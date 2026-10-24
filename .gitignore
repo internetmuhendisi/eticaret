@@ -1,0 +1,20 @@
+# Şifreler ve gizli ayarlar
+.env
+.env.*
+!.env.example
+
+# Claude Code kişisel ayarları
+.claude/settings.local.json
+
+# İşletim sistemi dosyaları
+.DS_Store
+Thumbs.db
+
+# Bağımlılıklar ve derleme çıktıları
+node_modules/
+vendor/
+dist/
+build/
+
+# Kayıt dosyaları
+*.log
