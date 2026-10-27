@@ -1,0 +1,30 @@
+---
+paths:
+  - "**/locales/**"
+  - "**/i18n/**"
+  - "**/messages/**"
+  - "**/translations/**"
+  - "**/lang/**"
+  - "**/metinler/**"
+  - "**/format*"
+  - "**/components/**"
+  - "**/pages/**"
+  - "**/app/**"
+  - "**/emails/**"
+---
+
+> Bu dosyanın paths satırları teknoloji kararından sonra projenin klasör düzenine göre güncellenir (Bölüm 4).
+
+# Metin, çeviri ve biçimler
+
+- Ekranda görünen metni koda yazma. Bütün metinleri metin dosyasında anahtarla tut, kod yalnız anahtarı kullansın.
+- Metin dosyalarını modüle göre ayır. Anahtarlar "modül.bölüm.anahtar" biçiminde olsun.
+- Altyapı bugün tek dilde çalışsa da metinleri sonradan çevrilebilecek biçimde tut. Sitenin dili site ayarıdır, çekirdekte Türkçe sabit varsayılmaz.
+- Sayı, tarih, saat, para ve dosya boyutunu tek ortak biçimleyiciyle göster. Elle biçimlendirme.
+- Para birimi ve biçimi (simgenin yeri, binlik ve ondalık ayırıcı, ondalık sayısı) ile ölçü birimleri site ayarından gelir. Türkiye'de 1.234,56 ₺.
+- Tarih ve saati mağazanın saat dilimine göre göster. Saat dilimini tek yerden al.
+- Sunucu hata ve durum bildirirken düz cümle değil bir kod döndürsün. Metni ekran çözer.
+- Ürünün kavramlarının tek adı olsun. Bu adları terim sözlüğü dosyasında tut, sözlükte olmayan başka bir adı kullanma.
+- Ekrandaki her iddiayı ürünün gerçek davranışıyla doğrula. Değişecek sayıları metne yazma.
+- Hata mesajında ne olduğunu ve kullanıcının ne yapması gerektiğini söyle.
+- Boş liste kullanıcıya bir sonraki adımı ve o adımın düğmesini göstersin.
