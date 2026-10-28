@@ -27,7 +27,7 @@ Kartın "Durum" başlığı altındaki değeri `bitti` yap. Kartın başka satı
 
 - O ayın dosyasına (`tarihce/YYYY-AA.md`) giriş ekle. Dosya yoksa `# YYYY-AA` başlığıyla aç.
 - Giriş ay başlığının hemen altına, en üste girer.
-- Biçim: `## YYYY-AA-GG — <işin kısa adı> (iş <numara>)`, altında en fazla iki satır özet. Öteki girişlerle aynı dili kullan.
+- Biçim: `## YYYY-AA-GG — <işin kısa adı> (kart <numara>)`, altında en fazla iki satır özet. Öteki girişlerle aynı dili kullan.
 
 ## 4. Kaydet ve GitHub'a gönder
 

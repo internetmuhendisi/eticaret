@@ -70,7 +70,7 @@ Konuşmalar oturumdan oturuma hatırlanmaz. Projenin hafızası aşağıdaki kla
 - **Karar kayıtlarına bak:** İşe başlamadan önce o işle ilgili karar kayıtlarını oku.
 - **Karar kaydı yaz:** Önemli bir karar verilince `kararlar/` klasörüne şablonla (`kararlar/sablon.md`) bir karar kaydı yaz. Şu iki sorudan birinin cevabı evetse karar önemlidir: Bu karar unutulursa ileride yeniden tartışılır mı? Birden çok yol arasından birini mi seçtik?
 - **Karar kaydı değişmez:** Yazılan kayıt sonradan değiştirilmez. Fikir değişirse yeni bir kayıt yazılır. Eski kayda yalnız "bu kararın yerine şu numaralı karar geçti" notu eklenir, başka satırına dokunulmaz.
-- **Tarihçeye yaz:** Her iş bitince `tarihce/` klasöründe o ayın dosyasına bir giriş eklenir. Kartlı işlerde bu girişi `/is-bitti` komutu yazar (`.claude/rules/calisma-duzeni.md`). En yeni giriş en üstte durur. Her giriş tarih, iş başlığı ve en fazla iki satır özetten oluşur.
+- **Tarihçeye yaz:** Her iş bitince `tarihce/` klasöründe o ayın dosyasına bir giriş eklenir. Kartlı işlerde bu girişi `/is-bitti` komutu, kartsız işlerde sen yazarsın (`.claude/rules/calisma-duzeni.md`). En yeni giriş en üstte durur. Her giriş tarih, iş başlığı ve en fazla iki satır özetten oluşur.
 - **Planlar:** Her büyük işten önce yazılan planlar ve site ayarları taslağı `planlar/` klasöründedir.
 - **İşler:** Yapılacak işlerin kartları `isler/` klasöründedir.
 - "En son ne yaptık?" diye sorulursa önce tarihçeye, sonra karar kayıtlarına bak.
