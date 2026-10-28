@@ -6,8 +6,12 @@ import { siteTurleri, teslimAdimiDurumlari } from "../kayitlar/site.ts";
 const teslimAdimi = z.enum(teslimAdimiDurumlari);
 
 export const kimlikSemasi = z.strictObject({
-  // Klasörün adıyla aynıdır: küçük harf, rakam ve tire.
-  kodAdi: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Küçük harf, rakam ve tireden oluşmalı."),
+  // Klasörün adıyla aynıdır: küçük harf, rakam ve tire. Veritabanı adı bundan türer
+  // (site_<kod adı>, karar 0022); PostgreSQL adları 63 harfte kestiği için en çok 40 harftir.
+  kodAdi: z
+    .string()
+    .max(40)
+    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Küçük harf, rakam ve tireden oluşmalı."),
   gorunenAd: z.string().trim().min(1),
   tur: z.enum(siteTurleri),
   // Adresler alan adı bağlanınca yazılır.

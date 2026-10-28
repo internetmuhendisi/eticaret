@@ -5,6 +5,7 @@ import { randomBytes } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { baglan, baglantiyiKapat, siteninVeritabani, veritabaniAdresi } from "../baglanti";
+import { uygulananDegisiklikTablosu } from "../degisiklik-ayari";
 import { siteVeritabaniniGuncelle } from "../guncelle";
 import { veritabaniKimligi } from "../tablolar/veritabani-kimligi";
 
@@ -60,6 +61,24 @@ describe("değişikliklerin uygulanması", () => {
     const ikinci = await siteVeritabaniniGuncelle(gecici, "deneme-sitesi");
     expect(ikinci).toEqual({ once: ilk.sonra, sonra: ilk.sonra });
     expect(await tablolar()).toEqual(ilkTablolar);
+  });
+
+  it("uygulanmış bir değişikliğin içeriği değişmişse hiçbir şey uygulamaz", async () => {
+    await siteVeritabaniniGuncelle(gecici, "deneme-sitesi");
+    const { tablo, sema } = uygulananDegisiklikTablosu;
+    const kayit = sql`${sql.identifier(sema)}.${sql.identifier(tablo)}`;
+    const ilk = sql`(select min(id) from ${kayit})`;
+    const { rows } = await gecici.execute<{ ozet: string }>(
+      sql`select hash as ozet from ${kayit} where id = ${ilk}`,
+    );
+    await gecici.execute(sql`update ${kayit} set hash = 'bozuk' where id = ${ilk}`);
+    try {
+      await expect(siteVeritabaniniGuncelle(gecici, "deneme-sitesi")).rejects.toThrow(
+        "içeriği değişmiş",
+      );
+    } finally {
+      await gecici.execute(sql`update ${kayit} set hash = ${rows[0]?.ozet} where id = ${ilk}`);
+    }
   });
 
   it("başka bir sitenin veritabanına uygulanmaz", async () => {

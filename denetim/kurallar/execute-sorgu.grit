@@ -1,0 +1,13 @@
+// Güvensiz sorgu yasağının Drizzle'a özgü parçası (kart 0011, karar 0022).
+// Drizzle'ın execute() çağrısı düz metin de kabul eder; metin değişkende kurulup verilirse
+// değer sorguya gömülmüş olur. Bu yüzden execute() yalnız sql`...` şablonu alır; şablondaki
+// değerler parametre olarak gider.
+language js
+
+JsCallExpression(callee=$cagri, arguments=$girdiler) where {
+  $cagri <: JsStaticMemberExpression(member=`execute`),
+  $girdiler <: JsCallArguments(args=$liste),
+  $liste <: some $girdi,
+  $girdi <: not JsTemplateExpression(tag=`sql`),
+  register_diagnostic(span=$girdi, message="Güvensiz sorgu: execute() yalnız sql`...` şablonu alır. Değerler şablonun içinde parametre olarak gider.", severity="error")
+}

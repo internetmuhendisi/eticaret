@@ -3,6 +3,7 @@ import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { ayarBilgileri, ayarSemasi, onekTuret } from "../ayarlar";
+import { kimlikSemasi } from "../kimlik";
 import { siteKlasorunuDogrula } from "../site-klasoru";
 
 const siteler = join(import.meta.dirname, "..", "..", "..", "siteler");
@@ -62,6 +63,14 @@ describe("ayar şeması", () => {
     expect(onekTuret("Öğün Evi")).toBe("OGU");
     expect(onekTuret("ılık çay")).toBe("ILI");
     expect(onekTuret("Şık İş")).toBe("SIK");
+  });
+});
+
+describe("kimlik şeması", () => {
+  it("kod adı en çok 40 harftir", () => {
+    const kodAdi = (uzunluk: number) => kimlikSemasi.shape.kodAdi.safeParse("a".repeat(uzunluk));
+    expect(kodAdi(40).success).toBe(true);
+    expect(kodAdi(41).success).toBe(false);
   });
 });
 

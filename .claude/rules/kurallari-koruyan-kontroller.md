@@ -10,7 +10,7 @@ Bir kural yalnız yazılı kalırsa zamanla çiğnenir. Bu yüzden önemli her k
 | Testler | Birim, entegrasyon, yetki, veri ayrımı, hesaplama, ödeme, eşzamanlılık, iade ve sözleşme testleri. | Her yayında | Kısmen kuruldu (0007): araçlar ve `pnpm testler`, gerçek testler ilgili kartlarda. Kart 0010: çekirdekte ve bileşenlerde site adı geçmez (`cekirdek/testler/site-adi-yok.test.ts`) |
 | Site klasörü doğrulaması | Kimliği ve ayarları şemadan geçirir; şemada olmayan ayarı, yanlış türü, eksik kimlik alanını ve klasörle uyuşmayan kod adını durdurur. Bozuk örneklerin kırmızıya düştüğünü gösterir. | Her yayında ve uygulama açılırken | Kuruldu (0010): `pnpm site-dogrula`, testi `pnpm birim-testleri` içinde |
 | Güvenlik kontrolleri | Güvenlik başlıkları, çerez ayarları, dosya yükleme ve dış paket açıkları. | Her yayında | Kurulmadı |
-| Veritabanı değişikliği notu | Geri dönüş notu olmayan değişiklik dosyasını yakalar, böyle bir dosya varsa hiçbir değişiklik uygulanmaz. Başka sitenin veritabanına değişiklik uygulanmasını durdurur. | Her yayında ve her güncellemede | Kuruldu (0011): testi `pnpm birim-testleri` içinde, `pnpm veritabani-guncelle` |
+| Veritabanı değişikliği notu ve sırası | Geri dönüş notu olmayan, zaman sırası bozuk ya da uygulandıktan sonra içeriği değişmiş değişikliği yakalar; böyle bir değişiklik varsa hiçbiri uygulanmaz. Başka sitenin veritabanına değişiklik uygulanmasını durdurur. | Her yayında ve her güncellemede | Kuruldu (0011): testi `pnpm birim-testleri` içinde, `pnpm veritabani-guncelle` |
 | Veritabanı değişikliği denemesi | Değişikliği canlının kişisel bilgileri silinmiş kopyasında uygular. | Veritabanı değiştiğinde | Kurulmadı |
 | Belge ve bayatlık kontrolü | Belgenin ve yardım içeriğinin güncellendiğini, kural dosyasının satır sınırını aşmadığını kontrol eder. | Her yayında | Kurulmadı |
 | Metin kontrolleri | Koda gömülü metni, yasak terimi, yasak iddiayı ve sabit sayıyı arar. | Her yayında | Kısmen kuruldu (0006): ekrana gömülü metin denetimde |
@@ -42,6 +42,8 @@ Belge dosyaları (`.md`) biçimlendirilmez ve denetlenmez.
 | Ekrana gömülü metin: öğenin içine yazılan metin, `{"..."}` ve `alt`, `title`, `placeholder`, `aria-label` gibi alanlara yazılan metin | Hata |
 | Güvensiz sorgu: sorgu çağrısına metin birleştirerek ya da `${...}` ile değer gömmek. Sorgu önce bir değişkende kurulursa yakalanmaz. | Hata |
 | Güvensiz sorgu: `sql.raw()` içine sabit metinden başka bir şey vermek (Drizzle, karar 0022) | Hata (0011) |
+| Güvensiz sorgu: Drizzle'ın `execute()` çağrısına `sql`...`` şablonundan başka bir şey vermek | Hata (0011) |
+| Güvensiz sorgu: `sql`'i takma adla almak (`import { sql as s }`) ya da `raw`'ı ayırıp çağırmak | Yalnız disiplin: denetim takma adı tanımaz |
 | `any` türü | Hata |
 | Biome'un önerilen kuralları | Hata |
 | Ham HTML öğesi (düğme, giriş alanı, seçim kutusu, pencere) | Sonra: bileşen kütüphanesi yazılınca |

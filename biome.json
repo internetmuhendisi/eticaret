@@ -25,6 +25,7 @@
     "./denetim/kurallar/gomulu-metin.grit",
     "./denetim/kurallar/guvensiz-sorgu.grit",
     "./denetim/kurallar/ham-sql.grit",
+    "./denetim/kurallar/execute-sorgu.grit",
     "./denetim/kurallar/elle-bicimlendirme.grit"
   ],
   "linter": {
