@@ -36,3 +36,12 @@ Her iş şu altı adımla yürür:
 4. **İş:** Claude işi kartın kendi çalışma kopyasında yapar. Kartta olmayan işe dokunmaz.
 5. **Kontrol:** Claude kartın "bitti sayılır" listesini madde madde kontrol eder, eksikleri proje sahibine söyler.
 6. **Kayıt:** Claude kartı "bitti" yapar, tarihçeye giriş yazar ve değişikliği kaydeder. Proje sahibi "push" deyince GitHub'a gönderir.
+
+## Komutlar
+
+Projenin kendi komutları `.claude/commands/` klasöründedir.
+
+| Komut | Ne işe yarar |
+|---|---|
+| `/durum` | Projenin durumunu özetler: tarihçedeki son üç giriş, açık kartlar ve açık çalışma kopyaları. Hiçbir dosyayı değiştirmez. |
+| `/is-bitti <kart numarası>` | Kartın bitti sayılır listesini kontrol eder. Eksik yoksa kartı bitti yapar, tarihçeye yazar, kaydedip GitHub'a gönderir. Yalnız proje sahibi çağırır. |
