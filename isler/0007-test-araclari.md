@@ -26,4 +26,4 @@ Karar 0013'te açık kalan test araçları seçilir. Birim testleri ve tarayıc�
 
 ## Durum
 
-yapılacak
+bitti
