@@ -1,0 +1,7 @@
+{
+  "name": "sahip-paneli",
+  "private": true,
+  "scripts": {
+    "tur-kontrolu": "tsc --noEmit -p tsconfig.json"
+  }
+}

@@ -26,4 +26,4 @@ Kodun ilk satırından önce projenin çalışma alanı kurulur. `cekirdek/`, `b
 
 ## Durum
 
-yapılacak
+bitti

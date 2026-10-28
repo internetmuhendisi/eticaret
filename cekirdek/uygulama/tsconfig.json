@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.temel.json",
+  "files": [],
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
+}

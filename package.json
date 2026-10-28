@@ -1,0 +1,26 @@
+{
+  "name": "kok",
+  "private": true,
+  "packageManager": "pnpm@12.15.0",
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.22.1",
+      "onFail": "download"
+    },
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.15.0",
+      "onFail": "error"
+    }
+  },
+  "engines": {
+    "node": "24.22.1"
+  },
+  "scripts": {
+    "tur-kontrolu": "pnpm -r --no-bail tur-kontrolu"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
+}

@@ -1,0 +1,8 @@
+packages:
+  - cekirdek/uygulama
+  - bilesenler
+  - sahip-paneli
+
+# Paket sürümleri her zaman tam sürümle yazılır (karar 0013, sürüm kilidi).
+saveExact: true
+engineStrict: true
