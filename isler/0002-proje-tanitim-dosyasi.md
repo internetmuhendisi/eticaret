@@ -22,4 +22,4 @@ Projeye ilk bakan biri ne olduğunu anlasın. Proje klasörüne `README.md` adı
 
 ## Durum
 
-yapılacak
+bitti
