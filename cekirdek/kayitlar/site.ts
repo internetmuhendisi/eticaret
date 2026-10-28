@@ -1,0 +1,13 @@
+// Siteyle ilgili türlerin ve durumların tek kaydı (.claude/rules/kayit-dosyalari.md).
+
+// Gerçek site satış yapar; demo site gerçek satış yapmaz ve arama motorlarına kapalıdır (karar 0007).
+export const siteTurleri = ["gercek", "demo"] as const;
+export type SiteTuru = (typeof siteTurleri)[number];
+
+// Teslimin her adımı (mağaza sahibi hesabı, yurt dışı aktarım belgeleri) bu durumlardan birindedir.
+export const teslimAdimiDurumlari = ["gerekmez", "bekliyor", "tamam"] as const;
+export type TeslimAdimiDurumu = (typeof teslimAdimiDurumlari)[number];
+
+// Bir site ayarını kimin değiştirdiği (karar 0010).
+export const ayarSahipleri = ["altyapi-sahibi", "magaza-sahibi"] as const;
+export type AyarSahibi = (typeof ayarSahipleri)[number];

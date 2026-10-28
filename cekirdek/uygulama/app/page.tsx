@@ -1,13 +1,15 @@
-// Vitrinin ana sayfası. Şimdilik boş (kart 0009).
+// Vitrinin ana sayfası. Şimdilik yalnız sitenin adını gösterir (kartlar 0009, 0010).
 import type { Metadata } from "next";
-import { metin } from "../../metinler/site-metni";
+import { calisanSite } from "../../ayar-semasi/calisan-site";
 
-export const metadata: Metadata = { title: metin("vitrin.anasayfa.baslik") };
+const { kimlik } = calisanSite();
+
+export const metadata: Metadata = { title: kimlik.gorunenAd };
 
 export default function VitrinAnaSayfa() {
   return (
     <main>
-      <h1>{metin("vitrin.anasayfa.baslik")}</h1>
+      <h1>{kimlik.gorunenAd}</h1>
     </main>
   );
 }

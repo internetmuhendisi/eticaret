@@ -1,0 +1,7 @@
+{
+  "kodAdi": "eksik-kimlik-alani",
+  "gorunenAd": "Deneme Dükkanı",
+  "tur": "gercek",
+  "adresler": { "canli": "https://deneme.example" },
+  "teslimDurumu": { "magazaSahibiHesabi": "tamam", "yurtDisiAktarimBelgeleri": "bekliyor" }
+}

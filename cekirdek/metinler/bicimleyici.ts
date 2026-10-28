@@ -19,6 +19,16 @@ export type BicimAyarlari = {
 
 export type Bicimleyici = ReturnType<typeof bicimleyiciOlustur>;
 
+// Saat dilimi adının tanınıp tanınmadığı. Ayar şeması saat dilimi ayarını bununla doğrular.
+export const saatDilimiGecerliMi = (ad: string): boolean => {
+  try {
+    new Intl.DateTimeFormat(undefined, { timeZone: ad });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
   const sayiBicimi = (ondalikSayisi: number) =>
     new Intl.NumberFormat(ayarlar.dil, {

@@ -19,7 +19,7 @@
     "node": "24.22.1"
   },
   "scripts": {
-    "cekirdek": "pnpm --filter cekirdek-uygulama gelistir",
+    "cekirdek": "SITE_KLASORU=\"${SITE_KLASORU:-$PWD/siteler/ornek-magaza}\" pnpm --filter cekirdek-uygulama gelistir",
     "tur-kontrolu": "tsc --noEmit -p tsconfig.json && pnpm -r --no-bail tur-kontrolu",
     "testler": "pnpm birim-testleri && pnpm tarayici-testleri",
     "birim-testleri": "vitest run",
@@ -27,6 +27,7 @@
     "denetim": "biome check --error-on-warnings",
     "bicimle": "biome format --write",
     "denetim-kendi-testi": "node denetim/kendi-kendini-denetle.mts",
+    "site-dogrula": "node komutlar/site-dogrula.mts",
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {
@@ -40,5 +41,8 @@
     "typescript": "7.0.2",
     "vite": "8.3.5",
     "vitest": "5.0.5"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
   }
 }

@@ -1,6 +1,12 @@
 // Tarayıcı testleri (karar 0018, .claude/rules/test.md).
 // Yalnız uctan-uca/ klasörlerindeki *.test.ts ve *.test.tsx dosyaları çalışır.
+import { join } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
+
+// Testler başka bir site verilmezse demo site Örnek Mağaza'yla çalışır (karar 0007, 0021).
+// Değişken hem uygulamaya hem testlere geçer.
+const { SITE_KLASORU = join(import.meta.dirname, "siteler", "ornek-magaza") } = process.env;
+Object.assign(process.env, { SITE_KLASORU });
 
 export default defineConfig({
   testDir: ".",

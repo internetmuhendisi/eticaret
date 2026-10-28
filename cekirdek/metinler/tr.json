@@ -5,9 +5,19 @@
       "vazgec": "Vazgeç"
     }
   },
-  "vitrin": {
-    "anasayfa": {
-      "baslik": "Ana sayfa"
+  "ayar": {
+    "aciklama": {
+      "ulke": "Mağazanın satış yaptığı ve teslimat yaptığı ülke.",
+      "dil": "Vitrinin, yönetim panelinin ve e-postaların dili.",
+      "paraBirimi": "Fiyatların ve siparişlerin para birimi.",
+      "paraBicimi": "Tutarların yazılışı: simge ve yeri, binlik ve ondalık ayırıcı, ondalık sayısı.",
+      "saatDilimi": "Tarih ve saatlerin gösterildiği saat dilimi.",
+      "agirlikBirimi": "Ürün ağırlıklarının birimi.",
+      "boyutBirimi": "Ürün boyutlarının birimi.",
+      "siparisOneki": "Sipariş numarasının başındaki harfler. Verilmezse mağaza adının ilk üç harfi kullanılır.",
+      "siparisBaslangici": "İlk siparişin numarası.",
+      "temaDegistirilebilir": "Mağaza sahibi yönetim panelinden temayı değiştirebilir.",
+      "vitrindeAltyapiAdi": "Vitrinde altyapının adı görünür."
     }
   },
   "yonetim": {

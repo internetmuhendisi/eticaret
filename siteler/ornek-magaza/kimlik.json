@@ -1,0 +1,11 @@
+{
+  "kodAdi": "ornek-magaza",
+  "gorunenAd": "Örnek Mağaza",
+  "tur": "demo",
+  "adresler": {},
+  "cekirdekSurumu": "0.1.0",
+  "teslimDurumu": {
+    "magazaSahibiHesabi": "gerekmez",
+    "yurtDisiAktarimBelgeleri": "gerekmez"
+  }
+}

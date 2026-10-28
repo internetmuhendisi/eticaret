@@ -15,6 +15,9 @@ const sozlukler = { tr } satisfies Record<string, Sozluk>;
 
 export type Dil = keyof typeof sozlukler;
 
+// Metin dosyası olan diller. Sitenin dil ayarı yalnız bunlardan biri olabilir.
+export const diller = Object.keys(sozlukler) as [Dil, ...Dil[]];
+
 export const metinOkuyucu = (dil: Dil) => {
   const sozluk: unknown = sozlukler[dil];
   return (anahtar: MetinAnahtari): string => {
