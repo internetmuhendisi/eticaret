@@ -95,15 +95,18 @@ Bütün mağazalar **aynı motoru** kullanır. Her mağazanın kendi **ayarları
 
 Bütün siteler, verileri ve yedekleri Almanya'daki sunucularda durur. Yedekler canlı sunucudan ayrı bir veri merkezindedir (karar 0009).
 
+## Ayrıntısı
+
+Çekirdeğin, site klasörünün ve sahip panelinin ayrıntısı: `planlar/cekirdek-ve-siteler.md`. Sahip paneli bilgiyi her siteye ayrı ayrı sorarak toplar, veritabanlarına bağlanmaz (karar 0012).
+
 ## Henüz kararı verilmemiş olanlar
 
 - Hangi programlama dili, hangi veritabanı ve hangi sunucu firması kullanılacak. Bunlar teknoloji bölümünde kararlaştırılacak.
-- Sahip panelinin sitelerden bilgiyi nasıl toplayacağı.
 - Sitelerin aynı sunucuyu mu paylaşacağı, her birinin ayrı sunucuda mı duracağı.
 
 ## Teknik ayrıntı
 
-- **Tek kod, sürümlü çalışma (0006):** Her çalışan site üç şeyin birleşimidir: çekirdeğin belirli bir sürümü, sitenin klasörü (marka, tema seçimi, ayar dosyası, gerekirse kendi vitrin parçaları) ve sitenin veritabanı. Sitenin hangi sürümde çalıştığı kayıtlıdır.
+- **Tek kod, sürümlü çalışma (0006):** Her çalışan site üç şeyin birleşimidir: çekirdeğin belirli bir sürümü, sitenin klasörü (marka, tema seçimi, ayar dosyası, gerekirse kendi vitrin parçaları) ve sitenin veritabanı. Sitenin hangi sürümde çalıştığı site klasöründeki kimlik dosyasında yazar (0011).
 - **Ayar şeması:** Bütün site ayarları tek şemada tanımlıdır: türü, varsayılanı, açıklaması. Panelin ayar ekranları bu şemadan üretilir. Gizli bilgiler (anahtar, şifre) ayarlarda değil, korumalı ortam değişkenlerindedir (`.claude/rules/ayarlar.md`).
 - **Modül yapısı:** Her çekirdek modülü aynı parçalardan oluşur: veri modeli, servis (iş kuralları), uçlar, izinler, metinler, testler.
 - **Sunucu arayüzü** (`.claude/rules/sunucu-arayuzu.md`):

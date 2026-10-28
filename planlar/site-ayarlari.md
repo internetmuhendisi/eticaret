@@ -2,7 +2,7 @@
 
 Siteden siteye değişebilen davranışların listesi. Her yeni site bu varsayılan değerlerle başlar, kurulurken gerekenler değiştirilir. Bu dosya bir taslaktır, plan aşamasında çekirdeğin ayar şemasına dönüşür (`.claude/rules/ayarlar.md`).
 
-Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site Örnek Mağaza'nın değerleri eklendi (karar 0007) ve üç yeni ayar girdi: kapıda ödeme seçenekleri, kargoya verme süresi, iade kargosunu kim öder (karar 0008). "Örnek Mağaza" sütununda "—" yazan ayar varsayılanla çalışır.
+Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site Örnek Mağaza'nın değerleri eklendi (karar 0007) ve üç yeni ayar girdi: kapıda ödeme seçenekleri, kargoya verme süresi, iade kargosunu kim öder (karar 0008). "Örnek Mağaza" sütununda "—" yazan ayar varsayılanla çalışır. Aynı gün her ayara "Kim değiştirir" sütunu eklendi (karar 0010): altyapı sahibinin ayarları site klasöründe durur ve yayınla değişir, mağaza sahibinin ayarları panelden değişir, site klasöründe yalnız başlangıç değerleri durur (`planlar/cekirdek-ve-siteler.md`).
 
 ## Örnek Mağaza
 
@@ -14,80 +14,80 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 
 ## Mağaza
 
-| Ayar | Varsayılan | Örnek Mağaza | Not |
-|---|---|---|---|
-| Satış ve teslimat ülkesi | Türkiye | — | |
-| Dil | Türkçe | — | |
-| Para birimi | TL | — | |
-| Para biçimi | 1.234,56 ₺ (simge sonda, binlikte nokta, ondalıkta virgül, 2 ondalık) | — | |
-| Saat dilimi | İstanbul (Europe/Istanbul) | — | |
-| Ağırlık birimi | kg | — | |
-| Boyut birimi | cm | — | |
-| Sipariş numarası öneki | Mağaza adından 3 harf | ORN | Kurulumda mağaza adından önerilir |
-| Sipariş numarası başlangıcı | 1001 | — | |
+| Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
+|---|---|---|---|---|
+| Satış ve teslimat ülkesi | Altyapı sahibi | Türkiye | — | |
+| Dil | Altyapı sahibi | Türkçe | — | |
+| Para birimi | Altyapı sahibi | TL | — | |
+| Para biçimi | Altyapı sahibi | 1.234,56 ₺ (simge sonda, binlikte nokta, ondalıkta virgül, 2 ondalık) | — | |
+| Saat dilimi | Altyapı sahibi | İstanbul (Europe/Istanbul) | — | |
+| Ağırlık birimi | Altyapı sahibi | kg | — | |
+| Boyut birimi | Altyapı sahibi | cm | — | |
+| Sipariş numarası öneki | Altyapı sahibi | Mağaza adından 3 harf | ORN | Kurulumda mağaza adından önerilir |
+| Sipariş numarası başlangıcı | Altyapı sahibi | 1001 | — | |
 
 ## Vergi
 
-| Ayar | Varsayılan | Örnek Mağaza | Not |
-|---|---|---|---|
-| Vergi | Açık | — | |
-| Vergi adı | KDV | — | |
-| Vergi sınıfları | %20, %10, %1, %0 | — | |
-| Fiyat girişi | Vergi dahil | — | |
-| Fiyatın yanındaki metin | "KDV dahil" | — | |
-| Verginin hesaplandığı adres | Teslimat adresi | — | |
-| Yuvarlama | Satır satır | — | Faturadaki satırlarla aynı tutar çıkar |
+| Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
+|---|---|---|---|---|
+| Vergi | Mağaza sahibi | Açık | — | |
+| Vergi adı | Mağaza sahibi | KDV | — | |
+| Vergi sınıfları | Mağaza sahibi | %20, %10, %1, %0 | — | |
+| Fiyat girişi | Mağaza sahibi | Vergi dahil | — | |
+| Fiyatın yanındaki metin | Mağaza sahibi | "KDV dahil" | — | |
+| Verginin hesaplandığı adres | Mağaza sahibi | Teslimat adresi | — | |
+| Yuvarlama | Mağaza sahibi | Satır satır | — | Faturadaki satırlarla aynı tutar çıkar |
 
 ## Fiyat
 
-| Ayar | Varsayılan | Örnek Mağaza | Not |
-|---|---|---|---|
-| İndirimde eski fiyat olarak son 30 günün en düşük fiyatı | Açık | — | Yasal dayanağı hukukçuya teyit ettirilecek |
+| Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
+|---|---|---|---|---|
+| İndirimde eski fiyat olarak son 30 günün en düşük fiyatı | Mağaza sahibi | Açık | — | Yasal dayanağı hukukçuya teyit ettirilecek |
 
 ## Stok
 
-| Ayar | Varsayılan | Örnek Mağaza | Not |
-|---|---|---|---|
-| Tükenen ürün | Gösterilir ama satılmaz | — | Seçenekler: göster ama satma, gizle |
-| Düşük stok uyarı eşiği | 5 adet | — | Ürün bazında değiştirilebilir |
-| "Son X ürün" yazısı | 5 adet ve altında | — | |
-| Ödeme sırasında stok ayırma süresi | 15 dakika | — | |
+| Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
+|---|---|---|---|---|
+| Tükenen ürün | Mağaza sahibi | Gösterilir ama satılmaz | — | Seçenekler: göster ama satma, gizle |
+| Düşük stok uyarı eşiği | Mağaza sahibi | 5 adet | — | Ürün bazında değiştirilebilir |
+| "Son X ürün" yazısı | Mağaza sahibi | 5 adet ve altında | — | |
+| Ödeme sırasında stok ayırma süresi | Mağaza sahibi | 15 dakika | — | |
 
 ## Sepet ve ödeme
 
-| Ayar | Varsayılan | Örnek Mağaza | Not |
-|---|---|---|---|
-| Üye olmadan alışveriş | Açık | — | |
-| Telefon zorunlu | Açık | — | Kargo firmaları telefon ister |
-| Havale | Açık | — | |
-| Ödenmeyen havale siparişinin iptal süresi | 3 gün | — | Süre sonunda stok geri döner |
-| Kapıda ödeme | Kapalı | Açık | İsteyen mağaza açar |
-| Kapıda ödeme seçenekleri | Nakit | Nakit ve kart | Seçenekler: nakit, kart. Müşteri ödeme adımında seçer, kartı kurye çeker |
+| Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
+|---|---|---|---|---|
+| Üye olmadan alışveriş | Mağaza sahibi | Açık | — | |
+| Telefon zorunlu | Mağaza sahibi | Açık | — | Kargo firmaları telefon ister |
+| Havale | Mağaza sahibi | Açık | — | |
+| Ödenmeyen havale siparişinin iptal süresi | Mağaza sahibi | 3 gün | — | Süre sonunda stok geri döner |
+| Kapıda ödeme | Mağaza sahibi | Kapalı | Açık | İsteyen mağaza açar |
+| Kapıda ödeme seçenekleri | Mağaza sahibi | Nakit | Nakit ve kart | Seçenekler: nakit, kart. Müşteri ödeme adımında seçer, kartı kurye çeker |
 
 ## Kargo
 
-| Ayar | Varsayılan | Örnek Mağaza | Not |
-|---|---|---|---|
-| Ücretsiz kargo sınırının hesaplandığı tutar | İndirimden sonraki tutar | — | Seçenekler: indirimden önce, indirimden sonra |
-| Kargoya verme süresi | 1 iş günü | — | Sayı olarak tutulur. Ürün sayfasında "1 iş gününde kargoda" yazar, ön bilgilendirme metnindeki teslim süresi de buradan gelir |
+| Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
+|---|---|---|---|---|
+| Ücretsiz kargo sınırının hesaplandığı tutar | Mağaza sahibi | İndirimden sonraki tutar | — | Seçenekler: indirimden önce, indirimden sonra |
+| Kargoya verme süresi | Mağaza sahibi | 1 iş günü | — | Sayı olarak tutulur. Ürün sayfasında "1 iş gününde kargoda" yazar, ön bilgilendirme metnindeki teslim süresi de buradan gelir |
 
 ## İade
 
-| Ayar | Varsayılan | Örnek Mağaza | Not |
-|---|---|---|---|
-| İade kargosunu kim öder | Mağaza | — | Seçenekler: mağaza, müşteri. İade koşulları metnine buradan girer. Cayma hakkında yasal kuralı hukukçuya teyit ettirilecek |
+| Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
+|---|---|---|---|---|
+| İade kargosunu kim öder | Mağaza sahibi | Mağaza | — | Seçenekler: mağaza, müşteri. İade koşulları metnine buradan girer. Cayma hakkında yasal kuralı hukukçuya teyit ettirilecek |
 
 ## Yorumlar
 
-| Ayar | Varsayılan | Örnek Mağaza | Not |
-|---|---|---|---|
-| Yalnız satın alanlar yorum yapabilir | Açık | — | |
-| Doğrulanmış alıcı etiketi | Açık | — | |
+| Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
+|---|---|---|---|---|
+| Yalnız satın alanlar yorum yapabilir | Mağaza sahibi | Açık | — | |
+| Doğrulanmış alıcı etiketi | Mağaza sahibi | Açık | — | |
 
 ## Tasarım ve marka
 
-| Ayar | Varsayılan | Örnek Mağaza | Not |
-|---|---|---|---|
-| Mağaza sahibi temayı değiştirebilir | Açık | — | Özel tasarlanan mağazada kapatılır |
-| Vitrinde altyapı adı | Kapalı | — | |
-| Vitrinde koyu tema | Kapalı | Açık | Mağazanın tasarımına göre açılır |
+| Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
+|---|---|---|---|---|
+| Mağaza sahibi temayı değiştirebilir | Altyapı sahibi | Açık | — | Özel tasarlanan mağazada kapatılır |
+| Vitrinde altyapı adı | Altyapı sahibi | Kapalı | — | |
+| Vitrinde koyu tema | Mağaza sahibi | Kapalı | Açık | Mağazanın tasarımına göre açılır |
