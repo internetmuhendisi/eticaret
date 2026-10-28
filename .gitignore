@@ -6,6 +6,9 @@
 # Claude Code kişisel ayarları
 .claude/settings.local.json
 
+# Çalışma kopyaları
+.claude/worktrees/
+
 # İşletim sistemi dosyaları
 .DS_Store
 Thumbs.db
