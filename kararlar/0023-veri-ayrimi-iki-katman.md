@@ -31,4 +31,7 @@ Veri ayrımı testi (`cekirdek/testler/veri-ayrimi.test.ts`) her çalıştırmad
 - Bağlantı kuralları dosyası değişince veritabanı kutusu yeniden başlatılır. Kutu dosyayı açılışta bağlar, sonraki değişikliği her zaman görmez.
 - Veritabanı adı ile kullanıcı adı aynı kalmak zorundadır. Bu ad biçimi değişirse bağlantı kuralı da değişir.
 - Sahip paneli sitelerin veritabanlarına bağlanmaz (karar 0012), bu kurallarda ona yer yoktur.
+- Bilinen sınır: Site kullanıcısı tablo verisine ulaşamaz, ama aynı PostgreSQL'deki veritabanı ve kullanıcı adlarını, başka sitelerin sayaçlarını (`pg_stat_database`) ve oturumlarının kullanıcı adlarını (`pg_stat_activity`) görebilir. Bu PostgreSQL'in yapısıdır, izinlerle tamamen kapatılamaz. Ele alınması kart 0037'dedir.
+- Sunucuda (0018) yöneticinin dışarıdan bağlanma kuralı (`host all postgres all`) daraltılmalı ya da veritabanı portu dışarı açılmamalıdır. Yerelde port yalnız bu bilgisayara açık olduğu için sorun yoktur.
+- Veri ayrımı testi yarıda öldürülürse rastgele adlı `site_ayrim_*` ve `ayrim_acik_*` veritabanları ile kullanıcıları kalır. Test başlarken bunları silmez, çünkü aynı anda çalışan başka bir işin testini bozabilir. Kalanlar yönetici olarak elle silinir.
 - Her site uygulaması yalnız kendi `VERITABANI_ADRESI`'ni alır. Bir site kutusunun başka sitenin adresini görmemesi kutular kurulurken sağlanır (kartlar 0016, 0019).
