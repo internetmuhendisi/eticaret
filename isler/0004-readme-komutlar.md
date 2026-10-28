@@ -27,4 +27,4 @@ Projeye ilk bakan biri hangi komutların olduğunu ve ne işe yaradığını da 
 
 ## Durum
 
-yapılacak
+bitti
