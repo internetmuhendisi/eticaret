@@ -1,6 +1,7 @@
 {
   "name": "kok",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@12.15.0",
   "devEngines": {
     "runtime": {
@@ -18,7 +19,10 @@
     "node": "24.22.1"
   },
   "scripts": {
-    "tur-kontrolu": "pnpm -r --no-bail tur-kontrolu",
+    "tur-kontrolu": "tsc --noEmit -p tsconfig.json && pnpm -r --no-bail tur-kontrolu",
+    "testler": "pnpm birim-testleri && pnpm tarayici-testleri",
+    "birim-testleri": "vitest run",
+    "tarayici-testleri": "playwright test",
     "denetim": "biome check --error-on-warnings",
     "bicimle": "biome format --write",
     "denetim-kendi-testi": "node denetim/kendi-kendini-denetle.mts",
@@ -29,7 +33,11 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.3",
+    "@playwright/test": "1.64.1",
+    "@types/node": "24.19.2",
     "simple-git-hooks": "2.14.0",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
   }
 }

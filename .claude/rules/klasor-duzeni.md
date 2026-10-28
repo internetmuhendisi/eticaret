@@ -34,7 +34,7 @@ cekirdek/
   kayitlar/            durum, izin, ikon gibi kayıt dosyaları
   izleme/              hata yakalama, sağlık ucu, yoklamalar
   eklentiler/          eklentilerin kodu
-  testler/             modüller arası ve uçtan uca testler
+  testler/             modüller arası testler; tarayıcı testleri uctan-uca/ altında
   surum-notlari/
 bilesenler/            ortak bileşen kütüphanesi; tasarim-degerleri/ altında tasarım değerleri
 sahip-paneli/          ayrı Next.js uygulaması

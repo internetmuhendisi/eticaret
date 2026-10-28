@@ -16,3 +16,10 @@ Birim testi tek bir parçayı, entegrasyon testi parçaların birlikte çalışm
 - Her test kendi verisini hazırlasın ve başka teste bağlı olmasın.
 - Önemli akışları tarayıcıda gerçek kullanıcı gibi tıklayarak dene.
 - Bir işin bitip bitmediğini işi yapmayan ikinci bir kontrol onaylasın. İşi yapan kendi işini onaylamaz.
+
+## Araçlar ve komutlar (karar 0018)
+
+- Birim ve entegrasyon testleri Vitest ile, tarayıcı testleri Playwright ile yazılır.
+- Test dosyasının adı `*.test.ts` ya da `*.test.tsx` ile biter. Tarayıcı testleri `uctan-uca/` klasöründe durur, öteki testler orada durmaz.
+- `pnpm testler` bütün testleri çalıştırır. Tek aracı çalıştırmak için `pnpm birim-testleri` ya da `pnpm tarayici-testleri`.
+- Test dosyaları da tür kontrolünden geçer (`pnpm tur-kontrolu`).

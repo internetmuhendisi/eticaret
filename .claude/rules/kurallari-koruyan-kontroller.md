@@ -7,7 +7,7 @@ Bir kural yalnız yazılı kalırsa zamanla çiğnenir. Bu yüzden önemli her k
 | Tür kontrolü | Kayıtta olmayan değeri, eksik alanı ve yanlış türü engeller. | Her yayında | Kuruldu (0005): `pnpm tur-kontrolu` |
 | Kod denetim kuralları | Ham renk, ham HTML öğesi, elle tablo, elle genişlik, elle biçimlendirme, şemasız uç, güvensiz sorgu gibi yasakları hata sayar. | Kod yazılırken ve her yayında | Kısmen kuruldu (0006): `pnpm denetim`, liste aşağıda |
 | Kayıt öncesi kontroller | Kod biçimini, metin anahtarlarını, karar kaydı numaralarını kontrol eder, gizli bilgi yazılmışsa kaydı durdurur. | Her kayıtta | Kısmen kuruldu (0006): biçim ve denetim kırmızıysa kayıt durur. Gizli bilgi dosyasını Claude'un kalkanı durdurur. Metin anahtarı ve karar numarası kontrolü sonra. |
-| Testler | Birim, entegrasyon, yetki, veri ayrımı, hesaplama, ödeme, eşzamanlılık, iade ve sözleşme testleri. | Her yayında | Kurulmadı |
+| Testler | Birim, entegrasyon, yetki, veri ayrımı, hesaplama, ödeme, eşzamanlılık, iade ve sözleşme testleri. | Her yayında | Kısmen kuruldu (0007): araçlar ve `pnpm testler`, gerçek testler ilgili kartlarda |
 | Güvenlik kontrolleri | Güvenlik başlıkları, çerez ayarları, dosya yükleme ve dış paket açıkları. | Her yayında | Kurulmadı |
 | Veritabanı değişikliği denemesi | Değişikliği canlının kişisel bilgileri silinmiş kopyasında uygular. | Veritabanı değiştiğinde | Kurulmadı |
 | Belge ve bayatlık kontrolü | Belgenin ve yardım içeriğinin güncellendiğini, kural dosyasının satır sınırını aşmadığını kontrol eder. | Her yayında | Kurulmadı |

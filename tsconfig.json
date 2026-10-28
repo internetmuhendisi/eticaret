@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.temel.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["*.config.ts", "cekirdek/testler/**/*.ts", "cekirdek/testler/**/*.tsx"]
+}

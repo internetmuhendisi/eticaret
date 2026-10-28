@@ -19,5 +19,9 @@ vendor/
 dist/
 build/
 
+# Test çıktıları
+test-results/
+playwright-report/
+
 # Kayıt dosyaları
 *.log
