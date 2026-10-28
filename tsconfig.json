@@ -3,5 +3,10 @@
   "compilerOptions": {
     "types": ["node"]
   },
-  "include": ["*.config.ts", "cekirdek/testler/**/*.ts", "cekirdek/testler/**/*.tsx"]
+  "include": [
+    "*.config.ts",
+    "cekirdek/metinler/**/*.ts",
+    "cekirdek/testler/**/*.ts",
+    "cekirdek/testler/**/*.tsx"
+  ]
 }

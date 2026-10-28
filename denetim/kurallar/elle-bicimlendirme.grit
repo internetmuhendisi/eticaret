@@ -1,0 +1,14 @@
+// Elle biçimlendirme yasağı (.claude/rules/metinler.md).
+// Para, sayı ve tarih yalnız ortak biçimleyiciyle biçimlenir (cekirdek/metinler/bicimleyici.ts).
+// Biçimleyici dışında Intl ve toLocale...String kullanılamaz.
+language js
+
+or {
+  `Intl.$_`,
+  JsCallExpression(callee=JsStaticMemberExpression(member=$yontem)) where {
+    $yontem <: r"toLocale(?:Date|Time)?String"
+  }
+} as $bicim where {
+  $filename <: not r".*/cekirdek/metinler/bicimleyici\.ts",
+  register_diagnostic(span=$bicim, message="Elle biçimlendirme yapılamaz. Para, sayı ve tarihi ortak biçimleyiciyle gösterin (cekirdek/metinler/bicimleyici.ts).", severity="error")
+}

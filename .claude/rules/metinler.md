@@ -11,7 +11,9 @@ paths:
 - Ekranda görünen metni koda yazma. Bütün metinleri metin dosyasında anahtarla tut, kod yalnız anahtarı kullansın.
 - Metin dosyalarını modüle göre ayır. Anahtarlar "modül.bölüm.anahtar" biçiminde olsun.
 - Altyapı bugün tek dilde çalışsa da metinleri sonradan çevrilebilecek biçimde tut. Sitenin dili site ayarıdır, çekirdekte Türkçe sabit varsayılmaz.
-- Sayı, tarih, saat, para ve dosya boyutunu tek ortak biçimleyiciyle göster. Elle biçimlendirme.
+- Metinler `cekirdek/metinler/` altındaki dil dosyalarındadır (`tr.json`) ve yalnız `metinOkuyucu` ile okunur (`metin.ts`). Olmayan anahtar tür kontrolünde hata verir (karar 0019).
+- Sayı, tarih, saat, para ve dosya boyutunu tek ortak biçimleyiciyle göster (`cekirdek/metinler/bicimleyici.ts`). Elle biçimlendirme.
+- Para tutarı her yerde para biriminin en küçük biriminde (kuruş) tam sayıdır (karar 0019).
 - Para birimi ve biçimi (simgenin yeri, binlik ve ondalık ayırıcı, ondalık sayısı) ile ölçü birimleri site ayarından gelir. Türkiye'de 1.234,56 ₺.
 - Tarih ve saati mağazanın saat dilimine göre göster. Saat dilimini tek yerden al.
 - Sunucu hata ve durum bildirirken düz cümle değil bir kod döndürsün. Metni ekran çözer.

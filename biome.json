@@ -17,7 +17,8 @@
   "plugins": [
     "./denetim/kurallar/ham-renk.grit",
     "./denetim/kurallar/gomulu-metin.grit",
-    "./denetim/kurallar/guvensiz-sorgu.grit"
+    "./denetim/kurallar/guvensiz-sorgu.grit",
+    "./denetim/kurallar/elle-bicimlendirme.grit"
   ],
   "linter": {
     "enabled": true,
