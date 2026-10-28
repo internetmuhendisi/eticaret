@@ -37,7 +37,7 @@ Bu üç kural hiçbir zaman çiğnenmez:
 
 - Benimle her zaman Türkçe konuş.
 - İşe başlamadan önce ne yapacağını kısaca söyle.
-- Yalnız istenen işi yap. Başka bir iş görürsen ona başlama, kart olarak yaz ve bana söyle. Bir kartı ben istemeden yapma.
+- Yalnız istenen iş kuralı: `.claude/rules/calisma-duzeni.md`.
 - İş bitince önce sonucu ve benim yapmam gereken bir şey olup olmadığını söyle. Ayrıntıyı ben sorarsam anlat.
 - Bilmediğin bir şeyi uydurma, emin değilsen söyle.
 - Bir işe bitti demeden önce gerçekten çalıştığını kontrol et.

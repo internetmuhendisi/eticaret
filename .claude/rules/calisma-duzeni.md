@@ -14,7 +14,7 @@ Bu kurallar her işte geçerlidir.
 - Her işi şu sırayla yürüt: anlama, etki kontrolü, plan, yazım, kontrol, yayın.
 - Her işi kendi çalışma kopyasında yap. Ortak bir dosyayı aynı anda iki işte değiştirme. Kopyayı proje klasörünün içinde, `.claude/worktrees/<kart numarası>` altında aç; proje dışındaki bir klasör her adımda izin ister.
 - İş ana dala alınınca o işin çalışma kopyasını ve dalını kaldır. Açık kalan kopya bir sonraki işe karışır ve diskte yer kaplar. Kopyayı zorlamadan kaldır (`git worktree remove <klasör>`, sonra `git branch -d <dal>`). Git, kaydedilmemiş iş olan kopyayı kaldırmaz; öyleyse dur ve kullanıcıya söyle.
-- İş sırasında fark ettiğin başka bir sorunu aynı değişikliğe karıştırma, ayrı iş olarak yaz.
+- Yalnız istenen işi yap. İş sırasında başka bir iş ya da sorun görürsen ona başlama ve aynı değişikliğe karıştırma. Onu `isler/` klasörüne kart olarak yaz ve kullanıcıya söyle. Bir kartı kullanıcı istemeden yapma.
 - Bir hatayı düzeltirken aynı hatanın başka yerlerde olup olmadığını ara.
 - "Şu bozuk" gibi bir sebep iddiasını bir ölçümle doğrulamadan yazma.
 - Bir işin maddelerini kaydet, yayını iş bitince tek seferde yap.
