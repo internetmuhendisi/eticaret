@@ -1,0 +1,37 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": ["**", "!**/*.md", "!pnpm-lock.yaml", "!denetim/bozuk-ornekler"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "plugins": [
+    "./denetim/kurallar/ham-renk.grit",
+    "./denetim/kurallar/gomulu-metin.grit",
+    "./denetim/kurallar/guvensiz-sorgu.grit"
+  ],
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "suspicious": {
+        "noExplicitAny": "error"
+      },
+      "style": {
+        "noJsxLiterals": "error"
+      }
+    }
+  },
+  "assist": {
+    "enabled": true
+  }
+}

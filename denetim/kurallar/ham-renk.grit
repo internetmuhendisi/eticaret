@@ -1,0 +1,14 @@
+// Ham renk yasağı (.claude/rules/tasarim-sistemi.md).
+// Kodda #rrggbb, rgb(), hsl(), oklch() gibi renk değeri yazılmaz; renk tasarım değerlerinden okunur.
+// Renklerin tanımlandığı bilesenler/tasarim-degerleri/ klasörü bu yasağın dışındadır.
+// Not: Grit düzenli ifadelerinde parantez değişken sayılır, gruplar (?:...) ile yazılır.
+language js
+
+or {
+  JsStringLiteralExpression(),
+  JsTemplateExpression()
+} as $metin where {
+  $filename <: not r".*/bilesenler/tasarim-degerleri/.*",
+  $metin <: r"(?is).*(?:#[0-9a-f]{3,8}(?:[^0-9a-z_-].*)?|[^a-z-](?:rgba?|hsla?|hwb|oklch|oklab|lab|lch|color-mix)[(].*)",
+  register_diagnostic(span=$metin, message="Ham renk yazılamaz. Rengi tasarım değerlerinden okuyun (bilesenler/tasarim-degerleri/).", severity="error")
+}

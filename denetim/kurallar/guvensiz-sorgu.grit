@@ -1,0 +1,18 @@
+// Güvensiz sorgu yasağı (.claude/rules/veritabani.md, .claude/rules/guvenlik.md).
+// Sorgu çalıştıran bir çağrıya (query, execute, raw, unsafe...) metin birleştirerek ya da
+// ${...} ile değer gömülerek kurulmuş bir sorgu verilemez. Değerler parametre olarak gönderilir.
+// Etiketli şablonlar (sql`... ${deger}`) parametreli çalıştığı için serbesttir.
+// Sınır: sorgu önce bir değişkende kurulup sonra çağrıya verilirse yakalanmaz.
+// Veritabanı aracı seçilince (kart 0011) çağrı adları o araca göre sıkılaştırılır.
+// Not: Grit düzenli ifadelerinde parantez değişken sayılır, gruplar (?:...) ile yazılır.
+language js
+
+JsCallExpression(callee=$cagri, arguments=$girdiler) where {
+  $cagri <: r"(?s)(?:.*[.])?(?:query|queryRaw|execute|executeRaw|raw|unsafe|[$]queryRawUnsafe|[$]executeRawUnsafe)",
+  $girdiler <: JsCallArguments(args=$liste),
+  $liste <: some or {
+    JsTemplateExpression(tag=., elements=contains JsTemplateElement()),
+    JsBinaryExpression()
+  } as $sorgu,
+  register_diagnostic(span=$sorgu, message="Güvensiz sorgu: sorguya değer birleştirilerek yazılamaz. Değeri parametre olarak gönderin.", severity="error")
+}

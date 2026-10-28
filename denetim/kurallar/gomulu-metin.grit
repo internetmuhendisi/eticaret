@@ -1,0 +1,28 @@
+// Koda gömülü ekran metni yasağı (.claude/rules/metinler.md).
+// Öğelerin arasına yazılan metni Biome'un noJsxLiterals kuralı yakalar.
+// Bu kural ikisini daha yakalar: ekranda ya da ekran okuyucuda görünen alanlara yazılan metin
+// (alt, title, placeholder, aria-label...) ve öğelerin arasına {"..."} biçiminde yazılan metin.
+// Harf içermeyen yazılar ("·", "/", "–") serbesttir.
+language js
+
+or {
+  JsxAttribute(name=$ad, initializer=JsxAttributeInitializerClause(value=$metin)) where {
+    $ad <: r"(?:alt|title|placeholder|label|aria-label|aria-description|aria-placeholder|aria-roledescription|aria-valuetext)",
+    $metin <: or {
+      JsxString(),
+      JsxExpressionAttributeValue(expression=or {
+        JsStringLiteralExpression(),
+        JsTemplateExpression()
+      })
+    }
+  },
+  JsxExpressionChild(expression=$metin) where {
+    $metin <: or {
+      JsStringLiteralExpression(),
+      JsTemplateExpression()
+    }
+  }
+} where {
+  $metin <: r"(?s).*\p{L}.*",
+  register_diagnostic(span=$metin, message="Ekran metni koda yazılamaz. Metni metin dosyasına ekleyip anahtarıyla okuyun.", severity="error")
+}

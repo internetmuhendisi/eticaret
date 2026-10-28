@@ -42,8 +42,10 @@ komutlar/              site kurma, güncelleme, teslim, yayın
 siteler/<kod-adi>/     kimlik.json, ayarlar.json, baslangic/, marka/, tema/, vitrin/,
                        testler/, KURALLAR.md
 sunucu/                Docker, Caddy ve yedek (yedek/) dosyaları
+denetim/               kod denetiminin projeye özel kuralları (kurallar/), bozuk örnekleri
+                       (bozuk-ornekler/) ve kendi kendini denetleme betiği (karar 0017)
 ```
 
-- Adlar Türkçedir ve yalnız İngiliz alfabesinin harfleriyle yazılır. Dosya ve klasör adları tireyle (`arka-plan-isleri`), tablo ve alan adları alt çizgiyle (`siparis_kalemleri`) yazılır. Araçların zorunlu tuttuğu adlar (`app/`, `page.tsx`, `route.ts`, `package.json`, `*.config.*`, `Dockerfile`) değişmez.
+- Adlar Türkçedir ve yalnız İngiliz alfabesinin harfleriyle yazılır. Dosya ve klasör adları tireyle (`arka-plan-isleri`), tablo ve alan adları alt çizgiyle (`siparis_kalemleri`) yazılır. Araçların zorunlu tuttuğu adlar (`app/`, `page.tsx`, `route.ts`, `package.json`, `biome.json`, `*.config.*`, `Dockerfile`) değişmez.
 - Test dosyalarının adı `*.test.ts` ya da `*.test.tsx` ile biter.
 - Bu ağaç değişirse kural dosyalarının `paths` satırları aynı değişiklikte güncellenir.

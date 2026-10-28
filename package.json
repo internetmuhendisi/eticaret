@@ -18,9 +18,18 @@
     "node": "24.22.1"
   },
   "scripts": {
-    "tur-kontrolu": "pnpm -r --no-bail tur-kontrolu"
+    "tur-kontrolu": "pnpm -r --no-bail tur-kontrolu",
+    "denetim": "biome check --error-on-warnings",
+    "bicimle": "biome format --write",
+    "denetim-kendi-testi": "node denetim/kendi-kendini-denetle.mts",
+    "prepare": "simple-git-hooks"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm denetim"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.3",
+    "simple-git-hooks": "2.14.0",
     "typescript": "7.0.2"
   }
 }

@@ -27,4 +27,4 @@ Yazılı kuralların bir kısmı kod yazılırken otomatik yakalansın (`.claude
 
 ## Durum
 
-yapılacak
+bitti
