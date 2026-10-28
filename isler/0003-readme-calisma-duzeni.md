@@ -25,4 +25,4 @@ Projeye ilk bakan biri bir işin nasıl yürüdüğünü de anlasın. `README.md
 
 ## Durum
 
-yapılacak
+bitti

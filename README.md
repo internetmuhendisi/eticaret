@@ -25,3 +25,14 @@ Projenin kuralları `CLAUDE.md` dosyasındadır.
 | `planlar/` | Büyük işlerden önce yazılan planlar ve site ayarları taslağı. |
 | `isler/` | Yapılacak işlerin numaralı kartları. |
 | `eklentiler/` | Temel paket dışındaki özelliklerin tarifleri. |
+
+## Çalışma düzeni
+
+Her iş şu altı adımla yürür:
+
+1. **Kart:** Proje sahibi yapılacak işi `isler/` klasöründe numaralı bir karta yazar ya da Claude'a yazdırır.
+2. **Plan:** Claude kartı ve ilgili karar kayıtlarını okur, ne yapacağını kısaca anlatır.
+3. **Onay:** Proje sahibi planı onaylar ya da değiştirir. Onay gelmeden iş başlamaz.
+4. **İş:** Claude işi kartın kendi çalışma kopyasında yapar. Kartta olmayan işe dokunmaz.
+5. **Kontrol:** Claude kartın "bitti sayılır" listesini madde madde kontrol eder, eksikleri proje sahibine söyler.
+6. **Kayıt:** Claude kartı "bitti" yapar, tarihçeye giriş yazar ve değişikliği kaydeder. Proje sahibi "push" deyince GitHub'a gönderir.
