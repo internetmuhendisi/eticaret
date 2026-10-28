@@ -29,4 +29,4 @@ Karar 0013'te açık kalan veritabanı erişim kütüphanesi seçilir. Uygulama 
 
 ## Durum
 
-yapılacak
+bitti
