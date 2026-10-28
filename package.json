@@ -19,6 +19,7 @@
     "node": "24.22.1"
   },
   "scripts": {
+    "cekirdek": "pnpm --filter cekirdek-uygulama gelistir",
     "tur-kontrolu": "tsc --noEmit -p tsconfig.json && pnpm -r --no-bail tur-kontrolu",
     "testler": "pnpm birim-testleri && pnpm tarayici-testleri",
     "birim-testleri": "vitest run",

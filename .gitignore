@@ -18,6 +18,8 @@ node_modules/
 vendor/
 dist/
 build/
+.next/
+next-env.d.ts
 
 # Test çıktıları
 test-results/

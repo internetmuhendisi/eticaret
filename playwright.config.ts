@@ -10,5 +10,12 @@ export default defineConfig({
   testIgnore: ["**/node_modules/**", `${import.meta.dirname}/.claude/**`],
   forbidOnly: true,
   reporter: "list",
+  use: { baseURL: "http://localhost:3000" },
+  // Çekirdek uygulamasını testten önce açar; açıksa olanı kullanır.
+  webServer: {
+    command: "pnpm cekirdek",
+    url: "http://localhost:3000",
+    reuseExistingServer: true,
+  },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
 });

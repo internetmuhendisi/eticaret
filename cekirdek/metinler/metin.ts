@@ -1,7 +1,7 @@
 // Ekran metinlerini anahtarla okuyan tek yol (.claude/rules/metinler.md).
 // Anahtarlar "modül.bölüm.anahtar" biçimindedir ve Türkçe dosyadan türetilir;
 // olmayan bir anahtar tür kontrolünde hata verir. Yeni dil, aynı anahtarlarla yeni bir dosyadır.
-import tr from "./tr.json";
+import tr from "./tr.json" with { type: "json" };
 
 type Sozluk = typeof tr;
 

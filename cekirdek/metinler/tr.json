@@ -4,5 +4,15 @@
       "kaydet": "Kaydet",
       "vazgec": "Vazgeç"
     }
+  },
+  "vitrin": {
+    "anasayfa": {
+      "baslik": "Ana sayfa"
+    }
+  },
+  "yonetim": {
+    "anasayfa": {
+      "baslik": "Yönetim paneli"
+    }
   }
 }
