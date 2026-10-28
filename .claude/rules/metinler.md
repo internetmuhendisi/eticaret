@@ -1,19 +1,10 @@
 ---
 paths:
-  - "**/locales/**"
-  - "**/i18n/**"
-  - "**/messages/**"
-  - "**/translations/**"
-  - "**/lang/**"
   - "**/metinler/**"
-  - "**/format*"
-  - "**/components/**"
-  - "**/pages/**"
-  - "**/app/**"
-  - "**/emails/**"
+  - "**/*bicim*"
+  - "cekirdek/moduller/eposta/**"
+  - "**/*.tsx"
 ---
-
-> Bu dosyanın paths satırları teknoloji kararından sonra projenin klasör düzenine göre güncellenir (Bölüm 4).
 
 # Metin, çeviri ve biçimler
 

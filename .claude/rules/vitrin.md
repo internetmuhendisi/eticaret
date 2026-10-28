@@ -1,18 +1,12 @@
 ---
 paths:
-  - "**/storefront/**"
-  - "**/vitrin/**"
-  - "**/shop/**"
-  - "**/store/**"
-  - "**/pages/**"
-  - "**/app/**"
-  - "**/sites/**"
-  - "**/siteler/**"
-  - "**/seo/**"
+  - "cekirdek/vitrin/**"
+  - "cekirdek/uygulama/app/**"
+  - "cekirdek/temalar/**"
+  - "siteler/**"
   - "**/sitemap*"
+  - "**/robots*"
 ---
-
-> Bu dosyanın paths satırları teknoloji kararından sonra projenin klasör düzenine göre güncellenir (Bölüm 4).
 
 # Vitrin yapısı
 

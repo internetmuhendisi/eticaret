@@ -1,22 +1,17 @@
 ---
 paths:
-  - "**/auth/**"
-  - "**/security/**"
-  - "**/guvenlik/**"
-  - "**/middleware*"
-  - "**/session*/**"
-  - "**/upload*/**"
-  - "**/api/**"
-  - "**/webhooks/**"
-  - "**/payments/**"
-  - "**/odeme/**"
-  - "**/consent*/**"
-  - "**/privacy*/**"
+  - "cekirdek/kapi/**"
+  - "cekirdek/moduller/odeme/**"
+  - "cekirdek/moduller/musteri/**"
+  - "cekirdek/moduller/ekip/**"
+  - "cekirdek/moduller/yasal-metinler/**"
+  - "**/middleware.ts"
+  - "**/*yukle*"
+  - "**/next.config.*"
+  - "sunucu/**"
   - "**/package.json"
   - "**/.env.example"
 ---
-
-> Bu dosyanın paths satırları teknoloji kararından sonra projenin klasör düzenine göre güncellenir (Bölüm 4).
 
 # Güvenlik
 

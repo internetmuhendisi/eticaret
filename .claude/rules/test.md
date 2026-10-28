@@ -1,18 +1,10 @@
 ---
 paths:
   - "**/*.test.*"
-  - "**/*.spec.*"
-  - "**/tests/**"
-  - "**/test/**"
-  - "**/__tests__/**"
-  - "**/e2e/**"
   - "**/testler/**"
   - "**/playwright.config.*"
   - "**/vitest.config.*"
-  - "**/jest.config.*"
 ---
-
-> Bu dosyanın paths satırları teknoloji kararından sonra projenin klasör düzenine göre güncellenir (Bölüm 4).
 
 # Test
 

@@ -1,17 +1,12 @@
 ---
 paths:
-  - "**/errors/**"
-  - "**/error*"
-  - "**/logging/**"
-  - "**/logger*"
-  - "**/monitoring/**"
-  - "**/health*"
-  - "**/instrumentation*"
-  - "**/cron/**"
-  - "**/jobs/**"
+  - "cekirdek/izleme/**"
+  - "cekirdek/arka-plan-isleri/**"
+  - "**/instrumentation.*"
+  - "**/error.tsx"
+  - "**/global-error.tsx"
+  - "sunucu/**"
 ---
-
-> Bu dosyanın paths satırları teknoloji kararından sonra projenin klasör düzenine göre güncellenir (Bölüm 4).
 
 # Hata yönetimi ve izleme
 

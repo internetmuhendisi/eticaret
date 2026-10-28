@@ -1,15 +1,10 @@
 ---
 paths:
-  - "**/lists/**"
-  - "**/listeler/**"
-  - "**/tables/**"
-  - "**/data-table/**"
-  - "**/admin/**"
-  - "**/panel/**"
-  - "**/yonetim/**"
+  - "bilesenler/liste/**"
+  - "cekirdek/yonetim-paneli/**"
+  - "cekirdek/uygulama/app/yonetim/**"
+  - "sahip-paneli/**"
 ---
-
-> Bu dosyanın paths satırları teknoloji kararından sonra projenin klasör düzenine göre güncellenir (Bölüm 4).
 
 # Liste, tablo, pano ve takvim motoru
 

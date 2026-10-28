@@ -2,9 +2,9 @@
 
 Altyapının üç komutunun tarifi: yeni site kurmak, bir siteyi güncellemek, bir siteyi mağaza sahibine teslim etmek. Her biri için ne zaman kullanıldığı, hangi soruları sorduğu, hangi adımları sırayla yaptığı ve ne zaman bitmiş sayıldığı yazar.
 
-Durum: 2026-10-28 tarihinde taslak olarak yazıldı. Komutlar henüz yazılmaz. Her iş önce birer kez bu tarife göre elle yapılır, elle yaparken öğrenilenler buraya eklenir, komut ondan sonra yazılır. Klasör ve dosya adları örnektir, teknoloji kararından sonra kesinleşir.
+Durum: 2026-10-28 tarihinde taslak olarak yazıldı. Komutlar henüz yazılmaz. Her iş önce birer kez bu tarife göre elle yapılır, elle yaparken öğrenilenler buraya eklenir, komut ondan sonra yazılır. Klasör ve dosya adları karar 0015 ile kesinleşti (`.claude/rules/klasor-duzeni.md`).
 
-"Siteyi devretmek" bu projede **teslim** diye geçer: mağaza sahibine yönetim panelini ve kendi hesabını vermektir, kodu ya da sunucuyu vermek değildir (karar 0001).
+**Teslim**, mağaza sahibine yönetim panelini ve kendi hesabını vermektir, kodu ya da sunucuyu vermek değildir. **Devir** başka bir iştir: ayrılmak isteyen mağazanın sitesini bütünüyle onun seçtiği sunucuya vermektir. Devir bu üç komutun dışındadır (karar 0014).
 
 ## Üç komutun ortak kuralları
 
@@ -131,7 +131,7 @@ Geri dönüş: Sorun yayından sonra çıkarsa kimlikteki sürüm eski hâline d
 
 - Kurulmuş ve denenmiş bir gerçek mağaza sitesi, sahibine verilip satışa açılacağı zaman. Her sitede bir kez kullanılır.
 
-Demo sitede kullanılmaz, Örnek Mağaza teslim edilmez. Teslimde mağaza sahibine panel ve kendi hesabı verilir, kod ve sunucu verilmez (karar 0001).
+Demo sitede kullanılmaz, Örnek Mağaza teslim edilmez. Teslimde mağaza sahibine panel ve kendi hesabı verilir, kod ve sunucu verilmez (karar 0014).
 
 ### Sorduğu sorular
 
@@ -188,6 +188,7 @@ Elle yaparken bu tarifin adımları sırayla izlenir. Eksik, fazla ya da yanlı�
 
 ## Henüz açık olanlar
 
-- Klasör adları, deneme adresinin biçimi ve gizli bilgilerin sunucuda nasıl saklanacağı: teknoloji kararıyla.
+- Deneme adresinin biçimi ve gizli bilgilerin sunucuda nasıl saklanacağı: ilk site kurulurken. Klasör adları karar 0015 ile kapandı.
 - Alan adını kimin satın alıp kimin adına kaydettireceği.
 - Teslim edilmiş bir sitenin sahibi değişirse ya da bir site kapatılırsa ne yapılacağı. Bunlar bu üç komutun dışındadır, gerekince ayrı tarif yazılır.
+- Ayrılan mağazaya siteyi devretmenin tarifi (0014): ilk devir istendiğinde yazılır. Kodun başka yerde kullanılması ve devredilen siteyi kimin güncelleyeceği de o zaman konuşulur.

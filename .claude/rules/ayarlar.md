@@ -1,16 +1,11 @@
 ---
 paths:
-  - "**/settings/**"
-  - "**/config/**"
-  - "**/ayarlar/**"
-  - "**/site-settings*"
-  - "**/sites/**"
-  - "**/siteler/**"
-  - "**/planlar/site-ayarlari.md"
+  - "cekirdek/ayar-semasi/**"
+  - "cekirdek/yonetim-paneli/ayarlar/**"
+  - "siteler/**"
+  - "planlar/site-ayarlari.md"
   - "**/.env.example"
 ---
-
-> Bu dosyanın paths satırları teknoloji kararından sonra projenin klasör düzenine göre güncellenir (Bölüm 4).
 
 # Ayarlar ve siteye özel davranış
 

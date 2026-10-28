@@ -1,17 +1,12 @@
 ---
 paths:
-  - "**/auth/**"
-  - "**/permissions/**"
-  - "**/roles/**"
-  - "**/policies/**"
-  - "**/yetki/**"
-  - "**/middleware*"
-  - "**/audit*/**"
-  - "**/api/**"
-  - "**/admin/**"
+  - "cekirdek/kapi/**"
+  - "**/izinler.ts"
+  - "cekirdek/moduller/ekip/**"
+  - "**/middleware.ts"
+  - "cekirdek/yonetim-paneli/**"
+  - "sahip-paneli/**"
 ---
-
-> Bu dosyanın paths satırları teknoloji kararından sonra projenin klasör düzenine göre güncellenir (Bölüm 4).
 
 # Yetki ve roller
 

@@ -1,18 +1,10 @@
 ---
 paths:
+  - "bilesenler/**"
+  - "cekirdek/temalar/**"
+  - "siteler/*/tema/**"
   - "**/*.css"
-  - "**/*.scss"
-  - "**/styles/**"
-  - "**/theme/**"
-  - "**/tema/**"
-  - "**/tokens/**"
-  - "**/tasarim/**"
-  - "**/components/**"
-  - "**/bilesenler/**"
-  - "**/tailwind.config.*"
 ---
-
-> Bu dosyanın paths satırları teknoloji kararından sonra projenin klasör düzenine göre güncellenir (Bölüm 4).
 
 # Tasarım sistemi
 

@@ -1,17 +1,11 @@
 ---
 paths:
-  - "**/api/**"
-  - "**/routes/**"
-  - "**/controllers/**"
-  - "**/handlers/**"
-  - "**/services/**"
-  - "**/endpoints/**"
-  - "**/webhooks/**"
-  - "**/server/**"
-  - "**/openapi*"
+  - "cekirdek/kapi/**"
+  - "**/uclar.ts"
+  - "**/semalar.ts"
+  - "**/servis.ts"
+  - "**/route.ts"
 ---
-
-> Bu dosyanın paths satırları teknoloji kararından sonra projenin klasör düzenine göre güncellenir (Bölüm 4).
 
 # Sunucu arayüzü (API)
 

@@ -2,7 +2,7 @@
 
 Altyapının hangi büyük parçalardan oluştuğunu, her parçanın ne iş yaptığını ve parçaların birbiriyle nasıl konuştuğunu anlatır. Kod bilmeyen biri için yazıldı, teknik ayrıntı en sondadır.
 
-Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Teknoloji kararından sonra güncellenir.
+Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün teknoloji kararıyla (0013) güncellendi.
 
 ## Tek cümleyle
 
@@ -99,10 +99,9 @@ Bütün siteler, verileri ve yedekleri Almanya'daki sunucularda durur. Yedekler 
 
 Çekirdeğin, site klasörünün ve sahip panelinin ayrıntısı: `planlar/cekirdek-ve-siteler.md`. Sahip paneli bilgiyi her siteye ayrı ayrı sorarak toplar, veritabanlarına bağlanmaz (karar 0012).
 
-## Henüz kararı verilmemiş olanlar
+## Teknoloji
 
-- Hangi programlama dili, hangi veritabanı ve hangi sunucu firması kullanılacak. Bunlar teknoloji bölümünde kararlaştırılacak.
-- Sitelerin aynı sunucuyu mu paylaşacağı, her birinin ayrı sunucuda mı duracağı.
+Karar 0013 ile verildi: TypeScript, React ve Next.js, PostgreSQL, Docker, önde Caddy, sunucu Hetzner (Almanya). Başta bütün siteler ve sahip paneli tek sunucuyu paylaşır. Her site kendi kutusunda, kendi çekirdek sürümüyle, kendi veritabanı ve veritabanı kullanıcısıyla çalışır. Ayrılmak isteyen mağazanın sitesi bütünüyle devredilebilir (0014). Klasör düzeni: 0015.
 
 ## Teknik ayrıntı
 

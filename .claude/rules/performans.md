@@ -1,18 +1,13 @@
 ---
 paths:
-  - "**/storefront/**"
-  - "**/vitrin/**"
-  - "**/pages/**"
-  - "**/app/**"
-  - "**/images/**"
-  - "**/media/**"
-  - "**/cache/**"
-  - "**/*cache*"
+  - "cekirdek/vitrin/**"
+  - "cekirdek/uygulama/**"
+  - "cekirdek/temalar/**"
+  - "siteler/*/vitrin/**"
+  - "siteler/*/marka/**"
+  - "**/*onbellek*"
   - "**/next.config.*"
-  - "**/vite.config.*"
 ---
-
-> Bu dosyanın paths satırları teknoloji kararından sonra projenin klasör düzenine göre güncellenir (Bölüm 4).
 
 # Performans
 

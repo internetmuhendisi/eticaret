@@ -1,17 +1,11 @@
 ---
 paths:
-  - "**/forms/**"
-  - "**/form/**"
-  - "**/formlar/**"
+  - "**/semalar.ts"
   - "**/*form*.*"
-  - "**/fields/**"
-  - "**/validation/**"
-  - "**/schemas/**"
-  - "**/upload*/**"
-  - "**/import*/**"
+  - "bilesenler/form/**"
+  - "**/*yukle*"
+  - "**/*ice-aktar*"
 ---
-
-> Bu dosyanın paths satırları teknoloji kararından sonra projenin klasör düzenine göre güncellenir (Bölüm 4).
 
 # Formlar ve alanlar
 

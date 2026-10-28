@@ -1,5 +1,7 @@
 # 0001 · Siteleri altyapı sahibi barındırır
 
+Bu kararın yerine 0014 numaralı karar geçti.
+
 ## Tarih
 
 2026-10-28

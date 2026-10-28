@@ -1,16 +1,13 @@
 ---
 paths:
-  - "**/components/**"
-  - "**/bilesenler/**"
-  - "**/ui/**"
-  - "**/pages/**"
-  - "**/app/**"
-  - "**/views/**"
-  - "**/storefront/**"
-  - "**/admin/**"
+  - "bilesenler/**"
+  - "cekirdek/vitrin/**"
+  - "cekirdek/yonetim-paneli/**"
+  - "cekirdek/uygulama/app/**"
+  - "sahip-paneli/**"
+  - "siteler/*/vitrin/**"
+  - "**/*.tsx"
 ---
-
-> Bu dosyanın paths satırları teknoloji kararından sonra projenin klasör düzenine göre güncellenir (Bölüm 4).
 
 # Bileşen kütüphanesi
 

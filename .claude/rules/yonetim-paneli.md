@@ -1,13 +1,9 @@
 ---
 paths:
-  - "**/admin/**"
-  - "**/panel/**"
-  - "**/yonetim/**"
-  - "**/dashboard/**"
-  - "**/backoffice/**"
+  - "cekirdek/yonetim-paneli/**"
+  - "cekirdek/uygulama/app/yonetim/**"
+  - "sahip-paneli/**"
 ---
-
-> Bu dosyanın paths satırları teknoloji kararından sonra projenin klasör düzenine göre güncellenir (Bölüm 4).
 
 # Yönetim paneli düzeni
 

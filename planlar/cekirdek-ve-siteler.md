@@ -2,7 +2,7 @@
 
 Altyapı haritasındaki (`planlar/altyapi-haritasi.md`) üç parçanın ayrıntısı: bir site klasöründe ne durur, çekirdekte ne vardır, sitenin çekirdek sürümü nerede yazar, sahip paneli bilgiyi nereden alır. Örnek olarak Örnek Mağaza kullanılır.
 
-Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Kararlar 0010, 0011 ve 0012 olarak kaydedildi. Klasör ve dosya adları örnektir, teknoloji kararından sonra kesinleşir.
+Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Kararlar 0010, 0011 ve 0012 olarak kaydedildi. Klasör ve dosya adları karar 0015 ile kesinleşti. Kesin ağaç `.claude/rules/klasor-duzeni.md` dosyasındadır, örneğin `kimlik` dosyasının adı `kimlik.json`, `ayarlar` dosyasının adı `ayarlar.json` olur.
 
 ## Tek cümleyle
 
@@ -165,5 +165,5 @@ Bu kararlarla birlikte `planlar/altyapi-haritasi.md`, `planlar/site-ayarlari.md`
 
 ## Henüz açık olanlar
 
-- Klasör adları, dosya biçimleri ve sürüm etiketlerinin nasıl tutulacağı: teknoloji kararıyla.
-- Sahip panelinin hangi sunucuda duracağı ve sitelerin sunucu paylaşıp paylaşmayacağı: haritadaki açık konuyla birlikte.
+- Klasör adları, dosya biçimi (JSON) ve sürüm etiketi (Docker görüntüsünün etiketi) kararlarla kapandı (0013, 0015).
+- Sahip paneli başta sitelerle aynı sunucuda durur, siteler sunucuyu paylaşır (0013).

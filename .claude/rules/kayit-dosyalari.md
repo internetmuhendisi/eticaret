@@ -1,18 +1,11 @@
 ---
 paths:
-  - "**/registry/**"
-  - "**/registries/**"
-  - "**/kayitlar/**"
-  - "**/enums/**"
-  - "**/constants/**"
-  - "**/statuses/**"
-  - "**/types/**"
-  - "**/permissions/**"
-  - "**/icons/**"
-  - "**/models/**"
+  - "cekirdek/kayitlar/**"
+  - "**/izinler.ts"
+  - "**/model.ts"
+  - "cekirdek/veritabani/tablolar/**"
+  - "bilesenler/ikonlar/**"
 ---
-
-> Bu dosyanın paths satırları teknoloji kararından sonra projenin klasör düzenine göre güncellenir (Bölüm 4).
 
 # Kayıt dosyaları ve tek ad
 

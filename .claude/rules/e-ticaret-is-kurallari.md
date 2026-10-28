@@ -1,33 +1,19 @@
 ---
 paths:
-  - "**/cart/**"
-  - "**/checkout/**"
-  - "**/orders/**"
-  - "**/payments/**"
-  - "**/pricing/**"
-  - "**/tax/**"
-  - "**/stock/**"
-  - "**/inventory/**"
-  - "**/shipping/**"
-  - "**/invoices/**"
-  - "**/coupons/**"
-  - "**/campaigns/**"
-  - "**/refunds/**"
-  - "**/emails/**"
-  - "**/integrations/**"
-  - "**/jobs/**"
-  - "**/sepet/**"
-  - "**/odeme/**"
-  - "**/siparis/**"
-  - "**/fiyat/**"
-  - "**/stok/**"
-  - "**/kargo/**"
-  - "**/fatura/**"
-  - "**/kampanya/**"
-  - "**/iade/**"
+  - "cekirdek/moduller/urun/**"
+  - "cekirdek/moduller/stok/**"
+  - "cekirdek/moduller/fiyat/**"
+  - "cekirdek/moduller/vergi/**"
+  - "cekirdek/moduller/sepet/**"
+  - "cekirdek/moduller/odeme/**"
+  - "cekirdek/moduller/siparis/**"
+  - "cekirdek/moduller/iade/**"
+  - "cekirdek/moduller/kargo/**"
+  - "cekirdek/moduller/kampanya/**"
+  - "cekirdek/moduller/eposta/**"
+  - "cekirdek/arka-plan-isleri/**"
+  - "cekirdek/eklentiler/**"
 ---
-
-> Bu dosyanın paths satırları teknoloji kararından sonra projenin klasör düzenine göre güncellenir (Bölüm 4).
 
 # E-ticarete özgü iş kuralları
 

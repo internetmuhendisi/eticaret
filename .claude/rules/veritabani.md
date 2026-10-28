@@ -1,19 +1,11 @@
 ---
 paths:
-  - "**/db/**"
-  - "**/database/**"
-  - "**/veritabani/**"
-  - "**/migrations/**"
+  - "cekirdek/veritabani/**"
+  - "**/model.ts"
   - "**/*.sql"
-  - "**/schema*"
-  - "**/prisma/**"
-  - "**/drizzle/**"
-  - "**/models/**"
-  - "**/seed*"
-  - "**/backup*/**"
+  - "siteler/*/baslangic/**"
+  - "sunucu/yedek/**"
 ---
-
-> Bu dosyanın paths satırları teknoloji kararından sonra projenin klasör düzenine göre güncellenir (Bölüm 4).
 
 # Veri modeli ve veritabanı
 

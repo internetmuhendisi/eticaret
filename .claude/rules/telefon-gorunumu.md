@@ -1,19 +1,13 @@
 ---
 paths:
-  - "**/components/**"
-  - "**/ui/**"
-  - "**/pages/**"
-  - "**/app/**"
-  - "**/views/**"
-  - "**/storefront/**"
-  - "**/vitrin/**"
-  - "**/admin/**"
-  - "**/panel/**"
+  - "bilesenler/**"
+  - "cekirdek/vitrin/**"
+  - "cekirdek/yonetim-paneli/**"
+  - "sahip-paneli/**"
+  - "siteler/*/vitrin/**"
+  - "**/*.tsx"
   - "**/*.css"
-  - "**/styles/**"
 ---
-
-> Bu dosyanın paths satırları teknoloji kararından sonra projenin klasör düzenine göre güncellenir (Bölüm 4).
 
 # Telefon ve tablet görünümü
 

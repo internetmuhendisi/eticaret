@@ -7,7 +7,8 @@ Konu konu ayrıntılı kurallar `.claude/rules/` klasöründedir. Konuya özgü 
 
 **eticaret** (geçici ad; ad tek yerde tanımlanır), tek yerden yönetilen, birbirinden bağımsız e-ticaret sitelerinin altyapısıdır. Temel paket (`temel-paket.md`) olduğu gibi kurulur.
 
-- Bütün siteleri altyapı sahibi barındırır ve günceller. Mağaza sahibi yalnız kendi sitesinin yönetim paneline girer, koda ve sunucuya erişmez. Sahip paneli yalnız altyapı sahibine açıktır.
+- Bütün siteleri altyapı sahibi barındırır ve günceller. Mağaza sahibi yalnız kendi sitesinin yönetim paneline girer, koda ve sunucuya erişmez. Sahip paneli yalnız altyapı sahibine açıktır. Ayrılmak isteyen mağazanın sitesi bütünüyle devredilebilir (karar 0014).
+- Teknoloji: TypeScript, Next.js, PostgreSQL, Docker, Hetzner (karar 0013). Klasör düzeni: `.claude/rules/klasor-duzeni.md`.
 - Mağazalar şimdilik yalnız Türkiye'de kurulur, yasal şablonlar Türk mevzuatına göre hazırlanır. Kod yine de ülkeye bağlı yazılmaz.
 - İlk yıl için 5–30 mağazaya göre tasarlanır, büyümeye açık kalır.
 - Her sitenin ayrı veritabanı vardır. Her site çekirdeğin belirli bir sürümünde çalışır.
