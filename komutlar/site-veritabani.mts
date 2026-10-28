@@ -1,6 +1,10 @@
 // Komutların ortak parçası: verilen site klasörünü okur ve VERITABANI_ADRESI'nin o siteye
 // ait olduğunu kontrol eder. Başka sitenin adresiyle çalışılmasını önler (karar 0022).
+// Siteye veritabanı ve kullanıcı açan tek yol da buradadır; komut ve veri ayrımı testi bunu kullanır.
 
+import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { siteKlasorunuOku } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { siteVeritabaniAdi, veritabaniAdresi } from "../cekirdek/veritabani/baglanti.ts";
 
@@ -22,4 +26,25 @@ export const siteVeAdres = (komut: string) => {
     process.exit(1);
   }
   return { kodAdi: kimlik.kodAdi, ad, adres };
+};
+
+const kok = join(import.meta.dirname, "..");
+
+// Yerel PostgreSQL kutusunda veritabanını ve kullanıcısını açar (site-veritabani-ac.sql).
+// Şifre psql'e ortam değişkeniyle geçer, komut satırında görünmez. Başarılıysa true döner.
+export const veritabaniVeKullaniciAc = (ad: string, sifre: string): boolean => {
+  const sonuc = spawnSync(
+    "docker",
+    [
+      ...["compose", "-f", join(kok, "sunucu", "compose.yaml"), "--env-file", join(kok, ".env")],
+      ...["exec", "-T", "-e", "SITE_VERITABANI_SIFRESI", "veritabani"],
+      ...["psql", "-U", "postgres", "-d", "postgres", "-q", "-v", `ad=${ad}`, "-f", "-"],
+    ],
+    {
+      input: readFileSync(join(import.meta.dirname, "site-veritabani-ac.sql"), "utf8"),
+      env: { ...process.env, SITE_VERITABANI_SIFRESI: sifre },
+      stdio: ["pipe", "inherit", "inherit"],
+    },
+  );
+  return sonuc.status === 0;
 };

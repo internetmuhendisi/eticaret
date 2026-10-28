@@ -29,3 +29,4 @@ paths:
 - Erişim Drizzle ile yapılır. Kimlik, zaman ve tutar alanları yalnız `cekirdek/veritabani/turler.ts` dosyasından alınır.
 - Değişiklik üretmek: `pnpm veritabani-degisikligi-uret --name <kisa-ad>`, sonra dosyanın ilk satırına geri dönüş notu yazılır. Uygulamak: `pnpm veritabani-guncelle siteler/<kod-adi>`.
 - Yerel veritabanı: `pnpm veritabani-baslat`, `pnpm veritabani-durdur`. Siteye veritabanı açmak: `pnpm site-veritabani-ac siteler/<kod-adi>`.
+- Veri ayrımı iki katmanlıdır: veritabanının izinleri (`komutlar/site-veritabani-ac.sql`) ve bağlantı kuralları (`sunucu/veritabani/pg_hba.conf`, karar 0023). İkisini `cekirdek/testler/veri-ayrimi.test.ts` ayrı ayrı denetler.

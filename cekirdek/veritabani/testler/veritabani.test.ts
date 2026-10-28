@@ -4,21 +4,11 @@
 import { randomBytes } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { baglan, baglantiyiKapat, siteninVeritabani, veritabaniAdresi } from "../baglanti";
+import { baglan, baglantiyiKapat, siteninVeritabani } from "../baglanti";
 import { uygulananDegisiklikTablosu } from "../degisiklik-ayari";
 import { siteVeritabaniniGuncelle } from "../guncelle";
 import { veritabaniKimligi } from "../tablolar/veritabani-kimligi";
-
-// Sitenin adresinden yönetici adresi: aynı sunucu, yönetici kullanıcısı.
-const yoneticiAdresi = (veritabani: string): string => {
-  const { VERITABANI_YONETICI_SIFRESI: sifre } = process.env;
-  if (!sifre) throw new Error("VERITABANI_YONETICI_SIFRESI ortam değişkeni yok.");
-  const adres = new URL(veritabaniAdresi());
-  adres.username = "postgres";
-  adres.password = sifre;
-  adres.pathname = `/${veritabani}`;
-  return adres.href;
-};
+import { yoneticiAdresi } from "./adresler";
 
 describe("uygulamanın bağlantısı", () => {
   afterAll(baglantiyiKapat);
