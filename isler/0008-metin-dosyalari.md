@@ -26,4 +26,4 @@ Ekrandaki bütün metinler anahtarlı metin dosyalarından okunsun. Para, tarih 
 
 ## Durum
 
-yapılacak
+bitti
