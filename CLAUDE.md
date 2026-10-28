@@ -14,7 +14,7 @@ Konu konu ayrıntılı kurallar `.claude/rules/` klasöründedir. Konuya özgü 
 - Mağaza sahibi panelden tema seçer ve temanın sınırlı ayarlarını (renk, yazı tipi, köşe ve düğme biçimi, logo, ana sayfa düzeni) değiştirir. Değişiklik önizlemeden sonra yayınlanır ve geri alınabilir.
 - Yönetim panelinde altyapı adı yalnız giriş sayfasında ve alt köşede küçük görünür. Vitrinde görünmesi site ayarıdır.
 - Site ayarlarının taslağı: `planlar/site-ayarlari.md`.
-- Açık konu: sunucunun ve müşteri verisinin hangi ülkede duracağı ilk site kurulurken kararlaştırılacak.
+- Sunucu, müşteri verisi ve yedekler Almanya'da durur (karar 0009). İlk demo site Örnek Mağaza'dır, her özellik önce onda denenir (karar 0007).
 
 ## Roller
 
