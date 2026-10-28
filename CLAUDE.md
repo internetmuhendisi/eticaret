@@ -5,7 +5,16 @@ Konu konu ayrıntılı kurallar `.claude/rules/` klasöründedir. Konuya özgü 
 
 ## Proje
 
-<!-- Bu bölüm boş gelir. İlk istekte kullanıcının anlattığından ve sorulara verdiği cevaplardan doldurulur: ne kurduğumuz ve temel yapının kararları. Birkaç satır yeterli. Siteye özgü bilgiler (mağazanın adı, ne sattığı, kime sattığı) buraya yazılmaz; onları yeni site kurulurken site kurma komutu sorar ve sitenin kendi klasörüne yazar. -->
+**eticaret** (geçici ad; ad tek yerde tanımlanır), tek yerden yönetilen, birbirinden bağımsız e-ticaret sitelerinin altyapısıdır. Temel paket (`temel-paket.md`) olduğu gibi kurulur.
+
+- Bütün siteleri altyapı sahibi barındırır ve günceller. Mağaza sahibi yalnız kendi sitesinin yönetim paneline girer, koda ve sunucuya erişmez. Sahip paneli yalnız altyapı sahibine açıktır.
+- Mağazalar şimdilik yalnız Türkiye'de kurulur, yasal şablonlar Türk mevzuatına göre hazırlanır. Kod yine de ülkeye bağlı yazılmaz.
+- İlk yıl için 5–30 mağazaya göre tasarlanır, büyümeye açık kalır.
+- Her sitenin ayrı veritabanı vardır. Her site çekirdeğin belirli bir sürümünde çalışır.
+- Mağaza sahibi panelden tema seçer ve temanın sınırlı ayarlarını (renk, yazı tipi, köşe ve düğme biçimi, logo, ana sayfa düzeni) değiştirir. Değişiklik önizlemeden sonra yayınlanır ve geri alınabilir.
+- Yönetim panelinde altyapı adı yalnız giriş sayfasında ve alt köşede küçük görünür. Vitrinde görünmesi site ayarıdır.
+- Site ayarlarının taslağı: `planlar/site-ayarlari.md`.
+- Açık konu: sunucunun ve müşteri verisinin hangi ülkede duracağı ilk site kurulurken kararlaştırılacak.
 
 ## Roller
 
@@ -28,7 +37,7 @@ Bu üç kural hiçbir zaman çiğnenmez:
 
 - Benimle her zaman Türkçe konuş.
 - İşe başlamadan önce ne yapacağını kısaca söyle.
-- İş bitince ne yaptığını sade bir dille anlat ve benim yapmam gereken bir şey olup olmadığını açıkça yaz.
+- İş bitince önce sonucu ve benim yapmam gereken bir şey olup olmadığını söyle. Ayrıntıyı ben sorarsam anlat.
 - Bilmediğin bir şeyi uydurma, emin değilsen söyle.
 - Bir işe bitti demeden önce gerçekten çalıştığını kontrol et.
 - Bir kartla gelen işte, işe başlamadan kartı oku ve planını söyle.
