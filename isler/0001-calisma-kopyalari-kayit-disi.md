@@ -15,3 +15,7 @@
 ## Bitti sayılır
 
 - Çalışma kopyası açıkken ana klasörde `git status` bu klasörü göstermez.
+
+## Durum
+
+bitti
