@@ -22,4 +22,4 @@ Kart 0011'in bağımsız kontrolünde fark edildi. 0012'den önce ya da onunla b
 
 ## Durum
 
-yapılacak
+bitti
