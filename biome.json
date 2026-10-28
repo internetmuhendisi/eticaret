@@ -6,7 +6,13 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/*.md", "!pnpm-lock.yaml", "!denetim/bozuk-ornekler"]
+    "includes": [
+      "**",
+      "!**/*.md",
+      "!pnpm-lock.yaml",
+      "!denetim/bozuk-ornekler",
+      "!cekirdek/veritabani/degisiklikler/meta"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -18,6 +24,7 @@
     "./denetim/kurallar/ham-renk.grit",
     "./denetim/kurallar/gomulu-metin.grit",
     "./denetim/kurallar/guvensiz-sorgu.grit",
+    "./denetim/kurallar/ham-sql.grit",
     "./denetim/kurallar/elle-bicimlendirme.grit"
   ],
   "linter": {

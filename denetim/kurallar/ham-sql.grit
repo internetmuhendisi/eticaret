@@ -1,0 +1,14 @@
+// Güvensiz sorgu yasağının Drizzle'a özgü parçası (kart 0011, karar 0022).
+// sql.raw() verilen metni olduğu gibi sorguya koyar. Bu yüzden yalnız sabit bir metin alabilir;
+// değişken, şablon ya da birleştirme verilemez. Bu, sorgunun önce bir değişkende kurulması
+// açığını da sql.raw için kapatır. Değer sql`... ${deger}` ile, tablo ya da alan adı
+// sql.identifier() ile verilir.
+language js
+
+JsCallExpression(callee=$cagri, arguments=$girdiler) where {
+  $cagri <: `sql.raw`,
+  $girdiler <: JsCallArguments(args=$liste),
+  $liste <: some $girdi,
+  $girdi <: not JsStringLiteralExpression(),
+  register_diagnostic(span=$girdi, message="Güvensiz sorgu: sql.raw() yalnız sabit metin alır. Değeri sql`...` içinde parametre olarak, adı sql.identifier() ile verin.", severity="error")
+}

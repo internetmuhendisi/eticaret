@@ -1,0 +1,60 @@
+{
+  "id": "90d40e6c-3345-4866-8fd4-67d1c2a10f1f",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.veritabani_kimligi": {
+      "name": "veritabani_kimligi",
+      "schema": "",
+      "columns": {
+        "kimlik": {
+          "name": "kimlik",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "site_kod_adi": {
+          "name": "site_kod_adi",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "olusturulma_zamani": {
+          "name": "olusturulma_zamani",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "veritabani_kimligi_site_kod_adi_unique": {
+          "name": "veritabani_kimligi_site_kod_adi_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "site_kod_adi"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

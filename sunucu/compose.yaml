@@ -1,0 +1,22 @@
+# Yerel ortam (kart 0011). Şimdilik yalnız PostgreSQL; Caddy ve site kutuları kart 0016'da eklenir.
+# Gizli bilgiler kökteki .env dosyasından gelir. Açmak: pnpm veritabani-baslat
+name: altyapi-yerel
+
+services:
+  veritabani:
+    image: postgres:18.6-alpine
+    environment:
+      POSTGRES_PASSWORD: ${VERITABANI_YONETICI_SIFRESI:?.env dosyasında VERITABANI_YONETICI_SIFRESI yok}
+    # Yalnız bu bilgisayardan erişilir.
+    ports:
+      - "127.0.0.1:${VERITABANI_PORTU:?.env dosyasında VERITABANI_PORTU yok}:5432"
+    volumes:
+      - veritabani:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  veritabani:

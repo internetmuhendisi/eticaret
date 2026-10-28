@@ -23,3 +23,9 @@ paths:
 - Her veritabanı değişikliğini canlının kişisel bilgileri silinmiş bir kopyasında uygulayarak dene.
 - Veritabanının düzenli yedeğini al ve geri yüklemeyi belirli aralıklarla dene.
 - Listeleri sayfa sayfa yükle. Bir sayfadaki kayıt sayısının üst sınırı olsun.
+
+## Araçlar ve komutlar (karar 0022)
+
+- Erişim Drizzle ile yapılır. Kimlik, zaman ve tutar alanları yalnız `cekirdek/veritabani/turler.ts` dosyasından alınır.
+- Değişiklik üretmek: `pnpm veritabani-degisikligi-uret --name <kisa-ad>`, sonra dosyanın ilk satırına geri dönüş notu yazılır. Uygulamak: `pnpm veritabani-guncelle siteler/<kod-adi>`.
+- Yerel veritabanı: `pnpm veritabani-baslat`, `pnpm veritabani-durdur`. Siteye veritabanı açmak: `pnpm site-veritabani-ac siteler/<kod-adi>`.

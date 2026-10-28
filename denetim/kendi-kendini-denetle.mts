@@ -16,6 +16,7 @@ const beklenenler: Record<string, Beklenen> = {
   "gomulu-metin.tsx": { kategori: "plugin", mesajBasi: "Ekran metni" },
   "gomulu-oge-metni.tsx": { kategori: "lint/style/noJsxLiterals" },
   "guvensiz-sorgu.ts": { kategori: "plugin", mesajBasi: "Güvensiz sorgu" },
+  "guvensiz-ham-sql.ts": { kategori: "plugin", mesajBasi: "Güvensiz sorgu: sql.raw()" },
   "elle-bicimlendirme.ts": { kategori: "plugin", mesajBasi: "Elle biçimlendirme" },
   "any-turu.ts": { kategori: "lint/suspicious/noExplicitAny" },
   "bicimsiz.ts": { kategori: "format" },

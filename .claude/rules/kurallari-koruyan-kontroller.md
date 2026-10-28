@@ -5,11 +5,12 @@ Bir kural yalnız yazılı kalırsa zamanla çiğnenir. Bu yüzden önemli her k
 | Kontrol | Ne yapar | Ne zaman | Durum |
 |---|---|---|---|
 | Tür kontrolü | Kayıtta olmayan değeri, eksik alanı ve yanlış türü engeller. | Her yayında | Kuruldu (0005): `pnpm tur-kontrolu` |
-| Kod denetim kuralları | Ham renk, ham HTML öğesi, elle tablo, elle genişlik, elle biçimlendirme, şemasız uç, güvensiz sorgu gibi yasakları hata sayar. | Kod yazılırken ve her yayında | Kısmen kuruldu (0006, 0008): `pnpm denetim`, liste aşağıda |
+| Kod denetim kuralları | Ham renk, ham HTML öğesi, elle tablo, elle genişlik, elle biçimlendirme, şemasız uç, güvensiz sorgu gibi yasakları hata sayar. | Kod yazılırken ve her yayında | Kısmen kuruldu (0006, 0008, 0011): `pnpm denetim`, liste aşağıda |
 | Kayıt öncesi kontroller | Kod biçimini, metin anahtarlarını, karar kaydı numaralarını kontrol eder, gizli bilgi yazılmışsa kaydı durdurur. | Her kayıtta | Kısmen kuruldu (0006): biçim ve denetim kırmızıysa kayıt durur. Gizli bilgi dosyasını Claude'un kalkanı durdurur. Metin anahtarı ve karar numarası kontrolü sonra. |
 | Testler | Birim, entegrasyon, yetki, veri ayrımı, hesaplama, ödeme, eşzamanlılık, iade ve sözleşme testleri. | Her yayında | Kısmen kuruldu (0007): araçlar ve `pnpm testler`, gerçek testler ilgili kartlarda. Kart 0010: çekirdekte ve bileşenlerde site adı geçmez (`cekirdek/testler/site-adi-yok.test.ts`) |
 | Site klasörü doğrulaması | Kimliği ve ayarları şemadan geçirir; şemada olmayan ayarı, yanlış türü, eksik kimlik alanını ve klasörle uyuşmayan kod adını durdurur. Bozuk örneklerin kırmızıya düştüğünü gösterir. | Her yayında ve uygulama açılırken | Kuruldu (0010): `pnpm site-dogrula`, testi `pnpm birim-testleri` içinde |
 | Güvenlik kontrolleri | Güvenlik başlıkları, çerez ayarları, dosya yükleme ve dış paket açıkları. | Her yayında | Kurulmadı |
+| Veritabanı değişikliği notu | Geri dönüş notu olmayan değişiklik dosyasını yakalar, böyle bir dosya varsa hiçbir değişiklik uygulanmaz. Başka sitenin veritabanına değişiklik uygulanmasını durdurur. | Her yayında ve her güncellemede | Kuruldu (0011): testi `pnpm birim-testleri` içinde, `pnpm veritabani-guncelle` |
 | Veritabanı değişikliği denemesi | Değişikliği canlının kişisel bilgileri silinmiş kopyasında uygular. | Veritabanı değiştiğinde | Kurulmadı |
 | Belge ve bayatlık kontrolü | Belgenin ve yardım içeriğinin güncellendiğini, kural dosyasının satır sınırını aşmadığını kontrol eder. | Her yayında | Kurulmadı |
 | Metin kontrolleri | Koda gömülü metni, yasak terimi, yasak iddiayı ve sabit sayıyı arar. | Her yayında | Kısmen kuruldu (0006): ekrana gömülü metin denetimde |
@@ -39,7 +40,8 @@ Belge dosyaları (`.md`) biçimlendirilmez ve denetlenmez.
 |---|---|
 | Ham renk değeri (`#rrggbb`, `rgb()`, `hsl()`, `oklch()`...). `bilesenler/tasarim-degerleri/` muaftır. | Hata |
 | Ekrana gömülü metin: öğenin içine yazılan metin, `{"..."}` ve `alt`, `title`, `placeholder`, `aria-label` gibi alanlara yazılan metin | Hata |
-| Güvensiz sorgu: sorgu çağrısına metin birleştirerek ya da `${...}` ile değer gömmek. Sorgu önce bir değişkende kurulursa yakalanmaz. | Hata, kart 0011'de veritabanı aracına göre sıkılaşır |
+| Güvensiz sorgu: sorgu çağrısına metin birleştirerek ya da `${...}` ile değer gömmek. Sorgu önce bir değişkende kurulursa yakalanmaz. | Hata |
+| Güvensiz sorgu: `sql.raw()` içine sabit metinden başka bir şey vermek (Drizzle, karar 0022) | Hata (0011) |
 | `any` türü | Hata |
 | Biome'un önerilen kuralları | Hata |
 | Ham HTML öğesi (düğme, giriş alanı, seçim kutusu, pencere) | Sonra: bileşen kütüphanesi yazılınca |

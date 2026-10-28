@@ -3,7 +3,7 @@
 // ${...} ile değer gömülerek kurulmuş bir sorgu verilemez. Değerler parametre olarak gönderilir.
 // Etiketli şablonlar (sql`... ${deger}`) parametreli çalıştığı için serbesttir.
 // Sınır: sorgu önce bir değişkende kurulup sonra çağrıya verilirse yakalanmaz.
-// Veritabanı aracı seçilince (kart 0011) çağrı adları o araca göre sıkılaştırılır.
+// Drizzle'ın sql.raw() çağrısı ayrıca ham-sql.grit ile sıkılaştırıldı (kart 0011).
 // Not: Grit düzenli ifadelerinde parantez değişken sayılır, gruplar (?:...) ile yazılır.
 language js
 

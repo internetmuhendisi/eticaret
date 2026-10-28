@@ -8,3 +8,5 @@ saveExact: true
 engineStrict: true
 allowBuilds:
   simple-git-hooks: false
+  # drizzle-kit'in kullandığı esbuild, ikili dosyasını kurulum betiği olmadan da bulur.
+  esbuild: false

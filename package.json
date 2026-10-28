@@ -28,6 +28,11 @@
     "bicimle": "biome format --write",
     "denetim-kendi-testi": "node denetim/kendi-kendini-denetle.mts",
     "site-dogrula": "node komutlar/site-dogrula.mts",
+    "veritabani-baslat": "docker compose -f sunucu/compose.yaml --env-file .env up -d --wait",
+    "veritabani-durdur": "docker compose -f sunucu/compose.yaml --env-file .env down",
+    "site-veritabani-ac": "node --env-file=.env komutlar/site-veritabani-ac.mts",
+    "veritabani-degisikligi-uret": "drizzle-kit generate",
+    "veritabani-guncelle": "node --env-file=.env komutlar/veritabani-guncelle.mts",
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {
@@ -37,12 +42,16 @@
     "@biomejs/biome": "2.6.3",
     "@playwright/test": "1.64.1",
     "@types/node": "24.19.2",
+    "@types/pg": "8.23.1",
+    "drizzle-kit": "0.31.11",
     "simple-git-hooks": "2.14.0",
     "typescript": "7.0.2",
     "vite": "8.3.5",
     "vitest": "5.0.5"
   },
   "dependencies": {
+    "drizzle-orm": "0.45.4",
+    "pg": "8.23.1",
     "zod": "4.6.7"
   }
 }
