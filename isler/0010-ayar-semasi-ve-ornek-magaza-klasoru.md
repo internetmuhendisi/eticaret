@@ -28,4 +28,4 @@ Bütün site ayarları tek şemada tanımlanır ve her site klasörü bu şemada
 
 ## Durum
 
-yapılacak
+bitti
