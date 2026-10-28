@@ -25,4 +25,4 @@ Bir sitenin başka bir sitenin verisini hiçbir yoldan göremediği gerçek veri
 
 ## Durum
 
-yapılacak
+bitti
