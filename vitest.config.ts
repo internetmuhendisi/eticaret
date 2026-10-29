@@ -7,6 +7,8 @@ import { configDefaults, defineConfig } from "vitest/config";
 if (existsSync(".env")) process.loadEnvFile(".env");
 
 export default defineConfig({
+  // tsconfig JSX'i Next.js'e bırakır (preserve); bileşen testlerinde JSX'i Vite çevirir.
+  oxc: { jsx: { runtime: "automatic" } },
   test: {
     include: ["**/*.test.ts", "**/*.test.tsx"],
     exclude: [...configDefaults.exclude, "**/uctan-uca/**", ".claude/**"],

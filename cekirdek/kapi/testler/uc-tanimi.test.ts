@@ -70,8 +70,12 @@ describe("uç tanımı", () => {
     });
   });
 
-  it("beklenmeyen hatanın mesajını istemciye göstermez", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
+  it("beklenmeyen hatanın mesajını istemciye göstermez, günlüğe hata seviyesinde yazar", async () => {
+    const gunlukSatirlari: Record<string, unknown>[] = [];
+    vi.spyOn(process.stderr, "write").mockImplementation((parca) => {
+      gunlukSatirlari.push(JSON.parse(String(parca)));
+      return true;
+    });
     const yanit = await ornekUc(async () => {
       throw new Error("iç ayrıntı");
     })(istek("beklenmeyen?ad=deneme"));
@@ -79,6 +83,16 @@ describe("uç tanımı", () => {
     const metin = await yanit.text();
     expect(JSON.parse(metin)).toEqual({ basarili: false, hata: { kod: "sunucu-hatasi" } });
     expect(metin).not.toContain("iç ayrıntı");
+    expect(gunlukSatirlari).toEqual([
+      expect.objectContaining({
+        seviye: "hata",
+        alanlar: expect.objectContaining({
+          yontem: "GET",
+          yol: "/kapi/herkese-acik/beklenmeyen",
+          hata: expect.objectContaining({ mesaj: "iç ayrıntı" }),
+        }),
+      }),
+    ]);
   });
 
   it("sınır aşılınca istek sınırı koduyla ve bekleme süresiyle cevap verir", async () => {

@@ -5,6 +5,10 @@ paths:
   - "**/instrumentation.*"
   - "**/error.tsx"
   - "**/global-error.tsx"
+  - "cekirdek/uygulama/app/**"
+  - "cekirdek/vitrin/**"
+  - "cekirdek/yonetim-paneli/**"
+  - "cekirdek/kapi/**"
   - "sunucu/**"
 ---
 
@@ -15,3 +19,10 @@ paths:
 - Sunucu kayıtlarını seviyeli tut: bilgi, uyarı, hata, ölümcül.
 - Sitenin açılmasını, ödemeyi ve e-posta gönderimini düzenli olarak otomatik kontrol et.
 - Bir bölümde oluşan hata yalnız o bölümde gösterilsin, sayfanın geri kalanı çalışsın.
+
+## Araçlar (karar 0025)
+
+- Sunucuda günlüğe yalnız `gunluk` ile yaz (`cekirdek/izleme/gunluk.ts`). Doğrudan `console` kullanmak denetimde hatadır. Açılışta konsol da günlüğe bağlanır.
+- Beklenmeyen bir hatayı yakalayınca `hatayiKaydet` ile kaydet (`cekirdek/izleme/hata-katmani.ts`). Tarayıcıda `istemciHatasiniKaydet` kullan (`cekirdek/izleme/istemci-hata-katmani.ts`). Hata izleme aracı yalnız bu iki dosyadaki bağlama işleviyle bağlanır.
+- Günlüğe giden her değer maskelenir (`cekirdek/izleme/maskele.ts`). Kayda yazılacak bir alanın adını şifre, anahtar, token ya da kart sözcükleriyle kurma; böyle bir alan `[gizli]` yazılır.
+- Kendi başına bozulabilecek her ekran bölümünü `<Bolum>` içine al (`cekirdek/izleme/bolum.tsx`). Bölüm dışındaki hata sayfayı `error.tsx` ekranına çevirir.

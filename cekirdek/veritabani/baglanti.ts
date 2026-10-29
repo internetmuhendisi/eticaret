@@ -1,6 +1,7 @@
 // Sitenin veritabanı bağlantısı (karar 0022). Adres yalnız VERITABANI_ADRESI ortam
 // değişkeninden okunur; şifre .env dosyasında ya da sunucunun korumalı değişkenlerinde durur.
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
+import { hatayiKaydet } from "../izleme/hata-katmani.ts";
 
 export type Veritabani = NodePgDatabase & { $client: import("pg").Pool };
 
@@ -25,8 +26,7 @@ export const baglan = (adres: string): Veritabani => {
   });
   // Veritabanı kapanınca boştaki bağlantılar hata verir. Dinleyici olmazsa bu hata uygulamayı
   // düşürür; dinleyiciyle bağlantı atılır, sonraki istek yeniden bağlanmayı dener.
-  // Hata kaydı kart 0014'te ortak hata katmanına gider.
-  veritabani.$client.on("error", (hata) => console.error(hata));
+  veritabani.$client.on("error", (hata) => hatayiKaydet(hata, { kaynak: "veritabani-havuzu" }));
   return veritabani;
 };
 

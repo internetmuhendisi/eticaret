@@ -3,6 +3,10 @@
     "islem": {
       "kaydet": "Kaydet",
       "vazgec": "Vazgeç"
+    },
+    "hata": {
+      "bolumGosterilemiyor": "Bu bölüm şu an gösterilemiyor. Sayfayı yenilemeyi deneyin.",
+      "sayfaGosterilemiyor": "Bu sayfa şu an gösterilemiyor. Sayfayı yenilemeyi deneyin."
     }
   },
   "ayar": {

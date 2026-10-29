@@ -33,7 +33,8 @@
     "rules": {
       "preset": "recommended",
       "suspicious": {
-        "noExplicitAny": "error"
+        "noExplicitAny": "error",
+        "noConsole": "error"
       },
       "style": {
         "noJsxLiterals": "error"
@@ -42,5 +43,22 @@
   },
   "assist": {
     "enabled": true
-  }
+  },
+  "overrides": [
+    {
+      "includes": [
+        "komutlar/**",
+        "denetim/*.mts",
+        "cekirdek/izleme/istemci-hata-katmani.ts",
+        "cekirdek/izleme/testler/konsol.test.ts"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    }
+  ]
 }

@@ -20,6 +20,7 @@ const beklenenler: Record<string, Beklenen> = {
   "guvensiz-execute.ts": { kategori: "plugin", mesajBasi: "Güvensiz sorgu: execute()" },
   "elle-bicimlendirme.ts": { kategori: "plugin", mesajBasi: "Elle biçimlendirme" },
   "any-turu.ts": { kategori: "lint/suspicious/noExplicitAny" },
+  "konsol.ts": { kategori: "lint/suspicious/noConsole" },
   "bicimsiz.ts": { kategori: "format" },
 };
 

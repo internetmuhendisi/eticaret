@@ -3,6 +3,7 @@
 // geçmez. Uç yalnız yönlendirir: sınırı sayar, girdiyi doğrular, işi servise verir,
 // sonucu zarfa koyar. İzin beyanı burada yazılır, kontrolü kart 0026'da eklenir.
 import type { z } from "zod";
+import { hatayiKaydet } from "../izleme/hata-katmani.ts";
 import type { HerkeseAcik, IzinAdi } from "../kayitlar/izinler.ts";
 import type { IstekSiniri, Kapi } from "../kayitlar/kapi.ts";
 import { istegiSay, istemciAdresi } from "./istek-siniri.ts";
@@ -68,8 +69,8 @@ export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
       return basariliYanit(await tanim.isle(sonuc.data, istek));
     } catch (hata) {
       if (hata instanceof BilinenHata) return hataliYanit(hata.kod, hata.ayrinti);
-      // Ortak hata katmanı ve günlük kart 0014'te gelir; iç hata istemciye gösterilmez.
-      console.error(hata);
+      // Beklenmeyen hata ortak hata katmanına gider, istemciye yalnız kodu döner.
+      hatayiKaydet(hata, { yontem: istek.method, yol: new URL(istek.url).pathname });
       return hataliYanit("sunucu-hatasi");
     }
   };

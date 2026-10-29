@@ -5,6 +5,7 @@ import { BilinenHata } from "../kapi/zarf.ts";
 import type { ParcaDurumu } from "../kayitlar/izleme.ts";
 import { cekirdekSurumu } from "../surum.ts";
 import { siteninVeritabani, type Veritabani } from "../veritabani/baglanti.ts";
+import { hatayiKaydet } from "./hata-katmani.ts";
 
 export type SaglikDurumu = {
   uygulama: ParcaDurumu;
@@ -20,8 +21,7 @@ export const saglikDurumu = async (
   try {
     await veritabani().execute(sql`select 1`);
   } catch (hata) {
-    // Hata kaydı kart 0014'te ortak hata katmanına gider.
-    console.error(hata);
+    hatayiKaydet(hata, { kaynak: "saglik" });
     throw new BilinenHata("hizmet-kullanilamiyor", {
       uygulama: "ayakta",
       veritabani: "kapali",

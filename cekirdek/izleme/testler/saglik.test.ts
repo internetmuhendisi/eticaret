@@ -25,7 +25,8 @@ describe("sağlık ucu", () => {
   });
 
   it("veritabanına ulaşılamazsa hizmet kullanılamıyor koduyla cevap verir", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    // Ulaşılamayan veritabanı hatası günlüğe yazılır; test çıktısını kirletmesin.
+    vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     const { VERITABANI_ADRESI: asil } = process.env;
     await baglantiyiKapat();
     Object.assign(process.env, { VERITABANI_ADRESI: ulasilamayanAdres });
@@ -46,7 +47,8 @@ describe("sağlık ucu", () => {
   });
 
   it("servis ulaşılamayan veritabanında bilinen hatayı verir", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    // Ulaşılamayan veritabanı hatası günlüğe yazılır; test çıktısını kirletmesin.
+    vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     const veritabani = baglan(ulasilamayanAdres);
     try {
       await expect(saglikDurumu(() => veritabani)).rejects.toMatchObject({

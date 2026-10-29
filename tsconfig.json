@@ -6,11 +6,13 @@
   "include": [
     "*.config.ts",
     "cekirdek/metinler/**/*.ts",
+    "cekirdek/metinler/**/*.tsx",
     "cekirdek/ayar-semasi/**/*.ts",
     "cekirdek/kayitlar/**/*.ts",
     "cekirdek/veritabani/**/*.ts",
     "cekirdek/kapi/**/*.ts",
     "cekirdek/izleme/**/*.ts",
+    "cekirdek/izleme/**/*.tsx",
     "cekirdek/surum.ts",
     "komutlar/**/*.mts",
     "cekirdek/testler/**/*.ts",
