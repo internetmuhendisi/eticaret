@@ -43,7 +43,7 @@ Projenin kendi komutları `.claude/commands/` klasöründedir.
 
 | Komut | Ne işe yarar |
 |---|---|
-| `/durum` | Projenin durumunu özetler: tarihçedeki son üç giriş, açık kartlar ve açık çalışma kopyaları. Hiçbir dosyayı değiştirmez. |
+| `/start` | Oturumun başında kendiliğinden çalışır, elle de çağrılabilir. Projenin durumunu özetler: tarihçedeki son üç giriş, açık kartlar ve açık çalışma kopyaları. Hiçbir dosyayı değiştirmez. |
 | `/is-bitti <kart numarası>` | Kartın bitti sayılır listesini kontrol eder. Eksik yoksa kartı bitti yapar, tarihçeye yazar, kaydedip GitHub'a gönderir. Yalnız proje sahibi çağırır. |
 
 Çekirdek uygulamasını yerelde açmak için `pnpm cekirdek` yazılır. Vitrin http://localhost:3000 adresinde, yönetim paneli http://localhost:3000/yonetim adresinde açılır. Uygulama Örnek Mağaza'yla açılır; başka bir site için `SITE_KLASORU=$PWD/siteler/<kod-adi> pnpm cekirdek` yazılır (karar 0021).

@@ -1,9 +1,11 @@
 ---
-description: Projenin durumunu özetler: tarihçedeki son üç giriş, yapılacak ve çalışılıyor durumundaki kartlar, açık çalışma kopyaları. Hiçbir dosyayı değiştirmez.
+description: Oturumun başında çalışır. Projenin durumunu özetler: tarihçedeki son üç giriş, yapılacak ve çalışılıyor durumundaki kartlar, açık çalışma kopyaları. Hiçbir dosyayı değiştirmez.
 allowed-tools: Read, Glob, Grep, Bash(ls *), Bash(git worktree list*), Bash(git status *), Bash(git branch *)
 ---
 
 # Proje durumu
+
+Bu komut oturumun başında çalışır: `.claude/settings.json` içindeki oturum başı kancası Claude'a ilk cevabında bu adımları uygulamasını söyler. Elle de çağrılabilir.
 
 Bu komut yalnız okur. Hiçbir dosyayı yazma, değiştirme ya da silme. Kayıt yapma, GitHub'a gönderme, çalışma kopyası açma ya da kaldırma.
 

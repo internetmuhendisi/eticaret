@@ -60,6 +60,17 @@
     ]
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Oturum başı: ilk cevabında, kullanıcının isteğine geçmeden önce .claude/commands/start.md dosyasındaki adımları uygula ve özeti yaz. Hiçbir dosyayı değiştirme.'"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
