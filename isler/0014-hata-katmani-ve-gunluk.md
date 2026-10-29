@@ -26,4 +26,4 @@ Sunucuda ve ekranda oluşan bütün hatalar tek bir katmanda yakalanır, sunucu 
 
 ## Durum
 
-çalışılıyor
+bitti
