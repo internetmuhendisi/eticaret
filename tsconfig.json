@@ -9,6 +9,9 @@
     "cekirdek/ayar-semasi/**/*.ts",
     "cekirdek/kayitlar/**/*.ts",
     "cekirdek/veritabani/**/*.ts",
+    "cekirdek/kapi/**/*.ts",
+    "cekirdek/izleme/**/*.ts",
+    "cekirdek/surum.ts",
     "komutlar/**/*.mts",
     "cekirdek/testler/**/*.ts",
     "cekirdek/testler/**/*.tsx"

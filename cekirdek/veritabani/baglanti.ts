@@ -16,7 +16,19 @@ export const veritabaniAdresi = (): string => {
   return adres;
 };
 
-export const baglan = (adres: string): Veritabani => drizzle({ connection: adres });
+// Veritabanına ulaşılamazsa istek bu süreden sonra hatayla biter, uygulama beklemede kalmaz.
+const baglantiZamanAsimi = 5_000;
+
+export const baglan = (adres: string): Veritabani => {
+  const veritabani = drizzle({
+    connection: { connectionString: adres, connectionTimeoutMillis: baglantiZamanAsimi },
+  });
+  // Veritabanı kapanınca boştaki bağlantılar hata verir. Dinleyici olmazsa bu hata uygulamayı
+  // düşürür; dinleyiciyle bağlantı atılır, sonraki istek yeniden bağlanmayı dener.
+  // Hata kaydı kart 0014'te ortak hata katmanına gider.
+  veritabani.$client.on("error", (hata) => console.error(hata));
+  return veritabani;
+};
 
 // Uygulamanın tek bağlantısı. İlk kullanımda açılır.
 export const siteninVeritabani = (): Veritabani => {

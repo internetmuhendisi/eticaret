@@ -20,3 +20,9 @@ Uç, ekranın ya da başka bir yazılımın sunucudan veri istediği adrestir.
 - Ödeme ve kargo bildirim uçlarını istek sınırından muaf tut, imzayla doğrula.
 - Mobil uygulama ya da dış entegrasyonun kullandığı bir alanı kaldırma, adını ya da türünü değiştirme. Önce yeni alanı ekle, eskisini kullanımını ölçerek kaldır.
 - Her yeni ya da değişen ucu aynı değişiklikte uç belgesine yaz.
+
+## Kapının yapısı (karar 0024)
+
+- Her uç `ucTanimla` ile yazılır (`cekirdek/kapi/uc.ts`): giriş, şema, izin beyanı ve istek sınırı zorunludur. Adres dosyası (`app/kapi/.../route.ts`) yalnız ucu bağlar.
+- Yanıtlar yalnız `cekirdek/kapi/zarf.ts` ile kurulur. Hata kodları, HTTP karşılıkları ve istek sınırları `cekirdek/kayitlar/kapi.ts` dosyasındadır. Servis bilinen hatayı `BilinenHata` ile bildirir.
+- Uç belgesi: `cekirdek/kapi/uclar.md`.

@@ -4,15 +4,15 @@ Bir kural yalnız yazılı kalırsa zamanla çiğnenir. Bu yüzden önemli her k
 
 | Kontrol | Ne yapar | Ne zaman | Durum |
 |---|---|---|---|
-| Tür kontrolü | Kayıtta olmayan değeri, eksik alanı ve yanlış türü engeller. | Her yayında | Kuruldu (0005): `pnpm tur-kontrolu` |
+| Tür kontrolü | Kayıtta olmayan değeri, eksik alanı ve yanlış türü engeller. | Her yayında | Kuruldu (0005): `pnpm tur-kontrolu`. Kart 0013: şemasız, izinsiz ya da sınırsız uç tanımı geçmez, örnekleri `cekirdek/kapi/testler/eksik-uc-ornekleri.ts` |
 | Kod denetim kuralları | Ham renk, ham HTML öğesi, elle tablo, elle genişlik, elle biçimlendirme, şemasız uç, güvensiz sorgu gibi yasakları hata sayar. | Kod yazılırken ve her yayında | Kısmen kuruldu (0006, 0008, 0011): `pnpm denetim`, liste aşağıda |
 | Kayıt öncesi kontroller | Kod biçimini, metin anahtarlarını, karar kaydı numaralarını kontrol eder, gizli bilgi yazılmışsa kaydı durdurur. | Her kayıtta | Kısmen kuruldu (0006): biçim ve denetim kırmızıysa kayıt durur. Gizli bilgi dosyasını Claude'un kalkanı durdurur. Metin anahtarı ve karar numarası kontrolü sonra. |
-| Testler | Birim, entegrasyon, yetki, veri ayrımı, hesaplama, ödeme, eşzamanlılık, iade ve sözleşme testleri. | Her yayında | Kısmen kuruldu (0007): araçlar ve `pnpm testler`, gerçek testler ilgili kartlarda. Kart 0010: çekirdekte ve bileşenlerde site adı geçmez (`cekirdek/testler/site-adi-yok.test.ts`). Kart 0012: veri ayrımı gerçek veritabanıyla, izinler ve bağlantı kuralları ayrı ayrı (`cekirdek/testler/veri-ayrimi.test.ts`) |
+| Testler | Birim, entegrasyon, yetki, veri ayrımı, hesaplama, ödeme, eşzamanlılık, iade ve sözleşme testleri. | Her yayında | Kısmen kuruldu (0007): araçlar ve `pnpm testler`, gerçek testler ilgili kartlarda. Kart 0010: çekirdekte ve bileşenlerde site adı geçmez (`cekirdek/testler/site-adi-yok.test.ts`). Kart 0012: veri ayrımı gerçek veritabanıyla, izinler ve bağlantı kuralları ayrı ayrı (`cekirdek/testler/veri-ayrimi.test.ts`). Kart 0013: kapının zarfı, doğrulaması ve istek sınırı (`cekirdek/kapi/testler/`), sağlık ucu gerçek ve ulaşılamayan veritabanıyla (`cekirdek/izleme/testler/`) |
 | Site klasörü doğrulaması | Kimliği ve ayarları şemadan geçirir; şemada olmayan ayarı, yanlış türü, eksik kimlik alanını ve klasörle uyuşmayan kod adını durdurur. Bozuk örneklerin kırmızıya düştüğünü gösterir. | Her yayında ve uygulama açılırken | Kuruldu (0010): `pnpm site-dogrula`, testi `pnpm birim-testleri` içinde |
 | Güvenlik kontrolleri | Güvenlik başlıkları, çerez ayarları, dosya yükleme ve dış paket açıkları. | Her yayında | Kurulmadı |
 | Veritabanı değişikliği notu ve sırası | Geri dönüş notu olmayan, zaman sırası bozuk ya da uygulandıktan sonra içeriği değişmiş değişikliği yakalar; böyle bir değişiklik varsa hiçbiri uygulanmaz. Başka sitenin veritabanına değişiklik uygulanmasını durdurur. | Her yayında ve her güncellemede | Kuruldu (0011): testi `pnpm birim-testleri` içinde, `pnpm veritabani-guncelle` |
 | Veritabanı değişikliği denemesi | Değişikliği canlının kişisel bilgileri silinmiş kopyasında uygular. | Veritabanı değiştiğinde | Kurulmadı |
-| Belge ve bayatlık kontrolü | Belgenin ve yardım içeriğinin güncellendiğini, kural dosyasının satır sınırını aşmadığını kontrol eder. | Her yayında | Kurulmadı |
+| Belge ve bayatlık kontrolü | Belgenin ve yardım içeriğinin güncellendiğini, kural dosyasının satır sınırını aşmadığını kontrol eder. | Her yayında | Kısmen kuruldu (0013): uygulamadaki kapı adresleriyle uç belgesi birebir aynı (`cekirdek/kapi/testler/uc-belgesi.test.ts`) |
 | Metin kontrolleri | Koda gömülü metni, yasak terimi, yasak iddiayı ve sabit sayıyı arar. | Her yayında | Kısmen kuruldu (0006): ekrana gömülü metin denetimde |
 | Hız ve boyut ölçümü | Sayfa hızını ve indirilen kod boyutunu ölçer. | Her yayında | Kurulmadı |
 | Ekran ölçümü | Sayfaları üç genişlikte açar, yatay kaydırma, konsol hatası, erişilebilirlik ve görüntü farkı arar. | Yayından önce ve sonra | Kurulmadı |
@@ -50,5 +50,5 @@ Belge dosyaları (`.md`) biçimlendirilmez ve denetlenmez.
 | Elle tablo | Sonra: liste motoru yazılınca |
 | Elle genişlik ve ölçü | Sonra: tasarım değerleri yazılınca |
 | Elle biçimlendirme: biçimleyici (`cekirdek/metinler/bicimleyici.ts`) dışında `Intl` ve `toLocale...String` | Hata (0008) |
-| Şemasız uç | Sonra: ilk uçlar yazılınca |
+| Şemasız uç | Tür kontrolü (0013): uç tanımı şemasız, izinsiz ya da sınırsız ucu kabul etmez. Uç tanımını kullanmayan adres dosyasını uç belgesi testi yakalar. |
 | Koda gömülü sunucu metni ve sabit sayı | Sonra: metin kontrolleriyle |

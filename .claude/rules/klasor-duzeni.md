@@ -23,7 +23,8 @@ cekirdek/
     izinler.ts         izinler
     metinler/          metinler
     testler/           testler
-  kapi/                dört giriş: herkese-acik/, musteri/, yonetici/, sahip/
+  surum.ts             çekirdeğin sürümü (karar 0024)
+  kapi/                dört giriş: herkese-acik/, musteri/, yonetici/, sahip/; uç belgesi uclar.md
   ayar-semasi/         bütün site ayarlarının şeması
   vitrin/              vitrin ekranları
   yonetim-paneli/      panel ekranları
