@@ -29,4 +29,4 @@ Vitrin ve panelin çekirdekle konuştuğu kapının ortak yapısı kurulur: ayn�
 
 ## Durum
 
-yapılacak
+bitti
