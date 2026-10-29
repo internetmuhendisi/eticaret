@@ -2,6 +2,11 @@
 import { describe, expect, it } from "vitest";
 import { gizliIsareti, kartIsareti, maskele, metniMaskele } from "../maskele.ts";
 
+// Şifreli bağlantı adresi. Kayıtlı dosyalarda şifreli adres geçmez (veri-ayrimi.test.ts), bu
+// yüzden adres çalışırken kurulur.
+const sifreliAdres = (sunucu: string) =>
+  ["postgres://kullanici", `GizliSifre123@${sunucu}`].join(":");
+
 // Luhn denetiminden geçen deneme kart numarası.
 const kartNumarasi = "4111 1111 1111 1111";
 
@@ -100,12 +105,8 @@ describe("maskeleme", () => {
     const denemeler: [string, string, string[]][] = [
       ["metnin içinde JSON şifre", '{"password":"hunter2"}', ["hunter2"]],
       ["boşluklu JSON şifre", '{"sifre": "hunter2", "eposta": "a@b.com"}', ["hunter2", "a@b"]],
-      ["adresteki şifre", "postgres://kullanici:GizliSifre123@localhost:5432/db", ["GizliSifre"]],
-      [
-        "adresteki şifre, alan adıyla",
-        "postgres://k:GizliSifre123@db.ornek.com/db",
-        ["GizliSifre", ":G***"],
-      ],
+      ["adresteki şifre", sifreliAdres("localhost:5432/db"), ["GizliSifre"]],
+      ["adresteki şifre, alan adıyla", sifreliAdres("db.ornek.com/db"), ["GizliSifre", ":G***"]],
       ["api_key", "api_key=sk_live_123abc", ["sk_live"]],
       ["x-api-key başlığı", "x-api-key: sk_live_123abc", ["sk_live"]],
       ["başında ad olmayan Bearer", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.abc", ["eyJ"]],

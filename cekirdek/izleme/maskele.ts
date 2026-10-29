@@ -53,7 +53,7 @@ const metinKurallari: [RegExp, (eslesen: string, on?: string) => string][] = [
   // Ön ekiyle yazılmış oturum anahtarı ve adı geçmeyen JWT.
   [/\b(bearer|basic)\s+[\w.~+/=-]+/giu, (_, on = "") => `${on} ${gizliIsareti}`],
   [/\beyJ[\w-]+\.[\w-]+\.[\w-]*/gu, () => gizliIsareti],
-  // Bağlantı adresindeki şifre: postgres://kullanici:sifre@sunucu.
+  // Bağlantı adresindeki şifre: <şema>://kullanici:sifre@sunucu.
   [/(\b[a-z][\w+.-]*:\/\/[^\s:/@]*:)[^\s@/]+@/giu, (_, on = "") => `${on}${gizliIsareti}@`],
 ];
 
