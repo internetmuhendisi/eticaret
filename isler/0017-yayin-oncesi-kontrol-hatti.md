@@ -23,4 +23,4 @@ GitHub'a her gönderimde bütün kontroller kendiliğinden çalışır. Kırmız
 
 ## Durum
 
-yapılacak
+bitti
