@@ -41,6 +41,8 @@
     "guvenlik-taramasi": "pnpm audit --prod --audit-level moderate && pnpm audit --audit-level high",
     "hat-ortami-hazirla": "node komutlar/hat-ortami-hazirla.mts",
     "hat-sonucu": "node komutlar/hat-sonucu.mts",
+    "sunucu-kur": "node komutlar/sunucu-kur.mts",
+    "sunucu-denetle": "node komutlar/sunucu-denetle.mts",
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {

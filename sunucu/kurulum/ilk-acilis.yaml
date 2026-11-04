@@ -1,0 +1,75 @@
+#cloud-config
+# Sunucunun ilk açılışta kendini kurduğu ayar (kart 0018, karar 0030). Hetzner bu dosyayı sunucu
+# açılırken "user data" olarak verir, Ubuntu'nun cloud-init aracı bir kez çalıştırır.
+# pnpm sunucu-kur bu dosyayı okur ve aşağıdaki anahtar yerine açık giriş anahtarını koyar.
+# Açık anahtar gizli değildir; özel anahtar yalnız bilgisayarda (~/.ssh) durur.
+#
+# Sonuç:
+# - Giriş yalnız "yonetici" kullanıcısıyla ve anahtarla. Şifreyle giriş ve kökle giriş kapalı.
+# - İçerideki duvar (ufw) yalnız 22, 80 ve 443'e izin verir. Dıştaki duvar Hetzner'dedir.
+# - Docker resmi kaynağından kurulur. Ubuntu güvenlik güncellemeleri kendiliğinden kurulur.
+# - Kurulum bitince /var/lib/altyapi/kurulum-tamam dosyası yazılır.
+
+users:
+  - name: yonetici
+    shell: /bin/bash
+    groups: [sudo]
+    lock_passwd: true
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    ssh_authorized_keys:
+      - __GIRIS_ANAHTARI__
+
+disable_root: true
+ssh_pwauth: false
+
+package_update: true
+package_upgrade: true
+packages:
+  - ca-certificates
+  - curl
+  - ufw
+  - unattended-upgrades
+
+write_files:
+  # sshd ayar parçalarında ilk yazılan değer geçerlidir; 00 öneki bunun her şeyden önce okunmasını sağlar.
+  - path: /etc/ssh/sshd_config.d/00-altyapi.conf
+    permissions: "0644"
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+      PubkeyAuthentication yes
+      AllowUsers yonetici
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    permissions: "0644"
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+
+runcmd:
+  - [sh, -c, "ufw default deny incoming && ufw default allow outgoing"]
+  - [sh, -c, "ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 443/tcp && ufw --force enable"]
+  - [install, -m, "0755", -d, /etc/apt/keyrings]
+  - [curl, -fsSL, "https://download.docker.com/linux/ubuntu/gpg", -o, /etc/apt/keyrings/docker.asc]
+  - [chmod, a+r, /etc/apt/keyrings/docker.asc]
+  - [
+      sh,
+      -c,
+      'echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" > /etc/apt/sources.list.d/docker.list',
+    ]
+  - [apt-get, update]
+  - [
+      apt-get,
+      install,
+      -y,
+      docker-ce,
+      docker-ce-cli,
+      containerd.io,
+      docker-buildx-plugin,
+      docker-compose-plugin,
+    ]
+  - [systemctl, enable, --now, docker]
+  - [usermod, -aG, docker, yonetici]
+  - [systemctl, enable, --now, unattended-upgrades]
+  - [systemctl, restart, ssh]
+  - [sh, -c, "mkdir -p /var/lib/altyapi && date -u +%FT%TZ > /var/lib/altyapi/kurulum-tamam"]
