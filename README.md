@@ -52,3 +52,5 @@ Projenin kendi komutları `.claude/commands/` klasöründedir.
 Veritabanı testleri yerel PostgreSQL kutusuyla çalışır (karar 0022). Bilgisayarda Docker gerekir. İlk kez kurarken `.env.example` dosyası `.env` adıyla kopyalanıp şifreler doldurulur, sonra sırayla şunlar yazılır: `pnpm veritabani-baslat`, `pnpm site-veritabani-ac siteler/ornek-magaza`, `pnpm veritabani-guncelle siteler/ornek-magaza`. Sonraki açılışlarda yalnız `pnpm veritabani-baslat` yeterlidir. `pnpm testler` veritabanı kutusu kapalıyken kırmızı biter.
 
 Site klasörlerini ayar şemasından geçirmek için `pnpm site-dogrula` yazılır. Tek site için klasör verilir: `pnpm site-dogrula siteler/ornek-magaza`.
+
+Çekirdeğin Docker görüntüsünü üretmek için `pnpm cekirdek-goruntusu` yazılır. Görüntü `altyapi-cekirdek:<sürüm>` adını alır ve hemen denetlenir: içinde `.env`, site klasörü ya da gizli bilgi olmamalı, kök kullanıcıyla çalışmamalıdır (karar 0027). Denetim ayrıca `pnpm cekirdek-goruntusu-denetle` ile çalıştırılır, `--kendi-testi` eklenirse bilerek bozulmuş bir görüntüyü yakaladığını gösterir. Çalıştırma örneği `sunucu/cekirdek/Dockerfile` dosyasının başındadır.

@@ -13,6 +13,10 @@ const ayar: NextConfig = {
   // Uygulama çekirdeğin öteki klasörlerinden (metinler/, moduller/...) dosya alır,
   // bu yüzden kök, çalışma alanının köküdür.
   turbopack: { root: calismaAlaniKoku },
+  // Docker görüntüsü için derleme, çalışmaya gereken dosyaları tek klasörde toplar
+  // (.next/standalone, kart 0015, karar 0027). İz, çalışma alanının kökünden sürülür.
+  output: "standalone",
+  outputFileTracingRoot: calismaAlaniKoku,
 };
 
 export default ayar;

@@ -33,6 +33,8 @@
     "site-veritabani-ac": "node --env-file=.env komutlar/site-veritabani-ac.mts",
     "veritabani-degisikligi-uret": "drizzle-kit generate",
     "veritabani-guncelle": "node --env-file=.env komutlar/veritabani-guncelle.mts",
+    "cekirdek-goruntusu": "node komutlar/cekirdek-goruntusu.mts",
+    "cekirdek-goruntusu-denetle": "node komutlar/cekirdek-goruntusu-denetle.mts",
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {

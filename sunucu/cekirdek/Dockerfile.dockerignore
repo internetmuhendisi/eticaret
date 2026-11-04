@@ -1,0 +1,22 @@
+# Görüntüye giren dosyaların izin listesi (kart 0015, karar 0027). Her şey dışarıda başlar,
+# yalnız derlemeye gereken dosyalar içeri alınır. Böylece .env, site klasörleri ve yeni eklenen
+# bir dosya kendiliğinden görüntüye girmez.
+*
+
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!tsconfig.json
+!tsconfig.temel.json
+!cekirdek/
+!bilesenler/
+!sahip-paneli/package.json
+
+# İzin verilen klasörlerin içinde de girmeyecekler.
+**/node_modules
+**/.next
+**/testler
+**/*.test.ts
+**/*.test.tsx
+**/.env
+**/.env.*
