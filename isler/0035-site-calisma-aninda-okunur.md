@@ -24,4 +24,4 @@ Kart 0010'da fark edildi. 0015'ten önce bitmiş olmalı.
 
 ## Durum
 
-yapılacak
+bitti
