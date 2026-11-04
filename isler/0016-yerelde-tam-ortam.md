@@ -25,4 +25,4 @@ Sunucudaki düzenin aynısı yerelde tek komutla açılır: önde Caddy, arkada 
 
 ## Durum
 
-yapılacak
+bitti
