@@ -17,6 +17,9 @@ export const register = async () => {
   const { surecHatalariniBagla } = await import("../izleme/hata-katmani");
   konsoluGunlugeBagla();
   surecHatalariniBagla();
+  // Site klasörü açılışta bir kez okunur ve doğrulanır; geçersizse uygulama açılmaz (kart 0035).
+  const { siteyiAcilistaDogrula } = await import("../izleme/acilis");
+  siteyiAcilistaDogrula();
 };
 
 export const onRequestError: Instrumentation.onRequestError = async (hata, istek, baglam) => {

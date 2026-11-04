@@ -2,11 +2,10 @@
 import type { Metadata } from "next";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 
-const { kimlik } = calisanSite();
-
-export const metadata: Metadata = { title: kimlik.gorunenAd };
+export const generateMetadata = (): Metadata => ({ title: calisanSite().kimlik.gorunenAd });
 
 export default function VitrinAnaSayfa() {
+  const { kimlik } = calisanSite();
   return (
     <main>
       <h1>{kimlik.gorunenAd}</h1>
