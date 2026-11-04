@@ -2,10 +2,10 @@
 // siteleri, veritabanları ve .env satırlarıyla birlikte silinir. Sitelerin verisi silinmez.
 // Çalıştırma: pnpm yerel-ortam-kapat
 
-import { ortamiKapat } from "./yerel-ortam.mts";
+import { kilitle, ortamiKapat } from "./yerel-ortam.mts";
 
 try {
-  const silinenler = await ortamiKapat();
+  const silinenler = await kilitle(ortamiKapat);
   for (const kodAdi of silinenler) console.log(`silindi     deneme sitesi ${kodAdi}`);
   console.log("Ortam kapandı.");
 } catch (hata) {

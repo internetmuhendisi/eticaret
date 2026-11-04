@@ -1,5 +1,5 @@
 # Yerelde tam ortam (kart 0016, karar 0028): veritabanının yanına Caddy eklenir. Site kutuları
-# site listesinden üretilen sunucu/olusan/siteler.yaml dosyasındadır. Bu dosya tek başına
+# site listesinden üretilen sunucu/olusan/siteler.compose.json dosyasındadır. Bu dosya tek başına
 # kullanılmaz; açmak ve kapatmak: pnpm yerel-ortam-ac, pnpm yerel-ortam-kapat
 services:
   caddy:

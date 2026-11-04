@@ -16,6 +16,7 @@ import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
 import {
   denemeSitesiAc,
   iste,
+  kilitle,
   kok,
   kutuAdi,
   type OrtamSitesi,
@@ -108,42 +109,50 @@ const sitesiniOlc = async (site: OrtamSitesi, oteki: OrtamSitesi) => {
   olc(`${kodAdi}: kutunun portu dışarıya kapalı`, portlar === "{}" || portlar === "null", portlar);
 };
 
-let siteler: OrtamSitesi[] = [];
+const calistir = async (): Promise<void> => {
+  let siteler: OrtamSitesi[] = [];
+  try {
+    const deneme = denemeSitesiAc();
+    siteler = await ortamiAc([join(kok, "siteler", "ornek-magaza"), deneme]);
+    const [ornek, denemeSitesi] = siteler as [OrtamSitesi, OrtamSitesi];
+    console.log("");
+    await sitesiniOlc(ornek, denemeSitesi);
+    await sitesiniOlc(denemeSitesi, ornek);
+
+    const tanimsiz = await iste("tanimsiz-site", "/");
+    olc("tanınmayan adres hiçbir siteye gitmiyor", tanimsiz.durum === 404, `${tanimsiz.durum}`);
+
+    // Her istekte başka bir sahte adres yazılır. Caddy başlığı kendisi yazıyorsa sınır yine dolar.
+    const { istek } = istekSinirlari.genel;
+    let sinirDoldu = false;
+    for (let sira = 0; sira <= istek + 5 && !sinirDoldu; sira++) {
+      const yanit = await iste(denemeSitesi.kimlik.kodAdi, "/kapi/herkese-acik/saglik", {
+        "x-forwarded-for": `203.0.113.${sira % 250}`,
+      });
+      sinirDoldu = yanit.durum === 429;
+    }
+    olc("sahte X-Forwarded-For başlığı istek sınırını aşamıyor", sinirDoldu);
+  } catch (hata) {
+    olc("ortam açıldı", false, (hata as Error).message);
+  }
+
+  if (acikBirak && siteler.length > 0) {
+    console.log("\nOrtam açık bırakıldı:");
+    for (const { kimlik } of siteler) {
+      console.log(`  ${kimlik.gorunenAd.padEnd(24)} ${siteAdresi(kimlik.kodAdi)}`);
+    }
+    console.log("Kapatmak (deneme sitesini de siler): pnpm yerel-ortam-kapat");
+  } else {
+    for (const kodAdi of await ortamiKapat()) console.log(`silindi     deneme sitesi ${kodAdi}`);
+  }
+};
+
 try {
-  const deneme = denemeSitesiAc();
-  siteler = await ortamiAc([join(kok, "siteler", "ornek-magaza"), deneme]);
-  const [ornek, denemeSitesi] = siteler as [OrtamSitesi, OrtamSitesi];
-  console.log("");
-  await sitesiniOlc(ornek, denemeSitesi);
-  await sitesiniOlc(denemeSitesi, ornek);
-
-  const tanimsiz = await iste("tanimsiz-site", "/");
-  olc("tanınmayan adres hiçbir siteye gitmiyor", tanimsiz.durum === 404, `${tanimsiz.durum}`);
-
-  // Her istekte başka bir sahte adres yazılır. Caddy başlığı kendisi yazıyorsa sınır yine dolar.
-  const { istek } = istekSinirlari.genel;
-  let sinirDoldu = false;
-  for (let sira = 0; sira <= istek + 5 && !sinirDoldu; sira++) {
-    const yanit = await iste(denemeSitesi.kimlik.kodAdi, "/kapi/herkese-acik/saglik", {
-      "x-forwarded-for": `203.0.113.${sira % 250}`,
-    });
-    sinirDoldu = yanit.durum === 429;
-  }
-  olc("sahte X-Forwarded-For başlığı istek sınırını aşamıyor", sinirDoldu);
+  await kilitle(calistir);
 } catch (hata) {
-  olc("ortam açıldı", false, (hata as Error).message);
+  olc("ortam komutu çalıştı", false, (hata as Error).message);
 }
-
 const kalanlar = sonuclar.filter((sonuc) => !sonuc.gecti);
-if (acikBirak && siteler.length > 0) {
-  console.log("\nOrtam açık bırakıldı:");
-  for (const { kimlik } of siteler) {
-    console.log(`  ${kimlik.gorunenAd.padEnd(24)} ${siteAdresi(kimlik.kodAdi)}`);
-  }
-  console.log("Kapatmak (deneme sitesini de siler): pnpm yerel-ortam-kapat");
-} else {
-  for (const kodAdi of await ortamiKapat()) console.log(`silindi     deneme sitesi ${kodAdi}`);
-}
 console.log(
   kalanlar.length === 0
     ? `\nYerel ortam denemesi yeşil: ${sonuclar.length} ölçüm geçti.`

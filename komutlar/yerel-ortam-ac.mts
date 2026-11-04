@@ -3,16 +3,16 @@
 //   Klasör verilmezse siteler/ altındaki bütün siteler ve açık deneme siteleri açılır.
 //   --goruntuyu-yenile: çekirdeğin görüntüsünü şu anki kodla yeniden üretir.
 
-import { ortamiAc, siteAdresi, varsayilanKlasorler } from "./yerel-ortam.mts";
+import { kilitle, ortamiAc, siteAdresi, varsayilanKlasorler } from "./yerel-ortam.mts";
 
 const argumanlar = process.argv.slice(2);
 const goruntuyuYenile = argumanlar.includes("--goruntuyu-yenile");
 const verilenler = argumanlar.filter((arguman) => !arguman.startsWith("--"));
 
 try {
-  const siteler = await ortamiAc(verilenler.length > 0 ? verilenler : varsayilanKlasorler(), {
-    goruntuyuYenile,
-  });
+  const siteler = await kilitle(() =>
+    ortamiAc(verilenler.length > 0 ? verilenler : varsayilanKlasorler(), { goruntuyuYenile }),
+  );
   console.log("\nOrtam açık:");
   for (const { kimlik } of siteler) {
     console.log(`  ${kimlik.gorunenAd.padEnd(24)} ${siteAdresi(kimlik.kodAdi)}`);

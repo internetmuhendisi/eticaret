@@ -129,7 +129,11 @@ const kutudanAdres = (adres: URL): string => {
 const goruntuyuHazirla = (surum: string, yenile: boolean): string => {
   const etiket = `${goruntuAdi}:${surum}`;
   const var_ = spawnSync("docker", ["image", "inspect", etiket], { stdio: "ignore" }).status === 0;
-  if (var_ && !yenile) return etiket;
+  if (var_ && !yenile) {
+    // Aynı etiketli görüntü koddaki son değişikliklerden önce üretilmiş olabilir.
+    console.log(`kullanılıyor ${etiket} (var olan görüntü; şu anki kodla: --goruntuyu-yenile)`);
+    return etiket;
+  }
   if (surum !== cekirdekSurumu) {
     throw new Error(
       `${etiket} görüntüsü yok. Bu sürüm şu anki çekirdeğin sürümü (${cekirdekSurumu}) değil, burada üretilemez.`,
@@ -288,6 +292,40 @@ export const ortamiAc = async (
   return siteler;
 };
 
+// Aynı anda tek ortam komutu çalışır: ikisi birden çalışırsa biri ötekinin deneme sitesini
+// silebilir ya da .env'yi aynı anda yazabilir. Kilit dosyası komutun süreç numarasını taşır;
+// o süreç artık yoksa kilit bayattır ve yeniden alınır.
+const kilitDosyasi = join(olusan, "kilit");
+
+const surecCalisiyor = (numara: number): boolean => {
+  try {
+    process.kill(numara, 0);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const kilitle = async <T,>(is: () => Promise<T>): Promise<T> => {
+  mkdirSync(olusan, { recursive: true });
+  try {
+    writeFileSync(kilitDosyasi, String(process.pid), { flag: "wx" });
+  } catch {
+    const sahibi = Number(readFileSync(kilitDosyasi, "utf8"));
+    if (surecCalisiyor(sahibi)) {
+      throw new Error(
+        `Başka bir yerel ortam komutu çalışıyor (süreç ${sahibi}). Bitmesini bekleyin.`,
+      );
+    }
+    writeFileSync(kilitDosyasi, String(process.pid));
+  }
+  try {
+    return await is();
+  } finally {
+    unlinkSync(kilitDosyasi);
+  }
+};
+
 // Geçici deneme sitelerini, veritabanlarını ve .env satırlarını siler. Veritabanı açık olmalı.
 const denemeSiteleriniTemizle = async (): Promise<string[]> => {
   const klasorler = altKlasorler(denemeSiteleri);
@@ -301,6 +339,18 @@ const denemeSiteleriniTemizle = async (): Promise<string[]> => {
   try {
     for (const klasor of klasorler) {
       const kodAdi = klasor.split("/").at(-1) ?? "";
+      // Yalnız denemeSitesiAc'ın açtığı klasör silinir: adı deneme-<6 harf>, kimliği geçerli ve
+      // demo, siteler/ altında aynı adlı site yok. Öteki her şey yerinde bırakılır ve söylenir.
+      const sonuc = siteKlasorunuDogrula(klasor);
+      const denemeMi =
+        denemeAdi.test(kodAdi) &&
+        sonuc.gecerli &&
+        sonuc.site.kimlik.tur === "demo" &&
+        !existsSync(join(kok, "siteler", kodAdi));
+      if (!denemeMi) {
+        console.error(`dokunulmadı ${klasor}: deneme sitesine benzemiyor, elle bakın.`);
+        continue;
+      }
       const ad = siteVeritabaniAdi(kodAdi);
       await yonetici.execute(sql`drop database if exists ${sql.identifier(ad)} with (force)`);
       await yonetici.execute(sql`drop role if exists ${sql.identifier(ad)}`);
@@ -329,6 +379,8 @@ export const ortamiKapat = async (): Promise<string[]> => {
 };
 
 // Geçici deneme sitesi: sunucu/olusan/deneme-siteleri/deneme-<ek>. Ayarların hepsi varsayılandır.
+const denemeAdi = /^deneme-[0-9a-f]{6}$/;
+
 export const denemeSitesiAc = (): string => {
   const kodAdi = `deneme-${randomBytes(3).toString("hex")}`;
   const klasor = join(denemeSiteleri, kodAdi);
