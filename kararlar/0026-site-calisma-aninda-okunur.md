@@ -31,4 +31,6 @@
 - Hiçbir sayfa derlemede hazırlanmaz. Ürün sayfaları gelince hangi verinin ne kadar önbellekte tutulacağı ayrıca tanımlanır (`.claude/rules/performans.md`).
 - Siteyi okuyan yeni kod da dosya yüklenirken değil, çağrıldığında okumalıdır. Bunu `cekirdek/metinler/testler/site-metni.test.ts` site metni için denetler; derleme de değişkensiz yapıldığı sürece yeni bir ihlal derlemeyi kırar.
 - Site klasörünü değiştirmek uygulamanın yeniden başlatılmasını gerektirir.
+- Next.js açılış kontrolünü ve sayfaları ayrı paketlere derler. Okunan site bu yüzden sürecin ortak alanında (`globalThis`) tutulur; yoksa sayfalar klasörü yeniden okurdu ve açılışta doğrulanan site sayfaların kullandığı site olmazdı. Bunu `cekirdek/ayar-semasi/testler/calisan-site.test.ts` denetler.
+- Next.js "Ready" satırını açılış kontrolünden önce yazar ve geçersiz klasörle kapanan süreç bir an bağlantı kabul eder, yanıt vermez. Yayın komutu ve sağlık kontrolü "Ready" satırına değil, çıkış koduna ve sağlık ucunun yanıtına bakmalıdır (kart 0021).
 - Docker görüntüsü (kart 0015) artık site olmadan derlenebilir.
