@@ -45,11 +45,19 @@ const degerler: Record<string, string> = {
   YEREL_ORTAM_PORTU: port("YEREL_ORTAM_PORTU"),
 };
 
+// .env.example'a eklenen her anahtar burada da üretilmeli; eksik kalırsa hat burada durur.
+const eksikler = Object.keys(ornek).filter((anahtar) => !(anahtar in degerler));
+if (eksikler.length > 0) {
+  console.error(`Hat ortamı .env.example'daki şu anahtarları üretmiyor: ${eksikler.join(", ")}`);
+  process.exit(1);
+}
+
+// "wx": dosya bu arada oluştuysa üzerine yazmaz, hata verir.
 writeFileSync(
   envYolu,
   `${Object.entries(degerler)
     .map(([anahtar, deger]) => `${anahtar}=${deger}`)
     .join("\n")}\n`,
-  { mode: 0o600 },
+  { mode: 0o600, flag: "wx" },
 );
 console.log(`hazır       .env (${Object.keys(degerler).join(", ")})`);

@@ -19,9 +19,9 @@
   9. Çekirdeğin Docker görüntüsünün üretilmesi ve denetlenmesi (karar 0027)
   10. Yerel ortam denemesi (karar 0028)
 - **Sürümler:** Node.js ve pnpm sürümleri kökteki `package.json` dosyasından okunur (karar 0016). Kullanılan GitHub eylemleri sürüm adıyla değil, değişmez kayıt numarasıyla sabitlenir.
-- **Gizli bilgi yok:** Hatta gerçek şifre bulunmaz. `pnpm hat-ortami-hazirla` her çalışmada `.env` dosyasını `.env.example` biçiminde, rastgele şifrelerle üretir. Yerelde `.env` zaten varsa komut ona dokunmadan durur. GitHub'a gizli bilgi tanımlanmaz. Hatta müşteri verisi de yoktur.
+- **Gizli bilgi yok:** Hatta gerçek şifre bulunmaz. `pnpm hat-ortami-hazirla` her çalışmada `.env` dosyasını rastgele şifrelerle üretir. Portları `.env.example`'dan alır. `.env.example`'daki bir anahtarı üretmiyorsa hat orada durur. Yerelde `.env` zaten varsa komut ona dokunmadan durur. GitHub'a gizli bilgi tanımlanmaz. Hatta müşteri verisi de yoktur.
 - **Güvenlik taraması eşiği:** `pnpm guvenlik-taramasi` iki kural uygular. Çalışırken kullanılan paketlerde orta ve üstü bir açık hattı durdurur. Yalnız geliştirmede kullanılan paketlerde yüksek ve kritik açıklar durdurur.
-- **Yeşil kilidi:** `pnpm hat-sonucu [kayıt]` yalnız şu durumda yeşil der: hattın bu kayıt için en son çalışması (en son denemesi) bitmiş ve başarılı olmalı. Çalışma hiç olmamışsa, sürüyorsa, başarısız ya da iptal olmuşsa, GitHub'ın cevabı okunamıyorsa ya da çalışma kopyasında kaydedilmemiş değişiklik varsa cevap "yeşil değil"dir. Yayın komutu (kart 0021) işe bu kontrolle başlar.
+- **Yeşil kilidi:** `pnpm hat-sonucu [kayıt]` yalnız şu durumda yeşil der: hattın bu kayıt için en son çalışması (en son denemesi) bitmiş ve başarılı olmalı. Çalışma hiç olmamışsa, sürüyorsa, başarısız ya da iptal olmuşsa, GitHub'ın cevabı okunamıyorsa ya da çalışma kopyasında kaydedilmemiş değişiklik varsa cevap "yeşil değil"dir. Hangi depoya sorulacağı, kaydın `origin` adresinden okunur. Kilit hiçbir durumda hata fırlatmaz, beklenmeyen her durumda "yeşil değil" der. Yayın komutu (kart 0021) işe bu kontrolle başlar.
 
 ## Neden
 
@@ -46,4 +46,4 @@
 - Hat dosyasını GitHub'a göndermek için GitHub girişinin `workflow` izni gerekir (`gh auth refresh -h github.com -s workflow`).
 - Görüntünün kendi testi (`pnpm cekirdek-goruntusu-denetle --kendi-testi`) hatta yoktur. İki görüntü daha üretir ve her gönderimde gerekmez. Denetim değişince elle çalıştırılır.
 - Ekran ölçümü, hız ölçümü ve güvenlik başlıkları sayfalar yazılınca hatta eklenir.
-- Ana dalın kırmızı kayıt kabul etmemesi (dal koruması) bu kararın dışındadır. Yayını korumak için yeşil kilidi yeterlidir.
+- Kilit, kaydın kendi hat dosyasıyla çalışan hattın sonucuna bakar. Bir kayıt hat dosyasındaki adımları silerse ya da etkisiz bırakırsa o kaydın hattı yeşil biter ve kilit de yeşil der. Bu boşluk şimdilik yalnız disiplindir. Bağımsız kontrol buldu. Hat dosyası değişikliği her zaman ayrı bir iş olarak yapılır. Yayın komutu (kart 0021) yayınlanacak kaydın hat dosyasının ana daldakiyle aynı olduğunu da denetlemelidir. Ana dal koruması da bu boşluğu kapatabilir. Ana dalın kırmızı kayıt kabul etmemesi (dal koruması) bu kararın dışındadır.

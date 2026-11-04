@@ -10,7 +10,7 @@ Bir site tek komutla yayınlanır, sorun çıkarsa tek komutla önceki sürüme 
 
 - `komutlar/` altında yayın komutu. Bir seferde bir site.
 - Sürümü yalnız sitenin kimlik dosyasından okur, başka yerde sürüm yazılmaz.
-- Kontrol hattının son sonucu yeşil değilse çalışmaz.
+- Kontrol hattının son sonucu yeşil değilse çalışmaz (`pnpm hat-sonucu`, karar 0029). Yayınlanacak kaydın hat dosyası ana daldakiyle aynı değilse de çalışmaz; hattı zayıflatan bir kaydın kendi hattı yeşil biter (karar 0029, Sonuçları).
 - Sırayla: veritabanı değişikliklerini uygular, yeni kutuyu açar, sağlık ucunu yoklar, sağlıklıysa trafiği yeniye verir.
 - Sağlık kontrolü geçmezse eski kutu çalışmaya devam eder, komut durur ve sebebi söyler.
 - Geri dönüş: önceki sürüme tek komutla dönülür. Veritabanı değişikliği yedekten dönmeyi gerektiriyorsa komut bunu söyler ve durur.

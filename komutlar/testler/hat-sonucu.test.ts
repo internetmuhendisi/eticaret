@@ -3,7 +3,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { type HatCalismasi, hatDosyasi, hatSonucunuYorumla } from "../hat-sonucu.mts";
+import { githubDeposu, type HatCalismasi, hatDosyasi, hatSonucunuYorumla } from "../hat-sonucu.mts";
 
 const kayit = "a".repeat(40);
 const baskaKayit = "b".repeat(40);
@@ -61,6 +61,14 @@ describe("hat sonucunun yorumu", () => {
       calisma({ run_attempt: 1, conclusion: "success" }),
     ];
     expect(hatSonucunuYorumla(yesildenKirmiziya, kayit).yesil).toBe(false);
+  });
+
+  it("depo adı kaydın GitHub adresinden çıkar", () => {
+    expect(githubDeposu("https://github.com/sahip/depo.git")).toBe("sahip/depo");
+    expect(githubDeposu("https://github.com/sahip/depo")).toBe("sahip/depo");
+    expect(githubDeposu("git@github.com:sahip/depo.git")).toBe("sahip/depo");
+    expect(githubDeposu("https://gitlab.com/sahip/depo.git")).toBeUndefined();
+    expect(githubDeposu("https://github.com/sahip")).toBeUndefined();
   });
 
   it("hattın dosyası yerinde", () => {
