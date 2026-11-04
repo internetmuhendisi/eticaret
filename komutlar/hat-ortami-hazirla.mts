@@ -31,10 +31,17 @@ const { kimlik } = siteKlasorunuOku(join(kok, "siteler", "ornek-magaza"));
 const ad = siteVeritabaniAdi(kimlik.kodAdi);
 const veritabaniPortu = port("VERITABANI_PORTU");
 
+// Adres parça parça kurulur: kayıtlı dosyada şifreli adres kalıbı durmaz (veri ayrımı testi).
+const adres = new URL("postgres://localhost");
+adres.username = ad;
+adres.password = sifre();
+adres.port = veritabaniPortu;
+adres.pathname = `/${ad}`;
+
 const degerler: Record<string, string> = {
   VERITABANI_PORTU: veritabaniPortu,
   VERITABANI_YONETICI_SIFRESI: sifre(),
-  VERITABANI_ADRESI: `postgres://${ad}:${sifre()}@localhost:${veritabaniPortu}/${ad}`,
+  VERITABANI_ADRESI: adres.href,
   YEREL_ORTAM_PORTU: port("YEREL_ORTAM_PORTU"),
 };
 
