@@ -35,6 +35,9 @@
     "veritabani-guncelle": "node --env-file=.env komutlar/veritabani-guncelle.mts",
     "cekirdek-goruntusu": "node komutlar/cekirdek-goruntusu.mts",
     "cekirdek-goruntusu-denetle": "node komutlar/cekirdek-goruntusu-denetle.mts",
+    "yerel-ortam-ac": "node komutlar/yerel-ortam-ac.mts",
+    "yerel-ortam-kapat": "node komutlar/yerel-ortam-kapat.mts",
+    "yerel-ortam-testi": "node komutlar/yerel-ortam-testi.mts",
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {

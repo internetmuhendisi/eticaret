@@ -1,0 +1,15 @@
+# Yerelde tam ortam (kart 0016, karar 0028): veritabanının yanına Caddy eklenir. Site kutuları
+# site listesinden üretilen sunucu/olusan/siteler.yaml dosyasındadır. Bu dosya tek başına
+# kullanılmaz; açmak ve kapatmak: pnpm yerel-ortam-ac, pnpm yerel-ortam-kapat
+services:
+  caddy:
+    image: caddy:2.10.2-alpine
+    # Dışarıya yalnız Caddy açılır, yalnız bu bilgisayardan. Site kutularının portu açılmaz;
+    # istemci adresini Caddy yazar (karar 0024). *.localhost adları IPv6 döngü adresine de
+    # çözülür, bu yüzden iki döngü adresinde de açılır.
+    ports:
+      - "127.0.0.1:${YEREL_ORTAM_PORTU:?.env dosyasında YEREL_ORTAM_PORTU yok}:80"
+      - "[::1]:${YEREL_ORTAM_PORTU}:80"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./olusan/caddy:/etc/caddy/siteler:ro

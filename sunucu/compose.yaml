@@ -1,5 +1,6 @@
-# Yerel ortam (kart 0011). Şimdilik yalnız PostgreSQL; Caddy ve site kutuları kart 0016'da eklenir.
-# Gizli bilgiler kökteki .env dosyasından gelir. Açmak: pnpm veritabani-baslat
+# Yerel ortamın veritabanı (kart 0011). Gizli bilgiler kökteki .env dosyasından gelir.
+# Yalnız veritabanı: pnpm veritabani-baslat. Caddy ve site kutularıyla tam ortam (kart 0016,
+# karar 0028): pnpm yerel-ortam-ac; Caddy yerel-ortam.yaml dosyasındadır.
 name: altyapi-yerel
 
 services:

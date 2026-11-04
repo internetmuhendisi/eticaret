@@ -27,3 +27,6 @@ playwright-report/
 
 # Kayıt dosyaları
 *.log
+
+# Yerel ortamın site listesinden üretilen dosyaları ve geçici deneme siteleri (karar 0028)
+sunucu/olusan/

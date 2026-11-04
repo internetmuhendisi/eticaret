@@ -1,0 +1,13 @@
+# Ön kapı (kart 0016, karar 0013, 0028). Caddy isteği adrese göre sitenin kutusuna gönderir.
+# Her sitenin satırı site listesinden üretilir (sunucu/olusan/caddy/, pnpm yerel-ortam-ac).
+# Yerelde şifreli bağlantı yoktur; sertifika kart 0020'nin işidir.
+{
+	auto_https off
+}
+
+import /etc/caddy/siteler/*.caddy
+
+# Tanınmayan adres hiçbir siteye gitmez.
+:80 {
+	respond 404
+}
