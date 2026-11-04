@@ -38,6 +38,9 @@
     "yerel-ortam-ac": "node komutlar/yerel-ortam-ac.mts",
     "yerel-ortam-kapat": "node komutlar/yerel-ortam-kapat.mts",
     "yerel-ortam-testi": "node komutlar/yerel-ortam-testi.mts",
+    "guvenlik-taramasi": "pnpm audit --prod --audit-level moderate && pnpm audit --audit-level high",
+    "hat-ortami-hazirla": "node komutlar/hat-ortami-hazirla.mts",
+    "hat-sonucu": "node komutlar/hat-sonucu.mts",
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {

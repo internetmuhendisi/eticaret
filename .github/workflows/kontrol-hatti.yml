@@ -1,0 +1,83 @@
+# Yayın öncesi kontrol hattı (kart 0017, karar 0029). GitHub'a her gönderimde, her dalda çalışır.
+# Adımlar sırayla çalışır, ilk kırmızı adım hattı durdurur. Yayın komutu yalnız yeşil hattan
+# geçmiş kayıtla çalışır (pnpm hat-sonucu, kart 0021).
+# Hatta gerçek gizli bilgi yoktur: .env her çalışmada rastgele şifrelerle üretilir.
+name: Kontrol hattı
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Aynı dala yeni gönderim gelince eski çalışma durur; durdurulan çalışma yeşil sayılmaz.
+concurrency:
+  group: kontrol-hatti-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # pnpm'in sürümünü kurulumda pnpm'in kendisi değil bu dosya sabitler (karar 0027).
+  PNPM_CONFIG_PM_ON_FAIL: ignore
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  kontroller:
+    name: Kontroller
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Kodu al
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Node.js (sürümü package.json'dan)
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: package.json
+
+      - name: pnpm (sürümü package.json'dan)
+        run: npm install --global --silent "pnpm@$(node -p 'require("./package.json").packageManager.split("@")[1]')"
+
+      - name: Paketleri kilit dosyasından kur
+        run: pnpm install --frozen-lockfile
+
+      - name: Hat ortamını hazırla (rastgele şifrelerle .env)
+        run: pnpm hat-ortami-hazirla
+
+      - name: Tür kontrolü
+        run: pnpm tur-kontrolu
+
+      - name: Biçim ve denetim
+        run: pnpm denetim
+
+      - name: Denetimin kendi testi
+        run: pnpm denetim-kendi-testi
+
+      - name: Site klasörlerinin doğrulaması
+        run: pnpm site-dogrula
+
+      - name: Dış paketlerin güvenlik taraması
+        run: pnpm guvenlik-taramasi
+
+      - name: Veritabanını aç
+        run: |
+          pnpm veritabani-baslat
+          pnpm site-veritabani-ac siteler/ornek-magaza
+          pnpm veritabani-guncelle siteler/ornek-magaza
+
+      - name: Birim ve entegrasyon testleri (veri ayrımı dahil)
+        run: pnpm birim-testleri
+
+      - name: Tarayıcıyı kur
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Tarayıcı testleri
+        run: pnpm tarayici-testleri
+
+      - name: Çekirdeğin Docker görüntüsü ve denetimi
+        run: pnpm cekirdek-goruntusu
+
+      - name: Yerel ortam denemesi
+        run: pnpm yerel-ortam-testi
