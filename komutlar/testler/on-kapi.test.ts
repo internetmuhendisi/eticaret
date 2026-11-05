@@ -11,9 +11,12 @@ import {
   denemeSatiri,
   dizineKapali,
   kalanGun,
+  kodAdiGecerli,
   kurmaBetigi,
+  kutuKisitHatalari,
   onKapiTanimi,
   robotlaraKapali,
+  sertifikaReddedildi,
   sonIstemciAdresi,
   yoklamaAdi,
   yoklamaAdresi,
@@ -111,6 +114,11 @@ describe("sunucudaki Caddy ayarı", () => {
     expect(ayar).toMatch(/protocols h1 h2\n/);
   });
 
+  it("tanınmayan ad şifresiz de şifreli de 404 alır", () => {
+    expect(ayar).toMatch(/http:\/\/ \{\n\trespond 404\n\}/);
+    expect(ayar).toMatch(/https:\/\/ \{\n\trespond 404\n\}/);
+  });
+
   it("deneme kuralı dizine almayı ve robots.txt'yi kapatır", () => {
     expect(ayar).toContain('X-Robots-Tag "noindex, nofollow"');
     expect(ayar).toContain("Disallow: /");
@@ -170,5 +178,91 @@ describe("denetimin karar kuralları", () => {
     expect(ayniAdres("2a01::1", "2a01::2")).toBe(false);
     expect(ayniAdres(undefined, "1.2.3.4")).toBe(false);
     expect(ayniAdres("172.17.0.1", "1.2.3.4")).toBe(false);
+  });
+});
+
+describe("kutuların sunucudaki gerçek ayarı", () => {
+  const { caddy } = onKapiTanimi().services;
+  const satir = (degisiklik: Partial<Record<number, string>> = {}) => {
+    const alanlar = [
+      "true",
+      caddy.user,
+      "true",
+      '["CAP_NET_BIND_SERVICE"]',
+      '["ALL"]',
+      '["no-new-privileges:true"]',
+    ];
+    for (const [sira, deger] of Object.entries(degisiklik)) alanlar[Number(sira)] = deger ?? "";
+    return alanlar.join("|");
+  };
+
+  it("tanımla aynı kutu geçer (Docker'ın CAP_ önekiyle de)", () => {
+    expect(kutuKisitHatalari(satir(), caddy)).toEqual([]);
+    expect(kutuKisitHatalari(satir({ 3: '["NET_BIND_SERVICE"]' }), caddy)).toEqual([]);
+  });
+
+  it.each([
+    ["kutu durmuş", { 0: "false" }],
+    ["kök kullanıcı", { 1: "" }],
+    ["kök kullanıcı (0:0)", { 1: "0:0" }],
+    ["başka kullanıcı", { 1: "10081:10081" }],
+    ["yazılabilir dosya sistemi", { 2: "false" }],
+    ["fazla yetki", { 3: '["CAP_NET_BIND_SERVICE","CAP_SYS_ADMIN"]' }],
+    ["yetkiler kaldırılmamış", { 4: "null" }],
+    ["yetki yükseltme açık", { 5: "null" }],
+    ["bozuk çıktı", { 5: "[" }],
+  ])("%s kırmızıdır", (_ad, degisiklik) => {
+    expect(kutuKisitHatalari(satir(degisiklik), caddy)).not.toEqual([]);
+  });
+
+  it("okunamayan çıktı kırmızıdır", () => {
+    expect(kutuKisitHatalari("", caddy)).not.toEqual([]);
+    expect(kutuKisitHatalari(`${satir()}|fazla`, caddy)).not.toEqual([]);
+  });
+});
+
+describe("tanınmayan adrese sertifika", () => {
+  const hata = (code: string, message: string) => Object.assign(new Error(message), { code });
+
+  it("yalnız Caddy'nin TLS uyarısıyla kesmesi yeşildir", () => {
+    expect(
+      sertifikaReddedildi(
+        hata("EPROTO", "SSL routines:ssl3_read_bytes:tlsv1 alert internal error"),
+      ),
+    ).toBe(true);
+  });
+
+  it.each([
+    hata("ERR_TLS_CERT_ALTNAME_INVALID", "Hostname/IP does not match certificate's altnames"),
+    hata("ECONNREFUSED", "connect ECONNREFUSED"),
+    hata("ECONNRESET", "socket hang up"),
+    new Error("zaman aşımı"),
+    { durum: 200 },
+  ])("başka her sonuç kırmızıdır: %o", (sonuc) => {
+    expect(sertifikaReddedildi(sonuc)).toBe(false);
+  });
+});
+
+describe("kurma betiğinin girdileri", () => {
+  it.each(['a"; rm -rf / #', "../disari", "$(id)", "Buyuk", "a b"])(
+    "site satırı adı kod adı değilse reddedilir: %j",
+    (ad) => {
+      expect(() => kurmaBetigi({ [ad]: "x\n" })).toThrow();
+    },
+  );
+
+  it("kod adı kuralı kimlik şemasından okunur", () => {
+    expect(kodAdiGecerli("ornek-magaza")).toBe(true);
+    expect(kodAdiGecerli("a".repeat(40))).toBe(true);
+    expect(kodAdiGecerli("a".repeat(41))).toBe(false);
+    expect(kodAdiGecerli(yoklamaAdi)).toBe(false);
+  });
+
+  it("ayar dosyaları kutulara klasör olarak bağlanır (yenisi açık kutuya ulaşsın)", () => {
+    for (const servis of Object.values(onKapiTanimi().services)) {
+      for (const baglama of servis.volumes) {
+        expect(baglama.split(":")[0]).not.toMatch(/Caddyfile$/);
+      }
+    }
   });
 });

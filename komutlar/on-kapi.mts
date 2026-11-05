@@ -4,10 +4,15 @@
 // - Altyapının alan adı ve deneme adreslerinin biçimi yalnız burada tanımlıdır.
 // - Caddy sunucuda kök olmayan kendi kullanıcısıyla, yetkisiz ve salt okunur kutuda çalışır.
 //   Sertifikaları sunucudaki /srv/altyapi/on-kapi/veri klasöründe tutar, yeniden kurulumda kaybolmaz.
-// - Site kutuları ön kapıya "altyapi" ağından bağlanır (yayın komutu, kart 0021).
+// - Ortak "altyapi" ağında yalnız ön kapı ve yoklama kutusu durur. Her site kendi ağındadır,
+//   ön kapı her sitenin ağına ayrıca bağlanır; siteler birbirine ulaşamaz (kart 0021).
+// - Ayar dosyaları kutulara klasör olarak bağlanır: tek dosya bağlansaydı, yerine konan yeni
+//   dosyayı açık kutu görmezdi.
 
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { kimlikSemasi } from "../cekirdek/ayar-semasi/kimlik.ts";
 import { kok, sshKomutu } from "./sunucu.mts";
 
 // --- Adresler ---
@@ -15,13 +20,12 @@ import { kok, sshKomutu } from "./sunucu.mts";
 export const altyapiAlanAdi = "eticaretmagazasi.com";
 export const denemeAlani = `deneme.${altyapiAlanAdi}`;
 
-// Kod adı kalıbı kimlik şemasıyla aynıdır (cekirdek/ayar-semasi/kimlik.ts).
-const kodAdiKalibi = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+// Kod adının kuralı yalnız kimlik şemasındadır (cekirdek/ayar-semasi/kimlik.ts).
+export const kodAdiGecerli = (kodAdi: string): boolean =>
+  kimlikSemasi.shape.kodAdi.safeParse(kodAdi).success;
 
 export const denemeAdresi = (kodAdi: string): string => {
-  if (!kodAdiKalibi.test(kodAdi) || kodAdi.length > 40) {
-    throw new Error(`Geçersiz kod adı: ${kodAdi}`);
-  }
+  if (!kodAdiGecerli(kodAdi)) throw new Error(`Geçersiz kod adı: ${kodAdi}`);
   return `${kodAdi}.${denemeAlani}`;
 };
 
@@ -50,8 +54,10 @@ const yoklamaKullanicisi = 10081;
 const yoklamaHedefi = "on-kapi-yoklama:3000";
 
 const kaynakKlasoru = join(kok, "sunucu", "on-kapi");
+const kaynak = (dosya: string): string => readFileSync(join(kaynakKlasoru, dosya), "utf8");
+const ozet = (metin: string): string => createHash("sha256").update(metin).digest("hex");
 
-// Bir deneme adresinin Caddy satırı. Hedef, sitenin kutusunun "altyapi" ağındaki adıdır.
+// Bir deneme adresinin Caddy satırı. Hedef, sitenin kutusunun ağındaki adıdır.
 export const denemeSatiri = (adres: string, hedef: string): string => {
   if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(adres) || !adres.endsWith(`.${denemeAlani}`)) {
     throw new Error(`Deneme adresi değil: ${adres}`);
@@ -81,8 +87,7 @@ export const onKapiTanimi = () => ({
       ...kisitli,
       tmpfs: ["/tmp"],
       volumes: [
-        `${onKapiKlasoru}/Caddyfile:/etc/caddy/Caddyfile:ro`,
-        `${onKapiKlasoru}/siteler:/etc/caddy/siteler:ro`,
+        `${onKapiKlasoru}/caddy:/etc/caddy:ro`,
         `${onKapiKlasoru}/veri:/data`,
         `${onKapiKlasoru}/ayar:/config`,
       ],
@@ -96,7 +101,10 @@ export const onKapiTanimi = () => ({
       environment: { XDG_DATA_HOME: "/tmp/veri", XDG_CONFIG_HOME: "/tmp/ayar" },
       ...kisitli,
       tmpfs: ["/tmp"],
-      volumes: [`${onKapiKlasoru}/yoklama.Caddyfile:/etc/caddy/Caddyfile:ro`],
+      volumes: [`${onKapiKlasoru}/yoklama:/etc/caddy:ro`],
+      // Yoklama kutusu ayarı yeniden okuyamaz (yönetim kapısı kapalı); ayar değişince özet
+      // değişir ve kutu yeniden kurulur.
+      labels: { "altyapi.ayar-ozeti": ozet(kaynak("yoklama.Caddyfile")) },
       networks: [agAdi],
     },
   },
@@ -113,14 +121,18 @@ export const onKapiTanimi = () => ({
 });
 
 // Sunucuda çalışan betik. Dosyalar girdiden yazılır; komut tekrar çalıştırılabilir.
-// Caddy açıksa ayarı yeniden okur (bağlantılar kesilmez).
+// Caddy zaten açıksa ayarı yeniden okur (bağlantılar kesilmez).
+// Site satırlarının adı sitenin kod adıdır (ya da yoklama adı); dosya adı ve betik bundan kurulur.
 export const kurmaBetigi = (siteSatirlari: Record<string, string>): string => {
+  for (const ad of Object.keys(siteSatirlari)) {
+    if (ad !== yoklamaAdi && !kodAdiGecerli(ad)) throw new Error(`Geçersiz site satırı adı: ${ad}`);
+  }
   const dosyalar: Record<string, string> = {
-    Caddyfile: readFileSync(join(kaynakKlasoru, "Caddyfile"), "utf8"),
-    "yoklama.Caddyfile": readFileSync(join(kaynakKlasoru, "yoklama.Caddyfile"), "utf8"),
+    "caddy/Caddyfile": kaynak("Caddyfile"),
+    "yoklama/Caddyfile": kaynak("yoklama.Caddyfile"),
     "compose.json": `${JSON.stringify(onKapiTanimi(), null, 2)}\n`,
     ...Object.fromEntries(
-      Object.entries(siteSatirlari).map(([ad, satir]) => [`siteler/${ad}.caddy`, satir]),
+      Object.entries(siteSatirlari).map(([ad, satir]) => [`caddy/siteler/${ad}.caddy`, satir]),
     ),
   };
   const yazma = Object.entries(dosyalar).map(([yol, icerik]) => {
@@ -131,16 +143,22 @@ export const kurmaBetigi = (siteSatirlari: Record<string, string>): string => {
   const istenenler = Object.keys(siteSatirlari).map((ad) => `${ad}.caddy`);
   return `set -eu
 k=${onKapiKlasoru}
-sudo install -d -m 0755 -o root -g root /srv/altyapi "$k" "$k/siteler"
+sudo install -d -m 0755 -o root -g root /srv/altyapi "$k" "$k/caddy" "$k/caddy/siteler" "$k/yoklama"
 sudo install -d -m 0700 -o ${caddyKullanicisi} -g ${caddyKullanicisi} "$k/veri" "$k/ayar"
 ${yazma.join("\n")}
 # Listede olmayan site satırları silinir: satırların tek kaynağı bu komuttur.
-for f in "$k"/siteler/*.caddy; do
+for f in "$k"/caddy/siteler/*.caddy; do
   [ -e "$f" ] || continue
   case " ${istenenler.join(" ")} " in *" $(basename "$f") "*) ;; *) sudo rm -f "$f" ;; esac
 done
+acilis() { docker inspect -f '{{.State.StartedAt}}' on-kapi 2>/dev/null || true; }
+once=$(acilis)
 docker compose -f "$k/compose.json" up -d --remove-orphans --quiet-pull </dev/null
-docker exec on-kapi caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile --force
+# Kutu bu çalışmada yeni açıldıysa ayarı zaten okudu; yeniden okutmak ilk sertifika
+# denemesini yarıda keser (ölçüldü). Kutu açık kaldıysa değişen site satırları okutulur.
+if [ -n "$once" ] && [ "$once" = "$(acilis)" ]; then
+  docker exec on-kapi caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile --force
+fi
 echo on-kapi=hazir
 `;
 };
@@ -207,3 +225,53 @@ export const ayniAdres = (a: string | undefined, b: string | undefined): boolean
   };
   return ac(a) === ac(b);
 };
+
+// Sunucudaki kutunun gerçek ayarı (docker inspect, kutuOlcumBicimi) kutu tanımıyla aynı olmalı.
+// Docker yetki adlarını "CAP_" önekiyle de yazabilir; karşılaştırma öneksiz yapılır.
+export const kutuOlcumBicimi =
+  "{{.State.Running}}|{{.Config.User}}|{{.HostConfig.ReadonlyRootfs}}|{{json .HostConfig.CapAdd}}|{{json .HostConfig.CapDrop}}|{{json .HostConfig.SecurityOpt}}";
+
+type KutuTanimi = {
+  user: string;
+  read_only: boolean;
+  cap_add: string[];
+  cap_drop: string[];
+  security_opt: string[];
+};
+
+export const kutuKisitHatalari = (satir: string, tanim: KutuTanimi): string[] => {
+  const [calisiyor, kullanici, saltOkunur, ekle, kaldir, guvenlik, ...fazla] = satir.split("|");
+  if (fazla.length > 0 || guvenlik === undefined) return [`okunamadı: ${satir}`];
+  const liste = (json: string | undefined): string[] | undefined => {
+    try {
+      const deger = JSON.parse(json ?? "") as unknown;
+      if (deger === null) return [];
+      return Array.isArray(deger) ? deger.map(String) : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+  const yetki = (adlar: string[] | undefined) =>
+    adlar
+      ?.map((a) => a.toUpperCase().replace(/^CAP_/, ""))
+      .sort()
+      .join(",");
+  const hatalar: string[] = [];
+  if (calisiyor !== "true") hatalar.push("çalışmıyor");
+  if (kullanici !== tanim.user)
+    hatalar.push(`kullanıcı ${kullanici || "kök"}, beklenen ${tanim.user}`);
+  if (saltOkunur !== String(tanim.read_only)) hatalar.push("dosya sistemi salt okunur değil");
+  if (yetki(liste(ekle)) !== yetki(tanim.cap_add)) hatalar.push(`eklenen yetkiler ${ekle}`);
+  if (yetki(liste(kaldir)) !== yetki(tanim.cap_drop)) hatalar.push(`kaldırılan yetkiler ${kaldir}`);
+  if ((liste(guvenlik) ?? []).sort().join(",") !== [...tanim.security_opt].sort().join(",")) {
+    hatalar.push(`güvenlik seçenekleri ${guvenlik}`);
+  }
+  return hatalar;
+};
+
+// Tanınmayan adrese sertifika verilmediğinde Caddy bağlantıyı TLS uyarısıyla keser (ölçüldü:
+// EPROTO, "alert internal error"). Zaman aşımı, ret ya da ad uyuşmazlığı bu sayılmaz.
+export const sertifikaReddedildi = (hata: unknown): boolean =>
+  hata instanceof Error &&
+  (hata as NodeJS.ErrnoException).code === "EPROTO" &&
+  /alert/i.test(hata.message);

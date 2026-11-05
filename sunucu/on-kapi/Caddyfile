@@ -25,7 +25,12 @@ Disallow: /
 
 import /etc/caddy/siteler/*.caddy
 
-# Tanınmayan adres hiçbir siteye gitmez. Şifreli bağlantıda tanınmayan adrese sertifika verilmez.
+# Tanınmayan adres hiçbir siteye gitmez. Şifreli bağlantıda tanınmayan adrese sertifika verilmez;
+# bir sitenin sertifikasıyla bağlanıp istekte başka bir ad yazan da 404 alır.
 http:// {
+	respond 404
+}
+
+https:// {
 	respond 404
 }

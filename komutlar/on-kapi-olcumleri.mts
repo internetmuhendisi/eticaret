@@ -7,8 +7,10 @@
 // - http:// isteği aynı adresin https:// hâline kalıcı olarak yönleniyor.
 // - Deneme adresi ve robots.txt arama motorlarına kapalı.
 // - Kutuya ulaşan istemci adresi ziyaretçinin gerçek adresi (karar 0024).
-// - Tanınmayan adres şifresiz 404 alıyor, şifreli bağlantıda sertifika almıyor.
-// - Caddy kutusu kök olmayan kullanıcıyla, salt okunur ve yalnız düşük kapı yetkisiyle çalışıyor.
+// - Tanınmayan adres şifresiz 404 alıyor, şifreli bağlantıda sertifika almıyor; bir sitenin
+//   sertifikasıyla bağlanıp tanınmayan ad isteyen de 404 alıyor.
+// - Ön kapının kutuları sunucuda tanımdaki gibi çalışıyor: kök olmayan kullanıcı, salt okunur,
+//   yalnız düşük kapı yetkisi, yetki yükseltme kapalı.
 
 import { randomBytes } from "node:crypto";
 import { Resolver } from "node:dns/promises";
@@ -17,11 +19,14 @@ import { request as httpsIstegi } from "node:https";
 import type { TLSSocket } from "node:tls";
 import {
   ayniAdres,
-  caddyKullanicisi,
   denemeAlani,
   dizineKapali,
   kalanGun,
+  kutuKisitHatalari,
+  kutuOlcumBicimi,
+  onKapiTanimi,
   robotlaraKapali,
+  sertifikaReddedildi,
   sertifikaSiniri,
   sonIstemciAdresi,
   yoklamaAdresi,
@@ -38,14 +43,21 @@ type Yanit = {
   sertifikaBitisi?: string;
 };
 
-// Ad çözümlemesine bağlı kalmadan doğrudan sunucunun adresine bağlanır; Host ve SNI verilen addır.
-const iste = (sifreli: boolean, ip: string, ad: string, yol: string): Promise<Yanit> =>
+// Ad çözümlemesine bağlı kalmadan doğrudan sunucunun adresine bağlanır; SNI verilen addır.
+// İstekte yazılan ad (Host) verilmezse aynıdır.
+const iste = (
+  sifreli: boolean,
+  ip: string,
+  ad: string,
+  yol: string,
+  istenenAd = ad,
+): Promise<Yanit> =>
   new Promise((coz, reddet) => {
     const secenekler = {
       host: ip,
       port: sifreli ? 443 : 80,
       path: yol,
-      headers: { host: ad },
+      headers: { host: istenenAd },
       servername: ad,
       timeout: 10_000,
     };
@@ -164,28 +176,35 @@ export const onKapiyiOlc = async (kayit: SunucuKaydi, olcum: Olcum): Promise<voi
     );
     const bosSifreli = await dene(() => iste(true, ip, tanimsiz, "/"));
     olcum(
-      bosSifreli instanceof Error,
+      sertifikaReddedildi(bosSifreli),
       `${tur}: tanınmayan adrese sertifika verilmiyor`,
-      bosSifreli instanceof Error ? "" : `${bosSifreli.durum} döndü`,
+      bosSifreli instanceof Error
+        ? sertifikaReddedildi(bosSifreli)
+          ? ""
+          : bosSifreli.message
+        : `${bosSifreli.durum} döndü`,
+    );
+    // Yoklamanın sertifikasıyla bağlanıp istekte tanınmayan ad yazılırsa da hiçbir siteye gidilmez.
+    const baskaAd = await dene(() => iste(true, ip, yoklamaAdresi, "/", tanimsiz));
+    olcum(
+      !(baskaAd instanceof Error) && baskaAd.durum === 404,
+      `${tur}: bir sitenin sertifikasıyla tanınmayan ad istenince 404 dönüyor`,
+      baskaAd instanceof Error ? baskaAd.message : String(baskaAd.durum),
     );
   }
 
-  const kutu = sshKomutu(
-    kayit.ipv4,
-    "docker inspect on-kapi on-kapi-yoklama --format '{{.State.Running}} {{.Config.User}} {{.HostConfig.ReadonlyRootfs}} {{json .HostConfig.CapAdd}} {{json .HostConfig.CapDrop}}'",
-  );
-  const satirlar = kutu.stdout.trim().split("\n");
-  const beklenen = (kullanici: number) =>
-    `true ${kullanici}:${kullanici} true ["NET_BIND_SERVICE"] ["ALL"]`;
-  olcum(
-    kutu.status === 0 && satirlar[0] === beklenen(caddyKullanicisi) && satirlar.length === 2,
-    "ön kapı kök olmayan kullanıcıyla, salt okunur ve tek yetkiyle çalışıyor",
-    kutu.status === 0 ? satirlar.join(" | ") : kutu.stderr.trim(),
-  );
-  olcum(
-    kutu.status === 0 &&
-      /^true \d+:\d+ true \["NET_BIND_SERVICE"\] \["ALL"\]$/.test(satirlar[1] ?? ""),
-    "yoklama kutusu açık ve aynı kısıtlarla çalışıyor",
-    satirlar[1] ?? "",
-  );
+  // Kutuların sunucudaki gerçek ayarı, kutu tanımıyla karşılaştırılır.
+  const tanim = onKapiTanimi();
+  for (const [ad, servis] of Object.entries(tanim.services)) {
+    const kutu = sshKomutu(
+      kayit.ipv4,
+      `docker inspect ${servis.container_name} --format '${kutuOlcumBicimi}'`,
+    );
+    const hatalar = kutu.status === 0 ? kutuKisitHatalari(kutu.stdout.trim(), servis) : [];
+    olcum(
+      kutu.status === 0 && hatalar.length === 0,
+      `ön kapının ${ad} kutusu çalışıyor: kök olmayan kullanıcı, salt okunur, tek yetki, yetki yükseltme kapalı`,
+      kutu.status === 0 ? hatalar.join("; ") : kutu.stderr.trim(),
+    );
+  }
 };

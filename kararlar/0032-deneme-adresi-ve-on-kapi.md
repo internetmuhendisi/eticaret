@@ -9,9 +9,10 @@
 - **Alan adı:** Altyapının alan adı `eticaretmagazasi.com`'dur. Kullanıcı bu adı Cloudflare'den aldı. Ad kodda yalnız `komutlar/on-kapi.mts` dosyasında tanımlıdır.
 - **Deneme adresinin biçimi:** `<kod-adi>.deneme.eticaretmagazasi.com`, örneğin `ornek-magaza.deneme.eticaretmagazasi.com`. Biçimi kullanıcı seçti. Adres kod adından `denemeAdresi()` ile üretilir.
 - **Alan adı kaydı:** Cloudflare'de iki joker kayıt vardır: `*.deneme` için A (IPv4) ve AAAA (IPv6). İkisi de sunucuyu gösterir ve ikisinde de Cloudflare vekili kapalıdır ("yalnız DNS"). Yeni bir site için alan adına bir daha dokunulmaz. Kayıtları `pnpm alan-adi` kurar: komut önce ne değişeceğini söyler, `--onayli` ile değiştirir. Yalnız bu iki kayda dokunur, aynı adda başka türde bir kayıt bulursa durur. Cloudflare anahtarı yalnız bu alan adının DNS kayıtlarını düzenleyebilir ve `.env` dosyasında `CLOUDFLARE_ANAHTARI` adıyla durur.
-- **Ön kapı:** Sunucuda önde Caddy çalışır (`sunucu/on-kapi/Caddyfile`). Caddy her adresin sertifikasını Let's Encrypt'ten adres adres alır ve kendisi yeniler. Sertifikalar sunucuda `/srv/altyapi/on-kapi/veri` klasöründe durur. Şifresiz istek 308 koduyla aynı adresin şifreli hâline yönlenir. Tanınmayan adres şifresiz bağlantıda 404 alır, şifreli bağlantıda sertifika almaz. HTTP/3 kapalıdır, çünkü duvarlar yalnız TCP kapılarını açar.
+- **Ön kapı:** Sunucuda önde Caddy çalışır (`sunucu/on-kapi/Caddyfile`). Caddy her adresin sertifikasını Let's Encrypt'ten adres adres alır ve kendisi yeniler. Sertifikalar sunucuda `/srv/altyapi/on-kapi/veri` klasöründe durur. Şifresiz istek 308 koduyla aynı adresin şifreli hâline yönlenir. Tanınmayan adres şifresiz bağlantıda 404 alır, şifreli bağlantıda sertifika almaz. Bir sitenin sertifikasıyla bağlanıp istekte tanınmayan bir ad yazan da 404 alır. HTTP/3 kapalıdır, çünkü duvarlar yalnız TCP kapılarını açar.
 - **Arama motorları:** Bütün deneme adresleri ortak `deneme` kuralını alır. Her cevaba `X-Robots-Tag: noindex, nofollow` başlığı eklenir. Kutu başka bir değer gönderse de bu başlık kalır. `robots.txt` bütün siteyi kapatır. Bu kural ön kapıdadır, uygulamaya bağlı değildir.
-- **Kutu:** Caddy kök olmayan kendi kullanıcısıyla çalışır (10080). Kutunun dosya sistemi salt okunurdur, yetki yükseltme kapalıdır. Kutuda düşük kapıları açma yetkisinden başka yetki yoktur. Dışarıya yalnız TCP 80 ve 443 açılır. Site kutuları ön kapıya `altyapi` ağından bağlanır, ağda IPv6 açıktır.
+- **Kutu:** Caddy kök olmayan kendi kullanıcısıyla çalışır (10080). Kutunun dosya sistemi salt okunurdur, yetki yükseltme kapalıdır. Kutuda düşük kapıları açma yetkisinden başka yetki yoktur. Dışarıya yalnız TCP 80 ve 443 açılır. Ayar dosyaları kutuya klasör olarak bağlanır. Tek dosya bağlansaydı, yerine konan yeni dosyayı açık kutu görmezdi.
+- **Ağlar:** Ortak `altyapi` ağında yalnız ön kapı ve yoklama kutusu durur, ağda IPv6 açıktır. Her site kutusu kendi ağındadır, ön kapı her sitenin ağına ayrıca bağlanır. Böylece bir site kutusu, ön kapıdan ve istek sınırından geçmeden başka bir sitenin kutusuna ulaşamaz (0024, değişmez kural 2). Site ağlarını yayın komutu kurar (kart 0021).
 - **Yoklama kutusu:** Ön kapının arkasında, bir site kutusunun yerinde kalıcı küçük bir kutu durur. Adresi `kapi--yoklama.deneme.eticaretmagazasi.com`'dur. Kod adlarında iki tire yan yana gelemez, bu yüzden bu adres hiçbir siteyle çakışmaz. Sunucu denetimi ön kapıyı bu adresten ölçer.
 - **Kurulum ve denetim:** `pnpm sunucu-kur --onayli` son adımda ön kapıyı kurar ya da ayarını yeniler. Komut tekrar çalıştırılabilir. Listede olmayan site satırını siler. `pnpm sunucu-denetle` ölçümlerinin hepsini dışarıdan, IPv4 ve IPv6 üzerinden ayrı ayrı yapar:
   - adresler herkese açık ad sunucularında sunucuya çözülüyor,
@@ -20,7 +21,7 @@
   - adres arama motorlarına kapalı,
   - kutu ziyaretçinin gerçek adresini görüyor,
   - tanınmayan adres hiçbir yere gitmiyor,
-  - kutular kısıtlı çalışıyor.
+  - kutular sunucuda tanımdaki kısıtlarla çalışıyor; beklenen değer tanımın kendisinden okunur.
 
 ## Neden
 
@@ -40,12 +41,13 @@
 - Cloudflare vekili ve Cloudflare sertifikası: Seçilmedi. Gerekçesi yukarıda (0009).
 - Kayıtları kullanıcının elle eklemesi: Kullanıcı anahtar vermeyi seçti. Böylece kayıtlar komutla kurulur ve denetlenir.
 - Yoklama yerine Örnek Mağaza'yı ölçmek: Seçilmedi. Sitenin sunucuda yayını kart 0023'ün işidir. Ön kapının ölçümü hiçbir sitenin durumuna bağlı kalmamalıdır.
-- Ayrı bir yoklama alan adı (`yoklama.eticaretmagazasi.com`): Seçilmedi. Bir kayıt daha gerekirdi, deneme kuralını da ölçmezdi.
+- Ayrı bir yoklama alan adı (`yoklama.eticaretmagazasi.com`): Seçilmedi. Alan adına bir kayıt daha gerekirdi.
+- Bütün site kutularının ortak `altyapi` ağında durması: Seçilmedi. Kutular birbirine ön kapıdan geçmeden ulaşırdı.
 
 ## Sonuçları
 
 - Let's Encrypt'in sınırları geçerlidir: alan adı başına haftada 50 yeni sertifika. Bu sınır 5–30 mağaza için yeterlidir. Deneme adresi DNS'te çözülmeden Caddy'ye eklenirse sertifika alınamaz, Caddy giderek seyrekleşen aralıklarla yeniden dener.
-- Joker kayıt yüzünden `*.deneme` altındaki her ad sunucuya çözülür. Tanınmayan ad şifresiz bağlantıda 404 alır, şifreli bağlantıda sertifika almaz.
+- Joker kayıt yüzünden `*.deneme` altındaki her ad sunucuya çözülür. Tanınmayan adın sonucu yukarıdaki "Ön kapı" maddesindedir.
 - Cloudflare anahtarı `.env`'dedir ve yalnız alan adı komutunu çalıştıran bilgisayarda kullanılır. Sunucuya ve kontrol hattına gitmez. Sunucu denetimi anahtar istemez, kayıtları herkese açık ad sunucularından okur.
 - Kurma komutu, listesinde olmayan site satırlarını siler. Bugün listede yalnız yoklama kutusu var. Yayın komutu (kart 0021) sitelerin satırlarını aynı listeden (`kurmaBetigi`) üretmelidir. Yoksa sonraki bir `pnpm sunucu-kur` sitelerin satırlarını siler.
 - Ön kapının yeniden başlama kuralı burada tanımlanmadı. Sunucu yeniden başlayınca ön kapının da açılması kart 0038'in işidir.
