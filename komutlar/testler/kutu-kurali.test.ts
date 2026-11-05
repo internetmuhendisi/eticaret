@@ -26,8 +26,7 @@ const composeAyari = (dosyalar: string[]) => {
     {
       encoding: "utf8",
       env: {
-        PATH: process.env["PATH"],
-        HOME: process.env["HOME"],
+        ...process.env,
         VERITABANI_YONETICI_SIFRESI: "uydurma",
         VERITABANI_PORTU: "5432",
         YEREL_ORTAM_PORTU: "8080",
