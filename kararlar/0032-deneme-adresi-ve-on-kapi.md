@@ -50,6 +50,7 @@
 - Joker kayıt yüzünden `*.deneme` altındaki her ad sunucuya çözülür. Tanınmayan adın sonucu yukarıdaki "Ön kapı" maddesindedir.
 - Cloudflare anahtarı `.env`'dedir ve yalnız alan adı komutunu çalıştıran bilgisayarda kullanılır. Sunucuya ve kontrol hattına gitmez. Sunucu denetimi anahtar istemez, kayıtları herkese açık ad sunucularından okur.
 - Kurma komutu, listesinde olmayan site satırlarını siler. Bugün listede yalnız yoklama kutusu var. Yayın komutu (kart 0021) sitelerin satırlarını aynı listeden (`kurmaBetigi`) üretmelidir. Yoksa sonraki bir `pnpm sunucu-kur` sitelerin satırlarını siler.
+- Doğrulamadan sonraki bir adım düşerse diskteki ayar ile çalışan ayar ayrışabilir. Örneğin Caddy ayarı çalışma anında reddeder ya da kutu açılamaz. Yeni dosyalar yerine konmuş olur, çalışan Caddy eski ayarla devam eder, sonraki açılışta yeni ayarla açılır. Komut bu durumda kırmızı biter, yani gözden kaçmaz. Bu bilerek kabul edildi.
 - Ön kapının yeniden başlama kuralı burada tanımlanmadı. Sunucu yeniden başlayınca ön kapının da açılması kart 0038'in işidir.
 - Güvenlik başlıkları (HSTS gibi) bu kararın dışındadır. Güvenlik kontrollerinde ele alınır.
 - Mağazaların kendi alan adları teslimin işidir.

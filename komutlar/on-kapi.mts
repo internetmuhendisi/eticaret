@@ -146,7 +146,7 @@ export const kurmaBetigi = (siteSatirlari: Record<string, string>): string => {
   const istenenler = Object.keys(siteSatirlari).map((ad) => `${ad}.caddy`);
   // Doğrulama kutusu ön kapının kısıtlarıyla ve ağsız açılır.
   const dogrula = (klasor: string) =>
-    `docker run --rm --network none --user ${caddyKullanicisi}:${caddyKullanicisi} --cap-drop ALL --cap-add NET_BIND_SERVICE --security-opt no-new-privileges:true --read-only --tmpfs /tmp -e XDG_DATA_HOME=/tmp/veri -e XDG_CONFIG_HOME=/tmp/ayar -v "$t/${klasor}:/etc/caddy:ro" ${caddyGoruntusu} caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>"$t/dogrulama" || { echo "HATA ${klasor} ayarı geçersiz:" >&2; tail -3 "$t/dogrulama" >&2; exit 1; }`;
+    `docker run --rm --network none --user ${caddyKullanicisi}:${caddyKullanicisi} --cap-drop ALL --cap-add NET_BIND_SERVICE --security-opt no-new-privileges:true --read-only --tmpfs /tmp -e XDG_DATA_HOME=/tmp/veri -e XDG_CONFIG_HOME=/tmp/ayar -v "$t/${klasor}:/etc/caddy:ro" ${caddyGoruntusu} caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>"$t/dogrulama" || { echo "HATA ${klasor} ayarı doğrulanamadı (ayar geçersiz ya da Caddy görüntüsü yok):" >&2; tail -3 "$t/dogrulama" >&2; exit 1; }`;
   return `set -eu
 k=${onKapiKlasoru}
 sudo install -d -m 0755 -o root -g root /srv/altyapi "$k" "$k/caddy" "$k/caddy/siteler" "$k/yoklama"

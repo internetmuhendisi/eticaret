@@ -1,5 +1,6 @@
 // Ön kapının tanımı ve denetiminin karar kuralları (kart 0020). Her kuralın bozuk bir örneği
 // yakaladığı gösterilir.
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -92,6 +93,23 @@ describe("kutu tanımı", () => {
   it("Caddy görüntüsü yerel ortamdakiyle aynıdır", () => {
     const yerel = readFileSync(join(kok, "sunucu", "yerel-ortam.yaml"), "utf8");
     expect(yerel).toContain(`image: ${caddyGoruntusu}`);
+  });
+
+  it("üretilen kurma betiği kabuğun sözdizimi denetiminden geçer", () => {
+    const betik = kurmaBetigi({
+      [yoklamaAdi]: denemeSatiri(yoklamaAdresi, "on-kapi-yoklama:3000"),
+    });
+    const sonuc = spawnSync("bash", ["-n"], { input: betik, encoding: "utf8" });
+    expect(sonuc.stderr).toBe("");
+    expect(sonuc.status).toBe(0);
+  });
+
+  it("sözdizimi denetimi bozuk betiği yakalar", () => {
+    const sonuc = spawnSync("bash", ["-n"], {
+      input: 'if [ x ]; then\necho "kapanmadı\n',
+      encoding: "utf8",
+    });
+    expect(sonuc.status).not.toBe(0);
   });
 
   it("kurma betiği önce doğrular, sonra yerine koyar", () => {
