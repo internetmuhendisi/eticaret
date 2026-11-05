@@ -1,9 +1,10 @@
 // Ön kapının tanımı ve denetiminin karar kuralları (kart 0020). Her kuralın bozuk bir örneği
 // yakaladığı gösterilir.
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { siteKlasorunuOku } from "../../cekirdek/ayar-semasi/site-klasoru.ts";
 import {
   alanAdiKayitlari,
   ayniAdres,
@@ -49,6 +50,22 @@ describe("deneme adresi", () => {
       ["AAAA", "*.deneme.eticaretmagazasi.com", false],
     ]);
   });
+});
+
+// Sitenin kimliğindeki deneme adresi ön kapının adresiyle aynı olmalı (kart 0023): adres
+// kimlikte belge olarak durur, trafiği ön kapının kod adından ürettiği adres alır.
+describe("sitelerin kimliğindeki deneme adresi", () => {
+  const siteler = readdirSync(join(kok, "siteler"), { withFileTypes: true })
+    .filter((girdi) => girdi.isDirectory())
+    .map((girdi) => siteKlasorunuOku(join(kok, "siteler", girdi.name)).kimlik);
+
+  it.each(siteler.map((kimlik) => [kimlik.kodAdi, kimlik] as const))(
+    "%s: yazılmışsa ön kapının adresidir",
+    (_kodAdi, kimlik) => {
+      if (kimlik.adresler.deneme === undefined) return;
+      expect(kimlik.adresler.deneme).toBe(`https://${denemeAdresi(kimlik.kodAdi)}`);
+    },
+  );
 });
 
 describe("Caddy satırı", () => {

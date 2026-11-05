@@ -2,7 +2,7 @@
 
 Altyapının üç komutunun tarifi: yeni site kurmak, bir siteyi güncellemek, bir siteyi mağaza sahibine teslim etmek. Her biri için ne zaman kullanıldığı, hangi soruları sorduğu, hangi adımları sırayla yaptığı ve ne zaman bitmiş sayıldığı yazar.
 
-Durum: 2026-10-28 tarihinde taslak olarak yazıldı. Komutlar henüz yazılmaz. Her iş önce birer kez bu tarife göre elle yapılır, elle yaparken öğrenilenler buraya eklenir, komut ondan sonra yazılır. Klasör ve dosya adları karar 0015 ile kesinleşti (`.claude/rules/klasor-duzeni.md`).
+Durum: 2026-10-28 tarihinde taslak olarak yazıldı. Komutlar henüz yazılmaz. Her iş önce birer kez bu tarife göre elle yapılır, elle yaparken öğrenilenler buraya eklenir, komut ondan sonra yazılır. Yeni site kurma 2026-11-05'te Örnek Mağaza'da, o güne kadar yapılabilen adımlarıyla bir kez elle izlendi (kart 0023, aşağıda "Elle yaparken"). Klasör ve dosya adları karar 0015 ile kesinleşti (`.claude/rules/klasor-duzeni.md`).
 
 **Teslim**, mağaza sahibine yönetim panelini ve kendi hesabını vermektir, kodu ya da sunucuyu vermek değildir. **Devir** başka bir iştir: ayrılmak isteyen mağazanın sitesini bütünüyle onun seçtiği sunucuya vermektir. Devir bu üç komutun dışındadır (karar 0014).
 
@@ -26,7 +26,7 @@ Durum: 2026-10-28 tarihinde taslak olarak yazıldı. Komutlar henüz yazılmaz. 
 
 Var olan bir siteyi değiştirmek için kullanılmaz. Kurulan site satışa açık değildir, yalnız deneme adresinde çalışır. Satışa açmak teslimin işidir.
 
-**Önkoşul:** Çekirdeğin yayınlanmış en az bir sürümü olmalı. Site gerçek bir mağazaysa yurt dışı veri aktarım belgelerinin şablonu hazır olmalı (karar 0009).
+**Önkoşul:** Çekirdeğin yayınlanmış en az bir sürümü olmalı. Yayınlanmış sürüm, `cekirdek/surum-notlari/` klasöründe notu olan sürümdür. Site gerçek bir mağazaysa yurt dışı veri aktarım belgelerinin şablonu hazır olmalı (karar 0009).
 
 ### Sorduğu sorular
 
@@ -53,10 +53,10 @@ Eklenti sorulmaz. Katalogdaki bir eklenti ayrıca istenmedikçe kurulmaz.
    - `testler/`: bu sitenin ayarlarına göre kontroller (örneğin sipariş numarası doğru önekle başlar);
    - `KURALLAR.md`: bu siteye özel kısa notlar.
 5. Klasörü kimlikte yazan çekirdek sürümünün ayar şemasıyla doğrular.
-6. Gizli bilgileri sunucuda üretir ve sitenin gizli bilgi dosyalarına yazar (`pnpm sunucu-gizli`, karar 0031).
-7. Sitenin kendi veritabanını açar, o sürümün veritabanı değişikliklerini sırayla uygular, başlangıç değerlerini bir kez aktarır.
-8. Sitenin dosya deposunu, gece yedeğini, hata izleme etiketini ve zamanlanmış kontrollerini tanımlar.
-9. Siteyi deneme adresinde yayınlar. Deneme adresi arama motoruna kapalıdır, gerçek ödeme almaz.
+6. Site klasörünü kaydeder ve kontrol hattından geçirir: kart dalı GitHub'a gönderilir, `pnpm hat-sonucu` yeşil olmalı. Yayın komutu yalnız yeşil hattan geçmiş, kaydedilmemiş değişikliği olmayan kayıtla çalışır (karar 0035).
+7. Siteyi deneme adresinde yayınlar (`pnpm yayinla siteler/<kod-adi> deneme`). Komut sırasıyla şunları kendisi yapar: hızlı sunucu denetimi, hata izleme projesi (karar 0036), gizli bilgiler (yoksa üretir, karar 0031), sitenin veritabanı ve kullanıcısı, o sürümün veritabanı değişiklikleri (karar 0034), yeni kutu, sağlık kontrolü içeriden ve dışarıdan, ön kapı. Deneme adresi arama motoruna kapalıdır, gerçek ödeme almaz. Başlangıç değerlerinin bir kez aktarılması henüz yoktur.
+8. Sitenin dosya deposunu, gece yedeğini ve zamanlanmış kontrollerini tanımlar.
+9. Hata izlemenin çalıştığını dener (`pnpm hata-izleme-denemesi siteler/<kod-adi>`).
 10. Kontrolleri çalıştırır: sağlık kontrolü, çekirdeğin ve sitenin testleri, veri ayrımı testi (yeni site başka bir sitenin verisini göremez), ekran ölçümü.
 11. Sahip panelinde sitenin göründüğünü ve durum ucunun cevap verdiğini kontrol eder.
 12. İlk yedeği alır ve o yedekten geri yüklemenin çalıştığını bir kez dener.
@@ -185,6 +185,36 @@ Her komut yazılmadan önce bir kez elle yapılır:
 - teslim: ilk gerçek mağazada.
 
 Elle yaparken bu tarifin adımları sırayla izlenir. Eksik, fazla ya da yanlış sıradaki adım buraya not edilir. Komut, düzeltilmiş tarife göre yazılır.
+
+### Yeni site kurmak: ilk kez elle, Örnek Mağaza (kart 0023, 2026-11-05)
+
+Kurulan: Örnek Mağaza, çekirdek `0.1.0` ile `https://ornek-magaza.deneme.eticaretmagazasi.com` adresinde. Adımlar sırayla:
+
+| Adım | Ne oldu |
+|---|---|
+| Sorular | Ad, tür (demo), kod adı ve sipariş numarası öneki (`ORN`, başlangıç varsayılan 1001) Örnek Mağaza'nın klasöründe zaten vardı (kart 0010). Şemadaki öteki ayarlar (tema değiştirilebilir mi, vitrinde altyapı adı) varsayılanında kaldı. Hazır tema, logo ve mağaza bilgileri sorulamadı: temalar, marka dosyaları ve mağaza bilgisi alanları henüz yok. Mağaza sahibinin ayarları da yok; şemada yalnız altyapı sahibinin ayarları var. |
+| 1. Kod adı | `ornek-magaza`. Başka sitenin kullanmadığını bugün `sunucu/site-kullanicilari.json` ve `siteler/` klasörü gösteriyor; ikisine birlikte bakan bir kontrol yok. |
+| 2. Özet ve onay | Kullanıcı kartın planını onayladı. |
+| 3. Çalışma kopyası | `.claude/worktrees/0023`. Kopyada `.env` yoktur; veritabanı testleri için ana klasördeki `.env` kopyaya alınır (kayda girmez). |
+| 4. Site klasörü | Yalnız `kimlik.json`, `ayarlar.json`, `KURALLAR.md` var. Kimliğe deneme adresi yazıldı; adres ön kapının kod adından ürettiği adresle aynı olmalı, testi `komutlar/testler/on-kapi.test.ts`. `baslangic/`, `marka/`, `testler/` açılmadı: içine konacak tema, ürün, logo ve siteye özel kural yok. |
+| 5. Doğrulama | `pnpm site-dogrula` geçti. Klasör "kimlikte yazan sürümün şemasıyla" değil, çalışma kopyasındaki çekirdeğin şemasıyla doğrulanıyor; ikisi bugün aynı (0.1.0). Sürümler ayrışınca bu adım o sürümün kaydını kullanmalı. |
+| 6. Kayıt ve hat | Kart dalı GitHub'a gönderildi, hat yeşil geçti. Tarifin ilk hâlinde bu adım yoktu. |
+| 7. Yayın | `pnpm yayinla` gizli bilgiyi, veritabanını, hata izleme projesini ve yayını tek komutta yaptı. Tarifin ilk hâlindeki 6 ve 7. adım ayrı komut değil, yayının parçası. |
+| 8. Depo, yedek, kontroller | Yapılamadı: dosya deposu (ürün görseli yok), gece yedeği (kart 0024) ve zamanlanmış kontroller henüz yok. Hata izleme etiketi yayın komutunun içinde. |
+| 9. Hata izleme | `pnpm hata-izleme-denemesi` yeşil. |
+| 10. Kontroller | Sağlık: yayın komutu içeriden ve dışarıdan ölçtü; `pnpm sunucu-denetle` artık her yayındaki sitenin adresini, arama motorlarına kapalılığını ve sağlık ucundaki sürümü ölçüyor. Çekirdeğin testleri hatta geçti. Sitenin kendi testleri yok. Veri ayrımı: `pnpm sunucu-veritabani-denemesi` yeşil (sunucuda iki site birbirinin veritabanına giremiyor). Ekran ölçümü kurulmadı. |
+| 11. Sahip paneli | Yapılamadı: sahip paneli yok. |
+| 12. İlk yedek | Yapılamadı: kart 0024. |
+| 13. Kayıt ve tarihçe | Kart dalı ana dala alınır, tarihçeye `/is-bitti` yazar. |
+
+Öğrenilenler, komut yazılırken uyulacak:
+
+- **Sıra:** Yayın komutu kurma tarifinin ortasını kendisi yapıyor. Kurma komutu yayın komutunu çağırmalı, onun adımlarını yeniden yazmamalı.
+- **Hat:** Yayın yalnız GitHub'da yeşil geçmiş kayıtla yapılır. Kurma komutu site klasörünü kaydedip gönderdikten sonra hattı beklemeli; gönderme kullanıcının onayını ister.
+- **Sürüm:** "Yayınlanmış sürüm" ancak sürüm notuyla tanımlı oldu. Notun varlığını ve biçimini `cekirdek/testler/surum-notlari.test.ts` denetliyor. Aynı numarayla farklı çekirdeğin yayınlanabilmesi ayrı bir iştir (kart 0040).
+- **Adres:** Deneme adresi kimlikte belge olarak, ön kapıda kod adından üretilerek iki yerde duruyor. Kurma komutu adresi kimliğe kendisi yazmalı; elle yazılan adresin farklı olmasını test yakalar.
+- **Ölçüm:** Yayından sonra sağlık kontrolü yalnız yayın anında değil, her sunucu denetiminde de çalışıyor. Bu yüzden ayrı bir "sağlık kontrolü" adımı komutta denetim çağrısı olur.
+- **Henüz yapılamayanlar:** Tarifin 4 (`baslangic/`, `marka/`, `testler/`), 8, 11 ve 12. adımları ve ekran ölçümü. Her biri ilgili parça yazılınca bu tabloya işlenir.
 
 ## Henüz açık olanlar
 

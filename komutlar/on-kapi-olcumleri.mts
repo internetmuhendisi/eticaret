@@ -11,14 +11,20 @@
 //   sertifikasıyla bağlanıp tanınmayan ad isteyen de 404 alıyor.
 // - Ön kapının kutuları sunucuda tanımdaki gibi çalışıyor: kök olmayan kullanıcı, salt okunur,
 //   yalnız düşük kapı yetkisi, yetki yükseltme kapalı.
+// - Yayındaki her sitenin deneme adresi şifreli açılıyor, arama motorlarına kapalı ve sağlık
+//   ucu sitenin kimliğindeki sürümü söylüyor (yayindakiSiteleriOlc, kart 0023).
 
 import { randomBytes } from "node:crypto";
 import { Resolver } from "node:dns/promises";
+import { existsSync } from "node:fs";
 import { request as httpIstegi, type IncomingHttpHeaders } from "node:http";
 import { request as httpsIstegi } from "node:https";
+import { join } from "node:path";
 import type { TLSSocket } from "node:tls";
+import { siteKlasorunuOku } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import {
   ayniAdres,
+  denemeAdresi,
   denemeAlani,
   dizineKapali,
   hataIzlemeAdresi,
@@ -30,10 +36,13 @@ import {
   sertifikaReddedildi,
   sertifikaSiniri,
   sonIstemciAdresi,
+  yayindakiSiteleriOku,
+  yayinOrtami,
   yoklamaAdresi,
   yonlendirmeDogru,
 } from "./on-kapi.mts";
-import { type SunucuKaydi, sshKomutu } from "./sunucu.mts";
+import { kok, type SunucuKaydi, sshKomutu } from "./sunucu.mts";
+import { saglikCoz, saglikHatasi } from "./yayin.mts";
 
 type Olcum = (tamam: boolean, metin: string, ayrinti?: string) => void;
 
@@ -238,6 +247,58 @@ export const onKapiyiOlc = async (kayit: SunucuKaydi, olcum: Olcum): Promise<voi
       kutu.status === 0 && hatalar.length === 0,
       `ön kapının ${ad} kutusu çalışıyor: kök olmayan kullanıcı, salt okunur, tek yetki, yetki yükseltme kapalı, yeniden başlayınca açılır`,
       kutu.status === 0 ? hatalar.join("; ") : kutu.stderr.trim(),
+    );
+  }
+};
+
+// Yayındaki her sitenin dışarıdan görünüşü. Ölçümün adı "<ortam>/<kod adı> yayındaki kutusu" ile
+// başlar: yayın komutu, yalnız o sitenin kendi kutusuyla ilgili kırmızı ölçümde düzeltme
+// yayınına izin verir (yayinla.mts). Sitenin kimliği bu bilgisayardaki site klasöründen okunur;
+// klasörü olmayan bir site yayındaysa (ör. yarıda kalmış bir denemenin sitesi) kırmızıdır.
+export const yayindakiSiteleriOlc = async (kayit: SunucuKaydi, olcum: Olcum): Promise<void> => {
+  const siteler = yayindakiSiteleriOku(kayit.ipv4);
+  for (const kodAdi of Object.keys(siteler).sort()) {
+    const ad = `${yayinOrtami}/${kodAdi} yayındaki kutusu`;
+    const adres = denemeAdresi(kodAdi);
+    const klasor = join(kok, "siteler", kodAdi);
+    if (!existsSync(klasor)) {
+      olcum(false, `${ad}: site klasörü bu bilgisayarda var`, `siteler/${kodAdi} yok`);
+      continue;
+    }
+    const { kimlik } = siteKlasorunuOku(klasor);
+    for (const [tur, ip] of [
+      ["IPv4", kayit.ipv4],
+      ["IPv6", kayit.ipv6],
+    ] as const) {
+      const ana = await dene(() => iste(true, ip, adres, "/"));
+      olcum(
+        !(ana instanceof Error) && ana.durum === 200,
+        `${ad}: ${tur} ile deneme adresi şifreli bağlantıyla açılıyor`,
+        ana instanceof Error ? ana.message : String(ana.durum),
+      );
+      olcum(
+        !(ana instanceof Error) && dizineKapali(ana.basliklar["x-robots-tag"]),
+        `${ad}: ${tur} ile deneme adresi arama motorlarına "dizine alma" diyor`,
+        ana instanceof Error ? ana.message : String(ana.basliklar["x-robots-tag"] ?? "başlık yok"),
+      );
+    }
+    const robots = await dene(() => iste(true, kayit.ipv4, adres, "/robots.txt"));
+    olcum(
+      !(robots instanceof Error) && robots.durum === 200 && robotlaraKapali(robots.govde),
+      `${ad}: robots.txt bütün siteyi kapatıyor`,
+      robots instanceof Error ? robots.message : String(robots.durum),
+    );
+    const saglik = await dene(() => iste(true, kayit.ipv4, adres, "/kapi/herkese-acik/saglik"));
+    const hata =
+      saglik instanceof Error
+        ? saglik.message
+        : saglik.durum === 200
+          ? saglikHatasi(saglikCoz(saglik.govde), kimlik.cekirdekSurumu)
+          : `sağlık ucu ${saglik.durum}`;
+    olcum(
+      hata === undefined,
+      `${ad}: sağlık ucu kimlikteki sürümü (${kimlik.cekirdekSurumu}) ve ayakta veritabanını söylüyor`,
+      hata ?? "",
     );
   }
 };

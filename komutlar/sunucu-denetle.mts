@@ -17,6 +17,8 @@
 // - Yayındaki her sitenin kutusu tanımıyla aynı ayarla ve sağlıklı çalışıyor (yayin.mts, kart 0021).
 // - Her ortamın veritabanı kutusu sağlıklı çalışıyor: kök olmayan kullanıcı, salt okunur, yetkisiz,
 //   yeniden başlayınca açılıyor, portu dışarıya açılmamış (sunucu-veritabani.mts, kart 0039).
+// - Yayındaki her sitenin deneme adresi şifreli açılıyor, arama motorlarına kapalı, sağlık ucu
+//   kimlikteki sürümü söylüyor (on-kapi-olcumleri.mts, kart 0023).
 // - Hata izleme kutusu aynı kısıtlarla, yalnız kendi ağında ve internete kapalı çalışıyor; ön
 //   kapıdan yalnız gönderim yolu açık (hata-izleme.mts, on-kapi-olcumleri.mts, kart 0022).
 // Bir ölçüm tutmazsa komut kırmızı biter.
@@ -47,7 +49,7 @@ import {
   yayindakiSiteleriOku,
   yayinOrtami,
 } from "./on-kapi.mts";
-import { onKapiyiOlc } from "./on-kapi-olcumleri.mts";
+import { onKapiyiOlc, yayindakiSiteleriOlc } from "./on-kapi-olcumleri.mts";
 import {
   acikKapilar,
   type DuvarKurali,
@@ -451,6 +453,9 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
   // Ön kapı ve deneme adresleri (karar 0032).
   console.log("ön kapı");
   await onKapiyiOlc(kayit, olcum);
+  // Yayındaki sitelerin dışarıdan görünüşü (kart 0023).
+  console.log("yayındaki siteler");
+  await yayindakiSiteleriOlc(kayit, olcum);
 
   // Kapılar. IPv4'te bütün kapılar; IPv6'da ilk 1024 kapı ve bilinen kapılar (aynı duvar
   // kuralları iki adrese birlikte uygulanır, kuralların kendisi yukarıda Hetzner'den denetlendi).
