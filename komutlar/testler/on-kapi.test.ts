@@ -13,6 +13,7 @@ import {
   denemeSatiri,
   dizineKapali,
   kalanGun,
+  kimlikAdresiHatasi,
   kodAdiGecerli,
   kurmaBetigi,
   kutuKisitHatalari,
@@ -52,20 +53,31 @@ describe("deneme adresi", () => {
   });
 });
 
-// Sitenin kimliğindeki deneme adresi ön kapının adresiyle aynı olmalı (kart 0023): adres
-// kimlikte belge olarak durur, trafiği ön kapının kod adından ürettiği adres alır.
+// Sitenin kimliğindeki deneme adresi ön kapının adresiyle aynı olmalı (kart 0023).
 describe("sitelerin kimliğindeki deneme adresi", () => {
   const siteler = readdirSync(join(kok, "siteler"), { withFileTypes: true })
     .filter((girdi) => girdi.isDirectory())
     .map((girdi) => siteKlasorunuOku(join(kok, "siteler", girdi.name)).kimlik);
 
   it.each(siteler.map((kimlik) => [kimlik.kodAdi, kimlik] as const))(
-    "%s: yazılmışsa ön kapının adresidir",
+    "%s: kimlikte ön kapının adresi yazıyor",
     (_kodAdi, kimlik) => {
-      if (kimlik.adresler.deneme === undefined) return;
-      expect(kimlik.adresler.deneme).toBe(`https://${denemeAdresi(kimlik.kodAdi)}`);
+      expect(kimlikAdresiHatasi(kimlik)).toBeUndefined();
     },
   );
+
+  it.each([
+    ["adres yok", {}, "yok"],
+    ["başka sitenin adresi", { deneme: "https://baska.deneme.eticaretmagazasi.com" }, "beklenen"],
+    ["şifresiz", { deneme: "http://ornek-site.deneme.eticaretmagazasi.com" }, "beklenen"],
+    [
+      "sonunda eğik çizgi",
+      { deneme: "https://ornek-site.deneme.eticaretmagazasi.com/" },
+      "beklenen",
+    ],
+  ])("bozuk kimlik yakalanır: %s", (_ad, adresler, beklenen) => {
+    expect(kimlikAdresiHatasi({ kodAdi: "ornek-site", adresler })).toContain(beklenen);
+  });
 });
 
 describe("Caddy satırı", () => {

@@ -54,7 +54,7 @@ Eklenti sorulmaz. Katalogdaki bir eklenti ayrıca istenmedikçe kurulmaz.
    - `KURALLAR.md`: bu siteye özel kısa notlar.
 5. Klasörü kimlikte yazan çekirdek sürümünün ayar şemasıyla doğrular.
 6. Site klasörünü kaydeder ve kontrol hattından geçirir: kart dalı GitHub'a gönderilir, `pnpm hat-sonucu` yeşil olmalı. Yayın komutu yalnız yeşil hattan geçmiş, kaydedilmemiş değişikliği olmayan kayıtla çalışır (karar 0035).
-7. Siteyi deneme adresinde yayınlar (`pnpm yayinla siteler/<kod-adi> deneme`). Komut sırasıyla şunları kendisi yapar: hızlı sunucu denetimi, hata izleme projesi (karar 0036), gizli bilgiler (yoksa üretir, karar 0031), sitenin veritabanı ve kullanıcısı, o sürümün veritabanı değişiklikleri (karar 0034), yeni kutu, sağlık kontrolü içeriden ve dışarıdan, ön kapı. Deneme adresi arama motoruna kapalıdır, gerçek ödeme almaz. Başlangıç değerlerinin bir kez aktarılması henüz yoktur.
+7. Siteyi deneme adresinde yayınlar (`pnpm yayinla siteler/<kod-adi> deneme`). Komut sırasıyla şunları kendisi yapar: kilitler (hat yeşil, kaydedilmemiş değişiklik yok, hat koruması), hızlı sunucu denetimi, çekirdeğin görüntüsünü bu kayıttan üretip denetlemek, hata izleme projesi (karar 0036), gizli bilgiler (yoksa üretir, karar 0031), sitenin veritabanı ve kullanıcısı, o sürümün veritabanı değişiklikleri (karar 0034), görüntünün sunucuya aktarılması, site klasörünün aktarılması, yeni kutu, içeriden sağlık kontrolü, ön kapının yeni kutuya çevrilmesi, dışarıdan sağlık kontrolü, trafiğin yeni kutuya geçmesi, eski kutunun durması (karar 0035). Deneme adresi arama motoruna kapalıdır, gerçek ödeme almaz. Başlangıç değerlerinin bir kez aktarılması henüz yoktur.
 8. Sitenin dosya deposunu, gece yedeğini ve zamanlanmış kontrollerini tanımlar.
 9. Hata izlemenin çalıştığını dener (`pnpm hata-izleme-denemesi siteler/<kod-adi>`).
 10. Kontrolleri çalıştırır: sağlık kontrolü, çekirdeğin ve sitenin testleri, veri ayrımı testi (yeni site başka bir sitenin verisini göremez), ekran ölçümü.
@@ -192,7 +192,7 @@ Kurulan: Örnek Mağaza, çekirdek `0.1.0` ile `https://ornek-magaza.deneme.etic
 
 | Adım | Ne oldu |
 |---|---|
-| Sorular | Ad, tür (demo), kod adı ve sipariş numarası öneki (`ORN`, başlangıç varsayılan 1001) Örnek Mağaza'nın klasöründe zaten vardı (kart 0010). Şemadaki öteki ayarlar (tema değiştirilebilir mi, vitrinde altyapı adı) varsayılanında kaldı. Hazır tema, logo ve mağaza bilgileri sorulamadı: temalar, marka dosyaları ve mağaza bilgisi alanları henüz yok. Mağaza sahibinin ayarları da yok; şemada yalnız altyapı sahibinin ayarları var. |
+| Sorular | Ad, tür (demo), kod adı ve sipariş numarası öneki (`ORN`, başlangıç varsayılan 1001) Örnek Mağaza'nın klasöründe zaten vardı (kart 0010). Şemadaki öteki bütün ayarlar (ülke, dil, para birimi ve biçimi, saat dilimi, ölçü birimleri, sipariş başlangıcı, tema değiştirilebilir mi, vitrinde altyapı adı) varsayılanında kaldı. Hazır tema, logo ve mağaza bilgileri sorulamadı: temalar, marka dosyaları ve mağaza bilgisi alanları henüz yok. Mağaza sahibinin ayarları da yok; şemada yalnız altyapı sahibinin ayarları var. |
 | 1. Kod adı | `ornek-magaza`. Başka sitenin kullanmadığını bugün `sunucu/site-kullanicilari.json` ve `siteler/` klasörü gösteriyor; ikisine birlikte bakan bir kontrol yok. |
 | 2. Özet ve onay | Kullanıcı kartın planını onayladı. |
 | 3. Çalışma kopyası | `.claude/worktrees/0023`. Kopyada `.env` yoktur; veritabanı testleri için ana klasördeki `.env` kopyaya alınır (kayda girmez). |
@@ -202,7 +202,7 @@ Kurulan: Örnek Mağaza, çekirdek `0.1.0` ile `https://ornek-magaza.deneme.etic
 | 7. Yayın | `pnpm yayinla` gizli bilgiyi, veritabanını, hata izleme projesini ve yayını tek komutta yaptı. Tarifin ilk hâlindeki 6 ve 7. adım ayrı komut değil, yayının parçası. |
 | 8. Depo, yedek, kontroller | Yapılamadı: dosya deposu (ürün görseli yok), gece yedeği (kart 0024) ve zamanlanmış kontroller henüz yok. Hata izleme etiketi yayın komutunun içinde. |
 | 9. Hata izleme | `pnpm hata-izleme-denemesi` yeşil. |
-| 10. Kontroller | Sağlık: yayın komutu içeriden ve dışarıdan ölçtü; `pnpm sunucu-denetle` artık her yayındaki sitenin adresini, arama motorlarına kapalılığını ve sağlık ucundaki sürümü ölçüyor. Çekirdeğin testleri hatta geçti. Sitenin kendi testleri yok. Veri ayrımı: `pnpm sunucu-veritabani-denemesi` yeşil (sunucuda iki site birbirinin veritabanına giremiyor). Ekran ölçümü kurulmadı. |
+| 10. Kontroller | Sağlık: yayın komutu içeriden ve dışarıdan ölçtü; `pnpm sunucu-denetle` artık her yayındaki sitenin adresini, arama motorlarına kapalılığını ve sağlık ucundaki sürümü ölçüyor. Beklenen sürüm bilgisayardaki kimlikten değil, sunucudaki etkin yayının kaydından okunur: kimlik bir sonraki sürüme geçmişken eski yayın çalışıyorsa öteki sitelerin yayını durmamalı (bağımsız kontrol buldu). Çekirdeğin testleri hatta geçti. Sitenin kendi testleri yok. Veri ayrımı: `pnpm sunucu-veritabani-denemesi` yeşil (sunucuda iki site birbirinin veritabanına giremiyor). Ekran ölçümü kurulmadı. |
 | 11. Sahip paneli | Yapılamadı: sahip paneli yok. |
 | 12. İlk yedek | Yapılamadı: kart 0024. |
 | 13. Kayıt ve tarihçe | Kart dalı ana dala alınır, tarihçeye `/is-bitti` yazar. |
@@ -212,7 +212,7 @@ Kurulan: Örnek Mağaza, çekirdek `0.1.0` ile `https://ornek-magaza.deneme.etic
 - **Sıra:** Yayın komutu kurma tarifinin ortasını kendisi yapıyor. Kurma komutu yayın komutunu çağırmalı, onun adımlarını yeniden yazmamalı.
 - **Hat:** Yayın yalnız GitHub'da yeşil geçmiş kayıtla yapılır. Kurma komutu site klasörünü kaydedip gönderdikten sonra hattı beklemeli; gönderme kullanıcının onayını ister.
 - **Sürüm:** "Yayınlanmış sürüm" ancak sürüm notuyla tanımlı oldu. Notun varlığını ve biçimini `cekirdek/testler/surum-notlari.test.ts` denetliyor. Aynı numarayla farklı çekirdeğin yayınlanabilmesi ayrı bir iştir (kart 0040).
-- **Adres:** Deneme adresi kimlikte belge olarak, ön kapıda kod adından üretilerek iki yerde duruyor. Kurma komutu adresi kimliğe kendisi yazmalı; elle yazılan adresin farklı olmasını test yakalar.
+- **Adres:** Deneme adresi kimlikte belge olarak, ön kapıda kod adından üretilerek iki yerde duruyor. Kurma komutu adresi kimliğe kendisi yazmalı; adres yoksa ya da farklıysa test yakalar (`kimlikAdresiHatasi`, `komutlar/on-kapi.mts`).
 - **Ölçüm:** Yayından sonra sağlık kontrolü yalnız yayın anında değil, her sunucu denetiminde de çalışıyor. Bu yüzden ayrı bir "sağlık kontrolü" adımı komutta denetim çağrısı olur.
 - **Henüz yapılamayanlar:** Tarifin 4 (`baslangic/`, `marka/`, `testler/`), 8, 11 ve 12. adımları ve ekran ölçümü. Her biri ilgili parça yazılınca bu tabloya işlenir.
 

@@ -147,6 +147,13 @@ export const etkinYigini = (kayitlar: YayinKaydi[]): number[] => {
   return yigin;
 };
 
+// Etkin yayının sürümü: o yayını trafiğe veren son başarılı kaydın sürümü (yayında da geri
+// dönüşte de kayıt dönülen yayının sürümünü taşır). Kayıt yoksa undefined. Sunucu denetimi
+// sağlık ucunu bununla karşılaştırır (kart 0023): bilgisayardaki kimlik sonraki bir sürüme
+// geçmiş olabilir, çalışan kutu ise kayıttaki sürümdedir.
+export const etkinYayinSurumu = (kayitlar: YayinKaydi[], etkin: number): string | undefined =>
+  kayitlar.findLast((kayit) => kayit.sonuc === "basarili" && kayit.etkin === etkin)?.surum;
+
 export const sonrakiNumara = (kayitlar: YayinKaydi[]): number =>
   Math.max(0, ...kayitlar.map((kayit) => kayit.no)) + 1;
 

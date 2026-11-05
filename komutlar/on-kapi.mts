@@ -31,6 +31,21 @@ export const denemeAdresi = (kodAdi: string): string => {
   return `${kodAdi}.${denemeAlani}`;
 };
 
+// Sitenin kimliğindeki deneme adresi bu adres olmalı (kart 0023): kimlikte belge olarak durur,
+// trafiği ön kapının kod adından ürettiği adres alır. Her sitenin deneme adresi vardır.
+export const kimlikAdresiHatasi = (kimlik: {
+  kodAdi: string;
+  adresler: { deneme?: string | undefined };
+}): string | undefined => {
+  const beklenen = `https://${denemeAdresi(kimlik.kodAdi)}`;
+  if (kimlik.adresler.deneme === undefined)
+    return `kimlikte deneme adresi yok, beklenen ${beklenen}`;
+  if (kimlik.adresler.deneme !== beklenen) {
+    return `kimlikteki deneme adresi ${kimlik.adresler.deneme}, beklenen ${beklenen}`;
+  }
+  return undefined;
+};
+
 // Yoklama kutusunun adresi. İki tire yan yana hiçbir kod adında geçemez (kimlik şeması),
 // bu yüzden bu adres hiçbir sitenin deneme adresiyle çakışmaz.
 export const yoklamaAdi = "kapi--yoklama";

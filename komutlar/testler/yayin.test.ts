@@ -10,6 +10,7 @@ import {
   yayindakiSitelerKomutu,
 } from "../on-kapi.mts";
 import {
+  etkinYayinSurumu,
   etkinYigini,
   geriDonusHedefi,
   kayitlariCoz,
@@ -51,6 +52,21 @@ describe("trafiğin geçtiği yayınlar", () => {
     expect(etkinYigini(kayitlar)).toEqual([1, 3]);
     expect(sonrakiNumara(kayitlar)).toBe(6);
     expect(sonrakiNumara([])).toBe(1);
+  });
+
+  // Sunucu denetimi sağlık ucunu etkin yayının kaydındaki sürümle karşılaştırır (kart 0023).
+  it("etkin yayının sürümü onu trafiğe veren son başarılı kayıttan okunur", () => {
+    const kayitlar = [
+      kayit({ no: 1, etkin: 1, surum: "0.1.0" }),
+      kayit({ no: 2, etkin: 2, surum: "0.2.0", sonuc: "basarisiz" }),
+      kayit({ no: 3, etkin: 3, surum: "0.2.0" }),
+      kayit({ no: 4, tur: "geri-donus", etkin: 1, surum: "0.1.0" }),
+    ];
+    // Başarısız yayının sürümü sayılmaz; geri dönüşte dönülen yayının sürümü geçerlidir.
+    expect(etkinYayinSurumu(kayitlar, 1)).toBe("0.1.0");
+    expect(etkinYayinSurumu(kayitlar, 3)).toBe("0.2.0");
+    expect(etkinYayinSurumu(kayitlar, 2)).toBeUndefined();
+    expect(etkinYayinSurumu([], 1)).toBeUndefined();
   });
 
   it("son üç yayın saklanır", () => {
