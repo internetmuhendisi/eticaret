@@ -55,11 +55,11 @@ Eklenti sorulmaz. Katalogdaki bir eklenti ayrıca istenmedikçe kurulmaz.
 5. Klasörü kimlikte yazan çekirdek sürümünün ayar şemasıyla doğrular.
 6. Site klasörünü kaydeder ve kontrol hattından geçirir: kart dalı GitHub'a gönderilir, `pnpm hat-sonucu` yeşil olmalı. Yayın komutu yalnız yeşil hattan geçmiş, kaydedilmemiş değişikliği olmayan kayıtla çalışır (karar 0035).
 7. Siteyi deneme adresinde yayınlar (`pnpm yayinla siteler/<kod-adi> deneme`). Komut sırasıyla şunları kendisi yapar: kilitler (hat yeşil, kaydedilmemiş değişiklik yok, hat koruması), hızlı sunucu denetimi, çekirdeğin görüntüsünü bu kayıttan üretip denetlemek, hata izleme projesi (karar 0036), gizli bilgiler (yoksa üretir, karar 0031), sitenin veritabanı ve kullanıcısı, o sürümün veritabanı değişiklikleri (karar 0034), görüntünün sunucuya aktarılması, site klasörünün aktarılması, yeni kutu, içeriden sağlık kontrolü, ön kapının yeni kutuya çevrilmesi, dışarıdan sağlık kontrolü, trafiğin yeni kutuya geçmesi, eski kutunun durması (karar 0035). Deneme adresi arama motoruna kapalıdır, gerçek ödeme almaz. Başlangıç değerlerinin bir kez aktarılması henüz yoktur.
-8. Sitenin dosya deposunu, gece yedeğini ve zamanlanmış kontrollerini tanımlar.
+8. Sitenin dosya deposunu ve zamanlanmış kontrollerini tanımlar. Gece yedeğini `pnpm yedek-kur` tanımlar: sitenin anahtar çiftini üretir, sunucuya kurar (karar 0037). Yeni açma anahtarının kopyası şifre yöneticisine konur.
 9. Hata izlemenin çalıştığını dener (`pnpm hata-izleme-denemesi siteler/<kod-adi>`).
 10. Kontrolleri çalıştırır: sağlık kontrolü, çekirdeğin ve sitenin testleri, veri ayrımı testi (yeni site başka bir sitenin verisini göremez), ekran ölçümü.
 11. Sahip panelinde sitenin göründüğünü ve durum ucunun cevap verdiğini kontrol eder.
-12. İlk yedeği alır ve o yedekten geri yüklemenin çalıştığını bir kez dener.
+12. İlk yedeği alır ve o yedekten geri yüklemenin çalıştığını bir kez dener (`pnpm yedek-prova siteler/<kod-adi> <ortam> --yeni`).
 13. Site klasörünü kaydeder, ana dala alır, çalışma kopyasını kaldırır, tarihçeye yazar.
 
 ### Ne zaman bitmiş sayılır
@@ -105,7 +105,7 @@ Büyük sürümde (ilk sayı artıyorsa) site klasöründe de değişiklik gerek
 7. Çekirdeğin ve sitenin testlerini hedef sürümle çalıştırır.
 8. Kimlik dosyasındaki sürümü değiştirir, kaydeder ve kontrol hattından geçirir. Yayın komutu kimlikteki sürümün kayıttaki çekirdekle aynı olmasını ister, bu yüzden bu adım yayından öncedir (kart 0041).
 9. Siteyi önce deneme adresinde hedef sürümle yayınlar ve kontrolleri orada çalıştırır.
-10. Canlı veritabanının yedeğini hemen alır.
+10. Canlı veritabanının yedeğini hemen alır (`pnpm yedek-al siteler/<kod-adi> <ortam>`).
 11. Yayın komutunu çalıştırır: veritabanı değişikliklerini sırayla uygular, siteyi yayınlar, sağlık kontrolü yapar. Sorun çıkarsa site kendiliğinden önceki sürüme döner ve komut durur.
 12. Yayından sonra sağlık kontrolünü ve ekran ölçümünü canlıda çalıştırır.
 13. Sahip panelinde çalışan sürümün hedef sürüm olduğunu kontrol eder.
@@ -113,7 +113,7 @@ Büyük sürümde (ilk sayı artıyorsa) site klasöründe de değişiklik gerek
 15. İstendiyse mağaza sahibine yenilikleri anlatan e-postayı gönderir.
 16. Ana dala alır, çalışma kopyasını kaldırır, tarihçeye yazar.
 
-Geri dönüş: Sorun yayından sonra çıkarsa `pnpm geri-don` siteyi önceki yayına döndürür; dönülen yayın kendi kutu tanımını, site klasörünü ve görüntüsünü kullanır (karar 0035). Kimlikteki sürüm ana dalda yeni sürümde kalır; kimliği eski sürüme çekip yeniden yayınlamak olmaz, çünkü yayın komutu kimlikteki sürümün kayıttaki çekirdekle aynı olmasını ister. Düzeltme yeni bir sürümle yayınlanır. Veritabanı değişikliği geri alınamıyorsa ("yedekten" notu) geri dönüş durur, site 10. adımdaki yedekten döner.
+Geri dönüş: Sorun yayından sonra çıkarsa `pnpm geri-don` siteyi önceki yayına döndürür; dönülen yayın kendi kutu tanımını, site klasörünü ve görüntüsünü kullanır (karar 0035). Kimlikteki sürüm ana dalda yeni sürümde kalır; kimliği eski sürüme çekip yeniden yayınlamak olmaz, çünkü yayın komutu kimlikteki sürümün kayıttaki çekirdekle aynı olmasını ister. Düzeltme yeni bir sürümle yayınlanır. Veritabanı değişikliği geri alınamıyorsa ("yedekten" notu) geri dönüş durur, site 10. adımdaki yedekten döner (`pnpm yedek-geri-yukle siteler/<kod-adi> <ortam> --dosya=<yedek>`, karar 0037).
 
 ### Ne zaman bitmiş sayılır
 

@@ -31,6 +31,9 @@ const geciciDosyalar = [
   "komutlar/cekirdek-goruntusu-denetle.mts",
   "komutlar/sunucu-denetle.mts",
   "komutlar/sunucu-veritabani-denemesi.mts",
+  "komutlar/yedek.mts",
+  "komutlar/yedek-denemesi.mts",
+  "sunucu/yedek/ortak.sh",
 ];
 
 // Metin bir kutu tanımlıyor ya da açıyor mu? Yorum satırları sayılmaz.

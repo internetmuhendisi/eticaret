@@ -21,6 +21,8 @@
 //   etkin yayının kaydındaki sürümü söylüyor (on-kapi-olcumleri.mts, kart 0023).
 // - Hata izleme kutusu aynı kısıtlarla, yalnız kendi ağında ve internete kapalı çalışıyor; ön
 //   kapıdan yalnız gönderim yolu açık (hata-izleme.mts, on-kapi-olcumleri.mts, kart 0022).
+// - Gece yedeğinin zamanlayıcısı açık, betiği projedekiyle aynı, her sitenin son gece yedeği başarılı
+//   ve 26 saatten yeni, depo yalnız kendi veri merkezinde görünüyor (yedek.mts, kart 0024).
 // Bir ölçüm tutmazsa komut kırmızı biter.
 
 import { spawnSync } from "node:child_process";
@@ -81,6 +83,7 @@ import {
   veritabaniTanimi,
 } from "./sunucu-veritabani.mts";
 import { yayinKutusuTanimi } from "./yayin.mts";
+import { depoAnahtarlari, kayittaYedekSizintisi, yedekDenetimi } from "./yedek.mts";
 
 // Hızlı taramada bakılan kapılar: gerekenler ve yanlışlıkla açılması en olası olanlar.
 const bilinenKapilar = [
@@ -448,7 +451,25 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
       "sunucudaki gizli değerler projenin kayıtlarında ve dosyalarında geçmiyor",
       sayilar ? `${sayilar[1]} değer, ${sayilar[3]} eşleşme` : arama.stderr.trim(),
     );
+    const { erisim, gizli } = depoAnahtarlari();
+    const sizinti = kayittaYedekSizintisi(
+      [gecmis.stdout, izlenen.stdout, kayitsizIcerik].join("\n"),
+      [erisim, gizli],
+    );
+    olcum(
+      gecmis.stdout.length > 0 && sizinti.length === 0,
+      "yedek deposu ve açma anahtarları projenin kayıtlarında ve dosyalarında geçmiyor",
+      sizinti.join("; "),
+    );
   }
+
+  // Gece yedeği (karar 0037).
+  const yedekSorunlari = yedekDenetimi(kayit.ipv4);
+  olcum(
+    yedekSorunlari.length === 0,
+    "gece yedeği çalışıyor, son yedek 26 saatten yeni, depo ayrı veri merkezinde",
+    yedekSorunlari.join("; "),
+  );
 
   // Ön kapı ve deneme adresleri (karar 0032).
   console.log("ön kapı");

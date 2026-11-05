@@ -1,0 +1,16 @@
+{
+  "depo": {
+    "konum": "nbg1",
+    "kova": "altyapi-yedek-308bf1"
+  },
+  "rclone_goruntusu": "rclone/rclone:1.75.2",
+  "varsayilan_saklama_gun": 30,
+  "siteler": {
+    "deneme": {
+      "ornek-magaza": {
+        "acik_anahtar": "age1vakeap7uveesf9pcm0lhqmswnnz6j075c39cqyqjdzq8klcj6vnq9uwry4",
+        "saklama_gun": 30
+      }
+    }
+  }
+}

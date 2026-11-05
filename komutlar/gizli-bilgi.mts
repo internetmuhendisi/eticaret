@@ -48,10 +48,21 @@ export const hataIzlemeGizliBilgisi = {
   dosyalar: { gizli_anahtar: 14237, yonetici_sifresi: 14237, yonetim_anahtari: 0 },
 } as const;
 
+// Yedek deposunun anahtarı (kart 0024, karar 0037): altyapınındır, kök kullanıcıya aittir, yedek işinin
+// geçici kutusuna salt okunur bağlanır. Kurulum yeri: yedek.mts.
+export const yedekDeposuGizliBilgisi = {
+  klasor: "altyapi--yedek-deposu",
+  dosya: "rclone.conf",
+  sahip: 0,
+} as const;
+
 // Altyapının gizli bilgi klasörleri: klasör adı → dosya adı → sahibin numarası.
 const altyapiGizliKlasorleri: Record<string, Record<string, number>> = {
   [yoneticiGizliBilgisi.klasor]: { [yoneticiGizliBilgisi.dosya]: yoneticiGizliBilgisi.sahip },
   [hataIzlemeGizliBilgisi.klasor]: hataIzlemeGizliBilgisi.dosyalar,
+  [yedekDeposuGizliBilgisi.klasor]: {
+    [yedekDeposuGizliBilgisi.dosya]: yedekDeposuGizliBilgisi.sahip,
+  },
 };
 
 const kodAdiKalibi = /^[a-z0-9]+(-[a-z0-9]+)*$/;

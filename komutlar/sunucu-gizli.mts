@@ -12,8 +12,7 @@ import { siteKlasorunuDogrula } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { ortamMi, siteNumarasiAl, uretmeBetigi } from "./gizli-bilgi.mts";
 import { yayinKilidiyle, yayinOrtami } from "./on-kapi.mts";
 import { kayitlariOku, sshKomutu } from "./sunucu.mts";
-import { sifreyiEsitle } from "./sunucu-veritabani.mts";
-import { etkinKutuyuYenidenBaslat } from "./yayin.mts";
+import { etkinKutuyuYenidenBaslat, gizliyiYenileVeEsitle } from "./yayin.mts";
 
 try {
   const [klasor, ortam] = process.argv.slice(2).filter((a) => !a.startsWith("--"));
@@ -30,16 +29,16 @@ try {
   const yenile = process.argv.includes("--yenile");
   // Bütün iş yayın kilidinin içindedir: aynı anda bir yayın eski değerle yeni kutu açamaz.
   await yayinKilidiyle(sunucu.ipv4, () => {
-    const betik = uretmeBetigi(ortam, kodAdi, numara, { yenile });
-    const calisma = sshKomutu(sunucu.ipv4, "bash -s", { girdi: betik });
-    process.stdout.write(calisma.stdout);
-    if (calisma.status !== 0) throw new Error(`Sunucuda kurulamadı: ${calisma.stderr.trim()}`);
-    if (!yenile) return;
-    console.log(
-      sifreyiEsitle(sunucu.ipv4, ortam, kodAdi)
-        ? `eşitlendi   ${ortam}/${kodAdi} veritabanı şifresi`
-        : `bilgi       ${ortam} ortamında veritabanı kutusu yok, şifre eşitlenmedi`,
-    );
+    if (yenile) {
+      gizliyiYenileVeEsitle(sunucu.ipv4, ortam, kodAdi, numara, console.log);
+    } else {
+      const calisma = sshKomutu(sunucu.ipv4, "bash -s", {
+        girdi: uretmeBetigi(ortam, kodAdi, numara),
+      });
+      process.stdout.write(calisma.stdout);
+      if (calisma.status !== 0) throw new Error(`Sunucuda kurulamadı: ${calisma.stderr.trim()}`);
+      return;
+    }
     // Kutu dosyayı açılışta bağlar, yenilenen değeri ancak yeniden başlayınca görür; yayındaki
     // kutu aynı adımda yeniden başlatılır (kart 0021).
     console.log(

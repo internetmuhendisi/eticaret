@@ -20,7 +20,7 @@ import {
   geriDonusNotlari,
 } from "../cekirdek/veritabani/guncelle.ts";
 import { goruntuyuDenetle } from "./cekirdek-goruntusu-denetle.mts";
-import { kutuGizliTanimi, type Ortam } from "./gizli-bilgi.mts";
+import { kutuGizliTanimi, type Ortam, uretmeBetigi } from "./gizli-bilgi.mts";
 import { projeAdresiniHazirla } from "./hata-izleme.mts";
 import { kaliciKutu, siteSaglikYoklamasi } from "./kutu-kurali.mts";
 import {
@@ -36,6 +36,7 @@ import {
 import { girisAnahtari, sshKomutu, sshSecenekleri, sunucuTanimi } from "./sunucu.mts";
 import {
   goruntuyuGonder,
+  sifreyiEsitle,
   siteVeritabaniniHazirla,
   sunucudaCalistir,
 } from "./sunucu-veritabani.mts";
@@ -620,6 +621,27 @@ const geriDonKilitli = async (girdi: {
 };
 
 // Yayındaki kutuyu yeniden başlatır (gizli bilgi yenilenince, sunucu-gizli.mts). Kutu yoksa false.
+// Sitenin gizli bilgilerini yeniler ve veritabanı şifresini aynı adımda eşitler (kart 0039). Yayın
+// kilidinin içinde çağrılır; yayındaki kutuyu çağıran yeniden başlatır (sunucu-gizli.mts, yedek.mts).
+export const gizliyiYenileVeEsitle = (
+  ipv4: string,
+  ortam: Ortam,
+  kodAdi: string,
+  numara: number,
+  yaz: (satir: string) => void,
+): void => {
+  const calisma = sshKomutu(ipv4, "bash -s", {
+    girdi: uretmeBetigi(ortam, kodAdi, numara, { yenile: true }),
+  });
+  for (const satir of calisma.stdout.split("\n")) if (satir.trim()) yaz(satir);
+  if (calisma.status !== 0) throw new Error(`Sunucuda kurulamadı: ${calisma.stderr.trim()}`);
+  yaz(
+    sifreyiEsitle(ipv4, ortam, kodAdi)
+      ? `eşitlendi   ${ortam}/${kodAdi} veritabanı şifresi`
+      : `bilgi       ${ortam} ortamında veritabanı kutusu yok, şifre eşitlenmedi`,
+  );
+};
+
 export const etkinKutuyuYenidenBaslat = (ipv4: string, ortam: Ortam, kodAdi: string): boolean => {
   const no = yayindakiSiteleriOku(ipv4)[kodAdi];
   if (no === undefined) return false;

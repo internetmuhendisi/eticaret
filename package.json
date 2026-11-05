@@ -55,6 +55,12 @@
     "sunucu-hata-izleme": "node komutlar/sunucu-hata-izleme.mts",
     "hata-izleme-ac": "node komutlar/hata-izleme-ac.mts",
     "hata-izleme-denemesi": "node komutlar/hata-izleme-denemesi.mts",
+    "yedek-kur": "node komutlar/yedek-kur.mts",
+    "yedek-al": "node komutlar/yedek-al.mts",
+    "yedek-kaydi": "node komutlar/yedek-kaydi.mts",
+    "yedek-prova": "node komutlar/yedek-prova.mts",
+    "yedek-geri-yukle": "node komutlar/yedek-geri-yukle.mts",
+    "yedek-denemesi": "node komutlar/yedek-denemesi.mts",
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {

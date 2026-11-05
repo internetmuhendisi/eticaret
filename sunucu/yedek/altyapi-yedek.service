@@ -1,0 +1,8 @@
+[Unit]
+Description=Sitelerin gece yedegi (kart 0024)
+Wants=network-online.target docker.service
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/srv/altyapi/yedek/gece.sh
