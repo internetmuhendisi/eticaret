@@ -254,4 +254,7 @@ export const yerlesimHatalari = (satirlar: string[], numaralar: SiteNumaralari):
 // Girdi: projenin kayıt geçmişi ve dosyaları (sunucu-denetle.mts).
 export const aramaParcaUzunlugu = 16;
 export const degerBasinaParca = 64 - aramaParcaUzunlugu + 1;
-export const kayittaArama = `sudo sh -c 'p=$(mktemp) && trap "rm -f \\"$p\\"" EXIT && find ${gizliKok} -type f -exec grep -ohE "[0-9a-f]{64}" {} + | awk "{ for (i = 1; i <= length(\\$0) - ${aramaParcaUzunlugu - 1}; i++) print substr(\\$0, i, ${aramaParcaUzunlugu}) }" > "$p"; n=$(wc -l < "$p"); if [ "$n" -gt 0 ]; then c=$(grep -c -i -F -f "$p" || true); else c=0; fi; echo "deger=$((n / ${degerBasinaParca})) parca=$n eslesme=$c"'`;
+// Kök ve önek testte değişir (komutlar/testler/gizli-bilgi.test.ts aynı komutu yerelde çalıştırır).
+export const kayittaAramaKomutu = (kok = gizliKok, onek = "sudo ") =>
+  `${onek}sh -c 'p=$(mktemp) && trap "rm -f \\"$p\\"" EXIT && find ${kok} -type f -exec grep -ohE "[0-9a-f]{64}" {} + | awk "{ for (i = 1; i <= length(\\$0) - ${aramaParcaUzunlugu - 1}; i++) print substr(\\$0, i, ${aramaParcaUzunlugu}) }" > "$p"; n=$(wc -l < "$p"); if [ "$n" -gt 0 ]; then c=$(grep -c -i -F -f "$p" || true); else c=0; fi; echo "deger=$((n / ${degerBasinaParca})) parca=$n eslesme=$c"'`;
+export const kayittaArama = kayittaAramaKomutu();

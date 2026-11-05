@@ -1,9 +1,15 @@
 // Gizli bilgilerin sunucuda saklanmasının kuralları (kart 0019, karar 0031). Her kuralın bozuk
 // bir örneği yakaladığı gösterilir.
-import { describe, expect, it } from "vitest";
+import { spawnSync } from "node:child_process";
+import { randomBytes } from "node:crypto";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterAll, describe, expect, it } from "vitest";
 import {
   denemeSiteNumarasi,
   gizliKlasor,
+  kayittaAramaKomutu,
   kutuGizliTanimi,
   kutuKullanicisi,
   sablonParcalari,
@@ -132,6 +138,42 @@ describe("kutunun gizli bilgi tanımı", () => {
   });
 });
 
+// Sunucuda çalışan arama komutunun aynısı, sudo'suz ve geçici bir klasörde çalıştırılır.
+// Değerler bu testte üretilen uydurma rastgele değerlerdir.
+describe("kayıtta arama", () => {
+  const kok = mkdtempSync(join(tmpdir(), "gizli-arama-"));
+  const degerler = [randomBytes(32).toString("hex"), randomBytes(32).toString("hex")];
+  degerler.forEach((deger, i) => {
+    mkdirSync(join(kok, "canli", `site-${i}`), { recursive: true });
+    writeFileSync(join(kok, "canli", `site-${i}`, "veritabani_adresi"), `on-${deger}-son`);
+  });
+  afterAll(() => rmSync(kok, { recursive: true }));
+  const ara = (girdi: string) =>
+    spawnSync("bash", ["-c", kayittaAramaKomutu(kok, "")], {
+      input: girdi,
+      encoding: "utf8",
+    }).stdout.trim();
+  const ilk = degerler[0] as string;
+
+  it("değerleri ve parçaları sayar, değer taşımayan girdide eşleşme yok", () => {
+    expect(ara("hicbir-sey")).toBe("deger=2 parca=98 eslesme=0");
+  });
+
+  it.each([
+    ["değerin tamamı", ilk],
+    ["büyük harfe çevrilmiş", ilk.toUpperCase()],
+    ["sınıra oturmayan 26 haneli parça", ilk.slice(5, 31)],
+    ["tam 16 haneli parça", ilk.slice(40, 56)],
+    ["başka metnin içinde", `kayit: x${ilk.slice(10, 30)}y`],
+  ])("%s yakalanır", (_ad, girdi) => {
+    expect(ara(girdi)).toBe("deger=2 parca=98 eslesme=1");
+  });
+
+  it("16 haneden kısa parça yakalanmaz (bilinen sınır)", () => {
+    expect(ara(ilk.slice(40, 55))).toBe("deger=2 parca=98 eslesme=0");
+  });
+});
+
 describe("sunucudaki yerleşimin denetimi", () => {
   const numaralar = { "ornek-magaza": 1 };
   const dogru = [
@@ -179,6 +221,11 @@ describe("sunucudaki yerleşimin denetimi", () => {
       "kayıtta olmayan",
     ],
     ["yanlış yerdeki dosya", "f 400 0 /srv/altyapi/gizli/canli/sifre", "beklenmeyen dosya"],
+    [
+      "geride kalmış deneme dosyası",
+      "f 600 0 /srv/altyapi/gizli/.deneme.AbC123",
+      "beklenmeyen dosya",
+    ],
     [
       "adında boşluk olan dosya",
       "f 400 20001 /srv/altyapi/gizli/canli/ornek-magaza/veritabani adresi",

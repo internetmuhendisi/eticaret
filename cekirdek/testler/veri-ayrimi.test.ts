@@ -162,8 +162,15 @@ describe("bağlantı bilgisi", () => {
     );
     expect(adresiOkuyanlar).toEqual(["cekirdek/veritabani/baglanti.ts"]);
 
-    expect(icerik(kayit)).not.toMatch(/process\.env|readFileSync|import\s/);
+    expect(icerik(kayit)).not.toMatch(/process\.env|readFileSync|import\s|export\s[^;]*\sfrom\s/);
     expect(icerik(okuma)).not.toContain("VERITABANI_");
+
+    // Adı yazmadan okumanın yolu da kapalı: okuma işlevini çekirdekte yalnız bağlantı dosyası,
+    // kaydı yalnız okuma işlevi içe alabilir (dışa aktarma ve dinamik içe alma da sayılır).
+    const yolGecen = (ad: string) =>
+      dosyalar.filter((dosya) => new RegExp(`["'][^"']*/${ad}(?:\\.ts)?["']`).test(icerik(dosya)));
+    expect(yolGecen("gizli-bilgi")).toEqual(["cekirdek/veritabani/baglanti.ts"]);
+    expect(yolGecen("gizli-bilgiler")).toEqual([okuma]);
   });
 
   it("kayıtlı hiçbir dosyada şifreli veritabanı adresi yok", () => {

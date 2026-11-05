@@ -32,10 +32,11 @@
 
 ## Sonuçları
 
+- Ayrım denemesi bağlantı koparsa da kendi kutularını, geçici dosyalarını ve deneme sitesini siler (bağlantı denemenin ortasında koparılarak ölçüldü). Geçici dosyaları gizli bilgi klasöründe açar; geride kalırlarsa sunucu denetimi yakalar.
 - Kutu dosyayı açılışta bağlar. Yenilenen değeri kutu ancak yeniden başlayınca görür (ölçüldü). `pnpm sunucu-gizli --yenile` bunu uyarı olarak söyler.
 - Veritabanı şifresi yenilenince PostgreSQL'deki kullanıcının şifresi de değişmelidir. Veritabanı bugün sunucuda yoktur. Bu bağlantı yayın komutunda kurulur (kart 0021).
 - Gizli bilgiler sunucunun diskinde şifresiz durur, yalnız dosya izinleriyle korunur. Sunucuya kök yetkisiyle giren her şeyi okur. `yonetici` kullanıcısı şifresiz sudo hakkına sahip olduğu için giriş anahtarının korunması bu yüzden de önemlidir (0030).
-- Arama, kodlanmış (base64 gibi) ya da 16 haneden kısa parçalar hâlinde sızmış bir değeri yakalamaz. `.gitignore`'daki dosyalar (`.env`) aranmaz, onlar bilgisayarın geliştirme değerleridir.
+- Arama, kodlanmış (base64 gibi) ya da 16 haneden kısa parçalar hâlinde sızmış bir değeri yakalamaz. İkili dosyalar aranmaz. Aramanın kendisi bu bilgisayarda geçici bir klasörle test edilir (`komutlar/testler/gizli-bilgi.test.ts`). `.gitignore`'daki dosyalar (`.env`) aranmaz, onlar bilgisayarın geliştirme değerleridir.
 - Gizli bilgiler gece yedeğine girmez. Sunucu kaybolursa değerler yeniden üretilir. Veritabanı yedekten dönerken şifre de yenilenir. Gece yedeği kartında (0024) bu adım yazılır.
 - Hetzner anahtarı gibi altyapının kendi gizli bilgileri sitelere ait değildir. Bilgisayarda `.env` dosyasında kalır.
 - Bu karar `planlar/komutlar.md` dosyasındaki "gizli bilgilerin sunucuda nasıl saklanacağı" açık konusunu kapatır.

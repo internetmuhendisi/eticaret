@@ -15,7 +15,7 @@
 // Bir ölçüm tutmazsa komut kırmızı biter.
 
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { lstatSync, readFileSync } from "node:fs";
 import { Socket } from "node:net";
 import { join } from "node:path";
 import {
@@ -260,7 +260,11 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
       yerlesimSorunlari.slice(0, 5).join("; "),
     );
     // Dosya izni ek erişim iznini (ACL) göstermez; ek izin hiç olmamalı.
-    const ekIzin = sshKomutu(kayit.ipv4, `sudo getfacl -R -s -p ${gizliKok} | wc -l`);
+    // getfacl başarısız olursa (araç yok, sudo hatası) ölçüm yeşil sayılmaz: çıkış kodu ayrı okunur.
+    const ekIzin = sshKomutu(
+      kayit.ipv4,
+      `o=$(sudo getfacl -R -s -p ${gizliKok}) || exit 3; printf '%s' "$o" | grep -c . || true`,
+    );
     olcum(
       ekIzin.status === 0 && ekIzin.stdout.trim() === "0",
       "gizli bilgilerde ek erişim izni (ACL) yok",
@@ -277,6 +281,8 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
     const kayitsizIcerik = kayitsiz.stdout
       .split("\0")
       .filter(Boolean)
+      // İç içe depo, klasöre bağlantı gibi dosya olmayanlar atlanır.
+      .filter((yol) => lstatSync(join(kok, yol)).isFile())
       .map((yol) => readFileSync(join(kok, yol), "utf8"))
       .join("\n");
     const arama = sshKomutu(kayit.ipv4, kayittaArama, {

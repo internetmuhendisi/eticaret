@@ -16,6 +16,7 @@
 import {
   denemeSiteNumarasi,
   gizliKlasor,
+  gizliKok,
   kutuGizliTanimi,
   silmeBetigi,
   siteNumaralariniOku,
@@ -65,7 +66,10 @@ temizle() {
   ${silmeBetigi(ortam, b.kodAdi).replaceAll("\n", "\n  ").replace("set -eu", "true")}
   rm -f "$d/compose.json"; rmdir "$d"
 }
-trap temizle EXIT
+# Bağlantı koparsa ya da kesilirse de temizlik çalışır; çıktısı kapalıdır (kopan bağlantıya
+# yazmaya çalışıp yarıda kalmasın).
+trap 'temizle >/dev/null 2>&1' EXIT
+trap 'exit 129' HUP INT TERM PIPE
 ${uretmeBetigi(ortam, a.kodAdi, a.numara)}
 ${uretmeBetigi(ortam, b.kodAdi, b.numara)}
 set +e
@@ -93,14 +97,15 @@ olcum $? "A'ya sunucudan yalnız A'nın, B'ye yalnız B'nin dosyası bağlı"
 [ "$(kaynaklar a-bozuk)" = "${dosyaB} " ] && dc exec -T a-bozuk cat ${ic} 2>&1 >/dev/null | grep -q "Permission denied"
 olcum $? "bilerek bozma: B'nin dosyası A'nın kullanıcısıyla bağlanınca izin reddediliyor"
 
-p=$(sudo mktemp)
+# Geçici dosyalar gizli bilgi klasöründe açılır: geride kalırlarsa sunucu denetimi yakalar.
+p=$(sudo mktemp -p ${gizliKok} .deneme.XXXXXX)
 sudo sh -c "grep -ohE '[0-9a-f]{64}' ${dosyaA} ${dosyaB} > $p"
 # Desen dosyası kök kullanıcıya aittir; sayımı da kök yapar. İki desen de yoksa ölçüm geçersizdir.
 [ "$(sudo sh -c "wc -l < $p")" = 2 ] && [ "$(docker inspect $(dc ps -aq) | sudo grep -c -F -f $p)" = 0 ]
 olcum $? "docker inspect çıktısında gizli değer yok"
 # Bilerek bozma: B'nin değeri bir kutunun ortam değişkenine konursa aynı ölçüm yakalamalı.
 # Değer kök kullanıcının dosyasından okunur, hiçbir komut satırında görünmez.
-q=$(sudo mktemp)
+q=$(sudo mktemp -p ${gizliKok} .deneme.XXXXXX)
 sudo sh -c "printf 'VERITABANI_ADRESI=%s\\n' \\"\\$(cat ${dosyaB})\\" > $q"
 sudo docker run -d -q --name gizli-denemesi-sizdiran --env-file $q busybox sleep 30 >/dev/null
 [ "$(docker inspect gizli-denemesi-sizdiran | sudo grep -c -F -f $p)" != 0 ]
