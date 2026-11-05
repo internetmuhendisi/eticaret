@@ -197,11 +197,19 @@ export const onKapiyiOlc = async (kayit: SunucuKaydi, olcum: Olcum): Promise<voi
 
     // Hata izleme adresi (kart 0022): yönetim ekranı ve okuma ucu dışarıya kapalı, gönderim
     // yolu araca ulaşıyor (anahtarsız istek aracın kendisinden ret alır, ön kapıdan 404 değil).
-    for (const kapaliYol of ["/", "/accounts/login/", "/api/canonical/0/projects/"]) {
-      const kapali = await dene(() => iste(true, ip, hataIzlemeAdresi, kapaliYol));
+    for (const [yontem, kapaliYol] of [
+      ["GET", "/"],
+      ["GET", "/accounts/login/"],
+      ["POST", "/accounts/login/"],
+      ["GET", "/api/canonical/0/projects/"],
+      ["POST", "/api/canonical/0/projects/"],
+    ] as const) {
+      const kapali = await dene(() =>
+        iste(true, ip, hataIzlemeAdresi, kapaliYol, hataIzlemeAdresi, yontem),
+      );
       olcum(
         !(kapali instanceof Error) && kapali.durum === 404,
-        `${tur}: hata izleme adresinde ${kapaliYol} dışarıya kapalı (404)`,
+        `${tur}: hata izleme adresinde ${yontem} ${kapaliYol} dışarıya kapalı (404)`,
         kapali instanceof Error ? kapali.message : String(kapali.durum),
       );
     }

@@ -31,7 +31,9 @@ export const onRequestError: Instrumentation.onRequestError = async (hata, istek
   hatayiKaydet(hata, {
     kaynak: "next",
     yontem: istek.method,
-    yol: istek.path,
+    // Next.js yola sorgu kısmını da yazar; sorgu doğrulama anahtarı ya da arama metni gibi
+    // değerler taşıyabilir, kayda yalnız yol girer (kart 0022).
+    yol: istek.path.split("?")[0],
     rota: baglam.routePath,
     rotaTuru: baglam.routeType,
     ...(baglam.renderSource === undefined ? {} : { cizimKaynagi: baglam.renderSource }),

@@ -3,7 +3,11 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Olay } from "../hata-izleme-araci.ts";
-import { HataIzlemeBaglantisi } from "../istemci-hata-izleme.tsx";
+import {
+  baglantiyiSifirla,
+  HataIzlemeBaglantisi,
+  sayfaBasinaEnCokOlay,
+} from "../istemci-hata-izleme.tsx";
 import { istemciHatasiniKaydet } from "../istemci-hata-katmani.ts";
 
 const bilgi = {
@@ -30,13 +34,16 @@ const olaylar = () => {
 describe("tarayıcıdaki hata izleme bağlantısı", () => {
   afterEach(() => {
     cleanup();
+    baglantiyiSifirla();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
   it("sınırın yakaladığı hata yolu ve etiketleriyle gider, sorgu kısmı gitmez", async () => {
     const gelenler = olaylar();
-    window.history.pushState({}, "", "/sifre-yenile?anahtar=cokgizlideger");
+    // Sorgu değerinin adı maskenin tanıdığı bir sözcük değildir: değer ancak sorgu kısmı hiç
+    // eklenmediği için gitmez (ad "anahtar" olsaydı maske de gizlerdi, test bir şey ölçmezdi).
+    window.history.pushState({}, "", "/sifre-yenile?k=cokgizlideger");
     render(<HataIzlemeBaglantisi bilgi={bilgi} />);
     istemciHatasiniKaydet(new Error("bölüm bozuldu ayse@ornek.com"));
     await bekle();
@@ -61,22 +68,36 @@ describe("tarayıcıdaki hata izleme bağlantısı", () => {
     expect(degerler).toEqual(["yakalanmadı", "söz düştü"]);
   });
 
-  it("bir sayfada en çok on olay gider", async () => {
+  it("bir sayfada en çok on olay gider; yeniden çizim sınırı sıfırlamaz", async () => {
     const gelenler = olaylar();
-    render(<HataIzlemeBaglantisi bilgi={bilgi} />);
-    for (let i = 0; i < 25; i++) istemciHatasiniKaydet(new Error(`döngü ${i}`));
+    const { rerender } = render(<HataIzlemeBaglantisi bilgi={bilgi} />);
+    for (let i = 0; i < 6; i++) istemciHatasiniKaydet(new Error(`döngü ${i}`));
+    rerender(<HataIzlemeBaglantisi bilgi={{ ...bilgi }} />);
+    for (let i = 6; i < 25; i++) istemciHatasiniKaydet(new Error(`döngü ${i}`));
     await bekle();
-    expect(gelenler).toHaveLength(10);
+    expect(gelenler).toHaveLength(sayfaBasinaEnCokOlay);
   });
 
-  it("kaldırılınca araç çözülür, hata yalnız konsola yazılır", async () => {
+  // Kök düzen bozulunca Next.js onu bu parçayla birlikte kaldırır ve kök hata ekranını çizer;
+  // ekranın kaydettiği hata yine araca gitmelidir.
+  it("kök düzen kaldırılınca da araç bağlı kalır, kök hata ekranının hatası gider", async () => {
     const gelenler = olaylar();
-    const konsol = vi.spyOn(console, "error").mockImplementation(() => {});
     const { unmount } = render(<HataIzlemeBaglantisi bilgi={bilgi} />);
     unmount();
-    istemciHatasiniKaydet(new Error("sonra"));
+    istemciHatasiniKaydet(new Error("kök düzen bozuldu"));
     await bekle();
-    expect(gelenler).toHaveLength(0);
-    expect(konsol).toHaveBeenCalled();
+    expect(gelenler.map((olay) => olay.exception?.values?.[0]?.value)).toEqual([
+      "kök düzen bozuldu",
+    ]);
+  });
+
+  it("hiçbir dinleyici iki kez eklenmez", async () => {
+    const gelenler = olaylar();
+    render(<HataIzlemeBaglantisi bilgi={bilgi} />);
+    baglantiyiSifirla();
+    render(<HataIzlemeBaglantisi bilgi={bilgi} />);
+    window.dispatchEvent(new ErrorEvent("error", { error: new Error("bir kez") }));
+    await bekle();
+    expect(gelenler).toHaveLength(1);
   });
 });

@@ -2,6 +2,7 @@
 // bilerek çıkarılır ve araçta okunur:
 // - sunucu: sitenin kutusunda uygulamanın hata katmanından (izleme/hata-denemesi.mjs),
 // - tarayıcı: sitenin deneme adresi gerçek bir tarayıcıda açılır, yakalanmamış bir hata çıkarılır.
+// Ayrıca ön kapının 1 MB gövde sınırı sitenin gönderim adresiyle ölçülür.
 // İkisinin de içinde uydurma kişisel ve gizli bilgiler vardır. Araçtaki kayıtta site kod adı,
 // çekirdek sürümü ve ortam etiketi olmalı; uydurma bilgilerin hiçbiri açık, ziyaretçi adresi,
 // istek başlığı ve çerez hiç olmamalı.
@@ -14,7 +15,11 @@
 import { randomInt } from "node:crypto";
 import { chromium } from "@playwright/test";
 import { siteKlasorunuDogrula } from "../cekirdek/ayar-semasi/site-klasoru.ts";
-import type { Olay } from "../cekirdek/izleme/hata-izleme-araci.ts";
+import {
+  gonderimAdresiniCoz,
+  hataIzlemeDegiskenleri,
+  type Olay,
+} from "../cekirdek/izleme/hata-izleme-araci.ts";
 import {
   denemeDegerleri,
   denemeMesaji,
@@ -36,7 +41,7 @@ const tarayicidaDene = async (kodAdi: string, isaret: string): Promise<number> =
   const tarayici = await chromium.launch();
   try {
     const sayfa = await tarayici.newPage();
-    await sayfa.goto(`https://${denemeAdresi(kodAdi)}/?anahtar=${denemeDegerleri.sorgu}`, {
+    await sayfa.goto(`https://${denemeAdresi(kodAdi)}/?k=${denemeDegerleri.sorgu}`, {
       waitUntil: "networkidle",
     });
     const yanit = sayfa.waitForResponse(
@@ -87,13 +92,39 @@ try {
     `${tarayiciDurumu === 200 ? "tamam" : "HATA "}  tarayıcıdaki hata araca gönderildi (${tarayiciDurumu})`,
   );
 
+  // Ön kapının gövde sınırı: sitenin kendi (herkese açık) gönderim adresiyle 2 MB'lık bir istek
+  // araca gitmeden 413 almalı. Anahtarsız istek gövde okunmadan ret aldığı için anahtar gerekir.
+  const gonderim = gonderimAdresiniCoz(
+    sshKomutu(
+      sunucu.ipv4,
+      `docker exec ${kutu} printenv ${hataIzlemeDegiskenleri.adres}`,
+    ).stdout.trim(),
+  );
+  const buyuk = gonderim
+    ? await fetch(gonderim.adres, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Sentry-Auth": `Sentry sentry_version=7, sentry_key=${gonderim.anahtar}`,
+        },
+        body: "a".repeat(2 * 1024 * 1024),
+      }).then(
+        (yanit) => yanit.status,
+        (hata: Error) => hata.message,
+      )
+    : "kutuda gönderim adresi yok";
+  console.log(
+    `${buyuk === 413 ? "tamam" : "HATA "}  2 MB'lık gönderim ön kapıda 413 alıyor (${buyuk})`,
+  );
+
   // Bugsink olayı kuyruktan işler; iki olay görünene kadar beklenir.
   let olaylar: Olay[] = [];
   for (let deneme = 0; deneme < 15 && olaylar.length < 2; deneme++) {
     await new Promise((bekle) => setTimeout(bekle, 2000));
     olaylar = olaylariOku(sunucu.ipv4, hataIzlemeOrtami, kodAdi, isaret);
   }
-  let hataSayisi = Number(sunucuDurumu !== "200") + Number(tarayiciDurumu !== 200);
+  let hataSayisi =
+    Number(sunucuDurumu !== "200") + Number(tarayiciDurumu !== 200) + Number(buyuk !== 413);
   for (const kaynak of ["sunucu", "tarayici"]) {
     const bulunan = olaylar.filter((olay) => olay.tags?.kaynak === kaynak);
     const sorunlar =

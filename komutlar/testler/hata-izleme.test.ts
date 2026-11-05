@@ -4,12 +4,17 @@
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { hataIzlemeDegiskenleri } from "../../cekirdek/izleme/hata-izleme-araci.ts";
-import { denemeDegerleri } from "../../cekirdek/izleme/hata-izleme-denemesi-degerleri.ts";
+import {
+  denemeDegerleri,
+  denemeMesaji,
+} from "../../cekirdek/izleme/hata-izleme-denemesi-degerleri.ts";
+import { metniMaskele } from "../../cekirdek/izleme/maskele.ts";
 import { hataIzlemeGizliBilgisi } from "../gizli-bilgi.mts";
 import {
   bugsinkGoruntusu,
   bugsinkKomutu,
   hataIzlemeAgHatalari,
+  hataIzlemeAgUyeHatalari,
   hataIzlemeTanimi,
   kurmaBetigi,
   olaySorunlari,
@@ -132,6 +137,14 @@ describe("ön kapı", () => {
     expect(tanim.services.yoklama.networks).not.toContain(hataIzlemeAgi);
   });
 
+  it("hata izleme ağında yalnız ön kapı ve hata izleme kutusu olmalı", () => {
+    expect(hataIzlemeAgUyeHatalari(["on-kapi", "hata-izleme-deneme"])).toEqual([]);
+    expect(hataIzlemeAgUyeHatalari(["on-kapi", "hata-izleme-deneme", "site-deneme-a-1"])).toEqual([
+      "ağda beklenmeyen kutu site-deneme-a-1",
+    ]);
+    expect(hataIzlemeAgUyeHatalari(["hata-izleme-deneme"])).toEqual(["ağda on-kapi yok"]);
+  });
+
   it("kutu yalnız kendi ağında olmalı", () => {
     expect(hataIzlemeAgHatalari([hataIzlemeAgi])).toEqual([]);
     expect(hataIzlemeAgHatalari([hataIzlemeAgi, "altyapi"])).toEqual(["beklenmeyen ağ altyapi"]);
@@ -171,7 +184,7 @@ describe("deneme komutunun kayıt denetimi", () => {
     ["açık e-posta", { extra: { e: denemeDegerleri.eposta } }, "açık"],
     ["açık şifre", { extra: { e: denemeDegerleri.sifre } }, "açık"],
     ["açık kart", { extra: { e: "4111111111111111" } }, "açık"],
-    ["sorgu kısmı", { extra: { yol: `/?anahtar=${denemeDegerleri.sorgu}` } }, "açık"],
+    ["sorgu kısmı", { extra: { yol: `/?k=${denemeDegerleri.sorgu}` } }, "açık"],
     ["ziyaretçi bilgisi", { user: { ip_address: "{{auto}}" } }, "yasak alan: user"],
     ["istek başlıkları", { request: { headers: {} } }, "yasak alan: request"],
     ["IP adresi", { extra: { ip: "203.0.113.7" } }, "IP adresi"],
@@ -181,6 +194,16 @@ describe("deneme komutunun kayıt denetimi", () => {
   ])("bozuk kayıt yakalanır: %s", (_ad, bozma, sorun) => {
     expect(olaySorunlari({ ...saglam, ...bozma }, beklenen).join("\n")).toContain(sorun);
   });
+
+  // İşaret rastgele harflerdir; gizli bilgi sözcüğü taşısa da mesajın maskesi bozulmamalı.
+  it.each(["abcotpdefghijklm", "keyabcdefghijklm", "abcdefghijklmkart", "pwdjwtcvvcvcxyzq"])(
+    "işaret %s olsa da e-posta kısaltılmış kalır",
+    (isaret) => {
+      const maskeli = metniMaskele(denemeMesaji(isaret, "sunucu"));
+      expect(maskeli).toContain("d***@example.com");
+      expect(maskeli).toContain(isaret);
+    },
+  );
 
   it("maske çalışmamış (e-posta tümüyle silinmiş) kayıt da yakalanır", () => {
     const silinmis = { ...saglam, exception: { values: [{ type: "Error", value: "x" }] } };

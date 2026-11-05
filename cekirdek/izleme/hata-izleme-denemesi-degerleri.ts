@@ -8,7 +8,8 @@ export const denemeDegerleri = {
   sifre: "Deneme-Sifre-9",
   kart: "4111 1111 1111 1111",
   jwt: "eyJhbGciOiJIUzI1NiJ9.eyJkZW5lbWUiOjF9.imza",
-  // Tarayıcı denemesinde sayfa adresinin sorgu kısmına konur; araca hiç gitmemeli.
+  // Tarayıcı denemesinde sayfa adresinin sorgu kısmına "k" adıyla konur; araca hiç gitmemeli.
+  // Adı maskenin tanıdığı bir sözcük değildir: değer ancak sorgu kısmı eklenmediği için gitmez.
   sorgu: "denemegizlisorgu",
 } as const;
 
@@ -24,6 +25,8 @@ export const acikBicimler = [
   denemeDegerleri.sorgu,
 ];
 
-// Denemenin hata mesajı: işaret, kaydı araçta bulmaya yarar.
+// Denemenin hata mesajı: işaret, kaydı araçta bulmaya yarar. İşaret en sondadır: ardından
+// "=" ya da ":" gelseydi ve işaret rastgele "otp", "key" gibi bir parça taşısaydı, maske
+// sonrasını gizli alan sayıp e-postayı bütünüyle silerdi (bulundu: yaklaşık 200 denemede bir).
 export const denemeMesaji = (isaret: string, kaynak: string): string =>
-  `hata izleme denemesi ${kaynak} ${isaret}: ${denemeDegerleri.eposta} ${denemeDegerleri.telefon} sifre=${denemeDegerleri.sifre} kart ${denemeDegerleri.kart}`;
+  `hata izleme denemesi ${kaynak} ${denemeDegerleri.eposta} ${denemeDegerleri.telefon} sifre=${denemeDegerleri.sifre} kart ${denemeDegerleri.kart} isaret ${isaret}`;

@@ -31,6 +31,7 @@ import {
   hataIzlemeOrtami,
   hataIzlemePortu,
   kodAdiGecerli,
+  onKapiKutusu,
 } from "./on-kapi.mts";
 import { sshKomutu } from "./sunucu.mts";
 
@@ -82,9 +83,18 @@ export const bugsinkKomutu = [
 // Hata izleme kutusu açılmış ortamlar. Canlı ortam alan adı bağlanınca eklenir (kullanıcı kararı).
 export const hataIzlemeOrtamlari = [hataIzlemeOrtami] as const satisfies readonly Ortam[];
 
-export const hataIzlemeKlasoru = (ortam: Ortam): string => `/srv/altyapi/hata-izleme/${ortam}`;
+// Kutunun adı, ağı ve adresi bugün yalnız deneme ortamı için tanımlıdır (on-kapi.mts). Başka bir
+// ortam verilirse komut durur: iki ortam aynı kutu adıyla çakışırdı. Canlı ortam eklenirken
+// adlar ortama bağlanır.
+const ortamiDenetle = (ortam: Ortam): Ortam => {
+  const acik: readonly string[] = hataIzlemeOrtamlari;
+  if (!acik.includes(ortam)) throw new Error(`${ortam} ortamında hata izleme kutusu yok.`);
+  return ortam;
+};
+export const hataIzlemeKlasoru = (ortam: Ortam): string =>
+  `/srv/altyapi/hata-izleme/${ortamiDenetle(ortam)}`;
 const gizliKlasoru = (ortam: Ortam): string =>
-  `${gizliKok}/${ortam}/${hataIzlemeGizliBilgisi.klasor}`;
+  `${gizliKok}/${ortamiDenetle(ortam)}/${hataIzlemeGizliBilgisi.klasor}`;
 // Yönetim ekranının kullanıcısı. Adres gerçek bir posta kutusu değildir, yalnız giriş adıdır.
 export const yoneticiAdi = `yonetici@${altyapiAlanAdi}`;
 // Bir sitenin projesinin tuttuğu en çok olay (Bugsink'in varsayılanı 10.000).
@@ -258,7 +268,10 @@ elif islem == "olaylar":
     isaret = sys.argv[3]
     cikti = []
     for p in projeler():
+        # Yalnız işareti taşıyan sorunların olayları okunur: kayıt biriktikçe deneme yavaşlamaz.
         for s in hepsi("/issues/?project=%d" % p["id"]):
+            if isaret not in (s.get("calculated_value") or ""):
+                continue
             for o in hepsi("/events/?issue=" + s["id"]):
                 veri = iste("/events/%s/" % o["id"])["data"]
                 if isaret in json.dumps(veri, ensure_ascii=False):
@@ -327,6 +340,18 @@ export const olaylariOku = (ipv4: string, ortam: Ortam, kodAdi: string, isaret: 
 };
 
 // --- Denetim ---
+
+// Hata izleme ağında yalnız ön kapı ve hata izleme kutusu durmalı (girdi: ağdaki kutuların
+// adları). Ağa bağlanan başka bir kutu, ön kapının yol süzgecini atlayıp yönetim ucuna ulaşırdı.
+export const hataIzlemeAgUyeHatalari = (uyeler: string[]): string[] => {
+  const beklenen = [onKapiKutusu, hataIzlemeKutusu];
+  const fazla = uyeler.filter((uye) => uye && !beklenen.includes(uye));
+  const eksik = beklenen.filter((uye) => !uyeler.includes(uye));
+  return [
+    ...fazla.map((uye) => `ağda beklenmeyen kutu ${uye}`),
+    ...eksik.map((uye) => `ağda ${uye} yok`),
+  ];
+};
 
 // Kutu yalnız kendi ağına bağlı olmalı (girdi: docker inspect'teki ağ adları).
 export const hataIzlemeAgHatalari = (aglar: string[]): string[] => {

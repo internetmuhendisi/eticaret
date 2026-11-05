@@ -2,6 +2,7 @@
 // ve hata katmanından araca giden yol. Gerçek araçla denemesi: pnpm hata-izleme-denemesi.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cekirdekSurumu } from "../../surum.ts";
+import { onRequestError } from "../../uygulama/instrumentation.ts";
 import {
   type Gonderici,
   gonderimAdresiniCoz,
@@ -131,8 +132,10 @@ describe("yığın", () => {
       "    at /uygulama/b.js:20:7",
       "    at Module._compile (node:internal/modules/cjs/loader:1:1)",
       "    at kutuphane (/uygulama/node_modules/x/index.js:3:4)",
+      "    at async node:internal/modules/esm/loader:647:26",
     ].join("\n");
     expect(yiginiCoz(yigin)).toEqual([
+      { filename: "node:internal/modules/esm/loader", lineno: 647, colno: 26, in_app: false },
       {
         filename: "/uygulama/node_modules/x/index.js",
         function: "kutuphane",
@@ -151,6 +154,23 @@ describe("yığın", () => {
       { filename: "/uygulama/a.js", function: "icteki", lineno: 10, colno: 5, in_app: true },
     ]);
     expect(yiginiCoz(undefined)).toEqual([]);
+  });
+
+  it("Safari ve Firefox biçimini de çözer, adresin sorgu kısmını atar", () => {
+    const yigin = [
+      "icteki@https://site.ornek.com/_next/static/a.js?k=degerburada:10:5",
+      "@https://site.ornek.com/_next/static/b.js#parca:20:7",
+    ].join("\n");
+    expect(yiginiCoz(yigin)).toEqual([
+      { filename: "https://site.ornek.com/_next/static/b.js", lineno: 20, colno: 7, in_app: true },
+      {
+        filename: "https://site.ornek.com/_next/static/a.js",
+        function: "icteki",
+        lineno: 10,
+        colno: 5,
+        in_app: true,
+      },
+    ]);
   });
 });
 
@@ -225,6 +245,31 @@ describe("sunucudaki bağlantı", () => {
     for (const deger of acikDegerler) expect(metin).not.toContain(deger);
     expect(istekler[0]?.olay.tags).toMatchObject({ site: "deneme-sitesi", kaynak: "sunucu" });
     expect(istekler[0]?.olay.extra).toMatchObject({ baglam: { kaynak: "next", yol: "/odeme" } });
+  });
+
+  // Next.js istek hatasının yoluna sorgu kısmını da yazar; araca yalnız yol gitmeli. Değerlerin
+  // adı maskenin tanıdığı bir sözcük değildir: gizlenmeleri ancak sorgunun atılmasına bağlıdır.
+  it("Next.js istek hatası sorgu kısmı olmadan gider", async () => {
+    vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    vi.stubEnv("NEXT_RUNTIME", "nodejs");
+    const { istekler, gonder } = yakalayici();
+    vi.stubGlobal("fetch", gonder);
+    hataIzlemeyiBagla(bilgi);
+    await onRequestError(
+      new Error("sayfa bozuldu"),
+      { path: "/ara?q=Gizli Arama Metni&k=dogrulamadegeri", method: "GET", headers: {} },
+      {
+        routerKind: "App Router",
+        routePath: "/ara",
+        routeType: "render",
+        revalidateReason: undefined,
+      },
+    );
+    await bekle();
+    const metin = JSON.stringify(istekler[0]?.olay);
+    expect(metin).not.toContain("Gizli Arama Metni");
+    expect(metin).not.toContain("dogrulamadegeri");
+    expect(istekler[0]?.olay.extra).toMatchObject({ baglam: { yol: "/ara" } });
   });
 
   it("araç ulaşılamazsa günlüğe uyarı yazılır, uygulama çalışır", async () => {

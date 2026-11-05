@@ -32,7 +32,12 @@ import {
   siteNumaralariniOku,
   yerlesimHatalari,
 } from "./gizli-bilgi.mts";
-import { hataIzlemeAgHatalari, hataIzlemeOrtamlari, hataIzlemeTanimi } from "./hata-izleme.mts";
+import {
+  hataIzlemeAgHatalari,
+  hataIzlemeAgUyeHatalari,
+  hataIzlemeOrtamlari,
+  hataIzlemeTanimi,
+} from "./hata-izleme.mts";
 import {
   hataIzlemeAgi,
   hataIzlemeKutusu,
@@ -301,9 +306,10 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
     for (const ortam of hataIzlemeOrtamlari) {
       const kutu = sshKomutu(
         kayit.ipv4,
-        `docker inspect ${hataIzlemeKutusu} --format '${kutuOlcumBicimi}|{{.State.Health.Status}}|{{json .HostConfig.PortBindings}}|{{range $ag, $_ := .NetworkSettings.Networks}}{{$ag}} {{end}}' && docker network inspect -f '{{.Internal}}' ${hataIzlemeAgi}`,
+        `docker inspect ${hataIzlemeKutusu} --format '${kutuOlcumBicimi}|{{.State.Health.Status}}|{{json .HostConfig.PortBindings}}|{{range $ag, $_ := .NetworkSettings.Networks}}{{$ag}} {{end}}' && docker network inspect -f '{{.Internal}}|{{range .Containers}}{{.Name}} {{end}}' ${hataIzlemeAgi}`,
       );
-      const [satir = "", kapali = ""] = kutu.stdout.trim().split("\n");
+      const [satir = "", agSatiri = ""] = kutu.stdout.trim().split("\n");
+      const [kapali = "", uyeler = ""] = agSatiri.split("|");
       const alanlar = satir.split("|");
       const [saglik = "", portlar = "", aglar = ""] = alanlar.slice(-3);
       const hatalar =
@@ -317,11 +323,12 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
               ...(portuKapali(portlar) ? [] : [`açık port ${portlar}`]),
               ...hataIzlemeAgHatalari(aglar.trim().split(" ")),
               ...(kapali.trim() === "true" ? [] : ["ağ dışarıya açık"]),
+              ...hataIzlemeAgUyeHatalari(uyeler.trim().split(" ")),
             ]
           : [kutu.stderr.trim() || "kutu yok"];
       olcum(
         hatalar.length === 0,
-        `${ortam} hata izleme kutusu sağlıklı: kök olmayan kullanıcı, salt okunur, yetkisiz, yeniden başlayınca açılır, portu kapalı, internete kapalı`,
+        `${ortam} hata izleme kutusu sağlıklı: kök olmayan kullanıcı, salt okunur, yetkisiz, yeniden başlayınca açılır, portu kapalı, internete kapalı, ağında yalnız ön kapı`,
         hatalar.join("; "),
       );
     }

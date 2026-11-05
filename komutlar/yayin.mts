@@ -457,6 +457,10 @@ const yayinlaKilitli = async (girdi: YayinGirdisi): Promise<YayinKaydi> => {
     yaz(`yayın       ${ortam}/${kodAdi} ${no} (sürüm ${surum}, kayıt ${girdi.kayit.slice(0, 12)})`);
     const hatalar = goruntuyuDenetle(girdi.etiket);
     if (hatalar.length > 0) throw new Error(`Görüntü denetimden geçmedi: ${hatalar.join("; ")}`);
+    // Hataları izlenmeyen bir site yayına çıkmaz: proje hazırlanamazsa yayın durur (kart 0022).
+    // Veritabanı değişikliklerinden önce: araç yanıt vermezse veritabanına hiç dokunulmamış olur.
+    const hataIzlemeAdresi = projeAdresiniHazirla(ipv4, ortam, kodAdi);
+    yaz(`hazır       ${ortam}/${kodAdi} hata izleme projesi`);
     // Değişiklik adımı yarıda kalırsa hepsi uygulanmış sayılır: geri dönüş "yedekten" notunu kaçırmaz.
     kayit.degisiklikToplami = notlar.length;
     const { toplam } = siteVeritabaniniHazirla(
@@ -468,9 +472,7 @@ const yayinlaKilitli = async (girdi: YayinGirdisi): Promise<YayinKaydi> => {
     kayit.degisiklikToplami = toplam;
     const { kimlik: goruntu } = goruntuyuGonder(ipv4, girdi.etiket);
     kayit.goruntu = goruntu;
-    // Hataları izlenmeyen bir site yayına çıkmaz: proje hazırlanamazsa yayın durur (kart 0022).
-    const hataIzlemeAdresi = projeAdresiniHazirla(ipv4, ortam, kodAdi);
-    yaz(`hazır       ${ortam}/${kodAdi} hata izleme projesi`);
+
     kutuAcildi = true;
     klasoruYukle(ipv4, ortam, kodAdi, no, girdi.klasor);
     const cikti = sunucudaCalistir(

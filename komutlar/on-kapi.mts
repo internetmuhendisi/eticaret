@@ -61,6 +61,7 @@ export const alanAdiKayitlari = (ipv4: string, ipv6: string) => [
 // --- Sunucudaki yerleşim ---
 
 export const caddyGoruntusu = "caddy:2.10.2-alpine";
+export const onKapiKutusu = "on-kapi";
 export const onKapiKlasoru = "/srv/altyapi/on-kapi";
 export const agAdi = "altyapi";
 const proje = "altyapi-on-kapi";
@@ -201,7 +202,7 @@ export const onKapiTanimi = (siteler: YayindakiSiteler = {}) => ({
   services: {
     caddy: {
       image: caddyGoruntusu,
-      container_name: "on-kapi",
+      container_name: onKapiKutusu,
       user: `${caddyKullanicisi}:${caddyKullanicisi}`,
       ports: ["80:80/tcp", "443:443/tcp"],
       ...kisitli,

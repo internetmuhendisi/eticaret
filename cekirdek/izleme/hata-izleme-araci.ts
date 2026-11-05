@@ -52,15 +52,22 @@ type Cerceve = {
   in_app: boolean;
 };
 
-// V8 yığın satırları: "at islev (dosya:satir:sutun)" ya da "at dosya:satir:sutun".
+// Yığın satırları iki biçimde gelir:
+// - V8 (Node.js, Chrome): "at islev (dosya:satir:sutun)" ya da "at dosya:satir:sutun",
+// - Safari ve Firefox: "islev@dosya:satir:sutun" ya da "@dosya:satir:sutun".
 // Bugsink çerçeveleri eskiden yeniye ister; yığın yeniden eskiye yazılır, sıra çevrilir.
+// Dosya adresinin sorgu ve parça kısmı atılır: sayfa adresi gibi değer taşıyabilir.
+const v8Satiri = /^\s*at (?:async )?(?:(.+?) \()?(.+?):(\d+):(\d+)\)?\s*$/;
+const safariSatiri = /^\s*([^@\s]*)@(.+?):(\d+):(\d+)\s*$/;
+
 export const yiginiCoz = (yigin: unknown): Cerceve[] => {
   if (typeof yigin !== "string") return [];
   const cerceveler: Cerceve[] = [];
   for (const satir of yigin.split("\n")) {
-    const eslesme = satir.match(/^\s*at (?:(.+?) \()?(.+?):(\d+):(\d+)\)?\s*$/);
+    const eslesme = satir.match(v8Satiri) ?? satir.match(safariSatiri);
     if (!eslesme) continue;
-    const [, islev, dosya = "", satirNo, sutun] = eslesme;
+    const [, islev, ham = "", satirNo, sutun] = eslesme;
+    const dosya = ham.replace(/[?#].*$/, "");
     cerceveler.push({
       filename: dosya,
       ...(islev ? { function: islev } : {}),
