@@ -50,8 +50,10 @@ const olc = (ad: string, gecti: boolean, ayrinti = "") => {
   console.log(`${gecti ? "tamam " : "HATA  "} ${ad}${ayrinti ? `  (${ayrinti})` : ""}`);
 };
 
-// Ctrl-C ya da kapatma isteği denemeyi hemen bitirmez: o anki sunucu adımı biter, sonraki adım
-// başlamadan deneme durur ve temizlik yine çalışır (deneme sitesi sunucuda kalmasın).
+// Ctrl-C: o anki ssh süreci de sinyali alır ve yarıda kalır. Deneme bunu ssh'in sonucundaki
+// sinyalden anlar ve sonraki adıma geçmeden durur. İşleyiciler yalnız Node'un hemen kapanmasını
+// önler (eşzamanlı akışta adımlar sürerken çalışmazlar); böylece temizlik yine çalışır ve deneme
+// sitesi sunucuda kalmaz. Yarıda kalan adımın artığını da temizlik siler.
 let kesildi = false;
 for (const sinyal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
   process.on(sinyal, () => {
@@ -66,6 +68,9 @@ const calistir = (
 ): { durum: number; cikti: string; hata: string } => {
   if (kesildi && !temizlik) throw new Error("Deneme kesildi.");
   const sonuc = sshKomutu(ipv4, "bash -s", { girdi: betik, sure: 300_000 });
+  if (sonuc.signal === "SIGINT" || sonuc.signal === "SIGTERM" || sonuc.signal === "SIGHUP") {
+    kesildi = true;
+  }
   return { durum: sonuc.status ?? 1, cikti: sonuc.stdout, hata: sonuc.stderr };
 };
 

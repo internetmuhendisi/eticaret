@@ -79,7 +79,10 @@ describe("veritabanı kutusunun tanımı", () => {
 
 describe("veritabanı kutusunun ağları", () => {
   it("yalnız o ortamdaki sitelerin ağları geçer", () => {
-    expect(agHatalari(["site-deneme-ornek-magaza", "site-deneme-vt-deneme"], "deneme")).toEqual([]);
+    const siteler = ["ornek-magaza", "vt-deneme"];
+    expect(
+      agHatalari(["site-deneme-ornek-magaza", "site-deneme-vt-deneme"], "deneme", siteler),
+    ).toEqual([]);
   });
 
   it.each([
@@ -88,10 +91,17 @@ describe("veritabanı kutusunun ağları", () => {
     ["başka ortamın site ağı", "site-canli-ornek-magaza"],
     ["geçersiz kod adlı ağ", "site-deneme-a--b"],
     ["kod adsız ağ", "site-deneme-"],
+    ["listede olmayan sitenin kalmış ağı", "site-deneme-vt-deneme"],
   ])("%s kırmızıdır", (_ad, ag) => {
-    expect(agHatalari(["site-deneme-ornek-magaza", ag], "deneme")).toEqual([
+    expect(agHatalari(["site-deneme-ornek-magaza", ag], "deneme", ["ornek-magaza"])).toEqual([
       `beklenmeyen ağ ${ag}`,
     ]);
+  });
+
+  it("listedeki sitenin ağı eksikse kırmızıdır", () => {
+    expect(
+      agHatalari(["site-deneme-ornek-magaza"], "deneme", ["ornek-magaza", "yeni-site"]),
+    ).toEqual(["eksik ağ site-deneme-yeni-site"]);
   });
 });
 
@@ -131,7 +141,9 @@ describe("sitenin veritabanını açan betik", () => {
   const [baskaOn, baskaSon] = sablonParcalari("VERITABANI_ADRESI", "baska");
   const adres = (deger: string) => `${on}${deger}${son}`;
 
-  const calistir = (deger: string) => {
+  // psql yerine geçen komut: girdiyi kaydeder; hata istenirse psql gibi şifreyi ve komutun metnini
+  // hata çıktısına basıp hatayla biter.
+  const calistir = (deger: string, { psqlHatasi = false } = {}) => {
     const dosya = join(klasor, "veritabani_adresi");
     const cikti = join(klasor, "psql-girdisi");
     writeFileSync(dosya, deger);
@@ -140,7 +152,12 @@ describe("sitenin veritabanını açan betik", () => {
     const ic = betik.split("<<'KOK_SONU'\n")[1]?.split("\nKOK_SONU\n")[0] ?? "";
     const yerel = ic
       .replace(/^f=.*$/m, `f=${dosya}`)
-      .replace(/docker exec -i \S+ psql .* -f - >\/dev\/null 2>"\$e"/, `cat > ${cikti}`);
+      .replace(
+        /docker exec -i \S+ psql .* -f - (>\/dev\/null 2>"\$e")/,
+        psqlHatasi
+          ? `{ cat > ${cikti}; printf '%s\\n' "psql:<stdin>:21: ERROR:  syntax error at or near $s" "LINE 1: ALTER ROLE x PASSWORD '$s'" "                                ^" >&2; false; } $1`
+          : `cat > ${cikti}`,
+      );
     const sonuc = spawnSync("bash", ["-c", yerel], { encoding: "utf8" });
     let girdi = "";
     try {
@@ -157,6 +174,15 @@ describe("sitenin veritabanını açan betik", () => {
     const [ilk, ...geri] = sonuc.girdi.split("\n");
     expect(ilk).toBe(`\\set sifre '${sifre}'`);
     expect(geri.join("\n")).toContain('ALTER ROLE :"ad"');
+  });
+
+  it("psql hatasında yalnız ERROR: iletisi görünür, şifre ve komutun metni görünmez", () => {
+    const sonuc = calistir(adres(sifre), { psqlHatasi: true });
+    expect(sonuc.status).not.toBe(0);
+    expect(sonuc.stderr).toContain("veritabanı açılamadı");
+    expect(sonuc.stderr).not.toContain(sifre);
+    expect(sonuc.stderr).not.toContain(sifre.slice(0, 16));
+    expect(sonuc.stderr).not.toContain("LINE 1");
   });
 
   it.each([

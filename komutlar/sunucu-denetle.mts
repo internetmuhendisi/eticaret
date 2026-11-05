@@ -55,6 +55,7 @@ import {
   agHatalari,
   pgHbaOzeti,
   portuKapali,
+  siteListesiniOku,
   veritabaniKlasoru,
   veritabaniKutusu,
   veritabaniOrtamlari,
@@ -273,7 +274,7 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
           ? []
           : ["bağlantı kuralı dosyası projedekiyle aynı değil"]),
         ...(ayar.status === 0 && aglar.trim()
-          ? agHatalari(aglar.trim().split(" "), ortam)
+          ? agHatalari(aglar.trim().split(" "), ortam, siteListesiniOku(kayit.ipv4, ortam))
           : ["ağlar okunamadı"]),
       ];
       olcum(
