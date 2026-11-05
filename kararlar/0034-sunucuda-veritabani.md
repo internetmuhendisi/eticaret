@@ -36,7 +36,7 @@
 ## Neden
 
 - **Ortam başına ayrı kutu:** Gizli bilgi şablonu her ortamda aynı veritabanı adını ve `veritabani` adresini kullanır. Ayrı kutu, deneme ile canlının verisini ve kullanıcılarını birbirinden ayırır.
-- **Site başına ağ:** Site veritabanına ulaşır ama başka bir sitenin kutusuna ulaşamaz. Ortak tek ağda her site kutusu ötekine ulaşabilirdi.
+- **Site başına ağ:** Site veritabanına ulaşır, başka bir sitenin ağına bağlı değildir. Ortak tek ağda her site kutusu ötekine ulaşabilirdi. Sunucuda henüz site kutusu olmadığı için iki site kutusunun birbirine ulaşamadığı ölçülmedi, yayın komutunda (0021) ölçülür.
 - **Ağların tanımda tutulması:** Kutu yeniden kurulunca bağlantılar kaybolmaz. Elle yapılan bağlantı, kutunun ilk yeniden kuruluşunda siteleri veritabanından koparırdı.
 - **Görüntüdeki parça:** Değişiklik dosyaları ve onları uygulayan kod, çekirdeğin o sürümüyle birlikte gelir. Sitenin veritabanı, kutusunun çalışacağı sürümün değişiklikleriyle güncellenir. Ayrı bir araç kurulmaz, yerelde ölçülen yol sunucuda da çalışır.
 - **Değişikliklerin sunucuda uygulanması:** Bilgisayardan tünelle bağlanmak sitenin şifresini bilgisayara getirirdi (0031 bunu yasaklar).
@@ -59,6 +59,9 @@
 - **Yeni sitede kısa kesinti:** Yeni bir sitenin veritabanı açılınca kutunun tanımı değişir (yeni ağ) ve kutu yeniden kurulur. O ortamdaki bütün siteler birkaç saniye veritabanına ulaşamaz. Denemede kutu iki kez yeniden kuruldu (deneme sitesi eklenince ve silinince), ardından yeni açılan bağlantılar kuruldu. Açık bir bağlantı havuzunun kendiliğinden yeniden bağlandığı ölçülmedi, çünkü sunucuda henüz site kutusu yok (0021). Canlı ortamda yeni site açmak bu yüzden sitelerin az ziyaret aldığı saate bırakılmalıdır.
 - **Yayın öncesi yeni görüntü:** Görüntü artık değişiklik dosyalarını da taşır. Değişiklik eklenince görüntü yeniden üretilmelidir. Eski bir görüntüyle sunucuda değişiklik uygulanamaz.
 - **Görüntünün boyutu ve kimliği:** Aktarılan görüntü yaklaşık 75 MB'tır (ölçüldü, `docker save`). Aynı kimlikteki görüntü yeniden gönderilmez. Kimlik bilgisayardaki görüntüden okunduğu için, bilgisayarda aynı sürüm yeniden üretilirse sunucudaki görüntü de değişir. Hangi kaydın yayınlandığını yayın komutu (0021) ayrıca tutmalıdır.
-- **Şifre yenilemenin yarım kalması:** Gizli bilgi yenilenip şifre eşitleme yarıda kalırsa sitenin yeni bağlantıları kurulamaz. Komut bunu hata olarak söyler. Komut yeniden çalıştırılınca şifre eşitlenir.
+- **Şifre yenilemede kesinti:** Şifre yenilenince PostgreSQL'deki şifre hemen değişir. Çalışan site kutusu eski dosyayı görmeye devam eder, yeniden başlatılana kadar yeni bağlantı kuramaz. Bugün sunucuda site kutusu yok. Yayın komutu (0021) yenilemeyle kutuyu aynı adımda yeniden başlatmalıdır.
+- **Şifre yenilemenin yarım kalması:** Gizli bilgi yenilenip şifre eşitleme yarıda kalırsa ya da veritabanı kutusu çalışmıyorsa komut hata verir. Komut yeniden çalıştırılınca şifre eşitlenir. Kutu hiç yoksa eşitlenecek bir şey yoktur.
+- **Site ağları dışarıya kapalı değildir:** Site ağları (`internal` değil) veritabanı kutusunun internete çıkmasına da yol açar. Sitelerin dışarıya (ödeme, e-posta) çıkması gerekeceği için ağlar kapatılmadı, karar yayın komutunda (0021) yeniden verilir.
+- **Denetim:** Sunucudaki bağlantı kuralı dosyasının projedekiyle aynı olduğunu ve kutunun yalnız sitelerin ağlarına bağlı olduğunu `pnpm sunucu-denetle` ölçer. Şifre denetimi değerin bütününe bakar, satır sonu kabul edilmez. psql'in hata çıktısı şifreyi taşıyan satırlardan arındırılarak gösterilir.
 - **Yedek:** Veritabanının yedeği yoktur, kart 0024'tedir. Veri klasörü silinirse deneme verisi kaybolur.
 - **Yeniden başlama:** Kutunun yeniden başlama kuralı ölçüldü. Sunucunun yeniden başlatılması bu kutuyla ayrıca denenmedi, kural 0033'te ön kapıyla denendi.

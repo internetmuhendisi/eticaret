@@ -38,7 +38,7 @@ try {
         : `bilgi       ${ortam} ortamında veritabanı kutusu yok, şifre eşitlenmedi`,
     );
     console.log(
-      `Uyarı: ${kodAdi} ${ortam} kutusu çalışıyorsa yeni değeri yeniden başlayınca görür.`,
+      `Uyarı: ${kodAdi} ${ortam} kutusu çalışıyorsa yeni değeri yeniden başlayınca görür; o zamana kadar veritabanına yeni bağlantı kuramaz.`,
     );
   }
 } catch (hata) {

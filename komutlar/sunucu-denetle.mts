@@ -52,7 +52,10 @@ import {
   yonetimKapisi,
 } from "./sunucu.mts";
 import {
+  agHatalari,
+  pgHbaOzeti,
   portuKapali,
+  veritabaniKlasoru,
   veritabaniKutusu,
   veritabaniOrtamlari,
   veritabaniTanimi,
@@ -259,6 +262,24 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
         hatalar.length === 0,
         `${ortam} veritabanı kutusu sağlıklı: kök olmayan kullanıcı, salt okunur, yetkisiz, yeniden başlayınca açılır, portu kapalı`,
         hatalar.join("; "),
+      );
+      const ayar = sshKomutu(
+        kayit.ipv4,
+        `sudo sha256sum ${veritabaniKlasoru(ortam)}/ayar/pg_hba.conf | cut -d" " -f1; docker inspect -f '{{range $ag, $_ := .NetworkSettings.Networks}}{{$ag}} {{end}}' ${ad}`,
+      );
+      const [ozet = "", aglar = ""] = ayar.stdout.trim().split("\n");
+      const ayarHatalari = [
+        ...(ozet.trim() === pgHbaOzeti()
+          ? []
+          : ["bağlantı kuralı dosyası projedekiyle aynı değil"]),
+        ...(ayar.status === 0 && aglar.trim()
+          ? agHatalari(aglar.trim().split(" "), ortam)
+          : ["ağlar okunamadı"]),
+      ];
+      olcum(
+        ayarHatalari.length === 0,
+        `${ortam} veritabanı kutusunun bağlantı kuralı projedekiyle aynı, yalnız sitelerin ağlarına bağlı`,
+        ayarHatalari.join("; "),
       );
     }
     const guncelleme = sshKomutu(

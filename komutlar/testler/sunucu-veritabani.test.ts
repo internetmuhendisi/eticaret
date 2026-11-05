@@ -5,8 +5,10 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
+import { sablonParcalari } from "../gizli-bilgi.mts";
 import { kodAdiGecerli } from "../on-kapi.mts";
 import {
+  agHatalari,
   guncellemeBetigi,
   kurmaBetigi,
   portuKapali,
@@ -75,6 +77,24 @@ describe("veritabanı kutusunun tanımı", () => {
   });
 });
 
+describe("veritabanı kutusunun ağları", () => {
+  it("yalnız o ortamdaki sitelerin ağları geçer", () => {
+    expect(agHatalari(["site-deneme-ornek-magaza", "site-deneme-vt-deneme"], "deneme")).toEqual([]);
+  });
+
+  it.each([
+    ["ön kapının ortak ağı", "altyapi"],
+    ["Docker'ın kendi ağı", "bridge"],
+    ["başka ortamın site ağı", "site-canli-ornek-magaza"],
+    ["geçersiz kod adlı ağ", "site-deneme-a--b"],
+    ["kod adsız ağ", "site-deneme-"],
+  ])("%s kırmızıdır", (_ad, ag) => {
+    expect(agHatalari(["site-deneme-ornek-magaza", ag], "deneme")).toEqual([
+      `beklenmeyen ağ ${ag}`,
+    ]);
+  });
+});
+
 describe("sunucuda çalışan betikler", () => {
   it.each([
     ["kurma", kurmaBetigi("deneme", ["ornek-magaza"])],
@@ -105,6 +125,11 @@ describe("sitenin veritabanını açan betik", () => {
   const klasor = mkdtempSync(join(tmpdir(), "vt-betik-"));
   afterAll(() => rmSync(klasor, { recursive: true, force: true }));
   const sifre = "a".repeat(32) + "0123456789abcdef".repeat(2);
+  // Adresler gizli bilgi kaydının parçalarından kurulur: kayıtta şifreli adres kalıbı durmaz
+  // (veri ayrımı testi).
+  const [on, son] = sablonParcalari("VERITABANI_ADRESI", "ornek-magaza");
+  const [baskaOn, baskaSon] = sablonParcalari("VERITABANI_ADRESI", "baska");
+  const adres = (deger: string) => `${on}${deger}${son}`;
 
   const calistir = (deger: string) => {
     const dosya = join(klasor, "veritabani_adresi");
@@ -115,7 +140,7 @@ describe("sitenin veritabanını açan betik", () => {
     const ic = betik.split("<<'KOK_SONU'\n")[1]?.split("\nKOK_SONU\n")[0] ?? "";
     const yerel = ic
       .replace(/^f=.*$/m, `f=${dosya}`)
-      .replace(/docker exec -i \S+ psql .* -f - >\/dev\/null/, `cat > ${cikti}`);
+      .replace(/docker exec -i \S+ psql .* -f - >\/dev\/null 2>"\$e"/, `cat > ${cikti}`);
     const sonuc = spawnSync("bash", ["-c", yerel], { encoding: "utf8" });
     let girdi = "";
     try {
@@ -125,9 +150,7 @@ describe("sitenin veritabanını açan betik", () => {
   };
 
   it("şifreyi psql'e girdinin ilk satırında verir, ardından SQL betiği gelir", () => {
-    const sonuc = calistir(
-      `postgres://site_ornek_magaza:${sifre}@veritabani:5432/site_ornek_magaza`,
-    );
+    const sonuc = calistir(adres(sifre));
     expect(sonuc.status).toBe(0);
     expect(sonuc.stdout).not.toContain(sifre);
     expect(sonuc.stderr).not.toContain(sifre);
@@ -137,13 +160,12 @@ describe("sitenin veritabanını açan betik", () => {
   });
 
   it.each([
-    ["başka sitenin adresi", `postgres://site_baska:${sifre}@veritabani:5432/site_baska`],
-    ["kısa şifre", "postgres://site_ornek_magaza:abc@veritabani:5432/site_ornek_magaza"],
-    [
-      "tırnaklı şifre",
-      `postgres://site_ornek_magaza:${sifre.slice(1)}'@veritabani:5432/site_ornek_magaza`,
-    ],
+    ["başka sitenin adresi", `${baskaOn}${sifre}${baskaSon}`],
+    ["kısa şifre", adres("abc")],
+    ["tırnaklı şifre", adres(`${sifre.slice(1)}'`)],
     ["boş dosya", ""],
+    ["şifreden sonra satır sonuyla eklenmiş komut", adres(`${sifre}\nselect 1/0;\n`)],
+    ["şifreden önce satır sonuyla eklenmiş komut", adres(`select 1/0;\n${sifre}`)],
   ])("%s reddedilir, psql'e bir şey gitmez", (_ad, deger) => {
     const sonuc = calistir(deger);
     expect(sonuc.status).not.toBe(0);

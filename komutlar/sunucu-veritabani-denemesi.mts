@@ -45,11 +45,26 @@ const b = { kodAdi: "vt-deneme", numara: denemeSiteNumarasi, surum: ornek.cekird
 
 const sonuclar: { ad: string; gecti: boolean }[] = [];
 const olc = (ad: string, gecti: boolean, ayrinti = "") => {
+  if (kesildi) throw new Error("Deneme kesildi.");
   sonuclar.push({ ad, gecti });
   console.log(`${gecti ? "tamam " : "HATA  "} ${ad}${ayrinti ? `  (${ayrinti})` : ""}`);
 };
 
-const calistir = (ipv4: string, betik: string): { durum: number; cikti: string; hata: string } => {
+// Ctrl-C ya da kapatma isteği denemeyi hemen bitirmez: o anki sunucu adımı biter, sonraki adım
+// başlamadan deneme durur ve temizlik yine çalışır (deneme sitesi sunucuda kalmasın).
+let kesildi = false;
+for (const sinyal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
+  process.on(sinyal, () => {
+    kesildi = true;
+  });
+}
+
+const calistir = (
+  ipv4: string,
+  betik: string,
+  { temizlik = false } = {},
+): { durum: number; cikti: string; hata: string } => {
+  if (kesildi && !temizlik) throw new Error("Deneme kesildi.");
   const sonuc = sshKomutu(ipv4, "bash -s", { girdi: betik, sure: 300_000 });
   return { durum: sonuc.status ?? 1, cikti: sonuc.stdout, hata: sonuc.stderr };
 };
@@ -99,7 +114,7 @@ ${eskiKopya ? `sudo rm -f ${eskiKopya}` : "true"}
 printf '%s\\n' 'DROP DATABASE IF EXISTS "${ad}" WITH (FORCE);' 'DROP ROLE IF EXISTS "${ad}";' | docker exec -i ${veritabaniKutusu(ortam)} psql -U postgres -d postgres -q >/dev/null
 ${silmeBetigi(ortam, b.kodAdi).replace("set -eu", "true")}
 `;
-  const sonuc = calistir(ipv4, betik);
+  const sonuc = calistir(ipv4, betik, { temizlik: true });
   if (sonuc.durum !== 0) console.error(`temizlik: ${sonuc.hata.trim()}`);
   // Deneme sitesi listeden çıkınca veritabanı kutusu onun ağı olmadan yeniden kurulur.
   try {
@@ -107,7 +122,9 @@ ${silmeBetigi(ortam, b.kodAdi).replace("set -eu", "true")}
   } catch (hata) {
     console.error(`temizlik: ${(hata as Error).message}`);
   }
-  calistir(ipv4, `docker network rm ${siteAgi(ortam, b.kodAdi)} >/dev/null 2>&1 || true`);
+  calistir(ipv4, `docker network rm ${siteAgi(ortam, b.kodAdi)} >/dev/null 2>&1 || true`, {
+    temizlik: true,
+  });
   console.log(`silindi     deneme sitesi ${b.kodAdi} (veritabanı, kullanıcı, gizli bilgi, ağ)`);
 };
 
@@ -180,7 +197,9 @@ try {
   const sonrakiA = yokla(ipv4, etiket, a);
   olc(`${a.kodAdi} yenilemeden etkilenmedi`, sonrakiA.baglandi === true, sonrakiA.hata ?? "");
 } catch (hata) {
-  olc("deneme çalıştı", false, (hata as Error).message);
+  // Kesilen denemede olc de durur; sonuç doğrudan yazılır.
+  sonuclar.push({ ad: "deneme çalıştı", gecti: false });
+  console.log(`HATA   deneme çalıştı  (${(hata as Error).message})`);
 } finally {
   temizle(ipv4, eskiKopya);
 }

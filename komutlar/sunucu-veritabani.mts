@@ -15,6 +15,7 @@
 //   sitenin kutu kullanıcısıyla, sitenin ağında ve sitenin gizli bilgi dosyasıyla.
 
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { gizliBilgiler } from "../cekirdek/kayitlar/gizli-bilgiler.ts";
@@ -117,8 +118,10 @@ const kabukKodAdi = (kodAdi: string): string => {
 };
 
 // Ortamdaki sitelerin listesi: gizli bilgi klasörü olan siteler. Çıktı her satırda bir kod adı.
+// Klasör yoksa liste boştur; okunamazsa komut hata verir (boş liste veritabanını bütün
+// sitelerin ağlarından koparırdı).
 export const siteListesiKomutu = (ortam: Ortam): string =>
-  `sudo find ${gizliKok}/${ortam} -mindepth 1 -maxdepth 1 -type d -printf '%f\\n' 2>/dev/null || true`;
+  `if sudo test -d ${gizliKok}/${ortam}; then sudo find ${gizliKok}/${ortam} -mindepth 1 -maxdepth 1 -type d -printf '%f\\n'; fi`;
 
 export const siteListesiniOku = (ipv4: string, ortam: Ortam): string[] => {
   const sonuc = sshKomutu(ipv4, siteListesiKomutu(ortam));
@@ -183,11 +186,20 @@ d=$(cat "$f")
 # Değer şablona uymalı: ${on}<64 hane>${son}
 case "$d" in '${on}'*'${son}') ;; *) echo "HATA ${ortam}/${kodAdi} gizli bilgisi beklenen biçimde değil" >&2; exit 1 ;; esac
 s=\${d#'${on}'}; s=\${s%'${son}'}
-printf '%s' "$s" | grep -qxE '[0-9a-f]{64}' || { echo "HATA ${ortam}/${kodAdi} şifresi beklenen biçimde değil" >&2; exit 1; }
-{ printf '\\\\set sifre %s\\n' "'$s'"; cat <<'VERITABANI_SQL_SONU'
+# Değerin bütünü 64 küçük onaltılık hane olmalı (satır sonu da kabul edilmez): psql'e giden
+# satıra başka bir şey karışamaz.
+[[ "$s" =~ ^[0-9a-f]{64}$ ]] || { echo "HATA ${ortam}/${kodAdi} şifresi beklenen biçimde değil" >&2; exit 1; }
+# psql'in hata çıktısı değeri taşıyan satırlardan arındırılarak gösterilir.
+e=$(mktemp)
+trap 'rm -f "$e"' EXIT
+if ! { printf '\\\\set sifre %s\\n' "'$s'"; cat <<'VERITABANI_SQL_SONU'
 ${sql}
 VERITABANI_SQL_SONU
-} | docker exec -i ${veritabaniKutusu(ortam)} psql -U postgres -d postgres -q -v ad=${ad} -f - >/dev/null
+} | docker exec -i ${veritabaniKutusu(ortam)} psql -U postgres -d postgres -q -v ad=${ad} -f - >/dev/null 2>"$e"; then
+  echo "HATA ${ortam}/${ad} veritabanı açılamadı:" >&2
+  grep -vF -- "$s" "$e" | tail -5 >&2 || true
+  exit 1
+fi
 echo "açıldı      ${ortam}/${ad}"
 KOK_SONU
 `;
@@ -284,13 +296,21 @@ export const siteVeritabaniniHazirla = (
 };
 
 // Gizli bilgi yenilenince veritabanı kullanıcısının şifresi aynı değere eşitlenir
-// (sunucu-gizli.mts). Ortamda veritabanı kutusu çalışmıyorsa eşitlenecek bir şey yoktur.
+// (sunucu-gizli.mts). Ortamda veritabanı kutusu hiç yoksa eşitlenecek şifre yoktur. Kutu var ama
+// çalışmıyorsa ya da durumu okunamıyorsa hatadır: sonra açılan kutuda eski şifre geçerli kalırdı.
 export const sifreyiEsitle = (ipv4: string, ortam: Ortam, kodAdi: string): boolean => {
+  const kutu = veritabaniKutusu(ortam);
   const durum = sshKomutu(
     ipv4,
-    `docker inspect -f '{{.State.Running}}' ${veritabaniKutusu(ortam)} 2>/dev/null || true`,
+    `if docker inspect ${kutu} >/dev/null 2>&1; then docker inspect -f '{{.State.Running}}' ${kutu}; else echo yok; fi`,
   );
-  if (durum.stdout.trim() !== "true") return false;
+  const deger = durum.stdout.trim();
+  if (durum.status === 0 && deger === "yok") return false;
+  if (durum.status !== 0 || deger !== "true") {
+    throw new Error(
+      `${kutu} çalışmıyor (${deger || durum.stderr.trim()}), şifre eşitlenmedi. Kutu açılınca: pnpm sunucu-veritabani <site klasörü> ${ortam}`,
+    );
+  }
   sunucudaCalistir(ipv4, siteAcmaBetigi(ortam, kodAdi));
   return true;
 };
@@ -310,6 +330,20 @@ export const veritabaniKutusunuKur = (
 };
 
 // --- Denetim ---
+
+// Sunucudaki bağlantı kuralı dosyası projedekiyle aynı olmalı: sha256sum çıktısının ilk alanı.
+export const pgHbaOzeti = (): string => createHash("sha256").update(pgHba()).digest("hex");
+
+// Veritabanı kutusu yalnız o ortamdaki sitelerin ağlarına bağlı olmalı (ortak ya da başka ortamın
+// ağına bağlıysa siteler arasında yol açılırdı). Girdi: kutunun ağ adları.
+export const agHatalari = (aglar: string[], ortam: Ortam): string[] =>
+  aglar
+    .filter(Boolean)
+    .filter((ag) => {
+      const kodAdi = ag.startsWith(`site-${ortam}-`) ? ag.slice(`site-${ortam}-`.length) : "";
+      return !kodAdiGecerli(kodAdi);
+    })
+    .map((ag) => `beklenmeyen ağ ${ag}`);
 
 // docker inspect çıktısı: {{json .HostConfig.PortBindings}}. Port açılmamış olmalı.
 export const portuKapali = (cikti: string): boolean => ["{}", "null"].includes(cikti.trim());
