@@ -103,8 +103,8 @@ Büyük sürümde (ilk sayı artıyorsa) site klasöründe de değişiklik gerek
 5. Site klasörünü hedef sürümün ayar şemasıyla doğrular.
 6. Veritabanı değişikliği varsa onu canlının kişisel bilgileri silinmiş bir kopyasında dener.
 7. Çekirdeğin ve sitenin testlerini hedef sürümle çalıştırır.
-8. Siteyi önce deneme adresinde hedef sürümle yayınlar ve kontrolleri orada çalıştırır.
-9. Kimlik dosyasındaki sürümü değiştirir ve kaydeder.
+8. Kimlik dosyasındaki sürümü değiştirir, kaydeder ve kontrol hattından geçirir. Yayın komutu kimlikteki sürümün kayıttaki çekirdekle aynı olmasını ister, bu yüzden bu adım yayından öncedir (kart 0041).
+9. Siteyi önce deneme adresinde hedef sürümle yayınlar ve kontrolleri orada çalıştırır.
 10. Canlı veritabanının yedeğini hemen alır.
 11. Yayın komutunu çalıştırır: veritabanı değişikliklerini sırayla uygular, siteyi yayınlar, sağlık kontrolü yapar. Sorun çıkarsa site kendiliğinden önceki sürüme döner ve komut durur.
 12. Yayından sonra sağlık kontrolünü ve ekran ölçümünü canlıda çalıştırır.
@@ -113,7 +113,7 @@ Büyük sürümde (ilk sayı artıyorsa) site klasöründe de değişiklik gerek
 15. İstendiyse mağaza sahibine yenilikleri anlatan e-postayı gönderir.
 16. Ana dala alır, çalışma kopyasını kaldırır, tarihçeye yazar.
 
-Geri dönüş: Sorun yayından sonra çıkarsa kimlikteki sürüm eski hâline döner ve yeniden yayınlanır. Veritabanı değişikliği geri alınamıyorsa site 10. adımdaki yedekten döner.
+Geri dönüş: Sorun yayından sonra çıkarsa `pnpm geri-don` siteyi önceki yayına döndürür; dönülen yayın kendi kutu tanımını, site klasörünü ve görüntüsünü kullanır (karar 0035). Kimlikteki sürüm ana dalda yeni sürümde kalır; kimliği eski sürüme çekip yeniden yayınlamak olmaz, çünkü yayın komutu kimlikteki sürümün kayıttaki çekirdekle aynı olmasını ister. Düzeltme yeni bir sürümle yayınlanır. Veritabanı değişikliği geri alınamıyorsa ("yedekten" notu) geri dönüş durur, site 10. adımdaki yedekten döner.
 
 ### Ne zaman bitmiş sayılır
 
@@ -216,6 +216,38 @@ Kurulan: Örnek Mağaza, çekirdek `0.1.0` ile `https://ornek-magaza.deneme.etic
 - **Ölçüm:** Yayından sonra sağlık kontrolü yalnız yayın anında değil, her sunucu denetiminde de çalışıyor. Bu yüzden ayrı bir "sağlık kontrolü" adımı komutta denetim çağrısı olur.
 - **Kimlik ile çalışan sürüm:** Sunucu denetimi çalışan sürümü yayın kaydıyla karşılaştırır, kimlikle karşılaştırmaz. Bir site geri dönünce ya da yayını düşünce kimlik sonraki sürümde kalabilir; bugün bunu hiçbir ölçüm söylemez. Farkı sahip paneli göstermeli (karar 0011), güncelleme komutu da 1. adımda bu farkta durmalı.
 - **Henüz yapılamayanlar:** Tarifin 4 (`baslangic/`, `marka/`, `testler/`), 8, 11 ve 12. adımları ve ekran ölçümü. Her biri ilgili parça yazılınca bu tabloya işlenir.
+
+### Bir siteyi güncellemek: ilk kez elle, Örnek Mağaza (kart 0041, 2026-11-05)
+
+Güncellenen: Örnek Mağaza, çekirdek `0.1.0` → `0.2.0` (ana sayfada "Yakında açılıyoruz." yazısı, yeni site ayarı). Veritabanı değişikliği yoktu. Canlı ortam olmadığı için güncelleme deneme adresinde yapıldı. Ardından geri dönüş ve yeniden yayın denendi.
+
+| Adım | Ne oldu |
+|---|---|
+| 1. Şu anki durum | Sağlık ucu `0.1.0`, ana daldaki kimlik `0.1.0`; site açık, son denetim yeşil. |
+| 2. Örnek Mağaza hedef sürümde mi | Güncellenen site Örnek Mağaza olduğu için geçilmedi. |
+| 3. Çalışma kopyası | `.claude/worktrees/0041`. |
+| 4. Büyük sürüm | Değil (orta sürüm); site klasöründe yalnız yeni ayarın değeri ve kimlikteki sürüm değişti. |
+| 5. Doğrulama | `pnpm site-dogrula` geçti. |
+| 6. Veritabanı değişikliği denemesi | Değişiklik yoktu. Kişisel bilgileri silinmiş kopya da henüz yok (kontrol tablosunda "kurulmadı"). |
+| 7. Testler | Birim, tarayıcı ve hat testleri geçti. Önce bilgisayarda bakıldı, kullanıcı onayladı; üç genişlikte yana kayma yok. |
+| 8. Kimlikte sürüm | Yayından önce kaydedilmek zorunda: yayın komutu kimlikteki sürümün kayıttaki çekirdekle aynı olmasını ister. Tarifin ilk hâlinde bu adım deneme yayınından sonraydı; sıra düzeltildi. |
+| 9. Deneme adresinde yayın | Tek ortam deneme olduğu için 9 ve 11. adım aynı yayın oldu. |
+| 10. Yedek | Yapılamadı: gece yedeği ve yedek komutu yok (kart 0024). |
+| 11. Yayın | `pnpm yayinla` yayın 4'ü açtı. Sağlık içeriden ve dışarıdan `0.2.0`. |
+| 12. Sağlık ve ekran ölçümü | Sağlık geçti; `pnpm sunucu-denetle` yeşil. Ekran ölçümü kurulmadı, üç genişlik elle bir betikle ölçüldü. |
+| 13. Sahip paneli | Yapılamadı: sahip paneli yok. |
+| 14. Bir saat hata izleme | Hata izleme denemesi yeni sürümle yeşil. Bir saat boyunca "bu siteye ait yeni hata"yı soran bir komut yok; yönetim ekranından (`pnpm hata-izleme-ac`) elle bakılabilir. |
+| 15. Mağaza sahibine e-posta | Demo site, gerekmedi. |
+| 16. Ana dala alma | Kart dalı ana dala alınır, tarihçeye `/is-bitti` yazar. |
+| Geri dönüş | `pnpm geri-don` yayın 3'e döndü: yazı kalktı, sağlık `0.1.0`. Kimlik ana dalda `0.2.0` kalırken denetim yeşil kaldı, çünkü denetim beklenen sürümü yayın kaydından okuyor (kart 0023). Ardından aynı kayıtla `pnpm yayinla` yayın 6'yı açtı, yazı geri geldi. |
+
+Öğrenilenler, komut yazılırken uyulacak:
+
+- **Sıra:** Kimlikteki sürüm yayından önce kaydedilir (tarifte düzeltildi, 8. adım). Komut: kimliği değiştir, kaydet, hattı bekle, yayınla.
+- **Sürüm:** Çekirdekteki her yayınlanan değişiklik yeni bir sürüm ve not ister. Aynı numarayla farklı çekirdeğin yayınlanmasını henüz bir şey durdurmuyor (kart 0040).
+- **Ayar ve eski sürüm:** Yeni bir ayar eski sürümün şemasında yoktur, eski sürüm o ayarla açılmaz. `pnpm geri-don` eski klasörü kullandığı için etkilenmez; elle eski sürüme dönülürken ayar da kaldırılmalı. Sürüm notunun "Sitelere etkisi" bölümü bunu söylemeli.
+- **Hata izleme:** "Yayından sonra bu siteye ait yeni hata var mı" sorusunu cevaplayan bir komut gerekir (14. adım). Bugsink'in okuma ucu bunu verebilir.
+- **Henüz yapılamayanlar:** 6 (kişisel bilgisi silinmiş kopya), 10 (yedek), 13 (sahip paneli), ekran ölçümü ve 14'ün komutu.
 
 ## Henüz açık olanlar
 
