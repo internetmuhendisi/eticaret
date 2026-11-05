@@ -304,10 +304,11 @@ export const siteVeritabaniniHazirla = (
 // çalışmıyorsa ya da durumu okunamıyorsa hatadır: sonra açılan kutuda eski şifre geçerli kalırdı.
 export const sifreyiEsitle = (ipv4: string, ortam: Ortam, kodAdi: string): boolean => {
   const kutu = veritabaniKutusu(ortam);
-  // Docker'ın "böyle bir kutu yok" iletisi ayrı tanınır; Docker yanıt vermiyorsa hatadır.
+  // Kutunun varlığı Docker'ın listesinden okunur (iletinin diline ve harfine bağlı kalmaz);
+  // Docker yanıt vermiyorsa komut hatayla biter.
   const durum = sshKomutu(
     ipv4,
-    `o=$(docker inspect -f '{{.State.Running}}' ${kutu} 2>&1) && echo "$o" || { case "$o" in *"No such object"*) echo yok ;; *) echo "$o" >&2; exit 1 ;; esac; }`,
+    `set -e; v=$(docker ps -aq --filter 'name=^${kutu}$'); if [ -z "$v" ]; then echo yok; else docker inspect -f '{{.State.Running}}' ${kutu}; fi`,
   );
   const deger = durum.stdout.trim();
   if (durum.status === 0 && deger === "yok") return false;
@@ -355,12 +356,11 @@ export const pgHbaOzeti = (): string => createHash("sha256").update(pgHba()).dig
 
 // Veritabanı kutusu yalnız o ortamdaki sitelerin ağlarına bağlı olmalı (ortak ya da başka ortamın
 // ağına bağlıysa siteler arasında yol açılırdı). Girdi: kutunun ağ adları ve ortamın siteleri.
+// Listedeki bir sitenin ağı eksik olabilir: gizli bilgisi üretilmiş ama veritabanı henüz açılmamış
+// site (pnpm sunucu-veritabani o siteyle çalışınca ağ eklenir).
 export const agHatalari = (aglar: string[], ortam: Ortam, siteler: string[]): string[] => {
   const beklenen = new Set(siteler.filter(kodAdiGecerli).map((kodAdi) => siteAgi(ortam, kodAdi)));
-  return [
-    ...aglar.filter((ag) => ag && !beklenen.has(ag)).map((ag) => `beklenmeyen ağ ${ag}`),
-    ...[...beklenen].filter((ag) => !aglar.includes(ag)).map((ag) => `eksik ağ ${ag}`),
-  ];
+  return aglar.filter((ag) => ag && !beklenen.has(ag)).map((ag) => `beklenmeyen ağ ${ag}`);
 };
 
 // docker inspect çıktısı: {{json .HostConfig.PortBindings}}. Port açılmamış olmalı.

@@ -98,10 +98,10 @@ describe("veritabanı kutusunun ağları", () => {
     ]);
   });
 
-  it("listedeki sitenin ağı eksikse kırmızıdır", () => {
+  it("veritabanı henüz açılmamış sitenin ağı olmaması kırmızı değildir", () => {
     expect(
       agHatalari(["site-deneme-ornek-magaza"], "deneme", ["ornek-magaza", "yeni-site"]),
-    ).toEqual(["eksik ağ site-deneme-yeni-site"]);
+    ).toEqual([]);
   });
 });
 

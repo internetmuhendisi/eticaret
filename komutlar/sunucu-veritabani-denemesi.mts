@@ -50,10 +50,10 @@ const olc = (ad: string, gecti: boolean, ayrinti = "") => {
   console.log(`${gecti ? "tamam " : "HATA  "} ${ad}${ayrinti ? `  (${ayrinti})` : ""}`);
 };
 
-// Ctrl-C: o anki ssh süreci de sinyali alır ve yarıda kalır. Deneme bunu ssh'in sonucundaki
-// sinyalden anlar ve sonraki adıma geçmeden durur. İşleyiciler yalnız Node'un hemen kapanmasını
+// Ctrl-C: o anki ssh süreci de sinyali alır ve adım yarıda kesilir. Deneme bunu ssh'in sonucundan
+// (sinyal ya da 255) anlar ve sonraki adıma geçmez. İşleyiciler yalnız Node'un hemen kapanmasını
 // önler (eşzamanlı akışta adımlar sürerken çalışmazlar); böylece temizlik yine çalışır ve deneme
-// sitesi sunucuda kalmaz. Yarıda kalan adımın artığını da temizlik siler.
+// sitesi sunucuda kalmaz.
 let kesildi = false;
 for (const sinyal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
   process.on(sinyal, () => {
@@ -68,9 +68,9 @@ const calistir = (
 ): { durum: number; cikti: string; hata: string } => {
   if (kesildi && !temizlik) throw new Error("Deneme kesildi.");
   const sonuc = sshKomutu(ipv4, "bash -s", { girdi: betik, sure: 300_000 });
-  if (sonuc.signal === "SIGINT" || sonuc.signal === "SIGTERM" || sonuc.signal === "SIGHUP") {
-    kesildi = true;
-  }
+  // ssh kesilince sinyali kendisi yakalayıp 255 ile çıkar; bağlantı hatası da 255'tir. İkisinde de
+  // deneme sonraki adıma geçmez.
+  if (sonuc.signal || sonuc.status === 255) kesildi = true;
   return { durum: sonuc.status ?? 1, cikti: sonuc.stdout, hata: sonuc.stderr };
 };
 
