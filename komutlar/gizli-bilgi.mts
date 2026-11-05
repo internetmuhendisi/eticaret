@@ -37,8 +37,38 @@ const kodAdiniDenetle = (kodAdi: string): void => {
 
 type SiteNumaralari = Record<string, number>;
 
-export const siteNumaralariniOku = (): SiteNumaralari =>
-  JSON.parse(readFileSync(siteKullanicilariDosyasi, "utf8")) as SiteNumaralari;
+// Deneme komutunun geçici sitesi bu numarayı kullanır; gerçek bir siteye verilmez.
+export const denemeSiteNumarasi = siteNumarasiSiniri;
+
+// Numara dosyasının kuralları: geçerli kod adı, 1 ile 9998 arası tam sayı, her numara bir kez.
+// İki dalda aynı numarayı alan iki site birleşince bu denetim durdurur (aynı kullanıcıyla
+// çalışan iki site ikinci koruma katını kaybeder).
+export const siteNumaralariHatalari = (numaralar: unknown): string[] => {
+  if (typeof numaralar !== "object" || numaralar === null || Array.isArray(numaralar)) {
+    return ["site numaraları bir nesne olmalı"];
+  }
+  const hatalar: string[] = [];
+  const gorulen = new Map<unknown, string>();
+  for (const [kodAdi, numara] of Object.entries(numaralar)) {
+    if (!kodAdiKalibi.test(kodAdi)) hatalar.push(`geçersiz kod adı: ${kodAdi}`);
+    if (!Number.isInteger(numara) || numara < 1 || numara >= denemeSiteNumarasi) {
+      hatalar.push(`${kodAdi}: geçersiz numara ${String(numara)}`);
+    }
+    const oteki = gorulen.get(numara);
+    if (oteki) hatalar.push(`${kodAdi} ile ${oteki} aynı numarayı taşıyor: ${String(numara)}`);
+    gorulen.set(numara, kodAdi);
+  }
+  return hatalar;
+};
+
+export const siteNumaralariniOku = (): SiteNumaralari => {
+  const numaralar: unknown = JSON.parse(readFileSync(siteKullanicilariDosyasi, "utf8"));
+  const hatalar = siteNumaralariHatalari(numaralar);
+  if (hatalar.length > 0) {
+    throw new Error(`sunucu/site-kullanicilari.json bozuk:\n  ${hatalar.join("\n  ")}`);
+  }
+  return numaralar as SiteNumaralari;
+};
 
 // Sitenin numarası yoksa bir sonrakini verir ve dosyaya yazar. Numara bir kez verilir, değişmez.
 export const siteNumarasiAl = (kodAdi: string): number => {
@@ -47,7 +77,7 @@ export const siteNumarasiAl = (kodAdi: string): number => {
   const var_ = numaralar[kodAdi];
   if (var_ !== undefined) return var_;
   const yeni = Math.max(0, ...Object.values(numaralar)) + 1;
-  if (yeni > siteNumarasiSiniri) throw new Error("Site numaraları tükendi.");
+  if (yeni >= denemeSiteNumarasi) throw new Error("Site numaraları tükendi.");
   writeFileSync(
     siteKullanicilariDosyasi,
     `${JSON.stringify({ ...numaralar, [kodAdi]: yeni }, null, 2)}\n`,
@@ -69,13 +99,12 @@ export const gizliKlasor = (ortam: Ortam, kodAdi: string): string => {
 
 const adlar = Object.keys(gizliBilgiler) as GizliBilgi[];
 
-// Şablonu sitenin adlarıyla doldurur ve {rastgele}'nin önünü ve arkasını ayırır. Parçalar gizli
-// değildir; betiğe yalnız izin verilen karakterlerle girer.
+// Ön ve son parçayı sitenin adlarıyla doldurur. Parçalar gizli değildir; betiğe yalnız izin
+// verilen karakterlerle girer.
 export const sablonParcalari = (ad: GizliBilgi, kodAdi: string): [string, string] => {
   kodAdiniDenetle(kodAdi);
-  const dolu = gizliBilgiler[ad].sablon.replaceAll("{veritabani}", siteVeritabaniAdi(kodAdi));
-  const parcalar = dolu.split("{rastgele}");
-  if (parcalar.length !== 2) throw new Error(`${ad} şablonunda {rastgele} tam bir kez geçmeli.`);
+  const doldur = (parca: string) => parca.replaceAll("{veritabani}", siteVeritabaniAdi(kodAdi));
+  const parcalar = [doldur(gizliBilgiler[ad].on), doldur(gizliBilgiler[ad].son)];
   for (const parca of parcalar) {
     if (!/^[A-Za-z0-9:/@._-]*$/.test(parca)) throw new Error(`${ad} şablonunda izinsiz karakter.`);
   }
@@ -86,6 +115,9 @@ export const sablonParcalari = (ad: GizliBilgi, kodAdi: string): [string, string
 
 // Sitenin o ortamdaki gizli bilgilerini kurar. Var olan değere dokunmaz; yenile ile hepsini
 // yeniler. Her durumda dosyanın sahibini ve iznini düzeltir. Çıktı yalnız dosya adlarıdır.
+// Üç aşama: (1) her dosyanın var olup olmadığı okunur, okunamazsa betik durur ve hiçbir şeye
+// dokunmaz; (2) kurulacak bütün değerler geçici dosyalara yazılır; (3) hepsi yerine konur.
+// Böylece yarıda kalan bir yenilemede değerlerin bir kısmı yeni, bir kısmı eski kalmaz.
 export const uretmeBetigi = (
   ortam: Ortam,
   kodAdi: string,
@@ -94,36 +126,51 @@ export const uretmeBetigi = (
 ): string => {
   const klasor = gizliKlasor(ortam, kodAdi);
   const kullanici = kutuKullanicisi(ortam, siteNumarasi);
+  const kur = (i: number) => `kur_${i}`;
   const satirlar = [
     "set -eu",
     `sudo install -d -m 0755 -o root -g root /srv/altyapi`,
     `sudo install -d -m 0700 -o root -g root ${gizliKok} ${gizliKok}/${ortam} ${klasor}`,
   ];
-  for (const ad of adlar) {
+  adlar.forEach((ad, i) => {
     const dosya = `${klasor}/${gizliBilgiler[ad].dosya}`;
+    satirlar.push(
+      `durum=$(sudo sh -c 'if [ -s ${dosya} ]; then echo var; else echo yok; fi')`,
+      `case "$durum" in var|yok) ;; *) echo "durum okunamadı: ${dosya}" >&2; exit 1 ;; esac`,
+      `if [ "$durum" = yok ] || [ ${yenile ? "evet" : "hayir"} = evet ]; then ${kur(i)}=evet; else ${kur(i)}=hayir; fi`,
+    );
+  });
+  adlar.forEach((ad, i) => {
     const gecici = `${klasor}/.${gizliBilgiler[ad].dosya}.yeni`;
     const [on, son] = sablonParcalari(ad, kodAdi);
     // Değer kök kabuğunun değişkeninde üretilir; printf kabuğun kendi komutudur, değer hiçbir
-    // sürecin komut satırında görünmez. Önce geçici dosyaya yazılır, sonra tek adımda yerine konur.
+    // sürecin komut satırında görünmez.
     const yaz = [
       "umask 077",
       "r=$(openssl rand -hex 32)",
       `printf '%s%s%s' '${on}' "$r" '${son}' > ${gecici}`,
       `chown ${kullanici}:${kullanici} ${gecici}`,
       `chmod 0400 ${gecici}`,
-      `mv -f ${gecici} ${dosya}`,
     ].join(" && ");
     satirlar.push(
-      `if sudo test -s ${dosya} && [ ${yenile ? "evet" : "hayir"} = hayir ]; then`,
-      `  echo "zaten var   ${ortam}/${kodAdi}/${gizliBilgiler[ad].dosya}"`,
+      `if [ "$${kur(i)}" = evet ]; then sudo sh -c "${yaz.replaceAll('"', '\\"').replaceAll("$", "\\$")}"; fi`,
+    );
+  });
+  adlar.forEach((ad, i) => {
+    const dosya = `${klasor}/${gizliBilgiler[ad].dosya}`;
+    const gecici = `${klasor}/.${gizliBilgiler[ad].dosya}.yeni`;
+    const ad_ = `${ortam}/${kodAdi}/${gizliBilgiler[ad].dosya}`;
+    satirlar.push(
+      `if [ "$${kur(i)}" = evet ]; then`,
+      `  sudo mv -f ${gecici} ${dosya}`,
+      `  echo "${yenile ? "yenilendi  " : "üretildi   "} ${ad_}"`,
       "else",
-      `  sudo sh -c "${yaz.replaceAll('"', '\\"').replaceAll("$", "\\$")}"`,
-      `  echo "${yenile ? "yenilendi  " : "üretildi   "} ${ortam}/${kodAdi}/${gizliBilgiler[ad].dosya}"`,
+      `  echo "zaten var   ${ad_}"`,
       "fi",
       `sudo chown ${kullanici}:${kullanici} ${dosya}`,
       `sudo chmod 0400 ${dosya}`,
     );
-  }
+  });
   return `${satirlar.join("\n")}\n`;
 };
 
@@ -166,8 +213,10 @@ export const yerlesimHatalari = (satirlar: string[], numaralar: SiteNumaralari):
   const hatalar: string[] = [];
   const dosyaAdlari = new Set<string>(adlar.map((ad) => gizliBilgiler[ad].dosya));
   for (const satir of satirlar.filter(Boolean)) {
-    const [tur, izin, sahip, yol] = satir.split(" ");
-    if (!yol?.startsWith(gizliKok)) {
+    // Yol boşluk içerebilir: ilk üç alandan sonrası yoldur.
+    const [tur, izin, sahip, ...yolParcalari] = satir.split(" ");
+    const yol = yolParcalari.join(" ");
+    if (!yol.startsWith(gizliKok)) {
       hatalar.push(`beklenmeyen satır: ${satir}`);
       continue;
     }
@@ -198,6 +247,11 @@ export const yerlesimHatalari = (satirlar: string[], numaralar: SiteNumaralari):
   return hatalar;
 };
 
-// Sunucudaki bütün rastgele değerleri desen yapıp girdide arar; çıktı yalnız sayılardır.
-// Girdi: projenin bütün kayıt geçmişi ve izlenen dosyaları (sunucu-denetle.mts).
-export const kayittaArama = `sudo sh -c 'p=$(mktemp) && find ${gizliKok} -type f -exec grep -ohE "[0-9a-f]{64}" {} + > "$p"; n=$(wc -l < "$p"); if [ "$n" -gt 0 ]; then c=$(grep -c -F -f "$p" || true); else c=0; fi; rm -f "$p"; echo "desen=$n eslesme=$c"'`;
+// Sunucudaki bütün rastgele değerleri girdide arar; çıktı yalnız sayılardır.
+// Her 64 haneli değerin içindeki bütün 16 haneli diziler (kayan pencere, değer başına 49)
+// büyük-küçük harf ayırmadan aranır: değerden 16 hane ya da daha uzun bir parça, nereden
+// kesilmiş olursa olsun yakalanır. Kodlanmış (ör. base64) değer yakalanmaz.
+// Girdi: projenin kayıt geçmişi ve dosyaları (sunucu-denetle.mts).
+export const aramaParcaUzunlugu = 16;
+export const degerBasinaParca = 64 - aramaParcaUzunlugu + 1;
+export const kayittaArama = `sudo sh -c 'p=$(mktemp) && trap "rm -f \\"$p\\"" EXIT && find ${gizliKok} -type f -exec grep -ohE "[0-9a-f]{64}" {} + | awk "{ for (i = 1; i <= length(\\$0) - ${aramaParcaUzunlugu - 1}; i++) print substr(\\$0, i, ${aramaParcaUzunlugu}) }" > "$p"; n=$(wc -l < "$p"); if [ "$n" -gt 0 ]; then c=$(grep -c -i -F -f "$p" || true); else c=0; fi; echo "deger=$((n / ${degerBasinaParca})) parca=$n eslesme=$c"'`;

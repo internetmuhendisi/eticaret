@@ -5,8 +5,8 @@
 // bilgileri sunucuda yan yana kurulur. İki küçük kutu, sitelerin kutularının kullanacağı gizli
 // bilgi tanımıyla (kutuGizliTanimi) açılır. Ölçülenler:
 // - A kendi dosyasını okuyor ve yalnız kendi dosyasını görüyor; değer sunucudakiyle aynı.
-// - B'nin sunucudaki klasörü A'da yok; A'nın içinde başka gizli bilgi dosyası yok.
-// - Bilerek bozma: B'nin dosyası A'nın kullanıcısıyla çalışan bir kutuya bağlanırsa okunamıyor.
+// - Docker'ın kaydına göre A'ya yalnız A'nın, B'ye yalnız B'nin dosyası bağlı.
+// - Bilerek bozma: B'nin dosyası A'nın kullanıcısıyla çalışan bir kutuya bağlanırsa izin reddediliyor.
 // - docker inspect çıktısında hiçbir gizli değer geçmiyor; değer bilerek ortam değişkenine
 //   konunca bu ölçüm yakalıyor.
 // - Yenileme değeri değiştiriyor; kutu yeni değeri hangi adımda gördüğü ölçülür.
@@ -14,6 +14,7 @@
 // Sonunda kutular, deneme görüntüsü ve deneme sitesinin gizli bilgileri silinir.
 
 import {
+  denemeSiteNumarasi,
   gizliKlasor,
   kutuGizliTanimi,
   silmeBetigi,
@@ -24,8 +25,8 @@ import { kayitlariOku, sshKomutu } from "./sunucu.mts";
 
 const ortam = "canli";
 const a = { kodAdi: "ornek-magaza", numara: siteNumaralariniOku()["ornek-magaza"] as number };
-// Deneme sitesinin numarası kayda yazılmaz; en büyük numara kullanılır.
-const b = { kodAdi: "gizli-deneme", numara: 9999 };
+// Deneme sitesinin numarası kayda yazılmaz; gerçek sitelere verilmeyen ayrılmış numarayı kullanır.
+const b = { kodAdi: "gizli-deneme", numara: denemeSiteNumarasi };
 
 const ta = kutuGizliTanimi(ortam, a.kodAdi, a.numara);
 const tb = kutuGizliTanimi(ortam, b.kodAdi, b.numara);
@@ -45,13 +46,22 @@ const ic = "/run/secrets/veritabani_adresi";
 
 const betik = `set -u
 d=$(mktemp -d)
+p=""; q=""
 hata=0
 olcum() { if [ "$1" = 0 ]; then echo "tamam  $2"; else echo "HATA   $2"; hata=$((hata+1)); fi; }
+# Karşılaştırmalar boş sonucu kabul etmez: okunamayan bir özet "aynı" ya da "farklı" sayılmaz.
+ayni() { [ -n "$1" ] && [ "$1" = "$2" ]; }
+farkli() { [ -n "$1" ] && [ -n "$2" ] && [ "$1" != "$2" ]; }
 dc() { docker compose -p gizli-denemesi -f "$d/compose.json" "$@" </dev/null; }
+# Deneme görüntüsü önceden varsa silinmez: başka bir iş kullanıyor olabilir.
+onceden=$(docker images -q busybox)
+# Yarıda kesilse de geride değer taşıyan dosya, kutu ya da deneme sitesi kalmaz.
 temizle() {
   dc down --timeout 1 >/dev/null 2>&1 || true
   docker rm -f gizli-denemesi-sizdiran >/dev/null 2>&1 || true
-  docker image rm busybox >/dev/null 2>&1 || true
+  [ -n "$p" ] && sudo rm -f "$p"
+  [ -n "$q" ] && sudo rm -f "$q"
+  [ -z "$onceden" ] && docker image rm busybox >/dev/null 2>&1 || true
   ${silmeBetigi(ortam, b.kodAdi).replaceAll("\n", "\n  ").replace("set -eu", "true")}
   rm -f "$d/compose.json"; rmdir "$d"
 }
@@ -67,22 +77,21 @@ dc up -d --quiet-pull >/dev/null 2>&1 || { echo "HATA   kutular açılamadı"; e
 ozet_ic() { dc exec -T "$1" sha256sum ${ic} 2>/dev/null | cut -d" " -f1; }
 ozet_dis() { sudo sha256sum "$1" | cut -d" " -f1; }
 
+kaynaklar() { docker inspect "$(dc ps -q "$1")" --format '{{range .Mounts}}{{.Source}} {{end}}'; }
+
 dc exec -T a sh -c 'test -s "$VERITABANI_ADRESI_DOSYASI"'
 olcum $? "A kendi gizli bilgisini dosyadan okuyabiliyor"
-[ "$(ozet_ic a)" = "$(ozet_dis ${dosyaA})" ]
+ayni "$(ozet_ic a)" "$(ozet_dis ${dosyaA})"
 olcum $? "A'nın gördüğü değer sunucudaki A değeriyle aynı"
-[ "$(ozet_ic a)" != "$(ozet_dis ${dosyaB})" ] && [ "$(ozet_ic b)" = "$(ozet_dis ${dosyaB})" ]
+farkli "$(ozet_ic a)" "$(ozet_dis ${dosyaB})" && ayni "$(ozet_ic b)" "$(ozet_dis ${dosyaB})"
 olcum $? "B kendi değerini görüyor, A ile B'nin değeri farklı"
 [ "$(dc exec -T a ls /run/secrets)" = "veritabani_adresi" ]
 olcum $? "A'da yalnız kendi gizli bilgi dosyası var"
-dc exec -T a test -e ${gizliKlasor(ortam, b.kodAdi)}
-[ $? -ne 0 ]
-olcum $? "B'nin sunucudaki klasörü A'nın içinde yok"
-[ "$(dc exec -T a sh -c 'find / -name veritabani_adresi -o -name ".veritabani_adresi.yeni" 2>/dev/null')" = "${ic}" ]
-olcum $? "A'nın içinde başka gizli bilgi dosyası yok"
-dc exec -T a-bozuk cat ${ic} >/dev/null 2>&1
-[ $? -ne 0 ]
-olcum $? "bilerek bozma: B'nin dosyası A'nın kullanıcısıyla bağlansa da okunamıyor"
+# Docker'ın kendi kaydından: kutuya sunucudan hangi dosyalar bağlandı.
+[ "$(kaynaklar a)" = "${dosyaA} " ] && [ "$(kaynaklar b)" = "${dosyaB} " ]
+olcum $? "A'ya sunucudan yalnız A'nın, B'ye yalnız B'nin dosyası bağlı"
+[ "$(kaynaklar a-bozuk)" = "${dosyaB} " ] && dc exec -T a-bozuk cat ${ic} 2>&1 >/dev/null | grep -q "Permission denied"
+olcum $? "bilerek bozma: B'nin dosyası A'nın kullanıcısıyla bağlanınca izin reddediliyor"
 
 p=$(sudo mktemp)
 sudo sh -c "grep -ohE '[0-9a-f]{64}' ${dosyaA} ${dosyaB} > $p"
@@ -97,19 +106,19 @@ sudo docker run -d -q --name gizli-denemesi-sizdiran --env-file $q busybox sleep
 [ "$(docker inspect gizli-denemesi-sizdiran | sudo grep -c -F -f $p)" != 0 ]
 olcum $? "bilerek bozma: ortam değişkenine konan değeri inspect ölçümü yakalıyor"
 docker rm -f gizli-denemesi-sizdiran >/dev/null 2>&1
-sudo rm -f $p $q
+sudo rm -f "$p" "$q"; p=""; q=""
 
 once=$(ozet_dis ${dosyaB})
 ${uretmeBetigi(ortam, b.kodAdi, b.numara, { yenile: true })}
 set +e
 sonra=$(ozet_dis ${dosyaB})
-[ "$once" != "$sonra" ]
+farkli "$once" "$sonra"
 olcum $? "yenileme B'nin değerini değiştirdi"
-[ "$(ozet_ic b)" = "$sonra" ] && echo "bilgi  kutu yeni değeri yeniden başlamadan gördü" || echo "bilgi  kutu yeniden başlamadan eski değeri görüyor"
+ayni "$(ozet_ic b)" "$sonra" && echo "bilgi  kutu yeni değeri yeniden başlamadan gördü" || echo "bilgi  kutu yeniden başlamadan eski değeri görüyor"
 dc restart --timeout 1 b >/dev/null 2>&1
-[ "$(ozet_ic b)" = "$sonra" ]
+ayni "$(ozet_ic b)" "$sonra"
 olcum $? "kutu yeniden başlayınca yeni değeri görüyor"
-[ "$(ozet_ic a)" = "$(ozet_dis ${dosyaA})" ]
+ayni "$(ozet_ic a)" "$(ozet_dis ${dosyaA})"
 olcum $? "B'nin yenilenmesi A'yı etkilemedi"
 echo "hata=$hata"
 [ "$hata" -eq 0 ]
@@ -119,7 +128,7 @@ try {
   const [sunucu] = kayitlariOku();
   if (!sunucu) throw new Error("sunucu/sunucular.json'da sunucu yok. Önce: pnpm sunucu-kur");
   console.log(`${sunucu.ad}: ${a.kodAdi} ile geçici ${b.kodAdi} yan yana deneniyor...`);
-  const sonuc = sshKomutu(sunucu.ipv4, "bash -s", { girdi: betik });
+  const sonuc = sshKomutu(sunucu.ipv4, "bash -s", { girdi: betik, sure: 600_000 });
   process.stdout.write(sonuc.stdout);
   if (sonuc.stderr.trim()) console.error(sonuc.stderr.trim());
   console.log(sonuc.status === 0 ? "Deneme yeşil." : "Deneme kırmızı.");

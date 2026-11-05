@@ -15,6 +15,7 @@ Bir site tek komutla yayınlanır, sorun çıkarsa tek komutla önceki sürüme 
 - Sağlık kontrolü geçmezse eski kutu çalışmaya devam eder, komut durur ve sebebi söyler.
 - Geri dönüş: önceki sürüme tek komutla dönülür. Veritabanı değişikliği yedekten dönmeyi gerektiriyorsa komut bunu söyler ve durur.
 - Her çalıştırma yayın kaydına yazılır: site, sürüm, zaman, sonuç.
+- Site kutusu gizli bilgileri `kutuGizliTanimi` ile alır (karar 0031). Gizli bilgi yenilenince (`pnpm sunucu-gizli --yenile`) veritabanı kullanıcısının şifresi de aynı adımda değişir ve kutu yeniden başlatılır; yarım kalırsa site eski şifreyle açık kalır.
 
 ## Sınırlar
 

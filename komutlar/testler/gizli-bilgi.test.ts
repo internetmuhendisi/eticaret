@@ -2,11 +2,14 @@
 // bir örneği yakaladığı gösterilir.
 import { describe, expect, it } from "vitest";
 import {
+  denemeSiteNumarasi,
   gizliKlasor,
   kutuGizliTanimi,
   kutuKullanicisi,
   sablonParcalari,
   silmeBetigi,
+  siteNumaralariHatalari,
+  siteNumaralariniOku,
   uretmeBetigi,
   yerlesimHatalari,
 } from "../gizli-bilgi.mts";
@@ -43,10 +46,23 @@ describe("üretme betiği", () => {
   });
 
   it("var olanı yenilemez, yenile ile yeniler", () => {
-    expect(betik).toContain("= hayir ]");
-    expect(uretmeBetigi("canli", "ornek-magaza", 1, { yenile: true })).toContain(
-      "[ evet = hayir ]",
-    );
+    expect(betik).toContain("[ hayir = evet ]");
+    expect(uretmeBetigi("canli", "ornek-magaza", 1, { yenile: true })).toContain("[ evet = evet ]");
+  });
+
+  it("dosyanın durumu okunamazsa hiçbir şeye dokunmadan durur", () => {
+    expect(betik).toContain('case "$durum" in var|yok) ;; *)');
+    const durum = betik.indexOf("durum=$(");
+    const yazma = betik.indexOf("openssl rand");
+    expect(durum).toBeGreaterThan(-1);
+    expect(durum).toBeLessThan(yazma);
+  });
+
+  it("önce bütün değerleri hazırlar, sonra hepsini yerine koyar", () => {
+    const sonUretim = betik.lastIndexOf("openssl rand");
+    const ilkYerineKoyma = betik.indexOf("sudo mv -f");
+    expect(sonUretim).toBeGreaterThan(-1);
+    expect(ilkYerineKoyma).toBeGreaterThan(sonUretim);
   });
 
   it.each(["../oteki", "a;rm", "A", "a b", "a/b", "$(id)"])(
@@ -63,6 +79,29 @@ describe("üretme betiği", () => {
       "postgres://site_ornek_magaza:",
       "@veritabani:5432/site_ornek_magaza",
     ]);
+  });
+});
+
+describe("site numaraları", () => {
+  it("kayıttaki dosya geçerli", () => {
+    expect(() => siteNumaralariniOku()).not.toThrow();
+    expect(Object.values(siteNumaralariniOku())).not.toContain(denemeSiteNumarasi);
+  });
+
+  it("geçerli numaralar geçer", () => {
+    expect(siteNumaralariHatalari({ "ornek-magaza": 1, oteki: 2 })).toEqual([]);
+  });
+
+  it.each([
+    ["aynı numara iki sitede", { a: 1, b: 1 }, "aynı numarayı"],
+    ["deneme sitesine ayrılmış numara", { a: denemeSiteNumarasi }, "geçersiz numara"],
+    ["sıfır", { a: 0 }, "geçersiz numara"],
+    ["kesirli", { a: 1.5 }, "geçersiz numara"],
+    ["metin", { a: "1" }, "geçersiz numara"],
+    ["geçersiz kod adı", { "Kotu Ad": 1 }, "geçersiz kod adı"],
+    ["liste", [1, 2], "nesne olmalı"],
+  ])("%s yakalanır", (_ad, numaralar, beklenen) => {
+    expect(siteNumaralariHatalari(numaralar).join("\n")).toContain(beklenen);
   });
 });
 
@@ -140,6 +179,11 @@ describe("sunucudaki yerleşimin denetimi", () => {
       "kayıtta olmayan",
     ],
     ["yanlış yerdeki dosya", "f 400 0 /srv/altyapi/gizli/canli/sifre", "beklenmeyen dosya"],
+    [
+      "adında boşluk olan dosya",
+      "f 400 20001 /srv/altyapi/gizli/canli/ornek-magaza/veritabani adresi",
+      "kayıtta olmayan",
+    ],
   ])("%s yakalanır", (_ad, satir, beklenen) => {
     const hatalar = yerlesimHatalari([...dogru, satir], numaralar);
     expect(hatalar.join("\n")).toContain(beklenen);

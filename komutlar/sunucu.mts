@@ -224,6 +224,8 @@ export const sshKomutu = (
     kullanici = sunucuTanimi.kullanici as string,
     ek = [] as string[],
     girdi = undefined as string | undefined,
+    // Varsayılan iki dakika; uzun işler (deneme, kayıt araması) kendi süresini verir.
+    sure = 120_000,
   } = {},
 ) =>
   spawnSync(
@@ -239,7 +241,7 @@ export const sshKomutu = (
       komut,
     ],
     // Girdi verilmezse ssh standart girdiyi okumaz (betik girdiden gönderilince karışmasın).
-    { encoding: "utf8", timeout: 600_000, input: girdi ?? "" },
+    { encoding: "utf8", timeout: sure, input: girdi ?? "" },
   );
 
 // --- Denetimin karar kuralları (testleri: komutlar/testler/sunucu.test.ts) ---

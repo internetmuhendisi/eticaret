@@ -106,7 +106,7 @@ Karar 0013 ile verildi: TypeScript, React ve Next.js, PostgreSQL, Docker, önde 
 ## Teknik ayrıntı
 
 - **Tek kod, sürümlü çalışma (0006):** Her çalışan site üç şeyin birleşimidir: çekirdeğin belirli bir sürümü, sitenin klasörü (marka, tema seçimi, ayar dosyası, gerekirse kendi vitrin parçaları) ve sitenin veritabanı. Sitenin hangi sürümde çalıştığı site klasöründeki kimlik dosyasında yazar (0011).
-- **Ayar şeması:** Bütün site ayarları tek şemada tanımlıdır: türü, varsayılanı, açıklaması. Panelin ayar ekranları bu şemadan üretilir. Gizli bilgiler (anahtar, şifre) ayarlarda değil, korumalı ortam değişkenlerindedir (`.claude/rules/ayarlar.md`).
+- **Ayar şeması:** Bütün site ayarları tek şemada tanımlıdır: türü, varsayılanı, açıklaması. Panelin ayar ekranları bu şemadan üretilir. Gizli bilgiler (anahtar, şifre) ayarlarda değil, bilgisayarda `.env` dosyasında, sunucuda sitenin kendi gizli bilgi dosyalarındadır (`.claude/rules/ayarlar.md`, karar 0031).
 - **Modül yapısı:** Her çekirdek modülü aynı parçalardan oluşur: veri modeli, servis (iş kuralları), uçlar, izinler, metinler, testler.
 - **Sunucu arayüzü** (`.claude/rules/sunucu-arayuzu.md`):
   - Her yanıt aynı zarfla döner.

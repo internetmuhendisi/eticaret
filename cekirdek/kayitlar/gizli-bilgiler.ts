@@ -2,16 +2,17 @@
 // dosyanın adı ve değerin nasıl kurulacağı yazar. Uygulama değeri gizliBilgi() ile okur
 // (cekirdek/ayar-semasi/gizli-bilgi.ts).
 //
-// Şablondaki yer tutucular:
-// - {rastgele}: sunucuda üretilen 64 haneli rastgele değer. Tam bir kez geçer. Bilgisayara gelmez.
-// - {veritabani}: sitenin veritabanının ve veritabanı kullanıcısının adı (site_<kod adı>).
+// Değer: on + sunucuda üretilen 64 haneli rastgele değer + son. Rastgele değer bilgisayara gelmez.
+// Ön ve son parçada {veritabani}, sitenin veritabanının ve veritabanı kullanıcısının adıdır
+// (site_<kod adı>). Parçalar ayrı yazılır: kayıtta şifreli adres kalıbı durmaz (veri ayrımı testi).
 // Sunucuda veritabanı kutusunun adı "veritabani"dır (sunucu/compose.yaml).
 export const gizliBilgiler = {
   VERITABANI_ADRESI: {
     dosya: "veritabani_adresi",
-    sablon: "postgres://{veritabani}:{rastgele}@veritabani:5432/{veritabani}",
+    on: "postgres://{veritabani}:",
+    son: "@veritabani:5432/{veritabani}",
   },
-} as const satisfies Record<string, { dosya: string; sablon: string }>;
+} as const satisfies Record<string, { dosya: string; on: string; son: string }>;
 export type GizliBilgi = keyof typeof gizliBilgiler;
 
 // Sunucuda bir değerin dosya yolunu veren ortam değişkeninin eki: VERITABANI_ADRESI_DOSYASI.

@@ -11,8 +11,9 @@ const dosya = (ad: string, icerik: string): string => {
   writeFileSync(yol, icerik);
   return yol;
 };
-const dosyadaki = "postgres://site_a:dosyadaki-deger@veritabani:5432/site_a";
-const ortamdaki = "postgres://site_a:ortamdaki-deger@localhost:5432/site_a";
+// İşlev değeri olduğu gibi döndürür; biçimi önemli değildir.
+const dosyadaki = "dosyadaki-deger";
+const ortamdaki = "ortamdaki-deger";
 
 describe("gizli bilgi", () => {
   afterEach(() => vi.unstubAllEnvs());

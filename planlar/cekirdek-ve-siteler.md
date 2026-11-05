@@ -66,7 +66,7 @@ Sahte ürünler yalnız demo sitede olur. Gerçek mağazanın ürünlerini mağa
 **KURALLAR.md.** Bu siteye özel kısa notlar: mağazanın özel durumları, kimden onay alınacağı. Örnek Mağaza'da "her yeni özellik önce burada denenir, gerçek ödeme alınmaz".
 
 **Site klasöründe olmayanlar:**
-- Gizli bilgiler (veritabanı şifresi, ödeme ve e-posta anahtarları): sunucunun korumalı ortam değişkenlerinde durur, kayda girmez.
+- Gizli bilgiler (veritabanı şifresi, ödeme ve e-posta anahtarları): sunucuda sitenin kendi gizli bilgi dosyalarında durur, yalnız o sitenin kutusuna bağlanır, kayda girmez (karar 0031).
 - Müşteri, sipariş ve ürün verisi: sitenin veritabanında (karar 0003).
 - Mağaza sahibinin yüklediği görseller: sitenin ayrı dosya deposunda.
 - Mağaza sahibinin panelden yaptığı her değişiklik: veritabanında.

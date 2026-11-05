@@ -144,14 +144,26 @@ describe("bağlantı bilgisi", () => {
     }
   });
 
+  // Gizli bilgiler gizliBilgi() ile okunur, adları gizli bilgi kaydında tanımlıdır (karar 0031).
+  // Kayıt adı yalnız tanımlar, okumaz; adresi çekirdekte yalnız bağlantı dosyası okur.
   it("çekirdekte veritabanı adresini yalnız bağlantı dosyası okur", () => {
     const dosyalar = spawnSync("git", ["ls-files", "cekirdek"], { cwd: kok, encoding: "utf8" })
       .stdout.split("\n")
       .filter((dosya) => /\.tsx?$/.test(dosya) && !dosya.includes("/testler/"));
-    const okuyanlar = dosyalar.filter((dosya) =>
-      readFileSync(join(kok, dosya), "utf8").includes("VERITABANI_"),
+    const icerik = (dosya: string) => readFileSync(join(kok, dosya), "utf8");
+    const kayit = "cekirdek/kayitlar/gizli-bilgiler.ts";
+    const okuma = "cekirdek/ayar-semasi/gizli-bilgi.ts";
+
+    const adGecenler = dosyalar.filter((dosya) => icerik(dosya).includes("VERITABANI_"));
+    expect(adGecenler.sort()).toEqual([kayit, "cekirdek/veritabani/baglanti.ts"].sort());
+
+    const adresiOkuyanlar = dosyalar.filter((dosya) =>
+      /gizliBilgi\(\s*["']VERITABANI_ADRESI["']/.test(icerik(dosya)),
     );
-    expect(okuyanlar).toEqual(["cekirdek/veritabani/baglanti.ts"]);
+    expect(adresiOkuyanlar).toEqual(["cekirdek/veritabani/baglanti.ts"]);
+
+    expect(icerik(kayit)).not.toMatch(/process\.env|readFileSync|import\s/);
+    expect(icerik(okuma)).not.toContain("VERITABANI_");
   });
 
   it("kayıtlı hiçbir dosyada şifreli veritabanı adresi yok", () => {

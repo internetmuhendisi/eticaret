@@ -15,8 +15,16 @@
 // Bir ölçüm tutmazsa komut kırmızı biter.
 
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { Socket } from "node:net";
-import { gizliKok, kayittaArama, siteNumaralariniOku, yerlesimHatalari } from "./gizli-bilgi.mts";
+import { join } from "node:path";
+import {
+  degerBasinaParca,
+  gizliKok,
+  kayittaArama,
+  siteNumaralariniOku,
+  yerlesimHatalari,
+} from "./gizli-bilgi.mts";
 import {
   acikKapilar,
   type DuvarKurali,
@@ -251,23 +259,39 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
       "gizli bilgi klasörleri ve dosyaları yalnız sahiplerine açık",
       yerlesimSorunlari.slice(0, 5).join("; "),
     );
-    // Projenin bütün kayıt geçmişi ve izlenen dosyaları sunucuya gider, değerler sunucudan çıkmaz.
+    // Dosya izni ek erişim iznini (ACL) göstermez; ek izin hiç olmamalı.
+    const ekIzin = sshKomutu(kayit.ipv4, `sudo getfacl -R -s -p ${gizliKok} | wc -l`);
+    olcum(
+      ekIzin.status === 0 && ekIzin.stdout.trim() === "0",
+      "gizli bilgilerde ek erişim izni (ACL) yok",
+      ekIzin.status === 0 ? "" : ekIzin.stderr.trim(),
+    );
+    // Kayıt geçmişinin tamamı (bütün dallar, reflog, birleştirmeler, saklananlar), izlenen ve
+    // kayıtsız dosyalar sunucuya gider; değerler sunucudan çıkmaz. .gitignore'dakiler (.env)
+    // aranmaz: bilgisayarın geliştirme değerleridir, sunucudakilerle ilgisi yoktur.
     const git = (argumanlar: string[]) =>
       spawnSync("git", ["-C", kok, ...argumanlar], { encoding: "utf8", maxBuffer: 512 * 2 ** 20 });
-    const gecmis = git(["log", "-p", "--all", "--no-color"]);
-    const dosyalar = git(["grep", "-h", "--no-color", "-I", "-e", ""]);
+    const gecmis = git(["log", "-p", "-m", "--all", "--reflog", "--no-color"]);
+    const izlenen = git(["grep", "-h", "--no-color", "-I", "-e", ""]);
+    const kayitsiz = git(["ls-files", "--others", "--exclude-standard", "-z"]);
+    const kayitsizIcerik = kayitsiz.stdout
+      .split("\0")
+      .filter(Boolean)
+      .map((yol) => readFileSync(join(kok, yol), "utf8"))
+      .join("\n");
     const arama = sshKomutu(kayit.ipv4, kayittaArama, {
-      girdi: `${gecmis.stdout}\n${dosyalar.stdout}`,
+      girdi: [gecmis.stdout, izlenen.stdout, kayitsizIcerik].join("\n"),
+      sure: 600_000,
     });
-    const sayilar = arama.stdout.match(/desen=(\d+) eslesme=(\d+)/);
+    const sayilar = arama.stdout.match(/deger=(\d+) parca=(\d+) eslesme=(\d+)/);
     olcum(
-      gecmis.status === 0 &&
-        dosyalar.status === 0 &&
+      [gecmis, izlenen, kayitsiz].every((s) => s.status === 0) &&
         sayilar !== null &&
         Number(sayilar[1]) > 0 &&
-        sayilar[2] === "0",
-      "sunucudaki gizli değerler projenin kayıtlarında geçmiyor",
-      sayilar ? `${sayilar[1]} değer, ${sayilar[2]} eşleşme` : arama.stderr.trim(),
+        Number(sayilar[2]) === Number(sayilar[1]) * degerBasinaParca &&
+        sayilar[3] === "0",
+      "sunucudaki gizli değerler projenin kayıtlarında ve dosyalarında geçmiyor",
+      sayilar ? `${sayilar[1]} değer, ${sayilar[3]} eşleşme` : arama.stderr.trim(),
     );
   }
 
