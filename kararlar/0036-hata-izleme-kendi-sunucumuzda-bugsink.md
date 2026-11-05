@@ -30,7 +30,7 @@
   - Araca ulaşılamazsa sunucu günlüğe uyarı yazar, uygulama çalışmaya devam eder. Sunucuda olay sayısının sınırı yoktur; bir döngüdeki hata her istekte bir gönderim yapar, taşmayı Bugsink'in proje sınırı keser.
 - **Deneme:** `pnpm hata-izleme-denemesi <site klasörü>` yayındaki sitede iki hatayı bilerek çıkarır. Sunucudaki hata, site kutusunun içinde uygulamanın hata katmanından geçer (`izleme/hata-denemesi.mjs`, yalnız `docker exec` ile çalışır). Tarayıcıdaki hata, deneme adresi gerçek bir tarayıcıda açılarak çıkarılır. İki hatanın da içinde uydurma e-posta, telefon, şifre, kart, oturum anahtarı ve sorgu değeri vardır. Komut araçtaki kayıtları okur ve şunları ölçer:
   - site, sürüm ve ortam etiketi var,
-  - ön kapının 1 MB gövde sınırı çalışıyor (sitenin gönderim adresiyle 2 MB'lık istek 413 alıyor),
+  - ön kapının 1 MB gövde sınırı çalışıyor: sitenin gönderim adresiyle 2 MB'lık istek ön kapının kendisinden 413 alıyor, araca ulaşmıyor (Bugsink de büyük gövdeye 413 verir, yanıtın kaynağı başlıktan ayrılır),
   - uydurma değerlerin hiçbiri açık değil, e-posta kısaltılmış,
   - ziyaretçi, istek, çerez, başlık alanı ve IP adresi yok.
 - **Denetim:** `pnpm sunucu-denetle` ölçer:
@@ -69,5 +69,5 @@
   - Bugsink görüntüsü bu ayarlarla bilgisayarda açılıp ölçüldü: kutu sağlıklı açıldı, `docker inspect` çıktısında imza anahtarı ve şifre geçmedi.
   - Compose, tanımdaki `$` işaretlerini kendi değişkeni sayıp boşaltıyordu (imza anahtarı boş gitti, kutu açılmadı). Komutta `$$` yazılır, bunun testi `komutlar/testler/hata-izleme.test.ts` içinde.
   - Rastgele işarette 10 haneli bir rakam dizisi maskeye takıldı. Deneme işareti bu yüzden yalnız harftir. İşaret mesajın sonundadır: ardından iki nokta gelseydi ve işaret rastgele "otp" gibi bir parça taşısaydı, maske e-postayı bütünüyle silerdi (bağımsız kontrol buldu).
-  - Sunucuda: `pnpm sunucu-hata-izleme` iki kez çalıştırıldı, ikincisinde hiçbir şey değişmedi. `pnpm sunucu-denetle --hizli` yeşil. Kutu internete çıkamıyor (`Network is unreachable`), sunucu kutuya ulaşıyor (tünel), `docker inspect`'te imza anahtarı geçmiyor. Proje olmayan bir numaraya ve anahtarsız gönderim 403, sitenin anahtarıyla 2 MB'lık gönderim 413 aldı.
+  - Sunucuda: `pnpm sunucu-hata-izleme` iki kez çalıştırıldı, ikincisinde hiçbir şey değişmedi. `pnpm sunucu-denetle --hizli` yeşil. Kutu internete çıkamıyor (`Network is unreachable`), sunucu kutuya ulaşıyor (tünel), `docker inspect`'te imza anahtarı geçmiyor. Proje olmayan bir numaraya ve anahtarsız gönderim 403, sitenin anahtarıyla 2 MB'lık gönderim ön kapıdan 413 aldı (`server: Caddy`); aynı istek Bugsink'e doğrudan gidince Bugsink de 413 veriyor (`server: gunicorn`).
   - Örnek Mağaza bu kayıtla deneme adresine yayınlandı. `pnpm hata-izleme-denemesi siteler/ornek-magaza` yeşil: sunucudaki ve tarayıcıdaki hata araçta `ornek-magaza`, `0.1.0` ve `deneme` etiketleriyle görüldü. Kayıtlarda e-posta kısaltılmış, şifre, kart ve oturum anahtarı gizlenmiş, telefonun yalnız son iki hanesi kalmış. IP adresi, çerez ve istek başlığı yok.

@@ -94,6 +94,8 @@ try {
 
   // Ön kapının gövde sınırı: sitenin kendi (herkese açık) gönderim adresiyle 2 MB'lık bir istek
   // araca gitmeden 413 almalı. Anahtarsız istek gövde okunmadan ret aldığı için anahtar gerekir.
+  // Bugsink'in kendisi de büyük gövdeye 413 verir (ölçüldü); yanıt ön kapının kendisinden
+  // gelmeli: "server: Caddy", araçtan geçen yanıtlardaki "via" başlığı yok.
   const gonderim = gonderimAdresiniCoz(
     sshKomutu(
       sunucu.ipv4,
@@ -109,12 +111,14 @@ try {
         },
         body: "a".repeat(2 * 1024 * 1024),
       }).then(
-        (yanit) => yanit.status,
+        (yanit) =>
+          `${yanit.status} ${yanit.headers.get("server") ?? "?"}${yanit.headers.has("via") ? " via" : ""}`,
         (hata: Error) => hata.message,
       )
     : "kutuda gönderim adresi yok";
+  const sinirTamam = buyuk === "413 Caddy";
   console.log(
-    `${buyuk === 413 ? "tamam" : "HATA "}  2 MB'lık gönderim ön kapıda 413 alıyor (${buyuk})`,
+    `${sinirTamam ? "tamam" : "HATA "}  2 MB'lık gönderim ön kapıda 413 alıyor, araca ulaşmıyor (${buyuk})`,
   );
 
   // Bugsink olayı kuyruktan işler; iki olay görünene kadar beklenir.
@@ -124,7 +128,7 @@ try {
     olaylar = olaylariOku(sunucu.ipv4, hataIzlemeOrtami, kodAdi, isaret);
   }
   let hataSayisi =
-    Number(sunucuDurumu !== "200") + Number(tarayiciDurumu !== 200) + Number(buyuk !== 413);
+    Number(sunucuDurumu !== "200") + Number(tarayiciDurumu !== 200) + Number(!sinirTamam);
   for (const kaynak of ["sunucu", "tarayici"]) {
     const bulunan = olaylar.filter((olay) => olay.tags?.kaynak === kaynak);
     const sorunlar =
