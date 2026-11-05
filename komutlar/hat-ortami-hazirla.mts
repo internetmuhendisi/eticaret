@@ -43,6 +43,8 @@ const degerler: Record<string, string> = {
   VERITABANI_YONETICI_SIFRESI: sifre(),
   VERITABANI_ADRESI: adres.href,
   YEREL_ORTAM_PORTU: port("YEREL_ORTAM_PORTU"),
+  // Hatta Hetzner anahtarı bilerek yoktur: sunucu denetimi hatta çalışmaz (karar 0030).
+  HETZNER_ANAHTARI: "",
 };
 
 // .env.example'a eklenen her anahtar burada da üretilmeli; eksik kalırsa hat burada durur.
