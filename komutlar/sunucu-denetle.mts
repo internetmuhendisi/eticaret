@@ -18,7 +18,7 @@
 // - Her ortamın veritabanı kutusu sağlıklı çalışıyor: kök olmayan kullanıcı, salt okunur, yetkisiz,
 //   yeniden başlayınca açılıyor, portu dışarıya açılmamış (sunucu-veritabani.mts, kart 0039).
 // - Yayındaki her sitenin deneme adresi şifreli açılıyor, arama motorlarına kapalı, sağlık ucu
-//   kimlikteki sürümü söylüyor (on-kapi-olcumleri.mts, kart 0023).
+//   etkin yayının kaydındaki sürümü söylüyor (on-kapi-olcumleri.mts, kart 0023).
 // - Hata izleme kutusu aynı kısıtlarla, yalnız kendi ağında ve internete kapalı çalışıyor; ön
 //   kapıdan yalnız gönderim yolu açık (hata-izleme.mts, on-kapi-olcumleri.mts, kart 0022).
 // Bir ölçüm tutmazsa komut kırmızı biter.

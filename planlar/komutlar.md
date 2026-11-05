@@ -214,6 +214,7 @@ Kurulan: Örnek Mağaza, çekirdek `0.1.0` ile `https://ornek-magaza.deneme.etic
 - **Sürüm:** "Yayınlanmış sürüm" ancak sürüm notuyla tanımlı oldu. Notun varlığını ve biçimini `cekirdek/testler/surum-notlari.test.ts` denetliyor. Aynı numarayla farklı çekirdeğin yayınlanabilmesi ayrı bir iştir (kart 0040).
 - **Adres:** Deneme adresi kimlikte belge olarak, ön kapıda kod adından üretilerek iki yerde duruyor. Kurma komutu adresi kimliğe kendisi yazmalı; adres yoksa ya da farklıysa test yakalar (`kimlikAdresiHatasi`, `komutlar/on-kapi.mts`).
 - **Ölçüm:** Yayından sonra sağlık kontrolü yalnız yayın anında değil, her sunucu denetiminde de çalışıyor. Bu yüzden ayrı bir "sağlık kontrolü" adımı komutta denetim çağrısı olur.
+- **Kimlik ile çalışan sürüm:** Sunucu denetimi çalışan sürümü yayın kaydıyla karşılaştırır, kimlikle karşılaştırmaz. Bir site geri dönünce ya da yayını düşünce kimlik sonraki sürümde kalabilir; bugün bunu hiçbir ölçüm söylemez. Farkı sahip paneli göstermeli (karar 0011), güncelleme komutu da 1. adımda bu farkta durmalı.
 - **Henüz yapılamayanlar:** Tarifin 4 (`baslangic/`, `marka/`, `testler/`), 8, 11 ve 12. adımları ve ekran ölçümü. Her biri ilgili parça yazılınca bu tabloya işlenir.
 
 ## Henüz açık olanlar
