@@ -252,10 +252,12 @@ describe("hat dosyası kilidi", () => {
   it("aynı kayıtta aynıdır", () => {
     expect(hatDosyasiAyniMi("HEAD", "HEAD")).toBe(true);
   });
-  it("hat dosyası olmayan kayıtla aynı değildir", () => {
-    const ilk = spawnSync("git", ["rev-list", "--max-parents=0", "HEAD"], {
-      encoding: "utf8",
-    }).stdout.trim();
-    expect(hatDosyasiAyniMi("HEAD", ilk)).toBe(false);
+  // Hattaki kopya geçmişsizdir; karşılaştırma geçmişe bağlı olmayan nesnelerle yapılır.
+  it.each([
+    ["hat dosyası olmayan klasör (git'in boş klasörü)", "4b825dc642cb6eb9a060e54bf8d69288fbee4904"],
+    ["olmayan kayıt", "0".repeat(40)],
+  ])("%s ile aynı değildir", (_ad, oteki) => {
+    expect(hatDosyasiAyniMi("HEAD", oteki)).toBe(false);
+    expect(hatDosyasiAyniMi(oteki, "HEAD")).toBe(false);
   });
 });
