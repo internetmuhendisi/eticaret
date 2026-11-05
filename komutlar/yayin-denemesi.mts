@@ -34,7 +34,12 @@ import {
 } from "./on-kapi.mts";
 import { onKapiyiOlc } from "./on-kapi-olcumleri.mts";
 import { kok, sshKomutu, kayitlariOku as sunuculariOku } from "./sunucu.mts";
-import { sifreyiEsitle, veritabaniKutusu, veritabaniKutusunuKur } from "./sunucu-veritabani.mts";
+import {
+  sifreyiEsitle,
+  surumEtiketi,
+  veritabaniKutusu,
+  veritabaniKutusunuKur,
+} from "./sunucu-veritabani.mts";
 import {
   disaridanIste,
   etkinKutuyuYenidenBaslat,
@@ -155,6 +160,8 @@ const temizle = async (ipv4: string): Promise<void> => {
     console.error(`temizlik: veritabanı kutusu: ${(hata as Error).message}`);
   }
   sunucudaAglariSil(ipv4, denemeler);
+  // Bozuk görüntü veritabanı adımında sunucuya da aktarılır; iki yerden de silinir.
+  sshKomutu(ipv4, `docker image rm ${bozukEtiket} >/dev/null 2>&1; true`);
   spawnSync("docker", ["image", "rm", bozukEtiket], { stdio: "ignore" });
   rmSync(klasorKoku, { recursive: true, force: true });
   console.log(`silindi     deneme siteleri ${denemeler.join(", ")}`);
@@ -165,7 +172,9 @@ const sunucudaTemizle = (ipv4: string, kodAdi: string, ad: string) =>
     sure: 300_000,
     girdi: `set +e
 for c in $(docker ps -aq --filter 'name=^${siteAgiAdi(ortam, kodAdi)}-[0-9]+$'); do docker rm -f "$c" >/dev/null; done
-for g in $(docker images -q 'altyapi-yayin:${ortam}-${kodAdi}-*' | sort -u); do docker image rm -f "$g" >/dev/null 2>&1; done
+# Görüntüler etiket adıyla ve zorlamadan silinir: bütün yayın etiketleri aynı görüntüyü gösterebilir,
+# kimlikle silmek başka sitelerin etiketlerini de götürürdü.
+for g in $(docker images --format '{{.Repository}}:{{.Tag}}' 'altyapi-yayin:${ortam}-${kodAdi}-*'); do docker image rm "$g" >/dev/null 2>&1; done
 sudo rm -rf ${yayinKlasoru(ortam, kodAdi)}
 printf '%s\\n' 'DROP DATABASE IF EXISTS "${ad}" WITH (FORCE);' 'DROP ROLE IF EXISTS "${ad}";' | docker exec -i ${veritabaniKutusu(ortam)} psql -U postgres -d postgres -q >/dev/null
 ${silmeBetigi(ortam, kodAdi).replace("set -eu", "true")}
@@ -317,6 +326,16 @@ try {
   console.log(`HATA   deneme çalıştı  (${(hata as Error).message})`);
 } finally {
   if (temizlikGerekli) await temizle(ipv4);
+}
+// Temizlik yalnız denemenin kendi etiketlerini siler; çekirdeğin görüntüsü sunucuda kalmalı.
+if (temizlikGerekli) {
+  const kalan = sshKomutu(
+    ipv4,
+    `docker image inspect -f '{{.Id}}' ${surumEtiketi(cekirdekSurumu)}`,
+  );
+  const gecti = kalan.status === 0 && kalan.stdout.trim() !== "";
+  sonuclar.push({ ad: "temizlik çekirdeğin görüntüsüne dokunmadı", gecti });
+  console.log(`${gecti ? "tamam " : "HATA  "} temizlik çekirdeğin görüntüsüne dokunmadı`);
 }
 
 const kalanlar = sonuclar.filter((sonuc) => !sonuc.gecti);
