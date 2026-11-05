@@ -13,7 +13,7 @@ Durum: 2026-10-28 tarihinde taslak olarak yazıldı. Komutlar henüz yazılmaz. 
 - **Ürün kararını sorar, teknik kararı kendi verir.** Siteden siteye değişebilen bir davranışı karar olarak sormaz. Ayar şemasındaki varsayılanı gösterir, bu site için önerdiği değeri söyler, değiştirmek isteyip istemediğini sorar.
 - **Kontrol geçmezse durur.** Bir test ya da kontrol kırmızıysa komut sonraki adıma geçmez, eksikleri liste olarak söyler. Kontrolü atlatan bir seçeneği yoktur.
 - **Geri alınamaz adımda ayrıca onay ister.** Alan adı bağlamak, siteyi satışa açmak, mağaza sahibine e-posta göndermek gibi adımlardan hemen önce bir kez daha sorar.
-- **Gizli bilgiyi kayda yazmaz.** Veritabanı şifresi, durum ucu anahtarı gibi bilgiler sunucunun korumalı ortam değişkenlerine gider, site klasörüne ve GitHub'a girmez.
+- **Gizli bilgiyi kayda yazmaz.** Veritabanı şifresi, durum ucu anahtarı gibi bilgiler sunucuda sitenin kendi gizli bilgi dosyalarında durur, site klasörüne ve GitHub'a girmez (karar 0031).
 - **Kendi çalışma kopyasında çalışır.** Site klasöründeki değişiklik ayrı bir kopyada yapılır, kontrollerden geçince kaydedilir ve ana dala alınır.
 - **İz bırakır.** Her çalıştırma yayın kaydına (sahip paneli buradan okur) ve tarihçeye bir giriş yazar: hangi site, ne yapıldı, sonuç.
 
@@ -53,7 +53,7 @@ Eklenti sorulmaz. Katalogdaki bir eklenti ayrıca istenmedikçe kurulmaz.
    - `testler/`: bu sitenin ayarlarına göre kontroller (örneğin sipariş numarası doğru önekle başlar);
    - `KURALLAR.md`: bu siteye özel kısa notlar.
 5. Klasörü kimlikte yazan çekirdek sürümünün ayar şemasıyla doğrular.
-6. Gizli bilgileri üretir ve korumalı ortam değişkenlerine yazar.
+6. Gizli bilgileri sunucuda üretir ve sitenin gizli bilgi dosyalarına yazar (`pnpm sunucu-gizli`, karar 0031).
 7. Sitenin kendi veritabanını açar, o sürümün veritabanı değişikliklerini sırayla uygular, başlangıç değerlerini bir kez aktarır.
 8. Sitenin dosya deposunu, gece yedeğini, hata izleme etiketini ve zamanlanmış kontrollerini tanımlar.
 9. Siteyi deneme adresinde yayınlar. Deneme adresi arama motoruna kapalıdır, gerçek ödeme almaz.
@@ -188,7 +188,7 @@ Elle yaparken bu tarifin adımları sırayla izlenir. Eksik, fazla ya da yanlı�
 
 ## Henüz açık olanlar
 
-- Deneme adresinin biçimi ve gizli bilgilerin sunucuda nasıl saklanacağı: ilk site kurulurken. Klasör adları karar 0015 ile kapandı.
+- Deneme adresinin biçimi: ilk site kurulurken. Klasör adları karar 0015 ile, gizli bilgilerin sunucuda saklanması karar 0031 ile kapandı.
 - Alan adını kimin satın alıp kimin adına kaydettireceği.
 - Teslim edilmiş bir sitenin sahibi değişirse ya da bir site kapatılırsa ne yapılacağı. Bunlar bu üç komutun dışındadır, gerekince ayrı tarif yazılır.
 - Ayrılan mağazaya siteyi devretmenin tarifi (0014): ilk devir istendiğinde yazılır. Kodun başka yerde kullanılması ve devredilen siteyi kimin güncelleyeceği de o zaman konuşulur.

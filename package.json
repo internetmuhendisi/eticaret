@@ -43,6 +43,8 @@
     "hat-sonucu": "node komutlar/hat-sonucu.mts",
     "sunucu-kur": "node komutlar/sunucu-kur.mts",
     "sunucu-denetle": "node komutlar/sunucu-denetle.mts",
+    "sunucu-gizli": "node komutlar/sunucu-gizli.mts",
+    "sunucu-gizli-denemesi": "node komutlar/sunucu-gizli-denemesi.mts",
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {

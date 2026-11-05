@@ -18,4 +18,4 @@ Site ayarı, siteden siteye değişebilen ve varsayılan değeriyle tanımlı da
 - Her ayarın varsayılanı olsun. Ayar verilmemişse sistem varsayılanla çalışır.
 - Fiziksel, dijital, hizmet gibi ürün türlerini site başına açılıp kapanan ayar yap.
 - Yönetim panelindeki ayar ekranlarını ayar şemasından üret.
-- Ödeme anahtarı, şifre gibi gizli bilgileri ayar dosyasına yazma. Korumalı ortam değişkenlerinde (`.env` dosyasında) tut.
+- Ödeme anahtarı, şifre gibi gizli bilgileri ayar dosyasına yazma. Bilgisayarda `.env` dosyasında, sunucuda sitenin gizli bilgi dosyalarında tut. Yeni gizli bilgiyi `cekirdek/kayitlar/gizli-bilgiler.ts` kaydına ekle, uygulamada yalnız `gizliBilgi()` ile oku (karar 0031).

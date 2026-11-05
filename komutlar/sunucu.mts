@@ -80,18 +80,30 @@ const hetznerAnahtari = (): string => {
   return deger;
 };
 
+// Hetzner'in geçici hataları (502, 503, 504) okuma isteklerinde birkaç kez yeniden denenir.
+// Değiştiren istek yeniden gönderilmez: iki kez uygulanabilir.
+const geciciHatalar = new Set([502, 503, 504]);
+const yenidenDenemeSureleri = [2000, 5000, 10_000];
+
 export const hetzner = async <T,>(
   yol: string,
   { yontem = "GET", govde }: { yontem?: string; govde?: unknown } = {},
 ): Promise<T> => {
-  const yanit = await fetch(`https://api.hetzner.cloud/v1${yol}`, {
-    method: yontem,
-    headers: {
-      Authorization: `Bearer ${hetznerAnahtari()}`,
-      ...(govde === undefined ? {} : { "Content-Type": "application/json" }),
-    },
-    ...(govde === undefined ? {} : { body: JSON.stringify(govde) }),
-  });
+  const iste = () =>
+    fetch(`https://api.hetzner.cloud/v1${yol}`, {
+      method: yontem,
+      headers: {
+        Authorization: `Bearer ${hetznerAnahtari()}`,
+        ...(govde === undefined ? {} : { "Content-Type": "application/json" }),
+      },
+      ...(govde === undefined ? {} : { body: JSON.stringify(govde) }),
+    });
+  let yanit = await iste();
+  for (const sure of yontem === "GET" ? yenidenDenemeSureleri : []) {
+    if (!geciciHatalar.has(yanit.status)) break;
+    await new Promise((bitti) => setTimeout(bitti, sure));
+    yanit = await iste();
+  }
   const metin = await yanit.text();
   const veri = metin ? JSON.parse(metin) : {};
   if (!yanit.ok) {
@@ -208,7 +220,11 @@ export const sshSecenekleri = [
 export const sshKomutu = (
   adres: string,
   komut: string,
-  { kullanici = sunucuTanimi.kullanici as string, ek = [] as string[] } = {},
+  {
+    kullanici = sunucuTanimi.kullanici as string,
+    ek = [] as string[],
+    girdi = undefined as string | undefined,
+  } = {},
 ) =>
   spawnSync(
     "ssh",
@@ -222,7 +238,8 @@ export const sshKomutu = (
       `${kullanici}@${adres}`,
       komut,
     ],
-    { encoding: "utf8", timeout: 120_000 },
+    // Girdi verilmezse ssh standart girdiyi okumaz (betik girdiden gönderilince karışmasın).
+    { encoding: "utf8", timeout: 600_000, input: girdi ?? "" },
   );
 
 // --- Denetimin karar kuralları (testleri: komutlar/testler/sunucu.test.ts) ---

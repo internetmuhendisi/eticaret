@@ -42,8 +42,8 @@ sahip-paneli/          ayrı Next.js uygulaması
 komutlar/              site kurma, güncelleme, teslim, yayın
 siteler/<kod-adi>/     kimlik.json, ayarlar.json, baslangic/, marka/, tema/, vitrin/,
                        testler/, KURALLAR.md
-sunucu/                Docker, Caddy, sunucu kurulumu (kurulum/), sunucu kaydı (sunucular.json)
-                       ve yedek (yedek/) dosyaları
+sunucu/                Docker, Caddy, sunucu kurulumu (kurulum/), sunucu kaydı (sunucular.json),
+                       sitelerin kutu kullanıcıları (site-kullanicilari.json) ve yedek (yedek/)
 denetim/               kod denetiminin projeye özel kuralları (kurallar/), bozuk örnekleri
                        (bozuk-ornekler/) ve kendi kendini denetleme betiği (karar 0017)
 ```

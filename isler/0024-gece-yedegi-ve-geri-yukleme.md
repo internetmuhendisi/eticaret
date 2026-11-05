@@ -14,6 +14,7 @@ Her sitenin veritabanı her gece ayrı yedeklenir ve tek başına geri yükleneb
 - Tek bir siteyi öteki sitelere dokunmadan geri yükleyen komut.
 - Her yedeğin sonucu kayda yazılır.
 - `sunucu/yedek/` altında yedek dosyaları.
+- Gizli bilgiler yedeğe girmez (karar 0031). Geri yüklemede sitenin veritabanı şifresi `pnpm sunucu-gizli --yenile` ile yeniden üretilip veritabanına da yazılır.
 
 ## Sınırlar
 

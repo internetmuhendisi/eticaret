@@ -6,6 +6,8 @@
 # Çalıştırmak:
 #   docker run -v <site klasörü>:/siteler/<kod-adi>:ro -e SITE_KLASORU=/siteler/<kod-adi> \
 #     -e VERITABANI_ADRESI=... -p 3000:3000 altyapi-cekirdek:<sürüm>
+# Sunucuda gizli bilgi ortam değişkeniyle değil, dosyayla verilir: VERITABANI_ADRESI_DOSYASI=
+# /run/secrets/veritabani_adresi ve kutu sitenin kendi kullanıcı numarasıyla çalışır (karar 0031).
 
 # Node.js ve pnpm sürümleri kökteki package.json'dan gelir (karar 0016); komut onları buraya
 # verir. Varsayılan değer yoktur, sürüm ikinci bir yerde yazmaz (ilk satırdaki uyarı bu yüzden kapalı).

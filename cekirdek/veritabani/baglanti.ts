@@ -1,21 +1,14 @@
-// Sitenin veritabanı bağlantısı (karar 0022). Adres yalnız VERITABANI_ADRESI ortam
-// değişkeninden okunur; şifre .env dosyasında ya da sunucunun korumalı değişkenlerinde durur.
+// Sitenin veritabanı bağlantısı (karar 0022). Adres gizli bilgidir ve yalnız gizliBilgi() ile
+// okunur: bilgisayarda .env'deki VERITABANI_ADRESI, sunucuda gizli bilgi dosyası (karar 0031).
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
+import { gizliBilgi } from "../ayar-semasi/gizli-bilgi.ts";
 import { hatayiKaydet } from "../izleme/hata-katmani.ts";
 
 export type Veritabani = NodePgDatabase & { $client: import("pg").Pool };
 
 let veritabani: Veritabani | undefined;
 
-export const veritabaniAdresi = (): string => {
-  const { VERITABANI_ADRESI: adres } = process.env;
-  if (!adres) {
-    throw new Error(
-      "VERITABANI_ADRESI ortam değişkeni yok. Değişkenin biçimi .env.example dosyasında yazar.",
-    );
-  }
-  return adres;
-};
+export const veritabaniAdresi = (): string => gizliBilgi("VERITABANI_ADRESI");
 
 // Veritabanına ulaşılamazsa istek bu süreden sonra hatayla biter, uygulama beklemede kalmaz.
 const baglantiZamanAsimi = 5_000;

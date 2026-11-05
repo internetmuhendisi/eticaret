@@ -16,6 +16,7 @@
 
 import { spawnSync } from "node:child_process";
 import { Socket } from "node:net";
+import { gizliKok, kayittaArama, siteNumaralariniOku, yerlesimHatalari } from "./gizli-bilgi.mts";
 import {
   acikKapilar,
   type DuvarKurali,
@@ -27,6 +28,7 @@ import {
   type KapiDurumu,
   kapiHatalari,
   kayitlariOku,
+  kok,
   type SunucuKaydi,
   sshKomutu,
   sshSecenekleri,
@@ -234,6 +236,39 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
     );
     const icDuvar = sshKomutu(kayit.ipv4, "sudo ufw status");
     olcum(icDuvar.stdout.includes("Status: active"), "içerideki duvar açık");
+
+    // Gizli bilgiler (karar 0031): yerleşim ve izinler, sonra kayıtta geçmediği.
+    const yerlesim = sshKomutu(
+      kayit.ipv4,
+      `sudo find ${gizliKok} -printf '%y %m %U %p\\n' 2>/dev/null || true`,
+    );
+    const yerlesimSorunlari = yerlesimHatalari(
+      yerlesim.stdout.trim().split("\n"),
+      siteNumaralariniOku(),
+    );
+    olcum(
+      yerlesim.status === 0 && yerlesimSorunlari.length === 0,
+      "gizli bilgi klasörleri ve dosyaları yalnız sahiplerine açık",
+      yerlesimSorunlari.slice(0, 5).join("; "),
+    );
+    // Projenin bütün kayıt geçmişi ve izlenen dosyaları sunucuya gider, değerler sunucudan çıkmaz.
+    const git = (argumanlar: string[]) =>
+      spawnSync("git", ["-C", kok, ...argumanlar], { encoding: "utf8", maxBuffer: 512 * 2 ** 20 });
+    const gecmis = git(["log", "-p", "--all", "--no-color"]);
+    const dosyalar = git(["grep", "-h", "--no-color", "-I", "-e", ""]);
+    const arama = sshKomutu(kayit.ipv4, kayittaArama, {
+      girdi: `${gecmis.stdout}\n${dosyalar.stdout}`,
+    });
+    const sayilar = arama.stdout.match(/desen=(\d+) eslesme=(\d+)/);
+    olcum(
+      gecmis.status === 0 &&
+        dosyalar.status === 0 &&
+        sayilar !== null &&
+        Number(sayilar[1]) > 0 &&
+        sayilar[2] === "0",
+      "sunucudaki gizli değerler projenin kayıtlarında geçmiyor",
+      sayilar ? `${sayilar[1]} değer, ${sayilar[2]} eşleşme` : arama.stderr.trim(),
+    );
   }
 
   // Kapılar. IPv4'te bütün kapılar; IPv6'da ilk 1024 kapı ve bilinen kapılar (aynı duvar
