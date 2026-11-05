@@ -52,6 +52,7 @@ describe("ayar şeması", () => {
       siparisBaslangici: 1001,
       temaDegistirilebilir: true,
       vitrindeAltyapiAdi: false,
+      yakindaYazisi: false,
     });
   });
 

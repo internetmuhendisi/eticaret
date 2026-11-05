@@ -89,6 +89,9 @@ export const ayarSemasi = z.strictObject({
     z.boolean().default(false),
     altyapiSahibinin("ayar.aciklama.vitrindeAltyapiAdi"),
   ),
+  // Ana sayfada başlığın altında "Yakında açılıyoruz." yazısı (kart 0041). Bakım modu değildir:
+  // vitrin açık kalır. Mağaza sahibinin ayarları gelince panele taşınabilir.
+  yakindaYazisi: ayar(z.boolean().default(false), altyapiSahibinin("ayar.aciklama.yakindaYazisi")),
 });
 
 // Varsayılanları uygulanmış ve sipariş öneki türetilmiş ayarlar.

@@ -21,12 +21,18 @@
       "siparisOneki": "Sipariş numarasının başındaki harfler. Verilmezse mağaza adının ilk üç harfi kullanılır.",
       "siparisBaslangici": "İlk siparişin numarası.",
       "temaDegistirilebilir": "Mağaza sahibi yönetim panelinden temayı değiştirebilir.",
-      "vitrindeAltyapiAdi": "Vitrinde altyapının adı görünür."
+      "vitrindeAltyapiAdi": "Vitrinde altyapının adı görünür.",
+      "yakindaYazisi": "Vitrinin ana sayfasında başlığın altında \"Yakında açılıyoruz.\" yazısı görünür."
     }
   },
   "yonetim": {
     "anasayfa": {
       "baslik": "Yönetim paneli"
+    }
+  },
+  "vitrin": {
+    "anasayfa": {
+      "yakindaAciliyoruz": "Yakında açılıyoruz."
     }
   }
 }

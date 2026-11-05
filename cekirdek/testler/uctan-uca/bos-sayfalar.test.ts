@@ -1,5 +1,6 @@
 // Vitrinin ve yönetim panelinin boş sayfaları tarayıcıda açılır (kartlar 0009, 0010).
-// Vitrin, sitenin adını kimlik dosyasından gösterir.
+// Vitrin, sitenin adını kimlik dosyasından gösterir; ayarı açıksa başlığın altında
+// "Yakında açılıyoruz." yazısını da (kart 0041).
 import { expect, test } from "@playwright/test";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { metin } from "../../metinler/site-metni";
@@ -17,3 +18,15 @@ for (const { adres, baslik } of sayfalar) {
     await expect(page).toHaveTitle(baslik);
   });
 }
+
+test("ana sayfadaki yakında yazısı sitenin ayarına uyar", async ({ page }) => {
+  await page.goto("/");
+  const yazi = page.getByText(metin("vitrin.anasayfa.yakindaAciliyoruz"), { exact: true });
+  if (calisanSite().ayarlar.yakindaYazisi) {
+    // Başlığın hemen ardından gelir.
+    await expect(page.locator("h1 + p")).toHaveText(metin("vitrin.anasayfa.yakindaAciliyoruz"));
+    await expect(yazi).toBeVisible();
+  } else {
+    await expect(yazi).toHaveCount(0);
+  }
+});
