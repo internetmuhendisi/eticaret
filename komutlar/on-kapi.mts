@@ -135,17 +135,31 @@ export const kurmaBetigi = (siteSatirlari: Record<string, string>): string => {
       Object.entries(siteSatirlari).map(([ad, satir]) => [`caddy/siteler/${ad}.caddy`, satir]),
     ),
   };
+  // Dosyalar önce hazırlık klasörüne yazılır ve Caddy'ye doğrulatılır; ancak hepsi geçerse yerine
+  // konur. Bozuk bir ayar çalışan ön kapının dosyalarına hiç dokunmaz.
   const yazma = Object.entries(dosyalar).map(([yol, icerik]) => {
     if (icerik.includes("ON_KAPI_DOSYA_SONU"))
       throw new Error(`${yol} ayrılmış bir satır içeriyor.`);
-    return `sudo tee "$k/${yol}.yeni" >/dev/null <<'ON_KAPI_DOSYA_SONU'\n${icerik}ON_KAPI_DOSYA_SONU\nsudo chmod 0644 "$k/${yol}.yeni"\nsudo mv "$k/${yol}.yeni" "$k/${yol}"`;
+    return `sudo tee "$t/${yol}" >/dev/null <<'ON_KAPI_DOSYA_SONU'\n${icerik}ON_KAPI_DOSYA_SONU\nsudo chmod 0644 "$t/${yol}"`;
   });
+  const yerineKoyma = Object.keys(dosyalar).map((yol) => `sudo mv "$t/${yol}" "$k/${yol}"`);
   const istenenler = Object.keys(siteSatirlari).map((ad) => `${ad}.caddy`);
+  // Doğrulama kutusu ön kapının kısıtlarıyla ve ağsız açılır.
+  const dogrula = (klasor: string) =>
+    `docker run --rm --network none --user ${caddyKullanicisi}:${caddyKullanicisi} --cap-drop ALL --cap-add NET_BIND_SERVICE --security-opt no-new-privileges:true --read-only --tmpfs /tmp -e XDG_DATA_HOME=/tmp/veri -e XDG_CONFIG_HOME=/tmp/ayar -v "$t/${klasor}:/etc/caddy:ro" ${caddyGoruntusu} caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>"$t/dogrulama" || { echo "HATA ${klasor} ayarı geçersiz:" >&2; tail -3 "$t/dogrulama" >&2; exit 1; }`;
   return `set -eu
 k=${onKapiKlasoru}
 sudo install -d -m 0755 -o root -g root /srv/altyapi "$k" "$k/caddy" "$k/caddy/siteler" "$k/yoklama"
 sudo install -d -m 0700 -o ${caddyKullanicisi} -g ${caddyKullanicisi} "$k/veri" "$k/ayar"
+t=$(sudo mktemp -d "$k/hazirlik.XXXXXX")
+trap 'sudo rm -f "$t"/dogrulama "$t"/caddy/siteler/* "$t"/caddy/Caddyfile "$t"/yoklama/Caddyfile "$t"/compose.json; sudo rmdir "$t"/caddy/siteler "$t"/caddy "$t"/yoklama "$t" 2>/dev/null || true' EXIT
+sudo chmod 0755 "$t"
+sudo install -d -m 0755 "$t/caddy" "$t/caddy/siteler" "$t/yoklama"
+sudo install -m 0600 -o "$(id -u)" /dev/null "$t/dogrulama"
 ${yazma.join("\n")}
+${dogrula("caddy")}
+${dogrula("yoklama")}
+${yerineKoyma.join("\n")}
 # Listede olmayan site satırları silinir: satırların tek kaynağı bu komuttur.
 for f in "$k"/caddy/siteler/*.caddy; do
   [ -e "$f" ] || continue
@@ -159,6 +173,11 @@ docker compose -f "$k/compose.json" up -d --remove-orphans --quiet-pull </dev/nu
 if [ -n "$once" ] && [ "$once" = "$(acilis)" ]; then
   docker exec on-kapi caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile --force
 fi
+# Açılan kutu birkaç saniye sonra da çalışıyor olmalı (ayarı okuyamayan Caddy hemen kapanır).
+sleep 3
+for kutu in on-kapi on-kapi-yoklama; do
+  [ "$(docker inspect -f '{{.State.Running}}' "$kutu")" = true ] || { echo "HATA $kutu çalışmıyor" >&2; docker logs --tail 3 "$kutu" >&2; exit 1; }
+done
 echo on-kapi=hazir
 `;
 };
@@ -229,7 +248,7 @@ export const ayniAdres = (a: string | undefined, b: string | undefined): boolean
 // Sunucudaki kutunun gerçek ayarı (docker inspect, kutuOlcumBicimi) kutu tanımıyla aynı olmalı.
 // Docker yetki adlarını "CAP_" önekiyle de yazabilir; karşılaştırma öneksiz yapılır.
 export const kutuOlcumBicimi =
-  "{{.State.Running}}|{{.Config.User}}|{{.HostConfig.ReadonlyRootfs}}|{{json .HostConfig.CapAdd}}|{{json .HostConfig.CapDrop}}|{{json .HostConfig.SecurityOpt}}";
+  "{{.State.Running}}|{{.HostConfig.Privileged}}|{{.Config.User}}|{{.HostConfig.ReadonlyRootfs}}|{{json .HostConfig.CapAdd}}|{{json .HostConfig.CapDrop}}|{{json .HostConfig.SecurityOpt}}";
 
 type KutuTanimi = {
   user: string;
@@ -240,7 +259,8 @@ type KutuTanimi = {
 };
 
 export const kutuKisitHatalari = (satir: string, tanim: KutuTanimi): string[] => {
-  const [calisiyor, kullanici, saltOkunur, ekle, kaldir, guvenlik, ...fazla] = satir.split("|");
+  const [calisiyor, yetkili, kullanici, saltOkunur, ekle, kaldir, guvenlik, ...fazla] =
+    satir.split("|");
   if (fazla.length > 0 || guvenlik === undefined) return [`okunamadı: ${satir}`];
   const liste = (json: string | undefined): string[] | undefined => {
     try {
@@ -258,6 +278,7 @@ export const kutuKisitHatalari = (satir: string, tanim: KutuTanimi): string[] =>
       .join(",");
   const hatalar: string[] = [];
   if (calisiyor !== "true") hatalar.push("çalışmıyor");
+  if (yetkili !== "false") hatalar.push("yetkili kipte (privileged)");
   if (kullanici !== tanim.user)
     hatalar.push(`kullanıcı ${kullanici || "kök"}, beklenen ${tanim.user}`);
   if (saltOkunur !== String(tanim.read_only)) hatalar.push("dosya sistemi salt okunur değil");

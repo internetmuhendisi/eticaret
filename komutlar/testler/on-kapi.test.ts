@@ -94,6 +94,14 @@ describe("kutu tanımı", () => {
     expect(yerel).toContain(`image: ${caddyGoruntusu}`);
   });
 
+  it("kurma betiği önce doğrular, sonra yerine koyar", () => {
+    const betik = kurmaBetigi({ [yoklamaAdi]: "x\n" });
+    const dogrulama = betik.indexOf("caddy validate");
+    expect(dogrulama).toBeGreaterThan(0);
+    expect(dogrulama).toBeLessThan(betik.indexOf(`sudo mv "$t/caddy/Caddyfile"`));
+    expect(betik).toContain("çalışmıyor");
+  });
+
   it("kurma betiği listede olmayan site satırlarını siler ve Caddy'yi yeniden okutur", () => {
     const betik = kurmaBetigi({ [yoklamaAdi]: "x\n" });
     expect(betik).toContain(`siteler/${yoklamaAdi}.caddy`);
@@ -186,6 +194,7 @@ describe("kutuların sunucudaki gerçek ayarı", () => {
   const satir = (degisiklik: Partial<Record<number, string>> = {}) => {
     const alanlar = [
       "true",
+      "false",
       caddy.user,
       "true",
       '["CAP_NET_BIND_SERVICE"]',
@@ -198,19 +207,20 @@ describe("kutuların sunucudaki gerçek ayarı", () => {
 
   it("tanımla aynı kutu geçer (Docker'ın CAP_ önekiyle de)", () => {
     expect(kutuKisitHatalari(satir(), caddy)).toEqual([]);
-    expect(kutuKisitHatalari(satir({ 3: '["NET_BIND_SERVICE"]' }), caddy)).toEqual([]);
+    expect(kutuKisitHatalari(satir({ 4: '["NET_BIND_SERVICE"]' }), caddy)).toEqual([]);
   });
 
   it.each([
     ["kutu durmuş", { 0: "false" }],
-    ["kök kullanıcı", { 1: "" }],
-    ["kök kullanıcı (0:0)", { 1: "0:0" }],
-    ["başka kullanıcı", { 1: "10081:10081" }],
-    ["yazılabilir dosya sistemi", { 2: "false" }],
-    ["fazla yetki", { 3: '["CAP_NET_BIND_SERVICE","CAP_SYS_ADMIN"]' }],
-    ["yetkiler kaldırılmamış", { 4: "null" }],
-    ["yetki yükseltme açık", { 5: "null" }],
-    ["bozuk çıktı", { 5: "[" }],
+    ["yetkili kip", { 1: "true" }],
+    ["kök kullanıcı", { 2: "" }],
+    ["kök kullanıcı (0:0)", { 2: "0:0" }],
+    ["başka kullanıcı", { 2: "10081:10081" }],
+    ["yazılabilir dosya sistemi", { 3: "false" }],
+    ["fazla yetki", { 4: '["CAP_NET_BIND_SERVICE","CAP_SYS_ADMIN"]' }],
+    ["yetkiler kaldırılmamış", { 5: "null" }],
+    ["yetki yükseltme açık", { 6: "null" }],
+    ["bozuk çıktı", { 6: "[" }],
   ])("%s kırmızıdır", (_ad, degisiklik) => {
     expect(kutuKisitHatalari(satir(degisiklik), caddy)).not.toEqual([]);
   });

@@ -15,7 +15,7 @@ Bir site tek komutla yayınlanır, sorun çıkarsa tek komutla önceki sürüme 
 - Sağlık kontrolü geçmezse eski kutu çalışmaya devam eder, komut durur ve sebebi söyler.
 - Geri dönüş: önceki sürüme tek komutla dönülür. Veritabanı değişikliği yedekten dönmeyi gerektiriyorsa komut bunu söyler ve durur.
 - Her çalıştırma yayın kaydına yazılır: site, sürüm, zaman, sonuç.
-- Ön kapı (karar 0032): sitenin Caddy satırı `denemeSatiri` ile üretilir ve `kurmaBetigi`'nin listesine girer (`komutlar/on-kapi.mts`). Liste o betikte tek yerdedir; listede olmayan satırı sonraki `pnpm sunucu-kur` siler. Site kutusu kendi ağındadır, ortak `altyapi` ağına bağlanmaz; ön kapı sitenin ağına bağlanır. Bir site kutusunun başka bir sitenin kutusuna ulaşamadığı ölçülür.
+- Ön kapı (karar 0032): sitenin Caddy satırı `denemeSatiri` ile üretilir ve `kurmaBetigi`'nin listesine girer (`komutlar/on-kapi.mts`). Liste o betikte tek yerdedir; listede olmayan satırı sonraki `pnpm sunucu-kur` siler. Site kutusu kendi ağındadır, ortak `altyapi` ağına bağlanmaz; ön kapı sitenin ağına bağlanır. Bu bağlantı da aynı site listesinden ön kapının kutu tanımına (`onKapiTanimi`) girer; elle (`docker network connect`) yapılırsa kutu yeniden kurulunca kaybolur ve siteler 502 döner. Ziyaretçinin gerçek adresi ortak ağın IPv6'sına bağlıdır, site ağı eklenince `pnpm sunucu-denetle` bunu yeniden ölçer. Bir site kutusunun başka bir sitenin kutusuna ulaşamadığı ölçülür.
 - Site kutusu gizli bilgileri `kutuGizliTanimi` ile alır (karar 0031). Gizli bilgi yenilenince (`pnpm sunucu-gizli --yenile`) veritabanı kullanıcısının şifresi de aynı adımda değişir ve kutu yeniden başlatılır; yarım kalırsa site eski şifreyle açık kalır.
 
 ## Sınırlar
