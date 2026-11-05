@@ -26,4 +26,4 @@ Kart 0018'in bağımsız kontrolünde, yeniden başlatma kararı verilirken fark
 
 ## Durum
 
-yapılacak
+bitti
