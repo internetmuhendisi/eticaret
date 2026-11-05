@@ -34,4 +34,4 @@ Yalnız deneme ortamına yayın yapılır (kullanıcı kararı); canlıya yayın
 
 ## Durum
 
-yapılacak
+bitti
