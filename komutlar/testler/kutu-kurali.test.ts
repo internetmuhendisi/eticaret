@@ -1,7 +1,7 @@
 // Kalıcı kutuların yeniden başlama kuralı (kart 0038, karar 0033). Her kalıcı kutu tanımı kuralı
 // tek tanımdan (kutu-kurali.mts) almalıdır; kuralı eksik bir tanım kırmızıya düşer.
 import { spawnSync } from "node:child_process";
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { kutuKuraliDogru, yenidenBaslama, yenidenBaslamaHatalari } from "../kutu-kurali.mts";
@@ -10,6 +10,35 @@ import { siteKutusu } from "../yerel-ortam.mts";
 
 const kok = join(import.meta.dirname, "..", "..");
 const sunucu = join(kok, "sunucu");
+
+// Sürekli çalışan kutuları tanımlayan dosyalar: kuralı almalıdır.
+const kaliciDosyalar = [
+  "sunucu/compose.yaml",
+  "sunucu/yerel-ortam.yaml",
+  "komutlar/on-kapi.mts",
+  "komutlar/yerel-ortam.mts",
+];
+// Geçici kutu açan dosyalar: kuralı bilerek almaz (deneme ve denetim kutuları, --rm).
+const geciciDosyalar = [
+  "komutlar/sunucu-gizli-denemesi.mts",
+  "komutlar/cekirdek-goruntusu-denetle.mts",
+  "komutlar/sunucu-denetle.mts",
+];
+
+// Metin bir kutu tanımlıyor ya da açıyor mu? Yorum satırları sayılmaz.
+const kutuIzi = (metin: string): boolean => {
+  const kod = metin
+    .split("\n")
+    .filter((satir) => !/^\s*(#|\/\/)/.test(satir))
+    .join("\n");
+  return [
+    /^\s*services\s*:/m,
+    /["']?\bservices\b["']?\s*[:=,}[]/,
+    /\bdocker\s+(container\s+)?(run|create)\b/,
+    // spawnSync("docker", ["run", ...]) ve docker(["run", ...]); dizi satırlara yayılabilir.
+    /(\bdocker\s*\(|"docker"\s*,)\s*\[\s*("compose"\s*,\s*)?"(run|create)"/,
+  ].some((kalip) => kalip.test(kod));
+};
 
 // Ayar dosyalarını Docker'ın kendisi okur: Docker'ın uygulayacağı kural budur. Değişkenler
 // uydurma değerlerdir, tanımın okunması için gerekir.
@@ -54,16 +83,58 @@ describe("kalıcı kutuların tanımı", () => {
     expect(yenidenBaslamaHatalari(onKapiTanimi())).toEqual([]);
   });
 
-  // Yeni bir kutu tanımı bu testin dışında kalmasın: sunucu/ altındaki her compose dosyası ve
-  // komutlardaki her compose tanımı burada bilinen bir yerdir.
+  // Kalıcı tanımlar kuralı tek tanımdan alır; ayar dosyaları kuralı Docker'ın okumasıyla denetlenir.
+  it.each(kaliciDosyalar)("%s kuralı tek tanımdan alıyor", (dosya) => {
+    const metin = readFileSync(join(kok, dosya), "utf8");
+    if (dosya.endsWith(".mts")) expect(metin).toContain("...kaliciKutu");
+    else expect(metin).toContain(`restart: ${yenidenBaslama}`);
+  });
+
+  // Yeni bir kutu tanımı ya da kutu açılışı bu testin dışında kalmasın: projedeki her dosya
+  // (kayda girmemiş yeni dosyalar da) taranır, kutu tanımlayan ya da açan her dosya iki
+  // listeden birinde olmalıdır.
   it("bilinmeyen kutu tanımı yok", () => {
-    const ayarlar = readdirSync(sunucu).filter((dosya) => /\.ya?ml$/.test(dosya));
-    expect(ayarlar.sort()).toEqual(["compose.yaml", "yerel-ortam.yaml"]);
-    const tanimlayanlar = readdirSync(join(kok, "komutlar"))
-      .filter((dosya) => dosya.endsWith(".mts"))
-      .filter((dosya) => /\bservices: \{/.test(readFileSync(join(kok, "komutlar", dosya), "utf8")));
-    // sunucu-gizli-denemesi.mts geçici deneme kutularıdır, kuralı bilerek almaz.
-    expect(tanimlayanlar.sort()).toEqual(["on-kapi.mts", "sunucu-gizli-denemesi.mts"]);
+    const dosyalar = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard"], {
+      cwd: kok,
+      encoding: "utf8",
+    })
+      .stdout.split("\n")
+      .filter((dosya) => dosya && !/\.md$|\.test\.tsx?$|(^|\/)pnpm-lock\.yaml$/.test(dosya));
+    expect(dosyalar.length).toBeGreaterThan(50);
+    const kutuAcanlar = dosyalar.filter((dosya) => {
+      try {
+        return kutuIzi(readFileSync(join(kok, dosya), "utf8"));
+      } catch {
+        return false; // silinmiş ya da okunamayan dosya
+      }
+    });
+    expect(kutuAcanlar.sort()).toEqual([...kaliciDosyalar, ...geciciDosyalar].sort());
+  });
+});
+
+describe("kutu taraması bozuk örnekleri yakalar", () => {
+  it.each([
+    ["compose dosyası", "services:\n  site:\n    image: x\n"],
+    ["compose JSON", '{ "services": { "a": {} } }'],
+    ["nesne", "const t = { services: { a: {} } };"],
+    ["kısa yazım", "const t = { services };"],
+    ["değişkenle", "writeFileSync(d, JSON.stringify({ services: servisler }));"],
+    ["sonradan ekleme", "tanim.services[ad] = kutu;"],
+    ["betikte docker run", "docker run -d --name x busybox"],
+    ["betikte docker create", "docker container create busybox"],
+    ["dizi biçiminde docker run", 'spawnSync("docker", ["run", "-d", goruntu]);'],
+    ["compose run", 'spawnSync("docker", ["compose", "run", "-d", "a"]);'],
+    ["yardımcı işlevle, satırlara yayılmış", 'docker(\n  [\n    "run",\n    "-d",\n  ],\n);'],
+  ])("%s", (_ad, metin) => {
+    expect(kutuIzi(metin)).toBe(true);
+  });
+
+  it.each([
+    ["yorum satırı", "# docker run -v a:b goruntu"],
+    ["okuma", "for (const s of Object.values(tanim.services)) {}"],
+    ["kutu açmayan docker komutu", 'spawnSync("docker", ["inspect", "x"]);'],
+  ])("%s kutu sayılmaz", (_ad, metin) => {
+    expect(kutuIzi(metin)).toBe(false);
   });
 });
 

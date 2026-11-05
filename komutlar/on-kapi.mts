@@ -291,7 +291,10 @@ export const kutuKisitHatalari = (satir: string, tanim: KutuTanimi): string[] =>
   if ((liste(guvenlik) ?? []).sort().join(",") !== [...tanim.security_opt].sort().join(",")) {
     hatalar.push(`güvenlik seçenekleri ${guvenlik}`);
   }
-  if (tanim.restart !== yenidenBaslama || !kutuKuraliDogru(kural)) {
+  if (tanim.restart !== yenidenBaslama) {
+    hatalar.push(`tanımdaki yeniden başlama kuralı ${tanim.restart}, beklenen ${yenidenBaslama}`);
+  }
+  if (!kutuKuraliDogru(kural)) {
     hatalar.push(`yeniden başlama kuralı ${kural || "yok"}, beklenen ${yenidenBaslama}`);
   }
   return hatalar;
