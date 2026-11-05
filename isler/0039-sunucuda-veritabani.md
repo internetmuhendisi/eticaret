@@ -33,4 +33,4 @@ Kart 0021'in planı yapılırken önkoşul olarak ayrıldı. Önce 0019, 0020 ve
 
 ## Durum
 
-yapılacak
+bitti
