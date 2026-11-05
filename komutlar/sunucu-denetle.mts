@@ -112,12 +112,12 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
   const { server: s } = await hetzner<{
     server: {
       status: string;
-      datacenter: { name: string; location: { country: string } };
+      location: { name: string; country: string };
       public_net: { firewalls: { id: number; status: string }[] };
     };
   }>(`/servers/${kayit.hetzner_numarasi}`);
   olcum(s.status === "running", "sunucu çalışıyor", s.status);
-  olcum(s.datacenter.location.country === t.ulke, "sunucu Almanya'da", s.datacenter.name);
+  olcum(s.location.country === t.ulke, "sunucu Almanya'da", s.location.name);
   const { firewalls } = await hetzner<{ firewalls: { id: number }[] }>(
     `/firewalls?name=${t.duvarAdi}`,
   );
@@ -159,11 +159,16 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
     ]) {
       olcum(ayar.split("\n").includes(satir), `sshd geçerli ayarı: ${satir}`);
     }
-    const docker = sshKomutu(kayit.ipv4, "docker run --rm hello-world");
+    // Deneme görüntüsü ölçümden sonra silinir, sunucuda iz kalmaz.
+    const docker = sshKomutu(
+      kayit.ipv4,
+      "docker run --rm hello-world; durum=$?; docker image rm hello-world >/dev/null; exit $durum",
+    );
+    const dockerTamam = docker.status === 0 && docker.stdout.includes("Hello from Docker!");
     olcum(
-      docker.status === 0 && docker.stdout.includes("Hello from Docker!"),
+      dockerTamam,
       "Docker bir kutu açıp çalıştırıyor",
-      docker.stderr.trim(),
+      dockerTamam ? "" : docker.stderr.trim(),
     );
     const guncelleme = sshKomutu(
       kayit.ipv4,

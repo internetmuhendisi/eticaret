@@ -34,7 +34,7 @@ type Sunucu = {
   status: string;
   server_type: { name: string };
   image: { name: string } | null;
-  datacenter: { name: string; location: { name: string; city: string; country: string } };
+  location: { name: string; description: string; city: string; country: string };
   public_net: { ipv4: { ip: string } | null; ipv6: { ip: string } | null };
   created: string;
 };
@@ -159,9 +159,9 @@ const kur = async (): Promise<void> => {
     ad: sunucu.name,
     hetzner_numarasi: sunucu.id,
     tip: sunucu.server_type.name,
-    veri_merkezi: sunucu.datacenter.name,
-    sehir: sunucu.datacenter.location.city,
-    ulke: sunucu.datacenter.location.country,
+    veri_merkezi: `${sunucu.location.name} (${sunucu.location.description})`,
+    sehir: sunucu.location.city,
+    ulke: sunucu.location.country,
     imaj: sunucu.image?.name ?? t.imaj,
     ipv4,
     ipv6: sunucu.public_net.ipv6?.ip ?? "",

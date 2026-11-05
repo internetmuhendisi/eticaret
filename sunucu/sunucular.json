@@ -1,0 +1,15 @@
+[
+  {
+    "ad": "altyapi-1",
+    "hetzner_numarasi": 174538855,
+    "tip": "cx33",
+    "veri_merkezi": "fsn1 (Falkenstein DC Park 1)",
+    "sehir": "Falkenstein",
+    "ulke": "DE",
+    "imaj": "ubuntu-24.04",
+    "ipv4": "2.31.160.7",
+    "ipv6": "2a01:4f8:c01e:14ad::/64",
+    "kullanici": "yonetici",
+    "acilis": "2026-11-04T23:59:02Z"
+  }
+]
