@@ -1,0 +1,12 @@
+# Ön kapının yoklama kutusu (kart 0020, karar 0032). Ön kapının arkasında bir site kutusunun
+# yerinde durur; pnpm sunucu-denetle ön kapıyı bunun adresinden ölçer. Şifreli bağlantı ön kapıdadır.
+{
+	admin off
+	auto_https off
+}
+
+:3000 {
+	# Kutunun gördüğü istemci adresi başlığı: ön kapının ziyaretçinin gerçek adresini yazdığı ölçülür.
+	respond /istemci "{http.request.header.X-Forwarded-For}" 200
+	respond "yoklama" 200
+}

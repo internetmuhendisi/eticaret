@@ -9,7 +9,9 @@
 // Komut tekrar çalıştırılabilir: aynı adla açılmış anahtar, duvar ve sunucu yeniden açılmaz.
 // Var olan sunucunun tipi ve yeri tanımla karşılaştırılır; duvar bağlanır, silme koruması açılır.
 // Duvara elle eklenmiş kurallar her çalışmada silinir: kuralların tek yeri sunucu.mts'dir.
+// Son adımda ön kapı (Caddy) kurulur ya da ayarı yenilenir (kart 0020, on-kapi.mts).
 
+import { onKapiyiKur } from "./on-kapi.mts";
 import {
   acikKapilar,
   bilinenSunucuyuUnut,
@@ -217,6 +219,10 @@ const kur = async (): Promise<void> => {
     acilis: sunucu.created,
   });
   console.log(`yazıldı     ${kayitDosyasi}`);
+
+  // 6. Ön kapı: Caddy ve yoklama kutusu (karar 0032).
+  onKapiyiKur(ipv4);
+  console.log("kuruldu     ön kapı (Caddy, yoklama kutusu)");
   console.log("Sunucu hazır. Denetim: pnpm sunucu-denetle");
 };
 

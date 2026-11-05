@@ -188,7 +188,7 @@ Elle yaparken bu tarifin adımları sırayla izlenir. Eksik, fazla ya da yanlı�
 
 ## Henüz açık olanlar
 
-- Deneme adresinin biçimi: ilk site kurulurken. Klasör adları karar 0015 ile, gizli bilgilerin sunucuda saklanması karar 0031 ile kapandı.
+- Klasör adları karar 0015 ile, gizli bilgilerin sunucuda saklanması karar 0031 ile, deneme adresinin biçimi (`<kod-adi>.deneme.eticaretmagazasi.com`) karar 0032 ile kapandı.
 - Alan adını kimin satın alıp kimin adına kaydettireceği.
 - Teslim edilmiş bir sitenin sahibi değişirse ya da bir site kapatılırsa ne yapılacağı. Bunlar bu üç komutun dışındadır, gerekince ayrı tarif yazılır.
 - Ayrılan mağazaya siteyi devretmenin tarifi (0014): ilk devir istendiğinde yazılır. Kodun başka yerde kullanılması ve devredilen siteyi kimin güncelleyeceği de o zaman konuşulur.

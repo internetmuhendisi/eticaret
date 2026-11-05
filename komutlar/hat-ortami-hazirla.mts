@@ -45,6 +45,8 @@ const degerler: Record<string, string> = {
   YEREL_ORTAM_PORTU: port("YEREL_ORTAM_PORTU"),
   // Hatta Hetzner anahtarı bilerek yoktur: sunucu denetimi hatta çalışmaz (karar 0030).
   HETZNER_ANAHTARI: "",
+  // Cloudflare anahtarı da hatta yoktur: alan adı komutu hatta çalışmaz (karar 0032).
+  CLOUDFLARE_ANAHTARI: "",
 };
 
 // .env.example'a eklenen her anahtar burada da üretilmeli; eksik kalırsa hat burada durur.

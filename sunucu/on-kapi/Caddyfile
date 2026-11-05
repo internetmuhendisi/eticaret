@@ -1,0 +1,31 @@
+# Sunucudaki ön kapı (kart 0020, karar 0032). Caddy isteği adrese göre sitenin kutusuna gönderir,
+# adreslerin şifreli bağlantı sertifikasını kendisi alır ve yeniler; şifresiz istek şifreliye yönlenir.
+# Her adresin satırı sunucuda /srv/altyapi/on-kapi/siteler/ altındadır (komutlar/on-kapi.mts üretir).
+# Yerel ortamın ayarı ayrıdır ve şifresizdir: sunucu/caddy/Caddyfile.
+{
+	# HTTP/3 UDP 443 ister; duvarlar yalnız TCP 80 ve 443'ü açar (karar 0030).
+	servers {
+		protocols h1 h2
+	}
+}
+
+# Deneme adreslerinin ortak kuralı: arama motorlarına kapalı. Başlık kutunun cevabından sonra
+# yazılır, kutu başka bir değer gönderse de bu kalır.
+(deneme) {
+	header {
+		defer
+		X-Robots-Tag "noindex, nofollow"
+	}
+	handle /robots.txt {
+		respond "User-agent: *
+Disallow: /
+" 200
+	}
+}
+
+import /etc/caddy/siteler/*.caddy
+
+# Tanınmayan adres hiçbir siteye gitmez. Şifreli bağlantıda tanınmayan adrese sertifika verilmez.
+http:// {
+	respond 404
+}

@@ -45,6 +45,7 @@
     "sunucu-denetle": "node komutlar/sunucu-denetle.mts",
     "sunucu-gizli": "node komutlar/sunucu-gizli.mts",
     "sunucu-gizli-denemesi": "node komutlar/sunucu-gizli-denemesi.mts",
+    "alan-adi": "node komutlar/alan-adi.mts",
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {

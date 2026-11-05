@@ -1,0 +1,174 @@
+// Ön kapının tanımı ve denetiminin karar kuralları (kart 0020). Her kuralın bozuk bir örneği
+// yakaladığı gösterilir.
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import {
+  alanAdiKayitlari,
+  ayniAdres,
+  caddyGoruntusu,
+  denemeAdresi,
+  denemeSatiri,
+  dizineKapali,
+  kalanGun,
+  kurmaBetigi,
+  onKapiTanimi,
+  robotlaraKapali,
+  sonIstemciAdresi,
+  yoklamaAdi,
+  yoklamaAdresi,
+  yonlendirmeDogru,
+} from "../on-kapi.mts";
+
+const kok = join(import.meta.dirname, "..", "..");
+
+describe("deneme adresi", () => {
+  it("kod adından üretilir", () => {
+    expect(denemeAdresi("ornek-magaza")).toBe("ornek-magaza.deneme.eticaretmagazasi.com");
+  });
+
+  it.each(["Ornek", "ornek_magaza", "ornek.magaza", "-ornek", "a".repeat(41), ""])(
+    "geçersiz kod adını reddeder: %j",
+    (kodAdi) => {
+      expect(() => denemeAdresi(kodAdi)).toThrow();
+    },
+  );
+
+  it("yoklama adı hiçbir kod adıyla çakışmaz", () => {
+    expect(() => denemeAdresi(yoklamaAdi)).toThrow();
+  });
+
+  it("alan adı kayıtları joker ve vekilsizdir", () => {
+    const kayitlar = alanAdiKayitlari("2.31.160.7", "2a01::1");
+    expect(kayitlar.map((k) => [k.type, k.name, k.proxied])).toEqual([
+      ["A", "*.deneme.eticaretmagazasi.com", false],
+      ["AAAA", "*.deneme.eticaretmagazasi.com", false],
+    ]);
+  });
+});
+
+describe("Caddy satırı", () => {
+  it("deneme kuralını alır ve kutuya gönderir", () => {
+    expect(denemeSatiri(yoklamaAdresi, "on-kapi-yoklama:3000")).toBe(
+      `${yoklamaAdresi} {\n\timport deneme\n\treverse_proxy on-kapi-yoklama:3000\n}\n`,
+    );
+  });
+
+  it.each([
+    ["ornek.com", "kutu:3000"],
+    ["x.deneme.eticaretmagazasi.com { }\nkotu", "kutu:3000"],
+    ["x.deneme.eticaretmagazasi.com", "kutu:3000\n}\n:80 {"],
+    ["x.deneme.eticaretmagazasi.com", "kutu"],
+  ])("deneme alanı dışını ya da ayar sızdıran girdiyi reddeder: %j", (adres, hedef) => {
+    expect(() => denemeSatiri(adres, hedef)).toThrow();
+  });
+});
+
+describe("kutu tanımı", () => {
+  const tanim = onKapiTanimi();
+
+  it("yalnız 80 ve 443 TCP dışarıya açılır, yoklama kutusu hiç açılmaz", () => {
+    expect(tanim.services.caddy.ports).toEqual(["80:80/tcp", "443:443/tcp"]);
+    expect("ports" in tanim.services.yoklama).toBe(false);
+  });
+
+  it("kutular kök olmayan kullanıcıyla, salt okunur ve tek yetkiyle çalışır", () => {
+    for (const servis of Object.values(tanim.services)) {
+      expect(servis.user).toMatch(/^[1-9]\d{3,}:[1-9]\d{3,}$/);
+      expect(servis.read_only).toBe(true);
+      expect(servis.cap_drop).toEqual(["ALL"]);
+      expect(servis.cap_add).toEqual(["NET_BIND_SERVICE"]);
+      expect(servis.security_opt).toContain("no-new-privileges:true");
+    }
+  });
+
+  it("ağ IPv6 açıktır (ziyaretçi adresi kaybolmasın)", () => {
+    expect(tanim.networks.altyapi.enable_ipv6).toBe(true);
+  });
+
+  it("Caddy görüntüsü yerel ortamdakiyle aynıdır", () => {
+    const yerel = readFileSync(join(kok, "sunucu", "yerel-ortam.yaml"), "utf8");
+    expect(yerel).toContain(`image: ${caddyGoruntusu}`);
+  });
+
+  it("kurma betiği listede olmayan site satırlarını siler ve Caddy'yi yeniden okutur", () => {
+    const betik = kurmaBetigi({ [yoklamaAdi]: "x\n" });
+    expect(betik).toContain(`siteler/${yoklamaAdi}.caddy`);
+    expect(betik).toContain(`*" $(basename "$f") "*`);
+    expect(betik).toContain("caddy reload");
+  });
+
+  it("kurma betiği dosya sonu işaretini taşıyan içeriği reddeder", () => {
+    expect(() => kurmaBetigi({ kotu: "ON_KAPI_DOSYA_SONU\nrm -rf /\n" })).toThrow();
+  });
+});
+
+describe("sunucudaki Caddy ayarı", () => {
+  const ayar = readFileSync(join(kok, "sunucu", "on-kapi", "Caddyfile"), "utf8");
+
+  it("şifreli bağlantıyı kapatmaz ve HTTP/3'ü kapatır", () => {
+    expect(ayar).not.toMatch(/auto_https\s+off/);
+    expect(ayar).toMatch(/protocols h1 h2\n/);
+  });
+
+  it("deneme kuralı dizine almayı ve robots.txt'yi kapatır", () => {
+    expect(ayar).toContain('X-Robots-Tag "noindex, nofollow"');
+    expect(ayar).toContain("Disallow: /");
+  });
+});
+
+describe("denetimin karar kuralları", () => {
+  const adres = "x.deneme.eticaretmagazasi.com";
+
+  it("kalıcı yönlendirme aynı adres ve yola gitmeli", () => {
+    expect(yonlendirmeDogru(308, `https://${adres}/a?b=1`, adres, "/a?b=1")).toBe(true);
+    expect(yonlendirmeDogru(301, `https://${adres}/`, adres, "/")).toBe(true);
+  });
+
+  it.each([
+    [302, `https://${adres}/`],
+    [308, `http://${adres}/`],
+    [308, "https://baska.com/"],
+    [308, `https://${adres}/baska`],
+    [200, undefined],
+  ])("yanlış yönlendirme kırmızıdır: %s %s", (durum, konum) => {
+    expect(yonlendirmeDogru(durum, konum, adres, "/")).toBe(false);
+  });
+
+  it("dizine alma başlığını okur", () => {
+    expect(dizineKapali("noindex, nofollow")).toBe(true);
+    expect(dizineKapali(["nofollow", "NoIndex"])).toBe(true);
+    expect(dizineKapali("nofollow")).toBe(false);
+    expect(dizineKapali(undefined)).toBe(false);
+    expect(dizineKapali("index")).toBe(false);
+  });
+
+  it("robots.txt bütün siteyi kapatmalı", () => {
+    expect(robotlaraKapali("User-agent: *\nDisallow: /\n")).toBe(true);
+    expect(robotlaraKapali("User-agent: *\nDisallow: /yonetim\n")).toBe(false);
+    expect(robotlaraKapali("User-agent: *\nAllow: /\n")).toBe(false);
+    expect(robotlaraKapali("")).toBe(false);
+  });
+
+  it("sertifikanın kalan gününü sayar", () => {
+    const simdi = new Date("2026-11-05T00:00:00Z");
+    expect(kalanGun("Feb  3 00:00:00 2027 GMT", simdi)).toBe(90);
+    expect(kalanGun("Nov 10 00:00:00 2026 GMT", simdi)).toBe(5);
+    expect(Number.isNaN(kalanGun("okunamadı", simdi))).toBe(true);
+  });
+
+  it("istemci adresi başlığının son değerini alır", () => {
+    expect(sonIstemciAdresi("1.2.3.4")).toBe("1.2.3.4");
+    expect(sonIstemciAdresi("6.6.6.6, 1.2.3.4")).toBe("1.2.3.4");
+    expect(sonIstemciAdresi("")).toBeUndefined();
+  });
+
+  it("adresleri yazılışından bağımsız karşılaştırır", () => {
+    expect(ayniAdres("2a01:4f8:c01e:14ad::1", "2A01:04F8:C01E:14AD:0:0:0:1")).toBe(true);
+    expect(ayniAdres("::ffff:1.2.3.4", "1.2.3.4")).toBe(true);
+    expect(ayniAdres("1.2.3.4", "1.2.3.5")).toBe(false);
+    expect(ayniAdres("2a01::1", "2a01::2")).toBe(false);
+    expect(ayniAdres(undefined, "1.2.3.4")).toBe(false);
+    expect(ayniAdres("172.17.0.1", "1.2.3.4")).toBe(false);
+  });
+});

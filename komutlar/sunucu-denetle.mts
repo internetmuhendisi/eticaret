@@ -12,6 +12,8 @@
 //   ya da tarama sırasında kesinti olursa sonuç güvenilmez sayılır ve kırmızıdır.
 // - Docker çalışıyor ve bir kutu açabiliyor; güvenlik güncellemeleri ve içerideki duvar açık;
 //   bekleyen bir yeniden başlatma iki günden uzun süredir yapılmamış değil.
+// - Ön kapı: deneme adresleri sunucuya çözülüyor, şifreli açılıyor, http:// yönleniyor, arama
+//   motorlarına kapalı, kutu ziyaretçinin gerçek adresini görüyor (on-kapi-olcumleri.mts, kart 0020).
 // Bir ölçüm tutmazsa komut kırmızı biter.
 
 import { spawnSync } from "node:child_process";
@@ -25,6 +27,7 @@ import {
   siteNumaralariniOku,
   yerlesimHatalari,
 } from "./gizli-bilgi.mts";
+import { onKapiyiOlc } from "./on-kapi-olcumleri.mts";
 import {
   acikKapilar,
   type DuvarKurali,
@@ -300,6 +303,10 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
       sayilar ? `${sayilar[1]} değer, ${sayilar[3]} eşleşme` : arama.stderr.trim(),
     );
   }
+
+  // Ön kapı ve deneme adresleri (karar 0032).
+  console.log("ön kapı");
+  await onKapiyiOlc(kayit, olcum);
 
   // Kapılar. IPv4'te bütün kapılar; IPv6'da ilk 1024 kapı ve bilinen kapılar (aynı duvar
   // kuralları iki adrese birlikte uygulanır, kuralların kendisi yukarıda Hetzner'den denetlendi).
