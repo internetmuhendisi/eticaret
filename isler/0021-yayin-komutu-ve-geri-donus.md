@@ -4,7 +4,9 @@
 
 Bir site tek komutla yayınlanır, sorun çıkarsa tek komutla önceki sürüme döner (`.claude/rules/calisma-duzeni.md`, `planlar/cekirdek-ve-siteler.md` 3. bölüm).
 
-Önce 0017 ve 0020 bitmiş olmalı.
+Önce 0017, 0020 ve 0039 bitmiş olmalı. Sunucudaki veritabanı ve değişikliklerin sunucuda uygulanması 0039'dadır.
+
+Yalnız deneme ortamına yayın yapılır (kullanıcı kararı); canlıya yayın alan adı bağlanınca eklenir.
 
 ## Olmazsa olmazlar
 
@@ -16,8 +18,8 @@ Bir site tek komutla yayınlanır, sorun çıkarsa tek komutla önceki sürüme 
 - Geri dönüş: önceki sürüme tek komutla dönülür. Veritabanı değişikliği yedekten dönmeyi gerektiriyorsa komut bunu söyler ve durur.
 - Her çalıştırma yayın kaydına yazılır: site, sürüm, zaman, sonuç.
 - Ön kapı (karar 0032): sitenin Caddy satırı `denemeSatiri` ile üretilir ve `kurmaBetigi`'nin listesine girer (`komutlar/on-kapi.mts`). Liste o betikte tek yerdedir; listede olmayan satırı sonraki `pnpm sunucu-kur` siler. Site kutusu kendi ağındadır, ortak `altyapi` ağına bağlanmaz; ön kapı sitenin ağına bağlanır. Bu bağlantı da aynı site listesinden ön kapının kutu tanımına (`onKapiTanimi`) girer; elle (`docker network connect`) yapılırsa kutu yeniden kurulunca kaybolur ve siteler 502 döner. Ziyaretçinin gerçek adresi ortak ağın IPv6'sına bağlıdır, site ağı eklenince `pnpm sunucu-denetle` bunu yeniden ölçer. Bir site kutusunun başka bir sitenin kutusuna ulaşamadığı ölçülür.
-- Site kutusu gizli bilgileri `kutuGizliTanimi` ile alır (karar 0031). Gizli bilgi yenilenince (`pnpm sunucu-gizli --yenile`) veritabanı kullanıcısının şifresi de aynı adımda değişir ve kutu yeniden başlatılır; yarım kalırsa site eski şifreyle açık kalır.
-- Sunucudaki site ve veritabanı kutuları yeniden başlama kuralını `kaliciKutu` ile alır (`komutlar/kutu-kurali.mts`, karar 0033). Kutu tanımını yazan dosya `komutlar/testler/kutu-kurali.test.ts`'teki kalıcı dosyalar listesine girer ve orada denetlenir; yeni bir dosya listeye girmezse o test kırmızıdır. Docker yeniden başlayınca kutular sırasız açılır; yeni kutunun sağlık ucu veritabanından önce açılsa da kendiliğinden düzelmelidir.
+- Site kutusu gizli bilgileri `kutuGizliTanimi` ile alır (karar 0031). Gizli bilgi yenilenince (`pnpm sunucu-gizli --yenile`) veritabanı şifresi 0039'a göre aynı adımda değişir; yayındaki kutu da yeniden başlatılır, yarım kalırsa site eski şifreyle açık kalır.
+- Sunucudaki site kutuları (veritabanı kutusu 0039'da) yeniden başlama kuralını `kaliciKutu` ile alır (`komutlar/kutu-kurali.mts`, karar 0033). Kutu tanımını yazan dosya `komutlar/testler/kutu-kurali.test.ts`'teki kalıcı dosyalar listesine girer ve orada denetlenir; yeni bir dosya listeye girmezse o test kırmızıdır. Docker yeniden başlayınca kutular sırasız açılır; yeni kutunun sağlık ucu veritabanından önce açılsa da kendiliğinden düzelmelidir.
 
 ## Sınırlar
 

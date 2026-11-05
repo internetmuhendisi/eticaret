@@ -27,6 +27,13 @@ COPY sahip-paneli/package.json sahip-paneli/
 RUN pnpm install --frozen-lockfile --ignore-scripts --config.pm-on-fail=ignore
 COPY . .
 RUN pnpm --filter cekirdek-uygulama derle
+# Sunucuda veritabanı değişikliklerini uygulayan parça (kart 0039, karar 0034): kullandığı paketler
+# içine gömülü tek dosya. pg CommonJS'tir; require gömülü dosyada yeniden tanımlanır.
+RUN pnpm exec esbuild cekirdek/veritabani/sunucuda-guncelle.ts --bundle --platform=node \
+      --format=esm --target=node24 --external:pg-native --log-level=warning \
+      --banner:js="import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" \
+      --outfile=/kaynak/veritabani/guncelle.mjs \
+    && cp -R cekirdek/veritabani/degisiklikler /kaynak/veritabani/degisiklikler
 
 FROM node:${NODE_SURUMU}-alpine
 ARG CEKIRDEK_SURUMU
@@ -39,6 +46,7 @@ WORKDIR /uygulama
 # Kod kök kullanıcıya aittir ve uygulama onu değiştiremez; uygulama node kullanıcısıyla çalışır.
 COPY --from=derleme /kaynak/cekirdek/uygulama/.next/standalone ./
 COPY --from=derleme /kaynak/cekirdek/uygulama/.next/static ./cekirdek/uygulama/.next/static
+COPY --from=derleme /kaynak/veritabani ./veritabani
 USER node
 EXPOSE 3000
 CMD ["node", "cekirdek/uygulama/server.js"]

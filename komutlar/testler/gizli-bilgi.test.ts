@@ -184,6 +184,8 @@ describe("sunucudaki yerleşimin denetimi", () => {
     "d 700 0 /srv/altyapi/gizli/deneme",
     "d 700 0 /srv/altyapi/gizli/deneme/ornek-magaza",
     "f 400 30001 /srv/altyapi/gizli/deneme/ornek-magaza/veritabani_adresi",
+    "d 700 0 /srv/altyapi/gizli/deneme/altyapi--veritabani",
+    "f 400 70 /srv/altyapi/gizli/deneme/altyapi--veritabani/yonetici_sifresi",
   ];
 
   it("doğru yerleşim geçer", () => {
@@ -230,6 +232,26 @@ describe("sunucudaki yerleşimin denetimi", () => {
       "adında boşluk olan dosya",
       "f 400 20001 /srv/altyapi/gizli/canli/ornek-magaza/veritabani adresi",
       "kayıtta olmayan",
+    ],
+    [
+      "okunabilir yönetici şifresi",
+      "f 444 70 /srv/altyapi/gizli/deneme/altyapi--veritabani/yonetici_sifresi",
+      "beklenen 400 70",
+    ],
+    [
+      "siteye ait yönetici şifresi",
+      "f 400 30001 /srv/altyapi/gizli/deneme/altyapi--veritabani/yonetici_sifresi",
+      "beklenen 400 70",
+    ],
+    [
+      "yönetici klasöründe başka dosya",
+      "f 400 70 /srv/altyapi/gizli/deneme/altyapi--veritabani/yedek",
+      "beklenmeyen dosya",
+    ],
+    [
+      "herkese açık yönetici klasörü",
+      "d 755 0 /srv/altyapi/gizli/deneme/altyapi--veritabani",
+      "klasör 755 0",
     ],
   ])("%s yakalanır", (_ad, satir, beklenen) => {
     const hatalar = yerlesimHatalari([...dogru, satir], numaralar);

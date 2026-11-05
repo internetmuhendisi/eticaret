@@ -5,7 +5,8 @@
 // Değer: on + sunucuda üretilen 64 haneli rastgele değer + son. Rastgele değer bilgisayara gelmez.
 // Ön ve son parçada {veritabani}, sitenin veritabanının ve veritabanı kullanıcısının adıdır
 // (site_<kod adı>). Parçalar ayrı yazılır: kayıtta şifreli adres kalıbı durmaz (veri ayrımı testi).
-// Sunucuda veritabanı kutusunun adı "veritabani"dır (sunucu/compose.yaml).
+// Veritabanı kutusu yerelde "veritabani" adlı hizmettir (sunucu/compose.yaml), sunucuda her
+// sitenin ağında "veritabani" adıyla görünür (komutlar/sunucu-veritabani.mts).
 export const gizliBilgiler = {
   VERITABANI_ADRESI: {
     dosya: "veritabani_adresi",

@@ -1,9 +1,16 @@
 -- Bir siteye ayrı veritabanı ve yalnız ona girebilen ayrı kullanıcı açar (karar 0003, 0022).
--- psql ile yönetici olarak çalışır. Değişkenler: ad (veritabanı ve kullanıcı adı), şifre ortam
--- değişkeni SITE_VERITABANI_SIFRESI'nden okunur. psql :"ad" ve :'sifre' değerlerini kendisi
+-- psql ile yönetici olarak çalışır. Değişkenler: ad (veritabanı ve kullanıcı adı) ve sifre.
+-- sifre'yi çağıran bu dosyadan önce verir, hiçbir komut satırında görünmez: bilgisayarda
+-- ortam değişkeninden (\getenv, site-veritabani.mts), sunucuda kök kabuğunun girdiden
+-- gönderdiği satırdan (sunucu-veritabani.mts). psql :"ad" ve :'sifre' değerlerini kendisi
 -- tırnaklar, metin birleştirilmez. Tekrar çalıştırılırsa yalnız şifreyi ve izinleri yeniler.
 \set ON_ERROR_STOP on
-\getenv sifre SITE_VERITABANI_SIFRESI
+\if :{?sifre}
+\else
+  DO $$ BEGIN RAISE EXCEPTION 'sifre verilmedi'; END $$;
+\endif
+-- Hata olursa PostgreSQL hatalı komutu günlüğe yazar; şifre taşıyan komut yazılmasın.
+SET log_min_error_statement = panic;
 
 SELECT NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'ad') AS rol_yok \gset
 \if :rol_yok

@@ -5,12 +5,13 @@
 //
 // Değer sunucuda üretilir, ekrana, günlüğe ve bu bilgisayara gelmez. Site numarası yoksa verilir
 // ve sunucu/site-kullanicilari.json'a yazılır (bu dosya kayda girer, gizli değildir).
-// Yenilenen değeri kutu ancak yeniden başlayınca görür; veritabanı şifresinin PostgreSQL'de de
-// değişmesi yayın komutunun işidir (kart 0021).
+// Yenilenen değeri kutu ancak yeniden başlayınca görür. Ortamda veritabanı varsa sitenin
+// veritabanı şifresi aynı adımda yeni değere eşitlenir (kart 0039, sunucu-veritabani.mts).
 
 import { siteKlasorunuDogrula } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { ortamMi, siteNumarasiAl, uretmeBetigi } from "./gizli-bilgi.mts";
 import { kayitlariOku, sshKomutu } from "./sunucu.mts";
+import { sifreyiEsitle } from "./sunucu-veritabani.mts";
 
 try {
   const [klasor, ortam] = process.argv.slice(2).filter((a) => !a.startsWith("--"));
@@ -31,6 +32,11 @@ try {
   // Kutu dosyayı açılışta bağlar; yenilenen değeri ancak yeniden başlayınca görür (ölçüldü,
   // pnpm sunucu-gizli-denemesi).
   if (process.argv.includes("--yenile")) {
+    console.log(
+      sifreyiEsitle(sunucu.ipv4, ortam, kodAdi)
+        ? `eşitlendi   ${ortam}/${kodAdi} veritabanı şifresi`
+        : `bilgi       ${ortam} ortamında veritabanı kutusu yok, şifre eşitlenmedi`,
+    );
     console.log(
       `Uyarı: ${kodAdi} ${ortam} kutusu çalışıyorsa yeni değeri yeniden başlayınca görür.`,
     );

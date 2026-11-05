@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { kutuKuraliDogru, yenidenBaslama, yenidenBaslamaHatalari } from "../kutu-kurali.mts";
 import { onKapiTanimi } from "../on-kapi.mts";
+import { veritabaniTanimi } from "../sunucu-veritabani.mts";
 import { siteKutusu } from "../yerel-ortam.mts";
 
 const kok = join(import.meta.dirname, "..", "..");
@@ -17,6 +18,7 @@ const kaliciDosyalar = [
   "sunucu/yerel-ortam.yaml",
   "komutlar/on-kapi.mts",
   "komutlar/yerel-ortam.mts",
+  "komutlar/sunucu-veritabani.mts",
 ];
 // Geçici kutu açan dosyalar: kuralı bilerek almaz. Kutular --rm ile açılır ya da deneme
 // sonunda silinir (sunucu-gizli-denemesi.mts).
@@ -24,6 +26,7 @@ const geciciDosyalar = [
   "komutlar/sunucu-gizli-denemesi.mts",
   "komutlar/cekirdek-goruntusu-denetle.mts",
   "komutlar/sunucu-denetle.mts",
+  "komutlar/sunucu-veritabani-denemesi.mts",
 ];
 
 // Metin bir kutu tanımlıyor ya da açıyor mu? Yorum satırları sayılmaz.
@@ -82,6 +85,10 @@ describe("kalıcı kutuların tanımı", () => {
 
   it("sunucudaki ön kapı", () => {
     expect(yenidenBaslamaHatalari(onKapiTanimi())).toEqual([]);
+  });
+
+  it("sunucudaki veritabanı", () => {
+    expect(yenidenBaslamaHatalari(veritabaniTanimi("deneme", ["ornek-magaza"]))).toEqual([]);
   });
 
   // Kalıcı tanımlar kuralı tek tanımdan alır; ayar dosyaları kuralı Docker'ın okumasıyla denetlenir.

@@ -30,6 +30,10 @@ export const siteVeAdres = (komut: string) => {
 
 const kok = join(import.meta.dirname, "..");
 
+// Siteye veritabanı ve kullanıcı açan SQL betiği; şifreyi çağıran önüne ekler.
+export const veritabaniAcmaBetigi = (): string =>
+  readFileSync(join(import.meta.dirname, "site-veritabani-ac.sql"), "utf8");
+
 // Yerel PostgreSQL kutusunda veritabanını ve kullanıcısını açar (site-veritabani-ac.sql).
 // Şifre psql'e ortam değişkeniyle geçer, komut satırında görünmez. Başarılıysa true döner.
 export const veritabaniVeKullaniciAc = (ad: string, sifre: string): boolean => {
@@ -41,7 +45,7 @@ export const veritabaniVeKullaniciAc = (ad: string, sifre: string): boolean => {
       ...["psql", "-U", "postgres", "-d", "postgres", "-q", "-v", `ad=${ad}`, "-f", "-"],
     ],
     {
-      input: readFileSync(join(import.meta.dirname, "site-veritabani-ac.sql"), "utf8"),
+      input: `\\getenv sifre SITE_VERITABANI_SIFRESI\n${veritabaniAcmaBetigi()}`,
       env: { ...process.env, SITE_VERITABANI_SIFRESI: sifre },
       stdio: ["pipe", "inherit", "inherit"],
     },

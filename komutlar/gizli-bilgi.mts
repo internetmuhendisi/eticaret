@@ -28,6 +28,16 @@ const siteNumarasiSiniri = 9999;
 
 export const ortamMi = (deger: string): deger is Ortam => Object.hasOwn(ortamlar, deger);
 
+// Ortamın veritabanı yönetici şifresi (kart 0039, karar 0034): sitenin değil altyapının gizli
+// bilgisidir, ortamın klasöründe ayrı bir klasörde durur. Klasörün adında iki tire yan yana
+// geçer; hiçbir kod adı böyle olamaz (kimlik şeması). Dosya veritabanı kutusunun postgres
+// kullanıcısına (70) aittir. Kutu tanımı: sunucu-veritabani.mts.
+export const yoneticiGizliBilgisi = {
+  klasor: "altyapi--veritabani",
+  dosya: "yonetici_sifresi",
+  sahip: 70,
+} as const;
+
 const kodAdiKalibi = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const kodAdiniDenetle = (kodAdi: string): void => {
   if (!kodAdiKalibi.test(kodAdi)) throw new Error(`Geçersiz kod adı: ${kodAdi}`);
@@ -226,13 +236,25 @@ export const yerlesimHatalari = (satirlar: string[], numaralar: SiteNumaralari):
         hatalar.push(`${yol}: klasör ${izin} ${sahip}, beklenen 700 0`);
       if (parcalar.length >= 1 && !ortamMi(parcalar[0] as string))
         hatalar.push(`${yol}: bilinmeyen ortam`);
-      if (parcalar.length === 2 && numaralar[parcalar[1] as string] === undefined) {
+      if (
+        parcalar.length === 2 &&
+        parcalar[1] !== yoneticiGizliBilgisi.klasor &&
+        numaralar[parcalar[1] as string] === undefined
+      ) {
         hatalar.push(`${yol}: numarası olmayan site`);
       }
       if (parcalar.length > 2) hatalar.push(`${yol}: beklenmeyen klasör`);
       continue;
     }
     const [ortam, kodAdi, dosya] = parcalar;
+    if (parcalar.length === 3 && kodAdi === yoneticiGizliBilgisi.klasor) {
+      if (tur !== "f" || !ortam || !ortamMi(ortam) || dosya !== yoneticiGizliBilgisi.dosya) {
+        hatalar.push(`${yol}: beklenmeyen dosya`);
+      } else if (izin !== "400" || sahip !== String(yoneticiGizliBilgisi.sahip)) {
+        hatalar.push(`${yol}: dosya ${izin} ${sahip}, beklenen 400 ${yoneticiGizliBilgisi.sahip}`);
+      }
+      continue;
+    }
     const numara = numaralar[kodAdi ?? ""];
     if (tur !== "f" || parcalar.length !== 3 || !ortam || !ortamMi(ortam) || numara === undefined) {
       hatalar.push(`${yol}: beklenmeyen dosya`);
