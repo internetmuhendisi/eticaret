@@ -314,6 +314,9 @@ describe("hat korumasının özeti", () => {
     ["vitest.config.ts", true],
     ["playwright.config.ts", true],
     ["denetim/kurallar/ham-renk.grit", true],
+    ["pnpm-workspace.yaml", true],
+    [".npmrc", true],
+    ["cekirdek/uygulama/.npmrc", true],
     ["komutlar/yayin.mts", false],
     ["cekirdek/testler/veri-ayrimi.test.ts", false],
   ])("%s korumada mı: %s", (yol, beklenen) => {

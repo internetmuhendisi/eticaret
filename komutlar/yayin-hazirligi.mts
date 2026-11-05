@@ -31,7 +31,7 @@ const git = (argumanlar: string[]) => {
 // bütün denetim ve test ayarları: bir kayıt bunları zayıflatırsa kendi hattı yeşil biter. Test ve
 // komut dosyalarının kendisi bu korumanın dışındadır (yalnız disiplin, karar 0035).
 export const hatAyarKalibi =
-  /^(\.github\/workflows\/kontrol-hatti\.yml|denetim\/.+|(.+\/)?(biome\.jsonc?|tsconfig[^/]*\.json|vitest\.config\.[cm]?[jt]s|playwright\.config\.[cm]?[jt]s|vitest\.workspace\.[cm]?[jt]s))$/;
+  /^(\.github\/workflows\/kontrol-hatti\.yml|pnpm-workspace\.yaml|(.+\/)?\.npmrc|denetim\/.+|(.+\/)?(biome\.jsonc?|tsconfig[^/]*\.json|vitest\.config\.[cm]?[jt]s|playwright\.config\.[cm]?[jt]s|vitest\.workspace\.[cm]?[jt]s))$/;
 const altPaketKalibi = /^.+\/package\.json$/;
 
 // Bir kayıttaki hat korumasının özeti; hat dosyası ya da kök paket okunamazsa undefined.
