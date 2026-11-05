@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { hataIzlemeTanimi } from "../hata-izleme.mts";
 import { kutuKuraliDogru, yenidenBaslama, yenidenBaslamaHatalari } from "../kutu-kurali.mts";
 import { onKapiTanimi } from "../on-kapi.mts";
 import { veritabaniTanimi } from "../sunucu-veritabani.mts";
@@ -21,6 +22,7 @@ const kaliciDosyalar = [
   "komutlar/yerel-ortam.mts",
   "komutlar/sunucu-veritabani.mts",
   "komutlar/yayin.mts",
+  "komutlar/hata-izleme.mts",
 ];
 // Geçici kutu açan dosyalar: kuralı bilerek almaz. Kutular --rm ile açılır ya da deneme
 // sonunda silinir (sunucu-gizli-denemesi.mts).
@@ -95,6 +97,10 @@ describe("kalıcı kutuların tanımı", () => {
 
   it("sunucudaki veritabanı", () => {
     expect(yenidenBaslamaHatalari(veritabaniTanimi("deneme", ["ornek-magaza"]))).toEqual([]);
+  });
+
+  it("sunucudaki hata izleme aracı", () => {
+    expect(yenidenBaslamaHatalari(hataIzlemeTanimi("deneme"))).toEqual([]);
   });
 
   // Kalıcı tanımlar kuralı tek tanımdan alır; ayar dosyaları kuralı Docker'ın okumasıyla denetlenir.

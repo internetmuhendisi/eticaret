@@ -36,6 +36,20 @@ export const denemeAdresi = (kodAdi: string): string => {
 export const yoklamaAdi = "kapi--yoklama";
 export const yoklamaAdresi = `${yoklamaAdi}.${denemeAlani}`;
 
+// Hata izleme aracının adresi (kart 0022, karar 0036). Bu da iki tire taşır, hiçbir sitenin
+// adresiyle çakışmaz. Dışarıya yalnız hata gönderim yolu açıktır; yönetim ekranı ve okuma ucu
+// ön kapıdan geçmez (komutlar/hata-izleme.mts).
+export const hataIzlemeAdi = "altyapi--hata";
+export const hataIzlemeAdresi = `${hataIzlemeAdi}.${denemeAlani}`;
+// Hata izleme kutusunun ağı. Ağı ön kapı kurar, içinde yalnız ön kapı ve hata izleme kutusu
+// durur; ağ dışarıya kapalıdır (internal), hata izleme kutusu internete çıkamaz.
+export const hataIzlemeOrtami = "deneme";
+export const hataIzlemeAgi = `altyapi-hata-izleme-${hataIzlemeOrtami}`;
+export const hataIzlemeKutusu = `hata-izleme-${hataIzlemeOrtami}`;
+export const hataIzlemePortu = 8000;
+// Bir olayın en büyük boyutu (Bugsink'in de sınırı 1 MiB'dir).
+const hataGonderimSiniri = "1MB";
+
 // Alan adında deneme adreslerini sunucuya bağlayan kayıtlar: tek joker kayıt her deneme
 // adresini karşılar, yeni site için alan adına dokunulmaz. Vekil kapalıdır: ziyaretçi doğrudan
 // Almanya'daki sunucuya bağlanır (karar 0009), sertifikayı Caddy alır.
@@ -67,6 +81,27 @@ export const denemeSatiri = (adres: string, hedef: string): string => {
   if (!/^[a-z0-9-]+:\d+$/.test(hedef)) throw new Error(`Geçersiz kutu hedefi: ${hedef}`);
   return `${adres} {\n\timport deneme\n\treverse_proxy ${hedef}\n}\n`;
 };
+
+// Hata izleme adresinin Caddy satırı: yalnız gönderim yolları (store, envelope) ve tarayıcının
+// ön sorusu (OPTIONS) kutuya gider, gövde sınırlıdır; geri kalan her yol 404'tür.
+export const hataIzlemeSatiri = (): string =>
+  `${hataIzlemeAdresi} {
+\timport deneme
+\t@gonderim {
+\t\tmethod POST OPTIONS
+\t\tpath_regexp ^/api/[0-9]+/(store|envelope)/$
+\t}
+\thandle @gonderim {
+\t\trequest_body {
+\t\t\tmax_size ${hataGonderimSiniri}
+\t\t}
+\t\treverse_proxy ${hataIzlemeKutusu}:${hataIzlemePortu}
+\t}
+\thandle {
+\t\trespond 404
+\t}
+}
+`;
 
 // Kutuların ortak güvenlik ayarı: dosya sistemi salt okunur, yetki yükseltme kapalı, tek yetki
 // düşük kapıları açmak. Görüntüdeki caddy programı bu yetkiyi dosyasında taşır; yetki kutuda
@@ -179,6 +214,7 @@ export const onKapiTanimi = (siteler: YayindakiSiteler = {}) => ({
       // Ortak ağ varsayılan çıkıştır (gw_priority); site ağları yalnız sitelere ulaşmak içindir.
       networks: {
         [agAdi]: { gw_priority: 100 },
+        [hataIzlemeAgi]: {},
         ...Object.fromEntries(siteAglari(siteler).map((ag) => [ag, {}])),
       },
     },
@@ -206,6 +242,8 @@ export const onKapiTanimi = (siteler: YayindakiSiteler = {}) => ({
       // IPv4 alt ağını Docker seçer; IPv6 için özel (dışarıya yönlenmeyen) bir alt ağ verilir.
       ipam: { config: [{ subnet: "fd00:a17a:0:1::/64" }] },
     },
+    // Hata izleme kutusunun ağı burada kurulur; hata izleme tanımında dışarıdandır.
+    [hataIzlemeAgi]: { name: hataIzlemeAgi, internal: true },
     // Site ağlarını veritabanı kutusunun tanımı kurar (sunucu-veritabani.mts); burada dışarıdandır.
     ...Object.fromEntries(siteAglari(siteler).map((ag) => [ag, { name: ag, external: true }])),
   },
@@ -219,7 +257,9 @@ export const kurmaBetigi = (
   siteler: YayindakiSiteler = {},
 ): string => {
   for (const ad of Object.keys(siteSatirlari)) {
-    if (ad !== yoklamaAdi && !kodAdiGecerli(ad)) throw new Error(`Geçersiz site satırı adı: ${ad}`);
+    if (ad !== yoklamaAdi && ad !== hataIzlemeAdi && !kodAdiGecerli(ad)) {
+      throw new Error(`Geçersiz site satırı adı: ${ad}`);
+    }
   }
   const dosyalar: Record<string, string> = {
     "caddy/Caddyfile": kaynak("Caddyfile"),
@@ -290,7 +330,11 @@ export const siteSatirlari = (siteler: YayindakiSiteler): Record<string, string>
 export const onKapiyiKur = (ipv4: string, siteler = yayindakiSiteleriOku(ipv4)): void => {
   const sonuc = sshKomutu(ipv4, "bash -s", {
     girdi: kurmaBetigi(
-      { [yoklamaAdi]: denemeSatiri(yoklamaAdresi, yoklamaHedefi), ...siteSatirlari(siteler) },
+      {
+        [yoklamaAdi]: denemeSatiri(yoklamaAdresi, yoklamaHedefi),
+        [hataIzlemeAdi]: hataIzlemeSatiri(),
+        ...siteSatirlari(siteler),
+      },
       siteler,
     ),
     sure: 300_000,

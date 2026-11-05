@@ -13,6 +13,7 @@
 
 import { spawnSync } from "node:child_process";
 import type { Kimlik } from "../cekirdek/ayar-semasi/kimlik.ts";
+import { hataIzlemeDegiskenleri } from "../cekirdek/izleme/hata-izleme-araci.ts";
 import {
   degisiklikKlasoru,
   type GeriDonusNotu,
@@ -20,6 +21,7 @@ import {
 } from "../cekirdek/veritabani/guncelle.ts";
 import { goruntuyuDenetle } from "./cekirdek-goruntusu-denetle.mts";
 import { kutuGizliTanimi, type Ortam } from "./gizli-bilgi.mts";
+import { projeAdresiniHazirla } from "./hata-izleme.mts";
 import { kaliciKutu, siteSaglikYoklamasi } from "./kutu-kurali.mts";
 import {
   denemeAdresi,
@@ -61,6 +63,9 @@ export const yayinKutusuTanimi = (
   kodAdi: string,
   siteNumarasi: number,
   no: number,
+  // Sitenin hata izleme projesinin gönderim adresi (kart 0022). Gizli değildir: tarayıcıya da
+  // gider, yalnız o projeye hata göndermeye izin verir (karar 0036).
+  hataIzlemeAdresi?: string,
 ) => {
   const gizli = kutuGizliTanimi(ortam, kodAdi, siteNumarasi);
   const ag = siteAgiAdi(ortam, kodAdi);
@@ -74,7 +79,16 @@ export const yayinKutusuTanimi = (
         user: gizli.servis.user,
         secrets: gizli.servis.secrets,
         // Kod adı klasör adıyla aynı olmalıdır (kimlik şeması), klasör aynı adla bağlanır.
-        environment: { ...gizli.servis.environment, SITE_KLASORU: `/siteler/${kodAdi}` },
+        environment: {
+          ...gizli.servis.environment,
+          SITE_KLASORU: `/siteler/${kodAdi}`,
+          ...(hataIzlemeAdresi === undefined
+            ? {}
+            : {
+                [hataIzlemeDegiskenleri.adres]: hataIzlemeAdresi,
+                [hataIzlemeDegiskenleri.ortam]: ortam,
+              }),
+        },
         cap_drop: ["ALL"],
         cap_add: [] as string[],
         security_opt: ["no-new-privileges:true"],
@@ -454,6 +468,9 @@ const yayinlaKilitli = async (girdi: YayinGirdisi): Promise<YayinKaydi> => {
     kayit.degisiklikToplami = toplam;
     const { kimlik: goruntu } = goruntuyuGonder(ipv4, girdi.etiket);
     kayit.goruntu = goruntu;
+    // Hataları izlenmeyen bir site yayına çıkmaz: proje hazırlanamazsa yayın durur (kart 0022).
+    const hataIzlemeAdresi = projeAdresiniHazirla(ipv4, ortam, kodAdi);
+    yaz(`hazır       ${ortam}/${kodAdi} hata izleme projesi`);
     kutuAcildi = true;
     klasoruYukle(ipv4, ortam, kodAdi, no, girdi.klasor);
     const cikti = sunucudaCalistir(
@@ -462,7 +479,7 @@ const yayinlaKilitli = async (girdi: YayinGirdisi): Promise<YayinKaydi> => {
         ortam,
         kodAdi,
         no,
-        yayinKutusuTanimi(ortam, kodAdi, siteNumarasi, no),
+        yayinKutusuTanimi(ortam, kodAdi, siteNumarasi, no, hataIzlemeAdresi),
         goruntu,
       ),
     );

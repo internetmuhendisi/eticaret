@@ -188,6 +188,10 @@ describe("sunucudaki yerleşimin denetimi", () => {
     "f 400 30001 /srv/altyapi/gizli/deneme/ornek-magaza/veritabani_adresi",
     "d 700 0 /srv/altyapi/gizli/deneme/altyapi--veritabani",
     "f 400 70 /srv/altyapi/gizli/deneme/altyapi--veritabani/yonetici_sifresi",
+    "d 700 0 /srv/altyapi/gizli/deneme/altyapi--hata-izleme",
+    "f 400 14237 /srv/altyapi/gizli/deneme/altyapi--hata-izleme/gizli_anahtar",
+    "f 400 14237 /srv/altyapi/gizli/deneme/altyapi--hata-izleme/yonetici_sifresi",
+    "f 400 0 /srv/altyapi/gizli/deneme/altyapi--hata-izleme/yonetim_anahtari",
   ];
 
   it("doğru yerleşim geçer", () => {
@@ -254,6 +258,31 @@ describe("sunucudaki yerleşimin denetimi", () => {
       "herkese açık yönetici klasörü",
       "d 755 0 /srv/altyapi/gizli/deneme/altyapi--veritabani",
       "klasör 755 0",
+    ],
+    [
+      "siteye ait hata izleme anahtarı",
+      "f 400 30001 /srv/altyapi/gizli/deneme/altyapi--hata-izleme/gizli_anahtar",
+      "beklenen 400 14237",
+    ],
+    [
+      "kutuya ait yönetim anahtarı",
+      "f 400 14237 /srv/altyapi/gizli/deneme/altyapi--hata-izleme/yonetim_anahtari",
+      "beklenen 400 0",
+    ],
+    [
+      "okunabilir hata izleme şifresi",
+      "f 440 14237 /srv/altyapi/gizli/deneme/altyapi--hata-izleme/yonetici_sifresi",
+      "dosya 440",
+    ],
+    [
+      "hata izleme klasöründe başka dosya",
+      "f 400 0 /srv/altyapi/gizli/deneme/altyapi--hata-izleme/yedek",
+      "beklenmeyen dosya",
+    ],
+    [
+      "veritabanı şifresinin adı hata izleme klasöründe başka sahiple",
+      "f 400 70 /srv/altyapi/gizli/deneme/altyapi--hata-izleme/yonetici_sifresi",
+      "beklenen 400 14237",
     ],
   ])("%s yakalanır", (_ad, satir, beklenen) => {
     const hatalar = yerlesimHatalari([...dogru, satir], numaralar);

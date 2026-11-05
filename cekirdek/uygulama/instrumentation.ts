@@ -20,6 +20,9 @@ export const register = async () => {
   // Site klasörü açılışta bir kez okunur ve doğrulanır; geçersizse uygulama açılmaz (kart 0035).
   const { siteyiAcilistaDogrula } = await import("../izleme/acilis");
   siteyiAcilistaDogrula();
+  // Sunucuda gönderim adresi verilmişse hatalar hata izleme aracına da gider (kart 0022).
+  const { hataIzlemeyiBagla } = await import("../izleme/hata-izleme-baglantisi");
+  hataIzlemeyiBagla();
 };
 
 export const onRequestError: Instrumentation.onRequestError = async (hata, istek, baglam) => {

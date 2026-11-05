@@ -9,8 +9,10 @@
 // Komut tekrar çalıştırılabilir: aynı adla açılmış anahtar, duvar ve sunucu yeniden açılmaz.
 // Var olan sunucunun tipi ve yeri tanımla karşılaştırılır; duvar bağlanır, silme koruması açılır.
 // Duvara elle eklenmiş kurallar her çalışmada silinir: kuralların tek yeri sunucu.mts'dir.
-// Son adımda ön kapı (Caddy) kurulur ya da ayarı yenilenir (kart 0020, on-kapi.mts).
+// Son adımlarda ön kapı (Caddy) kurulur ya da ayarı yenilenir (kart 0020, on-kapi.mts), ardından
+// hata izleme aracı (kart 0022, hata-izleme.mts).
 
+import { hataIzlemeOrtamlari, hataIzlemeyiKur } from "./hata-izleme.mts";
 import { onKapiyiKur, yayinKilidiyle } from "./on-kapi.mts";
 import {
   acikKapilar,
@@ -223,6 +225,13 @@ const kur = async (): Promise<void> => {
   // 6. Ön kapı: Caddy ve yoklama kutusu (karar 0032).
   await yayinKilidiyle(ipv4, () => onKapiyiKur(ipv4));
   console.log("kuruldu     ön kapı (Caddy, yoklama kutusu)");
+
+  // 7. Hata izleme aracı (kart 0022, karar 0036). Ağı ön kapıdadır, ondan sonra kurulur.
+  await yayinKilidiyle(ipv4, () => {
+    for (const ortam of hataIzlemeOrtamlari) {
+      hataIzlemeyiKur(ipv4, ortam, (satir) => console.log(satir));
+    }
+  });
   console.log("Sunucu hazır. Denetim: pnpm sunucu-denetle");
 };
 

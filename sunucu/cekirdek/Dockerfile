@@ -34,6 +34,10 @@ RUN pnpm exec esbuild cekirdek/veritabani/sunucuda-guncelle.ts --bundle --platfo
       --banner:js="import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" \
       --outfile=/kaynak/veritabani/guncelle.mjs \
     && cp -R cekirdek/veritabani/degisiklikler /kaynak/veritabani/degisiklikler
+# Hata izleme aracının sunucudaki denemesi (kart 0022, karar 0036): yalnız docker exec ile çalışır.
+RUN pnpm exec esbuild cekirdek/izleme/hata-izleme-denemesi.ts --bundle --platform=node \
+      --format=esm --target=node24 --log-level=warning \
+      --outfile=/kaynak/izleme/hata-denemesi.mjs
 
 FROM node:${NODE_SURUMU}-alpine
 ARG CEKIRDEK_SURUMU
@@ -47,6 +51,7 @@ WORKDIR /uygulama
 COPY --from=derleme /kaynak/cekirdek/uygulama/.next/standalone ./
 COPY --from=derleme /kaynak/cekirdek/uygulama/.next/static ./cekirdek/uygulama/.next/static
 COPY --from=derleme /kaynak/veritabani ./veritabani
+COPY --from=derleme /kaynak/izleme ./izleme
 USER node
 EXPOSE 3000
 CMD ["node", "cekirdek/uygulama/server.js"]

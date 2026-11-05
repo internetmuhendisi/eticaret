@@ -21,6 +21,7 @@ import {
   ayniAdres,
   denemeAlani,
   dizineKapali,
+  hataIzlemeAdresi,
   kalanGun,
   kutuKisitHatalari,
   kutuOlcumBicimi,
@@ -51,9 +52,11 @@ const iste = (
   ad: string,
   yol: string,
   istenenAd = ad,
+  yontem = "GET",
 ): Promise<Yanit> =>
   new Promise((coz, reddet) => {
     const secenekler = {
+      method: yontem,
       host: ip,
       port: sifreli ? 443 : 80,
       path: yol,
@@ -190,6 +193,28 @@ export const onKapiyiOlc = async (kayit: SunucuKaydi, olcum: Olcum): Promise<voi
       !(baskaAd instanceof Error) && baskaAd.durum === 404,
       `${tur}: bir sitenin sertifikasıyla tanınmayan ad istenince 404 dönüyor`,
       baskaAd instanceof Error ? baskaAd.message : String(baskaAd.durum),
+    );
+
+    // Hata izleme adresi (kart 0022): yönetim ekranı ve okuma ucu dışarıya kapalı, gönderim
+    // yolu araca ulaşıyor (anahtarsız istek aracın kendisinden ret alır, ön kapıdan 404 değil).
+    for (const kapaliYol of ["/", "/accounts/login/", "/api/canonical/0/projects/"]) {
+      const kapali = await dene(() => iste(true, ip, hataIzlemeAdresi, kapaliYol));
+      olcum(
+        !(kapali instanceof Error) && kapali.durum === 404,
+        `${tur}: hata izleme adresinde ${kapaliYol} dışarıya kapalı (404)`,
+        kapali instanceof Error ? kapali.message : String(kapali.durum),
+      );
+    }
+    const gonderim = await dene(() =>
+      iste(true, ip, hataIzlemeAdresi, "/api/1/store/", hataIzlemeAdresi, "POST"),
+    );
+    olcum(
+      !(gonderim instanceof Error) &&
+        gonderim.durum >= 400 &&
+        gonderim.durum < 500 &&
+        gonderim.durum !== 404,
+      `${tur}: hata izleme gönderim yolu araca ulaşıyor (anahtarsız istek ret alıyor)`,
+      gonderim instanceof Error ? gonderim.message : String(gonderim.durum),
     );
   }
 

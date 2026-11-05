@@ -208,6 +208,7 @@ describe("ön kapı ve yayındaki siteler", () => {
     const tanim = onKapiTanimi({ "ornek-magaza": 3 });
     expect(tanim.services.caddy.networks).toEqual({
       altyapi: { gw_priority: 100 },
+      "altyapi-hata-izleme-deneme": {},
       "site-deneme-ornek-magaza": {},
     });
     expect((tanim.networks as Record<string, unknown>)["site-deneme-ornek-magaza"]).toEqual({
@@ -218,8 +219,9 @@ describe("ön kapı ve yayındaki siteler", () => {
     expect(tanim.services.yoklama.networks).toEqual(["altyapi"]);
   });
 
-  it("yayın yoksa ön kapı yalnız ortak ağdadır", () => {
-    expect(Object.keys(onKapiTanimi().networks)).toEqual(["altyapi"]);
+  // Hata izleme ağı sitelerden ayrıdır; içinde yalnız ön kapı ve hata izleme kutusu durur (kart 0022).
+  it("yayın yoksa ön kapı yalnız ortak ağda ve hata izleme ağındadır", () => {
+    expect(Object.keys(onKapiTanimi().networks)).toEqual(["altyapi", "altyapi-hata-izleme-deneme"]);
   });
 });
 

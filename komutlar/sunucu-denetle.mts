@@ -17,6 +17,8 @@
 // - Yayındaki her sitenin kutusu tanımıyla aynı ayarla ve sağlıklı çalışıyor (yayin.mts, kart 0021).
 // - Her ortamın veritabanı kutusu sağlıklı çalışıyor: kök olmayan kullanıcı, salt okunur, yetkisiz,
 //   yeniden başlayınca açılıyor, portu dışarıya açılmamış (sunucu-veritabani.mts, kart 0039).
+// - Hata izleme kutusu aynı kısıtlarla, yalnız kendi ağında ve internete kapalı çalışıyor; ön
+//   kapıdan yalnız gönderim yolu açık (hata-izleme.mts, on-kapi-olcumleri.mts, kart 0022).
 // Bir ölçüm tutmazsa komut kırmızı biter.
 
 import { spawnSync } from "node:child_process";
@@ -30,7 +32,10 @@ import {
   siteNumaralariniOku,
   yerlesimHatalari,
 } from "./gizli-bilgi.mts";
+import { hataIzlemeAgHatalari, hataIzlemeOrtamlari, hataIzlemeTanimi } from "./hata-izleme.mts";
 import {
+  hataIzlemeAgi,
+  hataIzlemeKutusu,
   kutuKisitHatalari,
   kutuOlcumBicimi,
   siteKutusuAdi,
@@ -289,6 +294,35 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
         ayarHatalari.length === 0,
         `${ortam} veritabanı kutusunun bağlantı kuralı projedekiyle aynı, yalnız sitelerin ağlarına bağlı`,
         ayarHatalari.join("; "),
+      );
+    }
+    // Hata izleme kutusunun gerçek ayarı tanımıyla aynı (kart 0022): kısıtlar, sağlık, kapalı
+    // port, yalnız kendi ağı; ağ dışarıya kapalı (kutu internete çıkamaz).
+    for (const ortam of hataIzlemeOrtamlari) {
+      const kutu = sshKomutu(
+        kayit.ipv4,
+        `docker inspect ${hataIzlemeKutusu} --format '${kutuOlcumBicimi}|{{.State.Health.Status}}|{{json .HostConfig.PortBindings}}|{{range $ag, $_ := .NetworkSettings.Networks}}{{$ag}} {{end}}' && docker network inspect -f '{{.Internal}}' ${hataIzlemeAgi}`,
+      );
+      const [satir = "", kapali = ""] = kutu.stdout.trim().split("\n");
+      const alanlar = satir.split("|");
+      const [saglik = "", portlar = "", aglar = ""] = alanlar.slice(-3);
+      const hatalar =
+        kutu.status === 0
+          ? [
+              ...kutuKisitHatalari(
+                alanlar.slice(0, -3).join("|"),
+                hataIzlemeTanimi(ortam).services.bugsink,
+              ),
+              ...(saglik === "healthy" ? [] : [`sağlık ${saglik || "yok"}`]),
+              ...(portuKapali(portlar) ? [] : [`açık port ${portlar}`]),
+              ...hataIzlemeAgHatalari(aglar.trim().split(" ")),
+              ...(kapali.trim() === "true" ? [] : ["ağ dışarıya açık"]),
+            ]
+          : [kutu.stderr.trim() || "kutu yok"];
+      olcum(
+        hatalar.length === 0,
+        `${ortam} hata izleme kutusu sağlıklı: kök olmayan kullanıcı, salt okunur, yetkisiz, yeniden başlayınca açılır, portu kapalı, internete kapalı`,
+        hatalar.join("; "),
       );
     }
     // Yayındaki her sitenin kutusu tanımıyla aynı ayarla çalışıyor (kart 0021).

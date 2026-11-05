@@ -38,6 +38,22 @@ export const yoneticiGizliBilgisi = {
   sahip: 70,
 } as const;
 
+// Hata izleme aracının (Bugsink) gizli bilgileri (kart 0022, karar 0036): altyapınındır, ortamın
+// klasöründe ayrı bir klasörde durur. İmza anahtarı ve yönetici şifresi kutunun bugsink
+// kullanıcısına (14237, görüntüde ölçüldü: id bugsink) aittir; kutuya Docker gizli bilgisi
+// olarak bağlanır. Yönetim anahtarı kök kullanıcıya aittir, kutuya bağlanmaz: komutlar onu
+// sunucuda okuyup kutuya girdiden verir. Kutu tanımı: hata-izleme.mts.
+export const hataIzlemeGizliBilgisi = {
+  klasor: "altyapi--hata-izleme",
+  dosyalar: { gizli_anahtar: 14237, yonetici_sifresi: 14237, yonetim_anahtari: 0 },
+} as const;
+
+// Altyapının gizli bilgi klasörleri: klasör adı → dosya adı → sahibin numarası.
+const altyapiGizliKlasorleri: Record<string, Record<string, number>> = {
+  [yoneticiGizliBilgisi.klasor]: { [yoneticiGizliBilgisi.dosya]: yoneticiGizliBilgisi.sahip },
+  [hataIzlemeGizliBilgisi.klasor]: hataIzlemeGizliBilgisi.dosyalar,
+};
+
 const kodAdiKalibi = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const kodAdiniDenetle = (kodAdi: string): void => {
   if (!kodAdiKalibi.test(kodAdi)) throw new Error(`Geçersiz kod adı: ${kodAdi}`);
@@ -240,7 +256,7 @@ export const yerlesimHatalari = (satirlar: string[], numaralar: SiteNumaralari):
         hatalar.push(`${yol}: bilinmeyen ortam`);
       if (
         parcalar.length === 2 &&
-        parcalar[1] !== yoneticiGizliBilgisi.klasor &&
+        !Object.hasOwn(altyapiGizliKlasorleri, parcalar[1] as string) &&
         numaralar[parcalar[1] as string] === undefined
       ) {
         hatalar.push(`${yol}: numarası olmayan site`);
@@ -249,11 +265,17 @@ export const yerlesimHatalari = (satirlar: string[], numaralar: SiteNumaralari):
       continue;
     }
     const [ortam, kodAdi, dosya] = parcalar;
-    if (parcalar.length === 3 && kodAdi === yoneticiGizliBilgisi.klasor) {
-      if (tur !== "f" || !ortam || !ortamMi(ortam) || dosya !== yoneticiGizliBilgisi.dosya) {
+    const altyapiDosyalari = Object.hasOwn(altyapiGizliKlasorleri, kodAdi ?? "")
+      ? altyapiGizliKlasorleri[kodAdi ?? ""]
+      : undefined;
+    if (parcalar.length === 3 && altyapiDosyalari !== undefined) {
+      const beklenenSahip = Object.hasOwn(altyapiDosyalari, dosya ?? "")
+        ? altyapiDosyalari[dosya ?? ""]
+        : undefined;
+      if (tur !== "f" || !ortam || !ortamMi(ortam) || beklenenSahip === undefined) {
         hatalar.push(`${yol}: beklenmeyen dosya`);
-      } else if (izin !== "400" || sahip !== String(yoneticiGizliBilgisi.sahip)) {
-        hatalar.push(`${yol}: dosya ${izin} ${sahip}, beklenen 400 ${yoneticiGizliBilgisi.sahip}`);
+      } else if (izin !== "400" || sahip !== String(beklenenSahip)) {
+        hatalar.push(`${yol}: dosya ${izin} ${sahip}, beklenen 400 ${beklenenSahip}`);
       }
       continue;
     }
