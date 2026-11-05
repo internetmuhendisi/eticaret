@@ -27,4 +27,4 @@ Her site önce bir deneme adresinde açılır. Deneme adreslerinin biçimi belir
 
 ## Durum
 
-yapılacak
+bitti
