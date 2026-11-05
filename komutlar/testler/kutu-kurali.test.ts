@@ -18,7 +18,8 @@ const kaliciDosyalar = [
   "komutlar/on-kapi.mts",
   "komutlar/yerel-ortam.mts",
 ];
-// Geçici kutu açan dosyalar: kuralı bilerek almaz (deneme ve denetim kutuları, --rm).
+// Geçici kutu açan dosyalar: kuralı bilerek almaz. Kutular --rm ile açılır ya da deneme
+// sonunda silinir (sunucu-gizli-denemesi.mts).
 const geciciDosyalar = [
   "komutlar/sunucu-gizli-denemesi.mts",
   "komutlar/cekirdek-goruntusu-denetle.mts",
