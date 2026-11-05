@@ -219,6 +219,13 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
       "Docker bir kutu açıp çalıştırıyor",
       dockerTamam ? "" : docker.stderr.trim(),
     );
+    // Sunucu yeniden başlayınca kutuları Docker açar; Docker'ın kendisi açılışta başlamalı (kart 0038).
+    const acilis = sshKomutu(kayit.ipv4, "systemctl is-enabled docker.service");
+    olcum(
+      acilis.status === 0 && acilis.stdout.trim() === "enabled",
+      "Docker sunucu açılışında kendiliğinden başlıyor",
+      acilis.stdout.trim() || acilis.stderr.trim(),
+    );
     const guncelleme = sshKomutu(
       kayit.ipv4,
       "systemctl is-active unattended-upgrades && apt-config dump",

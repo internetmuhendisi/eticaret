@@ -4,6 +4,9 @@
 services:
   caddy:
     image: caddy:2.10.2-alpine
+    # Docker yeniden başlayınca kendiliğinden açılır. Kuralın tek tanımı komutlar/kutu-kurali.mts;
+    # buradaki değerin aynı olduğunu komutlar/testler/kutu-kurali.test.ts denetler (kart 0038).
+    restart: unless-stopped
     # Dışarıya yalnız Caddy açılır, yalnız bu bilgisayardan. Site kutularının portu açılmaz;
     # istemci adresini Caddy yazar (karar 0024). *.localhost adları IPv6 döngü adresine de
     # çözülür, bu yüzden iki döngü adresinde de açılır.

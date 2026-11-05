@@ -203,7 +203,7 @@ export const onKapiyiOlc = async (kayit: SunucuKaydi, olcum: Olcum): Promise<voi
     const hatalar = kutu.status === 0 ? kutuKisitHatalari(kutu.stdout.trim(), servis) : [];
     olcum(
       kutu.status === 0 && hatalar.length === 0,
-      `ön kapının ${ad} kutusu çalışıyor: kök olmayan kullanıcı, salt okunur, tek yetki, yetki yükseltme kapalı`,
+      `ön kapının ${ad} kutusu çalışıyor: kök olmayan kullanıcı, salt okunur, tek yetki, yetki yükseltme kapalı, yeniden başlayınca açılır`,
       kutu.status === 0 ? hatalar.join("; ") : kutu.stderr.trim(),
     );
   }

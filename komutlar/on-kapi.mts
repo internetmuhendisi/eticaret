@@ -13,6 +13,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { kimlikSemasi } from "../cekirdek/ayar-semasi/kimlik.ts";
+import { kaliciKutu, kutuKuraliDogru, yenidenBaslama } from "./kutu-kurali.mts";
 import { kok, sshKomutu } from "./sunucu.mts";
 
 // --- Adresler ---
@@ -68,8 +69,10 @@ export const denemeSatiri = (adres: string, hedef: string): string => {
 
 // Kutuların ortak güvenlik ayarı: dosya sistemi salt okunur, yetki yükseltme kapalı, tek yetki
 // düşük kapıları açmak. Görüntüdeki caddy programı bu yetkiyi dosyasında taşır; yetki kutuda
-// yoksa program hiç çalışmaz (ölçüldü).
+// yoksa program hiç çalışmaz (ölçüldü). Sunucu yeniden başlayınca kutular kendiliğinden açılır
+// (kutu-kurali.mts).
 const kisitli = {
+  ...kaliciKutu,
   cap_drop: ["ALL"],
   cap_add: ["NET_BIND_SERVICE"],
   security_opt: ["no-new-privileges:true"],
@@ -248,7 +251,7 @@ export const ayniAdres = (a: string | undefined, b: string | undefined): boolean
 // Sunucudaki kutunun gerçek ayarı (docker inspect, kutuOlcumBicimi) kutu tanımıyla aynı olmalı.
 // Docker yetki adlarını "CAP_" önekiyle de yazabilir; karşılaştırma öneksiz yapılır.
 export const kutuOlcumBicimi =
-  "{{.State.Running}}|{{.HostConfig.Privileged}}|{{.Config.User}}|{{.HostConfig.ReadonlyRootfs}}|{{json .HostConfig.CapAdd}}|{{json .HostConfig.CapDrop}}|{{json .HostConfig.SecurityOpt}}";
+  "{{.State.Running}}|{{.HostConfig.Privileged}}|{{.Config.User}}|{{.HostConfig.ReadonlyRootfs}}|{{json .HostConfig.CapAdd}}|{{json .HostConfig.CapDrop}}|{{json .HostConfig.SecurityOpt}}|{{.HostConfig.RestartPolicy.Name}}";
 
 type KutuTanimi = {
   user: string;
@@ -256,12 +259,13 @@ type KutuTanimi = {
   cap_add: string[];
   cap_drop: string[];
   security_opt: string[];
+  restart: string;
 };
 
 export const kutuKisitHatalari = (satir: string, tanim: KutuTanimi): string[] => {
-  const [calisiyor, yetkili, kullanici, saltOkunur, ekle, kaldir, guvenlik, ...fazla] =
+  const [calisiyor, yetkili, kullanici, saltOkunur, ekle, kaldir, guvenlik, kural, ...fazla] =
     satir.split("|");
-  if (fazla.length > 0 || guvenlik === undefined) return [`okunamadı: ${satir}`];
+  if (fazla.length > 0 || kural === undefined) return [`okunamadı: ${satir}`];
   const liste = (json: string | undefined): string[] | undefined => {
     try {
       const deger = JSON.parse(json ?? "") as unknown;
@@ -286,6 +290,9 @@ export const kutuKisitHatalari = (satir: string, tanim: KutuTanimi): string[] =>
   if (yetki(liste(kaldir)) !== yetki(tanim.cap_drop)) hatalar.push(`kaldırılan yetkiler ${kaldir}`);
   if ((liste(guvenlik) ?? []).sort().join(",") !== [...tanim.security_opt].sort().join(",")) {
     hatalar.push(`güvenlik seçenekleri ${guvenlik}`);
+  }
+  if (tanim.restart !== yenidenBaslama || !kutuKuraliDogru(kural)) {
+    hatalar.push(`yeniden başlama kuralı ${kural || "yok"}, beklenen ${yenidenBaslama}`);
   }
   return hatalar;
 };

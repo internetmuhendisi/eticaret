@@ -28,6 +28,7 @@ import { cekirdekSurumu } from "../cekirdek/surum.ts";
 import { baglan, siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
 import { siteVeritabaniniGuncelle } from "../cekirdek/veritabani/guncelle.ts";
 import { goruntuAdi } from "./cekirdek-goruntusu-denetle.mts";
+import { kaliciKutu } from "./kutu-kurali.mts";
 import { veritabaniVeKullaniciAc } from "./site-veritabani.mts";
 
 export const kok = join(import.meta.dirname, "..");
@@ -153,6 +154,34 @@ const uretilenleriSil = (): void => {
   if (existsSync(sitelerDosyasi)) unlinkSync(sitelerDosyasi);
 };
 
+// Bir sitenin kutu tanımı. Yeniden başlama kuralı tek yerden gelir (kutu-kurali.mts).
+export const siteKutusu = (kodAdi: string, klasor: string, etiket: string) => ({
+  image: etiket,
+  container_name: kutuAdi(kodAdi),
+  ...kaliciKutu,
+  environment: {
+    // Kod adı klasör adıyla aynı olmalıdır (kimlik şeması), klasör aynı adla bağlanır.
+    SITE_KLASORU: `/siteler/${kodAdi}`,
+    VERITABANI_ADRESI: `\${${kutuAdresAnahtari(kodAdi)}:?veritabanı adresi verilmedi}`,
+  },
+  volumes: [`${klasor}:/siteler/${kodAdi}:ro`],
+  depends_on: { veritabani: { condition: "service_healthy" } },
+  healthcheck: {
+    test: [
+      "CMD",
+      "node",
+      "-e",
+      "fetch('http://127.0.0.1:3000/kapi/herkese-acik/saglik').then((y)=>process.exit(y.ok?0:1),()=>process.exit(1))",
+    ],
+    // Açılırken sık, açıldıktan sonra seyrek yoklanır.
+    interval: "15s",
+    timeout: "5s",
+    retries: 3,
+    start_period: "60s",
+    start_interval: "1s",
+  },
+});
+
 // Her site için Caddy satırı ve kutu tanımı. Kutu tanımı JSON'dur (compose JSON da okur).
 const ayarlariUret = (siteler: (OrtamSitesi & { etiket: string })[]): void => {
   uretilenleriSil();
@@ -170,31 +199,7 @@ const ayarlariUret = (siteler: (OrtamSitesi & { etiket: string })[]): void => {
       join(caddyKlasoru, `${kodAdi}.caddy`),
       `http://${kodAdi}.localhost {\n\treverse_proxy ${servisAdi(kodAdi)}:3000\n}\n`,
     );
-    servisler[servisAdi(kodAdi)] = {
-      image: etiket,
-      container_name: kutuAdi(kodAdi),
-      environment: {
-        // Kod adı klasör adıyla aynı olmalıdır (kimlik şeması), klasör aynı adla bağlanır.
-        SITE_KLASORU: `/siteler/${kodAdi}`,
-        VERITABANI_ADRESI: `\${${kutuAdresAnahtari(kodAdi)}:?veritabanı adresi verilmedi}`,
-      },
-      volumes: [`${klasor}:/siteler/${kodAdi}:ro`],
-      depends_on: { veritabani: { condition: "service_healthy" } },
-      healthcheck: {
-        test: [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:3000/kapi/herkese-acik/saglik').then((y)=>process.exit(y.ok?0:1),()=>process.exit(1))",
-        ],
-        // Açılırken sık, açıldıktan sonra seyrek yoklanır.
-        interval: "15s",
-        timeout: "5s",
-        retries: 3,
-        start_period: "60s",
-        start_interval: "1s",
-      },
-    };
+    servisler[servisAdi(kodAdi)] = siteKutusu(kodAdi, klasor, etiket);
   }
   writeFileSync(sitelerDosyasi, `${JSON.stringify({ services: servisler }, null, 2)}\n`);
 };

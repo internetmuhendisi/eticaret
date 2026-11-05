@@ -4,7 +4,8 @@
 //   - tanınmayan adres 404 döner;
 //   - her kutu yalnız kendi veritabanına bağlanır, ötekinin veritabanına giremez;
 //   - site kutularının portu dışarıya açık değildir;
-//   - istemcinin yazdığı sahte X-Forwarded-For başlığı istek sınırını aşamaz (karar 0024).
+//   - istemcinin yazdığı sahte X-Forwarded-For başlığı istek sınırını aşamaz (karar 0024);
+//   - ortamın her kutusu Docker yeniden başlayınca kendiliğinden açılır (kart 0038).
 // Sonunda ortamı kapatır ve deneme sitesini siler. Bir ölçüm kalırsa kırmızı biter.
 // Çalıştırma: pnpm yerel-ortam-testi [--acik-birak]
 //   --acik-birak: ortamı ve deneme sitesini açık bırakır; kapatmak: pnpm yerel-ortam-kapat
@@ -13,6 +14,7 @@ import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { istekSinirlari } from "../cekirdek/kayitlar/kapi.ts";
 import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
+import { kutuKuraliDogru, yenidenBaslama } from "./kutu-kurali.mts";
 import {
   denemeSitesiAc,
   iste,
@@ -109,6 +111,35 @@ const sitesiniOlc = async (site: OrtamSitesi, oteki: OrtamSitesi) => {
   olc(`${kodAdi}: kutunun portu dışarıya kapalı`, portlar === "{}" || portlar === "null", portlar);
 };
 
+// Ortamın bütün kutuları (veritabanı, Caddy, siteler) yeniden başlama kuralıyla çalışmalı.
+const kutuKurallariniOlc = (siteSayisi: number) => {
+  const kutular = spawnSync(
+    "docker",
+    ["ps", "--filter", "label=com.docker.compose.project=altyapi-yerel", "--format", "{{.Names}}"],
+    { encoding: "utf8" },
+  )
+    .stdout.split("\n")
+    .filter(Boolean)
+    .sort();
+  olc(
+    "ortamın bütün kutuları çalışıyor",
+    kutular.length === siteSayisi + 2,
+    `${kutular.length} kutu, beklenen ${siteSayisi + 2}`,
+  );
+  for (const kutu of kutular) {
+    const kural = spawnSync(
+      "docker",
+      ["inspect", "--format", "{{.HostConfig.RestartPolicy.Name}}", kutu],
+      { encoding: "utf8" },
+    ).stdout.trim();
+    olc(
+      `${kutu}: Docker yeniden başlayınca açılıyor`,
+      kutuKuraliDogru(kural),
+      `kural ${kural || "yok"}, beklenen ${yenidenBaslama}`,
+    );
+  }
+};
+
 const calistir = async (): Promise<void> => {
   let siteler: OrtamSitesi[] = [];
   try {
@@ -132,6 +163,7 @@ const calistir = async (): Promise<void> => {
       sinirDoldu = yanit.durum === 429;
     }
     olc("sahte X-Forwarded-For başlığı istek sınırını aşamıyor", sinirDoldu);
+    kutuKurallariniOlc(siteler.length);
   } catch (hata) {
     olc("ortam açıldı", false, (hata as Error).message);
   }

@@ -218,6 +218,7 @@ describe("kutuların sunucudaki gerçek ayarı", () => {
       '["CAP_NET_BIND_SERVICE"]',
       '["ALL"]',
       '["no-new-privileges:true"]',
+      "unless-stopped",
     ];
     for (const [sira, deger] of Object.entries(degisiklik)) alanlar[Number(sira)] = deger ?? "";
     return alanlar.join("|");
@@ -239,6 +240,9 @@ describe("kutuların sunucudaki gerçek ayarı", () => {
     ["yetkiler kaldırılmamış", { 5: "null" }],
     ["yetki yükseltme açık", { 6: "null" }],
     ["bozuk çıktı", { 6: "[" }],
+    ["yeniden başlama kuralı yok", { 7: "no" }],
+    ["yeniden başlama kuralı farklı", { 7: "always" }],
+    ["yeniden başlama kuralı boş", { 7: "" }],
   ])("%s kırmızıdır", (_ad, degisiklik) => {
     expect(kutuKisitHatalari(satir(degisiklik), caddy)).not.toEqual([]);
   });
