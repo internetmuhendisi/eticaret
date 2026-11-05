@@ -220,14 +220,15 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
       "gereken yeniden başlatma gece kendiliğinden yapılıyor",
     );
     // Bekleyen yeniden başlatmanın yaşı (saniye); bekleyen yoksa 0.
-    const bekleyen = Number(
-      sshKomutu(
-        kayit.ipv4,
-        "f=/var/run/reboot-required; [ -f $f ] && echo $(( $(date +%s) - $(stat -c %Y $f) )) || echo 0",
-      ).stdout.trim(),
+    // ssh düşerse çıktı boş gelir; boş çıktı "bekleyen yok" sayılmaz.
+    const bekleyenSonuc = sshKomutu(
+      kayit.ipv4,
+      "f=/var/run/reboot-required; [ -f $f ] && echo $(( $(date +%s) - $(stat -c %Y $f) )) || echo 0",
     );
+    const bekleyenMetin = bekleyenSonuc.stdout.trim();
+    const bekleyen = /^\d+$/.test(bekleyenMetin) ? Number(bekleyenMetin) : Number.NaN;
     olcum(
-      Number.isFinite(bekleyen) && bekleyen < yenidenBaslatmaSiniri,
+      bekleyenSonuc.status === 0 && Number.isFinite(bekleyen) && bekleyen < yenidenBaslatmaSiniri,
       "bekleyen yeniden başlatma iki günden eski değil",
       bekleyen > 0 ? `${Math.round(bekleyen / 3600)} saattir bekliyor` : "",
     );
@@ -244,6 +245,16 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
     ["IPv6", kayit.ipv6, hizli ? bilinenKapilar : [...new Set([...ilk1024, ...bilinenKapilar])]],
   ];
   for (const [ad, adres, kapilar] of taramalar) {
+    // Denetimi çalıştıran ağda bu adres türü yoksa (ör. IPv6'sız ev ağı) tarama yapılamaz.
+    // Sonuç bilinmediği için kırmızıdır, ama sorunun sunucuda değil bu ağda olduğu söylenir.
+    if ((await kapiyaBak(adres, yonetimKapisi, 5000)) === "hata") {
+      olcum(
+        false,
+        `${ad}: taranamadı, bu ağdan ${ad} adresine çıkılamıyor`,
+        "sorun sunucuda değil; denetimi bu adres türünü destekleyen bir ağdan çalıştırın",
+      );
+      continue;
+    }
     console.log(`tarama  ${ad}: ${kapilar.length} TCP kapısı dışarıdan deneniyor...`);
     const { durumlar, kopma } = await kapilariTara(adres, kapilar);
     const kapiSorunlari = kapiHatalari(durumlar);

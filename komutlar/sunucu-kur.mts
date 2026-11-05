@@ -146,6 +146,14 @@ const kur = async (): Promise<void> => {
     console.log(`zaten var   sunucu ${t.ad}`);
   }
 
+  // 4. Sunucunun açılmasını bekle. Duvar ve koruma işlemleri ancak sonra gönderilir:
+  // açılış sürerken sunucu kilitlidir, başka işlem kabul etmez.
+  for (let deneme = 0; sunucu.status !== "running"; deneme++) {
+    if (deneme > 60) throw new Error("Sunucu 5 dakikada açılmadı.");
+    await new Promise((bitti) => setTimeout(bitti, 5000));
+    ({ server: sunucu } = await hetzner<{ server: Sunucu }>(`/servers/${sunucu.id}`));
+  }
+
   // Duvar sunucuya bağlı değilse bağlanır (ör. duvar silinip yeniden açıldıysa).
   if (!sunucu.public_net.firewalls.some((f) => f.id === duvar.id)) {
     await hetzner(`/firewalls/${duvar.id}/actions/apply_to_resources`, {
@@ -166,13 +174,6 @@ const kur = async (): Promise<void> => {
       govde: { delete: true, rebuild: true },
     });
     console.log(`açıldı      silme koruması ${t.ad}`);
-  }
-
-  // 4. Sunucunun açılmasını bekle.
-  for (let deneme = 0; sunucu.status !== "running"; deneme++) {
-    if (deneme > 60) throw new Error("Sunucu 5 dakikada açılmadı.");
-    await new Promise((bitti) => setTimeout(bitti, 5000));
-    ({ server: sunucu } = await hetzner<{ server: Sunucu }>(`/servers/${sunucu.id}`));
   }
   const ipv4 = sunucu.public_net.ipv4?.ip;
   if (!ipv4) throw new Error("Sunucunun IPv4 adresi yok.");

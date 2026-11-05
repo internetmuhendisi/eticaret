@@ -113,7 +113,9 @@ export const duvarUygulanmasiniBekle = async (
       server: { public_net: { firewalls: { id: number; status: string }[] } };
     }>(`/servers/${sunucuNumarasi}`);
     const duvarlar = server.public_net.firewalls;
-    if (duvarlar.every((d) => d.status === "applied") || deneme >= 40) return duvarlar;
+    // Boş liste "uygulandı" sayılmaz: yeni bağlanan duvar listede biraz geç görünür.
+    const uygulandi = duvarlar.length > 0 && duvarlar.every((d) => d.status === "applied");
+    if (uygulandi || deneme >= 40) return duvarlar;
     await new Promise((bitti) => setTimeout(bitti, 3000));
   }
 };
