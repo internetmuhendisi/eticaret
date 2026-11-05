@@ -245,6 +245,15 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
     ["IPv6", kayit.ipv6, hizli ? bilinenKapilar : [...new Set([...ilk1024, ...bilinenKapilar])]],
   ];
   for (const [ad, adres, kapilar] of taramalar) {
+    // Boş adres verilirse Node bu bilgisayarı tarar; kayıt eksikse açıkça söylenir.
+    if (!adres) {
+      olcum(
+        false,
+        `${ad}: kayıtta adres yok, taranamadı`,
+        "pnpm sunucu-kur --onayli kaydı yeniler",
+      );
+      continue;
+    }
     // Denetimi çalıştıran ağda bu adres türü yoksa (ör. IPv6'sız ev ağı) tarama yapılamaz.
     // Sonuç bilinmediği için kırmızıdır, ama sorunun sunucuda değil bu ağda olduğu söylenir.
     if ((await kapiyaBak(adres, yonetimKapisi, 5000)) === "hata") {
