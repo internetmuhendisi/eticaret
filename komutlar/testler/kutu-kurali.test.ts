@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { kutuKuraliDogru, yenidenBaslama, yenidenBaslamaHatalari } from "../kutu-kurali.mts";
 import { onKapiTanimi } from "../on-kapi.mts";
 import { veritabaniTanimi } from "../sunucu-veritabani.mts";
+import { yayinKutusuTanimi } from "../yayin.mts";
 import { siteKutusu } from "../yerel-ortam.mts";
 
 const kok = join(import.meta.dirname, "..", "..");
@@ -19,6 +20,7 @@ const kaliciDosyalar = [
   "komutlar/on-kapi.mts",
   "komutlar/yerel-ortam.mts",
   "komutlar/sunucu-veritabani.mts",
+  "komutlar/yayin.mts",
 ];
 // Geçici kutu açan dosyalar: kuralı bilerek almaz. Kutular --rm ile açılır ya da deneme
 // sonunda silinir (sunucu-gizli-denemesi.mts).
@@ -85,6 +87,10 @@ describe("kalıcı kutuların tanımı", () => {
 
   it("sunucudaki ön kapı", () => {
     expect(yenidenBaslamaHatalari(onKapiTanimi())).toEqual([]);
+  });
+
+  it("sunucudaki site kutusu", () => {
+    expect(yenidenBaslamaHatalari(yayinKutusuTanimi("deneme", "ornek-magaza", 1, 1))).toEqual([]);
   });
 
   it("sunucudaki veritabanı", () => {

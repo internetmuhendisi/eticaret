@@ -14,6 +14,7 @@
 //   bekleyen bir yeniden başlatma iki günden uzun süredir yapılmamış değil.
 // - Ön kapı: deneme adresleri sunucuya çözülüyor, şifreli açılıyor, http:// yönleniyor, arama
 //   motorlarına kapalı, kutu ziyaretçinin gerçek adresini görüyor (on-kapi-olcumleri.mts, kart 0020).
+// - Yayındaki her sitenin kutusu tanımıyla aynı ayarla ve sağlıklı çalışıyor (yayin.mts, kart 0021).
 // - Her ortamın veritabanı kutusu sağlıklı çalışıyor: kök olmayan kullanıcı, salt okunur, yetkisiz,
 //   yeniden başlayınca açılıyor, portu dışarıya açılmamış (sunucu-veritabani.mts, kart 0039).
 // Bir ölçüm tutmazsa komut kırmızı biter.
@@ -29,7 +30,13 @@ import {
   siteNumaralariniOku,
   yerlesimHatalari,
 } from "./gizli-bilgi.mts";
-import { kutuKisitHatalari, kutuOlcumBicimi } from "./on-kapi.mts";
+import {
+  kutuKisitHatalari,
+  kutuOlcumBicimi,
+  siteKutusuAdi,
+  yayindakiSiteleriOku,
+  yayinOrtami,
+} from "./on-kapi.mts";
 import { onKapiyiOlc } from "./on-kapi-olcumleri.mts";
 import {
   acikKapilar,
@@ -61,6 +68,7 @@ import {
   veritabaniOrtamlari,
   veritabaniTanimi,
 } from "./sunucu-veritabani.mts";
+import { yayinKutusuTanimi } from "./yayin.mts";
 
 // Hızlı taramada bakılan kapılar: gerekenler ve yanlışlıkla açılması en olası olanlar.
 const bilinenKapilar = [
@@ -281,6 +289,37 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
         ayarHatalari.length === 0,
         `${ortam} veritabanı kutusunun bağlantı kuralı projedekiyle aynı, yalnız sitelerin ağlarına bağlı`,
         ayarHatalari.join("; "),
+      );
+    }
+    // Yayındaki her sitenin kutusu tanımıyla aynı ayarla çalışıyor (kart 0021).
+    const yayindakiler = yayindakiSiteleriOku(kayit.ipv4);
+    const numaralar = siteNumaralariniOku();
+    for (const [kodAdi, no] of Object.entries(yayindakiler)) {
+      const ad = siteKutusuAdi(yayinOrtami, kodAdi, no);
+      const numara = numaralar[kodAdi];
+      const kutu = sshKomutu(
+        kayit.ipv4,
+        `docker inspect ${ad} --format '${kutuOlcumBicimi}|{{.State.Health.Status}}|{{json .HostConfig.PortBindings}}'`,
+      );
+      const alanlar = kutu.stdout.trim().split("|");
+      const [saglik = "", portlar = ""] = alanlar.slice(-2);
+      const hatalar =
+        numara === undefined
+          ? ["site numarası yok (sunucu/site-kullanicilari.json)"]
+          : kutu.status === 0
+            ? [
+                ...kutuKisitHatalari(
+                  alanlar.slice(0, -2).join("|"),
+                  yayinKutusuTanimi(yayinOrtami, kodAdi, numara, no).services.uygulama,
+                ),
+                ...(saglik === "healthy" ? [] : [`sağlık ${saglik || "yok"}`]),
+                ...(portuKapali(portlar) ? [] : [`açık port ${portlar}`]),
+              ]
+            : [kutu.stderr.trim() || "kutu yok"];
+      olcum(
+        hatalar.length === 0,
+        `${yayinOrtami}/${kodAdi} yayındaki kutusu (${no}) sağlıklı: kendi kullanıcısı, salt okunur, yetkisiz, yeniden başlayınca açılır, portu kapalı`,
+        hatalar.join("; "),
       );
     }
     const guncelleme = sshKomutu(

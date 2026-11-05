@@ -29,6 +29,7 @@ import {
   sifreyiEsitle,
   siteAgi,
   siteVeritabaniniHazirla,
+  surumEtiketi,
   veritabaniKutusu,
   veritabaniKutusunuKur,
 } from "./sunucu-veritabani.mts";
@@ -157,7 +158,7 @@ try {
     `yeni ${ikinciA.yeni} ve ${ikinciB.yeni}`,
   );
 
-  const etiket = goruntuyuGonder(ipv4, a.surum);
+  const { etiket } = goruntuyuGonder(ipv4, surumEtiketi(a.surum));
   for (const [site, oteki] of [
     [a, b],
     [b, a],

@@ -19,6 +19,8 @@ const kok = join(import.meta.dirname, "..");
 // görüntüleri olabildiği için ad altyapının yerel ortamıyla (altyapi-yerel) aynı önekle başlar.
 export const goruntuAdi = "altyapi-cekirdek";
 export const goruntuEtiketi = `${goruntuAdi}:${cekirdekSurumu}`;
+// Görüntünün üretildiği kayıt (cekirdek-goruntusu.mts yazar, yayın komutu okur).
+export const kayitEtiketi = "org.opencontainers.image.revision";
 
 const docker = (argumanlar: string[], girdi?: string) =>
   spawnSync("docker", argumanlar, { encoding: "utf8", input: girdi, maxBuffer: 64 * 1024 * 1024 });

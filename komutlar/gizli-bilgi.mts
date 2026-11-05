@@ -47,10 +47,12 @@ const kodAdiniDenetle = (kodAdi: string): void => {
 
 type SiteNumaralari = Record<string, number>;
 
-// Deneme komutunun geçici sitesi bu numarayı kullanır; gerçek bir siteye verilmez.
+// Deneme komutlarının geçici siteleri bu numaraları kullanır; gerçek bir siteye verilmez.
+// İkinci numara iki geçici siteyle çalışan yayın denemesi içindir (kart 0021).
 export const denemeSiteNumarasi = siteNumarasiSiniri;
+export const ikinciDenemeSiteNumarasi = siteNumarasiSiniri - 1;
 
-// Numara dosyasının kuralları: geçerli kod adı, 1 ile 9998 arası tam sayı, her numara bir kez.
+// Numara dosyasının kuralları: geçerli kod adı, 1 ile 9997 arası tam sayı, her numara bir kez.
 // İki dalda aynı numarayı alan iki site birleşince bu denetim durdurur (aynı kullanıcıyla
 // çalışan iki site ikinci koruma katını kaybeder).
 export const siteNumaralariHatalari = (numaralar: unknown): string[] => {
@@ -61,7 +63,7 @@ export const siteNumaralariHatalari = (numaralar: unknown): string[] => {
   const gorulen = new Map<unknown, string>();
   for (const [kodAdi, numara] of Object.entries(numaralar)) {
     if (!kodAdiKalibi.test(kodAdi)) hatalar.push(`geçersiz kod adı: ${kodAdi}`);
-    if (!Number.isInteger(numara) || numara < 1 || numara >= denemeSiteNumarasi) {
+    if (!Number.isInteger(numara) || numara < 1 || numara >= ikinciDenemeSiteNumarasi) {
       hatalar.push(`${kodAdi}: geçersiz numara ${String(numara)}`);
     }
     const oteki = gorulen.get(numara);
@@ -87,7 +89,7 @@ export const siteNumarasiAl = (kodAdi: string): number => {
   const var_ = numaralar[kodAdi];
   if (var_ !== undefined) return var_;
   const yeni = Math.max(0, ...Object.values(numaralar)) + 1;
-  if (yeni >= denemeSiteNumarasi) throw new Error("Site numaraları tükendi.");
+  if (yeni >= ikinciDenemeSiteNumarasi) throw new Error("Site numaraları tükendi.");
   writeFileSync(
     siteKullanicilariDosyasi,
     `${JSON.stringify({ ...numaralar, [kodAdi]: yeni }, null, 2)}\n`,

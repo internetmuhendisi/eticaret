@@ -28,7 +28,7 @@ import { cekirdekSurumu } from "../cekirdek/surum.ts";
 import { baglan, siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
 import { siteVeritabaniniGuncelle } from "../cekirdek/veritabani/guncelle.ts";
 import { goruntuAdi } from "./cekirdek-goruntusu-denetle.mts";
-import { kaliciKutu } from "./kutu-kurali.mts";
+import { kaliciKutu, siteSaglikYoklamasi } from "./kutu-kurali.mts";
 import { veritabaniVeKullaniciAc } from "./site-veritabani.mts";
 
 export const kok = join(import.meta.dirname, "..");
@@ -166,20 +166,7 @@ export const siteKutusu = (kodAdi: string, klasor: string, etiket: string) => ({
   },
   volumes: [`${klasor}:/siteler/${kodAdi}:ro`],
   depends_on: { veritabani: { condition: "service_healthy" } },
-  healthcheck: {
-    test: [
-      "CMD",
-      "node",
-      "-e",
-      "fetch('http://127.0.0.1:3000/kapi/herkese-acik/saglik').then((y)=>process.exit(y.ok?0:1),()=>process.exit(1))",
-    ],
-    // Açılırken sık, açıldıktan sonra seyrek yoklanır.
-    interval: "15s",
-    timeout: "5s",
-    retries: 3,
-    start_period: "60s",
-    start_interval: "1s",
-  },
+  healthcheck: siteSaglikYoklamasi,
 });
 
 // Her site için Caddy satırı ve kutu tanımı. Kutu tanımı JSON'dur (compose JSON da okur).

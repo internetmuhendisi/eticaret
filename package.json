@@ -47,6 +47,10 @@
     "sunucu-gizli-denemesi": "node komutlar/sunucu-gizli-denemesi.mts",
     "sunucu-veritabani": "node komutlar/sunucu-veritabani-ac.mts",
     "sunucu-veritabani-denemesi": "node komutlar/sunucu-veritabani-denemesi.mts",
+    "yayinla": "node komutlar/yayinla.mts",
+    "geri-don": "node komutlar/geri-don.mts",
+    "yayin-kaydi": "node komutlar/yayin-kaydi.mts",
+    "yayin-denemesi": "node komutlar/yayin-denemesi.mts",
     "alan-adi": "node komutlar/alan-adi.mts",
     "prepare": "simple-git-hooks"
   },

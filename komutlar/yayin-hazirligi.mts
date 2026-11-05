@@ -1,0 +1,99 @@
+// Yayından önceki kilitler ve hazırlık (kart 0021, karar 0035). Yayın komutu ve yayın denemesi
+// kullanır; ikisi de aynı kilitlerden geçer.
+//
+// - Kontrol hattı bu kayıt için yeşil olmalı, çalışma kopyasında kaydedilmemiş değişiklik
+//   olmamalı (pnpm hat-sonucu, karar 0029).
+// - Kayıttaki hat dosyası ana daldakiyle (origin/main) aynı olmalı: hattı zayıflatan bir kaydın
+//   kendi hattı yeşil biter (karar 0029, Sonuçları).
+// - Site klasörü çalışma klasöründen değil kayıttan alınır; görüntü bu kayıttan üretilmiş olmalı.
+
+import { spawnSync } from "node:child_process";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { cekirdekSurumu } from "../cekirdek/surum.ts";
+import { kayitEtiketi } from "./cekirdek-goruntusu-denetle.mts";
+import { hatDosyasi, hatSonucunuOku } from "./hat-sonucu.mts";
+import { kok } from "./sunucu.mts";
+import { surumEtiketi } from "./sunucu-veritabani.mts";
+
+const git = (argumanlar: string[]) => {
+  const sonuc = spawnSync("git", argumanlar, { cwd: kok, encoding: "utf8" });
+  return {
+    tamam: sonuc.status === 0,
+    cikti: (sonuc.stdout ?? "").trim(),
+    hata: (sonuc.stderr ?? "").trim(),
+  };
+};
+
+// Hat dosyasının iki kayıttaki içeriği aynı mı (git'in içerik özetiyle).
+export const hatDosyasiAyniMi = (kayit: string, anaDal: string): boolean => {
+  const bu = git(["rev-parse", `${kayit}:${hatDosyasi}`]);
+  const ana = git(["rev-parse", `${anaDal}:${hatDosyasi}`]);
+  return bu.tamam && ana.tamam && bu.cikti !== "" && bu.cikti === ana.cikti;
+};
+
+// Kilitler geçerse yayınlanacak kaydı döndürür; geçmezse hiçbir şeye dokunmadan hata verir.
+export const yayinKilitleri = (): string => {
+  const hat = hatSonucunuOku("HEAD");
+  if (!hat.yesil) throw new Error(`Kontrol hattı yeşil değil, yayın yapılmaz: ${hat.neden}`);
+  const kayit = git(["rev-parse", "HEAD"]).cikti;
+  const getir = git(["fetch", "--quiet", "origin", "main"]);
+  if (!getir.tamam) throw new Error(`Ana dal GitHub'dan okunamadı: ${getir.hata}`);
+  if (!hatDosyasiAyniMi(kayit, "origin/main")) {
+    throw new Error(
+      `Bu kayıttaki hat dosyası (${hatDosyasi}) ana daldakiyle aynı değil, yayın yapılmaz.`,
+    );
+  }
+  return kayit;
+};
+
+// Sitenin klasörü kayıttan geçici bir klasöre çıkarılır; dönen yol site klasörüdür.
+export const kayittanSiteKlasoru = (kayit: string, klasor: string): string => {
+  const yol = klasor.replace(/\/+$/, "");
+  if (!/^siteler\/[a-z0-9-]+$/.test(yol)) {
+    throw new Error(`Site klasörü siteler/<kod adı> biçiminde verilmeli: ${klasor}`);
+  }
+  const gecici = mkdtempSync(join(tmpdir(), "yayin-"));
+  const sonuc = spawnSync(
+    "sh",
+    ["-c", 'git -C "$0" archive "$1" "$2" | tar -x -C "$3"', kok, kayit, yol, gecici],
+    {
+      encoding: "utf8",
+    },
+  );
+  if (sonuc.status !== 0)
+    throw new Error(`Site klasörü kayıttan çıkarılamadı: ${sonuc.stderr.trim()}`);
+  return join(gecici, yol);
+};
+
+const goruntununKaydi = (etiket: string): string =>
+  spawnSync(
+    "docker",
+    ["image", "inspect", "-f", `{{index .Config.Labels "${kayitEtiketi}"}}`, etiket],
+    {
+      encoding: "utf8",
+    },
+  ).stdout?.trim() ?? "";
+
+// Kimlikteki sürümün görüntüsü bu kayıttan üretilmiş olmalı; değilse yeniden üretilir.
+// Bu kayıttan yalnız kaydın kendi çekirdek sürümü üretilebilir.
+export const yayinGoruntusunuHazirla = (surum: string, kayit: string): string => {
+  if (surum !== cekirdekSurumu) {
+    throw new Error(
+      `Kimlikteki sürüm ${surum}, bu kayıttaki çekirdek ${cekirdekSurumu}. Başka bir sürümün görüntüsü bu kayıttan üretilemez.`,
+    );
+  }
+  const etiket = surumEtiketi(surum);
+  if (goruntununKaydi(etiket) !== kayit) {
+    const uretim = spawnSync("node", [join(kok, "komutlar", "cekirdek-goruntusu.mts")], {
+      stdio: "inherit",
+    });
+    if (uretim.status !== 0) throw new Error("Görüntü üretilemedi.");
+  }
+  const sonra = goruntununKaydi(etiket);
+  if (sonra !== kayit) {
+    throw new Error(`${etiket} bu kayıttan üretilmemiş (görüntüdeki kayıt: ${sonra || "yok"}).`);
+  }
+  return etiket;
+};

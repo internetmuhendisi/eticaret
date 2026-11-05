@@ -229,9 +229,12 @@ docker run --rm --network ${siteAgi(ortam, kodAdi)} --user ${kullanici}:${kullan
 const goruntuKimligi = (cikti: string): string => cikti.trim().split("\n")[0]?.trim() ?? "";
 
 // Çekirdeğin görüntüsü bilgisayarda denetlenir ve sunucuda aynı görüntü yoksa aktarılır.
-// Ayrı bir görüntü deposu kullanılmaz (karar 0034).
-export const goruntuyuGonder = (ipv4: string, surum: string): string => {
-  const etiket = `${goruntuAdi}:${surum}`;
+// Ayrı bir görüntü deposu kullanılmaz (karar 0034). Dönen kimlik, görüntünün Docker kimliğidir.
+export const surumEtiketi = (surum: string): string => `${goruntuAdi}:${surum}`;
+export const goruntuyuGonder = (
+  ipv4: string,
+  etiket: string,
+): { etiket: string; kimlik: string } => {
   const yerel = spawnSync("docker", ["image", "inspect", "-f", "{{.Id}}", etiket], {
     encoding: "utf8",
   });
@@ -243,7 +246,7 @@ export const goruntuyuGonder = (ipv4: string, surum: string): string => {
     throw new Error(`${etiket} denetimden geçmedi:\n  ${hatalar.join("\n  ")}`);
   const yerelKimlik = goruntuKimligi(yerel.stdout);
   const uzak = sshKomutu(ipv4, `docker image inspect -f '{{.Id}}' ${etiket} 2>/dev/null || true`);
-  if (goruntuKimligi(uzak.stdout) === yerelKimlik) return etiket;
+  if (goruntuKimligi(uzak.stdout) === yerelKimlik) return { etiket, kimlik: yerelKimlik };
   const ssh = [
     "ssh",
     ...sshSecenekleri,
@@ -264,12 +267,12 @@ export const goruntuyuGonder = (ipv4: string, surum: string): string => {
   if (goruntuKimligi(sonra.stdout) !== yerelKimlik) {
     throw new Error(`Sunucudaki ${etiket} bilgisayardakiyle aynı değil (kimlik farklı).`);
   }
-  return etiket;
+  return { etiket, kimlik: yerelKimlik };
 };
 
 // --- Bütün adımlar ---
 
-const sunucudaCalistir = (ipv4: string, betik: string, sure = 300_000): string => {
+export const sunucudaCalistir = (ipv4: string, betik: string, sure = 300_000): string => {
   const sonuc = sshKomutu(ipv4, "bash -s", { girdi: betik, sure });
   if (sonuc.status !== 0) throw new Error(sonuc.stderr.trim() || "sunucudaki betik hatayla bitti");
   return sonuc.stdout;
@@ -281,7 +284,8 @@ const sunucudaCalistir = (ipv4: string, betik: string, sure = 300_000): string =
 export const siteVeritabaniniHazirla = (
   ipv4: string,
   ortam: Ortam,
-  site: { kodAdi: string; numara: number; surum: string },
+  // etiket verilmezse sürümün görüntüsü (altyapi-cekirdek:<sürüm>) kullanılır.
+  site: { kodAdi: string; numara: number; surum: string; etiket?: string },
   yaz: (satir: string) => void = () => {},
 ): { yeni: number; toplam: number } => {
   for (const satir of sunucudaCalistir(ipv4, uretmeBetigi(ortam, site.kodAdi, site.numara)).split(
@@ -289,7 +293,7 @@ export const siteVeritabaniniHazirla = (
   )) {
     if (satir.trim()) yaz(satir);
   }
-  const etiket = goruntuyuGonder(ipv4, site.surum);
+  const { etiket } = goruntuyuGonder(ipv4, site.etiket ?? surumEtiketi(site.surum));
   yaz(`hazır       ${etiket} sunucuda`);
   veritabaniKutusunuKur(ipv4, ortam, yaz);
   yaz(sunucudaCalistir(ipv4, siteAcmaBetigi(ortam, site.kodAdi)).trim());

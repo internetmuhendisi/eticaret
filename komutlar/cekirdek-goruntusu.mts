@@ -7,7 +7,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { cekirdekSurumu } from "../cekirdek/surum.ts";
-import { goruntuEtiketi, goruntuyuDenetle } from "./cekirdek-goruntusu-denetle.mts";
+import { goruntuEtiketi, goruntuyuDenetle, kayitEtiketi } from "./cekirdek-goruntusu-denetle.mts";
 
 const kok = join(import.meta.dirname, "..");
 const paket = JSON.parse(readFileSync(join(kok, "package.json"), "utf8")) as {
@@ -15,6 +15,12 @@ const paket = JSON.parse(readFileSync(join(kok, "package.json"), "utf8")) as {
   packageManager: string;
 };
 const pnpmSurumu = paket.packageManager.replace(/^pnpm@/, "");
+
+// Görüntüye hangi kayıttan üretildiği yazılır (kart 0021). Kaydedilmemiş değişiklik varsa kayıt
+// "-kirli" ekini taşır; yayın komutu böyle bir görüntüyü yayınlamaz.
+const git = (argumanlar: string[]) =>
+  spawnSync("git", argumanlar, { cwd: kok, encoding: "utf8" }).stdout?.trim() ?? "";
+const kayit = `${git(["rev-parse", "HEAD"]) || "bilinmiyor"}${git(["status", "--porcelain"]) ? "-kirli" : ""}`;
 
 console.log(`Üretiliyor  ${goruntuEtiketi} (Node.js ${paket.engines.node}, pnpm ${pnpmSurumu})`);
 const uretim = spawnSync(
@@ -25,6 +31,7 @@ const uretim = spawnSync(
     ...["--build-arg", `NODE_SURUMU=${paket.engines.node}`],
     ...["--build-arg", `PNPM_SURUMU=${pnpmSurumu}`],
     ...["--build-arg", `CEKIRDEK_SURUMU=${cekirdekSurumu}`],
+    ...["--label", `${kayitEtiketi}=${kayit}`],
     ...["-t", goruntuEtiketi],
     kok,
   ],
@@ -41,4 +48,4 @@ if (sorunlar.length > 0) {
   for (const sorun of sorunlar) console.error(`  ${sorun}`);
   process.exit(1);
 }
-console.log(`Hazır       ${goruntuEtiketi}`);
+console.log(`Hazır       ${goruntuEtiketi} (kayıt ${kayit.slice(0, 12)})`);

@@ -33,6 +33,20 @@ export const notuOlmayanlar = (klasor: string): string[] =>
     })
     .sort();
 
+// Değişikliklerin geri dönüş notları, uygulanma sırasıyla (yayın komutu geri dönüşte okur).
+// Notu olmayan değişiklik "notsuz" sayılır; böyle bir değişiklik zaten uygulanmaz.
+export type GeriDonusNotu = "geri alınabilir" | "yedekten" | "notsuz";
+export const geriDonusNotlari = (klasor: string): GeriDonusNotu[] => {
+  const liste = JSON.parse(readFileSync(join(klasor, "meta", "_journal.json"), "utf8")) as {
+    entries: { tag: string }[];
+  };
+  return liste.entries.map(({ tag }) => {
+    const [ilkSatir = ""] = readFileSync(join(klasor, `${tag}.sql`), "utf8").split("\n");
+    const not = ilkSatir.trim().match(geriDonusNotu)?.[1];
+    return not === "geri alınabilir" || not === "yedekten" ? not : "notsuz";
+  });
+};
+
 export type DegisiklikDosyasi = { ad: string; zaman: number; ozet: string };
 export type UygulananDegisiklik = { ozet: string };
 

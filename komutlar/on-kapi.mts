@@ -79,7 +79,52 @@ const kisitli = {
   read_only: true,
 };
 
-export const onKapiTanimi = () => ({
+// --- Yayındaki siteler (kart 0021, karar 0035) ---
+
+// Sitenin yayınları sunucuda /srv/altyapi/yayin/<ortam>/<kod adı>/ klasöründedir; etkin dosyası o an
+// trafiği alan yayının numarasını taşır. Ön kapının site satırları ve ağları bu listeden kurulur:
+// listenin tek kaynağı sunucudaki etkin dosyalarıdır (yayın komutu yazar, yayin.mts).
+export const yayinKoku = "/srv/altyapi/yayin";
+// Deneme adresi olan tek ortam; canlı ortam alan adı bağlanınca eklenir.
+export const yayinOrtami = "deneme";
+export const siteAgiAdi = (ortam: string, kodAdi: string): string => {
+  if (!kodAdiGecerli(kodAdi)) throw new Error(`Geçersiz kod adı: ${kodAdi}`);
+  return `site-${ortam}-${kodAdi}`;
+};
+export const siteKutusuAdi = (ortam: string, kodAdi: string, no: number): string => {
+  if (!Number.isInteger(no) || no < 1) throw new Error(`Geçersiz yayın numarası: ${no}`);
+  return `${siteAgiAdi(ortam, kodAdi)}-${no}`;
+};
+export type YayindakiSiteler = Record<string, number>;
+
+// Çıktı satırı: "<kod adı> <yayın no>". Klasör yoksa liste boştur; okunamazsa hata.
+export const yayindakiSitelerKomutu = `sudo sh -c 'k=${yayinKoku}/${yayinOrtami}; [ -d "$k" ] || exit 0; for d in "$k"/*/; do [ -f "$d/etkin" ] || continue; printf "%s %s\\n" "$(basename "$d")" "$(cat "$d/etkin")"; done'`;
+
+export const yayindakiSiteleriCoz = (cikti: string): YayindakiSiteler => {
+  const siteler: YayindakiSiteler = {};
+  for (const satir of cikti.split("\n").filter((s) => s.trim())) {
+    const [kodAdi = "", no = "", ...fazla] = satir.trim().split(" ");
+    if (fazla.length > 0 || !kodAdiGecerli(kodAdi) || !/^[1-9]\d*$/.test(no)) {
+      throw new Error(`Yayın listesinde bozuk satır: ${satir}`);
+    }
+    siteler[kodAdi] = Number(no);
+  }
+  return siteler;
+};
+
+export const yayindakiSiteleriOku = (ipv4: string): YayindakiSiteler => {
+  const sonuc = sshKomutu(ipv4, yayindakiSitelerKomutu);
+  if (sonuc.status !== 0) throw new Error(`Yayındaki siteler okunamadı: ${sonuc.stderr.trim()}`);
+  return yayindakiSiteleriCoz(sonuc.stdout);
+};
+
+// Ön kapı her yayındaki sitenin ağına bağlanır; dışarıya çıkış ve IPv6 ortak ağdan kalır.
+const siteAglari = (siteler: YayindakiSiteler): string[] =>
+  Object.keys(siteler)
+    .sort()
+    .map((kodAdi) => siteAgiAdi(yayinOrtami, kodAdi));
+
+export const onKapiTanimi = (siteler: YayindakiSiteler = {}) => ({
   name: proje,
   services: {
     caddy: {
@@ -94,7 +139,11 @@ export const onKapiTanimi = () => ({
         `${onKapiKlasoru}/veri:/data`,
         `${onKapiKlasoru}/ayar:/config`,
       ],
-      networks: [agAdi],
+      // Ortak ağ varsayılan çıkıştır (gw_priority); site ağları yalnız sitelere ulaşmak içindir.
+      networks: {
+        [agAdi]: { gw_priority: 100 },
+        ...Object.fromEntries(siteAglari(siteler).map((ag) => [ag, {}])),
+      },
     },
     yoklama: {
       image: caddyGoruntusu,
@@ -120,20 +169,25 @@ export const onKapiTanimi = () => ({
       // IPv4 alt ağını Docker seçer; IPv6 için özel (dışarıya yönlenmeyen) bir alt ağ verilir.
       ipam: { config: [{ subnet: "fd00:a17a:0:1::/64" }] },
     },
+    // Site ağlarını veritabanı kutusunun tanımı kurar (sunucu-veritabani.mts); burada dışarıdandır.
+    ...Object.fromEntries(siteAglari(siteler).map((ag) => [ag, { name: ag, external: true }])),
   },
 });
 
 // Sunucuda çalışan betik. Dosyalar girdiden yazılır; komut tekrar çalıştırılabilir.
 // Caddy zaten açıksa ayarı yeniden okur (bağlantılar kesilmez).
 // Site satırlarının adı sitenin kod adıdır (ya da yoklama adı); dosya adı ve betik bundan kurulur.
-export const kurmaBetigi = (siteSatirlari: Record<string, string>): string => {
+export const kurmaBetigi = (
+  siteSatirlari: Record<string, string>,
+  siteler: YayindakiSiteler = {},
+): string => {
   for (const ad of Object.keys(siteSatirlari)) {
     if (ad !== yoklamaAdi && !kodAdiGecerli(ad)) throw new Error(`Geçersiz site satırı adı: ${ad}`);
   }
   const dosyalar: Record<string, string> = {
     "caddy/Caddyfile": kaynak("Caddyfile"),
     "yoklama/Caddyfile": kaynak("yoklama.Caddyfile"),
-    "compose.json": `${JSON.stringify(onKapiTanimi(), null, 2)}\n`,
+    "compose.json": `${JSON.stringify(onKapiTanimi(siteler), null, 2)}\n`,
     ...Object.fromEntries(
       Object.entries(siteSatirlari).map(([ad, satir]) => [`caddy/siteler/${ad}.caddy`, satir]),
     ),
@@ -185,9 +239,23 @@ echo on-kapi=hazir
 `;
 };
 
-export const onKapiyiKur = (ipv4: string): void => {
+// Yayındaki sitelerin satırları; her satır sitenin etkin kutusunu gösterir.
+export const siteSatirlari = (siteler: YayindakiSiteler): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(siteler).map(([kodAdi, no]) => [
+      kodAdi,
+      denemeSatiri(denemeAdresi(kodAdi), `${siteKutusuAdi(yayinOrtami, kodAdi, no)}:3000`),
+    ]),
+  );
+
+// Ön kapıyı sunucudaki yayın listesine göre kurar. Yayın komutu listeyi değiştirerek
+// (yeni kutu ya da geri dönüş) çağırır; değişiklik verilmezse liste sunucudakidir.
+export const onKapiyiKur = (ipv4: string, siteler = yayindakiSiteleriOku(ipv4)): void => {
   const sonuc = sshKomutu(ipv4, "bash -s", {
-    girdi: kurmaBetigi({ [yoklamaAdi]: denemeSatiri(yoklamaAdresi, yoklamaHedefi) }),
+    girdi: kurmaBetigi(
+      { [yoklamaAdi]: denemeSatiri(yoklamaAdresi, yoklamaHedefi), ...siteSatirlari(siteler) },
+      siteler,
+    ),
     sure: 300_000,
   });
   if (sonuc.status !== 0 || !sonuc.stdout.includes("on-kapi=hazir")) {

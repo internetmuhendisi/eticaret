@@ -29,3 +29,19 @@ export const yenidenBaslamaHatalari = (tanim: {
 
 // Çalışan kutunun gerçek kuralı: docker inspect --format '{{.HostConfig.RestartPolicy.Name}}'.
 export const kutuKuraliDogru = (gercek: string): boolean => gercek.trim() === yenidenBaslama;
+
+// Site kutusunun sağlık yoklaması: yerel ortamda ve sunucuda aynıdır (yerel-ortam.mts, yayin.mts).
+// Açılırken sık, açıldıktan sonra seyrek yoklanır.
+export const siteSaglikYoklamasi = {
+  test: [
+    "CMD",
+    "node",
+    "-e",
+    "fetch('http://127.0.0.1:3000/kapi/herkese-acik/saglik').then((y)=>process.exit(y.ok?0:1),()=>process.exit(1))",
+  ],
+  interval: "15s",
+  timeout: "5s",
+  retries: 3,
+  start_period: "60s",
+  start_interval: "1s",
+};

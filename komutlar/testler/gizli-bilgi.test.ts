@@ -9,6 +9,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import {
   denemeSiteNumarasi,
   gizliKlasor,
+  ikinciDenemeSiteNumarasi,
   kayittaAramaKomutu,
   kutuGizliTanimi,
   kutuKullanicisi,
@@ -101,6 +102,7 @@ describe("site numaraları", () => {
   it.each([
     ["aynı numara iki sitede", { a: 1, b: 1 }, "aynı numarayı"],
     ["deneme sitesine ayrılmış numara", { a: denemeSiteNumarasi }, "geçersiz numara"],
+    ["ikinci deneme sitesine ayrılmış numara", { a: ikinciDenemeSiteNumarasi }, "geçersiz numara"],
     ["sıfır", { a: 0 }, "geçersiz numara"],
     ["kesirli", { a: 1.5 }, "geçersiz numara"],
     ["metin", { a: "1" }, "geçersiz numara"],
