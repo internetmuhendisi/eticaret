@@ -3,15 +3,17 @@
 //   pnpm yayinla siteler/<kod adı> deneme
 //
 // Önce kilitler: kontrol hattı bu kayıt için yeşil, kaydedilmemiş değişiklik yok, hat dosyası ana
-// daldakiyle aynı (yayin-hazirligi.mts). Site klasörü ve görüntü bu kayıttan gelir; sürüm yalnız
+// daldakiyle aynı (yayin-hazirligi.mts), ardından hızlı sunucu denetimi yeşil. Site klasörü ve görüntü bu kayıttan gelir; sürüm yalnız
 // kimlik dosyasından okunur. Sağlık kontrolü geçmezse eski kutu çalışmaya devam eder ve komut
 // sebebi söyleyip kırmızı biter. Her çalıştırma yayın kaydına yazılır. Şimdilik yalnız deneme
 // ortamına yayın yapılır (kullanıcı kararı).
 
+import { spawnSync } from "node:child_process";
+import { join } from "node:path";
 import { siteKlasorunuDogrula } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { siteNumarasiAl } from "./gizli-bilgi.mts";
 import { yayinOrtami } from "./on-kapi.mts";
-import { kayitlariOku as sunuculariOku } from "./sunucu.mts";
+import { kok, kayitlariOku as sunuculariOku } from "./sunucu.mts";
 import { yayinla } from "./yayin.mts";
 import {
   kayittanSiteKlasoru,
@@ -26,6 +28,17 @@ try {
   }
   const kayit = yayinKilitleri();
   console.log(`kilitler    geçti (kayıt ${kayit.slice(0, 12)})`);
+  // Sunucu denetimi kırmızıysa yayın yapılmaz (hızlı kapı taramasıyla, yaklaşık bir dakika).
+  const denetim = spawnSync("node", [join(kok, "komutlar", "sunucu-denetle.mts"), "--hizli"], {
+    encoding: "utf8",
+  });
+  if (denetim.status !== 0) {
+    const kalanlar = (denetim.stdout ?? "").split("\n").filter((satir) => satir.startsWith("HATA"));
+    throw new Error(
+      `Sunucu denetimi kırmızı, yayın yapılmaz:\n  ${kalanlar.join("\n  ") || denetim.stderr.trim()}`,
+    );
+  }
+  console.log("denetim     sunucu denetimi yeşil");
   const yerel = kayittanSiteKlasoru(kayit, klasor);
   const sonuc = siteKlasorunuDogrula(yerel);
   if (!sonuc.gecerli) throw new Error(`${klasor} geçersiz:\n  ${sonuc.hatalar.join("\n  ")}`);

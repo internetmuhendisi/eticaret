@@ -114,11 +114,13 @@ const ulasabilirMi = (ipv4: string, kaynak: string, hedef: string) => {
     ipv4,
     `set -u
 ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}' ${hedef} | cut -d" " -f1)
+printf 'cozum=%s\\n' "$(docker exec ${kaynak} node -e "require('node:dns').lookup('${hedef}',(h,a)=>process.stdout.write(h?'cozulmedi '+h.code:'cozuldu '+a))")"
 printf 'ad=%s\\n' "$(${istek(hedef)})"
 printf 'adres=%s %s\\n' "$ip" "$(${istek("$ip")})"
 `,
   );
   return {
+    cozum: cikti.match(/^cozum=(.*)$/m)?.[1] ?? "",
     ad: cikti.match(/^ad=(.*)$/m)?.[1] ?? "",
     adres: cikti.match(/^adres=(.*)$/m)?.[1] ?? "",
   };
@@ -170,13 +172,12 @@ ${silmeBetigi(ortam, kodAdi).replace("set -eu", "true")}
   });
 
 // sunucu-gizli --yenile ile aynı adımlar: değeri yenile, veritabanı şifresini eşitle, kutuyu başlat.
-const gizliBilgiyiYenile = (ip: string): boolean => {
+// Kesinti kutunun yeniden başlatılmasıyla başlar; dönen değer o anın zamanıdır (başarısızsa -1).
+const gizliBilgiyiYenile = (ip: string): number => {
   const { durum } = sunucuda(ip, uretmeBetigi(ortam, a.kodAdi, a.numara, { yenile: true }));
-  return (
-    durum === 0 &&
-    sifreyiEsitle(ip, ortam, a.kodAdi) &&
-    etkinKutuyuYenidenBaslat(ip, ortam, a.kodAdi)
-  );
+  if (durum !== 0 || !sifreyiEsitle(ip, ortam, a.kodAdi)) return -1;
+  const baslangic = Date.now();
+  return etkinKutuyuYenidenBaslat(ip, ortam, a.kodAdi) ? baslangic : -1;
 };
 
 const sunucudaAglariSil = (ipv4: string, kodAdlari: string[]) =>
@@ -231,9 +232,11 @@ try {
   ] as const) {
     const sonuc = ulasabilirMi(ipv4, kaynak, hedef);
     olc(
-      `${kaynak} ${hedef} kutusuna adla da adresle de ulaşamıyor`,
-      sonuc.ad.startsWith("ulasamadi") && /^\S+ ulasamadi/.test(sonuc.adres),
-      `ad: ${sonuc.ad}; adres: ${sonuc.adres}`,
+      `${kaynak} ${hedef} kutusunun adını çözemiyor, adına da adresine de ulaşamıyor`,
+      sonuc.cozum.startsWith("cozulmedi") &&
+        sonuc.ad.startsWith("ulasamadi") &&
+        /^\S+ ulasamadi/.test(sonuc.adres),
+      `çözüm: ${sonuc.cozum}; ad: ${sonuc.ad}; adres: ${sonuc.adres}`,
     );
   }
 
@@ -277,8 +280,8 @@ try {
   );
 
   // Gizli bilgi yenileme: sunucu-gizli --yenile ile aynı adımlar; kesinti dışarıdan ölçülür.
-  const yenileme = gizliBilgiyiYenile(ipv4);
-  const baslangic = Date.now();
+  const baslangic = gizliBilgiyiYenile(ipv4);
+  const yenileme = baslangic > 0;
   let kesinti = -1;
   if (yenileme) {
     for (let deneme = 0; deneme < 90; deneme++) {
@@ -292,7 +295,9 @@ try {
   olc(
     "gizli bilgi yenilenince yayındaki kutu yeni şifreyle veritabanına bağlanıyor",
     yenileme && kesinti >= 0,
-    yenileme ? `sağlık ucu ${kesinti} sn sonra yeniden ayakta` : "yenileme yapılamadı",
+    yenileme
+      ? `yeniden başlatmanın başından ${kesinti} sn sonra sağlık ucu dışarıdan yeniden ayakta`
+      : "yenileme yapılamadı",
   );
 } catch (hata) {
   sonuclar.push({ ad: "deneme çalıştı", gecti: false });
