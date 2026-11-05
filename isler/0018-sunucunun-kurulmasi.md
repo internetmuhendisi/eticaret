@@ -28,4 +28,4 @@ Bütün sitelerin çalışacağı ilk sunucu Hetzner'de, Almanya'da açılır ve
 
 ## Durum
 
-yapılacak
+bitti
