@@ -7,14 +7,20 @@
 // - Sunucu Hetzner'de Almanya'da çalışıyor ve dıştaki duvar ona bağlı.
 // - Sunucu şifreyle girişi hiç önermiyor, yalnız anahtar kabul ediyor; kökle anahtarlı giriş reddediliyor.
 // - Yönetici anahtarla girebiliyor; sshd'nin geçerli ayarı şifreyi ve kökü kapatıyor.
-// - Dışarıdan bakınca 22, 80 ve 443 dışında her TCP kapısı yanıtsız.
-// - Docker çalışıyor ve bir kutu açabiliyor; güvenlik güncellemeleri ve içerideki duvar açık.
+// - Silme koruması açık; sunucuya bağlı duvarlarda yalnız 22, 80 ve 443 kuralları var.
+// - Dışarıdan bakınca 22, 80 ve 443 dışında her TCP kapısı yanıtsız (IPv4 ve IPv6). Ağ hatası
+//   ya da tarama sırasında kesinti olursa sonuç güvenilmez sayılır ve kırmızıdır.
+// - Docker çalışıyor ve bir kutu açabiliyor; güvenlik güncellemeleri ve içerideki duvar açık;
+//   bekleyen bir yeniden başlatma iki günden uzun süredir yapılmamış değil.
 // Bir ölçüm tutmazsa komut kırmızı biter.
 
 import { spawnSync } from "node:child_process";
 import { Socket } from "node:net";
 import {
   acikKapilar,
+  type DuvarKurali,
+  duvarUygulanmasiniBekle,
+  fazlaKurallar,
   girisAnahtari,
   girisYontemleri,
   hetzner,
@@ -26,6 +32,8 @@ import {
   sshSecenekleri,
   sunucuTanimi as t,
   yalnizAnahtarla,
+  yenidenBaslatmaSiniri,
+  yonetimKapisi,
 } from "./sunucu.mts";
 
 // Hızlı taramada bakılan kapılar: gerekenler ve yanlışlıkla açılması en olası olanlar.
@@ -60,16 +68,22 @@ const kapiyaBak = (adres: string, kapi: number, sure = 2500): Promise<KapiDurumu
       soket.destroy();
       bitti(durum);
     };
+    // Yanıtsızlık yalnız süre dolunca sayılır; başka her ağ hatası "hata"dır ve denetimi kırmızı yapar.
     soket.setTimeout(sure, () => sonuc("yanitsiz"));
     soket.once("connect", () => sonuc("acik"));
     soket.once("error", (hata: NodeJS.ErrnoException) =>
-      sonuc(hata.code === "ECONNREFUSED" ? "reddetti" : "yanitsiz"),
+      sonuc(
+        hata.code === "ECONNREFUSED" ? "reddetti" : hata.code === "ETIMEDOUT" ? "yanitsiz" : "hata",
+      ),
     );
     soket.connect(kapi, adres);
   });
 
-const kapilariTara = async (adres: string, kapilar: number[]): Promise<Map<number, KapiDurumu>> => {
+// Tarama sürerken yönetim kapısı 15 saniyede bir yoklanır. Bağlantı kesilirse yanıtsız kapılar
+// duvardan değil kesintiden olabilir; bu durumda tarama güvenilmez sayılır.
+const kapilariTara = async (adres: string, kapilar: number[]) => {
   const durumlar = new Map<number, KapiDurumu>();
+  let kopma = 0;
   let sira = 0;
   const isci = async () => {
     while (sira < kapilar.length) {
@@ -77,8 +91,16 @@ const kapilariTara = async (adres: string, kapilar: number[]): Promise<Map<numbe
       durumlar.set(kapi, await kapiyaBak(adres, kapi));
     }
   };
-  await Promise.all(Array.from({ length: 500 }, isci));
-  return durumlar;
+  const nobet = setInterval(async () => {
+    if ((await kapiyaBak(adres, yonetimKapisi, 5000)) !== "acik") kopma++;
+  }, 15_000);
+  try {
+    await Promise.all(Array.from({ length: 500 }, isci));
+  } finally {
+    clearInterval(nobet);
+  }
+  if ((await kapiyaBak(adres, yonetimKapisi, 5000)) !== "acik") kopma++;
+  return { durumlar, kopma };
 };
 
 // Sunucunun önerdiği giriş yöntemleri: hiçbir yöntem denenmeden sorulur.
@@ -114,19 +136,32 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
       status: string;
       location: { name: string; country: string };
       public_net: { firewalls: { id: number; status: string }[] };
+      protection: { delete: boolean };
     };
   }>(`/servers/${kayit.hetzner_numarasi}`);
   olcum(s.status === "running", "sunucu çalışıyor", s.status);
   olcum(s.location.country === t.ulke, "sunucu Almanya'da", s.location.name);
+  olcum(s.protection.delete, "silme koruması açık");
   const { firewalls } = await hetzner<{ firewalls: { id: number }[] }>(
     `/firewalls?name=${t.duvarAdi}`,
   );
   const duvar = firewalls[0];
+  const bagliDuvarlar = await duvarUygulanmasiniBekle(kayit.hetzner_numarasi);
   olcum(
-    duvar !== undefined &&
-      s.public_net.firewalls.some((f) => f.id === duvar.id && f.status === "applied"),
+    duvar !== undefined && bagliDuvarlar.some((f) => f.id === duvar.id && f.status === "applied"),
     "dıştaki duvar sunucuya bağlı",
+    bagliDuvarlar.map((f) => `${f.id} ${f.status}`).join(", "),
   );
+  // Sunucuya bağlı bütün duvarların kuralları birleşir; hiçbiri fazla kapı açmamalı.
+  // Bu ölçüm, denetimin çalıştığı ağ bazı kapılara çıkışı engellese bile fazla kuralı yakalar.
+  const fazla: string[] = [];
+  for (const { id } of bagliDuvarlar) {
+    const { firewall } = await hetzner<{ firewall: { name: string; rules: DuvarKurali[] } }>(
+      `/firewalls/${id}`,
+    );
+    fazla.push(...fazlaKurallar(firewall.rules).map((k) => `${firewall.name}: ${k}`));
+  }
+  olcum(fazla.length === 0, "dıştaki duvarda yalnız gereken kurallar var", fazla.join(", "));
 
   // Giriş.
   for (const kullanici of [kayit.kullanici, "root"]) {
@@ -156,6 +191,7 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
       "passwordauthentication no",
       "kbdinteractiveauthentication no",
       "permitrootlogin no",
+      "x11forwarding no",
     ]) {
       olcum(ayar.split("\n").includes(satir), `sshd geçerli ayarı: ${satir}`);
     }
@@ -172,28 +208,53 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
     );
     const guncelleme = sshKomutu(
       kayit.ipv4,
-      "systemctl is-active unattended-upgrades && apt-config dump APT::Periodic::Unattended-Upgrade",
+      "systemctl is-active unattended-upgrades && apt-config dump",
     );
     olcum(
       guncelleme.status === 0 &&
-        guncelleme.stdout.includes('APT::Periodic::Unattended-Upgrade "1"'),
+        guncelleme.stdout.includes('APT::Periodic::Unattended-Upgrade "1";'),
       "güvenlik güncellemeleri kendiliğinden kuruluyor",
+    );
+    olcum(
+      guncelleme.stdout.includes('Unattended-Upgrade::Automatic-Reboot "true";'),
+      "gereken yeniden başlatma gece kendiliğinden yapılıyor",
+    );
+    // Bekleyen yeniden başlatmanın yaşı (saniye); bekleyen yoksa 0.
+    const bekleyen = Number(
+      sshKomutu(
+        kayit.ipv4,
+        "f=/var/run/reboot-required; [ -f $f ] && echo $(( $(date +%s) - $(stat -c %Y $f) )) || echo 0",
+      ).stdout.trim(),
+    );
+    olcum(
+      Number.isFinite(bekleyen) && bekleyen < yenidenBaslatmaSiniri,
+      "bekleyen yeniden başlatma iki günden eski değil",
+      bekleyen > 0 ? `${Math.round(bekleyen / 3600)} saattir bekliyor` : "",
     );
     const icDuvar = sshKomutu(kayit.ipv4, "sudo ufw status");
     olcum(icDuvar.stdout.includes("Status: active"), "içerideki duvar açık");
   }
 
-  // Kapılar.
-  const kapilar = hizli ? bilinenKapilar : Array.from({ length: 65535 }, (_, i) => i + 1);
-  console.log(`tarama  ${kapilar.length} TCP kapısı dışarıdan deneniyor...`);
-  const durumlar = await kapilariTara(kayit.ipv4, kapilar);
-  const kapiSorunlari = kapiHatalari(durumlar);
-  const gorunen = [...durumlar].filter(([, d]) => d !== "yanitsiz").map(([k, d]) => `${k} ${d}`);
-  olcum(
-    kapiSorunlari.length === 0,
-    "dışarıdan yalnız gereken kapılar açık",
-    [...kapiSorunlari, `görünen: ${gorunen.join(", ") || "yok"}`].join("; "),
-  );
+  // Kapılar. IPv4'te bütün kapılar; IPv6'da ilk 1024 kapı ve bilinen kapılar (aynı duvar
+  // kuralları iki adrese birlikte uygulanır, kuralların kendisi yukarıda Hetzner'den denetlendi).
+  const tumu = Array.from({ length: 65535 }, (_, i) => i + 1);
+  const ilk1024 = Array.from({ length: 1024 }, (_, i) => i + 1);
+  const taramalar: [string, string, number[]][] = [
+    ["IPv4", kayit.ipv4, hizli ? bilinenKapilar : tumu],
+    ["IPv6", kayit.ipv6, hizli ? bilinenKapilar : [...new Set([...ilk1024, ...bilinenKapilar])]],
+  ];
+  for (const [ad, adres, kapilar] of taramalar) {
+    console.log(`tarama  ${ad}: ${kapilar.length} TCP kapısı dışarıdan deneniyor...`);
+    const { durumlar, kopma } = await kapilariTara(adres, kapilar);
+    const kapiSorunlari = kapiHatalari(durumlar);
+    if (kopma > 0) kapiSorunlari.push(`tarama sırasında ${kopma} kez bağlantı kesildi`);
+    const gorunen = [...durumlar].filter(([, d]) => d !== "yanitsiz").map(([k, d]) => `${k} ${d}`);
+    olcum(
+      kapiSorunlari.length === 0,
+      `${ad}: dışarıdan yalnız gereken kapılar açık`,
+      [...kapiSorunlari, `görünen: ${gorunen.slice(0, 10).join(", ") || "yok"}`].join("; "),
+    );
+  }
 
   return hatalar;
 };

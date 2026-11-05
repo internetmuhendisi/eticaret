@@ -8,7 +8,8 @@
     "ulke": "DE",
     "imaj": "ubuntu-24.04",
     "ipv4": "2.31.160.7",
-    "ipv6": "2a01:4f8:c01e:14ad::/64",
+    "ipv6": "2a01:4f8:c01e:14ad::1",
+    "ipv6_agi": "2a01:4f8:c01e:14ad::/64",
     "kullanici": "yonetici",
     "acilis": "2026-11-04T23:59:02Z"
   }

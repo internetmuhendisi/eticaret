@@ -7,12 +7,18 @@
 //
 // Sunucu aylık ücretlidir; --onayli yalnız kullanıcı fiyatı onayladıktan sonra yazılır.
 // Komut tekrar çalıştırılabilir: aynı adla açılmış anahtar, duvar ve sunucu yeniden açılmaz.
+// Var olan sunucunun tipi ve yeri tanımla karşılaştırılır; duvar bağlanır, silme koruması açılır.
+// Duvara elle eklenmiş kurallar her çalışmada silinir: kuralların tek yeri sunucu.mts'dir.
 
 import {
   acikKapilar,
+  bilinenSunucuyuUnut,
+  duvarKurallari,
+  duvarUygulanmasiniBekle,
   girisAnahtariniHazirla,
   hetzner,
   ilkAcilisAyari,
+  ipv6Adresi,
   kaydiYaz,
   kayitDosyasi,
   sshKomutu,
@@ -35,7 +41,12 @@ type Sunucu = {
   server_type: { name: string };
   image: { name: string } | null;
   location: { name: string; description: string; city: string; country: string };
-  public_net: { ipv4: { ip: string } | null; ipv6: { ip: string } | null };
+  public_net: {
+    ipv4: { ip: string } | null;
+    ipv6: { ip: string } | null;
+    firewalls: { id: number }[];
+  };
+  protection: { delete: boolean; rebuild: boolean };
   created: string;
 };
 
@@ -88,13 +99,8 @@ const kur = async (): Promise<void> => {
     throw new Error(`Hetzner'deki ${t.anahtarAdi} anahtarı bu bilgisayardakiyle aynı değil.`);
   }
 
-  // 2. Dıştaki duvar: yalnız gereken kapılar, her yerden.
-  const kurallar = acikKapilar.map((kapi) => ({
-    direction: "in",
-    protocol: "tcp",
-    port: String(kapi),
-    source_ips: ["0.0.0.0/0", "::/0"],
-  }));
+  // 2. Dıştaki duvar: kuralları her çalışmada ortak tanıma eşitlenir, elle eklenen kural silinir.
+  const kurallar = duvarKurallari;
   let duvar = await tekAdla<{ id: number }>("firewalls", t.duvarAdi);
   if (!duvar) {
     ({ firewall: duvar } = await hetzner<{ firewall: { id: number } }>("/firewalls", {
@@ -128,8 +134,38 @@ const kur = async (): Promise<void> => {
       },
     }));
     console.log(`açıldı      sunucu ${t.ad}`);
+    // Hetzner eski bir sunucunun adresini yeniden verebilir; o adresin eski anahtarı unutulur.
+    bilinenSunucuyuUnut(sunucu.public_net.ipv4?.ip ?? "");
   } else {
+    // Var olan sunucu tanımla uyuşmalı; uyuşmuyorsa elle bakılır, komut bir şey değiştirmez.
+    if (sunucu.server_type.name !== t.tip || sunucu.location.name !== t.konum) {
+      throw new Error(
+        `${t.ad} var ama tanımla uyuşmuyor: ${sunucu.server_type.name} ${sunucu.location.name}, beklenen ${t.tip} ${t.konum}.`,
+      );
+    }
     console.log(`zaten var   sunucu ${t.ad}`);
+  }
+
+  // Duvar sunucuya bağlı değilse bağlanır (ör. duvar silinip yeniden açıldıysa).
+  if (!sunucu.public_net.firewalls.some((f) => f.id === duvar.id)) {
+    await hetzner(`/firewalls/${duvar.id}/actions/apply_to_resources`, {
+      yontem: "POST",
+      govde: { apply_to: [{ type: "server", server: { id: sunucu.id } }] },
+    });
+    console.log(`bağlandı    duvar ${t.duvarAdi} → ${t.ad}`);
+  }
+  const duvarlar = await duvarUygulanmasiniBekle(sunucu.id);
+  if (!duvarlar.some((d) => d.id === duvar.id && d.status === "applied")) {
+    throw new Error(`Duvar ${t.duvarAdi} iki dakikada sunucuya uygulanmadı.`);
+  }
+
+  // Silme koruması: yanlış bir çağrı ya da tıklama canlı sunucuyu silemez, yeniden kuramaz.
+  if (!sunucu.protection.delete || !sunucu.protection.rebuild) {
+    await hetzner(`/servers/${sunucu.id}/actions/change_protection`, {
+      yontem: "POST",
+      govde: { delete: true, rebuild: true },
+    });
+    console.log(`açıldı      silme koruması ${t.ad}`);
   }
 
   // 4. Sunucunun açılmasını bekle.
@@ -142,13 +178,23 @@ const kur = async (): Promise<void> => {
   if (!ipv4) throw new Error("Sunucunun IPv4 adresi yok.");
 
   // 5. İlk açılış kurulumunun bitmesini bekle (ssh açılana kadar birkaç kez dener).
+  // Bitti işareti yalnız Docker ve içerideki duvar çalışıyorsa yazılır (ilk-acilis.yaml).
+  // cloud-init'in çıkış kodu: 0 hatasız, 2 yalnız uyarı, 1 hata.
   process.stdout.write("bekleniyor  ilk açılış kurulumu");
   for (let deneme = 0; ; deneme++) {
     const sonuc = sshKomutu(
       ipv4,
-      "cloud-init status --wait >/dev/null; cat /var/lib/altyapi/kurulum-tamam",
+      'cloud-init status --wait >/dev/null; echo "cloud-init=$?"; test -f /var/lib/altyapi/kurulum-tamam && echo isaret=var',
     );
-    if (sonuc.status === 0) break;
+    if (sonuc.status === 0) {
+      const durum = sonuc.stdout.match(/cloud-init=(\d+)/)?.[1];
+      if (durum === "1" || !sonuc.stdout.includes("isaret=var")) {
+        throw new Error(
+          `\nİlk açılış kurulumu hatalı bitti (cloud-init=${durum}). Sunucuda: sudo cloud-init status --long`,
+        );
+      }
+      break;
+    }
     if (deneme > 40) throw new Error(`\nKurulum bitmedi: ${sonuc.stderr.trim()}`);
     process.stdout.write(".");
     await new Promise((bitti) => setTimeout(bitti, 10_000));
@@ -164,7 +210,8 @@ const kur = async (): Promise<void> => {
     ulke: sunucu.location.country,
     imaj: sunucu.image?.name ?? t.imaj,
     ipv4,
-    ipv6: sunucu.public_net.ipv6?.ip ?? "",
+    ipv6: sunucu.public_net.ipv6 ? ipv6Adresi(sunucu.public_net.ipv6.ip) : "",
+    ipv6_agi: sunucu.public_net.ipv6?.ip ?? "",
     kullanici: t.kullanici,
     acilis: sunucu.created,
   });

@@ -7,8 +7,9 @@
 # Sonuç:
 # - Giriş yalnız "yonetici" kullanıcısıyla ve anahtarla. Şifreyle giriş ve kökle giriş kapalı.
 # - İçerideki duvar (ufw) yalnız 22, 80 ve 443'e izin verir. Dıştaki duvar Hetzner'dedir.
-# - Docker resmi kaynağından kurulur. Ubuntu güvenlik güncellemeleri kendiliğinden kurulur.
-# - Kurulum bitince /var/lib/altyapi/kurulum-tamam dosyası yazılır.
+# - Docker resmi kaynağından kurulur. Ubuntu güvenlik güncellemeleri kendiliğinden kurulur,
+#   gerekirse sunucu gece 04:00'te (Türkiye) kendiliğinden yeniden başlar.
+# - Kurulum başarıyla bitince /var/lib/altyapi/kurulum-tamam dosyası yazılır.
 
 users:
   - name: yonetici
@@ -40,11 +41,20 @@ write_files:
       PermitRootLogin no
       PubkeyAuthentication yes
       AllowUsers yonetici
+      X11Forwarding no
   - path: /etc/apt/apt.conf.d/20auto-upgrades
     permissions: "0644"
     content: |
       APT::Periodic::Update-Package-Lists "1";
       APT::Periodic::Unattended-Upgrade "1";
+  # Çekirdek gibi yeniden başlatma isteyen bir güncelleme kurulduysa sunucu gece kendiliğinden
+  # yeniden başlar (karar 0030). Sunucu saati UTC'dir: 01:00 UTC, Türkiye saatiyle 04:00.
+  - path: /etc/apt/apt.conf.d/52altyapi-yeniden-baslatma
+    permissions: "0644"
+    content: |
+      Unattended-Upgrade::Automatic-Reboot "true";
+      Unattended-Upgrade::Automatic-Reboot-WithUsers "true";
+      Unattended-Upgrade::Automatic-Reboot-Time "01:00";
 
 runcmd:
   - [sh, -c, "ufw default deny incoming && ufw default allow outgoing"]
@@ -72,4 +82,9 @@ runcmd:
   - [usermod, -aG, docker, yonetici]
   - [systemctl, enable, --now, unattended-upgrades]
   - [systemctl, restart, ssh]
-  - [sh, -c, "mkdir -p /var/lib/altyapi && date -u +%FT%TZ > /var/lib/altyapi/kurulum-tamam"]
+  # Bitti işareti yalnız Docker ve içerideki duvar gerçekten çalışıyorsa yazılır.
+  - [
+      sh,
+      -c,
+      'docker info >/dev/null && ufw status | grep -q "Status: active" && mkdir -p /var/lib/altyapi && date -u +%FT%TZ > /var/lib/altyapi/kurulum-tamam',
+    ]

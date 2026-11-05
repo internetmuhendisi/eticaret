@@ -33,6 +33,33 @@ export const sunucuTanimi = {
 export const acikKapilar = [22, 80, 443] as const;
 export const yonetimKapisi = 22;
 
+// Dıştaki duvarın kuralları: yalnız gereken kapılar, her yerden. Kurma komutu duvarı her
+// çalışmada bu kurallara eşitler (elle eklenmiş kural silinir), denetim de bunlarla karşılaştırır.
+export const duvarKurallari = acikKapilar.map((kapi) => ({
+  direction: "in",
+  protocol: "tcp",
+  port: String(kapi),
+  source_ips: ["0.0.0.0/0", "::/0"],
+}));
+
+export type DuvarKurali = {
+  direction: string;
+  protocol: string;
+  port?: string | null;
+  source_ips?: string[];
+};
+
+// Bir duvarın kuralları yalnız gereken kurallardan oluşuyorsa boş liste döner.
+export const fazlaKurallar = (kurallar: DuvarKurali[]): string[] => {
+  const izinli = new Set(duvarKurallari.map((k) => `${k.direction} ${k.protocol} ${k.port}`));
+  return kurallar
+    .map((k) => `${k.direction} ${k.protocol} ${k.port ?? "hepsi"}`)
+    .filter((k) => !izinli.has(k));
+};
+
+// Bekleyen yeniden başlatma gece kendiliğinden yapılır (karar 0030); iki günden eskisi kırmızıdır.
+export const yenidenBaslatmaSiniri = 2 * 24 * 60 * 60;
+
 export const girisAnahtari = join(homedir(), ".ssh", "altyapi_sunucu");
 
 // --- Hetzner ---
@@ -76,6 +103,21 @@ export const hetzner = async <T,>(
   return veri as T;
 };
 
+// Duvar kuralı değişince Hetzner duvarı bir süre "pending" gösterir; kurma ve denetim
+// duvarın uygulanmasını bekler. En fazla iki dakika sonra son durum döner.
+export const duvarUygulanmasiniBekle = async (
+  sunucuNumarasi: number,
+): Promise<{ id: number; status: string }[]> => {
+  for (let deneme = 0; ; deneme++) {
+    const { server } = await hetzner<{
+      server: { public_net: { firewalls: { id: number; status: string }[] } };
+    }>(`/servers/${sunucuNumarasi}`);
+    const duvarlar = server.public_net.firewalls;
+    if (duvarlar.every((d) => d.status === "applied") || deneme >= 40) return duvarlar;
+    await new Promise((bitti) => setTimeout(bitti, 3000));
+  }
+};
+
 // --- Kayıt ---
 
 export type SunucuKaydi = {
@@ -88,6 +130,7 @@ export type SunucuKaydi = {
   imaj: string;
   ipv4: string;
   ipv6: string;
+  ipv6_agi: string;
   kullanici: string;
   acilis: string;
 };
@@ -126,13 +169,28 @@ export const ilkAcilisAyari = (acikAnahtar: string): string => {
   if (ayar.split(anahtarYeri).length !== 2) {
     throw new Error(`İlk açılış ayarında ${anahtarYeri} tam bir kez geçmeli.`);
   }
-  return ayar.replace(anahtarYeri, acikAnahtar);
+  // İşlevle verilir: anahtardaki "$&" gibi kalıplar özel anlam taşımaz.
+  return ayar.replace(anahtarYeri, () => acikAnahtar);
+};
+
+// Hetzner sunucuya bir IPv6 ağı (/64) verir; sunucunun adresi o ağın ::1'idir.
+export const ipv6Adresi = (ag: string): string => {
+  const onek = ag.match(/^([0-9a-f:]+)::\/64$/i)?.[1];
+  if (!onek) throw new Error(`Beklenmeyen IPv6 ağı: ${ag}`);
+  return `${onek}::1`;
 };
 
 // --- ssh ---
 
 // Bilinen sunucu dosyası proje dışındadır ve yalnız bu sunucular içindir.
 const bilinenSunucular = join(homedir(), ".ssh", "altyapi_bilinen_sunucular");
+
+// Yeni açılan bir sunucu eski bir sunucunun adresini alabilir; eski sunucu anahtarı unutulur.
+export const bilinenSunucuyuUnut = (adres: string): void => {
+  if (existsSync(bilinenSunucular)) {
+    spawnSync("ssh-keygen", ["-R", adres, "-f", bilinenSunucular], { stdio: "ignore" });
+  }
+};
 
 export const sshSecenekleri = [
   "-o",
@@ -176,13 +234,20 @@ export const girisYontemleri = (sshCiktisi: string): string[] | undefined => {
 export const yalnizAnahtarla = (yontemler: string[] | undefined): boolean =>
   yontemler !== undefined && yontemler.length > 0 && yontemler.every((y) => y === "publickey");
 
-export type KapiDurumu = "acik" | "reddetti" | "yanitsiz";
+// "hata": bağlantı denemesi ağ hatasıyla bitti (ağ yok, adres ulaşılamaz, dosya sınırı...).
+// Bu durumda kapı hakkında bir şey bilinmez, denetim kırmızıdır.
+export type KapiDurumu = "acik" | "reddetti" | "yanitsiz" | "hata";
 
 // Gereken kapılar dışında her kapı yanıtsız olmalı (dıştaki duvar düşürür).
 // Yönetim kapısı açık olmalı; web kapıları henüz dinleyen yoksa reddedebilir.
 export const kapiHatalari = (durumlar: Map<number, KapiDurumu>): string[] => {
   const hatalar: string[] = [];
+  const agHatasi = [...durumlar].filter(([, durum]) => durum === "hata").map(([kapi]) => kapi);
+  if (agHatasi.length > 0) {
+    hatalar.push(`${agHatasi.length} kapıda ağ hatası, sonuç güvenilmez (ilki ${agHatasi[0]})`);
+  }
   for (const [kapi, durum] of durumlar) {
+    if (durum === "hata") continue;
     const gerekli = (acikKapilar as readonly number[]).includes(kapi);
     if (!gerekli && durum !== "yanitsiz") hatalar.push(`${kapi} dışarıya açık (${durum})`);
     if (gerekli && durum === "yanitsiz") hatalar.push(`${kapi} duvarda kapalı, açık olmalı`);
