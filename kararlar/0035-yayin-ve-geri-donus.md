@@ -9,8 +9,8 @@
 - **Komutlar:** `pnpm yayinla siteler/<kod adı> deneme` siteyi yayınlar. `pnpm geri-don siteler/<kod adı> deneme` bir önceki başarılı yayına döner. `pnpm yayin-kaydi siteler/<kod adı> deneme` kaydı gösterir. Bir seferde bir site. Şimdilik yalnız deneme ortamına yayın yapılır (kullanıcı kararı).
 - **Kilitler:** Yayın komutu ancak üç koşul tutarsa başlar, tutmazsa hiçbir şeye dokunmaz (`komutlar/yayin-hazirligi.mts`):
   - Kontrol hattı bu kayıt için yeşil olmalı ve kaydedilmemiş değişiklik olmamalı (`pnpm hat-sonucu`, 0029).
-  - Kayıttaki hat dosyası ana daldakiyle (`origin/main`) aynı olmalı. Hattı zayıflatan bir kaydın kendi hattı yeşil biter, bu kilit onu durdurur.
-  - Ardından hızlı sunucu denetimi (`pnpm sunucu-denetle --hizli`) yeşil olmalı. Deneme komutu bu adımı atlar: geçici siteleri kayıtlı numara taşımadığı için denetimi bilerek kırmızıya düşürür.
+  - Kayıttaki hat koruması ana daldakiyle (`origin/main`) aynı olmalı: hat dosyası, hattın çağırdığı betiklerin `package.json`'daki tanımları, denetim ve test ayarları (`biome.json`, `vitest.config.ts`, `playwright.config.ts`, `tsconfig*.json`, `denetim/`). Hattı zayıflatan bir kaydın kendi hattı yeşil biter, bu kilit onu durdurur. Test ve komut dosyalarının kendisi bu korumanın dışındadır (yalnız disiplin).
+  - Ardından hızlı sunucu denetimi (`pnpm sunucu-denetle --hizli`) yeşil olmalı. Yalnız bu sitenin yayındaki kutusuyla ilgili bir ölçüm kırmızıysa yayın sürer, bozuk bir siteye düzeltme yayınlanabilir. Deneme komutu bu adımı atlar: geçici siteleri kayıtlı numara taşımadığı için denetimi bilerek kırmızıya düşürür.
   - Geri dönüşte kilit yoktur. Dönülen yayın zaten bu kilitlerden geçmiştir, acil durumda hattı beklemek gerekmez.
 - **Yayın birimi:** Çekirdeğin görüntüsü ve sitenin klasörü aynı kayıttan gelir.
   - Klasör çalışma klasöründen değil kayıttan çıkarılır (`git archive`).
@@ -34,7 +34,10 @@
   4. Ön kapının site satırı yeni kutuya çevrilir.
   5. Deneme adresi dışarıdan, şifreli bağlantıyla yoklanır.
   6. `etkin` yazılır, eski kutu durdurulur.
-  Bir adım geçmezse ön kapı eski hâline döner, yeni kutu ve yayın silinir. Eski kutuya hiç dokunulmaz.
+  Trafik geçmeden önce bir adım geçmezse ön kapı eski hâline döner, yeni kutu ve yayın silinir, eski kutuya dokunulmaz. `etkin` yazıldıktan sonra yayın başarılıdır: eski kutuyu durdurma ya da eski yayınları silme düşerse yayın geri alınmaz, kayda uyarı yazılır.
+- **Numara:** Yeni yayının numarası kayıttaki, sunucudaki klasörlerdeki ve etkin yayındaki en büyük numaradan büyüktür. Kayıt yazılamamış bir yayının numarası yeniden verilmez, çalışan kutunun klasörü silinmez.
+- **Yayın kilidi:** Yayın, geri dönüş, `pnpm sunucu-kur`'un ön kapı adımı ve gizli bilgi yenilemesinde kutunun yeniden başlatılması sunucudaki tek bir kilitle (`/srv/altyapi/yayin/.kilit`) sırayla çalışır. Kilidi kimin aldığı içine yazılır. Komut yarıda öldürülürse kilit kalır, sonraki komut bunu ve kaldırma yolunu söyler.
+- **Veritabanı değişikliği sayısı:** Değişiklik adımı yarıda kalırsa kayıttaki bütün değişiklikler uygulanmış sayılır, geri dönüş "yedekten" notunu kaçırmaz.
 - **Ön kapı:** Site satırları ve ön kapının bağlandığı site ağları sunucudaki `etkin` dosyalarından kurulur (`yayindakiSiteleriOku`). `pnpm sunucu-kur` de aynı listeyi okur, yayındaki siteyi silmez.
   - Ön kapı her yayındaki sitenin ağına bağlanır. Ortak ağ varsayılan çıkış olarak kalır (`gw_priority`).
   - Satır kutunun adını gösterir. Trafik, Caddy ayarı bağlantıları kesmeden yeniden okuyunca değişir.
@@ -50,7 +53,7 @@
 
 ## Neden
 
-- **Kilitler:** Yalnız hattan geçmiş kod yayına çıkar. Hat dosyasının ana dalla karşılaştırılması, hattı kendisi zayıflatan bir kaydın kendi yeşiliyle geçmesini önler.
+- **Kilitler:** Yalnız hattan geçmiş kod yayına çıkar. Hat korumasının ana dalla karşılaştırılması, hattı kendisi zayıflatan bir kaydın kendi yeşiliyle geçmesini önler.
 - **Klasörün kayıttan alınması:** Çalışma klasöründeki kaydedilmemiş ya da başka dalda kalmış bir değişiklik yayına çıkamaz. Yayının hangi kayıttan geldiği kesin bilinir.
 - **Görüntünün kaydı taşıması:** Aynı sürüm numarası farklı kayıtlardan üretilebilir. Kayıt etiketi, yayınlanan görüntünün yayınlanan kayıttan geldiğini gösterir.
 - **Yan yana kutu:** Ziyaretçi kesinti görmez. Yeni sürüm sağlıklı olmadan trafik ona verilmez.
@@ -70,7 +73,11 @@
 
 ## Sonuçları
 
-- **İlk yayında kesinti:** Bir sitenin ilk yayınında ve sitenin yayından kaldırılmasında ön kapı yeni ağ için yeniden kurulur. Bütün deneme adresleri birkaç saniye kesilir. Sonraki yayınlar ve geri dönüşler ön kapıyı yeniden kurmaz, yalnız ayarını yeniden okutur.
+- **Ön kapının geri alınamaması:** Trafik eskisine geri verilirken ön kapı kurulamazsa bütün deneme adresleri kapalı kalabilir. Kurtarma: `pnpm sunucu-kur --onayli` ön kapıyı sunucudaki `etkin` dosyalarından yeniden kurar. Komut bunu kayıttaki sebebe de yazar.
+- **Takılı kilit:** Komut yarıda öldürülürse yayın kilidi kalır, sunucuda elle kaldırılır (`sudo rm -r /srv/altyapi/yayin/.kilit`).
+- **Veritabanının yeniden başlaması:** Veritabanı kutusu yeniden başlayınca yayındaki site birkaç saniye sonra kendiliğinden yeniden bağlanır (ölçüldü, deneme komutu). Docker yeniden başlayınca kutuların sırasız açılması da bu yüzden sorun değildir.
+
+- **İlk yayında kesinti:** Bir sitenin ilk yayınında ve sitenin yayından kaldırılmasında ön kapı yeni ağ için yeniden kurulur. Bütün deneme adresleri birkaç saniye kesilir. İlk yayın başarısız olursa ön kapı iki kez yeniden kurulur (eklenip geri alınırken). Sonraki yayınlar ve geri dönüşler ön kapıyı yeniden kurmaz, yalnız ayarını yeniden okutur.
 - **İlk yayında sertifika:** Bir adresin ilk yayınında Caddy sertifikayı o anda alır. Dışarıdan yoklama bu yüzden 90 saniyeye kadar bekler.
 - **Hat beklemesi:** Yayın komutu kaydın hattının bitmesini bekler. Hat bitmeden yayın yapılamaz, hat yaklaşık 4 dakika sürer.
 - **Tek sürüm:** Bir kayıttan yalnız o kaydın çekirdek sürümü yayınlanabilir. Bir siteyi eski bir çekirdek sürümünde yeniden yayınlamak için o sürümün kaydına gidilir. Bu sınır site güncelleme komutunda (`planlar/komutlar.md`) yeniden ele alınacak.

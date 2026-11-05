@@ -11,6 +11,7 @@
 
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { hostname } from "node:os";
 import { join } from "node:path";
 import { kimlikSemasi } from "../cekirdek/ayar-semasi/kimlik.ts";
 import { kaliciKutu, kutuKuraliDogru, yenidenBaslama } from "./kutu-kurali.mts";
@@ -110,6 +111,33 @@ export const yayindakiSiteleriCoz = (cikti: string): YayindakiSiteler => {
     siteler[kodAdi] = Number(no);
   }
   return siteler;
+};
+
+// Yayın kilidi: ön kapıyı ve yayınları değiştiren komutlar (yayın, geri dönüş, sunucu kurulumu,
+// gizli bilgi yenileme) sunucuda aynı anda çalışmaz; yoksa biri ötekinin site satırını silebilir.
+// Kilit sunucuda bir klasördür (mkdir tek adımdır); kimin aldığı içine yazılır.
+export const yayinKilidi = `${yayinKoku}/.kilit`;
+const kilitSahibi = (): string => `${hostname().replace(/[^A-Za-z0-9.-]/g, "-")}-${process.pid}`;
+
+export const yayinKilidiyle = async <T,>(ipv4: string, is: () => Promise<T> | T): Promise<T> => {
+  const al = sshKomutu(
+    ipv4,
+    `sudo sh -c 'install -d -m 0755 -o root -g root /srv/altyapi ${yayinKoku} && mkdir ${yayinKilidi} 2>/dev/null && printf "%s %s\\n" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" ${kilitSahibi()} > ${yayinKilidi}/sahip'`,
+  );
+  if (al.status !== 0) {
+    const sahip = sshKomutu(
+      ipv4,
+      `sudo cat ${yayinKilidi}/sahip 2>/dev/null || true`,
+    ).stdout.trim();
+    throw new Error(
+      `Sunucuda başka bir yayın işi sürüyor (${sahip || "sahibi okunamadı"}). Takılı kaldıysa sunucuda: sudo rm -r ${yayinKilidi}`,
+    );
+  }
+  try {
+    return await is();
+  } finally {
+    sshKomutu(ipv4, `sudo rm -rf ${yayinKilidi}`);
+  }
 };
 
 export const yayindakiSiteleriOku = (ipv4: string): YayindakiSiteler => {

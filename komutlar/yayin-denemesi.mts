@@ -30,6 +30,7 @@ import {
   siteAgiAdi,
   siteKutusuAdi,
   yayindakiSiteleriOku,
+  yayinKilidiyle,
   yayinOrtami,
 } from "./on-kapi.mts";
 import { onKapiyiOlc } from "./on-kapi-olcumleri.mts";
@@ -145,7 +146,7 @@ const temizle = async (ipv4: string): Promise<void> => {
   try {
     const siteler = yayindakiSiteleriOku(ipv4);
     for (const kodAdi of denemeler) delete siteler[kodAdi];
-    onKapiyiKur(ipv4, siteler);
+    await yayinKilidiyle(ipv4, () => onKapiyiKur(ipv4, siteler));
   } catch (hata) {
     console.error(`temizlik: ön kapı: ${(hata as Error).message}`);
   }
@@ -174,7 +175,7 @@ const sunucudaTemizle = (ipv4: string, kodAdi: string, ad: string) =>
 for c in $(docker ps -aq --filter 'name=^${siteAgiAdi(ortam, kodAdi)}-[0-9]+$'); do docker rm -f "$c" >/dev/null; done
 # Görüntüler etiket adıyla ve zorlamadan silinir: bütün yayın etiketleri aynı görüntüyü gösterebilir,
 # kimlikle silmek başka sitelerin etiketlerini de götürürdü.
-for g in $(docker images --format '{{.Repository}}:{{.Tag}}' 'altyapi-yayin:${ortam}-${kodAdi}-*'); do docker image rm "$g" >/dev/null 2>&1; done
+for g in $(docker images --format '{{.Repository}}:{{.Tag}}' 'altyapi-yayin' | grep -E '^altyapi-yayin:${ortam}-${kodAdi}-[0-9]+$'); do docker image rm "$g" >/dev/null 2>&1; done
 sudo rm -rf ${yayinKlasoru(ortam, kodAdi)}
 printf '%s\\n' 'DROP DATABASE IF EXISTS "${ad}" WITH (FORCE);' 'DROP ROLE IF EXISTS "${ad}";' | docker exec -i ${veritabaniKutusu(ortam)} psql -U postgres -d postgres -q >/dev/null
 ${silmeBetigi(ortam, kodAdi).replace("set -eu", "true")}
@@ -299,6 +300,29 @@ try {
     "yayın kaydında bütün çalıştırmalar sırasıyla görünüyor",
     ozet === "yayin:basarili yayin:basarisiz yayin:basarili geri-donus:basarili",
     ozet,
+  );
+
+  // Veritabanı kutusu yeniden başlayınca (ör. Docker sırasız açılınca) yayındaki site kendiliğinden
+  // yeniden bağlanmalı: bağlantı havuzu kopan bağlantıyı atar, sonraki istek yeniden bağlanır.
+  const vtBaslangic = Date.now();
+  const vtYeniden = sunucuda(
+    ipv4,
+    `set -eu\ndocker restart --timeout 10 ${veritabaniKutusu(ortam)} >/dev/null\n`,
+  );
+  let vtSure = -1;
+  for (let deneme = 0; deneme < 90 && vtYeniden.durum === 0; deneme++) {
+    if (!(await saglik(ipv4, a.kodAdi))) {
+      vtSure = Math.round((Date.now() - vtBaslangic) / 1000);
+      break;
+    }
+    await new Promise((bekle) => setTimeout(bekle, 1000));
+  }
+  olc(
+    "veritabanı yeniden başlayınca yayındaki site kendiliğinden yeniden bağlanıyor",
+    vtSure >= 0,
+    vtSure >= 0
+      ? `${vtSure} sn sonra sağlık ucu yeniden ayakta`
+      : vtYeniden.hata.trim() || "bağlanmadı",
   );
 
   // Gizli bilgi yenileme: sunucu-gizli --yenile ile aynı adımlar; kesinti dışarıdan ölçülür.

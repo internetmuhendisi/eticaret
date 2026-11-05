@@ -28,6 +28,7 @@ import {
   siteAgiAdi,
   siteKutusuAdi,
   yayindakiSiteleriOku,
+  yayinKilidiyle,
   yayinKoku,
 } from "./on-kapi.mts";
 import { girisAnahtari, sshKomutu, sshSecenekleri, sunucuTanimi } from "./sunucu.mts";
@@ -268,23 +269,25 @@ export const yayiniSilmeBetigi = (ortam: Ortam, kodAdi: string, no: number): str
 sudo rm -rf ${yayinKlasoru(ortam, kodAdi)}/${no}
 `;
 
-// Saklanmayacak yayınların listesi sunucudaki klasörlerden okunur.
-const eskiYayinlariTemizle = (
-  ipv4: string,
-  ortam: Ortam,
-  kodAdi: string,
-  saklanan: number[],
-): void => {
+// Sunucudaki yayın klasörlerinin numaraları. Okunamazsa hata: numara ve temizlik buna dayanır.
+const sunucudakiYayinlar = (ipv4: string, ortam: Ortam, kodAdi: string): number[] => {
   const k = yayinKlasoru(ortam, kodAdi);
   const liste = sshKomutu(
     ipv4,
-    `sudo sh -c 'for d in ${k}/*/; do [ -d "$d" ] && basename "$d"; done; true'`,
+    `sudo sh -c 'if [ -d ${k} ]; then for d in ${k}/*/; do [ -d "$d" ] && basename "$d"; done; fi; true'`,
   );
-  for (const ad of liste.stdout.split("\n").map((s) => s.trim())) {
-    if (!/^[1-9]\d*$/.test(ad) || saklanan.includes(Number(ad))) continue;
-    sshKomutu(ipv4, "bash -s", { girdi: yayiniSilmeBetigi(ortam, kodAdi, Number(ad)) });
-  }
+  if (liste.status !== 0) throw new Error(`Yayın klasörleri okunamadı: ${liste.stderr.trim()}`);
+  return liste.stdout
+    .split("\n")
+    .map((satir) => satir.trim())
+    .filter((ad) => /^[1-9]\d*$/.test(ad))
+    .map(Number);
 };
+
+// Yeni yayının numarası kayıttan, sunucudaki klasörlerden ve etkin yayından büyüktür: kayıt
+// yazılamamış bir yayının numarası yeniden verilmez, çalışan kutunun klasörü silinmez.
+export const yeniNumara = (kayitlar: YayinKaydi[], klasorler: number[], etkin?: number): number =>
+  Math.max(sonrakiNumara(kayitlar), Math.max(0, ...klasorler, etkin ?? 0) + 1);
 
 const etkinYaz = (ipv4: string, ortam: Ortam, kodAdi: string, no: number): void => {
   const sonuc = sshKomutu(
@@ -378,15 +381,31 @@ export type YayinGirdisi = {
 };
 
 const zaman = (): string => new Date().toISOString();
+const hataMetni = (hata: unknown): string => tekSatir((hata as Error).message);
 
-export const yayinla = async (girdi: YayinGirdisi): Promise<YayinKaydi> => {
+// Trafik yeni kutuya geçtikten sonraki adımlar (eski kutuyu durdurmak, eski yayınları silmek)
+// yayının sonucunu değiştirmez: düşerlerse kayda uyarı olarak yazılır.
+const sonAdim = (kayit: YayinKaydi, ad: string, adim: () => void): void => {
+  try {
+    adim();
+  } catch (hata) {
+    const uyari = `uyarı: ${ad}: ${hataMetni(hata)}`;
+    kayit.neden = kayit.neden ? `${kayit.neden} | ${uyari}` : uyari;
+  }
+};
+
+export const yayinla = (girdi: YayinGirdisi): Promise<YayinKaydi> =>
+  yayinKilidiyle(girdi.ipv4, () => yayinlaKilitli(girdi));
+
+const yayinlaKilitli = async (girdi: YayinGirdisi): Promise<YayinKaydi> => {
   const { ipv4, ortam, kimlik, siteNumarasi } = girdi;
   const { kodAdi, cekirdekSurumu: surum } = kimlik;
   const yaz = girdi.yaz ?? (() => {});
   const kayitlar = kayitlariOku(ipv4, ortam, kodAdi);
-  const no = sonrakiNumara(kayitlar);
   const siteler = yayindakiSiteleriOku(ipv4);
   const onceki = siteler[kodAdi];
+  const no = yeniNumara(kayitlar, sunucudakiYayinlar(ipv4, ortam, kodAdi), onceki);
+  const notlar = geriDonusNotlari(degisiklikKlasoru);
   const kayit: YayinKaydi = {
     no,
     tur: "yayin",
@@ -397,14 +416,17 @@ export const yayinla = async (girdi: YayinGirdisi): Promise<YayinKaydi> => {
     zaman: zaman(),
     sonuc: "basarisiz",
     degisiklikToplami: null,
-    degisiklikNotlari: geriDonusNotlari(degisiklikKlasoru),
+    degisiklikNotlari: notlar,
   };
   let kutuAcildi = false;
   let onKapiDegisti = false;
+  let trafikGecti = false;
   try {
     yaz(`yayın       ${ortam}/${kodAdi} ${no} (sürüm ${surum}, kayıt ${girdi.kayit.slice(0, 12)})`);
     const hatalar = goruntuyuDenetle(girdi.etiket);
     if (hatalar.length > 0) throw new Error(`Görüntü denetimden geçmedi: ${hatalar.join("; ")}`);
+    // Değişiklik adımı yarıda kalırsa hepsi uygulanmış sayılır: geri dönüş "yedekten" notunu kaçırmaz.
+    kayit.degisiklikToplami = notlar.length;
     const { toplam } = siteVeritabaniniHazirla(
       ipv4,
       ortam,
@@ -414,8 +436,8 @@ export const yayinla = async (girdi: YayinGirdisi): Promise<YayinKaydi> => {
     kayit.degisiklikToplami = toplam;
     const { kimlik: goruntu } = goruntuyuGonder(ipv4, girdi.etiket);
     kayit.goruntu = goruntu;
-    klasoruYukle(ipv4, ortam, kodAdi, no, girdi.klasor);
     kutuAcildi = true;
+    klasoruYukle(ipv4, ortam, kodAdi, no, girdi.klasor);
     const cikti = sunucudaCalistir(
       ipv4,
       kutuyuAcmaBetigi(
@@ -433,23 +455,35 @@ export const yayinla = async (girdi: YayinGirdisi): Promise<YayinKaydi> => {
     onKapiyiKur(ipv4, { ...siteler, [kodAdi]: no });
     const disHata = await disaridanSaglik(ipv4, kodAdi, surum);
     if (disHata) throw new Error(`deneme adresi: ${disHata}`);
-    yaz(`trafik      ${denemeAdresi(kodAdi)} → ${no}`);
     etkinYaz(ipv4, ortam, kodAdi, no);
-    onKapiDegisti = false;
-    if (onceki !== undefined) sunucudaCalistir(ipv4, kutuyuDurdurmaBetigi(ortam, kodAdi, onceki));
+    trafikGecti = true;
     kayit.sonuc = "basarili";
-    eskiYayinlariTemizle(ipv4, ortam, kodAdi, saklanacaklar([...kayitlar, kayit]));
+    yaz(`trafik      ${denemeAdresi(kodAdi)} → ${no}`);
   } catch (hata) {
-    kayit.neden = tekSatir((hata as Error).message);
+    kayit.neden = hataMetni(hata);
     // Trafik eskisine geri verilir, yeni kutu ve yayın silinir; eski kutuya dokunulmaz.
     if (onKapiDegisti) {
       try {
         onKapiyiKur(ipv4, siteler);
       } catch (geri) {
-        kayit.neden += ` | ön kapı eski hâline döndürülemedi: ${tekSatir((geri as Error).message)}`;
+        kayit.neden += ` | ön kapı eski hâline döndürülemedi (kurtarma: pnpm sunucu-kur --onayli): ${hataMetni(geri)}`;
       }
     }
     if (kutuAcildi) sshKomutu(ipv4, "bash -s", { girdi: yayiniSilmeBetigi(ortam, kodAdi, no) });
+  }
+  if (trafikGecti) {
+    if (onceki !== undefined) {
+      sonAdim(kayit, "eski kutu durdurulamadı", () =>
+        sunucudaCalistir(ipv4, kutuyuDurdurmaBetigi(ortam, kodAdi, onceki)),
+      );
+    }
+    sonAdim(kayit, "eski yayınlar silinemedi", () => {
+      const saklanan = saklanacaklar([...kayitlar, kayit]);
+      for (const eski of sunucudakiYayinlar(ipv4, ortam, kodAdi)) {
+        if (!saklanan.includes(eski))
+          sunucudaCalistir(ipv4, yayiniSilmeBetigi(ortam, kodAdi, eski));
+      }
+    });
   }
   kayit.zaman = zaman();
   kayitEkle(ipv4, ortam, kodAdi, kayit);
@@ -458,7 +492,14 @@ export const yayinla = async (girdi: YayinGirdisi): Promise<YayinKaydi> => {
 
 // --- Geri dönüş ---
 
-export const geriDon = async (girdi: {
+export const geriDon = (girdi: {
+  ipv4: string;
+  ortam: Ortam;
+  kodAdi: string;
+  yaz?: (satir: string) => void;
+}): Promise<YayinKaydi> => yayinKilidiyle(girdi.ipv4, () => geriDonKilitli(girdi));
+
+const geriDonKilitli = async (girdi: {
   ipv4: string;
   ortam: Ortam;
   kodAdi: string;
@@ -467,16 +508,17 @@ export const geriDon = async (girdi: {
   const { ipv4, ortam, kodAdi } = girdi;
   const yaz = girdi.yaz ?? (() => {});
   const kayitlar = kayitlariOku(ipv4, ortam, kodAdi);
-  const no = sonrakiNumara(kayitlar);
   const siteler = yayindakiSiteleriOku(ipv4);
+  const no = yeniNumara(kayitlar, sunucudakiYayinlar(ipv4, ortam, kodAdi), siteler[kodAdi]);
   const sonuc = geriDonusHedefi(kayitlar);
+  const hedef = "hedef" in sonuc ? sonuc.hedef : undefined;
   const kayit: YayinKaydi = {
     no,
     tur: "geri-donus",
-    etkin: "hedef" in sonuc ? sonuc.hedef.etkin : 0,
-    kayit: "hedef" in sonuc ? sonuc.hedef.kayit : "",
-    surum: "hedef" in sonuc ? sonuc.hedef.surum : "",
-    goruntu: "hedef" in sonuc ? sonuc.hedef.goruntu : "",
+    etkin: hedef?.etkin ?? 0,
+    kayit: hedef?.kayit ?? "",
+    surum: hedef?.surum ?? "",
+    goruntu: hedef?.goruntu ?? "",
     zaman: zaman(),
     sonuc: "basarisiz",
     degisiklikToplami: null,
@@ -484,6 +526,7 @@ export const geriDon = async (girdi: {
   };
   let onKapiDegisti = false;
   let kutuAcildi = false;
+  let trafikGecti = false;
   try {
     if ("engel" in sonuc) throw new Error(sonuc.engel);
     const { hedef, etkin } = sonuc;
@@ -491,6 +534,9 @@ export const geriDon = async (girdi: {
       throw new Error(
         `Sunucudaki etkin yayın (${siteler[kodAdi] ?? "yok"}) kayıttakiyle (${etkin}) aynı değil; hiçbir şeye dokunulmadı.`,
       );
+    }
+    if (!sunucudakiYayinlar(ipv4, ortam, kodAdi).includes(hedef.etkin)) {
+      throw new Error(`${hedef.etkin} numaralı yayın sunucuda saklanmıyor; geri dönülemez.`);
     }
     yaz(`geri dönüş ${ortam}/${kodAdi} ${etkin} → ${hedef.etkin} (sürüm ${hedef.surum})`);
     kutuAcildi = true;
@@ -502,26 +548,27 @@ export const geriDon = async (girdi: {
     const disHata = await disaridanSaglik(ipv4, kodAdi, hedef.surum);
     if (disHata) throw new Error(`deneme adresi: ${disHata}`);
     etkinYaz(ipv4, ortam, kodAdi, hedef.etkin);
-    onKapiDegisti = false;
-    kutuAcildi = false;
-    sunucudaCalistir(ipv4, kutuyuDurdurmaBetigi(ortam, kodAdi, etkin));
+    trafikGecti = true;
     kayit.sonuc = "basarili";
     yaz(`trafik      ${denemeAdresi(kodAdi)} → ${hedef.etkin}`);
   } catch (hata) {
-    kayit.neden = tekSatir((hata as Error).message);
+    kayit.neden = hataMetni(hata);
     if (onKapiDegisti) {
       try {
         onKapiyiKur(ipv4, siteler);
       } catch (geri) {
-        kayit.neden += ` | ön kapı eski hâline döndürülemedi: ${tekSatir((geri as Error).message)}`;
+        kayit.neden += ` | ön kapı eski hâline döndürülemedi (kurtarma: pnpm sunucu-kur --onayli): ${hataMetni(geri)}`;
       }
     }
     // Dönülen yayının kutusu durdurulur; klasörü ve görüntüsü kalır.
-    if (kutuAcildi && "hedef" in sonuc) {
-      sshKomutu(ipv4, "bash -s", {
-        girdi: kutuyuDurdurmaBetigi(ortam, kodAdi, sonuc.hedef.etkin),
-      });
+    if (kutuAcildi && hedef) {
+      sshKomutu(ipv4, "bash -s", { girdi: kutuyuDurdurmaBetigi(ortam, kodAdi, hedef.etkin) });
     }
+  }
+  if (trafikGecti && "etkin" in sonuc) {
+    sonAdim(kayit, "eski kutu durdurulamadı", () =>
+      sunucudaCalistir(ipv4, kutuyuDurdurmaBetigi(ortam, kodAdi, sonuc.etkin)),
+    );
   }
   kayit.zaman = zaman();
   kayitEkle(ipv4, ortam, kodAdi, kayit);

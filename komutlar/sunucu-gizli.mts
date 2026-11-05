@@ -10,7 +10,7 @@
 
 import { siteKlasorunuDogrula } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { ortamMi, siteNumarasiAl, uretmeBetigi } from "./gizli-bilgi.mts";
-import { yayinOrtami } from "./on-kapi.mts";
+import { yayinKilidiyle, yayinOrtami } from "./on-kapi.mts";
 import { kayitlariOku, sshKomutu } from "./sunucu.mts";
 import { sifreyiEsitle } from "./sunucu-veritabani.mts";
 import { etkinKutuyuYenidenBaslat } from "./yayin.mts";
@@ -41,7 +41,10 @@ try {
     );
     // Yayındaki kutu eski dosyayı görmeye devam eder; aynı adımda yeniden başlatılır (kart 0021).
     console.log(
-      ortam === yayinOrtami && etkinKutuyuYenidenBaslat(sunucu.ipv4, ortam, kodAdi)
+      ortam === yayinOrtami &&
+        (await yayinKilidiyle(sunucu.ipv4, () =>
+          etkinKutuyuYenidenBaslat(sunucu.ipv4, ortam, kodAdi),
+        ))
         ? `yeniden     ${ortam}/${kodAdi} yayındaki kutu yeni değerle başlatıldı`
         : `bilgi       ${ortam}/${kodAdi} yayında değil, yeniden başlatılacak kutu yok`,
     );

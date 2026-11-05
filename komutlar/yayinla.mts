@@ -9,7 +9,8 @@
 // ortamına yayın yapılır (kullanıcı kararı).
 
 import { spawnSync } from "node:child_process";
-import { join } from "node:path";
+import { rmSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { siteKlasorunuDogrula } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { siteNumarasiAl } from "./gizli-bilgi.mts";
 import { yayinOrtami } from "./on-kapi.mts";
@@ -21,6 +22,7 @@ import {
   yayinKilitleri,
 } from "./yayin-hazirligi.mts";
 
+let gecici: string | undefined;
 try {
   const [klasor, ortam] = process.argv.slice(2);
   if (!klasor || ortam !== yayinOrtami) {
@@ -28,21 +30,30 @@ try {
   }
   const kayit = yayinKilitleri();
   console.log(`kilitler    geçti (kayıt ${kayit.slice(0, 12)})`);
-  // Sunucu denetimi kırmızıysa yayın yapılmaz (hızlı kapı taramasıyla, yaklaşık bir dakika).
-  const denetim = spawnSync("node", [join(kok, "komutlar", "sunucu-denetle.mts"), "--hizli"], {
-    encoding: "utf8",
-  });
-  if (denetim.status !== 0) {
-    const kalanlar = (denetim.stdout ?? "").split("\n").filter((satir) => satir.startsWith("HATA"));
-    throw new Error(
-      `Sunucu denetimi kırmızı, yayın yapılmaz:\n  ${kalanlar.join("\n  ") || denetim.stderr.trim()}`,
-    );
-  }
-  console.log("denetim     sunucu denetimi yeşil");
   const yerel = kayittanSiteKlasoru(kayit, klasor);
+  gecici = dirname(dirname(yerel));
   const sonuc = siteKlasorunuDogrula(yerel);
   if (!sonuc.gecerli) throw new Error(`${klasor} geçersiz:\n  ${sonuc.hatalar.join("\n  ")}`);
   const { kimlik } = sonuc.site;
+  // Sunucu denetimi kırmızıysa yayın yapılmaz (hızlı kapı taramasıyla, yaklaşık bir dakika).
+  // Yalnız bu sitenin yayındaki kutusuyla ilgili bir ölçüm kırmızıysa yayın sürer: bozuk bir
+  // siteye düzeltme yayınlanabilmeli.
+  const denetim = spawnSync("node", [join(kok, "komutlar", "sunucu-denetle.mts"), "--hizli"], {
+    encoding: "utf8",
+  });
+  const kalanlar = (denetim.stdout ?? "").split("\n").filter((satir) => satir.startsWith("HATA"));
+  const buSiteninki = (satir: string) =>
+    satir.includes(`${yayinOrtami}/${kimlik.kodAdi} yayındaki kutusu`);
+  if (denetim.status !== 0 && (kalanlar.length === 0 || !kalanlar.every(buSiteninki))) {
+    throw new Error(
+      `Sunucu denetimi kırmızı, yayın yapılmaz:\n  ${kalanlar.filter((k) => !buSiteninki(k)).join("\n  ") || denetim.stderr.trim()}`,
+    );
+  }
+  console.log(
+    denetim.status === 0
+      ? "denetim     sunucu denetimi yeşil"
+      : `denetim     yalnız bu sitenin kutusu kırmızı, düzeltme yayını sürüyor: ${kalanlar.join("; ")}`,
+  );
   const etiket = yayinGoruntusunuHazirla(kimlik.cekirdekSurumu, kayit);
   const [sunucu] = sunuculariOku();
   if (!sunucu) throw new Error("sunucu/sunucular.json'da sunucu yok. Önce: pnpm sunucu-kur");
@@ -58,7 +69,11 @@ try {
   });
   if (yayin.sonuc !== "basarili") throw new Error(`Yayın ${yayin.no} başarısız: ${yayin.neden}`);
   console.log(`yayında     ${kimlik.kodAdi} yayın ${yayin.no}, sürüm ${yayin.surum}`);
+  if (yayin.neden) console.log(yayin.neden);
 } catch (hata) {
   console.error((hata as Error).message);
   process.exitCode = 1;
+} finally {
+  // Kayıttan çıkarılan geçici klasör silinir.
+  if (gecici) rmSync(gecici, { recursive: true, force: true });
 }

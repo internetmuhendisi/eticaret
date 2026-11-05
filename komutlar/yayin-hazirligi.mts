@@ -3,8 +3,9 @@
 //
 // - Kontrol hattı bu kayıt için yeşil olmalı, çalışma kopyasında kaydedilmemiş değişiklik
 //   olmamalı (pnpm hat-sonucu, karar 0029).
-// - Kayıttaki hat dosyası ana daldakiyle (origin/main) aynı olmalı: hattı zayıflatan bir kaydın
-//   kendi hattı yeşil biter (karar 0029, Sonuçları).
+// - Kayıttaki hat dosyası, hattın çağırdığı betiklerin tanımları ve denetim ile test ayarları
+//   ana daldakiyle (origin/main) aynı olmalı: hattı zayıflatan bir kaydın kendi hattı yeşil biter
+//   (karar 0029, Sonuçları).
 // - Site klasörü çalışma klasöründen değil kayıttan alınır; görüntü bu kayıttan üretilmiş olmalı.
 
 import { spawnSync } from "node:child_process";
@@ -26,11 +27,46 @@ const git = (argumanlar: string[]) => {
   };
 };
 
-// Hat dosyasının iki kayıttaki içeriği aynı mı (git'in içerik özetiyle).
+// Hattın kendisi ve hattın çağırdığı betiklerin tanımları ile denetim ve test ayarları: bir kayıt
+// bunları zayıflatırsa kendi hattı yeşil biter. Test ve komut dosyalarının kendisi bu korumanın
+// dışındadır (yalnız disiplin, karar 0035).
+export const hatAyarDosyalari = [
+  hatDosyasi,
+  "biome.json",
+  "vitest.config.ts",
+  "playwright.config.ts",
+  "tsconfig.json",
+  "tsconfig.temel.json",
+  "denetim",
+];
+
+// Bir kayıttaki hat korumasının özeti; okunamayan parça "yok" olur.
+export const hatKorumasi = (kayit: string): string | undefined => {
+  const dosyalar = hatAyarDosyalari.map((yol) => {
+    const nesne = git(["rev-parse", `${kayit}:${yol}`]);
+    return nesne.tamam ? nesne.cikti : "yok";
+  });
+  if (dosyalar[0] === "yok") return undefined;
+  const hat = git(["show", `${kayit}:${hatDosyasi}`]).cikti;
+  const paket = git(["show", `${kayit}:package.json`]);
+  if (!paket.tamam) return undefined;
+  return korumaOzeti(hat, paket.cikti, dosyalar);
+};
+
+// Hattın çağırdığı betiklerin (pnpm <ad>) tanımları ve ayar dosyalarının içerik özetleri.
+// Hattın çağırmadığı bir betiğin eklenmesi ya da değişmesi özeti değiştirmez.
+export const korumaOzeti = (hat: string, paket: string, dosyalar: string[]): string => {
+  const betikler = (JSON.parse(paket) as { scripts?: Record<string, string> }).scripts ?? {};
+  const cagrilanlar = [...new Set([...hat.matchAll(/pnpm ([a-z0-9-]+)/g)].map((e) => e[1] ?? ""))]
+    .sort()
+    .map((ad) => [ad, betikler[ad] ?? "yok"]);
+  return JSON.stringify({ dosyalar, cagrilanlar });
+};
+
+// Hat koruması iki kayıtta aynı mı.
 export const hatDosyasiAyniMi = (kayit: string, anaDal: string): boolean => {
-  const bu = git(["rev-parse", `${kayit}:${hatDosyasi}`]);
-  const ana = git(["rev-parse", `${anaDal}:${hatDosyasi}`]);
-  return bu.tamam && ana.tamam && bu.cikti !== "" && bu.cikti === ana.cikti;
+  const bu = hatKorumasi(kayit);
+  return bu !== undefined && bu === hatKorumasi(anaDal);
 };
 
 // Kilitler geçerse yayınlanacak kaydı döndürür; geçmezse hiçbir şeye dokunmadan hata verir.
@@ -42,7 +78,7 @@ export const yayinKilitleri = (): string => {
   if (!getir.tamam) throw new Error(`Ana dal GitHub'dan okunamadı: ${getir.hata}`);
   if (!hatDosyasiAyniMi(kayit, "origin/main")) {
     throw new Error(
-      `Bu kayıttaki hat dosyası (${hatDosyasi}) ana daldakiyle aynı değil, yayın yapılmaz.`,
+      `Bu kayıttaki hat dosyası, hattın çağırdığı betikler ya da denetim ve test ayarları (${hatAyarDosyalari.join(", ")}) ana daldakiyle aynı değil, yayın yapılmaz.`,
     );
   }
   return kayit;

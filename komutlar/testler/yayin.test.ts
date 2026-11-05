@@ -23,7 +23,7 @@ import {
   yayiniSilmeBetigi,
   yayinKutusuTanimi,
 } from "../yayin.mts";
-import { hatDosyasiAyniMi } from "../yayin-hazirligi.mts";
+import { hatDosyasiAyniMi, korumaOzeti } from "../yayin-hazirligi.mts";
 
 const kayit = (ek: Partial<YayinKaydi>): YayinKaydi => ({
   no: 1,
@@ -245,6 +245,35 @@ describe("sunucuda çalışan betikler", () => {
     const sonuc = sozdizimi(betik);
     expect(sonuc.stderr).toBe("");
     expect(sonuc.status).toBe(0);
+  });
+});
+
+describe("hat korumasının özeti", () => {
+  const hat = "steps:\n  - run: pnpm birim-testleri\n  - run: pnpm denetim\n";
+  const paket = (betikler: Record<string, string>) => JSON.stringify({ scripts: betikler });
+  const asil = { "birim-testleri": "vitest run", denetim: "biome check", yayinla: "node a.mts" };
+  const ozet = korumaOzeti(hat, paket(asil), ["a", "b"]);
+
+  it.each([
+    [
+      "hattın çağırdığı test betiği boşaltılırsa",
+      paket({ ...asil, "birim-testleri": "true" }),
+      ["a", "b"],
+    ],
+    ["hattın çağırdığı betik silinirse", paket({ "birim-testleri": "vitest run" }), ["a", "b"]],
+    ["bir ayar dosyası değişirse", paket(asil), ["a", "c"]],
+  ])("%s özet değişir", (_ad, yeniPaket, dosyalar) => {
+    expect(korumaOzeti(hat, yeniPaket, dosyalar)).not.toBe(ozet);
+  });
+
+  it("hattın çağırmadığı betik eklenir ya da değişirse özet değişmez", () => {
+    expect(korumaOzeti(hat, paket({ ...asil, yayinla: "node b.mts", yeni: "x" }), ["a", "b"])).toBe(
+      ozet,
+    );
+  });
+
+  it("hat dosyasındaki çağrı değişirse özet değişir", () => {
+    expect(korumaOzeti("steps:\n  - run: pnpm denetim\n", paket(asil), ["a", "b"])).not.toBe(ozet);
   });
 });
 

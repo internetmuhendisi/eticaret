@@ -11,7 +11,7 @@
 // Duvara elle eklenmiş kurallar her çalışmada silinir: kuralların tek yeri sunucu.mts'dir.
 // Son adımda ön kapı (Caddy) kurulur ya da ayarı yenilenir (kart 0020, on-kapi.mts).
 
-import { onKapiyiKur } from "./on-kapi.mts";
+import { onKapiyiKur, yayinKilidiyle } from "./on-kapi.mts";
 import {
   acikKapilar,
   bilinenSunucuyuUnut,
@@ -221,7 +221,7 @@ const kur = async (): Promise<void> => {
   console.log(`yazıldı     ${kayitDosyasi}`);
 
   // 6. Ön kapı: Caddy ve yoklama kutusu (karar 0032).
-  onKapiyiKur(ipv4);
+  await yayinKilidiyle(ipv4, () => onKapiyiKur(ipv4));
   console.log("kuruldu     ön kapı (Caddy, yoklama kutusu)");
   console.log("Sunucu hazır. Denetim: pnpm sunucu-denetle");
 };
