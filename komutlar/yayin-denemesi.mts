@@ -32,6 +32,7 @@ import {
   yayindakiSiteleriOku,
   yayinOrtami,
 } from "./on-kapi.mts";
+import { onKapiyiOlc } from "./on-kapi-olcumleri.mts";
 import { kok, sshKomutu, kayitlariOku as sunuculariOku } from "./sunucu.mts";
 import { sifreyiEsitle, veritabaniKutusu, veritabaniKutusunuKur } from "./sunucu-veritabani.mts";
 import {
@@ -223,6 +224,18 @@ try {
   );
   const ikinciSite = await yayinla(yayinGirdisi(b, "Yayın Denemesi B1"));
   olc("ikinci deneme sitesi yayınlandı", ikinciSite.sonuc === "basarili", ikinciSite.neden ?? "");
+
+  // Ön kapı iki sitenin ağına bağlıyken ön kapının bütün ölçümleri (sunucu denetimindekiyle aynı):
+  // ziyaretçinin gerçek adresi IPv4 ve IPv6'da, sertifika, yönlendirme, kısıtlı kutu.
+  const onKapiHatalari: string[] = [];
+  await onKapiyiOlc(sunucu, (tamam, metin, ayrinti = "") => {
+    if (!tamam) onKapiHatalari.push(`${metin}${ayrinti ? `: ${ayrinti}` : ""}`);
+  });
+  olc(
+    "site ağlarına bağlı ön kapının ölçümleri geçiyor (ziyaretçinin gerçek adresi dahil)",
+    onKapiHatalari.length === 0,
+    onKapiHatalari.slice(0, 3).join("; "),
+  );
 
   const kutuA = siteKutusuAdi(ortam, a.kodAdi, ilk.etkin);
   const kutuB = siteKutusuAdi(ortam, b.kodAdi, ikinciSite.etkin);

@@ -75,6 +75,6 @@
 - **Hat beklemesi:** Yayın komutu kaydın hattının bitmesini bekler. Hat bitmeden yayın yapılamaz, hat yaklaşık 4 dakika sürer.
 - **Tek sürüm:** Bir kayıttan yalnız o kaydın çekirdek sürümü yayınlanabilir. Bir siteyi eski bir çekirdek sürümünde yeniden yayınlamak için o sürümün kaydına gidilir. Bu sınır site güncelleme komutunda (`planlar/komutlar.md`) yeniden ele alınacak.
 - **Saklanan yayınlar:** Silinen yayına geri dönülemez. Üçten eski bir yayına yalnız yeniden yayınla dönülür.
-- **Ön kapının görebildikleri:** Ön kapı her sitenin ağına bağlıdır, yani bütün sitelerin kutularına ulaşabilir. Siteler birbirine ulaşamaz (ölçüldü: ad çözülmüyor, adres zaman aşımına uğruyor).
-- **Yeniden başlatmada kısa kesinti:** Gizli bilgi yenilenince site birkaç saniye açılmaz. Süre deneme komutunun çıktısında yazar.
+- **Ön kapının görebildikleri:** Ön kapı her sitenin ağına bağlıdır, yani bütün sitelerin kutularına ulaşabilir. Siteler birbirine ulaşamaz (ölçüldü: ad çözülmüyor, adres zaman aşımına uğruyor). Ön kapı site ağlarına bağlıyken de ziyaretçinin gerçek adresini IPv4 ve IPv6'da görüyor (deneme komutu ön kapının bütün ölçümlerini o sırada çalıştırır).
+- **Yeniden başlatmada kısa kesinti:** Gizli bilgi yenilenince site kutusu yeniden başlar, site yaklaşık 3 saniye açılmaz (ölçüldü, deneme komutunun çıktısında yazar).
 - **Kayıttaki sebep:** Başarısız yayının kayıttaki sebebi Docker'ın ve kutunun son günlük satırlarını içerebilir. Gizli bilgi bu satırlara girmez (değer dosyadadır), ama kayıt yine de kök kullanıcıya aittir.
