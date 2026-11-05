@@ -23,7 +23,7 @@ import {
   yayiniSilmeBetigi,
   yayinKutusuTanimi,
 } from "../yayin.mts";
-import { hatDosyasiAyniMi, korumaOzeti } from "../yayin-hazirligi.mts";
+import { hatAyarKalibi, hatDosyasiAyniMi, korumaOzeti } from "../yayin-hazirligi.mts";
 
 const kayit = (ek: Partial<YayinKaydi>): YayinKaydi => ({
   no: 1,
@@ -252,28 +252,72 @@ describe("hat korumasının özeti", () => {
   const hat = "steps:\n  - run: pnpm birim-testleri\n  - run: pnpm denetim\n";
   const paket = (betikler: Record<string, string>) => JSON.stringify({ scripts: betikler });
   const asil = { "birim-testleri": "vitest run", denetim: "biome check", yayinla: "node a.mts" };
-  const ozet = korumaOzeti(hat, paket(asil), ["a", "b"]);
+  const alt = { "cekirdek/uygulama/package.json": paket({ "tur-kontrolu": "tsc --noEmit" }) };
+  const dosyalar: [string, string][] = [
+    ["biome.json", "a"],
+    ["cekirdek/uygulama/tsconfig.json", "b"],
+  ];
+  const ozet = korumaOzeti(hat, paket(asil), alt, dosyalar);
 
   it.each([
     [
       "hattın çağırdığı test betiği boşaltılırsa",
-      paket({ ...asil, "birim-testleri": "true" }),
-      ["a", "b"],
+      () => korumaOzeti(hat, paket({ ...asil, "birim-testleri": "true" }), alt, dosyalar),
     ],
-    ["hattın çağırdığı betik silinirse", paket({ "birim-testleri": "vitest run" }), ["a", "b"]],
-    ["bir ayar dosyası değişirse", paket(asil), ["a", "c"]],
-  ])("%s özet değişir", (_ad, yeniPaket, dosyalar) => {
-    expect(korumaOzeti(hat, yeniPaket, dosyalar)).not.toBe(ozet);
+    [
+      "hattın çağırdığı betik silinirse",
+      () => korumaOzeti(hat, paket({ "birim-testleri": "vitest run" }), alt, dosyalar),
+    ],
+    [
+      "bir alt paketin betiği boşaltılırsa",
+      () =>
+        korumaOzeti(
+          hat,
+          paket(asil),
+          { "cekirdek/uygulama/package.json": paket({ "tur-kontrolu": "true" }) },
+          dosyalar,
+        ),
+    ],
+    [
+      "bir ayar dosyası değişirse",
+      () =>
+        korumaOzeti(hat, paket(asil), alt, [["biome.json", "c"], dosyalar[1] as [string, string]]),
+    ],
+    [
+      "alt klasöre yeni bir ayar dosyası eklenirse",
+      () => korumaOzeti(hat, paket(asil), alt, [...dosyalar, ["bilesenler/biome.json", "d"]]),
+    ],
+    [
+      "hat dosyasındaki çağrı değişirse",
+      () => korumaOzeti("steps:\n  - run: pnpm denetim\n", paket(asil), alt, dosyalar),
+    ],
+  ])("%s özet değişir", (_ad, yeni) => {
+    expect(yeni()).not.toBe(ozet);
   });
 
-  it("hattın çağırmadığı betik eklenir ya da değişirse özet değişmez", () => {
-    expect(korumaOzeti(hat, paket({ ...asil, yayinla: "node b.mts", yeni: "x" }), ["a", "b"])).toBe(
-      ozet,
-    );
+  it("hattın çağırmadığı kök betik eklenir ya da değişirse özet değişmez", () => {
+    expect(
+      korumaOzeti(hat, paket({ ...asil, yayinla: "node b.mts", yeni: "x" }), alt, dosyalar),
+    ).toBe(ozet);
   });
 
-  it("hat dosyasındaki çağrı değişirse özet değişir", () => {
-    expect(korumaOzeti("steps:\n  - run: pnpm denetim\n", paket(asil), ["a", "b"])).not.toBe(ozet);
+  it("dosyaların sırası özeti değiştirmez", () => {
+    expect(korumaOzeti(hat, paket(asil), alt, [...dosyalar].reverse())).toBe(ozet);
+  });
+
+  it.each([
+    [".github/workflows/kontrol-hatti.yml", true],
+    ["biome.json", true],
+    ["bilesenler/biome.json", true],
+    ["cekirdek/uygulama/tsconfig.json", true],
+    ["tsconfig.temel.json", true],
+    ["vitest.config.ts", true],
+    ["playwright.config.ts", true],
+    ["denetim/kurallar/ham-renk.grit", true],
+    ["komutlar/yayin.mts", false],
+    ["cekirdek/testler/veri-ayrimi.test.ts", false],
+  ])("%s korumada mı: %s", (yol, beklenen) => {
+    expect(hatAyarKalibi.test(yol)).toBe(beklenen);
   });
 });
 

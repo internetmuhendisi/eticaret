@@ -27,28 +27,27 @@ try {
   if (!sunucu) throw new Error("sunucu/sunucular.json'da sunucu yok. Önce: pnpm sunucu-kur");
 
   const numara = siteNumarasiAl(kodAdi);
-  const betik = uretmeBetigi(ortam, kodAdi, numara, { yenile: process.argv.includes("--yenile") });
-  const calisma = sshKomutu(sunucu.ipv4, "bash -s", { girdi: betik });
-  process.stdout.write(calisma.stdout);
-  if (calisma.status !== 0) throw new Error(`Sunucuda kurulamadı: ${calisma.stderr.trim()}`);
-  // Kutu dosyayı açılışta bağlar; yenilenen değeri ancak yeniden başlayınca görür (ölçüldü,
-  // pnpm sunucu-gizli-denemesi).
-  if (process.argv.includes("--yenile")) {
+  const yenile = process.argv.includes("--yenile");
+  // Bütün iş yayın kilidinin içindedir: aynı anda bir yayın eski değerle yeni kutu açamaz.
+  await yayinKilidiyle(sunucu.ipv4, () => {
+    const betik = uretmeBetigi(ortam, kodAdi, numara, { yenile });
+    const calisma = sshKomutu(sunucu.ipv4, "bash -s", { girdi: betik });
+    process.stdout.write(calisma.stdout);
+    if (calisma.status !== 0) throw new Error(`Sunucuda kurulamadı: ${calisma.stderr.trim()}`);
+    if (!yenile) return;
     console.log(
       sifreyiEsitle(sunucu.ipv4, ortam, kodAdi)
         ? `eşitlendi   ${ortam}/${kodAdi} veritabanı şifresi`
         : `bilgi       ${ortam} ortamında veritabanı kutusu yok, şifre eşitlenmedi`,
     );
-    // Yayındaki kutu eski dosyayı görmeye devam eder; aynı adımda yeniden başlatılır (kart 0021).
+    // Kutu dosyayı açılışta bağlar, yenilenen değeri ancak yeniden başlayınca görür; yayındaki
+    // kutu aynı adımda yeniden başlatılır (kart 0021).
     console.log(
-      ortam === yayinOrtami &&
-        (await yayinKilidiyle(sunucu.ipv4, () =>
-          etkinKutuyuYenidenBaslat(sunucu.ipv4, ortam, kodAdi),
-        ))
+      ortam === yayinOrtami && etkinKutuyuYenidenBaslat(sunucu.ipv4, ortam, kodAdi)
         ? `yeniden     ${ortam}/${kodAdi} yayındaki kutu yeni değerle başlatıldı`
         : `bilgi       ${ortam}/${kodAdi} yayında değil, yeniden başlatılacak kutu yok`,
     );
-  }
+  });
 } catch (hata) {
   console.error((hata as Error).message);
   process.exitCode = 1;

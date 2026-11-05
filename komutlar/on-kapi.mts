@@ -120,11 +120,12 @@ export const yayinKilidi = `${yayinKoku}/.kilit`;
 const kilitSahibi = (): string => `${hostname().replace(/[^A-Za-z0-9.-]/g, "-")}-${process.pid}`;
 
 export const yayinKilidiyle = async <T,>(ipv4: string, is: () => Promise<T> | T): Promise<T> => {
+  // Kilit başkasındaysa 3 ile çıkar; başka her hata (ssh, sudo) kilidin alınamaması demektir.
   const al = sshKomutu(
     ipv4,
-    `sudo sh -c 'install -d -m 0755 -o root -g root /srv/altyapi ${yayinKoku} && mkdir ${yayinKilidi} 2>/dev/null && printf "%s %s\\n" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" ${kilitSahibi()} > ${yayinKilidi}/sahip'`,
+    `sudo sh -c 'install -d -m 0755 -o root -g root /srv/altyapi ${yayinKoku} || exit 1; mkdir ${yayinKilidi} 2>/dev/null || exit 3; printf "%s %s\\n" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" ${kilitSahibi()} > ${yayinKilidi}/sahip'`,
   );
-  if (al.status !== 0) {
+  if (al.status === 3) {
     const sahip = sshKomutu(
       ipv4,
       `sudo cat ${yayinKilidi}/sahip 2>/dev/null || true`,
@@ -133,10 +134,18 @@ export const yayinKilidiyle = async <T,>(ipv4: string, is: () => Promise<T> | T)
       `Sunucuda başka bir yayın işi sürüyor (${sahip || "sahibi okunamadı"}). Takılı kaldıysa sunucuda: sudo rm -r ${yayinKilidi}`,
     );
   }
+  if (al.status !== 0) {
+    throw new Error(`Yayın kilidi alınamadı (sunucuya ulaşılamadı?): ${al.stderr.trim()}`);
+  }
   try {
     return await is();
   } finally {
-    sshKomutu(ipv4, `sudo rm -rf ${yayinKilidi}`);
+    const birak = sshKomutu(ipv4, `sudo rm -rf ${yayinKilidi}`);
+    if (birak.status !== 0) {
+      process.stderr.write(
+        `Uyarı: yayın kilidi bırakılamadı. Sunucuda elle: sudo rm -r ${yayinKilidi}\n`,
+      );
+    }
   }
 };
 

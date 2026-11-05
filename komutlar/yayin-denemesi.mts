@@ -184,12 +184,13 @@ ${silmeBetigi(ortam, kodAdi).replace("set -eu", "true")}
 
 // sunucu-gizli --yenile ile aynı adımlar: değeri yenile, veritabanı şifresini eşitle, kutuyu başlat.
 // Kesinti kutunun yeniden başlatılmasıyla başlar; dönen değer o anın zamanıdır (başarısızsa -1).
-const gizliBilgiyiYenile = (ip: string): number => {
-  const { durum } = sunucuda(ip, uretmeBetigi(ortam, a.kodAdi, a.numara, { yenile: true }));
-  if (durum !== 0 || !sifreyiEsitle(ip, ortam, a.kodAdi)) return -1;
-  const baslangic = Date.now();
-  return etkinKutuyuYenidenBaslat(ip, ortam, a.kodAdi) ? baslangic : -1;
-};
+const gizliBilgiyiYenile = (ip: string): Promise<number> =>
+  yayinKilidiyle(ip, () => {
+    const { durum } = sunucuda(ip, uretmeBetigi(ortam, a.kodAdi, a.numara, { yenile: true }));
+    if (durum !== 0 || !sifreyiEsitle(ip, ortam, a.kodAdi)) return -1;
+    const baslangic = Date.now();
+    return etkinKutuyuYenidenBaslat(ip, ortam, a.kodAdi) ? baslangic : -1;
+  });
 
 const sunucudaAglariSil = (ipv4: string, kodAdlari: string[]) =>
   sshKomutu(
@@ -305,9 +306,10 @@ try {
   // Veritabanı kutusu yeniden başlayınca (ör. Docker sırasız açılınca) yayındaki site kendiliğinden
   // yeniden bağlanmalı: bağlantı havuzu kopan bağlantıyı atar, sonraki istek yeniden bağlanır.
   const vtBaslangic = Date.now();
-  const vtYeniden = sunucuda(
-    ipv4,
-    `set -eu\ndocker restart --timeout 10 ${veritabaniKutusu(ortam)} >/dev/null\n`,
+  // Deneme ortamının bütün siteleri (Örnek Mağaza dahil) bu sırada birkaç saniye veritabanına
+  // ulaşamaz; yeniden başlatma yayın kilidiyle yapılır.
+  const vtYeniden = await yayinKilidiyle(ipv4, () =>
+    sunucuda(ipv4, `set -eu\ndocker restart --timeout 10 ${veritabaniKutusu(ortam)} >/dev/null\n`),
   );
   let vtSure = -1;
   for (let deneme = 0; deneme < 90 && vtYeniden.durum === 0; deneme++) {
@@ -326,7 +328,7 @@ try {
   );
 
   // Gizli bilgi yenileme: sunucu-gizli --yenile ile aynı adımlar; kesinti dışarıdan ölçülür.
-  const baslangic = gizliBilgiyiYenile(ipv4);
+  const baslangic = await gizliBilgiyiYenile(ipv4);
   const yenileme = baslangic > 0;
   let kesinti = -1;
   if (yenileme) {

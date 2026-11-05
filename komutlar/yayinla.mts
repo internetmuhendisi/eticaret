@@ -42,9 +42,18 @@ try {
     encoding: "utf8",
   });
   const kalanlar = (denetim.stdout ?? "").split("\n").filter((satir) => satir.startsWith("HATA"));
+  // Süzgeç yalnız denetim sonuna kadar çalıştıysa geçerlidir: özet satırındaki sayı HATA satırlarının
+  // sayısıyla aynı olmalı, hata çıktısı boş olmalı. Sitenin numarası yoksa süzgeç geçirmez.
+  const ozet = (denetim.stdout ?? "").match(/Denetim kırmızı: (\d+) ölçüm tutmadı\./);
+  const tamamlandi =
+    ozet !== null && Number(ozet[1]) === kalanlar.length && !denetim.stderr?.trim();
   const buSiteninki = (satir: string) =>
-    satir.includes(`${yayinOrtami}/${kimlik.kodAdi} yayındaki kutusu`);
-  if (denetim.status !== 0 && (kalanlar.length === 0 || !kalanlar.every(buSiteninki))) {
+    satir.includes(`${yayinOrtami}/${kimlik.kodAdi} yayındaki kutusu`) &&
+    !satir.includes("site numarası yok");
+  if (
+    denetim.status !== 0 &&
+    (!tamamlandi || kalanlar.length === 0 || !kalanlar.every(buSiteninki))
+  ) {
     throw new Error(
       `Sunucu denetimi kırmızı, yayın yapılmaz:\n  ${kalanlar.filter((k) => !buSiteninki(k)).join("\n  ") || denetim.stderr.trim()}`,
     );

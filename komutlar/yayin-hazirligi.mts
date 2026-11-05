@@ -27,40 +27,58 @@ const git = (argumanlar: string[]) => {
   };
 };
 
-// Hattın kendisi ve hattın çağırdığı betiklerin tanımları ile denetim ve test ayarları: bir kayıt
-// bunları zayıflatırsa kendi hattı yeşil biter. Test ve komut dosyalarının kendisi bu korumanın
-// dışındadır (yalnız disiplin, karar 0035).
-export const hatAyarDosyalari = [
-  hatDosyasi,
-  "biome.json",
-  "vitest.config.ts",
-  "playwright.config.ts",
-  "tsconfig.json",
-  "tsconfig.temel.json",
-  "denetim",
-];
+// Hattın kendisi, hattın çağırdığı betiklerin tanımları, alt paketlerin betikleri ve projedeki
+// bütün denetim ve test ayarları: bir kayıt bunları zayıflatırsa kendi hattı yeşil biter. Test ve
+// komut dosyalarının kendisi bu korumanın dışındadır (yalnız disiplin, karar 0035).
+export const hatAyarKalibi =
+  /^(\.github\/workflows\/kontrol-hatti\.yml|denetim\/.+|(.+\/)?(biome\.jsonc?|tsconfig[^/]*\.json|vitest\.config\.[cm]?[jt]s|playwright\.config\.[cm]?[jt]s|vitest\.workspace\.[cm]?[jt]s))$/;
+const altPaketKalibi = /^.+\/package\.json$/;
 
-// Bir kayıttaki hat korumasının özeti; okunamayan parça "yok" olur.
+// Bir kayıttaki hat korumasının özeti; hat dosyası ya da kök paket okunamazsa undefined.
 export const hatKorumasi = (kayit: string): string | undefined => {
-  const dosyalar = hatAyarDosyalari.map((yol) => {
-    const nesne = git(["rev-parse", `${kayit}:${yol}`]);
-    return nesne.tamam ? nesne.cikti : "yok";
-  });
-  if (dosyalar[0] === "yok") return undefined;
+  const agac = git(["ls-tree", "-r", kayit]);
+  if (!agac.tamam) return undefined;
+  const nesneler = agac.cikti
+    .split("\n")
+    .map((satir) => satir.match(/^\d+ blob ([0-9a-f]+)\t(.+)$/))
+    .filter((e): e is RegExpMatchArray => e !== null)
+    .map((e) => [e[2] ?? "", e[1] ?? ""] as [string, string]);
+  if (!nesneler.some(([yol]) => yol === hatDosyasi)) return undefined;
   const hat = git(["show", `${kayit}:${hatDosyasi}`]).cikti;
   const paket = git(["show", `${kayit}:package.json`]);
   if (!paket.tamam) return undefined;
-  return korumaOzeti(hat, paket.cikti, dosyalar);
+  const altPaketler = Object.fromEntries(
+    nesneler
+      .filter(([yol]) => altPaketKalibi.test(yol))
+      .map(([yol]) => [yol, git(["show", `${kayit}:${yol}`]).cikti]),
+  );
+  return korumaOzeti(
+    hat,
+    paket.cikti,
+    altPaketler,
+    nesneler.filter(([yol]) => hatAyarKalibi.test(yol)),
+  );
 };
 
-// Hattın çağırdığı betiklerin (pnpm <ad>) tanımları ve ayar dosyalarının içerik özetleri.
-// Hattın çağırmadığı bir betiğin eklenmesi ya da değişmesi özeti değiştirmez.
-export const korumaOzeti = (hat: string, paket: string, dosyalar: string[]): string => {
-  const betikler = (JSON.parse(paket) as { scripts?: Record<string, string> }).scripts ?? {};
+// Hattın çağırdığı kök betiklerin (pnpm <ad>) tanımları, alt paketlerin bütün betikleri ve ayar
+// dosyalarının içerik özetleri. Hattın çağırmadığı bir kök betiğin değişmesi özeti değiştirmez.
+export const korumaOzeti = (
+  hat: string,
+  paket: string,
+  altPaketler: Record<string, string>,
+  dosyalar: [string, string][],
+): string => {
+  const betikler = (metin: string) =>
+    (JSON.parse(metin) as { scripts?: Record<string, string> }).scripts ?? {};
+  const kok = betikler(paket);
   const cagrilanlar = [...new Set([...hat.matchAll(/pnpm ([a-z0-9-]+)/g)].map((e) => e[1] ?? ""))]
     .sort()
-    .map((ad) => [ad, betikler[ad] ?? "yok"]);
-  return JSON.stringify({ dosyalar, cagrilanlar });
+    .map((ad) => [ad, kok[ad] ?? "yok"]);
+  const alt = Object.keys(altPaketler)
+    .sort()
+    .map((yol) => [yol, betikler(altPaketler[yol] ?? "{}")]);
+  const sirali = [...dosyalar].sort(([a], [b]) => a.localeCompare(b));
+  return JSON.stringify({ cagrilanlar, alt, dosyalar: sirali });
 };
 
 // Hat koruması iki kayıtta aynı mı.
@@ -78,7 +96,7 @@ export const yayinKilitleri = (): string => {
   if (!getir.tamam) throw new Error(`Ana dal GitHub'dan okunamadı: ${getir.hata}`);
   if (!hatDosyasiAyniMi(kayit, "origin/main")) {
     throw new Error(
-      `Bu kayıttaki hat dosyası, hattın çağırdığı betikler ya da denetim ve test ayarları (${hatAyarDosyalari.join(", ")}) ana daldakiyle aynı değil, yayın yapılmaz.`,
+      "Bu kayıttaki hat dosyası, hattın çağırdığı betikler, alt paketlerin betikleri ya da denetim ve test ayarları ana daldakiyle aynı değil, yayın yapılmaz.",
     );
   }
   return kayit;

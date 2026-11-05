@@ -297,6 +297,24 @@ const etkinYaz = (ipv4: string, ortam: Ortam, kodAdi: string, no: number): void 
   if (sonuc.status !== 0) throw new Error(`etkin yazılamadı: ${sonuc.stderr.trim()}`);
 };
 
+// etkin yazıldı mı, sunucudan yeniden okunarak anlaşılır: yazma sunucuda olup bağlantı sonra
+// koparsa yayın başarılı sayılır (etkin yeni yayını gösterirken yeni yayın silinmez).
+const etkinYazVeDogrula = (ipv4: string, ortam: Ortam, kodAdi: string, no: number): void => {
+  try {
+    etkinYaz(ipv4, ortam, kodAdi, no);
+  } catch (hata) {
+    let sunucudaki: number | undefined;
+    try {
+      sunucudaki = yayindakiSiteleriOku(ipv4)[kodAdi];
+    } catch {
+      throw new Error(
+        `${tekSatir((hata as Error).message)}; etkin dosyası da okunamadı, elle bakılmalı: ${yayinKlasoru(ortam, kodAdi)}/etkin`,
+      );
+    }
+    if (sunucudaki !== no) throw hata;
+  }
+};
+
 // --- Sağlık ---
 
 type Saglik = { cekirdekSurumu?: string; veritabani?: string };
@@ -455,7 +473,7 @@ const yayinlaKilitli = async (girdi: YayinGirdisi): Promise<YayinKaydi> => {
     onKapiyiKur(ipv4, { ...siteler, [kodAdi]: no });
     const disHata = await disaridanSaglik(ipv4, kodAdi, surum);
     if (disHata) throw new Error(`deneme adresi: ${disHata}`);
-    etkinYaz(ipv4, ortam, kodAdi, no);
+    etkinYazVeDogrula(ipv4, ortam, kodAdi, no);
     trafikGecti = true;
     kayit.sonuc = "basarili";
     yaz(`trafik      ${denemeAdresi(kodAdi)} → ${no}`);
@@ -547,7 +565,7 @@ const geriDonKilitli = async (girdi: {
     onKapiyiKur(ipv4, { ...siteler, [kodAdi]: hedef.etkin });
     const disHata = await disaridanSaglik(ipv4, kodAdi, hedef.surum);
     if (disHata) throw new Error(`deneme adresi: ${disHata}`);
-    etkinYaz(ipv4, ortam, kodAdi, hedef.etkin);
+    etkinYazVeDogrula(ipv4, ortam, kodAdi, hedef.etkin);
     trafikGecti = true;
     kayit.sonuc = "basarili";
     yaz(`trafik      ${denemeAdresi(kodAdi)} → ${hedef.etkin}`);
