@@ -26,4 +26,4 @@ Her sitenin veritabanı şifresi gibi gizli bilgileri sunucuda korumalı durur, 
 
 ## Durum
 
-yapılacak
+bitti
