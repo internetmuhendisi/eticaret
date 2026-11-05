@@ -26,4 +26,4 @@ Canlıdaki hatalar kullanıcıdan önce görülsün. Karar 0013'te açık kalan 
 
 ## Durum
 
-yapılacak
+bitti
