@@ -23,4 +23,4 @@ Olası neden, doğrulanmadı: aracın bağlantısını tutan modül değişkeni 
 
 ## Durum
 
-yapılacak
+bitti
