@@ -2,7 +2,7 @@
 
 ## Amaç
 
-`tsconfig.json` `cekirdek/moduller/**` klasörünü içermiyor; modül dosyaları ancak kapının içe aldığı kadarıyla denetleniyor (kart 0029'un bağımsız kontrolü, listesi aşağıda ölçülecek). Kapıya bağlı olmayan modül dosyasındaki ve modül testlerindeki tür hatası hattı kırmızıya düşürmez. Kural (`.claude/rules/test.md`) test dosyalarının da tür kontrolünden geçmesini ister.
+`tsconfig.json` `cekirdek/moduller/**` klasörünü içermiyor; modül dosyaları ancak kapının içe aldığı kadarıyla denetleniyor (kart 0029'un bağımsız kontrolü). Ölçüldü: `moduller/*/testler/` altındaki 7 test dosyası denetlenmiyor. Kapıya bağlı olmayan modül dosyasındaki ve modül testlerindeki tür hatası hattı kırmızıya düşürmez. Kural (`.claude/rules/test.md`) test dosyalarının da tür kontrolünden geçmesini ister.
 
 ## Olmazsa olmazlar
 

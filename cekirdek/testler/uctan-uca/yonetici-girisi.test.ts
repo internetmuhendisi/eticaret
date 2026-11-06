@@ -27,7 +27,11 @@ test.beforeEach(({ page }) => {
   });
 });
 
+// Sayfanın kodu yüklenmeden gönderilen form çalışmaz (kart 0057): önce yüklenmesi beklenir.
+const yuklenmesiniBekle = (page: Page) => page.waitForLoadState("networkidle");
+
 const sifreyleGir = async (page: Page, girilen = sifre) => {
+  await yuklenmesiniBekle(page);
   await page.getByLabel(metin("yonetim.giris.eposta")).fill(eposta);
   await page.getByLabel(metin("yonetim.giris.sifre")).fill(girilen);
   await page.getByRole("button", { name: metin("yonetim.giris.gonder") }).click();
@@ -45,6 +49,7 @@ const gizliOku = async (page: Page) =>
 // Kurulum ekranındaki metin anahtardan gerçek uygulamanın üreteceği kodu üretir, kurulumu bitirir.
 const kurulumuBitir = async (page: Page) => {
   await expect(page).toHaveURL(/\/yonetim\/giris\/kurulum/);
+  await yuklenmesiniBekle(page);
   const gizli = await gizliOku(page);
   const adim = kodAdimi();
   await page.getByLabel(metin("yonetim.kurulum.alan")).fill(zamanliKod(gizli, adim));
@@ -138,6 +143,7 @@ test("yanlış şifrede uyarı yazıyla görünür, sayfada kalır", async ({ pa
 
 test("yalnız klavyeyle doldurulur ve gönderilir", async ({ page }) => {
   await page.goto("/yonetim/giris");
+  await yuklenmesiniBekle(page);
   await page.getByLabel(metin("yonetim.giris.eposta")).focus();
   await page.keyboard.type(eposta);
   await page.keyboard.press("Tab");
@@ -147,6 +153,7 @@ test("yalnız klavyeyle doldurulur ve gönderilir", async ({ page }) => {
   await expect(page.getByRole("button", { name: metin("yonetim.giris.gonder") })).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/yonetim\/giris\/kurulum/);
+  await yuklenmesiniBekle(page);
   // Kod alanı odakla açılır: kurulum da klavyeyle bitirilir.
   const gizli = await gizliOku(page);
   await expect(page.getByLabel(metin("yonetim.kurulum.alan"))).toBeFocused();
@@ -188,6 +195,7 @@ test("kurulumlu yönetici yalnız şifreyle giremez, kodla girer; yanlış kod s
   await expect(page).toHaveURL(/\/yonetim\/giris\/kod/);
   await page.goto("/yonetim");
   await expect(page).toHaveURL(/\/yonetim\/giris\/kod/);
+  await yuklenmesiniBekle(page);
   const alan = page.getByLabel(metin("yonetim.kod.alan"));
   const dogru = zamanliKod(gizli, adim + 1);
   await alan.fill(dogru === "000000" ? "111111" : "000000");
@@ -211,12 +219,16 @@ test("yedek kodla girilir, aynı kod ikinci kez reddedilir", async ({ page }) =>
   const gonder = page.getByRole("button", { name: metin("yonetim.kod.gonder") });
 
   await sifreyleGir(page);
+  await expect(page).toHaveURL(/\/yonetim\/giris\/kod/);
+  await yuklenmesiniBekle(page);
   await page.getByLabel(metin("yonetim.kod.alan")).fill(kod ?? "");
   await gonder.click();
   await expect(page).toHaveURL(/\/yonetim$/);
   await cikisYap(page);
 
   await sifreyleGir(page);
+  await expect(page).toHaveURL(/\/yonetim\/giris\/kod/);
+  await yuklenmesiniBekle(page);
   await page.getByLabel(metin("yonetim.kod.alan")).fill(kod ?? "");
   await gonder.click();
   await expect(page.getByText(metin("yonetim.kod.hataKod"), { exact: true })).toHaveRole("alert");
@@ -274,6 +286,7 @@ for (const [ad, width, height] of [
     await page.goto("/yonetim/giris");
     await sifreyleGir(page);
     await expect(page).toHaveURL(/\/yonetim\/giris\/kurulum/);
+    await yuklenmesiniBekle(page);
     const yana = () => page.evaluate(() => document.documentElement.scrollWidth);
     expect(await yana()).toBeLessThanOrEqual(width);
     const karekod = await page
