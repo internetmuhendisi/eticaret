@@ -60,7 +60,7 @@ try {
     const surumleme = sunucudaCalistir(
       sunucu.ipv4,
       kokBetigi(
-        `rc ${ortam} mkdir "depo:$KOVA" --s3-bucket-object-lock-enabled\nrc ${ortam} backend versioning "depo:$KOVA"`,
+        `rc ${ortam} mkdir "depo:$KOVA" --s3-no-check-bucket=false --s3-bucket-object-lock-enabled\nrc ${ortam} backend versioning "depo:$KOVA"`,
       ),
     );
     if (!surumleme.includes("Enabled")) throw new Error("Kovada sürümleme açık değil.");

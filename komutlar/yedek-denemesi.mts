@@ -38,6 +38,7 @@ import {
   degistirmeBetigi,
   geriAlmaBetigi,
   geriYukle,
+  kaydaYazBetigi,
   kayitlariCoz,
   kokBetigi,
   konumHatalari,
@@ -208,11 +209,15 @@ printf 'isaret=%s\\n' "$(grep -a -c '${isaret}' "$g" || true)"`),
     surum !== "" && kaliciSilme.durum !== 0 && /object lock/.test(kaliciSilme.hata),
     surum ? "" : "sürüm bulunamadı",
   );
-  dene(
-    kokBetigi(
-      `rc ${ortam} backend cleanup-hidden "depo:$KOVA/${ortam}/${b.kodAdi}" >/dev/null 2>&1`,
-    ),
+  // Temizlik işareti kaldırır ve hata döner; alarm budur.
+  const alarm = dene(`set -eu\nsudo ${yedekKoku}/gece.sh --temizle ${ortam} ${b.kodAdi}\n`);
+  const alarmKaydi = kayitlariCoz(calistir(`sudo cat ${yedekKoku}/kayit.jsonl\n`)).at(-1);
+  olc(
+    "silme işareti temizlikte hata veriyor, kayda yazılıyor",
+    alarm.durum !== 0 && alarmKaydi?.tur === "temizlik" && alarmKaydi?.sonuc === "basarisiz",
+    alarmKaydi?.sebep ?? "",
   );
+  calistir(kaydaYazBetigi(ortam, b.kodAdi, "temizlik-onay", "basarili", "", ""));
   const donen = calistir(sonYedegiBulBetigi(ortam, b.kodAdi)).trim();
   olc("silme işareti kalkınca yedek geri geliyor", donen === dosya, donen);
 

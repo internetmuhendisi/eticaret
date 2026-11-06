@@ -16,6 +16,7 @@ import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { sunucuTanimi } from "../sunucu.mts";
 import {
+  anahtarHatalari,
   ayariOku,
   degistirmeBetigi,
   depoAyariMetni,
@@ -30,6 +31,7 @@ import {
   ozetiOku,
   provaBetigi,
   siteBilgisiSatiri,
+  veritabaniHatalari,
   type YedekAyari,
   type YedekKaydi,
   yanaAcmaBetigi,
@@ -105,8 +107,8 @@ describe("sunucu betikleri", () => {
     ["kurulum", kurmaBetigi(iyiAyar, "deneme", depoAyari)],
     ["prova", provaBetigi("deneme", "ornek-magaza", "20261106T000000Z.dump.age", anahtar)],
     ["yana açma", yanaAcmaBetigi("deneme", "ornek-magaza", "20261106T000000Z.dump.age", anahtar)],
-    ["yer değiştirme", degistirmeBetigi("deneme", "ornek-magaza", "kutu")],
-    ["geri alma", geriAlmaBetigi("deneme", "ornek-magaza", "kutu")],
+    ["yer değiştirme", degistirmeBetigi("deneme", "ornek-magaza")],
+    ["geri alma", geriAlmaBetigi("deneme", "ornek-magaza")],
     ["konum", konumOlcmeBetigi("deneme")],
     ["gece", readFileSync(join(yedekKlasoru, "gece.sh"), "utf8")],
     ["ortak", readFileSync(join(yedekKlasoru, "ortak.sh"), "utf8")],
@@ -143,6 +145,26 @@ describe("sunucu betikleri", () => {
     expect(prova).toContain("--network none");
     expect(prova).not.toMatch(/DROP|ALTER|CREATE DATABASE/);
     expect(prova).toContain("pg_restore -U postgres --no-owner --no-acl --exit-on-error -d prova");
+  });
+
+  it("pg_restore çıktısı (müşteri verisi taşıyabilir) gösterilmez", () => {
+    for (const betik of [
+      provaBetigi("deneme", "x", "20261106T000000Z.dump.age", anahtar),
+      yanaAcmaBetigi("deneme", "x", "20261106T000000Z.dump.age", anahtar),
+    ]) {
+      expect(betik).toMatch(/pg_restore [^\n]*2>\/dev\/null/);
+    }
+  });
+
+  it("yer değiştirme tek işlemdedir, hiçbir şey silmez; geri alma önce eskiyi arar", () => {
+    const degistir = degistirmeBetigi("deneme", "x");
+    expect(degistir.indexOf("BEGIN;")).toBeLessThan(degistir.indexOf("ALTER DATABASE"));
+    expect(degistir).toContain("COMMIT;");
+    expect(degistir).not.toContain("DROP");
+    const geri = geriAlmaBetigi("deneme", "x");
+    expect(geri.indexOf("datname = 'site_x__eski'")).toBeGreaterThan(-1);
+    expect(geri.indexOf("exit 1")).toBeLessThan(geri.indexOf("ALTER DATABASE"));
+    expect(geri.indexOf("COMMIT;")).toBeLessThan(geri.indexOf("DROP DATABASE"));
   });
 
   it("yana açma canlı veritabanına yazmaz, hatada yan veritabanını siler", () => {
@@ -220,6 +242,37 @@ describe("denetimin kararları", () => {
     expect(kayitHatalari(kayitlar as YedekKaydi[], [site], simdi).join(" ")).toContain(beklenen);
   });
 
+  it("temizlik hatası 26 saat sonra da kırmızı, onaylanınca kalkar", () => {
+    const eskiHata = kayit({
+      zaman: "2026-11-01T00:00:10Z",
+      tur: "temizlik",
+      sonuc: "basarisiz",
+      sebep: "temizlik-yarim",
+    });
+    const taze = kayit({});
+    expect(kayitHatalari([eskiHata, taze], [site], simdi).join(" ")).toContain("temizlik");
+    const onay = kayit({ zaman: "2026-11-02T00:00:10Z", tur: "temizlik-onay" });
+    expect(kayitHatalari([eskiHata, onay, taze], [site], simdi)).toEqual([]);
+    const sonrakiHata = { ...eskiHata, zaman: "2026-11-03T00:00:10Z" };
+    expect(kayitHatalari([eskiHata, onay, sonrakiHata, taze], [site], simdi)).toHaveLength(1);
+  });
+
+  it("anahtarsız veritabanı ve yarım geri yükleme artığı kırmızı", () => {
+    expect(veritabaniHatalari(["deneme site_ornek_magaza"], iyiAyar)).toEqual([]);
+    expect(veritabaniHatalari(["deneme site_yeni"], iyiAyar)[0]).toContain("anahtarı yok");
+    expect(veritabaniHatalari(["canli site_ornek_magaza"], iyiAyar)[0]).toContain("anahtarı yok");
+    expect(veritabaniHatalari(["deneme site_ornek_magaza__eski"], iyiAyar)[0]).toContain("artığı");
+  });
+
+  it("sunucudaki ya da bilgisayardaki anahtar ayarla aynı olmalı", () => {
+    const sunucuda = new Map([["deneme/ornek-magaza", acik]]);
+    expect(anahtarHatalari(iyiAyar, sunucuda, () => acik)).toEqual([]);
+    expect(anahtarHatalari(iyiAyar, new Map(), () => acik)[0]).toContain("sunucudaki");
+    expect(anahtarHatalari(iyiAyar, sunucuda, () => undefined)[0]).toContain("bilgisayarda yok");
+    const baska = `age1${"p".repeat(58)}`;
+    expect(anahtarHatalari(iyiAyar, sunucuda, () => baska)[0]).toContain("eşleşmiyor");
+  });
+
   it("kayıtlarda anahtar araması", () => {
     expect(kayittaYedekSizintisi("temiz metin", ["DEGER"])).toEqual([]);
     expect(kayittaYedekSizintisi("x DEGER y", ["DEGER"])).toHaveLength(1);
@@ -274,17 +327,16 @@ describe("gece betiğinin davranışı", () => {
       `printf '%s\\n' "$*" >> "$CAGRILAR"
 case "$*" in
   *"psql -U postgres -Atc"*) [ -z "\${LISTE_BOZUK:-}" ] || exit 1; printf '%s\\n' \${VERITABANLARI:-}; exit 0 ;;
-  *pg_dump*) [ -z "\${DOKUM_BOZUK:-}" ] || exit 1; printf 'DOKUM'; exit 0 ;;
+  *pg_dump*) [ -z "\${DOKUM_BOZUK:-}" ] || exit 1; [ -n "\${DOKUM_BOS:-}" ] || printf 'PGDMPveri'; exit 0 ;;
+  *"ps --format"*) [ -z "\${KUTU_BOZUK:-}" ] || exit 1; printf '%s\\n' \${KUTULAR:-veritabani-deneme}; exit 0 ;;
+  *"--files-only"*) printf '%s\\n' \${GENC_DOSYA-yeni.dump.age}; exit 0 ;;
   *copyto*) [ -z "\${YUKLEME_BOZUK:-}" ] || exit 1; exit 0 ;;
   *lsf*) printf '%s\\n' "\${UZAK_BOYUT:-11}"; exit 0 ;;
   *cleanup-hidden*) [ -z "\${TEMIZLIK_BOZUK:-}" ] || exit 1; exit 0 ;;
   *) exit 0 ;;
 esac`,
     );
-    betik(
-      "age",
-      'cat >/dev/null; printf "SIFRELIDOSYA"; exit 0'.replace("SIFRELIDOSYA", "12345678901"),
-    );
+    betik("age", 'cat > "$AGE_GIRDISI"; printf "12345678901"; exit 0');
     betik("flock", "exit 0");
     const calistir = (args: string[], ortam: Record<string, string> = {}) => {
       const sonuc = spawnSync("bash", [join(k, "gece.sh"), ...args], {
@@ -295,6 +347,7 @@ esac`,
           YEDEK_KOKU: k,
           GIZLI_KOKU: join(kok, "gizli"),
           CAGRILAR: join(kok, "cagrilar"),
+          AGE_GIRDISI: join(kok, "age-girdisi"),
           ...ortam,
         },
       });
@@ -309,17 +362,23 @@ esac`,
         cagrilar: existsSync(join(kok, "cagrilar"))
           ? readFileSync(join(kok, "cagrilar"), "utf8")
           : "",
+        sifrelenen: existsSync(join(kok, "age-girdisi"))
+          ? readFileSync(join(kok, "age-girdisi"), "utf8")
+          : "",
         gecici: spawnSync("ls", ["-A", join(k, "gecici")], { encoding: "utf8" }).stdout.trim(),
       };
     };
-    return { calistir };
+    const siteYaz = (site: string, metin: string) =>
+      writeFileSync(join(k, "siteler", "deneme", site), metin);
+    return { calistir, siteYaz };
   };
 
   it("başarılı gece: kilitle yükler, kayda yazar, temizler, geçici dosya kalmaz", () => {
     const { calistir } = kur(["ornek-magaza"]);
     const r = calistir([], { VERITABANLARI: "site_ornek_magaza" });
     expect(r.durum).toBe(0);
-    expect(r.kayit.at(-1)).toMatchObject({
+    expect(r.kayit.at(-1)).toMatchObject({ tur: "temizlik", sonuc: "basarili" });
+    expect(r.kayit.at(-2)).toMatchObject({
       site: "ornek-magaza",
       tur: "gece",
       sonuc: "basarili",
@@ -380,6 +439,57 @@ esac`,
     const r = calistir([], { TEMIZLIK_BOZUK: "1", VERITABANLARI: "site_ornek_magaza" });
     expect(r.durum).toBe(1);
     expect(r.kayit.at(-1)).toMatchObject({ tur: "temizlik", sebep: "temizlik-yarim" });
+  });
+
+  it("döküm şifrelemeye eksiksiz gider: imza denetimi baştaki baytları yutmaz", () => {
+    const { calistir } = kur(["ornek-magaza"]);
+    const r = calistir(["deneme", "ornek-magaza", "elle"]);
+    expect(r.sifrelenen).toBe("PGDMPveri");
+  });
+
+  it("boş döküm başarılı sayılmaz (age boş girdiyi de şifreler)", () => {
+    const { calistir } = kur(["ornek-magaza"]);
+    const r = calistir([], { DOKUM_BOS: "1", VERITABANLARI: "site_ornek_magaza" });
+    expect(r.durum).toBe(1);
+    expect(r.kayit.at(-1)).toMatchObject({ sonuc: "basarisiz", sebep: "dokum-bos" });
+    expect(r.cagrilar).not.toContain("copyto");
+  });
+
+  it("yedek işi kurulmamış ortamın veritabanı da görünür", () => {
+    const { calistir } = kur(["ornek-magaza"]);
+    const r = calistir([], {
+      KUTULAR: "veritabani-deneme veritabani-canli",
+      VERITABANLARI: "site_ornek_magaza",
+    });
+    expect(r.cagrilar).toContain("exec veritabani-canli psql");
+    expect(r.kayit.some((k) => k.ortam === "canli" && k.sebep === "anahtar-yok")).toBe(true);
+    expect(r.durum).toBe(1);
+  });
+
+  it("kutu listesi okunamazsa kırmızıdır", () => {
+    const { calistir } = kur(["ornek-magaza"]);
+    const r = calistir([], { KUTU_BOZUK: "1", VERITABANLARI: "site_ornek_magaza" });
+    expect(r.durum).toBe(1);
+    expect(r.kayit.some((k) => k.sebep === "kutu-listesi-okunamadi")).toBe(true);
+  });
+
+  it("bozuk site satırıyla temizlik hiçbir şey silmez, kayda yazar", () => {
+    const { calistir, siteYaz } = kur(["ornek-magaza"]);
+    siteYaz("ornek-magaza", `${acik}\n`);
+    const r = calistir(["--temizle", "deneme", "ornek-magaza"]);
+    expect(r.durum).toBe(1);
+    expect(r.cagrilar).not.toContain("delete");
+    expect(r.kayit.at(-1)).toMatchObject({ tur: "temizlik", sebep: "site-bilgisi-bozuk" });
+  });
+
+  it("süresi dolmamış yedek görünmüyorsa temizlik silmez: en yeni yedek kalır", () => {
+    const { calistir } = kur(["ornek-magaza"]);
+    const r = calistir(["--temizle", "deneme", "ornek-magaza"], { GENC_DOSYA: "" });
+    expect(r.durum).toBe(1);
+    expect(r.cagrilar).not.toContain("delete");
+    expect(r.kayit.at(-1)).toMatchObject({ tur: "temizlik", sebep: "yeni-yedek-yok" });
+    // İşaret altındaki yedek geri gelsin: işaretler yine kaldırılır.
+    expect(r.cagrilar).toContain("cleanup-hidden");
   });
 
   it("tek site çağrısında temizlik yapılmaz", () => {

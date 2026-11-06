@@ -10,7 +10,7 @@ import { secenek, yedekSitesi } from "./yedek-girdi.mts";
 try {
   const { ipv4, ortam, kodAdi } = yedekSitesi("yedek-prova");
   if (process.argv.includes("--yeni")) {
-    process.stdout.write(sunucudaCalistir(ipv4, yedekAlmaBetigi(ortam, kodAdi, "elle"), 600_000));
+    process.stdout.write(sunucudaCalistir(ipv4, yedekAlmaBetigi(ortam, kodAdi, "elle"), 900_000));
   }
   const dosya =
     secenek("dosya") ?? sunucudaCalistir(ipv4, sonYedegiBulBetigi(ortam, kodAdi)).trim();

@@ -18,8 +18,10 @@ Her sitenin açma anahtarı yalnız altyapı sahibinin bilgisayarında durur: `~
 
 1. `pnpm yedek-kaydi` ile dönülecek yedeği seçin. Son yedekten sonraki veri kaybolur.
 2. Önce deneyin: `pnpm yedek-prova siteler/<kod adı> <ortam> --dosya=<yedek>`. Site yedekten sonra yazdıysa fark görünmesi normaldir; yedeğin açılamaması normal değildir.
-3. `pnpm yedek-geri-yukle siteler/<kod adı> <ortam> --dosya=<yedek>`. Komut o anki durumun yedeğini alır, yedeği yan veritabanına açar, site kutusunu durdurur, veritabanlarını değiştirir, şifreyi yeniler (karar 0031), eksik veritabanı değişikliklerini uygular ve siteyi açar. Bir adım tutmazsa eski veritabanı yerine döner.
+3. `pnpm yedek-geri-yukle siteler/<kod adı> <ortam> --dosya=<yedek>`. Komut yedeği yan veritabanına açar, site kutusunu durdurur, o anki durumun yedeğini alır, veritabanlarını değiştirir, şifreyi yeniler (karar 0031), eksik veritabanı değişikliklerini uygular ve siteyi açar. Bir adım tutmazsa eski veritabanı yerine döner. Şimdilik yalnız deneme ortamında çalışır.
 4. `pnpm sunucu-denetle --hizli` ile kontrol edin.
+
+Komut "yarım kalmış" diyorsa (bağlantı kopmuş olabilir) önceki veri `<veritabanı>__eski` adıyla duruyordur. `--eskiye-don` onu yerine koyar, `--eskiyi-sil` şu anki hâli kabul eder. Karar vermeden o veritabanını silmeyin.
 
 ## Sunucu kaybolursa
 
@@ -27,4 +29,4 @@ Yeni sunucu (`pnpm sunucu-kur`), gizli bilgiler, veritabanı ve yayın kurulur; 
 
 ## Silme işareti
 
-Depo anahtarıyla yedek kalıcı silinemez, üstüne yalnız silme işareti konabilir. Gece işi işareti kaldırır ve `temizlik` kaydını başarısız yazar; denetim kırmızıya düşer. Kaydı görünce depo anahtarını Hetzner'de yenileyin.
+Depo anahtarıyla yedek kalıcı silinemez, üstüne yalnız silme işareti konabilir. Gece işi işareti kaldırır ve `temizlik` kaydını başarısız yazar; denetim, onaylanana kadar kırmızı kalır. Sebep ağ kesintisi değilse depo anahtarını Hetzner'de yenileyin. Bakınca: `pnpm yedek-kaydi --temizlik-onayla=<ortam>/<kod adı>`.

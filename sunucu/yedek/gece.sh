@@ -7,7 +7,8 @@
 #
 # Yedek sitenin kendi açık anahtarıyla şifrelenir; açma anahtarı sunucuda yoktur. Dosya süresi
 # dolana kadar depoda silme kilidiyle durur. Hiçbir site atlanmaz: anahtarı olmayan veritabanı
-# başarısız sayılır. Her sonuç kayda yazılır. Bir yedek başarısızsa çıkış kodu 1'dir.
+# başarısız sayılır, ortamlar çalışan veritabanı kutularından bulunur. Her sonuç kayda yazılır. Bir
+# yedek başarısızsa çıkış kodu 1'dir.
 set -uo pipefail
 umask 077
 # shellcheck disable=SC1091
@@ -20,12 +21,17 @@ if ! flock -w 3600 9; then
   exit 1
 fi
 
-bilgiyi_oku() { read -r acik saklama marj <"$K/siteler/$1/$2"; }
+# Site bilgisi: açık anahtar, kilit süresi (saniye), temizlik payı (saniye). Bozuk satır kullanılmaz:
+# boş bir süre "her şeyi sil" anlamına gelirdi.
+bilgiyi_oku() {
+  read -r acik saklama marj <"$K/siteler/$1/$2" || return 1
+  [[ "$acik" =~ ^age1[0-9a-z]{58}$ && "$saklama" =~ ^[1-9][0-9]*$ && "${marj:-}" =~ ^[0-9]+$ ]]
+}
 
 yedekle() {
   local ortam="$1" kod="$2" tur="$3" acik saklama marj
   local db="site_${kod//-/_}"
-  if ! bilgiyi_oku "$ortam" "$kod" 2>/dev/null || [ -z "${marj:-}" ]; then
+  if ! bilgiyi_oku "$ortam" "$kod" 2>/dev/null; then
     kayit "$ortam" "$kod" "$tur" "basarisiz" "anahtar-yok" "" 0
     echo "HATA $ortam/$kod: anahtar bilgisi yok" >&2
     return 1
@@ -33,8 +39,15 @@ yedekle() {
   local ad g boyut uzak bitis sebep=""
   ad="$(date -u +%Y%m%dT%H%M%SZ).dump.age"
   g="$(mktemp -d -p "$K/gecici")"
-  if ! docker exec "veritabani-$ortam" pg_dump -U postgres -Fc -d "$db" </dev/null | age -r "$acik" >"$g/$ad"; then
+  # age boş girdiyi de şifreler; dökümün başı bu yüzden şifrelemeden önce ölçülür (PGDMP imzası).
+  if ! docker exec "veritabani-$ortam" pg_dump -U postgres -Fc -d "$db" </dev/null |
+    {
+      dd bs=5 count=1 iflag=fullblock of="$g/bas" status=none
+      cat "$g/bas" -
+    } | age -r "$acik" >"$g/$ad"; then
     sebep="dokum-alinamadi"
+  elif [ "$(cat "$g/bas" 2>/dev/null)" != "PGDMP" ]; then
+    sebep="dokum-bos"
   elif ! boyut="$(stat -c %s "$g/$ad")" || [ "$boyut" -eq 0 ]; then
     sebep="dokum-bos"
   else
@@ -57,17 +70,33 @@ yedekle() {
   echo "yedeklendi $ortam/$kod $ad $boyut"
 }
 
-# Süresi dolan yedekler silinir. Bu adım yalnız o gece yedek başarılıysa çalışır, en yeni yedek
-# hiçbir zaman silinmez. Kilitli bir yedeğin üstündeki silme işareti de burada kalkar ve komut
-# hata döner: birisi süresi dolmamış yedeği silmeye çalışmış demektir.
+# Süresi dolan yedekler silinir. Kilitli bir yedeğin üstündeki silme işareti de burada kalkar ve
+# komut hata döner: birisi süresi dolmamış yedeği silmeye çalışmış olabilir, kayda yazılır. Süresi
+# dolmamış bir yedek yoksa hiçbir şey silinmez: en yeni yedek hiçbir zaman silinmesin.
 temizle() {
-  local ortam="$1" kod="$2" acik saklama marj
-  bilgiyi_oku "$ortam" "$kod" || return 1
-  rc "$ortam" delete --min-age "$((saklama + marj))s" "depo:$KOVA/$ortam/$kod" &&
-    rc "$ortam" backend cleanup-hidden "depo:$KOVA/$ortam/$kod" || {
+  local ortam="$1" kod="$2" acik saklama marj sinir genc
+  if ! bilgiyi_oku "$ortam" "$kod" 2>/dev/null; then
+    kayit "$ortam" "$kod" "temizlik" "basarisiz" "site-bilgisi-bozuk" "" 0
+    return 1
+  fi
+  sinir="$((saklama + marj))s"
+  if ! genc="$(rc "$ortam" lsf --files-only --max-age "$sinir" "depo:$KOVA/$ortam/$kod")"; then
+    kayit "$ortam" "$kod" "temizlik" "basarisiz" "liste-okunamadi" "" 0
+    return 1
+  fi
+  # Görünen yeni yedek yoksa hepsi silme işareti altında olabilir: hiçbir şey silinmez, yalnız işaretler
+  # kaldırılır (kilitli yedek geri gelir).
+  if [ -z "$genc" ]; then
+    rc "$ortam" backend cleanup-hidden "depo:$KOVA/$ortam/$kod" || true
+    kayit "$ortam" "$kod" "temizlik" "basarisiz" "yeni-yedek-yok" "" 0
+    return 1
+  fi
+  if ! rc "$ortam" delete --min-age "$sinir" "depo:$KOVA/$ortam/$kod" ||
+    ! rc "$ortam" backend cleanup-hidden "depo:$KOVA/$ortam/$kod"; then
     kayit "$ortam" "$kod" "temizlik" "basarisiz" "temizlik-yarim" "" 0
     return 1
-  }
+  fi
+  kayit "$ortam" "$kod" "temizlik" "basarili" "" "" 0
 }
 
 if [ "${1:-}" = "--temizle" ]; then
@@ -80,11 +109,19 @@ if [ $# -ge 3 ]; then
 fi
 
 durum=0
-for klasor in "$K"/siteler/*/; do
-  [ -d "$klasor" ] || continue
-  ortam="$(basename "$klasor")"
+# Ortamlar hem kurulu site bilgilerinden hem çalışan veritabanı kutularından gelir: yedek işi hiç
+# kurulmamış bir ortam da görünür.
+if ! kutular="$(docker ps --format '{{.Names}}' --filter 'name=^veritabani-' </dev/null)"; then
+  kayit "-" "-" "gece" "basarisiz" "kutu-listesi-okunamadi" "" 0
+  durum=1
+fi
+ortamlar="$(
+  for kutu in $kutular; do echo "${kutu#veritabani-}"; done
+  for klasor in "$K"/siteler/*/; do [ -d "$klasor" ] && basename "$klasor"; done
+)"
+for ortam in $(printf '%s\n' "$ortamlar" | sort -u); do
   bilinen=" "
-  for dosya in "$klasor"*; do
+  for dosya in "$K/siteler/$ortam"/*; do
     [ -f "$dosya" ] || continue
     kod="$(basename "$dosya")"
     bilinen="$bilinen site_${kod//-/_} "
@@ -94,7 +131,8 @@ for klasor in "$K"/siteler/*/; do
       durum=1
     fi
   done
-  # Anahtarı olmayan site sessizce yedeksiz kalmasın.
+  # Anahtarı olmayan site sessizce yedeksiz kalmasın. Çift alt çizgili adlar geri yüklemenin ara
+  # veritabanlarıdır, sunucu denetimi onları ayrıca kırmızı sayar.
   if ! dblar="$(docker exec "veritabani-$ortam" psql -U postgres -Atc "select datname from pg_database where datname like 'site\_%' and datname not like '%\_\_%'" </dev/null)"; then
     kayit "$ortam" "-" "gece" "basarisiz" "site-listesi-okunamadi" "" 0
     durum=1

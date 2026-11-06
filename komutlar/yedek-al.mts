@@ -8,7 +8,7 @@ import { yedekSitesi } from "./yedek-girdi.mts";
 
 try {
   const { ipv4, ortam, kodAdi } = yedekSitesi("yedek-al");
-  process.stdout.write(sunucudaCalistir(ipv4, yedekAlmaBetigi(ortam, kodAdi, "elle"), 600_000));
+  process.stdout.write(sunucudaCalistir(ipv4, yedekAlmaBetigi(ortam, kodAdi, "elle"), 900_000));
 } catch (hata) {
   console.error((hata as Error).message);
   process.exitCode = 1;
