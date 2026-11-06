@@ -6,6 +6,7 @@ export type Kapi = (typeof kapilar)[number];
 // Hatalı yanıtın kodu ve HTTP durumu. Kod bir kez yayınlandıktan sonra adı değişmez.
 export const hataKodlari = {
   dogrulama: 400,
+  "oturum-yok": 401,
   yetki: 403,
   bulunamadi: 404,
   cakisma: 409,

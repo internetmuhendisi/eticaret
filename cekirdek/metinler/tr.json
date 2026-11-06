@@ -31,6 +31,10 @@
   "yonetim": {
     "anasayfa": {
       "baslik": "Yönetim paneli"
+    },
+    "rol": {
+      "magaza-sahibi": "Mağaza sahibi",
+      "gorevli": "Görevli"
     }
   },
   "vitrin": {

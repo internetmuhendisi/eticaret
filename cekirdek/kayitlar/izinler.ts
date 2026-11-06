@@ -1,8 +1,31 @@
-// İzinlerin tek kaydı (.claude/rules/yetki.md). Roller bu izinlerden oluşur.
-// İzinler ve kontrolleri kart 0026'da eklenir. O zamana kadar liste boştur, bu yüzden
-// herkese açık giriş dışındaki girişlere uç yazılamaz (karar 0024).
-export const izinler = [] as const;
-export type IzinAdi = (typeof izinler)[number];
+// İzinlerin tek kaydı (.claude/rules/yetki.md, karar 0040). Her modül kendi izinlerini izinler.ts
+// dosyasında yazar, burada toplanır. Roller bu izinlerden oluşur. Liste belgede de yazar:
+// cekirdek/moduller/ekip/izinler-ve-roller.md.
+import { ekipIzinleri } from "../moduller/ekip/izinler.ts";
+import { musteriIzinleri } from "../moduller/musteri/izinler.ts";
+import type { Kapi } from "./kapi.ts";
+
+// Hesap yalnız kendi kayıtlarını, ekibinin kayıtlarını ya da bütün kayıtları görür.
+export const izinKapsamlari = ["kendi", "ekip", "tumu"] as const;
+export type IzinKapsami = (typeof izinKapsamlari)[number];
+
+// Müşteri izninin kapsamı yalnız "kendi" olabilir. Sahip izni sahip paneliyle gelir.
+export type IzinTanimi =
+  | { giris: "musteri"; kapsam: "kendi" }
+  | { giris: "yonetici"; kapsam: IzinKapsami };
+
+export const modulIzinleri = { ekip: ekipIzinleri, musteri: musteriIzinleri } as const;
+
+export const izinler = { ...ekipIzinleri, ...musteriIzinleri } as const satisfies Record<
+  string,
+  IzinTanimi
+>;
+export type IzinAdi = keyof typeof izinler;
+
+// Bir girişin kullanabileceği izinler. Sahip girişinde izin olmadığı için oraya uç yazılamaz.
+export type GirisIzni<Giris extends Kapi> = {
+  [Ad in IzinAdi]: (typeof izinler)[Ad]["giris"] extends Giris ? Ad : never;
+}[IzinAdi];
 
 // Herkese açık girişteki uçların izin beyanı. Başka girişte kullanılamaz.
 export const herkeseAcik = "herkese-acik";

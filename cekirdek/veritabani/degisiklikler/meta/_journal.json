@@ -15,6 +15,20 @@
       "when": 1793955910747,
       "tag": "0001_sifre-ve-oturum",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793964060282,
+      "tag": "0002_roller",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793964060778,
+      "tag": "0003_baslangic-rolleri",
+      "breakpoints": true
     }
   ]
 }

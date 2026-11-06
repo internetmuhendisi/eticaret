@@ -13,6 +13,7 @@ Fiyat, stok, sipariş ve yetki değişikliklerinde kimin, ne zaman, neyi değiş
 - Kayıtlar sonradan değiştirilemez, panelden silinemez.
 - Rol atama, rol kaldırma ve giriş hesabının kapatılması kaydedilir.
 - Kayıtta şifre ve anahtar yoktur.
+- Hesabı kapatan servis, tam yetkili son yöneticinin hesabını kapatmaz; `rolAl` bu kuralı rol alırken uygular, hesap kapatılırken kural henüz yoktur (karar 0040). Hesap kapatma `rolAl` ile aynı kilidi (tam yetkili rol satırları) alır; kilitsiz yazılırsa ikisi aynı anda geçer, sahip kalmaz.
 
 ## Sınırlar
 

@@ -20,7 +20,8 @@ Kapıdaki her uç burada yazar (`.claude/rules/sunucu-arayuzu.md`). Yeni ya da d
 | Kod | HTTP | Ne zaman |
 |---|---|---|
 | `dogrulama` | 400 | Girdi şemadan geçmedi. Ayrıntı: `[{ "alan", "kod" }]`, `kod` Zod'un hata kodudur. |
-| `yetki` | 403 | İstenen izin yok (kart 0026) ya da istek başka bir adresten geldi (sahte istek). |
+| `oturum-yok` | 401 | Geçerli oturum yok: girişsiz, süresi dolmuş ya da kapanmış oturum. Ekran giriş sayfasına yönlendirir. |
+| `yetki` | 403 | Oturum var ama istenen izin yok ya da istek başka bir adresten geldi (sahte istek). |
 | `bulunamadi` | 404 | Kayıt yok. |
 | `cakisma` | 409 | Kayıt başka biriyle çakışıyor. |
 | `is-kurali` | 422 | Girdi geçerli ama iş kuralı izin vermiyor. |
@@ -37,7 +38,7 @@ Kapıdaki her uç burada yazar (`.claude/rules/sunucu-arayuzu.md`). Yeni ya da d
 | `genel` | 60 saniyede 120 istek |
 | `siki` | 60 saniyede 5 istek (giriş, şifre sıfırlama gibi hassas uçlar) |
 
-**İzin.** Herkese açık girişteki uçların izni `herkese-acik`tır. Öteki girişlerdeki uçlar izin kaydındaki bir izni ister (`cekirdek/kayitlar/izinler.ts`, kart 0026).
+**İzin.** Herkese açık girişteki uçların izni `herkese-acik`tır. Öteki girişlerdeki uçlar yalnız o girişin iznini ister (`cekirdek/kayitlar/izinler.ts`, liste `cekirdek/moduller/ekip/izinler-ve-roller.md`). Kapı her istekte sırayla sahte isteğe, istek sınırına, oturuma, izne ve girdiye bakar: yetkisiz istek girdi hatası görmez. Uç, hesabın kimliğini ve iznin kapsamını kapıdan alır, girdiden almaz (karar 0040). Sahip girişinin henüz izni yoktur, oraya uç yazılamaz.
 
 **Sahte istek.** Veri değiştiren her istekte (`GET`, `HEAD` ve `OPTIONS` dışında) kapı `Sec-Fetch-Site` ve `Origin` başlıklarını isteğin adresi ve şemasıyla karşılaştırır, tutmayana istek sınırını saymadan `yetki` döner. İki başlık da yoksa istek tarayıcıdan gelmemiştir ve geçer (karar 0039).
 

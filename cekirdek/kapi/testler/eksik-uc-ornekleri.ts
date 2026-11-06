@@ -32,6 +32,38 @@ export const eksikUcOrnekleri = () => [
     isle: async () => 1,
   }),
   ucTanimla({
+    giris: "musteri",
+    sema: z.strictObject({}),
+    // @ts-expect-error yönetici izni müşteri girişinde geçerli değildir
+    izin: "ekip.gor",
+    sinir: "genel",
+    isle: async () => 1,
+  }),
+  ucTanimla({
+    giris: "yonetici",
+    sema: z.strictObject({}),
+    // @ts-expect-error müşteri izni yönetici girişinde geçerli değildir
+    izin: "musteri.kendi-hesabi.gor",
+    sinir: "genel",
+    isle: async () => 1,
+  }),
+  ucTanimla({
+    giris: "yonetici",
+    sema: z.strictObject({}),
+    // @ts-expect-error kayıtta olmayan izin
+    izin: "ekip.uydurma",
+    sinir: "genel",
+    isle: async () => 1,
+  }),
+  ucTanimla({
+    giris: "sahip",
+    sema: z.strictObject({}),
+    // @ts-expect-error sahip girişinin henüz izni yoktur, uç yazılamaz
+    izin: "ekip.gor",
+    sinir: "genel",
+    isle: async () => 1,
+  }),
+  ucTanimla({
     // @ts-expect-error kayıtta olmayan giriş
     giris: "gizli",
     sema: z.strictObject({}),

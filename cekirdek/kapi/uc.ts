@@ -1,25 +1,33 @@
 // Kapıdaki her uç bu tanımla yazılır (karar 0024, .claude/rules/sunucu-arayuzu.md).
 // Giriş, Zod şeması, izin beyanı ve istek sınırı zorunludur; biri eksikse tür kontrolü
 // geçmez. Uç yalnız yönlendirir: sınırı sayar, girdiyi doğrular, işi servise verir,
-// sonucu zarfa koyar. İzin beyanı burada yazılır, kontrolü kart 0026'da eklenir.
+// sonucu zarfa koyar. İzin beyanı burada yazılır, kapı her istekte kontrol eder (karar 0040).
 import type { z } from "zod";
 import { hatayiKaydet } from "../izleme/hata-katmani.ts";
-import type { HerkeseAcik, IzinAdi } from "../kayitlar/izinler.ts";
+import type { GirisIzni, HerkeseAcik, IzinAdi } from "../kayitlar/izinler.ts";
 import type { IstekSiniri, Kapi } from "../kayitlar/kapi.ts";
 import { istegiSay, istemciAdresi } from "./istek-siniri.ts";
+import { erisimiDenetle, type UcErisimi } from "./izin-kontrolu.ts";
 import { sahteIstekMi } from "./sahte-istek.ts";
 import { BilinenHata, basariliYanit, hataliYanit } from "./zarf.ts";
 
-// Herkese açık girişteki uç yalnız herkese açık beyanını, öteki girişlerdeki uç gerçek bir
-// izni alır.
-export type UcIzni<Giris extends Kapi> = Giris extends "herkese-acik" ? HerkeseAcik : IzinAdi;
+// Herkese açık girişteki uç yalnız herkese açık beyanını, öteki girişlerdeki uç yalnız o girişin
+// iznini alır.
+export type UcIzni<Giris extends Kapi> = Giris extends "herkese-acik"
+  ? HerkeseAcik
+  : GirisIzni<Giris>;
 
 export type UcTanimi<Giris extends Kapi, Sema extends z.ZodType, Veri> = {
   giris: Giris;
   sema: Sema;
   izin: UcIzni<Giris>;
   sinir: IstekSiniri;
-  isle: (girdi: z.output<Sema>, istek: Request, yanit: YanitYazici) => Promise<Veri>;
+  isle: (
+    girdi: z.output<Sema>,
+    istek: Request,
+    yanit: YanitYazici,
+    erisim: UcErisimi<Giris>,
+  ) => Promise<Veri>;
 };
 
 // Servisin yanıta eklediği çerezler (oturum-cerezi.ts). Hatalı yanıtta da gider: geçersiz oturumun
@@ -64,6 +72,9 @@ export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
         });
       }
 
+      // Doğrulamadan önce: yetkisiz kişi ucun girdi yapısını öğrenemesin.
+      const erisim = await erisimiDenetle(tanim.giris, tanim.izin, istek, yanit.cerezYaz);
+
       const sonuc = tanim.sema.safeParse(await girdiyiOku(istek));
       if (!sonuc.success) {
         return hataliYanit(
@@ -75,7 +86,7 @@ export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
         );
       }
 
-      return basariliYanit(await tanim.isle(sonuc.data, istek, yanit));
+      return basariliYanit(await tanim.isle(sonuc.data, istek, yanit, erisim as UcErisimi<Giris>));
     } catch (hata) {
       if (hata instanceof BilinenHata) return hataliYanit(hata.kod, hata.ayrinti);
       // Beklenmeyen hata ortak hata katmanına gider, istemciye yalnız kodu döner.

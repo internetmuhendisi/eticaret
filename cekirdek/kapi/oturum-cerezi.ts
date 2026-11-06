@@ -1,6 +1,6 @@
 // Oturum çerezleri ve istekten oturumun okunması (kart 0025, karar 0039). Kısa anahtarın süresi
 // dolduysa yenileme anahtarıyla sessizce yenilenir; müşteri ya da yönetici fark etmez.
-// Kapı izin kontrolünü (kart 0026) bunun üstüne kurar.
+// Kapının izin kontrolü (izin-kontrolu.ts) bunun üstüne kuruludur.
 import type { SiteAyarlari } from "../ayar-semasi/ayarlar.ts";
 import { type HesapTuru, kisaAnahtarSuresiSaniye, oturumCerezAdlari } from "../kayitlar/oturum.ts";
 import { type Anahtarlar, oturumuDogrula, oturumuYenile } from "../moduller/oturum/servis.ts";
