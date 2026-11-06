@@ -25,4 +25,4 @@ Hiçbir uç yanlış role açık kalmasın. Uç listesi uygulamanın kendisinden
 
 ## Durum
 
-yapılacak
+bitti
