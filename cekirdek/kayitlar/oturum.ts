@@ -10,6 +10,13 @@ export const kisaAnahtarSuresiSaniye = 15 * 60;
 // aynı anda giden iki istek kullanıcıyı çıkarmamalı.
 export const yenilemeToleransiSaniye = 30;
 
+// Yanlış giriş sınırı (karar 0042): süre içinde bu kadar yanlış denemeden sonra giriş, son denemeden
+// itibaren bu süre bekletilir. Bir ofis aynı bağlantıyı paylaşabildiği için bağlantı sınırı yüksektir.
+export const girisDenemeSiniri = {
+  hesap: { deneme: 10, saniye: 15 * 60 },
+  baglanti: { deneme: 20, saniye: 15 * 60 },
+} as const satisfies Record<string, { deneme: number; saniye: number }>;
+
 export const sifreSiniri = { enKisa: 10, enUzun: 128 } as const;
 
 // Argon2id ayarı. Değişirse eski özetler sonraki başarılı girişte yeni ayarla yeniden özetlenir.

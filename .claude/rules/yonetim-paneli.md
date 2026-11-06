@@ -19,3 +19,9 @@ paths:
 - Panelin ana ekranında günün satışını, bekleyen siparişleri ve uyarıları tek bakışta göster.
 - Her ayar penceresinin başına ne işe yaradığını söyleyen bir iki cümlelik açıklama koy.
 - Bir düğmeyi yalnız fare üzerine gelince görünür yapma.
+
+## Panelin kapısı (karar 0042)
+
+- Girişsiz panel adresi `cekirdek/uygulama/proxy.ts` ile giriş sayfasına yönlenir, `(panel)` düzeni anahtarı değiştirmeden ikinci kez sorar. Yeni panel sayfası `app/yonetim/(panel)/` altına yazılır; yalnız giriş sayfası dışarıda durur.
+- Sayfa çizerken `istektenOturumAl` çağrılmaz, `oturumAcikMi` kullanılır. Bu ve yukarıdaki yer kuralını `cekirdek/kapi/testler/panel-katmanlari.test.ts` denetler.
+- Girişten sonraki dönüş adresi yalnız `guvenliDonus` ile kullanılır (`cekirdek/yonetim-paneli/adresler.ts`).

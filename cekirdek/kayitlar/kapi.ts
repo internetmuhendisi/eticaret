@@ -7,6 +7,7 @@ export type Kapi = (typeof kapilar)[number];
 export const hataKodlari = {
   dogrulama: 400,
   "oturum-yok": 401,
+  "giris-hatasi": 401,
   yetki: 403,
   bulunamadi: 404,
   cakisma: 409,

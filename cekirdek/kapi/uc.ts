@@ -91,7 +91,7 @@ export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
 
       return basariliYanit(await tanim.isle(sonuc.data, istek, yanit, erisim as UcErisimi<Giris>));
     } catch (hata) {
-      if (hata instanceof BilinenHata) return hataliYanit(hata.kod, hata.ayrinti);
+      if (hata instanceof BilinenHata) return hataliYanit(hata.kod, hata.ayrinti, hata.basliklar);
       // Beklenmeyen hata ortak hata katmanına gider, istemciye yalnız kodu döner.
       hatayiKaydet(hata, { yontem: istek.method, yol: new URL(istek.url).pathname });
       return hataliYanit("sunucu-hatasi");

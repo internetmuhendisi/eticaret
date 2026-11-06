@@ -55,7 +55,7 @@ const yeniAnahtarlar = (sureSaniye: number) => {
 };
 
 export const hesapAc = async (
-  vt: Veritabani,
+  vt: Pick<Veritabani, "insert">,
   tur: HesapTuru,
   girdi: { eposta: string; sifre: string },
 ): Promise<{ hesapKimligi: string }> => {
@@ -202,11 +202,11 @@ export const cikisYap = async (
   vt: Veritabani,
   tur: HesapTuru,
   anahtarlar: Partial<Anahtarlar>,
-): Promise<void> => {
-  const { oturum } = tablolar[tur];
+): Promise<{ eposta: string } | null> => {
+  const { hesap, oturum } = tablolar[tur];
   const { kisaAnahtar, yenilemeAnahtari } = anahtarlar;
-  if (kisaAnahtar === undefined && yenilemeAnahtari === undefined) return;
-  await vt
+  if (kisaAnahtar === undefined && yenilemeAnahtari === undefined) return null;
+  const [kapanan] = await vt
     .update(oturum)
     .set({ kapanma_zamani: new Date() })
     .where(
@@ -224,5 +224,49 @@ export const cikisYap = async (
             : eq(oturum.onceki_yenileme_ozeti, anahtarOzeti(yenilemeAnahtari)),
         ),
       ),
+    )
+    .returning({ hesapKimligi: oturum.hesap_kimligi });
+  if (kapanan === undefined) return null;
+  const [bulunan] = await vt
+    .select({ eposta: hesap.eposta })
+    .from(hesap)
+    .where(eq(hesap.kimlik, kapanan.hesapKimligi));
+  return bulunan ?? null;
+};
+
+// Anahtarı değiştirmeden oturumun açık olup olmadığını söyler. Sayfa çizerken kullanılır: çerez
+// yazılamayan yerde oturumu yenilemek onu kapatırdı (karar 0039, 0042). Kısa anahtarı dolmuş
+// oturumun yenileme anahtarı da sayılır; az önce değiştiyse eskisi tolerans süresince geçerlidir.
+export const oturumAcikMi = async (
+  vt: Veritabani,
+  tur: HesapTuru,
+  anahtarlar: Partial<Anahtarlar>,
+): Promise<boolean> => {
+  const { hesap, oturum } = tablolar[tur];
+  const { kisaAnahtar, yenilemeAnahtari } = anahtarlar;
+  if (kisaAnahtar !== undefined && (await oturumuDogrula(vt, tur, kisaAnahtar)) !== null) {
+    return true;
+  }
+  if (yenilemeAnahtari === undefined) return false;
+  const ozet = anahtarOzeti(yenilemeAnahtari);
+  const simdi = new Date();
+  const [bulunan] = await vt
+    .select({ kimlik: oturum.kimlik })
+    .from(oturum)
+    .innerJoin(hesap, eq(hesap.kimlik, oturum.hesap_kimligi))
+    .where(
+      and(
+        isNull(oturum.kapanma_zamani),
+        gt(oturum.oturum_bitis, simdi),
+        isNull(hesap.silinme_zamani),
+        or(
+          eq(oturum.yenileme_anahtari_ozeti, ozet),
+          and(
+            eq(oturum.onceki_yenileme_ozeti, ozet),
+            gt(oturum.yenileme_zamani, new Date(simdi.getTime() - yenilemeToleransiSaniye * 1000)),
+          ),
+        ),
+      ),
     );
+  return bulunan !== undefined;
 };

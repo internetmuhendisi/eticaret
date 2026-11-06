@@ -31,6 +31,7 @@
     "veritabani-baslat": "docker compose -f sunucu/compose.yaml --env-file .env up -d --wait",
     "veritabani-durdur": "docker compose -f sunucu/compose.yaml --env-file .env down",
     "site-veritabani-ac": "node --env-file=.env komutlar/site-veritabani-ac.mts",
+    "yonetici-ac": "node --env-file=.env komutlar/yonetici-ac.mts",
     "veritabani-degisikligi-uret": "drizzle-kit generate",
     "veritabani-guncelle": "node --env-file=.env komutlar/veritabani-guncelle.mts",
     "cekirdek-goruntusu": "node komutlar/cekirdek-goruntusu.mts",

@@ -21,6 +21,7 @@ Kapıdaki her uç burada yazar (`.claude/rules/sunucu-arayuzu.md`). Yeni ya da d
 |---|---|---|
 | `dogrulama` | 400 | Girdi şemadan geçmedi. Ayrıntı: `[{ "alan", "kod" }]`, `kod` Zod'un hata kodudur. |
 | `oturum-yok` | 401 | Geçerli oturum yok: girişsiz, süresi dolmuş ya da kapanmış oturum. Ekran giriş sayfasına yönlendirir. |
+| `giris-hatasi` | 401 | E-posta ya da şifre yanlış. Kayıtlı olmayan e-postayla cevabı aynıdır (karar 0042). |
 | `yetki` | 403 | Oturum var ama istenen izin yok ya da istek başka bir adresten geldi (sahte istek). |
 | `bulunamadi` | 404 | Kayıt yok. |
 | `cakisma` | 409 | Kayıt başka biriyle çakışıyor. |
@@ -67,3 +68,22 @@ Veritabanına ulaşılamazsa (503):
 ```
 
 Veritabanı 5 saniye içinde cevap vermezse yanıt 503 olur.
+
+### POST /kapi/herkese-acik/yonetici-giris
+
+Mağaza yöneticisini giriş yaptırır, oturum çerezlerini yazar. Girişi yapılmamış kişi izin taşıyamayacağı için herkese açık giriştedir (karar 0042).
+
+- İzin: `herkese-acik`. Sınır: `siki`. Ayrıca yanlış denemeler hesap ve bağlantı başına sayılır (`girisDenemeSiniri`, `cekirdek/kayitlar/oturum.ts`).
+- Girdi: `{ "eposta", "sifre" }` (`girisSemasi`, `cekirdek/moduller/oturum/semalar.ts`).
+- Servis: `cekirdek/moduller/oturum/giris.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }` ve iki oturum çerezi.
+- Hatalar: `giris-hatasi` (yanlış e-posta ya da şifre), `istek-siniri` (`Retry-After` ile), `dogrulama` (e-posta biçimi, boş ya da çok uzun şifre, fazla alan, bozuk gövde), `yetki` (sahte istek).
+
+### POST /kapi/herkese-acik/yonetici-cikis
+
+Oturumu kapatır, çerezleri siler. Rolü olmayan yönetici de çıkabilsin, süresi dolmuş oturumun çerezleri de silinsin diye izin istemez.
+
+- İzin: `herkese-acik`. Sınır: `genel`.
+- Girdi: yok. Oturum yoksa da 200 döner.
+- Servis: `cekirdek/moduller/oturum/giris.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }` ve çerezleri silen başlıklar.

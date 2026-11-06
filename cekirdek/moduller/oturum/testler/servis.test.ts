@@ -164,7 +164,7 @@ describe.each(hesapTurleri)("%s hesabı", (tur) => {
     await cikisYap(a, tur, { yenilemeAnahtari: yenilemeyle.anahtarlar.yenilemeAnahtari });
     expect(await oturumuDogrula(a, tur, yenilemeyle.anahtarlar.kisaAnahtar)).toBeNull();
 
-    await expect(cikisYap(a, tur, {})).resolves.toBeUndefined();
+    await expect(cikisYap(a, tur, {})).resolves.toBeNull();
   });
 
   it("yenileme hareketsizlik süresini ileri alır", async () => {

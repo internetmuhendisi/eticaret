@@ -35,6 +35,19 @@
     "rol": {
       "magaza-sahibi": "Mağaza sahibi",
       "gorevli": "Görevli"
+    },
+    "giris": {
+      "baslik": "Yönetim paneline giriş",
+      "eposta": "E-posta",
+      "sifre": "Şifre",
+      "gonder": "Giriş yap",
+      "hataBilgi": "E-posta ya da şifre yanlış. Kontrol edip yeniden deneyin.",
+      "hataSinir": "Çok fazla deneme yapıldı. Biraz bekleyip yeniden deneyin.",
+      "hataGenel": "Giriş şu an yapılamıyor. Biraz sonra yeniden deneyin."
+    },
+    "cikis": {
+      "dugme": "Çıkış yap",
+      "hata": "Çıkış yapılamadı. Sayfayı yenileyip yeniden deneyin."
     }
   },
   "vitrin": {

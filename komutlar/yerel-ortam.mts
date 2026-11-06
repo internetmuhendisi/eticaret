@@ -196,7 +196,7 @@ export const iste = (
   kodAdi: string,
   yol: string,
   basliklar: Record<string, string> = {},
-): Promise<{ durum: number; govde: string }> =>
+): Promise<{ durum: number; govde: string; konum: string | undefined }> =>
   new Promise((coz, reddet) => {
     const istek = request(
       {
@@ -211,12 +211,48 @@ export const iste = (
         yanit.on("data", (parca) => {
           govde += parca;
         });
-        yanit.on("end", () => coz({ durum: yanit.statusCode ?? 0, govde }));
+        yanit.on("end", () =>
+          coz({ durum: yanit.statusCode ?? 0, govde, konum: yanit.headers.location }),
+        );
       },
     );
     istek.on("error", reddet);
     istek.setTimeout(10_000, () => istek.destroy(new Error("zaman aşımı")));
     istek.end();
+  });
+
+// JSON gövdeli POST isteği. Ön kapının üzerinden gider, yolu olduğu gibi gönderir.
+export const gonder = (
+  kodAdi: string,
+  yol: string,
+  govde: unknown,
+): Promise<{ durum: number; govde: string }> =>
+  new Promise((coz, reddet) => {
+    const metin = JSON.stringify(govde);
+    const istek = request(
+      {
+        host: "127.0.0.1",
+        port: yerelPort(),
+        path: yol,
+        method: "POST",
+        headers: {
+          host: `${kodAdi}.localhost:${yerelPort()}`,
+          "content-type": "application/json",
+          "content-length": Buffer.byteLength(metin),
+        },
+      },
+      (yanit) => {
+        let okunan = "";
+        yanit.setEncoding("utf8");
+        yanit.on("data", (parca) => {
+          okunan += parca;
+        });
+        yanit.on("end", () => coz({ durum: yanit.statusCode ?? 0, govde: okunan }));
+      },
+    );
+    istek.on("error", reddet);
+    istek.setTimeout(10_000, () => istek.destroy(new Error("zaman aşımı")));
+    istek.end(metin);
   });
 
 // Yalnız veritabanı açılır; açık site kutuları "artık" sayılıp uyarı verilmesin diye susturulur.

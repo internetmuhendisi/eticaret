@@ -8,13 +8,18 @@ export type Zarf<Veri> =
 
 // Servisin bildiği, istemciye kodu ve ayrıntısıyla gösterilebilen hata.
 // Ayrıntıya kişisel veri ya da iç hata mesajı yazılmaz.
+// Komutlar bu dosyayı Node ile doğrudan çalıştırır, bu yüzden yalnız silinebilir tür sözdizimi kullanılır.
 export class BilinenHata extends Error {
-  constructor(
-    readonly kod: HataKodu,
-    readonly ayrinti?: unknown,
-  ) {
+  readonly kod: HataKodu;
+  readonly ayrinti: unknown;
+  readonly basliklar: HeadersInit | undefined;
+
+  constructor(kod: HataKodu, ayrinti?: unknown, basliklar?: HeadersInit) {
     super(kod);
     this.name = "BilinenHata";
+    this.kod = kod;
+    this.ayrinti = ayrinti;
+    this.basliklar = basliklar;
   }
 }
 

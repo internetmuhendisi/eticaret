@@ -1,0 +1,33 @@
+/* Form parçalarının ortak iskeleti: yükseklik, yazı ve dokunma alanı tek yerde. Renkler tarayıcının
+   sistem renkleridir, tasarım değerleri yazılınca buraya bağlanır. */
+.alan {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.hata {
+  font-weight: 600;
+}
+
+.giris,
+.dugme {
+  box-sizing: border-box;
+  min-height: 2.75rem;
+  font: inherit;
+}
+
+.giris {
+  width: 100%;
+  padding-inline: 0.5rem;
+}
+
+.dugme {
+  padding-inline: 1rem;
+  cursor: pointer;
+}
+
+.uyari {
+  padding: 0.75rem;
+  border: 2px solid currentcolor;
+}

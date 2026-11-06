@@ -4,6 +4,7 @@ import { and, count, eq, isNotNull, isNull, or } from "drizzle-orm";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { GirisIzni } from "../../kayitlar/izinler.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
+import { hesapAc } from "../oturum/servis.ts";
 import { rolIzinleri, roller, yoneticiler, yoneticiRolleri } from "./model.ts";
 
 // Her istekte çalışır: rol alınınca erişim bir sonraki istekte kesilir.
@@ -31,7 +32,7 @@ export const yoneticininIzniVarMi = async (
 };
 
 export const rolVer = async (
-  vt: Veritabani,
+  vt: Pick<Veritabani, "select" | "insert">,
   girdi: { yoneticiKimligi: string; rolKodu: string },
 ): Promise<void> => {
   const [rol] = await vt
@@ -91,3 +92,23 @@ export const rolAl = async (
     if ((kalan?.sayi ?? 0) === 0) throw new BilinenHata("is-kurali");
   });
 };
+
+// Yeni yöneticiyi tam yetkili rolle açar (kart 0027). Rolsüz yönetici her izinli uçta yetki hatası
+// alır ve rol ucu olmadığı için bunu düzeltecek yol kalmaz (karar 0040); bu yüzden hesap ve rol tek
+// işlemdedir, rol verilemezse hesap da açılmaz.
+export const tamYetkiliYoneticiAc = (
+  vt: Veritabani,
+  girdi: { eposta: string; sifre: string },
+): Promise<{ hesapKimligi: string }> =>
+  vt.transaction(async (islem) => {
+    const [rol] = await islem
+      .select({ kod: roller.kod })
+      .from(roller)
+      .where(eq(roller.tam_yetki, true))
+      .orderBy(roller.kod)
+      .limit(1);
+    if (rol === undefined) throw new BilinenHata("bulunamadi");
+    const { hesapKimligi } = await hesapAc(islem, "yonetici", girdi);
+    await rolVer(islem, { yoneticiKimligi: hesapKimligi, rolKodu: rol.kod });
+    return { hesapKimligi };
+  });

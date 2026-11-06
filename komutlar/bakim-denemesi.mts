@@ -107,7 +107,7 @@ const olaganDurum = async () => {
   }
   olc("olağan durumda yoklama siteyi bakıma almıyor (60 saniye)", kotu === 0, `${kotu}/30 kötü`);
   const panel = await iste("/yonetim");
-  olc("olağan durumda panel açık", panel.durum === 200, String(panel.durum));
+  olc("olağan durumda panel girişe yönlendiriyor", panel.durum === 307, String(panel.durum));
 };
 
 const kutuDurunca = async () => {

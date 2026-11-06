@@ -23,7 +23,8 @@ export const baglan = (adres: string): Veritabani => {
   return veritabani;
 };
 
-// Uygulamanın tek bağlantısı. İlk kullanımda açılır.
+// Bağlantı havuzu. İlk kullanımda açılır. Next.js ara katmanı ayrı pakettir, kendi havuzunu açar
+// (karar 0042).
 export const siteninVeritabani = (): Veritabani => {
   veritabani ??= baglan(veritabaniAdresi());
   return veritabani;

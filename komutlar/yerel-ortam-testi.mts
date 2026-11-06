@@ -14,10 +14,12 @@
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { istekSinirlari } from "../cekirdek/kayitlar/kapi.ts";
+import { metinOkuyucu } from "../cekirdek/metinler/metin.ts";
 import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
 import { kutuKuraliDogru, yenidenBaslama } from "./kutu-kurali.mts";
 import {
   denemeSitesiAc,
+  gonder,
   iste,
   kilitle,
   kok,
@@ -176,6 +178,66 @@ const calistir = async (): Promise<void> => {
     ]) {
       const { durum } = await iste(denemeSitesi.kimlik.kodAdi, yol);
       olc(`${yol} yazılışı istek sınırını aşamıyor`, [308, 404, 429].includes(durum), `${durum}`);
+    }
+
+    // Panel kapısı (karar 0042): girişsiz panel görünmez; adresi başka yazmak ya da ara katmanı
+    // atlatmaya çalışan başlık sayfayı açmaz.
+    const panelSitesi = denemeSitesi.kimlik.kodAdi;
+    const panelBasligi = metinOkuyucu("tr")("yonetim.anasayfa.baslik");
+    const girissiz = await iste(panelSitesi, "/yonetim");
+    olc(
+      "girişsiz panel giriş sayfasına yönleniyor, adres ön kapının arkasında da doğru",
+      girissiz.durum === 307 && girissiz.konum === "/yonetim/giris",
+      `${girissiz.durum} ${girissiz.konum}`,
+    );
+    const panelYazilislari: [string, Record<string, string>][] = [
+      ["/%79onetim", {}],
+      ["/yonetim%2f", {}],
+      ["/YONETIM", {}],
+      ["//yonetim", {}],
+      ["/./yonetim", {}],
+      ["/yonetim/", {}],
+      [
+        "/yonetim",
+        { "x-middleware-subrequest": "src/proxy:src/proxy:src/proxy:src/proxy:src/proxy" },
+      ],
+      ["/yonetim", { "x-nextjs-data": "1" }],
+      ["/yonetim?_rsc=1", { rsc: "1" }],
+    ];
+    for (const [yol, basliklar] of panelYazilislari) {
+      const { durum, govde } = await iste(panelSitesi, yol, basliklar);
+      const adi = `${yol} ${Object.keys(basliklar).join(",")}`.trim();
+      olc(
+        `${adi} girişsiz paneli açmıyor`,
+        [307, 308, 404].includes(durum) && !govde.includes(panelBasligi),
+        `${durum}`,
+      );
+    }
+
+    // Giriş ucunun istek sınırı POST ile (karar 0041, 0042): bütün yazılışlar aynı sayaca düşer ya
+    // da uca ulaşmaz.
+    let girisSiniriDoldu = false;
+    const girisYolu = "/kapi/herkese-acik/yonetici-giris";
+    for (let sira = 0; sira <= istekSinirlari.siki.istek && !girisSiniriDoldu; sira++) {
+      const { durum } = await gonder(panelSitesi, girisYolu, {
+        eposta: `yok${sira}@ornek.test`,
+        sifre: "yanlis-bir-sifre",
+      });
+      girisSiniriDoldu = durum === 429;
+    }
+    olc("giriş ucunun istek sınırı POST ile doluyor", girisSiniriDoldu);
+    for (const yol of [
+      "/kapi/herkese-acik/yonetici-g%69ris",
+      "/k%61pi/herkese-acik/yonetici-giris",
+      "/kapi/herkese-acik%2fyonetici-giris",
+      "/kapi/herkese-acik/YONETICI-GIRIS",
+      "/kapi/herkese-acik/./yonetici-giris",
+    ]) {
+      const { durum } = await gonder(panelSitesi, yol, {
+        eposta: "yok@ornek.test",
+        sifre: "yanlis-bir-sifre",
+      });
+      olc(`POST ${yol} giriş sınırını aşamıyor`, [308, 404, 429].includes(durum), `${durum}`);
     }
     kutuKurallariniOlc(siteler.length);
   } catch (hata) {

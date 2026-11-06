@@ -1,4 +1,4 @@
-// Vitrinin ve yönetim panelinin boş sayfaları tarayıcıda açılır (kartlar 0009, 0010).
+// Vitrinin boş sayfası ve yönetim panelinin giriş sayfası tarayıcıda açılır (kartlar 0009, 0010, 0027).
 // Vitrin, sitenin adını kimlik dosyasından gösterir; ayarı açıksa başlığın altında
 // "Yakında açılıyoruz." yazısını da (kart 0041).
 import { expect, test } from "@playwright/test";
@@ -7,7 +7,7 @@ import { metin } from "../../metinler/site-metni";
 
 const sayfalar: { adres: string; baslik: string }[] = [
   { adres: "/", baslik: calisanSite().kimlik.gorunenAd },
-  { adres: "/yonetim", baslik: metin("yonetim.anasayfa.baslik") },
+  { adres: "/yonetim/giris", baslik: metin("yonetim.giris.baslik") },
 ];
 
 for (const { adres, baslik } of sayfalar) {

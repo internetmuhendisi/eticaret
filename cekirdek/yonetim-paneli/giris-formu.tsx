@@ -1,0 +1,76 @@
+"use client";
+// Yönetici giriş formu (kart 0027). Şema uçla ortaktır; şemadan geçmeyen girdi sunucuya gitmez.
+import { type FormEvent, useRef, useState } from "react";
+import { Dugme } from "../../bilesenler/form/dugme";
+import { FormAlani } from "../../bilesenler/form/form-alani";
+import { GirisAlani } from "../../bilesenler/form/giris-alani";
+import { Uyari } from "../../bilesenler/form/uyari";
+import { useMetin } from "../metinler/istemci-metni";
+import { girisSemasi } from "../moduller/oturum/semalar";
+import { stil } from "./stil";
+
+const girisUcu = "/kapi/herkese-acik/yonetici-giris";
+
+export function GirisFormu({ donus }: { donus: string }) {
+  const metin = useMetin();
+  const [hata, setHata] = useState<string | null>(null);
+  const gonderiliyor = useRef(false);
+
+  const gonder = async (olay: FormEvent<HTMLFormElement>) => {
+    olay.preventDefault();
+    // İkinci tıklama dikkate alınmaz.
+    if (gonderiliyor.current) return;
+    gonderiliyor.current = true;
+    setHata(null);
+    const veri = new FormData(olay.currentTarget);
+    const girdi = girisSemasi.safeParse({ eposta: veri.get("eposta"), sifre: veri.get("sifre") });
+    if (!girdi.success) {
+      setHata(metin("yonetim.giris.hataBilgi"));
+      gonderiliyor.current = false;
+      return;
+    }
+    try {
+      const yanit = await fetch(girisUcu, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(girdi.data),
+      });
+      if (yanit.ok) {
+        window.location.assign(donus);
+        return;
+      }
+      if (yanit.status === 429) setHata(metin("yonetim.giris.hataSinir"));
+      else if (yanit.status === 400 || yanit.status === 401)
+        setHata(metin("yonetim.giris.hataBilgi"));
+      else setHata(metin("yonetim.giris.hataGenel"));
+    } catch {
+      setHata(metin("yonetim.giris.hataGenel"));
+    } finally {
+      // Başarıda da: tarayıcının geri tuşu sayfayı önbellekten döndürürse form kilitli kalmasın.
+      gonderiliyor.current = false;
+    }
+  };
+
+  return (
+    <form className={stil.form} onSubmit={gonder} noValidate>
+      {hata === null ? null : <Uyari>{hata}</Uyari>}
+      <FormAlani etiket={metin("yonetim.giris.eposta")}>
+        {(alan) => (
+          <GirisAlani {...alan} name="eposta" type="email" autoComplete="username" required />
+        )}
+      </FormAlani>
+      <FormAlani etiket={metin("yonetim.giris.sifre")}>
+        {(alan) => (
+          <GirisAlani
+            {...alan}
+            name="sifre"
+            type="password"
+            autoComplete="current-password"
+            required
+          />
+        )}
+      </FormAlani>
+      <Dugme type="submit">{metin("yonetim.giris.gonder")}</Dugme>
+    </form>
+  );
+}

@@ -29,3 +29,7 @@ Bileşen, düğme, giriş alanı, pencere gibi tekrar kullanılan arayüz parça
 - Her bileşenin canlı örneğini, seçeneklerini ve kullanıldığı yerleri bileşen kataloğunda göster.
 - Bir bileşeni değiştirdiğinde onu kullanan sayfaları listele ve bileşenin her site temasındaki görüntüsünü bir önceki sürümle karşılaştır.
 - Yeni bir bileşen kuralını önce uyarı olarak başlat. Eski ihlalleri ihlal listesinde tut, liste sıfırlanınca kuralı hataya çek. İhlal listesi yalnız küçülebilir.
+
+## Yazılanlar
+
+- `bilesenler/form/`: `FormAlani`, `GirisAlani`, `Dugme`, `Uyari` (kart 0027). Renkleri tarayıcının sistem renkleridir, tasarım değerleri yazılınca bağlanır. Bileşen kataloğu henüz yoktur.
