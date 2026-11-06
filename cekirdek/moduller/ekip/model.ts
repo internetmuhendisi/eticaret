@@ -100,7 +100,7 @@ export const yoneticiYedekKodlari = pgTable(
 
 // Şifre doğrulandıktan sonraki ara adım. Oturum değildir: panele ve yönetici uçlarına girmez.
 // bekleyen_gizli kurulum ekranının gizlisidir ve bu adıma aittir: kurulum bitmeden başka bir şifre
-// girişinden görülemez, kurulum bitince adımla birlikte silinir.
+// girişinden görülemez, kurulum bitince hesabın bütün adımlarından silinir.
 export const yoneticiGirisAdimlari = pgTable(
   "yonetici_giris_adimlari",
   {

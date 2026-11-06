@@ -10,6 +10,7 @@ Kart 0028 ile yöneticiler için iki aşamalı giriş zorunlu olur. Telefonunu v
 
 - Altyapı sahibi bir yöneticinin iki aşamalı girişini kaldırabilir. Yönetici sonraki girişte kurulum ekranına düşer, eski yedek kodlar ve açık oturumlar geçersiz olur.
 - Kimlik doğrulaması altyapı sahibinin elle yaptığı bir adımdır; nasıl yapılacağı yazılı olur (telefonla arama gibi, kullanıcı kararı).
+- Kaldırma hesabın bütün ara adımlarını da siler: açık kalan bir adımla kurulum yeniden onaylanamaz (karar 0044).
 - Yapılan işlem kaydedilir: kim, ne zaman, hangi yönetici (kart 0029 ile).
 - Yedek kodları kaybeden ama telefonu duran yönetici panelden yeni yedek kod üretebilir.
 - İşlem yalnız o sitenin veritabanına dokunur.

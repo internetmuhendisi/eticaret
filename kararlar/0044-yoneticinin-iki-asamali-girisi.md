@@ -41,7 +41,8 @@
 ## Sonuçları
 
 - **Anahtar kaybolursa:** Bütün kurulu iki aşamalı girişler açılamaz, yöneticiler giremez. Anahtar yedeğe girmez: sunucu kaybında veritabanı yedeğiyle birlikte anahtar da gerekir, gizli bilgilerin yedeği henüz yok. Dosya kaybolursa sonraki yayın yeni anahtar üretir ve bunu kimse fark etmez, kod girişleri 500 döner, sağlık ucu yeşil kalır. Kart 0054'tedir, kurtarma kart 0053'tedir.
-- **Eski sürüme hızlı dönüş yok:** 0.7.0'a geçen site `pnpm geri-don` ile geri dönemez, yedekten dönülür. Yayın sırasında eski kutu çalışırken açılan oturumlar yeni kutuda geçmez, o yöneticiler yeniden girer.
+- **Eski sürüme dönüş aracı yok:** 0.7.0'a geçen site `pnpm geri-don` ile geri dönemez. Yedekten eski sürüme dönüşün aracı yoktur ve denenmedi; gerekirse elle yapılır. 0.7.0'dan sonraki sürümler arasında dönüş serbesttir. Yayın sırasında eski kutu çalışırken açılan oturumlar yeni kutuda geçmez, o yöneticiler yeniden girer.
+- **Düşen yayın:** Değişiklik uygulanıp yeni kutunun sağlığı geçmezse yayının kendi dönüşü engellenmez: site eski sürümde, yeni veritabanında kalır ve ikinci aşama çalışmaz. Yeni kutu bu sırada trafik aldıysa (en çok yaklaşık 90 saniye) kurulumu yapan yönetici eski kodda yalnız şifreyle girer. Yayın kaydı başarısız görünür; 0.7.0 yeniden yayınlanmadan bırakılmamalıdır.
 - **Yayın aralığında eski kutu:** Değişiklik uygulandıktan sonra eski kutu yeni kutu devralana kadar şifreyle girişe açıktır. Bu oturumlar yeni sürümde geçersizdir, ama o kısa süre içinde eski kod panel açar.
 - **Bekleyen gizlinin görünmesi:** Ara adım çerezi 10 dakika boyunca şifre sormadan kurulum ekranını açar. Ortak bilgisayarda bırakılan ekran bu süre görülebilir; kabul edildi, çıkış düğmesi bu ekranda yoktur, giriş sayfasına dönmek adımı kapatmaz.
 - **Devir (0014):** Site devredilirken bu anahtar da verilmelidir, ya da yöneticiler kurulumu yeniden yapar. `--yenile` anahtarı değiştirmediği için devirde elle düşünülmelidir.
@@ -53,5 +54,7 @@
 - **Süresi dolan ara adımlar:** Yalnız aynı hesap yeniden girince silinir. Hiç dönmeyen hesabın satırı kalır, içinde şifreli gizli olabilir; oturum temizliği kartına (0044) eklendi.
 - **Oturum açma denetimi:** Test `cekirdek/` altında işlev adını metin olarak arar. Takma adı, tabloya doğrudan yazmayı, `komutlar/` ve `sahip-paneli/` klasörlerini görmez; o kısmı yalnız disiplindir. Damga sonraki savunmadır: damgasız oturum zaten geçmez.
 - **Küçük bedeller:** Telefon saati ileride olup sonraki adımın kodu geçerse, telefon saati düzelene kadar 60 saniyeye kadar yeni kod yanlış sayılabilir. Güvenlik başlıkları (kurulum sayfası dahil) henüz yok, ayrı iştir.
-- **Ek sorgu:** Oturumsuz panel isteğinde bir sorgu daha atılır.
+- **Ek sorgu:** Oturumsuz ve ara adım çerezli panel isteğinde bir sorgu daha atılır.
+- **Damganın anlamı:** `iki_asama_zamani` yalnız oturumun `oturumAc`'tan geçtiğini gösterir. `oturumAc`'ı çağıran her yer damgalar; bu yüzden çağıranlar testle sınırlıdır.
+- **Kurtarma (kart 0053):** Kurulum satırını silen işlem hesabın bütün ara adımlarını da silmelidir: açık kalan bir adımla kurulum yeniden onaylanabilir.
 - **Giriş sayfası:** Giriş sayfası ara adımı olan kişiye de açılır; baştan başka hesapla girilebilsin diye.

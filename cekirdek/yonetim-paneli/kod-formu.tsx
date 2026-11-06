@@ -53,6 +53,11 @@ export function KodFormu<Veri>({
         window.location.assign(girisAdresi);
         return;
       }
+      // Başka sekmede kurulum bitmiş ya da durum değişmiş: ara katman doğru adıma yönlendirir.
+      if (govde?.hata?.kod === "is-kurali") {
+        window.location.reload();
+        return;
+      }
       if (yanit.status === 429) setHata(metin("yonetim.giris.hataSinir"));
       else if (yanit.status === 400 || yanit.status === 401) setHata(metin("yonetim.kod.hataKod"));
       else setHata(metin("yonetim.giris.hataGenel"));

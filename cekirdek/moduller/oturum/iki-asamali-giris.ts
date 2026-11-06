@@ -314,6 +314,11 @@ export const kurulumuOnayla = async (
         .onConflictDoNothing()
         .returning({ kimlik: yoneticiIkiAsama.yonetici_kimligi });
       if (yazilan === undefined) throw new BilinenHata("is-kurali");
+      // Öteki ara adımlardaki gizliler artık geçersizdir, satırda kalmaz.
+      await islem
+        .update(yoneticiGirisAdimlari)
+        .set({ bekleyen_gizli: null })
+        .where(eq(yoneticiGirisAdimlari.yonetici_kimligi, hesapKimligi));
       const yedekKodlari = yedekKodlariUret();
       await islem.insert(yoneticiYedekKodlari).values(
         yedekKodlari.map((yedek) => ({

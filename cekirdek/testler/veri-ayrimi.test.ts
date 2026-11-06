@@ -165,11 +165,18 @@ describe("bağlantı bilgisi", () => {
     expect(icerik(kayit)).not.toMatch(/process\.env|readFileSync|import\s|export\s[^;]*\sfrom\s/);
     expect(icerik(okuma)).not.toContain("VERITABANI_");
 
-    // Adı yazmadan okumanın yolu da kapalı: okuma işlevini çekirdekte yalnız bağlantı dosyası,
-    // kaydı yalnız okuma işlevi içe alabilir (dışa aktarma ve dinamik içe alma da sayılır).
+    // Adı yazmadan okumanın yolu da kapalı: okuma işlevini çekirdekte yalnız bağlantı dosyası ve kendi
+    // anahtarı için iki aşamalı giriş, kaydı yalnız okuma işlevi içe alabilir (dışa aktarma ve dinamik
+    // içe alma da sayılır).
     const yolGecen = (ad: string) =>
       dosyalar.filter((dosya) => new RegExp(`["'][^"']*/${ad}(?:\\.ts)?["']`).test(icerik(dosya)));
-    expect(yolGecen("gizli-bilgi")).toEqual(["cekirdek/veritabani/baglanti.ts"]);
+    const ikiAsama = "cekirdek/moduller/oturum/iki-asama.ts";
+    expect(yolGecen("gizli-bilgi").sort()).toEqual(
+      [ikiAsama, "cekirdek/veritabani/baglanti.ts"].sort(),
+    );
+    // İki aşamalı giriş okuma işlevini yalnız kendi anahtarıyla çağırır, işlevi başka yere vermez.
+    expect(icerik(ikiAsama).match(/gizliBilgi\b/g)).toHaveLength(2);
+    expect(icerik(ikiAsama)).toContain('gizliBilgi("IKI_ASAMA_ANAHTARI")');
     expect(yolGecen("gizli-bilgiler")).toEqual([okuma]);
   });
 

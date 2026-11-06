@@ -209,6 +209,14 @@ describe("kurulum", () => {
     expect((await onayla(zamanliKod(gercek.gizli, adim), gercek.cerez)).status).toBe(200);
     // Saldırgan eski adımıyla kurulumu ele geçiremez.
     expect((await onayla(zamanliKod(saldirgan.gizli, adim), saldirgan.cerez)).status).toBe(422);
+    // Öteki adımda şifreli gizli kalmaz.
+    const adimlar = await vt
+      .select({ gizli: yoneticiGirisAdimlari.bekleyen_gizli })
+      .from(yoneticiGirisAdimlari)
+      .where(
+        eq(yoneticiGirisAdimlari.anahtar_ozeti, anahtarOzeti(anahtarOf(saldirgan.cerez) ?? "")),
+      );
+    expect(adimlar).toEqual([{ gizli: null }]);
     // Şifreyle yeniden girip kopyaladığı anahtardan kod üretse de geçmez.
     const yeni = await sifreAsamasi(eposta);
     const kod = zamanliKod(saldirgan.gizli, adim + 1);
@@ -332,6 +340,16 @@ describe("kurulu yöneticinin girişi", () => {
     );
     expect(await panel(panelAdresi, cerezBasligi(yanit))).toBeNull();
     expect(await girisAdiminiOku(vt, anahtarOf(cerez))).toBeNull();
+  });
+
+  it("iki ayrı ara adımdan aynı anda giden aynı kodla yalnız biri girer", async () => {
+    sessiz();
+    const { eposta, gizli, adim } = await kurulmusYonetici();
+    const bir = await sifreAsamasi(eposta);
+    const iki = await sifreAsamasi(eposta);
+    const kod = zamanliKod(gizli, adim + 1);
+    const sonuclar = await Promise.all([kodla(kod, bir.cerez), kodla(kod, iki.cerez)]);
+    expect(sonuclar.map((yanit) => yanit.status).sort()).toEqual([200, 401]);
   });
 
   it("aynı kod ikinci girişte geçmez", async () => {
@@ -475,6 +493,21 @@ describe("iki aşamadan geçmemiş oturum", () => {
     expect(await oturumAcikMi(vt, "yonetici", { yenilemeAnahtari: yenileme })).toBe(false);
     expect((await oturumuYenile(vt, "yonetici", yenileme, 3600)).durum).toBe("gecersiz");
     expect(await oturumuDogrula(vt, "yonetici", kisa)).toBeNull();
+  });
+
+  it("çıkış damgasız oturumu da kapatır: eski sürümün oturumu açık kalmaz", async () => {
+    const { hesapKimligi, kisa } = await damgasizOturum();
+    await yoneticiCikisUcu(
+      new Request("http://yerel/kapi/herkese-acik/yonetici-cikis", {
+        method: "POST",
+        headers: { cookie: `${adlar.kisa}=${kisa}` },
+      }),
+    );
+    const [oturum] = await vt
+      .select()
+      .from(yoneticiOturumlari)
+      .where(eq(yoneticiOturumlari.hesap_kimligi, hesapKimligi));
+    expect(oturum?.kapanma_zamani).toBeInstanceOf(Date);
   });
 
   it("iki aşamadan geçen oturum damgalıdır", async () => {
