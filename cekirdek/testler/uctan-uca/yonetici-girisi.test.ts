@@ -18,13 +18,10 @@ test.beforeEach(({ page }) =>
 );
 
 test.beforeAll(() => {
-  const cikti = execFileSync(
-    "pnpm",
-    ["-s", "yonetici-ac", process.env["SITE_KLASORU"] ?? "", eposta],
-    {
-      encoding: "utf8",
-    },
-  );
+  const { SITE_KLASORU } = process.env;
+  const cikti = execFileSync("pnpm", ["-s", "yonetici-ac", SITE_KLASORU ?? "", eposta], {
+    encoding: "utf8",
+  });
   sifre = /^şifre\s+(\S+)$/m.exec(cikti)?.[1] ?? "";
   expect(sifre).not.toBe("");
 });
