@@ -30,4 +30,4 @@ Yönetici ve müşteri girişlerinin ortak temeli kurulur: şifrelerin güvenli 
 
 ## Durum
 
-yapılacak
+bitti
