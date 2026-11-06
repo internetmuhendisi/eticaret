@@ -33,6 +33,7 @@ import {
   oturumuDogrula,
   oturumuYenile,
 } from "../servis.ts";
+import { siraylaEnKisaSureler } from "./sure-olcumu.ts";
 
 const ek = randomBytes(4).toString("hex");
 const sifre = "uzun-bir-deneme-sifresi";
@@ -110,17 +111,11 @@ describe.each(hesapTurleri)("%s hesabı", (tur) => {
   it("kayıtlı olmayan e-posta yanlış şifre kadar sürer", async () => {
     const eposta = yeniEposta();
     await hesapAc(a, tur, { eposta, sifre });
-    const olc = async (girdi: { eposta: string; sifre: string }) => {
-      const sureler: number[] = [];
-      for (let i = 0; i < 5; i += 1) {
-        const baslangic = performance.now();
-        await girisYap(a, tur, girdi, sure);
-        sureler.push(performance.now() - baslangic);
-      }
-      return Math.min(...sureler);
-    };
-    const yanlisSifre = await olc({ eposta, sifre: `${sifre}x` });
-    const kayitsiz = await olc({ eposta: yeniEposta(), sifre });
+    const kayitsizEposta = yeniEposta();
+    const [yanlisSifre, kayitsiz] = await siraylaEnKisaSureler(
+      () => girisYap(a, tur, { eposta, sifre: `${sifre}x` }, sure),
+      () => girisYap(a, tur, { eposta: kayitsizEposta, sifre }, sure),
+    );
     expect(kayitsiz).toBeGreaterThan(yanlisSifre / 2);
   });
 

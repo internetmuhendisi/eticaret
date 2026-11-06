@@ -31,7 +31,9 @@ const ac = (ad: string): Promise<{ kod: number | null; hata: string }> =>
   });
 
 afterAll(async () => {
-  for (const ad of adlar) await denemeVeritabaniniKaldir(ad);
+  // Biri kaldırılamazsa ötekiler yine kaldırılır, hata sonra görünür.
+  const sonuclar = await Promise.allSettled(adlar.map(denemeVeritabaniniKaldir));
+  expect(sonuclar.filter((sonuc) => sonuc.status === "rejected")).toEqual([]);
 }, 120_000);
 
 describe("paralel veritabanı açma", () => {

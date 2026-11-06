@@ -9,7 +9,7 @@
 - `komutlar/site-veritabani-ac.sql`, `postgres` ve `template1` veritabanlarının ortak iznini değiştiren iki satırı tek işlemde ve PostgreSQL'in danışma kilidiyle (`pg_advisory_xact_lock`) çalıştırır. Kilit işlem bitince kalkar.
 - Geçici test veritabanlarını tek yardımcı açar (`denemeVeritabaniAc`, `cekirdek/veritabani/testler/deneme-sitesi.ts`). Betik yarıda kalırsa yardımcı veritabanını ve kullanıcıyı kaldırır.
 - `cekirdek/veritabani/testler/paralel-acma.test.ts` gerçek psql süreçleriyle aynı anda 8 veritabanı açar, bunu 5 tur tekrarlar ve ortak veritabanlarının kapalı kaldığını denetler.
-- Sahte doğrulamanın süre testi her iki doğrulamayı sırayla 20'şer kez ölçer, en kısa süreleri karşılaştırır. Sınırlar (yarısı ile iki katı) değişmedi.
+- Süre karşılaştıran iki test (`sifre.test.ts`, `servis.test.ts`) tek ölçümü kullanır (`cekirdek/moduller/oturum/testler/sure-olcumu.ts`): iki işi sırayla 20'şer kez ölçer, en kısa süreleri karşılaştırır. Sınırlar değişmedi.
 
 ## Neden
 
@@ -28,6 +28,8 @@
 ## Sonuçları
 
 - Bozma denemeleri: kilit kaldırılınca paralel test 5 koşunun 5'inde kırmızı. Betik sonda hata verince artık kalmıyor. Sahte doğrulama hesapsız ya da üçte bir bellekle çalışınca süre testi kırmızı. Kilit olmadan paralel testin yeşil geçmesi ihtimal olarak yine mümkündür; testin kırmızısı rastlantıya bağlıdır, yeşili değildir.
+- Ortak veritabanlarının kapalı olduğu denetimi yerelde bozulmayı göremez: yerel kutuda kaldırılmış izin kalıcıdır, betikten `REVOKE` silinse test yeşil kalır. Kontrol hattında veritabanı sıfırdan açıldığı için orada kırmızı olmalıdır (kod okumasıyla, hat bozulup denenmedi). Testin iznin kendisini açıp denemesi aynı anda çalışan veri ayrımı testini bozardı.
+- Yarım ile iki kat arası kabul edilir, yüzde 60 maliyetli bir sahte doğrulama geçer. Bu önceden de böyleydi.
 - Test öldürülürse artık yine kalabilir, 0023'teki sınır sürer. Temizlik yalnız betiğin ve değişikliklerin hata verdiği yolu kapsar.
 - Süre testi yaklaşık 40 Argon2 hesabı yapar (yüksüz koşuda yarım saniye kadar).
 - Sunucuda ölçüm: geçici bir sitenin veritabanı değişen betikle iki kez açıldı. Betik tuttu, ortak veritabanları kapalı kaldı, kilit kalmadı, veritabanı kutusu ve Örnek Mağaza yeniden başlamadı, tablo sayısı değişmedi. Sunucuda paralel açma ölçülmedi, yerelde ölçüldü.
