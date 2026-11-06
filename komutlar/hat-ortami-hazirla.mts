@@ -47,6 +47,9 @@ const degerler: Record<string, string> = {
   HETZNER_ANAHTARI: "",
   // Cloudflare anahtarı da hatta yoktur: alan adı komutu hatta çalışmaz (karar 0032).
   CLOUDFLARE_ANAHTARI: "",
+  // Yedek deposunun anahtarı da hatta yoktur: yedek komutları hatta çalışmaz (karar 0037).
+  YEDEK_DEPO_ERISIM_ANAHTARI: "",
+  YEDEK_DEPO_GIZLI_ANAHTARI: "",
 };
 
 // .env.example'a eklenen her anahtar burada da üretilmeli; eksik kalırsa hat burada durur.
