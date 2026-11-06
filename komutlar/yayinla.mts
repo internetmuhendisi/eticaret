@@ -13,7 +13,7 @@ import { rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { siteKlasorunuDogrula } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { siteNumarasiAl } from "./gizli-bilgi.mts";
-import { yayinOrtami } from "./on-kapi.mts";
+import { yayiniDurdurmayanSatir, yayinOrtami } from "./on-kapi.mts";
 import { kok, kayitlariOku as sunuculariOku } from "./sunucu.mts";
 import { yayinla } from "./yayin.mts";
 import {
@@ -48,8 +48,9 @@ try {
   const tamamlandi =
     ozet !== null && Number(ozet[1]) === kalanlar.length && !denetim.stderr?.trim();
   const buSiteninki = (satir: string) =>
-    satir.includes(`${yayinOrtami}/${kimlik.kodAdi} yayındaki kutusu`) &&
-    !satir.includes("site numarası yok");
+    yayiniDurdurmayanSatir(satir) ||
+    (satir.includes(`${yayinOrtami}/${kimlik.kodAdi} yayındaki kutusu`) &&
+      !satir.includes("site numarası yok"));
   if (
     denetim.status !== 0 &&
     (!tamamlandi || kalanlar.length === 0 || !kalanlar.every(buSiteninki))

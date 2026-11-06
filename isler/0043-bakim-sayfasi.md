@@ -14,7 +14,7 @@ Site güncellenirken ya da bir sorun çıktığında ziyaretçi boş bir hata ek
 - Elle açık bakım, sayfa yenilenince ve yeni yayında korunur.
 - Cevap 503 ve `Retry-After` taşır: arama motorları bunu geçici sayar. Sağlık ucu bakımda da açık kalır, kontroller gerçek durumu görür.
 - Metin tek yerden okunur, ham renk yazılmaz (tasarım değerleri henüz yok, sistem renkleri kullanılır). Sitenin metni site ayarıdır, boşsa ortak metin görünür.
-- `pnpm sunucu-denetle` elle açık bakımı söyler, 24 saatten uzun açık kaldıysa kırmızıdır. Yayın bakım açıkken de çalışır.
+- `pnpm sunucu-denetle` elle açık bakımı söyler, 24 saatten uzun açık kaldıysa kırmızıdır. Yayın bakım açıkken de çalışır, bu satır yayını durdurmaz.
 - Bakım açılınca, kapanınca sonuç kayda yazılır.
 
 ## Sınırlar

@@ -118,22 +118,23 @@ export const bakimSayfasi = ({ ad, dil, metin }: BakimBilgisi): string => {
   const secilen: Dil = diller.find((d) => d === dil) ?? "tr";
   const oku = metinOkuyucu(secilen);
   const degerler: Record<string, string> = {
-    'lang="tr"': `lang="${secilen}"`,
     __DAMGA__: bakimDamgasi,
     __AD__: htmlKacir(ad),
     __BASLIK__: htmlKacir(oku("vitrin.bakim.baslik")),
     __METIN__: htmlKacir(metin ?? oku("vitrin.bakim.metin")),
   };
-  return Object.entries(degerler).reduce(
-    (sayfa, [yer, deger]) => sayfa.replaceAll(yer, deger),
-    kaynak("bakim.html"),
-  );
+  // Tek geçiş ve işlevle değiştirme: değerdeki "$" ya da yer tutucuya benzeyen metin yorumlanmaz.
+  return kaynak("bakim.html")
+    .replace('lang="tr"', () => `lang="${secilen}"`)
+    .replace(/__[A-Z]+__/g, (yer) => degerler[yer] ?? yer);
 };
 
-// Sitenin Caddy satırı. Sağlık ucu her zaman kutuya gider: kontroller gerçek durumu görür. Ön kapı
-// sağlık ucunu yoklar; üç yoklama üst üste düşerse (veritabanı düştü) ziyaretçi kutuya gönderilmez.
-// Kutu kapalıysa bağlantı hatası da aynı sayfaya düşer. Elle bakımda geri kalan her yol, yönetim
-// paneli dahil, kapanır.
+// Sitenin Caddy satırı. Sağlık ucu her zaman kutuya gider: kontroller gerçek durumu görür. Yalnız
+// tam adresle ve GET ile eşleşir: Caddy yolu temizleyerek eşleştirip ham adresle iletir, gevşek
+// eşleşme elle bakımda uygulamaya yol açardı (ölçüldü). Ön kapı sağlık ucunu yoklar; Caddy hataları
+// üst üste değil biriktirerek sayar (ölçüldü), eşik bu yüzden yüksektir, tepki süresi yaklaşık 30
+// saniyedir. Kutu kapalıysa ya da 30 saniye cevap vermezse istek de aynı sayfaya düşer. Elle bakımda
+// geri kalan her yol, yönetim paneli dahil, kapanır.
 export const siteSatiri = (
   adres: string,
   hedef: string,
@@ -151,14 +152,25 @@ export const siteSatiri = (
     ? "\t\terror 503\n"
     : `\t\treverse_proxy ${hedef} {
 \t\t\thealth_uri ${saglikYolu}
-\t\t\thealth_interval 10s
-\t\t\thealth_timeout 5s
-\t\t\thealth_fails 3
+\t\t\thealth_interval 5s
+\t\t\thealth_timeout 4s
+\t\t\thealth_fails 6
+\t\t\ttransport http {
+\t\t\t\tresponse_header_timeout 30s
+\t\t\t}
 \t\t}\n`;
   return `${adres} {
 \timport deneme
-\thandle ${saglikYolu} {
-\t\treverse_proxy ${hedef}
+\t@saglik {
+\t\tmethod GET HEAD
+\t\texpression \`{http.request.uri} == "${saglikYolu}"\`
+\t}
+\thandle @saglik {
+\t\treverse_proxy ${hedef} {
+\t\t\ttransport http {
+\t\t\t\tresponse_header_timeout 30s
+\t\t\t}
+\t\t}
 \t}
 \thandle {
 ${ziyaretci}\t}
@@ -186,12 +198,12 @@ const bakimKlasoru = () => `${onKapiKlasoru}/bakim-acik`;
 export const bakimListesiKomutu = () =>
   `sudo sh -c 'cd ${bakimKlasoru()} 2>/dev/null || exit 0; for f in *; do [ -f "$f" ] && printf "%s %s\\n" "$f" "$(cat "$f")"; done; exit 0'`;
 
+// Adı geçersiz dosya atlanır: elle bırakılmış bir dosya bütün sitelerin yayınını durdurmasın.
 export const bakimListesiniCoz = (cikti: string): Map<string, string> => {
   const liste = new Map<string, string>();
   for (const satir of cikti.split("\n").filter((s) => s.trim())) {
     const [kodAdi = "", zaman = ""] = satir.trim().split(" ");
-    if (!kodAdiGecerli(kodAdi)) throw new Error(`Bakım listesinde bozuk satır: ${satir}`);
-    liste.set(kodAdi, zaman);
+    if (kodAdiGecerli(kodAdi)) liste.set(kodAdi, zaman);
   }
   return liste;
 };
@@ -212,17 +224,35 @@ export const bakimSuresiHatasi = (zaman: string, simdi: number): string | undefi
     : undefined;
 };
 
-export const bakimIsaretiBetigi = (kodAdi: string, acik: boolean): string => {
+// Geri almada önceki zaman korunur: 24 saat sayacı başa dönmesin, kayıtta da başarısız deneme görünsün.
+// Unutulan bakım denetimde kırmızıdır ama yayını durdurmaz: başka sitenin güvenlik yayını engellenmesin.
+export const bakimUnutulduMetni = "elle bakım unutulmamış";
+export const yayiniDurdurmayanSatir = (satir: string): boolean =>
+  satir.includes(bakimUnutulduMetni);
+
+export const bakimIsaretiBetigi = (
+  kodAdi: string,
+  acik: boolean,
+  {
+    zaman,
+    islem = acik ? "acildi" : "kapandi",
+  }: { zaman?: string | undefined; islem?: string } = {},
+): string => {
   if (!kodAdiGecerli(kodAdi)) throw new Error(`Geçersiz kod adı: ${kodAdi}`);
+  if (zaman !== undefined && !/^[0-9TZ:.-]+$/.test(zaman))
+    throw new Error(`Geçersiz zaman: ${zaman}`);
   const dosya = `${bakimKlasoru()}/${kodAdi}`;
-  const kayit = `printf '{"zaman":"%s","site":"${kodAdi}","islem":"${acik ? "acildi" : "kapandi"}"}\\n' "$z" >> ${onKapiKlasoru}/bakim-kaydi.jsonl`;
+  const yaz =
+    zaman === undefined
+      ? `[ -f ${dosya} ] || printf '%s\\n' "$z" > ${dosya}`
+      : `printf '%s\\n' '${zaman}' > ${dosya}`;
   return `set -eu
 sudo bash -s <<'BAKIM_SONU'
 set -eu
 z=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 install -d -m 0755 -o root -g root ${bakimKlasoru()}
-${acik ? `[ -f ${dosya} ] || printf '%s\\n' "$z" > ${dosya}` : `rm -f ${dosya}`}
-${kayit}
+${acik ? yaz : `rm -f ${dosya}`}
+printf '{"zaman":"%s","site":"${kodAdi}","islem":"${islem}"}\n' "$z" >> ${onKapiKlasoru}/bakim-kaydi.jsonl
 BAKIM_SONU
 `;
 };
@@ -480,23 +510,35 @@ export const siteSatirlari = (
   );
 
 // Sayfadaki ad ve metin sitenin yayındaki klasöründen okunur: çalışan yayınla aynıdır.
+// Okunamayan ya da bozuk bilgi kurulumu durdurmaz: bir sitenin dosyası bütün sitelerin yayınını ve
+// acil geri dönüşü engellemesin. Sayfada kod adı görünür, uyarı yazılır.
+export const bakimBilgisiCoz = (
+  kodAdi: string,
+  kimlikMetni: string,
+  ayarMetni: string,
+): BakimBilgisi => {
+  const nesne = (metin: string): Record<string, unknown> => {
+    const deger: unknown = metin.trim() ? JSON.parse(metin) : {};
+    return typeof deger === "object" && deger !== null ? (deger as Record<string, unknown>) : {};
+  };
+  const yazi = (deger: unknown) => (typeof deger === "string" && deger.trim() ? deger : undefined);
+  const { gorunenAd } = nesne(kimlikMetni);
+  const { dil, bakimMetni } = nesne(ayarMetni);
+  return { ad: yazi(gorunenAd) ?? kodAdi, dil: yazi(dil), metin: yazi(bakimMetni) };
+};
+
 export const bakimBilgisiOku = (ipv4: string, kodAdi: string, no: number): BakimBilgisi => {
   const klasor = `${yayinKoku}/${yayinOrtami}/${kodAdi}/${no}/site`;
   const oku = (dosya: string) =>
-    sshKomutu(ipv4, `sudo sh -c 'cat ${klasor}/${dosya} 2>/dev/null || true'`);
-  const kimlik = oku("kimlik.json");
-  const ayarlar = oku("ayarlar.json");
-  if (kimlik.status !== 0 || ayarlar.status !== 0) {
-    throw new Error(`${kodAdi} bilgileri okunamadı: ${kimlik.stderr.trim()}`);
+    sshKomutu(ipv4, `sudo sh -c 'cat ${klasor}/${dosya} 2>/dev/null || true'`).stdout;
+  try {
+    return bakimBilgisiCoz(kodAdi, oku("kimlik.json"), oku("ayarlar.json"));
+  } catch (hata) {
+    process.stderr.write(
+      `Uyarı: ${kodAdi} bakım sayfası bilgisi okunamadı, kod adı kullanılacak: ${(hata as Error).message}\n`,
+    );
+    return { ad: kodAdi };
   }
-  const { gorunenAd } = (kimlik.stdout.trim() ? JSON.parse(kimlik.stdout) : {}) as {
-    gorunenAd?: string;
-  };
-  const { dil, bakimMetni } = (ayarlar.stdout.trim() ? JSON.parse(ayarlar.stdout) : {}) as {
-    dil?: string;
-    bakimMetni?: string;
-  };
-  return { ad: gorunenAd ?? kodAdi, dil, metin: bakimMetni };
 };
 
 // Ön kapıyı sunucudaki yayın listesine göre kurar. Yayın komutu listeyi değiştirerek
@@ -639,23 +681,33 @@ export const sertifikaReddedildi = (hata: unknown): boolean =>
   (hata as NodeJS.ErrnoException).code === "EPROTO" &&
   /alert/i.test(hata.message);
 
-// Elle bakımı açar ya da kapatır. Ön kapı kurulamazsa işaret eski hâline döner: işaret ile çalışan ayar
-// ayrışmasın. Yayın kilidinin içinde çalışır.
+// Elle bakımı açar ya da kapatır. Yayında olmayan sitenin kalmış bakımı da kapatılabilir: site sonra
+// sessizce bakımda açılmasın. Ön kapı kurulamazsa işaret önceki hâline (önceki zamanıyla) döner ve kurulum
+// bir kez daha denenir: işaret ile çalışan ayar ayrışmasın. Yayın kilidinin içinde çalışır.
 export const bakimDegistir = async (ipv4: string, kodAdi: string, acik: boolean): Promise<void> => {
-  if (yayindakiSiteleriOku(ipv4)[kodAdi] === undefined) {
+  if (acik && yayindakiSiteleriOku(ipv4)[kodAdi] === undefined) {
     throw new Error(`${kodAdi} yayında değil.`);
   }
   await yayinKilidiyle(ipv4, () => {
-    const once = bakimdakiSiteleriOku(ipv4).has(kodAdi);
-    const degistir = (deger: boolean) => {
-      const sonuc = sshKomutu(ipv4, "bash -s", { girdi: bakimIsaretiBetigi(kodAdi, deger) });
+    const onceki = bakimdakiSiteleriOku(ipv4).get(kodAdi);
+    const isaret = (betik: string) => {
+      const sonuc = sshKomutu(ipv4, "bash -s", { girdi: betik });
       if (sonuc.status !== 0) throw new Error(`Bakım işareti yazılamadı: ${sonuc.stderr.trim()}`);
     };
-    degistir(acik);
+    isaret(bakimIsaretiBetigi(kodAdi, acik));
     try {
       onKapiyiKur(ipv4);
     } catch (hata) {
-      degistir(once);
+      isaret(
+        bakimIsaretiBetigi(kodAdi, onceki !== undefined, { zaman: onceki, islem: "geri-alindi" }),
+      );
+      try {
+        onKapiyiKur(ipv4);
+      } catch (ikinci) {
+        throw new Error(
+          `${(hata as Error).message}\n  Ön kapı yeniden de kurulamadı, işaret ile çalışan ayar farklı olabilir: ${(ikinci as Error).message}`,
+        );
+      }
       throw hata;
     }
   });

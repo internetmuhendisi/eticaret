@@ -24,6 +24,7 @@ import {
   bakimDamgasi,
   bakimdakiSiteleriOku,
   bakimSuresiHatasi,
+  bakimUnutulduMetni,
   denemeAdresi,
   denemeAlani,
   dizineKapali,
@@ -291,7 +292,7 @@ export const yayindakiSiteleriOlc = async (kayit: SunucuKaydi, olcum: Olcum): Pr
     const bakimZamani = bakimdakiler.get(kodAdi);
     if (bakimZamani !== undefined) {
       const sure = bakimSuresiHatasi(bakimZamani, Date.now());
-      olcum(sure === undefined, `${ad}: elle bakım unutulmamış`, sure ?? `${bakimZamani}'den beri`);
+      olcum(sure === undefined, `${ad}: ${bakimUnutulduMetni}`, sure ?? `${bakimZamani}'den beri`);
     }
     let surum: string | undefined;
     let kayitHatasi = "";

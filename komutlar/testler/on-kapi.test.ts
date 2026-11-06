@@ -8,11 +8,13 @@ import { siteKlasorunuOku } from "../../cekirdek/ayar-semasi/site-klasoru.ts";
 import {
   alanAdiKayitlari,
   ayniAdres,
+  bakimBilgisiCoz,
   bakimDamgasi,
   bakimIsaretiBetigi,
   bakimListesiniCoz,
   bakimSayfasi,
   bakimSuresiHatasi,
+  bakimUnutulduMetni,
   caddyGoruntusu,
   denemeAdresi,
   denemeSatiri,
@@ -28,6 +30,7 @@ import {
   sertifikaReddedildi,
   siteSatiri,
   sonIstemciAdresi,
+  yayiniDurdurmayanSatir,
   yoklamaAdi,
   yoklamaAdresi,
   yonlendirmeDogru,
@@ -146,8 +149,10 @@ describe("bakım sayfası", () => {
   it("olağan satır kutuya gönderir, sağlık yoklar, hata yolunda sayfayı 503 ile verir", () => {
     const satir = siteSatiri(adres, hedef, bilgi);
     expect(satir).toContain(`health_uri ${saglikYolu}`);
-    expect(satir).toContain("health_fails 3");
-    expect(satir).toContain(`handle ${saglikYolu} {\n\t\treverse_proxy ${hedef}\n\t}`);
+    expect(satir).toContain("health_fails 6");
+    expect(satir).toContain("response_header_timeout 30s");
+    expect(satir).toContain("method GET HEAD");
+    expect(satir).toContain(`{http.request.uri} == "${saglikYolu}"`);
     expect(satir).toContain("handle_errors 502 503 504");
     expect(satir).toContain("import bakim-basliklari");
     expect(satir).not.toContain("error 503");
@@ -155,7 +160,7 @@ describe("bakım sayfası", () => {
 
   it("elle bakımda kutuya yalnız sağlık ucu gider, panel de kapanır", () => {
     const satir = siteSatiri(adres, hedef, bilgi, { elleBakim: true });
-    expect(satir).toContain(`handle ${saglikYolu} {\n\t\treverse_proxy ${hedef}\n\t}`);
+    expect(satir).toContain("handle @saglik {");
     expect(satir).toContain("handle {\n\t\terror 503\n\t}");
     expect(satir.match(/reverse_proxy/g)).toHaveLength(1);
   });
@@ -178,12 +183,44 @@ describe("bakım sayfası", () => {
     expect(ayar).toMatch(/\(bakim-basliklari\)[\s\S]*X-Robots-Tag "noindex, nofollow"/);
   });
 
-  it("bakımdaki site listesi: bozuk satır kabul edilmez", () => {
+  it("metindeki $ ve yer tutucuya benzeyen yazı yorumlanmaz", () => {
+    const sayfa = bakimSayfasi({ ad: "__METIN__", metin: "100$'a kadar, $& ve $$" });
+    expect(sayfa).toContain("100$&#39;a kadar, $&#38; ve $$");
+    expect(sayfa).toContain("<title>Bakımdayız · __METIN__</title>");
+  });
+
+  it("bozuk site bilgisi kod adına düşer, tür dışı değer kullanılmaz", () => {
+    expect(bakimBilgisiCoz("x", '{"gorunenAd":"Ad"}', '{"bakimMetni":"M"}')).toEqual({
+      ad: "Ad",
+      dil: undefined,
+      metin: "M",
+    });
+    expect(bakimBilgisiCoz("x", "", "").ad).toBe("x");
+    expect(bakimBilgisiCoz("x", '{"gorunenAd":5}', "[]").ad).toBe("x");
+    expect(() => bakimBilgisiCoz("x", "{bozuk", "")).toThrow();
+  });
+
+  it("geri almada önceki zaman korunur, işlem kayda geçer", () => {
+    const betik = bakimIsaretiBetigi("ornek-magaza", true, {
+      zaman: "2026-11-06T10:00:00Z",
+      islem: "geri-alindi",
+    });
+    expect(betik).toContain("printf '%s\\n' '2026-11-06T10:00:00Z' >");
+    expect(betik).toContain('"islem":"geri-alindi"');
+    expect(() => bakimIsaretiBetigi("x", true, { zaman: "'; rm" })).toThrow();
+  });
+
+  it("bakımdaki site listesi: bozuk satır atlanır", () => {
     expect(bakimListesiniCoz("ornek-magaza 2026-11-06T10:00:00Z\n").get("ornek-magaza")).toBe(
       "2026-11-06T10:00:00Z",
     );
     expect(bakimListesiniCoz("").size).toBe(0);
-    expect(() => bakimListesiniCoz("../kotu x\n")).toThrow();
+    expect(bakimListesiniCoz("../kotu x\n").size).toBe(0);
+  });
+
+  it("yayını yalnız unutulan bakım satırı durdurmaz", () => {
+    expect(yayiniDurdurmayanSatir(`HATA x: ${bakimUnutulduMetni}: açık`)).toBe(true);
+    expect(yayiniDurdurmayanSatir("HATA deneme/x yayındaki kutusu: sağlık ucu")).toBe(false);
   });
 
   it("24 saatten uzun açık bakım kırmızıdır, okunamayan zaman da", () => {

@@ -5,12 +5,14 @@
 // - Kutu durunca sayfa 503, Retry-After, önbelleksiz, arama motorlarına kapalı; panel de sayfayı,
 //   kapı istekleri zarfı görüyor; robots.txt açık; kutu açılınca site kendiliğinden dönüyor.
 // - Veritabanı durunca sayfa görünüyor, açılınca kalkıyor.
+// - Kutu asılı kalınca istek 30 saniyede sayfaya düşüyor.
 // - Elle bakım vitrini ve paneli kapatıyor, sağlık ucu açık; ön kapı yeniden kurulunca da sürüyor;
 //   kapatınca site dönüyor.
 // - Bozuk ayar ön kapıyı düşürmüyor.
 // - Sayfa üç genişlikte ve açık-koyu temada yatay kaydırmasız, konsol hatasız, başlıklı, okunur.
 // Sonunda kutu ve veritabanı açık, elle bakım kapalıdır.
 
+import { request as httpsIstegi } from "node:https";
 import { chromium } from "@playwright/test";
 import {
   bakimDamgasi,
@@ -178,6 +180,7 @@ const elleBakim = async () => {
     await yayinKilidiyle(ipv4, () => onKapiyiKur(ipv4));
     olc("ön kapı yeniden kurulunca bakım sürüyor", bakimSayfasiMi(await iste("/")));
     olc("bakımın başlangıcı değişmiyor", bakimdakiSiteleriOku(ipv4).get(kodAdi) === ilkZaman);
+    await yolCesitleri();
     await sayfaOlcumleri();
   } finally {
     await bakimDegistir(ipv4, kodAdi, false);
@@ -187,10 +190,74 @@ const elleBakim = async () => {
   olc("işaret kalktı", !bakimdakiSiteleriOku(ipv4).has(kodAdi));
 };
 
-const bozukAyar = () => {
-  const betik = kurmaBetigi({ [kodAdi]: "bozuk-satir {\n" });
-  const sonuc = sshKomutu(ipv4, "bash -s", { girdi: betik });
-  olc("bozuk ayar kurulumdan önce durduruluyor", sonuc.status !== 0);
+const bozukAyar = async () => {
+  const siteler = yayindakiSiteleriOku(ipv4);
+  const betik = kurmaBetigi({ [kodAdi]: "bozuk-satir {\n" }, siteler);
+  const sonuc = await yayinKilidiyle(ipv4, () => sshKomutu(ipv4, "bash -s", { girdi: betik }));
+  olc(
+    "bozuk ayar kurulumdan önce durduruluyor",
+    sonuc.status !== 0 && /doğrulanamadı/.test(sonuc.stderr),
+    sonuc.stderr.trim().slice(0, 80),
+  );
+};
+
+// Kutu ayakta ama cevap vermiyor: istek 30 saniyede sayfaya düşmeli, ziyaretçi sonsuza kadar beklememeli.
+const kutuAsilinca = async () => {
+  docker(`pause ${kutu}`);
+  try {
+    const basla = Date.now();
+    const yanit = await fetch(`${adres}/`, { signal: AbortSignal.timeout(50_000) });
+    const sure = Math.round((Date.now() - basla) / 1000);
+    olc(
+      "asılı kutuda istek sayfaya düşüyor",
+      yanit.status === 503 && (await yanit.text()).includes(bakimDamgasi) && sure <= 35,
+      `${yanit.status}, ${sure} sn`,
+    );
+  } finally {
+    docker(`unpause ${kutu}`);
+  }
+  const sure = await beklenene((y) => y.durum === 200);
+  olc("kutu dönünce site dönüyor", sure !== undefined, `${sure ?? "?"} sn`);
+};
+
+// Sağlık yolunun yakın biçimleri ve başka yöntemler elle bakımı aşamamalı.
+// fetch ".." ve ".%2e" parçalarını göndermeden temizler (ölçüldü); adres burada ham gönderilir.
+const hamDurum = (yol: string): Promise<number> =>
+  new Promise((bitti, hata) => {
+    const istek = httpsIstegi(
+      { host: denemeAdresi(kodAdi), path: yol, method: "GET", timeout: 15_000 },
+      (yanit) => {
+        yanit.resume();
+        bitti(yanit.statusCode ?? 0);
+      },
+    );
+    istek.on("error", hata);
+    istek.on("timeout", () => istek.destroy(new Error("zaman aşımı")));
+    istek.end();
+  });
+
+const yolCesitleri = async () => {
+  for (const yol of [
+    "/KAPI/HERKESE-ACIK/SAGLIK",
+    "/kapi/herkese-acik/%73aglik",
+    "/yonetim%2f..%2fkapi/herkese-acik/saglik",
+    "/yonetim/.%2e/kapi/herkese-acik/saglik",
+    "/yonetim/../kapi/herkese-acik/saglik",
+    `${saglikYolu}/`,
+    `${saglikYolu}?a=1`,
+    "/_next/static/x.js",
+  ]) {
+    const durum = await hamDurum(yol);
+    olc(`elle bakımda ${yol} uygulamaya ulaşmıyor`, durum === 503, String(durum));
+  }
+  const yontem = await iste(saglikYolu, "POST");
+  olc("elle bakımda sağlık ucuna POST ulaşmıyor", yontem.durum === 503, String(yontem.durum));
+  const baska = await iste("/kapi/herkese-acik/yok");
+  olc(
+    "elle bakımda kapı isteği zarf alıyor",
+    baska.durum === 503 && JSON.parse(baska.govde).hata?.kod === "hizmet-kullanilamiyor",
+    String(baska.durum),
+  );
 };
 
 // WCAG'ın göreli parlaklık formülüyle kontrast oranı (tarayıcıda hesaplanan renklerle).
@@ -218,8 +285,13 @@ const sayfaOlcumleri = async () => {
         });
         const konsol: string[] = [];
         sayfa.on("console", (ileti) => {
-          // 503 cevabını tarayıcı kendisi yazar; sayfanın kendi hatası değildir.
-          if (ileti.type() === "error" && !/503/.test(ileti.text())) konsol.push(ileti.text());
+          // 503 cevabını tarayıcı kendisi yazar; yalnız o ileti süzülür.
+          if (
+            ileti.type() === "error" &&
+            !/^Failed to load resource: .*status of 503/.test(ileti.text())
+          ) {
+            konsol.push(ileti.text());
+          }
         });
         sayfa.on("pageerror", (hata) => konsol.push(hata.message));
         await sayfa.goto(adres);
@@ -276,9 +348,10 @@ try {
   await yayinKilidiyle(ipv4, () => onKapiyiKur(ipv4));
   await olaganDurum();
   await kutuDurunca();
+  await kutuAsilinca();
   await veritabaniDurunca();
   await elleBakim();
-  bozukAyar();
+  await bozukAyar();
   const son = await iste("/");
   olc("bozuk ayardan sonra site açık", son.durum === 200, String(son.durum));
 } catch (hata) {
