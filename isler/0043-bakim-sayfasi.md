@@ -35,4 +35,4 @@ Site güncellenirken ya da bir sorun çıktığında ziyaretçi boş bir hata ek
 
 ## Durum
 
-yapılacak
+bitti
