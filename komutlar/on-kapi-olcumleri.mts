@@ -21,6 +21,9 @@ import { request as httpsIstegi } from "node:https";
 import type { TLSSocket } from "node:tls";
 import {
   ayniAdres,
+  bakimDamgasi,
+  bakimdakiSiteleriOku,
+  bakimSuresiHatasi,
   denemeAdresi,
   denemeAlani,
   dizineKapali,
@@ -256,6 +259,7 @@ export const onKapiyiOlc = async (kayit: SunucuKaydi, olcum: Olcum): Promise<voi
 // Sağlık ucu anlık bir ağ takılmasında yanlış kırmızı vermesin diye üç kez denenir.
 export const yayindakiSiteleriOlc = async (kayit: SunucuKaydi, olcum: Olcum): Promise<void> => {
   const siteler = yayindakiSiteleriOku(kayit.ipv4);
+  const bakimdakiler = bakimdakiSiteleriOku(kayit.ipv4);
   for (const [kodAdi, no] of Object.entries(siteler).sort(([a], [b]) => a.localeCompare(b))) {
     const ad = `${yayinOrtami}/${kodAdi} yayındaki kutusu`;
     const adres = denemeAdresi(kodAdi);
@@ -264,9 +268,12 @@ export const yayindakiSiteleriOlc = async (kayit: SunucuKaydi, olcum: Olcum): Pr
       ["IPv6", kayit.ipv6],
     ] as const) {
       const ana = await dene(() => iste(true, ip, adres, "/"));
+      // Elle açık bakımda adres bakım sayfasını göstermeli; bu kırmızı değildir, unutulması kırmızıdır.
+      const bakimda = bakimdakiler.has(kodAdi);
       olcum(
-        !(ana instanceof Error) && ana.durum === 200,
-        `${ad}: ${tur} ile deneme adresi şifreli bağlantıyla açılıyor`,
+        !(ana instanceof Error) &&
+          (bakimda ? ana.durum === 503 && ana.govde.includes(bakimDamgasi) : ana.durum === 200),
+        `${ad}: ${tur} ile deneme adresi şifreli bağlantıyla ${bakimda ? "bakım sayfasını gösteriyor (elle açık)" : "açılıyor"}`,
         ana instanceof Error ? ana.message : String(ana.durum),
       );
       olcum(
@@ -280,6 +287,11 @@ export const yayindakiSiteleriOlc = async (kayit: SunucuKaydi, olcum: Olcum): Pr
         `${ad}: ${tur} ile robots.txt bütün siteyi kapatıyor`,
         robots instanceof Error ? robots.message : String(robots.durum),
       );
+    }
+    const bakimZamani = bakimdakiler.get(kodAdi);
+    if (bakimZamani !== undefined) {
+      const sure = bakimSuresiHatasi(bakimZamani, Date.now());
+      olcum(sure === undefined, `${ad}: elle bakım unutulmamış`, sure ?? `${bakimZamani}'den beri`);
     }
     let surum: string | undefined;
     let kayitHatasi = "";

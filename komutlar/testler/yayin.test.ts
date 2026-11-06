@@ -3,8 +3,8 @@
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import {
-  denemeSatiri,
   onKapiTanimi,
+  siteSatiri,
   siteSatirlari,
   yayindakiSiteleriCoz,
   yayindakiSitelerKomutu,
@@ -214,11 +214,23 @@ describe("ön kapı ve yayındaki siteler", () => {
     },
   );
 
+  it("elle bakımdaki sitenin satırı bakımı, ötekinin satırı siteyi gösterir", () => {
+    const satirlar = siteSatirlari(
+      { "ornek-magaza": 3, "oteki-site": 2 },
+      {},
+      new Map([["ornek-magaza", "2026-11-06T10:00:00Z"]]),
+    );
+    expect(satirlar["ornek-magaza"]).toContain("error 503");
+    expect(satirlar["oteki-site"]).not.toContain("error 503");
+    expect(satirlar["oteki-site"]).toContain("health_uri");
+  });
+
   it("her yayındaki site için etkin kutuyu gösteren satır ve ağ", () => {
     expect(siteSatirlari({ "ornek-magaza": 3 })).toEqual({
-      "ornek-magaza": denemeSatiri(
+      "ornek-magaza": siteSatiri(
         "ornek-magaza.deneme.eticaretmagazasi.com",
         "site-deneme-ornek-magaza-3:3000",
+        { ad: "ornek-magaza" },
       ),
     });
     const tanim = onKapiTanimi({ "ornek-magaza": 3 });

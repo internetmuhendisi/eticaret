@@ -8,6 +8,11 @@ import { siteKlasorunuOku } from "../../cekirdek/ayar-semasi/site-klasoru.ts";
 import {
   alanAdiKayitlari,
   ayniAdres,
+  bakimDamgasi,
+  bakimIsaretiBetigi,
+  bakimListesiniCoz,
+  bakimSayfasi,
+  bakimSuresiHatasi,
   caddyGoruntusu,
   denemeAdresi,
   denemeSatiri,
@@ -19,7 +24,9 @@ import {
   kutuKisitHatalari,
   onKapiTanimi,
   robotlaraKapali,
+  saglikYolu,
   sertifikaReddedildi,
+  siteSatiri,
   sonIstemciAdresi,
   yoklamaAdi,
   yoklamaAdresi,
@@ -94,6 +101,113 @@ describe("Caddy satırı", () => {
     ["x.deneme.eticaretmagazasi.com", "kutu"],
   ])("deneme alanı dışını ya da ayar sızdıran girdiyi reddeder: %j", (adres, hedef) => {
     expect(() => denemeSatiri(adres, hedef)).toThrow();
+  });
+});
+
+describe("bakım sayfası", () => {
+  const adres = "ornek-magaza.deneme.eticaretmagazasi.com";
+  const hedef = "site-deneme-ornek-magaza-6:3000";
+  const bilgi = { ad: "Örnek Mağaza" };
+
+  it("ortak metinle ve sitenin adıyla çıkar, damga taşır, ham renk taşımaz", () => {
+    const sayfa = bakimSayfasi(bilgi);
+    expect(sayfa).toContain("Örnek Mağaza");
+    expect(sayfa).toContain("Birazdan yeniden buradayız");
+    expect(sayfa).toContain(bakimDamgasi);
+    expect(sayfa).toContain('lang="tr"');
+    expect(sayfa).not.toMatch(/__[A-Z]+__/);
+    expect(sayfa).not.toMatch(/#[0-9a-f]{3,8}\b|rgb\(|hsl\(|oklch\(/i);
+  });
+
+  it("süslü ayraç taşımaz: Caddy yer tutucu sanırdı", () => {
+    expect(bakimSayfasi(bilgi)).not.toMatch(/[{}]/);
+  });
+
+  it("sitenin metni ortak metnin yerine geçer", () => {
+    const sayfa = bakimSayfasi({ ...bilgi, metin: "Saat 14:00'te döneceğiz." });
+    expect(sayfa).toContain("Saat 14:00&#39;te döneceğiz.");
+    expect(sayfa).not.toContain("Birazdan yeniden buradayız");
+  });
+
+  it.each([
+    ["HTML", "<script>x</script>", "&#60;script&#62;"],
+    ["Caddy yer tutucusu", "{env.HETZNER_ANAHTARI}", "env.HETZNER_ANAHTARI"],
+    ["Caddy ayar kaçışı", "\\`\nrespond 200", "&#96;"],
+  ])("%s metinden kaçamaz", (_ad, metin, beklenen) => {
+    const sayfa = bakimSayfasi({ ad: metin, metin });
+    expect(sayfa).toContain(beklenen);
+    expect(sayfa).not.toContain(metin);
+  });
+
+  it("bilinmeyen dil ortak dile düşer", () => {
+    expect(bakimSayfasi({ ...bilgi, dil: "xx" })).toContain('lang="tr"');
+  });
+
+  it("olağan satır kutuya gönderir, sağlık yoklar, hata yolunda sayfayı 503 ile verir", () => {
+    const satir = siteSatiri(adres, hedef, bilgi);
+    expect(satir).toContain(`health_uri ${saglikYolu}`);
+    expect(satir).toContain("health_fails 3");
+    expect(satir).toContain(`handle ${saglikYolu} {\n\t\treverse_proxy ${hedef}\n\t}`);
+    expect(satir).toContain("handle_errors 502 503 504");
+    expect(satir).toContain("import bakim-basliklari");
+    expect(satir).not.toContain("error 503");
+  });
+
+  it("elle bakımda kutuya yalnız sağlık ucu gider, panel de kapanır", () => {
+    const satir = siteSatiri(adres, hedef, bilgi, { elleBakim: true });
+    expect(satir).toContain(`handle ${saglikYolu} {\n\t\treverse_proxy ${hedef}\n\t}`);
+    expect(satir).toContain("handle {\n\t\terror 503\n\t}");
+    expect(satir.match(/reverse_proxy/g)).toHaveLength(1);
+  });
+
+  it("kapıya gelen istek zarfla cevap alır, zarftaki ayraçlar kaçırılır", () => {
+    expect(siteSatiri(adres, hedef, bilgi)).toContain(
+      'respond `\\{"basarili":false,"hata":\\{"kod":"hizmet-kullanilamiyor"\\}\\}` 503',
+    );
+  });
+
+  it("deneme alanı dışını ve ayar sızdıran hedefi reddeder", () => {
+    expect(() => siteSatiri("ornek.com", hedef, bilgi)).toThrow();
+    expect(() => siteSatiri(adres, "kutu:3000\n}\n:80 {", bilgi)).toThrow();
+  });
+
+  it("Caddyfile bakım başlıklarını tanımlar", () => {
+    const ayar = readFileSync(join(kok, "sunucu", "on-kapi", "Caddyfile"), "utf8");
+    expect(ayar).toContain("(bakim-basliklari)");
+    expect(ayar).toContain('Retry-After "300"');
+    expect(ayar).toMatch(/\(bakim-basliklari\)[\s\S]*X-Robots-Tag "noindex, nofollow"/);
+  });
+
+  it("bakımdaki site listesi: bozuk satır kabul edilmez", () => {
+    expect(bakimListesiniCoz("ornek-magaza 2026-11-06T10:00:00Z\n").get("ornek-magaza")).toBe(
+      "2026-11-06T10:00:00Z",
+    );
+    expect(bakimListesiniCoz("").size).toBe(0);
+    expect(() => bakimListesiniCoz("../kotu x\n")).toThrow();
+  });
+
+  it("24 saatten uzun açık bakım kırmızıdır, okunamayan zaman da", () => {
+    const simdi = Date.parse("2026-11-07T12:00:00Z");
+    expect(bakimSuresiHatasi("2026-11-07T11:00:00Z", simdi)).toBeUndefined();
+    expect(bakimSuresiHatasi("2026-11-06T11:00:00Z", simdi)).toContain("24 saatten");
+    expect(bakimSuresiHatasi("bozuk", simdi)).toContain("okunamadı");
+  });
+
+  it("işaret betiğinin sözdizimi doğru, geçersiz kod adını reddeder", () => {
+    for (const acik of [true, false]) {
+      const sonuc = spawnSync("bash", ["-n"], {
+        input: bakimIsaretiBetigi("ornek-magaza", acik),
+        encoding: "utf8",
+      });
+      expect(sonuc.status).toBe(0);
+    }
+    expect(() => bakimIsaretiBetigi("../x", true)).toThrow();
+  });
+
+  it("açık bakımı yeniden açmak başlangıç zamanını değiştirmez", () => {
+    expect(bakimIsaretiBetigi("ornek-magaza", true)).toContain(
+      "[ -f /srv/altyapi/on-kapi/bakim-acik/ornek-magaza ] ||",
+    );
   });
 });
 

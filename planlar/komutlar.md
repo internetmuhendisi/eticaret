@@ -89,7 +89,7 @@ Yalnız site klasörü değiştiğinde (örneğin altyapı sahibinin bir ayarı)
 
 1. **Hangi site?** Komut sahip panelinden siteleri, çalıştıkları sürümü ve bekleyen güvenlik güncellemesini gösterir.
 2. **Hangi sürüme?** Önerilen: yayınlanmış en yeni sürüm. Komut aradaki bütün sürümlerin notlarını sade dille özetler: ne değişti, bu siteye etkisi, mağaza sahibi panelde yeni bir şey görecek mi.
-3. **Ne zaman?** Hemen ya da mağazanın en az ziyaret aldığı saatte (önerilen: gece). Güncelleme sırasında site kısa süre bakım moduna geçecekse bu ayrıca söylenir.
+3. **Ne zaman?** Hemen ya da mağazanın en az ziyaret aldığı saatte (önerilen: gece). Yayın kesintisizdir, bakıma gerek yoktur. Veri düzenini riskli biçimde değiştiren güncellemede site elle bakıma alınır (`pnpm bakim`, karar 0038) ve bu ayrıca söylenir.
 4. **Mağaza sahibine haber verilsin mi?** Yalnız sürüm notunda mağaza sahibinin göreceği bir değişiklik varsa sorulur.
 
 Büyük sürümde (ilk sayı artıyorsa) site klasöründe de değişiklik gerekir. Komut bu değişiklikleri gösterir ve ayrıca onay alır. Veritabanı değişikliği geri alınamıyor ve yedekten dönmek gerekiyorsa bu da baştan söylenir.

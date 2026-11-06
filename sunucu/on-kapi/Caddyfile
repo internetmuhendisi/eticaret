@@ -23,6 +23,17 @@ Disallow: /
 	}
 }
 
+# Bakım cevabının başlıkları (kart 0043, karar 0038): 503 ve Retry-After arama motorlarına kapanmanın
+# geçici olduğunu söyler, sayfa önbelleğe alınmaz. Hata yolunda yukarıdaki kural çalışmaz, deneme
+# adresi arama motorlarına kapalı kalsın diye burada da yazılır.
+(bakim-basliklari) {
+	header {
+		Retry-After "300"
+		Cache-Control "no-store"
+		X-Robots-Tag "noindex, nofollow"
+	}
+}
+
 import /etc/caddy/siteler/*.caddy
 
 # Tanınmayan adres hiçbir siteye gitmez. Şifreli bağlantıda tanınmayan adrese sertifika verilmez;

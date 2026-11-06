@@ -22,7 +22,8 @@
       "siparisBaslangici": "İlk siparişin numarası.",
       "temaDegistirilebilir": "Mağaza sahibi yönetim panelinden temayı değiştirebilir.",
       "vitrindeAltyapiAdi": "Vitrinde altyapının adı görünür.",
-      "yakindaYazisi": "Vitrinin ana sayfasında başlığın altında \"Yakında açılıyoruz.\" yazısı görünür."
+      "yakindaYazisi": "Vitrinin ana sayfasında başlığın altında \"Yakında açılıyoruz.\" yazısı görünür.",
+      "bakimMetni": "Bakım sayfasında görünen metin. Boşsa ortak metin görünür."
     }
   },
   "yonetim": {
@@ -31,6 +32,10 @@
     }
   },
   "vitrin": {
+    "bakim": {
+      "baslik": "Bakımdayız",
+      "metin": "Kısa bir bakım yapıyoruz. Birazdan yeniden buradayız."
+    },
     "anasayfa": {
       "yakindaAciliyoruz": "Yakında açılıyoruz."
     }

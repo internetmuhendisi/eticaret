@@ -10,10 +10,10 @@ Site güncellenirken ya da bir sorun çıktığında ziyaretçi boş bir hata ek
 
 - Sayfa uygulamanın içinde değil ön kapıda durur: uygulama düşmüşken de açılır.
 - Kendiliğinden: sitenin kutusu kapalıysa, cevap vermiyorsa ya da sağlık ucu veritabanının düştüğünü söylüyorsa sayfa görünür, düzelince kendiliğinden kalkar.
-- Elle: `pnpm bakim <site klasörü> <ortam> ac|kapat|durum`. Yalnız o siteyi etkiler, öteki sitelere dokunmaz.
+- Elle: `pnpm bakim <site klasörü> <ortam> ac|kapat|durum`. Vitrin ve yönetim paneli birlikte kapanır. Yalnız o siteyi etkiler, öteki sitelere dokunmaz.
 - Elle açık bakım, sayfa yenilenince ve yeni yayında korunur.
 - Cevap 503 ve `Retry-After` taşır: arama motorları bunu geçici sayar. Sağlık ucu bakımda da açık kalır, kontroller gerçek durumu görür.
-- Metin tek yerden okunur, renkler tasarım değerlerinden gelir. Sitenin metni site ayarıdır, boşsa ortak metin görünür.
+- Metin tek yerden okunur, ham renk yazılmaz (tasarım değerleri henüz yok, sistem renkleri kullanılır). Sitenin metni site ayarıdır, boşsa ortak metin görünür.
 - `pnpm sunucu-denetle` elle açık bakımı söyler, 24 saatten uzun açık kaldıysa kırmızıdır. Yayın bakım açıkken de çalışır.
 - Bakım açılınca, kapanınca sonuç kayda yazılır.
 

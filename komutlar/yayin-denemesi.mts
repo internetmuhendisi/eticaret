@@ -8,6 +8,7 @@
 // - Bilerek bozulmuş bir görüntüyle yayın başarısız oluyor; site eski yayınıyla açık kalıyor.
 // - İkinci bir yayından (başka bir adla) sonra geri dönüş siteyi önceki yayına döndürüyor.
 // - Yayın kaydında bütün çalıştırmalar sırasıyla görünüyor.
+// - Elle bakım yalnız o sitenin vitrinini kapatıyor; yayın bakım açıkken çalışıyor, bakımı kapatmıyor.
 // - Gizli bilgi yenilenince yayındaki kutu yeni değerle yeniden başlıyor; kesinti ölçülür.
 // Sonunda deneme sitelerinin kutuları, yayınları, ön kapı satırları, veritabanları, gizli
 // bilgileri ve ağları silinir.
@@ -26,6 +27,8 @@ import {
   uretmeBetigi,
 } from "./gizli-bilgi.mts";
 import {
+  bakimDegistir,
+  onKapiKlasoru,
   onKapiyiKur,
   siteAgiAdi,
   siteKutusuAdi,
@@ -177,6 +180,7 @@ for c in $(docker ps -aq --filter 'name=^${siteAgiAdi(ortam, kodAdi)}-[0-9]+$');
 # kimlikle silmek başka sitelerin etiketlerini de götürürdü.
 for g in $(docker images --format '{{.Repository}}:{{.Tag}}' 'altyapi-yayin' | grep -E '^altyapi-yayin:${ortam}-${kodAdi}-[0-9]+$'); do docker image rm "$g" >/dev/null 2>&1; done
 sudo rm -rf ${yayinKlasoru(ortam, kodAdi)}
+sudo rm -f ${onKapiKlasoru}/bakim-acik/${kodAdi}
 printf '%s\\n' 'DROP DATABASE IF EXISTS "${ad}" WITH (FORCE);' 'DROP ROLE IF EXISTS "${ad}";' | docker exec -i ${veritabaniKutusu(ortam)} psql -U postgres -d postgres -q >/dev/null
 ${silmeBetigi(ortam, kodAdi).replace("set -eu", "true")}
 `,
@@ -275,7 +279,24 @@ try {
     `${bozuk.neden ?? "başarılı oldu"}; vitrin "${bozuktanSonra.ad}"`,
   );
 
+  // Elle bakım (kart 0043): yalnız o sitenin vitrini kapanır, ikinci yayın bakım açıkken çalışır ve
+  // bakımı kapatmaz.
+  await bakimDegistir(ipv4, a.kodAdi, true);
+  const bakimdaA = await vitrin(ipv4, a.kodAdi);
+  const bakimdaB = await vitrin(ipv4, b.kodAdi);
+  olc(
+    "elle bakım yalnız o siteyi kapatıyor",
+    bakimdaA.durum === 503 && bakimdaB.durum === 200,
+    `${a.kodAdi} ${bakimdaA.durum}, ${b.kodAdi} ${bakimdaB.durum}`,
+  );
   const ikinci = await yayinla(yayinGirdisi(a, "Yayın Denemesi A2"));
+  const yayindanSonraBakim = await vitrin(ipv4, a.kodAdi);
+  olc(
+    "yayın bakım açıkken çalışıyor, bakım yayından sonra sürüyor",
+    ikinci.sonuc === "basarili" && yayindanSonraBakim.durum === 503,
+    ikinci.neden ?? String(yayindanSonraBakim.durum),
+  );
+  await bakimDegistir(ipv4, a.kodAdi, false);
   const ikinciVitrin = await vitrin(ipv4, a.kodAdi);
   olc(
     "ikinci yayın: vitrin yeni adı gösteriyor",
