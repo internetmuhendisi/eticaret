@@ -147,6 +147,26 @@ describe("hata katmanı", () => {
     ]);
   });
 
+  // Next.js açılışı, uçları ve ara katmanı ayrı paketlere derler: açılışta bağlanan aracı öteki
+  // kopyalar da görmeli (kart 0049). Gerçek uygulamadaki ölçümü: pnpm hata-izleme-denemesi.
+  it("dosyanın başka kopyasından geçen hata, ilk kopyaya bağlanan araca gider", async () => {
+    surecCiktisiniYakala();
+    const kayitlar: IzlenenHata[] = [];
+    hataIzlemeAraciniBagla((kayit) => kayitlar.push(kayit));
+
+    vi.resetModules();
+    const ikinciKopya = await import("../hata-katmani.ts");
+    expect(ikinciKopya.hatayiKaydet).not.toBe(hatayiKaydet);
+    ikinciKopya.hatayiKaydet(new Error("kopyadan"), { kaynak: "kopya" });
+
+    expect(kayitlar).toHaveLength(1);
+    expect(kayitlar[0]?.baglam).toEqual({ kaynak: "kopya" });
+
+    ikinciKopya.hataIzlemeAraciniBagla(undefined);
+    hatayiKaydet(new Error("çözüldü"));
+    expect(kayitlar).toHaveLength(1);
+  });
+
   it("yakalanmamış süreç hatasını ölümcül seviyede kaydeder", () => {
     const { satirlar } = surecCiktisiniYakala();
     const onceki = process.listeners("uncaughtExceptionMonitor");

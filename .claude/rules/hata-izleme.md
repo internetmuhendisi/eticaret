@@ -32,4 +32,5 @@ paths:
 - Araç kendi sunucumuzdaki Bugsink'tir. Her sitenin kod adıyla bir projesi vardır, yayın komutu projeyi açar ve gönderim adresini site kutusuna verir.
 - Araca olayı yalnız `cekirdek/izleme/hata-izleme-araci.ts` gönderir. Sunucuda `hata-izleme-baglantisi.ts`, tarayıcıda kök düzendeki `istemci-hata-izleme.tsx` bağlar. Hazır Sentry paketi ekleme: istek başlığını, çerezi ve ziyaretçi adresini kendiliğinden toplar.
 - Her olay site kod adı, çekirdek sürümü ve ortamla etiketlenir. Olaya yeni bir alan eklenirse maskeden geçer; ziyaretçi, istek, çerez ve başlık alanı eklenmez.
-- Gerçek deneme: `pnpm hata-izleme-denemesi <site klasörü>`. Yönetim ekranı: `pnpm hata-izleme-ac`.
+- Sunucudaki araç bağlantısı sürecin ortak alanında durur: Next.js açılışı, uçları ve ara katmanı ayrı paketlere derler (karar 0043). Paketler arasında paylaşılması gereken yeni bir durum da aynı yolla tutulur.
+- Gerçek deneme: `pnpm hata-izleme-denemesi <site klasörü>`. Uç ve ara katman hatasını ölçmek için ortamın veritabanını kısa süre durdurur. Yönetim ekranı: `pnpm hata-izleme-ac`.

@@ -13,10 +13,13 @@ import { hataIzlemeGizliBilgisi } from "../gizli-bilgi.mts";
 import {
   bugsinkGoruntusu,
   bugsinkKomutu,
+  denemeIstekleri,
   hataIzlemeAgHatalari,
   hataIzlemeAgUyeHatalari,
   hataIzlemeTanimi,
   kurmaBetigi,
+  kutuIstekBetigi,
+  olayBaglamiTutuyor,
   olaySorunlari,
   yonetimBetigi,
 } from "../hata-izleme.mts";
@@ -167,6 +170,32 @@ describe("yayındaki site kutusu", () => {
   });
 });
 
+describe("uç ve ara katman denemesi", () => {
+  it("kutudaki betik sözdizimi doğru ve bütün istekleri taşır", () => {
+    const betik = kutuIstekBetigi(denemeIstekleri);
+    expect(spawnSync("node", ["--check", "-"], { input: betik, encoding: "utf8" }).status).toBe(0);
+    for (const { yol } of denemeIstekleri) expect(betik).toContain(yol);
+  });
+
+  it("her istek veritabanı kapalıyken beklenen yanıtı söyler", () => {
+    expect(denemeIstekleri.map((istek) => istek.beklenenDurum)).toEqual([500, 503, 503]);
+  });
+
+  it("istekler uydurma değer taşır: araçta açık geçmemeleri ölçülür", () => {
+    const betik = kutuIstekBetigi(denemeIstekleri);
+    expect(betik).toContain(denemeDegerleri.jwt);
+    expect(betik).toContain(denemeDegerleri.sifre);
+  });
+
+  it("kayıt yalnız beklenen bağlamla eşleşir", () => {
+    const olay = { extra: { baglam: { kaynak: "panel-korumasi" } } };
+    expect(olayBaglamiTutuyor(olay, { kaynak: "panel-korumasi" })).toBe(true);
+    expect(olayBaglamiTutuyor(olay, { kaynak: "saglik" })).toBe(false);
+    expect(olayBaglamiTutuyor({}, { kaynak: "panel-korumasi" })).toBe(false);
+    expect(olayBaglamiTutuyor({ extra: {} }, { kaynak: "panel-korumasi" })).toBe(false);
+  });
+});
+
 describe("deneme komutunun kayıt denetimi", () => {
   const beklenen = { site: "ornek-site", surum: "0.1.0", ortam: "deneme", kaynak: "sunucu" };
   const saglam = {
@@ -208,5 +237,11 @@ describe("deneme komutunun kayıt denetimi", () => {
   it("maske çalışmamış (e-posta tümüyle silinmiş) kayıt da yakalanır", () => {
     const silinmis = { ...saglam, exception: { values: [{ type: "Error", value: "x" }] } };
     expect(olaySorunlari(silinmis, beklenen)).toContain("kısaltılmış e-posta yok");
+    // Gerçek uç hatasında e-posta yoktur: yalnız bu ölçüm atlanır, öteki ölçümler kalır.
+    const uc = { ...beklenen, kisaltilmisEposta: false };
+    expect(olaySorunlari(silinmis, uc)).toEqual([]);
+    expect(olaySorunlari({ ...silinmis, extra: { e: denemeDegerleri.jwt } }, uc).join()).toContain(
+      "açık",
+    );
   });
 });

@@ -15,11 +15,14 @@ export type IzlenenHata = {
 
 export type HataIzlemeAraci = (kayit: IzlenenHata) => void;
 
-// Hata izleme aracının bağlandığı tek yer. Araç kart 0022'de seçilip bağlanır.
-let izlemeAraci: HataIzlemeAraci | undefined;
+// Hata izleme aracının bağlandığı tek yer (kart 0022). Next.js açılışı, uçları ve ara katmanı ayrı
+// paketlere derler, bu dosya süreçte üç kopya yüklenir (ölçüldü, kart 0049). Araç bu yüzden dosyanın
+// içinde değil, sürecin ortak alanında tutulur; açılışta bağlanan aracı bütün paketler görür.
+const anahtar = Symbol.for("cekirdek.hataIzlemeAraci");
+const ortak = globalThis as { [anahtar]?: HataIzlemeAraci | undefined };
 
 export const hataIzlemeAraciniBagla = (arac: HataIzlemeAraci | undefined): void => {
-  izlemeAraci = arac;
+  ortak[anahtar] = arac;
 };
 
 export const hatayiKaydet = (
@@ -28,6 +31,7 @@ export const hatayiKaydet = (
   seviye: IzlenenHata["seviye"] = "hata",
 ): void => {
   gunluk[seviye]("beklenmeyen hata", { ...baglam, hata });
+  const izlemeAraci = ortak[anahtar];
   if (izlemeAraci === undefined) return;
   try {
     izlemeAraci({ seviye, hata: maskele(hata), baglam: maskele(baglam) });

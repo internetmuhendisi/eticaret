@@ -21,6 +21,8 @@ import {
   acikBicimler,
   denemeDegerleri,
 } from "../cekirdek/izleme/hata-izleme-denemesi-degerleri.ts";
+import { oturumCerezAdlari } from "../cekirdek/kayitlar/oturum.ts";
+import { panelAdresi } from "../cekirdek/yonetim-paneli/adresler.ts";
 import { gizliKok, hataIzlemeGizliBilgisi, type Ortam } from "./gizli-bilgi.mts";
 import { kaliciKutu } from "./kutu-kurali.mts";
 import {
@@ -32,6 +34,7 @@ import {
   hataIzlemePortu,
   kodAdiGecerli,
   onKapiKutusu,
+  saglikYolu,
 } from "./on-kapi.mts";
 import { sshKomutu } from "./sunucu.mts";
 
@@ -234,8 +237,8 @@ echo hata-izleme=hazir
 // Kutunun içinde çalışan yönetim istemcisi: Bugsink'in okuma ve yönetim ucunu kutunun içinden
 // (127.0.0.1) çağırır. Yönetim anahtarı girdinin ilk satırıdır; komut satırında görünmez.
 // İşlemler: "proje <kod adı>" (yoksa açar, gönderim adresini yazar), "olaylar <kod adı> <işaret>"
-// (işareti taşıyan olayları yazar).
-const yonetimIstemcisi = `import json, sys, urllib.request
+// (işareti taşıyan olayları yazar), "son-olaylar <kod adı> <saniye>" (o andan sonraki olayları yazar).
+const yonetimIstemcisi = `import datetime, json, sys, urllib.request
 anahtar = sys.stdin.readline().strip()
 kok = "http://127.0.0.1:${hataIzlemePortu}/api/canonical/0"
 def iste(yol, govde=None):
@@ -276,6 +279,18 @@ elif islem == "olaylar":
                 veri = iste("/events/%s/" % o["id"])["data"]
                 if isaret in json.dumps(veri, ensure_ascii=False):
                     cikti.append(veri)
+    print("olaylar=" + json.dumps(cikti, ensure_ascii=False))
+elif islem == "son-olaylar":
+    sinir = float(sys.argv[3])
+    saniye = lambda z: datetime.datetime.fromisoformat(z.replace("Z", "+00:00")).timestamp()
+    cikti = []
+    for p in projeler():
+        for s in hepsi("/issues/?project=%d" % p["id"]):
+            if saniye(s["last_seen"]) < sinir:
+                continue
+            for o in hepsi("/events/?issue=" + s["id"]):
+                if saniye(o["timestamp"]) >= sinir:
+                    cikti.append(iste("/events/%s/" % o["id"])["data"])
     print("olaylar=" + json.dumps(cikti, ensure_ascii=False))
 else:
     sys.exit("bilinmeyen işlem")
@@ -331,12 +346,103 @@ export const projeAdresiniHazirla = (ipv4: string, ortam: Ortam, kodAdi: string)
 };
 
 // Sitenin projesinde işareti taşıyan olaylar (deneme komutu kullanır).
-export const olaylariOku = (ipv4: string, ortam: Ortam, kodAdi: string, isaret: string): Olay[] => {
-  if (!kodAdiGecerli(kodAdi)) throw new Error(`Geçersiz kod adı: ${kodAdi}`);
-  const cikti = sunucudaCalistir(ipv4, yonetimBetigi(ortam, ["olaylar", kodAdi, isaret]));
+const olayCiktisi = (cikti: string): Olay[] => {
   const satir = cikti.match(/^olaylar=(.*)$/m)?.[1];
   if (satir === undefined) throw new Error(`Olaylar okunamadı: ${cikti}`);
   return JSON.parse(satir) as Olay[];
+};
+
+export const olaylariOku = (ipv4: string, ortam: Ortam, kodAdi: string, isaret: string): Olay[] => {
+  if (!kodAdiGecerli(kodAdi)) throw new Error(`Geçersiz kod adı: ${kodAdi}`);
+  return olayCiktisi(sunucudaCalistir(ipv4, yonetimBetigi(ortam, ["olaylar", kodAdi, isaret])));
+};
+
+// Sitenin projesinde verilen andan (sunucu saatiyle saniye) sonra gelen olaylar. Uç ve ara katman
+// hataları işaret taşıyamaz, gerçek hatadır; deneme onları bu yolla okur.
+export const sonOlaylariOku = (
+  ipv4: string,
+  ortam: Ortam,
+  kodAdi: string,
+  sinir: number,
+): Olay[] => {
+  if (!kodAdiGecerli(kodAdi)) throw new Error(`Geçersiz kod adı: ${kodAdi}`);
+  return olayCiktisi(
+    sunucudaCalistir(ipv4, yonetimBetigi(ortam, ["son-olaylar", kodAdi, String(sinir)])),
+  );
+};
+
+// Veritabanı kapalıyken gerçek uygulamaya kutunun içinden atılan istekler (kart 0049). İstekler kutunun
+// içinden gider: ön kapı veritabanı durunca bakım sayfasına geçer ve isteği uygulamaya ulaştırmaz.
+// Çerez ve gövdede uydurma değerler vardır, araçtaki kayıtta açık geçmemeleri gerekir. Şifre ve oturum
+// anahtarı veritabanı hatasına hiç girmez; gerçek maske sınaması e-postadır. Giriş ucunun yolu değişirse
+// ölçüm kırmızıya düşer.
+export type DenemeIstegi = {
+  ad: string;
+  yol: string;
+  method: "GET" | "POST";
+  headers: Record<string, string>;
+  body?: string;
+  beklenenDurum: number;
+  // Araçtaki kaydın bağlamında olması gerekenler; kayıt bununla bulunur.
+  baglam: Record<string, string>;
+};
+
+const girisUcuYolu = "/kapi/herkese-acik/yonetici-giris";
+
+export const denemeIstekleri: DenemeIstegi[] = [
+  {
+    ad: "uçtaki hata (giriş ucu)",
+    yol: girisUcuYolu,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ eposta: denemeDegerleri.eposta, sifre: denemeDegerleri.sifre }),
+    beklenenDurum: 500,
+    baglam: { yontem: "POST", yol: girisUcuYolu },
+  },
+  {
+    ad: "uçtaki hata (sağlık ucu)",
+    yol: saglikYolu,
+    method: "GET",
+    headers: {},
+    beklenenDurum: 503,
+    baglam: { kaynak: "saglik" },
+  },
+  {
+    ad: "ara katmandaki hata (panel kapısı)",
+    yol: panelAdresi,
+    method: "GET",
+    headers: { Cookie: `${oturumCerezAdlari.yonetici.kisa}=${denemeDegerleri.jwt}` },
+    beklenenDurum: 503,
+    baglam: { kaynak: "panel-korumasi" },
+  },
+];
+
+// Kutunun içinde node'a girdiden verilen betik. Her istek için bir satır yazar: "istek=<sıra> <durum>".
+export const kutuIstekBetigi = (istekler: readonly DenemeIstegi[]): string =>
+  `(async () => {
+  const istekler = ${JSON.stringify(
+    istekler.map(({ yol, method, headers, body }) => ({
+      yol,
+      secenekler: { method, headers, ...(body === undefined ? {} : { body }) },
+    })),
+  )};
+  for (const [sira, { yol, secenekler }] of istekler.entries()) {
+    const durum = await fetch("http://127.0.0.1:" + process.env.PORT + yol, {
+      ...secenekler,
+      redirect: "manual",
+      signal: AbortSignal.timeout(30000),
+    }).then((yanit) => yanit.status, () => 0);
+    console.log("istek=" + sira + " " + durum);
+  }
+})();
+`;
+
+// Kaydın bağlamı beklenen alanları taşıyor mu.
+export const olayBaglamiTutuyor = (olay: Olay, baglam: Record<string, string>): boolean => {
+  const { extra } = olay;
+  if (typeof extra !== "object" || extra === null || !("baglam" in extra)) return false;
+  const kayitli = extra.baglam as Record<string, unknown> | null;
+  return Object.entries(baglam).every(([ad, deger]) => kayitli?.[ad] === deger);
 };
 
 // --- Denetim ---
@@ -381,7 +487,15 @@ const alanlar = (deger: unknown): string[] =>
 // Deneme komutunun bir kayda bakışı (hata-izleme-denemesi.mts). Testi: komutlar/testler/hata-izleme.test.ts.
 export const olaySorunlari = (
   olay: Olay,
-  beklenen: { site: string; surum: string; ortam: string; kaynak: string },
+  beklenen: {
+    site: string;
+    surum: string;
+    ortam: string;
+    kaynak: string;
+    // Gerçek uç hatasında e-posta sorgu satırıyla birlikte bütünüyle gizlenir, kısaltılmış hâli
+    // görünmez; bu ölçüm orada yapılmaz, açık değer aramaları yapılır.
+    kisaltilmisEposta?: boolean;
+  },
 ): string[] => {
   const sorunlar: string[] = [];
   const metin = JSON.stringify(olay);
@@ -396,6 +510,8 @@ export const olaySorunlari = (
   for (const ad of alanlar(olay)) if (yasakAlanlar.has(ad)) sorunlar.push(`yasak alan: ${ad}`);
   if (/\b\d{1,3}(\.\d{1,3}){3}\b/.test(metin)) sorunlar.push("kayıtta IP adresi var");
   // Maske çalıştı mı: e-posta kısaltılmış biçimiyle durmalı (silinmiş değil).
-  if (!metin.includes(`${denemeDegerleri.eposta[0]}***@`)) sorunlar.push("kısaltılmış e-posta yok");
+  if (beklenen.kisaltilmisEposta !== false && !metin.includes(`${denemeDegerleri.eposta[0]}***@`)) {
+    sorunlar.push("kısaltılmış e-posta yok");
+  }
   return sorunlar;
 };
