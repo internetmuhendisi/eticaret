@@ -25,4 +25,4 @@ Kurulum ekranında aynı durumda Enter bir şey yapmadı, adrese kod yazmadı (a
 
 ## Durum
 
-yapılacak
+bitti
