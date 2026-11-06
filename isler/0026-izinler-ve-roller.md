@@ -29,4 +29,4 @@ Her işlemin bir izni olur, roller bu izinlerden kurulur. Kapı her istekte iste
 
 ## Durum
 
-yapılacak
+bitti
