@@ -11,6 +11,8 @@ Kart 0049 sırasında `pnpm birim-testleri` bazı koşularda `cekirdek/kapi/test
 
 - Çakışmada geride kalan geçici test veritabanları da temizlenir (kart 0028'in kontrolünde yerelde 9 tane görüldü).
 
+- Aynı koşularda görülen öteki aralıklı kırmızı da ölçülür: `cekirdek/moduller/oturum/testler/sifre.test.ts` "sahte doğrulama gerçek doğrulama kadar sürer" süre karşılaştırması (kart 0057 sırasında 3 koşunun 1'inde). Testin nedeni ölçülmedi.
+
 ## Sınırlar
 
 - Veritabanı ayrımı kuralları zayıflatılmaz: `template1` ve `postgres` bağlantıları kapalı kalır.
