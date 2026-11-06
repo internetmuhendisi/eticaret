@@ -32,6 +32,8 @@ const gizliAdlar = [
   "cerez",
   "session",
   "oturum",
+  // Veritabanı hatasının taşıdığı sorgu değerleri: şifre özeti, anahtar özeti, kişisel veri.
+  "params",
 ]
   .join("|")
   .replace(/i/g, "[iİı]");
@@ -39,6 +41,9 @@ const gizliAlanAdlari = new RegExp(gizliAdlar, "iu");
 
 // Metnin içindeki kurallar sırayla uygulanır.
 const metinKurallari: [RegExp, (eslesen: string, on?: string) => string][] = [
+  // Sorgu hatasının "params: a,b,c" satırı bütünüyle gizlenir (karar 0039); değerler virgülle ayrılır,
+  // aşağıdaki kural yalnız ilkini gizlerdi.
+  [/(\bparams"?\s*[=:]\s*)[^\r\n]*/giu, (_, on = "") => `${on}${gizliIsareti}`],
   // Çerez satırının geri kalanı bütünüyle gizlenir; içinde birden çok çerez olabilir.
   [/((?:set-)?cookie"?\s*[=:]\s*)[^\r\n]*/giu, (_, on = "") => `${on}${gizliIsareti}`],
   // "şifre=...", "token: ...", JSON'daki "password":"..." biçimleri. Tırnak içindeki değer

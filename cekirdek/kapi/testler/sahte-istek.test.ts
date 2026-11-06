@@ -2,6 +2,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { herkeseAcik } from "../../kayitlar/izinler.ts";
+import { istekSinirlari } from "../../kayitlar/kapi.ts";
 import { sahteIstekMi } from "../sahte-istek.ts";
 import { ucTanimla } from "../uc.ts";
 
@@ -26,6 +27,15 @@ describe("sahte istek", () => {
       },
     ],
     ["tarayıcıdan gelmeyen (ödeme bildirimi gibi)", { host: adres }],
+    ["kullanıcının kendi başlattığı", { host: adres, "sec-fetch-site": "none" }],
+    [
+      "ön kapının şifreli dediği şifreli sayfadan",
+      {
+        host: adres,
+        origin: `https://${adres}`,
+        "x-forwarded-proto": "https",
+      },
+    ],
   ])("%s gelen isteği kabul eder", (_, basliklar) => {
     expect(sahteIstekMi(istek("POST", basliklar))).toBe(false);
   });
@@ -33,6 +43,14 @@ describe("sahte istek", () => {
   it.each([
     ["başka siteden", { host: adres, origin: "https://kotu.test" }],
     ["kardeş adresten", { host: adres, origin: "https://b.deneme.ornek.test" }],
+    [
+      "şifreli siteye şifresiz sayfadan",
+      {
+        host: adres,
+        origin: `http://${adres}`,
+        "x-forwarded-proto": "https",
+      },
+    ],
     ["başka porttan", { host: adres, origin: `https://${adres}:8443` }],
     ["kaynağı gizlenmiş", { host: adres, origin: "null" }],
     ["adresi bilinmeyen", { origin: `https://${adres}` }],
@@ -76,6 +94,24 @@ describe("kapıda sahte istek ve çerez", () => {
     expect(yanit.status).toBe(403);
     expect(await yanit.json()).toEqual({ basarili: false, hata: { kod: "yetki" } });
     expect(isle).not.toHaveBeenCalled();
+  });
+
+  it("sahte istek ziyaretçinin istek sınırını doldurmaz", async () => {
+    const uc = ucTanimla({
+      giris: "herkese-acik",
+      sema: z.strictObject({}),
+      izin: herkeseAcik,
+      sinir: "siki",
+      isle: async () => ({}),
+    });
+    const yol = "http://yerel/kapi/herkese-acik/sinir-sirasi";
+    for (let i = 0; i < istekSinirlari.siki.istek + 1; i += 1) {
+      const sahte = new Request(yol, { method: "POST" });
+      sahte.headers.set("host", adres);
+      sahte.headers.set("origin", "https://kotu.test");
+      expect((await uc(sahte)).status).toBe(403);
+    }
+    expect((await uc(new Request(yol, { method: "POST" }))).status).toBe(200);
   });
 
   it("servisin çerezlerini başarılı yanıta tek tek yazar", async () => {

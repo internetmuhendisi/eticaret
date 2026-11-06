@@ -12,7 +12,7 @@
 - **Hareketsizlik süresi:** Site ayarıdır, altyapı sahibinindir: `yoneticiOturumuSaat` (24), `musteriOturumuGun` (30). Örnek Mağaza varsayılanla çalışır (kullanıcı onayı). Her yenilemede ileri alınır.
 - **Yeniden kullanım:** Değişmiş yenileme anahtarı 30 saniye içinde gelirse aynı anda giden istek sayılır, yeni anahtar üretilmez, istek geçer. Sonra gelirse çalınmış olabilir: oturum kapanır, günlüğe uyarı yazılır.
 - **Çerezler:** `__Host-` önekli, `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`, alan adsız.
-- **Sahte istek:** Kapı veri değiştiren her istekte `Sec-Fetch-Site` ve `Origin` başlıklarını `Host` ile karşılaştırır (`cekirdek/kapi/sahte-istek.ts`). Tutmayan istek `yetki` koduyla reddedilir. İki başlık da yoksa istek tarayıcıdan gelmemiştir, geçer.
+- **Sahte istek:** Kapı veri değiştiren her istekte, istek sınırını saymadan önce bakar (`cekirdek/kapi/sahte-istek.ts`): `Sec-Fetch-Site` başka site diyorsa, `Origin`'in adres ve portu `Host`'la, şeması ön kapının yazdığı `X-Forwarded-Proto` ile tutmuyorsa istek `yetki` koduyla reddedilir. İki başlık da yoksa istek tarayıcıdan gelmemiştir, geçer.
 - **Tablolar:** Yönetici ve müşteri ayrı hesap ve oturum tablolarındadır (`moduller/ekip/model.ts`, `moduller/musteri/model.ts`), biçimleri ortaktır (`moduller/oturum/model.ts`, aranan alanlar ve indeksler orada yazar). Aynı e-posta iki tarafta da hesap açabilir.
 
 ## Neden
@@ -38,8 +38,13 @@
 
 - Her istek veritabanına bir sorgu atar. İndeksli tek satırdır, bu ölçekte önemsizdir.
 - Oturumun üst ömrü yoktur: düzenli kullanılan oturum, çalınmış olsa da, yeniden kullanım yakalanmadıkça açık kalır.
-- Yakalama yalnız bir önceki anahtarı bilir. Saldırgan çaldığı anahtarla kullanıcıdan önce iki kez yenilerse kullanıcının anahtarı yalnız geçersiz sayılır, oturum kapanmaz. Kullanıcı girişe düşer; saldırganın oturumu hareketsizlik süresine kadar sürebilir. Tam çözüm bütün eski özetleri tutmayı gerektirir, bu ölçekte seçilmedi.
+- Yakalama yalnız bir önceki anahtarı bilir. Saldırgan çaldığı anahtarla kullanıcıdan önce iki kez yenilerse kullanıcının anahtarı yalnız geçersiz sayılır, oturum kapanmaz. Kullanıcı girişe düşer ve eski çerezle çıkış da saldırganı kapatmaz; saldırgan düzenli yenilerse oturumu süresiz sürer. Tam çözüm bütün eski özetleri tutmayı gerektirir, bu ölçekte seçilmedi.
 - Tolerans süresindeki eski anahtar, yeni anahtar almadan bir istek geçirebilir. Bedel en çok 30 saniyedir.
+- Yenilemenin yanıtı tarayıcıya ulaşmazsa (sekme kapanır, ağ kopar) tarayıcı eski anahtarla kalır. Tolerans süresinden sonraki ilk istek oturumu kapatır ve günlüğe yanlış bir çalınma uyarısı yazar. Kullanıcı yeniden giriş yapar. Kabul edildi: seyrek olur, bedeli bir giriştir, korumayı gevşetmek daha pahalıdır.
+- `istektenOturumAl` yalnız çerez yazabilen yerde (uç, ara katman) çağrılır. Sayfa çizerken çağrılırsa anahtar yenilenir ama yenisi tarayıcıya gitmez; oturum 15 dakikada bir kapanır. Kartlar 0027 ve 0033'e not düşüldü.
+- Sahte istek kontrolünden muaf tutma yolu yoktur. Ödeme kuruluşu müşteriyi tarayıcıdan POST ile geri gönderiyorsa (3-D Secure dönüşü gibi) bu istek reddedilir. Ödeme kartında bakılır, gerekirse kapıya bilinçli bir muafiyet eklenir.
+- Ayarı eski bir özette yanlış şifrenin süresi kayıtsız e-postanınkinden farklıdır, Argon2 ayarı yükseltildiğinde hangi hesapların eski kaldığı süreden anlaşılabilir. Bugün böyle hesap yoktur. Ayar yükseltilince ele alınır.
+- Veritabanı hatası sorgu değerlerini mesajında taşır. Maske `params` satırını ve alanını bütünüyle gizler (`cekirdek/izleme/maskele.ts`).
 - Süresi dolan oturum satırları silinmez. Temizliği arka plan kuyruğuyla yapılacak (kart 0044).
 - Hesap tablolarında kişisel veri olarak yalnız e-posta vardır. Tablolar sitenin veritabanındadır, gece yedeğiyle yedeklenir.
 - `Origin` karşılaştırması ön kapının `Host` başlığını değiştirmeden iletmesine dayanır. Caddy'nin varsayılanı budur, ön kapıda bunu değiştiren ayar yoktur.

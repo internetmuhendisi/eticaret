@@ -23,11 +23,15 @@ export const oturumCerezleriniSil = (tur: HesapTuru): string[] => [
   cerez(oturumCerezAdlari[tur].yenileme, "", 0),
 ];
 
+// Çerez başlığında yalnız boşluk ve sekme kırpılır; trim() başka karakterleri de siler,
+// "\xA0__Host-..." gibi bir ad da __Host- çerezi sanılırdı.
+const bosluksuz = (metin: string): string => metin.replace(/^[ \t]+|[ \t]+$/g, "");
+
 export const cerezOku = (istek: Request, ad: string): string | undefined => {
   for (const parca of istek.headers.get("cookie")?.split(";") ?? []) {
     const ayirici = parca.indexOf("=");
-    if (ayirici !== -1 && parca.slice(0, ayirici).trim() === ad) {
-      return parca.slice(ayirici + 1).trim();
+    if (ayirici !== -1 && bosluksuz(parca.slice(0, ayirici)) === ad) {
+      return bosluksuz(parca.slice(ayirici + 1));
     }
   }
   return undefined;
@@ -49,7 +53,8 @@ export const oturumSuresiSaniye = (tur: HesapTuru, ayarlar: SiteAyarlari): numbe
     : ayarlar.musteriOturumuGun * 24 * 60 * 60;
 
 // hesapKimligi null ise oturum yoktur. cerezler yanıta yazılmalıdır: yenilenen anahtarları ya da
-// geçersiz anahtarların silinmesini taşır.
+// geçersiz anahtarların silinmesini taşır. Bu yüzden yalnız çerez yazabilen yerde (uç, ara katman)
+// çağrılır: sayfa çizerken çağrılırsa anahtar yenilenir ama yenisi tarayıcıya gitmez, oturum kapanır.
 export const istektenOturumAl = async (
   vt: Veritabani,
   tur: HesapTuru,

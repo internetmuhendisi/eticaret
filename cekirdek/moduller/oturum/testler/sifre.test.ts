@@ -1,8 +1,9 @@
 // Şifre özetleme (kart 0025, karar 0039).
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { gunluk } from "../../../izleme/gunluk.ts";
 import { sifreOzetiAyari, sifreSiniri } from "../../../kayitlar/oturum.ts";
 import { epostaSemasi, sifreSemasi } from "../semalar.ts";
-import { sifreDogrula, sifreOzetle, yenidenOzetlenmeli } from "../sifre.ts";
+import { sahteDogrulama, sifreDogrula, sifreOzetle, yenidenOzetlenmeli } from "../sifre.ts";
 
 describe("şifre özeti", () => {
   it("doğru şifreyi kabul eder, yanlışı reddeder", async () => {
@@ -37,6 +38,43 @@ describe("şifre özeti", () => {
     expect(await sifreDogrula(uzun, await sifreOzetle("uzun-bir-deneme-sifresi"))).toBe(false);
     // Sınırı aşan metin boş şifre gibi hesaplanır; boş şifreli bir özet varsa bile geçmez.
     expect(await sifreDogrula(uzun, await sifreOzetle(""))).toBe(false);
+  });
+
+  it("sınırı aşan şifre, özeti doğru olsa da geçmez", async () => {
+    const uzun = "a".repeat(sifreSiniri.enUzun + 1);
+    expect(await sifreDogrula(uzun, await sifreOzetle(uzun))).toBe(false);
+  });
+
+  it("ayarı geçersiz özeti hata fırlatmadan reddeder, bozuk kaydı hata olarak yazar", async () => {
+    const kaydet = vi.spyOn(gunluk, "hata").mockImplementation(() => undefined);
+    expect(
+      await sifreDogrula("uzun-bir-deneme-sifresi", "$argon2id$v=19$m=19456,t=2,p=1$A$A"),
+    ).toBe(false);
+    expect(kaydet).toHaveBeenCalled();
+    kaydet.mockRestore();
+  });
+
+  it("aynı karakterin farklı kodlanışı aynı şifre sayılır", async () => {
+    // "é" tek karakter ve e + birleşen vurgu olarak.
+    const ozet = await sifreOzetle("uzun-sifre-\u00e9");
+    expect(await sifreDogrula("uzun-sifre-e\u0301", ozet)).toBe(true);
+  });
+
+  it("sahte doğrulama gerçek doğrulama kadar sürer: e-posta süreden anlaşılmaz", async () => {
+    const ozet = await sifreOzetle("uzun-bir-deneme-sifresi");
+    const olc = async (is: () => Promise<unknown>) => {
+      const sureler: number[] = [];
+      for (let i = 0; i < 5; i += 1) {
+        const baslangic = performance.now();
+        await is();
+        sureler.push(performance.now() - baslangic);
+      }
+      return Math.min(...sureler);
+    };
+    const gercek = await olc(() => sifreDogrula("yanlis-sifre-deneme", ozet));
+    const sahte = await olc(() => sahteDogrulama("yanlis-sifre-deneme"));
+    expect(sahte).toBeGreaterThan(gercek / 2);
+    expect(sahte).toBeLessThan(gercek * 2);
   });
 
   it("eski ayarla üretilmiş özeti yenilenecek sayar", async () => {

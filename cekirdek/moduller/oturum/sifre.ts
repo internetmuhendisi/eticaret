@@ -2,6 +2,7 @@
 // içinde taşıyan standart biçimdedir: $argon2id$v=19$m=...,t=...,p=...$tuz$ozet.
 import { argon2, randomBytes, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
+import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
 import { sifreOzetiAyari, sifreSiniri } from "../../kayitlar/oturum.ts";
 
 const argon2Calistir = promisify(argon2);
@@ -51,8 +52,14 @@ export const sifreDogrula = async (sifre: string, ozet: string): Promise<boolean
   if (okunan === undefined) return false;
   // Sınırı aşan metin hesaba girmez (sunucuyu yoramaz), sonuç yine yanlıştır, süre aynı kalır.
   const metin = sifre.length > sifreSiniri.enUzun ? "" : sifre;
-  const hesaplanan = await hesapla(metin, okunan.tuz, okunan);
-  return timingSafeEqual(hesaplanan, okunan.beklenen) && metin === sifre;
+  try {
+    const hesaplanan = await hesapla(metin, okunan.tuz, okunan);
+    return timingSafeEqual(hesaplanan, okunan.beklenen) && metin === sifre;
+  } catch (hata) {
+    // Biçimi uyan ama ayarları geçersiz özet: giriş başarısızdır, bozuk kayıt görülsün.
+    hatayiKaydet(hata, { kaynak: "sifre-ozeti" });
+    return false;
+  }
 };
 
 // Özet güncel ayardan farklıysa sonraki başarılı girişte yeniden özetlenir.
@@ -68,10 +75,13 @@ export const yenidenOzetlenmeli = (ozet: string): boolean => {
 };
 
 // Kayıtlı olmayan e-postada da aynı hesap yapılır: cevabın süresi e-postanın kayıtlı olup
-// olmadığını ele vermez.
-let sahteOzet: Promise<string> | undefined;
-
+// olmadığını ele vermez. Değerler rastgeledir, hiçbir şifrenin özeti değildir.
 export const sahteDogrulama = async (sifre: string): Promise<void> => {
-  sahteOzet ??= sifreOzetle(randomBytes(32).toString("base64"));
-  await sifreDogrula(sifre, await sahteOzet);
+  const { bellekKb, tekrar, paralellik, tuzUzunlugu, uzunluk } = sifreOzetiAyari;
+  const tuz = yaziya(randomBytes(tuzUzunlugu));
+  const deger = yaziya(randomBytes(uzunluk));
+  await sifreDogrula(
+    sifre,
+    `$argon2id$v=19$m=${bellekKb},t=${tekrar},p=${paralellik}$${tuz}$${deger}`,
+  );
 };

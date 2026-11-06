@@ -181,7 +181,9 @@ export const oturumuYenile = async (
         .where(eq(oturum.kimlik, bulunan.kimlik));
       gunluk.uyari("Eski yenileme anahtarı yeniden kullanıldı, oturum kapatıldı.", {
         hesapTuru: tur,
-        oturumKimligi: bulunan.kimlik,
+        // Alanın adında "oturum" geçerse günlükte gizlenir.
+        kayitKimligi: bulunan.kimlik,
+        hesapKimligi: bulunan.hesapKimligi,
       });
       return { durum: "yeniden-kullanim" };
     }

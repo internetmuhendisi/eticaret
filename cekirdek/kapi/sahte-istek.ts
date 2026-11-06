@@ -16,5 +16,9 @@ export const sahteIstekMi = (istek: Request): boolean => {
   if (kaynak === null) return false;
   const adres = istek.headers.get("host");
   if (adres === null || !URL.canParse(kaynak)) return true;
-  return new URL(kaynak).host !== adres;
+  const { host, protocol } = new URL(kaynak);
+  if (host !== adres) return true;
+  // Ön kapı bağlantının şifreli olup olmadığını yazar: şifresiz sayfa şifreli siteye istek atamaz.
+  const sema = istek.headers.get("x-forwarded-proto");
+  return sema !== null && protocol !== `${sema}:`;
 };

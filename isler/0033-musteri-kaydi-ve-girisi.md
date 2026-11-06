@@ -12,6 +12,8 @@ Müşteri vitrinde hesap açar, giriş yapar ve çıkar (temel paket: Müşteri 
 - Kayıtta zorunlu sözleşme ve KVKK aydınlatma onayı, işaretsiz pazarlama izni kutusu. Verilen izin kaydedilir (`.claude/rules/guvenlik.md`).
 - Robot koruması. Hizmetin verisi Avrupa Birliği'nde durur, seçim karar kaydına yazılır.
 - Giriş deneme sınırı.
+- Oturum `istektenOturumAl` ile yalnız çerez yazabilen yerde (uç, ara katman) okunur; sayfa çizerken okunursa oturum kapanır (karar 0039).
+- Kayıtta "bu e-posta zaten kayıtlı" cevabı e-postanın kayıtlı olduğunu ele verir (`hesapAc` çakışma döner). Ne yapılacağı ürün kararı olarak kullanıcıya sorulur.
 - Kayıttan sonra hoş geldin e-postası.
 - Kayıtta e-posta doğrulamasının istenip istenmeyeceği site ayarı olarak önerilir. Varsayılan ve Örnek Mağaza için önerilen değer kullanıcıya söylenir, `planlar/site-ayarlari.md` dosyasına yazılır.
 

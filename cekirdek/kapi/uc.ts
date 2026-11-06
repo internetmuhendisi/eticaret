@@ -52,6 +52,10 @@ export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
 ): Uc => {
   const yanitla = async (istek: Request, yanit: YanitYazici): Promise<Response> => {
     try {
+      // Sınırdan önce: başka bir sayfa ziyaretçinin tarayıcısından istek atarak onun sınırını
+      // dolduramasın.
+      if (sahteIstekMi(istek)) return hataliYanit("yetki");
+
       const { pathname } = new URL(istek.url);
       const sinir = istegiSay(`${istek.method} ${pathname} ${istemciAdresi(istek)}`, tanim.sinir);
       if (!sinir.izinli) {
@@ -59,8 +63,6 @@ export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
           "Retry-After": String(sinir.bekleSaniye),
         });
       }
-
-      if (sahteIstekMi(istek)) return hataliYanit("yetki");
 
       const sonuc = tanim.sema.safeParse(await girdiyiOku(istek));
       if (!sonuc.success) {

@@ -6,7 +6,9 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { veritabaniVeKullaniciAc } from "../../../../komutlar/site-veritabani.mts";
 import { ayarSemasi, type SiteAyarlari } from "../../../ayar-semasi/ayarlar.ts";
 import { gunluk } from "../../../izleme/gunluk.ts";
+import { gizliIsareti, maskele } from "../../../izleme/maskele.ts";
 import {
+  cerezOku,
   istektenOturumAl,
   oturumCerezleri,
   oturumCerezleriniSil,
@@ -107,6 +109,23 @@ describe.each(hesapTurleri)("%s hesabı", (tur) => {
     expect(await girisYap(a, tur, { eposta: "eposta-degil", sifre }, sure)).toBeNull();
   });
 
+  it("kayıtlı olmayan e-posta yanlış şifre kadar sürer", async () => {
+    const eposta = yeniEposta();
+    await hesapAc(a, tur, { eposta, sifre });
+    const olc = async (girdi: { eposta: string; sifre: string }) => {
+      const sureler: number[] = [];
+      for (let i = 0; i < 5; i += 1) {
+        const baslangic = performance.now();
+        await girisYap(a, tur, girdi, sure);
+        sureler.push(performance.now() - baslangic);
+      }
+      return Math.min(...sureler);
+    };
+    const yanlisSifre = await olc({ eposta, sifre: `${sifre}x` });
+    const kayitsiz = await olc({ eposta: yeniEposta(), sifre });
+    expect(kayitsiz).toBeGreaterThan(yanlisSifre / 2);
+  });
+
   it("süresi dolan kısa anahtar geçmez, yenileme anahtarıyla yenilenir, eskileri geçmez", async () => {
     const { anahtarlar, hesapKimligi } = await girisliHesap(a, tur);
     await kisaAnahtariBitir(a, tur, anahtarlar.kisaAnahtar);
@@ -146,6 +165,31 @@ describe.each(hesapTurleri)("%s hesabı", (tur) => {
     expect(await oturumuDogrula(a, tur, yenilemeyle.anahtarlar.kisaAnahtar)).toBeNull();
 
     await expect(cikisYap(a, tur, {})).resolves.toBeUndefined();
+  });
+
+  it("yenileme hareketsizlik süresini ileri alır", async () => {
+    const { anahtarlar } = await girisliHesap(a, tur);
+    const tablo = oturumTablolari[tur];
+    const yakin = new Date(Date.now() + 60_000);
+    await a
+      .update(tablo)
+      .set({ oturum_bitis: yakin })
+      .where(eq(tablo.kisa_anahtar_ozeti, anahtarOzeti(anahtarlar.kisaAnahtar)));
+    const sonuc = await oturumuYenile(a, tur, anahtarlar.yenilemeAnahtari, sure);
+    if (sonuc.durum !== "yenilendi") throw new Error("Yenilenmedi.");
+    const [satir] = await a
+      .select({ bitis: tablo.oturum_bitis })
+      .from(tablo)
+      .where(eq(tablo.kisa_anahtar_ozeti, anahtarOzeti(sonuc.anahtarlar.kisaAnahtar)));
+    expect(satir?.bitis.getTime()).toBeGreaterThan(Date.now() + sure * 1000 - 60_000);
+  });
+
+  it("çıkış değişmiş yenileme anahtarıyla da oturumu kapatır", async () => {
+    const { anahtarlar } = await girisliHesap(a, tur);
+    const yenilenen = await oturumuYenile(a, tur, anahtarlar.yenilemeAnahtari, sure);
+    if (yenilenen.durum !== "yenilendi") throw new Error("Yenilenmedi.");
+    await cikisYap(a, tur, { yenilemeAnahtari: anahtarlar.yenilemeAnahtari });
+    expect(await oturumuDogrula(a, tur, yenilenen.anahtarlar.kisaAnahtar)).toBeNull();
   });
 
   it("hareketsizlik süresi dolan oturum yenilenmez", async () => {
@@ -209,16 +253,26 @@ describe("yenileme anahtarının yeniden kullanımı", () => {
     });
     expect(uyari).toHaveBeenCalledOnce();
     expect(JSON.stringify(uyari.mock.calls)).not.toContain(eski.yenilemeAnahtari);
+    // Uyarıdan hangi kaydın olduğu anlaşılır, alanlar günlükte gizlenmez.
+    expect(JSON.stringify(maskele(uyari.mock.calls[0]?.[1]))).not.toContain(gizliIsareti);
     uyari.mockRestore();
   });
 
   it("aynı anda giden yenilemelerden yalnız biri yeni anahtar alır, oturum açık kalır", async () => {
-    const { anahtarlar } = await girisliHesap(a, tur);
-    const sonuclar = await Promise.all(
-      Array.from({ length: 5 }, () => oturumuYenile(a, tur, anahtarlar.yenilemeAnahtari, sure)),
-    );
-    const durumlar = sonuclar.map(({ durum }) => durum).sort();
-    expect(durumlar).toEqual(["tolerans", "tolerans", "tolerans", "tolerans", "yenilendi"]);
+    const adet = 8;
+    // Bağlantılar önceden açılır: yoksa istekler bağlantı beklerken sıraya girer ve yarış olmaz.
+    await Promise.all(Array.from({ length: adet }, () => a.$client.query("select pg_sleep(0.05)")));
+    for (let deneme = 0; deneme < 5; deneme += 1) {
+      const { anahtarlar } = await girisliHesap(a, tur);
+      const sonuclar = await Promise.all(
+        Array.from({ length: adet }, () =>
+          oturumuYenile(a, tur, anahtarlar.yenilemeAnahtari, sure),
+        ),
+      );
+      const yenilenen = sonuclar.filter(({ durum }) => durum === "yenilendi");
+      expect(yenilenen).toHaveLength(1);
+      expect(sonuclar.filter(({ durum }) => durum === "tolerans")).toHaveLength(adet - 1);
+    }
   });
 });
 
@@ -297,6 +351,25 @@ describe("hesap", () => {
       .where(eq(yoneticiler.kimlik, hesapKimligi));
     expect(satir?.ozet).not.toBe(eskiOzet);
     expect(await girisYap(a, "yonetici", { eposta, sifre }, sure)).not.toBeNull();
+  });
+
+  it("veritabanı hatası şifre özetini ve anahtar özetini günlüğe taşımaz", async () => {
+    const eposta = yeniEposta();
+    const { hesapKimligi } = await hesapAc(a, "yonetici", { eposta, sifre });
+    const [satir] = await a
+      .select({ ozet: yoneticiler.sifre_ozeti })
+      .from(yoneticiler)
+      .where(eq(yoneticiler.kimlik, hesapKimligi));
+    const ozet = satir?.ozet as string;
+    // Aynı e-posta kısmi indeksi çiğner: gerçek sorgu hatası, değerleriyle birlikte.
+    const hata = await a
+      .insert(yoneticiler)
+      .values({ eposta, sifre_ozeti: ozet })
+      .catch((yakalanan: unknown) => yakalanan);
+    expect(String((hata as Error).message)).toContain(ozet);
+    const dokum = JSON.stringify(maskele(hata));
+    expect(dokum).not.toContain(ozet);
+    expect(dokum).not.toContain(eposta);
   });
 
   it("veritabanında düz şifre ve düz anahtar durmaz", async () => {
@@ -383,6 +456,21 @@ describe("çerezler ve istekten oturum", () => {
       hesapKimligi,
       cerezler: [],
     });
+  });
+
+  it("aynı anda giden istek eski anahtarla da geçer, çerezleri bozmaz", async () => {
+    const { anahtarlar, hesapKimligi } = await girisliHesap(a, tur);
+    const eski = istek({ [adlar.yenileme]: anahtarlar.yenilemeAnahtari });
+    expect((await istektenOturumAl(a, tur, eski, sure)).cerezler).toHaveLength(2);
+    expect(await istektenOturumAl(a, tur, eski, sure)).toEqual({ hesapKimligi, cerezler: [] });
+  });
+
+  it("aynı adlı çerezde ilki alınır, boşlukla kırpılır, başka karakterle kırpılmaz", () => {
+    expect(cerezOku(istek({ a: "1", b: "2" }), "b")).toBe("2");
+    const cift = new Request("http://yerel/", { headers: { cookie: "a=ilk;  a=ikinci" } });
+    expect(cerezOku(cift, "a")).toBe("ilk");
+    const sahte = new Request("http://yerel/", { headers: { cookie: "\u00a0a=kotu" } });
+    expect(cerezOku(sahte, "a")).toBeUndefined();
   });
 
   it("çıkıştan sonra çerezler reddedilir ve silinir; çerezsiz istek yalnız oturumsuzdur", async () => {

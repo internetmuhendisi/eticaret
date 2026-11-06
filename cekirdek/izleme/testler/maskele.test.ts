@@ -1,4 +1,5 @@
 // Günlüğe giden değerlerin maskelenmesi (kart 0014, .claude/rules/guvenlik.md).
+import { DrizzleQueryError } from "drizzle-orm/errors";
 import { describe, expect, it } from "vitest";
 import { gizliIsareti, kartIsareti, maskele, metniMaskele } from "../maskele.ts";
 
@@ -162,6 +163,19 @@ describe("maskeleme", () => {
     it("hata özeti adlı alan yalnız gerçek bir özetse olduğu gibi kalır", () => {
       expect(JSON.stringify(maskele({ digest: "ayse@ornek.com" }))).not.toContain("ayse");
     });
+  });
+
+  it("veritabanı hatasının sorgu değerlerini yazmaz: metinde de alanda da", () => {
+    const ozet = "$argon2id$v=19$m=19456,t=2,p=1$dHV6$ZGVnZXI";
+    const hata = new DrizzleQueryError("insert into yoneticiler values ($1, $2)", [
+      "a@b.test",
+      ozet,
+    ]);
+    const dokum = JSON.stringify(maskele(hata));
+    expect(dokum).not.toContain(ozet);
+    expect(dokum).not.toContain("dHV6");
+    expect(dokum).not.toContain("a@b.test");
+    expect(dokum).toContain("insert into yoneticiler");
   });
 
   it("döngülü yapıda takılmaz", () => {
