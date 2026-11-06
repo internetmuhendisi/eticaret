@@ -109,6 +109,10 @@ const uygula = (ad: string): ReturnType<typeof cevap> => {
       return cevap(0, "altyapi-yayin:6\n");
     case "guncelle":
       return cevap(0, "guncellendi\n");
+    case "calisiyor":
+      return cevap(0, d.kutu === "acik" ? "true\n" : "false\n");
+    case "saglik":
+      return d.kutu === "acik" ? cevap(0, "saglikli\n") : cevap(1, "", "kutu kapalı");
     case "yeniden":
       d.kutu = "acik";
       // Site, gerçek veri yerindeyken ya da yeni hâl bilerek tamamlanırken açılmalı.
@@ -258,6 +262,14 @@ describe("yer değiştirmeden sonra hata: eski veri yerine döner", () => {
     expect(durum.cagrilar.filter((ad) => ad === "yeniden")).toEqual([]);
   });
 
+  it("kutu durdurulamadıysa 'kapalı' denmez", async () => {
+    durum.bozuk.add("uret");
+    durum.kalici.add("gerial");
+    // İlk durdurma geçer, geri dönüşteki durdurma düşer.
+    durum.sonraBozuk = { ad: "durdur", kacinci: 2 };
+    await expect(calistir()).rejects.toThrow(/sitenin durumu bilinmiyor/);
+  });
+
   it("geri alma bitip bağlantı koparsa dönüş başarılı sayılır, site açılır", async () => {
     durum.bozuk.add("uret");
     durum.koptu.add("gerial");
@@ -307,18 +319,57 @@ describe("yarım kalmış işten sonra", () => {
     expect(cagrilar.indexOf("yedek")).toBeLessThan(cagrilar.indexOf("gerial"));
   });
 
-  it("--eskiye-don: yedek alınamazsa dönmez", async () => {
+  it("--eskiye-don: yedek alınamazsa dönmez, açık kutu önceki durumuna döner", async () => {
     Object.assign(durum, { canli: "yedek", eski: "gercek" });
     durum.bozuk.add("yedek");
     await expect(eskiyeDon("0.0.0.0", "deneme", "ornek-magaza")).rejects.toThrow(/dönülmedi/);
     expect(durum).toMatchObject({ canli: "yedek", eski: "gercek", kutu: "acik" });
   });
 
-  it("--eskiye-don: __eski yoksa kutuya ve veriye dokunmaz", async () => {
-    await expect(eskiyeDon("0.0.0.0", "deneme", "ornek-magaza")).rejects.toThrow(/dokunulmadı/);
+  it("--eskiye-don: yedek alınamazsa kapalı site yanlış veriyle açılmaz", async () => {
+    Object.assign(durum, { canli: "yedek", eski: "gercek", kutu: "kapali" });
+    durum.bozuk.add("yedek");
+    await expect(eskiyeDon("0.0.0.0", "deneme", "ornek-magaza")).rejects.toThrow(
+      /dönülmedi[\s\S]*Site kapalı kaldı/,
+    );
+    expect(durum).toMatchObject({ canli: "yedek", eski: "gercek", kutu: "kapali" });
+    expect(durum.cagrilar).not.toContain("yeniden");
+  });
+
+  it("--eskiye-don: yedek alınamaz ve site açılamazsa iki hata da söylenir", async () => {
+    Object.assign(durum, { canli: "yedek", eski: "gercek" });
+    durum.bozuk.add("yedek");
+    durum.bozuk.add("yeniden");
+    await expect(eskiyeDon("0.0.0.0", "deneme", "ornek-magaza")).rejects.toThrow(
+      /dönülmedi[\s\S]*yeniden açılamadı/,
+    );
+  });
+
+  it("--eskiye-don: canlı yoksa yedek atlanır, önceki veri yerine gelir", async () => {
+    Object.assign(durum, { canli: null, eski: "gercek", kutu: "kapali" });
+    await eskiyeDon("0.0.0.0", "deneme", "ornek-magaza");
+    expect(durum).toMatchObject({ canli: "gercek", eski: null, kutu: "acik" });
+    expect(durum.cagrilar).not.toContain("yedek");
+  });
+
+  it("--eskiye-don: __eski yoksa veriye dokunmaz, açık kutuya da", async () => {
+    await eskiyeDon("0.0.0.0", "deneme", "ornek-magaza");
     expect(durum.canli).toBe("gercek");
     expect(durum.cagrilar).not.toContain("durdur");
     expect(durum.cagrilar).not.toContain("yeniden");
+    expect(durum.cagrilar).not.toContain("gerial");
+  });
+
+  it("--eskiye-don: __eski yok ama site kapalı kaldıysa açar", async () => {
+    Object.assign(durum, { kutu: "kapali", sifreEsit: false });
+    await eskiyeDon("0.0.0.0", "deneme", "ornek-magaza");
+    expect(durum).toMatchObject({ canli: "gercek", kutu: "acik", sifreEsit: true });
+  });
+
+  it("--eskiyi-sil: __eski yok ama site kapalı kaldıysa açar", async () => {
+    durum.kutu = "kapali";
+    await eskiyiSil("0.0.0.0", "deneme", site);
+    expect(durum).toMatchObject({ canli: "gercek", kutu: "acik" });
   });
 
   it("--eskiyi-sil yeni hâli tamamlar, sağlıklıysa önceki veriyi siler", async () => {
@@ -345,6 +396,21 @@ describe("yarım kalmış işten sonra", () => {
   });
 });
 
+describe("veritabanı bozuksa", () => {
+  it("son yedek alınamazsa komut durur, site açık kalır", async () => {
+    durum.bozuk.add("yedek");
+    await expect(calistir()).rejects.toThrow(/veri değişmedi, site açık/);
+    expect(durum.canli).toBe("gercek");
+  });
+
+  it("--son-yedeksiz yedeği atlar, geri yükler, önceki veriyi silmez", async () => {
+    await geriYukle("0.0.0.0", "deneme", site, dosya, anahtar, undefined, { sonYedeksiz: true });
+    expect(durum).toMatchObject({ canli: "yedek", eski: "gercek", kutu: "acik" });
+    expect(durum.cagrilar).not.toContain("yedek");
+    expect(durum.cagrilar).not.toContain("eskisil");
+  });
+});
+
 describe("ortam", () => {
   it("canlı ortamda geri yükleme hiçbir şeye dokunmadan reddedilir", async () => {
     await expect(geriYukle("0.0.0.0", "canli", site, dosya, anahtar)).rejects.toThrow(
@@ -360,6 +426,8 @@ describe("komut satırı", () => {
     expect(geriYuklemeSecimi(["a", "deneme", "--dosya=x", "--onay=y"])).toBe("geri-yukle");
     expect(geriYuklemeSecimi(["a", "deneme", "--eskiye-don"])).toBe("eskiye-don");
     expect(geriYuklemeSecimi(["a", "deneme", "--eskiyi-sil"])).toBe("eskiyi-sil");
+    expect(geriYuklemeSecimi(["a", "deneme", "--son-yedeksiz"])).toBe("geri-yukle");
+    expect(() => geriYuklemeSecimi(["--eskiye-don", "--son-yedeksiz"])).toThrow(/birlikte/);
     expect(() => geriYuklemeSecimi(["--eskiye-dön"])).toThrow(/Bilinmeyen/);
     expect(() => geriYuklemeSecimi(["--eskiye-don", "--eskiyi-sil"])).toThrow(/birlikte/);
     expect(() => geriYuklemeSecimi(["--eskiye-don", "--dosya=x"])).toThrow(/birlikte/);

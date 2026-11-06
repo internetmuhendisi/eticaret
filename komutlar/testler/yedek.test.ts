@@ -168,9 +168,17 @@ describe("sunucu betikleri", () => {
     expect(degistir).toContain("COMMIT;");
     expect(degistir).not.toContain("DROP");
     const geri = geriAlmaBetigi("deneme", "x");
-    expect(geri.indexOf("datname = 'site_x__eski'")).toBeGreaterThan(-1);
+    expect(geri.indexOf("say 'site_x__eski'")).toBeGreaterThan(-1);
     expect(geri.indexOf("exit 1")).toBeLessThan(geri.indexOf("ALTER DATABASE"));
     expect(geri.indexOf("COMMIT;")).toBeLessThan(geri.indexOf("DROP DATABASE"));
+  });
+
+  it("geri alma canlı yoksa yalnız eskiyi adlandırır, canlıyı silmez", () => {
+    const geri = geriAlmaBetigi("deneme", "x");
+    const kosul = geri.indexOf("say 'site_x'");
+    expect(kosul).toBeGreaterThan(-1);
+    expect(geri.indexOf("BEGIN;")).toBeGreaterThan(kosul);
+    expect(geri).toMatch(/else\n[^\n]*RENAME TO "site_x"/);
   });
 
   it("yana açma canlı veritabanına yazmaz, hatada yan veritabanını siler", () => {

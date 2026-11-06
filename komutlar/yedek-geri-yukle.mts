@@ -6,6 +6,9 @@
 // Önceki geri yükleme yarım kaldıysa komut durur ve şu ikisinden birini ister:
 //   --eskiye-don   önceki veriyi yerine koyar; şu anki hâlin yedeği önce alınır
 //   --eskiyi-sil   şu anki hâli kabul eder, sağlıklı çalışınca önceki veriyi siler
+//
+// Veritabanı bozuk olduğu için o anki durumun yedeği alınamıyorsa --son-yedeksiz verilir: önceki veri
+// silinmez, sonradan --eskiyi-sil ile silinir. Veritabanı hiç yoksa önce: pnpm sunucu-veritabani.
 
 import { createInterface } from "node:readline/promises";
 import { sunucudaCalistir } from "./sunucu-veritabani.mts";
@@ -32,6 +35,9 @@ try {
     dosya = secenek("dosya") ?? sunucudaCalistir(ipv4, sonYedegiBulBetigi(ortam, kodAdi)).trim();
     if (!dosya) throw new Error(`${ortam}/${kodAdi} için depoda yedek yok.`);
     console.log(`${ortam}/${kodAdi} şu yedeğe dönecek: ${dosya}. Sonrasındaki veri kaybolur.`);
+    if (process.argv.includes("--son-yedeksiz")) {
+      console.log("O anki durumun yedeği ALINMAYACAK, önceki veri yerinde saklanacak.");
+    }
   }
   let onay = secenek("onay");
   if (onay === undefined) {
@@ -47,7 +53,9 @@ try {
     await eskiyiSil(ipv4, ortam, { kodAdi, numara }, console.log);
     console.log(`Temizlendi: ${ortam}/${kodAdi}.`);
   } else {
-    await geriYukle(ipv4, ortam, { kodAdi, numara }, dosya, undefined, console.log);
+    await geriYukle(ipv4, ortam, { kodAdi, numara }, dosya, undefined, console.log, {
+      sonYedeksiz: process.argv.includes("--son-yedeksiz"),
+    });
     console.log(`Geri yükleme bitti: ${ortam}/${kodAdi}, ${dosya}. Şifre yenilendi.`);
   }
 } catch (hata) {

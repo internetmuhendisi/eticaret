@@ -471,12 +471,13 @@ export const geriAlmaBetigi = (ortam: Ortam, kodAdi: string): string => {
   return kokBetigi(`# adim:gerial
 exec 9>"$K/.kilit"
 flock -w ${geriAlmaKilitSn} 9
-var=$(docker exec ${kutu} psql -U postgres -d postgres -At -c "select count(*) from pg_database where datname = '${eskiAd(ad)}'" </dev/null)
-if [ "$var" != 1 ]; then
+say() { docker exec ${kutu} psql -U postgres -d postgres -At -c "select count(*) from pg_database where datname = '$1'" </dev/null; }
+if [ "$(say '${eskiAd(ad)}')" != 1 ]; then
   echo "${eskiAd(ad)} yok, geri alınacak veritabanı bulunamadı; hiçbir şeye dokunulmadı" >&2
   exit 1
 fi
-docker exec -i ${kutu} psql -U postgres -d postgres -q -v ON_ERROR_STOP=1 >/dev/null <<'GERI_AL_SONU'
+if [ "$(say '${ad}')" = 1 ]; then
+  docker exec -i ${kutu} psql -U postgres -d postgres -q -v ON_ERROR_STOP=1 >/dev/null <<'GERI_AL_SONU'
 SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname IN ('${ad}', '${eskiAd(ad)}') AND pid <> pg_backend_pid();
 BEGIN;
 ALTER DATABASE "${ad}" RENAME TO "${basarisizAd(ad)}";
@@ -484,6 +485,9 @@ ALTER DATABASE "${eskiAd(ad)}" RENAME TO "${ad}";
 COMMIT;
 DROP DATABASE "${basarisizAd(ad)}" WITH (FORCE);
 GERI_AL_SONU
+else
+  docker exec ${kutu} psql -U postgres -d postgres -q -v ON_ERROR_STOP=1 -c 'ALTER DATABASE "${eskiAd(ad)}" RENAME TO "${ad}"' </dev/null >/dev/null
+fi
 echo geri-alindi`);
 };
 
@@ -496,6 +500,9 @@ for db in ${adlar.map((x) => `"${x}"`).join(" ")}; do
   docker exec ${veritabaniKutusu(ortam)} psql -U postgres -d postgres -q -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS \\"$db\\" WITH (FORCE)" </dev/null >/dev/null
 done`);
 };
+
+export const kutuCalismaBetigi = (kutuAdi: string): string =>
+  `# adim:calisiyor\nset -eu\ndocker inspect -f '{{.State.Running}}' ${kutuAdi}\n`;
 
 export const saglikBeklemeBetigi = (kutuAdi: string): string => `# adim:saglik
 set -eu
@@ -563,11 +570,13 @@ const eskiyeDonAdimlari = (
   kodAdi: string,
   kutu: string | undefined,
 ): string[] => {
+  let durdu = true;
   if (kutu) {
     try {
       sunucudaCalistir(ipv4, kutuyuDurdurmaBetigi(kutu));
     } catch {
-      // Kutu zaten kapalı olabilir; bağlantılar geri alma adımında kesilir.
+      // Bağlantı kopmuş olabilir: kutunun durduğu bilinmiyor, mesaj bunu söyler.
+      durdu = false;
     }
   }
   try {
@@ -581,7 +590,10 @@ const eskiyeDonAdimlari = (
       dondu = false;
     }
     if (!dondu) {
-      return [`eski veritabanı yerine konamadı, site kapalı bırakıldı: ${hataMetni(hata)}`];
+      const site = durdu
+        ? "site kapalı bırakıldı"
+        : "sitenin durumu bilinmiyor, açık olabilir ve yanlış veriyle çalışıyor olabilir";
+      return [`eski veritabanı yerine konamadı, ${site}: ${hataMetni(hata)}`];
     }
   }
   const sorunlar: string[] = [];
@@ -611,6 +623,9 @@ export const geriYukle = (
   dosya: string,
   anahtar = acmaAnahtariniOku(ortam, site.kodAdi),
   yaz: (satir: string) => void = () => {},
+  // Veritabanı bozuksa o anki durumun yedeği alınamaz. Bu seçenekte önceki veri kendiliğinden
+  // silinmez, yedeği yoktur: incelenince --eskiyi-sil ile silinir.
+  { sonYedeksiz = false } = {},
 ): Promise<void> =>
   yayinKilidiyle(ipv4, () => {
     ortamiDenetle(ortam);
@@ -660,13 +675,17 @@ export const geriYukle = (
     }
     try {
       if (kutu) sunucudaCalistir(ipv4, kutuyuDurdurmaBetigi(kutu));
-      yaz(
-        sunucudaCalistir(
-          ipv4,
-          yedekAlmaBetigi(ortam, kodAdi, "geri-yukleme-oncesi"),
-          uzunSure,
-        ).trim(),
-      );
+      if (sonYedeksiz) {
+        yaz("uyarı       son yedek istenerek atlandı, önceki veri silinmeyecek");
+      } else {
+        yaz(
+          sunucudaCalistir(
+            ipv4,
+            yedekAlmaBetigi(ortam, kodAdi, "geri-yukleme-oncesi"),
+            uzunSure,
+          ).trim(),
+        );
+      }
       sunucudaCalistir(ipv4, degistirmeBetigi(ortam, kodAdi));
     } catch (hata) {
       let durum: VeritabaniDurumu;
@@ -675,7 +694,7 @@ export const geriYukle = (
       } catch (okuma) {
         kaydet("basarisiz", "durum-bilinmiyor");
         throw new Error(
-          `Geri yükleme durdu ve veritabanının durumu okunamadı: ${hataMetni(okuma)}\n  Site kapalı bırakıldı (yanlış veriye sipariş yazılmasın). Sunucuya ulaşınca aynı komutu çalıştırın.\n  Asıl hata: ${hataMetni(hata)}`,
+          `Geri yükleme durdu ve veritabanının durumu okunamadı: ${hataMetni(okuma)}\n  Site kapalı bırakıldı (yanlış veriye sipariş yazılmasın). Sunucuya ulaşınca: pnpm yedek-geri-yukle <site klasörü> ${ortam} --eskiye-don. Yer değiştirme olduysa önceki veriye döner, olmadıysa siteyi açar.\n  Asıl hata: ${hataMetni(hata)}`,
         );
       }
       if (durum.eski) {
@@ -700,6 +719,12 @@ export const geriYukle = (
     }
     // Dönüşü olmayan nokta geçildi: buradan sonraki hata yeni hâli geri almaz.
     kaydet("basarili", "");
+    if (sonYedeksiz) {
+      yaz(
+        `bilgi       önceki veri ${eskiAd(siteVeritabaniAdi(kodAdi))} adıyla duruyor, denetim kırmızı kalır. İnceleyince: pnpm yedek-geri-yukle <site klasörü> ${ortam} --eskiyi-sil`,
+      );
+      return;
+    }
     try {
       sunucudaCalistir(ipv4, eskiyiSilmeBetigi(ortam, kodAdi));
     } catch (hata) {
@@ -716,21 +741,37 @@ export const geriYuklemeSecimi = (
 ): "geri-yukle" | "eskiye-don" | "eskiyi-sil" => {
   const secenekler = argumanlar.filter((a) => a.startsWith("--"));
   for (const secenek of secenekler) {
-    if (!/^--(dosya=|onay=|eskiye-don$|eskiyi-sil$)/.test(secenek)) {
+    if (!/^--(dosya=|onay=|son-yedeksiz$|eskiye-don$|eskiyi-sil$)/.test(secenek)) {
       throw new Error(`Bilinmeyen seçenek: ${secenek}`);
     }
   }
   const don = secenekler.includes("--eskiye-don");
   const sil = secenekler.includes("--eskiyi-sil");
   if (don && sil) throw new Error("--eskiye-don ile --eskiyi-sil birlikte verilemez.");
-  if ((don || sil) && secenekler.some((s) => s.startsWith("--dosya="))) {
-    throw new Error("--dosya bu seçenekle birlikte verilemez.");
+  if ((don || sil) && secenekler.some((s) => /^--(dosya=|son-yedeksiz$)/.test(s))) {
+    throw new Error("--dosya ve --son-yedeksiz bu seçenekle birlikte verilemez.");
   }
   return don ? "eskiye-don" : sil ? "eskiyi-sil" : "geri-yukle";
 };
 
+// Önceki veri beklemiyorsa canlı veritabanı doğru olandır. Site kapalı kaldıysa (kurtarma yarım
+// kalmış) şifre eşitlenip açılır.
+const kapaliysaAc = (
+  ipv4: string,
+  ortam: Ortam,
+  kodAdi: string,
+  kutu: string | undefined,
+  yaz: (satir: string) => void,
+): void => {
+  if (!kutu || sunucudaCalistir(ipv4, kutuCalismaBetigi(kutu)).trim() === "true") return;
+  sifreyiEsitle(ipv4, ortam, kodAdi);
+  kutuyuAc(ipv4, ortam, kodAdi, kutu);
+  yaz(`açıldı      ${kutu} kapalı kalmıştı`);
+};
+
 // Yarım kalmış geri yüklemeden sonra elle: önceki veriye dön. Şu anki hâl sipariş almış olabilir,
-// önce yedeği alınır; yedek alınamazsa dönülmez.
+// önce yedeği alınır; yedek alınamazsa dönülmez ve kutu önceki durumunda bırakılır: kapalı olan site
+// yanlış veriyle açılmaz. Önceki veri beklemiyorsa kapalı kalmış siteyi açar.
 export const eskiyeDon = (
   ipv4: string,
   ortam: Ortam,
@@ -740,13 +781,17 @@ export const eskiyeDon = (
   yayinKilidiyle(ipv4, () => {
     ortamiDenetle(ortam);
     const durum = veritabaniDurumunuOku(ipv4, ortam, kodAdi);
-    if (!durum.eski) {
-      throw new Error(
-        `Dönülecek önceki veri yok, hiçbir şeye dokunulmadı.${durum.basarisiz || durum.geri ? " Artıkları silmek için: --eskiyi-sil" : ""}`,
-      );
-    }
     const kutu = etkinKutuAdi(ipv4, ortam, kodAdi);
-    if (kutu) sunucudaCalistir(ipv4, kutuyuDurdurmaBetigi(kutu));
+    if (!durum.eski) {
+      if (!durum.canli) throw new Error("Canlı veritabanı da önceki veri de yok, dokunulmadı.");
+      kapaliysaAc(ipv4, ortam, kodAdi, kutu, yaz);
+      yaz(
+        `bilgi       dönülecek önceki veri yok, canlı veritabanına dokunulmadı.${durum.basarisiz || durum.geri ? " Artıkları silmek için: --eskiyi-sil" : ""}`,
+      );
+      return;
+    }
+    const acikti = kutu ? sunucudaCalistir(ipv4, kutuCalismaBetigi(kutu)).trim() === "true" : false;
+    if (kutu && acikti) sunucudaCalistir(ipv4, kutuyuDurdurmaBetigi(kutu));
     if (durum.canli) {
       try {
         yaz(
@@ -757,8 +802,14 @@ export const eskiyeDon = (
           ).trim(),
         );
       } catch (hata) {
-        kutuyuAc(ipv4, ortam, kodAdi, kutu);
-        throw new Error(`Şu anki hâlin yedeği alınamadı, dönülmedi: ${hataMetni(hata)}`);
+        const mesaj = `Şu anki hâlin yedeği alınamadı, dönülmedi: ${hataMetni(hata)}`;
+        if (!acikti) throw new Error(`${mesaj}\n  Site kapalı kaldı.`);
+        try {
+          kutuyuAc(ipv4, ortam, kodAdi, kutu);
+        } catch (acma) {
+          throw new Error(`${mesaj}\n  Site de yeniden açılamadı: ${hataMetni(acma)}`);
+        }
+        throw new Error(mesaj);
       }
     }
     const sorunlar = eskiyeDonAdimlari(ipv4, ortam, kodAdi, kutu);
@@ -767,7 +818,7 @@ export const eskiyeDon = (
   });
 
 // Yarım kalmış geri yüklemeden sonra elle: şu anki hâli kabul et. Önceki veri ancak yeni hâl sağlıklı
-// çalışınca silinir. Önceki veri yoksa yalnız artıklar silinir.
+// çalışınca silinir. Önceki veri yoksa yalnız artıklar silinir, kapalı kalmış site açılır.
 export const eskiyiSil = (
   ipv4: string,
   ortam: Ortam,
@@ -778,10 +829,13 @@ export const eskiyiSil = (
     ortamiDenetle(ortam);
     const { kodAdi } = site;
     const durum = veritabaniDurumunuOku(ipv4, ortam, kodAdi);
+    const kutu = etkinKutuAdi(ipv4, ortam, kodAdi);
     if (durum.eski) {
       if (!durum.canli)
         throw new Error("Canlı veritabanı yok, önceki veri silinmedi: --eskiye-don");
-      yeniHaliTamamla(ipv4, ortam, site, etkinKutuAdi(ipv4, ortam, kodAdi), yaz);
+      yeniHaliTamamla(ipv4, ortam, site, kutu, yaz);
+    } else if (durum.canli) {
+      kapaliysaAc(ipv4, ortam, kodAdi, kutu, yaz);
     }
     sunucudaCalistir(ipv4, eskiyiSilmeBetigi(ortam, kodAdi, { eski: durum.eski }));
   });

@@ -21,7 +21,9 @@ Her sitenin açma anahtarı yalnız altyapı sahibinin bilgisayarında durur: `~
 3. `pnpm yedek-geri-yukle siteler/<kod adı> <ortam> --dosya=<yedek>`. Komut yedeği yan veritabanına açar, site kutusunu durdurur, o anki durumun yedeğini alır, veritabanlarını değiştirir, şifreyi yeniler (karar 0031), eksik veritabanı değişikliklerini uygular ve siteyi açar. Bir adım tutmazsa komut durumu söyler: çoğunlukla eski veri yerindedir ve site açıktır. Eski veri yerine konamazsa ya da durum okunamazsa site bilerek kapalı bırakılır. Şimdilik yalnız deneme ortamında çalışır.
 4. `pnpm sunucu-denetle --hizli` ile kontrol edin.
 
-Komut "yarım kalmış" diyorsa (bağlantı kopmuş olabilir) önceki veri `<veritabanı>__eski` adıyla duruyordur. `--eskiye-don` önce şu anki hâlin yedeğini alıp onu yerine koyar. `--eskiyi-sil` şu anki hâli çalışır duruma getirir, sağlıklıysa önceki veriyi siler. Karar vermeden o veritabanını elle silmeyin.
+Komut "yarım kalmış" diyorsa (bağlantı kopmuş olabilir) önceki veri `<veritabanı>__eski` adıyla duruyordur. `--eskiye-don` önce şu anki hâlin yedeğini alıp onu yerine koyar. `--eskiyi-sil` şu anki hâli çalışır duruma getirir, sağlıklıysa önceki veriyi siler. Karar vermeden o veritabanını elle silmeyin. Komut "site kapalı bırakıldı" dediyse ve önceki veri beklemiyorsa `--eskiye-don` siteyi açar.
+
+Veritabanı bozuk olduğu için "yedek alınamadı" diyorsa `--son-yedeksiz` ekleyin: o anki durumun yedeği atlanır, önceki veri yerinde saklanır, incelenince `--eskiyi-sil` ile silinir. Veritabanı hiç yoksa önce `pnpm sunucu-veritabani siteler/<kod adı> <ortam>`.
 
 ## Sunucu kaybolursa
 

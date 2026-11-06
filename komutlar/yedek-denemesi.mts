@@ -272,6 +272,15 @@ RC_BAGLA="$g:/veri:ro" rc ${ortam} copyto "/veri/${bozukAd}" "depo:$KOVA/${ortam
     yerDegisti === "0" && yerineDondu === "1",
     `değişince ${yerDegisti}, geri alınınca ${yerineDondu}`,
   );
+  // Canlı hiç yokken de önceki veri yerine gelir.
+  calistir(yanaAcmaBetigi(ortam, b.kodAdi, dosya, cift.acma));
+  calistir(degistirmeBetigi(ortam, b.kodAdi));
+  sql(`DROP DATABASE "${db}" WITH (FORCE);`, "postgres");
+  calistir(geriAlmaBetigi(ortam, b.kodAdi));
+  olc(
+    "canlı yokken de eski veritabanı yerine geliyor",
+    sql("SELECT count(*) FROM yedek_denemesi WHERE no = 9;") === "1",
+  );
   sql("DELETE FROM yedek_denemesi WHERE no = 9;");
 
   // Geri yükleme: veri değişir, yedek dönünce değişiklik gider; Örnek Mağaza etkilenmez.
