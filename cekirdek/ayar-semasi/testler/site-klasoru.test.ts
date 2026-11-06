@@ -53,6 +53,8 @@ describe("ayar şeması", () => {
       temaDegistirilebilir: true,
       vitrindeAltyapiAdi: false,
       yakindaYazisi: false,
+      yoneticiOturumuSaat: 24,
+      musteriOturumuGun: 30,
     });
   });
 

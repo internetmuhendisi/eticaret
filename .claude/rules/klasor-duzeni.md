@@ -14,7 +14,7 @@ cekirdek/
   uygulama/            Next.js uygulaması: yalnız adres dosyaları (app/) ve ayarı
     app/yonetim/       yönetim paneli adresleri; geri kalan app/ vitrindir
   moduller/<modul>/    urun, stok, fiyat, vergi, sepet, odeme, siparis, iade, kargo,
-                       kampanya, musteri, yorum, icerik, eposta, gorunurluk,
+                       kampanya, musteri, oturum, yorum, icerik, eposta, gorunurluk,
                        yasal-metinler, rapor, ekip
     model.ts           veri modeli
     servis.ts          iş kuralları

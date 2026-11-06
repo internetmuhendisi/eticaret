@@ -23,7 +23,9 @@
       "temaDegistirilebilir": "Mağaza sahibi yönetim panelinden temayı değiştirebilir.",
       "vitrindeAltyapiAdi": "Vitrinde altyapının adı görünür.",
       "yakindaYazisi": "Vitrinin ana sayfasında başlığın altında \"Yakında açılıyoruz.\" yazısı görünür.",
-      "bakimMetni": "Bakım sayfasında görünen metin. Boşsa ortak metin görünür."
+      "bakimMetni": "Bakım sayfasında görünen metin. Boşsa ortak metin görünür.",
+      "yoneticiOturumuSaat": "Hiç girilmeyen yönetici oturumunun kapanma süresi, saat olarak.",
+      "musteriOturumuGun": "Hiç girilmeyen müşteri oturumunun kapanma süresi, gün olarak."
     }
   },
   "yonetim": {

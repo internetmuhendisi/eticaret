@@ -97,6 +97,15 @@ export const ayarSemasi = z.strictObject({
     z.string().trim().min(1).max(300).optional(),
     altyapiSahibinin("ayar.aciklama.bakimMetni"),
   ),
+  // Hiç girilmeyen oturumun kapanma süresi (kart 0025). Güvenlik ayarıdır, altyapı sahibinindir.
+  yoneticiOturumuSaat: ayar(
+    z.int().min(1).max(720).default(24),
+    altyapiSahibinin("ayar.aciklama.yoneticiOturumuSaat"),
+  ),
+  musteriOturumuGun: ayar(
+    z.int().min(1).max(365).default(30),
+    altyapiSahibinin("ayar.aciklama.musteriOturumuGun"),
+  ),
 });
 
 // Varsayılanları uygulanmış ve sipariş öneki türetilmiş ayarlar.

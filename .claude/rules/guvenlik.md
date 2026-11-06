@@ -2,6 +2,7 @@
 paths:
   - "cekirdek/kapi/**"
   - "cekirdek/moduller/odeme/**"
+  - "cekirdek/moduller/oturum/**"
   - "cekirdek/moduller/musteri/**"
   - "cekirdek/moduller/ekip/**"
   - "cekirdek/moduller/yasal-metinler/**"
@@ -16,7 +17,7 @@ paths:
 # Güvenlik
 
 - Şifreleri güncel ve güvenli bir şifre özetleme yöntemiyle sakla. Eski yöntemleri kullanma.
-- Oturumu kısa ömürlü bir anahtar ve onu yenileyen ikinci bir anahtarla yürüt. Anahtarları güvenli çerezde tut.
+- Oturumu kısa ömürlü bir anahtar ve onu yenileyen ikinci bir anahtarla yürüt. Anahtarları güvenli çerezde tut. Motor `cekirdek/moduller/oturum/`, çerezler `cekirdek/kapi/oturum-cerezi.ts`, sahte istek kontrolü `cekirdek/kapi/sahte-istek.ts`; süreler ve sınırlar `cekirdek/kayitlar/oturum.ts` (karar 0039).
 - Şifre, anahtar ve kart bilgisini kayıtlara (günlüğe) yazma. E-posta ve telefonu kısaltarak yaz.
 - Tarayıcıda çalışan kod yalnız açık olması güvenli değişkenleri okusun.
 - Kart bilgisi ödeme kuruluşunun formunda girilsin ve sitenin sunucusundan geçmesin.

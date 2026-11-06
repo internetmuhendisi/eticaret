@@ -20,7 +20,7 @@ Kapıdaki her uç burada yazar (`.claude/rules/sunucu-arayuzu.md`). Yeni ya da d
 | Kod | HTTP | Ne zaman |
 |---|---|---|
 | `dogrulama` | 400 | Girdi şemadan geçmedi. Ayrıntı: `[{ "alan", "kod" }]`, `kod` Zod'un hata kodudur. |
-| `yetki` | 403 | İstenen izin yok (kart 0026). |
+| `yetki` | 403 | İstenen izin yok (kart 0026) ya da istek başka bir adresten geldi (sahte istek). |
 | `bulunamadi` | 404 | Kayıt yok. |
 | `cakisma` | 409 | Kayıt başka biriyle çakışıyor. |
 | `is-kurali` | 422 | Girdi geçerli ama iş kuralı izin vermiyor. |
@@ -38,6 +38,10 @@ Kapıdaki her uç burada yazar (`.claude/rules/sunucu-arayuzu.md`). Yeni ya da d
 | `siki` | 60 saniyede 5 istek (giriş, şifre sıfırlama gibi hassas uçlar) |
 
 **İzin.** Herkese açık girişteki uçların izni `herkese-acik`tır. Öteki girişlerdeki uçlar izin kaydındaki bir izni ister (`cekirdek/kayitlar/izinler.ts`, kart 0026).
+
+**Sahte istek.** Veri değiştiren her istekte (`GET`, `HEAD` ve `OPTIONS` dışında) kapı `Sec-Fetch-Site` ve `Origin` başlıklarını isteğin adresiyle karşılaştırır, tutmayana `yetki` döner. İki başlık da yoksa istek tarayıcıdan gelmemiştir ve geçer (karar 0039).
+
+**Çerez.** Uç yanıta çerezi yalnız `cerezYaz` ile yazar. Oturum çerezleri `cekirdek/kapi/oturum-cerezi.ts` dosyasındadır, hatalı yanıtta da gider.
 
 ## Herkese açık
 

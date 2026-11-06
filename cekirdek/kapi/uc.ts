@@ -7,6 +7,7 @@ import { hatayiKaydet } from "../izleme/hata-katmani.ts";
 import type { HerkeseAcik, IzinAdi } from "../kayitlar/izinler.ts";
 import type { IstekSiniri, Kapi } from "../kayitlar/kapi.ts";
 import { istegiSay, istemciAdresi } from "./istek-siniri.ts";
+import { sahteIstekMi } from "./sahte-istek.ts";
 import { BilinenHata, basariliYanit, hataliYanit } from "./zarf.ts";
 
 // Herkese açık girişteki uç yalnız herkese açık beyanını, öteki girişlerdeki uç gerçek bir
@@ -18,8 +19,12 @@ export type UcTanimi<Giris extends Kapi, Sema extends z.ZodType, Veri> = {
   sema: Sema;
   izin: UcIzni<Giris>;
   sinir: IstekSiniri;
-  isle: (girdi: z.output<Sema>, istek: Request) => Promise<Veri>;
+  isle: (girdi: z.output<Sema>, istek: Request, yanit: YanitYazici) => Promise<Veri>;
 };
+
+// Servisin yanıta eklediği çerezler (oturum-cerezi.ts). Hatalı yanıtta da gider: geçersiz oturumun
+// çerezleri böyle silinir.
+export type YanitYazici = { cerezYaz: (...cerezler: string[]) => void };
 
 export type Uc = ((istek: Request) => Promise<Response>) & {
   readonly tanim: { giris: Kapi; izin: HerkeseAcik | IzinAdi; sinir: IstekSiniri };
@@ -45,7 +50,7 @@ const girdiyiOku = async (istek: Request): Promise<unknown> => {
 export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
   tanim: UcTanimi<Giris, Sema, Veri>,
 ): Uc => {
-  const isleyici = async (istek: Request): Promise<Response> => {
+  const yanitla = async (istek: Request, yanit: YanitYazici): Promise<Response> => {
     try {
       const { pathname } = new URL(istek.url);
       const sinir = istegiSay(`${istek.method} ${pathname} ${istemciAdresi(istek)}`, tanim.sinir);
@@ -54,6 +59,8 @@ export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
           "Retry-After": String(sinir.bekleSaniye),
         });
       }
+
+      if (sahteIstekMi(istek)) return hataliYanit("yetki");
 
       const sonuc = tanim.sema.safeParse(await girdiyiOku(istek));
       if (!sonuc.success) {
@@ -66,13 +73,19 @@ export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
         );
       }
 
-      return basariliYanit(await tanim.isle(sonuc.data, istek));
+      return basariliYanit(await tanim.isle(sonuc.data, istek, yanit));
     } catch (hata) {
       if (hata instanceof BilinenHata) return hataliYanit(hata.kod, hata.ayrinti);
       // Beklenmeyen hata ortak hata katmanına gider, istemciye yalnız kodu döner.
       hatayiKaydet(hata, { yontem: istek.method, yol: new URL(istek.url).pathname });
       return hataliYanit("sunucu-hatasi");
     }
+  };
+  const isleyici = async (istek: Request): Promise<Response> => {
+    const cerezler: string[] = [];
+    const yanit = await yanitla(istek, { cerezYaz: (...yeni) => cerezler.push(...yeni) });
+    for (const cerez of cerezler) yanit.headers.append("Set-Cookie", cerez);
+    return yanit;
   };
   return Object.assign(isleyici, {
     tanim: { giris: tanim.giris, izin: tanim.izin, sinir: tanim.sinir },
