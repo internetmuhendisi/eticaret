@@ -15,10 +15,17 @@ umask 077
 . "$(dirname "$(readlink -f "$0")")/ortak.sh"
 
 exec 9>"$K/.kilit"
-if ! flock -w 3600 9; then
+if ! flock -w "${YEDEK_KILIT_SN:-3600}" 9; then
   kayit "-" "-" "gece" "basarisiz" "kilit-alinamadi" "" 0
   echo "yedek kilidi alınamadı" >&2
   exit 1
+fi
+
+# Kayıt büyümesin: son 2000 satır kalır. Onay bekleyen temizlik hataları ve onaylar silinmez.
+if [ -f "$K/kayit.jsonl" ] && [ "$(wc -l <"$K/kayit.jsonl")" -gt 3000 ]; then
+  toplam="$(wc -l <"$K/kayit.jsonl")"
+  awk -v bas="$((toplam - 2000))" 'NR > bas || /"tur":"temizlik-onay"/ || (/"tur":"temizlik"/ && /"sonuc":"basarisiz"/)' \
+    "$K/kayit.jsonl" >"$K/kayit.jsonl.yeni" && mv -f "$K/kayit.jsonl.yeni" "$K/kayit.jsonl"
 fi
 
 # Site bilgisi: açık anahtar, kilit süresi (saniye), temizlik payı (saniye). Bozuk satır kullanılmaz:
@@ -53,7 +60,7 @@ yedekle() {
   else
     bitis="$(date -u -d "+$saklama seconds" +%Y-%m-%dT%H:%M:%SZ)"
     if ! RC_BAGLA="$g:/veri:ro" rc "$ortam" copyto "/veri/$ad" "depo:$KOVA/$ortam/$kod/$ad" \
-      --s3-object-lock-mode COMPLIANCE --s3-object-lock-retain-until-date "$bitis"; then
+      --s3-no-check-bucket --s3-object-lock-mode COMPLIANCE --s3-object-lock-retain-until-date "$bitis"; then
       sebep="yuklenemedi"
     else
       uzak="$(rc "$ortam" lsf --format s "depo:$KOVA/$ortam/$kod/$ad")"
@@ -72,7 +79,8 @@ yedekle() {
 
 # Süresi dolan yedekler silinir. Kilitli bir yedeğin üstündeki silme işareti de burada kalkar ve
 # komut hata döner: birisi süresi dolmamış yedeği silmeye çalışmış olabilir, kayda yazılır. Süresi
-# dolmamış bir yedek yoksa hiçbir şey silinmez: en yeni yedek hiçbir zaman silinmesin.
+# dolmamış yedek görünmüyorsa süresi dolanlar işaretlenmez: en yeni yedek silinmesin. Kovada kova
+# yokken yükleme hata verir, kilitsiz yeni kova açılmaz (--s3-no-check-bucket).
 temizle() {
   local ortam="$1" kod="$2" acik saklama marj sinir genc
   if ! bilgiyi_oku "$ortam" "$kod" 2>/dev/null; then
@@ -84,8 +92,8 @@ temizle() {
     kayit "$ortam" "$kod" "temizlik" "basarisiz" "liste-okunamadi" "" 0
     return 1
   fi
-  # Görünen yeni yedek yoksa hepsi silme işareti altında olabilir: hiçbir şey silinmez, yalnız işaretler
-  # kaldırılır (kilitli yedek geri gelir).
+  # Görünen yeni yedek yoksa hepsi silme işareti altında olabilir: yeni silme yapılmaz, işaretler
+  # kaldırılır, kilitli yedek geri gelir. Kilidi dolmuş işaretli sürüm bu adımda kalıcı silinir.
   if [ -z "$genc" ]; then
     rc "$ortam" backend cleanup-hidden "depo:$KOVA/$ortam/$kod" || true
     kayit "$ortam" "$kod" "temizlik" "basarisiz" "yeni-yedek-yok" "" 0

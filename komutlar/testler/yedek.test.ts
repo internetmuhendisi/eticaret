@@ -22,6 +22,7 @@ import {
   depoAyariMetni,
   geriAlmaBetigi,
   kayitHatalari,
+  kayitlariCoz,
   kayittaYedekSizintisi,
   konumHatalari,
   konumOlcmeBetigi,
@@ -145,6 +146,11 @@ describe("sunucu betikleri", () => {
     expect(prova).toContain("--network none");
     expect(prova).not.toMatch(/DROP|ALTER|CREATE DATABASE/);
     expect(prova).toContain("pg_restore -U postgres --no-owner --no-acl --exit-on-error -d prova");
+  });
+
+  it("yana açma sunucu günlüğüne satır içeriği yazmaz", () => {
+    const betik = yanaAcmaBetigi("deneme", "x", "20261106T000000Z.dump.age", anahtar);
+    expect(betik).toContain("log_min_messages=panic");
   });
 
   it("pg_restore çıktısı (müşteri verisi taşıyabilir) gösterilmez", () => {
@@ -273,6 +279,16 @@ describe("denetimin kararları", () => {
     expect(anahtarHatalari(iyiAyar, sunucuda, () => baska)[0]).toContain("eşleşmiyor");
   });
 
+  it("sonraki başarılı gece işi anahtarsız site hatasını kapatır", () => {
+    const hatali = kayit({ site: "site_yeni", sonuc: "basarisiz", sebep: "anahtar-yok" });
+    expect(kayitHatalari([kayit({}), hatali], [site], simdi)).toHaveLength(1);
+    expect(kayitHatalari([hatali, kayit({})], [site], simdi)).toEqual([]);
+  });
+
+  it("yarım yazılmış kayıt satırı okumayı düşürmez", () => {
+    expect(kayitlariCoz('{"tur":"gece"}\n{"tur":"ge').map((k) => k.tur)).toEqual(["gece"]);
+  });
+
   it("kayıtlarda anahtar araması", () => {
     expect(kayittaYedekSizintisi("temiz metin", ["DEGER"])).toEqual([]);
     expect(kayittaYedekSizintisi("x DEGER y", ["DEGER"])).toHaveLength(1);
@@ -302,6 +318,7 @@ describe("denetimin kararları", () => {
 // ortam değişkenleriyle bozulur.
 describe("gece betiğinin davranışı", () => {
   const koklar: string[] = [];
+  const { PATH: yol } = process.env;
   afterAll(() => {
     for (const k of koklar) rmSync(k, { recursive: true, force: true });
   });
@@ -343,7 +360,7 @@ esac`,
         encoding: "utf8",
         env: {
           ...process.env,
-          PATH: `${arac}:${process.env["PATH"]}`,
+          PATH: `${arac}:${yol}`,
           YEDEK_KOKU: k,
           GIZLI_KOKU: join(kok, "gizli"),
           CAGRILAR: join(kok, "cagrilar"),
@@ -370,7 +387,8 @@ esac`,
     };
     const siteYaz = (site: string, metin: string) =>
       writeFileSync(join(k, "siteler", "deneme", site), metin);
-    return { calistir, siteYaz };
+    const kayitYaz = (metin: string) => writeFileSync(join(k, "kayit.jsonl"), metin);
+    return { calistir, siteYaz, kayitYaz };
   };
 
   it("başarılı gece: kilitle yükler, kayda yazar, temizler, geçici dosya kalmaz", () => {
@@ -384,6 +402,7 @@ esac`,
       sonuc: "basarili",
       boyut: 11,
     });
+    expect(r.cagrilar).toContain("--s3-no-check-bucket");
     expect(r.cagrilar).toMatch(
       /copyto .*--s3-object-lock-mode COMPLIANCE --s3-object-lock-retain-until-date \d{4}-/,
     );
@@ -490,6 +509,19 @@ esac`,
     expect(r.kayit.at(-1)).toMatchObject({ tur: "temizlik", sebep: "yeni-yedek-yok" });
     // İşaret altındaki yedek geri gelsin: işaretler yine kaldırılır.
     expect(r.cagrilar).toContain("cleanup-hidden");
+  });
+
+  it("kayıt büyüyünce kısalır, onay bekleyen temizlik hatası kalır", () => {
+    const { calistir, kayitYaz } = kur(["ornek-magaza"]);
+    const hata =
+      '{"zaman":"2026-01-01T00:00:00Z","ortam":"deneme","site":"ornek-magaza","tur":"temizlik","sonuc":"basarisiz","sebep":"temizlik-yarim","dosya":"","boyut":0}';
+    const dolgu =
+      '{"zaman":"2026-01-02T00:00:00Z","ortam":"deneme","site":"ornek-magaza","tur":"gece","sonuc":"basarili","sebep":"","dosya":"x","boyut":1}';
+    kayitYaz(`${hata}\n${`${dolgu}\n`.repeat(3100)}`);
+    const r = calistir(["deneme", "ornek-magaza", "elle"]);
+    expect(r.kayit.length).toBeLessThan(2100);
+    expect(r.kayit[0]).toMatchObject({ tur: "temizlik", sonuc: "basarisiz" });
+    expect(r.kayit.at(-1)).toMatchObject({ tur: "elle" });
   });
 
   it("tek site çağrısında temizlik yapılmaz", () => {

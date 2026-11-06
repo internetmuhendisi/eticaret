@@ -1,27 +1,29 @@
-// Geri yükleme akışının hata yolları (kart 0024, karar 0037). Sunucu sahte ssh ile canlandırılır ve
-// veritabanlarının durumu izlenir. Her adım sırayla bozulur: akış nerede durursa dursun gerçek veri
-// bir yerde kalmalı, site açık kalmalı ve söylenen şey doğru olmalı.
+// Geri yükleme akışının hata yolları (kart 0024, karar 0037). Sunucu sahte ssh ile canlandırılır,
+// veritabanlarının ve kutunun durumu izlenir. Her adım iki biçimde bozulur: hiç olmadan düşer ya da
+// işini bitirip bağlantı kopar. Akış nerede durursa dursun gerçek veri bir yerde kalmalı, site yanlış
+// veriyle açılmamalı ve söylenen şey doğru olmalı.
+import { spawnSync } from "node:child_process";
+import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 type Durum = {
   canli: string | null;
   eski: string | null;
   yan: string | null;
+  basarisiz: string | null;
   kutu: "acik" | "kapali";
   cagrilar: string[];
   bozuk: Set<string>;
+  koptu: Set<string>;
+  kalici: Set<string>;
+  sonraBozuk: { ad: string; kacinci: number } | null;
   sifreEsit: boolean;
+  yanlisVeriyleAcildi: boolean;
 };
 
-const durum: Durum = {
-  canli: null,
-  eski: null,
-  yan: null,
-  kutu: "acik",
-  cagrilar: [],
-  bozuk: new Set(),
-  sifreEsit: true,
-};
+const durum = {} as Durum;
 
 const etiket = (metin: string): string => {
   const kural: [RegExp, string][] = [
@@ -29,7 +31,6 @@ const etiket = (metin: string): string => {
     [/gece\.sh deneme/, "yedek"],
     [/mkdir \/srv\/altyapi\/yayin\/\.kilit/, "kilit-al"],
     [/rm -rf \/srv\/altyapi\/yayin\/\.kilit/, "kilit-birak"],
-    [/__basarisiz'\)/, "artik"],
     [/for d in/, "yayindakiler"],
     [/openssl rand/, "uret"],
     [/docker ps -aq/, "kutu-durumu"],
@@ -48,58 +49,94 @@ const etiket = (metin: string): string => {
 
 const cevap = (status: number, stdout = "", stderr = "") => ({ status, stdout, stderr });
 
-const sahteSsh = (_ip: string, komut: string, secenek?: { girdi?: string }) => {
-  const ad = etiket(secenek?.girdi ?? komut);
-  durum.cagrilar.push(ad);
-  if (durum.bozuk.has(ad)) {
-    // Bir kerelik: geri dönüş yolundaki aynı adım çalışabilsin.
-    durum.bozuk.delete(ad);
-    return cevap(1, "", `SAHTE-HATA ${ad}`);
-  }
+// Adımın sunucudaki etkisi.
+const uygula = (ad: string): ReturnType<typeof cevap> => {
+  const d = durum;
   switch (ad) {
-    case "artik":
-      return cevap(0, durum.eski ? "site_ornek_magaza__eski\n" : "");
+    case "durum":
+      return cevap(
+        0,
+        [
+          d.canli && "site_ornek_magaza",
+          d.eski && "site_ornek_magaza__eski",
+          d.yan && "site_ornek_magaza__geri",
+          d.basarisiz && "site_ornek_magaza__basarisiz",
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      );
     case "yayindakiler":
       return cevap(0, "ornek-magaza 6\n");
     case "yana":
-      durum.yan = "yedek";
+      d.yan = "yedek";
       return cevap(0, "tablo=2\n");
+    case "yanisil":
+      d.yan = null;
+      return cevap(0);
     case "durdur":
-      durum.kutu = "kapali";
+      d.kutu = "kapali";
       return cevap(0);
     case "yedek":
       return cevap(0, "yedeklendi\n");
     case "degistir":
-      durum.eski = durum.canli;
-      durum.canli = durum.yan;
-      durum.yan = null;
+      d.eski = d.canli;
+      d.canli = d.yan;
+      d.yan = null;
       return cevap(0, "degisti\n");
     case "gerial":
-      if (!durum.eski) return cevap(1, "", "eski yok");
-      durum.canli = durum.eski;
-      durum.eski = null;
+      if (!d.eski) return cevap(1, "", "eski yok");
+      d.canli = d.eski;
+      d.eski = null;
       return cevap(0, "geri-alindi\n");
     case "eskisil":
-      durum.eski = null;
+      d.eski = null;
+      d.basarisiz = null;
+      d.yan = null;
+      return cevap(0);
+    case "artiksil":
+      d.basarisiz = null;
+      d.yan = null;
       return cevap(0);
     case "uret":
-      durum.sifreEsit = false;
+      d.sifreEsit = false;
       return cevap(0, "yenilendi\n");
     case "kutu-durumu":
       return cevap(0, "true\n");
     case "esitle":
-      durum.sifreEsit = true;
+      d.sifreEsit = true;
       return cevap(0, "açıldı\n");
     case "goruntu":
       return cevap(0, "altyapi-yayin:6\n");
     case "guncelle":
       return cevap(0, "guncellendi\n");
     case "yeniden":
-      durum.kutu = "acik";
+      d.kutu = "acik";
+      // Site, gerçek veri yerindeyken ya da yeni hâl bilerek tamamlanırken açılmalı.
+      if (d.canli !== "gercek" && !d.cagrilar.includes("uret")) d.yanlisVeriyleAcildi = true;
       return cevap(0);
     default:
       return cevap(0);
   }
+};
+
+const sahteSsh = (_ip: string, komut: string, secenek?: { girdi?: string }) => {
+  const ad = etiket(secenek?.girdi ?? komut);
+  durum.cagrilar.push(ad);
+  const sonra = durum.sonraBozuk;
+  if (sonra?.ad === ad && durum.cagrilar.filter((c) => c === ad).length >= sonra.kacinci) {
+    return cevap(1, "", `SAHTE-HATA ${ad}`);
+  }
+  if (durum.kalici.has(ad)) return cevap(1, "", `SAHTE-HATA ${ad}`);
+  if (durum.bozuk.has(ad)) {
+    durum.bozuk.delete(ad);
+    return cevap(1, "", `SAHTE-HATA ${ad}`);
+  }
+  const sonuc = uygula(ad);
+  if (durum.koptu.has(ad)) {
+    durum.koptu.delete(ad);
+    return cevap(255, "", `SAHTE-KOPMA ${ad}`);
+  }
+  return sonuc;
 };
 
 vi.mock("../sunucu.mts", async (asil) => ({
@@ -108,22 +145,27 @@ vi.mock("../sunucu.mts", async (asil) => ({
     sahteSsh(ip, komut, secenek),
 }));
 
-const { eskiyeDon, geriYukle } = await import("../yedek.mts");
+const { eskiyeDon, eskiyiSil, geriYuklemeSecimi, geriYukle } = await import("../yedek.mts");
 
 const anahtar = `AGE-SECRET-KEY-1${"Q".repeat(58)}`;
 const dosya = "20261106T000000Z.dump.age";
-const calistir = () =>
-  geriYukle("0.0.0.0", "deneme", { kodAdi: "ornek-magaza", numara: 1 }, dosya, anahtar);
+const site = { kodAdi: "ornek-magaza", numara: 1 };
+const calistir = () => geriYukle("0.0.0.0", "deneme", site, dosya, anahtar);
 
 beforeEach(() => {
   Object.assign(durum, {
     canli: "gercek",
     eski: null,
     yan: null,
+    basarisiz: null,
     kutu: "acik",
     cagrilar: [],
     bozuk: new Set(),
+    koptu: new Set(),
+    kalici: new Set(),
+    sonraBozuk: null,
     sifreEsit: true,
+    yanlisVeriyleAcildi: false,
   });
 });
 
@@ -148,13 +190,11 @@ describe("başarılı geri yükleme", () => {
   });
 });
 
-describe("yer değiştirmeden önce hata: veri değişmez, site açık kalır", () => {
-  it.each(["yana", "durdur", "yedek", "degistir"])("%s bozulursa", async (ad) => {
+describe("yer değiştirmeden önce hata: veri değişmez, site açık kalır, yan veritabanı kalmaz", () => {
+  it.each(["yana", "durdur", "yedek", "degistir"])("%s düşerse", async (ad) => {
     durum.bozuk.add(ad);
     await expect(calistir()).rejects.toThrow(/SAHTE-HATA/);
-    expect(durum.canli).toBe("gercek");
-    expect(durum.eski).toBeNull();
-    expect(durum.kutu).toBe("acik");
+    expect(durum).toMatchObject({ canli: "gercek", eski: null, yan: null, kutu: "acik" });
     expect(durum.cagrilar).not.toContain("uret");
     expect(durum.cagrilar).not.toContain("gerial");
     expect(durum.cagrilar).not.toContain("eskisil");
@@ -168,26 +208,61 @@ describe("yer değiştirmeden önce hata: veri değişmez, site açık kalır", 
   });
 });
 
+describe("yer değiştirme bitip bağlantı koparsa", () => {
+  it("'veri değişmedi' denmez, eski veri yerine döner", async () => {
+    durum.koptu.add("degistir");
+    await expect(calistir()).rejects.toThrow(/eski veritabanı yerinde, site açık/);
+    expect(durum).toMatchObject({ canli: "gercek", eski: null, kutu: "acik", sifreEsit: true });
+    expect(durum.yanlisVeriyleAcildi).toBe(false);
+  });
+
+  it("durum okunamazsa site kapalı kalır, açılmaz", async () => {
+    durum.koptu.add("degistir");
+    // İlk okuma (artık denetimi) geçer, yer değiştirmeden sonraki okuma düşer.
+    durum.sonraBozuk = { ad: "durum", kacinci: 2 };
+    await expect(calistir()).rejects.toThrow(/durumu okunamadı[\s\S]*Site kapalı bırakıldı/);
+    expect(durum.kutu).toBe("kapali");
+    expect(durum.yanlisVeriyleAcildi).toBe(false);
+    expect(durum.cagrilar).not.toContain("yeniden");
+  });
+});
+
 describe("yer değiştirmeden sonra hata: eski veri yerine döner", () => {
   it.each(["uret", "esitle", "goruntu", "guncelle", "yeniden", "saglik"])(
-    "%s bozulursa",
+    "%s düşerse",
     async (ad) => {
       durum.bozuk.add(ad);
       await expect(calistir()).rejects.toThrow(/eski veritabanı yerinde, site açık/);
       expect(durum).toMatchObject({ canli: "gercek", eski: null, kutu: "acik", sifreEsit: true });
-      // Geri dönüşte şifre yeniden eşitlenir ve sağlık ölçülür.
       const geri = durum.cagrilar.slice(durum.cagrilar.indexOf("gerial"));
       expect(geri).toEqual(expect.arrayContaining(["esitle", "yeniden", "saglik"]));
       expect(durum.cagrilar).not.toContain("eskisil");
     },
   );
 
-  it("geri alma da tutmazsa gerçek verinin yeri söylenir, silinmez", async () => {
+  it("sağlık kalıcı bozuksa dönüş tamamlanmadı denir, veri yine yerindedir", async () => {
+    durum.kalici.add("saglik");
+    await expect(calistir()).rejects.toThrow(/dönüş tamamlanmadı[\s\S]*site açılamadı/);
+    expect(durum.canli).toBe("gercek");
+    expect(durum.eski).toBeNull();
+  });
+
+  it("geri alma da tutmazsa site açılmaz, gerçek verinin yeri söylenir, silinmez", async () => {
     durum.bozuk.add("uret");
-    durum.bozuk.add("gerial");
-    await expect(calistir()).rejects.toThrow(/site_ornek_magaza__eski.*silmeyin/);
-    expect(durum.eski).toBe("gercek");
+    durum.kalici.add("gerial");
+    await expect(calistir()).rejects.toThrow(
+      /site_ornek_magaza__eski[\s\S]*silmeyin[\s\S]*site kapalı bırakıldı/,
+    );
+    expect(durum).toMatchObject({ eski: "gercek", kutu: "kapali" });
     expect(durum.cagrilar).not.toContain("eskisil");
+    expect(durum.cagrilar.filter((ad) => ad === "yeniden")).toEqual([]);
+  });
+
+  it("geri alma bitip bağlantı koparsa dönüş başarılı sayılır, site açılır", async () => {
+    durum.bozuk.add("uret");
+    durum.koptu.add("gerial");
+    await expect(calistir()).rejects.toThrow(/eski veritabanı yerinde, site açık/);
+    expect(durum).toMatchObject({ canli: "gercek", eski: null, kutu: "acik", sifreEsit: true });
   });
 });
 
@@ -200,7 +275,6 @@ describe("dönüşü olmayan noktadan sonra hata: yeni hâl korunur", () => {
   });
 
   it("sonuç kayda yazılamazsa geri dönülmez, eski yine silinir", async () => {
-    // Kaydın başarısız olması tek veritabanını da silen eski hatayı tetiklememeli.
     durum.bozuk.add("kayit");
     await calistir();
     expect(durum).toMatchObject({ canli: "yedek", eski: null, kutu: "acik" });
@@ -209,31 +283,140 @@ describe("dönüşü olmayan noktadan sonra hata: yeni hâl korunur", () => {
 });
 
 describe("yarım kalmış işten sonra", () => {
-  it("__eski varsa hiçbir şeye dokunmadan durur", async () => {
+  it("__eski varsa hiçbir şeye dokunmadan durur, iki yolu da söyler", async () => {
     Object.assign(durum, { canli: "yedek", eski: "gercek" });
-    await expect(calistir()).rejects.toThrow(/yarım kalmış.*--eskiye-don/s);
+    await expect(calistir()).rejects.toThrow(/yarım kalmış[\s\S]*--eskiye-don[\s\S]*--eskiyi-sil/);
     expect(durum).toMatchObject({ canli: "yedek", eski: "gercek" });
     expect(durum.cagrilar).not.toContain("yana");
     expect(durum.cagrilar).not.toContain("yedek");
   });
 
-  it("--eskiye-don gerçek veriyi geri koyar", async () => {
-    Object.assign(durum, { canli: "yedek", eski: "gercek", kutu: "kapali", sifreEsit: false });
-    await eskiyeDon("0.0.0.0", "deneme", "ornek-magaza");
-    expect(durum).toMatchObject({ canli: "gercek", eski: null, kutu: "acik", sifreEsit: true });
+  it("yalnız __basarisiz varsa --eskiye-don önerilmez", async () => {
+    durum.basarisiz = "yedek";
+    const hata = await calistir().catch((h: Error) => h.message);
+    expect(hata).toContain("--eskiyi-sil");
+    expect(hata).not.toContain("--eskiye-don");
   });
 
-  it("__eski yoksa --eskiye-don eldeki veriyi silmez", async () => {
-    await expect(eskiyeDon("0.0.0.0", "deneme", "ornek-magaza")).rejects.toThrow();
+  it("--eskiye-don kutuyu durdurur, şu anki hâlin yedeğini alır, gerçek veriyi koyar", async () => {
+    Object.assign(durum, { canli: "yedek", eski: "gercek", kutu: "acik", sifreEsit: false });
+    await eskiyeDon("0.0.0.0", "deneme", "ornek-magaza");
+    expect(durum).toMatchObject({ canli: "gercek", eski: null, kutu: "acik", sifreEsit: true });
+    const { cagrilar } = durum;
+    expect(cagrilar.indexOf("durdur")).toBeLessThan(cagrilar.indexOf("yedek"));
+    expect(cagrilar.indexOf("yedek")).toBeLessThan(cagrilar.indexOf("gerial"));
+  });
+
+  it("--eskiye-don: yedek alınamazsa dönmez", async () => {
+    Object.assign(durum, { canli: "yedek", eski: "gercek" });
+    durum.bozuk.add("yedek");
+    await expect(eskiyeDon("0.0.0.0", "deneme", "ornek-magaza")).rejects.toThrow(/dönülmedi/);
+    expect(durum).toMatchObject({ canli: "yedek", eski: "gercek", kutu: "acik" });
+  });
+
+  it("--eskiye-don: __eski yoksa kutuya ve veriye dokunmaz", async () => {
+    await expect(eskiyeDon("0.0.0.0", "deneme", "ornek-magaza")).rejects.toThrow(/dokunulmadı/);
     expect(durum.canli).toBe("gercek");
+    expect(durum.cagrilar).not.toContain("durdur");
+    expect(durum.cagrilar).not.toContain("yeniden");
+  });
+
+  it("--eskiyi-sil yeni hâli tamamlar, sağlıklıysa önceki veriyi siler", async () => {
+    Object.assign(durum, { canli: "yedek", eski: "gercek", kutu: "kapali", sifreEsit: false });
+    await eskiyiSil("0.0.0.0", "deneme", site);
+    expect(durum).toMatchObject({ canli: "yedek", eski: null, kutu: "acik", sifreEsit: true });
+    expect(durum.cagrilar.indexOf("saglik")).toBeLessThan(durum.cagrilar.indexOf("eskisil"));
+  });
+
+  it("--eskiyi-sil: yeni hâl sağlıksızsa önceki veri silinmez", async () => {
+    Object.assign(durum, { canli: "yedek", eski: "gercek", kutu: "kapali" });
+    durum.kalici.add("saglik");
+    await expect(eskiyiSil("0.0.0.0", "deneme", site)).rejects.toThrow(/SAHTE-HATA/);
+    expect(durum.eski).toBe("gercek");
+  });
+
+  it("--eskiyi-sil: önceki veri yoksa yalnız artıkları siler, canlıya ve kutuya dokunmaz", async () => {
+    Object.assign(durum, { basarisiz: "yedek", yan: "yedek" });
+    await eskiyiSil("0.0.0.0", "deneme", site);
+    expect(durum).toMatchObject({ canli: "gercek", basarisiz: null, yan: null });
+    expect(durum.cagrilar).toContain("artiksil");
+    expect(durum.cagrilar).not.toContain("eskisil");
+    expect(durum.cagrilar).not.toContain("uret");
   });
 });
 
 describe("ortam", () => {
   it("canlı ortamda geri yükleme hiçbir şeye dokunmadan reddedilir", async () => {
-    await expect(
-      geriYukle("0.0.0.0", "canli", { kodAdi: "ornek-magaza", numara: 1 }, dosya, anahtar),
-    ).rejects.toThrow(/yalnız deneme/);
+    await expect(geriYukle("0.0.0.0", "canli", site, dosya, anahtar)).rejects.toThrow(
+      /yalnız deneme/,
+    );
     expect(durum.cagrilar).not.toContain("yana");
+  });
+});
+
+describe("komut satırı", () => {
+  it("seçenekler ayrılır, tanınmayan reddedilir", () => {
+    expect(geriYuklemeSecimi(["a", "deneme"])).toBe("geri-yukle");
+    expect(geriYuklemeSecimi(["a", "deneme", "--dosya=x", "--onay=y"])).toBe("geri-yukle");
+    expect(geriYuklemeSecimi(["a", "deneme", "--eskiye-don"])).toBe("eskiye-don");
+    expect(geriYuklemeSecimi(["a", "deneme", "--eskiyi-sil"])).toBe("eskiyi-sil");
+    expect(() => geriYuklemeSecimi(["--eskiye-dön"])).toThrow(/Bilinmeyen/);
+    expect(() => geriYuklemeSecimi(["--eskiye-don", "--eskiyi-sil"])).toThrow(/birlikte/);
+    expect(() => geriYuklemeSecimi(["--eskiye-don", "--dosya=x"])).toThrow(/birlikte/);
+  });
+
+  // Gerçek komut sahte ssh programıyla çalışır: seçeneğin işleve bağlı olduğunu ölçer.
+  const { PATH: yol } = process.env;
+  const komutuCalistir = (secenekler: string[]) => {
+    const kok = mkdtempSync(join(tmpdir(), "yedek-komut-"));
+    const gunluk = join(kok, "gunluk");
+    writeFileSync(
+      join(kok, "ssh"),
+      `#!/bin/bash
+g="$(cat)"
+printf '%s\\n%s\\n' "$*" "$g" >> "${gunluk}"
+case "$* $g" in
+  *"select datname"*) echo site_ornek_magaza; echo site_ornek_magaza__eski ;;
+  *"for d in"*) echo "ornek-magaza 6" ;;
+  *"gece.sh deneme"*) echo yedeklendi ;;
+  *"docker ps -aq"*) echo true ;;
+esac
+exit 0
+`,
+    );
+    chmodSync(join(kok, "ssh"), 0o755);
+    const sonuc = spawnSync(
+      process.execPath,
+      [
+        "komutlar/yedek-geri-yukle.mts",
+        "siteler/ornek-magaza",
+        "deneme",
+        "--onay=ornek-magaza",
+        ...secenekler,
+      ],
+      {
+        encoding: "utf8",
+        cwd: join(import.meta.dirname, "..", ".."),
+        env: { ...process.env, PATH: `${kok}:${yol}` },
+      },
+    );
+    return { ...sonuc, gunluk: readFileSync(gunluk, "utf8") };
+  };
+
+  it("--eskiye-don geri alma adımını çalıştırır, yedeği açmaz", () => {
+    const sonuc = komutuCalistir(["--eskiye-don"]);
+    expect(sonuc.stderr).toBe("");
+    expect(sonuc.status).toBe(0);
+    expect(sonuc.gunluk).toContain("# adim:gerial");
+    expect(sonuc.gunluk).not.toContain("# adim:yana");
+  });
+
+  it("--eskiyi-sil önceki veriyi siler, yedeği açmaz", () => {
+    const sonuc = komutuCalistir(["--eskiyi-sil"]);
+    expect(sonuc.stderr).toBe("");
+    expect(sonuc.status).toBe(0);
+    expect(sonuc.gunluk).toContain("# adim:eskisil");
+    expect(sonuc.gunluk).not.toContain("# adim:yana");
+    expect(sonuc.gunluk).not.toContain("# adim:gerial");
   });
 });

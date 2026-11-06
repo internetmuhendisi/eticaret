@@ -241,7 +241,7 @@ export const sshKomutu = (
       komut,
     ],
     // Girdi verilmezse ssh standart girdiyi okumaz (betik girdiden gönderilince karışmasın).
-    { encoding: "utf8", timeout: sure, input: girdi ?? "" },
+    { encoding: "utf8", timeout: sure, input: girdi ?? "", maxBuffer: 64 * 2 ** 20 },
   );
 
 // --- Denetimin karar kuralları (testleri: komutlar/testler/sunucu.test.ts) ---

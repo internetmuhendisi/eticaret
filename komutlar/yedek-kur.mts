@@ -22,10 +22,16 @@ import {
   kokBetigi,
   kurmaBetigi,
   type YedekAyari,
+  yedekAlmaBetigi,
 } from "./yedek.mts";
 
-const siteleriHazirla = (ipv4: string, ayar: YedekAyari, ortam: Ortam): string[] => {
+const siteleriHazirla = (
+  ipv4: string,
+  ayar: YedekAyari,
+  ortam: Ortam,
+): { yeniler: string[]; eklenenler: string[] } => {
   const yeniler: string[] = [];
+  const eklenenler: string[] = [];
   const siteler = { ...(ayar.siteler[ortam] ?? {}) };
   for (const kodAdi of siteListesiniOku(ipv4, ortam)) {
     if (siteler[kodAdi]) continue;
@@ -37,10 +43,11 @@ const siteleriHazirla = (ipv4: string, ayar: YedekAyari, ortam: Ortam): string[]
       yeniler.push(anahtarDosyasi(ortam, kodAdi));
     }
     siteler[kodAdi] = { acik_anahtar: acik, saklama_gun: ayar.varsayilan_saklama_gun };
+    eklenenler.push(kodAdi);
     console.log(`eklendi     ${ortam}/${kodAdi}: ${ayar.varsayilan_saklama_gun} gün`);
   }
   ayar.siteler[ortam] = siteler;
-  return yeniler;
+  return { yeniler, eklenenler };
 };
 
 try {
@@ -51,7 +58,8 @@ try {
   const depoAyari = depoAyariMetni(ayar.depo.konum, erisim, gizli);
   const yeniler: string[] = [];
   for (const ortam of veritabaniOrtamlari.filter(ortamMi)) {
-    yeniler.push(...siteleriHazirla(sunucu.ipv4, ayar, ortam));
+    const hazirlik = siteleriHazirla(sunucu.ipv4, ayar, ortam);
+    yeniler.push(...hazirlik.yeniler);
     ayariYaz(ayar);
     const cikti = sunucudaCalistir(sunucu.ipv4, kurmaBetigi(ayar, ortam, depoAyari), 600_000);
     if (!cikti.includes("yedek=kuruldu")) throw new Error(`Kurulum bitmedi: ${cikti}`);
@@ -60,10 +68,15 @@ try {
     const surumleme = sunucudaCalistir(
       sunucu.ipv4,
       kokBetigi(
-        `rc ${ortam} mkdir "depo:$KOVA" --s3-no-check-bucket=false --s3-bucket-object-lock-enabled\nrc ${ortam} backend versioning "depo:$KOVA"`,
+        `rc ${ortam} mkdir "depo:$KOVA" --s3-bucket-object-lock-enabled\nrc ${ortam} backend versioning "depo:$KOVA"`,
       ),
     );
     if (!surumleme.includes("Enabled")) throw new Error("Kovada sürümleme açık değil.");
+    // Yeni sitenin ilk yedeği gece kaydı sayılır: denetim ilk geceyi beklemesin.
+    for (const kodAdi of hazirlik.eklenenler) {
+      const ilk = sunucudaCalistir(sunucu.ipv4, yedekAlmaBetigi(ortam, kodAdi, "gece"), 900_000);
+      console.log(ilk.trim());
+    }
     console.log(
       `kuruldu     ${ortam}: betikler, depo anahtarı, zamanlayıcı, kova ${ayar.depo.kova}`,
     );
