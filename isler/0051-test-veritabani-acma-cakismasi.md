@@ -24,4 +24,4 @@ Kart 0049 sırasında `pnpm birim-testleri` bazı koşularda `cekirdek/kapi/test
 
 ## Durum
 
-yapılacak
+bitti
