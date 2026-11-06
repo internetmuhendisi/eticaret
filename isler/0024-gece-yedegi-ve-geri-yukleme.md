@@ -29,4 +29,4 @@ Her sitenin veritabanı her gece ayrı yedeklenir ve tek başına geri yükleneb
 
 ## Durum
 
-yapılacak
+bitti
