@@ -29,4 +29,4 @@ Yönetici şifresi ele geçse bile panele girilemesin. Yönetici girişinde şif
 
 ## Durum
 
-yapılacak
+bitti
