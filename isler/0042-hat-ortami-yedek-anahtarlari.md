@@ -22,4 +22,4 @@ Kart 0024 `.env.example` dosyasına iki yeni anahtar ekledi ama hattın ortam ha
 
 ## Durum
 
-yapılacak
+bitti
