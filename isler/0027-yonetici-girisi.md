@@ -31,4 +31,4 @@ Mağaza sahibi ve ekibi `/yonetim/giris` adresinden panele girer. Girmeyen kimse
 
 ## Durum
 
-yapılacak
+bitti
