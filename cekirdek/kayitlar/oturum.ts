@@ -17,6 +17,28 @@ export const girisDenemeSiniri = {
   baglanti: { deneme: 20, saniye: 15 * 60 },
 } as const satisfies Record<string, { deneme: number; saniye: number }>;
 
+// Yöneticinin iki aşamalı girişi (kart 0028, karar 0044). Kod denemesi şifreden çok daha kolay
+// tahmin edilir (6 hane), hesap sınırı bu yüzden daha sıkıdır. Değerler bütün sitelerde aynıdır.
+export const ikiAsamaDenemeSiniri = {
+  hesap: { deneme: 5, saniye: 15 * 60 },
+  baglanti: { deneme: 20, saniye: 15 * 60 },
+} as const satisfies Record<string, { deneme: number; saniye: number }>;
+
+// Zamanlı kod standardı (RFC 6238). Doğrulama uygulamaları bu değerleri bekler. Tolerans: saati biraz
+// kaymış telefon için öncesindeki ve sonrasındaki kod da geçer.
+export const ikiAsamaAyari = {
+  adimSaniye: 30,
+  hane: 6,
+  tolerans: 1,
+  gizliBayt: 20,
+  yedekKodSayisi: 10,
+  yedekKodUzunlugu: 10,
+} as const;
+
+// Şifreden sonra koda ya da kuruluma kadar geçen ara adım. Oturum değildir, panele girmez.
+export const girisAdimiSuresiSaniye = 10 * 60;
+export const girisAdimiCerezi = "__Host-yonetici-giris-adimi";
+
 export const sifreSiniri = { enKisa: 10, enUzun: 128 } as const;
 
 // Argon2id ayarı. Değişirse eski özetler sonraki başarılı girişte yeni ayarla yeniden özetlenir.

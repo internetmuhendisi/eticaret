@@ -29,6 +29,13 @@
       "when": 1793964060778,
       "tag": "0003_baslangic-rolleri",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793984788091,
+      "tag": "0004_iki-asamali-giris",
+      "breakpoints": true
     }
   ]
 }

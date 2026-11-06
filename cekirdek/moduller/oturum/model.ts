@@ -47,6 +47,9 @@ export const oturumTablosu = (ad: string, hesap: () => AnyPgColumn) =>
       // Hareketsizlik sınırı: her yenilemede ileri alınır.
       oturum_bitis: zaman().notNull(),
       kapanma_zamani: zaman(),
+      // Yönetici oturumu ancak iki aşamadan geçince sayılır, boş olan reddedilir (karar 0044). Eski
+      // sürümün yalnız şifreyle açtığı oturum bu alanı doldurmaz. Müşteride kullanılmaz, boş kalır.
+      iki_asama_zamani: zaman(),
       olusturulma_zamani: zaman().notNull().defaultNow(),
     },
     (tablo) => [

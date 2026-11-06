@@ -5,16 +5,19 @@ import { resolve } from "node:path";
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { istekSinirlari } from "../../kayitlar/kapi.ts";
-import { girisDenemeSiniri, oturumCerezAdlari } from "../../kayitlar/oturum.ts";
+import { girisAdimiCerezi, girisDenemeSiniri } from "../../kayitlar/oturum.ts";
 import { yoneticiler } from "../../moduller/ekip/model.ts";
 import { tamYetkiliYoneticiAc, yoneticininIzniVarMi } from "../../moduller/ekip/servis.ts";
-import { sinirliGirisYap } from "../../moduller/oturum/giris.ts";
+import { sinirliSifreDogrula } from "../../moduller/oturum/giris.ts";
+import { kodAdimi, zamanliKod } from "../../moduller/oturum/iki-asama.ts";
+import { girisAdiminiOku, kurulumuHazirla } from "../../moduller/oturum/iki-asamali-giris.ts";
 import { girisYap, hesapAc, oturumAcikMi, oturumuYenile } from "../../moduller/oturum/servis.ts";
 import { baglan, baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
 import { girisAdresi, guvenliDonus, panelAdresi } from "../../yonetim-paneli/adresler.ts";
 import { yoneticiCikisUcu } from "../herkese-acik/yonetici-cikis.ts";
 import { yoneticiGirisUcu } from "../herkese-acik/yonetici-giris.ts";
+import { yoneticiKurulumOnayUcu } from "../herkese-acik/yonetici-kurulum-onay.ts";
 import { panelYoklamasi } from "../panel-korumasi.ts";
 
 const sifre = "uzun-bir-deneme-sifresi";
@@ -44,6 +47,26 @@ const cerezBasligi = (yanit: Response) =>
     .map((satir) => satir.split(";")[0])
     .join("; ");
 
+// Şifreden sonra kurulumu da bitirir, gerçek oturum çerezlerini döner (kart 0028).
+const tamGiris = async (eposta: string) => {
+  const ilk = await giris(eposta, sifre);
+  const adimCerezi = cerezBasligi(ilk);
+  const anahtar = adimCerezi.split("=")[1];
+  const adim = await girisAdiminiOku(vt, anahtar);
+  if (adim === null) throw new Error("Ara adım açılmadı.");
+  const kurulum = await kurulumuHazirla(vt, anahtar ?? "", adim, "Deneme");
+  if (kurulum === null) throw new Error("Kurulum hazırlanamadı.");
+  const onay = await yoneticiKurulumOnayUcu(
+    new Request("http://yerel/kapi/herkese-acik/yonetici-kurulum-onay", {
+      method: "POST",
+      headers: { "x-forwarded-for": yeniAg(), cookie: adimCerezi },
+      body: JSON.stringify({ kod: zamanliKod(kurulum.gizli, kodAdimi()) }),
+    }),
+  );
+  expect(onay.status).toBe(200);
+  return onay;
+};
+
 const panel = (yol: string, cerez?: string) =>
   panelYoklamasi(
     new Request(`http://yerel${yol}`, { headers: cerez === undefined ? {} : { cookie: cerez } }),
@@ -65,6 +88,7 @@ beforeAll(async () => {
   vt = site.vt;
   sil = site.sil;
   vi.stubEnv("VERITABANI_ADRESI", site.baglantiAdresi);
+  vi.stubEnv("IKI_ASAMA_ANAHTARI", randomBytes(32).toString("hex"));
   vi.stubEnv(
     "SITE_KLASORU",
     resolve(import.meta.dirname, "../../ayar-semasi/testler/ornek-siteler/gecerli"),
@@ -81,16 +105,14 @@ afterAll(async () => {
 });
 
 describe("giriş ucu", () => {
-  it("doğru şifre oturum çerezlerini yazar", async () => {
+  it("doğru şifre oturum değil, yalnız ara adım çerezi yazar", async () => {
     const eposta = yeniEposta();
     await hesapAc(vt, "yonetici", { eposta, sifre });
     const yanit = await giris(eposta, sifre);
     expect(yanit.status).toBe(200);
+    expect((await yanit.json()).veri).toEqual({ sonraki: "kurulum" });
     const cerezler = yanit.headers.getSetCookie();
-    expect(cerezler.map((satir) => satir.split("=")[0])).toEqual([
-      oturumCerezAdlari.yonetici.kisa,
-      oturumCerezAdlari.yonetici.yenileme,
-    ]);
+    expect(cerezler.map((satir) => satir.split("=")[0])).toEqual([girisAdimiCerezi]);
     for (const satir of cerezler) expect(satir).toMatch(/HttpOnly; Secure; SameSite=Lax/);
   });
 
@@ -115,7 +137,7 @@ describe("giriş ucu", () => {
     await hesapAc(vt, "yonetici", { eposta, sifre });
     const satirlar = gunlukYakala();
     await giris(eposta, "yanlis-bir-sifre-burada");
-    const basarili = await giris(eposta, sifre);
+    const basarili = await tamGiris(eposta);
     await yoneticiCikisUcu(
       new Request("http://yerel/kapi/herkese-acik/yonetici-cikis", {
         method: "POST",
@@ -124,7 +146,8 @@ describe("giriş ucu", () => {
     );
     const metin = satirlar.join("");
     expect(metin).toContain("Yanlış giriş denemesi.");
-    expect(metin).toContain("Giriş yapıldı.");
+    expect(metin).toContain("Şifre doğrulandı.");
+    expect(metin).toContain("İki aşamalı giriş kuruldu.");
     expect(metin).toContain("Çıkış yapıldı.");
     expect(metin).not.toContain(eposta);
     expect(metin).not.toContain(sifre);
@@ -197,7 +220,7 @@ describe("deneme sınırı", () => {
     await hesapAc(vt, "yonetici", { eposta, sifre });
     const baglanti = `basarili-${randomBytes(4).toString("hex")}`;
     for (let i = 0; i <= girisDenemeSiniri.baglanti.deneme; i += 1) {
-      await sinirliGirisYap(vt, "yonetici", { eposta, sifre }, baglanti, 60);
+      await sinirliSifreDogrula(vt, "yonetici", { eposta, sifre }, baglanti);
     }
   });
 
@@ -210,7 +233,7 @@ describe("deneme sınırı", () => {
     try {
       for (let i = 0; i <= girisDenemeSiniri.hesap.deneme; i += 1) {
         await expect(
-          sinirliGirisYap(kapali, "yonetici", { eposta, sifre }, baglanti, 60),
+          sinirliSifreDogrula(kapali, "yonetici", { eposta, sifre }, baglanti),
         ).rejects.not.toMatchObject({ kod: "istek-siniri" });
       }
     } finally {
@@ -218,11 +241,11 @@ describe("deneme sınırı", () => {
     }
     for (let i = 0; i < girisDenemeSiniri.hesap.deneme; i += 1) {
       await expect(
-        sinirliGirisYap(vt, "yonetici", { eposta, sifre }, baglanti, 60),
+        sinirliSifreDogrula(vt, "yonetici", { eposta, sifre }, baglanti),
       ).rejects.toMatchObject({ kod: "giris-hatasi" });
     }
     await expect(
-      sinirliGirisYap(vt, "yonetici", { eposta: eposta.toUpperCase(), sifre }, baglanti, 60),
+      sinirliSifreDogrula(vt, "yonetici", { eposta: eposta.toUpperCase(), sifre }, baglanti),
     ).rejects.toMatchObject({ kod: "istek-siniri" });
   });
 
@@ -253,7 +276,7 @@ describe("panel kapısı", () => {
   it("girişli istek geçer, giriş sayfasından panele döner, başka siteye dönmez", async () => {
     const eposta = yeniEposta();
     await hesapAc(vt, "yonetici", { eposta, sifre });
-    const cerez = cerezBasligi(await giris(eposta, sifre));
+    const cerez = cerezBasligi(await tamGiris(eposta));
     expect((await panel(panelAdresi, cerez)).yonlendir).toBeNull();
     expect((await panel(girisAdresi, cerez)).yonlendir).toBe(panelAdresi);
     expect((await panel(`${girisAdresi}?donus=%2Fyonetim%2Furunler`, cerez)).yonlendir).toBe(
@@ -267,7 +290,7 @@ describe("panel kapısı", () => {
   it("çıkıştan sonra panele girilemez, çerezler silinir, eski anahtar işe yaramaz", async () => {
     const eposta = yeniEposta();
     await hesapAc(vt, "yonetici", { eposta, sifre });
-    const cerez = cerezBasligi(await giris(eposta, sifre));
+    const cerez = cerezBasligi(await tamGiris(eposta));
     const cikis = await yoneticiCikisUcu(
       new Request("http://yerel/kapi/herkese-acik/yonetici-cikis", {
         method: "POST",
@@ -301,6 +324,8 @@ describe("dönüş adresi", () => {
     ["/yonetim/%2e%2e/baska", panelAdresi],
     ["javascript:alert(1)", panelAdresi],
     [girisAdresi, panelAdresi],
+    [`${girisAdresi}/kurulum`, panelAdresi],
+    [`${girisAdresi}/kod?donus=/yonetim`, panelAdresi],
     ["/yonetim", "/yonetim"],
     ["/yonetim/urunler?sayfa=2", "/yonetim/urunler?sayfa=2"],
   ])("%j → %s", (deger, beklenen) => {

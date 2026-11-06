@@ -152,8 +152,8 @@ export const sablonParcalari = (ad: GizliBilgi, kodAdi: string): [string, string
 
 // --- Sunucuda çalışan betikler (değer taşımaz) ---
 
-// Sitenin o ortamdaki gizli bilgilerini kurar. Var olan değere dokunmaz; yenile ile hepsini
-// yeniler. Her durumda dosyanın sahibini ve iznini düzeltir. Çıktı yalnız dosya adlarıdır.
+// Sitenin o ortamdaki gizli bilgilerini kurar. Var olan değere dokunmaz; yenile ile yenilenebilir
+// olanları yeniler (gizli-bilgiler.ts). Her durumda dosyanın sahibini ve iznini düzeltir. Çıktı yalnız dosya adlarıdır.
 // Üç aşama: (1) her dosyanın var olup olmadığı okunur, okunamazsa betik durur ve hiçbir şeye
 // dokunmaz; (2) kurulacak bütün değerler geçici dosyalara yazılır; (3) hepsi yerine konur.
 // Böylece yarıda kalan bir yenilemede değerlerin bir kısmı yeni, bir kısmı eski kalmaz.
@@ -176,7 +176,7 @@ export const uretmeBetigi = (
     satirlar.push(
       `durum=$(sudo sh -c 'if [ -s ${dosya} ]; then echo var; else echo yok; fi')`,
       `case "$durum" in var|yok) ;; *) echo "durum okunamadı: ${dosya}" >&2; exit 1 ;; esac`,
-      `if [ "$durum" = yok ] || [ ${yenile ? "evet" : "hayir"} = evet ]; then ${kur(i)}=evet; else ${kur(i)}=hayir; fi`,
+      `if [ "$durum" = yok ] || [ ${yenile && gizliBilgiler[ad].yenilenir ? "evet" : "hayir"} = evet ]; then ${kur(i)}=evet; else ${kur(i)}=hayir; fi`,
     );
   });
   adlar.forEach((ad, i) => {
@@ -202,7 +202,7 @@ export const uretmeBetigi = (
     satirlar.push(
       `if [ "$${kur(i)}" = evet ]; then`,
       `  sudo mv -f ${gecici} ${dosya}`,
-      `  echo "${yenile ? "yenilendi  " : "üretildi   "} ${ad_}"`,
+      `  echo "${yenile && gizliBilgiler[ad].yenilenir ? "yenilendi  " : "üretildi   "} ${ad_}"`,
       "else",
       `  echo "zaten var   ${ad_}"`,
       "fi",

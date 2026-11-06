@@ -1,0 +1,29 @@
+# 0053 · Telefonunu kaybeden yöneticinin hesabını kurtarma
+
+## Amaç
+
+Kart 0028 ile yöneticiler için iki aşamalı giriş zorunlu olur. Telefonunu ve yedek kodlarını birlikte kaybeden yönetici panele giremez, bu kartın öncesinde kurtarma yolu yoktur. Yeni bir site mağaza sahibine teslim edilmeden önce yapılmalıdır.
+
+Önce 0028 bitmiş olmalı.
+
+## Olmazsa olmazlar
+
+- Altyapı sahibi bir yöneticinin iki aşamalı girişini kaldırabilir. Yönetici sonraki girişte kurulum ekranına düşer, eski yedek kodlar ve açık oturumlar geçersiz olur.
+- Kimlik doğrulaması altyapı sahibinin elle yaptığı bir adımdır; nasıl yapılacağı yazılı olur (telefonla arama gibi, kullanıcı kararı).
+- Yapılan işlem kaydedilir: kim, ne zaman, hangi yönetici (kart 0029 ile).
+- Yedek kodları kaybeden ama telefonu duran yönetici panelden yeni yedek kod üretebilir.
+- İşlem yalnız o sitenin veritabanına dokunur.
+
+## Sınırlar
+
+- E-posta ya da SMS ile kendi kendine kurtarma yapılmaz: şifresi ele geçmiş hesapta ikinci aşamayı atlatan bir yol açardı.
+
+## Bitti sayılır
+
+- Kaldırma sonrası eski kod ve yedek kodlar geçmiyor, yönetici yalnız yeniden kurulumla girebiliyor. Testler bunu gösteriyor.
+- Başka sitenin yöneticisine işlem yapılamıyor. Ölçüldü.
+- Yeni yedek kod üretilince eskileri geçmiyor. Testler bunu gösteriyor.
+
+## Durum
+
+yapılacak

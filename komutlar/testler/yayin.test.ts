@@ -186,10 +186,12 @@ describe("sunucudaki site kutusunun tanımı", () => {
   it("gizli bilgiyi dosyadan alır, ortam değişkeninde değer yok", () => {
     expect(kutu.environment).toEqual({
       VERITABANI_ADRESI_DOSYASI: "/run/secrets/veritabani_adresi",
+      IKI_ASAMA_ANAHTARI_DOSYASI: "/run/secrets/iki_asama_anahtari",
       SITE_KLASORU: "/siteler/ornek-magaza",
     });
     expect(Object.values(tanim.secrets)).toEqual([
       { file: "/srv/altyapi/gizli/deneme/ornek-magaza/veritabani_adresi" },
+      { file: "/srv/altyapi/gizli/deneme/ornek-magaza/iki_asama_anahtari" },
     ]);
   });
 

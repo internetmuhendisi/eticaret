@@ -145,14 +145,18 @@ describe("panel dosyalarının yeri", () => {
     });
   const sayfalar = dosyalar(appKlasoru).map((yol) => relative(appKlasoru, yol));
 
-  it("girişli düzenin dışında yalnız giriş sayfası var", () => {
+  it("girişli düzenin dışında yalnız giriş, kod ve kurulum sayfaları var", () => {
     const disarida = sayfalar.filter(
       (yol) =>
         yol.startsWith(`yonetim${"/"}`) &&
         yol.endsWith("page.tsx") &&
         !yol.startsWith("yonetim/(panel)/"),
     );
-    expect(disarida).toEqual(["yonetim/giris/page.tsx"]);
+    expect(disarida.sort()).toEqual([
+      "yonetim/giris/kod/page.tsx",
+      "yonetim/giris/kurulum/page.tsx",
+      "yonetim/giris/page.tsx",
+    ]);
   });
 
   it("sayfa ve düzenler oturumu yenileyen işlevi çağırmaz", () => {

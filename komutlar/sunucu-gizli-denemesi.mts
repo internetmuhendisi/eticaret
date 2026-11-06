@@ -13,6 +13,7 @@
 // Değerler ekrana basılmaz; karşılaştırmalar sunucuda özet değerlerle yapılır.
 // Sonunda kutular, deneme görüntüsü ve deneme sitesinin gizli bilgileri silinir.
 
+import { gizliBilgiler } from "../cekirdek/kayitlar/gizli-bilgiler.ts";
 import {
   denemeSiteNumarasi,
   gizliKlasor,
@@ -44,6 +45,13 @@ const compose = {
 const dosyaA = `${gizliKlasor(ortam, a.kodAdi)}/veritabani_adresi`;
 const dosyaB = `${gizliKlasor(ortam, b.kodAdi)}/veritabani_adresi`;
 const ic = "/run/secrets/veritabani_adresi";
+// Sitenin bütün gizli bilgi dosyaları (kart 0028): kutuya hepsi bağlanır, biri eksik ya da fazla olmamalı.
+const dosyaAdlari = Object.values(gizliBilgiler)
+  .map(({ dosya }) => dosya)
+  .sort();
+const kaynakListesi = (kodAdi: string) =>
+  dosyaAdlari.map((dosya) => `${gizliKlasor(ortam, kodAdi)}/${dosya}`).join(" ");
+const anahtarB = `${gizliKlasor(ortam, b.kodAdi)}/${gizliBilgiler.IKI_ASAMA_ANAHTARI.dosya}`;
 
 const betik = `set -u
 d=$(mktemp -d)
@@ -81,7 +89,7 @@ dc up -d --quiet-pull >/dev/null 2>&1 || { echo "HATA   kutular açılamadı"; e
 ozet_ic() { dc exec -T "$1" sha256sum ${ic} 2>/dev/null | cut -d" " -f1; }
 ozet_dis() { sudo sha256sum "$1" | cut -d" " -f1; }
 
-kaynaklar() { docker inspect "$(dc ps -q "$1")" --format '{{range .Mounts}}{{.Source}} {{end}}'; }
+kaynaklar() { docker inspect "$(dc ps -q "$1")" --format '{{range .Mounts}}{{.Source}} {{end}}' | tr ' ' '\\n' | grep -v '^$' | sort | paste -sd' '; }
 
 dc exec -T a sh -c 'test -s "$VERITABANI_ADRESI_DOSYASI"'
 olcum $? "A kendi gizli bilgisini dosyadan okuyabiliyor"
@@ -89,19 +97,19 @@ ayni "$(ozet_ic a)" "$(ozet_dis ${dosyaA})"
 olcum $? "A'nın gördüğü değer sunucudaki A değeriyle aynı"
 farkli "$(ozet_ic a)" "$(ozet_dis ${dosyaB})" && ayni "$(ozet_ic b)" "$(ozet_dis ${dosyaB})"
 olcum $? "B kendi değerini görüyor, A ile B'nin değeri farklı"
-[ "$(dc exec -T a ls /run/secrets)" = "veritabani_adresi" ]
+[ "$(dc exec -T a ls /run/secrets | sort | paste -sd' ')" = "${dosyaAdlari.join(" ")}" ]
 olcum $? "A'da yalnız kendi gizli bilgi dosyası var"
 # Docker'ın kendi kaydından: kutuya sunucudan hangi dosyalar bağlandı.
-[ "$(kaynaklar a)" = "${dosyaA} " ] && [ "$(kaynaklar b)" = "${dosyaB} " ]
+[ "$(kaynaklar a)" = "${kaynakListesi(a.kodAdi)}" ] && [ "$(kaynaklar b)" = "${kaynakListesi(b.kodAdi)}" ]
 olcum $? "A'ya sunucudan yalnız A'nın, B'ye yalnız B'nin dosyası bağlı"
-[ "$(kaynaklar a-bozuk)" = "${dosyaB} " ] && dc exec -T a-bozuk cat ${ic} 2>&1 >/dev/null | grep -q "Permission denied"
+[ "$(kaynaklar a-bozuk)" = "${kaynakListesi(b.kodAdi)}" ] && dc exec -T a-bozuk cat ${ic} 2>&1 >/dev/null | grep -q "Permission denied" && dc exec -T a-bozuk cat /run/secrets/${gizliBilgiler.IKI_ASAMA_ANAHTARI.dosya} 2>&1 >/dev/null | grep -q "Permission denied"
 olcum $? "bilerek bozma: B'nin dosyası A'nın kullanıcısıyla bağlanınca izin reddediliyor"
 
 # Geçici dosyalar gizli bilgi klasöründe açılır: geride kalırlarsa sunucu denetimi yakalar.
 p=$(sudo mktemp -p ${gizliKok} .deneme.XXXXXX)
-sudo sh -c "grep -ohE '[0-9a-f]{64}' ${dosyaA} ${dosyaB} > $p"
+sudo sh -c "grep -ohE '[0-9a-f]{64}' ${kaynakListesi(a.kodAdi)} ${kaynakListesi(b.kodAdi)} > $p"
 # Desen dosyası kök kullanıcıya aittir; sayımı da kök yapar. İki desen de yoksa ölçüm geçersizdir.
-[ "$(sudo sh -c "wc -l < $p")" = 2 ] && [ "$(docker inspect $(dc ps -aq) | sudo grep -c -F -f $p)" = 0 ]
+[ "$(sudo sh -c "wc -l < $p")" = ${dosyaAdlari.length * 2} ] && [ "$(docker inspect $(dc ps -aq) | sudo grep -c -F -f $p)" = 0 ]
 olcum $? "docker inspect çıktısında gizli değer yok"
 # Bilerek bozma: B'nin değeri bir kutunun ortam değişkenine konursa aynı ölçüm yakalamalı.
 # Değer kök kullanıcının dosyasından okunur, hiçbir komut satırında görünmez.
@@ -114,11 +122,14 @@ docker rm -f gizli-denemesi-sizdiran >/dev/null 2>&1
 sudo rm -f "$p" "$q"; p=""; q=""
 
 once=$(ozet_dis ${dosyaB})
+anahtar_once=$(ozet_dis ${anahtarB})
 ${uretmeBetigi(ortam, b.kodAdi, b.numara, { yenile: true })}
 set +e
 sonra=$(ozet_dis ${dosyaB})
 farkli "$once" "$sonra"
 olcum $? "yenileme B'nin değerini değiştirdi"
+ayni "$anahtar_once" "$(ozet_dis ${anahtarB})"
+olcum $? "yenileme iki aşamalı giriş anahtarını değiştirmedi"
 ayni "$(ozet_ic b)" "$sonra" && echo "bilgi  kutu yeni değeri yeniden başlamadan gördü" || echo "bilgi  kutu yeniden başlamadan eski değeri görüyor"
 dc restart --timeout 1 b >/dev/null 2>&1
 ayni "$(ozet_ic b)" "$sonra"

@@ -1,7 +1,7 @@
 // Bir sitenin gizli bilgilerini sunucuda kurar ya da yeniler (kart 0019, karar 0031).
 //
 //   pnpm sunucu-gizli <site klasörü> <deneme|canli>            yoksa üretir, varsa dokunmaz
-//   pnpm sunucu-gizli <site klasörü> <deneme|canli> --yenile   hepsini yeniler (ör. devirde)
+//   pnpm sunucu-gizli <site klasörü> <deneme|canli> --yenile   yenilenebilirleri yeniler (ör. devirde)
 //
 // Değer sunucuda üretilir, ekrana, günlüğe ve bu bilgisayara gelmez. Site numarası yoksa verilir
 // ve sunucu/site-kullanicilari.json'a yazılır (bu dosya kayda girer, gizli değildir).

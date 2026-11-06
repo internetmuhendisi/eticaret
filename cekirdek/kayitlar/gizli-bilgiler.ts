@@ -7,13 +7,23 @@
 // (site_<kod adı>). Parçalar ayrı yazılır: kayıtta şifreli adres kalıbı durmaz (veri ayrımı testi).
 // Veritabanı kutusu yerelde "veritabani" adlı hizmettir (sunucu/compose.yaml), sunucuda her
 // sitenin ağında "veritabani" adıyla görünür (komutlar/sunucu-veritabani.mts).
+//
+// yenilenir: pnpm sunucu-gizli --yenile bu değeri değiştirir mi. İki aşamalı giriş anahtarı değişirse
+// veritabanındaki şifreli gizliler açılamaz, bütün yöneticiler panelin dışında kalır (karar 0044).
 export const gizliBilgiler = {
   VERITABANI_ADRESI: {
     dosya: "veritabani_adresi",
     on: "postgres://{veritabani}:",
     son: "@veritabani:5432/{veritabani}",
+    yenilenir: true,
   },
-} as const satisfies Record<string, { dosya: string; on: string; son: string }>;
+  IKI_ASAMA_ANAHTARI: {
+    dosya: "iki_asama_anahtari",
+    on: "",
+    son: "",
+    yenilenir: false,
+  },
+} as const satisfies Record<string, { dosya: string; on: string; son: string; yenilenir: boolean }>;
 export type GizliBilgi = keyof typeof gizliBilgiler;
 
 // Sunucuda bir değerin dosya yolunu veren ortam değişkeninin eki: VERITABANI_ADRESI_DOSYASI.

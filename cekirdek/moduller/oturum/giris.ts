@@ -1,21 +1,22 @@
-// Deneme sınırlı giriş ve günlüklü çıkış (kart 0027, karar 0042). Yönetici girişi kullanır, müşteri
-// girişi de (kart 0033) aynısını kullanır. Yanlış şifre ile kayıtlı olmayan e-postanın cevabı aynıdır.
+// Deneme sınırlı şifre doğrulama ve günlüklü çıkış (kart 0027, karar 0042). Yönetici girişi kullanır,
+// müşteri girişi de (kart 0033) aynısını kullanır. Yanlış şifre ile kayıtlı olmayan e-postanın cevabı aynıdır.
 // E-posta günlükte kısaltılır (cekirdek/izleme/maskele.ts).
 import { gunluk } from "../../izleme/gunluk.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import { girisDenemeSiniri, type HesapTuru } from "../../kayitlar/oturum.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeleriSil, denemeyiAyir, denemeyiGeriVer } from "./deneme-siniri.ts";
-import { type Anahtarlar, cikisYap, girisYap } from "./servis.ts";
+import { type Anahtarlar, cikisYap, hesapSifresiniDogrula } from "./servis.ts";
 
-export const sinirliGirisYap = async (
+// Şifreyi deneme sınırıyla doğrular, oturum açmaz. Şifreden sonra ne olacağı hesap türünün işidir:
+// yönetici iki aşamalı girişe geçer (iki-asamali-giris.ts).
+export const sinirliSifreDogrula = async (
   vt: Veritabani,
   tur: HesapTuru,
   girdi: { eposta: string; sifre: string },
   baglanti: string,
-  sureSaniye: number,
-): Promise<{ hesapKimligi: string; anahtarlar: Anahtarlar }> => {
-  // Küçük harfle: girisYap da e-postayı böyle arar, büyük harfli yazış ayrı sayaç açmasın.
+): Promise<{ hesapKimligi: string }> => {
+  // Küçük harfle: şifre doğrulama da e-postayı böyle arar, büyük harfli yazış ayrı sayaç açmasın.
   const hesapAnahtari = `${tur} hesap ${girdi.eposta.trim().toLowerCase()}`;
   const baglantiAnahtari = `${tur} baglanti ${baglanti}`;
   const { eposta } = girdi;
@@ -29,9 +30,9 @@ export const sinirliGirisYap = async (
     throw new BilinenHata("istek-siniri", undefined, { "Retry-After": String(bekle) });
   }
 
-  let sonuc: Awaited<ReturnType<typeof girisYap>>;
+  let sonuc: Awaited<ReturnType<typeof hesapSifresiniDogrula>>;
   try {
-    sonuc = await girisYap(vt, tur, girdi, sureSaniye);
+    sonuc = await hesapSifresiniDogrula(vt, tur, girdi);
   } catch (hata) {
     // Veritabanı hatası kullanıcının yanlış denemesi değildir.
     denemeyiGeriVer(hesapAnahtari);
@@ -44,7 +45,7 @@ export const sinirliGirisYap = async (
   }
   denemeleriSil(hesapAnahtari);
   denemeyiGeriVer(baglantiAnahtari);
-  gunluk.bilgi("Giriş yapıldı.", { hesapTuru: tur, eposta });
+  gunluk.bilgi("Şifre doğrulandı.", { hesapTuru: tur, eposta });
   return sonuc;
 };
 

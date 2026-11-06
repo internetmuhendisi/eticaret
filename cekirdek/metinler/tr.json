@@ -45,6 +45,28 @@
       "hataSinir": "Çok fazla deneme yapıldı. Biraz bekleyip yeniden deneyin.",
       "hataGenel": "Giriş şu an yapılamıyor. Biraz sonra yeniden deneyin."
     },
+    "kod": {
+      "baslik": "Doğrulama kodu",
+      "aciklama": "Telefonunuzdaki doğrulama uygulamasında görünen 6 haneli kodu girin. Telefonunuz yanınızda değilse yedek kodlarınızdan birini girebilirsiniz.",
+      "alan": "Doğrulama ya da yedek kodu",
+      "gonder": "Doğrula",
+      "hataKod": "Kod yanlış. Uygulamadaki güncel kodu girip yeniden deneyin.",
+      "girisDon": "Giriş sayfasına dön"
+    },
+    "kurulum": {
+      "baslik": "İki aşamalı girişi kurun",
+      "aciklama": "Yönetim paneline girmek için şifrenizin yanında telefonunuzdaki doğrulama uygulamasının kodu da gerekir. Bu adım bir kez yapılır.",
+      "adim1": "Telefonunuza bir doğrulama uygulaması kurun.",
+      "adim2": "Uygulamada yeni hesap ekleyip bu karekodu okutun.",
+      "karekod": "Doğrulama uygulaması için karekod",
+      "metinAnahtar": "Karekodu okutamıyorsanız uygulamaya bu anahtarı elle girin:",
+      "adim3": "Uygulamada görünen 6 haneli kodu girin.",
+      "alan": "Doğrulama kodu",
+      "gonder": "Onayla",
+      "yedekBaslik": "Yedek kodlarınız",
+      "yedekAciklama": "Telefonunuza ulaşamazsanız bu kodlarla girersiniz. Her kod bir kez geçer. Bir daha gösterilmezler: şimdi yazın ya da güvenli bir yere kaydedin.",
+      "devam": "Kodları kaydettim, panele geç"
+    },
     "cikis": {
       "dugme": "Çıkış yap",
       "hata": "Çıkış yapılamadı. Sayfayı yenileyip yeniden deneyin."

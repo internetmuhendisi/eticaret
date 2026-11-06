@@ -9,6 +9,8 @@ Kart 0049 sırasında `pnpm birim-testleri` bazı koşularda `cekirdek/kapi/test
 - Önce yarış ana dalda da bilerek tekrarlanır.
 - Düzeltme test koşusunu da sunucudaki kurulumu da kapsar; aynı betik ikisinde de kullanılıyor.
 
+- Çakışmada geride kalan geçici test veritabanları da temizlenir (kart 0028'in kontrolünde yerelde 9 tane görüldü).
+
 ## Sınırlar
 
 - Veritabanı ayrımı kuralları zayıflatılmaz: `template1` ve `postgres` bağlantıları kapalı kalır.

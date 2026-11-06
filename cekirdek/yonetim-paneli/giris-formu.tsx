@@ -7,6 +7,7 @@ import { GirisAlani } from "../../bilesenler/form/giris-alani";
 import { Uyari } from "../../bilesenler/form/uyari";
 import { useMetin } from "../metinler/istemci-metni";
 import { girisSemasi } from "../moduller/oturum/semalar";
+import { adimAdresi, donusParametresi } from "./adresler";
 import { stil } from "./stil";
 
 const girisUcu = "/kapi/herkese-acik/yonetici-giris";
@@ -36,7 +37,10 @@ export function GirisFormu({ donus }: { donus: string }) {
         body: JSON.stringify(girdi.data),
       });
       if (yanit.ok) {
-        window.location.assign(donus);
+        // Şifre yalnız ilk aşamadır: oturum kod ya da kurulum ekranından sonra başlar (kart 0028).
+        const { veri } = (await yanit.json()) as { veri: { sonraki: "kod" | "kurulum" } };
+        const sorgu = new URLSearchParams({ [donusParametresi]: donus });
+        window.location.assign(`${adimAdresi(veri.sonraki)}?${sorgu}`);
         return;
       }
       if (yanit.status === 429) setHata(metin("yonetim.giris.hataSinir"));

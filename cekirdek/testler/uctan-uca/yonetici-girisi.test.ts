@@ -4,32 +4,67 @@ import { execFileSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { expect, type Page, test } from "@playwright/test";
 import { altyapiAdi } from "../../kayitlar/altyapi";
-import { oturumCerezAdlari } from "../../kayitlar/oturum";
+import { girisAdimiCerezi, ikiAsamaDenemeSiniri, oturumCerezAdlari } from "../../kayitlar/oturum";
 import { metin } from "../../metinler/site-metni";
+import { kodAdimi, zamanliKod } from "../../moduller/oturum/iki-asama";
 
-const eposta = `deneme-${randomBytes(6).toString("hex")}@ornek.test`;
+// Her test kendi yöneticisini açar: bir kod ikinci kez geçmediği için aynı hesapla aynı 30 saniyede iki
+// kez girilemez (kart 0028).
+let eposta = "";
 let sifre = "";
 
 // Sıkı istek sınırı dakikada birkaç denemedir; her test kendi bağlantısından gelir.
-test.beforeEach(({ page }) =>
-  page.setExtraHTTPHeaders({
-    "x-forwarded-for": `198.51.100.${1 + ((randomBytes(1)[0] ?? 0) % 250)}`,
-  }),
-);
-
-test.beforeAll(() => {
+test.beforeEach(({ page }) => {
   const { SITE_KLASORU } = process.env;
+  eposta = `deneme-${randomBytes(6).toString("hex")}@ornek.test`;
   const cikti = execFileSync("pnpm", ["-s", "yonetici-ac", SITE_KLASORU ?? "", eposta], {
     encoding: "utf8",
   });
   sifre = /^şifre\s+(\S+)$/m.exec(cikti)?.[1] ?? "";
   expect(sifre).not.toBe("");
+  return page.setExtraHTTPHeaders({
+    "x-forwarded-for": `198.51.100.${1 + ((randomBytes(1)[0] ?? 0) % 250)}`,
+  });
 });
 
-const girisYap = async (page: Page, girilen = sifre) => {
+const sifreyleGir = async (page: Page, girilen = sifre) => {
   await page.getByLabel(metin("yonetim.giris.eposta")).fill(eposta);
   await page.getByLabel(metin("yonetim.giris.sifre")).fill(girilen);
   await page.getByRole("button", { name: metin("yonetim.giris.gonder") }).click();
+};
+
+// Karekodu okutamayanın elle gireceği anahtar: açıklamasının hemen altındadır.
+const gizliOku = async (page: Page) =>
+  (
+    await page
+      .getByText(metin("yonetim.kurulum.metinAnahtar"), { exact: true })
+      .locator("+ p")
+      .textContent()
+  )?.trim() ?? "";
+
+// Kurulum ekranındaki metin anahtardan gerçek uygulamanın üreteceği kodu üretir, kurulumu bitirir.
+const kurulumuBitir = async (page: Page) => {
+  await expect(page).toHaveURL(/\/yonetim\/giris\/kurulum/);
+  const gizli = await gizliOku(page);
+  const adim = kodAdimi();
+  await page.getByLabel(metin("yonetim.kurulum.alan")).fill(zamanliKod(gizli, adim));
+  await page.getByRole("button", { name: metin("yonetim.kurulum.gonder") }).click();
+  await expect(page.getByRole("heading", { level: 2 })).toHaveText(
+    metin("yonetim.kurulum.yedekBaslik"),
+  );
+  const yedekKodlari = await page.getByRole("listitem").allTextContents();
+  await page.getByRole("button", { name: metin("yonetim.kurulum.devam") }).click();
+  return { gizli, adim, yedekKodlari };
+};
+
+const girisYap = async (page: Page) => {
+  await sifreyleGir(page);
+  return kurulumuBitir(page);
+};
+
+const cikisYap = async (page: Page) => {
+  await page.getByRole("button", { name: metin("yonetim.cikis.dugme") }).click();
+  await expect(page).toHaveURL(/\/yonetim\/giris$/);
 };
 
 test("girişsiz panel giriş sayfasına yönlenir, altyapı adı küçük görünür", async ({ page }) => {
@@ -57,8 +92,7 @@ test("giriş yapıp boş panele ulaşır, çıkınca panele giremez", async ({ p
   await page.goto("/yonetim/giris");
   await expect(page).toHaveURL(/\/yonetim$/);
 
-  await page.getByRole("button", { name: metin("yonetim.cikis.dugme") }).click();
-  await expect(page).toHaveURL(/\/yonetim\/giris$/);
+  await cikisYap(page);
   await page.goto("/yonetim");
   await expect(page).toHaveURL(/\/yonetim\/giris$/);
 });
@@ -76,18 +110,18 @@ test("kısa anahtar dolunca panel açık kalır, yeni anahtar çereze yazılır"
   );
   const cerezler = await page.context().cookies();
   expect(cerezler.map(({ name }) => name)).toContain(kisa);
-  await page.getByRole("button", { name: metin("yonetim.cikis.dugme") }).click();
-  await expect(page).toHaveURL(/\/yonetim\/giris$/);
+  await cikisYap(page);
 });
 
-test("girişten sonra istenen sayfaya döner, başka siteye dönmez", async ({ page }) => {
+test("girişten sonra istenen sayfaya döner", async ({ page }) => {
   // Var olmayan panel adresi: dönüş doğru, ama sayfa henüz yok.
   await page.goto("/yonetim/urunler?sayfa=2");
   await expect(page).toHaveURL(/\/yonetim\/giris\?donus=%2Fyonetim%2Furunler%3Fsayfa%3D2$/);
   await girisYap(page);
   await expect(page).toHaveURL(/\/yonetim\/urunler\?sayfa=2$/);
+});
 
-  await page.context().clearCookies();
+test("başka siteye dönüş verilmişse panele döner", async ({ page }) => {
   await page.goto("/yonetim/giris?donus=https://kotu.test/");
   await girisYap(page);
   await expect(page).toHaveURL(/\/yonetim$/);
@@ -95,7 +129,7 @@ test("girişten sonra istenen sayfaya döner, başka siteye dönmez", async ({ p
 
 test("yanlış şifrede uyarı yazıyla görünür, sayfada kalır", async ({ page }) => {
   await page.goto("/yonetim/giris");
-  await girisYap(page, "yanlis-bir-sifre-burada");
+  await sifreyleGir(page, "yanlis-bir-sifre-burada");
   await expect(page.getByText(metin("yonetim.giris.hataBilgi"), { exact: true })).toHaveRole(
     "alert",
   );
@@ -112,7 +146,102 @@ test("yalnız klavyeyle doldurulur ve gönderilir", async ({ page }) => {
   await page.keyboard.press("Tab");
   await expect(page.getByRole("button", { name: metin("yonetim.giris.gonder") })).toBeFocused();
   await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/yonetim\/giris\/kurulum/);
+  // Kod alanı odakla açılır: kurulum da klavyeyle bitirilir.
+  const gizli = await gizliOku(page);
+  await expect(page.getByLabel(metin("yonetim.kurulum.alan"))).toBeFocused();
+  await page.keyboard.type(zamanliKod(gizli, kodAdimi()));
+  await page.keyboard.press("Enter");
+  const devam = page.getByRole("button", { name: metin("yonetim.kurulum.devam") });
+  await devam.focus();
+  await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/yonetim$/);
+});
+
+test("kurulumu olmayan yönetici panele geçemez, kurulum ekranına döner", async ({ page }) => {
+  await page.goto("/yonetim/giris");
+  await sifreyleGir(page);
+  await expect(page).toHaveURL(/\/yonetim\/giris\/kurulum/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(metin("yonetim.kurulum.baslik"));
+  await expect(page.getByRole("img", { name: metin("yonetim.kurulum.karekod") })).toBeVisible();
+  for (const adres of ["/yonetim", "/yonetim/urunler", "/yonetim/giris/kod"]) {
+    await page.goto(adres);
+    await expect(page).toHaveURL(/\/yonetim\/giris\/kurulum/);
+  }
+  const cerezler = await page.context().cookies();
+  expect(cerezler.map(({ name }) => name)).toEqual([girisAdimiCerezi]);
+  // Sayfa yenilenince karekodun anahtarı değişmez.
+  const gizli = await gizliOku(page);
+  await page.reload();
+  expect(await gizliOku(page)).toBe(gizli);
+});
+
+test("kurulumlu yönetici yalnız şifreyle giremez, kodla girer; yanlış kod sayfada uyarı olur", async ({
+  page,
+}) => {
+  await page.goto("/yonetim/giris");
+  const { gizli, adim } = await girisYap(page);
+  await expect(page).toHaveURL(/\/yonetim$/);
+  await cikisYap(page);
+
+  await sifreyleGir(page);
+  await expect(page).toHaveURL(/\/yonetim\/giris\/kod/);
+  await page.goto("/yonetim");
+  await expect(page).toHaveURL(/\/yonetim\/giris\/kod/);
+  const alan = page.getByLabel(metin("yonetim.kod.alan"));
+  const dogru = zamanliKod(gizli, adim + 1);
+  await alan.fill(dogru === "000000" ? "111111" : "000000");
+  await page.getByRole("button", { name: metin("yonetim.kod.gonder") }).click();
+  await expect(page.getByText(metin("yonetim.kod.hataKod"), { exact: true })).toHaveRole("alert");
+  await expect(page).toHaveURL(/\/yonetim\/giris\/kod/);
+  await alan.fill(dogru);
+  await page.getByRole("button", { name: metin("yonetim.kod.gonder") }).click();
+  await expect(page).toHaveURL(/\/yonetim$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    metin("yonetim.anasayfa.baslik"),
+  );
+});
+
+test("yedek kodla girilir, aynı kod ikinci kez reddedilir", async ({ page }) => {
+  await page.goto("/yonetim/giris");
+  const { yedekKodlari } = await girisYap(page);
+  await expect(page).toHaveURL(/\/yonetim$/);
+  await cikisYap(page);
+  const [kod] = yedekKodlari;
+  const gonder = page.getByRole("button", { name: metin("yonetim.kod.gonder") });
+
+  await sifreyleGir(page);
+  await page.getByLabel(metin("yonetim.kod.alan")).fill(kod ?? "");
+  await gonder.click();
+  await expect(page).toHaveURL(/\/yonetim$/);
+  await cikisYap(page);
+
+  await sifreyleGir(page);
+  await page.getByLabel(metin("yonetim.kod.alan")).fill(kod ?? "");
+  await gonder.click();
+  await expect(page.getByText(metin("yonetim.kod.hataKod"), { exact: true })).toHaveRole("alert");
+  await expect(page).toHaveURL(/\/yonetim\/giris\/kod/);
+});
+
+test("kod denemesi sınırı gerçek uygulamada dolar", async ({ page }) => {
+  await page.goto("/yonetim/giris");
+  const { gizli, adim } = await girisYap(page);
+  await expect(page).toHaveURL(/\/yonetim$/);
+  await cikisYap(page);
+  await sifreyleGir(page);
+  await expect(page).toHaveURL(/\/yonetim\/giris\/kod/);
+  const dogru = zamanliKod(gizli, adim + 1);
+  const yanlis = dogru === "000000" ? "111111" : "000000";
+  // Her istek kendi bağlantısından: sayılan, dakikalık istek sınırı değil hesap sınırı olsun.
+  const gonder = (kod: string, sira: number) =>
+    page.request.post("/kapi/herkese-acik/yonetici-kod", {
+      data: { kod },
+      headers: { "x-forwarded-for": `203.0.113.${sira + 1}` },
+    });
+  for (let sira = 0; sira < ikiAsamaDenemeSiniri.hesap.deneme; sira += 1) {
+    expect((await gonder(yanlis, sira)).status()).toBe(401);
+  }
+  expect((await gonder(dogru, 100)).status()).toBe(429);
 });
 
 for (const [ad, width, height] of [
@@ -132,5 +261,31 @@ for (const [ad, width, height] of [
     for (const alan of ["yonetim.giris.eposta", "yonetim.giris.sifre"] as const) {
       await expect(page.getByLabel(metin(alan))).toBeInViewport();
     }
+  });
+}
+
+for (const [ad, width, height] of [
+  ["telefon", 375, 667],
+  ["tablet", 768, 1024],
+  ["bilgisayar", 1280, 800],
+] as const) {
+  test(`kurulum ve yedek kod ekranı ${ad} genişliğinde yana kaymaz`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto("/yonetim/giris");
+    await sifreyleGir(page);
+    await expect(page).toHaveURL(/\/yonetim\/giris\/kurulum/);
+    const yana = () => page.evaluate(() => document.documentElement.scrollWidth);
+    expect(await yana()).toBeLessThanOrEqual(width);
+    const karekod = await page
+      .getByRole("img", { name: metin("yonetim.kurulum.karekod") })
+      .boundingBox();
+    expect(karekod?.width).toBeGreaterThanOrEqual(150);
+    const gizli = await gizliOku(page);
+    await page.getByLabel(metin("yonetim.kurulum.alan")).fill(zamanliKod(gizli, kodAdimi()));
+    await page.getByRole("button", { name: metin("yonetim.kurulum.gonder") }).click();
+    const devam = page.getByRole("button", { name: metin("yonetim.kurulum.devam") });
+    await expect(devam).toBeVisible();
+    expect(await yana()).toBeLessThanOrEqual(width);
+    expect((await devam.boundingBox())?.height).toBeGreaterThanOrEqual(44);
   });
 }

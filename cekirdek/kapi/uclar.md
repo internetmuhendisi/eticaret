@@ -71,17 +71,37 @@ Veritabanı 5 saniye içinde cevap vermezse yanıt 503 olur.
 
 ### POST /kapi/herkese-acik/yonetici-giris
 
-Mağaza yöneticisini giriş yaptırır, oturum çerezlerini yazar. Girişi yapılmamış kişi izin taşıyamayacağı için herkese açık giriştedir (karar 0042).
+Girişin ilk aşaması: şifreyi doğrular, oturum değil ara adım açar (karar 0044). Girişi yapılmamış kişi izin taşıyamayacağı için herkese açık giriştedir (karar 0042).
 
 - İzin: `herkese-acik`. Sınır: `siki`. Ayrıca yanlış denemeler hesap ve bağlantı başına sayılır (`girisDenemeSiniri`, `cekirdek/kayitlar/oturum.ts`).
 - Girdi: `{ "eposta", "sifre" }` (`girisSemasi`, `cekirdek/moduller/oturum/semalar.ts`).
-- Servis: `cekirdek/moduller/oturum/giris.ts`.
-- Başarılı (200): `{ "basarili": true, "veri": {} }` ve iki oturum çerezi.
+- Servis: `cekirdek/moduller/oturum/iki-asamali-giris.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "sonraki": "kod" | "kurulum" } }` ve ara adım çerezi. Oturum çerezi yazılmaz.
 - Hatalar: `giris-hatasi` (yanlış e-posta ya da şifre), `istek-siniri` (`Retry-After` ile), `dogrulama` (e-posta biçimi, boş ya da çok uzun şifre, fazla alan, bozuk gövde), `yetki` (sahte istek).
+
+### POST /kapi/herkese-acik/yonetici-kod
+
+Girişin ikinci aşaması: zamanlı kod ya da yedek kod doğruysa oturum açar, ara adımı kapatır. Yetki ara adım çerezinden gelir (karar 0044).
+
+- İzin: `herkese-acik`. Sınır: `siki`. Ayrıca yanlış kodlar hesap ve bağlantı başına sayılır (`ikiAsamaDenemeSiniri`).
+- Girdi: `{ "kod" }` (`kodSemasi`).
+- Servis: `cekirdek/moduller/oturum/iki-asamali-giris.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`, iki oturum çerezi ve ara adım çerezini silen başlık.
+- Hatalar: `giris-hatasi` (yanlış ya da kullanılmış kod), `oturum-yok` (ara adım yok ya da süresi dolmuş), `is-kurali` (kurulum bitmemiş), `istek-siniri` (`Retry-After` ile), `dogrulama`, `yetki` (sahte istek).
+
+### POST /kapi/herkese-acik/yonetici-kurulum-onay
+
+İki aşamalı girişin kurulumunu ilk kodla bitirir, yedek kodları bir kez döner, oturum açar. Yetki ara adım çerezinden gelir (karar 0044).
+
+- İzin: `herkese-acik`. Sınır: `siki`. Ayrıca yanlış kodlar hesap ve bağlantı başına sayılır (`ikiAsamaDenemeSiniri`).
+- Girdi: `{ "kod" }` (`kodSemasi`).
+- Servis: `cekirdek/moduller/oturum/iki-asamali-giris.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "yedekKodlari": ["..."] } }`, iki oturum çerezi ve ara adım çerezini silen başlık.
+- Hatalar: `giris-hatasi` (yanlış kod), `oturum-yok` (ara adım yok ya da süresi dolmuş), `is-kurali` (kurulum zaten bitmiş ya da kurulum ekranı açılmamış), `istek-siniri` (`Retry-After` ile), `dogrulama`, `yetki` (sahte istek).
 
 ### POST /kapi/herkese-acik/yonetici-cikis
 
-Oturumu kapatır, çerezleri siler. Rolü olmayan yönetici de çıkabilsin, süresi dolmuş oturumun çerezleri de silinsin diye izin istemez.
+Oturumu ve ara adımı kapatır, çerezleri siler. Rolü olmayan yönetici de çıkabilsin, süresi dolmuş oturumun çerezleri de silinsin diye izin istemez.
 
 - İzin: `herkese-acik`. Sınır: `genel`.
 - Girdi: yok. Oturum yoksa da 200 döner.

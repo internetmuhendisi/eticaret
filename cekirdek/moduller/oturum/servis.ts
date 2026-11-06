@@ -3,7 +3,7 @@
 // Anahtarlar rastgele üretilir, veritabanında yalnız özetleri durur. Her site kendi veritabanını
 // kullandığı için bir sitenin anahtarı başka sitede bulunamaz.
 import { createHash, randomBytes } from "node:crypto";
-import { and, eq, gt, isNull, or } from "drizzle-orm";
+import { and, eq, gt, isNotNull, isNull, or, type SQL } from "drizzle-orm";
 import { gunluk } from "../../izleme/gunluk.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import {
@@ -21,6 +21,11 @@ const tablolar = {
   yonetici: { hesap: yoneticiler, oturum: yoneticiOturumlari },
   musteri: { hesap: musteriler, oturum: musteriOturumlari },
 } as const;
+
+// Yönetici oturumu yalnız iki aşamadan geçtiyse geçerlidir: eski sürümün şifreyle açtığı oturum
+// (yayın aralığında, geri dönüşte) burada elenir (karar 0044).
+const gecerliOturumSarti = (tur: HesapTuru): SQL | undefined =>
+  tur === "yonetici" ? isNotNull(yoneticiOturumlari.iki_asama_zamani) : undefined;
 
 export type Anahtarlar = { kisaAnahtar: string; yenilemeAnahtari: string };
 
@@ -78,14 +83,13 @@ export const hesapAc = async (
   return { hesapKimligi: acilan.kimlik };
 };
 
-// Doğru şifrede oturum açar. Yanlış şifre ile kayıtlı olmayan e-postanın sonucu ve süresi aynıdır.
-export const girisYap = async (
+// Şifreyi doğrular, oturum açmaz. Yanlış şifre ile kayıtlı olmayan e-postanın sonucu ve süresi aynıdır.
+export const hesapSifresiniDogrula = async (
   vt: Veritabani,
   tur: HesapTuru,
   girdi: { eposta: string; sifre: string },
-  sureSaniye: number,
-): Promise<{ hesapKimligi: string; anahtarlar: Anahtarlar } | null> => {
-  const { hesap, oturum } = tablolar[tur];
+): Promise<{ hesapKimligi: string } | null> => {
+  const { hesap } = tablolar[tur];
   const eposta = epostaSemasi.safeParse(girdi.eposta);
   const [bulunan] = eposta.success
     ? await vt
@@ -105,9 +109,37 @@ export const girisYap = async (
       .set({ sifre_ozeti: await sifreOzetle(girdi.sifre), guncellenme_zamani: new Date() })
       .where(eq(hesap.kimlik, bulunan.kimlik));
   }
+  return { hesapKimligi: bulunan.kimlik };
+};
+
+// Oturum açar. Şifreden geçmiş kimlikle çağrılır. Yönetici için yalnız iki aşamalı giriş çağırır
+// (iki-asamali-giris.ts, cekirdek/kapi/testler/iki-asamali-giris.test.ts denetler).
+export const oturumAc = async (
+  vt: Pick<Veritabani, "insert">,
+  tur: HesapTuru,
+  hesapKimligi: string,
+  sureSaniye: number,
+): Promise<Anahtarlar> => {
+  const { oturum } = tablolar[tur];
   const { anahtarlar, alanlar } = yeniAnahtarlar(sureSaniye);
-  await vt.insert(oturum).values({ hesap_kimligi: bulunan.kimlik, ...alanlar });
-  return { hesapKimligi: bulunan.kimlik, anahtarlar };
+  await vt.insert(oturum).values({
+    hesap_kimligi: hesapKimligi,
+    ...alanlar,
+    ...(tur === "yonetici" ? { iki_asama_zamani: new Date() } : {}),
+  });
+  return anahtarlar;
+};
+
+// Şifre doğruysa oturum açar. Motor testleri içindir; uygulamada yönetici oturumu kodsuz açılmaz.
+export const girisYap = async (
+  vt: Veritabani,
+  tur: HesapTuru,
+  girdi: { eposta: string; sifre: string },
+  sureSaniye: number,
+): Promise<{ hesapKimligi: string; anahtarlar: Anahtarlar } | null> => {
+  const bulunan = await hesapSifresiniDogrula(vt, tur, girdi);
+  if (bulunan === null) return null;
+  return { ...bulunan, anahtarlar: await oturumAc(vt, tur, bulunan.hesapKimligi, sureSaniye) };
 };
 
 // Kısa anahtar geçerliyse hesabın kimliğini döner.
@@ -129,6 +161,7 @@ export const oturumuDogrula = async (
         gt(oturum.kisa_anahtar_bitis, simdi),
         gt(oturum.oturum_bitis, simdi),
         isNull(hesap.silinme_zamani),
+        gecerliOturumSarti(tur),
       ),
     );
   return bulunan ?? null;
@@ -157,7 +190,12 @@ export const oturumuYenile = async (
       })
       .from(oturum)
       .innerJoin(hesap, eq(hesap.kimlik, oturum.hesap_kimligi))
-      .where(or(eq(oturum.yenileme_anahtari_ozeti, ozet), eq(oturum.onceki_yenileme_ozeti, ozet)))
+      .where(
+        and(
+          or(eq(oturum.yenileme_anahtari_ozeti, ozet), eq(oturum.onceki_yenileme_ozeti, ozet)),
+          gecerliOturumSarti(tur),
+        ),
+      )
       .for("update", { of: oturum });
 
     const simdi = new Date();
@@ -259,6 +297,7 @@ export const oturumAcikMi = async (
         isNull(oturum.kapanma_zamani),
         gt(oturum.oturum_bitis, simdi),
         isNull(hesap.silinme_zamani),
+        gecerliOturumSarti(tur),
         or(
           eq(oturum.yenileme_anahtari_ozeti, ozet),
           and(

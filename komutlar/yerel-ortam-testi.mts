@@ -197,6 +197,8 @@ const calistir = async (): Promise<void> => {
       ["//yonetim", {}],
       ["/./yonetim", {}],
       ["/yonetim/", {}],
+      ["/yonetim/giris/kurulum", {}],
+      ["/yonetim/giris/kod", {}],
       [
         "/yonetim",
         { "x-middleware-subrequest": "src/proxy:src/proxy:src/proxy:src/proxy:src/proxy" },

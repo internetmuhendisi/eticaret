@@ -12,4 +12,13 @@ export const girisSemasi = z.strictObject({
   sifre: z.string().min(1).max(sifreSiniri.enUzun),
 });
 
+// İki aşamalı girişin kodu: 6 haneli zamanlı kod ya da yedek kod. Araya konan boşluk atılır.
+export const kodSemasi = z.strictObject({
+  kod: z
+    .string()
+    .max(32)
+    .transform((kod) => kod.replace(/\s/g, ""))
+    .pipe(z.string().min(1)),
+});
+
 export const sifreSemasi = z.string().min(sifreSiniri.enKisa).max(sifreSiniri.enUzun);

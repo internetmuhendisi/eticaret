@@ -55,6 +55,11 @@ describe("üretme betiği", () => {
   it("var olanı yenilemez, yenile ile yeniler", () => {
     expect(betik).toContain("[ hayir = evet ]");
     expect(uretmeBetigi("canli", "ornek-magaza", 1, { yenile: true })).toContain("[ evet = evet ]");
+    // İki aşamalı giriş anahtarı yenilenirse şifreli gizliler açılamaz: yenileme ona dokunmaz.
+    const yenileme = uretmeBetigi("canli", "ornek-magaza", 1, { yenile: true });
+    expect(yenileme).toContain("yenilendi   canli/ornek-magaza/veritabani_adresi");
+    expect(yenileme).toContain("üretildi    canli/ornek-magaza/iki_asama_anahtari");
+    expect(yenileme.match(/\[ evet = evet \]/g)).toHaveLength(1);
   });
 
   it("dosyanın durumu okunamazsa hiçbir şeye dokunmadan durur", () => {
@@ -120,14 +125,17 @@ describe("kutunun gizli bilgi tanımı", () => {
     expect(tanim.servis.user).toBe("20001:20001");
     expect(Object.values(tanim.gizliler)).toEqual([
       { file: "/srv/altyapi/gizli/canli/ornek-magaza/veritabani_adresi" },
+      { file: "/srv/altyapi/gizli/canli/ornek-magaza/iki_asama_anahtari" },
     ]);
     expect(tanim.servis.environment).toEqual({
       VERITABANI_ADRESI_DOSYASI: "/run/secrets/veritabani_adresi",
+      IKI_ASAMA_ANAHTARI_DOSYASI: "/run/secrets/iki_asama_anahtari",
     });
   });
 
   it("değeri ortam değişkenine koymaz", () => {
     expect(Object.keys(tanim.servis.environment)).not.toContain("VERITABANI_ADRESI");
+    expect(Object.keys(tanim.servis.environment)).not.toContain("IKI_ASAMA_ANAHTARI");
   });
 
   it("iki sitenin ve iki ortamın tanımı çakışmaz", () => {

@@ -42,6 +42,7 @@ const degerler: Record<string, string> = {
   VERITABANI_PORTU: veritabaniPortu,
   VERITABANI_YONETICI_SIFRESI: sifre(),
   VERITABANI_ADRESI: adres.href,
+  IKI_ASAMA_ANAHTARI: randomBytes(32).toString("hex"),
   YEREL_ORTAM_PORTU: port("YEREL_ORTAM_PORTU"),
   // Hatta Hetzner anahtarı bilerek yoktur: sunucu denetimi hatta çalışmaz (karar 0030).
   HETZNER_ANAHTARI: "",

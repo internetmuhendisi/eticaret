@@ -2,7 +2,13 @@
 // dolduysa yenileme anahtarıyla sessizce yenilenir; müşteri ya da yönetici fark etmez.
 // Kapının izin kontrolü (izin-kontrolu.ts) bunun üstüne kuruludur.
 import type { SiteAyarlari } from "../ayar-semasi/ayarlar.ts";
-import { type HesapTuru, kisaAnahtarSuresiSaniye, oturumCerezAdlari } from "../kayitlar/oturum.ts";
+import {
+  girisAdimiCerezi,
+  girisAdimiSuresiSaniye,
+  type HesapTuru,
+  kisaAnahtarSuresiSaniye,
+  oturumCerezAdlari,
+} from "../kayitlar/oturum.ts";
 import { type Anahtarlar, oturumuDogrula, oturumuYenile } from "../moduller/oturum/servis.ts";
 import type { Veritabani } from "../veritabani/baglanti.ts";
 
@@ -22,6 +28,11 @@ export const oturumCerezleriniSil = (tur: HesapTuru): string[] => [
   cerez(oturumCerezAdlari[tur].kisa, "", 0),
   cerez(oturumCerezAdlari[tur].yenileme, "", 0),
 ];
+
+// Şifreden sonraki ara adımın çerezi (kart 0028). Oturum değildir, panele girmez.
+export const girisAdimiCereziYaz = (anahtar: string): string =>
+  cerez(girisAdimiCerezi, anahtar, girisAdimiSuresiSaniye);
+export const girisAdimiCereziniSil = (): string => cerez(girisAdimiCerezi, "", 0);
 
 // Çerez başlığında yalnız boşluk ve sekme kırpılır; trim() başka karakterleri de siler,
 // "\xA0__Host-..." gibi bir ad da __Host- çerezi sanılırdı.
