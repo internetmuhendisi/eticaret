@@ -34,21 +34,27 @@ const kok = join(import.meta.dirname, "..");
 export const veritabaniAcmaBetigi = (): string =>
   readFileSync(join(import.meta.dirname, "site-veritabani-ac.sql"), "utf8");
 
+// Yerel kutuda açma betiğini çalıştıran komut. Şifre psql'e ortam değişkeniyle geçer, komut
+// satırında görünmez.
+export const veritabaniAcmaKomutu = (ad: string, sifre: string) => ({
+  komut: "docker",
+  argumanlar: [
+    ...["compose", "-f", join(kok, "sunucu", "compose.yaml"), "--env-file", join(kok, ".env")],
+    ...["exec", "-T", "-e", "SITE_VERITABANI_SIFRESI", "veritabani"],
+    ...["psql", "-U", "postgres", "-d", "postgres", "-q", "-v", `ad=${ad}`, "-f", "-"],
+  ],
+  girdi: `\\getenv sifre SITE_VERITABANI_SIFRESI\n${veritabaniAcmaBetigi()}`,
+  ortam: { ...process.env, SITE_VERITABANI_SIFRESI: sifre },
+});
+
 // Yerel PostgreSQL kutusunda veritabanını ve kullanıcısını açar (site-veritabani-ac.sql).
-// Şifre psql'e ortam değişkeniyle geçer, komut satırında görünmez. Başarılıysa true döner.
+// Başarılıysa true döner.
 export const veritabaniVeKullaniciAc = (ad: string, sifre: string): boolean => {
-  const sonuc = spawnSync(
-    "docker",
-    [
-      ...["compose", "-f", join(kok, "sunucu", "compose.yaml"), "--env-file", join(kok, ".env")],
-      ...["exec", "-T", "-e", "SITE_VERITABANI_SIFRESI", "veritabani"],
-      ...["psql", "-U", "postgres", "-d", "postgres", "-q", "-v", `ad=${ad}`, "-f", "-"],
-    ],
-    {
-      input: `\\getenv sifre SITE_VERITABANI_SIFRESI\n${veritabaniAcmaBetigi()}`,
-      env: { ...process.env, SITE_VERITABANI_SIFRESI: sifre },
-      stdio: ["pipe", "inherit", "inherit"],
-    },
-  );
+  const { komut, argumanlar, girdi, ortam } = veritabaniAcmaKomutu(ad, sifre);
+  const sonuc = spawnSync(komut, argumanlar, {
+    input: girdi,
+    env: ortam,
+    stdio: ["pipe", "inherit", "inherit"],
+  });
   return sonuc.status === 0;
 };

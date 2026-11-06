@@ -3,7 +3,6 @@
 import { randomBytes } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { veritabaniVeKullaniciAc } from "../../../../komutlar/site-veritabani.mts";
 import { ayarSemasi, type SiteAyarlari } from "../../../ayar-semasi/ayarlar.ts";
 import { gunluk } from "../../../izleme/gunluk.ts";
 import { gizliIsareti, maskele } from "../../../izleme/maskele.ts";
@@ -23,6 +22,7 @@ import {
 import { baglan, siteVeritabaniAdi, type Veritabani } from "../../../veritabani/baglanti.ts";
 import { siteVeritabaniniGuncelle } from "../../../veritabani/guncelle.ts";
 import { adres, yoneticiAdresi } from "../../../veritabani/testler/adresler.ts";
+import { denemeVeritabaniAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { yoneticiler, yoneticiOturumlari } from "../../ekip/model.ts";
 import { musteriler, musteriOturumlari } from "../../musteri/model.ts";
 import {
@@ -52,12 +52,10 @@ const siteAc = async (harf: string): Promise<Veritabani> => {
   const kodAdi = `oturum-${harf}-${ek}`;
   const ad = siteVeritabaniAdi(kodAdi);
   const veritabaniSifresi = randomBytes(24).toString("base64url");
-  if (!veritabaniVeKullaniciAc(ad, veritabaniSifresi)) {
-    throw new Error(`${ad} açılamadı. Veritabanı kutusu açık mı? (pnpm veritabani-baslat)`);
-  }
+  await denemeVeritabaniAc(ad, veritabaniSifresi);
   const vt = baglan(adres(ad, veritabaniSifresi, ad));
-  await siteVeritabaniniGuncelle(vt, kodAdi);
   siteler.push({ ad, vt });
+  await siteVeritabaniniGuncelle(vt, kodAdi);
   return vt;
 };
 

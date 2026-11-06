@@ -32,3 +32,4 @@ paths:
 - Sunucuda (karar 0034): `pnpm sunucu-veritabani siteler/<kod-adi> <ortam>` veritabanını açar ve değişiklikleri sitenin kendi kutu kullanıcısıyla uygular. Değişiklikleri uygulayan parça çekirdeğin görüntüsündedir (`cekirdek/veritabani/sunucuda-guncelle.ts`); yeni değişiklik eklenince görüntü yeniden üretilir.
 - Tablolar `cekirdek/veritabani/tablolar/` ve `cekirdek/moduller/*/model.ts` dosyalarındadır; değişiklik üreten araç ikisini de okur.
 - Veri ayrımı iki katmanlıdır: veritabanının izinleri (`komutlar/site-veritabani-ac.sql`) ve bağlantı kuralları (`sunucu/veritabani/pg_hba.conf`, karar 0023). İkisini `cekirdek/testler/veri-ayrimi.test.ts` ayrı ayrı denetler.
+- Açma betiği paralel çalışabilir: bütün sitelerde ortak izin kayıtları kilitle sırayla değişir (karar 0048). Geçici test veritabanını `denemeVeritabaniAc` açar, yarıda kalan açma artık bırakmaz.

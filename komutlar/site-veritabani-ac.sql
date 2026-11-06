@@ -28,5 +28,10 @@ SELECT NOT EXISTS (SELECT FROM pg_database WHERE datname = :'ad') AS veritabani_
 -- Sitenin kullanıcısı yalnız kendi veritabanına bağlanır, PostgreSQL'in kendi veritabanlarına da giremez.
 REVOKE ALL ON DATABASE :"ad" FROM PUBLIC;
 GRANT CONNECT, TEMPORARY ON DATABASE :"ad" TO :"ad";
+-- Bu iki kayıt bütün sitelerde ortaktır. Aynı anda değiştirilirse PostgreSQL "tuple concurrently
+-- updated" hatası verir (karar 0048), bu yüzden kilitle sırayla değiştirilir. Kilit işlem bitince kalkar.
+BEGIN;
+SELECT pg_advisory_xact_lock(hashtext('site-veritabani-ac')) \gset
 REVOKE CONNECT ON DATABASE postgres FROM PUBLIC;
 REVOKE CONNECT ON DATABASE template1 FROM PUBLIC;
+COMMIT;

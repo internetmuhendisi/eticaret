@@ -63,16 +63,20 @@ describe("şifre özeti", () => {
   it("sahte doğrulama gerçek doğrulama kadar sürer: e-posta süreden anlaşılmaz", async () => {
     const ozet = await sifreOzetle("uzun-bir-deneme-sifresi");
     const olc = async (is: () => Promise<unknown>) => {
-      const sureler: number[] = [];
-      for (let i = 0; i < 5; i += 1) {
-        const baslangic = performance.now();
-        await is();
-        sureler.push(performance.now() - baslangic);
-      }
-      return Math.min(...sureler);
+      const baslangic = performance.now();
+      await is();
+      return performance.now() - baslangic;
     };
-    const gercek = await olc(() => sifreDogrula("yanlis-sifre-deneme", ozet));
-    const sahte = await olc(() => sahteDogrulama("yanlis-sifre-deneme"));
+    // Ölçümler sırayla ve çok tekrarla alınır: paralel testlerin yükü ikisine de aynı biner, en
+    // kısa süre gerçek hesabın süresine yaklaşır (karar 0048).
+    const gercekler: number[] = [];
+    const sahteler: number[] = [];
+    for (let i = 0; i < 20; i += 1) {
+      gercekler.push(await olc(() => sifreDogrula("yanlis-sifre-deneme", ozet)));
+      sahteler.push(await olc(() => sahteDogrulama("yanlis-sifre-deneme")));
+    }
+    const gercek = Math.min(...gercekler);
+    const sahte = Math.min(...sahteler);
     expect(sahte).toBeGreaterThan(gercek / 2);
     expect(sahte).toBeLessThan(gercek * 2);
   });

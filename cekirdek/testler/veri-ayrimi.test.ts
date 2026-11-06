@@ -10,11 +10,11 @@ import { join } from "node:path";
 import { sql } from "drizzle-orm";
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { veritabaniVeKullaniciAc } from "../../komutlar/site-veritabani.mts";
 import { baglan, siteVeritabaniAdi, type Veritabani } from "../veritabani/baglanti";
 import { siteVeritabaniniGuncelle } from "../veritabani/guncelle";
 import { veritabaniKimligi } from "../veritabani/tablolar/veritabani-kimligi";
 import { adres, yoneticiAdresi } from "../veritabani/testler/adresler";
+import { denemeVeritabaniAc } from "../veritabani/testler/deneme-sitesi.ts";
 
 const kok = join(import.meta.dirname, "..", "..");
 const ek = randomBytes(4).toString("hex");
@@ -53,9 +53,7 @@ const dene = async (kullanici: string, sifre: string, veritabani: string, sorgu 
 
 beforeAll(async () => {
   for (const site of [a, b]) {
-    if (!veritabaniVeKullaniciAc(site.ad, site.sifre)) {
-      throw new Error(`${site.ad} açılamadı. Veritabanı kutusu açık mı? (pnpm veritabani-baslat)`);
-    }
+    await denemeVeritabaniAc(site.ad, site.sifre);
     const veritabani = baglan(adres(site.ad, site.sifre, site.ad));
     baglantilar.push(veritabani);
     await siteVeritabaniniGuncelle(veritabani, site.kodAdi);
