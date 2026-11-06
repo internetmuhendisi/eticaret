@@ -14,6 +14,7 @@ Mağaza sahibi ve ekibi `/yonetim/giris` adresinden panele girer. Girmeyen kimse
 - Yanlış girişte e-postanın kayıtlı olup olmadığı belli edilmez.
 - İlk yönetici hesabını açan bir komut. Örnek Mağaza'ya deneme yöneticisi bununla açılır, şifresi kayda girmez.
 - İlk yönetici hesabını açan komut hesaba tam yetkili rolü de verir (`rolVer`); rolsüz hesap her izinli uçta `yetki` alır ve rol ucu olmadığı için düzeltilemez (karar 0040).
+- Giriş ucunun istek sınırı `POST` ile ve kodlanmış yol yazılışlarıyla ölçülür; yerel ortam denemesindeki ölçüm yalnız `GET` iledir (karar 0041).
 - Giriş, çıkış ve başarısız denemeler günlüğe kısaltılmış e-postayla yazılır.
 - Oturum `istektenOturumAl` ile yalnız çerez yazabilen yerde (uç, ara katman) okunur; sayfa çizerken okunursa oturum kapanır (karar 0039).
 

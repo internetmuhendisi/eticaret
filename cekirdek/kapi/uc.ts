@@ -6,7 +6,7 @@ import type { z } from "zod";
 import { hatayiKaydet } from "../izleme/hata-katmani.ts";
 import type { GirisIzni, HerkeseAcik, IzinAdi } from "../kayitlar/izinler.ts";
 import type { IstekSiniri, Kapi } from "../kayitlar/kapi.ts";
-import { istegiSay, istemciAdresi } from "./istek-siniri.ts";
+import { istegiSay, istemciAdresi, sayacAdresi } from "./istek-siniri.ts";
 import { erisimiDenetle, type UcErisimi } from "./izin-kontrolu.ts";
 import { sahteIstekMi } from "./sahte-istek.ts";
 import { BilinenHata, basariliYanit, hataliYanit } from "./zarf.ts";
@@ -65,7 +65,10 @@ export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
       if (sahteIstekMi(istek)) return hataliYanit("yetki");
 
       const { pathname } = new URL(istek.url);
-      const sinir = istegiSay(`${istek.method} ${pathname} ${istemciAdresi(istek)}`, tanim.sinir);
+      const sinir = istegiSay(
+        `${istek.method} ${pathname} ${sayacAdresi(istemciAdresi(istek))}`,
+        tanim.sinir,
+      );
       if (!sinir.izinli) {
         return hataliYanit("istek-siniri", undefined, {
           "Retry-After": String(sinir.bekleSaniye),

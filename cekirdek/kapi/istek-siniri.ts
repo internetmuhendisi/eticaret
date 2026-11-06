@@ -1,5 +1,6 @@
 // İstek sınırının ortak yeri (karar 0024). Sayaçlar bellekte durur: her site tek kutuda,
 // tek süreçte çalışır. Pencere sabittir: sürenin başında sayaç sıfırlanır.
+import { isIP } from "node:net";
 import { type IstekSiniri, istekSinirlari } from "../kayitlar/kapi.ts";
 
 type Sayac = { bitis: number; sayi: number };
@@ -42,3 +43,33 @@ export const istegiSay = (
 // X-Forwarded-For başlığının son değerini o yazar. Başlık yoksa istek bu bilgisayardandır.
 export const istemciAdresi = (istek: Request): string =>
   istek.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim() || "yerel";
+
+// IPv6 adresini sekiz parçaya açar. URL ayrıştırıcısı yazılışı tek biçime indirir: küçük harf,
+// noktalı IPv4 kuyruğu onaltılık.
+const ipv6Parcalari = (adres: string): string[] => {
+  const yalin = new URL(`http://[${adres}]`).hostname.slice(1, -1);
+  const [bas, son] = yalin.split("::").map((kisim) => kisim.split(":").filter(Boolean));
+  if (bas === undefined || son === undefined) return bas ?? [];
+  return [...bas, ...Array<string>(8 - bas.length - son.length).fill("0"), ...son];
+};
+
+// Sayaçta istemciyi tanıyan değer (karar 0041). IPv4 tam adresle, IPv6 ilk 64 bitiyle sayılır: bir
+// bağlantının elinde milyarlarca IPv6 adresi vardır, tam adresle saymak sınırı anlamsız kılardı.
+// IPv4'ün IPv6 yazılışı (::ffff:1.2.3.4) aynı adrestir, IPv4 sayılır. Adres olmayan değer
+// (doğrudan erişimde "yerel") olduğu gibi kalır.
+export const sayacAdresi = (adres: string): string => {
+  const [yalin = ""] = adres.split("%");
+  if (isIP(yalin) !== 6) return adres;
+  const parcalar = ipv6Parcalari(yalin);
+  const ipv4Mu = parcalar.slice(0, 5).every((parca) => parca === "0") && parcalar[5] === "ffff";
+  if (ipv4Mu) {
+    return parcalar
+      .slice(6)
+      .flatMap((parca) => {
+        const deger = Number.parseInt(parca, 16);
+        return [deger >> 8, deger & 255];
+      })
+      .join(".");
+  }
+  return `${parcalar.slice(0, 4).join(":")}::/64`;
+};

@@ -5,6 +5,7 @@
 //   - her kutu yalnız kendi veritabanına bağlanır, ötekinin veritabanına giremez;
 //   - site kutularının portu dışarıya açık değildir;
 //   - istemcinin yazdığı sahte X-Forwarded-For başlığı istek sınırını aşamaz (karar 0024);
+//   - sınır doluyken aynı ucun kodlanmış ve başka yazılışları geçmez (karar 0041);
 //   - ortamın her kutusu Docker yeniden başlayınca kendiliğinden açılır (kart 0038).
 // Sonunda ortamı kapatır ve deneme sitesini siler. Bir ölçüm kalırsa kırmızı biter.
 // Çalıştırma: pnpm yerel-ortam-testi [--acik-birak]
@@ -163,6 +164,19 @@ const calistir = async (): Promise<void> => {
       sinirDoldu = yanit.durum === 429;
     }
     olc("sahte X-Forwarded-For başlığı istek sınırını aşamıyor", sinirDoldu);
+
+    // Sınır doluyken aynı ucun başka yazılışları da geçmez: aynı sayaca düşer ya da uca ulaşmaz.
+    for (const yol of [
+      "/kapi/herkese-acik/sa%67lik",
+      "/k%61pi/herkese-acik/saglik",
+      "/kapi/herkese-acik%2fsaglik",
+      "/kapi/herkese-acik/saglik%2f",
+      "/kapi/herkese-acik/SAGLIK",
+      "/kapi/herkese-acik/./saglik",
+    ]) {
+      const { durum } = await iste(denemeSitesi.kimlik.kodAdi, yol);
+      olc(`${yol} yazılışı istek sınırını aşamıyor`, [308, 404, 429].includes(durum), `${durum}`);
+    }
     kutuKurallariniOlc(siteler.length);
   } catch (hata) {
     olc("ortam açıldı", false, (hata as Error).message);
