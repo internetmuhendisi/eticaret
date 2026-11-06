@@ -27,4 +27,4 @@ Fiyat, stok, sipariş ve yetki değişikliklerinde kimin, ne zaman, neyi değiş
 
 ## Durum
 
-yapılacak
+bitti
