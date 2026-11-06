@@ -335,7 +335,7 @@ RC_BAGLA="$g:/veri:ro" rc ${ortam} copyto "/veri/${bozukAd}" "depo:$KOVA/${ortam
   // Süresi dolan yedek temizlenir, yeni yedek kalır.
   const yeniCikti = calistir(yedekAlmaBetigi(ortam, b.kodAdi, "deneme"));
   sonYukleme = Date.now();
-  const yeniDosya = yeniCikti.match(/\d{8}T\d{6}Z\.dump\.age/)?.[0] ?? "";
+  const yeniDosya = yeniCikti.match(/\d{8}T\d{6}Z-[a-z-]+\.dump\.age/)?.[0] ?? "";
   const kalan = ilkAn + (kilitSn + marjSn + 5) * 1000 - Date.now();
   if (kalan > 0) await bekle(kalan);
   const temizlik = dene(`set -eu\nsudo ${yedekKoku}/gece.sh --temizle ${ortam} ${b.kodAdi}\n`);

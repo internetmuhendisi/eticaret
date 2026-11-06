@@ -1,11 +1,13 @@
 // Bir sitenin veritabanını yedekten geri yükler, öteki sitelere dokunmaz (kart 0024, karar 0037).
 // Son yedekten sonraki veri kaybolur. Önce o anki durumun yedeği alınır.
 //
-//   pnpm yedek-geri-yukle <site klasörü> <ortam> [--dosya=<yedek dosyası>] [--onay=<kod adı>]
+//   pnpm yedek-geri-yukle <site klasörü> <ortam>                      depodaki yedekleri listeler
+//   pnpm yedek-geri-yukle <site klasörü> <ortam> --dosya=<ad> [--onay=<kod adı>]
 //
 // Önceki geri yükleme yarım kaldıysa komut durur ve şu ikisinden birini ister:
 //   --eskiye-don   önceki veriyi yerine koyar; şu anki hâlin yedeği önce alınır
 //   --eskiyi-sil   şu anki hâli kabul eder, sağlıklı çalışınca önceki veriyi siler
+//                  (önceki verinin yedeği yoksa --yedeksiz-onay da ister)
 //
 // Veritabanı bozuk olduğu için o anki durumun yedeği alınamıyorsa --son-yedeksiz verilir: önceki veri
 // silinmez, sonradan --eskiyi-sil ile silinir. Veritabanı hiç yoksa önce: pnpm sunucu-veritabani.
@@ -17,7 +19,7 @@ import {
   eskiyiSil,
   geriYukle,
   geriYuklemeSecimi,
-  sonYedegiBulBetigi,
+  yedekListesiBetigi,
 } from "./yedek.mts";
 import { secenek, yedekSitesi } from "./yedek-girdi.mts";
 
@@ -32,8 +34,16 @@ try {
   } else if (secimler === "eskiyi-sil") {
     console.log(`${ortam}/${kodAdi} şu anki hâliyle kalacak, önceki veri silinecek.`);
   } else {
-    dosya = secenek("dosya") ?? sunucudaCalistir(ipv4, sonYedegiBulBetigi(ortam, kodAdi)).trim();
-    if (!dosya) throw new Error(`${ortam}/${kodAdi} için depoda yedek yok.`);
+    dosya = secenek("dosya") ?? "";
+    // Dosya kendiliğinden seçilmez: en yeni dosya boş sunucunun ya da bozuk hâlin yedeği olabilir.
+    if (!dosya) {
+      const liste = sunucudaCalistir(ipv4, yedekListesiBetigi(ortam, kodAdi)).trim();
+      throw new Error(
+        liste
+          ? `Hangi yedeğe dönüleceğini seçin: --dosya=<ad>. Depodaki yedekler (tarih, boyut, ad):\n${liste}`
+          : `${ortam}/${kodAdi} için depoda yedek yok.`,
+      );
+    }
     console.log(`${ortam}/${kodAdi} şu yedeğe dönecek: ${dosya}. Sonrasındaki veri kaybolur.`);
     if (process.argv.includes("--son-yedeksiz")) {
       console.log("O anki durumun yedeği ALINMAYACAK, önceki veri yerinde saklanacak.");
@@ -47,10 +57,16 @@ try {
   }
   if (onay !== kodAdi) throw new Error("Onaylanmadı, hiçbir şey yapılmadı.");
   if (secimler === "eskiye-don") {
-    await eskiyeDon(ipv4, ortam, kodAdi, console.log);
-    console.log(`Önceki veri yerinde: ${ortam}/${kodAdi}.`);
+    const dondu = await eskiyeDon(ipv4, ortam, kodAdi, console.log);
+    console.log(
+      dondu
+        ? `Önceki veri yerinde: ${ortam}/${kodAdi}.`
+        : "Dönülmedi: bekleyen önceki veri yok, canlı veritabanı olduğu gibi. Biten bir geri yüklemeyi geri almak için o işten önce alınan yedeğe dönün: --dosya=<...-geri-yukleme-oncesi.dump.age>",
+    );
   } else if (secimler === "eskiyi-sil") {
-    await eskiyiSil(ipv4, ortam, { kodAdi, numara }, console.log);
+    await eskiyiSil(ipv4, ortam, { kodAdi, numara }, console.log, {
+      yedeksizOnay: process.argv.includes("--yedeksiz-onay"),
+    });
     console.log(`Temizlendi: ${ortam}/${kodAdi}.`);
   } else {
     await geriYukle(ipv4, ortam, { kodAdi, numara }, dosya, undefined, console.log, {

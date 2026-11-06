@@ -8,7 +8,7 @@
 // Yeni site açılınca yeniden çalıştırılır ve yeni açma anahtarının kopyası şifre yöneticisine konur.
 
 import { type Ortam, ortamMi } from "./gizli-bilgi.mts";
-import { kayitlariOku, sshKomutu } from "./sunucu.mts";
+import { kayitlariOku } from "./sunucu.mts";
 import { siteListesiniOku, sunucudaCalistir, veritabaniOrtamlari } from "./sunucu-veritabani.mts";
 import {
   acikAnahtariOku,
@@ -19,16 +19,14 @@ import {
   ayariYaz,
   depoAnahtarlari,
   depoAyariMetni,
-  kayitlariCoz,
+  depodaYedekVarBetigi,
   kokBetigi,
   kurmaBetigi,
   type YedekAyari,
   yedekAlmaBetigi,
-  yedekKoku,
 } from "./yedek.mts";
 
-const siteleriHazirla = (ipv4: string, ayar: YedekAyari, ortam: Ortam): string[] => {
-  const yeniler: string[] = [];
+const siteleriHazirla = (ipv4: string, ayar: YedekAyari, ortam: Ortam, yeniler: string[]): void => {
   const siteler = { ...(ayar.siteler[ortam] ?? {}) };
   for (const kodAdi of siteListesiniOku(ipv4, ortam)) {
     if (siteler[kodAdi]) continue;
@@ -36,14 +34,14 @@ const siteleriHazirla = (ipv4: string, ayar: YedekAyari, ortam: Ortam): string[]
     if (!acik) {
       const cift = anahtarCiftiUret();
       anahtarDosyasiniYaz(ortam, kodAdi, cift.metin);
-      acik = cift.acik;
+      // Dosya yazılır yazılmaz listeye girer: sonraki adım düşse de uyarı basılır.
       yeniler.push(anahtarDosyasi(ortam, kodAdi));
+      acik = cift.acik;
     }
     siteler[kodAdi] = { acik_anahtar: acik, saklama_gun: ayar.varsayilan_saklama_gun };
     console.log(`eklendi     ${ortam}/${kodAdi}: ${ayar.varsayilan_saklama_gun} gün`);
   }
   ayar.siteler[ortam] = siteler;
-  return yeniler;
 };
 
 // Uyarı kurulum yarıda kalsa da basılır: ikinci çalıştırmada bu anahtar "yeni" sayılmaz.
@@ -55,7 +53,7 @@ try {
   const { erisim, gizli } = depoAnahtarlari();
   const depoAyari = depoAyariMetni(ayar.depo.konum, erisim, gizli);
   for (const ortam of veritabaniOrtamlari.filter(ortamMi)) {
-    yeniler.push(...siteleriHazirla(sunucu.ipv4, ayar, ortam));
+    siteleriHazirla(sunucu.ipv4, ayar, ortam, yeniler);
     ayariYaz(ayar);
     const cikti = sunucudaCalistir(sunucu.ipv4, kurmaBetigi(ayar, ortam, depoAyari), 600_000);
     if (!cikti.includes("yedek=kuruldu")) throw new Error(`Kurulum bitmedi: ${cikti}`);
@@ -68,19 +66,11 @@ try {
       ),
     );
     if (!surumleme.includes("Enabled")) throw new Error("Kovada sürümleme açık değil.");
-    // Başarılı gece kaydı olmayan sitenin ilk yedeği alınır: denetim ilk geceyi beklemesin. Ayardan
-    // değil kayıttan bakılır, yarıda kalan kurulum sonraki çalıştırmada tamamlanır.
-    const kayit = sshKomutu(
-      sunucu.ipv4,
-      `sudo sh -c 'cat ${yedekKoku}/kayit.jsonl 2>/dev/null || true'`,
-    );
-    if (kayit.status !== 0) throw new Error(`Yedek kaydı okunamadı: ${kayit.stderr.trim()}`);
-    const kayitlar = kayitlariCoz(kayit.stdout);
+    // Depoda hiç dosyası olmayan sitenin ilk yedeği alınır: denetim ilk geceyi beklemesin. Depoda
+    // dosyası olan siteye dokunulmaz: sunucu yeniden kuruluyor olabilir, boş veritabanının yedeği
+    // gerçek yedeklerin yanına karışmasın. Denetim ilk gerçek geceye kadar kırmızı kalır.
     for (const kodAdi of Object.keys(ayar.siteler[ortam] ?? {})) {
-      const var_ = kayitlar.some(
-        (k) => k.ortam === ortam && k.site === kodAdi && k.tur === "gece" && k.sonuc === "basarili",
-      );
-      if (var_) continue;
+      if (sunucudaCalistir(sunucu.ipv4, depodaYedekVarBetigi(ortam, kodAdi)).trim()) continue;
       const ilk = sunucudaCalistir(sunucu.ipv4, yedekAlmaBetigi(ortam, kodAdi, "gece"), 900_000);
       console.log(ilk.trim());
     }

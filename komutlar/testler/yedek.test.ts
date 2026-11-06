@@ -532,6 +532,13 @@ esac`,
     expect(r.kayit.at(-1)).toMatchObject({ tur: "elle" });
   });
 
+  it("dosya adı yedeğin türünü taşır", () => {
+    const { calistir } = kur(["ornek-magaza"]);
+    const r = calistir(["deneme", "ornek-magaza", "geri-yukleme-oncesi"]);
+    expect(r.kayit.at(-1)?.dosya).toMatch(/^\d{8}T\d{6}Z-geri-yukleme-oncesi\.dump\.age$/);
+    expect(() => provaBetigi("deneme", "x", r.kayit.at(-1)?.dosya ?? "", anahtar)).not.toThrow();
+  });
+
   it("tek site çağrısında temizlik yapılmaz", () => {
     const { calistir } = kur(["ornek-magaza"]);
     const r = calistir(["deneme", "ornek-magaza", "elle"]);

@@ -113,7 +113,7 @@ Büyük sürümde (ilk sayı artıyorsa) site klasöründe de değişiklik gerek
 15. İstendiyse mağaza sahibine yenilikleri anlatan e-postayı gönderir.
 16. Ana dala alır, çalışma kopyasını kaldırır, tarihçeye yazar.
 
-Geri dönüş: Sorun yayından sonra çıkarsa `pnpm geri-don` siteyi önceki yayına döndürür; dönülen yayın kendi kutu tanımını, site klasörünü ve görüntüsünü kullanır (karar 0035). Kimlikteki sürüm ana dalda yeni sürümde kalır; kimliği eski sürüme çekip yeniden yayınlamak olmaz, çünkü yayın komutu kimlikteki sürümün kayıttaki çekirdekle aynı olmasını ister. Düzeltme yeni bir sürümle yayınlanır. Veritabanı değişikliği geri alınamıyorsa ("yedekten" notu) geri dönüş durur, site 10. adımdaki yedekten döner (`pnpm yedek-geri-yukle siteler/<kod-adi> <ortam> --dosya=<yedek>`, karar 0037).
+Geri dönüş: Sorun yayından sonra çıkarsa `pnpm geri-don` siteyi önceki yayına döndürür; dönülen yayın kendi kutu tanımını, site klasörünü ve görüntüsünü kullanır (karar 0035). Kimlikteki sürüm ana dalda yeni sürümde kalır; kimliği eski sürüme çekip yeniden yayınlamak olmaz, çünkü yayın komutu kimlikteki sürümün kayıttaki çekirdekle aynı olmasını ister. Düzeltme yeni bir sürümle yayınlanır. Veritabanı değişikliği geri alınamıyorsa ("yedekten" notu) geri dönüş durur, site 10. adımdaki yedekten döner (`pnpm yedek-geri-yukle siteler/<kod-adi> <ortam>` yedekleri listeler, `--dosya=<yedek>` ile döner, karar 0037).
 
 ### Ne zaman bitmiş sayılır
 

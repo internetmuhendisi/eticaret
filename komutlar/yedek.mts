@@ -230,7 +230,19 @@ export const yedekAlmaBetigi = (ortam: Ortam, kodAdi: string, tur: string): stri
 export const sonYedegiBulBetigi = (ortam: Ortam, kodAdi: string): string =>
   kokBetigi(`rc ${ortam} lsf --files-only "depo:$KOVA/${ortam}/${kodAdi}" | sort | tail -1`);
 
-const dosyaAdiGecerli = (ad: string): boolean => /^\d{8}T\d{6}Z(-[a-z]+)?\.dump\.age$/.test(ad);
+const dosyaAdiGecerli = (ad: string): boolean => /^\d{8}T\d{6}Z(-[a-z-]+)?\.dump\.age$/.test(ad);
+
+// Geri yüklemede dosya kendiliğinden seçilmez: en yeni dosya boş sunucunun ya da bozuk hâlin yedeği
+// olabilir. Bu liste kişinin seçmesi içindir: tarih, boyut, ad.
+export const yedekListesiBetigi = (ortam: Ortam, kodAdi: string): string =>
+  kokBetigi(
+    `rc ${ortam} lsf --files-only --format tsp --separator '  ' "depo:$KOVA/${ortam}/${kodAdi}" | sort`,
+  );
+
+// Depoda bu sitenin dosyası var mı? Sunucu yeniden kurulurken boş veritabanının "ilk yedeği" gerçek
+// yedeklerin yanına karışmasın.
+export const depodaYedekVarBetigi = (ortam: Ortam, kodAdi: string): string =>
+  kokBetigi(`rc ${ortam} lsf --files-only "depo:$KOVA/${ortam}/${kodAdi}" | head -1`);
 
 // --- Karşılaştırma ---
 
@@ -398,9 +410,25 @@ export const veritabaniDurumunuOku = (
   };
 };
 
+// __eski'nin yedeği var mı? Sitenin son geri yükleme kaydına bakılır. Okunamazsa yedeksiz sayılır: tek
+// kopyanın olağan artık sanılıp silinmesi, fazladan bir onaydan pahalıdır.
+const oncekiVeriYedeksiz = (ipv4: string, ortam: Ortam, kodAdi: string): boolean => {
+  const kayit = sshKomutu(ipv4, `sudo cat ${yedekKoku}/kayit.jsonl`);
+  if (kayit.status !== 0) return true;
+  const son = kayitlariCoz(kayit.stdout).findLast(
+    (k) => k.ortam === ortam && k.site === kodAdi && k.tur === "geri-yukleme",
+  );
+  return son?.sebep === "son-yedeksiz";
+};
+
 // Önceki geri yüklemeden artık kalmışsa durulur: __eski gerçek veri olabilir, üstüne yazılmaz.
 const artikDurdur = (ipv4: string, ortam: Ortam, kodAdi: string): void => {
   const durum = veritabaniDurumunuOku(ipv4, ortam, kodAdi);
+  if (durum.eski && oncekiVeriYedeksiz(ipv4, ortam, kodAdi)) {
+    throw new Error(
+      `Önceki geri yükleme --son-yedeksiz ile yapıldı, önceki veri ${eskiAd(siteVeritabaniAdi(kodAdi))} adıyla duruyor ve BU VERİNİN YEDEĞİ YOK. Hiçbir şeye dokunulmadı.\n  Önceki veriye dönmek için: pnpm yedek-geri-yukle <site klasörü> ${ortam} --eskiye-don\n  İnceleyip silmek için: pnpm yedek-geri-yukle <site klasörü> ${ortam} --eskiyi-sil --yedeksiz-onay`,
+    );
+  }
   if (durum.eski) {
     throw new Error(
       `Önceki geri yükleme yarım kalmış, önceki veri ${eskiAd(siteVeritabaniAdi(kodAdi))} adıyla duruyor. Hiçbir şeye dokunulmadı.\n  Önceki veriye dönmek için: pnpm yedek-geri-yukle <site klasörü> ${ortam} --eskiye-don\n  Şu anki hâli kabul edip önceki veriyi silmek için: pnpm yedek-geri-yukle <site klasörü> ${ortam} --eskiyi-sil`,
@@ -718,7 +746,7 @@ export const geriYukle = (
       eskiyeDonVeBildir(hata);
     }
     // Dönüşü olmayan nokta geçildi: buradan sonraki hata yeni hâli geri almaz.
-    kaydet("basarili", "");
+    kaydet("basarili", sonYedeksiz ? "son-yedeksiz" : "");
     if (sonYedeksiz) {
       yaz(
         `bilgi       önceki veri ${eskiAd(siteVeritabaniAdi(kodAdi))} adıyla duruyor, denetim kırmızı kalır. İnceleyince: pnpm yedek-geri-yukle <site klasörü> ${ortam} --eskiyi-sil`,
@@ -741,7 +769,7 @@ export const geriYuklemeSecimi = (
 ): "geri-yukle" | "eskiye-don" | "eskiyi-sil" => {
   const secenekler = argumanlar.filter((a) => a.startsWith("--"));
   for (const secenek of secenekler) {
-    if (!/^--(dosya=|onay=|son-yedeksiz$|eskiye-don$|eskiyi-sil$)/.test(secenek)) {
+    if (!/^--(dosya=|onay=|son-yedeksiz$|eskiye-don$|eskiyi-sil$|yedeksiz-onay$)/.test(secenek)) {
       throw new Error(`Bilinmeyen seçenek: ${secenek}`);
     }
   }
@@ -750,6 +778,9 @@ export const geriYuklemeSecimi = (
   if (don && sil) throw new Error("--eskiye-don ile --eskiyi-sil birlikte verilemez.");
   if ((don || sil) && secenekler.some((s) => /^--(dosya=|son-yedeksiz$)/.test(s))) {
     throw new Error("--dosya ve --son-yedeksiz bu seçenekle birlikte verilemez.");
+  }
+  if (!sil && secenekler.includes("--yedeksiz-onay")) {
+    throw new Error("--yedeksiz-onay yalnız --eskiyi-sil ile verilir.");
   }
   return don ? "eskiye-don" : sil ? "eskiyi-sil" : "geri-yukle";
 };
@@ -777,7 +808,7 @@ export const eskiyeDon = (
   ortam: Ortam,
   kodAdi: string,
   yaz: (satir: string) => void = () => {},
-): Promise<void> =>
+): Promise<boolean> =>
   yayinKilidiyle(ipv4, () => {
     ortamiDenetle(ortam);
     const durum = veritabaniDurumunuOku(ipv4, ortam, kodAdi);
@@ -785,10 +816,8 @@ export const eskiyeDon = (
     if (!durum.eski) {
       if (!durum.canli) throw new Error("Canlı veritabanı da önceki veri de yok, dokunulmadı.");
       kapaliysaAc(ipv4, ortam, kodAdi, kutu, yaz);
-      yaz(
-        `bilgi       dönülecek önceki veri yok, canlı veritabanına dokunulmadı.${durum.basarisiz || durum.geri ? " Artıkları silmek için: --eskiyi-sil" : ""}`,
-      );
-      return;
+      if (durum.basarisiz || durum.geri) yaz("bilgi       Artıkları silmek için: --eskiyi-sil");
+      return false;
     }
     const acikti = kutu ? sunucudaCalistir(ipv4, kutuCalismaBetigi(kutu)).trim() === "true" : false;
     if (kutu && acikti) sunucudaCalistir(ipv4, kutuyuDurdurmaBetigi(kutu));
@@ -815,6 +844,7 @@ export const eskiyeDon = (
     const sorunlar = eskiyeDonAdimlari(ipv4, ortam, kodAdi, kutu);
     if (sorunlar.length > 0) throw new Error(sorunlar.join("\n"));
     sunucudaCalistir(ipv4, eskiyiSilmeBetigi(ortam, kodAdi, { eski: false }));
+    return true;
   });
 
 // Yarım kalmış geri yüklemeden sonra elle: şu anki hâli kabul et. Önceki veri ancak yeni hâl sağlıklı
@@ -824,6 +854,7 @@ export const eskiyiSil = (
   ortam: Ortam,
   site: { kodAdi: string; numara: number },
   yaz: (satir: string) => void = () => {},
+  { yedeksizOnay = false } = {},
 ): Promise<void> =>
   yayinKilidiyle(ipv4, () => {
     ortamiDenetle(ortam);
@@ -833,6 +864,11 @@ export const eskiyiSil = (
     if (durum.eski) {
       if (!durum.canli)
         throw new Error("Canlı veritabanı yok, önceki veri silinmedi: --eskiye-don");
+      if (!yedeksizOnay && oncekiVeriYedeksiz(ipv4, ortam, kodAdi)) {
+        throw new Error(
+          "Önceki verinin yedeği yok (--son-yedeksiz), silinirse kalıcı gider; silinmedi. İnceledikten sonra: --eskiyi-sil --yedeksiz-onay",
+        );
+      }
       yeniHaliTamamla(ipv4, ortam, site, kutu, yaz);
     } else if (durum.canli) {
       kapaliysaAc(ipv4, ortam, kodAdi, kutu, yaz);

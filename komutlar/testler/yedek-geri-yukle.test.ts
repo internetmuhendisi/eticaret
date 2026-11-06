@@ -21,6 +21,7 @@ type Durum = {
   sonraBozuk: { ad: string; kacinci: number } | null;
   sifreEsit: boolean;
   yanlisVeriyleAcildi: boolean;
+  yedeksiz: boolean;
 };
 
 const durum = {} as Durum;
@@ -39,6 +40,7 @@ const etiket = (metin: string): string => {
     [/guncelle\.mjs/, "guncelle"],
     [/docker restart/, "yeniden"],
     [/\bkayit deneme\b/, "kayit"],
+    [/sudo cat \/srv\/altyapi\/yedek\/kayit\.jsonl/, "kayit-oku"],
   ];
   for (const [kalip, ad] of kural) {
     const eslesme = metin.match(kalip);
@@ -136,6 +138,13 @@ const sahteSsh = (_ip: string, komut: string, secenek?: { girdi?: string }) => {
     return cevap(1, "", `SAHTE-HATA ${ad}`);
   }
   const sonuc = uygula(ad);
+  if (ad === "kayit" && /son-yedeksiz/.test(secenek?.girdi ?? "")) durum.yedeksiz = true;
+  if (ad === "kayit-oku" && durum.yedeksiz) {
+    return cevap(
+      0,
+      `${JSON.stringify({ ortam: "deneme", site: "ornek-magaza", tur: "geri-yukleme", sebep: "son-yedeksiz" })}\n`,
+    );
+  }
   if (durum.koptu.has(ad)) {
     durum.koptu.delete(ad);
     return cevap(255, "", `SAHTE-KOPMA ${ad}`);
@@ -170,6 +179,7 @@ beforeEach(() => {
     sonraBozuk: null,
     sifreEsit: true,
     yanlisVeriyleAcildi: false,
+    yedeksiz: false,
   });
 });
 
@@ -409,6 +419,20 @@ describe("veritabanı bozuksa", () => {
     expect(durum.cagrilar).not.toContain("yedek");
     expect(durum.cagrilar).not.toContain("eskisil");
   });
+
+  it("sonraki geri yükleme önceki verinin yedeği olmadığını söyler", async () => {
+    await geriYukle("0.0.0.0", "deneme", site, dosya, anahtar, undefined, { sonYedeksiz: true });
+    await expect(calistir()).rejects.toThrow(/YEDEĞİ YOK[\s\S]*--yedeksiz-onay/);
+    expect(durum.eski).toBe("gercek");
+  });
+
+  it("--eskiyi-sil yedeği olmayan veriyi ayrı onay olmadan silmez", async () => {
+    await geriYukle("0.0.0.0", "deneme", site, dosya, anahtar, undefined, { sonYedeksiz: true });
+    await expect(eskiyiSil("0.0.0.0", "deneme", site)).rejects.toThrow(/yedeği yok/);
+    expect(durum.eski).toBe("gercek");
+    await eskiyiSil("0.0.0.0", "deneme", site, undefined, { yedeksizOnay: true });
+    expect(durum.eski).toBeNull();
+  });
 });
 
 describe("ortam", () => {
@@ -428,6 +452,8 @@ describe("komut satırı", () => {
     expect(geriYuklemeSecimi(["a", "deneme", "--eskiyi-sil"])).toBe("eskiyi-sil");
     expect(geriYuklemeSecimi(["a", "deneme", "--son-yedeksiz"])).toBe("geri-yukle");
     expect(() => geriYuklemeSecimi(["--eskiye-don", "--son-yedeksiz"])).toThrow(/birlikte/);
+    expect(geriYuklemeSecimi(["--eskiyi-sil", "--yedeksiz-onay"])).toBe("eskiyi-sil");
+    expect(() => geriYuklemeSecimi(["--yedeksiz-onay"])).toThrow(/yalnız/);
     expect(() => geriYuklemeSecimi(["--eskiye-dön"])).toThrow(/Bilinmeyen/);
     expect(() => geriYuklemeSecimi(["--eskiye-don", "--eskiyi-sil"])).toThrow(/birlikte/);
     expect(() => geriYuklemeSecimi(["--eskiye-don", "--dosya=x"])).toThrow(/birlikte/);
@@ -477,6 +503,14 @@ exit 0
     expect(sonuc.status).toBe(0);
     expect(sonuc.gunluk).toContain("# adim:gerial");
     expect(sonuc.gunluk).not.toContain("# adim:yana");
+  });
+
+  it("--dosya verilmezse hiçbir şeye dokunmaz, yedekleri listeler", () => {
+    const sonuc = komutuCalistir([]);
+    expect(sonuc.status).toBe(1);
+    expect(sonuc.gunluk).toContain("--format tsp");
+    expect(sonuc.gunluk).not.toContain("# adim:yana");
+    expect(sonuc.gunluk).not.toContain("# adim:durdur");
   });
 
   it("--eskiyi-sil önceki veriyi siler, yedeği açmaz", () => {

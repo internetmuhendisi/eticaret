@@ -44,7 +44,8 @@ yedekle() {
     return 1
   fi
   local ad g boyut uzak bitis sebep=""
-  ad="$(date -u +%Y%m%dT%H%M%SZ).dump.age"
+  # Dosya adı türü taşır: geri yüklemeyi seçen kişi bozuk hâlin yedeğini gece yedeğinden ayırsın.
+  ad="$(date -u +%Y%m%dT%H%M%SZ)-$tur.dump.age"
   g="$(mktemp -d -p "$K/gecici")"
   # age boş girdiyi de şifreler; dökümün başı bu yüzden şifrelemeden önce ölçülür (PGDMP imzası).
   if ! docker exec "veritabani-$ortam" pg_dump -U postgres -Fc -d "$db" </dev/null |
