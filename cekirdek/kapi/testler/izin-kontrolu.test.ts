@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
+import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
 import type { HesapTuru } from "../../kayitlar/oturum.ts";
 import { baslangicRolleri } from "../../moduller/ekip/baslangic-rolleri.ts";
 import { yoneticiler } from "../../moduller/ekip/model.ts";
@@ -14,6 +15,8 @@ import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
 import { oturumCerezleri } from "../oturum-cerezi.ts";
 import { ucTanimla } from "../uc.ts";
+
+const testIslemi = sistemIslemi("test");
 
 const sifre = "uzun-bir-deneme-sifresi";
 const sure = 60 * 60;
@@ -92,7 +95,7 @@ afterAll(async () => {
 describe("yönetici girişi", () => {
   it("izni olan rol uca erişir, kapı işe kimliği ve kapsamı verir", async () => {
     const yonetici = await giris("yonetici");
-    await rolVer(vt, { yoneticiKimligi: yonetici.hesapKimligi, rolKodu: tamYetkili });
+    await rolVer(vt, { yoneticiKimligi: yonetici.hesapKimligi, rolKodu: tamYetkili }, testIslemi);
     const isle = vi.fn(async () => ({ tamam: true }));
     const yanit = await yoneticiUcu(isle)(istek("yonetici", yonetici.cerez));
     expect(yanit.status).toBe(200);
@@ -105,7 +108,7 @@ describe("yönetici girişi", () => {
 
   it("izni olmayan rol yetki hatası alır, iş çalışmaz", async () => {
     const yonetici = await giris("yonetici");
-    await rolVer(vt, { yoneticiKimligi: yonetici.hesapKimligi, rolKodu: sinirli });
+    await rolVer(vt, { yoneticiKimligi: yonetici.hesapKimligi, rolKodu: sinirli }, testIslemi);
     const isle = vi.fn(async () => ({ tamam: true }));
     const yanit = await yoneticiUcu(isle)(istek("yonetici", yonetici.cerez));
     expect(yanit.status).toBe(403);
@@ -122,14 +125,14 @@ describe("yönetici girişi", () => {
     const yonetici = await giris("yonetici");
     const uc = yoneticiUcu();
     const rol = { yoneticiKimligi: yonetici.hesapKimligi, rolKodu: tamYetkili };
-    await rolVer(vt, rol);
+    await rolVer(vt, rol, testIslemi);
     expect((await uc(istek("yonetici", yonetici.cerez))).status).toBe(200);
     // Son sahibin rolü alınamaz, bu yüzden başka bir sahip de açılır.
     const oteki = await giris("yonetici");
-    await rolVer(vt, { yoneticiKimligi: oteki.hesapKimligi, rolKodu: tamYetkili });
-    await rolAl(vt, rol);
+    await rolVer(vt, { yoneticiKimligi: oteki.hesapKimligi, rolKodu: tamYetkili }, testIslemi);
+    await rolAl(vt, rol, testIslemi);
     expect((await uc(istek("yonetici", yonetici.cerez))).status).toBe(403);
-    await rolVer(vt, rol);
+    await rolVer(vt, rol, testIslemi);
     expect((await uc(istek("yonetici", yonetici.cerez))).status).toBe(200);
   });
 
@@ -149,14 +152,14 @@ describe("yönetici girişi", () => {
 
   it("çıkış yapan ve silinen hesap oturum-yok alır, geçersiz çerez silinir", async () => {
     const cikan = await giris("yonetici");
-    await rolVer(vt, { yoneticiKimligi: cikan.hesapKimligi, rolKodu: tamYetkili });
+    await rolVer(vt, { yoneticiKimligi: cikan.hesapKimligi, rolKodu: tamYetkili }, testIslemi);
     await cikisYap(vt, "yonetici", cikan.anahtarlar);
     const yanit = await yoneticiUcu()(istek("yonetici", cikan.cerez));
     expect(yanit.status).toBe(401);
     expect(yanit.headers.getSetCookie().join()).toContain("Max-Age=0");
 
     const silinen = await giris("yonetici");
-    await rolVer(vt, { yoneticiKimligi: silinen.hesapKimligi, rolKodu: tamYetkili });
+    await rolVer(vt, { yoneticiKimligi: silinen.hesapKimligi, rolKodu: tamYetkili }, testIslemi);
     await vt
       .update(yoneticiler)
       .set({ silinme_zamani: new Date() })
@@ -166,7 +169,7 @@ describe("yönetici girişi", () => {
 
   it("sınırlı rol izinli uca rol_izinleri satırıyla erişir, kapsamı kendisidir", async () => {
     const yonetici = await giris("yonetici");
-    await rolVer(vt, { yoneticiKimligi: yonetici.hesapKimligi, rolKodu: sinirli });
+    await rolVer(vt, { yoneticiKimligi: yonetici.hesapKimligi, rolKodu: sinirli }, testIslemi);
     const isle = vi.fn(async () => ({ tamam: true }));
     const uc = ucTanimla({
       giris: "yonetici",
@@ -191,7 +194,7 @@ describe("yönetici girişi", () => {
 
   it("kısa anahtar çerezde yoksa yenilenen anahtar yanıta yazılır, izinli istek geçer", async () => {
     const yonetici = await giris("yonetici");
-    await rolVer(vt, { yoneticiKimligi: yonetici.hesapKimligi, rolKodu: tamYetkili });
+    await rolVer(vt, { yoneticiKimligi: yonetici.hesapKimligi, rolKodu: tamYetkili }, testIslemi);
     const yalnizYenileme = yonetici.cerez.split("; ")[1];
     const yanit = await yoneticiUcu()(istek("yonetici", yalnizYenileme));
     expect(yanit.status).toBe(200);
@@ -229,7 +232,7 @@ describe("müşteri girişi", () => {
 
   it("yönetici oturumu müşteri girişinde geçmez, girişsiz istek oturum-yok alır", async () => {
     const yonetici = await giris("yonetici");
-    await rolVer(vt, { yoneticiKimligi: yonetici.hesapKimligi, rolKodu: tamYetkili });
+    await rolVer(vt, { yoneticiKimligi: yonetici.hesapKimligi, rolKodu: tamYetkili }, testIslemi);
     expect(await hataKodu(await musteriUcu(istek("musteri", yonetici.cerez)))).toBe("oturum-yok");
     expect(await hataKodu(await musteriUcu(istek("musteri")))).toBe("oturum-yok");
   });
@@ -263,7 +266,7 @@ describe("sıra", () => {
   it("sahte istek oturuma bakılmadan reddedilir, yenileme anahtarı harcanmaz", async () => {
     // İzinli hesap ve yalnız yenileme çerezi: oturuma bakılsaydı anahtar yenilenir, çerez yazılırdı.
     const yonetici = await giris("yonetici");
-    await rolVer(vt, { yoneticiKimligi: yonetici.hesapKimligi, rolKodu: tamYetkili });
+    await rolVer(vt, { yoneticiKimligi: yonetici.hesapKimligi, rolKodu: tamYetkili }, testIslemi);
     const yalnizYenileme = yonetici.cerez.split("; ")[1] ?? "";
     const sahte = new Request("http://yerel/kapi/yonetici/ornek", { method: "POST" });
     for (const [ad, deger] of Object.entries({

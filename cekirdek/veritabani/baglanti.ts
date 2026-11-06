@@ -5,6 +5,8 @@ import { gizliBilgi } from "../ayar-semasi/gizli-bilgi.ts";
 import { hatayiKaydet } from "../izleme/hata-katmani.ts";
 
 export type Veritabani = NodePgDatabase & { $client: import("pg").Pool };
+// Bir veritabanı işleminin içi. Birlikte olması gereken yazmalar bunu ister.
+export type VeritabaniIslemi = Parameters<Parameters<Veritabani["transaction"]>[0]>[0];
 
 let veritabani: Veritabani | undefined;
 

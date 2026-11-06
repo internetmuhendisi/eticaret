@@ -3,6 +3,7 @@ paths:
   - "cekirdek/kapi/**"
   - "**/izinler.ts"
   - "cekirdek/moduller/ekip/**"
+  - "cekirdek/moduller/degisiklik-kaydi/**"
   - "**/middleware.ts"
   - "cekirdek/yonetim-paneli/**"
   - "sahip-paneli/**"
@@ -22,4 +23,5 @@ paths:
 - Kapı izni her istekte denetler (`cekirdek/kapi/izin-kontrolu.ts`). Girişsiz istek `oturum-yok`, izni olmayan `yetki` alır.
 - Uç hesabın kimliğini ve iznin kapsamını `isle` işlevinin dördüncü değerinden alır. Kapsama göre süzmek servisin işidir. Müşteri kaydına giden uç kimliği girdiden almaz.
 - Başlangıç rolleri `cekirdek/moduller/ekip/baslangic-rolleri.ts` ve değişiklik dosyasındadır. Sınırlı role izin eklemek yeni bir değişiklik dosyası ve bu tanımda satır ister; ikisini `cekirdek/moduller/ekip/testler/servis.test.ts` karşılaştırır.
-- Tam yetkili son yöneticinin rolü alınamaz, bu kural `rolAl` içindedir.
+- Tam yetkili son yöneticinin rolü alınamaz, hesabı kapatılamaz; kural `rolAl` ve `yoneticiHesabiKapat` içindedir, ikisi aynı kilidi alır.
+- Değişiklik kaydı yalnız `degisikligiKaydet` ile, değişiklikle aynı veritabanı işleminde yazılır (`cekirdek/moduller/degisiklik-kaydi/`, karar 0045). Yeni işlem adı `cekirdek/kayitlar/degisiklik-islemleri.ts` kaydına eklenir. Değerler maskelenmez; şifre, anahtar ve e-posta taşıyan alan işi durdurur, kişiyi kimliğiyle yaz.

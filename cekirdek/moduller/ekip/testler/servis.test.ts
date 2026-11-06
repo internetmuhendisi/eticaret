@@ -1,6 +1,7 @@
 // Roller ve izin sorusu, gerçek veritabanıyla (kart 0026, karar 0040).
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { sistemIslemi } from "../../../kayitlar/degisiklik-islemleri.ts";
 import { type GirisIzni, type IzinAdi, izinler } from "../../../kayitlar/izinler.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
@@ -8,6 +9,8 @@ import { hesapAc } from "../../oturum/servis.ts";
 import { baslangicRolleri } from "../baslangic-rolleri.ts";
 import { rolIzinleri, roller, yoneticiler } from "../model.ts";
 import { rolAl, rolVer, yoneticininIzniVarMi } from "../servis.ts";
+
+const testIslemi = sistemIslemi("test");
 
 const rolKodlari = Object.keys(baslangicRolleri) as (keyof typeof baslangicRolleri)[];
 const [tamYetkiliKod] = rolKodlari.filter((kod) => baslangicRolleri[kod].tamYetki);
@@ -73,7 +76,7 @@ describe("izin sorusu", () => {
 
   it("tam yetkili rol bütün yönetici izinlerini verir", async () => {
     const kimlik = await yeniYonetici();
-    await rolVer(vt, { yoneticiKimligi: kimlik, rolKodu: tamYetkiliKod });
+    await rolVer(vt, { yoneticiKimligi: kimlik, rolKodu: tamYetkiliKod }, testIslemi);
     for (const izin of yoneticiIzinleri) {
       expect(await yoneticininIzniVarMi(vt, kimlik, izin)).toBe(true);
     }
@@ -81,7 +84,7 @@ describe("izin sorusu", () => {
 
   it("sınırlı rol yalnız kendi izinlerini verir", async () => {
     const kimlik = await yeniYonetici();
-    await rolVer(vt, { yoneticiKimligi: kimlik, rolKodu: sinirliKod });
+    await rolVer(vt, { yoneticiKimligi: kimlik, rolKodu: sinirliKod }, testIslemi);
     for (const izin of yoneticiIzinleri) {
       expect(await yoneticininIzniVarMi(vt, kimlik, izin)).toBe(
         sinirliRolunIzinleri.includes(izin),
@@ -93,16 +96,22 @@ describe("izin sorusu", () => {
 describe("rol verme ve alma", () => {
   it("aynı rolü iki kez vermek hata değildir, bilinmeyen rol ve yönetici bulunamadı döner", async () => {
     const kimlik = await yeniYonetici();
-    await rolVer(vt, { yoneticiKimligi: kimlik, rolKodu: sinirliKod });
-    await rolVer(vt, { yoneticiKimligi: kimlik, rolKodu: sinirliKod });
-    await expect(rolVer(vt, { yoneticiKimligi: kimlik, rolKodu: "yok" })).rejects.toMatchObject({
+    await rolVer(vt, { yoneticiKimligi: kimlik, rolKodu: sinirliKod }, testIslemi);
+    await rolVer(vt, { yoneticiKimligi: kimlik, rolKodu: sinirliKod }, testIslemi);
+    await expect(
+      rolVer(vt, { yoneticiKimligi: kimlik, rolKodu: "yok" }, testIslemi),
+    ).rejects.toMatchObject({
       kod: "bulunamadi",
     });
     await expect(
-      rolVer(vt, {
-        yoneticiKimligi: "00000000-0000-4000-8000-000000000000",
-        rolKodu: sinirliKod,
-      }),
+      rolVer(
+        vt,
+        {
+          yoneticiKimligi: "00000000-0000-4000-8000-000000000000",
+          rolKodu: sinirliKod,
+        },
+        testIslemi,
+      ),
     ).rejects.toMatchObject({ kod: "bulunamadi" });
   });
 
@@ -113,7 +122,7 @@ describe("rol verme ve alma", () => {
       .set({ silinme_zamani: new Date() })
       .where(eq(yoneticiler.kimlik, kimlik));
     await expect(
-      rolVer(vt, { yoneticiKimligi: kimlik, rolKodu: sinirliKod }),
+      rolVer(vt, { yoneticiKimligi: kimlik, rolKodu: sinirliKod }, testIslemi),
     ).rejects.toMatchObject({ kod: "bulunamadi" });
   });
 
@@ -121,13 +130,13 @@ describe("rol verme ve alma", () => {
     const kimlik = await yeniYonetici();
     const [izin] = baslangicRolleri[sinirliKod].izinler;
     if (izin === undefined) throw new Error("Sınırlı rolün izni olmalı.");
-    await rolVer(vt, { yoneticiKimligi: kimlik, rolKodu: sinirliKod });
+    await rolVer(vt, { yoneticiKimligi: kimlik, rolKodu: sinirliKod }, testIslemi);
     expect(await yoneticininIzniVarMi(vt, kimlik, izin)).toBe(true);
-    await rolAl(vt, { yoneticiKimligi: kimlik, rolKodu: sinirliKod });
+    await rolAl(vt, { yoneticiKimligi: kimlik, rolKodu: sinirliKod }, testIslemi);
     expect(await yoneticininIzniVarMi(vt, kimlik, izin)).toBe(false);
-    await expect(rolAl(vt, { yoneticiKimligi: kimlik, rolKodu: sinirliKod })).rejects.toMatchObject(
-      { kod: "bulunamadi" },
-    );
+    await expect(
+      rolAl(vt, { yoneticiKimligi: kimlik, rolKodu: sinirliKod }, testIslemi),
+    ).rejects.toMatchObject({ kod: "bulunamadi" });
   });
 });
 
@@ -142,23 +151,27 @@ describe("son mağaza sahibi", () => {
       const birinci = await yeni("birinci@ornek.test");
       const ikinci = await yeni("ikinci@ornek.test");
       const rol = { rolKodu: tamYetkiliKod };
-      await rolVer(taban.vt, { yoneticiKimligi: birinci, ...rol });
-      await expect(rolAl(taban.vt, { yoneticiKimligi: birinci, ...rol })).rejects.toMatchObject({
+      await rolVer(taban.vt, { yoneticiKimligi: birinci, ...rol }, testIslemi);
+      await expect(
+        rolAl(taban.vt, { yoneticiKimligi: birinci, ...rol }, testIslemi),
+      ).rejects.toMatchObject({
         kod: "is-kurali",
       });
       expect(await yoneticininIzniVarMi(taban.vt, birinci, "ekip.gor")).toBe(true);
 
-      await rolVer(taban.vt, { yoneticiKimligi: ikinci, ...rol });
-      await rolAl(taban.vt, { yoneticiKimligi: birinci, ...rol });
+      await rolVer(taban.vt, { yoneticiKimligi: ikinci, ...rol }, testIslemi);
+      await rolAl(taban.vt, { yoneticiKimligi: birinci, ...rol }, testIslemi);
       expect(await yoneticininIzniVarMi(taban.vt, birinci, "ekip.gor")).toBe(false);
 
       // İkinci kalan tek sahip; başka sahip silinmişse sayılmaz.
-      await rolVer(taban.vt, { yoneticiKimligi: birinci, ...rol });
+      await rolVer(taban.vt, { yoneticiKimligi: birinci, ...rol }, testIslemi);
       await taban.vt
         .update(yoneticiler)
         .set({ silinme_zamani: new Date() })
         .where(eq(yoneticiler.kimlik, birinci));
-      await expect(rolAl(taban.vt, { yoneticiKimligi: ikinci, ...rol })).rejects.toMatchObject({
+      await expect(
+        rolAl(taban.vt, { yoneticiKimligi: ikinci, ...rol }, testIslemi),
+      ).rejects.toMatchObject({
         kod: "is-kurali",
       });
     } finally {
@@ -176,12 +189,14 @@ describe("son mağaza sahibi", () => {
             eposta,
             sifre: "uzun-bir-deneme-sifresi",
           });
-          await rolVer(taban.vt, { yoneticiKimligi: hesapKimligi, ...rol });
+          await rolVer(taban.vt, { yoneticiKimligi: hesapKimligi, ...rol }, testIslemi);
           return hesapKimligi;
         }),
       );
       const sonuclar = await Promise.allSettled(
-        kimlikler.map((yoneticiKimligi) => rolAl(taban.vt, { yoneticiKimligi, ...rol })),
+        kimlikler.map((yoneticiKimligi) =>
+          rolAl(taban.vt, { yoneticiKimligi, ...rol }, testIslemi),
+        ),
       );
       expect(sonuclar.filter(({ status }) => status === "fulfilled")).toHaveLength(1);
       expect(sonuclar.find(({ status }) => status === "rejected")).toMatchObject({

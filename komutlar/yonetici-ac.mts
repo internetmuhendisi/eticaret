@@ -4,6 +4,7 @@
 
 import { randomBytes } from "node:crypto";
 import { BilinenHata } from "../cekirdek/kapi/zarf.ts";
+import { sistemIslemi } from "../cekirdek/kayitlar/degisiklik-islemleri.ts";
 import { tamYetkiliYoneticiAc } from "../cekirdek/moduller/ekip/servis.ts";
 import { baglan } from "../cekirdek/veritabani/baglanti.ts";
 import { siteVeAdres } from "./site-veritabani.mts";
@@ -24,7 +25,7 @@ const veritabani = baglan(adres.href);
 
 try {
   const sifre = randomBytes(24).toString("base64url");
-  await tamYetkiliYoneticiAc(veritabani, { eposta, sifre });
+  await tamYetkiliYoneticiAc(veritabani, { eposta, sifre }, sistemIslemi("yonetici-ac"));
   console.log(`açıldı      ${kodAdi}: ${eposta} (tam yetkili)`);
   console.log(`şifre       ${sifre}`);
   console.log("Şifre bir daha gösterilmez, güvenli bir yere yazın.");

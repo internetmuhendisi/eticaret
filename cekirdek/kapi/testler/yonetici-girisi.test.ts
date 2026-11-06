@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 import { resolve } from "node:path";
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
 import { istekSinirlari } from "../../kayitlar/kapi.ts";
 import { girisAdimiCerezi, girisDenemeSiniri } from "../../kayitlar/oturum.ts";
 import { yoneticiler } from "../../moduller/ekip/model.ts";
@@ -19,6 +20,8 @@ import { yoneticiCikisUcu } from "../herkese-acik/yonetici-cikis.ts";
 import { yoneticiGirisUcu } from "../herkese-acik/yonetici-giris.ts";
 import { yoneticiKurulumOnayUcu } from "../herkese-acik/yonetici-kurulum-onay.ts";
 import { panelYoklamasi } from "../panel-korumasi.ts";
+
+const testIslemi = sistemIslemi("test");
 
 const sifre = "uzun-bir-deneme-sifresi";
 let vt: Veritabani;
@@ -368,10 +371,10 @@ describe("anahtarı değiştirmeyen oturum sorusu", () => {
 describe("tam yetkili yönetici açma", () => {
   it("hesabı tam yetkili açar, girişi çalışır; aynı e-posta çakışır", async () => {
     const eposta = yeniEposta();
-    const { hesapKimligi } = await tamYetkiliYoneticiAc(vt, { eposta, sifre });
+    const { hesapKimligi } = await tamYetkiliYoneticiAc(vt, { eposta, sifre }, testIslemi);
     expect(await yoneticininIzniVarMi(vt, hesapKimligi, "ekip.rol-ata")).toBe(true);
     expect((await giris(eposta, sifre)).status).toBe(200);
-    await expect(tamYetkiliYoneticiAc(vt, { eposta, sifre })).rejects.toMatchObject({
+    await expect(tamYetkiliYoneticiAc(vt, { eposta, sifre }, testIslemi)).rejects.toMatchObject({
       kod: "cakisma",
     });
   });

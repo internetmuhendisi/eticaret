@@ -6,7 +6,7 @@ import { and, eq, gt, isNull, lt, sql } from "drizzle-orm";
 import { gunluk } from "../../izleme/gunluk.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import { girisAdimiSuresiSaniye, ikiAsamaDenemeSiniri } from "../../kayitlar/oturum.ts";
-import type { Veritabani } from "../../veritabani/baglanti.ts";
+import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import {
   yoneticiGirisAdimlari,
   yoneticiIkiAsama,
@@ -160,10 +160,8 @@ const sinirliKodDenemesi = async <Sonuc>(
   return sonuc;
 };
 
-type Islem = Parameters<Parameters<Veritabani["transaction"]>[0]>[0];
-
 // Ara adımı kilitleyip okur: aynı anda giden ikinci istek bekler, sonra adımı silinmiş bulur.
-const adimiKilitle = async (islem: Islem, anahtar: string, hesapKimligi: string) => {
+const adimiKilitle = async (islem: VeritabaniIslemi, anahtar: string, hesapKimligi: string) => {
   const [adim] = await islem
     .select({
       kimlik: yoneticiGirisAdimlari.kimlik,
@@ -182,7 +180,7 @@ const adimiKilitle = async (islem: Islem, anahtar: string, hesapKimligi: string)
   return adim;
 };
 
-const ikiAsamayiKilitle = async (islem: Islem, hesapKimligi: string) => {
+const ikiAsamayiKilitle = async (islem: VeritabaniIslemi, hesapKimligi: string) => {
   const [kayit] = await islem
     .select({
       sifreli: yoneticiIkiAsama.sifreli_gizli,
@@ -195,7 +193,7 @@ const ikiAsamayiKilitle = async (islem: Islem, hesapKimligi: string) => {
 };
 
 const adimiKapatipOturumAc = async (
-  islem: Islem,
+  islem: VeritabaniIslemi,
   adimKimligi: string,
   hesapKimligi: string,
   sureSaniye: number,

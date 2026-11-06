@@ -2,10 +2,19 @@
 // "bu yöneticide bu izin var mı" sorusudur. Bu servisi çağıran uç, izni kapıda beyan eder.
 import { and, count, eq, isNotNull, isNull, or } from "drizzle-orm";
 import { BilinenHata } from "../../kapi/zarf.ts";
+import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import type { GirisIzni } from "../../kayitlar/izinler.ts";
-import type { Veritabani } from "../../veritabani/baglanti.ts";
+import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
+import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { hesapAc } from "../oturum/servis.ts";
-import { rolIzinleri, roller, yoneticiler, yoneticiRolleri } from "./model.ts";
+import {
+  rolIzinleri,
+  roller,
+  yoneticiGirisAdimlari,
+  yoneticiler,
+  yoneticiOturumlari,
+  yoneticiRolleri,
+} from "./model.ts";
 
 // Her istekte çalışır: rol alınınca erişim bir sonraki istekte kesilir.
 export const yoneticininIzniVarMi = async (
@@ -17,6 +26,7 @@ export const yoneticininIzniVarMi = async (
     .select({ rol: roller.kimlik })
     .from(yoneticiRolleri)
     .innerJoin(roller, eq(roller.kimlik, yoneticiRolleri.rol_kimligi))
+    .innerJoin(yoneticiler, eq(yoneticiler.kimlik, yoneticiRolleri.yonetici_kimligi))
     .leftJoin(
       rolIzinleri,
       and(eq(rolIzinleri.rol_kimligi, roller.kimlik), eq(rolIzinleri.izin, izin)),
@@ -24,6 +34,7 @@ export const yoneticininIzniVarMi = async (
     .where(
       and(
         eq(yoneticiRolleri.yonetici_kimligi, yoneticiKimligi),
+        isNull(yoneticiler.silinme_zamani),
         or(eq(roller.tam_yetki, true), isNotNull(rolIzinleri.izin)),
       ),
     )
@@ -31,38 +42,72 @@ export const yoneticininIzniVarMi = async (
   return bulunan !== undefined;
 };
 
-export const rolVer = async (
-  vt: Pick<Veritabani, "select" | "insert">,
-  girdi: { yoneticiKimligi: string; rolKodu: string },
-): Promise<void> => {
-  const [rol] = await vt
+// Yetki işlemlerinin ortak kilidi: tam yetkili rollerin satırları. Bir sahibin rolünü almak ya da hesabını
+// kapatmak aynı anda iki kez geçemez, sahipsiz mağaza kalmaz (karar 0040). Rol verme de alır: kapatılmakta
+// olan hesaba rol verilmez. Her yetki işlemi önce bunu alır, kilitlenme (deadlock) olmaz.
+const tamYetkiliRolleriKilitle = (islem: VeritabaniIslemi) =>
+  islem
     .select({ kimlik: roller.kimlik })
     .from(roller)
-    .where(eq(roller.kod, girdi.rolKodu));
-  const [yonetici] = await vt
-    .select({ kimlik: yoneticiler.kimlik })
-    .from(yoneticiler)
-    .where(and(eq(yoneticiler.kimlik, girdi.yoneticiKimligi), isNull(yoneticiler.silinme_zamani)));
-  if (rol === undefined || yonetici === undefined) throw new BilinenHata("bulunamadi");
-  await vt
-    .insert(yoneticiRolleri)
-    .values({ yonetici_kimligi: yonetici.kimlik, rol_kimligi: rol.kimlik })
-    .onConflictDoNothing();
+    .where(eq(roller.tam_yetki, true))
+    .orderBy(roller.kimlik)
+    .for("update");
+
+// Her değişiklik aynı işlemde değişiklik kaydına yazılır (kart 0029, karar 0045). Kişi zaten bu role
+// sahipse değişen bir şey yoktur, kayıt düşmez.
+export const rolVer = async (
+  vt: Pick<Veritabani, "transaction">,
+  girdi: { yoneticiKimligi: string; rolKodu: string },
+  kim: DegisikligiYapan,
+): Promise<void> => {
+  await vt.transaction(async (islem) => {
+    await tamYetkiliRolleriKilitle(islem);
+    const [rol] = await islem
+      .select({ kimlik: roller.kimlik })
+      .from(roller)
+      .where(eq(roller.kod, girdi.rolKodu));
+    const [yonetici] = await islem
+      .select({ kimlik: yoneticiler.kimlik })
+      .from(yoneticiler)
+      .where(
+        and(eq(yoneticiler.kimlik, girdi.yoneticiKimligi), isNull(yoneticiler.silinme_zamani)),
+      );
+    if (rol === undefined || yonetici === undefined) throw new BilinenHata("bulunamadi");
+    const verilen = await islem
+      .insert(yoneticiRolleri)
+      .values({ yonetici_kimligi: yonetici.kimlik, rol_kimligi: rol.kimlik })
+      .onConflictDoNothing()
+      .returning({ rol: yoneticiRolleri.rol_kimligi });
+    if (verilen.length === 0) return;
+    await degisikligiKaydet(islem, {
+      kim,
+      islem: "rol.verildi",
+      kayit: { tur: "yonetici", kimlik: yonetici.kimlik },
+      eski: null,
+      yeni: { rol: girdi.rolKodu },
+    });
+  });
+};
+
+// Hata fırlarsa işlem geri alınır, yapılan değişiklik yerine döner.
+const sonSahipKontrolu = async (islem: VeritabaniIslemi): Promise<void> => {
+  const [kalan] = await islem
+    .select({ sayi: count() })
+    .from(yoneticiRolleri)
+    .innerJoin(roller, eq(roller.kimlik, yoneticiRolleri.rol_kimligi))
+    .innerJoin(yoneticiler, eq(yoneticiler.kimlik, yoneticiRolleri.yonetici_kimligi))
+    .where(and(eq(roller.tam_yetki, true), isNull(yoneticiler.silinme_zamani)));
+  if ((kalan?.sayi ?? 0) === 0) throw new BilinenHata("is-kurali");
 };
 
 // Tam yetkili son yöneticinin rolü alınamaz (karar 0040): mağazada ekibi yönetecek kimse kalmazdı.
-// Tam yetkili roller kilitlenir, iki sahibin rolü aynı anda alınırken ikisi de geçemez.
 export const rolAl = async (
-  vt: Veritabani,
+  vt: Pick<Veritabani, "transaction">,
   girdi: { yoneticiKimligi: string; rolKodu: string },
+  kim: DegisikligiYapan,
 ): Promise<void> => {
   await vt.transaction(async (islem) => {
-    await islem
-      .select({ kimlik: roller.kimlik })
-      .from(roller)
-      .where(eq(roller.tam_yetki, true))
-      .orderBy(roller.kimlik)
-      .for("update");
+    await tamYetkiliRolleriKilitle(islem);
 
     const [rol] = await islem
       .select({ kimlik: roller.kimlik, tamYetki: roller.tam_yetki })
@@ -80,16 +125,59 @@ export const rolAl = async (
       )
       .returning({ rol: yoneticiRolleri.rol_kimligi });
     if (alinan.length === 0) throw new BilinenHata("bulunamadi");
-    if (!rol.tamYetki) return;
+    if (rol.tamYetki) await sonSahipKontrolu(islem);
+    await degisikligiKaydet(islem, {
+      kim,
+      islem: "rol.alindi",
+      kayit: { tur: "yonetici", kimlik: girdi.yoneticiKimligi },
+      eski: { rol: girdi.rolKodu },
+      yeni: null,
+    });
+  });
+};
 
-    // Hata fırlarsa işlem geri alınır, silinen satır yerine döner.
-    const [kalan] = await islem
-      .select({ sayi: count() })
+// Yöneticinin giriş hesabını kapatır: giremez, açık oturumu ve yarım girişi hemen geçersiz olur. Tam
+// yetkili son yöneticinin hesabı kapatılamaz; rolAl ile aynı kilidi alır, ikisi aynı anda geçemez.
+export const yoneticiHesabiKapat = async (
+  vt: Pick<Veritabani, "transaction">,
+  girdi: { yoneticiKimligi: string },
+  kim: DegisikligiYapan,
+): Promise<void> => {
+  await vt.transaction(async (islem) => {
+    await tamYetkiliRolleriKilitle(islem);
+    const simdi = new Date();
+    const [kapanan] = await islem
+      .update(yoneticiler)
+      .set({ silinme_zamani: simdi, guncellenme_zamani: simdi })
+      .where(and(eq(yoneticiler.kimlik, girdi.yoneticiKimligi), isNull(yoneticiler.silinme_zamani)))
+      .returning({ kimlik: yoneticiler.kimlik });
+    if (kapanan === undefined) throw new BilinenHata("bulunamadi");
+    const [tamYetkili] = await islem
+      .select({ rol: yoneticiRolleri.rol_kimligi })
       .from(yoneticiRolleri)
       .innerJoin(roller, eq(roller.kimlik, yoneticiRolleri.rol_kimligi))
-      .innerJoin(yoneticiler, eq(yoneticiler.kimlik, yoneticiRolleri.yonetici_kimligi))
-      .where(and(eq(roller.tam_yetki, true), isNull(yoneticiler.silinme_zamani)));
-    if ((kalan?.sayi ?? 0) === 0) throw new BilinenHata("is-kurali");
+      .where(and(eq(yoneticiRolleri.yonetici_kimligi, kapanan.kimlik), eq(roller.tam_yetki, true)))
+      .limit(1);
+    if (tamYetkili !== undefined) await sonSahipKontrolu(islem);
+    await islem
+      .update(yoneticiOturumlari)
+      .set({ kapanma_zamani: simdi })
+      .where(
+        and(
+          eq(yoneticiOturumlari.hesap_kimligi, kapanan.kimlik),
+          isNull(yoneticiOturumlari.kapanma_zamani),
+        ),
+      );
+    await islem
+      .delete(yoneticiGirisAdimlari)
+      .where(eq(yoneticiGirisAdimlari.yonetici_kimligi, kapanan.kimlik));
+    await degisikligiKaydet(islem, {
+      kim,
+      islem: "yonetici.kapatildi",
+      kayit: { tur: "yonetici", kimlik: kapanan.kimlik },
+      eski: { hesap: "acik" },
+      yeni: { hesap: "kapali" },
+    });
   });
 };
 
@@ -99,6 +187,7 @@ export const rolAl = async (
 export const tamYetkiliYoneticiAc = (
   vt: Veritabani,
   girdi: { eposta: string; sifre: string },
+  kim: DegisikligiYapan,
 ): Promise<{ hesapKimligi: string }> =>
   vt.transaction(async (islem) => {
     const [rol] = await islem
@@ -109,6 +198,6 @@ export const tamYetkiliYoneticiAc = (
       .limit(1);
     if (rol === undefined) throw new BilinenHata("bulunamadi");
     const { hesapKimligi } = await hesapAc(islem, "yonetici", girdi);
-    await rolVer(islem, { yoneticiKimligi: hesapKimligi, rolKodu: rol.kod });
+    await rolVer(islem, { yoneticiKimligi: hesapKimligi, rolKodu: rol.kod }, kim);
     return { hesapKimligi };
   });
