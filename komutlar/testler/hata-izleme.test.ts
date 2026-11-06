@@ -192,6 +192,8 @@ describe("uç ve ara katman denemesi", () => {
     expect(olayBaglamiTutuyor(olay, { kaynak: "panel-korumasi" })).toBe(true);
     expect(olayBaglamiTutuyor(olay, { kaynak: "saglik" })).toBe(false);
     expect(olayBaglamiTutuyor({}, { kaynak: "panel-korumasi" })).toBe(false);
+    const kancadan = { extra: { baglam: { kaynak: "next", yontem: "POST", yol: "/kapi/a" } } };
+    expect(olayBaglamiTutuyor(kancadan, { yontem: "POST", yol: "/kapi/a" })).toBe(false);
     expect(olayBaglamiTutuyor({ extra: {} }, { kaynak: "panel-korumasi" })).toBe(false);
   });
 });

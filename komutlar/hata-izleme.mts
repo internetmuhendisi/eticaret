@@ -437,12 +437,18 @@ export const kutuIstekBetigi = (istekler: readonly DenemeIstegi[]): string =>
 })();
 `;
 
-// Kaydın bağlamı beklenen alanları taşıyor mu.
+// Kaydın bağlamı beklenenle birebir aynı mı. Alt küme yetmez: açılış paketinin istek hatası kancası da
+// aynı yöntem ve yolu yazar (kaynak: next); o kayıt uç ölçümünü yeşil göstermemeli.
 export const olayBaglamiTutuyor = (olay: Olay, baglam: Record<string, string>): boolean => {
   const { extra } = olay;
   if (typeof extra !== "object" || extra === null || !("baglam" in extra)) return false;
-  const kayitli = extra.baglam as Record<string, unknown> | null;
-  return Object.entries(baglam).every(([ad, deger]) => kayitli?.[ad] === deger);
+  const kayitli = extra.baglam;
+  if (typeof kayitli !== "object" || kayitli === null) return false;
+  const alanlar = Object.entries(kayitli);
+  return (
+    alanlar.length === Object.keys(baglam).length &&
+    alanlar.every(([ad, deger]) => baglam[ad] === deger)
+  );
 };
 
 // --- Denetim ---

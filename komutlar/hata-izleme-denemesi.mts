@@ -5,9 +5,9 @@
 // - uç ve ara katman: ortamın veritabanı kutusu kısa süre durdurulur, çalışan uygulamaya kutunun
 //   içinden istek atılır. İlk ölçüm ayrı süreçte kendi bağlantısını kurar; bu ölçüm uygulamanın
 //   açılışta bağladığı aracı dener.
-// Veritabanı kapatıldıktan sonra hata ve Ctrl-C durumunda da açılır, birkaç kez denenir. Açılamazsa
-// (sunucuya ulaşılamıyorsa) komut bunu ve elle açma komutunu söyler. Süreç zorla öldürülürse açılmaz;
-// bu durumu pnpm sunucu-denetle görür.
+// Veritabanı kapatıldıktan sonra hatada ve kesme sinyallerinde (Ctrl-C, terminalin kapanması) de açılır,
+// birkaç kez denenir ve çalıştığı okunur. Açılamazsa komut bunu ve elle açma komutunu söyler. Süreç
+// zorla öldürülürse (SIGKILL, bilgisayarın kapanması) açılmaz; bu durumu pnpm sunucu-denetle görür.
 // Ayrıca ön kapının 1 MB gövde sınırı sitenin gönderim adresiyle ölçülür.
 // Araçtaki kayıtta site kod adı, çekirdek sürümü ve ortam etiketi olmalı; uydurma bilgilerin hiçbiri
 // açık, ziyaretçi adresi, istek başlığı ve çerez hiç olmamalı.
@@ -80,11 +80,14 @@ const tarayicidaDene = async (kodAdi: string, isaret: string): Promise<number> =
 
 const uyu = (ms: number) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 
-// Veritabanı açılmadan bu dosya bitmemeli: elle durdurulan kutu kendiliğinden açılmaz (karar 0033).
+// Elle durdurulan kutu kendiliğinden açılmaz (karar 0033). Yarıda kesilen bir durdurma sunucuda sürebilir:
+// o sırada verilen "start" başarılı döner, kutu sonra yine kapanırdı. Bu yüzden önce durdurmanın bitmesi
+// beklenir (kutu zaten kapalıysa "stop" hemen döner), sonra açılır ve çalıştığı okunur.
 const veritabaniniAc = (ipv4: string, vt: string): boolean => {
+  const betik = `docker stop --timeout 10 ${vt} >/dev/null && docker start ${vt} >/dev/null && docker inspect --format '{{.State.Running}}' ${vt}`;
   for (let deneme = 0; deneme < 5; deneme++) {
     if (deneme > 0) uyu(3000);
-    if (sshKomutu(ipv4, `docker start ${vt}`).status === 0) return true;
+    if (sshKomutu(ipv4, betik).stdout?.trim() === "true") return true;
   }
   console.error(
     `VERİTABANI KAPALI KALDI, ortamdaki siteler bakımda. Elle açın: ssh <sunucu> docker start ${vt}`,
@@ -105,12 +108,13 @@ const sunucuSaati = (ipv4: string): number => {
 // açılırken gelen yoklama hataları ayrı bir durumdur, ölçüme karışmaz.
 const istekHatalariniCikar = async (ipv4: string, kutu: string) => {
   const vt = veritabaniKutusu(hataIzlemeOrtami);
+  // Dinleyici sinyalin süreci öldürmesini engeller: aşağıdaki iş eşzamanlıdır (spawnSync), sinyal geldiğinde
+  // süreç sonuna kadar gider ve veritabanını açar. Komut denemenin sonunda kırmızı biter.
+  const kesmeSinyalleri = ["SIGINT", "SIGTERM", "SIGHUP", "SIGQUIT"] as const;
   const kesinti = () => {
-    veritabaniniAc(ipv4, vt);
-    process.exit(130);
+    process.exitCode = 1;
   };
-  process.once("SIGINT", kesinti);
-  process.once("SIGTERM", kesinti);
+  for (const sinyal of kesmeSinyalleri) process.on(sinyal, kesinti);
   let cikti = "";
   let aralik = { baslangic: 0, bitis: 0 };
   let acildi = false;
@@ -126,11 +130,10 @@ const istekHatalariniCikar = async (ipv4: string, kutu: string) => {
     aralik = { baslangic, bitis: sunucuSaati(ipv4) };
   } finally {
     acildi = veritabaniniAc(ipv4, vt);
-    process.off("SIGINT", kesinti);
-    process.off("SIGTERM", kesinti);
+    for (const sinyal of kesmeSinyalleri) process.off(sinyal, kesinti);
   }
   const yanitlar = denemeIstekleri.map(
-    (_, sira) => cikti.match(new RegExp(`^istek=${sira} (\\d+)$`, "m"))?.[1] ?? "yok",
+    (_, sira) => cikti?.match(new RegExp(`^istek=${sira} (\\d+)$`, "m"))?.[1] ?? "yok",
   );
   if (!acildi) return { yanitlar, aralik, duzeldi: false };
   const saglikDurumu = kutuIstekBetigi([
