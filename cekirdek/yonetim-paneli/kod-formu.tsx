@@ -2,7 +2,7 @@
 // İki aşamalı girişin kod formu (kart 0028): kod ekranı ve kurulum ekranı ortak kullanır. Süresi dolan
 // ara adımda giriş sayfasına döner.
 import { type FormEvent, useRef, useState } from "react";
-import { Dugme } from "../../bilesenler/form/dugme";
+import { Form, GonderDugmesi } from "../../bilesenler/form/form";
 import { FormAlani } from "../../bilesenler/form/form-alani";
 import { GirisAlani } from "../../bilesenler/form/giris-alani";
 import { Uyari } from "../../bilesenler/form/uyari";
@@ -69,14 +69,19 @@ export function KodFormu<Veri>({
   };
 
   return (
-    <form className={stil.form} onSubmit={gonder} noValidate>
+    <Form
+      className={stil.form}
+      onSubmit={gonder}
+      kodGerekliMetni={metin("ortak.form.kodGerekli")}
+      yukleniyorMetni={metin("ortak.form.yukleniyor")}
+    >
       {hata === null ? null : <Uyari>{hata}</Uyari>}
       <FormAlani etiket={etiket}>
         {(alan) => (
           <GirisAlani {...alan} name="kod" autoComplete="one-time-code" autoFocus required />
         )}
       </FormAlani>
-      <Dugme type="submit">{dugme}</Dugme>
-    </form>
+      <GonderDugmesi>{dugme}</GonderDugmesi>
+    </Form>
   );
 }

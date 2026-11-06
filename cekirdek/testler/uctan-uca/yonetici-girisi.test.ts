@@ -302,3 +302,126 @@ for (const [ad, width, height] of [
     expect((await devam.boundingBox())?.height).toBeGreaterThanOrEqual(44);
   });
 }
+
+// Sayfanın kodu yüklenmeden form gönderilemez, şifre ve kod adrese yazılmaz (kart 0057). Kod bilerek
+// bekletilir; bütün gezinme istekleri kaydedilir, form gönderimi yeni bir gezinme olurdu.
+const koduBeklet = async (page: Page) => {
+  let birak = () => {};
+  const bekle = new Promise<void>((tamam) => {
+    birak = tamam;
+  });
+  await page.route("**/_next/static/**", async (yol) => {
+    await bekle;
+    await yol.continue();
+  });
+  const gezinmeler: string[] = [];
+  page.on("request", (istek) => {
+    if (istek.isNavigationRequest()) gezinmeler.push(`${istek.method()} ${istek.url()}`);
+  });
+  return {
+    gezinmeler,
+    birak: () => birak(),
+  };
+};
+
+const gonderilemez = async (page: Page, dugme: string, gezinmeler: string[], gizli: string) => {
+  const dugmesi = page.getByRole("button", { name: dugme });
+  await expect(dugmesi).toBeDisabled();
+  const once = gezinmeler.length;
+  await page.keyboard.press("Enter");
+  await dugmesi.click({ force: true });
+  await page.waitForTimeout(500);
+  expect(gezinmeler).toHaveLength(once);
+  expect(page.url()).not.toContain(gizli);
+  expect(await page.locator("form").getAttribute("method")).toBe("post");
+};
+
+test("giriş formu kod yüklenmeden gönderilmez, yüklenince aynı değerlerle çalışır", async ({
+  page,
+}) => {
+  const { gezinmeler, birak } = await koduBeklet(page);
+  await page.goto("/yonetim/giris", { waitUntil: "commit" });
+  const sifreAlani = page.getByLabel(metin("yonetim.giris.sifre"));
+  await page.getByLabel(metin("yonetim.giris.eposta")).fill(eposta);
+  await sifreAlani.fill(sifre);
+  await sifreAlani.focus();
+  await gonderilemez(page, metin("yonetim.giris.gonder"), gezinmeler, encodeURIComponent(sifre));
+  await expect(sifreAlani).toHaveValue(sifre);
+  // Kod yüklenmezse kullanıcı nedenini görür; yüklenince mesaj kalkar.
+  const yukleniyor = page.getByText(metin("ortak.form.yukleniyor"), { exact: true });
+  await expect(yukleniyor).toBeVisible({ timeout: 6000 });
+  birak();
+  await expect(page.getByRole("button", { name: metin("yonetim.giris.gonder") })).toBeEnabled();
+  await expect(yukleniyor).toBeHidden();
+  await expect(sifreAlani).toHaveValue(sifre);
+  await sifreAlani.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/yonetim\/giris\/kurulum/);
+  for (const adres of gezinmeler) {
+    expect(adres).not.toContain(encodeURIComponent(sifre));
+    expect(adres).not.toContain("sifre=");
+  }
+});
+
+test("kurulum ve kod formu kod yüklenmeden gönderilmez, yüklenince çalışır", async ({ page }) => {
+  await page.goto("/yonetim/giris");
+  await sifreyleGir(page);
+  await expect(page).toHaveURL(/\/yonetim\/giris\/kurulum/);
+
+  const beklet = await koduBeklet(page);
+  await page.reload({ waitUntil: "commit" });
+  const kurulumAlani = page.getByLabel(metin("yonetim.kurulum.alan"));
+  await kurulumAlani.waitFor();
+  const gizli = await gizliOku(page);
+  const adim = kodAdimi();
+  const ilkKod = zamanliKod(gizli, adim);
+  await kurulumAlani.fill(ilkKod);
+  await kurulumAlani.focus();
+  await gonderilemez(page, metin("yonetim.kurulum.gonder"), beklet.gezinmeler, ilkKod);
+  beklet.birak();
+  await expect(kurulumAlani).toHaveValue(ilkKod);
+  await page.getByRole("button", { name: metin("yonetim.kurulum.gonder") }).click();
+  await page.getByRole("button", { name: metin("yonetim.kurulum.devam") }).click();
+  await expect(page).toHaveURL(/\/yonetim$/);
+  await yuklenmesiniBekle(page);
+  await cikisYap(page);
+  await sifreyleGir(page);
+  await expect(page).toHaveURL(/\/yonetim\/giris\/kod/);
+
+  await page.unrouteAll();
+  const ikinci = await koduBeklet(page);
+  await page.reload({ waitUntil: "commit" });
+  const kodAlani = page.getByLabel(metin("yonetim.kod.alan"));
+  await kodAlani.waitFor();
+  const ikinciKod = zamanliKod(gizli, adim + 1);
+  await kodAlani.fill(ikinciKod);
+  await kodAlani.focus();
+  await gonderilemez(page, metin("yonetim.kod.gonder"), ikinci.gezinmeler, ikinciKod);
+  ikinci.birak();
+  await expect(page.getByRole("button", { name: metin("yonetim.kod.gonder") })).toBeEnabled();
+  await kodAlani.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/yonetim$/);
+});
+
+test("kod bekliyorken form tarayıcıdan zorla gönderilse de adres temiz kalır", async ({ page }) => {
+  const { birak } = await koduBeklet(page);
+  await page.goto("/yonetim/giris", { waitUntil: "commit" });
+  await page.getByLabel(metin("yonetim.giris.sifre")).fill(sifre);
+  await page.getByLabel(metin("yonetim.giris.eposta")).fill(eposta);
+  await page.evaluate(() => document.querySelector("form")?.requestSubmit());
+  await page.waitForTimeout(500);
+  birak();
+  await expect(page).toHaveURL(/\/yonetim\/giris$/);
+  expect(page.url()).not.toContain("sifre");
+});
+
+test.describe("JavaScript kapalı", () => {
+  test.use({ javaScriptEnabled: false });
+  test("form nedenini söyler", async ({ page }) => {
+    await page.goto("/yonetim/giris");
+    // Test aracı noscript içini metin saymaz, sayfanın kendisine bakılır.
+    expect(await page.content()).toContain(metin("ortak.form.kodGerekli"));
+    await expect(page.getByRole("button", { name: metin("yonetim.giris.gonder") })).toBeDisabled();
+  });
+});

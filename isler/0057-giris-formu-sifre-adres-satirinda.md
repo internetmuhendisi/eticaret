@@ -4,7 +4,7 @@
 
 Sayfanın kodu yüklenmeden giriş formunda Enter'a basılırsa form tarayıcının kendi yöntemiyle (GET) gönderilir: adres `/yonetim/giris?eposta=...&sifre=...` olur (kart 0029 sırasında, kod 6 saniye geciktirilerek ölçüldü). Şifre tarayıcı geçmişine, ön kapı ve varsa başka kayıtlara düşer. Kart 0027'den beri vardır. Deneme adresindeki sitede yönetici yoktur, canlıda site yoktur; yine de yeni yayından önce kapatılmalıdır.
 
-Kurulum ekranında aynı durumda Enter bir şey yapmadı, adrese kod yazmadı (aynı ölçüm). Neden farklı olduğu ölçülmedi.
+Kurulum ekranında aynı durumda Enter bir şey yapmadı, adrese kod yazmadı (aynı ölçüm). Neden farklı olduğu ölçülmedi. Düzeltme: bu ölçüm zamanlamadan yanlıştı, işin başındaki ölçümde kurulum formu da `?kod=` yazdı (karar 0046).
 
 ## Olmazsa olmazlar
 

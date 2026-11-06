@@ -1,7 +1,7 @@
 "use client";
 // Yönetici giriş formu (kart 0027). Şema uçla ortaktır; şemadan geçmeyen girdi sunucuya gitmez.
 import { type FormEvent, useRef, useState } from "react";
-import { Dugme } from "../../bilesenler/form/dugme";
+import { Form, GonderDugmesi } from "../../bilesenler/form/form";
 import { FormAlani } from "../../bilesenler/form/form-alani";
 import { GirisAlani } from "../../bilesenler/form/giris-alani";
 import { Uyari } from "../../bilesenler/form/uyari";
@@ -56,7 +56,12 @@ export function GirisFormu({ donus }: { donus: string }) {
   };
 
   return (
-    <form className={stil.form} onSubmit={gonder} noValidate>
+    <Form
+      className={stil.form}
+      onSubmit={gonder}
+      kodGerekliMetni={metin("ortak.form.kodGerekli")}
+      yukleniyorMetni={metin("ortak.form.yukleniyor")}
+    >
       {hata === null ? null : <Uyari>{hata}</Uyari>}
       <FormAlani etiket={metin("yonetim.giris.eposta")}>
         {(alan) => (
@@ -74,7 +79,7 @@ export function GirisFormu({ donus }: { donus: string }) {
           />
         )}
       </FormAlani>
-      <Dugme type="submit">{metin("yonetim.giris.gonder")}</Dugme>
-    </form>
+      <GonderDugmesi>{metin("yonetim.giris.gonder")}</GonderDugmesi>
+    </Form>
   );
 }

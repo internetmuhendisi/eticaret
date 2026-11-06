@@ -26,7 +26,8 @@
     "./denetim/kurallar/guvensiz-sorgu.grit",
     "./denetim/kurallar/ham-sql.grit",
     "./denetim/kurallar/execute-sorgu.grit",
-    "./denetim/kurallar/elle-bicimlendirme.grit"
+    "./denetim/kurallar/elle-bicimlendirme.grit",
+    "./denetim/kurallar/elle-form.grit"
   ],
   "linter": {
     "enabled": true,

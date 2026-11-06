@@ -4,6 +4,10 @@
       "kaydet": "Kaydet",
       "vazgec": "Vazgeç"
     },
+    "form": {
+      "kodGerekli": "Bu formun çalışması için tarayıcınızda JavaScript açık olmalı.",
+      "yukleniyor": "Sayfa yükleniyor. Uzun sürerse sayfayı yenileyin."
+    },
     "hata": {
       "bolumGosterilemiyor": "Bu bölüm şu an gösterilemiyor. Sayfayı yenilemeyi deneyin.",
       "sayfaGosterilemiyor": "Bu sayfa şu an gösterilemiyor. Sayfayı yenilemeyi deneyin."

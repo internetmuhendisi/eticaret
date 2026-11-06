@@ -92,6 +92,20 @@ describe("ara katman", () => {
     ]);
   });
 
+  it("sayfaya gelen POST gövdesiz yönlenir, sorgu ve değer adrese geçmez", async () => {
+    const yanit = await proxy(
+      new NextRequest(`http://yerel${girisAdresi}?donus=%2Fyonetim`, {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body: "eposta=a%40ornek.test&sifre=gizli-deger",
+      }),
+    );
+    expect(yanit.status).toBe(303);
+    expect(new URL(yanit.headers.get("location") ?? "").pathname).toBe(girisAdresi);
+    expect(yanit.headers.get("location")).not.toContain("gizli-deger");
+    expect(yanit.headers.get("location")).not.toContain("sifre");
+  });
+
   it("veritabanı kapalıyken paneli açmaz, 503 döner", async () => {
     vi.spyOn(process.stderr, "write").mockImplementation(() => true);
     await baglantiyiKapat();

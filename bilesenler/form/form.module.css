@@ -31,3 +31,15 @@
   padding: 0.75rem;
   border: 2px solid currentcolor;
 }
+
+/* Kod birkaç saniyede yüklenmezse görünür (kart 0057). */
+.yukleniyor {
+  visibility: hidden;
+  animation: yukleniyorGoster 0s 3s forwards;
+}
+
+@keyframes yukleniyorGoster {
+  to {
+    visibility: visible;
+  }
+}

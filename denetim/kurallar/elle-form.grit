@@ -1,0 +1,12 @@
+// Elle form yasağı (kart 0057, .claude/rules/formlar.md). Sayfanın kodu yüklenmeden gönderilen form
+// alanları adres satırına yazar; şifre ve kod kayıtlara düşer. Ortak form bunu engeller.
+language js
+
+or {
+  JsxOpeningElement(),
+  JsxSelfClosingElement()
+} as $oge where {
+  $filename <: not r".*/bilesenler/form/form\.tsx",
+  $oge <: r"(?s)<form[\s/>].*",
+  register_diagnostic(span=$oge, message="Elle <form> yazılamaz. bilesenler/form/form.tsx içindeki Form bileşenini kullanın.", severity="error")
+}

@@ -14,6 +14,7 @@ type Beklenen = { kategori: string; mesajBasi?: string };
 const beklenenler: Record<string, Beklenen> = {
   "ham-renk.ts": { kategori: "plugin", mesajBasi: "Ham renk" },
   "gomulu-metin.tsx": { kategori: "plugin", mesajBasi: "Ekran metni" },
+  "elle-form.tsx": { kategori: "plugin", mesajBasi: "Elle <form>" },
   "gomulu-oge-metni.tsx": { kategori: "lint/style/noJsxLiterals" },
   "guvensiz-sorgu.ts": { kategori: "plugin", mesajBasi: "Güvensiz sorgu" },
   "guvensiz-ham-sql.ts": { kategori: "plugin", mesajBasi: "Güvensiz sorgu: sql.raw()" },

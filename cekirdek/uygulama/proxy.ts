@@ -7,6 +7,11 @@ import { panelYoklamasi } from "../kapi/panel-korumasi";
 export const config = { matcher: ["/yonetim", "/yonetim/:path*"] };
 
 export async function proxy(istek: NextRequest) {
+  // Panel sayfası POST kabul etmez: bu istek, kodu yüklenmeden gönderilen formdur (kart 0057). Gövdesi
+  // okunmaz. 303 gövdeyi bırakır, tarayıcı aynı adresi temiz açar ve yenilemede şifreyi yeniden göndermez.
+  if (istek.method !== "GET" && istek.method !== "HEAD") {
+    return NextResponse.redirect(new URL(istek.nextUrl.pathname, istek.url), 303);
+  }
   try {
     const { yonlendir, cerezler } = await panelYoklamasi(istek);
     // Next.js ara katmanda tam adres ister; aynı kökteki adresi yanıtta kendisi göreliye çevirir, bu
