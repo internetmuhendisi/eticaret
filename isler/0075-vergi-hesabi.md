@@ -29,4 +29,4 @@ Vergi tek bir işlevle hesaplanır. Sepet, ödeme, sipariş, e-posta ve panel ay
 
 ## Durum
 
-yapılacak
+bitti
