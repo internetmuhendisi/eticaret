@@ -52,6 +52,7 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
     dateStyle: "short",
     timeZone: ayarlar.saatDilimi,
   });
+  const ulkeAdlari = new Intl.DisplayNames(ayarlar.dil, { type: "region", fallback: "none" });
   const tarihSaatBicimi = new Intl.DateTimeFormat(ayarlar.dil, {
     dateStyle: "short",
     timeStyle: "short",
@@ -73,5 +74,8 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
       ayiricilariUygula(sayiBicimi(ondalikSayisi), deger),
     tarih: (an: Date): string => tarihBicimi.format(an),
     tarihSaat: (an: Date): string => tarihSaatBicimi.format(an),
+    // ISO 3166-1 ülke kodunun sitenin dilindeki adı (kart 0070). Ad dil verisinden (CLDR) gelir, kodda
+    // ülke adı yazmaz. Tanınmayan kod kendisi olarak döner; kodu bolgeler.ts doğrular.
+    ulkeAdi: (kod: string): string => ulkeAdlari.of(kod) ?? kod,
   };
 };

@@ -1,0 +1,4393 @@
+{
+  "kaynak": {
+    "resmi": false,
+    "not": "Resmî değil. Gerçek mağaza açılmadan önce İçişleri Bakanlığı'nın (e-icisleri.gov.tr) resmî listesiyle karşılaştırılacak (kart 0089). Kaynaklar ve yöntem: cekirdek/bolgeler/README.md.",
+    "derlendigi_tarih": "2026-11-07",
+    "il_kodlari_ve_adlari": "ISO 3166-2:TR (en.wikipedia.org/wiki/ISO_3166-2:TR üzerinden okundu)",
+    "ilce_listesi": "github.com/AlperKocanx/TurkiyeGuncelSehirIlceMahalleBilgileri2022, AdresListesi.csv, kayıt 86fdf8c (2023-12-28), MIT lisansı",
+    "ilce_yazilisi_ve_karsilastirma": "en.wikipedia.org/wiki/Districts_of_Turkey, sürüm 1383908694 (CC BY-SA 4.0); ilçe kümesi il il derlemeyle birebir aynı çıktı",
+    "ilce_kodlari": "Bu projenin kodu, resmî değil: il kodu ve ilçenin il içindeki sırası (TR-34-001). Kod bir kez verilince değişmez ve yeniden kullanılmaz; yeni ilçe sıradaki numarayı alır."
+  },
+  "ulke": "TR",
+  "postaKoduBicimi": "^[0-9]{5}$",
+  "iller": [
+    {
+      "kod": "TR-01",
+      "ad": "Adana",
+      "ilceler": [
+        {
+          "kod": "TR-01-001",
+          "ad": "Aladağ"
+        },
+        {
+          "kod": "TR-01-002",
+          "ad": "Ceyhan"
+        },
+        {
+          "kod": "TR-01-003",
+          "ad": "Çukurova"
+        },
+        {
+          "kod": "TR-01-004",
+          "ad": "Feke"
+        },
+        {
+          "kod": "TR-01-005",
+          "ad": "İmamoğlu"
+        },
+        {
+          "kod": "TR-01-006",
+          "ad": "Karaisalı"
+        },
+        {
+          "kod": "TR-01-007",
+          "ad": "Karataş"
+        },
+        {
+          "kod": "TR-01-008",
+          "ad": "Kozan"
+        },
+        {
+          "kod": "TR-01-009",
+          "ad": "Pozantı"
+        },
+        {
+          "kod": "TR-01-010",
+          "ad": "Saimbeyli"
+        },
+        {
+          "kod": "TR-01-011",
+          "ad": "Sarıçam"
+        },
+        {
+          "kod": "TR-01-012",
+          "ad": "Seyhan"
+        },
+        {
+          "kod": "TR-01-013",
+          "ad": "Tufanbeyli"
+        },
+        {
+          "kod": "TR-01-014",
+          "ad": "Yumurtalık"
+        },
+        {
+          "kod": "TR-01-015",
+          "ad": "Yüreğir"
+        }
+      ]
+    },
+    {
+      "kod": "TR-02",
+      "ad": "Adıyaman",
+      "ilceler": [
+        {
+          "kod": "TR-02-001",
+          "ad": "Besni"
+        },
+        {
+          "kod": "TR-02-002",
+          "ad": "Çelikhan"
+        },
+        {
+          "kod": "TR-02-003",
+          "ad": "Gerger"
+        },
+        {
+          "kod": "TR-02-004",
+          "ad": "Gölbaşı"
+        },
+        {
+          "kod": "TR-02-005",
+          "ad": "Kahta"
+        },
+        {
+          "kod": "TR-02-006",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-02-007",
+          "ad": "Samsat"
+        },
+        {
+          "kod": "TR-02-008",
+          "ad": "Sincik"
+        },
+        {
+          "kod": "TR-02-009",
+          "ad": "Tut"
+        }
+      ]
+    },
+    {
+      "kod": "TR-03",
+      "ad": "Afyonkarahisar",
+      "ilceler": [
+        {
+          "kod": "TR-03-001",
+          "ad": "Başmakçı"
+        },
+        {
+          "kod": "TR-03-002",
+          "ad": "Bayat"
+        },
+        {
+          "kod": "TR-03-003",
+          "ad": "Bolvadin"
+        },
+        {
+          "kod": "TR-03-004",
+          "ad": "Çay"
+        },
+        {
+          "kod": "TR-03-005",
+          "ad": "Çobanlar"
+        },
+        {
+          "kod": "TR-03-006",
+          "ad": "Dazkırı"
+        },
+        {
+          "kod": "TR-03-007",
+          "ad": "Dinar"
+        },
+        {
+          "kod": "TR-03-008",
+          "ad": "Emirdağ"
+        },
+        {
+          "kod": "TR-03-009",
+          "ad": "Evciler"
+        },
+        {
+          "kod": "TR-03-010",
+          "ad": "Hocalar"
+        },
+        {
+          "kod": "TR-03-011",
+          "ad": "İhsaniye"
+        },
+        {
+          "kod": "TR-03-012",
+          "ad": "İscehisar"
+        },
+        {
+          "kod": "TR-03-013",
+          "ad": "Kızılören"
+        },
+        {
+          "kod": "TR-03-014",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-03-015",
+          "ad": "Sandıklı"
+        },
+        {
+          "kod": "TR-03-016",
+          "ad": "Sinanpaşa"
+        },
+        {
+          "kod": "TR-03-017",
+          "ad": "Sultandağı"
+        },
+        {
+          "kod": "TR-03-018",
+          "ad": "Şuhut"
+        }
+      ]
+    },
+    {
+      "kod": "TR-04",
+      "ad": "Ağrı",
+      "ilceler": [
+        {
+          "kod": "TR-04-001",
+          "ad": "Diyadin"
+        },
+        {
+          "kod": "TR-04-002",
+          "ad": "Doğubayazıt"
+        },
+        {
+          "kod": "TR-04-003",
+          "ad": "Eleşkirt"
+        },
+        {
+          "kod": "TR-04-004",
+          "ad": "Hamur"
+        },
+        {
+          "kod": "TR-04-005",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-04-006",
+          "ad": "Patnos"
+        },
+        {
+          "kod": "TR-04-007",
+          "ad": "Taşlıçay"
+        },
+        {
+          "kod": "TR-04-008",
+          "ad": "Tutak"
+        }
+      ]
+    },
+    {
+      "kod": "TR-05",
+      "ad": "Amasya",
+      "ilceler": [
+        {
+          "kod": "TR-05-001",
+          "ad": "Göynücek"
+        },
+        {
+          "kod": "TR-05-002",
+          "ad": "Gümüşhacıköy"
+        },
+        {
+          "kod": "TR-05-003",
+          "ad": "Hamamözü"
+        },
+        {
+          "kod": "TR-05-004",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-05-005",
+          "ad": "Merzifon"
+        },
+        {
+          "kod": "TR-05-006",
+          "ad": "Suluova"
+        },
+        {
+          "kod": "TR-05-007",
+          "ad": "Taşova"
+        }
+      ]
+    },
+    {
+      "kod": "TR-06",
+      "ad": "Ankara",
+      "ilceler": [
+        {
+          "kod": "TR-06-001",
+          "ad": "Akyurt"
+        },
+        {
+          "kod": "TR-06-002",
+          "ad": "Altındağ"
+        },
+        {
+          "kod": "TR-06-003",
+          "ad": "Ayaş"
+        },
+        {
+          "kod": "TR-06-004",
+          "ad": "Bala"
+        },
+        {
+          "kod": "TR-06-005",
+          "ad": "Beypazarı"
+        },
+        {
+          "kod": "TR-06-006",
+          "ad": "Çamlıdere"
+        },
+        {
+          "kod": "TR-06-007",
+          "ad": "Çankaya"
+        },
+        {
+          "kod": "TR-06-008",
+          "ad": "Çubuk"
+        },
+        {
+          "kod": "TR-06-009",
+          "ad": "Elmadağ"
+        },
+        {
+          "kod": "TR-06-010",
+          "ad": "Etimesgut"
+        },
+        {
+          "kod": "TR-06-011",
+          "ad": "Evren"
+        },
+        {
+          "kod": "TR-06-012",
+          "ad": "Gölbaşı"
+        },
+        {
+          "kod": "TR-06-013",
+          "ad": "Güdül"
+        },
+        {
+          "kod": "TR-06-014",
+          "ad": "Haymana"
+        },
+        {
+          "kod": "TR-06-015",
+          "ad": "Kahramankazan"
+        },
+        {
+          "kod": "TR-06-016",
+          "ad": "Kalecik"
+        },
+        {
+          "kod": "TR-06-017",
+          "ad": "Keçiören"
+        },
+        {
+          "kod": "TR-06-018",
+          "ad": "Kızılcahamam"
+        },
+        {
+          "kod": "TR-06-019",
+          "ad": "Mamak"
+        },
+        {
+          "kod": "TR-06-020",
+          "ad": "Nallıhan"
+        },
+        {
+          "kod": "TR-06-021",
+          "ad": "Polatlı"
+        },
+        {
+          "kod": "TR-06-022",
+          "ad": "Pursaklar"
+        },
+        {
+          "kod": "TR-06-023",
+          "ad": "Sincan"
+        },
+        {
+          "kod": "TR-06-024",
+          "ad": "Şereflikoçhisar"
+        },
+        {
+          "kod": "TR-06-025",
+          "ad": "Yenimahalle"
+        }
+      ]
+    },
+    {
+      "kod": "TR-07",
+      "ad": "Antalya",
+      "ilceler": [
+        {
+          "kod": "TR-07-001",
+          "ad": "Akseki"
+        },
+        {
+          "kod": "TR-07-002",
+          "ad": "Aksu"
+        },
+        {
+          "kod": "TR-07-003",
+          "ad": "Alanya"
+        },
+        {
+          "kod": "TR-07-004",
+          "ad": "Demre"
+        },
+        {
+          "kod": "TR-07-005",
+          "ad": "Döşemealtı"
+        },
+        {
+          "kod": "TR-07-006",
+          "ad": "Elmalı"
+        },
+        {
+          "kod": "TR-07-007",
+          "ad": "Finike"
+        },
+        {
+          "kod": "TR-07-008",
+          "ad": "Gazipaşa"
+        },
+        {
+          "kod": "TR-07-009",
+          "ad": "Gündoğmuş"
+        },
+        {
+          "kod": "TR-07-010",
+          "ad": "İbradı"
+        },
+        {
+          "kod": "TR-07-011",
+          "ad": "Kaş"
+        },
+        {
+          "kod": "TR-07-012",
+          "ad": "Kemer"
+        },
+        {
+          "kod": "TR-07-013",
+          "ad": "Kepez"
+        },
+        {
+          "kod": "TR-07-014",
+          "ad": "Konyaaltı"
+        },
+        {
+          "kod": "TR-07-015",
+          "ad": "Korkuteli"
+        },
+        {
+          "kod": "TR-07-016",
+          "ad": "Kumluca"
+        },
+        {
+          "kod": "TR-07-017",
+          "ad": "Manavgat"
+        },
+        {
+          "kod": "TR-07-018",
+          "ad": "Muratpaşa"
+        },
+        {
+          "kod": "TR-07-019",
+          "ad": "Serik"
+        }
+      ]
+    },
+    {
+      "kod": "TR-08",
+      "ad": "Artvin",
+      "ilceler": [
+        {
+          "kod": "TR-08-001",
+          "ad": "Ardanuç"
+        },
+        {
+          "kod": "TR-08-002",
+          "ad": "Arhavi"
+        },
+        {
+          "kod": "TR-08-003",
+          "ad": "Borçka"
+        },
+        {
+          "kod": "TR-08-004",
+          "ad": "Hopa"
+        },
+        {
+          "kod": "TR-08-005",
+          "ad": "Kemalpaşa"
+        },
+        {
+          "kod": "TR-08-006",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-08-007",
+          "ad": "Murgul"
+        },
+        {
+          "kod": "TR-08-008",
+          "ad": "Şavşat"
+        },
+        {
+          "kod": "TR-08-009",
+          "ad": "Yusufeli"
+        }
+      ]
+    },
+    {
+      "kod": "TR-09",
+      "ad": "Aydın",
+      "ilceler": [
+        {
+          "kod": "TR-09-001",
+          "ad": "Bozdoğan"
+        },
+        {
+          "kod": "TR-09-002",
+          "ad": "Buharkent"
+        },
+        {
+          "kod": "TR-09-003",
+          "ad": "Çine"
+        },
+        {
+          "kod": "TR-09-004",
+          "ad": "Didim"
+        },
+        {
+          "kod": "TR-09-005",
+          "ad": "Efeler"
+        },
+        {
+          "kod": "TR-09-006",
+          "ad": "Germencik"
+        },
+        {
+          "kod": "TR-09-007",
+          "ad": "İncirliova"
+        },
+        {
+          "kod": "TR-09-008",
+          "ad": "Karacasu"
+        },
+        {
+          "kod": "TR-09-009",
+          "ad": "Karpuzlu"
+        },
+        {
+          "kod": "TR-09-010",
+          "ad": "Koçarlı"
+        },
+        {
+          "kod": "TR-09-011",
+          "ad": "Köşk"
+        },
+        {
+          "kod": "TR-09-012",
+          "ad": "Kuşadası"
+        },
+        {
+          "kod": "TR-09-013",
+          "ad": "Kuyucak"
+        },
+        {
+          "kod": "TR-09-014",
+          "ad": "Nazilli"
+        },
+        {
+          "kod": "TR-09-015",
+          "ad": "Söke"
+        },
+        {
+          "kod": "TR-09-016",
+          "ad": "Sultanhisar"
+        },
+        {
+          "kod": "TR-09-017",
+          "ad": "Yenipazar"
+        }
+      ]
+    },
+    {
+      "kod": "TR-10",
+      "ad": "Balıkesir",
+      "ilceler": [
+        {
+          "kod": "TR-10-001",
+          "ad": "Altıeylül"
+        },
+        {
+          "kod": "TR-10-002",
+          "ad": "Ayvalık"
+        },
+        {
+          "kod": "TR-10-003",
+          "ad": "Balya"
+        },
+        {
+          "kod": "TR-10-004",
+          "ad": "Bandırma"
+        },
+        {
+          "kod": "TR-10-005",
+          "ad": "Bigadiç"
+        },
+        {
+          "kod": "TR-10-006",
+          "ad": "Burhaniye"
+        },
+        {
+          "kod": "TR-10-007",
+          "ad": "Dursunbey"
+        },
+        {
+          "kod": "TR-10-008",
+          "ad": "Edremit"
+        },
+        {
+          "kod": "TR-10-009",
+          "ad": "Erdek"
+        },
+        {
+          "kod": "TR-10-010",
+          "ad": "Gömeç"
+        },
+        {
+          "kod": "TR-10-011",
+          "ad": "Gönen"
+        },
+        {
+          "kod": "TR-10-012",
+          "ad": "Havran"
+        },
+        {
+          "kod": "TR-10-013",
+          "ad": "İvrindi"
+        },
+        {
+          "kod": "TR-10-014",
+          "ad": "Karesi"
+        },
+        {
+          "kod": "TR-10-015",
+          "ad": "Kepsut"
+        },
+        {
+          "kod": "TR-10-016",
+          "ad": "Manyas"
+        },
+        {
+          "kod": "TR-10-017",
+          "ad": "Marmara"
+        },
+        {
+          "kod": "TR-10-018",
+          "ad": "Savaştepe"
+        },
+        {
+          "kod": "TR-10-019",
+          "ad": "Sındırgı"
+        },
+        {
+          "kod": "TR-10-020",
+          "ad": "Susurluk"
+        }
+      ]
+    },
+    {
+      "kod": "TR-11",
+      "ad": "Bilecik",
+      "ilceler": [
+        {
+          "kod": "TR-11-001",
+          "ad": "Bozüyük"
+        },
+        {
+          "kod": "TR-11-002",
+          "ad": "Gölpazarı"
+        },
+        {
+          "kod": "TR-11-003",
+          "ad": "İnhisar"
+        },
+        {
+          "kod": "TR-11-004",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-11-005",
+          "ad": "Osmaneli"
+        },
+        {
+          "kod": "TR-11-006",
+          "ad": "Pazaryeri"
+        },
+        {
+          "kod": "TR-11-007",
+          "ad": "Söğüt"
+        },
+        {
+          "kod": "TR-11-008",
+          "ad": "Yenipazar"
+        }
+      ]
+    },
+    {
+      "kod": "TR-12",
+      "ad": "Bingöl",
+      "ilceler": [
+        {
+          "kod": "TR-12-001",
+          "ad": "Adaklı"
+        },
+        {
+          "kod": "TR-12-002",
+          "ad": "Genç"
+        },
+        {
+          "kod": "TR-12-003",
+          "ad": "Karlıova"
+        },
+        {
+          "kod": "TR-12-004",
+          "ad": "Kiğı"
+        },
+        {
+          "kod": "TR-12-005",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-12-006",
+          "ad": "Solhan"
+        },
+        {
+          "kod": "TR-12-007",
+          "ad": "Yayladere"
+        },
+        {
+          "kod": "TR-12-008",
+          "ad": "Yedisu"
+        }
+      ]
+    },
+    {
+      "kod": "TR-13",
+      "ad": "Bitlis",
+      "ilceler": [
+        {
+          "kod": "TR-13-001",
+          "ad": "Adilcevaz"
+        },
+        {
+          "kod": "TR-13-002",
+          "ad": "Ahlat"
+        },
+        {
+          "kod": "TR-13-003",
+          "ad": "Güroymak"
+        },
+        {
+          "kod": "TR-13-004",
+          "ad": "Hizan"
+        },
+        {
+          "kod": "TR-13-005",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-13-006",
+          "ad": "Mutki"
+        },
+        {
+          "kod": "TR-13-007",
+          "ad": "Tatvan"
+        }
+      ]
+    },
+    {
+      "kod": "TR-14",
+      "ad": "Bolu",
+      "ilceler": [
+        {
+          "kod": "TR-14-001",
+          "ad": "Dörtdivan"
+        },
+        {
+          "kod": "TR-14-002",
+          "ad": "Gerede"
+        },
+        {
+          "kod": "TR-14-003",
+          "ad": "Göynük"
+        },
+        {
+          "kod": "TR-14-004",
+          "ad": "Kıbrıscık"
+        },
+        {
+          "kod": "TR-14-005",
+          "ad": "Mengen"
+        },
+        {
+          "kod": "TR-14-006",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-14-007",
+          "ad": "Mudurnu"
+        },
+        {
+          "kod": "TR-14-008",
+          "ad": "Seben"
+        },
+        {
+          "kod": "TR-14-009",
+          "ad": "Yeniçağa"
+        }
+      ]
+    },
+    {
+      "kod": "TR-15",
+      "ad": "Burdur",
+      "ilceler": [
+        {
+          "kod": "TR-15-001",
+          "ad": "Ağlasun"
+        },
+        {
+          "kod": "TR-15-002",
+          "ad": "Altınyayla"
+        },
+        {
+          "kod": "TR-15-003",
+          "ad": "Bucak"
+        },
+        {
+          "kod": "TR-15-004",
+          "ad": "Çavdır"
+        },
+        {
+          "kod": "TR-15-005",
+          "ad": "Çeltikçi"
+        },
+        {
+          "kod": "TR-15-006",
+          "ad": "Gölhisar"
+        },
+        {
+          "kod": "TR-15-007",
+          "ad": "Karamanlı"
+        },
+        {
+          "kod": "TR-15-008",
+          "ad": "Kemer"
+        },
+        {
+          "kod": "TR-15-009",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-15-010",
+          "ad": "Tefenni"
+        },
+        {
+          "kod": "TR-15-011",
+          "ad": "Yeşilova"
+        }
+      ]
+    },
+    {
+      "kod": "TR-16",
+      "ad": "Bursa",
+      "ilceler": [
+        {
+          "kod": "TR-16-001",
+          "ad": "Büyükorhan"
+        },
+        {
+          "kod": "TR-16-002",
+          "ad": "Gemlik"
+        },
+        {
+          "kod": "TR-16-003",
+          "ad": "Gürsu"
+        },
+        {
+          "kod": "TR-16-004",
+          "ad": "Harmancık"
+        },
+        {
+          "kod": "TR-16-005",
+          "ad": "İnegöl"
+        },
+        {
+          "kod": "TR-16-006",
+          "ad": "İznik"
+        },
+        {
+          "kod": "TR-16-007",
+          "ad": "Karacabey"
+        },
+        {
+          "kod": "TR-16-008",
+          "ad": "Keles"
+        },
+        {
+          "kod": "TR-16-009",
+          "ad": "Kestel"
+        },
+        {
+          "kod": "TR-16-010",
+          "ad": "Mudanya"
+        },
+        {
+          "kod": "TR-16-011",
+          "ad": "Mustafakemalpaşa"
+        },
+        {
+          "kod": "TR-16-012",
+          "ad": "Nilüfer"
+        },
+        {
+          "kod": "TR-16-013",
+          "ad": "Orhaneli"
+        },
+        {
+          "kod": "TR-16-014",
+          "ad": "Orhangazi"
+        },
+        {
+          "kod": "TR-16-015",
+          "ad": "Osmangazi"
+        },
+        {
+          "kod": "TR-16-016",
+          "ad": "Yenişehir"
+        },
+        {
+          "kod": "TR-16-017",
+          "ad": "Yıldırım"
+        }
+      ]
+    },
+    {
+      "kod": "TR-17",
+      "ad": "Çanakkale",
+      "ilceler": [
+        {
+          "kod": "TR-17-001",
+          "ad": "Ayvacık"
+        },
+        {
+          "kod": "TR-17-002",
+          "ad": "Bayramiç"
+        },
+        {
+          "kod": "TR-17-003",
+          "ad": "Biga"
+        },
+        {
+          "kod": "TR-17-004",
+          "ad": "Bozcaada"
+        },
+        {
+          "kod": "TR-17-005",
+          "ad": "Çan"
+        },
+        {
+          "kod": "TR-17-006",
+          "ad": "Eceabat"
+        },
+        {
+          "kod": "TR-17-007",
+          "ad": "Ezine"
+        },
+        {
+          "kod": "TR-17-008",
+          "ad": "Gelibolu"
+        },
+        {
+          "kod": "TR-17-009",
+          "ad": "Gökçeada"
+        },
+        {
+          "kod": "TR-17-010",
+          "ad": "Lapseki"
+        },
+        {
+          "kod": "TR-17-011",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-17-012",
+          "ad": "Yenice"
+        }
+      ]
+    },
+    {
+      "kod": "TR-18",
+      "ad": "Çankırı",
+      "ilceler": [
+        {
+          "kod": "TR-18-001",
+          "ad": "Atkaracalar"
+        },
+        {
+          "kod": "TR-18-002",
+          "ad": "Bayramören"
+        },
+        {
+          "kod": "TR-18-003",
+          "ad": "Çerkeş"
+        },
+        {
+          "kod": "TR-18-004",
+          "ad": "Eldivan"
+        },
+        {
+          "kod": "TR-18-005",
+          "ad": "Ilgaz"
+        },
+        {
+          "kod": "TR-18-006",
+          "ad": "Kızılırmak"
+        },
+        {
+          "kod": "TR-18-007",
+          "ad": "Korgun"
+        },
+        {
+          "kod": "TR-18-008",
+          "ad": "Kurşunlu"
+        },
+        {
+          "kod": "TR-18-009",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-18-010",
+          "ad": "Orta"
+        },
+        {
+          "kod": "TR-18-011",
+          "ad": "Şabanözü"
+        },
+        {
+          "kod": "TR-18-012",
+          "ad": "Yapraklı"
+        }
+      ]
+    },
+    {
+      "kod": "TR-19",
+      "ad": "Çorum",
+      "ilceler": [
+        {
+          "kod": "TR-19-001",
+          "ad": "Alaca"
+        },
+        {
+          "kod": "TR-19-002",
+          "ad": "Bayat"
+        },
+        {
+          "kod": "TR-19-003",
+          "ad": "Boğazkale"
+        },
+        {
+          "kod": "TR-19-004",
+          "ad": "Dodurga"
+        },
+        {
+          "kod": "TR-19-005",
+          "ad": "İskilip"
+        },
+        {
+          "kod": "TR-19-006",
+          "ad": "Kargı"
+        },
+        {
+          "kod": "TR-19-007",
+          "ad": "Laçin"
+        },
+        {
+          "kod": "TR-19-008",
+          "ad": "Mecitözü"
+        },
+        {
+          "kod": "TR-19-009",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-19-010",
+          "ad": "Oğuzlar"
+        },
+        {
+          "kod": "TR-19-011",
+          "ad": "Ortaköy"
+        },
+        {
+          "kod": "TR-19-012",
+          "ad": "Osmancık"
+        },
+        {
+          "kod": "TR-19-013",
+          "ad": "Sungurlu"
+        },
+        {
+          "kod": "TR-19-014",
+          "ad": "Uğurludağ"
+        }
+      ]
+    },
+    {
+      "kod": "TR-20",
+      "ad": "Denizli",
+      "ilceler": [
+        {
+          "kod": "TR-20-001",
+          "ad": "Acıpayam"
+        },
+        {
+          "kod": "TR-20-002",
+          "ad": "Babadağ"
+        },
+        {
+          "kod": "TR-20-003",
+          "ad": "Baklan"
+        },
+        {
+          "kod": "TR-20-004",
+          "ad": "Bekilli"
+        },
+        {
+          "kod": "TR-20-005",
+          "ad": "Beyağaç"
+        },
+        {
+          "kod": "TR-20-006",
+          "ad": "Bozkurt"
+        },
+        {
+          "kod": "TR-20-007",
+          "ad": "Buldan"
+        },
+        {
+          "kod": "TR-20-008",
+          "ad": "Çal"
+        },
+        {
+          "kod": "TR-20-009",
+          "ad": "Çameli"
+        },
+        {
+          "kod": "TR-20-010",
+          "ad": "Çardak"
+        },
+        {
+          "kod": "TR-20-011",
+          "ad": "Çivril"
+        },
+        {
+          "kod": "TR-20-012",
+          "ad": "Güney"
+        },
+        {
+          "kod": "TR-20-013",
+          "ad": "Honaz"
+        },
+        {
+          "kod": "TR-20-014",
+          "ad": "Kale"
+        },
+        {
+          "kod": "TR-20-015",
+          "ad": "Merkezefendi"
+        },
+        {
+          "kod": "TR-20-016",
+          "ad": "Pamukkale"
+        },
+        {
+          "kod": "TR-20-017",
+          "ad": "Sarayköy"
+        },
+        {
+          "kod": "TR-20-018",
+          "ad": "Serinhisar"
+        },
+        {
+          "kod": "TR-20-019",
+          "ad": "Tavas"
+        }
+      ]
+    },
+    {
+      "kod": "TR-21",
+      "ad": "Diyarbakır",
+      "ilceler": [
+        {
+          "kod": "TR-21-001",
+          "ad": "Bağlar"
+        },
+        {
+          "kod": "TR-21-002",
+          "ad": "Bismil"
+        },
+        {
+          "kod": "TR-21-003",
+          "ad": "Çermik"
+        },
+        {
+          "kod": "TR-21-004",
+          "ad": "Çınar"
+        },
+        {
+          "kod": "TR-21-005",
+          "ad": "Çüngüş"
+        },
+        {
+          "kod": "TR-21-006",
+          "ad": "Dicle"
+        },
+        {
+          "kod": "TR-21-007",
+          "ad": "Eğil"
+        },
+        {
+          "kod": "TR-21-008",
+          "ad": "Ergani"
+        },
+        {
+          "kod": "TR-21-009",
+          "ad": "Hani"
+        },
+        {
+          "kod": "TR-21-010",
+          "ad": "Hazro"
+        },
+        {
+          "kod": "TR-21-011",
+          "ad": "Kayapınar"
+        },
+        {
+          "kod": "TR-21-012",
+          "ad": "Kocaköy"
+        },
+        {
+          "kod": "TR-21-013",
+          "ad": "Kulp"
+        },
+        {
+          "kod": "TR-21-014",
+          "ad": "Lice"
+        },
+        {
+          "kod": "TR-21-015",
+          "ad": "Silvan"
+        },
+        {
+          "kod": "TR-21-016",
+          "ad": "Sur"
+        },
+        {
+          "kod": "TR-21-017",
+          "ad": "Yenişehir"
+        }
+      ]
+    },
+    {
+      "kod": "TR-22",
+      "ad": "Edirne",
+      "ilceler": [
+        {
+          "kod": "TR-22-001",
+          "ad": "Enez"
+        },
+        {
+          "kod": "TR-22-002",
+          "ad": "Havsa"
+        },
+        {
+          "kod": "TR-22-003",
+          "ad": "İpsala"
+        },
+        {
+          "kod": "TR-22-004",
+          "ad": "Keşan"
+        },
+        {
+          "kod": "TR-22-005",
+          "ad": "Lalapaşa"
+        },
+        {
+          "kod": "TR-22-006",
+          "ad": "Meriç"
+        },
+        {
+          "kod": "TR-22-007",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-22-008",
+          "ad": "Süloğlu"
+        },
+        {
+          "kod": "TR-22-009",
+          "ad": "Uzunköprü"
+        }
+      ]
+    },
+    {
+      "kod": "TR-23",
+      "ad": "Elazığ",
+      "ilceler": [
+        {
+          "kod": "TR-23-001",
+          "ad": "Ağın"
+        },
+        {
+          "kod": "TR-23-002",
+          "ad": "Alacakaya"
+        },
+        {
+          "kod": "TR-23-003",
+          "ad": "Arıcak"
+        },
+        {
+          "kod": "TR-23-004",
+          "ad": "Baskil"
+        },
+        {
+          "kod": "TR-23-005",
+          "ad": "Karakoçan"
+        },
+        {
+          "kod": "TR-23-006",
+          "ad": "Keban"
+        },
+        {
+          "kod": "TR-23-007",
+          "ad": "Kovancılar"
+        },
+        {
+          "kod": "TR-23-008",
+          "ad": "Maden"
+        },
+        {
+          "kod": "TR-23-009",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-23-010",
+          "ad": "Palu"
+        },
+        {
+          "kod": "TR-23-011",
+          "ad": "Sivrice"
+        }
+      ]
+    },
+    {
+      "kod": "TR-24",
+      "ad": "Erzincan",
+      "ilceler": [
+        {
+          "kod": "TR-24-001",
+          "ad": "Çayırlı"
+        },
+        {
+          "kod": "TR-24-002",
+          "ad": "İliç"
+        },
+        {
+          "kod": "TR-24-003",
+          "ad": "Kemah"
+        },
+        {
+          "kod": "TR-24-004",
+          "ad": "Kemaliye"
+        },
+        {
+          "kod": "TR-24-005",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-24-006",
+          "ad": "Otlukbeli"
+        },
+        {
+          "kod": "TR-24-007",
+          "ad": "Refahiye"
+        },
+        {
+          "kod": "TR-24-008",
+          "ad": "Tercan"
+        },
+        {
+          "kod": "TR-24-009",
+          "ad": "Üzümlü"
+        }
+      ]
+    },
+    {
+      "kod": "TR-25",
+      "ad": "Erzurum",
+      "ilceler": [
+        {
+          "kod": "TR-25-001",
+          "ad": "Aşkale"
+        },
+        {
+          "kod": "TR-25-002",
+          "ad": "Aziziye"
+        },
+        {
+          "kod": "TR-25-003",
+          "ad": "Çat"
+        },
+        {
+          "kod": "TR-25-004",
+          "ad": "Hınıs"
+        },
+        {
+          "kod": "TR-25-005",
+          "ad": "Horasan"
+        },
+        {
+          "kod": "TR-25-006",
+          "ad": "İspir"
+        },
+        {
+          "kod": "TR-25-007",
+          "ad": "Karaçoban"
+        },
+        {
+          "kod": "TR-25-008",
+          "ad": "Karayazı"
+        },
+        {
+          "kod": "TR-25-009",
+          "ad": "Köprüköy"
+        },
+        {
+          "kod": "TR-25-010",
+          "ad": "Narman"
+        },
+        {
+          "kod": "TR-25-011",
+          "ad": "Oltu"
+        },
+        {
+          "kod": "TR-25-012",
+          "ad": "Olur"
+        },
+        {
+          "kod": "TR-25-013",
+          "ad": "Palandöken"
+        },
+        {
+          "kod": "TR-25-014",
+          "ad": "Pasinler"
+        },
+        {
+          "kod": "TR-25-015",
+          "ad": "Pazaryolu"
+        },
+        {
+          "kod": "TR-25-016",
+          "ad": "Şenkaya"
+        },
+        {
+          "kod": "TR-25-017",
+          "ad": "Tekman"
+        },
+        {
+          "kod": "TR-25-018",
+          "ad": "Tortum"
+        },
+        {
+          "kod": "TR-25-019",
+          "ad": "Uzundere"
+        },
+        {
+          "kod": "TR-25-020",
+          "ad": "Yakutiye"
+        }
+      ]
+    },
+    {
+      "kod": "TR-26",
+      "ad": "Eskişehir",
+      "ilceler": [
+        {
+          "kod": "TR-26-001",
+          "ad": "Alpu"
+        },
+        {
+          "kod": "TR-26-002",
+          "ad": "Beylikova"
+        },
+        {
+          "kod": "TR-26-003",
+          "ad": "Çifteler"
+        },
+        {
+          "kod": "TR-26-004",
+          "ad": "Günyüzü"
+        },
+        {
+          "kod": "TR-26-005",
+          "ad": "Han"
+        },
+        {
+          "kod": "TR-26-006",
+          "ad": "İnönü"
+        },
+        {
+          "kod": "TR-26-007",
+          "ad": "Mahmudiye"
+        },
+        {
+          "kod": "TR-26-008",
+          "ad": "Mihalgazi"
+        },
+        {
+          "kod": "TR-26-009",
+          "ad": "Mihalıççık"
+        },
+        {
+          "kod": "TR-26-010",
+          "ad": "Odunpazarı"
+        },
+        {
+          "kod": "TR-26-011",
+          "ad": "Sarıcakaya"
+        },
+        {
+          "kod": "TR-26-012",
+          "ad": "Seyitgazi"
+        },
+        {
+          "kod": "TR-26-013",
+          "ad": "Sivrihisar"
+        },
+        {
+          "kod": "TR-26-014",
+          "ad": "Tepebaşı"
+        }
+      ]
+    },
+    {
+      "kod": "TR-27",
+      "ad": "Gaziantep",
+      "ilceler": [
+        {
+          "kod": "TR-27-001",
+          "ad": "Araban"
+        },
+        {
+          "kod": "TR-27-002",
+          "ad": "İslahiye"
+        },
+        {
+          "kod": "TR-27-003",
+          "ad": "Karkamış"
+        },
+        {
+          "kod": "TR-27-004",
+          "ad": "Nizip"
+        },
+        {
+          "kod": "TR-27-005",
+          "ad": "Nurdağı"
+        },
+        {
+          "kod": "TR-27-006",
+          "ad": "Oğuzeli"
+        },
+        {
+          "kod": "TR-27-007",
+          "ad": "Şahinbey"
+        },
+        {
+          "kod": "TR-27-008",
+          "ad": "Şehitkamil"
+        },
+        {
+          "kod": "TR-27-009",
+          "ad": "Yavuzeli"
+        }
+      ]
+    },
+    {
+      "kod": "TR-28",
+      "ad": "Giresun",
+      "ilceler": [
+        {
+          "kod": "TR-28-001",
+          "ad": "Alucra"
+        },
+        {
+          "kod": "TR-28-002",
+          "ad": "Bulancak"
+        },
+        {
+          "kod": "TR-28-003",
+          "ad": "Çamoluk"
+        },
+        {
+          "kod": "TR-28-004",
+          "ad": "Çanakçı"
+        },
+        {
+          "kod": "TR-28-005",
+          "ad": "Dereli"
+        },
+        {
+          "kod": "TR-28-006",
+          "ad": "Doğankent"
+        },
+        {
+          "kod": "TR-28-007",
+          "ad": "Espiye"
+        },
+        {
+          "kod": "TR-28-008",
+          "ad": "Eynesil"
+        },
+        {
+          "kod": "TR-28-009",
+          "ad": "Görele"
+        },
+        {
+          "kod": "TR-28-010",
+          "ad": "Güce"
+        },
+        {
+          "kod": "TR-28-011",
+          "ad": "Keşap"
+        },
+        {
+          "kod": "TR-28-012",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-28-013",
+          "ad": "Piraziz"
+        },
+        {
+          "kod": "TR-28-014",
+          "ad": "Şebinkarahisar"
+        },
+        {
+          "kod": "TR-28-015",
+          "ad": "Tirebolu"
+        },
+        {
+          "kod": "TR-28-016",
+          "ad": "Yağlıdere"
+        }
+      ]
+    },
+    {
+      "kod": "TR-29",
+      "ad": "Gümüşhane",
+      "ilceler": [
+        {
+          "kod": "TR-29-001",
+          "ad": "Kelkit"
+        },
+        {
+          "kod": "TR-29-002",
+          "ad": "Köse"
+        },
+        {
+          "kod": "TR-29-003",
+          "ad": "Kürtün"
+        },
+        {
+          "kod": "TR-29-004",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-29-005",
+          "ad": "Şiran"
+        },
+        {
+          "kod": "TR-29-006",
+          "ad": "Torul"
+        }
+      ]
+    },
+    {
+      "kod": "TR-30",
+      "ad": "Hakkâri",
+      "ilceler": [
+        {
+          "kod": "TR-30-001",
+          "ad": "Çukurca"
+        },
+        {
+          "kod": "TR-30-002",
+          "ad": "Derecik"
+        },
+        {
+          "kod": "TR-30-003",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-30-004",
+          "ad": "Şemdinli"
+        },
+        {
+          "kod": "TR-30-005",
+          "ad": "Yüksekova"
+        }
+      ]
+    },
+    {
+      "kod": "TR-31",
+      "ad": "Hatay",
+      "ilceler": [
+        {
+          "kod": "TR-31-001",
+          "ad": "Altınözü"
+        },
+        {
+          "kod": "TR-31-002",
+          "ad": "Antakya"
+        },
+        {
+          "kod": "TR-31-003",
+          "ad": "Arsuz"
+        },
+        {
+          "kod": "TR-31-004",
+          "ad": "Belen"
+        },
+        {
+          "kod": "TR-31-005",
+          "ad": "Defne"
+        },
+        {
+          "kod": "TR-31-006",
+          "ad": "Dörtyol"
+        },
+        {
+          "kod": "TR-31-007",
+          "ad": "Erzin"
+        },
+        {
+          "kod": "TR-31-008",
+          "ad": "Hassa"
+        },
+        {
+          "kod": "TR-31-009",
+          "ad": "İskenderun"
+        },
+        {
+          "kod": "TR-31-010",
+          "ad": "Kırıkhan"
+        },
+        {
+          "kod": "TR-31-011",
+          "ad": "Kumlu"
+        },
+        {
+          "kod": "TR-31-012",
+          "ad": "Payas"
+        },
+        {
+          "kod": "TR-31-013",
+          "ad": "Reyhanlı"
+        },
+        {
+          "kod": "TR-31-014",
+          "ad": "Samandağ"
+        },
+        {
+          "kod": "TR-31-015",
+          "ad": "Yayladağı"
+        }
+      ]
+    },
+    {
+      "kod": "TR-32",
+      "ad": "Isparta",
+      "ilceler": [
+        {
+          "kod": "TR-32-001",
+          "ad": "Aksu"
+        },
+        {
+          "kod": "TR-32-002",
+          "ad": "Atabey"
+        },
+        {
+          "kod": "TR-32-003",
+          "ad": "Eğirdir"
+        },
+        {
+          "kod": "TR-32-004",
+          "ad": "Gelendost"
+        },
+        {
+          "kod": "TR-32-005",
+          "ad": "Gönen"
+        },
+        {
+          "kod": "TR-32-006",
+          "ad": "Keçiborlu"
+        },
+        {
+          "kod": "TR-32-007",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-32-008",
+          "ad": "Senirkent"
+        },
+        {
+          "kod": "TR-32-009",
+          "ad": "Sütçüler"
+        },
+        {
+          "kod": "TR-32-010",
+          "ad": "Şarkikaraağaç"
+        },
+        {
+          "kod": "TR-32-011",
+          "ad": "Uluborlu"
+        },
+        {
+          "kod": "TR-32-012",
+          "ad": "Yalvaç"
+        },
+        {
+          "kod": "TR-32-013",
+          "ad": "Yenişarbademli"
+        }
+      ]
+    },
+    {
+      "kod": "TR-33",
+      "ad": "Mersin",
+      "ilceler": [
+        {
+          "kod": "TR-33-001",
+          "ad": "Akdeniz"
+        },
+        {
+          "kod": "TR-33-002",
+          "ad": "Anamur"
+        },
+        {
+          "kod": "TR-33-003",
+          "ad": "Aydıncık"
+        },
+        {
+          "kod": "TR-33-004",
+          "ad": "Bozyazı"
+        },
+        {
+          "kod": "TR-33-005",
+          "ad": "Çamlıyayla"
+        },
+        {
+          "kod": "TR-33-006",
+          "ad": "Erdemli"
+        },
+        {
+          "kod": "TR-33-007",
+          "ad": "Gülnar"
+        },
+        {
+          "kod": "TR-33-008",
+          "ad": "Mezitli"
+        },
+        {
+          "kod": "TR-33-009",
+          "ad": "Mut"
+        },
+        {
+          "kod": "TR-33-010",
+          "ad": "Silifke"
+        },
+        {
+          "kod": "TR-33-011",
+          "ad": "Tarsus"
+        },
+        {
+          "kod": "TR-33-012",
+          "ad": "Toroslar"
+        },
+        {
+          "kod": "TR-33-013",
+          "ad": "Yenişehir"
+        }
+      ]
+    },
+    {
+      "kod": "TR-34",
+      "ad": "İstanbul",
+      "ilceler": [
+        {
+          "kod": "TR-34-001",
+          "ad": "Adalar"
+        },
+        {
+          "kod": "TR-34-002",
+          "ad": "Arnavutköy"
+        },
+        {
+          "kod": "TR-34-003",
+          "ad": "Ataşehir"
+        },
+        {
+          "kod": "TR-34-004",
+          "ad": "Avcılar"
+        },
+        {
+          "kod": "TR-34-005",
+          "ad": "Bağcılar"
+        },
+        {
+          "kod": "TR-34-006",
+          "ad": "Bahçelievler"
+        },
+        {
+          "kod": "TR-34-007",
+          "ad": "Bakırköy"
+        },
+        {
+          "kod": "TR-34-008",
+          "ad": "Başakşehir"
+        },
+        {
+          "kod": "TR-34-009",
+          "ad": "Bayrampaşa"
+        },
+        {
+          "kod": "TR-34-010",
+          "ad": "Beşiktaş"
+        },
+        {
+          "kod": "TR-34-011",
+          "ad": "Beykoz"
+        },
+        {
+          "kod": "TR-34-012",
+          "ad": "Beylikdüzü"
+        },
+        {
+          "kod": "TR-34-013",
+          "ad": "Beyoğlu"
+        },
+        {
+          "kod": "TR-34-014",
+          "ad": "Büyükçekmece"
+        },
+        {
+          "kod": "TR-34-015",
+          "ad": "Çatalca"
+        },
+        {
+          "kod": "TR-34-016",
+          "ad": "Çekmeköy"
+        },
+        {
+          "kod": "TR-34-017",
+          "ad": "Esenler"
+        },
+        {
+          "kod": "TR-34-018",
+          "ad": "Esenyurt"
+        },
+        {
+          "kod": "TR-34-019",
+          "ad": "Eyüpsultan"
+        },
+        {
+          "kod": "TR-34-020",
+          "ad": "Fatih"
+        },
+        {
+          "kod": "TR-34-021",
+          "ad": "Gaziosmanpaşa"
+        },
+        {
+          "kod": "TR-34-022",
+          "ad": "Güngören"
+        },
+        {
+          "kod": "TR-34-023",
+          "ad": "Kadıköy"
+        },
+        {
+          "kod": "TR-34-024",
+          "ad": "Kağıthane"
+        },
+        {
+          "kod": "TR-34-025",
+          "ad": "Kartal"
+        },
+        {
+          "kod": "TR-34-026",
+          "ad": "Küçükçekmece"
+        },
+        {
+          "kod": "TR-34-027",
+          "ad": "Maltepe"
+        },
+        {
+          "kod": "TR-34-028",
+          "ad": "Pendik"
+        },
+        {
+          "kod": "TR-34-029",
+          "ad": "Sancaktepe"
+        },
+        {
+          "kod": "TR-34-030",
+          "ad": "Sarıyer"
+        },
+        {
+          "kod": "TR-34-031",
+          "ad": "Silivri"
+        },
+        {
+          "kod": "TR-34-032",
+          "ad": "Sultanbeyli"
+        },
+        {
+          "kod": "TR-34-033",
+          "ad": "Sultangazi"
+        },
+        {
+          "kod": "TR-34-034",
+          "ad": "Şile"
+        },
+        {
+          "kod": "TR-34-035",
+          "ad": "Şişli"
+        },
+        {
+          "kod": "TR-34-036",
+          "ad": "Tuzla"
+        },
+        {
+          "kod": "TR-34-037",
+          "ad": "Ümraniye"
+        },
+        {
+          "kod": "TR-34-038",
+          "ad": "Üsküdar"
+        },
+        {
+          "kod": "TR-34-039",
+          "ad": "Zeytinburnu"
+        }
+      ]
+    },
+    {
+      "kod": "TR-35",
+      "ad": "İzmir",
+      "ilceler": [
+        {
+          "kod": "TR-35-001",
+          "ad": "Aliağa"
+        },
+        {
+          "kod": "TR-35-002",
+          "ad": "Balçova"
+        },
+        {
+          "kod": "TR-35-003",
+          "ad": "Bayındır"
+        },
+        {
+          "kod": "TR-35-004",
+          "ad": "Bayraklı"
+        },
+        {
+          "kod": "TR-35-005",
+          "ad": "Bergama"
+        },
+        {
+          "kod": "TR-35-006",
+          "ad": "Beydağ"
+        },
+        {
+          "kod": "TR-35-007",
+          "ad": "Bornova"
+        },
+        {
+          "kod": "TR-35-008",
+          "ad": "Buca"
+        },
+        {
+          "kod": "TR-35-009",
+          "ad": "Çeşme"
+        },
+        {
+          "kod": "TR-35-010",
+          "ad": "Çiğli"
+        },
+        {
+          "kod": "TR-35-011",
+          "ad": "Dikili"
+        },
+        {
+          "kod": "TR-35-012",
+          "ad": "Foça"
+        },
+        {
+          "kod": "TR-35-013",
+          "ad": "Gaziemir"
+        },
+        {
+          "kod": "TR-35-014",
+          "ad": "Güzelbahçe"
+        },
+        {
+          "kod": "TR-35-015",
+          "ad": "Karabağlar"
+        },
+        {
+          "kod": "TR-35-016",
+          "ad": "Karaburun"
+        },
+        {
+          "kod": "TR-35-017",
+          "ad": "Karşıyaka"
+        },
+        {
+          "kod": "TR-35-018",
+          "ad": "Kemalpaşa"
+        },
+        {
+          "kod": "TR-35-019",
+          "ad": "Kınık"
+        },
+        {
+          "kod": "TR-35-020",
+          "ad": "Kiraz"
+        },
+        {
+          "kod": "TR-35-021",
+          "ad": "Konak"
+        },
+        {
+          "kod": "TR-35-022",
+          "ad": "Menderes"
+        },
+        {
+          "kod": "TR-35-023",
+          "ad": "Menemen"
+        },
+        {
+          "kod": "TR-35-024",
+          "ad": "Narlıdere"
+        },
+        {
+          "kod": "TR-35-025",
+          "ad": "Ödemiş"
+        },
+        {
+          "kod": "TR-35-026",
+          "ad": "Seferihisar"
+        },
+        {
+          "kod": "TR-35-027",
+          "ad": "Selçuk"
+        },
+        {
+          "kod": "TR-35-028",
+          "ad": "Tire"
+        },
+        {
+          "kod": "TR-35-029",
+          "ad": "Torbalı"
+        },
+        {
+          "kod": "TR-35-030",
+          "ad": "Urla"
+        }
+      ]
+    },
+    {
+      "kod": "TR-36",
+      "ad": "Kars",
+      "ilceler": [
+        {
+          "kod": "TR-36-001",
+          "ad": "Akyaka"
+        },
+        {
+          "kod": "TR-36-002",
+          "ad": "Arpaçay"
+        },
+        {
+          "kod": "TR-36-003",
+          "ad": "Digor"
+        },
+        {
+          "kod": "TR-36-004",
+          "ad": "Kağızman"
+        },
+        {
+          "kod": "TR-36-005",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-36-006",
+          "ad": "Sarıkamış"
+        },
+        {
+          "kod": "TR-36-007",
+          "ad": "Selim"
+        },
+        {
+          "kod": "TR-36-008",
+          "ad": "Susuz"
+        }
+      ]
+    },
+    {
+      "kod": "TR-37",
+      "ad": "Kastamonu",
+      "ilceler": [
+        {
+          "kod": "TR-37-001",
+          "ad": "Abana"
+        },
+        {
+          "kod": "TR-37-002",
+          "ad": "Ağlı"
+        },
+        {
+          "kod": "TR-37-003",
+          "ad": "Araç"
+        },
+        {
+          "kod": "TR-37-004",
+          "ad": "Azdavay"
+        },
+        {
+          "kod": "TR-37-005",
+          "ad": "Bozkurt"
+        },
+        {
+          "kod": "TR-37-006",
+          "ad": "Cide"
+        },
+        {
+          "kod": "TR-37-007",
+          "ad": "Çatalzeytin"
+        },
+        {
+          "kod": "TR-37-008",
+          "ad": "Daday"
+        },
+        {
+          "kod": "TR-37-009",
+          "ad": "Devrekani"
+        },
+        {
+          "kod": "TR-37-010",
+          "ad": "Doğanyurt"
+        },
+        {
+          "kod": "TR-37-011",
+          "ad": "Hanönü"
+        },
+        {
+          "kod": "TR-37-012",
+          "ad": "İhsangazi"
+        },
+        {
+          "kod": "TR-37-013",
+          "ad": "İnebolu"
+        },
+        {
+          "kod": "TR-37-014",
+          "ad": "Küre"
+        },
+        {
+          "kod": "TR-37-015",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-37-016",
+          "ad": "Pınarbaşı"
+        },
+        {
+          "kod": "TR-37-017",
+          "ad": "Seydiler"
+        },
+        {
+          "kod": "TR-37-018",
+          "ad": "Şenpazar"
+        },
+        {
+          "kod": "TR-37-019",
+          "ad": "Taşköprü"
+        },
+        {
+          "kod": "TR-37-020",
+          "ad": "Tosya"
+        }
+      ]
+    },
+    {
+      "kod": "TR-38",
+      "ad": "Kayseri",
+      "ilceler": [
+        {
+          "kod": "TR-38-001",
+          "ad": "Akkışla"
+        },
+        {
+          "kod": "TR-38-002",
+          "ad": "Bünyan"
+        },
+        {
+          "kod": "TR-38-003",
+          "ad": "Develi"
+        },
+        {
+          "kod": "TR-38-004",
+          "ad": "Felahiye"
+        },
+        {
+          "kod": "TR-38-005",
+          "ad": "Hacılar"
+        },
+        {
+          "kod": "TR-38-006",
+          "ad": "İncesu"
+        },
+        {
+          "kod": "TR-38-007",
+          "ad": "Kocasinan"
+        },
+        {
+          "kod": "TR-38-008",
+          "ad": "Melikgazi"
+        },
+        {
+          "kod": "TR-38-009",
+          "ad": "Özvatan"
+        },
+        {
+          "kod": "TR-38-010",
+          "ad": "Pınarbaşı"
+        },
+        {
+          "kod": "TR-38-011",
+          "ad": "Sarıoğlan"
+        },
+        {
+          "kod": "TR-38-012",
+          "ad": "Sarız"
+        },
+        {
+          "kod": "TR-38-013",
+          "ad": "Talas"
+        },
+        {
+          "kod": "TR-38-014",
+          "ad": "Tomarza"
+        },
+        {
+          "kod": "TR-38-015",
+          "ad": "Yahyalı"
+        },
+        {
+          "kod": "TR-38-016",
+          "ad": "Yeşilhisar"
+        }
+      ]
+    },
+    {
+      "kod": "TR-39",
+      "ad": "Kırklareli",
+      "ilceler": [
+        {
+          "kod": "TR-39-001",
+          "ad": "Babaeski"
+        },
+        {
+          "kod": "TR-39-002",
+          "ad": "Demirköy"
+        },
+        {
+          "kod": "TR-39-003",
+          "ad": "Kofçaz"
+        },
+        {
+          "kod": "TR-39-004",
+          "ad": "Lüleburgaz"
+        },
+        {
+          "kod": "TR-39-005",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-39-006",
+          "ad": "Pehlivanköy"
+        },
+        {
+          "kod": "TR-39-007",
+          "ad": "Pınarhisar"
+        },
+        {
+          "kod": "TR-39-008",
+          "ad": "Vize"
+        }
+      ]
+    },
+    {
+      "kod": "TR-40",
+      "ad": "Kırşehir",
+      "ilceler": [
+        {
+          "kod": "TR-40-001",
+          "ad": "Akçakent"
+        },
+        {
+          "kod": "TR-40-002",
+          "ad": "Akpınar"
+        },
+        {
+          "kod": "TR-40-003",
+          "ad": "Boztepe"
+        },
+        {
+          "kod": "TR-40-004",
+          "ad": "Çiçekdağı"
+        },
+        {
+          "kod": "TR-40-005",
+          "ad": "Kaman"
+        },
+        {
+          "kod": "TR-40-006",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-40-007",
+          "ad": "Mucur"
+        }
+      ]
+    },
+    {
+      "kod": "TR-41",
+      "ad": "Kocaeli",
+      "ilceler": [
+        {
+          "kod": "TR-41-001",
+          "ad": "Başiskele"
+        },
+        {
+          "kod": "TR-41-002",
+          "ad": "Çayırova"
+        },
+        {
+          "kod": "TR-41-003",
+          "ad": "Darıca"
+        },
+        {
+          "kod": "TR-41-004",
+          "ad": "Derince"
+        },
+        {
+          "kod": "TR-41-005",
+          "ad": "Dilovası"
+        },
+        {
+          "kod": "TR-41-006",
+          "ad": "Gebze"
+        },
+        {
+          "kod": "TR-41-007",
+          "ad": "Gölcük"
+        },
+        {
+          "kod": "TR-41-008",
+          "ad": "İzmit"
+        },
+        {
+          "kod": "TR-41-009",
+          "ad": "Kandıra"
+        },
+        {
+          "kod": "TR-41-010",
+          "ad": "Karamürsel"
+        },
+        {
+          "kod": "TR-41-011",
+          "ad": "Kartepe"
+        },
+        {
+          "kod": "TR-41-012",
+          "ad": "Körfez"
+        }
+      ]
+    },
+    {
+      "kod": "TR-42",
+      "ad": "Konya",
+      "ilceler": [
+        {
+          "kod": "TR-42-001",
+          "ad": "Ahırlı"
+        },
+        {
+          "kod": "TR-42-002",
+          "ad": "Akören"
+        },
+        {
+          "kod": "TR-42-003",
+          "ad": "Akşehir"
+        },
+        {
+          "kod": "TR-42-004",
+          "ad": "Altınekin"
+        },
+        {
+          "kod": "TR-42-005",
+          "ad": "Beyşehir"
+        },
+        {
+          "kod": "TR-42-006",
+          "ad": "Bozkır"
+        },
+        {
+          "kod": "TR-42-007",
+          "ad": "Cihanbeyli"
+        },
+        {
+          "kod": "TR-42-008",
+          "ad": "Çeltik"
+        },
+        {
+          "kod": "TR-42-009",
+          "ad": "Çumra"
+        },
+        {
+          "kod": "TR-42-010",
+          "ad": "Derbent"
+        },
+        {
+          "kod": "TR-42-011",
+          "ad": "Derebucak"
+        },
+        {
+          "kod": "TR-42-012",
+          "ad": "Doğanhisar"
+        },
+        {
+          "kod": "TR-42-013",
+          "ad": "Emirgazi"
+        },
+        {
+          "kod": "TR-42-014",
+          "ad": "Ereğli"
+        },
+        {
+          "kod": "TR-42-015",
+          "ad": "Güneysınır"
+        },
+        {
+          "kod": "TR-42-016",
+          "ad": "Hadim"
+        },
+        {
+          "kod": "TR-42-017",
+          "ad": "Halkapınar"
+        },
+        {
+          "kod": "TR-42-018",
+          "ad": "Hüyük"
+        },
+        {
+          "kod": "TR-42-019",
+          "ad": "Ilgın"
+        },
+        {
+          "kod": "TR-42-020",
+          "ad": "Kadınhanı"
+        },
+        {
+          "kod": "TR-42-021",
+          "ad": "Karapınar"
+        },
+        {
+          "kod": "TR-42-022",
+          "ad": "Karatay"
+        },
+        {
+          "kod": "TR-42-023",
+          "ad": "Kulu"
+        },
+        {
+          "kod": "TR-42-024",
+          "ad": "Meram"
+        },
+        {
+          "kod": "TR-42-025",
+          "ad": "Sarayönü"
+        },
+        {
+          "kod": "TR-42-026",
+          "ad": "Selçuklu"
+        },
+        {
+          "kod": "TR-42-027",
+          "ad": "Seydişehir"
+        },
+        {
+          "kod": "TR-42-028",
+          "ad": "Taşkent"
+        },
+        {
+          "kod": "TR-42-029",
+          "ad": "Tuzlukçu"
+        },
+        {
+          "kod": "TR-42-030",
+          "ad": "Yalıhüyük"
+        },
+        {
+          "kod": "TR-42-031",
+          "ad": "Yunak"
+        }
+      ]
+    },
+    {
+      "kod": "TR-43",
+      "ad": "Kütahya",
+      "ilceler": [
+        {
+          "kod": "TR-43-001",
+          "ad": "Altıntaş"
+        },
+        {
+          "kod": "TR-43-002",
+          "ad": "Aslanapa"
+        },
+        {
+          "kod": "TR-43-003",
+          "ad": "Çavdarhisar"
+        },
+        {
+          "kod": "TR-43-004",
+          "ad": "Domaniç"
+        },
+        {
+          "kod": "TR-43-005",
+          "ad": "Dumlupınar"
+        },
+        {
+          "kod": "TR-43-006",
+          "ad": "Emet"
+        },
+        {
+          "kod": "TR-43-007",
+          "ad": "Gediz"
+        },
+        {
+          "kod": "TR-43-008",
+          "ad": "Hisarcık"
+        },
+        {
+          "kod": "TR-43-009",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-43-010",
+          "ad": "Pazarlar"
+        },
+        {
+          "kod": "TR-43-011",
+          "ad": "Simav"
+        },
+        {
+          "kod": "TR-43-012",
+          "ad": "Şaphane"
+        },
+        {
+          "kod": "TR-43-013",
+          "ad": "Tavşanlı"
+        }
+      ]
+    },
+    {
+      "kod": "TR-44",
+      "ad": "Malatya",
+      "ilceler": [
+        {
+          "kod": "TR-44-001",
+          "ad": "Akçadağ"
+        },
+        {
+          "kod": "TR-44-002",
+          "ad": "Arapgir"
+        },
+        {
+          "kod": "TR-44-003",
+          "ad": "Arguvan"
+        },
+        {
+          "kod": "TR-44-004",
+          "ad": "Battalgazi"
+        },
+        {
+          "kod": "TR-44-005",
+          "ad": "Darende"
+        },
+        {
+          "kod": "TR-44-006",
+          "ad": "Doğanşehir"
+        },
+        {
+          "kod": "TR-44-007",
+          "ad": "Doğanyol"
+        },
+        {
+          "kod": "TR-44-008",
+          "ad": "Hekimhan"
+        },
+        {
+          "kod": "TR-44-009",
+          "ad": "Kale"
+        },
+        {
+          "kod": "TR-44-010",
+          "ad": "Kuluncak"
+        },
+        {
+          "kod": "TR-44-011",
+          "ad": "Pütürge"
+        },
+        {
+          "kod": "TR-44-012",
+          "ad": "Yazıhan"
+        },
+        {
+          "kod": "TR-44-013",
+          "ad": "Yeşilyurt"
+        }
+      ]
+    },
+    {
+      "kod": "TR-45",
+      "ad": "Manisa",
+      "ilceler": [
+        {
+          "kod": "TR-45-001",
+          "ad": "Ahmetli"
+        },
+        {
+          "kod": "TR-45-002",
+          "ad": "Akhisar"
+        },
+        {
+          "kod": "TR-45-003",
+          "ad": "Alaşehir"
+        },
+        {
+          "kod": "TR-45-004",
+          "ad": "Demirci"
+        },
+        {
+          "kod": "TR-45-005",
+          "ad": "Gölmarmara"
+        },
+        {
+          "kod": "TR-45-006",
+          "ad": "Gördes"
+        },
+        {
+          "kod": "TR-45-007",
+          "ad": "Kırkağaç"
+        },
+        {
+          "kod": "TR-45-008",
+          "ad": "Köprübaşı"
+        },
+        {
+          "kod": "TR-45-009",
+          "ad": "Kula"
+        },
+        {
+          "kod": "TR-45-010",
+          "ad": "Salihli"
+        },
+        {
+          "kod": "TR-45-011",
+          "ad": "Sarıgöl"
+        },
+        {
+          "kod": "TR-45-012",
+          "ad": "Saruhanlı"
+        },
+        {
+          "kod": "TR-45-013",
+          "ad": "Selendi"
+        },
+        {
+          "kod": "TR-45-014",
+          "ad": "Soma"
+        },
+        {
+          "kod": "TR-45-015",
+          "ad": "Şehzadeler"
+        },
+        {
+          "kod": "TR-45-016",
+          "ad": "Turgutlu"
+        },
+        {
+          "kod": "TR-45-017",
+          "ad": "Yunusemre"
+        }
+      ]
+    },
+    {
+      "kod": "TR-46",
+      "ad": "Kahramanmaraş",
+      "ilceler": [
+        {
+          "kod": "TR-46-001",
+          "ad": "Afşin"
+        },
+        {
+          "kod": "TR-46-002",
+          "ad": "Andırın"
+        },
+        {
+          "kod": "TR-46-003",
+          "ad": "Çağlayancerit"
+        },
+        {
+          "kod": "TR-46-004",
+          "ad": "Dulkadiroğlu"
+        },
+        {
+          "kod": "TR-46-005",
+          "ad": "Ekinözü"
+        },
+        {
+          "kod": "TR-46-006",
+          "ad": "Elbistan"
+        },
+        {
+          "kod": "TR-46-007",
+          "ad": "Göksun"
+        },
+        {
+          "kod": "TR-46-008",
+          "ad": "Nurhak"
+        },
+        {
+          "kod": "TR-46-009",
+          "ad": "Onikişubat"
+        },
+        {
+          "kod": "TR-46-010",
+          "ad": "Pazarcık"
+        },
+        {
+          "kod": "TR-46-011",
+          "ad": "Türkoğlu"
+        }
+      ]
+    },
+    {
+      "kod": "TR-47",
+      "ad": "Mardin",
+      "ilceler": [
+        {
+          "kod": "TR-47-001",
+          "ad": "Artuklu"
+        },
+        {
+          "kod": "TR-47-002",
+          "ad": "Dargeçit"
+        },
+        {
+          "kod": "TR-47-003",
+          "ad": "Derik"
+        },
+        {
+          "kod": "TR-47-004",
+          "ad": "Kızıltepe"
+        },
+        {
+          "kod": "TR-47-005",
+          "ad": "Mazıdağı"
+        },
+        {
+          "kod": "TR-47-006",
+          "ad": "Midyat"
+        },
+        {
+          "kod": "TR-47-007",
+          "ad": "Nusaybin"
+        },
+        {
+          "kod": "TR-47-008",
+          "ad": "Ömerli"
+        },
+        {
+          "kod": "TR-47-009",
+          "ad": "Savur"
+        },
+        {
+          "kod": "TR-47-010",
+          "ad": "Yeşilli"
+        }
+      ]
+    },
+    {
+      "kod": "TR-48",
+      "ad": "Muğla",
+      "ilceler": [
+        {
+          "kod": "TR-48-001",
+          "ad": "Bodrum"
+        },
+        {
+          "kod": "TR-48-002",
+          "ad": "Dalaman"
+        },
+        {
+          "kod": "TR-48-003",
+          "ad": "Datça"
+        },
+        {
+          "kod": "TR-48-004",
+          "ad": "Fethiye"
+        },
+        {
+          "kod": "TR-48-005",
+          "ad": "Kavaklıdere"
+        },
+        {
+          "kod": "TR-48-006",
+          "ad": "Köyceğiz"
+        },
+        {
+          "kod": "TR-48-007",
+          "ad": "Marmaris"
+        },
+        {
+          "kod": "TR-48-008",
+          "ad": "Menteşe"
+        },
+        {
+          "kod": "TR-48-009",
+          "ad": "Milas"
+        },
+        {
+          "kod": "TR-48-010",
+          "ad": "Ortaca"
+        },
+        {
+          "kod": "TR-48-011",
+          "ad": "Seydikemer"
+        },
+        {
+          "kod": "TR-48-012",
+          "ad": "Ula"
+        },
+        {
+          "kod": "TR-48-013",
+          "ad": "Yatağan"
+        }
+      ]
+    },
+    {
+      "kod": "TR-49",
+      "ad": "Muş",
+      "ilceler": [
+        {
+          "kod": "TR-49-001",
+          "ad": "Bulanık"
+        },
+        {
+          "kod": "TR-49-002",
+          "ad": "Hasköy"
+        },
+        {
+          "kod": "TR-49-003",
+          "ad": "Korkut"
+        },
+        {
+          "kod": "TR-49-004",
+          "ad": "Malazgirt"
+        },
+        {
+          "kod": "TR-49-005",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-49-006",
+          "ad": "Varto"
+        }
+      ]
+    },
+    {
+      "kod": "TR-50",
+      "ad": "Nevşehir",
+      "ilceler": [
+        {
+          "kod": "TR-50-001",
+          "ad": "Acıgöl"
+        },
+        {
+          "kod": "TR-50-002",
+          "ad": "Avanos"
+        },
+        {
+          "kod": "TR-50-003",
+          "ad": "Derinkuyu"
+        },
+        {
+          "kod": "TR-50-004",
+          "ad": "Gülşehir"
+        },
+        {
+          "kod": "TR-50-005",
+          "ad": "Hacıbektaş"
+        },
+        {
+          "kod": "TR-50-006",
+          "ad": "Kozaklı"
+        },
+        {
+          "kod": "TR-50-007",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-50-008",
+          "ad": "Ürgüp"
+        }
+      ]
+    },
+    {
+      "kod": "TR-51",
+      "ad": "Niğde",
+      "ilceler": [
+        {
+          "kod": "TR-51-001",
+          "ad": "Altunhisar"
+        },
+        {
+          "kod": "TR-51-002",
+          "ad": "Bor"
+        },
+        {
+          "kod": "TR-51-003",
+          "ad": "Çamardı"
+        },
+        {
+          "kod": "TR-51-004",
+          "ad": "Çiftlik"
+        },
+        {
+          "kod": "TR-51-005",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-51-006",
+          "ad": "Ulukışla"
+        }
+      ]
+    },
+    {
+      "kod": "TR-52",
+      "ad": "Ordu",
+      "ilceler": [
+        {
+          "kod": "TR-52-001",
+          "ad": "Akkuş"
+        },
+        {
+          "kod": "TR-52-002",
+          "ad": "Altınordu"
+        },
+        {
+          "kod": "TR-52-003",
+          "ad": "Aybastı"
+        },
+        {
+          "kod": "TR-52-004",
+          "ad": "Çamaş"
+        },
+        {
+          "kod": "TR-52-005",
+          "ad": "Çatalpınar"
+        },
+        {
+          "kod": "TR-52-006",
+          "ad": "Çaybaşı"
+        },
+        {
+          "kod": "TR-52-007",
+          "ad": "Fatsa"
+        },
+        {
+          "kod": "TR-52-008",
+          "ad": "Gölköy"
+        },
+        {
+          "kod": "TR-52-009",
+          "ad": "Gülyalı"
+        },
+        {
+          "kod": "TR-52-010",
+          "ad": "Gürgentepe"
+        },
+        {
+          "kod": "TR-52-011",
+          "ad": "İkizce"
+        },
+        {
+          "kod": "TR-52-012",
+          "ad": "Kabadüz"
+        },
+        {
+          "kod": "TR-52-013",
+          "ad": "Kabataş"
+        },
+        {
+          "kod": "TR-52-014",
+          "ad": "Korgan"
+        },
+        {
+          "kod": "TR-52-015",
+          "ad": "Kumru"
+        },
+        {
+          "kod": "TR-52-016",
+          "ad": "Mesudiye"
+        },
+        {
+          "kod": "TR-52-017",
+          "ad": "Perşembe"
+        },
+        {
+          "kod": "TR-52-018",
+          "ad": "Ulubey"
+        },
+        {
+          "kod": "TR-52-019",
+          "ad": "Ünye"
+        }
+      ]
+    },
+    {
+      "kod": "TR-53",
+      "ad": "Rize",
+      "ilceler": [
+        {
+          "kod": "TR-53-001",
+          "ad": "Ardeşen"
+        },
+        {
+          "kod": "TR-53-002",
+          "ad": "Çamlıhemşin"
+        },
+        {
+          "kod": "TR-53-003",
+          "ad": "Çayeli"
+        },
+        {
+          "kod": "TR-53-004",
+          "ad": "Derepazarı"
+        },
+        {
+          "kod": "TR-53-005",
+          "ad": "Fındıklı"
+        },
+        {
+          "kod": "TR-53-006",
+          "ad": "Güneysu"
+        },
+        {
+          "kod": "TR-53-007",
+          "ad": "Hemşin"
+        },
+        {
+          "kod": "TR-53-008",
+          "ad": "İkizdere"
+        },
+        {
+          "kod": "TR-53-009",
+          "ad": "İyidere"
+        },
+        {
+          "kod": "TR-53-010",
+          "ad": "Kalkandere"
+        },
+        {
+          "kod": "TR-53-011",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-53-012",
+          "ad": "Pazar"
+        }
+      ]
+    },
+    {
+      "kod": "TR-54",
+      "ad": "Sakarya",
+      "ilceler": [
+        {
+          "kod": "TR-54-001",
+          "ad": "Adapazarı"
+        },
+        {
+          "kod": "TR-54-002",
+          "ad": "Akyazı"
+        },
+        {
+          "kod": "TR-54-003",
+          "ad": "Arifiye"
+        },
+        {
+          "kod": "TR-54-004",
+          "ad": "Erenler"
+        },
+        {
+          "kod": "TR-54-005",
+          "ad": "Ferizli"
+        },
+        {
+          "kod": "TR-54-006",
+          "ad": "Geyve"
+        },
+        {
+          "kod": "TR-54-007",
+          "ad": "Hendek"
+        },
+        {
+          "kod": "TR-54-008",
+          "ad": "Karapürçek"
+        },
+        {
+          "kod": "TR-54-009",
+          "ad": "Karasu"
+        },
+        {
+          "kod": "TR-54-010",
+          "ad": "Kaynarca"
+        },
+        {
+          "kod": "TR-54-011",
+          "ad": "Kocaali"
+        },
+        {
+          "kod": "TR-54-012",
+          "ad": "Pamukova"
+        },
+        {
+          "kod": "TR-54-013",
+          "ad": "Sapanca"
+        },
+        {
+          "kod": "TR-54-014",
+          "ad": "Serdivan"
+        },
+        {
+          "kod": "TR-54-015",
+          "ad": "Söğütlü"
+        },
+        {
+          "kod": "TR-54-016",
+          "ad": "Taraklı"
+        }
+      ]
+    },
+    {
+      "kod": "TR-55",
+      "ad": "Samsun",
+      "ilceler": [
+        {
+          "kod": "TR-55-001",
+          "ad": "Alaçam"
+        },
+        {
+          "kod": "TR-55-002",
+          "ad": "Asarcık"
+        },
+        {
+          "kod": "TR-55-003",
+          "ad": "Atakum"
+        },
+        {
+          "kod": "TR-55-004",
+          "ad": "Ayvacık"
+        },
+        {
+          "kod": "TR-55-005",
+          "ad": "Bafra"
+        },
+        {
+          "kod": "TR-55-006",
+          "ad": "Canik"
+        },
+        {
+          "kod": "TR-55-007",
+          "ad": "Çarşamba"
+        },
+        {
+          "kod": "TR-55-008",
+          "ad": "Havza"
+        },
+        {
+          "kod": "TR-55-009",
+          "ad": "İlkadım"
+        },
+        {
+          "kod": "TR-55-010",
+          "ad": "Kavak"
+        },
+        {
+          "kod": "TR-55-011",
+          "ad": "Ladik"
+        },
+        {
+          "kod": "TR-55-012",
+          "ad": "Salıpazarı"
+        },
+        {
+          "kod": "TR-55-013",
+          "ad": "Tekkeköy"
+        },
+        {
+          "kod": "TR-55-014",
+          "ad": "Terme"
+        },
+        {
+          "kod": "TR-55-015",
+          "ad": "Vezirköprü"
+        },
+        {
+          "kod": "TR-55-016",
+          "ad": "Yakakent"
+        },
+        {
+          "kod": "TR-55-017",
+          "ad": "19 Mayıs"
+        }
+      ]
+    },
+    {
+      "kod": "TR-56",
+      "ad": "Siirt",
+      "ilceler": [
+        {
+          "kod": "TR-56-001",
+          "ad": "Baykan"
+        },
+        {
+          "kod": "TR-56-002",
+          "ad": "Eruh"
+        },
+        {
+          "kod": "TR-56-003",
+          "ad": "Kurtalan"
+        },
+        {
+          "kod": "TR-56-004",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-56-005",
+          "ad": "Pervari"
+        },
+        {
+          "kod": "TR-56-006",
+          "ad": "Şirvan"
+        },
+        {
+          "kod": "TR-56-007",
+          "ad": "Tillo"
+        }
+      ]
+    },
+    {
+      "kod": "TR-57",
+      "ad": "Sinop",
+      "ilceler": [
+        {
+          "kod": "TR-57-001",
+          "ad": "Ayancık"
+        },
+        {
+          "kod": "TR-57-002",
+          "ad": "Boyabat"
+        },
+        {
+          "kod": "TR-57-003",
+          "ad": "Dikmen"
+        },
+        {
+          "kod": "TR-57-004",
+          "ad": "Durağan"
+        },
+        {
+          "kod": "TR-57-005",
+          "ad": "Erfelek"
+        },
+        {
+          "kod": "TR-57-006",
+          "ad": "Gerze"
+        },
+        {
+          "kod": "TR-57-007",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-57-008",
+          "ad": "Saraydüzü"
+        },
+        {
+          "kod": "TR-57-009",
+          "ad": "Türkeli"
+        }
+      ]
+    },
+    {
+      "kod": "TR-58",
+      "ad": "Sivas",
+      "ilceler": [
+        {
+          "kod": "TR-58-001",
+          "ad": "Akıncılar"
+        },
+        {
+          "kod": "TR-58-002",
+          "ad": "Altınyayla"
+        },
+        {
+          "kod": "TR-58-003",
+          "ad": "Divriği"
+        },
+        {
+          "kod": "TR-58-004",
+          "ad": "Doğanşar"
+        },
+        {
+          "kod": "TR-58-005",
+          "ad": "Gemerek"
+        },
+        {
+          "kod": "TR-58-006",
+          "ad": "Gölova"
+        },
+        {
+          "kod": "TR-58-007",
+          "ad": "Gürün"
+        },
+        {
+          "kod": "TR-58-008",
+          "ad": "Hafik"
+        },
+        {
+          "kod": "TR-58-009",
+          "ad": "İmranlı"
+        },
+        {
+          "kod": "TR-58-010",
+          "ad": "Kangal"
+        },
+        {
+          "kod": "TR-58-011",
+          "ad": "Koyulhisar"
+        },
+        {
+          "kod": "TR-58-012",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-58-013",
+          "ad": "Suşehri"
+        },
+        {
+          "kod": "TR-58-014",
+          "ad": "Şarkışla"
+        },
+        {
+          "kod": "TR-58-015",
+          "ad": "Ulaş"
+        },
+        {
+          "kod": "TR-58-016",
+          "ad": "Yıldızeli"
+        },
+        {
+          "kod": "TR-58-017",
+          "ad": "Zara"
+        }
+      ]
+    },
+    {
+      "kod": "TR-59",
+      "ad": "Tekirdağ",
+      "ilceler": [
+        {
+          "kod": "TR-59-001",
+          "ad": "Çerkezköy"
+        },
+        {
+          "kod": "TR-59-002",
+          "ad": "Çorlu"
+        },
+        {
+          "kod": "TR-59-003",
+          "ad": "Ergene"
+        },
+        {
+          "kod": "TR-59-004",
+          "ad": "Hayrabolu"
+        },
+        {
+          "kod": "TR-59-005",
+          "ad": "Kapaklı"
+        },
+        {
+          "kod": "TR-59-006",
+          "ad": "Malkara"
+        },
+        {
+          "kod": "TR-59-007",
+          "ad": "Marmaraereğlisi"
+        },
+        {
+          "kod": "TR-59-008",
+          "ad": "Muratlı"
+        },
+        {
+          "kod": "TR-59-009",
+          "ad": "Saray"
+        },
+        {
+          "kod": "TR-59-010",
+          "ad": "Süleymanpaşa"
+        },
+        {
+          "kod": "TR-59-011",
+          "ad": "Şarköy"
+        }
+      ]
+    },
+    {
+      "kod": "TR-60",
+      "ad": "Tokat",
+      "ilceler": [
+        {
+          "kod": "TR-60-001",
+          "ad": "Almus"
+        },
+        {
+          "kod": "TR-60-002",
+          "ad": "Artova"
+        },
+        {
+          "kod": "TR-60-003",
+          "ad": "Başçiftlik"
+        },
+        {
+          "kod": "TR-60-004",
+          "ad": "Erbaa"
+        },
+        {
+          "kod": "TR-60-005",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-60-006",
+          "ad": "Niksar"
+        },
+        {
+          "kod": "TR-60-007",
+          "ad": "Pazar"
+        },
+        {
+          "kod": "TR-60-008",
+          "ad": "Reşadiye"
+        },
+        {
+          "kod": "TR-60-009",
+          "ad": "Sulusaray"
+        },
+        {
+          "kod": "TR-60-010",
+          "ad": "Turhal"
+        },
+        {
+          "kod": "TR-60-011",
+          "ad": "Yeşilyurt"
+        },
+        {
+          "kod": "TR-60-012",
+          "ad": "Zile"
+        }
+      ]
+    },
+    {
+      "kod": "TR-61",
+      "ad": "Trabzon",
+      "ilceler": [
+        {
+          "kod": "TR-61-001",
+          "ad": "Akçaabat"
+        },
+        {
+          "kod": "TR-61-002",
+          "ad": "Araklı"
+        },
+        {
+          "kod": "TR-61-003",
+          "ad": "Arsin"
+        },
+        {
+          "kod": "TR-61-004",
+          "ad": "Beşikdüzü"
+        },
+        {
+          "kod": "TR-61-005",
+          "ad": "Çarşıbaşı"
+        },
+        {
+          "kod": "TR-61-006",
+          "ad": "Çaykara"
+        },
+        {
+          "kod": "TR-61-007",
+          "ad": "Dernekpazarı"
+        },
+        {
+          "kod": "TR-61-008",
+          "ad": "Düzköy"
+        },
+        {
+          "kod": "TR-61-009",
+          "ad": "Hayrat"
+        },
+        {
+          "kod": "TR-61-010",
+          "ad": "Köprübaşı"
+        },
+        {
+          "kod": "TR-61-011",
+          "ad": "Maçka"
+        },
+        {
+          "kod": "TR-61-012",
+          "ad": "Of"
+        },
+        {
+          "kod": "TR-61-013",
+          "ad": "Ortahisar"
+        },
+        {
+          "kod": "TR-61-014",
+          "ad": "Sürmene"
+        },
+        {
+          "kod": "TR-61-015",
+          "ad": "Şalpazarı"
+        },
+        {
+          "kod": "TR-61-016",
+          "ad": "Tonya"
+        },
+        {
+          "kod": "TR-61-017",
+          "ad": "Vakfıkebir"
+        },
+        {
+          "kod": "TR-61-018",
+          "ad": "Yomra"
+        }
+      ]
+    },
+    {
+      "kod": "TR-62",
+      "ad": "Tunceli",
+      "ilceler": [
+        {
+          "kod": "TR-62-001",
+          "ad": "Çemişgezek"
+        },
+        {
+          "kod": "TR-62-002",
+          "ad": "Hozat"
+        },
+        {
+          "kod": "TR-62-003",
+          "ad": "Mazgirt"
+        },
+        {
+          "kod": "TR-62-004",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-62-005",
+          "ad": "Nazımiye"
+        },
+        {
+          "kod": "TR-62-006",
+          "ad": "Ovacık"
+        },
+        {
+          "kod": "TR-62-007",
+          "ad": "Pertek"
+        },
+        {
+          "kod": "TR-62-008",
+          "ad": "Pülümür"
+        }
+      ]
+    },
+    {
+      "kod": "TR-63",
+      "ad": "Şanlıurfa",
+      "ilceler": [
+        {
+          "kod": "TR-63-001",
+          "ad": "Akçakale"
+        },
+        {
+          "kod": "TR-63-002",
+          "ad": "Birecik"
+        },
+        {
+          "kod": "TR-63-003",
+          "ad": "Bozova"
+        },
+        {
+          "kod": "TR-63-004",
+          "ad": "Ceylanpınar"
+        },
+        {
+          "kod": "TR-63-005",
+          "ad": "Eyyübiye"
+        },
+        {
+          "kod": "TR-63-006",
+          "ad": "Halfeti"
+        },
+        {
+          "kod": "TR-63-007",
+          "ad": "Haliliye"
+        },
+        {
+          "kod": "TR-63-008",
+          "ad": "Harran"
+        },
+        {
+          "kod": "TR-63-009",
+          "ad": "Hilvan"
+        },
+        {
+          "kod": "TR-63-010",
+          "ad": "Karaköprü"
+        },
+        {
+          "kod": "TR-63-011",
+          "ad": "Siverek"
+        },
+        {
+          "kod": "TR-63-012",
+          "ad": "Suruç"
+        },
+        {
+          "kod": "TR-63-013",
+          "ad": "Viranşehir"
+        }
+      ]
+    },
+    {
+      "kod": "TR-64",
+      "ad": "Uşak",
+      "ilceler": [
+        {
+          "kod": "TR-64-001",
+          "ad": "Banaz"
+        },
+        {
+          "kod": "TR-64-002",
+          "ad": "Eşme"
+        },
+        {
+          "kod": "TR-64-003",
+          "ad": "Karahallı"
+        },
+        {
+          "kod": "TR-64-004",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-64-005",
+          "ad": "Sivaslı"
+        },
+        {
+          "kod": "TR-64-006",
+          "ad": "Ulubey"
+        }
+      ]
+    },
+    {
+      "kod": "TR-65",
+      "ad": "Van",
+      "ilceler": [
+        {
+          "kod": "TR-65-001",
+          "ad": "Bahçesaray"
+        },
+        {
+          "kod": "TR-65-002",
+          "ad": "Başkale"
+        },
+        {
+          "kod": "TR-65-003",
+          "ad": "Çaldıran"
+        },
+        {
+          "kod": "TR-65-004",
+          "ad": "Çatak"
+        },
+        {
+          "kod": "TR-65-005",
+          "ad": "Edremit"
+        },
+        {
+          "kod": "TR-65-006",
+          "ad": "Erciş"
+        },
+        {
+          "kod": "TR-65-007",
+          "ad": "Gevaş"
+        },
+        {
+          "kod": "TR-65-008",
+          "ad": "Gürpınar"
+        },
+        {
+          "kod": "TR-65-009",
+          "ad": "İpekyolu"
+        },
+        {
+          "kod": "TR-65-010",
+          "ad": "Muradiye"
+        },
+        {
+          "kod": "TR-65-011",
+          "ad": "Özalp"
+        },
+        {
+          "kod": "TR-65-012",
+          "ad": "Saray"
+        },
+        {
+          "kod": "TR-65-013",
+          "ad": "Tuşba"
+        }
+      ]
+    },
+    {
+      "kod": "TR-66",
+      "ad": "Yozgat",
+      "ilceler": [
+        {
+          "kod": "TR-66-001",
+          "ad": "Akdağmadeni"
+        },
+        {
+          "kod": "TR-66-002",
+          "ad": "Aydıncık"
+        },
+        {
+          "kod": "TR-66-003",
+          "ad": "Boğazlıyan"
+        },
+        {
+          "kod": "TR-66-004",
+          "ad": "Çandır"
+        },
+        {
+          "kod": "TR-66-005",
+          "ad": "Çayıralan"
+        },
+        {
+          "kod": "TR-66-006",
+          "ad": "Çekerek"
+        },
+        {
+          "kod": "TR-66-007",
+          "ad": "Kadışehri"
+        },
+        {
+          "kod": "TR-66-008",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-66-009",
+          "ad": "Saraykent"
+        },
+        {
+          "kod": "TR-66-010",
+          "ad": "Sarıkaya"
+        },
+        {
+          "kod": "TR-66-011",
+          "ad": "Sorgun"
+        },
+        {
+          "kod": "TR-66-012",
+          "ad": "Şefaatli"
+        },
+        {
+          "kod": "TR-66-013",
+          "ad": "Yenifakılı"
+        },
+        {
+          "kod": "TR-66-014",
+          "ad": "Yerköy"
+        }
+      ]
+    },
+    {
+      "kod": "TR-67",
+      "ad": "Zonguldak",
+      "ilceler": [
+        {
+          "kod": "TR-67-001",
+          "ad": "Alaplı"
+        },
+        {
+          "kod": "TR-67-002",
+          "ad": "Çaycuma"
+        },
+        {
+          "kod": "TR-67-003",
+          "ad": "Devrek"
+        },
+        {
+          "kod": "TR-67-004",
+          "ad": "Ereğli"
+        },
+        {
+          "kod": "TR-67-005",
+          "ad": "Gökçebey"
+        },
+        {
+          "kod": "TR-67-006",
+          "ad": "Kilimli"
+        },
+        {
+          "kod": "TR-67-007",
+          "ad": "Kozlu"
+        },
+        {
+          "kod": "TR-67-008",
+          "ad": "Merkez"
+        }
+      ]
+    },
+    {
+      "kod": "TR-68",
+      "ad": "Aksaray",
+      "ilceler": [
+        {
+          "kod": "TR-68-001",
+          "ad": "Ağaçören"
+        },
+        {
+          "kod": "TR-68-002",
+          "ad": "Eskil"
+        },
+        {
+          "kod": "TR-68-003",
+          "ad": "Gülağaç"
+        },
+        {
+          "kod": "TR-68-004",
+          "ad": "Güzelyurt"
+        },
+        {
+          "kod": "TR-68-005",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-68-006",
+          "ad": "Ortaköy"
+        },
+        {
+          "kod": "TR-68-007",
+          "ad": "Sarıyahşi"
+        },
+        {
+          "kod": "TR-68-008",
+          "ad": "Sultanhanı"
+        }
+      ]
+    },
+    {
+      "kod": "TR-69",
+      "ad": "Bayburt",
+      "ilceler": [
+        {
+          "kod": "TR-69-001",
+          "ad": "Aydıntepe"
+        },
+        {
+          "kod": "TR-69-002",
+          "ad": "Demirözü"
+        },
+        {
+          "kod": "TR-69-003",
+          "ad": "Merkez"
+        }
+      ]
+    },
+    {
+      "kod": "TR-70",
+      "ad": "Karaman",
+      "ilceler": [
+        {
+          "kod": "TR-70-001",
+          "ad": "Ayrancı"
+        },
+        {
+          "kod": "TR-70-002",
+          "ad": "Başyayla"
+        },
+        {
+          "kod": "TR-70-003",
+          "ad": "Ermenek"
+        },
+        {
+          "kod": "TR-70-004",
+          "ad": "Kazımkarabekir"
+        },
+        {
+          "kod": "TR-70-005",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-70-006",
+          "ad": "Sarıveliler"
+        }
+      ]
+    },
+    {
+      "kod": "TR-71",
+      "ad": "Kırıkkale",
+      "ilceler": [
+        {
+          "kod": "TR-71-001",
+          "ad": "Bahşılı"
+        },
+        {
+          "kod": "TR-71-002",
+          "ad": "Balışeyh"
+        },
+        {
+          "kod": "TR-71-003",
+          "ad": "Çelebi"
+        },
+        {
+          "kod": "TR-71-004",
+          "ad": "Delice"
+        },
+        {
+          "kod": "TR-71-005",
+          "ad": "Karakeçili"
+        },
+        {
+          "kod": "TR-71-006",
+          "ad": "Keskin"
+        },
+        {
+          "kod": "TR-71-007",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-71-008",
+          "ad": "Sulakyurt"
+        },
+        {
+          "kod": "TR-71-009",
+          "ad": "Yahşihan"
+        }
+      ]
+    },
+    {
+      "kod": "TR-72",
+      "ad": "Batman",
+      "ilceler": [
+        {
+          "kod": "TR-72-001",
+          "ad": "Beşiri"
+        },
+        {
+          "kod": "TR-72-002",
+          "ad": "Gercüş"
+        },
+        {
+          "kod": "TR-72-003",
+          "ad": "Hasankeyf"
+        },
+        {
+          "kod": "TR-72-004",
+          "ad": "Kozluk"
+        },
+        {
+          "kod": "TR-72-005",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-72-006",
+          "ad": "Sason"
+        }
+      ]
+    },
+    {
+      "kod": "TR-73",
+      "ad": "Şırnak",
+      "ilceler": [
+        {
+          "kod": "TR-73-001",
+          "ad": "Beytüşşebap"
+        },
+        {
+          "kod": "TR-73-002",
+          "ad": "Cizre"
+        },
+        {
+          "kod": "TR-73-003",
+          "ad": "Güçlükonak"
+        },
+        {
+          "kod": "TR-73-004",
+          "ad": "İdil"
+        },
+        {
+          "kod": "TR-73-005",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-73-006",
+          "ad": "Silopi"
+        },
+        {
+          "kod": "TR-73-007",
+          "ad": "Uludere"
+        }
+      ]
+    },
+    {
+      "kod": "TR-74",
+      "ad": "Bartın",
+      "ilceler": [
+        {
+          "kod": "TR-74-001",
+          "ad": "Amasra"
+        },
+        {
+          "kod": "TR-74-002",
+          "ad": "Kurucaşile"
+        },
+        {
+          "kod": "TR-74-003",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-74-004",
+          "ad": "Ulus"
+        }
+      ]
+    },
+    {
+      "kod": "TR-75",
+      "ad": "Ardahan",
+      "ilceler": [
+        {
+          "kod": "TR-75-001",
+          "ad": "Çıldır"
+        },
+        {
+          "kod": "TR-75-002",
+          "ad": "Damal"
+        },
+        {
+          "kod": "TR-75-003",
+          "ad": "Göle"
+        },
+        {
+          "kod": "TR-75-004",
+          "ad": "Hanak"
+        },
+        {
+          "kod": "TR-75-005",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-75-006",
+          "ad": "Posof"
+        }
+      ]
+    },
+    {
+      "kod": "TR-76",
+      "ad": "Iğdır",
+      "ilceler": [
+        {
+          "kod": "TR-76-001",
+          "ad": "Aralık"
+        },
+        {
+          "kod": "TR-76-002",
+          "ad": "Karakoyunlu"
+        },
+        {
+          "kod": "TR-76-003",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-76-004",
+          "ad": "Tuzluca"
+        }
+      ]
+    },
+    {
+      "kod": "TR-77",
+      "ad": "Yalova",
+      "ilceler": [
+        {
+          "kod": "TR-77-001",
+          "ad": "Altınova"
+        },
+        {
+          "kod": "TR-77-002",
+          "ad": "Armutlu"
+        },
+        {
+          "kod": "TR-77-003",
+          "ad": "Çınarcık"
+        },
+        {
+          "kod": "TR-77-004",
+          "ad": "Çiftlikköy"
+        },
+        {
+          "kod": "TR-77-005",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-77-006",
+          "ad": "Termal"
+        }
+      ]
+    },
+    {
+      "kod": "TR-78",
+      "ad": "Karabük",
+      "ilceler": [
+        {
+          "kod": "TR-78-001",
+          "ad": "Eflani"
+        },
+        {
+          "kod": "TR-78-002",
+          "ad": "Eskipazar"
+        },
+        {
+          "kod": "TR-78-003",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-78-004",
+          "ad": "Ovacık"
+        },
+        {
+          "kod": "TR-78-005",
+          "ad": "Safranbolu"
+        },
+        {
+          "kod": "TR-78-006",
+          "ad": "Yenice"
+        }
+      ]
+    },
+    {
+      "kod": "TR-79",
+      "ad": "Kilis",
+      "ilceler": [
+        {
+          "kod": "TR-79-001",
+          "ad": "Elbeyli"
+        },
+        {
+          "kod": "TR-79-002",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-79-003",
+          "ad": "Musabeyli"
+        },
+        {
+          "kod": "TR-79-004",
+          "ad": "Polateli"
+        }
+      ]
+    },
+    {
+      "kod": "TR-80",
+      "ad": "Osmaniye",
+      "ilceler": [
+        {
+          "kod": "TR-80-001",
+          "ad": "Bahçe"
+        },
+        {
+          "kod": "TR-80-002",
+          "ad": "Düziçi"
+        },
+        {
+          "kod": "TR-80-003",
+          "ad": "Hasanbeyli"
+        },
+        {
+          "kod": "TR-80-004",
+          "ad": "Kadirli"
+        },
+        {
+          "kod": "TR-80-005",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-80-006",
+          "ad": "Sumbas"
+        },
+        {
+          "kod": "TR-80-007",
+          "ad": "Toprakkale"
+        }
+      ]
+    },
+    {
+      "kod": "TR-81",
+      "ad": "Düzce",
+      "ilceler": [
+        {
+          "kod": "TR-81-001",
+          "ad": "Akçakoca"
+        },
+        {
+          "kod": "TR-81-002",
+          "ad": "Cumayeri"
+        },
+        {
+          "kod": "TR-81-003",
+          "ad": "Çilimli"
+        },
+        {
+          "kod": "TR-81-004",
+          "ad": "Gölyaka"
+        },
+        {
+          "kod": "TR-81-005",
+          "ad": "Gümüşova"
+        },
+        {
+          "kod": "TR-81-006",
+          "ad": "Kaynaşlı"
+        },
+        {
+          "kod": "TR-81-007",
+          "ad": "Merkez"
+        },
+        {
+          "kod": "TR-81-008",
+          "ad": "Yığılca"
+        }
+      ]
+    }
+  ]
+}

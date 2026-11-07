@@ -57,3 +57,15 @@ describe("tarih", () => {
     expect(bicim.tarihSaat(an)).toBe("29.10.2026 00:30");
   });
 });
+
+describe("ülke adı", () => {
+  it("ülke kodunu sitenin dilinde adlandırır", () => {
+    expect(bicim.ulkeAdi("TR")).toBe("Türkiye");
+    expect(bicim.ulkeAdi("DE")).toBe("Almanya");
+    expect(bicimleyiciOlustur({ ...turkiye, dil: "en" }).ulkeAdi("DE")).toBe("Germany");
+  });
+
+  it("tanınmayan kodu olduğu gibi döndürür", () => {
+    expect(bicim.ulkeAdi("QQ")).toBe("QQ");
+  });
+});

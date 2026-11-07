@@ -24,4 +24,4 @@ Mağaza adresi, vergi bölgesi ve ileride teslimat adresi aynı bölge listesini
 
 ## Durum
 
-yapılacak
+çalışılıyor

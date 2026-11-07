@@ -27,6 +27,7 @@ cekirdek/
   surum.ts             çekirdeğin sürümü (karar 0024)
   kapi/                dört giriş: herkese-acik/, musteri/, yonetici/, sahip/; uç belgesi uclar.md
   ayar-semasi/         bütün site ayarlarının şeması
+  bolgeler/            ülke, il ve ilçe listesi (veri dosyaları) ve bölge doğrulaması (karar 0056)
   vitrin/              vitrin ekranları
   yonetim-paneli/      panel ekranları
   temalar/             hazır temalar
