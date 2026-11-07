@@ -17,6 +17,7 @@ describe("oran birimi", () => {
     expect(yuzdedenOrana("0.0001")).toBe(1);
     expect(yuzdedenOrana("7.5")).toBe(75_000);
     expect(yuzdedenOrana("7.50")).toBe(75_000);
+    expect(yuzdedenOrana("7,5")).toBe(75_000);
     expect(yuzdedenOrana("18")).toBe(180_000);
     expect(yuzdedenOrana("33.3333")).toBe(333_333);
     expect(yuzdedenOrana("100")).toBe(tamOran);
@@ -25,7 +26,18 @@ describe("oran birimi", () => {
   });
 
   it("biçim dışı metin çevrilmez", () => {
-    for (const metin of ["", "18,5", "-1", "1.23456", "1e2", " 18", "18.", ".5", "1000"]) {
+    for (const metin of [
+      "",
+      "18,5,1",
+      "18.5,1",
+      "-1",
+      "1.23456",
+      "1e2",
+      " 18",
+      "18.",
+      ".5",
+      "1000",
+    ]) {
       expect(yuzdedenOrana(metin), metin).toBeUndefined();
     }
   });
@@ -42,7 +54,8 @@ describe("oran birimi", () => {
   it("şema yüzde yüzden büyük oranı ve sayıyı reddeder, kenar boşluğunu siler", () => {
     expect(oranSemasi.safeParse(" 18 ").data).toBe(180_000);
     expect(oranSemasi.safeParse("100.0001").error?.issues[0]?.message).toBe("oran-siniri");
-    expect(oranSemasi.safeParse("18,5").error?.issues[0]?.message).toBe("oran-bicimi");
+    expect(oranSemasi.safeParse("18,5").data).toBe(185_000);
+    expect(oranSemasi.safeParse("on sekiz").error?.issues[0]?.message).toBe("oran-bicimi");
     expect(oranSemasi.safeParse(18).success).toBe(false);
   });
 });

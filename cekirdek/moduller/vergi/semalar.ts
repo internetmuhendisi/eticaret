@@ -5,8 +5,9 @@
 // verisidir. Bunu cekirdek/testler/vergi-degeri-yok.test.ts denetler.
 //
 // Oran, küsuratlı sayı yerine milyonda bir birimiyle tam sayı olarak saklanır: %18 = 180000,
-// %7,5 = 75000. Girişte yüzde metin olarak yazılır ("18", "7.5") ve sayıya çevrilmeden okunur, böylece
-// hiçbir adımda yuvarlama olmaz. En çok dört ondalık basamak yazılabilir.
+// %7,5 = 75000. Girişte yüzde metin olarak yazılır ("18", "7.5" ya da "7,5") ve sayıya çevrilmeden
+// okunur, böylece hiçbir adımda yuvarlama olmaz. En çok dört ondalık basamak yazılabilir. Yüzde 100'ü
+// geçemediği için binlik ayırıcı yoktur: nokta da virgül de ondalık ayırıcıdır.
 //
 // Hata iletileri düz cümle değil koddur (vergiHatalari, bolgeHatalari, adresHatalari); metni ekran çözer.
 // Komutlar bu dosyayı Node ile doğrudan çalıştırır (site doğrulaması): yalnız silinebilir tür sözdizimi.
@@ -15,13 +16,20 @@ import type { AdresHatasi } from "../../bolgeler/adres.ts";
 import { bolgeyiDogrula, postaKoduGecerliMi } from "../../bolgeler/bolgeler.ts";
 import type { MetinAnahtari } from "../../metinler/metin.ts";
 
-export const vergiHatalari = ["oran-bicimi", "oran-siniri", "ad-tekrar", "sinif-silinmis"] as const;
+export const vergiHatalari = [
+  "oran-bicimi",
+  "oran-siniri",
+  "ad-bicimi",
+  "ad-tekrar",
+  "sinif-silinmis",
+] as const;
 export type VergiHatasi = (typeof vergiHatalari)[number];
 
 // Her hata kodunun ekran metni: eksik metin tür kontrolünde hata verir.
 export const vergiHataMetinleri = {
   "oran-bicimi": "yonetim.vergi.hata.oran-bicimi",
   "oran-siniri": "yonetim.vergi.hata.oran-siniri",
+  "ad-bicimi": "yonetim.vergi.hata.ad-bicimi",
   "ad-tekrar": "yonetim.vergi.hata.ad-tekrar",
   "sinif-silinmis": "yonetim.vergi.hata.sinif-silinmis",
 } as const satisfies Record<VergiHatasi, MetinAnahtari>;
@@ -31,9 +39,10 @@ export const tamOran = 1_000_000;
 const yuzdeBasinaBirim = tamOran / 100;
 const ondalikBasamak = 4;
 
-// Yüzde metnini ("18", "7.5", "0.0001") milyonda bir birimine çevirir. Biçim dışı metin undefined döner.
+// Yüzde metnini ("18", "7.5", "7,5", "0.0001") milyonda bir birimine çevirir. Biçim dışı metin
+// undefined döner.
 export const yuzdedenOrana = (yuzde: string): number | undefined => {
-  const eslesme = /^(\d{1,3})(?:\.(\d{1,4}))?$/.exec(yuzde);
+  const eslesme = /^(\d{1,3})(?:[.,](\d{1,4}))?$/.exec(yuzde);
   if (eslesme === null) return undefined;
   const [, tam = "", kesir = ""] = eslesme;
   return Number(tam) * yuzdeBasinaBirim + Number(kesir.padEnd(ondalikBasamak, "0"));
@@ -74,7 +83,7 @@ export const vergiAdiSemasi = z
   .trim()
   .min(1)
   .max(50)
-  .refine((ad) => !ad.includes("@"), "@ olamaz.");
+  .refine((ad) => !ad.includes("@"), hata("ad-bicimi"));
 
 const siraSemasi = z.int().min(0).max(9999);
 
@@ -108,9 +117,10 @@ const bolgeKurali = (
   }
 };
 
+// Sıra verilmezse servis yeni kaydı listenin sonuna koyar.
 export const sinifGirdisi = z.strictObject({
   ad: vergiAdiSemasi,
-  sira: siraSemasi.default(0),
+  sira: siraSemasi.optional(),
 });
 export type SinifGirdisi = z.input<typeof sinifGirdisi>;
 
@@ -121,10 +131,30 @@ export const sinifDegisikligi = z.strictObject({
 });
 
 export const oranGirdisi = oranAlanlari
-  .extend({ sira: siraSemasi.default(0) })
+  .extend({ sira: siraSemasi.optional() })
   .superRefine(bolgeKurali);
 export type OranGirdisi = z.input<typeof oranGirdisi>;
-export type OranDegeri = z.output<typeof oranGirdisi>;
+
+// Oran değişikliği: yalnız verilen alan değişir. İsteğe bağlı alanı (il, posta kodu, ad) boşaltmak için
+// null verilir; verilmeyen alan eski değerinde kalır. Bölge kuralı birleşmiş sonuca uygulanır
+// (oranBolgesi), çünkü yalnız il değişince de ülkeyle tutarlı olmalıdır.
+export const oranDegisikligi = z.strictObject({
+  ulke: z.string().trim().optional(),
+  il: z.string().trim().nullable().optional(),
+  postaKodu: z.string().trim().min(1).max(20).nullable().optional(),
+  oran: oranSemasi.optional(),
+  ad: vergiAdiSemasi.nullable().optional(),
+  sira: siraSemasi.optional(),
+});
+export type OranDegisikligi = z.input<typeof oranDegisikligi>;
+
+export const oranBolgesi = z
+  .strictObject({
+    ulke: z.string(),
+    il: z.string().optional(),
+    postaKodu: z.string().optional(),
+  })
+  .superRefine(bolgeKurali);
 
 // Sitenin başlangıç verisi (baslangic/vergi.json). Sınıflar ve oranlar yazıldıkları sırayla gelir.
 // Dosyası olmayan site sınıfsız başlar.

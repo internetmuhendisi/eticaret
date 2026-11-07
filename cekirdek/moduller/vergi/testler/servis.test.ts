@@ -127,6 +127,19 @@ describe("başlangıç verisi", () => {
     expect(await sayilar(vt)).toEqual({ sinif: sinifSayisi, oran: oranSayisi });
   });
 
+  it("sırası verilmeyen yeni sınıf silinmemiş sınıfların sonuna gelir", async () => {
+    const vt = await siteAc();
+    const [, , vergisiz] = await servis.tabloyuOku(vt);
+    if (vergisiz === undefined) throw new Error("Sınıf yok.");
+    await servis.sinifSil(vt, yonetici(), vergisiz.kimlik);
+    await servis.sinifEkle(vt, yonetici(), { ad: "Yeni" });
+    expect((await servis.tabloyuOku(vt)).map((sinif) => [sinif.ad, sinif.sira])).toEqual([
+      ["Genel", 0],
+      ["İndirimli", 1],
+      ["Yeni", 2],
+    ]);
+  });
+
   it("ilk işlem bir değişiklikse başlangıç verisi önce yazılır", async () => {
     const vt = await siteAc();
     await servis.sinifEkle(vt, yonetici(), { ad: "Yeni", sira: 5 });
@@ -296,7 +309,7 @@ describe("oranlar", () => {
     const kim = yonetici();
     const sinif = await bos.sinifEkle(vt, kim, { ad: "Genel" });
     const birinci = await bos.oranEkle(vt, kim, sinif, tr("4", { sira: 1 }));
-    await bos.oranEkle(vt, kim, sinif, tr("0.0001", { ad: "Ek" }));
+    await bos.oranEkle(vt, kim, sinif, tr("0.0001", { ad: "Ek", sira: 0 }));
     const [okunan] = await bos.tabloyuOku(vt);
     expect(okunan?.oranlar.map((oran) => [oran.oran, oran.ad, oran.sira])).toEqual([
       [1, "Ek", 0],
@@ -327,7 +340,7 @@ describe("oranlar", () => {
     const hatalilar: unknown[] = [
       tr("100.0001"),
       tr("101"),
-      tr("20,5"),
+      tr("4,5,1"),
       tr("-1"),
       tr("1.23456"),
       tr(""),
@@ -345,12 +358,80 @@ describe("oranlar", () => {
       );
     }
     expect((await sayilar(vt)).oran).toBe(0);
+    // Hata ayrıntısı alanı ve kodu söyler: ekran metni koddan çözer.
+    expect(await hatasi(bos.oranEkle(vt, yonetici(), sinif, tr("101")))).toEqual({
+      kod: "dogrulama",
+      ayrinti: [{ alan: "oran", kod: "oran-siniri" }],
+    });
+    expect(
+      await hatasi(bos.oranEkle(vt, yonetici(), sinif, { ulke: "DE", il: "TR-06", oran: "5" })),
+    ).toEqual({ kod: "dogrulama", ayrinti: [{ alan: "il", kod: "il-baska-ulkenin" }] });
+    expect(await hatasi(bos.oranEkle(vt, yonetici(), sinif, tr("5", { ad: "a@b" })))).toEqual({
+      kod: "dogrulama",
+      ayrinti: [{ alan: "ad", kod: "ad-bicimi" }],
+    });
     // Sınırdaki değerler geçer.
     await bos.oranEkle(vt, yonetici(), sinif, tr("100"));
     await bos.oranEkle(vt, yonetici(), sinif, tr("0"));
     expect((await bos.tabloyuOku(vt))[0]?.oranlar.map((oran) => oran.oran).toSorted()).toEqual([
       0, 1_000_000,
     ]);
+  });
+
+  it("değişiklikte yalnız verilen alan değişir, null isteğe bağlı alanı boşaltır", async () => {
+    const vt = await bosSite();
+    const sinif = await bos.sinifEkle(vt, yonetici(), { ad: "Genel" });
+    const kimlik = await bos.oranEkle(
+      vt,
+      yonetici(),
+      sinif,
+      tr("4", { il: "TR-34", postaKodu: "34000", ad: "Ek", sira: 3 }),
+    );
+    const oku = async () => (await bos.tabloyuOku(vt))[0]?.oranlar[0];
+    await bos.oranDegistir(vt, yonetici(), kimlik, { oran: "7,5" });
+    expect(await oku()).toEqual({
+      kimlik,
+      sinifKimligi: sinif,
+      ulke: "TR",
+      il: "TR-34",
+      postaKodu: "34000",
+      oran: 75_000,
+      ad: "Ek",
+      sira: 3,
+    });
+    await bos.oranDegistir(vt, yonetici(), kimlik, { il: null, ad: null });
+    expect(await oku()).toEqual({
+      kimlik,
+      sinifKimligi: sinif,
+      ulke: "TR",
+      postaKodu: "34000",
+      oran: 75_000,
+      sira: 3,
+    });
+  });
+
+  it("değişiklikte bölge kuralı birleşmiş sonuca uygulanır", async () => {
+    const vt = await bosSite();
+    const sinif = await bos.sinifEkle(vt, yonetici(), { ad: "Genel" });
+    const kimlik = await bos.oranEkle(vt, yonetici(), sinif, tr("4", { il: "TR-34" }));
+    // Yalnız ülke değişince eski il yeni ülkeyle tutarsız kalır.
+    expect(await hatasi(bos.oranDegistir(vt, yonetici(), kimlik, { ulke: "DE" }))).toEqual({
+      kod: "dogrulama",
+      ayrinti: [{ alan: "il", kod: "il-baska-ulkenin" }],
+    });
+    expect(
+      (await hatasi(bos.oranDegistir(vt, yonetici(), kimlik, { postaKodu: "1" }))).ayrinti,
+    ).toEqual([{ alan: "postaKodu", kod: "posta-kodu-bicimi" }]);
+    await bos.oranDegistir(vt, yonetici(), kimlik, { ulke: "DE", il: null });
+    expect((await bos.tabloyuOku(vt))[0]?.oranlar[0]?.ulke).toBe("DE");
+  });
+
+  it("sırası verilmeyen oran sınıfın sonuna gelir", async () => {
+    const vt = await bosSite();
+    const sinif = await bos.sinifEkle(vt, yonetici(), { ad: "Genel" });
+    await bos.oranEkle(vt, yonetici(), sinif, tr("1", { sira: 4 }));
+    await bos.oranEkle(vt, yonetici(), sinif, tr("2"));
+    expect((await bos.tabloyuOku(vt))[0]?.oranlar.map((oran) => oran.sira)).toEqual([4, 5]);
   });
 
   it("veritabanı sınırın dışındaki oranı da reddeder", async () => {

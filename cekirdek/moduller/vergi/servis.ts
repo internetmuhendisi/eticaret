@@ -11,9 +11,12 @@
 //
 // İzin kapıda denetlenir (izinler.ts); servis yalnız kimin yaptığını kayda yazar. Girdi şemadan
 // geçmemişse servis yine şemadan geçirir: başka bir yoldan gelen ham değer tabloya yazılmaz.
-import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, max, sql } from "drizzle-orm";
+import type { z } from "zod";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
+import { adresHatalari } from "../../bolgeler/adres.ts";
+import { bolgeHatalari } from "../../bolgeler/bolgeler.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import { type DegisikligiYapan, sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
 import {
@@ -24,14 +27,17 @@ import {
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { vergiOranlari, vergiSiniflari } from "./model.ts";
 import {
-  type OranDegeri,
+  type OranDegisikligi,
   type OranGirdisi,
+  oranBolgesi,
+  oranDegisikligi,
   oranGirdisi,
   type SinifGirdisi,
   sinifDegisikligi,
   sinifGirdisi,
   type VergiBaslangici,
   type VergiHatasi,
+  vergiHatalari,
 } from "./semalar.ts";
 
 // Başlangıç yazımını yapan, değişiklik kaydında "kim" olarak görünür.
@@ -82,7 +88,15 @@ const oranKaydi = (oran: {
   sira: oran.sira,
 });
 
-const oranSatiri = (sinifKimligi: string, oran: Omit<OranDegeri, "sira">, sira: number) => ({
+type OranAlanlari = {
+  ulke: string;
+  il?: string | undefined;
+  postaKodu?: string | undefined;
+  oran: number;
+  ad?: string | undefined;
+};
+
+const oranSatiri = (sinifKimligi: string, oran: OranAlanlari, sira: number) => ({
   sinif_kimligi: sinifKimligi,
   ulke: oran.ulke,
   il: oran.il ?? null,
@@ -103,11 +117,18 @@ const oranAlanlari = {
   sira: vergiOranlari.sira,
 };
 
-const girdiyiDogrula = <T>(
-  sonuc: { success: true; data: T } | { success: false; error: unknown },
-) => {
-  if (!sonuc.success) throw new BilinenHata("dogrulama");
-  return sonuc.data;
+// Şemadan geçmeyen girdi doğrulama hatasıdır. Ayrıntıda her sorunun alanı ve kodu durur: bilinen
+// kodlar (vergi, bölge, adres) kendisiyle, ötekiler şemanın sorun türüyle ("too_small" gibi).
+const bilinenKodlar = new Set<string>([...vergiHatalari, ...bolgeHatalari, ...adresHatalari]);
+const girdiyiDogrula = <T>(sonuc: z.ZodSafeParseResult<T>): T => {
+  if (sonuc.success) return sonuc.data;
+  throw new BilinenHata(
+    "dogrulama",
+    sonuc.error.issues.map((sorun) => ({
+      alan: sorun.path.join("."),
+      kod: bilinenKodlar.has(sorun.message) ? sorun.message : sorun.code,
+    })),
+  );
 };
 
 export const vergiServisi = (baslangic: () => VergiBaslangici) => {
@@ -250,13 +271,32 @@ export const vergiServisi = (baslangic: () => VergiBaslangici) => {
     return oran;
   };
 
+  // Sıra verilmezse yeni kayıt silinmemişlerin sonuna gelir.
+  const sonrakiSinifSirasi = async (islem: VeritabaniIslemi) => {
+    const [son] = await islem
+      .select({ sira: max(vergiSiniflari.sira) })
+      .from(vergiSiniflari)
+      .where(isNull(vergiSiniflari.silinme_zamani));
+    return son?.sira === null || son?.sira === undefined ? 0 : son.sira + 1;
+  };
+  const sonrakiOranSirasi = async (islem: VeritabaniIslemi, sinifKimligi: string) => {
+    const [son] = await islem
+      .select({ sira: max(vergiOranlari.sira) })
+      .from(vergiOranlari)
+      .where(
+        and(eq(vergiOranlari.sinif_kimligi, sinifKimligi), isNull(vergiOranlari.silinme_zamani)),
+      );
+    return son?.sira === null || son?.sira === undefined ? 0 : son.sira + 1;
+  };
+
   const sinifEkle = async (vt: Veritabani, kim: DegisikligiYapan, ham: SinifGirdisi) => {
     const girdi = girdiyiDogrula(sinifGirdisi.safeParse(ham));
     return yaz(vt, async (islem) => {
       if (await adKullaniliyor(islem, girdi.ad)) throw isHatasi("ad-tekrar");
+      const sinif = { ad: girdi.ad, sira: girdi.sira ?? (await sonrakiSinifSirasi(islem)) };
       const [yazilan] = await islem
         .insert(vergiSiniflari)
-        .values({ ad: girdi.ad, sira: girdi.sira })
+        .values(sinif)
         .returning({ kimlik: vergiSiniflari.kimlik });
       if (yazilan === undefined) throw new Error("Vergi sınıfı yazılamadı.");
       await degisikligiKaydet(islem, {
@@ -264,7 +304,7 @@ export const vergiServisi = (baslangic: () => VergiBaslangici) => {
         islem: "vergi-sinifi.eklendi",
         kayit: { tur: "vergi-sinifi", kimlik: yazilan.kimlik },
         eski: null,
-        yeni: sinifKaydi(girdi),
+        yeni: sinifKaydi(sinif),
       });
       return yazilan.kimlik;
     });
@@ -325,9 +365,10 @@ export const vergiServisi = (baslangic: () => VergiBaslangici) => {
     const girdi = girdiyiDogrula(oranGirdisi.safeParse(ham));
     return yaz(vt, async (islem) => {
       await degisebilenSinif(islem, sinifKimligi);
+      const sira = girdi.sira ?? (await sonrakiOranSirasi(islem, sinifKimligi));
       const [yazilan] = await islem
         .insert(vergiOranlari)
-        .values(oranSatiri(sinifKimligi, girdi, girdi.sira))
+        .values(oranSatiri(sinifKimligi, girdi, sira))
         .returning(oranAlanlari);
       if (yazilan === undefined) throw new Error("Vergi oranı yazılamadı.");
       await degisikligiKaydet(islem, {
@@ -341,17 +382,31 @@ export const vergiServisi = (baslangic: () => VergiBaslangici) => {
     });
   };
 
-  // Oranın bütün alanları yeni değerle yazılır; sınıfı değişmez. Aynı kalan değişiklik kayda girmez.
+  // Yalnız verilen alan değişir, null isteğe bağlı alanı boşaltır (semalar.ts); sınıfı değişmez.
+  // Bölge kuralı birleşmiş sonuca uygulanır. Aynı kalan değişiklik kayda girmez.
   const oranDegistir = async (
     vt: Veritabani,
     kim: DegisikligiYapan,
     kimlik: string,
-    ham: OranGirdisi,
+    ham: OranDegisikligi,
   ) => {
-    const girdi = girdiyiDogrula(oranGirdisi.safeParse(ham));
+    const girdi = girdiyiDogrula(oranDegisikligi.safeParse(ham));
+    const secilen = <T>(verilen: T | null | undefined, eski: T | null) =>
+      (verilen === undefined ? eski : verilen) ?? undefined;
     return yaz(vt, async (islem) => {
       const eski = await degisebilenOran(islem, kimlik);
-      const yeni = oranSatiri(eski.sinif_kimligi, girdi, girdi.sira);
+      const bolge = girdiyiDogrula(
+        oranBolgesi.safeParse({
+          ulke: girdi.ulke ?? eski.ulke,
+          il: secilen(girdi.il, eski.il),
+          postaKodu: secilen(girdi.postaKodu, eski.posta_kodu),
+        }),
+      );
+      const yeni = oranSatiri(
+        eski.sinif_kimligi,
+        { ...bolge, oran: girdi.oran ?? eski.oran_milyonda, ad: secilen(girdi.ad, eski.ad) },
+        girdi.sira ?? eski.sira,
+      );
       const eskiKayit = oranKaydi(eski);
       const yeniKayit = oranKaydi(yeni);
       if (JSON.stringify(eskiKayit) === JSON.stringify(yeniKayit)) return;

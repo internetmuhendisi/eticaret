@@ -4,7 +4,11 @@
 // bütün sitelerin dosyalarından okunur: yeni bir sitenin vergi adı da kendiliğinden aranır.
 //
 // - Adlar (örneğin vergi adı ya da "%..." sınıf adı) çekirdekte ve bileşenlerde, kodda, metin
-//   dosyalarında ve testlerde, büyük-küçük harf ayırmadan ve tek sözcük olarak aranır.
+//   dosyalarında, veritabanı değişikliklerinde ve testlerde, büyük-küçük harf ayırmadan ve tek sözcük
+//   olarak aranır. Bitişik yazılmış ad da sözcüktür: "vergiOrani" içinde "vergi" ve "Orani" aranır.
+// - Aranan adlar sitelerden geldiği için bir site sınıfına sıradan bir sözcük ("Genel" gibi) ad verirse
+//   bu test çekirdekteki o sözcüğe kırmızı verir. Öyleyse sınıfın adı değiştirilir ya da bu test,
+//   gerekçesi yazılarak, yalnız vergi adını ve "%" ile başlayan adları arayacak biçimde daraltılır.
 // - Sıfır olmayan her oran yüzde yazılışıyla ("%N" ve "N%", arada boşluksuz) aynı yerlerde aranır.
 //   Boşluklu yazılış ("% N") kalan bölme işlemiyle karışacağı için aranmaz: yalnız disiplindir.
 // - Vergi modülünde ayrıca oranın milyonda bir ve kesir yazılışı sayı olarak aranır. Tam yüzde sayı
@@ -65,16 +69,21 @@ const oranlar = [
 
 const kacir = (metin: string) => metin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 // Tek sözcük: önünde ve arkasında harf ya da rakam olmaz.
-const sozcuk = (metin: string) => `(?<![\\p{L}\\p{N}])${kacir(metin)}(?![\\p{L}\\p{N}])`;
+// "$" de sözcüğün parçası sayılır: "%1$s" gibi yer tutucu ad değildir.
+const sozcuk = (metin: string) => `(?<![\\p{L}\\p{N}])${kacir(metin)}(?![\\p{L}\\p{N}$])`;
 // Yüzde yazılışı, ondalık ayırıcı nokta ya da virgül: "%7.5", "%7,5", "7.5%".
 const yuzdeler = (oran: number) => {
   const yuzde = oranYuzdesi(oran);
   return [yuzde, yuzde.replace(".", ",")].flatMap((yazilis) => [
-    `%${kacir(yazilis)}(?![\\p{L}\\p{N}.,])`,
+    // "%1$s" gibi yer tutucu oran değildir.
+    `%${kacir(yazilis)}(?![\\p{L}\\p{N}.,$])`,
     `(?<![\\p{L}\\p{N}.,:])${kacir(yazilis)}%`,
   ]);
 };
 const adKalibi = new RegExp([...adlar.map(sozcuk), ...oranlar.flatMap(yuzdeler)].join("|"), "iu");
+// Bitişik yazılmış adı sözcüklerine ayırır: "kdvOrani" → "kdv Orani".
+const ayrilmis = (satir: string) => satir.replace(/(\p{Ll})(\p{Lu})/gu, "$1 $2");
+const adGeciyor = (satir: string) => adKalibi.test(satir) || adKalibi.test(ayrilmis(satir));
 
 // Vergi modülündeki sayılar: alt çizgisiz değeri milyonda bir ya da kesir yazılışıyla bir oran olan.
 const sayiKalibi = /(?<![\w.])\d[\d_]*(?:\.\d+)?(?![\w.])/g;
@@ -95,7 +104,7 @@ const adGecenler = (metinler: Metin[]): string[] =>
   metinler.flatMap(({ ad, icerik }) =>
     icerik
       .split("\n")
-      .filter((satir) => adKalibi.test(satir) && !biliniyor(ad, satir))
+      .filter((satir) => adGeciyor(satir) && !biliniyor(ad, satir))
       .map((satir) => `${ad}: ${satir.trim()}`),
   );
 
@@ -118,10 +127,13 @@ describe("çekirdekte sitenin vergi değeri", () => {
   it("çekirdekte ve bileşenlerde vergi adı, sınıf adı ya da yüzde yazılışıyla oran geçmez", () => {
     const taranan = oku(
       ["cekirdek", "bilesenler"].flatMap((klasor) =>
-        dosyalar(join(kok, klasor), /\.(ts|tsx|mts|json)$/),
+        dosyalar(join(kok, klasor), /\.(ts|tsx|mts|cts|js|mjs|cjs|json|sql|css)$/),
       ),
     );
     expect(taranan.length).toBeGreaterThan(50);
+    // Veritabanı değişiklikleri de taranır: bütün sitelerin oranını değiştiren veri değişikliği oranı
+    // yazamaz.
+    expect(taranan.some(({ ad }) => ad.endsWith(".sql"))).toBe(true);
     // Bu dosya kuralı ve bilinen geçişi alıntılar, aranan değerleri yalnız sitelerden okur.
     const buDosya = relative(kok, import.meta.filename);
     expect(adGecenler(taranan.filter(({ ad }) => ad !== buDosya))).toEqual([]);
@@ -142,10 +154,14 @@ describe("çekirdekte sitenin vergi değeri", () => {
       { ad: "kucuk.ts", icerik: `const vergiAdi = '${ad.toLowerCase()}';` },
       { ad: "yorum.ts", icerik: `// ${ad} dahil fiyat` },
       { ad: "metin.json", icerik: `{ "fiyat": "${ad} dahil" }` },
+      { ad: "bitisik.ts", icerik: `const ${ad.toLowerCase()}Orani = 1;` },
+      { ad: "alt-cizgi.ts", icerik: `const ${ad.toUpperCase()}_ORANI = 1;` },
+      { ad: "degisiklik.sql", icerik: `UPDATE vergi_oranlari SET ad = '${ad}';` },
       { ad: "yuzde.ts", icerik: `const sinif = "%${yuzde}";` },
       { ad: "sonda.ts", icerik: `const metin = "${yuzde}% indirim";` },
       { ad: "sozcuk-icinde.ts", icerik: `const x = "on${ad}son";` },
       { ad: "kalan.ts", icerik: `const x = toplam % ${yuzde} === 0;` },
+      { ad: "yer-tutucu.ts", icerik: `const x = "%${yuzde}$s";` },
       { ad: "uzun-sayi.ts", icerik: `const x = "%${yuzde}5";` },
       { ad: "kodlama.ts", icerik: `const x = "%${yuzde}F";` },
       { ad: "ipv6.ts", icerik: `const x = "fe80::${yuzde}%eth0";` },
@@ -155,6 +171,9 @@ describe("çekirdekte sitenin vergi değeri", () => {
       "kucuk.ts",
       "yorum.ts",
       "metin.json",
+      "bitisik.ts",
+      "alt-cizgi.ts",
+      "degisiklik.sql",
       "yuzde.ts",
       "sonda.ts",
     ]);

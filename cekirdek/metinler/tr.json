@@ -109,8 +109,9 @@
     },
     "vergi": {
       "hata": {
-        "oran-bicimi": "Oranı yüzde olarak yazın, en çok dört ondalık basamakla. Örnek: 18 ya da 7.5.",
+        "oran-bicimi": "Oranı yüzde olarak yazın, en çok dört ondalık basamakla. Örnek: 18 ya da 7,5.",
         "oran-siniri": "Oran yüzde 100'den büyük olamaz. Oranı yüzde olarak yazın.",
+        "ad-bicimi": "Adda @ işareti olamaz. Adı @ olmadan yazın.",
         "ad-tekrar": "Bu adla bir vergi sınıfı zaten var. Başka bir ad yazın.",
         "sinif-silinmis": "Bu vergi sınıfı silinmiş, değiştirilemez. Ürünleri başka bir sınıfa geçirin."
       }
