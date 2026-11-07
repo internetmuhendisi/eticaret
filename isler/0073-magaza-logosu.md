@@ -28,4 +28,4 @@ Mağazanın logosu tek yerden gelir; vitrin, panel ve e-postalar aynı logoyu ku
 
 ## Durum
 
-çalışılıyor
+bitti
