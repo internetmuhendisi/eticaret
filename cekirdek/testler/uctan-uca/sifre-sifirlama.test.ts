@@ -136,11 +136,54 @@ test("kayıtsız e-postada da aynı cevap görünür", async ({ page }) => {
   await bagantiIste(page, "/sifremi-unuttum", yeniEposta());
 });
 
-test("anahtarsız bağlantı açıklama ve yeni bağlantı yolu gösterir", async ({ page }) => {
-  await page.goto("/sifre-yenile");
-  await expect(page.locator("main").getByRole("alert")).toHaveText(
-    metin("ortak.sifirlama.hataBaglanti"),
-  );
+for (const adres of [
+  "/sifre-yenile",
+  "/sifre-yenile#anahtar=",
+  `/sifre-yenile#anahtar=${"a".repeat(200)}`,
+]) {
+  test(`anahtarı olmayan ya da bozuk bağlantı açıklama gösterir: ${adres.slice(0, 30)}`, async ({
+    page,
+  }) => {
+    await page.goto(adres);
+    await expect(page.locator("main").getByRole("alert")).toHaveText(
+      metin("ortak.sifirlama.hataBaglanti"),
+    );
+    expect(page.url()).not.toContain("#");
+  });
+}
+
+test("sayfa yenilenince bağlantı geçerli kalır; aynı sekmeye yapıştırılan yeni bağlantı adresten silinir", async ({
+  page,
+}) => {
+  const eposta = yeniEposta();
+  await musteriKaydet(page, eposta);
+  await bagantiIste(page, "/sifremi-unuttum", eposta);
+  const baglanti = await epostadakiBaglanti(eposta);
+
+  await page.goto("/sifre-yenile#anahtar=bozuk-eski-anahtar");
+  await yuklenmesiniBekle(page);
+  await page.evaluate((yeni) => {
+    window.location.hash = new URL(yeni, window.location.href).hash;
+  }, baglanti);
+  await expect.poll(() => page.url()).not.toContain("#");
+
+  await page.reload();
+  await yuklenmesiniBekle(page);
+  await alan(page, metin("ortak.sifirlama.sifre")).fill(sifre);
+  await page.getByRole("button", { name: metin("ortak.sifirlama.yenileGonder") }).click();
+  await expect(page).toHaveURL(/\/giris\?sifre-yenilendi=1$/);
+});
+
+test.describe("JavaScript kapalı", () => {
+  test.use({ javaScriptEnabled: false });
+  test("yeni şifre sayfası nedenini söyler, form gönderilmez", async ({ page }) => {
+    await page.goto("/sifre-yenile#anahtar=abc");
+    // Test aracı noscript içini metin saymaz, sayfanın kendisine bakılır.
+    expect(await page.content()).toContain(metin("ortak.form.kodGerekli"));
+    await expect(
+      page.getByRole("button", { name: metin("ortak.sifirlama.yenileGonder") }),
+    ).toBeDisabled();
+  });
 });
 
 test("yönetici: sıfırlamadan sonra yine doğrulama kodu ister", async ({ page }) => {

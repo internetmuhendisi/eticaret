@@ -25,7 +25,7 @@ import {
   yedekKodlariUret,
   yedekKodOzeti,
 } from "./iki-asama.ts";
-import { type Anahtarlar, anahtarOzeti, oturumAc } from "./servis.ts";
+import { type Anahtarlar, anahtarOzeti, oturumAc, sifreDegismediyse } from "./servis.ts";
 
 export type AdimDurumu = "kod" | "kurulum";
 export type GirisAdimi = { hesapKimligi: string; eposta: string; durum: AdimDurumu };
@@ -66,21 +66,24 @@ export const yoneticiSifreAsamasi = async (
   girdi: { eposta: string; sifre: string },
   baglanti: string,
 ): Promise<{ anahtar: string; durum: AdimDurumu }> => {
-  const { hesapKimligi } = await sinirliSifreDogrula(vt, "yonetici", girdi, baglanti);
+  const dogrulanan = await sinirliSifreDogrula(vt, "yonetici", girdi, baglanti);
+  const { hesapKimligi } = dogrulanan;
   const simdi = new Date();
-  await vt
-    .delete(yoneticiGirisAdimlari)
-    .where(
-      and(
-        eq(yoneticiGirisAdimlari.yonetici_kimligi, hesapKimligi),
-        lt(yoneticiGirisAdimlari.bitis, simdi),
-      ),
-    );
   const anahtar = randomBytes(32).toString("base64url");
-  await vt.insert(yoneticiGirisAdimlari).values({
-    yonetici_kimligi: hesapKimligi,
-    anahtar_ozeti: anahtarOzeti(anahtar),
-    bitis: new Date(simdi.getTime() + girisAdimiSuresiSaniye * 1000),
+  await sifreDegismediyse(vt, "yonetici", dogrulanan, async (islem) => {
+    await islem
+      .delete(yoneticiGirisAdimlari)
+      .where(
+        and(
+          eq(yoneticiGirisAdimlari.yonetici_kimligi, hesapKimligi),
+          lt(yoneticiGirisAdimlari.bitis, simdi),
+        ),
+      );
+    await islem.insert(yoneticiGirisAdimlari).values({
+      yonetici_kimligi: hesapKimligi,
+      anahtar_ozeti: anahtarOzeti(anahtar),
+      bitis: new Date(simdi.getTime() + girisAdimiSuresiSaniye * 1000),
+    });
   });
   const adim = await girisAdiminiOku(vt, anahtar);
   if (adim === null) throw new BilinenHata("oturum-yok");

@@ -2,7 +2,7 @@
 // tablolarıyla kullanır. Anahtar rastgele üretilir, veritabanında yalnız özeti durur, tek kullanımlıktır.
 // Sıfırlama iki aşamalı girişe dokunmaz: yönetici yeni şifreyle yine kod girer ya da kurulum ekranına düşer.
 import { randomBytes } from "node:crypto";
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, eq, gt, isNull, ne } from "drizzle-orm";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import { siteAdresi } from "../../ayar-semasi/site-adresi.ts";
 import { gunluk } from "../../izleme/gunluk.ts";
@@ -45,8 +45,11 @@ export const sifreSifirlamaIste = async (
   yenilemeYolu: string,
 ): Promise<void> => {
   const eposta = epostaSemasi.parse(girdi.eposta);
-  const { gecerlilikSaniye, hesap: sinir } = sifreSifirlamaAyari;
-  const dolu = denemeyiAyir([{ anahtar: `${tur} sifirlama ${eposta}`, ...sinir }]);
+  const { gecerlilikSaniye, hesap: sinir, hesapGunluk } = sifreSifirlamaAyari;
+  const dolu = denemeyiAyir([
+    { anahtar: `${tur} sifirlama ${eposta}`, ...sinir },
+    { anahtar: `${tur} sifirlama gunluk ${eposta}`, ...hesapGunluk },
+  ]);
   if (dolu !== null) {
     gunluk.uyari("Şifre sıfırlama sınırı doldu.", { hesapTuru: tur, eposta });
     return;
@@ -67,6 +70,12 @@ export const sifreSifirlamaIste = async (
   }
   const anahtar = randomBytes(32).toString("base64url");
   await vt.transaction(async (islem) => {
+    // Hesap kilitlenir: aynı anda giden iki istek iki canlı bağlantı bırakmasın.
+    await islem
+      .select({ kimlik: hesap.kimlik })
+      .from(hesap)
+      .where(eq(hesap.kimlik, bulunan.kimlik))
+      .for("update");
     await islem.delete(sifirlama).where(eq(sifirlama.hesap_kimligi, bulunan.kimlik));
     await islem.insert(sifirlama).values({
       hesap_kimligi: bulunan.kimlik,
@@ -94,20 +103,27 @@ export const sifreYenile = async (
   girdi: { anahtar: string; sifre: string },
 ): Promise<void> => {
   const { hesap, oturum, sifirlama } = tablolar[tur];
+  const anahtarinOzeti = anahtarOzeti(girdi.anahtar);
+  const gecerliSart = () =>
+    and(
+      eq(sifirlama.anahtar_ozeti, anahtarinOzeti),
+      isNull(sifirlama.kullanilma_zamani),
+      gt(sifirlama.bitis, new Date()),
+    );
+  // Uydurma anahtar şifre özetleme yükünü çalıştırmasın.
+  const [gecerli] = await vt
+    .select({ kimlik: sifirlama.kimlik })
+    .from(sifirlama)
+    .where(gecerliSart());
+  if (gecerli === undefined) throw new BilinenHata("is-kurali");
   const sifreOzeti = await sifreOzetle(girdi.sifre);
   const eposta = await vt.transaction(async (islem) => {
     const simdi = new Date();
     const [harcanan] = await islem
       .update(sifirlama)
       .set({ kullanilma_zamani: simdi })
-      .where(
-        and(
-          eq(sifirlama.anahtar_ozeti, anahtarOzeti(girdi.anahtar)),
-          isNull(sifirlama.kullanilma_zamani),
-          gt(sifirlama.bitis, simdi),
-        ),
-      )
-      .returning({ hesapKimligi: sifirlama.hesap_kimligi });
+      .where(gecerliSart())
+      .returning({ kimlik: sifirlama.kimlik, hesapKimligi: sifirlama.hesap_kimligi });
     if (harcanan === undefined) throw new BilinenHata("is-kurali");
     const { hesapKimligi } = harcanan;
 
@@ -118,14 +134,22 @@ export const sifreYenile = async (
       .returning({ eposta: hesap.eposta });
     if (guncellenen === undefined) throw new BilinenHata("is-kurali");
 
-    await islem
-      .update(oturum)
-      .set({ kapanma_zamani: simdi })
-      .where(and(eq(oturum.hesap_kimligi, hesapKimligi), isNull(oturum.kapanma_zamani)));
+    // Sıra önemlidir. Önce hesap güncellendi: şifre aşamasında olan giriş bunu bekler (sifreDegismediyse).
+    // Önce adım silinir: kod işlemi sürüyorsa beklenir, açtığı oturum aşağıda kapanır.
     if (tur === "yonetici") {
       await islem
         .delete(yoneticiGirisAdimlari)
         .where(eq(yoneticiGirisAdimlari.yonetici_kimligi, hesapKimligi));
+    }
+    await islem
+      .update(oturum)
+      .set({ kapanma_zamani: simdi })
+      .where(and(eq(oturum.hesap_kimligi, hesapKimligi), isNull(oturum.kapanma_zamani)));
+    // Hesabın öteki bağlantıları da ölür.
+    await islem
+      .delete(sifirlama)
+      .where(and(eq(sifirlama.hesap_kimligi, hesapKimligi), ne(sifirlama.kimlik, harcanan.kimlik)));
+    if (tur === "yonetici") {
       await degisikligiKaydet(islem, {
         kim: { tur: "yonetici", kimlik: hesapKimligi },
         islem: "yonetici.sifre-sifirlandi",

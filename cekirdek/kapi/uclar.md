@@ -149,9 +149,9 @@ Müşteri oturumunu kapatır, çerezleri siler. Süresi dolmuş oturumun çerezl
 
 ### POST /kapi/herkese-acik/musteri-sifre-sifirlama
 
-Şifre yenileme bağlantısı ister. Kayıtlı olsa da olmasa da cevap ve süre aynıdır (karar 0052).
+Şifre yenileme bağlantısı ister. Kayıtlı olsa da olmasa da cevap aynıdır, her cevap en az aynı süreyi bekler; süre farkının sınırı karar 0052'de yazılı.
 
-- İzin: `herkese-acik`. Sınır: `siki`. Ayrıca hesap başına e-posta sınırı vardır (`sifreSifirlamaAyari`), dolunca cevap yine aynıdır.
+- İzin: `herkese-acik`. Sınır: `siki`. Ayrıca hesap başına 15 dakikalık ve günlük e-posta sınırı vardır (`sifreSifirlamaAyari`), dolunca cevap yine aynıdır.
 - Girdi: `{ "eposta", "robotCevabi" }` (`sifirlamaIstekSemasi`, `cekirdek/moduller/oturum/semalar.ts`).
 - Servis: `cekirdek/moduller/oturum/sifre-sifirlama.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": {} }`.

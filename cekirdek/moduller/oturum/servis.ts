@@ -11,7 +11,7 @@ import {
   kisaAnahtarSuresiSaniye,
   yenilemeToleransiSaniye,
 } from "../../kayitlar/oturum.ts";
-import type { Veritabani } from "../../veritabani/baglanti.ts";
+import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { yoneticiler, yoneticiOturumlari } from "../ekip/model.ts";
 import { musteriler, musteriOturumlari } from "../musteri/model.ts";
 import { epostaSemasi, sifreSemasi } from "./semalar.ts";
@@ -28,6 +28,7 @@ const gecerliOturumSarti = (tur: HesapTuru): SQL | undefined =>
   tur === "yonetici" ? isNotNull(yoneticiOturumlari.iki_asama_zamani) : undefined;
 
 export type Anahtarlar = { kisaAnahtar: string; yenilemeAnahtari: string };
+export type DogrulananSifre = { hesapKimligi: string; sifreOzeti: string };
 
 export type YenilemeSonucu =
   | { durum: "yenilendi"; hesapKimligi: string; anahtarlar: Anahtarlar }
@@ -88,7 +89,7 @@ export const hesapSifresiniDogrula = async (
   vt: Veritabani,
   tur: HesapTuru,
   girdi: { eposta: string; sifre: string },
-): Promise<{ hesapKimligi: string } | null> => {
+): Promise<DogrulananSifre | null> => {
   const { hesap } = tablolar[tur];
   const eposta = epostaSemasi.safeParse(girdi.eposta);
   const [bulunan] = eposta.success
@@ -104,13 +105,39 @@ export const hesapSifresiniDogrula = async (
   if (!(await sifreDogrula(girdi.sifre, bulunan.sifre_ozeti))) return null;
 
   if (yenidenOzetlenmeli(bulunan.sifre_ozeti)) {
-    await vt
+    const yeniOzet = await sifreOzetle(girdi.sifre);
+    // Bu arada şifre değiştiyse eski şifre geri yazılmaz.
+    const [yenilenen] = await vt
       .update(hesap)
-      .set({ sifre_ozeti: await sifreOzetle(girdi.sifre), guncellenme_zamani: new Date() })
-      .where(eq(hesap.kimlik, bulunan.kimlik));
+      .set({ sifre_ozeti: yeniOzet, guncellenme_zamani: new Date() })
+      .where(and(eq(hesap.kimlik, bulunan.kimlik), eq(hesap.sifre_ozeti, bulunan.sifre_ozeti)))
+      .returning({ kimlik: hesap.kimlik });
+    if (yenilenen === undefined) return null;
+    return { hesapKimligi: bulunan.kimlik, sifreOzeti: yeniOzet };
   }
-  return { hesapKimligi: bulunan.kimlik };
+  return { hesapKimligi: bulunan.kimlik, sifreOzeti: bulunan.sifre_ozeti };
 };
+
+// Şifreden geçen kişinin oturumu ya da ara adımı bununla açılır (kart 0034, karar 0052). Şifre doğrulanıp
+// oturum açılana kadar sıfırlama bitmiş olabilir: eski şifreyle başlayan giriş, "oturumlar kapatıldı"dan sonra
+// açık oturum bırakırdı. Hesap satırı paylaşımlı kilitlenir: sıfırlama sürüyorsa beklenir, sonra şifre değişmiş
+// bulunur; önce bu işlem başladıysa sıfırlama onu bekler ve açılan oturumu da kapatır.
+export const sifreDegismediyse = <Sonuc>(
+  vt: Veritabani,
+  tur: HesapTuru,
+  dogrulanan: DogrulananSifre,
+  is: (islem: VeritabaniIslemi) => Promise<Sonuc>,
+): Promise<Sonuc> =>
+  vt.transaction(async (islem) => {
+    const { hesap } = tablolar[tur];
+    const [guncel] = await islem
+      .select({ sifre_ozeti: hesap.sifre_ozeti })
+      .from(hesap)
+      .where(and(eq(hesap.kimlik, dogrulanan.hesapKimligi), isNull(hesap.silinme_zamani)))
+      .for("share");
+    if (guncel?.sifre_ozeti !== dogrulanan.sifreOzeti) throw new BilinenHata("giris-hatasi");
+    return is(islem);
+  });
 
 // Oturum açar. Şifreden geçmiş kimlikle çağrılır. Yönetici için yalnız iki aşamalı giriş çağırır
 // (iki-asamali-giris.ts, cekirdek/kapi/testler/iki-asamali-giris.test.ts denetler).
@@ -139,7 +166,8 @@ export const girisYap = async (
 ): Promise<{ hesapKimligi: string; anahtarlar: Anahtarlar } | null> => {
   const bulunan = await hesapSifresiniDogrula(vt, tur, girdi);
   if (bulunan === null) return null;
-  return { ...bulunan, anahtarlar: await oturumAc(vt, tur, bulunan.hesapKimligi, sureSaniye) };
+  const { hesapKimligi } = bulunan;
+  return { hesapKimligi, anahtarlar: await oturumAc(vt, tur, hesapKimligi, sureSaniye) };
 };
 
 // Kısa anahtar geçerliyse hesabın kimliğini döner.

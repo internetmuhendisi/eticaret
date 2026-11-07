@@ -7,7 +7,7 @@ import { type MusteriOnayTuru, musteriOnayTurleri } from "../../kayitlar/musteri
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { epostaGonder } from "../eposta/servis.ts";
 import { sinirliSifreDogrula } from "../oturum/giris.ts";
-import { type Anahtarlar, hesapAc, oturumAc } from "../oturum/servis.ts";
+import { type Anahtarlar, hesapAc, oturumAc, sifreDegismediyse } from "../oturum/servis.ts";
 import { musteriler, musteriOnaylari } from "./model.ts";
 import type { kayitFormuSemasi } from "./semalar.ts";
 
@@ -46,8 +46,10 @@ export const musteriGirisi = async (
   baglanti: string,
   oturumSuresiSaniye: number,
 ): Promise<Anahtarlar> => {
-  const { hesapKimligi } = await sinirliSifreDogrula(vt, "musteri", girdi, baglanti);
-  return oturumAc(vt, "musteri", hesapKimligi, oturumSuresiSaniye);
+  const dogrulanan = await sinirliSifreDogrula(vt, "musteri", girdi, baglanti);
+  return sifreDegismediyse(vt, "musteri", dogrulanan, (islem) =>
+    oturumAc(islem, "musteri", dogrulanan.hesapKimligi, oturumSuresiSaniye),
+  );
 };
 
 // Kimlik kapıdan gelir, girdiden alınmaz (karar 0040).

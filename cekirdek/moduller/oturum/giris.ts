@@ -6,7 +6,12 @@ import { BilinenHata } from "../../kapi/zarf.ts";
 import { girisDenemeSiniri, type HesapTuru } from "../../kayitlar/oturum.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeleriSil, denemeyiAyir, denemeyiGeriVer } from "./deneme-siniri.ts";
-import { type Anahtarlar, cikisYap, hesapSifresiniDogrula } from "./servis.ts";
+import {
+  type Anahtarlar,
+  cikisYap,
+  type DogrulananSifre,
+  hesapSifresiniDogrula,
+} from "./servis.ts";
 
 // Şifreyi deneme sınırıyla doğrular, oturum açmaz. Şifreden sonra ne olacağı hesap türünün işidir:
 // yönetici iki aşamalı girişe geçer (iki-asamali-giris.ts).
@@ -15,7 +20,7 @@ export const sinirliSifreDogrula = async (
   tur: HesapTuru,
   girdi: { eposta: string; sifre: string },
   baglanti: string,
-): Promise<{ hesapKimligi: string }> => {
+): Promise<DogrulananSifre> => {
   // Küçük harfle: şifre doğrulama da e-postayı böyle arar, büyük harfli yazış ayrı sayaç açmasın.
   const hesapAnahtari = `${tur} hesap ${girdi.eposta.trim().toLowerCase()}`;
   const baglantiAnahtari = `${tur} baglanti ${baglanti}`;

@@ -1,7 +1,7 @@
 // Şifre sıfırlama uçları gerçek veritabanıyla, müşteri ve yönetici için (kart 0034, karar 0052).
 import { randomBytes } from "node:crypto";
 import { resolve } from "node:path";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { istekSinirlari } from "../../kayitlar/kapi.ts";
 import { type HesapTuru, sifreSifirlamaAyari } from "../../kayitlar/oturum.ts";
@@ -12,16 +12,25 @@ import {
   yoneticiSifreSifirlamalari,
 } from "../../moduller/ekip/model.ts";
 import { epostaKayitlari } from "../../moduller/eposta/model.ts";
-import { musteriler, musteriSifreSifirlamalari } from "../../moduller/musteri/model.ts";
+import {
+  musteriler,
+  musteriOturumlari,
+  musteriSifreSifirlamalari,
+} from "../../moduller/musteri/model.ts";
 import { kodAdimi, zamanliKod } from "../../moduller/oturum/iki-asama.ts";
 import { girisAdiminiOku, kurulumuHazirla } from "../../moduller/oturum/iki-asamali-giris.ts";
 import {
+  anahtarOzeti,
   girisYap,
   hesapAc,
+  hesapSifresiniDogrula,
+  oturumAc,
   oturumAcikMi,
   oturumuDogrula,
   oturumuYenile,
+  sifreDegismediyse,
 } from "../../moduller/oturum/servis.ts";
+import { sifreSifirlamaIste } from "../../moduller/oturum/sifre-sifirlama.ts";
 import { robotSorusuUret } from "../../moduller/robot-korumasi/servis.ts";
 import { soruyuCoz } from "../../moduller/robot-korumasi/testler/soru-coz.ts";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
@@ -263,6 +272,18 @@ describe.each(turler)("%s: yeni şifre", (tur) => {
     expect((await yenile(tur, yeni)).status).toBe(200);
   });
 
+  it("şifre değişince hesabın öteki bağlantıları da geçmez", async () => {
+    const { eposta, anahtar, hesapKimligi } = await hazirla(tur);
+    await vt.insert(uclar[tur].tablo).values({
+      hesap_kimligi: hesapKimligi,
+      anahtar_ozeti: anahtarOzeti("ikinci-bir-anahtar"),
+      bitis: new Date(Date.now() + 60_000),
+    });
+    expect((await yenile(tur, anahtar)).status).toBe(200);
+    expect((await yenile(tur, "ikinci-bir-anahtar", "baska-uzun-bir-sifre")).status).toBe(422);
+    expect((await giris(tur, eposta, yeniSifre)).status).toBe(200);
+  });
+
   it("kısa şifre bağlantıyı harcamaz", async () => {
     const { anahtar } = await hazirla(tur);
     expect((await yenile(tur, anahtar, "kisa")).status).toBe(400);
@@ -302,6 +323,111 @@ describe.each(turler)("%s: yeni şifre", (tur) => {
     expect(metin).not.toContain(yeniSifre);
     expect(metin).not.toContain(eposta);
   });
+});
+
+describe("aynı anda giden işler", () => {
+  const bekle = (ms: number) => new Promise((coz) => setTimeout(coz, ms));
+
+  it("müşteri: sıfırlamayla üst üste binen eski şifreli giriş açık oturum bırakmaz", async () => {
+    gunlukYakala();
+    for (let tur = 0; tur < 6; tur++) {
+      const { eposta, anahtar, hesapKimligi } = await hazirla("musteri");
+      let bitti = false;
+      const yenileme = yenile("musteri", anahtar).then((yanit) => {
+        bitti = true;
+        return yanit;
+      });
+      const girisler: Promise<Response>[] = [];
+      while (!bitti) {
+        girisler.push(giris("musteri", eposta, eskiSifre));
+        await bekle(5);
+      }
+      expect((await yenileme).status).toBe(200);
+      await Promise.all(girisler);
+      expect(
+        await vt
+          .select()
+          .from(musteriOturumlari)
+          .where(
+            and(
+              eq(musteriOturumlari.hesap_kimligi, hesapKimligi),
+              isNull(musteriOturumlari.kapanma_zamani),
+            ),
+          ),
+      ).toEqual([]);
+    }
+  }, 60_000);
+
+  it("yönetici: sıfırlamayla üst üste binen eski şifreli giriş ara adım bırakmaz", async () => {
+    gunlukYakala();
+    for (let tur = 0; tur < 6; tur++) {
+      const { eposta, anahtar, hesapKimligi } = await hazirla("yonetici");
+      let bitti = false;
+      const yenileme = yenile("yonetici", anahtar).then((yanit) => {
+        bitti = true;
+        return yanit;
+      });
+      const girisler: Promise<Response>[] = [];
+      while (!bitti) {
+        girisler.push(giris("yonetici", eposta, eskiSifre));
+        await bekle(5);
+      }
+      expect((await yenileme).status).toBe(200);
+      await Promise.all(girisler);
+      expect(
+        await vt
+          .select()
+          .from(yoneticiGirisAdimlari)
+          .where(eq(yoneticiGirisAdimlari.yonetici_kimligi, hesapKimligi)),
+      ).toEqual([]);
+    }
+  }, 60_000);
+
+  it("şifre doğrulandıktan sonra değiştiyse oturum açılmaz", async () => {
+    const { eposta, anahtar, hesapKimligi } = await hazirla("musteri");
+    const dogrulanan = await hesapSifresiniDogrula(vt, "musteri", { eposta, sifre: eskiSifre });
+    if (dogrulanan === null) throw new Error("şifre doğrulanmadı");
+    await yenile("musteri", anahtar);
+    await expect(
+      sifreDegismediyse(vt, "musteri", dogrulanan, (islem) =>
+        oturumAc(islem, "musteri", hesapKimligi, 3600),
+      ),
+    ).rejects.toMatchObject({ kod: "giris-hatasi" });
+  });
+
+  it.each(turler)("%s: aynı anda iki istek tek canlı bağlantı bırakır", async (tur) => {
+    const eposta = yeniEposta();
+    const { hesapKimligi } = await hesapAc(vt, tur, { eposta, sifre: eskiSifre });
+    await Promise.all([iste(tur, eposta), iste(tur, eposta)]);
+    expect(
+      await vt
+        .select()
+        .from(uclar[tur].tablo)
+        .where(eq(uclar[tur].tablo.hesap_kimligi, hesapKimligi)),
+    ).toHaveLength(1);
+  });
+
+  it.each(turler)(
+    "%s: günlük e-posta sınırı dolar",
+    async (tur) => {
+      const eposta = yeniEposta();
+      await hesapAc(vt, tur, { eposta, sifre: eskiSifre });
+      gunlukYakala();
+      const { hesap, hesapGunluk } = sifreSifirlamaAyari;
+      vi.useFakeTimers({ toFake: ["Date"], now: Date.now() });
+      try {
+        for (let sira = 0; sira < hesapGunluk.deneme + hesap.deneme; sira++) {
+          await sifreSifirlamaIste(vt, tur, { eposta }, "/yol");
+          // 15 dakikalık sınıra takılmasın diye süre ilerler.
+          vi.setSystemTime(Date.now() + ((hesap.saniye + 1) * 1000) / (hesap.deneme - 1));
+        }
+      } finally {
+        vi.useRealTimers();
+      }
+      expect(await epostalar(eposta)).toHaveLength(hesapGunluk.deneme);
+    },
+    30_000,
+  );
 });
 
 describe("hesap türleri karışmaz", () => {

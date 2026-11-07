@@ -24,12 +24,12 @@ paths:
 - Yüklenen dosyanın türünü, boyutunu ve içeriğini yükleme anında sunucuda kontrol et.
 - Siteyi yalnız şifreli bağlantıyla aç. Güvenlik başlıklarını aç. Başka sitelerden gelen sahte istekleri kabul etme.
 - Yönetici girişinde iki aşamalı doğrulama ve giriş deneme sınırı olsun. Deneme sınırı `cekirdek/moduller/oturum/giris.ts`, değerleri `cekirdek/kayitlar/oturum.ts` (karar 0042). Yeni bir giriş ucu `sinirliSifreDogrula` kullanır. İki aşamalı giriş `cekirdek/moduller/oturum/iki-asamali-giris.ts`, karar 0044: yönetici oturumu yalnız oradan açılır, başka yerden `oturumAc` çağırmak testte kırmızıdır, iki aşamadan geçmemiş oturum reddedilir. Şifreleme anahtarı `IKI_ASAMA_ANAHTARI` değişirse kurulu girişler açılamaz.
-- Şifre sıfırlama `cekirdek/moduller/oturum/sifre-sifirlama.ts`, değerleri `sifreSifirlamaAyari` (karar 0052). E-postadaki bağlantının adresini istekten alma, `siteAdresi` kullan. Tek kullanımlık anahtarı adresin `#` sonrasında taşı.
+- Şifre sıfırlama `cekirdek/moduller/oturum/sifre-sifirlama.ts`, değerleri `sifreSifirlamaAyari` (karar 0052). E-postadaki bağlantının adresini istekten alma, `siteAdresi` kullan. Tek kullanımlık anahtarı adresin `#` sonrasında taşı. Şifreden geçen kişinin oturumunu ya da ara adımını `sifreDegismediyse` içinde aç.
 - Geçmişi silen ve dosyaları toptan silen komutlar proje ayar dosyasındaki yasak listesiyle kapalıdır. Bu yasakları aşmaya çalışma.
 - Gizli bilgi dosyası `.env` kayda girmez, GitHub'a ve sunucuya gitmez.
 - Toplu e-posta, gerçek ödeme ve alan adı değişikliği gibi geri alınamaz işleri kullanıcının onayıyla yap.
 - Çerez izni ve pazarlama izni tek yerde tanımlı olsun, müşterinin verdiği izin kaydedilsin. Onaylar `cekirdek/kayitlar/musteri-onaylari.ts` kaydında, satırlar değiştirilemez `musteri_onaylari` tablosunda; metin değişince sürümü artır (karar 0051).
 - Ürün açıklaması, yorum ve form girdilerini ekrana yazmadan önce zararlı koddan temizle.
-- Kayıt, yorum, iletişim ve şifre sıfırlama formlarında bot koruması kullan. Yol `cekirdek/moduller/robot-korumasi/`, değerleri `cekirdek/kayitlar/robot-korumasi.ts`: uç `robotCevabiniDogrula` çağırır, form `robotCevabiAl` ile cevabı alır (karar 0051). Veri dış hizmete gitmez.
+- Kayıt, yorum, iletişim ve şifre sıfırlama formlarında bot koruması kullan. Yol `cekirdek/moduller/robot-korumasi/`, değerleri `cekirdek/kayitlar/robot-korumasi.ts`: uç `robotCevabiniDogrula` çağırır, form `useRobotluGonderim` ile gönderir (karar 0051). Veri dış hizmete gitmez.
 - Kullanılan dış kütüphanelerin bilinen güvenlik açıklarını her yayında tara.
 - Geliştirme, deneme ve canlı ortamın verisini ve anahtarlarını ayrı tut. Deneme ortamı gerçek ödeme almaz ve arama motoruna kapalıdır.

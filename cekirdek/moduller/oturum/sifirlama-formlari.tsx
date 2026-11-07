@@ -15,6 +15,29 @@ import { useRobotluGonderim } from "../robot-korumasi/istemci";
 import { sifirlamaFormuSemasi, sifreYenileSemasi } from "./semalar";
 import { anahtarParametresi, sifreYenilendiParametresi } from "./sifirlama-adresleri";
 
+// Anahtar adresten silinir, sekme kapanana kadar burada durur: sayfa yenilenince bağlantı "geçersiz" görünmesin.
+const anahtarYeri = "sifre-sifirlama-anahtari";
+const depodan = <Sonuc,>(is: (depo: Storage) => Sonuc): Sonuc | null => {
+  try {
+    return is(window.sessionStorage);
+  } catch {
+    // Tarayıcı depoyu kapatmış olabilir: yenilemede bağlantı yeniden açılır.
+    return null;
+  }
+};
+
+// Adresteki anahtar öncedir: yeni bağlantı eskisinin yerine geçer. Biçimi bozuk anahtar bağlantı hatasıdır.
+const anahtariOku = (): string | null => {
+  const adresteki = new URLSearchParams(window.location.hash.slice(1)).get(anahtarParametresi);
+  if (window.location.hash !== "") {
+    // Anahtar adres çubuğunda ve tarayıcı geçmişinde kalmasın.
+    window.history.replaceState(null, "", window.location.pathname);
+  }
+  if (adresteki !== null) depodan((depo) => depo.setItem(anahtarYeri, adresteki));
+  const anahtar = adresteki ?? depodan((depo) => depo.getItem(anahtarYeri));
+  return sifreYenileSemasi.shape.anahtar.safeParse(anahtar).success ? anahtar : null;
+};
+
 type OrtakOzellikler = { className: string; girisAdresi: string };
 
 export function SifremiUnuttumFormu({
@@ -109,18 +132,22 @@ export function SifreYenileFormu({
 }: OrtakOzellikler & { sifremiUnuttumAdresi: string; yenileUcu: string }) {
   const metin = useMetin();
   const enKisa = { enKisa: String(sifreSiniri.enKisa) };
-  // Sunucuda çizilirken adresin # sonrası bilinmez: anahtar kod yüklenince okunur.
+  // Sunucuda çizilirken adresin # sonrası bilinmez: anahtar kod yüklenince okunur. O zamana kadar form görünür,
+  // düğmesi kapalıdır; JavaScript kapalıysa Form nedenini söyler.
   const [anahtar, setAnahtar] = useState<string | null | undefined>(undefined);
   const [alanHatasi, setAlanHatasi] = useState<string | undefined>();
   const [hata, setHata] = useState<"baglanti" | "sinir" | "genel" | null>(null);
   const gonderiliyor = useRef(false);
 
   useEffect(() => {
-    const okunan = new URLSearchParams(window.location.hash.slice(1)).get(anahtarParametresi);
-    // Etki iki kez çalışabilir (geliştirme ortamı): ikincisinde adres çoktan temizlenmiştir.
-    setAnahtar((onceki) => onceki ?? okunan);
-    // Anahtar adres çubuğunda ve tarayıcı geçmişinde kalmasın.
-    window.history.replaceState(null, "", window.location.pathname);
+    const oku = () => {
+      setAnahtar(anahtariOku());
+      setHata(null);
+    };
+    oku();
+    // Aynı sekmeye yeni bağlantı yapıştırılırsa sayfa yeniden yüklenmez.
+    window.addEventListener("hashchange", oku);
+    return () => window.removeEventListener("hashchange", oku);
   }, []);
 
   const gonder = async (olay: FormEvent<HTMLFormElement>) => {
@@ -144,11 +171,14 @@ export function SifreYenileFormu({
         body: JSON.stringify(girdi.data),
       });
       if (yanit.ok) {
+        depodan((depo) => depo.removeItem(anahtarYeri));
         window.location.assign(`${girisAdresi}?${sifreYenilendiParametresi}=1`);
         return;
       }
-      if (yanit.status === hataKodlari["is-kurali"]) setHata("baglanti");
-      else if (yanit.status === hataKodlari["istek-siniri"]) setHata("sinir");
+      if (yanit.status === hataKodlari["is-kurali"]) {
+        depodan((depo) => depo.removeItem(anahtarYeri));
+        setHata("baglanti");
+      } else if (yanit.status === hataKodlari["istek-siniri"]) setHata("sinir");
       else setHata("genel");
     } catch {
       setHata("genel");
@@ -157,7 +187,6 @@ export function SifreYenileFormu({
     }
   };
 
-  if (anahtar === undefined) return null;
   if (anahtar === null || hata === "baglanti") {
     return (
       <>
