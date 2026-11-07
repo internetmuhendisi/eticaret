@@ -1,1 +1,11 @@
-{}
+{
+  "iletisimEpostasi": "iletisim@ornek-magaza.test",
+  "iletisimTelefonu": "+90 312 000 00 00",
+  "magazaAdresi": {
+    "ulke": "TR",
+    "il": "TR-06",
+    "ilce": "TR-06-007",
+    "adres": "Deneme Sokak No: 1",
+    "postaKodu": "06000"
+  }
+}

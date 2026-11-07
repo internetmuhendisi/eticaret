@@ -79,8 +79,8 @@ export type BolgeHatasi = (typeof bolgeHatalari)[number];
 // adresi isteyen yerin kuralıdır (ilListesiVarMi). Verilen her kod geçerli ve birbiriyle tutarlı olmalı.
 export const bolgeyiDogrula = (bolge: {
   ulke: string;
-  il?: string;
-  ilce?: string;
+  il?: string | undefined;
+  ilce?: string | undefined;
 }): { gecerli: true } | { gecerli: false; hata: BolgeHatasi } => {
   const hata = (kod: BolgeHatasi) => ({ gecerli: false, hata: kod }) as const;
   if (!ulkeGecerliMi(bolge.ulke)) return hata("ulke-yok");

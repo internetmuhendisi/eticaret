@@ -7,6 +7,7 @@ import { gunluk } from "../../izleme/gunluk.ts";
 import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
 import { type EpostaSablonu, epostaDurumu } from "../../kayitlar/eposta.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
+import { magazaninAdi } from "../magaza-ayarlari/servis.ts";
 import { type EpostaGondericisi, epostaGondericisi } from "./gonderici.ts";
 import { epostaKayitlari } from "./model.ts";
 import { epostaOlustur } from "./sablon.ts";
@@ -33,7 +34,10 @@ export const epostaKaydiniGonder = async (
   const site = bagimliliklar.site ?? calisanSite();
   // Testin "gönderici yok" demesi varsayılana düşmesin.
   const gonderici = "gonderici" in bagimliliklar ? bagimliliklar.gonderici : epostaGondericisi();
-  const { kimlik, ayarlar } = site;
+  const { ayarlar } = site;
+  // Mağaza adı mağaza sahibinin ayarıdır (kart 0071). Gönderim işleminden önce okunur: ilk okuma
+  // başlangıç değerini kendi işleminde yazabilir.
+  const magazaAdi = await magazaninAdi(vt, site);
   const sonuc = await vt.transaction(async (islem) => {
     const [kayit] = await islem
       .select()
@@ -57,7 +61,7 @@ export const epostaKaydiniGonder = async (
     }
     const icerik = epostaOlustur({
       dil: ayarlar.dil,
-      magazaAdi: kimlik.gorunenAd,
+      magazaAdi,
       logoAdresi: ayarlar.logoAdresi,
       sablon: kayit.sablon as EpostaSablonu,
       degiskenler: (kayit.degiskenler ?? {}) as Record<string, string>,
@@ -67,7 +71,7 @@ export const epostaKaydiniGonder = async (
       await gonderici(
         {
           kimden: {
-            ad: ayarlar.epostaGonderenAdi ?? kimlik.gorunenAd,
+            ad: ayarlar.epostaGonderenAdi ?? magazaAdi,
             adres: ayarlar.epostaGonderenAdresi,
           },
           ...(ayarlar.epostaYanitAdresi === undefined

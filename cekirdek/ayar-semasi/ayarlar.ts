@@ -7,6 +7,8 @@
 //   klasöründe yalnız başlangıç değerleri olur (baslangic/ayarlar.json); ayar veritabanında ilk kez
 //   yokken bir kez yazılır (cekirdek/moduller/magaza-ayarlari/, karar 0055).
 import { z } from "zod";
+import { postaAdresiSemasi, telefonSemasi } from "../bolgeler/adres.ts";
+import { ulkeGecerliMi } from "../bolgeler/bolgeler.ts";
 import { type AyarSahibi, ayarSahibi } from "../kayitlar/site.ts";
 import { saatDilimiGecerliMi } from "../metinler/bicimleyici.ts";
 import { diller, type MetinAnahtari } from "../metinler/metin.ts";
@@ -14,6 +16,9 @@ import { diller, type MetinAnahtari } from "../metinler/metin.ts";
 export type AyarBilgisi = {
   aciklama: MetinAnahtari;
   kimDegistirir: AyarSahibi;
+  // Değeri değişiklik kaydına yazılmaz, yalnız ayarın değiştiği yazılır (kart 0071). Kişisel veri
+  // taşıyabilen ayarlar içindir: küçük mağazada iletişim bilgisi çoğu zaman sahibinin kendisidir.
+  kayittaGizli?: true;
 };
 
 // Her ayarın açıklaması ve sahibi. Panelin ayar ekranları bu bilgiden üretilecek.
@@ -29,18 +34,28 @@ const altyapiSahibinin = (aciklama: MetinAnahtari): AyarBilgisi => ({
   kimDegistirir: ayarSahibi.altyapi,
 });
 
-export const magazaSahibinin = (aciklama: MetinAnahtari): AyarBilgisi => ({
+export const magazaSahibinin = (
+  aciklama: MetinAnahtari,
+  secenekler: { kayittaGizli?: true } = {},
+): AyarBilgisi => ({
   aciklama,
   kimDegistirir: ayarSahibi.magaza,
+  ...secenekler,
 });
 
+// Ülke kodları listesi: en az bir ülke, her kod ülke listesinde (cekirdek/bolgeler/), tekrar yok.
+const ulkeListesi = z
+  .array(z.string().refine(ulkeGecerliMi, "Ülke listesinde olmayan kod, örneğin TR."))
+  .min(1, "En az bir ülke olmalı.")
+  .refine((liste) => new Set(liste).size === liste.length, "Aynı ülke iki kez yazılmış.");
+
 export const ayarSemasi = z.strictObject({
-  ulke: ayar(
-    z
-      .string()
-      .regex(/^[A-Z]{2}$/, "İki büyük harfli ülke kodu olmalı, örneğin TR.")
-      .default("TR"),
-    altyapiSahibinin("ayar.aciklama.ulke"),
+  // Satış ve teslimat yapılan ülkeler (kart 0071, karar 0010): satış ayarlarını değiştirdiği için
+  // altyapı sahibinindir.
+  satisUlkeleri: ayar(ulkeListesi.default(["TR"]), altyapiSahibinin("ayar.aciklama.satisUlkeleri")),
+  teslimatUlkeleri: ayar(
+    ulkeListesi.default(["TR"]),
+    altyapiSahibinin("ayar.aciklama.teslimatUlkeleri"),
   ),
   dil: ayar(z.enum(diller).default("tr"), altyapiSahibinin("ayar.aciklama.dil")),
   paraBirimi: ayar(
@@ -136,9 +151,28 @@ export const ayarSemasi = z.strictObject({
 });
 
 // Mağaza sahibinin ayarları. Her ayarın varsayılanı olur (ya da boş kalabilir); veritabanında JSON
-// olarak saklandığı için değer null olamaz, boş değer "yok" demektir. İlk ayarlar kart 0071 ve vergi
-// kartlarıyla gelir.
-export const magazaAyarSemasi = z.strictObject({});
+// olarak saklandığı için değer null olamaz, boş değer "yok" demektir.
+export const magazaAyarSemasi = z.strictObject({
+  // Vitrinde, panelde ve e-postalarda görünen ad (kart 0071). Başlangıç değeri verilmezse kimlikteki
+  // görünen addır (site-klasoru.ts); kimlikteki ad altyapının iç adı olarak kalır.
+  magazaAdi: ayar(
+    z.string().trim().min(1).max(100).optional(),
+    magazaSahibinin("ayar.aciklama.magazaAdi"),
+  ),
+  // İletişim bilgileri ve mağaza adresi boş başlar: anlamlı bir varsayılanı yoktur.
+  iletisimEpostasi: ayar(
+    z.email().optional(),
+    magazaSahibinin("ayar.aciklama.iletisimEpostasi", { kayittaGizli: true }),
+  ),
+  iletisimTelefonu: ayar(
+    telefonSemasi.optional(),
+    magazaSahibinin("ayar.aciklama.iletisimTelefonu", { kayittaGizli: true }),
+  ),
+  magazaAdresi: ayar(
+    postaAdresiSemasi.optional(),
+    magazaSahibinin("ayar.aciklama.magazaAdresi", { kayittaGizli: true }),
+  ),
+});
 export type MagazaAyarlari = z.output<typeof magazaAyarSemasi>;
 
 // Varsayılanları uygulanmış ve sipariş öneki türetilmiş ayarlar.

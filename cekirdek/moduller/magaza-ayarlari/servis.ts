@@ -13,8 +13,9 @@
 import { isDeepStrictEqual } from "node:util";
 import { inArray, sql } from "drizzle-orm";
 import type { z } from "zod";
-import { magazaAyarSemasi } from "../../ayar-semasi/ayarlar.ts";
+import { ayarBilgileri, magazaAyarSemasi } from "../../ayar-semasi/ayarlar.ts";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
+import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { type DegisikligiYapan, sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
 import { siteninVeritabani, type Veritabani } from "../../veritabani/baglanti.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
@@ -45,6 +46,12 @@ export const magazaAyarlariServisi = <S extends z.ZodObject>(
   baslangic: () => z.output<S>,
 ) => {
   const anahtarlar = Object.keys(sema.shape);
+  // Değişiklik kaydına giden değer: kayıtta gizli ayarın yalnız adı yazılır (ayarlar.ts, kart 0071).
+  const kayitDegeri = (anahtar: string, deger: unknown): Record<string, unknown> => {
+    const alan = Object.hasOwn(sema.shape, anahtar) ? sema.shape[anahtar] : undefined;
+    const gizli = alan !== undefined && ayarBilgileri.get(alan)?.kayittaGizli === true;
+    return gizli ? { ayar: anahtar } : { ayar: anahtar, deger };
+  };
 
   // Veritabanındaki satırlardan ayarlar. Her ayar kendi şemasından geçer.
   const coz = (satirlar: Satir[]): z.output<S> => {
@@ -83,7 +90,7 @@ export const magazaAyarlariServisi = <S extends z.ZodObject>(
           islem: "magaza-ayari.baslangic",
           kayit: { tur: "magaza-ayari", kimlik },
           eski: null,
-          yeni: { ayar: anahtar, deger: saklanan(ilkDegerler[anahtar]) },
+          yeni: kayitDegeri(anahtar, saklanan(ilkDegerler[anahtar])),
         });
       }
     });
@@ -151,8 +158,8 @@ export const magazaAyarlariServisi = <S extends z.ZodObject>(
           kim,
           islem: "magaza-ayari.degisti",
           kayit: { tur: "magaza-ayari", kimlik: satir.kimlik },
-          eski: { ayar: satir.anahtar, deger: satir.deger },
-          yeni: { ayar: satir.anahtar, deger: yeni },
+          eski: kayitDegeri(satir.anahtar, satir.deger),
+          yeni: kayitDegeri(satir.anahtar, yeni),
         });
       }
     });
@@ -170,6 +177,17 @@ const calisanSiteninServisi = magazaAyarlariServisi(
 
 export const magazaAyarlariniOku = (vt: Veritabani = siteninVeritabani()) =>
   calisanSiteninServisi.oku(vt);
+
+// Verilen sitenin ayarları: arka plan işi ve testler siteyi kendisi verir.
+export const siteninMagazaAyarlari = (vt: Veritabani, site: Site) =>
+  magazaAyarlariServisi(magazaAyarSemasi, () => site.baslangic).oku(vt);
+
+// Müşterinin ve mağaza sahibinin gördüğü mağaza adı (kart 0071). Kimlikteki ad yalnız ayar boşsa
+// kullanılır; başlangıç değeri onu zaten doldurur.
+export const magazaninAdi = async (
+  vt: Veritabani = siteninVeritabani(),
+  site: Site = calisanSite(),
+): Promise<string> => (await siteninMagazaAyarlari(vt, site)).magazaAdi ?? site.kimlik.gorunenAd;
 
 export const magazaAyarlariniDegistir = (
   kim: DegisikligiYapan,

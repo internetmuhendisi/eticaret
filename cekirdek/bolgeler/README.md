@@ -11,6 +11,7 @@ Mağaza adresi, vergi bölgesi ve teslimat adresi bölgelerini buradan okur (kar
 | `ulkeler.json` | ISO 3166-1 iki harfli ülke kodları (249). Ad yok. |
 | `tr.json` | Türkiye'nin 81 ili ve 973 ilçesi, kodlarıyla; posta kodu biçimi (5 rakam). |
 | `bolgeler.ts` | Okuma işlevleri ve tek bölge doğrulaması (`bolgeyiDogrula`), posta kodu biçimi. |
+| `adres.ts` | Posta adresinin ve telefonun ortak şeması (kart 0071, karar 0057). Hata iletileri koddur. |
 
 İl ve ilçe listesi olan yeni bir ülke `<ülke kodu>.json` dosyasıyla gelir ve `bolgeler.ts` içindeki `bolgeliUlkeler` listesine eklenir.
 

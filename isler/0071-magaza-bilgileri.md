@@ -29,4 +29,4 @@ Mağazanın adı, iletişim bilgileri, adresi ve satış ile teslimat ülkeleri 
 
 ## Durum
 
-yapılacak
+çalışılıyor

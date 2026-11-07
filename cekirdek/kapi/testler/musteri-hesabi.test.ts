@@ -326,6 +326,7 @@ describe("hoş geldin e-postası", () => {
   const site = {
     kimlik: { gorunenAd: "Deneme <Mağaza>" },
     ayarlar: { dil: "tr", epostaGonderenAdresi: "gonderen@ornek.test" },
+    baslangic: { magazaAdi: "Deneme <Mağaza>" },
   } as unknown as Site;
 
   it("kayıttan sonra kuyruğa girer ve yerel posta kutusuna düşer", async () => {

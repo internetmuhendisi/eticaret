@@ -1,0 +1,66 @@
+// Posta adresinin ve telefonun ortak şeması (kart 0071). Mağaza adresi, ileride teslimat ve fatura
+// adresi aynı şemayı kullanır. Bölge bolgeyiDogrula ile denetlenir; il listesi olan ülkede il ve
+// ilçe zorunludur, posta kodu ülkenin biçimine uyar.
+//
+// Hata iletileri düz cümle değil koddur (bolgeHatalari ve adresHatalari); metni ekran çözer.
+import { z } from "zod";
+import { bolgeyiDogrula, ilListesiVarMi, postaKoduGecerliMi } from "./bolgeler.ts";
+
+export const adresHatalari = [
+  "il-gerekli",
+  "ilce-gerekli",
+  "posta-kodu-bicimi",
+  "telefon-bicimi",
+] as const;
+export type AdresHatasi = (typeof adresHatalari)[number];
+
+const adresHatasi = (kod: AdresHatasi) => kod;
+
+export const postaAdresiSemasi = z
+  .strictObject({
+    ulke: z.string(),
+    il: z.string().optional(),
+    ilce: z.string().optional(),
+    adres: z.string().trim().min(1).max(250),
+    postaKodu: z.string().trim().min(1).max(20),
+  })
+  .superRefine((adres, ctx) => {
+    const bolge = bolgeyiDogrula(adres);
+    if (!bolge.gecerli) {
+      ctx.addIssue({ code: "custom", message: bolge.hata, path: [bolgeAlani(bolge.hata)] });
+      return;
+    }
+    if (ilListesiVarMi(adres.ulke)) {
+      if (adres.il === undefined) {
+        ctx.addIssue({ code: "custom", message: adresHatasi("il-gerekli"), path: ["il"] });
+      }
+      if (adres.ilce === undefined) {
+        ctx.addIssue({ code: "custom", message: adresHatasi("ilce-gerekli"), path: ["ilce"] });
+      }
+    }
+    if (!postaKoduGecerliMi(adres.ulke, adres.postaKodu)) {
+      ctx.addIssue({
+        code: "custom",
+        message: adresHatasi("posta-kodu-bicimi"),
+        path: ["postaKodu"],
+      });
+    }
+  });
+export type PostaAdresi = z.output<typeof postaAdresiSemasi>;
+
+const bolgeAlani = (hata: string): "ulke" | "il" | "ilce" =>
+  hata.startsWith("ulke") ? "ulke" : hata.startsWith("il-") ? "il" : "ilce";
+
+// Telefon ülke koduyla yazılır (+90 ...). Boşluk, tire ve parantez serbesttir; rakam sayısı
+// uluslararası numaranın sınırlarındadır (10-15). Numaranın gerçekten var olduğu denetlenmez.
+export const telefonGecerliMi = (telefon: string): boolean => {
+  const temiz = telefon.trim();
+  if (!/^\+[0-9 ()-]+$/.test(temiz)) return false;
+  const rakamlar = temiz.replace(/[^0-9]/g, "").length;
+  return rakamlar >= 10 && rakamlar <= 15;
+};
+
+export const telefonSemasi = z
+  .string()
+  .trim()
+  .refine(telefonGecerliMi, { message: adresHatasi("telefon-bicimi") });

@@ -133,7 +133,12 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
   }
   return {
     gecerli: true,
-    site: { kimlik, ayarlar: { ...ayarlar, siparisOneki }, baslangic: baslangic.deger },
+    site: {
+      kimlik,
+      ayarlar: { ...ayarlar, siparisOneki },
+      // Mağaza adı verilmemişse kimlikteki görünen ad başlangıç değeridir (kart 0071).
+      baslangic: { ...baslangic.deger, magazaAdi: baslangic.deger.magazaAdi ?? kimlik.gorunenAd },
+    },
   };
 };
 

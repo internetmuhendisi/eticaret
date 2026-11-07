@@ -36,7 +36,12 @@
   },
   "ayar": {
     "aciklama": {
-      "ulke": "Mağazanın satış yaptığı ve teslimat yaptığı ülke.",
+      "satisUlkeleri": "Mağazanın satış yaptığı ülkeler.",
+      "teslimatUlkeleri": "Mağazanın teslimat yaptığı ülkeler.",
+      "magazaAdi": "Vitrinde, panelde ve e-postalarda görünen mağaza adı.",
+      "iletisimEpostasi": "Müşterilerin mağazaya yazacağı e-posta adresi.",
+      "iletisimTelefonu": "Müşterilerin mağazayı arayacağı telefon, ülke koduyla.",
+      "magazaAdresi": "Mağazanın adresi. Yasal metinlerde görünür, vergi hesabında bölgesi bulunamayan adres yerine kullanılır.",
       "dil": "Vitrinin, yönetim panelinin ve e-postaların dili.",
       "paraBirimi": "Fiyatların ve siparişlerin para birimi.",
       "paraBicimi": "Tutarların yazılışı: simge ve yeri, binlik ve ondalık ayırıcı, ondalık sayısı.",

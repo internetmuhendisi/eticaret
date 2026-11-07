@@ -1,12 +1,14 @@
 // Vitrinin ana sayfası: "Yakında açılıyoruz." yazısı yalnız ayarı açık sitede görünür (kart 0041).
-// Sayfa sunucuda çizilir (react-dom/server); çalışan site, sürecin ortak alanına konarak verilir.
+// İçerik sunucuda çizilir (react-dom/server); çalışan site, sürecin ortak alanına konarak verilir.
+// Mağaza adını veritabanından okuyan sayfa (app/page.tsx) burada değil, yerel ortam denemesinde
+// gerçek kutuyla ölçülür; adın okunması servis testindedir (kart 0071).
 import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 import { siteKlasorunuOku } from "../ayar-semasi/site-klasoru.ts";
 import { MetinSaglayici } from "../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../metinler/metin.ts";
-import VitrinAnaSayfa from "../uygulama/app/page.tsx";
+import { AnaSayfa } from "../vitrin/ana-sayfa.tsx";
 
 const ortak = globalThis as Record<symbol, unknown>;
 const anahtar = Symbol.for("cekirdek.calisanSite");
@@ -20,7 +22,7 @@ const ciz = (yakindaYazisi: boolean): string => {
   // Hesap alanı oturumu tarayıcıda sorar (kart 0033): sunucu çiziminde yer tutmaz.
   return renderToStaticMarkup(
     <MetinSaglayici dil="tr">
-      <VitrinAnaSayfa />
+      <AnaSayfa magazaAdi={site.kimlik.gorunenAd} yakindaYazisi={yakindaYazisi} />
     </MetinSaglayici>,
   );
 };

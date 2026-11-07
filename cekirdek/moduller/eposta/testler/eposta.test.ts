@@ -32,6 +32,7 @@ const site = (ayarlar: Partial<Site["ayarlar"]> = {}) =>
   ({
     kimlik: { gorunenAd: "Deneme <Mağaza>" },
     ayarlar: { dil: "tr", epostaGonderenAdresi: "gonderen@ornek.test", ...ayarlar },
+    baslangic: { magazaAdi: "Deneme <Mağaza>" },
   }) as unknown as Site;
 
 const { POSTA_KUTUSU_PORTU: kutuPortu, POSTA_SMTP_PORTU: smtpPortu } = process.env;

@@ -3,16 +3,24 @@
 // yazılır ve geri alınır, bozuk değer sessizce varsayılana dönmez, iki site birbirinin ayarını görmez.
 // Çekirdekte henüz mağaza sahibinin ayarı olmadığı için servis deneme şemasıyla kurulur.
 import { randomUUID } from "node:crypto";
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
 import { eq, sql } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 import { z } from "zod";
-import { magazaAyarSemasi } from "../../../ayar-semasi/ayarlar.ts";
+import { ayarBilgileri, magazaAyarSemasi } from "../../../ayar-semasi/ayarlar.ts";
+import { siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { magazaAyarlari } from "../model.ts";
-import { baslangicYazari, magazaAyarlariServisi } from "../servis.ts";
+import {
+  baslangicYazari,
+  magazaAyarlariServisi,
+  magazaninAdi,
+  siteninMagazaAyarlari,
+} from "../servis.ts";
 
 const denemeSemasi = z.strictObject({
   kapidaOdeme: z.boolean().default(false),
@@ -249,10 +257,77 @@ describe("iki site", () => {
 });
 
 describe("çekirdeğin şeması", () => {
-  it("çalışan sitenin servisi bugünkü boş şemayla okur", async () => {
+  it("başlangıç değeri verilmeyen her mağaza ayarı boş başlar, her ayarın satırı yazılır", async () => {
     const vt = await siteAc();
     const gercek = magazaAyarlariServisi(magazaAyarSemasi, () => magazaAyarSemasi.parse({}));
-    expect(await gercek.oku(vt)).toEqual({});
-    expect(await satirSayisi(vt)).toBe(0);
+    expect(await gercek.oku(vt)).toEqual(magazaAyarSemasi.parse({}));
+    expect(await satirSayisi(vt)).toBe(Object.keys(magazaAyarSemasi.shape).length);
   });
+});
+
+describe("kayıtta gizli ayar", () => {
+  it("işaretli ayarın değeri kayda yazılmaz, yalnız adı yazılır", async () => {
+    const vt = await siteAc();
+    const gizliAlan = z.string().min(1).optional();
+    ayarBilgileri.add(gizliAlan, {
+      aciklama: "ayar.aciklama.iletisimEpostasi",
+      kimDegistirir: "magaza-sahibi",
+      kayittaGizli: true,
+    });
+    const gizliSema = denemeSemasi.extend({ gizliMetin: gizliAlan });
+    const gizliServis = magazaAyarlariServisi(gizliSema, () =>
+      gizliSema.parse({ gizliMetin: "ilk-deger" }),
+    );
+    expect((await gizliServis.oku(vt)).gizliMetin).toBe("ilk-deger");
+    // E-posta taşıyan değer gizli olmasaydı değişiklik kaydı onu reddederdi.
+    await gizliServis.degistir(vt, yonetici(), { gizliMetin: "sahip@ornek.test" });
+    expect((await gizliServis.oku(vt)).gizliMetin).toBe("sahip@ornek.test");
+    const gizliKayitlar = (await kayitlar(vt)).filter(
+      (k) => (k.yeni_deger as { ayar: string }).ayar === "gizliMetin",
+    );
+    expect(gizliKayitlar.map((k) => [k.islem, k.eski_deger, k.yeni_deger])).toEqual([
+      ["magaza-ayari.baslangic", null, { ayar: "gizliMetin" }],
+      ["magaza-ayari.degisti", { ayar: "gizliMetin" }, { ayar: "gizliMetin" }],
+    ]);
+    expect(JSON.stringify(await kayitlar(vt))).not.toMatch(/ilk-deger|sahip@ornek/);
+  });
+});
+
+// Çekirdekte site adı geçmez (cekirdek/testler/site-adi-yok.test.ts): siteler klasörden okunur.
+const sitelerKlasoru = join(import.meta.dirname, "../../../../siteler");
+const siteler = readdirSync(sitelerKlasoru, { withFileTypes: true })
+  .filter((girdi) => girdi.isDirectory())
+  .map((girdi) => siteKlasorunuOku(join(sitelerKlasoru, girdi.name)));
+
+describe("siteler/ altındaki her site", () => {
+  it("en az bir site var", () => {
+    expect(siteler.length).toBeGreaterThan(0);
+  });
+
+  for (const site of siteler) {
+    it(`${site.kimlik.kodAdi}: bilgileri başlangıç dosyasından veritabanına yazılır ve oradan okunur`, async () => {
+      const vt = await siteAc();
+      const okunan = await siteninMagazaAyarlari(vt, site);
+      expect(okunan).toEqual(site.baslangic);
+      // Değer veritabanındadır: dosyadaki değer değişse de okunan değişmez.
+      const degismis = { ...site, baslangic: { ...site.baslangic, magazaAdi: "Başka Ad" } };
+      expect(await magazaninAdi(vt, degismis)).toBe(site.baslangic.magazaAdi);
+      // Kişisel veri taşıyabilen değerler kayda girmez.
+      const kayit = JSON.stringify(await kayitlar(vt));
+      for (const gizli of [
+        okunan.iletisimEpostasi,
+        okunan.iletisimTelefonu,
+        okunan.magazaAdresi?.adres,
+      ]) {
+        if (gizli !== undefined) expect(kayit).not.toContain(gizli);
+      }
+    });
+
+    it(`${site.kimlik.kodAdi}: mağaza adı değişince yeni ad okunur`, async () => {
+      const vt = await siteAc();
+      const servisi = magazaAyarlariServisi(magazaAyarSemasi, () => site.baslangic);
+      await servisi.degistir(vt, yonetici(), { magazaAdi: "Yeni Ad" });
+      expect(await magazaninAdi(vt, site)).toBe("Yeni Ad");
+    });
+  }
 });

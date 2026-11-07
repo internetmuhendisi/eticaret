@@ -2,8 +2,8 @@
 // bitmiş kişi kod ekranına döner: gizli bir daha gösterilmez.
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { calisanSite } from "../../../../../ayar-semasi/calisan-site";
 import { metin } from "../../../../../metinler/site-metni";
+import { magazaninAdi } from "../../../../../moduller/magaza-ayarlari/servis";
 import { kurulumuHazirla } from "../../../../../moduller/oturum/iki-asamali-giris";
 import { siteninVeritabani } from "../../../../../veritabani/baglanti";
 import {
@@ -31,7 +31,7 @@ export default async function KurulumSayfasi({
     siteninVeritabani(),
     adim.anahtar,
     adim,
-    calisanSite().kimlik.gorunenAd,
+    await magazaninAdi(),
   );
   if (kurulum === null) redirect(kodAdresi);
   const donus = (await searchParams)[donusParametresi];

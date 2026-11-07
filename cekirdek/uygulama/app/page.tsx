@@ -1,21 +1,18 @@
-// Vitrinin ana sayfası. Şimdilik sitenin adını ve ayarı açıksa "Yakında açılıyoruz." yazısını
-// gösterir (kartlar 0009, 0010, 0041). Hesap alanı başlığın üstündedir (kart 0033).
+// Vitrinin ana sayfası. Şimdilik mağazanın adını ve ayarı açıksa "Yakında açılıyoruz." yazısını
+// gösterir (kartlar 0009, 0010, 0041). Hesap alanı başlığın üstündedir (kart 0033). Ad mağaza
+// sahibinin ayarıdır (kart 0071).
 import type { Metadata } from "next";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
-import { metin } from "../../metinler/site-metni";
-import { HesapAlani } from "../../vitrin/hesap-alani";
+import { magazaninAdi } from "../../moduller/magaza-ayarlari/servis";
+import { AnaSayfa } from "../../vitrin/ana-sayfa";
 
-export const generateMetadata = (): Metadata => ({ title: calisanSite().kimlik.gorunenAd });
+export const generateMetadata = async (): Promise<Metadata> => ({ title: await magazaninAdi() });
 
-export default function VitrinAnaSayfa() {
-  const { kimlik, ayarlar } = calisanSite();
+export default async function VitrinAnaSayfa() {
   return (
-    <>
-      <HesapAlani />
-      <main>
-        <h1>{kimlik.gorunenAd}</h1>
-        {ayarlar.yakindaYazisi ? <p>{metin("vitrin.anasayfa.yakindaAciliyoruz")}</p> : null}
-      </main>
-    </>
+    <AnaSayfa
+      magazaAdi={await magazaninAdi()}
+      yakindaYazisi={calisanSite().ayarlar.yakindaYazisi}
+    />
   );
 }

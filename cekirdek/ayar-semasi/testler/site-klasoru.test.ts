@@ -53,7 +53,8 @@ describe("ayar şeması", () => {
 
   it("boş ayar dosyası bütün varsayılanları verir", () => {
     expect(ayarSemasi.parse({})).toEqual({
-      ulke: "TR",
+      satisUlkeleri: ["TR"],
+      teslimatUlkeleri: ["TR"],
       dil: "tr",
       paraBirimi: "TRY",
       paraBicimi: {
@@ -74,6 +75,12 @@ describe("ayar şeması", () => {
       yoneticiOturumuSaat: 24,
       musteriOturumuGun: 30,
     });
+  });
+
+  it("ülke listesinde tekrar ve eski tek ülke ayarı kabul edilmez", () => {
+    expect(ayarSemasi.safeParse({ satisUlkeleri: ["TR", "TR"] }).success).toBe(false);
+    expect(ayarSemasi.safeParse({ ulke: "TR" }).success).toBe(false);
+    expect(ayarSemasi.safeParse({ satisUlkeleri: ["TR", "DE"] }).success).toBe(true);
   });
 
   it("tanınmayan saat dilimini kabul etmez", () => {
@@ -112,6 +119,13 @@ describe("örnek klasörler", () => {
     ["ayar-dosyasi-yok", "ayarlar.json: dosya yok."],
     ["baslangic-bilinmeyen-ayar", `${baslangicDosyasi}: (dosyanın tamamı)`],
     ["baslangic-altyapi-ayari", `${baslangicDosyasi}: dil: bu ayar ayarlar.json dosyasına yazılır`],
+    ["baslangic-yanlis-tur-gercek", `${baslangicDosyasi}: iletisimTelefonu: `],
+    [
+      "magaza-ayari-yanlis-dosyada",
+      `ayarlar.json: iletisimEpostasi: bu ayar ${baslangicDosyasi} dosyasına yazılır`,
+    ],
+    ["ulke-listesi-bozuk", "ayarlar.json: satisUlkeleri.1: Ülke listesinde olmayan kod"],
+    ["ulke-listesi-bozuk", "ayarlar.json: teslimatUlkeleri: En az bir ülke olmalı."],
   ];
 
   for (const [ornek, beklenenHata] of bozuklar) {
@@ -126,6 +140,16 @@ describe("örnek klasörler", () => {
     });
   }
 
+  // Kart 0069'dan kalan madde: gerçek bir mağaza ayarında yanlış tür, ayarın adı ve tür hatasıyla.
+  // İletinin dili ortama göre değişir, iki dilde de beklenen tür ("string") yazar.
+  it("mağaza ayarında yanlış tür, tür hatasıyla geçemez", () => {
+    const sonuc = dogrula("baslangic-yanlis-tur-gercek");
+    expect(sonuc.gecerli).toBe(false);
+    if (sonuc.gecerli) return;
+    expect(sonuc.hatalar).toHaveLength(1);
+    expect(sonuc.hatalar[0]).toMatch(/^baslangic\/ayarlar\.json: iletisimTelefonu: .*string/);
+  });
+
   it("olmayan klasör doğrulamadan geçemez", () => {
     expect(dogrula("olmayan").gecerli).toBe(false);
   });
@@ -138,7 +162,11 @@ describe("başlangıç dosyası", () => {
   it("dosyası olmayan site mağaza ayarlarını varsayılanla başlatır", () => {
     const sonuc = dogrula("gecerli");
     if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
-    expect(sonuc.site.baslangic).toEqual(magazaAyarSemasi.parse({}));
+    // Mağaza adı verilmezse kimlikteki görünen addır (kart 0071).
+    expect(sonuc.site.baslangic).toEqual({
+      ...magazaAyarSemasi.parse({}),
+      magazaAdi: "Deneme Dükkanı",
+    });
     expect(baslangicDosyasiniDogrula(join(ornekler, "gecerli"), denemeSemasi)).toEqual({
       gecerli: true,
       deger: { kapidaOdeme: false },

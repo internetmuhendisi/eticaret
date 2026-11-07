@@ -16,7 +16,8 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
 |---|---|---|---|---|
-| Satış ve teslimat ülkesi | Altyapı sahibi | Türkiye | — | |
+| Satış yapılan ülkeler | Altyapı sahibi | Türkiye | — | Liste; her kod ülke listesinde (kart 0071) |
+| Teslimat yapılan ülkeler | Altyapı sahibi | Türkiye | — | Liste (kart 0071) |
 | Dil | Altyapı sahibi | Türkçe | — | |
 | Para birimi | Altyapı sahibi | TL | — | |
 | Para biçimi | Altyapı sahibi | 1.234,56 ₺ (simge sonda, binlikte nokta, ondalıkta virgül, 2 ondalık) | — | |
@@ -25,6 +26,10 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Boyut birimi | Altyapı sahibi | cm | — | |
 | Sipariş numarası öneki | Altyapı sahibi | Mağaza adından 3 harf | ORN | Kurulumda mağaza adından önerilir |
 | Sipariş numarası başlangıcı | Altyapı sahibi | 1001 | — | |
+| Mağaza adı | Mağaza sahibi | Kimlikteki görünen ad | — | Vitrinde, panelde ve e-postalarda görünür; kimlikteki ad altyapının iç adıdır, bakım sayfası onu gösterir (kart 0071, karar 0057) |
+| İletişim e-postası | Mağaza sahibi | Boş | `iletisim@ornek-magaza.test` | Değeri değişiklik kaydına yazılmaz |
+| İletişim telefonu | Mağaza sahibi | Boş | `+90 312 000 00 00` | Ülke koduyla. Değeri değişiklik kaydına yazılmaz |
+| Mağaza adresi | Mağaza sahibi | Boş | Ankara / Çankaya, Deneme Sokak No: 1, 06000 | Ülke, il, ilçe (listeden), adres, posta kodu. Değeri değişiklik kaydına yazılmaz. Örnek Mağaza'nınki deneme değeridir |
 
 ## Vergi
 
