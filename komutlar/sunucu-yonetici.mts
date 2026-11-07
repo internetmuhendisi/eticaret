@@ -4,8 +4,8 @@
 import { z } from "zod";
 import { gizliBilgiler } from "../cekirdek/kayitlar/gizli-bilgiler.ts";
 import { epostaSemasi } from "../cekirdek/moduller/oturum/semalar.ts";
-import type { Ortam } from "./sunucu.mts";
-import { gizliKlasor, kutuKullanicisi, siteAgi } from "./sunucu-veritabani.mts";
+import { gizliKlasor, kutuKullanicisi, type Ortam } from "./gizli-bilgi.mts";
+import { siteAgi } from "./sunucu-veritabani.mts";
 
 const kodAdiSemasi = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);
 

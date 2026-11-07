@@ -315,6 +315,8 @@ const calistir = async (): Promise<void> => {
     console.log("");
     await sitesiniOlc(ornek, denemeSitesi);
     await sitesiniOlc(denemeSitesi, ornek);
+    // Giriş ucunun sınırı aşağıda doldurulur, bu ölçüm ondan önce gelir.
+    await yoneticiOlc(denemeSitesi.kimlik.kodAdi, ornek.kimlik.kodAdi);
 
     const tanimsiz = await iste("tanimsiz-site", "/");
     olc("tanınmayan adres hiçbir siteye gitmiyor", tanimsiz.durum === 404, `${tanimsiz.durum}`);
@@ -405,7 +407,6 @@ const calistir = async (): Promise<void> => {
       olc(`POST ${yol} giriş sınırını aşamıyor`, [308, 404, 429].includes(durum), `${durum}`);
     }
     await kayitOlc(ornek.kimlik.kodAdi);
-    await yoneticiOlc(denemeSitesi.kimlik.kodAdi, ornek.kimlik.kodAdi);
     kutuKurallariniOlc(siteler.length);
   } catch (hata) {
     olc("ortam açıldı", false, (hata as Error).message);

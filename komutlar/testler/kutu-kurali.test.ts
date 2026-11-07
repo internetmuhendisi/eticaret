@@ -27,6 +27,8 @@ const kaliciDosyalar = [
 // Geçici kutu açan dosyalar: kuralı bilerek almaz. Kutular --rm ile açılır ya da deneme
 // sonunda silinir (sunucu-gizli-denemesi.mts).
 const geciciDosyalar = [
+  // Yönetici açan geçici kutu: iş bitince silinir (--rm).
+  "komutlar/sunucu-yonetici.mts",
   "komutlar/sunucu-gizli-denemesi.mts",
   "komutlar/cekirdek-goruntusu-denetle.mts",
   "komutlar/sunucu-denetle.mts",
