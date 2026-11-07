@@ -28,4 +28,4 @@ E-posta gibi işler kullanıcıyı bekletmeden arka planda yapılsın. Kuyruk si
 
 ## Durum
 
-yapılacak
+bitti
