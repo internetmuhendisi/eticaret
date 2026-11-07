@@ -13,9 +13,15 @@ let veritabani: Veritabani | undefined;
 export const veritabaniAdresi = (): string => gizliBilgi("VERITABANI_ADRESI");
 
 // Komutların güvencesi: adres verilen siteye ait değilse null döner, başka sitenin veritabanına dokunulmaz.
+// Bozuk adres de null döner: URL hatası adresi, yani şifreyi iletisinde taşır.
 export const siteninAdresi = (kodAdi: string): string | null => {
   const ad = siteVeritabaniAdi(kodAdi);
-  const adres = new URL(veritabaniAdresi());
+  let adres: URL;
+  try {
+    adres = new URL(veritabaniAdresi());
+  } catch {
+    return null;
+  }
   const uyuyor =
     decodeURIComponent(adres.username) === ad && decodeURIComponent(adres.pathname.slice(1)) === ad;
   return uyuyor ? adres.href : null;

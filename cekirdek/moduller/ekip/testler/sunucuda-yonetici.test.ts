@@ -75,6 +75,31 @@ describe("sunucuda yönetici", () => {
     expect(calistir("kod", ...argumanlar).status).toBe(1);
   });
 
+  it("bozuk adres şifreyi yazmaz, hiçbir şey yapmaz", () => {
+    const sonuc = spawnSync(
+      process.execPath,
+      [join(import.meta.dirname, "..", "sunucuda-yonetici.ts"), kodAdi, "ac", "bozuk@ornek.test"],
+      {
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          VERITABANI_ADRESI: ["postgres://k:", "gizli-deger", "@[bozuk"].join(""),
+        },
+      },
+    );
+    expect(sonuc.status).toBe(1);
+    expect(`${sonuc.stdout}${sonuc.stderr}`).not.toContain("gizli-deger");
+  });
+
+  it("tam yetkili yöneticileri sayar", async () => {
+    const once = /^sahip (\d+)$/m.exec(calistir(kodAdi, "sahip-sayisi").stdout)?.[1];
+    calistir(kodAdi, "ac", "sayilan@ornek.test");
+    const sonra = /^sahip (\d+)$/m.exec(calistir(kodAdi, "sahip-sayisi").stdout)?.[1];
+    expect(Number(sonra)).toBe(Number(once) + 1);
+    calistir(kodAdi, "kapat", "sayilan@ornek.test");
+    expect(calistir("baska-site", "sahip-sayisi").status).toBe(1);
+  });
+
   it("son tam yetkili kapatılamaz, başka sahip varken kapatılır, kapanan giremez", async () => {
     const son = calistir(kodAdi, "kapat", "ilk@ornek.test");
     expect(son.status).toBe(1);

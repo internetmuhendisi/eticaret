@@ -9,7 +9,7 @@
 - **Komut:** `pnpm sunucu-yonetici-ac <site klasörü> deneme <e-posta>`. Yayındaki görüntünün `yonetici/yonetici.mjs` parçasını geçici kutuda çalıştırır: sitenin kutu kullanıcısı, sitenin ağı, salt okunur, yetkisiz, yalnız o sitenin veritabanı gizli dosyası.
 - **Şifre:** Parça üretir, standart çıktıya bir kez yazar, komut ekrana basar. Kutu `--log-driver none` ile çalışır. Ssh üzerinden yalnız şifreli akışla gelir, dosyaya yazılmaz.
 - **Başka site:** Veritabanı adresi verilen kod adının değilse parça hiçbir şey yapmaz. Denetim tek işlevdedir (`siteninAdresi`), `sunucuda-guncelle.ts` de bunu kullanır.
-- **Hesap kapatma:** Parçada `kapat` vardır, son tam yetkili kuralına uyar. Şimdilik yalnız panel denemesi kullanır; ekran ve komut gelmedi.
+- **Hesap kapatma:** Parçada `kapat` vardır, son tam yetkili kuralına uyar. Panel denemesi ve `pnpm sunucu-yonetici-kapat` kullanır; ekran gelmedi.
 - **Tekrarlanabilir ölçüm:** `pnpm panel-denemesi` geçici yöneticiyle gerçek tarayıcıda ölçer, hesabı kapatır, şifre ve kodları yazmaz.
 - **Deneme yöneticisinin e-postası (kullanıcı kararı):** `magaza-sahibi@ornek.test`. Komutu kullanıcı kendi penceresinde çalıştırır: şifre sohbete ve Claude'un kayıtlarına girmez.
 
@@ -33,4 +33,7 @@
 - **Yalnız deneme ortamı:** Yayın yalnız orada vardır. Canlı ortam gelince komut genişler.
 - **Eski yayında çalışmaz:** Parça 0.12.1 ve sonrasındadır. `pnpm geri-don` bundan eskiye dönerse komut hata verir.
 - **Teslim akışı yok:** Mağaza sahibinin ilk girişte şifre belirlemesi site komutlarıyla gelecek.
-- **Panel denemesinin kırılganlığı:** Sunucuda geçici hesap açılır, kapanış başarısız olursa hesap adı ekranda yazar, elle kapatılır. Kesintide hesap açık kalabilir.
+- **Panel denemesinin kırılganlığı:** Sitede başka tam yetkili yoksa hesap açılmadan durur, tarayıcı hesaptan önce açılır. Hesap adı başta yazar, kapanış başarısız olursa `pnpm sunucu-yonetici-kapat` ile kapatılır. Süreç öldürülürse hesap açık kalabilir, şifresi kimsede olmaz.
+- **Arka arkaya çalışmaz:** Giriş ucunun sınırı dakikada 5 istektir, deneme 4 istek atar. Bir dakika içinde ikinci kez çalışırsa yanlış kırmızı verir.
+- **Saat kayması:** Deneme kodu bilgisayarın saatiyle üretir. Saat 10 saniyeden çok ileriyse kod ekranı kırmızı olabilir (bağımsız kontrolün hesabı).
+- **Geçici kutunun bayrakları testte yok:** `pnpm yerel-ortam-testi` parçayı çalışan kutuda dener. Gerçek bayraklarla ölçüm sunucudaki komut ve panel denemesidir, bağımsız kontrol de yerel görüntüyle bir kez ölçtü.

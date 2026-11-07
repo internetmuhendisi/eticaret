@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { sifreyiOku, yoneticiBetigi } from "../sunucu-yonetici.mts";
+import { sahipSayisiniOku, sifreyiOku, yoneticiBetigi } from "../sunucu-yonetici.mts";
 
 const betik = (eposta = "magaza-sahibi@ornek.test", kodAdi = "ornek-magaza") =>
   yoneticiBetigi("ac", "deneme", kodAdi, 3, "yayin-deneme-ornek-magaza:7", eposta);
@@ -35,6 +35,20 @@ describe("sunucuda yönetici betiği", () => {
     expect(sifreyiOku("sifre abc\n")).toBe("abc");
     expect(sifreyiOku("hata var\n")).toBeNull();
     expect(sifreyiOku("")).toBeNull();
+  });
+
+  it("sahip sayısı e-posta istemez, sayı yalnız kendi satırından okunur", () => {
+    const metin = yoneticiBetigi("sahip-sayisi", "deneme", "ornek-magaza", 3, "etiket:1");
+    expect(metin.trim().endsWith("ornek-magaza sahip-sayisi")).toBe(true);
+    expect(sahipSayisiniOku("sahip 2\n")).toBe(2);
+    expect(sahipSayisiniOku("hata\n")).toBeNull();
+  });
+
+  it("panel denemesi tarayıcıyı hesaptan önce açar", () => {
+    const metin = readFileSync(join(import.meta.dirname, "..", "panel-denemesi.mts"), "utf8");
+    expect(metin.indexOf("chromium.launch()")).toBeGreaterThan(0);
+    expect(metin.indexOf("chromium.launch()")).toBeLessThan(metin.indexOf('betik("ac")'));
+    expect(metin.indexOf('betik("sahip-sayisi")')).toBeLessThan(metin.indexOf('betik("ac")'));
   });
 
   it("parça görüntüde", () => {

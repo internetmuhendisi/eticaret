@@ -3,7 +3,8 @@
 // Örnek Mağaza'nın deneme adresinde geçici bir yönetici açar. Ölçer: girişsiz panel kapalı, yanlış şifre girmiyor,
 // doğru şifre kurulum ekranına düşürüyor, kurulumla boş panele giriliyor, çıkınca girilemiyor, yeniden girişte
 // yalnız şifre yetmiyor, kodla giriliyor. Sonunda hesabı kapatır, kapattıktan sonra şifre geçmez.
-// Hesabı kapatabilmek için sitede başka bir tam yetkili yönetici olmalı: son sahip kapatılamaz (karar 0040).
+// Hesabı kapatabilmek için sitede başka bir tam yetkili yönetici olmalı: son sahip kapatılamaz (karar 0040); yoksa
+// hesap açılmadan durur. Giriş ucunun sınırı dakikada 5 olduğu için arka arkaya çalıştırılmaz: araya bir dakika girer.
 // Şifre ve kodlar ekrana yazılmaz.
 
 import { randomBytes } from "node:crypto";
@@ -13,7 +14,7 @@ import { kodAdimi, zamanliKod } from "../cekirdek/moduller/oturum/iki-asama.ts";
 import { siteNumarasiAl } from "./gizli-bilgi.mts";
 import { denemeAdresi, yayindakiSiteleriOku, yayinOrtami } from "./on-kapi.mts";
 import { kayitlariOku, sshKomutu } from "./sunucu.mts";
-import { sifreyiOku, yoneticiBetigi } from "./sunucu-yonetici.mts";
+import { sahipSayisiniOku, sifreyiOku, yoneticiBetigi } from "./sunucu-yonetici.mts";
 import { yayinGoruntusu } from "./yayin.mts";
 
 const kodAdi = "ornek-magaza";
@@ -31,21 +32,36 @@ const [sunucu] = kayitlariOku();
 if (!sunucu) throw new Error("sunucu/sunucular.json'da sunucu yok.");
 const no = yayindakiSiteleriOku(sunucu.ipv4)[kodAdi];
 if (no === undefined) throw new Error(`${kodAdi} yayında değil.`);
-const betik = (islem: "ac" | "kapat") =>
+const betik = (islem: "ac" | "kapat" | "sahip-sayisi") =>
   yoneticiBetigi(
     islem,
     yayinOrtami,
     kodAdi,
     siteNumarasiAl(kodAdi),
     yayinGoruntusu(yayinOrtami, kodAdi, no),
-    eposta,
+    islem === "sahip-sayisi" ? undefined : eposta,
   );
 
-const acilis = sshKomutu(sunucu.ipv4, betik("ac"));
-const sifre = acilis.status === 0 ? sifreyiOku(acilis.stdout) : null;
-olc("geçici yönetici açıldı", sifre !== null, sifre === null ? acilis.stderr.trim() : "");
-if (sifre === null) process.exit(1);
+const sahipYaniti = sshKomutu(sunucu.ipv4, betik("sahip-sayisi"));
+const sahipSayisi = sahipYaniti.status === 0 ? sahipSayisiniOku(sahipYaniti.stdout) : null;
+if (sahipSayisi === null || sahipSayisi < 1) {
+  console.error(
+    sahipSayisi === null
+      ? `Tam yetkili yöneticiler sayılamadı: ${sahipYaniti.stderr.trim()}`
+      : "Sitede tam yetkili yönetici yok: geçici hesap kapatılamaz. Önce: pnpm sunucu-yonetici-ac",
+  );
+  process.exit(1);
+}
 
+// Tarayıcı hesaptan önce açılır: açılamazsa geride hesap kalmaz.
+const tarayici = await chromium.launch();
+console.log(`geçici hesap ${eposta}`);
+
+const acilis = sshKomutu(sunucu.ipv4, betik("ac"));
+const sifre = sifreyiOku(acilis.stdout);
+olc("geçici yönetici açıldı", sifre !== null, sifre === null ? acilis.stderr.trim() : "");
+
+let sonSifre: string | null = null;
 const yuklenmesiniBekle = (page: Page) => page.waitForLoadState("networkidle");
 const adresiBekle = async (page: Page, yol: RegExp): Promise<boolean> => {
   try {
@@ -62,8 +78,8 @@ const sifreyleGir = async (page: Page, girilen: string): Promise<void> => {
   await page.getByRole("button", { name: metin("yonetim.giris.gonder") }).click();
 };
 
-const tarayici = await chromium.launch();
 try {
+  if (sifre === null) throw new Error("Şifre okunamadı, tarayıcı ölçümü yapılmadı.");
   const page = await (await tarayici.newContext()).newPage();
   const konsol: string[] = [];
   page.on("pageerror", (hata) => konsol.push(hata.message));
@@ -122,14 +138,31 @@ try {
   await page.getByRole("button", { name: metin("yonetim.kod.gonder") }).click();
   olc("kodla panele giriliyor", await adresiBekle(page, /\/yonetim$/));
   olc("sayfada kod hatası yok", konsol.length === 0, konsol.join("; "));
+  await page.getByRole("button", { name: metin("yonetim.cikis.dugme") }).click();
+  await adresiBekle(page, /\/yonetim\/giris$/);
+  sonSifre = sifre;
+} catch (hata) {
+  olc("tarayıcı ölçümü bitti", false, (hata as Error).message.split("\n")[0]);
 } finally {
-  await tarayici.close();
+  // Tarayıcı kapanırken hata verse de hesap kapatılır.
+  await tarayici.close().catch(() => undefined);
   const kapanis = sshKomutu(sunucu.ipv4, betik("kapat"));
+  const kapandi = kapanis.status === 0 && kapanis.stdout.includes("kapatildi");
   olc(
     "geçici yönetici kapatıldı",
-    kapanis.status === 0 && kapanis.stdout.includes("kapatildi"),
-    kapanis.status === 0 ? "" : `${kapanis.stderr.trim()} Hesap: ${eposta}`,
+    kapandi,
+    kapandi
+      ? ""
+      : `${kapanis.stderr.trim()} Elle: pnpm sunucu-yonetici-kapat siteler/${kodAdi} ${yayinOrtami} ${eposta}`,
   );
+  if (kapandi && sonSifre !== null) {
+    const giris = await fetch(`${adres}/kapi/herkese-acik/yonetici-giris`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ eposta, sifre: sonSifre }),
+    });
+    olc("kapanan hesabın şifresi geçmiyor", giris.status === 401, `${giris.status}`);
+  }
 }
 if (kirmizi > 0) {
   console.error(`Panel denemesi kırmızı: ${kirmizi} ölçüm kaldı.`);
