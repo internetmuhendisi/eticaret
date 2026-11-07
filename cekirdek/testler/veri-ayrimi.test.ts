@@ -10,7 +10,12 @@ import { join } from "node:path";
 import { sql } from "drizzle-orm";
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { ustBilgiAcikOlanlarSql, ustBilgiKapatmaSql } from "../../komutlar/site-ust-bilgi.mts";
+import {
+  guvenliOturumAyari,
+  ustBilgiAcikOlanlarSql,
+  ustBilgiKapatmaSql,
+} from "../../komutlar/site-ust-bilgi.mts";
+import { veritabaniVeKullaniciAc } from "../../komutlar/site-veritabani.mts";
 import { baglan, siteVeritabaniAdi, type Veritabani } from "../veritabani/baglanti";
 import { siteVeritabaniniGuncelle } from "../veritabani/guncelle";
 import { veritabaniKimligi } from "../veritabani/tablolar/veritabani-kimligi";
@@ -160,6 +165,7 @@ describe("üst bilgi", () => {
     "select pg_stat_get_backend_dbid(1)",
     "select pg_tablespace_size('pg_default')",
     "select pg_lock_status()",
+    "select pg_tablespace_databases(1663)",
   ];
 
   it.each(kapaliSorgular)("site okuyamaz: %s", async (sorgu) => {
@@ -223,6 +229,98 @@ describe("üst bilgi", () => {
       await yoneticiBaglantisi.$client.query(ustBilgiKapatmaSql());
       const kapali = await yoneticiBaglantisi.$client.query(ustBilgiAcikOlanlarSql(a.ad));
       expect(Object.values(kapali.rows[0] ?? {})).toEqual([""]);
+    } finally {
+      await yoneticiBaglantisi.$client.end();
+    }
+  });
+
+  // Bağımsız kontrolün bulduğu yol (karar 0053): site, veritabanı ayarıyla kendi işlevini sistem işlevinin önüne
+  // alır; yönetici oturumu çalıştırırsa site süper kullanıcı olurdu. Gerçek betik ve gerçek denetim sorgusuyla.
+  it("site, veritabanı ayarıyla yönetici oturumunu ele geçiremez", async () => {
+    const c = denemeSitesi("c");
+    await denemeVeritabaniAc(c.ad, c.sifre);
+    const zararli = (
+      imza: string,
+      donus: string,
+    ) => `create function public.${imza} returns ${donus}
+      language plpgsql as $f$ begin execute 'alter role ${c.ad} superuser'; return null; end $f$`;
+    try {
+      for (const sorgu of [
+        `alter database ${c.ad} set search_path = public, pg_catalog`,
+        zararli("has_any_column_privilege(name, oid, text)", "boolean"),
+        zararli("has_function_privilege(name, oid, text)", "boolean"),
+        zararli("format(text, regprocedure)", "text"),
+        zararli("format(text, regclass)", "text"),
+      ]) {
+        expect(await dene(c.ad, c.sifre, c.ad, sorgu)).toBe("bağlandı");
+      }
+      const superMi = async () =>
+        (
+          await yonetici.execute<{ s: boolean }>(
+            sql`select rolsuper as s from pg_roles where rolname = ${c.ad}`,
+          )
+        ).rows[0]?.s;
+      // Açma betiği (şifre yenilemede de çalışır).
+      expect(veritabaniVeKullaniciAc(c.ad, c.sifre)).toBe(true);
+      expect(await superMi()).toBe(false);
+      // Denetim sorgusu, sunucudaki gibi kutunun içinden.
+      const denetim = spawnSync(
+        "docker",
+        [
+          ...[
+            "compose",
+            "-f",
+            join(kok, "sunucu", "compose.yaml"),
+            "--env-file",
+            join(kok, ".env"),
+          ],
+          ...["exec", "-T", "-e", `PGOPTIONS=${guvenliOturumAyari}`, "veritabani"],
+          ...["psql", "-U", "postgres", "-d", c.ad, "-At", "-v", "ON_ERROR_STOP=1", "-f", "-"],
+        ],
+        { input: ustBilgiAcikOlanlarSql(c.ad), encoding: "utf8" },
+      );
+      expect(denetim.status).toBe(0);
+      expect(denetim.stdout.trim()).toBe("");
+      expect(await superMi()).toBe(false);
+
+      // Yönetici oturumu kendi rolüne çevrilemez.
+      expect(await dene(c.ad, c.sifre, c.ad, `alter database ${c.ad} set role = '${c.ad}'`)).toBe(
+        "bağlandı",
+      );
+      expect(veritabaniVeKullaniciAc(c.ad, c.sifre)).toBe(true);
+      const kim = spawnSync(
+        "docker",
+        [
+          ...[
+            "compose",
+            "-f",
+            join(kok, "sunucu", "compose.yaml"),
+            "--env-file",
+            join(kok, ".env"),
+          ],
+          ...["exec", "-T", "-e", `PGOPTIONS=${guvenliOturumAyari}`, "veritabani"],
+          ...["psql", "-U", "postgres", "-d", c.ad, "-Atc", "select current_user"],
+        ],
+        { encoding: "utf8" },
+      );
+      expect(kim.stdout.trim()).toBe("postgres");
+    } finally {
+      await yonetici.execute(sql`drop database if exists ${sql.identifier(c.ad)} with (force)`);
+      await yonetici.execute(sql`drop role if exists ${sql.identifier(c.ad)}`);
+    }
+  }, 60_000);
+
+  it("tek sütun izni de açık sayılır", async () => {
+    const yoneticiBaglantisi = baglan(yoneticiAdresi(a.ad));
+    try {
+      await yoneticiBaglantisi.execute(
+        sql`grant select (datname) on pg_catalog.pg_database to public`,
+      );
+      const sonuc = await yoneticiBaglantisi.$client.query(ustBilgiAcikOlanlarSql(a.ad));
+      expect(Object.values(sonuc.rows[0] ?? {})).toEqual(["pg_database"]);
+      await yoneticiBaglantisi.execute(
+        sql`revoke select (datname) on pg_catalog.pg_database from public`,
+      );
     } finally {
       await yoneticiBaglantisi.$client.end();
     }

@@ -23,6 +23,7 @@ import {
   type Ortam,
   silmeBetigi,
 } from "./gizli-bilgi.mts";
+import { guvenliOturum } from "./site-ust-bilgi.mts";
 import { kayitlariOku, kok, sshKomutu } from "./sunucu.mts";
 import {
   postgresGoruntusu,
@@ -84,7 +85,7 @@ const bekle = (ms: number) => new Promise((bitti) => setTimeout(bitti, ms));
 
 const sql = (komut: string, hedef = db): string =>
   calistir(
-    `docker exec -i ${dbKutusu} psql -U postgres -d ${hedef} -At -v ON_ERROR_STOP=1 <<'SQL_SONU'\n${komut}\nSQL_SONU\n`,
+    `docker exec -i ${guvenliOturum} ${dbKutusu} psql -U postgres -d ${hedef} -At -v ON_ERROR_STOP=1 <<'SQL_SONU'\n${komut}\nSQL_SONU\n`,
   ).trim();
 
 // Veritabanının özeti: Örnek Mağaza'nın değişmediğini ölçer. Yalnız özet döner, veri basılmaz.

@@ -48,7 +48,8 @@ yedekle() {
   ad="$(date -u +%Y%m%dT%H%M%SZ)-$tur.dump.age"
   g="$(mktemp -d -p "$K/gecici")"
   # age boş girdiyi de şifreler; dökümün başı bu yüzden şifrelemeden önce ölçülür (PGDMP imzası).
-  if ! docker exec "veritabani-$ortam" pg_dump -U postgres -Fc -d "$db" </dev/null |
+  # Site kullanıcısı veritabanının ayarıyla yönetici oturumunu değiştiremesin (karar 0053).
+  if ! docker exec -e PGOPTIONS='-c search_path=pg_catalog -c role=none' "veritabani-$ortam" pg_dump -U postgres -Fc -d "$db" </dev/null |
     {
       dd bs=5 count=1 iflag=fullblock of="$g/bas" status=none
       cat "$g/bas" -

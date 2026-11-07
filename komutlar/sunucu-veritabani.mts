@@ -32,6 +32,7 @@ import {
 } from "./gizli-bilgi.mts";
 import { kaliciKutu } from "./kutu-kurali.mts";
 import { kodAdiGecerli } from "./on-kapi.mts";
+import { guvenliOturum } from "./site-ust-bilgi.mts";
 import { veritabaniAcmaBetigi } from "./site-veritabani.mts";
 import { girisAnahtari, kok, sshKomutu, sshSecenekleri, sunucuTanimi } from "./sunucu.mts";
 
@@ -197,7 +198,7 @@ trap 'rm -f "$e"' EXIT
 if ! { printf '\\\\set sifre %s\\n' "'$s'"; cat <<'VERITABANI_SQL_SONU'
 ${sql}
 VERITABANI_SQL_SONU
-} | docker exec -i ${veritabaniKutusu(ortam)} psql -U postgres -d postgres -q -v ad=${ad} -f - >/dev/null 2>"$e"; then
+} | docker exec -i ${guvenliOturum} ${veritabaniKutusu(ortam)} psql -U postgres -d postgres -q -v ad=${ad} -f - >/dev/null 2>"$e"; then
   echo "HATA ${ortam}/${ad} veritabanı açılamadı:" >&2
   while IFS= read -r l; do
     case "$l" in *"$s"*) continue ;; *ERROR:*) printf '%s\\n' "ERROR:\${l#*ERROR:}" >&2 ;; esac

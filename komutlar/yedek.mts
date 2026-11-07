@@ -24,7 +24,7 @@ import {
   yayinKilidiyle,
   yayinOrtami,
 } from "./on-kapi.mts";
-import { ustBilgiKapatmaSql } from "./site-ust-bilgi.mts";
+import { guvenliOturum, ustBilgiKapatmaSql } from "./site-ust-bilgi.mts";
 import { kok, sshKomutu, sunucuTanimi } from "./sunucu.mts";
 import {
   guncellemeBetigi,
@@ -256,8 +256,8 @@ ORDER BY 1 \\gexec`;
 
 // Veritabanının özet satırları: her tablo için ad, satır sayısı, içerik özeti ve bir de düzen özeti.
 const ozetKomutu = (kutu: string, veritabani: string, onek: string): string => `
-printf '${onek} sema %s\\n' "$(docker exec ${kutu} pg_dump -U postgres -s --no-owner --no-acl -d ${veritabani} </dev/null | grep -v -E '^.(un)?restrict' | sha256sum | cut -d' ' -f1)"
-docker exec -i ${kutu} psql -U postgres -d ${veritabani} -At -f - <<'OZET_SONU' | sed 's/^/${onek} tablo /'
+printf '${onek} sema %s\\n' "$(docker exec ${guvenliOturum} ${kutu} pg_dump -U postgres -s --no-owner --no-acl -d ${veritabani} </dev/null | grep -v -E '^.(un)?restrict' | sha256sum | cut -d' ' -f1)"
+docker exec -i ${guvenliOturum} ${kutu} psql -U postgres -d ${veritabani} -At -f - <<'OZET_SONU' | sed 's/^/${onek} tablo /'
 ${ozetSql}
 OZET_SONU
 `;
@@ -462,13 +462,13 @@ flock -w ${kisaKilitSn} 9
 sil() { docker exec ${kutu} psql -U postgres -d postgres -q -c 'DROP DATABASE IF EXISTS "${yeni}" WITH (FORCE)' </dev/null >/dev/null; }
 sil
 docker exec ${kutu} psql -U postgres -d postgres -q -v ON_ERROR_STOP=1 -c 'CREATE DATABASE "${yeni}" OWNER "${ad}"' -c 'REVOKE ALL ON DATABASE "${yeni}" FROM PUBLIC' </dev/null >/dev/null
-if ! ${yedekAcmaBoru(ortam, kodAdi, dosya)} | docker exec -i ${sessizOturum} ${kutu} pg_restore -U postgres --no-owner --no-acl --role="${ad}" --exit-on-error -d "${yeni}" 2>/dev/null; then
+if ! ${yedekAcmaBoru(ortam, kodAdi, dosya)} | docker exec -i ${guvenliOturum} ${sessizOturum} ${kutu} pg_restore -U postgres --no-owner --no-acl --role="${ad}" --exit-on-error -d "${yeni}" 2>/dev/null; then
   sil
   echo "yedek açılamadı (ayrıntı müşteri verisi taşıyabilir, gösterilmez), canlı veritabanına dokunulmadı" >&2
   exit 1
 fi
 # Üst bilgi izinleri sitenin veritabanındaki sistem kayıtlarındadır, yedekten gelmez (karar 0053).
-if ! docker exec -i ${kutu} psql -U postgres -d "${yeni}" -q -v ON_ERROR_STOP=1 -f - >/dev/null <<'UST_BILGI_SONU'
+if ! docker exec -i ${guvenliOturum} ${kutu} psql -U postgres -d "${yeni}" -q -v ON_ERROR_STOP=1 -f - >/dev/null <<'UST_BILGI_SONU'
 ${ustBilgiKapatmaSql()}
 UST_BILGI_SONU
 then
@@ -476,7 +476,7 @@ then
   echo "üst bilgi izinleri kapatılamadı, canlı veritabanına dokunulmadı" >&2
   exit 1
 fi
-printf 'tablo=%s\\n' "$(docker exec ${kutu} psql -U postgres -d "${yeni}" -Atc "select count(*) from information_schema.tables where table_schema not in ('pg_catalog','information_schema')" </dev/null)"`);
+printf 'tablo=%s\\n' "$(docker exec ${guvenliOturum} ${kutu} psql -U postgres -d "${yeni}" -Atc "select count(*) from information_schema.tables where table_schema not in ('pg_catalog','information_schema')" </dev/null)"`);
 };
 
 export const yaniSilmeBetigi = (ortam: Ortam, kodAdi: string): string =>

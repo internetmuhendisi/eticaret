@@ -153,7 +153,7 @@ describe("sitenin veritabanını açan betik", () => {
     const yerel = ic
       .replace(/^f=.*$/m, `f=${dosya}`)
       .replace(
-        /docker exec -i \S+ psql .* -f - (>\/dev\/null 2>"\$e")/,
+        /docker exec -i -e PGOPTIONS='[^']*' \S+ psql .* -f - (>\/dev\/null 2>"\$e")/,
         psqlHatasi
           ? `{ cat > ${cikti}; printf '%s\\n' "psql:<stdin>:21: ERROR:  syntax error at or near $s" "LINE 1: ALTER ROLE x PASSWORD '$s'" "                                ^" >&2; false; } $1`
           : `cat > ${cikti}`,

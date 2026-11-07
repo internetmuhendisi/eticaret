@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { siteKlasorunuOku } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { siteVeritabaniAdi, veritabaniAdresi } from "../cekirdek/veritabani/baglanti.ts";
-import { ustBilgiKapatmaSql } from "./site-ust-bilgi.mts";
+import { guvenliOturumAyari, ustBilgiKapatmaSql } from "./site-ust-bilgi.mts";
 
 export const siteVeAdres = (komut: string) => {
   const [klasor] = process.argv.slice(2);
@@ -44,7 +44,8 @@ export const veritabaniAcmaKomutu = (ad: string, sifre: string) => ({
   komut: "docker",
   argumanlar: [
     ...["compose", "-f", join(kok, "sunucu", "compose.yaml"), "--env-file", join(kok, ".env")],
-    ...["exec", "-T", "-e", "SITE_VERITABANI_SIFRESI", "veritabani"],
+    ...["exec", "-T", "-e", "SITE_VERITABANI_SIFRESI", "-e", `PGOPTIONS=${guvenliOturumAyari}`],
+    "veritabani",
     ...["psql", "-U", "postgres", "-d", "postgres", "-q", "-v", `ad=${ad}`, "-f", "-"],
   ],
   girdi: `\\getenv sifre SITE_VERITABANI_SIFRESI\n${veritabaniAcmaBetigi()}`,
