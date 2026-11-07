@@ -59,7 +59,9 @@
       "epostaGonderenAdi": "E-postalarda görünen gönderen adı. Boşsa mağazanın görünen adı kullanılır.",
       "epostaGonderenAdresi": "E-postaların gönderildiği adres. Boşsa e-posta gönderilmez.",
       "epostaYanitAdresi": "Müşterinin yanıtının gideceği adres. Boşsa yanıt gönderen adresine gider.",
-      "logo": "Vitrinde, panelde ve e-postalarda görünen logo. Boşsa sitenin ilk logosu, o da yoksa mağaza adı görünür."
+      "logo": "Vitrinde, panelde ve e-postalarda görünen logo. Boşsa sitenin ilk logosu, o da yoksa mağaza adı görünür.",
+      "vergiAcik": "Fiyatlarda ve siparişlerde vergi hesaplanır. Kapalıysa vergi tutarı sıfırdır.",
+      "vergiAdi": "Fiyatın yanında ve vergi dökümünde görünen vergi adı. Oranın kendi adı varsa o görünür."
     }
   },
   "yonetim": {
@@ -104,6 +106,14 @@
     "cikis": {
       "dugme": "Çıkış yap",
       "hata": "Çıkış yapılamadı. Sayfayı yenileyip yeniden deneyin."
+    },
+    "vergi": {
+      "hata": {
+        "oran-bicimi": "Oranı yüzde olarak yazın, en çok dört ondalık basamakla. Örnek: 18 ya da 7.5.",
+        "oran-siniri": "Oran yüzde 100'den büyük olamaz. Oranı yüzde olarak yazın.",
+        "ad-tekrar": "Bu adla bir vergi sınıfı zaten var. Başka bir ad yazın.",
+        "sinif-silinmis": "Bu vergi sınıfı silinmiş, değiştirilemez. Ürünleri başka bir sınıfa geçirin."
+      }
     }
   },
   "vitrin": {

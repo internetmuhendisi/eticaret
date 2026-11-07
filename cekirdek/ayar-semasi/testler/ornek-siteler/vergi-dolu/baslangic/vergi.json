@@ -1,0 +1,12 @@
+{
+  "siniflar": [
+    {
+      "ad": "Genel",
+      "oranlar": [
+        { "ulke": "TR", "oran": "18" },
+        { "ulke": "TR", "il": "TR-34", "postaKodu": "34000", "oran": "0.5", "ad": "Ek" }
+      ]
+    },
+    { "ad": "Vergisiz" }
+  ]
+}

@@ -14,6 +14,8 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `magaza-ayarlari.gor` | yonetici | tumu | Mağaza sahibinin ayarlarını görür. |
 | `magaza-ayarlari.degistir` | yonetici | tumu | Mağaza sahibinin ayarlarını değiştirir. |
 | `musteri.kendi-hesabi.gor` | musteri | kendi | Müşteri kendi hesabını görür. |
+| `vergi.gor` | yonetici | tumu | Vergi sınıflarını ve oran tablosunu görür. |
+| `vergi.degistir` | yonetici | tumu | Vergi sınıflarını ve oranlarını ekler, değiştirir ve siler. |
 
 Müşterinin rolü yoktur: geçerli oturumu olan her müşteri müşteri girişinin izinlerine sahiptir, kapsamı yalnız kendi kayıtlarıdır. Sahip girişinin izni sahip paneliyle gelir.
 

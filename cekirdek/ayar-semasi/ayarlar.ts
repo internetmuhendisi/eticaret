@@ -12,6 +12,7 @@ import { ulkeGecerliMi } from "../bolgeler/bolgeler.ts";
 import { type AyarSahibi, ayarSahibi } from "../kayitlar/site.ts";
 import { saatDilimiGecerliMi } from "../metinler/bicimleyici.ts";
 import { diller, type MetinAnahtari } from "../metinler/metin.ts";
+import { vergiAdiSemasi } from "../moduller/vergi/semalar.ts";
 
 export type AyarBilgisi = {
   aciklama: MetinAnahtari;
@@ -182,6 +183,11 @@ export const magazaAyarSemasi = z.strictObject({
   // Boşsa sitenin ilk logosu (marka/ klasörü), o da yoksa mağaza adı görünür.
   // Yalnız logoyuDegistir ve logoyuKaldir değiştirir: herhangi bir dosya kimliği logo yapılamaz.
   logo: ayar(z.uuid().optional(), magazaSahibinin("ayar.aciklama.logo", { kendiIsleviyle: true })),
+  // Vergi (kart 0074, karar 0060). Kapalıysa vergi tutarı sıfırdır (kart 0075). Vergi adının çekirdekte
+  // varsayılanı yoktur: çekirdekte bir ülkenin vergi adı yazılmaz, site başlangıç dosyasında verir.
+  // Oranın kendi adı yoksa bu ad kullanılır. Sınıflar ve oranlar ayar değil, vergi modülünün tablosudur.
+  vergiAcik: ayar(z.boolean().default(true), magazaSahibinin("ayar.aciklama.vergiAcik")),
+  vergiAdi: ayar(vergiAdiSemasi.optional(), magazaSahibinin("ayar.aciklama.vergiAdi")),
 });
 export type MagazaAyarlari = z.output<typeof magazaAyarSemasi>;
 

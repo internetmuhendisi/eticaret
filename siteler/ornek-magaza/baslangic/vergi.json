@@ -1,0 +1,8 @@
+{
+  "siniflar": [
+    { "ad": "%20", "oranlar": [{ "ulke": "TR", "oran": "20" }] },
+    { "ad": "%10", "oranlar": [{ "ulke": "TR", "oran": "10" }] },
+    { "ad": "%1", "oranlar": [{ "ulke": "TR", "oran": "1" }] },
+    { "ad": "%0", "oranlar": [{ "ulke": "TR", "oran": "0" }] }
+  ]
+}

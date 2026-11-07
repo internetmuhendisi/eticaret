@@ -36,8 +36,8 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
 |---|---|---|---|---|
 | Vergi | Mağaza sahibi | Açık | — | |
-| Vergi adı | Mağaza sahibi | KDV | — | |
-| Vergi sınıfları | Mağaza sahibi | %20, %10, %1, %0 | — | |
+| Vergi adı | Mağaza sahibi | Çekirdekte boş; Türkiye'de kurulan site KDV | KDV | `baslangic/ayarlar.json` (`vergiAdi`). Oranın kendi adı varsa o görünür |
+| Vergi sınıfları ve oranları | Mağaza sahibi | Çekirdekte yok; Türkiye'de kurulan site %20, %10, %1, %0 | %20, %10, %1, %0 | Ayar değil, vergi tablosudur: `baslangic/vergi.json`, ilk okumada bir kez yazılır (karar 0060) |
 | Fiyat girişi | Mağaza sahibi | Vergi dahil | — | |
 | Fiyatın yanındaki metin | Mağaza sahibi | "KDV dahil" | — | |
 | Verginin hesaplandığı adres | Mağaza sahibi | Teslimat adresi | — | |

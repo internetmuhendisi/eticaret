@@ -8,11 +8,24 @@ export const degisiklikIslemleri = [
   // Mağaza sahibinin ayarı veritabanına ilk kez başlangıç değeriyle yazıldı (kart 0069).
   "magaza-ayari.baslangic",
   "magaza-ayari.degisti",
+  // Vergi sınıfı ya da oranı sitenin başlangıç verisinden ilk kez yazıldı (kart 0074).
+  "vergi.baslangic",
+  "vergi-sinifi.eklendi",
+  "vergi-sinifi.degisti",
+  "vergi-sinifi.silindi",
+  "vergi-orani.eklendi",
+  "vergi-orani.degisti",
+  "vergi-orani.silindi",
 ] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 
 // Değişen kaydın türü.
-export const degisiklikKayitTurleri = ["yonetici", "magaza-ayari"] as const;
+export const degisiklikKayitTurleri = [
+  "yonetici",
+  "magaza-ayari",
+  "vergi-sinifi",
+  "vergi-orani",
+] as const;
 export type DegisiklikKayitTuru = (typeof degisiklikKayitTurleri)[number];
 
 // Değişikliği kim yaptı: bir hesap ya da komut gibi hesabı olmayan bir işlem.

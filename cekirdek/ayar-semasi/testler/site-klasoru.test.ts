@@ -15,7 +15,12 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { ayarBilgileri, ayarSemasi, magazaAyarSemasi, onekTuret } from "../ayarlar";
 import { kimlikSemasi } from "../kimlik";
-import { baslangicDosyasi, baslangicDosyasiniDogrula, siteKlasorunuDogrula } from "../site-klasoru";
+import {
+  baslangicDosyasi,
+  baslangicDosyasiniDogrula,
+  siteKlasorunuDogrula,
+  vergiBaslangicDosyasi,
+} from "../site-klasoru";
 
 const siteler = join(import.meta.dirname, "..", "..", "..", "siteler");
 const ornekler = join(import.meta.dirname, "ornek-siteler");
@@ -145,6 +150,12 @@ describe("örnek klasörler", () => {
     ["marka-uzanti-uyusmuyor", "marka/logo.png: içeriği uzantısıyla uyuşmuyor"],
     ["marka-izinsiz-uzanti", "marka/logo.gif: ad logo.png, logo.jpg ya da logo.webp olmalı"],
     ["ulke-listesi-bozuk", "ayarlar.json: teslimatUlkeleri: En az bir ülke olmalı."],
+    // Vergi başlangıç verisi (kart 0074): hata iletileri koddur (cekirdek/moduller/vergi/semalar.ts).
+    ["vergi-oran-bozuk", `${vergiBaslangicDosyasi}: siniflar.0.oranlar.0.oran: oran-bicimi`],
+    ["vergi-oran-sayi", `${vergiBaslangicDosyasi}: siniflar.0.oranlar.0.oran: `],
+    ["vergi-bolge-bozuk", `${vergiBaslangicDosyasi}: siniflar.0.oranlar.0.il: il-baska-ulkenin`],
+    ["vergi-sinif-tekrar", `${vergiBaslangicDosyasi}: siniflar.1.ad: ad-tekrar`],
+    ["vergi-bilinmeyen-alan", `${vergiBaslangicDosyasi}: siniflar.0: `],
   ];
 
   for (const [ornek, beklenenHata] of bozuklar) {
@@ -220,6 +231,31 @@ describe("başlangıç dosyası", () => {
     } finally {
       rmSync(kok, { recursive: true, force: true });
     }
+  });
+});
+
+describe("vergi başlangıç verisi (kart 0074)", () => {
+  it("dosyası olmayan site vergi sınıfı olmadan başlar", () => {
+    const sonuc = dogrula("gecerli");
+    if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+    expect(sonuc.site.vergiBaslangici).toEqual({ siniflar: [] });
+  });
+
+  it("dosyadaki sınıflar sırasıyla, oranlar milyonda bir birimiyle okunur", () => {
+    const sonuc = dogrula("vergi-dolu");
+    if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+    expect(sonuc.site.vergiBaslangici).toEqual({
+      siniflar: [
+        {
+          ad: "Genel",
+          oranlar: [
+            { ulke: "TR", oran: 180_000 },
+            { ulke: "TR", il: "TR-34", postaKodu: "34000", oran: 5_000, ad: "Ek" },
+          ],
+        },
+        { ad: "Vergisiz", oranlar: [] },
+      ],
+    });
   });
 });
 

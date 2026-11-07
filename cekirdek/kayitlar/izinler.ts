@@ -4,6 +4,7 @@
 import { ekipIzinleri } from "../moduller/ekip/izinler.ts";
 import { magazaAyarlariIzinleri } from "../moduller/magaza-ayarlari/izinler.ts";
 import { musteriIzinleri } from "../moduller/musteri/izinler.ts";
+import { vergiIzinleri } from "../moduller/vergi/izinler.ts";
 import type { Kapi } from "./kapi.ts";
 
 // Hesap yalnız kendi kayıtlarını, ekibinin kayıtlarını ya da bütün kayıtları görür.
@@ -19,12 +20,14 @@ export const modulIzinleri = {
   ekip: ekipIzinleri,
   "magaza-ayarlari": magazaAyarlariIzinleri,
   musteri: musteriIzinleri,
+  vergi: vergiIzinleri,
 } as const;
 
 export const izinler = {
   ...ekipIzinleri,
   ...magazaAyarlariIzinleri,
   ...musteriIzinleri,
+  ...vergiIzinleri,
 } as const satisfies Record<string, IzinTanimi>;
 export type IzinAdi = keyof typeof izinler;
 

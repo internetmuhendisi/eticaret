@@ -7,6 +7,7 @@ import { basename, join } from "node:path";
 import type { z } from "zod";
 import { type DosyaTuru, dosyaSinirlari } from "../kayitlar/dosya.ts";
 import { icerikTuru, uzantininTuru } from "../moduller/dosya/tur.ts";
+import { type VergiBaslangici, vergiBaslangicSemasi } from "../moduller/vergi/semalar.ts";
 import {
   ayarSemasi,
   type MagazaAyarlari,
@@ -20,10 +21,13 @@ import { type Kimlik, kimlikSemasi } from "./kimlik.ts";
 // ayar veritabanında ilk kez yokken kullanılır (karar 0010, 0055); asıl değer veritabanındadır.
 // markaLogosu: sitenin ilk logosu (marka/logo.<uzantı>, kart 0073). Mağaza sahibi logo yüklemediyse
 // görünür; yoksa mağaza adı yazı olarak görünür.
+// vergiBaslangici: vergi sınıflarının ve oranlarının başlangıç verisi (baslangic/vergi.json, kart 0074).
+// Yalnız sitenin vergi tablosu hiç kurulmamışken kullanılır (karar 0060); dosyası yoksa boştur.
 export type Site = {
   kimlik: Kimlik;
   ayarlar: SiteAyarlari;
   baslangic: MagazaAyarlari;
+  vergiBaslangici: VergiBaslangici;
   markaLogosu?: { yol: string; tur: DosyaTuru };
 };
 
@@ -87,6 +91,19 @@ export const baslangicDosyasiniDogrula = <S extends z.ZodObject>(
       ...(sonuc.success ? [] : sorunlariYaz(baslangicDosyasi, sonuc.error.issues)),
     ],
   };
+};
+
+export const vergiBaslangicDosyasi = "baslangic/vergi.json";
+
+// Dosyası olmayan site vergi sınıfı olmadan başlar.
+export const vergiBaslangiciniDogrula = (
+  klasor: string,
+): { gecerli: true; deger: VergiBaslangici } | { gecerli: false; hatalar: string[] } => {
+  const ham = jsonOku(klasor, vergiBaslangicDosyasi, { siniflar: [] });
+  if ("hata" in ham) return { gecerli: false, hatalar: [ham.hata] };
+  const sonuc = vergiBaslangicSemasi.safeParse(ham.deger);
+  if (sonuc.success) return { gecerli: true, deger: sonuc.data };
+  return { gecerli: false, hatalar: sorunlariYaz(vergiBaslangicDosyasi, sonuc.error.issues) };
 };
 
 export const markaKlasoru = "marka";
@@ -166,6 +183,8 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
 
   const baslangic = baslangicDosyasiniDogrula(klasor, magazaAyarSemasi);
   if (!baslangic.gecerli) hatalar.push(...baslangic.hatalar);
+  const vergiBaslangici = vergiBaslangiciniDogrula(klasor);
+  if (!vergiBaslangici.gecerli) hatalar.push(...vergiBaslangici.hatalar);
   const markaLogosu = markaLogosunuDogrula(klasor);
   if (!markaLogosu.gecerli) hatalar.push(...markaLogosu.hatalar);
 
@@ -180,6 +199,7 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
     kimlik === undefined ||
     ayarlar === undefined ||
     !baslangic.gecerli ||
+    !vergiBaslangici.gecerli ||
     !markaLogosu.gecerli
   ) {
     return { gecerli: false, hatalar };
@@ -212,6 +232,7 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
       kimlik,
       ayarlar: { ...ayarlar, siparisOneki },
       baslangic: { ...baslangic.deger, magazaAdi },
+      vergiBaslangici: vergiBaslangici.deger,
       ...(markaLogosu.logo === undefined ? {} : { markaLogosu: markaLogosu.logo }),
     },
   };
