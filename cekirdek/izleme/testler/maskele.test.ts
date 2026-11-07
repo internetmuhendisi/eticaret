@@ -211,6 +211,7 @@ describe("uzun e-posta", () => {
     const adres = `${"a".repeat(70)}bcdef@ornek.test`;
     expect(metniMaskele(adres)).toBe("a***@ornek.test");
     expect(metniMaskele(`x ${adres} y`)).toBe("x a***@ornek.test y");
-    expect(metniMaskele(`${"a".repeat(300)}bcdef@ornek.test`)).toBe("a***@ornek.test");
+    // Şemanın kabul ettiği en uzun adres (254) bütünüyle kısaltılır.
+    expect(metniMaskele(`${"a".repeat(241)}@ornek.test`)).toBe("a***@ornek.test");
   });
 });
