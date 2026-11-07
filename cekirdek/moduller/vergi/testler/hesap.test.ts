@@ -154,7 +154,39 @@ describe("satır ve ara toplam yuvarlaması", () => {
     ]);
   });
 
-  it("ara toplamda yalnız aynı oranlara düşen kalemler birlikte yuvarlanır", () => {
+  it("ara toplamda aynı yüzdedeki farklı sınıflar birlikte yuvarlanır: 550 × 0,18 = 99", () => {
+    const giyim = sinif("giyim", [oranSatiri("giyim", "18", tr)]);
+    const sonuc = hesapla(
+      girdi({
+        ayarlar: ayarlar({ vergiYuvarlama: "ara-toplam" }),
+        tablo: [genel, giyim],
+        satirlar: [
+          { birimFiyat: 275, adet: 1, sinif: "genel" },
+          { birimFiyat: 275, adet: 1, sinif: "giyim" },
+        ],
+      }),
+    );
+    expect(sonuc.dokum).toEqual([
+      { ad: "Deneme vergisi", oran: oran("18"), matrah: 550, vergi: 99 },
+    ]);
+    expect(ozet(sonuc)).toEqual([kalem(275, 50), kalem(275, 49)]);
+  });
+
+  it("bir kaleme aynı ad ve yüzdede iki oran uygulanırsa döküm iki satırdır, matrah iki kez sayılmaz", () => {
+    const cift = sinif("cift", [
+      oranSatiri("cift", "5", tr),
+      oranSatiri("cift", "5", tr, { sira: 1 }),
+    ]);
+    const sonuc = hesapla(
+      girdi({ tablo: [cift], satirlar: [{ birimFiyat: 1000, adet: 1, sinif: "cift" }] }),
+    );
+    expect(sonuc.dokum).toEqual([
+      { ad: "Deneme vergisi", oran: oran("5"), matrah: 1000, vergi: 50 },
+      { ad: "Deneme vergisi", oran: oran("5"), matrah: 1000, vergi: 50 },
+    ]);
+  });
+
+  it("ara toplamda oran kümesi farklı kalemler ayrı yuvarlanır", () => {
     // genel: 275 × 0,18 = 49,5 → 50; ikili: %18 49,5 → 50 ve %2 5,5 → 6. İki grup ayrı yuvarlanır.
     const sonuc = hesapla(
       girdi({
@@ -209,7 +241,7 @@ describe("vergisiz ürün, kargo, silinmiş sınıf, vergi kapalı", () => {
   it("silinmiş sınıf kendi oranlarıyla hesaplanır", () => {
     const silinmis = sinif("eski", [oranSatiri("eski", "8", tr)], { silindi: true });
     const sonuc = hesapla(
-      girdi({ tablo: [silinmis], satirlar: [{ birimFiyat: 5000, adet: 1, sinif: "eski" }] }),
+      girdi({ tablo: [genel, silinmis], satirlar: [{ birimFiyat: 5000, adet: 1, sinif: "eski" }] }),
     );
     expect(ozet(sonuc)).toEqual([kalem(5000, 400)]);
   });
@@ -260,6 +292,47 @@ describe("bölge", () => {
     expect(sonucOrani({ ulke: "TR", il: "TR-34", postaKodu: "34000" })).toBe(50);
     expect(sonucOrani({ ulke: "TR", il: "TR-34", postaKodu: "34100" })).toBe(80);
     expect(sonucOrani({ ulke: "TR", il: "TR-06", postaKodu: "34000" })).toBe(180);
+  });
+
+  it("posta kodu düzeyi tektir: ilsiz ve illi posta kodu oranları toplanır, il oranı geçmez", () => {
+    const postali = sinif("postali", [
+      oranSatiri("postali", "8", { ulke: "TR", il: "TR-34" }),
+      oranSatiri("postali", "3", { ulke: "TR", postaKodu: "34000" }),
+      oranSatiri("postali", "4", { ulke: "TR", il: "TR-34", postaKodu: "34000" }, { sira: 1 }),
+    ]);
+    const sonuc = hesapla(
+      girdi({
+        tablo: [postali],
+        adresler: { teslimat: { ulke: "TR", il: "TR-34", postaKodu: "34000" } },
+        satirlar: [{ birimFiyat: 1000, adet: 1, sinif: "postali" }],
+      }),
+    );
+    // 1000 × (%3 + %4) = 30 + 40.
+    expect(sonuc.satirlar[0]?.oranlar.map((o) => o.vergi)).toEqual([30, 40]);
+  });
+
+  it("mağaza adresi seçiliyse müşterinin adresine bakılmaz", () => {
+    const sonuc = hesapla(
+      girdi({
+        ayarlar: ayarlar({ vergiAdresi: "magaza" }),
+        tablo: [ilOrani],
+        adresler: { teslimat: { ulke: "TR", il: "TR-34" }, magaza: magazaAdresi },
+        satirlar: [{ birimFiyat: 1000, adet: 1, sinif: "il" }],
+      }),
+    );
+    expect([sonuc.bolge, sonuc.satirlar[0]?.vergi]).toEqual(["magaza", 180]);
+  });
+
+  it("silinmiş sınıfın kalmış oranı bölgeyi bulunmuş saydırmaz", () => {
+    const eski = sinif("eski", [oranSatiri("eski", "19", { ulke: "DE" })], { silindi: true });
+    const sonuc = hesapla(
+      girdi({
+        tablo: [genel, eski],
+        adresler: { teslimat: { ulke: "DE" }, magaza: magazaAdresi },
+        satirlar: [{ birimFiyat: 1000, adet: 1, sinif: "genel" }],
+      }),
+    );
+    expect([sonuc.bolge, sonuc.satirlar[0]?.vergi]).toEqual(["magaza", 180]);
   });
 
   it("ayardaki adres kullanılır: fatura adresi seçiliyse teslimat adresine bakılmaz", () => {
@@ -329,6 +402,17 @@ describe("bölge", () => {
     expect(() =>
       hesapla(girdi({ adresler: {}, satirlar: [{ birimFiyat: 1000, adet: 1, sinif: null }] })),
     ).not.toThrow();
+    // Sıfır oranlı sınıftaki ürün vergisiz ürün değildir: bölge yoksa hesap yine durur (kullanıcı kararı).
+    const sifir = sinif("sifir", [oranSatiri("sifir", "0", tr)]);
+    expect(() =>
+      hesapla(
+        girdi({
+          tablo: [sifir],
+          adresler: bolgesiz,
+          satirlar: [{ birimFiyat: 1000, adet: 1, sinif: "sifir" }],
+        }),
+      ),
+    ).toThrow(BilinenHata);
   });
 });
 

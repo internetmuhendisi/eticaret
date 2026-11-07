@@ -461,8 +461,9 @@ export const vergiServisi = (baslangic: () => VergiBaslangici) => {
         .select({ kimlik: vergiSiniflari.kimlik })
         .from(vergiSiniflari)
         .where(eq(vergiSiniflari.kargo_sinifi, true));
-      if (kimlik !== null) await degisebilenSinif(islem, kimlik);
+      // Seçim değişmiyorsa hiçbir şey yapılmaz: seçiliyken silinen sınıfı yeniden seçmek hata değildir.
       if ((eski?.kimlik ?? null) === kimlik) return;
+      if (kimlik !== null) await degisebilenSinif(islem, kimlik);
       if (eski !== undefined) {
         await islem
           .update(vergiSiniflari)

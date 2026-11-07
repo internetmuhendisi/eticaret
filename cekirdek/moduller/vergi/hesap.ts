@@ -3,18 +3,25 @@
 // oranlar milyonda bir birimindedir (semalar.ts); yuvarlama yalnız yuvarlama.ts ile yapılır.
 //
 // Kurallar (karar 0061, kullanıcı kararları):
-// - Bölge: ayardaki adres (teslimat, fatura ya da mağaza) kullanılır. Adres yoksa ya da vergi tablosunda
-//   o bölgeye uyan hiçbir oran (hangi sınıfta olursa olsun) yoksa mağaza adresi kullanılır. Bölge tabloda
-//   varsa ama ürünün sınıfının orada oranı yoksa o ürüne vergi uygulanmaz.
-// - Hiçbir bölge bulunamazsa ve vergilenecek bir kalem varsa hesap durur: sessizce vergisiz satılmaz.
-// - Bir sınıfın bölgeye uyan oranlarından en özel olanlar geçer: posta kodu ve il birlikte, sonra posta
-//   kodu, sonra il, sonra yalnız ülke. Aynı özgüllükteki oranlar toplanır.
+// - Bölge: ayardaki adres (teslimat, fatura ya da mağaza) kullanılır. Adres yoksa ya da silinmemiş
+//   sınıfların hiçbirinde o bölgeye uyan oran yoksa mağaza adresi kullanılır. Silinmiş sınıfın kalmış
+//   oranı bölgeyi "tabloda var" saydırmaz. Bölge tabloda varsa ama ürünün sınıfının orada oranı yoksa o
+//   ürüne vergi uygulanmaz.
+// - Hiçbir bölge bulunamazsa ve sınıfı olan bir kalem varsa hesap durur: sessizce vergisiz satılmaz.
+//   Sıfır oranlı sınıftaki ürün de sınıfı olan kalemdir (oranı bölgeye göre değişebilir); yalnız vergisiz ürün
+//   (sınıfı yok) ve sınıfsız kargo durdurmaz.
+// - Bir sınıfın bölgeye uyan oranlarından en özel düzeydekiler geçer: posta kodu, sonra il, sonra yalnız
+//   ülke. Posta kodu oranının ayrıca il taşıması düzeyini değiştirmez. Aynı düzeydeki oranlar toplanır.
 // - Vergi dahil girişte vergi = vergili × oran / (1 + oran) yuvarlanır, vergisiz = vergili − vergi.
 //   Birden çok oranda toplam vergi oranlara göre paylaştırılır. Vergi hariç girişte her oranın vergisi
 //   ayrı yuvarlanır.
 // - Satır yuvarlamasında her kalem (birim fiyat × adet ve kargo) ayrı yuvarlanır. Ara toplam
-//   yuvarlamasında aynı oranlara düşen kalemler toplanıp bir kez yuvarlanır, sonuç kalemlere tutarlarına
-//   göre dağıtılır (toplamları her zaman aynıdır).
+//   yuvarlamasında aynı oranlara (ad ve yüzde; hangi sınıftan geldiği önemli değil) düşen kalemler
+//   toplanıp bir kez yuvarlanır, sonuç kalemlere tutarlarına göre dağıtılır (toplamları her zaman
+//   aynıdır). Oran kümesi farklı kalemlerdeki aynı oran ayrı yuvarlanır: dökümde o oranın vergisi
+//   matrah × oran'dan bir iki kuruş farklı olabilir.
+// - Döküm: aynı ad ve yüzde bir satırdır. Bir kaleme aynı ad ve yüzdede iki oran uygulanırsa ikincisi
+//   ayrı satırdır: matrah iki kez sayılmaz.
 // - Silinmiş sınıf kendi oranlarıyla hesaplanır (karar 0060). Vergi kapalıysa vergi sıfırdır, döküm boştur.
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { FiyatGirisi, VergiAdresi, VergiYuvarlama } from "./semalar.ts";
@@ -78,7 +85,7 @@ const uyar = (oran: VergiOrani, bolge: VergiBolgesi) =>
   (oran.postaKodu === undefined || oran.postaKodu === bolge.postaKodu);
 
 const ozgulluk = (oran: VergiOrani) =>
-  (oran.postaKodu === undefined ? 0 : 2) + (oran.il === undefined ? 0 : 1);
+  oran.postaKodu !== undefined ? 2 : oran.il !== undefined ? 1 : 0;
 
 // Bir sınıfın bölgedeki oranları: en özel olanlar, sırasıyla.
 const siniftakiOranlar = (sinif: VergiSinifi, bolge: VergiBolgesi): VergiOrani[] => {
@@ -91,7 +98,9 @@ const adiyla = (ad: string | undefined) => (ad === undefined ? {} : { ad });
 
 const tamSayiMi = (deger: number, enAz: number) => Number.isSafeInteger(deger) && deger >= enAz;
 
-type Kalem = { tutar: bigint; oranlar: VergiOrani[] };
+// Kalemin oranı ve döküm anahtarı: ad, yüzde ve aynı ad ve yüzdenin kalemdeki kaçıncı tekrarı olduğu.
+type KalemOrani = VergiOrani & { gorunenAd?: string; anahtar: string };
+type Kalem = { tutar: bigint; oranlar: KalemOrani[]; sirali: number[] };
 
 export const hesapla = (girdi: HesapGirdisi): VergiSonucu => {
   const { ayarlar, tablo } = girdi;
@@ -123,7 +132,8 @@ export const hesapla = (girdi: HesapGirdisi): VergiSonucu => {
   // Bölge: ayardaki adres, tabloda yoksa mağaza adresi.
   const vergilenecekVar = ayarlar.vergiAcik && kalemSiniflari.some((sinif) => sinif !== undefined);
   const tablodaMi = (bolge: VergiBolgesi | undefined): bolge is VergiBolgesi =>
-    bolge !== undefined && tablo.some((sinif) => sinif.oranlar.some((oran) => uyar(oran, bolge)));
+    bolge !== undefined &&
+    tablo.some((sinif) => !sinif.silindi && sinif.oranlar.some((oran) => uyar(oran, bolge)));
   const secilen = girdi.adresler[ayarlar.vergiAdresi];
   const [kaynak, bolge]: [VergiAdresi | "yok", VergiBolgesi | undefined] = !vergilenecekVar
     ? ["yok", undefined]
@@ -138,20 +148,36 @@ export const hesapla = (girdi: HesapGirdisi): VergiSonucu => {
 
   const kalemler: Kalem[] = tutarlar.map((tutar, yer) => {
     const sinif = kalemSiniflari[yer];
-    return {
-      tutar,
-      oranlar: bolge === undefined || sinif === undefined ? [] : siniftakiOranlar(sinif, bolge),
-    };
+    const bulunan =
+      bolge === undefined || sinif === undefined ? [] : siniftakiOranlar(sinif, bolge);
+    const tekrar = new Map<string, number>();
+    const oranlar = bulunan.map((oran): KalemOrani => {
+      const gorunenAd = oran.ad ?? ayarlar.vergiAdi;
+      const ozu = `${gorunenAd ?? ""}\u0000${oran.oran}`;
+      const kacinci = tekrar.get(ozu) ?? 0;
+      tekrar.set(ozu, kacinci + 1);
+      return {
+        ...oran,
+        ...(gorunenAd === undefined ? {} : { gorunenAd }),
+        anahtar: `${ozu}\u0000${kacinci}`,
+      };
+    });
+    // Oranların anahtar sırası: aynı oran kümesindeki kalemler oranlarını aynı sırayla eşler.
+    const sirali = oranlar
+      .map((_, sira) => sira)
+      .sort((a, b) => ((oranlar[a]?.anahtar ?? "") < (oranlar[b]?.anahtar ?? "") ? -1 : 1));
+    return { tutar, oranlar, sirali };
   });
 
   // Kalemleri yuvarlama gruplarına ayırır: satır yuvarlamasında her kalem kendi grubudur, ara toplamda
-  // aynı oranlara düşen kalemler bir gruptur. Her grubun her oranının vergisi bir kez yuvarlanır.
+  // aynı oran kümesine (ad ve yüzde) düşen kalemler bir gruptur. Her grubun her oranının vergisi bir
+  // kez yuvarlanır.
   const gruplar = new Map<string, number[]>();
   kalemler.forEach((kalem, yer) => {
     const anahtar =
       ayarlar.vergiYuvarlama === "satir"
         ? `kalem:${yer}`
-        : `oranlar:${kalem.oranlar.map((oran) => oran.kimlik).join(",")}`;
+        : `oranlar:${kalem.sirali.map((sira) => kalem.oranlar[sira]?.anahtar).join("\u0001")}`;
     gruplar.set(anahtar, [...(gruplar.get(anahtar) ?? []), yer]);
   });
 
@@ -160,7 +186,10 @@ export const hesapla = (girdi: HesapGirdisi): VergiSonucu => {
   // kalemVergileri[yer][oranSirasi]: kalemin o orandan payı.
   const kalemVergileri: bigint[][] = kalemler.map((kalem) => kalem.oranlar.map(() => 0n));
   for (const yerler of gruplar.values()) {
-    const oranlar = kalemler[yerler[0] ?? 0]?.oranlar ?? [];
+    const ilk = kalemler[yerler[0] ?? 0];
+    const oranlar = (ilk?.sirali ?? [])
+      .map((sira) => ilk?.oranlar[sira])
+      .filter((o) => o !== undefined);
     if (oranlar.length === 0) continue;
     const grupTutari = yerler.reduce((toplam, yer) => toplam + (kalemler[yer]?.tutar ?? 0n), 0n);
     const oranDegerleri = oranlar.map((oran) => BigInt(oran.oran));
@@ -168,14 +197,15 @@ export const hesapla = (girdi: HesapGirdisi): VergiSonucu => {
     const oranVergileri = dahil
       ? oranlaDagit(bolVeYuvarla(grupTutari * oranToplami, milyon + oranToplami), oranDegerleri)
       : oranDegerleri.map((oran) => bolVeYuvarla(grupTutari * oran, milyon));
-    oranVergileri.forEach((oranVergisi, oranSirasi) => {
+    oranVergileri.forEach((oranVergisi, kacinci) => {
       const paylar = oranlaDagit(
         oranVergisi,
         yerler.map((yer) => kalemler[yer]?.tutar ?? 0n),
       );
       yerler.forEach((yer, sira) => {
         const satir = kalemVergileri[yer];
-        if (satir !== undefined) satir[oranSirasi] = paylar[sira] ?? 0n;
+        const oranSirasi = kalemler[yer]?.sirali[kacinci];
+        if (satir !== undefined && oranSirasi !== undefined) satir[oranSirasi] = paylar[sira] ?? 0n;
       });
     });
   }
@@ -190,18 +220,18 @@ export const hesapla = (girdi: HesapGirdisi): VergiSonucu => {
       vergili: kurusa(vergisiz + vergi),
       oranlar: kalem.oranlar.map((oran, sira) => ({
         oranKimligi: oran.kimlik,
-        ...adiyla(oran.ad ?? ayarlar.vergiAdi),
+        ...adiyla(oran.gorunenAd),
         oran: oran.oran,
         vergi: kurusa(vergiler[sira] ?? 0n),
       })),
     };
   });
 
-  // Döküm: aynı ad ve oran bir satır, büyük oran önce.
+  // Döküm: aynı ad ve yüzde bir satır (kalem içindeki tekrar ayrı satır), büyük oran önce.
   const dokum = new Map<string, { ad?: string; oran: number; matrah: bigint; vergi: bigint }>();
-  sonuclar.forEach((sonuc) => {
-    for (const oran of sonuc.oranlar) {
-      const anahtar = `${oran.ad ?? ""}\u0000${oran.oran}`;
+  sonuclar.forEach((sonuc, yer) => {
+    sonuc.oranlar.forEach((oran, sira) => {
+      const anahtar = kalemler[yer]?.oranlar[sira]?.anahtar ?? "";
       const satir = dokum.get(anahtar) ?? {
         ...(oran.ad === undefined ? {} : { ad: oran.ad }),
         oran: oran.oran,
@@ -211,7 +241,7 @@ export const hesapla = (girdi: HesapGirdisi): VergiSonucu => {
       satir.matrah += BigInt(sonuc.vergisiz);
       satir.vergi += BigInt(oran.vergi);
       dokum.set(anahtar, satir);
-    }
+    });
   });
 
   const urunSonuclari = sonuclar.slice(0, girdi.satirlar.length);

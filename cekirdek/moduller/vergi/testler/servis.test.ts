@@ -529,6 +529,9 @@ describe("kargo sınıfı (kart 0075)", () => {
     });
     await kargolu.sinifSil(vt, yonetici(), genel.kimlik);
     expect(await kargoSinifi(vt)).toEqual(["Genel"]);
+    // Hâlâ seçili olan silinmiş sınıfı yeniden seçmek bir şey değiştirmez, hata da vermez.
+    await kargolu.kargoSinifiniDegistir(vt, yonetici(), genel.kimlik);
+    expect(await kargoSinifi(vt)).toEqual(["Genel"]);
     expect((await hatasi(kargolu.kargoSinifiniDegistir(vt, yonetici(), randomUUID()))).kod).toBe(
       "bulunamadi",
     );
@@ -584,6 +587,9 @@ describe("veritabanıyla vergi hesabı (kart 0075)", () => {
     const servisi = siteninVergiServisi(site);
     const [genel] = await servisi.tabloyuOku(vt);
     if (genel === undefined) throw new Error("Sınıf yok.");
+    // Etkin bir sınıfta da aynı ülkenin oranı var: silinmiş sınıfın oranı bölgeyi bulunmuş saydırmaz.
+    const yeni = await servisi.sinifEkle(vt, yonetici(), { ad: "Yeni" });
+    await servisi.oranEkle(vt, yonetici(), yeni, tr("8"));
     await servisi.kargoSinifiniDegistir(vt, yonetici(), genel.kimlik);
     await servisi.sinifSil(vt, yonetici(), genel.kimlik);
     const hesap = () =>
