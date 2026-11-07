@@ -11,6 +11,7 @@ Kart 0012'nin bağımsız kontrolünde fark edildi (karar 0023, bilinen sınır)
 - Hangi sistem görünümlerinin site kullanıcısından kapatılabileceği ve kapatmanın uygulamayı, Drizzle'ı ya da yedek araçlarını bozup bozmadığı ölçülür.
 - Kapatılamayanlar için seçenekler ve bedelleri yazılır, örneğin her siteye ayrı PostgreSQL kutusu (karar 0013'te bellek nedeniyle seçilmemişti).
 - Seçilen yol veri ayrımı testine eklenir.
+- Kullanıcı kararı (2026-11-07): Karar 0053'teki kalan kabul edildi. Numaraları deneyen biri sitelerin kod adlarını listeleyebilir, satış ve işlem bilgisi göremez.
 
 ## Sınırlar
 
