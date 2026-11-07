@@ -382,6 +382,10 @@ describe("kayıt içeriği", () => {
     ["jwt değeri", { deger: "eyJhbGciOiJ9.eyJhIjoxfQ.imza" }],
     ["basic giriş başlığı", { baslik: "Basic YWRtaW46Z2l6bGk=" }],
     ["küçük harfle basic başlığı", { baslik: "basic dTpw" }],
+    ["Türkçe harfli şifreyle basic başlığı", { baslik: "Basic YWRtaW46xZ9pZnJl" }],
+    ["sonda boşluklu basic başlığı", { baslik: "Basic YWRtaW46Z2l6bGk= " }],
+    ["dolgusuz basic başlığı", { baslik: "Basic YWRtaW46Z2l6bGk" }],
+    ["sonda satır sonlu e-posta", { kisi: "a@ornek.test\n" }],
     ["tarih nesnesi", { zaman: new Date() }],
   ])("%s kayda girmez, iş durur", async (_ad, deger) => {
     await expect(kaydet(null, deger)).rejects.toThrow(/Değişiklik kaydına/);
@@ -393,6 +397,8 @@ describe("kayıt içeriği", () => {
     ["Basic Tişört"],
     ["Basic Sweatshirt"],
     ["basic tee"],
+    ["Basic Tees"],
+    ["Basic Hoodie"],
     ["İletişim: destek@ornek.test adresine yazın."],
   ])("%s düz metin olarak kayda girer", async (metin) => {
     const kayit = randomUUID();

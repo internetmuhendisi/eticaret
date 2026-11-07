@@ -12,7 +12,7 @@
 // İzin kapıda denetlenir (izinler.ts); servis yalnız kimin yaptığını kayda yazar. Girdi şemadan
 // geçmemişse servis yine şemadan geçirir: başka bir yoldan gelen ham değer tabloya yazılmaz.
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, isNull, like, ne, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
@@ -225,7 +225,9 @@ export const urunServisi = (saatDilimi: () => string) => {
     const [sinif] = await islem
       .select({ kimlik: vergiSiniflari.kimlik })
       .from(vergiSiniflari)
-      .where(and(eq(vergiSiniflari.kimlik, kimlik), isNull(vergiSiniflari.silinme_zamani)));
+      .where(and(eq(vergiSiniflari.kimlik, kimlik), isNull(vergiSiniflari.silinme_zamani)))
+      // Satır paylaşımlı kilitlenir: aynı anda silen işlem bitene kadar beklenir, sonra silinmiş görülür.
+      .for("share");
     if (sinif === undefined) {
       throw dogrulamaHatasi([{ alan: "vergiSinifi", kod: "vergi-sinifi-gecersiz" }]);
     }
@@ -269,28 +271,28 @@ export const urunServisi = (saatDilimi: () => string) => {
   };
 
   // Addan üretilen adres adı. Kullanılıyorsa sonuna sayı eklenir: cicekli-sal-2, cicekli-sal-3...
-  // Addan hiç harf kalmazsa ürünün kimliğinin ilk parçası kullanılır.
+  // Addan hiç harf kalmazsa ürünün kimliğinin ilk parçası kullanılır. Uzun kökte sayılı aday kökü
+  // kısaltır; bu yüzden adaylar önekle değil tek tek, elli elli tek sorguyla aranır (kart 0076 kontrolü).
   const adresAdiBul = async (islem: VeritabaniIslemi, ad: string, kimlik: string) => {
     const uretilen = adresAdiUret(ad);
     const kok = uretilen === "" ? (kimlik.split("-")[0] ?? kimlik) : uretilen;
-    const kullanilan = new Set(
-      (
-        await islem
-          .select({ adresAdi: urunler.adres_adi })
-          .from(urunler)
-          .where(
-            and(
-              isNull(urunler.silinme_zamani),
-              or(eq(urunler.adres_adi, kok), like(urunler.adres_adi, `${kok}-%`)),
-            ),
-          )
-      ).map((satir) => satir.adresAdi),
-    );
-    if (!kullanilan.has(kok)) return kok;
-    for (let sayi = 2; ; sayi += 1) {
+    const aday = (sayi: number) => {
+      if (sayi === 1) return kok;
       const ek = `-${sayi}`;
-      const aday = `${kok.slice(0, adresAdiUzunlugu - ek.length).replace(/-+$/, "")}${ek}`;
-      if (!kullanilan.has(aday)) return aday;
+      return `${kok.slice(0, adresAdiUzunlugu - ek.length).replace(/-+$/, "")}${ek}`;
+    };
+    for (let ilk = 1; ; ilk += 50) {
+      const adaylar = Array.from({ length: 50 }, (_, sira) => aday(ilk + sira));
+      const kullanilan = new Set(
+        (
+          await islem
+            .select({ adresAdi: urunler.adres_adi })
+            .from(urunler)
+            .where(and(isNull(urunler.silinme_zamani), inArray(urunler.adres_adi, adaylar)))
+        ).map((satir) => satir.adresAdi),
+      );
+      const bos = adaylar.find((adresAdi) => !kullanilan.has(adresAdi));
+      if (bos !== undefined) return bos;
     }
   };
 

@@ -2,31 +2,36 @@
 // durdurur; serbest metin alan modüller (ürün adı, açıklama) aynı işlevle girdiyi şemada reddeder,
 // böylece mağaza sahibinin yazdığı bir metin beklenmeyen hataya dönmez.
 //
-// Kalıp değerin tamamına bakar: e-posta adresi, giriş başlığı ya da JWT'nin kendisi. Cümle içinde
-// geçen adres takılmaz.
+// Kalıp değerin tamamına bakar (baştaki ve sondaki boşluk atılır): e-posta adresi, giriş başlığı ya da
+// JWT'nin kendisi. Cümle içinde geçen adres takılmaz.
 const epostaKalibi = /^[^\s@]+@[^\s@]+$/;
 const bearerKalibi = /^bearer\s/i;
 const jwtKalibi = /^eyJ[\w-]+\.[\w-]+\./;
 // "Basic " başlığı yalnız ardından "kullanıcı:şifre"nin base64 hâli gelirse yakalanır (kart 0076):
-// "Basic Tişört" gibi bir ürün adı giriş başlığı değildir.
+// "Basic Tişört" gibi bir ürün adı giriş başlığı değildir. Dolgu (=) zorunlu değildir.
 const basicKalibi = /^basic\s+([A-Za-z0-9+/]+={0,2})$/i;
 
-// Geçerli base64 (uzunluğu dördün katı), çözülünce yalnız yazılabilir ASCII ve içinde ":" var.
+// Çözülen değer geçerli UTF-8 (Türkçe harfli şifre de olur), denetim karakteri yok ve içinde ":" var.
+// atob ve TextDecoder tarayıcıda da çalışır: ürün şeması ekranla ortaktır.
 const basicBasligiMi = (deger: string): boolean => {
   const kodlu = basicKalibi.exec(deger)?.[1];
-  if (kodlu === undefined || kodlu.length % 4 !== 0) return false;
-  // atob tarayıcıda da çalışır: ürün şeması ekranla ortaktır.
+  if (kodlu === undefined) return false;
   let cozulen: string;
   try {
-    cozulen = atob(kodlu);
+    const baytlar = Uint8Array.from(atob(kodlu), (harf) => harf.charCodeAt(0));
+    cozulen = new TextDecoder("utf-8", { fatal: true }).decode(baytlar);
   } catch {
     return false;
   }
-  return cozulen.includes(":") && /^[\x20-\x7e]+$/.test(cozulen);
+  return cozulen.includes(":") && !/\p{Cc}/u.test(cozulen);
 };
 
-export const kayitDegeriYasakMi = (deger: string): boolean =>
-  epostaKalibi.test(deger) ||
-  bearerKalibi.test(deger) ||
-  jwtKalibi.test(deger) ||
-  basicBasligiMi(deger);
+export const kayitDegeriYasakMi = (ham: string): boolean => {
+  const deger = ham.trim();
+  return (
+    epostaKalibi.test(deger) ||
+    bearerKalibi.test(deger) ||
+    jwtKalibi.test(deger) ||
+    basicBasligiMi(deger)
+  );
+};

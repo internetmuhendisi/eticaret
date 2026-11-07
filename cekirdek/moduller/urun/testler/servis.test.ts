@@ -12,6 +12,7 @@ import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { vergiServisi } from "../../vergi/servis.ts";
+import { adresAdiUzunlugu } from "../adres-adi.ts";
 import { urunBirimleri, urunler } from "../model.ts";
 import type { UrunGirdisi } from "../semalar.ts";
 import { urunServisi } from "../servis.ts";
@@ -243,6 +244,28 @@ describe("tekillik ve barkod", () => {
     expect(
       await hatasi(servis.urunEkle(vt, yonetici(), urun({ adresAdi: "Çiçekli Şal" }))),
     ).toEqual({ kod: "dogrulama", ayrinti: [{ alan: "adresAdi", kod: "adres-adi-bicimi" }] });
+  });
+
+  // Kart 0076 kontrolü: uzun kökte sayılı aday kökü kısaltır, önekle arama onu bulamıyordu.
+  it("uzun adla eklenen ürünler sınırı aşmadan ayrı adres adı alır, elle verilen kısaltılmış ad da sayılır", async () => {
+    const vt = await siteAc();
+    const uzun = "a".repeat(150);
+    const kok = "a".repeat(adresAdiUzunlugu);
+    const elle = `${"a".repeat(adresAdiUzunlugu - 2)}-3`;
+    await servis.urunEkle(vt, yonetici(), urun({ ad: "Elle", adresAdi: elle }));
+    const kimlikler = [];
+    for (let sira = 0; sira < 4; sira += 1) {
+      kimlikler.push(await servis.urunEkle(vt, yonetici(), urun({ ad: uzun })));
+    }
+    const adlar = await Promise.all(
+      kimlikler.map(async (k) => (await servis.urunuOku(vt, k))?.adresAdi),
+    );
+    expect(adlar).toEqual([
+      kok,
+      `${"a".repeat(adresAdiUzunlugu - 2)}-2`,
+      `${"a".repeat(adresAdiUzunlugu - 2)}-4`,
+      `${"a".repeat(adresAdiUzunlugu - 2)}-5`,
+    ]);
   });
 
   it("ad değişince adres adı değişmez; Latin dışı addan kimlikle üretilir", async () => {
