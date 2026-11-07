@@ -5,7 +5,7 @@
 //   node veritabani/guncelle.mjs <kod adı>
 // Adres yalnız gizliBilgi() ile okunur ve ekrana basılmaz. Adres verilen siteye ait değilse,
 // notsuz, sırası bozuk ya da sonradan değişmiş değişiklik varsa hiçbir şey uygulanmaz.
-import { baglan, siteVeritabaniAdi, veritabaniAdresi } from "./baglanti.ts";
+import { baglan, siteninAdresi, siteVeritabaniAdi } from "./baglanti.ts";
 import { siteVeritabaniniGuncelle } from "./guncelle.ts";
 
 const yaz = (satir: string): void => {
@@ -18,16 +18,13 @@ if (!kodAdi) {
   process.exit(1);
 }
 const ad = siteVeritabaniAdi(kodAdi);
-const adres = new URL(veritabaniAdresi());
-if (
-  decodeURIComponent(adres.username) !== ad ||
-  decodeURIComponent(adres.pathname.slice(1)) !== ad
-) {
+const adres = siteninAdresi(kodAdi);
+if (adres === null) {
   process.stderr.write(`Veritabanı adresi ${kodAdi} sitesinin değil, hiçbir şey uygulanmadı.\n`);
   process.exit(1);
 }
 
-const veritabani = baglan(adres.href);
+const veritabani = baglan(adres);
 try {
   const { once, sonra } = await siteVeritabaniniGuncelle(veritabani, kodAdi);
   yaz(`guncellendi ${ad} yeni=${sonra - once} toplam=${sonra}`);

@@ -8,7 +8,8 @@
 //   - sınır doluyken aynı ucun kodlanmış ve başka yazılışları geçmez (karar 0041);
 //   - ortamın her kutusu Docker yeniden başlayınca kendiliğinden açılır (kart 0038);
 //   - kayıt olan müşteriye hoş geldin e-postası gerçek arka plan kutusundan ulaşır (kart 0033);
-//   - şifre sıfırlama e-postası ulaşır, bağlantısı sitenin adresindedir ve yeni şifreyi kurar (kart 0034).
+//   - şifre sıfırlama e-postası ulaşır, bağlantısı sitenin adresindedir ve yeni şifreyi kurar (kart 0034);
+//   - görüntüdeki parça yalnız kendi sitesine yönetici açar, şifre girişte geçer (kart 0048).
 // Sonunda ortamı kapatır ve deneme sitesini siler. Bir ölçüm kalırsa kırmızı biter.
 // Çalıştırma: pnpm yerel-ortam-testi [--acik-birak]
 //   --acik-birak: ortamı ve deneme sitesini açık bırakır; kapatmak: pnpm yerel-ortam-kapat
@@ -158,6 +159,29 @@ const sitesiniOlc = async (site: OrtamSitesi, oteki: OrtamSitesi) => {
       `${yakalanan.messages?.length ?? 0} e-posta`,
     );
   }
+};
+
+// Görüntüdeki yönetici parçası (kart 0048, karar 0054): sunucudaki gibi kutunun kendi ortamında çalışır.
+const yoneticiOlc = async (kodAdi: string, otekiKodAdi: string): Promise<void> => {
+  const eposta = `yerel-${Date.now()}@ornek.test`;
+  const parca = (kod: string) =>
+    spawnSync(
+      "docker",
+      ["exec", kutuAdi(kodAdi), "node", "yonetici/yonetici.mjs", kod, "ac", eposta],
+      { encoding: "utf8" },
+    );
+  const baska = parca(otekiKodAdi);
+  olc(
+    `${kodAdi}: görüntüdeki parça başka sitenin adıyla yönetici açmıyor`,
+    baska.status === 1 && baska.stderr.includes("hiçbir şey yapılmadı"),
+  );
+  const sifre = /^sifre (\S+)$/m.exec(parca(kodAdi).stdout)?.[1] ?? "";
+  const giris = await gonder(kodAdi, "/kapi/herkese-acik/yonetici-giris", { eposta, sifre });
+  olc(
+    `${kodAdi}: görüntüdeki parçanın açtığı yönetici şifreyle geçiyor`,
+    giris.durum === 200,
+    `${giris.durum}`,
+  );
 };
 
 // Kapıdan gerçek kayıt: robot sorusu, hesap, kuyruk, arka plan kutusu, posta kutusu (kart 0033, karar 0051).
@@ -381,6 +405,7 @@ const calistir = async (): Promise<void> => {
       olc(`POST ${yol} giriş sınırını aşamıyor`, [308, 404, 429].includes(durum), `${durum}`);
     }
     await kayitOlc(ornek.kimlik.kodAdi);
+    await yoneticiOlc(denemeSitesi.kimlik.kodAdi, ornek.kimlik.kodAdi);
     kutuKurallariniOlc(siteler.length);
   } catch (hata) {
     olc("ortam açıldı", false, (hata as Error).message);

@@ -44,6 +44,12 @@ RUN pnpm exec esbuild cekirdek/arka-plan-isleri/surec.ts cekirdek/arka-plan-isle
       --banner:js="import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" \
       --outdir=/kaynak/arka-plan --out-extension:.js=.mjs
 
+# Sunucuda yönetici açan parça (kart 0048, karar 0054): dışarıya uç açmaz, geçici kutuda çalışır.
+RUN pnpm exec esbuild cekirdek/moduller/ekip/sunucuda-yonetici.ts --bundle --platform=node \
+      --format=esm --target=node24 --external:pg-native --log-level=warning \
+      --banner:js="import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" \
+      --outfile=/kaynak/yonetici/yonetici.mjs
+
 FROM node:${NODE_SURUMU}-alpine
 ARG CEKIRDEK_SURUMU
 LABEL org.opencontainers.image.version="${CEKIRDEK_SURUMU}"
@@ -58,6 +64,7 @@ COPY --from=derleme /kaynak/cekirdek/uygulama/.next/static ./cekirdek/uygulama/.
 COPY --from=derleme /kaynak/veritabani ./veritabani
 COPY --from=derleme /kaynak/izleme ./izleme
 COPY --from=derleme /kaynak/arka-plan ./arka-plan
+COPY --from=derleme /kaynak/yonetici ./yonetici
 USER node
 EXPOSE 3000
 CMD ["node", "cekirdek/uygulama/server.js"]
