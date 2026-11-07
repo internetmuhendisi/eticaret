@@ -31,4 +31,4 @@ Site kendi vergi sınıflarını ve oranlarını tanımlar. Yapı ülkeye bağl�
 
 ## Durum
 
-yapılacak
+bitti
