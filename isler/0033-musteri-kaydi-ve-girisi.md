@@ -33,4 +33,4 @@ Müşteri vitrinde hesap açar, giriş yapar ve çıkar (temel paket: Müşteri 
 
 ## Durum
 
-yapılacak
+bitti
