@@ -16,6 +16,7 @@ import type { z } from "zod";
 import { ayarBilgileri, magazaAyarSemasi } from "../../ayar-semasi/ayarlar.ts";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
+import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
 import { type DegisikligiYapan, sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
 import { siteninVeritabani, type Veritabani } from "../../veritabani/baglanti.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
@@ -97,6 +98,27 @@ export const magazaAyarlariServisi = <S extends z.ZodObject>(
     return true;
   };
 
+  // Tek bir ayarı okur: öteki ayarlardan biri bozuk olsa da bu ayar okunur. Bütün şemanın kuralı
+  // burada denetlenmez; o, bütün ayarları okuyan oku() ve değiştirme işindedir.
+  const tekOku = async <K extends keyof z.output<S> & string>(
+    vt: Veritabani,
+    anahtar: K,
+  ): Promise<z.output<S>[K]> => {
+    let [satir] = await satirlariOku(vt, [anahtar]);
+    if (satir === undefined) {
+      await eksikleriYaz(vt, await satirlariOku(vt));
+      [satir] = await satirlariOku(vt, [anahtar]);
+    }
+    if (satir === undefined) throw new Error(`Mağaza ayarı veritabanında yok: ${anahtar}.`);
+    const sonuc = sema.shape[anahtar]?.safeParse(satir.deger ?? undefined);
+    if (!sonuc?.success) {
+      throw new Error(
+        `Mağaza ayarının veritabanındaki değeri şemaya uymuyor: ${anahtar}. Değer bir veri değişikliğiyle düzeltilmeli.`,
+      );
+    }
+    return sonuc.data as z.output<S>[K];
+  };
+
   const oku = async (vt: Veritabani): Promise<z.output<S>> => {
     const satirlar = await satirlariOku(vt);
     if (await eksikleriYaz(vt, satirlar)) return coz(await satirlariOku(vt));
@@ -166,7 +188,7 @@ export const magazaAyarlariServisi = <S extends z.ZodObject>(
     return oku(vt);
   };
 
-  return { oku, degistir };
+  return { oku, tekOku, degistir };
 };
 
 // Çalışan sitenin servisi. Başlangıç değerleri site klasöründen gelir, yalnız eksik ayar varsa okunur.
@@ -178,16 +200,28 @@ const calisanSiteninServisi = magazaAyarlariServisi(
 export const magazaAyarlariniOku = (vt: Veritabani = siteninVeritabani()) =>
   calisanSiteninServisi.oku(vt);
 
-// Verilen sitenin ayarları: arka plan işi ve testler siteyi kendisi verir.
-export const siteninMagazaAyarlari = (vt: Veritabani, site: Site) =>
-  magazaAyarlariServisi(magazaAyarSemasi, () => site.baslangic).oku(vt);
+// Verilen sitenin servisi: arka plan işi ve testler siteyi kendisi verir.
+const siteninServisi = (site: Site) =>
+  magazaAyarlariServisi(magazaAyarSemasi, () => site.baslangic);
 
-// Müşterinin ve mağaza sahibinin gördüğü mağaza adı (kart 0071). Kimlikteki ad yalnız ayar boşsa
-// kullanılır; başlangıç değeri onu zaten doldurur.
+export const siteninMagazaAyarlari = (vt: Veritabani, site: Site) => siteninServisi(site).oku(vt);
+
+// Müşterinin ve mağaza sahibinin gördüğü mağaza adı (kart 0071, karar 0057). Yalnız kendi ayarını
+// okur. Okunamazsa (veritabanı yok, değer bozuk) kimlikteki ad gösterilir ve hata kaydedilir: ad
+// görünüştür, vitrin, panel girişi ve şifre sıfırlama e-postası onun yüzünden düşmemeli. Kimlikteki
+// ad ayrıca yalnız ayar boşsa kullanılır; başlangıç değeri onu zaten doldurur.
 export const magazaninAdi = async (
-  vt: Veritabani = siteninVeritabani(),
+  vt?: Veritabani,
   site: Site = calisanSite(),
-): Promise<string> => (await siteninMagazaAyarlari(vt, site)).magazaAdi ?? site.kimlik.gorunenAd;
+): Promise<string> => {
+  try {
+    const ad = await siteninServisi(site).tekOku(vt ?? siteninVeritabani(), "magazaAdi");
+    return ad ?? site.kimlik.gorunenAd;
+  } catch (hata) {
+    hatayiKaydet(hata, { kaynak: "magaza-adi" });
+    return site.kimlik.gorunenAd;
+  }
+};
 
 export const magazaAyarlariniDegistir = (
   kim: DegisikligiYapan,

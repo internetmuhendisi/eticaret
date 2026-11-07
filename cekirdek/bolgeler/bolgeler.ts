@@ -98,6 +98,9 @@ export const bolgeyiDogrula = (bolge: {
   return { gecerli: true };
 };
 
+// Posta kodu biçimi bilinen ülkede adreste posta kodu zorunludur.
+export const postaKoduZorunluMu = (ulke: string): boolean => postaKoduBicimleri.has(ulke);
+
 // Posta kodu yalnız biçimle denetlenir, liste tutulmaz. Biçimi bilinmeyen ülkede boş olmayan her
 // değer geçer.
 export const postaKoduGecerliMi = (ulke: string, postaKodu: string): boolean => {

@@ -61,8 +61,7 @@ const yanlisDosyadakiler = (
         )
     : [];
 
-// Başlangıç dosyası yoksa bütün mağaza ayarları varsayılanla başlar. Şema testlerde değiştirilebilir:
-// çekirdekte henüz mağaza sahibinin ayarı yoktur.
+// Başlangıç dosyası yoksa bütün mağaza ayarları varsayılanla başlar. Şema testlerde değiştirilebilir.
 export const baslangicDosyasiniDogrula = <S extends z.ZodObject>(
   klasor: string,
   sema: S,
@@ -122,6 +121,18 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
     return { gecerli: false, hatalar };
   }
 
+  // Mağaza adı verilmemişse kimlikteki görünen ad başlangıç değeridir (kart 0071); o da ayarın
+  // kuralından geçmeli, yoksa ilk okumada veritabanına geçersiz değer yazılırdı.
+  const magazaAdi = baslangic.deger.magazaAdi ?? kimlik.gorunenAd;
+  if (!magazaAyarSemasi.shape.magazaAdi.safeParse(magazaAdi).success) {
+    return {
+      gecerli: false,
+      hatalar: [
+        `kimlik.json: gorunenAd: mağaza adı olarak kullanılamaz (en çok 100 harf, @ olmadan); ${baslangicDosyasi} dosyasına magazaAdi yazın.`,
+      ],
+    };
+  }
+
   const siparisOneki = ayarlar.siparisOneki ?? onekTuret(kimlik.gorunenAd);
   if (siparisOneki.length < 2) {
     return {
@@ -136,8 +147,7 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
     site: {
       kimlik,
       ayarlar: { ...ayarlar, siparisOneki },
-      // Mağaza adı verilmemişse kimlikteki görünen ad başlangıç değeridir (kart 0071).
-      baslangic: { ...baslangic.deger, magazaAdi: baslangic.deger.magazaAdi ?? kimlik.gorunenAd },
+      baslangic: { ...baslangic.deger, magazaAdi },
     },
   };
 };

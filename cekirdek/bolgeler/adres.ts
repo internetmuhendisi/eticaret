@@ -4,11 +4,17 @@
 //
 // Hata iletileri düz cümle değil koddur (bolgeHatalari ve adresHatalari); metni ekran çözer.
 import { z } from "zod";
-import { bolgeyiDogrula, ilListesiVarMi, postaKoduGecerliMi } from "./bolgeler.ts";
+import {
+  bolgeyiDogrula,
+  ilListesiVarMi,
+  postaKoduGecerliMi,
+  postaKoduZorunluMu,
+} from "./bolgeler.ts";
 
 export const adresHatalari = [
   "il-gerekli",
   "ilce-gerekli",
+  "posta-kodu-gerekli",
   "posta-kodu-bicimi",
   "telefon-bicimi",
 ] as const;
@@ -18,11 +24,13 @@ const adresHatasi = (kod: AdresHatasi) => kod;
 
 export const postaAdresiSemasi = z
   .strictObject({
-    ulke: z.string(),
-    il: z.string().optional(),
-    ilce: z.string().optional(),
+    ulke: z.string().trim(),
+    il: z.string().trim().optional(),
+    ilce: z.string().trim().optional(),
     adres: z.string().trim().min(1).max(250),
-    postaKodu: z.string().trim().min(1).max(20),
+    // Posta kodu biçimi bilinen ülkede zorunludur. Ötekilerde boş kalabilir: posta kodu olmayan
+    // ülkeler vardır.
+    postaKodu: z.string().trim().min(1).max(20).optional(),
   })
   .superRefine((adres, ctx) => {
     const bolge = bolgeyiDogrula(adres);
@@ -38,7 +46,15 @@ export const postaAdresiSemasi = z
         ctx.addIssue({ code: "custom", message: adresHatasi("ilce-gerekli"), path: ["ilce"] });
       }
     }
-    if (!postaKoduGecerliMi(adres.ulke, adres.postaKodu)) {
+    if (adres.postaKodu === undefined) {
+      if (postaKoduZorunluMu(adres.ulke)) {
+        ctx.addIssue({
+          code: "custom",
+          message: adresHatasi("posta-kodu-gerekli"),
+          path: ["postaKodu"],
+        });
+      }
+    } else if (!postaKoduGecerliMi(adres.ulke, adres.postaKodu)) {
       ctx.addIssue({
         code: "custom",
         message: adresHatasi("posta-kodu-bicimi"),
@@ -51,13 +67,14 @@ export type PostaAdresi = z.output<typeof postaAdresiSemasi>;
 const bolgeAlani = (hata: string): "ulke" | "il" | "ilce" =>
   hata.startsWith("ulke") ? "ulke" : hata.startsWith("il-") ? "il" : "ilce";
 
-// Telefon ülke koduyla yazılır (+90 ...). Boşluk, tire ve parantez serbesttir; rakam sayısı
-// uluslararası numaranın sınırlarındadır (10-15). Numaranın gerçekten var olduğu denetlenmez.
+// Telefon ülke koduyla yazılır (+90 ...), ülke kodu sıfırla başlamaz. Boşluk, tire ve parantez
+// serbesttir; rakam sayısı uluslararası numaranın sınırlarındadır (10-15). Numaranın gerçekten var
+// olduğu denetlenmez.
 export const telefonGecerliMi = (telefon: string): boolean => {
   const temiz = telefon.trim();
   if (!/^\+[0-9 ()-]+$/.test(temiz)) return false;
-  const rakamlar = temiz.replace(/[^0-9]/g, "").length;
-  return rakamlar >= 10 && rakamlar <= 15;
+  const rakamlar = temiz.replace(/[^0-9]/g, "");
+  return !rakamlar.startsWith("0") && rakamlar.length >= 10 && rakamlar.length <= 15;
 };
 
 export const telefonSemasi = z

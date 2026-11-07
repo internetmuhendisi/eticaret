@@ -32,7 +32,8 @@ const site = (ayarlar: Partial<Site["ayarlar"]> = {}) =>
   ({
     kimlik: { gorunenAd: "Deneme <Mağaza>" },
     ayarlar: { dil: "tr", epostaGonderenAdresi: "gonderen@ornek.test", ...ayarlar },
-    baslangic: { magazaAdi: "Deneme <Mağaza>" },
+    // Ad mağaza sahibinin ayarından gelir (kart 0071): kimliktekinden farklı ki kimlikten okunursa yakalansın.
+    baslangic: { magazaAdi: "Ayardaki <Mağaza>" },
   }) as unknown as Site;
 
 const { POSTA_KUTUSU_PORTU: kutuPortu, POSTA_SMTP_PORTU: smtpPortu } = process.env;
@@ -208,7 +209,9 @@ describe("gönderim", () => {
       MessageID: string;
     };
     expect(ileti.From.Address).toBe("gonderen@ornek.test");
-    expect(ileti.From.Name).toBe("Deneme <Mağaza>");
+    expect(ileti.From.Name).toBe("Ayardaki <Mağaza>");
+    expect(ileti.HTML).toContain("Ayardaki &lt;Mağaza&gt;");
+    expect(ileti.HTML).not.toContain("Deneme &lt;Mağaza&gt;");
     expect(ileti.ReplyTo[0]?.Address).toBe("yanit@ornek.test");
     // Posta kutusu HTML'den de metin türetir; düz metin bölümünün gerçekten gittiği hamdan okunur.
     const ham = await (await fetch(`${kutu}/api/v1/message/${iletiler[0]?.ID}/raw`)).text();

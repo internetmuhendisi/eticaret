@@ -416,7 +416,8 @@ export const ortamiKapat = async (): Promise<string[]> => {
   return silinenler;
 };
 
-// Geçici deneme sitesi: sunucu/olusan/deneme-siteleri/deneme-<ek>. Ayarların hepsi varsayılandır.
+// Geçici deneme sitesi: sunucu/olusan/deneme-siteleri/deneme-<ek>. Ayarların hepsi varsayılandır;
+// yalnız mağaza adı kimlikteki addan farklıdır: vitrin adı ayardan okumazsa denemede yakalanır (kart 0071).
 const denemeAdi = /^deneme-[0-9a-f]{6}$/;
 
 export const denemeSitesiAc = (): string => {
@@ -433,5 +434,10 @@ export const denemeSitesiAc = (): string => {
   };
   writeFileSync(join(klasor, "kimlik.json"), `${JSON.stringify(kimlik, null, 2)}\n`);
   writeFileSync(join(klasor, "ayarlar.json"), "{}\n");
+  mkdirSync(join(klasor, "baslangic"));
+  writeFileSync(
+    join(klasor, "baslangic", "ayarlar.json"),
+    `${JSON.stringify({ magazaAdi: `Deneme Mağazası ${kodAdi.slice("deneme-".length)}` }, null, 2)}\n`,
+  );
   return klasor;
 };

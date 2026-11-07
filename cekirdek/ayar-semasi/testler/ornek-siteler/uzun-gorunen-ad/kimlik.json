@@ -1,0 +1,13 @@
+{
+  "kodAdi": "uzun-gorunen-ad",
+  "gorunenAd": "ÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇÇ",
+  "tur": "gercek",
+  "adresler": {
+    "canli": "https://deneme.example"
+  },
+  "cekirdekSurumu": "1.2.3",
+  "teslimDurumu": {
+    "magazaSahibiHesabi": "tamam",
+    "yurtDisiAktarimBelgeleri": "bekliyor"
+  }
+}

@@ -1,17 +1,18 @@
 // Mağaza sahibinin ayarları gerçek veritabanıyla (kart 0069, karar 0055): başlangıç değeri bir kez
 // yazılır ve sonra değişmez, aynı anda açılan süreçler iki kez yazmaz, değişiklik kaydı işle birlikte
 // yazılır ve geri alınır, bozuk değer sessizce varsayılana dönmez, iki site birbirinin ayarını görmez.
-// Çekirdekte henüz mağaza sahibinin ayarı olmadığı için servis deneme şemasıyla kurulur.
+// Servisin kendisi deneme şemasıyla, çekirdeğin gerçek şeması ve siteler en sondaki bölümlerde denenir.
 import { randomUUID } from "node:crypto";
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { eq, sql } from "drizzle-orm";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 import { ayarBilgileri, magazaAyarSemasi } from "../../../ayar-semasi/ayarlar.ts";
 import { siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
+import { hataIzlemeAraciniBagla, type IzlenenHata } from "../../../izleme/hata-katmani.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
-import type { Veritabani } from "../../../veritabani/baglanti.ts";
+import { baglan, type Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { magazaAyarlari } from "../model.ts";
@@ -330,4 +331,58 @@ describe("siteler/ altındaki her site", () => {
       expect(await magazaninAdi(vt, site)).toBe("Yeni Ad");
     });
   }
+});
+
+describe("mağaza adı", () => {
+  const [site] = siteler;
+  if (site === undefined) throw new Error("Site yok.");
+  let izlenenler: IzlenenHata[] = [];
+  beforeEach(() => {
+    izlenenler = [];
+    hataIzlemeAraciniBagla((olay) => izlenenler.push(olay));
+  });
+  afterEach(() => {
+    hataIzlemeAraciniBagla(undefined);
+  });
+
+  it("başka bir ayar bozuk olsa da ad okunur", async () => {
+    const vt = await siteAc();
+    await siteninMagazaAyarlari(vt, site);
+    await vt
+      .update(magazaAyarlari)
+      .set({ deger: 123 })
+      .where(eq(magazaAyarlari.anahtar, "iletisimTelefonu"));
+    await expect(siteninMagazaAyarlari(vt, site)).rejects.toThrow("iletisimTelefonu");
+    expect(await magazaninAdi(vt, site)).toBe(site.baslangic.magazaAdi);
+    expect(izlenenler).toEqual([]);
+  });
+
+  it("adın kendisi bozuksa kimlikteki ad görünür ve hata kaydedilir", async () => {
+    const vt = await siteAc();
+    await siteninMagazaAyarlari(vt, site);
+    await vt
+      .update(magazaAyarlari)
+      .set({ deger: 123 })
+      .where(eq(magazaAyarlari.anahtar, "magazaAdi"));
+    expect(await magazaninAdi(vt, site)).toBe(site.kimlik.gorunenAd);
+    expect(izlenenler).toHaveLength(1);
+    expect(JSON.stringify(izlenenler[0])).toContain("magaza-adi");
+  });
+
+  it("veritabanına ulaşılamazsa kimlikteki ad görünür ve hata kaydedilir", async () => {
+    // Kimse dinlemeyen bir port: bağlantı hemen reddedilir.
+    const ulasilamayan = baglan("postgres://127.0.0.1:1/yok");
+    try {
+      expect(await magazaninAdi(ulasilamayan, site)).toBe(site.kimlik.gorunenAd);
+      expect(izlenenler).toHaveLength(1);
+    } finally {
+      await ulasilamayan.$client.end();
+    }
+  });
+
+  it("ilk okumada adın başlangıç değeri yazılır", async () => {
+    const vt = await siteAc();
+    expect(await magazaninAdi(vt, site)).toBe(site.baslangic.magazaAdi);
+    expect(await satirSayisi(vt)).toBe(Object.keys(magazaAyarSemasi.shape).length);
+  });
 });

@@ -86,11 +86,13 @@ const kutudaCalistir = (kodAdi: string, otekiVeritabani: string) => {
 };
 
 const sitesiniOlc = async (site: OrtamSitesi, oteki: OrtamSitesi) => {
-  const { kodAdi, gorunenAd, cekirdekSurumu } = site.kimlik;
+  const { kodAdi, cekirdekSurumu } = site.kimlik;
+  // Ad mağaza sahibinin ayarıdır (kart 0071); deneme sitesinde kimlikteki addan farklıdır.
+  const magazaAdi = site.baslangic.magazaAdi;
   const vitrin = await iste(kodAdi, "/");
   olc(
     `${kodAdi}: vitrin kendi adını gösteriyor`,
-    vitrin.durum === 200 && baslik(vitrin.govde) === gorunenAd,
+    vitrin.durum === 200 && baslik(vitrin.govde) === magazaAdi,
     `${vitrin.durum}, "${baslik(vitrin.govde)}"`,
   );
   const saglik = await iste(kodAdi, "/kapi/herkese-acik/saglik");
@@ -224,10 +226,11 @@ const kayitOlc = async (kodAdi: string): Promise<void> => {
     konular = messages.map(({ Subject }) => Subject);
     if (konular.length === 0) await new Promise((coz) => setTimeout(coz, 1000));
   }
-  const { kimlik } = siteKlasorunuOku(join(kok, "siteler", kodAdi));
+  // Konudaki ad mağaza sahibinin ayarıdır (kart 0071).
+  const { baslangic } = siteKlasorunuOku(join(kok, "siteler", kodAdi));
   olc(
     `${kodAdi}: hoş geldin e-postası yerel posta kutusuna ulaşıyor`,
-    konular.length === 1 && konular[0]?.includes(kimlik.gorunenAd) === true,
+    konular.length === 1 && konular[0]?.includes(baslangic.magazaAdi ?? "") === true,
     konular.join(", ") || "e-posta yok",
   );
   await sifirlamaOlc(kodAdi, eposta);

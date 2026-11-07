@@ -77,6 +77,11 @@ describe("ayar şeması", () => {
     });
   });
 
+  it("mağaza adında @ olamaz", () => {
+    expect(magazaAyarSemasi.shape.magazaAdi.safeParse("satis@dukkan").success).toBe(false);
+    expect(magazaAyarSemasi.shape.magazaAdi.safeParse("Satış Dükkanı").success).toBe(true);
+  });
+
   it("ülke listesinde tekrar ve eski tek ülke ayarı kabul edilmez", () => {
     expect(ayarSemasi.safeParse({ satisUlkeleri: ["TR", "TR"] }).success).toBe(false);
     expect(ayarSemasi.safeParse({ ulke: "TR" }).success).toBe(false);
@@ -125,6 +130,7 @@ describe("örnek klasörler", () => {
       `ayarlar.json: iletisimEpostasi: bu ayar ${baslangicDosyasi} dosyasına yazılır`,
     ],
     ["ulke-listesi-bozuk", "ayarlar.json: satisUlkeleri.1: Ülke listesinde olmayan kod"],
+    ["uzun-gorunen-ad", "kimlik.json: gorunenAd: mağaza adı olarak kullanılamaz"],
     ["ulke-listesi-bozuk", "ayarlar.json: teslimatUlkeleri: En az bir ülke olmalı."],
   ];
 

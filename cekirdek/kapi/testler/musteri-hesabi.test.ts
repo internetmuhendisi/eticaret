@@ -326,7 +326,8 @@ describe("hoş geldin e-postası", () => {
   const site = {
     kimlik: { gorunenAd: "Deneme <Mağaza>" },
     ayarlar: { dil: "tr", epostaGonderenAdresi: "gonderen@ornek.test" },
-    baslangic: { magazaAdi: "Deneme <Mağaza>" },
+    // Ad mağaza sahibinin ayarından gelir (kart 0071): kimliktekinden farklı ki kimlikten okunursa yakalansın.
+    baslangic: { magazaAdi: "Ayardaki <Mağaza>" },
   } as unknown as Site;
 
   it("kayıttan sonra kuyruğa girer ve yerel posta kutusuna düşer", async () => {
@@ -348,7 +349,7 @@ describe("hoş geldin e-postası", () => {
       messages: { Subject: string; Snippet: string }[];
     };
     expect(messages).toHaveLength(1);
-    expect(messages[0]?.Subject).toContain("Deneme <Mağaza>");
+    expect(messages[0]?.Subject).toContain("Ayardaki <Mağaza>");
     expect(messages[0]?.Snippet).not.toContain(sifre);
   });
 });

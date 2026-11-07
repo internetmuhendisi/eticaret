@@ -35,6 +35,21 @@ describe("posta adresi", () => {
     expect(hatalar({ ulke: listesiz, adres: "1 Deneme Road", postaKodu: "SW1A 1AA" })).toEqual([]);
   });
 
+  it("posta kodu biçimi bilinmeyen ülkede posta kodu boş kalabilir, bilinende zorunludur", () => {
+    expect(hatalar({ ulke: listesiz, adres: "1 Deneme Road" })).toEqual([]);
+    const { postaKodu: _, ...postaKodsuz } = gecerli;
+    expect(hatalar(postaKodsuz)).toEqual(["postaKodu:posta-kodu-gerekli"]);
+  });
+
+  it("kodların başındaki ve sonundaki boşluk silinir", () => {
+    const sonuc = postaAdresiSemasi.parse({
+      ...gecerli,
+      il: ` ${gecerli.il} `,
+      ilce: `${gecerli.ilce} `,
+    });
+    expect([sonuc.il, sonuc.ilce]).toEqual([gecerli.il, gecerli.ilce]);
+  });
+
   const bozuklar: [string, unknown, string[]][] = [
     [
       "ilsiz",
@@ -89,7 +104,14 @@ describe("telefon", () => {
   });
 
   it("ülke kodu olmayan, harfli, çok kısa ya da çok uzun numara geçmez", () => {
-    for (const telefon of ["0312 000 00 00", "+90 312 ABC", "+90 312", "+1234567890123456", ""]) {
+    for (const telefon of [
+      "0312 000 00 00",
+      "+90 312 ABC",
+      "+90 312",
+      "+1234567890123456",
+      "+0 312 000 00 00",
+      "",
+    ]) {
       expect(telefonGecerliMi(telefon), telefon).toBe(false);
     }
   });
