@@ -11,10 +11,23 @@ export type Ilce = { kod: string; ad: string };
 export type Il = { kod: string; ad: string; ilceler: readonly Ilce[] };
 type UlkeBolgeleri = { ulke: string; postaKoduBicimi?: string; iller: readonly Il[] };
 
-// İl ve ilçe listesi olan ülkeler. Yeni ülkenin dosyası buraya eklenir.
-const bolgeliUlkeler: readonly UlkeBolgeleri[] = [trVerisi];
+// Dışarı verilen listeler dondurulur: çağıran değiştiremez.
+const dondur = <T>(liste: readonly T[]): readonly T[] => Object.freeze([...liste]);
+const ulkeListesi = dondur(ulkeVerisi.ulkeler);
+const ulkeKumesi = new Set<string>(ulkeListesi);
 
-const ulkeKumesi = new Set<string>(ulkeVerisi.ulkeler);
+// İl ve ilçe listesi olan ülkeler. Yeni ülkenin dosyası buraya eklenir.
+const bolgeliUlkeler: readonly UlkeBolgeleri[] = [trVerisi].map((veri) => ({
+  ...veri,
+  iller: dondur(
+    veri.iller.map((il) =>
+      Object.freeze({
+        ...il,
+        ilceler: dondur(il.ilceler.map((ilce): Ilce => Object.freeze({ ...ilce }))),
+      }),
+    ),
+  ),
+}));
 const ulkeninBolgeleri = new Map(bolgeliUlkeler.map((veri) => [veri.ulke, veri]));
 const iller = new Map(
   bolgeliUlkeler.flatMap((veri) => veri.iller.map((il) => [il.kod, { ...il, ulke: veri.ulke }])),
@@ -31,7 +44,7 @@ const postaKoduBicimleri = new Map(
 );
 
 // ISO 3166-1 iki harfli ülke kodları, harf sırasıyla.
-export const ulkeKodlari = (): readonly string[] => ulkeVerisi.ulkeler;
+export const ulkeKodlari = (): readonly string[] => ulkeListesi;
 
 export const ulkeGecerliMi = (kod: string): boolean => ulkeKumesi.has(kod);
 

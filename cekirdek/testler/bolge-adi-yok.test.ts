@@ -1,6 +1,8 @@
 // Kodda ülke ya da il adı yazı olarak geçmez (kart 0070, karar 0056, .claude/rules/e-ticaret-is-kurallari.md:
 // "çekirdekte bir ülke sabit yazılmaz"). Adlar bölge verisinden ve biçimleyiciden gelir. Ülke adları
-// Türkçe ve İngilizce aranır. Veri dosyaları, metin dosyaları, belgeler ve testler taranmaz.
+// Türkçe ve İngilizce, büyük harfle ve Türkçe harfler olmadan da aranır. Veri dosyaları, metin
+// dosyaları, belgeler ve testler taranmaz. Ülke adıyla aynı yazılan başka bir ad (örneğin "Georgia"
+// yazı tipi) tırnak içinde tek başına yazılırsa yanlış kırmızı verir; o zaman ad başka biçimde yazılır.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -28,9 +30,30 @@ const bicim = (dil: string) =>
     para: { simge: "x", simgeYeri: "sonda", simgeBoslugu: true, ondalikSayisi: 2 },
   });
 
+// Dil verisinde olmayan yaygın ülke adları: dil verisi İngilizcede de "Türkiye" der.
+const ekAdlar = ["Turkey", "Republic of Turkey", "Türkiye Cumhuriyeti"];
+
+// Bir adın yazılışları: kendisi, Türkçe büyük harfle ve Türkçe harfler olmadan ("Istanbul", "ISTANBUL").
+const turkceHarfsiz = (ad: string) =>
+  ad
+    .replaceAll("İ", "I")
+    .replaceAll("ı", "i")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+const turkceBuyuk = (ad: string) => ad.replaceAll("i", "İ").replaceAll("ı", "I").toUpperCase();
+const yazilislar = (ad: string) => {
+  const harfsiz = turkceHarfsiz(ad);
+  return [ad, turkceBuyuk(ad), harfsiz, harfsiz.toUpperCase()];
+};
+
 const adlar = [
-  ...ulkeKodlari().flatMap((kod) => [bicim("tr").ulkeAdi(kod), bicim("en").ulkeAdi(kod)]),
-  ...ulkeKodlari().flatMap((kod) => ulkeninIlleri(kod).map((il) => il.ad)),
+  ...new Set(
+    [
+      ...ulkeKodlari().flatMap((kod) => [bicim("tr").ulkeAdi(kod), bicim("en").ulkeAdi(kod)]),
+      ...ekAdlar,
+      ...ulkeKodlari().flatMap((kod) => ulkeninIlleri(kod).map((il) => il.ad)),
+    ].flatMap(yazilislar),
+  ),
 ];
 
 const kacir = (metin: string) => metin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -61,8 +84,18 @@ describe("kodda bölge adı", () => {
       { ad: "il.ts", icerik: `const il = "${il.ad}";` },
       { ad: "ulke.ts", icerik: `if (ulke === '${bicim("tr").ulkeAdi("DE")}') {}` },
       { ad: "ingilizce.ts", icerik: `const ad = \`${bicim("en").ulkeAdi("DE")}\`;` },
+      { ad: "turkey.ts", icerik: `const ulke = "Turkey";` },
+      { ad: "harfsiz.ts", icerik: `const il = "Istanbul";` },
+      { ad: "buyuk.ts", icerik: `const il = "İZMİR";` },
       { ad: "cumle.ts", icerik: `const saat = "Europe/Istanbul"; // ${il.ad}` },
     ];
-    expect(adGecenler(ornekler)).toEqual(["il.ts", "ulke.ts", "ingilizce.ts"]);
+    expect(adGecenler(ornekler)).toEqual([
+      "il.ts",
+      "ulke.ts",
+      "ingilizce.ts",
+      "turkey.ts",
+      "harfsiz.ts",
+      "buyuk.ts",
+    ]);
   });
 });

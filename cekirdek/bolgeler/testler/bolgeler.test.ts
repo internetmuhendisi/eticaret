@@ -128,10 +128,10 @@ describe("bölge doğrulaması", () => {
 
   it("bütün ilçeler kendi iliyle geçer, bir sonraki ille geçmez", () => {
     iller.forEach((il, sira) => {
-      const sonraki = iller[(sira + 1) % iller.length];
+      const sonraki = iller[(sira + 1) % iller.length] ?? birinciIl;
       for (const ilce of il.ilceler) {
         expect(bolgeyiDogrula({ ulke, il: il.kod, ilce: ilce.kod }).gecerli).toBe(true);
-        expect(bolgeyiDogrula({ ulke, il: sonraki?.kod, ilce: ilce.kod }).gecerli).toBe(false);
+        expect(bolgeyiDogrula({ ulke, il: sonraki.kod, ilce: ilce.kod }).gecerli).toBe(false);
       }
     });
   });

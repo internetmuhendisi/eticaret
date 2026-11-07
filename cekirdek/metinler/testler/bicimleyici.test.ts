@@ -65,7 +65,7 @@ describe("ülke adı", () => {
     expect(bicimleyiciOlustur({ ...turkiye, dil: "en" }).ulkeAdi("DE")).toBe("Germany");
   });
 
-  it("tanınmayan kodu olduğu gibi döndürür", () => {
-    expect(bicim.ulkeAdi("QQ")).toBe("QQ");
+  it("tanınmayan ya da biçimi bozuk kodu olduğu gibi döndürür, hata vermez", () => {
+    for (const kod of ["QQ", "", "T", "TUR", "X1"]) expect(bicim.ulkeAdi(kod)).toBe(kod);
   });
 });

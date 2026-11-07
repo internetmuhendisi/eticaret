@@ -8,6 +8,7 @@
     "cekirdek/metinler/**/*.ts",
     "cekirdek/metinler/**/*.tsx",
     "cekirdek/ayar-semasi/**/*.ts",
+    "cekirdek/bolgeler/**/*.ts",
     "cekirdek/kayitlar/**/*.ts",
     "cekirdek/veritabani/**/*.ts",
     "cekirdek/kapi/**/*.ts",

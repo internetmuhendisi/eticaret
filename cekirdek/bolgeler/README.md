@@ -18,7 +18,7 @@ Mağaza adresi, vergi bölgesi ve teslimat adresi bölgelerini buradan okur (kar
 
 - **Ülke:** ISO 3166-1 alpha-2, örneğin `TR`.
 - **İl:** ISO 3166-2:TR, örneğin `TR-34`. Sayı plaka numarasıdır.
-- **İlçe:** Bu projenin kodudur, resmî değildir: il kodu ve ilçenin il içindeki sırası, örneğin `TR-34-001`. Numaralar 2026-11-07'de Türkçe alfabe sırasıyla verildi. Kod bir kez verilince değişmez ve yeniden kullanılmaz. Yeni ilçe ilindeki sıradaki numarayı alır. Kaldırılan ilçenin kodu listede kalır, kaldırılma bilgisiyle işaretlenir; bunun alanı ilk kaldırmada eklenir.
+- **İlçe:** Bu projenin kodudur, resmî değildir: il kodu ve ilçenin il içindeki sırası, örneğin `TR-34-001`. Numaralar 2026-11-07'de Türkçe alfabe sırasıyla verildi (rakamla başlayan ad sonda). Kod bir kez verilince değişmez ve yeniden kullanılmaz. Yeni ilçe ilindeki sıradaki numarayı alır. Kaldırılan ilçenin kodu listede kalır, kaldırılma bilgisiyle işaretlenir; bunun alanı ilk kaldırmada eklenir.
 
 ## İlçe sayısı
 
@@ -32,7 +32,7 @@ Resmî ilçe sayısı 922'dir. Büyükşehir olmayan 51 ilin merkez ilçesi bu s
 | İlçe listesi | [AlperKocanx/TurkiyeGuncelSehirIlceMahalleBilgileri2022](https://github.com/AlperKocanx/TurkiyeGuncelSehirIlceMahalleBilgileri2022), `AdresListesi.csv`, kayıt `86fdf8c` (2023-12-28) | MIT, aşağıda |
 | İlçe adlarının yazılışı ve karşılaştırma | [Districts of Turkey](https://en.wikipedia.org/wiki/Districts_of_Turkey), sürüm 1383908694 | CC BY-SA 4.0 |
 | Ülke kodları | [datasets/country-list](https://github.com/datasets/country-list), `data.csv` (pycountry ve Debian iso-codes üzerinden ISO 3166-1) | ISO kodların ücretsiz kullanımına izin verir |
-| Ülke adları | Node.js'in dil verisi (ICU 78.3, CLDR 48.0), biçimleyiciden | Unicode lisansı |
+| Ülke adları | Node.js'in dil verisi, biçimleyiciden (çekirdek görüntüsündeki Node 24.22.1: ICU 78.3, CLDR 48.0) | Unicode lisansı |
 
 Resmî kaynaklara 2026-11-07'de ulaşılamadı: NVİ'nin il-ilçe kod tablosunun adresi kaldırılmış (404), e-icisleri.gov.tr yurt dışından bağlantıya açılmadı.
 
@@ -41,11 +41,13 @@ Resmî kaynaklara 2026-11-07'de ulaşılamadı: NVİ'nin il-ilçe kod tablosunun
 1. İlçe kümesi derlemeden alındı: üst kaydı il olan satırlar.
 2. Vikipedi'nin il il ilçe tablolarıyla karşılaştırıldı. Büyük-küçük harf, şapka ve "Istanbul" yazılışı yok sayıldığında 81 ilin hepsinde ilçe kümeleri birebir aynı çıktı.
 3. İl adları ISO listesinden (örneğin "Hakkâri"), ilçe adları Vikipedi'den alındı (derlemede bütün adlar büyük harfle yazılı). Merkez ilçeler "Merkez" adını taşır.
-4. İlçeler il içinde Türkçe alfabe sırasıyla numaralandı.
+4. İlçeler il içinde Türkçe alfabe sırasıyla numaralandı; rakamla başlayan ad ("19 Mayıs") harflerden sonra geldi.
 
 Veriyi üreten betik projede tutulmadı. Kart 0089'da resmî liste gelince liste o listeden yeniden üretilecek ve betik o zaman projeye girecek.
 
 ## İlçe listesinin lisans metni
+
+Aynı metin dağıtılan veri dosyasında da durur (`tr.json`, `kaynak.ilce_listesi_lisansi`).
 
 ```
 MIT License
