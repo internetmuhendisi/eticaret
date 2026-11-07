@@ -24,4 +24,4 @@ Kart 0012'nin bağımsız kontrolünde fark edildi (karar 0023, bilinen sınır)
 
 ## Durum
 
-yapılacak
+bitti
