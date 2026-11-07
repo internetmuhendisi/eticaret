@@ -28,7 +28,7 @@ import { istekSinirlari } from "../cekirdek/kayitlar/kapi.ts";
 import { metinOkuyucu } from "../cekirdek/metinler/metin.ts";
 import { soruyuCoz } from "../cekirdek/moduller/robot-korumasi/testler/soru-coz.ts";
 import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
-import { arkaPlanKutuAdi, kutuKuraliDogru, yenidenBaslama } from "./kutu-kurali.mts";
+import { arkaPlanKutuAdi, kutuKuraliDogru, surumEnAz, yenidenBaslama } from "./kutu-kurali.mts";
 import {
   denemeSitesiAc,
   dosyaBirimi,
@@ -104,19 +104,21 @@ const sitesiniOlc = async (site: OrtamSitesi, oteki: OrtamSitesi) => {
     `${vitrin.durum}, "${baslik(vitrin.govde)}"`,
   );
   // Logo ucu (kart 0073): ilk logosu olan site dosyanın kendisini doğru tür ve nosniff ile verir,
-  // logosu olmayan 404 alır. Gövde site klasöründeki dosyayla bayt bayt aynıdır.
+  // logosu olmayan 404 alır. Gövde site klasöründeki dosyayla bayt bayt aynıdır. Uç 0.16.0'da geldi:
+  // daha eski sürümle açılan sitede ölçülmez.
   const logo = await isteHam(kodAdi, "/kapi/herkese-acik/logo");
   const markaLogosu = site.markaLogosu;
-  olc(
-    `${kodAdi}: logo ucu ${markaLogosu ? "ilk logoyu veriyor" : "logo yokken 404 dönüyor"}`,
-    markaLogosu
-      ? logo.durum === 200 &&
-          logo.basliklar["content-type"] === dosyaTurleri[markaLogosu.tur].mime &&
-          logo.basliklar["x-content-type-options"] === "nosniff" &&
-          logo.govde.equals(readFileSync(markaLogosu.yol))
-      : logo.durum === 404,
-    `${logo.durum}, ${logo.basliklar["content-type"]}, ${logo.basliklar["x-content-type-options"]}, ${logo.govde.length} bayt`,
-  );
+  if (surumEnAz(cekirdekSurumu, [0, 16, 0]))
+    olc(
+      `${kodAdi}: logo ucu ${markaLogosu ? "ilk logoyu veriyor" : "logo yokken 404 dönüyor"}`,
+      markaLogosu
+        ? logo.durum === 200 &&
+            logo.basliklar["content-type"] === dosyaTurleri[markaLogosu.tur].mime &&
+            logo.basliklar["x-content-type-options"] === "nosniff" &&
+            logo.govde.equals(readFileSync(markaLogosu.yol))
+        : logo.durum === 404,
+      `${logo.durum}, ${logo.basliklar["content-type"]}, ${logo.basliklar["x-content-type-options"]}, ${logo.govde.length} bayt`,
+    );
   const saglik = await iste(kodAdi, "/kapi/herkese-acik/saglik");
   const veri = JSON.parse(saglik.govde || "{}").veri ?? {};
   olc(

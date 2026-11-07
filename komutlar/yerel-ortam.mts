@@ -11,6 +11,7 @@ import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import {
   appendFileSync,
+  copyFileSync,
   existsSync,
   mkdirSync,
   readdirSync,
@@ -20,10 +21,14 @@ import {
   writeFileSync,
 } from "node:fs";
 import { request } from "node:http";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { parseEnv } from "node:util";
 import { sql } from "drizzle-orm";
-import { type Site, siteKlasorunuDogrula } from "../cekirdek/ayar-semasi/site-klasoru.ts";
+import {
+  markaKlasoru,
+  type Site,
+  siteKlasorunuDogrula,
+} from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { dosyaKlasoruDegiskeni, kutudakiDosyaKlasoru } from "../cekirdek/kayitlar/dosya.ts";
 import { cekirdekSurumu } from "../cekirdek/surum.ts";
 import { baglan, siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
@@ -474,12 +479,12 @@ const denemeSiteleriniTemizle = async (): Promise<string[]> => {
       const anahtar = `${adresAnahtari(kodAdi)}=`;
       const satirlar = readFileSync(envYolu, "utf8").split("\n");
       writeFileSync(envYolu, satirlar.filter((satir) => !satir.startsWith(anahtar)).join("\n"));
-      // Deneme sitesinin tek alt klasörü başlangıç değerleridir (denemeSitesiAc).
-      const baslangicKlasoru = join(klasor, "baslangic");
-      if (existsSync(baslangicKlasoru)) {
-        for (const dosya of readdirSync(baslangicKlasoru))
-          unlinkSync(join(baslangicKlasoru, dosya));
-        rmdirSync(baslangicKlasoru);
+      // Deneme sitesinin alt klasörleri başlangıç değerleri ve ilk logodur (denemeSitesiAc).
+      for (const alt of denemeAltKlasorleri) {
+        const altKlasor = join(klasor, alt);
+        if (!existsSync(altKlasor)) continue;
+        for (const dosya of readdirSync(altKlasor)) unlinkSync(join(altKlasor, dosya));
+        rmdirSync(altKlasor);
       }
       for (const dosya of readdirSync(klasor)) unlinkSync(join(klasor, dosya));
       rmdirSync(klasor);
@@ -508,6 +513,13 @@ export const ortamiKapat = async (): Promise<string[]> => {
 // Geçici deneme sitesi: sunucu/olusan/deneme-siteleri/deneme-<ek>. Ayarların hepsi varsayılandır;
 // yalnız mağaza adı kimlikteki addan farklıdır: vitrin adı ayardan okumazsa denemede yakalanır (kart 0071).
 const denemeAdi = /^deneme-[0-9a-f]{6}$/;
+const denemeAltKlasorleri = ["baslangic", markaKlasoru];
+const denemeLogosu = join(
+  kok,
+  "cekirdek/ayar-semasi/testler/ornek-siteler/marka-logolu",
+  markaKlasoru,
+  "logo.webp",
+);
 
 export const denemeSitesiAc = (): string => {
   const kodAdi = `deneme-${randomBytes(3).toString("hex")}`;
@@ -528,5 +540,8 @@ export const denemeSitesiAc = (): string => {
     join(klasor, "baslangic", "ayarlar.json"),
     `${JSON.stringify({ magazaAdi: `Deneme Mağazası ${kodAdi.slice("deneme-".length)}` }, null, 2)}\n`,
   );
+  // İlk logo (kart 0073): logo ucu gerçek kutuda denenir. Testlerin örnek logosu kopyalanır.
+  mkdirSync(join(klasor, markaKlasoru));
+  copyFileSync(denemeLogosu, join(klasor, markaKlasoru, basename(denemeLogosu)));
   return klasor;
 };
