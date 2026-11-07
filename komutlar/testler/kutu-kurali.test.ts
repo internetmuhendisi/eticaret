@@ -50,8 +50,9 @@ const kutuIzi = (metin: string): boolean => {
     /^\s*services\s*:/m,
     /["']?\bservices\b["']?\s*[:=,}[]/,
     /\bdocker\s+(container\s+)?(run|create)\b/,
-    // spawnSync("docker", ["run", ...]) ve docker(["run", ...]); dizi satırlara yayılabilir.
-    /(\bdocker\s*\(|"docker"\s*,)\s*\[\s*("compose"\s*,\s*)?"(run|create)"/,
+    // spawnSync("docker", ["run", ...]) ve docker(["run", ...]); dizi satırlara yayılabilir, iç dizi
+    // olarak açılabilir (...["run", ...], kart 0072'de bulunan açık).
+    /(\bdocker\s*\(|"docker"\s*,)\s*\[\s*(\.\.\.\s*\[\s*)?("compose"\s*,\s*)?"(run|create)"/,
   ].some((kalip) => kalip.test(kod));
 };
 
@@ -173,6 +174,10 @@ describe("kutu taraması bozuk örnekleri yakalar", () => {
     ["dizi biçiminde docker run", 'spawnSync("docker", ["run", "-d", goruntu]);'],
     ["compose run", 'spawnSync("docker", ["compose", "run", "-d", "a"]);'],
     ["yardımcı işlevle, satırlara yayılmış", 'docker(\n  [\n    "run",\n    "-d",\n  ],\n);'],
+    [
+      "iç dizi olarak açılmış",
+      'spawnSync(\n  "docker",\n  [\n    ...["run", "--rm"],\n    goruntu,\n  ],\n);',
+    ],
   ])("%s", (_ad, metin) => {
     expect(kutuIzi(metin)).toBe(true);
   });

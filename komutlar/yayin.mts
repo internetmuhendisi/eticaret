@@ -14,6 +14,7 @@
 import { spawnSync } from "node:child_process";
 import type { Kimlik } from "../cekirdek/ayar-semasi/kimlik.ts";
 import { hataIzlemeDegiskenleri } from "../cekirdek/izleme/hata-izleme-araci.ts";
+import { dosyaKlasoruDegiskeni, kutudakiDosyaKlasoru } from "../cekirdek/kayitlar/dosya.ts";
 import {
   degisiklikKlasoru,
   type GeriDonusNotu,
@@ -59,6 +60,52 @@ export const yayinGoruntusu = (ortam: Ortam, kodAdi: string, no: number): string
 const projeAdi = (ortam: Ortam, kodAdi: string, no: number): string =>
   `yayin-${siteKutusuAdi(ortam, kodAdi, no).replace(/^site-/, "")}`;
 
+// Sitenin dosya klasörü (kart 0072, karar 0058): yalnız sitenin kutu kullanıcısına açık (0700),
+// kutuya /dosyalar olarak bağlanır. Yayın klasöründen ayrıdır: yayınla değişmez, geri dönüşte kalır.
+export const dosyaKoku = "/srv/altyapi/dosyalar";
+export const sunucuDosyaKlasoru = (ortam: Ortam, kodAdi: string): string =>
+  `${dosyaKoku}/${ortam}/${kodAdiniDenetle(kodAdi)}`;
+
+// Sunucu denetiminin dosya klasörü kuralı. stat satırı: "%a %u %F" (izin, sahip, tür); bağlantılar:
+// docker inspect --format '{{json .Mounts}}'.
+export const dosyaKlasoruHatalari = (
+  statSatiri: string,
+  baglantilarJson: string,
+  kullanici: number,
+  klasor: string,
+): string[] => {
+  const hatalar: string[] = [];
+  const [izin, sahip, ...tur] = statSatiri.trim().split(" ");
+  if (tur.join(" ") !== "directory")
+    hatalar.push(`klasör yok ya da klasör değil: ${statSatiri.trim() || "okunamadı"}`);
+  else {
+    if (izin !== "700") hatalar.push(`izin ${izin}, beklenen 700`);
+    if (sahip !== String(kullanici)) hatalar.push(`sahibi ${sahip}, beklenen ${kullanici}`);
+  }
+  let baglantilar: { Source?: string; Destination?: string; RW?: boolean }[] = [];
+  try {
+    baglantilar = JSON.parse(baglantilarJson) ?? [];
+  } catch {
+    hatalar.push(`kutunun bağlantıları okunamadı: ${baglantilarJson.trim()}`);
+  }
+  const baglanti = baglantilar.find((b) => b.Destination === kutudakiDosyaKlasoru);
+  if (baglanti === undefined) hatalar.push(`kutuda ${kutudakiDosyaKlasoru} bağlı değil`);
+  else {
+    if (baglanti.Source !== klasor)
+      hatalar.push(`${kutudakiDosyaKlasoru} başka klasöre bağlı: ${baglanti.Source}`);
+    if (baglanti.RW !== true) hatalar.push(`${kutudakiDosyaKlasoru} yazılamaz bağlı`);
+  }
+  return hatalar;
+};
+
+// Diskin doluluk sınırı (yüzde). Dosyalar sunucunun diskinde durur; dolarsa nesne deposuna geçilir
+// (karar 0058). df -P çıktısının son satırı okunur.
+export const diskDolulukSiniri = 85;
+export const diskDolulugu = (dfCiktisi: string): number | undefined => {
+  const yuzde = dfCiktisi.trim().split("\n").at(-1)?.split(/\s+/)[4];
+  return yuzde !== undefined && /^[0-9]+%$/.test(yuzde) ? Number.parseInt(yuzde, 10) : undefined;
+};
+
 // Geri dönüş için saklanan son başarılı yayın sayısı (etkin olan dahil).
 export const saklananYayinSayisi = 3;
 
@@ -85,6 +132,7 @@ export const yayinKutusuTanimi = (
     environment: {
       ...gizli.servis.environment,
       SITE_KLASORU: `/siteler/${kodAdi}`,
+      [dosyaKlasoruDegiskeni]: kutudakiDosyaKlasoru,
       ...(hataIzlemeAdresi === undefined
         ? {}
         : {
@@ -97,7 +145,10 @@ export const yayinKutusuTanimi = (
     security_opt: ["no-new-privileges:true"],
     read_only: true,
     tmpfs: ["/tmp"],
-    volumes: [`${yayinKlasoru(ortam, kodAdi)}/${no}/site:/siteler/${kodAdi}:ro`],
+    volumes: [
+      `${yayinKlasoru(ortam, kodAdi)}/${no}/site:/siteler/${kodAdi}:ro`,
+      `${sunucuDosyaKlasoru(ortam, kodAdi)}:${kutudakiDosyaKlasoru}`,
+    ],
     networks: [ag],
     healthcheck: siteSaglikYoklamasi,
   };
@@ -263,12 +314,24 @@ export const kutuyuAcmaBetigi = (
   const d = `${yayinKlasoru(ortam, kodAdi)}/${no}`;
   const kutu = siteKutusuAdi(ortam, kodAdi, no);
   const icerik = tanim ? `${JSON.stringify(tanim, null, 2)}\n` : "";
+  // Dosya klasörü kutu açılmadan kurulur ya da sahibi ve izni yeniden verilir; içeriğine dokunulmaz.
+  // Kullanıcı yayının kendi tanımından gelir. Tanımsız açılışta (geri dönüş) klasör zaten vardır.
+  const kullanici = tanim?.services.uygulama.user.split(":")[0];
+  if (kullanici !== undefined && !/^[0-9]+$/.test(kullanici)) {
+    throw new Error(`Kutu kullanıcısı sayı değil: ${kullanici}`);
+  }
+  const dosyaKlasoruKurulumu =
+    kullanici === undefined
+      ? ""
+      : `sudo install -d -m 0755 -o root -g root ${dosyaKoku} ${dosyaKoku}/${ortam}
+sudo install -d -m 0700 -o ${kullanici} -g ${kullanici} ${sunucuDosyaKlasoru(ortam, kodAdi)}
+`;
   if (icerik.includes("YAYIN_DOSYA_SONU")) throw new Error("Kutu tanımı ayrılmış satır içeriyor.");
   return `set -eu
 d=${d}
 ${tanim ? `sudo tee "$d/compose.json" >/dev/null <<'YAYIN_DOSYA_SONU'\n${icerik}YAYIN_DOSYA_SONU\nsudo chmod 0644 "$d/compose.json"` : '[ -f "$d/compose.json" ] || { echo "HATA yayının kutu tanımı yok: $d" >&2; exit 1; }'}
 ${goruntuKimligi ? `docker tag ${goruntuKimligi} ${yayinGoruntusu(ortam, kodAdi, no)}` : `docker image inspect ${yayinGoruntusu(ortam, kodAdi, no)} >/dev/null 2>&1 || { echo "HATA yayının görüntüsü yok" >&2; exit 1; }`}
-h=$(mktemp)
+${dosyaKlasoruKurulumu}h=$(mktemp)
 trap 'rm -f "$h"' EXIT
 if ! docker compose -f "$d/compose.json" up -d --wait --wait-timeout 150 --quiet-pull </dev/null >/dev/null 2>"$h"; then
   echo "HATA yeni kutu sağlıklı açılmadı:" >&2

@@ -33,6 +33,7 @@ import {
   degerBasinaParca,
   gizliKok,
   kayittaArama,
+  kutuKullanicisi,
   siteNumaralariniOku,
   yerlesimHatalari,
 } from "./gizli-bilgi.mts";
@@ -42,7 +43,7 @@ import {
   hataIzlemeOrtamlari,
   hataIzlemeTanimi,
 } from "./hata-izleme.mts";
-import { arkaPlanKutuAdi, arkaPlanKutusuVarMi } from "./kutu-kurali.mts";
+import { arkaPlanKutuAdi, arkaPlanKutusuVarMi, dosyaKlasoruVarMi } from "./kutu-kurali.mts";
 import {
   hataIzlemeAgi,
   hataIzlemeKutusu,
@@ -85,7 +86,11 @@ import {
   veritabaniTanimi,
 } from "./sunucu-veritabani.mts";
 import {
+  diskDolulugu,
+  diskDolulukSiniri,
+  dosyaKlasoruHatalari,
   etkinYayinSurumu,
+  sunucuDosyaKlasoru,
   kayitlariOku as yayinKayitlariniOku,
   yayinKutusuTanimi,
 } from "./yayin.mts";
@@ -418,7 +423,39 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
           arkaPlanHatalari.join("; "),
         );
       }
+      // Dosya klasörü (kart 0072, karar 0058): yalnız sitenin kullanıcısına açık, kutuya yazılabilir
+      // bağlı. Klasörü taşımayan eski yayında aranmaz.
+      if (numara !== undefined && (surum === undefined || dosyaKlasoruVarMi(surum))) {
+        const klasor = sunucuDosyaKlasoru(yayinOrtami, kodAdi);
+        const durum = sshKomutu(
+          kayit.ipv4,
+          `sudo stat -c '%a %u %F' ${klasor} 2>/dev/null || true`,
+        );
+        const baglantilar = sshKomutu(
+          kayit.ipv4,
+          `docker inspect ${ad} --format '{{json .Mounts}}'`,
+        );
+        const dosyaHatalari = dosyaKlasoruHatalari(
+          durum.stdout,
+          baglantilar.stdout,
+          kutuKullanicisi(yayinOrtami, numara),
+          klasor,
+        );
+        olcum(
+          dosyaHatalari.length === 0,
+          `${yayinOrtami}/${kodAdi} dosya klasörü yalnız sitenin kullanıcısına açık (0700), kutuya yazılabilir bağlı`,
+          dosyaHatalari.join("; "),
+        );
+      }
     }
+    // Dosyalar sunucunun diskindedir (kart 0072, karar 0058); dolmadan nesne deposuna geçilir.
+    const disk = sshKomutu(kayit.ipv4, "df -P /srv/altyapi");
+    const doluluk = diskDolulugu(disk.stdout);
+    olcum(
+      doluluk !== undefined && doluluk < diskDolulukSiniri,
+      `disk yüzde ${diskDolulukSiniri}'ten az dolu`,
+      doluluk === undefined ? `okunamadı: ${disk.stderr.trim()}` : `yüzde ${doluluk}`,
+    );
     const guncelleme = sshKomutu(
       kayit.ipv4,
       "systemctl is-active unattended-upgrades && apt-config dump",

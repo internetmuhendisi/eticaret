@@ -18,7 +18,7 @@ import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { siteKlasorunuOku } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { arkaPlanDosyalari } from "../cekirdek/kayitlar/arka-plan.ts";
-import { dosyaKlasoruDegiskeni } from "../cekirdek/kayitlar/dosya.ts";
+import { dosyaKlasoruDegiskeni, kutudakiDosyaKlasoru } from "../cekirdek/kayitlar/dosya.ts";
 import { istekSinirlari } from "../cekirdek/kayitlar/kapi.ts";
 import { metinOkuyucu } from "../cekirdek/metinler/metin.ts";
 import { soruyuCoz } from "../cekirdek/moduller/robot-korumasi/testler/soru-coz.ts";
@@ -32,7 +32,6 @@ import {
   kilitle,
   kok,
   kutuAdi,
-  kutudakiDosyaKlasoru,
   type OrtamSitesi,
   ortamiAc,
   ortamiKapat,

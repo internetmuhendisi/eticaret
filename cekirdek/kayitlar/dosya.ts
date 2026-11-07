@@ -31,6 +31,8 @@ export const dosyaSinirlari = {
 
 // Sitenin dosya klasörünü veren ortam değişkeni. Yerelde ve sunucuda kutu tanımı verir.
 export const dosyaKlasoruDegiskeni = "DOSYA_KLASORU";
+// Klasörün kutu içindeki yeri: yerelde ve sunucuda aynıdır.
+export const kutudakiDosyaKlasoru = "/dosyalar";
 
 // Kaydetmenin reddetme sebepleri. Ekran metni bu kodlardan çözer.
 export const dosyaHatalari = [

@@ -24,7 +24,7 @@ import { join, resolve } from "node:path";
 import { parseEnv } from "node:util";
 import { sql } from "drizzle-orm";
 import { type Site, siteKlasorunuDogrula } from "../cekirdek/ayar-semasi/site-klasoru.ts";
-import { dosyaKlasoruDegiskeni } from "../cekirdek/kayitlar/dosya.ts";
+import { dosyaKlasoruDegiskeni, kutudakiDosyaKlasoru } from "../cekirdek/kayitlar/dosya.ts";
 import { cekirdekSurumu } from "../cekirdek/surum.ts";
 import { baglan, siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
 import { siteVeritabaniniGuncelle } from "../cekirdek/veritabani/guncelle.ts";
@@ -163,7 +163,6 @@ const uretilenleriSil = (): void => {
 // açılıştaki sırasından gelir; birim her açılışta o kullanıcıya verilir.
 export const yerelKutuKullanicisi = (sira: number): number => 40_000 + sira;
 export const dosyaBirimi = (kodAdi: string): string => `altyapi-yerel-dosyalar-${kodAdi}`;
-export const kutudakiDosyaKlasoru = "/dosyalar";
 
 const dosyaBiriminiHazirla = (kodAdi: string, kullanici: number, etiket: string): void => {
   const birim = dosyaBirimi(kodAdi);

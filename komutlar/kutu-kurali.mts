@@ -74,13 +74,19 @@ export const arkaPlanServisi = <Servis extends { container_name: string }>(site:
   healthcheck: arkaPlanSaglikYoklamasi,
 });
 
-// Bu sürümden eski yayınların arka plan kutusu yoktur: geri dönüşte ve denetimde beklenmez.
-const arkaPlanIlkSurumu = [0, 9, 0];
-export const arkaPlanKutusuVarMi = (surum: string): boolean => {
+// Sürüm en az verilen sürüm mü (büyük.orta.küçük)? Bir özelliğin ilk sürümünden eski yayınlar o
+// özelliği taşımaz: geri dönüşte ve denetimde beklenmez.
+export const surumEnAz = (surum: string, ilk: readonly number[]): boolean => {
   const parcalar = surum.split(".").map(Number);
-  for (const [sira, ilk] of arkaPlanIlkSurumu.entries()) {
-    const deger = parcalar[sira] ?? 0;
-    if (deger !== ilk) return deger > ilk;
+  for (const [sira, deger] of ilk.entries()) {
+    const gercek = parcalar[sira] ?? 0;
+    if (gercek !== deger) return gercek > deger;
   }
   return true;
 };
+
+// Bu sürümden eski yayınların arka plan kutusu yoktur.
+export const arkaPlanKutusuVarMi = (surum: string): boolean => surumEnAz(surum, [0, 9, 0]);
+
+// Bu sürümden eski yayınların dosya klasörü yoktur (kart 0072, karar 0058).
+export const dosyaKlasoruVarMi = (surum: string): boolean => surumEnAz(surum, [0, 15, 0]);

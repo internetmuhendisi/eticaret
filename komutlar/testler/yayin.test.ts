@@ -3,7 +3,11 @@
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { arkaPlanDosyalari } from "../../cekirdek/kayitlar/arka-plan.ts";
-import { arkaPlanKutusuVarMi, arkaPlanSaglikYoklamasi } from "../kutu-kurali.mts";
+import {
+  arkaPlanKutusuVarMi,
+  arkaPlanSaglikYoklamasi,
+  dosyaKlasoruVarMi,
+} from "../kutu-kurali.mts";
 import {
   onKapiTanimi,
   siteSatiri,
@@ -12,6 +16,8 @@ import {
   yayindakiSitelerKomutu,
 } from "../on-kapi.mts";
 import {
+  diskDolulugu,
+  dosyaKlasoruHatalari,
   etkinYayinSurumu,
   etkinYigini,
   geriDonusHedefi,
@@ -182,6 +188,8 @@ describe("sunucudaki site kutusunun tanımı", () => {
     });
     expect(kutu.volumes).toEqual([
       "/srv/altyapi/yayin/deneme/ornek-magaza/7/site:/siteler/ornek-magaza:ro",
+      // Dosya klasörü (kart 0072): yayından bağımsız, yazılabilir.
+      "/srv/altyapi/dosyalar/deneme/ornek-magaza:/dosyalar",
     ]);
     expect("ports" in kutu).toBe(false);
   });
@@ -191,6 +199,7 @@ describe("sunucudaki site kutusunun tanımı", () => {
       VERITABANI_ADRESI_DOSYASI: "/run/secrets/veritabani_adresi",
       IKI_ASAMA_ANAHTARI_DOSYASI: "/run/secrets/iki_asama_anahtari",
       SITE_KLASORU: "/siteler/ornek-magaza",
+      DOSYA_KLASORU: "/dosyalar",
     });
     expect(Object.values(tanim.secrets)).toEqual([
       { file: "/srv/altyapi/gizli/deneme/ornek-magaza/veritabani_adresi" },
@@ -230,6 +239,15 @@ describe("sunucudaki site kutusunun tanımı", () => {
     ["1.0.0", true],
   ])("%s sürümünün arka plan kutusu beklenir: %s", (surum, beklenen) => {
     expect(arkaPlanKutusuVarMi(surum)).toBe(beklenen);
+  });
+
+  it.each([
+    ["0.14.0", false],
+    ["0.12.1", false],
+    ["0.15.0", true],
+    ["1.0.0", true],
+  ])("%s sürümünün dosya klasörü beklenir: %s", (surum, beklenen) => {
+    expect(dosyaKlasoruVarMi(surum)).toBe(beklenen);
   });
 
   it.each([0, -1, 1.5])("geçersiz yayın numarası reddedilir: %s", (no) => {
@@ -404,5 +422,58 @@ describe("hat dosyası kilidi", () => {
   ])("%s ile aynı değildir", (_ad, oteki) => {
     expect(hatDosyasiAyniMi("HEAD", oteki)).toBe(false);
     expect(hatDosyasiAyniMi(oteki, "HEAD")).toBe(false);
+  });
+});
+
+describe("dosya klasörü (kart 0072)", () => {
+  const klasor = "/srv/altyapi/dosyalar/deneme/ornek-magaza";
+  const baglanti = (ek: Record<string, unknown> = {}) =>
+    JSON.stringify([
+      { Source: "/srv/altyapi/yayin/x", Destination: "/siteler/ornek-magaza", RW: false },
+      { Source: klasor, Destination: "/dosyalar", RW: true, ...ek },
+    ]);
+
+  it("kutuyu açma betiği klasörü yayının kullanıcısına 0700 kurar, içeriğe dokunmaz", () => {
+    const betik = kutuyuAcmaBetigi(
+      "deneme",
+      "ornek-magaza",
+      2,
+      yayinKutusuTanimi("deneme", "ornek-magaza", 1, 2),
+      "sha256:abc",
+    );
+    expect(betik).toContain(`sudo install -d -m 0700 -o 30001 -g 30001 ${klasor}\n`);
+    expect(betik.indexOf("install -d -m 0700")).toBeLessThan(betik.indexOf("docker compose"));
+    expect(betik).not.toMatch(/chown -R|chmod -R|rm -rf \/srv\/altyapi\/dosyalar/);
+  });
+
+  it("geri dönüşte klasöre dokunulmaz", () => {
+    expect(kutuyuAcmaBetigi("deneme", "ornek-magaza", 1)).not.toContain("dosyalar");
+  });
+
+  it("doğru klasör geçer", () => {
+    expect(dosyaKlasoruHatalari("700 30001 directory\n", baglanti(), 30001, klasor)).toEqual([]);
+  });
+
+  it.each([
+    ["herkese açık", "755 30001 directory", baglanti(), "izin 755"],
+    ["başka sahip", "700 30002 directory", baglanti(), "sahibi 30002"],
+    ["kök sahip", "700 0 directory", baglanti(), "sahibi 0"],
+    ["klasör yok", "", baglanti(), "klasör yok"],
+    ["dosya", "700 30001 regular file", baglanti(), "klasör değil"],
+    ["bağlı değil", "700 30001 directory", "[]", "bağlı değil"],
+    ["başka klasör bağlı", "700 30001 directory", baglanti({ Source: "/tmp/x" }), "başka klasöre"],
+    ["salt okunur bağlı", "700 30001 directory", baglanti({ RW: false }), "yazılamaz"],
+    ["okunamayan bağlantı", "700 30001 directory", "", "okunamadı"],
+  ])("%s kırmızıdır", (_ad, stat, baglantilar, beklenen) => {
+    const hatalar = dosyaKlasoruHatalari(stat, baglantilar, 30001, klasor);
+    expect(hatalar.join("; ")).toContain(beklenen);
+  });
+
+  it("disk doluluğu df çıktısından okunur", () => {
+    const df =
+      "Filesystem 1024-blocks Used Available Capacity Mounted on\n/dev/sda1 78425224 30000000 45000000 41% /\n";
+    expect(diskDolulugu(df)).toBe(41);
+    expect(diskDolulugu("")).toBeUndefined();
+    expect(diskDolulugu("bozuk satır")).toBeUndefined();
   });
 });
