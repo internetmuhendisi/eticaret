@@ -6,7 +6,7 @@ Kart 0033 müşteri girişinde yöneticinin deneme sınırını kullanıyor: hes
 
 ## Olmazsa olmazlar
 
-- Kullanıcıya ürün kararı olarak sorulur: kabul mü edilir, yoksa kilitlenen müşteriye çıkış yolu mu sunulur (e-postayla tek kullanımlık giriş bağlantısı, şifremi unuttum gibi).
+- Kullanıcı kararı (2026-11-07): Kilitlenen müşteriye e-postayla giriş yolu verilir. İlk gerçek mağazadan önce yapılır, Örnek Mağaza o zamana kadar bugünkü sınırla kalır. Önce 0034 ve 0060 bitmiş olmalı: yol gerçek e-postaya dayanır.
 - Şifre kırmayı kolaylaştıran bir yol açılmaz.
 - Kullanıcının kararı site başına değişebilecekse site ayarı olarak önerilir.
 
