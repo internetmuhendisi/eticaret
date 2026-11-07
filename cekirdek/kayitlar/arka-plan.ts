@@ -25,6 +25,8 @@ export const kuyrukAyari = {
   nabizMs: 10_000,
   // Kapatılırken süren iş bu kadar beklenir. Docker'ın durdurma süresinden (10 sn) kısadır.
   kapanmaBeklemeMs: 8_000,
+  // Süreci düşüren hatanın araca ulaşması için kapanmadan önce beklenen süre.
+  olumculBeklemeMs: 2_000,
   // Biten işler bu süre sonra silinir: girdileri kişisel bilgi taşıyabilir. Hatalı işler kalır.
   bitenSaklamaGun: 30,
   hataOzetiUzunlugu: 500,

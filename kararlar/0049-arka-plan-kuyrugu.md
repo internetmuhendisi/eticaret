@@ -39,6 +39,11 @@
 - **Geri dönüşte kalan işler:** Eski sürüme dönülürse yeni sürümün tanıdığı türler `bekliyor` durumunda kalır, yeniden yükseltilince çalışır. Bunları gösteren bir denetim yoktur.
 - **Bellek:** Her site için ikinci bir süreç çalışır. Sunucudaki ölçüm `pnpm arka-plan-denemesi` çıktısındadır.
 - **Tek işlik süreç:** Süreç işleri sırayla çalıştırır, uzun bir iş sırayı bekletir. Şimdilik yeterlidir, ölçülmedi.
-- **Kapanış:** Kapatılırken süren iş 8 saniye beklenir, bitmezse süreç kapanır ve iş kilit süresi dolunca yeniden denenir.
+- **Kapanış:** Kapatılırken işe durması söylenir ve 8 saniye beklenir. Sinyale uyup duran iş deneme hakkı yemeden sıraya döner. Durmayan işte süreç kapanır, iş kilit süresi dolunca yeniden denenir ve bir deneme hakkı gider.
+- **Biten işin yazılamaması:** İş bitip sonucu yazılamazsa (veritabanı kesintisi) kilit süresi dolunca iş yeniden çalışır.
+- **Geri yükleme:** Yedekteki `bekliyor` işler geri yüklemeden sonra yeniden çalışır, sonradan bitmiş olsalar da. Bu da `isKimligi` ile önlenir.
+- **Kesintide olay sayısı:** Döngü kesinti başına tek hata gönderir. Bağlantı havuzunun kendi olayı (`veritabani-havuzu`) buna dahil değildir, gerçek kesintide en az iki olay beklenir. Gerçek veritabanı durdurmasıyla ölçülmedi, sahte bağlantıyla ölçüldü.
+- **Nabız:** Yoklama döngünün değil sürecin canlılığını gösterir. Takılmış bir sorguda kutu sağlıklı görünür, sorgularda zaman aşımı yoktur.
+- **Maske:** Rakam dizisi kuralı benzersiz kimlikleri bozuyordu (yüzde 9 kadar). Kimlikler bu kuraldan muaf oldu; bu, bütün günlük ve araç kayıtlarını etkiler. Kimlik biçiminde yazılmış bir değer rakam kuralından geçmez, adı gizli alanda ise yine gizlenir.
 - **Deneme işleri görüntüdedir:** `deneme-basarili` ve `deneme-hatali` kayıtlı işlerdir, yalnız kutunun içinden tetiklenir, veri yazmaz.
 - Tablodaki durum listesi değişiklik dosyasında elle yazılıdır. Kayıttaki değerlerle aynı olduğunu `kuyruk.test.ts` denetler; kayda yeni durum eklenirse test kırmızı olur, tersi yönde (tabloda fazla durum) denetim yoktur.

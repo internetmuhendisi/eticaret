@@ -111,10 +111,26 @@ const sahipliIs = (is: AlinanIs, sahip: string) =>
 
 const kilitsiz = { kilit_sahibi: null, kilit_bitis: null };
 
-export const isiBitir = async (vt: Veritabani, is: AlinanIs, sahip: string): Promise<void> => {
-  await vt
+// Dönen değer: sonuç yazıldı mı. Yazılmadıysa kilit başka sürece geçmiştir.
+export const isiBitir = async (vt: Veritabani, is: AlinanIs, sahip: string): Promise<boolean> => {
+  const guncellenen = await vt
     .update(arkaPlanIsleri)
     .set({ durum: isDurumu.bitti, bitis_zamani: new Date(), son_hata: null, ...kilitsiz })
+    .where(sahipliIs(is, sahip))
+    .returning({ kimlik: arkaPlanIsleri.kimlik });
+  return guncellenen.length > 0;
+};
+
+// Süreç kapanırken yarıda bırakılan iş sıraya döner, deneme hakkı yenmez: kapanış işin hatası değildir.
+export const isiBirak = async (vt: Veritabani, is: AlinanIs, sahip: string): Promise<void> => {
+  await vt
+    .update(arkaPlanIsleri)
+    .set({
+      durum: isDurumu.bekliyor,
+      deneme_sayisi: is.deneme_sayisi - 1,
+      calisma_zamani: new Date(),
+      ...kilitsiz,
+    })
     .where(sahipliIs(is, sahip));
 };
 

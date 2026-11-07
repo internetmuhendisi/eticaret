@@ -532,14 +532,16 @@ for db in ${adlar.map((x) => `"${x}"`).join(" ")}; do
 done`);
 };
 
+// Arka plan kutusu varsa ve çalışmıyorsa site de kapalı sayılır: açma ikisini birden açar.
 export const kutuCalismaBetigi = (kutuAdi: string): string =>
-  `# adim:calisiyor\nset -eu\ndocker inspect -f '{{.State.Running}}' ${kutuAdi}\n`;
+  `# adim:calisiyor\nset -eu\nd=$(docker inspect -f '{{.State.Running}}' ${kutuAdi})\nif a=$(docker inspect -f '{{.State.Running}}' ${arkaPlanKutuAdi(kutuAdi)} 2>/dev/null) && [ "$a" != true ]; then d=false; fi\necho "$d"\n`;
 
 export const saglikBeklemeBetigi = (kutuAdi: string): string => `# adim:saglik
 set -eu
 for _ in $(seq 1 60); do
   d=$(docker inspect -f '{{.State.Health.Status}}' ${kutuAdi})
-  if [ "$d" = healthy ]; then echo saglikli; exit 0; fi
+  a=$(docker inspect -f '{{.State.Health.Status}}' ${arkaPlanKutuAdi(kutuAdi)} 2>/dev/null || echo healthy)
+  if [ "$d" = healthy ] && [ "$a" = healthy ]; then echo saglikli; exit 0; fi
   sleep 2
 done
 echo "${kutuAdi} sağlıklı açılmadı" >&2

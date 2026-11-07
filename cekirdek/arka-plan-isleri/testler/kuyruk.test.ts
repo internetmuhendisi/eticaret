@@ -280,6 +280,56 @@ describe("süreç iş sırasında ölürse", () => {
   });
 });
 
+describe("süreç kapanırken", () => {
+  it("sinyale uyup duran iş sıraya döner, deneme hakkı yenmez, araca gitmez", async () => {
+    const durdur = new AbortController();
+    const tanim = isTanimla({
+      tur: "uyan",
+      sema: z.object({}),
+      enCokDeneme: 1,
+      calistir: (_, { sinyal }) =>
+        new Promise<void>((_coz, reddet) => {
+          sinyal.addEventListener("abort", () => reddet(new Error("durduruldu")));
+          durdur.abort();
+        }),
+    });
+    const kimlik = await isEkle(vt, tanim, {});
+    await calistiriciKur({ vt, isler: [tanim] }).birIsCalistir(durdur.signal);
+    const durum = await satir(kimlik);
+    expect(durum.durum).toBe(isDurumu.bekliyor);
+    expect(durum.deneme_sayisi).toBe(0);
+    expect(durum.kilit_sahibi).toBeNull();
+    expect(izlenenler).toEqual([]);
+  });
+
+  it("sinyal iş alınırken geldiyse iş hiç başlamaz", async () => {
+    const { calistir, tanim } = basarili();
+    const kimlik = await isEkle(vt, tanim, { deger: 1 });
+    const durdur = new AbortController();
+    durdur.abort();
+    await calistiriciKur({ vt, isler: [tanim] }).birIsCalistir(durdur.signal);
+    expect(calistir).not.toHaveBeenCalled();
+    const durum = await satir(kimlik);
+    expect(durum.durum).toBe(isDurumu.bekliyor);
+    expect(durum.deneme_sayisi).toBe(0);
+  });
+
+  it("döngü boş beklerken sinyale dinleyici biriktirmez", async () => {
+    const durdur = new AbortController();
+    const ekle = vi.spyOn(durdur.signal, "addEventListener");
+    const kaldir = vi.spyOn(durdur.signal, "removeEventListener");
+    const dongu = calistiriciKur({
+      vt,
+      isler: [isTanimla({ tur: "bos", sema: z.object({}), calistir: async () => {} })],
+      ayar: { ...kuyrukAyari, bosBeklemeMs: 1 },
+    }).dongu(durdur.signal);
+    await vi.waitFor(() => expect(ekle.mock.calls.length).toBeGreaterThan(5), { timeout: 5_000 });
+    durdur.abort();
+    await dongu;
+    expect(ekle.mock.calls.length - kaldir.mock.calls.length).toBeLessThanOrEqual(1);
+  });
+});
+
 describe("zamanlı işler", () => {
   const tanim = isTanimla({ tur: "zamanli", sema: z.object({}), calistir: async () => {} });
   const tanimli = zamanliIs(tanim, {}, { herDakika: 10 });
@@ -312,6 +362,13 @@ describe("zamanlı işler", () => {
     await vi.waitFor(() => expect(calistir).toHaveBeenCalledOnce(), { timeout: 5_000 });
     durdur.abort();
     await dongu;
+  });
+
+  it("bozuk girdili zamanlı iş tanımlanırken görünür", () => {
+    const girdili = isTanimla({ tur: "g", sema: girdiSemasi, calistir: async () => {} });
+    expect(() =>
+      zamanliIs(girdili, { deger: "yazi" } as unknown as { deger: number }, { herDakika: 1 }),
+    ).toThrow();
   });
 
   it("kayıttaki zamanlı işler kayıtlı işlerdendir", () => {

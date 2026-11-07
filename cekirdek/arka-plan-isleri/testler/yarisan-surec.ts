@@ -23,6 +23,16 @@ const yarisIsi = isTanimla({
   },
 });
 
+// İki süreç de hazır olmadan iş alınmaz: geç başlayan süreç yarışı kaçırmasın.
+await vt.execute(sql`insert into yarisan_hazir (sahip) values (${sahip})`);
+for (;;) {
+  const { rows } = await vt.execute<{ sayi: number }>(
+    sql`select count(*)::int as sayi from yarisan_hazir`,
+  );
+  if (rows[0]?.sayi === 2) break;
+  await new Promise((coz) => setTimeout(coz, 10));
+}
+
 const durdur = new AbortController();
 const denetim = setInterval(async () => {
   const kalan = await vt

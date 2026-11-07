@@ -176,7 +176,7 @@ const sunucudaTemizle = (ipv4: string, kodAdi: string, ad: string) =>
   sshKomutu(ipv4, "bash -s", {
     sure: 300_000,
     girdi: `set +e
-for c in $(docker ps -aq --filter 'name=^${siteAgiAdi(ortam, kodAdi)}-[0-9]+$'); do docker rm -f "$c" >/dev/null; done
+for c in $(docker ps -aq --filter 'name=^${siteAgiAdi(ortam, kodAdi)}-[0-9]+(-arka-plan)?$'); do docker rm -f "$c" >/dev/null; done
 # Görüntüler etiket adıyla ve zorlamadan silinir: bütün yayın etiketleri aynı görüntüyü gösterebilir,
 # kimlikle silmek başka sitelerin etiketlerini de götürürdü.
 for g in $(docker images --format '{{.Repository}}:{{.Tag}}' 'altyapi-yayin' | grep -E '^altyapi-yayin:${ortam}-${kodAdi}-[0-9]+$'); do docker image rm "$g" >/dev/null 2>&1; done

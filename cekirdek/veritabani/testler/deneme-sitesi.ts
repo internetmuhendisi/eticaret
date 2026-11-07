@@ -32,8 +32,8 @@ export const denemeSitesiAc = async (
   const kodAdi = `${onEk}-${randomBytes(4).toString("hex")}`;
   const ad = siteVeritabaniAdi(kodAdi);
   const sifre = randomBytes(24).toString("base64url");
-  await denemeVeritabaniAc(ad, sifre);
   const baglantiAdresi = adres(ad, sifre, ad);
+  await denemeVeritabaniAc(ad, sifre);
   const vt = baglan(baglantiAdresi);
   const sil = async () => {
     await vt.$client.end();

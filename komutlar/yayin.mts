@@ -274,6 +274,7 @@ if ! docker compose -f "$d/compose.json" up -d --wait --wait-timeout 150 --quiet
   echo "HATA yeni kutu sağlıklı açılmadı:" >&2
   tail -3 "$h" >&2
   docker logs --tail 5 ${kutu} >&2 2>&1 || true
+  docker logs --tail 5 ${arkaPlanKutuAdi(kutu)} >&2 2>&1 || true
   exit 1
 fi
 printf 'saglik=%s\\n' "$(docker exec ${kutu} node -e "fetch('http://127.0.0.1:3000/kapi/herkese-acik/saglik').then((y)=>y.text()).then((t)=>process.stdout.write(t),()=>process.stdout.write('{}'))")"

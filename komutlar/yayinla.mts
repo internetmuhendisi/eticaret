@@ -49,7 +49,8 @@ try {
     ozet !== null && Number(ozet[1]) === kalanlar.length && !denetim.stderr?.trim();
   const buSiteninki = (satir: string) =>
     yayiniDurdurmayanSatir(satir) ||
-    (satir.includes(`${yayinOrtami}/${kimlik.kodAdi} yayındaki kutusu`) &&
+    ((satir.includes(`${yayinOrtami}/${kimlik.kodAdi} yayındaki kutusu`) ||
+      satir.includes(`${yayinOrtami}/${kimlik.kodAdi} arka plan kutusu`)) &&
       !satir.includes("site numarası yok"));
   if (
     denetim.status !== 0 &&

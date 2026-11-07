@@ -9,6 +9,7 @@ import {
   isAl,
   isEkle,
   isiBasarisizYap,
+  isiBirak,
   isiBitir,
   sahipUret,
 } from "./kuyruk.ts";
@@ -25,7 +26,11 @@ export const zamanliIs = <Girdi>(
   is: IsTanimi<Girdi>,
   girdi: Girdi,
   { herDakika }: { herDakika: number },
-): ZamanliIs => ({ is, girdi, herDakika });
+): ZamanliIs => {
+  // Bozuk girdi süreç açılırken görünür; kuyruk çalışırken bütün işleri durduramaz.
+  is.girdiyiDogrula(girdi);
+  return { is, girdi, herDakika };
+};
 
 export const zamanliIsleriGir = async (
   vt: Veritabani,
@@ -93,6 +98,11 @@ export const calistiriciKur = ({
     const is = await isAl(vt, turler, sahip, ayar.kilitSaniye);
     if (is === undefined) return false;
     const tanim = tanimlar.get(is.tur) as IsTanimi;
+    // Sinyal iş alınırken geldiyse iş hiç başlamaz, sıraya döner.
+    if (ustSinyal.aborted) {
+      await isiBirak(vt, is, sahip);
+      return true;
+    }
     // Süreç önceki denemelerde iş bitmeden öldüyse hakkı dolmuş olabilir: iş artık çalıştırılmaz.
     if (is.deneme_sayisi > is.en_cok_deneme) {
       const hata = new Error(
@@ -115,6 +125,10 @@ export const calistiriciKur = ({
         ustSinyal,
       );
     } catch (hata) {
+      if (ustSinyal.aborted) {
+        await isiBirak(vt, is, sahip);
+        return true;
+      }
       const sonuc = await isiBasarisizYap(vt, is, sahip, hata, tanim.ilkGecikmeSaniye, ayar);
       if (sonuc === "hata") hataIleBitir(is, hata);
       else {
@@ -128,7 +142,13 @@ export const calistiriciKur = ({
       }
       return true;
     }
-    await isiBitir(vt, is, sahip);
+    if (!(await isiBitir(vt, is, sahip))) {
+      gunluk.uyari("arka plan işi bitti ama kilidi başka sürece geçmişti", {
+        tur: is.tur,
+        isKimligi: is.kimlik,
+        deneme: is.deneme_sayisi,
+      });
+    }
     return true;
   };
 
@@ -138,15 +158,15 @@ export const calistiriciKur = ({
     const bekle = (ms: number) =>
       new Promise<void>((coz) => {
         if (sinyal.aborted) return coz();
-        const zamanlayici = setTimeout(coz, ms);
-        sinyal.addEventListener(
-          "abort",
-          () => {
-            clearTimeout(zamanlayici);
-            coz();
-          },
-          { once: true },
-        );
+        const kesildi = () => {
+          clearTimeout(zamanlayici);
+          coz();
+        };
+        const zamanlayici = setTimeout(() => {
+          sinyal.removeEventListener("abort", kesildi);
+          coz();
+        }, ms);
+        sinyal.addEventListener("abort", kesildi, { once: true });
       });
     let sonZamanli = Number.NEGATIVE_INFINITY;
     let kesinti = 0;

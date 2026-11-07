@@ -99,14 +99,28 @@ const rakamDizisiniMaskele = (dizi: string): string => {
   return `${"*".repeat(rakamlar.length - 2)}${rakamlar.slice(-2)}`;
 };
 
-export const metniMaskele = (metin: string): string =>
-  metinKurallari
-    .reduce((sonuc, [desen, yerine]) => sonuc.replace(desen, yerine), metin)
-    .replace(
-      epostaDeseni,
-      (_, ad: string, ayirici: string, alan: string) => `${ad[0]}***${ayirici}${alan}`,
+// Benzersiz kimlik (UUID) kişisel bilgi değildir; rakamları yan yana gelince telefon ya da kart
+// sanılır ve kayıt işe götürmez olurdu (kart 0031). Yalnız rakam dizisi kuralından muaftır: adı gizli
+// bir alandaki kimlik yukarıdaki kurallarla yine gizlenir.
+const kimlikDeseni = /(\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b)/iu;
+
+const rakamDizileriniMaskele = (metin: string): string =>
+  metin
+    .split(kimlikDeseni)
+    .map((parca, sira) =>
+      sira % 2 === 1 ? parca : parca.replace(rakamDizisiDeseni, rakamDizisiniMaskele),
     )
-    .replace(rakamDizisiDeseni, rakamDizisiniMaskele);
+    .join("");
+
+export const metniMaskele = (metin: string): string =>
+  rakamDizileriniMaskele(
+    metinKurallari
+      .reduce((sonuc, [desen, yerine]) => sonuc.replace(desen, yerine), metin)
+      .replace(
+        epostaDeseni,
+        (_, ad: string, ayirici: string, alan: string) => `${ad[0]}***${ayirici}${alan}`,
+      ),
+  );
 
 // Next.js'in hata özeti (digest) tarayıcıdaki hatayı sunucudaki kayıtla eşlemeye yarar; kısa ve
 // yalnız harf, rakam ve tireden oluşuyorsa olduğu gibi kalır.

@@ -13,6 +13,12 @@ import { kayitliIsler, zamanliIsler } from "./isler.ts";
 
 konsoluGunlugeBagla();
 surecHatalariniBagla();
+// Next.js'ten farklı olarak bu süreç yakalanmamış hatada kapanır. Hata kaydedilir (yukarıdaki
+// dinleyici), kapanmadan önce gönderimin araca ulaşması beklenir; Docker kutuyu yeniden başlatır.
+process.on("uncaughtException", () => {
+  process.exitCode = 1;
+  setTimeout(() => process.exit(1), kuyrukAyari.olumculBeklemeMs);
+});
 siteyiAcilistaDogrula();
 hataIzlemeyiBagla();
 

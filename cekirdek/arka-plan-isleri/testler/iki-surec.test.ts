@@ -30,6 +30,7 @@ beforeAll(async () => {
   await site.vt.execute(
     sql`create table yarisan_kayitlar (is_kimligi uuid not null, sahip text not null)`,
   );
+  await site.vt.execute(sql`create table yarisan_hazir (sahip text not null)`);
 }, 60_000);
 
 afterAll(async () => {

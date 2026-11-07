@@ -184,3 +184,24 @@ describe("maskeleme", () => {
     expect(maskele(dongu)).toEqual({ ad: "kok", kendisi: "[döngü]" });
   });
 });
+
+describe("benzersiz kimlik", () => {
+  it.each([
+    "3998b286-f8b1-2345-6739-bb862a456f90",
+    "12345678-1234-4234-8234-123456789012",
+    "00000000-0000-4000-8000-000000000000",
+  ])("%s bozulmaz", (kimlik) => {
+    expect(metniMaskele(`iş ${kimlik} başarısız`)).toBe(`iş ${kimlik} başarısız`);
+    expect(maskele({ isKimligi: kimlik })).toEqual({ isKimligi: kimlik });
+  });
+
+  it("yanındaki telefon ve kart yine gizlenir, adı gizli alandaki kimlik de", () => {
+    const kimlik = "3998b286-f8b1-2345-6739-bb862a456f90";
+    const metin = metniMaskele(`${kimlik} tel 0532 123 45 67 kart 4242 4242 4242 4242`);
+    expect(metin).toContain(kimlik);
+    expect(metin).not.toContain("0532 123");
+    expect(metin).not.toContain("4242 4242");
+    expect(metniMaskele(`anahtar=${kimlik}`)).not.toContain(kimlik);
+    expect(maskele({ oturumAnahtari: kimlik })).not.toEqual({ oturumAnahtari: kimlik });
+  });
+});
