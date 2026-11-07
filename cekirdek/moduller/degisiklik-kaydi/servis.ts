@@ -10,6 +10,7 @@ import type {
   DegisiklikKayitTuru,
 } from "../../kayitlar/degisiklik-islemleri.ts";
 import type { VeritabaniIslemi } from "../../veritabani/baglanti.ts";
+import { kayitDegeriYasakMi } from "./deger.ts";
 import { degisiklikKayitlari } from "./model.ts";
 
 // Alan adının bu sözcüklerden birini taşıması yasaktır: şifre, anahtar ve kişisel veri kayda girmez.
@@ -35,7 +36,6 @@ const yasakSozcukler = new Set([
   "email",
   "telefon",
 ]);
-const yasakDeger = [/^[^\s@]+@[^\s@]+$/, /^(?:bearer|basic)\s/i, /^eyJ[\w-]+\.[\w-]+\./];
 
 const sozcukler = (alan: string): string[] =>
   alan
@@ -45,7 +45,7 @@ const sozcukler = (alan: string): string[] =>
 
 const degeriDenetle = (deger: unknown, yol: string): void => {
   if (typeof deger === "string") {
-    if (yasakDeger.some((kalip) => kalip.test(deger))) {
+    if (kayitDegeriYasakMi(deger)) {
       throw new Error(`Değişiklik kaydına gizli ya da kişisel değer yazılamaz: ${yol}`);
     }
     return;

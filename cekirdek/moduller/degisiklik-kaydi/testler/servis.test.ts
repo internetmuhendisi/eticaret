@@ -380,10 +380,33 @@ describe("kayıt içeriği", () => {
     ["dizideki e-posta", { kisiler: ["a@ornek.test"] }],
     ["oturum anahtarı değeri", { baslik: "Bearer abc" }],
     ["jwt değeri", { deger: "eyJhbGciOiJ9.eyJhIjoxfQ.imza" }],
+    ["basic giriş başlığı", { baslik: "Basic YWRtaW46Z2l6bGk=" }],
+    ["küçük harfle basic başlığı", { baslik: "basic dTpw" }],
     ["tarih nesnesi", { zaman: new Date() }],
   ])("%s kayda girmez, iş durur", async (_ad, deger) => {
     await expect(kaydet(null, deger)).rejects.toThrow(/Değişiklik kaydına/);
     await expect(kaydet(deger, null)).rejects.toThrow(/Değişiklik kaydına/);
+  });
+
+  // Kart 0076: ürün adı "Basic" ile başlayabilir; yalnız "kullanıcı:şifre" taşıyan başlık yakalanır.
+  it.each([
+    ["Basic Tişört"],
+    ["Basic Sweatshirt"],
+    ["basic tee"],
+    ["İletişim: destek@ornek.test adresine yazın."],
+  ])("%s düz metin olarak kayda girer", async (metin) => {
+    const kayit = randomUUID();
+    await vt.transaction((islem) =>
+      degisikligiKaydet(islem, {
+        kim: sistemIslemi("test"),
+        islem: "rol.verildi",
+        kayit: { tur: "yonetici", kimlik: kayit },
+        eski: null,
+        yeni: { ad: metin },
+      }),
+    );
+    const [satir] = await kayitlari(kayit);
+    expect(satir?.yeni_deger).toEqual({ ad: metin });
   });
 
   it("kimlik, sayı ve iş değerleri bozulmadan yazılır", async () => {

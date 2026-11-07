@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type BicimAyarlari, bicimleyiciOlustur } from "../bicimleyici";
+import { type BicimAyarlari, bicimleyiciOlustur, yerelZamandan } from "../bicimleyici";
 
 // Türkiye'nin varsayılan biçimi (planlar/site-ayarlari.md): 1.234,56 ₺, Europe/Istanbul.
 const turkiye: BicimAyarlari = {
@@ -67,5 +67,44 @@ describe("ülke adı", () => {
 
   it("tanınmayan ya da biçimi bozuk kodu olduğu gibi döndürür, hata vermez", () => {
     for (const kod of ["QQ", "", "T", "TUR", "X1"]) expect(bicim.ulkeAdi(kod)).toBe(kod);
+  });
+});
+
+// Kart 0076: zamanlanmış ürünün yayın zamanı sitenin saat diliminde yazılır.
+describe("yerel zamandan an", () => {
+  it.each([
+    ["Europe/Istanbul", "2026-11-08T09:30", "2026-11-08T06:30:00.000Z"],
+    ["UTC", "2026-11-08T09:30", "2026-11-08T09:30:00.000Z"],
+    ["America/New_York", "2026-07-01T00:00", "2026-07-01T04:00:00.000Z"],
+    ["America/New_York", "2026-01-01T00:00", "2026-01-01T05:00:00.000Z"],
+    ["Asia/Kolkata", "2026-03-01T12:00", "2026-03-01T06:30:00.000Z"],
+    ["Europe/Berlin", "2026-12-31T23:59", "2026-12-31T22:59:00.000Z"],
+  ])("%s %s → %s", (saatDilimi, yerel, an) => {
+    expect(yerelZamandan(yerel, saatDilimi)?.toISOString()).toBe(an);
+  });
+
+  it("yaz saatine geçişte atlanan saat yok sayılır", () => {
+    // Berlin 2026-03-29: 02:00'den 03:00'e atlanır.
+    expect(yerelZamandan("2026-03-29T02:30", "Europe/Berlin")).toBeUndefined();
+    expect(yerelZamandan("2026-03-29T03:00", "Europe/Berlin")?.toISOString()).toBe(
+      "2026-03-29T01:00:00.000Z",
+    );
+  });
+
+  it("saat geri alınırken iki kez yaşanan saatte önceki an seçilir", () => {
+    // Berlin 2026-10-25: 03:00'te 02:00'ye dönülür, 02:30 iki kez yaşanır.
+    expect(yerelZamandan("2026-10-25T02:30", "Europe/Berlin")?.toISOString()).toBe(
+      "2026-10-25T00:30:00.000Z",
+    );
+  });
+
+  it.each([
+    ["takvimde olmayan gün", "2026-02-30T10:00"],
+    ["saniyeli", "2026-11-08T09:30:00"],
+    ["saat dilimli", "2026-11-08T09:30Z"],
+    ["boş", ""],
+    ["25. saat", "2026-11-08T25:00"],
+  ])("%s reddedilir", (_ad, yerel) => {
+    expect(yerelZamandan(yerel, "Europe/Istanbul")).toBeUndefined();
   });
 });

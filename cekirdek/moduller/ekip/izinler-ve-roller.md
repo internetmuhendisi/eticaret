@@ -14,6 +14,9 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `magaza-ayarlari.gor` | yonetici | tumu | Mağaza sahibinin ayarlarını görür. |
 | `magaza-ayarlari.degistir` | yonetici | tumu | Mağaza sahibinin ayarlarını değiştirir. |
 | `musteri.kendi-hesabi.gor` | musteri | kendi | Müşteri kendi hesabını görür. |
+| `urun.gor` | yonetici | tumu | Ürünleri, silinmişler dahil, görür. |
+| `urun.degistir` | yonetici | tumu | Ürün ekler ve değiştirir. |
+| `urun.sil` | yonetici | tumu | Ürün siler (silinmiş olarak işaretler). |
 | `vergi.gor` | yonetici | tumu | Vergi sınıflarını ve oran tablosunu görür. |
 | `vergi.degistir` | yonetici | tumu | Vergi sınıflarını ve oranlarını ekler, değiştirir ve siler. |
 
@@ -26,6 +29,6 @@ Her sitede hazır gelir. Ekranda görünen adları metin dosyasındadır (`yonet
 | Kod | Görünen ad | İzinler |
 |---|---|---|
 | `magaza-sahibi` | Mağaza sahibi | bütün yönetici izinleri |
-| `gorevli` | Görevli | ekip.kendi-hesabi.gor |
+| `gorevli` | Görevli | ekip.kendi-hesabi.gor, urun.gor, urun.degistir |
 
 Tam yetkili son yöneticinin rolü alınamaz. Görevlinin izinleri ürün ve sipariş gibi modüller geldikçe artar.

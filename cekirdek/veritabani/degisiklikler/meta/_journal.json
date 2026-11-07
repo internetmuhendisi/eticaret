@@ -99,6 +99,13 @@
       "when": 1794080910650,
       "tag": "0013_vergi-kargo-sinifi",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794091908336,
+      "tag": "0014_urun",
+      "breakpoints": true
     }
   ]
 }

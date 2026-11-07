@@ -29,6 +29,44 @@ export const saatDilimiGecerliMi = (ad: string): boolean => {
   }
 };
 
+// Bir saat diliminde duvar saatinin parçaları: an → [yıl, ay, gün, saat, dakika].
+const duvarSaati = (an: Date, saatDilimi: string): number[] => {
+  const parcalar = new Intl.DateTimeFormat("en", {
+    timeZone: saatDilimi,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+  }).formatToParts(an);
+  const al = (tur: Intl.DateTimeFormatPartTypes) =>
+    Number(parcalar.find((parca) => parca.type === tur)?.value);
+  return [al("year"), al("month"), al("day"), al("hour"), al("minute")];
+};
+
+// Sitenin saat diliminde yazılmış yerel zamanı ("2026-11-08T09:30") ana çevirir (kart 0076). Biçim
+// dışı metin, takvimde olmayan gün ve o saat diliminde hiç yaşanmayan saat (yaz saatine geçişteki
+// atlanan saat) undefined döner. Saat geri alınırken iki kez yaşanan saatte önceki an seçilir.
+export const yerelZamandan = (yerel: string, saatDilimi: string): Date | undefined => {
+  const eslesme = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(yerel);
+  if (eslesme === null) return undefined;
+  const istenen = eslesme.slice(1).map(Number);
+  const [yil = 0, ay = 1, gun = 1, saat = 0, dakika = 0] = istenen;
+  const duvar = Date.UTC(yil, ay - 1, gun, saat, dakika);
+  // Bir anın o saat dilimindeki farkı (milisaniye).
+  const fark = (an: number) => {
+    const [y = 0, a = 1, g = 1, s = 0, d = 0] = duvarSaati(new Date(an), saatDilimi);
+    return Date.UTC(y, a - 1, g, s, d) - Math.floor(an / 60_000) * 60_000;
+  };
+  // Duvar saatine uyan adaylar: iki farklı farkla bulunan anlardan doğru olanlar, önce gelen seçilir.
+  const adaylar = [duvar - fark(duvar - 86_400_000), duvar - fark(duvar + 86_400_000)]
+    .filter((an) => duvarSaati(new Date(an), saatDilimi).every((deger, i) => deger === istenen[i]))
+    .toSorted((a, b) => a - b);
+  const [an] = adaylar;
+  return an === undefined ? undefined : new Date(an);
+};
+
 export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
   const sayiBicimi = (ondalikSayisi: number) =>
     new Intl.NumberFormat(ayarlar.dil, {

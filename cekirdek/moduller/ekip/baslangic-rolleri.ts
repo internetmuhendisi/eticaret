@@ -7,7 +7,11 @@ import type { GirisIzni } from "../../kayitlar/izinler.ts";
 export const baslangicRolleri = {
   // Tam yetki: bütün yönetici izinleri, ileride eklenecekler de.
   "magaza-sahibi": { tamYetki: true, izinler: [] },
-  gorevli: { tamYetki: false, izinler: ["ekip.kendi-hesabi.gor"] },
+  // Ürünü görür ve değiştirir, silemez (kart 0076, kullanıcı kararı).
+  gorevli: {
+    tamYetki: false,
+    izinler: ["ekip.kendi-hesabi.gor", "urun.gor", "urun.degistir"],
+  },
 } as const satisfies Record<
   string,
   { tamYetki: boolean; izinler: readonly GirisIzni<"yonetici">[] }

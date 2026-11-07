@@ -4,6 +4,7 @@
 import { ekipIzinleri } from "../moduller/ekip/izinler.ts";
 import { magazaAyarlariIzinleri } from "../moduller/magaza-ayarlari/izinler.ts";
 import { musteriIzinleri } from "../moduller/musteri/izinler.ts";
+import { urunIzinleri } from "../moduller/urun/izinler.ts";
 import { vergiIzinleri } from "../moduller/vergi/izinler.ts";
 import type { Kapi } from "./kapi.ts";
 
@@ -20,6 +21,7 @@ export const modulIzinleri = {
   ekip: ekipIzinleri,
   "magaza-ayarlari": magazaAyarlariIzinleri,
   musteri: musteriIzinleri,
+  urun: urunIzinleri,
   vergi: vergiIzinleri,
 } as const;
 
@@ -27,6 +29,7 @@ export const izinler = {
   ...ekipIzinleri,
   ...magazaAyarlariIzinleri,
   ...musteriIzinleri,
+  ...urunIzinleri,
   ...vergiIzinleri,
 } as const satisfies Record<string, IzinTanimi>;
 export type IzinAdi = keyof typeof izinler;
