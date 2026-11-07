@@ -395,6 +395,13 @@ const denemeSiteleriniTemizle = async (): Promise<string[]> => {
       const anahtar = `${adresAnahtari(kodAdi)}=`;
       const satirlar = readFileSync(envYolu, "utf8").split("\n");
       writeFileSync(envYolu, satirlar.filter((satir) => !satir.startsWith(anahtar)).join("\n"));
+      // Deneme sitesinin tek alt klasörü başlangıç değerleridir (denemeSitesiAc).
+      const baslangicKlasoru = join(klasor, "baslangic");
+      if (existsSync(baslangicKlasoru)) {
+        for (const dosya of readdirSync(baslangicKlasoru))
+          unlinkSync(join(baslangicKlasoru, dosya));
+        rmdirSync(baslangicKlasoru);
+      }
       for (const dosya of readdirSync(klasor)) unlinkSync(join(klasor, dosya));
       rmdirSync(klasor);
       silinenler.push(kodAdi);
