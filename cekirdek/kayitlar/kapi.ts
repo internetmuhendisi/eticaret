@@ -9,6 +9,7 @@ export const hataKodlari = {
   "oturum-yok": 401,
   "giris-hatasi": 401,
   yetki: 403,
+  "robot-dogrulamasi": 403,
   bulunamadi: 404,
   cakisma: 409,
   "is-kurali": 422,

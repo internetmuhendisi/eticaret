@@ -6,7 +6,8 @@
 //   - site kutularının portu dışarıya açık değildir;
 //   - istemcinin yazdığı sahte X-Forwarded-For başlığı istek sınırını aşamaz (karar 0024);
 //   - sınır doluyken aynı ucun kodlanmış ve başka yazılışları geçmez (karar 0041);
-//   - ortamın her kutusu Docker yeniden başlayınca kendiliğinden açılır (kart 0038).
+//   - ortamın her kutusu Docker yeniden başlayınca kendiliğinden açılır (kart 0038);
+//   - kayıt olan müşteriye hoş geldin e-postası gerçek arka plan kutusundan ulaşır (kart 0033).
 // Sonunda ortamı kapatır ve deneme sitesini siler. Bir ölçüm kalırsa kırmızı biter.
 // Çalıştırma: pnpm yerel-ortam-testi [--acik-birak]
 //   --acik-birak: ortamı ve deneme sitesini açık bırakır; kapatmak: pnpm yerel-ortam-kapat
@@ -17,6 +18,7 @@ import { siteKlasorunuOku } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { arkaPlanDosyalari } from "../cekirdek/kayitlar/arka-plan.ts";
 import { istekSinirlari } from "../cekirdek/kayitlar/kapi.ts";
 import { metinOkuyucu } from "../cekirdek/metinler/metin.ts";
+import { soruyuCoz } from "../cekirdek/moduller/robot-korumasi/testler/soru-coz.ts";
 import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
 import { arkaPlanKutuAdi, kutuKuraliDogru, yenidenBaslama } from "./kutu-kurali.mts";
 import {
@@ -157,6 +159,54 @@ const sitesiniOlc = async (site: OrtamSitesi, oteki: OrtamSitesi) => {
   }
 };
 
+// Kapıdan gerçek kayıt: robot sorusu, hesap, kuyruk, arka plan kutusu, posta kutusu (kart 0033, karar 0051).
+const kayitOlc = async (kodAdi: string): Promise<void> => {
+  const soru = JSON.parse((await iste(kodAdi, "/kapi/herkese-acik/robot-sorusu")).govde).veri;
+  const eposta = `kayit-${Date.now()}@ornek.test`;
+  const kayit = await gonder(kodAdi, "/kapi/herkese-acik/musteri-kayit", {
+    eposta,
+    sifre: "yerel-ortam-kayit-sifresi",
+    uyelikOnayi: true,
+    kvkkOnayi: true,
+    pazarlamaIzni: false,
+    robotCevabi: await soruyuCoz(soru),
+  });
+  olc(
+    `${kodAdi}: robot sorusunu çözen müşteri kayıt oluyor`,
+    kayit.durum === 200,
+    `${kayit.durum}`,
+  );
+  const uydurma = await gonder(kodAdi, "/kapi/herkese-acik/musteri-kayit", {
+    eposta: `uydurma-${eposta}`,
+    sifre: "yerel-ortam-kayit-sifresi",
+    uyelikOnayi: true,
+    kvkkOnayi: true,
+    pazarlamaIzni: false,
+    robotCevabi: "uydurma",
+  });
+  olc(
+    `${kodAdi}: robot cevabı uydurulan kayıt açılmıyor`,
+    uydurma.durum === 403,
+    `${uydurma.durum}`,
+  );
+  let konular: string[] = [];
+  for (let tur = 0; tur < 30 && konular.length === 0; tur++) {
+    const { messages = [] } = (await (
+      await fetch(
+        `${postaKutusuAdresi()}/api/v1/search?query=${encodeURIComponent(`to:"${eposta}"`)}`,
+      )
+    ).json()) as { messages?: { Subject: string }[] };
+    konular = messages.map(({ Subject }) => Subject);
+    if (konular.length === 0) await new Promise((coz) => setTimeout(coz, 1000));
+  }
+  const { kimlik } = siteKlasorunuOku(join(kok, "siteler", kodAdi));
+  olc(
+    `${kodAdi}: hoş geldin e-postası yerel posta kutusuna ulaşıyor`,
+    konular.length === 1 && konular[0]?.includes(kimlik.gorunenAd) === true,
+    konular.join(", ") || "e-posta yok",
+  );
+};
+
 // Ortamın bütün kutuları (veritabanı, Caddy, siteler) yeniden başlama kuralıyla çalışmalı.
 const kutuKurallariniOlc = (siteSayisi: number) => {
   const kutular = spawnSync(
@@ -284,6 +334,7 @@ const calistir = async (): Promise<void> => {
       });
       olc(`POST ${yol} giriş sınırını aşamıyor`, [308, 404, 429].includes(durum), `${durum}`);
     }
+    await kayitOlc(ornek.kimlik.kodAdi);
     kutuKurallariniOlc(siteler.length);
   } catch (hata) {
     olc("ortam açıldı", false, (hata as Error).message);

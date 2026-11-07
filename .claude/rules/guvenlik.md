@@ -27,8 +27,8 @@ paths:
 - Geçmişi silen ve dosyaları toptan silen komutlar proje ayar dosyasındaki yasak listesiyle kapalıdır. Bu yasakları aşmaya çalışma.
 - Gizli bilgi dosyası `.env` kayda girmez, GitHub'a ve sunucuya gitmez.
 - Toplu e-posta, gerçek ödeme ve alan adı değişikliği gibi geri alınamaz işleri kullanıcının onayıyla yap.
-- Çerez izni ve pazarlama izni tek yerde tanımlı olsun, müşterinin verdiği izin kaydedilsin.
+- Çerez izni ve pazarlama izni tek yerde tanımlı olsun, müşterinin verdiği izin kaydedilsin. Onaylar `cekirdek/kayitlar/musteri-onaylari.ts` kaydında, satırlar değiştirilemez `musteri_onaylari` tablosunda; metin değişince sürümü artır (karar 0051).
 - Ürün açıklaması, yorum ve form girdilerini ekrana yazmadan önce zararlı koddan temizle.
-- Kayıt, yorum, iletişim ve şifre sıfırlama formlarında bot koruması kullan.
+- Kayıt, yorum, iletişim ve şifre sıfırlama formlarında bot koruması kullan. Yol `cekirdek/moduller/robot-korumasi/`, değerleri `cekirdek/kayitlar/robot-korumasi.ts`: uç `robotCevabiniDogrula` çağırır, form `robotCevabiAl` ile cevabı alır (karar 0051). Veri dış hizmete gitmez.
 - Kullanılan dış kütüphanelerin bilinen güvenlik açıklarını her yayında tara.
 - Geliştirme, deneme ve canlı ortamın verisini ve anahtarlarını ayrı tut. Deneme ortamı gerçek ödeme almaz ve arama motoruna kapalıdır.

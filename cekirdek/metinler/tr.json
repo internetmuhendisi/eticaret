@@ -87,6 +87,52 @@
     },
     "anasayfa": {
       "yakindaAciliyoruz": "Yakında açılıyoruz."
+    },
+    "hesap": {
+      "giris": "Giriş yap",
+      "kayit": "Kayıt ol",
+      "cikis": "Çıkış yap",
+      "cikisHata": "Çıkış yapılamadı. Sayfayı yenileyip yeniden deneyin."
+    },
+    "giris": {
+      "baslik": "Giriş yap",
+      "eposta": "E-posta",
+      "sifre": "Şifre",
+      "gonder": "Giriş yap",
+      "hataBilgi": "E-posta ya da şifre yanlış. Kontrol edip yeniden deneyin.",
+      "hataSinir": "Çok fazla deneme yapıldı. Biraz bekleyip yeniden deneyin.",
+      "hataGenel": "Giriş şu an yapılamıyor. Biraz sonra yeniden deneyin.",
+      "hesabinYokMu": "Hesabınız yok mu? Kayıt olun"
+    },
+    "kayit": {
+      "baslik": "Kayıt ol",
+      "eposta": "E-posta",
+      "sifre": "Şifre",
+      "sifreAciklama": "En az {enKisa} karakter.",
+      "gonder": "Kayıt ol",
+      "gonderiliyor": "Kaydınız yapılıyor, lütfen bekleyin.",
+      "uyelikOnayi": "Üyelik sözleşmesini okudum ve kabul ediyorum.",
+      "uyelikBaglanti": "Üyelik sözleşmesini oku (yeni sekmede açılır)",
+      "kvkkOnayi": "KVKK aydınlatma metnini okudum.",
+      "kvkkBaglanti": "KVKK aydınlatma metnini oku (yeni sekmede açılır)",
+      "pazarlamaIzni": "Kampanya ve duyurular için bana e-posta gönderilsin. (İsteğe bağlı)",
+      "hataEposta": "Geçerli bir e-posta adresi yazın.",
+      "hataSifre": "Şifreniz en az {enKisa} karakter olmalı.",
+      "hataOnay": "Kayıt olmak için bu kutuyu işaretleyin.",
+      "hataKayitli": "Bu e-posta adresi zaten kayıtlı. Bu adresle giriş yapabilirsiniz.",
+      "girisBaglanti": "Giriş sayfasına git",
+      "hataSinir": "Çok fazla deneme yapıldı. Biraz bekleyip yeniden deneyin.",
+      "hataGenel": "Kayıt şu an yapılamıyor. Biraz sonra yeniden deneyin.",
+      "hesabinVarMi": "Hesabınız var mı? Giriş yapın"
+    },
+    "yasal": {
+      "taslak": "Bu metin taslak bir yer tutucudur. Mağaza açılmadan önce hukukçu tarafından kontrol edilen metin buraya gelecek.",
+      "uyelik": {
+        "baslik": "Üyelik sözleşmesi"
+      },
+      "kvkk": {
+        "baslik": "KVKK aydınlatma metni"
+      }
     }
   },
   "eposta": {
@@ -97,6 +143,11 @@
       "konu": "{magaza} deneme e-postası",
       "baslik": "Deneme e-postası",
       "govde": "Bu e-posta, gönderimin çalıştığını denemek için gönderildi. Bir şey yapmanız gerekmez."
+    },
+    "hosGeldin": {
+      "konu": "{magaza} hesabınız açıldı",
+      "baslik": "Hoş geldiniz",
+      "govde": "{magaza} hesabınız açıldı. Bu e-posta adresi ve belirlediğiniz şifreyle giriş yapabilirsiniz."
     }
   }
 }

@@ -23,6 +23,7 @@ Kapıdaki her uç burada yazar (`.claude/rules/sunucu-arayuzu.md`). Yeni ya da d
 | `oturum-yok` | 401 | Geçerli oturum yok: girişsiz, süresi dolmuş ya da kapanmış oturum. Ekran giriş sayfasına yönlendirir. |
 | `giris-hatasi` | 401 | E-posta ya da şifre yanlış. Kayıtlı olmayan e-postayla cevabı aynıdır (karar 0042). |
 | `yetki` | 403 | Oturum var ama istenen izin yok ya da istek başka bir adresten geldi (sahte istek). |
+| `robot-dogrulamasi` | 403 | Robot cevabı yanlış, süresi dolmuş ya da kullanılmış. Ekran yeni soruyla bir kez daha dener (karar 0051). |
 | `bulunamadi` | 404 | Kayıt yok. |
 | `cakisma` | 409 | Kayıt başka biriyle çakışıyor. |
 | `is-kurali` | 422 | Girdi geçerli ama iş kuralı izin vermiyor. |
@@ -107,3 +108,53 @@ Oturumu ve ara adımı kapatır, çerezleri siler. Rolü olmayan yönetici de ç
 - Girdi: yok. Oturum yoksa da 200 döner.
 - Servis: `cekirdek/moduller/oturum/giris.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": {} }` ve çerezleri silen başlıklar.
+
+### GET /kapi/herkese-acik/robot-sorusu
+
+Kayıt formunun robot sorusunu verir. Tarayıcı arkada çözer, cevabı formla gönderir (karar 0051).
+
+- İzin: `herkese-acik`. Sınır: `genel`.
+- Girdi: yok.
+- Servis: `cekirdek/moduller/robot-korumasi/servis.ts`.
+- Başarılı (200): imzalı soru. Kişisel veri taşımaz, biçimi robot koruması kütüphanesinindir.
+
+### POST /kapi/herkese-acik/musteri-kayit
+
+Müşteri hesabı açar, onayları kaydeder, hoş geldin e-postasını kuyruğa koyar, oturumu başlatır. Hepsi aynı veritabanı işlemindedir (karar 0051).
+
+- İzin: `herkese-acik`. Sınır: `siki`.
+- Girdi: `{ "eposta", "sifre", "uyelikOnayi": true, "kvkkOnayi": true, "pazarlamaIzni", "robotCevabi" }` (`kayitSemasi`, `cekirdek/moduller/musteri/semalar.ts`).
+- Servis: `cekirdek/moduller/musteri/servis.ts`. Robot cevabı veritabanına bakılmadan önce denetlenir.
+- Başarılı (200): `{ "basarili": true, "veri": {} }` ve iki oturum çerezi.
+- Hatalar: `cakisma` (e-posta kayıtlı; müşteriye söylenir, karar 0051), `robot-dogrulamasi`, `istek-siniri` (`Retry-After` ile), `dogrulama` (bozuk e-posta, kısa şifre, işaretlenmemiş zorunlu onay, fazla alan), `yetki` (sahte istek).
+
+### POST /kapi/herkese-acik/musteri-giris
+
+Şifre doğruysa müşteri oturumu açar. Müşterinin iki aşamalı girişi yoktur.
+
+- İzin: `herkese-acik`. Sınır: `siki`. Ayrıca yanlış denemeler hesap ve bağlantı başına sayılır (`girisDenemeSiniri`, `cekirdek/kayitlar/oturum.ts`).
+- Girdi: `{ "eposta", "sifre" }` (`girisSemasi`, `cekirdek/moduller/oturum/semalar.ts`).
+- Servis: `cekirdek/moduller/musteri/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }` ve iki oturum çerezi.
+- Hatalar: `giris-hatasi` (yanlış e-posta ya da şifre), `istek-siniri` (`Retry-After` ile), `dogrulama`, `yetki` (sahte istek).
+
+### POST /kapi/herkese-acik/musteri-cikis
+
+Müşteri oturumunu kapatır, çerezleri siler. Süresi dolmuş oturumun çerezleri de silinsin diye izin istemez.
+
+- İzin: `herkese-acik`. Sınır: `genel`.
+- Girdi: yok. Oturum yoksa da 200 döner.
+- Servis: `cekirdek/moduller/oturum/giris.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }` ve çerezleri silen başlıklar.
+
+## Müşteri
+
+### GET /kapi/musteri/hesabim
+
+Müşterinin kendi hesabını döner. Vitrin oturumu buradan sorar: sayfa çizerken oturum okunamaz (karar 0039). Girişsiz ziyaretçi için 401 olağandır, tarayıcı konsolunda görünür (karar 0051).
+
+- İzin: `musteri.kendi-hesabi.gor`. Sınır: `genel`.
+- Girdi: yok. Kimlik yalnız kapıdan gelir.
+- Servis: `cekirdek/moduller/musteri/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "eposta": "..." } }`, gerekirse yenilenen oturum çerezleri.
+- Hatalar: `oturum-yok`.

@@ -1,0 +1,32 @@
+/* Vitrinin hesap sayfalarının sade düzeni. Vitrin tasarımı bu işte yapılmaz (kart 0033), tasarım değerleri
+   gelince buraya bağlanır. Sayfa önce telefonda düzgün durur. */
+.icerik {
+  width: 100%;
+  max-width: 28rem;
+  margin-inline: auto;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.hesapAlani {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem 1rem;
+}
+
+.eposta {
+  overflow-wrap: anywhere;
+}
+
+/* Parmakla rahat basılır. */
+.baglanti {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+}

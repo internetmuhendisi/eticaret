@@ -606,9 +606,16 @@ describe("oturum açma yolu", () => {
   // Yeni bir oturum açma yeri eklenirse bu test kırmızı olur: yönetici oturumu kodsuz açılmamalı.
   it("oturumu yalnız iki aşamalı giriş açar; şifreyle oturum açan işlevi uygulama çağırmaz", () => {
     expect(kullananlar(/\boturumAc\(/)).toEqual([
+      // Müşterinin iki aşamalı girişi yoktur (kart 0033); dosya yönetici oturumu açamaz, aşağıda denetlenir.
+      "moduller/musteri/servis.ts",
       "moduller/oturum/iki-asamali-giris.ts",
       "moduller/oturum/servis.ts",
     ]);
     expect(kullananlar(/\bgirisYap\b/)).toEqual(["moduller/oturum/servis.ts"]);
+    const musteriServisi = readFileSync(join(kok, "moduller/musteri/servis.ts"), "utf8");
+    expect(musteriServisi).not.toContain("yonetici");
+    expect([...musteriServisi.matchAll(/\boturumAc\(\s*\w+,\s*"(\w+)"/g)].map((m) => m[1])).toEqual(
+      ["musteri", "musteri"],
+    );
   });
 });

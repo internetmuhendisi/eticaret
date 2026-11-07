@@ -57,6 +57,13 @@
       "when": 1794014109128,
       "tag": "0007_eposta-kayitlari",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794024967924,
+      "tag": "0008_musteri-onaylari",
+      "breakpoints": true
     }
   ]
 }

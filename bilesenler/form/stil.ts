@@ -2,6 +2,15 @@
 import ham from "./form.module.css";
 
 export const stil = ham as Record<
-  "alan" | "hata" | "giris" | "dugme" | "uyari" | "yukleniyor",
+  | "alan"
+  | "aciklama"
+  | "hata"
+  | "giris"
+  | "dugme"
+  | "uyari"
+  | "yukleniyor"
+  | "onay"
+  | "onayEtiketi"
+  | "onayKutusu",
   string
 >;

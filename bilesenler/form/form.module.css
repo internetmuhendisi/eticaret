@@ -10,6 +10,10 @@
   font-weight: 600;
 }
 
+.aciklama {
+  font-size: 0.875rem;
+}
+
 .giris,
 .dugme {
   box-sizing: border-box;
@@ -30,6 +34,28 @@
 .uyari {
   padding: 0.75rem;
   border: 2px solid currentcolor;
+}
+
+.onay {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Yazının tamamı kutuyu işaretler: dokunma alanı kutuyla sınırlı kalmaz. */
+.onayEtiketi {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  cursor: pointer;
+}
+
+.onayKutusu {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0;
 }
 
 /* Kod birkaç saniyede yüklenmezse görünür (kart 0057). */

@@ -40,7 +40,10 @@ type MusteriSenaryosu = (b: { kimlik: string; eposta: string }) => Promise<{
   govde?: unknown;
   aranan?: string[];
 }>;
-const musteriSenaryolari: Record<string, MusteriSenaryosu> = {};
+const musteriSenaryolari: Record<string, MusteriSenaryosu> = {
+  // Uç girdi almaz, kimliği yalnız kapıdan okur: A kendi e-postasını görür, B'ninkini göremez.
+  "GET /kapi/musteri/hesabim": async () => ({}),
+};
 
 const senaryosuzUclar = (uclar: readonly KayitliUc[], senaryolar: Record<string, unknown>) =>
   uclar

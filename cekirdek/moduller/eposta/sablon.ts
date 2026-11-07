@@ -13,6 +13,11 @@ const sablonlar: Record<EpostaSablonu, SablonTanimi> = {
     baslik: "eposta.deneme.baslik",
     govde: ["eposta.deneme.govde"],
   },
+  "hos-geldin": {
+    konu: "eposta.hosGeldin.konu",
+    baslik: "eposta.hosGeldin.baslik",
+    govde: ["eposta.hosGeldin.govde"],
+  },
 };
 
 const htmlKacir = (metin: string): string =>

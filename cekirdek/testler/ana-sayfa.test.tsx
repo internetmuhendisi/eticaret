@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 import { siteKlasorunuOku } from "../ayar-semasi/site-klasoru.ts";
+import { MetinSaglayici } from "../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../metinler/metin.ts";
 import VitrinAnaSayfa from "../uygulama/app/page.tsx";
 
@@ -16,7 +17,12 @@ const yazi = metinOkuyucu("tr")("vitrin.anasayfa.yakindaAciliyoruz");
 
 const ciz = (yakindaYazisi: boolean): string => {
   ortak[anahtar] = { ...site, ayarlar: { ...site.ayarlar, yakindaYazisi } };
-  return renderToStaticMarkup(<VitrinAnaSayfa />);
+  // Hesap alanı oturumu tarayıcıda sorar (kart 0033): sunucu çiziminde yer tutmaz.
+  return renderToStaticMarkup(
+    <MetinSaglayici dil="tr">
+      <VitrinAnaSayfa />
+    </MetinSaglayici>,
+  );
 };
 
 describe("vitrinin ana sayfası", () => {

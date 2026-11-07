@@ -11,20 +11,34 @@ export type AlanBaglantisi = {
 
 export function FormAlani({
   etiket,
+  aciklama,
   hata,
   children,
 }: {
   etiket: string;
+  aciklama?: string;
   hata?: string;
   children: (alan: AlanBaglantisi) => ReactNode;
 }) {
   const id = useId();
   const hataKimligi = `${id}-hata`;
+  const aciklamaKimligi = `${id}-aciklama`;
+  const bagli = [
+    ...(aciklama === undefined ? [] : [aciklamaKimligi]),
+    ...(hata === undefined ? [] : [hataKimligi]),
+  ].join(" ");
   return (
     <div className={stil.alan}>
       <label htmlFor={id}>{etiket}</label>
-      {children(
-        hata === undefined ? { id } : { id, "aria-invalid": true, "aria-describedby": hataKimligi },
+      {children({
+        id,
+        ...(hata === undefined ? {} : { "aria-invalid": true as const }),
+        ...(bagli === "" ? {} : { "aria-describedby": bagli }),
+      })}
+      {aciklama === undefined ? null : (
+        <span id={aciklamaKimligi} className={stil.aciklama}>
+          {aciklama}
+        </span>
       )}
       {hata === undefined ? null : (
         <span id={hataKimligi} className={stil.hata}>

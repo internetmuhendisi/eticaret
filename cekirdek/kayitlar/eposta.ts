@@ -9,7 +9,7 @@ export const epostaDurumu = {
 export type EpostaDurumu = (typeof epostaDurumu)[keyof typeof epostaDurumu];
 
 // Yeni e-posta: buraya ad, tr.json'a metinler, moduller/eposta/sablon.ts'e tanım.
-export const epostaSablonlari = ["deneme"] as const;
+export const epostaSablonlari = ["deneme", "hos-geldin"] as const;
 export type EpostaSablonu = (typeof epostaSablonlari)[number];
 
 export const epostaAyari = {

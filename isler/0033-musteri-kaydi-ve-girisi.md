@@ -26,7 +26,7 @@ Müşteri vitrinde hesap açar, giriş yapar ve çıkar (temel paket: Müşteri 
 ## Bitti sayılır
 
 - Tarayıcı testi kayıt, çıkış ve yeniden girişi baştan sona deniyor.
-- Hoş geldin e-postası deneme sitesinde ulaşıyor.
+- Hoş geldin e-postası yerel posta kutusuna ulaşıyor (`pnpm yerel-ortam-testi`). Kullanıcı onayıyla değişti: sunucuda gönderici yok, gerçek adrese ulaşma kart 0060'ta (karar 0051).
 - Pazarlama izni kutusu işaretsiz geliyor, verilen izin kaydediliyor.
 - Robot koruması ve deneme sınırı testle gösteriliyor.
 - Sayfalar telefonda, tablette ve bilgisayarda kullanılabiliyor, klavyeyle doldurulabiliyor.
