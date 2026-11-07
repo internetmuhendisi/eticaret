@@ -27,4 +27,4 @@ Site müşteriye ve yöneticiye e-posta gönderebilsin. E-postalar ortak bir şa
 
 ## Durum
 
-yapılacak
+bitti
