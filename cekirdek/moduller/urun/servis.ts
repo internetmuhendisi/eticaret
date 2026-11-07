@@ -19,6 +19,7 @@ import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import { type UrunDurumu, urunDurumVitrini, type VitrinYeri } from "../../kayitlar/urun.ts";
+import { bosAdresAdi } from "../../metinler/adres-adi.ts";
 import { yerelZamandan } from "../../metinler/bicimleyici.ts";
 import {
   siteninVeritabani,
@@ -26,8 +27,8 @@ import {
   type VeritabaniIslemi,
 } from "../../veritabani/baglanti.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
+import { kategoriler, urunKategorileri } from "../kategori/model.ts";
 import { vergiSiniflari } from "../vergi/model.ts";
-import { adresAdiUret, adresAdiUzunlugu } from "./adres-adi.ts";
 import { urunBirimleri, urunler } from "./model.ts";
 import {
   type UrunDegisikligi,
@@ -64,6 +65,8 @@ export type Urun = {
   enCokAdet?: number;
   // Boşsa (null) ürün vergisizdir.
   vergiSinifi: string | null;
+  // Bağlı kategorilerin kimlikleri, sıralı (kart 0077).
+  kategoriler: string[];
   silindi: boolean;
   birimler: UrunBirimi[];
 };
@@ -87,6 +90,8 @@ type UrunKaydi = {
   enMm: number | null;
   boyMm: number | null;
   yukseklikMm: number | null;
+  // Sıralı kategori kimlikleri (kart 0077).
+  kategoriler: string[];
 };
 const kayitAlanlari = [
   "ad",
@@ -105,6 +110,7 @@ const kayitAlanlari = [
   "enMm",
   "boyMm",
   "yukseklikMm",
+  "kategoriler",
 ] as const satisfies readonly (keyof UrunKaydi)[];
 
 type Sorun = { alan: string; kod: string };
@@ -137,11 +143,17 @@ const kurallariDenetle = (kayit: UrunKaydi): UrunKaydi => {
   return zamanli ? kayit : { ...kayit, yayinZamani: null };
 };
 
-// Değişiklik kaydına giden değer: boş alan yazılmaz, zaman ISO metnidir.
-const kayitDegeri = (kayit: Partial<UrunKaydi>): Record<string, unknown> =>
+// Değişiklik kaydına giden değer: boş alan yazılmaz, zaman ISO metnidir. Boş liste eklemede ve silmede
+// yazılmaz; değişiklikte yazılır (listenin boşaldığı görünsün).
+const kayitDegeri = (kayit: Partial<UrunKaydi>, bosListe = false): Record<string, unknown> =>
   Object.fromEntries(
     Object.entries(kayit)
-      .filter(([, deger]) => deger !== null && deger !== undefined)
+      .filter(
+        ([, deger]) =>
+          deger !== null &&
+          deger !== undefined &&
+          (bosListe || !(Array.isArray(deger) && deger.length === 0)),
+      )
       .map(([alan, deger]) => [alan, deger instanceof Date ? deger.toISOString() : deger]),
   );
 
@@ -202,6 +214,17 @@ const doluAlanlar = <T extends Record<string, unknown>>(nesne: T) =>
     [A in keyof T]: Exclude<T[A], null>;
   };
 
+// Ürünün kategorileri, sıralı. Kategori silinince bağlantı kalktığı için hepsi silinmemiştir.
+const urununKategorileri = async (vt: Veritabani | VeritabaniIslemi, urun: string) =>
+  (
+    await vt
+      .select({ kategori: urunKategorileri.kategori_kimligi })
+      .from(urunKategorileri)
+      .where(eq(urunKategorileri.urun_kimligi, urun))
+  )
+    .map((satir) => satir.kategori)
+    .toSorted();
+
 export const urunServisi = (saatDilimi: () => string) => {
   const yaz = <T>(vt: Veritabani, is: (islem: VeritabaniIslemi) => Promise<T>) =>
     vt.transaction(async (islem) => {
@@ -231,6 +254,27 @@ export const urunServisi = (saatDilimi: () => string) => {
     if (sinif === undefined) {
       throw dogrulamaHatasi([{ alan: "vergiSinifi", kod: "vergi-sinifi-gecersiz" }]);
     }
+  };
+
+  // Bağlanacak kategoriler var ve silinmemiş olmalı. Satırlar paylaşımlı kilitlenir: aynı anda silinen
+  // kategori (kategori/servis.ts) bitene kadar beklenir, sonra silinmiş görülür.
+  const kategorileriDenetle = async (islem: VeritabaniIslemi, kimlikler: string[]) => {
+    if (kimlikler.length === 0) return;
+    const bulunan = await islem
+      .select({ kimlik: kategoriler.kimlik })
+      .from(kategoriler)
+      .where(and(inArray(kategoriler.kimlik, kimlikler), isNull(kategoriler.silinme_zamani)))
+      .for("share");
+    if (bulunan.length !== kimlikler.length) {
+      throw dogrulamaHatasi([{ alan: "kategoriler", kod: "kategori-gecersiz" }]);
+    }
+  };
+
+  const kategorileriBagla = async (islem: VeritabaniIslemi, urun: string, kimlikler: string[]) => {
+    if (kimlikler.length === 0) return;
+    await islem
+      .insert(urunKategorileri)
+      .values(kimlikler.map((kategori) => ({ urun_kimligi: urun, kategori_kimligi: kategori })));
   };
 
   // Kilit altında: silinmemiş başka bir birim bu stok kodunu (büyük küçük harf ayrımsız) taşıyor mu?
@@ -270,31 +314,15 @@ export const urunServisi = (saatDilimi: () => string) => {
     return bulunan.length > 0;
   };
 
-  // Addan üretilen adres adı. Kullanılıyorsa sonuna sayı eklenir: cicekli-sal-2, cicekli-sal-3...
-  // Addan hiç harf kalmazsa ürünün kimliğinin ilk parçası kullanılır. Uzun kökte sayılı aday kökü
-  // kısaltır; bu yüzden adaylar önekle değil tek tek, elli elli tek sorguyla aranır (kart 0076 kontrolü).
-  const adresAdiBul = async (islem: VeritabaniIslemi, ad: string, kimlik: string) => {
-    const uretilen = adresAdiUret(ad);
-    const kok = uretilen === "" ? (kimlik.split("-")[0] ?? kimlik) : uretilen;
-    const aday = (sayi: number) => {
-      if (sayi === 1) return kok;
-      const ek = `-${sayi}`;
-      return `${kok.slice(0, adresAdiUzunlugu - ek.length).replace(/-+$/, "")}${ek}`;
-    };
-    for (let ilk = 1; ; ilk += 50) {
-      const adaylar = Array.from({ length: 50 }, (_, sira) => aday(ilk + sira));
-      const kullanilan = new Set(
-        (
-          await islem
-            .select({ adresAdi: urunler.adres_adi })
-            .from(urunler)
-            .where(and(isNull(urunler.silinme_zamani), inArray(urunler.adres_adi, adaylar)))
-        ).map((satir) => satir.adresAdi),
-      );
-      const bos = adaylar.find((adresAdi) => !kullanilan.has(adresAdi));
-      if (bos !== undefined) return bos;
-    }
-  };
+  // Addan üretilen adres adı (cekirdek/metinler/adres-adi.ts); adaylar silinmemişler arasında aranır.
+  const adresAdiBul = (islem: VeritabaniIslemi, ad: string, kimlik: string) =>
+    bosAdresAdi(ad, kimlik, async (adaylar) => {
+      const satirlar = await islem
+        .select({ adresAdi: urunler.adres_adi })
+        .from(urunler)
+        .where(and(isNull(urunler.silinme_zamani), inArray(urunler.adres_adi, adaylar)));
+      return new Set(satirlar.map((satir) => satir.adresAdi));
+    });
 
   const tekligiDenetle = async (
     islem: VeritabaniIslemi,
@@ -340,15 +368,18 @@ export const urunServisi = (saatDilimi: () => string) => {
       enMm: girdi.enMm ?? null,
       boyMm: girdi.boyMm ?? null,
       yukseklikMm: girdi.yukseklikMm ?? null,
+      kategoriler: (girdi.kategoriler ?? []).toSorted(),
     });
     return yaz(vt, async (islem) => {
       await vergiSinifiniDenetle(islem, kayit.vergiSinifi);
+      await kategorileriDenetle(islem, kayit.kategoriler);
       await tekligiDenetle(islem, kayit);
       const kimlik = randomUUID();
       const adresAdi = kayit.adresAdi ?? (await adresAdiBul(islem, kayit.ad, kimlik));
       const yazilacak = { ...kayit, adresAdi };
       await islem.insert(urunler).values({ kimlik, ...urunSatiri(yazilacak) });
       await islem.insert(urunBirimleri).values({ urun_kimligi: kimlik, ...birimSatiri(yazilacak) });
+      await kategorileriBagla(islem, kimlik, yazilacak.kategoriler);
       await degisikligiKaydet(islem, {
         kim,
         islem: "urun.eklendi",
@@ -372,7 +403,12 @@ export const urunServisi = (saatDilimi: () => string) => {
     if (birim === undefined) throw new Error("Ürünün satılabilir birimi yok.");
     const { silinme: _urunSilinme, kimlik: _urun, ...urunKaydi } = urun;
     const { silinme: _birimSilinme, kimlik: birimKimligi, sira: _sira, ...birimKaydi } = birim;
-    const kayit: UrunKaydi = { ...urunKaydi, durum: urun.durum as UrunDurumu, ...birimKaydi };
+    const kayit: UrunKaydi = {
+      ...urunKaydi,
+      durum: urun.durum as UrunDurumu,
+      ...birimKaydi,
+      kategoriler: await urununKategorileri(islem, kimlik),
+    };
     return { kayit, birimKimligi };
   };
 
@@ -392,6 +428,7 @@ export const urunServisi = (saatDilimi: () => string) => {
       const verilen = Object.fromEntries(
         Object.entries({ ...girdi, yayinZamani }).filter(([, deger]) => deger !== undefined),
       ) as Partial<UrunKaydi>;
+      if (verilen.kategoriler !== undefined) verilen.kategoriler = verilen.kategoriler.toSorted();
       const yeni = kurallariDenetle({ ...eski, ...verilen });
       const degisen = kayitAlanlari.filter(
         (alan) => JSON.stringify(eski[alan]) !== JSON.stringify(yeni[alan]),
@@ -399,6 +436,9 @@ export const urunServisi = (saatDilimi: () => string) => {
       if (degisen.length === 0) return;
       if (yeni.vergiSinifi !== eski.vergiSinifi)
         await vergiSinifiniDenetle(islem, yeni.vergiSinifi);
+      const eklenen = yeni.kategoriler.filter((k) => !eski.kategoriler.includes(k));
+      const kalkan = eski.kategoriler.filter((k) => !yeni.kategoriler.includes(k));
+      await kategorileriDenetle(islem, eklenen);
       await tekligiDenetle(
         islem,
         {
@@ -419,8 +459,19 @@ export const urunServisi = (saatDilimi: () => string) => {
         .update(urunBirimleri)
         .set({ ...birimSatiri(yeni), guncellenme_zamani: sql`now()` })
         .where(eq(urunBirimleri.kimlik, birimKimligi));
+      if (kalkan.length > 0) {
+        await islem
+          .delete(urunKategorileri)
+          .where(
+            and(
+              eq(urunKategorileri.urun_kimligi, kimlik),
+              inArray(urunKategorileri.kategori_kimligi, kalkan),
+            ),
+          );
+      }
+      await kategorileriBagla(islem, kimlik, eklenen);
       const sec = (kaynak: UrunKaydi) =>
-        kayitDegeri(Object.fromEntries(degisen.map((alan) => [alan, kaynak[alan]])));
+        kayitDegeri(Object.fromEntries(degisen.map((alan) => [alan, kaynak[alan]])), true);
       await degisikligiKaydet(islem, {
         kim,
         islem: "urun.degisti",
@@ -466,6 +517,7 @@ export const urunServisi = (saatDilimi: () => string) => {
       ...doluAlanlar(alanlar),
       durum: durum as UrunDurumu,
       vergiSinifi,
+      kategoriler: await urununKategorileri(vt, kimlik),
       silindi: silinme !== null,
       birimler: birimler.map(({ silinme: birimSilinme, ...birim }) => ({
         ...doluAlanlar(birim),

@@ -10,7 +10,14 @@ export const baslangicRolleri = {
   // Ürünü görür ve değiştirir, silemez (kart 0076, kullanıcı kararı).
   gorevli: {
     tamYetki: false,
-    izinler: ["ekip.kendi-hesabi.gor", "urun.gor", "urun.degistir"],
+    // Kategoriyi görür, değiştirir ve taşır, silemez (kart 0077, kullanıcı kararı).
+    izinler: [
+      "ekip.kendi-hesabi.gor",
+      "urun.gor",
+      "urun.degistir",
+      "kategori.gor",
+      "kategori.degistir",
+    ],
   },
 } as const satisfies Record<
   string,

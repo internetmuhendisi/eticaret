@@ -1,6 +1,7 @@
 ---
 paths:
   - "cekirdek/moduller/urun/**"
+  - "cekirdek/moduller/kategori/**"
   - "cekirdek/moduller/stok/**"
   - "cekirdek/moduller/fiyat/**"
   - "cekirdek/moduller/vergi/**"
@@ -35,6 +36,7 @@ paths:
 ## Ürün
 
 - Ürün yalnız `cekirdek/moduller/urun/servis.ts` ile okunur ve değişir. Fiyat, stok ve stok kodu ürüne değil satılabilir birime bağlanır (karar 0062).
+- Kategori yalnız `cekirdek/moduller/kategori/servis.ts` ile okunur ve değişir. Kategorinin ürünleri tek sorguyla `kategorininUrunleri` ile gelir; döngüyü servis ve veritabanındaki tetikleyici aynı kilitle denetler (karar 0063).
 - Ürünün vitrinde görünüp görünmediği yalnız `vitrinKosulu` (`cekirdek/moduller/urun/vitrin.ts`) ile bulunur. Yayın durumlarının nerede göründüğü `cekirdek/kayitlar/urun.ts` kaydındadır, durum adını kodda elle yazma.
 
 ## Stok

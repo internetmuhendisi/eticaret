@@ -132,7 +132,20 @@
         "yayin-zamani-gerekli": "Zamanlanmış ürün için yayın zamanını seçin.",
         "yayin-zamani-gecersiz": "Bu tarih ve saat mağazanın saat diliminde yok (saat değişimi). Başka bir saat seçin.",
         "adet-siniri": "En çok alım adedi, en az alım adedinden küçük olamaz. Adetleri düzeltin.",
-        "vergi-sinifi-gecersiz": "Bu vergi sınıfı bulunamadı ya da silinmiş. Başka bir vergi sınıfı seçin."
+        "vergi-sinifi-gecersiz": "Bu vergi sınıfı bulunamadı ya da silinmiş. Başka bir vergi sınıfı seçin.",
+        "kategori-tekrar": "Aynı kategori iki kez seçilmiş. Kategoriyi bir kez seçin.",
+        "kategori-gecersiz": "Seçilen kategorilerden biri bulunamadı ya da silinmiş. Kategorileri yeniden seçin."
+      }
+    },
+    "kategori": {
+      "hata": {
+        "kayda-uygun-degil": "Bu alan yalnız bir e-posta adresinden ya da giriş anahtarından oluşamaz. Metni değiştirin.",
+        "adres-adi-bicimi": "Adres adında yalnız küçük harf (ç, ğ, ı, ö, ş, ü olmadan), rakam ve tire olabilir. Örnek: ev-ve-yasam.",
+        "adres-adi-tekrar": "Bu adres adı başka bir kategoride kullanılıyor. Başka bir ad yazın.",
+        "ad-tekrar": "Aynı üst kategorinin altında bu adla bir kategori zaten var. Başka bir ad yazın ya da başka bir üst kategori seçin.",
+        "ust-gecersiz": "Seçilen üst kategori bulunamadı ya da silinmiş. Başka bir üst kategori seçin.",
+        "dongu": "Bir kategori kendi altına ya da alt kategorilerinden birinin altına taşınamaz. Başka bir üst kategori seçin.",
+        "silmede-ad-tekrar": "Bu kategori silinince alt kategorileri bir üste çıkar, ama oradaki bir kategoriyle aynı adı taşıyan bir alt kategori var. Önce birinin adını değiştirin."
       }
     }
   },

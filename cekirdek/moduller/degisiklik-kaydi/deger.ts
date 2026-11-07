@@ -4,6 +4,8 @@
 //
 // Kalıp değerin tamamına bakar (baştaki ve sondaki boşluk atılır): e-posta adresi, giriş başlığı ya da
 // JWT'nin kendisi. Cümle içinde geçen adres takılmaz.
+import { z } from "zod";
+
 const epostaKalibi = /^[^\s@]+@[^\s@]+$/;
 const bearerKalibi = /^bearer\s/i;
 const jwtKalibi = /^eyJ[\w-]+\.[\w-]+\./;
@@ -35,3 +37,14 @@ export const kayitDegeriYasakMi = (ham: string): boolean => {
     basicBasligiMi(deger)
   );
 };
+
+// Kayda girecek serbest metnin şeması: kırpılır, boş olamaz, en çok verilen uzunlukta, değerin tamamı
+// kayda yazılamayan bir değer olamaz. Hata kodu modüllerin hata listesinde de yazar.
+export const kayitMetniHatasi = "kayda-uygun-degil";
+export const kayitMetni = (enCok: number) =>
+  z
+    .string()
+    .trim()
+    .min(1)
+    .max(enCok)
+    .refine((deger) => !kayitDegeriYasakMi(deger), kayitMetniHatasi);

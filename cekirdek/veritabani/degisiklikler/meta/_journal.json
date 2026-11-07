@@ -106,6 +106,13 @@
       "when": 1794091908336,
       "tag": "0014_urun",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1794093882309,
+      "tag": "0015_kategori",
+      "breakpoints": true
     }
   ]
 }

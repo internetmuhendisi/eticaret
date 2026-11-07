@@ -8,11 +8,11 @@ import { afterEach, describe, expect, it } from "vitest";
 import { BilinenHata } from "../../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
 import { urunDurumlari, urunDurumVitrini, vitrinYerleri } from "../../../kayitlar/urun.ts";
+import { adresAdiUzunlugu } from "../../../metinler/adres-adi.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { vergiServisi } from "../../vergi/servis.ts";
-import { adresAdiUzunlugu } from "../adres-adi.ts";
 import { urunBirimleri, urunler } from "../model.ts";
 import type { UrunGirdisi } from "../semalar.ts";
 import { urunServisi } from "../servis.ts";
@@ -352,6 +352,7 @@ describe("alanlar", () => {
       enAzAdet: 2,
       enCokAdet: 10,
       vergiSinifi: sinif,
+      kategoriler: [],
       silindi: false,
       birimler: [
         {

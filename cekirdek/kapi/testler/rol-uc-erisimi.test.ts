@@ -166,24 +166,31 @@ describe("kişi listesi", () => {
     }
   });
 
-  // Kart 0076 (kullanıcı kararı): her rol ürünü görür ve değiştirir, yalnız tam yetkili siler. Ürünün
-  // uçları panel ekranlarıyla gelir; o zaman bu beklenti her uçta gerçek veritabanıyla denenir.
-  it("ürün izinleri: her rol görür ve değiştirir, yalnız tam yetkili siler", () => {
-    const [girissiz, musteri, rolsuz, ...roller] = kisiler;
-    for (const kisi of [girissiz, musteri, rolsuz]) {
-      if (kisi === undefined) throw new Error("Kişi eksik.");
-      for (const izin of ["urun.gor", "urun.degistir", "urun.sil"] as const) {
-        expect(erisebilirMi(kisi, izin)).toBe(false);
+  // Kart 0076 ve 0077 (kullanıcı kararları): her rol ürünü ve kategoriyi görür ve değiştirir, yalnız
+  // tam yetkili siler. Uçlar panel ekranlarıyla gelir; o zaman bu beklenti her uçta gerçek
+  // veritabanıyla denenir.
+  it.each([
+    ["ürün", "urun.gor", "urun.degistir", "urun.sil"],
+    ["kategori", "kategori.gor", "kategori.degistir", "kategori.sil"],
+  ] as const)(
+    "%s izinleri: her rol görür ve değiştirir, yalnız tam yetkili siler",
+    (_ad, gor, degistir, sil) => {
+      const [girissiz, musteri, rolsuz, ...roller] = kisiler;
+      for (const kisi of [girissiz, musteri, rolsuz]) {
+        if (kisi === undefined) throw new Error("Kişi eksik.");
+        for (const izin of [gor, degistir, sil]) {
+          expect(erisebilirMi(kisi, izin)).toBe(false);
+        }
       }
-    }
-    expect(roller.length).toBeGreaterThanOrEqual(2);
-    for (const rol of roller) {
-      if (rol.tur !== "yonetici" || rol.rolKodu === null) throw new Error("Rol eksik.");
-      expect(erisebilirMi(rol, "urun.gor")).toBe(true);
-      expect(erisebilirMi(rol, "urun.degistir")).toBe(true);
-      expect(erisebilirMi(rol, "urun.sil")).toBe(baslangicRolleri[rol.rolKodu].tamYetki);
-    }
-  });
+      expect(roller.length).toBeGreaterThanOrEqual(2);
+      for (const rol of roller) {
+        if (rol.tur !== "yonetici" || rol.rolKodu === null) throw new Error("Rol eksik.");
+        expect(erisebilirMi(rol, gor)).toBe(true);
+        expect(erisebilirMi(rol, degistir)).toBe(true);
+        expect(erisebilirMi(rol, sil)).toBe(baslangicRolleri[rol.rolKodu].tamYetki);
+      }
+    },
+  );
 });
 
 describe("makine gerçekten yakalıyor", () => {

@@ -22,6 +22,10 @@ export const degisiklikIslemleri = [
   "urun.eklendi",
   "urun.degisti",
   "urun.silindi",
+  // Kategori (kart 0077). Taşıma, üst kategorinin değişmesidir: kategori.degisti.
+  "kategori.eklendi",
+  "kategori.degisti",
+  "kategori.silindi",
 ] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 
@@ -32,6 +36,7 @@ export const degisiklikKayitTurleri = [
   "vergi-sinifi",
   "vergi-orani",
   "urun",
+  "kategori",
 ] as const;
 export type DegisiklikKayitTuru = (typeof degisiklikKayitTurleri)[number];
 
