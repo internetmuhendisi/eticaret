@@ -21,7 +21,7 @@
 
 ## Bitti sayılır
 
-- Tarayıcı testi müşteri için baştan sona deniyor: istek, e-postadaki bağlantı, yeni şifre, yeni şifreyle giriş.
+- Tarayıcı testi müşteri için baştan sona deniyor: istek, e-postadaki bağlantı (yerel posta kutusunda; kullanıcı onayıyla, gerçek adrese ulaşma kart 0060'ta), yeni şifre, yeni şifreyle giriş.
 - Kullanılmış ya da süresi dolmuş bağlantı reddediliyor.
 - Şifre sıfırlandıktan sonra eski oturum geçmiyor.
 - Sıfırlamadan sonra yönetici yine doğrulama kodu istiyor.

@@ -9,6 +9,10 @@
 // - yenileme_anahtari_ozeti: anahtar yenilenirken, benzersiz indeksli.
 // - onceki_yenileme_ozeti: eski anahtarın yeniden kullanımı yakalanırken, indeksli.
 // - hesap_kimligi: bir hesabın oturumları bulunurken, indeksli.
+//
+// Şifre sıfırlama tablosunda aranan alanlar (kart 0034, karar 0052):
+// - anahtar_ozeti: bağlantı kullanılırken, benzersiz indeksli.
+// - hesap_kimligi: bir hesabın eski bağlantıları silinirken, indeksli.
 import { type AnyPgColumn, index, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm/sql";
 import { kimlik, zaman } from "../../veritabani/turler.ts";
@@ -56,6 +60,24 @@ export const oturumTablosu = (ad: string, hesap: () => AnyPgColumn) =>
       uniqueIndex(`${ad}_kisa_anahtar_benzersiz`).on(tablo.kisa_anahtar_ozeti),
       uniqueIndex(`${ad}_yenileme_anahtari_benzersiz`).on(tablo.yenileme_anahtari_ozeti),
       index(`${ad}_onceki_yenileme`).on(tablo.onceki_yenileme_ozeti),
+      index(`${ad}_hesap`).on(tablo.hesap_kimligi),
+    ],
+  );
+
+export const sifreSifirlamaTablosu = (ad: string, hesap: () => AnyPgColumn) =>
+  pgTable(
+    ad,
+    {
+      kimlik: kimlik(),
+      hesap_kimligi: uuid().notNull().references(hesap, { onDelete: "cascade" }),
+      // Anahtarın kendisi tutulmaz, yalnız özeti.
+      anahtar_ozeti: text().notNull(),
+      bitis: zaman().notNull(),
+      kullanilma_zamani: zaman(),
+      olusturulma_zamani: zaman().notNull().defaultNow(),
+    },
+    (tablo) => [
+      uniqueIndex(`${ad}_anahtar_benzersiz`).on(tablo.anahtar_ozeti),
       index(`${ad}_hesap`).on(tablo.hesap_kimligi),
     ],
   );

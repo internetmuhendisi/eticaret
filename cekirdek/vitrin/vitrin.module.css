@@ -23,10 +23,3 @@
 .eposta {
   overflow-wrap: anywhere;
 }
-
-/* Parmakla rahat basılır. */
-.baglanti {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.75rem;
-}

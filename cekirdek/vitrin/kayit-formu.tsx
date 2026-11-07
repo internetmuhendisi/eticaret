@@ -1,8 +1,7 @@
 "use client";
-// Müşteri kayıt formu (kart 0033, karar 0051). Şema uçla ortaktır. Robot sorusu form açılınca arkada çözülür,
-// müşteri bir şey yapmaz. Her cevap bir kez geçer: gönderimden sonra yenisi hazırlanır.
-import Link from "next/link";
+// Müşteri kayıt formu (kart 0033, karar 0051). Şema uçla ortaktır. Robot korumasını useRobotluGonderim yürütür.
 import { type FormEvent, useEffect, useRef, useState } from "react";
+import { Baglanti } from "../../bilesenler/form/baglanti";
 import { Form, GonderDugmesi } from "../../bilesenler/form/form";
 import { FormAlani } from "../../bilesenler/form/form-alani";
 import { GirisAlani } from "../../bilesenler/form/giris-alani";
@@ -13,7 +12,7 @@ import { sifreSiniri } from "../kayitlar/oturum";
 import { useMetin } from "../metinler/istemci-metni";
 import { doldur } from "../moduller/eposta/sablon";
 import { kayitFormuSemasi } from "../moduller/musteri/semalar";
-import { robotCevabiAl } from "../moduller/robot-korumasi/istemci";
+import { useRobotluGonderim } from "../moduller/robot-korumasi/istemci";
 import { vitrinAdresleri } from "./adresler";
 import { stil } from "./stil";
 
@@ -28,33 +27,15 @@ export function KayitFormu() {
   const [genelHata, setGenelHata] = useState<GenelHata | null>(null);
   const [bekliyor, setBekliyor] = useState(false);
   const gonderiliyor = useRef(false);
-  const robotCevabi = useRef<Promise<string | null> | null>(null);
+  const robotluGonder = useRobotluGonderim();
   const formYeri = useRef<HTMLDivElement>(null);
   const enKisa = { enKisa: String(sifreSiniri.enKisa) };
-
-  useEffect(() => {
-    robotCevabi.current = robotCevabiAl();
-  }, []);
 
   // Klavyeyle dolduran kişi hatanın olduğu alana gider.
   useEffect(() => {
     if (Object.keys(alanHatalari).length === 0) return;
     formYeri.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
   }, [alanHatalari]);
-
-  // Arkadaki çözüm tutmadıysa (ağ hatası, süre) gönderirken bir kez daha denenir.
-  const siradakiCevap = async () => {
-    const hazir = robotCevabi.current;
-    robotCevabi.current = robotCevabiAl();
-    return (await hazir) ?? robotCevabiAl();
-  };
-
-  const istekGonder = async (girdi: object) =>
-    fetch(kayitUcu, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ...girdi, robotCevabi: await siradakiCevap() }),
-    });
 
   const gonder = async (olay: FormEvent<HTMLFormElement>) => {
     olay.preventDefault();
@@ -83,9 +64,7 @@ export function KayitFormu() {
     gonderiliyor.current = true;
     setBekliyor(true);
     try {
-      let yanit = await istekGonder(girdi.data);
-      // Soru süresi dolduysa ya da site yeniden başladıysa müşteri fark etmeden bir kez daha denenir.
-      if (yanit.status === hataKodlari["robot-dogrulamasi"]) yanit = await istekGonder(girdi.data);
+      const yanit = await robotluGonder(kayitUcu, girdi.data);
       if (yanit.ok) {
         window.location.assign(vitrinAdresleri.anasayfa);
         return;
@@ -113,9 +92,7 @@ export function KayitFormu() {
         {genelHata === "kayitli" ? (
           <Uyari>
             <p>{metin("vitrin.kayit.hataKayitli")}</p>
-            <Link className={stil.baglanti} href={vitrinAdresleri.giris}>
-              {metin("vitrin.kayit.girisBaglanti")}
-            </Link>
+            <Baglanti href={vitrinAdresleri.giris}>{metin("vitrin.kayit.girisBaglanti")}</Baglanti>
           </Uyari>
         ) : null}
         {genelHata === "sinir" ? <Uyari>{metin("vitrin.kayit.hataSinir")}</Uyari> : null}
@@ -148,9 +125,9 @@ export function KayitFormu() {
           etiket={metin("vitrin.kayit.uyelikOnayi")}
           hata={alanHatalari.uyelikOnayi}
           ek={
-            <Link className={stil.baglanti} href={vitrinAdresleri.uyelikSozlesmesi} target="_blank">
+            <Baglanti href={vitrinAdresleri.uyelikSozlesmesi} target="_blank">
               {metin("vitrin.kayit.uyelikBaglanti")}
-            </Link>
+            </Baglanti>
           }
         />
         <OnayKutusu
@@ -158,17 +135,15 @@ export function KayitFormu() {
           etiket={metin("vitrin.kayit.kvkkOnayi")}
           hata={alanHatalari.kvkkOnayi}
           ek={
-            <Link className={stil.baglanti} href={vitrinAdresleri.kvkkAydinlatma} target="_blank">
+            <Baglanti href={vitrinAdresleri.kvkkAydinlatma} target="_blank">
               {metin("vitrin.kayit.kvkkBaglanti")}
-            </Link>
+            </Baglanti>
           }
         />
         <OnayKutusu name="pazarlamaIzni" etiket={metin("vitrin.kayit.pazarlamaIzni")} />
         {bekliyor ? <p role="status">{metin("vitrin.kayit.gonderiliyor")}</p> : null}
         <GonderDugmesi>{metin("vitrin.kayit.gonder")}</GonderDugmesi>
-        <Link className={stil.baglanti} href={vitrinAdresleri.giris}>
-          {metin("vitrin.kayit.hesabinVarMi")}
-        </Link>
+        <Baglanti href={vitrinAdresleri.giris}>{metin("vitrin.kayit.hesabinVarMi")}</Baglanti>
       </Form>
     </div>
   );

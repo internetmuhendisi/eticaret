@@ -2,6 +2,8 @@
 // null döner: form genel hatayı gösterir. Yöntem değişirse değişiklik bu modüldedir.
 import { solveChallenge } from "altcha-lib";
 import { deriveKey } from "altcha-lib/algorithms/web/pbkdf2";
+import { useEffect, useRef } from "react";
+import { hataKodlari } from "../../kayitlar/kapi";
 import { robotKorumasiAyari } from "../../kayitlar/robot-korumasi";
 
 const soruUcu = "/kapi/herkese-acik/robot-sorusu";
@@ -22,4 +24,33 @@ export const robotCevabiAl = async (): Promise<string | null> => {
   } catch {
     return null;
   }
+};
+
+// Robotlu formların gönderimi (kartlar 0033, 0034). Cevap form açılınca arkada hazırlanır. Her cevap bir kez
+// geçer: gönderimden sonra yenisi hazırlanır. Arkadaki çözüm tutmadıysa gönderirken bir kez daha denenir.
+// Sunucu cevabı reddederse (soru süresi dolmuş, site yeniden başlamış) müşteri fark etmeden bir kez daha gider.
+export const useRobotluGonderim = () => {
+  const hazirlanan = useRef<Promise<string | null> | null>(null);
+
+  useEffect(() => {
+    hazirlanan.current = robotCevabiAl();
+  }, []);
+
+  const siradakiCevap = async () => {
+    const hazir = hazirlanan.current;
+    hazirlanan.current = robotCevabiAl();
+    return (await hazir) ?? robotCevabiAl();
+  };
+
+  const istekGonder = async (ucAdresi: string, girdi: object) =>
+    fetch(ucAdresi, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ ...girdi, robotCevabi: await siradakiCevap() }),
+    });
+
+  return async (ucAdresi: string, girdi: object): Promise<Response> => {
+    const yanit = await istekGonder(ucAdresi, girdi);
+    return yanit.status === hataKodlari["robot-dogrulamasi"] ? istekGonder(ucAdresi, girdi) : yanit;
+  };
 };

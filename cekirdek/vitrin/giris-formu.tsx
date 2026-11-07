@@ -1,7 +1,7 @@
 "use client";
 // Müşteri giriş formu (kart 0033). Şema uçla ortaktır; şemadan geçmeyen girdi sunucuya gitmez.
-import Link from "next/link";
 import { type FormEvent, useRef, useState } from "react";
+import { Baglanti } from "../../bilesenler/form/baglanti";
 import { Form, GonderDugmesi } from "../../bilesenler/form/form";
 import { FormAlani } from "../../bilesenler/form/form-alani";
 import { GirisAlani } from "../../bilesenler/form/giris-alani";
@@ -78,9 +78,8 @@ export function GirisFormu() {
         )}
       </FormAlani>
       <GonderDugmesi>{metin("vitrin.giris.gonder")}</GonderDugmesi>
-      <Link className={stil.baglanti} href={vitrinAdresleri.kayit}>
-        {metin("vitrin.giris.hesabinYokMu")}
-      </Link>
+      <Baglanti href={vitrinAdresleri.sifremiUnuttum}>{metin("ortak.sifirlama.baglanti")}</Baglanti>
+      <Baglanti href={vitrinAdresleri.kayit}>{metin("vitrin.giris.hesabinYokMu")}</Baglanti>
     </Form>
   );
 }

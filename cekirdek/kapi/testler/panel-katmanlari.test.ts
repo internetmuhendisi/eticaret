@@ -159,7 +159,7 @@ describe("panel dosyalarının yeri", () => {
     });
   const sayfalar = dosyalar(appKlasoru).map((yol) => relative(appKlasoru, yol));
 
-  it("girişli düzenin dışında yalnız giriş, kod ve kurulum sayfaları var", () => {
+  it("girişli düzenin dışında yalnız giriş, kod, kurulum ve şifre sıfırlama sayfaları var", () => {
     const disarida = sayfalar.filter(
       (yol) =>
         yol.startsWith(`yonetim${"/"}`) &&
@@ -170,6 +170,8 @@ describe("panel dosyalarının yeri", () => {
       "yonetim/giris/kod/page.tsx",
       "yonetim/giris/kurulum/page.tsx",
       "yonetim/giris/page.tsx",
+      "yonetim/giris/sifre-yenile/page.tsx",
+      "yonetim/giris/sifremi-unuttum/page.tsx",
     ]);
   });
 

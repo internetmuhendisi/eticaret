@@ -147,6 +147,46 @@ Müşteri oturumunu kapatır, çerezleri siler. Süresi dolmuş oturumun çerezl
 - Servis: `cekirdek/moduller/oturum/giris.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": {} }` ve çerezleri silen başlıklar.
 
+### POST /kapi/herkese-acik/musteri-sifre-sifirlama
+
+Şifre yenileme bağlantısı ister. Kayıtlı olsa da olmasa da cevap ve süre aynıdır (karar 0052).
+
+- İzin: `herkese-acik`. Sınır: `siki`. Ayrıca hesap başına e-posta sınırı vardır (`sifreSifirlamaAyari`), dolunca cevap yine aynıdır.
+- Girdi: `{ "eposta", "robotCevabi" }` (`sifirlamaIstekSemasi`, `cekirdek/moduller/oturum/semalar.ts`).
+- Servis: `cekirdek/moduller/oturum/sifre-sifirlama.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `robot-dogrulamasi`, `istek-siniri` (`Retry-After` ile), `dogrulama`, `yetki` (sahte istek).
+
+### POST /kapi/herkese-acik/musteri-sifre-yenile
+
+Bağlantıdaki anahtarla yeni şifre belirler, bağlantıyı harcar, bütün oturumları kapatır, "şifreniz değişti" e-postasını kuyruğa koyar. Oturum açmaz (karar 0052).
+
+- İzin: `herkese-acik`. Sınır: `siki`.
+- Girdi: `{ "anahtar", "sifre" }` (`sifreYenileSemasi`).
+- Servis: `cekirdek/moduller/oturum/sifre-sifirlama.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `is-kurali` (geçersiz, kullanılmış ya da süresi dolmuş bağlantı), `istek-siniri` (`Retry-After` ile), `dogrulama` (kısa şifre gibi; bağlantı harcanmaz), `yetki` (sahte istek).
+
+### POST /kapi/herkese-acik/yonetici-sifre-sifirlama
+
+Müşterinin ucuyla aynı, yönetici hesaplarında çalışır.
+
+- İzin: `herkese-acik`. Sınır: `siki`. Hesap başına e-posta sınırı aynıdır.
+- Girdi: `{ "eposta", "robotCevabi" }` (`sifirlamaIstekSemasi`).
+- Servis: `cekirdek/moduller/oturum/sifre-sifirlama.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `robot-dogrulamasi`, `istek-siniri` (`Retry-After` ile), `dogrulama`, `yetki` (sahte istek).
+
+### POST /kapi/herkese-acik/yonetici-sifre-yenile
+
+Müşterinin ucuyla aynı. Ayrıca yarım kalmış giriş adımlarını siler, değişiklik kaydına yazar. İki aşamalı girişe dokunmaz: yönetici yine kod girer (karar 0052).
+
+- İzin: `herkese-acik`. Sınır: `siki`.
+- Girdi: `{ "anahtar", "sifre" }` (`sifreYenileSemasi`).
+- Servis: `cekirdek/moduller/oturum/sifre-sifirlama.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `is-kurali` (geçersiz, kullanılmış ya da süresi dolmuş bağlantı), `istek-siniri` (`Retry-After` ile), `dogrulama`, `yetki` (sahte istek).
+
 ## Müşteri
 
 ### GET /kapi/musteri/hesabim

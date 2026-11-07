@@ -8,10 +8,14 @@
 // Aranan alanlar: musteri_kimligi ve tur (bir müşterinin bir onayı bulunurken, indeksli).
 import { boolean, index, pgTable, text, uuid } from "drizzle-orm/pg-core";
 import { kimlik, zaman } from "../../veritabani/turler.ts";
-import { hesapTablosu, oturumTablosu } from "../oturum/model.ts";
+import { hesapTablosu, oturumTablosu, sifreSifirlamaTablosu } from "../oturum/model.ts";
 
 export const musteriler = hesapTablosu("musteriler");
 export const musteriOturumlari = oturumTablosu("musteri_oturumlari", () => musteriler.kimlik);
+export const musteriSifreSifirlamalari = sifreSifirlamaTablosu(
+  "musteri_sifre_sifirlamalari",
+  () => musteriler.kimlik,
+);
 
 export const musteriOnaylari = pgTable(
   "musteri_onaylari",

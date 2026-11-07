@@ -12,6 +12,7 @@ Süresi dolan ve kapanan oturum satırları oturum tablolarında birikir (karar 
 - Silme için gereken indeks numaralı değişiklik dosyasıyla eklenir.
 
 - `yonetici_giris_adimlari` tablosunun süresi dolan satırları da silinir (kart 0028, içinde şifreli gizli olabilir).
+- `musteri_sifre_sifirlamalari` ve `yonetici_sifre_sifirlamalari` tablolarının kullanılmış ve süresi dolan satırları da silinir (kart 0034, karar 0052).
 
 ## Sınırlar
 

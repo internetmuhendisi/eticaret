@@ -1,8 +1,8 @@
 "use client";
 // Vitrinde müşterinin hesap alanı (kart 0033). Oturum uçtan sorulur: sayfa çizerken okunursa oturum kapanır
 // (karar 0039). Cevap gelene kadar boş kalır: girişli müşteri bir an "Giriş yap" görmesin.
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Baglanti } from "../../bilesenler/form/baglanti";
 import { Dugme } from "../../bilesenler/form/dugme";
 import { Uyari } from "../../bilesenler/form/uyari";
 import { hataKodlari } from "../kayitlar/kapi";
@@ -66,12 +66,8 @@ export function HesapAlani() {
     <nav className={stil.hesapAlani}>
       {durum.tur === "girissiz" ? (
         <>
-          <Link className={stil.baglanti} href={vitrinAdresleri.giris}>
-            {metin("vitrin.hesap.giris")}
-          </Link>
-          <Link className={stil.baglanti} href={vitrinAdresleri.kayit}>
-            {metin("vitrin.hesap.kayit")}
-          </Link>
+          <Baglanti href={vitrinAdresleri.giris}>{metin("vitrin.hesap.giris")}</Baglanti>
+          <Baglanti href={vitrinAdresleri.kayit}>{metin("vitrin.hesap.kayit")}</Baglanti>
         </>
       ) : (
         <>

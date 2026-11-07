@@ -15,7 +15,13 @@ import { girisAdiminiOku, kurulumuHazirla } from "../../moduller/oturum/iki-asam
 import { girisYap, hesapAc, oturumAcikMi, oturumuYenile } from "../../moduller/oturum/servis.ts";
 import { baglan, baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
-import { girisAdresi, guvenliDonus, panelAdresi } from "../../yonetim-paneli/adresler.ts";
+import {
+  girisAdresi,
+  guvenliDonus,
+  panelAdresi,
+  sifremiUnuttumAdresi,
+  sifreYenileAdresi,
+} from "../../yonetim-paneli/adresler.ts";
 import { yoneticiCikisUcu } from "../herkese-acik/yonetici-cikis.ts";
 import { yoneticiGirisUcu } from "../herkese-acik/yonetici-giris.ts";
 import { yoneticiKurulumOnayUcu } from "../herkese-acik/yonetici-kurulum-onay.ts";
@@ -105,6 +111,18 @@ afterAll(async () => {
   await baglantiyiKapat();
   vi.unstubAllEnvs();
   await sil();
+});
+
+describe("şifre sıfırlama sayfaları (kart 0034)", () => {
+  it("girişsiz açılır, yönlendirilmez; alt adresleri açılmaz, panele geçilmez", async () => {
+    for (const yol of [sifremiUnuttumAdresi, sifreYenileAdresi]) {
+      expect((await panel(yol)).yonlendir).toBeNull();
+      expect((await panel(`${yol}/baska`)).yonlendir).toBe(
+        `${girisAdresi}?donus=${encodeURIComponent(panelAdresi)}`.replace(/\?donus=.*/, ""),
+      );
+    }
+    expect(guvenliDonus(sifreYenileAdresi)).toBe(panelAdresi);
+  });
 });
 
 describe("giriş ucu", () => {

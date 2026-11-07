@@ -22,10 +22,14 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { kimlik, zaman } from "../../veritabani/turler.ts";
-import { hesapTablosu, oturumTablosu } from "../oturum/model.ts";
+import { hesapTablosu, oturumTablosu, sifreSifirlamaTablosu } from "../oturum/model.ts";
 
 export const yoneticiler = hesapTablosu("yoneticiler");
 export const yoneticiOturumlari = oturumTablosu("yonetici_oturumlari", () => yoneticiler.kimlik);
+export const yoneticiSifreSifirlamalari = sifreSifirlamaTablosu(
+  "yonetici_sifre_sifirlamalari",
+  () => yoneticiler.kimlik,
+);
 
 export const roller = pgTable(
   "roller",

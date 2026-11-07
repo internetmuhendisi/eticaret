@@ -58,6 +58,13 @@
   margin: 0;
 }
 
+/* Parmakla rahat basılır. */
+.baglanti {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+}
+
 /* Kod birkaç saniyede yüklenmezse görünür (kart 0057). */
 .yukleniyor {
   visibility: hidden;

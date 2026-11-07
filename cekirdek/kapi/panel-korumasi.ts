@@ -13,6 +13,8 @@ import {
   kodAdresi,
   kurulumAdresi,
   panelAdresi,
+  sifremiUnuttumAdresi,
+  sifreYenileAdresi,
 } from "../yonetim-paneli/adresler.ts";
 import {
   cerezOku,
@@ -35,6 +37,11 @@ export const panelYoklamasi = async (
     istek,
     oturumSuresiSaniye("yonetici", calisanSite().ayarlar),
   );
+  // Şifre sıfırlama sayfaları hesap ve adım gözetmeden açılır (kart 0034): yönlendirme bağlantıdaki anahtarı
+  // kaybederdi, sayfaların kendisi panele girmez.
+  if (pathname === sifremiUnuttumAdresi || pathname === sifreYenileAdresi) {
+    return { yonlendir: null, cerezler };
+  }
   const girisSayfasi = pathname === girisAdresi;
   const adimSayfasi = pathname === kodAdresi || pathname === kurulumAdresi;
   const istenenDonus = guvenliDonus(searchParams.get(donusParametresi));

@@ -417,3 +417,32 @@ describe("gönderim", () => {
     expect(is?.girdi).toEqual({ kayitKimligi: kimlik });
   });
 });
+
+describe("şifre sıfırlama şablonu (kart 0034)", () => {
+  const baglanti = "https://site.ornek/sifre-yenile#anahtar=abc&x=<y>";
+  const icerik = epostaOlustur({
+    dil: "tr",
+    magazaAdi: "Mağaza",
+    sablon: "sifre-sifirlama",
+    degiskenler: { baglanti, dakika: "60" },
+  });
+
+  it("bağlantı düz metinde ve HTML'de vardır, HTML'de kaçırılır, süre metne girer", () => {
+    expect(icerik.metin).toContain(baglanti);
+    expect(icerik.metin).toContain("60 dakika");
+    expect(icerik.html).toContain(
+      'href="https://site.ornek/sifre-yenile#anahtar=abc&amp;x=&lt;y&gt;"',
+    );
+    expect(icerik.html).not.toContain("<y>");
+  });
+
+  it("bağlantısı olmayan şablonda bağlantı satırı çıkmaz", () => {
+    const degisti = epostaOlustur({
+      dil: "tr",
+      magazaAdi: "Mağaza",
+      sablon: "sifre-degisti",
+      degiskenler: {},
+    });
+    expect(degisti.html).not.toContain("<a ");
+  });
+});

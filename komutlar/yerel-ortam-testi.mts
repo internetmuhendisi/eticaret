@@ -7,7 +7,8 @@
 //   - istemcinin yazdığı sahte X-Forwarded-For başlığı istek sınırını aşamaz (karar 0024);
 //   - sınır doluyken aynı ucun kodlanmış ve başka yazılışları geçmez (karar 0041);
 //   - ortamın her kutusu Docker yeniden başlayınca kendiliğinden açılır (kart 0038);
-//   - kayıt olan müşteriye hoş geldin e-postası gerçek arka plan kutusundan ulaşır (kart 0033).
+//   - kayıt olan müşteriye hoş geldin e-postası gerçek arka plan kutusundan ulaşır (kart 0033);
+//   - şifre sıfırlama e-postası ulaşır, bağlantısı sitenin adresindedir ve yeni şifreyi kurar (kart 0034).
 // Sonunda ortamı kapatır ve deneme sitesini siler. Bir ölçüm kalırsa kırmızı biter.
 // Çalıştırma: pnpm yerel-ortam-testi [--acik-birak]
 //   --acik-birak: ortamı ve deneme sitesini açık bırakır; kapatmak: pnpm yerel-ortam-kapat
@@ -204,6 +205,51 @@ const kayitOlc = async (kodAdi: string): Promise<void> => {
     `${kodAdi}: hoş geldin e-postası yerel posta kutusuna ulaşıyor`,
     konular.length === 1 && konular[0]?.includes(kimlik.gorunenAd) === true,
     konular.join(", ") || "e-posta yok",
+  );
+  await sifirlamaOlc(kodAdi, eposta);
+};
+
+// Kapıdan gerçek şifre sıfırlama (kart 0034, karar 0052): e-posta arka plan kutusundan gelir, bağlantı sitenin
+// adresindedir, anahtar yeni şifreyi kurar.
+const sifirlamaOlc = async (kodAdi: string, eposta: string): Promise<void> => {
+  const soru = JSON.parse((await iste(kodAdi, "/kapi/herkese-acik/robot-sorusu")).govde).veri;
+  const istek = await gonder(kodAdi, "/kapi/herkese-acik/musteri-sifre-sifirlama", {
+    eposta,
+    robotCevabi: await soruyuCoz(soru),
+  });
+  olc(`${kodAdi}: şifre sıfırlama isteği geçiyor`, istek.durum === 200, `${istek.durum}`);
+  let baglanti: URL | undefined;
+  for (let tur = 0; tur < 30 && baglanti === undefined; tur++) {
+    const { messages = [] } = (await (
+      await fetch(
+        `${postaKutusuAdresi()}/api/v1/search?query=${encodeURIComponent(`to:"${eposta}"`)}`,
+      )
+    ).json()) as { messages?: { ID: string }[] };
+    for (const { ID } of messages) {
+      const { Text } = (await (
+        await fetch(`${postaKutusuAdresi()}/api/v1/message/${ID}`)
+      ).json()) as { Text: string };
+      const bulunan = /https?:\/\/\S+#anahtar=\S+/.exec(Text)?.[0];
+      if (bulunan !== undefined) baglanti = new URL(bulunan);
+    }
+    if (baglanti === undefined) await new Promise((coz) => setTimeout(coz, 1000));
+  }
+  olc(
+    `${kodAdi}: sıfırlama e-postası ulaşıyor, bağlantı sitenin adresinde`,
+    baglanti?.hostname === `${kodAdi}.localhost`,
+    baglanti?.host ?? "bağlantı yok",
+  );
+  const anahtar = new URLSearchParams(baglanti?.hash.slice(1)).get("anahtar") ?? "";
+  const sifre = "yerel-ortam-yeni-sifre";
+  const yenile = await gonder(kodAdi, "/kapi/herkese-acik/musteri-sifre-yenile", {
+    anahtar,
+    sifre,
+  });
+  const giris = await gonder(kodAdi, "/kapi/herkese-acik/musteri-giris", { eposta, sifre });
+  olc(
+    `${kodAdi}: bağlantıdaki anahtar yeni şifreyi kuruyor, yeni şifreyle giriliyor`,
+    yenile.durum === 200 && giris.durum === 200,
+    `${yenile.durum} ${giris.durum}`,
   );
 };
 

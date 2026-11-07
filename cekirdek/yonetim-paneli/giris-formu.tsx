@@ -1,13 +1,14 @@
 "use client";
 // Yönetici giriş formu (kart 0027). Şema uçla ortaktır; şemadan geçmeyen girdi sunucuya gitmez.
 import { type FormEvent, useRef, useState } from "react";
+import { Baglanti } from "../../bilesenler/form/baglanti";
 import { Form, GonderDugmesi } from "../../bilesenler/form/form";
 import { FormAlani } from "../../bilesenler/form/form-alani";
 import { GirisAlani } from "../../bilesenler/form/giris-alani";
 import { Uyari } from "../../bilesenler/form/uyari";
 import { useMetin } from "../metinler/istemci-metni";
 import { girisSemasi } from "../moduller/oturum/semalar";
-import { adimAdresi, donusParametresi } from "./adresler";
+import { adimAdresi, donusParametresi, sifremiUnuttumAdresi } from "./adresler";
 import { stil } from "./stil";
 
 const girisUcu = "/kapi/herkese-acik/yonetici-giris";
@@ -80,6 +81,7 @@ export function GirisFormu({ donus }: { donus: string }) {
         )}
       </FormAlani>
       <GonderDugmesi>{metin("yonetim.giris.gonder")}</GonderDugmesi>
+      <Baglanti href={sifremiUnuttumAdresi}>{metin("ortak.sifirlama.baglanti")}</Baglanti>
     </Form>
   );
 }

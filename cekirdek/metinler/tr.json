@@ -11,6 +11,27 @@
     "hata": {
       "bolumGosterilemiyor": "Bu bölüm şu an gösterilemiyor. Sayfayı yenilemeyi deneyin.",
       "sayfaGosterilemiyor": "Bu sayfa şu an gösterilemiyor. Sayfayı yenilemeyi deneyin."
+    },
+    "sifirlama": {
+      "baglanti": "Şifremi unuttum",
+      "istekBaslik": "Şifremi unuttum",
+      "istekAciklama": "Hesabınızın e-posta adresini yazın, yeni şifre belirlemeniz için bir bağlantı gönderelim.",
+      "eposta": "E-posta",
+      "gonder": "Bağlantı gönder",
+      "gonderiliyor": "Gönderiliyor, lütfen bekleyin.",
+      "gonderildi": "Bu adres kayıtlıysa bir bağlantı gönderdik. Gelen ve istenmeyen kutunuza bakın. Bağlantı {dakika} dakika geçerlidir.",
+      "hataEposta": "Geçerli bir e-posta adresi yazın.",
+      "hataSinir": "Çok fazla deneme yapıldı. Biraz bekleyip yeniden deneyin.",
+      "hataGenel": "Şu an gönderilemiyor. Biraz sonra yeniden deneyin.",
+      "yenileBaslik": "Yeni şifre belirle",
+      "sifre": "Yeni şifre",
+      "sifreAciklama": "En az {enKisa} karakter.",
+      "yenileGonder": "Şifreyi kaydet",
+      "hataSifre": "Şifreniz en az {enKisa} karakter olmalı.",
+      "hataBaglanti": "Bu bağlantı geçersiz, kullanılmış ya da süresi dolmuş. Yeni bir bağlantı isteyin.",
+      "yeniBaglanti": "Yeni bağlantı iste",
+      "yenilendi": "Şifreniz değişti. Yeni şifrenizle giriş yapabilirsiniz.",
+      "girisDon": "Giriş sayfasına dön"
     }
   },
   "ayar": {
@@ -148,6 +169,19 @@
       "konu": "{magaza} hesabınız açıldı",
       "baslik": "Hoş geldiniz",
       "govde": "{magaza} hesabınız açıldı. Bu e-posta adresi ve belirlediğiniz şifreyle giriş yapabilirsiniz."
+    },
+    "sifreSifirlama": {
+      "konu": "{magaza} şifre yenileme",
+      "baslik": "Şifrenizi yenileyin",
+      "govde": "Hesabınız için şifre yenileme istendi. Yeni şifre belirlemek için aşağıdaki bağlantıyı kullanın. Bağlantı {dakika} dakika geçerlidir ve bir kez kullanılabilir.",
+      "uyari": "Bunu siz istemediyseniz bu e-postayı yok sayın, şifreniz değişmez.",
+      "baglanti": "Yeni şifre belirle"
+    },
+    "sifreDegisti": {
+      "konu": "{magaza} şifreniz değişti",
+      "baslik": "Şifreniz değişti",
+      "govde": "Hesabınızın şifresi az önce değiştirildi, açık oturumlar kapatıldı.",
+      "uyari": "Bunu siz yapmadıysanız hemen şifremi unuttum adımıyla şifrenizi yenileyin ve mağazayla iletişime geçin."
     }
   }
 }

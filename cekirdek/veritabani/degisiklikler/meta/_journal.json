@@ -64,6 +64,13 @@
       "when": 1794024967924,
       "tag": "0008_musteri-onaylari",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794027207949,
+      "tag": "0009_sifre-sifirlama",
+      "breakpoints": true
     }
   ]
 }

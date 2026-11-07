@@ -24,6 +24,7 @@ paths:
 - Yüklenen dosyanın türünü, boyutunu ve içeriğini yükleme anında sunucuda kontrol et.
 - Siteyi yalnız şifreli bağlantıyla aç. Güvenlik başlıklarını aç. Başka sitelerden gelen sahte istekleri kabul etme.
 - Yönetici girişinde iki aşamalı doğrulama ve giriş deneme sınırı olsun. Deneme sınırı `cekirdek/moduller/oturum/giris.ts`, değerleri `cekirdek/kayitlar/oturum.ts` (karar 0042). Yeni bir giriş ucu `sinirliSifreDogrula` kullanır. İki aşamalı giriş `cekirdek/moduller/oturum/iki-asamali-giris.ts`, karar 0044: yönetici oturumu yalnız oradan açılır, başka yerden `oturumAc` çağırmak testte kırmızıdır, iki aşamadan geçmemiş oturum reddedilir. Şifreleme anahtarı `IKI_ASAMA_ANAHTARI` değişirse kurulu girişler açılamaz.
+- Şifre sıfırlama `cekirdek/moduller/oturum/sifre-sifirlama.ts`, değerleri `sifreSifirlamaAyari` (karar 0052). E-postadaki bağlantının adresini istekten alma, `siteAdresi` kullan. Tek kullanımlık anahtarı adresin `#` sonrasında taşı.
 - Geçmişi silen ve dosyaları toptan silen komutlar proje ayar dosyasındaki yasak listesiyle kapalıdır. Bu yasakları aşmaya çalışma.
 - Gizli bilgi dosyası `.env` kayda girmez, GitHub'a ve sunucuya gitmez.
 - Toplu e-posta, gerçek ödeme ve alan adı değişikliği gibi geri alınamaz işleri kullanıcının onayıyla yap.

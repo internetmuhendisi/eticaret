@@ -39,6 +39,15 @@ export const ikiAsamaAyari = {
 export const girisAdimiSuresiSaniye = 10 * 60;
 export const girisAdimiCerezi = "__Host-yonetici-giris-adimi";
 
+// Şifre sıfırlama (kart 0034, karar 0052). Değerler bütün sitelerde aynıdır. hesap: bir hesaba gidebilecek
+// e-posta sınırı, dolunca cevap yine aynıdır. enAzCevapMs: kayıtlı ve kayıtsız e-postanın cevabı süreden de
+// anlaşılmasın diye her cevap en az bu kadar sürer, e-posta kuyruğa yazılırken geçen süreden uzun olmalıdır.
+export const sifreSifirlamaAyari = {
+  gecerlilikSaniye: 60 * 60,
+  hesap: { deneme: 3, saniye: 15 * 60 },
+  enAzCevapMs: 500,
+} as const;
+
 export const sifreSiniri = { enKisa: 10, enUzun: 128 } as const;
 
 // Argon2id ayarı. Değişirse eski özetler sonraki başarılı girişte yeni ayarla yeniden özetlenir.

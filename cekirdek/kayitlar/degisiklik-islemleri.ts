@@ -1,6 +1,11 @@
 // Değişiklik kaydına yazılan işlemlerin tek kaydı (kart 0029, karar 0045). Kod bir kez yayınlandıktan
 // sonra adı değişmez: eski kayıtlar bu adı taşır. Fiyat, stok ve sipariş kendi modülleriyle eklenir.
-export const degisiklikIslemleri = ["rol.verildi", "rol.alindi", "yonetici.kapatildi"] as const;
+export const degisiklikIslemleri = [
+  "rol.verildi",
+  "rol.alindi",
+  "yonetici.kapatildi",
+  "yonetici.sifre-sifirlandi",
+] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 
 // Değişen kaydın türü.

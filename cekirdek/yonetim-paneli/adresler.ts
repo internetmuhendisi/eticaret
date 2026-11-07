@@ -3,6 +3,8 @@ export const panelAdresi = "/yonetim";
 export const girisAdresi = `${panelAdresi}/giris`;
 export const kodAdresi = `${girisAdresi}/kod`;
 export const kurulumAdresi = `${girisAdresi}/kurulum`;
+export const sifremiUnuttumAdresi = `${girisAdresi}/sifremi-unuttum`;
+export const sifreYenileAdresi = `${girisAdresi}/sifre-yenile`;
 export const donusParametresi = "donus";
 
 // Şifreden sonraki ara adımın sayfası (kart 0028).

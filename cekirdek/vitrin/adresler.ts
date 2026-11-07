@@ -3,6 +3,8 @@ export const vitrinAdresleri = {
   anasayfa: "/",
   giris: "/giris",
   kayit: "/kayit",
+  sifremiUnuttum: "/sifremi-unuttum",
+  sifreYenile: "/sifre-yenile",
   uyelikSozlesmesi: "/yasal/uyelik-sozlesmesi",
   kvkkAydinlatma: "/yasal/kvkk-aydinlatma",
 } as const;

@@ -11,6 +11,7 @@ export const stil = ham as Record<
   | "yukleniyor"
   | "onay"
   | "onayEtiketi"
-  | "onayKutusu",
+  | "onayKutusu"
+  | "baglanti",
   string
 >;
