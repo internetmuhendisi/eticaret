@@ -37,7 +37,7 @@
 - **İki kez çalışma sınırı:** İki süreç aynı işi aynı anda alamaz. Süreç iş ortasında ölürse ya da iş süresini aşıp durmazsa iş yeniden çalışabilir. Dış servise giden iş `isKimligi` ile tekrarı önlemelidir (kart 0032).
 - **Hatalı işlerin girdisi kalır:** Silinmedikleri için kişisel bilgi taşıyan girdi de kalır. Hatalı işleri görecek ekran ve silme yolu kart 0059'dadır. Yöneticiye bildirim de oradadır (`.claude/rules/e-ticaret-is-kurallari.md`). Bugün hatayı yalnız altyapı sahibi araçta görür.
 - **Geri dönüşte kalan işler:** Eski sürüme dönülürse yeni sürümün tanıdığı türler `bekliyor` durumunda kalır, yeniden yükseltilince çalışır. Bunları gösteren bir denetim yoktur.
-- **Bellek:** Her site için ikinci bir süreç çalışır. Sunucudaki ölçüm `pnpm arka-plan-denemesi` çıktısındadır.
+- **Bellek:** Her site için ikinci bir süreç çalışır. Yayından kısa süre sonra sunucuda ölçüldü: arka plan kutusu yaklaşık 30 MB, site kutusu yaklaşık 50-60 MB. 30 sitede arka plan kutuları yaklaşık 900 MB eder. Uzun süreli ölçüm yapılmadı.
 - **Tek işlik süreç:** Süreç işleri sırayla çalıştırır, uzun bir iş sırayı bekletir. Şimdilik yeterlidir, ölçülmedi.
 - **Kapanış:** Kapatılırken işe durması söylenir ve 8 saniye beklenir. Sinyale uyup duran iş deneme hakkı yemeden sıraya döner. Durmayan işte süreç kapanır, iş kilit süresi dolunca yeniden denenir ve bir deneme hakkı gider.
 - **Biten işin yazılamaması:** İş bitip sonucu yazılamazsa (veritabanı kesintisi) kilit süresi dolunca iş yeniden çalışır.

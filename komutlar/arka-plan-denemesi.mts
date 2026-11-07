@@ -4,7 +4,7 @@
 // Yayındaki sitenin arka plan kutusunda örnek bir iş ile bilerek hata veren bir iş kuyruğa girer.
 // Ölçülenler: iki kutu da ayakta ve sağlıklı; örnek iş bir denemede bitiyor; hatalı iş iki kez
 // denenip hata olarak kalıyor; hata, işaretiyle, site adı ve sürümüyle hata izleme aracında bir kez
-// görünüyor. Deneme kendi satırlarını siler; araçtaki kayıt kalır, işaretinden tanınır.
+// görünüyor. Maske burada değil kuyruk.test.ts'te ölçülür. Deneme kendi satırlarını siler; araçtaki kayıt kalır, işaretinden tanınır.
 import { randomInt } from "node:crypto";
 import { siteKlasorunuDogrula } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { arkaPlanDosyalari } from "../cekirdek/kayitlar/arka-plan.ts";
@@ -73,11 +73,13 @@ try {
           surum,
           ortam: hataIzlemeOrtami,
           kaynak: "sunucu",
+          // Deneme işinin hatası e-posta taşımaz; maske kuyruk.test.ts'te, uydurma değerlerle ölçülür.
+          kisaltilmisEposta: false,
         })
       : [`araçta ${olaylar.length} kayıt`];
   olc(
     sorunlar.length === 0,
-    "hata, hata izleme aracında bir kez, etiketli ve maskeli",
+    "hata, hata izleme aracında bir kez, etiketli, yasak alan yok",
     sorunlar.join("; "),
   );
 
