@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { siteKlasorunuOku } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { siteVeritabaniAdi, veritabaniAdresi } from "../cekirdek/veritabani/baglanti.ts";
+import { ustBilgiKapatmaSql } from "./site-ust-bilgi.mts";
 
 export const siteVeAdres = (komut: string) => {
   const [klasor] = process.argv.slice(2);
@@ -30,9 +31,12 @@ export const siteVeAdres = (komut: string) => {
 
 const kok = join(import.meta.dirname, "..");
 
-// Siteye veritabanı ve kullanıcı açan SQL betiği; şifreyi çağıran önüne ekler.
+// Siteye veritabanı ve kullanıcı açan SQL betiği; şifreyi çağıran önüne ekler. Sonunda sitenin veritabanına
+// geçip başka sitelerin üst bilgisini kapatır (karar 0053). Yönetici oradan yerel soketle bağlanır.
 export const veritabaniAcmaBetigi = (): string =>
-  readFileSync(join(import.meta.dirname, "site-veritabani-ac.sql"), "utf8");
+  `${readFileSync(join(import.meta.dirname, "site-veritabani-ac.sql"), "utf8")}
+\\connect :"ad"
+${ustBilgiKapatmaSql()}`;
 
 // Yerel kutuda açma betiğini çalıştıran komut. Şifre psql'e ortam değişkeniyle geçer, komut
 // satırında görünmez.

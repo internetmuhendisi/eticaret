@@ -29,6 +29,7 @@ import { spawnSync } from "node:child_process";
 import { lstatSync, readFileSync } from "node:fs";
 import { Socket } from "node:net";
 import { join } from "node:path";
+import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
 import {
   degerBasinaParca,
   gizliKok,
@@ -53,6 +54,7 @@ import {
   yayinOrtami,
 } from "./on-kapi.mts";
 import { onKapiyiOlc, yayindakiSiteleriOlc } from "./on-kapi-olcumleri.mts";
+import { ustBilgiAcikOlanlarSql, ustBilgiHatalari } from "./site-ust-bilgi.mts";
 import {
   acikKapilar,
   type DuvarKurali,
@@ -310,6 +312,22 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
         `${ortam} veritabanı kutusunun bağlantı kuralı projedekiyle aynı, yalnız sitelerin ağlarına bağlı`,
         ayarHatalari.join("; "),
       );
+      // Her sitenin kullanıcısı başka sitelerin üst bilgisini okuyamıyor (kart 0037, karar 0053).
+      for (const kodAdi of siteListesiniOku(kayit.ipv4, ortam)) {
+        const site = siteVeritabaniAdi(kodAdi);
+        const acik = sshKomutu(
+          kayit.ipv4,
+          `docker exec -i ${ad} psql -U postgres -d ${site} -At -v ON_ERROR_STOP=1 <<'UST_BILGI_SONU'\n${ustBilgiAcikOlanlarSql(site)}\nUST_BILGI_SONU`,
+        );
+        const hatalar = ustBilgiHatalari(acik.status === 0, acik.stdout);
+        olcum(
+          hatalar.length === 0,
+          `${ortam}/${kodAdi} başka sitelerin adlarını ve sayaçlarını göremiyor`,
+          hatalar.length === 0
+            ? ""
+            : `${hatalar.join("; ")}. Kapatmak: pnpm sunucu-veritabani siteler/${kodAdi} ${ortam}`,
+        );
+      }
     }
     // Hata izleme kutusunun gerçek ayarı tanımıyla aynı (kart 0022): kısıtlar, sağlık, kapalı
     // port, yalnız kendi ağı; ağ dışarıya kapalı (kutu internete çıkamaz).

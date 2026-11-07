@@ -24,6 +24,7 @@ import {
   yayinKilidiyle,
   yayinOrtami,
 } from "./on-kapi.mts";
+import { ustBilgiKapatmaSql } from "./site-ust-bilgi.mts";
 import { kok, sshKomutu, sunucuTanimi } from "./sunucu.mts";
 import {
   guncellemeBetigi,
@@ -464,6 +465,15 @@ docker exec ${kutu} psql -U postgres -d postgres -q -v ON_ERROR_STOP=1 -c 'CREAT
 if ! ${yedekAcmaBoru(ortam, kodAdi, dosya)} | docker exec -i ${sessizOturum} ${kutu} pg_restore -U postgres --no-owner --no-acl --role="${ad}" --exit-on-error -d "${yeni}" 2>/dev/null; then
   sil
   echo "yedek açılamadı (ayrıntı müşteri verisi taşıyabilir, gösterilmez), canlı veritabanına dokunulmadı" >&2
+  exit 1
+fi
+# Üst bilgi izinleri sitenin veritabanındaki sistem kayıtlarındadır, yedekten gelmez (karar 0053).
+if ! docker exec -i ${kutu} psql -U postgres -d "${yeni}" -q -v ON_ERROR_STOP=1 -f - >/dev/null <<'UST_BILGI_SONU'
+${ustBilgiKapatmaSql()}
+UST_BILGI_SONU
+then
+  sil
+  echo "üst bilgi izinleri kapatılamadı, canlı veritabanına dokunulmadı" >&2
   exit 1
 fi
 printf 'tablo=%s\\n' "$(docker exec ${kutu} psql -U postgres -d "${yeni}" -Atc "select count(*) from information_schema.tables where table_schema not in ('pg_catalog','information_schema')" </dev/null)"`);
