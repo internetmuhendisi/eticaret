@@ -4,14 +4,17 @@
 //   docker exec <arka plan kutusu> node arka-plan/deneme.mjs <işaret>
 // İki işi kuyruğa koyar, kutudaki sürecin işlemesini bekler ve sonucu yazar; satırlarını siler.
 // Dışarıdan bir adresle tetiklenemez. Çıktı satırları: basarili=<durum> <deneme>, hatali=<durum> <deneme>.
-import { inArray } from "drizzle-orm";
+// İkinci argüman verilirse o adrese deneme e-postası da gönderilir: eposta=<durum> (kart 0032).
+import { eq, inArray, sql } from "drizzle-orm";
 import { denemeIsaretiBicimi, isDurumu } from "../kayitlar/arka-plan.ts";
+import { epostaKayitlari } from "../moduller/eposta/model.ts";
+import { epostaGonder } from "../moduller/eposta/servis.ts";
 import { baglantiyiKapat, siteninVeritabani } from "../veritabani/baglanti.ts";
 import { basariliDenemeIsi, hataliDenemeIsi } from "./isler.ts";
 import { isEkle } from "./kuyruk.ts";
 import { arkaPlanIsleri } from "./model.ts";
 
-const [isaret] = process.argv.slice(2);
+const [isaret, epostaAlicisi] = process.argv.slice(2);
 if (!isaret || !denemeIsaretiBicimi.test(isaret)) {
   process.stderr.write("İşaret verilmedi (12-32 küçük harf).\n");
   process.exit(1);
@@ -20,7 +23,18 @@ if (!isaret || !denemeIsaretiBicimi.test(isaret)) {
 const vt = siteninVeritabani();
 const basarili = await isEkle(vt, basariliDenemeIsi, { isaret });
 const hatali = await isEkle(vt, hataliDenemeIsi, { isaret });
-const kimlikler = [basarili, hatali].filter((kimlik) => kimlik !== null);
+const epostaKaydi = epostaAlicisi
+  ? await epostaGonder(vt, { kime: epostaAlicisi, sablon: "deneme" })
+  : undefined;
+const epostaIsi = epostaKaydi
+  ? (
+      await vt
+        .select({ kimlik: arkaPlanIsleri.kimlik })
+        .from(arkaPlanIsleri)
+        .where(sql`${arkaPlanIsleri.girdi}->>'kayitKimligi' = ${epostaKaydi}`)
+    )[0]?.kimlik
+  : undefined;
+const kimlikler = [basarili, hatali, epostaIsi].filter((kimlik) => typeof kimlik === "string");
 
 const sonucDurumlari: string[] = [isDurumu.bitti, isDurumu.hata];
 const oku = () => vt.select().from(arkaPlanIsleri).where(inArray(arkaPlanIsleri.kimlik, kimlikler));
@@ -35,6 +49,14 @@ for (const [ad, kimlik] of [
 ] as const) {
   const satir = satirlar.find((is) => is.kimlik === kimlik);
   process.stdout.write(`${ad}=${satir?.durum ?? "yok"} ${satir?.deneme_sayisi ?? 0}\n`);
+}
+if (epostaKaydi) {
+  const [kayit] = await vt
+    .select({ durum: epostaKayitlari.durum })
+    .from(epostaKayitlari)
+    .where(eq(epostaKayitlari.kimlik, epostaKaydi));
+  process.stdout.write(`eposta=${kayit?.durum ?? "yok"}\n`);
+  await vt.delete(epostaKayitlari).where(eq(epostaKayitlari.kimlik, epostaKaydi));
 }
 await vt.delete(arkaPlanIsleri).where(inArray(arkaPlanIsleri.kimlik, kimlikler));
 await baglantiyiKapat();

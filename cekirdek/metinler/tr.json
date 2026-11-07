@@ -29,7 +29,11 @@
       "yakindaYazisi": "Vitrinin ana sayfasında başlığın altında \"Yakında açılıyoruz.\" yazısı görünür.",
       "bakimMetni": "Bakım sayfasında görünen metin. Boşsa ortak metin görünür.",
       "yoneticiOturumuSaat": "Hiç girilmeyen yönetici oturumunun kapanma süresi, saat olarak.",
-      "musteriOturumuGun": "Hiç girilmeyen müşteri oturumunun kapanma süresi, gün olarak."
+      "musteriOturumuGun": "Hiç girilmeyen müşteri oturumunun kapanma süresi, gün olarak.",
+      "epostaGonderenAdi": "E-postalarda görünen gönderen adı. Boşsa mağazanın görünen adı kullanılır.",
+      "epostaGonderenAdresi": "E-postaların gönderildiği adres. Boşsa e-posta gönderilmez.",
+      "epostaYanitAdresi": "Müşterinin yanıtının gideceği adres. Boşsa yanıt gönderen adresine gider.",
+      "logoAdresi": "Mağazanın logosunun herkese açık adresi. Boşsa mağazanın adı yazı olarak görünür."
     }
   },
   "yonetim": {
@@ -83,6 +87,16 @@
     },
     "anasayfa": {
       "yakindaAciliyoruz": "Yakında açılıyoruz."
+    }
+  },
+  "eposta": {
+    "ortak": {
+      "altBilgi": "Bu e-postayı {magaza} gönderdi."
+    },
+    "deneme": {
+      "konu": "{magaza} deneme e-postası",
+      "baslik": "Deneme e-postası",
+      "govde": "Bu e-posta, gönderimin çalıştığını denemek için gönderildi. Bir şey yapmanız gerekmez."
     }
   }
 }

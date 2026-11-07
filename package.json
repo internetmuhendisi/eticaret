@@ -57,6 +57,7 @@
     "hata-izleme-ac": "node komutlar/hata-izleme-ac.mts",
     "hata-izleme-denemesi": "node komutlar/hata-izleme-denemesi.mts",
     "arka-plan-denemesi": "node komutlar/arka-plan-denemesi.mts",
+    "eposta-denemesi": "node --env-file=.env komutlar/eposta-denemesi.mts",
     "bakim": "node komutlar/bakim.mts",
     "bakim-denemesi": "node komutlar/bakim-denemesi.mts",
     "yedek-kur": "node komutlar/yedek-kur.mts",
@@ -76,6 +77,7 @@
     "@testing-library/dom": "10.4.2",
     "@testing-library/react": "16.3.3",
     "@types/node": "24.19.2",
+    "@types/nodemailer": "8.0.2",
     "@types/pg": "8.23.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
@@ -90,6 +92,7 @@
   "dependencies": {
     "drizzle-orm": "0.45.4",
     "next": "16.4.3",
+    "nodemailer": "10.2.1",
     "pg": "8.23.1",
     "react": "19.3.1",
     "react-dom": "19.3.1",

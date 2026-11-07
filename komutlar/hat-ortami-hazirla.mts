@@ -44,6 +44,9 @@ const degerler: Record<string, string> = {
   VERITABANI_ADRESI: adres.href,
   IKI_ASAMA_ANAHTARI: randomBytes(32).toString("hex"),
   YEREL_ORTAM_PORTU: port("YEREL_ORTAM_PORTU"),
+  POSTA_SMTP_PORTU: port("POSTA_SMTP_PORTU"),
+  POSTA_KUTUSU_PORTU: port("POSTA_KUTUSU_PORTU"),
+  EPOSTA_SUNUCUSU: port("EPOSTA_SUNUCUSU"),
   // Hatta Hetzner anahtarı bilerek yoktur: sunucu denetimi hatta çalışmaz (karar 0030).
   HETZNER_ANAHTARI: "",
   // Cloudflare anahtarı da hatta yoktur: alan adı komutu hatta çalışmaz (karar 0032).

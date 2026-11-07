@@ -81,8 +81,22 @@ describe("kalıcı kutuların tanımı", () => {
   it("yerel ortamın veritabanı ve Caddy kutuları (sunucu/*.yaml)", () => {
     expect(yenidenBaslamaHatalari(composeAyari(["compose.yaml"]))).toEqual([]);
     const ortam = composeAyari(["compose.yaml", "yerel-ortam.yaml"]);
-    expect(Object.keys(ortam.services).sort()).toEqual(["caddy", "veritabani"]);
+    expect(Object.keys(ortam.services).sort()).toEqual(["caddy", "posta-kutusu", "veritabani"]);
     expect(yenidenBaslamaHatalari(ortam)).toEqual([]);
+  });
+
+  it("yerel posta kutusunda dışarı gönderim ayarı yok, portu yalnız bu bilgisayara açık", () => {
+    const metin = readFileSync(join(kok, "sunucu", "compose.yaml"), "utf8");
+    const parca = metin.slice(
+      metin.indexOf("  posta-kutusu:"),
+      metin.indexOf("volumes:\n  veritabani:"),
+    );
+    expect(parca).toContain("image: axllent/mailpit:");
+    expect(parca).not.toMatch(/^\s+MP_SMTP_RELAY/m);
+    expect(parca).not.toContain("environment:");
+    for (const satir of parca.split("\n").filter((s) => /^\s+- "/.test(s))) {
+      expect(satir).toMatch(/^\s+- "127\.0\.0\.1:/);
+    }
   });
 
   it("site kutusu", () => {

@@ -97,6 +97,24 @@ export const ayarSemasi = z.strictObject({
     z.string().trim().min(1).max(300).optional(),
     altyapiSahibinin("ayar.aciklama.bakimMetni"),
   ),
+  // E-postanın göndereni (kart 0032). Gönderen adresi olmayan site e-posta göndermez.
+  epostaGonderenAdi: ayar(
+    z.string().trim().min(1).max(100).optional(),
+    altyapiSahibinin("ayar.aciklama.epostaGonderenAdi"),
+  ),
+  epostaGonderenAdresi: ayar(
+    z.email().optional(),
+    altyapiSahibinin("ayar.aciklama.epostaGonderenAdresi"),
+  ),
+  epostaYanitAdresi: ayar(
+    z.email().optional(),
+    altyapiSahibinin("ayar.aciklama.epostaYanitAdresi"),
+  ),
+  // Mağaza sahibinin marka ayarları gelince panele taşınır.
+  logoAdresi: ayar(
+    z.url({ protocol: /^https$/ }).optional(),
+    altyapiSahibinin("ayar.aciklama.logoAdresi"),
+  ),
   // Hiç girilmeyen oturumun kapanma süresi (kart 0025). Güvenlik ayarıdır, altyapı sahibinindir.
   yoneticiOturumuSaat: ayar(
     z.int().min(1).max(720).default(24),

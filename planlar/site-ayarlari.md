@@ -84,6 +84,15 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Yalnız satın alanlar yorum yapabilir | Mağaza sahibi | Açık | — | |
 | Doğrulanmış alıcı etiketi | Mağaza sahibi | Açık | — | |
 
+## E-posta
+
+| Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
+|---|---|---|---|---|
+| Gönderen adı | Altyapı sahibi | Mağazanın görünen adı | — | Panelden düzenlenmesi panel işidir |
+| Gönderen adresi | Altyapı sahibi | Yok, e-posta gönderilmez | `ornek-magaza@posta.eticaretmagazasi.com` | Alan adı henüz doğrulanmadı, bugün yalnız yerel kutuya gider (karar 0050) |
+| Yanıt adresi | Altyapı sahibi | Gönderen adresi | — | |
+| Logo adresi | Altyapı sahibi | Yok, mağaza adı yazı olarak görünür | — | Marka ayarları gelince panele taşınır |
+
 ## Tasarım ve marka
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |

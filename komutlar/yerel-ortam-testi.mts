@@ -13,6 +13,7 @@
 
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
+import { siteKlasorunuOku } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { arkaPlanDosyalari } from "../cekirdek/kayitlar/arka-plan.ts";
 import { istekSinirlari } from "../cekirdek/kayitlar/kapi.ts";
 import { metinOkuyucu } from "../cekirdek/metinler/metin.ts";
@@ -114,7 +115,9 @@ const sitesiniOlc = async (site: OrtamSitesi, oteki: OrtamSitesi) => {
   ).stdout.trim();
   olc(`${kodAdi}: kutunun portu dışarıya kapalı`, portlar === "{}" || portlar === "null", portlar);
 
-  // Arka plan kutusu kendi sitesinin kuyruğunu işliyor (kart 0031, karar 0049).
+  // Arka plan kutusu kendi sitesinin kuyruğunu işliyor (kart 0031, karar 0049). E-posta yerel posta
+  // kutusuna düşüyor (kart 0032, karar 0050); gönderen adresi olmayan site göndermiyor.
+  const alici = `${kodAdi}-${Date.now()}@ornek.test`;
   const deneme = spawnSync(
     "docker",
     [
@@ -123,6 +126,7 @@ const sitesiniOlc = async (site: OrtamSitesi, oteki: OrtamSitesi) => {
       "node",
       arkaPlanDosyalari.deneme,
       "yerelortamdenemesi",
+      alici,
     ],
     { encoding: "utf8" },
   ).stdout;
@@ -131,6 +135,27 @@ const sitesiniOlc = async (site: OrtamSitesi, oteki: OrtamSitesi) => {
     deneme.includes("basarili=bitti 1") && deneme.includes("hatali=hata 2"),
     deneme.trim().replaceAll("\n", ", "),
   );
+  const yakalanan = (await (
+    await fetch(
+      `http://127.0.0.1:${process.env["POSTA_KUTUSU_PORTU"]}/api/v1/search?query=${encodeURIComponent(`to:"${alici}"`)}`,
+    )
+  ).json()) as { messages?: { From?: { Address?: string } }[] };
+  const gonderenAdresi = siteKlasorunuOku(site.klasor).ayarlar.epostaGonderenAdresi;
+  if (gonderenAdresi) {
+    olc(
+      `${kodAdi}: e-posta yerel posta kutusuna düştü, gönderen sitenin adresi`,
+      deneme.includes("eposta=gonderildi") &&
+        yakalanan.messages?.length === 1 &&
+        yakalanan.messages[0]?.From?.Address === gonderenAdresi,
+      `${yakalanan.messages?.length ?? 0} e-posta`,
+    );
+  } else {
+    olc(
+      `${kodAdi}: gönderen adresi olmayan site e-posta göndermiyor`,
+      deneme.includes("eposta=gonderilmedi") && (yakalanan.messages?.length ?? 0) === 0,
+      `${yakalanan.messages?.length ?? 0} e-posta`,
+    );
+  }
 };
 
 // Ortamın bütün kutuları (veritabanı, Caddy, siteler) yeniden başlama kuralıyla çalışmalı.

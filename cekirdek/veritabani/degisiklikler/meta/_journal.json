@@ -50,6 +50,13 @@
       "when": 1794009668529,
       "tag": "0006_arka-plan-isleri",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794014109128,
+      "tag": "0007_eposta-kayitlari",
+      "breakpoints": true
     }
   ]
 }

@@ -56,7 +56,7 @@ paths:
 
 ## E-posta, dış servis ve arka plan işleri
 
-- Bütün müşteri ve yönetici e-postalarını tek şablon sistemiyle, site tasarım değerleriyle üret.
+- Bütün müşteri ve yönetici e-postalarını tek şablon sistemiyle, site tasarım değerleriyle üret. E-posta yalnız `epostaGonder` ile gönderilir, kuyruktan gider. Gönderim hizmeti tek dosyada bağlanır: `cekirdek/moduller/eposta/gonderici.ts` (karar 0050).
 - Kargo, fatura, pazaryeri ve ödeme bağlantılarını aynı kalıpla yaz: zaman aşımı, yeniden deneme, kayıt ve hata bildirimi her birinde olsun.
 - Dış servisten beklenmeyen yanıt gelince işlemi yarım bırakma. Geri al ve yöneticiye bildir.
 - E-posta, fatura, pazaryeri eşitleme gibi uzun işleri kuyrukta yürüt. Başarısız işi sınırlı sayıda yeniden dene, yine olmazsa ayrı listeye düşür ve yöneticiye bildir.

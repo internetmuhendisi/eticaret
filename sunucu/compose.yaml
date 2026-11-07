@@ -25,5 +25,20 @@ services:
       timeout: 5s
       retries: 15
 
+  # Yerel posta kutusu (kart 0032, karar 0050): e-postaları yakalar, dışarı göndermez. Gönderim
+  # yönlendirmesi (MP_SMTP_RELAY_*) bilerek verilmez; testi komutlar/testler/kutu-kurali.test.ts.
+  # Gelenleri görmek: http://localhost:<POSTA_KUTUSU_PORTU>
+  posta-kutusu:
+    image: axllent/mailpit:v1.31@sha256:23fe39e81bde596a918000b3135c0f85dc8bb4c9ea6be274b051143f3e300387
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${POSTA_SMTP_PORTU:?.env dosyasında POSTA_SMTP_PORTU yok}:1025"
+      - "127.0.0.1:${POSTA_KUTUSU_PORTU:?.env dosyasında POSTA_KUTUSU_PORTU yok}:8025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
 volumes:
   veritabani:

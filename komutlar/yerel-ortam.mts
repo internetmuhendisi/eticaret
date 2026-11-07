@@ -164,9 +164,13 @@ export const siteKutusu = (kodAdi: string, klasor: string, etiket: string) => ({
     SITE_KLASORU: `/siteler/${kodAdi}`,
     VERITABANI_ADRESI: `\${${kutuAdresAnahtari(kodAdi)}:?veritabanı adresi verilmedi}`,
     IKI_ASAMA_ANAHTARI: `\${IKI_ASAMA_ANAHTARI:?iki aşamalı giriş anahtarı verilmedi}`,
+    EPOSTA_SUNUCUSU: "smtp://posta-kutusu:1025",
   },
   volumes: [`${klasor}:/siteler/${kodAdi}:ro`],
-  depends_on: { veritabani: { condition: "service_healthy" } },
+  depends_on: {
+    veritabani: { condition: "service_healthy" },
+    "posta-kutusu": { condition: "service_healthy" },
+  },
   healthcheck: siteSaglikYoklamasi,
 });
 

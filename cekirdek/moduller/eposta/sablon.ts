@@ -1,0 +1,65 @@
+// Ortak e-posta şablonu (kart 0032, karar 0050): mağazanın logosu ve adı, metin dosyasından metinler,
+// düz metin karşılığı. Bütün e-postalar buradan geçer. Tasarım değerleri henüz yok; renk verilmez,
+// e-posta programının varsayılan renkleri kullanılır (kart 0060).
+
+import type { EpostaSablonu } from "../../kayitlar/eposta.ts";
+import { type Dil, type MetinAnahtari, metinOkuyucu } from "../../metinler/metin.ts";
+
+type SablonTanimi = { konu: MetinAnahtari; baslik: MetinAnahtari; govde: MetinAnahtari[] };
+
+const sablonlar: Record<EpostaSablonu, SablonTanimi> = {
+  deneme: {
+    konu: "eposta.deneme.konu",
+    baslik: "eposta.deneme.baslik",
+    govde: ["eposta.deneme.govde"],
+  },
+};
+
+const htmlKacir = (metin: string): string =>
+  metin
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+
+// {ad} biçimindeki yerleri doldurur. Değer metnin içinde yeniden aranmaz.
+const doldur = (metin: string, degerler: Record<string, string>): string =>
+  metin.replace(/\{([a-zA-Z]+)\}/g, (yer, ad: string) => degerler[ad] ?? yer);
+
+export type EpostaIcerigi = { konu: string; metin: string; html: string };
+
+export const epostaOlustur = (girdi: {
+  dil: Dil;
+  magazaAdi: string;
+  logoAdresi?: string | undefined;
+  sablon: EpostaSablonu;
+  degiskenler: Record<string, string>;
+  tanim?: SablonTanimi;
+}): EpostaIcerigi => {
+  const { dil, magazaAdi, logoAdresi, sablon, degiskenler, tanim = sablonlar[sablon] } = girdi;
+  const oku = metinOkuyucu(dil);
+  const degerler = { ...degiskenler, magaza: magazaAdi };
+  const satir = (anahtar: MetinAnahtari) => doldur(oku(anahtar), degerler);
+  const konu = satir(tanim.konu);
+  const baslik = satir(tanim.baslik);
+  const govde = tanim.govde.map(satir);
+  const altBilgi = satir("eposta.ortak.altBilgi");
+  const metin = [magazaAdi, "", baslik, "", ...govde.flatMap((p) => [p, ""]), altBilgi].join("\n");
+  const ust = logoAdresi
+    ? `<img src="${htmlKacir(logoAdresi)}" alt="${htmlKacir(magazaAdi)}" height="48">`
+    : `<strong>${htmlKacir(magazaAdi)}</strong>`;
+  const html = `<!doctype html>
+<html lang="${htmlKacir(dil)}">
+<head><meta charset="utf-8"><title>${htmlKacir(konu)}</title></head>
+<body>
+<p>${ust}</p>
+<h1>${htmlKacir(baslik)}</h1>
+${govde.map((p) => `<p>${htmlKacir(p)}</p>`).join("\n")}
+<hr>
+<p><small>${htmlKacir(altBilgi)}</small></p>
+</body>
+</html>
+`;
+  return { konu, metin, html };
+};

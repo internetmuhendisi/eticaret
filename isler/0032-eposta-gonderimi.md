@@ -24,9 +24,9 @@ Site müşteriye ve yöneticiye e-posta gönderebilsin. Karar 0013'te açık kal
 
 ## Bitti sayılır
 
-- Deneme sitesinden gönderilen deneme e-postası kullanıcının adresine ulaştı ve istenmeyen kutusuna düşmedi.
 - Yerelde gönderilen e-posta dışarı gitmeden yakalanıyor.
-- Hizmet seçiminin karar kaydı yazıldı.
+- Gönderim hizmeti tek dosyadan değiştirilebiliyor; gönderici yerel olmayan adrese bağlanmıyor.
+- Kullanıcının kararı (2026-11-07): hesap açılmadı, gerçek gönderim açılışta bağlanacak. Hizmet seçimi, alan adı kayıtları, anahtar ve e-postanın gerçek adrese ulaşması kart 0060'a taşındı.
 
 ## Durum
 

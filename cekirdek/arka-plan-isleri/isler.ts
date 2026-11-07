@@ -4,6 +4,7 @@
 import { z } from "zod";
 import { gunluk } from "../izleme/gunluk.ts";
 import { denemeIsaretiBicimi } from "../kayitlar/arka-plan.ts";
+import { epostaGonderIsi, epostaKayitTemizligiIsi } from "../moduller/eposta/isler.ts";
 import { type ZamanliIs, zamanliIs } from "./calistirici.ts";
 import { bitenIsleriSil, type IsTanimi, isTanimla } from "./kuyruk.ts";
 
@@ -42,8 +43,11 @@ export const kayitliIsler: readonly IsTanimi[] = [
   basariliDenemeIsi,
   hataliDenemeIsi,
   kuyrukTemizligiIsi,
+  epostaGonderIsi,
+  epostaKayitTemizligiIsi,
 ];
 
 export const zamanliIsler: readonly ZamanliIs[] = [
   zamanliIs(kuyrukTemizligiIsi, {}, { herDakika: 24 * 60 }),
+  zamanliIs(epostaKayitTemizligiIsi, {}, { herDakika: 24 * 60 }),
 ];
