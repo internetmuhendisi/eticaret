@@ -9,7 +9,9 @@
 Mağaza sahibinin ayarları sitenin veritabanındaki `magaza_ayarlari` tablosunda, her ayar ayrı bir satırda durur (kart 0069). Başlangıç değerleri site klasöründeki `baslangic/ayarlar.json` dosyasındadır. Uygulama bir ayarın satırını bulamazsa, onu başlangıç değeriyle (dosyada yoksa şemanın varsayılanıyla) bir kez yazar. Sonra hep veritabanındakini okur.
 
 - **Tek şema, iki sahip:** `ayarSemasi` altyapı sahibinin, `magazaAyarSemasi` mağaza sahibinin ayarlarıdır. İkisi aynı dosyada (`cekirdek/ayar-semasi/ayarlar.ts`), her ayar sahibinin şemasında durur. Bir ayar öteki sahibin dosyasına yazılırsa site doğrulaması durur.
-- **Yarış:** Tekil anahtar, aynı anda açılan ikinci sürecin yazmasını atlatır. Değişiklik kaydına yalnız gerçekten yazan düşer.
+- **Yarış:** Tekil anahtar, aynı anda açılan ikinci sürecin yazmasını atlatır. Değişiklik kaydına yalnız gerçekten yazan düşer. Değiştirme bütün ayar satırlarını kilitler: aynı anda gelen iki değişiklik sırayla çalışır.
+- **Bütün şema:** Değişikliğin sonucu yazılmadan önce bütün şemadan geçer. Birden çok ayarı birbirine bağlayan bir kural varsa ona aykırı değişiklik yazılmaz.
+- **Başlangıç dosyası:** Değeri yalnız veritabanında satırı olmayan ayar için kullanılır. Dosyanın kendisi ise site klasörünün parçası olarak her açılışta ve `pnpm site-dogrula`'da şemadan geçer, geçersizse site açılmaz.
 - **Bozuk değer:** Kayıtlı değer şemaya uymuyorsa okuma hata verir, varsayılana dönmez. Düzeltme bir veri değişikliğiyle ya da servisle yapılır.
 - **Kayıt:** Başlangıç yazımı `sistem: baslangic-ayarlari` adıyla, değişiklik yapanın kimliğiyle değişiklik kaydına girer. Değeri değişmeyen ayar kayda girmez.
 
@@ -31,6 +33,7 @@ Mağaza sahibinin ayarları sitenin veritabanındaki `magaza_ayarlari` tablosund
 
 - Okuma yolu yazabilir: bir ayarın ilk okunduğu istekte kısa bir yazma işlemi olur. Bu yalnız ayar başına bir kez olur.
 - Varsayılan da yazılır. Çekirdekte bir ayarın varsayılanı sonradan değişirse kurulmuş siteler eski değerde kalır, değişiklik ancak veri değişikliğiyle gider. Bu bilerek seçildi: çekirdek değişikliği siteye kendiliğinden gitmez.
-- Ayarın şeması sonradan daralırsa (örneğin bir seçenek kalkarsa) eski değer okumayı durdurur. Şemayı daraltan değişiklik kayıtlı değerleri dönüştüren bir veri değişikliğiyle gelir.
+- Ayarın şeması sonradan daralırsa (örneğin bir seçenek kalkarsa) eski değer okumayı durdurur. Şemayı daraltan değişiklik kayıtlı değerleri dönüştüren bir veri değişikliğiyle gelir. Sitelerin başlangıç dosyaları da aynı güncellemede düzeltilir: değerleri çoktan veritabanında olsa da eski dosya site doğrulamasını ve açılışı durdurur.
+- Değiştirme bütün ayar satırlarını kilitler. Ayarlar az ve seyrek değiştiği için bu bilerek seçildi.
 - Değişiklik kaydı e-posta taşıyan değeri reddeder (karar 0045). Mağazanın iletişim e-postası gibi bir ayar geldiğinde (kart 0071) kaydın bunu nasıl yazacağı o kartta çözülür.
 - Mağaza sahibinin henüz ayarı yoktur. Servis deneme şemasıyla gerçek veritabanında test edilir.

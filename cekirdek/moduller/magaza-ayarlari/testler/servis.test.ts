@@ -19,8 +19,13 @@ const denemeSemasi = z.strictObject({
   iptalSuresiGun: z.int().min(1).default(3),
   secenekler: z.array(z.enum(["nakit", "kart"])).default(["nakit"]),
   bilgiMetni: z.string().min(1).optional(),
+  kargo: z
+    .strictObject({ ucret: z.int().min(0), not: z.string().min(1).optional() })
+    .default({ ucret: 0 }),
+  yanitMetni: z.string().min(1).optional(),
 });
 type DenemeAyarlari = z.output<typeof denemeSemasi>;
+const ayarSayisi = Object.keys(denemeSemasi.shape).length;
 
 // Site klasöründe yalnız kapıda ödeme yazılmış gibi: geri kalanı varsayılan.
 const baslangic: DenemeAyarlari = denemeSemasi.parse({ kapidaOdeme: true });
@@ -54,10 +59,11 @@ describe("başlangıç değerleri", () => {
       kapidaOdeme: true,
       iptalSuresiGun: 3,
       secenekler: ["nakit"],
+      kargo: { ucret: 0 },
     });
-    expect(await satirSayisi(vt)).toBe(4);
+    expect(await satirSayisi(vt)).toBe(ayarSayisi);
     const yazilan = await kayitlar(vt);
-    expect(yazilan).toHaveLength(4);
+    expect(yazilan).toHaveLength(ayarSayisi);
     for (const kayit of yazilan) {
       expect(kayit.islem).toBe("magaza-ayari.baslangic");
       expect(kayit.kim_turu).toBe("sistem");
@@ -74,7 +80,7 @@ describe("başlangıç değerleri", () => {
     const vt = await siteAc();
     const ilk = await servis.oku(vt);
     expect(await servis.oku(vt)).toEqual(ilk);
-    expect(await kayitlar(vt)).toHaveLength(4);
+    expect(await kayitlar(vt)).toHaveLength(ayarSayisi);
   });
 
   it("başlangıç dosyası sonradan değişse de yazılmış değer değişmez", async () => {
@@ -83,7 +89,7 @@ describe("başlangıç değerleri", () => {
     const degismisDosya = denemeSemasi.parse({ kapidaOdeme: false, iptalSuresiGun: 9 });
     const sonraki = magazaAyarlariServisi(denemeSemasi, () => degismisDosya);
     expect(await sonraki.oku(vt)).toMatchObject({ kapidaOdeme: true, iptalSuresiGun: 3 });
-    expect(await kayitlar(vt)).toHaveLength(4);
+    expect(await kayitlar(vt)).toHaveLength(ayarSayisi);
   });
 
   it("şemaya yeni ayar eklenince yalnız o yazılır, eskiler yerinde kalır", async () => {
@@ -99,7 +105,7 @@ describe("başlangıç değerleri", () => {
       yeniAyar: false,
     });
     const baslangiclar = (await kayitlar(vt)).filter((k) => k.islem === "magaza-ayari.baslangic");
-    expect(baslangiclar).toHaveLength(5);
+    expect(baslangiclar).toHaveLength(ayarSayisi + 1);
   });
 
   it("aynı anda açılan okumalar her ayarı bir kez yazar ve bir kez kaydeder", async () => {
@@ -108,8 +114,8 @@ describe("başlangıç değerleri", () => {
     await Promise.all(Array.from({ length: 8 }, () => vt.execute(sql`select pg_sleep(0.05)`)));
     const sonuclar = await Promise.all(Array.from({ length: 8 }, () => servis.oku(vt)));
     for (const sonuc of sonuclar) expect(sonuc).toEqual(sonuclar[0]);
-    expect(await satirSayisi(vt)).toBe(4);
-    expect(await kayitlar(vt)).toHaveLength(4);
+    expect(await satirSayisi(vt)).toBe(ayarSayisi);
+    expect(await kayitlar(vt)).toHaveLength(ayarSayisi);
   });
 });
 
@@ -148,8 +154,62 @@ describe("değiştirme", () => {
     await expect(
       servis.degistir(vt, yonetici(), { olmayan: 1 } as Partial<DenemeAyarlari>),
     ).rejects.toThrow("Bilinmeyen mağaza ayarı: olmayan");
+    await expect(
+      servis.degistir(vt, yonetici(), { constructor: 1 } as Partial<DenemeAyarlari>),
+    ).rejects.toThrow("Bilinmeyen mağaza ayarı: constructor");
     expect(await servis.oku(vt)).toEqual(once);
-    expect(await kayitlar(vt)).toHaveLength(4);
+    expect(await kayitlar(vt)).toHaveLength(ayarSayisi);
+  });
+
+  it("nesne ayarının boş bırakılan alanı düşer, değişiklik reddedilmez", async () => {
+    const vt = await siteAc();
+    await servis.degistir(vt, yonetici(), { kargo: { ucret: 50, not: undefined } });
+    expect((await servis.oku(vt)).kargo).toEqual({ ucret: 50 });
+  });
+
+  it("aynı anda gelen değişiklikler sırayla çalışır, kayıttaki eski değerler zincir kurar", async () => {
+    const vt = await siteAc();
+    await servis.oku(vt);
+    await Promise.all(Array.from({ length: 8 }, () => vt.execute(sql`select pg_sleep(0.05)`)));
+    const yeniler = [4, 5, 6, 7, 8, 9, 10, 11];
+    await Promise.all(
+      yeniler.map((gun) => servis.degistir(vt, yonetici(), { iptalSuresiGun: gun })),
+    );
+    const degisenler = (await kayitlar(vt)).filter((k) => k.islem === "magaza-ayari.degisti");
+    expect(degisenler).toHaveLength(yeniler.length);
+    // Sırayla çalışan her değişiklik bir öncekinin yeni değerini eski değer olarak görür: eski
+    // değerler başlangıçla birlikte, sonuncusu hariç yeni değerlerin hepsidir ve hiçbiri tekrar etmez.
+    const eskiler = degisenler.map((k) => (k.eski_deger as { deger: number }).deger);
+    const son = (await servis.oku(vt)).iptalSuresiGun;
+    expect(eskiler.toSorted((a, b) => a - b)).toEqual(
+      [3, ...yeniler.filter((gun) => gun !== son)].toSorted((a, b) => a - b),
+    );
+  });
+
+  it("değişiklik ile kaydı aynı işlemdedir: sonraki bir adım düşerse önceki kayıt da geri alınır", async () => {
+    const vt = await siteAc();
+    await servis.oku(vt);
+    // Ayarlar ada göre sırayla yazılır: iptalSuresiGun yazılıp kaydı düştükten sonra yanitMetni'nin
+    // kaydı e-posta taşıdığı için reddedilir. Kayıt işlemin dışında yazılsaydı ilk kayıt kalırdı.
+    await expect(
+      servis.degistir(vt, yonetici(), { iptalSuresiGun: 9, yanitMetni: "bilgi@ornek.test" }),
+    ).rejects.toThrow("Değişiklik kaydına");
+    expect((await servis.oku(vt)).iptalSuresiGun).toBe(3);
+    expect(await kayitlar(vt)).toHaveLength(ayarSayisi);
+  });
+
+  it("bütün şemaya konan kurala aykırı değişiklik yazılmaz", async () => {
+    const vt = await siteAc();
+    const kuralliSema = denemeSemasi.refine((a) => !a.kapidaOdeme || a.secenekler.length > 0, {
+      message: "Kapıda ödeme açıkken en az bir seçenek olmalı.",
+    });
+    const kuralli = magazaAyarlariServisi(kuralliSema, () => baslangic);
+    await kuralli.oku(vt);
+    await expect(kuralli.degistir(vt, yonetici(), { secenekler: [] })).rejects.toThrow(
+      "yeni hâli şemaya uymuyor",
+    );
+    expect((await kuralli.oku(vt)).secenekler).toEqual(["nakit"]);
+    expect(await kayitlar(vt)).toHaveLength(ayarSayisi);
   });
 
   it("kayıt yazılamazsa değişiklik de geri alınır", async () => {
@@ -160,7 +220,7 @@ describe("değiştirme", () => {
       servis.degistir(vt, yonetici(), { kapidaOdeme: false, bilgiMetni: "bilgi@ornek.test" }),
     ).rejects.toThrow("Değişiklik kaydına");
     expect(await servis.oku(vt)).toMatchObject({ kapidaOdeme: true, bilgiMetni: undefined });
-    expect(await kayitlar(vt)).toHaveLength(4);
+    expect(await kayitlar(vt)).toHaveLength(ayarSayisi);
   });
 });
 
