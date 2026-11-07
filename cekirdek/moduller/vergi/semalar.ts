@@ -22,6 +22,10 @@ export const vergiHatalari = [
   "ad-bicimi",
   "ad-tekrar",
   "sinif-silinmis",
+  // Başlangıç verisinde birden çok kargo sınıfı (kart 0075).
+  "kargo-tekrar",
+  // Ne müşterinin ne mağazanın bölgesi vergi tablosunda var (kart 0075, karar 0061).
+  "vergi-bolgesi-yok",
 ] as const;
 export type VergiHatasi = (typeof vergiHatalari)[number];
 
@@ -32,7 +36,20 @@ export const vergiHataMetinleri = {
   "ad-bicimi": "yonetim.vergi.hata.ad-bicimi",
   "ad-tekrar": "yonetim.vergi.hata.ad-tekrar",
   "sinif-silinmis": "yonetim.vergi.hata.sinif-silinmis",
+  "kargo-tekrar": "yonetim.vergi.hata.kargo-tekrar",
+  "vergi-bolgesi-yok": "yonetim.vergi.hata.vergi-bolgesi-yok",
 } as const satisfies Record<VergiHatasi, MetinAnahtari>;
+
+// Vergi ayarlarının seçenekleri (kart 0075, karar 0061). Mağaza sahibinin ayarıdır (ayarlar.ts).
+// - fiyatGirisi: ürün ve kargo fiyatı vergi dahil mi hariç mi girilir.
+// - vergiAdresi: vergi hangi adresin bölgesine göre hesaplanır.
+// - vergiYuvarlama: vergi her satırda mı, aynı oranlı satırların toplamında mı yuvarlanır.
+export const fiyatGirisleri = ["vergi-dahil", "vergi-haric"] as const;
+export type FiyatGirisi = (typeof fiyatGirisleri)[number];
+export const vergiAdresleri = ["teslimat", "fatura", "magaza"] as const;
+export type VergiAdresi = (typeof vergiAdresleri)[number];
+export const vergiYuvarlamalari = ["satir", "ara-toplam"] as const;
+export type VergiYuvarlama = (typeof vergiYuvarlamalari)[number];
 
 // Tam oran (yüzde yüz) milyonda bir biriminde.
 export const tamOran = 1_000_000;
@@ -163,17 +180,26 @@ export const vergiBaslangicSemasi = z.strictObject({
     .array(
       z.strictObject({
         ad: vergiAdiSemasi,
+        // Kargo ücretinin sınıfı (kart 0075); en çok bir sınıf.
+        kargo: z.literal(true).optional(),
         oranlar: z.array(oranAlanlari.superRefine(bolgeKurali)).max(200).default([]),
       }),
     )
     .max(50)
     .superRefine((siniflar, ctx) => {
       const gorulen = new Set<string>();
+      let kargoGoruldu = false;
       siniflar.forEach((sinif, sira) => {
         if (gorulen.has(sinif.ad)) {
           ctx.addIssue({ code: "custom", message: hata("ad-tekrar"), path: [sira, "ad"] });
         }
         gorulen.add(sinif.ad);
+        if (sinif.kargo === true) {
+          if (kargoGoruldu) {
+            ctx.addIssue({ code: "custom", message: hata("kargo-tekrar"), path: [sira, "kargo"] });
+          }
+          kargoGoruldu = true;
+        }
       });
     }),
 });

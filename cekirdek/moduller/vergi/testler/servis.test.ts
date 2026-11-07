@@ -16,10 +16,17 @@ import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
-import { siteninMagazaAyarlari } from "../../magaza-ayarlari/servis.ts";
+import { siteninMagazaAyarlari, siteninServisi } from "../../magaza-ayarlari/servis.ts";
+import { hesapla, type VergiSonucu } from "../hesap.ts";
 import { vergiOranlari, vergiSiniflari } from "../model.ts";
 import { type VergiBaslangici, vergiBaslangicSemasi } from "../semalar.ts";
-import { baslangicVergiYazari, siteninVergiServisi, vergiServisi } from "../servis.ts";
+import {
+  baslangicVergiYazari,
+  siteninVergiServisi,
+  type VergiSinifi,
+  vergiHesapla,
+  vergiServisi,
+} from "../servis.ts";
 
 const baslangic: VergiBaslangici = vergiBaslangicSemasi.parse({
   siniflar: [
@@ -475,6 +482,138 @@ describe("iki site", () => {
   });
 });
 
+describe("kargo sınıfı (kart 0075)", () => {
+  const kargolu = vergiServisi(() =>
+    vergiBaslangicSemasi.parse({
+      siniflar: [
+        { ad: "Genel", kargo: true, oranlar: [{ ulke: "TR", oran: "18" }] },
+        { ad: "Diğer" },
+      ],
+    }),
+  );
+  const kargoSinifi = async (vt: Veritabani, s = kargolu) =>
+    (await s.tabloyuOku(vt, { silinmisSiniflar: true })).filter((k) => k.kargo).map((k) => k.ad);
+
+  it("başlangıç verisindeki kargo işareti yazılır ve kayda girer", async () => {
+    const vt = await siteAc();
+    expect(await kargoSinifi(vt)).toEqual(["Genel"]);
+    const kayit = (await kayitlar(vt)).find((k) => (k.yeni_deger as { kargo?: true }).kargo);
+    expect(kayit?.islem).toBe("vergi.baslangic");
+  });
+
+  it("değiştirme eskisini kaldırır, kayda girer; null kargoyu vergisiz yapar; aynı seçim kayda girmez", async () => {
+    const vt = await siteAc();
+    const [genel, diger] = await kargolu.tabloyuOku(vt);
+    if (genel === undefined || diger === undefined) throw new Error("Sınıf yok.");
+    const kim = yonetici();
+    await kargolu.kargoSinifiniDegistir(vt, kim, diger.kimlik);
+    await kargolu.kargoSinifiniDegistir(vt, kim, diger.kimlik);
+    expect(await kargoSinifi(vt)).toEqual(["Diğer"]);
+    await kargolu.kargoSinifiniDegistir(vt, kim, null);
+    expect(await kargoSinifi(vt)).toEqual([]);
+    const degisenler = (await kayitlar(vt)).filter((k) => k.islem === "vergi.kargo-sinifi");
+    expect(degisenler.map((k) => [k.eski_deger, k.yeni_deger])).toEqual([
+      [{ kargoSinifi: genel.kimlik }, { kargoSinifi: diger.kimlik }],
+      [{ kargoSinifi: diger.kimlik }, { kargoSinifi: null }],
+    ]);
+  });
+
+  it("silinmiş sınıf kargo sınıfı yapılamaz; seçiliyken silinen sınıf kargo sınıfı kalır", async () => {
+    const vt = await siteAc();
+    const [genel, diger] = await kargolu.tabloyuOku(vt);
+    if (genel === undefined || diger === undefined) throw new Error("Sınıf yok.");
+    await kargolu.sinifSil(vt, yonetici(), diger.kimlik);
+    expect(await hatasi(kargolu.kargoSinifiniDegistir(vt, yonetici(), diger.kimlik))).toEqual({
+      kod: "is-kurali",
+      ayrinti: { kod: "sinif-silinmis" },
+    });
+    await kargolu.sinifSil(vt, yonetici(), genel.kimlik);
+    expect(await kargoSinifi(vt)).toEqual(["Genel"]);
+    expect((await hatasi(kargolu.kargoSinifiniDegistir(vt, yonetici(), randomUUID()))).kod).toBe(
+      "bulunamadi",
+    );
+  });
+
+  it("aynı anda gelen seçimlerden sonra yalnız bir kargo sınıfı kalır", async () => {
+    const vt = await siteAc();
+    const siniflar = await kargolu.tabloyuOku(vt);
+    await Promise.all(Array.from({ length: 6 }, () => vt.execute(sql`select pg_sleep(0.05)`)));
+    await Promise.all(
+      Array.from({ length: 6 }, (_, sira) =>
+        kargolu.kargoSinifiniDegistir(vt, yonetici(), siniflar[sira % 2]?.kimlik ?? null),
+      ),
+    );
+    expect(await kargoSinifi(vt)).toHaveLength(1);
+  });
+});
+
+describe("veritabanıyla vergi hesabı (kart 0075)", () => {
+  // Deneme sitesi: sitenin ayarları ve tablosu veritabanından okunur, mağaza adresi ayardan gelir.
+  const denemeSitesi = () => {
+    const site = siteKlasorunuOku(
+      join(
+        import.meta.dirname,
+        "..",
+        "..",
+        "..",
+        "ayar-semasi",
+        "testler",
+        "ornek-siteler",
+        "vergi-dolu",
+      ),
+    );
+    return {
+      ...site,
+      baslangic: {
+        ...site.baslangic,
+        vergiAdi: "Deneme vergisi",
+        magazaAdresi: {
+          ulke: "TR",
+          il: "TR-06",
+          ilce: "TR-06-007",
+          adres: "Deneme Sokak No: 1",
+          postaKodu: "06000",
+        },
+      },
+    };
+  };
+
+  it("ayarları, silinmiş sınıfı, kargo sınıfını ve mağaza adresini veritabanından alır", async () => {
+    const vt = await siteAc();
+    const site = denemeSitesi();
+    const servisi = siteninVergiServisi(site);
+    const [genel] = await servisi.tabloyuOku(vt);
+    if (genel === undefined) throw new Error("Sınıf yok.");
+    await servisi.kargoSinifiniDegistir(vt, yonetici(), genel.kimlik);
+    await servisi.sinifSil(vt, yonetici(), genel.kimlik);
+    const hesap = () =>
+      vergiHesapla(
+        vt,
+        {
+          satirlar: [{ birimFiyat: 3333, adet: 3, sinif: genel.kimlik }],
+          kargo: { tutar: 2990 },
+          // Teslimat bölgesi tabloda yok: mağaza adresinin bölgesi kullanılır.
+          teslimatAdresi: { ulke: "DE" },
+        },
+        site,
+      );
+    // Varsayılan vergi dahil: 9999 × 18 / 118 = 1525,27 → 1525; kargo 2990 × 18 / 118 = 456,10 → 456.
+    const dahil = await hesap();
+    expect([dahil.bolge, dahil.satirlar[0]?.vergi, dahil.kargo?.vergi]).toEqual([
+      "magaza",
+      1525,
+      456,
+    ]);
+    expect(dahil.dokum.map((satir) => satir.ad)).toEqual(["Deneme vergisi"]);
+    // Ayar değişince hesap değişir: hariç 9999 × 0,18 = 1799,82 → 1800; 2990 × 0,18 = 538,2 → 538.
+    await siteninServisi(site).degistir(vt, yonetici(), { fiyatGirisi: "vergi-haric" });
+    const haric = await hesap();
+    expect([haric.satirlar[0]?.vergi, haric.kargo?.vergi]).toEqual([1800, 538]);
+    await siteninServisi(site).degistir(vt, yonetici(), { vergiAcik: false });
+    expect((await hesap()).toplam.vergi).toBe(0);
+  });
+});
+
 // Çekirdekte site adı geçmez (cekirdek/testler/site-adi-yok.test.ts): siteler klasörden okunur.
 // Beklenen değerler sitenin kendi dosyasından okunur: çekirdekte sitenin vergi değeri yazmaz.
 const sitelerKlasoru = join(import.meta.dirname, "..", "..", "..", "..", "siteler");
@@ -507,6 +646,64 @@ describe("başlangıç verisi olan her site", () => {
       expect(tablo.map((sinif) => sinif.oranlar.map(({ ulke, oran }) => ({ ulke, oran })))).toEqual(
         dosya.siniflar.map((sinif) => sinif.oranlar.map(({ ulke, oran }) => ({ ulke, oran }))),
       );
+      expect(tablo.map((sinif) => sinif.kargo)).toEqual(
+        dosya.siniflar.map((sinif) => sinif.kargo === true),
+      );
+    });
+
+    it(`${site.kimlik.kodAdi} vergisini ayarları ve dosyasıyla aynı hesaplar`, async () => {
+      const vt = await siteAc();
+      const tablo = await siteninVergiServisi(site).tabloyuOku(vt);
+      const satirlar = (siniflar: { kimlik: string }[]) =>
+        siniflar.map((sinif) => ({ birimFiyat: 12_345, adet: 2, sinif: sinif.kimlik }));
+      const adres = site.baslangic.magazaAdresi;
+      const teslimatAdresi = adres === undefined ? undefined : { ulke: adres.ulke, il: adres.il };
+      const vtSonucu = await vergiHesapla(
+        vt,
+        {
+          satirlar: satirlar(tablo),
+          kargo: { tutar: 2990 },
+          ...(teslimatAdresi ? { teslimatAdresi } : {}),
+        },
+        site,
+      );
+      // Aynı hesap veritabanına uğramadan, sitenin dosyalarından kurulan tabloyla.
+      const dosyaTablosu: VergiSinifi[] = dosya.siniflar.map((sinif, sira) => ({
+        kimlik: sinif.ad,
+        ad: sinif.ad,
+        sira,
+        silindi: false,
+        kargo: sinif.kargo === true,
+        oranlar: sinif.oranlar.map((oran, oranSirasi) => ({
+          kimlik: `${sinif.ad}-${oranSirasi}`,
+          sinifKimligi: sinif.ad,
+          ...oran,
+          sira: oranSirasi,
+        })),
+      }));
+      const dosyaSonucu = hesapla({
+        ayarlar: site.baslangic,
+        tablo: dosyaTablosu,
+        adresler: {
+          ...(teslimatAdresi ? { teslimat: teslimatAdresi } : {}),
+          ...(adres ? { magaza: adres } : {}),
+        },
+        satirlar: satirlar(dosyaTablosu),
+        kargo: { tutar: 2990 },
+      });
+      const kimliksiz = (sonuc: VergiSonucu) => ({
+        ...sonuc,
+        satirlar: sonuc.satirlar.map((k) => ({
+          ...k,
+          oranlar: k.oranlar.map(({ oranKimligi: _, ...o }) => o),
+        })),
+        kargo: sonuc.kargo && {
+          ...sonuc.kargo,
+          oranlar: sonuc.kargo.oranlar.map(({ oranKimligi: _, ...o }) => o),
+        },
+      });
+      expect(kimliksiz(vtSonucu)).toEqual(kimliksiz(dosyaSonucu));
+      expect(vtSonucu.toplam.vergi).toBeGreaterThan(0);
     });
   }
 });

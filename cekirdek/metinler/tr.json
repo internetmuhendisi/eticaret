@@ -61,7 +61,10 @@
       "epostaYanitAdresi": "Müşterinin yanıtının gideceği adres. Boşsa yanıt gönderen adresine gider.",
       "logo": "Vitrinde, panelde ve e-postalarda görünen logo. Boşsa sitenin ilk logosu, o da yoksa mağaza adı görünür.",
       "vergiAcik": "Fiyatlarda ve siparişlerde vergi hesaplanır. Kapalıysa vergi tutarı sıfırdır.",
-      "vergiAdi": "Fiyatın yanında ve vergi dökümünde görünen vergi adı. Oranın kendi adı varsa o görünür."
+      "vergiAdi": "Fiyatın yanında ve vergi dökümünde görünen vergi adı. Oranın kendi adı varsa o görünür.",
+      "fiyatGirisi": "Ürün ve kargo fiyatlarının vergi dahil mi, vergi hariç mi girildiği.",
+      "vergiAdresi": "Verginin hangi adrese göre hesaplandığı: teslimat, fatura ya da mağaza adresi. Adresin bölgesi vergi tablosunda yoksa mağaza adresi kullanılır.",
+      "vergiYuvarlama": "Verginin her satırda mı, aynı oranlı satırların toplamında mı kuruşa yuvarlandığı."
     }
   },
   "yonetim": {
@@ -113,7 +116,9 @@
         "oran-siniri": "Oran yüzde 100'den büyük olamaz. Oranı yüzde olarak yazın.",
         "ad-bicimi": "Adda @ işareti olamaz. Adı @ olmadan yazın.",
         "ad-tekrar": "Bu adla bir vergi sınıfı zaten var. Başka bir ad yazın.",
-        "sinif-silinmis": "Bu vergi sınıfı silinmiş, değiştirilemez. Ürünleri başka bir sınıfa geçirin."
+        "sinif-silinmis": "Bu vergi sınıfı silinmiş, değiştirilemez. Ürünleri başka bir sınıfa geçirin.",
+        "kargo-tekrar": "Kargo için yalnız bir vergi sınıfı seçilebilir. Öteki sınıflardan kargo işaretini kaldırın.",
+        "vergi-bolgesi-yok": "Bu adres için vergi oranı bulunamadı, mağaza adresi de vergi tablosunda yok. Mağaza adresini ve vergi oranlarını kontrol edin."
       }
     }
   },

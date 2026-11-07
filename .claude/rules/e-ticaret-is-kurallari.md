@@ -25,7 +25,7 @@ paths:
 - Kargo ücretini, ücretsiz kargo sınırını ve bölge kurallarını tek kargo hesabında tut.
 - Para tutarını küsuratlı sayı olarak tutma. Yuvarlama hatası olmayan biçimde, para birimiyle birlikte sakla.
 - Kupon, otomatik indirim ve kampanyaları tek kampanya motorunda hesapla. Birleşme kurallarını orada tanımla.
-- Vergi oranlarını ve hesabını tek modülde yap.
+- Vergi oranlarını ve hesabını tek modülde yap. Vergi yalnız `hesapla` (`cekirdek/moduller/vergi/hesap.ts`) ile, sitenin ayarları ve tablosuyla `vergiHesapla` ile hesaplanır. Kuruş yalnız `cekirdek/moduller/vergi/yuvarlama.ts` ile yuvarlanır (karar 0061).
 - Vergi ülkeye bağlı yazılmaz: çekirdekte "KDV", bir oran ya da bir ülke sabit yazılmaz. Vergi sınıfları, oranlar, vergi adı, fiyatın vergi dahil ya da hariç girilmesi ve hesaplamanın hangi adrese göre yapılacağı site ayarıdır.
 - Oranı ürünün vergi sınıfı ile müşterinin bölgesinden bul. Bölge bulunamazsa mağaza adresini kullan.
 - Siparişe her satırın o anki vergi oranını ve tutarını yaz. Oran sonradan değişse de eski sipariş değişmesin.

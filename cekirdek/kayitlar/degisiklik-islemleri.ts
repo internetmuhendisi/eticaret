@@ -16,6 +16,8 @@ export const degisiklikIslemleri = [
   "vergi-orani.eklendi",
   "vergi-orani.degisti",
   "vergi-orani.silindi",
+  // Kargo ücretinin vergi sınıfı değişti (kart 0075).
+  "vergi.kargo-sinifi",
 ] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 

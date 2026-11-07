@@ -12,7 +12,12 @@ import { ulkeGecerliMi } from "../bolgeler/bolgeler.ts";
 import { type AyarSahibi, ayarSahibi } from "../kayitlar/site.ts";
 import { saatDilimiGecerliMi } from "../metinler/bicimleyici.ts";
 import { diller, type MetinAnahtari } from "../metinler/metin.ts";
-import { vergiAdiSemasi } from "../moduller/vergi/semalar.ts";
+import {
+  fiyatGirisleri,
+  vergiAdiSemasi,
+  vergiAdresleri,
+  vergiYuvarlamalari,
+} from "../moduller/vergi/semalar.ts";
 
 export type AyarBilgisi = {
   aciklama: MetinAnahtari;
@@ -188,6 +193,19 @@ export const magazaAyarSemasi = z.strictObject({
   // Oranın kendi adı yoksa bu ad kullanılır. Sınıflar ve oranlar ayar değil, vergi modülünün tablosudur.
   vergiAcik: ayar(z.boolean().default(true), magazaSahibinin("ayar.aciklama.vergiAcik")),
   vergiAdi: ayar(vergiAdiSemasi.optional(), magazaSahibinin("ayar.aciklama.vergiAdi")),
+  // Vergi hesabının ayarları (kart 0075, karar 0061). Seçenekler vergi modülündedir.
+  fiyatGirisi: ayar(
+    z.enum(fiyatGirisleri).default("vergi-dahil"),
+    magazaSahibinin("ayar.aciklama.fiyatGirisi"),
+  ),
+  vergiAdresi: ayar(
+    z.enum(vergiAdresleri).default("teslimat"),
+    magazaSahibinin("ayar.aciklama.vergiAdresi"),
+  ),
+  vergiYuvarlama: ayar(
+    z.enum(vergiYuvarlamalari).default("satir"),
+    magazaSahibinin("ayar.aciklama.vergiYuvarlama"),
+  ),
 });
 export type MagazaAyarlari = z.output<typeof magazaAyarSemasi>;
 

@@ -156,6 +156,7 @@ describe("örnek klasörler", () => {
     ["vergi-bolge-bozuk", `${vergiBaslangicDosyasi}: siniflar.0.oranlar.0.il: il-baska-ulkenin`],
     ["vergi-sinif-tekrar", `${vergiBaslangicDosyasi}: siniflar.1.ad: ad-tekrar`],
     ["vergi-bilinmeyen-alan", `${vergiBaslangicDosyasi}: siniflar.0: `],
+    ["vergi-kargo-tekrar", `${vergiBaslangicDosyasi}: siniflar.1.kargo: kargo-tekrar`],
   ];
 
   for (const [ornek, beklenenHata] of bozuklar) {

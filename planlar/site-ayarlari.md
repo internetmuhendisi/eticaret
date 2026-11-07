@@ -38,10 +38,11 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Vergi | Mağaza sahibi | Açık | — | |
 | Vergi adı | Mağaza sahibi | Çekirdekte boş; Türkiye'de kurulan site KDV | KDV | `baslangic/ayarlar.json` (`vergiAdi`). Oranın kendi adı varsa o görünür |
 | Vergi sınıfları ve oranları | Mağaza sahibi | Çekirdekte yok; Türkiye'de kurulan site %20, %10, %1, %0 | %20, %10, %1, %0 | Ayar değil, vergi tablosudur: `baslangic/vergi.json`, ilk okumada bir kez yazılır (karar 0060) |
-| Fiyat girişi | Mağaza sahibi | Vergi dahil | — | |
+| Fiyat girişi | Mağaza sahibi | Vergi dahil | — | `fiyatGirisi` (karar 0061) |
 | Fiyatın yanındaki metin | Mağaza sahibi | "KDV dahil" | — | |
-| Verginin hesaplandığı adres | Mağaza sahibi | Teslimat adresi | — | |
-| Yuvarlama | Mağaza sahibi | Satır satır | — | Faturadaki satırlarla aynı tutar çıkar |
+| Verginin hesaplandığı adres | Mağaza sahibi | Teslimat adresi | — | `vergiAdresi`. Bölgesi vergi tablosunda yoksa mağaza adresi kullanılır (karar 0061) |
+| Yuvarlama | Mağaza sahibi | Satır satır | — | `vergiYuvarlama`. Faturadaki satırlarla aynı tutar çıkar |
+| Kargonun vergi sınıfı | Mağaza sahibi | Vergisiz | %20 | Ayar değil, vergi tablosunda işaretli sınıftır: başlangıçta `baslangic/vergi.json` içinde `"kargo": true` (karar 0061) |
 
 ## Fiyat
 

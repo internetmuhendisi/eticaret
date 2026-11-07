@@ -8,10 +8,21 @@
 // Aranan alanlar:
 // - vergi_siniflari.ad: silinmemiş sınıflar arasında tekildir (kısmi tekil indeks). Sınıflar ayrıca
 //   hep birlikte okunur, sitede en çok onlarca sınıf olur.
+// - vergi_siniflari.kargo_sinifi: kargo ücretinin sınıfı (kart 0075). En çok bir sınıf işaretlidir
+//   (kısmi tekil indeks); silinmiş sınıf da kargo sınıfı kalabilir, kargo onun oranıyla hesaplanır.
 // - vergi_oranlari.sinif_kimligi: bir sınıfın oranları okunurken ve vergi hesabında (kart 0075).
 //   Bölge alanları (ulke, il, posta_kodu) sınıfın birkaç satırı içinde süzülür, ayrı indeks gerekmez.
 import { sql } from "drizzle-orm";
-import { check, index, integer, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  check,
+  index,
+  integer,
+  pgTable,
+  text,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { kimlik, zaman } from "../../veritabani/turler.ts";
 
 export const vergiSiniflari = pgTable(
@@ -21,12 +32,15 @@ export const vergiSiniflari = pgTable(
     ad: text().notNull(),
     // Ekranda ve seçim listelerinde sıra; küçük önce.
     sira: integer().notNull().default(0),
+    // Kargo ücreti bu sınıfın oranlarıyla vergilenir. Hiçbir sınıf işaretli değilse kargo vergisizdir.
+    kargo_sinifi: boolean().notNull().default(false),
     olusturma_zamani: zaman().notNull().defaultNow(),
     guncellenme_zamani: zaman().notNull().defaultNow(),
     silinme_zamani: zaman(),
   },
   (tablo) => [
     uniqueIndex("vergi_siniflari_ad").on(tablo.ad).where(sql`${tablo.silinme_zamani} is null`),
+    uniqueIndex("vergi_siniflari_kargo").on(tablo.kargo_sinifi).where(sql`${tablo.kargo_sinifi}`),
   ],
 );
 

@@ -25,6 +25,8 @@ import {
   type VeritabaniIslemi,
 } from "../../veritabani/baglanti.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
+import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
+import { type HesapGirdisi, hesapla, type VergiBolgesi, type VergiSonucu } from "./hesap.ts";
 import { vergiOranlari, vergiSiniflari } from "./model.ts";
 import {
   type OranDegisikligi,
@@ -60,6 +62,8 @@ export type VergiSinifi = {
   ad: string;
   sira: number;
   silindi: boolean;
+  // Kargo ücreti bu sınıfın oranlarıyla vergilenir (kart 0075). En çok bir sınıf.
+  kargo: boolean;
   oranlar: VergiOrani[];
 };
 
@@ -143,7 +147,7 @@ export const vergiServisi = (baslangic: () => VergiBaslangici) => {
     for (const [sinifSirasi, sinif] of veri.siniflar.entries()) {
       const [yazilan] = await islem
         .insert(vergiSiniflari)
-        .values({ ad: sinif.ad, sira: sinifSirasi })
+        .values({ ad: sinif.ad, sira: sinifSirasi, kargo_sinifi: sinif.kargo === true })
         .returning({ kimlik: vergiSiniflari.kimlik });
       if (yazilan === undefined) throw new Error("Vergi sınıfı yazılamadı.");
       await degisikligiKaydet(islem, {
@@ -151,7 +155,10 @@ export const vergiServisi = (baslangic: () => VergiBaslangici) => {
         islem: "vergi.baslangic",
         kayit: { tur: "vergi-sinifi", kimlik: yazilan.kimlik },
         eski: null,
-        yeni: sinifKaydi({ ad: sinif.ad, sira: sinifSirasi }),
+        yeni: {
+          ...sinifKaydi({ ad: sinif.ad, sira: sinifSirasi }),
+          ...(sinif.kargo === true ? { kargo: true } : {}),
+        },
       });
       if (sinif.oranlar.length === 0) continue;
       const satirlar = sinif.oranlar.map((oran, sira) => oranSatiri(yazilan.kimlik, oran, sira));
@@ -197,6 +204,7 @@ export const vergiServisi = (baslangic: () => VergiBaslangici) => {
         kimlik: vergiSiniflari.kimlik,
         ad: vergiSiniflari.ad,
         sira: vergiSiniflari.sira,
+        kargo: vergiSiniflari.kargo_sinifi,
         silinme: vergiSiniflari.silinme_zamani,
       })
       .from(vergiSiniflari)
@@ -221,6 +229,7 @@ export const vergiServisi = (baslangic: () => VergiBaslangici) => {
       ad: sinif.ad,
       sira: sinif.sira,
       silindi: sinif.silinme !== null,
+      kargo: sinif.kargo,
       oranlar: oranlar
         .filter((oran) => oran.sinif_kimligi === sinif.kimlik)
         .map((oran) => ({
@@ -440,11 +449,83 @@ export const vergiServisi = (baslangic: () => VergiBaslangici) => {
       });
     });
 
-  return { tabloyuOku, sinifEkle, sinifDegistir, sinifSil, oranEkle, oranDegistir, oranSil };
+  // Kargo ücretinin sınıfını seçer; null kargoyu vergisiz yapar (kart 0075). Silinmiş sınıf seçilemez,
+  // ama seçiliyken silinen sınıf kargo sınıfı kalır. Değişmeyen seçim kayda girmez.
+  const kargoSinifiniDegistir = async (
+    vt: Veritabani,
+    kim: DegisikligiYapan,
+    kimlik: string | null,
+  ) =>
+    yaz(vt, async (islem) => {
+      const [eski] = await islem
+        .select({ kimlik: vergiSiniflari.kimlik })
+        .from(vergiSiniflari)
+        .where(eq(vergiSiniflari.kargo_sinifi, true));
+      if (kimlik !== null) await degisebilenSinif(islem, kimlik);
+      if ((eski?.kimlik ?? null) === kimlik) return;
+      if (eski !== undefined) {
+        await islem
+          .update(vergiSiniflari)
+          .set({ kargo_sinifi: false, guncellenme_zamani: sql`now()` })
+          .where(eq(vergiSiniflari.kimlik, eski.kimlik));
+      }
+      if (kimlik !== null) {
+        await islem
+          .update(vergiSiniflari)
+          .set({ kargo_sinifi: true, guncellenme_zamani: sql`now()` })
+          .where(eq(vergiSiniflari.kimlik, kimlik));
+      }
+      await degisikligiKaydet(islem, {
+        kim,
+        islem: "vergi.kargo-sinifi",
+        kayit: { tur: "vergi-sinifi", kimlik: kimlik ?? eski?.kimlik ?? "" },
+        eski: { kargoSinifi: eski?.kimlik ?? null },
+        yeni: { kargoSinifi: kimlik },
+      });
+    });
+
+  return {
+    tabloyuOku,
+    sinifEkle,
+    sinifDegistir,
+    sinifSil,
+    oranEkle,
+    oranDegistir,
+    oranSil,
+    kargoSinifiniDegistir,
+  };
 };
 
 // Verilen sitenin servisi: arka plan işi ve testler siteyi kendisi verir.
 export const siteninVergiServisi = (site: Site) => vergiServisi(() => site.vergiBaslangici);
+
+// Sitenin ayarları ve vergi tablosuyla verginin hesabı (kart 0075). Hesabın kendisi hesap.ts'dedir;
+// bu işlev yalnız ayarları, silinmiş sınıflarıyla tabloyu ve mağaza adresini okur.
+export const vergiHesapla = async (
+  vt: Veritabani,
+  girdi: Omit<HesapGirdisi, "ayarlar" | "tablo" | "adresler"> & {
+    teslimatAdresi?: VergiBolgesi;
+    faturaAdresi?: VergiBolgesi;
+  },
+  site: Site = calisanSite(),
+): Promise<VergiSonucu> => {
+  const ayarlar = await siteninMagazaAyarlari(vt, site);
+  const tablo = await siteninVergiServisi(site).tabloyuOku(vt, { silinmisSiniflar: true });
+  const magaza = ayarlar.magazaAdresi;
+  return hesapla({
+    ayarlar,
+    tablo,
+    adresler: {
+      ...(girdi.teslimatAdresi === undefined ? {} : { teslimat: girdi.teslimatAdresi }),
+      ...(girdi.faturaAdresi === undefined ? {} : { fatura: girdi.faturaAdresi }),
+      ...(magaza === undefined
+        ? {}
+        : { magaza: { ulke: magaza.ulke, il: magaza.il, postaKodu: magaza.postaKodu } }),
+    },
+    satirlar: girdi.satirlar,
+    ...(girdi.kargo === undefined ? {} : { kargo: girdi.kargo }),
+  });
+};
 
 // Çalışan sitenin servisi. Başlangıç verisi site klasöründen gelir, yalnız tablo kurulmamışsa okunur.
 const calisanSiteninServisi = vergiServisi(() => calisanSite().vergiBaslangici);
