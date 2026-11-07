@@ -2,6 +2,8 @@
 // Her kuralın bozuk bir örneği yakalanır.
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
+import { arkaPlanDosyalari } from "../../cekirdek/kayitlar/arka-plan.ts";
+import { arkaPlanKutusuVarMi, arkaPlanSaglikYoklamasi } from "../kutu-kurali.mts";
 import {
   onKapiTanimi,
   siteSatiri,
@@ -25,6 +27,7 @@ import {
   yayinKutusuTanimi,
 } from "../yayin.mts";
 import { hatAyarKalibi, hatDosyasiAyniMi, korumaOzeti } from "../yayin-hazirligi.mts";
+import { kutuyuDurdurmaBetigi as yedekteKutuyuDurdurmaBetigi } from "../yedek.mts";
 
 const kayit = (ek: Partial<YayinKaydi>): YayinKaydi => ({
   no: 1,
@@ -193,6 +196,40 @@ describe("sunucudaki site kutusunun tanımı", () => {
       { file: "/srv/altyapi/gizli/deneme/ornek-magaza/veritabani_adresi" },
       { file: "/srv/altyapi/gizli/deneme/ornek-magaza/iki_asama_anahtari" },
     ]);
+  });
+
+  it("arka plan kutusu aynı görüntü, kısıtlar ve gizli bilgilerle, yalnız adı, komutu ve yoklaması farklı", () => {
+    const { container_name, command, healthcheck, ...kalani } = tanim.services["arka-plan"];
+    const { container_name: _ad, healthcheck: siteYoklamasi, ...siteninKalani } = kutu;
+    expect(container_name).toBe("site-deneme-ornek-magaza-7-arka-plan");
+    expect(command).toEqual(["node", arkaPlanDosyalari.surec]);
+    expect(healthcheck).toEqual(arkaPlanSaglikYoklamasi);
+    expect(healthcheck).not.toEqual(siteYoklamasi);
+    expect(kalani).toEqual(siteninKalani);
+    expect("ports" in kalani).toBe(false);
+  });
+
+  it("geri yüklemede önce site, sonra arka plan kutusu durur", () => {
+    const betik = yedekteKutuyuDurdurmaBetigi("site-deneme-x-3");
+    const siteSirasi = betik.indexOf("docker stop --timeout 20 site-deneme-x-3 ");
+    const arkaSirasi = betik.indexOf("docker stop --timeout 20 site-deneme-x-3-arka-plan");
+    expect(siteSirasi).toBeGreaterThan(-1);
+    expect(arkaSirasi).toBeGreaterThan(siteSirasi);
+  });
+
+  it("durdurma betiği iki kutuyu da kaldırır", () => {
+    const betik = kutuyuDurdurmaBetigi("deneme", "ornek-magaza", 7);
+    expect(betik).toContain("site-deneme-ornek-magaza-7 site-deneme-ornek-magaza-7-arka-plan");
+  });
+
+  it.each([
+    ["0.8.1", false],
+    ["0.6.1", false],
+    ["0.9.0", true],
+    ["0.10.0", true],
+    ["1.0.0", true],
+  ])("%s sürümünün arka plan kutusu beklenir: %s", (surum, beklenen) => {
+    expect(arkaPlanKutusuVarMi(surum)).toBe(beklenen);
   });
 
   it.each([0, -1, 1.5])("geçersiz yayın numarası reddedilir: %s", (no) => {

@@ -13,10 +13,11 @@
 
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
+import { arkaPlanDosyalari } from "../cekirdek/kayitlar/arka-plan.ts";
 import { istekSinirlari } from "../cekirdek/kayitlar/kapi.ts";
 import { metinOkuyucu } from "../cekirdek/metinler/metin.ts";
 import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
-import { kutuKuraliDogru, yenidenBaslama } from "./kutu-kurali.mts";
+import { arkaPlanKutuAdi, kutuKuraliDogru, yenidenBaslama } from "./kutu-kurali.mts";
 import {
   denemeSitesiAc,
   gonder,
@@ -112,6 +113,24 @@ const sitesiniOlc = async (site: OrtamSitesi, oteki: OrtamSitesi) => {
     { encoding: "utf8" },
   ).stdout.trim();
   olc(`${kodAdi}: kutunun portu dışarıya kapalı`, portlar === "{}" || portlar === "null", portlar);
+
+  // Arka plan kutusu kendi sitesinin kuyruğunu işliyor (kart 0031, karar 0049).
+  const deneme = spawnSync(
+    "docker",
+    [
+      "exec",
+      arkaPlanKutuAdi(kutuAdi(kodAdi)),
+      "node",
+      arkaPlanDosyalari.deneme,
+      "yerelortamdenemesi",
+    ],
+    { encoding: "utf8" },
+  ).stdout;
+  olc(
+    `${kodAdi}: arka plan kutusu örnek işi çalıştırıyor, hatalı işi yeniden deneyip bırakıyor`,
+    deneme.includes("basarili=bitti 1") && deneme.includes("hatali=hata 2"),
+    deneme.trim().replaceAll("\n", ", "),
+  );
 };
 
 // Ortamın bütün kutuları (veritabanı, Caddy, siteler) yeniden başlama kuralıyla çalışmalı.
@@ -126,8 +145,8 @@ const kutuKurallariniOlc = (siteSayisi: number) => {
     .sort();
   olc(
     "ortamın bütün kutuları çalışıyor",
-    kutular.length === siteSayisi + 2,
-    `${kutular.length} kutu, beklenen ${siteSayisi + 2}`,
+    kutular.length === siteSayisi * 2 + 2,
+    `${kutular.length} kutu, beklenen ${siteSayisi * 2 + 2}`,
   );
   for (const kutu of kutular) {
     const kural = spawnSync(

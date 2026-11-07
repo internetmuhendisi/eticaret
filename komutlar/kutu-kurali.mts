@@ -8,6 +8,8 @@
 // - Geçici deneme kutuları (sunucu-gizli-denemesi.mts, görüntü denetimi) bu kuralı almaz: geride
 //   kalmamaları gerekir.
 
+import { arkaPlanDosyalari, nabizDosyasi, nabizSiniriMs } from "../cekirdek/kayitlar/arka-plan.ts";
+
 export const yenidenBaslama = "unless-stopped";
 
 // Kutu tanımına eklenen parça.
@@ -44,4 +46,41 @@ export const siteSaglikYoklamasi = {
   retries: 3,
   start_period: "60s",
   start_interval: "1s",
+};
+
+// Arka plan kutusu (kart 0031, karar 0049): site kutusuyla aynı görüntü, aynı kısıtlar, aynı gizli
+// bilgiler; yalnız adı, komutu ve sağlık yoklaması farklıdır. Yoklama, sürecin yazdığı nabız
+// dosyasının yaşına bakar: veritabanı kesintisi kutuyu sağlıksız yapmaz, süreç ayakta kalır.
+export const arkaPlanKutuAdi = (siteKutusu: string): string => `${siteKutusu}-arka-plan`;
+
+export const arkaPlanSaglikYoklamasi = {
+  test: [
+    "CMD",
+    "node",
+    "-e",
+    `process.exit(Date.now()-require('node:fs').statSync('${nabizDosyasi}').mtimeMs<${nabizSiniriMs}?0:1)`,
+  ],
+  interval: "15s",
+  timeout: "5s",
+  retries: 3,
+  start_period: "30s",
+  start_interval: "1s",
+};
+
+export const arkaPlanServisi = <Servis extends { container_name: string }>(site: Servis) => ({
+  ...site,
+  container_name: arkaPlanKutuAdi(site.container_name),
+  command: ["node", arkaPlanDosyalari.surec],
+  healthcheck: arkaPlanSaglikYoklamasi,
+});
+
+// Bu sürümden eski yayınların arka plan kutusu yoktur: geri dönüşte ve denetimde beklenmez.
+const arkaPlanIlkSurumu = [0, 9, 0];
+export const arkaPlanKutusuVarMi = (surum: string): boolean => {
+  const parcalar = surum.split(".").map(Number);
+  for (const [sira, ilk] of arkaPlanIlkSurumu.entries()) {
+    const deger = parcalar[sira] ?? 0;
+    if (deger !== ilk) return deger > ilk;
+  }
+  return true;
 };

@@ -38,6 +38,11 @@ RUN pnpm exec esbuild cekirdek/veritabani/sunucuda-guncelle.ts --bundle --platfo
 RUN pnpm exec esbuild cekirdek/izleme/hata-izleme-denemesi.ts --bundle --platform=node \
       --format=esm --target=node24 --log-level=warning \
       --outfile=/kaynak/izleme/hata-denemesi.mjs
+# Arka plan süreci ve denemesi (kart 0031, karar 0049): kullandıkları paketler içine gömülü tek dosyalar.
+RUN pnpm exec esbuild cekirdek/arka-plan-isleri/surec.ts cekirdek/arka-plan-isleri/deneme.ts \
+      --bundle --platform=node --format=esm --target=node24 --external:pg-native --log-level=warning \
+      --banner:js="import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" \
+      --outdir=/kaynak/arka-plan --out-extension:.js=.mjs
 
 FROM node:${NODE_SURUMU}-alpine
 ARG CEKIRDEK_SURUMU
@@ -52,6 +57,7 @@ COPY --from=derleme /kaynak/cekirdek/uygulama/.next/standalone ./
 COPY --from=derleme /kaynak/cekirdek/uygulama/.next/static ./cekirdek/uygulama/.next/static
 COPY --from=derleme /kaynak/veritabani ./veritabani
 COPY --from=derleme /kaynak/izleme ./izleme
+COPY --from=derleme /kaynak/arka-plan ./arka-plan
 USER node
 EXPOSE 3000
 CMD ["node", "cekirdek/uygulama/server.js"]

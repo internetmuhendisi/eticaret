@@ -26,6 +26,7 @@ import {
   silmeBetigi,
   uretmeBetigi,
 } from "./gizli-bilgi.mts";
+import { arkaPlanKutuAdi } from "./kutu-kurali.mts";
 import {
   bakimDegistir,
   onKapiKlasoru,
@@ -254,6 +255,14 @@ try {
 
   const kutuA = siteKutusuAdi(ortam, a.kodAdi, ilk.etkin);
   const kutuB = siteKutusuAdi(ortam, b.kodAdi, ikinciSite.etkin);
+  // Yayın iki süreci birlikte açar (kart 0031, karar 0049).
+  for (const kutu of [kutuA, kutuB]) {
+    const durum = sunucuda(
+      ipv4,
+      `docker inspect -f '{{.State.Health.Status}}' ${arkaPlanKutuAdi(kutu)}`,
+    ).cikti.trim();
+    olc(`${arkaPlanKutuAdi(kutu)} yayınla birlikte açıldı, sağlıklı`, durum === "healthy", durum);
+  }
   for (const [kaynak, hedef] of [
     [kutuA, kutuB],
     [kutuB, kutuA],
@@ -314,6 +323,18 @@ try {
       donusVitrin.ad === "Yayın Denemesi A1" &&
       !donusSaglik,
     donus.neden ?? donusSaglik ?? `vitrin "${donusVitrin.ad}", etkin ${donus.etkin}`,
+  );
+
+  // Geri dönüşte iki süreç birlikte döner: eski kutu ayakta, ikinci yayının kutusu kapalı.
+  const arkaPlanDurumu = (no: number) =>
+    sunucuda(
+      ipv4,
+      `docker inspect -f '{{.State.Health.Status}}' ${arkaPlanKutuAdi(siteKutusuAdi(ortam, a.kodAdi, no))} 2>/dev/null || echo yok`,
+    ).cikti.trim();
+  olc(
+    "geri dönüş: arka plan süreci de önceki yayına döndü",
+    arkaPlanDurumu(ilk.etkin) === "healthy" && arkaPlanDurumu(ikinci.etkin) !== "healthy",
+    `önceki ${arkaPlanDurumu(ilk.etkin)}, sonraki ${arkaPlanDurumu(ikinci.etkin)}`,
   );
 
   const kayitlar = kayitlariOku(ipv4, ortam, a.kodAdi);

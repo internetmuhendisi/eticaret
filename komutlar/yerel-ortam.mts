@@ -28,7 +28,7 @@ import { cekirdekSurumu } from "../cekirdek/surum.ts";
 import { baglan, siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
 import { siteVeritabaniniGuncelle } from "../cekirdek/veritabani/guncelle.ts";
 import { goruntuAdi } from "./cekirdek-goruntusu-denetle.mts";
-import { kaliciKutu, siteSaglikYoklamasi } from "./kutu-kurali.mts";
+import { arkaPlanServisi, kaliciKutu, siteSaglikYoklamasi } from "./kutu-kurali.mts";
 import { veritabaniVeKullaniciAc } from "./site-veritabani.mts";
 
 export const kok = join(import.meta.dirname, "..");
@@ -188,6 +188,9 @@ const ayarlariUret = (siteler: (OrtamSitesi & { etiket: string })[]): void => {
       `http://${kodAdi}.localhost {\n\treverse_proxy ${servisAdi(kodAdi)}:3000\n}\n`,
     );
     servisler[servisAdi(kodAdi)] = siteKutusu(kodAdi, klasor, etiket);
+    servisler[`${servisAdi(kodAdi)}-arka-plan`] = arkaPlanServisi(
+      siteKutusu(kodAdi, klasor, etiket),
+    );
   }
   writeFileSync(sitelerDosyasi, `${JSON.stringify({ services: servisler }, null, 2)}\n`);
 };

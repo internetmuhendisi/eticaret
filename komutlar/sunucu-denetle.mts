@@ -42,6 +42,7 @@ import {
   hataIzlemeOrtamlari,
   hataIzlemeTanimi,
 } from "./hata-izleme.mts";
+import { arkaPlanKutuAdi, arkaPlanKutusuVarMi } from "./kutu-kurali.mts";
 import {
   hataIzlemeAgi,
   hataIzlemeKutusu,
@@ -82,7 +83,11 @@ import {
   veritabaniOrtamlari,
   veritabaniTanimi,
 } from "./sunucu-veritabani.mts";
-import { yayinKutusuTanimi } from "./yayin.mts";
+import {
+  etkinYayinSurumu,
+  kayitlariOku as yayinKayitlariniOku,
+  yayinKutusuTanimi,
+} from "./yayin.mts";
 import { depoAnahtarlari, kayittaYedekSizintisi, yedekDenetimi } from "./yedek.mts";
 
 // Hızlı taramada bakılan kapılar: gerekenler ve yanlışlıkla açılması en olası olanlar.
@@ -343,30 +348,46 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
     for (const [kodAdi, no] of Object.entries(yayindakiler)) {
       const ad = siteKutusuAdi(yayinOrtami, kodAdi, no);
       const numara = numaralar[kodAdi];
-      const kutu = sshKomutu(
-        kayit.ipv4,
-        `docker inspect ${ad} --format '${kutuOlcumBicimi}|{{.State.Health.Status}}|{{json .HostConfig.PortBindings}}'`,
+      const kutuHatalari = (
+        kutuAdi: string,
+        tanim: (numara: number) => Parameters<typeof kutuKisitHatalari>[1],
+      ): string[] => {
+        const kutu = sshKomutu(
+          kayit.ipv4,
+          `docker inspect ${kutuAdi} --format '${kutuOlcumBicimi}|{{.State.Health.Status}}|{{json .HostConfig.PortBindings}}'`,
+        );
+        const alanlar = kutu.stdout.trim().split("|");
+        const [saglik = "", portlar = ""] = alanlar.slice(-2);
+        if (numara === undefined) return ["site numarası yok (sunucu/site-kullanicilari.json)"];
+        if (kutu.status !== 0) return [kutu.stderr.trim() || "kutu yok"];
+        return [
+          ...kutuKisitHatalari(alanlar.slice(0, -2).join("|"), tanim(numara)),
+          ...(saglik === "healthy" ? [] : [`sağlık ${saglik || "yok"}`]),
+          ...(portuKapali(portlar) ? [] : [`açık port ${portlar}`]),
+        ];
+      };
+      const hatalar = kutuHatalari(
+        ad,
+        (n) => yayinKutusuTanimi(yayinOrtami, kodAdi, n, no).services.uygulama,
       );
-      const alanlar = kutu.stdout.trim().split("|");
-      const [saglik = "", portlar = ""] = alanlar.slice(-2);
-      const hatalar =
-        numara === undefined
-          ? ["site numarası yok (sunucu/site-kullanicilari.json)"]
-          : kutu.status === 0
-            ? [
-                ...kutuKisitHatalari(
-                  alanlar.slice(0, -2).join("|"),
-                  yayinKutusuTanimi(yayinOrtami, kodAdi, numara, no).services.uygulama,
-                ),
-                ...(saglik === "healthy" ? [] : [`sağlık ${saglik || "yok"}`]),
-                ...(portuKapali(portlar) ? [] : [`açık port ${portlar}`]),
-              ]
-            : [kutu.stderr.trim() || "kutu yok"];
       olcum(
         hatalar.length === 0,
         `${yayinOrtami}/${kodAdi} yayındaki kutusu (${no}) sağlıklı: kendi kullanıcısı, salt okunur, yetkisiz, yeniden başlayınca açılır, portu kapalı`,
         hatalar.join("; "),
       );
+      // Etkin yayının sürümü kayıttan okunur: bilgisayardaki kimlik daha yeni olabilir (kart 0031).
+      const surum = etkinYayinSurumu(yayinKayitlariniOku(kayit.ipv4, yayinOrtami, kodAdi), no);
+      if (surum === undefined || arkaPlanKutusuVarMi(surum)) {
+        const arkaPlanHatalari = kutuHatalari(
+          arkaPlanKutuAdi(ad),
+          (n) => yayinKutusuTanimi(yayinOrtami, kodAdi, n, no).services["arka-plan"],
+        );
+        olcum(
+          arkaPlanHatalari.length === 0,
+          `${yayinOrtami}/${kodAdi} arka plan kutusu (${no}) sağlıklı: kendi kullanıcısı, salt okunur, yetkisiz, yeniden başlayınca açılır, portu kapalı`,
+          arkaPlanHatalari.join("; "),
+        );
+      }
     }
     const guncelleme = sshKomutu(
       kayit.ipv4,

@@ -16,6 +16,7 @@ import { join } from "node:path";
 import { parseEnv } from "node:util";
 import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
 import { gizliKok, type Ortam, yedekDeposuGizliBilgisi } from "./gizli-bilgi.mts";
+import { arkaPlanKutuAdi } from "./kutu-kurali.mts";
 import {
   kodAdiGecerli,
   siteKutusuAdi,
@@ -471,8 +472,10 @@ printf 'tablo=%s\\n' "$(docker exec ${kutu} psql -U postgres -d "${yeni}" -Atc "
 export const yaniSilmeBetigi = (ortam: Ortam, kodAdi: string): string =>
   `# adim:yanisil\nset -eu\ndocker exec ${veritabaniKutusu(ortam)} psql -U postgres -d postgres -q -v ON_ERROR_STOP=1 -c 'DROP DATABASE IF EXISTS "${geciciAd(siteVeritabaniAdi(kodAdi))}" WITH (FORCE)' </dev/null >/dev/null\n`;
 
+// Arka plan kutusu da durur: veritabanı yer değiştirirken kuyruğa yazmamalı. Önce site durur: arada
+// kesilirse site kapalı görünür ve yeniden açma ikisini birden açar.
 export const kutuyuDurdurmaBetigi = (kutuAdi: string): string =>
-  `# adim:durdur\nset -eu\ndocker stop --timeout 20 ${kutuAdi} >/dev/null\n`;
+  `# adim:durdur\nset -eu\ndocker stop --timeout 20 ${kutuAdi} >/dev/null\nif docker inspect ${arkaPlanKutuAdi(kutuAdi)} >/dev/null 2>&1; then docker stop --timeout 20 ${arkaPlanKutuAdi(kutuAdi)} >/dev/null; fi\n`;
 
 // Veritabanları tek işlemde yer değiştirir: ya ikisi de olur ya hiçbiri. Hiçbir şey silinmez.
 export const degistirmeBetigi = (ortam: Ortam, kodAdi: string): string => {

@@ -30,6 +30,6 @@ paths:
 - Değişiklik üretmek: `pnpm veritabani-degisikligi-uret --name <kisa-ad>`, sonra dosyanın ilk satırına geri dönüş notu yazılır. Uygulamak: `pnpm veritabani-guncelle siteler/<kod-adi>`.
 - Yerel veritabanı: `pnpm veritabani-baslat`, `pnpm veritabani-durdur`. Siteye veritabanı açmak: `pnpm site-veritabani-ac siteler/<kod-adi>`.
 - Sunucuda (karar 0034): `pnpm sunucu-veritabani siteler/<kod-adi> <ortam>` veritabanını açar ve değişiklikleri sitenin kendi kutu kullanıcısıyla uygular. Değişiklikleri uygulayan parça çekirdeğin görüntüsündedir (`cekirdek/veritabani/sunucuda-guncelle.ts`); yeni değişiklik eklenince görüntü yeniden üretilir.
-- Tablolar `cekirdek/veritabani/tablolar/` ve `cekirdek/moduller/*/model.ts` dosyalarındadır; değişiklik üreten araç ikisini de okur.
+- Tablolar `cekirdek/veritabani/tablolar/`, `cekirdek/moduller/*/model.ts` ve `cekirdek/arka-plan-isleri/model.ts` dosyalarındadır; değişiklik üreten araç hepsini okur.
 - Veri ayrımı iki katmanlıdır: veritabanının izinleri (`komutlar/site-veritabani-ac.sql`) ve bağlantı kuralları (`sunucu/veritabani/pg_hba.conf`, karar 0023). İkisini `cekirdek/testler/veri-ayrimi.test.ts` ayrı ayrı denetler.
 - Açma betiği paralel çalışabilir: bütün sitelerde ortak izin kayıtları kilitle sırayla değişir (karar 0048). Geçici test veritabanını `denemeVeritabaniAc` açar, yarıda kalan açma artık bırakmaz.

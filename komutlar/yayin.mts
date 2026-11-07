@@ -22,7 +22,12 @@ import {
 import { goruntuyuDenetle } from "./cekirdek-goruntusu-denetle.mts";
 import { kutuGizliTanimi, type Ortam, uretmeBetigi } from "./gizli-bilgi.mts";
 import { projeAdresiniHazirla } from "./hata-izleme.mts";
-import { kaliciKutu, siteSaglikYoklamasi } from "./kutu-kurali.mts";
+import {
+  arkaPlanKutuAdi,
+  arkaPlanServisi,
+  kaliciKutu,
+  siteSaglikYoklamasi,
+} from "./kutu-kurali.mts";
 import {
   denemeAdresi,
   kodAdiGecerli,
@@ -70,36 +75,35 @@ export const yayinKutusuTanimi = (
 ) => {
   const gizli = kutuGizliTanimi(ortam, kodAdi, siteNumarasi);
   const ag = siteAgiAdi(ortam, kodAdi);
+  const uygulama = {
+    image: yayinGoruntusu(ortam, kodAdi, no),
+    container_name: siteKutusuAdi(ortam, kodAdi, no),
+    ...kaliciKutu,
+    user: gizli.servis.user,
+    secrets: gizli.servis.secrets,
+    // Kod adı klasör adıyla aynı olmalıdır (kimlik şeması), klasör aynı adla bağlanır.
+    environment: {
+      ...gizli.servis.environment,
+      SITE_KLASORU: `/siteler/${kodAdi}`,
+      ...(hataIzlemeAdresi === undefined
+        ? {}
+        : {
+            [hataIzlemeDegiskenleri.adres]: hataIzlemeAdresi,
+            [hataIzlemeDegiskenleri.ortam]: ortam,
+          }),
+    },
+    cap_drop: ["ALL"],
+    cap_add: [] as string[],
+    security_opt: ["no-new-privileges:true"],
+    read_only: true,
+    tmpfs: ["/tmp"],
+    volumes: [`${yayinKlasoru(ortam, kodAdi)}/${no}/site:/siteler/${kodAdi}:ro`],
+    networks: [ag],
+    healthcheck: siteSaglikYoklamasi,
+  };
   return {
     name: projeAdi(ortam, kodAdi, no),
-    services: {
-      uygulama: {
-        image: yayinGoruntusu(ortam, kodAdi, no),
-        container_name: siteKutusuAdi(ortam, kodAdi, no),
-        ...kaliciKutu,
-        user: gizli.servis.user,
-        secrets: gizli.servis.secrets,
-        // Kod adı klasör adıyla aynı olmalıdır (kimlik şeması), klasör aynı adla bağlanır.
-        environment: {
-          ...gizli.servis.environment,
-          SITE_KLASORU: `/siteler/${kodAdi}`,
-          ...(hataIzlemeAdresi === undefined
-            ? {}
-            : {
-                [hataIzlemeDegiskenleri.adres]: hataIzlemeAdresi,
-                [hataIzlemeDegiskenleri.ortam]: ortam,
-              }),
-        },
-        cap_drop: ["ALL"],
-        cap_add: [] as string[],
-        security_opt: ["no-new-privileges:true"],
-        read_only: true,
-        tmpfs: ["/tmp"],
-        volumes: [`${yayinKlasoru(ortam, kodAdi)}/${no}/site:/siteler/${kodAdi}:ro`],
-        networks: [ag],
-        healthcheck: siteSaglikYoklamasi,
-      },
-    },
+    services: { uygulama, "arka-plan": arkaPlanServisi(uygulama) },
     secrets: gizli.gizliler,
     networks: { [ag]: { name: ag, external: true } },
   };
@@ -281,7 +285,7 @@ export const kutuyuDurdurmaBetigi = (ortam: Ortam, kodAdi: string, no: number): 
   const d = `${yayinKlasoru(ortam, kodAdi)}/${no}`;
   return `set -u
 if [ -f ${d}/compose.json ]; then docker compose -f ${d}/compose.json down --timeout 10 </dev/null >/dev/null 2>&1 || true; fi
-docker rm -f ${siteKutusuAdi(ortam, kodAdi, no)} >/dev/null 2>&1 || true
+docker rm -f ${siteKutusuAdi(ortam, kodAdi, no)} ${arkaPlanKutuAdi(siteKutusuAdi(ortam, kodAdi, no))} >/dev/null 2>&1 || true
 `;
 };
 
@@ -645,9 +649,12 @@ export const gizliyiYenileVeEsitle = (
 export const etkinKutuyuYenidenBaslat = (ipv4: string, ortam: Ortam, kodAdi: string): boolean => {
   const no = yayindakiSiteleriOku(ipv4)[kodAdi];
   if (no === undefined) return false;
+  const kutu = siteKutusuAdi(ortam, kodAdi, no);
+  const arkaPlan = arkaPlanKutuAdi(kutu);
+  // Eski sürüme dönülmüş yayında arka plan kutusu olmayabilir.
   sunucudaCalistir(
     ipv4,
-    `set -eu\ndocker restart --timeout 10 ${siteKutusuAdi(ortam, kodAdi, no)} >/dev/null\n`,
+    `set -eu\ndocker restart --timeout 10 ${kutu} >/dev/null\nif docker inspect ${arkaPlan} >/dev/null 2>&1; then docker restart --timeout 10 ${arkaPlan} >/dev/null; fi\n`,
   );
   return true;
 };

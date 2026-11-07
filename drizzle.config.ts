@@ -6,7 +6,11 @@ import { uygulananDegisiklikTablosu } from "./cekirdek/veritabani/degisiklik-aya
 
 export default defineConfig({
   dialect: "postgresql",
-  schema: ["./cekirdek/veritabani/tablolar", "./cekirdek/moduller/*/model.ts"],
+  schema: [
+    "./cekirdek/veritabani/tablolar",
+    "./cekirdek/moduller/*/model.ts",
+    "./cekirdek/arka-plan-isleri/model.ts",
+  ],
   // cekirdek/veritabani/guncelle.ts dosyasındaki degisiklikKlasoru ile aynıdır (testle denetlenir).
   out: "./cekirdek/veritabani/degisiklikler",
   migrations: {

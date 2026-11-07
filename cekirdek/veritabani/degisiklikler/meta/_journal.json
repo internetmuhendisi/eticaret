@@ -43,6 +43,13 @@
       "when": 1793987464392,
       "tag": "0005_degisiklik-kaydi",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794009668529,
+      "tag": "0006_arka-plan-isleri",
+      "breakpoints": true
     }
   ]
 }
