@@ -8,7 +8,7 @@ const soruUcu = "/kapi/herkese-acik/robot-sorusu";
 
 export const robotCevabiAl = async (): Promise<string | null> => {
   try {
-    const yanit = await fetch(soruUcu);
+    const yanit = await fetch(soruUcu, { cache: "no-store" });
     if (!yanit.ok) return null;
     const { veri: soru } = await yanit.json();
     const cozum = await solveChallenge({

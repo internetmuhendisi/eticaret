@@ -32,7 +32,8 @@ export const robotSorusuUret = () => {
   return createChallenge({
     algorithm: algoritma,
     cost: maliyet,
-    counter: randomInt(enAzDeneme, enCokDeneme),
+    // Kütüphanenin sırası: üst sınır, alt sınır.
+    counter: randomInt(enCokDeneme, enAzDeneme),
     deriveKey,
     expiresAt: new Date(Date.now() + sureSaniye * 1000),
     hmacSignatureSecret: soruAnahtari,

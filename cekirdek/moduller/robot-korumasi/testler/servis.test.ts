@@ -69,6 +69,15 @@ describe("robot koruması", () => {
     },
   );
 
+  it("doğru cevabın yeri ayarlanan aralıktadır", async () => {
+    const { enAzDeneme, enCokDeneme } = robotKorumasiAyari;
+    for (let tur = 0; tur < 5; tur++) {
+      const { cozum } = JSON.parse(await soruyuCoz(await robotSorusuUret()));
+      expect(cozum.counter).toBeGreaterThanOrEqual(enAzDeneme);
+      expect(cozum.counter).toBeLessThanOrEqual(enCokDeneme);
+    }
+  });
+
   it("cevap şemanın sınırına sığar", async () => {
     const cevap = await soruyuCoz(await robotSorusuUret());
     expect(cevap.length).toBeLessThan(robotKorumasiAyari.cevapUzunlugu);

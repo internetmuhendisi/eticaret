@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Dugme } from "../../bilesenler/form/dugme";
 import { Uyari } from "../../bilesenler/form/uyari";
+import { hataKodlari } from "../kayitlar/kapi";
 import { useMetin } from "../metinler/istemci-metni";
 import { vitrinAdresleri } from "./adresler";
 import { stil } from "./stil";
@@ -24,15 +25,19 @@ export function HesapAlani() {
     // kalınır ve oturum kapanır (karar 0039). Bileşen kapandıysa yalnız sonucu yok sayılır.
     let acik = true;
     const sor = async () => {
-      let sonuc: Durum = { tur: "girissiz" };
+      // Yalnız oturum yoksa girişsiz görünür. Sunucu hatasında ve ağ hatasında alan boş kalır: girişli müşteri
+      // oturumu kapanmış sanmasın.
+      let sonuc: Durum = { tur: "bilinmiyor" };
       try {
-        const yanit = await fetch(hesabimUcu);
+        const yanit = await fetch(hesabimUcu, { cache: "no-store" });
         if (yanit.ok) {
           const { veri } = (await yanit.json()) as { veri: { eposta: string } };
           sonuc = { tur: "girisli", eposta: veri.eposta };
+        } else if (yanit.status === hataKodlari["oturum-yok"]) {
+          sonuc = { tur: "girissiz" };
         }
       } catch {
-        // Ağ hatasında da girişsiz görünür: müşteri giriş sayfasına ulaşabilsin.
+        // Alan boş kalır.
       }
       if (acik) setDurum(sonuc);
     };

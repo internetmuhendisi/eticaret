@@ -6,7 +6,7 @@ import { eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { istekSinirlari } from "../../kayitlar/kapi.ts";
-import { musteriOnayTurleri } from "../../kayitlar/musteri-onaylari.ts";
+import { type MusteriOnayTuru, musteriOnayTurleri } from "../../kayitlar/musteri-onaylari.ts";
 import { girisDenemeSiniri, oturumCerezAdlari } from "../../kayitlar/oturum.ts";
 import { epostaGondericisi } from "../../moduller/eposta/gonderici.ts";
 import { epostaKaydiniGonder } from "../../moduller/eposta/gonderim.ts";
@@ -25,6 +25,7 @@ import { robotSorusuUcu } from "../herkese-acik/robot-sorusu.ts";
 import { musteriHesabimUcu } from "../musteri/hesabim.ts";
 
 const sifre = "uzun-bir-deneme-sifresi";
+const pazarlamaTuru: MusteriOnayTuru = "pazarlama";
 let vt: Veritabani;
 let sil: () => Promise<void>;
 let sayac = 0;
@@ -154,7 +155,7 @@ describe("kayıt", () => {
   it("verilen pazarlama izni kaydedilir", async () => {
     const girdi = { ...(await gecerliGirdi()), pazarlamaIzni: true };
     expect((await kayit(girdi)).status).toBe(200);
-    expect((await onaylar(girdi.eposta))["pazarlama"]?.verildi).toBe(true);
+    expect((await onaylar(girdi.eposta))[pazarlamaTuru]?.verildi).toBe(true);
   });
 
   it.each([

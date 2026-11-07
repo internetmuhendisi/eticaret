@@ -146,6 +146,27 @@ test("robot cevabı reddedilirse form yeni soruyla bir kez daha dener", async ({
   expect(istekSayisi).toBe(2);
 });
 
+test("robot sorusu ilk seferde alınamazsa gönderirken yeniden alınır", async ({ page }) => {
+  let soruSayisi = 0;
+  await page.route("**/kapi/herkese-acik/robot-sorusu", async (yol) => {
+    soruSayisi += 1;
+    // İlk sorular (sayfa açılışı) ağ hatasına düşer, gönderimdeki geçer.
+    if (soruSayisi === 1) await yol.abort();
+    else await yol.continue();
+  });
+  await kayitOl(page, yeniEposta());
+});
+
+test("sunucu hatasında girişli müşteri ana sayfada 'Giriş yap' görmez", async ({ page }) => {
+  const eposta = yeniEposta();
+  await kayitOl(page, eposta);
+  await page.route("**/kapi/musteri/hesabim", (yol) => yol.fulfill({ status: 500, body: "{}" }));
+  const yanit = page.waitForResponse("**/kapi/musteri/hesabim");
+  await page.reload();
+  await yanit;
+  await expect(page.getByRole("link", { name: metin("vitrin.hesap.giris") })).toHaveCount(0);
+});
+
 test("yanlış şifrede uyarı yazıyla görünür, sayfada kalır", async ({ page }) => {
   await page.goto(vitrinAdresleri.giris);
   await yuklenmesiniBekle(page);

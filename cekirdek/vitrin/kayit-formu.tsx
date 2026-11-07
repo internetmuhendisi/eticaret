@@ -42,10 +42,11 @@ export function KayitFormu() {
     formYeri.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
   }, [alanHatalari]);
 
-  const siradakiCevap = () => {
-    const cevap = robotCevabi.current ?? robotCevabiAl();
+  // Arkadaki çözüm tutmadıysa (ağ hatası, süre) gönderirken bir kez daha denenir.
+  const siradakiCevap = async () => {
+    const hazir = robotCevabi.current;
     robotCevabi.current = robotCevabiAl();
-    return cevap;
+    return (await hazir) ?? robotCevabiAl();
   };
 
   const istekGonder = async (girdi: object) =>
