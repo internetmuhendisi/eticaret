@@ -15,7 +15,9 @@ import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { dosyalar } from "../../dosya/model.ts";
+import { dosyaSil } from "../../dosya/servis.ts";
 import { logonunAdresi, logoyuDegistir, logoyuKaldir, magazaLogosu } from "../logo.ts";
+import { siteninServisi } from "../servis.ts";
 
 const ornekler = resolve(import.meta.dirname, "../../../ayar-semasi/testler/ornek-siteler");
 const logolu = siteKlasorunuOku(join(ornekler, "marka-logolu"));
@@ -110,6 +112,33 @@ describe("hangi logo", () => {
     if (!sonuc.tamam) throw new Error(sonuc.hata);
     for (const ad of readdirSync(klasor)) unlinkSync(join(klasor, ad));
     expect((await magazaLogosu(vt, { site: logolu, klasor }))?.kaynak).toBe("ilk");
+    expect(izlenenler).toHaveLength(1);
+  });
+});
+
+describe("bağ", () => {
+  it("logo ayarı genel değiştirmeyle değişmez: herhangi bir dosya logo yapılamaz", async () => {
+    const servis = siteninServisi(logolu);
+    await expect(servis.degistir(vt, yonetici, { logo: randomUUID() })).rejects.toThrow(
+      "yalnız kendi işleviyle",
+    );
+    expect((await magazaLogosu(vt, { site: logolu, klasor }))?.kaynak).toBe("ilk");
+  });
+
+  it("logo ayarındaki dosya silinmiş olarak işaretlenirse ilk logo görünür, hata kaydedilir", async () => {
+    const sonuc = await logoyuDegistir(vt, yonetici, await png(30), { site: logolu, klasor });
+    if (!sonuc.tamam) throw new Error(sonuc.hata);
+    await dosyaSil(vt, sonuc.dosya.kimlik);
+    expect((await magazaLogosu(vt, { site: logolu, klasor }))?.kaynak).toBe("ilk");
+    expect(izlenenler).toHaveLength(1);
+  });
+
+  it("ilk logo okunamazsa logo yok sayılır, hata kaydedilir, düşmez", async () => {
+    const kayip = {
+      ...logolu,
+      markaLogosu: { yol: join(klasor, "olmayan-logo.webp"), tur: "webp" as const },
+    };
+    expect(await magazaLogosu(vt, { site: kayip, klasor })).toBeUndefined();
     expect(izlenenler).toHaveLength(1);
   });
 });

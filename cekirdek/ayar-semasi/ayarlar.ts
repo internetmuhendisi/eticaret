@@ -19,6 +19,10 @@ export type AyarBilgisi = {
   // Değeri değişiklik kaydına yazılmaz, yalnız ayarın değiştiği yazılır (kart 0071). Kişisel veri
   // taşıyabilen ayarlar içindir: küçük mağazada iletişim bilgisi çoğu zaman sahibinin kendisidir.
   kayittaGizli?: true;
+  // Genel ayar değiştirmeyle değişmez, yalnız kendi işleviyle (kart 0073): değeri başka bir kayda
+  // (örneğin dosya deposundaki logo) bağlıdır ve o işlev bağı kurar. Şemadan üretilen ayar ekranı
+  // bu ayarı göstermez.
+  kendiIsleviyle?: true;
 };
 
 // Her ayarın açıklaması ve sahibi. Panelin ayar ekranları bu bilgiden üretilecek.
@@ -36,7 +40,7 @@ const altyapiSahibinin = (aciklama: MetinAnahtari): AyarBilgisi => ({
 
 export const magazaSahibinin = (
   aciklama: MetinAnahtari,
-  secenekler: { kayittaGizli?: true } = {},
+  secenekler: { kayittaGizli?: true; kendiIsleviyle?: true } = {},
 ): AyarBilgisi => ({
   aciklama,
   kimDegistirir: ayarSahibi.magaza,
@@ -176,7 +180,8 @@ export const magazaAyarSemasi = z.strictObject({
   ),
   // Mağaza sahibinin yüklediği logo: dosya deposundaki kaydın kimliği (kart 0073, karar 0059).
   // Boşsa sitenin ilk logosu (marka/ klasörü), o da yoksa mağaza adı görünür.
-  logo: ayar(z.uuid().optional(), magazaSahibinin("ayar.aciklama.logo")),
+  // Yalnız logoyuDegistir ve logoyuKaldir değiştirir: herhangi bir dosya kimliği logo yapılamaz.
+  logo: ayar(z.uuid().optional(), magazaSahibinin("ayar.aciklama.logo", { kendiIsleviyle: true })),
 });
 export type MagazaAyarlari = z.output<typeof magazaAyarSemasi>;
 

@@ -283,6 +283,7 @@ export const iste = (
 export const isteHam = (
   kodAdi: string,
   yol: string,
+  { yontem = "GET", basliklar = {} }: { yontem?: string; basliklar?: Record<string, string> } = {},
 ): Promise<{
   durum: number;
   basliklar: Record<string, string | string[] | undefined>;
@@ -294,7 +295,8 @@ export const isteHam = (
         host: "127.0.0.1",
         port: yerelPort(),
         path: yol,
-        headers: { host: `${kodAdi}.localhost:${yerelPort()}` },
+        method: yontem,
+        headers: { host: `${kodAdi}.localhost:${yerelPort()}`, ...basliklar },
       },
       (yanit) => {
         const parcalar: Buffer[] = [];

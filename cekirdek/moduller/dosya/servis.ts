@@ -92,9 +92,10 @@ const kodla = async (
 ): Promise<
   { tamam: true; data: Buffer; info: OutputInfo } | { tamam: false; hata: DosyaHatasi }
 > => {
+  // Görsel kütüphanesi yalnız kaydederken yüklenir: dosyayı okumak ve vermek ona bağlı kalmaz.
+  // Yüklenemezse hata olduğu gibi çıkar (hata katmanına gider); "bozuk dosya" sayılmaz.
+  const { default: sharp } = await import("sharp");
   try {
-    // Görsel kütüphanesi yalnız kaydederken yüklenir: dosyayı okumak ve vermek ona bağlı kalmaz.
-    const { default: sharp } = await import("sharp");
     const girdi = sharp(icerik, { limitInputPixels: dosyaSinirlari.enCokPiksel, failOn: "error" });
     const bilgi = await girdi.metadata();
     if (bilgi.format !== sharpBicimi[tur]) return { tamam: false, hata: "tur-izinsiz" };
@@ -164,6 +165,22 @@ export const dosyaKaydet = async (
     await Promise.all(yazilanlar.map((yol) => rm(yol, { force: true })));
     throw hata;
   }
+};
+
+// Silinmemiş dosyanın kaydı (tür ve içerik özeti); yoksa undefined. İçeriği okumaz: önbellekteki
+// içeriğin hâlâ geçerli olduğunu anlamak için yeter.
+export const dosyaKaydi = async (
+  vt: Veritabani,
+  kimlik: string,
+): Promise<{ tur: DosyaTuru; icerikOzeti: string } | undefined> => {
+  if (!kimlikBicimi.test(kimlik)) return undefined;
+  const [satir] = await vt
+    .select({ tur: dosyalar.tur, icerikOzeti: dosyalar.icerik_ozeti })
+    .from(dosyalar)
+    .where(and(eq(dosyalar.kimlik, kimlik), isNull(dosyalar.silinme_zamani)));
+  return satir === undefined
+    ? undefined
+    : { tur: satir.tur as DosyaTuru, icerikOzeti: satir.icerikOzeti };
 };
 
 // Silinmemiş dosyanın içeriği ve türü; yoksa undefined. İçerik özeti tutmuyorsa hata verir:

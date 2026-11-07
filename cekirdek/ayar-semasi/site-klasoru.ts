@@ -2,7 +2,7 @@
 // Doğrulama komutu (komutlar/site-dogrula.mts), testler ve çalışan uygulama aynı yolu kullanır.
 // Komut bu dosyaları Node ile doğrudan çalıştırdığı için ayar-semasi/ ve onun aldığı dosyalar
 // birbirini .ts uzantısıyla alır.
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { z } from "zod";
 import { type DosyaTuru, dosyaSinirlari } from "../kayitlar/dosya.ts";
@@ -100,7 +100,8 @@ export const markaLogosunuDogrula = (
   | { gecerli: false; hatalar: string[] } => {
   const marka = join(klasor, markaKlasoru);
   if (!existsSync(marka)) return { gecerli: true };
-  const logolar = readdirSync(marka).filter((ad) => /^logo\./.test(ad));
+  // Büyük harfli ya da başka uzantılı "logo" adları sessizce yok sayılmaz, hata verir.
+  const logolar = readdirSync(marka).filter((ad) => /^logo\./i.test(ad));
   if (logolar.length === 0) return { gecerli: true };
   if (logolar.length > 1) {
     return {
@@ -111,10 +112,17 @@ export const markaLogosunuDogrula = (
   const [ad = ""] = logolar;
   const yer = `${markaKlasoru}/${ad}`;
   const tur = uzantininTuru(ad.slice("logo.".length));
-  if (tur === undefined) {
-    return { gecerli: false, hatalar: [`${yer}: uzantı png, jpg ya da webp olmalı.`] };
+  if (!ad.startsWith("logo.") || tur === undefined) {
+    return { gecerli: false, hatalar: [`${yer}: ad logo.png, logo.jpg ya da logo.webp olmalı.`] };
   }
   const yol = join(marka, ad);
+  // Sembolik bağlantı ve klasör kabul edilmez: dosya site klasörünün içinde, düz bir dosya olmalı.
+  if (!lstatSync(yol).isFile()) {
+    return {
+      gecerli: false,
+      hatalar: [`${yer}: düz bir dosya olmalı (bağlantı ya da klasör değil).`],
+    };
+  }
   const icerik = readFileSync(yol);
   if (icerik.length === 0 || icerik.length > dosyaSinirlari.enCokBayt) {
     return {

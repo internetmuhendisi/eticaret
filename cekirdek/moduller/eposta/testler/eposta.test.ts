@@ -1,6 +1,6 @@
 // E-posta modülü gerçek veritabanı ve gerçek yerel posta kutusuyla (kart 0032, karar 0050).
-import { randomBytes } from "node:crypto";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { createHash, randomBytes } from "node:crypto";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { type AddressInfo, createServer, type Socket } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -212,17 +212,25 @@ describe("logo (kart 0073)", () => {
 
   it("logo varsa e-posta logoyu logo ucundan, sitenin adresiyle alır", async () => {
     vi.stubEnv("SITE_ADRESI", "https://magaza.ornek.test");
-    const html = await gonderilen(logoluSite());
-    expect(html).toMatch(
-      /<img src="https:\/\/magaza\.ornek\.test\/kapi\/herkese-acik\/logo\?s=[0-9a-f]{16}"/,
-    );
+    const site = logoluSite();
+    const html = await gonderilen(site);
+    // Özet logonun içeriğinden gelir: logo değişince adres de değişir.
+    const ozet = createHash("sha256")
+      .update(readFileSync(site.markaLogosu?.yol ?? ""))
+      .digest("hex")
+      .slice(0, 16);
+    expect(html).toContain(`<img src="https://magaza.ornek.test/kapi/herkese-acik/logo?s=${ozet}"`);
   });
 
   it("logo ya da sitenin adresi yoksa e-postada logo yok, ad var", async () => {
     vi.stubEnv("SITE_ADRESI", "https://magaza.ornek.test");
-    expect(await gonderilen(site())).not.toContain("<img");
+    const logosuz = await gonderilen(site());
+    expect(logosuz).not.toContain("<img");
+    expect(logosuz).toContain("Ayardaki &lt;Mağaza&gt;");
     vi.stubEnv("SITE_ADRESI", "");
-    expect(await gonderilen(logoluSite())).not.toContain("<img");
+    const adressiz = await gonderilen(logoluSite());
+    expect(adressiz).not.toContain("<img");
+    expect(adressiz).toContain("Ayardaki &lt;Mağaza&gt;");
   });
 });
 

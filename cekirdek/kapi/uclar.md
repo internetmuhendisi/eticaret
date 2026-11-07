@@ -78,7 +78,7 @@ Mağazanın logosunu verir: mağaza sahibinin yüklediği logo, yoksa sitenin il
 - Girdi: isteğe bağlı `s` (en çok 64 küçük harf onaltılık rakam). Yalnız önbelleği aşmak içindir, yanıtı değiştirmez; e-postadaki adres logonun özetini taşır. Başka parametre `dogrulama`.
 - Servis: `cekirdek/moduller/magaza-ayarlari/logo.ts`.
 - Başarılı (200): görselin kendisi. Başlıklar: `Content-Type` dosyanın içerikten bulunmuş türü (`image/png`, `image/jpeg`, `image/webp`), `X-Content-Type-Options: nosniff`, `Cache-Control: public, max-age=300`, `ETag` içeriğin özeti.
-- Aynı `ETag` ile gelen istek (`If-None-Match`) gövdesiz 304 alır.
+- Aynı `ETag` ile gelen istek (`If-None-Match`) gövdesiz 304 alır. `HEAD` isteği aynı başlıkları gövdesiz alır.
 - Logo yoksa (404): `{ "basarili": false, "hata": { "kod": "bulunamadi" } }`. Ekran mağaza adını yazı olarak gösterir.
 
 ### POST /kapi/herkese-acik/yonetici-giris

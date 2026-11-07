@@ -8,11 +8,13 @@
 
 - **Hangi logo:** Tek işlev karar verir (`magazaLogosu`, `cekirdek/moduller/magaza-ayarlari/logo.ts`). Önce mağaza sahibinin yüklediği logo: `logo` ayarındaki dosya deposu kaydı (kart 0072). Yoksa sitenin ilk logosu: site klasöründe `marka/logo.png`, `.jpg` ya da `.webp`. O da yoksa logo yoktur, mağaza adı yazı olarak görünür. Yüklenen logo okunamazsa ilk logoya düşülür, hata kaydedilir.
 - **İlk logo:** Altyapı sahibinin dosyasıdır, yayınla değişir. `pnpm site-dogrula` denetler: en çok bir dosya, tür içerikten okunur ve uzantıyla aynıdır, boyut dosya sınırını aşmaz. Yeniden kodlanmadan verilir.
+- **Bağ:** `logo` ayarı genel ayar değiştirmeyle değişmez, yalnız `logoyuDegistir` ve `logoyuKaldir` değiştirir (`kendiIsleviyle`, `cekirdek/ayar-semasi/ayarlar.ts`). Böylece şemadan üretilecek bir ayar ekranı depodaki başka bir dosyayı herkese açık logo yapamaz.
+- **Bellek:** İlk logo süreç başına bir kez okunur (yalnız yayınla değişir). Yüklenen logonun içeriği, kimliği ve içerik özeti değişmedikçe bellekten verilir; geçerliliği her istekte veritabanından sorulur. İlk logo okunamazsa logo yok sayılır, hata kaydedilir.
 - **Değiştirme:** `logoyuDegistir` yeni dosyayı kart 0072'nin yoluyla kaydeder, ayarı ona çevirir (değişiklik kaydına girer), eski yüklenen logoyu silinmiş olarak işaretler. `logoyuKaldir` ilk logoya döndürür. Ekran ve uç sonraki kartla gelir (kart 0094).
 - **Uç:** `GET /kapi/herkese-acik/logo`. Kapıya dosya yanıtı eklendi (`DosyaYaniti`, `cekirdek/kapi/zarf.ts`): yanıt zarf değil dosyanın kendisidir; türü içerikten bulunmuş türdür, `X-Content-Type-Options: nosniff`, 5 dakika önbellek, içeriğin özeti `ETag`'dir, aynı etiketle gelen istek gövdesiz 304 alır. Hata yine zarfla döner, logo yoksa 404.
 - **E-posta:** `logoAdresi` ayarı kaldırıldı. E-postadaki logo sitenin adresi (`siteAdresi`) ile logo ucunun adresidir, adres logonun özetini taşır. Logo ya da adres yoksa e-postada mağaza adı görünür.
 - **Örnek Mağaza (kullanıcı kararı):** Projede üretilmiş, yazısız bir yer tutucu logo (`siteler/ornek-magaza/marka/logo.png`).
-- **Görsel kütüphanesi:** Dosya servisi `sharp`'ı yalnız kaydederken yükler. Logoyu vermek ve site klasörünü okumak ona bağlı değildir.
+- **Görsel kütüphanesi:** Dosya servisi `sharp`'ı yalnız kaydederken yükler. Logoyu vermek ve site klasörünü okumak ona bağlı değildir. Yüklenemezse kaydetme hatayı olduğu gibi verir, "bozuk dosya" demez.
 
 ## Neden
 
@@ -32,6 +34,8 @@
 
 - İlk logo yeniden kodlanmaz; içindeki gömülü bilgiler (EXIF gibi) olduğu gibi verilir. Dosya altyapı sahibinin olduğu için kabul edildi; logo eklerken gömülü bilgisi temiz dosya kullanılır. Piksel sayısı denetlenmez.
 - Logo değişince vitrinde en geç 5 dakika eski logo görünebilir (önbellek).
+- Yüklenen logo okunamıyorsa her logo isteği hata izlemeye bir olay gönderir. Sorunun görünmesi için bilerek sınırlanmadı; olay sayısı istek sınırıyla (`genel`) sınırlıdır.
+- Aynı anda iki logo değiştirmesi gelirse ikisi de aynı eski logoyu işaretler; ikincisinin yerine geçen logo silinmemiş ama kullanılmayan bir kayıt olarak kalır. Kayıtsız ve kullanılmayan dosyaların temizliği kart 0093'tedir.
 - `logoAdresi` yazan bir site doğrulamadan geçmez (sürüm notu 0.16.0).
 - Kart 0072'nin yükleme ucuna bağladığı iki koşul (kutulara bellek sınırı, `sharp`'ın görüntüde ölçülmesi) yükleme ekranının kartına (0094) taşındı: bu kartta yükleme ucu yok.
 - Logonun vitrinde ve panelde nerede görüneceği tasarım işidir, bu karara girmez.

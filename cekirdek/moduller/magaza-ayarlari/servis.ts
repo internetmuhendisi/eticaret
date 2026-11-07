@@ -127,15 +127,20 @@ export const magazaAyarlariServisi = <S extends z.ZodObject>(
 
   // Verilen ayarları değiştirir; değeri aynı kalan ayar kayda girmez. Bilinmeyen ayar, şemaya
   // uymayan değer ya da bütün şemaya konan bir kurala aykırı sonuç hiçbir şeyi değiştirmez.
+  // kendiIslevi: kendi işleviyle değişen ayarları (ayarlar.ts, kendiIsleviyle) yalnız o işlev verir.
   const degistir = async (
     vt: Veritabani,
     kim: DegisikligiYapan,
     yeniler: Partial<z.input<S>>,
+    { kendiIslevi = false }: { kendiIslevi?: boolean } = {},
   ): Promise<z.output<S>> => {
     const yeniDegerler = new Map<string, unknown>();
     for (const [anahtar, ham] of Object.entries(yeniler)) {
       const alan = Object.hasOwn(sema.shape, anahtar) ? sema.shape[anahtar] : undefined;
       if (alan === undefined) throw new Error(`Bilinmeyen mağaza ayarı: ${anahtar}.`);
+      if (!kendiIslevi && ayarBilgileri.get(alan)?.kendiIsleviyle === true) {
+        throw new Error(`Bu mağaza ayarı yalnız kendi işleviyle değişir: ${anahtar}.`);
+      }
       const sonuc = alan.safeParse(ham);
       if (!sonuc.success) throw new Error(`Mağaza ayarının değeri geçersiz: ${anahtar}.`);
       yeniDegerler.set(anahtar, saklanan(sonuc.data));

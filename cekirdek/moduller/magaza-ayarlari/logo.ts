@@ -4,8 +4,13 @@
 // 2. Yüklenmemişse sitenin ilk logosu: site klasöründe marka/logo.<uzantı> (site-klasoru.ts).
 // 3. O da yoksa logo yoktur, mağaza adı yazı olarak görünür.
 //
-// Yüklenen logo okunamazsa (dosya silinmiş, bozuk, veritabanı yok) ilk logoya düşülür ve hata
-// kaydedilir: logo görünüştür, sayfa ya da e-posta onun yüzünden düşmez.
+// Yüklenen logo okunamazsa (dosya silinmiş, bozuk, veritabanı yok) ilk logoya düşülür, ilk logo
+// okunamazsa logo yok sayılır; ikisinde de hata kaydedilir: logo görünüştür, sayfa ya da e-posta onun
+// yüzünden düşmez.
+//
+// İçerik süreç başına bellekte tutulur: ilk logo yalnız yayınla değişir, yüklenen logonun içeriği
+// kimliği ve özeti aynı kaldıkça değişmez. Logonun hâlâ geçerli olduğu her istekte veritabanından
+// sorulur.
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
@@ -17,6 +22,7 @@ import { dosyaTurleri } from "../../kayitlar/dosya.ts";
 import { siteninVeritabani, type Veritabani } from "../../veritabani/baglanti.ts";
 import {
   dosyaKaydet,
+  dosyaKaydi,
   dosyaKlasoru,
   dosyaOku,
   dosyaSil,
@@ -36,6 +42,10 @@ const ozet = (icerik: Uint8Array): string => createHash("sha256").update(icerik)
 
 type Secenekler = { site?: Site; klasor?: string };
 
+// Bellekteki son yüklenen logo (anahtar: kimlik ve içerik özeti) ve ilk logolar (anahtar: yol).
+let sonYuklenen: { anahtar: string; logo: Logo } | undefined;
+const ilkLogolar = new Map<string, Logo>();
+
 const yuklenenLogo = async (
   vt: Veritabani,
   site: Site,
@@ -44,15 +54,43 @@ const yuklenenLogo = async (
   try {
     const kimlik = await siteninServisi(site).tekOku(vt, "logo");
     if (kimlik === undefined) return undefined;
+    const kayit = await dosyaKaydi(vt, kimlik);
+    if (kayit === undefined)
+      throw new Error(`Logo ayarındaki dosya yok ya da silinmiş: ${kimlik}.`);
+    const anahtar = `${kimlik}:${kayit.icerikOzeti}`;
+    if (sonYuklenen?.anahtar === anahtar) return sonYuklenen.logo;
     const dosya = await dosyaOku(vt, kimlik, klasor ?? dosyaKlasoru());
     if (dosya === undefined)
       throw new Error(`Logo ayarındaki dosya yok ya da silinmiş: ${kimlik}.`);
-    return {
+    const logo: Logo = {
       kaynak: "yuklenen",
       icerik: dosya.icerik,
       mime: dosya.mime,
       etiket: ozet(dosya.icerik),
     };
+    sonYuklenen = { anahtar, logo };
+    return logo;
+  } catch (hata) {
+    hatayiKaydet(hata, { kaynak: "magaza-logosu" });
+    return undefined;
+  }
+};
+
+const ilkLogo = async (site: Site): Promise<Logo | undefined> => {
+  const marka = site.markaLogosu;
+  if (marka === undefined) return undefined;
+  const bilinen = ilkLogolar.get(marka.yol);
+  if (bilinen !== undefined) return bilinen;
+  try {
+    const icerik = await readFile(marka.yol);
+    const logo: Logo = {
+      kaynak: "ilk",
+      icerik,
+      mime: dosyaTurleri[marka.tur].mime,
+      etiket: ozet(icerik),
+    };
+    ilkLogolar.set(marka.yol, logo);
+    return logo;
   } catch (hata) {
     hatayiKaydet(hata, { kaynak: "magaza-logosu" });
     return undefined;
@@ -62,18 +100,7 @@ const yuklenenLogo = async (
 export const magazaLogosu = async (
   vt: Veritabani = siteninVeritabani(),
   { site = calisanSite(), klasor }: Secenekler = {},
-): Promise<Logo | undefined> => {
-  const yuklenen = await yuklenenLogo(vt, site, klasor);
-  if (yuklenen !== undefined) return yuklenen;
-  if (site.markaLogosu === undefined) return undefined;
-  const icerik = await readFile(site.markaLogosu.yol);
-  return {
-    kaynak: "ilk",
-    icerik,
-    mime: dosyaTurleri[site.markaLogosu.tur].mime,
-    etiket: ozet(icerik),
-  };
-};
+): Promise<Logo | undefined> => (await yuklenenLogo(vt, site, klasor)) ?? (await ilkLogo(site));
 
 // Logonun herkese açık adresi (e-posta gibi sitenin dışında görünen yerler için). Sitenin adresi
 // istekten değil kimlikten ya da kutunun ortamından gelir (siteAdresi). Adres logonun özetini taşır:
@@ -99,7 +126,7 @@ export const logoyuDegistir = async (
   const sonuc = await dosyaKaydet(vt, icerik, klasor ?? dosyaKlasoru());
   if (!sonuc.tamam) return sonuc;
   try {
-    await servis.degistir(vt, kim, { logo: sonuc.dosya.kimlik });
+    await servis.degistir(vt, kim, { logo: sonuc.dosya.kimlik }, { kendiIslevi: true });
   } catch (hata) {
     await dosyaSil(vt, sonuc.dosya.kimlik);
     throw hata;
@@ -117,6 +144,6 @@ export const logoyuKaldir = async (
   const servis = siteninServisi(site);
   const eski = await servis.tekOku(vt, "logo");
   if (eski === undefined) return;
-  await servis.degistir(vt, kim, { logo: undefined });
+  await servis.degistir(vt, kim, { logo: undefined }, { kendiIslevi: true });
   await dosyaSil(vt, eski);
 };

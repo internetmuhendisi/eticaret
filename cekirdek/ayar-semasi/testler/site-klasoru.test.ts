@@ -1,5 +1,14 @@
 // Site klasörlerinin kimlik ve ayar şemasından geçtiğini, bozuk klasörlerin geçemediğini gösterir (kart 0010).
-import { cpSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -134,7 +143,7 @@ describe("örnek klasörler", () => {
     // İlk logo (kart 0073).
     ["marka-iki-logo", "marka/: birden çok logo var"],
     ["marka-uzanti-uyusmuyor", "marka/logo.png: içeriği uzantısıyla uyuşmuyor"],
-    ["marka-izinsiz-uzanti", "marka/logo.gif: uzantı png, jpg ya da webp olmalı"],
+    ["marka-izinsiz-uzanti", "marka/logo.gif: ad logo.png, logo.jpg ya da logo.webp olmalı"],
     ["ulke-listesi-bozuk", "ayarlar.json: teslimatUlkeleri: En az bir ülke olmalı."],
   ];
 
@@ -226,5 +235,40 @@ describe("ilk logo (kart 0073)", () => {
     const sonuc = dogrula("gecerli");
     if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
     expect(sonuc.site.markaLogosu).toBeUndefined();
+  });
+});
+
+describe("ilk logonun adı ve türü (kart 0073)", () => {
+  const kopyala = (hazirla: (marka: string) => void) => {
+    const kok = mkdtempSync(join(tmpdir(), "marka-"));
+    const klasor = join(kok, "marka-logolu");
+    cpSync(join(ornekler, "marka-logolu"), klasor, { recursive: true });
+    const marka = join(klasor, "marka");
+    rmSync(join(marka, "logo.webp"));
+    hazirla(marka);
+    const sonuc = siteKlasorunuDogrula(klasor);
+    rmSync(kok, { recursive: true, force: true });
+    return sonuc.gecerli ? [] : sonuc.hatalar;
+  };
+  const gercekLogo = () => readFileSync(join(ornekler, "marka-logolu", "marka", "logo.webp"));
+
+  it("büyük harfli ad sessizce yok sayılmaz", () => {
+    expect(kopyala((m) => writeFileSync(join(m, "Logo.webp"), gercekLogo())).join()).toContain(
+      "ad logo.png, logo.jpg ya da logo.webp olmalı",
+    );
+  });
+
+  it("logo adında klasör kabul edilmez", () => {
+    expect(kopyala((m) => mkdirSync(join(m, "logo.webp"))).join()).toContain(
+      "düz bir dosya olmalı",
+    );
+  });
+
+  it("sembolik bağlantı kabul edilmez", () => {
+    const hedef = join(mkdtempSync(join(tmpdir(), "hedef-")), "logo.webp");
+    writeFileSync(hedef, gercekLogo());
+    expect(kopyala((m) => symlinkSync(hedef, join(m, "logo.webp"))).join()).toContain(
+      "düz bir dosya olmalı",
+    );
   });
 });
