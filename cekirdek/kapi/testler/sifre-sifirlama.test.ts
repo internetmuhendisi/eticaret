@@ -329,7 +329,7 @@ describe("aynı anda giden işler", () => {
   const bekle = (ms: number) => new Promise((coz) => setTimeout(coz, ms));
 
   it("müşteri: sıfırlamayla üst üste binen eski şifreli giriş açık oturum bırakmaz", async () => {
-    gunlukYakala();
+    const gunlukSatirlari = gunlukYakala();
     for (let tur = 0; tur < 6; tur++) {
       const { eposta, anahtar, hesapKimligi } = await hazirla("musteri");
       let bitti = false;
@@ -342,7 +342,18 @@ describe("aynı anda giden işler", () => {
         girisler.push(giris("musteri", eposta, eskiSifre));
         await bekle(5);
       }
-      expect((await yenileme).status).toBe(200);
+      // Başarısız olursa sunucudaki asıl hata da görünsün: günlük yakalandığı için başka yerde çıkmaz (kart 0067).
+      const durum = (await yenileme).status;
+      const hatalar = gunlukSatirlari.filter((satir) => satir.includes('"seviye":"hata"'));
+      expect({
+        durum,
+        girisSayisi: girisler.length,
+        hatalar: durum === 200 ? [] : hatalar,
+      }).toEqual({
+        durum: 200,
+        girisSayisi: girisler.length,
+        hatalar: [],
+      });
       await Promise.all(girisler);
       expect(
         await vt
