@@ -2,6 +2,7 @@
 // dosyasında yazar, burada toplanır. Roller bu izinlerden oluşur. Liste belgede de yazar:
 // cekirdek/moduller/ekip/izinler-ve-roller.md.
 import { ekipIzinleri } from "../moduller/ekip/izinler.ts";
+import { magazaAyarlariIzinleri } from "../moduller/magaza-ayarlari/izinler.ts";
 import { musteriIzinleri } from "../moduller/musteri/izinler.ts";
 import type { Kapi } from "./kapi.ts";
 
@@ -14,12 +15,17 @@ export type IzinTanimi =
   | { giris: "musteri"; kapsam: "kendi" }
   | { giris: "yonetici"; kapsam: IzinKapsami };
 
-export const modulIzinleri = { ekip: ekipIzinleri, musteri: musteriIzinleri } as const;
+export const modulIzinleri = {
+  ekip: ekipIzinleri,
+  "magaza-ayarlari": magazaAyarlariIzinleri,
+  musteri: musteriIzinleri,
+} as const;
 
-export const izinler = { ...ekipIzinleri, ...musteriIzinleri } as const satisfies Record<
-  string,
-  IzinTanimi
->;
+export const izinler = {
+  ...ekipIzinleri,
+  ...magazaAyarlariIzinleri,
+  ...musteriIzinleri,
+} as const satisfies Record<string, IzinTanimi>;
 export type IzinAdi = keyof typeof izinler;
 
 // Bir girişin kullanabileceği izinler. Sahip girişinde izin olmadığı için oraya uç yazılamaz.

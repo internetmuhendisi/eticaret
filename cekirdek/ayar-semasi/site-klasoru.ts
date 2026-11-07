@@ -5,10 +5,18 @@
 import { existsSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { z } from "zod";
-import { ayarSemasi, onekTuret, type SiteAyarlari } from "./ayarlar.ts";
+import {
+  ayarSemasi,
+  type MagazaAyarlari,
+  magazaAyarSemasi,
+  onekTuret,
+  type SiteAyarlari,
+} from "./ayarlar.ts";
 import { type Kimlik, kimlikSemasi } from "./kimlik.ts";
 
-export type Site = { kimlik: Kimlik; ayarlar: SiteAyarlari };
+// baslangic: mağaza sahibinin ayarlarının başlangıç değerleri, varsayılanları uygulanmış. Yalnız
+// ayar veritabanında ilk kez yokken kullanılır (karar 0010, 0055); asıl değer veritabanındadır.
+export type Site = { kimlik: Kimlik; ayarlar: SiteAyarlari; baslangic: MagazaAyarlari };
 
 export type DogrulamaSonucu = { gecerli: true; site: Site } | { gecerli: false; hatalar: string[] };
 
@@ -18,14 +26,59 @@ const sorunlariYaz = (dosya: string, sorunlar: z.core.$ZodIssue[]): string[] =>
     return `${dosya}: ${yer}: ${sorun.message}`;
   });
 
-const jsonOku = (klasor: string, dosya: string): { deger: unknown } | { hata: string } => {
+const jsonOku = (
+  klasor: string,
+  dosya: string,
+  yoksa?: unknown,
+): { deger: unknown } | { hata: string } => {
   const yol = join(klasor, dosya);
-  if (!existsSync(yol)) return { hata: `${dosya}: dosya yok.` };
+  if (!existsSync(yol)) {
+    return yoksa === undefined ? { hata: `${dosya}: dosya yok.` } : { deger: yoksa };
+  }
   try {
     return { deger: JSON.parse(readFileSync(yol, "utf8")) };
   } catch (hata) {
     return { hata: `${dosya}: geçerli JSON değil (${(hata as Error).message}).` };
   }
+};
+
+export const baslangicDosyasi = "baslangic/ayarlar.json";
+
+// Bir ayar öteki sahibin dosyasına yazılmışsa doğru dosyayı söyler; şemanın "tanınmayan alan" hatası
+// bunu söylemez.
+const yanlisDosyadakiler = (
+  dosya: string,
+  deger: unknown,
+  otekiDosya: string,
+  otekiSema: z.ZodObject,
+): string[] =>
+  typeof deger === "object" && deger !== null && !Array.isArray(deger)
+    ? Object.keys(deger)
+        .filter((ad) => Object.hasOwn(otekiSema.shape, ad))
+        .map(
+          (ad) =>
+            `${dosya}: ${ad}: bu ayar ${otekiDosya} dosyasına yazılır (ayarın sahibi o dosyanınkidir).`,
+        )
+    : [];
+
+// Başlangıç dosyası yoksa bütün mağaza ayarları varsayılanla başlar. Şema testlerde değiştirilebilir:
+// çekirdekte henüz mağaza sahibinin ayarı yoktur.
+export const baslangicDosyasiniDogrula = <S extends z.ZodObject>(
+  klasor: string,
+  sema: S,
+): { gecerli: true; deger: z.output<S> } | { gecerli: false; hatalar: string[] } => {
+  const ham = jsonOku(klasor, baslangicDosyasi, {});
+  if ("hata" in ham) return { gecerli: false, hatalar: [ham.hata] };
+  const yanlislar = yanlisDosyadakiler(baslangicDosyasi, ham.deger, "ayarlar.json", ayarSemasi);
+  const sonuc = sema.safeParse(ham.deger);
+  if (yanlislar.length === 0 && sonuc.success) return { gecerli: true, deger: sonuc.data };
+  return {
+    gecerli: false,
+    hatalar: [
+      ...yanlislar,
+      ...(sonuc.success ? [] : sorunlariYaz(baslangicDosyasi, sonuc.error.issues)),
+    ],
+  };
 };
 
 export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
@@ -48,10 +101,16 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
   if ("hata" in hamAyarlar) {
     hatalar.push(hamAyarlar.hata);
   } else {
+    hatalar.push(
+      ...yanlisDosyadakiler("ayarlar.json", hamAyarlar.deger, baslangicDosyasi, magazaAyarSemasi),
+    );
     const sonuc = ayarSemasi.safeParse(hamAyarlar.deger);
     if (sonuc.success) ayarlar = sonuc.data;
     else hatalar.push(...sorunlariYaz("ayarlar.json", sonuc.error.issues));
   }
+
+  const baslangic = baslangicDosyasiniDogrula(klasor, magazaAyarSemasi);
+  if (!baslangic.gecerli) hatalar.push(...baslangic.hatalar);
 
   if (kimlik !== undefined && kimlik.kodAdi !== basename(klasor)) {
     hatalar.push(
@@ -59,7 +118,7 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
     );
   }
 
-  if (hatalar.length > 0 || kimlik === undefined || ayarlar === undefined) {
+  if (hatalar.length > 0 || kimlik === undefined || ayarlar === undefined || !baslangic.gecerli) {
     return { gecerli: false, hatalar };
   }
 
@@ -72,7 +131,10 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
       ],
     };
   }
-  return { gecerli: true, site: { kimlik, ayarlar: { ...ayarlar, siparisOneki } } };
+  return {
+    gecerli: true,
+    site: { kimlik, ayarlar: { ...ayarlar, siparisOneki }, baslangic: baslangic.deger },
+  };
 };
 
 // Klasör geçerli değilse bütün hataları sayarak durur.

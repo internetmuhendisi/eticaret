@@ -1,10 +1,12 @@
 // Site klasörlerinin kimlik ve ayar şemasından geçtiğini, bozuk klasörlerin geçemediğini gösterir (kart 0010).
-import { readdirSync } from "node:fs";
+import { cpSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ayarBilgileri, ayarSemasi, onekTuret } from "../ayarlar";
+import { z } from "zod";
+import { ayarBilgileri, ayarSemasi, magazaAyarSemasi, onekTuret } from "../ayarlar";
 import { kimlikSemasi } from "../kimlik";
-import { siteKlasorunuDogrula } from "../site-klasoru";
+import { baslangicDosyasi, baslangicDosyasiniDogrula, siteKlasorunuDogrula } from "../site-klasoru";
 
 const siteler = join(import.meta.dirname, "..", "..", "..", "siteler");
 const ornekler = join(import.meta.dirname, "ornek-siteler");
@@ -27,10 +29,26 @@ describe("siteler/ altındaki her site", () => {
 });
 
 describe("ayar şeması", () => {
-  it("her ayarın açıklaması ve sahibi yazılı", () => {
+  it("her ayarın açıklaması ve sahibi yazılı, ayar sahibinin şemasında durur", () => {
     for (const [ad, sema] of Object.entries(ayarSemasi.shape)) {
-      expect(ayarBilgileri.get(sema), ad).toBeDefined();
+      expect(ayarBilgileri.get(sema)?.kimDegistirir, ad).toBe("altyapi-sahibi");
     }
+    // Şema bugün boş: türü alanlardan çıkarılamaz, alanlar ZodType olarak okunur.
+    const magazaAlanlari: Record<string, z.ZodType> = magazaAyarSemasi.shape;
+    for (const [ad, sema] of Object.entries(magazaAlanlari)) {
+      expect(ayarBilgileri.get(sema)?.kimDegistirir, ad).toBe("magaza-sahibi");
+    }
+  });
+
+  it("bir ayar iki şemada birden durmaz", () => {
+    const ortak = Object.keys(magazaAyarSemasi.shape).filter((ad) =>
+      Object.hasOwn(ayarSemasi.shape, ad),
+    );
+    expect(ortak).toEqual([]);
+  });
+
+  it("mağaza sahibinin her ayarının varsayılanı var ya da boş kalabilir", () => {
+    expect(magazaAyarSemasi.safeParse({}).success).toBe(true);
   });
 
   it("boş ayar dosyası bütün varsayılanları verir", () => {
@@ -92,6 +110,8 @@ describe("örnek klasörler", () => {
     ["eksik-kimlik-alani", "kimlik.json: cekirdekSurumu"],
     ["kod-adi-farkli", "kimlik.json: kodAdi: klasörün adıyla aynı olmalı"],
     ["ayar-dosyasi-yok", "ayarlar.json: dosya yok."],
+    ["baslangic-bilinmeyen-ayar", `${baslangicDosyasi}: (dosyanın tamamı)`],
+    ["baslangic-altyapi-ayari", `${baslangicDosyasi}: dil: bu ayar ayarlar.json dosyasına yazılır`],
   ];
 
   for (const [ornek, beklenenHata] of bozuklar) {
@@ -108,5 +128,50 @@ describe("örnek klasörler", () => {
 
   it("olmayan klasör doğrulamadan geçemez", () => {
     expect(dogrula("olmayan").gecerli).toBe(false);
+  });
+});
+
+describe("başlangıç dosyası", () => {
+  // Çekirdekte henüz mağaza sahibinin ayarı yok; tür denetimi deneme şemasıyla gösterilir.
+  const denemeSemasi = z.strictObject({ kapidaOdeme: z.boolean().default(false) });
+
+  it("dosyası olmayan site mağaza ayarlarını varsayılanla başlatır", () => {
+    const sonuc = dogrula("gecerli");
+    if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+    expect(sonuc.site.baslangic).toEqual(magazaAyarSemasi.parse({}));
+    expect(baslangicDosyasiniDogrula(join(ornekler, "gecerli"), denemeSemasi)).toEqual({
+      gecerli: true,
+      deger: { kapidaOdeme: false },
+    });
+  });
+
+  it("dosyadaki değer okunur", () => {
+    expect(baslangicDosyasiniDogrula(join(ornekler, "baslangic-dolu"), denemeSemasi)).toEqual({
+      gecerli: true,
+      deger: { kapidaOdeme: true },
+    });
+  });
+
+  it("yanlış türdeki başlangıç değeri doğrulamadan geçemez", () => {
+    const sonuc = baslangicDosyasiniDogrula(join(ornekler, "baslangic-yanlis-tur"), denemeSemasi);
+    expect(sonuc.gecerli).toBe(false);
+    if (sonuc.gecerli) return;
+    expect(sonuc.hatalar.join("\n")).toContain(`${baslangicDosyasi}: kapidaOdeme`);
+  });
+
+  it("JSON olmayan başlangıç dosyası doğrulamadan geçemez", () => {
+    // Bozuk JSON biçim denetimini düşürdüğü için örnek klasörde durmaz, burada üretilir.
+    const kok = mkdtempSync(join(tmpdir(), "baslangic-"));
+    const klasor = join(kok, "baslangic-dolu");
+    try {
+      cpSync(join(ornekler, "baslangic-dolu"), klasor, { recursive: true });
+      writeFileSync(join(klasor, baslangicDosyasi), "{ bozuk");
+      const sonuc = siteKlasorunuDogrula(klasor);
+      expect(sonuc.gecerli).toBe(false);
+      if (sonuc.gecerli) return;
+      expect(sonuc.hatalar.join("\n")).toContain(`${baslangicDosyasi}: geçerli JSON değil`);
+    } finally {
+      rmSync(kok, { recursive: true, force: true });
+    }
   });
 });

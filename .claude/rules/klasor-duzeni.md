@@ -15,7 +15,8 @@ cekirdek/
     app/yonetim/       yönetim paneli adresleri; geri kalan app/ vitrindir
   moduller/<modul>/    urun, stok, fiyat, vergi, sepet, odeme, siparis, iade, kargo,
                        kampanya, musteri, oturum, yorum, icerik, eposta, gorunurluk,
-                       yasal-metinler, rapor, ekip, degisiklik-kaydi, robot-korumasi
+                       yasal-metinler, rapor, ekip, degisiklik-kaydi, robot-korumasi,
+                       magaza-ayarlari
     model.ts           veri modeli
     servis.ts          iş kuralları
     uclar.ts           uçlar

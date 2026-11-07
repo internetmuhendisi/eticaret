@@ -1,9 +1,13 @@
 // Bütün site ayarlarının şeması (.claude/rules/ayarlar.md, karar 0010).
 // Her ayarın türü ve varsayılanı şemada, açıklaması ve kimin değiştirdiği ayar bilgisinde yazar.
-// Şimdilik yalnız altyapı sahibinin ayarları vardır; değerler planlar/site-ayarlari.md dosyasındandır.
-// Sitenin ayarlar.json dosyasında yalnız varsayılandan farklı olanlar yazılır.
+// Değerler planlar/site-ayarlari.md dosyasındandır. İki şema vardır, her ayar sahibinin şemasında durur:
+// - ayarSemasi: altyapı sahibinin ayarları. Sitenin ayarlar.json dosyasında yalnız varsayılandan
+//   farklı olanlar yazılır, kayıt ve yayınla değişir.
+// - magazaAyarSemasi: mağaza sahibinin ayarları. Sitenin veritabanında durur, panelden değişir. Site
+//   klasöründe yalnız başlangıç değerleri olur (baslangic/ayarlar.json); ayar veritabanında ilk kez
+//   yokken bir kez yazılır (cekirdek/moduller/magaza-ayarlari/, karar 0055).
 import { z } from "zod";
-import type { AyarSahibi } from "../kayitlar/site.ts";
+import { type AyarSahibi, ayarSahibi } from "../kayitlar/site.ts";
 import { saatDilimiGecerliMi } from "../metinler/bicimleyici.ts";
 import { diller, type MetinAnahtari } from "../metinler/metin.ts";
 
@@ -22,7 +26,12 @@ const ayar = <T extends z.ZodType>(sema: T, bilgi: AyarBilgisi): T => {
 
 const altyapiSahibinin = (aciklama: MetinAnahtari): AyarBilgisi => ({
   aciklama,
-  kimDegistirir: "altyapi-sahibi",
+  kimDegistirir: ayarSahibi.altyapi,
+});
+
+export const magazaSahibinin = (aciklama: MetinAnahtari): AyarBilgisi => ({
+  aciklama,
+  kimDegistirir: ayarSahibi.magaza,
 });
 
 export const ayarSemasi = z.strictObject({
@@ -125,6 +134,12 @@ export const ayarSemasi = z.strictObject({
     altyapiSahibinin("ayar.aciklama.musteriOturumuGun"),
   ),
 });
+
+// Mağaza sahibinin ayarları. Her ayarın varsayılanı olur (ya da boş kalabilir); veritabanında JSON
+// olarak saklandığı için değer null olamaz, boş değer "yok" demektir. İlk ayarlar kart 0071 ve vergi
+// kartlarıyla gelir.
+export const magazaAyarSemasi = z.strictObject({});
+export type MagazaAyarlari = z.output<typeof magazaAyarSemasi>;
 
 // Varsayılanları uygulanmış ve sipariş öneki türetilmiş ayarlar.
 export type SiteAyarlari = Omit<z.output<typeof ayarSemasi>, "siparisOneki"> & {

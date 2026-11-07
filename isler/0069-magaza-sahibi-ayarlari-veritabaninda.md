@@ -28,4 +28,4 @@ Mağaza sahibinin ayarları sitenin veritabanında durur, site klasöründe yaln
 
 ## Durum
 
-yapılacak
+çalışılıyor

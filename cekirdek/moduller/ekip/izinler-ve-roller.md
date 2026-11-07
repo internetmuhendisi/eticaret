@@ -11,6 +11,8 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `ekip.kendi-hesabi.gor` | yonetici | kendi | Yönetici kendi hesabını görür. |
 | `ekip.gor` | yonetici | tumu | Ekipteki bütün yöneticileri görür. |
 | `ekip.rol-ata` | yonetici | tumu | Yöneticilere rol verir ve alır. |
+| `magaza-ayarlari.gor` | yonetici | tumu | Mağaza sahibinin ayarlarını görür. |
+| `magaza-ayarlari.degistir` | yonetici | tumu | Mağaza sahibinin ayarlarını değiştirir. |
 | `musteri.kendi-hesabi.gor` | musteri | kendi | Müşteri kendi hesabını görür. |
 
 Müşterinin rolü yoktur: geçerli oturumu olan her müşteri müşteri girişinin izinlerine sahiptir, kapsamı yalnız kendi kayıtlarıdır. Sahip girişinin izni sahip paneliyle gelir.

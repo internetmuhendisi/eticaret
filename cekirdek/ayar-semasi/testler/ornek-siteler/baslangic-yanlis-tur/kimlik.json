@@ -1,0 +1,8 @@
+{
+  "kodAdi": "baslangic-yanlis-tur",
+  "gorunenAd": "Deneme Dükkanı",
+  "tur": "gercek",
+  "adresler": { "canli": "https://deneme.example" },
+  "cekirdekSurumu": "1.2.3",
+  "teslimDurumu": { "magazaSahibiHesabi": "tamam", "yurtDisiAktarimBelgeleri": "bekliyor" }
+}

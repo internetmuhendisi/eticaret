@@ -11,3 +11,9 @@ export type TeslimAdimiDurumu = (typeof teslimAdimiDurumlari)[number];
 // Bir site ayarını kimin değiştirdiği (karar 0010).
 export const ayarSahipleri = ["altyapi-sahibi", "magaza-sahibi"] as const;
 export type AyarSahibi = (typeof ayarSahipleri)[number];
+// Kodda sahip adı buradan okunur. "magaza-sahibi" aynı zamanda bir rolün kodudur; rol denetimi bu
+// dosyayı bu yüzden muaf tutar (cekirdek/testler/rol-adi-yok.test.ts).
+export const ayarSahibi = {
+  altyapi: "altyapi-sahibi",
+  magaza: "magaza-sahibi",
+} as const satisfies Record<string, AyarSahibi>;

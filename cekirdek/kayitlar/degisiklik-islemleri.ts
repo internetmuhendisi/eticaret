@@ -5,11 +5,14 @@ export const degisiklikIslemleri = [
   "rol.alindi",
   "yonetici.kapatildi",
   "yonetici.sifre-sifirlandi",
+  // Mağaza sahibinin ayarı veritabanına ilk kez başlangıç değeriyle yazıldı (kart 0069).
+  "magaza-ayari.baslangic",
+  "magaza-ayari.degisti",
 ] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 
 // Değişen kaydın türü.
-export const degisiklikKayitTurleri = ["yonetici"] as const;
+export const degisiklikKayitTurleri = ["yonetici", "magaza-ayari"] as const;
 export type DegisiklikKayitTuru = (typeof degisiklikKayitTurleri)[number];
 
 // Değişikliği kim yaptı: bir hesap ya da komut gibi hesabı olmayan bir işlem.
