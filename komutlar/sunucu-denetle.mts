@@ -431,19 +431,22 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
           kayit.ipv4,
           `sudo stat -c '%a %u %F' ${klasor} 2>/dev/null || true`,
         );
-        const baglantilar = sshKomutu(
-          kayit.ipv4,
-          `docker inspect ${ad} --format '{{json .Mounts}}'`,
-        );
-        const dosyaHatalari = dosyaKlasoruHatalari(
-          durum.stdout,
-          baglantilar.stdout,
-          kutuKullanicisi(yayinOrtami, numara),
-          klasor,
-        );
+        // Site ve arka plan kutusu aynı klasörü alır; ikisinin bağlantısı da ölçülür.
+        const dosyaHatalari = [ad, arkaPlanKutuAdi(ad)].flatMap((kutu) => {
+          const baglantilar = sshKomutu(
+            kayit.ipv4,
+            `docker inspect ${kutu} --format '{{json .Mounts}}'`,
+          );
+          return dosyaKlasoruHatalari(
+            durum.stdout,
+            baglantilar.stdout,
+            kutuKullanicisi(yayinOrtami, numara),
+            klasor,
+          ).map((hata) => `${kutu}: ${hata}`);
+        });
         olcum(
           dosyaHatalari.length === 0,
-          `${yayinOrtami}/${kodAdi} dosya klasörü yalnız sitenin kullanıcısına açık (0700), kutuya yazılabilir bağlı`,
+          `${yayinOrtami}/${kodAdi} dosya klasörü yalnız sitenin kullanıcısına açık (0700), iki kutuya da yazılabilir bağlı`,
           dosyaHatalari.join("; "),
         );
       }

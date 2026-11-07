@@ -14,6 +14,7 @@ Kart 0072 her sitenin dosyalarını sunucunun diskinde, sitenin kendi klasörün
 - Geri yüklemenin yarıda kalması siteyi bozuk bırakmaz (karar 0037'deki kurallar dosyalar için de geçerlidir).
 - Sunucu denetimi dosya yedeğinin de son 26 saatte başarılı olduğunu ölçer.
 - Prova dosyaları da karşılaştırır: kayıt sayısı ve içerik özetleri.
+- Kaydı olmayan dosyaları (süreç kaydetme sırasında ölürse kalabilir, karar 0058) ve kalıcı silinme zamanı gelmiş işaretli dosyaları bulan bir temizlik; kayıtsız dosya önce bildirilir, kendiliğinden silinmez.
 
 ## Sınırlar
 

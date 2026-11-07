@@ -14,6 +14,7 @@ Mağazanın logosu tek yerden gelir; vitrin, panel ve e-postalar aynı logoyu ku
 - Logonun değişmesi değişiklik kaydına yazılır.
 - Logo dosya deposundan (kart 0072, karar 0058) tarayıcıya bir adresle verilir: adres yalnız silinmemiş dosyayı ve kaydındaki türü verir, doğru `Content-Type` ve `X-Content-Type-Options: nosniff` başlığıyla. Yükleme ucu gelirse istek boyutu dosya sınırıyla sınırlanır.
 - Uygulama dosya servisini ilk kez bu kartta kullanır: `sharp`'ın çekirdek görüntüsünde (Alpine) çalıştığı yerel ortam denemesinde ölçülür.
+- Yükleme ucu açılmadan önce site kutularına bellek sınırı konur: büyük bir görselin yeniden kodlanması yaklaşık 370 MB ister, kutular sunucuyu paylaşır (kart 0072'nin bağımsız kontrolü).
 
 ## Sınırlar
 

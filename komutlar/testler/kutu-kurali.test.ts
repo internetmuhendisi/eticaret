@@ -111,7 +111,7 @@ describe("kalıcı kutuların tanımı", () => {
       "ornek-magaza",
       "/siteler/ornek-magaza",
       "altyapi-cekirdek:0.1.0",
-      yerelKutuKullanicisi(1),
+      yerelKutuKullanicisi(1, 1),
     );
     expect(yenidenBaslamaHatalari({ services: { site: servis } })).toEqual([]);
   });

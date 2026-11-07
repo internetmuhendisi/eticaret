@@ -29,6 +29,7 @@ import { cekirdekSurumu } from "../cekirdek/surum.ts";
 import { baglan, siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
 import { siteVeritabaniniGuncelle } from "../cekirdek/veritabani/guncelle.ts";
 import { goruntuAdi } from "./cekirdek-goruntusu-denetle.mts";
+import { siteNumaralariniOku } from "./gizli-bilgi.mts";
 import { arkaPlanServisi, kaliciKutu, siteSaglikYoklamasi } from "./kutu-kurali.mts";
 import { veritabaniVeKullaniciAc } from "./site-veritabani.mts";
 
@@ -159,9 +160,11 @@ const uretilenleriSil = (): void => {
 // --- Dosya deposu (kart 0072, karar 0058) ---
 // Sunucudaki gibi her site kendi kullanıcısıyla çalışır ve dosyaları yalnız o kullanıcıya açık
 // (0700) bir klasördedir. Yerelde klasör Docker'ın adlandırılmış birimidir: bilgisayardaki bir
-// klasörün sahibi başka kullanıcı olunca onu çalıştıran kişi silemezdi. Kullanıcı numarası sitenin
-// açılıştaki sırasından gelir; birim her açılışta o kullanıcıya verilir.
-export const yerelKutuKullanicisi = (sira: number): number => 40_000 + sira;
+// klasörün sahibi başka kullanıcı olunca onu çalıştıran kişi silemezdi. Kullanıcı numarası sunucudaki
+// gibi sitenin numarasından gelir (sunucu/site-kullanicilari.json), açılış sırası onu değiştirmez;
+// numarası olmayan deneme sitesi 41000'den başlar. Birim her açılışta o kullanıcıya verilir.
+export const yerelKutuKullanicisi = (siteNumarasi: number | undefined, sira: number): number =>
+  siteNumarasi === undefined ? 41_000 + sira : 40_000 + siteNumarasi;
 export const dosyaBirimi = (kodAdi: string): string => `altyapi-yerel-dosyalar-${kodAdi}`;
 
 const dosyaBiriminiHazirla = (kodAdi: string, kullanici: number, etiket: string): void => {
@@ -344,7 +347,7 @@ export const ortamiAc = async (
     // Aynı sürümü kullanan siteler için görüntü bir kez hazırlanır.
     const etiket = uretilen.get(surum) ?? goruntuyuHazirla(surum, goruntuyuYenile);
     uretilen.set(surum, etiket);
-    const kullanici = yerelKutuKullanicisi(hazirlar.length + 1);
+    const kullanici = yerelKutuKullanicisi(siteNumaralariniOku()[kodAdi], hazirlar.length + 1);
     dosyaBiriminiHazirla(kodAdi, kullanici, etiket);
     hazirlar.push({ ...site, etiket, kullanici });
   }
@@ -458,12 +461,12 @@ export const ortamiKapat = async (): Promise<string[]> => {
   const silinenler = await denemeSiteleriniTemizle();
   // Üretilen site dosyası olmadan kapatılır: site kutuları projenin artık kutuları sayılır ve
   // --remove-orphans ile kapanır. Veritabanının verisi silinmez.
-  if (compose(["down", "--remove-orphans"]).status !== 0) {
-    throw new Error("Ortam kapatılamadı.");
-  }
-  // Deneme sitesinin dosya birimi kutusu kapandıktan sonra silinebilir. Kalıcı sitelerin birimi
-  // veritabanı gibi kalır.
+  const kapanis = compose(["down", "--remove-orphans"]);
+  // Deneme sitesinin dosya birimi kutusu kapandıktan sonra silinebilir. Kapanış başarısız olsa da
+  // denenir: deneme klasörü silindiği için sonraki kapanış bu birimi bulamazdı. Kalıcı sitelerin
+  // birimi veritabanı gibi kalır.
   for (const kodAdi of silinenler) dosyaBiriminiSil(kodAdi);
+  if (kapanis.status !== 0) throw new Error("Ortam kapatılamadı.");
   uretilenleriSil();
   return silinenler;
 };

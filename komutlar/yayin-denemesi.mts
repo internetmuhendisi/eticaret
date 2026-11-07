@@ -52,6 +52,7 @@ import {
   kayitlariOku,
   saglikCoz,
   saglikHatasi,
+  sunucuDosyaKlasoru,
   yayinKlasoru,
   yayinla,
 } from "./yayin.mts";
@@ -181,6 +182,8 @@ for c in $(docker ps -aq --filter 'name=^${siteAgiAdi(ortam, kodAdi)}-[0-9]+(-ar
 # kimlikle silmek başka sitelerin etiketlerini de götürürdü.
 for g in $(docker images --format '{{.Repository}}:{{.Tag}}' 'altyapi-yayin' | grep -E '^altyapi-yayin:${ortam}-${kodAdi}-[0-9]+$'); do docker image rm "$g" >/dev/null 2>&1; done
 sudo rm -rf ${yayinKlasoru(ortam, kodAdi)}
+# Deneme sitesinin dosya klasörü (kart 0072): yalnız bu geçici sitenin.
+sudo rm -rf ${sunucuDosyaKlasoru(ortam, kodAdi)}
 sudo rm -f ${onKapiKlasoru}/bakim-acik/${kodAdi}
 printf '%s\\n' 'DROP DATABASE IF EXISTS "${ad}" WITH (FORCE);' 'DROP ROLE IF EXISTS "${ad}";' | docker exec -i ${veritabaniKutusu(ortam)} psql -U postgres -d postgres -q >/dev/null
 ${silmeBetigi(ortam, kodAdi).replace("set -eu", "true")}

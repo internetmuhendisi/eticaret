@@ -145,10 +145,21 @@ describe("gömülü bilgiler", () => {
   });
 });
 
+describe("çok dilli dosya", () => {
+  it("JPEG'in sonuna eklenmiş HTML yeniden kodlamada düşer", async () => {
+    const icerik = Buffer.concat([await gorsel("jpeg"), Buffer.from("<script>alert(1)</script>")]);
+    const sonuc = await dosyaKaydet(vt, icerik, klasor);
+    if (!sonuc.tamam) throw new Error(sonuc.hata);
+    const saklanan = readFileSync(join(klasor, klasordekiler()[0] ?? ""));
+    expect(saklanan.includes("<script>")).toBe(false);
+  });
+});
+
 describe("kayıt ve dosya birlikte", () => {
   it("kayıt yazılamazsa dosya da kalmaz", async () => {
     const once = await kayitSayisi();
     const bozukVt = {
+      $client: vt.$client,
       transaction: (is: (islem: unknown) => Promise<unknown>) =>
         vt.transaction(async (islem) => {
           await is(islem);
@@ -158,6 +169,24 @@ describe("kayıt ve dosya birlikte", () => {
     await expect(dosyaKaydet(bozukVt, await gorsel("png"), klasor)).rejects.toThrow("kayıt düştü");
     expect(klasordekiler()).toEqual([]);
     expect(await kayitSayisi()).toBe(once);
+  });
+
+  it("bir veritabanı işleminin içinde çağrılmaz: dış işlem geri alınınca dosya kayıtsız kalırdı", async () => {
+    const once = await kayitSayisi();
+    await expect(
+      vt.transaction(async (islem) =>
+        dosyaKaydet(islem as unknown as Veritabani, await gorsel("png"), klasor),
+      ),
+    ).rejects.toThrow("işleminin içinde");
+    expect(klasordekiler()).toEqual([]);
+    expect(await kayitSayisi()).toBe(once);
+  });
+
+  it("aynı anda gelen kaydetmeler sırayla yeniden kodlanır, hepsi kaydedilir", async () => {
+    const icerikler = await Promise.all([1, 2, 3, 4].map((n) => gorsel("png", 10 * n, 10)));
+    const sonuclar = await Promise.all(icerikler.map((icerik) => dosyaKaydet(vt, icerik, klasor)));
+    expect(sonuclar.map((s) => (s.tamam ? s.dosya.genislik : s.hata))).toEqual([10, 20, 30, 40]);
+    expect(klasordekiler()).toHaveLength(4);
   });
 
   it("klasöre yazılamazsa kayıt da kalmaz", async () => {
