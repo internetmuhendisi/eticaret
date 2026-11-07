@@ -24,6 +24,7 @@ import {
   type Veritabani,
   type VeritabaniIslemi,
 } from "../../veritabani/baglanti.ts";
+import { kimlikMi } from "../../veritabani/turler.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { urunler } from "../urun/model.ts";
 import { vitrinKosulu } from "../urun/vitrin.ts";
@@ -190,6 +191,7 @@ const sonrakiSira = async (islem: VeritabaniIslemi, ust: string | null) => {
 };
 
 const degisebilenKategori = async (islem: VeritabaniIslemi, kimlik: string) => {
+  if (!kimlikMi(kimlik)) throw new BilinenHata("bulunamadi");
   const [satir] = await islem
     .select(kategoriAlanlari)
     .from(kategoriler)
@@ -368,6 +370,7 @@ export const kategoriyiOku = async (
   kimlik: string,
   vt: Veritabani = siteninVeritabani(),
 ): Promise<Kategori | undefined> => {
+  if (!kimlikMi(kimlik)) return undefined;
   const [satir] = await vt
     .select(kategoriAlanlari)
     .from(kategoriler)
@@ -411,6 +414,7 @@ export const kategorininUrunleri = async (
     boyut = listeSayfasi.varsayilanBoyut,
   }: KategoriUrunleriSecenekleri = {},
 ): Promise<{ urunler: string[]; toplam: number }> => {
+  if (!kimlikMi(kimlik)) return { urunler: [], toplam: 0 };
   const sinirliBoyut = Math.min(Math.max(Math.trunc(boyut), 1), listeSayfasi.enCokBoyut);
   const ofset = (Math.max(Math.trunc(sayfa), 1) - 1) * sinirliBoyut;
   const gorunurluk: SQL = vitrin === undefined ? sql`true` : vitrinKosulu(vitrin.yer, vitrin.an);

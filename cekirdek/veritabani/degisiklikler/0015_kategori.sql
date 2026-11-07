@@ -34,6 +34,11 @@ BEGIN
   IF NEW."ust_kimligi" IS NULL THEN
     RETURN NEW;
   END IF;
+  -- Kilitten sonra okunan atalar yalnız READ COMMITTED işlemde kilitten sonraki durumu görür; daha
+  -- yüksek yalıtımda işlemin baştaki görüntüsü okunur ve aynı anda yapılan ters taşıma görünmez.
+  IF current_setting('transaction_isolation') <> 'read committed' THEN
+    RAISE EXCEPTION 'kategori tasimasi yalniz read committed islemde yapilir' USING ERRCODE = 'serialization_failure';
+  END IF;
   PERFORM pg_advisory_xact_lock(hashtext('kategori'));
   IF EXISTS (
     WITH RECURSIVE "atalar"("kimlik") AS (

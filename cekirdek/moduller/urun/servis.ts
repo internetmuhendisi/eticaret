@@ -26,6 +26,7 @@ import {
   type Veritabani,
   type VeritabaniIslemi,
 } from "../../veritabani/baglanti.ts";
+import { kimlikMi } from "../../veritabani/turler.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { kategoriler, urunKategorileri } from "../kategori/model.ts";
 import { vergiSiniflari } from "../vergi/model.ts";
@@ -225,6 +226,21 @@ const urununKategorileri = async (vt: Veritabani | VeritabaniIslemi, urun: strin
     .map((satir) => satir.kategori)
     .toSorted();
 
+// Değişecek ürünün kategorileri: kategori satırları paylaşımlı kilitlenir. Aynı anda silinen kategori
+// bitene kadar beklenir ve listeye girmez; ürün işlemi bitene kadar da bu kategoriler silinemez.
+// Böylece değişiklik kaydındaki eski ve yeni liste gerçekle aynı kalır (kart 0077 kontrolü).
+const kilitliKategorileri = async (islem: VeritabaniIslemi, urun: string) =>
+  (
+    await islem
+      .select({ kategori: urunKategorileri.kategori_kimligi })
+      .from(urunKategorileri)
+      .innerJoin(kategoriler, eq(kategoriler.kimlik, urunKategorileri.kategori_kimligi))
+      .where(and(eq(urunKategorileri.urun_kimligi, urun), isNull(kategoriler.silinme_zamani)))
+      .for("share", { of: kategoriler })
+  )
+    .map((satir) => satir.kategori)
+    .toSorted();
+
 export const urunServisi = (saatDilimi: () => string) => {
   const yaz = <T>(vt: Veritabani, is: (islem: VeritabaniIslemi) => Promise<T>) =>
     vt.transaction(async (islem) => {
@@ -393,6 +409,7 @@ export const urunServisi = (saatDilimi: () => string) => {
 
   // Değişecek ürün ve tek birimi, kayıt biçiminde. Yoksa ya da silinmişse bulunamadı.
   const degisebilenUrun = async (islem: VeritabaniIslemi, kimlik: string) => {
+    if (!kimlikMi(kimlik)) throw new BilinenHata("bulunamadi");
     const [urun] = await islem.select(urunAlanlari).from(urunler).where(eq(urunler.kimlik, kimlik));
     if (urun === undefined || urun.silinme !== null) throw new BilinenHata("bulunamadi");
     const [birim] = await islem
@@ -407,7 +424,7 @@ export const urunServisi = (saatDilimi: () => string) => {
       ...urunKaydi,
       durum: urun.durum as UrunDurumu,
       ...birimKaydi,
-      kategoriler: await urununKategorileri(islem, kimlik),
+      kategoriler: await kilitliKategorileri(islem, kimlik),
     };
     return { kayit, birimKimligi };
   };
@@ -505,6 +522,7 @@ export const urunServisi = (saatDilimi: () => string) => {
 
   // Ürün, silinmiş olsa da okunur (eski kayıtlar ona bağlı kalır). İki sorgu.
   const urunuOku = async (vt: Veritabani, kimlik: string): Promise<Urun | undefined> => {
+    if (!kimlikMi(kimlik)) return undefined;
     const [urun] = await vt.select(urunAlanlari).from(urunler).where(eq(urunler.kimlik, kimlik));
     if (urun === undefined) return undefined;
     const birimler = await vt
@@ -533,6 +551,7 @@ export const urunServisi = (saatDilimi: () => string) => {
     yer: VitrinYeri,
     an?: Date,
   ): Promise<boolean> =>
+    kimlikMi(kimlik) &&
     (
       await vt
         .select({ kimlik: urunler.kimlik })

@@ -210,16 +210,95 @@ describe("silme kuralı", () => {
     expect((await kategoriyiOku(yeni, vt))?.adresAdi).toBe("mum");
   });
 
-  it("aynı anda silinen kategoriye ürün bağlanamaz", async () => {
+  // Sıra bilerek kurulur: silme işlemi kategoriyi işaretleyip bağlantılarını kaldırır ve açık bekler,
+  // ürün değişikliği tam o sırada gelir. Paylaşımlı kilit olmasa ürün eski görüntüyü okur: ya silinmiş
+  // kategoriye bağlanır ya da kayda kalkmış bağlantıyı yazar (kart 0077 kontrolü). İki durum ayrı
+  // denenir: ürün kilidi aynı anda iki ürün değişikliğini sıraya koyar.
+  const acikSilme = async (vt: Veritabani, kategori: string) => {
+    let hazir: () => void = () => undefined;
+    const isaretlendi = new Promise<void>((coz) => {
+      hazir = coz;
+    });
+    const bitti = vt.transaction(async (islem) => {
+      await islem
+        .update(kategoriler)
+        .set({ silinme_zamani: sql`now()` })
+        .where(eq(kategoriler.kimlik, kategori));
+      await islem.delete(urunKategorileri).where(eq(urunKategorileri.kategori_kimligi, kategori));
+      hazir();
+      await islem.execute(sql`select pg_sleep(0.3)`);
+    });
+    await isaretlendi;
+    // Söz nesne içinde döner: async işlevden doğrudan dönen söz beklenirdi, yarış kurulmazdı.
+    return { bitti };
+  };
+  const gecersizKategori = {
+    kod: "dogrulama",
+    ayrinti: [{ alan: "kategoriler", kod: "kategori-gecersiz" }],
+  };
+  const urunDegisiklikleri = (vt: Veritabani) =>
+    vt.select().from(degisiklikKayitlari).where(eq(degisiklikKayitlari.islem, "urun.degisti"));
+
+  it("açık duran silmenin kategorisine ürün bağlanamaz", async () => {
     const vt = await siteAc();
-    for (let tur = 0; tur < 8; tur += 1) {
-      const kategori = await ekle(vt, `Yarış ${tur}`);
-      const urun = await urunEkle(vt, { ad: `Yarış ürünü ${tur}` });
-      await Promise.allSettled([
-        kategoriSil(vt, yonetici(), kategori),
-        urunSrv.urunDegistir(vt, yonetici(), urun, { kategoriler: [kategori] }),
-      ]);
-      expect((await urunSrv.urunuOku(vt, urun))?.kategoriler).toEqual([]);
+    const silinecek = await ekle(vt, "Silinecek");
+    const urun = await urunEkle(vt);
+    const silme = await acikSilme(vt, silinecek);
+    const sonuc = await hatasi(
+      urunSrv.urunDegistir(vt, yonetici(), urun, { kategoriler: [silinecek] }),
+    );
+    await silme.bitti;
+    expect(sonuc).toEqual(gecersizKategori);
+    expect(await vt.select().from(urunKategorileri)).toEqual([]);
+    expect(await urunDegisiklikleri(vt)).toEqual([]);
+  });
+
+  it("açık duran silmenin kaldırdığı bağlantı ürünün kaydına bağlıymış gibi girmez", async () => {
+    const vt = await siteAc();
+    const silinecek = await ekle(vt, "Silinecek");
+    const kalan = await ekle(vt, "Kalan");
+    const urun = await urunEkle(vt, { kategoriler: [silinecek] });
+    const silme = await acikSilme(vt, silinecek);
+    const sonuc = await hatasi(
+      urunSrv.urunDegistir(vt, yonetici(), urun, { kategoriler: [silinecek, kalan] }),
+    );
+    await silme.bitti;
+    expect(sonuc).toEqual(gecersizKategori);
+    expect(await vt.select().from(urunKategorileri)).toEqual([]);
+    expect(await urunDegisiklikleri(vt)).toEqual([]);
+  });
+
+  it("veritabanı READ COMMITTED dışındaki işlemde taşımayı reddeder", async () => {
+    const vt = await siteAc();
+    const a = await ekle(vt, "A");
+    const b = await ekle(vt, "B");
+    await expect(
+      vt.transaction(
+        (islem) =>
+          islem.update(kategoriler).set({ ust_kimligi: b }).where(eq(kategoriler.kimlik, a)),
+        { isolationLevel: "repeatable read" },
+      ),
+    ).rejects.toThrow();
+    expect(await ustu(vt, a)).toBeNull();
+  });
+
+  it("kimlik biçiminde olmayan metin bulunamadı sayılır, beklenmeyen hata vermez", async () => {
+    const vt = await siteAc();
+    for (const bozuk of ["abc", "1; select 1", ""]) {
+      expect(await kategoriyiOku(bozuk, vt)).toBeUndefined();
+      expect(await kategorininUrunleri(vt, bozuk)).toEqual({ urunler: [], toplam: 0 });
+      expect(await hatasi(kategoriDegistir(vt, yonetici(), bozuk, { ad: "x y" }))).toMatchObject({
+        kod: "bulunamadi",
+      });
+      expect(await hatasi(kategoriSil(vt, yonetici(), bozuk))).toMatchObject({ kod: "bulunamadi" });
+      expect(await urunSrv.urunuOku(vt, bozuk)).toBeUndefined();
+      expect(await urunSrv.vitrindeGorunurMu(vt, bozuk, "sayfa")).toBe(false);
+      expect(
+        await hatasi(urunSrv.urunDegistir(vt, yonetici(), bozuk, { ad: "x y" })),
+      ).toMatchObject({ kod: "bulunamadi" });
+      expect(await hatasi(urunSrv.urunSil(vt, yonetici(), bozuk))).toMatchObject({
+        kod: "bulunamadi",
+      });
     }
   });
 });
