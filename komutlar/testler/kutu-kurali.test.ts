@@ -9,7 +9,7 @@ import { kutuKuraliDogru, yenidenBaslama, yenidenBaslamaHatalari } from "../kutu
 import { onKapiTanimi } from "../on-kapi.mts";
 import { veritabaniTanimi } from "../sunucu-veritabani.mts";
 import { yayinKutusuTanimi } from "../yayin.mts";
-import { siteKutusu } from "../yerel-ortam.mts";
+import { siteKutusu, yerelKutuKullanicisi } from "../yerel-ortam.mts";
 
 const kok = join(import.meta.dirname, "..", "..");
 const sunucu = join(kok, "sunucu");
@@ -36,6 +36,8 @@ const geciciDosyalar = [
   "komutlar/yedek.mts",
   "komutlar/yedek-denemesi.mts",
   "sunucu/yedek/ortak.sh",
+  // Dosya klasörlerinin ayrımını ölçen geçici kutular (kart 0072): --rm ile açılır.
+  "komutlar/yerel-ortam-testi.mts",
 ];
 
 // Metin bir kutu tanımlıyor ya da açıyor mu? Yorum satırları sayılmaz.
@@ -104,7 +106,12 @@ describe("kalıcı kutuların tanımı", () => {
   });
 
   it("site kutusu", () => {
-    const servis = siteKutusu("ornek-magaza", "/siteler/ornek-magaza", "altyapi-cekirdek:0.1.0");
+    const servis = siteKutusu(
+      "ornek-magaza",
+      "/siteler/ornek-magaza",
+      "altyapi-cekirdek:0.1.0",
+      yerelKutuKullanicisi(1),
+    );
     expect(yenidenBaslamaHatalari({ services: { site: servis } })).toEqual([]);
   });
 

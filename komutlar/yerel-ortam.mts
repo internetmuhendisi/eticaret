@@ -24,6 +24,7 @@ import { join, resolve } from "node:path";
 import { parseEnv } from "node:util";
 import { sql } from "drizzle-orm";
 import { type Site, siteKlasorunuDogrula } from "../cekirdek/ayar-semasi/site-klasoru.ts";
+import { dosyaKlasoruDegiskeni } from "../cekirdek/kayitlar/dosya.ts";
 import { cekirdekSurumu } from "../cekirdek/surum.ts";
 import { baglan, siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
 import { siteVeritabaniniGuncelle } from "../cekirdek/veritabani/guncelle.ts";
@@ -155,12 +156,45 @@ const uretilenleriSil = (): void => {
   if (existsSync(sitelerDosyasi)) unlinkSync(sitelerDosyasi);
 };
 
+// --- Dosya deposu (kart 0072, karar 0058) ---
+// Sunucudaki gibi her site kendi kullanıcısıyla çalışır ve dosyaları yalnız o kullanıcıya açık
+// (0700) bir klasördedir. Yerelde klasör Docker'ın adlandırılmış birimidir: bilgisayardaki bir
+// klasörün sahibi başka kullanıcı olunca onu çalıştıran kişi silemezdi. Kullanıcı numarası sitenin
+// açılıştaki sırasından gelir; birim her açılışta o kullanıcıya verilir.
+export const yerelKutuKullanicisi = (sira: number): number => 40_000 + sira;
+export const dosyaBirimi = (kodAdi: string): string => `altyapi-yerel-dosyalar-${kodAdi}`;
+export const kutudakiDosyaKlasoru = "/dosyalar";
+
+const dosyaBiriminiHazirla = (kodAdi: string, kullanici: number, etiket: string): void => {
+  const birim = dosyaBirimi(kodAdi);
+  const olustur = spawnSync("docker", ["volume", "create", birim], { stdio: "ignore" });
+  // Sahibi ve izni kök kullanıcıyla, ağsız ve hemen silinen bir kutuda verilir.
+  const izin = spawnSync(
+    "docker",
+    [
+      ...["run", "--rm", "--network", "none", "--user", "0:0", "--entrypoint", "sh"],
+      ...["-v", `${birim}:/birim`, etiket],
+      ...["-c", `chown ${kullanici}:${kullanici} /birim && chmod 0700 /birim`],
+    ],
+    { stdio: "inherit" },
+  );
+  if (olustur.status !== 0 || izin.status !== 0) {
+    throw new Error(`${kodAdi} için dosya birimi hazırlanamadı.`);
+  }
+};
+
+const dosyaBiriminiSil = (kodAdi: string): void => {
+  spawnSync("docker", ["volume", "rm", "--force", dosyaBirimi(kodAdi)], { stdio: "ignore" });
+};
+
 // Bir sitenin kutu tanımı. Yeniden başlama kuralı tek yerden gelir (kutu-kurali.mts).
-export const siteKutusu = (kodAdi: string, klasor: string, etiket: string) => ({
+export const siteKutusu = (kodAdi: string, klasor: string, etiket: string, kullanici: number) => ({
   image: etiket,
   container_name: kutuAdi(kodAdi),
   ...kaliciKutu,
+  user: `${kullanici}:${kullanici}`,
   environment: {
+    [dosyaKlasoruDegiskeni]: kutudakiDosyaKlasoru,
     // Kod adı klasör adıyla aynı olmalıdır (kimlik şeması), klasör aynı adla bağlanır.
     SITE_KLASORU: `/siteler/${kodAdi}`,
     VERITABANI_ADRESI: `\${${kutuAdresAnahtari(kodAdi)}:?veritabanı adresi verilmedi}`,
@@ -168,7 +202,7 @@ export const siteKutusu = (kodAdi: string, klasor: string, etiket: string) => ({
     EPOSTA_SUNUCUSU: "smtp://posta-kutusu:1025",
     SITE_ADRESI: `http://${kodAdi}.localhost:${yerelPort()}`,
   },
-  volumes: [`${klasor}:/siteler/${kodAdi}:ro`],
+  volumes: [`${klasor}:/siteler/${kodAdi}:ro`, `${dosyaBirimi(kodAdi)}:${kutudakiDosyaKlasoru}`],
   depends_on: {
     veritabani: { condition: "service_healthy" },
     "posta-kutusu": { condition: "service_healthy" },
@@ -177,7 +211,7 @@ export const siteKutusu = (kodAdi: string, klasor: string, etiket: string) => ({
 });
 
 // Her site için Caddy satırı ve kutu tanımı. Kutu tanımı JSON'dur (compose JSON da okur).
-const ayarlariUret = (siteler: (OrtamSitesi & { etiket: string })[]): void => {
+const ayarlariUret = (siteler: (OrtamSitesi & { etiket: string; kullanici: number })[]): void => {
   uretilenleriSil();
   mkdirSync(caddyKlasoru, { recursive: true });
   const servisler: Record<string, unknown> = {
@@ -187,18 +221,25 @@ const ayarlariUret = (siteler: (OrtamSitesi & { etiket: string })[]): void => {
       ),
     },
   };
-  for (const { kimlik, klasor, etiket } of siteler) {
+  for (const { kimlik, klasor, etiket, kullanici } of siteler) {
     const { kodAdi } = kimlik;
     writeFileSync(
       join(caddyKlasoru, `${kodAdi}.caddy`),
       `http://${kodAdi}.localhost {\n\treverse_proxy ${servisAdi(kodAdi)}:3000\n}\n`,
     );
-    servisler[servisAdi(kodAdi)] = siteKutusu(kodAdi, klasor, etiket);
+    servisler[servisAdi(kodAdi)] = siteKutusu(kodAdi, klasor, etiket, kullanici);
     servisler[`${servisAdi(kodAdi)}-arka-plan`] = arkaPlanServisi(
-      siteKutusu(kodAdi, klasor, etiket),
+      siteKutusu(kodAdi, klasor, etiket, kullanici),
     );
   }
-  writeFileSync(sitelerDosyasi, `${JSON.stringify({ services: servisler }, null, 2)}\n`);
+  // Dosya birimleri açılıştan önce hazırlanır (dosyaBiriminiHazirla), tanım onları dışarıdan alır.
+  const birimler = Object.fromEntries(
+    siteler.map(({ kimlik }) => [dosyaBirimi(kimlik.kodAdi), { external: true }]),
+  );
+  writeFileSync(
+    sitelerDosyasi,
+    `${JSON.stringify({ services: servisler, volumes: birimler }, null, 2)}\n`,
+  );
 };
 
 // Caddy üzerinden istek. Host başlığı sitenin adresidir; ad çözümlemesine bağlı kalmaz.
@@ -285,7 +326,7 @@ export const ortamiAc = async (
   veritabaniniBaslat();
 
   const kutuAdresleri: Degerler = {};
-  const hazirlar: (OrtamSitesi & { etiket: string })[] = [];
+  const hazirlar: (OrtamSitesi & { etiket: string; kullanici: number })[] = [];
   const uretilen = new Map<string, string>();
   for (const site of siteler) {
     const { kodAdi, cekirdekSurumu: surum } = site.kimlik;
@@ -304,7 +345,9 @@ export const ortamiAc = async (
     // Aynı sürümü kullanan siteler için görüntü bir kez hazırlanır.
     const etiket = uretilen.get(surum) ?? goruntuyuHazirla(surum, goruntuyuYenile);
     uretilen.set(surum, etiket);
-    hazirlar.push({ ...site, etiket });
+    const kullanici = yerelKutuKullanicisi(hazirlar.length + 1);
+    dosyaBiriminiHazirla(kodAdi, kullanici, etiket);
+    hazirlar.push({ ...site, etiket, kullanici });
   }
 
   ayarlariUret(hazirlar);
@@ -419,6 +462,9 @@ export const ortamiKapat = async (): Promise<string[]> => {
   if (compose(["down", "--remove-orphans"]).status !== 0) {
     throw new Error("Ortam kapatılamadı.");
   }
+  // Deneme sitesinin dosya birimi kutusu kapandıktan sonra silinebilir. Kalıcı sitelerin birimi
+  // veritabanı gibi kalır.
+  for (const kodAdi of silinenler) dosyaBiriminiSil(kodAdi);
   uretilenleriSil();
   return silinenler;
 };

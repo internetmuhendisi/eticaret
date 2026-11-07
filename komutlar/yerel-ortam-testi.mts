@@ -18,6 +18,7 @@ import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { siteKlasorunuOku } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { arkaPlanDosyalari } from "../cekirdek/kayitlar/arka-plan.ts";
+import { dosyaKlasoruDegiskeni } from "../cekirdek/kayitlar/dosya.ts";
 import { istekSinirlari } from "../cekirdek/kayitlar/kapi.ts";
 import { metinOkuyucu } from "../cekirdek/metinler/metin.ts";
 import { soruyuCoz } from "../cekirdek/moduller/robot-korumasi/testler/soru-coz.ts";
@@ -25,11 +26,13 @@ import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
 import { arkaPlanKutuAdi, kutuKuraliDogru, yenidenBaslama } from "./kutu-kurali.mts";
 import {
   denemeSitesiAc,
+  dosyaBirimi,
   gonder,
   iste,
   kilitle,
   kok,
   kutuAdi,
+  kutudakiDosyaKlasoru,
   type OrtamSitesi,
   ortamiAc,
   ortamiKapat,
@@ -121,6 +124,56 @@ const sitesiniOlc = async (site: OrtamSitesi, oteki: OrtamSitesi) => {
     { encoding: "utf8" },
   ).stdout.trim();
   olc(`${kodAdi}: kutunun portu dışarıya kapalı`, portlar === "{}" || portlar === "null", portlar);
+
+  // Dosya deposu (kart 0072, karar 0058): kutu kendi kullanıcısıyla çalışır, kendi klasörüne
+  // yazabilir; klasör yalnız ona açıktır. Ötekinin klasörü yanlışlıkla bağlansa bile okuyamaz ve
+  // yazamaz: bu, ötekinin birimi bu sitenin kullanıcısıyla açılan geçici bir kutuda ölçülür.
+  for (const kutu of [kutuAdi(kodAdi), arkaPlanKutuAdi(kutuAdi(kodAdi))]) {
+    const kendiKlasoru = spawnSync(
+      "docker",
+      [
+        ...["exec", kutu, "sh", "-c"],
+        `id -u; printenv ${dosyaKlasoruDegiskeni}; stat -c '%a %u' "$${dosyaKlasoruDegiskeni}"; f="$${dosyaKlasoruDegiskeni}/.yoklama-$$$$"; echo x > "$f" && rm "$f" && echo yazildi`,
+      ],
+      { encoding: "utf8" },
+    )
+      .stdout.trim()
+      .split("\n");
+    const [kullanici, klasor, izin, yazildi] = kendiKlasoru;
+    olc(
+      `${kutu}: kendi dosya klasörüne yazıyor, klasör yalnız kendi kullanıcısına açık`,
+      klasor === kutudakiDosyaKlasoru &&
+        kullanici !== "0" &&
+        kullanici !== "1000" &&
+        izin === `700 ${kullanici}` &&
+        yazildi === "yazildi",
+      kendiKlasoru.join(", "),
+    );
+  }
+  const kullanici = spawnSync("docker", ["exec", kutuAdi(kodAdi), "id", "-u"], {
+    encoding: "utf8",
+  }).stdout.trim();
+  const goruntu = spawnSync(
+    "docker",
+    ["inspect", "--format", "{{.Config.Image}}", kutuAdi(kodAdi)],
+    { encoding: "utf8" },
+  ).stdout.trim();
+  const otekininKlasoru = spawnSync(
+    "docker",
+    [
+      ...["run", "--rm", "--network", "none", "--user", `${kullanici}:${kullanici}`],
+      ...["--entrypoint", "sh", "-v", `${dosyaBirimi(oteki.kimlik.kodAdi)}:/oteki`, goruntu],
+      ...["-c", 'ls /oteki 2>&1; echo "okuma=$?"; echo x > /oteki/sizinti 2>&1; echo "yazma=$?"'],
+    ],
+    { encoding: "utf8" },
+  ).stdout.trim();
+  olc(
+    `${kodAdi}: ötekinin dosya klasörü bağlansa bile okuyamıyor ve yazamıyor`,
+    /okuma=[1-9]/.test(otekininKlasoru) &&
+      /yazma=[1-9]/.test(otekininKlasoru) &&
+      /Permission denied/.test(otekininKlasoru),
+    otekininKlasoru.replaceAll("\n", " | "),
+  );
 
   // Arka plan kutusu kendi sitesinin kuyruğunu işliyor (kart 0031, karar 0049). E-posta yerel posta
   // kutusuna düşüyor (kart 0032, karar 0050); gönderen adresi olmayan site göndermiyor.

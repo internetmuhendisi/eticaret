@@ -11,22 +11,21 @@ Logo, ürün görselleri ve videolar için her sitenin kendi dosya deposu olur. 
 - Yüklemede dosyanın türüne içeriğinden bakılır, adına güvenilmez. İzin verilen türler ve boyut sınırı tek yerde tanımlanır.
 - Dosya adları tahmin edilemez, kullanıcının verdiği ad yol olarak kullanılmaz.
 - Görsellerin içindeki konum gibi gizli bilgiler silinir.
-- Dosyalar sitenin yedeğine girer ve site tek başına geri yüklenebilir.
 - Yerel ortamda ve kontrol hattında aynı depo düzeni çalışır.
 
 ## Sınırlar
 
 - Görsel küçültme ve galeri 0087'dedir (Katalog 2).
 - Yükleme ekranı yazılmaz.
+- Dosyaların yedeği ve geri yüklenmesi 0093'tedir (kullanıcı kararıyla bu karttan ayrıldı).
 
 ## Bitti sayılır
 
 - Uzantısı değiştirilmiş zararlı dosya, sınırı aşan dosya ve izinsiz tür testte reddediliyor.
 - İki site birbirinin dosyasına ulaşamıyor (gerçek depoyla test).
 - Konum bilgisi olan görsel bilgisi silinmiş olarak saklanıyor.
-- Yedekten geri yüklenen sitenin dosyaları yerinde.
 - Güvenlik kontrolleri tablosunun "dosya yükleme" durumu güncellendi.
 
 ## Durum
 
-yapılacak
+çalışılıyor

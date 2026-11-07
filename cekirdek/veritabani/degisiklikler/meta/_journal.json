@@ -78,6 +78,13 @@
       "when": 1794054882692,
       "tag": "0010_magaza-ayarlari",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794060320284,
+      "tag": "0011_dosyalar",
+      "breakpoints": true
     }
   ]
 }

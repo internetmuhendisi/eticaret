@@ -1,0 +1,173 @@
+// Dosya kaydetmenin, okumanın ve silmenin tek yolu (kart 0072, karar 0058).
+//
+// - Tür içerikten anlaşılır (cekirdek/kayitlar/dosya.ts); ad ve uzantı hiç alınmaz.
+// - Görsel her zaman yeniden kodlanır. Konum, cihaz, tarih gibi gömülü bilgiler bu sırada düşer;
+//   yönü bilgisi önce görsele işlenir. İçerikte görsel olmayan bir şey taşıyan dosya (çok dilli
+//   dosya) yeniden kodlamada dışarıda kalır ya da reddedilir.
+// - Dosya adı kaydın kimliğidir. Dosya önce geçici adla yazılır, kayıtla aynı işlemde yerine
+//   konur; işlem geri alınırsa dosya silinir. Yarım dosya ve kaydı olmayan dosya kalmaz.
+// - Dosya klasörü sitenin kendi klasörüdür, yalnız sitenin kutu kullanıcısı okuyup yazabilir.
+//   Uygulama yerini DOSYA_KLASORU ortam değişkeninden öğrenir.
+import { createHash } from "node:crypto";
+import { readFile, rename, rm, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { and, eq, isNull } from "drizzle-orm";
+import sharp, { type OutputInfo, type Sharp } from "sharp";
+import {
+  type DosyaHatasi,
+  type DosyaTuru,
+  dosyaKlasoruDegiskeni,
+  dosyaSinirlari,
+  dosyaTurleri,
+} from "../../kayitlar/dosya.ts";
+import type { Veritabani } from "../../veritabani/baglanti.ts";
+import { dosyalar } from "./model.ts";
+
+// Sitenin dosya klasörü. Okunduğu anda sorulur (karar 0026): dosya yüklenirken değil.
+export const dosyaKlasoru = (): string => {
+  const klasor = process.env[dosyaKlasoruDegiskeni];
+  if (!klasor) {
+    throw new Error(
+      `${dosyaKlasoruDegiskeni} ortam değişkeni yok: sitenin dosya klasörü verilmedi.`,
+    );
+  }
+  return klasor;
+};
+
+// İçeriğin başındaki baytlardan tür. Hiçbir imzaya uymuyorsa undefined.
+export const icerikTuru = (icerik: Uint8Array): DosyaTuru | undefined =>
+  (Object.keys(dosyaTurleri) as DosyaTuru[]).find((tur) =>
+    dosyaTurleri[tur].imzalar.some(
+      (imza) =>
+        icerik.length >= imza.length &&
+        imza.every((bayt, sira) => bayt === null || icerik[sira] === bayt),
+    ),
+  );
+
+// sharp'ın biçim adı kendi tür adımızla eşleşir; başka bir biçim gelirse dosya reddedilir.
+const sharpBicimi: Record<DosyaTuru, string> = { jpeg: "jpeg", png: "png", webp: "webp" };
+
+const yenidenKodla = (girdi: Sharp, tur: DosyaTuru): Sharp => {
+  // Yön bilgisi görsele işlenir; metadata yazılmaz (sharp varsayılanı), gömülü bilgiler düşer.
+  const donmus = girdi.rotate();
+  if (tur === "jpeg") return donmus.jpeg({ quality: 90, mozjpeg: true });
+  if (tur === "png") return donmus.png({ compressionLevel: 9 });
+  return donmus.webp({ quality: 90 });
+};
+
+export type KaydedilenDosya = {
+  kimlik: string;
+  tur: DosyaTuru;
+  boyut: number;
+  genislik: number;
+  yukseklik: number;
+};
+
+export type KaydetmeSonucu =
+  | { tamam: true; dosya: KaydedilenDosya }
+  | { tamam: false; hata: DosyaHatasi };
+
+const reddet = (hata: DosyaHatasi): KaydetmeSonucu => ({ tamam: false, hata });
+
+const dosyaAdi = (kimlik: string, tur: DosyaTuru): string =>
+  `${kimlik}.${dosyaTurleri[tur].uzanti}`;
+
+// Kimlik veritabanının ürettiği tahmin edilemez koddur; yine de yol olarak kullanılmadan önce
+// biçimi denetlenir.
+const kimlikBicimi = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+export const dosyaKaydet = async (
+  vt: Veritabani,
+  icerik: Uint8Array,
+  klasor: string = dosyaKlasoru(),
+): Promise<KaydetmeSonucu> => {
+  if (icerik.length === 0) return reddet("bos");
+  if (icerik.length > dosyaSinirlari.enCokBayt) return reddet("cok-buyuk");
+  const tur = icerikTuru(icerik);
+  if (tur === undefined) return reddet("tur-izinsiz");
+
+  let cikti: { data: Buffer; info: OutputInfo };
+  try {
+    const girdi = sharp(icerik, { limitInputPixels: dosyaSinirlari.enCokPiksel, failOn: "error" });
+    const bilgi = await girdi.metadata();
+    if (bilgi.format !== sharpBicimi[tur]) return reddet("tur-izinsiz");
+    if ((bilgi.width ?? 0) * (bilgi.height ?? 0) > dosyaSinirlari.enCokPiksel) {
+      return reddet("cok-fazla-piksel");
+    }
+    cikti = await yenidenKodla(girdi, tur).toBuffer({ resolveWithObject: true });
+  } catch (hata) {
+    if (hata instanceof Error && /pixel limit/i.test(hata.message))
+      return reddet("cok-fazla-piksel");
+    return reddet("bozuk");
+  }
+
+  const ozet = createHash("sha256").update(cikti.data).digest("hex");
+  let yazilan: string | undefined;
+  try {
+    const dosya = await vt.transaction(async (islem) => {
+      const [satir] = await islem
+        .insert(dosyalar)
+        .values({
+          tur,
+          boyut: cikti.data.length,
+          genislik: cikti.info.width,
+          yukseklik: cikti.info.height,
+          icerik_ozeti: ozet,
+        })
+        .returning({ kimlik: dosyalar.kimlik });
+      if (satir === undefined || !kimlikBicimi.test(satir.kimlik)) {
+        throw new Error("Dosya kaydının kimliği beklenen biçimde değil.");
+      }
+      const hedef = join(klasor, dosyaAdi(satir.kimlik, tur));
+      const gecici = `${hedef}.yaziliyor`;
+      await writeFile(gecici, cikti.data, { mode: 0o600, flag: "wx" });
+      await rename(gecici, hedef);
+      yazilan = hedef;
+      return {
+        kimlik: satir.kimlik,
+        tur,
+        boyut: cikti.data.length,
+        genislik: cikti.info.width,
+        yukseklik: cikti.info.height,
+      };
+    });
+    return { tamam: true, dosya };
+  } catch (hata) {
+    // İşlem geri alındı: yazılmış dosya kayıtsız kalmasın.
+    if (yazilan !== undefined) await rm(yazilan, { force: true });
+    throw hata;
+  }
+};
+
+// Silinmemiş dosyanın içeriği ve türü; yoksa undefined. İçerik özeti tutmuyorsa hata verir:
+// diskteki dosya kayıttan sonra değişmiş demektir.
+export const dosyaOku = async (
+  vt: Veritabani,
+  kimlik: string,
+  klasor: string = dosyaKlasoru(),
+): Promise<{ icerik: Buffer; tur: DosyaTuru; mime: string } | undefined> => {
+  if (!kimlikBicimi.test(kimlik)) return undefined;
+  const [satir] = await vt
+    .select()
+    .from(dosyalar)
+    .where(and(eq(dosyalar.kimlik, kimlik), isNull(dosyalar.silinme_zamani)));
+  if (satir === undefined) return undefined;
+  const tur = satir.tur as DosyaTuru;
+  const icerik = await readFile(join(klasor, dosyaAdi(satir.kimlik, tur)));
+  if (createHash("sha256").update(icerik).digest("hex") !== satir.icerik_ozeti) {
+    throw new Error(`Dosyanın içeriği kayıttakiyle aynı değil: ${satir.kimlik}.`);
+  }
+  return { icerik, tur, mime: dosyaTurleri[tur].mime };
+};
+
+// Dosyayı silinmiş olarak işaretler; dosyanın kendisi yerinde kalır (kalıcı silme yedekle gelir,
+// kart 0093). Zaten silinmişse ya da yoksa false.
+export const dosyaSil = async (vt: Veritabani, kimlik: string): Promise<boolean> => {
+  if (!kimlikBicimi.test(kimlik)) return false;
+  const silinen = await vt
+    .update(dosyalar)
+    .set({ silinme_zamani: new Date() })
+    .where(and(eq(dosyalar.kimlik, kimlik), isNull(dosyalar.silinme_zamani)))
+    .returning({ kimlik: dosyalar.kimlik });
+  return silinen.length > 0;
+};
