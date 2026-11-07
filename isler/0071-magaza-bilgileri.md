@@ -25,6 +25,7 @@ Mağazanın adı, iletişim bilgileri, adresi ve satış ile teslimat ülkeleri 
 - Temel paketteki Mağaza ayarları satırının her maddesinin şemada bir karşılığı var, liste kartın kapanışında tek tek gösteriliyor.
 - Geçersiz il ve ilçe, eksik zorunlu alan testte reddediliyor.
 - Örnek Mağaza'nın bilgileri veritabanından okunuyor.
+- Mağaza sahibinin bir ayarında yanlış türdeki başlangıç değeri `pnpm site-dogrula`'da tür hatasıyla kırmızı oluyor; bozuk örneği ve testi var (kart 0069'dan kalan madde: o kartta mağaza sahibinin hiç ayarı olmadığı için gösterilemedi).
 
 ## Durum
 
