@@ -18,7 +18,7 @@ import { createHash } from "node:crypto";
 import { readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { and, eq, isNull } from "drizzle-orm";
-import sharp, { type OutputInfo, type Sharp } from "sharp";
+import type { OutputInfo, Sharp } from "sharp";
 import {
   type DosyaHatasi,
   type DosyaTuru,
@@ -28,6 +28,7 @@ import {
 } from "../../kayitlar/dosya.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { dosyalar } from "./model.ts";
+import { icerikTuru } from "./tur.ts";
 
 // Sitenin dosya klasörü. Okunduğu anda sorulur (karar 0026): dosya yüklenirken değil.
 export const dosyaKlasoru = (): string => {
@@ -40,15 +41,7 @@ export const dosyaKlasoru = (): string => {
   return klasor;
 };
 
-// İçeriğin başındaki baytlardan tür. Hiçbir imzaya uymuyorsa undefined.
-export const icerikTuru = (icerik: Uint8Array): DosyaTuru | undefined =>
-  (Object.keys(dosyaTurleri) as DosyaTuru[]).find((tur) =>
-    dosyaTurleri[tur].imzalar.some(
-      (imza) =>
-        icerik.length >= imza.length &&
-        imza.every((bayt, sira) => bayt === null || icerik[sira] === bayt),
-    ),
-  );
+export { icerikTuru } from "./tur.ts";
 
 // sharp'ın biçim adı kendi tür adımızla eşleşir; başka bir biçim gelirse dosya reddedilir.
 const sharpBicimi: Record<DosyaTuru, string> = { jpeg: "jpeg", png: "png", webp: "webp" };
@@ -100,6 +93,8 @@ const kodla = async (
   { tamam: true; data: Buffer; info: OutputInfo } | { tamam: false; hata: DosyaHatasi }
 > => {
   try {
+    // Görsel kütüphanesi yalnız kaydederken yüklenir: dosyayı okumak ve vermek ona bağlı kalmaz.
+    const { default: sharp } = await import("sharp");
     const girdi = sharp(icerik, { limitInputPixels: dosyaSinirlari.enCokPiksel, failOn: "error" });
     const bilgi = await girdi.metadata();
     if (bilgi.format !== sharpBicimi[tur]) return { tamam: false, hata: "tur-izinsiz" };

@@ -9,7 +9,7 @@ import type { IstekSiniri, Kapi } from "../kayitlar/kapi.ts";
 import { istegiSay, istemciAdresi, sayacAdresi } from "./istek-siniri.ts";
 import { erisimiDenetle, type UcErisimi } from "./izin-kontrolu.ts";
 import { sahteIstekMi } from "./sahte-istek.ts";
-import { BilinenHata, basariliYanit, hataliYanit } from "./zarf.ts";
+import { BilinenHata, basariliYanit, DosyaYaniti, dosyaYanitla, hataliYanit } from "./zarf.ts";
 
 // Herkese açık girişteki uç yalnız herkese açık beyanını, öteki girişlerdeki uç yalnız o girişin
 // iznini alır.
@@ -89,7 +89,8 @@ export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
         );
       }
 
-      return basariliYanit(await tanim.isle(sonuc.data, istek, yanit, erisim as UcErisimi<Giris>));
+      const veri = await tanim.isle(sonuc.data, istek, yanit, erisim as UcErisimi<Giris>);
+      return veri instanceof DosyaYaniti ? dosyaYanitla(veri, istek) : basariliYanit(veri);
     } catch (hata) {
       if (hata instanceof BilinenHata) return hataliYanit(hata.kod, hata.ayrinti, hata.basliklar);
       // Beklenmeyen hata ortak hata katmanına gider, istemciye yalnız kodu döner.

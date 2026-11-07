@@ -201,7 +201,7 @@ export const magazaAyarlariniOku = (vt: Veritabani = siteninVeritabani()) =>
   calisanSiteninServisi.oku(vt);
 
 // Verilen sitenin servisi: arka plan işi ve testler siteyi kendisi verir.
-const siteninServisi = (site: Site) =>
+export const siteninServisi = (site: Site) =>
   magazaAyarlariServisi(magazaAyarSemasi, () => site.baslangic);
 
 export const siteninMagazaAyarlari = (vt: Veritabani, site: Site) => siteninServisi(site).oku(vt);

@@ -7,6 +7,7 @@ import { gunluk } from "../../izleme/gunluk.ts";
 import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
 import { type EpostaSablonu, epostaDurumu } from "../../kayitlar/eposta.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
+import { logonunAdresi, magazaLogosu } from "../magaza-ayarlari/logo.ts";
 import { magazaninAdi } from "../magaza-ayarlari/servis.ts";
 import { type EpostaGondericisi, epostaGondericisi } from "./gonderici.ts";
 import { epostaKayitlari } from "./model.ts";
@@ -38,6 +39,8 @@ export const epostaKaydiniGonder = async (
   // Mağaza adı mağaza sahibinin ayarıdır (kart 0071). Gönderim işleminden önce okunur: ilk okuma
   // başlangıç değerini kendi işleminde yazabilir.
   const magazaAdi = await magazaninAdi(vt, site);
+  // Logo da işlemden önce okunur (kart 0073); okunamazsa e-posta logosuz, adla gider.
+  const logoAdresi = logonunAdresi(site, await magazaLogosu(vt, { site }));
   const sonuc = await vt.transaction(async (islem) => {
     const [kayit] = await islem
       .select()
@@ -62,7 +65,7 @@ export const epostaKaydiniGonder = async (
     const icerik = epostaOlustur({
       dil: ayarlar.dil,
       magazaAdi,
-      logoAdresi: ayarlar.logoAdresi,
+      logoAdresi,
       sablon: kayit.sablon as EpostaSablonu,
       degiskenler: (kayit.degiskenler ?? {}) as Record<string, string>,
     });

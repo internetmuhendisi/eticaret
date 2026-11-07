@@ -179,6 +179,53 @@ describe("şablon", () => {
   });
 });
 
+describe("logo (kart 0073)", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  // Sitenin ilk logosu olan örnek klasör; logo adresi sitenin adresi ve logo ucundan kurulur.
+  const logoluSite = () =>
+    ({
+      ...site(),
+      kimlik: { gorunenAd: "Deneme <Mağaza>", adresler: {} },
+      markaLogosu: {
+        yol: join(
+          import.meta.dirname,
+          "../../../ayar-semasi/testler/ornek-siteler/marka-logolu/marka/logo.webp",
+        ),
+        tur: "webp",
+      },
+    }) as Site;
+
+  const gonderilen = async (secilen: Site): Promise<string> => {
+    const kimlik = await epostaGonder(vt, { kime: alici(), sablon: "deneme" });
+    let html = "";
+    await epostaKaydiniGonder(vt, kimlik, {
+      site: secilen,
+      gonderici: async (ileti) => {
+        html = ileti.html;
+      },
+    });
+    return html;
+  };
+
+  it("logo varsa e-posta logoyu logo ucundan, sitenin adresiyle alır", async () => {
+    vi.stubEnv("SITE_ADRESI", "https://magaza.ornek.test");
+    const html = await gonderilen(logoluSite());
+    expect(html).toMatch(
+      /<img src="https:\/\/magaza\.ornek\.test\/kapi\/herkese-acik\/logo\?s=[0-9a-f]{16}"/,
+    );
+  });
+
+  it("logo ya da sitenin adresi yoksa e-postada logo yok, ad var", async () => {
+    vi.stubEnv("SITE_ADRESI", "https://magaza.ornek.test");
+    expect(await gonderilen(site())).not.toContain("<img");
+    vi.stubEnv("SITE_ADRESI", "");
+    expect(await gonderilen(logoluSite())).not.toContain("<img");
+  });
+});
+
 describe("gönderim", () => {
   it("e-posta kuyruktan gider, gerçek posta kutusuna düşer, kayıt tutulur, değişkenler silinir", async () => {
     const adres = alici();

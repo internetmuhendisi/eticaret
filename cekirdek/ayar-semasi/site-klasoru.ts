@@ -2,9 +2,11 @@
 // Doğrulama komutu (komutlar/site-dogrula.mts), testler ve çalışan uygulama aynı yolu kullanır.
 // Komut bu dosyaları Node ile doğrudan çalıştırdığı için ayar-semasi/ ve onun aldığı dosyalar
 // birbirini .ts uzantısıyla alır.
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { z } from "zod";
+import { type DosyaTuru, dosyaSinirlari } from "../kayitlar/dosya.ts";
+import { icerikTuru, uzantininTuru } from "../moduller/dosya/tur.ts";
 import {
   ayarSemasi,
   type MagazaAyarlari,
@@ -16,7 +18,14 @@ import { type Kimlik, kimlikSemasi } from "./kimlik.ts";
 
 // baslangic: mağaza sahibinin ayarlarının başlangıç değerleri, varsayılanları uygulanmış. Yalnız
 // ayar veritabanında ilk kez yokken kullanılır (karar 0010, 0055); asıl değer veritabanındadır.
-export type Site = { kimlik: Kimlik; ayarlar: SiteAyarlari; baslangic: MagazaAyarlari };
+// markaLogosu: sitenin ilk logosu (marka/logo.<uzantı>, kart 0073). Mağaza sahibi logo yüklemediyse
+// görünür; yoksa mağaza adı yazı olarak görünür.
+export type Site = {
+  kimlik: Kimlik;
+  ayarlar: SiteAyarlari;
+  baslangic: MagazaAyarlari;
+  markaLogosu?: { yol: string; tur: DosyaTuru };
+};
 
 export type DogrulamaSonucu = { gecerli: true; site: Site } | { gecerli: false; hatalar: string[] };
 
@@ -80,6 +89,45 @@ export const baslangicDosyasiniDogrula = <S extends z.ZodObject>(
   };
 };
 
+export const markaKlasoru = "marka";
+
+// Sitenin ilk logosu: marka/ klasöründe en çok bir logo.<uzantı> dosyası. Tür içerikten okunur ve
+// uzantıyla aynı olmalıdır; boyut dosya sınırını aşamaz (cekirdek/kayitlar/dosya.ts).
+export const markaLogosunuDogrula = (
+  klasor: string,
+):
+  | { gecerli: true; logo?: { yol: string; tur: DosyaTuru } }
+  | { gecerli: false; hatalar: string[] } => {
+  const marka = join(klasor, markaKlasoru);
+  if (!existsSync(marka)) return { gecerli: true };
+  const logolar = readdirSync(marka).filter((ad) => /^logo\./.test(ad));
+  if (logolar.length === 0) return { gecerli: true };
+  if (logolar.length > 1) {
+    return {
+      gecerli: false,
+      hatalar: [`${markaKlasoru}/: birden çok logo var (${logolar.join(", ")}), bir tane olmalı.`],
+    };
+  }
+  const [ad = ""] = logolar;
+  const yer = `${markaKlasoru}/${ad}`;
+  const tur = uzantininTuru(ad.slice("logo.".length));
+  if (tur === undefined) {
+    return { gecerli: false, hatalar: [`${yer}: uzantı png, jpg ya da webp olmalı.`] };
+  }
+  const yol = join(marka, ad);
+  const icerik = readFileSync(yol);
+  if (icerik.length === 0 || icerik.length > dosyaSinirlari.enCokBayt) {
+    return {
+      gecerli: false,
+      hatalar: [`${yer}: boş ya da ${dosyaSinirlari.enCokBayt} bayttan büyük.`],
+    };
+  }
+  if (icerikTuru(icerik) !== tur) {
+    return { gecerli: false, hatalar: [`${yer}: içeriği uzantısıyla uyuşmuyor.`] };
+  }
+  return { gecerli: true, logo: { yol, tur } };
+};
+
 export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
   if (!existsSync(klasor)) return { gecerli: false, hatalar: [`${klasor}: klasör yok.`] };
 
@@ -110,6 +158,8 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
 
   const baslangic = baslangicDosyasiniDogrula(klasor, magazaAyarSemasi);
   if (!baslangic.gecerli) hatalar.push(...baslangic.hatalar);
+  const markaLogosu = markaLogosunuDogrula(klasor);
+  if (!markaLogosu.gecerli) hatalar.push(...markaLogosu.hatalar);
 
   if (kimlik !== undefined && kimlik.kodAdi !== basename(klasor)) {
     hatalar.push(
@@ -117,7 +167,13 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
     );
   }
 
-  if (hatalar.length > 0 || kimlik === undefined || ayarlar === undefined || !baslangic.gecerli) {
+  if (
+    hatalar.length > 0 ||
+    kimlik === undefined ||
+    ayarlar === undefined ||
+    !baslangic.gecerli ||
+    !markaLogosu.gecerli
+  ) {
     return { gecerli: false, hatalar };
   }
 
@@ -148,6 +204,7 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
       kimlik,
       ayarlar: { ...ayarlar, siparisOneki },
       baslangic: { ...baslangic.deger, magazaAdi },
+      ...(markaLogosu.logo === undefined ? {} : { markaLogosu: markaLogosu.logo }),
     },
   };
 };

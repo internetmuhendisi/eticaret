@@ -15,10 +15,15 @@
 //   --acik-birak: ortamı ve deneme sitesini açık bırakır; kapatmak: pnpm yerel-ortam-kapat
 
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { siteKlasorunuOku } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { arkaPlanDosyalari } from "../cekirdek/kayitlar/arka-plan.ts";
-import { dosyaKlasoruDegiskeni, kutudakiDosyaKlasoru } from "../cekirdek/kayitlar/dosya.ts";
+import {
+  dosyaKlasoruDegiskeni,
+  dosyaTurleri,
+  kutudakiDosyaKlasoru,
+} from "../cekirdek/kayitlar/dosya.ts";
 import { istekSinirlari } from "../cekirdek/kayitlar/kapi.ts";
 import { metinOkuyucu } from "../cekirdek/metinler/metin.ts";
 import { soruyuCoz } from "../cekirdek/moduller/robot-korumasi/testler/soru-coz.ts";
@@ -29,6 +34,7 @@ import {
   dosyaBirimi,
   gonder,
   iste,
+  isteHam,
   kilitle,
   kok,
   kutuAdi,
@@ -96,6 +102,20 @@ const sitesiniOlc = async (site: OrtamSitesi, oteki: OrtamSitesi) => {
     `${kodAdi}: vitrin kendi adını gösteriyor`,
     vitrin.durum === 200 && baslik(vitrin.govde) === magazaAdi,
     `${vitrin.durum}, "${baslik(vitrin.govde)}"`,
+  );
+  // Logo ucu (kart 0073): ilk logosu olan site dosyanın kendisini doğru tür ve nosniff ile verir,
+  // logosu olmayan 404 alır. Gövde site klasöründeki dosyayla bayt bayt aynıdır.
+  const logo = await isteHam(kodAdi, "/kapi/herkese-acik/logo");
+  const markaLogosu = site.markaLogosu;
+  olc(
+    `${kodAdi}: logo ucu ${markaLogosu ? "ilk logoyu veriyor" : "logo yokken 404 dönüyor"}`,
+    markaLogosu
+      ? logo.durum === 200 &&
+          logo.basliklar["content-type"] === dosyaTurleri[markaLogosu.tur].mime &&
+          logo.basliklar["x-content-type-options"] === "nosniff" &&
+          logo.govde.equals(readFileSync(markaLogosu.yol))
+      : logo.durum === 404,
+    `${logo.durum}, ${logo.basliklar["content-type"]}, ${logo.basliklar["x-content-type-options"]}, ${logo.govde.length} bayt`,
   );
   const saglik = await iste(kodAdi, "/kapi/herkese-acik/saglik");
   const veri = JSON.parse(saglik.govde || "{}").veri ?? {};

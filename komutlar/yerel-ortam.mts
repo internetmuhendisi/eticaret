@@ -274,6 +274,40 @@ export const iste = (
     istek.end();
   });
 
+// Gövdesi bayt olarak okunan GET isteği (görsel gibi, kart 0073). Başlıkları da döner.
+export const isteHam = (
+  kodAdi: string,
+  yol: string,
+): Promise<{
+  durum: number;
+  basliklar: Record<string, string | string[] | undefined>;
+  govde: Buffer;
+}> =>
+  new Promise((coz, reddet) => {
+    const istek = request(
+      {
+        host: "127.0.0.1",
+        port: yerelPort(),
+        path: yol,
+        headers: { host: `${kodAdi}.localhost:${yerelPort()}` },
+      },
+      (yanit) => {
+        const parcalar: Buffer[] = [];
+        yanit.on("data", (parca: Buffer) => parcalar.push(parca));
+        yanit.on("end", () =>
+          coz({
+            durum: yanit.statusCode ?? 0,
+            basliklar: yanit.headers,
+            govde: Buffer.concat(parcalar),
+          }),
+        );
+      },
+    );
+    istek.on("error", reddet);
+    istek.setTimeout(10_000, () => istek.destroy(new Error("zaman aşımı")));
+    istek.end();
+  });
+
 // JSON gövdeli POST isteği. Ön kapının üzerinden gider, yolu olduğu gibi gönderir.
 export const gonder = (
   kodAdi: string,

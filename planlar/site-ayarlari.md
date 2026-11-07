@@ -96,7 +96,7 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Gönderen adı | Altyapı sahibi | Mağazanın görünen adı | — | Panelden düzenlenmesi panel işidir |
 | Gönderen adresi | Altyapı sahibi | Yok, e-posta gönderilmez | `ornek-magaza@posta.eticaretmagazasi.com` | Alan adı henüz doğrulanmadı, bugün yalnız yerel kutuya gider (karar 0050) |
 | Yanıt adresi | Altyapı sahibi | Gönderen adresi | — | |
-| Logo adresi | Altyapı sahibi | Yok, mağaza adı yazı olarak görünür | — | Marka ayarları gelince panele taşınır |
+| Logo | Mağaza sahibi | Sitenin ilk logosu (`marka/` klasörü), yoksa mağaza adı yazı olarak | Yer tutucu ilk logo (`marka/logo.png`) | Yüklenen logo dosya deposunda; vitrin, panel ve e-posta tek uçtan alır (kart 0073, karar 0059). Yükleme ekranı kart 0094 |
 
 ## Tasarım ve marka
 

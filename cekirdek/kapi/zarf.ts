@@ -23,6 +23,44 @@ export class BilinenHata extends Error {
   }
 }
 
+// Dosya veren uç (kart 0073) servisten bunu döndürür; kapı zarf yerine dosyanın kendisini yanıtlar.
+// Hata yine zarfla döner. Tür tarayıcıya tahmin ettirilmez (nosniff), önbellek süresi kısadır;
+// etiket içeriğin özetidir, aynı etiketle gelen isteğe gövdesiz 304 döner.
+export class DosyaYaniti {
+  readonly icerik: Uint8Array;
+  readonly mime: string;
+  readonly etiket: string;
+
+  constructor(icerik: Uint8Array, mime: string, etiket: string) {
+    this.icerik = icerik;
+    this.mime = mime;
+    this.etiket = etiket;
+  }
+}
+
+// Dosya yanıtının önbellek süresi (saniye). Logo değişince en geç bu kadar sonra yenisi görünür.
+export const dosyaOnbellekSuresi = 300;
+
+export const dosyaYanitla = (dosya: DosyaYaniti, istek: Request): Response => {
+  const etiket = `"${dosya.etiket}"`;
+  const basliklar = {
+    "Content-Type": dosya.mime,
+    "X-Content-Type-Options": "nosniff",
+    "Cache-Control": `public, max-age=${dosyaOnbellekSuresi}`,
+    ETag: etiket,
+  };
+  const eslesen = istek.headers
+    .get("if-none-match")
+    ?.split(",")
+    .map((parca) => parca.trim());
+  if (eslesen?.includes(etiket)) return new Response(null, { status: 304, headers: basliklar });
+  const govde = istek.method === "HEAD" ? null : new Uint8Array(dosya.icerik);
+  return new Response(govde, {
+    status: 200,
+    headers: { ...basliklar, "Content-Length": String(dosya.icerik.length) },
+  });
+};
+
 export const basariliYanit = <Veri>(veri: Veri): Response =>
   Response.json({ basarili: true, veri } satisfies Zarf<Veri>);
 

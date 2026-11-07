@@ -134,11 +134,6 @@ export const ayarSemasi = z.strictObject({
     z.email().optional(),
     altyapiSahibinin("ayar.aciklama.epostaYanitAdresi"),
   ),
-  // Mağaza sahibinin marka ayarları gelince panele taşınır.
-  logoAdresi: ayar(
-    z.url({ protocol: /^https$/ }).optional(),
-    altyapiSahibinin("ayar.aciklama.logoAdresi"),
-  ),
   // Hiç girilmeyen oturumun kapanma süresi (kart 0025). Güvenlik ayarıdır, altyapı sahibinindir.
   yoneticiOturumuSaat: ayar(
     z.int().min(1).max(720).default(24),
@@ -179,6 +174,9 @@ export const magazaAyarSemasi = z.strictObject({
     postaAdresiSemasi.optional(),
     magazaSahibinin("ayar.aciklama.magazaAdresi", { kayittaGizli: true }),
   ),
+  // Mağaza sahibinin yüklediği logo: dosya deposundaki kaydın kimliği (kart 0073, karar 0059).
+  // Boşsa sitenin ilk logosu (marka/ klasörü), o da yoksa mağaza adı görünür.
+  logo: ayar(z.uuid().optional(), magazaSahibinin("ayar.aciklama.logo")),
 });
 export type MagazaAyarlari = z.output<typeof magazaAyarSemasi>;
 

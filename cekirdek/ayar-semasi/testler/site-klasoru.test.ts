@@ -131,6 +131,10 @@ describe("örnek klasörler", () => {
     ],
     ["ulke-listesi-bozuk", "ayarlar.json: satisUlkeleri.1: Ülke listesinde olmayan kod"],
     ["uzun-gorunen-ad", "kimlik.json: gorunenAd: mağaza adı olarak kullanılamaz"],
+    // İlk logo (kart 0073).
+    ["marka-iki-logo", "marka/: birden çok logo var"],
+    ["marka-uzanti-uyusmuyor", "marka/logo.png: içeriği uzantısıyla uyuşmuyor"],
+    ["marka-izinsiz-uzanti", "marka/logo.gif: uzantı png, jpg ya da webp olmalı"],
     ["ulke-listesi-bozuk", "ayarlar.json: teslimatUlkeleri: En az bir ülke olmalı."],
   ];
 
@@ -207,5 +211,20 @@ describe("başlangıç dosyası", () => {
     } finally {
       rmSync(kok, { recursive: true, force: true });
     }
+  });
+});
+
+describe("ilk logo (kart 0073)", () => {
+  it("marka/ klasöründeki logo türüyle okunur", () => {
+    const sonuc = dogrula("marka-logolu");
+    if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+    expect(sonuc.site.markaLogosu?.tur).toBe("webp");
+    expect(sonuc.site.markaLogosu?.yol).toMatch(/marka-logolu\/marka\/logo\.webp$/);
+  });
+
+  it("marka/ klasörü olmayan sitenin ilk logosu yoktur", () => {
+    const sonuc = dogrula("gecerli");
+    if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+    expect(sonuc.site.markaLogosu).toBeUndefined();
   });
 });
