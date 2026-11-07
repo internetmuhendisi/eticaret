@@ -28,4 +28,4 @@ Logo, ürün görselleri ve videolar için her sitenin kendi dosya deposu olur. 
 
 ## Durum
 
-çalışılıyor
+bitti
