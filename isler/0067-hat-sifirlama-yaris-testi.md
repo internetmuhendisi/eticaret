@@ -12,6 +12,13 @@ Nedeni ölçülmedi. Test günlüğü yakaladığı için 500'ün hatası hat ka
 - Asıl hata üretim kodundaysa (kilit, kilitlenme) kod düzeltilir. Yalnız test yükündeyse test sınırlanır.
 - Test eski yarışı yakalamaya devam eder: `sifreDegismediyse` içindeki kilit kaldırılınca kırmızı olur.
 
+## Ölçümler (2026-11-07)
+
+- Hatta 12 çalışmanın 2'si kırmızı: ikisi de `f7ebcad` kaydında, birbirine yakın zamanda. Sonra 10 çalışma üst üste yeşil: `bcbfb57` 1, `kart-0067` 5, `f7ebcad` üzerine yalnız hata gösteren test değişikliği eklenmiş ölçüm dalı 4. Yani hata kayda bağlı görünmüyor, seyrek ve aralıklı.
+- 500'ün asıl hatası hiç görülmedi: tekrarlanan çalışmalarda hata çıkmadı. Test artık başarısız olunca asıl hatayı yazıyor, bir sonraki kırmızıda hat kaydından okunur.
+- Yerelde tekrarlanmadı: Node tek ve iki çekirdekte, bütün testler yanda çalışırken; veritabanı kutusu 0,3 ve 0,1 işlemciyle. Bu ölçümlerde yenileme başına yalnız 5-21 giriş başladı. Kartın ilk hâlindeki "sınırsız giriş havuzu dolduruyor" tahmini bu ölçümlerle desteklenmedi, çürütülmedi de; bu yüzden test sınırlanmadı.
+- `sifreDegismediyse` içindeki kilit kaldırılınca test kırmızı oluyor.
+
 ## Sınırlar
 
 - Karar 0052'deki davranış değişmez.
