@@ -2,7 +2,7 @@
 // düz metin karşılığı. Bütün e-postalar buradan geçer. Tasarım değerleri henüz yok; renk verilmez,
 // e-posta programının varsayılan renkleri kullanılır (kart 0060).
 
-import type { EpostaSablonu } from "../../kayitlar/eposta.ts";
+import { type EpostaSablonu, epostaAyari } from "../../kayitlar/eposta.ts";
 import { type Dil, type MetinAnahtari, metinOkuyucu } from "../../metinler/metin.ts";
 
 type SablonTanimi = { konu: MetinAnahtari; baslik: MetinAnahtari; govde: MetinAnahtari[] };
@@ -24,7 +24,7 @@ const htmlKacir = (metin: string): string =>
     .replaceAll("'", "&#39;");
 
 // {ad} biçimindeki yerleri doldurur. Değer metnin içinde yeniden aranmaz.
-const doldur = (metin: string, degerler: Record<string, string>): string =>
+export const doldur = (metin: string, degerler: Record<string, string>): string =>
   metin.replace(/\{([a-zA-Z]+)\}/g, (yer, ad: string) => degerler[ad] ?? yer);
 
 export type EpostaIcerigi = { konu: string; metin: string; html: string };
@@ -47,7 +47,7 @@ export const epostaOlustur = (girdi: {
   const altBilgi = satir("eposta.ortak.altBilgi");
   const metin = [magazaAdi, "", baslik, "", ...govde.flatMap((p) => [p, ""]), altBilgi].join("\n");
   const ust = logoAdresi
-    ? `<img src="${htmlKacir(logoAdresi)}" alt="${htmlKacir(magazaAdi)}" height="48">`
+    ? `<img src="${htmlKacir(logoAdresi)}" alt="${htmlKacir(magazaAdi)}" height="${epostaAyari.logoYuksekligi}">`
     : `<strong>${htmlKacir(magazaAdi)}</strong>`;
   const html = `<!doctype html>
 <html lang="${htmlKacir(dil)}">

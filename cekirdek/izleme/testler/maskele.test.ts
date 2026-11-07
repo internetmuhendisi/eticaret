@@ -205,3 +205,12 @@ describe("benzersiz kimlik", () => {
     expect(maskele({ oturumAnahtari: kimlik })).not.toEqual({ oturumAnahtari: kimlik });
   });
 });
+
+describe("uzun e-posta", () => {
+  it("yerel kısmı 64 harften uzun adresin başı sızmaz", () => {
+    const adres = `${"a".repeat(70)}bcdef@ornek.test`;
+    expect(metniMaskele(adres)).toBe("a***@ornek.test");
+    expect(metniMaskele(`x ${adres} y`)).toBe("x a***@ornek.test y");
+    expect(metniMaskele(`${"a".repeat(300)}bcdef@ornek.test`)).toBe("a***@ornek.test");
+  });
+});

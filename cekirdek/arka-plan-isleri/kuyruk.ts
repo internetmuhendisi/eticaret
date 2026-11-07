@@ -24,6 +24,8 @@ export type IsTanimi<Girdi = unknown> = {
   ilkGecikmeSaniye: number;
   girdiyiDogrula: (girdi: unknown) => Girdi;
   calistir: (girdi: unknown, baglam: IsBaglami) => Promise<void>;
+  // İş deneme hakkını bitirip hata olarak kalınca bir kez çağrılır; süreç iş sırasında öldüyse de.
+  sonHata?: ((girdi: unknown, vt: Veritabani, hata: unknown) => Promise<void>) | undefined;
 };
 
 export const isTanimla = <Sema extends z.ZodType>(tanim: {
@@ -32,6 +34,7 @@ export const isTanimla = <Sema extends z.ZodType>(tanim: {
   calistir: (girdi: z.output<Sema>, baglam: IsBaglami) => Promise<void>;
   enCokDeneme?: number;
   ilkGecikmeSaniye?: number;
+  sonHata?: (girdi: z.output<Sema>, vt: Veritabani, hata: unknown) => Promise<void>;
 }): IsTanimi<z.input<Sema>> => ({
   tur: tanim.tur,
   enCokDeneme: tanim.enCokDeneme ?? kuyrukAyari.enCokDeneme,
@@ -39,6 +42,9 @@ export const isTanimla = <Sema extends z.ZodType>(tanim: {
   girdiyiDogrula: (girdi) => tanim.sema.parse(girdi) as z.input<Sema>,
   // Girdi kuyruktan okunurken de doğrulanır: tablodaki satır eski bir sürümden kalmış olabilir.
   calistir: (girdi, baglam) => tanim.calistir(tanim.sema.parse(girdi), baglam),
+  sonHata:
+    tanim.sonHata &&
+    ((girdi, vt, hata) => tanim.sonHata?.(tanim.sema.parse(girdi), vt, hata) as Promise<void>),
 });
 
 // Yazan bir işlemin içinden çağrılırsa iş, işlemle birlikte girer ya da hiç girmez. Tekillik anahtarı

@@ -16,81 +16,107 @@ export const gonderilmemeNedeni = {
   gonderenAdresiYok: "gonderen-adresi-yok",
 } as const;
 
-type Bagimliliklar = { site?: Site; gonderici?: EpostaGondericisi | undefined };
+type Bagimliliklar = {
+  site?: Site;
+  gonderici?: EpostaGondericisi | undefined;
+  sinyal?: AbortSignal;
+};
 
-// Son denemede hata verirse kayıt "başarısız" olur; kuyruk işi zaten hata olarak bırakır. Daha önce
-// gönderilmişse (iş yeniden çalıştıysa) bir daha gönderilmez.
+// Kayıt gönderim boyunca kilitlidir: aynı anda çalışan ikinci deneme bekler, sonra gönderilmiş
+// olduğunu görür. Daha önce gönderilmişse bir daha gönderilmez. Hata fırlatan deneme kuyrukta
+// yeniden denenir; hak bitince kaydı epostaBasarisizYap kapatır.
 export const epostaKaydiniGonder = async (
   vt: Veritabani,
   kayitKimligi: string,
-  sonDeneme: boolean,
   bagimliliklar: Bagimliliklar = {},
 ): Promise<void> => {
   const site = bagimliliklar.site ?? calisanSite();
   // Testin "gönderici yok" demesi varsayılana düşmesin.
   const gonderici = "gonderici" in bagimliliklar ? bagimliliklar.gonderici : epostaGondericisi();
-  const [kayit] = await vt
-    .select()
-    .from(epostaKayitlari)
-    .where(eq(epostaKayitlari.kimlik, kayitKimligi));
-  if (!kayit) throw new Error(`E-posta kaydı yok: ${kayitKimligi}`);
-  if (kayit.durum !== epostaDurumu.bekliyor) return;
-  const guncelle = (alanlar: Partial<typeof epostaKayitlari.$inferInsert>) =>
-    vt.update(epostaKayitlari).set(alanlar).where(eq(epostaKayitlari.kimlik, kayit.kimlik));
-
   const { kimlik, ayarlar } = site;
-  const nedenler = [
-    ...(gonderici === undefined ? [gonderilmemeNedeni.gondericiYok] : []),
-    ...(ayarlar.epostaGonderenAdresi === undefined ? [gonderilmemeNedeni.gonderenAdresiYok] : []),
-  ];
-  if (gonderici === undefined || ayarlar.epostaGonderenAdresi === undefined) {
-    const neden = nedenler.join(",");
-    await guncelle({ durum: epostaDurumu.gonderilmedi, son_hata: neden, degiskenler: null });
+  const sonuc = await vt.transaction(async (islem) => {
+    const [kayit] = await islem
+      .select()
+      .from(epostaKayitlari)
+      .where(eq(epostaKayitlari.kimlik, kayitKimligi))
+      .for("update");
+    if (!kayit) throw new Error(`E-posta kaydı yok: ${kayitKimligi}`);
+    if (kayit.durum !== epostaDurumu.bekliyor) return undefined;
+    const guncelle = (alanlar: Partial<typeof epostaKayitlari.$inferInsert>) =>
+      islem.update(epostaKayitlari).set(alanlar).where(eq(epostaKayitlari.kimlik, kayit.kimlik));
+
+    if (gonderici === undefined || ayarlar.epostaGonderenAdresi === undefined) {
+      const neden = [
+        ...(gonderici === undefined ? [gonderilmemeNedeni.gondericiYok] : []),
+        ...(ayarlar.epostaGonderenAdresi === undefined
+          ? [gonderilmemeNedeni.gonderenAdresiYok]
+          : []),
+      ].join(",");
+      await guncelle({ durum: epostaDurumu.gonderilmedi, son_hata: neden, degiskenler: null });
+      return { tur: "gonderilmedi" as const, neden, sablon: kayit.sablon };
+    }
+    const icerik = epostaOlustur({
+      dil: ayarlar.dil,
+      magazaAdi: kimlik.gorunenAd,
+      logoAdresi: ayarlar.logoAdresi,
+      sablon: kayit.sablon as EpostaSablonu,
+      degiskenler: (kayit.degiskenler ?? {}) as Record<string, string>,
+    });
+    const alanAdi = ayarlar.epostaGonderenAdresi.split("@")[1];
+    try {
+      await gonderici(
+        {
+          kimden: {
+            ad: ayarlar.epostaGonderenAdi ?? kimlik.gorunenAd,
+            adres: ayarlar.epostaGonderenAdresi,
+          },
+          ...(ayarlar.epostaYanitAdresi === undefined
+            ? {}
+            : { yanitAdresi: ayarlar.epostaYanitAdresi }),
+          kime: kayit.alici,
+          ...icerik,
+          mesajKimligi: `<${kayit.kimlik}@${alanAdi}>`,
+        },
+        bagimliliklar.sinyal,
+      );
+    } catch (hata) {
+      await guncelle({ son_hata: hataOzeti(hata) });
+      return { tur: "hata" as const, hata };
+    }
+    await guncelle({
+      durum: epostaDurumu.gonderildi,
+      gonderilme_zamani: new Date(),
+      degiskenler: null,
+      son_hata: null,
+    });
+    return { tur: "gonderildi" as const, alici: kayit.alici, sablon: kayit.sablon };
+  });
+  if (sonuc === undefined) return;
+  if (sonuc.tur === "hata") throw sonuc.hata;
+  if (sonuc.tur === "gonderilmedi") {
     // Yeniden denemek düzeltmez: bir kez araca gider, görülsün.
-    hatayiKaydet(new Error(`E-posta gönderilmedi: ${neden}`), {
+    hatayiKaydet(new Error(`E-posta gönderilmedi: ${sonuc.neden}`), {
       kaynak: "eposta",
-      sablon: kayit.sablon,
-      kayitKimligi: kayit.kimlik,
+      sablon: sonuc.sablon,
+      kayitKimligi,
     });
     return;
   }
-  const icerik = epostaOlustur({
-    dil: ayarlar.dil,
-    magazaAdi: kimlik.gorunenAd,
-    logoAdresi: ayarlar.logoAdresi,
-    sablon: kayit.sablon as EpostaSablonu,
-    degiskenler: (kayit.degiskenler ?? {}) as Record<string, string>,
-  });
-  const alanAdi = ayarlar.epostaGonderenAdresi.split("@")[1];
-  try {
-    await gonderici({
-      kimden: {
-        ad: ayarlar.epostaGonderenAdi ?? kimlik.gorunenAd,
-        adres: ayarlar.epostaGonderenAdresi,
-      },
-      ...(ayarlar.epostaYanitAdresi === undefined
-        ? {}
-        : { yanitAdresi: ayarlar.epostaYanitAdresi }),
-      kime: kayit.alici,
-      ...icerik,
-      mesajKimligi: `<${kayit.kimlik}@${alanAdi}>`,
-    });
-  } catch (hata) {
-    await guncelle({
-      son_hata: hataOzeti(hata),
-      ...(sonDeneme ? { durum: epostaDurumu.basarisiz, degiskenler: null } : {}),
-    });
-    throw hata;
-  }
-  await guncelle({
-    durum: epostaDurumu.gonderildi,
-    gonderilme_zamani: new Date(),
-    degiskenler: null,
-    son_hata: null,
-  });
   gunluk.bilgi("e-posta gönderildi", {
-    alici: kayit.alici,
-    sablon: kayit.sablon,
-    kayitKimligi: kayit.kimlik,
+    alici: sonuc.alici,
+    sablon: sonuc.sablon,
+    kayitKimligi,
   });
+};
+
+// İş hakkını bitirdi: kayıt kapanır, değişkenler kalmaz. Süreç iş sırasında öldüyse de çağrılır.
+export const epostaBasarisizYap = async (
+  vt: Veritabani,
+  kayitKimligi: string,
+  hata: unknown,
+): Promise<void> => {
+  await vt
+    .update(epostaKayitlari)
+    .set({ durum: epostaDurumu.basarisiz, degiskenler: null, son_hata: hataOzeti(hata) })
+    .where(eq(epostaKayitlari.kimlik, kayitKimligi));
 };

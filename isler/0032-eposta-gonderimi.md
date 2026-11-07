@@ -2,19 +2,16 @@
 
 ## Amaç
 
-Site müşteriye ve yöneticiye e-posta gönderebilsin. Karar 0013'te açık kalan e-posta gönderim hizmeti seçilir, e-postalar ortak bir şablonla kuyruktan gider.
+Site müşteriye ve yöneticiye e-posta gönderebilsin. E-postalar ortak bir şablonla kuyruktan gider. Gönderim hizmeti seçimi açılışa kaldı (kart 0060, karar 0050).
 
 Önce 0031 bitmiş olmalı.
 
 ## Olmazsa olmazlar
 
-- Hizmetin verisi Avrupa Birliği'nde, tercihen Almanya'da durur (karar 0009). Seçim ve gerekçesi karar kaydına yazılır, fiyatı kullanıcıya söylenir.
-- Kullanıcıdan: hizmette hesap açılması ve gönderen alan adının doğrulanması için alan adı ayarına onay.
-- Gönderen alan adı doğrulanır, e-postalar istenmeyen kutusuna düşmesin diye gereken alan adı kayıtları eklenir.
 - Ortak e-posta şablonu: mağazanın logosu ve adı, metinler metin dosyasından, düz metin karşılığı.
 - Her e-posta kuyruktan gider. Gönderilen her e-postanın kaydı tutulur, alıcı adresi günlükte kısaltılır.
 - Geliştirmede e-postalar gerçek kişilere gitmez, yerelde yakalanır.
-- Hizmetin anahtarı gizli bilgidir (0019).
+- Gönderim hizmeti tek dosyadan bağlanır.
 
 ## Sınırlar
 

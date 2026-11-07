@@ -92,8 +92,10 @@ describe("kalıcı kutuların tanımı", () => {
       metin.indexOf("volumes:\n  veritabani:"),
     );
     expect(parca).toContain("image: axllent/mailpit:");
-    expect(parca).not.toMatch(/^\s+MP_SMTP_RELAY/m);
-    expect(parca).not.toContain("environment:");
+    expect(parca).not.toMatch(/environment:|env_file:|command:/);
+    for (const dosya of ["sunucu/compose.yaml", "sunucu/yerel-ortam.yaml", ".env.example"]) {
+      expect(readFileSync(join(kok, dosya), "utf8")).not.toMatch(/^\s*[^#\s].*MP_SMTP_RELAY/m);
+    }
     for (const satir of parca.split("\n").filter((s) => /^\s+- "/.test(s))) {
       expect(satir).toMatch(/^\s+- "127\.0\.0\.1:/);
     }

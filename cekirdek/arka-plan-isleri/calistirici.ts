@@ -84,7 +84,16 @@ export const calistiriciKur = ({
   const tanimlar = new Map(isler.map((tanim) => [tanim.tur, tanim]));
   const turler = [...tanimlar.keys()];
 
-  const hataIleBitir = (is: AlinanIs, hata: unknown) => {
+  const hataIleBitir = async (is: AlinanIs, tanim: IsTanimi, hata: unknown) => {
+    try {
+      await tanim.sonHata?.(is.girdi, vt, hata);
+    } catch (kancaHatasi) {
+      hatayiKaydet(kancaHatasi, {
+        kaynak: "arka-plan-son-hata",
+        tur: is.tur,
+        isKimligi: is.kimlik,
+      });
+    }
     hatayiKaydet(hata, {
       kaynak: "arka-plan",
       tur: is.tur,
@@ -109,7 +118,7 @@ export const calistiriciKur = ({
         "İş deneme hakkı bitene kadar tamamlanamadı, süreç iş sırasında durdu.",
       );
       const sonuc = await isiBasarisizYap(vt, is, sahip, hata, tanim.ilkGecikmeSaniye, ayar);
-      if (sonuc === "hata") hataIleBitir(is, hata);
+      if (sonuc === "hata") await hataIleBitir(is, tanim, hata);
       return true;
     }
     try {
@@ -130,7 +139,7 @@ export const calistiriciKur = ({
         return true;
       }
       const sonuc = await isiBasarisizYap(vt, is, sahip, hata, tanim.ilkGecikmeSaniye, ayar);
-      if (sonuc === "hata") hataIleBitir(is, hata);
+      if (sonuc === "hata") await hataIleBitir(is, tanim, hata);
       else {
         gunluk.uyari("arka plan işi başarısız", {
           sonuc,

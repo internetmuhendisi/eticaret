@@ -13,7 +13,9 @@
 - **Gönderim yolu:** E-posta yalnız `epostaGonder` ile gönderilir: kayıt açılır, iş kuyruğa girer, ikisi aynı işlemdedir. Arka plan süreci gönderir.
 - **Kayıt:** `eposta_kayitlari` alıcıyı, şablonu ve durumu tutar, içeriği tutmaz. Değişkenler gönderilince silinir. Kuyruk işinde yalnız kaydın kimliği durur. Kayıtlar 1 yıl sonra silinir. Alıcı günlükte kısaltılır.
 - **Gönderici ya da adres yoksa:** Kayıt `gonderilmedi` olur, yeniden denenmez, hata izleme aracına bir olay düşer.
-- **Tekrar:** Kayıt `bekliyor` değilse gönderilmez. Mesaj kimliği kayıttan üretilir, her denemede aynıdır.
+- **Tekrar:** Kayıt gönderim boyunca veritabanında kilitlidir, aynı anda iki çağrı iki e-posta göndermez. Kayıt `bekliyor` değilse gönderilmez. Mesaj kimliği kayıttan üretilir, her denemede aynıdır.
+- **Son hata:** İş hakkını bitirince kayıt `basarisiz` olur ve değişkenler silinir; süreç iş sırasında ölse de (`sonHata`, 0049'a eklendi).
+- **Süre:** Gönderim sunucusu 10 saniye susarsa deneme başarısız olur. Süreç kapanırken gönderim beklenmez, iş sıraya döner.
 - **Site ayarları:** Gönderen adı, gönderen adresi, yanıt adresi, logo adresi. Varsayılanda gönderen adresi yoktur.
 - **Şablon:** Mağazanın adı ya da logosu, metin dosyasından metinler, düz metin karşılığı. Bütün değerler HTML'de kaçırılır.
 
@@ -38,6 +40,9 @@
 - **Sunucuda e-posta gitmez:** 0.10.0 yayınlanırsa `EPOSTA_SUNUCUSU` verilmediği için e-postalar `gonderilmedi` olur. Karttaki "deneme sitesinde ulaşıyor" gibi maddeler (0033) kart 0060 olmadan ölçülemez, yerel kutuda ölçülür.
 - **Örnek Mağaza'nın gönderen adresi** `posta.eticaretmagazasi.com` altındadır, bu alan adı henüz doğrulanmadı. Yalnız yerel kutuya gider.
 - **Sürüm farkı:** Kimlik 0.10.0, sunucudaki site 0.9.0. Fark kapanana kadar `pnpm sunucu-veritabani-denemesi` çalıştırılmamalı (kart 0058).
-- **Tekrar sınırı:** Hizmet e-postayı kabul edip kayıt yazılamadan süreç ölürse e-posta ikinci kez gider. Mesaj kimliği aynı kalır, hizmetin bunu tanıyıp tanımadığı hizmete bağlıdır.
+- **Tekrar sınırı:** Hizmet e-postayı kabul edip `gonderildi` yazılamazsa ya da süreç o anda ölürse ya da kapanırken gönderim beklenmeden sıraya dönerse e-posta ikinci kez gidebilir. Mesaj kimliği aynı kalır, hizmetin bunu tanıyıp tanımadığı hizmete bağlıdır.
+- **Kilit süresi:** Kilit gönderim boyunca bir bağlantı tutar. Gönderim 10 saniye sessizlikle sınırlı olduğu için tek işlik süreçte sorun değildir.
+- **Kısaltılmış adres kalabilir:** Hizmetin ret yanıtı `son_hata`'ya kısaltılmış adresle (`a***@alan`) girer, hatalı kuyruk işi silinmediği için kalır. Tam adres kuyruğa girmez.
+- **Değişkenlerin silinmediği tek yol:** Eski sürüme dönüşte tanınmayan e-posta işi `bekliyor` kalır, değişkenleri de durur; yeniden yükseltilince gider.
 - **Tasarım değerleri yok:** Şablonda renk yoktur, e-posta programının varsayılanı kullanılır. Değerler gelince şablon onları okur.
 - **Yerel ortamda yeni portlar:** `.env` dosyasına üç satır eklendi. Eski bir `.env` ile `pnpm veritabani-baslat` hata verir ve eksik adı söyler.

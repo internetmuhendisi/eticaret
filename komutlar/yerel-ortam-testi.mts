@@ -29,6 +29,7 @@ import {
   type OrtamSitesi,
   ortamiAc,
   ortamiKapat,
+  postaKutusuAdresi,
   siteAdresi,
 } from "./yerel-ortam.mts";
 
@@ -136,9 +137,7 @@ const sitesiniOlc = async (site: OrtamSitesi, oteki: OrtamSitesi) => {
     deneme.trim().replaceAll("\n", ", "),
   );
   const yakalanan = (await (
-    await fetch(
-      `http://127.0.0.1:${process.env["POSTA_KUTUSU_PORTU"]}/api/v1/search?query=${encodeURIComponent(`to:"${alici}"`)}`,
-    )
+    await fetch(`${postaKutusuAdresi()}/api/v1/search?query=${encodeURIComponent(`to:"${alici}"`)}`)
   ).json()) as { messages?: { From?: { Address?: string } }[] };
   const gonderenAdresi = siteKlasorunuOku(site.klasor).ayarlar.epostaGonderenAdresi;
   if (gonderenAdresi) {
@@ -170,8 +169,8 @@ const kutuKurallariniOlc = (siteSayisi: number) => {
     .sort();
   olc(
     "ortamın bütün kutuları çalışıyor",
-    kutular.length === siteSayisi * 2 + 2,
-    `${kutular.length} kutu, beklenen ${siteSayisi * 2 + 2}`,
+    kutular.length === siteSayisi * 2 + 3,
+    `${kutular.length} kutu, beklenen ${siteSayisi * 2 + 3}`,
   );
   for (const kutu of kutular) {
     const kural = spawnSync(

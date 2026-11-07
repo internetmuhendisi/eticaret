@@ -15,6 +15,8 @@ export type EpostaSablonu = (typeof epostaSablonlari)[number];
 export const epostaAyari = {
   // Kayıt alıcı adresi taşır, bu süreden sonra silinir. İçerik hiç tutulmaz.
   kayitSaklamaGun: 365,
-  // Gönderim sunucusu cevap vermezse iş bu süreden sonra başarısız sayılır.
-  baglantiZamanAsimiMs: 10_000,
+  // Gönderim sunucusu bağlantıda, selamlamada ya da gönderim sırasında bu kadar susarsa deneme başarısız
+  // sayılır. Kuyruğun iş süresinden çok kısadır: iş sınırı dolup gönderim arkada sürmez.
+  sunucuZamanAsimiMs: 10_000,
+  logoYuksekligi: 48,
 } as const;

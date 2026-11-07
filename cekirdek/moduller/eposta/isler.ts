@@ -4,16 +4,15 @@ import { lt } from "drizzle-orm";
 import { z } from "zod";
 import { isTanimla } from "../../arka-plan-isleri/kuyruk.ts";
 import { gunluk } from "../../izleme/gunluk.ts";
-import { kuyrukAyari } from "../../kayitlar/arka-plan.ts";
 import { epostaAyari } from "../../kayitlar/eposta.ts";
-import { epostaKaydiniGonder } from "./gonderim.ts";
+import { epostaBasarisizYap, epostaKaydiniGonder } from "./gonderim.ts";
 import { epostaKayitlari } from "./model.ts";
 
 export const epostaGonderIsi = isTanimla({
   tur: "eposta-gonder",
   sema: z.strictObject({ kayitKimligi: z.uuid() }),
-  calistir: ({ kayitKimligi }, { vt, deneme }) =>
-    epostaKaydiniGonder(vt, kayitKimligi, deneme >= kuyrukAyari.enCokDeneme),
+  calistir: ({ kayitKimligi }, { vt, sinyal }) => epostaKaydiniGonder(vt, kayitKimligi, { sinyal }),
+  sonHata: ({ kayitKimligi }, vt, hata) => epostaBasarisizYap(vt, kayitKimligi, hata),
 });
 
 export const epostaKayitTemizligiIsi = isTanimla({

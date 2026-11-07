@@ -48,6 +48,7 @@ const gerekli = (ad: string): string => {
 };
 
 export const yerelPort = (): number => Number(gerekli("YEREL_ORTAM_PORTU"));
+export const postaKutusuAdresi = (): string => `http://127.0.0.1:${gerekli("POSTA_KUTUSU_PORTU")}`;
 export const siteAdresi = (kodAdi: string): string => `http://${kodAdi}.localhost:${yerelPort()}`;
 const servisAdi = (kodAdi: string): string => `site-${kodAdi}`;
 export const kutuAdi = (kodAdi: string): string => `altyapi-yerel-site-${kodAdi}`;

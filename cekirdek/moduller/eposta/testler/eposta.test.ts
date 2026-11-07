@@ -1,19 +1,26 @@
 // E-posta modülü gerçek veritabanı ve gerçek yerel posta kutusuyla (kart 0032, karar 0050).
 import { randomBytes } from "node:crypto";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { type AddressInfo, createServer, type Socket } from "node:net";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { calistiriciKur } from "../../../arka-plan-isleri/calistirici.ts";
 import { isAl } from "../../../arka-plan-isleri/kuyruk.ts";
 import { arkaPlanIsleri } from "../../../arka-plan-isleri/model.ts";
 import type { Site } from "../../../ayar-semasi/site-klasoru.ts";
 import { hataIzlemeAraciniBagla, type IzlenenHata } from "../../../izleme/hata-katmani.ts";
-import { epostaDurumu } from "../../../kayitlar/eposta.ts";
+import { isDurumu } from "../../../kayitlar/arka-plan.ts";
+import { epostaAyari, epostaDurumu } from "../../../kayitlar/eposta.ts";
+import { cekirdekSurumu } from "../../../surum.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { epostaGondericisi } from "../gonderici.ts";
 import { epostaKaydiniGonder, gonderilmemeNedeni } from "../gonderim.ts";
-import { epostaGonderIsi } from "../isler.ts";
+import { epostaGonderIsi, epostaKayitTemizligiIsi } from "../isler.ts";
 import { epostaKayitlari } from "../model.ts";
-import { epostaOlustur } from "../sablon.ts";
+import { doldur, epostaOlustur } from "../sablon.ts";
 import { epostaGonder } from "../servis.ts";
 
 type DenemeSitesi = Awaited<ReturnType<typeof denemeSitesiAc>>;
@@ -27,7 +34,9 @@ const site = (ayarlar: Partial<Site["ayarlar"]> = {}) =>
     ayarlar: { dil: "tr", epostaGonderenAdresi: "gonderen@ornek.test", ...ayarlar },
   }) as unknown as Site;
 
-const kutu = `http://127.0.0.1:${process.env["POSTA_KUTUSU_PORTU"]}`;
+const { POSTA_KUTUSU_PORTU: kutuPortu, POSTA_SMTP_PORTU: smtpPortu } = process.env;
+const kutu = `http://127.0.0.1:${kutuPortu}`;
+const gonderimAdresi = `smtp://localhost:${smtpPortu}`;
 const alici = () => `alici-${randomBytes(6).toString("hex")}@ornek.test`;
 const yakalanan = async (adres: string) => {
   const yanit = await fetch(`${kutu}/api/v1/search?query=${encodeURIComponent(`to:"${adres}"`)}`);
@@ -39,11 +48,31 @@ const kayit = async (kimlik: string) => {
   return satir;
 };
 
+// Çalıştırıcı siteyi SITE_KLASORU'ndan okur; site adı çekirdekte geçmesin diye geçici klasör açılır.
+const siteKlasoru = join(mkdtempSync(join(tmpdir(), "eposta-")), "eposta-deneme");
+
 beforeAll(async () => {
+  mkdirSync(siteKlasoru);
+  writeFileSync(
+    join(siteKlasoru, "kimlik.json"),
+    JSON.stringify({
+      kodAdi: "eposta-deneme",
+      gorunenAd: "E-posta Denemesi",
+      tur: "demo",
+      adresler: {},
+      cekirdekSurumu,
+      teslimDurumu: { magazaSahibiHesabi: "gerekmez", yurtDisiAktarimBelgeleri: "gerekmez" },
+    }),
+  );
+  writeFileSync(
+    join(siteKlasoru, "ayarlar.json"),
+    JSON.stringify({ epostaGonderenAdresi: "gonderen@ornek.test" }),
+  );
   deneme = await denemeSitesiAc("eposta");
   vt = deneme.vt;
 }, 60_000);
 afterAll(async () => {
+  rmSync(dirname(siteKlasoru), { recursive: true, force: true });
   await deneme?.sil();
 }, 60_000);
 beforeEach(() => {
@@ -56,7 +85,7 @@ afterEach(() => {
 });
 
 const gercekGonderici = () => {
-  const gonderici = epostaGondericisi(process.env["EPOSTA_SUNUCUSU"]);
+  const gonderici = epostaGondericisi(gonderimAdresi);
   if (!gonderici) throw new Error("EPOSTA_SUNUCUSU yerel posta kutusunu göstermeli.");
   return gonderici;
 };
@@ -69,9 +98,40 @@ describe("gönderici", () => {
     "http://localhost:1025",
     "gecersiz",
     "",
-    undefined,
   ])("yerel olmayan ya da boş adrese bağlanmaz: %s", (adres) => {
-    expect(epostaGondericisi(adres ?? "")).toBeUndefined();
+    expect(epostaGondericisi(adres)).toBeUndefined();
+  });
+
+  it("ortamda adres yoksa gönderici yoktur", () => {
+    vi.stubEnv("EPOSTA_SUNUCUSU", "");
+    expect(epostaGondericisi()).toBeUndefined();
+    vi.unstubAllEnvs();
+  });
+
+  it("süreç kapanınca sessiz sunucuyu beklemez", async () => {
+    const baglantilar: Socket[] = [];
+    const sunucu = createServer((baglanti) => {
+      baglanti.on("error", () => {});
+      baglantilar.push(baglanti);
+    });
+    await new Promise<void>((coz) => sunucu.listen(0, "127.0.0.1", coz));
+    const { port } = sunucu.address() as AddressInfo;
+    const gonderici = epostaGondericisi(`smtp://127.0.0.1:${port}`);
+    if (!gonderici) throw new Error("gönderici yok");
+    const ileti = {
+      kimden: { ad: "A", adres: "a@ornek.test" },
+      kime: "b@ornek.test",
+      konu: "k",
+      metin: "m",
+      html: "h",
+      mesajKimligi: "<x@ornek.test>",
+    };
+    const durdur = new AbortController();
+    const bekleyen = gonderici(ileti, durdur.signal);
+    setTimeout(() => durdur.abort(new Error("durduruldu")), 50);
+    await expect(bekleyen).rejects.toThrow("durduruldu");
+    for (const baglanti of baglantilar) baglanti.destroy();
+    sunucu.close();
   });
 
   it("yerel posta kutusuna bağlanır", () => {
@@ -106,20 +166,14 @@ describe("şablon", () => {
     expect(html).not.toContain("<script>");
   });
 
-  it("değişkenler doldurulur ve kaçırılır, bilinmeyen yer olduğu gibi kalır", () => {
-    const { html, metin } = epostaOlustur({
-      dil: "tr",
-      magazaAdi: "M",
-      sablon: "deneme",
-      degiskenler: { ad: "<i>Ali</i>" },
-      tanim: {
-        konu: "eposta.deneme.konu",
-        baslik: "eposta.ortak.altBilgi",
-        govde: ["eposta.deneme.govde"],
-      },
-    });
-    expect(html).not.toContain("{magaza}");
-    expect(metin).not.toContain("{magaza}");
+  it("yerleri doldurur, bilinmeyen yer kalır, değer yeniden işlenmez", () => {
+    expect(doldur("{ad} {yok}", { ad: "{yok} $&" })).toBe("{yok} $& {yok}");
+  });
+
+  it("logo yüksekliği kayıttan gelir", () => {
+    expect(icerik({ logoAdresi: "https://ornek.test/l.png" }).html).toContain(
+      `height="${epostaAyari.logoYuksekligi}"`,
+    );
   });
 });
 
@@ -135,7 +189,7 @@ describe("gönderim", () => {
     expect((await kayit(kimlik)).durum).toBe(epostaDurumu.bekliyor);
 
     const uyari = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-    await epostaKaydiniGonder(vt, kimlik, false, {
+    await epostaKaydiniGonder(vt, kimlik, {
       site: site({ epostaYanitAdresi: "yanit@ornek.test" }),
       gonderici: gercekGonderici(),
     });
@@ -184,6 +238,7 @@ describe("gönderim", () => {
 
   it("işlem geri alınırsa kayıt da iş de kalmaz", async () => {
     const adres = alici();
+    const isSayisi = (await vt.select().from(arkaPlanIsleri)).length;
     await expect(
       vt.transaction(async (islem) => {
         await epostaGonder(islem, { kime: adres, sablon: "deneme" });
@@ -193,6 +248,8 @@ describe("gönderim", () => {
     expect(await vt.select().from(epostaKayitlari).where(eq(epostaKayitlari.alici, adres))).toEqual(
       [],
     );
+    const isler = await vt.select().from(arkaPlanIsleri);
+    expect(isSayisi).toBe(isler.length);
   });
 
   it("geçersiz alıcı ve bilinmeyen şablon reddedilir", async () => {
@@ -206,9 +263,24 @@ describe("gönderim", () => {
     const adres = alici();
     const kimlik = await epostaGonder(vt, { kime: adres, sablon: "deneme" });
     const secenek = { site: site(), gonderici: gercekGonderici() };
-    await epostaKaydiniGonder(vt, kimlik, false, secenek);
-    await epostaKaydiniGonder(vt, kimlik, false, secenek);
+    await epostaKaydiniGonder(vt, kimlik, secenek);
+    await epostaKaydiniGonder(vt, kimlik, secenek);
     expect((await yakalanan(adres)).length).toBe(1);
+  });
+
+  it("aynı anda iki deneme de tek e-posta gönderir", async () => {
+    const kimlik = await epostaGonder(vt, { kime: alici(), sablon: "deneme" });
+    let gonderilen = 0;
+    const yavas = async () => {
+      gonderilen += 1;
+      await new Promise((coz) => setTimeout(coz, 100));
+    };
+    const secenek = { site: site(), gonderici: yavas };
+    await Promise.all([
+      epostaKaydiniGonder(vt, kimlik, secenek),
+      epostaKaydiniGonder(vt, kimlik, secenek),
+    ]);
+    expect(gonderilen).toBe(1);
   });
 
   it.each([
@@ -228,7 +300,7 @@ describe("gönderim", () => {
         sablon: "deneme",
         degiskenler: { a: "b" },
       });
-      await epostaKaydiniGonder(vt, kimlik, false, { site: site(ayarlar), gonderici });
+      await epostaKaydiniGonder(vt, kimlik, { site: site(ayarlar), gonderici });
       const satir = await kayit(kimlik);
       expect(satir.durum).toBe(epostaDurumu.gonderilmedi);
       expect(satir.son_hata).toBe(neden);
@@ -239,20 +311,103 @@ describe("gönderim", () => {
     },
   );
 
-  it("hizmet hata verirse iş yeniden dener, kayıt bekler; son denemede başarısız olur, özet maskeli", async () => {
+  it("hizmet hata verirse kayıt bekler, özet maskeli", async () => {
     const adres = alici();
     const kimlik = await epostaGonder(vt, { kime: adres, sablon: "deneme" });
     const bozuk = async () => {
       throw new Error(`reddedildi ${adres}`);
     };
-    const secenek = { site: site(), gonderici: bozuk };
-    await expect(epostaKaydiniGonder(vt, kimlik, false, secenek)).rejects.toThrow();
-    expect((await kayit(kimlik)).durum).toBe(epostaDurumu.bekliyor);
-    await expect(epostaKaydiniGonder(vt, kimlik, true, secenek)).rejects.toThrow();
+    await expect(
+      epostaKaydiniGonder(vt, kimlik, { site: site(), gonderici: bozuk }),
+    ).rejects.toThrow();
     const satir = await kayit(kimlik);
-    expect(satir.durum).toBe(epostaDurumu.basarisiz);
+    expect(satir.durum).toBe(epostaDurumu.bekliyor);
     expect(satir.son_hata).not.toContain(adres);
-    expect(satir.degiskenler).toBeNull();
+  });
+
+  describe("gerçek çalıştırıcıyla", () => {
+    const calistir = () => calistiriciKur({ vt, isler: [epostaGonderIsi] }).birIsCalistir();
+    const isiniBul = async (kimlik: string) => {
+      const isler = await vt.select().from(arkaPlanIsleri);
+      const is = isler.find((satir) => JSON.stringify(satir.girdi).includes(kimlik));
+      if (!is) throw new Error("iş yok");
+      return is;
+    };
+    beforeEach(async () => {
+      await vt.delete(arkaPlanIsleri);
+      vi.stubEnv("SITE_KLASORU", siteKlasoru);
+    });
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it("kuyruktan gider, posta kutusuna düşer", async () => {
+      vi.stubEnv("EPOSTA_SUNUCUSU", gonderimAdresi);
+      const adres = alici();
+      const kimlik = await epostaGonder(vt, { kime: adres, sablon: "deneme" });
+      expect(await calistir()).toBe(true);
+      expect((await kayit(kimlik)).durum).toBe(epostaDurumu.gonderildi);
+      expect((await isiniBul(kimlik)).durum).toBe(isDurumu.bitti);
+      expect((await yakalanan(adres)).length).toBe(1);
+    });
+
+    it("hak bitince kayıt başarısız olur, değişkenler silinir, araca gider", async () => {
+      vi.stubEnv("EPOSTA_SUNUCUSU", "smtp://127.0.0.1:1");
+      const kimlik = await epostaGonder(vt, {
+        kime: alici(),
+        sablon: "deneme",
+        degiskenler: { a: "b" },
+      });
+      await vt
+        .update(arkaPlanIsleri)
+        .set({ en_cok_deneme: 1 })
+        .where(eq(arkaPlanIsleri.kimlik, (await isiniBul(kimlik)).kimlik));
+      await calistir();
+      const satir = await kayit(kimlik);
+      expect(satir.durum).toBe(epostaDurumu.basarisiz);
+      expect(satir.degiskenler).toBeNull();
+      expect((await isiniBul(kimlik)).durum).toBe(isDurumu.hata);
+      expect(izlenenler.length).toBe(1);
+    });
+
+    it("süreç son denemede öldüyse kayıt da kapanır", async () => {
+      const kimlik = await epostaGonder(vt, {
+        kime: alici(),
+        sablon: "deneme",
+        degiskenler: { a: "b" },
+      });
+      await vt
+        .update(arkaPlanIsleri)
+        .set({
+          durum: isDurumu.calisiyor,
+          deneme_sayisi: 5,
+          en_cok_deneme: 5,
+          kilit_sahibi: "olen",
+          kilit_bitis: new Date(Date.now() - 1000),
+        })
+        .where(eq(arkaPlanIsleri.kimlik, (await isiniBul(kimlik)).kimlik));
+      await calistir();
+      const satir = await kayit(kimlik);
+      expect(satir.durum).toBe(epostaDurumu.basarisiz);
+      expect(satir.degiskenler).toBeNull();
+    });
+
+    it("temizlik yalnız süresi dolan kaydı siler", async () => {
+      const eski = await epostaGonder(vt, { kime: alici(), sablon: "deneme" });
+      const yeni = await epostaGonder(vt, { kime: alici(), sablon: "deneme" });
+      await vt
+        .update(epostaKayitlari)
+        .set({
+          olusturulma_zamani: new Date(Date.now() - (epostaAyari.kayitSaklamaGun + 1) * 86_400_000),
+        })
+        .where(eq(epostaKayitlari.kimlik, eski));
+      await epostaKayitTemizligiIsi.calistir(
+        {},
+        { vt, isKimligi: "x", deneme: 1, sinyal: new AbortController().signal },
+      );
+      await expect(kayit(eski)).rejects.toThrow("kayıt yok");
+      expect((await kayit(yeni)).durum).toBe(epostaDurumu.bekliyor);
+    });
   });
 
   it("kuyruktan alınan iş kayıtlı türdür", async () => {

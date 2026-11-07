@@ -65,7 +65,8 @@ const metinKurallari: [RegExp, (eslesen: string, on?: string) => string][] = [
 // E-postanın yalnız ilk harfi ve alan adı kalır: a***@ornek.com. Adreste kodlanmış @ (%40) da
 // yakalanır. Alan adı harfle biten bir uzantıyla biter; böylece "paket@1.2.3" gibi sürüm
 // yazıları e-posta sanılmaz.
-const epostaDeseni = /([\p{L}\d._%+'-]{1,64})(@|%40)((?:[\p{L}\d-]+\.)+\p{L}{2,})/giu;
+const epostaDeseni =
+  /(?<![\p{L}\d._%+'-])([\p{L}\d._%+'-]{1,254})(@|%40)((?:[\p{L}\d-]+\.)+\p{L}{2,})/giu;
 
 // Rakam dizisi: başta + olabilir, arada boşluk, tire, alt çizgi, nokta ve parantez olabilir.
 const rakamDizisiDeseni = /\+?\d[\d\s().\-_]{8,}\d/g;
