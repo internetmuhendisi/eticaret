@@ -17,14 +17,24 @@
 //
 // Site doğrulaması bu dosyayı Node ile doğrudan çalıştırır: veritabanı kodu almaz.
 import { z } from "zod";
+import { galeriSinirlari } from "../../kayitlar/gorsel.ts";
 import { urunDurumVitrini } from "../../kayitlar/urun.ts";
+import type { VideoSitesi } from "../../kayitlar/video-siteleri.ts";
 import { adresAdiKalibi, adresAdiUzunlugu } from "../../metinler/adres-adi.ts";
 import { yerelZamandan } from "../../metinler/bicimleyici.ts";
 import { fiyatAlanKurallari, fiyatGirdisi } from "../fiyat/semalar.ts";
 import { kategoriGirdisi } from "../kategori/semalar.ts";
 import { enCokStok } from "../stok/semalar.ts";
 import { grupGirdisi } from "./grup-semalari.ts";
-import { listeSinirlari, tekrarsizListe, urunAlanKurallari, urunGirdisi } from "./semalar.ts";
+import {
+  galeriGorselGirdisi,
+  galeriVideoGirdisi,
+  listeSinirlari,
+  tekrarsizListe,
+  urunAlanKurallari,
+  urunGirdisi,
+} from "./semalar.ts";
+import { videoAdresiniCoz, videoSitesiIzinliMi } from "./video.ts";
 
 export const katalogBaslangicHatalari = [
   // Aynı adres adı aynı listede iki kez.
@@ -36,12 +46,20 @@ export const katalogBaslangicHatalari = [
   "ilgili-tanimsiz",
   // Stok takibi kapalı üründe stok yazılmaz: takip açılana kadar sayılmaz, yanıltır.
   "takipsiz-stok",
+  // Galerideki görsel aynı üründe iki kez (kart 0087).
+  "galeri-gorsel-tekrar",
 ] as const;
 export type KatalogBaslangicHatasi = (typeof katalogBaslangicHatalari)[number];
 
 const hata = (kod: KatalogBaslangicHatasi) => kod;
 
 const adresAdi = z.string().max(adresAdiUzunlugu).regex(adresAdiKalibi);
+
+// Galeri görselinin dosyası: sitenin baslangic/gorseller/ klasöründe, küçük harfli, tireli ad ve
+// görsel türünün uzantısı. Alt klasör ve ".." yoktur.
+export const katalogGorselKlasoru = "baslangic/gorseller";
+export const katalogGorselAdi = z.string().regex(/^[a-z0-9][a-z0-9-]{0,99}\.(png|jpg|webp)$/);
+const alternatifMetin = galeriGorselGirdisi.shape.alternatifMetin;
 
 const kategori = kategoriGirdisi.pick({ ad: true, aciklama: true }).extend({ adresAdi });
 // Grup şeması açıklamayı koşullu alır, türü açıklamayı tanımaz: okunan değer açık türe çevrilir.
@@ -77,6 +95,18 @@ const urun = urunGirdisi
     fiyat: fiyatGirdisi.optional(),
     // Başlangıç stoğu; verilmezse sıfır.
     stok: z.int().min(0).max(enCokStok).optional(),
+    // Ürünün galerisi sırasıyla (kart 0087): görsel, sitenin baslangic/gorseller/ klasöründeki dosyanın
+    // adıyla; video, video sitesinin bağlantısıyla. Dosyanın kendisini site doğrulaması denetler
+    // (site-klasoru.ts), bağlantının bu sitede kabul edilmesini katalogKurallari.
+    galeri: z
+      .array(
+        z.union([
+          z.strictObject({ gorsel: katalogGorselAdi, alternatifMetin }),
+          z.strictObject({ video: galeriVideoGirdisi.shape.adres, alternatifMetin }),
+        ]),
+      )
+      .max(galeriSinirlari.oge)
+      .default([]),
   });
 
 // Aynı listede adres adı bir kez geçer.
@@ -149,6 +179,18 @@ export const katalogBaslangicSemasi = z
       if (!oge.stokTakibi && oge.stok !== undefined) {
         ctx.addIssue({ code: "custom", message: hata("takipsiz-stok"), path: yer("stok") });
       }
+      const gorseller = new Set<string>();
+      oge.galeri.forEach((galeriOgesi, i) => {
+        if (!("gorsel" in galeriOgesi)) return;
+        if (gorseller.has(galeriOgesi.gorsel)) {
+          ctx.addIssue({
+            code: "custom",
+            message: hata("galeri-gorsel-tekrar"),
+            path: [...yer("galeri", i), "gorsel"],
+          });
+        }
+        gorseller.add(galeriOgesi.gorsel);
+      });
     });
   });
 export type KatalogBaslangici = z.output<typeof katalogBaslangicSemasi>;
@@ -166,7 +208,11 @@ export const bosKatalog = (): KatalogBaslangici => ({
 // şemanın yolu gibidir ("urunler.0.fiyat.indirimBitisi").
 export const katalogKurallari = (
   katalog: KatalogBaslangici,
-  site: { saatDilimi: string; vergiSiniflari: readonly string[] },
+  site: {
+    saatDilimi: string;
+    vergiSiniflari: readonly string[];
+    videoSiteleri: readonly VideoSitesi[];
+  },
 ): { yer: string; kod: string }[] => {
   const siniflar = new Set(site.vergiSiniflari);
   return katalog.urunler.flatMap((urun, sira) => {
@@ -181,6 +227,14 @@ export const katalogKurallari = (
         sorunlar.push({ yer: yer("yayinZamani"), kod: "yayin-zamani-gecersiz" });
       }
     }
+    // Video bağlantısı bu sitede kabul edilen bir siteden olmalı (videoSiteleri ayarı).
+    urun.galeri.forEach((oge, i) => {
+      if (!("video" in oge)) return;
+      const video = videoAdresiniCoz(oge.video);
+      if (video !== undefined && !videoSitesiIzinliMi(video.site, site.videoSiteleri)) {
+        sorunlar.push({ yer: yer(`galeri.${i}.video`), kod: "video-sitesi-izinsiz" });
+      }
+    });
     if (urun.fiyat !== undefined) {
       const { fiyat } = urun;
       const ana = (alan: "indirimBaslangici" | "indirimBitisi") => {

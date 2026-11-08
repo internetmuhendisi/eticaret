@@ -48,6 +48,7 @@
       "saatDilimi": "Tarih ve saatlerin gösterildiği saat dilimi.",
       "agirlikBirimi": "Ürün ağırlıklarının birimi.",
       "boyutBirimi": "Ürün boyutlarının birimi.",
+      "videoSiteleri": "Ürün galerisine bağlantısı eklenebilen video siteleri.",
       "siparisOneki": "Sipariş numarasının başındaki harfler. Verilmezse mağaza adının ilk üç harfi kullanılır.",
       "siparisBaslangici": "İlk siparişin numarası.",
       "temaDegistirilebilir": "Mağaza sahibi yönetim panelinden temayı değiştirebilir.",
@@ -162,7 +163,15 @@
         "ozellik-tekrar": "Aynı özellik iki kez girilmiş. Her özelliğe bir değer girin.",
         "ozellik-gecersiz": "Seçilen özelliklerden biri bulunamadı ya da silinmiş. Özellikleri yeniden seçin.",
         "ozellik-deger-gecersiz": "Bu değer özelliğin türüne uymuyor. Sayı özelliğine en çok {ondalik} ondalık basamaklı bir sayı, evet/hayır özelliğine evet ya da hayır, metin özelliğine metin girin.",
-        "ozellik-secenek-gecersiz": "Seçilen seçenek bu özelliğin seçeneklerinde yok ya da silinmiş. Listeden bir seçenek seçin."
+        "ozellik-secenek-gecersiz": "Seçilen seçenek bu özelliğin seçeneklerinde yok ya da silinmiş. Listeden bir seçenek seçin.",
+        "galeri-gorsel-gecersiz": "Görsel bulunamadı ya da silinmiş. Görseli yeniden yükleyin.",
+        "galeri-boyut-eksik": "Görselin küçük boyutları hazır değil. Görseli yeniden yükleyin.",
+        "galeri-gorsel-tekrar": "Bu görsel ürünün galerisinde zaten var.",
+        "galeri-siniri": "Ürünün galerisi dolu. Yeni görsel ya da video eklemeden önce birini kaldırın.",
+        "galeri-sira-gecersiz": "Galeri değişmiş. Sayfayı yenileyip sıralamayı yeniden yapın.",
+        "video-adresi-gecersiz": "Bu bağlantı tanınmadı. Videonun kendi sayfasındaki bağlantısını yapıştırın.",
+        "video-sitesi-izinsiz": "Bu sitenin videoları bu mağazada eklenemiyor.",
+        "birim-gorseli-gecersiz": "Seçilen görsel bu ürünün galerisinde yok. Galeriden bir görsel seçin."
       }
     },
     "fiyat": {

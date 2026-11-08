@@ -6,6 +6,7 @@
 //
 // Hata iletileri düz cümle değil koddur (urunHatalari); metni ekran çözer.
 import { z } from "zod";
+import { galeriSinirlari } from "../../kayitlar/gorsel.ts";
 import { ozellikSinirlari } from "../../kayitlar/ozellik.ts";
 import {
   type UrunDurumu,
@@ -19,6 +20,7 @@ import type { MetinAnahtari } from "../../metinler/metin.ts";
 import { kayitMetni } from "../degisiklik-kaydi/deger.ts";
 import { urunOzellikDegeri } from "../ozellik/semalar.ts";
 import { barkoduDogrula } from "./barkod.ts";
+import { videoAdresiniCoz, videoAdresiUzunlugu } from "./video.ts";
 
 export const urunHatalari = [
   "barkod",
@@ -62,6 +64,17 @@ export const urunHatalari = [
   "ozellik-gecersiz",
   "ozellik-deger-gecersiz",
   "ozellik-secenek-gecersiz",
+  // Ürün galerisi (kart 0087, karar 0073): olmayan, silinmiş ya da boyutları eksik görsel; aynı görsel
+  // iki kez; öğe sınırı; sıralamada eksik ya da fazla öğe; tanınmayan ya da bu sitede kabul edilmeyen
+  // video bağlantısı; birleşimin seçtiği öğe ürünün galerisinde görsel değil.
+  "galeri-gorsel-gecersiz",
+  "galeri-boyut-eksik",
+  "galeri-gorsel-tekrar",
+  "galeri-siniri",
+  "galeri-sira-gecersiz",
+  "video-adresi-gecersiz",
+  "video-sitesi-izinsiz",
+  "birim-gorseli-gecersiz",
 ] as const;
 export type UrunHatasi = (typeof urunHatalari)[number];
 
@@ -101,6 +114,14 @@ export const urunHataMetinleri = {
   "ozellik-gecersiz": "yonetim.urun.hata.ozellik-gecersiz",
   "ozellik-deger-gecersiz": "yonetim.urun.hata.ozellik-deger-gecersiz",
   "ozellik-secenek-gecersiz": "yonetim.urun.hata.ozellik-secenek-gecersiz",
+  "galeri-gorsel-gecersiz": "yonetim.urun.hata.galeri-gorsel-gecersiz",
+  "galeri-boyut-eksik": "yonetim.urun.hata.galeri-boyut-eksik",
+  "galeri-gorsel-tekrar": "yonetim.urun.hata.galeri-gorsel-tekrar",
+  "galeri-siniri": "yonetim.urun.hata.galeri-siniri",
+  "galeri-sira-gecersiz": "yonetim.urun.hata.galeri-sira-gecersiz",
+  "video-adresi-gecersiz": "yonetim.urun.hata.video-adresi-gecersiz",
+  "video-sitesi-izinsiz": "yonetim.urun.hata.video-sitesi-izinsiz",
+  "birim-gorseli-gecersiz": "yonetim.urun.hata.birim-gorseli-gecersiz",
 } as const satisfies Record<UrunHatasi, MetinAnahtari>;
 
 const hata = (kod: UrunHatasi) => kod;
@@ -306,6 +327,9 @@ export const birlesimGirdisi = z.strictObject({
   enMm: alanlar.enMm.optional(),
   boyMm: alanlar.boyMm.optional(),
   yukseklikMm: alanlar.yukseklikMm.optional(),
+  // Birleşimin görseli: ürünün galerisindeki bir görsel öğesinin kimliği (kart 0087). Verilmezse ana
+  // görsel gösterilir.
+  gorsel: z.uuid().optional(),
 });
 export type BirlesimGirdisi = z.input<typeof birlesimGirdisi>;
 
@@ -318,5 +342,44 @@ export const birlesimDegisikligi = z.strictObject({
   enMm: alanlar.enMm.nullable().optional(),
   boyMm: alanlar.boyMm.nullable().optional(),
   yukseklikMm: alanlar.yukseklikMm.nullable().optional(),
+  // null seçimi kaldırır: ana görsel gösterilir.
+  gorsel: z.uuid().nullable().optional(),
 });
 export type BirlesimDegisikligi = z.input<typeof birlesimDegisikligi>;
+
+// Galeri öğesinin alternatif metni (kart 0087): görselde ekran okuyucunun okuduğu metin, videoda
+// oynatıcının başlığı. Zorunludur.
+const alternatifMetin = metin(galeriSinirlari.alternatifMetin);
+
+// Galeriye görsel: dosya deposunda boyutlarıyla kaydedilmiş görselin kimliği (gorselKaydet,
+// cekirdek/moduller/dosya/servis.ts). Sıra verilmezse sona eklenir.
+export const galeriGorselGirdisi = z.strictObject({
+  dosya: z.uuid(),
+  alternatifMetin,
+  sira: sira.optional(),
+});
+export type GaleriGorselGirdisi = z.input<typeof galeriGorselGirdisi>;
+
+// Galeriye video: video sitesinin bağlantısı. Bağlantıdan yalnız site ve videonun kimliği saklanır
+// (video.ts); sitenin bu sitede kabul edildiğini servis ayarla denetler.
+export const galeriVideoGirdisi = z.strictObject({
+  adres: z
+    .string()
+    .max(videoAdresiUzunlugu, hata("video-adresi-gecersiz"))
+    .refine((adres) => videoAdresiniCoz(adres) !== undefined, hata("video-adresi-gecersiz")),
+  alternatifMetin,
+  sira: sira.optional(),
+});
+export type GaleriVideoGirdisi = z.input<typeof galeriVideoGirdisi>;
+
+export const galeriOgesiDegisikligi = z.strictObject({
+  alternatifMetin: alternatifMetin.optional(),
+});
+export type GaleriOgesiDegisikligi = z.input<typeof galeriOgesiDegisikligi>;
+
+// Galerinin yeni sırası: silinmemiş bütün öğelerin kimlikleri, tekrarsız. Eksik ya da fazla öğe
+// servis tarafından reddedilir.
+export const galeriSiralamasi = z.strictObject({
+  ogeler: tekrarsizListe(z.uuid(), galeriSinirlari.oge, "galeri-sira-gecersiz"),
+});
+export type GaleriSiralamasi = z.input<typeof galeriSiralamasi>;

@@ -11,6 +11,7 @@ Kart 0033 kayıt kutularını taslak olduğunu söyleyen yer tutucu sayfalara ba
 - Metin değişince `cekirdek/kayitlar/musteri-onaylari.ts` içindeki sürüm artar.
 - Hukukçuya sorulur: KVKK aydınlatmasının zorunlu onay kutusuyla alınması doğru mu, onay kaydında bağlantı adresi gerekir mi, onay satırları ne kadar saklanır.
 - Yer tutucu metinle gerçek mağazanın açılmasını engelleyen bir kontrol kurulur.
+- Kart 0087'den not: ürün galerisindeki video müşteriyi video sitesine bağlar (YouTube, Vimeo; sitede hangilerinin açık olduğu `videoSiteleri` ayarı, karar 0073). KVKK aydınlatmasında ve çerez politikasında bu siteler anılır; hukukçuya oynatıcının çerez onayından önce yüklenip yüklenemeyeceği sorulur.
 
 ## Sınırlar
 

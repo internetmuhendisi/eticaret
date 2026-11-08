@@ -88,6 +88,7 @@ describe("ayar şeması", () => {
       saatDilimi: "Europe/Istanbul",
       agirlikBirimi: "kg",
       boyutBirimi: "cm",
+      videoSiteleri: ["youtube", "vimeo"],
       siparisBaslangici: 1001,
       temaDegistirilebilir: true,
       vitrindeAltyapiAdi: false,
@@ -229,6 +230,25 @@ describe("örnek klasörler", () => {
       `${katalogBaslangicDosyasi}: urunler.0.fiyat.indirimliFiyat: indirim-sifir`,
     ],
     ["katalog-bilinmeyen-alan", `${katalogBaslangicDosyasi}: urunler.0: `],
+    // Kataloğun galerisi (kart 0087).
+    ["katalog-galeri-gorsel-yok", "baslangic/gorseller/yok.png: dosya yok"],
+    [
+      "katalog-galeri-uzanti-uyusmuyor",
+      "baslangic/gorseller/bir.webp: içeriği uzantısıyla uyuşmuyor",
+    ],
+    [
+      "katalog-galeri-gorsel-tekrar",
+      `${katalogBaslangicDosyasi}: urunler.0.galeri.1.gorsel: galeri-gorsel-tekrar`,
+    ],
+    ["katalog-galeri-gorsel-adi", `${katalogBaslangicDosyasi}: urunler.0.galeri.0.gorsel: `],
+    [
+      "katalog-galeri-video-gecersiz",
+      `${katalogBaslangicDosyasi}: urunler.0.galeri.0.video: video-adresi-gecersiz`,
+    ],
+    [
+      "katalog-galeri-video-izinsiz",
+      `${katalogBaslangicDosyasi}: urunler.0.galeri.0.video: video-sitesi-izinsiz`,
+    ],
   ];
 
   for (const [ornek, beklenenHata] of bozuklar) {
@@ -369,6 +389,60 @@ describe("başlangıç kataloğu (kart 0084)", () => {
       ilgiliUrunler: [],
     });
     expect(ikinci?.stok).toBeUndefined();
+  });
+
+  it("katalog görselleri site klasöründeki tam yollarıyla okunur (kart 0087)", () => {
+    const sonuc = dogrula("katalog-galerili");
+    if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+    expect(Object.keys(sonuc.site.katalogGorselleri)).toEqual(["bir.png"]);
+    expect(sonuc.site.katalogGorselleri["bir.png"]).toMatch(
+      /katalog-galerili\/baslangic\/gorseller\/bir\.png$/,
+    );
+    expect(sonuc.site.katalogBaslangici.urunler[0]?.galeri).toEqual([
+      { gorsel: "bir.png", alternatifMetin: "Görsel" },
+      { video: "https://youtu.be/aqz-KE-bpKQ", alternatifMetin: "Video" },
+    ]);
+    expect(dogrula("katalog-dolu").gecerli && dogrula("katalog-dolu")).toMatchObject({
+      site: { katalogGorselleri: {} },
+    });
+  });
+
+  it("katalog görseli bağlantı ya da klasör olamaz (kart 0087)", () => {
+    const kok = mkdtempSync(join(tmpdir(), "katalog-galeri-"));
+    try {
+      const klasor = join(kok, "katalog-galerili");
+      cpSync(join(ornekler, "katalog-galerili"), klasor, { recursive: true });
+      const yol = join(klasor, "baslangic", "gorseller", "bir.png");
+      rmSync(yol);
+      symlinkSync(join(ornekler, "katalog-galerili", "baslangic", "gorseller", "bir.png"), yol);
+      const sonuc = siteKlasorunuDogrula(klasor);
+      expect(sonuc.gecerli).toBe(false);
+      if (sonuc.gecerli) return;
+      expect(sonuc.hatalar).toEqual([
+        "baslangic/gorseller/bir.png: düz bir dosya olmalı (bağlantı ya da klasör değil).",
+      ]);
+    } finally {
+      rmSync(kok, { recursive: true, force: true });
+    }
+  });
+
+  it("katalog görsel klasörü site klasörünün dışına bağlantı olamaz (kart 0087 kontrolü)", () => {
+    const kok = mkdtempSync(join(tmpdir(), "katalog-galeri-"));
+    try {
+      const klasor = join(kok, "katalog-galerili");
+      cpSync(join(ornekler, "katalog-galerili"), klasor, { recursive: true });
+      const gorseller = join(klasor, "baslangic", "gorseller");
+      rmSync(gorseller, { recursive: true });
+      symlinkSync(join(ornekler, "katalog-galerili", "baslangic", "gorseller"), gorseller);
+      const sonuc = siteKlasorunuDogrula(klasor);
+      expect(sonuc.gecerli).toBe(false);
+      if (sonuc.gecerli) return;
+      expect(sonuc.hatalar).toEqual([
+        "baslangic/gorseller/: site klasörünün içinde gerçek bir klasör olmalı.",
+      ]);
+    } finally {
+      rmSync(kok, { recursive: true, force: true });
+    }
   });
 
   it("JSON olmayan katalog dosyası doğrulamadan geçemez", () => {

@@ -13,10 +13,18 @@
 //   kurulmamışsa okuma onu kurar). Katalog kurulu mu sorusu bu kilitler alındıktan sonra sorulur: arada
 //   panelden açılan bir kategori, marka, etiket ya da ürün kataloğa karışmaz (kart 0084 kontrolü). Hiçbir
 //   iş ürün kilidinden sonra kategori ya da grup kilidini, vergi kilidinden sonra ötekileri almaz.
+// - Galeri görselleri (kart 0087): dosya kaydetme bir veritabanı işleminin içinde çağrılamaz (karar
+//   0058). Bu yüzden katalog kurulu değilse görseller önce, her biri kendi işleminde, boyutlarıyla dosya
+//   deposuna kaydedilir; katalog işlemi onları kimlikleriyle galeriye bağlar. Katalog yazılmazsa (hata
+//   ya da arada başka bir süreç kurdu) bu çağrının kaydettiği görseller ve boyutları silinmiş
+//   işaretlenir; kayıtsız dosyaların temizliği kart 0093'tedir. Görsel kaydedilemezse katalog yazılmaz.
+import { readFile } from "node:fs/promises";
 import { sql } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
+import { gunluk } from "../../izleme/gunluk.ts";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
+import { dosyaKlasoru, dosyaSil, gorselKaydet } from "../dosya/servis.ts";
 import { etiketler } from "../etiket/model.ts";
 import { etiketServisi } from "../etiket/servis.ts";
 import { siteninFiyatServisi } from "../fiyat/servis.ts";
@@ -58,10 +66,71 @@ const kimligi = (harita: Map<string, string>, adresAdi: string) => {
   return kimlik;
 };
 
-// Katalog yazıldıysa true. Dosya boşsa ya da katalog zaten kurulmuşsa hiçbir şey yazılmaz.
-export const katalogBaslangiciniKur = async (vt: Veritabani, site: Site): Promise<boolean> => {
+// Katalogdaki görselleri boyutlarıyla dosya deposuna kaydeder; dosya adından kaydın kimliğine. Bir
+// görsel kaydedilemezse o ana kadar kaydedilenler silinmiş işaretlenir, hata verilir.
+const gorselleriKaydet = async (
+  vt: Veritabani,
+  site: Site,
+  klasor: () => string,
+  kaydedilenler: string[],
+): Promise<Map<string, string>> => {
+  const kimlikler = new Map<string, string>();
+  const adlar = new Set(
+    site.katalogBaslangici.urunler.flatMap((urun) =>
+      urun.galeri.flatMap((oge) => ("gorsel" in oge ? [oge.gorsel] : [])),
+    ),
+  );
+  for (const ad of adlar) {
+    const yol = site.katalogGorselleri[ad];
+    // Site doğrulaması her adın dosyasını bulur; buraya düşen bir yazılım hatasıdır.
+    if (yol === undefined) throw new Error(`Başlangıç kataloğunun görseli bulunamadı: ${ad}.`);
+    const sonuc = await gorselKaydet(vt, await readFile(yol), klasor());
+    if (!sonuc.tamam) {
+      throw new Error(`Başlangıç kataloğunun görseli kaydedilemedi: ${ad} (${sonuc.hata}).`);
+    }
+    kaydedilenler.push(sonuc.dosya.kimlik, ...Object.values(sonuc.boyutlar).map((d) => d.kimlik));
+    kimlikler.set(ad, sonuc.dosya.kimlik);
+  }
+  return kimlikler;
+};
+
+// Katalog yazıldıysa true. Dosya boşsa ya da katalog zaten kurulmuşsa hiçbir şey yazılmaz. klasor,
+// galeri görsellerinin kaydedileceği dosya klasörüdür; verilmezse sitenin klasörü (DOSYA_KLASORU),
+// yalnız katalogda görsel varsa sorulur.
+export const katalogBaslangiciniKur = async (
+  vt: Veritabani,
+  site: Site,
+  klasor: () => string = dosyaKlasoru,
+): Promise<boolean> => {
   const katalog = site.katalogBaslangici;
   if (bosKatalogMu(katalog)) return false;
+  // Kurulu katalogda görseller boşuna kaydedilmesin. Kesin cevap işlemin içinde, kilitlerden sonradır.
+  if (await vt.transaction(kuruluMu)) return false;
+  const kaydedilenler: string[] = [];
+  let yazildi = false;
+  try {
+    const gorseller = await gorselleriKaydet(vt, site, klasor, kaydedilenler);
+    yazildi = await katalogIsleminiYaz(vt, site, gorseller);
+    return yazildi;
+  } finally {
+    // Temizlik hatası asıl hatanın üstüne yazmaz: günlüğe yazılır, kalan dosyaların temizliği kart
+    // 0093'tedir.
+    if (!yazildi) {
+      for (const kimlik of kaydedilenler) {
+        await dosyaSil(vt, kimlik).catch((hata: unknown) =>
+          gunluk.hata("başlangıç kataloğunun görseli silinmiş işaretlenemedi", { hata }),
+        );
+      }
+    }
+  }
+};
+
+const katalogIsleminiYaz = (
+  vt: Veritabani,
+  site: Site,
+  gorseller: Map<string, string>,
+): Promise<boolean> => {
+  const katalog = site.katalogBaslangici;
   const kim = baslangicKatalogYazari;
   const urunServisi = siteninUrunServisi(site);
   const fiyatServisi = siteninFiyatServisi(site);
@@ -99,6 +168,7 @@ export const katalogBaslangiciniKur = async (vt: Veritabani, site: Site): Promis
         fiyat,
         stok: miktar,
         ilgiliUrunler,
+        galeri,
         vergiSinifi,
         kategoriler,
         etiketler,
@@ -119,6 +189,21 @@ export const katalogBaslangiciniKur = async (vt: Veritabani, site: Site): Promis
         marka: marka === undefined ? null : kimligi(markaKimlikleri, marka),
       });
       urunKimlikleri.set(urun.adresAdi, kimlik);
+      for (const oge of galeri) {
+        if ("video" in oge) {
+          await urunServisi.galeriyeVideoEkle(islem, kim, kimlik, {
+            adres: oge.video,
+            alternatifMetin: oge.alternatifMetin,
+          });
+          continue;
+        }
+        const dosya = gorseller.get(oge.gorsel);
+        if (dosya === undefined) throw new Error(`Görsel kaydedilmemiş: ${oge.gorsel}.`);
+        await urunServisi.galeriyeGorselEkle(islem, kim, kimlik, {
+          dosya,
+          alternatifMetin: oge.alternatifMetin,
+        });
+      }
       const birim = (await urunServisi.urunuOku(islem, kimlik))?.birimler[0]?.kimlik;
       if (birim === undefined) throw new Error(`${urun.adresAdi} ürününün birimi okunamadı.`);
       if (fiyat !== undefined) await fiyatServisi.fiyatYaz(islem, kim, birim, fiyat);

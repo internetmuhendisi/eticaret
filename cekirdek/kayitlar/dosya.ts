@@ -1,6 +1,7 @@
 // Yüklenebilen dosya türlerinin ve sınırlarının tek kaydı (kart 0072, karar 0058). Tür içerikten
 // anlaşılır: dosyanın adına ve uzantısına bakılmaz. SVG ve HTML yoktur, içlerinde çalışan kod
-// taşıyabilirler. Video türü kart 0087'deki kararla eklenir.
+// taşıyabilirler. Video dosyası yüklenmez: galerideki video bir video sitesinin bağlantısıdır (kart 0087,
+// karar 0073).
 
 // İmza: dosyanın başındaki baytlar. null, o baytın her değeri alabileceğini söyler.
 type Imza = readonly (number | null)[];

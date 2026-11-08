@@ -51,6 +51,12 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 |---|---|---|---|---|
 | İndirimde eski fiyat olarak son 30 günün en düşük fiyatı | Mağaza sahibi | Açık | — | `indirimdeEnDusukFiyat`. 30 gün indirimin başladığı andan geriye sayılır, önceki indirimler dahildir; bulunan fiyat indirimli fiyattan yüksek değilse ya da o dönemde fiyat yoksa eski fiyat gösterilmez. Kapalıysa eski fiyat indirimden önceki satış fiyatıdır (kart 0081, karar 0067). Yasal dayanağı hukukçuya teyit ettirilecek |
 
+## Ürün
+
+| Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
+|---|---|---|---|---|
+| Galeriye eklenebilen video siteleri | Altyapı sahibi | YouTube ve Vimeo | — | `videoSiteleri`. Boş liste galeride videoyu kapatır. Video müşteriyi o siteye bağladığı için çerez ve gizlilik metinlerini etkiler (kart 0087, karar 0073) |
+
 ## Stok
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |

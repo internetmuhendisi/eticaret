@@ -1,10 +1,14 @@
 // Örnek Mağaza'nın başlangıç kataloğu (kart 0084): KURALLAR.md'deki tablonun her durumu, katalog boş bir
 // veritabanına kurulduktan sonra çekirdeğin kendi işlevleriyle gerçekten o durumda görünür. Zaman sabit
 // verilir: tarihli indirim ve zamanlanmış ürün takvimden bağımsız denenir.
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { siteKlasorunuOku } from "../../../cekirdek/ayar-semasi/site-klasoru.ts";
+import { gorselBoyutAdlari, gorselBoyutlari } from "../../../cekirdek/kayitlar/gorsel.ts";
+import { dosyaOku } from "../../../cekirdek/moduller/dosya/servis.ts";
 import { etiketServisi } from "../../../cekirdek/moduller/etiket/servis.ts";
 import { fiyatGosterimServisi } from "../../../cekirdek/moduller/fiyat/gosterim.ts";
 import { siteninFiyatServisi } from "../../../cekirdek/moduller/fiyat/servis.ts";
@@ -15,6 +19,7 @@ import {
 import { markaServisi } from "../../../cekirdek/moduller/marka/servis.ts";
 import { siteninStokDurumlari } from "../../../cekirdek/moduller/stok/durum.ts";
 import { katalogBaslangiciniKur } from "../../../cekirdek/moduller/urun/baslangic.ts";
+import { anaGorseller } from "../../../cekirdek/moduller/urun/galeri.ts";
 import { ilgiliUrunleriGetir } from "../../../cekirdek/moduller/urun/ilgili.ts";
 import { urunler } from "../../../cekirdek/moduller/urun/model.ts";
 import { siteninUrunServisi, type Urun } from "../../../cekirdek/moduller/urun/servis.ts";
@@ -34,18 +39,22 @@ const birOnce = new Date(aralik.getTime() - 1);
 
 let vt: Veritabani;
 let sil: () => Promise<void>;
+// Galeri görselleri geçici bir dosya klasörüne kaydedilir (kart 0087).
+const klasor = mkdtempSync(join(tmpdir(), "ornek-katalog-"));
 const urunlerim = new Map<string, Urun>();
 
 beforeAll(async () => {
   ({ vt, sil } = await denemeSitesiAc("ornek-katalog"));
-  expect(await katalogBaslangiciniKur(vt, site)).toBe(true);
+  expect(await katalogBaslangiciniKur(vt, site, () => klasor)).toBe(true);
   for (const satir of await vt.select({ kimlik: urunler.kimlik }).from(urunler)) {
     const urun = await urunServisi.urunuOku(vt, satir.kimlik);
     if (urun !== undefined) urunlerim.set(urun.adresAdi, urun);
   }
-});
+  // Galeri görselleri ve boyutları yeniden kodlanır: yüklü hatta birkaç saniye sürer.
+}, 120_000);
 afterAll(async () => {
   await sil();
+  rmSync(klasor, { recursive: true, force: true });
 });
 
 const urun = (adresAdi: string): Urun => {
@@ -209,5 +218,54 @@ describe("KURALLAR.md'deki durumlar", () => {
       .from(urunler)
       .where(eq(urunler.adres_adi, "porselen-kupa"));
     expect(kupa?.durum).toBe("yayinda");
+  });
+});
+
+describe("galeri (kart 0087)", () => {
+  it("görselli ürünlerin ana görseli kataloğun ilk görselidir; Hediye Paketleme görselsizdir", async () => {
+    const analar = await anaGorseller(
+      vt,
+      [...urunlerim.values()].map((u) => u.kimlik),
+    );
+    for (const katalogUrunu of site.katalogBaslangici.urunler) {
+      const ilk = katalogUrunu.galeri.find((oge) => "gorsel" in oge);
+      const ana = analar.get(urun(katalogUrunu.adresAdi).kimlik);
+      expect(ana?.alternatifMetin, katalogUrunu.adresAdi).toBe(ilk?.alternatifMetin);
+    }
+    expect(analar.has(urun("hediye-paketleme").kimlik)).toBe(false);
+  });
+
+  it("videolu galeri (Kablosuz Kulaklık): üç görsel ve ikinci sırada YouTube videosu, çerezsiz oynatıcıyla", () => {
+    const galeri = urun("kablosuz-kulaklik").galeri;
+    expect(galeri.map((oge) => oge.tur)).toEqual(["gorsel", "video", "gorsel", "gorsel"]);
+    expect(galeri[1]).toMatchObject({
+      tur: "video",
+      site: "youtube",
+      videoKimligi: "aqz-KE-bpKQ",
+      oynatici: "https://www.youtube-nocookie.com/embed/aqz-KE-bpKQ",
+    });
+  });
+
+  it("birden çok görselli ürün (Pamuklu Bez Çanta): iki görsel sırasıyla", () => {
+    expect(urun("pamuklu-bez-canta").galeri.map((oge) => oge.alternatifMetin)).toEqual([
+      "Bej pamuklu bez çanta, saplarıyla önden",
+      "Yeşil pamuklu bez çanta, saplarıyla önden",
+    ]);
+  });
+
+  it("her görselin bütün boyutları var; 1600 piksellik görsel her boyuta küçülmüş, okunabilir WebP", async () => {
+    for (const u of urunlerim.values()) {
+      for (const oge of u.galeri) {
+        if (oge.tur !== "gorsel") continue;
+        for (const ad of gorselBoyutAdlari) {
+          const boyut = oge.boyutlar[ad];
+          expect(boyut, `${u.adresAdi} ${ad}`).toMatchObject({
+            genislik: gorselBoyutlari[ad],
+            yukseklik: gorselBoyutlari[ad],
+          });
+          expect((await dosyaOku(vt, boyut?.kimlik ?? "", klasor))?.tur).toBe("webp");
+        }
+      }
+    }
   });
 });

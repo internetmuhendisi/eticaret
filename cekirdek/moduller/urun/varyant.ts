@@ -33,6 +33,7 @@ import {
   kayitDegeri,
   stokKoduKullaniliyor,
 } from "./dogrulama.ts";
+import { galeriGorseliMi } from "./galeri.ts";
 import {
   urunBirimiDegerleri,
   urunBirimleri,
@@ -189,6 +190,8 @@ const birimAlanlari = {
   boyMm: urunBirimleri.boy_mm,
   yukseklikMm: urunBirimleri.yukseklik_mm,
   sira: urunBirimleri.sira,
+  // Birleşimin görseli: ürünün galerisindeki bir görsel öğesi (kart 0087, galeri.ts).
+  gorsel: urunBirimleri.gorsel_kimligi,
 };
 type BirimKaydi = {
   stokKodu: string | null;
@@ -198,6 +201,7 @@ type BirimKaydi = {
   boyMm: number | null;
   yukseklikMm: number | null;
   sira: number;
+  gorsel: string | null;
 };
 const birimSatiri = (kayit: BirimKaydi) => ({
   stok_kodu: kayit.stokKodu,
@@ -207,6 +211,7 @@ const birimSatiri = (kayit: BirimKaydi) => ({
   boy_mm: kayit.boyMm,
   yukseklik_mm: kayit.yukseklikMm,
   sira: kayit.sira,
+  gorsel_kimligi: kayit.gorsel,
 });
 
 const kaydet = (
@@ -289,6 +294,14 @@ export const varyantIslemleri = (yaz: Yaz) => {
       .from(urunler)
       .where(and(eq(urunler.kimlik, urun), isNull(urunler.silinme_zamani)));
     if (satir === undefined) throw new BilinenHata("bulunamadi");
+  };
+
+  // Birleşimin seçtiği öğe ürünün galerisinde silinmemiş bir görsel olmalı (kart 0087). Ürün kilidi
+  // altında: galeriden silme de aynı kilidi alır.
+  const birimGorseliniDenetle = async (islem: VeritabaniIslemi, urun: string, oge: string) => {
+    if (!(await galeriGorseliMi(islem, urun, oge))) {
+      throw dogrulamaHatasi([{ alan: "gorsel", kod: "birim-gorseli-gecersiz" }]);
+    }
   };
 
   // Silinmemiş seçenek ve ürünü; yoksa bulunamadı.
@@ -743,6 +756,7 @@ export const varyantIslemleri = (yaz: Yaz) => {
       if (girdi.stokKodu !== undefined && (await stokKoduKullaniliyor(islem, girdi.stokKodu))) {
         throw cakisma("stokKodu", "stok-kodu-tekrar");
       }
+      if (girdi.gorsel !== undefined) await birimGorseliniDenetle(islem, urun, girdi.gorsel);
       const kimlik = randomUUID();
       const kayit: BirimKaydi = {
         stokKodu: girdi.stokKodu ?? null,
@@ -751,6 +765,7 @@ export const varyantIslemleri = (yaz: Yaz) => {
         enMm: girdi.enMm ?? null,
         boyMm: girdi.boyMm ?? null,
         yukseklikMm: girdi.yukseklikMm ?? null,
+        gorsel: girdi.gorsel ?? null,
         sira:
           girdi.sira ??
           (await sonrakiSira(islem, urunBirimleri, eq(urunBirimleri.urun_kimligi, urun))),
@@ -783,7 +798,7 @@ export const varyantIslemleri = (yaz: Yaz) => {
   ): Promise<void> => {
     const girdi = girdiyiDogrula(birlesimDegisikligi.safeParse(ham));
     await yaz(vt, async (islem) => {
-      const { kimlik: _kimlik, urun: _urun, ...eski } = await birlesimiBul(islem, birim);
+      const { kimlik: _kimlik, urun, ...eski } = await birlesimiBul(islem, birim);
       const verilen = Object.fromEntries(
         Object.entries(girdi).filter(([, deger]) => deger !== undefined),
       ) as Partial<BirimKaydi>;
@@ -798,6 +813,9 @@ export const varyantIslemleri = (yaz: Yaz) => {
         (await stokKoduKullaniliyor(islem, yeni.stokKodu, birim))
       ) {
         throw cakisma("stokKodu", "stok-kodu-tekrar");
+      }
+      if (yeni.gorsel !== null && yeni.gorsel !== eski.gorsel) {
+        await birimGorseliniDenetle(islem, urun, yeni.gorsel);
       }
       await islem
         .update(urunBirimleri)

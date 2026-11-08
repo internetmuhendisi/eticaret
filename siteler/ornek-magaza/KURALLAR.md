@@ -27,4 +27,20 @@
 | En az ve en çok alım adedi | Porselen Kupa | 189,90, stok 40, en az 2, en çok 6 |
 | Elle seçilmiş ilgili ürün | Porselen Kupa | Keten Masa Örtüsü ve Yılbaşı Kupa Seti; Kupa Seti yayına girene kadar atlanır |
 
-Tarihler gerçektir: 1 Aralık 2026'dan sonra demoda indirim görünmez, Kupa Seti yayındadır. Varyantlı ürünler, özellikler ve görseller Katalog 2 ile gelir (kartlar 0085, 0086, 0087).
+Tarihler gerçektir: 1 Aralık 2026'dan sonra demoda indirim görünmez, Kupa Seti yayındadır. Varyantlı ürünler ve özellikler Katalog 2 ile gelir (kartlar 0085, 0086).
+
+## Görseller ve video (kart 0087)
+
+Görseller `baslangic/gorseller/` klasöründedir, katalogdaki ürünün `galeri` alanı onları adıyla sıralar. Katalog kurulurken dosya deposuna yüklenir, her birinin dört boyutu üretilir. Durumları `testler/katalog.test.ts` dener.
+
+| Durum | Ürün | Nasıl |
+|---|---|---|
+| Tek görsel | Yün Atkı, Keten Masa Örtüsü, Porselen Kupa, Yılbaşı Kupa Seti, USB-C Şarj Kablosu 1 m | Ana görsel o görseldir |
+| Birden çok görsel | Pamuklu Bez Çanta | İki görsel, sırasıyla |
+| Videolu galeri | Kablosuz Kulaklık | Üç görsel, ikinci sırada YouTube videosu; ana görsel ilk görseldir |
+| Görselsiz ürün | Hediye Paketleme | Ana görseli yok |
+
+**Kaynaklar:**
+
+- Görseller projede üretildi (kullanıcı kararı): 1600 × 1600 piksel, yazısız PNG. Her biri açık renkli düz bir zemin üzerine ürünü andıran basit bir biçimdir (çanta, şerit, kare, kupa, kulaklık, daire, kablo). SVG olarak çizilip `sharp` ile PNG'ye çevrildi. Telif ya da lisans gerektirmez.
+- Video: "Big Buck Bunny", Blender Foundation, Creative Commons Attribution 3.0 lisanslı (https://peach.blender.org). YouTube'da Blender'ın resmî kanalındaki yükleme: https://www.youtube.com/watch?v=aqz-KE-bpKQ (2026-11-08'de YouTube'un oEmbed yanıtıyla var olduğu doğrulandı). Ürünle ilgisi yoktur, yalnız galeride videonun nasıl göründüğünü göstermek içindir. Lisansın istediği atıf alternatif metindedir.

@@ -11,6 +11,7 @@ import { postaAdresiSemasi, telefonSemasi } from "../bolgeler/adres.ts";
 import { ulkeGecerliMi } from "../bolgeler/bolgeler.ts";
 import { type AyarSahibi, ayarSahibi } from "../kayitlar/site.ts";
 import { tukenenUrunDavranislari } from "../kayitlar/stok.ts";
+import { videoSiteAdlari } from "../kayitlar/video-siteleri.ts";
 import { saatDilimiGecerliMi } from "../metinler/bicimleyici.ts";
 import { diller, type MetinAnahtari } from "../metinler/metin.ts";
 import { kayitDegeriYasakMi, kayitMetniHatasi } from "../moduller/degisiklik-kaydi/deger.ts";
@@ -104,6 +105,16 @@ export const ayarSemasi = z.strictObject({
   boyutBirimi: ayar(
     z.enum(["cm", "mm", "in"]).default("cm"),
     altyapiSahibinin("ayar.aciklama.boyutBirimi"),
+  ),
+  // Ürün galerisine bağlantısı eklenebilen video siteleri (kart 0087, karar 0073). Video müşteriyi o
+  // siteye bağladığı için çerez ve gizlilik metinlerini etkiler: altyapı sahibinindir. Boş liste
+  // galeriye video eklenmesini kapatır.
+  videoSiteleri: ayar(
+    z
+      .array(z.enum(videoSiteAdlari))
+      .refine((liste) => new Set(liste).size === liste.length, "Aynı site iki kez yazılmış.")
+      .default([...videoSiteAdlari]),
+    altyapiSahibinin("ayar.aciklama.videoSiteleri"),
   ),
   // Varsayılanı sitenin görünen adından türetilir (site-klasoru.ts), bu yüzden şemada boş kalabilir.
   siparisOneki: ayar(

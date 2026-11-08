@@ -4,14 +4,18 @@
 // ve stok geçmişi. Örnek katalog cekirdek/ayar-semasi/testler/ornek-siteler/katalog-dolu klasöründedir;
 // sitelerin kendi kataloğunun durumları sitenin testindedir (siteler/<kod-adi>/testler/).
 import { randomUUID } from "node:crypto";
+import { mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { count, eq } from "drizzle-orm";
-import { afterEach, describe, expect, it } from "vitest";
+import { count, eq, isNull } from "drizzle-orm";
+import sharp from "sharp";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { type Site, siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
+import { dosyaBoyutlari, dosyalar } from "../../dosya/model.ts";
 import { etiketler } from "../../etiket/model.ts";
 import { birimFiyatlari, fiyatGecmisi } from "../../fiyat/model.ts";
 import { siteninFiyatServisi } from "../../fiyat/servis.ts";
@@ -23,8 +27,12 @@ import { stokServisi } from "../../stok/servis.ts";
 import { siteninVergiServisi } from "../../vergi/servis.ts";
 import { baslangicKatalogYazari, katalogBaslangiciniKur } from "../baslangic.ts";
 import { bosKatalog, type KatalogBaslangici } from "../baslangic-semasi.ts";
-import { urunBirimleri, urunler } from "../model.ts";
+import { urunBirimleri, urunGalerisi, urunler } from "../model.ts";
 import { siteninUrunServisi } from "../servis.ts";
+
+// Görseller ve boyutları gerçekten yeniden kodlanır: yüklü kontrol hattında bir test birkaç saniye
+// sürebilir.
+vi.setConfig({ testTimeout: 60_000 });
 
 const ornekSite = siteKlasorunuOku(
   join(
@@ -271,5 +279,157 @@ describe("yarım katalog kalmaz", () => {
     await expect(katalogBaslangiciniKur(vt, ornekSite)).rejects.toThrow(/vergi sınıfı yok: Genel/);
     expect(await sayilar(vt)).toEqual(once);
     expect(once).toMatchObject({ urunler: 0, kategoriler: 0 });
+  });
+});
+
+// Galeri görselleri (kart 0087): örnek katalog görselsizdir; bu testler kataloğa geçici klasörde
+// üretilmiş görseller ve bir video ekler.
+describe("galeri görselleri", () => {
+  const temizlenecekler: string[] = [];
+  afterEach(() => {
+    for (const klasor of temizlenecekler.splice(0))
+      rmSync(klasor, { recursive: true, force: true });
+  });
+  const klasorAc = () => {
+    const klasor = mkdtempSync(join(tmpdir(), "katalog-galeri-"));
+    temizlenecekler.push(klasor);
+    return klasor;
+  };
+  // İki görsel ve bir video; ilk ürüne iki görsel, ikincisine aynı ilk görsel ve video.
+  const galerili = async (degistir: (katalog: KatalogBaslangici) => void = () => {}) => {
+    const kaynak = klasorAc();
+    const katalogGorselleri: Record<string, string> = {};
+    for (const [ad, renk] of [
+      ["bir.png", { r: 200, g: 0, b: 0 }],
+      ["iki.png", { r: 0, g: 200, b: 0 }],
+    ] as const) {
+      const yol = join(kaynak, ad);
+      writeFileSync(
+        yol,
+        await sharp({ create: { width: 600, height: 400, channels: 3, background: renk } })
+          .png()
+          .toBuffer(),
+      );
+      katalogGorselleri[ad] = yol;
+    }
+    const site = katalogla((katalog) => {
+      const [ilk, ikinci] = katalog.urunler;
+      if (ilk === undefined || ikinci === undefined) throw new Error("İki ürün beklenirdi.");
+      ilk.galeri = [
+        { gorsel: "bir.png", alternatifMetin: "Bir" },
+        { gorsel: "iki.png", alternatifMetin: "İki" },
+      ];
+      ikinci.galeri = [
+        { video: "https://youtu.be/aqz-KE-bpKQ", alternatifMetin: "Video" },
+        { gorsel: "bir.png", alternatifMetin: "Aynı görsel" },
+      ];
+      degistir(katalog);
+    });
+    return { ...site, katalogGorselleri };
+  };
+  const silinmemisDosyalar = async (vt: Veritabani) =>
+    (await vt.select({ sayi: count() }).from(dosyalar).where(isNull(dosyalar.silinme_zamani)))[0]
+      ?.sayi;
+  // İki görsel, her biri kayıttaki dört boyutuyla.
+  const dosyaSayisi = 2 * 5;
+
+  it("görseller boyutlarıyla kaydedilir, galeriler sırasıyla bağlanır; aynı görsel bir kez kaydedilir", async () => {
+    const vt = await siteAc();
+    const klasor = klasorAc();
+    const site = await galerili();
+    expect(await katalogBaslangiciniKur(vt, site, () => klasor)).toBe(true);
+    expect(await silinmemisDosyalar(vt)).toBe(dosyaSayisi);
+    expect(readdirSync(klasor)).toHaveLength(dosyaSayisi);
+    expect((await vt.select({ sayi: count() }).from(dosyaBoyutlari))[0]?.sayi).toBe(8);
+    const servis = siteninUrunServisi(site);
+    const galeriler = [];
+    for (const urun of site.katalogBaslangici.urunler) {
+      const [satir] = await vt
+        .select({ kimlik: urunler.kimlik })
+        .from(urunler)
+        .where(eq(urunler.adres_adi, urun.adresAdi));
+      galeriler.push((await servis.urunuOku(vt, satir?.kimlik ?? ""))?.galeri ?? []);
+    }
+    expect(galeriler.map((g) => g.map((o) => [o.tur, o.alternatifMetin]))).toEqual([
+      [
+        ["gorsel", "Bir"],
+        ["gorsel", "İki"],
+      ],
+      [
+        ["video", "Video"],
+        ["gorsel", "Aynı görsel"],
+      ],
+    ]);
+    const [ilk] = galeriler[0] ?? [];
+    const ayni = galeriler[1]?.[1];
+    expect(ilk?.tur === "gorsel" && ayni?.tur === "gorsel" && ilk.dosya === ayni.dosya).toBe(true);
+    const kayit = await vt
+      .select({ kim: degisiklikKayitlari.kim_adi })
+      .from(degisiklikKayitlari)
+      .where(eq(degisiklikKayitlari.islem, "urun-galerisi.eklendi"));
+    expect(kayit).toHaveLength(4);
+    for (const satir of kayit) expect(satir.kim).toBe("baslangic-katalog");
+  });
+
+  it("kurulu katalogda görsel kaydedilmez", async () => {
+    const vt = await siteAc();
+    await kategoriEkle(vt, yonetici(), { ad: "Elle açılan" });
+    const klasor = klasorAc();
+    expect(await katalogBaslangiciniKur(vt, await galerili(), () => klasor)).toBe(false);
+    expect((await vt.select({ sayi: count() }).from(dosyalar))[0]?.sayi).toBe(0);
+    expect(readdirSync(klasor)).toEqual([]);
+  });
+
+  it("katalog yazılamazsa galeri kalmaz, kaydedilen görseller ve boyutları silinmiş işaretlenir", async () => {
+    const vt = await siteAc();
+    const klasor = klasorAc();
+    const bozuk = await galerili((katalog) => {
+      for (const urun of katalog.urunler) urun.stokKodu = "AYNI-KOD";
+    });
+    await expect(katalogBaslangiciniKur(vt, bozuk, () => klasor)).rejects.toMatchObject({
+      kod: "cakisma",
+    });
+    expect(await sayilar(vt)).toEqual(bos);
+    expect(await vt.select().from(urunGalerisi)).toEqual([]);
+    expect((await vt.select({ sayi: count() }).from(dosyalar))[0]?.sayi).toBe(dosyaSayisi);
+    expect(await silinmemisDosyalar(vt)).toBe(0);
+    // Düzeltilen katalog yeniden kurulur, görselleri yeniden kaydeder.
+    expect(await katalogBaslangiciniKur(vt, await galerili(), () => klasor)).toBe(true);
+    expect(await silinmemisDosyalar(vt)).toBe(dosyaSayisi);
+  });
+
+  it("görsel kaydedilemezse (içi bozuk) katalog yazılmaz, önceki görsel silinmiş işaretlenir", async () => {
+    const vt = await siteAc();
+    const klasor = klasorAc();
+    const site = await galerili();
+    // İmzası PNG, devamı değil: dosya deposu yeniden kodlayamaz.
+    writeFileSync(
+      site.katalogGorselleri["iki.png"] ?? "",
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]),
+    );
+    await expect(katalogBaslangiciniKur(vt, site, () => klasor)).rejects.toThrow(
+      /iki\.png \(bozuk\)/,
+    );
+    expect(await sayilar(vt)).toEqual(bos);
+    expect(await silinmemisDosyalar(vt)).toBe(0);
+  });
+
+  it("aynı anda üç çağrıdan biri yazar; ötekilerin kaydettiği görseller silinmiş işaretlenir", async () => {
+    const vt = await siteAc();
+    const klasor = klasorAc();
+    const site = await galerili();
+    const sonuclar = await Promise.all([
+      katalogBaslangiciniKur(vt, site, () => klasor),
+      katalogBaslangiciniKur(vt, site, () => klasor),
+      katalogBaslangiciniKur(vt, site, () => klasor),
+    ]);
+    expect(sonuclar.filter(Boolean)).toHaveLength(1);
+    expect(await silinmemisDosyalar(vt)).toBe(dosyaSayisi);
+    const bagli = await vt
+      .select({ dosya: urunGalerisi.dosya_kimligi })
+      .from(urunGalerisi)
+      .innerJoin(dosyalar, eq(dosyalar.kimlik, urunGalerisi.dosya_kimligi))
+      .where(isNull(dosyalar.silinme_zamani));
+    expect(bagli).toHaveLength(3);
   });
 });

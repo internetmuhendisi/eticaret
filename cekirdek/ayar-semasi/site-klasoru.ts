@@ -2,15 +2,17 @@
 // Doğrulama komutu (komutlar/site-dogrula.mts), testler ve çalışan uygulama aynı yolu kullanır.
 // Komut bu dosyaları Node ile doğrudan çalıştırdığı için ayar-semasi/ ve onun aldığı dosyalar
 // birbirini .ts uzantısıyla alır.
-import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync } from "node:fs";
+import { basename, join, sep } from "node:path";
 import type { z } from "zod";
 import { type DosyaTuru, dosyaSinirlari } from "../kayitlar/dosya.ts";
+import type { VideoSitesi } from "../kayitlar/video-siteleri.ts";
 import { icerikTuru, uzantininTuru } from "../moduller/dosya/tur.ts";
 import {
   bosKatalog,
   type KatalogBaslangici,
   katalogBaslangicSemasi,
+  katalogGorselKlasoru,
   katalogKurallari,
 } from "../moduller/urun/baslangic-semasi.ts";
 import { type VergiBaslangici, vergiBaslangicSemasi } from "../moduller/vergi/semalar.ts";
@@ -31,12 +33,15 @@ import { type Kimlik, kimlikSemasi } from "./kimlik.ts";
 // Yalnız sitenin vergi tablosu hiç kurulmamışken kullanılır (karar 0060); dosyası yoksa boştur.
 // katalogBaslangici: kategoriler, markalar, etiketler ve ürünler (baslangic/katalog.json, kart 0084).
 // Yalnız sitenin kataloğu hiç kurulmamışken kullanılır (urun/baslangic.ts); dosyası yoksa boştur.
+// katalogGorselleri: kataloğun galeri görsellerinin dosya adından site klasöründeki tam yola
+// (baslangic/gorseller/, kart 0087); katalogda görsel yoksa boştur.
 export type Site = {
   kimlik: Kimlik;
   ayarlar: SiteAyarlari;
   baslangic: MagazaAyarlari;
   vergiBaslangici: VergiBaslangici;
   katalogBaslangici: KatalogBaslangici;
+  katalogGorselleri: Record<string, string>;
   markaLogosu?: { yol: string; tur: DosyaTuru };
 };
 
@@ -121,7 +126,9 @@ export const katalogBaslangicDosyasi = "baslangic/katalog.json";
 // başlangıcı) yalnız ikisi geçerliyse denetlenir; geçersizse hatası zaten kendi dosyasında yazar.
 export const katalogBaslangiciniDogrula = (
   klasor: string,
-  site: { saatDilimi: string; vergi: VergiBaslangici } | undefined,
+  site:
+    | { saatDilimi: string; vergi: VergiBaslangici; videoSiteleri: readonly VideoSitesi[] }
+    | undefined,
 ): { gecerli: true; deger: KatalogBaslangici } | { gecerli: false; hatalar: string[] } => {
   const ham = jsonOku(klasor, katalogBaslangicDosyasi, bosKatalog());
   if ("hata" in ham) return { gecerli: false, hatalar: [ham.hata] };
@@ -133,12 +140,69 @@ export const katalogBaslangiciniDogrula = (
   const hatalar = katalogKurallari(sonuc.data, {
     saatDilimi: site.saatDilimi,
     vergiSiniflari: site.vergi.siniflar.map((sinif) => sinif.ad),
+    videoSiteleri: site.videoSiteleri,
   }).map(({ yer, kod }) =>
     kod === "vergi-sinifi-tanimsiz"
       ? `${katalogBaslangicDosyasi}: ${yer}: ${kod} (${vergiBaslangicDosyasi} dosyasında bu adlı sınıf yok)`
       : `${katalogBaslangicDosyasi}: ${yer}: ${kod}`,
   );
   return hatalar.length > 0 ? { gecerli: false, hatalar } : { gecerli: true, deger: sonuc.data };
+};
+
+// Kataloğun galeri görselleri (kart 0087): her ad baslangic/gorseller/ klasöründe düz bir dosya olmalı;
+// tür içerikten okunur ve uzantıyla aynıdır, boyut dosya sınırını aşmaz. Görseller kurulumda dosya
+// deposuna yüklenirken ayrıca yeniden kodlanır ve boyutları üretilir; bozuk görsel orada da düşer.
+export const katalogGorselleriniDogrula = (
+  klasor: string,
+  katalog: KatalogBaslangici,
+): { gecerli: true; gorseller: Record<string, string> } | { gecerli: false; hatalar: string[] } => {
+  const adlar = [
+    ...new Set(
+      katalog.urunler.flatMap((urun) =>
+        urun.galeri.flatMap((oge) => ("gorsel" in oge ? [oge.gorsel] : [])),
+      ),
+    ),
+  ];
+  const hatalar: string[] = [];
+  const gorseller: Record<string, string> = {};
+  // Klasör de site klasörünün içinde gerçek bir klasör olmalı: bağlantıyla dışarıdaki dosyalara
+  // gidilmesin (kart 0087 kontrolü).
+  const gorselKlasoru = join(klasor, katalogGorselKlasoru);
+  if (
+    adlar.length > 0 &&
+    existsSync(gorselKlasoru) &&
+    !realpathSync(gorselKlasoru).startsWith(`${realpathSync(klasor)}${sep}`)
+  ) {
+    return {
+      gecerli: false,
+      hatalar: [`${katalogGorselKlasoru}/: site klasörünün içinde gerçek bir klasör olmalı.`],
+    };
+  }
+  for (const ad of adlar) {
+    const yer = `${katalogGorselKlasoru}/${ad}`;
+    const yol = join(klasor, katalogGorselKlasoru, ad);
+    if (!existsSync(yol)) {
+      hatalar.push(`${yer}: dosya yok (${katalogBaslangicDosyasi} bu görseli kullanıyor).`);
+      continue;
+    }
+    // Sembolik bağlantı ve klasör kabul edilmez: dosya site klasörünün içinde, düz bir dosya olmalı.
+    if (!lstatSync(yol).isFile()) {
+      hatalar.push(`${yer}: düz bir dosya olmalı (bağlantı ya da klasör değil).`);
+      continue;
+    }
+    const icerik = readFileSync(yol);
+    if (icerik.length === 0 || icerik.length > dosyaSinirlari.enCokBayt) {
+      hatalar.push(`${yer}: boş ya da ${dosyaSinirlari.enCokBayt} bayttan büyük.`);
+      continue;
+    }
+    const tur = icerikTuru(icerik);
+    if (tur === undefined || tur !== uzantininTuru(ad.slice(ad.lastIndexOf(".") + 1))) {
+      hatalar.push(`${yer}: içeriği uzantısıyla uyuşmuyor.`);
+      continue;
+    }
+    gorseller[ad] = yol;
+  }
+  return hatalar.length > 0 ? { gecerli: false, hatalar } : { gecerli: true, gorseller };
 };
 
 export const markaKlasoru = "marka";
@@ -223,10 +287,20 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
   const katalogBaslangici = katalogBaslangiciniDogrula(
     klasor,
     vergiBaslangici.gecerli && ayarlar !== undefined
-      ? { saatDilimi: ayarlar.saatDilimi, vergi: vergiBaslangici.deger }
+      ? {
+          saatDilimi: ayarlar.saatDilimi,
+          vergi: vergiBaslangici.deger,
+          videoSiteleri: ayarlar.videoSiteleri,
+        }
       : undefined,
   );
   if (!katalogBaslangici.gecerli) hatalar.push(...katalogBaslangici.hatalar);
+  const katalogGorselleri = katalogBaslangici.gecerli
+    ? katalogGorselleriniDogrula(klasor, katalogBaslangici.deger)
+    : undefined;
+  if (katalogGorselleri !== undefined && !katalogGorselleri.gecerli) {
+    hatalar.push(...katalogGorselleri.hatalar);
+  }
   const markaLogosu = markaLogosunuDogrula(klasor);
   if (!markaLogosu.gecerli) hatalar.push(...markaLogosu.hatalar);
 
@@ -243,6 +317,8 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
     !baslangic.gecerli ||
     !vergiBaslangici.gecerli ||
     !katalogBaslangici.gecerli ||
+    katalogGorselleri === undefined ||
+    !katalogGorselleri.gecerli ||
     !markaLogosu.gecerli
   ) {
     return { gecerli: false, hatalar };
@@ -277,6 +353,7 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
       baslangic: { ...baslangic.deger, magazaAdi },
       vergiBaslangici: vergiBaslangici.deger,
       katalogBaslangici: katalogBaslangici.deger,
+      katalogGorselleri: katalogGorselleri.gorseller,
       ...(markaLogosu.logo === undefined ? {} : { markaLogosu: markaLogosu.logo }),
     },
   };

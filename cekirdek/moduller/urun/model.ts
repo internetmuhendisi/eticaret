@@ -21,11 +21,13 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  foreignKey,
   index,
   integer,
   pgTable,
   primaryKey,
   text,
+  unique,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
@@ -85,6 +87,59 @@ export const urunler = pgTable(
   ],
 );
 
+// Ürünün galerisi (kart 0087, karar 0073): sıralı görseller ve video bağlantıları. Türler
+// cekirdek/kayitlar/gorsel.ts kaydındadır. Görsel, dosya deposundaki boyutları üretilmiş bir dosyadır
+// (dosya_kimligi); video, bir video sitesinin adı ve videonun kimliğidir, bağlantının kendisi saklanmaz.
+// Her öğenin alternatif metni vardır. Sırası küçük olan önce gelir; ana görsel, silinmemiş görsel
+// türündeki ilk öğedir.
+//
+// Silme işaretle yapılır, satır ve dosya kalır: geçmiş siparişler ürünün o andaki görseline bağlı
+// kalabilir. Silinen öğeyi seçmiş birleşimin görseli aynı işlemde boşaltılır; veritabanındaki
+// tetikleyici bir birimin seçtiği öğenin silinmesini ve birimin silinmiş ya da video öğesini seçmesini
+// reddeder.
+//
+// Aranan alanlar:
+// - urun_kimligi: ürünün galerisi (urun_galerisi_urun indeksi, sırayla okunur). Birden çok ürünün ana
+//   görseli de buradan tek sorguyla gelir.
+// - (urun_kimligi, dosya_kimligi): aynı görsel bir ürünün silinmemiş galerisinde bir kez (kısmi tekil
+//   indeks).
+// - (kimlik, urun_kimligi): birimin görseli bu ikiliye bağlanır, başka ürünün öğesi seçilemez.
+export const urunGalerisi = pgTable(
+  "urun_galerisi",
+  {
+    kimlik: kimlik(),
+    urun_kimligi: uuid()
+      .notNull()
+      .references(() => urunler.kimlik, { onDelete: "restrict" }),
+    // cekirdek/kayitlar/gorsel.ts'deki türlerden biri.
+    tur: text().notNull(),
+    dosya_kimligi: uuid().references(() => dosyalar.kimlik, { onDelete: "restrict" }),
+    // cekirdek/kayitlar/video-siteleri.ts'deki sitelerden biri ve videonun o sitedeki kimliği.
+    video_sitesi: text(),
+    video_kimligi: text(),
+    alternatif_metin: text().notNull(),
+    sira: integer().notNull().default(0),
+    olusturma_zamani: zaman().notNull().defaultNow(),
+    guncellenme_zamani: zaman().notNull().defaultNow(),
+    silinme_zamani: zaman(),
+  },
+  (tablo) => [
+    index("urun_galerisi_urun").on(tablo.urun_kimligi, tablo.sira),
+    uniqueIndex("urun_galerisi_dosya")
+      .on(tablo.urun_kimligi, tablo.dosya_kimligi)
+      .where(sql`${tablo.silinme_zamani} is null and ${tablo.dosya_kimligi} is not null`),
+    unique("urun_galerisi_kimlik_urun").on(tablo.kimlik, tablo.urun_kimligi),
+    check("urun_galerisi_tur", sql`${tablo.tur} in ('gorsel', 'video')`),
+    check(
+      "urun_galerisi_video",
+      sql`(${tablo.tur} = 'gorsel') = (${tablo.dosya_kimligi} is not null)
+        and (${tablo.tur} = 'video') = (${tablo.video_sitesi} is not null and ${tablo.video_kimligi} is not null)
+        and (${tablo.video_sitesi} is null or ${tablo.video_sitesi} in ('youtube', 'vimeo'))`,
+    ),
+    check("urun_galerisi_alternatif_metin", sql`length(trim(${tablo.alternatif_metin})) > 0`),
+  ],
+);
+
 export const urunBirimleri = pgTable(
   "urun_birimleri",
   {
@@ -106,14 +161,23 @@ export const urunBirimleri = pgTable(
     // (urun_birimi_degerleri) aynı işlemde. Silinmemiş birimler arasında ürün başına tekildir: aynı
     // birleşim iki kez, basit ürün iki birimle olamaz.
     birlesim: text().notNull().default(""),
-    // Birimin görseli (kart 0087 doldurur). Bu kart yalnız yerini açar.
-    gorsel_kimligi: uuid().references(() => dosyalar.kimlik, { onDelete: "restrict" }),
+    // Birleşimin görseli (kart 0087, karar 0073): kendi ürününün galerisinden bir görsel öğesi
+    // (urun_galerisi.kimlik, dosya değil). Boşsa ürünün ana görseli gösterilir. Basit ürünün biriminde
+    // boştur. Ürün ve öğe ikilisine bağlıdır: başka ürünün öğesi seçilemez.
+    gorsel_kimligi: uuid(),
     olusturma_zamani: zaman().notNull().defaultNow(),
     guncellenme_zamani: zaman().notNull().defaultNow(),
     silinme_zamani: zaman(),
   },
   (tablo) => [
     index("urun_birimleri_urun").on(tablo.urun_kimligi),
+    // Silinen galeri öğesini seçmiş birimler (tetikleyici ve galeri.ts).
+    index("urun_birimleri_gorsel_kimligi").on(tablo.gorsel_kimligi),
+    foreignKey({
+      name: "urun_birimleri_gorsel",
+      columns: [tablo.gorsel_kimligi, tablo.urun_kimligi],
+      foreignColumns: [urunGalerisi.kimlik, urunGalerisi.urun_kimligi],
+    }).onDelete("restrict"),
     uniqueIndex("urun_birimleri_stok_kodu")
       .on(sql`lower(${tablo.stok_kodu})`)
       .where(sql`${tablo.silinme_zamani} is null and ${tablo.stok_kodu} is not null`),

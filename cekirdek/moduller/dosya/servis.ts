@@ -1,4 +1,6 @@
 // Dosya kaydetmenin, okumanın ve silmenin tek yolu (kart 0072, karar 0058).
+// Görsel boyutlarıyla birlikte gorselKaydet ile kaydedilir (kart 0087, karar 0073): boyutlar
+// cekirdek/kayitlar/gorsel.ts kaydındadır, görselle aynı işlemde yazılır.
 //
 // - Tür içerikten anlaşılır (cekirdek/kayitlar/dosya.ts); ad ve uzantı hiç alınmaz.
 // - Görsel her zaman yeniden kodlanır. Konum, cihaz, tarih gibi gömülü bilgiler bu sırada düşer;
@@ -17,7 +19,7 @@
 import { createHash } from "node:crypto";
 import { readFile, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { OutputInfo, Sharp } from "sharp";
 import {
   type DosyaHatasi,
@@ -26,8 +28,14 @@ import {
   dosyaSinirlari,
   dosyaTurleri,
 } from "../../kayitlar/dosya.ts";
-import type { Veritabani } from "../../veritabani/baglanti.ts";
-import { dosyalar } from "./model.ts";
+import {
+  type GorselBoyutu,
+  gorselBoyutAdlari,
+  gorselBoyutBicimi,
+  gorselBoyutlari,
+} from "../../kayitlar/gorsel.ts";
+import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
+import { dosyaBoyutlari, dosyalar } from "./model.ts";
 import { icerikTuru } from "./tur.ts";
 
 // Sitenin dosya klasörü. Okunduğu anda sorulur (karar 0026): dosya yüklenirken değil.
@@ -112,59 +120,217 @@ const kodla = async (
   }
 };
 
-export const dosyaKaydet = async (
+// Yazılacak bir dosya: yeniden kodlanmış içerik ve ölçüleri.
+type Parca = { data: Buffer; tur: DosyaTuru; genislik: number; yukseklik: number };
+
+// Parçaları tek işlemde kaydeder: her biri bir kayıt ve bir dosya. Dosyalar önce geçici adla yazılır,
+// kayıtla aynı işlemde yerine konur. sonra, kayıtlarla aynı işlemde çalışır (boyut satırları). İşlem
+// geri alınırsa ya da yazılamazsa bütün dosyalar ve geçici dosyalar silinir.
+const parcalariYaz = async (
   vt: Veritabani,
-  icerik: Uint8Array,
-  klasor: string = dosyaKlasoru(),
-): Promise<KaydetmeSonucu> => {
+  parcalar: Parca[],
+  klasor: string,
+  sonra: (islem: VeritabaniIslemi, dosyalar: KaydedilenDosya[]) => Promise<void> = async () => {},
+): Promise<KaydedilenDosya[]> => {
   // İşlemin içindeki veritabanı nesnesinin bağlantı havuzu yoktur (yukarıdaki açıklama).
   if (!("$client" in vt) || vt.$client === undefined) {
-    throw new Error("dosyaKaydet bir veritabanı işleminin içinde çağrılmaz.");
+    throw new Error("Dosya kaydetme bir veritabanı işleminin içinde çağrılmaz.");
   }
-  if (icerik.length === 0) return reddet("bos");
-  if (icerik.length > dosyaSinirlari.enCokBayt) return reddet("cok-buyuk");
-  const tur = icerikTuru(icerik);
-  if (tur === undefined) return reddet("tur-izinsiz");
-
-  const cikti = await sirayla(() => kodla(icerik, tur));
-  if (!cikti.tamam) return reddet(cikti.hata);
-
-  const ozet = createHash("sha256").update(cikti.data).digest("hex");
   const yazilanlar: string[] = [];
   try {
-    const dosya = await vt.transaction(async (islem) => {
-      const [satir] = await islem
-        .insert(dosyalar)
-        .values({
-          tur,
-          boyut: cikti.data.length,
-          genislik: cikti.info.width,
-          yukseklik: cikti.info.height,
-          icerik_ozeti: ozet,
-        })
-        .returning({ kimlik: dosyalar.kimlik });
-      if (satir === undefined || !kimlikBicimi.test(satir.kimlik)) {
-        throw new Error("Dosya kaydının kimliği beklenen biçimde değil.");
+    return await vt.transaction(async (islem) => {
+      const kaydedilenler: KaydedilenDosya[] = [];
+      for (const parca of parcalar) {
+        const [satir] = await islem
+          .insert(dosyalar)
+          .values({
+            tur: parca.tur,
+            boyut: parca.data.length,
+            genislik: parca.genislik,
+            yukseklik: parca.yukseklik,
+            icerik_ozeti: createHash("sha256").update(parca.data).digest("hex"),
+          })
+          .returning({ kimlik: dosyalar.kimlik });
+        if (satir === undefined || !kimlikBicimi.test(satir.kimlik)) {
+          throw new Error("Dosya kaydının kimliği beklenen biçimde değil.");
+        }
+        const hedef = join(klasor, dosyaAdi(satir.kimlik, parca.tur));
+        const gecici = `${hedef}.yaziliyor`;
+        yazilanlar.push(gecici, hedef);
+        await writeFile(gecici, parca.data, { mode: 0o600, flag: "wx" });
+        await rename(gecici, hedef);
+        kaydedilenler.push({
+          kimlik: satir.kimlik,
+          tur: parca.tur,
+          boyut: parca.data.length,
+          genislik: parca.genislik,
+          yukseklik: parca.yukseklik,
+        });
       }
-      const hedef = join(klasor, dosyaAdi(satir.kimlik, tur));
-      const gecici = `${hedef}.yaziliyor`;
-      yazilanlar.push(gecici, hedef);
-      await writeFile(gecici, cikti.data, { mode: 0o600, flag: "wx" });
-      await rename(gecici, hedef);
-      return {
-        kimlik: satir.kimlik,
-        tur,
-        boyut: cikti.data.length,
-        genislik: cikti.info.width,
-        yukseklik: cikti.info.height,
-      };
+      await sonra(islem, kaydedilenler);
+      return kaydedilenler;
     });
-    return { tamam: true, dosya };
   } catch (hata) {
     // İşlem geri alındı: yazılmış ya da yarım kalmış dosya kayıtsız kalmasın.
     await Promise.all(yazilanlar.map((yol) => rm(yol, { force: true })));
     throw hata;
   }
+};
+
+// Kaydetmeden önceki ortak denetimler: boş, sınırı aşan ve izinsiz tür.
+const onDenetim = (icerik: Uint8Array): DosyaHatasi | DosyaTuru => {
+  if (icerik.length === 0) return "bos";
+  if (icerik.length > dosyaSinirlari.enCokBayt) return "cok-buyuk";
+  return icerikTuru(icerik) ?? "tur-izinsiz";
+};
+const turMu = (deger: DosyaHatasi | DosyaTuru): deger is DosyaTuru =>
+  Object.hasOwn(dosyaTurleri, deger);
+
+export const dosyaKaydet = async (
+  vt: Veritabani,
+  icerik: Uint8Array,
+  klasor: string = dosyaKlasoru(),
+): Promise<KaydetmeSonucu> => {
+  const tur = onDenetim(icerik);
+  if (!turMu(tur)) return reddet(tur);
+  const cikti = await sirayla(() => kodla(icerik, tur));
+  if (!cikti.tamam) return reddet(cikti.hata);
+  const [dosya] = await parcalariYaz(
+    vt,
+    [{ data: cikti.data, tur, genislik: cikti.info.width, yukseklik: cikti.info.height }],
+    klasor,
+  );
+  if (dosya === undefined) throw new Error("Dosya kaydedilemedi.");
+  return { tamam: true, dosya };
+};
+
+export type GorselKaydetmeSonucu =
+  | { tamam: true; dosya: KaydedilenDosya; boyutlar: Record<GorselBoyutu, KaydedilenDosya> }
+  | { tamam: false; hata: DosyaHatasi };
+
+// Görseli ve kayıttaki bütün boyutlarını (cekirdek/kayitlar/gorsel.ts) kaydeder (kart 0087, karar
+// 0073). Görsel önce dosyaKaydet'teki gibi yeniden kodlanır; boyutlar bu temizlenmiş görselden, en
+// uzun kenarı boyutun sayısını aşmayacak biçimde küçültülerek üretilir, küçük görsel büyütülmez.
+// Görsel, boyutları ve boyut satırları tek işlemdedir: boyutu eksik görsel kaydedilmez. Bütün iş süreç
+// başına tek tek yapılır (yeniden kodlama gibi).
+export const gorselKaydet = async (
+  vt: Veritabani,
+  icerik: Uint8Array,
+  klasor: string = dosyaKlasoru(),
+): Promise<GorselKaydetmeSonucu> => {
+  const tur = onDenetim(icerik);
+  if (!turMu(tur)) return { tamam: false, hata: tur };
+  const uretilen = await sirayla(async () => {
+    const cikti = await kodla(icerik, tur);
+    if (!cikti.tamam) return cikti;
+    const { default: sharp } = await import("sharp");
+    const boyutlar: Parca[] = [];
+    for (const ad of gorselBoyutAdlari) {
+      const kenar = gorselBoyutlari[ad];
+      const { data, info } = await sharp(cikti.data, {
+        limitInputPixels: dosyaSinirlari.enCokPiksel,
+      })
+        .resize({ width: kenar, height: kenar, fit: "inside", withoutEnlargement: true })
+        .webp({ quality: gorselBoyutBicimi.kalite })
+        .toBuffer({ resolveWithObject: true });
+      boyutlar.push({
+        data,
+        tur: gorselBoyutBicimi.tur,
+        genislik: info.width,
+        yukseklik: info.height,
+      });
+    }
+    return { tamam: true as const, cikti, boyutlar };
+  });
+  if (!uretilen.tamam) return { tamam: false, hata: uretilen.hata };
+  const { cikti, boyutlar } = uretilen;
+  const [dosya, ...boyutDosyalari] = await parcalariYaz(
+    vt,
+    [
+      { data: cikti.data, tur, genislik: cikti.info.width, yukseklik: cikti.info.height },
+      ...boyutlar,
+    ],
+    klasor,
+    async (islem, [kaynak, ...uretilenler]) => {
+      if (kaynak === undefined) throw new Error("Görselin kaydı yok.");
+      await islem.insert(dosyaBoyutlari).values(
+        uretilenler.map((boyutDosyasi, i) => ({
+          kaynak_kimligi: kaynak.kimlik,
+          boyut: gorselBoyutAdlari[i] as GorselBoyutu,
+          dosya_kimligi: boyutDosyasi.kimlik,
+        })),
+      );
+    },
+  );
+  if (dosya === undefined || boyutDosyalari.length !== gorselBoyutAdlari.length) {
+    throw new Error("Görsel ve boyutları kaydedilemedi.");
+  }
+  return {
+    tamam: true,
+    dosya,
+    boyutlar: Object.fromEntries(
+      gorselBoyutAdlari.map((ad, i) => [ad, boyutDosyalari[i]]),
+    ) as Record<GorselBoyutu, KaydedilenDosya>,
+  };
+};
+
+export type GorselBoyutDosyasi = { kimlik: string; genislik: number; yukseklik: number };
+
+// Görsellerin silinmemiş boyutları tek sorguyla: kaynak kimliğinden boyut adına. Boyutu olmayan ya da
+// kendisi silinmiş görsel haritada yoktur; kayıtta olmayan boyut adı okunmaz.
+export const gorselBoyutlariniOku = async (
+  vt: Veritabani | VeritabaniIslemi,
+  kaynaklar: string[],
+): Promise<Map<string, Partial<Record<GorselBoyutu, GorselBoyutDosyasi>>>> => {
+  const sonuc = new Map<string, Partial<Record<GorselBoyutu, GorselBoyutDosyasi>>>();
+  const gecerli = [...new Set(kaynaklar.filter((kimlik) => kimlikBicimi.test(kimlik)))];
+  if (gecerli.length === 0) return sonuc;
+  const satirlar = await vt
+    .select({
+      kaynak: dosyaBoyutlari.kaynak_kimligi,
+      boyut: dosyaBoyutlari.boyut,
+      kimlik: dosyalar.kimlik,
+      genislik: dosyalar.genislik,
+      yukseklik: dosyalar.yukseklik,
+    })
+    .from(dosyaBoyutlari)
+    .innerJoin(dosyalar, eq(dosyalar.kimlik, dosyaBoyutlari.dosya_kimligi))
+    .where(
+      and(
+        inArray(dosyaBoyutlari.kaynak_kimligi, gecerli),
+        isNull(dosyalar.silinme_zamani),
+        // Kaynağı silinmiş görselin boyutları da okunmaz.
+        sql`exists (select 1 from ${dosyalar} as kaynak where kaynak.kimlik = ${dosyaBoyutlari.kaynak_kimligi} and kaynak.silinme_zamani is null)`,
+      ),
+    );
+  for (const { kaynak, boyut, ...dosya } of satirlar) {
+    if (!Object.hasOwn(gorselBoyutlari, boyut)) continue;
+    sonuc.set(kaynak, { ...sonuc.get(kaynak), [boyut as GorselBoyutu]: dosya });
+  }
+  return sonuc;
+};
+
+// Galeriye bağlanabilecek görsel mi (kart 0087)? Dosya var ve silinmemiş, kendisi bir boyut değil,
+// kayıttaki bütün boyutları var ve silinmemiş. Kaynak dosyanın satırı paylaşımlı kilitlenir: aynı anda
+// silen işlem bitene kadar beklenir. Bir işlemin içinde çağrılır.
+export const gorselHazirMi = async (
+  islem: VeritabaniIslemi,
+  kimlik: string,
+): Promise<"yok" | "boyut-eksik" | "hazir"> => {
+  if (!kimlikBicimi.test(kimlik)) return "yok";
+  const [kaynak] = await islem
+    .select({ kimlik: dosyalar.kimlik })
+    .from(dosyalar)
+    .where(and(eq(dosyalar.kimlik, kimlik), isNull(dosyalar.silinme_zamani)))
+    .for("share");
+  if (kaynak === undefined) return "yok";
+  const [boyutu] = await islem
+    .select({ kaynak: dosyaBoyutlari.kaynak_kimligi })
+    .from(dosyaBoyutlari)
+    .where(eq(dosyaBoyutlari.dosya_kimligi, kimlik));
+  if (boyutu !== undefined) return "yok";
+  const boyutlar = (await gorselBoyutlariniOku(islem, [kimlik])).get(kimlik) ?? {};
+  return gorselBoyutAdlari.every((ad) => boyutlar[ad] !== undefined) ? "hazir" : "boyut-eksik";
 };
 
 // Silinmemiş dosyanın kaydı (tür ve içerik özeti); yoksa undefined. İçeriği okumaz: önbellekteki

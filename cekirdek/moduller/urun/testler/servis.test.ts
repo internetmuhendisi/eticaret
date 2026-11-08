@@ -380,6 +380,7 @@ describe("alanlar", () => {
           silindi: false,
         },
       ],
+      galeri: [],
     });
   });
 

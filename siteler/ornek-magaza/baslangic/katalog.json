@@ -1,11 +1,34 @@
 {
   "kategoriler": [
-    { "ad": "Giyim", "adresAdi": "giyim" },
-    { "ad": "Ev ve Yaşam", "adresAdi": "ev-ve-yasam" },
-    { "ad": "Elektronik Aksesuar", "adresAdi": "elektronik-aksesuar" }
+    {
+      "ad": "Giyim",
+      "adresAdi": "giyim"
+    },
+    {
+      "ad": "Ev ve Yaşam",
+      "adresAdi": "ev-ve-yasam"
+    },
+    {
+      "ad": "Elektronik Aksesuar",
+      "adresAdi": "elektronik-aksesuar"
+    }
   ],
-  "markalar": [{ "ad": "Örnek Ses", "adresAdi": "ornek-ses" }],
-  "etiketler": [{ "ad": "kablosuz", "adresAdi": "kablosuz" }, { "ad": "yeni", "adresAdi": "yeni" }],
+  "markalar": [
+    {
+      "ad": "Örnek Ses",
+      "adresAdi": "ornek-ses"
+    }
+  ],
+  "etiketler": [
+    {
+      "ad": "kablosuz",
+      "adresAdi": "kablosuz"
+    },
+    {
+      "ad": "yeni",
+      "adresAdi": "yeni"
+    }
+  ],
   "urunler": [
     {
       "ad": "Pamuklu Bez Çanta",
@@ -16,8 +39,20 @@
       "vergiSinifi": "%20",
       "stokKodu": "ORN-GYM-001",
       "kategoriler": ["giyim", "ev-ve-yasam"],
-      "fiyat": { "satisFiyati": 12990 },
-      "stok": 0
+      "fiyat": {
+        "satisFiyati": 12990
+      },
+      "stok": 0,
+      "galeri": [
+        {
+          "gorsel": "pamuklu-bez-canta-1.png",
+          "alternatifMetin": "Bej pamuklu bez çanta, saplarıyla önden"
+        },
+        {
+          "gorsel": "pamuklu-bez-canta-2.png",
+          "alternatifMetin": "Yeşil pamuklu bez çanta, saplarıyla önden"
+        }
+      ]
     },
     {
       "ad": "Yün Atkı",
@@ -28,8 +63,16 @@
       "vergiSinifi": "%20",
       "stokKodu": "ORN-GYM-002",
       "kategoriler": ["giyim"],
-      "fiyat": { "satisFiyati": 34990 },
-      "stok": 10
+      "fiyat": {
+        "satisFiyati": 34990
+      },
+      "stok": 10,
+      "galeri": [
+        {
+          "gorsel": "yun-atki-1.png",
+          "alternatifMetin": "Kırmızı tonlarında yün atkı"
+        }
+      ]
     },
     {
       "ad": "Keten Masa Örtüsü",
@@ -40,8 +83,16 @@
       "vergiSinifi": "%20",
       "stokKodu": "ORN-EV-001",
       "kategoriler": ["ev-ve-yasam"],
-      "fiyat": { "satisFiyati": 44990 },
-      "stok": 15
+      "fiyat": {
+        "satisFiyati": 44990
+      },
+      "stok": 15,
+      "galeri": [
+        {
+          "gorsel": "keten-masa-ortusu-1.png",
+          "alternatifMetin": "Gri keten masa örtüsü, katlanmış"
+        }
+      ]
     },
     {
       "ad": "Porselen Kupa",
@@ -55,8 +106,16 @@
       "enCokAdet": 6,
       "kategoriler": ["ev-ve-yasam"],
       "ilgiliUrunler": ["keten-masa-ortusu", "yilbasi-kupa-seti"],
-      "fiyat": { "satisFiyati": 18990 },
-      "stok": 40
+      "fiyat": {
+        "satisFiyati": 18990
+      },
+      "stok": 40,
+      "galeri": [
+        {
+          "gorsel": "porselen-kupa-1.png",
+          "alternatifMetin": "Mavi porselen kupa, yandan"
+        }
+      ]
     },
     {
       "ad": "Yılbaşı Kupa Seti",
@@ -68,8 +127,16 @@
       "vergiSinifi": "%20",
       "stokKodu": "ORN-EV-003",
       "kategoriler": ["ev-ve-yasam"],
-      "fiyat": { "satisFiyati": 39990 },
-      "stok": 20
+      "fiyat": {
+        "satisFiyati": 39990
+      },
+      "stok": 20,
+      "galeri": [
+        {
+          "gorsel": "yilbasi-kupa-seti-1.png",
+          "alternatifMetin": "Kırmızı yılbaşı kupası"
+        }
+      ]
     },
     {
       "ad": "Kablosuz Kulaklık",
@@ -87,7 +154,25 @@
         "indirimliFiyat": 99900,
         "indirimBitisi": "2026-12-01T00:00"
       },
-      "stok": 8
+      "stok": 8,
+      "galeri": [
+        {
+          "gorsel": "kablosuz-kulaklik-1.png",
+          "alternatifMetin": "Lacivert kablosuz kulaklık, önden"
+        },
+        {
+          "video": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+          "alternatifMetin": "Örnek tanıtım videosu: Big Buck Bunny (Blender Foundation, CC BY 3.0)"
+        },
+        {
+          "gorsel": "kablosuz-kulaklik-2.png",
+          "alternatifMetin": "Yeşil kablosuz kulaklık, önden"
+        },
+        {
+          "gorsel": "kablosuz-kulaklik-3.png",
+          "alternatifMetin": "Kulaklığın yastığı, yakından"
+        }
+      ]
     },
     {
       "ad": "USB-C Şarj Kablosu 1 m",
@@ -98,8 +183,16 @@
       "vergiSinifi": "%20",
       "stokKodu": "ORN-ELK-002",
       "kategoriler": ["elektronik-aksesuar"],
-      "fiyat": { "satisFiyati": 14990 },
-      "stok": 2
+      "fiyat": {
+        "satisFiyati": 14990
+      },
+      "stok": 2,
+      "galeri": [
+        {
+          "gorsel": "usb-c-sarj-kablosu-1-m-1.png",
+          "alternatifMetin": "Gri USB-C şarj kablosu, iki ucuyla"
+        }
+      ]
     },
     {
       "ad": "Hediye Paketleme",
@@ -111,7 +204,9 @@
       "stokKodu": "ORN-HZM-001",
       "kargoGerekmez": true,
       "stokTakibi": false,
-      "fiyat": { "satisFiyati": 4990 }
+      "fiyat": {
+        "satisFiyati": 4990
+      }
     }
   ]
 }

@@ -13,6 +13,7 @@
 // geçmemişse servis yine şemadan geçirir: başka bir yoldan gelen ham değer tabloya yazılmaz.
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
+import { ayarSemasi } from "../../ayar-semasi/ayarlar.ts";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
@@ -23,6 +24,7 @@ import {
   urunDurumVitrini,
   type VitrinYeri,
 } from "../../kayitlar/urun.ts";
+import type { VideoSitesi } from "../../kayitlar/video-siteleri.ts";
 import { bosAdresAdi } from "../../metinler/adres-adi.ts";
 import { yerelZamandan } from "../../metinler/bicimleyici.ts";
 import {
@@ -56,6 +58,7 @@ import {
   type Sorun,
   stokKoduKullaniliyor,
 } from "./dogrulama.ts";
+import { type GaleriOgesi, galeriIslemleri, urunGalerileri } from "./galeri.ts";
 import { ilgilileriYaz, ilgiliSecimHatasi, secilenIlgililer } from "./ilgili.ts";
 import { urunKilidiAl } from "./kilit.ts";
 import { urunBirimleri, urunler } from "./model.ts";
@@ -88,7 +91,8 @@ export type UrunBirimi = {
   // Varyantlı üründe birleşimin değerlerinin kimlikleri, seçeneklerin sırasıyla; basit üründe boş
   // (kart 0085).
   degerler: string[];
-  // Birimin görseli (dosya kimliği; kart 0087).
+  // Birleşimin seçtiği galeri görseli (galeri öğesinin kimliği; kart 0087). Gösterilecek görseli
+  // birimGorseli (galeri.ts) verir: seçim yoksa ana görsel.
   gorsel?: string;
   silindi: boolean;
 };
@@ -126,6 +130,8 @@ export type Urun = {
   // bağlıdır).
   secenekler: UrunSecenegi[];
   birimler: UrunBirimi[];
+  // Silinmemiş galeri öğeleri sırasıyla (kart 0087); ana görsel ilk görsel öğesidir.
+  galeri: GaleriOgesi[];
 };
 
 // Ürünün ve tek biriminin düz hâli: girdi bu biçime çevrilir, alanlar arası kurallar buna uygulanır,
@@ -274,7 +280,13 @@ const bagliHepsi = async (
   };
 };
 
-export const urunServisi = (saatDilimi: () => string) => {
+// videoSiteleri: galeriye bağlantısı eklenebilen video siteleri (site ayarı). Verilmezse ayarın
+// varsayılanı geçerlidir (testler).
+export const urunServisi = (
+  saatDilimi: () => string,
+  videoSiteleri: () => readonly VideoSitesi[] = () =>
+    ayarSemasi.shape.videoSiteleri.parse(undefined),
+) => {
   const yaz = <T>(vt: Veritabani | VeritabaniIslemi, is: (islem: VeritabaniIslemi) => Promise<T>) =>
     vt.transaction(async (islem) => {
       await urunKilidiAl(islem);
@@ -626,6 +638,7 @@ export const urunServisi = (saatDilimi: () => string) => {
       ...(await bagliHepsi((t) => bagliGruplar(vt, t, kimlik))),
       ilgiliUrunler: await secilenIlgililer(vt, kimlik),
       ozellikler: await urununOzellikleri(vt, kimlik),
+      galeri: (await urunGalerileri(vt, [kimlik])).get(kimlik) ?? [],
       silindi: silinme !== null,
       tur: secenekler.some((secenek) => !secenek.silindi) ? "varyantli" : "basit",
       secenekler,
@@ -659,14 +672,22 @@ export const urunServisi = (saatDilimi: () => string) => {
     urunuOku,
     vitrindeGorunurMu,
     ...varyantIslemleri(yaz),
+    ...galeriIslemleri(yaz, videoSiteleri),
   };
 };
 
 // Verilen sitenin servisi: arka plan işi ve testler siteyi kendisi verir.
-export const siteninUrunServisi = (site: Site) => urunServisi(() => site.ayarlar.saatDilimi);
+export const siteninUrunServisi = (site: Site) =>
+  urunServisi(
+    () => site.ayarlar.saatDilimi,
+    () => site.ayarlar.videoSiteleri,
+  );
 
 // Çalışan sitenin servisi. Saat dilimi çağrıldığında okunur (karar 0026).
-const calisanSiteninServisi = urunServisi(() => calisanSite().ayarlar.saatDilimi);
+const calisanSiteninServisi = urunServisi(
+  () => calisanSite().ayarlar.saatDilimi,
+  () => calisanSite().ayarlar.videoSiteleri,
+);
 export const calisanSiteninUrunServisi = () => calisanSiteninServisi;
 export const urunuOku = (kimlik: string, vt: Veritabani = siteninVeritabani()) =>
   calisanSiteninServisi.urunuOku(vt, kimlik);

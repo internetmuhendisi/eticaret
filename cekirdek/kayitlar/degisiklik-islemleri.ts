@@ -33,6 +33,13 @@ export const degisiklikIslemleri = [
   "urun-birimi.eklendi",
   "urun-birimi.degisti",
   "urun-birimi.silindi",
+  // Ürün galerisi (kart 0087): öğe eklendi, alternatif metni değişti, silindi; sıralama ürünün
+  // kaydına yazılır (kayıt türü urun). Silinen öğeyi seçmiş birleşimin görseli urun-birimi.degisti
+  // olarak yazılır.
+  "urun-galerisi.eklendi",
+  "urun-galerisi.degisti",
+  "urun-galerisi.silindi",
+  "urun-galerisi.siralandi",
   // Kategori (kart 0077). Taşıma, üst kategorinin değişmesidir: kategori.degisti.
   "kategori.eklendi",
   "kategori.degisti",
@@ -71,6 +78,8 @@ export const degisiklikKayitTurleri = [
   "urun-secenegi",
   "urun-secenek-degeri",
   "urun-birimi",
+  // Kart 0087: ürün galerisinin öğesi.
+  "urun-galeri-ogesi",
   "kategori",
   "marka",
   "etiket",

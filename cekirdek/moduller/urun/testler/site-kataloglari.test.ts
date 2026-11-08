@@ -2,7 +2,8 @@
 // 0070). Site doğrulaması dosyanın alanlarını ve servislerin alanlar arası kurallarını denetler; aynı ad
 // ve aynı stok kodu gibi veritabanında aranan kuralları ancak bu test yakalar. Kurulamayan katalog
 // sunucuda her açılışta yalnız hata kaydederdi; test her yayında çalışır, yayından önce kırmızı olur.
-import { readdirSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
@@ -23,11 +24,15 @@ describe("sitelerin başlangıç kataloğu", () => {
   for (const site of kataloglu) {
     it(`${site.kimlik.kodAdi} boş veritabanına kurulur`, async () => {
       const { vt, sil } = await denemeSitesiAc("site-katalogu");
+      // Galeri görselleri geçici bir dosya klasörüne kaydedilir (kart 0087).
+      const klasor = mkdtempSync(join(tmpdir(), "site-katalogu-"));
       try {
-        expect(await katalogBaslangiciniKur(vt, site)).toBe(true);
+        expect(await katalogBaslangiciniKur(vt, site, () => klasor)).toBe(true);
       } finally {
         await sil();
+        rmSync(klasor, { recursive: true, force: true });
       }
-    });
+      // Galeri görselleri ve boyutları yeniden kodlanır: yüklü hatta birkaç saniye sürer.
+    }, 120_000);
   }
 });
