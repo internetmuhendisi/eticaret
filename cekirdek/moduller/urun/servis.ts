@@ -464,7 +464,13 @@ export const urunServisi = (saatDilimi: () => string) => {
       const degisen = kayitAlanlari.filter(
         (alan) => JSON.stringify(eski[alan]) !== JSON.stringify(yeni[alan]),
       );
-      if (degisen.length === 0) return;
+      // Seçim verildiyse tablo her zaman baştan yazılır: sonradan silinen seçimin satırı, liste aynen
+      // kaydedilse de kalkar (kart 0079 kontrolü). Değişmeyen liste kayda girmez.
+      const ilgiliVerildi = girdi.ilgiliUrunler !== undefined;
+      if (degisen.length === 0) {
+        if (ilgiliVerildi) await ilgilileriYaz(islem, kimlik, yeni.ilgiliUrunler);
+        return;
+      }
       if (yeni.vergiSinifi !== eski.vergiSinifi)
         await vergiSinifiniDenetle(islem, yeni.vergiSinifi);
       const fark = (a: UrunKaydi, b: UrunKaydi) => (alan: Alan) =>
@@ -499,7 +505,7 @@ export const urunServisi = (saatDilimi: () => string) => {
         await gruplariKaldir(islem, t, kimlik, kalkan(t.alan));
         await gruplariBagla(islem, t, kimlik, eklenen(t.alan));
       }
-      if (ilgiliDegisti) await ilgilileriYaz(islem, kimlik, yeni.ilgiliUrunler);
+      if (ilgiliDegisti || ilgiliVerildi) await ilgilileriYaz(islem, kimlik, yeni.ilgiliUrunler);
       const sec = (kaynak: UrunKaydi) =>
         kayitDegeri(Object.fromEntries(degisen.map((alan) => [alan, kaynak[alan]])), true);
       await degisikligiKaydet(islem, {

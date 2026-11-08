@@ -8,7 +8,8 @@
 // - En çok ilgiliUrunSiniri kadar (kullanıcı kararı). Elle seçilenlerin bir kısmı görünüyorsa liste
 //   kategoriden tamamlanmaz.
 // Görünürlük ürünün tek vitrin koşuluyladır (vitrin.ts, liste yeri): taslak, gizli, arşiv, zamanı
-// gelmemiş ve silinmiş ürün girmez. Ürünün kendisi hiçbir zaman girmez.
+// gelmemiş ve silinmiş ürün girmez. Ürünün kendisi hiçbir zaman girmez. Ürünün kendi sayfası vitrinde
+// açılmıyorsa (taslak, arşiv, silinmiş) liste boştur (kart 0079 kontrolü).
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { kimlikMi } from "../../veritabani/turler.ts";
@@ -72,12 +73,16 @@ export const ilgiliUrunleriGetir = async (
 ): Promise<string[]> => {
   if (!kimlikMi(urun)) return [];
   const gorunur = vitrinKosulu("liste", an);
+  const sayfasiAcik = vitrinKosulu("sayfa", an);
   const sonuc = await vt.execute<{ kimlik: string }>(sql`
-    with elle as (
+    with kaynak as (
+      select 1 from ${urunler} where ${urunler.kimlik} = ${urun}::uuid and ${sayfasiAcik}
+    ),
+    elle as (
       select ${urunler.kimlik} as kimlik, ${urunIlgilileri.sira} as sira
       from ${urunIlgilileri} join ${urunler} on ${urunler.kimlik} = ${urunIlgilileri.ilgili_kimligi}
       where ${urunIlgilileri.urun_kimligi} = ${urun}::uuid and ${urunler.kimlik} <> ${urun}::uuid
-        and ${gorunur}
+        and ${gorunur} and exists (select 1 from kaynak)
       order by ${urunIlgilileri.sira}
       limit ${ilgiliUrunSiniri}
     ),
@@ -87,7 +92,7 @@ export const ilgiliUrunleriGetir = async (
         row_number() over (order by ${urunler.olusturma_zamani} desc, ${urunler.kimlik}) as sira
       from ${urunler}
       where ${urunler.kimlik} <> ${urun}::uuid and ${gorunur}
-        and not exists (select 1 from elle)
+        and exists (select 1 from kaynak) and not exists (select 1 from elle)
         and exists (
           select 1 from ${urunKategorileri}
           where ${urunKategorileri.urun_kimligi} = ${urunler.kimlik}

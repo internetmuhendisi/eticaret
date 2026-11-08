@@ -9,9 +9,9 @@
 Ürünün ilgili ürünleri tek işlevle bulunur: `ilgiliUrunleriGetir` (`cekirdek/moduller/urun/ilgili.ts`, kart 0079). Elle seçim ürün girdisinin `ilgiliUrunler` alanıyla ürün servisinden yazılır ve `urun_ilgilileri` tablosunda sırasıyla durur.
 
 - **Sayı (kullanıcı kararı):** Vitrinde en çok 4 ilgili ürün görünür (`ilgiliUrunSiniri`). Elle en çok 20 ürün seçilebilir; öndekiler vitrinden çıkarsa sonrakiler yerlerini alır.
-- **Elle seçim:** Seçim sırasıyla gelir. Ürün kendisini seçemez (veritabanında da denetlenir), silinmiş ya da olmayan ürün seçilemez, aynı ürün iki kez seçilemez. Değişiklik listeyi baştan yazar ve ürünün değişiklik kaydına sırasıyla girer. Seçilen ürün sonradan silinirse satır kalır, okunmaz ve vitrinde görünmez.
+- **Elle seçim:** Seçim sırasıyla gelir. Ürün kendisini seçemez (veritabanında da denetlenir), silinmiş ya da olmayan ürün seçilemez, aynı ürün iki kez seçilemez. Liste verildiğinde tablo her zaman baştan yazılır; değişen liste ürünün değişiklik kaydına sırasıyla girer, aynı kalan girmez. Seçilen ürün sonradan silinirse satır kalır, okunmaz ve vitrinde görünmez.
 - **Kategoriden (kullanıcı kararları):** Elle seçim yoksa ya da seçilenlerin hiçbiri vitrinde görünmüyorsa, ürünün silinmemiş kategorilerindeki öteki ürünler en yeni önce gelir. Seçilenlerin bir kısmı görünüyorsa liste kategoriden tamamlanmaz.
-- **Görünürlük:** Ürünün tek vitrin koşuluyla, liste yeri için (karar 0062): taslak, gizli, arşiv, zamanı gelmemiş ve silinmiş ürün girmez. Ürünün kendisi hiçbir zaman girmez.
+- **Görünürlük:** Ürünün tek vitrin koşuluyla, liste yeri için (karar 0062): taslak, gizli, arşiv, zamanı gelmemiş ve silinmiş ürün girmez. Ürünün kendisi hiçbir zaman girmez. Ürünün kendi sayfası vitrinde açılmıyorsa (taslak, arşiv, zamanı gelmemiş, silinmiş) liste boştur; gizli ürünün sayfası açıldığı için listesi gelir.
 - **Tek sorgu:** Elle seçim, kategoriden gelenler ve görünürlük tek sorguda birleşir.
 - **İzin:** Seçim ürünün parçasıdır, `urun.degistir` ile yazılır. Yeni izin yoktur.
 
@@ -33,5 +33,5 @@
 ## Sonuçları
 
 - Stok durumuna göre süzme kart 0083 bitince bu işleve eklenir.
-- Silinen ürünün başka ürünlerin seçimlerinde kalan satırları, o ürünlerin seçimi bir sonraki değişiklikte baştan yazılınca kalkar.
+- Silinen ürünün başka ürünlerin seçimlerinde kalan satırları, o ürünlerin seçimi bir sonraki kaydedilişte (liste aynı kalsa da) kalkar. Değişiklik kaydında silinen seçim ayrı bir girdi olmaz: bir önceki kaydın yeni listesi silinen ürünü taşır, sonrakinin eski listesi taşımaz.
 - Seçilen ürünün görünürlüğü her okumada yeniden bulunur; panel, seçilen ama vitrinde görünmeyen ürünleri ayrıca göstermelidir (panel bölümü).

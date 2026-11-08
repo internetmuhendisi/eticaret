@@ -200,6 +200,37 @@ describe("seçimin doğrulanması ve kaydı", () => {
   });
 });
 
+describe("kontrol bulguları", () => {
+  it("silinen seçim satırı, liste aynen yeniden kaydedilince de kalkar", async () => {
+    const vt = await siteAc();
+    const [x, y] = [await urun(vt), await urun(vt)];
+    const ana = await urun(vt, { ilgiliUrunler: [x, y] });
+    await servis.urunSil(vt, yonetici(), x);
+    expect((await servis.urunuOku(vt, ana))?.ilgiliUrunler).toEqual([y]);
+    await servis.urunDegistir(vt, yonetici(), ana, { ilgiliUrunler: [y] });
+    expect(
+      (await vt.select().from(urunIlgilileri).where(eq(urunIlgilileri.urun_kimligi, ana))).map(
+        (satir) => satir.ilgili_kimligi,
+      ),
+    ).toEqual([y]);
+  });
+
+  it("sayfası vitrinde açılmayan ürünün ilgili listesi boştur", async () => {
+    const vt = await siteAc();
+    const k = await kategori(vt, "Kaynak");
+    const secilen = await urun(vt, { kategoriler: [k] });
+    for (const durum of ["taslak", "arsiv"] as const) {
+      const ana = await urun(vt, { durum, kategoriler: [k], ilgiliUrunler: [secilen] });
+      expect(await ilgiliUrunleriGetir(vt, ana)).toEqual([]);
+    }
+    const gizli = await urun(vt, { durum: "gizli", ilgiliUrunler: [secilen] });
+    expect(await ilgiliUrunleriGetir(vt, gizli)).toEqual([secilen]);
+    const silinen = await urun(vt, { kategoriler: [k] });
+    await servis.urunSil(vt, yonetici(), silinen);
+    expect(await ilgiliUrunleriGetir(vt, silinen)).toEqual([]);
+  });
+});
+
 describe("iki site", () => {
   it("bir sitenin ürünü ötekinin ilgili listesine giremez ve görünmez", async () => {
     const [a, b] = await Promise.all([siteAc(), siteAc()]);
