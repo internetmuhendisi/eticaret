@@ -35,6 +35,9 @@ export const degisiklikIslemleri = [
   "etiket.silindi",
   // Satılabilir birimin fiyatı (kart 0080). İlk fiyatta eski değer boştur.
   "fiyat.degisti",
+  // Satılabilir birimin stoğu panelden elle düzeltildi (kart 0082). Siparişin düşürmesi ve iptalin
+  // artırması yalnız stok geçmişine yazılır.
+  "stok.duzeltildi",
 ] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 
@@ -50,6 +53,8 @@ export const degisiklikKayitTurleri = [
   "etiket",
   // Kayıt kimliği satılabilir birimin kimliğidir (kart 0080).
   "fiyat",
+  // Kayıt kimliği satılabilir birimin kimliğidir (kart 0082).
+  "stok",
 ] as const;
 export type DegisiklikKayitTuru = (typeof degisiklikKayitTurleri)[number];
 

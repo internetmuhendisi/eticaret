@@ -157,6 +157,27 @@
         "indirim-sirasi": "İndirimin bitişi başlangıcından sonra olmalı."
       }
     },
+    "stok": {
+      "sebep": {
+        "sayim": "Sayım düzeltmesi",
+        "yeni-mal": "Yeni mal geldi",
+        "hasarli-kayip": "Hasarlı ya da kayıp",
+        "iade-edilen": "İade edilen ürün",
+        "diger": "Diğer",
+        "siparis": "Sipariş",
+        "siparis-iptali": "Sipariş iptali",
+        "siparis-iadesi": "Sipariş iadesi"
+      },
+      "hata": {
+        "miktar-bicimi": "Stok sıfır ya da sıfırdan büyük bir tam sayı olmalı.",
+        "adet-bicimi": "Adet sıfırdan büyük bir tam sayı olmalı.",
+        "stok-yetersiz": "Bu üründen yeterli stok yok.",
+        "birim-gecersiz": "Bu ürün artık satılmıyor.",
+        "stok-degisti": "Siz düzeltirken stok değişti. Güncel miktara bakıp yeniden kaydedin.",
+        "not-gerekli": "\"Diğer\" sebebinde kısa bir not yazın.",
+        "kayda-uygun-degil": "Not yalnız bir e-posta adresinden ya da giriş anahtarından oluşamaz. Metni değiştirin."
+      }
+    },
     "marka": {
       "hata": {
         "kayda-uygun-degil": "Bu alan yalnız bir e-posta adresinden ya da giriş anahtarından oluşamaz. Metni değiştirin.",

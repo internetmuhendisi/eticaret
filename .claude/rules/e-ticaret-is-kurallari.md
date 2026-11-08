@@ -47,6 +47,7 @@ paths:
 
 ## Stok
 
+- Stok yalnız `cekirdek/moduller/stok/servis.ts` ile okunur ve değişir. Sipariş `stokDus`, iptal ve iade `stokArtir` kullanır, ikisi de çağıranın işleminde çalışır. Panel `stokDuzelt` ile ekranın gördüğü miktarı da gönderir. Sebepler `cekirdek/kayitlar/stok.ts` kaydındadır, geçmiş değiştirilemez (karar 0068).
 - Sipariş oluşurken stoğu "yeterliyse düş" koşuluyla ve siparişin kaydıyla aynı veritabanı işleminde düş. Aynı anda gelen iki sipariş son ürünü iki kez satmasın.
 - Ödemeye geçen sepetin ürünlerini belli bir süre ayır. Ödeme başarısız olur ya da süre dolarsa geri bırak.
 - Beden ve renk gibi seçeneklerin her birleşiminin kendi stok kodu, stoğu ve fiyatı olsun.

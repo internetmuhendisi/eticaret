@@ -87,6 +87,8 @@ const alanlar = {
   // Sitenin saat diliminde yerel zaman: "2026-11-08T09:30". Servis saat dilimi ayarıyla ana çevirir.
   yayinZamani: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, hata("yayin-zamani-bicimi")),
   kargoGerekmez: z.boolean(),
+  // Stok takibi (kart 0082): yeni üründe açık (kullanıcı kararı).
+  stokTakibi: z.boolean(),
   enAzAdet: adet,
   enCokAdet: adet,
   // Vergi sınıfının kimliği; null ürünü vergisiz yapar. Bilerek zorunludur: unutulan sınıf vergisiz
@@ -128,6 +130,7 @@ export const urunGirdisi = z.strictObject({
   durum: alanlar.durum.default(varsayilanUrunDurumu),
   yayinZamani: alanlar.yayinZamani.optional(),
   kargoGerekmez: alanlar.kargoGerekmez.default(false),
+  stokTakibi: alanlar.stokTakibi.default(true),
   enAzAdet: alanlar.enAzAdet.default(1),
   enCokAdet: alanlar.enCokAdet.optional(),
   vergiSinifi: alanlar.vergiSinifi,
@@ -153,6 +156,7 @@ export const urunDegisikligi = z.strictObject({
   durum: alanlar.durum.optional(),
   yayinZamani: alanlar.yayinZamani.nullable().optional(),
   kargoGerekmez: alanlar.kargoGerekmez.optional(),
+  stokTakibi: alanlar.stokTakibi.optional(),
   enAzAdet: alanlar.enAzAdet.optional(),
   enCokAdet: alanlar.enCokAdet.nullable().optional(),
   vergiSinifi: alanlar.vergiSinifi.optional(),

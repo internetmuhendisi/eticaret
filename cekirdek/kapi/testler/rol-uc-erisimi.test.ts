@@ -209,6 +209,22 @@ describe("kişi listesi", () => {
       expect(erisebilirMi(rol, "fiyat.degistir")).toBe(baslangicRolleri[rol.rolKodu].tamYetki);
     }
   });
+
+  // Kart 0082 (kullanıcı kararı): her rol stoğu görür ve elle düzeltir.
+  it("stok izinleri: her rol görür ve düzeltir", () => {
+    const [girissiz, musteri, rolsuz, ...roller] = kisiler;
+    for (const kisi of [girissiz, musteri, rolsuz]) {
+      if (kisi === undefined) throw new Error("Kişi eksik.");
+      expect(erisebilirMi(kisi, "stok.gor")).toBe(false);
+      expect(erisebilirMi(kisi, "stok.duzelt")).toBe(false);
+    }
+    expect(roller.length).toBeGreaterThanOrEqual(2);
+    for (const rol of roller) {
+      if (rol.tur !== "yonetici" || rol.rolKodu === null) throw new Error("Rol eksik.");
+      expect(erisebilirMi(rol, "stok.gor")).toBe(true);
+      expect(erisebilirMi(rol, "stok.duzelt")).toBe(true);
+    }
+  });
 });
 
 describe("makine gerçekten yakalıyor", () => {

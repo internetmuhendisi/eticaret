@@ -71,6 +71,8 @@ export type Urun = {
   durum: UrunDurumu;
   yayinZamani?: Date;
   kargoGerekmez: boolean;
+  // Stok takibi açık mı (kart 0082). Stoğun kendisi stok modülündedir.
+  stokTakibi: boolean;
   enAzAdet: number;
   enCokAdet?: number;
   // Boşsa (null) ürün vergisizdir.
@@ -96,6 +98,7 @@ type UrunKaydi = {
   durum: UrunDurumu;
   yayinZamani: Date | null;
   kargoGerekmez: boolean;
+  stokTakibi: boolean;
   enAzAdet: number;
   enCokAdet: number | null;
   vergiSinifi: string | null;
@@ -125,6 +128,7 @@ const kayitAlanlari = [
   "durum",
   "yayinZamani",
   "kargoGerekmez",
+  "stokTakibi",
   "enAzAdet",
   "enCokAdet",
   "vergiSinifi",
@@ -192,6 +196,7 @@ const urunSatiri = (kayit: UrunKaydi & { adresAdi: string }) => ({
   durum: kayit.durum,
   yayin_zamani: kayit.yayinZamani,
   kargo_gerekmez: kayit.kargoGerekmez,
+  stok_takibi: kayit.stokTakibi,
   en_az_adet: kayit.enAzAdet,
   en_cok_adet: kayit.enCokAdet,
   vergi_sinifi_kimligi: kayit.vergiSinifi,
@@ -215,6 +220,7 @@ const urunAlanlari = {
   durum: urunler.durum,
   yayinZamani: urunler.yayin_zamani,
   kargoGerekmez: urunler.kargo_gerekmez,
+  stokTakibi: urunler.stok_takibi,
   enAzAdet: urunler.en_az_adet,
   enCokAdet: urunler.en_cok_adet,
   vergiSinifi: urunler.vergi_sinifi_kimligi,
@@ -379,6 +385,7 @@ export const urunServisi = (saatDilimi: () => string) => {
         ? (yayinZamaniniCevir(girdi.yayinZamani) ?? null)
         : null,
       kargoGerekmez: girdi.kargoGerekmez,
+      stokTakibi: girdi.stokTakibi,
       enAzAdet: girdi.enAzAdet,
       enCokAdet: girdi.enCokAdet ?? null,
       vergiSinifi: girdi.vergiSinifi,

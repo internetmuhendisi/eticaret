@@ -46,6 +46,9 @@ export const urunler = pgTable(
     // Yalnız zamanlanmış üründe dolu: bu andan sonra ürün vitrinde görünür.
     yayin_zamani: zaman(),
     kargo_gerekmez: boolean().notNull().default(false),
+    // Stok takibi (kart 0082, karar 0068). Kapalıysa stok düşmez ve artmaz, ürün stoktan bağımsız
+    // satılır. Yeni üründe açık (kullanıcı kararı): stok girilene kadar stoğu sıfırdır.
+    stok_takibi: boolean().notNull().default(true),
     en_az_adet: integer().notNull().default(1),
     en_cok_adet: integer(),
     // Boşsa ürün vergisizdir. Silinmiş sınıf da bağlı kalabilir (karar 0060).

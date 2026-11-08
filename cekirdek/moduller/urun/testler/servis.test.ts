@@ -330,6 +330,7 @@ describe("alanlar", () => {
       adresAdi: "tam-urun",
       durum: "gizli",
       kargoGerekmez: true,
+      stokTakibi: false,
       enAzAdet: 2,
       enCokAdet: 10,
       vergiSinifi: sinif,
@@ -349,6 +350,7 @@ describe("alanlar", () => {
       adresAdi: "tam-urun",
       durum: "gizli",
       kargoGerekmez: true,
+      stokTakibi: false,
       enAzAdet: 2,
       enCokAdet: 10,
       vergiSinifi: sinif,
@@ -373,12 +375,13 @@ describe("alanlar", () => {
     });
   });
 
-  it("varsayılanlar: taslak, kargo gerekir, en az bir adet, vergisiz", async () => {
+  it("varsayılanlar: taslak, kargo gerekir, stok takibi açık, en az bir adet, vergisiz", async () => {
     const vt = await siteAc();
     const okunan = await servis.urunuOku(vt, await servis.urunEkle(vt, yonetici(), urun()));
     expect(okunan).toMatchObject({
       durum: "taslak",
       kargoGerekmez: false,
+      stokTakibi: true,
       enAzAdet: 1,
       vergiSinifi: null,
     });
@@ -476,6 +479,7 @@ describe("silme ve değişiklik kaydı", () => {
           adresAdi: "kayitli",
           durum: "taslak",
           kargoGerekmez: false,
+          stokTakibi: true,
           enAzAdet: 1,
           stokKodu: "KY-1",
         },
@@ -496,6 +500,7 @@ describe("silme ve değişiklik kaydı", () => {
           adresAdi: "kayitli",
           durum: "yayinda",
           kargoGerekmez: false,
+          stokTakibi: true,
           enAzAdet: 1,
           stokKodu: "KY-1",
           agirlikGram: 5,

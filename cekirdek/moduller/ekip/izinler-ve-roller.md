@@ -25,6 +25,8 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `marka.degistir` | yonetici | tumu | Marka ekler ve değiştirir. |
 | `marka.sil` | yonetici | tumu | Marka siler: ürünlerden kalkar. |
 | `musteri.kendi-hesabi.gor` | musteri | kendi | Müşteri kendi hesabını görür. |
+| `stok.gor` | yonetici | tumu | Satılabilir birimlerin stoğunu ve stok geçmişini görür. |
+| `stok.duzelt` | yonetici | tumu | Stoğu sebebiyle elle düzeltir. |
 | `urun.gor` | yonetici | tumu | Ürünleri, silinmişler dahil, görür. |
 | `urun.degistir` | yonetici | tumu | Ürün ekler ve değiştirir. |
 | `urun.sil` | yonetici | tumu | Ürün siler (silinmiş olarak işaretler). |
@@ -40,6 +42,6 @@ Her sitede hazır gelir. Ekranda görünen adları metin dosyasındadır (`yonet
 | Kod | Görünen ad | İzinler |
 |---|---|---|
 | `magaza-sahibi` | Mağaza sahibi | bütün yönetici izinleri |
-| `gorevli` | Görevli | ekip.kendi-hesabi.gor, urun.gor, urun.degistir, kategori.gor, kategori.degistir, marka.gor, marka.degistir, etiket.gor, etiket.degistir, fiyat.gor |
+| `gorevli` | Görevli | ekip.kendi-hesabi.gor, urun.gor, urun.degistir, kategori.gor, kategori.degistir, marka.gor, marka.degistir, etiket.gor, etiket.degistir, fiyat.gor, stok.gor, stok.duzelt |
 
 Tam yetkili son yöneticinin rolü alınamaz. Görevlinin izinleri ürün ve sipariş gibi modüller geldikçe artar.

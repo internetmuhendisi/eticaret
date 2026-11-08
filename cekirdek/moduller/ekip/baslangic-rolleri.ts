@@ -24,6 +24,9 @@ export const baslangicRolleri = {
       "etiket.degistir",
       // Fiyatı görür, değiştiremez (kart 0080, kullanıcı kararı).
       "fiyat.gor",
+      // Stoğu görür ve elle düzeltir (kart 0082, kullanıcı kararı).
+      "stok.gor",
+      "stok.duzelt",
     ],
   },
 } as const satisfies Record<
