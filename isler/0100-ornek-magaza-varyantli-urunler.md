@@ -49,4 +49,4 @@ Bölüm: Katalog 2. Önce 0085, 0086 ve 0087 bitmiş olmalı.
 
 ## Durum
 
-çalışılıyor
+bitti
