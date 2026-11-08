@@ -26,6 +26,10 @@ export const urunHatalari = [
   // Ürünün kategorileri (kart 0077): aynı kategori iki kez, ya da olmayan veya silinmiş kategori.
   "kategori-tekrar",
   "kategori-gecersiz",
+  // Ürünün markası ve etiketleri (kart 0078).
+  "marka-gecersiz",
+  "etiket-tekrar",
+  "etiket-gecersiz",
 ] as const;
 export type UrunHatasi = (typeof urunHatalari)[number];
 
@@ -43,6 +47,9 @@ export const urunHataMetinleri = {
   "vergi-sinifi-gecersiz": "yonetim.urun.hata.vergi-sinifi-gecersiz",
   "kategori-tekrar": "yonetim.urun.hata.kategori-tekrar",
   "kategori-gecersiz": "yonetim.urun.hata.kategori-gecersiz",
+  "marka-gecersiz": "yonetim.urun.hata.marka-gecersiz",
+  "etiket-tekrar": "yonetim.urun.hata.etiket-tekrar",
+  "etiket-gecersiz": "yonetim.urun.hata.etiket-gecersiz",
 } as const satisfies Record<UrunHatasi, MetinAnahtari>;
 
 const hata = (kod: UrunHatasi) => kod;
@@ -50,6 +57,12 @@ const hata = (kod: UrunHatasi) => kod;
 // Serbest metin: değerin tamamı e-posta adresi ya da giriş anahtarı olamaz, değişiklik kaydı onu
 // reddeder (karar 0045); mağaza sahibi beklenmeyen hata yerine "kayda-uygun-degil" kodunu görür.
 const metin = kayitMetni;
+
+const kimlikListesi = (tekrar: UrunHatasi) =>
+  z
+    .array(z.uuid())
+    .max(50)
+    .refine((liste) => new Set(liste).size === liste.length, hata(tekrar));
 
 // Ağırlık gram, ölçüler milimetre biriminde tam sayıdır (karar 0062). Ekran sitenin birimine
 // (agirlikBirimi, boyutBirimi) çevirir.
@@ -84,11 +97,12 @@ const alanlar = {
   enMm: olcu(100_000),
   boyMm: olcu(100_000),
   yukseklikMm: olcu(100_000),
-  // Ürünün kategorileri (kart 0077): kimlik listesi, tekrarsız. Sırası önemli değildir.
-  kategoriler: z
-    .array(z.uuid())
-    .max(50)
-    .refine((liste) => new Set(liste).size === liste.length, hata("kategori-tekrar")),
+  // Ürünün kategorileri (kart 0077) ve etiketleri (kart 0078): kimlik listesi, tekrarsız. Sırası
+  // önemli değildir.
+  kategoriler: kimlikListesi("kategori-tekrar"),
+  etiketler: kimlikListesi("etiket-tekrar"),
+  // Ürünün markası (kart 0078); null ürünü markasız yapar.
+  marka: z.uuid().nullable(),
 };
 
 // Yeni ürün. Verilmeyen adres adı addan üretilir; zamanlanmış durum dışında yayın zamanı yok sayılır.
@@ -110,6 +124,8 @@ export const urunGirdisi = z.strictObject({
   boyMm: alanlar.boyMm.optional(),
   yukseklikMm: alanlar.yukseklikMm.optional(),
   kategoriler: alanlar.kategoriler.optional(),
+  etiketler: alanlar.etiketler.optional(),
+  marka: alanlar.marka.optional(),
 });
 export type UrunGirdisi = z.input<typeof urunGirdisi>;
 
@@ -131,7 +147,10 @@ export const urunDegisikligi = z.strictObject({
   enMm: alanlar.enMm.nullable().optional(),
   boyMm: alanlar.boyMm.nullable().optional(),
   yukseklikMm: alanlar.yukseklikMm.nullable().optional(),
-  // Verilirse ürünün kategorileri bu liste olur; boş liste bütün bağlantıları kaldırır.
+  // Verilirse ürünün kategorileri ya da etiketleri bu liste olur; boş liste bütün bağlantıları
+  // kaldırır. null markayı kaldırır.
   kategoriler: alanlar.kategoriler.optional(),
+  etiketler: alanlar.etiketler.optional(),
+  marka: alanlar.marka.optional(),
 });
 export type UrunDegisikligi = z.input<typeof urunDegisikligi>;

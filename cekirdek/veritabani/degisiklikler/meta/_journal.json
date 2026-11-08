@@ -113,6 +113,13 @@
       "when": 1794093882309,
       "tag": "0015_kategori",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794096650288,
+      "tag": "0016_marka-ve-etiket",
+      "breakpoints": true
     }
   ]
 }

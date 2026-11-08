@@ -80,6 +80,11 @@ describe("ekleme ve okuma", () => {
     expect((await kategoriyiOku(ikinci, vt))?.adresAdi).toBe("tisort-2");
     const beklenen = { kod: "cakisma", ayrinti: [{ alan: "ad", kod: "ad-tekrar" }] };
     expect(await hatasi(ekle(vt, "TİŞÖRT", erkek))).toEqual(beklenen);
+    // Noktalı noktasız i ayrımı da yapılmaz (kart 0078, cekirdek/metinler/ad-anahtari.ts).
+    await ekle(vt, "Deniz", erkek);
+    expect(await hatasi(ekle(vt, "DENİZ", erkek))).toEqual(beklenen);
+    await ekle(vt, "Şık", erkek);
+    expect(await hatasi(ekle(vt, "ŞIK", erkek))).toEqual(beklenen);
     expect(await hatasi(ekle(vt, "erkek"))).toEqual(beklenen);
     // Taşınınca yeni kardeşlerle karşılaştırılır.
     expect(await hatasi(kategoriDegistir(vt, yonetici(), ikinci, { ust: erkek }))).toEqual(

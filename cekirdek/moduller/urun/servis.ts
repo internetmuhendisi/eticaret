@@ -28,8 +28,15 @@ import {
 } from "../../veritabani/baglanti.ts";
 import { kimlikMi } from "../../veritabani/turler.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
-import { kategoriler, urunKategorileri } from "../kategori/model.ts";
 import { vergiSiniflari } from "../vergi/model.ts";
+import {
+  baglantiTanimlari,
+  bagliGruplar,
+  gruplarGecerliMi,
+  gruplariBagla,
+  gruplariKaldir,
+  kilitliBagliGruplar,
+} from "./baglantilar.ts";
 import { urunBirimleri, urunler } from "./model.ts";
 import {
   type UrunDegisikligi,
@@ -66,8 +73,11 @@ export type Urun = {
   enCokAdet?: number;
   // Boşsa (null) ürün vergisizdir.
   vergiSinifi: string | null;
-  // Bağlı kategorilerin kimlikleri, sıralı (kart 0077).
+  // Bağlı kategorilerin (kart 0077) ve etiketlerin (kart 0078) kimlikleri, sıralı.
   kategoriler: string[];
+  etiketler: string[];
+  // Markanın kimliği; null markasız (kart 0078).
+  marka: string | null;
   silindi: boolean;
   birimler: UrunBirimi[];
 };
@@ -91,9 +101,16 @@ type UrunKaydi = {
   enMm: number | null;
   boyMm: number | null;
   yukseklikMm: number | null;
-  // Sıralı kategori kimlikleri (kart 0077).
+  // Bağlantılar (baglantilar.ts): sıralı kategori ve etiket kimlikleri, markanın kimliği.
   kategoriler: string[];
+  etiketler: string[];
+  marka: string | null;
 };
+
+// Bağlantı alanının kimlik listesi: marka tekildir, kayıtta tek kimlik durur.
+type Alan = "kategoriler" | "marka" | "etiketler";
+const gruplari = (kayit: UrunKaydi, alan: Alan): string[] =>
+  alan === "marka" ? (kayit.marka === null ? [] : [kayit.marka]) : kayit[alan];
 const kayitAlanlari = [
   "ad",
   "kisaAciklama",
@@ -112,6 +129,8 @@ const kayitAlanlari = [
   "boyMm",
   "yukseklikMm",
   "kategoriler",
+  "etiketler",
+  "marka",
 ] as const satisfies readonly (keyof UrunKaydi)[];
 
 type Sorun = { alan: string; kod: string };
@@ -215,31 +234,18 @@ const doluAlanlar = <T extends Record<string, unknown>>(nesne: T) =>
     [A in keyof T]: Exclude<T[A], null>;
   };
 
-// Ürünün kategorileri, sıralı. Kategori silinince bağlantı kalktığı için hepsi silinmemiştir.
-const urununKategorileri = async (vt: Veritabani | VeritabaniIslemi, urun: string) =>
-  (
-    await vt
-      .select({ kategori: urunKategorileri.kategori_kimligi })
-      .from(urunKategorileri)
-      .where(eq(urunKategorileri.urun_kimligi, urun))
-  )
-    .map((satir) => satir.kategori)
-    .toSorted();
-
-// Değişecek ürünün kategorileri: kategori satırları paylaşımlı kilitlenir. Aynı anda silinen kategori
-// bitene kadar beklenir ve listeye girmez; ürün işlemi bitene kadar da bu kategoriler silinemez.
-// Böylece değişiklik kaydındaki eski ve yeni liste gerçekle aynı kalır (kart 0077 kontrolü).
-const kilitliKategorileri = async (islem: VeritabaniIslemi, urun: string) =>
-  (
-    await islem
-      .select({ kategori: urunKategorileri.kategori_kimligi })
-      .from(urunKategorileri)
-      .innerJoin(kategoriler, eq(kategoriler.kimlik, urunKategorileri.kategori_kimligi))
-      .where(and(eq(urunKategorileri.urun_kimligi, urun), isNull(kategoriler.silinme_zamani)))
-      .for("share", { of: kategoriler })
-  )
-    .map((satir) => satir.kategori)
-    .toSorted();
+// Üç bağlantının kayıttaki hâli: kategori ve etiket listesi, marka tek kimlik.
+const bagliHepsi = async (
+  oku: (t: (typeof baglantiTanimlari)[number]) => Promise<string[]>,
+): Promise<Pick<UrunKaydi, "kategoriler" | "etiketler" | "marka">> => {
+  const sonuc: Record<Alan, string[]> = { kategoriler: [], marka: [], etiketler: [] };
+  for (const t of baglantiTanimlari) sonuc[t.alan] = await oku(t);
+  return {
+    kategoriler: sonuc.kategoriler,
+    etiketler: sonuc.etiketler,
+    marka: sonuc.marka[0] ?? null,
+  };
+};
 
 export const urunServisi = (saatDilimi: () => string) => {
   const yaz = <T>(vt: Veritabani, is: (islem: VeritabaniIslemi) => Promise<T>) =>
@@ -272,25 +278,13 @@ export const urunServisi = (saatDilimi: () => string) => {
     }
   };
 
-  // Bağlanacak kategoriler var ve silinmemiş olmalı. Satırlar paylaşımlı kilitlenir: aynı anda silinen
-  // kategori (kategori/servis.ts) bitene kadar beklenir, sonra silinmiş görülür.
-  const kategorileriDenetle = async (islem: VeritabaniIslemi, kimlikler: string[]) => {
-    if (kimlikler.length === 0) return;
-    const bulunan = await islem
-      .select({ kimlik: kategoriler.kimlik })
-      .from(kategoriler)
-      .where(and(inArray(kategoriler.kimlik, kimlikler), isNull(kategoriler.silinme_zamani)))
-      .for("share");
-    if (bulunan.length !== kimlikler.length) {
-      throw dogrulamaHatasi([{ alan: "kategoriler", kod: "kategori-gecersiz" }]);
+  // Kategori, marka ve etiket bağlantıları (baglantilar.ts): eklenecek gruplar var ve silinmemiş olmalı.
+  const gruplariDenetle = async (islem: VeritabaniIslemi, eklenecek: (alan: Alan) => string[]) => {
+    for (const t of baglantiTanimlari) {
+      if (!(await gruplarGecerliMi(islem, t, eklenecek(t.alan)))) {
+        throw dogrulamaHatasi([{ alan: t.alan, kod: t.hata }]);
+      }
     }
-  };
-
-  const kategorileriBagla = async (islem: VeritabaniIslemi, urun: string, kimlikler: string[]) => {
-    if (kimlikler.length === 0) return;
-    await islem
-      .insert(urunKategorileri)
-      .values(kimlikler.map((kategori) => ({ urun_kimligi: urun, kategori_kimligi: kategori })));
   };
 
   // Kilit altında: silinmemiş başka bir birim bu stok kodunu (büyük küçük harf ayrımsız) taşıyor mu?
@@ -385,17 +379,21 @@ export const urunServisi = (saatDilimi: () => string) => {
       boyMm: girdi.boyMm ?? null,
       yukseklikMm: girdi.yukseklikMm ?? null,
       kategoriler: (girdi.kategoriler ?? []).toSorted(),
+      etiketler: (girdi.etiketler ?? []).toSorted(),
+      marka: girdi.marka ?? null,
     });
     return yaz(vt, async (islem) => {
       await vergiSinifiniDenetle(islem, kayit.vergiSinifi);
-      await kategorileriDenetle(islem, kayit.kategoriler);
+      await gruplariDenetle(islem, (alan) => gruplari(kayit, alan));
       await tekligiDenetle(islem, kayit);
       const kimlik = randomUUID();
       const adresAdi = kayit.adresAdi ?? (await adresAdiBul(islem, kayit.ad, kimlik));
       const yazilacak = { ...kayit, adresAdi };
       await islem.insert(urunler).values({ kimlik, ...urunSatiri(yazilacak) });
       await islem.insert(urunBirimleri).values({ urun_kimligi: kimlik, ...birimSatiri(yazilacak) });
-      await kategorileriBagla(islem, kimlik, yazilacak.kategoriler);
+      for (const t of baglantiTanimlari) {
+        await gruplariBagla(islem, t, kimlik, gruplari(yazilacak, t.alan));
+      }
       await degisikligiKaydet(islem, {
         kim,
         islem: "urun.eklendi",
@@ -420,11 +418,12 @@ export const urunServisi = (saatDilimi: () => string) => {
     if (birim === undefined) throw new Error("Ürünün satılabilir birimi yok.");
     const { silinme: _urunSilinme, kimlik: _urun, ...urunKaydi } = urun;
     const { silinme: _birimSilinme, kimlik: birimKimligi, sira: _sira, ...birimKaydi } = birim;
+    const bagli = await bagliHepsi((t) => kilitliBagliGruplar(islem, t, kimlik));
     const kayit: UrunKaydi = {
       ...urunKaydi,
       durum: urun.durum as UrunDurumu,
       ...birimKaydi,
-      kategoriler: await kilitliKategorileri(islem, kimlik),
+      ...bagli,
     };
     return { kayit, birimKimligi };
   };
@@ -446,6 +445,7 @@ export const urunServisi = (saatDilimi: () => string) => {
         Object.entries({ ...girdi, yayinZamani }).filter(([, deger]) => deger !== undefined),
       ) as Partial<UrunKaydi>;
       if (verilen.kategoriler !== undefined) verilen.kategoriler = verilen.kategoriler.toSorted();
+      if (verilen.etiketler !== undefined) verilen.etiketler = verilen.etiketler.toSorted();
       const yeni = kurallariDenetle({ ...eski, ...verilen });
       const degisen = kayitAlanlari.filter(
         (alan) => JSON.stringify(eski[alan]) !== JSON.stringify(yeni[alan]),
@@ -453,9 +453,11 @@ export const urunServisi = (saatDilimi: () => string) => {
       if (degisen.length === 0) return;
       if (yeni.vergiSinifi !== eski.vergiSinifi)
         await vergiSinifiniDenetle(islem, yeni.vergiSinifi);
-      const eklenen = yeni.kategoriler.filter((k) => !eski.kategoriler.includes(k));
-      const kalkan = eski.kategoriler.filter((k) => !yeni.kategoriler.includes(k));
-      await kategorileriDenetle(islem, eklenen);
+      const fark = (a: UrunKaydi, b: UrunKaydi) => (alan: Alan) =>
+        gruplari(a, alan).filter((grup) => !gruplari(b, alan).includes(grup));
+      const eklenen = fark(yeni, eski);
+      const kalkan = fark(eski, yeni);
+      await gruplariDenetle(islem, eklenen);
       await tekligiDenetle(
         islem,
         {
@@ -476,17 +478,11 @@ export const urunServisi = (saatDilimi: () => string) => {
         .update(urunBirimleri)
         .set({ ...birimSatiri(yeni), guncellenme_zamani: sql`now()` })
         .where(eq(urunBirimleri.kimlik, birimKimligi));
-      if (kalkan.length > 0) {
-        await islem
-          .delete(urunKategorileri)
-          .where(
-            and(
-              eq(urunKategorileri.urun_kimligi, kimlik),
-              inArray(urunKategorileri.kategori_kimligi, kalkan),
-            ),
-          );
+      // Önce kaldırılır: marka bağlantısı ürün başına tektir.
+      for (const t of baglantiTanimlari) {
+        await gruplariKaldir(islem, t, kimlik, kalkan(t.alan));
+        await gruplariBagla(islem, t, kimlik, eklenen(t.alan));
       }
-      await kategorileriBagla(islem, kimlik, eklenen);
       const sec = (kaynak: UrunKaydi) =>
         kayitDegeri(Object.fromEntries(degisen.map((alan) => [alan, kaynak[alan]])), true);
       await degisikligiKaydet(islem, {
@@ -535,7 +531,7 @@ export const urunServisi = (saatDilimi: () => string) => {
       ...doluAlanlar(alanlar),
       durum: durum as UrunDurumu,
       vergiSinifi,
-      kategoriler: await urununKategorileri(vt, kimlik),
+      ...(await bagliHepsi((t) => bagliGruplar(vt, t, kimlik))),
       silindi: silinme !== null,
       birimler: birimler.map(({ silinme: birimSilinme, ...birim }) => ({
         ...doluAlanlar(birim),

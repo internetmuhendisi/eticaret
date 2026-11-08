@@ -13,8 +13,8 @@
 cekirdek/
   uygulama/            Next.js uygulaması: yalnız adres dosyaları (app/) ve ayarı
     app/yonetim/       yönetim paneli adresleri; geri kalan app/ vitrindir
-  moduller/<modul>/    urun, kategori, stok, fiyat, vergi, sepet, odeme, siparis, iade, kargo,
-                       kampanya, musteri, oturum, yorum, icerik, eposta, gorunurluk,
+  moduller/<modul>/    urun, kategori, marka, etiket, stok, fiyat, vergi, sepet, odeme, siparis,
+                       iade, kargo, kampanya, musteri, oturum, yorum, icerik, eposta, gorunurluk,
                        yasal-metinler, rapor, ekip, degisiklik-kaydi, robot-korumasi,
                        magaza-ayarlari, dosya
     model.ts           veri modeli

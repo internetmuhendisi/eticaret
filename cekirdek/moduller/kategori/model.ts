@@ -12,7 +12,8 @@
 // - kategoriler.adres_adi: vitrinde kategori sayfası bu adla açılır. Silinmemişler arasında tekil
 //   (kısmi tekil indeks), indeks aramayı da karşılar.
 // - kategoriler.ust_kimligi: bir kategorinin altları ve alt ağacı (özyinelemeli sorgu) okunurken.
-//   Kardeş ad tekilliği (ust_kimligi, lower(ad)) kısmi tekil indeksiyle korunur.
+//   Kardeş ad tekilliği (ust_kimligi, ad anahtarı: cekirdek/metinler/ad-anahtari.ts) kısmi tekil
+//   indeksiyle korunur.
 // - urun_kategorileri.kategori_kimligi: bir kategorinin ürünleri. urun_kimligi birincil anahtarın
 //   ilk alanıdır: bir ürünün kategorileri birincil anahtardan okunur.
 import { sql } from "drizzle-orm";
@@ -27,6 +28,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import { adAnahtariSql } from "../../metinler/ad-anahtari.ts";
 import { kimlik, zaman } from "../../veritabani/turler.ts";
 import { urunler } from "../urun/model.ts";
 
@@ -56,7 +58,7 @@ export const kategoriler = pgTable(
     uniqueIndex("kategoriler_kardes_adi")
       .on(
         sql`coalesce(${tablo.ust_kimligi}, '00000000-0000-0000-0000-000000000000'::uuid)`,
-        sql`lower(${tablo.ad})`,
+        adAnahtariSql(tablo.ad),
       )
       .where(sql`${tablo.silinme_zamani} is null`),
     index("kategoriler_ust").on(tablo.ust_kimligi),

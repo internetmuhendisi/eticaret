@@ -12,12 +12,11 @@
 //
 // İzin kapıda denetlenir (izinler.ts); servis yalnız kimin yaptığını kayda yazar.
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, inArray, isNull, max, ne, notInArray, type SQL, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, max, ne, notInArray, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
-import { listeSayfasi } from "../../kayitlar/liste.ts";
-import type { VitrinYeri } from "../../kayitlar/urun.ts";
+import { adAnahtari, adAnahtariSql } from "../../metinler/ad-anahtari.ts";
 import { bosAdresAdi } from "../../metinler/adres-adi.ts";
 import {
   siteninVeritabani,
@@ -26,8 +25,13 @@ import {
 } from "../../veritabani/baglanti.ts";
 import { kimlikMi } from "../../veritabani/turler.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
+import {
+  bosUrunListesi,
+  type UrunListesi,
+  type UrunListesiSecenekleri,
+  urunListesi,
+} from "../urun/liste.ts";
 import { urunler } from "../urun/model.ts";
-import { vitrinKosulu } from "../urun/vitrin.ts";
 import { kategoriler, urunKategorileri } from "./model.ts";
 import {
   type KategoriDegisikligi,
@@ -135,7 +139,7 @@ const kardesAdiKullaniliyor = async (
       .where(
         and(
           ayniUst(ust),
-          sql`lower(${kategoriler.ad}) = lower(${ad})`,
+          sql`${adAnahtariSql(kategoriler.ad)} = ${adAnahtariSql(ad)}`,
           isNull(kategoriler.silinme_zamani),
           haric.length > 0 ? notInArray(kategoriler.kimlik, haric) : undefined,
         ),
@@ -288,7 +292,7 @@ export const kategoriDegistir = async (
       if (await donguKurar(islem, kimlik, ust)) throw isKurali("ust", "dongu");
     }
     if (
-      (tasindi || yeni.ad.toLowerCase() !== eski.ad.toLowerCase()) &&
+      (tasindi || adAnahtari(yeni.ad) !== adAnahtari(eski.ad)) &&
       (await kardesAdiKullaniliyor(islem, ust, yeni.ad, [kimlik]))
     ) {
       throw cakisma([{ alan: "ad", kod: "ad-tekrar" }]);
@@ -389,57 +393,38 @@ export const kategorileriOku = async (vt: Veritabani = siteninVeritabani()): Pro
       .orderBy(asc(kategoriler.sira), sql`lower(${kategoriler.ad})`, asc(kategoriler.kimlik))
   ).map(okunan);
 
-export type KategoriUrunleriSecenekleri = {
+export type KategoriUrunleriSecenekleri = UrunListesiSecenekleri & {
   // Alt kategorilerin (bütün alt ağacın) ürünleri de gelsin mi? Vitrinde hangisinin kullanılacağına
   // kategori sayfası karar verir.
   altKategoriler?: boolean;
-  // Verilirse yalnız vitrinde bu yerde görünen ürünler gelir (urun/vitrin.ts). Verilmezse silinmemiş
-  // bütün ürünler gelir (panel).
-  vitrin?: { yer: VitrinYeri; an?: Date };
-  sayfa?: number;
-  boyut?: number;
 };
 
-// Bir kategorinin ürünleri tek sorguyla: kategori ağacı, bağlantılar, görünürlük, sayfa ve toplam
-// sayı birlikte. Silinmiş kategori ve ürün gelmez. Bir ürün birden çok eşleşen kategoride olsa da bir
-// kez gelir. Sıra: en yeni önce (elle sıralama vitrin yönetimiyle gelir). Sayfa sonun ötesindeyse liste
-// boş ve toplam 0 döner.
+// Bir kategorinin ürünleri tek sorguyla (urun/liste.ts): kategori ağacı, bağlantılar, görünürlük, sayfa
+// ve toplam birlikte. Silinmiş kategori gelmez. Bir ürün birden çok eşleşen kategoride olsa da bir kez
+// gelir.
 export const kategorininUrunleri = async (
   vt: Veritabani,
   kimlik: string,
-  {
-    altKategoriler = false,
-    vitrin,
-    sayfa = 1,
-    boyut = listeSayfasi.varsayilanBoyut,
-  }: KategoriUrunleriSecenekleri = {},
-): Promise<{ urunler: string[]; toplam: number }> => {
-  if (!kimlikMi(kimlik)) return { urunler: [], toplam: 0 };
-  const sinirliBoyut = Math.min(Math.max(Math.trunc(boyut), 1), listeSayfasi.enCokBoyut);
-  const ofset = (Math.max(Math.trunc(sayfa), 1) - 1) * sinirliBoyut;
-  const gorunurluk: SQL = vitrin === undefined ? sql`true` : vitrinKosulu(vitrin.yer, vitrin.an);
-  const sonuc = await vt.execute<{ kimlik: string; toplam: string }>(sql`
-    with recursive agac(kimlik) as (
-      select ${kategoriler.kimlik} from ${kategoriler}
-        where ${kategoriler.kimlik} = ${kimlik}::uuid and ${kategoriler.silinme_zamani} is null
-      union
-      select ${kategoriler.kimlik} from ${kategoriler}
-        join agac on ${kategoriler.ust_kimligi} = agac.kimlik
-        where ${altKategoriler} and ${kategoriler.silinme_zamani} is null
-    )
-    select ${urunler.kimlik} as kimlik, count(*) over () as toplam
-    from ${urunler}
-    where ${urunler.silinme_zamani} is null
-      and exists (
-        select 1 from ${urunKategorileri}
-        where ${urunKategorileri.urun_kimligi} = ${urunler.kimlik}
-          and ${urunKategorileri.kategori_kimligi} in (select kimlik from agac)
-      )
-      and ${gorunurluk}
-    order by ${urunler.olusturma_zamani} desc, ${urunler.kimlik}
-    limit ${sinirliBoyut} offset ${ofset}`);
-  return {
-    urunler: sonuc.rows.map((satir) => satir.kimlik),
-    toplam: Number(sonuc.rows[0]?.toplam ?? 0),
-  };
+  { altKategoriler = false, ...secenekler }: KategoriUrunleriSecenekleri = {},
+): Promise<UrunListesi> => {
+  if (!kimlikMi(kimlik)) return bosUrunListesi();
+  return urunListesi(
+    vt,
+    sql`exists (
+      select 1 from ${urunKategorileri}
+      where ${urunKategorileri.urun_kimligi} = ${urunler.kimlik}
+        and ${urunKategorileri.kategori_kimligi} in (
+          with recursive agac(kimlik) as (
+            select ${kategoriler.kimlik} from ${kategoriler}
+              where ${kategoriler.kimlik} = ${kimlik}::uuid and ${kategoriler.silinme_zamani} is null
+            union
+            select ${kategoriler.kimlik} from ${kategoriler}
+              join agac on ${kategoriler.ust_kimligi} = agac.kimlik
+              where ${altKategoriler} and ${kategoriler.silinme_zamani} is null
+          )
+          select kimlik from agac
+        )
+    )`,
+    secenekler,
+  );
 };

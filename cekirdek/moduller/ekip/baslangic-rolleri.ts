@@ -17,6 +17,11 @@ export const baslangicRolleri = {
       "urun.degistir",
       "kategori.gor",
       "kategori.degistir",
+      // Marka ve etiketi görür ve değiştirir, silemez (kart 0078, kullanıcı kararı).
+      "marka.gor",
+      "marka.degistir",
+      "etiket.gor",
+      "etiket.degistir",
     ],
   },
 } as const satisfies Record<

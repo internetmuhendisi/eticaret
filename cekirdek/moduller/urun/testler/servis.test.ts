@@ -353,6 +353,8 @@ describe("alanlar", () => {
       enCokAdet: 10,
       vergiSinifi: sinif,
       kategoriler: [],
+      etiketler: [],
+      marka: null,
       silindi: false,
       birimler: [
         {

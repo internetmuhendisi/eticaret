@@ -26,6 +26,13 @@ export const degisiklikIslemleri = [
   "kategori.eklendi",
   "kategori.degisti",
   "kategori.silindi",
+  // Marka ve etiket (kart 0078).
+  "marka.eklendi",
+  "marka.degisti",
+  "marka.silindi",
+  "etiket.eklendi",
+  "etiket.degisti",
+  "etiket.silindi",
 ] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 
@@ -37,6 +44,8 @@ export const degisiklikKayitTurleri = [
   "vergi-orani",
   "urun",
   "kategori",
+  "marka",
+  "etiket",
 ] as const;
 export type DegisiklikKayitTuru = (typeof degisiklikKayitTurleri)[number];
 

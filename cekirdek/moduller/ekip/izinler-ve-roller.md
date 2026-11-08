@@ -11,11 +11,17 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `ekip.kendi-hesabi.gor` | yonetici | kendi | Yönetici kendi hesabını görür. |
 | `ekip.gor` | yonetici | tumu | Ekipteki bütün yöneticileri görür. |
 | `ekip.rol-ata` | yonetici | tumu | Yöneticilere rol verir ve alır. |
+| `etiket.gor` | yonetici | tumu | Etiketleri ve ürünlerini görür. |
+| `etiket.degistir` | yonetici | tumu | Etiket ekler ve değiştirir. |
+| `etiket.sil` | yonetici | tumu | Etiket siler: ürünlerden kalkar. |
 | `kategori.gor` | yonetici | tumu | Kategorileri ve ürünlerini görür. |
 | `kategori.degistir` | yonetici | tumu | Kategori ekler, değiştirir ve taşır. |
 | `kategori.sil` | yonetici | tumu | Kategori siler: altındakiler bir üste çıkar, ürün bağlantıları kalkar. |
 | `magaza-ayarlari.gor` | yonetici | tumu | Mağaza sahibinin ayarlarını görür. |
 | `magaza-ayarlari.degistir` | yonetici | tumu | Mağaza sahibinin ayarlarını değiştirir. |
+| `marka.gor` | yonetici | tumu | Markaları ve ürünlerini görür. |
+| `marka.degistir` | yonetici | tumu | Marka ekler ve değiştirir. |
+| `marka.sil` | yonetici | tumu | Marka siler: ürünlerden kalkar. |
 | `musteri.kendi-hesabi.gor` | musteri | kendi | Müşteri kendi hesabını görür. |
 | `urun.gor` | yonetici | tumu | Ürünleri, silinmişler dahil, görür. |
 | `urun.degistir` | yonetici | tumu | Ürün ekler ve değiştirir. |
@@ -32,6 +38,6 @@ Her sitede hazır gelir. Ekranda görünen adları metin dosyasındadır (`yonet
 | Kod | Görünen ad | İzinler |
 |---|---|---|
 | `magaza-sahibi` | Mağaza sahibi | bütün yönetici izinleri |
-| `gorevli` | Görevli | ekip.kendi-hesabi.gor, urun.gor, urun.degistir, kategori.gor, kategori.degistir |
+| `gorevli` | Görevli | ekip.kendi-hesabi.gor, urun.gor, urun.degistir, kategori.gor, kategori.degistir, marka.gor, marka.degistir, etiket.gor, etiket.degistir |
 
 Tam yetkili son yöneticinin rolü alınamaz. Görevlinin izinleri ürün ve sipariş gibi modüller geldikçe artar.

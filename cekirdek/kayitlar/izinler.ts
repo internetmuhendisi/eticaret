@@ -2,8 +2,10 @@
 // dosyasında yazar, burada toplanır. Roller bu izinlerden oluşur. Liste belgede de yazar:
 // cekirdek/moduller/ekip/izinler-ve-roller.md.
 import { ekipIzinleri } from "../moduller/ekip/izinler.ts";
+import { etiketIzinleri } from "../moduller/etiket/izinler.ts";
 import { kategoriIzinleri } from "../moduller/kategori/izinler.ts";
 import { magazaAyarlariIzinleri } from "../moduller/magaza-ayarlari/izinler.ts";
+import { markaIzinleri } from "../moduller/marka/izinler.ts";
 import { musteriIzinleri } from "../moduller/musteri/izinler.ts";
 import { urunIzinleri } from "../moduller/urun/izinler.ts";
 import { vergiIzinleri } from "../moduller/vergi/izinler.ts";
@@ -20,8 +22,10 @@ export type IzinTanimi =
 
 export const modulIzinleri = {
   ekip: ekipIzinleri,
+  etiket: etiketIzinleri,
   kategori: kategoriIzinleri,
   "magaza-ayarlari": magazaAyarlariIzinleri,
+  marka: markaIzinleri,
   musteri: musteriIzinleri,
   urun: urunIzinleri,
   vergi: vergiIzinleri,
@@ -29,8 +33,10 @@ export const modulIzinleri = {
 
 export const izinler = {
   ...ekipIzinleri,
+  ...etiketIzinleri,
   ...kategoriIzinleri,
   ...magazaAyarlariIzinleri,
+  ...markaIzinleri,
   ...musteriIzinleri,
   ...urunIzinleri,
   ...vergiIzinleri,

@@ -134,7 +134,26 @@
         "adet-siniri": "En çok alım adedi, en az alım adedinden küçük olamaz. Adetleri düzeltin.",
         "vergi-sinifi-gecersiz": "Bu vergi sınıfı bulunamadı ya da silinmiş. Başka bir vergi sınıfı seçin.",
         "kategori-tekrar": "Aynı kategori iki kez seçilmiş. Kategoriyi bir kez seçin.",
-        "kategori-gecersiz": "Seçilen kategorilerden biri bulunamadı ya da silinmiş. Kategorileri yeniden seçin."
+        "kategori-gecersiz": "Seçilen kategorilerden biri bulunamadı ya da silinmiş. Kategorileri yeniden seçin.",
+        "marka-gecersiz": "Seçilen marka bulunamadı ya da silinmiş. Başka bir marka seçin.",
+        "etiket-tekrar": "Aynı etiket iki kez seçilmiş. Etiketi bir kez seçin.",
+        "etiket-gecersiz": "Seçilen etiketlerden biri bulunamadı ya da silinmiş. Etiketleri yeniden seçin."
+      }
+    },
+    "marka": {
+      "hata": {
+        "kayda-uygun-degil": "Bu alan yalnız bir e-posta adresinden ya da giriş anahtarından oluşamaz. Metni değiştirin.",
+        "adres-adi-bicimi": "Adres adında yalnız küçük harf (ç, ğ, ı, ö, ş, ü olmadan), rakam ve tire olabilir. Örnek: ornek-marka.",
+        "adres-adi-tekrar": "Bu adres adı başka bir markada kullanılıyor. Başka bir ad yazın.",
+        "ad-tekrar": "Bu adla bir marka zaten var. Başka bir ad yazın."
+      }
+    },
+    "etiket": {
+      "hata": {
+        "kayda-uygun-degil": "Bu alan yalnız bir e-posta adresinden ya da giriş anahtarından oluşamaz. Metni değiştirin.",
+        "adres-adi-bicimi": "Adres adında yalnız küçük harf (ç, ğ, ı, ö, ş, ü olmadan), rakam ve tire olabilir. Örnek: yaz-indirimi.",
+        "adres-adi-tekrar": "Bu adres adı başka bir etikette kullanılıyor. Başka bir ad yazın.",
+        "ad-tekrar": "Bu adla bir etiket zaten var. Başka bir ad yazın."
       }
     },
     "kategori": {
