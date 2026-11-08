@@ -27,4 +27,4 @@ Bir ürünün satılabilir olup olmadığı, tükenince ne olacağı, düşük s
 
 ## Durum
 
-yapılacak
+bitti
