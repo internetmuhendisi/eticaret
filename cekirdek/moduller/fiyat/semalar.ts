@@ -47,7 +47,13 @@ export const fiyatGirdisi = z.strictObject({
   // Sıfır olabilir: ücretsiz ürün (kart 0080, kullanıcı kararı).
   satisFiyati: tutar,
   // Sıfır olamaz: bedava vermek satış fiyatını sıfır yapmaktır.
-  indirimliFiyat: tutar.min(1, hata("indirim-sifir")).nullable().default(null),
+  // Eksi tutar yalnız biçim hatası alır: aynı alana iki ileti düşmesin (kart 0080 kontrolü).
+  indirimliFiyat: z
+    .int(hata("tutar-bicimi"))
+    .min(0, { error: hata("tutar-bicimi"), abort: true })
+    .refine((deger) => deger > 0, hata("indirim-sifir"))
+    .nullable()
+    .default(null),
   // Boş başlangıç: hemen; boş bitiş: indirim kaldırılana kadar (kart 0080, kullanıcı kararı).
   indirimBaslangici: yerelZaman.nullable().default(null),
   indirimBitisi: yerelZaman.nullable().default(null),

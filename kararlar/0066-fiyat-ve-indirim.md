@@ -13,7 +13,9 @@ Fiyat satılabilir birime bağlıdır (karar 0062) ve yalnız `cekirdek/moduller
 - **Girdi fiyatın tam hâlidir:** Satış fiyatı, indirimli fiyat, indirimin başlangıcı ve bitişi birlikte gelir; verilmeyen indirim alanı boş sayılır. İndirimi kaldırmak indirimli fiyatı göndermemektir. Geçmişin her satırı fiyatın bütününü taşır. Aynı kalan fiyat hiçbir yere yazılmaz.
 - **Kurallar (kullanıcı kararları):** Satış fiyatı sıfır olabilir (ücretsiz ürün). İndirimli fiyat sıfırdan büyük ve satış fiyatından küçüktür. İndirimin başlangıcı da bitişi de isteğe bağlıdır: boş başlangıç hemen, boş bitiş indirim kaldırılana kadar demektir. Fiyatı girilmemiş birim kaydedilir ama satılamaz. Bitiş başlangıçtan sonradır. Kurallar serviste koddur, veritabanında denetimdir.
 - **Zaman:** İndirim zamanları sitenin saat diliminde yerel olarak girilir ve `yerelZamandan` ile ana çevrilip saklanır (ürünün yayın zamanıyla aynı yol). Başlangıç anı dahil, bitiş anı hariçtir: bitişi `2026-11-16T00:00` olan indirim 15 Kasım günü sonuna kadar sürer. Panel gün seçtirirse bitiş günü ertesi günün gece yarısı olarak gönderilir.
-- **Geçerli fiyat:** Bir anın fiyatını yalnız `gecerliFiyat` (`gecerli.ts`) verir. Sepet, ödeme, sipariş ve vitrin onu kullanır; birden çok birimin fiyatı tek sorguyla `gecerliFiyatlar` ile gelir.
+- **Geçerli fiyat:** Bir anın fiyatını yalnız `gecerliFiyat` (`gecerli.ts`) verir. Sepet, ödeme, sipariş ve vitrin onu kullanır; birden çok birimin fiyatı tek sorguyla `gecerliFiyatlar` ile gelir. Bu işlev birimin satılıp satılamayacağına bakmaz: silinmiş birimin ve görünmeyen ürünün fiyatı da döner (eski kayıtlar ona bağlıdır). Sepet ve vitrin birimi önce kendi koşuluyla süzer.
+- **Para birimi uyuşmazlığının kaydı:** Her para birimi çifti için süreç başına bir kez kaydedilir. Yoksa ayar değişince her vitrin açılışı hata izleme aracını birim sayısı kadar kayıtla doldururdu.
+- **Geçmişin sayfaları:** Sonraki sayfa, önceki sayfanın son satırının kimliğiyle istenir; karşılaştırma veritabanında satırın zamanı ve kimliğiyle yapılır. Uygulamaya milisaniyeye kesilerek gelen zamanla karşılaştırılsaydı aynı milisaniyedeki satır sayfalar arasında kaybolabilirdi.
 - **Yazma:** Bugünkü fiyat, geçmiş satırı ve değişiklik kaydı aynı işlemde yazılır. Yazmalar ürün kilidini alır (`cekirdek/moduller/urun/kilit.ts`); geçmişin zamanı kilit alındıktan sonraki saattir (`clock_timestamp`), işlemin başladığı an değil. Silinmiş ürünün ya da birimin fiyatı değişmez, eski fiyatı okunur.
 - **İzinler (kullanıcı kararı):** `fiyat.gor`, `fiyat.degistir`. Görevli fiyatı görür, değiştiremez.
 
@@ -36,6 +38,9 @@ Fiyat satılabilir birime bağlıdır (karar 0062) ve yalnız `cekirdek/moduller
 - **İndirimli fiyatın sıfır olabilmesi:** Kullanıcı seçmedi; ücretsiz ürün satış fiyatını sıfır yapmaktır.
 
 ## Sonuçları
+
+- **Korumanın sınırı (karar 0045 ile aynı):** Sitenin veritabanı kullanıcısı fiyat geçmişi tablosunun sahibidir: tetikleyiciyi kapatıp satırları silebilir (bağımsız kontrolde ölçüldü). Panel ve hatalı kod geçmişi değiştiremez; sunucuya ve veritabanına erişen biri ya da istediği sorguyu çalıştırabilen bir saldırgan değiştirebilir. Fiyat geçmişi indirim öncesi fiyatın dayanağı olduğu için bu sınır bilinerek kabul edilmiştir. Geçmişin kopyası her sitenin günlük yedeğindedir.
+- Silinmiş birimin satılmaması `gecerliFiyatlar`'da değil, sepette denetlenecektir; o kural sepet kartında yazılıp test edilmelidir.
 
 - Fiyat ve ürün yazmaları aynı kilitten geçer. 30 mağazalık ölçekte sorun değildir; toplu fiyat değişikliği gelince ölçülmelidir.
 - Fiyatı silmenin yolu yoktur: bir kez fiyat girilen birim fiyatsız kalamaz. Gerekirse ürün taslağa alınır.

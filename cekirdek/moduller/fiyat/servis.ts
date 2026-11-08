@@ -12,7 +12,7 @@
 //   sırayla yazılır, geçmiş sırası bozulmaz; aynı anda silinen ürünün birimine fiyat yazılmaz.
 //
 // İzin kapıda denetlenir (izinler.ts); servis yalnız kimin yaptığını kayda yazar.
-import { and, desc, eq, inArray, isNull, lt, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
@@ -31,7 +31,10 @@ import { type FiyatGirdisi, type FiyatHatasi, fiyatGirdisi, fiyatHatalari } from
 
 export type FiyatAyarlari = { saatDilimi: string; paraBirimi: string };
 
-export type FiyatGecmisiSatiri = Omit<Fiyat, "birim"> & { zaman: Date };
+export type FiyatGecmisiSatiri = Omit<Fiyat, "birim"> & { kimlik: string; zaman: Date };
+
+// Süreçte bir kez kaydedilen para birimi uyuşmazlıkları ("TRY>EUR").
+const bildirilenUyusmazliklar = new Set<string>();
 
 // Bir sayfada okunan geçmiş satırının üst sınırı (.claude/rules/veritabani.md).
 export const fiyatGecmisiSayfasi = 100;
@@ -177,7 +180,8 @@ export const fiyatServisi = (ayarlar: () => FiyatAyarlari) => {
   };
 
   // Birimlerin fiyatları tek sorguyla; fiyatı olmayan birim haritada yoktur. Silinmiş birimin fiyatı
-  // da okunur (eski kayıtlar ona bağlıdır).
+  // da okunur (eski kayıtlar ona bağlıdır). Birimin satılıp satılamayacağına (silinmiş, görünmeyen
+  // ürün) burada bakılmaz: sepet ve vitrin birimi önce kendi koşuluyla süzer (karar 0066).
   const fiyatlariOku = async (vt: Veritabani, birimler: string[]): Promise<Map<string, Fiyat>> => {
     const gecerli = birimler.filter(kimlikMi);
     if (gecerli.length === 0) return new Map();
@@ -193,7 +197,8 @@ export const fiyatServisi = (ayarlar: () => FiyatAyarlari) => {
 
   // Birimlerin verilen andaki geçerli fiyatları, tek sorguyla. Fiyatı olmayan birim haritada yoktur:
   // satılamaz. Para birimi uyuşmayan fiyat da yoktur ve hata kaydedilir: ayar değişmiş, fiyatlar
-  // yeniden girilmemiştir.
+  // yeniden girilmemiştir. Hata her para birimi çifti için süreç başına bir kez kaydedilir: yoksa her
+  // vitrin açılışı hata izleme aracını birim sayısı kadar kayıtla doldururdu.
   const gecerliFiyatlar = async (
     vt: Veritabani,
     birimler: string[],
@@ -207,6 +212,9 @@ export const fiyatServisi = (ayarlar: () => FiyatAyarlari) => {
         sonuc.set(birim, gecerli);
         continue;
       }
+      const cift = `${fiyat.paraBirimi}>${paraBirimi}`;
+      if (bildirilenUyusmazliklar.has(cift)) continue;
+      bildirilenUyusmazliklar.add(cift);
       hatayiKaydet(new Error("Fiyatın para birimi sitenin para biriminden farklı."), {
         kaynak: "fiyat",
         birim,
@@ -217,20 +225,24 @@ export const fiyatServisi = (ayarlar: () => FiyatAyarlari) => {
     return sonuc;
   };
 
-  // Birimin fiyat geçmişi, en yeni önce, en çok bir sayfa. `once` verilirse o andan önceki satırlar
-  // (sonraki sayfa).
+  // Birimin fiyat geçmişi, en yeni önce, en çok bir sayfa. `sonra` bir önceki sayfanın son satırının
+  // kimliğidir: sonraki sayfa o satırdan sonra gelenlerdir. Karşılaştırma veritabanında, satırın kendi
+  // zamanı ve kimliğiyle yapılır; uygulamaya milisaniyeye kesilerek gelen zaman kullanılsaydı aynı
+  // milisaniyedeki satır sayfalar arasında kaybolabilirdi (kart 0080 kontrolü).
   const fiyatGecmisiniOku = async (
     vt: Veritabani,
     birim: string,
-    secenekler: { once?: Date; sinir?: number } = {},
+    secenekler: { sonra?: string; sinir?: number } = {},
   ): Promise<FiyatGecmisiSatiri[]> => {
-    if (!kimlikMi(birim)) return [];
+    const { sonra } = secenekler;
+    if (!kimlikMi(birim) || (sonra !== undefined && !kimlikMi(sonra))) return [];
     const sinir = Math.min(
       Math.max(secenekler.sinir ?? fiyatGecmisiSayfasi, 1),
       fiyatGecmisiSayfasi,
     );
     return vt
       .select({
+        kimlik: fiyatGecmisi.kimlik,
         zaman: fiyatGecmisi.zaman,
         satisFiyati: fiyatGecmisi.satis_fiyati,
         indirimliFiyat: fiyatGecmisi.indirimli_fiyat,
@@ -242,7 +254,9 @@ export const fiyatServisi = (ayarlar: () => FiyatAyarlari) => {
       .where(
         and(
           eq(fiyatGecmisi.birim_kimligi, birim),
-          secenekler.once === undefined ? undefined : lt(fiyatGecmisi.zaman, secenekler.once),
+          sonra === undefined
+            ? undefined
+            : sql`(${fiyatGecmisi.zaman}, ${fiyatGecmisi.kimlik}) < (select ${fiyatGecmisi.zaman}, ${fiyatGecmisi.kimlik} from ${fiyatGecmisi} where ${fiyatGecmisi.kimlik} = ${sonra})`,
         ),
       )
       .orderBy(desc(fiyatGecmisi.zaman), desc(fiyatGecmisi.kimlik))

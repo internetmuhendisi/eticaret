@@ -5,6 +5,7 @@
 import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { gunluk } from "../../../izleme/gunluk.ts";
 import { BilinenHata } from "../../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
@@ -162,12 +163,12 @@ describe("fiyat geçmişi", () => {
     ]);
     expect(satirlar.every((s) => s.paraBirimi === "TRY")).toBe(true);
     expect(satirlar[1]?.indirimBaslangici?.toISOString()).toBe("2026-11-09T21:00:00.000Z");
-    // Sonraki sayfa: verilen andan öncekiler.
+    // Sonraki sayfa: verilen satırdan sonrakiler.
     const ikinci = satirlar[1];
     if (ikinci === undefined) throw new Error("Satır yok.");
-    const sonraki = await servis.fiyatGecmisiniOku(vt, birim, { once: ikinci.zaman, sinir: 5 });
-    expect(sonraki.map((s) => s.indirimliFiyat)).toEqual([null]);
-    expect(sonraki[0]?.satisFiyati).toBe(10_000);
+    const sonraki = await servis.fiyatGecmisiniOku(vt, birim, { sonra: ikinci.kimlik, sinir: 5 });
+    expect(sonraki.map((s) => [s.satisFiyati, s.indirimliFiyat])).toEqual([[10_000, null]]);
+    expect(await servis.fiyatGecmisiniOku(vt, birim, { sonra: "kimlik-degil" })).toEqual([]);
 
     const kayit = await kayitlar(vt, birim);
     expect(kayit.map((k) => [k.islem, k.kayit_turu, k.kim_kimligi])).toEqual([
@@ -186,6 +187,28 @@ describe("fiyat geçmişi", () => {
     });
     expect(kayit[2]?.eski_deger).toEqual(kayit[1]?.yeni_deger);
     expect(kayit[2]?.yeni_deger).toEqual({ satisFiyati: 12_000, paraBirimi: "TRY" });
+  });
+
+  it("aynı milisaniyedeki satırlar sayfalar arasında kaybolmaz", async () => {
+    const vt = await siteAc();
+    const { birim } = await birimAc(vt);
+    // Mikrosaniyesi farklı, milisaniyesi aynı iki satır; uygulamaya ikisi de aynı zamanla gelir.
+    for (const [satisFiyati, zaman] of [
+      [1_000, "2026-11-08 10:00:00.000100+00"],
+      [2_000, "2026-11-08 10:00:00.000200+00"],
+    ] as const) {
+      await vt.insert(fiyatGecmisi).values({
+        birim_kimligi: birim,
+        satis_fiyati: satisFiyati,
+        para_birimi: "TRY",
+        zaman: sql`${zaman}::timestamptz`,
+      });
+    }
+    const [ilk] = await servis.fiyatGecmisiniOku(vt, birim, { sinir: 1 });
+    if (ilk === undefined) throw new Error("Satır yok.");
+    expect(ilk.satisFiyati).toBe(2_000);
+    const sonraki = await servis.fiyatGecmisiniOku(vt, birim, { sonra: ilk.kimlik, sinir: 1 });
+    expect(sonraki.map((s) => s.satisFiyati)).toEqual([1_000]);
   });
 
   it("geçmiş güncellenemez, silinemez, boşaltılamaz", async () => {
@@ -260,6 +283,12 @@ describe("kurallar", () => {
       { satisFiyati: 1000, indirimliFiyat: 1001 },
       "indirimliFiyat",
       "indirim-buyuk",
+    ],
+    [
+      "eksi indirim (tek ileti)",
+      { satisFiyati: 1000, indirimliFiyat: -1 },
+      "indirimliFiyat",
+      "tutar-bicimi",
     ],
     ["sıfır indirim", { satisFiyati: 1000, indirimliFiyat: 0 }, "indirimliFiyat", "indirim-sifir"],
     ["eksi satış fiyatı", { satisFiyati: -1 }, "satisFiyati", "tutar-bicimi"],
@@ -401,6 +430,37 @@ describe("birim", () => {
     await euro.fiyatYaz(vt, yonetici(), birim, { satisFiyati: 10_000 });
     expect((await euro.gecerliFiyatlar(vt, [birim])).get(birim)?.paraBirimi).toBe("EUR");
     expect((await gecmis(vt, birim)).map((s) => s.para_birimi).toSorted()).toEqual(["EUR", "TRY"]);
+  });
+
+  it("para birimi uyuşmazlığı süreç başına bir kez kaydedilir", async () => {
+    const vt = await siteAc();
+    const birimler = await Promise.all([birimAc(vt), birimAc(vt)]);
+    // Bu teste özgü para birimleri: öteki testlerin kaydı sonucu etkilemesin.
+    const eski = fiyatServisi(() => ({ ...istanbul, paraBirimi: "XAA" }));
+    for (const { birim } of birimler)
+      await eski.fiyatYaz(vt, yonetici(), birim, { satisFiyati: 1 });
+    const yeni = fiyatServisi(() => ({ ...istanbul, paraBirimi: "XAB" }));
+    const hata = vi.spyOn(gunluk, "hata").mockImplementation(() => undefined);
+    try {
+      for (let i = 0; i < 3; i++) {
+        expect(
+          (
+            await yeni.gecerliFiyatlar(
+              vt,
+              birimler.map((b) => b.birim),
+            )
+          ).size,
+        ).toBe(0);
+      }
+      expect(hata).toHaveBeenCalledTimes(1);
+      expect(hata.mock.calls[0]?.[1]).toMatchObject({
+        kaynak: "fiyat",
+        fiyatinParaBirimi: "XAA",
+        siteninParaBirimi: "XAB",
+      });
+    } finally {
+      hata.mockRestore();
+    }
   });
 });
 
