@@ -22,12 +22,14 @@ import { siteninFiyatServisi } from "../../fiyat/servis.ts";
 import { kategoriler } from "../../kategori/model.ts";
 import { kategoriEkle, kategorileriOku } from "../../kategori/servis.ts";
 import { markalar } from "../../marka/model.ts";
+import { ozellikler, urunOzellikDegerleri } from "../../ozellik/model.ts";
+import { ozellikServisi } from "../../ozellik/servis.ts";
 import { birimStoklari, stokGecmisi } from "../../stok/model.ts";
 import { stokServisi } from "../../stok/servis.ts";
 import { siteninVergiServisi } from "../../vergi/servis.ts";
 import { baslangicKatalogYazari, katalogBaslangiciniKur } from "../baslangic.ts";
 import { bosKatalog, type KatalogBaslangici } from "../baslangic-semasi.ts";
-import { urunBirimleri, urunGalerisi, urunler } from "../model.ts";
+import { urunBirimleri, urunGalerisi, urunler, urunSecenekleri } from "../model.ts";
 import { siteninUrunServisi } from "../servis.ts";
 
 // Görseller ve boyutları gerçekten yeniden kodlanır: yüklü kontrol hattında bir test birkaç saniye
@@ -74,6 +76,9 @@ const tablolar = {
   birimStoklari,
   stokGecmisi,
   degisiklikKayitlari,
+  ozellikler,
+  urunOzellikDegerleri,
+  urunSecenekleri,
 };
 const sayilar = async (vt: Veritabani) =>
   Object.fromEntries(
@@ -371,6 +376,30 @@ describe("galeri görselleri", () => {
     for (const satir of kayit) expect(satir.kim).toBe("baslangic-katalog");
   });
 
+  it("birleşim kendi görselini galeriden seçer; seçmeyen birleşimin görseli yoktur (kart 0100)", async () => {
+    const vt = await siteAc();
+    const klasor = klasorAc();
+    const site = await galerili((katalog) => {
+      const ilk = katalog.urunler[0];
+      if (ilk === undefined) throw new Error("Ürün yok.");
+      ilk.fiyat = undefined;
+      ilk.stok = undefined;
+      ilk.secenekler = [{ ad: "Renk", degerler: ["Kırmızı", "Yeşil", "Sarı"] }];
+      ilk.birlesimler = [
+        { degerler: ["Kırmızı"], gorsel: "bir.png" },
+        { degerler: ["Yeşil"], gorsel: "iki.png" },
+        { degerler: ["Sarı"] },
+      ];
+    });
+    expect(await katalogBaslangiciniKur(vt, site, () => klasor)).toBe(true);
+    const urun = await siteninUrunServisi(site).urunuOku(vt, await urunKimligi(vt, "deneme-urunu"));
+    if (urun === undefined) throw new Error("Ürün okunamadı.");
+    const metni = new Map(urun.galeri.map((oge) => [oge.kimlik, oge.alternatifMetin]));
+    expect(
+      urun.birimler.filter((b) => !b.silindi).map((b) => b.gorsel && metni.get(b.gorsel)),
+    ).toEqual(["Bir", "İki", undefined]);
+  });
+
   it("kurulu katalogda görsel kaydedilmez", async () => {
     const vt = await siteAc();
     await kategoriEkle(vt, yonetici(), { ad: "Elle açılan" });
@@ -396,6 +425,28 @@ describe("galeri görselleri", () => {
     // Düzeltilen katalog yeniden kurulur, görselleri yeniden kaydeder.
     expect(await katalogBaslangiciniKur(vt, await galerili(), () => klasor)).toBe(true);
     expect(await silinmemisDosyalar(vt)).toBe(dosyaSayisi);
+  });
+
+  it("görselli birleşim yazılamazsa (aynı stok kodu) ne birleşim, ne seçenek, ne galeri kalır (kart 0100)", async () => {
+    const vt = await siteAc();
+    const klasor = klasorAc();
+    const bozuk = await galerili((katalog) => {
+      const ilk = katalog.urunler[0];
+      if (ilk === undefined) throw new Error("Ürün yok.");
+      ilk.fiyat = undefined;
+      ilk.stok = undefined;
+      ilk.secenekler = [{ ad: "Renk", degerler: ["Kırmızı", "Yeşil"] }];
+      ilk.birlesimler = [
+        { degerler: ["Kırmızı"], gorsel: "bir.png", stokKodu: "AYNI-KOD" },
+        { degerler: ["Yeşil"], gorsel: "iki.png", stokKodu: "AYNI-KOD" },
+      ];
+    });
+    await expect(katalogBaslangiciniKur(vt, bozuk, () => klasor)).rejects.toMatchObject({
+      kod: "cakisma",
+    });
+    expect(await sayilar(vt)).toEqual(bos);
+    expect(await vt.select().from(urunGalerisi)).toEqual([]);
+    expect(await silinmemisDosyalar(vt)).toBe(0);
   });
 
   it("görsel kaydedilemezse (içi bozuk) katalog yazılmaz, önceki görsel silinmiş işaretlenir", async () => {
@@ -431,5 +482,177 @@ describe("galeri görselleri", () => {
       .innerJoin(dosyalar, eq(dosyalar.kimlik, urunGalerisi.dosya_kimligi))
       .where(isNull(dosyalar.silinme_zamani));
     expect(bagli).toHaveLength(3);
+  });
+});
+
+// Özellikler ve varyantlar (kart 0100): örnek katalog ikisini de taşımaz; bu testler ekler. İlk ürün
+// iki seçenekli (Beden: S, M; Renk: Kırmızı, Mavi) dört birleşimli olur, ikinci ürün basit kalır.
+const ozellikliVaryantli = (degistir: (katalog: KatalogBaslangici) => void = () => {}) =>
+  katalogla((katalog) => {
+    const [ilk, ikinci] = katalog.urunler;
+    if (ilk === undefined || ikinci === undefined) throw new Error("İki ürün beklenirdi.");
+    katalog.ozellikler = [
+      { ad: "Kumaş", tur: "liste", filtrede: false, secenekler: ["Pamuk", "Keten"] },
+      { ad: "Gramaj", tur: "sayi", birim: "g/m²", filtrede: false },
+      { ad: "Yıkanır", tur: "evet-hayir", filtrede: false },
+      { ad: "Not", tur: "metin", filtrede: false },
+    ];
+    ilk.fiyat = undefined;
+    ilk.stok = undefined;
+    ilk.ozellikler = [
+      { ozellik: "Kumaş", deger: "Pamuk" },
+      { ozellik: "Gramaj", deger: 180.5 },
+      { ozellik: "Yıkanır", deger: true },
+      { ozellik: "Not", deger: "Ters yıkayın" },
+    ];
+    ilk.secenekler = [
+      { ad: "Beden", degerler: ["S", "M"] },
+      { ad: "Renk", degerler: ["Kırmızı", "Mavi"] },
+    ];
+    ilk.birlesimler = [
+      ["S", "Kırmızı"],
+      ["M", "Kırmızı"],
+      ["S", "Mavi"],
+      ["M", "Mavi"],
+    ].map((degerler, i) => ({
+      degerler,
+      stokKodu: `VRY-${i}`,
+      fiyat: {
+        satisFiyati: 1000 + i,
+        indirimliFiyat: null,
+        indirimBaslangici: null,
+        indirimBitisi: null,
+      },
+      ...(i === 1 ? {} : { stok: i + 1 }),
+    }));
+    ikinci.ozellikler = [{ ozellik: "Kumaş", deger: "Keten" }];
+    degistir(katalog);
+  });
+
+describe("özellikler ve varyantlar (kart 0100)", () => {
+  it("özellikler tanımlarıyla, ürünün değerleri türleriyle yazılır; liste değeri seçeneğe bağlanır", async () => {
+    const vt = await siteAc();
+    const site = ozellikliVaryantli();
+    expect(await katalogBaslangiciniKur(vt, site)).toBe(true);
+    const tanimlar = await ozellikServisi.hepsiniOku(vt);
+    expect(tanimlar.map((t) => [t.ad, t.tur, t.birim, t.secenekler.map((s) => s.ad)])).toEqual([
+      ["Kumaş", "liste", undefined, ["Pamuk", "Keten"]],
+      ["Gramaj", "sayi", "g/m²", []],
+      ["Yıkanır", "evet-hayir", undefined, []],
+      ["Not", "metin", undefined, []],
+    ]);
+    const [kumas, gramaj, yikanir, not] = tanimlar;
+    const secenek = (ad: string) => kumas?.secenekler.find((s) => s.ad === ad)?.kimlik;
+    const servis = siteninUrunServisi(site);
+    const ilk = await servis.urunuOku(vt, await urunKimligi(vt, "deneme-urunu"));
+    const ikinci = await servis.urunuOku(vt, await urunKimligi(vt, "vergisiz-urun"));
+    expect(ilk?.ozellikler).toEqual([
+      { ozellik: kumas?.kimlik, deger: secenek("Pamuk") },
+      { ozellik: gramaj?.kimlik, deger: 180.5 },
+      { ozellik: yikanir?.kimlik, deger: true },
+      { ozellik: not?.kimlik, deger: "Ters yıkayın" },
+    ]);
+    expect(ikinci?.ozellikler).toEqual([{ ozellik: kumas?.kimlik, deger: secenek("Keten") }]);
+    // Bir değere sahip ürünler tek sorguyla (filtrenin temeli).
+    const ketenli = await ozellikServisi.urunleri(vt, kumas?.kimlik ?? "", secenek("Keten") ?? "");
+    expect(ketenli.urunler).toEqual([ikinci?.kimlik]);
+  });
+
+  it("seçenekli ürünün her birleşimi kendi stok kodu, fiyatı ve stoğuyla; basit birimi kalmaz", async () => {
+    const vt = await siteAc();
+    const site = ozellikliVaryantli();
+    expect(await katalogBaslangiciniKur(vt, site)).toBe(true);
+    const servis = siteninUrunServisi(site);
+    const urun = await servis.urunuOku(vt, await urunKimligi(vt, "deneme-urunu"));
+    if (urun === undefined) throw new Error("Ürün okunamadı.");
+    expect(urun.tur).toBe("varyantli");
+    expect(urun.secenekler.map((s) => [s.ad, s.degerler.map((d) => d.ad)])).toEqual([
+      ["Beden", ["S", "M"]],
+      ["Renk", ["Kırmızı", "Mavi"]],
+    ]);
+    const ad = new Map(urun.secenekler.flatMap((s) => s.degerler.map((d) => [d.kimlik, d.ad])));
+    const canli = urun.birimler.filter((b) => !b.silindi);
+    expect(canli.map((b) => [b.stokKodu, b.degerler.map((d) => ad.get(d))])).toEqual([
+      ["VRY-0", ["S", "Kırmızı"]],
+      ["VRY-1", ["M", "Kırmızı"]],
+      ["VRY-2", ["S", "Mavi"]],
+      ["VRY-3", ["M", "Mavi"]],
+    ]);
+    // Ürün eklenirken açılan basit birim ilk seçenekle silinmiştir (panelde de öyle).
+    expect(urun.birimler.filter((b) => b.silindi && b.degerler.length === 0)).toHaveLength(1);
+    const kimlikler = canli.map((b) => b.kimlik);
+    const fiyatlar = await siteninFiyatServisi(site).gecerliFiyatlar(vt, kimlikler, new Date());
+    expect(kimlikler.map((k) => fiyatlar.get(k)?.tutar)).toEqual([1000, 1001, 1002, 1003]);
+    const stoklar = await stokServisi().stoklariOku(vt, kimlikler);
+    expect(kimlikler.map((k) => stoklar.get(k)?.miktar ?? 0)).toEqual([1, 0, 3, 4]);
+    const kayitlar = await vt
+      .select({ islem: degisiklikKayitlari.islem, kim: degisiklikKayitlari.kim_adi })
+      .from(degisiklikKayitlari)
+      .where(eq(degisiklikKayitlari.kim_adi, "baslangic-katalog"));
+    const sayisi = (islem: string) => kayitlar.filter((k) => k.islem === islem).length;
+    expect(sayisi("urun-birimi.eklendi")).toBe(4);
+    expect(sayisi("urun-secenegi.eklendi")).toBe(2);
+    expect(sayisi("ozellik.eklendi")).toBe(4);
+  });
+
+  it("yalnız özellikleri olan katalog da yazılır", async () => {
+    const vt = await siteAc();
+    const site = ozellikliVaryantli();
+    const yalniz = {
+      ...site,
+      katalogBaslangici: { ...bosKatalog(), ozellikler: site.katalogBaslangici.ozellikler },
+    };
+    expect(await katalogBaslangiciniKur(vt, yalniz)).toBe(true);
+    expect(await sayilar(vt)).toMatchObject({ ozellikler: 4, urunler: 0 });
+  });
+
+  it("kurulu katalog yazılmaz: yalnız bir özelliği olan site", async () => {
+    const vt = await siteAc();
+    await ozellikServisi.ekle(vt, yonetici(), { ad: "Elle açılan", tur: "metin" });
+    expect(await katalogBaslangiciniKur(vt, ozellikliVaryantli())).toBe(false);
+    expect(await sayilar(vt)).toMatchObject({ ozellikler: 1, urunler: 0, kategoriler: 0 });
+  });
+
+  it("panelden açılmakta olan özellik kataloğa karışmaz: kurulu mu sorusu kilitlerden sonra", async () => {
+    const vt = await siteAc();
+    let hazir: () => void = () => {};
+    let birak: () => void = () => {};
+    const yazildi = new Promise<void>((coz) => {
+      hazir = coz;
+    });
+    const bitir = new Promise<void>((coz) => {
+      birak = coz;
+    });
+    const panel = vt.transaction(async (islem) => {
+      await ozellikServisi.ekle(islem, yonetici(), { ad: "Panelden", tur: "metin" });
+      hazir();
+      await bitir;
+    });
+    await yazildi;
+    const katalog = katalogBaslangiciniKur(vt, ozellikliVaryantli());
+    await new Promise((coz) => setTimeout(coz, 500));
+    birak();
+    await panel;
+    expect(await katalog).toBe(false);
+    expect(await sayilar(vt)).toMatchObject({ ozellikler: 1, urunler: 0, kategoriler: 0 });
+  });
+
+  it("bir birleşim yazılamazsa (aynı stok kodu) hiçbir parça kalmaz: özellik, seçenek, birim", async () => {
+    const vt = await siteAc();
+    const bozuk = ozellikliVaryantli((katalog) => {
+      for (const b of katalog.urunler[0]?.birlesimler ?? []) b.stokKodu = "AYNI-KOD";
+    });
+    await expect(katalogBaslangiciniKur(vt, bozuk)).rejects.toMatchObject({ kod: "cakisma" });
+    expect(await sayilar(vt)).toEqual(bos);
+    expect(await katalogBaslangiciniKur(vt, ozellikliVaryantli())).toBe(true);
+  });
+
+  it("bir özellik yazılamazsa (harf ayrımsız aynı ad) hiçbir parça kalmaz", async () => {
+    const vt = await siteAc();
+    const bozuk = ozellikliVaryantli((katalog) => {
+      katalog.ozellikler.push({ ad: "KUMAŞ", tur: "metin", filtrede: false });
+    });
+    await expect(katalogBaslangiciniKur(vt, bozuk)).rejects.toMatchObject({ kod: "cakisma" });
+    expect(await sayilar(vt)).toEqual(bos);
   });
 });

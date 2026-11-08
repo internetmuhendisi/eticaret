@@ -1,7 +1,8 @@
 // Sitenin başlangıç kataloğunu (baslangic/katalog.json, kart 0084) bir kez yazar.
 //
 // - Ne zaman: arka plan süreci açılırken (arka-plan-isleri/surec.ts). Katalog hiç kurulmamışsa
-//   (ürün, kategori, marka ya da etiket tablosunda, silinmiş bile olsa, tek satır yoksa) dosya yazılır.
+//   (ürün, kategori, marka, etiket ya da özellik tablosunda, silinmiş bile olsa, tek satır yoksa)
+//   dosya yazılır.
 //   Sonra dosya kullanılmaz: mağaza sahibinin sildiği ürün geri gelmez (karar 0060'taki yol).
 // - Nasıl: yalnız servislerle. Doğrulama, adres adı, değişiklik kaydı, fiyat geçmişi ve stok geçmişi
 //   panelden girilen bir üründeki gibidir. Yazan, değişiklik kaydında "baslangic-katalog" adlı sistem
@@ -9,10 +10,15 @@
 // - Bütün katalog tek veritabanı işlemindedir: bir parça yazılamazsa hiçbiri yazılmaz, yarım katalog
 //   kalmaz. Servisler kendi işlemlerini bu işlemin içinde kayıt noktası olarak açar. İşlem önce kendi
 //   kilidini alır: aynı anda açılan iki süreç kataloğu iki kez yazmaz.
-// - Kilit sırası: katalog, kategori, marka, etiket, ürün; sonra gerekirse vergi (vergi tablosu
+// - Kilit sırası: katalog, kategori, marka, etiket, özellik, ürün; sonra gerekirse vergi (vergi tablosu
 //   kurulmamışsa okuma onu kurar). Katalog kurulu mu sorusu bu kilitler alındıktan sonra sorulur: arada
-//   panelden açılan bir kategori, marka, etiket ya da ürün kataloğa karışmaz (kart 0084 kontrolü). Hiçbir
-//   iş ürün kilidinden sonra kategori ya da grup kilidini, vergi kilidinden sonra ötekileri almaz.
+//   panelden açılan bir kategori, marka, etiket, özellik ya da ürün kataloğa karışmaz (kart 0084
+//   kontrolü; özellik kart 0100). Hiçbir iş ürün kilidinden sonra kategori, grup ya da özellik kilidini,
+//   vergi kilidinden sonra ötekileri almaz.
+// - Özellikler ve varyantlar (kart 0100): özellikler ürünlerden önce yazılır, ürünün değerleri ürün
+//   girdisiyle gider (liste değeri seçeneğin kimliğine çevrilir). Seçenekli üründe seçenekler panelde
+//   olduğu gibi eklenir (ilk seçenek basit birimi siler), her birleşim kendi birimidir; fiyatı ve stoğu
+//   o birime yazılır, görseli ürünün galerisindeki öğedir.
 // - Galeri görselleri (kart 0087): dosya kaydetme bir veritabanı işleminin içinde çağrılamaz (karar
 //   0058). Bu yüzden katalog kurulu değilse görseller önce, her biri kendi işleminde, boyutlarıyla dosya
 //   deposuna kaydedilir; katalog işlemi onları kimlikleriyle galeriye bağlar. Katalog yazılmazsa (hata
@@ -32,12 +38,15 @@ import { kategoriler } from "../kategori/model.ts";
 import { kategoriEkle, kategoriKilidiAl } from "../kategori/servis.ts";
 import { markalar } from "../marka/model.ts";
 import { markaServisi } from "../marka/servis.ts";
+import { ozellikler } from "../ozellik/model.ts";
+import { ozellikServisi } from "../ozellik/servis.ts";
 import { stokServisi } from "../stok/servis.ts";
 import { siteninVergiServisi } from "../vergi/servis.ts";
 import type { KatalogBaslangici } from "./baslangic-semasi.ts";
 import { urunKilidiAl } from "./kilit.ts";
 import { urunler } from "./model.ts";
 import { siteninUrunServisi } from "./servis.ts";
+import { secenekleriOku } from "./varyant.ts";
 
 export const baslangicKatalogYazari = sistemIslemi("baslangic-katalog");
 
@@ -48,11 +57,12 @@ const bosKatalogMu = (katalog: KatalogBaslangici) =>
   katalog.kategoriler.length === 0 &&
   katalog.markalar.length === 0 &&
   katalog.etiketler.length === 0 &&
+  katalog.ozellikler.length === 0 &&
   katalog.urunler.length === 0;
 
 // Silinmiş satır da sayılır: mağaza sahibi her şeyi silse de katalog yeniden yazılmaz.
 const kuruluMu = async (islem: VeritabaniIslemi) => {
-  for (const tablo of [urunler, kategoriler, markalar, etiketler]) {
+  for (const tablo of [urunler, kategoriler, markalar, etiketler, ozellikler]) {
     const satir = await islem.select({ kimlik: tablo.kimlik }).from(tablo).limit(1);
     if (satir.length > 0) return true;
   }
@@ -140,6 +150,7 @@ const katalogIsleminiYaz = (
     await kategoriKilidiAl(islem);
     await markaServisi.kilidiAl(islem);
     await etiketServisi.kilidiAl(islem);
+    await ozellikServisi.kilidiAl(islem);
     await urunKilidiAl(islem);
     if (await kuruluMu(islem)) return false;
 
@@ -161,6 +172,21 @@ const katalogIsleminiYaz = (
       etiketKimlikleri.set(etiket.adresAdi, await etiketServisi.ekle(islem, kim, etiket));
     }
 
+    // Özellik adından kimliğine ve (liste türünde) seçenek adından kimliğine.
+    const ozellikKimlikleri = new Map<
+      string,
+      { kimlik: string; secenekler: Map<string, string> }
+    >();
+    for (const ozellik of katalog.ozellikler) {
+      const kimlik = await ozellikServisi.ekle(islem, kim, ozellik);
+      const okunan = await ozellikServisi.oku(kimlik, islem);
+      if (okunan === undefined) throw new Error(`${ozellik.ad} özelliği okunamadı.`);
+      ozellikKimlikleri.set(ozellik.ad, {
+        kimlik,
+        secenekler: new Map(okunan.secenekler.map((s) => [s.ad, s.kimlik])),
+      });
+    }
+
     // İlgili ürünler bütün ürünler yazıldıktan sonra bağlanır: dosyada sonra gelen ürün de seçilebilir.
     const urunKimlikleri = new Map<string, string>();
     for (const urun of katalog.urunler) {
@@ -173,6 +199,9 @@ const katalogIsleminiYaz = (
         kategoriler,
         etiketler,
         marka,
+        ozellikler: degerler,
+        secenekler,
+        birlesimler,
         ...alanlar
       } = urun;
       const sinif = vergiSinifi === null ? null : vergiSiniflari.get(vergiSinifi);
@@ -187,8 +216,16 @@ const katalogIsleminiYaz = (
         kategoriler: kategoriler.map((ad) => kimligi(kategoriKimlikleri, ad)),
         etiketler: etiketler.map((ad) => kimligi(etiketKimlikleri, ad)),
         marka: marka === undefined ? null : kimligi(markaKimlikleri, marka),
+        ozellikler: degerler.map(({ ozellik, deger }) => {
+          const tanim = ozellikKimlikleri.get(ozellik);
+          if (tanim === undefined)
+            throw new Error(`Başlangıç kataloğunda ${ozellik} özelliği yok.`);
+          const secenek = typeof deger === "string" ? tanim.secenekler.get(deger) : undefined;
+          return { ozellik: tanim.kimlik, deger: secenek ?? deger };
+        }),
       });
       urunKimlikleri.set(urun.adresAdi, kimlik);
+      const galeriOgeleri = new Map<string, string>();
       for (const oge of galeri) {
         if ("video" in oge) {
           await urunServisi.galeriyeVideoEkle(islem, kim, kimlik, {
@@ -199,20 +236,56 @@ const katalogIsleminiYaz = (
         }
         const dosya = gorseller.get(oge.gorsel);
         if (dosya === undefined) throw new Error(`Görsel kaydedilmemiş: ${oge.gorsel}.`);
-        await urunServisi.galeriyeGorselEkle(islem, kim, kimlik, {
-          dosya,
-          alternatifMetin: oge.alternatifMetin,
-        });
+        galeriOgeleri.set(
+          oge.gorsel,
+          await urunServisi.galeriyeGorselEkle(islem, kim, kimlik, {
+            dosya,
+            alternatifMetin: oge.alternatifMetin,
+          }),
+        );
       }
-      const birim = (await urunServisi.urunuOku(islem, kimlik))?.birimler[0]?.kimlik;
-      if (birim === undefined) throw new Error(`${urun.adresAdi} ürününün birimi okunamadı.`);
-      if (fiyat !== undefined) await fiyatServisi.fiyatYaz(islem, kim, birim, fiyat);
-      if (miktar !== undefined && miktar > 0) {
-        await stok.stokDuzelt(islem, kim, birim, {
-          gorulenMiktar: 0,
-          yeniMiktar: miktar,
-          sebep: "yeni-mal",
+      const birimiDoldur = async (
+        birim: string,
+        birimFiyati: typeof fiyat,
+        birimStogu: number | undefined,
+      ) => {
+        if (birimFiyati !== undefined) await fiyatServisi.fiyatYaz(islem, kim, birim, birimFiyati);
+        if (birimStogu !== undefined && birimStogu > 0) {
+          await stok.stokDuzelt(islem, kim, birim, {
+            gorulenMiktar: 0,
+            yeniMiktar: birimStogu,
+            sebep: "yeni-mal",
+          });
+        }
+      };
+      if (secenekler.length === 0) {
+        const birim = (await urunServisi.urunuOku(islem, kimlik))?.birimler[0]?.kimlik;
+        if (birim === undefined) throw new Error(`${urun.adresAdi} ürününün birimi okunamadı.`);
+        await birimiDoldur(birim, fiyat, miktar);
+        continue;
+      }
+      for (const secenek of secenekler) await urunServisi.secenekEkle(islem, kim, kimlik, secenek);
+      // Seçeneklerin sırasıyla, değer adından kimliğine.
+      const degerKimlikleri = (
+        (await secenekleriOku(islem, [kimlik], { silinmisler: false })).get(kimlik) ?? []
+      ).map((secenek) => new Map(secenek.degerler.map((d) => [d.ad, d.kimlik])));
+      for (const {
+        degerler: adlar,
+        gorsel,
+        fiyat: birimFiyati,
+        stok: birimStogu,
+        ...birimAlanlari
+      } of birlesimler) {
+        const birim = await urunServisi.birlesimEkle(islem, kim, kimlik, {
+          ...birimAlanlari,
+          degerler: adlar.map((ad, sira) => {
+            const deger = degerKimlikleri[sira]?.get(ad);
+            if (deger === undefined) throw new Error(`${urun.adresAdi} ürününde ${ad} değeri yok.`);
+            return deger;
+          }),
+          ...(gorsel === undefined ? {} : { gorsel: kimligi(galeriOgeleri, gorsel) }),
         });
+        await birimiDoldur(birim, birimFiyati, birimStogu);
       }
     }
     for (const urun of katalog.urunler) {

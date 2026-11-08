@@ -10,7 +10,7 @@ const epostaKalibi = /^[^\s@]+@[^\s@]+$/;
 const bearerKalibi = /^bearer\s/i;
 const jwtKalibi = /^eyJ[\w-]+\.[\w-]+\./;
 // "Basic " başlığı yalnız ardından "kullanıcı:şifre"nin base64 hâli gelirse yakalanır (kart 0076):
-// "Basic Tişört" gibi bir ürün adı giriş başlığı değildir. Dolgu (=) zorunlu değildir.
+// "Basic Kazak" gibi bir ürün adı giriş başlığı değildir. Dolgu (=) zorunlu değildir.
 const basicKalibi = /^basic\s+([A-Za-z0-9+/]+={0,2})$/i;
 
 // Çözülen değer geçerli UTF-8 (Türkçe harfli şifre de olur), denetim karakteri yok ve içinde ":" var.

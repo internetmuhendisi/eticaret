@@ -249,6 +249,68 @@ describe("örnek klasörler", () => {
       "katalog-galeri-video-izinsiz",
       `${katalogBaslangicDosyasi}: urunler.0.galeri.0.video: video-sitesi-izinsiz`,
     ],
+    // Özellikler ve varyantlar (kart 0100).
+    ["katalog-ozellik-ad-tekrar", `${katalogBaslangicDosyasi}: ozellikler.2.ad: ozellik-ad-tekrar`],
+    [
+      "katalog-ozellik-birim-liste",
+      `${katalogBaslangicDosyasi}: ozellikler.0.birim: birim-yalniz-sayi`,
+    ],
+    [
+      "katalog-ozellik-secenek-metin",
+      `${katalogBaslangicDosyasi}: ozellikler.2.secenekler: secenek-yalniz-liste`,
+    ],
+    [
+      "katalog-ozellik-tanimsiz",
+      `${katalogBaslangicDosyasi}: urunler.2.ozellikler.0: ozellik-tanimsiz`,
+    ],
+    [
+      "katalog-ozellik-tekrar",
+      `${katalogBaslangicDosyasi}: urunler.2.ozellikler.1: ozellik-tekrar`,
+    ],
+    [
+      "katalog-ozellik-deger-gecersiz",
+      `${katalogBaslangicDosyasi}: urunler.2.ozellikler.0: ozellik-deger-gecersiz`,
+    ],
+    [
+      "katalog-ozellik-secenek-gecersiz",
+      `${katalogBaslangicDosyasi}: urunler.2.ozellikler.0: ozellik-secenek-gecersiz`,
+    ],
+    [
+      "katalog-varyant-birim-alani",
+      `${katalogBaslangicDosyasi}: urunler.2.stokKodu: varyant-birim-alani`,
+    ],
+    [
+      "katalog-birlesimsiz-secenek",
+      `${katalogBaslangicDosyasi}: urunler.2.birlesimler: birlesimsiz-secenek`,
+    ],
+    [
+      "katalog-seceneksiz-birlesim",
+      `${katalogBaslangicDosyasi}: urunler.2.birlesimler: seceneksiz-birlesim`,
+    ],
+    [
+      "katalog-birlesim-gecersiz",
+      `${katalogBaslangicDosyasi}: urunler.2.birlesimler.1.degerler: birlesim-gecersiz`,
+    ],
+    [
+      "katalog-birlesim-eksik-deger",
+      `${katalogBaslangicDosyasi}: urunler.2.birlesimler.1.degerler: birlesim-gecersiz`,
+    ],
+    [
+      "katalog-birlesim-tekrar",
+      `${katalogBaslangicDosyasi}: urunler.2.birlesimler.1.degerler: birlesim-tekrar`,
+    ],
+    [
+      "katalog-birlesim-gorsel-tanimsiz",
+      `${katalogBaslangicDosyasi}: urunler.2.birlesimler.0.gorsel: birlesim-gorsel-tanimsiz`,
+    ],
+    [
+      "katalog-birlesim-indirim",
+      `${katalogBaslangicDosyasi}: urunler.2.birlesimler.0.fiyat.indirimliFiyat: indirim-buyuk`,
+    ],
+    [
+      "katalog-birlesim-takipsiz-stok",
+      `${katalogBaslangicDosyasi}: urunler.2.birlesimler.0.stok: takipsiz-stok`,
+    ],
   ];
 
   for (const [ornek, beklenenHata] of bozuklar) {
@@ -360,8 +422,17 @@ describe("başlangıç kataloğu (kart 0084)", () => {
       kategoriler: [],
       markalar: [],
       etiketler: [],
+      ozellikler: [],
       urunler: [],
     });
+  });
+
+  it("özellikli ve varyantlı katalog doğrulamadan geçer (kart 0100)", () => {
+    const sonuc = dogrula("katalog-varyantli");
+    if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+    const varyantli = sonuc.site.katalogBaslangici.urunler[2];
+    expect(varyantli?.birlesimler.map((b) => b.degerler)).toEqual([["S"], ["M"]]);
+    expect(sonuc.site.katalogBaslangici.ozellikler.map((o) => o.ad)).toEqual(["Kumaş", "Gramaj"]);
   });
 
   it("dosyadaki katalog varsayılanlarıyla okunur", () => {

@@ -29,6 +29,26 @@
       "adresAdi": "yeni"
     }
   ],
+  "ozellikler": [
+    {
+      "ad": "Kumaş",
+      "tur": "liste",
+      "secenekler": ["Pamuk", "Polyester", "Keten"]
+    },
+    {
+      "ad": "Gramaj",
+      "tur": "sayi",
+      "birim": "g/m²"
+    },
+    {
+      "ad": "Makinede yıkanabilir",
+      "tur": "evet-hayir"
+    },
+    {
+      "ad": "Bakım notu",
+      "tur": "metin"
+    }
+  ],
   "urunler": [
     {
       "ad": "Pamuklu Bez Çanta",
@@ -91,6 +111,16 @@
         {
           "gorsel": "keten-masa-ortusu-1.png",
           "alternatifMetin": "Gri keten masa örtüsü, katlanmış"
+        }
+      ],
+      "ozellikler": [
+        {
+          "ozellik": "Kumaş",
+          "deger": "Keten"
+        },
+        {
+          "ozellik": "Makinede yıkanabilir",
+          "deger": true
         }
       ]
     },
@@ -207,6 +237,239 @@
       "fiyat": {
         "satisFiyati": 4990
       }
+    },
+    {
+      "ad": "Basic Tişört",
+      "adresAdi": "basic-tisort",
+      "kisaAciklama": "Her gün giyilecek sade kesimli, yumuşak pamuklu tişört.",
+      "uzunAciklama": "Yuvarlak yakalı, düz kesimli bir tişört. Tek başına da ceketin altında da rahat giyilir. Pamuklu kumaşı nefes alır. Siyah ve beyaz renkte, S'den XL'e kadar bedenleri var.",
+      "durum": "yayinda",
+      "vergiSinifi": "%20",
+      "kategoriler": ["giyim"],
+      "galeri": [
+        {
+          "gorsel": "basic-tisort-siyah.png",
+          "alternatifMetin": "Siyah tişört, önden"
+        },
+        {
+          "gorsel": "basic-tisort-beyaz.png",
+          "alternatifMetin": "Beyaz tişört, önden"
+        }
+      ],
+      "ozellikler": [
+        {
+          "ozellik": "Kumaş",
+          "deger": "Pamuk"
+        },
+        {
+          "ozellik": "Gramaj",
+          "deger": 180
+        },
+        {
+          "ozellik": "Makinede yıkanabilir",
+          "deger": true
+        },
+        {
+          "ozellik": "Bakım notu",
+          "deger": "30 derecede ters yıkayın"
+        }
+      ],
+      "secenekler": [
+        {
+          "ad": "Beden",
+          "degerler": ["S", "M", "L", "XL"]
+        },
+        {
+          "ad": "Renk",
+          "degerler": ["Siyah", "Beyaz"]
+        }
+      ],
+      "birlesimler": [
+        {
+          "degerler": ["S", "Siyah"],
+          "stokKodu": "ORN-GYM-003-S-SYH",
+          "gorsel": "basic-tisort-siyah.png",
+          "fiyat": {
+            "satisFiyati": 29990
+          },
+          "stok": 10
+        },
+        {
+          "degerler": ["M", "Siyah"],
+          "stokKodu": "ORN-GYM-003-M-SYH",
+          "gorsel": "basic-tisort-siyah.png",
+          "fiyat": {
+            "satisFiyati": 29990
+          },
+          "stok": 10
+        },
+        {
+          "degerler": ["L", "Siyah"],
+          "stokKodu": "ORN-GYM-003-L-SYH",
+          "gorsel": "basic-tisort-siyah.png",
+          "fiyat": {
+            "satisFiyati": 29990
+          },
+          "stok": 10
+        },
+        {
+          "degerler": ["XL", "Siyah"],
+          "stokKodu": "ORN-GYM-003-XL-SYH",
+          "gorsel": "basic-tisort-siyah.png",
+          "fiyat": {
+            "satisFiyati": 32990
+          },
+          "stok": 10
+        },
+        {
+          "degerler": ["S", "Beyaz"],
+          "stokKodu": "ORN-GYM-003-S-BYZ",
+          "gorsel": "basic-tisort-beyaz.png",
+          "fiyat": {
+            "satisFiyati": 29990
+          },
+          "stok": 10
+        },
+        {
+          "degerler": ["M", "Beyaz"],
+          "stokKodu": "ORN-GYM-003-M-BYZ",
+          "gorsel": "basic-tisort-beyaz.png",
+          "fiyat": {
+            "satisFiyati": 29990
+          },
+          "stok": 0
+        },
+        {
+          "degerler": ["L", "Beyaz"],
+          "stokKodu": "ORN-GYM-003-L-BYZ",
+          "gorsel": "basic-tisort-beyaz.png",
+          "fiyat": {
+            "satisFiyati": 29990
+          },
+          "stok": 10
+        },
+        {
+          "degerler": ["XL", "Beyaz"],
+          "stokKodu": "ORN-GYM-003-XL-BYZ",
+          "gorsel": "basic-tisort-beyaz.png",
+          "fiyat": {
+            "satisFiyati": 32990
+          },
+          "stok": 10
+        }
+      ]
+    },
+    {
+      "ad": "Kapüşonlu Sweatshirt",
+      "adresAdi": "kapusonlu-sweatshirt",
+      "kisaAciklama": "Serin günler için içi yumuşak, kapüşonlu sweatshirt.",
+      "uzunAciklama": "Kapüşonu ve önde kanguru cebi olan, rahat kesimli bir sweatshirt. Pamuk ve polyester karışımı kumaşı sıcak tutar. Gri ve lacivert renkte, S, M ve L bedenleri var.",
+      "durum": "yayinda",
+      "vergiSinifi": "%20",
+      "kategoriler": ["giyim"],
+      "galeri": [
+        {
+          "gorsel": "kapusonlu-sweatshirt-gri.png",
+          "alternatifMetin": "Gri kapüşonlu sweatshirt, önden"
+        },
+        {
+          "gorsel": "kapusonlu-sweatshirt-lacivert.png",
+          "alternatifMetin": "Lacivert kapüşonlu sweatshirt, önden"
+        }
+      ],
+      "ozellikler": [
+        {
+          "ozellik": "Kumaş",
+          "deger": "Pamuk"
+        },
+        {
+          "ozellik": "Gramaj",
+          "deger": 320
+        },
+        {
+          "ozellik": "Makinede yıkanabilir",
+          "deger": true
+        },
+        {
+          "ozellik": "Bakım notu",
+          "deger": "Pamuk ve polyester karışımıdır. Kurutma makinesine atmayın."
+        }
+      ],
+      "secenekler": [
+        {
+          "ad": "Beden",
+          "degerler": ["S", "M", "L"]
+        },
+        {
+          "ad": "Renk",
+          "degerler": ["Gri", "Lacivert"]
+        }
+      ],
+      "birlesimler": [
+        {
+          "degerler": ["S", "Gri"],
+          "stokKodu": "ORN-GYM-004-S-GRI",
+          "gorsel": "kapusonlu-sweatshirt-gri.png",
+          "fiyat": {
+            "satisFiyati": 64990
+          },
+          "stok": 6
+        },
+        {
+          "degerler": ["M", "Gri"],
+          "stokKodu": "ORN-GYM-004-M-GRI",
+          "gorsel": "kapusonlu-sweatshirt-gri.png",
+          "fiyat": {
+            "satisFiyati": 64990
+          },
+          "stok": 6
+        },
+        {
+          "degerler": ["L", "Gri"],
+          "stokKodu": "ORN-GYM-004-L-GRI",
+          "gorsel": "kapusonlu-sweatshirt-gri.png",
+          "fiyat": {
+            "satisFiyati": 64990
+          },
+          "stok": 6
+        },
+        {
+          "degerler": ["S", "Lacivert"],
+          "stokKodu": "ORN-GYM-004-S-LCV",
+          "gorsel": "kapusonlu-sweatshirt-lacivert.png",
+          "fiyat": {
+            "satisFiyati": 64990,
+            "indirimliFiyat": 54990,
+            "indirimBaslangici": "2026-11-15T00:00",
+            "indirimBitisi": "2026-12-01T00:00"
+          },
+          "stok": 6
+        },
+        {
+          "degerler": ["M", "Lacivert"],
+          "stokKodu": "ORN-GYM-004-M-LCV",
+          "gorsel": "kapusonlu-sweatshirt-lacivert.png",
+          "fiyat": {
+            "satisFiyati": 64990,
+            "indirimliFiyat": 54990,
+            "indirimBaslangici": "2026-11-15T00:00",
+            "indirimBitisi": "2026-12-01T00:00"
+          },
+          "stok": 6
+        },
+        {
+          "degerler": ["L", "Lacivert"],
+          "stokKodu": "ORN-GYM-004-L-LCV",
+          "gorsel": "kapusonlu-sweatshirt-lacivert.png",
+          "fiyat": {
+            "satisFiyati": 64990,
+            "indirimliFiyat": 54990,
+            "indirimBaslangici": "2026-11-15T00:00",
+            "indirimBitisi": "2026-12-01T00:00"
+          },
+          "stok": 6
+        }
+      ]
     }
   ]
 }

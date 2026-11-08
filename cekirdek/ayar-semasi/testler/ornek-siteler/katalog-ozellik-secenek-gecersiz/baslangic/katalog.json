@@ -1,0 +1,88 @@
+{
+  "kategoriler": [
+    {
+      "ad": "Birinci Bölüm",
+      "adresAdi": "birinci"
+    },
+    {
+      "ad": "İkinci Bölüm",
+      "adresAdi": "ikinci"
+    }
+  ],
+  "markalar": [
+    {
+      "ad": "Deneme Markası",
+      "adresAdi": "deneme-markasi",
+      "aciklama": "Açıklama"
+    }
+  ],
+  "etiketler": [
+    {
+      "ad": "etiket bir",
+      "adresAdi": "etiket-bir"
+    }
+  ],
+  "urunler": [
+    {
+      "ad": "Deneme Ürünü",
+      "adresAdi": "deneme-urunu",
+      "durum": "yayinda",
+      "vergiSinifi": "Genel",
+      "kategoriler": ["birinci", "ikinci"],
+      "marka": "deneme-markasi",
+      "etiketler": ["etiket-bir"],
+      "ilgiliUrunler": ["vergisiz-urun"],
+      "fiyat": {
+        "satisFiyati": 1000,
+        "indirimliFiyat": 800
+      },
+      "stok": 3
+    },
+    {
+      "ad": "Vergisiz Ürün",
+      "adresAdi": "vergisiz-urun",
+      "vergiSinifi": null,
+      "stokTakibi": false
+    },
+    {
+      "ad": "Varyantlı Ürün",
+      "adresAdi": "varyantli-urun",
+      "vergiSinifi": null,
+      "secenekler": [
+        {
+          "ad": "Beden",
+          "degerler": ["S", "M"]
+        }
+      ],
+      "birlesimler": [
+        {
+          "degerler": ["S"],
+          "stokKodu": "V-S",
+          "stok": 1
+        },
+        {
+          "degerler": ["M"],
+          "stokKodu": "V-M"
+        }
+      ],
+      "ozellikler": [
+        {
+          "ozellik": "Kumaş",
+          "deger": "İpek"
+        }
+      ]
+    }
+  ],
+  "ozellikler": [
+    {
+      "ad": "Kumaş",
+      "tur": "liste",
+      "secenekler": ["Pamuk"]
+    },
+    {
+      "ad": "Gramaj",
+      "tur": "sayi",
+      "birim": "g/m²"
+    }
+  ]
+}

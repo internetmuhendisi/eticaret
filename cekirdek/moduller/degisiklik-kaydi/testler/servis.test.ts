@@ -394,7 +394,7 @@ describe("kayıt içeriği", () => {
 
   // Kart 0076: ürün adı "Basic" ile başlayabilir; yalnız "kullanıcı:şifre" taşıyan başlık yakalanır.
   it.each([
-    ["Basic Tişört"],
+    ["Basic Kazak"],
     ["Basic Sweatshirt"],
     ["basic tee"],
     ["Basic Tees"],

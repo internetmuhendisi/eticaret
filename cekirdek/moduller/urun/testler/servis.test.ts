@@ -432,8 +432,8 @@ describe("alanlar", () => {
         ayrinti: [{ alan, kod: "kayda-uygun-degil" }],
       });
     }
-    const kimlik = await servis.urunEkle(vt, yonetici(), urun({ ad: "Basic Tişört" }));
-    expect((await servis.urunuOku(vt, kimlik))?.ad).toBe("Basic Tişört");
+    const kimlik = await servis.urunEkle(vt, yonetici(), urun({ ad: "Basic Kazak" }));
+    expect((await servis.urunuOku(vt, kimlik))?.ad).toBe("Basic Kazak");
   });
 });
 

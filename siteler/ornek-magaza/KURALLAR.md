@@ -9,7 +9,7 @@
 
 ## Örnek ürünler (kart 0084)
 
-Ürünler `baslangic/katalog.json` dosyasındadır, katalog hiç kurulmamışsa arka plan süreci açılırken bir kez yüklenir. Hepsi basit üründür, fiyatları KDV dahildir ve %20 sınıfındadır. Her durumu `testler/katalog.test.ts` gerçek veritabanıyla dener; zaman testte sabit verilir.
+Ürünler `baslangic/katalog.json` dosyasındadır, katalog hiç kurulmamışsa arka plan süreci açılırken bir kez yüklenir. Basic Tişört ve Kapüşonlu Sweatshirt dışındakiler basit üründür. Fiyatların hepsi KDV dahildir ve %20 sınıfındadır. Her durumu `testler/katalog.test.ts` gerçek veritabanıyla dener; zaman testte sabit verilir.
 
 | Durum | Ürün | Nasıl |
 |---|---|---|
@@ -27,7 +27,30 @@
 | En az ve en çok alım adedi | Porselen Kupa | 189,90, stok 40, en az 2, en çok 6 |
 | Elle seçilmiş ilgili ürün | Porselen Kupa | Keten Masa Örtüsü ve Yılbaşı Kupa Seti; Kupa Seti yayına girene kadar atlanır |
 
-Tarihler gerçektir: 1 Aralık 2026'dan sonra demoda indirim görünmez, Kupa Seti yayındadır. Varyantlı ürünler ve özellikler Katalog 2 ile gelir (kartlar 0085, 0086).
+Tarihler gerçektir: 1 Aralık 2026'dan sonra demoda indirim görünmez, Kupa Seti yayındadır.
+
+## Varyantlı ürünler ve özellikler (kart 0100)
+
+Katalog biçimi karar 0074'tedir. Her durumu `testler/katalog.test.ts` dener.
+
+| Durum | Ürün | Nasıl |
+|---|---|---|
+| İki seçenekli ürün | Basic Tişört | Beden S, M, L, XL × Renk Siyah, Beyaz: 8 birleşim, her biri kendi stok koduyla (`ORN-GYM-003-<beden>-<renk>`) |
+| Birleşime göre fiyat | Basic Tişört | 299,90; XL bedenler 329,90. Fiyat aralığı 299,90–329,90 |
+| Tükenmiş birleşim | Basic Tişört | M Beyaz stok 0, öteki birleşimler 10; ürünün geneli satılabilir |
+| Birleşime göre tarihli indirim | Kapüşonlu Sweatshirt | Beden S, M, L × Renk Gri, Lacivert, 6'şar adet, 649,90. Lacivert birleşimler 15 Kasım 2026 00:00'dan 1 Aralık 2026 00:00'a kadar (İstanbul) 549,90; Gri indirimsiz. Katalog 15 Kasım'dan önce kurulursa üstü çizili 649,90 görünür (karar 0067, 0074) |
+| Birleşimin kendi görseli | Basic Tişört, Kapüşonlu Sweatshirt | Her renk kendi görselini gösterir |
+
+Özellikler:
+
+| Özellik | Tür | Basic Tişört | Kapüşonlu Sweatshirt | Keten Masa Örtüsü |
+|---|---|---|---|---|
+| Kumaş | Liste: Pamuk, Polyester, Keten | Pamuk | Pamuk | Keten |
+| Gramaj | Sayı, g/m² | 180 | 320 | — |
+| Makinede yıkanabilir | Evet/hayır | Evet | Evet | Evet |
+| Bakım notu | Metin | 30 derecede ters yıkayın | Pamuk ve polyester karışımıdır. Kurutma makinesine atmayın. | — |
+
+Kumaş tek seçimlidir (kullanıcı kararı): sweatshirtin karışımı bakım notunda yazar.
 
 ## Görseller ve video (kart 0087)
 
@@ -39,8 +62,9 @@ Görseller `baslangic/gorseller/` klasöründedir, katalogdaki ürünün `galeri
 | Birden çok görsel | Pamuklu Bez Çanta | İki görsel, sırasıyla |
 | Videolu galeri | Kablosuz Kulaklık | Üç görsel, ikinci sırada YouTube videosu; ana görsel ilk görseldir |
 | Görselsiz ürün | Hediye Paketleme | Ana görseli yok |
+| Renge göre görsel | Basic Tişört, Kapüşonlu Sweatshirt | Her rengin bir görseli; birleşim kendi renginin görselini seçer (kart 0100) |
 
 **Kaynaklar:**
 
-- Görseller projede üretildi (kullanıcı kararı): 1600 × 1600 piksel, yazısız PNG. Her biri açık renkli düz bir zemin üzerine ürünü andıran basit bir biçimdir (çanta, şerit, kare, kupa, kulaklık, daire, kablo). SVG olarak çizilip `sharp` ile PNG'ye çevrildi. Telif ya da lisans gerektirmez.
+- Görseller projede üretildi (kullanıcı kararı): 1600 × 1600 piksel, yazısız PNG. Her biri açık renkli düz bir zemin üzerine ürünü andıran basit bir biçimdir (çanta, şerit, kare, kupa, kulaklık, daire, kablo; kart 0100 ile tişört ve kapüşonlu). SVG olarak çizilip `sharp` ile PNG'ye çevrildi. Telif ya da lisans gerektirmez.
 - Video: "Big Buck Bunny", Blender Foundation, Creative Commons Attribution 3.0 lisanslı (https://peach.blender.org). YouTube'da Blender'ın resmî kanalındaki yükleme: https://www.youtube.com/watch?v=aqz-KE-bpKQ (2026-11-08'de YouTube'un oEmbed yanıtıyla var olduğu doğrulandı). Ürünle ilgisi yoktur, yalnız galeride videonun nasıl göründüğünü göstermek içindir. Lisansın istediği atıf alternatif metindedir.
