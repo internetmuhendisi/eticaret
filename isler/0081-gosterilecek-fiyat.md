@@ -28,4 +28,4 @@ Vitrin, sepet ve e-posta bir ürünün fiyatını tek işlevden alır: geçerli 
 
 ## Durum
 
-yapılacak
+bitti
