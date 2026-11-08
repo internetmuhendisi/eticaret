@@ -18,6 +18,7 @@ import { kimlikSemasi } from "../kimlik";
 import {
   baslangicDosyasi,
   baslangicDosyasiniDogrula,
+  katalogBaslangicDosyasi,
   siteKlasorunuDogrula,
   vergiBaslangicDosyasi,
 } from "../site-klasoru";
@@ -168,6 +169,66 @@ describe("örnek klasörler", () => {
     ["vergi-sinif-tekrar", `${vergiBaslangicDosyasi}: siniflar.1.ad: ad-tekrar`],
     ["vergi-bilinmeyen-alan", `${vergiBaslangicDosyasi}: siniflar.0: `],
     ["vergi-kargo-tekrar", `${vergiBaslangicDosyasi}: siniflar.1.kargo: kargo-tekrar`],
+    // Başlangıç kataloğu (kart 0084): hata iletileri koddur (cekirdek/moduller/urun/baslangic-semasi.ts).
+    [
+      "katalog-kategori-tanimsiz",
+      `${katalogBaslangicDosyasi}: urunler.0.kategoriler.1: kategori-tanimsiz`,
+    ],
+    ["katalog-marka-tanimsiz", `${katalogBaslangicDosyasi}: urunler.0.marka: marka-tanimsiz`],
+    [
+      "katalog-ilgili-tanimsiz",
+      `${katalogBaslangicDosyasi}: urunler.0.ilgiliUrunler.0: ilgili-tanimsiz`,
+    ],
+    ["katalog-takipsiz-stok", `${katalogBaslangicDosyasi}: urunler.1.stok: takipsiz-stok`],
+    [
+      "katalog-adres-adi-tekrar",
+      `${katalogBaslangicDosyasi}: urunler.1.adresAdi: adres-adi-tekrar`,
+    ],
+    [
+      "katalog-vergi-sinifi-yok",
+      `${katalogBaslangicDosyasi}: urunler.0.vergiSinifi: vergi-sinifi-tanimsiz (${vergiBaslangicDosyasi} dosyasında bu adlı sınıf yok)`,
+    ],
+    // Servislerin alanlar arası kuralları aynı işlevlerle (kart 0084 kontrolü).
+    ["katalog-adet-siniri", `${katalogBaslangicDosyasi}: urunler.0.enCokAdet: adet-siniri`],
+    [
+      "katalog-yayin-zamani-yok",
+      `${katalogBaslangicDosyasi}: urunler.0.yayinZamani: yayin-zamani-gerekli`,
+    ],
+    [
+      "katalog-indirim-buyuk",
+      `${katalogBaslangicDosyasi}: urunler.0.fiyat.indirimliFiyat: indirim-buyuk`,
+    ],
+    [
+      "katalog-indirimsiz-zaman",
+      `${katalogBaslangicDosyasi}: urunler.1.fiyat.indirimBitisi: indirim-zamani-indirimsiz`,
+    ],
+    [
+      "katalog-indirim-sirasi",
+      `${katalogBaslangicDosyasi}: urunler.0.fiyat.indirimBitisi: indirim-sirasi`,
+    ],
+    [
+      "katalog-yaz-saati",
+      `${katalogBaslangicDosyasi}: urunler.0.fiyat.indirimBaslangici: indirim-zamani-gecersiz`,
+    ],
+    [
+      "katalog-yayin-yaz-saati",
+      `${katalogBaslangicDosyasi}: urunler.0.yayinZamani: yayin-zamani-gecersiz`,
+    ],
+    [
+      "katalog-kategori-tekrar",
+      `${katalogBaslangicDosyasi}: urunler.0.kategoriler: kategori-tekrar`,
+    ],
+    [
+      "katalog-ilgili-kendisi",
+      `${katalogBaslangicDosyasi}: urunler.0.ilgiliUrunler.0: ilgili-kendisi`,
+    ],
+    ["katalog-ilgili-sinir", `${katalogBaslangicDosyasi}: urunler.0.ilgiliUrunler: `],
+    ["katalog-vergi-sinifi-eksik", `${katalogBaslangicDosyasi}: urunler.0.vergiSinifi: `],
+    [
+      "katalog-fiyat-bozuk",
+      `${katalogBaslangicDosyasi}: urunler.0.fiyat.indirimliFiyat: indirim-sifir`,
+    ],
+    ["katalog-bilinmeyen-alan", `${katalogBaslangicDosyasi}: urunler.0: `],
   ];
 
   for (const [ornek, beklenenHata] of bozuklar) {
@@ -268,6 +329,61 @@ describe("vergi başlangıç verisi (kart 0074)", () => {
         { ad: "Vergisiz", oranlar: [] },
       ],
     });
+  });
+});
+
+describe("başlangıç kataloğu (kart 0084)", () => {
+  it("dosyası olmayan site boş katalogla başlar", () => {
+    const sonuc = dogrula("gecerli");
+    if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+    expect(sonuc.site.katalogBaslangici).toEqual({
+      kategoriler: [],
+      markalar: [],
+      etiketler: [],
+      urunler: [],
+    });
+  });
+
+  it("dosyadaki katalog varsayılanlarıyla okunur", () => {
+    const sonuc = dogrula("katalog-dolu");
+    if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+    const [ilk, ikinci] = sonuc.site.katalogBaslangici.urunler;
+    expect(ilk).toMatchObject({
+      adresAdi: "deneme-urunu",
+      vergiSinifi: "Genel",
+      kategoriler: ["birinci", "ikinci"],
+      fiyat: {
+        satisFiyati: 1000,
+        indirimliFiyat: 800,
+        indirimBaslangici: null,
+        indirimBitisi: null,
+      },
+      stok: 3,
+    });
+    expect(ikinci).toMatchObject({
+      durum: "taslak",
+      stokTakibi: false,
+      enAzAdet: 1,
+      kategoriler: [],
+      etiketler: [],
+      ilgiliUrunler: [],
+    });
+    expect(ikinci?.stok).toBeUndefined();
+  });
+
+  it("JSON olmayan katalog dosyası doğrulamadan geçemez", () => {
+    const kok = mkdtempSync(join(tmpdir(), "katalog-"));
+    const klasor = join(kok, "katalog-dolu");
+    try {
+      cpSync(join(ornekler, "katalog-dolu"), klasor, { recursive: true });
+      writeFileSync(join(klasor, katalogBaslangicDosyasi), "{ bozuk");
+      const sonuc = siteKlasorunuDogrula(klasor);
+      expect(sonuc.gecerli).toBe(false);
+      if (sonuc.gecerli) return;
+      expect(sonuc.hatalar.join("\n")).toContain(`${katalogBaslangicDosyasi}: geçerli JSON değil`);
+    } finally {
+      rmSync(kok, { recursive: true, force: true });
+    }
   });
 });
 

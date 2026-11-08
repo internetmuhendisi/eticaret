@@ -44,6 +44,7 @@ import {
   type UrunDegisikligi,
   type UrunGirdisi,
   type UrunHatasi,
+  urunAlanKurallari,
   urunDegisikligi,
   urunGirdisi,
   urunHatalari,
@@ -166,14 +167,13 @@ const girdiyiDogrula = <T>(sonuc: z.ZodSafeParseResult<T>): T => {
 
 // Alanlar arası kurallar birleşmiş kayda uygulanır. Zamanlanmış olmayan ürünün yayın zamanı silinir.
 const kurallariDenetle = (kayit: UrunKaydi): UrunKaydi => {
-  const sorunlar: Sorun[] = [];
+  const sorunlar: Sorun[] = urunAlanKurallari({
+    durum: kayit.durum,
+    yayinZamaniVar: kayit.yayinZamani !== null,
+    enAzAdet: kayit.enAzAdet,
+    enCokAdet: kayit.enCokAdet,
+  });
   const zamanli = urunDurumVitrini[kayit.durum].zamanli;
-  if (zamanli && kayit.yayinZamani === null) {
-    sorunlar.push({ alan: "yayinZamani", kod: "yayin-zamani-gerekli" });
-  }
-  if (kayit.enCokAdet !== null && kayit.enCokAdet < kayit.enAzAdet) {
-    sorunlar.push({ alan: "enCokAdet", kod: "adet-siniri" });
-  }
   if (sorunlar.length > 0) throw dogrulamaHatasi(sorunlar);
   return zamanli ? kayit : { ...kayit, yayinZamani: null };
 };
@@ -264,7 +264,7 @@ const bagliHepsi = async (
 };
 
 export const urunServisi = (saatDilimi: () => string) => {
-  const yaz = <T>(vt: Veritabani, is: (islem: VeritabaniIslemi) => Promise<T>) =>
+  const yaz = <T>(vt: Veritabani | VeritabaniIslemi, is: (islem: VeritabaniIslemi) => Promise<T>) =>
     vt.transaction(async (islem) => {
       await urunKilidiAl(islem);
       return is(islem);
@@ -376,7 +376,7 @@ export const urunServisi = (saatDilimi: () => string) => {
   };
 
   const urunEkle = async (
-    vt: Veritabani,
+    vt: Veritabani | VeritabaniIslemi,
     kim: DegisikligiYapan,
     ham: UrunGirdisi,
   ): Promise<string> => {
@@ -460,7 +460,7 @@ export const urunServisi = (saatDilimi: () => string) => {
   // sonuca uygulanır. Ad değişince adres adı değişmez (eski bağlantılar kırılmasın). Aynı kalan
   // değişiklik kayda girmez; kayda yalnız değişen alanlar yazılır.
   const urunDegistir = async (
-    vt: Veritabani,
+    vt: Veritabani | VeritabaniIslemi,
     kim: DegisikligiYapan,
     kimlik: string,
     ham: UrunDegisikligi,
@@ -554,7 +554,10 @@ export const urunServisi = (saatDilimi: () => string) => {
     });
 
   // Ürün, silinmiş olsa da okunur (eski kayıtlar ona bağlı kalır). İki sorgu.
-  const urunuOku = async (vt: Veritabani, kimlik: string): Promise<Urun | undefined> => {
+  const urunuOku = async (
+    vt: Veritabani | VeritabaniIslemi,
+    kimlik: string,
+  ): Promise<Urun | undefined> => {
     if (!kimlikMi(kimlik)) return undefined;
     const [urun] = await vt.select(urunAlanlari).from(urunler).where(eq(urunler.kimlik, kimlik));
     if (urun === undefined) return undefined;

@@ -1,12 +1,14 @@
 // Arka plan süreci (kart 0031, karar 0013, 0049). Sitenin görüntüsünden ikinci bir kutu olarak
 // başlar (/uygulama/arka-plan/surec.mjs). Kapatılınca yeni iş almaz, süren işi kısa süre bekler.
 import { writeFileSync } from "node:fs";
+import { calisanSite } from "../ayar-semasi/calisan-site.ts";
 import { siteyiAcilistaDogrula } from "../izleme/acilis.ts";
 import { gunluk } from "../izleme/gunluk.ts";
 import { hataIzlemeyiBagla } from "../izleme/hata-izleme-baglantisi.ts";
-import { surecHatalariniBagla } from "../izleme/hata-katmani.ts";
+import { hatayiKaydet, surecHatalariniBagla } from "../izleme/hata-katmani.ts";
 import { konsoluGunlugeBagla } from "../izleme/konsol.ts";
 import { kuyrukAyari, nabizDosyasi } from "../kayitlar/arka-plan.ts";
+import { katalogBaslangiciniKur } from "../moduller/urun/baslangic.ts";
 import { baglantiyiKapat, siteninVeritabani } from "../veritabani/baglanti.ts";
 import { calistiriciKur } from "./calistirici.ts";
 import { kayitliIsler, zamanliIsler } from "./isler.ts";
@@ -41,6 +43,17 @@ for (const sinyal of ["SIGTERM", "SIGINT"] as const) {
 }
 
 gunluk.bilgi("arka plan süreci başladı");
+// Sitenin başlangıç kataloğu, katalog hiç kurulmamışsa bir kez yazılır (kart 0084). Yazılamazsa hiçbir
+// parçası yazılmaz; hata kaydedilir, kuyruk yine çalışır, sonraki açılışta yeniden denenir.
+try {
+  if (await katalogBaslangiciniKur(siteninVeritabani(), calisanSite())) {
+    gunluk.bilgi("başlangıç kataloğu yazıldı");
+  } else {
+    gunluk.bilgi("başlangıç kataloğu yazılmadı: dosya boş ya da katalog kurulu");
+  }
+} catch (hata) {
+  hatayiKaydet(hata, { kaynak: "katalog-baslangici" });
+}
 await calistiriciKur({ vt: siteninVeritabani(), isler: kayitliIsler, zamanliIsler }).dongu(
   durdur.signal,
 );

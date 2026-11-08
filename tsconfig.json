@@ -18,6 +18,7 @@
     "komutlar/**/*.mts",
     "komutlar/**/*.ts",
     "cekirdek/testler/**/*.ts",
-    "cekirdek/testler/**/*.tsx"
+    "cekirdek/testler/**/*.tsx",
+    "siteler/**/*.ts"
   ]
 }

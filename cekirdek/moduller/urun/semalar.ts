@@ -6,7 +6,12 @@
 //
 // Hata iletileri düz cümle değil koddur (urunHatalari); metni ekran çözer.
 import { z } from "zod";
-import { urunDurumlari, varsayilanUrunDurumu } from "../../kayitlar/urun.ts";
+import {
+  type UrunDurumu,
+  urunDurumlari,
+  urunDurumVitrini,
+  varsayilanUrunDurumu,
+} from "../../kayitlar/urun.ts";
 import { adresAdiKalibi, adresAdiUzunlugu } from "../../metinler/adres-adi.ts";
 import type { MetinAnahtari } from "../../metinler/metin.ts";
 import { kayitMetni } from "../degisiklik-kaydi/deger.ts";
@@ -66,11 +71,34 @@ const hata = (kod: UrunHatasi) => kod;
 // reddeder (karar 0045); mağaza sahibi beklenmeyen hata yerine "kayda-uygun-degil" kodunu görür.
 const metin = kayitMetni;
 
-const kimlikListesi = (tekrar: UrunHatasi) =>
+// Listelerin üst sınırı: kategori ve etiket bağlantıları, elle seçilen ilgili ürünler.
+export const listeSinirlari = { grup: 50, ilgili: 20 } as const;
+
+// Tekrarsız liste. Başlangıç kataloğu (baslangic-semasi.ts) aynı kuralı adres adı listelerinde kullanır.
+export const tekrarsizListe = <T extends z.ZodType>(oge: T, enCok: number, tekrar: UrunHatasi) =>
   z
-    .array(z.uuid())
-    .max(50)
+    .array(oge)
+    .max(enCok)
     .refine((liste) => new Set(liste).size === liste.length, hata(tekrar));
+
+const kimlikListesi = (tekrar: UrunHatasi) => tekrarsizListe(z.uuid(), listeSinirlari.grup, tekrar);
+
+// Alanlar arası kurallar: zamanlanmış ürünün yayın zamanı olur, en çok adet en az adetten küçük olmaz.
+// Servis birleşmiş kayda uygular (değişiklikte yalnız bir alan gelebilir); başlangıç kataloğunun
+// doğrulaması da aynı işlevi kullanır.
+export const urunAlanKurallari = (kayit: {
+  durum: UrunDurumu;
+  yayinZamaniVar: boolean;
+  enAzAdet: number;
+  enCokAdet: number | null;
+}): { alan: string; kod: UrunHatasi }[] => [
+  ...(urunDurumVitrini[kayit.durum].zamanli && !kayit.yayinZamaniVar
+    ? [{ alan: "yayinZamani", kod: hata("yayin-zamani-gerekli") }]
+    : []),
+  ...(kayit.enCokAdet !== null && kayit.enCokAdet < kayit.enAzAdet
+    ? [{ alan: "enCokAdet", kod: hata("adet-siniri") }]
+    : []),
+];
 
 // Ağırlık gram, ölçüler milimetre biriminde tam sayıdır (karar 0062). Ekran sitenin birimine
 // (agirlikBirimi, boyutBirimi) çevirir.
@@ -117,10 +145,7 @@ const alanlar = {
   marka: z.uuid().nullable(),
   // Elle seçilen ilgili ürünler (kart 0079): sırası tutulur. Vitrinde en çok ilgiliUrunSiniri kadarı
   // görünür (ilgili.ts); fazlası, öncekiler vitrinden çıkarsa yerlerini alır.
-  ilgiliUrunler: z
-    .array(z.uuid())
-    .max(20)
-    .refine((liste) => new Set(liste).size === liste.length, hata("ilgili-tekrar")),
+  ilgiliUrunler: tekrarsizListe(z.uuid(), listeSinirlari.ilgili, "ilgili-tekrar"),
 };
 
 // Yeni ürün. Verilmeyen adres adı addan üretilir; zamanlanmış durum dışında yayın zamanı yok sayılır.

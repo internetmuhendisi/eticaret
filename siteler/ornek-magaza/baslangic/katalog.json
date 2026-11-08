@@ -1,0 +1,117 @@
+{
+  "kategoriler": [
+    { "ad": "Giyim", "adresAdi": "giyim" },
+    { "ad": "Ev ve Yaşam", "adresAdi": "ev-ve-yasam" },
+    { "ad": "Elektronik Aksesuar", "adresAdi": "elektronik-aksesuar" }
+  ],
+  "markalar": [{ "ad": "Örnek Ses", "adresAdi": "ornek-ses" }],
+  "etiketler": [{ "ad": "kablosuz", "adresAdi": "kablosuz" }, { "ad": "yeni", "adresAdi": "yeni" }],
+  "urunler": [
+    {
+      "ad": "Pamuklu Bez Çanta",
+      "adresAdi": "pamuklu-bez-canta",
+      "kisaAciklama": "Günlük kullanım için sağlam, katlanabilir pamuklu çanta.",
+      "uzunAciklama": "Pazar alışverişinden kitap taşımaya kadar her işe yarar. Geniş iç hacmi ve uzun sapları sayesinde omuzda rahat taşınır. Katlanınca az yer kaplar.",
+      "durum": "yayinda",
+      "vergiSinifi": "%20",
+      "stokKodu": "ORN-GYM-001",
+      "kategoriler": ["giyim", "ev-ve-yasam"],
+      "fiyat": { "satisFiyati": 12990 },
+      "stok": 0
+    },
+    {
+      "ad": "Yün Atkı",
+      "adresAdi": "yun-atki",
+      "kisaAciklama": "Soğuk günler için yumuşak dokulu, sıcak tutan atkı.",
+      "uzunAciklama": "Boyna rahatça dolanacak uzunluktadır. Sade rengi her mevsimin montuyla uyum sağlar. Elde, ılık suda yıkanması önerilir.",
+      "durum": "taslak",
+      "vergiSinifi": "%20",
+      "stokKodu": "ORN-GYM-002",
+      "kategoriler": ["giyim"],
+      "fiyat": { "satisFiyati": 34990 },
+      "stok": 10
+    },
+    {
+      "ad": "Keten Masa Örtüsü",
+      "adresAdi": "keten-masa-ortusu",
+      "kisaAciklama": "Sofraya doğal bir görünüm katan keten masa örtüsü.",
+      "uzunAciklama": "Altı kişilik masaya uygun boyuttadır. Ketenin doğal dokusu yıkandıkça yumuşar. Günlük sofralarda da özel davetlerde de kullanılabilir.",
+      "durum": "yayinda",
+      "vergiSinifi": "%20",
+      "stokKodu": "ORN-EV-001",
+      "kategoriler": ["ev-ve-yasam"],
+      "fiyat": { "satisFiyati": 44990 },
+      "stok": 15
+    },
+    {
+      "ad": "Porselen Kupa",
+      "adresAdi": "porselen-kupa",
+      "kisaAciklama": "Sabah kahvesi için sade ve dayanıklı porselen kupa.",
+      "uzunAciklama": "Rahat tutulan kulpu ve ince ağzıyla sıcak içecekler için tasarlandı. Bulaşık makinesinde yıkanabilir. En az 2, en çok 6 adet alınabilir.",
+      "durum": "yayinda",
+      "vergiSinifi": "%20",
+      "stokKodu": "ORN-EV-002",
+      "enAzAdet": 2,
+      "enCokAdet": 6,
+      "kategoriler": ["ev-ve-yasam"],
+      "ilgiliUrunler": ["keten-masa-ortusu", "yilbasi-kupa-seti"],
+      "fiyat": { "satisFiyati": 18990 },
+      "stok": 40
+    },
+    {
+      "ad": "Yılbaşı Kupa Seti",
+      "adresAdi": "yilbasi-kupa-seti",
+      "kisaAciklama": "Yeni yıla özel desenli iki kupalık hediye seti.",
+      "uzunAciklama": "Kış desenli iki porselen kupa, hediye kutusunda gelir. Sevdiklerinize ya da kendinize yılbaşı hediyesi olarak uygundur.",
+      "durum": "zamanlanmis",
+      "yayinZamani": "2026-12-01T00:00",
+      "vergiSinifi": "%20",
+      "stokKodu": "ORN-EV-003",
+      "kategoriler": ["ev-ve-yasam"],
+      "fiyat": { "satisFiyati": 39990 },
+      "stok": 20
+    },
+    {
+      "ad": "Kablosuz Kulaklık",
+      "adresAdi": "kablosuz-kulaklik",
+      "kisaAciklama": "Kablo derdi olmadan müzik ve görüşme için kablosuz kulaklık.",
+      "uzunAciklama": "Hafif yapısıyla uzun süre rahat takılır. Şarj kutusuyla birlikte gelir. Telefon görüşmeleri için dahili mikrofonu vardır.",
+      "durum": "yayinda",
+      "vergiSinifi": "%20",
+      "stokKodu": "ORN-ELK-001",
+      "kategoriler": ["elektronik-aksesuar"],
+      "marka": "ornek-ses",
+      "etiketler": ["kablosuz", "yeni"],
+      "fiyat": {
+        "satisFiyati": 129900,
+        "indirimliFiyat": 99900,
+        "indirimBitisi": "2026-12-01T00:00"
+      },
+      "stok": 8
+    },
+    {
+      "ad": "USB-C Şarj Kablosu 1 m",
+      "adresAdi": "usb-c-sarj-kablosu-1-m",
+      "kisaAciklama": "Telefon ve tabletler için 1 metrelik USB-C şarj kablosu.",
+      "uzunAciklama": "Her iki ucu USB-C olan kablo, şarj ve veri aktarımı için kullanılır. Örgülü kılıfı günlük kullanımda kolay yıpranmaz.",
+      "durum": "yayinda",
+      "vergiSinifi": "%20",
+      "stokKodu": "ORN-ELK-002",
+      "kategoriler": ["elektronik-aksesuar"],
+      "fiyat": { "satisFiyati": 14990 },
+      "stok": 2
+    },
+    {
+      "ad": "Hediye Paketleme",
+      "adresAdi": "hediye-paketleme",
+      "kisaAciklama": "Siparişiniz özenle hediye paketine sarılır.",
+      "uzunAciklama": "Siparişinizdeki ürünler hediye kâğıdı ve kurdeleyle paketlenir. İsterseniz pakete kısa bir not eklenir.",
+      "durum": "gizli",
+      "vergiSinifi": "%20",
+      "stokKodu": "ORN-HZM-001",
+      "kargoGerekmez": true,
+      "stokTakibi": false,
+      "fiyat": { "satisFiyati": 4990 }
+    }
+  ]
+}

@@ -111,9 +111,13 @@ export const grupServisi = (tanim: GrupTanimi) => {
     silindi: satir.silinme !== null,
   });
 
-  const yaz = <T>(vt: Veritabani, is: (islem: VeritabaniIslemi) => Promise<T>) =>
+  // Grubun yazmalarının işlem kilidi. Başlangıç kataloğu da katalog kurulu mu diye bakmadan önce alır.
+  const kilidiAl = (islem: VeritabaniIslemi) =>
+    islem.execute(sql`select pg_advisory_xact_lock(hashtext(${tanim.kilit}))`);
+
+  const yaz = <T>(vt: Veritabani | VeritabaniIslemi, is: (islem: VeritabaniIslemi) => Promise<T>) =>
     vt.transaction(async (islem) => {
-      await islem.execute(sql`select pg_advisory_xact_lock(hashtext(${tanim.kilit}))`);
+      await kilidiAl(islem);
       return is(islem);
     });
 
@@ -152,7 +156,11 @@ export const grupServisi = (tanim: GrupTanimi) => {
     return { ad: satir.ad, adresAdi: satir.adresAdi, aciklama: satir.aciklama };
   };
 
-  const ekle = async (vt: Veritabani, kim: DegisikligiYapan, ham: GrupGirdisi): Promise<string> => {
+  const ekle = async (
+    vt: Veritabani | VeritabaniIslemi,
+    kim: DegisikligiYapan,
+    ham: GrupGirdisi,
+  ): Promise<string> => {
     // Şema açıklamayı yalnız açıklamalı grupta taşır; çıktı bu biçimdedir.
     const girdi = girdiyiDogrula(girdiSemasi.safeParse(ham)) as GrupGirdisi;
     return yaz(vt, async (islem) => {
@@ -303,5 +311,5 @@ export const grupServisi = (tanim: GrupTanimi) => {
     );
   };
 
-  return { ekle, degistir, sil, oku, hepsiniOku, urunleri };
+  return { ekle, degistir, sil, oku, hepsiniOku, urunleri, kilidiAl };
 };

@@ -175,7 +175,7 @@ export const vergiServisi = (baslangic: () => VergiBaslangici) => {
     }
   };
 
-  const kur = async (vt: Veritabani): Promise<void> => {
+  const kur = async (vt: Veritabani | VeritabaniIslemi): Promise<void> => {
     if (await kuruluMu(vt)) return;
     if (baslangic().siniflar.length === 0) return;
     await vt.transaction(async (islem) => {
@@ -195,7 +195,7 @@ export const vergiServisi = (baslangic: () => VergiBaslangici) => {
   // Sınıflar sırasıyla, her biri silinmemiş oranlarıyla. Silinmiş sınıflar yalnız istenirse gelir
   // (ürünü hâlâ ona bağlı olabilir). İki sorgu: satır başına sorgu atılmaz.
   const tabloyuOku = async (
-    vt: Veritabani,
+    vt: Veritabani | VeritabaniIslemi,
     { silinmisSiniflar = false }: { silinmisSiniflar?: boolean } = {},
   ): Promise<VergiSinifi[]> => {
     await kur(vt);

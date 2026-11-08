@@ -7,6 +7,12 @@ import { basename, join } from "node:path";
 import type { z } from "zod";
 import { type DosyaTuru, dosyaSinirlari } from "../kayitlar/dosya.ts";
 import { icerikTuru, uzantininTuru } from "../moduller/dosya/tur.ts";
+import {
+  bosKatalog,
+  type KatalogBaslangici,
+  katalogBaslangicSemasi,
+  katalogKurallari,
+} from "../moduller/urun/baslangic-semasi.ts";
 import { type VergiBaslangici, vergiBaslangicSemasi } from "../moduller/vergi/semalar.ts";
 import {
   ayarSemasi,
@@ -23,11 +29,14 @@ import { type Kimlik, kimlikSemasi } from "./kimlik.ts";
 // görünür; yoksa mağaza adı yazı olarak görünür.
 // vergiBaslangici: vergi sınıflarının ve oranlarının başlangıç verisi (baslangic/vergi.json, kart 0074).
 // Yalnız sitenin vergi tablosu hiç kurulmamışken kullanılır (karar 0060); dosyası yoksa boştur.
+// katalogBaslangici: kategoriler, markalar, etiketler ve ürünler (baslangic/katalog.json, kart 0084).
+// Yalnız sitenin kataloğu hiç kurulmamışken kullanılır (urun/baslangic.ts); dosyası yoksa boştur.
 export type Site = {
   kimlik: Kimlik;
   ayarlar: SiteAyarlari;
   baslangic: MagazaAyarlari;
   vergiBaslangici: VergiBaslangici;
+  katalogBaslangici: KatalogBaslangici;
   markaLogosu?: { yol: string; tur: DosyaTuru };
 };
 
@@ -104,6 +113,32 @@ export const vergiBaslangiciniDogrula = (
   const sonuc = vergiBaslangicSemasi.safeParse(ham.deger);
   if (sonuc.success) return { gecerli: true, deger: sonuc.data };
   return { gecerli: false, hatalar: sorunlariYaz(vergiBaslangicDosyasi, sonuc.error.issues) };
+};
+
+export const katalogBaslangicDosyasi = "baslangic/katalog.json";
+
+// Dosyası olmayan site boş katalogla başlar. Sitenin ayarına bağlı kurallar (saat dilimi, vergi
+// başlangıcı) yalnız ikisi geçerliyse denetlenir; geçersizse hatası zaten kendi dosyasında yazar.
+export const katalogBaslangiciniDogrula = (
+  klasor: string,
+  site: { saatDilimi: string; vergi: VergiBaslangici } | undefined,
+): { gecerli: true; deger: KatalogBaslangici } | { gecerli: false; hatalar: string[] } => {
+  const ham = jsonOku(klasor, katalogBaslangicDosyasi, bosKatalog());
+  if ("hata" in ham) return { gecerli: false, hatalar: [ham.hata] };
+  const sonuc = katalogBaslangicSemasi.safeParse(ham.deger);
+  if (!sonuc.success) {
+    return { gecerli: false, hatalar: sorunlariYaz(katalogBaslangicDosyasi, sonuc.error.issues) };
+  }
+  if (site === undefined) return { gecerli: true, deger: sonuc.data };
+  const hatalar = katalogKurallari(sonuc.data, {
+    saatDilimi: site.saatDilimi,
+    vergiSiniflari: site.vergi.siniflar.map((sinif) => sinif.ad),
+  }).map(({ yer, kod }) =>
+    kod === "vergi-sinifi-tanimsiz"
+      ? `${katalogBaslangicDosyasi}: ${yer}: ${kod} (${vergiBaslangicDosyasi} dosyasında bu adlı sınıf yok)`
+      : `${katalogBaslangicDosyasi}: ${yer}: ${kod}`,
+  );
+  return hatalar.length > 0 ? { gecerli: false, hatalar } : { gecerli: true, deger: sonuc.data };
 };
 
 export const markaKlasoru = "marka";
@@ -185,6 +220,13 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
   if (!baslangic.gecerli) hatalar.push(...baslangic.hatalar);
   const vergiBaslangici = vergiBaslangiciniDogrula(klasor);
   if (!vergiBaslangici.gecerli) hatalar.push(...vergiBaslangici.hatalar);
+  const katalogBaslangici = katalogBaslangiciniDogrula(
+    klasor,
+    vergiBaslangici.gecerli && ayarlar !== undefined
+      ? { saatDilimi: ayarlar.saatDilimi, vergi: vergiBaslangici.deger }
+      : undefined,
+  );
+  if (!katalogBaslangici.gecerli) hatalar.push(...katalogBaslangici.hatalar);
   const markaLogosu = markaLogosunuDogrula(klasor);
   if (!markaLogosu.gecerli) hatalar.push(...markaLogosu.hatalar);
 
@@ -200,6 +242,7 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
     ayarlar === undefined ||
     !baslangic.gecerli ||
     !vergiBaslangici.gecerli ||
+    !katalogBaslangici.gecerli ||
     !markaLogosu.gecerli
   ) {
     return { gecerli: false, hatalar };
@@ -233,6 +276,7 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
       ayarlar: { ...ayarlar, siparisOneki },
       baslangic: { ...baslangic.deger, magazaAdi },
       vergiBaslangici: vergiBaslangici.deger,
+      katalogBaslangici: katalogBaslangici.deger,
       ...(markaLogosu.logo === undefined ? {} : { markaLogosu: markaLogosu.logo }),
     },
   };

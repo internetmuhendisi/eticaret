@@ -20,14 +20,24 @@ import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import { yerelZamandan } from "../../metinler/bicimleyici.ts";
-import { siteninVeritabani, type Veritabani } from "../../veritabani/baglanti.ts";
+import {
+  siteninVeritabani,
+  type Veritabani,
+  type VeritabaniIslemi,
+} from "../../veritabani/baglanti.ts";
 import { kimlikMi } from "../../veritabani/turler.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { urunKilidiAl } from "../urun/kilit.ts";
 import { urunBirimleri, urunler } from "../urun/model.ts";
 import { type Fiyat, type GecerliFiyat, gecerliFiyat } from "./gecerli.ts";
 import { birimFiyatlari, fiyatGecmisi } from "./model.ts";
-import { type FiyatGirdisi, type FiyatHatasi, fiyatGirdisi, fiyatHatalari } from "./semalar.ts";
+import {
+  type FiyatGirdisi,
+  type FiyatHatasi,
+  fiyatAlanKurallari,
+  fiyatGirdisi,
+  fiyatHatalari,
+} from "./semalar.ts";
 
 export type FiyatAyarlari = { saatDilimi: string; paraBirimi: string };
 
@@ -99,34 +109,15 @@ export const fiyatServisi = (ayarlar: () => FiyatAyarlari) => {
     return an;
   };
 
-  // Alanlar arası kurallar: indirimli fiyat satış fiyatından küçük, zaman yalnız indirimle, bitiş
-  // başlangıçtan sonra. Bütün sorunlar birlikte döner.
+  // Alanlar arası kurallar fiyat şemasındadır (fiyatAlanKurallari); bütün sorunlar birlikte döner.
   const kurallariDenetle = (fiyat: Omit<Fiyat, "birim">) => {
-    const sorunlar: Sorun[] = [];
-    const { indirimliFiyat, indirimBaslangici, indirimBitisi } = fiyat;
-    if (indirimliFiyat !== null && indirimliFiyat >= fiyat.satisFiyati) {
-      sorunlar.push(sorun("indirimliFiyat", "indirim-buyuk"));
-    }
-    if (indirimliFiyat === null) {
-      if (indirimBaslangici !== null) {
-        sorunlar.push(sorun("indirimBaslangici", "indirim-zamani-indirimsiz"));
-      }
-      if (indirimBitisi !== null)
-        sorunlar.push(sorun("indirimBitisi", "indirim-zamani-indirimsiz"));
-    }
-    if (
-      indirimBaslangici !== null &&
-      indirimBitisi !== null &&
-      indirimBitisi.getTime() <= indirimBaslangici.getTime()
-    ) {
-      sorunlar.push(sorun("indirimBitisi", "indirim-sirasi"));
-    }
+    const sorunlar = fiyatAlanKurallari(fiyat);
     if (sorunlar.length > 0) throw dogrulamaHatasi(sorunlar);
   };
 
   // Birimin fiyatını yazar. Birim yoksa, birim ya da ürünü silinmişse bulunamadı.
   const fiyatYaz = async (
-    vt: Veritabani,
+    vt: Veritabani | VeritabaniIslemi,
     kim: DegisikligiYapan,
     birim: string,
     ham: FiyatGirdisi,

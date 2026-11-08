@@ -1,5 +1,6 @@
 // Çekirdekte ve ortak bileşenlerde hiçbir sitenin kod adı ya da görünen adı geçmez
-// (değişmez kural 1, .claude/rules/ayarlar.md). Siteye özel davranış ayarla yapılır.
+// (değişmez kural 1, .claude/rules/ayarlar.md). Siteye özel davranış ayarla yapılır. Sitenin başlangıç
+// kataloğundaki ürün ve marka adları da geçmez (kart 0084): örnek ürünler yalnız sitenin klasöründedir.
 import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -23,7 +24,7 @@ const siteKlasorleri = readdirSync(join(kok, "siteler"), { withFileTypes: true }
 
 describe("çekirdekte site adı", () => {
   for (const klasor of siteKlasorleri) {
-    const { kimlik } = siteKlasorunuOku(klasor);
+    const { kimlik, katalogBaslangici } = siteKlasorunuOku(klasor);
 
     it(`${kimlik.kodAdi} geçmez`, () => {
       const adlar = [kimlik.kodAdi, kimlik.gorunenAd].map((ad) => ad.toLowerCase());
@@ -32,6 +33,20 @@ describe("çekirdekte site adı", () => {
         return adlar.some((ad) => icerik.includes(ad));
       });
       expect(gecenler.map((dosya) => relative(kok, dosya))).toEqual([]);
+    });
+
+    it(`${kimlik.kodAdi} kataloğunun ürün ve marka adları geçmez`, () => {
+      const adlar = [
+        ...katalogBaslangici.urunler.flatMap((urun) => [urun.ad, urun.adresAdi]),
+        ...katalogBaslangici.markalar.map((marka) => marka.ad),
+      ].map((ad) => ad.toLocaleLowerCase("tr"));
+      const gecenler = taranan.flatMap((dosya) => {
+        const icerik = readFileSync(dosya, "utf8").toLocaleLowerCase("tr");
+        return adlar
+          .filter((ad) => icerik.includes(ad))
+          .map((ad) => `${relative(kok, dosya)}: ${ad}`);
+      });
+      expect(gecenler).toEqual([]);
     });
   }
 });

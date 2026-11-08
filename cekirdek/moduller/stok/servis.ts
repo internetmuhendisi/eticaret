@@ -251,7 +251,7 @@ export const stokServisi = () => {
   // Takibi kapalı üründe de düzeltilir: takip açılmadan önce stok girilebilsin. Silinmiş birim ya da
   // ürün bulunamadıdır.
   const stokDuzelt = async (
-    vt: Veritabani,
+    vt: Veritabani | VeritabaniIslemi,
     kim: DegisikligiYapan,
     birim: string,
     ham: ElleDuzeltme,

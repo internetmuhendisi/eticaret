@@ -59,3 +59,32 @@ export const fiyatGirdisi = z.strictObject({
   indirimBitisi: yerelZaman.nullable().default(null),
 });
 export type FiyatGirdisi = z.input<typeof fiyatGirdisi>;
+
+// Alanlar arası kurallar: indirimli fiyat satış fiyatından küçük, zaman yalnız indirimle, bitiş
+// başlangıçtan sonra. Zamanlar ana çevrilmiştir. Servis yazmadan önce, başlangıç kataloğunun doğrulaması
+// (urun/baslangic-semasi.ts) dosyayı okurken aynı işlevi kullanır.
+export const fiyatAlanKurallari = (fiyat: {
+  satisFiyati: number;
+  indirimliFiyat: number | null;
+  indirimBaslangici: Date | null;
+  indirimBitisi: Date | null;
+}): { alan: string; kod: FiyatHatasi }[] => {
+  const sorunlar: { alan: string; kod: FiyatHatasi }[] = [];
+  const sorun = (alan: string, kod: FiyatHatasi) => sorunlar.push({ alan, kod });
+  const { indirimliFiyat, indirimBaslangici, indirimBitisi } = fiyat;
+  if (indirimliFiyat !== null && indirimliFiyat >= fiyat.satisFiyati) {
+    sorun("indirimliFiyat", "indirim-buyuk");
+  }
+  if (indirimliFiyat === null) {
+    if (indirimBaslangici !== null) sorun("indirimBaslangici", "indirim-zamani-indirimsiz");
+    if (indirimBitisi !== null) sorun("indirimBitisi", "indirim-zamani-indirimsiz");
+  }
+  if (
+    indirimBaslangici !== null &&
+    indirimBitisi !== null &&
+    indirimBitisi.getTime() <= indirimBaslangici.getTime()
+  ) {
+    sorun("indirimBitisi", "indirim-sirasi");
+  }
+  return sorunlar;
+};

@@ -85,7 +85,9 @@ const kayitDegeri = (kayit: Partial<KategoriKaydi> & Record<string, unknown>) =>
     Object.entries(kayit).filter(([, deger]) => deger !== null && deger !== undefined),
   );
 
-const kilitle = (islem: VeritabaniIslemi) =>
+// Kategori yazmalarının işlem kilidi. Başlangıç kataloğu (urun/baslangic.ts) katalog kurulu mu diye
+// bakmadan önce alır: arada panelden açılan kategori kataloğa karışmasın.
+export const kategoriKilidiAl = (islem: VeritabaniIslemi) =>
   islem.execute(sql`select pg_advisory_xact_lock(hashtext('kategori'))`);
 
 const kategoriAlanlari = {
@@ -120,9 +122,9 @@ const okunan = (satir: {
 const ayniUst = (ust: string | null) =>
   ust === null ? isNull(kategoriler.ust_kimligi) : eq(kategoriler.ust_kimligi, ust);
 
-const yaz = <T>(vt: Veritabani, is: (islem: VeritabaniIslemi) => Promise<T>) =>
+const yaz = <T>(vt: Veritabani | VeritabaniIslemi, is: (islem: VeritabaniIslemi) => Promise<T>) =>
   vt.transaction(async (islem) => {
-    await kilitle(islem);
+    await kategoriKilidiAl(islem);
     return is(islem);
   });
 
@@ -221,7 +223,7 @@ const kategoriSatiri = (kayit: KategoriKaydi) => ({
 });
 
 export const kategoriEkle = async (
-  vt: Veritabani,
+  vt: Veritabani | VeritabaniIslemi,
   kim: DegisikligiYapan,
   ham: KategoriGirdisi,
 ): Promise<string> => {
