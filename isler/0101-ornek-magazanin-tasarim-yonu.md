@@ -29,4 +29,4 @@ Bölüm: Tasarım. Önceki kart yok, bu bölümün ilk işi.
 
 ## Durum
 
-yapılacak
+bitti
