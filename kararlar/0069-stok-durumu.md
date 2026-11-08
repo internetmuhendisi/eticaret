@@ -9,7 +9,8 @@
 Bir birimin satılabilir olup olmadığı, tükenip tükenmediği, düşük stokta olup olmadığı ve müşteriye ne yazılacağı yalnız `stokDurumu` (`cekirdek/moduller/stok/durum.ts`) ile bulunur (kart 0083). Birimlerin durumu tek sorguyla `stokDurumlari` ile, sitenin ayarlarıyla `siteninStokDurumlari` ile gelir.
 
 - **Kurallar:**
-  - Takibi kapalı ürün her zaman satılabilir, tükenmez, düşük stokta olmaz; müşteriye "stokta" yazılır.
+  - Silinmiş birim (ya da silinmiş ürünün birimi) satılamaz ve tükenmiş sayılır (bağımsız kontrolün bulgusu: yoksa `satilabilir` tek başına kullanılınca silinmiş birim satılabilir görünürdü).
+  - Takibi kapalı ürünün silinmemiş birimi her zaman satılabilir, tükenmez, düşük stokta olmaz; müşteriye "stokta" yazılır.
   - Takip açıksa stok sıfırsa birim tükenmiştir ve satılamaz.
   - Düşük stok: stok sıfırdan büyük ve eşiğe eşit ya da altında. Tükenmiş ürün düşük stokta sayılmaz, ikisi ayrı durumdur (temel paketteki "düşük ve tükenen stok" bildirimleri gibi).
 - **Ayarlar** (mağaza sahibinin, `planlar/site-ayarlari.md` ile aynı varsayılanlarla):
@@ -19,7 +20,7 @@ Bir birimin satılabilir olup olmadığı, tükenip tükenmediği, düşük stok
   - İki eşikte de 0 o özelliği kapatır.
 - **Ürünün eşiği:** `urunler.dusuk_stok_esigi`. Boşsa genel ayar geçerlidir; doluysa yalnız o geçerlidir. "Son X ürün" eşiği ürün bazında değildir.
 - **Gizlenen tükenmiş ürün (kullanıcı kararı):** Listelerden, aramadan ve ilgili ürünlerden çıkar. Kendi sayfası bağlantıyla açılır, "Tükendi" yazar, satılmaz. Stok gelince listelere kendiliğinden döner; durumu değiştiren bir iş gerekmez.
-- **Vitrin koşulu:** Gizleme ürünün tek vitrin koşulundadır (`vitrinKosulu`, karar 0062). Koşul ayarı zorunlu değer olarak alır (`VitrinSecenekleri.tukenenUrun`). Ürün, silinmemiş birimlerinin hiçbirinde stok kalmayınca listede tükenmiş sayılır (`tukenmisUrunKosulu`); varyantlı üründe bir birleşimin stoğu varsa ürün listede kalır (kart 0085).
+- **Vitrin koşulu:** Gizleme ürünün tek vitrin koşulundadır (`vitrinKosulu`, karar 0062). Koşul ayarı zorunlu değer olarak alır (`VitrinSecenekleri.tukenenUrun`). Ürün, satılabilir tek bir birimi (silinmemiş, takip kapalı ya da stoğu var) kalmayınca listede tükenmiş sayılır (`tukenmisUrunKosulu`); varyantlı üründe bir birleşimin stoğu varsa ürün listede kalır. Birim ve ürün düzeyindeki iki kural aynı tanımı kullanır. Ürünün silinmişliğine liste kuralı bakmaz, onu vitrin koşulu süzer. Koşul takma adsız `urunler` tablosunun içinde kullanılır: takma adlı bir `urunler` içinde sütunlar sessizce dıştaki satıra bağlanırdı.
 - **Metinler:** Müşteri metinleri `vitrin.stok.*`, ayar açıklamaları `ayar.aciklama.*`. Durumun metin anahtarı `stokGosterimMetinleri` kaydındadır.
 
 ## Neden
@@ -44,4 +45,7 @@ Bir birimin satılabilir olup olmadığı, tükenip tükenmediği, düşük stok
 - Tükenmişlik sorgusu her liste satırında birimlere ve stoklara bakar; birim kimliği ve stok birincil anahtarı indekslidir. 30 mağazalık ölçekte sorun değildir; büyük kataloglarda ölçülmelidir.
 - Sepet "bu adet satılabilir mi" sorusunu stok durumu ve `miktar` ile kendisi sınar; stok ayırma sepet kartıyla gelir.
 - Düşük stok bildirimi e-postalar bölümüyle, vitrindeki görünüm vitrin bölümüyle, varyantlı ürünün genel durumu kart 0085 ile gelir.
+- **Yalnız disiplin:** Vitrin sayfası ayarı mağaza ayarlarından okumak yerine elle `"goster"` yazarsa tür kontrolü bunu yakalamaz. Vitrin sayfaları gelince ayarı okuyan tek bir işlev yazılmalıdır. `siteninMagazaAyarlari` bütün ayarları okur; başka bir ayar bozuksa stok durumu da hata verir (`magazaninAdi`'ndaki gibi bir yedek yoktur). Vitrin bölümü bunu ölçmelidir.
+- **Site haritası:** Hangi yeri (liste ya da sayfa) kullanacağı site haritası kartında kararlaştırılmalıdır. Liste yeri "gizle"de tükenmiş ürünü haritadan çıkarır; sayfa yeri durumu `gizli` olan ürünü haritaya sokar.
+- **Varyantlı ürün:** İki kuralın aynı sonucu verdiği bugün tek birimli ürünlerle ölçülür. Ürün düzeyindeki durum ve birden çok birimle karşılaştırma kart 0085 ile gelmelidir.
 - Bu kartta modül testlerinin tür kontrolünden geçmediği görüldü (kart 0056). Stok modülündeki eski hatalar burada düzeltildi; vergi testlerinde ve bileşenlerde kalanlar kart 0056'dadır.

@@ -2,9 +2,13 @@
 // düşük stokta olup olmadığı ve müşteriye ne yazılacağı yalnız buradan bulunur.
 //
 // Kurallar:
-// - Takibi kapalı ürün her zaman satılabilir, tükenmez, düşük stokta olmaz; müşteriye "stokta" yazılır.
-// - Takip açıksa stok sıfırsa birim tükenmiştir ve satılamaz. Ürün, silinmemiş birimlerinin hiçbirinde
-//   stok kalmayınca tükenmiştir (vitrin listesi için tukenmisUrunKosulu).
+// - Silinmiş birim (ya da silinmiş ürünün birimi) satılamaz ve tükenmiş sayılır (kart 0083 kontrolü).
+// - Takibi kapalı ürünün silinmemiş birimi her zaman satılabilir, tükenmez, düşük stokta olmaz;
+//   müşteriye "stokta" yazılır.
+// - Takip açıksa stok sıfırsa birim tükenmiştir ve satılamaz.
+// - Ürün, satılabilir tek bir birimi kalmayınca tükenmiştir (vitrin listesi için tukenmisUrunKosulu).
+//   İki kural aynı tanımı kullanır: birim, silinmemişse ve takip kapalıysa ya da stoğu varsa satılabilir.
+//   Ürün düzeyindeki durum (varyantlı üründe birimlerin birleşimi) kart 0085 ile gelir.
 // - Düşük stok: stok sıfırdan büyük ve eşiğe eşit ya da altında. Eşik ürünün kendi eşiği, yoksa mağaza
 //   ayarı (dusukStokEsigi). Eşik 0 düşük stoğu kapatır.
 // - Müşteriye yazılan: tükendiyse "tukendi"; stok sonAdetEsigi'ne eşit ya da altındaysa "son-adet" ve
@@ -29,6 +33,8 @@ export type BirimStokBilgisi = {
   takip: boolean;
   // Ürünün kendi düşük stok eşiği; null ise mağaza ayarı.
   dusukStokEsigi: number | null;
+  // Birim ya da ürünü silinmiş.
+  silinmis: boolean;
 };
 
 export type StokDurumu = {
@@ -43,6 +49,16 @@ export type StokDurumu = {
 
 export const stokDurumu = (stok: BirimStokBilgisi, ayarlar: StokDurumAyarlari): StokDurumu => {
   const { miktar, takip } = stok;
+  if (stok.silinmis) {
+    return {
+      takip,
+      miktar,
+      satilabilir: false,
+      tukendi: true,
+      dusukStok: false,
+      gosterim: { tur: "tukendi" },
+    };
+  }
   if (!takip) {
     return {
       takip,
@@ -69,17 +85,21 @@ export const stokDurumu = (stok: BirimStokBilgisi, ayarlar: StokDurumAyarlari): 
   };
 };
 
-// Sorgudaki ürün satırı (urunler tablosu, takma adsız) tükenmiş mi: takip açık ve silinmemiş hiçbir
-// biriminde stok yok. Stok satırı olmayan birimin stoğu sıfırdır.
-export const tukenmisUrunKosulu = (): SQL => sql`(${urunler.stok_takibi} and not exists (
+// Sorgudaki ürün satırı tükenmiş mi: satılabilir tek bir birimi yok (silinmemiş, takip kapalı ya da
+// stoğu var). Stok satırı olmayan birimin stoğu sıfırdır.
+// Dış sorgudaki urunler tablosu takma adsız olmalıdır: sütunlar "urunler".… diye yazılır; takma adlı
+// bir urunler içinde kullanılırsa koşul sessizce dıştaki satıra bağlanır (kart 0083 kontrolü).
+export const tukenmisUrunKosulu = (): SQL => sql`(not exists (
   select 1 from ${urunBirimleri}
-  join ${birimStoklari} on ${birimStoklari.birim_kimligi} = ${urunBirimleri.kimlik}
+  left join ${birimStoklari} on ${birimStoklari.birim_kimligi} = ${urunBirimleri.kimlik}
   where ${urunBirimleri.urun_kimligi} = ${urunler.kimlik}
-    and ${urunBirimleri.silinme_zamani} is null and ${birimStoklari.miktar} > 0
+    and ${urunBirimleri.silinme_zamani} is null
+    and (not ${urunler.stok_takibi} or ${birimStoklari.miktar} > 0)
 ))`;
 
-// Birimlerin stok bilgisi tek sorguyla; olmayan birim haritada yoktur. Silinmiş birim de okunur:
-// birimin satılıp satılamayacağına (silinmiş, görünmeyen ürün) sepet kendi koşuluyla bakar.
+// Birimlerin stok bilgisi tek sorguyla; olmayan birim haritada yoktur. Silinmiş birim de okunur ve
+// silinmiş diye işaretlenir. Ürünün vitrinde görünüp görünmediğine (taslak, gizli) burada bakılmaz: o
+// vitrinKosulu'nun işidir, sepet ikisini birlikte sınar.
 export const birimStokBilgileri = async (
   vt: Veritabani,
   birimler: string[],
@@ -92,6 +112,7 @@ export const birimStokBilgileri = async (
       miktar: sql<number>`coalesce(${birimStoklari.miktar}, 0)`.mapWith(Number),
       takip: urunler.stok_takibi,
       dusukStokEsigi: urunler.dusuk_stok_esigi,
+      silinmis: sql<boolean>`(${urunBirimleri.silinme_zamani} is not null or ${urunler.silinme_zamani} is not null)`,
     })
     .from(urunBirimleri)
     .innerJoin(urunler, eq(urunler.kimlik, urunBirimleri.urun_kimligi))

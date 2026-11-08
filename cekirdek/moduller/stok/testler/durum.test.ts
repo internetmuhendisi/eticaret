@@ -73,8 +73,19 @@ const urunAc = async (
 const secenek = (tukenenUrun: TukenenUrunDavranisi) => ({ tukenenUrun });
 
 describe("stok durumu", () => {
-  const durum = (miktar: number, ek: { takip?: boolean; esik?: number | null } = {}) =>
-    stokDurumu({ miktar, takip: ek.takip ?? true, dusukStokEsigi: ek.esik ?? null }, ayarlar);
+  const durum = (
+    miktar: number,
+    ek: { takip?: boolean; esik?: number | null; silinmis?: boolean } = {},
+  ) =>
+    stokDurumu(
+      {
+        miktar,
+        takip: ek.takip ?? true,
+        dusukStokEsigi: ek.esik ?? null,
+        silinmis: ek.silinmis ?? false,
+      },
+      ayarlar,
+    );
 
   it("takibi kapalı ürün her zaman satılabilir, tükenmez, düşük stokta olmaz", () => {
     for (const miktar of [0, 1, 100]) {
@@ -86,6 +97,19 @@ describe("stok durumu", () => {
         dusukStok: false,
         gosterim: { tur: "stokta" },
       });
+    }
+  });
+
+  it("silinmiş birim, stoğu ya da takibi ne olursa olsun satılamaz (kart 0083 kontrolü)", () => {
+    for (const ek of [{ takip: false }, { takip: true }]) {
+      for (const miktar of [0, 9]) {
+        expect(durum(miktar, { ...ek, silinmis: true })).toMatchObject({
+          satilabilir: false,
+          tukendi: true,
+          dusukStok: false,
+          gosterim: { tur: "tukendi" },
+        });
+      }
     }
   });
 
@@ -115,7 +139,7 @@ describe("stok durumu", () => {
     expect(durum(1, { esik: 0 }).dusukStok).toBe(false);
     expect(
       stokDurumu(
-        { miktar: 1, takip: true, dusukStokEsigi: null },
+        { miktar: 1, takip: true, dusukStokEsigi: null, silinmis: false },
         { ...ayarlar, dusukStokEsigi: 0 },
       ).dusukStok,
     ).toBe(false);
@@ -127,8 +151,10 @@ describe("stok durumu", () => {
     expect(durum(6).gosterim).toEqual({ tur: "stokta" });
     expect(durum(3, { esik: 1 }).gosterim).toEqual({ tur: "son-adet", adet: 3 });
     expect(
-      stokDurumu({ miktar: 1, takip: true, dusukStokEsigi: null }, { ...ayarlar, sonAdetEsigi: 0 })
-        .gosterim,
+      stokDurumu(
+        { miktar: 1, takip: true, dusukStokEsigi: null, silinmis: false },
+        { ...ayarlar, sonAdetEsigi: 0 },
+      ).gosterim,
     ).toEqual({ tur: "stokta" });
   });
 
@@ -229,7 +255,31 @@ describe("veritabanıyla stok durumu", () => {
     await vt.transaction((islem) =>
       stok.stokDus(islem, yonetici(), [{ birim: satilan.birim, adet: 1 }], { sebep: "siparis" }),
     );
-    const hepsi = [...urunler, satilan];
+    // Birimi tek başına silinmiş ürünler (stoklu ve takipsiz) ve silinmiş ürün (kart 0083 kontrolü).
+    const birimiSilinen = await urunAc(vt, 4);
+    const takipsizBirimiSilinen = await urunAc(vt, 0, { takip: false });
+    for (const { birim } of [birimiSilinen, takipsizBirimiSilinen]) {
+      await vt
+        .update(urunBirimleri)
+        .set({ silinme_zamani: new Date() })
+        .where(eq(urunBirimleri.kimlik, birim));
+    }
+    const silinen = await urunAc(vt, 3);
+    await urunSrv.urunSil(vt, yonetici(), silinen.urun);
+    // Yalnız ürünü silinmiş, birimi silinmemiş (servis ikisini birlikte siler; doğrudan yazıyla kurulur).
+    const yalnizUrunuSilinen = await urunAc(vt, 3, { takip: false });
+    await vt
+      .update(urunTablosu)
+      .set({ silinme_zamani: new Date() })
+      .where(eq(urunTablosu.kimlik, yalnizUrunuSilinen.urun));
+    const hepsi = [
+      ...urunler,
+      satilan,
+      birimiSilinen,
+      takipsizBirimiSilinen,
+      silinen,
+      yalnizUrunuSilinen,
+    ];
     const tukenmis = await vt
       .select({ kimlik: urunTablosu.kimlik })
       .from(urunTablosu)
@@ -244,13 +294,18 @@ describe("veritabanıyla stok durumu", () => {
       hepsi.map((u) => u.birim),
       ayarlar,
     );
+    // Yalnız ürünü silinmiş olan karşılaştırmaya girmez: liste kuralı ürünün silinmişliğine bakmaz, onu
+    // vitrin koşulu süzer (silinmiş ürün listeye hiç girmez). Birimi ise satılamaz (aşağıda).
     expect(tukenmis.map((t) => t.kimlik).toSorted()).toEqual(
       hepsi
-        .filter((u) => durumlar.get(u.birim)?.tukendi)
+        .filter((u) => u !== yalnizUrunuSilinen && durumlar.get(u.birim)?.tukendi)
         .map((u) => u.urun)
         .toSorted(),
     );
-    expect(tukenmis).toHaveLength(2);
+    expect(tukenmis).toHaveLength(5);
+    for (const u of [birimiSilinen, takipsizBirimiSilinen, silinen, yalnizUrunuSilinen]) {
+      expect(durumlar.get(u.birim)).toMatchObject({ satilabilir: false, tukendi: true });
+    }
   });
 
   it("yalnız silinmiş biriminde stok kalan ürün listede tükenmiştir", async () => {
