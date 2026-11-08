@@ -39,8 +39,11 @@ RUN pnpm exec esbuild cekirdek/izleme/hata-izleme-denemesi.ts --bundle --platfor
       --format=esm --target=node24 --log-level=warning \
       --outfile=/kaynak/izleme/hata-denemesi.mjs
 # Arka plan süreci ve denemesi (kart 0031, karar 0049): kullandıkları paketler içine gömülü tek dosyalar.
+# sharp gömülmez (kart 0087): yerli ikili dosya taşır, kendi içindeki createRequire üstteki satırla
+# çakışır. Başlangıç kataloğunun görselleri onu uygulamanın node_modules klasöründen yükler.
 RUN pnpm exec esbuild cekirdek/arka-plan-isleri/surec.ts cekirdek/arka-plan-isleri/deneme.ts \
-      --bundle --platform=node --format=esm --target=node24 --external:pg-native --log-level=warning \
+      --bundle --platform=node --format=esm --target=node24 --external:pg-native --external:sharp \
+      --log-level=warning \
       --banner:js="import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" \
       --outdir=/kaynak/arka-plan --out-extension:.js=.mjs
 
