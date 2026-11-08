@@ -7,12 +7,12 @@ import { listeSayfasi } from "../../kayitlar/liste.ts";
 import type { VitrinYeri } from "../../kayitlar/urun.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { urunler } from "./model.ts";
-import { vitrinKosulu } from "./vitrin.ts";
+import { type VitrinSecenekleri, vitrinKosulu } from "./vitrin.ts";
 
 export type UrunListesiSecenekleri = {
   // Verilirse yalnız vitrinde bu yerde görünen ürünler gelir (vitrin.ts). Verilmezse silinmemiş bütün
   // ürünler gelir (panel).
-  vitrin?: { yer: VitrinYeri; an?: Date };
+  vitrin?: { yer: VitrinYeri } & VitrinSecenekleri;
   sayfa?: number;
   boyut?: number;
 };
@@ -27,7 +27,7 @@ export const urunListesi = async (
 ): Promise<UrunListesi> => {
   const sinirliBoyut = Math.min(Math.max(Math.trunc(boyut), 1), listeSayfasi.enCokBoyut);
   const ofset = (Math.max(Math.trunc(sayfa), 1) - 1) * sinirliBoyut;
-  const gorunurluk: SQL = vitrin === undefined ? sql`true` : vitrinKosulu(vitrin.yer, vitrin.an);
+  const gorunurluk: SQL = vitrin === undefined ? sql`true` : vitrinKosulu(vitrin.yer, vitrin);
   const sonuc = await vt.execute<{ kimlik: string; toplam: string }>(sql`
     select ${urunler.kimlik} as kimlik, count(*) over () as toplam
     from ${urunler}

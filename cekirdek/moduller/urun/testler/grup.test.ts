@@ -16,6 +16,10 @@ import { markalar, urunMarkalari } from "../../marka/model.ts";
 import { markaServisi } from "../../marka/servis.ts";
 import type { UrunGirdisi } from "../semalar.ts";
 import { urunServisi } from "../servis.ts";
+import type { VitrinSecenekleri } from "../vitrin.ts";
+
+// Stokla ilgisi olmayan vitrin testleri: tükenen ürün gösterilir (kart 0083).
+const goster: VitrinSecenekleri = { tukenenUrun: "goster" };
 
 const urunSrv = urunServisi(() => "Europe/Istanbul");
 const yonetici = (): DegisikligiYapan => ({ tur: "yonetici", kimlik: randomUUID() });
@@ -198,7 +202,7 @@ describe.each(gruplar)("$ad", (g) => {
     const sorgu = vi.spyOn(vt.$client, "query");
     expect(await g.servis.urunleri(vt, grup)).toEqual({ urunler: [taslak, yayinda], toplam: 2 });
     expect(sorgu).toHaveBeenCalledTimes(1);
-    expect(await g.servis.urunleri(vt, grup, { vitrin: { yer: "liste" } })).toEqual({
+    expect(await g.servis.urunleri(vt, grup, { vitrin: { yer: "liste", ...goster } })).toEqual({
       urunler: [yayinda],
       toplam: 1,
     });

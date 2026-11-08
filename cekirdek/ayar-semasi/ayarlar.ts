@@ -10,6 +10,7 @@ import { z } from "zod";
 import { postaAdresiSemasi, telefonSemasi } from "../bolgeler/adres.ts";
 import { ulkeGecerliMi } from "../bolgeler/bolgeler.ts";
 import { type AyarSahibi, ayarSahibi } from "../kayitlar/site.ts";
+import { tukenenUrunDavranislari } from "../kayitlar/stok.ts";
 import { saatDilimiGecerliMi } from "../metinler/bicimleyici.ts";
 import { diller, type MetinAnahtari } from "../metinler/metin.ts";
 import { kayitDegeriYasakMi, kayitMetniHatasi } from "../moduller/degisiklik-kaydi/deger.ts";
@@ -230,6 +231,23 @@ export const magazaAyarSemasi = z.strictObject({
   indirimdeEnDusukFiyat: ayar(
     z.boolean().default(true),
     magazaSahibinin("ayar.aciklama.indirimdeEnDusukFiyat"),
+  ),
+  // Stok durumu (kart 0083, karar 0069). Tükenen ürün: göster ama satma ya da listelerden gizle.
+  tukenenUrun: ayar(
+    z.enum(tukenenUrunDavranislari).default("goster"),
+    magazaSahibinin("ayar.aciklama.tukenenUrun"),
+  ),
+  // Düşük stok eşiği: stok bu sayıya eşit ya da altındaysa (ve sıfırdan büyükse) düşük stoktadır. Ürünün
+  // kendi eşiği varsa o geçerlidir. 0 düşük stok uyarısını kapatır.
+  dusukStokEsigi: ayar(
+    z.int().min(0).max(1_000_000).default(5),
+    magazaSahibinin("ayar.aciklama.dusukStokEsigi"),
+  ),
+  // "Son 3 ürün" yazısı: stok bu sayıya eşit ya da altındaysa müşteriye kalan adet yazılır. 0 yazıyı
+  // kapatır.
+  sonAdetEsigi: ayar(
+    z.int().min(0).max(1000).default(5),
+    magazaSahibinin("ayar.aciklama.sonAdetEsigi"),
   ),
 });
 export type MagazaAyarlari = z.output<typeof magazaAyarSemasi>;

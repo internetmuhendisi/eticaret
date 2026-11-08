@@ -679,7 +679,9 @@ describe("geçmiş", () => {
     for (let sira = 0; sira < 4; sira++) await siparisVer(vt, [{ birim, adet: 1 }]);
     const ilk = await servis.stokGecmisiniOku(vt, birim, { sinir: 3 });
     expect(ilk.map((s) => s.sonrakiMiktar)).toEqual([6, 7, 8]);
-    const sonraki = await servis.stokGecmisiniOku(vt, birim, { sonra: ilk[2]?.kimlik, sinir: 3 });
+    const sonra = ilk[2]?.kimlik;
+    if (sonra === undefined) throw new Error("Sayfa eksik.");
+    const sonraki = await servis.stokGecmisiniOku(vt, birim, { sonra, sinir: 3 });
     expect(sonraki.map((s) => s.sonrakiMiktar)).toEqual([9, 10]);
     expect(await servis.stokGecmisiniOku(vt, "bozuk")).toEqual([]);
   });

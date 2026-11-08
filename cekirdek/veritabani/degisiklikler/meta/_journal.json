@@ -141,6 +141,13 @@
       "when": 1794122578823,
       "tag": "0019_stok",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794123374084,
+      "tag": "0020_dusuk-stok-esigi",
+      "breakpoints": true
     }
   ]
 }

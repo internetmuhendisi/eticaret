@@ -15,6 +15,10 @@ import { ilgiliUrunleriGetir, ilgiliUrunSiniri } from "../ilgili.ts";
 import { urunIlgilileri } from "../model.ts";
 import type { UrunGirdisi } from "../semalar.ts";
 import { urunServisi } from "../servis.ts";
+import type { VitrinSecenekleri } from "../vitrin.ts";
+
+// Stokla ilgisi olmayan vitrin testleri: tükenen ürün gösterilir (kart 0083).
+const goster: VitrinSecenekleri = { tukenenUrun: "goster" };
 
 const servis = urunServisi(() => "Europe/Istanbul");
 const yonetici = (): DegisikligiYapan => ({ tur: "yonetici", kimlik: randomUUID() });
@@ -59,12 +63,12 @@ describe("elle seçim", () => {
     for (let sira = 0; sira < 6; sira += 1) secilenler.push(await urun(vt));
     const ana = await urun(vt, { ilgiliUrunler: secilenler.toReversed() });
     expect(ilgiliUrunSiniri).toBe(4);
-    expect(await ilgiliUrunleriGetir(vt, ana)).toEqual(secilenler.toReversed().slice(0, 4));
+    expect(await ilgiliUrunleriGetir(vt, ana, goster)).toEqual(secilenler.toReversed().slice(0, 4));
     const [ilk, ikinci] = secilenler.toReversed();
     if (ilk === undefined || ikinci === undefined) throw new Error("Ürün eksik.");
     await servis.urunDegistir(vt, yonetici(), ilk, { durum: "arsiv" });
     await servis.urunSil(vt, yonetici(), ikinci);
-    expect(await ilgiliUrunleriGetir(vt, ana)).toEqual(secilenler.toReversed().slice(2, 6));
+    expect(await ilgiliUrunleriGetir(vt, ana, goster)).toEqual(secilenler.toReversed().slice(2, 6));
   });
 
   it("vitrin listesinde görünmeyen ürün girmez: taslak, gizli, arşiv, zamanı gelmemiş, silinmiş", async () => {
@@ -79,12 +83,11 @@ describe("elle seçim", () => {
     const silinecek = await urun(vt);
     const ana = await urun(vt, { ilgiliUrunler: [...gorunmeyenler, silinecek, gorunen] });
     await servis.urunSil(vt, yonetici(), silinecek);
-    expect(await ilgiliUrunleriGetir(vt, ana)).toEqual([gorunen]);
+    expect(await ilgiliUrunleriGetir(vt, ana, goster)).toEqual([gorunen]);
     // Zamanı gelince görünür.
-    expect(await ilgiliUrunleriGetir(vt, ana, { an: new Date("2099-01-02T00:00:00Z") })).toEqual([
-      gorunmeyenler[3],
-      gorunen,
-    ]);
+    expect(
+      await ilgiliUrunleriGetir(vt, ana, { ...goster, an: new Date("2099-01-02T00:00:00Z") }),
+    ).toEqual([gorunmeyenler[3], gorunen]);
   });
 
   it("seçilenlerin bir kısmı görünüyorsa liste kategoriden tamamlanmaz", async () => {
@@ -93,7 +96,7 @@ describe("elle seçim", () => {
     await urun(vt, { kategoriler: [k] });
     const secilen = await urun(vt);
     const ana = await urun(vt, { kategoriler: [k], ilgiliUrunler: [secilen] });
-    expect(await ilgiliUrunleriGetir(vt, ana)).toEqual([secilen]);
+    expect(await ilgiliUrunleriGetir(vt, ana, goster)).toEqual([secilen]);
   });
 });
 
@@ -111,7 +114,7 @@ describe("kategoriden", () => {
     await urun(vt, { kategoriler: [b], durum: "gizli" });
     const yeni = await urun(vt, { kategoriler: [b] });
     const sorgu = vi.spyOn(vt.$client, "query");
-    expect(await ilgiliUrunleriGetir(vt, ana)).toEqual([yeni, ikisinde, eski]);
+    expect(await ilgiliUrunleriGetir(vt, ana, goster)).toEqual([yeni, ikisinde, eski]);
     expect(sorgu).toHaveBeenCalledTimes(1);
   });
 
@@ -121,7 +124,7 @@ describe("kategoriden", () => {
     const ana = await urun(vt, { kategoriler: [k] });
     const digerleri = [];
     for (let sira = 0; sira < 6; sira += 1) digerleri.push(await urun(vt, { kategoriler: [k] }));
-    const sonuc = await ilgiliUrunleriGetir(vt, ana);
+    const sonuc = await ilgiliUrunleriGetir(vt, ana, goster);
     expect(sonuc).toEqual(digerleri.toReversed().slice(0, 4));
     expect(sonuc).not.toContain(ana);
   });
@@ -132,14 +135,14 @@ describe("kategoriden", () => {
     const kategoride = await urun(vt, { kategoriler: [k] });
     const secilen = await urun(vt);
     const ana = await urun(vt, { kategoriler: [k], ilgiliUrunler: [secilen] });
-    expect(await ilgiliUrunleriGetir(vt, ana)).toEqual([secilen]);
+    expect(await ilgiliUrunleriGetir(vt, ana, goster)).toEqual([secilen]);
     await servis.urunDegistir(vt, yonetici(), secilen, { durum: "arsiv" });
-    expect(await ilgiliUrunleriGetir(vt, ana)).toEqual([kategoride]);
+    expect(await ilgiliUrunleriGetir(vt, ana, goster)).toEqual([kategoride]);
   });
 
   it("kategorisi ve seçimi olmayan üründe liste boş; silinen kategori kullanılmaz", async () => {
     const vt = await siteAc();
-    expect(await ilgiliUrunleriGetir(vt, await urun(vt))).toEqual([]);
+    expect(await ilgiliUrunleriGetir(vt, await urun(vt), goster)).toEqual([]);
     const k = await kategori(vt, "Silinecek");
     const ana = await urun(vt, { kategoriler: [k] });
     await urun(vt, { kategoriler: [k] });
@@ -148,8 +151,8 @@ describe("kategoriden", () => {
       .update(kategoriler)
       .set({ silinme_zamani: sql`now()` })
       .where(eq(kategoriler.kimlik, k));
-    expect(await ilgiliUrunleriGetir(vt, ana)).toEqual([]);
-    expect(await ilgiliUrunleriGetir(vt, "abc")).toEqual([]);
+    expect(await ilgiliUrunleriGetir(vt, ana, goster)).toEqual([]);
+    expect(await ilgiliUrunleriGetir(vt, "abc", goster)).toEqual([]);
   });
 });
 
@@ -221,13 +224,13 @@ describe("kontrol bulguları", () => {
     const secilen = await urun(vt, { kategoriler: [k] });
     for (const durum of ["taslak", "arsiv"] as const) {
       const ana = await urun(vt, { durum, kategoriler: [k], ilgiliUrunler: [secilen] });
-      expect(await ilgiliUrunleriGetir(vt, ana)).toEqual([]);
+      expect(await ilgiliUrunleriGetir(vt, ana, goster)).toEqual([]);
     }
     const gizli = await urun(vt, { durum: "gizli", ilgiliUrunler: [secilen] });
-    expect(await ilgiliUrunleriGetir(vt, gizli)).toEqual([secilen]);
+    expect(await ilgiliUrunleriGetir(vt, gizli, goster)).toEqual([secilen]);
     const silinen = await urun(vt, { kategoriler: [k] });
     await servis.urunSil(vt, yonetici(), silinen);
-    expect(await ilgiliUrunleriGetir(vt, silinen)).toEqual([]);
+    expect(await ilgiliUrunleriGetir(vt, silinen, goster)).toEqual([]);
   });
 });
 
@@ -237,6 +240,6 @@ describe("iki site", () => {
     const ondaki = await urun(a);
     expect(await hatasi(urun(b, { ilgiliUrunler: [ondaki] }))).toEqual(gecersiz("ilgili-gecersiz"));
     const ana = await urun(a, { ilgiliUrunler: [ondaki] });
-    expect(await ilgiliUrunleriGetir(b, ana)).toEqual([]);
+    expect(await ilgiliUrunleriGetir(b, ana, goster)).toEqual([]);
   });
 });

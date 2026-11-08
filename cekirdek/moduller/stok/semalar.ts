@@ -5,7 +5,7 @@
 //
 // Hata iletileri düz cümle değil koddur (stokHatalari); metni ekran çözer.
 import { z } from "zod";
-import { elleStokSebepleri, type StokSebebi } from "../../kayitlar/stok.ts";
+import { elleStokSebepleri, type StokGosterimi, type StokSebebi } from "../../kayitlar/stok.ts";
 import type { MetinAnahtari } from "../../metinler/metin.ts";
 import { kayitDegeriYasakMi, kayitMetniHatasi } from "../degisiklik-kaydi/deger.ts";
 
@@ -102,3 +102,11 @@ export const stokKalemleri = z
   .min(1)
   .max(500);
 export type StokKalemi = z.input<typeof stokKalemleri>[number];
+
+// Müşteriye yazılan stok durumunun metni (kart 0083): eksik metin tür kontrolünde hata verir.
+// "son-adet" metni kalan adedi {adet} olarak alır.
+export const stokGosterimMetinleri = {
+  tukendi: "vitrin.stok.tukendi",
+  "son-adet": "vitrin.stok.son-adet",
+  stokta: "vitrin.stok.stokta",
+} as const satisfies Record<StokGosterimi, MetinAnahtari>;

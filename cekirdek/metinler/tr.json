@@ -67,7 +67,10 @@
       "vergiYuvarlama": "Verginin her satırda mı, aynı oranlı satırların toplamında mı kuruşa yuvarlandığı.",
       "fiyatGosterimi": "Fiyatların vitrinde, sepette ve e-postada vergi dahil mi hariç mi gösterildiği.",
       "fiyatEkMetni": "Fiyatın yanında görünen metin. Yazılmazsa vergi adından kurulur (\"… dahil\"); boş bırakılırsa metin görünmez.",
-      "indirimdeEnDusukFiyat": "İndirimli üründe eski fiyat olarak indirimden önceki 30 günün en düşük fiyatı gösterilir. Kapalıysa indirimden önceki satış fiyatı gösterilir."
+      "indirimdeEnDusukFiyat": "İndirimli üründe eski fiyat olarak indirimden önceki 30 günün en düşük fiyatı gösterilir. Kapalıysa indirimden önceki satış fiyatı gösterilir.",
+      "tukenenUrun": "Stoğu biten ürün listelerde görünür ama satılmaz ya da listelerden ve aramadan gizlenir. Gizlenen ürünün sayfası bağlantıyla açılır, Tükendi yazar.",
+      "dusukStokEsigi": "Stok bu sayıya eşit ya da altına inince ürün düşük stokta sayılır. Ürünün kendi eşiği varsa o geçerlidir. 0 uyarıyı kapatır.",
+      "sonAdetEsigi": "Stok bu sayıya eşit ya da altına inince müşteriye kalan adet yazılır (Son 3 ürün gibi). 0 yazıyı kapatır."
     }
   },
   "yonetim": {
@@ -209,6 +212,11 @@
     }
   },
   "vitrin": {
+    "stok": {
+      "tukendi": "Tükendi",
+      "son-adet": "Son {adet} ürün",
+      "stokta": "Stokta"
+    },
     "bakim": {
       "baslik": "Bakımdayız",
       "metin": "Kısa bir bakım yapıyoruz. Birazdan yeniden buradayız."

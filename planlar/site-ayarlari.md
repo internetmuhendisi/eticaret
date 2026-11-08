@@ -55,9 +55,9 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
 |---|---|---|---|---|
-| Tükenen ürün | Mağaza sahibi | Gösterilir ama satılmaz | — | Seçenekler: göster ama satma, gizle |
-| Düşük stok uyarı eşiği | Mağaza sahibi | 5 adet | — | Ürün bazında değiştirilebilir |
-| "Son X ürün" yazısı | Mağaza sahibi | 5 adet ve altında | — | |
+| Tükenen ürün | Mağaza sahibi | Gösterilir ama satılmaz | — | `tukenenUrun`. Seçenekler: göster ama satma, gizle. Gizlenen ürün listelerden, aramadan ve ilgili ürünlerden çıkar; kendi sayfası bağlantıyla açılır, Tükendi yazar, satılmaz (kart 0083, karar 0069) |
+| Düşük stok uyarı eşiği | Mağaza sahibi | 5 adet | — | `dusukStokEsigi`. Ürün bazında değiştirilebilir. Eşik dahil, 0 kapatır (kart 0083) |
+| "Son X ürün" yazısı | Mağaza sahibi | 5 adet ve altında | — | `sonAdetEsigi`. 0 yazıyı kapatır (kart 0083) |
 | Ödeme sırasında stok ayırma süresi | Mağaza sahibi | 15 dakika | — | |
 
 ## Sepet ve ödeme

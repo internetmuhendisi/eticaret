@@ -22,7 +22,7 @@
 //   noktası); çağıranın işlemi hatayı yakalarsa geri kalanı bozulmadan sürebilir.
 //
 // İzin kapıda denetlenir (izinler.ts); servis yalnız kimin yaptığını kayda yazar.
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
@@ -36,6 +36,7 @@ import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts"
 import { kimlikMi } from "../../veritabani/turler.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { urunBirimleri, urunler } from "../urun/model.ts";
+import { birimStokBilgileri } from "./durum.ts";
 import { birimStoklari, stokGecmisi } from "./model.ts";
 import {
   type ElleDuzeltme,
@@ -105,8 +106,8 @@ type GecmisGirdisi = {
   onceki: number;
   sonraki: number;
   sebep: StokSebebi;
-  not?: string | null;
-  kaynak?: string | null;
+  not?: string | null | undefined;
+  kaynak?: string | null | undefined;
   kim: DegisikligiYapan;
 };
 
@@ -306,21 +307,13 @@ export const stokServisi = () => {
   const stoklariOku = async (
     vt: Veritabani,
     birimler: string[],
-  ): Promise<Map<string, BirimStogu>> => {
-    const gecerli = birimler.filter(kimlikMi);
-    if (gecerli.length === 0) return new Map();
-    const satirlar = await vt
-      .select({
-        birim: urunBirimleri.kimlik,
-        miktar: sql<number>`coalesce(${birimStoklari.miktar}, 0)`.mapWith(Number),
-        takip: urunler.stok_takibi,
-      })
-      .from(urunBirimleri)
-      .innerJoin(urunler, eq(urunler.kimlik, urunBirimleri.urun_kimligi))
-      .leftJoin(birimStoklari, eq(birimStoklari.birim_kimligi, urunBirimleri.kimlik))
-      .where(inArray(urunBirimleri.kimlik, gecerli));
-    return new Map(satirlar.map(({ birim, ...stok }) => [birim, stok]));
-  };
+  ): Promise<Map<string, BirimStogu>> =>
+    new Map(
+      [...(await birimStokBilgileri(vt, birimler))].map(([birim, { miktar, takip }]) => [
+        birim,
+        { miktar, takip },
+      ]),
+    );
 
   // Birimin stok geçmişi, en yeni önce, en çok bir sayfa. `sonra` bir önceki sayfanın son satırının
   // kimliğidir; karşılaştırma veritabanında satırın kendi zamanı ve kimliğiyle yapılır (fiyat geçmişiyle

@@ -49,6 +49,8 @@ export const urunler = pgTable(
     // Stok takibi (kart 0082, karar 0068). Kapalıysa stok düşmez ve artmaz, ürün stoktan bağımsız
     // satılır. Yeni üründe açık (kullanıcı kararı): stok girilene kadar stoğu sıfırdır.
     stok_takibi: boolean().notNull().default(true),
+    // Ürünün kendi düşük stok eşiği (kart 0083). Boşsa mağaza ayarı (dusukStokEsigi) geçerlidir.
+    dusuk_stok_esigi: integer(),
     en_az_adet: integer().notNull().default(1),
     en_cok_adet: integer(),
     // Boşsa ürün vergisizdir. Silinmiş sınıf da bağlı kalabilir (karar 0060).
@@ -69,6 +71,10 @@ export const urunler = pgTable(
     check(
       "urunler_yayin_zamani",
       sql`(${tablo.durum} = 'zamanlanmis') = (${tablo.yayin_zamani} is not null)`,
+    ),
+    check(
+      "urunler_dusuk_stok_esigi",
+      sql`${tablo.dusuk_stok_esigi} is null or ${tablo.dusuk_stok_esigi} >= 0`,
     ),
     check(
       "urunler_adet",

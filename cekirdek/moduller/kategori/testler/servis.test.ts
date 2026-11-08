@@ -12,6 +12,7 @@ import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import type { UrunGirdisi } from "../../urun/semalar.ts";
 import { urunServisi } from "../../urun/servis.ts";
+import type { VitrinSecenekleri } from "../../urun/vitrin.ts";
 import { kategoriler, urunKategorileri } from "../model.ts";
 import {
   kategoriDegistir,
@@ -21,6 +22,9 @@ import {
   kategoriSil,
   kategoriyiOku,
 } from "../servis.ts";
+
+// Stokla ilgisi olmayan vitrin testleri: tükenen ürün gösterilir (kart 0083).
+const goster: VitrinSecenekleri = { tukenenUrun: "goster" };
 
 const urunSrv = urunServisi(() => "Europe/Istanbul");
 const yonetici = (): DegisikligiYapan => ({ tur: "yonetici", kimlik: randomUUID() });
@@ -297,7 +301,7 @@ describe("silme kuralı", () => {
       });
       expect(await hatasi(kategoriSil(vt, yonetici(), bozuk))).toMatchObject({ kod: "bulunamadi" });
       expect(await urunSrv.urunuOku(vt, bozuk)).toBeUndefined();
-      expect(await urunSrv.vitrindeGorunurMu(vt, bozuk, "sayfa")).toBe(false);
+      expect(await urunSrv.vitrindeGorunurMu(vt, bozuk, "sayfa", goster)).toBe(false);
       expect(
         await hatasi(urunSrv.urunDegistir(vt, yonetici(), bozuk, { ad: "x y" })),
       ).toMatchObject({ kod: "bulunamadi" });
@@ -403,12 +407,14 @@ describe("kategorinin ürünleri", () => {
     expect((await kategorininUrunleri(vt, mum)).urunler.toSorted()).toEqual(
       [yayinda, gizli, taslak].toSorted(),
     );
-    expect(await kategorininUrunleri(vt, mum, { vitrin: { yer: "liste" } })).toEqual({
+    expect(await kategorininUrunleri(vt, mum, { vitrin: { yer: "liste", ...goster } })).toEqual({
       urunler: [yayinda],
       toplam: 1,
     });
     expect(
-      (await kategorininUrunleri(vt, mum, { vitrin: { yer: "sayfa" } })).urunler.toSorted(),
+      (
+        await kategorininUrunleri(vt, mum, { vitrin: { yer: "sayfa", ...goster } })
+      ).urunler.toSorted(),
     ).toEqual([yayinda, gizli].toSorted());
     await kategoriSil(vt, yonetici(), mum);
     expect(await kategorininUrunleri(vt, mum)).toEqual({ urunler: [], toplam: 0 });

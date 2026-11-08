@@ -16,7 +16,7 @@ import { kimlikMi } from "../../veritabani/turler.ts";
 import { kategoriler, urunKategorileri } from "../kategori/model.ts";
 import { urunIlgilileri, urunler } from "./model.ts";
 import type { UrunHatasi } from "./semalar.ts";
-import { vitrinKosulu } from "./vitrin.ts";
+import { type VitrinSecenekleri, vitrinKosulu } from "./vitrin.ts";
 
 // Ürün sayfasında en çok kaç ilgili ürün görünür (kullanıcı kararı, karar 0065).
 export const ilgiliUrunSiniri = 4;
@@ -65,15 +65,16 @@ export const ilgilileriYaz = async (
     .values(liste.map((ilgili, sira) => ({ urun_kimligi: urun, ilgili_kimligi: ilgili, sira })));
 };
 
-// Vitrindeki ilgili ürünler tek sorguyla (kural yukarıda). an verilmezse veritabanının şimdiki zamanı.
+// Vitrindeki ilgili ürünler tek sorguyla (kural yukarıda). Seçenekler vitrin koşulununkidir: an ve
+// tükenen ürün ayarı (kart 0083; "gizle"de tükenmiş ürün listeye girmez).
 export const ilgiliUrunleriGetir = async (
   vt: Veritabani,
   urun: string,
-  { an }: { an?: Date } = {},
+  secenekler: VitrinSecenekleri,
 ): Promise<string[]> => {
   if (!kimlikMi(urun)) return [];
-  const gorunur = vitrinKosulu("liste", an);
-  const sayfasiAcik = vitrinKosulu("sayfa", an);
+  const gorunur = vitrinKosulu("liste", secenekler);
+  const sayfasiAcik = vitrinKosulu("sayfa", secenekler);
   const sonuc = await vt.execute<{ kimlik: string }>(sql`
     with kaynak as (
       select 1 from ${urunler} where ${urunler.kimlik} = ${urun}::uuid and ${sayfasiAcik}

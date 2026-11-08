@@ -43,11 +43,12 @@ paths:
 - Kategori yalnız `cekirdek/moduller/kategori/servis.ts` ile okunur ve değişir. Kategorinin ürünleri tek sorguyla `kategorininUrunleri` ile gelir; döngüyü servis ve veritabanındaki tetikleyici aynı kilitle denetler (karar 0063).
 - Marka ve etiket aynı grup servisini kullanır (`cekirdek/moduller/urun/grup-servisi.ts`); ürünün kategori, marka ve etiket bağlantıları `cekirdek/moduller/urun/baglantilar.ts`, grupların ürünleri `cekirdek/moduller/urun/liste.ts` ile tek sorgudan gelir. Ad tekilliği yalnız ad anahtarıyla karşılaştırılır (`cekirdek/metinler/ad-anahtari.ts`, karar 0064).
 - İlgili ürünler yalnız `ilgiliUrunleriGetir` (`cekirdek/moduller/urun/ilgili.ts`) ile bulunur; kural ve sayı oradadır (karar 0065).
-- Ürünün vitrinde görünüp görünmediği yalnız `vitrinKosulu` (`cekirdek/moduller/urun/vitrin.ts`) ile bulunur. Yayın durumlarının nerede göründüğü `cekirdek/kayitlar/urun.ts` kaydındadır, durum adını kodda elle yazma.
+- Ürünün vitrinde görünüp görünmediği yalnız `vitrinKosulu` (`cekirdek/moduller/urun/vitrin.ts`) ile bulunur. Koşul mağaza sahibinin `tukenenUrun` ayarını ister: "gizle"de tükenmiş ürün listelere girmez, sayfası açılır. Yayın durumlarının nerede göründüğü `cekirdek/kayitlar/urun.ts` kaydındadır, durum adını kodda elle yazma.
 
 ## Stok
 
 - Stok yalnız `cekirdek/moduller/stok/servis.ts` ile okunur ve değişir. Sipariş `stokDus`, iptal ve iade `stokArtir` kullanır, ikisi de çağıranın işleminde çalışır. Panel `stokDuzelt` ile ekranın gördüğü miktarı da gönderir. Sebepler `cekirdek/kayitlar/stok.ts` kaydındadır, geçmiş değiştirilemez (karar 0068). Aynı işlemde düşürmeden sonra ürünün işlem kilidi alınmaz (ürün ya da fiyat yazılmaz), iptal ve iade yalnız o siparişin stok geçmişinde düşürdüğü adedi geri koyar.
+- Bir birimin satılabilir olup olmadığı, tükenip tükenmediği, düşük stokta olup olmadığı ve müşteriye yazılan durum yalnız `stokDurumu` (`cekirdek/moduller/stok/durum.ts`) ile, birimlerin durumu tek sorguyla `stokDurumlari` ile bulunur. Tükenen ürünün listelerde gizlenmesi vitrin koşulundadır; koşul tükenen ürün ayarını zorunlu değer olarak alır (karar 0069).
 - Sipariş oluşurken stoğu "yeterliyse düş" koşuluyla ve siparişin kaydıyla aynı veritabanı işleminde düş. Aynı anda gelen iki sipariş son ürünü iki kez satmasın.
 - Ödemeye geçen sepetin ürünlerini belli bir süre ayır. Ödeme başarısız olur ya da süre dolarsa geri bırak.
 - Beden ve renk gibi seçeneklerin her birleşiminin kendi stok kodu, stoğu ve fiyatı olsun.

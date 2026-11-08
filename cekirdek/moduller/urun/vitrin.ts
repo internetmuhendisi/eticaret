@@ -4,12 +4,25 @@
 // Koşul durum tablosundan (cekirdek/kayitlar/urun.ts) kurulur: hangi durumun nerede göründüğü orada
 // yazar, burada durum adı elle yazılmaz. Silinmiş ürün hiçbir yerde görünmez. Zamanlanmış ürün
 // yayın zamanı geldiği anda görünür; durumu değiştiren bir iş gerekmez.
-import { and, inArray, isNull, lte, or, type SQL, sql } from "drizzle-orm";
+//
+// Tükenen ürün (kart 0083, karar 0069): mağaza sahibinin tukenenUrun ayarı "gizle" ise tükenmiş ürün
+// listelerde (liste yeri) görünmez; kendi sayfası (sayfa yeri) açılır, ürün satılamaz (kullanıcı
+// kararı). Tükenmişlik stok modülünün tek kuralıyla sınanır (stok/durum.ts). Ayar zorunlu değerdir:
+// koşulu kuran her yer onu vermeden derlenmez, unutulamaz. Stok gelince ürün kendiliğinden döner.
+import { and, inArray, isNull, lte, not, or, type SQL, sql } from "drizzle-orm";
+import type { TukenenUrunDavranisi } from "../../kayitlar/stok.ts";
 import { urunDurumlari, urunDurumVitrini, type VitrinYeri } from "../../kayitlar/urun.ts";
+import { tukenmisUrunKosulu } from "../stok/durum.ts";
 import { urunler } from "./model.ts";
 
-// an verilmezse veritabanının şimdiki zamanı kullanılır: sunucuların saati farklı olsa da sonuç aynıdır.
-export const vitrinKosulu = (yer: VitrinYeri, an?: Date): SQL => {
+export type VitrinSecenekleri = {
+  // Verilmezse veritabanının şimdiki zamanı: sunucuların saati farklı olsa da sonuç aynıdır.
+  an?: Date;
+  // Mağaza sahibinin tukenenUrun ayarı (magaza-ayarlari servisinden okunur).
+  tukenenUrun: TukenenUrunDavranisi;
+};
+
+export const vitrinKosulu = (yer: VitrinYeri, { an, tukenenUrun }: VitrinSecenekleri): SQL => {
   const simdi = an === undefined ? sql`now()` : sql`${an.toISOString()}::timestamptz`;
   const gorunen = urunDurumlari.filter((durum) => urunDurumVitrini[durum][yer]);
   const herZaman = gorunen.filter((durum) => !urunDurumVitrini[durum].zamanli);
@@ -22,6 +35,7 @@ export const vitrinKosulu = (yer: VitrinYeri, an?: Date): SQL => {
         ? and(inArray(urunler.durum, zamanli), lte(urunler.yayin_zamani, simdi))
         : sql`false`,
     ),
+    yer === "liste" && tukenenUrun === "gizle" ? not(tukenmisUrunKosulu()) : undefined,
   );
   if (kosul === undefined) throw new Error("Vitrin koşulu kurulamadı.");
   return kosul;

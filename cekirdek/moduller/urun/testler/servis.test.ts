@@ -16,6 +16,10 @@ import { vergiServisi } from "../../vergi/servis.ts";
 import { urunBirimleri, urunler } from "../model.ts";
 import type { UrunGirdisi } from "../semalar.ts";
 import { urunServisi } from "../servis.ts";
+import type { VitrinSecenekleri } from "../vitrin.ts";
+
+// Stokla ilgisi olmayan vitrin testleri: tükenen ürün gösterilir (kart 0083).
+const goster: VitrinSecenekleri = { tukenenUrun: "goster" };
 
 const saatDilimi = "Europe/Istanbul";
 const servis = urunServisi(() => saatDilimi);
@@ -71,7 +75,7 @@ describe("vitrinde görünür mü", () => {
         }),
       );
       for (const yer of vitrinYerleri) {
-        expect([durum, yer, await servis.vitrindeGorunurMu(vt, kimlik, yer)]).toEqual([
+        expect([durum, yer, await servis.vitrindeGorunurMu(vt, kimlik, yer, goster)]).toEqual([
           durum,
           yer,
           urunDurumVitrini[durum][yer],
@@ -104,14 +108,14 @@ describe("vitrinde görünür mü", () => {
     const once = new Date("2030-05-01T06:59:59.999Z");
     const tam = new Date("2030-05-01T07:00:00.000Z");
     for (const yer of vitrinYerleri) {
-      expect(await servis.vitrindeGorunurMu(vt, kimlik, yer, once)).toBe(false);
-      expect(await servis.vitrindeGorunurMu(vt, kimlik, yer, tam)).toBe(true);
+      expect(await servis.vitrindeGorunurMu(vt, kimlik, yer, { ...goster, an: once })).toBe(false);
+      expect(await servis.vitrindeGorunurMu(vt, kimlik, yer, { ...goster, an: tam })).toBe(true);
       // Veritabanının şimdiki zamanı: 2030 henüz gelmedi.
-      expect(await servis.vitrindeGorunurMu(vt, kimlik, yer)).toBe(false);
+      expect(await servis.vitrindeGorunurMu(vt, kimlik, yer, goster)).toBe(false);
     }
     // Zamanı geçmiş: veritabanının şimdiki zamanıyla görünür, durumu değiştiren bir iş yok.
     await servis.urunDegistir(vt, yonetici(), kimlik, { yayinZamani: "2020-05-01T10:00" });
-    expect(await servis.vitrindeGorunurMu(vt, kimlik, "liste")).toBe(true);
+    expect(await servis.vitrindeGorunurMu(vt, kimlik, "liste", goster)).toBe(true);
     expect((await servis.urunuOku(vt, kimlik))?.durum).toBe("zamanlanmis");
   });
 
@@ -120,7 +124,7 @@ describe("vitrinde görünür mü", () => {
     const kimlik = await servis.urunEkle(vt, yonetici(), urun({ durum: "yayinda" }));
     await servis.urunSil(vt, yonetici(), kimlik);
     for (const yer of vitrinYerleri) {
-      expect(await servis.vitrindeGorunurMu(vt, kimlik, yer)).toBe(false);
+      expect(await servis.vitrindeGorunurMu(vt, kimlik, yer, goster)).toBe(false);
     }
   });
 });
@@ -559,7 +563,7 @@ describe("iki site", () => {
       urun({ durum: "yayinda", stokKodu: "AYNI" }),
     );
     expect(await servis.urunuOku(b, kimlik)).toBeUndefined();
-    expect(await servis.vitrindeGorunurMu(b, kimlik, "sayfa")).toBe(false);
+    expect(await servis.vitrindeGorunurMu(b, kimlik, "sayfa", goster)).toBe(false);
     expect((await b.select().from(urunler)).length).toBe(0);
     // Aynı stok kodu ve adres adı öteki sitede serbesttir.
     await servis.urunEkle(b, yonetici(), urun({ durum: "yayinda", stokKodu: "AYNI" }));

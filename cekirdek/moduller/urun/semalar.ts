@@ -89,6 +89,8 @@ const alanlar = {
   kargoGerekmez: z.boolean(),
   // Stok takibi (kart 0082): yeni üründe açık (kullanıcı kararı).
   stokTakibi: z.boolean(),
+  // Ürünün kendi düşük stok eşiği (kart 0083); boşsa mağaza ayarı geçerlidir.
+  dusukStokEsigi: z.int().min(0).max(1_000_000),
   enAzAdet: adet,
   enCokAdet: adet,
   // Vergi sınıfının kimliği; null ürünü vergisiz yapar. Bilerek zorunludur: unutulan sınıf vergisiz
@@ -131,6 +133,7 @@ export const urunGirdisi = z.strictObject({
   yayinZamani: alanlar.yayinZamani.optional(),
   kargoGerekmez: alanlar.kargoGerekmez.default(false),
   stokTakibi: alanlar.stokTakibi.default(true),
+  dusukStokEsigi: alanlar.dusukStokEsigi.optional(),
   enAzAdet: alanlar.enAzAdet.default(1),
   enCokAdet: alanlar.enCokAdet.optional(),
   vergiSinifi: alanlar.vergiSinifi,
@@ -157,6 +160,7 @@ export const urunDegisikligi = z.strictObject({
   yayinZamani: alanlar.yayinZamani.nullable().optional(),
   kargoGerekmez: alanlar.kargoGerekmez.optional(),
   stokTakibi: alanlar.stokTakibi.optional(),
+  dusukStokEsigi: alanlar.dusukStokEsigi.nullable().optional(),
   enAzAdet: alanlar.enAzAdet.optional(),
   enCokAdet: alanlar.enCokAdet.nullable().optional(),
   vergiSinifi: alanlar.vergiSinifi.optional(),

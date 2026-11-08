@@ -1,4 +1,7 @@
-// Stok değişikliği sebeplerinin tek kaydı (kart 0082, karar 0068, .claude/rules/kayit-dosyalari.md).
+// Stokun kayıtları (.claude/rules/kayit-dosyalari.md): değişiklik sebepleri (kart 0082, karar 0068),
+// tükenen ürünün davranışı ve müşteriye yazılan durum (kart 0083, karar 0069).
+//
+// Değişiklik sebepleri:
 // Sebep adı stok geçmişine yazılır: yayınlandıktan sonra ancak eski kayıtları dönüştüren bir veri
 // değişikliğiyle değişir. Veritabanındaki denetim (stok_gecmisi_sebep) bu listeyle aynıdır, bunu
 // cekirdek/moduller/stok/testler/servis.test.ts denetler.
@@ -35,3 +38,17 @@ export type ArtirmaSebebi = Yonlu<"artir">;
 export const elleStokSebepleri = stokSebepAdlari.filter(
   (ad) => stokSebepleri[ad].elle,
 ) as ElleStokSebebi[];
+
+// Tükenen ürünün vitrindeki davranışı (kart 0083, karar 0069). Mağaza sahibinin ayarıdır (tukenenUrun).
+// - goster: ürün listelerde görünür, satılamaz.
+// - gizle: ürün listelerden, aramadan ve ilgili ürünlerden çıkar; kendi sayfası bağlantıyla açılır ve
+//   satılamaz (kullanıcı kararı). Stok gelince listelere kendiliğinden döner.
+export const tukenenUrunDavranislari = ["goster", "gizle"] as const;
+export type TukenenUrunDavranisi = (typeof tukenenUrunDavranislari)[number];
+
+// Müşteriye yazılan stok durumu (kart 0083). Metinleri cekirdek/moduller/stok/semalar.ts'de.
+// - tukendi: takip açık, stok yok.
+// - son-adet: stok "son X ürün" eşiğine (sonAdetEsigi) eşit ya da altında.
+// - stokta: stok eşiğin üstünde ya da takip kapalı.
+export const stokGosterimleri = ["tukendi", "son-adet", "stokta"] as const;
+export type StokGosterimi = (typeof stokGosterimleri)[number];

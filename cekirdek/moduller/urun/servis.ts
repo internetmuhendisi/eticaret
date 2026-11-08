@@ -48,7 +48,7 @@ import {
   urunGirdisi,
   urunHatalari,
 } from "./semalar.ts";
-import { vitrinKosulu } from "./vitrin.ts";
+import { type VitrinSecenekleri, vitrinKosulu } from "./vitrin.ts";
 
 export type UrunBirimi = {
   kimlik: string;
@@ -73,6 +73,8 @@ export type Urun = {
   kargoGerekmez: boolean;
   // Stok takibi açık mı (kart 0082). Stoğun kendisi stok modülündedir.
   stokTakibi: boolean;
+  // Ürünün kendi düşük stok eşiği (kart 0083); yoksa mağaza ayarı geçerlidir.
+  dusukStokEsigi?: number;
   enAzAdet: number;
   enCokAdet?: number;
   // Boşsa (null) ürün vergisizdir.
@@ -99,6 +101,7 @@ type UrunKaydi = {
   yayinZamani: Date | null;
   kargoGerekmez: boolean;
   stokTakibi: boolean;
+  dusukStokEsigi: number | null;
   enAzAdet: number;
   enCokAdet: number | null;
   vergiSinifi: string | null;
@@ -129,6 +132,7 @@ const kayitAlanlari = [
   "yayinZamani",
   "kargoGerekmez",
   "stokTakibi",
+  "dusukStokEsigi",
   "enAzAdet",
   "enCokAdet",
   "vergiSinifi",
@@ -197,6 +201,7 @@ const urunSatiri = (kayit: UrunKaydi & { adresAdi: string }) => ({
   yayin_zamani: kayit.yayinZamani,
   kargo_gerekmez: kayit.kargoGerekmez,
   stok_takibi: kayit.stokTakibi,
+  dusuk_stok_esigi: kayit.dusukStokEsigi,
   en_az_adet: kayit.enAzAdet,
   en_cok_adet: kayit.enCokAdet,
   vergi_sinifi_kimligi: kayit.vergiSinifi,
@@ -221,6 +226,7 @@ const urunAlanlari = {
   yayinZamani: urunler.yayin_zamani,
   kargoGerekmez: urunler.kargo_gerekmez,
   stokTakibi: urunler.stok_takibi,
+  dusukStokEsigi: urunler.dusuk_stok_esigi,
   enAzAdet: urunler.en_az_adet,
   enCokAdet: urunler.en_cok_adet,
   vergiSinifi: urunler.vergi_sinifi_kimligi,
@@ -386,6 +392,7 @@ export const urunServisi = (saatDilimi: () => string) => {
         : null,
       kargoGerekmez: girdi.kargoGerekmez,
       stokTakibi: girdi.stokTakibi,
+      dusukStokEsigi: girdi.dusukStokEsigi ?? null,
       enAzAdet: girdi.enAzAdet,
       enCokAdet: girdi.enCokAdet ?? null,
       vergiSinifi: girdi.vergiSinifi,
@@ -576,14 +583,14 @@ export const urunServisi = (saatDilimi: () => string) => {
     vt: Veritabani,
     kimlik: string,
     yer: VitrinYeri,
-    an?: Date,
+    secenekler: VitrinSecenekleri,
   ): Promise<boolean> =>
     kimlikMi(kimlik) &&
     (
       await vt
         .select({ kimlik: urunler.kimlik })
         .from(urunler)
-        .where(and(eq(urunler.kimlik, kimlik), vitrinKosulu(yer, an)))
+        .where(and(eq(urunler.kimlik, kimlik), vitrinKosulu(yer, secenekler)))
     ).length > 0;
 
   return { urunEkle, urunDegistir, urunSil, urunuOku, vitrindeGorunurMu };
