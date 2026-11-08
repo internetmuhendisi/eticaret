@@ -158,7 +158,11 @@
         "birlesim-eksik": "Birleşim için her seçenekten bir değer seçin.",
         "birlesim-gecersiz": "Seçilen değerlerden biri bu ürünün seçeneklerinde yok ya da silinmiş. Değerleri yeniden seçin.",
         "varyantli-urun-birim-alani": "Seçenekli üründe stok kodu, barkod, ağırlık ve ölçüler her birleşimde ayrı girilir.",
-        "son-deger": "Seçeneğin son değeri silinemez. Seçeneği kaldırmak için seçeneği silin."
+        "son-deger": "Seçeneğin son değeri silinemez. Seçeneği kaldırmak için seçeneği silin.",
+        "ozellik-tekrar": "Aynı özellik iki kez girilmiş. Her özelliğe bir değer girin.",
+        "ozellik-gecersiz": "Seçilen özelliklerden biri bulunamadı ya da silinmiş. Özellikleri yeniden seçin.",
+        "ozellik-deger-gecersiz": "Bu değer özelliğin türüne uymuyor. Sayı özelliğine en çok {ondalik} ondalık basamaklı bir sayı, evet/hayır özelliğine evet ya da hayır, metin özelliğine metin girin.",
+        "ozellik-secenek-gecersiz": "Seçilen seçenek bu özelliğin seçeneklerinde yok ya da silinmiş. Listeden bir seçenek seçin."
       }
     },
     "fiyat": {
@@ -209,6 +213,18 @@
         "adres-adi-bicimi": "Adres adında yalnız küçük harf (ç, ğ, ı, ö, ş, ü olmadan), rakam ve tire olabilir. Örnek: yaz-indirimi.",
         "adres-adi-tekrar": "Bu adres adı başka bir etikette kullanılıyor. Başka bir ad yazın.",
         "ad-tekrar": "Bu adla bir etiket zaten var. Başka bir ad yazın."
+      }
+    },
+    "ozellik": {
+      "hata": {
+        "kayda-uygun-degil": "Bu alan yalnız bir e-posta adresinden ya da giriş anahtarından oluşamaz. Metni değiştirin.",
+        "ad-tekrar": "Bu adla bir özellik zaten var. Başka bir ad yazın.",
+        "secenek-ad-tekrar": "Bu özellikte bu adla bir seçenek zaten var. Başka bir ad yazın.",
+        "birim-yalniz-sayi": "Birim yalnız sayı türündeki özelliğe yazılır. Birimi silin ya da türü sayı yapın.",
+        "secenek-yalniz-liste": "Seçenekler yalnız liste türündeki özelliğe eklenir. Türü liste yapın.",
+        "tur-degisemez": "Bu özelliğin türü değiştirilemez: ürünlerde değeri ya da seçenekleri var. Yeni türle ayrı bir özellik açın.",
+        "ozellik-siniri": "Bir mağazada en çok {sinir} özellik olabilir.",
+        "secenek-siniri": "Bir özellikte en çok {sinir} seçenek olabilir."
       }
     },
     "kategori": {

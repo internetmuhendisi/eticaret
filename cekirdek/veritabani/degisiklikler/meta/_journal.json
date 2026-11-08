@@ -155,6 +155,13 @@
       "when": 1794137387289,
       "tag": "0021_varyantli-urun",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794145460801,
+      "tag": "0022_urun-ozellikleri",
+      "breakpoints": true
     }
   ]
 }

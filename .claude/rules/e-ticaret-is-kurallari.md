@@ -4,6 +4,7 @@ paths:
   - "cekirdek/moduller/kategori/**"
   - "cekirdek/moduller/marka/**"
   - "cekirdek/moduller/etiket/**"
+  - "cekirdek/moduller/ozellik/**"
   - "cekirdek/moduller/stok/**"
   - "cekirdek/moduller/fiyat/**"
   - "cekirdek/moduller/vergi/**"
@@ -43,6 +44,7 @@ paths:
 - Kategori yalnız `cekirdek/moduller/kategori/servis.ts` ile okunur ve değişir. Kategorinin ürünleri tek sorguyla `kategorininUrunleri` ile gelir; döngüyü servis ve veritabanındaki tetikleyici aynı kilitle denetler (karar 0063).
 - Marka ve etiket aynı grup servisini kullanır (`cekirdek/moduller/urun/grup-servisi.ts`); ürünün kategori, marka ve etiket bağlantıları `cekirdek/moduller/urun/baglantilar.ts`, grupların ürünleri `cekirdek/moduller/urun/liste.ts` ile tek sorgudan gelir. Ad tekilliği yalnız ad anahtarıyla karşılaştırılır (`cekirdek/metinler/ad-anahtari.ts`, karar 0064).
 - Varyantlı ürünün seçenekleri, değerleri ve birleşimleri yalnız ürün servisinin varyant işlemleriyle (`cekirdek/moduller/urun/varyant.ts`) yazılır. Her birleşim bir satılabilir birimdir; fiyat ve stok onu basit ürünün birimi gibi kullanır. Ürünün türü kayıttan (`urunTurleri`), sınırları `varyantSinirlari` ile, fiyat aralığı yalnız `fiyatAraliklari`, genel stok durumu yalnız `urunStokDurumu` ile bulunur (karar 0071).
+- Ürün özellikleri (sitenin kendi ek alanları) yalnız `ozellikServisi` (`cekirdek/moduller/ozellik/servis.ts`) ile tanımlanır; ürünün değerleri ürün girdisinin `ozellikler` alanıyla ürün servisinden yazılır ve türün şemasıyla doğrulanır (`cekirdek/moduller/ozellik/degerler.ts`). Değer türleri `cekirdek/kayitlar/ozellik.ts` kaydındadır. Bir değere sahip ürünler tek sorguyla `ozellikServisi.urunleri` ile gelir (karar 0072).
 - İlgili ürünler yalnız `ilgiliUrunleriGetir` (`cekirdek/moduller/urun/ilgili.ts`) ile bulunur; kural ve sayı oradadır (karar 0065).
 - Sitenin ilk kategorileri, markaları, etiketleri ve ürünleri sitenin klasöründe `baslangic/katalog.json` dosyasındadır; katalog hiç kurulmamışsa arka plan süreci açılırken `katalogBaslangiciniKur` (`cekirdek/moduller/urun/baslangic.ts`) onları servislerle, tek işlemde, bir kez yazar (karar 0070). Örnek ürün çekirdeğe yazılmaz.
 - Ürünün vitrinde görünüp görünmediği yalnız `vitrinKosulu` (`cekirdek/moduller/urun/vitrin.ts`) ile bulunur. Koşul mağaza sahibinin `tukenenUrun` ayarını ister: "gizle"de tükenmiş ürün listelere girmez, sayfası açılır. Yayın durumlarının nerede göründüğü `cekirdek/kayitlar/urun.ts` kaydındadır, durum adını kodda elle yazma.

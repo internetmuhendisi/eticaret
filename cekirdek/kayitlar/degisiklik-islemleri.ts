@@ -44,6 +44,14 @@ export const degisiklikIslemleri = [
   "etiket.eklendi",
   "etiket.degisti",
   "etiket.silindi",
+  // Ürün özelliği ve liste türündeki seçenekleri (kart 0086). Ürünün değerleri urun.* ile yazılır;
+  // silinen özelliğin ya da seçeneğin değerlerinin kalktığı ürünler silme kaydında listelenir.
+  "ozellik.eklendi",
+  "ozellik.degisti",
+  "ozellik.silindi",
+  "ozellik-secenegi.eklendi",
+  "ozellik-secenegi.degisti",
+  "ozellik-secenegi.silindi",
   // Satılabilir birimin fiyatı (kart 0080). İlk fiyatta eski değer boştur.
   "fiyat.degisti",
   // Satılabilir birimin stoğu panelden elle düzeltildi (kart 0082). Siparişin düşürmesi ve iptalin
@@ -66,6 +74,9 @@ export const degisiklikKayitTurleri = [
   "kategori",
   "marka",
   "etiket",
+  // Kart 0086: ürün özelliği ve liste seçeneği.
+  "ozellik",
+  "ozellik-secenegi",
   // Kayıt kimliği satılabilir birimin kimliğidir (kart 0080).
   "fiyat",
   // Kayıt kimliği satılabilir birimin kimliğidir (kart 0082).

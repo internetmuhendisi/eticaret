@@ -362,6 +362,7 @@ describe("alanlar", () => {
       etiketler: [],
       marka: null,
       ilgiliUrunler: [],
+      ozellikler: [],
       silindi: false,
       tur: "basit",
       secenekler: [],

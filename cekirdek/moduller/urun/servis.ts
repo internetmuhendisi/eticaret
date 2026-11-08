@@ -32,6 +32,13 @@ import {
 } from "../../veritabani/baglanti.ts";
 import { kimlikMi } from "../../veritabani/turler.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
+import {
+  kilitliUrunOzellikleri,
+  ozellikDegerleriniDenetle,
+  ozellikDegerleriniYaz,
+  urununOzellikleri,
+} from "../ozellik/degerler.ts";
+import type { UrunOzellikDegeri } from "../ozellik/semalar.ts";
 import { vergiSiniflari } from "../vergi/model.ts";
 import {
   baglantiTanimlari,
@@ -110,6 +117,8 @@ export type Urun = {
   marka: string | null;
   // Elle seçilen ilgili ürünler, seçim sırasıyla; silinmiş olanlar görünmez (kart 0079).
   ilgiliUrunler: string[];
+  // Özellik değerleri, özelliklerin sırasıyla (kart 0086). Liste değeri seçeneğin kimliğidir.
+  ozellikler: UrunOzellikDegeri[];
   silindi: boolean;
   // Seçeneği olan ürün varyantlıdır (cekirdek/kayitlar/urun.ts).
   tur: UrunTuru;
@@ -146,6 +155,8 @@ type UrunKaydi = {
   marka: string | null;
   // Elle seçilen ilgili ürünler, seçim sırasıyla (ilgili.ts). Sıralanmaz: sıra seçimin parçasıdır.
   ilgiliUrunler: string[];
+  // Özellik değerleri, özellik kimliğine göre sıralı (cekirdek/moduller/ozellik/degerler.ts).
+  ozellikler: UrunOzellikDegeri[];
 };
 
 // Bağlantı alanının kimlik listesi: marka tekildir, kayıtta tek kimlik durur.
@@ -175,6 +186,7 @@ const kayitAlanlari = [
   "etiketler",
   "marka",
   "ilgiliUrunler",
+  "ozellikler",
 ] as const satisfies readonly (keyof UrunKaydi)[];
 
 // Alanlar arası kurallar birleşmiş kayda uygulanır. Zamanlanmış olmayan ürünün yayın zamanı silinir.
@@ -386,21 +398,24 @@ export const urunServisi = (saatDilimi: () => string) => {
       etiketler: (girdi.etiketler ?? []).toSorted(),
       marka: girdi.marka ?? null,
       ilgiliUrunler: girdi.ilgiliUrunler ?? [],
+      ozellikler: [],
     });
     return yaz(vt, async (islem) => {
       const kimlik = randomUUID();
       await vergiSinifiniDenetle(islem, kayit.vergiSinifi);
       await gruplariDenetle(islem, (alan) => gruplari(kayit, alan));
       await ilgilileriDenetle(islem, kimlik, kayit.ilgiliUrunler);
+      const ozellikler = await ozellikDegerleriniDenetle(islem, girdi.ozellikler ?? []);
       await tekligiDenetle(islem, kayit);
       const adresAdi = kayit.adresAdi ?? (await adresAdiBul(islem, kayit.ad, kimlik));
-      const yazilacak = { ...kayit, adresAdi };
+      const yazilacak = { ...kayit, adresAdi, ozellikler: ozellikler.degerler };
       await islem.insert(urunler).values({ kimlik, ...urunSatiri(yazilacak) });
       await islem.insert(urunBirimleri).values({ urun_kimligi: kimlik, ...birimSatiri(yazilacak) });
       for (const t of baglantiTanimlari) {
         await gruplariBagla(islem, t, kimlik, gruplari(yazilacak, t.alan));
       }
       await ilgilileriYaz(islem, kimlik, yazilacak.ilgiliUrunler);
+      await ozellikDegerleriniYaz(islem, kimlik, ozellikler.degerler, ozellikler.turler);
       await degisikligiKaydet(islem, {
         kim,
         islem: "urun.eklendi",
@@ -458,6 +473,7 @@ export const urunServisi = (saatDilimi: () => string) => {
       ...birimKaydi,
       ...bagli,
       ilgiliUrunler: await secilenIlgililer(islem, kimlik),
+      ozellikler: await kilitliUrunOzellikleri(islem, kimlik),
     };
     return { kayit, birimKimligi };
   };
@@ -482,8 +498,16 @@ export const urunServisi = (saatDilimi: () => string) => {
           .map((alan) => ({ alan, kod: "varyantli-urun-birim-alani" }));
         if (sorunlar.length > 0) throw dogrulamaHatasi(sorunlar);
       }
+      // Özellik değerleri türleriyle denetlenir ve kayıt biçimine çevrilir; özellik ve seçenek satırları
+      // değer satırlarına dokunmadan önce kilitlenir (cekirdek/moduller/ozellik/degerler.ts).
+      const ozellikler =
+        girdi.ozellikler === undefined
+          ? undefined
+          : await ozellikDegerleriniDenetle(islem, girdi.ozellikler);
       const verilen = Object.fromEntries(
-        Object.entries({ ...girdi, yayinZamani }).filter(([, deger]) => deger !== undefined),
+        Object.entries({ ...girdi, yayinZamani, ozellikler: ozellikler?.degerler }).filter(
+          ([, deger]) => deger !== undefined,
+        ),
       ) as Partial<UrunKaydi>;
       if (verilen.kategoriler !== undefined) verilen.kategoriler = verilen.kategoriler.toSorted();
       if (verilen.etiketler !== undefined) verilen.etiketler = verilen.etiketler.toSorted();
@@ -535,6 +559,9 @@ export const urunServisi = (saatDilimi: () => string) => {
         await gruplariBagla(islem, t, kimlik, eklenen(t.alan));
       }
       if (ilgiliDegisti || ilgiliVerildi) await ilgilileriYaz(islem, kimlik, yeni.ilgiliUrunler);
+      if (ozellikler !== undefined && degisen.includes("ozellikler")) {
+        await ozellikDegerleriniYaz(islem, kimlik, ozellikler.degerler, ozellikler.turler);
+      }
       const sec = (kaynak: UrunKaydi) =>
         kayitDegeri(Object.fromEntries(degisen.map((alan) => [alan, kaynak[alan]])), true);
       await degisikligiKaydet(islem, {
@@ -598,6 +625,7 @@ export const urunServisi = (saatDilimi: () => string) => {
       vergiSinifi,
       ...(await bagliHepsi((t) => bagliGruplar(vt, t, kimlik))),
       ilgiliUrunler: await secilenIlgililer(vt, kimlik),
+      ozellikler: await urununOzellikleri(vt, kimlik),
       silindi: silinme !== null,
       tur: secenekler.some((secenek) => !secenek.silindi) ? "varyantli" : "basit",
       secenekler,

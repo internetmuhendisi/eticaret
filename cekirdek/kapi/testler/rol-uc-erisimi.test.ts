@@ -166,14 +166,16 @@ describe("kişi listesi", () => {
     }
   });
 
-  // Kart 0076, 0077 ve 0078 (kullanıcı kararları): her rol ürünü, kategoriyi, markayı ve etiketi
-  // görür ve değiştirir, yalnız tam yetkili siler. Uçlar panel ekranlarıyla gelir; o zaman bu beklenti
-  // her uçta gerçek veritabanıyla denenir.
+  // Kart 0076, 0077, 0078 ve 0086 (kullanıcı kararları): her rol ürünü, kategoriyi, markayı, etiketi ve
+  // özelliği görür ve değiştirir, yalnız tam yetkili siler. Uçlar panel ekranlarıyla gelir; o zaman bu
+  // beklenti her uçta gerçek veritabanıyla denenir.
   it.each([
     ["ürün", "urun.gor", "urun.degistir", "urun.sil"],
     ["kategori", "kategori.gor", "kategori.degistir", "kategori.sil"],
     ["marka", "marka.gor", "marka.degistir", "marka.sil"],
     ["etiket", "etiket.gor", "etiket.degistir", "etiket.sil"],
+    // Kart 0086 (kullanıcı kararı): görevli özelliği görür ve değiştirir, silemez.
+    ["özellik", "ozellik.gor", "ozellik.degistir", "ozellik.sil"],
   ] as const)(
     "%s izinleri: her rol görür ve değiştirir, yalnız tam yetkili siler",
     (_ad, gor, degistir, sil) => {

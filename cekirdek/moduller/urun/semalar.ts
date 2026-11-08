@@ -6,6 +6,7 @@
 //
 // Hata iletileri düz cümle değil koddur (urunHatalari); metni ekran çözer.
 import { z } from "zod";
+import { ozellikSinirlari } from "../../kayitlar/ozellik.ts";
 import {
   type UrunDurumu,
   urunDurumlari,
@@ -16,6 +17,7 @@ import {
 import { adresAdiKalibi, adresAdiUzunlugu } from "../../metinler/adres-adi.ts";
 import type { MetinAnahtari } from "../../metinler/metin.ts";
 import { kayitMetni } from "../degisiklik-kaydi/deger.ts";
+import { urunOzellikDegeri } from "../ozellik/semalar.ts";
 import { barkoduDogrula } from "./barkod.ts";
 
 export const urunHatalari = [
@@ -54,6 +56,12 @@ export const urunHatalari = [
   "birlesim-gecersiz",
   "varyantli-urun-birim-alani",
   "son-deger",
+  // Ürün özelliklerinin değerleri (kart 0086, karar 0072): aynı özellik iki kez, olmayan ya da
+  // silinmiş özellik, türüne uymayan değer, özelliğin olmayan ya da silinmiş seçeneği.
+  "ozellik-tekrar",
+  "ozellik-gecersiz",
+  "ozellik-deger-gecersiz",
+  "ozellik-secenek-gecersiz",
 ] as const;
 export type UrunHatasi = (typeof urunHatalari)[number];
 
@@ -89,6 +97,10 @@ export const urunHataMetinleri = {
   "birlesim-gecersiz": "yonetim.urun.hata.birlesim-gecersiz",
   "varyantli-urun-birim-alani": "yonetim.urun.hata.varyantli-urun-birim-alani",
   "son-deger": "yonetim.urun.hata.son-deger",
+  "ozellik-tekrar": "yonetim.urun.hata.ozellik-tekrar",
+  "ozellik-gecersiz": "yonetim.urun.hata.ozellik-gecersiz",
+  "ozellik-deger-gecersiz": "yonetim.urun.hata.ozellik-deger-gecersiz",
+  "ozellik-secenek-gecersiz": "yonetim.urun.hata.ozellik-secenek-gecersiz",
 } as const satisfies Record<UrunHatasi, MetinAnahtari>;
 
 const hata = (kod: UrunHatasi) => kod;
@@ -172,6 +184,15 @@ const alanlar = {
   // Elle seçilen ilgili ürünler (kart 0079): sırası tutulur. Vitrinde en çok ilgiliUrunSiniri kadarı
   // görünür (ilgili.ts); fazlası, öncekiler vitrinden çıkarsa yerlerini alır.
   ilgiliUrunler: tekrarsizListe(z.uuid(), listeSinirlari.ilgili, "ilgili-tekrar"),
+  // Ürünün özellik değerleri (kart 0086): her özellikte en çok bir değer. Değerin özelliğin türüne
+  // uyduğunu servis özelliği okuyunca denetler (cekirdek/moduller/ozellik/degerler.ts).
+  ozellikler: z
+    .array(urunOzellikDegeri)
+    .max(ozellikSinirlari.ozellik)
+    .refine(
+      (liste) => new Set(liste.map((d) => d.ozellik)).size === liste.length,
+      hata("ozellik-tekrar"),
+    ),
 };
 
 // Yeni ürün. Verilmeyen adres adı addan üretilir; zamanlanmış durum dışında yayın zamanı yok sayılır.
@@ -198,6 +219,7 @@ export const urunGirdisi = z.strictObject({
   etiketler: alanlar.etiketler.optional(),
   marka: alanlar.marka.optional(),
   ilgiliUrunler: alanlar.ilgiliUrunler.optional(),
+  ozellikler: alanlar.ozellikler.optional(),
 });
 export type UrunGirdisi = z.input<typeof urunGirdisi>;
 
@@ -228,6 +250,9 @@ export const urunDegisikligi = z.strictObject({
   marka: alanlar.marka.optional(),
   // Verilirse elle seçilen ilgili ürünler bu liste olur (sırasıyla); boş liste seçimi kaldırır.
   ilgiliUrunler: alanlar.ilgiliUrunler.optional(),
+  // Verilirse ürünün özellik değerleri bu liste olur; listede olmayan özelliğin değeri kalkar, boş
+  // liste bütün değerleri kaldırır.
+  ozellikler: alanlar.ozellikler.optional(),
 });
 export type UrunDegisikligi = z.input<typeof urunDegisikligi>;
 
