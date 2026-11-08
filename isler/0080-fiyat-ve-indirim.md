@@ -28,4 +28,4 @@ Her satılabilir birimin satış fiyatı ve tarihli indirimli fiyatı olur. Her 
 
 ## Durum
 
-yapılacak
+bitti
