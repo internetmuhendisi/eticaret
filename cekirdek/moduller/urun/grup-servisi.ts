@@ -17,7 +17,7 @@ import type {
   DegisiklikIslemi,
   DegisiklikKayitTuru,
 } from "../../kayitlar/degisiklik-islemleri.ts";
-import { adAnahtari, adAnahtariSql } from "../../metinler/ad-anahtari.ts";
+import { adAnahtariSql } from "../../metinler/ad-anahtari.ts";
 import { bosAdresAdi } from "../../metinler/adres-adi.ts";
 import {
   siteninVeritabani,
@@ -210,10 +210,7 @@ export const grupServisi = (tanim: GrupTanimi) => {
         (alan) => eski[alan] !== yeni[alan],
       );
       if (degisen.length === 0) return;
-      if (
-        adAnahtari(yeni.ad) !== adAnahtari(eski.ad) &&
-        (await adKullaniliyor(islem, yeni.ad, kimlik))
-      ) {
+      if (yeni.ad !== eski.ad && (await adKullaniliyor(islem, yeni.ad, kimlik))) {
         throw cakisma("ad", "ad-tekrar");
       }
       if (

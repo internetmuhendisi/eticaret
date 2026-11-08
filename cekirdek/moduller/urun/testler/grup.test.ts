@@ -116,6 +116,28 @@ describe.each(gruplar)("$ad", (g) => {
     expect((await g.servis.oku(bir, vt))?.ad).toBe("ŞIK");
   });
 
+  // Kart 0078 kontrolü: ad karşılaştırması yalnız veritabanında yapılır. JavaScript "ΟΔΟΣ" adını
+  // "οδος", veritabanı "οδοσ" yapar; uygulamanın kendi anahtarıyla denetimi atlamak 500 hatasına
+  // dönüyordu.
+  it("adın yalnız harf büyüklüğü değişse de tekillik veritabanında aranır", async () => {
+    const vt = await siteAc();
+    const bir = await ekle(vt, "οδος");
+    await ekle(vt, "οδοσ");
+    expect(await hatasi(g.servis.degistir(vt, yonetici(), bir, { ad: "ΟΔΟΣ" }))).toEqual({
+      kod: "cakisma",
+      ayrinti: [{ alan: "ad", kod: "ad-tekrar" }],
+    });
+  });
+
+  it("aynı görünen iki yazılış (birleşik ve ayrık Ş) aynı addır", async () => {
+    const vt = await siteAc();
+    await ekle(vt, "Şık");
+    expect(await hatasi(ekle(vt, "S\u0327ık"))).toEqual({
+      kod: "cakisma",
+      ayrinti: [{ alan: "ad", kod: "ad-tekrar" }],
+    });
+  });
+
   it("veritabanı da aynı adı reddeder", async () => {
     const vt = await siteAc();
     await ekle(vt, "Tekil");

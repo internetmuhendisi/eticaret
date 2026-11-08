@@ -16,7 +16,7 @@ import { and, asc, eq, inArray, isNull, max, ne, notInArray, sql } from "drizzle
 import type { z } from "zod";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
-import { adAnahtari, adAnahtariSql } from "../../metinler/ad-anahtari.ts";
+import { adAnahtariSql } from "../../metinler/ad-anahtari.ts";
 import { bosAdresAdi } from "../../metinler/adres-adi.ts";
 import {
   siteninVeritabani,
@@ -25,6 +25,7 @@ import {
 } from "../../veritabani/baglanti.ts";
 import { kimlikMi } from "../../veritabani/turler.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
+import { urunKilidiAl } from "../urun/kilit.ts";
 import {
   bosUrunListesi,
   type UrunListesi,
@@ -292,7 +293,7 @@ export const kategoriDegistir = async (
       if (await donguKurar(islem, kimlik, ust)) throw isKurali("ust", "dongu");
     }
     if (
-      (tasindi || adAnahtari(yeni.ad) !== adAnahtari(eski.ad)) &&
+      (tasindi || yeni.ad !== eski.ad) &&
       (await kardesAdiKullaniliyor(islem, ust, yeni.ad, [kimlik]))
     ) {
       throw cakisma([{ alan: "ad", kod: "ad-tekrar" }]);
@@ -323,6 +324,9 @@ export const kategoriDegistir = async (
 // çıkar, ürün bağlantıları kalkar. Önce bütün çakışmalar aranır: biri bile varsa hiçbir şey değişmez.
 export const kategoriSil = (vt: Veritabani, kim: DegisikligiYapan, kimlik: string) =>
   yaz(vt, async (islem) => {
+    // Birden çok kategori satırı güncellenir: ürün değişikliğiyle kilitlenmemek için önce ürün kilidi
+    // alınır (urun/kilit.ts).
+    await urunKilidiAl(islem);
     const kategori = await degisebilenKategori(islem, kimlik);
     const altlar = await islem
       .select({ kimlik: kategoriler.kimlik, ad: kategoriler.ad, sira: kategoriler.sira })

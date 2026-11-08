@@ -39,7 +39,9 @@ export const kayitDegeriYasakMi = (ham: string): boolean => {
 };
 
 // Kayda girecek serbest metnin şeması: kırpılır, boş olamaz, en çok verilen uzunlukta, değerin tamamı
-// kayda yazılamayan bir değer olamaz. Hata kodu modüllerin hata listesinde de yazar.
+// kayda yazılamayan bir değer olamaz. NFC biçimine çevrilir: aynı görünen iki yazılış (birleşik ve
+// ayrık "Ş") aynı metin olarak saklanır ve karşılaştırılır (kart 0078). Hata kodu modüllerin hata
+// listesinde de yazar.
 export const kayitMetniHatasi = "kayda-uygun-degil";
 export const kayitMetni = (enCok: number) =>
   z
@@ -47,4 +49,5 @@ export const kayitMetni = (enCok: number) =>
     .trim()
     .min(1)
     .max(enCok)
-    .refine((deger) => !kayitDegeriYasakMi(deger), kayitMetniHatasi);
+    .refine((deger) => !kayitDegeriYasakMi(deger), kayitMetniHatasi)
+    .transform((deger) => deger.normalize("NFC"));

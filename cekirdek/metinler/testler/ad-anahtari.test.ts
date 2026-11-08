@@ -1,10 +1,11 @@
-// Ad anahtarı (kart 0078, karar 0064): uygulama ve veritabanı aynı adlar için aynı anahtarı üretir,
-// büyük küçük harf ve noktalı noktasız i ayrımı yapılmaz, öteki harfler ayrı kalır.
+// Ad anahtarı (kart 0078, karar 0064) gerçek veritabanıyla: büyük küçük harf ve noktalı noktasız i
+// ayrımı yapılmaz, öteki harfler ayrı kalır. Türkçe harflerin küçülmesi veritabanının harf ayarına
+// bağlıdır; ayar bozulursa bu test kırmızıya düşer.
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
-import { adAnahtari, adAnahtariSql } from "../ad-anahtari.ts";
+import { adAnahtariSql } from "../ad-anahtari.ts";
 
 let vt: Veritabani;
 let sil: () => Promise<void>;
@@ -13,7 +14,7 @@ beforeAll(async () => {
 });
 afterAll(() => sil());
 
-const veritabanindaki = async (ad: string) =>
+const anahtar = async (ad: string) =>
   (await vt.execute<{ anahtar: string }>(sql`select ${adAnahtariSql(ad)} as anahtar`)).rows[0]
     ?.anahtar;
 
@@ -24,11 +25,9 @@ describe("ad anahtarı", () => {
     ["ılık", "ILIK", "ilik"],
     ["Çağ Öğün Üç", "ÇAĞ ÖĞÜN ÜÇ", "çağ öğün üç"],
     ["Crème", "CRÈME", "crème"],
-  ])("%s ile %s aynı anahtarı verir (uygulama ve veritabanı)", async (bir, iki, beklenen) => {
-    for (const ad of [bir, iki]) {
-      expect(adAnahtari(ad)).toBe(beklenen);
-      expect(await veritabanindaki(ad)).toBe(adAnahtari(ad));
-    }
+  ])("%s ile %s aynı anahtarı verir", async (bir, iki, beklenen) => {
+    expect(await anahtar(bir)).toBe(beklenen);
+    expect(await anahtar(iki)).toBe(beklenen);
   });
 
   it("öteki harfler ayrı kalır: ş ile s, ç ile c, ö ile o", async () => {
@@ -36,9 +35,8 @@ describe("ad anahtarı", () => {
       ["Şık", "Sik"],
       ["Çam", "Cam"],
       ["Öz", "Oz"],
-    ]) {
-      expect(adAnahtari(bir ?? "")).not.toBe(adAnahtari(iki ?? ""));
-      expect(await veritabanindaki(bir ?? "")).not.toBe(await veritabanindaki(iki ?? ""));
+    ] as const) {
+      expect(await anahtar(bir)).not.toBe(await anahtar(iki));
     }
   });
 });

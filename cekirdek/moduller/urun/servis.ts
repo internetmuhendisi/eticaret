@@ -37,6 +37,7 @@ import {
   gruplariKaldir,
   kilitliBagliGruplar,
 } from "./baglantilar.ts";
+import { urunKilidiAl } from "./kilit.ts";
 import { urunBirimleri, urunler } from "./model.ts";
 import {
   type UrunDegisikligi,
@@ -177,9 +178,6 @@ const kayitDegeri = (kayit: Partial<UrunKaydi>, bosListe = false): Record<string
       .map(([alan, deger]) => [alan, deger instanceof Date ? deger.toISOString() : deger]),
   );
 
-const kilitle = (islem: VeritabaniIslemi) =>
-  islem.execute(sql`select pg_advisory_xact_lock(hashtext('urun'))`);
-
 const urunSatiri = (kayit: UrunKaydi & { adresAdi: string }) => ({
   ad: kayit.ad,
   kisa_aciklama: kayit.kisaAciklama,
@@ -250,7 +248,7 @@ const bagliHepsi = async (
 export const urunServisi = (saatDilimi: () => string) => {
   const yaz = <T>(vt: Veritabani, is: (islem: VeritabaniIslemi) => Promise<T>) =>
     vt.transaction(async (islem) => {
-      await kilitle(islem);
+      await urunKilidiAl(islem);
       return is(islem);
     });
 

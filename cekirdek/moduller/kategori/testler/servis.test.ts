@@ -308,6 +308,48 @@ describe("silme kuralı", () => {
   });
 });
 
+// Kart 0078 kontrolü: kategori silme birden çok kategori satırını günceller, ürün değişikliği aynı
+// satırları başka sırayla paylaşımlı kilitleyebilir. Silme önce ürün kilidini alır (urun/kilit.ts).
+describe("kategori silme ile ürün değişikliği", () => {
+  it("silme, açık duran ürün yazmasının kilidini bekler", async () => {
+    const vt = await siteAc();
+    const kategori = await ekle(vt, "Bekleyen");
+    let hazir: () => void = () => undefined;
+    const alindi = new Promise<void>((coz) => {
+      hazir = coz;
+    });
+    const urunYazmasi = vt.transaction(async (islem) => {
+      await islem.execute(sql`select pg_advisory_xact_lock(hashtext('urun'))`);
+      hazir();
+      await islem.execute(sql`select pg_sleep(0.4)`);
+    });
+    await alindi;
+    const bas = Date.now();
+    await kategoriSil(vt, yonetici(), kategori);
+    const sure = Date.now() - bas;
+    await urunYazmasi;
+    expect(sure).toBeGreaterThanOrEqual(300);
+  });
+
+  it("alt kategorisiyle birlikte bağlı ürün değişirken silme kilitlenmez", async () => {
+    const vt = await siteAc();
+    for (let tur = 0; tur < 10; tur += 1) {
+      const ust = await ekle(vt, `Üst ${tur}`);
+      const altlar = await Promise.all(
+        Array.from({ length: 4 }, (_, sira) => ekle(vt, `Alt ${tur}-${sira}`, ust)),
+      );
+      const urun = await urunEkle(vt, { ad: `Ürün ${tur}`, kategoriler: altlar });
+      const sonuclar = await Promise.allSettled([
+        urunSrv.urunDegistir(vt, yonetici(), urun, { kategoriler: [...altlar, ust] }),
+        kategoriSil(vt, yonetici(), ust),
+      ]);
+      for (const sonuc of sonuclar) {
+        if (sonuc.status === "rejected") expect(sonuc.reason).toBeInstanceOf(BilinenHata);
+      }
+    }
+  });
+});
+
 describe("kategorinin ürünleri", () => {
   it("bir ürün iki kategoride listelenir; ürünler tek sorguyla, sayfa sayfa ve toplamla gelir", async () => {
     const vt = await siteAc();
