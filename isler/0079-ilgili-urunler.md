@@ -24,4 +24,4 @@
 
 ## Durum
 
-yapılacak
+bitti
