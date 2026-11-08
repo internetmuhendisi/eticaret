@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Örnek Mağaza tasarım yönü</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+/* Kart 0101 taslağı. Ürün kodu değildir. */
+* { box-sizing: border-box; }
+body { margin: 0; background: #FFFFFF; color: #16181D; font-family: 'Inter', system-ui, sans-serif; line-height: 1.5; }
+.kap { max-width: 1200px; margin: 0 auto; padding: 48px 24px 64px; display: flex; flex-direction: column; gap: 32px; }
+.ust-yazi { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #545B68; }
+h1 { margin: 6px 0 10px; font-size: 40px; line-height: 1.1; }
+h2 { margin: 0; font-size: 20px; }
+p { margin: 0; }
+.giris { font-size: 17px; color: #3D434F; max-width: 900px; }
+.iki { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
+.kutu { display: flex; flex-direction: column; gap: 12px; padding: 24px 28px; background: #F4F5F7; border-radius: 12px; }
+.kutu ul, .kutu ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; color: #2B3039; }
+.uc { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+.secenek { display: flex; flex-direction: column; gap: 14px; padding: 24px; border: 1px solid #DADDE3; border-radius: 12px; }
+.secenek-ust { display: flex; align-items: baseline; gap: 10px; }
+.harf { font-size: 28px; font-weight: 800; color: #545B68; }
+.secenek p { font-size: 15px; color: #2B3039; }
+.renkler { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; color: #545B68; }
+.sira { display: flex; gap: 6px; }
+.sira span { width: 40px; height: 40px; border-radius: 8px; border: 1px solid #C9CDD5; }
+dl { margin: 0; display: grid; grid-template-columns: 100px minmax(0, 1fr); row-gap: 6px; font-size: 14px; }
+dt { color: #545B68; }
+dd { margin: 0; }
+.baglantilar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+.baglantilar a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 8px; background: #16181D; color: #FFFFFF; text-decoration: none; font-size: 14px; font-weight: 600; }
+.baglantilar a.ikincil { background: transparent; color: #16181D; border: 1px solid #16181D; }
+.not { background: #FFF6E0; }
+</style>
+</head>
+<body>
+<div class="kap">
+  <div>
+    <span class="ust-yazi">Kart 0101 · Tasarım yönü</span>
+    <h1>Örnek Mağaza için üç tasarım yönü</h1>
+    <p class="giris">Üçü de beğendiğin mağazanın havasından başlar ve aynı bölüm sırasını kullanır. Ayrıldıkları yerler renk, yazı tipi, köşe biçimi ve yoğunluk. Seçenek sayfasında üstteki çubuktan seçeneği, açık ya da koyu temayı ve masaüstü ya da telefon genişliğini değiştirebilirsin.</p>
+  </div>
+
+  <div class="iki">
+    <section class="kutu">
+      <h2>Görüntünün çözümlemesi</h2>
+      <ul>
+        <li><strong>Yoğunluk:</strong> yüksek. Masaüstünde bir sırada 5 ürün, küçük yazı (13–14 px), bölümler arası dar boşluk. Sayfa uzun ve kaydırarak okunuyor.</li>
+        <li><strong>Renk:</strong> beyaz zemin, tek sıcak vurgu (turuncu-sarı) düğme ve rozetlerde. Kategori ve kampanya kutularında doygun ya da pastel renkli zeminler. Koyu lacivert alt kısım.</li>
+        <li><strong>Düzen:</strong> ortalanmış, yaklaşık 1200 px'lik içerik alanı. Üstte iki satır (logo, arama, iletişim, hesap, sepet; altında menü). Kartlar ince kenarlı, köşeler hafif yuvarlak, düğmeler hap biçiminde.</li>
+        <li><strong>Ürün kartı:</strong> görsel, indirim rozeti, marka, iki satır ad, yıldızlar, üstü çizili eski fiyat ve yeni fiyat.</li>
+      </ul>
+    </section>
+    <section class="kutu">
+      <h2>Bölümlerin sırası (üç seçenekte aynı)</h2>
+      <ol>
+        <li>Üst kısım: duyuru, logo, arama, sepet, menü</li>
+        <li>Kayan büyük afiş</li>
+        <li>Güven şeridi</li>
+        <li>Kampanya afişleri (üçlü)</li>
+        <li>Kategori kutuları</li>
+        <li>Ürün vitrini: öne çıkanlar</li>
+        <li>Ürün vitrini: yeni gelenler, yan afişli</li>
+        <li>Görsel ve metin afişleri (ikili)</li>
+        <li>Sekmeli vitrin</li>
+        <li>Geri sayımlı fırsatlar</li>
+        <li>Müşteri yorumları</li>
+        <li>Geniş afiş</li>
+        <li>Blog yazıları</li>
+        <li>Marka logoları</li>
+        <li>Bülten kaydı</li>
+        <li>Alt kısım</li>
+      </ol>
+    </section>
+  </div>
+
+  <div class="uc">
+    <section class="secenek">
+      <div class="secenek-ust"><span class="harf">A</span><h2>Canlı Çarşı</h2></div>
+      <p>Görüntüye en yakın olan. Beyaz zemin, sıcak turuncu-sarı vurgu, renkli kutular, sık ızgara. Her türden ürün satan, kalabalık ve neşeli bir pazar hissi.</p>
+      <div class="renkler">Açık tema
+        <div class="sira"><span style="background: #FFFFFF"></span><span style="background: #F5F6F8"></span><span style="background: #1B1F27"></span><span style="background: #F29F05"></span><span style="background: #C62F21"></span><span style="background: #1E2533"></span></div>
+        Koyu tema
+        <div class="sira"><span style="background: #12151B"></span><span style="background: #1B2029"></span><span style="background: #EEF0F4"></span><span style="background: #F5A623"></span><span style="background: #FF8577"></span><span style="background: #0B0D11"></span></div>
+      </div>
+      <dl>
+        <dt>Yazı tipi</dt><dd>Başlık Jost, metin Inter</dd>
+        <dt>Köşe</dt><dd>Kartta 8 px, düğmeler hap</dd>
+        <dt>Yoğunluk</dt><dd>Yüksek: sırada 5 ürün, dar boşluk</dd>
+        <dt>Ürün kartı</dt><dd>İnce kenarlı, görsel açık gri zeminde</dd>
+        <dt>Kontrast</dt><dd>En düşük 5,07:1 (açık), 6,90:1 (koyu)</dd>
+      </dl>
+      <div class="baglantilar"><a href="secenekler.html?yon=a">Masaüstü</a><a class="ikincil" href="secenekler.html?yon=a&amp;gorunum=telefon">Telefon</a><a class="ikincil" href="secenekler.html?yon=a&amp;tema=koyu">Koyu</a></div>
+    </section>
+
+    <section class="secenek">
+      <div class="secenek-ust"><span class="harf">B</span><h2>Yumuşak Mevsim</h2></div>
+      <p>Aynı bölümler, daha sakin. Kırık beyaz zemin, koyu yeşil vurgu, toprak tonlu kutular, geniş boşluk. Giyim ve ev ürünlerinin dokusunu öne çıkarır.</p>
+      <div class="renkler">Açık tema
+        <div class="sira"><span style="background: #FBFAF7"></span><span style="background: #F1EEE8"></span><span style="background: #23211E"></span><span style="background: #2F5D50"></span><span style="background: #A63D29"></span><span style="background: #2F3B36"></span></div>
+        Koyu tema
+        <div class="sira"><span style="background: #161816"></span><span style="background: #1F2320"></span><span style="background: #ECEDE8"></span><span style="background: #8CC5B0"></span><span style="background: #F08A73"></span><span style="background: #0F110F"></span></div>
+      </div>
+      <dl>
+        <dt>Yazı tipi</dt><dd>Başlık ve metin Manrope</dd>
+        <dt>Köşe</dt><dd>Kartta 16 px, düğmede 12 px</dd>
+        <dt>Yoğunluk</dt><dd>Orta: sırada 4 ürün, geniş boşluk</dd>
+        <dt>Ürün kartı</dt><dd>Kenarsız, hafif gölgeli, yumuşak köşe</dd>
+        <dt>Kontrast</dt><dd>En düşük 5,46:1 (açık), 6,51:1 (koyu)</dd>
+      </dl>
+      <div class="baglantilar"><a href="secenekler.html?yon=b">Masaüstü</a><a class="ikincil" href="secenekler.html?yon=b&amp;gorunum=telefon">Telefon</a><a class="ikincil" href="secenekler.html?yon=b&amp;tema=koyu">Koyu</a></div>
+    </section>
+
+    <section class="secenek">
+      <div class="secenek-ust"><span class="harf">C</span><h2>Keskin Çizgi</h2></div>
+      <p>Aynı yoğunluk, daha iddialı. Koyu lacivert afiş, elektrik mavisi düğme, sarı rozet, büyük harfli başlıklar, köşesiz kutular. Dergi gibi, güçlü bir duruş.</p>
+      <div class="renkler">Açık tema
+        <div class="sira"><span style="background: #FFFFFF"></span><span style="background: #F2F3F7"></span><span style="background: #0D1021"></span><span style="background: #2340FF"></span><span style="background: #C8102E"></span><span style="background: #FFD43B"></span></div>
+        Koyu tema
+        <div class="sira"><span style="background: #0B0D18"></span><span style="background: #151829"></span><span style="background: #F1F2F8"></span><span style="background: #6F82FF"></span><span style="background: #FF6B81"></span><span style="background: #FFD43B"></span></div>
+      </div>
+      <dl>
+        <dt>Yazı tipi</dt><dd>Başlık Archivo (büyük harf), metin Inter</dd>
+        <dt>Köşe</dt><dd>Köşesiz</dd>
+        <dt>Yoğunluk</dt><dd>Yüksek: sırada 5 ürün</dd>
+        <dt>Ürün kartı</dt><dd>İnce kenarlı, keskin köşe, sarı rozet</dd>
+        <dt>Kontrast</dt><dd>En düşük 5,31:1 (açık), 5,82:1 (koyu)</dd>
+      </dl>
+      <div class="baglantilar"><a href="secenekler.html?yon=c">Masaüstü</a><a class="ikincil" href="secenekler.html?yon=c&amp;gorunum=telefon">Telefon</a><a class="ikincil" href="secenekler.html?yon=c&amp;tema=koyu">Koyu</a></div>
+    </section>
+  </div>
+
+  <section class="kutu not">
+    <h2>Bilmen gerekenler</h2>
+    <ul>
+      <li>O mağazanın logosu, yazıları, ürün adları ve görselleri hiçbir yerde yok. Ürünler, fiyatlar ve görseller Örnek Mağaza'nın kendi kataloğundan.</li>
+      <li>Köşeli parantezli yerler ([Blog yazısı], [Marka logosu], [TUTAR]) henüz verisi olmayan alanlar. Görsel paketi, yorumlar, blog ve ayarlar gelince dolar.</li>
+      <li>Kategori kutularında iki yer yeni kategorilere ayrıldı. Afiş görselleri şimdilik ürün fotoğraflarından, asıl afişler paketle gelecek.</li>
+      <li>Bülten bölümü yalnız bülten eklentisi kurulan sitede görünecek. Sayfada nerede duracağını görmen için gösterildi.</li>
+      <li>Fiyat yazılışı (999,00 ₺) yalnız görünüm içindir, sitede para biçimi ayarından gelir. Yazı tipleri bu taslakta Google'dan yükleniyor; gerçek sitede sitenin kendi sunucusundan yüklenecek (kart 0102).</li>
+    </ul>
+  </section>
+</div>
+</body>
+</html>

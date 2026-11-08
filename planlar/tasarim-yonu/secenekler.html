@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Örnek Mağaza tasarım seçenekleri</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Jost:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=Archivo:wght@600;700;800&display=swap">
+<style>
+/* Kart 0101 taslağı. Ürün kodu değildir; renkler burada yalnız seçenekleri göstermek için yazılıdır. */
+* { box-sizing: border-box; }
+body { margin: 0; background: #E9EBEF; font-family: 'Inter', system-ui, sans-serif; }
+p { margin: 0; }
+img { display: block; }
+
+/* Seçim çubuğu (taslağın parçası, mağazanın değil) */
+.arac-cubugu { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; padding: 10px 16px; background: #16181D; color: #F2F3F5; font-size: 14px; }
+.grup { display: flex; gap: 4px; align-items: center; }
+.grup > span { color: #B8BDC7; margin-right: 4px; }
+.arac-cubugu button { min-height: 36px; padding: 0 12px; border: 1px solid #5A606C; background: transparent; color: #F2F3F5; border-radius: 6px; font: inherit; cursor: pointer; }
+.arac-cubugu button[aria-pressed="true"] { background: #F2F3F5; color: #16181D; border-color: #F2F3F5; }
+.arac-cubugu a { color: #F2F3F5; margin-left: auto; }
+.sahne.telefon { max-width: 390px; margin: 24px auto; box-shadow: 0 0 0 1px #C9CDD5, 0 12px 32px rgba(0, 0, 0, 0.15); }
+
+/* Renk takımları: her seçenek için açık ve koyu */
+.sayfa[data-yon="a"][data-tema="acik"] { --zemin: #FFFFFF; --yuzey: #F5F6F8; --yazi: #1B1F27; --soluk: #5A6170; --kenar: #E3E6EB; --birincil: #F29F05; --birincil-yazi: #1B1F27; --indirim: #C62F21; --alt: #1E2533; --alt-yazi: #E6E9EF; --alt-soluk: #A9B1BF; --rozet: #F29F05; --rozet-yazi: #1B1F27; --bag: #1B1F27; --hero: #FFE2A8; --hero-yazi: #1B1F27; --hero-dugme: #1B1F27; --hero-dugme-yazi: #FFFFFF; --firsat: #F29F05; --firsat-yazi: #1B1F27; --k1: #FDF1D6; --k2: #E2F0FF; --k3: #FFE3E3; --k4: #E4F6E8; --k5: #EFE6FF; }
+.sayfa[data-yon="a"][data-tema="koyu"] { --zemin: #12151B; --yuzey: #1B2029; --yazi: #EEF0F4; --soluk: #A3AAB8; --kenar: #2A303B; --birincil: #F5A623; --birincil-yazi: #12151B; --indirim: #FF8577; --alt: #0B0D11; --alt-yazi: #E6E9EF; --alt-soluk: #A3AAB8; --rozet: #F5A623; --rozet-yazi: #12151B; --bag: #EEF0F4; --hero: #33270F; --hero-yazi: #EEF0F4; --hero-dugme: #F5A623; --hero-dugme-yazi: #12151B; --firsat: #F5A623; --firsat-yazi: #12151B; --k1: #2E2716; --k2: #17263A; --k3: #3A1F22; --k4: #1A2E22; --k5: #262037; }
+.sayfa[data-yon="b"][data-tema="acik"] { --zemin: #FBFAF7; --yuzey: #F1EEE8; --yazi: #23211E; --soluk: #5F5950; --kenar: #E4DFD6; --birincil: #2F5D50; --birincil-yazi: #FFFFFF; --indirim: #A63D29; --alt: #2F3B36; --alt-yazi: #EEF1EE; --alt-soluk: #B9C3BD; --rozet: #2F5D50; --rozet-yazi: #FFFFFF; --bag: #2F5D50; --hero: #E3EBE4; --hero-yazi: #23211E; --hero-dugme: #2F5D50; --hero-dugme-yazi: #FFFFFF; --firsat: #2F5D50; --firsat-yazi: #FFFFFF; --k1: #E9EFE6; --k2: #F3E7DA; --k3: #E6ECF2; --k4: #F2E4E4; --k5: #ECE8F1; }
+.sayfa[data-yon="b"][data-tema="koyu"] { --zemin: #161816; --yuzey: #1F2320; --yazi: #ECEDE8; --soluk: #A7ABA3; --kenar: #2E332F; --birincil: #8CC5B0; --birincil-yazi: #102019; --indirim: #F08A73; --alt: #0F110F; --alt-yazi: #ECEDE8; --alt-soluk: #A7ABA3; --rozet: #8CC5B0; --rozet-yazi: #102019; --bag: #8CC5B0; --hero: #202A22; --hero-yazi: #ECEDE8; --hero-dugme: #8CC5B0; --hero-dugme-yazi: #102019; --firsat: #8CC5B0; --firsat-yazi: #102019; --k1: #202A22; --k2: #2C251E; --k3: #1E2630; --k4: #2E2122; --k5: #25222D; }
+.sayfa[data-yon="c"][data-tema="acik"] { --zemin: #FFFFFF; --yuzey: #F2F3F7; --yazi: #0D1021; --soluk: #4D5266; --kenar: #D6D9E3; --birincil: #2340FF; --birincil-yazi: #FFFFFF; --indirim: #C8102E; --alt: #0D1021; --alt-yazi: #F1F2F8; --alt-soluk: #A6ABC2; --rozet: #FFD43B; --rozet-yazi: #0D1021; --bag: #2340FF; --hero: #0D1021; --hero-yazi: #FFFFFF; --hero-dugme: #FFD43B; --hero-dugme-yazi: #0D1021; --firsat: #FFD43B; --firsat-yazi: #0D1021; --k1: #EEF1FF; --k2: #FFF6D6; --k3: #F0F0F0; --k4: #E8F7F1; --k5: #FDEBEF; }
+.sayfa[data-yon="c"][data-tema="koyu"] { --zemin: #0B0D18; --yuzey: #151829; --yazi: #F1F2F8; --soluk: #A6ABC2; --kenar: #262A40; --birincil: #6F82FF; --birincil-yazi: #0B0D18; --indirim: #FF6B81; --alt: #05060C; --alt-yazi: #F1F2F8; --alt-soluk: #A6ABC2; --rozet: #FFD43B; --rozet-yazi: #0B0D18; --bag: #8FA0FF; --hero: #1A1F3D; --hero-yazi: #F1F2F8; --hero-dugme: #FFD43B; --hero-dugme-yazi: #0B0D18; --firsat: #FFD43B; --firsat-yazi: #0B0D18; --k1: #1A2040; --k2: #2E2A14; --k3: #1E2130; --k4: #14291F; --k5: #30182A; }
+
+/* Biçim değerleri: yazı tipi, köşe, yoğunluk */
+.sayfa[data-yon="a"] { --font-govde: 'Inter', system-ui, sans-serif; --font-baslik: 'Jost', 'Inter', sans-serif; --baslik-agirlik: 600; --donusum: none; --harf: 0; --r: 8px; --r-kucuk: 4px; --r-dugme: 999px; --kart-kenar: 1px solid var(--kenar); --kart-golge: none; --bolum-arasi: 48px; --kart-ic: 12px; --govde-boyut: 14px; --h1: 48px; --h2: 24px; --sutun: 5; }
+.sayfa[data-yon="b"] { --font-govde: 'Manrope', system-ui, sans-serif; --font-baslik: 'Manrope', system-ui, sans-serif; --baslik-agirlik: 800; --donusum: none; --harf: -0.01em; --r: 16px; --r-kucuk: 8px; --r-dugme: 12px; --kart-kenar: 1px solid transparent; --kart-golge: 0 1px 3px rgba(35, 33, 30, 0.08), 0 6px 18px rgba(35, 33, 30, 0.05); --bolum-arasi: 80px; --kart-ic: 16px; --govde-boyut: 15px; --h1: 52px; --h2: 28px; --sutun: 4; }
+.sayfa[data-yon="c"] { --font-govde: 'Inter', system-ui, sans-serif; --font-baslik: 'Archivo', 'Inter', sans-serif; --baslik-agirlik: 800; --donusum: uppercase; --harf: 0.02em; --r: 0px; --r-kucuk: 0px; --r-dugme: 0px; --kart-kenar: 1px solid var(--kenar); --kart-golge: none; --bolum-arasi: 56px; --kart-ic: 12px; --govde-boyut: 14px; --h1: 52px; --h2: 26px; --sutun: 5; }
+
+.sayfa { container-type: inline-size; container-name: sayfa; background: var(--zemin); color: var(--yazi); font-family: var(--font-govde); font-size: var(--govde-boyut); line-height: 1.5; }
+.icerik { --sutun-yeni: 4; --sutun-kompakt: 4; --sutun-afis: 3; --sutun-kat: 5; --sutun-alt: 5; --sutun-uc: 3; --sutun-marka: 5; --sutun-ikili: 2; --sutun-guven: 4; --kenar-bosluk: 24px; }
+.sayfa[data-yon="b"] .icerik { --sutun-kompakt: 3; }
+.sayfa[data-yon="b"] .izgara-one > :nth-child(n + 5) { display: none; }
+.yalniz-tel { display: none; }
+.gizli { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Telefon genişliği: sayfanın kendi genişliğine göre */
+@container sayfa (max-width: 640px) {
+  .icerik { --sutun: 2; --sutun-yeni: 2; --sutun-kompakt: 1; --sutun-afis: 1; --sutun-kat: 3; --sutun-alt: 2; --sutun-uc: 1; --sutun-marka: 2; --sutun-ikili: 1; --sutun-guven: 2; --kenar-bosluk: 16px; --bolum-arasi: 40px; --h1: 32px; --h2: 22px; }
+  .sayfa[data-yon="b"] .icerik { --bolum-arasi: 56px; --sutun-kompakt: 1; }
+  .izgara-one > :nth-child(n + 5), .markalar > :nth-child(n + 5) { display: none; }
+  .icerik .yalniz-masa { display: none; }
+  .icerik .yalniz-tel { display: flex; }
+}
+
+:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.kap { max-width: 1240px; margin: 0 auto; padding: 0 var(--kenar-bosluk); }
+svg.ikon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.ikon-dugme { width: 44px; height: 44px; border: 0; background: transparent; color: var(--yazi); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+
+.duyuru { background: var(--alt); color: var(--alt-yazi); font-size: 13px; }
+.duyuru-kap { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px; }
+.ikonlu { display: inline-flex; align-items: center; gap: 6px; }
+.ikonlu svg.ikon { width: 16px; height: 16px; }
+
+header.ust { background: var(--zemin); border-bottom: 1px solid var(--kenar); }
+.ust-satir { display: flex; align-items: center; gap: 28px; padding-top: 18px; padding-bottom: 18px; }
+.logo { display: flex; align-items: center; gap: 10px; color: var(--yazi); text-decoration: none; flex-shrink: 0; }
+.logo-isaret { width: 36px; height: 36px; border-radius: var(--r-kucuk); background: var(--birincil); color: var(--birincil-yazi); display: flex; align-items: center; justify-content: center; font-family: var(--font-baslik); font-weight: 700; font-size: 18px; }
+.logo-ad { font-family: var(--font-baslik); font-weight: var(--baslik-agirlik); font-size: 22px; text-transform: var(--donusum); letter-spacing: var(--harf); }
+.arama { flex-grow: 1; max-width: 560px; display: flex; align-items: center; height: 44px; border: 1px solid var(--kenar); border-radius: var(--r-dugme); background: var(--yuzey); overflow: hidden; }
+.arama-girdi { flex-grow: 1; min-width: 0; height: 100%; border: 0; background: transparent; padding: 0 18px; color: var(--yazi); font: inherit; font-size: 14px; }
+.arama-girdi::placeholder { color: var(--soluk); }
+.arama-dugme { width: 44px; height: 44px; border: 0; background: var(--birincil); color: var(--birincil-yazi); display: flex; align-items: center; justify-content: center; border-radius: var(--r-dugme); cursor: pointer; }
+.ust-eylemler { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.ust-bag { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 10px; color: var(--yazi); text-decoration: none; font-size: 14px; }
+.sepet { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: var(--r-dugme); background: var(--yuzey); border: 1px solid var(--kenar); color: var(--yazi); text-decoration: none; font-size: 14px; font-weight: 600; }
+.sayi { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--rozet); color: var(--rozet-yazi); font-size: 12px; display: flex; align-items: center; justify-content: center; }
+.menu { border-top: 1px solid var(--kenar); }
+.menu-kap { display: flex; align-items: center; gap: 8px; }
+.kategori-dugme { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 18px; margin: 6px 12px 6px 0; border: 0; border-radius: var(--r-kucuk); background: var(--birincil); color: var(--birincil-yazi); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.menu-bag { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--yazi); text-decoration: none; font-size: 14px; font-weight: 500; }
+.tel-ust { flex-direction: column; gap: 10px; padding: 10px var(--kenar-bosluk); }
+.tel-satir { display: flex; align-items: center; gap: 4px; }
+.isaret-kucuk { width: 30px; height: 30px; font-size: 16px; }
+.ad-kucuk { font-size: 18px; }
+.arama-genis { max-width: none; }
+.girdi-buyuk { font-size: 16px; }
+
+.hero { background: var(--hero); color: var(--hero-yazi); }
+.hero-kap { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; padding-top: 40px; padding-bottom: 40px; }
+.hero-metin { flex: 1 1 320px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.etiket { align-self: flex-start; padding: 4px 10px; border-radius: var(--r-kucuk); background: var(--rozet); color: var(--rozet-yazi); font-size: 13px; font-weight: 700; }
+.hero-baslik { margin: 0; font-family: var(--font-baslik); font-weight: var(--baslik-agirlik); font-size: var(--h1); line-height: 1.08; text-transform: var(--donusum); letter-spacing: var(--harf); }
+.hero-metin-yazi { font-size: 17px; max-width: 440px; }
+.hero-fiyat { display: flex; align-items: baseline; gap: 12px; }
+.hero-fiyat strong { font-size: 28px; }
+.hero-fiyat s { font-size: 17px; }
+.hero-dugmeler { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.dugme-hero { display: inline-flex; align-items: center; min-height: 48px; padding: 0 28px; border-radius: var(--r-dugme); background: var(--hero-dugme); color: var(--hero-dugme-yazi); text-decoration: none; font-weight: 700; font-size: 15px; text-transform: var(--donusum); letter-spacing: var(--harf); }
+.gezinme { display: flex; align-items: center; gap: 4px; margin-left: 8px; }
+.yuvarlak { width: 44px; height: 44px; border-radius: 999px; border: 1px solid currentColor; background: transparent; color: inherit; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+.nokta { width: 28px; height: 44px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; color: inherit; }
+.nokta span { width: 10px; height: 10px; border-radius: 999px; border: 2px solid currentColor; }
+.nokta[aria-current="true"] span { background: currentColor; }
+.hero-gorsel { flex: 1 1 300px; display: flex; justify-content: center; min-width: 0; }
+.hero-gorsel img { width: 100%; max-width: 420px; aspect-ratio: 1; object-fit: contain; border-radius: var(--r); }
+
+main.ana { display: flex; flex-direction: column; gap: var(--bolum-arasi); padding: 28px 0 var(--bolum-arasi); }
+.izgara { display: grid; gap: 16px; }
+.bolum { display: flex; flex-direction: column; gap: 18px; }
+.bolum-ust { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h2.b2 { margin: 0; font-family: var(--font-baslik); font-weight: var(--baslik-agirlik); font-size: var(--h2); line-height: 1.15; text-transform: var(--donusum); letter-spacing: var(--harf); }
+h3.b3 { margin: 0; font-family: var(--font-baslik); font-weight: var(--baslik-agirlik); font-size: 22px; line-height: 1.2; text-transform: var(--donusum); letter-spacing: var(--harf); }
+.tumu { display: flex; align-items: center; min-height: 44px; color: var(--bag); font-size: 14px; font-weight: 600; }
+.soluk { color: var(--soluk); }
+.yer { border: 2px dashed var(--kenar); color: var(--soluk); font-size: 13px; text-align: center; padding: 8px; }
+
+.guven { grid-template-columns: repeat(var(--sutun-guven), minmax(0, 1fr)); }
+.guven-oge { display: flex; align-items: center; gap: 12px; justify-content: center; font-size: 14px; font-weight: 500; }
+.guven-ikon { width: 40px; height: 40px; border-radius: 999px; background: var(--yuzey); color: var(--bag); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+.afisler { grid-template-columns: repeat(var(--sutun-afis), minmax(0, 1fr)); }
+.kampanya { display: flex; align-items: center; gap: 12px; min-height: 190px; padding: 22px; border-radius: var(--r); color: var(--yazi); text-decoration: none; overflow: hidden; }
+.kampanya-metin { flex: 1 1 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.rozet-koyu { align-self: flex-start; padding: 3px 8px; border-radius: var(--r-kucuk); background: var(--yazi); color: var(--zemin); font-size: 12px; font-weight: 700; }
+.kampanya-baslik { font-family: var(--font-baslik); font-weight: var(--baslik-agirlik); font-size: 20px; line-height: 1.2; text-transform: var(--donusum); letter-spacing: var(--harf); }
+.alti-cizili { font-size: 13px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.kampanya img { width: 42%; aspect-ratio: 1; object-fit: contain; flex-shrink: 0; }
+
+.kategoriler { grid-template-columns: repeat(var(--sutun-kat), minmax(0, 1fr)); }
+.kategori { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--yazi); text-decoration: none; min-width: 0; font-size: 14px; font-weight: 600; text-align: center; }
+.kategori-kutu { width: 100%; aspect-ratio: 1; border-radius: var(--r); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.kategori-kutu img { width: 72%; height: 72%; object-fit: contain; }
+
+.izgara-one { grid-template-columns: repeat(var(--sutun), minmax(0, 1fr)); }
+.kart { display: flex; flex-direction: column; background: var(--zemin); border: var(--kart-kenar); border-radius: var(--r); box-shadow: var(--kart-golge); overflow: hidden; min-width: 0; }
+.kart-gorsel { position: relative; background: var(--yuzey); aspect-ratio: 1; display: flex; align-items: center; justify-content: center; }
+.kart-gorsel img { width: 86%; height: 86%; object-fit: contain; }
+.kart-rozet { position: absolute; top: 10px; left: 10px; padding: 3px 8px; border-radius: var(--r-kucuk); background: var(--rozet); color: var(--rozet-yazi); font-size: 12px; font-weight: 700; }
+.kart-rozet.tukendi { background: var(--yazi); color: var(--zemin); }
+.kart-gorsel .ikon-dugme { position: absolute; top: 4px; right: 4px; }
+.kart-govde { padding: var(--kart-ic); display: flex; flex-direction: column; gap: 6px; flex-grow: 1; }
+.ust-metin { font-size: 12px; color: var(--soluk); }
+.kart-ad { color: var(--yazi); text-decoration: none; font-size: 14px; font-weight: 500; line-height: 1.35; }
+.yildizlar { display: flex; gap: 2px; color: var(--soluk); }
+.yildizlar svg.ikon { width: 13px; height: 13px; }
+.fiyat { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+.fiyat strong { font-size: 16px; }
+.fiyat .indirimli { color: var(--indirim); }
+.fiyat s { font-size: 13px; color: var(--soluk); }
+.sayac-metni { font-size: 12px; font-weight: 600; color: var(--indirim); }
+
+.yan-afisli { display: flex; flex-wrap: wrap; gap: 16px; }
+.yan-afis { flex: 1 1 240px; display: flex; flex-direction: column; justify-content: space-between; gap: 16px; padding: 24px; border-radius: var(--r); background: var(--k3); min-height: 220px; }
+.yan-afis img { width: 70%; max-width: 200px; align-self: flex-end; aspect-ratio: 1; object-fit: contain; }
+.dugme-koyu { align-self: flex-start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; border-radius: var(--r-dugme); background: var(--yazi); color: var(--zemin); text-decoration: none; font-size: 14px; font-weight: 700; }
+.izgara-yeni { flex: 999 1 600px; min-width: 0; grid-template-columns: repeat(var(--sutun-yeni), minmax(0, 1fr)); }
+
+.ikili { grid-template-columns: repeat(var(--sutun-ikili), minmax(0, 1fr)); }
+.ikili-oge { display: flex; flex-wrap: wrap; border-radius: var(--r); background: var(--yuzey); overflow: hidden; min-width: 0; }
+.ikili-gorsel { flex: 1 1 180px; display: flex; align-items: center; justify-content: center; min-height: 200px; }
+.ikili-gorsel img { width: 80%; max-width: 240px; aspect-ratio: 1; object-fit: contain; }
+.ikili-metin { flex: 1 1 200px; padding: 24px; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.dugme-cerceve { align-self: flex-start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; border-radius: var(--r-dugme); border: 1.5px solid var(--yazi); color: var(--yazi); text-decoration: none; font-size: 14px; font-weight: 700; }
+
+.sekmeler { display: flex; gap: 6px; flex-wrap: wrap; }
+.sekme { min-height: 44px; padding: 0 16px; border-radius: var(--r-dugme); border: 1px solid var(--kenar); background: transparent; color: var(--yazi); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.sekme[aria-selected="true"] { background: var(--yazi); color: var(--zemin); border-color: var(--yazi); }
+.kompakt-izgara { grid-template-columns: repeat(var(--sutun-kompakt), minmax(0, 1fr)); gap: 12px; }
+.kompakt { display: flex; align-items: center; gap: 14px; padding: 12px; border: var(--kart-kenar); border-radius: var(--r); background: var(--zemin); box-shadow: var(--kart-golge); min-width: 0; }
+.kompakt-gorsel { width: 84px; height: 84px; flex-shrink: 0; border-radius: var(--r-kucuk); background: var(--yuzey); display: flex; align-items: center; justify-content: center; }
+.kompakt-gorsel img { width: 88%; height: 88%; object-fit: contain; }
+.kompakt .fiyat { margin-top: 0; }
+
+.firsat-panel { flex: 1 1 280px; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 28px; border-radius: var(--r); background: var(--firsat); color: var(--firsat-yazi); }
+.ust-yazi { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.sayac { display: flex; gap: 8px; }
+.sayac-kutu { display: flex; flex-direction: column; align-items: center; min-width: 64px; padding: 10px 8px; border-radius: var(--r-kucuk); background: var(--zemin); color: var(--yazi); font-size: 12px; }
+.sayac-kutu strong { font-size: 24px; line-height: 1.1; }
+.izgara-firsat { flex: 999 1 560px; min-width: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.uclu { grid-template-columns: repeat(var(--sutun-uc), minmax(0, 1fr)); }
+.yorum { margin: 0; display: flex; flex-direction: column; gap: 12px; padding: 24px; border-radius: var(--r); background: var(--yuzey); }
+.yorum blockquote { margin: 0; font-size: 15px; }
+.yorum .yildizlar svg.ikon { width: 16px; height: 16px; }
+.yorum figcaption { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+.avatar { width: 36px; height: 36px; border-radius: 999px; background: var(--kenar); }
+
+.genis-afis { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; padding: 32px; border-radius: var(--r); background: var(--alt); color: var(--alt-yazi); text-decoration: none; overflow: hidden; }
+.genis-afis-metin { flex: 1 1 300px; display: flex; flex-direction: column; gap: 10px; }
+.genis-baslik { font-family: var(--font-baslik); font-weight: var(--baslik-agirlik); font-size: 32px; line-height: 1.1; text-transform: var(--donusum); letter-spacing: var(--harf); }
+.alt-soluk { color: var(--alt-soluk); font-size: 16px; }
+.genis-fiyat { font-size: 22px; font-weight: 700; }
+.genis-afis img { flex: 0 1 240px; width: 240px; max-width: 100%; aspect-ratio: 1; object-fit: contain; }
+
+.blog { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.blog-gorsel { aspect-ratio: 16 / 10; border-radius: var(--r); background: var(--yuzey); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.blog h3 { margin: 0; font-family: var(--font-baslik); font-weight: var(--baslik-agirlik); font-size: 18px; line-height: 1.3; }
+.blog .tumu { color: var(--bag); }
+
+.markalar { grid-template-columns: repeat(var(--sutun-marka), minmax(0, 1fr)); }
+.marka { height: 76px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--kenar); border-radius: var(--r); color: var(--yazi); text-decoration: none; font-family: var(--font-baslik); font-size: 18px; font-weight: 700; letter-spacing: 0.04em; }
+.marka.yer { border: 2px dashed var(--kenar); font-family: var(--font-govde); font-weight: 400; font-size: 13px; color: var(--soluk); letter-spacing: 0; }
+
+.bulten { background: var(--birincil); color: var(--birincil-yazi); }
+.bulten-kap { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; padding-top: 28px; padding-bottom: 28px; }
+.bulten-metin { flex: 1 1 320px; display: flex; flex-direction: column; gap: 6px; }
+.bulten-baslik { margin: 0; font-family: var(--font-baslik); font-weight: var(--baslik-agirlik); font-size: 24px; text-transform: var(--donusum); letter-spacing: var(--harf); }
+.cerceve-etiket { align-self: flex-start; padding: 2px 8px; border: 1px solid currentColor; border-radius: var(--r-kucuk); font-size: 12px; font-weight: 600; }
+.bulten-form { flex: 1 1 340px; display: flex; flex-direction: column; gap: 6px; }
+.bulten-etiket { font-size: 14px; font-weight: 600; }
+.bulten-satir { display: flex; gap: 8px; flex-wrap: wrap; }
+.bulten-girdi { flex: 1 1 200px; min-width: 0; height: 48px; border: 0; border-radius: var(--r-dugme); background: var(--zemin); color: var(--yazi); padding: 0 16px; font: inherit; font-size: 15px; }
+.bulten-dugme { height: 48px; padding: 0 24px; border: 0; border-radius: var(--r-dugme); background: var(--yazi); color: var(--zemin); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+
+.alt { background: var(--alt); color: var(--alt-yazi); }
+.alt-kap { padding-top: 44px; padding-bottom: 24px; display: flex; flex-direction: column; gap: 32px; }
+.alt-sutunlar { grid-template-columns: repeat(var(--sutun-alt), minmax(0, 1fr)); gap: 28px; }
+.alt-sutun { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.alt-baslik { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.alt-bag { color: var(--alt-soluk); text-decoration: none; min-height: 32px; display: flex; align-items: center; }
+.iletisim { display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: var(--alt-soluk); }
+.alt-logo { font-size: 18px; color: var(--alt-yazi); }
+.alt-satir { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding-top: 20px; border-top: 1px solid var(--alt-soluk); font-size: 13px; color: var(--alt-soluk); }
+.odemeler { display: flex; gap: 8px; }
+.odeme { padding: 4px 10px; border: 1px solid var(--alt-soluk); border-radius: var(--r-kucuk); }
+</style>
+</head>
+<body>
+
+<div class="arac-cubugu" role="toolbar" aria-label="Taslak seçimi">
+  <div class="grup"><span>Seçenek</span>
+    <button type="button" data-yon="a">A · Canlı Çarşı</button>
+    <button type="button" data-yon="b">B · Yumuşak Mevsim</button>
+    <button type="button" data-yon="c">C · Keskin Çizgi</button>
+  </div>
+  <div class="grup"><span>Tema</span>
+    <button type="button" data-tema="acik">Açık</button>
+    <button type="button" data-tema="koyu">Koyu</button>
+  </div>
+  <div class="grup"><span>Genişlik</span>
+    <button type="button" data-gorunum="masaustu">Masaüstü</button>
+    <button type="button" data-gorunum="telefon">Telefon</button>
+  </div>
+  <a href="genel-bakis.html">Genel bakış</a>
+</div>
+
+<div class="sahne" id="sahne">
+<div class="sayfa" id="sayfa" data-yon="a" data-tema="acik">
+<div class="icerik">
+
+  <div class="duyuru">
+    <div class="kap duyuru-kap">
+      <span>[TUTAR] üzeri siparişlerde ücretsiz kargo</span>
+      <span class="ikonlu yalniz-masa"><svg class="ikon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>+90 312 000 00 00</span>
+    </div>
+  </div>
+
+  <header class="ust">
+    <div class="yalniz-masa">
+      <div class="kap ust-satir">
+        <a href="#sayfa" class="logo"><span class="logo-isaret">Ö</span><span class="logo-ad">Örnek Mağaza</span></a>
+        <div class="arama">
+          <input class="arama-girdi" type="search" aria-label="Ürün ara" placeholder="Ürün, kategori ya da marka ara">
+          <button type="button" class="arama-dugme" aria-label="Ara"><svg class="ikon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+        </div>
+        <div class="ust-eylemler">
+          <a href="#sayfa" class="ust-bag"><svg class="ikon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Giriş yap</a>
+          <a href="#sayfa" class="ikon-dugme"><span class="gizli">Favoriler</span><svg class="ikon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg></a>
+          <a href="#sayfa" class="sepet"><svg class="ikon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>Sepet <span class="sayi">0</span></a>
+        </div>
+      </div>
+      <nav class="menu" aria-label="Ana menü">
+        <div class="kap menu-kap">
+          <button type="button" class="kategori-dugme"><svg class="ikon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Kategoriler<svg class="ikon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          <a class="menu-bag" href="#sayfa">Ana sayfa</a><a class="menu-bag" href="#sayfa">Giyim</a><a class="menu-bag" href="#sayfa">Ev ve Yaşam</a><a class="menu-bag" href="#sayfa">Elektronik Aksesuar</a><a class="menu-bag" href="#sayfa">Blog</a><a class="menu-bag" href="#sayfa">İletişim</a>
+        </div>
+      </nav>
+    </div>
+    <div class="yalniz-tel tel-ust">
+      <div class="tel-satir">
+        <button type="button" class="ikon-dugme" aria-label="Menüyü aç" style="margin-left: -10px"><svg class="ikon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <a href="#sayfa" class="logo"><span class="logo-isaret isaret-kucuk">Ö</span><span class="logo-ad ad-kucuk">Örnek Mağaza</span></a>
+        <a href="#sayfa" class="ikon-dugme" style="margin-left: auto"><span class="gizli">Hesabım</span><svg class="ikon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></a>
+        <a href="#sayfa" class="ikon-dugme" style="margin-right: -10px"><span class="gizli">Sepet, 0 ürün</span><svg class="ikon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></a>
+      </div>
+      <div class="arama arama-genis">
+        <input class="arama-girdi girdi-buyuk" type="search" aria-label="Ürün ara" placeholder="Ürün ara">
+        <button type="button" class="arama-dugme" aria-label="Ara"><svg class="ikon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero" aria-roledescription="kayan afiş" aria-label="Öne çıkan kampanyalar">
+    <div class="kap hero-kap">
+      <div class="hero-metin">
+        <span class="etiket" id="slayt-ust"></span>
+        <h1 class="hero-baslik" id="slayt-baslik">Kablosuz Kulaklık</h1>
+        <p class="hero-metin-yazi" id="slayt-metin"></p>
+        <div class="hero-fiyat"><strong id="slayt-fiyat"></strong><s id="slayt-eski"></s></div>
+        <div class="hero-dugmeler">
+          <a href="#sayfa" class="dugme-hero">Ürünü incele</a>
+          <div class="gezinme">
+            <button type="button" class="yuvarlak" id="onceki" aria-label="Önceki afiş"><svg class="ikon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+            <span id="noktalar" style="display: flex"></span>
+            <button type="button" class="yuvarlak" id="sonraki" aria-label="Sonraki afiş"><svg class="ikon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div class="hero-gorsel"><img id="slayt-gorsel" src="" alt=""></div>
+    </div>
+  </section>
+
+  <main class="ana">
+    <section aria-label="Alışveriş güvenceleri"><div class="kap izgara guven" id="guven"></div></section>
+    <section aria-label="Kampanyalar"><div class="kap izgara afisler" id="kampanyalar"></div></section>
+
+    <section aria-labelledby="b-kategoriler">
+      <div class="kap bolum">
+        <h2 class="b2" id="b-kategoriler">Kategoriler</h2>
+        <div class="izgara kategoriler" id="kategoriler"></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="b-one">
+      <div class="kap bolum">
+        <div class="bolum-ust"><h2 class="b2" id="b-one">Öne çıkanlar</h2><a href="#sayfa" class="tumu">Tümünü gör</a></div>
+        <div class="izgara izgara-one" id="one-cikan"></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="b-yeni">
+      <div class="kap yan-afisli">
+        <div class="yan-afis">
+          <div class="bolum" style="gap: 8px"><h2 class="b2" id="b-yeni">Yeni gelenler</h2><p>Kataloğa son eklenen ürünler.</p></div>
+          <img src="../../siteler/ornek-magaza/baslangic/gorseller/kapusonlu-sweatshirt-gri.png" alt="">
+          <a href="#sayfa" class="dugme-koyu">Tümünü gör</a>
+        </div>
+        <div class="izgara izgara-yeni" id="yeni-gelen"></div>
+      </div>
+    </section>
+
+    <section aria-label="Tanıtımlar"><div class="kap izgara ikili" id="ikili"></div></section>
+
+    <section aria-labelledby="b-sekmeli">
+      <div class="kap bolum">
+        <div class="bolum-ust" style="justify-content: flex-start; gap: 16px">
+          <h2 class="b2" id="b-sekmeli">Kategoriye göre</h2>
+          <div class="sekmeler" role="tablist" aria-label="Kategoriler" id="sekmeler"></div>
+        </div>
+        <div class="izgara kompakt-izgara" role="tabpanel" id="sekme-urunleri"></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="b-firsat">
+      <div class="kap yan-afisli">
+        <div class="firsat-panel">
+          <span class="ust-yazi">Süreli fırsatlar</span>
+          <h2 class="b2" id="b-firsat">İndirimler 1 Aralık'ta bitiyor</h2>
+          <div class="sayac" role="timer" aria-label="Kalan süre" id="sayac"></div>
+        </div>
+        <div class="izgara izgara-firsat" id="firsatlar"></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="b-yorum">
+      <div class="kap bolum">
+        <h2 class="b2" id="b-yorum">Müşterilerimiz ne diyor</h2>
+        <div class="izgara uclu" id="yorumlar"></div>
+      </div>
+    </section>
+
+    <section aria-label="Yakında">
+      <div class="kap">
+        <a href="#sayfa" class="genis-afis">
+          <div class="genis-afis-metin">
+            <span class="etiket">1 Aralık'ta satışta</span>
+            <span class="genis-baslik">Yılbaşı Kupa Seti</span>
+            <span class="alt-soluk">Yeni yıla özel desenli iki kupalık hediye seti.</span>
+            <span class="genis-fiyat">399,90 ₺</span>
+          </div>
+          <img src="../../siteler/ornek-magaza/baslangic/gorseller/yilbasi-kupa-seti-1.png" alt="Kırmızı yılbaşı kupası">
+        </a>
+      </div>
+    </section>
+
+    <section aria-labelledby="b-blog">
+      <div class="kap bolum">
+        <h2 class="b2" id="b-blog">Blogdan</h2>
+        <div class="izgara uclu" id="blog"></div>
+      </div>
+    </section>
+
+    <section aria-label="Markalar"><div class="kap izgara markalar" id="markalar"></div></section>
+  </main>
+
+  <section class="bulten" aria-labelledby="b-bulten">
+    <div class="kap bulten-kap">
+      <div class="bulten-metin">
+        <span class="cerceve-etiket">Bülten eklentisi kurulunca görünür</span>
+        <h2 class="bulten-baslik" id="b-bulten">Bültenimize katılın</h2>
+        <p>Yeni ürünleri ve fırsatları ilk siz duyun.</p>
+      </div>
+      <div class="bulten-form">
+        <label class="bulten-etiket" for="bulten-eposta">E-posta adresiniz</label>
+        <div class="bulten-satir">
+          <input class="bulten-girdi" id="bulten-eposta" type="email" autocomplete="email">
+          <button type="button" class="bulten-dugme">Kaydol</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="alt">
+    <div class="kap alt-kap">
+      <div class="izgara alt-sutunlar" id="alt-sutunlar"></div>
+      <div class="alt-satir">
+        <span>© 2026 Örnek Mağaza</span>
+        <div class="odemeler"><span class="odeme">Havale</span><span class="odeme">Kapıda ödeme</span></div>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</div>
+</div>
+
+<script>
+// Kart 0101 taslağı: içerik Örnek Mağaza'nın başlangıç kataloğundan elle alındı.
+const GORSEL = '../../siteler/ornek-magaza/baslangic/gorseller/';
+const IKON = {
+  kalp: '<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>',
+  yildiz: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+  kargo: '<path d="M3 6h11v10H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>',
+  paket: '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
+  iade: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
+  odeme: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M16 15h2"/>'
+};
+const ikon = (ad) => `<svg class="ikon" viewBox="0 0 24 24" aria-hidden="true">${IKON[ad]}</svg>`;
+const yildizlar = (etiket) => `<span class="yildizlar" aria-label="${etiket}">${ikon('yildiz').repeat(5)}</span>`;
+
+const urun = (ad, ust, fiyat, eski, rozet, dosya, alt, tukendi) => ({ ad, ust, fiyat, eski, rozet, img: GORSEL + dosya, alt, tukendi: !!tukendi });
+const U = {
+  kulaklik: urun('Kablosuz Kulaklık', 'Örnek Ses', '999,00 ₺', '1.299,00 ₺', '%23', 'kablosuz-kulaklik-1.png', 'Lacivert kablosuz kulaklık, önden'),
+  sweatLacivert: urun('Kapüşonlu Sweatshirt', 'Giyim', '549,90 ₺', '649,90 ₺', '%15', 'kapusonlu-sweatshirt-lacivert.png', 'Lacivert kapüşonlu sweatshirt, önden'),
+  sweatGri: urun('Kapüşonlu Sweatshirt', 'Giyim', '649,90 ₺', null, null, 'kapusonlu-sweatshirt-gri.png', 'Gri kapüşonlu sweatshirt, önden'),
+  tisortSiyah: urun('Basic Tişört', 'Giyim', '299,90 – 329,90 ₺', null, null, 'basic-tisort-siyah.png', 'Siyah tişört, önden'),
+  tisortBeyaz: urun('Basic Tişört', 'Giyim', '299,90 – 329,90 ₺', null, null, 'basic-tisort-beyaz.png', 'Beyaz tişört, önden'),
+  masaOrtusu: urun('Keten Masa Örtüsü', 'Ev ve Yaşam', '449,90 ₺', null, null, 'keten-masa-ortusu-1.png', 'Gri keten masa örtüsü, katlanmış'),
+  kupa: urun('Porselen Kupa', 'Ev ve Yaşam', '189,90 ₺', null, null, 'porselen-kupa-1.png', 'Mavi porselen kupa, yandan'),
+  kablo: urun('USB-C Şarj Kablosu 1 m', 'Elektronik Aksesuar', '149,90 ₺', null, null, 'usb-c-sarj-kablosu-1-m-1.png', 'Gri USB-C şarj kablosu, iki ucuyla'),
+  canta: urun('Pamuklu Bez Çanta', 'Giyim', '129,90 ₺', null, null, 'pamuklu-bez-canta-1.png', 'Bej pamuklu bez çanta, saplarıyla önden', true)
+};
+
+const fiyatHtml = (u) => `<div class="fiyat"><strong class="${u.eski ? 'indirimli' : ''}">${u.fiyat}</strong>${u.eski ? `<s>${u.eski}</s>` : ''}</div>`;
+const kartHtml = (u, ustSatir = '') => `
+  <article class="kart">
+    <div class="kart-gorsel">
+      <img src="${u.img}" alt="${u.alt}">
+      ${u.tukendi ? '<span class="kart-rozet tukendi">Tükendi</span>' : u.rozet ? `<span class="kart-rozet">${u.rozet}</span>` : ''}
+      <button type="button" class="ikon-dugme" aria-label="Favorilere ekle">${ikon('kalp')}</button>
+    </div>
+    <div class="kart-govde">
+      ${ustSatir}
+      <span class="ust-metin">${u.ust}</span>
+      <a href="#sayfa" class="kart-ad">${u.ad}</a>
+      ${yildizlar('Henüz puan yok')}
+      ${fiyatHtml(u)}
+    </div>
+  </article>`;
+const kompaktHtml = (u) => `
+  <article class="kompakt">
+    <span class="kompakt-gorsel"><img src="${u.img}" alt="${u.alt}"></span>
+    <div class="bolum" style="gap: 4px; min-width: 0">
+      <a href="#sayfa" class="kart-ad">${u.ad}</a>
+      ${fiyatHtml(u)}
+      ${u.tukendi ? '<span class="ust-metin" style="font-weight: 600">Tükendi</span>' : ''}
+    </div>
+  </article>`;
+const doldur = (id, html) => { document.getElementById(id).innerHTML = html; };
+
+// Kayan afiş
+const slaytlar = [
+  { ust: '%23 indirim', baslik: 'Kablosuz Kulaklık', metin: 'Kablo derdi olmadan müzik ve görüşme için.', fiyat: '999,00 ₺', eski: '1.299,00 ₺', img: 'kablosuz-kulaklik-2.png', alt: 'Lacivert kablosuz kulaklık' },
+  { ust: 'Her gün', baslik: 'Basic Tişört', metin: 'Sade kesimli, yumuşak pamuklu. Siyah ve beyaz, S–XL.', fiyat: '299,90 ₺', eski: '', img: 'basic-tisort-beyaz.png', alt: 'Beyaz tişört, önden' },
+  { ust: 'Ev ve Yaşam', baslik: 'Keten Masa Örtüsü', metin: 'Sofraya doğal bir görünüm katar.', fiyat: '449,90 ₺', eski: '', img: 'keten-masa-ortusu-1.png', alt: 'Gri keten masa örtüsü, katlanmış' }
+];
+let slayt = 0;
+function slaytGoster(i) {
+  slayt = (i + slaytlar.length) % slaytlar.length;
+  const s = slaytlar[slayt];
+  document.getElementById('slayt-ust').textContent = s.ust;
+  document.getElementById('slayt-baslik').textContent = s.baslik;
+  document.getElementById('slayt-metin').textContent = s.metin;
+  document.getElementById('slayt-fiyat').textContent = s.fiyat;
+  document.getElementById('slayt-eski').textContent = s.eski;
+  const g = document.getElementById('slayt-gorsel');
+  g.src = GORSEL + s.img;
+  g.alt = s.alt;
+  doldur('noktalar', slaytlar.map((_, n) => `<button type="button" class="nokta" aria-label="${n + 1}. afiş" aria-current="${n === slayt}" data-n="${n}"><span></span></button>`).join(''));
+}
+document.getElementById('onceki').onclick = () => slaytGoster(slayt - 1);
+document.getElementById('sonraki').onclick = () => slaytGoster(slayt + 1);
+document.getElementById('noktalar').onclick = (e) => { const b = e.target.closest('[data-n]'); if (b) slaytGoster(Number(b.dataset.n)); };
+slaytGoster(0);
+
+doldur('guven', [
+  ['kargo', '[TUTAR] üzeri ücretsiz kargo'], ['paket', '[X] iş gününde kargoda'],
+  ['iade', '14 gün içinde iade'], ['odeme', 'Havale ve kapıda ödeme']
+].map(([i, m]) => `<div class="guven-oge"><span class="guven-ikon">${ikon(i)}</span><span>${m}</span></div>`).join(''));
+
+doldur('kampanyalar', [
+  { rozet: '%15 indirim', baslik: 'Kapüşonlu Sweatshirt', metin: 'Lacivert renkte 15 Kasım – 1 Aralık', zemin: 'k2', img: 'kapusonlu-sweatshirt-lacivert.png', alt: 'Lacivert kapüşonlu sweatshirt' },
+  { rozet: '%23 indirim', baslik: 'Kablosuz Kulaklık', metin: '999,00 ₺', zemin: 'k1', img: 'kablosuz-kulaklik-1.png', alt: 'Lacivert kablosuz kulaklık' },
+  { rozet: 'Yeni', baslik: 'Porselen Kupa', metin: '189,90 ₺', zemin: 'k4', img: 'porselen-kupa-1.png', alt: 'Mavi porselen kupa' }
+].map((k) => `
+  <a href="#sayfa" class="kampanya" style="background: var(--${k.zemin})">
+    <div class="kampanya-metin">
+      <span class="rozet-koyu">${k.rozet}</span>
+      <span class="kampanya-baslik">${k.baslik}</span>
+      <span>${k.metin}</span>
+      <span class="alti-cizili">İncele</span>
+    </div>
+    <img src="${GORSEL + k.img}" alt="${k.alt}">
+  </a>`).join(''));
+
+doldur('kategoriler', [
+  { ad: 'Giyim', img: 'basic-tisort-siyah.png', zemin: 'k1' },
+  { ad: 'Ev ve Yaşam', img: 'porselen-kupa-1.png', zemin: 'k2' },
+  { ad: 'Elektronik Aksesuar', img: 'kablosuz-kulaklik-1.png', zemin: 'k3' },
+  null, null
+].map((c) => c
+  ? `<a href="#sayfa" class="kategori"><span class="kategori-kutu" style="background: var(--${c.zemin})"><img src="${GORSEL + c.img}" alt=""></span>${c.ad}</a>`
+  : '<div class="kategori"><span class="kategori-kutu yer">[Kategori görseli]</span><span class="soluk">[Yeni kategori]</span></div>').join(''));
+
+doldur('one-cikan', [U.kulaklik, U.sweatLacivert, U.tisortSiyah, U.masaOrtusu, U.kupa].map((u) => kartHtml(u)).join(''));
+doldur('yeni-gelen', [U.kablo, U.canta, U.tisortBeyaz, U.sweatGri].map((u) => kartHtml(u)).join(''));
+
+doldur('ikili', [
+  { baslik: 'Keten Masa Örtüsü', metin: 'Sofraya doğal bir görünüm katan keten masa örtüsü.', img: 'keten-masa-ortusu-1.png', alt: 'Gri keten masa örtüsü', zemin: 'k5' },
+  { baslik: 'USB-C Şarj Kablosu', metin: 'Telefon ve tabletler için 1 metrelik şarj kablosu.', img: 'usb-c-sarj-kablosu-1-m-1.png', alt: 'Gri USB-C şarj kablosu', zemin: 'k4' }
+].map((i) => `
+  <div class="ikili-oge">
+    <div class="ikili-gorsel" style="background: var(--${i.zemin})"><img src="${GORSEL + i.img}" alt="${i.alt}"></div>
+    <div class="ikili-metin"><h3 class="b3">${i.baslik}</h3><p class="soluk">${i.metin}</p><a href="#sayfa" class="dugme-cerceve">İncele</a></div>
+  </div>`).join(''));
+
+const sekmeler = [
+  { id: 'giyim', ad: 'Giyim', urunler: [U.tisortSiyah, U.sweatGri, U.canta] },
+  { id: 'ev', ad: 'Ev ve Yaşam', urunler: [U.masaOrtusu, U.kupa, U.canta] },
+  { id: 'elektronik', ad: 'Elektronik Aksesuar', urunler: [U.kulaklik, U.kablo] }
+];
+function sekmeGoster(id) {
+  doldur('sekmeler', sekmeler.map((s) => `<button type="button" class="sekme" role="tab" aria-selected="${s.id === id}" data-sekme="${s.id}">${s.ad}</button>`).join(''));
+  doldur('sekme-urunleri', sekmeler.find((s) => s.id === id).urunler.map(kompaktHtml).join(''));
+}
+document.getElementById('sekmeler').onclick = (e) => { const b = e.target.closest('[data-sekme]'); if (b) sekmeGoster(b.dataset.sekme); };
+sekmeGoster('giyim');
+
+// Geri sayım: indirimin bitişi kataloğdaki tarihtir (1 Aralık 00.00, İstanbul saati).
+function sayacGuncelle() {
+  const kalan = Math.max(0, Date.parse('2026-12-01T00:00:00+03:00') - Date.now());
+  const gun = Math.floor(kalan / 86400000);
+  const saat = Math.floor((kalan % 86400000) / 3600000);
+  const dakika = Math.floor((kalan % 3600000) / 60000);
+  const iki = (n) => String(n).padStart(2, '0');
+  doldur('sayac', [[gun, 'gün'], [saat, 'saat'], [dakika, 'dakika']].map(([d, b]) => `<span class="sayac-kutu"><strong>${iki(d)}</strong>${b}</span>`).join(''));
+  const ust = `<span class="sayac-metni">Bitmesine ${gun} gün ${saat} saat</span>`;
+  doldur('firsatlar', [U.kulaklik, U.sweatLacivert].map((u) => kartHtml(u, ust)).join(''));
+}
+sayacGuncelle();
+setInterval(sayacGuncelle, 30000);
+
+doldur('yorumlar', [1, 2, 3].map(() => `
+  <figure class="yorum">
+    ${yildizlar('[Puan]')}
+    <blockquote>[Müşteri yorumu. Onaylanan yorumlar burada görünür.]</blockquote>
+    <figcaption><span class="avatar"></span>[Müşteri adı]</figcaption>
+  </figure>`).join(''));
+
+doldur('blog', [1, 2, 3].map(() => `
+  <article class="blog">
+    <span class="blog-gorsel yer">[Blog görseli]</span>
+    <span class="ust-metin">[Tarih]</span>
+    <h3>[Blog yazısının başlığı]</h3>
+    <p class="soluk">[Yazının ilk iki satırı burada görünür.]</p>
+    <a href="#sayfa" class="tumu">Devamını oku</a>
+  </article>`).join(''));
+
+doldur('markalar', ['<a href="#sayfa" class="marka">Örnek Ses</a>'].concat(Array(4).fill('<span class="marka yer">[Marka logosu]</span>')).join(''));
+
+doldur('alt-sutunlar', [
+  '<div class="iletisim"><span class="logo-ad alt-logo">Örnek Mağaza</span><span>Deneme Sokak No: 1<br>06000 Ankara</span><span>+90 312 000 00 00</span><span>iletisim@ornek-magaza.test</span></div>'
+].concat([
+  ['Hesabım', ['Giriş yap', 'Siparişlerim', 'Favorilerim', 'Adreslerim']],
+  ['Kategoriler', ['Giyim', 'Ev ve Yaşam', 'Elektronik Aksesuar']],
+  ['Kurumsal', ['Hakkımızda', 'İletişim', 'Blog']],
+  ['Yasal', ['Mesafeli satış sözleşmesi', 'Ön bilgilendirme formu', 'KVKK aydınlatma metni', 'Çerez politikası', 'İade koşulları']]
+].map(([b, l]) => `<nav class="alt-sutun" aria-label="${b}"><span class="alt-baslik">${b}</span>${l.map((x) => `<a class="alt-bag" href="#sayfa">${x}</a>`).join('')}</nav>`)).join(''));
+
+// Seçim çubuğu: seçim adres satırında da durur (secenekler.html?yon=b&tema=koyu&gorunum=telefon).
+const durum = { yon: 'a', tema: 'acik', gorunum: 'masaustu' };
+const adres = new URLSearchParams(location.search);
+for (const k of Object.keys(durum)) if (adres.get(k)) durum[k] = adres.get(k);
+function uygula() {
+  const sayfa = document.getElementById('sayfa');
+  sayfa.dataset.yon = durum.yon;
+  sayfa.dataset.tema = durum.tema;
+  document.getElementById('sahne').classList.toggle('telefon', durum.gorunum === 'telefon');
+  for (const b of document.querySelectorAll('.arac-cubugu button')) {
+    const [k] = Object.keys(b.dataset);
+    b.setAttribute('aria-pressed', String(durum[k] === b.dataset[k]));
+  }
+  try { history.replaceState(null, '', `?${new URLSearchParams(durum)}`); } catch (e) { /* file:// adresinde izin verilmeyebilir */ }
+}
+document.querySelector('.arac-cubugu').onclick = (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const [k] = Object.keys(b.dataset);
+  durum[k] = b.dataset[k];
+  uygula();
+};
+uygula();
+</script>
+</body>
+</html>
