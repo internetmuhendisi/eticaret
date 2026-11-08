@@ -30,4 +30,4 @@
 
 ## Durum
 
-yapılacak
+bitti
