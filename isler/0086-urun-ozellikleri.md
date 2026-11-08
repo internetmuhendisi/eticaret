@@ -27,4 +27,4 @@ Bölüm: Katalog 2. Önce 0084 bitmiş olmalı.
 
 ## Durum
 
-yapılacak
+bitti
