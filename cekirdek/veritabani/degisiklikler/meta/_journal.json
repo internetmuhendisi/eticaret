@@ -120,6 +120,13 @@
       "when": 1794096650288,
       "tag": "0016_marka-ve-etiket",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794099021664,
+      "tag": "0017_ilgili-urunler",
+      "breakpoints": true
     }
   ]
 }

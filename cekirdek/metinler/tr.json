@@ -137,7 +137,10 @@
         "kategori-gecersiz": "Seçilen kategorilerden biri bulunamadı ya da silinmiş. Kategorileri yeniden seçin.",
         "marka-gecersiz": "Seçilen marka bulunamadı ya da silinmiş. Başka bir marka seçin.",
         "etiket-tekrar": "Aynı etiket iki kez seçilmiş. Etiketi bir kez seçin.",
-        "etiket-gecersiz": "Seçilen etiketlerden biri bulunamadı ya da silinmiş. Etiketleri yeniden seçin."
+        "etiket-gecersiz": "Seçilen etiketlerden biri bulunamadı ya da silinmiş. Etiketleri yeniden seçin.",
+        "ilgili-tekrar": "Aynı ürün ilgili ürünlerde iki kez seçilmiş. Ürünü bir kez seçin.",
+        "ilgili-kendisi": "Ürün kendi ilgili ürünü olamaz. Listeden çıkarın.",
+        "ilgili-gecersiz": "Seçilen ilgili ürünlerden biri bulunamadı ya da silinmiş. İlgili ürünleri yeniden seçin."
       }
     },
     "marka": {

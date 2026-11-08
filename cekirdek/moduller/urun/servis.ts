@@ -37,6 +37,7 @@ import {
   gruplariKaldir,
   kilitliBagliGruplar,
 } from "./baglantilar.ts";
+import { ilgilileriYaz, ilgiliSecimHatasi, secilenIlgililer } from "./ilgili.ts";
 import { urunKilidiAl } from "./kilit.ts";
 import { urunBirimleri, urunler } from "./model.ts";
 import {
@@ -79,6 +80,8 @@ export type Urun = {
   etiketler: string[];
   // Markanın kimliği; null markasız (kart 0078).
   marka: string | null;
+  // Elle seçilen ilgili ürünler, seçim sırasıyla; silinmiş olanlar görünmez (kart 0079).
+  ilgiliUrunler: string[];
   silindi: boolean;
   birimler: UrunBirimi[];
 };
@@ -106,6 +109,8 @@ type UrunKaydi = {
   kategoriler: string[];
   etiketler: string[];
   marka: string | null;
+  // Elle seçilen ilgili ürünler, seçim sırasıyla (ilgili.ts). Sıralanmaz: sıra seçimin parçasıdır.
+  ilgiliUrunler: string[];
 };
 
 // Bağlantı alanının kimlik listesi: marka tekildir, kayıtta tek kimlik durur.
@@ -132,6 +137,7 @@ const kayitAlanlari = [
   "kategoriler",
   "etiketler",
   "marka",
+  "ilgiliUrunler",
 ] as const satisfies readonly (keyof UrunKaydi)[];
 
 type Sorun = { alan: string; kod: string };
@@ -332,6 +338,12 @@ export const urunServisi = (saatDilimi: () => string) => {
       return new Set(satirlar.map((satir) => satir.adresAdi));
     });
 
+  // Elle seçilen ilgili ürünler (ilgili.ts): ürün kendisini seçemez, seçilenler var ve silinmemiş.
+  const ilgilileriDenetle = async (islem: VeritabaniIslemi, urun: string, liste: string[]) => {
+    const kod = await ilgiliSecimHatasi(islem, urun, liste);
+    if (kod !== undefined) throw dogrulamaHatasi([{ alan: "ilgiliUrunler", kod }]);
+  };
+
   const tekligiDenetle = async (
     islem: VeritabaniIslemi,
     kayit: UrunKaydi,
@@ -379,12 +391,14 @@ export const urunServisi = (saatDilimi: () => string) => {
       kategoriler: (girdi.kategoriler ?? []).toSorted(),
       etiketler: (girdi.etiketler ?? []).toSorted(),
       marka: girdi.marka ?? null,
+      ilgiliUrunler: girdi.ilgiliUrunler ?? [],
     });
     return yaz(vt, async (islem) => {
+      const kimlik = randomUUID();
       await vergiSinifiniDenetle(islem, kayit.vergiSinifi);
       await gruplariDenetle(islem, (alan) => gruplari(kayit, alan));
+      await ilgilileriDenetle(islem, kimlik, kayit.ilgiliUrunler);
       await tekligiDenetle(islem, kayit);
-      const kimlik = randomUUID();
       const adresAdi = kayit.adresAdi ?? (await adresAdiBul(islem, kayit.ad, kimlik));
       const yazilacak = { ...kayit, adresAdi };
       await islem.insert(urunler).values({ kimlik, ...urunSatiri(yazilacak) });
@@ -392,6 +406,7 @@ export const urunServisi = (saatDilimi: () => string) => {
       for (const t of baglantiTanimlari) {
         await gruplariBagla(islem, t, kimlik, gruplari(yazilacak, t.alan));
       }
+      await ilgilileriYaz(islem, kimlik, yazilacak.ilgiliUrunler);
       await degisikligiKaydet(islem, {
         kim,
         islem: "urun.eklendi",
@@ -422,6 +437,7 @@ export const urunServisi = (saatDilimi: () => string) => {
       durum: urun.durum as UrunDurumu,
       ...birimKaydi,
       ...bagli,
+      ilgiliUrunler: await secilenIlgililer(islem, kimlik),
     };
     return { kayit, birimKimligi };
   };
@@ -456,6 +472,8 @@ export const urunServisi = (saatDilimi: () => string) => {
       const eklenen = fark(yeni, eski);
       const kalkan = fark(eski, yeni);
       await gruplariDenetle(islem, eklenen);
+      const ilgiliDegisti = degisen.includes("ilgiliUrunler");
+      if (ilgiliDegisti) await ilgilileriDenetle(islem, kimlik, yeni.ilgiliUrunler);
       await tekligiDenetle(
         islem,
         {
@@ -481,6 +499,7 @@ export const urunServisi = (saatDilimi: () => string) => {
         await gruplariKaldir(islem, t, kimlik, kalkan(t.alan));
         await gruplariBagla(islem, t, kimlik, eklenen(t.alan));
       }
+      if (ilgiliDegisti) await ilgilileriYaz(islem, kimlik, yeni.ilgiliUrunler);
       const sec = (kaynak: UrunKaydi) =>
         kayitDegeri(Object.fromEntries(degisen.map((alan) => [alan, kaynak[alan]])), true);
       await degisikligiKaydet(islem, {
@@ -530,6 +549,7 @@ export const urunServisi = (saatDilimi: () => string) => {
       durum: durum as UrunDurumu,
       vergiSinifi,
       ...(await bagliHepsi((t) => bagliGruplar(vt, t, kimlik))),
+      ilgiliUrunler: await secilenIlgililer(vt, kimlik),
       silindi: silinme !== null,
       birimler: birimler.map(({ silinme: birimSilinme, ...birim }) => ({
         ...doluAlanlar(birim),

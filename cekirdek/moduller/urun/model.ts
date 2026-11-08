@@ -24,6 +24,7 @@ import {
   index,
   integer,
   pgTable,
+  primaryKey,
   text,
   uniqueIndex,
   uuid,
@@ -103,5 +104,27 @@ export const urunBirimleri = pgTable(
       "urun_birimleri_olcu",
       sql`coalesce(${tablo.agirlik_gram}, 0) >= 0 and coalesce(${tablo.en_mm}, 0) >= 0 and coalesce(${tablo.boy_mm}, 0) >= 0 and coalesce(${tablo.yukseklik_mm}, 0) >= 0`,
     ),
+  ],
+);
+
+// Ürünün elle seçilen ilgili ürünleri (kart 0079, karar 0065). Sıra tutulur, küçük önce. Ürün kendisine
+// bağlanamaz. Bağlanan ürün sonradan silinirse satır kalır, vitrin listesi (ilgili.ts) onu süzer.
+//
+// Aranan alanlar: urun_kimligi birincil anahtarın ilk alanıdır, bir ürünün ilgilileri oradan okunur.
+export const urunIlgilileri = pgTable(
+  "urun_ilgilileri",
+  {
+    urun_kimligi: uuid()
+      .notNull()
+      .references(() => urunler.kimlik, { onDelete: "restrict" }),
+    ilgili_kimligi: uuid()
+      .notNull()
+      .references(() => urunler.kimlik, { onDelete: "restrict" }),
+    sira: integer().notNull(),
+    olusturma_zamani: zaman().notNull().defaultNow(),
+  },
+  (tablo) => [
+    primaryKey({ columns: [tablo.urun_kimligi, tablo.ilgili_kimligi] }),
+    check("urun_ilgilileri_kendisi", sql`${tablo.urun_kimligi} <> ${tablo.ilgili_kimligi}`),
   ],
 );

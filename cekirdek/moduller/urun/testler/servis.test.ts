@@ -355,6 +355,7 @@ describe("alanlar", () => {
       kategoriler: [],
       etiketler: [],
       marka: null,
+      ilgiliUrunler: [],
       silindi: false,
       birimler: [
         {

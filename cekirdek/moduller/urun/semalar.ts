@@ -30,6 +30,11 @@ export const urunHatalari = [
   "marka-gecersiz",
   "etiket-tekrar",
   "etiket-gecersiz",
+  // Elle seçilen ilgili ürünler (kart 0079): aynı ürün iki kez, ürünün kendisi, olmayan ya da
+  // silinmiş ürün.
+  "ilgili-tekrar",
+  "ilgili-kendisi",
+  "ilgili-gecersiz",
 ] as const;
 export type UrunHatasi = (typeof urunHatalari)[number];
 
@@ -50,6 +55,9 @@ export const urunHataMetinleri = {
   "marka-gecersiz": "yonetim.urun.hata.marka-gecersiz",
   "etiket-tekrar": "yonetim.urun.hata.etiket-tekrar",
   "etiket-gecersiz": "yonetim.urun.hata.etiket-gecersiz",
+  "ilgili-tekrar": "yonetim.urun.hata.ilgili-tekrar",
+  "ilgili-kendisi": "yonetim.urun.hata.ilgili-kendisi",
+  "ilgili-gecersiz": "yonetim.urun.hata.ilgili-gecersiz",
 } as const satisfies Record<UrunHatasi, MetinAnahtari>;
 
 const hata = (kod: UrunHatasi) => kod;
@@ -103,6 +111,12 @@ const alanlar = {
   etiketler: kimlikListesi("etiket-tekrar"),
   // Ürünün markası (kart 0078); null ürünü markasız yapar.
   marka: z.uuid().nullable(),
+  // Elle seçilen ilgili ürünler (kart 0079): sırası tutulur. Vitrinde en çok ilgiliUrunSiniri kadarı
+  // görünür (ilgili.ts); fazlası, öncekiler vitrinden çıkarsa yerlerini alır.
+  ilgiliUrunler: z
+    .array(z.uuid())
+    .max(20)
+    .refine((liste) => new Set(liste).size === liste.length, hata("ilgili-tekrar")),
 };
 
 // Yeni ürün. Verilmeyen adres adı addan üretilir; zamanlanmış durum dışında yayın zamanı yok sayılır.
@@ -126,6 +140,7 @@ export const urunGirdisi = z.strictObject({
   kategoriler: alanlar.kategoriler.optional(),
   etiketler: alanlar.etiketler.optional(),
   marka: alanlar.marka.optional(),
+  ilgiliUrunler: alanlar.ilgiliUrunler.optional(),
 });
 export type UrunGirdisi = z.input<typeof urunGirdisi>;
 
@@ -152,5 +167,7 @@ export const urunDegisikligi = z.strictObject({
   kategoriler: alanlar.kategoriler.optional(),
   etiketler: alanlar.etiketler.optional(),
   marka: alanlar.marka.optional(),
+  // Verilirse elle seçilen ilgili ürünler bu liste olur (sırasıyla); boş liste seçimi kaldırır.
+  ilgiliUrunler: alanlar.ilgiliUrunler.optional(),
 });
 export type UrunDegisikligi = z.input<typeof urunDegisikligi>;
