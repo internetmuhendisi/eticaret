@@ -30,4 +30,4 @@ Her satılabilir birimin tek depoda stoğu olur. Stok yalnız tek bir servisle d
 
 ## Durum
 
-yapılacak
+bitti
