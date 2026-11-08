@@ -128,6 +128,17 @@ describe("eski fiyat", () => {
     expect(eskiFiyatiBul(karisik, gun(35), "XAA", true)).toBeUndefined();
   });
 
+  it("aynı anda yazılmış iki satırdan sonraki geçer, öncekinin süresi sıfırdır", () => {
+    // Gün 10'da iki satır: 110,00 hiç uygulanmadı, 130,00 uygulandı. Pencere gün 11–41: en düşük 130,00.
+    const ayniAn = [
+      satir(0, 12_000),
+      satir(10, 11_000),
+      { ...satir(10, 13_000), kimlik: "satir-10-ikinci" },
+      satir(40, 13_000, { fiyat: 10_000, bas: 41 }),
+    ];
+    expect(eskiFiyatiBul(ayniAn, gun(45), "XTS", true)).toBe(13_000);
+  });
+
   it("verilen andan sonra yazılan satırlar hesaba girmez", () => {
     expect(eskiFiyatiBul(gecmis, gun(39), "XTS", true)).toBeUndefined();
     expect(eskiFiyatiBul([...gecmis, satir(60, 9_000)], gun(45), "XTS", true)).toBe(10_500);

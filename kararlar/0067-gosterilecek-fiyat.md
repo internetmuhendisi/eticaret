@@ -9,7 +9,9 @@
 Vitrin, sepet ve e-posta bir birimin fiyatını yalnız `gosterilecekFiyatlar` (`cekirdek/moduller/fiyat/gosterim.ts`) ile alır (kart 0081). Geçerli fiyatı kart 0080'in `gecerliFiyat` işlevi verir; bu kart onu gösterilecek biçime çevirir.
 
 - **Vergi dahil ya da hariç gösterim:** Mağaza ayarı `fiyatGosterimi` (varsayılan vergi dahil). Fiyatın girildiği biçimden (`fiyatGirisi`) farklıysa tutar vergi hesabıyla (`hesapla`, karar 0061) bir adet olarak çevrilir; ikisi aynıysa ya da vergi kapalıysa hesap yapılmaz. Bölge verilmezse mağaza adresinin bölgesi kullanılır: ürün sayfasında müşterinin adresi bilinmez. Sepet, teslimat adresi bilinince bölgeyi verir.
-- **Fiyatın yanındaki metin:** Mağaza ayarı `fiyatEkMetni`. Yazılmazsa vergi adından ve gösterimden kurulur ("<vergi adı> dahil" ya da "hariç"; vergi adı yoksa "Vergiler dahil"); vergi kapalıysa metin yoktur. Boş metin hiçbir şey göstermez. Metin kalıbı metin dosyasındadır, çekirdekte vergi adı yazmaz.
+- **Fiyatın yanındaki metin:** Mağaza ayarı `fiyatEkMetni`. Yazılmazsa vergi adından ve tutarın vergi durumundan kurulur ("<vergi adı> dahil" ya da "hariç"; vergi adı yoksa "Vergiler dahil"). Vergi kapalıysa ya da ürün vergisizse (sınıfı yok) tutarın vergisi "yok"tur ve kendiliğinden metin yoktur; mağaza sahibinin yazdığı metin yine görünür. Boş metin hiçbir şey göstermez. Metin kalıbı metin dosyasındadır, çekirdekte vergi adı yazmaz.
+- **Bölge bulunamazsa vitrin düşmez:** Çevirme gerekirken vergi hesabı bölge bulamazsa (mağaza adresi yok ya da tabloda değil; karar 0061 hesabı durdurur) tutar girildiği biçimde, kendi vergi durumu ve metniyle gösterilir; hata süreç başına bir kez kaydedilir. Tutar ve metin birbirini tutar: yanlış tutar gösterilmez, yalnız mağazanın seçtiği gösterim uygulanamaz.
+- **Çevrilmiş tutarlar yeniden karşılaştırılır:** Eski fiyat ve indirimli fiyat çevrilince aynı kuruşa yuvarlanabilir; çevrilmiş eski fiyat yüksek değilse gösterilmez.
 - **Eski fiyat (kullanıcı kararları):** Mağaza ayarı `indirimdeEnDusukFiyat` (varsayılan açık).
   - Açıksa eski fiyat, indirimin başladığı andan önceki 30 günde uygulanan en düşük fiyattır. 30 gün bugünden değil indirimin başlangıcından geriye sayılır. Önceki indirimler bu fiyata dahildir.
   - İndirim fiyatı değişerek kesintisiz sürdüyse başlangıç ilk indirimdir; ara verilip yeniden başlayan indirimin başlangıcı yenisidir.
@@ -42,7 +44,10 @@ Vitrin, sepet ve e-posta bir birimin fiyatını yalnız `gosterilecekFiyatlar` (
 - Her site `ayarlar.json` dosyasına `paraBirimi` yazmak zorundadır; yazmayan doğrulamadan geçmez. Yeni site kurma komutu bunu sormalıdır.
 - 30 gün kuralının yasal dayanağı hukukçuya sorulacaktır (kart 0081). Yorum değişirse yalnız `eski-fiyat.ts` ve testi değişir.
 - Ürün sayfasında vergi, mağaza adresinin bölgesiyle çevrilir. Farklı oranlı bölgeye gönderilen siparişte sepet tutarı ürün sayfasındakinden farklı olabilir; yalnız giriş ve gösterim farklıyken olur.
-- Vergi açık, giriş ve gösterim farklı, mağaza adresi boş ve tablo bölgesiz ise vergi hesabı durur (karar 0061) ve fiyat gösterilemez. Panel mağaza adresini zorunlu tutmalıdır.
+- Vergi açık, giriş ve gösterim farklı ve bölge bulunamıyorsa fiyat seçilen gösterimle değil girildiği biçimle görünür, hata kaydedilir (bağımsız kontrolün bulgusu). Panel, gösterim girişten farklıyken mağaza adresini zorunlu tutmalıdır.
+- Bölgede oranı olmayan sınıftaki ürün (karar 0061: o ürüne vergi uygulanmaz) çevrilir ama vergisi sıfırdır; metni yine "dahil" der. Yalnız sınıfı olmayan ürün "vergi yok" sayılır.
+- Geçmiş verilen ana kadar (`an`) okunur, geçerli fiyat bugünkü satırdan. Uygulamanın saati veritabanınınkinin gerisindeyse yeni yazılmış indirimin eski fiyatı saat farkı kadar görünmeyebilir. İkisi aynı sunucuda çalışır; fark ölçülmedi.
+- Komutların kurduğu deneme sitelerinin ayarları tek yerdedir (`komutlar/deneme-sitesi-ayarlari.mts`); ayar dosyası yazan her komutun onu kullandığını test denetler. Yayın denemesinin deneme sitesi bu işte unutulmuştu, bağımsız kontrol buldu.
 - Gösterim tutarı her birim için tek başına yuvarlanır; sepet toplamı vergiyi kendi satırlarıyla hesaplar. Ara toplam yuvarlamalı sitede sepet toplamı ürün sayfasındaki tutarların toplamından bir iki kuruş farklı olabilir.
 - Geçmiş sayfasız okunur. Birim başına satır sayısı fiyat değişikliği kadardır; toplu fiyat değişikliği gelince ölçülmelidir.
 - Silinmiş birimin ve görünmeyen ürünün fiyatı da gelir (karar 0066); vitrin ve sepet birimi önce kendi koşuluyla süzer.

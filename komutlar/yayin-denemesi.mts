@@ -19,6 +19,7 @@ import { join } from "node:path";
 import { type Site, siteKlasorunuDogrula } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { cekirdekSurumu } from "../cekirdek/surum.ts";
 import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
+import { denemeSitesiAyarDosyasi } from "./deneme-sitesi-ayarlari.mts";
 import {
   denemeSiteNumarasi,
   ikinciDenemeSiteNumarasi,
@@ -98,7 +99,7 @@ const siteKlasoru = (kodAdi: string, gorunenAd: string): { klasor: string; site:
     teslimDurumu: { magazaSahibiHesabi: "gerekmez", yurtDisiAktarimBelgeleri: "gerekmez" },
   };
   writeFileSync(join(klasor, "kimlik.json"), `${JSON.stringify(kimlik, null, 2)}\n`);
-  writeFileSync(join(klasor, "ayarlar.json"), "{}\n");
+  writeFileSync(join(klasor, "ayarlar.json"), denemeSitesiAyarDosyasi());
   const sonuc = siteKlasorunuDogrula(klasor);
   if (!sonuc.gecerli) throw new Error(`Deneme sitesi geçersiz: ${sonuc.hatalar.join("; ")}`);
   return { klasor, site: sonuc.site };

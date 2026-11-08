@@ -11,6 +11,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { MagazaAyarlari } from "../../../ayar-semasi/ayarlar.ts";
 import { siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
+import { gunluk } from "../../../izleme/gunluk.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { siteninServisi } from "../../magaza-ayarlari/servis.ts";
@@ -111,10 +112,34 @@ describe("vergi dahil ve hariç gösterim", () => {
     expect(sonuc.eskiTutar).toBeUndefined();
   });
 
-  it("vergisiz ürün çevrilmez", async () => {
+  it("vergisiz ürün çevrilmez, vergisi yok, kendiliğinden metni yok", async () => {
     const h = await hazirla({ fiyatGosterimi: "vergi-haric" }, false);
     await h.fiyat.fiyatYaz(h.vt, yonetici(), h.birim, { satisFiyati: 10_000 });
-    expect((await gosterileni(h)).tutar).toBe(10_000);
+    const sonuc = await gosterileni(h);
+    expect(sonuc).toMatchObject({ tutar: 10_000, vergi: "yok" });
+    expect(sonuc.ekMetin).toBeUndefined();
+    // Mağaza sahibinin kendi metni yine görünür.
+    await h.ayarla({ fiyatEkMetni: "Kargo hariç" });
+    expect((await gosterileni(h)).ekMetin).toBe("Kargo hariç");
+  });
+
+  it("bölge bulunamazsa vitrin düşmez: tutar girildiği biçimde, kendi metniyle; hata bir kez", async () => {
+    const h = await hazirla({ magazaAdresi: undefined, fiyatGosterimi: "vergi-haric" });
+    await h.fiyat.fiyatYaz(h.vt, yonetici(), h.birim, { satisFiyati: 10_000 });
+    const hata = vi.spyOn(gunluk, "hata").mockImplementation(() => undefined);
+    try {
+      for (let i = 0; i < 3; i++) {
+        expect(await gosterileni(h)).toMatchObject({
+          tutar: 10_000,
+          vergi: "vergi-dahil",
+          ekMetin: "Deneme vergisi dahil",
+        });
+      }
+      expect(hata).toHaveBeenCalledTimes(1);
+      expect(hata.mock.calls[0]?.[1]).toMatchObject({ kaynak: "fiyat-gosterimi" });
+    } finally {
+      hata.mockRestore();
+    }
   });
 
   it("vergi kapalıysa çevrilmez, metin yok", async () => {
@@ -161,8 +186,12 @@ describe("eski fiyat geçmişten", () => {
     { zaman: 20, satis: 13_000 },
     { zaman: 40, satis: 13_000, indirim: 10_000, bas: 41 },
   ];
-  const gecmisiKur = async (h: Awaited<ReturnType<typeof hazirla>>) => {
-    for (const s of satirlar) {
+  type Satir = { zaman: number; satis: number; indirim?: number; bas?: number; bit?: number };
+  const gecmisiKur = async (
+    h: Awaited<ReturnType<typeof hazirla>>,
+    kurulacak: Satir[] = satirlar,
+  ) => {
+    for (const s of kurulacak) {
       await h.vt.insert(fiyatGecmisi).values({
         birim_kimligi: h.birim,
         zaman: gun(s.zaman),
@@ -173,11 +202,13 @@ describe("eski fiyat geçmişten", () => {
         para_birimi: h.site.ayarlar.paraBirimi,
       });
     }
+    const son = kurulacak.at(-1);
+    if (son === undefined) throw new Error("Satır yok.");
     await h.vt.insert(birimFiyatlari).values({
       birim_kimligi: h.birim,
-      satis_fiyati: 13_000,
-      indirimli_fiyat: 10_000,
-      indirim_baslangici: gun(41),
+      satis_fiyati: son.satis,
+      indirimli_fiyat: son.indirim ?? null,
+      indirim_baslangici: son.bas === undefined ? null : gun(son.bas),
       para_birimi: h.site.ayarlar.paraBirimi,
     });
   };
@@ -203,6 +234,20 @@ describe("eski fiyat geçmişten", () => {
     await gecmisiKur(h);
     // 10000 → 8475; 10500 × 18 / 118 = 1601,69 → 1602, 10500 − 1602 = 8898.
     expect(await gosterileni(h, gun(45))).toMatchObject({ tutar: 8_475, eskiTutar: 8_898 });
+  });
+
+  it("çevrilince aynı kuruşa yuvarlanan eski fiyat gösterilmez", async () => {
+    const h = await hazirla({ fiyatGosterimi: "vergi-haric" });
+    // Girişte en düşük 4 kuruş, indirimli 3 kuruş. Hariç: 4 × 18 / 118 = 0,61 → 1, 4 − 1 = 3;
+    // 3 × 18 / 118 = 0,46 → 0, 3 − 0 = 3. İkisi de 3 kuruş.
+    await gecmisiKur(h, [
+      { zaman: 0, satis: 4 },
+      { zaman: 40, satis: 10, indirim: 3, bas: 41 },
+    ]);
+    const sonuc = await gosterileni(h, gun(45));
+    expect(sonuc).toMatchObject({ tutar: 3, indirimde: true });
+    expect(sonuc.eskiTutar).toBeUndefined();
+    expect(sonuc.yazili.eskiTutar).toBeUndefined();
   });
 });
 
