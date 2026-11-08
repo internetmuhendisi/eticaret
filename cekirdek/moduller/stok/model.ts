@@ -26,7 +26,11 @@ export const birimStoklari = pgTable(
     miktar: integer().notNull().default(0),
     guncellenme_zamani: zaman().notNull().defaultNow(),
   },
-  (tablo) => [check("birim_stoklari_miktar", sql`${tablo.miktar} >= 0`)],
+  // Üst sınır semalar.ts'deki enCokStok ile aynıdır (testle denetlenir): servis aşan artırmayı kendi
+  // hatasıyla reddeder, bu ikinci ağdır.
+  (tablo) => [
+    check("birim_stoklari_miktar", sql`${tablo.miktar} >= 0 and ${tablo.miktar} <= 1000000000`),
+  ],
 );
 
 export const stokGecmisi = pgTable(

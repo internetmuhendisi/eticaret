@@ -171,6 +171,8 @@
       "hata": {
         "miktar-bicimi": "Stok sıfır ya da sıfırdan büyük bir tam sayı olmalı.",
         "adet-bicimi": "Adet sıfırdan büyük bir tam sayı olmalı.",
+        "miktar-siniri": "Bu miktar stok için çok büyük. Daha küçük bir sayı girin.",
+        "not-uzun": "Not çok uzun. Kısaltıp yeniden kaydedin.",
         "stok-yetersiz": "Bu üründen yeterli stok yok.",
         "birim-gecersiz": "Bu ürün artık satılmıyor.",
         "stok-degisti": "Siz düzeltirken stok değişti. Güncel miktara bakıp yeniden kaydedin.",

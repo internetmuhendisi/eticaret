@@ -3,7 +3,7 @@ CREATE TABLE "birim_stoklari" (
 	"birim_kimligi" uuid PRIMARY KEY NOT NULL,
 	"miktar" integer DEFAULT 0 NOT NULL,
 	"guncellenme_zamani" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "birim_stoklari_miktar" CHECK ("birim_stoklari"."miktar" >= 0)
+	CONSTRAINT "birim_stoklari_miktar" CHECK ("birim_stoklari"."miktar" >= 0 and "birim_stoklari"."miktar" <= 1000000000)
 );
 --> statement-breakpoint
 CREATE TABLE "stok_gecmisi" (

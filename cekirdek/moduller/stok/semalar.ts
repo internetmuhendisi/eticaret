@@ -7,11 +7,14 @@
 import { z } from "zod";
 import { elleStokSebepleri, type StokSebebi } from "../../kayitlar/stok.ts";
 import type { MetinAnahtari } from "../../metinler/metin.ts";
-import { kayitMetni, kayitMetniHatasi } from "../degisiklik-kaydi/deger.ts";
+import { kayitDegeriYasakMi, kayitMetniHatasi } from "../degisiklik-kaydi/deger.ts";
 
 export const stokHatalari = [
   "miktar-bicimi",
   "adet-bicimi",
+  // Miktar ya da artırmanın sonucu üst sınırı (enCokStok) aşıyor.
+  "miktar-siniri",
+  "not-uzun",
   // Düşürmede birimin stoğu yetmiyor.
   "stok-yetersiz",
   // Düşürmede birim ya da ürünü silinmiş: satılamaz.
@@ -28,6 +31,8 @@ export type StokHatasi = (typeof stokHatalari)[number];
 export const stokHataMetinleri = {
   "miktar-bicimi": "yonetim.stok.hata.miktar-bicimi",
   "adet-bicimi": "yonetim.stok.hata.adet-bicimi",
+  "miktar-siniri": "yonetim.stok.hata.miktar-siniri",
+  "not-uzun": "yonetim.stok.hata.not-uzun",
   "stok-yetersiz": "yonetim.stok.hata.stok-yetersiz",
   "birim-gecersiz": "yonetim.stok.hata.birim-gecersiz",
   "stok-degisti": "yonetim.stok.hata.stok-degisti",
@@ -49,18 +54,45 @@ export const stokSebepMetinleri = {
 
 const hata = (kod: StokHatasi) => kod;
 
-// Miktarın üst sınırı: veritabanındaki tam sayının (2^31 - 1) çok altında, artırmada taşmasın.
+// Miktarın üst sınırı: veritabanındaki tam sayının (2^31 - 1) altında, iki sınırın toplamı da taşmaz.
+// Veritabanındaki denetim (birim_stoklari_miktar) aynı sayıyı kullanır, testle denetlenir. Servis
+// toplanmış adedi ve artırmanın sonucunu da bu sınırla denetler (kart 0082 kontrolü).
 export const enCokStok = 1_000_000_000;
 
-const miktar = z.int(hata("miktar-bicimi")).min(0, hata("miktar-bicimi")).max(enCokStok);
-const adet = z.int(hata("adet-bicimi")).min(1, hata("adet-bicimi")).max(enCokStok);
+const miktar = z
+  .int(hata("miktar-bicimi"))
+  .min(0, hata("miktar-bicimi"))
+  .max(enCokStok, hata("miktar-siniri"));
+const adet = z
+  .int(hata("adet-bicimi"))
+  .min(1, hata("adet-bicimi"))
+  .max(enCokStok, hata("miktar-siniri"));
+
+export const notUzunlugu = 500;
+
+// Boş ya da yalnız boşluklu not yazılmamış sayılır: "diğer"de "not-gerekli" alır (kart 0082 kontrolü).
+// Kurallar kayitMetni ile aynıdır (kırpılır, kayda yazılamayan değer olamaz, NFC); her sorun ekranın
+// tanıdığı tek bir kodla döner.
+const not = z.string().transform((deger, ctx) => {
+  const temiz = deger.trim();
+  if (temiz === "") return undefined;
+  const kod =
+    temiz.length > notUzunlugu
+      ? hata("not-uzun")
+      : kayitDegeriYasakMi(temiz)
+        ? hata(kayitMetniHatasi)
+        : undefined;
+  if (kod === undefined) return temiz.normalize("NFC");
+  ctx.addIssue({ code: "custom", message: kod });
+  return z.NEVER;
+});
 
 export const elleDuzeltme = z.strictObject({
   yeniMiktar: miktar,
   // Ekranın düzeltmeden önce gösterdiği miktar.
   gorulenMiktar: miktar,
   sebep: z.enum(elleStokSebepleri),
-  not: kayitMetni(500).optional(),
+  not: not.optional(),
 });
 export type ElleDuzeltme = z.input<typeof elleDuzeltme>;
 

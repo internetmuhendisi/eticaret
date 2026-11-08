@@ -14,7 +14,10 @@
 // - Kilit sırası hep aynıdır: önce ürün ve birim satırları paylaşımlı (takip ve silinme okunurken
 //   değişmesin), sonra birimin stok satırı. Birden çok kalem birim kimliği sırasıyla işlenir: iki
 //   sipariş aynı birimleri ters sırada kilitleyip birbirini beklemez. Ürünün işlem kilidi
-//   (urun/kilit.ts) alınmaz: bütün siparişler tek kuyruğa girerdi.
+//   (urun/kilit.ts) alınmaz: bütün siparişler tek kuyruğa girerdi. Çağıran, aynı işlemde düşürmeden ya
+//   da artırmadan sonra ürünün işlem kilidini almaz (ürün ya da fiyat yazmaz): ürün değişikliği önce o
+//   kilidi alıp sonra bu işlemin paylaşımlı kilitlediği ürün satırını bekler, iki işlem birbirini
+//   bekleyip kilitlenir. Gerekirse kilit düşürmeden önce alınır (kart 0082 kontrolü).
 // - Düşürme ya da artırma bir kalemde reddedilirse o çağrının bütün kalemleri geri alınır (iç kayıt
 //   noktası); çağıranın işlemi hatayı yakalarsa geri kalanı bozulmadan sürebilir.
 //
@@ -37,6 +40,7 @@ import { birimStoklari, stokGecmisi } from "./model.ts";
 import {
   type ElleDuzeltme,
   elleDuzeltme,
+  enCokStok,
   type StokHatasi,
   type StokKalemi,
   stokHatalari,
@@ -80,6 +84,11 @@ const kalemleriTopla = (ham: StokKalemi[]): { birim: string; adet: number }[] =>
   const kalemler = girdiyiDogrula(stokKalemleri.safeParse(ham));
   const toplam = new Map<string, number>();
   for (const { birim, adet } of kalemler) toplam.set(birim, (toplam.get(birim) ?? 0) + adet);
+  // Toplanmış adet de sınırın içinde kalır (kart 0082 kontrolü): tek kalem sınırı şemadadır.
+  const asan = [...toplam].filter(([, adet]) => adet > enCokStok);
+  if (asan.length > 0) {
+    throw dogrulamaHatasi(asan.map(([birim]) => sorun("kalemler", "miktar-siniri", birim)));
+  }
   return [...toplam]
     .map(([birim, adet]) => ({ birim, adet }))
     .toSorted((a, b) => (a.birim < b.birim ? -1 : a.birim > b.birim ? 1 : 0));
@@ -215,9 +224,14 @@ export const stokServisi = () => {
               miktar: sql`${birimStoklari.miktar} + ${adet}`,
               guncellenme_zamani: sql`now()`,
             },
+            // Sonuç sınırı aşarsa satır değişmez, sorgu satır döndürmez (kart 0082 kontrolü).
+            setWhere: sql`${birimStoklari.miktar} + ${adet} <= ${enCokStok}`,
           })
           .returning({ miktar: birimStoklari.miktar });
-        if (yeni === undefined) throw new Error("Stok satırı yazılamadı.");
+        if (yeni === undefined) {
+          sorunlar.push(sorun("kalemler", "miktar-siniri", birim));
+          continue;
+        }
         await gecmiseYaz(ic, {
           birim,
           onceki: yeni.miktar - adet,

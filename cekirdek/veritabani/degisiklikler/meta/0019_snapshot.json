@@ -1,5 +1,5 @@
 {
-  "id": "5005867c-98d3-44c9-aad2-cf2bd5ce11ae",
+  "id": "b723d7b2-c86c-4053-b7a3-4564c893c08e",
   "prevId": "f24a94f9-6452-4776-a0b2-413f297023fa",
   "version": "7",
   "dialect": "postgresql",
@@ -2383,7 +2383,7 @@
       "checkConstraints": {
         "birim_stoklari_miktar": {
           "name": "birim_stoklari_miktar",
-          "value": "\"birim_stoklari\".\"miktar\" >= 0"
+          "value": "\"birim_stoklari\".\"miktar\" >= 0 and \"birim_stoklari\".\"miktar\" <= 1000000000"
         }
       },
       "isRLSEnabled": false

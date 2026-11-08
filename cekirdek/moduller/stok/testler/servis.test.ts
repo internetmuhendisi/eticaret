@@ -15,6 +15,7 @@ import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { urunServisi } from "../../urun/servis.ts";
 import { birimStoklari, stokGecmisi } from "../model.ts";
+import { enCokStok } from "../semalar.ts";
 import { stokServisi } from "../servis.ts";
 
 const servis = stokServisi();
@@ -84,7 +85,8 @@ const kilitBekleyeniGor = async (vt: Veritabani) => {
   const ad = (await vt.execute<{ ad: string }>(sql`select current_database() as ad`)).rows[0]?.ad;
   const yonetici = baglan(yoneticiAdresi("postgres"));
   try {
-    for (let deneme = 0; deneme < 200; deneme++) {
+    // Yüklü kontrol hattında da yetsin: en çok 20 saniye (kart 0082 kontrolü).
+    for (let deneme = 0; deneme < 800; deneme++) {
       const sonuc = await yonetici.execute<{ sayi: number }>(
         sql`select count(*)::int as sayi from pg_stat_activity where datname = ${ad} and wait_event_type = 'Lock'`,
       );
@@ -533,6 +535,94 @@ describe("elle düzeltme", () => {
     ).rejects.toThrow();
     expect(await miktari(vt, birim)).toBe(2);
     expect(await gecmis(vt, birim)).toHaveLength(1);
+  });
+});
+
+describe("sınırlar (kart 0082 kontrolü)", () => {
+  it("toplanmış adet sınırı aşarsa reddedilir; artırmanın sonucu sınırı aşamaz", async () => {
+    const vt = await siteAc();
+    const { birim } = await birimAc(vt, 5);
+    const artir = (kalemler: { birim: string; adet: number }[]) =>
+      vt.transaction((islem) =>
+        servis.stokArtir(islem, yonetici(), kalemler, { sebep: "siparis-iptali" }),
+      );
+    expect(
+      await hatasi(
+        artir([
+          { birim, adet: enCokStok },
+          { birim, adet: 1 },
+        ]),
+      ),
+    ).toEqual({ kod: "dogrulama", ayrinti: [{ alan: "kalemler", kod: "miktar-siniri", birim }] });
+    expect(await hatasi(artir([{ birim, adet: enCokStok }]))).toEqual({
+      kod: "cakisma",
+      ayrinti: [{ alan: "kalemler", kod: "miktar-siniri", birim }],
+    });
+    expect(await hatasi(artir([{ birim, adet: enCokStok + 1 }]))).toEqual({
+      kod: "dogrulama",
+      ayrinti: [{ alan: "0.adet", kod: "miktar-siniri" }],
+    });
+    expect(await miktari(vt, birim)).toBe(5);
+    // Sınıra kadar artırılır, sonra panelden düzeltilebilir.
+    await artir([{ birim, adet: enCokStok - 5 }]);
+    expect(await miktari(vt, birim)).toBe(enCokStok);
+    await servis.stokDuzelt(vt, yonetici(), birim, {
+      yeniMiktar: 3,
+      gorulenMiktar: enCokStok,
+      sebep: "sayim",
+    });
+    expect(await miktari(vt, birim)).toBe(3);
+  });
+
+  it("veritabanının üst sınırı servisteki sınırla aynı", async () => {
+    const vt = await siteAc();
+    const { birim } = await birimAc(vt, 1);
+    await vt
+      .update(birimStoklari)
+      .set({ miktar: enCokStok })
+      .where(eq(birimStoklari.birim_kimligi, birim));
+    await expect(
+      vt
+        .update(birimStoklari)
+        .set({ miktar: enCokStok + 1 })
+        .where(eq(birimStoklari.birim_kimligi, birim)),
+    ).rejects.toMatchObject({ cause: { code: "23514" } });
+  });
+
+  it("sınırı aşan miktar, boş ve uzun not ekranın tanıdığı kodla döner", async () => {
+    const vt = await siteAc();
+    const { birim } = await birimAc(vt, 3);
+    const dene = (girdi: Parameters<typeof servis.stokDuzelt>[3]) =>
+      hatasi(servis.stokDuzelt(vt, yonetici(), birim, girdi));
+    expect(await dene({ yeniMiktar: enCokStok + 1, gorulenMiktar: 3, sebep: "sayim" })).toEqual({
+      kod: "dogrulama",
+      ayrinti: [{ alan: "yeniMiktar", kod: "miktar-siniri" }],
+    });
+    for (const not of ["", "   "]) {
+      expect(await dene({ yeniMiktar: 1, gorulenMiktar: 3, sebep: "diger", not })).toEqual({
+        kod: "dogrulama",
+        ayrinti: [{ alan: "not", kod: "not-gerekli" }],
+      });
+    }
+    expect(
+      await dene({ yeniMiktar: 1, gorulenMiktar: 3, sebep: "sayim", not: "a".repeat(501) }),
+    ).toEqual({ kod: "dogrulama", ayrinti: [{ alan: "not", kod: "not-uzun" }] });
+    // Boş not başka sebepte yazılmamış sayılır, kırpılan not kırpılmış saklanır.
+    await servis.stokDuzelt(vt, yonetici(), birim, {
+      yeniMiktar: 2,
+      gorulenMiktar: 3,
+      sebep: "sayim",
+      not: "  ",
+    });
+    await servis.stokDuzelt(vt, yonetici(), birim, {
+      yeniMiktar: 1,
+      gorulenMiktar: 2,
+      sebep: "sayim",
+      not: `  ${"a".repeat(500)}  `,
+    });
+    const [son, onceki] = await servis.stokGecmisiniOku(vt, birim);
+    expect(onceki?.not).toBeNull();
+    expect(son?.not).toBe("a".repeat(500));
   });
 });
 
