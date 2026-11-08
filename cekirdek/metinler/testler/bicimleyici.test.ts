@@ -1,30 +1,32 @@
 import { describe, expect, it } from "vitest";
 import { type BicimAyarlari, bicimleyiciOlustur, yerelZamandan } from "../bicimleyici";
 
-// Türkiye'nin varsayılan biçimi (planlar/site-ayarlari.md): 1.234,56 ₺, Europe/Istanbul.
+// Türkiye'nin biçimi (planlar/site-ayarlari.md): binlikte nokta, ondalıkta virgül, simge sonda,
+// Europe/Istanbul. Çekirdekte bir sitenin para simgesi yazmaz (cekirdek/testler/para-simgesi-yok.test.ts):
+// simge yerine "¤" kullanılır.
 const turkiye: BicimAyarlari = {
   dil: "tr",
   saatDilimi: "Europe/Istanbul",
   sayi: { binlikAyirici: ".", ondalikAyirici: "," },
-  para: { simge: "₺", simgeYeri: "sonda", simgeBoslugu: true, ondalikSayisi: 2 },
+  para: { paraBirimi: "XTS", simge: "¤", simgeYeri: "sonda", simgeBoslugu: true, ondalikSayisi: 2 },
 };
 
 const bicim = bicimleyiciOlustur(turkiye);
 
 describe("para", () => {
-  it("Türk lirasını binlikte nokta, ondalıkta virgül ve simge sonda yazar", () => {
-    expect(bicim.para(124700)).toBe("1.247,00 ₺");
-    expect(bicim.para(123456)).toBe("1.234,56 ₺");
+  it("tutarı binlikte nokta, ondalıkta virgül ve simge sonda yazar", () => {
+    expect(bicim.para(124700)).toBe("1.247,00 ¤");
+    expect(bicim.para(123456)).toBe("1.234,56 ¤");
   });
 
   it("büyük, küçük ve sıfır tutarları doğru yazar", () => {
-    expect(bicim.para(123456789)).toBe("1.234.567,89 ₺");
-    expect(bicim.para(5)).toBe("0,05 ₺");
-    expect(bicim.para(0)).toBe("0,00 ₺");
+    expect(bicim.para(123456789)).toBe("1.234.567,89 ¤");
+    expect(bicim.para(5)).toBe("0,05 ¤");
+    expect(bicim.para(0)).toBe("0,00 ¤");
   });
 
   it("eksi tutarı eksi işaretiyle yazar", () => {
-    expect(bicim.para(-124700)).toBe("-1.247,00 ₺");
+    expect(bicim.para(-124700)).toBe("-1.247,00 ¤");
   });
 
   it("simgenin yerini ve ayırıcıları ayardan alır", () => {
@@ -32,9 +34,28 @@ describe("para", () => {
       ...turkiye,
       dil: "en",
       sayi: { binlikAyirici: ",", ondalikAyirici: "." },
-      para: { simge: "$", simgeYeri: "basta", simgeBoslugu: false, ondalikSayisi: 2 },
+      para: {
+        paraBirimi: "XTS",
+        simge: "$",
+        simgeYeri: "basta",
+        simgeBoslugu: false,
+        ondalikSayisi: 2,
+      },
     });
     expect(basta.para(124700)).toBe("$1,247.00");
+  });
+
+  it("simge yazılmazsa para biriminin sitenin dilindeki simgesi kullanılır", () => {
+    const simgesiz = (dil: string, paraBirimi: string) =>
+      bicimleyiciOlustur({
+        ...turkiye,
+        dil,
+        para: { ...turkiye.para, paraBirimi, simge: undefined },
+      });
+    expect(simgesiz("en", "USD").para(100)).toBe("1,00 $");
+    expect(simgesiz("de", "EUR").para(100)).toBe("1,00 €");
+    // Dil verisinde simgesi olmayan kod kendisi olarak yazılır.
+    expect(simgesiz("tr", "XTS").para(100)).toBe("1,00 XTS");
   });
 
   it("en küçük birimde tam sayı olmayan tutarı reddeder", () => {

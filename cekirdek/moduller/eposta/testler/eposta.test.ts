@@ -68,7 +68,7 @@ beforeAll(async () => {
   );
   writeFileSync(
     join(siteKlasoru, "ayarlar.json"),
-    JSON.stringify({ epostaGonderenAdresi: "gonderen@ornek.test" }),
+    JSON.stringify({ paraBirimi: "XTS", epostaGonderenAdresi: "gonderen@ornek.test" }),
   );
   deneme = await denemeSitesiAc("eposta");
   vt = deneme.vt;

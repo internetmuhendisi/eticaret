@@ -17,7 +17,7 @@ import { birimFiyatlari, fiyatGecmisi } from "../model.ts";
 import type { FiyatGirdisi } from "../semalar.ts";
 import { type FiyatAyarlari, fiyatServisi } from "../servis.ts";
 
-const istanbul: FiyatAyarlari = { saatDilimi: "Europe/Istanbul", paraBirimi: "TRY" };
+const istanbul: FiyatAyarlari = { saatDilimi: "Europe/Istanbul", paraBirimi: "XTS" };
 const servis = fiyatServisi(() => istanbul);
 const urunler = urunServisi(() => istanbul.saatDilimi);
 
@@ -85,7 +85,7 @@ describe("geçerli fiyat sitenin saat diliminde", () => {
     expect(gecerli).toEqual({
       tutar: 7_500,
       indirimde: true,
-      paraBirimi: "TRY",
+      paraBirimi: "XTS",
       satisFiyati: 10_000,
     });
   });
@@ -93,7 +93,7 @@ describe("geçerli fiyat sitenin saat diliminde", () => {
   it("aynı yerel saat başka saat diliminde başka andır", async () => {
     const vt = await siteAc();
     const { birim } = await birimAc(vt);
-    const newYork = fiyatServisi(() => ({ saatDilimi: "America/New_York", paraBirimi: "TRY" }));
+    const newYork = fiyatServisi(() => ({ saatDilimi: "America/New_York", paraBirimi: "XTS" }));
     await newYork.fiyatYaz(vt, yonetici(), birim, indirim);
     // New York 10 Kasım'da UTC-5: yerel gece yarısı 05:00 UTC.
     expect(await tutari(vt, birim, new Date("2026-11-10T04:59:59.999Z"), newYork)).toBe(10_000);
@@ -161,7 +161,7 @@ describe("fiyat geçmişi", () => {
       [10_000, 7_500],
       [10_000, null],
     ]);
-    expect(satirlar.every((s) => s.paraBirimi === "TRY")).toBe(true);
+    expect(satirlar.every((s) => s.paraBirimi === "XTS")).toBe(true);
     expect(satirlar[1]?.indirimBaslangici?.toISOString()).toBe("2026-11-09T21:00:00.000Z");
     // Sonraki sayfa: verilen satırdan sonrakiler.
     const ikinci = satirlar[1];
@@ -177,16 +177,16 @@ describe("fiyat geçmişi", () => {
       ["fiyat.degisti", "fiyat", kim.tur === "yonetici" ? kim.kimlik : null],
     ]);
     expect(kayit[0]?.eski_deger).toBeNull();
-    expect(kayit[0]?.yeni_deger).toEqual({ satisFiyati: 10_000, paraBirimi: "TRY" });
+    expect(kayit[0]?.yeni_deger).toEqual({ satisFiyati: 10_000, paraBirimi: "XTS" });
     expect(kayit[1]?.yeni_deger).toEqual({
       satisFiyati: 10_000,
       indirimliFiyat: 7_500,
       indirimBaslangici: "2026-11-09T21:00:00.000Z",
       indirimBitisi: "2026-11-15T21:00:00.000Z",
-      paraBirimi: "TRY",
+      paraBirimi: "XTS",
     });
     expect(kayit[2]?.eski_deger).toEqual(kayit[1]?.yeni_deger);
-    expect(kayit[2]?.yeni_deger).toEqual({ satisFiyati: 12_000, paraBirimi: "TRY" });
+    expect(kayit[2]?.yeni_deger).toEqual({ satisFiyati: 12_000, paraBirimi: "XTS" });
   });
 
   it("aynı milisaniyedeki satırlar sayfalar arasında kaybolmaz", async () => {
@@ -200,7 +200,7 @@ describe("fiyat geçmişi", () => {
       await vt.insert(fiyatGecmisi).values({
         birim_kimligi: birim,
         satis_fiyati: satisFiyati,
-        para_birimi: "TRY",
+        para_birimi: "XTS",
         zaman: sql`${zaman}::timestamptz`,
       });
     }
@@ -357,7 +357,7 @@ describe("kurallar", () => {
   it("veritabanı da kuralı çiğneyen fiyatı reddeder", async () => {
     const vt = await siteAc();
     const { birim } = await birimAc(vt);
-    const gecerli = { birim_kimligi: birim, satis_fiyati: 1000, para_birimi: "TRY" };
+    const gecerli = { birim_kimligi: birim, satis_fiyati: 1000, para_birimi: "XTS" };
     const bozuklar = [
       { satis_fiyati: -1 },
       { indirimli_fiyat: 1000 },
@@ -429,7 +429,7 @@ describe("birim", () => {
     // Yeniden girilen fiyat yeni para birimiyle yazılır.
     await euro.fiyatYaz(vt, yonetici(), birim, { satisFiyati: 10_000 });
     expect((await euro.gecerliFiyatlar(vt, [birim])).get(birim)?.paraBirimi).toBe("EUR");
-    expect((await gecmis(vt, birim)).map((s) => s.para_birimi).toSorted()).toEqual(["EUR", "TRY"]);
+    expect((await gecmis(vt, birim)).map((s) => s.para_birimi).toSorted()).toEqual(["EUR", "XTS"]);
   });
 
   it("para birimi uyuşmazlığı süreç başına bir kez kaydedilir", async () => {

@@ -536,7 +536,11 @@ export const denemeSitesiAc = (): string => {
     teslimDurumu: { magazaSahibiHesabi: "gerekmez", yurtDisiAktarimBelgeleri: "gerekmez" },
   };
   writeFileSync(join(klasor, "kimlik.json"), `${JSON.stringify(kimlik, null, 2)}\n`);
-  writeFileSync(join(klasor, "ayarlar.json"), "{}\n");
+  // Para biriminin çekirdekte varsayılanı yoktur (kart 0081): site yazar.
+  writeFileSync(
+    join(klasor, "ayarlar.json"),
+    `${JSON.stringify({ paraBirimi: "TRY" }, null, 2)}\n`,
+  );
   mkdirSync(join(klasor, "baslangic"));
   writeFileSync(
     join(klasor, "baslangic", "ayarlar.json"),

@@ -32,8 +32,9 @@ paths:
 - Vergi ülkeye bağlı yazılmaz: çekirdekte "KDV", bir oran ya da bir ülke sabit yazılmaz. Vergi sınıfları, oranlar, vergi adı, fiyatın vergi dahil ya da hariç girilmesi ve hesaplamanın hangi adrese göre yapılacağı site ayarıdır.
 - Oranı ürünün vergi sınıfı ile müşterinin bölgesinden bul. Bölge bulunamazsa mağaza adresini kullan.
 - Siparişe her satırın o anki vergi oranını ve tutarını yaz. Oran sonradan değişse de eski sipariş değişmesin.
-- Para birimini ve para biçimini site ayarından al. Çekirdekte "TL" ya da "₺" sabit yazılmaz.
+- Para birimini ve para biçimini site ayarından al. Çekirdekte "TL" ya da "₺" sabit yazılmaz: para biriminin çekirdekte varsayılanı yoktur, simge ayardan ya da dil verisinden gelir (`cekirdek/testler/para-simgesi-yok.test.ts`, karar 0067).
 - Fiyat yalnız `cekirdek/moduller/fiyat/servis.ts` ile okunur ve değişir; bir anın fiyatını yalnız `gecerliFiyat` (`cekirdek/moduller/fiyat/gecerli.ts`) verir, birimlerin fiyatları tek sorguyla `gecerliFiyatlar` ile gelir. Tutar kuruş, para birimi satırda saklanır (karar 0066).
+- Vitrin, sepet ve e-posta fiyatı yalnız `gosterilecekFiyatlar` (`cekirdek/moduller/fiyat/gosterim.ts`) ile gösterir: vergi dahil ya da hariç tutar, eski fiyat, fiyatın yanındaki metin ve biçimli yazılış oradan gelir. Eski fiyat yalnız `eskiFiyatiBul` (`cekirdek/moduller/fiyat/eski-fiyat.ts`) ile hesaplanır (karar 0067).
 - Her fiyat değişikliğini tarihiyle fiyat geçmişine yaz, geçmiş silinmez. İndirimli üründe eski fiyatı fiyat geçmişinden hesapla: son 30 günün en düşük fiyatını göstermek site ayarıdır.
 
 ## Ürün

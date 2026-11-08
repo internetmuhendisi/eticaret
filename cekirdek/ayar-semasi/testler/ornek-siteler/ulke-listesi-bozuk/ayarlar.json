@@ -1,1 +1,5 @@
-{ "satisUlkeleri": ["TR", "QQ"], "teslimatUlkeleri": [] }
+{
+  "paraBirimi": "XTS",
+  "satisUlkeleri": ["TR", "QQ"],
+  "teslimatUlkeleri": []
+}

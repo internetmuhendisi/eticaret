@@ -1,1 +1,4 @@
-{ "iletisimEpostasi": "iletisim@ornek.test" }
+{
+  "paraBirimi": "XTS",
+  "iletisimEpostasi": "iletisim@ornek.test"
+}

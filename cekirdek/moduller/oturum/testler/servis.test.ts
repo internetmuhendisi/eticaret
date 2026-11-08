@@ -419,7 +419,7 @@ describe("çerezler ve istekten oturum", () => {
   });
 
   it("süreler site ayarından gelir: yönetici 24 saat, müşteri 30 gün", () => {
-    const ayarlar = ayarSemasi.parse({}) as SiteAyarlari;
+    const ayarlar = ayarSemasi.parse({ paraBirimi: "XTS" }) as SiteAyarlari;
     expect(oturumSuresiSaniye("yonetici", ayarlar)).toBe(24 * 60 * 60);
     expect(oturumSuresiSaniye("musteri", ayarlar)).toBe(30 * 24 * 60 * 60);
     const degisik = { ...ayarlar, yoneticiOturumuSaat: 2, musteriOturumuGun: 3 };

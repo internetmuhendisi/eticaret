@@ -12,7 +12,7 @@
 //   sırayla yazılır, geçmiş sırası bozulmaz; aynı anda silinen ürünün birimine fiyat yazılmaz.
 //
 // İzin kapıda denetlenir (izinler.ts); servis yalnız kimin yaptığını kayda yazar.
-import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lte, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
@@ -33,7 +33,7 @@ export type FiyatAyarlari = { saatDilimi: string; paraBirimi: string };
 
 export type FiyatGecmisiSatiri = Omit<Fiyat, "birim"> & { kimlik: string; zaman: Date };
 
-// Süreçte bir kez kaydedilen para birimi uyuşmazlıkları ("TRY>EUR").
+// Süreçte bir kez kaydedilen para birimi uyuşmazlıkları ("<fiyatınki>><sitenin>").
 const bildirilenUyusmazliklar = new Set<string>();
 
 // Bir sayfada okunan geçmiş satırının üst sınırı (.claude/rules/veritabani.md).
@@ -61,6 +61,16 @@ const fiyatAlanlari = {
   indirimBaslangici: birimFiyatlari.indirim_baslangici,
   indirimBitisi: birimFiyatlari.indirim_bitisi,
   paraBirimi: birimFiyatlari.para_birimi,
+};
+
+const gecmisAlanlari = {
+  kimlik: fiyatGecmisi.kimlik,
+  zaman: fiyatGecmisi.zaman,
+  satisFiyati: fiyatGecmisi.satis_fiyati,
+  indirimliFiyat: fiyatGecmisi.indirimli_fiyat,
+  indirimBaslangici: fiyatGecmisi.indirim_baslangici,
+  indirimBitisi: fiyatGecmisi.indirim_bitisi,
+  paraBirimi: fiyatGecmisi.para_birimi,
 };
 
 const zamanDegeri = (an: Date | null) => (an === null ? null : an.toISOString());
@@ -241,15 +251,7 @@ export const fiyatServisi = (ayarlar: () => FiyatAyarlari) => {
       fiyatGecmisiSayfasi,
     );
     return vt
-      .select({
-        kimlik: fiyatGecmisi.kimlik,
-        zaman: fiyatGecmisi.zaman,
-        satisFiyati: fiyatGecmisi.satis_fiyati,
-        indirimliFiyat: fiyatGecmisi.indirimli_fiyat,
-        indirimBaslangici: fiyatGecmisi.indirim_baslangici,
-        indirimBitisi: fiyatGecmisi.indirim_bitisi,
-        paraBirimi: fiyatGecmisi.para_birimi,
-      })
+      .select(gecmisAlanlari)
       .from(fiyatGecmisi)
       .where(
         and(
@@ -263,7 +265,27 @@ export const fiyatServisi = (ayarlar: () => FiyatAyarlari) => {
       .limit(sinir);
   };
 
-  return { fiyatYaz, fiyatOku, fiyatlariOku, gecerliFiyatlar, fiyatGecmisiniOku };
+  // Birimlerin verilen ana kadarki bütün geçmişi, eskiden yeniye, tek sorguyla (eski fiyat hesabı,
+  // kart 0081). Sayfasızdır: indirimin ne zaman başladığı geçmişin ne kadar gerisine gittiğine bağlıdır.
+  // Birim başına satır sayısı fiyat değişikliği kadardır; toplu fiyat değişikliği gelince ölçülmelidir.
+  const gecmisleriOku = async (
+    vt: Veritabani,
+    birimler: string[],
+    an: Date,
+  ): Promise<Map<string, FiyatGecmisiSatiri[]>> => {
+    const gecerli = birimler.filter(kimlikMi);
+    const sonuc = new Map<string, FiyatGecmisiSatiri[]>(gecerli.map((birim) => [birim, []]));
+    if (gecerli.length === 0) return sonuc;
+    const satirlar = await vt
+      .select({ birim: fiyatGecmisi.birim_kimligi, ...gecmisAlanlari })
+      .from(fiyatGecmisi)
+      .where(and(inArray(fiyatGecmisi.birim_kimligi, gecerli), lte(fiyatGecmisi.zaman, an)))
+      .orderBy(asc(fiyatGecmisi.zaman), asc(fiyatGecmisi.kimlik));
+    for (const { birim, ...satir } of satirlar) sonuc.get(birim)?.push(satir);
+    return sonuc;
+  };
+
+  return { fiyatYaz, fiyatOku, fiyatlariOku, gecerliFiyatlar, fiyatGecmisiniOku, gecmisleriOku };
 };
 
 export const siteninFiyatServisi = (site: Site) =>

@@ -64,7 +64,10 @@
       "vergiAdi": "Fiyatın yanında ve vergi dökümünde görünen vergi adı. Oranın kendi adı varsa o görünür.",
       "fiyatGirisi": "Ürün ve kargo fiyatlarının vergi dahil mi, vergi hariç mi girildiği.",
       "vergiAdresi": "Verginin hangi adrese göre hesaplandığı: teslimat, fatura ya da mağaza adresi. Adresin bölgesi vergi tablosunda yoksa mağaza adresi kullanılır.",
-      "vergiYuvarlama": "Verginin her satırda mı, aynı oranlı satırların toplamında mı kuruşa yuvarlandığı."
+      "vergiYuvarlama": "Verginin her satırda mı, aynı oranlı satırların toplamında mı kuruşa yuvarlandığı.",
+      "fiyatGosterimi": "Fiyatların vitrinde, sepette ve e-postada vergi dahil mi hariç mi gösterildiği.",
+      "fiyatEkMetni": "Fiyatın yanında görünen metin. Yazılmazsa vergi adından kurulur (\"… dahil\"); boş bırakılırsa metin görünmez.",
+      "indirimdeEnDusukFiyat": "İndirimli üründe eski fiyat olarak indirimden önceki 30 günün en düşük fiyatı gösterilir. Kapalıysa indirimden önceki satış fiyatı gösterilir."
     }
   },
   "yonetim": {
@@ -235,6 +238,12 @@
       "kvkk": {
         "baslik": "KVKK aydınlatma metni"
       }
+    },
+    "fiyat": {
+      "vergiDahil": "{vergi} dahil",
+      "vergiHaric": "{vergi} hariç",
+      "vergilerDahil": "Vergiler dahil",
+      "vergilerHaric": "Vergiler hariç"
     }
   },
   "eposta": {

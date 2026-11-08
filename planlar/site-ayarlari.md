@@ -19,8 +19,8 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Satış yapılan ülkeler | Altyapı sahibi | Türkiye | — | Liste; her kod ülke listesinde (kart 0071) |
 | Teslimat yapılan ülkeler | Altyapı sahibi | Türkiye | — | Liste (kart 0071) |
 | Dil | Altyapı sahibi | Türkçe | — | |
-| Para birimi | Altyapı sahibi | TL | — | |
-| Para biçimi | Altyapı sahibi | 1.234,56 ₺ (simge sonda, binlikte nokta, ondalıkta virgül, 2 ondalık) | — | |
+| Para birimi | Altyapı sahibi | Çekirdekte yok, site yazar; Türkiye'de kurulan site TRY | TRY | `paraBirimi`, ISO 4217 kodu, `ayarlar.json` (kart 0081, karar 0067) |
+| Para biçimi | Altyapı sahibi | 1.234,56 ₺ (simge sonda, binlikte nokta, ondalıkta virgül, 2 ondalık) | — | `paraBicimi`. Simge yazılmazsa para biriminin sitenin dilindeki simgesi kullanılır (dil verisinden) |
 | Saat dilimi | Altyapı sahibi | İstanbul (Europe/Istanbul) | — | |
 | Ağırlık birimi | Altyapı sahibi | kg | — | |
 | Boyut birimi | Altyapı sahibi | cm | — | |
@@ -39,7 +39,8 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Vergi adı | Mağaza sahibi | Çekirdekte boş; Türkiye'de kurulan site KDV | KDV | `baslangic/ayarlar.json` (`vergiAdi`). Oranın kendi adı varsa o görünür |
 | Vergi sınıfları ve oranları | Mağaza sahibi | Çekirdekte yok; Türkiye'de kurulan site %20, %10, %1, %0 | %20, %10, %1, %0 | Ayar değil, vergi tablosudur: `baslangic/vergi.json`, ilk okumada bir kez yazılır (karar 0060) |
 | Fiyat girişi | Mağaza sahibi | Vergi dahil | — | `fiyatGirisi` (karar 0061) |
-| Fiyatın yanındaki metin | Mağaza sahibi | "KDV dahil" | — | |
+| Fiyat gösterimi | Mağaza sahibi | Vergi dahil | — | `fiyatGosterimi`. Girişten farklıysa tutar vergi hesabıyla çevrilir; ürün sayfasında mağaza adresinin bölgesiyle (kart 0081, karar 0067) |
+| Fiyatın yanındaki metin | Mağaza sahibi | Vergi adından ve gösterimden kurulur: "<vergi adı> dahil" (Türkiye'de kurulan sitede "KDV dahil"); vergi kapalıysa yok | — | `fiyatEkMetni`. Mağaza sahibi kendi metnini yazabilir; boş bırakılırsa metin görünmez |
 | Verginin hesaplandığı adres | Mağaza sahibi | Teslimat adresi | — | `vergiAdresi`. Bölgesi vergi tablosunda yoksa mağaza adresi kullanılır (karar 0061) |
 | Yuvarlama | Mağaza sahibi | Satır satır | — | `vergiYuvarlama`. Faturadaki satırlarla aynı tutar çıkar |
 | Kargonun vergi sınıfı | Mağaza sahibi | Vergisiz | %20 | Ayar değil, vergi tablosunda işaretli sınıftır: başlangıçta `baslangic/vergi.json` içinde `"kargo": true` (karar 0061) |
@@ -48,7 +49,7 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
 |---|---|---|---|---|
-| İndirimde eski fiyat olarak son 30 günün en düşük fiyatı | Mağaza sahibi | Açık | — | Yasal dayanağı hukukçuya teyit ettirilecek |
+| İndirimde eski fiyat olarak son 30 günün en düşük fiyatı | Mağaza sahibi | Açık | — | `indirimdeEnDusukFiyat`. 30 gün indirimin başladığı andan geriye sayılır, önceki indirimler dahildir; bulunan fiyat indirimli fiyattan yüksek değilse ya da o dönemde fiyat yoksa eski fiyat gösterilmez. Kapalıysa eski fiyat indirimden önceki satış fiyatıdır (kart 0081, karar 0067). Yasal dayanağı hukukçuya teyit ettirilecek |
 
 ## Stok
 

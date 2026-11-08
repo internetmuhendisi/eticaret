@@ -65,14 +65,19 @@ describe("ayar şeması", () => {
     expect(magazaAyarSemasi.safeParse({}).success).toBe(true);
   });
 
-  it("boş ayar dosyası bütün varsayılanları verir", () => {
-    expect(ayarSemasi.parse({})).toEqual({
+  it("para biriminin varsayılanı yok, simgesi isteğe bağlı (kart 0081)", () => {
+    expect(ayarSemasi.safeParse({}).success).toBe(false);
+    expect(ayarSemasi.safeParse({ paraBirimi: "xts" }).success).toBe(false);
+    expect(ayarSemasi.parse({ paraBirimi: "XTS" }).paraBicimi.simge).toBeUndefined();
+  });
+
+  it("para birimi dışında boş ayar dosyası bütün varsayılanları verir", () => {
+    expect(ayarSemasi.parse({ paraBirimi: "XTS" })).toEqual({
       satisUlkeleri: ["TR"],
       teslimatUlkeleri: ["TR"],
       dil: "tr",
-      paraBirimi: "TRY",
+      paraBirimi: "XTS",
       paraBicimi: {
-        simge: "₺",
         simgeYeri: "sonda",
         simgeBoslugu: true,
         binlikAyirici: ".",
@@ -97,13 +102,19 @@ describe("ayar şeması", () => {
   });
 
   it("ülke listesinde tekrar ve eski tek ülke ayarı kabul edilmez", () => {
-    expect(ayarSemasi.safeParse({ satisUlkeleri: ["TR", "TR"] }).success).toBe(false);
-    expect(ayarSemasi.safeParse({ ulke: "TR" }).success).toBe(false);
-    expect(ayarSemasi.safeParse({ satisUlkeleri: ["TR", "DE"] }).success).toBe(true);
+    const para = { paraBirimi: "XTS" };
+    expect(ayarSemasi.safeParse({ ...para, satisUlkeleri: ["TR", "TR"] }).success).toBe(false);
+    expect(ayarSemasi.safeParse({ ...para, ulke: "TR" }).success).toBe(false);
+    expect(ayarSemasi.safeParse({ ...para, satisUlkeleri: ["TR", "DE"] }).success).toBe(true);
   });
 
   it("tanınmayan saat dilimini kabul etmez", () => {
-    expect(ayarSemasi.safeParse({ saatDilimi: "Avrupa/Istanbul" }).success).toBe(false);
+    expect(ayarSemasi.safeParse({ paraBirimi: "XTS", saatDilimi: "Avrupa/Istanbul" }).success).toBe(
+      false,
+    );
+    expect(ayarSemasi.safeParse({ paraBirimi: "XTS", saatDilimi: "Europe/Berlin" }).success).toBe(
+      true,
+    );
   });
 
   it("sipariş önekini görünen addan türetir", () => {

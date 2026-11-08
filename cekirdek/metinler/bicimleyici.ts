@@ -10,7 +10,9 @@ export type BicimAyarlari = {
     ondalikAyirici: string;
   };
   para: {
-    simge: string;
+    // ISO 4217 kodu. Simge verilmezse bu kodun sitenin dilindeki simgesi kullanılır.
+    paraBirimi: string;
+    simge?: string | undefined;
     simgeYeri: "basta" | "sonda";
     simgeBoslugu: boolean;
     ondalikSayisi: number;
@@ -67,6 +69,17 @@ export const yerelZamandan = (yerel: string, saatDilimi: string): Date | undefin
   return an === undefined ? undefined : new Date(an);
 };
 
+// Para biriminin bir dildeki simgesi, dil verisinden (CLDR): kodda bir para simgesi yazmaz (kart 0081).
+// Dil verisinde simgesi olmayan kod kendisi olarak döner.
+export const paraSimgesi = (dil: string, paraBirimi: string): string =>
+  new Intl.NumberFormat(dil, {
+    style: "currency",
+    currency: paraBirimi,
+    currencyDisplay: "narrowSymbol",
+  })
+    .formatToParts(0)
+    .find((parca) => parca.type === "currency")?.value ?? paraBirimi;
+
 export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
   const sayiBicimi = (ondalikSayisi: number) =>
     new Intl.NumberFormat(ayarlar.dil, {
@@ -86,6 +99,7 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
       .join("");
 
   const paraSayisi = sayiBicimi(ayarlar.para.ondalikSayisi);
+  const simge = ayarlar.para.simge ?? paraSimgesi(ayarlar.dil, ayarlar.para.paraBirimi);
   const tarihBicimi = new Intl.DateTimeFormat(ayarlar.dil, {
     dateStyle: "short",
     timeZone: ayarlar.saatDilimi,
@@ -103,7 +117,7 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
       if (!Number.isSafeInteger(enKucukBirimde)) {
         throw new Error(`Para tutarı en küçük birimde tam sayı olmalı: ${enKucukBirimde}`);
       }
-      const { simge, simgeYeri, simgeBoslugu, ondalikSayisi } = ayarlar.para;
+      const { simgeYeri, simgeBoslugu, ondalikSayisi } = ayarlar.para;
       const tutar = ayiricilariUygula(paraSayisi, enKucukBirimde / 10 ** ondalikSayisi);
       const bosluk = simgeBoslugu ? " " : "";
       return simgeYeri === "basta" ? `${simge}${bosluk}${tutar}` : `${tutar}${bosluk}${simge}`;

@@ -11,7 +11,7 @@ const fiyat = (ek: Partial<Fiyat> = {}): Fiyat => ({
   indirimliFiyat: 7_500,
   indirimBaslangici: baslangic,
   indirimBitisi: bitis,
-  paraBirimi: "TRY",
+  paraBirimi: "XTS",
   ...ek,
 });
 const once = (an: Date) => new Date(an.getTime() - 1);
@@ -25,20 +25,20 @@ describe("geçerli fiyat", () => {
     ["bittiği anda", bitis, 10_000, false],
     ["bittikten sonra", new Date("2027-01-01T00:00:00.000Z"), 10_000, false],
   ])("%s", (_ad, an, tutar, indirimde) => {
-    expect(gecerliFiyat(fiyat(), an, "TRY")).toEqual({
+    expect(gecerliFiyat(fiyat(), an, "XTS")).toEqual({
       tutar,
       indirimde,
-      paraBirimi: "TRY",
+      paraBirimi: "XTS",
       satisFiyati: 10_000,
     });
   });
 
   it("boş başlangıç hemen, boş bitiş süresiz", () => {
     const acik = fiyat({ indirimBaslangici: null, indirimBitisi: null });
-    expect(gecerliFiyat(acik, new Date(0), "TRY")?.tutar).toBe(7_500);
-    expect(gecerliFiyat(acik, new Date("2100-01-01T00:00:00Z"), "TRY")?.tutar).toBe(7_500);
-    expect(gecerliFiyat(fiyat({ indirimBaslangici: null }), once(bitis), "TRY")?.tutar).toBe(7_500);
-    expect(gecerliFiyat(fiyat({ indirimBitisi: null }), once(baslangic), "TRY")?.tutar).toBe(
+    expect(gecerliFiyat(acik, new Date(0), "XTS")?.tutar).toBe(7_500);
+    expect(gecerliFiyat(acik, new Date("2100-01-01T00:00:00Z"), "XTS")?.tutar).toBe(7_500);
+    expect(gecerliFiyat(fiyat({ indirimBaslangici: null }), once(bitis), "XTS")?.tutar).toBe(7_500);
+    expect(gecerliFiyat(fiyat({ indirimBitisi: null }), once(baslangic), "XTS")?.tutar).toBe(
       10_000,
     );
   });
@@ -49,16 +49,16 @@ describe("geçerli fiyat", () => {
       indirimBaslangici: null,
       indirimBitisi: null,
     });
-    expect(gecerliFiyat(indirimsiz, baslangic, "TRY")).toMatchObject({
+    expect(gecerliFiyat(indirimsiz, baslangic, "XTS")).toMatchObject({
       tutar: 10_000,
       indirimde: false,
     });
     const ucretsiz = { ...indirimsiz, satisFiyati: 0 };
-    expect(gecerliFiyat(ucretsiz, baslangic, "TRY")?.tutar).toBe(0);
+    expect(gecerliFiyat(ucretsiz, baslangic, "XTS")?.tutar).toBe(0);
   });
 
   it("fiyatı olmayan ya da başka para biriminde yazılmış birimin fiyatı yok", () => {
-    expect(gecerliFiyat(undefined, baslangic, "TRY")).toBeUndefined();
+    expect(gecerliFiyat(undefined, baslangic, "XTS")).toBeUndefined();
     expect(gecerliFiyat(fiyat(), baslangic, "EUR")).toBeUndefined();
   });
 });

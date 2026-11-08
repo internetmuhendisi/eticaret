@@ -75,7 +75,13 @@ describe("veri", () => {
       dil: "tr",
       saatDilimi: "UTC",
       sayi: { binlikAyirici: ".", ondalikAyirici: "," },
-      para: { simge: "x", simgeYeri: "sonda", simgeBoslugu: true, ondalikSayisi: 2 },
+      para: {
+        paraBirimi: "XTS",
+        simge: "x",
+        simgeYeri: "sonda",
+        simgeBoslugu: true,
+        ondalikSayisi: 2,
+      },
     });
     expect(ulkeKodlari().filter((kod) => tr.ulkeAdi(kod) === kod)).toEqual([]);
   });

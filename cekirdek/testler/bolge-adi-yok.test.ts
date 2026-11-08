@@ -27,7 +27,13 @@ const bicim = (dil: string) =>
     dil,
     saatDilimi: "UTC",
     sayi: { binlikAyirici: ".", ondalikAyirici: "," },
-    para: { simge: "x", simgeYeri: "sonda", simgeBoslugu: true, ondalikSayisi: 2 },
+    para: {
+      paraBirimi: "XTS",
+      simge: "x",
+      simgeYeri: "sonda",
+      simgeBoslugu: true,
+      ondalikSayisi: 2,
+    },
   });
 
 // Dil verisinde olmayan yaygın ülke adları: dil verisi İngilizcede de "Türkiye" der.

@@ -12,6 +12,7 @@ import { ulkeGecerliMi } from "../bolgeler/bolgeler.ts";
 import { type AyarSahibi, ayarSahibi } from "../kayitlar/site.ts";
 import { saatDilimiGecerliMi } from "../metinler/bicimleyici.ts";
 import { diller, type MetinAnahtari } from "../metinler/metin.ts";
+import { kayitDegeriYasakMi, kayitMetniHatasi } from "../moduller/degisiklik-kaydi/deger.ts";
 import {
   fiyatGirisleri,
   vergiAdiSemasi,
@@ -68,17 +69,17 @@ export const ayarSemasi = z.strictObject({
     altyapiSahibinin("ayar.aciklama.teslimatUlkeleri"),
   ),
   dil: ayar(z.enum(diller).default("tr"), altyapiSahibinin("ayar.aciklama.dil")),
+  // Para biriminin çekirdekte varsayılanı yoktur: çekirdekte bir ülkenin para birimi ya da simgesi
+  // yazılmaz (kart 0081, karar 0067). Site ayarlar.json dosyasında yazar.
   paraBirimi: ayar(
-    z
-      .string()
-      .regex(/^[A-Z]{3}$/, "Üç büyük harfli para birimi kodu olmalı, örneğin TRY.")
-      .default("TRY"),
+    z.string().regex(/^[A-Z]{3}$/, "Üç büyük harfli ISO 4217 para birimi kodu olmalı."),
     altyapiSahibinin("ayar.aciklama.paraBirimi"),
   ),
   paraBicimi: ayar(
     z
       .strictObject({
-        simge: z.string().min(1).default("₺"),
+        // Yazılmazsa para biriminin sitenin dilindeki simgesi kullanılır (biçimleyici, dil verisinden).
+        simge: z.string().min(1).optional(),
         simgeYeri: z.enum(["basta", "sonda"]).default("sonda"),
         simgeBoslugu: z.boolean().default(true),
         binlikAyirici: z.string().default("."),
@@ -205,6 +206,30 @@ export const magazaAyarSemasi = z.strictObject({
   vergiYuvarlama: ayar(
     z.enum(vergiYuvarlamalari).default("satir"),
     magazaSahibinin("ayar.aciklama.vergiYuvarlama"),
+  ),
+  // Gösterilecek fiyat (kart 0081, karar 0067). Fiyat vitrinde, sepette ve e-postada vergi dahil ya
+  // da hariç gösterilir; girildiği biçimden farklıysa vergi hesabıyla çevrilir.
+  fiyatGosterimi: ayar(
+    z.enum(fiyatGirisleri).default("vergi-dahil"),
+    magazaSahibinin("ayar.aciklama.fiyatGosterimi"),
+  ),
+  // Fiyatın yanındaki metin. Yazılmazsa vergi adından ve gösterimden kurulur ("<vergi adı> dahil");
+  // boş metin hiçbir şey göstermez.
+  fiyatEkMetni: ayar(
+    z
+      .string()
+      .trim()
+      .max(60)
+      .refine((deger) => !kayitDegeriYasakMi(deger), kayitMetniHatasi)
+      .transform((deger) => deger.normalize("NFC"))
+      .optional(),
+    magazaSahibinin("ayar.aciklama.fiyatEkMetni"),
+  ),
+  // İndirimli üründe eski fiyat: açıksa indirimden önceki 30 günün en düşük fiyatı, kapalıysa
+  // indirimden önceki satış fiyatı (kart 0081, karar 0067).
+  indirimdeEnDusukFiyat: ayar(
+    z.boolean().default(true),
+    magazaSahibinin("ayar.aciklama.indirimdeEnDusukFiyat"),
   ),
 });
 export type MagazaAyarlari = z.output<typeof magazaAyarSemasi>;

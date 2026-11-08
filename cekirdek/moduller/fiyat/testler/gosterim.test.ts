@@ -1,0 +1,259 @@
+// Gösterilecek fiyat gerçek veritabanıyla (kart 0081, karar 0067): vergi dahil ve hariç girişin dahil
+// ve hariç gösterimi ve ek metni, vergi kapalı, vergi adı olmayan site, mağaza sahibinin kendi metni ve
+// boş metni, geçmişten eski fiyat (ayar açık ve kapalı), sitenin para biçimiyle yazılış, bölge, fiyatsız
+// birim ve birim sayısıyla artmayan sorgu sayısı.
+//
+// Beklenen tutarlar elle hesaplanmıştır. Deneme sitesinin vergi sınıfı "Genel" ülkede yüzde 18'dir; mağaza
+// Ankara'dadır, binde beşlik ek oran yalnız İstanbul'un bir posta kodundadır (orada en özel oran olarak
+// yalnız o geçer).
+import { randomUUID } from "node:crypto";
+import { join } from "node:path";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { MagazaAyarlari } from "../../../ayar-semasi/ayarlar.ts";
+import { siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
+import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
+import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
+import { siteninServisi } from "../../magaza-ayarlari/servis.ts";
+import { urunServisi } from "../../urun/servis.ts";
+import { siteninVergiServisi } from "../../vergi/servis.ts";
+import { fiyatGosterimServisi } from "../gosterim.ts";
+import { birimFiyatlari, fiyatGecmisi } from "../model.ts";
+import { siteninFiyatServisi } from "../servis.ts";
+
+const yonetici = (): DegisikligiYapan => ({ tur: "yonetici", kimlik: randomUUID() });
+
+const klasor = siteKlasorunuOku(
+  join(
+    import.meta.dirname,
+    "..",
+    "..",
+    "..",
+    "ayar-semasi",
+    "testler",
+    "ornek-siteler",
+    "vergi-dolu",
+  ),
+);
+const site = (baslangic: Partial<MagazaAyarlari> = {}) => ({
+  ...klasor,
+  baslangic: {
+    ...klasor.baslangic,
+    vergiAdi: "Deneme vergisi",
+    magazaAdresi: {
+      ulke: "TR",
+      il: "TR-06",
+      ilce: "TR-06-007",
+      adres: "Deneme Sokak No: 1",
+      postaKodu: "06000",
+    },
+    ...baslangic,
+  },
+});
+
+const silinecekler: (() => Promise<void>)[] = [];
+afterEach(async () => {
+  await Promise.all(silinecekler.splice(0).map((sil) => sil()));
+});
+
+// Sitenin veritabanı, vergi sınıfı "Genel" ve bir ürünün birimi.
+const hazirla = async (baslangic: Partial<MagazaAyarlari> = {}, sinifli = true) => {
+  const deneme = await denemeSitesiAc("gosterim");
+  silinecekler.push(deneme.sil);
+  const vt = deneme.vt;
+  const s = site(baslangic);
+  const siniflar = await siteninVergiServisi(s).tabloyuOku(vt);
+  const genel = siniflar.find((sinif) => sinif.ad === "Genel");
+  if (genel === undefined) throw new Error("Genel sınıfı yok.");
+  const birimAc = async () => {
+    const urunler = urunServisi(() => s.ayarlar.saatDilimi);
+    const urun = await urunler.urunEkle(vt, yonetici(), {
+      ad: "Deneme ürünü",
+      vergiSinifi: sinifli ? genel.kimlik : null,
+    });
+    const birim = (await urunler.urunuOku(vt, urun))?.birimler[0]?.kimlik;
+    if (birim === undefined) throw new Error("Birim yok.");
+    return birim;
+  };
+  return {
+    vt,
+    site: s,
+    birim: await birimAc(),
+    birimAc,
+    gosterim: fiyatGosterimServisi(s),
+    fiyat: siteninFiyatServisi(s),
+    ayarla: (degerler: Partial<MagazaAyarlari>) =>
+      siteninServisi(s).degistir(vt, yonetici(), degerler),
+  };
+};
+
+const gosterileni = async (h: Awaited<ReturnType<typeof hazirla>>, an?: Date) => {
+  const sonuc = (await h.gosterim.gosterilecekFiyatlar(h.vt, [h.birim], an ? { an } : {})).get(
+    h.birim,
+  );
+  if (sonuc === undefined) throw new Error("Fiyat yok.");
+  return sonuc;
+};
+
+describe("vergi dahil ve hariç gösterim", () => {
+  it.each([
+    // Giriş, gösterim, gösterilen tutar (elle), ek metin.
+    ["vergi-dahil", "vergi-dahil", 10_000, "Deneme vergisi dahil"],
+    // 10000 × 18 / 118 = 1525,42 → 1525; 10000 − 1525 = 8475.
+    ["vergi-dahil", "vergi-haric", 8_475, "Deneme vergisi hariç"],
+    // 10000 × 0,18 = 1800; 10000 + 1800 = 11800.
+    ["vergi-haric", "vergi-dahil", 11_800, "Deneme vergisi dahil"],
+    ["vergi-haric", "vergi-haric", 10_000, "Deneme vergisi hariç"],
+  ] as const)("%s girilen fiyat %s gösterilir", async (giris, gosterim, tutar, ekMetin) => {
+    const h = await hazirla({ fiyatGirisi: giris, fiyatGosterimi: gosterim });
+    await h.fiyat.fiyatYaz(h.vt, yonetici(), h.birim, { satisFiyati: 10_000 });
+    const sonuc = await gosterileni(h);
+    expect(sonuc).toMatchObject({ tutar, vergi: gosterim, ekMetin, indirimde: false });
+    expect(sonuc.eskiTutar).toBeUndefined();
+  });
+
+  it("vergisiz ürün çevrilmez", async () => {
+    const h = await hazirla({ fiyatGosterimi: "vergi-haric" }, false);
+    await h.fiyat.fiyatYaz(h.vt, yonetici(), h.birim, { satisFiyati: 10_000 });
+    expect((await gosterileni(h)).tutar).toBe(10_000);
+  });
+
+  it("vergi kapalıysa çevrilmez, metin yok", async () => {
+    const h = await hazirla({ vergiAcik: false, fiyatGosterimi: "vergi-haric" });
+    await h.fiyat.fiyatYaz(h.vt, yonetici(), h.birim, { satisFiyati: 10_000 });
+    const sonuc = await gosterileni(h);
+    expect(sonuc).toMatchObject({ tutar: 10_000, vergi: "yok" });
+    expect(sonuc.ekMetin).toBeUndefined();
+  });
+
+  it("verilen bölgeyle çevrilir; bölge tabloda yoksa mağaza adresi", async () => {
+    const h = await hazirla({ fiyatGirisi: "vergi-haric" });
+    await h.fiyat.fiyatYaz(h.vt, yonetici(), h.birim, { satisFiyati: 10_000 });
+    const bolgeyle = async (bolge: { ulke: string; il?: string; postaKodu?: string }) =>
+      (await h.gosterim.gosterilecekFiyatlar(h.vt, [h.birim], { bolge })).get(h.birim)?.tutar;
+    // İstanbul'un posta kodunda en özel oran geçer (karar 0061): yalnız binde beş, 10000 × 0,005 = 50.
+    expect(await bolgeyle({ ulke: "TR", il: "TR-34", postaKodu: "34000" })).toBe(10_050);
+    expect(await bolgeyle({ ulke: "DE" })).toBe(11_800);
+  });
+});
+
+describe("fiyatın yanındaki metin", () => {
+  it("mağaza sahibinin metni, boş metin ve vergi adı olmayan site", async () => {
+    const h = await hazirla();
+    await h.fiyat.fiyatYaz(h.vt, yonetici(), h.birim, { satisFiyati: 10_000 });
+    await h.ayarla({ fiyatEkMetni: "Tüm vergiler fiyata dahildir" });
+    expect((await gosterileni(h)).ekMetin).toBe("Tüm vergiler fiyata dahildir");
+    await h.ayarla({ fiyatEkMetni: "  " });
+    expect((await gosterileni(h)).ekMetin).toBeUndefined();
+    const adsiz = await hazirla({ vergiAdi: undefined, fiyatGosterimi: "vergi-haric" });
+    await adsiz.fiyat.fiyatYaz(adsiz.vt, yonetici(), adsiz.birim, { satisFiyati: 10_000 });
+    expect((await gosterileni(adsiz)).ekMetin).toBe("Vergiler hariç");
+  });
+});
+
+describe("eski fiyat geçmişten", () => {
+  // Kart 0080'in servisi geçmişe o anın saatini yazar; burada geçmiş bilinen zamanlarla kurulur.
+  const ilk = Date.parse("2026-09-01T00:00:00Z");
+  const gun = (n: number) => new Date(ilk + n * 24 * 60 * 60 * 1000);
+  const satirlar = [
+    { zaman: 0, satis: 12_000 },
+    { zaman: 10, satis: 11_000 },
+    { zaman: 15, satis: 11_000, indirim: 10_500, bas: 16, bit: 18 },
+    { zaman: 20, satis: 13_000 },
+    { zaman: 40, satis: 13_000, indirim: 10_000, bas: 41 },
+  ];
+  const gecmisiKur = async (h: Awaited<ReturnType<typeof hazirla>>) => {
+    for (const s of satirlar) {
+      await h.vt.insert(fiyatGecmisi).values({
+        birim_kimligi: h.birim,
+        zaman: gun(s.zaman),
+        satis_fiyati: s.satis,
+        indirimli_fiyat: s.indirim ?? null,
+        indirim_baslangici: s.bas === undefined ? null : gun(s.bas),
+        indirim_bitisi: s.bit === undefined ? null : gun(s.bit),
+        para_birimi: h.site.ayarlar.paraBirimi,
+      });
+    }
+    await h.vt.insert(birimFiyatlari).values({
+      birim_kimligi: h.birim,
+      satis_fiyati: 13_000,
+      indirimli_fiyat: 10_000,
+      indirim_baslangici: gun(41),
+      para_birimi: h.site.ayarlar.paraBirimi,
+    });
+  };
+
+  it("fiyatı birkaç kez değişmiş üründe elle hesaplanan eski fiyat", async () => {
+    const h = await hazirla();
+    await gecmisiKur(h);
+    // Pencere gün 11–41: en düşük 105,00 (gün 16–18 indirimi); 120,00 dışarıda.
+    const sonuc = await gosterileni(h, gun(45));
+    expect(sonuc).toMatchObject({ tutar: 10_000, eskiTutar: 10_500, indirimde: true });
+    expect(sonuc.yazili).toEqual({ tutar: "100,00 XTS", eskiTutar: "105,00 XTS" });
+    expect(await gosterileni(h, gun(30))).toMatchObject({ tutar: 13_000, indirimde: false });
+  });
+
+  it("ayar kapalıyken eski fiyat indirimden önceki satış fiyatı", async () => {
+    const h = await hazirla({ indirimdeEnDusukFiyat: false });
+    await gecmisiKur(h);
+    expect(await gosterileni(h, gun(45))).toMatchObject({ tutar: 10_000, eskiTutar: 13_000 });
+  });
+
+  it("eski fiyat da gösterim biçimine çevrilir", async () => {
+    const h = await hazirla({ fiyatGosterimi: "vergi-haric" });
+    await gecmisiKur(h);
+    // 10000 → 8475; 10500 × 18 / 118 = 1601,69 → 1602, 10500 − 1602 = 8898.
+    expect(await gosterileni(h, gun(45))).toMatchObject({ tutar: 8_475, eskiTutar: 8_898 });
+  });
+});
+
+describe("sitenin para biçimi", () => {
+  it("tutar sitenin para biçimiyle yazılır", async () => {
+    const h = await hazirla();
+    await h.fiyat.fiyatYaz(h.vt, yonetici(), h.birim, { satisFiyati: 123_456 });
+    const bicimli = fiyatGosterimServisi({
+      ...h.site,
+      ayarlar: {
+        ...h.site.ayarlar,
+        paraBicimi: { ...h.site.ayarlar.paraBicimi, simge: "¤", simgeYeri: "basta" },
+      },
+    });
+    const sonuc = (await bicimli.gosterilecekFiyatlar(h.vt, [h.birim])).get(h.birim);
+    expect(sonuc?.yazili.tutar).toBe("¤ 1.234,56");
+  });
+});
+
+describe("birimler", () => {
+  it("fiyatı olmayan birim haritada yok", async () => {
+    const h = await hazirla();
+    expect((await h.gosterim.gosterilecekFiyatlar(h.vt, [h.birim])).size).toBe(0);
+  });
+
+  it("sorgu sayısı birim sayısıyla artmaz", async () => {
+    const h = await hazirla({ fiyatGosterimi: "vergi-haric" });
+    const birimler = [h.birim, ...(await Promise.all([1, 2, 3, 4].map(() => h.birimAc())))];
+    for (const birim of birimler) {
+      await h.fiyat.fiyatYaz(h.vt, yonetici(), birim, {
+        satisFiyati: 10_000,
+        indirimliFiyat: 9_000,
+      });
+    }
+    const say = async (liste: string[]) => {
+      const sorgu = vi.spyOn(h.vt.$client, "query");
+      const sonuc = await h.gosterim.gosterilecekFiyatlar(h.vt, liste);
+      const sayi = sorgu.mock.calls.length;
+      sorgu.mockRestore();
+      expect(sonuc.size).toBe(liste.length);
+      return sayi;
+    };
+    // İlk okuma mağaza ayarlarının ve vergi tablosunun başlangıç değerini bir kez yazar.
+    await h.gosterim.gosterilecekFiyatlar(h.vt, birimler);
+    expect(await say(birimler)).toBe(await say(birimler.slice(0, 1)));
+  });
+
+  it("olmayan ve bozuk kimlik yok sayılır", async () => {
+    const h = await hazirla();
+    await h.fiyat.fiyatYaz(h.vt, yonetici(), h.birim, { satisFiyati: 10_000 });
+    const sonuc = await h.gosterim.gosterilecekFiyatlar(h.vt, [h.birim, randomUUID(), "bozuk"]);
+    expect([...sonuc.keys()]).toEqual([h.birim]);
+  });
+});
