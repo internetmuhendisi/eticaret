@@ -3,6 +3,7 @@
 // cekirdek/moduller/ekip/izinler-ve-roller.md.
 import { ekipIzinleri } from "../moduller/ekip/izinler.ts";
 import { etiketIzinleri } from "../moduller/etiket/izinler.ts";
+import { fiyatIzinleri } from "../moduller/fiyat/izinler.ts";
 import { kategoriIzinleri } from "../moduller/kategori/izinler.ts";
 import { magazaAyarlariIzinleri } from "../moduller/magaza-ayarlari/izinler.ts";
 import { markaIzinleri } from "../moduller/marka/izinler.ts";
@@ -23,6 +24,7 @@ export type IzinTanimi =
 export const modulIzinleri = {
   ekip: ekipIzinleri,
   etiket: etiketIzinleri,
+  fiyat: fiyatIzinleri,
   kategori: kategoriIzinleri,
   "magaza-ayarlari": magazaAyarlariIzinleri,
   marka: markaIzinleri,
@@ -34,6 +36,7 @@ export const modulIzinleri = {
 export const izinler = {
   ...ekipIzinleri,
   ...etiketIzinleri,
+  ...fiyatIzinleri,
   ...kategoriIzinleri,
   ...magazaAyarlariIzinleri,
   ...markaIzinleri,

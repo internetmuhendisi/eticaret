@@ -127,6 +127,13 @@
       "when": 1794099021664,
       "tag": "0017_ilgili-urunler",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794111976703,
+      "tag": "0018_fiyat",
+      "breakpoints": true
     }
   ]
 }

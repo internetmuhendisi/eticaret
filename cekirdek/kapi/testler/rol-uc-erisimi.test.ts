@@ -193,6 +193,22 @@ describe("kişi listesi", () => {
       }
     },
   );
+
+  // Kart 0080 (kullanıcı kararı): her rol fiyatı görür, yalnız tam yetkili değiştirir.
+  it("fiyat izinleri: her rol görür, yalnız tam yetkili değiştirir", () => {
+    const [girissiz, musteri, rolsuz, ...roller] = kisiler;
+    for (const kisi of [girissiz, musteri, rolsuz]) {
+      if (kisi === undefined) throw new Error("Kişi eksik.");
+      expect(erisebilirMi(kisi, "fiyat.gor")).toBe(false);
+      expect(erisebilirMi(kisi, "fiyat.degistir")).toBe(false);
+    }
+    expect(roller.length).toBeGreaterThanOrEqual(2);
+    for (const rol of roller) {
+      if (rol.tur !== "yonetici" || rol.rolKodu === null) throw new Error("Rol eksik.");
+      expect(erisebilirMi(rol, "fiyat.gor")).toBe(true);
+      expect(erisebilirMi(rol, "fiyat.degistir")).toBe(baslangicRolleri[rol.rolKodu].tamYetki);
+    }
+  });
 });
 
 describe("makine gerçekten yakalıyor", () => {

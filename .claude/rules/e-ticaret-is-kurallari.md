@@ -33,6 +33,7 @@ paths:
 - Oranı ürünün vergi sınıfı ile müşterinin bölgesinden bul. Bölge bulunamazsa mağaza adresini kullan.
 - Siparişe her satırın o anki vergi oranını ve tutarını yaz. Oran sonradan değişse de eski sipariş değişmesin.
 - Para birimini ve para biçimini site ayarından al. Çekirdekte "TL" ya da "₺" sabit yazılmaz.
+- Fiyat yalnız `cekirdek/moduller/fiyat/servis.ts` ile okunur ve değişir; bir anın fiyatını yalnız `gecerliFiyat` (`cekirdek/moduller/fiyat/gecerli.ts`) verir, birimlerin fiyatları tek sorguyla `gecerliFiyatlar` ile gelir. Tutar kuruş, para birimi satırda saklanır (karar 0066).
 - Her fiyat değişikliğini tarihiyle fiyat geçmişine yaz, geçmiş silinmez. İndirimli üründe eski fiyatı fiyat geçmişinden hesapla: son 30 günün en düşük fiyatını göstermek site ayarıdır.
 
 ## Ürün

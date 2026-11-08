@@ -143,6 +143,17 @@
         "ilgili-gecersiz": "Seçilen ilgili ürünlerden biri bulunamadı ya da silinmiş. İlgili ürünleri yeniden seçin."
       }
     },
+    "fiyat": {
+      "hata": {
+        "tutar-bicimi": "Tutar sıfır ya da sıfırdan büyük olmalı.",
+        "indirim-sifir": "İndirimli fiyat sıfır olamaz. Ürünü ücretsiz vermek için satış fiyatını sıfır yapın.",
+        "indirim-buyuk": "İndirimli fiyat satış fiyatından küçük olmalı.",
+        "indirim-zamani-bicimi": "İndirim zamanını tarih ve saatiyle seçin.",
+        "indirim-zamani-gecersiz": "Bu tarih ve saat mağazanın saat diliminde yok (saat değişimi). Başka bir saat seçin.",
+        "indirim-zamani-indirimsiz": "İndirim tarihleri yalnız indirimli fiyatla birlikte girilebilir.",
+        "indirim-sirasi": "İndirimin bitişi başlangıcından sonra olmalı."
+      }
+    },
     "marka": {
       "hata": {
         "kayda-uygun-degil": "Bu alan yalnız bir e-posta adresinden ya da giriş anahtarından oluşamaz. Metni değiştirin.",

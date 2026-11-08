@@ -33,6 +33,8 @@ export const degisiklikIslemleri = [
   "etiket.eklendi",
   "etiket.degisti",
   "etiket.silindi",
+  // Satılabilir birimin fiyatı (kart 0080). İlk fiyatta eski değer boştur.
+  "fiyat.degisti",
 ] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 
@@ -46,6 +48,8 @@ export const degisiklikKayitTurleri = [
   "kategori",
   "marka",
   "etiket",
+  // Kayıt kimliği satılabilir birimin kimliğidir (kart 0080).
+  "fiyat",
 ] as const;
 export type DegisiklikKayitTuru = (typeof degisiklikKayitTurleri)[number];
 

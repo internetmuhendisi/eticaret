@@ -22,6 +22,8 @@ export const baslangicRolleri = {
       "marka.degistir",
       "etiket.gor",
       "etiket.degistir",
+      // Fiyatı görür, değiştiremez (kart 0080, kullanıcı kararı).
+      "fiyat.gor",
     ],
   },
 } as const satisfies Record<
