@@ -9,9 +9,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { BilinenHata } from "../../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
 import { elleStokSebepleri, stokSebepAdlari } from "../../../kayitlar/stok.ts";
-import { baglan, type Veritabani } from "../../../veritabani/baglanti.ts";
-import { yoneticiAdresi } from "../../../veritabani/testler/adresler.ts";
+import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
+import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { urunServisi } from "../../urun/servis.ts";
 import { birimStoklari, stokGecmisi } from "../model.ts";
@@ -78,26 +78,6 @@ const siparisVer = (vt: Veritabani, kalemler: { birim: string; adet: number }[],
   vt.transaction((islem) =>
     servis.stokDus(islem, kim, kalemler, { sebep: "siparis", kaynak: randomUUID() }),
   );
-
-// Bu veritabanında kilit bekleyen bir sorgu görünene kadar bekler. Site kullanıcısı öteki oturumları
-// göremez (karar 0053): gözlem yönetici bağlantısıyla yapılır.
-const kilitBekleyeniGor = async (vt: Veritabani) => {
-  const ad = (await vt.execute<{ ad: string }>(sql`select current_database() as ad`)).rows[0]?.ad;
-  const yonetici = baglan(yoneticiAdresi("postgres"));
-  try {
-    // Yüklü kontrol hattında da yetsin: en çok 20 saniye (kart 0082 kontrolü).
-    for (let deneme = 0; deneme < 800; deneme++) {
-      const sonuc = await yonetici.execute<{ sayi: number }>(
-        sql`select count(*)::int as sayi from pg_stat_activity where datname = ${ad} and wait_event_type = 'Lock'`,
-      );
-      if ((sonuc.rows[0]?.sayi ?? 0) > 0) return;
-      await new Promise((bitti) => setTimeout(bitti, 25));
-    }
-    throw new Error("Kilit bekleyen sorgu görülmedi.");
-  } finally {
-    await yonetici.$client.end();
-  }
-};
 
 describe("kayıt dosyası", () => {
   it("veritabanının sebep denetimi kayıttaki sebeplerle aynı", async () => {

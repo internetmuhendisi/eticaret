@@ -30,7 +30,9 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { varsayilanUrunDurumu } from "../../kayitlar/urun.ts";
+import { adAnahtariSql } from "../../metinler/ad-anahtari.ts";
 import { kimlik, zaman } from "../../veritabani/turler.ts";
+import { dosyalar } from "../dosya/model.ts";
 import { vergiSiniflari } from "../vergi/model.ts";
 
 export const urunler = pgTable(
@@ -99,6 +101,13 @@ export const urunBirimleri = pgTable(
     yukseklik_mm: integer(),
     // Varyantlı üründe birimlerin sırası; küçük önce.
     sira: integer().notNull().default(0),
+    // Birleşimin anahtarı (kart 0085, karar 0071): birimin seçenek değerlerinin kimlikleri sıralı ve
+    // virgülle. Basit ürünün birimi boş anahtar taşır. Yalnız varyant.ts yazar, birimin değerleriyle
+    // (urun_birimi_degerleri) aynı işlemde. Silinmemiş birimler arasında ürün başına tekildir: aynı
+    // birleşim iki kez, basit ürün iki birimle olamaz.
+    birlesim: text().notNull().default(""),
+    // Birimin görseli (kart 0087 doldurur). Bu kart yalnız yerini açar.
+    gorsel_kimligi: uuid().references(() => dosyalar.kimlik, { onDelete: "restrict" }),
     olusturma_zamani: zaman().notNull().defaultNow(),
     guncellenme_zamani: zaman().notNull().defaultNow(),
     silinme_zamani: zaman(),
@@ -109,10 +118,78 @@ export const urunBirimleri = pgTable(
       .on(sql`lower(${tablo.stok_kodu})`)
       .where(sql`${tablo.silinme_zamani} is null and ${tablo.stok_kodu} is not null`),
     index("urun_birimleri_barkod").on(tablo.barkod),
+    uniqueIndex("urun_birimleri_birlesim")
+      .on(tablo.urun_kimligi, tablo.birlesim)
+      .where(sql`${tablo.silinme_zamani} is null`),
     check(
       "urun_birimleri_olcu",
       sql`coalesce(${tablo.agirlik_gram}, 0) >= 0 and coalesce(${tablo.en_mm}, 0) >= 0 and coalesce(${tablo.boy_mm}, 0) >= 0 and coalesce(${tablo.yukseklik_mm}, 0) >= 0`,
     ),
+  ],
+);
+
+// Varyantlı ürünün seçenekleri ve değerleri (kart 0085, karar 0071). Adlar sitenin verisidir ("Beden",
+// "M"). Silme işaretle yapılır: değeri silinen birleşim de silinmiş işaretlenir, satırlar kalır, eski
+// siparişler bozulmaz. Ad, büyük küçük harf ve noktalı noktasız i ayrımı olmadan (ad anahtarı) ürünün
+// silinmemiş seçenekleri, seçeneğin silinmemiş değerleri arasında tekildir.
+//
+// Aranan alanlar: urun_secenekleri.urun_kimligi (ürünün seçenekleri), urun_secenek_degerleri
+// .secenek_kimligi (seçeneğin değerleri); ikisi de tekil ad indeksinin ilk alanıdır.
+export const urunSecenekleri = pgTable(
+  "urun_secenekleri",
+  {
+    kimlik: kimlik(),
+    urun_kimligi: uuid()
+      .notNull()
+      .references(() => urunler.kimlik, { onDelete: "restrict" }),
+    ad: text().notNull(),
+    sira: integer().notNull().default(0),
+    olusturma_zamani: zaman().notNull().defaultNow(),
+    guncellenme_zamani: zaman().notNull().defaultNow(),
+    silinme_zamani: zaman(),
+  },
+  (tablo) => [
+    uniqueIndex("urun_secenekleri_ad")
+      .on(tablo.urun_kimligi, adAnahtariSql(tablo.ad))
+      .where(sql`${tablo.silinme_zamani} is null`),
+  ],
+);
+
+export const urunSecenekDegerleri = pgTable(
+  "urun_secenek_degerleri",
+  {
+    kimlik: kimlik(),
+    secenek_kimligi: uuid()
+      .notNull()
+      .references(() => urunSecenekleri.kimlik, { onDelete: "restrict" }),
+    ad: text().notNull(),
+    sira: integer().notNull().default(0),
+    olusturma_zamani: zaman().notNull().defaultNow(),
+    guncellenme_zamani: zaman().notNull().defaultNow(),
+    silinme_zamani: zaman(),
+  },
+  (tablo) => [
+    uniqueIndex("urun_secenek_degerleri_ad")
+      .on(tablo.secenek_kimligi, adAnahtariSql(tablo.ad))
+      .where(sql`${tablo.silinme_zamani} is null`),
+  ],
+);
+
+// Birimin hangi değerlerden oluştuğu: her seçenekten bir değer. Birimin birleşim anahtarı bu satırlardan
+// kurulur (varyant.ts). Aranan alan: deger_kimligi (değeri silinen birleşimler).
+export const urunBirimiDegerleri = pgTable(
+  "urun_birimi_degerleri",
+  {
+    birim_kimligi: uuid()
+      .notNull()
+      .references(() => urunBirimleri.kimlik, { onDelete: "restrict" }),
+    deger_kimligi: uuid()
+      .notNull()
+      .references(() => urunSecenekDegerleri.kimlik, { onDelete: "restrict" }),
+  },
+  (tablo) => [
+    primaryKey({ columns: [tablo.birim_kimligi, tablo.deger_kimligi] }),
+    index("urun_birimi_degerleri_deger").on(tablo.deger_kimligi),
   ],
 );
 

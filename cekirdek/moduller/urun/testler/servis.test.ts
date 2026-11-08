@@ -363,6 +363,8 @@ describe("alanlar", () => {
       marka: null,
       ilgiliUrunler: [],
       silindi: false,
+      tur: "basit",
+      secenekler: [],
       birimler: [
         {
           kimlik: expect.any(String),
@@ -373,6 +375,7 @@ describe("alanlar", () => {
           boyMm: 200,
           yukseklikMm: 30,
           sira: 0,
+          degerler: [],
           silindi: false,
         },
       ],

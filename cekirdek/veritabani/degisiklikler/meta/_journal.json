@@ -148,6 +148,13 @@
       "when": 1794123374084,
       "tag": "0020_dusuk-stok-esigi",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794137387289,
+      "tag": "0021_varyantli-urun",
+      "breakpoints": true
     }
   ]
 }

@@ -26,3 +26,13 @@ export const urunDurumVitrini = {
   // Kullanıcı kararı (karar 0062): vitrinden bütünüyle çıkar.
   arsiv: { sayfa: false, liste: false, zamanli: false },
 } as const satisfies Record<UrunDurumu, Record<VitrinYeri | "zamanli", boolean>>;
+
+// Ürünün türü (kart 0085, karar 0071). Veritabanına yazılmaz, ürünün seçeneklerinden çıkar: silinmemiş
+// seçeneği olan ürün varyantlıdır. Basit ürünün tek birimi vardır (boş birleşim); varyantlı üründe her
+// birleşim bir birimdir.
+export const urunTurleri = ["basit", "varyantli"] as const;
+export type UrunTuru = (typeof urunTurleri)[number];
+
+// Varyantların sınırları: bir üründe en çok bu kadar silinmemiş seçenek, seçenek başına değer ve
+// birleşim olur. Panel ve sorgular sınırsız birleşimle yavaşlar.
+export const varyantSinirlari = { secenek: 3, deger: 50, birlesim: 100 } as const;

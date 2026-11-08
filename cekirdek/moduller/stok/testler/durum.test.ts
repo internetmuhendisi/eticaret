@@ -2,6 +2,8 @@
 // tükenmiş birim, ürün eşiği olan ve olmayan üründe düşük stok, "son X ürün" eşiği, tükenen ürün
 // ayarının iki değerinde listeler, ürün sayfası ve ilgili ürünler; listedeki tükenmişlik kuralının
 // stokDurumu ile aynı sonucu vermesi; ayarların varsayılanı ve sitenin kendi ayarıyla okunması.
+// Kart 0085: ürünün genel durumu birimlerinden (tek ve çok birimli, silinmiş birleşim, birimsiz ürün) ve
+// çok birimli üründe listedeki tükenmişlik kuralıyla aynı sonuç.
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { eq, inArray, sql } from "drizzle-orm";
@@ -24,6 +26,8 @@ import {
   stokDurumlari,
   stokDurumu,
   tukenmisUrunKosulu,
+  urunStokDurumlari,
+  urunStokDurumu,
 } from "../durum.ts";
 import { stokServisi } from "../servis.ts";
 
@@ -388,5 +392,121 @@ describe("tükenen ürün ayarı vitrinde", () => {
       yalniz.urun,
       stokta.urun,
     ]);
+  });
+});
+
+describe("ürünün genel durumu (kart 0085)", () => {
+  const birim = (miktar: number, takip = true) =>
+    stokDurumu({ miktar, takip, dusukStokEsigi: null, silinmis: false }, ayarlar);
+
+  it("tek birimli üründe birimin durumudur, kalan adet dahil", () => {
+    expect(urunStokDurumu([birim(3)])).toEqual({
+      satilabilir: true,
+      tukendi: false,
+      gosterim: { tur: "son-adet", adet: 3 },
+    });
+    expect(urunStokDurumu([birim(0)])).toEqual({
+      satilabilir: false,
+      tukendi: true,
+      gosterim: { tur: "tukendi" },
+    });
+  });
+
+  it("çok birimli üründe biri satılabilirse stokta, kalan adet yazılmaz; hiçbiri değilse tükendi", () => {
+    expect(urunStokDurumu([birim(0), birim(2)])).toEqual({
+      satilabilir: true,
+      tukendi: false,
+      gosterim: { tur: "stokta" },
+    });
+    expect(urunStokDurumu([birim(0), birim(0), birim(0)])).toEqual({
+      satilabilir: false,
+      tukendi: true,
+      gosterim: { tur: "tukendi" },
+    });
+    expect(urunStokDurumu([])).toEqual({
+      satilabilir: false,
+      tukendi: true,
+      gosterim: { tur: "tukendi" },
+    });
+  });
+
+  it("veritabanıyla: birleşimlerden çıkar, silinmiş birleşim sayılmaz, liste kuralıyla aynı", async () => {
+    const vt = await siteAc();
+    // Beden S, M, L tek seçenek: her değer bir birleşim.
+    const varyantli = async (miktarlar: number[], takip = true) => {
+      const urun = await urunSrv.urunEkle(vt, yonetici(), {
+        ad: `Varyantlı ${randomUUID().slice(0, 8)}`,
+        vergiSinifi: null,
+        durum: "yayinda",
+        stokTakibi: takip,
+      });
+      const adlar = miktarlar.map((_, i) => `d${i}`);
+      await urunSrv.secenekEkle(vt, yonetici(), urun, { ad: "Beden", degerler: adlar });
+      const degerler = (await urunSrv.urunuOku(vt, urun))?.secenekler[0]?.degerler ?? [];
+      const birimler: string[] = [];
+      for (const [i, miktar] of miktarlar.entries()) {
+        const kimlik = await urunSrv.birlesimEkle(vt, yonetici(), urun, {
+          degerler: [degerler[i]?.kimlik ?? ""],
+        });
+        if (miktar > 0) {
+          await stok.stokDuzelt(vt, yonetici(), kimlik, {
+            yeniMiktar: miktar,
+            gorulenMiktar: 0,
+            sebep: "sayim",
+          });
+        }
+        birimler.push(kimlik);
+      }
+      return { urun, birimler };
+    };
+    const birStokta = await varyantli([0, 4, 0]);
+    const hepsiTukenmis = await varyantli([0, 0]);
+    const takipsiz = await varyantli([0, 0], false);
+    // Stoklu tek birleşimi silinen ürün tükenmiştir.
+    const stokluSilinen = await varyantli([0, 6]);
+    await urunSrv.birlesimSil(vt, yonetici(), stokluSilinen.birimler[1] ?? "");
+    // Bütün birleşimleri silinen (birimsiz) ürün tükenmiştir.
+    const birimsiz = await varyantli([5]);
+    await urunSrv.birlesimSil(vt, yonetici(), birimsiz.birimler[0] ?? "");
+    // Silinmiş birleşim sayılmaz: tek canlı birleşimi kalan ürün onun kalan adedini yazar.
+    const tekKalan = await varyantli([3, 9]);
+    await urunSrv.birlesimSil(vt, yonetici(), tekKalan.birimler[1] ?? "");
+    const basit = await urunAc(vt, 2);
+    const hepsi = [birStokta, hepsiTukenmis, takipsiz, stokluSilinen, birimsiz, tekKalan];
+    const kimlikler = [...hepsi.map((u) => u.urun), basit.urun];
+    const durumlar = await urunStokDurumlari(vt, [...kimlikler, randomUUID(), "bozuk"], ayarlar);
+    expect(kimlikler.map((k) => durumlar.get(k)?.gosterim)).toEqual([
+      { tur: "stokta" },
+      { tur: "tukendi" },
+      { tur: "stokta" },
+      { tur: "tukendi" },
+      { tur: "tukendi" },
+      { tur: "son-adet", adet: 3 },
+      { tur: "son-adet", adet: 2 },
+    ]);
+    expect(durumlar.size).toBe(kimlikler.length);
+    const tukenmis = await vt
+      .select({ kimlik: urunTablosu.kimlik })
+      .from(urunTablosu)
+      .where(sql`${inArray(urunTablosu.kimlik, kimlikler)} and ${tukenmisUrunKosulu()}`);
+    expect(tukenmis.map((t) => t.kimlik).toSorted()).toEqual(
+      kimlikler.filter((k) => durumlar.get(k)?.tukendi).toSorted(),
+    );
+  });
+
+  it("ürün sayısıyla sorgu sayısı artmaz", async () => {
+    const vt = await siteAc();
+    const urunler = await Promise.all([1, 2, 3, 4].map((m) => urunAc(vt, m)));
+    const sorgular = vi.spyOn(vt.$client, "query");
+    await urunStokDurumlari(vt, urunler.map((u) => u.urun).slice(0, 1), ayarlar);
+    const bir = sorgular.mock.calls.length;
+    sorgular.mockClear();
+    await urunStokDurumlari(
+      vt,
+      urunler.map((u) => u.urun),
+      ayarlar,
+    );
+    expect(sorgular.mock.calls.length).toBe(bir);
+    sorgular.mockRestore();
   });
 });

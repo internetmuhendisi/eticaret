@@ -146,7 +146,19 @@
         "etiket-gecersiz": "Seçilen etiketlerden biri bulunamadı ya da silinmiş. Etiketleri yeniden seçin.",
         "ilgili-tekrar": "Aynı ürün ilgili ürünlerde iki kez seçilmiş. Ürünü bir kez seçin.",
         "ilgili-kendisi": "Ürün kendi ilgili ürünü olamaz. Listeden çıkarın.",
-        "ilgili-gecersiz": "Seçilen ilgili ürünlerden biri bulunamadı ya da silinmiş. İlgili ürünleri yeniden seçin."
+        "ilgili-gecersiz": "Seçilen ilgili ürünlerden biri bulunamadı ya da silinmiş. İlgili ürünleri yeniden seçin.",
+        "secenek-ad-tekrar": "Bu üründe bu adla bir seçenek zaten var. Başka bir ad yazın.",
+        "deger-ad-tekrar": "Bu seçenekte bu değer zaten var. Başka bir değer yazın.",
+        "deger-tekrar": "Aynı değer iki kez yazılmış. Değeri bir kez yazın.",
+        "secenek-siniri": "Bir üründe en çok {sinir} seçenek olabilir.",
+        "deger-siniri": "Bir seçenekte en çok {sinir} değer olabilir.",
+        "birlesim-siniri": "Bir üründe en çok {sinir} birleşim olabilir.",
+        "secenek-eklenemez": "Birleşimleri olan ürüne yeni seçenek eklenemez: var olan birleşimlerin o seçenekte değeri olmaz. Önce birleşimleri silin.",
+        "birlesim-tekrar": "Bu birleşim üründe zaten var. Başka bir değer seçin.",
+        "birlesim-eksik": "Birleşim için her seçenekten bir değer seçin.",
+        "birlesim-gecersiz": "Seçilen değerlerden biri bu ürünün seçeneklerinde yok ya da silinmiş. Değerleri yeniden seçin.",
+        "varyantli-urun-birim-alani": "Seçenekli üründe stok kodu, barkod, ağırlık ve ölçüler her birleşimde ayrı girilir.",
+        "son-deger": "Seçeneğin son değeri silinemez. Seçeneği kaldırmak için seçeneği silin."
       }
     },
     "fiyat": {

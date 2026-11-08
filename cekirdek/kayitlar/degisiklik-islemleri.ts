@@ -22,6 +22,17 @@ export const degisiklikIslemleri = [
   "urun.eklendi",
   "urun.degisti",
   "urun.silindi",
+  // Varyantlı ürünün seçenekleri, değerleri ve birleşimleri (kart 0085). Değeri silinen birleşim de
+  // kendi satırıyla urun-birimi.silindi olarak yazılır.
+  "urun-secenegi.eklendi",
+  "urun-secenegi.degisti",
+  "urun-secenegi.silindi",
+  "urun-secenek-degeri.eklendi",
+  "urun-secenek-degeri.degisti",
+  "urun-secenek-degeri.silindi",
+  "urun-birimi.eklendi",
+  "urun-birimi.degisti",
+  "urun-birimi.silindi",
   // Kategori (kart 0077). Taşıma, üst kategorinin değişmesidir: kategori.degisti.
   "kategori.eklendi",
   "kategori.degisti",
@@ -48,6 +59,10 @@ export const degisiklikKayitTurleri = [
   "vergi-sinifi",
   "vergi-orani",
   "urun",
+  // Kart 0085: varyantlı ürünün seçeneği, değeri ve satılabilir birimi.
+  "urun-secenegi",
+  "urun-secenek-degeri",
+  "urun-birimi",
   "kategori",
   "marka",
   "etiket",

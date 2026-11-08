@@ -8,7 +8,10 @@
 // - Takip açıksa stok sıfırsa birim tükenmiştir ve satılamaz.
 // - Ürün, satılabilir tek bir birimi kalmayınca tükenmiştir (vitrin listesi için tukenmisUrunKosulu).
 //   İki kural aynı tanımı kullanır: birim, silinmemişse ve takip kapalıysa ya da stoğu varsa satılabilir.
-//   Ürün düzeyindeki durum (varyantlı üründe birimlerin birleşimi) kart 0085 ile gelir.
+// - Ürünün genel durumu (kart 0085, kullanıcı kararı) silinmemiş birimlerinden çıkar (urunStokDurumu):
+//   tek birimli üründe birimin durumudur; birden çok birimde biri satılabilirse "stokta", hiçbiri
+//   satılamıyorsa "tukendi" yazılır. Kalan adet ("Son 3 ürün") ancak birleşim seçilince, birimin
+//   durumunda görünür; düşük stok birim bazındadır.
 // - Düşük stok: stok sıfırdan büyük ve eşiğe eşit ya da altında. Eşik ürünün kendi eşiği, yoksa mağaza
 //   ayarı (dusukStokEsigi). Eşik 0 düşük stoğu kapatır.
 // - Müşteriye yazılan: tükendiyse "tukendi"; stok sonAdetEsigi'ne eşit ya da altındaysa "son-adet" ve
@@ -24,6 +27,7 @@ import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { kimlikMi } from "../../veritabani/turler.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
 import { urunBirimleri, urunler } from "../urun/model.ts";
+import { urunlerinBirimleri } from "../urun/varyant.ts";
 import { birimStoklari } from "./model.ts";
 
 export type StokDurumAyarlari = Pick<MagazaAyarlari, "dusukStokEsigi" | "sonAdetEsigi">;
@@ -97,6 +101,21 @@ export const tukenmisUrunKosulu = (): SQL => sql`(not exists (
     and (not ${urunler.stok_takibi} or ${birimStoklari.miktar} > 0)
 ))`;
 
+// Ürünün genel durumu. Yalnız silinmemiş birimler verilir; birimi olmayan ürün tükenmiştir.
+export type UrunStokDurumu = Pick<StokDurumu, "satilabilir" | "tukendi" | "gosterim">;
+export const urunStokDurumu = (birimler: StokDurumu[]): UrunStokDurumu => {
+  const [tek] = birimler;
+  if (birimler.length === 1 && tek !== undefined) {
+    return { satilabilir: tek.satilabilir, tukendi: tek.tukendi, gosterim: tek.gosterim };
+  }
+  const satilabilir = birimler.some((birim) => birim.satilabilir);
+  return {
+    satilabilir,
+    tukendi: !satilabilir,
+    gosterim: { tur: satilabilir ? "stokta" : "tukendi" },
+  };
+};
+
 // Birimlerin stok bilgisi tek sorguyla; olmayan birim haritada yoktur. Silinmiş birim de okunur ve
 // silinmiş diye işaretlenir. Ürünün vitrinde görünüp görünmediğine (taslak, gizli) burada bakılmaz: o
 // vitrinKosulu'nun işidir, sepet ikisini birlikte sınar.
@@ -134,3 +153,38 @@ export const stokDurumlari = async (
 // Sitenin mağaza ayarlarıyla birimlerin stok durumu: ayar ve stok iki sorguda, birim sayısıyla artmaz.
 export const siteninStokDurumlari = async (vt: Veritabani, site: Site, birimler: string[]) =>
   stokDurumlari(vt, birimler, await siteninMagazaAyarlari(vt, site));
+
+// Ürünlerin genel stok durumu, verilen ayarlarla: birimler, stoklar üç sorguda, ürün sayısıyla artmaz.
+// Olmayan ürün haritada yoktur; silinmemiş birimi olmayan ürün tükenmiştir.
+export const urunStokDurumlari = async (
+  vt: Veritabani,
+  urunKimlikleri: string[],
+  ayarlar: StokDurumAyarlari,
+): Promise<Map<string, UrunStokDurumu>> => {
+  const gecerli = urunKimlikleri.filter(kimlikMi);
+  if (gecerli.length === 0) return new Map();
+  const bulunan = await vt
+    .select({ kimlik: urunler.kimlik })
+    .from(urunler)
+    .where(inArray(urunler.kimlik, gecerli));
+  const birimleri = await urunlerinBirimleri(vt, gecerli);
+  const durumlar = await stokDurumlari(vt, [...birimleri.values()].flat(), ayarlar);
+  return new Map(
+    bulunan.map(({ kimlik }) => [
+      kimlik,
+      urunStokDurumu(
+        (birimleri.get(kimlik) ?? []).flatMap((birim) => {
+          const durum = durumlar.get(birim);
+          return durum === undefined ? [] : [durum];
+        }),
+      ),
+    ]),
+  );
+};
+
+// Sitenin mağaza ayarlarıyla ürünlerin genel stok durumu.
+export const siteninUrunStokDurumlari = async (
+  vt: Veritabani,
+  site: Site,
+  urunKimlikleri: string[],
+) => urunStokDurumlari(vt, urunKimlikleri, await siteninMagazaAyarlari(vt, site));

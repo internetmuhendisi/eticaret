@@ -13,12 +13,16 @@
 // geçmemişse servis yine şemadan geçirir: başka bir yoldan gelen ham değer tabloya yazılmaz.
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
-import type { z } from "zod";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
-import { type UrunDurumu, urunDurumVitrini, type VitrinYeri } from "../../kayitlar/urun.ts";
+import {
+  type UrunDurumu,
+  type UrunTuru,
+  urunDurumVitrini,
+  type VitrinYeri,
+} from "../../kayitlar/urun.ts";
 import { bosAdresAdi } from "../../metinler/adres-adi.ts";
 import { yerelZamandan } from "../../metinler/bicimleyici.ts";
 import {
@@ -37,18 +41,32 @@ import {
   gruplariKaldir,
   kilitliBagliGruplar,
 } from "./baglantilar.ts";
+import {
+  cakisma,
+  dogrulamaHatasi,
+  girdiyiDogrula,
+  kayitDegeri,
+  type Sorun,
+  stokKoduKullaniliyor,
+} from "./dogrulama.ts";
 import { ilgilileriYaz, ilgiliSecimHatasi, secilenIlgililer } from "./ilgili.ts";
 import { urunKilidiAl } from "./kilit.ts";
 import { urunBirimleri, urunler } from "./model.ts";
 import {
+  birimAlanAdlari,
   type UrunDegisikligi,
   type UrunGirdisi,
-  type UrunHatasi,
   urunAlanKurallari,
   urunDegisikligi,
   urunGirdisi,
-  urunHatalari,
 } from "./semalar.ts";
+import {
+  birimDegerleri,
+  secenekleriOku,
+  type UrunSecenegi,
+  urununBirlesimleriniSil,
+  varyantIslemleri,
+} from "./varyant.ts";
 import { type VitrinSecenekleri, vitrinKosulu } from "./vitrin.ts";
 
 export type UrunBirimi = {
@@ -60,6 +78,11 @@ export type UrunBirimi = {
   boyMm?: number;
   yukseklikMm?: number;
   sira: number;
+  // Varyantlı üründe birleşimin değerlerinin kimlikleri, seçeneklerin sırasıyla; basit üründe boş
+  // (kart 0085).
+  degerler: string[];
+  // Birimin görseli (dosya kimliği; kart 0087).
+  gorsel?: string;
   silindi: boolean;
 };
 
@@ -88,6 +111,11 @@ export type Urun = {
   // Elle seçilen ilgili ürünler, seçim sırasıyla; silinmiş olanlar görünmez (kart 0079).
   ilgiliUrunler: string[];
   silindi: boolean;
+  // Seçeneği olan ürün varyantlıdır (cekirdek/kayitlar/urun.ts).
+  tur: UrunTuru;
+  // Seçenekler ve değerleri sırasıyla; silinmişler de okunur, işaretlidir (eski birleşimler onlara
+  // bağlıdır).
+  secenekler: UrunSecenegi[];
   birimler: UrunBirimi[];
 };
 
@@ -149,22 +177,6 @@ const kayitAlanlari = [
   "ilgiliUrunler",
 ] as const satisfies readonly (keyof UrunKaydi)[];
 
-type Sorun = { alan: string; kod: string };
-const dogrulamaHatasi = (sorunlar: Sorun[]) => new BilinenHata("dogrulama", sorunlar);
-const cakisma = (alan: string, kod: UrunHatasi) => new BilinenHata("cakisma", [{ alan, kod }]);
-
-// Şemadan geçmeyen girdi doğrulama hatasıdır: her sorunun alanı ve kodu (vergi modülüyle aynı biçim).
-const bilinenKodlar = new Set<string>(urunHatalari);
-const girdiyiDogrula = <T>(sonuc: z.ZodSafeParseResult<T>): T => {
-  if (sonuc.success) return sonuc.data;
-  throw dogrulamaHatasi(
-    sonuc.error.issues.map((sorun) => ({
-      alan: sorun.path.join("."),
-      kod: bilinenKodlar.has(sorun.message) ? sorun.message : sorun.code,
-    })),
-  );
-};
-
 // Alanlar arası kurallar birleşmiş kayda uygulanır. Zamanlanmış olmayan ürünün yayın zamanı silinir.
 const kurallariDenetle = (kayit: UrunKaydi): UrunKaydi => {
   const sorunlar: Sorun[] = urunAlanKurallari({
@@ -177,20 +189,6 @@ const kurallariDenetle = (kayit: UrunKaydi): UrunKaydi => {
   if (sorunlar.length > 0) throw dogrulamaHatasi(sorunlar);
   return zamanli ? kayit : { ...kayit, yayinZamani: null };
 };
-
-// Değişiklik kaydına giden değer: boş alan yazılmaz, zaman ISO metnidir. Boş liste eklemede ve silmede
-// yazılmaz; değişiklikte yazılır (listenin boşaldığı görünsün).
-const kayitDegeri = (kayit: Partial<UrunKaydi>, bosListe = false): Record<string, unknown> =>
-  Object.fromEntries(
-    Object.entries(kayit)
-      .filter(
-        ([, deger]) =>
-          deger !== null &&
-          deger !== undefined &&
-          (bosListe || !(Array.isArray(deger) && deger.length === 0)),
-      )
-      .map(([alan, deger]) => [alan, deger instanceof Date ? deger.toISOString() : deger]),
-  );
 
 const urunSatiri = (kayit: UrunKaydi & { adresAdi: string }) => ({
   ad: kayit.ad,
@@ -241,6 +239,7 @@ const birimAlanlari = {
   boyMm: urunBirimleri.boy_mm,
   yukseklikMm: urunBirimleri.yukseklik_mm,
   sira: urunBirimleri.sira,
+  gorsel: urunBirimleri.gorsel_kimligi,
   silinme: urunBirimleri.silinme_zamani,
 };
 
@@ -303,25 +302,6 @@ export const urunServisi = (saatDilimi: () => string) => {
     }
   };
 
-  // Kilit altında: silinmemiş başka bir birim bu stok kodunu (büyük küçük harf ayrımsız) taşıyor mu?
-  const stokKoduKullaniliyor = async (
-    islem: VeritabaniIslemi,
-    stokKodu: string,
-    haricBirim?: string,
-  ) => {
-    const bulunan = await islem
-      .select({ kimlik: urunBirimleri.kimlik })
-      .from(urunBirimleri)
-      .where(
-        and(
-          sql`lower(${urunBirimleri.stok_kodu}) = lower(${stokKodu})`,
-          isNull(urunBirimleri.silinme_zamani),
-          haricBirim === undefined ? undefined : ne(urunBirimleri.kimlik, haricBirim),
-        ),
-      );
-    return bulunan.length > 0;
-  };
-
   const adresAdiKullaniliyor = async (
     islem: VeritabaniIslemi,
     adresAdi: string,
@@ -359,7 +339,7 @@ export const urunServisi = (saatDilimi: () => string) => {
   const tekligiDenetle = async (
     islem: VeritabaniIslemi,
     kayit: UrunKaydi,
-    haric?: { urun: string; birim: string },
+    haric?: { urun: string; birim?: string },
   ) => {
     if (
       kayit.stokKodu !== null &&
@@ -432,7 +412,9 @@ export const urunServisi = (saatDilimi: () => string) => {
     });
   };
 
-  // Değişecek ürün ve tek birimi, kayıt biçiminde. Yoksa ya da silinmişse bulunamadı.
+  // Değişecek ürün, kayıt biçiminde. Yoksa ya da silinmişse bulunamadı. Basit üründe tek birimin
+  // (boş birleşim) alanları kayda girer; varyantlı üründe birim alanları her birleşimdedir (varyant.ts),
+  // kayıtta boştur ve birim kimliği yoktur.
   const degisebilenUrun = async (islem: VeritabaniIslemi, kimlik: string) => {
     if (!kimlikMi(kimlik)) throw new BilinenHata("bulunamadi");
     const [urun] = await islem.select(urunAlanlari).from(urunler).where(eq(urunler.kimlik, kimlik));
@@ -440,11 +422,35 @@ export const urunServisi = (saatDilimi: () => string) => {
     const [birim] = await islem
       .select(birimAlanlari)
       .from(urunBirimleri)
-      .where(and(eq(urunBirimleri.urun_kimligi, kimlik), isNull(urunBirimleri.silinme_zamani)))
-      .orderBy(asc(urunBirimleri.sira), asc(urunBirimleri.olusturma_zamani));
-    if (birim === undefined) throw new Error("Ürünün satılabilir birimi yok.");
+      .where(
+        and(
+          eq(urunBirimleri.urun_kimligi, kimlik),
+          eq(urunBirimleri.birlesim, ""),
+          isNull(urunBirimleri.silinme_zamani),
+        ),
+      );
+    const varyantli = (await secenekleriOku(islem, [kimlik], { silinmisler: false })).has(kimlik);
+    if (birim === undefined && !varyantli) throw new Error("Basit ürünün satılabilir birimi yok.");
     const { silinme: _urunSilinme, kimlik: _urun, ...urunKaydi } = urun;
-    const { silinme: _birimSilinme, kimlik: birimKimligi, sira: _sira, ...birimKaydi } = birim;
+    const birimKaydi =
+      birim === undefined || varyantli
+        ? {
+            stokKodu: null,
+            barkod: null,
+            agirlikGram: null,
+            enMm: null,
+            boyMm: null,
+            yukseklikMm: null,
+          }
+        : {
+            stokKodu: birim.stokKodu,
+            barkod: birim.barkod,
+            agirlikGram: birim.agirlikGram,
+            enMm: birim.enMm,
+            boyMm: birim.boyMm,
+            yukseklikMm: birim.yukseklikMm,
+          };
+    const birimKimligi = varyantli ? undefined : birim?.kimlik;
     const bagli = await bagliHepsi((t) => kilitliBagliGruplar(islem, t, kimlik));
     const kayit: UrunKaydi = {
       ...urunKaydi,
@@ -469,6 +475,13 @@ export const urunServisi = (saatDilimi: () => string) => {
     const yayinZamani = yayinZamaniniCevir(girdi.yayinZamani);
     await yaz(vt, async (islem) => {
       const { kayit: eski, birimKimligi } = await degisebilenUrun(islem, kimlik);
+      // Varyantlı üründe birim alanları her birleşimde ayrı girilir (birlesimDegistir).
+      if (birimKimligi === undefined) {
+        const sorunlar: Sorun[] = birimAlanAdlari
+          .filter((alan) => girdi[alan] !== undefined)
+          .map((alan) => ({ alan, kod: "varyantli-urun-birim-alani" }));
+        if (sorunlar.length > 0) throw dogrulamaHatasi(sorunlar);
+      }
       const verilen = Object.fromEntries(
         Object.entries({ ...girdi, yayinZamani }).filter(([, deger]) => deger !== undefined),
       ) as Partial<UrunKaydi>;
@@ -502,7 +515,7 @@ export const urunServisi = (saatDilimi: () => string) => {
             yeni.stokKodu?.toLowerCase() === eski.stokKodu?.toLowerCase() ? null : yeni.stokKodu,
           adresAdi: yeni.adresAdi === eski.adresAdi ? null : yeni.adresAdi,
         },
-        { urun: kimlik, birim: birimKimligi },
+        { urun: kimlik, ...(birimKimligi === undefined ? {} : { birim: birimKimligi }) },
       );
       const adresAdi = yeni.adresAdi ?? eski.adresAdi;
       if (adresAdi === null) throw new Error("Ürünün adres adı yok.");
@@ -510,10 +523,12 @@ export const urunServisi = (saatDilimi: () => string) => {
         .update(urunler)
         .set({ ...urunSatiri({ ...yeni, adresAdi }), guncellenme_zamani: sql`now()` })
         .where(eq(urunler.kimlik, kimlik));
-      await islem
-        .update(urunBirimleri)
-        .set({ ...birimSatiri(yeni), guncellenme_zamani: sql`now()` })
-        .where(eq(urunBirimleri.kimlik, birimKimligi));
+      if (birimKimligi !== undefined) {
+        await islem
+          .update(urunBirimleri)
+          .set({ ...birimSatiri(yeni), guncellenme_zamani: sql`now()` })
+          .where(eq(urunBirimleri.kimlik, birimKimligi));
+      }
       // Önce kaldırılır: marka bağlantısı ürün başına tektir.
       for (const t of baglantiTanimlari) {
         await gruplariKaldir(islem, t, kimlik, kalkan(t.alan));
@@ -536,6 +551,9 @@ export const urunServisi = (saatDilimi: () => string) => {
   const urunSil = (vt: Veritabani, kim: DegisikligiYapan, kimlik: string) =>
     yaz(vt, async (islem) => {
       const { kayit } = await degisebilenUrun(islem, kimlik);
+      // Varyantlı üründe her birleşim kendi satırıyla kayda girer; basit birimin alanları ürünün
+      // kaydındadır.
+      await urununBirlesimleriniSil(islem, kim, kimlik);
       await islem
         .update(urunler)
         .set({ silinme_zamani: sql`now()`, guncellenme_zamani: sql`now()` })
@@ -567,6 +585,13 @@ export const urunServisi = (saatDilimi: () => string) => {
       .where(eq(urunBirimleri.urun_kimligi, kimlik))
       .orderBy(asc(urunBirimleri.sira), asc(urunBirimleri.olusturma_zamani));
     const { silinme, vergiSinifi, durum, ...alanlar } = urun;
+    const secenekler =
+      (await secenekleriOku(vt, [kimlik], { silinmisler: true })).get(kimlik) ?? [];
+    const degerler = await birimDegerleri(
+      vt,
+      birimler.map((birim) => birim.kimlik),
+      secenekler,
+    );
     return {
       ...doluAlanlar(alanlar),
       durum: durum as UrunDurumu,
@@ -574,8 +599,11 @@ export const urunServisi = (saatDilimi: () => string) => {
       ...(await bagliHepsi((t) => bagliGruplar(vt, t, kimlik))),
       ilgiliUrunler: await secilenIlgililer(vt, kimlik),
       silindi: silinme !== null,
+      tur: secenekler.some((secenek) => !secenek.silindi) ? "varyantli" : "basit",
+      secenekler,
       birimler: birimler.map(({ silinme: birimSilinme, ...birim }) => ({
         ...doluAlanlar(birim),
+        degerler: degerler.get(birim.kimlik) ?? [],
         silindi: birimSilinme !== null,
       })),
     };
@@ -596,7 +624,14 @@ export const urunServisi = (saatDilimi: () => string) => {
         .where(and(eq(urunler.kimlik, kimlik), vitrinKosulu(yer, secenekler)))
     ).length > 0;
 
-  return { urunEkle, urunDegistir, urunSil, urunuOku, vitrindeGorunurMu };
+  return {
+    urunEkle,
+    urunDegistir,
+    urunSil,
+    urunuOku,
+    vitrindeGorunurMu,
+    ...varyantIslemleri(yaz),
+  };
 };
 
 // Verilen sitenin servisi: arka plan işi ve testler siteyi kendisi verir.

@@ -11,6 +11,7 @@ import {
   urunDurumlari,
   urunDurumVitrini,
   varsayilanUrunDurumu,
+  varyantSinirlari,
 } from "../../kayitlar/urun.ts";
 import { adresAdiKalibi, adresAdiUzunlugu } from "../../metinler/adres-adi.ts";
 import type { MetinAnahtari } from "../../metinler/metin.ts";
@@ -40,6 +41,19 @@ export const urunHatalari = [
   "ilgili-tekrar",
   "ilgili-kendisi",
   "ilgili-gecersiz",
+  // Varyantlı ürün (kart 0085, karar 0071).
+  "secenek-ad-tekrar",
+  "deger-ad-tekrar",
+  "deger-tekrar",
+  "secenek-siniri",
+  "deger-siniri",
+  "birlesim-siniri",
+  "secenek-eklenemez",
+  "birlesim-tekrar",
+  "birlesim-eksik",
+  "birlesim-gecersiz",
+  "varyantli-urun-birim-alani",
+  "son-deger",
 ] as const;
 export type UrunHatasi = (typeof urunHatalari)[number];
 
@@ -63,6 +77,18 @@ export const urunHataMetinleri = {
   "ilgili-tekrar": "yonetim.urun.hata.ilgili-tekrar",
   "ilgili-kendisi": "yonetim.urun.hata.ilgili-kendisi",
   "ilgili-gecersiz": "yonetim.urun.hata.ilgili-gecersiz",
+  "secenek-ad-tekrar": "yonetim.urun.hata.secenek-ad-tekrar",
+  "deger-ad-tekrar": "yonetim.urun.hata.deger-ad-tekrar",
+  "deger-tekrar": "yonetim.urun.hata.deger-tekrar",
+  "secenek-siniri": "yonetim.urun.hata.secenek-siniri",
+  "deger-siniri": "yonetim.urun.hata.deger-siniri",
+  "birlesim-siniri": "yonetim.urun.hata.birlesim-siniri",
+  "secenek-eklenemez": "yonetim.urun.hata.secenek-eklenemez",
+  "birlesim-tekrar": "yonetim.urun.hata.birlesim-tekrar",
+  "birlesim-eksik": "yonetim.urun.hata.birlesim-eksik",
+  "birlesim-gecersiz": "yonetim.urun.hata.birlesim-gecersiz",
+  "varyantli-urun-birim-alani": "yonetim.urun.hata.varyantli-urun-birim-alani",
+  "son-deger": "yonetim.urun.hata.son-deger",
 } as const satisfies Record<UrunHatasi, MetinAnahtari>;
 
 const hata = (kod: UrunHatasi) => kod;
@@ -204,3 +230,68 @@ export const urunDegisikligi = z.strictObject({
   ilgiliUrunler: alanlar.ilgiliUrunler.optional(),
 });
 export type UrunDegisikligi = z.input<typeof urunDegisikligi>;
+
+// Birimin kendi alanları: basit üründe ürün girdisiyle, varyantlı üründe her birleşimde ayrı gelir
+// (kart 0085). Varyantlı üründe ürün girdisi ve değişikliği bunları taşıyamaz.
+export const birimAlanAdlari = [
+  "stokKodu",
+  "barkod",
+  "agirlikGram",
+  "enMm",
+  "boyMm",
+  "yukseklikMm",
+] as const;
+
+// Seçeneklerin ve değerlerin adları sitenin verisidir ("Beden", "M"). Ad tekilliği veritabanında, ad
+// anahtarıyla aranır (karar 0064); girdi içindeki tekrar da öyle yakalanır.
+const secenekAdi = metin(100);
+const sira = z.int().min(0).max(1_000_000);
+
+// Yeni seçenek ve değerleri; değerlerin sırası listedeki sıradır.
+export const secenekGirdisi = z.strictObject({
+  ad: secenekAdi,
+  sira: sira.optional(),
+  degerler: z.array(secenekAdi).min(1).max(varyantSinirlari.deger),
+});
+export type SecenekGirdisi = z.input<typeof secenekGirdisi>;
+
+export const secenekDegisikligi = z.strictObject({
+  ad: secenekAdi.optional(),
+  sira: sira.optional(),
+});
+export type SecenekDegisikligi = z.input<typeof secenekDegisikligi>;
+
+export const degerGirdisi = z.strictObject({ ad: secenekAdi, sira: sira.optional() });
+export type DegerGirdisi = z.input<typeof degerGirdisi>;
+
+export const degerDegisikligi = z.strictObject({
+  ad: secenekAdi.optional(),
+  sira: sira.optional(),
+});
+export type DegerDegisikligi = z.input<typeof degerDegisikligi>;
+
+// Yeni birleşim: her seçenekten bir değerin kimliği ve birimin alanları. Birleşim sonradan değişmez:
+// başka bir birleşim yeni birimdir (stok ve fiyat geçmişi birime bağlıdır).
+export const birlesimGirdisi = z.strictObject({
+  degerler: tekrarsizListe(z.uuid(), varyantSinirlari.secenek, "deger-tekrar").min(1),
+  sira: sira.optional(),
+  stokKodu: alanlar.stokKodu.optional(),
+  barkod: alanlar.barkod.optional(),
+  agirlikGram: alanlar.agirlikGram.optional(),
+  enMm: alanlar.enMm.optional(),
+  boyMm: alanlar.boyMm.optional(),
+  yukseklikMm: alanlar.yukseklikMm.optional(),
+});
+export type BirlesimGirdisi = z.input<typeof birlesimGirdisi>;
+
+// Birleşimin değişikliği: yalnız verilen alan değişir, null boşaltır.
+export const birlesimDegisikligi = z.strictObject({
+  sira: sira.optional(),
+  stokKodu: alanlar.stokKodu.nullable().optional(),
+  barkod: alanlar.barkod.nullable().optional(),
+  agirlikGram: alanlar.agirlikGram.nullable().optional(),
+  enMm: alanlar.enMm.nullable().optional(),
+  boyMm: alanlar.boyMm.nullable().optional(),
+  yukseklikMm: alanlar.yukseklikMm.nullable().optional(),
+});
+export type BirlesimDegisikligi = z.input<typeof birlesimDegisikligi>;

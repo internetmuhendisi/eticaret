@@ -1,13 +1,16 @@
 // Gösterilecek fiyat gerçek veritabanıyla (kart 0081, karar 0067): vergi dahil ve hariç girişin dahil
 // ve hariç gösterimi ve ek metni, vergi kapalı, vergi adı olmayan site, mağaza sahibinin kendi metni ve
 // boş metni, geçmişten eski fiyat (ayar açık ve kapalı), sitenin para biçimiyle yazılış, bölge, fiyatsız
-// birim ve birim sayısıyla artmayan sorgu sayısı.
+// birim ve birim sayısıyla artmayan sorgu sayısı. Kart 0085: varyantlı ürünün fiyat aralığı (yalnız
+// satılabilir birleşimler, hepsi tükenmişse hepsi, fiyatsız ve silinmiş birleşim, tek fiyat, indirim ve
+// vergi çevirmesi), basit ürünün aralığı ve ürün sayısıyla artmayan sorgu sayısı.
 //
 // Beklenen tutarlar elle hesaplanmıştır. Deneme sitesinin vergi sınıfı "Genel" ülkede yüzde 18'dir; mağaza
 // Ankara'dadır, binde beşlik ek oran yalnız İstanbul'un bir posta kodundadır (orada en özel oran olarak
 // yalnız o geçer).
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
+import { eq } from "drizzle-orm";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { MagazaAyarlari } from "../../../ayar-semasi/ayarlar.ts";
 import { siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
@@ -15,6 +18,8 @@ import { gunluk } from "../../../izleme/gunluk.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { siteninServisi } from "../../magaza-ayarlari/servis.ts";
+import { stokServisi } from "../../stok/servis.ts";
+import { urunBirimleri } from "../../urun/model.ts";
 import { urunServisi } from "../../urun/servis.ts";
 import { siteninVergiServisi } from "../../vergi/servis.ts";
 import { fiyatGosterimServisi } from "../gosterim.ts";
@@ -300,5 +305,172 @@ describe("birimler", () => {
     await h.fiyat.fiyatYaz(h.vt, yonetici(), h.birim, { satisFiyati: 10_000 });
     const sonuc = await h.gosterim.gosterilecekFiyatlar(h.vt, [h.birim, randomUUID(), "bozuk"]);
     expect([...sonuc.keys()]).toEqual([h.birim]);
+  });
+});
+
+describe("fiyat aralığı (kart 0085)", () => {
+  const stok = stokServisi();
+
+  // Tek seçenekli (Beden) varyantlı ürün: her miktar bir birleşim, stoğuyla.
+  const varyantliAc = async (h: Awaited<ReturnType<typeof hazirla>>, miktarlar: number[]) => {
+    const urunler = urunServisi(() => h.site.ayarlar.saatDilimi);
+    const siniflar = await siteninVergiServisi(h.site).tabloyuOku(h.vt);
+    const urun = await urunler.urunEkle(h.vt, yonetici(), {
+      ad: `Varyantlı ${randomUUID().slice(0, 8)}`,
+      vergiSinifi: siniflar.find((sinif) => sinif.ad === "Genel")?.kimlik ?? null,
+    });
+    await urunler.secenekEkle(h.vt, yonetici(), urun, {
+      ad: "Beden",
+      degerler: miktarlar.map((_, i) => `d${i}`),
+    });
+    const degerler = (await urunler.urunuOku(h.vt, urun))?.secenekler[0]?.degerler ?? [];
+    const birimler: string[] = [];
+    for (const [i, miktar] of miktarlar.entries()) {
+      const birim = await urunler.birlesimEkle(h.vt, yonetici(), urun, {
+        degerler: [degerler[i]?.kimlik ?? ""],
+      });
+      if (miktar > 0) {
+        await stok.stokDuzelt(h.vt, yonetici(), birim, {
+          yeniMiktar: miktar,
+          gorulenMiktar: 0,
+          sebep: "sayim",
+        });
+      }
+      birimler.push(birim);
+    }
+    return { urun, birimler, urunler };
+  };
+  const fiyatlar = async (
+    h: Awaited<ReturnType<typeof hazirla>>,
+    birimler: string[],
+    tutarlar: (number | undefined)[],
+  ) => {
+    for (const [i, birim] of birimler.entries()) {
+      const tutar = tutarlar[i];
+      if (tutar !== undefined)
+        await h.fiyat.fiyatYaz(h.vt, yonetici(), birim, { satisFiyati: tutar });
+    }
+  };
+  const uclar = async (h: Awaited<ReturnType<typeof hazirla>>, urun: string) => {
+    const aralik = (await h.gosterim.fiyatAraliklari(h.vt, [urun])).get(urun);
+    return aralik === undefined
+      ? undefined
+      : [aralik.enDusuk.tutar, aralik.enYuksek.tutar, aralik.tek];
+  };
+
+  it("yalnız satılabilir birleşimlerden: tükenmiş en ucuz birleşim aralığa girmez", async () => {
+    const h = await hazirla();
+    const { urun, birimler } = await varyantliAc(h, [0, 3, 5, 2]);
+    // En ucuzu (19990) tükenmiş; fiyatı olmayan birleşim (son) sayılmaz.
+    await fiyatlar(h, birimler, [19_990, 24_990, 27_990, undefined]);
+    expect(await uclar(h, urun)).toEqual([24_990, 27_990, false]);
+    // Tükenmiş birleşime stok gelince aralığa girer.
+    await stok.stokDuzelt(h.vt, yonetici(), birimler[0] ?? "", {
+      yeniMiktar: 1,
+      gorulenMiktar: 0,
+      sebep: "sayim",
+    });
+    expect(await uclar(h, urun)).toEqual([19_990, 27_990, false]);
+  });
+
+  it("hiçbiri satılamıyorsa bütün silinmemiş birleşimlerden; silinmiş birleşim hiç sayılmaz", async () => {
+    const h = await hazirla();
+    const { urun, birimler, urunler } = await varyantliAc(h, [0, 0, 0]);
+    await fiyatlar(h, birimler, [10_000, 30_000, 5_000]);
+    await urunler.birlesimSil(h.vt, yonetici(), birimler[2] ?? "");
+    expect(await uclar(h, urun)).toEqual([10_000, 30_000, false]);
+  });
+
+  it("fiyatı olmayan birleşim satılabilir sayılmaz: aralık stoklu ama fiyatsız birleşimi atlar", async () => {
+    const h = await hazirla();
+    const { urun, birimler } = await varyantliAc(h, [4, 0]);
+    // Stoklu birleşimin fiyatı yok (satın alınamaz); tükenmiş birleşim 100,00.
+    await fiyatlar(h, birimler, [undefined, 10_000]);
+    expect(await uclar(h, urun)).toEqual([10_000, 10_000, true]);
+  });
+
+  it("tutar aynı ama eski fiyat farklıysa tek fiyat sayılmaz", async () => {
+    const h = await hazirla({ indirimdeEnDusukFiyat: false });
+    const { urun, birimler } = await varyantliAc(h, [1, 1]);
+    // Kapalı ayarda eski fiyat indirimden önceki satış fiyatıdır.
+    await h.fiyat.fiyatYaz(h.vt, yonetici(), birimler[0] ?? "", {
+      satisFiyati: 20_000,
+      indirimliFiyat: 10_000,
+    });
+    await fiyatlar(h, birimler, [undefined, 10_000]);
+    const aralik = (await h.gosterim.fiyatAraliklari(h.vt, [urun])).get(urun);
+    expect([aralik?.enDusuk.tutar, aralik?.enYuksek.tutar, aralik?.tek]).toEqual([
+      10_000,
+      10_000,
+      false,
+    ]);
+  });
+
+  it("tutar aynı ama biri indirimdeyse (eski fiyatı gösterilmese de) tek fiyat sayılmaz", async () => {
+    const h = await hazirla();
+    const { urun, birimler } = await varyantliAc(h, [1, 1]);
+    // Doğrudan indirimle girildi: önceki 30 günde fiyat yok, eski fiyat gösterilmez (karar 0067).
+    await h.fiyat.fiyatYaz(h.vt, yonetici(), birimler[0] ?? "", {
+      satisFiyati: 20_000,
+      indirimliFiyat: 10_000,
+    });
+    await fiyatlar(h, birimler, [undefined, 10_000]);
+    const aralik = (await h.gosterim.fiyatAraliklari(h.vt, [urun])).get(urun);
+    expect(aralik?.enDusuk.eskiTutar).toBeUndefined();
+    expect(aralik?.tek).toBe(false);
+  });
+
+  it("bütün birleşimler aynı fiyattaysa tek fiyattır; basit ürünün aralığı kendi fiyatıdır", async () => {
+    const h = await hazirla();
+    const { urun, birimler } = await varyantliAc(h, [1, 1]);
+    await fiyatlar(h, birimler, [59_990, 59_990]);
+    expect(await uclar(h, urun)).toEqual([59_990, 59_990, true]);
+    await h.fiyat.fiyatYaz(h.vt, yonetici(), h.birim, { satisFiyati: 4_990 });
+    const [basit] = await h.vt
+      .select({ urun: urunBirimleri.urun_kimligi })
+      .from(urunBirimleri)
+      .where(eq(urunBirimleri.kimlik, h.birim));
+    expect(await uclar(h, basit?.urun ?? "")).toEqual([4_990, 4_990, true]);
+  });
+
+  it("uçlar gösterilecek fiyattır: indirimli tutar, vergi çevirmesi ve eski fiyatıyla", async () => {
+    const h = await hazirla({ fiyatGosterimi: "vergi-haric" });
+    const { urun, birimler } = await varyantliAc(h, [1, 1]);
+    await h.fiyat.fiyatYaz(h.vt, yonetici(), birimler[0] ?? "", {
+      satisFiyati: 20_000,
+      indirimliFiyat: 10_000,
+    });
+    await fiyatlar(h, birimler, [undefined, 11_800]);
+    const aralik = (await h.gosterim.fiyatAraliklari(h.vt, [urun])).get(urun);
+    // 10000 dahil → 8475 hariç; 11800 dahil → 11800 × 18 / 118 = 1800 → 10000 hariç.
+    expect([aralik?.enDusuk.tutar, aralik?.enDusuk.indirimde, aralik?.enYuksek.tutar]).toEqual([
+      8_475,
+      true,
+      10_000,
+    ]);
+    expect(aralik?.enDusuk.vergi).toBe("vergi-haric");
+  });
+
+  it("fiyatı olmayan, olmayan ve bozuk ürün haritada yoktur; sorgu sayısı ürün sayısıyla artmaz", async () => {
+    const h = await hazirla();
+    const fiyatsiz = await varyantliAc(h, [1]);
+    const urunlerde = await Promise.all([0, 1, 2].map(() => varyantliAc(h, [1, 1])));
+    for (const u of urunlerde) await fiyatlar(h, u.birimler, [1_000, 2_000]);
+    const kimlikler = urunlerde.map((u) => u.urun);
+    const sonuc = await h.gosterim.fiyatAraliklari(h.vt, [
+      ...kimlikler,
+      fiyatsiz.urun,
+      randomUUID(),
+      "bozuk",
+    ]);
+    expect([...sonuc.keys()].toSorted()).toEqual(kimlikler.toSorted());
+    const say = async (liste: string[]) => {
+      const sorgu = vi.spyOn(h.vt.$client, "query");
+      await h.gosterim.fiyatAraliklari(h.vt, liste);
+      const sayi = sorgu.mock.calls.length;
+      sorgu.mockRestore();
+      return sayi;
+    };
+    expect(await say(kimlikler)).toBe(await say(kimlikler.slice(0, 1)));
   });
 });

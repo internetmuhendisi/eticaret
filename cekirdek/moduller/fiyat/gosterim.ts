@@ -13,6 +13,12 @@
 // - Para birimi ve biçimi site ayarındadır; tutar ortak biçimleyiciden geçer. Çekirdekte para simgesi
 //   ve vergi adı yazmaz.
 //
+// - Fiyat aralığı (kart 0085, kullanıcı kararı): ürünün en düşük ve en yüksek gösterilecek fiyatı
+//   (fiyatAraliklari). Yalnız satılabilir birimlerden hesaplanır, müşteri alamayacağı fiyatı "en düşük"
+//   görmesin; hiçbiri satılamıyorsa bütün silinmemiş birimlerden. Fiyatı olmayan birim satın alınamaz:
+//   aralıkta hiç sayılmaz, satılabilir de sayılmaz. Bütün adaylar aynı tutar, aynı eski fiyat ve aynı
+//   indirim durumundaysa tek fiyattır (tek: true). Basit ürünün aralığı tek biriminin fiyatıdır.
+//
 // Bütün birimler birkaç sorguyla gelir, birim başına sorgu atılmaz.
 import { eq, inArray } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
@@ -23,7 +29,9 @@ import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { doldur } from "../eposta/sablon.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
+import { siteninStokDurumlari } from "../stok/durum.ts";
 import { urunBirimleri, urunler } from "../urun/model.ts";
+import { urunlerinBirimleri } from "../urun/varyant.ts";
 import { hesapla, type VergiBolgesi } from "../vergi/hesap.ts";
 import type { FiyatGirisi } from "../vergi/semalar.ts";
 import { siteninVergiServisi, type VergiSinifi } from "../vergi/servis.ts";
@@ -42,6 +50,13 @@ export type GosterilecekFiyat = {
   ekMetin?: string;
   // Sitenin para biçimiyle yazılmış hâlleri.
   yazili: { tutar: string; eskiTutar?: string };
+};
+
+export type FiyatAraligi = {
+  enDusuk: GosterilecekFiyat;
+  enYuksek: GosterilecekFiyat;
+  // İki uç aynı tutarda: tek fiyat gösterilir.
+  tek: boolean;
 };
 
 type Ayarlar = Awaited<ReturnType<typeof siteninMagazaAyarlari>>;
@@ -185,5 +200,48 @@ export const fiyatGosterimServisi = (site: Site) => {
     return sonuc;
   };
 
-  return { gosterilecekFiyatlar };
+  // Ürünlerin fiyat aralığı. Fiyatı olan silinmemiş birimi olmayan ürün haritada yoktur. Eşit
+  // tutarlarda birimlerin sırasında önce gelen seçilir.
+  const fiyatAraliklari = async (
+    vt: Veritabani,
+    urunKimlikleri: string[],
+    secenekler: { an?: Date; bolge?: VergiBolgesi } = {},
+  ): Promise<Map<string, FiyatAraligi>> => {
+    const birimleri = await urunlerinBirimleri(vt, urunKimlikleri);
+    const hepsi = [...birimleri.values()].flat();
+    const fiyatlar = await gosterilecekFiyatlar(vt, hepsi, secenekler);
+    const stoklar = await siteninStokDurumlari(vt, site, hepsi);
+    const sonuc = new Map<string, FiyatAraligi>();
+    for (const [urun, birimler] of birimleri) {
+      const fiyatli = birimler.flatMap((birim) => {
+        const fiyat = fiyatlar.get(birim);
+        return fiyat === undefined ? [] : [{ fiyat, satilabilir: stoklar.get(birim)?.satilabilir }];
+      });
+      const satilabilir = fiyatli.filter((birim) => birim.satilabilir === true);
+      const adaylar = (satilabilir.length > 0 ? satilabilir : fiyatli).map((birim) => birim.fiyat);
+      const [ilk] = adaylar;
+      if (ilk === undefined) continue;
+      let enDusuk = ilk;
+      let enYuksek = ilk;
+      for (const fiyat of adaylar) {
+        if (fiyat.tutar < enDusuk.tutar) enDusuk = fiyat;
+        if (fiyat.tutar > enYuksek.tutar) enYuksek = fiyat;
+      }
+      sonuc.set(urun, {
+        enDusuk,
+        enYuksek,
+        // Bütün adaylar aynı tutar ve eski fiyattaysa: eşit tutarda iki uç aynı birleşimden gelir,
+        // ötekinin farklı eski fiyatı yalnız bütün adaylara bakılınca görülür.
+        tek: adaylar.every(
+          (fiyat) =>
+            fiyat.tutar === ilk.tutar &&
+            fiyat.eskiTutar === ilk.eskiTutar &&
+            fiyat.indirimde === ilk.indirimde,
+        ),
+      });
+    }
+    return sonuc;
+  };
+
+  return { gosterilecekFiyatlar, fiyatAraliklari };
 };
