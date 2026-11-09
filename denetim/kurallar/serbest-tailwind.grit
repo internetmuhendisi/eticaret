@@ -18,7 +18,12 @@ or {
   JsTemplateExpression(),
   JsxString()
 } as $metin where {
-  $filename <: not r".*/bilesenler/tasarim-degerleri/.*",
+  // Muafiyet yalnız projenin kökündeki bilesenler/tasarim-degerleri/ içindir: başka bir klasörün içindeki aynı adlı
+  // klasör (cekirdek/.../bilesenler/tasarim-degerleri/) muaf değildir (kart 0103).
+  or {
+    $filename <: not r".*/bilesenler/tasarim-degerleri/.*",
+    $filename <: r".*/(?:cekirdek|siteler|sahip-paneli|komutlar|denetim|bilesenler)/(?:.*/)?bilesenler/tasarim-degerleri/.*"
+  },
   $metin <: or {
     r"(?s)(?:.*[^a-z0-9_-])?!?-?[a-z][a-z0-9-]*-(?:\[|[(]--).*",
     r"(?s)(?:.*[^a-z0-9_-])?[a-z][a-z0-9]*-[a-z0-9-]*/(?:\[|[(]--).*",

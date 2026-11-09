@@ -266,7 +266,8 @@ for (const [ad, width, height] of [
       const genislik = await page.evaluate(() => document.documentElement.scrollWidth);
       expect(genislik).toBeLessThanOrEqual(width);
       const ogeler = page.locator(
-        "main input:not([type=checkbox]), main button, main a, nav a, nav button",
+        // Onay kutusu (Radix'te rolü checkbox olan düğme) etiketiyle ölçülür: dokunma alanı yazısıdır.
+        "main input:not([type=checkbox]), main button:not([role=checkbox]), main a, nav a, nav button",
       );
       const adet = await ogeler.count();
       expect(adet).toBeGreaterThan(0);
@@ -274,7 +275,7 @@ for (const [ad, width, height] of [
         const kutu = await ogeler.nth(sira).boundingBox();
         expect(kutu?.height ?? 0).toBeGreaterThanOrEqual(44);
       }
-      for (const kutu of await page.locator("input[type=checkbox]").all()) {
+      for (const kutu of await page.getByRole("checkbox").all()) {
         const etiket = await kutu.locator("xpath=ancestor::label").boundingBox();
         expect(etiket?.height ?? 0).toBeGreaterThanOrEqual(44);
       }

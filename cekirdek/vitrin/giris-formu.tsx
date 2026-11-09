@@ -1,11 +1,11 @@
 "use client";
 // Müşteri giriş formu (kart 0033). Şema uçla ortaktır; şemadan geçmeyen girdi sunucuya gitmez.
 import { type FormEvent, useRef, useState } from "react";
-import { Baglanti } from "../../bilesenler/form/baglanti";
 import { Form, GonderDugmesi } from "../../bilesenler/form/form";
 import { FormAlani } from "../../bilesenler/form/form-alani";
-import { GirisAlani } from "../../bilesenler/form/giris-alani";
-import { Uyari } from "../../bilesenler/form/uyari";
+import { Baglanti } from "../../bilesenler/parcalar/baglanti";
+import { GirisAlani } from "../../bilesenler/parcalar/giris-alani";
+import { Uyari } from "../../bilesenler/parcalar/uyari";
 import { useMetin } from "../metinler/istemci-metni";
 import { girisSemasi } from "../moduller/oturum/semalar";
 import { vitrinAdresleri } from "./adresler";
@@ -60,7 +60,7 @@ export function GirisFormu() {
       kodGerekliMetni={metin("ortak.form.kodGerekli")}
       yukleniyorMetni={metin("ortak.form.yukleniyor")}
     >
-      {hata === null ? null : <Uyari>{hata}</Uyari>}
+      {hata === null ? null : <Uyari tur="tehlike">{hata}</Uyari>}
       <FormAlani etiket={metin("vitrin.giris.eposta")}>
         {(alan) => (
           <GirisAlani {...alan} name="eposta" type="email" autoComplete="username" required />

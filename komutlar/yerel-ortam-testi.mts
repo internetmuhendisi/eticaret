@@ -103,6 +103,14 @@ const sitesiniOlc = async (site: OrtamSitesi, oteki: OrtamSitesi) => {
     vitrin.durum === 200 && baslik(vitrin.govde) === magazaAdi,
     `${vitrin.durum}, "${baslik(vitrin.govde)}"`,
   );
+  // Geliştirmeye özel sayfalar canlı görüntüde yoktur (kart 0103): bileşen deneme sahnesi yalnız
+  // geliştirmede derlenir. 0.33.0'dan önceki görüntüde sahne hiç yoktu, orada da 404 beklenir.
+  const sahne = await iste(kodAdi, "/gelistirme/bilesenler");
+  olc(
+    `${kodAdi}: bileşen deneme sahnesi canlı görüntüde açılmıyor`,
+    sahne.durum === 404,
+    `${sahne.durum}`,
+  );
   // Logo ucu (kart 0073), gerçek Next.js ve Caddy üzerinden. Uç 0.16.0'da geldi: daha eski sürümle
   // açılan sitede ölçülmez. İlk logosu olan sitede: dosya bayt bayt aynı, doğru tür, nosniff,
   // önbellek; HEAD gövdesiz; aynı etiketle gelen istek gövdesiz 304. Logosu olmayan site 404 alır

@@ -32,5 +32,16 @@ Bileşen, düğme, giriş alanı, pencere gibi tekrar kullanılan arayüz parça
 
 ## Yazılanlar
 
-- `bilesenler/form/`: `FormAlani`, `GirisAlani`, `Dugme`, `Uyari` (kart 0027), `OnayKutusu` (kart 0033), `Baglanti` (kart 0034). Görünüşleri tasarım değerlerinden gelir, sınıfları `bilesenler/form/stil.ts` dosyasındadır (kart 0102). Bileşen kataloğu henüz yoktur.
+- `bilesenler/parcalar/` (kart 0103, karar 0077, shadcn/ui'dan uyarlanmış):
+  - `Dugme`, `IkonDugmesi`, `Baglanti`
+  - `GirisAlani`, `Etiket`, `SecimKutusu`, `OnayKutusu`
+  - `AcilirMenu`, `Pencere`, `YanPencere`, `Sekmeler`
+  - `Kart`, `Rozet`, `Uyari`, `BildirimAlani` ile `bildirimGoster`, `Ipucu`
+  - `IskeletGorunum`, `YukleniyorGostergesi`, `Serit`, `Akordeon`
+
+  Sınıflar `sinif()` ile birleştirilir. Asıl shadcn hâlleri `bilesenler/shadcn-kaynagi/` altındadır, güncellemesi `pnpm shadcn-farki` ile yapılır.
+- `bilesenler/form/`: `Form`, `GonderDugmesi` (kart 0057), `FormAlani` (kart 0027).
+- `bilesenler/ikonlar/`: ikon sözlüğü (`sozluk.ts`) ve `Ikon`. Lucide yalnız sözlükte içe aktarılır.
 - `bilesenler/tasarim-degerleri/`: tasarım değerleri ve Tailwind'in ortak girişi (kart 0102, karar 0076).
+- Parçalar yalnız geliştirmede açılan deneme sahnesinde (`/gelistirme/bilesenler`) gerçek tarayıcıda denenir (`cekirdek/testler/uctan-uca/bilesenler.test.ts`). Yeni parça sahneye ve teste de eklenir. Bileşen kataloğu henüz yoktur (kart 0104).
+- Metni olan parça metni zorunlu bir alanla alır. Pencerenin kapat düğmesi, yükleniyor göstergesi ve şeridin düğmeleri gibi ekran okuyucu metinleri `ortak.parca` altındadır.

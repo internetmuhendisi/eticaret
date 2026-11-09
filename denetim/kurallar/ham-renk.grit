@@ -8,7 +8,12 @@ or {
   JsStringLiteralExpression(),
   JsTemplateExpression()
 } as $metin where {
-  $filename <: not r".*/bilesenler/tasarim-degerleri/.*",
+  // Muafiyet yalnız projenin kökündeki bilesenler/tasarim-degerleri/ içindir: başka bir klasörün içindeki aynı adlı
+  // klasör (cekirdek/.../bilesenler/tasarim-degerleri/) muaf değildir (kart 0103).
+  or {
+    $filename <: not r".*/bilesenler/tasarim-degerleri/.*",
+    $filename <: r".*/(?:cekirdek|siteler|sahip-paneli|komutlar|denetim|bilesenler)/(?:.*/)?bilesenler/tasarim-degerleri/.*"
+  },
   $metin <: r"(?is).*(?:#[0-9a-f]{3,8}(?:[^0-9a-z_-].*)?|[^a-z-](?:rgba?|hsla?|hwb|oklch|oklab|lab|lch|color-mix)[(].*)",
   register_diagnostic(span=$metin, message="Ham renk yazılamaz. Rengi tasarım değerlerinden okuyun (bilesenler/tasarim-degerleri/).", severity="error")
 }

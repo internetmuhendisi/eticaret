@@ -2,11 +2,11 @@
 // "Şifremi unuttum" ve "Yeni şifre belirle" formları (kart 0034, karar 0052). Vitrin ve panel aynı formu kendi
 // adresleriyle kullanır. Şemalar uçla ortaktır.
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import { Baglanti } from "../../../bilesenler/form/baglanti";
 import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
 import { FormAlani } from "../../../bilesenler/form/form-alani";
-import { GirisAlani } from "../../../bilesenler/form/giris-alani";
-import { Uyari } from "../../../bilesenler/form/uyari";
+import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
+import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
+import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { hataKodlari } from "../../kayitlar/kapi";
 import { sifreSifirlamaAyari, sifreSiniri } from "../../kayitlar/oturum";
 import { useMetin } from "../../metinler/istemci-metni";
@@ -108,7 +108,7 @@ export function SifremiUnuttumFormu({
       yukleniyorMetni={metin("ortak.form.yukleniyor")}
     >
       <p>{metin("ortak.sifirlama.istekAciklama")}</p>
-      {hata === null ? null : <Uyari>{hata}</Uyari>}
+      {hata === null ? null : <Uyari tur="tehlike">{hata}</Uyari>}
       <FormAlani
         etiket={metin("ortak.sifirlama.eposta")}
         {...(alanHatasi === undefined ? {} : { hata: alanHatasi })}
@@ -190,7 +190,7 @@ export function SifreYenileFormu({
   if (anahtar === null || hata === "baglanti") {
     return (
       <>
-        <Uyari>{metin("ortak.sifirlama.hataBaglanti")}</Uyari>
+        <Uyari tur="tehlike">{metin("ortak.sifirlama.hataBaglanti")}</Uyari>
         <Baglanti href={sifremiUnuttumAdresi}>{metin("ortak.sifirlama.yeniBaglanti")}</Baglanti>
       </>
     );
@@ -202,8 +202,8 @@ export function SifreYenileFormu({
       kodGerekliMetni={metin("ortak.form.kodGerekli")}
       yukleniyorMetni={metin("ortak.form.yukleniyor")}
     >
-      {hata === "sinir" ? <Uyari>{metin("ortak.sifirlama.hataSinir")}</Uyari> : null}
-      {hata === "genel" ? <Uyari>{metin("ortak.sifirlama.hataGenel")}</Uyari> : null}
+      {hata === "sinir" ? <Uyari tur="tehlike">{metin("ortak.sifirlama.hataSinir")}</Uyari> : null}
+      {hata === "genel" ? <Uyari tur="tehlike">{metin("ortak.sifirlama.hataGenel")}</Uyari> : null}
       <FormAlani
         etiket={metin("ortak.sifirlama.sifre")}
         aciklama={doldur(metin("ortak.sifirlama.sifreAciklama"), enKisa)}

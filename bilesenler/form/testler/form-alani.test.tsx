@@ -1,12 +1,22 @@
 // @vitest-environment jsdom
 // Form alanının etiketi ve hatası alana bağlıdır (kart 0027).
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
+import { GirisAlani } from "../../parcalar/giris-alani.tsx";
+import { OnayKutusu } from "../../parcalar/onay-kutusu.tsx";
+import { Form } from "../form";
 import { FormAlani } from "../form-alani";
-import { GirisAlani } from "../giris-alani";
-import { OnayKutusu } from "../onay-kutusu";
 
 afterEach(cleanup);
+
+// Radix'in onay kutusu formdaki gizli alanın boyutunu ResizeObserver ile izler; jsdom'da yoktur, gerçek
+// tarayıcıda vardır (tarayıcı testi cekirdek/testler/uctan-uca/bilesenler.test.ts).
+globalThis.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
 
 describe("form alanı", () => {
   it("etiket alana bağlıdır, hatasız alan geçersiz işaretlenmez", () => {
@@ -45,15 +55,31 @@ describe("form alanı", () => {
 describe("onay kutusu", () => {
   it("etiket kutuya bağlıdır, işaretsiz gelir, hatasız geçersiz işaretlenmez", () => {
     render(<OnayKutusu etiket="Kabul ediyorum" name="onay" />);
-    const kutu = screen.getByLabelText("Kabul ediyorum") as HTMLInputElement;
-    expect(kutu.type).toBe("checkbox");
-    expect(kutu.checked).toBe(false);
+    const kutu = screen.getByRole("checkbox", { name: "Kabul ediyorum" });
+    expect(kutu.getAttribute("aria-checked")).toBe("false");
     expect(kutu.getAttribute("aria-invalid")).toBeNull();
+  });
+
+  it("yazıya dokunmak kutuyu işaretler, işaretli kutu form verisinde gelir", async () => {
+    const kullanici = userEvent.setup();
+    render(
+      <Form data-testid="form" kodGerekliMetni="" yukleniyorMetni="">
+        <OnayKutusu etiket="Kabul ediyorum" name="onay" />
+      </Form>,
+    );
+    const form = screen.getByTestId("form") as HTMLFormElement;
+    expect(new FormData(form).get("onay")).toBeNull();
+    await kullanici.click(screen.getByText("Kabul ediyorum"));
+    expect(screen.getByRole("checkbox").getAttribute("aria-checked")).toBe("true");
+    expect(new FormData(form).get("onay")).toBe("on");
+    await kullanici.keyboard(" ");
+    expect(screen.getByRole("checkbox").getAttribute("aria-checked")).toBe("false");
+    expect(new FormData(form).get("onay")).toBeNull();
   });
 
   it("hata yazıyla görünür ve kutuya bağlanır", () => {
     render(<OnayKutusu etiket="Kabul ediyorum" name="onay" hata="İşaretleyin." />);
-    const kutu = screen.getByLabelText("Kabul ediyorum");
+    const kutu = screen.getByRole("checkbox", { name: "Kabul ediyorum" });
     expect(kutu.getAttribute("aria-invalid")).toBe("true");
     expect(document.getElementById(kutu.getAttribute("aria-describedby") ?? "")?.textContent).toBe(
       "İşaretleyin.",

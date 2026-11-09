@@ -9,6 +9,11 @@ or {
     $yontem <: r"toLocale(?:Date|Time)?String"
   }
 } as $bicim where {
-  $filename <: not r".*/cekirdek/metinler/bicimleyici\.ts",
+  // Muafiyet yalnız projenin kökündeki cekirdek/metinler/ içindir: başka bir klasörün içindeki aynı adlı
+  // klasör (cekirdek/.../cekirdek/metinler/) muaf değildir (kart 0103).
+  or {
+    $filename <: not r".*/cekirdek/metinler/bicimleyici\.ts",
+    $filename <: r".*/(?:cekirdek|siteler|sahip-paneli|komutlar|denetim|bilesenler)/(?:.*/)?cekirdek/metinler/.*"
+  },
   register_diagnostic(span=$bicim, message="Elle biçimlendirme yapılamaz. Para, sayı ve tarihi ortak biçimleyiciyle gösterin (cekirdek/metinler/bicimleyici.ts).", severity="error")
 }

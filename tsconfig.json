@@ -16,6 +16,7 @@
     "cekirdek/izleme/**/*.tsx",
     "cekirdek/surum.ts",
     "cekirdek/temalar/**/*.ts",
+    "cekirdek/uygulama/app/**/*.deneme.tsx",
     "komutlar/**/*.mts",
     "komutlar/**/*.ts",
     "cekirdek/testler/**/*.ts",

@@ -1,13 +1,10 @@
 // Tailwind yalnız tasarım değerlerindeki adları tanır (kart 0102, karar 0076). Gerçek stil girişleri
 // Tailwind'in kendi derleyicisiyle derlenir: hazır palet, hazır ölçü ve tanımsız ad hiçbir şey üretmez,
 // her tasarım değerinin sınıfı vardır, tema değerlerinin değişkenleri sayfaya yazılan CSS'te tanımlıdır.
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { compile } from "@tailwindcss/node";
 import { describe, expect, it } from "vitest";
-import { stil as vitrinStili } from "../../../cekirdek/vitrin/stil.ts";
-import { stil as panelStili } from "../../../cekirdek/yonetim-paneli/stil.ts";
-import { stil as formStili } from "../../form/stil.ts";
 import { temaDegerleriCss } from "../css.ts";
 import {
   golgeAdlari,
@@ -19,6 +16,7 @@ import {
   yaziBoyuAdlari,
   yaziTipiAdlari,
 } from "../degerler.ts";
+import tailwindAyari from "../tailwind.ayar.ts";
 
 const kok = join(import.meta.dirname, "../../..");
 
@@ -133,7 +131,9 @@ describe("Tailwind yalnız tasarım değerlerini tanır", () => {
     const okunan = new Set(
       [...uygulama(siniflar).matchAll(/var\((--[a-z0-9-]+)\)/g)]
         .map((e) => e[1])
-        .filter((ad) => ad !== undefined && !ad.startsWith("--tw-")),
+        // Tailwind'in kendi (--tw-) ve Radix'in açılır parçalara verdiği (--radix-) değişkenler
+        // tema değeri değildir.
+        .filter((ad) => ad !== undefined && !/^--(?:tw|radix)-/.test(ad)),
     );
     const tanimli = new Set(
       [...temaDegerleriCss(varsayilanTemaDegerleri).matchAll(/(--[a-z0-9-]+):/g)].map((e) => e[1]),
@@ -142,11 +142,72 @@ describe("Tailwind yalnız tasarım değerlerini tanır", () => {
     for (const ad of okunan) expect(tanimli.has(ad), ad).toBe(true);
   });
 
-  it("form, vitrin ve panel stillerindeki her sınıf bir kural üretir", () => {
-    const siniflar = [formStili, vitrinStili, panelStili].flatMap((stil) =>
-      Object.values(stil).flatMap((deger) => deger.split(/\s+/)),
-    );
-    expect(siniflar.length).toBeGreaterThan(40);
-    for (const sinif of siniflar) expect(uretir(uygulama, sinif), sinif).toBe(true);
+  // Tailwind 4 ayar dosyasındaki keyframes alanını CSS'e yazmaz (ölçüldü): hareket tanımı olmayan
+  // animasyon hiç oynamaz, Radix kapanış animasyonunun bitmesini beklediği için pencere ve menü de
+  // kapanmaz. Her animasyonun hareketi CSS'te tanımlıdır.
+  it("her animasyonun hareket tanımı derlenmiş CSS'te vardır", () => {
+    const adlar = Object.keys(tailwindAyari.theme.animation);
+    expect(adlar.length).toBeGreaterThan(10);
+    const cikti = uygulama(adlar.map((ad) => `animate-${ad}`));
+    for (const ad of adlar) {
+      expect(cikti, ad).toMatch(new RegExp(`\\.animate-${ad} \\{\\s*animation: ${ad} `));
+      expect(cikti, ad).toContain(`@keyframes ${ad} {`);
+    }
+  });
+
+  // Parçaların, formun ve sayfa düzenlerinin kaynağındaki her sınıf bir kural üretir: yazım hatalı ya da
+  // tanımsız bir sınıf sessizce hiçbir şey çizmeden kalamaz. Sınıflar kaynaktaki metinlerden toplanır;
+  // içe aktarma satırları ve data-slot adları sınıf değildir, atlanır. Sınıf gibi görünen her sözcük
+  // (bilinen bir önekle başlayan) denetlenir.
+  it("parçaların, formun ve sayfa düzenlerinin kaynağındaki her sınıf bir kural üretir", () => {
+    const dosyalar = [
+      ...["bilesenler/parcalar", "bilesenler/form", "bilesenler/ikonlar"].flatMap((klasor) =>
+        readdirSync(join(kok, klasor))
+          // sinif.ts tailwind-merge'in ayarıdır, sınıf değil grup adları taşır.
+          .filter((ad) => /\.tsx?$/.test(ad) && ad !== "sinif.ts")
+          .map((ad) => join(kok, klasor, ad)),
+      ),
+      join(kok, "cekirdek/vitrin/stil.ts"),
+      join(kok, "cekirdek/yonetim-paneli/stil.ts"),
+    ];
+    const onek =
+      /^(?:[a-z-]+:)*-?(?:flex|grid|inline|block|hidden|items|justify|self|place|gap|p[xytrbl]?|m[xytrbl]?|w|h|size|min|max|inset|top|right|bottom|left|fixed|absolute|relative|sticky|bg|text|border|rounded|shadow|font|z|overflow|outline|cursor|select|pointer|animate|transition|duration|opacity|translate|rotate|scale|sr|underline|no-underline|shrink|grow|basis|whitespace|truncate|list|accent|invisible|visible|last|first|fill|secim|menu|wrap|col|row|order|leading|tracking|aspect|group)(?:-|$)/;
+    const tekSozcukSiniflar = new Set([
+      "flex",
+      "grid",
+      "inline",
+      "block",
+      "hidden",
+      "fixed",
+      "absolute",
+      "relative",
+      "sticky",
+      "border",
+      "rounded",
+      "underline",
+      "invisible",
+      "visible",
+      "truncate",
+      "shrink",
+      "grow",
+    ]);
+    const siniflar = new Set<string>();
+    for (const dosya of dosyalar) {
+      const kaynak = readFileSync(dosya, "utf8")
+        .replaceAll(/^import[^;]*;$/gms, "")
+        .replaceAll(/(?:data-slot|position|side|taraf)="[^"]*"/g, "");
+      for (const [, metin] of kaynak.matchAll(/"([^"\\\n]*)"/g)) {
+        for (const sozcuk of (metin ?? "").split(/\s+/)) {
+          // Tire ya da durum taşımayan tek sözcük ("top", "select") ancak tek başına bir sınıfsa sayılır.
+          // "group" yalnız işarettir, kendisi kural üretmez.
+          const tekSozcuk = !/[-:]/.test(sozcuk);
+          if (sozcuk === "group" || (tekSozcuk && !tekSozcukSiniflar.has(sozcuk))) continue;
+          if (onek.test(sozcuk)) siniflar.add(sozcuk);
+        }
+      }
+    }
+    expect(siniflar.size).toBeGreaterThan(150);
+    const uretmeyenler = [...siniflar].filter((s) => !uretir(uygulama, s));
+    expect(uretmeyenler).toEqual([]);
   });
 });

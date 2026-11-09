@@ -13,6 +13,130 @@
 
 @config "./tailwind.ayar.ts";
 
+/* Radix parçalarının durumları adlı durum olarak yazılır (kart 0103): acik:bg-yuzey. Köşeli parantezli
+   durum (data-[state=open]:) denetimde yasaktır. */
+@custom-variant acik (&[data-state="open"]);
+@custom-variant kapali (&[data-state="closed"]);
+@custom-variant etkin (&[data-state="active"]);
+@custom-variant isaretli (&[data-state="checked"]);
+@custom-variant devre-disi (&[data-disabled]);
+@custom-variant vurgulu (&[data-highlighted]);
+@custom-variant yer-tutucu (&[data-placeholder]);
+
+/* Radix'in açılır parçalara verdiği ölçüler: seçim listesi tetikleyicisi kadar geniştir, ekrana
+   sığdığı kadar uzar. */
+@utility secim-genisligi {
+  min-width: var(--radix-select-trigger-width);
+}
+
+@utility secim-yuksekligi {
+  max-height: var(--radix-select-content-available-height);
+}
+
+@utility menu-yuksekligi {
+  max-height: var(--radix-dropdown-menu-content-available-height);
+}
+
+/* Animasyonların hareketi (kart 0103). Adları ve süreleri tailwind.ayar.ts'tedir; Tailwind 4 ayar
+   dosyasındaki keyframes alanını CSS'e yazmadığı için hareket burada tanımlanır. */
+@keyframes geciken-gorunum {
+  to {
+    visibility: visible;
+  }
+}
+
+@keyframes belir {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes kaybol {
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes ortu-belir {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes ortu-kaybol {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes sagdan-gir {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes saga-cik {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes soldan-gir {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes sola-cik {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes alttan-gir {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes alta-cik {
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes akordeon-ac {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes akordeon-kapa {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+@keyframes don {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes nabiz {
+  50% {
+    opacity: 0.5;
+  }
+}
+
 @layer base {
   /* Kökün yazı boyuna dokunulmaz: rem ölçüleri (boşluk ölçeği, dokunma alanı) ona göre hesaplanır ve
      ziyaretçinin tarayıcıdaki yazı boyu tercihine uyar. Metnin boyu gövdeye verilir. */
@@ -61,5 +185,18 @@
   /* Klavyeyle odaklanılan öğe her zaman görünür. */
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-odak outline-solid;
+  }
+}
+
+/* Hareketi azaltmayı seçen kullanıcıda açılış, kapanış ve dönme hareketi olmaz
+   (.claude/rules/erisilebilirlik.md). Gecikme kalır: "yükleniyor" yazısı yine geç görünür. Kural bilerek
+   katman dışındadır: katmansız stil Tailwind'in bütün katmanlarından (sınıflar dahil) önce gelir. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0s;
+    animation-iteration-count: 1;
+    transition-duration: 0s;
   }
 }

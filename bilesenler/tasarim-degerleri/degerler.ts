@@ -35,6 +35,7 @@ export const renkAdlari = [
   "kutu-4",
   "kutu-5",
   "tehlike",
+  "tehlike-ustu",
   "tehlike-yazi",
   "tehlike-zemin",
   "basari",
@@ -45,6 +46,7 @@ export const renkAdlari = [
   "uyari-zemin",
   "karekod",
   "karekod-zemin",
+  "ortu",
 ] as const;
 export type RenkAdi = (typeof renkAdlari)[number];
 
@@ -112,6 +114,7 @@ export const varsayilanTemaDegerleri: TemaDegerleri = {
       "kutu-4": "#E4F6E8",
       "kutu-5": "#EFE6FF",
       tehlike: "#D92D20",
+      "tehlike-ustu": "#FFFFFF",
       "tehlike-yazi": "#B42318",
       "tehlike-zemin": "#FEECEB",
       basari: "#17B26A",
@@ -122,6 +125,8 @@ export const varsayilanTemaDegerleri: TemaDegerleri = {
       "uyari-zemin": "#FEF4E2",
       karekod: "#000000",
       "karekod-zemin": "#FFFFFF",
+      // Pencerenin arkasındaki örtü; saydamlığıyla kullanılır (bg-ortu/60).
+      ortu: "#12151B",
     },
     koyu: {
       zemin: "#12151B",
@@ -145,6 +150,7 @@ export const varsayilanTemaDegerleri: TemaDegerleri = {
       "kutu-4": "#1A2E22",
       "kutu-5": "#262037",
       tehlike: "#F04438",
+      "tehlike-ustu": "#12151B",
       "tehlike-yazi": "#FF8577",
       "tehlike-zemin": "#3A1F22",
       basari: "#17B26A",
@@ -157,6 +163,7 @@ export const varsayilanTemaDegerleri: TemaDegerleri = {
       // okuyamayabilir.
       karekod: "#000000",
       "karekod-zemin": "#FFFFFF",
+      ortu: "#000000",
     },
   },
   golgeler: {
@@ -219,13 +226,18 @@ export const sabitDegerler = {
   genislikler: { karekod: "16rem", form: "28rem", metin: "42rem", icerik: "80rem" },
   // Kod yüklenmeyince "yükleniyor" yazısının görünmeden önce beklediği süre (kart 0057).
   yukleniyorGecikmesi: "3s",
+  // Açılış ve kapanış hareketlerinin süreleri (kart 0103). Hareketi azaltmayı seçen kullanıcıda
+  // hareket olmaz (tailwind.css).
+  sureler: { kisa: "150ms", orta: "200ms", uzun: "300ms", don: "1s", nabiz: "2s" },
   // Üst üste binen öğelerin sırası (.claude/rules/tasarim-sistemi.md).
+  // Açılır parçalar (menü, seçim listesi, ipucu) pencerelerin üstündedir: pencerenin içinde açılan liste
+  // pencerenin arkasında kalmaz (kart 0103, ölçüldü). Bildirim her şeyin üstündedir.
   katmanlar: {
     taban: "0",
     "ust-kisim": "10",
-    acilir: "20",
-    "yan-pencere": "30",
-    pencere: "40",
+    "yan-pencere": "20",
+    pencere: "30",
+    acilir: "40",
     bildirim: "50",
   },
 } as const;
@@ -250,6 +262,7 @@ export const yaziCiftleri: readonly (readonly [RenkAdi, RenkAdi])[] = [
   ["yazi", "kutu-3"],
   ["yazi", "kutu-4"],
   ["yazi", "kutu-5"],
+  ["tehlike-ustu", "tehlike"],
   ["tehlike-yazi", "zemin"],
   ["tehlike-yazi", "tehlike-zemin"],
   ["basari-yazi", "zemin"],
@@ -257,6 +270,11 @@ export const yaziCiftleri: readonly (readonly [RenkAdi, RenkAdi])[] = [
   ["uyari-yazi", "zemin"],
   ["uyari-yazi", "uyari-zemin"],
   ["karekod", "karekod-zemin"],
+  // İpucu ters renklidir: zemin renginde yazı, yazı renginde zemin.
+  ["zemin", "yazi"],
+  // İkincil düğmenin ve menü öğesinin üzerine gelinmiş hâli.
+  ["yazi", "kenar"],
+  ["soluk-yazi", "kenar"],
 ];
 
 export const isaretCiftleri: readonly (readonly [RenkAdi, RenkAdi])[] = [

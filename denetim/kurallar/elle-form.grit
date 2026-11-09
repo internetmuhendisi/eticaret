@@ -6,7 +6,12 @@ or {
   JsxOpeningElement(),
   JsxSelfClosingElement()
 } as $oge where {
-  $filename <: not r".*/bilesenler/form/form\.tsx",
+  // Muafiyet yalnız projenin kökündeki bilesenler/form/ içindir: başka bir klasörün içindeki aynı adlı
+  // klasör (cekirdek/.../bilesenler/form/) muaf değildir (kart 0103).
+  or {
+    $filename <: not r".*/bilesenler/form/form\.tsx",
+    $filename <: r".*/(?:cekirdek|siteler|sahip-paneli|komutlar|denetim|bilesenler)/(?:.*/)?bilesenler/form/.*"
+  },
   $oge <: r"(?s)<form[\s/>].*",
   register_diagnostic(span=$oge, message="Elle <form> yazılamaz. bilesenler/form/form.tsx içindeki Form bileşenini kullanın.", severity="error")
 }

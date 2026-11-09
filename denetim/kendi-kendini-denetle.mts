@@ -5,7 +5,7 @@
 // Çalıştırma: pnpm denetim-kendi-testi
 
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, readdirSync, rmSync } from "node:fs";
+import { cpSync, existsSync, readdirSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 type Beklenen = { kategori: string; mesajBasi?: string };
@@ -25,6 +25,16 @@ const beklenenler: Record<string, Beklenen> = {
   "satir-ici-birimli-olcu.tsx": { kategori: "plugin", mesajBasi: "Satır içi stilde" },
   "gomulu-metin.tsx": { kategori: "plugin", mesajBasi: "Ekran metni" },
   "elle-form.tsx": { kategori: "plugin", mesajBasi: "Elle <form>" },
+  "ham-dugme.tsx": { kategori: "plugin", mesajBasi: "Ham HTML öğesi" },
+  "ham-giris.tsx": { kategori: "plugin", mesajBasi: "Ham HTML öğesi" },
+  "dogrudan-ikon.ts": { kategori: "plugin", mesajBasi: "İkon doğrudan" },
+  "ikon-yeniden-disa-aktarma.ts": { kategori: "plugin", mesajBasi: "İkon doğrudan" },
+  "ikon-sonradan-yukleme.ts": { kategori: "plugin", mesajBasi: "İkon doğrudan" },
+  "ic-ice/cekirdek/bilesenler/ham-dugme.tsx": { kategori: "plugin", mesajBasi: "Ham HTML öğesi" },
+  "ic-ice/cekirdek/bilesenler/tasarim-degerleri/ham-renk.ts": {
+    kategori: "plugin",
+    mesajBasi: "Ham renk",
+  },
   "gomulu-oge-metni.tsx": { kategori: "lint/style/noJsxLiterals" },
   "guvensiz-sorgu.ts": { kategori: "plugin", mesajBasi: "Güvensiz sorgu" },
   "guvensiz-ham-sql.ts": { kategori: "plugin", mesajBasi: "Güvensiz sorgu: sql.raw()" },
@@ -40,7 +50,10 @@ type Bulgu = { category: string; message: string; location?: { path?: string } }
 const kaynak = join("denetim", "bozuk-ornekler");
 const gecici = join("denetim", ".kendi-testi");
 
-const ornekler = readdirSync(kaynak);
+// Örnekler alt klasörlerde de durabilir (iç içe klasör muafiyetini denemek için); anahtar göreli yoldur.
+const ornekler = readdirSync(kaynak, { recursive: true, encoding: "utf8" }).filter((yol) =>
+  statSync(join(kaynak, yol)).isFile(),
+);
 const eksikler = ornekler.filter((ad) => !(ad in beklenenler));
 const kayiplar = Object.keys(beklenenler).filter((ad) => !ornekler.includes(ad));
 let hataVar = false;

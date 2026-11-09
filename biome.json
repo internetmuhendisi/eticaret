@@ -11,6 +11,7 @@
       "!**/*.md",
       "!pnpm-lock.yaml",
       "!denetim/bozuk-ornekler",
+      "!bilesenler/shadcn-kaynagi",
       "!cekirdek/veritabani/degisiklikler/meta"
     ]
   },
@@ -30,7 +31,9 @@
     "./denetim/kurallar/elle-form.grit",
     "./denetim/kurallar/serbest-tailwind.grit",
     "./denetim/kurallar/hazir-palet.grit",
-    "./denetim/kurallar/satir-ici-olcu.grit"
+    "./denetim/kurallar/satir-ici-olcu.grit",
+    "./denetim/kurallar/ham-oge.grit",
+    "./denetim/kurallar/ikon-sozlugu.grit"
   ],
   "css": {
     "parser": {

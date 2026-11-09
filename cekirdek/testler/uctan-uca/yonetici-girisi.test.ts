@@ -135,9 +135,7 @@ test("başka siteye dönüş verilmişse panele döner", async ({ page }) => {
 test("yanlış şifrede uyarı yazıyla görünür, sayfada kalır", async ({ page }) => {
   await page.goto("/yonetim/giris");
   await sifreyleGir(page, "yanlis-bir-sifre-burada");
-  await expect(page.getByText(metin("yonetim.giris.hataBilgi"), { exact: true })).toHaveRole(
-    "alert",
-  );
+  await expect(uyariKutusu(page, metin("yonetim.giris.hataBilgi"))).toBeVisible();
   await expect(page).toHaveURL(/\/yonetim\/giris$/);
 });
 
@@ -200,7 +198,7 @@ test("kurulumlu yönetici yalnız şifreyle giremez, kodla girer; yanlış kod s
   const dogru = zamanliKod(gizli, adim + 1);
   await alan.fill(dogru === "000000" ? "111111" : "000000");
   await page.getByRole("button", { name: metin("yonetim.kod.gonder") }).click();
-  await expect(page.getByText(metin("yonetim.kod.hataKod"), { exact: true })).toHaveRole("alert");
+  await expect(uyariKutusu(page, metin("yonetim.kod.hataKod"))).toBeVisible();
   await expect(page).toHaveURL(/\/yonetim\/giris\/kod/);
   await alan.fill(dogru);
   await page.getByRole("button", { name: metin("yonetim.kod.gonder") }).click();
@@ -231,7 +229,7 @@ test("yedek kodla girilir, aynı kod ikinci kez reddedilir", async ({ page }) =>
   await yuklenmesiniBekle(page);
   await page.getByLabel(metin("yonetim.kod.alan")).fill(kod ?? "");
   await gonder.click();
-  await expect(page.getByText(metin("yonetim.kod.hataKod"), { exact: true })).toHaveRole("alert");
+  await expect(uyariKutusu(page, metin("yonetim.kod.hataKod"))).toBeVisible();
   await expect(page).toHaveURL(/\/yonetim\/giris\/kod/);
 });
 
@@ -305,12 +303,18 @@ for (const [ad, width, height] of [
 
 // Sayfanın kodu yüklenmeden form gönderilemez, şifre ve kod adrese yazılmaz (kart 0057). Kod bilerek
 // bekletilir; bütün gezinme istekleri kaydedilir, form gönderimi yeni bir gezinme olurdu.
+// Uyarı kutusu (role="alert") yazıyı kendi içinde taşır; yazı ikonun yanındaki iç öğededir (kart 0103).
+const uyariKutusu = (page: Page, yazi: string) =>
+  page.getByRole("alert").filter({ has: page.getByText(yazi, { exact: true }) });
+
 const koduBeklet = async (page: Page) => {
   let birak = () => {};
   const bekle = new Promise<void>((tamam) => {
     birak = tamam;
   });
-  await page.route("**/_next/static/**", async (yol) => {
+  // Yalnız kod bekletilir, stil yüklenir: "yükleniyor" yazısının gecikmesi stille çalışır, stil de
+  // bekletilseydi yazı en baştan görünür ve gecikme ölçülmezdi (kart 0103'te bulundu).
+  await page.route("**/_next/static/**/*.js", async (yol) => {
     await bekle;
     await yol.continue();
   });
@@ -348,7 +352,9 @@ test("giriş formu kod yüklenmeden gönderilmez, yüklenince aynı değerlerle 
   await gonderilemez(page, metin("yonetim.giris.gonder"), gezinmeler, encodeURIComponent(sifre));
   await expect(sifreAlani).toHaveValue(sifre);
   // Kod yüklenmezse kullanıcı nedenini görür; yüklenince mesaj kalkar.
+  // Yazı önce görünmez, birkaç saniye sonra görünür.
   const yukleniyor = page.getByText(metin("ortak.form.yukleniyor"), { exact: true });
+  await expect(yukleniyor).toBeHidden();
   await expect(yukleniyor).toBeVisible({ timeout: 6000 });
   birak();
   await expect(page.getByRole("button", { name: metin("yonetim.giris.gonder") })).toBeEnabled();

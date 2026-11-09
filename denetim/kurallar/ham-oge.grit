@@ -1,0 +1,19 @@
+// Ham HTML öğesi yasağı (kart 0103, .claude/rules/bilesenler.md). Sayfada tarayıcının ham düğmesi, giriş
+// alanı, seçim kutusu, metin kutusu ve penceresi yazılmaz; ortak kütüphanenin parçası kullanılır
+// (bilesenler/parcalar/). Kütüphanenin kendisi (bilesenler/) bu yasağın dışındadır. createElement ile
+// açılan öğe yalnız disiplindir.
+language js
+
+or {
+  JsxOpeningElement(),
+  JsxSelfClosingElement()
+} as $oge where {
+  // Muafiyet yalnız projenin kökündeki bilesenler/ içindir: başka bir klasörün içindeki aynı adlı
+  // klasör (cekirdek/.../bilesenler/) muaf değildir (kart 0103).
+  or {
+    $filename <: not r".*/bilesenler/.*",
+    $filename <: r".*/(?:cekirdek|siteler|sahip-paneli|komutlar|denetim|bilesenler)/(?:.*/)?bilesenler/.*"
+  },
+  $oge <: r"(?s)<(?:button|input|select|textarea|dialog)[\s/>].*",
+  register_diagnostic(span=$oge, message="Ham HTML öğesi yazılamaz. Ortak kütüphanenin parçasını kullanın (bilesenler/parcalar/): Dugme, GirisAlani, SecimKutusu, OnayKutusu, Pencere.", severity="error")
+}

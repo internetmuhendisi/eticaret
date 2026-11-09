@@ -40,7 +40,9 @@ cekirdek/
   eklentiler/          eklentilerin kodu
   testler/             modüller arası testler; tarayıcı testleri uctan-uca/ altında
   surum-notlari/
-bilesenler/            ortak bileşen kütüphanesi; tasarim-degerleri/ altında tasarım değerleri
+bilesenler/            ortak bileşen kütüphanesi: parcalar/ (shadcn/ui'dan uyarlanmış parçalar), form/,
+                       ikonlar/ (ikon sözlüğü), tasarim-degerleri/ (tasarım değerleri),
+                       shadcn-kaynagi/ (parçaların asıl hâlleri, kod değil; karar 0077)
 sahip-paneli/          ayrı Next.js uygulaması
 komutlar/              site kurma, güncelleme, teslim, yayın
 siteler/<kod-adi>/     kimlik.json, ayarlar.json, baslangic/, marka/, tema/, vitrin/,

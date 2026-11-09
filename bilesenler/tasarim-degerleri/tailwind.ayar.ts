@@ -17,6 +17,7 @@ const eslestir = <A extends string, D>(adlar: readonly A[], deger: (ad: A) => D)
   Object.fromEntries(adlar.map((ad) => [ad, deger(ad)])) as Record<A, D>;
 
 const degisken = (ad: string) => `var(${ad})`;
+const sure = sabitDegerler.sureler;
 
 export default {
   // Taranacak dosyalar CSS'te @source ile verilir.
@@ -46,10 +47,27 @@ export default {
     screens: sabitDegerler.kirilmaNoktalari,
     maxWidth: sabitDegerler.genislikler,
     zIndex: sabitDegerler.katmanlar,
-    // Kod birkaç saniyede yüklenmezse görünen yazı (kart 0057): görünmez başlar, gecikmeden sonra görünür.
-    keyframes: { "geciken-gorunum": { to: { visibility: "visible" } } },
+    // Açılış ve kapanış hareketleri (kart 0103). Süreler degerler.ts'ten gelir; hareketin kendisi
+    // (@keyframes) tailwind.css'tedir: Tailwind 4 bu ayar dosyasındaki keyframes alanını CSS'e yazmaz
+    // (ölçüldü). Her animasyonun tanımı olduğunu testler/tailwind.test.ts denetler. Hareketi azaltmayı
+    // seçen kullanıcıda tailwind.css hepsini durdurur.
     animation: {
       "geciken-gorunum": `geciken-gorunum 0s ${sabitDegerler.yukleniyorGecikmesi} forwards`,
+      belir: `belir ${sure.kisa} ease-out`,
+      kaybol: `kaybol ${sure.kisa} ease-in forwards`,
+      "ortu-belir": `ortu-belir ${sure.orta} ease-out`,
+      "ortu-kaybol": `ortu-kaybol ${sure.orta} ease-in forwards`,
+      "sagdan-gir": `sagdan-gir ${sure.uzun} ease-out`,
+      "saga-cik": `saga-cik ${sure.orta} ease-in forwards`,
+      "soldan-gir": `soldan-gir ${sure.uzun} ease-out`,
+      "sola-cik": `sola-cik ${sure.orta} ease-in forwards`,
+      "alttan-gir": `alttan-gir ${sure.uzun} ease-out`,
+      "alta-cik": `alta-cik ${sure.orta} ease-in forwards`,
+      "akordeon-ac": `akordeon-ac ${sure.orta} ease-out`,
+      "akordeon-kapa": `akordeon-kapa ${sure.orta} ease-in`,
+      don: `don ${sure.don} linear infinite`,
+      nabiz: `nabiz ${sure.nabiz} ease-in-out infinite`,
     },
+    transitionDuration: sure,
   },
 };

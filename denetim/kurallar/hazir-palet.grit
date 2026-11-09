@@ -9,7 +9,12 @@ or {
   JsTemplateExpression(),
   JsxString()
 } as $metin where {
-  $filename <: not r".*/bilesenler/tasarim-degerleri/.*",
+  // Muafiyet yalnız projenin kökündeki bilesenler/tasarim-degerleri/ içindir: başka bir klasörün içindeki aynı adlı
+  // klasör (cekirdek/.../bilesenler/tasarim-degerleri/) muaf değildir (kart 0103).
+  or {
+    $filename <: not r".*/bilesenler/tasarim-degerleri/.*",
+    $filename <: r".*/(?:cekirdek|siteler|sahip-paneli|komutlar|denetim|bilesenler)/(?:.*/)?bilesenler/tasarim-degerleri/.*"
+  },
   $metin <: r"(?s)(?:.*[^a-z0-9_-])?(?:bg|text|border|border-[xytrblse]|ring|ring-offset|outline|fill|stroke|from|via|to|divide|placeholder|accent|caret|decoration|shadow|inset-shadow)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|black|white)(?:-\d{2,3})?(?:[^a-z0-9_-].*)?",
   register_diagnostic(span=$metin, message="Hazır palet rengi yazılamaz. Rengi anlamlı adıyla kullanın (bilesenler/tasarim-degerleri/degerler.ts).", severity="error")
 }

@@ -1,12 +1,12 @@
 "use client";
 // Müşteri kayıt formu (kart 0033, karar 0051). Şema uçla ortaktır. Robot korumasını useRobotluGonderim yürütür.
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import { Baglanti } from "../../bilesenler/form/baglanti";
 import { Form, GonderDugmesi } from "../../bilesenler/form/form";
 import { FormAlani } from "../../bilesenler/form/form-alani";
-import { GirisAlani } from "../../bilesenler/form/giris-alani";
-import { OnayKutusu } from "../../bilesenler/form/onay-kutusu";
-import { Uyari } from "../../bilesenler/form/uyari";
+import { Baglanti } from "../../bilesenler/parcalar/baglanti";
+import { GirisAlani } from "../../bilesenler/parcalar/giris-alani";
+import { OnayKutusu } from "../../bilesenler/parcalar/onay-kutusu";
+import { Uyari } from "../../bilesenler/parcalar/uyari";
 import { hataKodlari } from "../kayitlar/kapi";
 import { sifreSiniri } from "../kayitlar/oturum";
 import { useMetin } from "../metinler/istemci-metni";
@@ -90,13 +90,17 @@ export function KayitFormu() {
         yukleniyorMetni={metin("ortak.form.yukleniyor")}
       >
         {genelHata === "kayitli" ? (
-          <Uyari>
+          <Uyari tur="tehlike">
             <p>{metin("vitrin.kayit.hataKayitli")}</p>
             <Baglanti href={vitrinAdresleri.giris}>{metin("vitrin.kayit.girisBaglanti")}</Baglanti>
           </Uyari>
         ) : null}
-        {genelHata === "sinir" ? <Uyari>{metin("vitrin.kayit.hataSinir")}</Uyari> : null}
-        {genelHata === "genel" ? <Uyari>{metin("vitrin.kayit.hataGenel")}</Uyari> : null}
+        {genelHata === "sinir" ? (
+          <Uyari tur="tehlike">{metin("vitrin.kayit.hataSinir")}</Uyari>
+        ) : null}
+        {genelHata === "genel" ? (
+          <Uyari tur="tehlike">{metin("vitrin.kayit.hataGenel")}</Uyari>
+        ) : null}
         <FormAlani
           etiket={metin("vitrin.kayit.eposta")}
           {...(alanHatalari.eposta === undefined ? {} : { hata: alanHatalari.eposta })}

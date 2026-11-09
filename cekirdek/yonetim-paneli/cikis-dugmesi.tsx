@@ -1,8 +1,8 @@
 "use client";
 // Panelden çıkış (kart 0027). Çıkınca sayfa baştan yüklenir: tarayıcıda panel kalmaz.
 import { useState } from "react";
-import { Dugme } from "../../bilesenler/form/dugme";
-import { Uyari } from "../../bilesenler/form/uyari";
+import { Dugme } from "../../bilesenler/parcalar/dugme";
+import { Uyari } from "../../bilesenler/parcalar/uyari";
 import { useMetin } from "../metinler/istemci-metni";
 import { girisAdresi } from "./adresler";
 
@@ -28,7 +28,7 @@ export function CikisDugmesi() {
 
   return (
     <>
-      {hata ? <Uyari>{metin("yonetim.cikis.hata")}</Uyari> : null}
+      {hata ? <Uyari tur="tehlike">{metin("yonetim.cikis.hata")}</Uyari> : null}
       <Dugme onClick={cik}>{metin("yonetim.cikis.dugme")}</Dugme>
     </>
   );

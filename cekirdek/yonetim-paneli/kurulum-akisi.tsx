@@ -2,7 +2,7 @@
 // Kurulum ekranının akışı (kart 0028): önce karekod ve ilk kod, onaydan sonra bir kez gösterilen yedek
 // kodlar. Karekodu sunucu çizer ve hazır verir; gizli tarayıcıda üretilmez.
 import { type ReactNode, useState } from "react";
-import { Dugme } from "../../bilesenler/form/dugme";
+import { Dugme } from "../../bilesenler/parcalar/dugme";
 import { useMetin } from "../metinler/istemci-metni";
 import { KodFormu } from "./kod-formu";
 import { stil } from "./stil";

@@ -1,7 +1,7 @@
 // Her alanın etiketini ve hata mesajını aynı biçimde gösterir (.claude/rules/formlar.md). Alan bu
 // sarmalayıcının verdiği kimliği ve hata bağlantısını alır, ekran okuyucu ikisini birlikte okur.
 import { type ReactNode, useId } from "react";
-import { stil } from "./stil";
+import { Etiket } from "../parcalar/etiket.tsx";
 
 export type AlanBaglantisi = {
   id: string;
@@ -28,20 +28,20 @@ export function FormAlani({
     ...(hata === undefined ? [] : [hataKimligi]),
   ].join(" ");
   return (
-    <div className={stil.alan}>
-      <label htmlFor={id}>{etiket}</label>
+    <div className="flex flex-col gap-1">
+      <Etiket htmlFor={id}>{etiket}</Etiket>
       {children({
         id,
         ...(hata === undefined ? {} : { "aria-invalid": true as const }),
         ...(bagli === "" ? {} : { "aria-describedby": bagli }),
       })}
       {aciklama === undefined ? null : (
-        <span id={aciklamaKimligi} className={stil.aciklama}>
+        <span id={aciklamaKimligi} className="text-kucuk text-soluk-yazi">
           {aciklama}
         </span>
       )}
       {hata === undefined ? null : (
-        <span id={hataKimligi} className={stil.hata}>
+        <span id={hataKimligi} className="font-kalin text-tehlike-yazi">
           {hata}
         </span>
       )}

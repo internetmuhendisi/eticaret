@@ -37,10 +37,12 @@ Sınıfta `bg-`, `text-`, `border-`, `outline-`, `accent-` önekleriyle yazılı
 | `alt-kisim`, `alt-kisim-ustu`, `alt-kisim-soluk` | Sayfanın alt kısmı |
 | `afis`, `afis-ustu` | Büyük afiş zemini ve üstündeki yazı |
 | `kutu-1` … `kutu-5` | Kategori ve kampanya kutularının zeminleri |
-| `tehlike`, `basari`, `uyari` | Doygun ton: yalnız işaret ve kenar |
+| `tehlike`, `basari`, `uyari` | Doygun ton: yalnız işaret, kenar ve düğme zemini |
+| `tehlike-ustu` | Tehlike düğmesinin yazısı |
 | `tehlike-yazi`, `basari-yazi`, `uyari-yazi` | Okunur ton: yazı |
 | `tehlike-zemin`, `basari-zemin`, `uyari-zemin` | Kutu zemini |
 | `karekod`, `karekod-zemin` | Karekod: koyu temada da açık zeminde koyu |
+| `ortu` | Pencerenin arkasındaki örtü; saydamlığıyla kullanılır (`bg-ortu/60`) |
 
 `birincil` işaret değildir: açık zeminde 3:1'in altında kalabilir. Düğmeyi üstündeki yazı tanıtır. Birincil renk tek başına bir durumu göstermek için (onay kutusu, ilerleme) kullanılmaz.
 
@@ -67,7 +69,7 @@ Bütün temalarda aynıdır.
 | Boşluk ölçeği | `p-`, `m-`, `gap-`, `w-`, `h-`, `size-`, `min-h-`... | `0`, `px`, `0.5`, `1`, `1.5`, `2`, `3`, `4`, `5`, `6`, `8`, `10`, `11`, `12`, `16`, `20`; `11` parmakla rahat basılan en küçük yüksekliktir |
 | Genişlik sınırı | `max-w-` | `karekod`, `form`, `metin`, `icerik` |
 | Kırılma noktası | önek | `tablet:`, `masaustu:`, `genis:`; önek yoksa telefon |
-| Katman sırası | `z-` | `taban`, `ust-kisim`, `acilir`, `yan-pencere`, `pencere`, `bildirim` |
+| Katman sırası | `z-` | alttan üste `taban`, `ust-kisim`, `yan-pencere`, `pencere`, `acilir`, `bildirim`; açılır parçalar (menü, seçim listesi, ipucu) pencerelerin üstündedir |
 | Kenar ve çizgi kalınlığı | `border`, `outline`, `ring`, `decoration`, `underline-offset`... | öneksiz (1 px), `2`, `0` |
 
 `w-full`, `w-1/2`, `min-h-dvh` gibi oranlar ve Tailwind'in sayı almayan sınıfları kullanılabilir. Saydamlık, ızgara sütunu, sıra, döndürme, büyütme ve süre gibi sayı alan sınıflar ölçek dışıdır ve serbesttir.
@@ -87,6 +89,34 @@ Tailwind'in kendi teması yüklenmez. `bg-red-500`, `text-sm`, `rounded-lg`, `sh
 - Satır içi stilde ölçü (`style={{ marginTop: 12 }}`, `style={{ padding: "12px" }}`)
 
 Bu klasör yasakların dışındadır, değerler burada tanımlanır. Denetim metni sınıfa benzeyen her yazıda arar: düz bir metinde `[...]:`, `z-1` ya da `dark:` geçerse de hata verir. Ekran metni zaten metin dosyasındadır; kod içindeki böyle bir metin yeniden yazılır.
+
+## Durumlar ve hareket
+
+Radix parçalarının durumları adlı durum olarak yazılır (kart 0103), köşeli parantezli durum (`data-[state=open]:`) denetimde yasaktır:
+
+| Durum | Ne zaman |
+|---|---|
+| `acik:`, `kapali:` | Pencere, menü, seçim listesi, akordeon açık ya da kapalı |
+| `etkin:` | Seçili sekme |
+| `isaretli:` | İşaretli onay kutusu |
+| `devre-disi:` | Seçilemeyen menü ya da liste öğesi |
+| `vurgulu:` | Klavyeyle ya da fareyle üzerine gelinen menü ya da liste öğesi |
+| `yer-tutucu:` | Seçim yapılmamış seçim kutusu |
+
+Radix'in açılır parçalara verdiği ölçüler için üç adlı sınıf vardır: `secim-genisligi`, `secim-yuksekligi`, `menu-yuksekligi`.
+
+Animasyonlar `animate-` ile yazılır:
+- `belir`, `kaybol`: açılır parça
+- `ortu-belir`, `ortu-kaybol`: örtü
+- `sagdan-gir`, `saga-cik`, `soldan-gir`, `sola-cik`, `alttan-gir`, `alta-cik`: yan pencere
+- `akordeon-ac`, `akordeon-kapa`: akordeon
+- `don`: yükleniyor
+- `nabiz`: iskelet
+- `geciken-gorunum`: kod yüklenmeyince görünen yazı
+
+Süreleri `sabitDegerler.sureler`'dedir, `duration-kisa`, `duration-orta`, `duration-uzun` ile de kullanılır. Hareketin kendisi (`@keyframes`) `tailwind.css`'tedir: Tailwind 4 ayar dosyasındaki `keyframes` alanını CSS'e yazmaz. Yeni animasyon iki yere birden eklenir, eksik tanımı `testler/tailwind.test.ts` yakalar. Hareketi azaltmayı seçen kullanıcıda hiçbir hareket olmaz.
+
+Sınıflar `sinif()` ile birleştirilir (`bilesenler/parcalar/sinif.ts`). Aynı türden iki sınıftan sonra yazılan kalır; bu yüzden tasarım değerlerinin adlarını tanır.
 
 ## Koyu tema
 

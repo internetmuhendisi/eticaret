@@ -2,9 +2,9 @@
 // Vitrinde müşterinin hesap alanı (kart 0033). Oturum uçtan sorulur: sayfa çizerken okunursa oturum kapanır
 // (karar 0039). Cevap gelene kadar boş kalır: girişli müşteri bir an "Giriş yap" görmesin.
 import { useEffect, useState } from "react";
-import { Baglanti } from "../../bilesenler/form/baglanti";
-import { Dugme } from "../../bilesenler/form/dugme";
-import { Uyari } from "../../bilesenler/form/uyari";
+import { Baglanti } from "../../bilesenler/parcalar/baglanti";
+import { Dugme } from "../../bilesenler/parcalar/dugme";
+import { Uyari } from "../../bilesenler/parcalar/uyari";
 import { hataKodlari } from "../kayitlar/kapi";
 import { useMetin } from "../metinler/istemci-metni";
 import { vitrinAdresleri } from "./adresler";
@@ -71,7 +71,7 @@ export function HesapAlani() {
         </>
       ) : (
         <>
-          {cikisHatasi ? <Uyari>{metin("vitrin.hesap.cikisHata")}</Uyari> : null}
+          {cikisHatasi ? <Uyari tur="tehlike">{metin("vitrin.hesap.cikisHata")}</Uyari> : null}
           <span className={stil.eposta}>{durum.eposta}</span>
           <Dugme onClick={cik}>{metin("vitrin.hesap.cikis")}</Dugme>
         </>

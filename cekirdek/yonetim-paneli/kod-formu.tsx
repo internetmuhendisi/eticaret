@@ -4,8 +4,8 @@
 import { type FormEvent, useRef, useState } from "react";
 import { Form, GonderDugmesi } from "../../bilesenler/form/form";
 import { FormAlani } from "../../bilesenler/form/form-alani";
-import { GirisAlani } from "../../bilesenler/form/giris-alani";
-import { Uyari } from "../../bilesenler/form/uyari";
+import { GirisAlani } from "../../bilesenler/parcalar/giris-alani";
+import { Uyari } from "../../bilesenler/parcalar/uyari";
 import { useMetin } from "../metinler/istemci-metni";
 import { kodSemasi } from "../moduller/oturum/semalar";
 import { girisAdresi } from "./adresler";
@@ -75,7 +75,7 @@ export function KodFormu<Veri>({
       kodGerekliMetni={metin("ortak.form.kodGerekli")}
       yukleniyorMetni={metin("ortak.form.yukleniyor")}
     >
-      {hata === null ? null : <Uyari>{hata}</Uyari>}
+      {hata === null ? null : <Uyari tur="tehlike">{hata}</Uyari>}
       <FormAlani etiket={etiket}>
         {(alan) => (
           <GirisAlani {...alan} name="kod" autoComplete="one-time-code" autoFocus required />

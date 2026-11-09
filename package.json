@@ -27,6 +27,7 @@
     "denetim": "biome check --error-on-warnings",
     "bicimle": "biome format --write",
     "denetim-kendi-testi": "node denetim/kendi-kendini-denetle.mts",
+    "shadcn-farki": "node komutlar/shadcn-farki.mts",
     "site-dogrula": "node komutlar/site-dogrula.mts",
     "veritabani-baslat": "docker compose -f sunucu/compose.yaml --env-file .env up -d --wait",
     "veritabani-durdur": "docker compose -f sunucu/compose.yaml --env-file .env down",
@@ -75,11 +76,13 @@
     "pre-commit": "pnpm denetim"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@biomejs/biome": "2.6.3",
     "@playwright/test": "1.64.1",
     "@tailwindcss/node": "4.3.5",
     "@testing-library/dom": "10.4.2",
     "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.8",
     "@types/node": "24.19.2",
     "@types/nodemailer": "8.0.2",
     "@types/pg": "8.23.1",

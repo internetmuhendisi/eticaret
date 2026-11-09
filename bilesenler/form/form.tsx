@@ -14,7 +14,8 @@ import {
   useEffect,
   useState,
 } from "react";
-import { stil } from "./stil";
+import { type DugmeTuru, dugmeSiniflari } from "../parcalar/dugme.tsx";
+import { sinif } from "../parcalar/sinif.ts";
 
 const FormHazir = createContext(false);
 
@@ -37,7 +38,7 @@ export function Form({
     <form method="post" noValidate aria-busy={!hazir} {...ozellikler}>
       <noscript>{kodGerekliMetni}</noscript>
       {hazir ? null : (
-        <p className={stil.yukleniyor} role="status">
+        <p className="invisible animate-geciken-gorunum" role="status">
           {yukleniyorMetni}
         </p>
       )}
@@ -46,21 +47,23 @@ export function Form({
   );
 }
 
-// Formun tek gönderme düğmesi: Dugme submit olamaz (tür kontrolü). Düğmenin kendi yöntemi ve adresi de
+// Formun tek gönderme düğmesi: Dugme submit olamaz (tür kontrolü). Görünüşü Dugme ile aynıdır. Düğmenin kendi yöntemi ve adresi de
 // verilemez, formun korumasını aşardı.
 export function GonderDugmesi({
   disabled,
   className,
+  tur = "birincil",
   ...ozellikler
 }: Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
   "type" | "formMethod" | "formAction" | "formEncType" | "formNoValidate" | "formTarget"
->) {
+> & { tur?: DugmeTuru }) {
   const hazir = useContext(FormHazir);
   return (
     <button
       type="submit"
-      className={className === undefined ? stil.dugme : `${stil.dugme} ${className}`}
+      data-slot="gonder-dugmesi"
+      className={sinif(dugmeSiniflari({ tur }), className)}
       disabled={disabled === true || !hazir}
       {...ozellikler}
     />
