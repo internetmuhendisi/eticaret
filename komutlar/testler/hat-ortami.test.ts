@@ -10,7 +10,8 @@ import { afterAll, describe, expect, it } from "vitest";
 
 const kok = join(import.meta.dirname, "..", "..");
 
-// Komut kendi klasörüne göre çalışır; proje kopyalanır, paketler bağlanır.
+// Komut kendi klasörüne göre çalışır; proje kopyalanır, paketler bağlanır. Site klasörünü okuyan kod
+// temaların değerleri için ortak tasarım değerlerini de alır (kart 0105).
 const kopyalar: string[] = [];
 afterAll(() => {
   for (const kopya of kopyalar) rmSync(kopya, { recursive: true, force: true });
@@ -19,7 +20,13 @@ afterAll(() => {
 const kopyaHazirla = (): string => {
   const kopya = mkdtempSync(join(tmpdir(), "hat-ortami-"));
   kopyalar.push(kopya);
-  for (const yol of ["komutlar/hat-ortami-hazirla.mts", "cekirdek", "siteler", "package.json"]) {
+  for (const yol of [
+    "komutlar/hat-ortami-hazirla.mts",
+    "cekirdek",
+    "bilesenler/tasarim-degerleri",
+    "siteler",
+    "package.json",
+  ]) {
     cpSync(join(kok, yol), join(kopya, yol), {
       recursive: true,
       filter: (kaynak) => !kaynak.includes("node_modules") && !kaynak.includes(".next"),

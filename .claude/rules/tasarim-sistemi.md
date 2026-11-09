@@ -2,6 +2,7 @@
 paths:
   - "bilesenler/**"
   - "cekirdek/temalar/**"
+  - "cekirdek/moduller/tema/**"
   - "siteler/*/tema/**"
   - "**/*.css"
 ---
@@ -14,11 +15,11 @@ Tasarım değeri, renk, yazı boyutu, boşluk gibi tasarımı oluşturan ve tek 
 - Renk, yazı tipi, yazı boyutu, boşluk, köşe yarıçapı, gölge ve katman sırasını tek dosyada tanımla. Tasarımı değiştirmek o dosyayı değiştirmek demektir.
 - Rengi "birincil", "zemin", "yazı", "tehlike" gibi anlamlı adlarla kullan. Renk kodu ya da paletten ham renk yazma.
 - Vitrin tasarımını sitenin seçtiği temadan al. Tema, tasarım değerlerinin tamamını ve koyu tema değerlerini tanımlar. Temasız site kurulmaz, yeni site bir temanın varsayılanlarıyla başlar.
-- Temalar çekirdekte durur ve bütün sitelerde ortaktır. Yalnız tek bir siteye tasarlanan tema o sitenin klasöründe durur, o sitede "Mağaza sahibi temayı değiştirebilir" ayarı kapalıdır.
+- Temalar çekirdekte durur ve bütün sitelerde ortaktır. Yalnız tek bir siteye tasarlanan tema o sitenin klasöründe durur ve başka sitede görünmez. Sitenin kullanabileceği temalar altyapı sahibinin ayarıdır, panel yalnız onları gösterir. "Mağaza sahibi temayı değiştirebilir" kapalıysa ne tema ne tema ayarı değişir.
 - Mağaza sahibi temanın yalnız açtığı değerleri değiştirir: renk, yazı tipi, köşe ve düğme biçimi, logo, ana sayfa düzeni. Tema her ayar için varsayılanı ve izin verilen seçenekleri tanımlar. Boşluk ölçeği, genişlik sınırları ve katman sırası gibi değerler her zaman temadan gelir, serbest kod ya da stil yazılamaz.
 - Vitrinin son tasarımı temanın değerleri ile sitenin tema ayarlarının birleşimidir. Bu birleşimi tek yerde üret, bileşenler yalnız sonucu okur.
-- Mağaza sahibinin seçtiği renkleri kaydetmeden önce kontrast kontrolünden geçir. Geçmezse yayınlamadan önce uyar ve okunur bir ton öner.
-- Tema seçimi ve tema ayarı değişikliği önce taslak olarak kaydedilir, önizlemede görülür, yayınlanınca yeni bir sürüm olur. Her yayınlanan sürümü sakla, önceki sürüme tek adımda dönülebilsin. Tema değişikliği ürüne, içeriğe ve menülere dokunmaz.
+- Mağaza sahibinin seçtiği renkleri kaydetmeden önce kontrast kontrolünden geçir. Açık temada geçmezse kaydetme ve okunur bir ton öner. Mağaza sahibi tek renk seçer; koyu temada geçmezse okunur tonunu kullan.
+- Panelde canlı önizleme ve taslak yoktur, her temanın gezilebilir demosu vardır (karar 0080). Tema seçimi ve tema ayarı değişikliği yayınlanınca yeni bir sürüm olur. Her yayınlanan sürümü sakla, önceki sürüme tek adımda dönülebilsin. Tema değişikliği ürüne, içeriğe ve menülere dokunmaz.
 - Yönetim paneli bütün sitelerde aynı görünür. Panel siteden yalnız logo ve ana rengi alır.
 - Panelin siteden aldığı ana rengi kontrast kontrolünden geçir. Geçmezse okunur bir tonunu türet.
 - Koyu tema değerlerini aynı dosyada ayrıca tanımla. Koyu temayı bileşen bileşen yamama.
@@ -38,6 +39,14 @@ Tasarım değeri, renk, yazı boyutu, boşluk gibi tasarımı oluşturan ve tek 
 - Gereken değer yoksa önce `degerler.ts`'e eklenir. Yeni yazı-zemin eşleşmesi kontrast listesine de eklenir.
 - Radix parçalarının durumları adlı durumla yazılır (`acik:`, `etkin:`, `isaretli:`...), sınıflar `sinif()` ile birleştirilir (kart 0103, belgesi aynı README).
 - İkonlar yalnız ikon sözlüğünden gelir (`bilesenler/ikonlar/sozluk.ts`); Lucide'yi başka yerde içe aktarmak denetimde hatadır.
-- Sitenin değerlerini yalnız `cekirdek/temalar/birlesim.ts` verir. Kök düzen onları sayfaya CSS değişkeni olarak yazar.
+- Sitenin değerlerini yalnız `cekirdek/temalar/birlesim.ts` verir. Kök düzen onları sayfaya CSS değişkeni olarak yazar, panel düzeni panelin değerlerini onların üstüne yazar.
+
+## Tema yapısı (karar 0080)
+
+- Tema tanımının şeması `cekirdek/temalar/sema.ts`, hazır temalar `cekirdek/temalar/hazir/` ve kaydı `cekirdek/temalar/temalar.ts`. Siteye özel tema `siteler/<kod>/tema/<tema kodu>.json` dosyasıdır, adını da taşır.
+- Temanın başvurduğu bölüm türleri ve parça görünümleri `cekirdek/kayitlar/tema.ts` kaydındadır. Yeni bölüm ya da görünüm önce kayda eklenir; kayıtta olmayana başvuran tema açılmaz.
+- Tema yalnız sitede barındırılan yazı tiplerini (`yuklenenYaziTipleri`) ve cihazın genel yazı tiplerini kullanır.
+- Mağaza sahibinin tema ayarlarının şeması `cekirdek/temalar/ayarlar.ts`, sürümleri `cekirdek/moduller/tema/` modülündedir. Başlangıç değeri `siteler/<kod>/baslangic/tema.json`.
+- Renk okunurluğu tek yerde ölçülür (`cekirdek/temalar/okunurluk.ts`): temanın kendi değerleri, mağaza sahibinin rengi ve panelin ana rengi aynı ölçüden geçer.
 - Yeni CSS dosyası açılmaz. Stil sınıfla yazılır, temel stil `tailwind.css` içindedir.
 - Yazı tipleri sitenin kendi sunucusundan yüklenir (`@fontsource-variable` paketleri), dış sunucudan yüklenmez.

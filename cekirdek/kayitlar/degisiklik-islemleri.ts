@@ -64,6 +64,11 @@ export const degisiklikIslemleri = [
   // Satılabilir birimin stoğu panelden elle düzeltildi (kart 0082). Siparişin düşürmesi ve iptalin
   // artırması yalnız stok geçmişine yazılır.
   "stok.duzeltildi",
+  // Sitenin tema sürümü (kart 0105): başlangıç değeriyle ilk sürüm, mağaza sahibinin yayını ve önceki bir
+  // sürüme dönüş. Kayıt kimliği yeni sürümün kimliğidir.
+  "tema.baslangic",
+  "tema.yayinlandi",
+  "tema.geri-donuldu",
 ] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 
@@ -90,6 +95,8 @@ export const degisiklikKayitTurleri = [
   "fiyat",
   // Kayıt kimliği satılabilir birimin kimliğidir (kart 0082).
   "stok",
+  // Kart 0105: sitenin tema sürümü.
+  "tema-surumu",
 ] as const;
 export type DegisiklikKayitTuru = (typeof degisiklikKayitTurleri)[number];
 

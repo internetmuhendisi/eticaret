@@ -15,6 +15,7 @@ import {
   varsayilanTemaDegerleri,
   yaziBoyuAdlari,
   yaziTipiAdlari,
+  yuklenenYaziTipleri,
 } from "../degerler.ts";
 import tailwindAyari from "../tailwind.ayar.ts";
 
@@ -216,5 +217,15 @@ describe("Tailwind yalnız tasarım değerlerini tanır", () => {
     expect(siniflar.size).toBeGreaterThan(150);
     const uretmeyenler = [...siniflar].filter((s) => !uretir(uygulama, s));
     expect(uretmeyenler).toEqual([]);
+  });
+});
+
+// Temaların kullanabileceği yazı tipleri (kart 0105): kayıttaki her yazı tipinin paketi stil girişinde
+// yüklenir ve stil girişinde kayıtta olmayan yazı tipi paketi yoktur.
+describe("yüklenen yazı tipleri", () => {
+  it("kayıt ile tailwind.css'teki yazı tipi paketleri aynıdır", () => {
+    const giris = readFileSync(join(kok, "bilesenler/tasarim-degerleri/tailwind.css"), "utf8");
+    const paketler = [...giris.matchAll(/@import\s+"(@fontsource[^"]*)"/g)].map((e) => e[1]).sort();
+    expect(paketler).toEqual(Object.values(yuklenenYaziTipleri).sort());
   });
 });

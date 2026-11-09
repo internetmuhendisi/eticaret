@@ -169,6 +169,13 @@
       "when": 1794151353789,
       "tag": "0023_urun-galerisi",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794216116216,
+      "tag": "0024_tema-surumleri",
+      "breakpoints": true
     }
   ]
 }

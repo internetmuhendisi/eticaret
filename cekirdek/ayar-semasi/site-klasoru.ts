@@ -4,7 +4,7 @@
 // birbirini .ts uzantısıyla alır.
 import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { basename, join, sep } from "node:path";
-import type { z } from "zod";
+import { z } from "zod";
 import { type DosyaTuru, dosyaSinirlari } from "../kayitlar/dosya.ts";
 import type { VideoSitesi } from "../kayitlar/video-siteleri.ts";
 import { icerikTuru, uzantininTuru } from "../moduller/dosya/tur.ts";
@@ -16,6 +16,9 @@ import {
   katalogKurallari,
 } from "../moduller/urun/baslangic-semasi.ts";
 import { type VergiBaslangici, vergiBaslangicSemasi } from "../moduller/vergi/semalar.ts";
+import { type TemaAyarlari, temaAyariSorunlari, temaAyarlariSemasi } from "../temalar/ayarlar.ts";
+import { kodSemasi, siteTemasiSemasi } from "../temalar/sema.ts";
+import { hazirTemaKodlari, hazirTemayiOku, type Tema } from "../temalar/temalar.ts";
 import {
   ayarSemasi,
   type MagazaAyarlari,
@@ -35,6 +38,9 @@ import { type Kimlik, kimlikSemasi } from "./kimlik.ts";
 // Yalnız sitenin kataloğu hiç kurulmamışken kullanılır (urun/baslangic.ts); dosyası yoksa boştur.
 // katalogGorselleri: kataloğun galeri görsellerinin dosya adından site klasöründeki tam yola
 // (baslangic/gorseller/, kart 0087); katalogda görsel yoksa boştur.
+// temalar: sitenin kullanabileceği temalar, şemadan geçmiş (kart 0105); ilki başlangıç temasıdır.
+// temaBaslangici: tema ayarlarının başlangıç değeri (baslangic/tema.json). Yalnız sitenin tema sürümü hiç
+// yazılmamışken kullanılır; asıl değer veritabanındadır (cekirdek/moduller/tema/).
 export type Site = {
   kimlik: Kimlik;
   ayarlar: SiteAyarlari;
@@ -43,6 +49,8 @@ export type Site = {
   katalogBaslangici: KatalogBaslangici;
   katalogGorselleri: Record<string, string>;
   markaLogosu?: { yol: string; tur: DosyaTuru };
+  temalar: Tema[];
+  temaBaslangici: { tema: string; ayarlar: TemaAyarlari };
 };
 
 export type DogrulamaSonucu = { gecerli: true; site: Site } | { gecerli: false; hatalar: string[] };
@@ -205,6 +213,127 @@ export const katalogGorselleriniDogrula = (
   return hatalar.length > 0 ? { gecerli: false, hatalar } : { gecerli: true, gorseller };
 };
 
+export const temaKlasoru = "tema";
+
+// Sitenin kullanabileceği temalar (kart 0105): "temalar" ayarındaki her kod ya hazır bir tema ya da sitenin
+// tema/ klasöründeki bir temadır. Siteye özel tema dosyası <kod>.json adlı düz bir dosyadır, kodu hazır
+// bir temanınkiyle aynı olamaz ve listede yazılı olmalıdır (kullanılmayan tema dosyası kalmasın). Her tema
+// şemadan geçer. Liste verilmezse bütün hazır temalardır.
+export const temalariDogrula = (
+  klasor: string,
+  liste: readonly string[] | undefined,
+): { gecerli: true; temalar: Tema[] } | { gecerli: false; hatalar: string[] } => {
+  const hatalar: string[] = [];
+  const siteTemalari = new Map<string, Tema>();
+  const temaYolu = join(klasor, temaKlasoru);
+  const hazirlar = new Set(hazirTemaKodlari());
+  if (existsSync(temaYolu)) {
+    if (!lstatSync(temaYolu).isDirectory()) {
+      return { gecerli: false, hatalar: [`${temaKlasoru}/: gerçek bir klasör olmalı.`] };
+    }
+    // Gizli dosyalar (işletim sisteminin .DS_Store gibi dosyaları) tema sayılmaz.
+    for (const ad of readdirSync(temaYolu)
+      .filter((ad) => !ad.startsWith("."))
+      .sort()) {
+      const yer = `${temaKlasoru}/${ad}`;
+      const kod = ad.endsWith(".json") ? ad.slice(0, -".json".length) : "";
+      if (!kodSemasi.safeParse(kod).success) {
+        hatalar.push(`${yer}: ad <tema kodu>.json olmalı (küçük harf, rakam ve tire).`);
+        continue;
+      }
+      if (!lstatSync(join(temaYolu, ad)).isFile()) {
+        hatalar.push(`${yer}: düz bir dosya olmalı (bağlantı ya da klasör değil).`);
+        continue;
+      }
+      if (hazirlar.has(kod)) {
+        hatalar.push(`${yer}: bu kod hazır bir temanın, siteye özel tema başka bir kod almalı.`);
+        continue;
+      }
+      const ham = jsonOku(temaYolu, ad);
+      if ("hata" in ham) {
+        hatalar.push(`${temaKlasoru}/${ham.hata}`);
+        continue;
+      }
+      const sonuc = siteTemasiSemasi().safeParse(ham.deger);
+      if (!sonuc.success) {
+        hatalar.push(...sorunlariYaz(yer, sonuc.error.issues));
+        continue;
+      }
+      const { ad: gorunenAd, ...tanim } = sonuc.data;
+      siteTemalari.set(kod, { kod, kaynak: "site", ad: { metin: gorunenAd }, tanim });
+    }
+  }
+  const kodlar = liste ?? [...hazirlar];
+  const temalar: Tema[] = [];
+  for (const kod of kodlar) {
+    const siteninki = siteTemalari.get(kod);
+    if (siteninki !== undefined) {
+      temalar.push(siteninki);
+      continue;
+    }
+    if (!hazirlar.has(kod)) {
+      hatalar.push(
+        `ayarlar.json: temalar: "${kod}" diye bir tema yok (hazır temalarda ve ${temaKlasoru}/ klasöründe).`,
+      );
+      continue;
+    }
+    const hazir = hazirTemayiOku(kod);
+    if (hazir.gecerli) temalar.push(hazir.tema);
+    else hatalar.push(...hazir.hatalar);
+  }
+  for (const kod of siteTemalari.keys()) {
+    if (!kodlar.includes(kod)) {
+      hatalar.push(`${temaKlasoru}/${kod}.json: ayarlar.json dosyasındaki temalar listesinde yok.`);
+    }
+  }
+  if (hatalar.length === 0 && temalar.length === 0) {
+    hatalar.push("ayarlar.json: temalar: sitenin kullanabileceği bir tema yok.");
+  }
+  return hatalar.length > 0 ? { gecerli: false, hatalar } : { gecerli: true, temalar };
+};
+
+export const temaBaslangicDosyasi = "baslangic/tema.json";
+
+const temaBaslangicSemasi = z.strictObject({
+  tema: kodSemasi.optional(),
+  ayarlar: temaAyarlariSemasi.prefault({}),
+});
+
+// Tema ayarlarının başlangıç değeri: tema listede olmalı (verilmezse listenin ilki), ayarlar o temanın
+// açtığı değerlerden ve okunur renklerden oluşmalı. Dosyası yoksa ilk tema kendi değerleriyle başlar.
+export const temaBaslangiciniDogrula = (
+  klasor: string,
+  temalar: readonly Tema[],
+):
+  | { gecerli: true; deger: { tema: string; ayarlar: TemaAyarlari } }
+  | { gecerli: false; hatalar: string[] } => {
+  const ham = jsonOku(klasor, temaBaslangicDosyasi, {});
+  if ("hata" in ham) return { gecerli: false, hatalar: [ham.hata] };
+  const sonuc = temaBaslangicSemasi.safeParse(ham.deger);
+  if (!sonuc.success) {
+    return { gecerli: false, hatalar: sorunlariYaz(temaBaslangicDosyasi, sonuc.error.issues) };
+  }
+  const kod = sonuc.data.tema ?? temalar[0]?.kod;
+  const tema = temalar.find((aday) => aday.kod === kod);
+  if (tema === undefined) {
+    return {
+      gecerli: false,
+      hatalar: [`${temaBaslangicDosyasi}: tema: "${kod}" sitenin kullanabileceği temalarda yok.`],
+    };
+  }
+  const sorunlar = temaAyariSorunlari(tema.tanim, sonuc.data.ayarlar);
+  if (sorunlar.length > 0) {
+    return {
+      gecerli: false,
+      hatalar: sorunlar.map(
+        ({ alan, kod: hata, oneri }) =>
+          `${temaBaslangicDosyasi}: ayarlar.${alan}: ${hata}${oneri === undefined ? "" : ` (öneri ${oneri})`}`,
+      ),
+    };
+  }
+  return { gecerli: true, deger: { tema: tema.kod, ayarlar: sonuc.data.ayarlar } };
+};
+
 export const markaKlasoru = "marka";
 
 // Sitenin ilk logosu: marka/ klasöründe en çok bir logo.<uzantı> dosyası. Tür içerikten okunur ve
@@ -303,6 +432,13 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
   }
   const markaLogosu = markaLogosunuDogrula(klasor);
   if (!markaLogosu.gecerli) hatalar.push(...markaLogosu.hatalar);
+  const temalar = ayarlar === undefined ? undefined : temalariDogrula(klasor, ayarlar.temalar);
+  if (temalar !== undefined && !temalar.gecerli) hatalar.push(...temalar.hatalar);
+  const temaBaslangici =
+    temalar?.gecerli === true ? temaBaslangiciniDogrula(klasor, temalar.temalar) : undefined;
+  if (temaBaslangici !== undefined && !temaBaslangici.gecerli) {
+    hatalar.push(...temaBaslangici.hatalar);
+  }
 
   if (kimlik !== undefined && kimlik.kodAdi !== basename(klasor)) {
     hatalar.push(
@@ -319,7 +455,11 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
     !katalogBaslangici.gecerli ||
     katalogGorselleri === undefined ||
     !katalogGorselleri.gecerli ||
-    !markaLogosu.gecerli
+    !markaLogosu.gecerli ||
+    temalar === undefined ||
+    !temalar.gecerli ||
+    temaBaslangici === undefined ||
+    !temaBaslangici.gecerli
   ) {
     return { gecerli: false, hatalar };
   }
@@ -355,6 +495,8 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
       katalogBaslangici: katalogBaslangici.deger,
       katalogGorselleri: katalogGorselleri.gorseller,
       ...(markaLogosu.logo === undefined ? {} : { markaLogosu: markaLogosu.logo }),
+      temalar: temalar.temalar,
+      temaBaslangici: temaBaslangici.deger,
     },
   };
 };

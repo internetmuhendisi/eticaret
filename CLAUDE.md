@@ -12,7 +12,7 @@ Konu konu ayrıntılı kurallar `.claude/rules/` klasöründedir. Konuya özgü 
 - Mağazalar şimdilik yalnız Türkiye'de kurulur, yasal şablonlar Türk mevzuatına göre hazırlanır. Kod yine de ülkeye bağlı yazılmaz.
 - İlk yıl için 5–30 mağazaya göre tasarlanır, büyümeye açık kalır.
 - Her sitenin ayrı veritabanı vardır. Her site çekirdeğin belirli bir sürümünde çalışır.
-- Mağaza sahibi panelden tema seçer ve temanın sınırlı ayarlarını (renk, yazı tipi, köşe ve düğme biçimi, logo, ana sayfa düzeni) değiştirir. Değişiklik önizlemeden sonra yayınlanır ve geri alınabilir.
+- Mağaza sahibi panelden tema seçer ve temanın sınırlı ayarlarını (renk, yazı tipi, köşe ve düğme biçimi, logo, ana sayfa düzeni) değiştirir. Önizleme yerine her temanın gezilebilir demosu vardır; değişiklik doğrudan yayınlanır ve önceki sürüme tek adımda dönülür (karar 0080).
 - Yönetim panelinde altyapı adı yalnız giriş sayfasında ve alt köşede küçük görünür. Vitrinde görünmesi site ayarıdır.
 - Site ayarlarının taslağı: `planlar/site-ayarlari.md`.
 - Sunucu, müşteri verisi ve yedekler Almanya'da durur (karar 0009). İlk demo site Örnek Mağaza'dır, her özellik önce onda denenir (karar 0007).

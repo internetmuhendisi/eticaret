@@ -62,6 +62,7 @@
       "siparisOneki": "Sipariş numarasının başındaki harfler. Verilmezse mağaza adının ilk üç harfi kullanılır.",
       "siparisBaslangici": "İlk siparişin numarası.",
       "temaDegistirilebilir": "Mağaza sahibi yönetim panelinden temayı değiştirebilir.",
+      "temalar": "Mağaza sahibinin seçebileceği temalar. İlki sitenin başlangıç temasıdır. Verilmezse bütün hazır temalar.",
       "vitrindeAltyapiAdi": "Vitrinde altyapının adı görünür.",
       "yakindaYazisi": "Vitrinin ana sayfasında başlığın altında \"Yakında açılıyoruz.\" yazısı görünür.",
       "bakimMetni": "Bakım sayfasında görünen metin. Boşsa ortak metin görünür.",
@@ -82,6 +83,11 @@
       "tukenenUrun": "Stoğu biten ürün listelerde görünür ama satılmaz ya da listelerden ve aramadan gizlenir. Gizlenen ürünün sayfası bağlantıyla açılır, Tükendi yazar.",
       "dusukStokEsigi": "Stok bu sayıya eşit ya da altına inince ürün düşük stokta sayılır. Ürünün kendi eşiği varsa o geçerlidir. 0 uyarıyı kapatır.",
       "sonAdetEsigi": "Stok bu sayıya eşit ya da altına inince müşteriye kalan adet yazılır (Son 3 ürün gibi). 0 yazıyı kapatır."
+    }
+  },
+  "tema": {
+    "ad": {
+      "canliCarsi": "Canlı Çarşı"
     }
   },
   "yonetim": {

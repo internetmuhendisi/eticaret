@@ -10,15 +10,15 @@ import "../stil.css";
 // (kart 0035, karar 0026). Site klasörü süreç açılırken bir kez okunur ve bellekte kalır.
 export const dynamic = "force-dynamic";
 
-export default function KokDuzen({ children }: { children: ReactNode }) {
+export default async function KokDuzen({ children }: { children: ReactNode }) {
   const dil = siteDili();
   // Hata izleme aracı tarayıcıda da bağlanır (kart 0022); adres yoksa hiçbir şey çizilmez.
   const hataIzleme = hataIzlemeBilgisi();
   return (
     <html lang={dil}>
       <head>
-        {/* Sitenin tasarım değerleri (karar 0076): sınıflar bu değişkenleri okur. */}
-        <style>{sitenTasarimCss()}</style>
+        {/* Sitenin temasının değerleri (kararlar 0076, 0080): sınıflar bu değişkenleri okur. */}
+        <style>{await sitenTasarimCss()}</style>
       </head>
       <body>
         {hataIzleme === undefined ? null : <HataIzlemeBaglantisi bilgi={hataIzleme} />}

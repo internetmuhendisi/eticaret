@@ -1,0 +1,161 @@
+{
+  "ad": "Özel Tema",
+  "degerler": {
+    "renkler": {
+      "acik": {
+        "zemin": "#FFFFFF",
+        "yuzey": "#F5F6F8",
+        "yazi": "#1B1F27",
+        "soluk-yazi": "#5A6170",
+        "kenar": "#E3E6EB",
+        "alan-kenari": "#7A8190",
+        "birincil": "#F29F05",
+        "birincil-ustu": "#1B1F27",
+        "indirim": "#C62F21",
+        "odak": "#1D5FD1",
+        "alt-kisim": "#1E2533",
+        "alt-kisim-ustu": "#E6E9EF",
+        "alt-kisim-soluk": "#A9B1BF",
+        "afis": "#FFE2A8",
+        "afis-ustu": "#1B1F27",
+        "kutu-1": "#FDF1D6",
+        "kutu-2": "#E2F0FF",
+        "kutu-3": "#FFE3E3",
+        "kutu-4": "#E4F6E8",
+        "kutu-5": "#EFE6FF",
+        "tehlike": "#D92D20",
+        "tehlike-ustu": "#FFFFFF",
+        "tehlike-yazi": "#B42318",
+        "tehlike-zemin": "#FEECEB",
+        "basari": "#17B26A",
+        "basari-yazi": "#067647",
+        "basari-zemin": "#E6F6EC",
+        "uyari": "#F29F05",
+        "uyari-yazi": "#8A5300",
+        "uyari-zemin": "#FEF4E2",
+        "karekod": "#000000",
+        "karekod-zemin": "#FFFFFF",
+        "ortu": "#12151B"
+      },
+      "koyu": {
+        "zemin": "#12151B",
+        "yuzey": "#1B2029",
+        "yazi": "#EEF0F4",
+        "soluk-yazi": "#A3AAB8",
+        "kenar": "#2A303B",
+        "alan-kenari": "#7C8496",
+        "birincil": "#F5A623",
+        "birincil-ustu": "#12151B",
+        "indirim": "#FF8577",
+        "odak": "#8DB4FF",
+        "alt-kisim": "#0B0D11",
+        "alt-kisim-ustu": "#E6E9EF",
+        "alt-kisim-soluk": "#A3AAB8",
+        "afis": "#33270F",
+        "afis-ustu": "#EEF0F4",
+        "kutu-1": "#2E2716",
+        "kutu-2": "#17263A",
+        "kutu-3": "#3A1F22",
+        "kutu-4": "#1A2E22",
+        "kutu-5": "#262037",
+        "tehlike": "#F04438",
+        "tehlike-ustu": "#12151B",
+        "tehlike-yazi": "#FF8577",
+        "tehlike-zemin": "#3A1F22",
+        "basari": "#17B26A",
+        "basari-yazi": "#6CD49A",
+        "basari-zemin": "#1A2E22",
+        "uyari": "#F5A623",
+        "uyari-yazi": "#F5C26B",
+        "uyari-zemin": "#2E2716",
+        "karekod": "#000000",
+        "karekod-zemin": "#FFFFFF",
+        "ortu": "#000000"
+      }
+    },
+    "golgeler": {
+      "acik": {
+        "kart": "none",
+        "acilir": "0 8px 24px rgb(27 31 39 / 0.12)",
+        "pencere": "0 16px 48px rgb(27 31 39 / 0.18)"
+      },
+      "koyu": {
+        "kart": "none",
+        "acilir": "0 8px 24px rgb(0 0 0 / 0.45)",
+        "pencere": "0 16px 48px rgb(0 0 0 / 0.6)"
+      }
+    },
+    "yaziTipleri": {
+      "govde": "Inter Variable, system-ui, sans-serif",
+      "baslik": "Jost Variable, Inter Variable, system-ui, sans-serif",
+      "kod": "ui-monospace, monospace"
+    },
+    "kalinliklar": {
+      "normal": "400",
+      "orta": "500",
+      "kalin": "600",
+      "en-kalin": "700",
+      "baslik-kalinligi": "600"
+    },
+    "yaziBoylari": {
+      "kucuk": {
+        "boy": "0.75rem",
+        "satir": "1.4"
+      },
+      "govde": {
+        "boy": "0.875rem",
+        "satir": "1.5"
+      },
+      "orta": {
+        "boy": "1rem",
+        "satir": "1.5"
+      },
+      "buyuk": {
+        "boy": "1.125rem",
+        "satir": "1.4"
+      },
+      "baslik-4": {
+        "boy": "1.25rem",
+        "satir": "1.2"
+      },
+      "baslik-3": {
+        "boy": "1.375rem",
+        "satir": "1.2"
+      },
+      "baslik-2": {
+        "boy": "1.5rem",
+        "satir": "1.15"
+      },
+      "baslik-1": {
+        "boy": "2rem",
+        "satir": "1.1"
+      },
+      "afis-basligi": {
+        "boy": "3rem",
+        "satir": "1.08"
+      }
+    },
+    "koseler": {
+      "kucuk": "4px",
+      "orta": "8px",
+      "dugme": "9999px"
+    }
+  },
+  "magazaSecenekleri": {
+    "renkler": ["birincil"],
+    "yaziTipleri": {},
+    "koseler": {
+      "keskin": {
+        "kucuk": "0",
+        "orta": "0"
+      }
+    },
+    "dugmeBicimleri": {}
+  },
+  "gorunumler": {},
+  "baslangicDuzeni": {
+    "ust-kisim": [],
+    "ana-sayfa": [],
+    "alt-kisim": []
+  }
+}

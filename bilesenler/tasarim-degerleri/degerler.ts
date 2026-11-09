@@ -9,8 +9,9 @@
 // - Sabit değerler: bütün temalarda aynı cetveldir (boşluk ölçeği, genişlikler, kırılma noktaları,
 //   katman sırası). Derlemede sınıflara yazılır.
 //
-// Başlangıç tema değerleri karar 0075'te seçilen Canlı Çarşı yönündendir. Tema yapısı
-// kurulunca (kart 0105) temalara taşınır.
+// Başlangıç tema değerleri karar 0075'te seçilen Canlı Çarşı yönündendir. Yönetim paneli bütün
+// sitelerde bu değerlerle açılır, siteden yalnız ana rengi alır (kart 0105). Vitrin değerlerini sitenin
+// temasından alır (cekirdek/temalar/); Canlı Çarşı teması bugün bu değerleri kullanır.
 
 // Renklerin anlamlı adları. "-ustu" o zeminin üstündeki yazı ve ikondur.
 export const renkAdlari = [
@@ -55,6 +56,24 @@ export type GolgeAdi = (typeof golgeAdlari)[number];
 
 export const yaziTipiAdlari = ["govde", "baslik", "kod"] as const;
 export type YaziTipiAdi = (typeof yaziTipiAdlari)[number];
+
+// Sitede barındırılan yazı tipleri (tailwind.css, @fontsource-variable paketleri). Bir tema yalnız
+// bunları ve cihazın kendi yazı tiplerini (genelYaziTipleri) kullanabilir (kart 0105): listede olmayan
+// yazı tipi ziyaretçinin cihazında yoksa sessizce başka bir yazı tipine düşerdi. Listenin tailwind.css ile
+// aynı olduğunu testler/tailwind.test.ts denetler.
+export const yuklenenYaziTipleri = {
+  "Inter Variable": "@fontsource-variable/inter",
+  "Jost Variable": "@fontsource-variable/jost",
+} as const;
+export const genelYaziTipleri = [
+  "system-ui",
+  "ui-sans-serif",
+  "ui-serif",
+  "ui-monospace",
+  "sans-serif",
+  "serif",
+  "monospace",
+] as const;
 
 // Tailwind'de yazı tipi ve kalınlık aynı önekle yazılır (font-...): kalınlık adları yazı tipi
 // adlarıyla çakışmaz.

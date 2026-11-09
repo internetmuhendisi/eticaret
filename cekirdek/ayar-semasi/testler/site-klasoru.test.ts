@@ -13,6 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
+import { hazirTemalar } from "../../temalar/temalar";
 import { ayarBilgileri, ayarSemasi, magazaAyarSemasi, onekTuret } from "../ayarlar";
 import { kimlikSemasi } from "../kimlik";
 import {
@@ -20,6 +21,7 @@ import {
   baslangicDosyasiniDogrula,
   katalogBaslangicDosyasi,
   siteKlasorunuDogrula,
+  temaBaslangicDosyasi,
   vergiBaslangicDosyasi,
 } from "../site-klasoru";
 
@@ -313,6 +315,28 @@ describe("örnek klasörler", () => {
     ],
   ];
 
+  bozuklar.push(
+    // Temalar (kart 0105).
+    ["tema-tanimsiz", 'ayarlar.json: temalar: "olmayan" diye bir tema yok'],
+    ["tema-liste-bos", "ayarlar.json: temalar: En az bir tema olmalı."],
+    ["tema-listede-yok", "tema/ozel-tema.json: ayarlar.json dosyasındaki temalar listesinde yok."],
+    ["tema-bozuk", "tema/ozel-tema.json: degerler.renkler.acik.yazi: kontrast-yetersiz"],
+    ["tema-hazir-kodu", "tema/canli-carsi.json: bu kod hazır bir temanın"],
+    ["tema-dosya-adi", "tema/Ozel.json: ad <tema kodu>.json olmalı"],
+    [
+      "tema-baslangic-listede-yok",
+      `${temaBaslangicDosyasi}: tema: "olmayan" sitenin kullanabileceği temalarda yok.`,
+    ],
+    [
+      "tema-baslangic-renk",
+      `${temaBaslangicDosyasi}: ayarlar.renkler.birincil: kontrast-yetersiz (öneri #`,
+    ],
+    [
+      "tema-baslangic-acmadigi-renk",
+      `${temaBaslangicDosyasi}: ayarlar.renkler.zemin: renk-degistirilemez`,
+    ],
+  );
+
   for (const [ornek, beklenenHata] of bozuklar) {
     it(`${ornek} doğrulamadan geçemez`, () => {
       const sonuc = dogrula(ornek);
@@ -526,6 +550,68 @@ describe("başlangıç kataloğu (kart 0084)", () => {
       expect(sonuc.gecerli).toBe(false);
       if (sonuc.gecerli) return;
       expect(sonuc.hatalar.join("\n")).toContain(`${katalogBaslangicDosyasi}: geçerli JSON değil`);
+    } finally {
+      rmSync(kok, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("temalar (kart 0105)", () => {
+  it("temalar verilmezse bütün hazır temalar, ilki başlangıç teması ve kendi değerleriyle", () => {
+    const sonuc = dogrula("gecerli");
+    if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+    expect(sonuc.site.temalar.map((tema) => [tema.kod, tema.kaynak])).toEqual(
+      Object.keys(hazirTemalar).map((kod) => [kod, "cekirdek"]),
+    );
+    expect(sonuc.site.temaBaslangici).toEqual({
+      tema: Object.keys(hazirTemalar)[0],
+      ayarlar: { renkler: {}, koyuTema: false },
+    });
+  });
+
+  it("siteye özel tema adıyla okunur, listedeki sırayla", () => {
+    const sonuc = dogrula("tema-ozel-ve-hazir");
+    if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+    expect(sonuc.site.temalar.map(({ kod, kaynak, ad }) => ({ kod, kaynak, ad }))).toEqual([
+      { kod: "canli-carsi", kaynak: "cekirdek", ad: { anahtar: "tema.ad.canliCarsi" } },
+      { kod: "ozel-tema", kaynak: "site", ad: { metin: "Özel Tema" } },
+    ]);
+  });
+
+  it("başlangıç dosyasındaki ayarlar okunur", () => {
+    const sonuc = dogrula("tema-ozel");
+    if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+    expect(sonuc.site.temaBaslangici).toEqual({
+      tema: "ozel-tema",
+      ayarlar: { renkler: {}, kose: "keskin", koyuTema: true },
+    });
+  });
+
+  it("tema klasöründeki gizli dosya (.DS_Store) tema sayılmaz", () => {
+    const kok = mkdtempSync(join(tmpdir(), "tema-"));
+    try {
+      const klasor = join(kok, "tema-ozel");
+      cpSync(join(ornekler, "tema-ozel"), klasor, { recursive: true });
+      writeFileSync(join(klasor, "tema", ".DS_Store"), "gizli");
+      const sonuc = siteKlasorunuDogrula(klasor);
+      expect(sonuc.gecerli ? [] : sonuc.hatalar).toEqual([]);
+    } finally {
+      rmSync(kok, { recursive: true, force: true });
+    }
+  });
+
+  it("tema klasöründe bağlantı kabul edilmez", () => {
+    const kok = mkdtempSync(join(tmpdir(), "tema-"));
+    try {
+      const klasor = join(kok, "tema-ozel");
+      cpSync(join(ornekler, "tema-ozel"), klasor, { recursive: true });
+      const dosya = join(klasor, "tema", "ozel-tema.json");
+      const hedef = join(kok, "dis.json");
+      writeFileSync(hedef, readFileSync(dosya));
+      rmSync(dosya);
+      symlinkSync(hedef, dosya);
+      const sonuc = siteKlasorunuDogrula(klasor);
+      expect(sonuc.gecerli ? [] : sonuc.hatalar.join()).toContain("düz bir dosya olmalı");
     } finally {
       rmSync(kok, { recursive: true, force: true });
     }

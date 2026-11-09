@@ -6,19 +6,20 @@ Vitrinin ve panelin bütün renkleri, yazı tipleri ve ölçüleri `degerler.ts`
 
 | Dosya | Ne yapar |
 |---|---|
-| `degerler.ts` | Bütün adlar ve değerler, açık ve koyu tema; kontrastı ölçülen çiftler |
+| `degerler.ts` | Bütün adlar ve değerler, açık ve koyu tema; kontrastı ölçülen çiftler; sitede barındırılan yazı tipleri (`yuklenenYaziTipleri`) |
 | `tailwind.ayar.ts` | Tailwind'e yalnız bu adları tanıtır, değer yazmaz |
 | `tailwind.css` | Ortak stil girişi: sıfırlama, sınıflar, yazı tipleri, temel stil |
 | `degisken-adlari.ts` | Tema değerlerinin CSS değişkeni adları (`--renk-birincil`...) |
-| `css.ts` | Tema değerlerini şemadan geçirip sayfaya yazılacak CSS'e çevirir; şemaya uymayan değerde hata atar |
+| `css.ts` | Tema değerlerini şemadan geçirip sayfaya yazılacak CSS'e çevirir; şemaya uymayan değerde hata atar. Koyu tema kapatılabilir: kapalıyken cihazın koyu tercihi yazılmaz (kart 0105) |
 | `renk-ozniteligi.ts` | Açık ya da koyu temayı cihazdan bağımsız seçen kök özniteliğinin adı (kart 0104) |
-| `kontrast.ts` | İki rengin kontrast oranı (WCAG 2.2) |
+| `kontrast.ts` | İki rengin kontrast oranı (WCAG 2.2) ve bir rengin aynı tonda, ölçüden geçen en yakın açıklığı (`okunurTon`, kart 0105) |
+| `testler/ornek-renkler.ts` | Testlerin renk örnekleri: mağaza sahibinin seçebileceği renkleri taklit eder (ham renk yalnız bu klasörde yazılır) |
 
-Uygulamaların stil girişleri `cekirdek/uygulama/stil.css` ve `sahip-paneli/stil.css` yalnız `tailwind.css`'i içe aktarır ve taranacak klasörleri yazar. Sitenin değerlerini `cekirdek/temalar/birlesim.ts` verir, kök düzen sayfaya yazar. Değerler şemaya uymazsa sayfa düşmez: hata kaydedilir, sayfa başlangıç değerleriyle açılır.
+Uygulamaların stil girişleri `cekirdek/uygulama/stil.css` ve `sahip-paneli/stil.css` yalnız `tailwind.css`'i içe aktarır ve taranacak klasörleri yazar. Sitenin değerlerini `cekirdek/temalar/birlesim.ts` verir: vitrin sitenin temasının değerleriyle ve mağaza sahibinin tema ayarlarıyla, panel bu dosyadaki değerlerle ve sitenin ana rengiyle çizilir (kart 0105, karar 0080). Kök düzen vitrinin, panel düzeni panelin değerlerini sayfaya yazar. Değerler şemaya uymazsa sayfa düşmez: hata kaydedilir, sayfa başlangıç değerleriyle açılır.
 
 ## Tema değerleri
 
-Temadan temaya değişir, sayfa açılırken yazılır. Başlangıç değerleri karar 0075'teki Canlı Çarşı yönündendir. Bu belge adları ve ne için olduklarını anlatır; değerlerin kendisi yalnız `degerler.ts`'tedir.
+Temadan temaya değişir, sayfa açılırken yazılır. Bu dosyadaki değerler karar 0075'teki Canlı Çarşı yönündendir; panelin değerleridir ve Canlı Çarşı teması bugün bunları kullanır. Bir tema yalnız `yuklenenYaziTipleri` ve cihazın genel yazı tiplerini kullanabilir. Bu belge adları ve ne için olduklarını anlatır; değerlerin kendisi yalnız `degerler.ts`'tedir.
 
 ### Renkler
 

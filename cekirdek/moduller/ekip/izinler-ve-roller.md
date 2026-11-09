@@ -30,6 +30,8 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `ozellik.sil` | yonetici | tumu | Özellik ya da seçenek siler: değerleri ürünlerden kalkar. |
 | `stok.gor` | yonetici | tumu | Satılabilir birimlerin stoğunu ve stok geçmişini görür. |
 | `stok.duzelt` | yonetici | tumu | Stoğu sebebiyle elle düzeltir. |
+| `tema.gor` | yonetici | tumu | Sitenin temasını, tema ayarlarını ve tema sürümlerini görür. |
+| `tema.degistir` | yonetici | tumu | Temayı ve tema ayarlarını yayınlar, önceki bir tema sürümüne döner. |
 | `urun.gor` | yonetici | tumu | Ürünleri, silinmişler dahil, görür. |
 | `urun.degistir` | yonetici | tumu | Ürün ekler ve değiştirir. |
 | `urun.sil` | yonetici | tumu | Ürün siler (silinmiş olarak işaretler). |

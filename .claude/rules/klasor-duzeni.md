@@ -16,7 +16,7 @@ cekirdek/
   moduller/<modul>/    urun, kategori, marka, etiket, ozellik, stok, fiyat, vergi, sepet, odeme,
                        siparis, iade, kargo, kampanya, musteri, oturum, yorum, icerik, eposta,
                        gorunurluk, yasal-metinler, rapor, ekip, degisiklik-kaydi, robot-korumasi,
-                       magaza-ayarlari, dosya
+                       magaza-ayarlari, dosya, tema
     model.ts           veri modeli
     servis.ts          iş kuralları
     uclar.ts           uçlar
@@ -32,7 +32,7 @@ cekirdek/
                        şeması (kararlar 0056, 0057)
   vitrin/              vitrin ekranları
   yonetim-paneli/      panel ekranları
-  temalar/             hazır temalar
+  temalar/             tema şeması, hazır temalar (hazir/), birleşim ve okunurluk (karar 0080)
   arka-plan-isleri/    kuyruk ve zamanlı işler
   veritabani/          tablolar/, degisiklikler/ (numaralı)
   metinler/            ortak metinler, biçimleyiciler, terim sözlüğü

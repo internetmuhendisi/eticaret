@@ -110,11 +110,15 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
 |---|---|---|---|---|
-| Mağaza sahibi temayı değiştirebilir | Altyapı sahibi | Açık | — | Özel tasarlanan mağazada kapatılır |
+| Mağaza sahibi temayı değiştirebilir | Altyapı sahibi | Açık | — | Kapalıyken mağaza sahibi ne temayı ne tema ayarlarını değiştirir, önceki sürüme de dönemez; logo bu ayara bağlı değil (kart 0105, karar 0080) |
+| Kullanılabilir temalar | Altyapı sahibi | Bütün hazır temalar | — (bugün tek hazır tema Canlı Çarşı) | İlki sitenin başlangıç temasıdır. Siteye özel tema `tema/` klasöründe durur ve bu listede yazılır (kart 0105) |
+| Tema | Mağaza sahibi | Kullanılabilir temaların ilki | Canlı Çarşı | Tema ayarlarıyla birlikte sürüm sürüm saklanır, önceki sürüme tek adımda dönülür (kart 0105) |
+| Tema rengi | Mağaza sahibi | Temanın kendi rengi | Temanın kendi rengi | Yalnız temanın açtığı renkler (Canlı Çarşı'da ana renk). Açık temada okunmayan renk kaydedilmez, okunur ton önerilir; koyu temada okunur tonu kullanılır (kart 0105) |
+| Tema yazı tipi, köşe ve düğme biçimi | Mağaza sahibi | Temanın kendi değerleri | Temanın kendi değerleri | Temanın seçeneklerinden biri; Canlı Çarşı'nın seçenekleri kart 0114'te |
 | Vitrinde altyapı adı | Altyapı sahibi | Kapalı | — | |
 | Ana sayfada "Yakında açılıyoruz." yazısı | Altyapı sahibi | Kapalı | Açık | Başlığın altında bilgi yazısı; bakım modu değildir, vitrin açık kalır (kart 0041). Mağaza sahibinin ayarları gelince panele taşınabilir |
 | Bakım sayfasının metni | Altyapı sahibi | Boş (ortak metin) | Boş | Bakım sayfasında ortak metnin yerine görünür (kart 0043) |
 | Yönetici oturumu | Altyapı sahibi | 24 saat | — | Bu süre boyunca hiç girmezse yeniden giriş ister (kart 0025) |
 | Müşteri oturumu | Altyapı sahibi | 30 gün | — | Bu süre boyunca hiç girmezse yeniden giriş ister (kart 0025) |
 | Kayıtta e-posta doğrulaması | Altyapı sahibi | Kapalı | — | Kapalıyken kayıtla oturum açılır, kayıtlı e-posta söylenir. "Açık" davranışı henüz yok, şemada değil (kart 0062, karar 0051). Üyeliği gizli kalması gereken mağazada açılır |
-| Vitrinde koyu tema | Mağaza sahibi | Kapalı | Açık | Mağazanın tasarımına göre açılır |
+| Vitrinde koyu tema | Mağaza sahibi | Kapalı | Açık | Mağazanın tasarımına göre açılır. Tema ayarlarının parçasıdır, başlangıç değeri `baslangic/tema.json` (kart 0105) |

@@ -21,6 +21,7 @@ import {
   vergiAdresleri,
   vergiYuvarlamalari,
 } from "../moduller/vergi/semalar.ts";
+import { kodSemasi } from "../temalar/sema.ts";
 
 export type AyarBilgisi = {
   aciklama: MetinAnahtari;
@@ -131,6 +132,17 @@ export const ayarSemasi = z.strictObject({
   temaDegistirilebilir: ayar(
     z.boolean().default(true),
     altyapiSahibinin("ayar.aciklama.temaDegistirilebilir"),
+  ),
+  // Mağaza sahibinin seçebileceği temalar (kart 0105): hazır temaların ve sitenin kendi temalarının
+  // (tema/ klasörü) kodları. İlki sitenin başlangıç temasıdır. Verilmezse bütün hazır temalardır; listede
+  // olmayan tema seçilemez. Kodların var olduğu site klasörü doğrulamasında denetlenir.
+  temalar: ayar(
+    z
+      .array(kodSemasi)
+      .min(1, "En az bir tema olmalı.")
+      .refine((liste) => new Set(liste).size === liste.length, "Aynı tema iki kez yazılmış.")
+      .optional(),
+    altyapiSahibinin("ayar.aciklama.temalar"),
   ),
   vitrindeAltyapiAdi: ayar(
     z.boolean().default(false),

@@ -10,6 +10,7 @@ import { markaIzinleri } from "../moduller/marka/izinler.ts";
 import { musteriIzinleri } from "../moduller/musteri/izinler.ts";
 import { ozellikIzinleri } from "../moduller/ozellik/izinler.ts";
 import { stokIzinleri } from "../moduller/stok/izinler.ts";
+import { temaIzinleri } from "../moduller/tema/izinler.ts";
 import { urunIzinleri } from "../moduller/urun/izinler.ts";
 import { vergiIzinleri } from "../moduller/vergi/izinler.ts";
 import type { Kapi } from "./kapi.ts";
@@ -33,6 +34,7 @@ export const modulIzinleri = {
   musteri: musteriIzinleri,
   ozellik: ozellikIzinleri,
   stok: stokIzinleri,
+  tema: temaIzinleri,
   urun: urunIzinleri,
   vergi: vergiIzinleri,
 } as const;
@@ -47,6 +49,7 @@ export const izinler = {
   ...musteriIzinleri,
   ...ozellikIzinleri,
   ...stokIzinleri,
+  ...temaIzinleri,
   ...urunIzinleri,
   ...vergiIzinleri,
 } as const satisfies Record<string, IzinTanimi>;

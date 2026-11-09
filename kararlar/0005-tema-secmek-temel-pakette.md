@@ -1,5 +1,7 @@
 # 0005 · Tema seçmek temel pakettedir
 
+Bu kararın önizleme ve özel tema maddelerinin yerine 0080 numaralı karar geçti.
+
 ## Tarih
 
 2026-10-28
