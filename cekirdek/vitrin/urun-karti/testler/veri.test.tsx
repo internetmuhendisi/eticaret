@@ -7,18 +7,19 @@
 // - Görsel ana görseldir: kart boyutlarının adresleri genişlikleriyle, alternatif metniyle.
 // - Uç yalnız sayfası açılan ürünün canlı görselinin boyutunu verir; öteki her durumda 404, bozuk girdide 400.
 import { randomUUID } from "node:crypto";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import sharp from "sharp";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { type Site, siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
+import { gunluk } from "../../../izleme/gunluk.ts";
 import { urunGorseliUcu } from "../../../kapi/herkese-acik/urun-gorseli.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
 import { gorselBoyutlari } from "../../../kayitlar/gorsel.ts";
 import { yazilanIslevler } from "../../../kayitlar/islevler.ts";
-import { dosyaOku, gorselKaydet } from "../../../moduller/dosya/servis.ts";
+import { dosyaOku, dosyaSil, gorselKaydet } from "../../../moduller/dosya/servis.ts";
 import { fiyatGosterimServisi } from "../../../moduller/fiyat/gosterim.ts";
 import { siteninFiyatServisi } from "../../../moduller/fiyat/servis.ts";
 import { siteninServisi } from "../../../moduller/magaza-ayarlari/servis.ts";
@@ -389,6 +390,32 @@ describe("ürün görseli ucu", () => {
     expect(await durum(kalanOge, "ozgun")).toBe(400);
     const fazla = await urunGorseliUcu(new Request(`${adres(kalanOge, "orta")}&yol=../x`));
     expect(fazla.status).toBe(400);
+  });
+
+  // Bağımsız kontrolün bulguları: büyük harfli kimlik, tek boyutun ya da kaynağın silinmesi, diskte olmayan
+  // dosya.
+  it("büyük harfli kimlik geçer; silinen boyut ve kaynak 404; diskte olmayan dosya 404 ve hata bir kez", async () => {
+    const h = await hazirla();
+    const { urun } = await h.urunAc();
+    const { oge, kayit } = await h.gorselEkle(urun, "G");
+    const oku = (kimlik: string, boyut: "kucuk" | "orta" | "buyuk") =>
+      vitrinGorseli(h.vt, site, kimlik, boyut, { klasor: h.dosyaKlasoru });
+    expect((await oku(oge.toUpperCase(), "orta"))?.mime).toBe("image/webp");
+    await dosyaSil(h.vt, kayit.boyutlar.orta.kimlik);
+    expect(await oku(oge, "orta")).toBeUndefined();
+    expect((await oku(oge, "kucuk"))?.mime).toBe("image/webp");
+    // Diskten silinen boyut: görsel yok, hata yalnız ilk istekte kaydedilir.
+    const ad = readdirSync(h.dosyaKlasoru).find((dosya) =>
+      dosya.startsWith(kayit.boyutlar.buyuk.kimlik),
+    );
+    rmSync(join(h.dosyaKlasoru, ad ?? ""));
+    const kayitlar = vi.spyOn(gunluk, "hata");
+    expect(await oku(oge, "buyuk")).toBeUndefined();
+    expect(await oku(oge, "buyuk")).toBeUndefined();
+    expect(kayitlar).toHaveBeenCalledTimes(1);
+    kayitlar.mockRestore();
+    await dosyaSil(h.vt, kayit.dosya.kimlik);
+    expect(await oku(oge, "kucuk")).toBeUndefined();
   });
 
   it("servis görünmeyen ürünün görselini zamanından önce vermez", async () => {

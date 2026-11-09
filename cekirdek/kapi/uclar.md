@@ -91,7 +91,7 @@ Mağazanın logosunu verir: mağaza sahibinin yüklediği logo, yoksa sitenin il
 - Servis: `cekirdek/moduller/urun/vitrin-gorseli.ts`.
 - Yalnız vitrinde sayfası açılan ürünün (`vitrinKosulu`, sayfa yeri) silinmemiş galeri görselinin boyutu verilir. Özgün görsel ve dosya kimliğiyle başka dosya verilmez.
 - Başarılı (200): görselin boyutu (WebP). Başlıklar logo ucuyla aynıdır: `Content-Type`, `X-Content-Type-Options: nosniff`, `Cache-Control: public, max-age=300`, `ETag` içeriğin özeti; aynı `ETag` ile 304, `HEAD` gövdesiz.
-- Görsel yoksa (404): `{ "basarili": false, "hata": { "kod": "bulunamadi" } }`. Olmayan öğe, video, silinmiş öğe ya da dosya, görünmeyen ürün ve eksik boyut aynı cevabı alır.
+- Görsel yoksa (404): `{ "basarili": false, "hata": { "kod": "bulunamadi" } }`. Olmayan öğe, video, silinmiş öğe ya da dosya, görünmeyen ürün ve eksik boyut aynı cevabı alır. Boyutun dosyası diskte yoksa ya da içeriği kayıttakinden farklıysa da 404 döner; hata her dosya için süreç başına bir kez kaydedilir.
 
 ### POST /kapi/herkese-acik/yonetici-giris
 

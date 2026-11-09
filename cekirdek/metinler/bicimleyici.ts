@@ -23,7 +23,8 @@ export type Bicimleyici = ReturnType<typeof bicimleyiciOlustur>;
 
 // Sayının yönelme eki (kart 0109): "%30'a varan indirim". Ek, sayının okunuşundaki son sözcüğe göre
 // seçilir; yalnız eki olan diller burada yazılıdır, ötekilerde ek boştur (metin eki kullanmaz).
-// Türkçe: birler basamağı, o sıfırsa onlar, o da sıfırsa yüz ya da bin.
+// Türkçe: birler basamağı, o sıfırsa onlar; o da sıfırsa son sözcük yüz ya da bin ("'e"), milyon ya da
+// milyar ("'a"). Trilyon ve üstü yazılmaz.
 const yonelmeEkleri: Readonly<Record<string, (sayi: number) => string>> = {
   tr: (sayi) => {
     const birler = ["", "'e", "'ye", "'e", "'e", "'e", "'ya", "'ye", "'e", "'a"];
@@ -32,7 +33,7 @@ const yonelmeEkleri: Readonly<Record<string, (sayi: number) => string>> = {
     if (tam === 0) return "'a";
     if (tam % 10 !== 0) return birler[tam % 10] ?? "";
     if (tam % 100 !== 0) return onlar[(tam % 100) / 10] ?? "";
-    return "'e";
+    return tam % 1_000_000 !== 0 ? "'e" : "'a";
   },
 };
 

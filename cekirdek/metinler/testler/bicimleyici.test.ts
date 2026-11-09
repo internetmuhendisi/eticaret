@@ -96,6 +96,13 @@ describe("yüzde ve yönelme eki", () => {
     [90, "'a"],
     [99, "'a"],
     [100, "'e"],
+    [300, "'e"],
+    [1000, "'e"],
+    [5000, "'e"],
+    [1_000_000, "'a"],
+    [2_000_000, "'a"],
+    [1_001_000, "'e"],
+    [1_000_000_000, "'a"],
   ])("Türkçede %i sayısının yönelme eki %s", (sayi, ek) => {
     expect(bicim.yonelmeEki(sayi)).toBe(ek);
   });

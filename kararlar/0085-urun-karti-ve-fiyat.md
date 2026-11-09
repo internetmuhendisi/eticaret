@@ -21,7 +21,7 @@ Bütün ürünler birkaç sorguyla gelir. Görünmeyen ürünün kartı yoktur. 
 
 **Fiyat (kullanıcı kararları).**
 
-- Varyantlı ürünün fiyatı aralıktır: "en düşük – en yüksek". Aralıkta eski fiyat yazılmaz.
+- Varyantlı ürünün fiyatı aralıktır: "en düşük – en yüksek". Aralıkta eski fiyat yazılmaz. İki uç aynı tutardaysa (birleşimlerin yalnız eski fiyatı ya da indirimi farklıysa) tek tutar yazılır; "150,00 – 150,00" yazılmaz (bağımsız kontrolün bulgusu).
 - İndirim rozeti oranı yazar ("%24 indirim").
   - Oran eski fiyatın gösterildiği fiyattan hesaplanır ve aşağı yuvarlanır. Böylece indirim hiçbir zaman olduğundan büyük görünmez.
   - Eski fiyat gösterilmiyorsa (30 gün kuralı, karar 0067) rozet de çıkmaz.
@@ -38,6 +38,7 @@ Bütün ürünler birkaç sorguyla gelir. Görünmeyen ürünün kartı yoktur. 
 - Adres galeri öğesinin kimliğini taşır, dosyanın kimliğini taşımaz. Adresle logo, özgün görsel ya da başka bir dosya okunamaz.
 - Yalnız vitrinde sayfası açılan ürünün silinmemiş görselinin kayıtlı boyutları verilir.
 - Yanıt logo ucunun dosya yanıtıyla aynıdır: tür, `nosniff`, 300 saniye önbellek ve `ETag`.
+- Boyutun dosyası okunamazsa (diskte yok, içeriği kayıttakinden farklı) uç 404 verir. Hata her dosya için süreç başına bir kez kaydedilir. Bağımsız kontrol, ilk hâlinde ucun 500 verdiğini ve her istekte hata kaydettiğini ölçtü.
 - Yeni istek sınırı `gorsel`: 60 saniyede 600 istek. Sayaç uç başınadır ve bir liste sayfası aynı uca onlarca kez gider.
 
 **Kartın biçimi.**
@@ -75,3 +76,5 @@ Bütün ürünler birkaç sorguyla gelir. Görünmeyen ürünün kartı yoktur. 
 - Katalogdaki örnek görseller düz biçimlerdir (veri adresi). Koyu temada koyu görünürler; ürün fotoğrafı değildirler.
 - `fiyatAraliklari` sonucuna `indirim` eklendi. Sepet ve e-posta bunu kullanmak zorunda değildir.
 - Kart ve fiyat bileşeninin taslakla stil karşılaştırması bir kez görüntüyle yapıldı, testte yoktur.
+- Her görsel isteği mağaza ayarlarını ve görselin kaydını okur, dosyanın tamamını okuyup özetini çıkarır; aynı etiketle gelen istek (304) de bu işi yapar. Görsel boyutları küçüktür (en çok 960 piksel, WebP), 5–30 mağazada sorun değildir. Ziyaretçi sayısı büyüyünce ölçülmelidir; etiket kayıttaki özetten alınıp dosya yalnız gerekince okunabilir.
+- Yönelme eki trilyon ve üstünü bilmez; oran en çok 100'dür.

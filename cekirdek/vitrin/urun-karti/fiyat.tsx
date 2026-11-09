@@ -27,15 +27,17 @@ export function FiyatGosterimi({
   boyut?: FiyatBoyutu;
   className?: string;
 }) {
-  const { enDusuk, enYuksek, tek } = fiyat;
-  // Eski fiyat yalnız tek fiyatta yazılır.
-  const eski = enDusuk.yazili.eskiTutar;
+  const { enDusuk, enYuksek } = fiyat;
+  // İki uç aynı tutardaysa (birleşimlerin eski fiyatı ya da indirimi farklı olsa da) tek tutar yazılır;
+  // "150,00 – 150,00" yazılmaz. Eski fiyat yalnız bütün birleşimler aynıyken (tek) yazılır.
+  const tekTutar = fiyat.tek || enDusuk.tutar === enYuksek.tutar;
+  const eski = fiyat.tek ? enDusuk.yazili.eskiTutar : undefined;
   return (
     <div
       data-slot="fiyat"
       className={sinif("flex min-w-0 flex-wrap items-baseline gap-x-2", className)}
     >
-      {tek ? (
+      {tekTutar ? (
         <>
           {eski === undefined ? null : (
             <span className="sr-only">{metin("vitrin.fiyat.indirimliFiyat")}</span>

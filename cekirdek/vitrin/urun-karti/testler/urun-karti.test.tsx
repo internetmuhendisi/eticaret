@@ -156,6 +156,15 @@ describe("fiyat", () => {
     expect(kart.querySelector("s")).toBeNull();
   });
 
+  // Bağımsız kontrolün bulgusu: iki ucun tutarı aynı ama biri indirimdeyse "150,00 – 150,00" yazılmazdı.
+  it("uçlar aynı tutardaysa tek tutar yazılır, eski fiyat yazılmaz", () => {
+    const kart = ciz(
+      urun({ fiyat: { enDusuk: tutar(1500, 2000), enYuksek: tutar(1500), tek: false } }),
+    );
+    expect(kart.querySelector("strong")?.textContent).toBe("T1500");
+    expect(kart.querySelector("s")).toBeNull();
+  });
+
   it("fiyatı olmayan üründe fiyat yok", () => {
     const { fiyat: _, ...fiyatsiz } = urun();
     expect(ciz(fiyatsiz).querySelector('[data-slot="fiyat"]')).toBeNull();
