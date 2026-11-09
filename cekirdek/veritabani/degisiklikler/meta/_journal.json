@@ -176,6 +176,13 @@
       "when": 1794216116216,
       "tag": "0024_tema-surumleri",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794219165437,
+      "tag": "0025_duzen-surumleri",
+      "breakpoints": true
     }
   ]
 }

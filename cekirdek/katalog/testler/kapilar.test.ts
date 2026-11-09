@@ -2,13 +2,17 @@
 // gövdesiz 404, RSC isteği ve her yöntem için de. Düzen, sayfalar ve sayfa bilgisi (generateMetadata) ara
 // katman atlanırsa diye ikinci kapıyı ayrıca çağırır: Next.js'te düzenin notFound() vermesi sayfanın
 // çizilmesini durdurmaz (bağımsız kontrol, gerçek görüntüde ölçüldü).
-import { resolve } from "node:path";
+import { readdirSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { siteOrtamiDegiskeni } from "../../kayitlar/site.ts";
 import ParcaSayfasi, {
   generateMetadata as parcaBilgisi,
 } from "../../uygulama/app/gelistirme/bilesenler/[parca]/page.tsx";
+import BolumKutuphanesiSayfasi, {
+  generateMetadata as bolumKutuphanesiBilgisi,
+} from "../../uygulama/app/gelistirme/bilesenler/bolum-kutuphanesi/page.tsx";
 import KatalogDuzeni from "../../uygulama/app/gelistirme/bilesenler/layout.tsx";
 import AnaSayfa, {
   generateMetadata as anaSayfaBilgisi,
@@ -80,6 +84,26 @@ describe("sayfa içindeki ikinci kapı", () => {
     await expect(AnaSayfa({ searchParams: Promise.resolve({}) })).rejects.toThrow("bulunamadi");
     await expect(parcaBilgisi(parametreler)).rejects.toThrow("bulunamadi");
     await expect(ParcaSayfasi(parametreler)).rejects.toThrow("bulunamadi");
+    // Bölüm kütüphanesinin sayfası (kart 0106).
+    expect(() => bolumKutuphanesiBilgisi()).toThrow("bulunamadi");
+    await expect(BolumKutuphanesiSayfasi({ searchParams: Promise.resolve({}) })).rejects.toThrow(
+      "bulunamadi",
+    );
+  });
+
+  // Yeni bir geliştirme sayfası ikinci kapıyı unutmasın (kart 0106): her sayfa dosyası kapıyı hem sayfada
+  // hem sayfa bilgisinde, her düzen dosyası düzende çağırır.
+  it("geliştirme klasöründeki her sayfa ve düzen ikinci kapıyı çağırır", () => {
+    const klasor = resolve(import.meta.dirname, "../../uygulama/app/gelistirme");
+    const dosyalar = readdirSync(klasor, { recursive: true, encoding: "utf8" }).filter((ad) =>
+      /(?:^|\/)(?:page|layout)\.tsx$/.test(ad),
+    );
+    expect(dosyalar.length).toBeGreaterThanOrEqual(4);
+    for (const dosya of dosyalar) {
+      const icerik = readFileSync(join(klasor, dosya), "utf8");
+      const cagri = icerik.match(/katalogKapisi\(\)/g)?.length ?? 0;
+      expect(cagri, dosya).toBeGreaterThanOrEqual(dosya.endsWith("page.tsx") ? 2 : 1);
+    }
   });
 
   it("geliştirmede sayfa çizilir", async () => {

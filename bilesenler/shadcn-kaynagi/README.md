@@ -8,6 +8,7 @@ Bu dosyalar kod değildir: hiçbir yerden içe aktarılmaz, denetime girmez. Yal
 |---|---|
 | button | `dugme.tsx` (Dugme, IkonDugmesi), `form/form.tsx` (GonderDugmesi) |
 | input | `giris-alani.tsx` |
+| textarea | `uzun-metin-alani.tsx` (kart 0106, indirme 2026-11-09) |
 | label | `etiket.tsx` |
 | select | `secim-kutusu.tsx` |
 | checkbox | `onay-kutusu.tsx` |

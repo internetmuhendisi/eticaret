@@ -43,6 +43,47 @@ const beklenenler: Record<string, Beklenen> = {
   "any-turu.ts": { kategori: "lint/suspicious/noExplicitAny" },
   "konsol.ts": { kategori: "lint/suspicious/noConsole" },
   "bicimsiz.ts": { kategori: "format" },
+  // Bölüm kodunda elle içerik (kart 0106).
+  "bolum/cekirdek/vitrin/bolumler/elle-urun-adi.tsx": {
+    kategori: "plugin",
+    mesajBasi: "Bölüm kodunda elle içerik",
+  },
+  "bolum/cekirdek/vitrin/bolumler/elle-fiyat.tsx": {
+    kategori: "plugin",
+    mesajBasi: "Bölüm kodunda elle içerik",
+  },
+  "bolum/cekirdek/vitrin/bolumler/elle-gorsel-adresi.ts": {
+    kategori: "plugin",
+    mesajBasi: "Bölüm kodunda elle içerik",
+  },
+  "bolum/cekirdek/vitrin/bolumler/elle-baglanti.ts": {
+    kategori: "plugin",
+    mesajBasi: "Bölüm kodunda elle içerik",
+  },
+  "bolum/cekirdek/katalog/deneme-bolumu/elle-sablon-metni.ts": {
+    kategori: "plugin",
+    mesajBasi: "Bölüm kodunda elle içerik",
+  },
+  "bolum/cekirdek/vitrin/bolumler/elle-href.tsx": {
+    kategori: "plugin",
+    mesajBasi: "Bölüm kodunda elle içerik",
+  },
+  "bolum/cekirdek/vitrin/bolumler/elle-src.tsx": {
+    kategori: "plugin",
+    mesajBasi: "Bölüm kodunda elle içerik",
+  },
+  "bolum/cekirdek/vitrin/bolumler/elle-rakamli-fiyat.ts": {
+    kategori: "plugin",
+    mesajBasi: "Bölüm kodunda elle içerik",
+  },
+  "bolum/cekirdek/vitrin/bolumler/elle-goreli-yol.ts": {
+    kategori: "plugin",
+    mesajBasi: "Bölüm kodunda elle içerik",
+  },
+  "bolum/cekirdek/vitrin/bolumler/elle-yerel-adres.ts": {
+    kategori: "plugin",
+    mesajBasi: "Bölüm kodunda elle içerik",
+  },
 };
 
 type Bulgu = { category: string; message: string; location?: { path?: string } };

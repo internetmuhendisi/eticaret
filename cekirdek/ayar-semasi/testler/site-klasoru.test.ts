@@ -19,6 +19,7 @@ import { kimlikSemasi } from "../kimlik";
 import {
   baslangicDosyasi,
   baslangicDosyasiniDogrula,
+  duzenBaslangicDosyasi,
   katalogBaslangicDosyasi,
   siteKlasorunuDogrula,
   temaBaslangicDosyasi,
@@ -337,6 +338,12 @@ describe("örnek klasörler", () => {
     ],
   );
 
+  bozuklar.push(
+    // Başlangıç düzeni (kart 0106).
+    ["duzen-tanimsiz-bolum", `${duzenBaslangicDosyasi}: ana-sayfa.0.tur: bolum-tanimsiz`],
+    ["duzen-bozuk-bicim", `${duzenBaslangicDosyasi}: ana-sayfa: `],
+  );
+
   for (const [ornek, beklenenHata] of bozuklar) {
     it(`${ornek} doğrulamadan geçemez`, () => {
       const sonuc = dogrula(ornek);
@@ -615,6 +622,25 @@ describe("temalar (kart 0105)", () => {
     } finally {
       rmSync(kok, { recursive: true, force: true });
     }
+  });
+});
+
+describe("başlangıç düzeni (kart 0106)", () => {
+  it("dosyası olmayan site başlangıç temasının düzeniyle başlar", () => {
+    const sonuc = dogrula("gecerli");
+    if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+    const tema = sonuc.site.temalar.find((aday) => aday.kod === sonuc.site.temaBaslangici.tema);
+    expect(sonuc.site.duzenBaslangici).toEqual(tema?.tanim.baslangicDuzeni);
+  });
+
+  it("dosyadaki düzen okunur", () => {
+    const sonuc = dogrula("duzen-bos");
+    if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+    expect(sonuc.site.duzenBaslangici).toEqual({
+      "ust-kisim": [],
+      "ana-sayfa": [],
+      "alt-kisim": [],
+    });
   });
 });
 

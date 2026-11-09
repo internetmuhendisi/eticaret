@@ -33,7 +33,8 @@
     "./denetim/kurallar/hazir-palet.grit",
     "./denetim/kurallar/satir-ici-olcu.grit",
     "./denetim/kurallar/ham-oge.grit",
-    "./denetim/kurallar/ikon-sozlugu.grit"
+    "./denetim/kurallar/ikon-sozlugu.grit",
+    "./denetim/kurallar/bolum-icerigi.grit"
   ],
   "css": {
     "parser": {

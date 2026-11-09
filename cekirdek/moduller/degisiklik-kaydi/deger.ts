@@ -28,6 +28,41 @@ const basicBasligiMi = (deger: string): boolean => {
   return cozulen.includes(":") && !/\p{Cc}/u.test(cozulen);
 };
 
+// Alan adının bu sözcüklerden birini taşıması yasaktır: şifre, anahtar ve kişisel veri kayda girmez.
+// Kişiyi kimliğiyle yaz. Alan adı sözcüklerine bölünür: "fiyat_kart_komisyonu" gibi adlar takılmaz.
+const yasakSozcukler = new Set([
+  "sifre",
+  "parola",
+  "password",
+  "pass",
+  "pwd",
+  "anahtar",
+  "anahtari",
+  "anahtarlar",
+  "token",
+  "secret",
+  "jwt",
+  "ozet",
+  "hash",
+  "cvv",
+  "cvc",
+  "yedek",
+  "eposta",
+  "email",
+  "telefon",
+]);
+
+const sozcukler = (alan: string): string[] =>
+  alan
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/);
+
+// Alan adı kayda yazılamaz mı? Kayda başka modüllerden gelen alan adları (bölüm tarifinin alan kodları,
+// kart 0106) da önceden bununla denetlenir.
+export const kayitAlaniYasakMi = (alan: string): boolean =>
+  sozcukler(alan).some((sozcuk) => yasakSozcukler.has(sozcuk));
+
 export const kayitDegeriYasakMi = (ham: string): boolean => {
   const deger = ham.trim();
   return (

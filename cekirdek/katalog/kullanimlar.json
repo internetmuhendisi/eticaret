@@ -3,6 +3,7 @@
     "cekirdek/moduller/oturum/sifirlama-formlari.tsx",
     "cekirdek/vitrin/giris-formu.tsx",
     "cekirdek/vitrin/kayit-formu.tsx",
+    "cekirdek/yonetim-paneli/bolum-formu.tsx",
     "cekirdek/yonetim-paneli/giris-formu.tsx",
     "cekirdek/yonetim-paneli/kod-formu.tsx"
   ],
@@ -40,6 +41,7 @@
     "bilesenler/parcalar/serit.tsx",
     "bilesenler/parcalar/yan-pencere.tsx",
     "cekirdek/vitrin/hesap-alani.tsx",
+    "cekirdek/yonetim-paneli/bolum-formu.tsx",
     "cekirdek/yonetim-paneli/cikis-dugmesi.tsx",
     "cekirdek/yonetim-paneli/kurulum-akisi.tsx"
   ],
@@ -49,16 +51,20 @@
     "cekirdek/moduller/oturum/sifirlama-formlari.tsx",
     "cekirdek/vitrin/giris-formu.tsx",
     "cekirdek/vitrin/kayit-formu.tsx",
+    "cekirdek/yonetim-paneli/bolum-formu.tsx",
     "cekirdek/yonetim-paneli/giris-formu.tsx",
     "cekirdek/yonetim-paneli/kod-formu.tsx"
   ],
   "bilesenler/parcalar/ipucu.tsx": ["bilesenler/parcalar/dugme.tsx"],
   "bilesenler/parcalar/iskelet.tsx": [],
   "bilesenler/parcalar/kart.tsx": [],
-  "bilesenler/parcalar/onay-kutusu.tsx": ["cekirdek/vitrin/kayit-formu.tsx"],
+  "bilesenler/parcalar/onay-kutusu.tsx": [
+    "cekirdek/vitrin/kayit-formu.tsx",
+    "cekirdek/yonetim-paneli/bolum-formu.tsx"
+  ],
   "bilesenler/parcalar/pencere.tsx": ["bilesenler/parcalar/yan-pencere.tsx"],
   "bilesenler/parcalar/rozet.tsx": [],
-  "bilesenler/parcalar/secim-kutusu.tsx": [],
+  "bilesenler/parcalar/secim-kutusu.tsx": ["cekirdek/yonetim-paneli/bolum-formu.tsx"],
   "bilesenler/parcalar/sekmeler.tsx": [],
   "bilesenler/parcalar/serit.tsx": [],
   "bilesenler/parcalar/uyari.tsx": [
@@ -71,6 +77,7 @@
     "cekirdek/yonetim-paneli/giris-formu.tsx",
     "cekirdek/yonetim-paneli/kod-formu.tsx"
   ],
+  "bilesenler/parcalar/uzun-metin-alani.tsx": ["cekirdek/yonetim-paneli/bolum-formu.tsx"],
   "bilesenler/parcalar/yan-pencere.tsx": [],
   "bilesenler/parcalar/yukleniyor.tsx": []
 }

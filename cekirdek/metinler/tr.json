@@ -262,6 +262,38 @@
         "dongu": "Bir kategori kendi altına ya da alt kategorilerinden birinin altına taşınamaz. Başka bir üst kategori seçin.",
         "silmede-ad-tekrar": "Bu kategori silinince alt kategorileri bir üste çıkar, ama oradaki bir kategoriyle aynı adı taşıyan bir alt kategori var. Önce birinin adını değiştirin."
       }
+    },
+    "bolumFormu": {
+      "secilmedi": "Seçilmedi",
+      "kaynakTuru": "Ürünlerin kaynağı",
+      "adet": "Gösterilecek ürün sayısı",
+      "urun": "Ürün",
+      "urunEkle": "Ürün ekle",
+      "ekle": "Ekle",
+      "kaldir": "Kaldır",
+      "adres": "Adres",
+      "adresAciklamasi": "Mağazanın kendi sayfası için / ile başlayın (/kategori/giyim). Başka bir site için https:// ile yazın.",
+      "yeniSekme": "Yeni sekmede aç",
+      "kaynak": {
+        "yeni": "Yeni gelenler",
+        "indirimli": "İndirimdekiler",
+        "kategori": "Kategori",
+        "marka": "Marka",
+        "etiket": "Etiket",
+        "elle": "Elle seçilen ürünler"
+      }
+    },
+    "renk": {
+      "zemin": "Sayfa zemini",
+      "yuzey": "Yüzey",
+      "birincil": "Ana renk",
+      "afis": "Afiş",
+      "alt-kisim": "Alt kısım",
+      "kutu-1": "Kutu 1",
+      "kutu-2": "Kutu 2",
+      "kutu-3": "Kutu 3",
+      "kutu-4": "Kutu 4",
+      "kutu-5": "Kutu 5"
     }
   },
   "vitrin": {
@@ -382,6 +414,7 @@
         "baglanti": "Bağlantı",
         "etiket": "Etiket",
         "girisAlani": "Giriş alanı",
+        "uzunMetinAlani": "Uzun metin alanı",
         "secimKutusu": "Seçim kutusu",
         "onayKutusu": "Onay kutusu",
         "acilirMenu": "Açılır menü",
@@ -400,7 +433,8 @@
         "form": "Form",
         "formAlani": "Form alanı",
         "ikon": "İkon"
-      }
+      },
+      "bolumKutuphanesi": "Bölüm kütüphanesi"
     },
     "ornek": {
       "birincil": "Kaydet",
@@ -499,7 +533,44 @@
       "isTelefonu": "İş telefonu",
       "eposta": "E-posta",
       "aboneOl": "Abone ol",
-      "gonderildi": "Form gönderildi."
+      "gonderildi": "Form gönderildi.",
+      "siparisNotu": "Sipariş notu",
+      "siparisNotuAciklama": "Kargoya ya da paketlemeye dair isteğinizi yazın.",
+      "siparisNotuHata": "Not en çok 500 harf olabilir."
+    },
+    "bolum": {
+      "ad": "Deneme bölümü",
+      "seritAdi": "Deneme şeridi",
+      "yorumlarAdi": "Deneme yorumları",
+      "baslik": "Bölüm kütüphanesi",
+      "aciklama": "Kütüphaneyi sınayan deneme bölümü ve tarifinden kendiliğinden çıkan düzenleme formu. Deneme bölümü mağazanın seçebileceği bölümlere girmez.",
+      "cizim": "Bölümün görünüşü",
+      "form": "Düzenleme formu",
+      "alan": {
+        "baslik": "Başlık",
+        "aciklama": "Açıklama",
+        "gorsel": "Görsel",
+        "baglanti": "Bağlantı",
+        "urunler": "Ürünler",
+        "kategori": "Kategori",
+        "marka": "Marka",
+        "bitis": "Bitiş zamanı",
+        "zemin": "Zemin rengi",
+        "maddeler": "Maddeler",
+        "madde": "Madde",
+        "maddeMetni": "Madde metni"
+      },
+      "gorunum": {
+        "genis": "Geniş",
+        "dar": "Dar",
+        "duz": "Düz"
+      },
+      "ornek": {
+        "baslik": "Haftanın seçkisi",
+        "aciklama": "Bu bölüm yalnız katalogda görünür.",
+        "madde1": "Ücretsiz kargo",
+        "madde2": "Kolay iade"
+      }
     }
   }
 }

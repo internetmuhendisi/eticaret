@@ -186,3 +186,38 @@ for (const { ad, piksel } of [
     expect(hatalar).toEqual([]);
   });
 }
+
+// Bölüm kütüphanesinin sayfası (kart 0106): deneme bölümü iki görünümüyle çizilir, tariften çıkan form her
+// alanı gösterir; iki renkte ve üç genişlikte taramadan geçer, yana kaymaz, konsolda hata yoktur.
+test("bölüm kütüphanesi: deneme bölümü ve tarifinden çıkan form iki renkte ve üç genişlikte taramadan geçer", async ({
+  page,
+}) => {
+  const hatalar: string[] = [];
+  for (const renk of ["acik", "koyu"] as const) {
+    for (const { ad, width, height } of genislikler) {
+      await page.setViewportSize({ width, height });
+      const sayfa = await ac(page, `${katalogAdresi}/bolum-kutuphanesi?renk=${renk}`);
+      expect(sayfa.durum).toBe(200);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+        metin("gelistirme.bolum.baslik"),
+      );
+      const cizim = page.getByRole("region", { name: metin("gelistirme.bolum.cizim") });
+      await expect(cizim.getByText(metin("gelistirme.bolum.ornek.madde1"))).toBeVisible();
+      const form = page.getByRole("region", { name: metin("gelistirme.bolum.form") });
+      await expect(form.getByLabel(metin("gelistirme.bolum.alan.baslik"))).toHaveValue(
+        metin("gelistirme.bolum.ornek.baslik"),
+      );
+      await expect(form.getByLabel(metin("gelistirme.bolum.alan.aciklama"))).toBeVisible();
+      await tara(page, `${renk}, ${ad}`);
+      expect(await yanaKayma(page), `${renk}, ${ad}`).toBe(0);
+      hatalar.push(...sayfa.hatalar);
+    }
+  }
+  // Formda liste öğesi eklenir ve sınırda ekleme düğmesi kapanır.
+  const liste = page.getByRole("group", { name: metin("gelistirme.bolum.alan.maddeler") });
+  const ekle = liste.getByRole("button", { name: metin("yonetim.bolumFormu.ekle") });
+  await ekle.click();
+  await expect(liste.getByLabel(metin("gelistirme.bolum.alan.maddeMetni"))).toHaveCount(3);
+  await expect(ekle).toBeDisabled();
+  expect(hatalar).toEqual([]);
+});

@@ -160,6 +160,29 @@ test.describe("klavye", () => {
     await expect(soyad).toHaveAccessibleDescription(m("soyadHata"));
   });
 
+  // Kart 0106: uzun metin alanı Enter'la yeni satır açar, formu göndermez; odak görünür; yazdıkça uzar.
+  test("uzun metin alanı çok satır alır, açıklaması ve hatası bağlıdır, odak görünür", async ({
+    page,
+  }) => {
+    const bolum = page.getByRole("region", {
+      name: metin("gelistirme.katalog.parca.uzunMetinAlani"),
+    });
+    const [not, hatali] = [bolum.getByRole("textbox").nth(0), bolum.getByRole("textbox").nth(1)];
+    await not.focus();
+    expect(await not.evaluate((e) => getComputedStyle(e).outlineStyle)).toBe("solid");
+    const ilkYukseklik = await not.evaluate((e) => e.getBoundingClientRect().height);
+    await page.keyboard.type("Birinci satır");
+    for (let i = 0; i < 4; i += 1) await page.keyboard.press("Enter");
+    await page.keyboard.type("Son satır");
+    await expect(not).toHaveValue("Birinci satır\n\n\n\nSon satır");
+    expect(await not.evaluate((e) => e.getBoundingClientRect().height)).toBeGreaterThan(
+      ilkYukseklik,
+    );
+    await expect(not).toHaveAccessibleDescription(m("siparisNotuAciklama"));
+    await expect(hatali).toHaveAttribute("aria-invalid", "true");
+    await expect(hatali).toHaveAccessibleDescription(m("siparisNotuHata"));
+  });
+
   test("seçim kutusu klavyeyle açılır, seçilir ve kapanır", async ({ page }) => {
     const secim = page.getByRole("combobox", { name: m("zaman") });
     await secim.focus();

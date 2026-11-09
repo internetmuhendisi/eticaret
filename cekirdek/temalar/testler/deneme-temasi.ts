@@ -1,13 +1,13 @@
 // Testlerin deneme teması ve deneme kütüphanesi (kart 0105). Çekirdeğin bölüm ve görünüm kayıtları bugün
-// boştur (cekirdek/kayitlar/tema.ts); şemanın bölüm ve görünüm kuralları bu deneme kayıtlarıyla denenir.
+// boştur; şemanın bölüm ve görünüm kuralları deneme bölümleriyle (cekirdek/katalog/deneme-bolumu/, kart 0106)
+// ve deneme görünümüyle denenir.
 import { varsayilanTemaDegerleri } from "../../../bilesenler/tasarim-degerleri/degerler.ts";
+import { denemeKutuphanesi as denemeBolumleri } from "../../katalog/deneme-bolumu/tarif.ts";
+import type { BaslangicDuzeniGirdisi } from "../../vitrin/bolum-kutuphanesi/duzen.ts";
 import type { TemaKutuphanesi, TemaTanimiGirdisi } from "../sema.ts";
 
 export const denemeKutuphanesi: TemaKutuphanesi = {
-  bolumTurleri: {
-    "deneme-afis": { alanlar: ["ana-sayfa"] },
-    "deneme-menu": { alanlar: ["ust-kisim", "alt-kisim"] },
-  },
+  bolumTurleri: denemeBolumleri,
   parcaGorunumleri: { "deneme-kart": ["dikey", "yatay"] },
 };
 
@@ -36,8 +36,11 @@ export const kutuphaneliDenemeTemasi = () => ({
   ...denemeTemasi(),
   gorunumler: { "deneme-kart": "dikey" } as Record<string, string>,
   baslangicDuzeni: {
-    "ust-kisim": [{ tur: "deneme-menu" }],
-    "ana-sayfa": [{ tur: "deneme-afis" }, { tur: "deneme-afis", gizli: true }],
-    "alt-kisim": [{ tur: "deneme-menu" }],
-  },
+    "ust-kisim": [{ tur: "deneme-seridi", degerler: { metin: "Duyuru" } }],
+    "ana-sayfa": [
+      { tur: "deneme-bolumu", degerler: { baslik: "Seçkiler" } },
+      { tur: "deneme-bolumu", gorunum: "dar", gizli: true, degerler: { baslik: "Yeniler" } },
+    ],
+    "alt-kisim": [{ tur: "deneme-seridi", degerler: { metin: "Alt bilgi" } }],
+  } as BaslangicDuzeniGirdisi,
 });

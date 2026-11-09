@@ -8,11 +8,12 @@
 //   yazı tipi, köşe ve düğme biçimi için seçenekler. Seçenek seçilmemişse temanın kendi değeri geçerlidir.
 // - gorunumler: parçaların görünüm tipleri. Kayıttaki (cekirdek/kayitlar/tema.ts) her parça için bir
 //   görünüm seçilir.
-// - baslangicDuzeni: üst kısım, ana sayfa ve alt kısımda sırasıyla bölümler. Her bölüm kütüphanede olmalı
-//   ve o alana konabilmeli.
+// - baslangicDuzeni: üst kısım, ana sayfa ve alt kısımda sırasıyla bölümler. Her bölüm kütüphanede olmalı,
+//   o alana konabilmeli, görünümü ve alan değerleri tarifine uymalı (kart 0106). Kayda başvuran alanlar
+//   (görsel, kategori, marka, seçilen ürünler) başlangıçta boş kalır.
 //
 // Kütüphane şemaya parametre olarak verilir: testler deneme bölümü ve görünümüyle dener, çekirdek gerçek
-// kayıtla çalışır. Bölüm alanlarının değerleri bölüm kütüphanesiyle gelir (kart 0106).
+// kayıtla çalışır.
 import { z } from "zod";
 import {
   olcuSemasi,
@@ -25,19 +26,23 @@ import {
   type TemaDegerleri,
   yuklenenYaziTipleri,
 } from "../../bilesenler/tasarim-degerleri/degerler.ts";
+import { parcaGorunumleri } from "../kayitlar/tema.ts";
 import {
-  type BolumTuruKaydi,
-  bolumTurleri,
-  duzenAlanlari,
-  parcaGorunumleri,
-} from "../kayitlar/tema.ts";
+  type BolumKutuphanesi,
+  baslangicDuzeniSemasi,
+  baslangicDuzeniSorunlari,
+} from "../vitrin/bolum-kutuphanesi/duzen.ts";
+import { bolumKutuphanesi } from "../vitrin/bolum-kutuphanesi/kutuphane.ts";
 import { okunmayanCiftler, olculenRenkler } from "./okunurluk.ts";
 
 export type TemaKutuphanesi = {
-  bolumTurleri: Readonly<Record<string, BolumTuruKaydi>>;
+  bolumTurleri: BolumKutuphanesi;
   parcaGorunumleri: Readonly<Record<string, readonly string[]>>;
 };
-export const cekirdekKutuphanesi: TemaKutuphanesi = { bolumTurleri, parcaGorunumleri };
+export const cekirdekKutuphanesi: TemaKutuphanesi = {
+  bolumTurleri: bolumKutuphanesi,
+  parcaGorunumleri,
+};
 
 // Tema, seçenek, bölüm ve görünüm kodları: küçük harf, rakam ve tire.
 export const kodSemasi = z
@@ -52,16 +57,12 @@ export const temaTanimiHatalari = [
   "gorunum-eksik",
   "parca-tanimsiz",
   "gorunum-tanimsiz",
-  "bolum-tanimsiz",
-  "bolum-alani-uygun-degil",
   "ayni-renk-iki-kez",
   "renk-olculmuyor",
 ] as const;
 export type TemaTanimiHatasi = (typeof temaTanimiHatalari)[number];
 
 const yaziTipiSecenegi = z.strictObject({ govde: yaziTipiSemasi, baslik: yaziTipiSemasi });
-
-const bolumSemasi = z.strictObject({ tur: kodSemasi, gizli: z.boolean().default(false) });
 
 const tanimSemasi = z.strictObject({
   degerler: temaDegerleriSemasi,
@@ -74,16 +75,13 @@ const tanimSemasi = z.strictObject({
     dugmeBicimleri: z.record(kodSemasi, olcuSemasi),
   }),
   gorunumler: z.record(z.string(), kodSemasi),
-  baslangicDuzeni: z.strictObject({
-    "ust-kisim": z.array(bolumSemasi).max(50),
-    "ana-sayfa": z.array(bolumSemasi).max(50),
-    "alt-kisim": z.array(bolumSemasi).max(50),
-  }),
+  baslangicDuzeni: baslangicDuzeniSemasi,
 });
 export type TemaTanimi = z.output<typeof tanimSemasi>;
 export type TemaTanimiGirdisi = z.input<typeof tanimSemasi>;
 
-type Sorun = { yer: (string | number)[]; kod: TemaTanimiHatasi };
+// Kod tema tanımının ya da düzenin (cekirdek/vitrin/bolum-kutuphanesi/duzen.ts, duzenHatalari) hata kodudur.
+type Sorun = { yer: (string | number)[]; kod: TemaTanimiHatasi | string };
 
 // Yazı tipi listesindeki her ad sitede barındırılan ya da cihazın genel yazı tipi olmalı.
 const yukluMu = (liste: string): boolean =>
@@ -137,16 +135,12 @@ export const temaKurallari = (tema: TemaTanimi, kutuphane: TemaKutuphanesi): Sor
       sorunlar.push({ yer: ["gorunumler", parca], kod: "parca-tanimsiz" });
     }
   }
-  for (const alan of duzenAlanlari) {
-    tema.baslangicDuzeni[alan].forEach((bolum, sira) => {
-      const yer = ["baslangicDuzeni", alan, sira, "tur"];
-      const kayit = Object.hasOwn(kutuphane.bolumTurleri, bolum.tur)
-        ? kutuphane.bolumTurleri[bolum.tur]
-        : undefined;
-      if (kayit === undefined) sorunlar.push({ yer, kod: "bolum-tanimsiz" });
-      else if (!kayit.alanlar.includes(alan))
-        sorunlar.push({ yer, kod: "bolum-alani-uygun-degil" });
-    });
+  // Başlangıç düzeni bölüm kütüphanesinin kurallarından geçer (kart 0106).
+  for (const { yer, kod } of baslangicDuzeniSorunlari(
+    tema.baslangicDuzeni,
+    kutuphane.bolumTurleri,
+  )) {
+    sorunlar.push({ yer: ["baslangicDuzeni", ...yer], kod });
   }
   return sorunlar;
 };

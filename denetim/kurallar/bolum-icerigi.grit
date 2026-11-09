@@ -1,0 +1,40 @@
+// Bölüm kodunda elle yazılmış içerik yasağı (kart 0106, karar 0081). Vitrin bölümlerinin kodunda
+// (cekirdek/vitrin/bolumler/ ve deneme bölümü cekirdek/katalog/deneme-bolumu/) ürün adı, fiyat, görsel adresi,
+// bağlantı ya da mağazaya özel metin yazılmaz: içerik yalnız bölümün alan değerlerinden ve veriden gelir,
+// sabit metin metin dosyasından. Testler bu yasağın dışındadır.
+//
+// Metin hem koddaki yazıda ("...") hem JSX özelliğinde (href="...", src="...") aranır. Bölüm kodunda serbest
+// olanlar: kod, alan adı ve metin anahtarı biçimindeki yazılar (deneme-bolumu, baslik, gelistirme.bolum.ad),
+// harfle başlayan Tailwind sınıfları (bg-kutu-1 tablet:w-1/2 bg-ortu/60) ve bağlantının hedefi (_blank).
+// Bunun dışındaki her metin hatadır: büyük harf, boşluklu cümle, rakamla başlayan yazı ("19990", "199.90"),
+// eğik çizgili yol ("/kategori/kupa", "urun/kupa"), bağlantı ve görsel adresi. Ekran dosyalarında (.tsx)
+// ondalıklı ya da 100 ve üstü sayı da hatadır (fiyat, ölçü); küçük sayılar (başlık düzeyi, slice(0, 8))
+// serbesttir. Yalnız disiplin olanlar: küçük harfle tek sözcük ürün adı ("kupa", koda benzer), .ts
+// dosyasında sayı (tarifin sınırları sayıdır) ve 100'ün altında bir fiyat.
+// Not: Grit düzenli ifadelerinde parantez değişken sayılır, gruplar (?:...) ile yazılır.
+language js
+
+or {
+  or {
+    JsStringLiteralExpression(),
+    JsxString()
+  } as $deger where {
+    or {
+      $deger <: not or {
+        r"\"[a-z][a-zA-Z0-9]*(?:[.-][a-zA-Z0-9]+)*\"",
+        r"\"[a-z!-][a-z0-9:.!-]*(?:/[0-9]+)?(?: [a-z!-][a-z0-9:.!-]*(?:/[0-9]+)?)*\"",
+        r"\"_(?:blank|self)\""
+      },
+      $deger <: r"(?i).*(?:\.(?:jpe?g|png|webp|avif|gif|svg)|://).*"
+    }
+  },
+  JsTemplateChunkElement() as $deger where { $deger <: r"(?s).*\p{L}.*" },
+  JsNumberLiteralExpression() as $deger where {
+    $filename <: r".*\.tsx",
+    $deger <: not r"[0-9]{1,2}"
+  }
+} as $oge where {
+  $filename <: r".*/cekirdek/(?:vitrin/bolumler|katalog/deneme-bolumu)/.*",
+  $filename <: not r".*/testler/.*",
+  register_diagnostic(span=$oge, message="Bölüm kodunda elle içerik yazılamaz (ürün adı, fiyat, görsel adresi, bağlantı, metin). İçerik bölümün alan değerlerinden ve veriden, sabit metin metin dosyasından gelir.", severity="error")
+}

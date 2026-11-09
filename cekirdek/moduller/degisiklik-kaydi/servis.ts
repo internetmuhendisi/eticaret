@@ -10,38 +10,8 @@ import type {
   DegisiklikKayitTuru,
 } from "../../kayitlar/degisiklik-islemleri.ts";
 import type { VeritabaniIslemi } from "../../veritabani/baglanti.ts";
-import { kayitDegeriYasakMi } from "./deger.ts";
+import { kayitAlaniYasakMi, kayitDegeriYasakMi } from "./deger.ts";
 import { degisiklikKayitlari } from "./model.ts";
-
-// Alan adının bu sözcüklerden birini taşıması yasaktır: şifre, anahtar ve kişisel veri kayda girmez.
-// Kişiyi kimliğiyle yaz. Alan adı sözcüklerine bölünür: "fiyat_kart_komisyonu" gibi adlar takılmaz.
-const yasakSozcukler = new Set([
-  "sifre",
-  "parola",
-  "password",
-  "pass",
-  "pwd",
-  "anahtar",
-  "anahtari",
-  "anahtarlar",
-  "token",
-  "secret",
-  "jwt",
-  "ozet",
-  "hash",
-  "cvv",
-  "cvc",
-  "yedek",
-  "eposta",
-  "email",
-  "telefon",
-]);
-
-const sozcukler = (alan: string): string[] =>
-  alan
-    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
-    .toLowerCase()
-    .split(/[^a-z0-9]+/);
 
 const degeriDenetle = (deger: unknown, yol: string): void => {
   if (typeof deger === "string") {
@@ -61,7 +31,7 @@ const degeriDenetle = (deger: unknown, yol: string): void => {
     throw new Error(`Değişiklik kaydına yalnız düz değer yazılır: ${yol}`);
   }
   for (const [alan, alt] of Object.entries(deger)) {
-    if (sozcukler(alan).some((sozcuk) => yasakSozcukler.has(sozcuk))) {
+    if (kayitAlaniYasakMi(alan)) {
       throw new Error(`Değişiklik kaydına gizli ya da kişisel alan yazılamaz: ${yol}.${alan}`);
     }
     degeriDenetle(alt, `${yol}.${alan}`);

@@ -20,6 +20,12 @@ import { type TemaAyarlari, temaAyariSorunlari, temaAyarlariSemasi } from "../te
 import { kodSemasi, siteTemasiSemasi } from "../temalar/sema.ts";
 import { hazirTemaKodlari, hazirTemayiOku, type Tema } from "../temalar/temalar.ts";
 import {
+  type BaslangicDuzeni,
+  baslangicDuzeniSemasi,
+  baslangicDuzeniSorunlari,
+} from "../vitrin/bolum-kutuphanesi/duzen.ts";
+import { bolumKutuphanesi } from "../vitrin/bolum-kutuphanesi/kutuphane.ts";
+import {
   ayarSemasi,
   type MagazaAyarlari,
   magazaAyarSemasi,
@@ -41,6 +47,8 @@ import { type Kimlik, kimlikSemasi } from "./kimlik.ts";
 // temalar: sitenin kullanabileceği temalar, şemadan geçmiş (kart 0105); ilki başlangıç temasıdır.
 // temaBaslangici: tema ayarlarının başlangıç değeri (baslangic/tema.json). Yalnız sitenin tema sürümü hiç
 // yazılmamışken kullanılır; asıl değer veritabanındadır (cekirdek/moduller/tema/).
+// duzenBaslangici: düzenin başlangıç değeri (baslangic/duzen.json, yoksa başlangıç temasının düzeni, kart
+// 0106). Yalnız sitenin düzen sürümü hiç yazılmamışken kullanılır (cekirdek/moduller/duzen/).
 export type Site = {
   kimlik: Kimlik;
   ayarlar: SiteAyarlari;
@@ -51,6 +59,7 @@ export type Site = {
   markaLogosu?: { yol: string; tur: DosyaTuru };
   temalar: Tema[];
   temaBaslangici: { tema: string; ayarlar: TemaAyarlari };
+  duzenBaslangici: BaslangicDuzeni;
 };
 
 export type DogrulamaSonucu = { gecerli: true; site: Site } | { gecerli: false; hatalar: string[] };
@@ -334,6 +343,31 @@ export const temaBaslangiciniDogrula = (
   return { gecerli: true, deger: { tema: tema.kod, ayarlar: sonuc.data.ayarlar } };
 };
 
+export const duzenBaslangicDosyasi = "baslangic/duzen.json";
+
+// Düzenin başlangıç değeri (kart 0106): dosya varsa bölüm kütüphanesinin kurallarından geçer, yoksa sitenin
+// başlangıç temasının düzeni kullanılır (o da tema şemasında aynı kurallardan geçmiştir).
+export const duzenBaslangiciniDogrula = (
+  klasor: string,
+  baslangicTemasi: Tema,
+): { gecerli: true; deger: BaslangicDuzeni } | { gecerli: false; hatalar: string[] } => {
+  const ham = jsonOku(klasor, duzenBaslangicDosyasi, null);
+  if ("hata" in ham) return { gecerli: false, hatalar: [ham.hata] };
+  if (ham.deger === null) return { gecerli: true, deger: baslangicTemasi.tanim.baslangicDuzeni };
+  const sonuc = baslangicDuzeniSemasi.safeParse(ham.deger);
+  if (!sonuc.success) {
+    return { gecerli: false, hatalar: sorunlariYaz(duzenBaslangicDosyasi, sonuc.error.issues) };
+  }
+  const sorunlar = baslangicDuzeniSorunlari(sonuc.data, bolumKutuphanesi);
+  if (sorunlar.length > 0) {
+    return {
+      gecerli: false,
+      hatalar: sorunlar.map(({ yer, kod }) => `${duzenBaslangicDosyasi}: ${yer.join(".")}: ${kod}`),
+    };
+  }
+  return { gecerli: true, deger: sonuc.data };
+};
+
 export const markaKlasoru = "marka";
 
 // Sitenin ilk logosu: marka/ klasöründe en çok bir logo.<uzantı> dosyası. Tür içerikten okunur ve
@@ -439,6 +473,15 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
   if (temaBaslangici !== undefined && !temaBaslangici.gecerli) {
     hatalar.push(...temaBaslangici.hatalar);
   }
+  const baslangicTemasi =
+    temalar?.gecerli === true && temaBaslangici?.gecerli === true
+      ? temalar.temalar.find((tema) => tema.kod === temaBaslangici.deger.tema)
+      : undefined;
+  const duzenBaslangici =
+    baslangicTemasi === undefined ? undefined : duzenBaslangiciniDogrula(klasor, baslangicTemasi);
+  if (duzenBaslangici !== undefined && !duzenBaslangici.gecerli) {
+    hatalar.push(...duzenBaslangici.hatalar);
+  }
 
   if (kimlik !== undefined && kimlik.kodAdi !== basename(klasor)) {
     hatalar.push(
@@ -459,7 +502,9 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
     temalar === undefined ||
     !temalar.gecerli ||
     temaBaslangici === undefined ||
-    !temaBaslangici.gecerli
+    !temaBaslangici.gecerli ||
+    duzenBaslangici === undefined ||
+    !duzenBaslangici.gecerli
   ) {
     return { gecerli: false, hatalar };
   }
@@ -497,6 +542,7 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
       ...(markaLogosu.logo === undefined ? {} : { markaLogosu: markaLogosu.logo }),
       temalar: temalar.temalar,
       temaBaslangici: temaBaslangici.deger,
+      duzenBaslangici: duzenBaslangici.deger,
     },
   };
 };

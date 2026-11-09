@@ -96,10 +96,34 @@ describe("bozuk tema açılmaz", () => {
   it("kütüphanede olmayan bölüm ve o alana konamayan bölüm", () => {
     const tema = kutuphaneliDenemeTemasi();
     tema.baslangicDuzeni["ana-sayfa"].push({ tur: "olmayan-bolum" });
-    tema.baslangicDuzeni["ust-kisim"].push({ tur: "deneme-afis" });
+    tema.baslangicDuzeni["ust-kisim"].push({
+      tur: "deneme-bolumu",
+      degerler: { baslik: "Yanlış yer" },
+    });
     expect(sorunlar(tema)).toEqual([
       ["baslangicDuzeni.ust-kisim.1.tur", "bolum-alani-uygun-degil"],
       ["baslangicDuzeni.ana-sayfa.2.tur", "bolum-tanimsiz"],
+    ]);
+  });
+
+  it("başlangıç düzeninde tanımsız bölüm görünümü, tarife uymayan değer ve kayda başvuran alan (kart 0106)", () => {
+    const tema = kutuphaneliDenemeTemasi();
+    tema.baslangicDuzeni["ana-sayfa"] = [
+      { tur: "deneme-bolumu", gorunum: "capraz", degerler: { baslik: "Seçkiler" } },
+      { tur: "deneme-bolumu", degerler: {} },
+      { tur: "deneme-bolumu", degerler: { baslik: "Seçkiler", fazla: 1 } },
+      {
+        tur: "deneme-bolumu",
+        degerler: { baslik: "Seçkiler", kategori: "8d8f4bb1-7d6c-4f3a-9a52-0c5f3d1e2b7a" },
+      },
+    ];
+    const bulunan = sorunlar(tema);
+    expect(bulunan).toContainEqual(["baslangicDuzeni.ana-sayfa.0.gorunum", "gorunum-tanimsiz"]);
+    expect(bulunan.map(([yer]) => yer)).toContain("baslangicDuzeni.ana-sayfa.1.degerler.baslik");
+    expect(bulunan.map(([yer]) => yer)).toContain("baslangicDuzeni.ana-sayfa.2.degerler");
+    expect(bulunan).toContainEqual([
+      "baslangicDuzeni.ana-sayfa.3.degerler.kategori",
+      "baslangicta-kayit-secilemez",
     ]);
   });
 

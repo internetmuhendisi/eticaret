@@ -4,6 +4,10 @@
 import type { ReactNode } from "react";
 import { Baglanti } from "../../bilesenler/parcalar/baglanti";
 import { metin } from "../metinler/site-metni";
+import { DuzenAlaniCizimi } from "../vitrin/duzen-alani";
+import { BolumFormu } from "../yonetim-paneli/bolum-formu";
+import { denemeGorunumleri } from "./deneme-bolumu/gorunum";
+import { denemeBolumu } from "./deneme-bolumu/tarif";
 import {
   type GenislikSecenegi,
   genislikSecenekleri,
@@ -144,7 +148,14 @@ export function KatalogAnaSayfasi({ secim }: { secim: KatalogSecimi }) {
       yol={katalogAdresi}
       secim={secim}
       baslik={metin("gelistirme.katalog.baslik")}
-      ust={<p>{metin("gelistirme.katalog.aciklama")}</p>}
+      ust={
+        <>
+          <p>{metin("gelistirme.katalog.aciklama")}</p>
+          <Baglanti href={secimAdresi(bolumKutuphanesiAdresi, secim)}>
+            {metin("gelistirme.katalog.bolumKutuphanesi")}
+          </Baglanti>
+        </>
+      }
     >
       {katalogParcalari.map((parca) => (
         <ParcaBolumu key={parca.kod} parca={parca} secim={secim} />
@@ -198,6 +209,73 @@ export function KatalogParcaSayfasi({
           </section>
         </>
       )}
+    </KatalogDuzeni>
+  );
+}
+
+// Bölüm kütüphanesinin sayfası (kart 0106): deneme bölümünün görünüşü ve tarifinden çıkan düzenleme formu.
+export const bolumKutuphanesiAdresi = `${katalogAdresi}/bolum-kutuphanesi`;
+
+export function KatalogBolumKutuphanesiSayfasi({ secim }: { secim: KatalogSecimi }) {
+  const ornek = {
+    baslik: metin("gelistirme.bolum.ornek.baslik"),
+    aciklama: metin("gelistirme.bolum.ornek.aciklama"),
+    zemin: "kutu-1",
+    maddeler: [
+      { metin: metin("gelistirme.bolum.ornek.madde1") },
+      { metin: metin("gelistirme.bolum.ornek.madde2") },
+    ],
+  };
+  return (
+    <KatalogDuzeni
+      yol={bolumKutuphanesiAdresi}
+      secim={secim}
+      baslik={metin("gelistirme.bolum.baslik")}
+      ust={
+        <>
+          <p>{metin("gelistirme.bolum.aciklama")}</p>
+          <Baglanti href={secimAdresi(katalogAdresi, { ...secim, cerceve: false })}>
+            {metin("gelistirme.katalog.butunParcalar")}
+          </Baglanti>
+        </>
+      }
+    >
+      <section
+        aria-label={metin("gelistirme.bolum.cizim")}
+        className="flex flex-col gap-4 border-t border-kenar pt-6"
+      >
+        <h2>{metin("gelistirme.bolum.cizim")}</h2>
+        <DuzenAlaniCizimi
+          bolumler={[
+            {
+              kimlik: "deneme-genis",
+              tur: denemeBolumu.tur,
+              gorunum: "genis",
+              gizli: false,
+              degerler: ornek,
+            },
+            {
+              kimlik: "deneme-dar",
+              tur: denemeBolumu.tur,
+              gorunum: "dar",
+              gizli: false,
+              degerler: { baslik: ornek.baslik },
+            },
+          ]}
+          gorunumler={denemeGorunumleri}
+        />
+      </section>
+      <section
+        aria-label={metin("gelistirme.bolum.form")}
+        className="flex flex-col gap-4 border-t border-kenar pt-6"
+      >
+        <h2>{metin("gelistirme.bolum.form")}</h2>
+        <BolumFormu
+          tarif={denemeBolumu}
+          ilkDegerler={ornek}
+          secenekler={{ kategoriler: [], markalar: [], etiketler: [], urunler: [], gorseller: [] }}
+        />
+      </section>
     </KatalogDuzeni>
   );
 }

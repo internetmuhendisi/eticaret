@@ -8,6 +8,8 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 
 | İzin | Giriş | Kapsam | Ne verir |
 |---|---|---|---|
+| `duzen.gor` | yonetici | tumu | Vitrinin düzenini (üst kısım, ana sayfa, alt kısım bölümleri) görür. |
+| `duzen.degistir` | yonetici | tumu | Bölüm ekler, değiştirir, gizler, sıralar ve siler. |
 | `ekip.kendi-hesabi.gor` | yonetici | kendi | Yönetici kendi hesabını görür. |
 | `ekip.gor` | yonetici | tumu | Ekipteki bütün yöneticileri görür. |
 | `ekip.rol-ata` | yonetici | tumu | Yöneticilere rol verir ve alır. |

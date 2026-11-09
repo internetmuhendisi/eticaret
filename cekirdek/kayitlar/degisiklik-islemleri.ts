@@ -69,6 +69,15 @@ export const degisiklikIslemleri = [
   "tema.baslangic",
   "tema.yayinlandi",
   "tema.geri-donuldu",
+  // Sitenin düzeni (kart 0106): başlangıç düzeniyle ilk sürüm ve bölüm işlemleri. Kayıt kimliği yeni düzen
+  // sürümünün kimliğidir; değerlerde bölümün kimliği ve türü yazar.
+  "duzen.baslangic",
+  "duzen.bolum-eklendi",
+  "duzen.bolum-degisti",
+  "duzen.bolum-gizlendi",
+  "duzen.bolum-gosterildi",
+  "duzen.bolumler-siralandi",
+  "duzen.bolum-silindi",
 ] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 
@@ -97,6 +106,8 @@ export const degisiklikKayitTurleri = [
   "stok",
   // Kart 0105: sitenin tema sürümü.
   "tema-surumu",
+  // Kart 0106: sitenin düzen sürümü.
+  "duzen-surumu",
 ] as const;
 export type DegisiklikKayitTuru = (typeof degisiklikKayitTurleri)[number];
 

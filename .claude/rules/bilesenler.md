@@ -35,7 +35,7 @@ Bileşen, düğme, giriş alanı, pencere gibi tekrar kullanılan arayüz parça
 
 - `bilesenler/parcalar/` (kart 0103, karar 0077, shadcn/ui'dan uyarlanmış):
   - `Dugme`, `IkonDugmesi`, `Baglanti`
-  - `GirisAlani`, `Etiket`, `SecimKutusu`, `OnayKutusu`
+  - `GirisAlani`, `UzunMetinAlani` (kart 0106), `Etiket`, `SecimKutusu`, `OnayKutusu`
   - `AcilirMenu`, `Pencere`, `YanPencere`, `Sekmeler`
   - `Kart`, `Rozet`, `Uyari`, `BildirimAlani` ile `bildirimGoster`, `Ipucu`
   - `IskeletGorunum`, `YukleniyorGostergesi`, `Serit`, `Akordeon`

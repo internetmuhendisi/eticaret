@@ -1,6 +1,7 @@
 // İzinlerin tek kaydı (.claude/rules/yetki.md, karar 0040). Her modül kendi izinlerini izinler.ts
 // dosyasında yazar, burada toplanır. Roller bu izinlerden oluşur. Liste belgede de yazar:
 // cekirdek/moduller/ekip/izinler-ve-roller.md.
+import { duzenIzinleri } from "../moduller/duzen/izinler.ts";
 import { ekipIzinleri } from "../moduller/ekip/izinler.ts";
 import { etiketIzinleri } from "../moduller/etiket/izinler.ts";
 import { fiyatIzinleri } from "../moduller/fiyat/izinler.ts";
@@ -25,6 +26,7 @@ export type IzinTanimi =
   | { giris: "yonetici"; kapsam: IzinKapsami };
 
 export const modulIzinleri = {
+  duzen: duzenIzinleri,
   ekip: ekipIzinleri,
   etiket: etiketIzinleri,
   fiyat: fiyatIzinleri,
@@ -40,6 +42,7 @@ export const modulIzinleri = {
 } as const;
 
 export const izinler = {
+  ...duzenIzinleri,
   ...ekipIzinleri,
   ...etiketIzinleri,
   ...fiyatIzinleri,
