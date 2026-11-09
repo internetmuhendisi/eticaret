@@ -1,0 +1,6 @@
+/* Vitrinin ve panelin tek stil girişi (karar 0076). Değerler ve Tailwind ayarı ortak kütüphanededir;
+   burada yalnız Tailwind'in sınıf arayacağı klasörler yazılır: çekirdeğin tamamı ve ortak bileşenler. */
+@import "../../bilesenler/tasarim-degerleri/tailwind.css";
+
+@source "..";
+@source "../../bilesenler";

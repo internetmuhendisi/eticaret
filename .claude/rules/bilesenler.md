@@ -32,4 +32,5 @@ Bileşen, düğme, giriş alanı, pencere gibi tekrar kullanılan arayüz parça
 
 ## Yazılanlar
 
-- `bilesenler/form/`: `FormAlani`, `GirisAlani`, `Dugme`, `Uyari` (kart 0027), `OnayKutusu` (kart 0033), `Baglanti` (kart 0034). Renkleri tarayıcının sistem renkleridir, tasarım değerleri yazılınca bağlanır. Bileşen kataloğu henüz yoktur.
+- `bilesenler/form/`: `FormAlani`, `GirisAlani`, `Dugme`, `Uyari` (kart 0027), `OnayKutusu` (kart 0033), `Baglanti` (kart 0034). Görünüşleri tasarım değerlerinden gelir, sınıfları `bilesenler/form/stil.ts` dosyasındadır (kart 0102). Bileşen kataloğu henüz yoktur.
+- `bilesenler/tasarim-degerleri/`: tasarım değerleri ve Tailwind'in ortak girişi (kart 0102, karar 0076).

@@ -27,8 +27,16 @@
     "./denetim/kurallar/ham-sql.grit",
     "./denetim/kurallar/execute-sorgu.grit",
     "./denetim/kurallar/elle-bicimlendirme.grit",
-    "./denetim/kurallar/elle-form.grit"
+    "./denetim/kurallar/elle-form.grit",
+    "./denetim/kurallar/serbest-tailwind.grit",
+    "./denetim/kurallar/hazir-palet.grit",
+    "./denetim/kurallar/satir-ici-olcu.grit"
   ],
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
   "linter": {
     "enabled": true,
     "rules": {

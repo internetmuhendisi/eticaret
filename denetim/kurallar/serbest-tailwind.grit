@@ -1,0 +1,32 @@
+// Serbest Tailwind değeri yasağı (kart 0102, karar 0076, .claude/rules/tasarim-sistemi.md).
+// Tailwind yalnız tasarım değerlerindeki adları tanır, ama şunlar Tailwind'de kapatılamaz:
+// - köşeli parantezli değer (w-[37px], bg-[#fff]) ve değişkenle değer (bg-(--x))
+// - serbest saydamlık ya da satır yüksekliği (bg-zemin/[0.37], text-govde/(--x))
+// - köşeli parantezli özellik ([mask-type:alpha]) ve seçici ya da kırılma noktası ([&>svg]:p-4,
+//   [@media(min-width:900px)]:p-4, [.acik_&]:p-4)
+// - katman sırası yerine sayı (z-37)
+// - kenar, çerçeve ve alt çizgide 0 ve 2 dışında sayı (border-7, outline-offset-5): kalınlıklar 1
+//   (öneksiz), 2 ve 0'dır
+// Koyu tema bileşen bileşen yamanmaz (dark:), değerleri tasarım değerlerinde tanımlanır.
+// Tasarım değerlerinin kendi klasörü (bilesenler/tasarim-degerleri/) bu yasağın dışındadır.
+// Not: Grit düzenli ifadelerinde parantez değişken sayılır, gruplar (?:...) ile yazılır. İleriye bakma
+// desteklenmez: sınıfın bittiği yer (?:[^a-z0-9_-].*)? ile yazılır.
+language js
+
+or {
+  JsStringLiteralExpression(),
+  JsTemplateExpression(),
+  JsxString()
+} as $metin where {
+  $filename <: not r".*/bilesenler/tasarim-degerleri/.*",
+  $metin <: or {
+    r"(?s)(?:.*[^a-z0-9_-])?!?-?[a-z][a-z0-9-]*-(?:\[|[(]--).*",
+    r"(?s)(?:.*[^a-z0-9_-])?[a-z][a-z0-9]*-[a-z0-9-]*/(?:\[|[(]--).*",
+    r"(?s)(?:.*[^a-z0-9_-])?\[[a-z-]+:.*",
+    r"(?s)(?:.*[^a-z0-9_-])?\[[&@.][^\]\s]*\]:.*",
+    r"(?s)(?:.*[^a-z0-9_-])?-?z-\d.*",
+    r"(?s)(?:.*[^a-z0-9_-])?(?:border(?:-[xytrblse])?|divide-[xy]|outline|outline-offset|ring|ring-offset|decoration|underline-offset)-(?:[13-9]|\d\d+)(?:[^a-z0-9_-].*)?",
+    r"(?s)(?:.*[^a-z0-9_-])?dark:.*"
+  },
+  register_diagnostic(span=$metin, message="Serbest Tailwind değeri yazılamaz. Yalnız tasarım değerlerindeki adları kullanın (bilesenler/tasarim-degerleri/degerler.ts); değer yoksa oraya ekleyin.", severity="error")
+}

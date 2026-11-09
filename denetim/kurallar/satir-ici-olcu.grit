@@ -1,0 +1,15 @@
+// Satır içi stilde ölçü yasağı (kart 0102, karar 0076, .claude/rules/tasarim-sistemi.md).
+// style={{ marginTop: 12 }} ya da style={{ padding: "12px" }} gibi ölçü taşıyan satır içi stil
+// ölçeği atlar. Ölçü tasarım değerlerindeki adlarla, sınıf olarak yazılır. Birimli sayı ve ölçü
+// özelliğine verilen sayı yakalanır; saydamlık gibi ölçü olmayan sayılar serbesttir. Stil bir
+// değişkenden ya da şablonla (`${oran}%`) verilirse yakalanmaz (yalnız disiplin).
+language js
+
+JsxAttribute(name=$ad, initializer=JsxAttributeInitializerClause(value=$deger)) where {
+  $ad <: r"style",
+  $deger <: or {
+    r"(?s).*\d(?:\.\d+)?(?:px|rem|em|%|vh|vw|dvh|svh|lvh|ch|ex|pt|cm|mm|in)(?:[^a-z].*)?",
+    r"(?s).*(?:width|height|margin|padding|gap|top|left|right|bottom|inset|size|fontSize|lineHeight|letterSpacing|borderRadius|borderWidth|flexBasis|outlineWidth|outlineOffset)[A-Za-z]*\s*:\s*-?\d.*"
+  },
+  register_diagnostic(span=$deger, message="Satır içi stilde ölçü yazılamaz. Ölçüyü tasarım değerlerindeki adlarla sınıf olarak yazın (bilesenler/tasarim-degerleri/degerler.ts).", severity="error")
+}

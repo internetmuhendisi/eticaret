@@ -1,0 +1,65 @@
+/* Tailwind'in ortak girişi (karar 0076). Vitrin ve panel (cekirdek/uygulama/stil.css) ile sahip
+   paneli bunu içe aktarır ve kendi taranacak klasörlerini @source ile ekler.
+   Tailwind'in kendi teması (tailwindcss/theme.css) bilerek yüklenmez: hazır palet, hazır ölçüler ve
+   hazır kırılma noktaları hiç tanımlanmaz. Tailwind yalnız tailwind.ayar.ts'teki adları tanır. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+
+/* Yazı tipleri sitenin kendi sunucusundan gelir, dış sunucuya istek gitmez. Türkçe harfler latin-ext
+   parçasındadır; tarayıcı yalnız sayfada geçen harflerin parçasını indirir. */
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jost";
+
+@config "./tailwind.ayar.ts";
+
+@layer base {
+  /* Kökün yazı boyuna dokunulmaz: rem ölçüleri (boşluk ölçeği, dokunma alanı) ona göre hesaplanır ve
+     ziyaretçinin tarayıcıdaki yazı boyu tercihine uyar. Metnin boyu gövdeye verilir. */
+  html {
+    @apply bg-zemin;
+  }
+
+  body {
+    @apply font-govde text-govde text-yazi;
+  }
+
+  /* Sayfanın ana içeriği alt alta, ölçekteki aralıkla dizilir: Tailwind'in sıfırlaması tarayıcının
+     paragraf ve başlık boşluklarını kaldırır. */
+  main {
+    @apply flex flex-col gap-4;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-baslik font-baslik-kalinligi;
+  }
+
+  h1 {
+    @apply text-baslik-1;
+  }
+
+  h2 {
+    @apply text-baslik-2;
+  }
+
+  h3 {
+    @apply text-baslik-3;
+  }
+
+  h4 {
+    @apply text-baslik-4;
+  }
+
+  /* Bağlantı yalnız renkle değil, alt çizgiyle de ayrılır (.claude/rules/erisilebilirlik.md). */
+  a {
+    @apply underline underline-offset-2;
+  }
+
+  /* Klavyeyle odaklanılan öğe her zaman görünür. */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-odak outline-solid;
+  }
+}

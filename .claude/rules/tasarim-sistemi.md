@@ -30,3 +30,12 @@ Tasarım değeri, renk, yazı boyutu, boşluk gibi tasarımı oluşturan ve tek 
 - Bütün ikonları tek setten al. "Düzenle", "sil", "sepete ekle" gibi bir kavramın ikonu her yerde aynıdır ve tek ikon sözlüğünden okunur.
 - Bir öğe değişirken animasyonu yalnız değişen özelliğe uygula.
 - Tasarım değerleri değişince tasarım sistemi belgesini aynı değişiklikte güncelle.
+
+## Araçlar (karar 0076)
+
+- Değerler `bilesenler/tasarim-degerleri/degerler.ts` dosyasındadır, belgesi aynı klasörün `README.md` dosyasıdır. Stil Tailwind CSS 4 sınıflarıyla, yalnız oradaki adlarla yazılır (`bg-birincil`, `p-4`, `tablet:`).
+- Tailwind'in kendi teması yüklenmez: hazır palet, hazır ölçü ve hazır kırılma noktası yoktur. Serbest değer (`w-[37px]`, `bg-(--x)`, `bg-zemin/[0.37]`, `[&>svg]:p-4`), sayıyla katman (`z-37`), 0 ve 2 dışında kenar kalınlığı (`border-7`), `dark:`, hazır palet rengi ve satır içi stilde ölçü denetimde hatadır.
+- Gereken değer yoksa önce `degerler.ts`'e eklenir. Yeni yazı-zemin eşleşmesi kontrast listesine de eklenir.
+- Sitenin değerlerini yalnız `cekirdek/temalar/birlesim.ts` verir. Kök düzen onları sayfaya CSS değişkeni olarak yazar.
+- Yeni CSS dosyası açılmaz. Stil sınıfla yazılır, temel stil `tailwind.css` içindedir.
+- Yazı tipleri sitenin kendi sunucusundan yüklenir (`@fontsource-variable` paketleri), dış sunucudan yüklenmez.

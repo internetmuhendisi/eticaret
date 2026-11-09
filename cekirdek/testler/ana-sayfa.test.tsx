@@ -9,6 +9,7 @@ import { siteKlasorunuOku } from "../ayar-semasi/site-klasoru.ts";
 import { MetinSaglayici } from "../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../metinler/metin.ts";
 import { AnaSayfa } from "../vitrin/ana-sayfa.tsx";
+import { stil } from "../vitrin/stil.ts";
 
 const ortak = globalThis as Record<symbol, unknown>;
 const anahtar = Symbol.for("cekirdek.calisanSite");
@@ -33,13 +34,15 @@ describe("vitrinin ana sayfası", () => {
   });
 
   it("ayar açıkken yazı başlığın hemen altında görünür", () => {
-    expect(ciz(true)).toBe(`<main><h1>${site.kimlik.gorunenAd}</h1><p>${yazi}</p></main>`);
+    expect(ciz(true)).toBe(
+      `<main class="${stil.icerik}"><h1>${site.kimlik.gorunenAd}</h1><p>${yazi}</p></main>`,
+    );
   });
 
   it("ayar kapalıyken yazı görünmez", () => {
     const sayfa = ciz(false);
     expect(sayfa).not.toContain(yazi);
-    expect(sayfa).toBe(`<main><h1>${site.kimlik.gorunenAd}</h1></main>`);
+    expect(sayfa).toBe(`<main class="${stil.icerik}"><h1>${site.kimlik.gorunenAd}</h1></main>`);
   });
 
   it("ayar verilmemiş sitede varsayılan kapalıdır", () => {

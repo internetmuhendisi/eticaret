@@ -13,6 +13,16 @@ type Beklenen = { kategori: string; mesajBasi?: string };
 // Her bozuk örnek ve onu yakalaması gereken kural.
 const beklenenler: Record<string, Beklenen> = {
   "ham-renk.ts": { kategori: "plugin", mesajBasi: "Ham renk" },
+  "serbest-tailwind.tsx": { kategori: "plugin", mesajBasi: "Serbest Tailwind" },
+  "serbest-katman.ts": { kategori: "plugin", mesajBasi: "Serbest Tailwind" },
+  "serbest-degisken.ts": { kategori: "plugin", mesajBasi: "Serbest Tailwind" },
+  "koyu-tema-yamasi.ts": { kategori: "plugin", mesajBasi: "Serbest Tailwind" },
+  "serbest-saydamlik.ts": { kategori: "plugin", mesajBasi: "Serbest Tailwind" },
+  "serbest-secici.tsx": { kategori: "plugin", mesajBasi: "Serbest Tailwind" },
+  "serbest-kenar.ts": { kategori: "plugin", mesajBasi: "Serbest Tailwind" },
+  "hazir-palet.tsx": { kategori: "plugin", mesajBasi: "Hazır palet" },
+  "satir-ici-olcu.tsx": { kategori: "plugin", mesajBasi: "Satır içi stilde" },
+  "satir-ici-birimli-olcu.tsx": { kategori: "plugin", mesajBasi: "Satır içi stilde" },
   "gomulu-metin.tsx": { kategori: "plugin", mesajBasi: "Ekran metni" },
   "elle-form.tsx": { kategori: "plugin", mesajBasi: "Elle <form>" },
   "gomulu-oge-metni.tsx": { kategori: "lint/style/noJsxLiterals" },

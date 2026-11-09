@@ -1,0 +1,6 @@
+/* Sahip panelinin stil girişi (karar 0076). Sahip paneli uygulaması yazılınca kök düzeni bunu içe aktarır.
+   Değerler ve Tailwind ayarı ortak kütüphanededir. */
+@import "../bilesenler/tasarim-degerleri/tailwind.css";
+
+@source ".";
+@source "../bilesenler";

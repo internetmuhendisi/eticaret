@@ -2,6 +2,7 @@
 // (app/page.tsx) okuyup verir, bu bileşen yalnız çizer.
 import { metin } from "../metinler/site-metni";
 import { HesapAlani } from "./hesap-alani";
+import { stil } from "./stil";
 
 export function AnaSayfa({
   magazaAdi,
@@ -13,7 +14,7 @@ export function AnaSayfa({
   return (
     <>
       <HesapAlani />
-      <main>
+      <main className={stil.icerik}>
         <h1>{magazaAdi}</h1>
         {yakindaYazisi ? <p>{metin("vitrin.anasayfa.yakindaAciliyoruz")}</p> : null}
       </main>
