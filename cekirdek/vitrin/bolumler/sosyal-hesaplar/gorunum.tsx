@@ -29,21 +29,25 @@ export function SosyalHesaplarGorunumu({
   // Değerler tarifin şemasından geçmiştir (kart 0106); türleri tarifteki alanlardır.
   const degerler = ham as { baslik?: unknown };
   if (baglam.sosyalHesaplar.length === 0) return null;
+  const yatay = gorunum === "yatay";
   const baslik = metinMi(degerler.baslik)
     ? degerler.baslik
     : metin("vitrin.bolum.sosyalHesaplar.baslik");
   return (
-    <section aria-label={baslik} className={s.kutu}>
+    <section
+      aria-label={baslik}
+      className={sinif(s.sutun, yatay && "col-span-2 masaustu:col-span-5")}
+    >
       <h2 className={s.baslik}>{baslik}</h2>
-      <ul className={sinif("flex gap-x-6", gorunum === "yatay" ? "flex-wrap" : "flex-col")}>
+      <ul className={sinif("flex", yatay ? "flex-wrap gap-x-6" : "flex-col")}>
         {baglam.sosyalHesaplar.map((hesap) => (
           <li key={hesap.adres}>
             <Baglanti
               href={hesap.adres}
-              className={sinif(s.baglanti, "gap-2 font-normal")}
+              className={sinif(s.baglanti, "gap-2")}
               {...yeniSekmeOzellikleri(true)}
             >
-              <Ikon ad="dis-baglanti" />
+              {yatay ? <Ikon ad="dis-baglanti" /> : null}
               {metin(siteAdlari[hesap.site])}
               <span className="sr-only">{metin("vitrin.bolum.sosyalHesaplar.yeniSekme")}</span>
             </Baglanti>

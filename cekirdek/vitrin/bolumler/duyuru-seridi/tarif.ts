@@ -12,11 +12,13 @@ export const duyuruSeridi = {
     zemin: {
       tur: "renk",
       ad: "vitrin.bolum.duyuruSeridi.zemin",
-      renkler: ["afis", "birincil", "alt-kisim"],
+      renkler: ["alt-kisim", "afis", "birincil"],
     },
   },
+  // İki yana: metin solda, mağazanın telefonu sağda (masaüstünde; Canlı Çarşı taslağı). Ortalı: yalnız metin,
+  // kalın.
   gorunumler: [
+    { kod: "iki-yana", ad: "vitrin.bolum.gorunum.ikiYana" },
     { kod: "ortali", ad: "vitrin.bolum.gorunum.ortali" },
-    { kod: "ince", ad: "vitrin.bolum.gorunum.ince" },
   ],
 } as const satisfies BolumTarifi;

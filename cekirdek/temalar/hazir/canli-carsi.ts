@@ -24,11 +24,11 @@ export const canliCarsi: TemaTanimiGirdisi = {
     ],
     "ana-sayfa": [],
     "alt-kisim": [
-      { tur: "baglanti-sutunlari", gorunum: "sutunlu", degerler: { menu: "alt-bilgi" } },
       { tur: "iletisim-bilgileri", gorunum: "liste" },
+      { tur: "baglanti-sutunlari", gorunum: "sutunlu", degerler: { menu: "alt-bilgi" } },
       { tur: "sosyal-hesaplar", gorunum: "liste" },
+      { tur: "telif-satiri", gorunum: "duz" },
       { tur: "odeme-isaretleri", gorunum: "yazili" },
-      { tur: "telif-satiri", gorunum: "ortali" },
     ],
   },
 };

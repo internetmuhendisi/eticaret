@@ -1,5 +1,5 @@
 // Telif satırı (kart 0108): "© yıl mağaza adı", isteğe bağlı ek metin; altyapı sahibinin ayarı açıksa altyapı
-// adı. Mağaza adı ve yıl bölümde yazılmaz, bağlamdan gelir.
+// adı. Mağaza adı ve yıl bölümde yazılmaz, bağlamdan gelir. Alt kısmın en alt satırındadır.
 import type { BolumTarifi } from "../../bolum-kutuphanesi/tarif.ts";
 
 export const telifSatiri = {
@@ -9,8 +9,7 @@ export const telifSatiri = {
   alanlar: {
     ekMetin: { tur: "metin", ad: "vitrin.bolum.telifSatiri.ekMetin", enCok: 120 },
   },
-  gorunumler: [
-    { kod: "ortali", ad: "vitrin.bolum.gorunum.ortali" },
-    { kod: "iki-yana", ad: "vitrin.bolum.gorunum.ikiYana" },
-  ],
+  // Alt satırın solunda durur; yerini alt kısım verir.
+  gorunumler: [{ kod: "duz", ad: "vitrin.bolum.gorunum.duz" }],
+  altKisimdaYeri: "alt-satir",
 } as const satisfies BolumTarifi;

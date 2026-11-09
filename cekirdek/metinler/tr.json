@@ -383,7 +383,6 @@
     "bolum": {
       "gorunum": {
         "ortali": "Ortalı",
-        "ince": "İnce",
         "logoSolda": "Logo solda",
         "logoOrtada": "Logo ortada",
         "solaYasli": "Sola yaslı",
@@ -393,7 +392,8 @@
         "yatay": "Yatay",
         "yazili": "Yazılı",
         "yalnizIsaret": "Yalnız işaret",
-        "ikiYana": "İki yana"
+        "ikiYana": "İki yana",
+        "duz": "Düz"
       },
       "alan": {
         "baslik": "Başlık"
@@ -434,7 +434,6 @@
       },
       "iletisimBilgileri": {
         "ad": "İletişim bilgileri",
-        "baslik": "İletişim",
         "telefon": "Telefon",
         "eposta": "E-posta",
         "adres": "Adres"

@@ -74,6 +74,9 @@ export type BolumTarifi = {
   ];
   // Bağlı olduğu işlev (cekirdek/kayitlar/islevler.ts): işlev yokken bölüm vitrinde çizilmez.
   islev?: Islev;
+  // Alt kısımdaki yeri: sütunlar ızgarası (varsayılan) ya da çizgiyle ayrılan en alt satır (telif, ödeme
+  // işaretleri; Canlı Çarşı taslağı).
+  altKisimdaYeri?: "sutun" | "alt-satir";
 };
 
 // Alan değerlerinin hata kodları. Şemanın kendi hataları (tür, uzunluk) zod kodlarıyla döner.

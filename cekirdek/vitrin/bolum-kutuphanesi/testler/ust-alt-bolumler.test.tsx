@@ -89,7 +89,7 @@ describe("kısımlar", () => {
     expect(ust([])).toBe("");
     expect(alt([])).toBe("");
     expect(ust([bolum("ust-satir", "logo-solda")])).toMatch(/^<header/);
-    expect(alt([bolum("telif-satiri", "ortali")])).toMatch(/^<footer/);
+    expect(alt([bolum("telif-satiri", "duz")])).toMatch(/^<footer/);
   });
 });
 
@@ -128,14 +128,31 @@ describe("logo ve simgeler satırı", () => {
     for (const anahtar of ["arama", "sepet"] as const) {
       expect(baglanti(anahtar)?.className).not.toContain("hidden");
     }
+    // Masaüstünde hesap ve sepet yazısıyla, sepet kenarlı bir hap içinde (Canlı Çarşı taslağı).
+    for (const anahtar of ["hesap", "sepet"] as const) {
+      expect(baglanti(anahtar)?.querySelector("span")?.className).toBe(
+        "sr-only masaustu:not-sr-only",
+      );
+    }
+    expect(baglanti("sepet")?.className).toContain(
+      "masaustu:border masaustu:border-kenar masaustu:bg-yuzey",
+    );
+    expect(baglanti("hesap")?.className).not.toContain("masaustu:border");
     const logo = kap.querySelector("img");
     expect(logo?.getAttribute("alt")).toBe("Deneme Dükkânı");
     expect(logo?.getAttribute("src")).toBe("/kapi/herkese-acik/logo?s=ab");
   });
 
-  it("menü düğmesi telefonda ve tablette görünür, masaüstünde gizlidir; telefon numarası tablette görünür", () => {
+  it("menü düğmesi telefonda ve tablette görünür, masaüstünde gizlidir; logo ortadayken telefon numarası tablette görünür, logo soldayken satırda yoktur", () => {
+    const solda = belge(
+      ust([bolum("ust-satir", "logo-solda")], {
+        ...bosBaglam,
+        iletisim: { telefon: { metin: "+90 000", adres: "tel:+90000" } },
+      }),
+    );
+    expect(solda.querySelector('a[href="tel:+90000"]')).toBeNull();
     const kap = belge(
-      ust([bolum("ust-satir", "logo-solda", { menuler: [{ menu: "ana-menu" }] })], {
+      ust([bolum("ust-satir", "logo-ortada", { menuler: [{ menu: "ana-menu" }] })], {
         ...bosBaglam,
         iletisim: { telefon: { metin: "+90 000", adres: "tel:+90000" } },
         menuler: { "ana-menu": [dal("a", "/a")] },
@@ -242,7 +259,7 @@ describe("alt kısım", () => {
     );
   });
 
-  it("iletişim bilgileri: boş olan gösterilmez, hiçbiri yoksa bölüm çizilmez; başlık verilmezse ortak başlıktır", () => {
+  it("iletişim bilgileri: boş olan gösterilmez, hiçbiri yoksa bölüm çizilmez; başlık verilmezse mağazanın adıdır, liste görünümü ikonsuzdur", () => {
     expect(alt([bolum("iletisim-bilgileri", "liste")])).not.toContain("<section");
     const kap = belge(
       alt([bolum("iletisim-bilgileri", "yatay", { baslik: "Bize ulaşın" })], {
@@ -266,9 +283,9 @@ describe("alt kısım", () => {
         iletisim: { telefon: { metin: "+90", adres: "tel:+90" } },
       }),
     );
-    expect(ortak.querySelector("h2")?.textContent).toBe(
-      metin("vitrin.bolum.iletisimBilgileri.baslik"),
-    );
+    expect(ortak.querySelector("h2")?.textContent).toBe("Deneme Dükkânı");
+    expect(ortak.querySelector("svg")).toBeNull();
+    expect(kap.querySelector("svg")).not.toBeNull();
   });
 
   it("sosyal hesaplar: hesap yoksa çizilmez; varsa sitenin adıyla, yeni sekmede ve açtığı sayfaya erişim vermeden", () => {
@@ -295,12 +312,12 @@ describe("alt kısım", () => {
         odemeIsaretleri: [...baglamli.odemeIsaretleri],
       }),
     );
-    expect(
-      [...yazili.querySelectorAll("li span")].map((s) => [s.textContent, s.className]),
-    ).toEqual([
-      [metin("vitrin.bolum.odemeIsaretleri.isaret.havale"), ""],
-      [metin("vitrin.bolum.odemeIsaretleri.isaret.kapida-odeme"), ""],
+    // Yazılı görünümde her yöntem kenarlı küçük bir yazıdır, ikonsuz (Canlı Çarşı taslağı).
+    expect([...yazili.querySelectorAll("li")].map((li) => li.textContent)).toEqual([
+      metin("vitrin.bolum.odemeIsaretleri.isaret.havale"),
+      metin("vitrin.bolum.odemeIsaretleri.isaret.kapida-odeme"),
     ]);
+    expect(yazili.querySelector("svg")).toBeNull();
     const isaret = belge(
       alt([bolum("odeme-isaretleri", "yalniz-isaret")], {
         ...baglamli,
@@ -313,19 +330,69 @@ describe("alt kısım", () => {
   });
 
   it("telif satırı: yıl ve mağaza adı bağlamdan, ek metin değerden; altyapı adı yalnız bağlamda varsa", () => {
-    const kap = belge(alt([bolum("telif-satiri", "ortali", { ekMetin: "Tüm hakları saklıdır." })]));
+    const kap = belge(alt([bolum("telif-satiri", "duz", { ekMetin: "Tüm hakları saklıdır." })]));
     expect(kap.textContent).toBe(
       `${metin("vitrin.bolum.telifSatiri.isaret")} 2026 Deneme Dükkânı Tüm hakları saklıdır.`,
     );
     const altyapili = belge(
-      alt([bolum("telif-satiri", "iki-yana")], { ...bosBaglam, altyapiAdi: "altyapi" }),
+      alt([bolum("telif-satiri", "duz")], { ...bosBaglam, altyapiAdi: "altyapi" }),
     );
     expect(altyapili.textContent).toContain(`${metin("vitrin.bolum.telifSatiri.altyapi")} altyapi`);
   });
 });
 
+describe("alt kısmın yerleşimi", () => {
+  it("telif ve ödeme işaretleri çizgiyle ayrılan alt satırda, öteki bölümler ızgarada; her grup sırasını korur", () => {
+    const kap = belge(
+      alt(
+        [
+          bolum("telif-satiri", "duz"),
+          bolum("iletisim-bilgileri", "liste"),
+          bolum("odeme-isaretleri", "yazili"),
+          bolum("sosyal-hesaplar", "liste"),
+        ],
+        {
+          ...bosBaglam,
+          iletisim: { telefon: { metin: "+90", adres: "tel:+90" } },
+          sosyalHesaplar: [{ site: "x", adres: "https://x.com/ornek" }],
+          odemeIsaretleri: ["havale"],
+        },
+      ),
+    );
+    const [izgara, altSatir] = [...(kap.querySelector("footer > div")?.children ?? [])];
+    expect(izgara?.className).toContain("grid-cols-2");
+    expect(izgara?.className).toContain("masaustu:grid-cols-5");
+    expect([...(izgara?.children ?? [])].map((oge) => oge.getAttribute("aria-label"))).toEqual([
+      metin("vitrin.bolum.iletisimBilgileri.ad"),
+      metin("vitrin.bolum.sosyalHesaplar.baslik"),
+    ]);
+    expect(altSatir?.className).toContain("border-t");
+    expect([...(altSatir?.children ?? [])].map((oge) => oge.tagName)).toEqual(["P", "SECTION"]);
+  });
+
+  it("bağlantı sütunları masaüstünde sütun sayısı kadar yer alır, daha dar ekranda sütunları ızgaraya tek tek yerleşir", () => {
+    const baglam: VitrinBaglami = {
+      ...bosBaglam,
+      menuler: {
+        iki: [dal("a", undefined, [dal("a1", "/a1")]), dal("b", undefined, [dal("b1", "/b1")])],
+        uc: [
+          dal("a", undefined, [dal("a1", "/a1")]),
+          dal("b", "/b", [dal("b1", "/b1")]),
+          dal("c", "/c"),
+        ],
+      },
+    };
+    const nav = (menu: string) =>
+      belge(alt([bolum("baglanti-sutunlari", "sutunlu", { menu })], baglam)).querySelector("nav");
+    expect(nav("iki")?.className).toContain("masaustu:col-span-2");
+    expect(nav("uc")?.className).toContain("masaustu:col-span-3");
+    expect(nav("uc")?.className).toContain("contents");
+    expect(nav("uc")?.className).toContain("masaustu:grid-cols-subgrid");
+  });
+});
+
 describe("duyuru şeridi", () => {
-  it("metin, isteğe bağlı bağlantı ve okunur renk çifti; bilinmeyen renk afiş rengine düşer", () => {
+  it("metin, isteğe bağlı bağlantı ve okunur renk çifti; bilinmeyen renk alt kısım rengine düşer", () => {
     const kap = belge(
       ust([
         bolum("duyuru-seridi", "ortali", {
@@ -340,10 +407,27 @@ describe("duyuru şeridi", () => {
     expect(a?.getAttribute("target")).toBe("_blank");
     expect(kap.querySelector("div")?.className).toContain("bg-birincil text-birincil-ustu");
     const bilinmeyen = belge(
-      ust([bolum("duyuru-seridi", "ince", { metin: "Duyuru", zemin: "yok" })]),
+      ust([bolum("duyuru-seridi", "ortali", { metin: "Duyuru", zemin: "yok" })]),
     );
-    expect(bilinmeyen.querySelector("div")?.className).toContain("bg-afis text-afis-ustu");
+    expect(bilinmeyen.querySelector("div")?.className).toContain(
+      "bg-alt-kisim text-alt-kisim-ustu",
+    );
     expect(bilinmeyen.querySelector("p")?.textContent).toBe("Duyuru");
+  });
+
+  it("iki yana görünümünde mağazanın telefonu sağda ve yalnız masaüstünde; ortalı görünümde telefon yok", () => {
+    const baglam = {
+      ...bosBaglam,
+      iletisim: { telefon: { metin: "+90 000", adres: "tel:+90000" } },
+    };
+    const ikiYana = belge(ust([bolum("duyuru-seridi", "iki-yana", { metin: "Duyuru" })], baglam));
+    const telefon = ikiYana.querySelector('a[href="tel:+90000"]');
+    expect(telefon?.textContent).toBe("+90 000");
+    expect(telefon?.className).toContain("hidden");
+    expect(telefon?.className).toContain("masaustu:inline-flex");
+    expect(ikiYana.querySelector("div > div")?.className).toContain("justify-between");
+    const ortali = belge(ust([bolum("duyuru-seridi", "ortali", { metin: "Duyuru" })], baglam));
+    expect(ortali.querySelector('a[href="tel:+90000"]')).toBeNull();
   });
 });
 

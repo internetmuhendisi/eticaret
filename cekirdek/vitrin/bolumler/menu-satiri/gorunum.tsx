@@ -48,11 +48,25 @@ function Altlar({ dal }: { dal: BaglamMenuDali }) {
   );
 }
 
-function AcilirDal({ etiket, children }: { etiket: string; children: ReactNode }) {
+// Açılır dalın düğmesi; kategoriler düğmesi ana renkte, menü ikonlu ve az yuvarlak köşelidir (Canlı Çarşı
+// taslağı), öteki dallar menü bağlantısı gibi görünür.
+function AcilirDal({
+  etiket,
+  children,
+  kategoriler = false,
+}: {
+  etiket: string;
+  children: ReactNode;
+  kategoriler?: boolean;
+}) {
   return (
     <AcilirMenu>
       <AcilirMenuTetikleyici asChild>
-        <Dugme tur="sade" className="px-3">
+        <Dugme
+          tur={kategoriler ? "birincil" : "sade"}
+          className={kategoriler ? "my-1.5 mr-3 rounded-kucuk px-4 font-kalin" : "px-3 font-orta"}
+        >
+          {kategoriler ? <Ikon ad="menu" className="size-5" /> : null}
           {etiket}
           <Ikon ad="asagi" />
         </Dugme>
@@ -77,13 +91,13 @@ export function MenuSatiriGorunumu({ gorunum, degerler: ham, baglam }: BolumGoru
     >
       <ul
         className={sinif(
-          "mx-auto flex max-w-icerik flex-wrap items-center gap-1 px-4",
+          "mx-auto flex max-w-icerik flex-wrap items-center px-4 tablet:px-6",
           gorunum === "ortali" && "justify-center",
         )}
       >
         {kategoriler === undefined || kategoriler.length === 0 ? null : (
           <li>
-            <AcilirDal etiket={metin("vitrin.bolum.menuSatiri.kategoriler")}>
+            <AcilirDal etiket={metin("vitrin.bolum.menuSatiri.kategoriler")} kategoriler>
               {kategoriler.map((dal) =>
                 dal.altlar.length === 0 ? (
                   <MenuOgesi key={dal.kimlik} dal={dal} />
@@ -102,7 +116,7 @@ export function MenuSatiriGorunumu({ gorunum, degerler: ham, baglam }: BolumGoru
         {(anaMenu ?? []).map((dal) => (
           <li key={dal.kimlik}>
             {dal.altlar.length === 0 ? (
-              <MenuBaglantisi dal={dal} className="px-3 no-underline hover:underline" />
+              <MenuBaglantisi dal={dal} className="px-3 font-orta no-underline hover:underline" />
             ) : (
               <AcilirDal etiket={dal.metin}>
                 <Altlar dal={dal} />

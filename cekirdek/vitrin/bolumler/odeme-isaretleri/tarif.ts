@@ -12,4 +12,5 @@ export const odemeIsaretleri = {
     { kod: "yalniz-isaret", ad: "vitrin.bolum.gorunum.yalnizIsaret" },
   ],
   islev: "odeme",
+  altKisimdaYeri: "alt-satir",
 } as const satisfies BolumTarifi;

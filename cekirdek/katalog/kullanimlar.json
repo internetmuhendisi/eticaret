@@ -23,6 +23,7 @@
     "bilesenler/parcalar/secim-kutusu.tsx",
     "bilesenler/parcalar/uyari.tsx",
     "bilesenler/parcalar/yukleniyor.tsx",
+    "cekirdek/vitrin/bolumler/duyuru-seridi/gorunum.tsx",
     "cekirdek/vitrin/bolumler/iletisim-bilgileri/gorunum.tsx",
     "cekirdek/vitrin/bolumler/menu-satiri/gorunum.tsx",
     "cekirdek/vitrin/bolumler/odeme-isaretleri/gorunum.tsx",
@@ -77,7 +78,7 @@
     "cekirdek/yonetim-paneli/bolum-formu.tsx"
   ],
   "bilesenler/parcalar/pencere.tsx": ["bilesenler/parcalar/yan-pencere.tsx"],
-  "bilesenler/parcalar/rozet.tsx": ["cekirdek/vitrin/bolumler/ust-satir/gorunum.tsx"],
+  "bilesenler/parcalar/rozet.tsx": [],
   "bilesenler/parcalar/secim-kutusu.tsx": ["cekirdek/yonetim-paneli/bolum-formu.tsx"],
   "bilesenler/parcalar/sekmeler.tsx": [],
   "bilesenler/parcalar/serit.tsx": [],

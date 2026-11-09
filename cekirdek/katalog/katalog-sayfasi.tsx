@@ -3,6 +3,7 @@
 // genişlik seçilince sayfa o genişlikte bir çerçevede, aynı seçimle açılır.
 import type { ReactNode } from "react";
 import { Baglanti } from "../../bilesenler/parcalar/baglanti";
+import { sinif } from "../../bilesenler/parcalar/sinif";
 import { metin } from "../metinler/site-metni";
 import { bolumGorunumleri } from "../vitrin/bolum-kutuphanesi/gorunumler";
 import { DuzenAlaniCizimi } from "../vitrin/duzen-alani";
@@ -110,17 +111,25 @@ function KatalogDuzeni({
   secim,
   baslik,
   ust,
+  genis = false,
   children,
 }: {
   yol: string;
   secim: KatalogSecimi;
   baslik: string;
   ust?: ReactNode;
+  // Vitrinin üst ve alt kısmı gibi sayfanın tamamına yayılan örnekler için içerik genişliği (kart 0108).
+  genis?: boolean;
   children: ReactNode;
 }) {
   const onizleme = secim.genislik !== "tam" && !secim.cerceve;
   return (
-    <main className="mx-auto flex w-full max-w-metin flex-col gap-6 p-4">
+    <main
+      className={sinif(
+        "mx-auto flex w-full flex-col gap-6 p-4",
+        genis ? "max-w-icerik" : "max-w-metin",
+      )}
+    >
       <RenkSecimi renk={secim.renk} />
       {secim.cerceve ? null : (
         <>
@@ -242,6 +251,7 @@ export function KatalogBolumKutuphanesiSayfasi({ secim }: { secim: KatalogSecimi
     <KatalogDuzeni
       yol={bolumKutuphanesiAdresi}
       secim={secim}
+      genis
       baslik={metin("gelistirme.bolum.baslik")}
       ust={
         <>

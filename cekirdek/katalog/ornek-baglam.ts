@@ -94,10 +94,9 @@ const ornekBolum = (tur: string, gorunum: string, degerler: Record<string, unkno
 // Üst ve alt kısmın örnek bölümleri: önce her türün ilk görünümü (vitrindeki gibi bir arada), sonra öteki
 // görünümleri.
 export const ornekUstKisim = (): BolumOrnegi[] => [
-  ornekBolum("duyuru-seridi", "ortali", {
+  ornekBolum("duyuru-seridi", "iki-yana", {
     metin: metin("gelistirme.bolum.ornek.duyuru"),
-    baglanti: { adres: vitrinAdresleri.anasayfa, yeniSekme: false },
-    zemin: "afis",
+    zemin: "alt-kisim",
   }),
   ornekBolum("ust-satir", "logo-solda", {
     menuler: [{ menu: "ana-menu" }, { menu: "kategori-menusu" }],
@@ -108,12 +107,14 @@ export const ornekUstKisim = (): BolumOrnegi[] => [
   }),
 ];
 
+// Canlı Çarşı taslağının sırası: iletişim sütunu önce, sonra bağlantı sütunları; telif ve ödeme işaretleri alt
+// satırda.
 export const ornekAltKisim = (): BolumOrnegi[] => [
-  ornekBolum("baglanti-sutunlari", "sutunlu", { menu: "alt-bilgi" }),
   ornekBolum("iletisim-bilgileri", "liste"),
+  ornekBolum("baglanti-sutunlari", "sutunlu", { menu: "alt-bilgi" }),
   ornekBolum("sosyal-hesaplar", "liste"),
+  ornekBolum("telif-satiri", "duz", { ekMetin: metin("gelistirme.bolum.ornek.telifEk") }),
   ornekBolum("odeme-isaretleri", "yazili"),
-  ornekBolum("telif-satiri", "ortali", { ekMetin: metin("gelistirme.bolum.ornek.telifEk") }),
 ];
 
 export const ornekOtekiGorunumler = (): {
@@ -123,7 +124,7 @@ export const ornekOtekiGorunumler = (): {
 } => ({
   logolu: [ornekBolum("ust-satir", "logo-solda", { menuler: [{ menu: "ana-menu" }] })],
   ust: [
-    ornekBolum("duyuru-seridi", "ince", {
+    ornekBolum("duyuru-seridi", "ortali", {
       metin: metin("gelistirme.bolum.ornek.duyuru"),
       baglanti: { adres: vitrinAdresleri.anasayfa, yeniSekme: false },
       zemin: "birincil",
@@ -136,6 +137,6 @@ export const ornekOtekiGorunumler = (): {
     ornekBolum("iletisim-bilgileri", "yatay"),
     ornekBolum("sosyal-hesaplar", "yatay"),
     ornekBolum("odeme-isaretleri", "yalniz-isaret"),
-    ornekBolum("telif-satiri", "iki-yana"),
+    ornekBolum("telif-satiri", "duz"),
   ],
 });

@@ -1,10 +1,11 @@
-// Logo ve simgeler satırının görünüşü (kart 0108). Logo yoksa mağaza adı yazılır. Arama, favori ve sepet yalnız
-// işlevi yazılınca görünür; telefonda menü düğmesi seçilen menüleri soldan açılan yan pencerede gösterir, arama ve
-// sepet satırda kalır. Masaüstünde menüler menü satırındadır.
+// Logo ve simgeler satırının görünüşü (kart 0108; Canlı Çarşı taslağı). Logo yoksa mağaza adı yazılır. Arama,
+// favori ve sepet yalnız işlevi yazılınca görünür; telefonda menü düğmesi seçilen menüleri soldan açılan yan
+// pencerede gösterir, arama ve sepet satırda kalır. Masaüstünde menüler menü satırındadır; hesap yazısıyla, sepet
+// yazısı ve sayısıyla kenarlı bir hap içinde görünür. Telefon numarası yalnız logo ortada görünümündedir; logo
+// solda görünümünde taslaktaki gibi duyuru şeridindedir.
 import { Ikon } from "../../../../bilesenler/ikonlar/ikon";
 import type { IkonAdi } from "../../../../bilesenler/ikonlar/sozluk";
 import { Baglanti } from "../../../../bilesenler/parcalar/baglanti";
-import { Rozet } from "../../../../bilesenler/parcalar/rozet";
 import { sinif } from "../../../../bilesenler/parcalar/sinif";
 import { metin } from "../../../metinler/site-metni";
 import { vitrinAdresleri } from "../../adresler";
@@ -15,6 +16,12 @@ import { MenuDugmesi } from "./menu-dugmesi";
 // böylece logoya yer kalır.
 type Simge = { adres: string; ikon: IkonAdi; etiket: string; sayi?: number | undefined };
 
+// Sepetteki ve favorilerdeki ürün sayısı: yuvarlak, ana renkte. Simge köşesinde durur; yazılı haptaki sayı satırın
+// içindedir. Sıfır yalnız haptaki sayıda görünür.
+const sayiSiniflari =
+  "inline-flex h-5 min-w-5 items-center justify-center rounded-dugme bg-birincil px-1.5 text-kucuk font-kalin text-birincil-ustu";
+
+// Yalnız ikonlu bağlantı (arama, favori); telefonda gizlenebilir.
 function SimgeBaglantisi({
   adres,
   ikon,
@@ -26,12 +33,54 @@ function SimgeBaglantisi({
     <Baglanti
       href={adres}
       gorunum="sade"
-      className={sinif("relative size-11 px-0", telefondaGizli && "hidden tablet:inline-flex")}
+      className={sinif(
+        "relative size-11 px-0 no-underline",
+        telefondaGizli && "hidden tablet:inline-flex",
+      )}
     >
       <Ikon ad={ikon} className="size-5" />
       <span className="sr-only">{etiket}</span>
       {sayi === undefined || sayi === 0 ? null : (
-        <Rozet className="absolute top-0 right-0">{sayi}</Rozet>
+        <span className={sinif(sayiSiniflari, "absolute top-0 right-0")}>{sayi}</span>
+      )}
+    </Baglanti>
+  );
+}
+
+// Masaüstünde ikon ve yazı (hesap), ya da kenarlı hap içinde ikon, yazı ve sayı (sepet); daha dar ekranda yalnız
+// ikon.
+function YaziliBaglanti({
+  adres,
+  ikon,
+  etiket,
+  sayi,
+  hap = false,
+  telefondaGizli = false,
+}: Simge & { hap?: boolean; telefondaGizli?: boolean }) {
+  return (
+    <Baglanti
+      href={adres}
+      gorunum="sade"
+      className={sinif(
+        "relative min-w-11 gap-2 px-0 no-underline masaustu:px-3",
+        hap
+          ? "masaustu:border masaustu:border-kenar masaustu:bg-yuzey masaustu:px-4 masaustu:font-kalin"
+          : "font-normal",
+        telefondaGizli && "hidden tablet:inline-flex",
+      )}
+    >
+      <Ikon ad={ikon} className="size-5" />
+      <span className="sr-only masaustu:not-sr-only">{etiket}</span>
+      {sayi === undefined ? null : (
+        <span
+          className={sinif(
+            sayiSiniflari,
+            "absolute top-0 right-0 masaustu:static",
+            sayi === 0 && "hidden masaustu:inline-flex",
+          )}
+        >
+          {sayi}
+        </span>
       )}
     </Baglanti>
   );
@@ -88,7 +137,7 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
       className="min-w-0 shrink px-0 no-underline"
     >
       {baglam.logoAdresi === undefined ? (
-        <span className="min-w-0 truncate text-baslik-4 font-baslik-kalinligi">
+        <span className="min-w-0 truncate font-baslik text-buyuk font-baslik-kalinligi masaustu:text-baslik-3">
           {baglam.magazaAdi}
         </span>
       ) : (
@@ -115,7 +164,7 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
     );
 
   const simgeler = (
-    <div className="flex shrink-0 items-center justify-end">
+    <div className="flex shrink-0 items-center justify-end gap-1">
       {islevler.arama ? (
         <SimgeBaglantisi
           adres={vitrinAdresleri.arama}
@@ -124,13 +173,14 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
         />
       ) : null}
       {favori === undefined ? null : <SimgeBaglantisi {...favori} telefondaGizli />}
-      <SimgeBaglantisi {...hesap} telefondaGizli />
+      <YaziliBaglanti {...hesap} telefondaGizli />
       {islevler.sepet ? (
-        <SimgeBaglantisi
+        <YaziliBaglanti
           adres={vitrinAdresleri.sepet}
           ikon="sepet"
           etiket={metin("vitrin.bolum.ustSatir.sepet")}
           sayi={sayilar.sepet}
+          hap
         />
       ) : null}
     </div>
@@ -140,7 +190,7 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
     <div className="border-b border-kenar bg-zemin">
       {ortada ? (
         // Logo ortada: iki yan grup eşit büyür, logo aralarında kalır; telefonda logo kısalır.
-        <div className="mx-auto flex max-w-icerik items-center gap-2 px-4 py-2">
+        <div className="mx-auto flex max-w-icerik items-center gap-2 px-4 py-2 tablet:px-6 masaustu:gap-6 masaustu:py-4">
           <div className="flex flex-1 items-center gap-2">
             {menuDugmesi}
             {telefon}
@@ -149,10 +199,10 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
           <div className="flex flex-1 justify-end">{simgeler}</div>
         </div>
       ) : (
-        <div className="mx-auto flex max-w-icerik items-center gap-2 px-4 py-2">
+        <div className="mx-auto flex max-w-icerik items-center gap-2 px-4 py-2 tablet:px-6 masaustu:gap-6 masaustu:py-4">
           {menuDugmesi}
           {logo}
-          <div className="flex flex-1 justify-end">{telefon}</div>
+          <div className="flex-1" />
           {simgeler}
         </div>
       )}

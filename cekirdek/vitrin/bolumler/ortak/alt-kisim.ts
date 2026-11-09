@@ -1,8 +1,11 @@
-// Alt kısım bölümlerinin ortak sınıfları (kart 0108). Alt kısmın zemini ve yazısı çerçevededir
-// (cekirdek/vitrin/ust-alt-kisim.tsx); bağlantılar o yazının rengini alır, ikincil yazı soluk rengidir.
+// Alt kısım bölümlerinin ortak sınıfları (kart 0108; Canlı Çarşı taslağı). Alt kısmın zemini, yazısı ve
+// yerleşimi çerçevededir (cekirdek/vitrin/ust-alt-kisim.tsx): her sütun bölümü ızgarada bir hücredir. Başlık açık
+// yazı rengindedir, bilgi ve bağlantılar soluk rengidir. Bağlantılar listede durur, alt çizgileri üzerine gelince
+// görünür (menü satırındaki gibi); dokunma alanı 44 px kalır.
 export const altKisimSiniflari = {
-  kutu: "mx-auto flex w-full max-w-icerik flex-col gap-3 px-4 py-6",
-  baslik: "text-govde font-kalin",
-  baglanti: "min-h-11 justify-start text-left text-alt-kisim-ustu",
+  sutun: "flex min-w-0 flex-col gap-1",
+  baslik: "mb-1 font-govde text-govde font-en-kalin text-alt-kisim-ustu",
+  baglanti:
+    "min-h-11 justify-start text-left font-normal text-alt-kisim-soluk no-underline hover:underline",
   soluk: "text-alt-kisim-soluk",
 } as const;
