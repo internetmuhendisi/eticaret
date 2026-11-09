@@ -57,6 +57,8 @@ export type FiyatAraligi = {
   enYuksek: GosterilecekFiyat;
   // İki uç aynı tutarda: tek fiyat gösterilir.
   tek: boolean;
+  // Aralığın sitenin para biçimiyle yazılışı, simge bir kez (kart 0109): "299,90 – 329,90 ¤".
+  yaziliAralik: string;
   // İndirim rozeti (kart 0109, karar 0085): adayların en büyük indirim oranı. Adayların oranları
   // farklıysa (biri indirimsiz de olabilir) "varan" indirimdir. Hiçbir adayın oranı yoksa alan yoktur.
   indirim?: { oran: number; varan: boolean };
@@ -221,6 +223,9 @@ export const fiyatGosterimServisi = (site: Site) => {
 
   // Ürünlerin fiyat aralığı. Fiyatı olan silinmemiş birimi olmayan ürün haritada yoktur. Eşit
   // tutarlarda birimlerin sırasında önce gelen seçilir.
+  const aralikBicimi = siteninBicimleyicisi(site.ayarlar);
+  const aralikAyirici = metinOkuyucu(site.ayarlar.dil)("vitrin.fiyat.aralikAyirici");
+
   const fiyatAraliklari = async (
     vt: Veritabani,
     urunKimlikleri: string[],
@@ -251,6 +256,7 @@ export const fiyatGosterimServisi = (site: Site) => {
         enDusuk,
         enYuksek,
         ...(indirim === undefined ? {} : { indirim }),
+        yaziliAralik: aralikBicimi.paraAraligi(enDusuk.tutar, enYuksek.tutar, aralikAyirici),
         // Bütün adaylar aynı tutar ve eski fiyattaysa: eşit tutarda iki uç aynı birleşimden gelir,
         // ötekinin farklı eski fiyatı yalnız bütün adaylara bakılınca görülür.
         tek: adaylar.every(

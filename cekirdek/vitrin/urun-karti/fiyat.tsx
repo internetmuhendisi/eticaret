@@ -4,13 +4,12 @@
 //
 // - Tek fiyat: indirimli fiyat (eski fiyat gösteriliyorsa indirim renginde) ve üstü çizili eski fiyat.
 //   Ekran okuyucu üstü çizili yazıyı ayırt etmez; iki tutarın adı ekran okuyucuda okunur.
-// - Aralık (varyantlı ürün, kullanıcı kararı): "en düşük – en yüksek". Aralıkta eski fiyat gösterilmez;
-//   indirimi kartın rozeti söyler.
+// - Aralık (varyantlı ürün, kullanıcı kararı): "en düşük – en yüksek", para simgesi bir kez (Canlı Çarşı
+//   taslağı). Aralıkta eski fiyat gösterilmez; indirimi kartın rozeti söyler.
 // - Vergi metni (mağaza ayarı ya da vergi adından) fiyatın altında, soluk ve küçük.
 // Büyük tutar kartı taşırmaz: tutar gerekirse alt satıra geçer, o da sığmazsa kırılır.
 import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { metin } from "../../metinler/site-metni";
-import { doldur } from "../../moduller/eposta/sablon";
 import type { FiyatAraligi } from "../../moduller/fiyat/gosterim";
 
 export type FiyatBoyutu = "normal" | "buyuk";
@@ -62,10 +61,7 @@ export function FiyatGosterimi({
         </>
       ) : (
         <strong className={sinif("min-w-0 font-en-kalin wrap-anywhere", tutarBoyutu[boyut])}>
-          {doldur(metin("vitrin.fiyat.aralik"), {
-            enDusuk: enDusuk.yazili.tutar,
-            enYuksek: enYuksek.yazili.tutar,
-          })}
+          {fiyat.yaziliAralik}
         </strong>
       )}
       {enDusuk.ekMetin === undefined ? null : (

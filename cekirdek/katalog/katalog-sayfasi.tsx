@@ -339,12 +339,12 @@ export function KatalogBolumKutuphanesiSayfasi({ secim }: { secim: KatalogSecimi
 }
 
 // Ürün kartının sayfası (kart 0109): her görünüm her durumla, işlevler açıkken; bugünkü vitrin gibi
-// işlevler kapalıyken de dikey görünüm. Izgaralar vitrindeki yoğunluktadır (karar 0075: masaüstünde bir
-// sırada 5 ürün, telefonda 2).
+// işlevler kapalıyken de dikey görünüm. Izgaralar taslaktaki yoğunluk ve aralıktadır (karar 0075:
+// masaüstünde bir sırada 5 ürün, telefonda 2; kartlar arası 16 px, kompakt kartlar arası 12 px).
 export const urunKartiAdresi = `${katalogAdresi}/urun-karti`;
 
 const kartIzgarasi: Record<(typeof urunKartiGorunumleri)[number], string> = {
-  dikey: "grid grid-cols-2 gap-3 tablet:grid-cols-3 masaustu:grid-cols-5 masaustu:gap-4",
+  dikey: "grid grid-cols-2 gap-4 tablet:grid-cols-3 masaustu:grid-cols-5",
   yatay: "grid grid-cols-1 gap-3 tablet:grid-cols-2 masaustu:grid-cols-3",
   "buyuk-gorsel": "grid grid-cols-1 gap-4 tablet:grid-cols-2 masaustu:grid-cols-3",
 };

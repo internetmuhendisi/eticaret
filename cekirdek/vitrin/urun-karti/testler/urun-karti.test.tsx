@@ -48,12 +48,17 @@ const urun = (degisiklik: Partial<UrunKartiVerisi> = {}): UrunKartiVerisi => ({
     genislik: 480,
     yukseklik: 360,
   },
-  fiyat: { enDusuk: tutar(1000), enYuksek: tutar(1000), tek: true },
+  fiyat: { enDusuk: tutar(1000), enYuksek: tutar(1000), tek: true, yaziliAralik: "A1000-1000" },
   tukendi: false,
   ...degisiklik,
 });
 
-const tekFiyat = { enDusuk: tutar(1000), enYuksek: tutar(1000), tek: true };
+const tekFiyat = {
+  enDusuk: tutar(1000),
+  enYuksek: tutar(1000),
+  tek: true,
+  yaziliAralik: "A1000-1000",
+};
 
 const kapali: UrunKartiIslevleri = { favori: false, sepet: false, yorum: false };
 const acik: UrunKartiIslevleri = { favori: true, sepet: true, yorum: true };
@@ -95,7 +100,9 @@ describe("görünüm", () => {
       // Ad iki satırda üç noktayla biter; bağlantı bütün kartın üstüne yayılır.
       expect(baglanti?.className).toContain("line-clamp-2");
       expect(baglanti?.className).toContain("after:inset-0");
-      expect(kart.textContent).toContain("Deneme markası");
+      // Yatay kart taslaktaki kompakt karttır: marka yok.
+      if (gorunum === "yatay") expect(kart.textContent).not.toContain("Deneme markası");
+      else expect(kart.textContent).toContain("Deneme markası");
       expect(kart.querySelector("strong")?.textContent).toBe("T1000");
       const gorsel = kart.querySelector("img");
       expect(gorsel?.getAttribute("alt")).toBe("Mavi kupa");
@@ -134,7 +141,14 @@ describe("rozet", () => {
 describe("fiyat", () => {
   it("indirimli fiyat indirim renginde, eski fiyat üstü çizili; ikisinin adı ekran okuyucuda", () => {
     const kart = ciz(
-      urun({ fiyat: { enDusuk: tutar(750, 1000), enYuksek: tutar(750, 1000), tek: true } }),
+      urun({
+        fiyat: {
+          enDusuk: tutar(750, 1000),
+          enYuksek: tutar(750, 1000),
+          tek: true,
+          yaziliAralik: "A750-750",
+        },
+      }),
     );
     expect(kart.querySelector("strong")?.className).toContain("text-indirim");
     expect(kart.querySelector("s")?.textContent).toBe("E1000");
@@ -150,16 +164,30 @@ describe("fiyat", () => {
 
   it("aralıkta iki uç yazılır, eski fiyat yazılmaz", () => {
     const kart = ciz(
-      urun({ fiyat: { enDusuk: tutar(750, 1000), enYuksek: tutar(2000), tek: false } }),
+      urun({
+        fiyat: {
+          enDusuk: tutar(750, 1000),
+          enYuksek: tutar(2000),
+          tek: false,
+          yaziliAralik: "A750-2000",
+        },
+      }),
     );
-    expect(kart.querySelector("strong")?.textContent).toBe("T750 – T2000");
+    expect(kart.querySelector("strong")?.textContent).toBe("A750-2000");
     expect(kart.querySelector("s")).toBeNull();
   });
 
   // Bağımsız kontrolün bulgusu: iki ucun tutarı aynı ama biri indirimdeyse "150,00 – 150,00" yazılmazdı.
   it("uçlar aynı tutardaysa tek tutar yazılır, eski fiyat yazılmaz", () => {
     const kart = ciz(
-      urun({ fiyat: { enDusuk: tutar(1500, 2000), enYuksek: tutar(1500), tek: false } }),
+      urun({
+        fiyat: {
+          enDusuk: tutar(1500, 2000),
+          enYuksek: tutar(1500),
+          tek: false,
+          yaziliAralik: "A1500-1500",
+        },
+      }),
     );
     expect(kart.querySelector("strong")?.textContent).toBe("T1500");
     expect(kart.querySelector("s")).toBeNull();
@@ -180,9 +208,9 @@ describe("görsel ve işlevler", () => {
   });
 
   it("işlevler kapalıyken favori, sepet ve puan yok; açıkken görünür", () => {
-    const puanli = urun({ puan: { ortalama: 4.5, sayi: 12 } });
+    const puanli = urun({ puan: { ortalama: 3.6, sayi: 12 } });
     expect(ciz(puanli, kapali).querySelectorAll("button")).toHaveLength(0);
-    expect(ciz(puanli, kapali).textContent).not.toContain("4,5");
+    expect(ciz(puanli, kapali).querySelector('[data-slot="puan"]')).toBeNull();
     const kart = ciz(puanli, acik);
     const adlar = [...kart.querySelectorAll("button")].map((d) => d.getAttribute("aria-label"));
     // Klavye sırası: ürünün adı, sepete ekle, favori.
@@ -190,8 +218,27 @@ describe("görsel ve işlevler", () => {
       metin("vitrin.urunKarti.sepeteEkle"),
       metin("vitrin.urunKarti.favoriyeEkle"),
     ]);
-    expect(kart.textContent).toContain("4,5");
-    expect(kart.textContent).toContain("5 üzerinden 4,5 puan, 12 değerlendirme");
+    // Puan beş yıldızdır (taslak): ortalama 3,6 yuvarlanır, dördü dolu.
+    const puan = kart.querySelector('[data-slot="puan"]');
+    expect(puan?.querySelectorAll("svg")).toHaveLength(5);
+    expect(puan?.querySelectorAll("svg.fill-current")).toHaveLength(4);
+    expect(puan?.textContent).toBe("5 üzerinden 3,6 puan, 12 değerlendirme");
+    // Puanı olmayan üründe beşi boş, ekran okuyucuda "Henüz puan yok".
+    const puansiz = ciz(urun(), acik).querySelector('[data-slot="puan"]');
+    expect(puansiz?.querySelectorAll("svg.fill-current")).toHaveLength(0);
+    expect(puansiz?.textContent).toBe(metin("vitrin.urunKarti.puanYok"));
+    // Yatay kartta puan yok (taslağın kompakt kartı).
+    expect(ciz(puanli, acik, "yatay").querySelector('[data-slot="puan"]')).toBeNull();
+  });
+
+  it("yatay kartta rozet yok, tükenmiş ürün fiyatın altında yazıyla", () => {
+    const indirimli = urun({ fiyat: { ...tekFiyat, indirim: { oran: 24, varan: false } } });
+    expect(rozetler(ciz(indirimli, kapali, "yatay"))).toEqual([]);
+    const tukenmis = ciz(urun({ tukendi: true }), kapali, "yatay");
+    expect(rozetler(tukenmis)).toEqual([]);
+    expect(tukenmis.lastElementChild?.lastElementChild?.textContent).toBe(
+      metin("vitrin.stok.tukendi"),
+    );
   });
 
   it("tükenmiş ve fiyatsız üründe sepete ekle yok, favori var", () => {

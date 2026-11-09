@@ -381,7 +381,7 @@
       "vergilerHaric": "Vergiler hariç",
       "eskiFiyat": "Eski fiyat:",
       "indirimliFiyat": "İndirimli fiyat:",
-      "aralik": "{enDusuk} – {enYuksek}"
+      "aralikAyirici": " – "
     },
     "bolum": {
       "gorunum": {
@@ -480,7 +480,8 @@
       "varanIndirim": "{oran}{ek} varan indirim",
       "favoriyeEkle": "Favorilere ekle",
       "sepeteEkle": "Sepete ekle",
-      "puan": "5 üzerinden {ortalama} puan, {sayi} değerlendirme"
+      "puan": "5 üzerinden {ortalama} puan, {sayi} değerlendirme",
+      "puanYok": "Henüz puan yok"
     }
   },
   "eposta": {

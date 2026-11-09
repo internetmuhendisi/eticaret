@@ -149,6 +149,22 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
       const bosluk = simgeBoslugu ? " " : "";
       return simgeYeri === "basta" ? `${simge}${bosluk}${tutar}` : `${tutar}${bosluk}${simge}`;
     },
+    // Fiyat aralığı (kart 0109, Canlı Çarşı taslağı): simge bir kez, aralığın simgenin yerindeki ucunda
+    // ("299,90 – 329,90 ¤", "¤299,90 – 329,90"). Ayırıcı metin dosyasındandır.
+    paraAraligi: (enDusuk: number, enYuksek: number, ayirici: string): string => {
+      for (const tutar of [enDusuk, enYuksek]) {
+        if (!Number.isSafeInteger(tutar)) {
+          throw new Error(`Para tutarı en küçük birimde tam sayı olmalı: ${tutar}`);
+        }
+      }
+      const { simgeYeri, simgeBoslugu, ondalikSayisi } = ayarlar.para;
+      const [a, b] = [enDusuk, enYuksek].map((tutar) =>
+        ayiricilariUygula(paraSayisi, tutar / 10 ** ondalikSayisi),
+      );
+      const aralik = `${a}${ayirici}${b}`;
+      const bosluk = simgeBoslugu ? " " : "";
+      return simgeYeri === "basta" ? `${simge}${bosluk}${aralik}` : `${aralik}${bosluk}${simge}`;
+    },
     sayi: (deger: number, ondalikSayisi = 0): string =>
       ayiricilariUygula(sayiBicimi(ondalikSayisi), deger),
     // Oran yüz üzerinden verilir (23 → "%23").

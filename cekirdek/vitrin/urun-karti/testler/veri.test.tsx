@@ -196,9 +196,7 @@ describe("kartın verisi", () => {
     expect(kart?.fiyat?.tek).toBe(false);
     if (kart?.fiyat === undefined) throw new Error("Fiyat yok.");
     const html = ciz(kart);
-    expect(html).toContain(
-      `>${kart.fiyat.enDusuk.yazili.tutar} – ${kart.fiyat.enYuksek.yazili.tutar}</strong>`,
-    );
+    expect(html).toContain(`>${kart.fiyat.yaziliAralik}</strong>`);
     expect(html).toContain(">%30&#x27;a varan indirim<");
     expect(html).not.toContain("</s>");
   });

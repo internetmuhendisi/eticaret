@@ -63,6 +63,17 @@ describe("para", () => {
   });
 });
 
+describe("para aralığı", () => {
+  it("simge bir kez, simgenin yerindeki uçta", () => {
+    expect(bicim.paraAraligi(29_990, 32_990, " – ")).toBe("299,90 – 329,90 ¤");
+    const basta = bicimleyiciOlustur({
+      ...turkiye,
+      para: { ...turkiye.para, simgeYeri: "basta", simgeBoslugu: false },
+    });
+    expect(basta.paraAraligi(29_990, 123_456, " – ")).toBe("¤299,90 – 1.234,56");
+  });
+});
+
 describe("sayı", () => {
   it("binlik ve ondalık ayırıcıyı ayardan alır", () => {
     expect(bicim.sayi(1247)).toBe("1.247");

@@ -16,6 +16,7 @@ import type { MagazaAyarlari } from "../../../ayar-semasi/ayarlar.ts";
 import { siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
 import { gunluk } from "../../../izleme/gunluk.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
+import { siteninBicimleyicisi } from "../../../metinler/site-metni.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { siteninServisi } from "../../magaza-ayarlari/servis.ts";
 import { stokServisi } from "../../stok/servis.ts";
@@ -449,6 +450,10 @@ describe("fiyat aralığı (kart 0085)", () => {
       10_000,
     ]);
     expect(aralik?.enDusuk.vergi).toBe("vergi-haric");
+    // Aralığın yazılışı uçların gösterilecek tutarıyla, sitenin para biçiminde, simge bir kez (kart 0109).
+    const bicim = siteninBicimleyicisi(h.site.ayarlar);
+    expect(aralik?.yaziliAralik).toBe(bicim.paraAraligi(8_475, 10_000, " – "));
+    expect(aralik?.yaziliAralik.startsWith(bicim.para(8_475).replace(/\s*\D+$/, ""))).toBe(true);
   });
 
   // Kart 0109 (karar 0085): indirim rozetinin oranı. Kapalı ayarda eski fiyat indirimden önceki satış

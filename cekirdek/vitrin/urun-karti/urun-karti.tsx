@@ -2,14 +2,17 @@
 // kartı tek bileşendir (.claude/rules/vitrin.md); veriyi yalnız urunKartlari'ndan (veri.ts) alır.
 //
 // Görünüm temadan ya da bölümün seçiminden gelir (gorunum.ts):
-// - dikey: kare görsel üstte, marka, ad ve fiyat altta (Canlı Çarşı taslağı, karar 0075).
-// - yatay: küçük görsel solda, bilgiler sağda; dar yerler için.
+// - dikey: kare görsel üstte, marka, ad, puan ve fiyat altta (Canlı Çarşı taslağı, karar 0075).
+// - yatay: küçük görsel solda; ad, fiyat ve tükenmişse "Tükendi" yazısı sağda (taslağın kompakt kartı:
+//   marka ve rozet yok, indirimi fiyatın rengi ve eski fiyat söyler); dar yerler için.
 // - buyuk-gorsel: uzun görsel büyük boyuttan, ad ve fiyat daha büyük.
 //
 // - Rozet görselin sol üstündedir. Tükenmiş üründe yalnız "Tükendi" (koyu); değilse indirim oranı
 //   (kullanıcı kararı: aşağı yuvarlanmış oran, birleşimlerin oranları farklıysa "...'e varan"). "Son 3
 //   ürün" kartta yazmaz, ürün sayfasınındır (kullanıcı kararı).
-// - Görseli olmayan üründe yüzey renginde ikon durur; görselin alternatif metni galeriden gelir.
+// - Görsel yüzey renginde kutunun ortasında, kutunun 7/8'i kadardır (taslakta 86 ve 88 yüzde). Görseli
+//   olmayan üründe ikon durur; görselin alternatif metni galeriden gelir.
+// - Puan beş yıldızdır (taslak): ortalamanın yuvarlandığı kadarı dolu; puanı olmayan üründe beşi boş.
 // - Ad iki satırda üç noktayla biter, tam adı bağlantının kendisidir. Bütün kart ürün sayfasına gider:
 //   adın bağlantısı kartın üstüne yayılır, favori ve sepet düğmeleri onun üstündedir.
 // - Favori, sepete ekle ve puan işlevleri yazılınca görünür (cekirdek/kayitlar/islevler.ts). Eylemleri
@@ -59,18 +62,20 @@ function KartGorseli({
   }
   const [ilk] = gorsel.kaynaklar;
   return (
-    // biome-ignore lint/performance/noImgElement: boyutlar çekirdekte üretilir (karar 0073), srcset ile seçilir.
-    <img
-      src={ilk?.adres}
-      srcSet={gorsel.kaynaklar.map((k) => `${k.adres} ${k.genislik}w`).join(", ")}
-      sizes={genislik}
-      alt={gorsel.alternatifMetin}
-      width={gorsel.genislik}
-      height={gorsel.yukseklik}
-      loading={oncelikli ? "eager" : "lazy"}
-      decoding="async"
-      className="size-full object-contain p-2"
-    />
+    <span className="flex size-full items-center justify-center">
+      {/* biome-ignore lint/performance/noImgElement: boyutlar çekirdekte üretilir (karar 0073), srcset ile seçilir. */}
+      <img
+        src={ilk?.adres}
+        srcSet={gorsel.kaynaklar.map((k) => `${k.adres} ${k.genislik}w`).join(", ")}
+        sizes={genislik}
+        alt={gorsel.alternatifMetin}
+        width={gorsel.genislik}
+        height={gorsel.yukseklik}
+        loading={oncelikli ? "eager" : "lazy"}
+        decoding="async"
+        className="size-7/8 object-contain"
+      />
+    </span>
   );
 }
 
@@ -98,15 +103,27 @@ function KartRozeti({ urun }: { urun: UrunKartiVerisi }) {
   );
 }
 
-function Puan({ puan }: { puan: NonNullable<UrunKartiVerisi["puan"]> }) {
-  const yazi = doldur(metin("vitrin.urunKarti.puan"), {
-    ortalama: bicim().sayi(puan.ortalama, 1),
-    sayi: bicim().sayi(puan.sayi),
-  });
+const yildizSayisi = 5;
+
+function Puan({ puan }: { puan: UrunKartiVerisi["puan"] }) {
+  const dolu = puan === undefined ? 0 : Math.round(puan.ortalama);
+  const yazi =
+    puan === undefined
+      ? metin("vitrin.urunKarti.puanYok")
+      : doldur(metin("vitrin.urunKarti.puan"), {
+          ortalama: bicim().sayi(puan.ortalama, 1),
+          sayi: bicim().sayi(puan.sayi),
+        });
   return (
-    <span className="flex items-center gap-1 text-kucuk text-soluk-yazi">
-      <Ikon ad="yildiz" className="size-3" />
-      <span aria-hidden="true">{bicim().sayi(puan.ortalama, 1)}</span>
+    <span data-slot="puan" className="flex items-center gap-0.5 text-soluk-yazi">
+      {Array.from({ length: yildizSayisi }, (_, sira) => (
+        <Ikon
+          // biome-ignore lint/suspicious/noArrayIndexKey: yıldızlar sabit sıradadır, kimlikleri yoktur.
+          key={sira}
+          ad="yildiz"
+          className={sinif("size-3", sira < dolu && "fill-current")}
+        />
+      ))}
       <span className="sr-only">{yazi}</span>
     </span>
   );
@@ -135,13 +152,14 @@ export function UrunKarti({
   const Baslik = `h${baslikDuzeyi}` as const;
   const yatay = gorunum === "yatay";
   const buyuk = gorunum === "buyuk-gorsel";
-  // Görselin üstündeki düğmeler zemin rengindedir: altındaki görsel ne olursa olsun okunur.
+  // Favori taslaktaki gibi zeminsizdir: görselin köşesindeki yüzeyin üstünde durur. Sepete ekle
+  // görselin altına yakın durduğu için zemin rengindedir, görselin üstüne gelse de okunur.
   const favori = islevler.favori ? (
     <IkonDugmesi
       ikon="favori"
       etiket={metin("vitrin.urunKarti.favoriyeEkle")}
       tur="sade"
-      className={sinif("pointer-events-auto relative", !yatay && "bg-zemin")}
+      className="pointer-events-auto relative"
     />
   ) : null;
   const sepet =
@@ -164,10 +182,12 @@ export function UrunKarti({
 
   const bilgiler = (
     <div
-      className={sinif("flex min-w-0 flex-1 flex-col gap-1.5", yatay ? "" : buyuk ? "p-4" : "p-3")}
+      className={sinif(
+        "flex min-w-0 flex-1 flex-col",
+        yatay ? "gap-1" : buyuk ? "gap-1.5 p-4" : "gap-1.5 p-3",
+      )}
     >
-      {yatay ? <KartRozeti urun={urun} /> : null}
-      {urun.marka === undefined ? null : (
+      {yatay || urun.marka === undefined ? null : (
         <span className="truncate text-kucuk text-soluk-yazi">{urun.marka}</span>
       )}
       <Baslik className={sinif("font-govde font-orta", buyuk ? "text-buyuk" : "text-govde")}>
@@ -178,7 +198,7 @@ export function UrunKarti({
           {urun.ad}
         </Link>
       </Baslik>
-      {islevler.yorum && urun.puan !== undefined ? <Puan puan={urun.puan} /> : null}
+      {islevler.yorum && !yatay ? <Puan puan={urun.puan} /> : null}
       <div className="mt-auto flex min-w-0 items-end justify-between gap-2">
         {urun.fiyat === undefined ? null : (
           <FiyatGosterimi fiyat={urun.fiyat} boyut={buyuk ? "buyuk" : "normal"} />
@@ -190,6 +210,11 @@ export function UrunKarti({
           </div>
         ) : null}
       </div>
+      {yatay && urun.tukendi ? (
+        <span className="text-kucuk font-kalin text-soluk-yazi">
+          {metin("vitrin.stok.tukendi")}
+        </span>
+      ) : null}
     </div>
   );
 

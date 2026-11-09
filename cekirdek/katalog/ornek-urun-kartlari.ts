@@ -43,10 +43,14 @@ const fiyat = (tutar: number, eskiTutar?: number): GosterilecekFiyat => ({
   },
 });
 
+const yazili = (enDusuk: number, enYuksek: number) =>
+  bicim().paraAraligi(enDusuk, enYuksek, metin("vitrin.fiyat.aralikAyirici"));
+
 const tek = (tutar: number, eskiTutar?: number) => ({
   enDusuk: fiyat(tutar, eskiTutar),
   enYuksek: fiyat(tutar, eskiTutar),
   tek: true,
+  yaziliAralik: yazili(tutar, tutar),
 });
 
 const urun = (
@@ -74,13 +78,19 @@ export const ornekUrunKartlari = (): UrunKartiVerisi[] => {
     }),
     urun(1, "gelistirme.urunKarti.ornek.tukenmis", { tukendi: true }),
     urun(2, "gelistirme.urunKarti.ornek.varyantli", {
-      fiyat: { enDusuk: fiyat(24_990), enYuksek: fiyat(27_990), tek: false },
+      fiyat: {
+        enDusuk: fiyat(24_990),
+        enYuksek: fiyat(27_990),
+        tek: false,
+        yaziliAralik: yazili(24_990, 27_990),
+      },
     }),
     urun(3, "gelistirme.urunKarti.ornek.varanIndirimli", {
       fiyat: {
         enDusuk: fiyat(14_000, 20_000),
         enYuksek: fiyat(25_000),
         tek: false,
+        yaziliAralik: yazili(14_000, 25_000),
         indirim: { oran: 30, varan: true },
       },
     }),
