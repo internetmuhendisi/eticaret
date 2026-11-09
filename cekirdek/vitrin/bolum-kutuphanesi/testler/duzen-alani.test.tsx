@@ -7,9 +7,11 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { denemeGorunumleri } from "../../../katalog/deneme-bolumu/gorunum.tsx";
+import { yazilanIslevler } from "../../../kayitlar/islevler.ts";
 import { MetinSaglayici } from "../../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../../metinler/metin.ts";
 import { DuzenAlaniCizimi } from "../../duzen-alani.tsx";
+import type { VitrinBaglami } from "../baglam.ts";
 import type { BolumOrnegi } from "../duzen.ts";
 import type { BolumGorunumleri } from "../gorunumler.tsx";
 
@@ -28,9 +30,21 @@ function BozukGorunum(): never {
 }
 const bozukluGorunumler: BolumGorunumleri = { ...denemeGorunumleri, "bozuk-bolum": BozukGorunum };
 
+// Deneme bölümleri bağlamı kullanmaz; üst ve alt kısım bölümlerinin bağlamı ust-alt-bolumler.test.tsx'tedir.
+const baglam: VitrinBaglami = {
+  magazaAdi: "Deneme",
+  iletisim: {},
+  sosyalHesaplar: [],
+  odemeIsaretleri: [],
+  menuler: {},
+  islevler: yazilanIslevler,
+  sayilar: {},
+  yil: "2026",
+};
+
 const agac = (bolumler: BolumOrnegi[], gorunumler = bozukluGorunumler) => (
   <MetinSaglayici dil="tr">
-    <DuzenAlaniCizimi bolumler={bolumler} gorunumler={gorunumler} />
+    <DuzenAlaniCizimi bolumler={bolumler} gorunumler={gorunumler} baglam={baglam} />
   </MetinSaglayici>
 );
 

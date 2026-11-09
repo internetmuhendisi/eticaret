@@ -1,0 +1,116 @@
+// Menü satırının görünüşü (kart 0108). Masaüstünde görünür; telefonda gizlidir, menüler logo satırının yan
+// penceresinden açılır. Alt düzeyi olan dal açılır menüyle açılır (ok tuşları, Escape); kategori menüsü
+// "Kategoriler" düğmesinin altındadır, alt kategoriler alt menüdür.
+import Link from "next/link";
+import type { ReactNode } from "react";
+import { Ikon } from "../../../../bilesenler/ikonlar/ikon";
+import {
+  AcilirMenu,
+  AcilirMenuBasligi,
+  AcilirMenuIcerigi,
+  AcilirMenuOgesi,
+  AcilirMenuTetikleyici,
+  AltMenu,
+  AltMenuIcerigi,
+  AltMenuTetikleyici,
+} from "../../../../bilesenler/parcalar/acilir-menu";
+import { Dugme } from "../../../../bilesenler/parcalar/dugme";
+import { sinif } from "../../../../bilesenler/parcalar/sinif";
+import { metin } from "../../../metinler/site-metni";
+import type { BaglamMenuDali } from "../../bolum-kutuphanesi/baglam";
+import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
+import { metinMi } from "../ortak/deger";
+import { MenuBaglantisi, yeniSekmeOzellikleri } from "../ortak/menu";
+
+// Açılır menünün bağlantı öğesi; başlık (adressiz dal) seçilemeyen etikettir.
+function MenuOgesi({ dal, metinYerine }: { dal: BaglamMenuDali; metinYerine?: string }) {
+  if (dal.adres === undefined) return <AcilirMenuBasligi>{dal.metin}</AcilirMenuBasligi>;
+  return (
+    <AcilirMenuOgesi asChild>
+      <Link href={dal.adres} {...yeniSekmeOzellikleri(dal.yeniSekme)}>
+        {metinYerine ?? dal.metin}
+      </Link>
+    </AcilirMenuOgesi>
+  );
+}
+
+// Dalın altları; dalın adresi varsa ilk öğe "Tümü"dür.
+function Altlar({ dal }: { dal: BaglamMenuDali }) {
+  return (
+    <>
+      {dal.adres === undefined ? null : (
+        <MenuOgesi dal={dal} metinYerine={metin("vitrin.bolum.menuSatiri.tumu")} />
+      )}
+      {dal.altlar.map((alt) => (
+        <MenuOgesi key={alt.kimlik} dal={alt} />
+      ))}
+    </>
+  );
+}
+
+function AcilirDal({ etiket, children }: { etiket: string; children: ReactNode }) {
+  return (
+    <AcilirMenu>
+      <AcilirMenuTetikleyici asChild>
+        <Dugme tur="sade" className="px-3">
+          {etiket}
+          <Ikon ad="asagi" />
+        </Dugme>
+      </AcilirMenuTetikleyici>
+      <AcilirMenuIcerigi align="start">{children}</AcilirMenuIcerigi>
+    </AcilirMenu>
+  );
+}
+
+export function MenuSatiriGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunumuOzellikleri) {
+  // Değerler tarifin şemasından geçmiştir (kart 0106); türleri tarifteki alanlardır.
+  const degerler = ham as { anaMenu?: unknown; kategoriMenusu?: unknown };
+  const anaMenu = metinMi(degerler.anaMenu) ? baglam.menuler[degerler.anaMenu] : undefined;
+  const kategoriler = metinMi(degerler.kategoriMenusu)
+    ? baglam.menuler[degerler.kategoriMenusu]
+    : undefined;
+  if ((anaMenu?.length ?? 0) === 0 && (kategoriler?.length ?? 0) === 0) return null;
+  return (
+    <nav
+      aria-label={metin("vitrin.bolum.menuSatiri.gezinme")}
+      className="hidden border-b border-kenar bg-zemin masaustu:block"
+    >
+      <ul
+        className={sinif(
+          "mx-auto flex max-w-icerik flex-wrap items-center gap-1 px-4",
+          gorunum === "ortali" && "justify-center",
+        )}
+      >
+        {kategoriler === undefined || kategoriler.length === 0 ? null : (
+          <li>
+            <AcilirDal etiket={metin("vitrin.bolum.menuSatiri.kategoriler")}>
+              {kategoriler.map((dal) =>
+                dal.altlar.length === 0 ? (
+                  <MenuOgesi key={dal.kimlik} dal={dal} />
+                ) : (
+                  <AltMenu key={dal.kimlik}>
+                    <AltMenuTetikleyici>{dal.metin}</AltMenuTetikleyici>
+                    <AltMenuIcerigi>
+                      <Altlar dal={dal} />
+                    </AltMenuIcerigi>
+                  </AltMenu>
+                ),
+              )}
+            </AcilirDal>
+          </li>
+        )}
+        {(anaMenu ?? []).map((dal) => (
+          <li key={dal.kimlik}>
+            {dal.altlar.length === 0 ? (
+              <MenuBaglantisi dal={dal} className="px-3 no-underline hover:underline" />
+            ) : (
+              <AcilirDal etiket={dal.metin}>
+                <Altlar dal={dal} />
+              </AcilirDal>
+            )}
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}

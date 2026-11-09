@@ -1,8 +1,8 @@
 // Vitrinin müşteri kayıt sayfası (kart 0033).
 import type { Metadata } from "next";
-import { metin } from "../../../metinler/site-metni";
-import { KayitFormu } from "../../../vitrin/kayit-formu";
-import { stil } from "../../../vitrin/stil";
+import { metin } from "../../../../metinler/site-metni";
+import { KayitFormu } from "../../../../vitrin/kayit-formu";
+import { stil } from "../../../../vitrin/stil";
 
 export const generateMetadata = (): Metadata => ({ title: metin("vitrin.kayit.baslik") });
 

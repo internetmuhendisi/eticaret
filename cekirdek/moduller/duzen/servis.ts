@@ -8,7 +8,8 @@
 //   ikisi aynı veritabanı işleminde. Yazmalar düzen kilidini alır: aynı anda gelen iki işlem sırayla çalışır,
 //   biri ötekini ezmez.
 // - Eklenen ya da değişen bölüm bölüm kütüphanesinin kurallarından geçer (tür, alan, görünüm, değerler) ve
-//   başvurduğu kayıtların (görsel, kategori, marka, etiket, ürün) var ve silinmemiş olduğu denetlenir.
+//   başvurduğu kayıtların (görsel, kategori, marka, etiket, ürün; menü koduyla, kart 0108) var ve silinmemiş
+//   olduğu denetlenir.
 //   Başvurulan satırlar paylaşımlı kilitlenir: aynı anda silinen kayda bağlanılmaz.
 // - Vitrin yalnız görünür, türü kütüphanede olan, değerleri geçerli ve bağlı olduğu işlevi yazılmış bölümleri
 //   çizer. Panel her bölümün çizilip çizilmediğini ve nedenini görür.
@@ -47,6 +48,7 @@ import { gorselHazirMi } from "../dosya/servis.ts";
 import { etiketler } from "../etiket/model.ts";
 import { kategoriler } from "../kategori/model.ts";
 import { markalar } from "../marka/model.ts";
+import { menuler } from "../menu/model.ts";
 import { urunler } from "../urun/model.ts";
 import { duzenSurumleri } from "./model.ts";
 
@@ -146,6 +148,20 @@ const baglariDenetle = async (islem: VeritabaniIslemi, baglar: BolumBaglari): Pr
     const varolan = new Set(bulunan.map((satir) => satir.kimlik));
     for (const kimlik of kimlikler) {
       if (!varolan.has(kimlik)) eksik(baglar[tur].get(kimlik), "kayit-yok");
+    }
+  }
+  // Menü koduyla başvurulur (kart 0108): kod silinmemiş bir menünün olmalı. Menü satırı paylaşımlı kilitlenir,
+  // aynı anda silinen menüye bağlanılmaz. Kilit sırası: düzen, menü satırı; menü servisi düzen kilidini almaz.
+  const menuKodlari = [...baglar.menu.keys()];
+  if (menuKodlari.length > 0) {
+    const bulunan = await islem
+      .select({ kod: menuler.kod })
+      .from(menuler)
+      .where(and(inArray(menuler.kod, menuKodlari), isNull(menuler.silinme_zamani)))
+      .for("share");
+    const varolan = new Set(bulunan.map((satir) => satir.kod));
+    for (const kod of menuKodlari) {
+      if (!varolan.has(kod)) eksik(baglar.menu.get(kod), "kayit-yok");
     }
   }
   for (const [gorsel, yollar] of baglar.gorsel) {

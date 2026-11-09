@@ -10,6 +10,7 @@ import { z } from "zod";
 import { postaAdresiSemasi, telefonSemasi } from "../bolgeler/adres.ts";
 import { ulkeGecerliMi } from "../bolgeler/bolgeler.ts";
 import { type AyarSahibi, ayarSahibi } from "../kayitlar/site.ts";
+import { sosyalHesapKalibi, sosyalHesapSiniri, sosyalSiteler } from "../kayitlar/sosyal-siteler.ts";
 import { tukenenUrunDavranislari } from "../kayitlar/stok.ts";
 import { videoSiteAdlari } from "../kayitlar/video-siteleri.ts";
 import { saatDilimiGecerliMi } from "../metinler/bicimleyici.ts";
@@ -208,6 +209,24 @@ export const magazaAyarSemasi = z.strictObject({
   magazaAdresi: ayar(
     postaAdresiSemasi.optional(),
     magazaSahibinin("ayar.aciklama.magazaAdresi", { kayittaGizli: true }),
+  ),
+  // Mağazanın sosyal hesapları (kart 0108, karar 0083): site ve kullanıcı adı, adres kayıttan kurulur
+  // (cekirdek/kayitlar/sosyal-siteler.ts). Alt kısmın sosyal hesaplar bölümü buradan okur. Boş başlar.
+  sosyalHesaplar: ayar(
+    z
+      .array(
+        z.strictObject({
+          site: z.enum(sosyalSiteler),
+          hesap: z.string().trim().regex(sosyalHesapKalibi),
+        }),
+      )
+      .max(sosyalHesapSiniri)
+      .refine(
+        (hesaplar) => new Set(hesaplar.map((h) => `${h.site}:${h.hesap}`)).size === hesaplar.length,
+        "Aynı hesap iki kez yazılmış.",
+      )
+      .default([]),
+    magazaSahibinin("ayar.aciklama.sosyalHesaplar"),
   ),
   // Mağaza sahibinin yüklediği logo: dosya deposundaki kaydın kimliği (kart 0073, karar 0059).
   // Boşsa sitenin ilk logosu (marka/ klasörü), o da yoksa mağaza adı görünür.

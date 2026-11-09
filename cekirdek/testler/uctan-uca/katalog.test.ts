@@ -4,7 +4,8 @@
 // genişlik seçimi sayfayı o genişlikte bir çerçevede aynı renkle açar. Ana sayfa her parçayı gösterir.
 // Klavye denemeleri ana sayfada bilesenler.test.ts'tedir.
 import AxeBuilder from "@axe-core/playwright";
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
+import { kontrastOrani } from "../../../bilesenler/tasarim-degerleri/kontrast";
 import { katalogAdresi, katalogParcalari } from "../../katalog/kayit";
 import kullanimlar from "../../katalog/kullanimlar.json" with { type: "json" };
 import type { MetinAnahtari } from "../../metinler/metin";
@@ -221,3 +222,159 @@ test("bölüm kütüphanesi: deneme bölümü ve tarifinden çıkan form iki ren
   await expect(ekle).toBeDisabled();
   expect(hatalar).toEqual([]);
 });
+
+// Üst ve alt kısım bölümleri (kart 0108): yukarıdaki test sayfanın tamamını iki renkte ve üç genişlikte tarar;
+// burada telefonda yan pencere, masaüstünde açılır menü klavyeyle denenir, açıkken de taranır.
+test("üst kısım: telefonda menü yan pencereden açılır, arama ve sepet satırda kalır, klavyeyle kapanır", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 800 });
+  const sayfa = await ac(page, `${katalogAdresi}/bolum-kutuphanesi`);
+  const bolum = page.getByRole("region", { name: metin("gelistirme.bolum.ustAlt") });
+  // Katalogda üst kısım bir bölümün içindedir: sayfanın başlığı (banner) sayılmaz.
+  const ust = bolum.locator("header").first();
+  await expect(ust.getByRole("link", { name: metin("vitrin.bolum.ustSatir.arama") })).toBeVisible();
+  await expect(ust.getByRole("link", { name: metin("vitrin.bolum.ustSatir.sepet") })).toBeVisible();
+  await expect(ust.getByRole("link", { name: metin("vitrin.bolum.ustSatir.hesap") })).toBeHidden();
+  await expect(
+    ust.getByRole("navigation", { name: metin("vitrin.bolum.menuSatiri.gezinme") }),
+  ).toBeHidden();
+  const ac2 = ust.getByRole("button", { name: metin("vitrin.bolum.ustSatir.menuyuAc") });
+  await ac2.focus();
+  await page.keyboard.press("Enter");
+  const pencere = page.getByRole("dialog", { name: metin("vitrin.bolum.ustSatir.menuBasligi") });
+  await expect(pencere).toBeVisible();
+  await expect(
+    pencere.getByRole("link", { name: metin("gelistirme.bolum.ornek.menu.yeni") }),
+  ).toBeVisible();
+  await expect(
+    pencere.getByRole("link", { name: metin("vitrin.bolum.ustSatir.hesap") }),
+  ).toBeVisible();
+  // Alt düzeyi olan dal akordeonla açılır; dalın kendisi "Tümü" bağlantısıdır.
+  const giyim = pencere
+    .getByRole("button", { name: metin("gelistirme.bolum.ornek.menu.giyim") })
+    .first();
+  await giyim.focus();
+  await page.keyboard.press("Enter");
+  await expect(
+    pencere.getByRole("link", { name: metin("gelistirme.bolum.ornek.menu.kadin") }).first(),
+  ).toBeVisible();
+  await expect(
+    pencere.getByRole("link", { name: metin("vitrin.bolum.ustSatir.tumu") }).first(),
+  ).toHaveAttribute("href", "/kategori/giyim");
+  await tara(page, "yan pencere açık");
+  await page.keyboard.press("Escape");
+  await expect(pencere).toBeHidden();
+  await expect(ac2).toBeFocused();
+  expect(await yanaKayma(page)).toBe(0);
+  expect(sayfa.hatalar).toEqual([]);
+});
+
+test("üst kısım: masaüstünde menü satırı açılır menülerle klavyeyle gezilir, menü düğmesi gizlidir", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const sayfa = await ac(page, `${katalogAdresi}/bolum-kutuphanesi`);
+  const bolum = page.getByRole("region", { name: metin("gelistirme.bolum.ustAlt") });
+  // Katalogda üst kısım bir bölümün içindedir: sayfanın başlığı (banner) sayılmaz.
+  const ust = bolum.locator("header").first();
+  await expect(
+    ust.getByRole("button", { name: metin("vitrin.bolum.ustSatir.menuyuAc") }),
+  ).toBeHidden();
+  await expect(ust.getByRole("link", { name: metin("vitrin.bolum.ustSatir.hesap") })).toBeVisible();
+  const menu = ust.getByRole("navigation", { name: metin("vitrin.bolum.menuSatiri.gezinme") });
+  await expect(menu).toBeVisible();
+  // Kategoriler: Enter açar, ok tuşları gezer, sağ ok alt kategorilere girer, Escape kapatıp odağı geri verir.
+  const kategoriler = menu.getByRole("button", {
+    name: metin("vitrin.bolum.menuSatiri.kategoriler"),
+  });
+  await kategoriler.focus();
+  await page.keyboard.press("Enter");
+  const acilir = page.getByRole("menu");
+  await expect(acilir).toBeVisible();
+  const giyim = acilir.getByRole("menuitem", { name: metin("gelistirme.bolum.ornek.menu.giyim") });
+  await expect(giyim).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  const alt = page.getByRole("menu").last();
+  await expect(
+    alt.getByRole("menuitem", { name: metin("gelistirme.bolum.ornek.menu.kadin") }),
+  ).toBeVisible();
+  await expect(
+    alt.getByRole("menuitem", { name: metin("vitrin.bolum.menuSatiri.tumu") }),
+  ).toHaveAttribute("href", "/kategori/giyim");
+  await tara(page, "açılır menü açık");
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("menu")).toHaveCount(0);
+  await expect(kategoriler).toBeFocused();
+  // Altı olmayan dal düz bağlantıdır; Tab ile sıradaki menüye geçilir.
+  await expect(
+    menu.getByRole("link", { name: metin("gelistirme.bolum.ornek.menu.yeni") }),
+  ).toHaveAttribute("href", "/");
+  await page.keyboard.press("Tab");
+  await expect(
+    menu.getByRole("link", { name: metin("gelistirme.bolum.ornek.menu.yeni") }),
+  ).toBeFocused();
+  expect(sayfa.hatalar).toEqual([]);
+});
+
+// Renkli zeminli bölgede odak çerçevesi bölgenin yazı rengindedir (kart 0108 kontrolü): alt kısımda ve birincil
+// renkli duyuru şeridinde, iki temada, çerçeve zemine karşı en az 3:1.
+const onaltilik = (rgb: string) => {
+  const parcalar = rgb.match(/^rgba?\((\d+), (\d+), (\d+)(?:, 1)?\)$/);
+  if (parcalar === null) throw new Error(`Saydam ya da tanınmayan renk: ${rgb}`);
+  return `#${parcalar
+    .slice(1, 4)
+    .map((k) => Number(k).toString(16).padStart(2, "0"))
+    .join("")
+    .toUpperCase()}`;
+};
+
+for (const renk of ["acik", "koyu"] as const) {
+  test(`üst ve alt kısım: renkli zeminde odak çerçevesi okunur (${renk})`, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await ac(page, `${katalogAdresi}/bolum-kutuphanesi?renk=${renk}`);
+    const bolum = page.getByRole("region", { name: metin("gelistirme.bolum.ustAlt") });
+    const olc = async (baglanti: Locator, zemin: Locator, ne: string) => {
+      await baglanti.focus();
+      await page.keyboard.press("Shift+Tab");
+      await page.keyboard.press("Tab");
+      await expect(baglanti, ne).toBeFocused();
+      await page.evaluate(() =>
+        Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))),
+      );
+      const cerceve = await baglanti.evaluate((e) => getComputedStyle(e).outlineColor);
+      const arka = await zemin.evaluate((e) => getComputedStyle(e).backgroundColor);
+      expect(kontrastOrani(onaltilik(cerceve), onaltilik(arka)), ne).toBeGreaterThanOrEqual(3);
+    };
+    const altKisim = bolum.locator("footer").first();
+    await olc(
+      altKisim.getByRole("link", { name: metin("gelistirme.bolum.ornek.menu.uyelik") }),
+      altKisim,
+      "alt kısım",
+    );
+    // Öteki görünümlerdeki duyuru şeridi birincil renkli zemindedir.
+    const serit = bolum.locator("header").nth(1).locator("div").first();
+    await expect(serit).toHaveClass(/bg-birincil/);
+    await olc(serit.getByRole("link"), serit, "duyuru şeridi");
+  });
+}
+
+// Geniş logo dar ekranda oranını korur, ezilmez (kart 0108 kontrolü).
+for (const width of [320, 375, 768, 1280]) {
+  test(`üst kısım: geniş logo ${width} px'te oranını korur`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await ac(page, `${katalogAdresi}/bolum-kutuphanesi`);
+    const logo = page
+      .getByRole("region", { name: metin("gelistirme.bolum.ustAlt") })
+      .locator("header img")
+      .first();
+    await expect(logo).toBeVisible();
+    const oran = await logo.evaluate((e) => {
+      const kutu = e.getBoundingClientRect();
+      return kutu.width / kutu.height;
+    });
+    expect(Math.abs(oran - 10) / 10).toBeLessThan(0.02);
+    expect(await yanaKayma(page)).toBe(0);
+  });
+}

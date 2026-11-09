@@ -4,7 +4,7 @@
 //
 // Bu bileşen yalnız alanları çizer ve değerleri tutar; kaydetme, panelin sayfasının işidir: sayfa alanları
 // <Form> içine koyar, değerleri düzen servisine gönderir, dönen hataları alan yoluyla geri verir. Kategori,
-// marka, etiket, ürün ve görsel seçenekleri de sayfadan gelir.
+// marka, etiket, ürün, görsel ve menü seçenekleri de sayfadan gelir.
 import { useId, useState } from "react";
 import { FormAlani } from "../../bilesenler/form/form-alani";
 import { Dugme } from "../../bilesenler/parcalar/dugme";
@@ -35,6 +35,8 @@ export type BolumFormuSecenekleri = {
   etiketler: readonly KayitSecenegi[];
   urunler: readonly KayitSecenegi[];
   gorseller: readonly KayitSecenegi[];
+  // Menüler (kart 0108): kimlik yerine menünün kodu.
+  menuler: readonly KayitSecenegi[];
 };
 
 // Radix seçim kutusunun öğesi boş değer alamaz: "seçilmedi" bu değerle gösterilir, değere çevrilmez.
@@ -337,6 +339,18 @@ function TekAlan({
           etiket={etiket}
           hata={hata("")}
           secenekler={secenekler.markalar}
+          deger={deger}
+          degistir={degistir}
+          zorunlu={zorunlu}
+        />
+      );
+    case "menu":
+      // Menü koduyla seçilir: seçeneğin kimliği menünün kodudur.
+      return (
+        <KayitSecimi
+          etiket={etiket}
+          hata={hata("")}
+          secenekler={secenekler.menuler}
           deger={deger}
           degistir={degistir}
           zorunlu={zorunlu}

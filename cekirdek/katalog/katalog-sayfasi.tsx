@@ -4,7 +4,9 @@
 import type { ReactNode } from "react";
 import { Baglanti } from "../../bilesenler/parcalar/baglanti";
 import { metin } from "../metinler/site-metni";
+import { bolumGorunumleri } from "../vitrin/bolum-kutuphanesi/gorunumler";
 import { DuzenAlaniCizimi } from "../vitrin/duzen-alani";
+import { AltKisim, UstKisim } from "../vitrin/ust-alt-kisim";
 import { BolumFormu } from "../yonetim-paneli/bolum-formu";
 import { denemeGorunumleri } from "./deneme-bolumu/gorunum";
 import { denemeBolumu } from "./deneme-bolumu/tarif";
@@ -19,6 +21,13 @@ import {
   secimAdresi,
 } from "./kayit";
 import kullanimlar from "./kullanimlar.json" with { type: "json" };
+import {
+  ornekAltKisim,
+  ornekBaglam,
+  ornekGenisLogo,
+  ornekOtekiGorunumler,
+  ornekUstKisim,
+} from "./ornek-baglam";
 import { KatalogOrnegi } from "./ornekler";
 import { RenkSecimi } from "./renk-secimi";
 
@@ -213,10 +222,13 @@ export function KatalogParcaSayfasi({
   );
 }
 
-// Bölüm kütüphanesinin sayfası (kart 0106): deneme bölümünün görünüşü ve tarifinden çıkan düzenleme formu.
+// Bölüm kütüphanesinin sayfası (kart 0106): deneme bölümünün görünüşü ve tarifinden çıkan düzenleme formu. Kart
+// 0108: üst ve alt kısım bölümleri örnek bağlamla, her görünümüyle.
 export const bolumKutuphanesiAdresi = `${katalogAdresi}/bolum-kutuphanesi`;
 
 export function KatalogBolumKutuphanesiSayfasi({ secim }: { secim: KatalogSecimi }) {
+  const baglam = ornekBaglam();
+  const otekiler = ornekOtekiGorunumler();
   const ornek = {
     baslik: metin("gelistirme.bolum.ornek.baslik"),
     aciklama: metin("gelistirme.bolum.ornek.aciklama"),
@@ -241,6 +253,28 @@ export function KatalogBolumKutuphanesiSayfasi({ secim }: { secim: KatalogSecimi
       }
     >
       <section
+        aria-label={metin("gelistirme.bolum.ustAlt")}
+        className="flex flex-col gap-4 border-t border-kenar pt-6"
+      >
+        <h2>{metin("gelistirme.bolum.ustAlt")}</h2>
+        <p>{metin("gelistirme.bolum.ustAltAciklamasi")}</p>
+        <div className="flex flex-col border border-kenar">
+          <UstKisim bolumler={ornekUstKisim()} gorunumler={bolumGorunumleri} baglam={baglam} />
+          <div className="p-4">{metin("gelistirme.bolum.ornek.icerik")}</div>
+          <AltKisim bolumler={ornekAltKisim()} gorunumler={bolumGorunumleri} baglam={baglam} />
+        </div>
+        <h3>{metin("gelistirme.bolum.otekiGorunumler")}</h3>
+        <div className="flex flex-col border border-kenar">
+          <UstKisim bolumler={otekiler.ust} gorunumler={bolumGorunumleri} baglam={baglam} />
+          <UstKisim
+            bolumler={otekiler.logolu}
+            gorunumler={bolumGorunumleri}
+            baglam={{ ...baglam, logoAdresi: ornekGenisLogo }}
+          />
+          <AltKisim bolumler={otekiler.alt} gorunumler={bolumGorunumleri} baglam={baglam} />
+        </div>
+      </section>
+      <section
         aria-label={metin("gelistirme.bolum.cizim")}
         className="flex flex-col gap-4 border-t border-kenar pt-6"
       >
@@ -263,6 +297,7 @@ export function KatalogBolumKutuphanesiSayfasi({ secim }: { secim: KatalogSecimi
             },
           ]}
           gorunumler={denemeGorunumleri}
+          baglam={baglam}
         />
       </section>
       <section
@@ -273,7 +308,14 @@ export function KatalogBolumKutuphanesiSayfasi({ secim }: { secim: KatalogSecimi
         <BolumFormu
           tarif={denemeBolumu}
           ilkDegerler={ornek}
-          secenekler={{ kategoriler: [], markalar: [], etiketler: [], urunler: [], gorseller: [] }}
+          secenekler={{
+            kategoriler: [],
+            markalar: [],
+            etiketler: [],
+            urunler: [],
+            gorseller: [],
+            menuler: [],
+          }}
         />
       </section>
     </KatalogDuzeni>

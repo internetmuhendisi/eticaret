@@ -1,9 +1,9 @@
 // Vitrinin müşteri giriş sayfası (kart 0033).
 import type { Metadata } from "next";
-import { metin } from "../../../metinler/site-metni";
-import { SifreYenilendiBildirimi } from "../../../moduller/oturum/sifre-yenilendi-bildirimi";
-import { GirisFormu } from "../../../vitrin/giris-formu";
-import { stil } from "../../../vitrin/stil";
+import { metin } from "../../../../metinler/site-metni";
+import { SifreYenilendiBildirimi } from "../../../../moduller/oturum/sifre-yenilendi-bildirimi";
+import { GirisFormu } from "../../../../vitrin/giris-formu";
+import { stil } from "../../../../vitrin/stil";
 
 export const generateMetadata = (): Metadata => ({ title: metin("vitrin.giris.baslik") });
 

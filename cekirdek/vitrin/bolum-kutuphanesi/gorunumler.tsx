@@ -3,11 +3,34 @@
 //
 // Görünüş bileşeni içeriği yalnız alan değerlerinden ve veriden alır: ürün adı, fiyat, görsel adresi ya da
 // mağazaya özel metin elle yazılmaz (denetim/kurallar/bolum-icerigi.grit). Ekrandaki sabit metin metin
-// dosyasından gelir.
+// dosyasından gelir. Mağaza adı, logo, iletişim ve menüler bağlamdan gelir (kart 0108, baglam.ts).
 import type { ComponentType } from "react";
+import { BaglantiSutunlariGorunumu } from "../bolumler/baglanti-sutunlari/gorunum";
+import { DuyuruSeridiGorunumu } from "../bolumler/duyuru-seridi/gorunum";
+import { IletisimBilgileriGorunumu } from "../bolumler/iletisim-bilgileri/gorunum";
+import { MenuSatiriGorunumu } from "../bolumler/menu-satiri/gorunum";
+import { OdemeIsaretleriGorunumu } from "../bolumler/odeme-isaretleri/gorunum";
+import { SosyalHesaplarGorunumu } from "../bolumler/sosyal-hesaplar/gorunum";
+import { TelifSatiriGorunumu } from "../bolumler/telif-satiri/gorunum";
+import { UstSatirGorunumu } from "../bolumler/ust-satir/gorunum";
+import type { VitrinBaglami } from "./baglam.ts";
 import type { BolumDegerleri } from "./tarif.ts";
 
-export type BolumGorunumuOzellikleri = { gorunum: string; degerler: BolumDegerleri };
+// baglam: mağaza adı, logo, iletişim, menüler gibi alan değerleri dışındaki veri (kart 0108).
+export type BolumGorunumuOzellikleri = {
+  gorunum: string;
+  degerler: BolumDegerleri;
+  baglam: VitrinBaglami;
+};
 export type BolumGorunumleri = Readonly<Record<string, ComponentType<BolumGorunumuOzellikleri>>>;
 
-export const bolumGorunumleri: BolumGorunumleri = {};
+export const bolumGorunumleri: BolumGorunumleri = {
+  "duyuru-seridi": DuyuruSeridiGorunumu,
+  "ust-satir": UstSatirGorunumu,
+  "menu-satiri": MenuSatiriGorunumu,
+  "baglanti-sutunlari": BaglantiSutunlariGorunumu,
+  "iletisim-bilgileri": IletisimBilgileriGorunumu,
+  "sosyal-hesaplar": SosyalHesaplarGorunumu,
+  "odeme-isaretleri": OdemeIsaretleriGorunumu,
+  "telif-satiri": TelifSatiriGorunumu,
+};

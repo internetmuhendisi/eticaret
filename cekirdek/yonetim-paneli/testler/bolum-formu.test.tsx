@@ -19,6 +19,7 @@ const secenekler: BolumFormuSecenekleri = {
   etiketler: [],
   urunler: [],
   gorseller: [],
+  menuler: [],
 };
 
 const ciz = (tarif: BolumTarifi, ozellikler: Partial<Parameters<typeof BolumFormu>[0]> = {}) => {

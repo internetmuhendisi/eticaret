@@ -22,12 +22,24 @@
     "bilesenler/parcalar/onay-kutusu.tsx",
     "bilesenler/parcalar/secim-kutusu.tsx",
     "bilesenler/parcalar/uyari.tsx",
-    "bilesenler/parcalar/yukleniyor.tsx"
+    "bilesenler/parcalar/yukleniyor.tsx",
+    "cekirdek/vitrin/bolumler/iletisim-bilgileri/gorunum.tsx",
+    "cekirdek/vitrin/bolumler/menu-satiri/gorunum.tsx",
+    "cekirdek/vitrin/bolumler/odeme-isaretleri/gorunum.tsx",
+    "cekirdek/vitrin/bolumler/sosyal-hesaplar/gorunum.tsx",
+    "cekirdek/vitrin/bolumler/ust-satir/gorunum.tsx",
+    "cekirdek/vitrin/bolumler/ust-satir/menu-dugmesi.tsx"
   ],
-  "bilesenler/parcalar/acilir-menu.tsx": [],
-  "bilesenler/parcalar/akordeon.tsx": [],
+  "bilesenler/parcalar/acilir-menu.tsx": ["cekirdek/vitrin/bolumler/menu-satiri/gorunum.tsx"],
+  "bilesenler/parcalar/akordeon.tsx": ["cekirdek/vitrin/bolumler/ortak/menu.tsx"],
   "bilesenler/parcalar/baglanti.tsx": [
     "cekirdek/moduller/oturum/sifirlama-formlari.tsx",
+    "cekirdek/vitrin/bolumler/duyuru-seridi/gorunum.tsx",
+    "cekirdek/vitrin/bolumler/iletisim-bilgileri/gorunum.tsx",
+    "cekirdek/vitrin/bolumler/ortak/menu.tsx",
+    "cekirdek/vitrin/bolumler/sosyal-hesaplar/gorunum.tsx",
+    "cekirdek/vitrin/bolumler/ust-satir/gorunum.tsx",
+    "cekirdek/vitrin/bolumler/ust-satir/menu-dugmesi.tsx",
     "cekirdek/vitrin/giris-formu.tsx",
     "cekirdek/vitrin/hesap-alani.tsx",
     "cekirdek/vitrin/kayit-formu.tsx",
@@ -40,6 +52,8 @@
     "bilesenler/parcalar/pencere.tsx",
     "bilesenler/parcalar/serit.tsx",
     "bilesenler/parcalar/yan-pencere.tsx",
+    "cekirdek/vitrin/bolumler/menu-satiri/gorunum.tsx",
+    "cekirdek/vitrin/bolumler/ust-satir/menu-dugmesi.tsx",
     "cekirdek/vitrin/hesap-alani.tsx",
     "cekirdek/yonetim-paneli/bolum-formu.tsx",
     "cekirdek/yonetim-paneli/cikis-dugmesi.tsx",
@@ -63,7 +77,7 @@
     "cekirdek/yonetim-paneli/bolum-formu.tsx"
   ],
   "bilesenler/parcalar/pencere.tsx": ["bilesenler/parcalar/yan-pencere.tsx"],
-  "bilesenler/parcalar/rozet.tsx": [],
+  "bilesenler/parcalar/rozet.tsx": ["cekirdek/vitrin/bolumler/ust-satir/gorunum.tsx"],
   "bilesenler/parcalar/secim-kutusu.tsx": ["cekirdek/yonetim-paneli/bolum-formu.tsx"],
   "bilesenler/parcalar/sekmeler.tsx": [],
   "bilesenler/parcalar/serit.tsx": [],
@@ -78,6 +92,6 @@
     "cekirdek/yonetim-paneli/kod-formu.tsx"
   ],
   "bilesenler/parcalar/uzun-metin-alani.tsx": ["cekirdek/yonetim-paneli/bolum-formu.tsx"],
-  "bilesenler/parcalar/yan-pencere.tsx": [],
+  "bilesenler/parcalar/yan-pencere.tsx": ["cekirdek/vitrin/bolumler/ust-satir/menu-dugmesi.tsx"],
   "bilesenler/parcalar/yukleniyor.tsx": []
 }

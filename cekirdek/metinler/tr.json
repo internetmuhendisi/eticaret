@@ -72,6 +72,7 @@
       "epostaGonderenAdresi": "E-postaların gönderildiği adres. Boşsa e-posta gönderilmez.",
       "epostaYanitAdresi": "Müşterinin yanıtının gideceği adres. Boşsa yanıt gönderen adresine gider.",
       "logo": "Vitrinde, panelde ve e-postalarda görünen logo. Boşsa sitenin ilk logosu, o da yoksa mağaza adı görünür.",
+      "sosyalHesaplar": "Vitrinin alt kısmında görünen sosyal hesaplar: site ve kullanıcı adı, @ işareti olmadan.",
       "vergiAcik": "Fiyatlarda ve siparişlerde vergi hesaplanır. Kapalıysa vergi tutarı sıfırdır.",
       "vergiAdi": "Fiyatın yanında ve vergi dökümünde görünen vergi adı. Oranın kendi adı varsa o görünür.",
       "fiyatGirisi": "Ürün ve kargo fiyatlarının vergi dahil mi, vergi hariç mi girildiği.",
@@ -378,6 +379,99 @@
       "vergiHaric": "{vergi} hariç",
       "vergilerDahil": "Vergiler dahil",
       "vergilerHaric": "Vergiler hariç"
+    },
+    "bolum": {
+      "gorunum": {
+        "ortali": "Ortalı",
+        "ince": "İnce",
+        "logoSolda": "Logo solda",
+        "logoOrtada": "Logo ortada",
+        "solaYasli": "Sola yaslı",
+        "sutunlu": "Sütunlu",
+        "tekSatir": "Tek satır",
+        "liste": "Liste",
+        "yatay": "Yatay",
+        "yazili": "Yazılı",
+        "yalnizIsaret": "Yalnız işaret",
+        "ikiYana": "İki yana"
+      },
+      "alan": {
+        "baslik": "Başlık"
+      },
+      "duyuruSeridi": {
+        "ad": "Duyuru şeridi",
+        "metin": "Duyuru",
+        "baglanti": "Bağlantı",
+        "zemin": "Zemin rengi"
+      },
+      "ustSatir": {
+        "ad": "Logo ve simgeler satırı",
+        "menuler": "Telefonda açılan menüler",
+        "menu": "Menü",
+        "menuyuAc": "Menüyü aç",
+        "menuBasligi": "Menü",
+        "menuyuKapat": "Menüyü kapat",
+        "tumu": "Tümü",
+        "anasayfa": "Ana sayfa",
+        "arama": "Ara",
+        "favoriler": "Favoriler",
+        "sepet": "Sepet",
+        "hesap": "Hesabım",
+        "sayi": "ürün"
+      },
+      "menuSatiri": {
+        "ad": "Menü satırı",
+        "anaMenu": "Ana menü",
+        "kategoriMenusu": "Kategori menüsü",
+        "kategoriler": "Kategoriler",
+        "tumu": "Tümü",
+        "gezinme": "Ana menü"
+      },
+      "baglantiSutunlari": {
+        "ad": "Bağlantı sütunları",
+        "menu": "Menü",
+        "gezinme": "Alt bilgi bağlantıları"
+      },
+      "iletisimBilgileri": {
+        "ad": "İletişim bilgileri",
+        "baslik": "İletişim",
+        "telefon": "Telefon",
+        "eposta": "E-posta",
+        "adres": "Adres"
+      },
+      "sosyalHesaplar": {
+        "ad": "Sosyal hesaplar",
+        "baslik": "Bizi takip edin",
+        "yeniSekme": "yeni sekmede açılır",
+        "site": {
+          "instagram": "Instagram",
+          "facebook": "Facebook",
+          "x": "X",
+          "youtube": "YouTube",
+          "tiktok": "TikTok",
+          "pinterest": "Pinterest",
+          "linkedin": "LinkedIn"
+        }
+      },
+      "odemeIsaretleri": {
+        "ad": "Ödeme işaretleri",
+        "baslik": "Ödeme yöntemleri",
+        "isaret": {
+          "kart": "Kredi ve banka kartı",
+          "havale": "Havale",
+          "kapida-odeme": "Kapıda ödeme"
+        }
+      },
+      "telifSatiri": {
+        "ad": "Telif satırı",
+        "ekMetin": "Ek metin",
+        "isaret": "©",
+        "altyapi": "Altyapı:"
+      }
+    },
+    "cerceve": {
+      "ustKisim": "Üst kısım",
+      "altKisim": "Alt kısım"
     }
   },
   "eposta": {
@@ -587,8 +681,32 @@
         "baslik": "Haftanın seçkisi",
         "aciklama": "Bu bölüm yalnız katalogda görünür.",
         "madde1": "Ücretsiz kargo",
-        "madde2": "Kolay iade"
-      }
+        "madde2": "Kolay iade",
+        "magazaAdi": "Deneme Dükkânı",
+        "telefon": "+90 000 000 00 00",
+        "eposta": "iletisim@ornek.test",
+        "adres1": "Deneme Sokak No: 1",
+        "adres2": "00000 İlçe / İl",
+        "duyuru": "Örnek duyuru: bu şerit yalnız katalogda görünür",
+        "telifEk": "Tüm hakları saklıdır.",
+        "menu": {
+          "yeni": "Yeni gelenler",
+          "giyim": "Giyim",
+          "kadin": "Kadın",
+          "erkek": "Erkek",
+          "ev": "Ev",
+          "markalar": "Markalar",
+          "marka": "Örnek marka",
+          "alisveris": "Alışveriş",
+          "sozlesmeler": "Sözleşmeler",
+          "uyelik": "Üyelik sözleşmesi",
+          "kvkk": "KVKK aydınlatma metni"
+        },
+        "icerik": "Sayfanın içeriği burada durur."
+      },
+      "ustAlt": "Üst ve alt kısım",
+      "ustAltAciklamasi": "Mağazanın seçebileceği üst ve alt kısım bölümleri, örnek iletişim bilgileri ve menülerle. Önce her bölümün ilk görünümü vitrindeki gibi bir arada, sonra öteki görünümleri. Katalogda bütün işlevler açıktır.",
+      "otekiGorunumler": "Öteki görünümler"
     }
   }
 }

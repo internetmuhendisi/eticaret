@@ -4,17 +4,29 @@
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
+  BanknoteIcon,
   CheckIcon,
   ChevronDownIcon,
   ChevronRightIcon,
   ChevronUpIcon,
   CircleCheckIcon,
   CircleIcon,
+  CreditCardIcon,
+  HeartIcon,
   InfoIcon,
+  LandmarkIcon,
+  LinkIcon,
   LoaderCircleIcon,
   type LucideIcon,
+  MailIcon,
+  MapPinIcon,
+  MenuIcon,
   OctagonXIcon,
+  PhoneIcon,
+  SearchIcon,
+  ShoppingBagIcon,
   TriangleAlertIcon,
+  UserIcon,
   XIcon,
 } from "lucide-react";
 
@@ -40,6 +52,22 @@ export const ikonlar = {
   bilgi: InfoIcon,
   uyari: TriangleAlertIcon,
   hata: OctagonXIcon,
+  // Vitrinin üst kısmı (kart 0108): telefonda menüyü açar, arama, favoriler, sepet ve hesap.
+  menu: MenuIcon,
+  arama: SearchIcon,
+  favori: HeartIcon,
+  sepet: ShoppingBagIcon,
+  hesap: UserIcon,
+  // İletişim bilgileri: telefon, e-posta, adres.
+  telefon: PhoneIcon,
+  eposta: MailIcon,
+  konum: MapPinIcon,
+  // Dış bağlantı (sosyal hesap: ikon setinde marka logoları yoktur).
+  "dis-baglanti": LinkIcon,
+  // Ödeme işaretleri (cekirdek/kayitlar/odeme.ts).
+  kart: CreditCardIcon,
+  havale: LandmarkIcon,
+  "kapida-odeme": BanknoteIcon,
 } satisfies Record<string, LucideIcon>;
 
 export type IkonAdi = keyof typeof ikonlar;

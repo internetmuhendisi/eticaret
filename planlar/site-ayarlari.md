@@ -30,6 +30,7 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | İletişim e-postası | Mağaza sahibi | Boş | `iletisim@ornek-magaza.test` | Değeri değişiklik kaydına yazılmaz |
 | İletişim telefonu | Mağaza sahibi | Boş | `+90 312 000 00 00` | Ülke koduyla. Değeri değişiklik kaydına yazılmaz |
 | Mağaza adresi | Mağaza sahibi | Boş | Ankara / Çankaya, Deneme Sokak No: 1, 06000 | Ülke, il, ilçe (listeden), adres, posta kodu. Değeri değişiklik kaydına yazılmaz. Örnek Mağaza'nınki deneme değeridir |
+| Sosyal hesaplar | Mağaza sahibi | Boş | — | Site (Instagram, Facebook, X, YouTube, TikTok, Pinterest, LinkedIn) ve kullanıcı adı; adres kayıttan kurulur. Vitrinin alt kısmında görünür (kart 0108, karar 0083) |
 
 ## Vergi
 

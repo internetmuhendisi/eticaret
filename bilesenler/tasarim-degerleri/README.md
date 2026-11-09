@@ -107,6 +107,8 @@ Radix parçalarının durumları adlı durum olarak yazılır (kart 0103), köş
 
 Radix'in açılır parçalara verdiği ölçüler için üç adlı sınıf vardır: `secim-genisligi`, `secim-yuksekligi`, `menu-yuksekligi`.
 
+Renkli zeminli bölgede (vitrinin alt kısmı, duyuru şeridi) odak çerçevesi `odak-yazi-renginde` ile bölgenin yazı rengini alır: `odak` rengi yalnız `zemin` ve `yuzey` üstünde ölçülür (kart 0108).
+
 Animasyonlar `animate-` ile yazılır:
 - `belir`, `kaybol`: açılır parça
 - `ortu-belir`, `ortu-kaybol`: örtü

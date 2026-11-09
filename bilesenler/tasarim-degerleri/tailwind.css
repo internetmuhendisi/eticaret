@@ -37,6 +37,15 @@
   max-height: var(--radix-dropdown-menu-content-available-height);
 }
 
+/* Renkli zeminli bölge (vitrinin alt kısmı, duyuru şeridi; kart 0108): odak çerçevesi o bölgenin yazı
+   rengindedir. Odak rengi yalnız zemin ve yüzey üstünde okunur ölçülmüştür; yazı rengi bölgenin zemininde en az
+   4,5:1 okunur olduğu için çerçeve de 3:1'i geçer. */
+@utility odak-yazi-renginde {
+  & :focus-visible {
+    outline-color: currentColor;
+  }
+}
+
 /* Animasyonların hareketi (kart 0103). Adları ve süreleri tailwind.ayar.ts'tedir; Tailwind 4 ayar
    dosyasındaki keyframes alanını CSS'e yazmadığı için hareket burada tanımlanır. */
 @keyframes geciken-gorunum {

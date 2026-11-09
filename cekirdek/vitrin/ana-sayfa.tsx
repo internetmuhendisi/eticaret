@@ -1,5 +1,5 @@
 // Vitrinin ana sayfasının içeriği (kartlar 0009, 0041, 0071). Ad mağaza sahibinin ayarıdır; sayfa
-// (app/page.tsx) okuyup verir, bu bileşen yalnız çizer.
+// (app/(vitrin)/page.tsx) okuyup verir, bu bileşen yalnız çizer.
 import { metin } from "../metinler/site-metni";
 import { HesapAlani } from "./hesap-alani";
 import { stil } from "./stil";

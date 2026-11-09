@@ -12,6 +12,7 @@ import { z } from "zod";
 import type { RenkAdi } from "../../../bilesenler/tasarim-degerleri/degerler.ts";
 import type { Islev } from "../../kayitlar/islevler.ts";
 import type { DuzenAlani } from "../../kayitlar/tema.ts";
+import { adresAdiKalibi, adresAdiUzunlugu } from "../../metinler/adres-adi.ts";
 import type { MetinAnahtari } from "../../metinler/metin.ts";
 import {
   kayitDegeriYasakMi,
@@ -37,6 +38,8 @@ export type TekAlanTarifi =
   | (Ortak & { tur: "urun-kaynagi"; enCokUrun: number })
   | (Ortak & { tur: "kategori" })
   | (Ortak & { tur: "marka" })
+  // Sitenin bir menüsü, koduyla (kart 0108): başlangıç düzeni de seçebilir, kod kurulumda değişmez.
+  | (Ortak & { tur: "menu" })
   // Sitenin saat diliminde yerel tarih (saatli: tarih ve saat).
   | (Ortak & { tur: "tarih"; saatli: boolean })
   // Temanın renklerinden biri; yalnız tarifin saydığı renkler.
@@ -179,6 +182,8 @@ const tekAlanSemasi = (alan: TekAlanTarifi, kip: Kip): z.ZodType => {
       return z.string().refine((deger) => tarihGecerliMi(deger, alan.saatli), "tarih-gecersiz");
     case "renk":
       return z.enum(alan.renkler);
+    case "menu":
+      return z.string().max(adresAdiUzunlugu).regex(adresAdiKalibi);
   }
 };
 
@@ -216,9 +221,9 @@ export type BolumDegerleri = Record<string, unknown>;
 
 // Değerlerin veritabanındaki kayıtlara başvuruları: kimlikten, ona başvuran alanların yollarına ("kategori",
 // "urunler.urunler.1", "maddeler.0.gorsel"). Düzen servisi bunların var ve silinmemiş olduğunu denetler; hata
-// alanın yoluyla döner, panel onu alanın yanında gösterir.
+// alanın yoluyla döner, panel onu alanın yanında gösterir. Menü kimlikle değil koduyla başvurulur.
 export type BolumBaglari = Record<
-  "gorsel" | "kategori" | "marka" | "etiket" | "urun",
+  "gorsel" | "kategori" | "marka" | "etiket" | "urun" | "menu",
   Map<string, string[]>
 >;
 
@@ -228,6 +233,7 @@ export const bosBaglar = (): BolumBaglari => ({
   marka: new Map(),
   etiket: new Map(),
   urun: new Map(),
+  menu: new Map(),
 });
 
 const bagEkle = (baglar: BolumBaglari, tur: keyof BolumBaglari, kimlik: string, yol: string) => {
@@ -236,7 +242,12 @@ const bagEkle = (baglar: BolumBaglari, tur: keyof BolumBaglari, kimlik: string, 
 
 const tekAlanBaglari = (alan: TekAlanTarifi, deger: unknown, yol: string, baglar: BolumBaglari) => {
   if (deger === undefined) return;
-  if (alan.tur === "gorsel" || alan.tur === "kategori" || alan.tur === "marka") {
+  if (
+    alan.tur === "gorsel" ||
+    alan.tur === "kategori" ||
+    alan.tur === "marka" ||
+    alan.tur === "menu"
+  ) {
     bagEkle(baglar, alan.tur, deger as string, yol);
   } else if (alan.tur === "urun-kaynagi") {
     const kaynak = deger as

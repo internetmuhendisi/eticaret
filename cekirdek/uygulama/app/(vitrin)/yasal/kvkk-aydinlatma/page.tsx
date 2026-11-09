@@ -1,7 +1,7 @@
 // Yasal metnin yer tutucusu (kart 0033). Gerçek metin hukukçu kontrolünden sonra gelir (kart 0063).
 import type { Metadata } from "next";
-import { metin } from "../../../../metinler/site-metni";
-import { stil } from "../../../../vitrin/stil";
+import { metin } from "../../../../../metinler/site-metni";
+import { stil } from "../../../../../vitrin/stil";
 
 export const generateMetadata = (): Metadata => ({ title: metin("vitrin.yasal.kvkk.baslik") });
 

@@ -1,6 +1,6 @@
 // Vitrinin ana sayfası: "Yakında açılıyoruz." yazısı yalnız ayarı açık sitede görünür (kart 0041).
 // İçerik sunucuda çizilir (react-dom/server); çalışan site, sürecin ortak alanına konarak verilir.
-// Mağaza adını veritabanından okuyan sayfa (app/page.tsx) burada değil, yerel ortam denemesinde
+// Mağaza adını veritabanından okuyan sayfa (app/(vitrin)/page.tsx) burada değil, yerel ortam denemesinde
 // gerçek kutuyla ölçülür; adın okunması servis testindedir (kart 0071).
 import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";

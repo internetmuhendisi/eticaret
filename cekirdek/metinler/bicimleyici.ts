@@ -104,6 +104,11 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
     dateStyle: "short",
     timeZone: ayarlar.saatDilimi,
   });
+  // Yıl (kart 0108): telif satırı. Saat dilimine göredir, yılbaşı gecesi sunucunun saatine göre kaymaz.
+  const yilBicimi = new Intl.DateTimeFormat(ayarlar.dil, {
+    year: "numeric",
+    timeZone: ayarlar.saatDilimi,
+  });
   const ulkeAdlari = new Intl.DisplayNames(ayarlar.dil, { type: "region", fallback: "none" });
   const tarihSaatBicimi = new Intl.DateTimeFormat(ayarlar.dil, {
     dateStyle: "short",
@@ -126,6 +131,7 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
       ayiricilariUygula(sayiBicimi(ondalikSayisi), deger),
     tarih: (an: Date): string => tarihBicimi.format(an),
     tarihSaat: (an: Date): string => tarihSaatBicimi.format(an),
+    yil: (an: Date): string => yilBicimi.format(an),
     // ISO 3166-1 ülke kodunun sitenin dilindeki adı (kart 0070). Ad dil verisinden (CLDR) gelir, kodda
     // ülke adı yazmaz. Tanınmayan ya da biçimi bozuk kod (boş, üç harf) kendisi olarak döner, hata
     // vermez: ekranın bir bölümü bozuk bir kayıt yüzünden düşmesin. Kodu bolgeler.ts doğrular.

@@ -81,9 +81,11 @@ for (const sayfa of sayfalar) {
 
         // Zemin ve yazı tipi kök öğeye verilir (tailwind.css).
         const govde = page.locator("html");
-        const etiket = page.getByText(metin(sayfa.eposta), { exact: true });
-        const alan = page.getByLabel(metin(sayfa.eposta), { exact: true });
-        const dugme = page.getByRole("button", { name: metin(sayfa.gonder) });
+        // Form sayfanın ana içeriğindedir; vitrinin üst ve alt kısmı (kart 0108) aynı adlı yazı taşıyabilir.
+        const icerik = page.getByRole("main");
+        const etiket = icerik.getByText(metin(sayfa.eposta), { exact: true });
+        const alan = icerik.getByLabel(metin(sayfa.eposta), { exact: true });
+        const dugme = icerik.getByRole("button", { name: metin(sayfa.gonder) });
         await expect(dugme).toBeEnabled();
 
         // Renkler tasarım değerlerinden gelir.
