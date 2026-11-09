@@ -21,6 +21,7 @@ import {
   baslangicDosyasiniDogrula,
   duzenBaslangicDosyasi,
   katalogBaslangicDosyasi,
+  menuBaslangicDosyasi,
   siteKlasorunuDogrula,
   temaBaslangicDosyasi,
   vergiBaslangicDosyasi,
@@ -342,6 +343,12 @@ describe("örnek klasörler", () => {
     // Başlangıç düzeni (kart 0106).
     ["duzen-tanimsiz-bolum", `${duzenBaslangicDosyasi}: ana-sayfa.0.tur: bolum-tanimsiz`],
     ["duzen-bozuk-bicim", `${duzenBaslangicDosyasi}: ana-sayfa: `],
+    // Başlangıç menüleri (kart 0107): hata iletileri koddur (cekirdek/moduller/menu/semalar.ts).
+    ["menu-hedef-tanimsiz", `${menuBaslangicDosyasi}: 0.ogeler.1.hedef.adresAdi: hedef-yok`],
+    ["menu-derinlik", `${menuBaslangicDosyasi}: 0.ogeler.0.altlar.0.altlar: derinlik`],
+    ["menu-kategori-ogeli", `${menuBaslangicDosyasi}: 0.ogeler: kategori-menusu`],
+    ["menu-kod-tekrar", `${menuBaslangicDosyasi}: 1.kod: kod-tekrar`],
+    ["menu-metinsiz-baslik", `${menuBaslangicDosyasi}: 0.ogeler.0.metin: metin-gerekli`],
   );
 
   for (const [ornek, beklenenHata] of bozuklar) {
@@ -631,6 +638,27 @@ describe("başlangıç düzeni (kart 0106)", () => {
     if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
     const tema = sonuc.site.temalar.find((aday) => aday.kod === sonuc.site.temaBaslangici.tema);
     expect(sonuc.site.duzenBaslangici).toEqual(tema?.tanim.baslangicDuzeni);
+  });
+
+  it("dosyadaki menüler okunur; dosyası olmayan sitenin başlangıç menüsü yoktur (kart 0107)", () => {
+    const sonuc = dogrula("menu-dolu");
+    if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+    expect(
+      sonuc.site.menuBaslangici.map((menu) => [menu.kod, menu.tur, menu.ogeler.length]),
+    ).toEqual([
+      ["ana-menu", "elle", 3],
+      ["kategori-menusu", "kategori-agaci", 0],
+      ["alt-bilgi", "elle", 1],
+    ]);
+    // Verilmeyen yeni sekme kapalıdır, verilmeyen altlar boştur.
+    expect(sonuc.site.menuBaslangici[2]?.ogeler[0]?.altlar[0]).toEqual({
+      metin: "Üyelik sözleşmesi",
+      hedef: { tur: "adres", adres: "/yasal/uyelik-sozlesmesi", yeniSekme: false },
+      altlar: [],
+    });
+    const bos = dogrula("katalog-dolu");
+    if (!bos.gecerli) throw new Error(bos.hatalar.join("\n"));
+    expect(bos.site.menuBaslangici).toEqual([]);
   });
 
   it("dosyadaki düzen okunur", () => {

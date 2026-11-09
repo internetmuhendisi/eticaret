@@ -1,0 +1,71 @@
+[
+  {
+    "kod": "ana-menu",
+    "ad": "Ana menü",
+    "tur": "elle",
+    "ogeler": [
+      {
+        "hedef": {
+          "tur": "kategori",
+          "adresAdi": "birinci"
+        },
+        "altlar": [
+          {
+            "hedef": {
+              "tur": "urun",
+              "adresAdi": "deneme-urunu"
+            }
+          },
+          {
+            "metin": "Kendi adı",
+            "hedef": {
+              "tur": "kategori",
+              "adresAdi": "ikinci"
+            }
+          }
+        ]
+      },
+      {
+        "hedef": {
+          "tur": "marka",
+          "adresAdi": "deneme-markasi"
+        }
+      },
+      {
+        "metin": "Yardım",
+        "hedef": {
+          "tur": "adres",
+          "adres": "https://yardim.example/sss",
+          "yeniSekme": true
+        }
+      }
+    ]
+  },
+  {
+    "kod": "kategori-menusu",
+    "ad": "Kategori menüsü",
+    "tur": "kategori-agaci"
+  },
+  {
+    "kod": "alt-bilgi",
+    "ad": "Alt bilgi",
+    "tur": "elle",
+    "ogeler": [
+      {
+        "metin": "Sözleşmeler",
+        "hedef": {
+          "tur": "baslik"
+        },
+        "altlar": [
+          {
+            "metin": "Üyelik sözleşmesi",
+            "hedef": {
+              "tur": "adres",
+              "adres": "/yasal/uyelik-sozlesmesi"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

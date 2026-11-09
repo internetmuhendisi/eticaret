@@ -8,6 +8,7 @@ import { fiyatIzinleri } from "../moduller/fiyat/izinler.ts";
 import { kategoriIzinleri } from "../moduller/kategori/izinler.ts";
 import { magazaAyarlariIzinleri } from "../moduller/magaza-ayarlari/izinler.ts";
 import { markaIzinleri } from "../moduller/marka/izinler.ts";
+import { menuIzinleri } from "../moduller/menu/izinler.ts";
 import { musteriIzinleri } from "../moduller/musteri/izinler.ts";
 import { ozellikIzinleri } from "../moduller/ozellik/izinler.ts";
 import { stokIzinleri } from "../moduller/stok/izinler.ts";
@@ -33,6 +34,7 @@ export const modulIzinleri = {
   kategori: kategoriIzinleri,
   "magaza-ayarlari": magazaAyarlariIzinleri,
   marka: markaIzinleri,
+  menu: menuIzinleri,
   musteri: musteriIzinleri,
   ozellik: ozellikIzinleri,
   stok: stokIzinleri,
@@ -49,6 +51,7 @@ export const izinler = {
   ...kategoriIzinleri,
   ...magazaAyarlariIzinleri,
   ...markaIzinleri,
+  ...menuIzinleri,
   ...musteriIzinleri,
   ...ozellikIzinleri,
   ...stokIzinleri,

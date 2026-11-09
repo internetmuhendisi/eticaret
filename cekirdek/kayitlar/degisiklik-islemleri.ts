@@ -78,6 +78,16 @@ export const degisiklikIslemleri = [
   "duzen.bolum-gosterildi",
   "duzen.bolumler-siralandi",
   "duzen.bolum-silindi",
+  // Menü ve öğeleri (kart 0107). Öğenin taşınması üstünün değişmesidir: menu-ogesi.degisti. Kardeşlerin
+  // sıralanması menünün kaydına yazılır. Silinen menünün ve öğenin alt öğeleri silme kaydında listelenir.
+  // Başlangıç menüleri aynı işlemlerle, "baslangic-menu" adlı sistem işlemi olarak yazılır.
+  "menu.eklendi",
+  "menu.degisti",
+  "menu.silindi",
+  "menu-ogesi.eklendi",
+  "menu-ogesi.degisti",
+  "menu-ogesi.silindi",
+  "menu-ogesi.siralandi",
 ] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 
@@ -108,6 +118,9 @@ export const degisiklikKayitTurleri = [
   "tema-surumu",
   // Kart 0106: sitenin düzen sürümü.
   "duzen-surumu",
+  // Kart 0107: menü ve menü öğesi.
+  "menu",
+  "menu-ogesi",
 ] as const;
 export type DegisiklikKayitTuru = (typeof degisiklikKayitTurleri)[number];
 

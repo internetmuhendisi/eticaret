@@ -1,0 +1,122 @@
+[
+  {
+    "kod": "ana-menu",
+    "ad": "Ana menü",
+    "tur": "elle",
+    "ogeler": [
+      {
+        "hedef": {
+          "tur": "kategori",
+          "adresAdi": "giyim"
+        }
+      },
+      {
+        "hedef": {
+          "tur": "kategori",
+          "adresAdi": "ev-ve-yasam"
+        }
+      },
+      {
+        "hedef": {
+          "tur": "kategori",
+          "adresAdi": "elektronik-aksesuar"
+        },
+        "altlar": [
+          {
+            "hedef": {
+              "tur": "urun",
+              "adresAdi": "kablosuz-kulaklik"
+            }
+          }
+        ]
+      },
+      {
+        "metin": "Markalar",
+        "hedef": {
+          "tur": "baslik"
+        },
+        "altlar": [
+          {
+            "hedef": {
+              "tur": "marka",
+              "adresAdi": "ornek-ses"
+            }
+          }
+        ]
+      },
+      {
+        "metin": "Yılbaşı",
+        "hedef": {
+          "tur": "urun",
+          "adresAdi": "yilbasi-kupa-seti"
+        }
+      }
+    ]
+  },
+  {
+    "kod": "kategori-menusu",
+    "ad": "Kategori menüsü",
+    "tur": "kategori-agaci"
+  },
+  {
+    "kod": "alt-bilgi",
+    "ad": "Alt bilgi",
+    "tur": "elle",
+    "ogeler": [
+      {
+        "metin": "Alışveriş",
+        "hedef": {
+          "tur": "baslik"
+        },
+        "altlar": [
+          {
+            "hedef": {
+              "tur": "kategori",
+              "adresAdi": "giyim"
+            }
+          },
+          {
+            "hedef": {
+              "tur": "kategori",
+              "adresAdi": "ev-ve-yasam"
+            }
+          },
+          {
+            "hedef": {
+              "tur": "kategori",
+              "adresAdi": "elektronik-aksesuar"
+            }
+          },
+          {
+            "hedef": {
+              "tur": "urun",
+              "adresAdi": "hediye-paketleme"
+            }
+          }
+        ]
+      },
+      {
+        "metin": "Sözleşmeler",
+        "hedef": {
+          "tur": "baslik"
+        },
+        "altlar": [
+          {
+            "metin": "Üyelik sözleşmesi",
+            "hedef": {
+              "tur": "adres",
+              "adres": "/yasal/uyelik-sozlesmesi"
+            }
+          },
+          {
+            "metin": "KVKK aydınlatma metni",
+            "hedef": {
+              "tur": "adres",
+              "adres": "/yasal/kvkk-aydinlatma"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

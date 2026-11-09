@@ -1,0 +1,15 @@
+[
+  {
+    "kod": "kategoriler",
+    "ad": "Kategoriler",
+    "tur": "kategori-agaci",
+    "ogeler": [
+      {
+        "hedef": {
+          "tur": "kategori",
+          "adresAdi": "birinci"
+        }
+      }
+    ]
+  }
+]

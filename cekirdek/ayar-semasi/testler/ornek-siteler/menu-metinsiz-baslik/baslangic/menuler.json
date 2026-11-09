@@ -1,0 +1,14 @@
+[
+  {
+    "kod": "alt-bilgi",
+    "ad": "Alt bilgi",
+    "tur": "elle",
+    "ogeler": [
+      {
+        "hedef": {
+          "tur": "baslik"
+        }
+      }
+    ]
+  }
+]

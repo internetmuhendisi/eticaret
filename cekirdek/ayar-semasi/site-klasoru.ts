@@ -9,6 +9,11 @@ import { type DosyaTuru, dosyaSinirlari } from "../kayitlar/dosya.ts";
 import type { VideoSitesi } from "../kayitlar/video-siteleri.ts";
 import { icerikTuru, uzantininTuru } from "../moduller/dosya/tur.ts";
 import {
+  type MenuBaslangici,
+  menuBaslangicKurallari,
+  menuBaslangicSemasi,
+} from "../moduller/menu/semalar.ts";
+import {
   bosKatalog,
   type KatalogBaslangici,
   katalogBaslangicSemasi,
@@ -49,6 +54,8 @@ import { type Kimlik, kimlikSemasi } from "./kimlik.ts";
 // yazılmamışken kullanılır; asıl değer veritabanındadır (cekirdek/moduller/tema/).
 // duzenBaslangici: düzenin başlangıç değeri (baslangic/duzen.json, yoksa başlangıç temasının düzeni, kart
 // 0106). Yalnız sitenin düzen sürümü hiç yazılmamışken kullanılır (cekirdek/moduller/duzen/).
+// menuBaslangici: başlangıç menüleri (baslangic/menuler.json, kart 0107). Yalnız sitede hiç menü
+// yazılmamışken kullanılır (cekirdek/moduller/menu/baslangic.ts); dosyası yoksa boştur.
 export type Site = {
   kimlik: Kimlik;
   ayarlar: SiteAyarlari;
@@ -60,6 +67,7 @@ export type Site = {
   temalar: Tema[];
   temaBaslangici: { tema: string; ayarlar: TemaAyarlari };
   duzenBaslangici: BaslangicDuzeni;
+  menuBaslangici: MenuBaslangici;
 };
 
 export type DogrulamaSonucu = { gecerli: true; site: Site } | { gecerli: false; hatalar: string[] };
@@ -368,6 +376,37 @@ export const duzenBaslangiciniDogrula = (
   return { gecerli: true, deger: sonuc.data };
 };
 
+export const menuBaslangicDosyasi = "baslangic/menuler.json";
+
+// Başlangıç menüleri (kart 0107): dosya menü şemasından geçer, bağlanılan kategori, marka ve ürün başlangıç
+// kataloğunda olmalı. Dosyası olmayan sitede başlangıç menüsü yoktur.
+export const menuBaslangiciniDogrula = (
+  klasor: string,
+  katalog: KatalogBaslangici,
+): { gecerli: true; deger: MenuBaslangici } | { gecerli: false; hatalar: string[] } => {
+  const ham = jsonOku(klasor, menuBaslangicDosyasi, []);
+  if ("hata" in ham) return { gecerli: false, hatalar: [ham.hata] };
+  const sonuc = menuBaslangicSemasi.safeParse(ham.deger);
+  if (!sonuc.success) {
+    return { gecerli: false, hatalar: sorunlariYaz(menuBaslangicDosyasi, sonuc.error.issues) };
+  }
+  const sorunlar = menuBaslangicKurallari(sonuc.data, {
+    kategori: new Set(katalog.kategoriler.map((kayit) => kayit.adresAdi)),
+    marka: new Set(katalog.markalar.map((kayit) => kayit.adresAdi)),
+    urun: new Set(katalog.urunler.map((kayit) => kayit.adresAdi)),
+  });
+  if (sorunlar.length > 0) {
+    return {
+      gecerli: false,
+      hatalar: sorunlar.map(
+        ({ yer, kod }) =>
+          `${menuBaslangicDosyasi}: ${yer.join(".")}: ${kod} (${katalogBaslangicDosyasi} dosyasında bu adres adı yok)`,
+      ),
+    };
+  }
+  return { gecerli: true, deger: sonuc.data };
+};
+
 export const markaKlasoru = "marka";
 
 // Sitenin ilk logosu: marka/ klasöründe en çok bir logo.<uzantı> dosyası. Tür içerikten okunur ve
@@ -464,6 +503,12 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
   if (katalogGorselleri !== undefined && !katalogGorselleri.gecerli) {
     hatalar.push(...katalogGorselleri.hatalar);
   }
+  const menuBaslangici = katalogBaslangici.gecerli
+    ? menuBaslangiciniDogrula(klasor, katalogBaslangici.deger)
+    : undefined;
+  if (menuBaslangici !== undefined && !menuBaslangici.gecerli) {
+    hatalar.push(...menuBaslangici.hatalar);
+  }
   const markaLogosu = markaLogosunuDogrula(klasor);
   if (!markaLogosu.gecerli) hatalar.push(...markaLogosu.hatalar);
   const temalar = ayarlar === undefined ? undefined : temalariDogrula(klasor, ayarlar.temalar);
@@ -498,6 +543,8 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
     !katalogBaslangici.gecerli ||
     katalogGorselleri === undefined ||
     !katalogGorselleri.gecerli ||
+    menuBaslangici === undefined ||
+    !menuBaslangici.gecerli ||
     !markaLogosu.gecerli ||
     temalar === undefined ||
     !temalar.gecerli ||
@@ -543,6 +590,7 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
       temalar: temalar.temalar,
       temaBaslangici: temaBaslangici.deger,
       duzenBaslangici: duzenBaslangici.deger,
+      menuBaslangici: menuBaslangici.deger,
     },
   };
 };

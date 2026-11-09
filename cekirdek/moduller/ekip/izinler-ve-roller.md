@@ -26,6 +26,8 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `marka.gor` | yonetici | tumu | Markaları ve ürünlerini görür. |
 | `marka.degistir` | yonetici | tumu | Marka ekler ve değiştirir. |
 | `marka.sil` | yonetici | tumu | Marka siler: ürünlerden kalkar. |
+| `menu.gor` | yonetici | tumu | Menüleri ve öğelerini, hedefi silinmiş öğelerin işaretiyle görür. |
+| `menu.degistir` | yonetici | tumu | Menü ve öğe ekler, değiştirir, sıralar ve siler. |
 | `musteri.kendi-hesabi.gor` | musteri | kendi | Müşteri kendi hesabını görür. |
 | `ozellik.gor` | yonetici | tumu | Ürün özelliklerini ve seçeneklerini görür. |
 | `ozellik.degistir` | yonetici | tumu | Özellik ve seçenek ekler ve değiştirir. |

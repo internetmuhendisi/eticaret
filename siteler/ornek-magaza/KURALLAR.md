@@ -68,3 +68,17 @@ Görseller `baslangic/gorseller/` klasöründedir, katalogdaki ürünün `galeri
 
 - Görseller projede üretildi (kullanıcı kararı): 1600 × 1600 piksel, yazısız PNG. Her biri açık renkli düz bir zemin üzerine ürünü andıran basit bir biçimdir (çanta, şerit, kare, kupa, kulaklık, daire, kablo; kart 0100 ile tişört ve kapüşonlu). SVG olarak çizilip `sharp` ile PNG'ye çevrildi. Telif ya da lisans gerektirmez.
 - Video: "Big Buck Bunny", Blender Foundation, Creative Commons Attribution 3.0 lisanslı (https://peach.blender.org). YouTube'da Blender'ın resmî kanalındaki yükleme: https://www.youtube.com/watch?v=aqz-KE-bpKQ (2026-11-08'de YouTube'un oEmbed yanıtıyla var olduğu doğrulandı). Ürünle ilgisi yoktur, yalnız galeride videonun nasıl göründüğünü göstermek içindir. Lisansın istediği atıf alternatif metindedir.
+
+## Menüler (kart 0107)
+
+Menüler `baslangic/menuler.json` dosyasındadır. Arka plan süreci açılırken, katalogdan sonra, sitede hiç menü yoksa bir kez yüklenir. Her durumu `testler/menuler.test.ts` gerçek veritabanıyla dener; zaman testte sabit verilir.
+
+| Durum | Menü | Nasıl |
+|---|---|---|
+| Kategoriye bağlı, adını kategoriden alır | Ana menü | Giyim, Ev ve Yaşam, Elektronik Aksesuar |
+| Açılır alt öğe (ürün) | Ana menü | Elektronik Aksesuar'ın altında Kablosuz Kulaklık |
+| Bağlantısız başlık ve marka | Ana menü | "Markalar" başlığının altında Örnek Ses |
+| Açılmayan ürün görünmez | Ana menü | "Yılbaşı" Yılbaşı Kupa Seti'ne bağlı: 1 Aralık 2026 00:00'a (İstanbul) kadar görünmez, panelde işaretlidir |
+| Kategori ağacından kendiliğinden | Kategori menüsü | Kategoriler kendi sırasıyla, ad değişince menü de değişir |
+| Alt bilgi sütunları | Alt bilgi | "Alışveriş" (üç kategori ve Hediye Paketleme), "Sözleşmeler" (üyelik sözleşmesi ve KVKK aydınlatma metni, sitenin kendi adresleri) |
+| Gizli ürün görünür | Alt bilgi | Hediye Paketleme listede yok ama sayfası açılır: menüdeki bağlantısı görünür |

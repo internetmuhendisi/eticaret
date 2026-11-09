@@ -263,6 +263,24 @@
         "silmede-ad-tekrar": "Bu kategori silinince alt kategorileri bir üste çıkar, ama oradaki bir kategoriyle aynı adı taşıyan bir alt kategori var. Önce birinin adını değiştirin."
       }
     },
+    "menu": {
+      "hata": {
+        "kayda-uygun-degil": "Bu alan yalnız bir e-posta adresinden ya da giriş anahtarından oluşamaz. Metni değiştirin.",
+        "denetim-karakteri": "Bu alanda görünmeyen bir karakter var. Metni silip yeniden yazın.",
+        "kod-bicimi": "Menü kodunda yalnız küçük harf (ç, ğ, ı, ö, ş, ü olmadan), rakam ve tire olabilir. Örnek: alt-bilgi.",
+        "kod-tekrar": "Bu kod başka bir menüde kullanılıyor. Başka bir kod yazın.",
+        "baglanti-gecersiz": "Adres / ile başlamalı (sitenin kendi sayfası) ya da https:// ile başlayan tam bir adres olmalı.",
+        "hedef-kullanilamaz": "Bu bağlantı türü henüz seçilemiyor.",
+        "metin-gerekli": "Menüde görünecek yazıyı girin.",
+        "hedef-yok": "Seçilen kayıt bulunamadı ya da silinmiş. Başka bir kayıt seçin.",
+        "ust-gecersiz": "Seçilen üst öğe bu menüde bulunamadı ya da öğe kendi altına taşınamaz. Başka bir üst öğe seçin.",
+        "derinlik": "Menüde yalnız bir alt düzey açılabilir. Bu öğe bir alt öğenin altına konamaz; altı olan öğe de başka bir öğenin altına taşınamaz.",
+        "kategori-menusu": "Kategori menüsü kategorilerden kendiliğinden kurulur, ona öğe eklenmez. Kategorileri değiştirin.",
+        "menu-dolu": "Bu menüde öğe sınırına ulaşıldı. Yeni öğe eklemek için önce bir öğeyi silin.",
+        "menu-sayisi": "Menü sınırına ulaşıldı. Yeni menü açmak için önce bir menüyü silin.",
+        "siralama-gecersiz": "Sıralama eski kaldı: bu sırada başka bir değişiklik yapılmış. Sayfayı yenileyip yeniden sıralayın."
+      }
+    },
     "bolumFormu": {
       "secilmedi": "Seçilmedi",
       "kaynakTuru": "Ürünlerin kaynağı",

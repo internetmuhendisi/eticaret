@@ -16,7 +16,7 @@ cekirdek/
   moduller/<modul>/    urun, kategori, marka, etiket, ozellik, stok, fiyat, vergi, sepet, odeme,
                        siparis, iade, kargo, kampanya, musteri, oturum, yorum, icerik, eposta,
                        gorunurluk, yasal-metinler, rapor, ekip, degisiklik-kaydi, robot-korumasi,
-                       magaza-ayarlari, dosya, tema, duzen
+                       magaza-ayarlari, dosya, tema, duzen, menu
     model.ts           veri modeli
     servis.ts          iş kuralları
     uclar.ts           uçlar

@@ -8,6 +8,7 @@ import { hataIzlemeyiBagla } from "../izleme/hata-izleme-baglantisi.ts";
 import { hatayiKaydet, surecHatalariniBagla } from "../izleme/hata-katmani.ts";
 import { konsoluGunlugeBagla } from "../izleme/konsol.ts";
 import { kuyrukAyari, nabizDosyasi } from "../kayitlar/arka-plan.ts";
+import { menuBaslangiciniKur } from "../moduller/menu/baslangic.ts";
 import { katalogBaslangiciniKur } from "../moduller/urun/baslangic.ts";
 import { baglantiyiKapat, siteninVeritabani } from "../veritabani/baglanti.ts";
 import { calistiriciKur } from "./calistirici.ts";
@@ -45,14 +46,29 @@ for (const sinyal of ["SIGTERM", "SIGINT"] as const) {
 gunluk.bilgi("arka plan süreci başladı");
 // Sitenin başlangıç kataloğu, katalog hiç kurulmamışsa bir kez yazılır (kart 0084). Yazılamazsa hiçbir
 // parçası yazılmaz; hata kaydedilir, kuyruk yine çalışır, sonraki açılışta yeniden denenir.
+let katalogHazir = false;
 try {
   if (await katalogBaslangiciniKur(siteninVeritabani(), calisanSite())) {
     gunluk.bilgi("başlangıç kataloğu yazıldı");
   } else {
     gunluk.bilgi("başlangıç kataloğu yazılmadı: dosya boş ya da katalog kurulu");
   }
+  katalogHazir = true;
 } catch (hata) {
   hatayiKaydet(hata, { kaynak: "katalog-baslangici" });
+}
+// Başlangıç menüleri kataloğa bağlanır (kart 0107): katalog bu açılışta yazılamadıysa menüler de yazılmaz,
+// sonraki açılışta ikisi birlikte yeniden denenir; yoksa menü bağlanacağı kaydı bulamadan bir kez yazılırdı.
+if (katalogHazir) {
+  try {
+    if (await menuBaslangiciniKur(siteninVeritabani(), calisanSite())) {
+      gunluk.bilgi("başlangıç menüleri yazıldı");
+    } else {
+      gunluk.bilgi("başlangıç menüleri yazılmadı: dosya boş ya da menüler kurulu");
+    }
+  } catch (hata) {
+    hatayiKaydet(hata, { kaynak: "menu-baslangici" });
+  }
 }
 await calistiriciKur({ vt: siteninVeritabani(), isler: kayitliIsler, zamanliIsler }).dongu(
   durdur.signal,

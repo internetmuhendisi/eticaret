@@ -2,6 +2,7 @@
 paths:
   - "cekirdek/vitrin/**"
   - "cekirdek/moduller/duzen/**"
+  - "cekirdek/moduller/menu/**"
   - "cekirdek/katalog/deneme-bolumu/**"
   - "cekirdek/uygulama/app/**"
   - "cekirdek/temalar/**"
@@ -28,3 +29,8 @@ paths:
 - Düzen yalnız `cekirdek/moduller/duzen/servis.ts` ile okunur ve değişir. Vitrin bölümleri `cizilecekBolumler` ile alır ve `DuzenAlaniCizimi` ile çizer: her bölüm kendi hata sınırının içindedir.
 - Bölümün bağlı olduğu işlev `cekirdek/kayitlar/islevler.ts` kaydındadır. İşlev yazılınca orada açılır; bölüm kendiliğinden çizilir.
 
+## Menüler (karar 0082)
+
+- Menüler ve alt bilgi bağlantıları mağaza sahibinin verisidir. Yalnız `cekirdek/moduller/menu/servis.ts` ile okunur ve değişir. Türler, hedefler, derinlik ve sınırlar `cekirdek/kayitlar/menu.ts` kaydındadır: derinliği ya da hedef türünü kodda elle yazma.
+- Vitrin menüyü koduyla `vitrinMenusu` ile alır. Görünmeyen öğeyi (silinmiş ya da açılmayan hedef, boş başlık) süzmek servisin işidir, bölüm yeniden süzmez. Kategori menüsü ağaçtan gelir, kategori listesini bölümde ayrıca okuma.
+- Başlangıç menüleri sitenin `baslangic/menuler.json` dosyasındadır. Kayıtlı hedef adres adıyla yazılır, başlangıç kataloğunda olmalıdır.

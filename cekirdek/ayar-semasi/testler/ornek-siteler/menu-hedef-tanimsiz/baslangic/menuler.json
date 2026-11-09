@@ -1,0 +1,21 @@
+[
+  {
+    "kod": "ana-menu",
+    "ad": "Ana menü",
+    "tur": "elle",
+    "ogeler": [
+      {
+        "hedef": {
+          "tur": "kategori",
+          "adresAdi": "birinci"
+        }
+      },
+      {
+        "hedef": {
+          "tur": "marka",
+          "adresAdi": "olmayan-marka"
+        }
+      }
+    ]
+  }
+]
