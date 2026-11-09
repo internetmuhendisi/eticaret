@@ -74,7 +74,7 @@ const ogeAlanlari = {
 };
 // Galerinin canlı öğesi: öğe silinmemiş ve görselse dosyası da silinmemiş (kart 0087 kontrolü).
 // Dosyası silinmiş görsel galeride görünmez, sıralamaya ve sınıra sayılmaz, seçilemez; satırı kalır.
-const canliOge = () =>
+export const canliOge = () =>
   and(
     isNull(urunGalerisi.silinme_zamani),
     sql`(${urunGalerisi.dosya_kimligi} is null or exists (select 1 from ${dosyalar} where ${dosyalar.kimlik} = ${urunGalerisi.dosya_kimligi} and ${dosyalar.silinme_zamani} is null))`,

@@ -152,7 +152,7 @@
     },
     "dugmeBicimleri": {}
   },
-  "gorunumler": {},
+  "gorunumler": { "urun-karti": "dikey" },
   "baslangicDuzeni": {
     "ust-kisim": [],
     "ana-sayfa": [],

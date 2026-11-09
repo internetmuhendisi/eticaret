@@ -38,6 +38,7 @@ const baglam: VitrinBaglami = {
   odemeIsaretleri: [],
   menuler: {},
   islevler: yazilanIslevler,
+  parcaGorunumleri: { "urun-karti": "dikey" },
   sayilar: {},
   yil: "2026",
 };

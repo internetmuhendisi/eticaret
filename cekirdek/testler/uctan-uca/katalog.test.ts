@@ -378,3 +378,141 @@ for (const width of [320, 375, 768, 1280]) {
     expect(await yanaKayma(page)).toBe(0);
   });
 }
+
+// Ürün kartının sayfası (kart 0109): her görünüm her durumla (indirimli, tükenmiş, varyantlı, görselsiz, uzun
+// adlı, büyük fiyatlı, puanlı, fiyatsız) iki renkte ve üç genişlikte taramadan geçer, sayfa yana kaymaz,
+// hiçbir kartın içeriği kartın dışına taşmaz; uzun ad iki satırda kesilir.
+test("ürün kartı: her görünüm her durumla iki renkte ve üç genişlikte taramadan geçer, kart taşmaz", async ({
+  page,
+}) => {
+  const hatalar: string[] = [];
+  for (const renk of ["acik", "koyu"] as const) {
+    for (const { ad, width, height } of genislikler) {
+      await page.setViewportSize({ width, height });
+      const sayfa = await ac(page, `${katalogAdresi}/urun-karti?renk=${renk}`);
+      expect(sayfa.durum).toBe(200);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+        metin("gelistirme.urunKarti.baslik"),
+      );
+      for (const gorunum of ["dikey", "yatay", "buyuk-gorsel"] as const) {
+        const bolum = page.getByRole("region", {
+          name: metin(`gelistirme.urunKarti.gorunum.${gorunum}`),
+        });
+        await expect(bolum.locator("article")).toHaveCount(9);
+      }
+      await tara(page, `${renk}, ${ad}`);
+      expect(await yanaKayma(page), `${renk}, ${ad}`).toBe(0);
+      // Kartın her öğesi kartın sınırları içindedir (ekran okuyucu metni dışında).
+      const tasanlar = await page.locator("article[data-slot=urun-karti]").evaluateAll((kartlar) =>
+        kartlar.flatMap((kart) => {
+          const sinir = kart.getBoundingClientRect();
+          return [...kart.querySelectorAll("*")]
+            .filter((oge) => !oge.closest(".sr-only"))
+            .filter((oge) => {
+              const kutu = oge.getBoundingClientRect();
+              if (kutu.width === 0 && kutu.height === 0) return false;
+              return (
+                kutu.left < sinir.left - 0.5 ||
+                kutu.right > sinir.right + 0.5 ||
+                kutu.bottom > sinir.bottom + 0.5
+              );
+            })
+            .map((oge) => `${kart.textContent?.slice(0, 30)}: ${oge.tagName}`);
+        }),
+      );
+      expect(tasanlar, `${renk}, ${ad}`).toEqual([]);
+      // Uzun ad iki satırda kesilir: yazının tamamı kutuya sığmaz, kutu iki satır yüksekliğindedir.
+      const uzun = page
+        .getByRole("link", { name: metin("gelistirme.urunKarti.ornek.uzunAdli") })
+        .first();
+      const olcu = await uzun.evaluate((oge) => ({
+        kesik: oge.scrollHeight > oge.clientHeight,
+        satir: oge.clientHeight / Number.parseFloat(getComputedStyle(oge).lineHeight),
+      }));
+      expect(olcu.kesik, `${renk}, ${ad}`).toBe(true);
+      expect(Math.round(olcu.satir), `${renk}, ${ad}`).toBe(2);
+      hatalar.push(...sayfa.hatalar);
+    }
+  }
+  expect(hatalar).toEqual([]);
+});
+
+// Kartın klavyesi: sırayla ürünün adı, sepete ekle ve favori; adın odağı bütün kartın çevresinde görünür.
+test("ürün kartı: klavyede ad, sepet ve favori sırasıyla; adın odağı kartın çevresinde", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await ac(page, `${katalogAdresi}/urun-karti`);
+  const kart = page
+    .getByRole("region", { name: metin("gelistirme.urunKarti.gorunum.dikey") })
+    .locator("article")
+    .first();
+  const ad = kart.getByRole("link", { name: metin("gelistirme.urunKarti.ornek.indirimli") });
+  // Kartın önündeki son odaklanabilir öğeden Tab ile girilir.
+  await page
+    .getByRole("region", { name: metin("gelistirme.urunKarti.gorunum.dikey") })
+    .getByRole("heading", { level: 2 })
+    .click();
+  await page.keyboard.press("Tab");
+  await expect(ad).toBeFocused();
+  const cerceve = await ad.evaluate((oge) => {
+    const after = getComputedStyle(oge, "::after");
+    // Çerçeve kartın kenarlığının içindedir.
+    return {
+      stil: after.outlineStyle,
+      genislik: after.width,
+      kart: oge.closest("article")?.clientWidth,
+    };
+  });
+  expect(cerceve.stil).toBe("solid");
+  expect(Number.parseFloat(cerceve.genislik)).toBeCloseTo(cerceve.kart ?? 0, 0);
+  await page.keyboard.press("Tab");
+  await expect(
+    kart.getByRole("button", { name: metin("vitrin.urunKarti.sepeteEkle") }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(
+    kart.getByRole("button", { name: metin("vitrin.urunKarti.favoriyeEkle") }),
+  ).toBeFocused();
+});
+
+// Bütün kart ürün sayfasına gider: görselin ortasında en üstteki öğe adın bağlantısıdır; düğmeler onun üstündedir.
+test("ürün kartı: görsele tıklayan ürün sayfasına, düğmeye tıklayan düğmeye basar", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 900 });
+  await ac(page, `${katalogAdresi}/urun-karti`);
+  const kart = page
+    .getByRole("region", { name: metin("gelistirme.urunKarti.gorunum.dikey") })
+    .locator("article")
+    .first();
+  const ustteki = (x: number, y: number) =>
+    kart.evaluate(
+      (_, [px, py]) => {
+        const bulunan = document.elementFromPoint(px ?? 0, py ?? 0);
+        return (
+          bulunan?.closest("a, button")?.textContent ??
+          bulunan?.closest("a, button")?.getAttribute("aria-label")
+        );
+      },
+      [x, y],
+    );
+  const gorsel = await kart.locator("img").boundingBox();
+  if (gorsel === null) throw new Error("Görsel yok.");
+  expect(await ustteki(gorsel.x + gorsel.width / 2, gorsel.y + gorsel.height / 2)).toBe(
+    metin("gelistirme.urunKarti.ornek.indirimli"),
+  );
+  for (const ad of [metin("vitrin.urunKarti.sepeteEkle"), metin("vitrin.urunKarti.favoriyeEkle")]) {
+    const kutu = await kart.getByRole("button", { name: ad }).boundingBox();
+    if (kutu === null) throw new Error("Düğme yok.");
+    const bulunan = await kart.evaluate(
+      (_, [px, py]) =>
+        document
+          .elementFromPoint(px ?? 0, py ?? 0)
+          ?.closest("button")
+          ?.getAttribute("aria-label"),
+      [kutu.x + kutu.width / 2, kutu.y + kutu.height / 2],
+    );
+    expect(bulunan).toBe(ad);
+  }
+});

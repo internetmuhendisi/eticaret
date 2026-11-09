@@ -57,6 +57,25 @@ export type FiyatAraligi = {
   enYuksek: GosterilecekFiyat;
   // İki uç aynı tutarda: tek fiyat gösterilir.
   tek: boolean;
+  // İndirim rozeti (kart 0109, karar 0085): adayların en büyük indirim oranı. Adayların oranları
+  // farklıysa (biri indirimsiz de olabilir) "varan" indirimdir. Hiçbir adayın oranı yoksa alan yoktur.
+  indirim?: { oran: number; varan: boolean };
+};
+
+// İndirim oranı (kart 0109, karar 0085, kullanıcı kararı): eski fiyatın gösterildiği fiyatta, yüzde
+// olarak aşağı yuvarlanır; indirim hiçbir zaman olduğundan büyük görünmez. Eski fiyat gösterilmiyorsa
+// (30 gün kuralı) oran sıfırdır. Tutarlar gösterim biçimindedir, kuruştur. En büyük oran 1'in altındaysa
+// rozet yoktur.
+const indirimOrani = (fiyat: GosterilecekFiyat): number =>
+  fiyat.eskiTutar === undefined
+    ? 0
+    : Math.floor(((fiyat.eskiTutar - fiyat.tutar) * 100) / fiyat.eskiTutar);
+
+const araliginIndirimi = (adaylar: GosterilecekFiyat[]): FiyatAraligi["indirim"] => {
+  const oranlar = adaylar.map(indirimOrani);
+  const enBuyuk = Math.max(...oranlar);
+  if (enBuyuk < 1) return undefined;
+  return { oran: enBuyuk, varan: oranlar.some((oran) => oran !== enBuyuk) };
 };
 
 type Ayarlar = Awaited<ReturnType<typeof siteninMagazaAyarlari>>;
@@ -227,9 +246,11 @@ export const fiyatGosterimServisi = (site: Site) => {
         if (fiyat.tutar < enDusuk.tutar) enDusuk = fiyat;
         if (fiyat.tutar > enYuksek.tutar) enYuksek = fiyat;
       }
+      const indirim = araliginIndirimi(adaylar);
       sonuc.set(urun, {
         enDusuk,
         enYuksek,
+        ...(indirim === undefined ? {} : { indirim }),
         // Bütün adaylar aynı tutar ve eski fiyattaysa: eşit tutarda iki uç aynı birleşimden gelir,
         // ötekinin farklı eski fiyatı yalnız bütün adaylara bakılınca görülür.
         tek: adaylar.every(

@@ -36,6 +36,9 @@ export type VitrinBaglami = {
   // Bölümlerin seçtiği menüler, koduyla. Silinmiş ya da olmayan menü burada yoktur.
   menuler: Readonly<Record<string, readonly BaglamMenuDali[]>>;
   islevler: Readonly<Record<Islev, boolean>>;
+  // Temanın parça görünümleri (cekirdek/kayitlar/tema.ts): ürün kartını çizen bölüm görünümü buradan
+  // ve kendi seçiminden alır (cekirdek/vitrin/urun-karti/gorunum.ts, kart 0109).
+  parcaGorunumleri: Readonly<Record<string, string>>;
   // Sepetteki ve favorilerdeki ürün sayısı; işlevleri yazılınca gelir.
   sayilar: { sepet?: number; favori?: number };
   // Telif satırının yılı: sitenin saat dilimine göre bugünün yılı.

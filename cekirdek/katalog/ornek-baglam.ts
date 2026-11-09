@@ -74,6 +74,7 @@ export const ornekBaglam = (): VitrinBaglami => ({
     ],
   },
   islevler: Object.fromEntries(islevler.map((islev) => [islev, true])) as VitrinBaglami["islevler"],
+  parcaGorunumleri: { "urun-karti": "dikey" },
   sayilar: { sepet: 2, favori: 3 },
   yil: bicim().yil(new Date()),
   altyapiAdi,

@@ -13,6 +13,7 @@ import {
   CircleIcon,
   CreditCardIcon,
   HeartIcon,
+  ImageIcon,
   InfoIcon,
   LandmarkIcon,
   LinkIcon,
@@ -25,6 +26,7 @@ import {
   PhoneIcon,
   SearchIcon,
   ShoppingBagIcon,
+  StarIcon,
   TriangleAlertIcon,
   UserIcon,
   XIcon,
@@ -68,6 +70,9 @@ export const ikonlar = {
   kart: CreditCardIcon,
   havale: LandmarkIcon,
   "kapida-odeme": BanknoteIcon,
+  // Ürün kartı (kart 0109): görseli olmayan ürünün yer tutucusu ve puan.
+  gorsel: ImageIcon,
+  yildiz: StarIcon,
 } satisfies Record<string, LucideIcon>;
 
 export type IkonAdi = keyof typeof ikonlar;

@@ -451,6 +451,90 @@ describe("fiyat aralığı (kart 0085)", () => {
     expect(aralik?.enDusuk.vergi).toBe("vergi-haric");
   });
 
+  // Kart 0109 (karar 0085): indirim rozetinin oranı. Kapalı ayarda eski fiyat indirimden önceki satış
+  // fiyatıdır; oranlar elle hesaplanmıştır.
+  describe("indirim oranı", () => {
+    const araligi = async (h: Awaited<ReturnType<typeof hazirla>>, urun: string) =>
+      (await h.gosterim.fiyatAraliklari(h.vt, [urun])).get(urun);
+
+    it("oran aşağı yuvarlanır: 299,90'dan 225,00'a indirim yüzde 24,97 → 24", async () => {
+      const h = await hazirla({ indirimdeEnDusukFiyat: false });
+      const { urun, birimler } = await varyantliAc(h, [1]);
+      await h.fiyat.fiyatYaz(h.vt, yonetici(), birimler[0] ?? "", {
+        satisFiyati: 29_990,
+        indirimliFiyat: 22_500,
+      });
+      expect((await araligi(h, urun))?.indirim).toEqual({ oran: 24, varan: false });
+    });
+
+    it("yüzde 1'in altındaki indirimin ve eski fiyatı gösterilmeyen indirimin oranı yoktur", async () => {
+      const h = await hazirla({ indirimdeEnDusukFiyat: false });
+      const { urun, birimler } = await varyantliAc(h, [1]);
+      // 10000'den 9901'e: yüzde 0,99.
+      await h.fiyat.fiyatYaz(h.vt, yonetici(), birimler[0] ?? "", {
+        satisFiyati: 10_000,
+        indirimliFiyat: 9_901,
+      });
+      const kucuk = await araligi(h, urun);
+      expect(kucuk?.enDusuk.eskiTutar).toBe(10_000);
+      expect(kucuk?.indirim).toBeUndefined();
+      // Ayar açık ve önceki 30 günde fiyat yok: eski fiyat gösterilmez, rozet de çıkmaz.
+      const acik = await hazirla();
+      const ikinci = await varyantliAc(acik, [1]);
+      await acik.fiyat.fiyatYaz(acik.vt, yonetici(), ikinci.birimler[0] ?? "", {
+        satisFiyati: 20_000,
+        indirimliFiyat: 10_000,
+      });
+      const gosterilmeyen = await araligi(acik, ikinci.urun);
+      expect(gosterilmeyen?.enDusuk.indirimde).toBe(true);
+      expect(gosterilmeyen?.enDusuk.eskiTutar).toBeUndefined();
+      expect(gosterilmeyen?.indirim).toBeUndefined();
+    });
+
+    it("birleşimlerin oranları farklıysa en büyüğüne varan indirimdir; indirimsiz birleşim de farktır", async () => {
+      const h = await hazirla({ indirimdeEnDusukFiyat: false });
+      const { urun, birimler } = await varyantliAc(h, [1, 1, 1]);
+      // 20000 → 15000 yüzde 25; 20000 → 18000 yüzde 10; üçüncüsü indirimsiz.
+      await h.fiyat.fiyatYaz(h.vt, yonetici(), birimler[0] ?? "", {
+        satisFiyati: 20_000,
+        indirimliFiyat: 15_000,
+      });
+      await h.fiyat.fiyatYaz(h.vt, yonetici(), birimler[1] ?? "", {
+        satisFiyati: 20_000,
+        indirimliFiyat: 18_000,
+      });
+      await fiyatlar(h, birimler, [undefined, undefined, 20_000]);
+      expect((await araligi(h, urun))?.indirim).toEqual({ oran: 25, varan: true });
+    });
+
+    it("bütün birleşimler aynı oranda indirimdeyse varan değildir; tükenmiş birleşimin oranı sayılmaz", async () => {
+      const h = await hazirla({ indirimdeEnDusukFiyat: false });
+      const { urun, birimler } = await varyantliAc(h, [1, 1, 0]);
+      // İkisi yüzde 20 (farklı tutarlarda); tükenmiş üçüncüsü yüzde 50.
+      const indirimler = [
+        [10_000, 8_000],
+        [20_000, 16_000],
+        [20_000, 10_000],
+      ] as const;
+      for (const [i, [satisFiyati, indirimliFiyat]] of indirimler.entries()) {
+        await h.fiyat.fiyatYaz(h.vt, yonetici(), birimler[i] ?? "", {
+          satisFiyati,
+          indirimliFiyat,
+        });
+      }
+      const aralik = await araligi(h, urun);
+      expect(aralik?.tek).toBe(false);
+      expect(aralik?.indirim).toEqual({ oran: 20, varan: false });
+    });
+
+    it("indirimsiz ürünün oranı yoktur", async () => {
+      const h = await hazirla();
+      const { urun, birimler } = await varyantliAc(h, [1]);
+      await fiyatlar(h, birimler, [10_000]);
+      expect((await araligi(h, urun))?.indirim).toBeUndefined();
+    });
+  });
+
   it("fiyatı olmayan, olmayan ve bozuk ürün haritada yoktur; sorgu sayısı ürün sayısıyla artmaz", async () => {
     const h = await hazirla();
     const fiyatsiz = await varyantliAc(h, [1]);

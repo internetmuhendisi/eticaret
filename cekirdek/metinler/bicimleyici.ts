@@ -21,6 +21,21 @@ export type BicimAyarlari = {
 
 export type Bicimleyici = ReturnType<typeof bicimleyiciOlustur>;
 
+// Sayının yönelme eki (kart 0109): "%30'a varan indirim". Ek, sayının okunuşundaki son sözcüğe göre
+// seçilir; yalnız eki olan diller burada yazılıdır, ötekilerde ek boştur (metin eki kullanmaz).
+// Türkçe: birler basamağı, o sıfırsa onlar, o da sıfırsa yüz ya da bin.
+const yonelmeEkleri: Readonly<Record<string, (sayi: number) => string>> = {
+  tr: (sayi) => {
+    const birler = ["", "'e", "'ye", "'e", "'e", "'e", "'ya", "'ye", "'e", "'a"];
+    const onlar = ["", "'a", "'ye", "'a", "'a", "'ye", "'a", "'e", "'e", "'a"];
+    const tam = Math.abs(Math.trunc(sayi));
+    if (tam === 0) return "'a";
+    if (tam % 10 !== 0) return birler[tam % 10] ?? "";
+    if (tam % 100 !== 0) return onlar[(tam % 100) / 10] ?? "";
+    return "'e";
+  },
+};
+
 // Saat dilimi adının tanınıp tanınmadığı. Ayar şeması saat dilimi ayarını bununla doğrular.
 export const saatDilimiGecerliMi = (ad: string): boolean => {
   try {
@@ -109,6 +124,12 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
     year: "numeric",
     timeZone: ayarlar.saatDilimi,
   });
+  // Yüzde (kart 0109): tam sayı, işaretin yeri dilden ("%23", "23%").
+  const yuzdeBicimi = new Intl.NumberFormat(ayarlar.dil, {
+    style: "percent",
+    maximumFractionDigits: 0,
+  });
+  const yonelmeEki = yonelmeEkleri[ayarlar.dil.split("-")[0] ?? ""] ?? (() => "");
   const ulkeAdlari = new Intl.DisplayNames(ayarlar.dil, { type: "region", fallback: "none" });
   const tarihSaatBicimi = new Intl.DateTimeFormat(ayarlar.dil, {
     dateStyle: "short",
@@ -129,6 +150,9 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
     },
     sayi: (deger: number, ondalikSayisi = 0): string =>
       ayiricilariUygula(sayiBicimi(ondalikSayisi), deger),
+    // Oran yüz üzerinden verilir (23 → "%23").
+    yuzde: (oran: number): string => yuzdeBicimi.format(oran / 100),
+    yonelmeEki,
     tarih: (an: Date): string => tarihBicimi.format(an),
     tarihSaat: (an: Date): string => tarihSaatBicimi.format(an),
     yil: (an: Date): string => yilBicimi.format(an),

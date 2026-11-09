@@ -51,6 +51,7 @@ const bosBaglam: VitrinBaglami = {
   odemeIsaretleri: [],
   menuler: {},
   islevler: kapali,
+  parcaGorunumleri: { "urun-karti": "dikey" },
   sayilar: {},
   yil: "2026",
 };

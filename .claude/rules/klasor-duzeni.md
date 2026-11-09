@@ -33,7 +33,8 @@ cekirdek/
                        şeması (kararlar 0056, 0057)
   vitrin/              vitrin ekranları; bolum-kutuphanesi/ (bölüm tarifi, düzen kuralları, tür ve görünüş
                        kaydı, vitrin bağlamı), bolumler/<tür>/ (her bölüm türünün kodu, elle içerik taşımaz;
-                       ortak/ bölümlerin ortak parçaları) (karar 0081, 0083)
+                       ortak/ bölümlerin ortak parçaları), urun-karti/ (ürün kartı, fiyat bileşeni ve
+                       kartın verisi) (karar 0081, 0083, 0085)
   yonetim-paneli/      panel ekranları
   temalar/             tema şeması, hazır temalar (hazir/), birleşim ve okunurluk (karar 0080)
   arka-plan-isleri/    kuyruk ve zamanlı işler

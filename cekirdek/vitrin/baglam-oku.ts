@@ -5,6 +5,7 @@
 // - Logo logo ucundan: mağaza sahibinin yüklediği, yoksa sitenin ilk logosu; ikisi de yoksa adres yoktur.
 // - Menüler yalnız çizilecek bölümlerin seçtikleri, koduyla; menünün görünmeyen öğeleri menü servisinde süzülür.
 //   Bağlantıların adresi burada kurulur (cekirdek/vitrin/adresler.ts).
+// - Parça görünümleri sitenin geçerli temasından (kart 0109): kayıtlı tema kullanılamıyorsa başlangıç teması.
 // - Ödeme işaretleri sitede açık ödeme yöntemlerinden gelir; ödeme modülü yazılana kadar yoktur.
 import type { Site } from "../ayar-semasi/site-klasoru";
 import { ilAdi, ilceAdi } from "../bolgeler/bolgeler";
@@ -15,6 +16,7 @@ import { siteninBicimleyicisi } from "../metinler/site-metni";
 import { logoUcuYolu, magazaLogosu } from "../moduller/magaza-ayarlari/logo";
 import { siteninMagazaAyarlari } from "../moduller/magaza-ayarlari/servis";
 import { type MenuDali, type VitrinHedefi, vitrinMenusu } from "../moduller/menu/servis";
+import { temaServisi } from "../moduller/tema/servis";
 import type { Veritabani } from "../veritabani/baglanti";
 import { kayitAdresleri } from "./adresler";
 import type { BaglamMenuDali, VitrinBaglami } from "./bolum-kutuphanesi/baglam";
@@ -67,10 +69,11 @@ export const vitrinBaglaminiOku = async (
   an: Date = new Date(),
 ): Promise<VitrinBaglami> => {
   const kodlar = bolumlerinMenuKodlari(bolumler, kutuphane);
-  const [ayarlar, logo, menuler] = await Promise.all([
+  const [ayarlar, logo, menuler, tema] = await Promise.all([
     siteninMagazaAyarlari(vt, site),
     magazaLogosu(vt, { site }),
     Promise.all(kodlar.map(async (kod) => [kod, await vitrinMenusu(vt, kod)] as const)),
+    temaServisi(() => site).gecerliTema(vt),
   ]);
   const adres = ayarlar.magazaAdresi;
   const bolge =
@@ -123,6 +126,7 @@ export const vitrinBaglaminiOku = async (
         dallar === undefined ? [] : [[kod, menuDallari(dallar)]],
       ),
     ),
+    parcaGorunumleri: tema.tema.tanim.gorunumler,
     islevler: yazilanIslevler,
     sayilar: {},
     yil: siteninBicimleyicisi(site.ayarlar).yil(an),

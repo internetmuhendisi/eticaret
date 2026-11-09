@@ -4,9 +4,11 @@
 import type { ReactNode } from "react";
 import { Baglanti } from "../../bilesenler/parcalar/baglanti";
 import { sinif } from "../../bilesenler/parcalar/sinif";
+import { urunKartiGorunumleri } from "../kayitlar/tema";
 import { metin } from "../metinler/site-metni";
 import { bolumGorunumleri } from "../vitrin/bolum-kutuphanesi/gorunumler";
 import { DuzenAlaniCizimi } from "../vitrin/duzen-alani";
+import { UrunKarti, type UrunKartiIslevleri } from "../vitrin/urun-karti/urun-karti";
 import { AltKisim, UstKisim } from "../vitrin/ust-alt-kisim";
 import { BolumFormu } from "../yonetim-paneli/bolum-formu";
 import { denemeGorunumleri } from "./deneme-bolumu/gorunum";
@@ -29,6 +31,7 @@ import {
   ornekOtekiGorunumler,
   ornekUstKisim,
 } from "./ornek-baglam";
+import { ornekUrunKartlari } from "./ornek-urun-kartlari";
 import { KatalogOrnegi } from "./ornekler";
 import { RenkSecimi } from "./renk-secimi";
 
@@ -171,6 +174,9 @@ export function KatalogAnaSayfasi({ secim }: { secim: KatalogSecimi }) {
           <p>{metin("gelistirme.katalog.aciklama")}</p>
           <Baglanti href={secimAdresi(bolumKutuphanesiAdresi, secim)}>
             {metin("gelistirme.katalog.bolumKutuphanesi")}
+          </Baglanti>
+          <Baglanti href={secimAdresi(urunKartiAdresi, secim)}>
+            {metin("gelistirme.urunKarti.baslik")}
           </Baglanti>
         </>
       }
@@ -327,6 +333,76 @@ export function KatalogBolumKutuphanesiSayfasi({ secim }: { secim: KatalogSecimi
             menuler: [],
           }}
         />
+      </section>
+    </KatalogDuzeni>
+  );
+}
+
+// Ürün kartının sayfası (kart 0109): her görünüm her durumla, işlevler açıkken; bugünkü vitrin gibi
+// işlevler kapalıyken de dikey görünüm. Izgaralar vitrindeki yoğunluktadır (karar 0075: masaüstünde bir
+// sırada 5 ürün, telefonda 2).
+export const urunKartiAdresi = `${katalogAdresi}/urun-karti`;
+
+const kartIzgarasi: Record<(typeof urunKartiGorunumleri)[number], string> = {
+  dikey: "grid grid-cols-2 gap-3 tablet:grid-cols-3 masaustu:grid-cols-5 masaustu:gap-4",
+  yatay: "grid grid-cols-1 gap-3 tablet:grid-cols-2 masaustu:grid-cols-3",
+  "buyuk-gorsel": "grid grid-cols-1 gap-4 tablet:grid-cols-2 masaustu:grid-cols-3",
+};
+
+const acikIslevler: UrunKartiIslevleri = { favori: true, sepet: true, yorum: true };
+const kapaliIslevler: UrunKartiIslevleri = { favori: false, sepet: false, yorum: false };
+
+export function KatalogUrunKartiSayfasi({ secim }: { secim: KatalogSecimi }) {
+  const urunler = ornekUrunKartlari();
+  return (
+    <KatalogDuzeni
+      yol={urunKartiAdresi}
+      secim={secim}
+      genis
+      baslik={metin("gelistirme.urunKarti.baslik")}
+      ust={
+        <>
+          <p>{metin("gelistirme.urunKarti.aciklama")}</p>
+          <p>{metin("gelistirme.urunKarti.islevler")}</p>
+          <Baglanti href={secimAdresi(katalogAdresi, { ...secim, cerceve: false })}>
+            {metin("gelistirme.katalog.butunParcalar")}
+          </Baglanti>
+        </>
+      }
+    >
+      {urunKartiGorunumleri.map((gorunum) => {
+        const baslik = metin(`gelistirme.urunKarti.gorunum.${gorunum}`);
+        return (
+          <section
+            key={gorunum}
+            aria-label={baslik}
+            className="flex flex-col gap-4 border-t border-kenar pt-6"
+          >
+            <h2>{baslik}</h2>
+            <div className={kartIzgarasi[gorunum]}>
+              {urunler.map((urun, sira) => (
+                <UrunKarti
+                  key={urun.kimlik}
+                  urun={urun}
+                  gorunum={gorunum}
+                  islevler={acikIslevler}
+                  oncelikli={sira < 2}
+                />
+              ))}
+            </div>
+          </section>
+        );
+      })}
+      <section
+        aria-label={metin("gelistirme.urunKarti.islevsiz")}
+        className="flex flex-col gap-4 border-t border-kenar pt-6"
+      >
+        <h2>{metin("gelistirme.urunKarti.islevsiz")}</h2>
+        <div className={kartIzgarasi.dikey}>
+          {urunler.map((urun) => (
+            <UrunKarti key={urun.kimlik} urun={urun} gorunum="dikey" islevler={kapaliIslevler} />
+          ))}
+        </div>
       </section>
     </KatalogDuzeni>
   );

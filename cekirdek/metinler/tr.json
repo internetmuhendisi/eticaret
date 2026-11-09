@@ -378,7 +378,10 @@
       "vergiDahil": "{vergi} dahil",
       "vergiHaric": "{vergi} hariç",
       "vergilerDahil": "Vergiler dahil",
-      "vergilerHaric": "Vergiler hariç"
+      "vergilerHaric": "Vergiler hariç",
+      "eskiFiyat": "Eski fiyat:",
+      "indirimliFiyat": "İndirimli fiyat:",
+      "aralik": "{enDusuk} – {enYuksek}"
     },
     "bolum": {
       "gorunum": {
@@ -471,6 +474,13 @@
     "cerceve": {
       "ustKisim": "Üst kısım",
       "altKisim": "Alt kısım"
+    },
+    "urunKarti": {
+      "indirim": "{oran} indirim",
+      "varanIndirim": "{oran}{ek} varan indirim",
+      "favoriyeEkle": "Favorilere ekle",
+      "sepeteEkle": "Sepete ekle",
+      "puan": "5 üzerinden {ortalama} puan, {sayi} değerlendirme"
     }
   },
   "eposta": {
@@ -706,6 +716,32 @@
       "ustAlt": "Üst ve alt kısım",
       "ustAltAciklamasi": "Mağazanın seçebileceği üst ve alt kısım bölümleri, örnek iletişim bilgileri ve menülerle. Önce her bölümün ilk görünümü vitrindeki gibi bir arada, sonra öteki görünümleri. Katalogda bütün işlevler açıktır.",
       "otekiGorunumler": "Öteki görünümler"
+    },
+    "urunKarti": {
+      "baslik": "Ürün kartı",
+      "aciklama": "Ürünün listelerde, vitrin bölümlerinde, aramada ve önerilerde görünen kartı ve fiyatı. Tema kartın görünümünü seçer, bölüm kendi seçimiyle değiştirebilir. Örnekler hiçbir siteye ait değildir.",
+      "gorunum": {
+        "dikey": "Dikey kart",
+        "yatay": "Yatay kompakt kart",
+        "buyuk-gorsel": "Görseli büyük kart"
+      },
+      "islevler": "Favori, sepet ve puan alanı işlevleri yazılınca görünür; aşağıdaki örnekler işlevler açıkken çizilir.",
+      "islevsiz": "İşlevler kapalıyken (bugünkü vitrin)",
+      "ornek": {
+        "marka": "Örnek Marka",
+        "uzunMarka": "Çok uzun adlı örnek marka ve alt markası",
+        "indirimli": "İndirimli örnek ürün",
+        "tukenmis": "Tükenmiş örnek ürün",
+        "varyantli": "Seçenekli örnek ürün",
+        "varanIndirimli": "Seçenekleri farklı indirimde olan örnek ürün",
+        "gorselsiz": "Görseli olmayan örnek ürün",
+        "uzunAdli": "Adı çok uzun olan, iki satıra sığmayıp üç noktayla biten ve kartın genişliğini zorlayan örnek ürün adı",
+        "buyukFiyat": "Fiyatı çok büyük örnek ürün",
+        "puanli": "Puanı olan örnek ürün",
+        "fiyatsiz": "Fiyatı olmayan örnek ürün",
+        "gorselMetni": "Örnek ürünün görseli: açık zeminde geometrik bir biçim",
+        "ekMetin": "Vergiler dahil"
+      }
     }
   }
 }

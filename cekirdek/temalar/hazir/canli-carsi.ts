@@ -1,5 +1,5 @@
 // Canlı Çarşı (karar 0075): ilk demo site için seçilen yön. Bugün yalnız değerleri ve mağaza sahibinin
-// seçebileceği ana renk yazılıdır. Yazı tipi, köşe ve düğme seçenekleri, parça görünümleri ve ana sayfanın
+// seçebileceği ana renk yazılıdır. Yazı tipi, köşe ve düğme seçenekleri ve ana sayfanın
 // başlangıç düzeni kart 0114'te yazılır. Üst ve alt kısım (kart 0108) sitenin menülerine koduyla bağlanır
 // (ana-menu, kategori-menusu, alt-bilgi); sitede o kodda menü yoksa bölüm boş kalır.
 import { varsayilanTemaDegerleri } from "../../../bilesenler/tasarim-degerleri/degerler.ts";
@@ -8,7 +8,8 @@ import type { TemaTanimiGirdisi } from "../sema.ts";
 export const canliCarsi: TemaTanimiGirdisi = {
   degerler: varsayilanTemaDegerleri,
   magazaSecenekleri: { renkler: ["birincil"], yaziTipleri: {}, koseler: {}, dugmeBicimleri: {} },
-  gorunumler: {},
+  // Taslaktaki ürün kartı dikeydir (karar 0075).
+  gorunumler: { "urun-karti": "dikey" },
   baslangicDuzeni: {
     "ust-kisim": [
       {

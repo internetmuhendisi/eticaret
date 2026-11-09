@@ -70,6 +70,41 @@ describe("sayı", () => {
   });
 });
 
+// Kart 0109: indirim rozetinin oranı ve "%30'a varan" eki.
+describe("yüzde ve yönelme eki", () => {
+  it("yüzde işareti dilin yerinde, tam sayı", () => {
+    expect(bicim.yuzde(23)).toBe("%23");
+    expect(bicimleyiciOlustur({ ...turkiye, dil: "en" }).yuzde(23)).toBe("23%");
+  });
+
+  it.each([
+    [1, "'e"],
+    [2, "'ye"],
+    [6, "'ya"],
+    [9, "'a"],
+    [10, "'a"],
+    [20, "'ye"],
+    [23, "'e"],
+    [25, "'e"],
+    [30, "'a"],
+    [40, "'a"],
+    [46, "'ya"],
+    [50, "'ye"],
+    [60, "'a"],
+    [70, "'e"],
+    [80, "'e"],
+    [90, "'a"],
+    [99, "'a"],
+    [100, "'e"],
+  ])("Türkçede %i sayısının yönelme eki %s", (sayi, ek) => {
+    expect(bicim.yonelmeEki(sayi)).toBe(ek);
+  });
+
+  it("eki olmayan dilde ek boştur", () => {
+    expect(bicimleyiciOlustur({ ...turkiye, dil: "en" }).yonelmeEki(30)).toBe("");
+  });
+});
+
 describe("tarih", () => {
   it("tarihi mağazanın saat dilimine göre yazar", () => {
     // UTC'de 28 Ekim 21:30, İstanbul'da 29 Ekim 00:30.

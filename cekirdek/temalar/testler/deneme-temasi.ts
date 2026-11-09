@@ -1,6 +1,5 @@
-// Testlerin deneme teması ve deneme kütüphanesi (kart 0105). Çekirdeğin bölüm ve görünüm kayıtları bugün
-// boştur; şemanın bölüm ve görünüm kuralları deneme bölümleriyle (cekirdek/katalog/deneme-bolumu/, kart 0106)
-// ve deneme görünümüyle denenir.
+// Testlerin deneme teması ve deneme kütüphanesi (kart 0105). Şemanın bölüm ve görünüm kuralları deneme
+// bölümleriyle (cekirdek/katalog/deneme-bolumu/, kart 0106) ve deneme görünümüyle denenir.
 import { varsayilanTemaDegerleri } from "../../../bilesenler/tasarim-degerleri/degerler.ts";
 import { denemeKutuphanesi as denemeBolumleri } from "../../katalog/deneme-bolumu/tarif.ts";
 import type { BaslangicDuzeniGirdisi } from "../../vitrin/bolum-kutuphanesi/duzen.ts";
@@ -27,7 +26,8 @@ export const denemeTemasi = (): TemaTanimiGirdisi & {
     koseler: { keskin: { kucuk: "0", orta: "0" }, yumusak: { kucuk: "6px", orta: "12px" } },
     dugmeBicimleri: { kare: "0", hap: "9999px" },
   },
-  gorunumler: {},
+  // Çekirdeğin parça kaydıyla geçer (kart 0109).
+  gorunumler: { "urun-karti": "dikey" },
   baslangicDuzeni: { "ust-kisim": [], "ana-sayfa": [], "alt-kisim": [] },
 });
 

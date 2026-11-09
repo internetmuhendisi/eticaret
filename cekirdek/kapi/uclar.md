@@ -39,6 +39,7 @@ Kapıdaki her uç burada yazar (`.claude/rules/sunucu-arayuzu.md`). Yeni ya da d
 |---|---|
 | `genel` | 60 saniyede 120 istek |
 | `siki` | 60 saniyede 5 istek (giriş, şifre sıfırlama gibi hassas uçlar) |
+| `gorsel` | 60 saniyede 600 istek (ürün görseli: bir sayfa aynı uca onlarca kez gider) |
 
 **İzin.** Herkese açık girişteki uçların izni `herkese-acik`tır. Öteki girişlerdeki uçlar yalnız o girişin iznini ister (`cekirdek/kayitlar/izinler.ts`, liste `cekirdek/moduller/ekip/izinler-ve-roller.md`). Kapı her istekte sırayla sahte isteğe, istek sınırına, oturuma, izne ve girdiye bakar: yetkisiz istek girdi hatası görmez. Uç, hesabın kimliğini ve iznin kapsamını kapıdan alır, girdiden almaz (karar 0040). Sahip girişinin henüz izni yoktur, oraya uç yazılamaz.
 
@@ -80,6 +81,17 @@ Mağazanın logosunu verir: mağaza sahibinin yüklediği logo, yoksa sitenin il
 - Başarılı (200): görselin kendisi. Başlıklar: `Content-Type` dosyanın içerikten bulunmuş türü (`image/png`, `image/jpeg`, `image/webp`), `X-Content-Type-Options: nosniff`, `Cache-Control: public, max-age=300`, `ETag` içeriğin özeti.
 - Aynı `ETag` ile gelen istek (`If-None-Match`) gövdesiz 304 alır. `HEAD` isteği aynı başlıkları gövdesiz alır.
 - Logo yoksa (404): `{ "basarili": false, "hata": { "kod": "bulunamadi" } }`. Ekran mağaza adını yazı olarak gösterir.
+
+### GET /kapi/herkese-acik/urun-gorseli
+
+Ürün görselinin bir boyutunu verir. Ürün kartı ve vitrin görseli bu adresten alır (kart 0109, karar 0085). Yanıt zarf değil, dosyanın kendisidir; hata yine zarfla döner.
+
+- İzin: `herkese-acik`. Sınır: `gorsel`.
+- Girdi: `o` galeri öğesinin kimliği, `b` boyutun adı (`kucuk`, `orta`, `buyuk`, `tam`; `cekirdek/kayitlar/gorsel.ts`). Başka parametre, kimlik biçiminde olmayan `o` ya da kayıtta olmayan boyut `dogrulama`.
+- Servis: `cekirdek/moduller/urun/vitrin-gorseli.ts`.
+- Yalnız vitrinde sayfası açılan ürünün (`vitrinKosulu`, sayfa yeri) silinmemiş galeri görselinin boyutu verilir. Özgün görsel ve dosya kimliğiyle başka dosya verilmez.
+- Başarılı (200): görselin boyutu (WebP). Başlıklar logo ucuyla aynıdır: `Content-Type`, `X-Content-Type-Options: nosniff`, `Cache-Control: public, max-age=300`, `ETag` içeriğin özeti; aynı `ETag` ile 304, `HEAD` gövdesiz.
+- Görsel yoksa (404): `{ "basarili": false, "hata": { "kod": "bulunamadi" } }`. Olmayan öğe, video, silinmiş öğe ya da dosya, görünmeyen ürün ve eksik boyut aynı cevabı alır.
 
 ### POST /kapi/herkese-acik/yonetici-giris
 

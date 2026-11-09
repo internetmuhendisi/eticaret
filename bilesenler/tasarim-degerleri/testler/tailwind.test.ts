@@ -177,9 +177,13 @@ describe("Tailwind yalnız tasarım değerlerini tanır", () => {
       ),
       join(kok, "cekirdek/vitrin/stil.ts"),
       join(kok, "cekirdek/yonetim-paneli/stil.ts"),
+      // Ürün kartı ve fiyat bileşeni (kart 0109).
+      ...readdirSync(join(kok, "cekirdek/vitrin/urun-karti"))
+        .filter((ad) => ad.endsWith(".tsx"))
+        .map((ad) => join(kok, "cekirdek/vitrin/urun-karti", ad)),
     ];
     const onek =
-      /^(?:[a-z-]+:)*-?(?:flex|grid|inline|block|hidden|items|justify|self|place|gap|p[xytrbl]?|m[xytrbl]?|w|h|size|min|max|inset|top|right|bottom|left|fixed|absolute|relative|sticky|bg|text|border|rounded|shadow|font|z|overflow|outline|cursor|select|pointer|animate|transition|duration|opacity|translate|rotate|scale|sr|underline|no-underline|shrink|grow|basis|whitespace|truncate|list|accent|invisible|visible|last|first|fill|secim|menu|wrap|col|row|order|leading|tracking|aspect|group)(?:-|$)/;
+      /^(?:[a-z-]+:)*-?(?:flex|grid|inline|block|hidden|items|justify|self|place|gap|p[xytrbl]?|m[xytrbl]?|w|h|size|min|max|inset|top|right|bottom|left|fixed|absolute|relative|sticky|bg|text|border|rounded|shadow|font|z|overflow|outline|cursor|select|pointer|animate|transition|duration|opacity|translate|rotate|scale|sr|underline|no-underline|shrink|grow|basis|whitespace|truncate|list|accent|invisible|visible|last|first|fill|secim|menu|wrap|col|row|order|leading|tracking|aspect|group|line|object)(?:-|$)/;
     const tekSozcukSiniflar = new Set([
       "flex",
       "grid",

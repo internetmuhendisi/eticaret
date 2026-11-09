@@ -17,6 +17,9 @@ import KatalogDuzeni from "../../uygulama/app/gelistirme/bilesenler/layout.tsx";
 import AnaSayfa, {
   generateMetadata as anaSayfaBilgisi,
 } from "../../uygulama/app/gelistirme/bilesenler/page.tsx";
+import UrunKartiSayfasi, {
+  generateMetadata as urunKartiBilgisi,
+} from "../../uygulama/app/gelistirme/bilesenler/urun-karti/page.tsx";
 import { config, proxy } from "../../uygulama/proxy.ts";
 
 vi.mock("next/navigation", () => ({
@@ -77,7 +80,7 @@ describe("sayfa içindeki ikinci kapı", () => {
     searchParams: Promise.resolve({}),
   };
 
-  it("katalog kapalıyken düzen, iki sayfa ve iki sayfa bilgisi bulunamadı verir", async () => {
+  it("katalog kapalıyken düzen, sayfalar ve sayfa bilgileri bulunamadı verir", async () => {
     kapali();
     expect(() => KatalogDuzeni({ children: null })).toThrow("bulunamadi");
     expect(() => anaSayfaBilgisi()).toThrow("bulunamadi");
@@ -89,6 +92,11 @@ describe("sayfa içindeki ikinci kapı", () => {
     await expect(BolumKutuphanesiSayfasi({ searchParams: Promise.resolve({}) })).rejects.toThrow(
       "bulunamadi",
     );
+    // Ürün kartının sayfası (kart 0109).
+    expect(() => urunKartiBilgisi()).toThrow("bulunamadi");
+    await expect(UrunKartiSayfasi({ searchParams: Promise.resolve({}) })).rejects.toThrow(
+      "bulunamadi",
+    );
   });
 
   // Yeni bir geliştirme sayfası ikinci kapıyı unutmasın (kart 0106): her sayfa dosyası kapıyı hem sayfada
@@ -98,7 +106,7 @@ describe("sayfa içindeki ikinci kapı", () => {
     const dosyalar = readdirSync(klasor, { recursive: true, encoding: "utf8" }).filter((ad) =>
       /(?:^|\/)(?:page|layout)\.tsx$/.test(ad),
     );
-    expect(dosyalar.length).toBeGreaterThanOrEqual(4);
+    expect(dosyalar.length).toBeGreaterThanOrEqual(5);
     for (const dosya of dosyalar) {
       const icerik = readFileSync(join(klasor, dosya), "utf8");
       const cagri = icerik.match(/katalogKapisi\(\)/g)?.length ?? 0;

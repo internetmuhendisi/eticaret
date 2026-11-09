@@ -20,9 +20,11 @@ export const hataKodlari = {
 export type HataKodu = keyof typeof hataKodlari;
 
 // Bir istemcinin bir uca belirli bir sürede gönderebileceği istek sayısı.
-// Giriş ve şifre sıfırlama gibi hassas uçlar sıkı sınırı kullanır.
+// Giriş ve şifre sıfırlama gibi hassas uçlar sıkı sınırı kullanır. Ürün görseli (kart 0109) bir sayfada
+// onlarca kez aynı uca gider (sayaç uç başınadır, adresin sorgu kısmı sayılmaz): görsel sınırını kullanır.
 export const istekSinirlari = {
   genel: { istek: 120, saniye: 60 },
   siki: { istek: 5, saniye: 60 },
+  gorsel: { istek: 600, saniye: 60 },
 } as const satisfies Record<string, { istek: number; saniye: number }>;
 export type IstekSiniri = keyof typeof istekSinirlari;

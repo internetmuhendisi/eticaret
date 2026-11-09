@@ -200,6 +200,24 @@ describe("vitrin bağlamı", () => {
     expect(acik.altyapiAdi).toBe(altyapiAdi);
     expect(acik.yil).toBe("2026");
   });
+
+  // Kart 0109: ürün kartını çizen bölüm görünümü bağlamdan alır.
+  it("parça görünümleri sitenin geçerli temasından", async () => {
+    const vt = await siteAc();
+    const yatayli: Site = {
+      ...site,
+      temalar: site.temalar.map((tema) => ({
+        ...tema,
+        tanim: { ...tema.tanim, gorunumler: { "urun-karti": "yatay" } },
+      })),
+    };
+    expect((await vitrinBaglaminiOku(vt, site, [], bolumKutuphanesi)).parcaGorunumleri).toEqual({
+      "urun-karti": "dikey",
+    });
+    expect((await vitrinBaglaminiOku(vt, yatayli, [], bolumKutuphanesi)).parcaGorunumleri).toEqual({
+      "urun-karti": "yatay",
+    });
+  });
 });
 
 describe("düzenin menü bağı", () => {
