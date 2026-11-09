@@ -32,4 +32,4 @@ Bölüm: Tasarım. Önce 0101 bitmiş olmalı.
 
 ## Durum
 
-yapılacak
+bitti
