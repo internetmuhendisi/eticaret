@@ -9,7 +9,8 @@ export function RozetOrnegi() {
       <Rozet>{m("yeni")}</Rozet>
       <Rozet tur="ikincil">{m("kargoBedava")}</Rozet>
       <Rozet tur="cerceveli">{m("cerceveliRozet")}</Rozet>
-      <Rozet tur="tehlike">{m("tukendi")}</Rozet>
+      <Rozet tur="koyu">{m("tukendi")}</Rozet>
+      <Rozet tur="tehlike">{m("odenmedi")}</Rozet>
       <Rozet tur="basari">{m("stokta")}</Rozet>
       <Rozet tur="uyari">{m("sonUrunler")}</Rozet>
     </div>

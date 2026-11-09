@@ -1,5 +1,5 @@
-// Bağlantı (kart 0034, 0103). Parmakla rahat basılır, alt çizgisi vardır. Düğme görünümlü bağlantı
-// "gorunum" ile yazılır. Metni kullanan sayfa verir.
+// Bağlantı (kart 0034, 0103). Parmakla rahat basılır, alt çizgisi vardır, yazısı kalındır ("Tümünü gör",
+// "İncele"). Düğme görünümlü bağlantı "gorunum" ile yazılır. Metni kullanan sayfa verir.
 import Link from "next/link";
 import type { ComponentProps } from "react";
 import { type DugmeTuru, dugmeSiniflari } from "./dugme.tsx";
@@ -15,7 +15,7 @@ export function Baglanti({
       data-slot="baglanti"
       className={sinif(
         dugmeSiniflari({ tur: gorunum }),
-        gorunum === "baglanti" && "justify-start font-normal",
+        gorunum === "baglanti" && "justify-start font-kalin",
         className,
       )}
       {...ozellikler}

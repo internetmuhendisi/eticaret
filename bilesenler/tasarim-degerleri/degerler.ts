@@ -58,7 +58,8 @@ export type YaziTipiAdi = (typeof yaziTipiAdlari)[number];
 
 // Tailwind'de yazı tipi ve kalınlık aynı önekle yazılır (font-...): kalınlık adları yazı tipi
 // adlarıyla çakışmaz.
-export const kalinlikAdlari = ["normal", "orta", "kalin", "baslik-kalinligi"] as const;
+// "en-kalin" düğme ve rozet yazısıdır (karar 0075'in taslağında 700).
+export const kalinlikAdlari = ["normal", "orta", "kalin", "en-kalin", "baslik-kalinligi"] as const;
 export type KalinlikAdi = (typeof kalinlikAdlari)[number];
 
 // Küçükten büyüğe. "govde" metnin olağan boyudur. Tailwind'de renk ve yazı boyu aynı önekle yazılır
@@ -183,7 +184,13 @@ export const varsayilanTemaDegerleri: TemaDegerleri = {
     baslik: "Jost Variable, Inter Variable, system-ui, sans-serif",
     kod: "ui-monospace, monospace",
   },
-  kalinliklar: { normal: "400", orta: "500", kalin: "600", "baslik-kalinligi": "600" },
+  kalinliklar: {
+    normal: "400",
+    orta: "500",
+    kalin: "600",
+    "en-kalin": "700",
+    "baslik-kalinligi": "600",
+  },
   yaziBoylari: {
     kucuk: { boy: "0.75rem", satir: "1.4" },
     govde: { boy: "0.875rem", satir: "1.5" },

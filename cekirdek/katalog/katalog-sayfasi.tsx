@@ -126,7 +126,12 @@ function ParcaBolumu({ parca, secim }: { parca: ParcaBilgisi; secim: KatalogSeci
   return (
     <section aria-label={baslik} className="flex flex-col gap-4 border-t border-kenar pt-6">
       <h2>
-        <Baglanti href={secimAdresi(`${katalogAdresi}/${parca.kod}`, secim)}>{baslik}</Baglanti>
+        <Baglanti
+          href={secimAdresi(`${katalogAdresi}/${parca.kod}`, secim)}
+          className="font-baslik-kalinligi"
+        >
+          {baslik}
+        </Baglanti>
       </h2>
       <KatalogOrnegi kod={parca.kod} />
     </section>

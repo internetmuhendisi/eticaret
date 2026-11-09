@@ -52,7 +52,7 @@ Sınıfta `bg-`, `text-`, `border-`, `outline-`, `accent-` önekleriyle yazılı
 | Tür | Sınıf | Adlar |
 |---|---|---|
 | Yazı tipi | `font-` | `govde` (Inter), `baslik` (Jost), `kod` |
-| Kalınlık | `font-` | `normal`, `orta`, `kalin`, `baslik-kalinligi` |
+| Kalınlık | `font-` | `normal`, `orta`, `kalin`, `en-kalin` (düğme ve rozet), `baslik-kalinligi` |
 | Yazı boyu (satır yüksekliğiyle) | `text-` | küçükten büyüğe `kucuk`, `govde`, `orta`, `buyuk`, `baslik-4`, `baslik-3`, `baslik-2`, `baslik-1`, `afis-basligi` |
 | Köşe | `rounded-` | `kucuk` (rozet), `orta` (kart, alan), `dugme`; ayrıca `none`, `full` |
 | Gölge | `shadow-` | `kart`, `acilir`, `pencere`; ayrıca `none` |

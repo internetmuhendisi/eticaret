@@ -10,17 +10,19 @@ import { sinif } from "./sinif.ts";
 
 // Yükseklik 11 (44 px): parmakla rahat basılır. Kapalı düğme gri zemindedir, renge bağlı değildir.
 export const dugmeSiniflari = cva(
-  "inline-flex min-h-11 shrink-0 cursor-pointer items-center justify-center gap-2 text-center font-kalin transition-colors duration-kisa disabled:cursor-not-allowed disabled:bg-yuzey disabled:text-soluk-yazi",
+  "inline-flex min-h-11 shrink-0 cursor-pointer items-center justify-center gap-2 text-center font-en-kalin transition-colors duration-kisa disabled:cursor-not-allowed disabled:bg-yuzey disabled:text-soluk-yazi",
   {
     variants: {
       tur: {
         // Sayfanın asıl eylemi.
-        birincil: "rounded-dugme bg-birincil px-6 text-birincil-ustu hover:bg-birincil/90",
-        ikincil: "rounded-dugme bg-yuzey px-6 text-yazi hover:bg-kenar",
-        cerceveli: "rounded-dugme border border-alan-kenari bg-zemin px-6 text-yazi hover:bg-yuzey",
-        sade: "rounded-dugme bg-transparent px-6 text-yazi hover:bg-yuzey",
+        birincil: "rounded-dugme bg-birincil px-5 text-birincil-ustu hover:bg-birincil/90",
+        // Koyu düğme: zemini yazının rengidir, iki temada da en güçlü ikinci vurgu.
+        ikincil: "rounded-dugme bg-yazi px-5 text-zemin hover:bg-yazi/85",
+        // Kenarı yazının rengindedir; şeridin önceki ve sonraki düğmeleri de bu türdür.
+        cerceveli: "rounded-dugme border border-yazi bg-transparent px-5 text-yazi hover:bg-yuzey",
+        sade: "rounded-dugme bg-transparent px-5 text-yazi hover:bg-yuzey",
         // Geri dönüşsüz eylem: silme, iptal.
-        tehlike: "rounded-dugme bg-tehlike px-6 text-tehlike-ustu hover:bg-tehlike-yazi",
+        tehlike: "rounded-dugme bg-tehlike px-5 text-tehlike-ustu hover:bg-tehlike-yazi",
         // Bağlantı gibi görünen düğme.
         baglanti: "px-0 text-yazi underline underline-offset-2 hover:no-underline",
       },

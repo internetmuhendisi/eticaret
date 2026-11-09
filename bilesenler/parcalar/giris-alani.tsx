@@ -16,7 +16,7 @@ type YazilanTur =
   | "datetime-local";
 
 export const girisAlaniSiniflari =
-  "min-h-11 w-full min-w-0 rounded-orta border border-alan-kenari bg-zemin px-3 text-yazi placeholder:text-soluk-yazi disabled:cursor-not-allowed disabled:bg-yuzey disabled:text-soluk-yazi aria-invalid:border-2 aria-invalid:border-tehlike";
+  "min-h-11 w-full min-w-0 rounded-dugme border border-alan-kenari bg-zemin px-4 text-yazi placeholder:text-soluk-yazi disabled:cursor-not-allowed disabled:bg-yuzey disabled:text-soluk-yazi aria-invalid:border-2 aria-invalid:border-tehlike";
 
 export function GirisAlani({
   className,
