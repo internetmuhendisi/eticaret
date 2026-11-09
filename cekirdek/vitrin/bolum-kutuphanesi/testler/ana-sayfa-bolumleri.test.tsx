@@ -267,7 +267,11 @@ describe("güven şeridi", () => {
 describe("kampanya afişleri", () => {
   it("afişin başlığı bağlantıdır ve afişin tamamına yayılır; rozet koyu; düğme yazısı ekran okuyucuda okunmaz", () => {
     const kap = ciz([
-      bolum("kampanya-afisleri", "yatay", { afisler: ornekAnaSayfa()[2]?.degerler["afisler"] }),
+      bolum(
+        "kampanya-afisleri",
+        "yatay",
+        (ornekAnaSayfa()[2]?.degerler ?? {}) as { afisler?: unknown },
+      ),
     ]);
     const afisler = kap.querySelectorAll("li");
     expect(afisler).toHaveLength(3);
