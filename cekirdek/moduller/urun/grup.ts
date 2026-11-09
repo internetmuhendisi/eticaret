@@ -2,7 +2,7 @@
 // bağlantı biçimini ve aynı servisi (grup-servisi.ts) kullanır; yalnız adları, izinleri, metinleri ve
 // bağlantının tekilliği ayrıdır. Kategori ağaç olduğu için kendi modülündedir.
 //
-// Grup: ad, adres adı ve açıklama. Ad (büyük küçük harf ve noktalı noktasız i ayrımsız,
+// Grup: ad, adres adı, açıklama ve logo (logo yalnız markada girilir, kart 0111). Ad (büyük küçük harf ve noktalı noktasız i ayrımsız,
 // cekirdek/metinler/ad-anahtari.ts) ve adres adı silinmemişler arasında
 // sitede tekildir. Silme silinme işaretiyle yapılır, satır kalır; ürün bağlantıları kalkar (kullanıcı
 // kararı, grup-servisi.ts).
@@ -13,10 +13,13 @@
 // - ad anahtarı (ad-anahtari.ts): ad tekilliği (kısmi tekil indeks).
 // - <bağlantı>.grup_kimligi: bir grubun ürünleri. urun_kimligi birincil anahtarın ilk alanıdır: bir
 //   ürünün grupları birincil anahtardan okunur.
+// - <grup>.logo_kimligi: vitrin görseli ucu markanın logosunu bu alanla arar (cekirdek/moduller/duzen/gorsel.ts);
+//   sitede en çok birkaç yüz marka olduğu için indeks yoktur (kategori görseliyle aynı, karar 0087).
 import { sql } from "drizzle-orm";
 import { index, pgTable, primaryKey, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { adAnahtariSql } from "../../metinler/ad-anahtari.ts";
 import { kimlik, zaman } from "../../veritabani/turler.ts";
+import { dosyalar } from "../dosya/model.ts";
 import { urunler } from "./model.ts";
 
 export const grupTablosu = <Ad extends string>(ad: Ad) =>
@@ -28,6 +31,9 @@ export const grupTablosu = <Ad extends string>(ad: Ad) =>
       adres_adi: text().notNull(),
       // Etiket için bugün girilmez (kart 0078); alan iki grupta aynı biçim için vardır.
       aciklama: text(),
+      // Dosya deposundaki görsel (kart 0111). Etiket için girilmez; alan iki grupta aynı biçim için vardır.
+      // Dosya silinme işaretiyle silindiği için bağ kalıcı silmeyi engeller.
+      logo_kimligi: uuid().references(() => dosyalar.kimlik, { onDelete: "restrict" }),
       olusturma_zamani: zaman().notNull().defaultNow(),
       guncellenme_zamani: zaman().notNull().defaultNow(),
       silinme_zamani: zaman(),

@@ -641,3 +641,65 @@ test("kayan afiş: telefonda telefon görseli, masaüstünde asıl görsel", asy
     expect(dogal, String(width)).toBe(beklenen === "dikey");
   }
 });
+
+// Ürün bölümleri (kart 0111): bölüm kütüphanesi testi sayfanın tamamını (ürün bölümleri dahil) iki renkte ve üç
+// genişlikte tarar; burada sekmeli vitrin klavyeyle, fırsatların geri sayımı saat ilerletilerek denenir.
+const om = (anahtar: string) =>
+  metin(`gelistirme.bolum.ornek.anaSayfa.${anahtar}` as MetinAnahtari);
+
+test("sekmeli vitrin: ok tuşları sekmeyi değiştirir, Tab seçili sekmenin ürünlerine geçer", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await ac(page, `${katalogAdresi}/bolum-kutuphanesi`);
+  const bolum = page.getByRole("region", { name: om("kategoriyeGore") });
+  const sekmeler = bolum.getByRole("tab");
+  await expect(sekmeler).toHaveText([om("sekmeYeni"), om("sekmeIndirimli"), om("sekmeMarka")]);
+  await sekmeler.first().focus();
+  await expect(sekmeler.first()).toHaveAttribute("aria-selected", "true");
+  const panel = bolum.getByRole("tabpanel");
+  const ilkKartlar = await panel.getByRole("heading", { level: 3 }).allTextContents();
+  await page.keyboard.press("ArrowRight");
+  await expect(sekmeler.nth(1)).toBeFocused();
+  await expect(sekmeler.nth(1)).toHaveAttribute("aria-selected", "true");
+  const ikinciKartlar = await panel.getByRole("heading", { level: 3 }).allTextContents();
+  expect(ikinciKartlar).not.toEqual(ilkKartlar);
+  expect(ikinciKartlar.length).toBeGreaterThan(0);
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+  await expect(panel.getByRole("link").first()).toBeFocused();
+  await tara(page, "sekmeli vitrin, ikinci sekme");
+});
+
+test("fırsatlar: kalan süre kartta ve sayaçta; biten kart kalkar, hepsi bitince bölüm kalkar", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await ac(page, `${katalogAdresi}/bolum-kutuphanesi`);
+  const bolum = page.getByRole("region", { name: om("firsatBaslik") });
+  await expect(
+    bolum.getByRole("timer", { name: metin("vitrin.bolum.firsatlar.kalanSure") }),
+  ).toBeVisible();
+  // Katalogdaki ilk iki fırsat 40 dakika ve 3 saat 20 dakika sonra biter (cekirdek/katalog/ornek-baglam.ts).
+  await expect(bolum.getByText(/^Bitmesine (40|39) dakika$/)).toBeVisible();
+  await expect(bolum.getByRole("heading", { level: 3 })).toHaveCount(2);
+  await page.clock.runFor(41 * 60_000);
+  await expect(bolum.getByRole("heading", { level: 3 })).toHaveCount(1);
+  await expect(bolum.getByText(/^Bitmesine 2 saat (39|40) dakika$/)).toBeVisible();
+  await tara(page, "fırsatlar, bir kart bitti");
+  await page.clock.runFor(3 * 60 * 60_000);
+  await expect(bolum).toHaveCount(0);
+});
+
+test("marka logoları: logolu markada logo, logosuzda adı; her kutu markanın sayfasına bağlı", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 800 });
+  await ac(page, `${katalogAdresi}/bolum-kutuphanesi`);
+  // İlk örnek başlıksızdır, adı "Markalar"dır; ikincisinin başlığı da "Markalar"dır.
+  const bolum = page.getByRole("region", { name: om("markalar") }).first();
+  await expect(bolum.getByRole("link", { name: om("marka1") }).locator("img")).toBeVisible();
+  await expect(bolum.getByRole("link", { name: om("marka3") })).toHaveText(om("marka3"));
+  expect(await yanaKayma(page)).toBe(0);
+});

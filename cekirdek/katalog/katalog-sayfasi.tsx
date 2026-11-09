@@ -31,6 +31,8 @@ import {
   ornekBaglam,
   ornekGenisLogo,
   ornekOtekiGorunumler,
+  ornekUrunBolumleri,
+  ornekUrunBolumleriOtekiGorunumler,
   ornekUstKisim,
 } from "./ornek-baglam";
 import { ornekUrunKartlari } from "./ornek-urun-kartlari";
@@ -309,6 +311,28 @@ export function KatalogBolumKutuphanesiSayfasi({ secim }: { secim: KatalogSecimi
         <div className="flex flex-col gap-10 border border-kenar py-6 masaustu:gap-12">
           <DuzenAlaniCizimi
             bolumler={ornekAnaSayfaOtekiGorunumler()}
+            gorunumler={bolumGorunumleri}
+            baglam={baglam}
+          />
+        </div>
+      </section>
+      <section
+        aria-label={metin("gelistirme.bolum.urunBolumleri")}
+        className="flex flex-col gap-4 border-t border-kenar pt-6"
+      >
+        <h2>{metin("gelistirme.bolum.urunBolumleri")}</h2>
+        <p>{metin("gelistirme.bolum.urunBolumleriAciklamasi")}</p>
+        <div className="flex flex-col gap-10 border border-kenar py-6 masaustu:gap-12">
+          <DuzenAlaniCizimi
+            bolumler={ornekUrunBolumleri()}
+            gorunumler={bolumGorunumleri}
+            baglam={baglam}
+          />
+        </div>
+        <h3>{metin("gelistirme.bolum.otekiGorunumler")}</h3>
+        <div className="flex flex-col gap-10 border border-kenar py-6 masaustu:gap-12">
+          <DuzenAlaniCizimi
+            bolumler={ornekUrunBolumleriOtekiGorunumler()}
             gorunumler={bolumGorunumleri}
             baglam={baglam}
           />

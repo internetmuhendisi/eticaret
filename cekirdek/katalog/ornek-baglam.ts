@@ -6,15 +6,20 @@ import { altyapiAdi } from "../kayitlar/altyapi";
 import { islevler } from "../kayitlar/islevler";
 import { odemeIsaretleri } from "../kayitlar/odeme";
 import { sosyalHesapAdresleri } from "../kayitlar/sosyal-siteler";
+import type { MetinAnahtari } from "../metinler/metin";
 import { bicim, metin } from "../metinler/site-metni";
 import { kayitAdresleri, vitrinAdresleri } from "../vitrin/adresler";
 import type {
   BaglamGorseli,
   BaglamKategorisi,
+  BaglamMarkasi,
   BaglamMenuDali,
   VitrinBaglami,
 } from "../vitrin/bolum-kutuphanesi/baglam";
 import type { BolumOrnegi } from "../vitrin/bolum-kutuphanesi/duzen";
+import { type UrunKaynagi, urunKaynagiAnahtari } from "../vitrin/bolum-kutuphanesi/urun-kaynagi";
+import type { UrunKartiVerisi } from "../vitrin/urun-karti/tur";
+import { ornekUrunKartlari } from "./ornek-urun-kartlari";
 
 const dal = (
   kimlik: string,
@@ -106,7 +111,66 @@ const ornekKategoriler = (): Record<string, BaglamKategorisi> =>
     ]),
   );
 
-export const ornekBaglam = (): VitrinBaglami => ({
+// Ürün bölümlerinin örnek markaları ve kaynakları (kart 0111). Vitrinde markalar marka tablosundan, kaynakların
+// ürünleri urunKartlari'ndan gelir; katalog örnek kartlarla doldurur. İlk iki markanın logosu var.
+export const ornekMarkaKimligi = (sira: number) => ornekKimlik(sira + 201);
+const ornekMarkaAdlari: readonly MetinAnahtari[] = [
+  "gelistirme.bolum.ornek.anaSayfa.marka1",
+  "gelistirme.bolum.ornek.anaSayfa.marka2",
+  "gelistirme.bolum.ornek.anaSayfa.marka3",
+  "gelistirme.bolum.ornek.anaSayfa.marka4",
+  "gelistirme.bolum.ornek.anaSayfa.marka5",
+];
+const ornekMarkalar = (): Record<string, BaglamMarkasi> =>
+  Object.fromEntries(
+    ornekMarkaAdlari.map((anahtar, sira) => [
+      ornekMarkaKimligi(sira),
+      {
+        ad: metin(anahtar),
+        adres: kayitAdresleri.marka(`ornek-${sira + 1}`),
+        ...(sira < 2 ? { logo: ornekGorselKimligi.genis(sira) } : {}),
+      },
+    ]),
+  );
+
+export const ornekKaynaklar = {
+  yeni: { tur: "yeni", adet: 8 },
+  kategori: { tur: "kategori", kategori: ornekKategoriKimligi(0), adet: 8 },
+  indirimli: { tur: "indirimli", adet: 4 },
+  marka: { tur: "marka", marka: ornekMarkaKimligi(0), adet: 4 },
+  firsat2: { tur: "firsat", adet: 2 },
+  firsat4: { tur: "firsat", adet: 4 },
+} as const satisfies Record<string, UrunKaynagi>;
+
+// Fırsatların örnek kartları: indirimli kartlar, bağlamın anından sonra biten indirimlerle (en yakın önce).
+const dakikaSonra = (an: Date, dakika: number) => new Date(an.getTime() + dakika * 60_000);
+const ornekFirsatlar = (an: Date): UrunKartiVerisi[] => {
+  const kartlar = ornekUrunKartlari();
+  const bitisler = [40, 3 * 60 + 20, 2 * 24 * 60 + 5 * 60, 6 * 24 * 60];
+  return [0, 3, 6, 5].flatMap((sira, kacinci) => {
+    const kart = kartlar[sira];
+    const bitis = bitisler[kacinci];
+    if (kart?.fiyat === undefined || bitis === undefined) return [];
+    return [{ ...kart, fiyat: { ...kart.fiyat, indirimBitisi: dakikaSonra(an, bitis) } }];
+  });
+};
+
+const ornekUrunler = (an: Date): Record<string, readonly UrunKartiVerisi[]> => {
+  const kartlar = ornekUrunKartlari();
+  const firsatlar = ornekFirsatlar(an);
+  return {
+    [urunKaynagiAnahtari(ornekKaynaklar.yeni)]: kartlar.slice(0, 8),
+    [urunKaynagiAnahtari(ornekKaynaklar.kategori)]: kartlar.slice(2, 8),
+    [urunKaynagiAnahtari(ornekKaynaklar.indirimli)]: [0, 3, 6].flatMap(
+      (sira) => kartlar[sira] ?? [],
+    ),
+    [urunKaynagiAnahtari(ornekKaynaklar.marka)]: kartlar.slice(4, 8),
+    [urunKaynagiAnahtari(ornekKaynaklar.firsat2)]: firsatlar.slice(0, 2),
+    [urunKaynagiAnahtari(ornekKaynaklar.firsat4)]: firsatlar,
+  };
+};
+
+export const ornekBaglam = (an: Date = new Date()): VitrinBaglami => ({
   magazaAdi: metin("gelistirme.bolum.ornek.magazaAdi"),
   iletisim: {
     telefon: { metin: metin("gelistirme.bolum.ornek.telefon"), adres: "tel:+900000000000" },
@@ -150,6 +214,9 @@ export const ornekBaglam = (): VitrinBaglami => ({
   islevler: Object.fromEntries(islevler.map((islev) => [islev, true])) as VitrinBaglami["islevler"],
   gorseller: ornekGorseller(),
   kategoriler: ornekKategoriler(),
+  markalar: ornekMarkalar(),
+  urunler: ornekUrunler(an),
+  an,
   yerTutucular: { kargoyaVermeSuresi: bicim().sayi(1) },
   parcaGorunumleri: { "urun-karti": "dikey" },
   sayilar: { sepet: 2, favori: 3 },
@@ -310,5 +377,55 @@ export const ornekAnaSayfaOtekiGorunumler = (): BolumOrnegi[] => [
     ...ornekGenisAfis(),
     gorsel: ornekGorselKimligi.genis(1),
     zemin: "afis",
+  }),
+];
+
+// Ürün bölümleri (kart 0111): önce her türün ilk görünümü, sonra öteki görünümler. Ürünler, markalar ve indirim
+// bitişleri yukarıdaki örneklerdir.
+export const ornekUrunBolumleri = (): BolumOrnegi[] => [
+  ornekBolum("urun-vitrini", "izgara", {
+    baslik: om("oneCikanlar"),
+    urunler: ornekKaynaklar.yeni,
+    tumuBaglantisi: { adres: vitrinAdresleri.anasayfa, yeniSekme: false },
+  }),
+  ornekBolum("sekmeli-vitrin", "izgara", {
+    baslik: om("kategoriyeGore"),
+    sekmeler: [
+      { baslik: om("sekmeYeni"), urunler: ornekKaynaklar.yeni },
+      { baslik: om("sekmeIndirimli"), urunler: ornekKaynaklar.indirimli },
+      { baslik: om("sekmeMarka"), urunler: ornekKaynaklar.marka },
+    ],
+    kartGorunumu: "yatay",
+  }),
+  ornekBolum("firsatlar", "yan-panelli", {
+    ustYazi: om("firsatUst"),
+    baslik: om("firsatBaslik"),
+  }),
+  ornekBolum("marka-logolari", "izgara", {
+    markalar: [0, 1, 2, 3, 4].map((sira) => ({ marka: ornekMarkaKimligi(sira) })),
+  }),
+];
+
+export const ornekUrunBolumleriOtekiGorunumler = (): BolumOrnegi[] => [
+  ornekBolum("urun-vitrini", "kaydirmali", {
+    baslik: om("yeniGelenler"),
+    urunler: ornekKaynaklar.kategori,
+    yanBaslik: om("yeniGelenler"),
+    yanMetin: om("yeniGelenlerMetni"),
+    yanGorsel: ornekGorselKimligi.kare(4),
+    yanDugmeYazisi: om("yanDugme"),
+    yanBaglanti: { adres: vitrinAdresleri.anasayfa, yeniSekme: false },
+  }),
+  ornekBolum("sekmeli-vitrin", "kaydirmali", {
+    sekmeler: [
+      { baslik: om("sekmeIndirimli"), urunler: ornekKaynaklar.indirimli },
+      { baslik: om("sekmeMarka"), urunler: ornekKaynaklar.marka },
+    ],
+    kartGorunumu: "dikey",
+  }),
+  ornekBolum("firsatlar", "panelsiz", { adet: "dort", kartGorunumu: "yatay" }),
+  ornekBolum("marka-logolari", "kaydirmali", {
+    baslik: om("markalar"),
+    markalar: [0, 1, 2, 3, 4].map((sira) => ({ marka: ornekMarkaKimligi(sira) })),
   }),
 ];

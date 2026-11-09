@@ -204,6 +204,13 @@
       "when": 1794251959564,
       "tag": "0028_kategori-gorseli",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1794265432797,
+      "tag": "0029_marka-logosu",
+      "breakpoints": true
     }
   ]
 }

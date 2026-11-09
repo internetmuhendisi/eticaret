@@ -26,6 +26,7 @@ import {
 } from "../../veritabani/baglanti.ts";
 import { kimlikMi } from "../../veritabani/turler.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
+import { gorselHazirMi } from "../dosya/servis.ts";
 import type { GrupBaglantisi, GrupTablosu } from "./grup.ts";
 import {
   type GrupDegisikligi,
@@ -47,10 +48,12 @@ export type Grup = {
   ad: string;
   adresAdi: string;
   aciklama?: string;
+  // Logonun dosya kimliği (kart 0111); yalnız markada girilir.
+  logo?: string;
   silindi: boolean;
 };
 
-type GrupKaydi = { ad: string; adresAdi: string; aciklama: string | null };
+type GrupKaydi = { ad: string; adresAdi: string; aciklama: string | null; logo: string | null };
 
 type Sorun = { alan: string; kod: string };
 const bilinenKodlar = new Set<string>(grupHatalari);
@@ -95,6 +98,7 @@ export const grupServisi = (tanim: GrupTanimi) => {
     ad: tablo.ad,
     adresAdi: tablo.adres_adi,
     aciklama: tablo.aciklama,
+    logo: tablo.logo_kimligi,
     silinme: tablo.silinme_zamani,
   };
   const okunan = (satir: {
@@ -102,12 +106,14 @@ export const grupServisi = (tanim: GrupTanimi) => {
     ad: string;
     adresAdi: string;
     aciklama: string | null;
+    logo: string | null;
     silinme: Date | null;
   }): Grup => ({
     kimlik: satir.kimlik,
     ad: satir.ad,
     adresAdi: satir.adresAdi,
     ...(satir.aciklama === null ? {} : { aciklama: satir.aciklama }),
+    ...(satir.logo === null ? {} : { logo: satir.logo }),
     silindi: satir.silinme !== null,
   });
 
@@ -153,7 +159,21 @@ export const grupServisi = (tanim: GrupTanimi) => {
     if (!kimlikMi(kimlik)) throw new BilinenHata("bulunamadi");
     const [satir] = await islem.select(alanlar).from(tablo).where(eq(tablo.kimlik, kimlik));
     if (satir === undefined || satir.silinme !== null) throw new BilinenHata("bulunamadi");
-    return { ad: satir.ad, adresAdi: satir.adresAdi, aciklama: satir.aciklama };
+    return {
+      ad: satir.ad,
+      adresAdi: satir.adresAdi,
+      aciklama: satir.aciklama,
+      logo: satir.logo,
+    };
+  };
+
+  // Logo hazır bir görsel olmalı (kategori görseliyle aynı kural, karar 0087): dosya var ve silinmemiş,
+  // kendisi bir boyut değil, bütün boyutları tam. Dosya satırı paylaşımlı kilitlenir: aynı anda silinen
+  // dosyaya bağlanılmaz.
+  const logoyuDenetle = async (islem: VeritabaniIslemi, logo: string | null) => {
+    if (logo !== null && (await gorselHazirMi(islem, logo)) !== "hazir") {
+      throw new BilinenHata("dogrulama", [{ alan: "logo", kod: "gorsel-gecersiz" }]);
+    }
   };
 
   const ekle = async (
@@ -165,6 +185,7 @@ export const grupServisi = (tanim: GrupTanimi) => {
     const girdi = girdiyiDogrula(girdiSemasi.safeParse(ham)) as GrupGirdisi;
     return yaz(vt, async (islem) => {
       if (await adKullaniliyor(islem, girdi.ad)) throw cakisma("ad", "ad-tekrar");
+      await logoyuDenetle(islem, girdi.logo ?? null);
       if (girdi.adresAdi !== undefined && (await adresAdiKullaniliyor(islem, girdi.adresAdi))) {
         throw cakisma("adresAdi", "adres-adi-tekrar");
       }
@@ -181,12 +202,14 @@ export const grupServisi = (tanim: GrupTanimi) => {
             return new Set(satirlar.map((satir) => satir.adresAdi));
           })),
         aciklama: girdi.aciklama ?? null,
+        logo: girdi.logo ?? null,
       };
       await islem.insert(tablo).values({
         kimlik,
         ad: kayit.ad,
         adres_adi: kayit.adresAdi,
         aciklama: kayit.aciklama,
+        logo_kimligi: kayit.logo,
       });
       await degisikligiKaydet(islem, {
         kim,
@@ -213,11 +236,14 @@ export const grupServisi = (tanim: GrupTanimi) => {
         ad: girdi.ad ?? eski.ad,
         adresAdi: girdi.adresAdi ?? eski.adresAdi,
         aciklama: girdi.aciklama === undefined ? eski.aciklama : girdi.aciklama,
+        logo: girdi.logo === undefined ? eski.logo : girdi.logo,
       };
-      const degisen = (["ad", "adresAdi", "aciklama"] as const).filter(
+      const degisen = (["ad", "adresAdi", "aciklama", "logo"] as const).filter(
         (alan) => eski[alan] !== yeni[alan],
       );
       if (degisen.length === 0) return;
+      // Logosu sonradan silinen marka, logo değişmedikçe değişebilir (kategori görseliyle aynı).
+      if (yeni.logo !== eski.logo) await logoyuDenetle(islem, yeni.logo);
       if (yeni.ad !== eski.ad && (await adKullaniliyor(islem, yeni.ad, kimlik))) {
         throw cakisma("ad", "ad-tekrar");
       }
@@ -233,6 +259,7 @@ export const grupServisi = (tanim: GrupTanimi) => {
           ad: yeni.ad,
           adres_adi: yeni.adresAdi,
           aciklama: yeni.aciklama,
+          logo_kimligi: yeni.logo,
           guncellenme_zamani: sql`now()`,
         })
         .where(eq(tablo.kimlik, kimlik));

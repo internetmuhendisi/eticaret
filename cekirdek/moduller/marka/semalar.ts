@@ -3,8 +3,8 @@
 import type { MetinAnahtari } from "../../metinler/metin.ts";
 import { type GrupHatasi, grupDegisikligi, grupGirdisi } from "../urun/grup-semalari.ts";
 
-export const markaGirdisi = grupGirdisi(true);
-export const markaDegisikligi = grupDegisikligi(true);
+export const markaGirdisi = grupGirdisi({ aciklama: true, logo: true });
+export const markaDegisikligi = grupDegisikligi({ aciklama: true, logo: true });
 
 // Her hata kodunun ekran metni: eksik metin tür kontrolünde hata verir.
 export const markaHataMetinleri = {
@@ -12,4 +12,5 @@ export const markaHataMetinleri = {
   "adres-adi-bicimi": "yonetim.marka.hata.adres-adi-bicimi",
   "adres-adi-tekrar": "yonetim.marka.hata.adres-adi-tekrar",
   "ad-tekrar": "yonetim.marka.hata.ad-tekrar",
+  "gorsel-gecersiz": "yonetim.marka.hata.gorsel-gecersiz",
 } as const satisfies Record<GrupHatasi, MetinAnahtari>;

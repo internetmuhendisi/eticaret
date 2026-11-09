@@ -95,12 +95,12 @@ Mağazanın logosunu verir: mağaza sahibinin yüklediği logo, yoksa sitenin il
 
 ### GET /kapi/herkese-acik/vitrin-gorseli
 
-Vitrin bölümlerindeki ve kategorilerdeki görselin bir boyutunu verir (kart 0110, karar 0087). Kayan afiş, kampanya afişleri, geniş afiş ve kategori kutuları görseli bu adresten alır. Yanıt zarf değil, dosyanın kendisidir; hata yine zarfla döner.
+Vitrin bölümlerindeki, kategorilerdeki görselin ve markanın logosunun bir boyutunu verir (kart 0110, karar 0087; kart 0111, karar 0088). Kayan afiş, kampanya afişleri, geniş afiş, kategori kutuları, ürün vitrininin yan afişi ve marka logoları görseli bu adresten alır. Yanıt zarf değil, dosyanın kendisidir; hata yine zarfla döner.
 
 - İzin: `herkese-acik`. Sınır: `gorsel`.
 - Girdi: `d` görselin dosya kimliği, `b` boyutun adı (`kucuk`, `orta`, `buyuk`, `tam`). Başka parametre, kimlik biçiminde olmayan `d` ya da kayıtta olmayan boyut `dogrulama`.
 - Servis: `cekirdek/moduller/duzen/gorsel.ts`.
-- Yalnız vitrinde kullanılan görsel verilir: geçerli düzende çizilen bir bölümün başvurduğu görsel ya da silinmemiş bir kategorinin görseli. Gizli ya da geçersiz bölümün görseli, logo, ürün görseli ve dosya deposundaki öteki dosyalar bu adresle açılmaz; özgün görsel verilmez.
+- Yalnız vitrinde kullanılan görsel verilir: geçerli düzende çizilen bir bölümün başvurduğu görsel, silinmemiş bir kategorinin görseli ya da silinmemiş bir markanın logosu. Gizli ya da geçersiz bölümün görseli, mağaza logosu, ürün görseli ve dosya deposundaki öteki dosyalar bu adresle açılmaz; özgün görsel verilmez.
 - Başarılı (200) ve 304: ürün görseli ucuyla aynı başlıklar.
 - Görsel yoksa (404): `{ "basarili": false, "hata": { "kod": "bulunamadi" } }`. Kullanılmayan, silinmiş ya da okunamayan dosya ve eksik boyut aynı cevabı alır; okunamayan dosyanın hatası dosya başına bir kez kaydedilir.
 

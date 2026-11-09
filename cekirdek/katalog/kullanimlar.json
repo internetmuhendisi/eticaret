@@ -59,6 +59,7 @@
     "cekirdek/vitrin/bolumler/genis-afis/gorunum.tsx",
     "cekirdek/vitrin/bolumler/kayan-afis/kaydirici.tsx",
     "cekirdek/vitrin/bolumler/menu-satiri/gorunum.tsx",
+    "cekirdek/vitrin/bolumler/ortak/urun-izgarasi.tsx",
     "cekirdek/vitrin/bolumler/ust-satir/menu-dugmesi.tsx",
     "cekirdek/vitrin/hesap-alani.tsx",
     "cekirdek/vitrin/urun-karti/urun-karti.tsx",
@@ -91,8 +92,12 @@
     "cekirdek/vitrin/urun-karti/urun-karti.tsx"
   ],
   "bilesenler/parcalar/secim-kutusu.tsx": ["cekirdek/yonetim-paneli/bolum-formu.tsx"],
-  "bilesenler/parcalar/sekmeler.tsx": [],
-  "bilesenler/parcalar/serit.tsx": ["cekirdek/vitrin/bolumler/kategori-kutulari/gorunum.tsx"],
+  "bilesenler/parcalar/sekmeler.tsx": ["cekirdek/vitrin/bolumler/sekmeli-vitrin/gorunum.tsx"],
+  "bilesenler/parcalar/serit.tsx": [
+    "cekirdek/vitrin/bolumler/kategori-kutulari/gorunum.tsx",
+    "cekirdek/vitrin/bolumler/marka-logolari/gorunum.tsx",
+    "cekirdek/vitrin/bolumler/ortak/urun-izgarasi.tsx"
+  ],
   "bilesenler/parcalar/uyari.tsx": [
     "bilesenler/parcalar/bildirim.tsx",
     "cekirdek/moduller/oturum/sifirlama-formlari.tsx",

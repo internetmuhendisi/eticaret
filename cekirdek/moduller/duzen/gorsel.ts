@@ -2,7 +2,8 @@
 // (GET /kapi/herkese-acik/vitrin-gorseli). Adres görselin dosya kimliğini ve boyutun adını taşır.
 //
 // Yalnız vitrinde kullanılan görsel verilir: geçerli düzende çizilen bir bölümün başvurduğu görsel ya da
-// silinmemiş bir kategorinin görseli. Gizli bölümün, silinmiş kategorinin, logonun, ürün görselinin (o kendi
+// silinmemiş bir kategorinin görseli ya da silinmemiş bir markanın logosu (kart 0111; marka sayfası da onu
+// gösterecek). Gizli bölümün, silinmiş kategorinin ve markanın, mağaza logosunun, ürün görselinin (o kendi
 // ucundadır, karar 0085) ve dosya deposundaki öteki dosyaların görseli bu adresle açılmaz. Özgün görsel
 // verilmez, yalnız kayıttaki boyutlar.
 import { and, eq, isNull } from "drizzle-orm";
@@ -15,6 +16,7 @@ import { bolumKutuphanesi } from "../../vitrin/bolum-kutuphanesi/kutuphane.ts";
 import { type GorselDosyasi, gorselBoyutunuOku } from "../dosya/gorsel-boyutu.ts";
 import { dosyaKlasoru } from "../dosya/servis.ts";
 import { kategoriler } from "../kategori/model.ts";
+import { markalar } from "../marka/model.ts";
 import { duzenServisi } from "./servis.ts";
 
 export const vitrinGorseliYolu = "/kapi/herkese-acik/vitrin-gorseli";
@@ -23,7 +25,7 @@ export const vitrinGorseliYolu = "/kapi/herkese-acik/vitrin-gorseli";
 export const vitrinGorseliAdresi = (dosya: string, boyut: GorselBoyutu): string =>
   `${vitrinGorseliYolu}?d=${dosya}&b=${boyut}`;
 
-// Görsel vitrinde kullanılıyor mu: önce kategoriler (tek sorgu), sonra düzen.
+// Görsel vitrinde kullanılıyor mu: önce kategoriler ve markalar (birer sorgu), sonra düzen.
 export const vitrindeKullaniliyorMu = async (
   vt: Veritabani,
   site: Site,
@@ -38,6 +40,12 @@ export const vitrindeKullaniliyorMu = async (
     .where(and(eq(kategoriler.gorsel_kimligi, kimlik), isNull(kategoriler.silinme_zamani)))
     .limit(1);
   if (kategori !== undefined) return true;
+  const [marka] = await vt
+    .select({ kimlik: markalar.kimlik })
+    .from(markalar)
+    .where(and(eq(markalar.logo_kimligi, kimlik), isNull(markalar.silinme_zamani)))
+    .limit(1);
+  if (marka !== undefined) return true;
   return (
     await duzenServisi(
       () => site,

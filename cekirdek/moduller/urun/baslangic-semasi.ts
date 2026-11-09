@@ -90,14 +90,14 @@ const alternatifMetin = galeriGorselGirdisi.shape.alternatifMetin;
 
 const kategori = kategoriGirdisi.pick({ ad: true, aciklama: true }).extend({ adresAdi });
 // Grup şeması açıklamayı koşullu alır, türü açıklamayı tanımaz: okunan değer açık türe çevrilir.
-const marka = grupGirdisi(true)
+const marka = grupGirdisi({ aciklama: true, logo: false })
   .extend({ adresAdi })
   .transform(({ ad, adresAdi, aciklama }) => ({
     ad,
     adresAdi,
     ...(typeof aciklama === "string" ? { aciklama } : {}),
   }));
-const etiket = grupGirdisi(false)
+const etiket = grupGirdisi({ aciklama: false, logo: false })
   .extend({ adresAdi })
   .transform(({ ad, adresAdi }) => ({ ad, adresAdi }));
 

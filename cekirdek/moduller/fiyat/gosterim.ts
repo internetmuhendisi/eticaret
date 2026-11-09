@@ -48,6 +48,8 @@ export type GosterilecekFiyat = {
   // Tutarın vergi durumu; vergi kapalıysa ya da ürün vergisizse "yok".
   vergi: FiyatGirisi | "yok";
   ekMetin?: string;
+  // İndirimin bittiği an (hariç), indirimdeyse ve bitişi varsa (gecerliFiyat, kart 0111).
+  indirimBitisi?: Date;
   // Sitenin para biçimiyle yazılmış hâlleri.
   yazili: { tutar: string; eskiTutar?: string };
 };
@@ -62,6 +64,10 @@ export type FiyatAraligi = {
   // İndirim rozeti (kart 0109, karar 0085): adayların en büyük indirim oranı. Adayların oranları
   // farklıysa (biri indirimsiz de olabilir) "varan" indirimdir. Hiçbir adayın oranı yoksa alan yoktur.
   indirim?: { oran: number; varan: boolean };
+  // Geri sayımın bitişi (kart 0111, kullanıcı kararı): adayların (yalnız satılabilir birimler, hiçbiri
+  // satılamıyorsa hepsi) kartta görünen (oranı en az 1) ve bitişi olan indirimlerinin en yakını. Süresiz
+  // indirimde, indirim yokken ve eski fiyatı gösterilemeyen indirimde alan yoktur.
+  indirimBitisi?: Date;
 };
 
 // İndirim oranı (kart 0109, karar 0085, kullanıcı kararı): eski fiyatın gösterildiği fiyatta, yüzde
@@ -212,6 +218,7 @@ export const fiyatGosterimServisi = (site: Site) => {
         paraBirimi: gecerli.paraBirimi,
         vergi,
         ...(ekMetin === undefined ? {} : { ekMetin }),
+        ...(gecerli.indirimBitisi === undefined ? {} : { indirimBitisi: gecerli.indirimBitisi }),
         yazili: {
           tutar: bicim.para(tutar),
           ...(eskiTutar === undefined ? {} : { eskiTutar: bicim.para(eskiTutar) }),
@@ -252,10 +259,18 @@ export const fiyatGosterimServisi = (site: Site) => {
         if (fiyat.tutar > enYuksek.tutar) enYuksek = fiyat;
       }
       const indirim = araliginIndirimi(adaylar);
+      // Bitiş yalnız indirimi kartta görünen adaylardan (oranı en az 1, rozetle aynı ölçü; kart 0111 kontrolü):
+      // eski fiyatı gösterilemeyen (30 gün kuralı) indirime geri sayılmaz, sayaç ile kart ayrışmaz.
+      const bitisler = adaylar.flatMap((fiyat) =>
+        fiyat.indirimBitisi === undefined || indirimOrani(fiyat) < 1
+          ? []
+          : [fiyat.indirimBitisi.getTime()],
+      );
       sonuc.set(urun, {
         enDusuk,
         enYuksek,
         ...(indirim === undefined ? {} : { indirim }),
+        ...(bitisler.length === 0 ? {} : { indirimBitisi: new Date(Math.min(...bitisler)) }),
         yaziliAralik: aralikBicimi.paraAraligi(enDusuk.tutar, enYuksek.tutar, aralikAyirici),
         // Bütün adaylar aynı tutar ve eski fiyattaysa: eşit tutarda iki uç aynı birleşimden gelir,
         // ötekinin farklı eski fiyatı yalnız bütün adaylara bakılınca görülür.

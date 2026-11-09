@@ -8,6 +8,8 @@
 // - Parça görünümleri sitenin geçerli temasından (kart 0109): kayıtlı tema kullanılamıyorsa başlangıç teması.
 // - Bölümlerin seçtiği kategoriler (silinmemişler) ve bölümlerin ve kategorilerin görselleri, vitrin görseli
 //   ucunun adresleriyle (kart 0110). Yer tutucuların değerleri mağaza ayarlarından.
+// - Bölümlerin seçtiği markalar (silinmemişler) ve logoları; ürün bölümlerinin kaynaklarının ürün kartları
+//   (kart 0111, cekirdek/vitrin/urun-kaynagi.ts). Ürün bölümü yoksa ürün sorgusu atılmaz.
 // - Ödeme işaretleri sitede açık ödeme yöntemlerinden gelir; ödeme modülü yazılana kadar yoktur.
 import { and, inArray, isNull } from "drizzle-orm";
 import type { Site } from "../ayar-semasi/site-klasoru";
@@ -23,6 +25,7 @@ import { vitrinGorseliAdresi } from "../moduller/duzen/gorsel";
 import { kategoriler } from "../moduller/kategori/model";
 import { logoUcuYolu, magazaLogosu } from "../moduller/magaza-ayarlari/logo";
 import { siteninMagazaAyarlari } from "../moduller/magaza-ayarlari/servis";
+import { markalar } from "../moduller/marka/model";
 import { type MenuDali, type VitrinHedefi, vitrinMenusu } from "../moduller/menu/servis";
 import { temaServisi } from "../moduller/tema/servis";
 import type { Veritabani } from "../veritabani/baglanti";
@@ -31,11 +34,14 @@ import { kayitAdresleri } from "./adresler";
 import type {
   BaglamGorseli,
   BaglamKategorisi,
+  BaglamMarkasi,
   BaglamMenuDali,
   VitrinBaglami,
 } from "./bolum-kutuphanesi/baglam";
 import type { BolumKutuphanesi, BolumOrnegi } from "./bolum-kutuphanesi/duzen";
-import { bolumBaglari } from "./bolum-kutuphanesi/tarif";
+import { bolumBaglari, bolumunUrunKaynaklari } from "./bolum-kutuphanesi/tarif";
+import type { UrunKaynagi } from "./bolum-kutuphanesi/urun-kaynagi";
+import { kaynaklarinUrunleri } from "./urun-kaynagi";
 
 const hedefAdresi = (hedef: VitrinHedefi): { adres?: string; yeniSekme: boolean } => {
   switch (hedef.tur) {
@@ -62,7 +68,7 @@ export const menuDallari = (dallar: readonly MenuDali[]): BaglamMenuDali[] =>
 const bolumlerinBaglari = (
   bolumler: readonly BolumOrnegi[],
   kutuphane: BolumKutuphanesi,
-  tur: "menu" | "kategori" | "gorsel",
+  tur: "menu" | "kategori" | "marka" | "gorsel",
 ): string[] => {
   const kimlikler = new Set<string>();
   for (const bolum of bolumler) {
@@ -123,6 +129,44 @@ const kategorileriOku = async (
   );
 };
 
+// Bölümlerin seçtiği markalar ve logoları (kart 0111): silinmemiş olanlar, tek sorgu.
+const markalariOku = async (
+  vt: Veritabani,
+  kimlikler: string[],
+): Promise<Record<string, BaglamMarkasi>> => {
+  const gecerli = kimlikler.filter(kimlikMi).map((kimlik) => kimlik.toLowerCase());
+  if (gecerli.length === 0) return {};
+  const satirlar = await vt
+    .select({
+      kimlik: markalar.kimlik,
+      ad: markalar.ad,
+      adresAdi: markalar.adres_adi,
+      logo: markalar.logo_kimligi,
+    })
+    .from(markalar)
+    .where(and(inArray(markalar.kimlik, gecerli), isNull(markalar.silinme_zamani)));
+  return Object.fromEntries(
+    satirlar.map((satir) => [
+      satir.kimlik,
+      {
+        ad: satir.ad,
+        adres: kayitAdresleri.marka(satir.adresAdi),
+        ...(satir.logo === null ? {} : { logo: satir.logo }),
+      },
+    ]),
+  );
+};
+
+// Bölümlerin ürün kaynakları (kart 0111).
+const bolumlerinUrunKaynaklari = (
+  bolumler: readonly BolumOrnegi[],
+  kutuphane: BolumKutuphanesi,
+): UrunKaynagi[] =>
+  bolumler.flatMap((bolum) => {
+    const tarif = Object.hasOwn(kutuphane, bolum.tur) ? kutuphane[bolum.tur] : undefined;
+    return tarif === undefined ? [] : bolumunUrunKaynaklari(tarif, bolum.degerler);
+  });
+
 // Telefonun bağlantısı: yalnız rakam ve baştaki +.
 const telefonAdresi = (telefon: string) => `tel:${telefon.replace(/[^\d+]/g, "")}`;
 
@@ -134,12 +178,14 @@ export const vitrinBaglaminiOku = async (
   an: Date = new Date(),
 ): Promise<VitrinBaglami> => {
   const kodlar = bolumlerinMenuKodlari(bolumler, kutuphane);
-  const [ayarlar, logo, menuler, tema, kategoriListesi] = await Promise.all([
+  const [ayarlar, logo, menuler, tema, kategoriListesi, markaListesi, urunler] = await Promise.all([
     siteninMagazaAyarlari(vt, site),
     magazaLogosu(vt, { site }),
     Promise.all(kodlar.map(async (kod) => [kod, await vitrinMenusu(vt, kod)] as const)),
     temaServisi(() => site).gecerliTema(vt),
     kategorileriOku(vt, bolumlerinBaglari(bolumler, kutuphane, "kategori")),
+    markalariOku(vt, bolumlerinBaglari(bolumler, kutuphane, "marka")),
+    kaynaklarinUrunleri(vt, site, bolumlerinUrunKaynaklari(bolumler, kutuphane), an),
   ]);
   // Bölümlerin ve seçtikleri kategorilerin görselleri tek okumayla (silinmiş görsel yok).
   const gorselKimlikleri = [
@@ -147,6 +193,9 @@ export const vitrinBaglaminiOku = async (
       ...bolumlerinBaglari(bolumler, kutuphane, "gorsel"),
       ...Object.values(kategoriListesi).flatMap((kategori) =>
         kategori.gorsel === undefined ? [] : [kategori.gorsel],
+      ),
+      ...Object.values(markaListesi).flatMap((marka) =>
+        marka.logo === undefined ? [] : [marka.logo],
       ),
     ]),
   ].filter(kimlikMi);
@@ -217,6 +266,9 @@ export const vitrinBaglaminiOku = async (
     ),
     gorseller,
     kategoriler: kategoriListesi,
+    markalar: markaListesi,
+    urunler,
+    an,
     yerTutucular: yerTutucuDegerleri,
     parcaGorunumleri: tema.tema.tanim.gorunumler,
     islevler: yazilanIslevler,

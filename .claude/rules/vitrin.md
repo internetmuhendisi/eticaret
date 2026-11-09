@@ -36,6 +36,13 @@ paths:
 - Renkli zemin `zeminSiniflari` ile okunur çiftiyle seçilir (`cekirdek/vitrin/bolumler/ortak/zemin.ts`), renkli zeminde odak yazının rengindedir.
 - Kendiliğinden hareket eden bölüm durdurulabilir ve hareket azaltma tercihinde kendiliğinden hareket etmez (`useHareketAzaltma`).
 
+## Ürün bölümleri (karar 0088)
+
+- Ürün gösteren bölüm ürünlerini yalnız ürün kaynağından, vitrin bağlamı üzerinden alır (`kaynaklarinUrunleri`, `cekirdek/vitrin/urun-kaynagi.ts`; anahtar `urunKaynagiAnahtari`). Kaynakta görünürlük, tükenen ürün ve sıra sorgudadır; bölüm ürünü yeniden süzmez, sıralamaz.
+- İndirimdeki ürünün listesi yalnız `indirimdekiUrunKosulu` ile süzülür. Kartta görünen indirim tek ölçüdür: rozeti çıkaran oran (`fiyat.indirim`); geri sayım, "indirimdekiler" ve fırsatlar ona bakar. İndirimin bitişi kartın fiyatından (`indirimBitisi`) okunur; geri sayımın bitişi elle girilmez, bölümde hesaplanmaz.
+- Ürün bölümünün ızgarası, başlık satırı ve yan afişi ortak parçalardır (`cekirdek/vitrin/bolumler/ortak/urun-izgarasi.tsx`, alanları `urun-alanlari.ts`).
+- Sayfa açıkken değişen vitrin bilgisi (geri sayım) sunucuda bağlamın anıyla çizilir, tarayıcıda yalnız değişeceği anda yeniden kurulur.
+
 ## Bölüm kütüphanesi (karar 0081)
 
 - Üst kısım, ana sayfa ve alt kısım bölümlerden kurulur. Bölüm türünün tarifi (`cekirdek/vitrin/bolum-kutuphanesi/tarif.ts`) adını, konabileceği alanları, alanlarını ve türlerini, görünümlerini ve bağlı olduğu işlevi yazar. Alanların şeması, panelin düzenleme formu ve düzen servisi bu tariften çıkar.

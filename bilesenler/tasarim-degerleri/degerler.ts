@@ -249,7 +249,14 @@ export const sabitDegerler = {
   // Kırılma noktaları: telefon varsayılandır, tablet ve masaüstü bu genişliklerden başlar.
   kirilmaNoktalari: { tablet: "40rem", masaustu: "64rem", genis: "80rem" },
   // İçeriğin en çok genişliği.
-  genislikler: { karekod: "16rem", form: "28rem", metin: "42rem", icerik: "80rem" },
+  // panel: ürün bölümlerinin yan afişi ve fırsat paneli (kart 0111), masaüstünde.
+  genislikler: {
+    karekod: "16rem",
+    panel: "16rem",
+    form: "28rem",
+    metin: "42rem",
+    icerik: "80rem",
+  },
   // Kod yüklenmeyince "yükleniyor" yazısının görünmeden önce beklediği süre (kart 0057).
   yukleniyorGecikmesi: "3s",
   // Açılış ve kapanış hareketlerinin süreleri (kart 0103). Hareketi azaltmayı seçen kullanıcıda

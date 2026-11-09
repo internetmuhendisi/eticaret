@@ -1,15 +1,21 @@
 // Marka ve etiket gerçek veritabanıyla (kart 0078, karar 0064). İkisi aynı servisi kullandığı için her
 // senaryo ikisinde de denenir: ekleme ve okuma, ad ve adres adı tekilliği, ürüne bağlama (marka tekil,
 // etiket çoklu), silme kuralı (bağlantılar kalkar, ürün bozulmaz), grubun ürünlerinin tek sorguyla
-// gelmesi, açık duran silmeyle yarış, bozuk kimlik, değişiklik kaydı ve iki sitenin ayrı kalması.
+// gelmesi, açık duran silmeyle yarış, bozuk kimlik, değişiklik kaydı ve iki sitenin ayrı kalması. Markanın
+// logosu (kart 0111) en sonda.
 import { randomUUID } from "node:crypto";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { eq, sql } from "drizzle-orm";
+import sharp from "sharp";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BilinenHata } from "../../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
+import { dosyaSil, gorselKaydet } from "../../dosya/servis.ts";
 import { etiketler, urunEtiketleri } from "../../etiket/model.ts";
 import { etiketServisi } from "../../etiket/servis.ts";
 import { markalar, urunMarkalari } from "../../marka/model.ts";
@@ -351,5 +357,105 @@ describe("marka tekildir", () => {
       kod: "dogrulama",
       ayrinti: [{ alan: "etiketler", kod: "etiket-tekrar" }],
     });
+  });
+});
+
+// Marka logosu (kart 0111, karar 0088): hazır bir görsel olmalı (kategori görseliyle aynı kural), kaldırılabilir,
+// her değişikliği kayda girer; etikette logo girilmez.
+describe("marka logosu", () => {
+  const klasorler: string[] = [];
+  afterEach(() => {
+    for (const klasor of klasorler.splice(0)) rmSync(klasor, { recursive: true, force: true });
+  });
+  const gorselAc = async (vt: Veritabani) => {
+    const klasor = mkdtempSync(join(tmpdir(), "marka-logosu-"));
+    klasorler.push(klasor);
+    const icerik = await sharp({
+      create: { width: 600, height: 200, channels: 3, background: { r: 20, g: 20, b: 20 } },
+    })
+      .png()
+      .toBuffer();
+    const sonuc = await gorselKaydet(vt, icerik, klasor);
+    if (!sonuc.tamam) throw new Error(sonuc.hata);
+    return sonuc;
+  };
+  const logoHatasi = { kod: "dogrulama", ayrinti: [{ alan: "logo", kod: "gorsel-gecersiz" }] };
+
+  it("logo kaydedilir, okunur, değişir ve kaldırılır; her değişiklik kayda girer", async () => {
+    const vt = await siteAc();
+    const [ilk, ikinci] = [await gorselAc(vt), await gorselAc(vt)];
+    const marka = await markaServisi.ekle(vt, yonetici(), {
+      ad: "Logolu",
+      logo: ilk.dosya.kimlik.toUpperCase(),
+    });
+    expect((await markaServisi.oku(marka, vt))?.logo).toBe(ilk.dosya.kimlik);
+    await markaServisi.degistir(vt, yonetici(), marka, { logo: ikinci.dosya.kimlik });
+    expect((await markaServisi.oku(marka, vt))?.logo).toBe(ikinci.dosya.kimlik);
+    await markaServisi.degistir(vt, yonetici(), marka, { logo: null });
+    expect(await markaServisi.oku(marka, vt)).not.toHaveProperty("logo");
+    const kayitlar = await vt
+      .select({
+        islem: degisiklikKayitlari.islem,
+        eski: degisiklikKayitlari.eski_deger,
+        yeni: degisiklikKayitlari.yeni_deger,
+      })
+      .from(degisiklikKayitlari)
+      .where(sql`${degisiklikKayitlari.kayit_kimligi} = ${marka}`)
+      .orderBy(degisiklikKayitlari.zaman);
+    expect(kayitlar).toEqual([
+      expect.objectContaining({
+        islem: "marka.eklendi",
+        yeni: expect.objectContaining({ logo: ilk.dosya.kimlik }),
+      }),
+      {
+        islem: "marka.degisti",
+        eski: { logo: ilk.dosya.kimlik },
+        yeni: { logo: ikinci.dosya.kimlik },
+      },
+      { islem: "marka.degisti", eski: { logo: ikinci.dosya.kimlik }, yeni: { logo: null } },
+    ]);
+  });
+
+  it("hazır olmayan görsel logo olamaz: olmayan, silinmiş, kendisi boyut olan dosya", async () => {
+    const vt = await siteAc();
+    const gorsel = await gorselAc(vt);
+    const silinen = await gorselAc(vt);
+    await dosyaSil(vt, silinen.dosya.kimlik);
+    for (const logo of [randomUUID(), silinen.dosya.kimlik, gorsel.boyutlar.orta.kimlik]) {
+      expect(await hatasi(markaServisi.ekle(vt, yonetici(), { ad: "Hatalı", logo }))).toEqual(
+        logoHatasi,
+      );
+    }
+    const marka = await markaServisi.ekle(vt, yonetici(), { ad: "Marka" });
+    expect(
+      await hatasi(markaServisi.degistir(vt, yonetici(), marka, { logo: silinen.dosya.kimlik })),
+    ).toEqual(logoHatasi);
+    expect(await markaServisi.oku(marka, vt)).not.toHaveProperty("logo");
+    expect(
+      await hatasi(markaServisi.ekle(vt, yonetici(), { ad: "Bozuk", logo: "bozuk" })),
+    ).toMatchObject({ kod: "dogrulama" });
+  });
+
+  it("logosu sonradan silinen marka, logo değişmedikçe değişebilir", async () => {
+    const vt = await siteAc();
+    const gorsel = await gorselAc(vt);
+    const marka = await markaServisi.ekle(vt, yonetici(), {
+      ad: "Eski",
+      logo: gorsel.dosya.kimlik,
+    });
+    await dosyaSil(vt, gorsel.dosya.kimlik);
+    await markaServisi.degistir(vt, yonetici(), marka, { ad: "Yeni" });
+    expect(await markaServisi.oku(marka, vt)).toMatchObject({
+      ad: "Yeni",
+      logo: gorsel.dosya.kimlik,
+    });
+  });
+
+  it("etikette logo girilmez", async () => {
+    const vt = await siteAc();
+    const gorsel = await gorselAc(vt);
+    expect(
+      await hatasi(etiketServisi.ekle(vt, yonetici(), { ad: "Etiket", logo: gorsel.dosya.kimlik })),
+    ).toMatchObject({ kod: "dogrulama" });
   });
 });

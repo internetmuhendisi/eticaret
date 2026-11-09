@@ -87,6 +87,8 @@ describe("geçerli fiyat sitenin saat diliminde", () => {
       indirimde: true,
       paraBirimi: "XTS",
       satisFiyati: 10_000,
+      // Geri sayımın bitişi yerel 16 Kasım 00:00'dır (kart 0111).
+      indirimBitisi: new Date("2026-11-15T21:00:00Z"),
     });
   });
 

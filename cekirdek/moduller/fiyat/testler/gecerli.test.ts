@@ -25,12 +25,26 @@ describe("geçerli fiyat", () => {
     ["bittiği anda", bitis, 10_000, false],
     ["bittikten sonra", new Date("2027-01-01T00:00:00.000Z"), 10_000, false],
   ])("%s", (_ad, an, tutar, indirimde) => {
+    // İndirim sürerken bitişi de gelir (kart 0111, geri sayım); bittiğinde ve başlamadan yoktur.
     expect(gecerliFiyat(fiyat(), an, "XTS")).toEqual({
       tutar,
       indirimde,
       paraBirimi: "XTS",
       satisFiyati: 10_000,
+      ...(indirimde ? { indirimBitisi: bitis } : {}),
     });
+  });
+
+  it("süresiz indirimde ve indirimsiz fiyatta bitiş yoktur (kart 0111)", () => {
+    const suresiz = gecerliFiyat(fiyat({ indirimBitisi: null }), baslangic, "XTS");
+    expect(suresiz?.indirimde).toBe(true);
+    expect(suresiz).not.toHaveProperty("indirimBitisi");
+    const indirimsiz = gecerliFiyat(
+      fiyat({ indirimliFiyat: null, indirimBaslangici: null, indirimBitisi: null }),
+      baslangic,
+      "XTS",
+    );
+    expect(indirimsiz).not.toHaveProperty("indirimBitisi");
   });
 
   it("boş başlangıç hemen, boş bitiş süresiz", () => {

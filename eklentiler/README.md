@@ -98,7 +98,7 @@ Parantez içindeki ad, eklentinin önerilen kod adıdır. Tarif dosyası bu adla
 - Hızlı bakış (`hizli-bakis`)
 - Ürün rozetleri (`urun-rozetleri`)
 - Açılır pencere (`acilir-pencere`)
-- Geri sayım (`geri-sayim`)
+- Geri sayım (`geri-sayim`): ürün sayfası ve öteki yerler için; ana sayfanın geri sayımlı fırsatlar bölümü temel pakettedir (karar 0088)
 - Mağaza bulucu (`magaza-bulucu`)
 - Beden rehberi (`beden-rehberi`)
 - Odanda gör ve sanal deneme (`odanda-gor-ve-sanal-deneme`)

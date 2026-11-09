@@ -7,6 +7,7 @@
 import type { Islev } from "../../kayitlar/islevler.ts";
 import type { OdemeIsareti } from "../../kayitlar/odeme.ts";
 import type { SosyalSite } from "../../kayitlar/sosyal-siteler.ts";
+import type { UrunKartiVerisi } from "../urun-karti/tur.ts";
 
 // Menünün vitrinde çizilecek dalı: bağlantının adresi kurulmuştur, başlığın adresi yoktur.
 export type BaglamMenuDali = {
@@ -27,6 +28,9 @@ export type BaglamGorseli = {
 
 // Bölümlerin seçtiği kategori (kart 0110): adı, sayfasının adresi ve görselinin dosya kimliği.
 export type BaglamKategorisi = { ad: string; adres: string; gorsel?: string };
+
+// Bölümlerin seçtiği marka (kart 0111): adı, sayfasının adresi ve logosunun dosya kimliği.
+export type BaglamMarkasi = { ad: string; adres: string; logo?: string };
 
 // İletişim bilgisinin yazılışı ve bağlantısı (tel:, mailto:).
 export type IletisimBilgisi = { metin: string; adres: string };
@@ -52,6 +56,13 @@ export type VitrinBaglami = {
   gorseller: Readonly<Record<string, BaglamGorseli>>;
   // Bölümlerin seçtiği kategoriler, kimliğiyle (kart 0110). Silinmiş ya da olmayan kategori burada yoktur.
   kategoriler: Readonly<Record<string, BaglamKategorisi>>;
+  // Bölümlerin seçtiği markalar, kimliğiyle (kart 0111). Silinmiş ya da olmayan marka burada yoktur.
+  markalar: Readonly<Record<string, BaglamMarkasi>>;
+  // Ürün bölümlerinin kaynaklarının ürün kartları, kaynağın anahtarıyla (kart 0111, urun-kaynagi.ts). Kartlar
+  // urunKartlari'ndandır: yalnız vitrinde görünen ürünler, kaynağın sırasıyla.
+  urunler: Readonly<Record<string, readonly UrunKartiVerisi[]>>;
+  // Bağlamın okunduğu an (kart 0111): geri sayım sunucuda bu anla çizilir, tarayıcıda saatle sürer.
+  an: Date;
   // Bölüm metinlerindeki yer tutucuların değerleri (kart 0110, cekirdek/kayitlar/yer-tutucular.ts).
   yerTutucular: Readonly<Record<string, string>>;
   // Temanın parça görünümleri (cekirdek/kayitlar/tema.ts): ürün kartını çizen bölüm görünümü buradan

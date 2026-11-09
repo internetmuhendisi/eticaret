@@ -231,7 +231,8 @@
         "kayda-uygun-degil": "Bu alan yalnız bir e-posta adresinden ya da giriş anahtarından oluşamaz. Metni değiştirin.",
         "adres-adi-bicimi": "Adres adında yalnız küçük harf (ç, ğ, ı, ö, ş, ü olmadan), rakam ve tire olabilir. Örnek: ornek-marka.",
         "adres-adi-tekrar": "Bu adres adı başka bir markada kullanılıyor. Başka bir ad yazın.",
-        "ad-tekrar": "Bu adla bir marka zaten var. Başka bir ad yazın."
+        "ad-tekrar": "Bu adla bir marka zaten var. Başka bir ad yazın.",
+        "gorsel-gecersiz": "Logo için yüklenmiş ve hazır bir görsel seçin."
       }
     },
     "etiket": {
@@ -239,7 +240,8 @@
         "kayda-uygun-degil": "Bu alan yalnız bir e-posta adresinden ya da giriş anahtarından oluşamaz. Metni değiştirin.",
         "adres-adi-bicimi": "Adres adında yalnız küçük harf (ç, ğ, ı, ö, ş, ü olmadan), rakam ve tire olabilir. Örnek: yaz-indirimi.",
         "adres-adi-tekrar": "Bu adres adı başka bir etikette kullanılıyor. Başka bir ad yazın.",
-        "ad-tekrar": "Bu adla bir etiket zaten var. Başka bir ad yazın."
+        "ad-tekrar": "Bu adla bir etiket zaten var. Başka bir ad yazın.",
+        "gorsel-gecersiz": "Görsel hazır değil. Başka bir görsel seçin."
       }
     },
     "ozellik": {
@@ -407,7 +409,9 @@
         "yanYana": "Yan yana",
         "tamGenislik": "Tam genişlik",
         "izgara": "Izgara",
-        "kaydirmali": "Kaydırmalı"
+        "kaydirmali": "Kaydırmalı",
+        "yanPanelli": "Yan panelli",
+        "panelsiz": "Panelsiz"
       },
       "alan": {
         "baslik": "Başlık",
@@ -543,6 +547,57 @@
         "kategoriler": "Kategoriler",
         "kategori": "Kategori",
         "etiket": "Kategoriler"
+      },
+      "urun": {
+        "kaynak": "Ürünler",
+        "kartGorunumu": "Ürün kartı",
+        "temaninKarti": "Temanın kartı",
+        "kart": {
+          "dikey": "Dikey",
+          "yatay": "Yatay (küçük görselli)",
+          "buyukGorsel": "Büyük görselli"
+        },
+        "tumuBaglantisi": "\"Tümünü gör\" bağlantısı",
+        "tumunuGor": "Tümünü gör",
+        "yanBaslik": "Yan afişin başlığı (verilirse yan afiş görünür)",
+        "yanMetin": "Yan afişin metni",
+        "yanGorsel": "Yan afişin görseli"
+      },
+      "urunVitrini": {
+        "ad": "Ürün vitrini",
+        "etiket": "Ürünler"
+      },
+      "sekmeliVitrin": {
+        "ad": "Sekmeli vitrin",
+        "sekmeler": "Sekmeler",
+        "sekme": "Sekme",
+        "sekmeBasligi": "Sekmenin başlığı",
+        "etiket": "Ürünler"
+      },
+      "firsatlar": {
+        "ad": "Geri sayımlı fırsatlar",
+        "adet": "Gösterilecek ürün sayısı",
+        "adet2": "2 ürün",
+        "adet4": "4 ürün",
+        "adet6": "6 ürün",
+        "adet8": "8 ürün",
+        "etiket": "Süreli fırsatlar",
+        "kalanSure": "Kalan süre",
+        "gun": "gün",
+        "saat": "saat",
+        "dakikaAdi": "dakika",
+        "bitmesine": "Bitmesine {sure}",
+        "gunSaat": "{gun} gün {saat} saat",
+        "saatDakika": "{saat} saat {dakika} dakika",
+        "dakika": "{dakika} dakika",
+        "yalnizGun": "{gun} gün",
+        "yalnizSaat": "{saat} saat"
+      },
+      "markaLogolari": {
+        "ad": "Marka logoları",
+        "markalar": "Markalar",
+        "marka": "Marka",
+        "etiket": "Markalar"
       }
     },
     "cerceve": {
@@ -821,14 +876,32 @@
           "genisMetin": "Geniş afişin açıklaması: kampanya, yeni ürün ya da duyuru.",
           "genisDugme": "Ayrıntılar",
           "kategoriBaslik": "Kategoriler",
-          "gorselMetni": "Örnek görsel: açık zeminde geometrik bir biçim"
+          "gorselMetni": "Örnek görsel: açık zeminde geometrik bir biçim",
+          "oneCikanlar": "Öne çıkanlar",
+          "yeniGelenler": "Yeni gelenler",
+          "yeniGelenlerMetni": "Kataloğa son eklenen ürünler.",
+          "yanDugme": "Tümünü gör",
+          "kategoriyeGore": "Kategoriye göre",
+          "sekmeYeni": "Yeni",
+          "sekmeIndirimli": "İndirimdekiler",
+          "sekmeMarka": "Örnek marka",
+          "firsatUst": "Süreli fırsatlar",
+          "firsatBaslik": "İndirimler yakında bitiyor",
+          "markalar": "Markalar",
+          "marka1": "Birinci Marka",
+          "marka2": "Logolu Marka",
+          "marka3": "Uzun adlı bir örnek marka",
+          "marka4": "Dördüncü Marka",
+          "marka5": "Beşinci Marka"
         }
       },
       "ustAlt": "Üst ve alt kısım",
       "ustAltAciklamasi": "Mağazanın seçebileceği üst ve alt kısım bölümleri, örnek iletişim bilgileri ve menülerle. Önce her bölümün ilk görünümü vitrindeki gibi bir arada, sonra öteki görünümleri. Katalogda bütün işlevler açıktır.",
       "otekiGorunumler": "Öteki görünümler",
       "anaSayfa": "Ana sayfa bölümleri",
-      "anaSayfaAciklamasi": "Kart 0110'un bölümleri her görünümüyle. Görseller ve kategoriler örnektir; vitrinde bölümün seçtiği kayıtlardan gelir."
+      "anaSayfaAciklamasi": "Kart 0110'un bölümleri her görünümüyle. Görseller ve kategoriler örnektir; vitrinde bölümün seçtiği kayıtlardan gelir.",
+      "urunBolumleri": "Ürün bölümleri",
+      "urunBolumleriAciklamasi": "Kart 0111'in bölümleri her görünümüyle. Ürünler, markalar ve indirim bitişleri örnektir; vitrinde bölümün kaynağından ve çekirdeğin indiriminden gelir."
     },
     "urunKarti": {
       "baslik": "Ürün kartı",

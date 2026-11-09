@@ -17,6 +17,7 @@ import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { dosyaOku, gorselKaydet } from "../../dosya/servis.ts";
 import { kategoriDegistir, kategoriEkle, kategoriSil } from "../../kategori/servis.ts";
 import { logoyuDegistir } from "../../magaza-ayarlari/logo.ts";
+import { markaServisi } from "../../marka/servis.ts";
 import { urunServisi } from "../../urun/servis.ts";
 import { vitrindeKullaniliyorMu, vitrinGorseliAdresi, vitrinGorseliOku } from "../gorsel.ts";
 import { duzenServisi } from "../servis.ts";
@@ -107,6 +108,38 @@ describe("vitrin görseli", () => {
     await kategoriDegistir(h.vt, yonetici(), kategori, { gorsel: ilk.dosya.kimlik });
     await kategoriSil(h.vt, yonetici(), kategori);
     expect(await h.oku(ilk.dosya.kimlik)).toBeUndefined();
+  });
+
+  it("silinmemiş markanın logosu verilir; logo kaldırılınca ve marka silinince verilmez (kart 0111)", async () => {
+    const h = await hazirla();
+    const logo = await h.gorsel();
+    const marka = await markaServisi.ekle(h.vt, yonetici(), {
+      ad: "Logolu",
+      logo: logo.dosya.kimlik,
+    });
+    expect(await vitrindeKullaniliyorMu(h.vt, site, logo.dosya.kimlik)).toBe(true);
+    const beklenen = await dosyaOku(h.vt, logo.boyutlar.orta.kimlik, h.klasor);
+    const okunan = await h.oku(logo.dosya.kimlik);
+    expect(okunan?.icerik.equals(beklenen?.icerik ?? Buffer.alloc(0))).toBe(true);
+    await markaServisi.degistir(h.vt, yonetici(), marka, { logo: null });
+    expect(await vitrindeKullaniliyorMu(h.vt, site, logo.dosya.kimlik)).toBe(false);
+    await markaServisi.degistir(h.vt, yonetici(), marka, { logo: logo.dosya.kimlik });
+    await markaServisi.sil(h.vt, yonetici(), marka);
+    expect(await h.oku(logo.dosya.kimlik)).toBeUndefined();
+  });
+
+  it("ürün vitrininin yan afiş görseli verilir (kart 0111)", async () => {
+    const h = await hazirla();
+    const yan = await h.gorsel();
+    await duzen.bolumEkle(h.vt, yonetici(), "ana-sayfa", {
+      tur: "urun-vitrini",
+      degerler: {
+        urunler: { tur: "yeni", adet: 4 },
+        yanBaslik: "Yan",
+        yanGorsel: yan.dosya.kimlik,
+      },
+    });
+    expect(await vitrindeKullaniliyorMu(h.vt, site, yan.dosya.kimlik)).toBe(true);
   });
 
   it("listedeki her slaytın görseli ve telefon görseli verilir", async () => {

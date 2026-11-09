@@ -24,6 +24,9 @@ export type GecerliFiyat = {
   // Tutar indirimli fiyat mı? Satış fiyatı her zaman yanında durur.
   indirimde: boolean;
   satisFiyati: number;
+  // İndirimdeyse ve bitişi varsa indirimin bittiği an (hariç). Süresiz indirimde ve indirimsizken yoktur.
+  // Geri sayım bunu gösterir (kart 0111); elle girilmez.
+  indirimBitisi?: Date;
 };
 
 export const indirimSuruyorMu = (fiyat: Fiyat, an: Date): boolean =>
@@ -43,5 +46,6 @@ export const gecerliFiyat = (
     paraBirimi: fiyat.paraBirimi,
     indirimde,
     satisFiyati: fiyat.satisFiyati,
+    ...(indirimde && fiyat.indirimBitisi !== null ? { indirimBitisi: fiyat.indirimBitisi } : {}),
   };
 };

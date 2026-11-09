@@ -1,6 +1,6 @@
 // Vitrin bağlamı ve düzenin menü bağı gerçek veritabanıyla (kart 0108, karar 0083): mağaza adı, iletişim,
 // adres ve sosyal hesaplar mağaza ayarlarından; menüler yalnız bölümlerin seçtikleri, adresleri kurulmuş ve
-// görünmeyen öğeleri süzülmüş; silinmiş ya da olmayan menü bağlamda yok; altyapı adı yalnız ayar açıkken; yıl
+// görünmeyen öğeleri süzülmüş; ürün bölümlerinin markaları ve kartları (kart 0111); silinmiş ya da olmayan menü bağlamda yok; altyapı adı yalnız ayar açıkken; yıl
 // sitenin saat dilimine göre. Düzene bölüm eklenirken seçilen menü var ve silinmemiş olmalı; aynı anda silinen
 // menüye bağlanılmaz.
 import { randomUUID } from "node:crypto";
@@ -20,14 +20,18 @@ import { vitrinGorseliAdresi } from "../../moduller/duzen/gorsel.ts";
 import { duzenServisi } from "../../moduller/duzen/servis.ts";
 import { kategoriEkle, kategoriSil } from "../../moduller/kategori/servis.ts";
 import { siteninServisi } from "../../moduller/magaza-ayarlari/servis.ts";
+import { markaServisi } from "../../moduller/marka/servis.ts";
 import { menuler } from "../../moduller/menu/model.ts";
 import { menuEkle, menuSil, ogeEkle } from "../../moduller/menu/servis.ts";
+import { urunServisi } from "../../moduller/urun/servis.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
 import { kilitBekleyeniGor } from "../../veritabani/testler/kilit-bekleyen.ts";
+import { kayitAdresleri } from "../adresler.ts";
 import { vitrinBaglaminiOku } from "../baglam-oku.ts";
 import type { BolumOrnegi } from "../bolum-kutuphanesi/duzen.ts";
 import { bolumKutuphanesi } from "../bolum-kutuphanesi/kutuphane.ts";
+import { urunKaynagiAnahtari } from "../bolum-kutuphanesi/urun-kaynagi.ts";
 
 const ornekSite = siteKlasorunuOku(
   join(import.meta.dirname, "..", "..", "ayar-semasi", "testler", "ornek-siteler", "gecerli"),
@@ -366,5 +370,70 @@ describe("ana sayfa bölümlerinin bağlamı", () => {
     // 0 aynı gün demektir: "0 iş gününde" yazılmasın diye değer yoktur, madde çizilmez.
     await siteninServisi(site).degistir(vt, yonetici(), { kargoyaVermeSuresi: 0 });
     expect((await vitrinBaglaminiOku(vt, site, [], bolumKutuphanesi)).yerTutucular).toEqual({});
+  });
+});
+
+// Ürün bölümlerinin verisi (kart 0111, karar 0088).
+describe("ürün bölümlerinin bağlamı", () => {
+  it("bölümlerin seçtiği markalar logolarıyla (silinmiş yok), kaynakların kartları ve okunduğu an", async () => {
+    const vt = await siteAc();
+    const klasor = mkdtempSync(join(tmpdir(), "vitrin-baglam-marka-"));
+    temizlenecekler.push(async () => rmSync(klasor, { recursive: true, force: true }));
+    const icerik = await sharp({
+      create: { width: 600, height: 200, channels: 3, background: { r: 10, g: 10, b: 10 } },
+    })
+      .png()
+      .toBuffer();
+    const logo = await gorselKaydet(vt, icerik, klasor);
+    if (!logo.tamam) throw new Error(logo.hata);
+    const logolu = await markaServisi.ekle(vt, yonetici(), {
+      ad: "Logolu",
+      adresAdi: "logolu",
+      logo: logo.dosya.kimlik,
+    });
+    const logosuz = await markaServisi.ekle(vt, yonetici(), { ad: "Logosuz", adresAdi: "logosuz" });
+    const silinen = await markaServisi.ekle(vt, yonetici(), { ad: "Silinen" });
+    await markaServisi.sil(vt, yonetici(), silinen);
+    const urun = await urunServisi(() => site.ayarlar.saatDilimi).urunEkle(vt, yonetici(), {
+      ad: "Ürün",
+      vergiSinifi: null,
+      durum: "yayinda",
+      marka: logolu,
+    });
+    const an = new Date("2030-01-15T12:00:00Z");
+    const kaynak = { tur: "marka", marka: logolu, adet: 4 } as const;
+    const baglam = await vitrinBaglaminiOku(
+      vt,
+      site,
+      [
+        bolum("marka-logolari", {
+          markalar: [{ marka: logolu }, { marka: logosuz.toUpperCase() }, { marka: silinen }],
+        }),
+        bolum("urun-vitrini", { urunler: kaynak }),
+      ],
+      bolumKutuphanesi,
+      an,
+    );
+    expect(baglam.markalar).toEqual({
+      [logolu]: { ad: "Logolu", adres: kayitAdresleri.marka("logolu"), logo: logo.dosya.kimlik },
+      [logosuz]: { ad: "Logosuz", adres: kayitAdresleri.marka("logosuz") },
+    });
+    expect(baglam.gorseller[logo.dosya.kimlik]?.kaynaklar[0]?.adres).toBe(
+      vitrinGorseliAdresi(logo.dosya.kimlik, "kucuk"),
+    );
+    expect(baglam.urunler[urunKaynagiAnahtari(kaynak)]?.map((kart) => kart.kimlik)).toEqual([urun]);
+    expect(baglam.an).toEqual(an);
+  });
+
+  it("ürün bölümü yoksa ürün okunmaz", async () => {
+    const vt = await siteAc();
+    const baglam = await vitrinBaglaminiOku(
+      vt,
+      site,
+      [bolum("telif-satiri", {})],
+      bolumKutuphanesi,
+    );
+    expect(baglam.urunler).toEqual({});
+    expect(baglam.markalar).toEqual({});
   });
 });

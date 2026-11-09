@@ -7,6 +7,8 @@ import { metinMi } from "./deger";
 export const zeminRenkleri = {
   "alt-kisim": "bg-alt-kisim text-alt-kisim-ustu odak-yazi-renginde",
   afis: "bg-afis text-afis-ustu odak-yazi-renginde",
+  // Fırsatlar panelinin varsayılanı (kart 0111; Canlı Çarşı taslağı): birincil-ustu/birincil okunur çifttir.
+  birincil: "bg-birincil text-birincil-ustu odak-yazi-renginde",
   yuzey: "bg-yuzey text-yazi",
   "kutu-1": "bg-kutu-1 text-yazi odak-yazi-renginde",
   "kutu-2": "bg-kutu-2 text-yazi odak-yazi-renginde",

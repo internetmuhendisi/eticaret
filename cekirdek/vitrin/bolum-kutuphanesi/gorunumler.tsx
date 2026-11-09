@@ -7,16 +7,20 @@
 import type { ComponentType } from "react";
 import { BaglantiSutunlariGorunumu } from "../bolumler/baglanti-sutunlari/gorunum";
 import { DuyuruSeridiGorunumu } from "../bolumler/duyuru-seridi/gorunum";
+import { FirsatlarGorunumu } from "../bolumler/firsatlar/gorunum";
 import { GenisAfisGorunumu } from "../bolumler/genis-afis/gorunum";
 import { GuvenSeridiGorunumu } from "../bolumler/guven-seridi/gorunum";
 import { IletisimBilgileriGorunumu } from "../bolumler/iletisim-bilgileri/gorunum";
 import { KampanyaAfisleriGorunumu } from "../bolumler/kampanya-afisleri/gorunum";
 import { KategoriKutulariGorunumu } from "../bolumler/kategori-kutulari/gorunum";
 import { KayanAfisGorunumu } from "../bolumler/kayan-afis/gorunum";
+import { MarkaLogolariGorunumu } from "../bolumler/marka-logolari/gorunum";
 import { MenuSatiriGorunumu } from "../bolumler/menu-satiri/gorunum";
 import { OdemeIsaretleriGorunumu } from "../bolumler/odeme-isaretleri/gorunum";
+import { SekmeliVitrinGorunumu } from "../bolumler/sekmeli-vitrin/gorunum";
 import { SosyalHesaplarGorunumu } from "../bolumler/sosyal-hesaplar/gorunum";
 import { TelifSatiriGorunumu } from "../bolumler/telif-satiri/gorunum";
+import { UrunVitriniGorunumu } from "../bolumler/urun-vitrini/gorunum";
 import { UstSatirGorunumu } from "../bolumler/ust-satir/gorunum";
 import type { VitrinBaglami } from "./baglam.ts";
 import type { BolumDegerleri } from "./tarif.ts";
@@ -43,4 +47,8 @@ export const bolumGorunumleri: BolumGorunumleri = {
   "kampanya-afisleri": KampanyaAfisleriGorunumu,
   "genis-afis": GenisAfisGorunumu,
   "kategori-kutulari": KategoriKutulariGorunumu,
+  "urun-vitrini": UrunVitriniGorunumu,
+  "sekmeli-vitrin": SekmeliVitrinGorunumu,
+  firsatlar: FirsatlarGorunumu,
+  "marka-logolari": MarkaLogolariGorunumu,
 };

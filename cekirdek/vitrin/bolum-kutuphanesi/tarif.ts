@@ -19,6 +19,7 @@ import {
   kayitMetni,
   kayitMetniHatasi,
 } from "../../moduller/degisiklik-kaydi/deger.ts";
+import type { UrunKaynagi } from "./urun-kaynagi.ts";
 
 // Alanın panelde görünen adı ve boş bırakılıp bırakılamayacağı. Açıklama metin alanlarının altında görünür
 // (kart 0110: güven şeridindeki ayar değerlerinin yer tutucuları).
@@ -88,6 +89,10 @@ export type BolumTarifi = {
   // Alt kısımdaki yeri: sütunlar ızgarası (varsayılan) ya da çizgiyle ayrılan en alt satır (telif, ödeme
   // işaretleri; Canlı Çarşı taslağı).
   altKisimdaYeri?: "sutun" | "alt-satir";
+  // Geri sayımlı fırsatlar (kart 0111): bölüm mağaza sahibinin seçtiği bir kaynakla değil, bitişi olan süren
+  // indirimlerle dolar. alan, kaç ürün gösterileceğini taşıyan seçim alanının kodudur; adetler her seçeneğin
+  // ürün sayısıdır (seçeneklerle aynı kodlar, testler/kutuphane.test.ts).
+  firsatAdedi?: { alan: string; adetler: Readonly<Record<string, number>> };
 };
 
 // Alan değerlerinin hata kodları. Şemanın kendi hataları (tür, uzunluk) zod kodlarıyla döner.
@@ -159,7 +164,11 @@ const urunKaynagiSemasi = (enCokUrun: number, { baslangic }: Kip) => {
         .array(kimlikSemasi)
         .min(1)
         .max(enCokUrun)
-        .refine((liste) => new Set(liste).size === liste.length, "ayni-urun-iki-kez"),
+        // Kimlik büyük harfle de gelebilir (kart 0119): aynı ürün harf farkıyla iki kez seçilemez.
+        .refine(
+          (liste) => new Set(liste.map((kimlik) => kimlik.toLowerCase())).size === liste.length,
+          "ayni-urun-iki-kez",
+        ),
     }),
   ]);
 };
@@ -308,4 +317,36 @@ export const bolumBaglari = (tarif: BolumTarifi, degerler: BolumDegerleri): Bolu
     });
   }
   return baglar;
+};
+
+// Bölümün ürün kaynakları (kart 0111): ürün kaynağı alanlarının değerleri (listedekiler de, sekmeli vitrin)
+// ve fırsat bölümünün kaynağı. Vitrin bağlamı bunların ürünlerini bir kez okur.
+export const bolumunUrunKaynaklari = (
+  tarif: BolumTarifi,
+  degerler: BolumDegerleri,
+): UrunKaynagi[] => {
+  const kaynaklar: UrunKaynagi[] = [];
+  const ekle = (alan: TekAlanTarifi, deger: unknown) => {
+    if (alan.tur === "urun-kaynagi" && deger !== undefined) kaynaklar.push(deger as UrunKaynagi);
+  };
+  for (const [kod, alan] of Object.entries(tarif.alanlar)) {
+    const deger = degerler[kod];
+    if (alan.tur !== "liste") {
+      ekle(alan, deger);
+      continue;
+    }
+    for (const oge of (deger as Record<string, unknown>[] | undefined) ?? []) {
+      for (const [altKod, alt] of Object.entries(alan.alanlar)) ekle(alt, oge[altKod]);
+    }
+  }
+  const firsat = tarif.firsatAdedi;
+  if (firsat !== undefined) {
+    const adetAlani = tarif.alanlar[firsat.alan];
+    const adet =
+      adetAlani?.tur === "secim"
+        ? firsat.adetler[secimDegeri(adetAlani, degerler[firsat.alan])]
+        : undefined;
+    if (adet !== undefined) kaynaklar.push({ tur: "firsat", adet });
+  }
+  return kaynaklar;
 };
