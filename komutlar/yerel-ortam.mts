@@ -30,6 +30,7 @@ import {
   siteKlasorunuDogrula,
 } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { dosyaKlasoruDegiskeni, kutudakiDosyaKlasoru } from "../cekirdek/kayitlar/dosya.ts";
+import { siteOrtamiDegiskeni } from "../cekirdek/kayitlar/site.ts";
 import { cekirdekSurumu } from "../cekirdek/surum.ts";
 import { baglan, siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
 import { siteVeritabaniniGuncelle } from "../cekirdek/veritabani/guncelle.ts";
@@ -203,6 +204,9 @@ export const siteKutusu = (kodAdi: string, klasor: string, etiket: string, kulla
   user: `${kullanici}:${kullanici}`,
   environment: {
     [dosyaKlasoruDegiskeni]: kutudakiDosyaKlasoru,
+    // Yerel ortam sunucudaki deneme ortamının eşidir (kart 0104): bileşen kataloğu açıktır. Kapalı
+    // olduğu ortamları yerel ortam denemesi aynı görüntüde ayrıca ölçer.
+    [siteOrtamiDegiskeni]: "deneme",
     // Kod adı klasör adıyla aynı olmalıdır (kimlik şeması), klasör aynı adla bağlanır.
     SITE_KLASORU: `/siteler/${kodAdi}`,
     VERITABANI_ADRESI: `\${${kutuAdresAnahtari(kodAdi)}:?veritabanı adresi verilmedi}`,

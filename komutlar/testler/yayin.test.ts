@@ -200,6 +200,7 @@ describe("sunucudaki site kutusunun tanımı", () => {
       IKI_ASAMA_ANAHTARI_DOSYASI: "/run/secrets/iki_asama_anahtari",
       SITE_KLASORU: "/siteler/ornek-magaza",
       DOSYA_KLASORU: "/dosyalar",
+      SITE_ORTAMI: "deneme",
     });
     expect(Object.values(tanim.secrets)).toEqual([
       { file: "/srv/altyapi/gizli/deneme/ornek-magaza/veritabani_adresi" },

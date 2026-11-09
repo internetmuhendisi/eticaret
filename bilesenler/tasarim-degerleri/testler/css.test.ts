@@ -14,12 +14,32 @@ describe("tema değerlerinin CSS'i", () => {
   const css = temaDegerleriCss(varsayilanTemaDegerleri);
 
   it("her renk açık temada :root'ta, koyu temada koyu tema tercihinde yazılır", () => {
-    const [acik, koyu] = css.split("@media (prefers-color-scheme:dark)");
+    const [acik, koyu] = css.split(/@media \(prefers-color-scheme:dark\)|:root\[data-renk=acik\]/);
     for (const ad of renkAdlari) {
       expect(acik).toContain(`--renk-${ad}:${varsayilanTemaDegerleri.renkler.acik[ad]};`);
       expect(koyu).toContain(`--renk-${ad}:${varsayilanTemaDegerleri.renkler.koyu[ad]};`);
     }
     expect(acik).toContain("color-scheme:light dark;");
+  });
+
+  // Bileşen kataloğu (kart 0104) temayı cihazdan bağımsız seçer: öznitelikli kök iki temanın değerlerini
+  // de taşır, cihazın tercihinden sonra ve daha özgül seçiciyle yazılır.
+  it("kökteki tema özniteliği açık ya da koyu temayı cihazın tercihinden bağımsız seçer", () => {
+    const tercih = css.indexOf("@media (prefers-color-scheme:dark)");
+    const zorlananAcik = css.match(/:root\[data-renk=acik\]\{([^}]*)\}/);
+    const zorlananKoyu = css.match(/:root\[data-renk=koyu\]\{([^}]*)\}/);
+    expect(zorlananAcik?.index ?? -1).toBeGreaterThan(tercih);
+    expect(zorlananKoyu?.index ?? -1).toBeGreaterThan(tercih);
+    expect(zorlananAcik?.[1]).toContain("color-scheme:light;");
+    expect(zorlananKoyu?.[1]).toContain("color-scheme:dark;");
+    for (const ad of renkAdlari) {
+      expect(zorlananAcik?.[1]).toContain(
+        `--renk-${ad}:${varsayilanTemaDegerleri.renkler.acik[ad]};`,
+      );
+      expect(zorlananKoyu?.[1]).toContain(
+        `--renk-${ad}:${varsayilanTemaDegerleri.renkler.koyu[ad]};`,
+      );
+    }
   });
 
   it("HTML ya da başka CSS kuralı yazılabilecek karakter yoktur", () => {

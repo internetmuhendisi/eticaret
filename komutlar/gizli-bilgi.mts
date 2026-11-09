@@ -14,6 +14,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { dosyaEki, type GizliBilgi, gizliBilgiler } from "../cekirdek/kayitlar/gizli-bilgiler.ts";
+import type { SiteOrtami } from "../cekirdek/kayitlar/site.ts";
 import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
 
 const kok = join(import.meta.dirname, "..");
@@ -21,8 +22,12 @@ export const siteKullanicilariDosyasi = join(kok, "sunucu", "site-kullanicilari.
 export const gizliKok = "/srv/altyapi/gizli";
 
 // Sunucudaki ortamlar ve kutu kullanıcı numaralarının tabanı. Geliştirme ortamı bilgisayardaki
-// .env'dir, sunucuda yeri yoktur. Bir sitenin kullanıcı numarası: taban + sitenin numarası.
-export const ortamlar = { deneme: 30000, canli: 20000 } as const;
+// .env'dir, sunucuda yeri yoktur. Bir sitenin kullanıcı numarası: taban + sitenin numarası. Ortamların
+// adları cekirdek/kayitlar/site.ts'tedir; eksik ya da fazla ad tür kontrolünde hatadır.
+export const ortamlar = { deneme: 30000, canli: 20000 } as const satisfies Record<
+  SiteOrtami,
+  number
+>;
 export type Ortam = keyof typeof ortamlar;
 const siteNumarasiSiniri = 9999;
 

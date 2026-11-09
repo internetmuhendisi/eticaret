@@ -1,5 +1,5 @@
-// Ortak parçalar gerçek tarayıcıda (kart 0103): bileşen deneme sahnesi (yalnız geliştirmede açılır) açık ve
-// koyu temada, üç genişlikte erişilebilirlik taramasından (axe, WCAG 2.2 AA) geçer; açılır parçalar açıkken
+// Ortak parçalar gerçek tarayıcıda (kart 0103, 0104): bileşen kataloğunun ana sayfası bütün parçaları bir
+// arada gösterir; açık ve koyu temada, üç genişlikte erişilebilirlik taramasından (axe, WCAG 2.2 AA) geçer; açılır parçalar açıkken
 // de taranır. Her parça yalnız klavyeyle kullanılır: odak açılan parçaya girer, Escape kapatır, odak açan
 // öğeye döner. Sayfa yana kaymaz, konsolda hata yoktur, hareketi azaltan kullanıcıda hareket olmaz.
 import AxeBuilder from "@axe-core/playwright";
@@ -8,7 +8,7 @@ import type { MetinAnahtari } from "../../metinler/metin";
 import { metin } from "../../metinler/site-metni";
 
 const adres = "/gelistirme/bilesenler";
-const m = (anahtar: string) => metin(`gelistirme.sahne.${anahtar}` as MetinAnahtari);
+const m = (anahtar: string) => metin(`gelistirme.ornek.${anahtar}` as MetinAnahtari);
 const dugme = (page: Page, ad: string) => page.getByRole("button", { name: ad, exact: true });
 
 const ac = async (page: Page) => {
@@ -55,7 +55,7 @@ for (const tema of ["light", "dark"] as const) {
     { ad: "tablet", width: 768, height: 1000 },
     { ad: "masaüstü", width: 1280, height: 900 },
   ]) {
-    test(`deneme sahnesi ${tema === "light" ? "açık" : "koyu"} temada, ${ad} genişliğinde taramadan geçer`, async ({
+    test(`katalog ${tema === "light" ? "açık" : "koyu"} temada, ${ad} genişliğinde taramadan geçer`, async ({
       page,
     }) => {
       await page.setViewportSize({ width, height });
@@ -130,7 +130,7 @@ test.describe("klavye", () => {
 
   test("düğme Enter ve boşlukla çalışır, odak görünür", async ({ page }) => {
     const kaydet = page
-      .getByRole("region", { name: m("dugmeler") })
+      .getByRole("region", { name: metin("gelistirme.katalog.parca.dugme") })
       .getByRole("button", { name: m("birincil"), exact: true });
     await kaydet.focus();
     await page.keyboard.press("Enter");

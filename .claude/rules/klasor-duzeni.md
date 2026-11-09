@@ -25,6 +25,7 @@ cekirdek/
     metinler/          metinler
     testler/           testler
   surum.ts             çekirdeğin sürümü (karar 0024)
+  katalog/             bileşen kataloğu: parça listesi, örnekler, sayfa, kaynak taraması (karar 0078)
   kapi/                dört giriş: herkese-acik/, musteri/, yonetici/, sahip/; uç belgesi uclar.md
   ayar-semasi/         bütün site ayarlarının şeması
   bolgeler/            ülke, il ve ilçe listesi (veri dosyaları), bölge doğrulaması ve ortak adres

@@ -28,6 +28,7 @@
     "bicimle": "biome format --write",
     "denetim-kendi-testi": "node denetim/kendi-kendini-denetle.mts",
     "shadcn-farki": "node komutlar/shadcn-farki.mts",
+    "katalog-kullanimlari": "node komutlar/katalog-kullanimlari.mts",
     "site-dogrula": "node komutlar/site-dogrula.mts",
     "veritabani-baslat": "docker compose -f sunucu/compose.yaml --env-file .env up -d --wait",
     "veritabani-durdur": "docker compose -f sunucu/compose.yaml --env-file .env down",

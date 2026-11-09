@@ -18,7 +18,5 @@
 **/testler
 **/*.test.ts
 **/*.test.tsx
-# Geliştirmeye özel sayfalar (kart 0103): canlı derlemede zaten sayfa sayılmazlar, görüntüye de girmezler.
-**/*.deneme.tsx
 **/.env
 **/.env.*

@@ -3,6 +3,7 @@ paths:
   - "bilesenler/**"
   - "cekirdek/vitrin/**"
   - "cekirdek/yonetim-paneli/**"
+  - "cekirdek/katalog/**"
   - "cekirdek/uygulama/app/**"
   - "sahip-paneli/**"
   - "siteler/*/vitrin/**"
@@ -43,5 +44,8 @@ Bileşen, düğme, giriş alanı, pencere gibi tekrar kullanılan arayüz parça
 - `bilesenler/form/`: `Form`, `GonderDugmesi` (kart 0057), `FormAlani` (kart 0027).
 - `bilesenler/ikonlar/`: ikon sözlüğü (`sozluk.ts`) ve `Ikon`. Lucide yalnız sözlükte içe aktarılır.
 - `bilesenler/tasarim-degerleri/`: tasarım değerleri ve Tailwind'in ortak girişi (kart 0102, karar 0076).
-- Parçalar yalnız geliştirmede açılan deneme sahnesinde (`/gelistirme/bilesenler`) gerçek tarayıcıda denenir (`cekirdek/testler/uctan-uca/bilesenler.test.ts`). Yeni parça sahneye ve teste de eklenir. Bileşen kataloğu henüz yoktur (kart 0104).
+- Bileşen kataloğu `/gelistirme/bilesenler` adresindedir (kart 0104, karar 0078). Yalnız geliştirmede ve deneme ortamında açılır. Her parçanın kendi sayfası örneği, dosyayı ve kullanıldığı yerleri gösterir; renk ve genişlik adresten seçilir.
+- Yeni parça kataloğa üç yerde eklenir: `cekirdek/katalog/kayit.ts`, `cekirdek/katalog/ornekler/<dosya adı>.tsx` ve `cekirdek/katalog/ornekler.tsx`. Kütüphanede olup katalogda olmayan dosya ya da örneklerde kullanılmayan parça testte kırmızıdır.
+- Bir parçayı kullanan dosya eklenince ya da kalkınca `pnpm katalog-kullanimlari` çalıştırılır; liste kodla aynı değilse test kırmızıdır.
+- Parçalar kataloğun ana sayfasında gerçek tarayıcıda klavyeyle ve taramayla denenir (`cekirdek/testler/uctan-uca/bilesenler.test.ts`). Her parça sayfası iki renkte ve üç genişlikte taranır (`katalog.test.ts`). Yeni parçanın klavye davranışı da teste eklenir.
 - Metni olan parça metni zorunlu bir alanla alır. Pencerenin kapat düğmesi, yükleniyor göstergesi ve şeridin düğmeleri gibi ekran okuyucu metinleri `ortak.parca` altındadır.

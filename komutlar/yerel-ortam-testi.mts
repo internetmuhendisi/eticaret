@@ -9,7 +9,8 @@
 //   - ortamın her kutusu Docker yeniden başlayınca kendiliğinden açılır (kart 0038);
 //   - kayıt olan müşteriye hoş geldin e-postası gerçek arka plan kutusundan ulaşır (kart 0033);
 //   - şifre sıfırlama e-postası ulaşır, bağlantısı sitenin adresindedir ve yeni şifreyi kurar (kart 0034);
-//   - görüntüdeki parça yalnız kendi sitesine yönetici açar, şifre girişte geçer (kart 0048).
+//   - görüntüdeki parça yalnız kendi sitesine yönetici açar, şifre girişte geçer (kart 0048);
+//   - bileşen kataloğu deneme ortamında açılır, canlı ve ortamı bilinmeyen kutuda açılmaz (kart 0104).
 // Sonunda ortamı kapatır ve deneme sitesini siler. Bir ölçüm kalırsa kırmızı biter.
 // Çalıştırma: pnpm yerel-ortam-testi [--acik-birak]
 //   --acik-birak: ortamı ve deneme sitesini açık bırakır; kapatmak: pnpm yerel-ortam-kapat
@@ -18,6 +19,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { siteKlasorunuOku } from "../cekirdek/ayar-semasi/site-klasoru.ts";
+import { katalogAdresi } from "../cekirdek/katalog/kayit.ts";
 import { arkaPlanDosyalari } from "../cekirdek/kayitlar/arka-plan.ts";
 import {
   dosyaKlasoruDegiskeni,
@@ -25,6 +27,7 @@ import {
   kutudakiDosyaKlasoru,
 } from "../cekirdek/kayitlar/dosya.ts";
 import { istekSinirlari } from "../cekirdek/kayitlar/kapi.ts";
+import { siteOrtamiDegiskeni } from "../cekirdek/kayitlar/site.ts";
 import { metinOkuyucu } from "../cekirdek/metinler/metin.ts";
 import { soruyuCoz } from "../cekirdek/moduller/robot-korumasi/testler/soru-coz.ts";
 import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
@@ -103,14 +106,21 @@ const sitesiniOlc = async (site: OrtamSitesi, oteki: OrtamSitesi) => {
     vitrin.durum === 200 && baslik(vitrin.govde) === magazaAdi,
     `${vitrin.durum}, "${baslik(vitrin.govde)}"`,
   );
-  // Geliştirmeye özel sayfalar canlı görüntüde yoktur (kart 0103): bileşen deneme sahnesi yalnız
-  // geliştirmede derlenir. 0.33.0'dan önceki görüntüde sahne hiç yoktu, orada da 404 beklenir.
-  const sahne = await iste(kodAdi, "/gelistirme/bilesenler");
-  olc(
-    `${kodAdi}: bileşen deneme sahnesi canlı görüntüde açılmıyor`,
-    sahne.durum === 404,
-    `${sahne.durum}`,
-  );
+  // Bileşen kataloğu (kart 0104, karar 0078) deneme ortamında açılır; yerel ortamın kutuları deneme
+  // ortamındadır. 0.34.0'dan önceki görüntüde katalog yoktur (0.33.0'daki deneme sahnesi canlı derlemeye
+  // girmezdi), orada 404 beklenir. Canlı ve ortamı bilinmeyen kutuda kapalı olması aşağıda, aynı
+  // görüntüde ayrıca ölçülür (katalogKapaliOlc).
+  const katalogVar = surumEnAz(cekirdekSurumu, [0, 34, 0]);
+  for (const yol of [katalogAdresi, `${katalogAdresi}/dugme`]) {
+    const katalog = await iste(kodAdi, yol);
+    olc(
+      `${kodAdi}: ${yol} ${katalogVar ? "deneme ortamında açılıyor" : "eski görüntüde yok"}`,
+      katalogVar
+        ? katalog.durum === 200 && katalog.govde.includes("noindex")
+        : katalog.durum === 404,
+      `${katalog.durum}`,
+    );
+  }
   // Logo ucu (kart 0073), gerçek Next.js ve Caddy üzerinden. Uç 0.16.0'da geldi: daha eski sürümle
   // açılan sitede ölçülmez. İlk logosu olan sitede: dosya bayt bayt aynı, doğru tür, nosniff,
   // önbellek; HEAD gövdesiz; aynı etiketle gelen istek gövdesiz 304. Logosu olmayan site 404 alır
@@ -406,6 +416,110 @@ const kutuKurallariniOlc = (siteSayisi: number) => {
   }
 };
 
+// Katalog canlı ve ortamı bilinmeyen kutuda kapalıdır (kart 0104, karar 0078). Aynı görüntü, sitenin
+// kutusunun içinde ikinci bir süreç olarak başka ortamla ve her ölçümde başka bir portta açılır; kutunun
+// kendi ortamı değişmez. Port açılmadan önce boş olmalıdır (yanıt veren süreç ölçülen süreçtir), süreç
+// ölçümden sonra kapatılır ve portun kapandığı da ölçülür. Next.js süreç adını değiştirdiği için süreç
+// adıyla değil, yalnız ona verilen bir ortam değişkeniyle bulunur (/proc/<no>/environ). 404 yetmez: gövdede katalogun
+// içeriği de aranır (Next.js düzende notFound() verilince sayfayı yine çiziyordu). RSC isteği, ön yükleme,
+// HEAD ve adresin başka yazılışları da denenir. Vitrin aynı süreçte açılmalıdır: 404'ün nedeni katalogun
+// kapalı olmasıdır, sürecin çalışmaması değil.
+const katalogKapaliOlc = async (kodAdi: string) => {
+  const kutu = kutuAdi(kodAdi);
+  const dil = metinOkuyucu("tr");
+  const izler = [dil("gelistirme.katalog.baslik"), dil("gelistirme.katalog.kullanildigiYerler")];
+  const istekler: { yol: string; yontem?: string; basliklar?: Record<string, string> }[] = [
+    { yol: katalogAdresi },
+    { yol: `${katalogAdresi}/dugme` },
+    { yol: katalogAdresi, basliklar: { RSC: "1" } },
+    { yol: `${katalogAdresi}/dugme`, basliklar: { RSC: "1", "Next-Router-Prefetch": "1" } },
+    { yol: `${katalogAdresi}/dugme?_rsc=olcum` },
+    { yol: katalogAdresi, yontem: "HEAD" },
+    { yol: `${katalogAdresi}/` },
+    { yol: "/%67elistirme/bilesenler" },
+    { yol: "/gelistirme%2Fbilesenler", basliklar: { RSC: "1" } },
+    { yol: "/gelistirme/%62ilesenler/dugme" },
+    { yol: "/gelistirme//bilesenler" },
+  ];
+  // Bunlar ara katmanın katalog kapısından geçmelidir: başka bir sonuç (ör. panel yönlendirmesi) kapının
+  // atlandığını gösterir. Öteki yazılışlarda Next.js'in kendi yönlendirmesi kabul edilir, içerik gitmemelidir.
+  const kesin404 = [
+    katalogAdresi,
+    `${katalogAdresi}/dugme`,
+    "/%67elistirme/bilesenler",
+    "/gelistirme%2Fbilesenler",
+  ];
+  for (const [ad, ortam, onunde, port] of [
+    // docker exec değişkeni silemez: değişkensiz süreç kutunun içinde env -u ile açılır.
+    ["canlı ortamda", ["-e", `${siteOrtamiDegiskeni}=canli`], [], 3998],
+    ["ortamı bilinmeyen kutuda", [], ["env", "-u", siteOrtamiDegiskeni], 3999],
+  ] as const) {
+    const isaret = `KATALOG_OLCUMU=${port}`;
+    const betik = (istenen: string) =>
+      spawnSync("docker", ["exec", kutu, "node", "-e", istenen], { encoding: "utf8" }).stdout;
+    const portAcik = () =>
+      betik(
+        `fetch("http://127.0.0.1:${port}/").then(() => process.stdout.write("acik"), () => process.stdout.write("kapali"))`,
+      ) === "acik";
+    const once = portAcik();
+    spawnSync(
+      "docker",
+      [
+        ...["exec", "-d", ...ortam, "-e", isaret, "-e", `PORT=${port}`, "-e", "HOSTNAME=127.0.0.1"],
+        ...[kutu, ...onunde, "node", "cekirdek/uygulama/server.js"],
+      ],
+      { stdio: "ignore" },
+    );
+    const cikti = betik(`const bekle = (ms) => new Promise((c) => setTimeout(c, ms));
+const istekler = ${JSON.stringify(istekler)};
+const izler = ${JSON.stringify(izler)};
+(async () => {
+  for (let i = 0; i < 120; i++) {
+    try {
+      const vitrin = (await fetch("http://127.0.0.1:${port}/")).status;
+      const sonuclar = [];
+      for (const { yol, yontem = "GET", basliklar = {} } of istekler) {
+        const yanit = await fetch("http://127.0.0.1:${port}" + yol, { method: yontem, headers: basliklar, redirect: "manual" });
+        const govde = await yanit.text();
+        sonuclar.push({ yol, yontem, basliklar, durum: yanit.status, iz: izler.some((iz) => govde.includes(iz)) });
+      }
+      process.stdout.write(JSON.stringify({ vitrin, sonuclar }));
+      return;
+    } catch {
+      await bekle(500);
+    }
+  }
+})();`);
+    betik(`const { readdirSync, readFileSync } = require("node:fs");
+for (const no of readdirSync("/proc").filter((ad) => /^[0-9]+$/.test(ad))) {
+  try {
+    if (readFileSync("/proc/" + no + "/environ", "utf8").split("\\0").includes(${JSON.stringify(isaret)})) process.kill(Number(no));
+  } catch {}
+}`);
+    let sonra = true;
+    for (let i = 0; i < 20 && sonra; i++) {
+      sonra = portAcik();
+      if (sonra) await new Promise((coz) => setTimeout(coz, 250));
+    }
+    const sonuc = JSON.parse(cikti || "{}") as {
+      vitrin?: number;
+      sonuclar?: { yol: string; yontem: string; durum: number; iz: boolean }[];
+    };
+    const sizanlar = (sonuc.sonuclar ?? []).filter(
+      ({ yol, durum, iz }) => iz || durum === 200 || (kesin404.includes(yol) && durum !== 404),
+    );
+    olc(
+      `${kodAdi}: bileşen kataloğu ${ad} hiçbir istekte açılmıyor, içeriği gitmiyor, vitrin açılıyor`,
+      !once &&
+        !sonra &&
+        sonuc.vitrin === 200 &&
+        sonuc.sonuclar?.length === istekler.length &&
+        sizanlar.length === 0,
+      JSON.stringify({ portOnceAcik: once, portSonraAcik: sonra, vitrin: sonuc.vitrin, sizanlar }),
+    );
+  }
+};
+
 const calistir = async (): Promise<void> => {
   let siteler: OrtamSitesi[] = [];
   try {
@@ -415,6 +529,7 @@ const calistir = async (): Promise<void> => {
     console.log("");
     await sitesiniOlc(ornek, denemeSitesi);
     await sitesiniOlc(denemeSitesi, ornek);
+    await katalogKapaliOlc(denemeSitesi.kimlik.kodAdi);
     // Giriş ucunun sınırı aşağıda doldurulur, bu ölçüm ondan önce gelir.
     await yoneticiOlc(denemeSitesi.kimlik.kodAdi, ornek.kimlik.kodAdi);
 

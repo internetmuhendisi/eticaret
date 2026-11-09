@@ -17,3 +17,12 @@ export const ayarSahibi = {
   altyapi: "altyapi-sahibi",
   magaza: "magaza-sahibi",
 } as const satisfies Record<string, AyarSahibi>;
+
+// Sunucudaki ortamlar (kart 0104, karar 0078). Kutu kullanıcı numaralarının tabanı bu adlarla
+// komutlar/gizli-bilgi.mts'tedir.
+export const siteOrtamlari = ["deneme", "canli"] as const;
+export type SiteOrtami = (typeof siteOrtamlari)[number];
+
+// Kutunun hangi sunucu ortamında çalıştığını söyleyen değişken. Değerini yayın komutu ortamın adıyla verir.
+// Değişkeni okuyan davranış, değer yoksa canlı ortamdaki gibi davranır (cekirdek/katalog/acik-mi.ts).
+export const siteOrtamiDegiskeni = "SITE_ORTAMI";

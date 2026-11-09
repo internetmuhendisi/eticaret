@@ -155,7 +155,7 @@ describe("Tailwind yalnız tasarım değerlerini tanır", () => {
     }
   });
 
-  // Parçaların, formun ve sayfa düzenlerinin kaynağındaki her sınıf bir kural üretir: yazım hatalı ya da
+  // Parçaların, formun, katalogun ve sayfa düzenlerinin kaynağındaki her sınıf bir kural üretir: yazım hatalı ya da
   // tanımsız bir sınıf sessizce hiçbir şey çizmeden kalamaz. Sınıflar kaynaktaki metinlerden toplanır;
   // içe aktarma satırları ve data-slot adları sınıf değildir, atlanır. Sınıf gibi görünen her sözcük
   // (bilinen bir önekle başlayan) denetlenir.
@@ -165,6 +165,13 @@ describe("Tailwind yalnız tasarım değerlerini tanır", () => {
         readdirSync(join(kok, klasor))
           // sinif.ts tailwind-merge'in ayarıdır, sınıf değil grup adları taşır.
           .filter((ad) => /\.tsx?$/.test(ad) && ad !== "sinif.ts")
+          .map((ad) => join(kok, klasor, ad)),
+      ),
+      // Bileşen kataloğu (kart 0104): sayfası ve örnekleri. ornekler.tsx sınıf taşımaz, anahtarları
+      // parça kodlarıdır ("secim-kutusu" sınıfa benzer).
+      ...["cekirdek/katalog", "cekirdek/katalog/ornekler"].flatMap((klasor) =>
+        readdirSync(join(kok, klasor))
+          .filter((ad) => ad.endsWith(".tsx") && ad !== "ornekler.tsx")
           .map((ad) => join(kok, klasor, ad)),
       ),
       join(kok, "cekirdek/vitrin/stil.ts"),

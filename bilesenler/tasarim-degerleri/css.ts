@@ -1,5 +1,6 @@
 // Tema değerlerini sayfaya yazılacak CSS'e çevirir (karar 0076). Açık tema değerleri :root'a, koyu
-// tema değerleri cihazın koyu tema tercihine yazılır. Her değer önce şemadan geçer: ileride mağaza
+// tema değerleri cihazın koyu tema tercihine yazılır. Sayfanın kökündeki zorlananRenkOzniteligi ikisinden
+// birini cihazdan bağımsız seçer (kart 0104, bileşen kataloğu). Her değer önce şemadan geçer: ileride mağaza
 // sahibinin seçtiği değerler de buradan geçecek (kart 0105). Şemaya uymayan değerde hata atar; sayfayı
 // yazan cekirdek/temalar/birlesim.ts hatayı kaydedip başlangıç değerlerini yazar.
 import { z } from "zod";
@@ -13,6 +14,7 @@ import {
   yaziTipiAdlari,
 } from "./degerler.ts";
 import { degiskenAdi } from "./degisken-adlari.ts";
+import { zorlananRenkOzniteligi } from "./renk-ozniteligi.ts";
 
 const nesne = <A extends string, S extends z.ZodType>(adlar: readonly A[], sema: S) =>
   z.strictObject(Object.fromEntries(adlar.map((ad) => [ad, sema])) as Record<A, S>);
@@ -70,6 +72,9 @@ export function temaDegerleriCss(girdi: TemaDegerleri): string {
   ]);
   return (
     `:root{color-scheme:light dark;${ortak}${renkVeGolge(degerler, "acik")}}` +
-    `@media (prefers-color-scheme:dark){:root{${renkVeGolge(degerler, "koyu")}}}`
+    `@media (prefers-color-scheme:dark){:root{${renkVeGolge(degerler, "koyu")}}}` +
+    // Öznitelikli seçici :root'tan özgüldür, cihazın tercihinin önüne geçer.
+    `:root[${zorlananRenkOzniteligi}=acik]{color-scheme:light;${renkVeGolge(degerler, "acik")}}` +
+    `:root[${zorlananRenkOzniteligi}=koyu]{color-scheme:dark;${renkVeGolge(degerler, "koyu")}}`
   );
 }

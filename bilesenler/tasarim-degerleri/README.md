@@ -11,6 +11,7 @@ Vitrinin ve panelin bütün renkleri, yazı tipleri ve ölçüleri `degerler.ts`
 | `tailwind.css` | Ortak stil girişi: sıfırlama, sınıflar, yazı tipleri, temel stil |
 | `degisken-adlari.ts` | Tema değerlerinin CSS değişkeni adları (`--renk-birincil`...) |
 | `css.ts` | Tema değerlerini şemadan geçirip sayfaya yazılacak CSS'e çevirir; şemaya uymayan değerde hata atar |
+| `renk-ozniteligi.ts` | Açık ya da koyu temayı cihazdan bağımsız seçen kök özniteliğinin adı (kart 0104) |
 | `kontrast.ts` | İki rengin kontrast oranı (WCAG 2.2) |
 
 Uygulamaların stil girişleri `cekirdek/uygulama/stil.css` ve `sahip-paneli/stil.css` yalnız `tailwind.css`'i içe aktarır ve taranacak klasörleri yazar. Sitenin değerlerini `cekirdek/temalar/birlesim.ts` verir, kök düzen sayfaya yazar. Değerler şemaya uymazsa sayfa düşmez: hata kaydedilir, sayfa başlangıç değerleriyle açılır.
@@ -120,7 +121,7 @@ Sınıflar `sinif()` ile birleştirilir (`bilesenler/parcalar/sinif.ts`). Aynı 
 
 ## Koyu tema
 
-Koyu değerler `degerler.ts`'te açık değerlerin yanındadır ve cihazın tercihine göre açılır. Bileşen koyu tema için ayrı sınıf yazmaz.
+Koyu değerler `degerler.ts`'te açık değerlerin yanındadır ve cihazın tercihine göre açılır. Bileşen koyu tema için ayrı sınıf yazmaz. Sayfanın kökündeki `data-renk` özniteliği (`acik` ya da `koyu`, adı `renk-ozniteligi.ts`'te) cihazın tercihini geçersiz kılar; bugün yalnız bileşen kataloğu kullanır (kart 0104).
 
 ## Kontrast
 

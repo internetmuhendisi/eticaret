@@ -15,6 +15,7 @@ import { spawnSync } from "node:child_process";
 import type { Kimlik } from "../cekirdek/ayar-semasi/kimlik.ts";
 import { hataIzlemeDegiskenleri } from "../cekirdek/izleme/hata-izleme-araci.ts";
 import { dosyaKlasoruDegiskeni, kutudakiDosyaKlasoru } from "../cekirdek/kayitlar/dosya.ts";
+import { siteOrtamiDegiskeni } from "../cekirdek/kayitlar/site.ts";
 import {
   degisiklikKlasoru,
   type GeriDonusNotu,
@@ -133,6 +134,9 @@ export const yayinKutusuTanimi = (
       ...gizli.servis.environment,
       SITE_KLASORU: `/siteler/${kodAdi}`,
       [dosyaKlasoruDegiskeni]: kutudakiDosyaKlasoru,
+      // Kutu ortamını bilir (kart 0104): bileşen kataloğu yalnız deneme ortamında açılır. Eski sürüm
+      // değişkeni okumaz, zararsızdır.
+      [siteOrtamiDegiskeni]: ortam,
       ...(hataIzlemeAdresi === undefined
         ? {}
         : {
