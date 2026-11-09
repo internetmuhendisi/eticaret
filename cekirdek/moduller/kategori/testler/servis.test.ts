@@ -595,6 +595,19 @@ describe("kategori görseli", () => {
     expect((await kategoriyiOku(kategori, vt))?.gorsel).toBeUndefined();
   });
 
+  it("büyük harfle verilen görsel kimliği küçük harfle yazılır", async () => {
+    const vt = await siteAc();
+    const gorsel = await gorselKaydi(vt);
+    const kategori = await kategoriEkle(vt, yonetici(), {
+      ad: "Büyük",
+      gorsel: gorsel.dosya.kimlik.toUpperCase(),
+    });
+    expect((await kategoriyiOku(kategori, vt))?.gorsel).toBe(gorsel.dosya.kimlik);
+    const ikinci = await gorselKaydi(vt);
+    await kategoriDegistir(vt, yonetici(), kategori, { gorsel: ikinci.dosya.kimlik.toUpperCase() });
+    expect((await kategoriyiOku(kategori, vt))?.gorsel).toBe(ikinci.dosya.kimlik);
+  });
+
   it("aynı görsel yeniden verilince değişiklik yazılmaz; görseli sonradan silinen kategori değişebilir", async () => {
     const vt = await siteAc();
     const gorsel = await gorselKaydi(vt);

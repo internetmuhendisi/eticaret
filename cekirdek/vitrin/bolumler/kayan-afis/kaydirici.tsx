@@ -3,7 +3,9 @@
 // yalnız hangisinin görüneceği seçilir. WAI-ARIA'nın "carousel" kalıbı:
 // - Bölüm "kayan afiş", her slayt "slayt" rol tanımıyla ve "2 / 3" adıyla okunur; yalnız etkin slayt görünür.
 // - Kendiliğinden geçerken yeni slayt duyurulmaz (aria-live off); durunca duyurulur (polite).
-// - Durdurma düğmesi her zaman ilk denetimdir. Fare afişin üstündeyken ya da klavye odağı içindeyken geçiş
+// - Durdurma düğmesi klavye sırasında afişin ilk denetimidir: kodda slaytın düğmesinden önce gelir, ekranda
+//   onun sağındadır (order-first). Denetimler zeminin yazı rengindedir.
+// - Kendiliğinden geçen afişte durdurma düğmesi her zaman vardır. Fare afişin üstündeyken ya da klavye odağı içindeyken geçiş
 //   bekler; kullanıcı durdurduysa bir daha kendiliğinden geçmez.
 // - Hareket azaltma tercihinde kendiliğinden geçmez; kullanıcı başlat düğmesiyle isterse geçer.
 // - Önceki, sonraki ve nokta düğmeleri klavyeyle kullanılır; etkin noktanın aria-current'ı vardır.
@@ -83,6 +85,7 @@ export function Kaydirici({
           ikon="onceki"
           etiket={metinler.onceki}
           tur="cerceveli"
+          className="border-current text-current"
           onClick={() => git(etkin - 1)}
         />
         <div className="flex">
@@ -108,6 +111,7 @@ export function Kaydirici({
           ikon="sonraki"
           etiket={metinler.sonraki}
           tur="cerceveli"
+          className="border-current text-current"
           onClick={() => git(etkin + 1)}
         />
       </div>
@@ -145,8 +149,8 @@ export function Kaydirici({
               <div className="flex min-w-0 flex-col gap-4">
                 {slayt.yazi}
                 <div className="flex flex-wrap items-center gap-3">
-                  {slayt.dugme}
                   {denetimler}
+                  {slayt.dugme === null ? null : <div className="order-first">{slayt.dugme}</div>}
                 </div>
               </div>
               <div className="flex min-w-0 justify-center">{slayt.gorsel}</div>
@@ -158,8 +162,8 @@ export function Kaydirici({
               <div className="col-start-1 row-start-2 mt-4 flex max-w-form min-w-0 flex-col gap-4 rounded-orta bg-zemin p-6 text-yazi tablet:row-start-1 tablet:m-8">
                 {slayt.yazi}
                 <div className="flex flex-wrap items-center gap-3">
-                  {slayt.dugme}
                   {denetimler}
+                  {slayt.dugme === null ? null : <div className="order-first">{slayt.dugme}</div>}
                 </div>
               </div>
             </>

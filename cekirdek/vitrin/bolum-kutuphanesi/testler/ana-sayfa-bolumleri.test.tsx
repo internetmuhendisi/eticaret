@@ -175,6 +175,12 @@ describe("kayan afiş", () => {
     expect(gorsel?.getAttribute("alt")).toBe("Birinci görsel");
     expect(gorsel?.getAttribute("loading")).toBe("eager");
     expect(kap.querySelector("a")?.textContent).toBe("İncele");
+    // Klavye sırasında afişin ilk denetimi durdurma düğmesidir; slaytın düğmesi denetimlerden sonradır.
+    const odaklanabilenler = [...kap.querySelectorAll("a, button")].map(
+      (oge) => oge.getAttribute("aria-label") ?? oge.textContent,
+    );
+    expect(odaklanabilenler[0]).toBe(metin("vitrin.bolum.kayanAfis.durdur"));
+    expect(odaklanabilenler.at(-1)).toBe("İncele");
   });
 
   it("kendiliğinden geçmeyen afişte durdurma düğmesi yok, slayt duyurulur; tek slaytta gezinme yok", () => {
@@ -275,7 +281,7 @@ describe("kampanya afişleri", () => {
     ]);
     const afisler = kap.querySelectorAll("li");
     expect(afisler).toHaveLength(3);
-    const baglanti = afisler[0]?.querySelector("h3 a");
+    const baglanti = afisler[0]?.querySelector("h2 a");
     expect(baglanti?.textContent).toBe(metin("gelistirme.bolum.ornek.anaSayfa.kampanya1Baslik"));
     expect(baglanti?.className).toContain("after:inset-0");
     expect(afisler[0]?.className).toContain("relative");

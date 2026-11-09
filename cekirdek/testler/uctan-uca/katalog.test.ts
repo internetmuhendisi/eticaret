@@ -567,7 +567,14 @@ test("kayan afiş: klavyeyle durdurulur, önceki, sonraki ve noktalarla gezilir"
   await ac(page, `${katalogAdresi}/bolum-kutuphanesi`);
   const afis = kayanAfis(page);
   const durdur = afis.getByRole("button", { name: metin("vitrin.bolum.kayanAfis.durdur") });
-  await durdur.focus();
+  // Afişin önündeki son odaklanabilir öğeden Tab ile girilir: ilk denetim durdurma düğmesidir.
+  await page
+    .getByRole("region", { name: metin("gelistirme.bolum.anaSayfa"), exact: true })
+    .getByRole("heading", { level: 2 })
+    .first()
+    .click();
+  await page.keyboard.press("Tab");
+  await expect(durdur).toBeFocused();
   // Odak afişin içindeyken geçiş bekler; Enter durdurur.
   await page.keyboard.press("Enter");
   await expect(

@@ -158,9 +158,12 @@ export const vitrinBaglaminiOku = async (
     }),
   );
   const bicim = siteninBicimleyicisi(site.ayarlar);
-  const yerTutucuDegerleri: Record<YerTutucu, string> = {
-    kargoyaVermeSuresi: bicim.sayi(ayarlar.kargoyaVermeSuresi),
-  };
+  // 0 iş günü "aynı gün" demektir: "0 iş gününde kargoda" yazılmasın diye değer yoktur, madde çizilmez (kart
+  // 0110 kontrolü). Mağaza sahibi aynı gün kargoyu metne elle yazar.
+  const yerTutucuDegerleri: Partial<Record<YerTutucu, string>> =
+    ayarlar.kargoyaVermeSuresi === 0
+      ? {}
+      : { kargoyaVermeSuresi: bicim.sayi(ayarlar.kargoyaVermeSuresi) };
   const adres = ayarlar.magazaAdresi;
   const bolge =
     adres === undefined

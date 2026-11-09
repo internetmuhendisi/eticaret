@@ -516,7 +516,7 @@
         "madde": "Madde",
         "ikon": "İkon",
         "etiket": "Alışveriş güvenceleri",
-        "yerTutucular": "Ayardaki değer için metne {kargoyaVermeSuresi} yazın: kargoya verme süresi ayarındaki sayı görünür. Değeri olmayan madde vitrinde görünmez.",
+        "yerTutucular": "Ayardaki değer için metne {kargoyaVermeSuresi} yazın: kargoya verme süresi ayarındaki sayı görünür. Değeri olmayan madde vitrinde görünmez; süre 0 (aynı gün) ise de görünmez, aynı gün kargoyu metne kendiniz yazın.",
         "ikonlar": {
           "kargo": "Kargo aracı",
           "paket": "Paket",

@@ -16,6 +16,7 @@ import { baglantiyiKapat } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { dosyaOku, gorselKaydet } from "../../dosya/servis.ts";
 import { kategoriDegistir, kategoriEkle, kategoriSil } from "../../kategori/servis.ts";
+import { logoyuDegistir } from "../../magaza-ayarlari/logo.ts";
 import { urunServisi } from "../../urun/servis.ts";
 import { vitrindeKullaniliyorMu, vitrinGorseliAdresi, vitrinGorseliOku } from "../gorsel.ts";
 import { duzenServisi } from "../servis.ts";
@@ -106,6 +107,35 @@ describe("vitrin görseli", () => {
     await kategoriDegistir(h.vt, yonetici(), kategori, { gorsel: ilk.dosya.kimlik });
     await kategoriSil(h.vt, yonetici(), kategori);
     expect(await h.oku(ilk.dosya.kimlik)).toBeUndefined();
+  });
+
+  it("listedeki her slaytın görseli ve telefon görseli verilir", async () => {
+    const h = await hazirla();
+    const [ilk, ikinci, telefon] = [await h.gorsel(), await h.gorsel(), await h.gorsel()];
+    await duzen.bolumEkle(h.vt, yonetici(), "ana-sayfa", {
+      tur: "kayan-afis",
+      degerler: {
+        slaytlar: [
+          { baslik: "Bir", gorsel: ilk.dosya.kimlik },
+          { baslik: "İki", gorsel: ikinci.dosya.kimlik, darEkranGorseli: telefon.dosya.kimlik },
+        ],
+      },
+    });
+    for (const gorsel of [ilk, ikinci, telefon]) {
+      expect(await h.oku(gorsel.dosya.kimlik), gorsel.dosya.kimlik).toBeDefined();
+    }
+  });
+
+  it("mağazanın logosu bu adresle verilmez", async () => {
+    const h = await hazirla();
+    const icerik = await sharp({
+      create: { width: 200, height: 80, channels: 3, background: { r: 0, g: 0, b: 0 } },
+    })
+      .png()
+      .toBuffer();
+    const logo = await logoyuDegistir(h.vt, yonetici(), icerik, { site, klasor: h.klasor });
+    if (!logo.tamam) throw new Error(logo.hata);
+    expect(await h.oku(logo.dosya.kimlik)).toBeUndefined();
   });
 
   it("kullanılmayan görsel, boyutun kendisi ve ürün galerisindeki görsel bu adresle verilmez", async () => {

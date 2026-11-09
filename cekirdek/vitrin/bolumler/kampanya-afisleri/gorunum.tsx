@@ -1,6 +1,7 @@
 // Kampanya afişlerinin görünüşü (kart 0110; Canlı Çarşı taslağı). Masaüstünde afiş sayısı kadar sütun, telefonda
 // alt alta. Bağlantısı olan afişin başlığı bağlantıdır ve afişin tamamına yayılır (kart 0109'daki ürün
-// kartıyla aynı yol); düğme yazısı afişin altında altı çizili durur.
+// kartıyla aynı yol); düğme yazısı afişin altında altı çizili durur. Afişin başlığı h2'dir (bölüm başlıkları h2,
+// kart 0110 kontrolü).
 import Link from "next/link";
 import { Rozet } from "../../../../bilesenler/parcalar/rozet";
 import { sinif } from "../../../../bilesenler/parcalar/sinif";
@@ -65,7 +66,7 @@ export function KampanyaAfisleriGorunumu({
                     {afis.rozet}
                   </Rozet>
                 ) : null}
-                <h3 className="font-baslik text-baslik-4 font-baslik-kalinligi">
+                <h2 className="min-w-0 font-baslik text-baslik-4 font-baslik-kalinligi wrap-anywhere">
                   {baglanti === undefined ? (
                     baslik
                   ) : (
@@ -77,7 +78,7 @@ export function KampanyaAfisleriGorunumu({
                       {baslik}
                     </Link>
                   )}
-                </h3>
+                </h2>
                 {metinMi(afis.metin) ? <p className="whitespace-pre-line">{afis.metin}</p> : null}
                 {baglanti !== undefined && metinMi(afis.dugmeYazisi) ? (
                   <span

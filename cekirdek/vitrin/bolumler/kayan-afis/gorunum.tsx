@@ -50,7 +50,7 @@ export function KayanAfisGorunumu({ gorunum, degerler: ham, baglam }: BolumGorun
           {metinMi(slayt.ustYazi) ? (
             <Rozet className="whitespace-normal">{slayt.ustYazi}</Rozet>
           ) : null}
-          <h2 className="font-baslik text-baslik-1 font-baslik-kalinligi masaustu:text-afis-basligi">
+          <h2 className="min-w-0 font-baslik text-baslik-1 font-baslik-kalinligi wrap-anywhere masaustu:text-afis-basligi">
             {slayt.baslik as string}
           </h2>
           {metinMi(slayt.metin) ? (

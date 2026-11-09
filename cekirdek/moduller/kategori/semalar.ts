@@ -44,7 +44,11 @@ const alanlar = {
   ust: z.uuid().nullable(),
   sira: z.int().min(0).max(9999),
   // Görselin dosya kimliği (kart 0110); null görseli kaldırır.
-  gorsel: z.uuid().nullable(),
+  // Büyük harfle verilen kimlik küçük harfe çevrilir: veritabanı ve vitrin görseli ucu küçük harfle karşılaştırır.
+  gorsel: z
+    .uuid()
+    .transform((kimlik) => kimlik.toLowerCase())
+    .nullable(),
 };
 
 // Yeni kategori. Verilmeyen adres adı addan üretilir, verilmeyen üst en üsttür, verilmeyen sıra

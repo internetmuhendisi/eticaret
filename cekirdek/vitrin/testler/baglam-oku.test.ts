@@ -363,5 +363,8 @@ describe("ana sayfa bölümlerinin bağlamı", () => {
     expect((await vitrinBaglaminiOku(vt, site, [], bolumKutuphanesi)).yerTutucular).toEqual({
       kargoyaVermeSuresi: "3",
     });
+    // 0 aynı gün demektir: "0 iş gününde" yazılmasın diye değer yoktur, madde çizilmez.
+    await siteninServisi(site).degistir(vt, yonetici(), { kargoyaVermeSuresi: 0 });
+    expect((await vitrinBaglaminiOku(vt, site, [], bolumKutuphanesi)).yerTutucular).toEqual({});
   });
 });

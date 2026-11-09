@@ -22,7 +22,7 @@ Bölüm kütüphanesine ana sayfanın görsel ağırlıklı beş bölümü girdi
 - Ekran okuyucu bölümü "kayan afiş", slaytı "slayt" ve "2 / 3" diye okur.
 - Yalnız etkin slayt görünür. Geçişte hareket yoktur, slayt yer değiştirir.
 - Kendiliğinden geçerken yeni slayt duyurulmaz; durunca duyurulur.
-- Durdurma düğmesi ilk denetimdir. Fare afişin üstündeyken ya da klavye odağı içindeyken geçiş bekler. Kullanıcı durdurduysa afiş bir daha kendiliğinden geçmez.
+- Durdurma düğmesi klavye sırasında ilk denetimdir: kodda slaytın düğmesinden önce gelir, ekranda onun sağındadır. Denetimler zeminin yazı rengindedir. Fare afişin üstündeyken ya da klavye odağı içindeyken geçiş bekler. Kullanıcı durdurduysa afiş bir daha kendiliğinden geçmez.
 - Hareket azaltma tercihinde afiş kendiliğinden geçmez. Kullanıcı başlat düğmesiyle isterse geçer.
 - Önceki, sonraki ve nokta düğmeleri klavyeyle kullanılır.
 
@@ -47,6 +47,7 @@ Bölüm kütüphanesine ana sayfanın görsel ağırlıklı beş bölümü girdi
 
 - Bölüm metnine ayardan dolan bir değer yazılabilir, örneğin `{kargoyaVermeSuresi} iş gününde kargoda`. Kayıt `cekirdek/kayitlar/yer-tutucular.ts` dosyasındadır.
 - Değeri olmayan yer tutucuyu taşıyan madde çizilmez: yanlış ya da boş bir değer gösterilmez.
+- Kargoya verme süresi 0 ise (aynı gün) değeri yoktur, "0 iş gününde kargoda" yazılmaz. Panelde bu da açıklanır; mağaza sahibi aynı gün kargoyu metne kendisi yazar.
 - Bugün yalnız kargoya verme süresi vardır. Yeni mağaza ayarı `kargoyaVermeSuresi`, varsayılanı 1 iş günüdür (site ayarları taslağındaki değer).
 - Ücretsiz kargo sınırı ve iade süresi kendi modülleriyle eklenir; o güne kadar mağaza sahibi bu değerleri metne elle yazar.
 
@@ -81,6 +82,18 @@ Bilerek ayrılan yerler:
 - **Afişteki fiyat:** Taslakta fiyat vardır; afiş bölümü ürüne bağlı değildir. Fiyatlı afiş ürün bölümleriyle gelebilir (kart 0111).
 - **Geniş afişin düğmesi:** Taslakta düğme yerine fiyat vardır. Geniş afişte düğme yazısı alanı vardır.
 - **Küçük ölçü farkları:** Afişin düğmesi 44 px, taslakta 48 px; rozet 12 px, taslakta 13 px; metin 18 px, taslakta 17 px. Ortak parçaların ölçüleridir (karar 0079).
+
+## Bağımsız kontrolün bulguları
+
+Kodda güvenlik açığı bulunmadı. Düzeltilenler:
+
+- Durdurma düğmesi klavye sırasında slaytın düğmesinden sonra geliyordu; öne alındı.
+- Kampanya afişlerinin başlıkları h3'tü; bölüm başlıkları gibi h2 oldu.
+- Kargoya verme süresi 0 olunca "0 iş gününde kargoda" yazılıyordu; madde artık çizilmez.
+- Çok uzun tek sözcüklü başlık telefonda kayan afişte sayfayı yana kaydırıyor, geniş afişte kesiliyordu; başlık artık kırılır.
+- Büyük harfle verilen kategori görseli yanlış hata alıyordu; kimlik küçük harfe çevrilir.
+- Slider'ın denetimleri zeminin yazı rengini almıyordu; artık alır.
+- Testlere eklendi: logonun bu adresle açılmaması, listedeki her slaytın ve telefon görselinin verilmesi. "Her sınıf bir kural üretir" testi bölüm klasörlerini de tarar.
 
 ## Sonuçları
 
