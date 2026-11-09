@@ -27,4 +27,4 @@ Bölüm: Tasarım. Önce 0103 bitmiş olmalı.
 
 ## Durum
 
-yapılacak
+bitti
