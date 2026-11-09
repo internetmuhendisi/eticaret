@@ -4,13 +4,19 @@
 // sitenin saat dilimine göre. Düzene bölüm eklenirken seçilen menü var ve silinmemiş olmalı; aynı anda silinen
 // menüye bağlanılmaz.
 import { randomUUID } from "node:crypto";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { eq, sql } from "drizzle-orm";
+import sharp from "sharp";
 import { afterEach, describe, expect, it } from "vitest";
 import { type Site, siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import { altyapiAdi } from "../../kayitlar/altyapi.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
+import { gorselBoyutAdlari, gorselBoyutlari } from "../../kayitlar/gorsel.ts";
+import { dosyaSil, gorselKaydet } from "../../moduller/dosya/servis.ts";
+import { vitrinGorseliAdresi } from "../../moduller/duzen/gorsel.ts";
 import { duzenServisi } from "../../moduller/duzen/servis.ts";
 import { kategoriEkle, kategoriSil } from "../../moduller/kategori/servis.ts";
 import { siteninServisi } from "../../moduller/magaza-ayarlari/servis.ts";
@@ -288,5 +294,74 @@ describe("düzenin menü bağı", () => {
     birak();
     await silme;
     expect((await ekleme).ayrinti).toEqual([{ alan: "degerler.menu", kod: "kayit-yok" }]);
+  });
+});
+
+// Kart 0110: ana sayfa bölümlerinin bağlamı. Bölümlerin seçtiği kategoriler (silinmişler yok) ve
+// bölümlerin ve kategorilerin görselleri (vitrin görseli ucunun adresleriyle; silinmiş görsel yok), yer
+// tutucuların değeri mağaza ayarından.
+describe("ana sayfa bölümlerinin bağlamı", () => {
+  const gorselKaydi = async (vt: Veritabani) => {
+    const klasor = mkdtempSync(join(tmpdir(), "baglam-gorsel-"));
+    temizlenecekler.push(async () => rmSync(klasor, { recursive: true, force: true }));
+    const icerik = await sharp({
+      create: { width: 1200, height: 600, channels: 3, background: { r: 20, g: 40, b: 200 } },
+    })
+      .png()
+      .toBuffer();
+    const sonuc = await gorselKaydet(vt, icerik, klasor);
+    if (!sonuc.tamam) throw new Error(sonuc.hata);
+    return sonuc;
+  };
+
+  it("seçilen kategoriler adı, adresi ve görseliyle; silinen kategori yok; görsellerin adresleri boyutlarıyla", async () => {
+    const vt = await siteAc();
+    const kategoriGorseli = await gorselKaydi(vt);
+    const afisGorseli = await gorselKaydi(vt);
+    const silinecekGorsel = await gorselKaydi(vt);
+    const giyim = await kategoriEkle(vt, yonetici(), {
+      ad: "Giyim",
+      adresAdi: "giyim",
+      gorsel: kategoriGorseli.dosya.kimlik,
+    });
+    const ev = await kategoriEkle(vt, yonetici(), { ad: "Ev", adresAdi: "ev" });
+    const silinen = await kategoriEkle(vt, yonetici(), { ad: "Eski", adresAdi: "eski" });
+    await kategoriSil(vt, yonetici(), silinen);
+    await dosyaSil(vt, silinecekGorsel.dosya.kimlik);
+    const bolumler = [
+      bolum("kategori-kutulari", {
+        kategoriler: [{ kategori: giyim }, { kategori: ev }, { kategori: silinen }],
+      }),
+      bolum("genis-afis", { baslik: "Afiş", gorsel: afisGorseli.dosya.kimlik }),
+      bolum("genis-afis", { baslik: "Silinmiş görsel", gorsel: silinecekGorsel.dosya.kimlik }),
+    ];
+    const baglam = await vitrinBaglaminiOku(vt, site, bolumler, bolumKutuphanesi);
+    expect(baglam.kategoriler).toEqual({
+      [giyim]: { ad: "Giyim", adres: "/kategori/giyim", gorsel: kategoriGorseli.dosya.kimlik },
+      [ev]: { ad: "Ev", adres: "/kategori/ev" },
+    });
+    expect(Object.keys(baglam.gorseller).toSorted()).toEqual(
+      [kategoriGorseli.dosya.kimlik, afisGorseli.dosya.kimlik].toSorted(),
+    );
+    expect(baglam.gorseller[afisGorseli.dosya.kimlik]).toEqual({
+      kaynaklar: gorselBoyutAdlari.map((boyut) => ({
+        adres: vitrinGorseliAdresi(afisGorseli.dosya.kimlik, boyut),
+        // Küçük görsel büyütülmez: 1200 piksellik görselin tam boyutu 1200'dür.
+        genislik: Math.min(gorselBoyutlari[boyut], 1200),
+      })),
+      genislik: gorselBoyutlari.orta,
+      yukseklik: gorselBoyutlari.orta / 2,
+    });
+  });
+
+  it("yer tutucunun değeri mağaza ayarından; ayar değişince değişir", async () => {
+    const vt = await siteAc();
+    expect((await vitrinBaglaminiOku(vt, site, [], bolumKutuphanesi)).yerTutucular).toEqual({
+      kargoyaVermeSuresi: "1",
+    });
+    await siteninServisi(site).degistir(vt, yonetici(), { kargoyaVermeSuresi: 3 });
+    expect((await vitrinBaglaminiOku(vt, site, [], bolumKutuphanesi)).yerTutucular).toEqual({
+      kargoyaVermeSuresi: "3",
+    });
   });
 });

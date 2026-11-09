@@ -28,6 +28,14 @@ paths:
 - Kartın görünümü `urunKartiGorunumu` ile bulunur: bölümün seçimi, yoksa temanınki (vitrin bağlamındaki `parcaGorunumleri`). Görünümler `cekirdek/kayitlar/tema.ts` kaydındadır.
 - Ürün görseli yalnız ürün görseli ucundan (`urunGorseliAdresi`) gösterilir; dosyanın kimliği vitrinde adres olmaz.
 
+## Ana sayfa bölümleri ve görseller (karar 0087)
+
+- Ana sayfa düzenin ana sayfa alanını çizer; bölüm yoksa sade sayfa görünür. Bölümün başlığı h2'dir, sayfanın h1'i mağaza adıdır.
+- Bölümün ve kategorinin görseli yalnız vitrin görseli ucundan (`vitrinGorseliAdresi`) ve `BolumGorseli` ile (`cekirdek/vitrin/bolum-kutuphanesi/gorsel.tsx`) gösterilir. Görselin ölçüsü ve adresleri vitrin bağlamındadır; bölüm görsel adresi yazmaz.
+- Bölüm metnindeki ayar değeri yalnız yer tutucuyla gelir (`cekirdek/kayitlar/yer-tutucular.ts`, `yerTutuculariDoldur`). Değeri olmayan yer tutucuyu taşıyan metin çizilmez.
+- Renkli zemin `zeminSiniflari` ile okunur çiftiyle seçilir (`cekirdek/vitrin/bolumler/ortak/zemin.ts`), renkli zeminde odak yazının rengindedir.
+- Kendiliğinden hareket eden bölüm durdurulabilir ve hareket azaltma tercihinde kendiliğinden hareket etmez (`useHareketAzaltma`).
+
 ## Bölüm kütüphanesi (karar 0081)
 
 - Üst kısım, ana sayfa ve alt kısım bölümlerden kurulur. Bölüm türünün tarifi (`cekirdek/vitrin/bolum-kutuphanesi/tarif.ts`) adını, konabileceği alanları, alanlarını ve türlerini, görünümlerini ve bağlı olduğu işlevi yazar. Alanların şeması, panelin düzenleme formu ve düzen servisi bu tariften çıkar.

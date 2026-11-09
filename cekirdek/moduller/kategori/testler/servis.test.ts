@@ -3,13 +3,18 @@
 // kuralı (altlar bir üste çıkar, ürün bağlantıları kalkar), bir kategorinin ürünlerinin tek sorguyla
 // gelmesi, ürünün birden çok kategoride olması, değişiklik kaydı ve iki sitenin ayrı kalması.
 import { randomUUID } from "node:crypto";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { eq, sql } from "drizzle-orm";
+import sharp from "sharp";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BilinenHata } from "../../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
+import { dosyaSil, gorselKaydet } from "../../dosya/servis.ts";
 import type { UrunGirdisi } from "../../urun/semalar.ts";
 import { urunServisi } from "../../urun/servis.ts";
 import type { VitrinSecenekleri } from "../../urun/vitrin.ts";
@@ -523,5 +528,86 @@ describe("iki site", () => {
     });
     // Aynı ad ve adres adı öteki sitede serbesttir.
     expect((await kategoriyiOku(await ekle(b, "Mum"), b))?.adresAdi).toBe("mum");
+  });
+});
+
+// Kart 0110: kategorinin görseli. Görsel hazır olmalı (var, silinmemiş, kendisi bir boyut değil, boyutları
+// tam); değişiklik kaydına girer; null görseli kaldırır.
+describe("kategori görseli", () => {
+  const gorselKaydi = async (vt: Veritabani) => {
+    const klasor = mkdtempSync(join(tmpdir(), "kategori-gorseli-"));
+    silinecekler.push(async () => rmSync(klasor, { recursive: true, force: true }));
+    const icerik = await sharp({
+      create: { width: 300, height: 300, channels: 3, background: { r: 10, g: 120, b: 60 } },
+    })
+      .png()
+      .toBuffer();
+    const sonuc = await gorselKaydet(vt, icerik, klasor);
+    if (!sonuc.tamam) throw new Error(sonuc.hata);
+    return sonuc;
+  };
+
+  it("hazır görsel eklenir, değişir ve kaldırılır; her değişiklik kayda girer", async () => {
+    const vt = await siteAc();
+    const ilk = await gorselKaydi(vt);
+    const kategori = await kategoriEkle(vt, yonetici(), { ad: "Giyim", gorsel: ilk.dosya.kimlik });
+    expect((await kategoriyiOku(kategori, vt))?.gorsel).toBe(ilk.dosya.kimlik);
+    const ikinci = await gorselKaydi(vt);
+    await kategoriDegistir(vt, yonetici(), kategori, { gorsel: ikinci.dosya.kimlik });
+    expect((await kategoriyiOku(kategori, vt))?.gorsel).toBe(ikinci.dosya.kimlik);
+    await kategoriDegistir(vt, yonetici(), kategori, { gorsel: null });
+    expect((await kategoriyiOku(kategori, vt))?.gorsel).toBeUndefined();
+    const kayitlar = await vt
+      .select({ eski: degisiklikKayitlari.eski_deger, yeni: degisiklikKayitlari.yeni_deger })
+      .from(degisiklikKayitlari)
+      .where(eq(degisiklikKayitlari.kayit_kimligi, kategori))
+      .orderBy(degisiklikKayitlari.zaman);
+    expect(kayitlar.map((k) => [k.eski, k.yeni])).toEqual([
+      [null, expect.objectContaining({ gorsel: ilk.dosya.kimlik })],
+      [{ gorsel: ilk.dosya.kimlik }, { gorsel: ikinci.dosya.kimlik }],
+      [{ gorsel: ikinci.dosya.kimlik }, { gorsel: null }],
+    ]);
+  });
+
+  it("olmayan, silinmiş, kendisi boyut olan ve boyutu silinmiş görsel bağlanmaz", async () => {
+    const vt = await siteAc();
+    const kategori = await ekle(vt, "Ev");
+    const silinen = await gorselKaydi(vt);
+    await dosyaSil(vt, silinen.dosya.kimlik);
+    const boyutuEksik = await gorselKaydi(vt);
+    await dosyaSil(vt, boyutuEksik.boyutlar.orta.kimlik);
+    const bir = await gorselKaydi(vt);
+    for (const gorsel of [
+      randomUUID(),
+      silinen.dosya.kimlik,
+      bir.boyutlar.kucuk.kimlik,
+      boyutuEksik.dosya.kimlik,
+    ]) {
+      expect(await hatasi(kategoriDegistir(vt, yonetici(), kategori, { gorsel }))).toEqual({
+        kod: "dogrulama",
+        ayrinti: [{ alan: "gorsel", kod: "gorsel-gecersiz" }],
+      });
+      expect(await hatasi(kategoriEkle(vt, yonetici(), { ad: `Yeni ${gorsel}`, gorsel }))).toEqual({
+        kod: "dogrulama",
+        ayrinti: [{ alan: "gorsel", kod: "gorsel-gecersiz" }],
+      });
+    }
+    expect((await kategoriyiOku(kategori, vt))?.gorsel).toBeUndefined();
+  });
+
+  it("aynı görsel yeniden verilince değişiklik yazılmaz; görseli sonradan silinen kategori değişebilir", async () => {
+    const vt = await siteAc();
+    const gorsel = await gorselKaydi(vt);
+    const kategori = await kategoriEkle(vt, yonetici(), {
+      ad: "Mutfak",
+      gorsel: gorsel.dosya.kimlik,
+    });
+    await dosyaSil(vt, gorsel.dosya.kimlik);
+    // Görsel değişmiyorsa yeniden denetlenmez: kategorinin adı değişebilir.
+    await kategoriDegistir(vt, yonetici(), kategori, {
+      ad: "Mutfak Gereçleri",
+      gorsel: gorsel.dosya.kimlik,
+    });
+    expect((await kategoriyiOku(kategori, vt))?.ad).toBe("Mutfak Gereçleri");
   });
 });

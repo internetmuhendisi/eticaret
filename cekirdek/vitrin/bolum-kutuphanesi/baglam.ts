@@ -17,6 +17,17 @@ export type BaglamMenuDali = {
   altlar: readonly BaglamMenuDali[];
 };
 
+// Bir görselin boyutlarının adresleri genişlikleriyle (srcset) ve orta boyutun ölçüsü (kart 0110): tarayıcı
+// görsel gelmeden yerini ayırır.
+export type BaglamGorseli = {
+  kaynaklar: readonly { adres: string; genislik: number }[];
+  genislik: number;
+  yukseklik: number;
+};
+
+// Bölümlerin seçtiği kategori (kart 0110): adı, sayfasının adresi ve görselinin dosya kimliği.
+export type BaglamKategorisi = { ad: string; adres: string; gorsel?: string };
+
 // İletişim bilgisinin yazılışı ve bağlantısı (tel:, mailto:).
 export type IletisimBilgisi = { metin: string; adres: string };
 
@@ -36,6 +47,13 @@ export type VitrinBaglami = {
   // Bölümlerin seçtiği menüler, koduyla. Silinmiş ya da olmayan menü burada yoktur.
   menuler: Readonly<Record<string, readonly BaglamMenuDali[]>>;
   islevler: Readonly<Record<Islev, boolean>>;
+  // Bölümlerin ve kategorilerin görselleri, dosya kimliğiyle (kart 0110). Silinmiş ya da boyutu olmayan görsel
+  // burada yoktur; bölüm o görseli çizmez.
+  gorseller: Readonly<Record<string, BaglamGorseli>>;
+  // Bölümlerin seçtiği kategoriler, kimliğiyle (kart 0110). Silinmiş ya da olmayan kategori burada yoktur.
+  kategoriler: Readonly<Record<string, BaglamKategorisi>>;
+  // Bölüm metinlerindeki yer tutucuların değerleri (kart 0110, cekirdek/kayitlar/yer-tutucular.ts).
+  yerTutucular: Readonly<Record<string, string>>;
   // Temanın parça görünümleri (cekirdek/kayitlar/tema.ts): ürün kartını çizen bölüm görünümü buradan
   // ve kendi seçiminden alır (cekirdek/vitrin/urun-karti/gorunum.ts, kart 0109).
   parcaGorunumleri: Readonly<Record<string, string>>;

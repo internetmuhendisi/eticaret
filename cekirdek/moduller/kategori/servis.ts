@@ -25,6 +25,7 @@ import {
 } from "../../veritabani/baglanti.ts";
 import { kimlikMi } from "../../veritabani/turler.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
+import { gorselHazirMi } from "../dosya/servis.ts";
 import { urunKilidiAl } from "../urun/kilit.ts";
 import {
   bosUrunListesi,
@@ -51,6 +52,8 @@ export type Kategori = {
   // Boşsa (null) en üsttedir.
   ust: string | null;
   sira: number;
+  // Görselin dosya kimliği (kart 0110).
+  gorsel?: string;
   silindi: boolean;
 };
 
@@ -60,6 +63,7 @@ type KategoriKaydi = {
   aciklama: string | null;
   ust: string | null;
   sira: number;
+  gorsel: string | null;
 };
 
 type Sorun = { alan: string; kod: string; kimlik?: string };
@@ -97,6 +101,7 @@ const kategoriAlanlari = {
   aciklama: kategoriler.aciklama,
   ust: kategoriler.ust_kimligi,
   sira: kategoriler.sira,
+  gorsel: kategoriler.gorsel_kimligi,
   silinme: kategoriler.silinme_zamani,
 };
 
@@ -107,6 +112,7 @@ const okunan = (satir: {
   aciklama: string | null;
   ust: string | null;
   sira: number;
+  gorsel: string | null;
   silinme: Date | null;
 }): Kategori => ({
   kimlik: satir.kimlik,
@@ -115,6 +121,7 @@ const okunan = (satir: {
   ...(satir.aciklama === null ? {} : { aciklama: satir.aciklama }),
   ust: satir.ust,
   sira: satir.sira,
+  ...(satir.gorsel === null ? {} : { gorsel: satir.gorsel }),
   silindi: satir.silinme !== null,
 });
 
@@ -210,6 +217,7 @@ const degisebilenKategori = async (islem: VeritabaniIslemi, kimlik: string) => {
     aciklama: satir.aciklama,
     ust: satir.ust,
     sira: satir.sira,
+    gorsel: satir.gorsel,
   };
   return kayit;
 };
@@ -220,7 +228,16 @@ const kategoriSatiri = (kayit: KategoriKaydi) => ({
   aciklama: kayit.aciklama,
   ust_kimligi: kayit.ust,
   sira: kayit.sira,
+  gorsel_kimligi: kayit.gorsel,
 });
+
+// Kategoriye bağlanacak görsel hazır olmalı (kart 0110): dosya satırı paylaşımlı kilitlenir, aynı anda silinen
+// görsele bağlanılmaz.
+const gorseliDenetle = async (islem: VeritabaniIslemi, gorsel: string | null) => {
+  if (gorsel !== null && (await gorselHazirMi(islem, gorsel)) !== "hazir") {
+    throw dogrulamaHatasi([{ alan: "gorsel", kod: "gorsel-gecersiz" }]);
+  }
+};
 
 export const kategoriEkle = async (
   vt: Veritabani | VeritabaniIslemi,
@@ -236,6 +253,7 @@ export const kategoriEkle = async (
     if (girdi.adresAdi !== undefined && (await adresAdiKullaniliyor(islem, girdi.adresAdi))) {
       throw cakisma([{ alan: "adresAdi", kod: "adres-adi-tekrar" }]);
     }
+    await gorseliDenetle(islem, girdi.gorsel);
     const kimlik = randomUUID();
     const kayit: KategoriKaydi = {
       ad: girdi.ad,
@@ -253,6 +271,7 @@ export const kategoriEkle = async (
       aciklama: girdi.aciklama ?? null,
       ust: girdi.ust,
       sira: girdi.sira ?? (await sonrakiSira(islem, girdi.ust)),
+      gorsel: girdi.gorsel,
     };
     await islem.insert(kategoriler).values({ kimlik, ...kategoriSatiri(kayit) });
     await degisikligiKaydet(islem, {
@@ -286,10 +305,12 @@ export const kategoriDegistir = async (
       aciklama: girdi.aciklama === undefined ? eski.aciklama : girdi.aciklama,
       ust,
       sira: girdi.sira ?? (tasindi ? await sonrakiSira(islem, ust) : eski.sira),
+      gorsel: girdi.gorsel === undefined ? eski.gorsel : girdi.gorsel,
     };
-    const alanlar = ["ad", "adresAdi", "aciklama", "ust", "sira"] as const;
+    const alanlar = ["ad", "adresAdi", "aciklama", "ust", "sira", "gorsel"] as const;
     const degisen = alanlar.filter((alan) => eski[alan] !== yeni[alan]);
     if (degisen.length === 0) return;
+    if (yeni.gorsel !== eski.gorsel) await gorseliDenetle(islem, yeni.gorsel);
     if (tasindi) {
       await ustuDenetle(islem, ust);
       if (await donguKurar(islem, kimlik, ust)) throw isKurali("ust", "dongu");

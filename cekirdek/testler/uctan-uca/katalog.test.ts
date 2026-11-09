@@ -516,3 +516,121 @@ test("ürün kartı: görsele tıklayan ürün sayfasına, düğmeye tıklayan d
     expect(bulunan).toBe(ad);
   }
 });
+
+// Kayan afiş (Slider, kart 0110): katalogdaki ilk kayan afiş üç slaytlıdır, 6 saniyede bir geçer. Saat ileri
+// alınarak geçiş ölçülür; fare üstündeyken ve hareket azaltma tercihinde geçmez. Klavyeyle durdurulur,
+// önceki, sonraki ve noktalarla gezilir; slaytın adı ekran okuyucuda "2 / 3".
+const kayanAfis = (page: Page) =>
+  page
+    .getByRole("region", { name: metin("gelistirme.bolum.anaSayfa"), exact: true })
+    .getByRole("region", { name: metin("vitrin.bolum.kayanAfis.etiket") })
+    .first();
+const etkinSlayt = (afis: Locator) => afis.getByRole("group");
+
+test("kayan afiş: kendiliğinden geçer, fare üstündeyken bekler, durdurulunca geçmez", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await ac(page, `${katalogAdresi}/bolum-kutuphanesi`);
+  const afis = kayanAfis(page);
+  await expect(etkinSlayt(afis)).toHaveAttribute("aria-label", "1 / 3");
+  await page.clock.runFor(6100);
+  await expect(etkinSlayt(afis)).toHaveAttribute("aria-label", "2 / 3");
+  // Fare üstündeyken bekler. Saat geçiş süresinden biraz uzun adımlarla ilerler: tek büyük sıçrama bozuk
+  // kodu yakalamıyordu (ölçüldü).
+  await afis.hover();
+  for (let adim = 0; adim < 3; adim += 1) {
+    await page.clock.runFor(6100);
+    await expect(etkinSlayt(afis)).toHaveAttribute("aria-label", "2 / 3");
+  }
+  await page.mouse.move(0, 0);
+  await page.clock.runFor(6100);
+  await expect(etkinSlayt(afis)).toHaveAttribute("aria-label", "3 / 3");
+  // Durdurulunca geçmez; yeni slayt duyurulur.
+  await afis.getByRole("button", { name: metin("vitrin.bolum.kayanAfis.durdur") }).click();
+  await page.mouse.move(0, 0);
+  for (let adim = 0; adim < 3; adim += 1) {
+    await page.clock.runFor(6100);
+    await expect(etkinSlayt(afis)).toHaveAttribute("aria-label", "3 / 3");
+  }
+  await expect(afis.locator("[aria-live]")).toHaveAttribute("aria-live", "polite");
+  await expect(
+    afis.getByRole("button", { name: metin("vitrin.bolum.kayanAfis.baslat") }),
+  ).toBeVisible();
+});
+
+test("kayan afiş: klavyeyle durdurulur, önceki, sonraki ve noktalarla gezilir", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await ac(page, `${katalogAdresi}/bolum-kutuphanesi`);
+  const afis = kayanAfis(page);
+  const durdur = afis.getByRole("button", { name: metin("vitrin.bolum.kayanAfis.durdur") });
+  await durdur.focus();
+  // Odak afişin içindeyken geçiş bekler; Enter durdurur.
+  await page.keyboard.press("Enter");
+  await expect(
+    afis.getByRole("button", { name: metin("vitrin.bolum.kayanAfis.baslat") }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(
+    afis.getByRole("button", { name: metin("vitrin.bolum.kayanAfis.onceki") }),
+  ).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(etkinSlayt(afis)).toHaveAttribute("aria-label", "3 / 3");
+  await afis.getByRole("button", { name: "2. slaytı göster" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(etkinSlayt(afis)).toHaveAttribute("aria-label", "2 / 3");
+  await expect(afis.getByRole("button", { name: "2. slaytı göster" })).toHaveAttribute(
+    "aria-current",
+    "true",
+  );
+  await afis.getByRole("button", { name: metin("vitrin.bolum.kayanAfis.sonraki") }).focus();
+  await page.keyboard.press("Enter");
+  await expect(etkinSlayt(afis)).toHaveAttribute("aria-label", "3 / 3");
+  await page.keyboard.press("Enter");
+  await expect(etkinSlayt(afis)).toHaveAttribute("aria-label", "1 / 3");
+});
+
+test("kayan afiş: hareket azaltma tercihinde kendiliğinden geçmez, başlat düğmesiyle geçer", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.clock.install();
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await ac(page, `${katalogAdresi}/bolum-kutuphanesi`);
+  const afis = kayanAfis(page);
+  const baslat = afis.getByRole("button", { name: metin("vitrin.bolum.kayanAfis.baslat") });
+  await expect(baslat).toBeVisible();
+  for (let adim = 0; adim < 3; adim += 1) {
+    await page.clock.runFor(6100);
+    await expect(etkinSlayt(afis)).toHaveAttribute("aria-label", "1 / 3");
+  }
+  await baslat.click();
+  // Odak afişin içindeyken geçiş bekler: odak ve fare afişin dışına çıkar.
+  await page.getByRole("heading", { level: 1 }).click();
+  await page.clock.runFor(6100);
+  await expect(etkinSlayt(afis)).toHaveAttribute("aria-label", "2 / 3");
+});
+
+test("kayan afiş: telefonda telefon görseli, masaüstünde asıl görsel", async ({ page }) => {
+  for (const [width, beklenen] of [
+    [375, "dikey"],
+    [1280, "asil"],
+  ] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    await ac(page, `${katalogAdresi}/bolum-kutuphanesi`);
+    const afis = kayanAfis(page);
+    await afis.getByRole("button", { name: metin("vitrin.bolum.kayanAfis.durdur") }).click();
+    await afis.getByRole("button", { name: "2. slaytı göster" }).click();
+    const gorsel = etkinSlayt(afis).locator("img");
+    const { dogal, kaynaklar } = await gorsel.evaluate((img: HTMLImageElement) => ({
+      dogal: img.naturalHeight > img.naturalWidth,
+      kaynaklar: [...(img.parentElement?.querySelectorAll("source") ?? [])].length,
+    }));
+    expect(kaynaklar, String(width)).toBe(2);
+    // Katalogda telefon görseli dikey (480 × 640), asıl görsel karedir.
+    expect(dogal, String(width)).toBe(beklenen === "dikey");
+  }
+});

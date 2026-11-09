@@ -9,7 +9,12 @@
 // (cekirdek/katalog/deneme-bolumu/).
 import { baglantiSutunlari } from "../bolumler/baglanti-sutunlari/tarif.ts";
 import { duyuruSeridi } from "../bolumler/duyuru-seridi/tarif.ts";
+import { genisAfis } from "../bolumler/genis-afis/tarif.ts";
+import { guvenSeridi } from "../bolumler/guven-seridi/tarif.ts";
 import { iletisimBilgileri } from "../bolumler/iletisim-bilgileri/tarif.ts";
+import { kampanyaAfisleri } from "../bolumler/kampanya-afisleri/tarif.ts";
+import { kategoriKutulari } from "../bolumler/kategori-kutulari/tarif.ts";
+import { kayanAfis } from "../bolumler/kayan-afis/tarif.ts";
 import { menuSatiri } from "../bolumler/menu-satiri/tarif.ts";
 import { odemeIsaretleri } from "../bolumler/odeme-isaretleri/tarif.ts";
 import { sosyalHesaplar } from "../bolumler/sosyal-hesaplar/tarif.ts";
@@ -26,4 +31,9 @@ export const bolumKutuphanesi: BolumKutuphanesi = {
   "sosyal-hesaplar": sosyalHesaplar,
   "odeme-isaretleri": odemeIsaretleri,
   "telif-satiri": telifSatiri,
+  "kayan-afis": kayanAfis,
+  "guven-seridi": guvenSeridi,
+  "kampanya-afisleri": kampanyaAfisleri,
+  "genis-afis": genisAfis,
+  "kategori-kutulari": kategoriKutulari,
 };

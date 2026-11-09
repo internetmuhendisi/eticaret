@@ -231,7 +231,11 @@ function TekAlan({
   switch (alan.tur) {
     case "metin":
       return (
-        <FormAlani etiket={etiket} {...hataOzelligi(hata(""))}>
+        <FormAlani
+          etiket={etiket}
+          {...(alan.aciklama === undefined ? {} : { aciklama: metin(alan.aciklama) })}
+          {...hataOzelligi(hata(""))}
+        >
           {(baglanti) => (
             <GirisAlani
               {...baglanti}
@@ -245,7 +249,11 @@ function TekAlan({
       );
     case "uzun-metin":
       return (
-        <FormAlani etiket={etiket} {...hataOzelligi(hata(""))}>
+        <FormAlani
+          etiket={etiket}
+          {...(alan.aciklama === undefined ? {} : { aciklama: metin(alan.aciklama) })}
+          {...hataOzelligi(hata(""))}
+        >
           {(baglanti) => (
             <UzunMetinAlani
               {...baglanti}
@@ -368,6 +376,21 @@ function TekAlan({
           deger={deger}
           degistir={degistir}
           zorunlu={zorunlu}
+        />
+      );
+    case "secim":
+      // Seçim her zaman bir değerdir: boşsa varsayılanı gösterilir, "seçilmedi" yoktur.
+      return (
+        <KayitSecimi
+          etiket={etiket}
+          hata={hata("")}
+          secenekler={alan.secenekler.map((secenek) => ({
+            kimlik: secenek.kod,
+            ad: metin(secenek.ad),
+          }))}
+          deger={typeof deger === "string" ? deger : alan.varsayilan}
+          degistir={degistir}
+          zorunlu
         />
       );
     case "urun-kaynagi":

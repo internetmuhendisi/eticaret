@@ -24,6 +24,7 @@
     "bilesenler/parcalar/uyari.tsx",
     "bilesenler/parcalar/yukleniyor.tsx",
     "cekirdek/vitrin/bolumler/duyuru-seridi/gorunum.tsx",
+    "cekirdek/vitrin/bolumler/guven-seridi/gorunum.tsx",
     "cekirdek/vitrin/bolumler/iletisim-bilgileri/gorunum.tsx",
     "cekirdek/vitrin/bolumler/menu-satiri/gorunum.tsx",
     "cekirdek/vitrin/bolumler/odeme-isaretleri/gorunum.tsx",
@@ -38,6 +39,7 @@
     "cekirdek/moduller/oturum/sifirlama-formlari.tsx",
     "cekirdek/vitrin/bolumler/duyuru-seridi/gorunum.tsx",
     "cekirdek/vitrin/bolumler/iletisim-bilgileri/gorunum.tsx",
+    "cekirdek/vitrin/bolumler/kayan-afis/gorunum.tsx",
     "cekirdek/vitrin/bolumler/ortak/menu.tsx",
     "cekirdek/vitrin/bolumler/sosyal-hesaplar/gorunum.tsx",
     "cekirdek/vitrin/bolumler/ust-satir/gorunum.tsx",
@@ -54,6 +56,8 @@
     "bilesenler/parcalar/pencere.tsx",
     "bilesenler/parcalar/serit.tsx",
     "bilesenler/parcalar/yan-pencere.tsx",
+    "cekirdek/vitrin/bolumler/genis-afis/gorunum.tsx",
+    "cekirdek/vitrin/bolumler/kayan-afis/kaydirici.tsx",
     "cekirdek/vitrin/bolumler/menu-satiri/gorunum.tsx",
     "cekirdek/vitrin/bolumler/ust-satir/menu-dugmesi.tsx",
     "cekirdek/vitrin/hesap-alani.tsx",
@@ -80,10 +84,15 @@
     "cekirdek/yonetim-paneli/bolum-formu.tsx"
   ],
   "bilesenler/parcalar/pencere.tsx": ["bilesenler/parcalar/yan-pencere.tsx"],
-  "bilesenler/parcalar/rozet.tsx": ["cekirdek/vitrin/urun-karti/urun-karti.tsx"],
+  "bilesenler/parcalar/rozet.tsx": [
+    "cekirdek/vitrin/bolumler/genis-afis/gorunum.tsx",
+    "cekirdek/vitrin/bolumler/kampanya-afisleri/gorunum.tsx",
+    "cekirdek/vitrin/bolumler/kayan-afis/gorunum.tsx",
+    "cekirdek/vitrin/urun-karti/urun-karti.tsx"
+  ],
   "bilesenler/parcalar/secim-kutusu.tsx": ["cekirdek/yonetim-paneli/bolum-formu.tsx"],
   "bilesenler/parcalar/sekmeler.tsx": [],
-  "bilesenler/parcalar/serit.tsx": [],
+  "bilesenler/parcalar/serit.tsx": ["cekirdek/vitrin/bolumler/kategori-kutulari/gorunum.tsx"],
   "bilesenler/parcalar/uyari.tsx": [
     "bilesenler/parcalar/bildirim.tsx",
     "cekirdek/moduller/oturum/sifirlama-formlari.tsx",

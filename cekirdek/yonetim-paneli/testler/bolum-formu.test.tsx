@@ -51,8 +51,8 @@ describe("bölümün düzenleme formu", () => {
     expect(
       (screen.getByLabelText(metin("gelistirme.bolum.alan.bitis")) as HTMLInputElement).type,
     ).toBe("datetime-local");
-    // Seçim kutuları: görsel, kategori, marka, renk ve ürünlerin kaynağı.
-    for (const ad of ["gorsel", "kategori", "marka", "zemin"] as const) {
+    // Seçim kutuları: görsel, kategori, marka, renk, sabit seçim ve ürünlerin kaynağı.
+    for (const ad of ["gorsel", "kategori", "marka", "zemin", "sure"] as const) {
       expect(screen.getByLabelText(metin(`gelistirme.bolum.alan.${ad}`)).getAttribute("role")).toBe(
         "combobox",
       );
@@ -66,6 +66,10 @@ describe("bölümün düzenleme formu", () => {
     expect(
       screen.getByRole("group", { name: metin("gelistirme.bolum.alan.maddeler") }),
     ).toBeDefined();
+    // Değeri verilmemiş seçim varsayılanını gösterir (kart 0110).
+    expect(screen.getByLabelText(metin("gelistirme.bolum.alan.sure")).textContent).toBe(
+      metin("gelistirme.bolum.alan.sureUzun"),
+    );
   });
 
   it("tarife alan eklenince formda görünür, çıkınca kaybolur", () => {

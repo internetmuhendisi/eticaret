@@ -56,6 +56,37 @@ describe("bölüm kütüphanesi", () => {
           },
         },
       },
+      // Kart 0110: seçim alanının varsayılanı seçeneklerde olmalı, seçenekler tekil.
+      "secim-varsayilani": {
+        ...temel,
+        tur: "secim-varsayilani",
+        alanlar: {
+          sure: {
+            tur: "secim",
+            ad: temel.ad,
+            secenekler: [{ kod: "a", ad: temel.ad }],
+            varsayilan: "b",
+          },
+          maddeler: {
+            tur: "liste",
+            ad: temel.ad,
+            ogeAdi: temel.ad,
+            enAz: 0,
+            enCok: 2,
+            alanlar: {
+              ikon: {
+                tur: "secim",
+                ad: temel.ad,
+                secenekler: [
+                  { kod: "a", ad: temel.ad },
+                  { kod: "a", ad: temel.ad },
+                ],
+                varsayilan: "a",
+              },
+            },
+          },
+        },
+      },
     };
     const sorunlar = kutuphaneSorunlari(bozuk).join("\n");
     expect(sorunlar).toContain("bolum farkli-anahtar: kayıt anahtarı türün koduyla aynı değil");
@@ -63,5 +94,7 @@ describe("bölüm kütüphanesi", () => {
     expect(sorunlar).toContain("bolum gorunum-tekrari: görünüm tekrarı");
     expect(sorunlar).toContain("bolum kayda-yazilamaz: alan kodu kayda yazılamaz: telefon");
     expect(sorunlar).toContain("bolum liste-siniri: maddeler: listenin sınırları yanlış");
+    expect(sorunlar).toContain("bolum secim-varsayilani: sure: varsayılan seçeneklerde yok");
+    expect(sorunlar).toContain("bolum secim-varsayilani: maddeler.ikon: seçenek tekrarı");
   });
 });

@@ -12,6 +12,8 @@ import {
   CircleCheckIcon,
   CircleIcon,
   CreditCardIcon,
+  GiftIcon,
+  HeadsetIcon,
   HeartIcon,
   ImageIcon,
   InfoIcon,
@@ -23,11 +25,17 @@ import {
   MapPinIcon,
   MenuIcon,
   OctagonXIcon,
+  PackageIcon,
+  PauseIcon,
   PhoneIcon,
+  PlayIcon,
   SearchIcon,
+  ShieldCheckIcon,
   ShoppingBagIcon,
   StarIcon,
   TriangleAlertIcon,
+  TruckIcon,
+  Undo2Icon,
   UserIcon,
   XIcon,
 } from "lucide-react";
@@ -73,6 +81,17 @@ export const ikonlar = {
   // Ürün kartı (kart 0109): görseli olmayan ürünün yer tutucusu ve puan.
   gorsel: ImageIcon,
   yildiz: StarIcon,
+  // Kayan afiş (kart 0110): kendiliğinden geçişi durdurur ve başlatır.
+  durdur: PauseIcon,
+  baslat: PlayIcon,
+  // Güven şeridi (kart 0110): kargo, kargoya verme, iade, güvenli alışveriş, destek, hediye. Ödeme için kart,
+  // havale ve kapıda ödeme ikonları yukarıdadır.
+  kargo: TruckIcon,
+  paket: PackageIcon,
+  iade: Undo2Icon,
+  guvenlik: ShieldCheckIcon,
+  destek: HeadsetIcon,
+  hediye: GiftIcon,
 } satisfies Record<string, LucideIcon>;
 
 export type IkonAdi = keyof typeof ikonlar;

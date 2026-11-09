@@ -88,10 +88,21 @@ Mağazanın logosunu verir: mağaza sahibinin yüklediği logo, yoksa sitenin il
 
 - İzin: `herkese-acik`. Sınır: `gorsel`.
 - Girdi: `o` galeri öğesinin kimliği, `b` boyutun adı (`kucuk`, `orta`, `buyuk`, `tam`; `cekirdek/kayitlar/gorsel.ts`). Başka parametre, kimlik biçiminde olmayan `o` ya da kayıtta olmayan boyut `dogrulama`.
-- Servis: `cekirdek/moduller/urun/vitrin-gorseli.ts`.
+- Servis: `cekirdek/moduller/urun/urun-gorseli.ts`.
 - Yalnız vitrinde sayfası açılan ürünün (`vitrinKosulu`, sayfa yeri) silinmemiş galeri görselinin boyutu verilir. Özgün görsel ve dosya kimliğiyle başka dosya verilmez.
 - Başarılı (200): görselin boyutu (WebP). Başlıklar logo ucuyla aynıdır: `Content-Type`, `X-Content-Type-Options: nosniff`, `Cache-Control: public, max-age=300`, `ETag` içeriğin özeti; aynı `ETag` ile 304, `HEAD` gövdesiz.
 - Görsel yoksa (404): `{ "basarili": false, "hata": { "kod": "bulunamadi" } }`. Olmayan öğe, video, silinmiş öğe ya da dosya, görünmeyen ürün ve eksik boyut aynı cevabı alır. Boyutun dosyası diskte yoksa ya da içeriği kayıttakinden farklıysa da 404 döner; hata her dosya için süreç başına bir kez kaydedilir.
+
+### GET /kapi/herkese-acik/vitrin-gorseli
+
+Vitrin bölümlerindeki ve kategorilerdeki görselin bir boyutunu verir (kart 0110, karar 0087). Kayan afiş, kampanya afişleri, geniş afiş ve kategori kutuları görseli bu adresten alır. Yanıt zarf değil, dosyanın kendisidir; hata yine zarfla döner.
+
+- İzin: `herkese-acik`. Sınır: `gorsel`.
+- Girdi: `d` görselin dosya kimliği, `b` boyutun adı (`kucuk`, `orta`, `buyuk`, `tam`). Başka parametre, kimlik biçiminde olmayan `d` ya da kayıtta olmayan boyut `dogrulama`.
+- Servis: `cekirdek/moduller/duzen/gorsel.ts`.
+- Yalnız vitrinde kullanılan görsel verilir: geçerli düzende çizilen bir bölümün başvurduğu görsel ya da silinmemiş bir kategorinin görseli. Gizli ya da geçersiz bölümün görseli, logo, ürün görseli ve dosya deposundaki öteki dosyalar bu adresle açılmaz; özgün görsel verilmez.
+- Başarılı (200) ve 304: ürün görseli ucuyla aynı başlıklar.
+- Görsel yoksa (404): `{ "basarili": false, "hata": { "kod": "bulunamadi" } }`. Kullanılmayan, silinmiş ya da okunamayan dosya ve eksik boyut aynı cevabı alır; okunamayan dosyanın hatası dosya başına bir kez kaydedilir.
 
 ### POST /kapi/herkese-acik/yonetici-giris
 

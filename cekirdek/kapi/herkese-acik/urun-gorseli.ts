@@ -3,7 +3,7 @@ import { z } from "zod";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import { type GorselBoyutu, gorselBoyutAdlari } from "../../kayitlar/gorsel.ts";
 import { herkeseAcik } from "../../kayitlar/izinler.ts";
-import { vitrinGorseli } from "../../moduller/urun/vitrin-gorseli.ts";
+import { urunGorseli } from "../../moduller/urun/urun-gorseli.ts";
 import { siteninVeritabani } from "../../veritabani/baglanti.ts";
 import { kimlikMi } from "../../veritabani/turler.ts";
 import { ucTanimla } from "../uc.ts";
@@ -21,7 +21,7 @@ export const urunGorseliUcu = ucTanimla({
   izin: herkeseAcik,
   sinir: "gorsel",
   isle: async (girdi) => {
-    const gorsel = await vitrinGorseli(siteninVeritabani(), calisanSite(), girdi.o, girdi.b);
+    const gorsel = await urunGorseli(siteninVeritabani(), calisanSite(), girdi.o, girdi.b);
     if (gorsel === undefined) throw new BilinenHata("bulunamadi");
     return new DosyaYaniti(gorsel.icerik, gorsel.mime, gorsel.etiket);
   },

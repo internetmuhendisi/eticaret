@@ -83,7 +83,8 @@
       "indirimdeEnDusukFiyat": "İndirimli üründe eski fiyat olarak indirimden önceki 30 günün en düşük fiyatı gösterilir. Kapalıysa indirimden önceki satış fiyatı gösterilir.",
       "tukenenUrun": "Stoğu biten ürün listelerde görünür ama satılmaz ya da listelerden ve aramadan gizlenir. Gizlenen ürünün sayfası bağlantıyla açılır, Tükendi yazar.",
       "dusukStokEsigi": "Stok bu sayıya eşit ya da altına inince ürün düşük stokta sayılır. Ürünün kendi eşiği varsa o geçerlidir. 0 uyarıyı kapatır.",
-      "sonAdetEsigi": "Stok bu sayıya eşit ya da altına inince müşteriye kalan adet yazılır (Son 3 ürün gibi). 0 yazıyı kapatır."
+      "sonAdetEsigi": "Stok bu sayıya eşit ya da altına inince müşteriye kalan adet yazılır (Son 3 ürün gibi). 0 yazıyı kapatır.",
+      "kargoyaVermeSuresi": "Siparişin kaç iş gününde kargoya verildiği. 0 aynı gün demektir."
     }
   },
   "tema": {
@@ -261,7 +262,8 @@
         "ad-tekrar": "Aynı üst kategorinin altında bu adla bir kategori zaten var. Başka bir ad yazın ya da başka bir üst kategori seçin.",
         "ust-gecersiz": "Seçilen üst kategori bulunamadı ya da silinmiş. Başka bir üst kategori seçin.",
         "dongu": "Bir kategori kendi altına ya da alt kategorilerinden birinin altına taşınamaz. Başka bir üst kategori seçin.",
-        "silmede-ad-tekrar": "Bu kategori silinince alt kategorileri bir üste çıkar, ama oradaki bir kategoriyle aynı adı taşıyan bir alt kategori var. Önce birinin adını değiştirin."
+        "silmede-ad-tekrar": "Bu kategori silinince alt kategorileri bir üste çıkar, ama oradaki bir kategoriyle aynı adı taşıyan bir alt kategori var. Önce birinin adını değiştirin.",
+        "gorsel-gecersiz": "Seçilen görsel bulunamadı, silinmiş ya da hazırlanması bitmemiş. Başka bir görsel seçin."
       }
     },
     "menu": {
@@ -396,10 +398,27 @@
         "yazili": "Yazılı",
         "yalnizIsaret": "Yalnız işaret",
         "ikiYana": "İki yana",
-        "duz": "Düz"
+        "duz": "Düz",
+        "yaziSolda": "Yazı solda",
+        "gorselArkada": "Görsel arkada",
+        "ikonlu": "İkonlu",
+        "kutulu": "Kutulu",
+        "dikey": "Dikey",
+        "yanYana": "Yan yana",
+        "tamGenislik": "Tam genişlik",
+        "izgara": "Izgara",
+        "kaydirmali": "Kaydırmalı"
       },
       "alan": {
-        "baslik": "Başlık"
+        "baslik": "Başlık",
+        "metin": "Metin",
+        "ustYazi": "Üst yazı",
+        "dugmeYazisi": "Düğme yazısı",
+        "baglanti": "Bağlantı",
+        "gorsel": "Görsel",
+        "gorselMetni": "Görselin açıklaması (ekran okuyucu için)",
+        "rozet": "Rozet",
+        "zemin": "Zemin rengi"
       },
       "duyuruSeridi": {
         "ad": "Duyuru şeridi",
@@ -469,6 +488,61 @@
         "ekMetin": "Ek metin",
         "isaret": "©",
         "altyapi": "Altyapı:"
+      },
+      "kayanAfis": {
+        "ad": "Slider",
+        "slaytlar": "Slaytlar",
+        "slayt": "Slayt",
+        "gorsel": "Masaüstü görseli",
+        "telefonGorseli": "Telefon görseli (isteğe bağlı)",
+        "gecis": "Kendiliğinden geçiş",
+        "gecisOrta": "6 saniyede bir",
+        "gecisKisa": "4 saniyede bir",
+        "gecisUzun": "8 saniyede bir",
+        "gecisKapali": "Kendiliğinden geçmesin",
+        "etiket": "Öne çıkanlar",
+        "rolTanimi": "kayan afiş",
+        "slaytTanimi": "slayt",
+        "slaytAdi": "{sira} / {toplam}",
+        "slaytaGit": "{sira}. slaytı göster",
+        "onceki": "Önceki slayt",
+        "sonraki": "Sonraki slayt",
+        "durdur": "Slaytların geçişini durdur",
+        "baslat": "Slaytları kendiliğinden geçir"
+      },
+      "guvenSeridi": {
+        "ad": "Güven şeridi",
+        "maddeler": "Maddeler",
+        "madde": "Madde",
+        "ikon": "İkon",
+        "etiket": "Alışveriş güvenceleri",
+        "yerTutucular": "Ayardaki değer için metne {kargoyaVermeSuresi} yazın: kargoya verme süresi ayarındaki sayı görünür. Değeri olmayan madde vitrinde görünmez.",
+        "ikonlar": {
+          "kargo": "Kargo aracı",
+          "paket": "Paket",
+          "iade": "İade oku",
+          "kart": "Kart",
+          "havale": "Banka",
+          "kapidaOdeme": "Para",
+          "guvenlik": "Kalkan",
+          "destek": "Kulaklık",
+          "hediye": "Hediye"
+        }
+      },
+      "kampanyaAfisleri": {
+        "ad": "Kampanya afişleri",
+        "afisler": "Afişler",
+        "afis": "Afiş",
+        "etiket": "Kampanyalar"
+      },
+      "genisAfis": {
+        "ad": "Geniş afiş"
+      },
+      "kategoriKutulari": {
+        "ad": "Kategori kutuları",
+        "kategoriler": "Kategoriler",
+        "kategori": "Kategori",
+        "etiket": "Kategoriler"
       }
     },
     "cerceve": {
@@ -680,7 +754,10 @@
         "zemin": "Zemin rengi",
         "maddeler": "Maddeler",
         "madde": "Madde",
-        "maddeMetni": "Madde metni"
+        "maddeMetni": "Madde metni",
+        "sure": "Süre",
+        "sureKisa": "Kısa",
+        "sureUzun": "Uzun"
       },
       "gorunum": {
         "genis": "Geniş",
@@ -712,11 +789,46 @@
           "uyelik": "Üyelik sözleşmesi",
           "kvkk": "KVKK aydınlatma metni"
         },
-        "icerik": "Sayfanın içeriği burada durur."
+        "icerik": "Sayfanın içeriği burada durur.",
+        "kategori": {
+          "aksesuar": "Elektronik Aksesuar",
+          "uzunAdli": "Mutfak, sofra ve ev düzenine dair her şey",
+          "gorselsiz": "Hediyelik"
+        },
+        "anaSayfa": {
+          "slayt1Ust": "Yeni sezon",
+          "slayt1Baslik": "Örnek afişin başlığı",
+          "slayt1Metin": "Afişin kısa açıklaması burada iki satıra kadar uzanabilir.",
+          "slayt1Dugme": "Ürünü incele",
+          "slayt2Ust": "Kısa süre",
+          "slayt2Baslik": "İkinci slayt",
+          "slayt2Metin": "Telefonda ayrı bir görsel kullanan slayt.",
+          "slayt2Dugme": "Kampanyayı gör",
+          "slayt3Baslik": "Görselsiz ve düğmesiz üçüncü slayt",
+          "guven1": "Belirli tutarın üzerinde ücretsiz kargo",
+          "guven2": "{kargoyaVermeSuresi} iş gününde kargoda",
+          "guven3": "Kolay iade",
+          "guven4": "Havale ve kapıda ödeme",
+          "kampanya1Rozet": "İndirim",
+          "kampanya1Baslik": "Birinci kampanya",
+          "kampanya1Metin": "Kampanyanın kısa açıklaması.",
+          "kampanyaDugme": "Alışverişe başla",
+          "kampanya2Rozet": "Yeni",
+          "kampanya2Baslik": "İkinci kampanya",
+          "kampanya3Baslik": "Görselsiz üçüncü kampanya",
+          "genisUst": "Yakında",
+          "genisBaslik": "Geniş afişin başlığı",
+          "genisMetin": "Geniş afişin açıklaması: kampanya, yeni ürün ya da duyuru.",
+          "genisDugme": "Ayrıntılar",
+          "kategoriBaslik": "Kategoriler",
+          "gorselMetni": "Örnek görsel: açık zeminde geometrik bir biçim"
+        }
       },
       "ustAlt": "Üst ve alt kısım",
       "ustAltAciklamasi": "Mağazanın seçebileceği üst ve alt kısım bölümleri, örnek iletişim bilgileri ve menülerle. Önce her bölümün ilk görünümü vitrindeki gibi bir arada, sonra öteki görünümleri. Katalogda bütün işlevler açıktır.",
-      "otekiGorunumler": "Öteki görünümler"
+      "otekiGorunumler": "Öteki görünümler",
+      "anaSayfa": "Ana sayfa bölümleri",
+      "anaSayfaAciklamasi": "Kart 0110'un bölümleri her görünümüyle. Görseller ve kategoriler örnektir; vitrinde bölümün seçtiği kayıtlardan gelir."
     },
     "urunKarti": {
       "baslik": "Ürün kartı",

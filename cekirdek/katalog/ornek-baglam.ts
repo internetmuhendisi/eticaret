@@ -8,7 +8,12 @@ import { odemeIsaretleri } from "../kayitlar/odeme";
 import { sosyalHesapAdresleri } from "../kayitlar/sosyal-siteler";
 import { bicim, metin } from "../metinler/site-metni";
 import { kayitAdresleri, vitrinAdresleri } from "../vitrin/adresler";
-import type { BaglamMenuDali, VitrinBaglami } from "../vitrin/bolum-kutuphanesi/baglam";
+import type {
+  BaglamGorseli,
+  BaglamKategorisi,
+  BaglamMenuDali,
+  VitrinBaglami,
+} from "../vitrin/bolum-kutuphanesi/baglam";
 import type { BolumOrnegi } from "../vitrin/bolum-kutuphanesi/duzen";
 
 const dal = (
@@ -31,6 +36,75 @@ const kategoriMenusu = (): BaglamMenuDali[] => [
   ]),
   dal("k-ev", metin("gelistirme.bolum.ornek.menu.ev"), kayitAdresleri.kategori("ev")),
 ];
+
+// Ana sayfa bölümlerinin örnek görselleri ve kategorileri (kart 0110). Vitrinde görseller vitrin görseli ucundan,
+// kategoriler kategori tablosundan gelir; katalog kimliği sabit örneklerle doldurur. Görseller yalın biçimlerdir
+// (veri adresi), ürün fotoğrafı değildir.
+const ornekKimlik = (sira: number) => `00000000-0000-4000-8000-${String(sira).padStart(12, "0")}`;
+
+const ornekSekiller = [
+  "<circle cx='50' cy='50' r='34' opacity='0.7'/>",
+  "<rect x='20' y='20' width='60' height='60' rx='8' opacity='0.6'/>",
+  "<polygon points='50,14 86,82 14,82' opacity='0.65'/>",
+  "<rect x='14' y='34' width='72' height='32' rx='16' opacity='0.55'/>",
+];
+
+const ornekGorsel = (sira: number, genislik: number, yukseklik: number): BaglamGorseli => ({
+  kaynaklar: [
+    {
+      adres: `data:image/svg+xml,${encodeURIComponent(
+        `<svg xmlns='http://www.w3.org/2000/svg' width='${genislik}' height='${yukseklik}' viewBox='0 0 100 100' preserveAspectRatio='xMidYMid meet'>${ornekSekiller[sira % ornekSekiller.length] ?? ""}</svg>`,
+      )}`,
+      genislik,
+    },
+  ],
+  genislik,
+  yukseklik,
+});
+
+// Kare görseller 1–8, geniş görseller 11–12 (masaüstü afişi), dikey görsel 21 (telefon afişi).
+export const ornekGorselKimligi = {
+  kare: (sira: number) => ornekKimlik(sira + 1),
+  genis: (sira: number) => ornekKimlik(sira + 11),
+  dikey: ornekKimlik(21),
+};
+
+const ornekGorseller = (): Record<string, BaglamGorseli> => ({
+  ...Object.fromEntries(
+    [0, 1, 2, 3, 4, 5, 6, 7].map((sira) => [
+      ornekGorselKimligi.kare(sira),
+      ornekGorsel(sira, 480, 480),
+    ]),
+  ),
+  [ornekGorselKimligi.genis(0)]: ornekGorsel(0, 960, 480),
+  [ornekGorselKimligi.genis(1)]: ornekGorsel(2, 960, 480),
+  [ornekGorselKimligi.dikey]: ornekGorsel(1, 480, 640),
+});
+
+// Kategori kutularının örnek kategorileri: altısının görseli var, biri görselsiz.
+export const ornekKategoriKimligi = (sira: number) => ornekKimlik(sira + 101);
+const ornekKategoriAdlari = [
+  "gelistirme.bolum.ornek.menu.giyim",
+  "gelistirme.bolum.ornek.menu.kadin",
+  "gelistirme.bolum.ornek.menu.erkek",
+  "gelistirme.bolum.ornek.menu.ev",
+  "gelistirme.bolum.ornek.kategori.aksesuar",
+  "gelistirme.bolum.ornek.kategori.uzunAdli",
+  "gelistirme.bolum.ornek.kategori.gorselsiz",
+] as const;
+const ornekKategoriler = (): Record<string, BaglamKategorisi> =>
+  Object.fromEntries(
+    ornekKategoriAdlari.map((anahtar, sira) => [
+      ornekKategoriKimligi(sira),
+      {
+        ad: metin(anahtar),
+        adres: kayitAdresleri.kategori(`ornek-${sira + 1}`),
+        ...(sira === ornekKategoriAdlari.length - 1
+          ? {}
+          : { gorsel: ornekGorselKimligi.kare(sira) }),
+      },
+    ]),
+  );
 
 export const ornekBaglam = (): VitrinBaglami => ({
   magazaAdi: metin("gelistirme.bolum.ornek.magazaAdi"),
@@ -74,6 +148,9 @@ export const ornekBaglam = (): VitrinBaglami => ({
     ],
   },
   islevler: Object.fromEntries(islevler.map((islev) => [islev, true])) as VitrinBaglami["islevler"],
+  gorseller: ornekGorseller(),
+  kategoriler: ornekKategoriler(),
+  yerTutucular: { kargoyaVermeSuresi: bicim().sayi(1) },
   parcaGorunumleri: { "urun-karti": "dikey" },
   sayilar: { sepet: 2, favori: 3 },
   yil: bicim().yil(new Date()),
@@ -141,3 +218,97 @@ export const ornekOtekiGorunumler = (): {
     ornekBolum("telif-satiri", "duz"),
   ],
 });
+
+// Ana sayfa bölümleri (kart 0110): önce her türün ilk görünümü, sonra öteki görünümler. Görseller ve
+// kategoriler yukarıdaki örneklerdir.
+const om = (anahtar: string) =>
+  metin(`gelistirme.bolum.ornek.anaSayfa.${anahtar}` as Parameters<typeof metin>[0]);
+
+const ornekSlaytlar = () => [
+  {
+    gorsel: ornekGorselKimligi.kare(0),
+    gorselMetni: om("gorselMetni"),
+    ustYazi: om("slayt1Ust"),
+    baslik: om("slayt1Baslik"),
+    metin: om("slayt1Metin"),
+    dugmeYazisi: om("slayt1Dugme"),
+    baglanti: { adres: vitrinAdresleri.anasayfa, yeniSekme: false },
+  },
+  {
+    gorsel: ornekGorselKimligi.kare(2),
+    darEkranGorseli: ornekGorselKimligi.dikey,
+    ustYazi: om("slayt2Ust"),
+    baslik: om("slayt2Baslik"),
+    metin: om("slayt2Metin"),
+    dugmeYazisi: om("slayt2Dugme"),
+    baglanti: { adres: vitrinAdresleri.anasayfa, yeniSekme: false },
+  },
+  { baslik: om("slayt3Baslik") },
+];
+
+const ornekKampanyalar = () => [
+  {
+    gorsel: ornekGorselKimligi.kare(1),
+    gorselMetni: om("gorselMetni"),
+    rozet: om("kampanya1Rozet"),
+    baslik: om("kampanya1Baslik"),
+    metin: om("kampanya1Metin"),
+    dugmeYazisi: om("kampanyaDugme"),
+    baglanti: { adres: vitrinAdresleri.anasayfa, yeniSekme: false },
+  },
+  {
+    gorsel: ornekGorselKimligi.kare(3),
+    rozet: om("kampanya2Rozet"),
+    baslik: om("kampanya2Baslik"),
+    baglanti: { adres: vitrinAdresleri.anasayfa, yeniSekme: false },
+    dugmeYazisi: om("kampanyaDugme"),
+  },
+  { baslik: om("kampanya3Baslik"), zemin: "yuzey" },
+];
+
+const ornekGenisAfis = () => ({
+  gorsel: ornekGorselKimligi.kare(4),
+  ustYazi: om("genisUst"),
+  baslik: om("genisBaslik"),
+  metin: om("genisMetin"),
+  dugmeYazisi: om("genisDugme"),
+  baglanti: { adres: vitrinAdresleri.anasayfa, yeniSekme: false },
+});
+
+const ornekKategoriKutulari = () => ({
+  baslik: om("kategoriBaslik"),
+  kategoriler: [0, 1, 2, 3, 4, 5, 6].map((sira) => ({ kategori: ornekKategoriKimligi(sira) })),
+});
+
+const ornekGuvenMaddeleri = () => [
+  { ikon: "kargo", metin: om("guven1") },
+  { ikon: "paket", metin: om("guven2") },
+  { ikon: "iade", metin: om("guven3") },
+  { ikon: "havale", metin: om("guven4") },
+];
+
+export const ornekAnaSayfa = (): BolumOrnegi[] => [
+  ornekBolum("kayan-afis", "yazi-solda", { slaytlar: ornekSlaytlar() }),
+  ornekBolum("guven-seridi", "ikonlu", { maddeler: ornekGuvenMaddeleri() }),
+  ornekBolum("kampanya-afisleri", "yatay", { afisler: ornekKampanyalar() }),
+  ornekBolum("kategori-kutulari", "izgara", ornekKategoriKutulari()),
+  ornekBolum("genis-afis", "yan-yana", ornekGenisAfis()),
+];
+
+export const ornekAnaSayfaOtekiGorunumler = (): BolumOrnegi[] => [
+  ornekBolum("kayan-afis", "gorsel-arkada", {
+    slaytlar: ornekSlaytlar().map((slayt, sira) =>
+      sira === 0 ? { ...slayt, gorsel: ornekGorselKimligi.genis(0) } : slayt,
+    ),
+    gecis: "kapali",
+    zemin: "yuzey",
+  }),
+  ornekBolum("guven-seridi", "kutulu", { maddeler: ornekGuvenMaddeleri().slice(0, 3) }),
+  ornekBolum("kampanya-afisleri", "dikey", { afisler: ornekKampanyalar().slice(0, 2) }),
+  ornekBolum("kategori-kutulari", "kaydirmali", ornekKategoriKutulari()),
+  ornekBolum("genis-afis", "tam-genislik", {
+    ...ornekGenisAfis(),
+    gorsel: ornekGorselKimligi.genis(1),
+    zemin: "afis",
+  }),
+];

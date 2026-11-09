@@ -17,6 +17,8 @@ export const kategoriHatalari = [
   "dongu",
   // Silinen kategorinin bir alt kategorisi üste çıkınca orada aynı adlı bir kardeşle karşılaşıyor.
   "silmede-ad-tekrar",
+  // Görsel yok, silinmiş, kendisi bir boyut ya da boyutları eksik (kart 0110).
+  "gorsel-gecersiz",
 ] as const;
 export type KategoriHatasi = (typeof kategoriHatalari)[number];
 
@@ -29,6 +31,7 @@ export const kategoriHataMetinleri = {
   "ust-gecersiz": "yonetim.kategori.hata.ust-gecersiz",
   dongu: "yonetim.kategori.hata.dongu",
   "silmede-ad-tekrar": "yonetim.kategori.hata.silmede-ad-tekrar",
+  "gorsel-gecersiz": "yonetim.kategori.hata.gorsel-gecersiz",
 } as const satisfies Record<KategoriHatasi, MetinAnahtari>;
 
 const hata = (kod: KategoriHatasi) => kod;
@@ -40,6 +43,8 @@ const alanlar = {
   // Üst kategorinin kimliği; null kategoriyi en üste koyar.
   ust: z.uuid().nullable(),
   sira: z.int().min(0).max(9999),
+  // Görselin dosya kimliği (kart 0110); null görseli kaldırır.
+  gorsel: z.uuid().nullable(),
 };
 
 // Yeni kategori. Verilmeyen adres adı addan üretilir, verilmeyen üst en üsttür, verilmeyen sıra
@@ -50,6 +55,7 @@ export const kategoriGirdisi = z.strictObject({
   aciklama: alanlar.aciklama.optional(),
   ust: alanlar.ust.default(null),
   sira: alanlar.sira.optional(),
+  gorsel: alanlar.gorsel.default(null),
 });
 export type KategoriGirdisi = z.input<typeof kategoriGirdisi>;
 
@@ -60,5 +66,6 @@ export const kategoriDegisikligi = z.strictObject({
   aciklama: alanlar.aciklama.nullable().optional(),
   ust: alanlar.ust.optional(),
   sira: alanlar.sira.optional(),
+  gorsel: alanlar.gorsel.optional(),
 });
 export type KategoriDegisikligi = z.input<typeof kategoriDegisikligi>;

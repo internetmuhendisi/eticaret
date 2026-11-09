@@ -30,6 +30,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { adAnahtariSql } from "../../metinler/ad-anahtari.ts";
 import { kimlik, zaman } from "../../veritabani/turler.ts";
+import { dosyalar } from "../dosya/model.ts";
 import { urunler } from "../urun/model.ts";
 
 export const kategoriler = pgTable(
@@ -45,6 +46,11 @@ export const kategoriler = pgTable(
     }),
     // Kardeşler arasında sıra; küçük önce.
     sira: integer().notNull().default(0),
+    // Kategorinin görseli (kart 0110): dosya deposundaki görsel, boyutlarıyla. Vitrinde kategori kutularında
+    // görünür; görseli yazan servis görselin hazır olduğunu denetler. Silinen dosya vitrinde görünmez. Vitrin
+    // görseli ucu bu alanla arar (cekirdek/moduller/duzen/gorsel.ts); sitede en çok birkaç yüz kategori olduğu
+    // için indeks yoktur.
+    gorsel_kimligi: uuid().references(() => dosyalar.kimlik, { onDelete: "restrict" }),
     olusturma_zamani: zaman().notNull().defaultNow(),
     guncellenme_zamani: zaman().notNull().defaultNow(),
     silinme_zamani: zaman(),

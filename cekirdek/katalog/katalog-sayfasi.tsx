@@ -26,6 +26,8 @@ import {
 import kullanimlar from "./kullanimlar.json" with { type: "json" };
 import {
   ornekAltKisim,
+  ornekAnaSayfa,
+  ornekAnaSayfaOtekiGorunumler,
   ornekBaglam,
   ornekGenisLogo,
   ornekOtekiGorunumler,
@@ -288,6 +290,28 @@ export function KatalogBolumKutuphanesiSayfasi({ secim }: { secim: KatalogSecimi
             baglam={{ ...baglam, logoAdresi: ornekGenisLogo }}
           />
           <AltKisim bolumler={otekiler.alt} gorunumler={bolumGorunumleri} baglam={baglam} />
+        </div>
+      </section>
+      <section
+        aria-label={metin("gelistirme.bolum.anaSayfa")}
+        className="flex flex-col gap-4 border-t border-kenar pt-6"
+      >
+        <h2>{metin("gelistirme.bolum.anaSayfa")}</h2>
+        <p>{metin("gelistirme.bolum.anaSayfaAciklamasi")}</p>
+        <div className="flex flex-col gap-10 border border-kenar py-6 masaustu:gap-12">
+          <DuzenAlaniCizimi
+            bolumler={ornekAnaSayfa()}
+            gorunumler={bolumGorunumleri}
+            baglam={baglam}
+          />
+        </div>
+        <h3>{metin("gelistirme.bolum.otekiGorunumler")}</h3>
+        <div className="flex flex-col gap-10 border border-kenar py-6 masaustu:gap-12">
+          <DuzenAlaniCizimi
+            bolumler={ornekAnaSayfaOtekiGorunumler()}
+            gorunumler={bolumGorunumleri}
+            baglam={baglam}
+          />
         </div>
       </section>
       <section

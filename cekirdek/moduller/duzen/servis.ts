@@ -467,8 +467,27 @@ export const duzenServisi = (
     });
   };
 
+  // Vitrinde çizilen bölümlerin başvurduğu görseller (kart 0110): vitrin görseli ucu yalnız bunları ve
+  // kategorilerin görsellerini verir. Gizli, geçersiz ya da işlevi yazılmamış bölümün görseli yoktur. Düzen
+  // bir kez okunur.
+  const vitrindekiGorseller = async (vt: Veritabani): Promise<Set<string>> => {
+    const { duzen } = await duzenOku(vt);
+    const gorseller = new Set<string>();
+    for (const alan of duzenAlanlari) {
+      for (const bolum of duzen[alan]) {
+        if (cizilmemeNedeni(alan, bolum) !== undefined) continue;
+        const tarif = kutuphane()[bolum.tur];
+        if (tarif === undefined) continue;
+        for (const gorsel of bolumBaglari(tarif, bolum.degerler).gorsel.keys())
+          gorseller.add(gorsel);
+      }
+    }
+    return gorseller;
+  };
+
   return {
     duzenOku,
+    vitrindekiGorseller,
     bolumEkle,
     bolumDegistir,
     bolumGorunurlugu,

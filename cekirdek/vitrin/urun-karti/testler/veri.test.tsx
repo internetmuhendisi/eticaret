@@ -26,7 +26,7 @@ import { siteninServisi } from "../../../moduller/magaza-ayarlari/servis.ts";
 import { markaServisi } from "../../../moduller/marka/servis.ts";
 import { stokServisi } from "../../../moduller/stok/servis.ts";
 import { urunServisi } from "../../../moduller/urun/servis.ts";
-import { urunGorseliAdresi, vitrinGorseli } from "../../../moduller/urun/vitrin-gorseli.ts";
+import { urunGorseli, urunGorseliAdresi } from "../../../moduller/urun/urun-gorseli.ts";
 import { siteninVergiServisi } from "../../../moduller/vergi/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
@@ -397,7 +397,7 @@ describe("ürün görseli ucu", () => {
     const { urun } = await h.urunAc();
     const { oge, kayit } = await h.gorselEkle(urun, "G");
     const oku = (kimlik: string, boyut: "kucuk" | "orta" | "buyuk") =>
-      vitrinGorseli(h.vt, site, kimlik, boyut, { klasor: h.dosyaKlasoru });
+      urunGorseli(h.vt, site, kimlik, boyut, { klasor: h.dosyaKlasoru });
     expect((await oku(oge.toUpperCase(), "orta"))?.mime).toBe("image/webp");
     await dosyaSil(h.vt, kayit.boyutlar.orta.kimlik);
     expect(await oku(oge, "orta")).toBeUndefined();
@@ -426,8 +426,7 @@ describe("ürün görseli ucu", () => {
     });
     const { oge } = await h.gorselEkle(urun, "G");
     const zaman = new Date("2030-01-01T06:00:00Z");
-    const oku = (an: Date) =>
-      vitrinGorseli(h.vt, site, oge, "orta", { an, klasor: h.dosyaKlasoru });
+    const oku = (an: Date) => urunGorseli(h.vt, site, oge, "orta", { an, klasor: h.dosyaKlasoru });
     expect(await oku(new Date(zaman.getTime() - 1))).toBeUndefined();
     expect((await oku(zaman))?.mime).toBe("image/webp");
   });

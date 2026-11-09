@@ -291,6 +291,13 @@ export const magazaAyarSemasi = z.strictObject({
     z.int().min(0).max(1000).default(5),
     magazaSahibinin("ayar.aciklama.sonAdetEsigi"),
   ),
+  // Kargoya verme süresi, iş günü (kart 0110, planlar/site-ayarlari.md: varsayılan 1). Bugün güven şeridinin
+  // yer tutucusu okur (cekirdek/kayitlar/yer-tutucular.ts); ürün sayfası ve ön bilgilendirme metni kendi
+  // kartlarıyla okuyacak. 0 "aynı gün" demektir.
+  kargoyaVermeSuresi: ayar(
+    z.int().min(0).max(60).default(1),
+    magazaSahibinin("ayar.aciklama.kargoyaVermeSuresi"),
+  ),
 });
 export type MagazaAyarlari = z.output<typeof magazaAyarSemasi>;
 

@@ -7,7 +7,12 @@
 import type { ComponentType } from "react";
 import { BaglantiSutunlariGorunumu } from "../bolumler/baglanti-sutunlari/gorunum";
 import { DuyuruSeridiGorunumu } from "../bolumler/duyuru-seridi/gorunum";
+import { GenisAfisGorunumu } from "../bolumler/genis-afis/gorunum";
+import { GuvenSeridiGorunumu } from "../bolumler/guven-seridi/gorunum";
 import { IletisimBilgileriGorunumu } from "../bolumler/iletisim-bilgileri/gorunum";
+import { KampanyaAfisleriGorunumu } from "../bolumler/kampanya-afisleri/gorunum";
+import { KategoriKutulariGorunumu } from "../bolumler/kategori-kutulari/gorunum";
+import { KayanAfisGorunumu } from "../bolumler/kayan-afis/gorunum";
 import { MenuSatiriGorunumu } from "../bolumler/menu-satiri/gorunum";
 import { OdemeIsaretleriGorunumu } from "../bolumler/odeme-isaretleri/gorunum";
 import { SosyalHesaplarGorunumu } from "../bolumler/sosyal-hesaplar/gorunum";
@@ -33,4 +38,9 @@ export const bolumGorunumleri: BolumGorunumleri = {
   "sosyal-hesaplar": SosyalHesaplarGorunumu,
   "odeme-isaretleri": OdemeIsaretleriGorunumu,
   "telif-satiri": TelifSatiriGorunumu,
+  "kayan-afis": KayanAfisGorunumu,
+  "guven-seridi": GuvenSeridiGorunumu,
+  "kampanya-afisleri": KampanyaAfisleriGorunumu,
+  "genis-afis": GenisAfisGorunumu,
+  "kategori-kutulari": KategoriKutulariGorunumu,
 };

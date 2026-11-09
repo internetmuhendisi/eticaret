@@ -8,6 +8,7 @@ import { z } from "zod";
 import { type DuzenAlani, duzenAlanlari } from "../../kayitlar/tema.ts";
 import { kayitAlaniYasakMi } from "../../moduller/degisiklik-kaydi/deger.ts";
 import {
+  type AlanTarifi,
   type BolumDegerleri,
   type BolumTarifi,
   bolumAlanHatalari,
@@ -49,6 +50,16 @@ export const bosDuzen = (): Duzen => ({ "ust-kisim": [], "ana-sayfa": [], "alt-k
 // Kütüphanenin kendi tutarlılığı: kayıt anahtarı türün koduyla aynı, kodlar kalıba uygun, görünüm kodları
 // tekil, listenin sınırları doğru. Alan kodları değişiklik kaydına girer: kayıtta yasak bir sözcük
 // (telefon, eposta, anahtar...) taşıyamaz, yoksa her kayıt düşerdi. Testte denetlenir (cekirdek/vitrin/bolum-kutuphanesi/testler/).
+// Seçim alanının seçenekleri tekil, varsayılanı seçeneklerden biri olmalı (kart 0110).
+const secimSorunlari = (alan: AlanTarifi, yer: string): string[] => {
+  if (alan.tur !== "secim") return [];
+  const kodlar = alan.secenekler.map((secenek) => secenek.kod);
+  return [
+    ...(new Set(kodlar).size === kodlar.length ? [] : [`${yer}: seçenek tekrarı`]),
+    ...(kodlar.includes(alan.varsayilan) ? [] : [`${yer}: varsayılan seçeneklerde yok`]),
+  ];
+};
+
 export const kutuphaneSorunlari = (kutuphane: BolumKutuphanesi): string[] => {
   const sorunlar: string[] = [];
   for (const [anahtar, tarif] of Object.entries(kutuphane)) {
@@ -63,11 +74,13 @@ export const kutuphaneSorunlari = (kutuphane: BolumKutuphanesi): string[] => {
     for (const [kod, alan] of Object.entries(tarif.alanlar)) {
       if (!alanKoduKalibi.test(kod)) sorunlar.push(`${yer}: alan kodu kalıba uymuyor: ${kod}`);
       if (kayitAlaniYasakMi(kod)) sorunlar.push(`${yer}: alan kodu kayda yazılamaz: ${kod}`);
+      sorunlar.push(...secimSorunlari(alan, `${yer}: ${kod}`));
       if (alan.tur !== "liste") continue;
       if (alan.enAz < 0 || alan.enCok < Math.max(1, alan.enAz)) {
         sorunlar.push(`${yer}: ${kod}: listenin sınırları yanlış`);
       }
-      for (const altKod of Object.keys(alan.alanlar)) {
+      for (const [altKod, alt] of Object.entries(alan.alanlar)) {
+        sorunlar.push(...secimSorunlari(alt, `${yer}: ${kod}.${altKod}`));
         if (!alanKoduKalibi.test(altKod) || kayitAlaniYasakMi(altKod)) {
           sorunlar.push(
             `${yer}: ${kod}: alan kodu kalıba uymuyor ya da kayda yazılamaz: ${altKod}`,

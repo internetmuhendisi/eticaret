@@ -24,6 +24,16 @@ export const denemeBolumu = {
       ad: "gelistirme.bolum.alan.zemin",
       renkler: ["kutu-1", "kutu-2", "kutu-3"],
     },
+    // Kart 0110: sabit seçeneklerden biri, varsayılanıyla.
+    sure: {
+      tur: "secim",
+      ad: "gelistirme.bolum.alan.sure",
+      secenekler: [
+        { kod: "kisa", ad: "gelistirme.bolum.alan.sureKisa" },
+        { kod: "uzun", ad: "gelistirme.bolum.alan.sureUzun" },
+      ],
+      varsayilan: "uzun",
+    },
     maddeler: {
       tur: "liste",
       ad: "gelistirme.bolum.alan.maddeler",

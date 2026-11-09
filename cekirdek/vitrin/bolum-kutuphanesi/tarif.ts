@@ -20,8 +20,12 @@ import {
   kayitMetniHatasi,
 } from "../../moduller/degisiklik-kaydi/deger.ts";
 
-// Alanın panelde görünen adı ve boş bırakılıp bırakılamayacağı.
-type Ortak = { ad: MetinAnahtari; zorunlu?: boolean };
+// Alanın panelde görünen adı ve boş bırakılıp bırakılamayacağı. Açıklama metin alanlarının altında görünür
+// (kart 0110: güven şeridindeki ayar değerlerinin yer tutucuları).
+type Ortak = { ad: MetinAnahtari; zorunlu?: boolean; aciklama?: MetinAnahtari };
+
+// Seçim alanının bir seçeneği: kod değere yazılır, ad panelde görünür.
+export type SecimSecenegi = { kod: string; ad: MetinAnahtari };
 
 // Liste dışındaki alan türleri. Liste yalnız bunlardan kurulur, iç içe liste yoktur.
 export type TekAlanTarifi =
@@ -43,7 +47,14 @@ export type TekAlanTarifi =
   // Sitenin saat diliminde yerel tarih (saatli: tarih ve saat).
   | (Ortak & { tur: "tarih"; saatli: boolean })
   // Temanın renklerinden biri; yalnız tarifin saydığı renkler.
-  | (Ortak & { tur: "renk"; renkler: readonly [RenkAdi, ...RenkAdi[]] });
+  | (Ortak & { tur: "renk"; renkler: readonly [RenkAdi, ...RenkAdi[]] })
+  // Sabit seçeneklerden biri (kart 0110: slaytın geçiş süresi, güven şeridinin ikonu). Değer verilmezse
+  // varsayılan geçerlidir; varsayılan seçeneklerdendir (testler/kutuphane.test.ts).
+  | (Ortak & {
+      tur: "secim";
+      secenekler: readonly [SecimSecenegi, ...SecimSecenegi[]];
+      varsayilan: string;
+    });
 
 // Liste: aynı alanlardan oluşan öğeler (afişin kareleri, güven şeridinin maddeleri).
 export type ListeTarifi = {
@@ -185,6 +196,8 @@ const tekAlanSemasi = (alan: TekAlanTarifi, kip: Kip): z.ZodType => {
       return z.string().refine((deger) => tarihGecerliMi(deger, alan.saatli), "tarih-gecersiz");
     case "renk":
       return z.enum(alan.renkler);
+    case "secim":
+      return z.enum(alan.secenekler.map((secenek) => secenek.kod) as [string, ...string[]]);
     case "menu":
       return z.string().max(adresAdiUzunlugu).regex(adresAdiKalibi);
   }
@@ -221,6 +234,15 @@ export const bolumDegerSemasi = (tarif: BolumTarifi, kip: Kip = { baslangic: fal
   );
 
 export type BolumDegerleri = Record<string, unknown>;
+
+// Seçim alanının geçerli değeri: verilmişse kendisi, yoksa (ya da seçeneklerde değilse) varsayılan.
+export const secimDegeri = (
+  alan: Extract<TekAlanTarifi, { tur: "secim" }>,
+  deger: unknown,
+): string =>
+  typeof deger === "string" && alan.secenekler.some((secenek) => secenek.kod === deger)
+    ? deger
+    : alan.varsayilan;
 
 // Değerlerin veritabanındaki kayıtlara başvuruları: kimlikten, ona başvuran alanların yollarına ("kategori",
 // "urunler.urunler.1", "maddeler.0.gorsel"). Düzen servisi bunların var ve silinmemiş olduğunu denetler; hata
