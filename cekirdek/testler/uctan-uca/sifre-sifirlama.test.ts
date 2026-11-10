@@ -108,7 +108,11 @@ test("müşteri: istek, e-postadaki bağlantı, yeni şifre, yeni şifreyle giri
   const baglanti = await epostadakiBaglanti(eposta);
   await yeniSifreYaz(page, baglanti);
   await expect(page).toHaveURL(/\/giris\?sifre-yenilendi=1$/);
-  await expect(page.getByRole("status")).toHaveText(metin("ortak.sifirlama.yenilendi"));
+  // Makine yavaşken sayfada "Sayfa yükleniyor" durum yazısı da bulunabilir (kart 0129, yük altında ölçüldü).
+  const yenilendi = page
+    .getByRole("status")
+    .filter({ hasText: metin("ortak.sifirlama.yenilendi") });
+  await expect(yenilendi).toHaveText(metin("ortak.sifirlama.yenilendi"));
 
   await alan(page, metin("vitrin.giris.eposta")).fill(eposta);
   await alan(page, metin("vitrin.giris.sifre")).fill(sifre);

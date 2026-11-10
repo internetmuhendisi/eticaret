@@ -30,6 +30,12 @@ export default defineConfig({
   testIgnore: ["**/node_modules/**", `${import.meta.dirname}/.claude/**`],
   // Sitenin başlangıç kataloğu, menüleri ve düzeni testlerden önce kurulur (kart 0129).
   globalSetup: "./cekirdek/testler/uctan-uca/hazirlik.ts",
+  // Bir testin süre sınırı (kart 0129). Playwright'ın 30 saniyesi kontrol hattında yetmiyor: hattın makinesi
+  // bilgisayarın yüksüz hâlinin yaklaşık iki katı sürer (bütün takım 14,4 ve 3,8 dakika). Ölçüldü: iki renkte ve üç
+  // genişlikte tarayan bölüm kütüphanesi testi bilgisayarda yüksüz 15, yük ortalaması 23'te 31 saniye sürdü, hatta
+  // 30 saniyede sınıra takıldı; hattaki öteki en uzun testler 16–20 saniye. Beklentilerin kendi sınırı (5 saniye)
+  // değişmez.
+  timeout: 60_000,
   forbidOnly: true,
   reporter: "list",
   use: { baseURL: "http://localhost:3000" },
