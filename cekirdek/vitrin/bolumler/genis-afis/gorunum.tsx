@@ -34,7 +34,13 @@ export function GenisAfisGorunumu({ gorunum, degerler: ham, baglam }: BolumGorun
       {metinMi(degerler.ustYazi) ? (
         <Rozet className="whitespace-normal">{degerler.ustYazi}</Rozet>
       ) : null}
-      <h2 className="min-w-0 font-baslik text-baslik-2 font-baslik-kalinligi wrap-anywhere tablet:text-baslik-1">
+      <h2
+        className={sinif(
+          "min-w-0 font-baslik font-baslik-kalinligi wrap-anywhere",
+          // Yan yanada başlık telefonda da taslaktaki gibi büyüktür; tam genişlikte görselin üstüne sığmalı.
+          tam ? "text-baslik-2 tablet:text-baslik-1" : "text-baslik-1",
+        )}
+      >
         {baglanti === undefined ? (
           degerler.baslik
         ) : (

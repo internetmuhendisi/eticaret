@@ -30,9 +30,12 @@ export const kampanyaAfisleri = {
       },
     },
   },
-  // Yatay: yazı solda, görsel sağda (Canlı Çarşı taslağı). Dikey: görsel üstte, yazı altta.
+  // Yatay: yazı solda, görsel sağda (Canlı Çarşı taslağının kampanyaları). Dikey: görsel üstte, yazı altta.
+  // Görsel solda: görsel kendi renkli alanında solda, yazı ve çerçeveli düğme yüzey renginde sağda; telefonda
+  // görsel üstte (Canlı Çarşı taslağının ikili tanıtımları).
   gorunumler: [
     { kod: "yatay", ad: "vitrin.bolum.gorunum.yatay" },
     { kod: "dikey", ad: "vitrin.bolum.gorunum.dikey" },
+    { kod: "gorsel-solda", ad: "vitrin.bolum.gorunum.gorselSolda" },
   ],
 } as const satisfies BolumTarifi;

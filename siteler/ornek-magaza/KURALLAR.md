@@ -98,6 +98,6 @@ Ana sayfanın ilk düzeni `baslangic/duzen.json` dosyasındadır, sırası karar
 | Kategoriye göre sekmeler | Sekmeli vitrin | Giyim, Ev ve Yaşam, Elektronik Aksesuar; kartlar yatay |
 | Geri sayımlı fırsat | Fırsatlar | Eski fiyatı gösterilen, bitişli indirimdeki ürünler: 15 Kasım–1 Aralık 2026 arası Kapüşonlu Sweatshirt (lacivert). Kablosuz Kulaklık'ın eski fiyatı gösterilmediği için girmez (karar 0088). Fırsat yokken bölüm vitrinde çizilmez |
 | İşlevi yazılmamış bölüm | Müşteri yorumları, blog yazıları, bülten kaydı | Düzende durur, vitrinde çizilmez (karar 0090) |
-| Görseli gelmemiş bölüm gizli | Kayan afiş, kampanya afişleri (üçlü ve ikili), kategori kutuları, geniş afiş, marka logoları | Metni ve bağlantısı yazılı, görsel paketi gelene kadar gizli (kart 0115) |
+| Görseli gelmemiş bölüm gizli | Kayan afiş, kampanya afişleri (üçlü yatay ve ikili "görsel solda", karar 0093), kategori kutuları, geniş afiş, marka logoları | Metni ve bağlantısı yazılı, görsel paketi gelene kadar gizli (kart 0115) |
 
 Güven şeridine ücretsiz kargo ve ödeme yöntemi yazılmadı: kargo hesabı ve ödeme yazılmadan ekrana iddia olarak konmaz.

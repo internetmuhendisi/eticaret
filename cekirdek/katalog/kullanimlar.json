@@ -61,6 +61,7 @@
     "bilesenler/parcalar/serit.tsx",
     "bilesenler/parcalar/yan-pencere.tsx",
     "cekirdek/vitrin/bolumler/genis-afis/gorunum.tsx",
+    "cekirdek/vitrin/bolumler/kampanya-afisleri/gorunum.tsx",
     "cekirdek/vitrin/bolumler/kayan-afis/kaydirici.tsx",
     "cekirdek/vitrin/bolumler/menu-satiri/gorunum.tsx",
     "cekirdek/vitrin/bolumler/ortak/urun-izgarasi.tsx",

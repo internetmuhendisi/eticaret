@@ -136,7 +136,7 @@
     },
     {
       "tur": "kampanya-afisleri",
-      "gorunum": "dikey",
+      "gorunum": "gorsel-solda",
       "gizli": true,
       "degerler": {
         "afisler": [

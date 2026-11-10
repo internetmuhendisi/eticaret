@@ -307,7 +307,80 @@ describe("kampanya afişleri", () => {
   });
 });
 
+describe("kampanya afişleri: görsel solda (taslağın ikili tanıtımları, karar 0093)", () => {
+  const ciziliAfisler = () =>
+    [
+      ...ciz([
+        bolum("kampanya-afisleri", "gorsel-solda", {
+          ...(ornekAnaSayfa()[2]?.degerler ?? {}),
+        }),
+      ]).querySelectorAll("li"),
+    ] as HTMLLIElement[];
+
+  it("afiş yüzey renginde; görsel kendi alanında, afişin renginde ve yazıdan önce; tablette yan yana", () => {
+    const [ilk, ikinci] = ciziliAfisler();
+    expect(ilk?.className).toContain("bg-yuzey");
+    expect(ilk?.className).toContain("tablet:grid-cols-2");
+    const alan = ilk?.firstElementChild;
+    expect(alan?.querySelector("img")).not.toBeNull();
+    expect(alan?.className).toContain("bg-kutu-1");
+    expect(ikinci?.firstElementChild?.className).toContain("bg-kutu-2");
+    // Görselin alanında odaklanan öğe yok: renkli zeminin odak kuralı uygulanmaz.
+    expect(alan?.className).not.toContain("odak-yazi-renginde");
+    expect(alan?.nextElementSibling?.querySelector("h2")?.className).toContain("text-baslik-3");
+  });
+
+  it("açıklama soluk yazıyla; düğme yazısı çerçeveli düğme gibi ve ekran okuyucuda okunmaz; başlık afişin tamamına yayılır", () => {
+    const [ilk] = ciziliAfisler();
+    expect(ilk?.querySelector("p")?.className).toContain("text-soluk-yazi");
+    const dugme = ilk?.querySelector('span[aria-hidden="true"]');
+    expect(dugme?.textContent).toBe(metin("gelistirme.bolum.ornek.anaSayfa.kampanyaDugme"));
+    expect(dugme?.className).toContain("border-yazi");
+    expect(ilk?.querySelector("h2 a")?.className).toContain("after:inset-0");
+  });
+
+  it("görselin alanı yalnız yazı renginin okunduğu zemini alır; afiş rengi sıradaki kutu rengine düşer (odak çerçevesi görünür kalır)", () => {
+    const { afisler } = (ornekAnaSayfa()[2]?.degerler ?? { afisler: [] }) as {
+      afisler: Record<string, unknown>[];
+    };
+    const kap = ciz([
+      bolum("kampanya-afisleri", "gorsel-solda", {
+        afisler: [
+          { ...afisler[0], zemin: "afis" },
+          { ...afisler[1], zemin: "kutu-5" },
+        ],
+      }),
+    ]);
+    const alanlar = [...kap.querySelectorAll("li")].map(
+      (li) => li.firstElementChild?.className ?? "",
+    );
+    expect(alanlar[0]).toContain("bg-kutu-1");
+    expect(alanlar[0]).not.toContain("bg-afis");
+    expect(alanlar[1]).toContain("bg-kutu-5");
+  });
+
+  it("görselsiz afişte renkli alan yok, yazı kartın tamamında", () => {
+    const ucuncu = ciziliAfisler()[2];
+    expect(ucuncu?.className).not.toContain("tablet:grid-cols-2");
+    expect(ucuncu?.children).toHaveLength(1);
+    expect(ucuncu?.querySelector("img")).toBeNull();
+    expect(ucuncu?.querySelector("h2")?.textContent).toBe(
+      metin("gelistirme.bolum.ornek.anaSayfa.kampanya3Baslik"),
+    );
+  });
+});
+
 describe("geniş afiş", () => {
+  it("yan yana görünümde başlık telefonda da büyük; tam genişlikte telefonda küçülür (karar 0093)", () => {
+    const yanYana = ciz([bolum("genis-afis", "yan-yana", ornekAnaSayfa()[4]?.degerler ?? {})]);
+    const tam = ciz([bolum("genis-afis", "tam-genislik", ornekAnaSayfa()[4]?.degerler ?? {})]);
+    expect(yanYana.querySelector("h2")?.className.split(" ")).toContain("text-baslik-1");
+    expect(yanYana.querySelector("h2")?.className).not.toContain("text-baslik-2");
+    expect(tam.querySelector("h2")?.className.split(" ")).toEqual(
+      expect.arrayContaining(["text-baslik-2", "tablet:text-baslik-1"]),
+    );
+  });
+
   it("varsayılan zemin alt kısım rengi, metin onun soluk yazısıyla; bağlantı afişin tamamına yayılır", () => {
     const kap = ciz([bolum("genis-afis", "yan-yana", ornekAnaSayfa()[4]?.degerler ?? {})]);
     expect(kap.querySelector(".bg-alt-kisim")).not.toBeNull();

@@ -424,6 +424,8 @@ export const ornekAnaSayfaOtekiGorunumler = (): BolumOrnegi[] => [
   }),
   ornekBolum("guven-seridi", "kutulu", { maddeler: ornekGuvenMaddeleri().slice(0, 3) }),
   ornekBolum("kampanya-afisleri", "dikey", { afisler: ornekKampanyalar().slice(0, 2) }),
+  // Taslağın ikili tanıtımları (karar 0093); üçüncü afiş görselsizdir.
+  ornekBolum("kampanya-afisleri", "gorsel-solda", { afisler: ornekKampanyalar() }),
   ornekBolum("kategori-kutulari", "kaydirmali", ornekKategoriKutulari()),
   ornekBolum("genis-afis", "tam-genislik", {
     ...ornekGenisAfis(),
