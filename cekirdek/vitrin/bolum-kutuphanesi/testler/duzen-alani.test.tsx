@@ -33,6 +33,7 @@ const bozukluGorunumler: BolumGorunumleri = { ...denemeGorunumleri, "bozuk-bolum
 // Deneme bölümleri bağlamı kullanmaz; üst ve alt kısım bölümlerinin bağlamı ust-alt-bolumler.test.tsx'tedir.
 const baglam: VitrinBaglami = {
   magazaAdi: "Deneme",
+  musteriOturumu: "ornek",
   iletisim: {},
   sosyalHesaplar: [],
   odemeIsaretleri: [],

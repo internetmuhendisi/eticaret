@@ -263,6 +263,7 @@ export const ornekBaglam = (an: Date = new Date()): VitrinBaglami => ({
   blogYazilari: { [blogKaynagiAnahtari(ornekIslevKaynaklari.blog)]: ornekBlogYazilari(an) },
   // Katalog bülten formunu örnek kipte çizer: yalnız doğrular, göndermez.
   bultenKaydi: { tur: "ornek" },
+  musteriOturumu: "ornek",
   yerTutucular: { kargoyaVermeSuresi: bicim().sayi(1) },
   parcaGorunumleri: { "urun-karti": "dikey" },
   sayilar: { sepet: 2, favori: 3 },

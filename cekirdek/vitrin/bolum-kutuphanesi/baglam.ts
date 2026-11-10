@@ -68,6 +68,9 @@ export type VitrinBaglami = {
   // İşlevleri yazılana kadar boştur; bölüm zaten çizilmez.
   yorumlar: Readonly<Record<string, readonly BaglamYorumu[]>>;
   blogYazilari: Readonly<Record<string, readonly BaglamBlogYazisi[]>>;
+  // Müşterinin oturumu (kart 0131): gerçek vitrinde Hesabım öğesi oturumu uçtan sorar; katalogda örnek kipte
+  // istek gitmez, öğe girişsiz bağlantı olarak kalır (gerçek müşterisi yoktur, girişsiz istek konsola hata yazar).
+  musteriOturumu: "sorulur" | "ornek";
   // Bülten eklentisi kurulunca kaydın gönderildiği uç; yoksa bülten bölümü çizilmez.
   bultenKaydi?: BultenKaydi;
   // Bölüm metinlerindeki yer tutucuların değerleri (kart 0110, cekirdek/kayitlar/yer-tutucular.ts).

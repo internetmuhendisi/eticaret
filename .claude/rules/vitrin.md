@@ -71,4 +71,5 @@ paths:
 - Bölüm mağaza adı, logo, iletişim, sosyal hesaplar, menüler gibi veriyi yalnız vitrin bağlamından alır (`baglam.ts`); bağlam istek başına bir kez `vitrinBaglaminiOku` ile okunur. Bölüm veritabanına kendisi gitmez.
 - Vitrinin adresleri `cekirdek/vitrin/adresler.ts` dosyasındadır; kategori, marka ve ürün sayfasının adresi `kayitAdresleri` ile kurulur.
 - Henüz yazılmamış bir sayfaya giden düğme (arama, favori, sepet) işlevine bağlanır; işlev açılınca görünür.
+- Müşterinin oturumu vitrinde yalnız `useHesapDurumu`, çıkış yalnız `cikisYap` ile (`cekirdek/vitrin/hesap-durumu.ts`, karar 0098): sayfada tek istek gider, yalnız 401 girişsizdir. Hesabım menüsü üst satırdadır, katalogun örnek bağlamında (`musteriOturumu: "ornek"`) istek gitmez.
 - Radix tetikleyicisine (`asChild`) verilen ve ipucuyla sarılı parça (ikon düğmesi) sunucuda çizilen bölümde tetikleyicinin özelliklerini almaz; böyle bir parça tarayıcıda çizilen bileşene yazılır (`menu-dugmesi.tsx`).

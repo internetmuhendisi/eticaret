@@ -225,6 +225,7 @@ export const vitrinBaglaminiOku = async (
           .join(" / ");
   return {
     magazaAdi: ayarlar.magazaAdi ?? site.kimlik.gorunenAd,
+    musteriOturumu: "sorulur",
     ...(logo === undefined ? {} : { logoAdresi: `${logoUcuYolu}?s=${logo.etiket.slice(0, 16)}` }),
     iletisim: {
       ...(ayarlar.iletisimTelefonu === undefined

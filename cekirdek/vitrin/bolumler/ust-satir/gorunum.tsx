@@ -10,6 +10,7 @@ import { sinif } from "../../../../bilesenler/parcalar/sinif";
 import { metin } from "../../../metinler/site-metni";
 import { vitrinAdresleri } from "../../adresler";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
+import { HesapMenusu } from "./hesap-menusu";
 import { MenuDugmesi } from "./menu-dugmesi";
 
 // Telefonda yalnız arama ve sepet satırda kalır (kart 0108); hesap ve favoriler yan penceredeki listededir,
@@ -48,7 +49,16 @@ function SimgeBaglantisi({
 }
 
 // Masaüstünde ikon ve yazı (hesap), ya da kenarlı hap içinde ikon, yazı ve sayı (sepet); daha dar ekranda yalnız
-// ikon.
+// ikon. Hesabım menüsünün düğmesi de bu sınıflarla durur (kart 0131).
+const yaziliSiniflar = ({ hap = false, telefondaGizli = false }) =>
+  sinif(
+    "relative min-w-11 gap-2 px-0 no-underline masaustu:px-3",
+    hap
+      ? "masaustu:border masaustu:border-kenar masaustu:bg-yuzey masaustu:px-4 masaustu:font-kalin"
+      : "font-normal",
+    telefondaGizli && "hidden tablet:inline-flex",
+  );
+
 function YaziliBaglanti({
   adres,
   ikon,
@@ -58,17 +68,7 @@ function YaziliBaglanti({
   telefondaGizli = false,
 }: Simge & { hap?: boolean; telefondaGizli?: boolean }) {
   return (
-    <Baglanti
-      href={adres}
-      gorunum="sade"
-      className={sinif(
-        "relative min-w-11 gap-2 px-0 no-underline masaustu:px-3",
-        hap
-          ? "masaustu:border masaustu:border-kenar masaustu:bg-yuzey masaustu:px-4 masaustu:font-kalin"
-          : "font-normal",
-        telefondaGizli && "hidden tablet:inline-flex",
-      )}
-    >
+    <Baglanti href={adres} gorunum="sade" className={yaziliSiniflar({ hap, telefondaGizli })}>
       <Ikon ad={ikon} className="size-5" />
       <span className="sr-only masaustu:not-sr-only">{etiket}</span>
       {sayi === undefined ? null : (
@@ -114,13 +114,18 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
         sayi: sayilar.favori,
       }
     : undefined;
-  const yandakiler = favori === undefined ? [hesap] : [favori, hesap];
 
   // Menü düğmesi masaüstünde gizlidir; menüler orada menü satırındadır.
   const menuDugmesi = (
     <MenuDugmesi
       menuler={menuler}
-      yandakiler={yandakiler.map(({ adres, ikon, etiket }) => ({ adres, ikon, etiket }))}
+      yandakiler={
+        favori === undefined
+          ? []
+          : [{ adres: favori.adres, ikon: favori.ikon, etiket: favori.etiket }]
+      }
+      hesap={{ adres: hesap.adres, ikon: hesap.ikon, etiket: hesap.etiket }}
+      hesapSorulur={baglam.musteriOturumu === "sorulur"}
       metinler={{
         ac: metin("vitrin.bolum.ustSatir.menuyuAc"),
         kapat: metin("vitrin.bolum.ustSatir.menuyuKapat"),
@@ -173,7 +178,12 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
         />
       ) : null}
       {favori === undefined ? null : <SimgeBaglantisi {...favori} telefondaGizli />}
-      <YaziliBaglanti {...hesap} telefondaGizli />
+      <HesapMenusu
+        baglanti={<YaziliBaglanti {...hesap} telefondaGizli />}
+        etiket={hesap.etiket}
+        className={yaziliSiniflar({ telefondaGizli: true })}
+        sorulur={baglam.musteriOturumu === "sorulur"}
+      />
       {islevler.sepet ? (
         <YaziliBaglanti
           adres={vitrinAdresleri.sepet}

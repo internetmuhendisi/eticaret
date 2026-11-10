@@ -1,12 +1,20 @@
 // Müşteri kaydı, çıkışı ve yeniden girişi tarayıcıda baştan sona; robot sorusu gerçek tarayıcıda çözülür
 // (kart 0033, karar 0051). Her test kendi e-postasını ve bağlantısını kullanır: sıkı sınır dakikada birkaç denemedir.
 import { randomBytes } from "node:crypto";
+import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import { oturumCerezAdlari, sifreSiniri } from "../../kayitlar/oturum";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { metin } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import { vitrinAdresleri } from "../../vitrin/adresler";
+import {
+  hesapBaglantisi,
+  hesapDugmesi,
+  hesapMenusunuKapat,
+  hesaptaEpostaGorunur,
+  hesaptanCik,
+} from "./hesap";
 
 const sifre = "uzun-bir-musteri-sifresi";
 const yeniEposta = () => `musteri-${randomBytes(6).toString("hex")}@ornek.test`;
@@ -44,18 +52,19 @@ const kayitOl = async (page: Page, eposta: string) => {
   await kayitFormunuDoldur(page, eposta);
   await kayitGonder(page);
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByText(eposta, { exact: true })).toBeVisible();
+  await hesaptaEpostaGorunur(page, eposta);
+  await hesapMenusunuKapat(page);
 };
 
-const cikisYap = async (page: Page) => {
-  await page.getByRole("button", { name: metin("vitrin.hesap.cikis") }).click();
-  await expect(page.getByRole("link", { name: metin("vitrin.hesap.giris") })).toBeVisible();
-};
+// Müşteri e-postasını ve çıkışı üst kısmın Hesabım menüsünde görür (kart 0131, ./hesap.ts).
+const cikisYap = hesaptanCik;
 
 test("kayıt olur, çıkar, ana sayfadan yeniden girer", async ({ page }) => {
   const eposta = yeniEposta();
   await page.goto(vitrinAdresleri.anasayfa);
-  await page.getByRole("link", { name: metin("vitrin.hesap.kayit") }).click();
+  await hesapBaglantisi(page).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(metin("vitrin.giris.baslik"));
+  await page.getByRole("link", { name: metin("vitrin.giris.hesabinYokMu") }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(metin("vitrin.kayit.baslik"));
 
   await kayitOl(page, eposta);
@@ -66,14 +75,14 @@ test("kayıt olur, çıkar, ana sayfadan yeniden girer", async ({ page }) => {
 
   await cikisYap(page);
   await page.reload();
-  await page.getByRole("link", { name: metin("vitrin.hesap.giris") }).click();
+  await hesapBaglantisi(page).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(metin("vitrin.giris.baslik"));
   await yuklenmesiniBekle(page);
   await alan(page, "vitrin.giris.eposta").fill(eposta);
   await alan(page, "vitrin.giris.sifre").fill(sifre);
   await page.getByRole("button", { name: metin("vitrin.giris.gonder") }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByText(eposta, { exact: true })).toBeVisible();
+  await hesaptaEpostaGorunur(page, eposta);
 });
 
 test("kısa anahtar dolunca sayfa yenilenince oturum açık kalır, çerez yenilenir", async ({
@@ -83,7 +92,7 @@ test("kısa anahtar dolunca sayfa yenilenince oturum açık kalır, çerez yenil
   await kayitOl(page, eposta);
   await page.context().clearCookies({ name: oturumCerezAdlari.musteri.kisa });
   await page.reload();
-  await expect(page.getByText(eposta, { exact: true })).toBeVisible();
+  await hesaptaEpostaGorunur(page, eposta);
   await expect
     .poll(async () => (await page.context().cookies()).map(({ name }) => name))
     .toContain(oturumCerezAdlari.musteri.kisa);
@@ -172,6 +181,9 @@ test("sunucu hatasında girişli müşteri ana sayfada 'Giriş yap' görmez", as
   await page.reload();
   await yanit;
   await expect(page.getByRole("link", { name: metin("vitrin.hesap.giris") })).toHaveCount(0);
+  // Hesabım bilinmeyen durumda girişsiz gibi davranmaz: yazısı tarafsızdır, e-posta ve çıkış da yoktur.
+  await expect(hesapBaglantisi(page)).toBeVisible();
+  await expect(page.getByText(eposta, { exact: true })).toHaveCount(0);
 });
 
 test("yanlış şifrede uyarı yazıyla görünür, sayfada kalır", async ({ page }) => {
@@ -210,7 +222,7 @@ test("kayıt formu yalnız klavyeyle doldurulur ve gönderilir", async ({ page }
   await expect(page.getByRole("button", { name: metin("vitrin.kayit.gonder") })).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByText(eposta, { exact: true })).toBeVisible();
+  await hesaptaEpostaGorunur(page, eposta);
 });
 
 test("giriş formu yalnız klavyeyle doldurulur ve gönderilir", async ({ page }) => {
@@ -226,7 +238,8 @@ test("giriş formu yalnız klavyeyle doldurulur ve gönderilir", async ({ page }
   await page.keyboard.press("Tab");
   await expect(page.getByRole("button", { name: metin("vitrin.giris.gonder") })).toBeFocused();
   await page.keyboard.press("Enter");
-  await expect(page.getByText(eposta, { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
+  await hesaptaEpostaGorunur(page, eposta);
 });
 
 test("kayıt formu kod yüklenmeden gönderilmez, şifre adres satırına düşmez", async ({ page }) => {
@@ -302,3 +315,116 @@ for (const [ad, width, height] of [
     });
   }
 }
+
+// Hesabım menüsü (kart 0131): bölümlü ana sayfada girişli müşteri e-postasını ve çıkışı üst kısımda görür.
+const taraHesap = async (page: Page, ne: string) => {
+  // Menünün açılış animasyonu bitmeden renkler ara değerdedir.
+  await page.evaluate(() =>
+    Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))),
+  );
+  const sonuc = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+    .include("header")
+    .include('[role="menu"]')
+    .analyze();
+  expect(
+    sonuc.violations.map((ihlal) => ({
+      kural: ihlal.id,
+      ogeler: ihlal.nodes.map((oge) => oge.target.join(" ")),
+    })),
+    ne,
+  ).toEqual([]);
+};
+
+test("Hesabım menüsü klavyeyle açılır, e-postayı gösterir, taramadan geçer, çıkış Enter ile yapılır", async ({
+  page,
+}) => {
+  const eposta = yeniEposta();
+  await kayitOl(page, eposta);
+  const dugme = hesapDugmesi(page);
+  await dugme.focus();
+  await page.keyboard.press("Enter");
+  const menu = page.getByRole("menu");
+  await expect(menu.getByText(eposta, { exact: true })).toBeVisible();
+  const cikis = menu.getByRole("menuitem", { name: metin("vitrin.hesap.cikis") });
+  await expect(cikis).toBeFocused();
+  await taraHesap(page, "menü açık");
+  await page.keyboard.press("Escape");
+  await expect(menu).toHaveCount(0);
+  await expect(dugme).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(cikis).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(hesapBaglantisi(page)).toBeVisible();
+  await expect(page.getByText(eposta, { exact: true })).toHaveCount(0);
+  // Çıkış gerçekten oturumu kapattı: uç girişsiz der.
+  expect((await page.request.get("/kapi/musteri/hesabim")).status()).toBe(401);
+});
+
+test("çıkış olmazsa uyarı menünün içinde görünür, müşteri girişli kalır", async ({ page }) => {
+  const eposta = yeniEposta();
+  await kayitOl(page, eposta);
+  await page.route("**/kapi/herkese-acik/musteri-cikis", (yol) =>
+    yol.fulfill({ status: 500, body: "{}" }),
+  );
+  await hesapDugmesi(page).click();
+  const menu = page.getByRole("menu");
+  await menu.getByRole("menuitem", { name: metin("vitrin.hesap.cikis") }).click();
+  await expect(menu.getByRole("alert")).toHaveText(metin("vitrin.hesap.cikisHata"));
+  await expect(menu.getByText(eposta, { exact: true })).toBeVisible();
+});
+
+test("telefonda yan pencerede e-posta ve çıkış görünür, çıkış yapılır", async ({ page }) => {
+  const eposta = yeniEposta();
+  await kayitOl(page, eposta);
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.reload();
+  await yuklenmesiniBekle(page);
+  await page
+    .getByRole("banner")
+    .getByRole("button", { name: metin("vitrin.bolum.ustSatir.menuyuAc") })
+    .first()
+    .click();
+  const pencere = page.getByRole("dialog", { name: metin("vitrin.bolum.ustSatir.menuBasligi") });
+  await expect(pencere.getByText(eposta, { exact: true })).toBeVisible();
+  const cikis = pencere.getByRole("button", { name: metin("vitrin.hesap.cikis") });
+  expect((await cikis.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+  const cikti = page.waitForResponse("**/kapi/herkese-acik/musteri-cikis");
+  await cikis.click();
+  expect((await cikti).ok()).toBe(true);
+  // Çıkış sayfayı baştan yükler; yeni sayfanın oturum sorusu girişsiz cevabını alınca yan pencere açılır.
+  const oturum = page.waitForResponse(
+    (gelen) => gelen.url().endsWith("/kapi/musteri/hesabim") && gelen.status() === 401,
+  );
+  await page.waitForURL(/\/$/);
+  await oturum;
+  await yuklenmesiniBekle(page);
+  await page
+    .getByRole("banner")
+    .getByRole("button", { name: metin("vitrin.bolum.ustSatir.menuyuAc") })
+    .first()
+    .click();
+  await expect(
+    pencere.getByRole("link", { name: metin("vitrin.bolum.ustSatir.hesap") }),
+  ).toBeVisible();
+  await expect(pencere.getByText(eposta, { exact: true })).toHaveCount(0);
+});
+
+test("sayfa başına oturum ucuna tek istek gider", async ({ page }) => {
+  await kayitOl(page, yeniEposta());
+  for (const [width, height] of [
+    [360, 740],
+    [1280, 800],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    let istek = 0;
+    const say = (gelen: { url: () => string }) => {
+      if (gelen.url().endsWith("/kapi/musteri/hesabim")) istek += 1;
+    };
+    page.on("request", say);
+    await page.reload();
+    await yuklenmesiniBekle(page);
+    page.off("request", say);
+    expect(istek, `${width} px`).toBe(1);
+  }
+});

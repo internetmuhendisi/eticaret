@@ -12,6 +12,7 @@ import { epostaKaydiniGonder } from "../../moduller/eposta/gonderim";
 import { epostaKayitlari } from "../../moduller/eposta/model";
 import { kodAdimi, zamanliKod } from "../../moduller/oturum/iki-asama";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
+import { hesapBaglantisi, hesapDugmesi, hesapMenusunuKapat, hesaptaEpostaGorunur } from "./hesap";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
 const { POSTA_KUTUSU_PORTU: kutuPortu, POSTA_SMTP_PORTU: smtpPortu, SITE_KLASORU } = process.env;
@@ -72,7 +73,9 @@ const musteriKaydet = async (page: Page, eposta: string) => {
   await alan(page, metin("vitrin.kayit.uyelikOnayi")).check();
   await alan(page, metin("vitrin.kayit.kvkkOnayi")).check();
   await page.getByRole("button", { name: metin("vitrin.kayit.gonder") }).click();
-  await expect(page.getByText(eposta, { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
+  await hesaptaEpostaGorunur(page, eposta);
+  await hesapMenusunuKapat(page);
 };
 
 const yeniSifreYaz = async (page: Page, baglanti: string) => {
@@ -110,13 +113,18 @@ test("müşteri: istek, e-postadaki bağlantı, yeni şifre, yeni şifreyle giri
   await alan(page, metin("vitrin.giris.sifre")).fill(sifre);
   await yuklenmesiniBekle(page);
   await page.getByRole("button", { name: metin("vitrin.giris.gonder") }).click();
-  await expect(page.getByText(eposta, { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
+  await hesaptaEpostaGorunur(page, eposta);
 
-  // Sıfırlamadan önceki çerezlerle ana sayfa girişsiz görünür.
+  // Sıfırlamadan önceki çerezlerle ana sayfa girişsiz görünür: oturum ucu 401 verir, Hesabım giriş bağlantısıdır
+  // (kart 0131).
   await context.clearCookies();
   await context.addCookies(eskiCerezler);
+  const oturum = page.waitForResponse("**/kapi/musteri/hesabim");
   await page.goto("/");
-  await expect(page.getByRole("link", { name: metin("vitrin.hesap.giris") })).toBeVisible();
+  expect((await oturum).status()).toBe(401);
+  await expect(hesapBaglantisi(page)).toBeVisible();
+  await expect(hesapDugmesi(page)).toHaveCount(0);
 
   // Kullanılmış bağlantı reddedilir, yenisini istemenin yolu gösterilir.
   await page.goto("/");

@@ -47,6 +47,7 @@ const acik = Object.fromEntries(
 
 const bosBaglam: VitrinBaglami = {
   magazaAdi: "Deneme Dükkânı",
+  musteriOturumu: "ornek",
   iletisim: {},
   sosyalHesaplar: [],
   odemeIsaretleri: [],

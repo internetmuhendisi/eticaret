@@ -11,6 +11,11 @@ Kart 0110'un bütün tarayıcı testleri çalışırken "üst kısım: telefonda
 
 Uyarıyı React yalnız geliştirme derlemesinde yazar. Kırmızı test ise kontrol hattını durdurabilir.
 
+## Ölçüm (2026-11-10, kart 0131 sırasında)
+
+- Uyuşmazlık vitrinin gerçek ana sayfasında da çıktı. Telefon genişliğinde (360 px) sayfa yeniden yüklendi, ağ işinin bitmesi beklendi, sonra menü düğmesine basıldı. React, ana sayfa bölümlerinin `section` öğelerinde sunucunun HTML'inde olmayan `aria-hidden` ve `data-aria-hidden` uyarısını verdi: güven şeridi, kampanya afişleri, kategori kutuları, ürün vitrinleri. Ağ işinin bitmesi hidrasyonun bittiğini göstermiyor: üst kısımdaki menü düğmesi bağlanmış, ana sayfa bölümleri henüz bağlanmamıştı.
+- Kontrol hattında (kart 0114'ün çalışması, 42766203129) aynı uyarı bileşen kataloğunun bölüm kütüphanesi sayfasında `katalog.test.ts`'in iki testini düşürdü; üçüncü test aynı sayfada odak bekledi.
+
 ## Olmazsa olmazlar
 
 - Önce ölçülür: uyuşmazlık hidrasyon bitmeden pencere açılınca mı oluyor? Canlı derlemede de oluyor mu? Pencere kapanınca öznitelik kalıyor mu?
