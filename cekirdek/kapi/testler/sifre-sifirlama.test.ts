@@ -326,35 +326,39 @@ describe.each(turler)("%s: yeni şifre", (tur) => {
 });
 
 describe("aynı anda giden işler", () => {
-  const bekle = (ms: number) => new Promise((coz) => setTimeout(coz, ms));
+  // Yenileme sürdükçe eski şifreyle giriş istekleri kesintisiz gider, aynı anda en çok bu kadarı (kart 0092). Biten
+  // isteğin yerine hemen yenisi gider: yarış yenilemenin her anını kapsar. Sınır yokken (her 5 ms'de bir yeni istek)
+  // yenileme gecikince istek sayısı büyüyordu, büyüyen yük yenilemeyi daha da geciktiriyordu: yük altında 881 istek,
+  // havuzda 12 bekleyen ve 5 saniyede bağlantı alamayan yenileme ölçüldü. Havuzun 10 bağlantısından azı kullanılır.
+  const ayniAndaGiris = 4;
+  const yenilemeBoyuncaGir = async (yenileme: Promise<Response>, gir: () => Promise<Response>) => {
+    let bitti = false;
+    const sonuc = yenileme.finally(() => {
+      bitti = true;
+    });
+    let girisSayisi = 0;
+    const akim = async () => {
+      while (!bitti) {
+        girisSayisi += 1;
+        await gir();
+      }
+    };
+    await Promise.all(Array.from({ length: ayniAndaGiris }, akim));
+    return { yanit: await sonuc, girisSayisi };
+  };
 
   it("müşteri: sıfırlamayla üst üste binen eski şifreli giriş açık oturum bırakmaz", async () => {
     const gunlukSatirlari = gunlukYakala();
     for (let tur = 0; tur < 6; tur++) {
       const { eposta, anahtar, hesapKimligi } = await hazirla("musteri");
-      let bitti = false;
-      const yenileme = yenile("musteri", anahtar).then((yanit) => {
-        bitti = true;
-        return yanit;
-      });
-      const girisler: Promise<Response>[] = [];
-      while (!bitti) {
-        girisler.push(giris("musteri", eposta, eskiSifre));
-        await bekle(5);
-      }
+      const { yanit, girisSayisi } = await yenilemeBoyuncaGir(yenile("musteri", anahtar), () =>
+        giris("musteri", eposta, eskiSifre),
+      );
       // Başarısız olursa sunucudaki asıl hata da görünsün: günlük yakalandığı için başka yerde çıkmaz (kart 0067).
-      const durum = (await yenileme).status;
+      const durum = yanit.status;
       const hatalar = gunlukSatirlari.filter((satir) => satir.includes('"seviye":"hata"'));
-      expect({
-        durum,
-        girisSayisi: girisler.length,
-        hatalar: durum === 200 ? [] : hatalar,
-      }).toEqual({
-        durum: 200,
-        girisSayisi: girisler.length,
-        hatalar: [],
-      });
-      await Promise.all(girisler);
+      expect({ durum, hatalar: durum === 200 ? [] : hatalar }).toEqual({ durum: 200, hatalar: [] });
+      expect(girisSayisi).toBeGreaterThanOrEqual(ayniAndaGiris);
       expect(
         await vt
           .select()
@@ -373,18 +377,11 @@ describe("aynı anda giden işler", () => {
     gunlukYakala();
     for (let tur = 0; tur < 6; tur++) {
       const { eposta, anahtar, hesapKimligi } = await hazirla("yonetici");
-      let bitti = false;
-      const yenileme = yenile("yonetici", anahtar).then((yanit) => {
-        bitti = true;
-        return yanit;
-      });
-      const girisler: Promise<Response>[] = [];
-      while (!bitti) {
-        girisler.push(giris("yonetici", eposta, eskiSifre));
-        await bekle(5);
-      }
-      expect((await yenileme).status).toBe(200);
-      await Promise.all(girisler);
+      const { yanit, girisSayisi } = await yenilemeBoyuncaGir(yenile("yonetici", anahtar), () =>
+        giris("yonetici", eposta, eskiSifre),
+      );
+      expect(yanit.status).toBe(200);
+      expect(girisSayisi).toBeGreaterThanOrEqual(ayniAndaGiris);
       expect(
         await vt
           .select()
