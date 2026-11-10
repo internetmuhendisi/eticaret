@@ -29,4 +29,4 @@ Bölüm: Tasarım. Önce 0101, 0108 ve 0110–0113 bitmiş olmalı.
 
 ## Durum
 
-yapılacak
+bitti
