@@ -29,4 +29,4 @@ Bölüm: Tasarım. Önce 0114 bitmiş olmalı ve kullanıcı görsel paketini ve
 
 ## Durum
 
-yapılacak
+bitti
