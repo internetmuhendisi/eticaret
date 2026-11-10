@@ -26,7 +26,7 @@
 ## Sonuçları
 
 - Görsele başvuran sitede arka plan süreci kurulumu bitirene kadar ana sayfa sade görünür, düzene dokunan uçlar 503 döner. Örnek Mağaza'da 59 görselle kurulum yaklaşık yarım dakika sürdü (bilgisayarda).
-- Düzen görselleri kaydedilip süreç ölürse kayıtsız görsel kalır (temizliği kart 0093).
+- Düzen görselleri kaydedilip süreç ölürse kayıtsız görsel kalır. Kurulumdan önce silinen kayıt yüzünden düşen bölümün görseli de başvurusuz kalır, vitrinde görünmez (bağımsız kontrolün bulgusu). İkisinin temizliği kart 0093.
 - `gorsel` yazan site klasörü eski çekirdekte doğrulamadan geçmez: Örnek Mağaza'nın kimliği klasörle birlikte 0.50.0 oldu. Yayın ayrı iştir (kart 0128).
 - Örnek Mağaza 15 Kasım'dan sonra sıfırdan kurulursa üç ürünün ve sweatshirtin eski fiyatı görünmez, fırsatlar boş kalır.
 - Depo görsellerle 37 MB büyüdü: görseller kurulumda site klasöründen okunur.
