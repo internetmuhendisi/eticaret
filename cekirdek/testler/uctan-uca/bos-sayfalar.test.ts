@@ -1,9 +1,15 @@
 // Vitrinin boş sayfası ve yönetim panelinin giriş sayfası tarayıcıda açılır (kartlar 0009, 0010, 0027).
 // Vitrin, sitenin adını kimlik dosyasından gösterir; ayarı açıksa başlığın altında
-// "Yakında açılıyoruz." yazısını da (kart 0041).
+// "Yakında açılıyoruz." yazısını da (kart 0041). Yazı yalnız sade ana sayfadadır: ana sayfa alanında çizilecek
+// bölüm varsa sayfa bölümleri çizer, yazı görünmez (kart 0110). Beklenen, sitenin gerçek düzeninden okunur (kart 0129).
+import { existsSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { metin } from "../../metinler/site-metni";
+import { duzenServisi } from "../../moduller/duzen/servis";
+import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
+
+if (existsSync(".env")) process.loadEnvFile(".env");
 
 const sayfalar: { adres: string; baslik: string }[] = [
   { adres: "/", baslik: calisanSite().kimlik.gorunenAd },
@@ -19,10 +25,14 @@ for (const { adres, baslik } of sayfalar) {
   });
 }
 
-test("ana sayfadaki yakında yazısı sitenin ayarına uyar", async ({ page }) => {
+test("ana sayfadaki yakında yazısı sitenin ayarına ve düzenine uyar", async ({ page }) => {
+  const vt = baglan(veritabaniAdresi());
+  const bolumler = await duzenServisi(calisanSite)
+    .cizilecekBolumler(vt, "ana-sayfa")
+    .finally(() => vt.$client.end());
   await page.goto("/");
   const yazi = page.getByText(metin("vitrin.anasayfa.yakindaAciliyoruz"), { exact: true });
-  if (calisanSite().ayarlar.yakindaYazisi) {
+  if (calisanSite().ayarlar.yakindaYazisi && bolumler.length === 0) {
     // Başlığın hemen ardından gelir.
     await expect(page.locator("h1 + p")).toHaveText(metin("vitrin.anasayfa.yakindaAciliyoruz"));
     await expect(yazi).toBeVisible();

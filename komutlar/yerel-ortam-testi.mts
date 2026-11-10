@@ -46,6 +46,7 @@ import {
   ortamiKapat,
   postaKutusuAdresi,
   siteAdresi,
+  vitrinBasligi,
 } from "./yerel-ortam.mts";
 
 const acikBirak = process.argv.includes("--acik-birak");
@@ -54,8 +55,6 @@ const olc = (ad: string, gecti: boolean, ayrinti = "") => {
   sonuclar.push({ ad, gecti, ayrinti });
   console.log(`${gecti ? "geçti " : "KALDI "}  ${ad}${ayrinti ? `  (${ayrinti})` : ""}`);
 };
-
-const baslik = (govde: string): string => govde.match(/<h1>([^<]*)<\/h1>/)?.[1] ?? "";
 
 // Kutunun içinde kendi adresiyle çalışan betik: kendi veritabanını ve kimliğini okur, sonra aynı
 // kullanıcıyla ötekinin veritabanına girmeyi dener. Adres kutunun ortamından okunur, yazdırılmaz.
@@ -103,8 +102,8 @@ const sitesiniOlc = async (site: OrtamSitesi, oteki: OrtamSitesi) => {
   const vitrin = await iste(kodAdi, "/");
   olc(
     `${kodAdi}: vitrin kendi adını gösteriyor`,
-    vitrin.durum === 200 && baslik(vitrin.govde) === magazaAdi,
-    `${vitrin.durum}, "${baslik(vitrin.govde)}"`,
+    vitrin.durum === 200 && vitrinBasligi(vitrin.govde) === magazaAdi,
+    `${vitrin.durum}, "${vitrinBasligi(vitrin.govde)}"`,
   );
   // Bileşen kataloğu (kart 0104, karar 0078) deneme ortamında açılır; yerel ortamın kutuları deneme
   // ortamındadır. 0.34.0'dan önceki görüntüde katalog yoktur (0.33.0'daki deneme sahnesi canlı derlemeye

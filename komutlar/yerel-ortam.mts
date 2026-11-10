@@ -254,6 +254,12 @@ const ayarlariUret = (siteler: (OrtamSitesi & { etiket: string; kullanici: numbe
   );
 };
 
+// Vitrin sayfasının başlığı (h1) içindeki yazı. Sade ana sayfada başlık özniteliksizdir, bölümlü ana sayfada
+// yalnız ekran okuyucuda görünür ve sınıf taşır (kart 0110); ikisinde de okunur (kart 0129). Testi:
+// komutlar/testler/vitrin-basligi.test.tsx, ana sayfanın sunucuda çizdiği gerçek HTML ile.
+export const vitrinBasligi = (govde: string): string =>
+  govde.match(/<h1(?:\s[^>]*)?>([^<]*)<\/h1>/)?.[1] ?? "";
+
 // Caddy üzerinden istek. Host başlığı sitenin adresidir; ad çözümlemesine bağlı kalmaz.
 export const iste = (
   kodAdi: string,

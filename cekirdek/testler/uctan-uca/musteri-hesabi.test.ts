@@ -276,12 +276,25 @@ for (const [ad, width, height] of [
         // Onay kutusu (Radix'te rolü checkbox olan düğme) etiketiyle ölçülür: dokunma alanı yazısıdır.
         "main input:not([type=checkbox]), main button:not([role=checkbox]), main a, nav a, nav button",
       );
-      const adet = await ogeler.count();
-      expect(adet).toBeGreaterThan(0);
-      for (let sira = 0; sira < adet; sira++) {
-        const kutu = await ogeler.nth(sira).boundingBox();
-        expect(kutu?.height ?? 0).toBeGreaterThanOrEqual(44);
-      }
+      // Dokunma alanı basılan yerdir: ekranda çizilmeyen öğe (telefonda gizli menü satırı) basılamaz, sayılmaz;
+      // alanını ::after ile kabına yayan bağlantının (ürün kartının adı) alanı o kaptır (kart 0129).
+      const alanlar = await ogeler.evaluateAll((liste) =>
+        liste.flatMap((oge) => {
+          if (oge.getClientRects().length === 0) return [];
+          const sonra = getComputedStyle(oge, "::after");
+          let kap: Element | null = oge;
+          if (sonra.position === "absolute" && sonra.content !== "none") {
+            kap = oge.parentElement;
+            while (kap !== null && getComputedStyle(kap).position === "static") {
+              kap = kap.parentElement;
+            }
+          }
+          const { height } = (kap ?? oge).getBoundingClientRect();
+          return [{ yazi: oge.textContent?.trim() ?? "", height }];
+        }),
+      );
+      expect(alanlar.length).toBeGreaterThan(0);
+      expect(alanlar.filter(({ height }) => height < 44)).toEqual([]);
       for (const kutu of await page.getByRole("checkbox").all()) {
         const etiket = await kutu.locator("xpath=ancestor::label").boundingBox();
         expect(etiket?.height ?? 0).toBeGreaterThanOrEqual(44);

@@ -33,84 +33,95 @@ beforeAll(async () => {
 }, 60_000);
 afterAll(() => sil(), 60_000);
 
-describe("sunucuda yönetici", () => {
-  it("açar, şifre yalnız çıktıda bir kez, geçer, tam yetkilidir, kayda şifre girmez", async () => {
-    const eposta = "ilk@ornek.test";
-    const sonuc = calistir(kodAdi, "ac", eposta);
-    expect(sonuc.status).toBe(0);
-    expect(sonuc.stderr).toBe("");
-    const sifre = /^sifre (\S+)$/m.exec(sonuc.stdout)?.[1] ?? "";
-    expect(sifre.length).toBeGreaterThan(20);
-    const dogrulanan = await hesapSifresiniDogrula(vt, "yonetici", { eposta, sifre });
-    if (dogrulanan === null) throw new Error("şifre geçmedi");
-    expect(await yoneticininIzniVarMi(vt, dogrulanan.hesapKimligi, "ekip.rol-ata")).toBe(true);
-    const kayit = await vt
-      .select()
-      .from(degisiklikKayitlari)
-      .where(eq(degisiklikKayitlari.kayit_kimligi, dogrulanan.hesapKimligi));
-    expect(kayit[0]?.kim_adi).toBe("sunucu-yonetici");
-    expect(JSON.stringify(kayit)).not.toContain(sifre);
-  });
+// Her adım parçayı ayrı bir süreçte çalıştırır: testin denediği şey gerçek süreçtir. Bir sürecin açılışı ölçüldü
+// (kart 0088, 2026-11-10): yalnız modüllerin yüklenmesi yaklaşık 280 ms, veritabanı işi ve şifre özeti onun
+// yanında küçük (özet 20 ms). Yükleme işlemciye bağlıdır, makine yüklüyken uzar: dört ya da beş süreç açan
+// testler boşta 1,5–3 saniye sürerken yük ortalaması 27,8'de (32 çekirdek) 5 saniyelik varsayılan sınırı aştı.
+// Sınır bu yüzden yükseltildi; süreç asılı kalırsa test yine düşer.
+const surecliTestSiniri = 30_000;
 
-  it("aynı e-posta ikinci kez açılmaz, şifre üretilmez", () => {
-    const sonuc = calistir(kodAdi, "ac", "ilk@ornek.test");
-    expect(sonuc.status).toBe(1);
-    expect(sonuc.stderr).toContain("zaten var");
-    expect(sonuc.stdout).not.toContain("sifre");
-  });
+describe(
+  "sunucuda yönetici",
+  () => {
+    it("açar, şifre yalnız çıktıda bir kez, geçer, tam yetkilidir, kayda şifre girmez", async () => {
+      const eposta = "ilk@ornek.test";
+      const sonuc = calistir(kodAdi, "ac", eposta);
+      expect(sonuc.status).toBe(0);
+      expect(sonuc.stderr).toBe("");
+      const sifre = /^sifre (\S+)$/m.exec(sonuc.stdout)?.[1] ?? "";
+      expect(sifre.length).toBeGreaterThan(20);
+      const dogrulanan = await hesapSifresiniDogrula(vt, "yonetici", { eposta, sifre });
+      if (dogrulanan === null) throw new Error("şifre geçmedi");
+      expect(await yoneticininIzniVarMi(vt, dogrulanan.hesapKimligi, "ekip.rol-ata")).toBe(true);
+      const kayit = await vt
+        .select()
+        .from(degisiklikKayitlari)
+        .where(eq(degisiklikKayitlari.kayit_kimligi, dogrulanan.hesapKimligi));
+      expect(kayit[0]?.kim_adi).toBe("sunucu-yonetici");
+      expect(JSON.stringify(kayit)).not.toContain(sifre);
+    });
 
-  it("başka sitenin kod adıyla hiçbir şey yapmaz", async () => {
-    const eposta = "baska@ornek.test";
-    const sonuc = calistir("baska-site", "ac", eposta);
-    expect(sonuc.status).toBe(1);
-    expect(sonuc.stderr).toContain("hiçbir şey yapılmadı");
-    expect(await vt.select().from(yoneticiler).where(eq(yoneticiler.eposta, eposta))).toEqual([]);
-  });
+    it("aynı e-posta ikinci kez açılmaz, şifre üretilmez", () => {
+      const sonuc = calistir(kodAdi, "ac", "ilk@ornek.test");
+      expect(sonuc.status).toBe(1);
+      expect(sonuc.stderr).toContain("zaten var");
+      expect(sonuc.stdout).not.toContain("sifre");
+    });
 
-  it.each([
-    ["geçersiz e-posta", ["ac", "gecersiz"]],
-    ["e-posta yok", ["ac"]],
-    ["bilinmeyen işlem", ["sil", "x@ornek.test"]],
-  ])("%s reddedilir", (_ad, argumanlar) => {
-    expect(calistir("kod", ...argumanlar).status).toBe(1);
-  });
+    it("başka sitenin kod adıyla hiçbir şey yapmaz", async () => {
+      const eposta = "baska@ornek.test";
+      const sonuc = calistir("baska-site", "ac", eposta);
+      expect(sonuc.status).toBe(1);
+      expect(sonuc.stderr).toContain("hiçbir şey yapılmadı");
+      expect(await vt.select().from(yoneticiler).where(eq(yoneticiler.eposta, eposta))).toEqual([]);
+    });
 
-  it("bozuk adres şifreyi yazmaz, hiçbir şey yapmaz", () => {
-    const sonuc = spawnSync(
-      process.execPath,
-      [join(import.meta.dirname, "..", "sunucuda-yonetici.ts"), kodAdi, "ac", "bozuk@ornek.test"],
-      {
-        encoding: "utf8",
-        env: {
-          ...process.env,
-          VERITABANI_ADRESI: ["postgres://k:", "gizli-deger", "@[bozuk"].join(""),
+    it.each([
+      ["geçersiz e-posta", ["ac", "gecersiz"]],
+      ["e-posta yok", ["ac"]],
+      ["bilinmeyen işlem", ["sil", "x@ornek.test"]],
+    ])("%s reddedilir", (_ad, argumanlar) => {
+      expect(calistir("kod", ...argumanlar).status).toBe(1);
+    });
+
+    it("bozuk adres şifreyi yazmaz, hiçbir şey yapmaz", () => {
+      const sonuc = spawnSync(
+        process.execPath,
+        [join(import.meta.dirname, "..", "sunucuda-yonetici.ts"), kodAdi, "ac", "bozuk@ornek.test"],
+        {
+          encoding: "utf8",
+          env: {
+            ...process.env,
+            VERITABANI_ADRESI: ["postgres://k:", "gizli-deger", "@[bozuk"].join(""),
+          },
         },
-      },
-    );
-    expect(sonuc.status).toBe(1);
-    expect(`${sonuc.stdout}${sonuc.stderr}`).not.toContain("gizli-deger");
-  });
+      );
+      expect(sonuc.status).toBe(1);
+      expect(`${sonuc.stdout}${sonuc.stderr}`).not.toContain("gizli-deger");
+    });
 
-  it("tam yetkili yöneticileri sayar", async () => {
-    const once = /^sahip (\d+)$/m.exec(calistir(kodAdi, "sahip-sayisi").stdout)?.[1];
-    calistir(kodAdi, "ac", "sayilan@ornek.test");
-    const sonra = /^sahip (\d+)$/m.exec(calistir(kodAdi, "sahip-sayisi").stdout)?.[1];
-    expect(Number(sonra)).toBe(Number(once) + 1);
-    calistir(kodAdi, "kapat", "sayilan@ornek.test");
-    expect(calistir("baska-site", "sahip-sayisi").status).toBe(1);
-  });
+    it("tam yetkili yöneticileri sayar", async () => {
+      const once = /^sahip (\d+)$/m.exec(calistir(kodAdi, "sahip-sayisi").stdout)?.[1];
+      calistir(kodAdi, "ac", "sayilan@ornek.test");
+      const sonra = /^sahip (\d+)$/m.exec(calistir(kodAdi, "sahip-sayisi").stdout)?.[1];
+      expect(Number(sonra)).toBe(Number(once) + 1);
+      calistir(kodAdi, "kapat", "sayilan@ornek.test");
+      expect(calistir("baska-site", "sahip-sayisi").status).toBe(1);
+    });
 
-  it("son tam yetkili kapatılamaz, başka sahip varken kapatılır, kapanan giremez", async () => {
-    const son = calistir(kodAdi, "kapat", "ilk@ornek.test");
-    expect(son.status).toBe(1);
-    expect(son.stderr).toContain("Son tam yetkili");
+    it("son tam yetkili kapatılamaz, başka sahip varken kapatılır, kapanan giremez", async () => {
+      const son = calistir(kodAdi, "kapat", "ilk@ornek.test");
+      expect(son.status).toBe(1);
+      expect(son.stderr).toContain("Son tam yetkili");
 
-    const ikinci = "ikinci@ornek.test";
-    const sifre = /^sifre (\S+)$/m.exec(calistir(kodAdi, "ac", ikinci).stdout)?.[1] ?? "";
-    const kapat = calistir(kodAdi, "kapat", ikinci);
-    expect(kapat.status).toBe(0);
-    expect(kapat.stdout).toContain("kapatildi");
-    expect(await hesapSifresiniDogrula(vt, "yonetici", { eposta: ikinci, sifre })).toBeNull();
-    expect(calistir(kodAdi, "kapat", "yok@ornek.test").status).toBe(1);
-  });
-});
+      const ikinci = "ikinci@ornek.test";
+      const sifre = /^sifre (\S+)$/m.exec(calistir(kodAdi, "ac", ikinci).stdout)?.[1] ?? "";
+      const kapat = calistir(kodAdi, "kapat", ikinci);
+      expect(kapat.status).toBe(0);
+      expect(kapat.stdout).toContain("kapatildi");
+      expect(await hesapSifresiniDogrula(vt, "yonetici", { eposta: ikinci, sifre })).toBeNull();
+      expect(calistir(kodAdi, "kapat", "yok@ornek.test").status).toBe(1);
+    });
+  },
+  surecliTestSiniri,
+);
