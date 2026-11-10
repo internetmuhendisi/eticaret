@@ -20,6 +20,13 @@ test.beforeEach(({ page }) =>
 const alan = (page: Page, anahtar: MetinAnahtari) =>
   page.getByLabel(metin(anahtar), { exact: true });
 
+// Pazarlama onayının etiketi ortak metinle kurulur (kart 0112).
+const pazarlamaKutusu = (page: Page) =>
+  page.getByLabel(
+    doldur(metin("vitrin.kayit.pazarlamaIzni"), { onay: metin("vitrin.onay.pazarlama") }),
+    { exact: true },
+  );
+
 const yuklenmesiniBekle = (page: Page) => page.waitForLoadState("networkidle");
 
 const kayitFormunuDoldur = async (page: Page, eposta: string) => {
@@ -91,7 +98,7 @@ test("pazarlama kutusu işaretsiz gelir, zorunlu kutular işaretlenmeden kayıt 
   });
   await page.goto(vitrinAdresleri.kayit);
   await yuklenmesiniBekle(page);
-  await expect(alan(page, "vitrin.kayit.pazarlamaIzni")).not.toBeChecked();
+  await expect(pazarlamaKutusu(page)).not.toBeChecked();
   await expect(alan(page, "vitrin.kayit.uyelikOnayi")).not.toBeChecked();
   await expect(alan(page, "vitrin.kayit.kvkkOnayi")).not.toBeChecked();
 
@@ -198,7 +205,7 @@ test("kayıt formu yalnız klavyeyle doldurulur ve gönderilir", async ({ page }
   await page.keyboard.press("Space");
   await page.keyboard.press("Tab");
   await page.keyboard.press("Tab");
-  await expect(alan(page, "vitrin.kayit.pazarlamaIzni")).toBeFocused();
+  await expect(pazarlamaKutusu(page)).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(page.getByRole("button", { name: metin("vitrin.kayit.gonder") })).toBeFocused();
   await page.keyboard.press("Enter");

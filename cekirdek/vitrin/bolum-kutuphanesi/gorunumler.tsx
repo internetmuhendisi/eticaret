@@ -6,6 +6,8 @@
 // dosyasından gelir. Mağaza adı, logo, iletişim ve menüler bağlamdan gelir (kart 0108, baglam.ts).
 import type { ComponentType } from "react";
 import { BaglantiSutunlariGorunumu } from "../bolumler/baglanti-sutunlari/gorunum";
+import { BlogYazilariGorunumu } from "../bolumler/blog-yazilari/gorunum";
+import { BultenKaydiGorunumu } from "../bolumler/bulten-kaydi/gorunum";
 import { DuyuruSeridiGorunumu } from "../bolumler/duyuru-seridi/gorunum";
 import { FirsatlarGorunumu } from "../bolumler/firsatlar/gorunum";
 import { GenisAfisGorunumu } from "../bolumler/genis-afis/gorunum";
@@ -16,6 +18,7 @@ import { KategoriKutulariGorunumu } from "../bolumler/kategori-kutulari/gorunum"
 import { KayanAfisGorunumu } from "../bolumler/kayan-afis/gorunum";
 import { MarkaLogolariGorunumu } from "../bolumler/marka-logolari/gorunum";
 import { MenuSatiriGorunumu } from "../bolumler/menu-satiri/gorunum";
+import { MusteriYorumlariGorunumu } from "../bolumler/musteri-yorumlari/gorunum";
 import { OdemeIsaretleriGorunumu } from "../bolumler/odeme-isaretleri/gorunum";
 import { SekmeliVitrinGorunumu } from "../bolumler/sekmeli-vitrin/gorunum";
 import { SosyalHesaplarGorunumu } from "../bolumler/sosyal-hesaplar/gorunum";
@@ -51,4 +54,7 @@ export const bolumGorunumleri: BolumGorunumleri = {
   "sekmeli-vitrin": SekmeliVitrinGorunumu,
   firsatlar: FirsatlarGorunumu,
   "marka-logolari": MarkaLogolariGorunumu,
+  "musteri-yorumlari": MusteriYorumlariGorunumu,
+  "blog-yazilari": BlogYazilariGorunumu,
+  "bulten-kaydi": BultenKaydiGorunumu,
 };

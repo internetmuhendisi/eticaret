@@ -28,6 +28,7 @@ import type { Islev } from "../../kayitlar/islevler";
 import type { UrunKartiGorunumu } from "../../kayitlar/tema";
 import { bicim, metin } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
+import { Yildizlar } from "../yildizlar";
 import { FiyatGosterimi } from "./fiyat";
 import type { UrunKartiGorseli, UrunKartiVerisi } from "./tur";
 
@@ -104,10 +105,7 @@ function KartRozeti({ urun }: { urun: UrunKartiVerisi }) {
   );
 }
 
-const yildizSayisi = 5;
-
 function Puan({ puan }: { puan: UrunKartiVerisi["puan"] }) {
-  const dolu = puan === undefined ? 0 : Math.round(puan.ortalama);
   const yazi =
     puan === undefined
       ? metin("vitrin.urunKarti.puanYok")
@@ -116,16 +114,8 @@ function Puan({ puan }: { puan: UrunKartiVerisi["puan"] }) {
           sayi: bicim().sayi(puan.sayi),
         });
   return (
-    <span data-slot="puan" className="flex items-center gap-0.5 text-soluk-yazi">
-      {Array.from({ length: yildizSayisi }, (_, sira) => (
-        <Ikon
-          // biome-ignore lint/suspicious/noArrayIndexKey: yıldızlar sabit sıradadır, kimlikleri yoktur.
-          key={sira}
-          ad="yildiz"
-          className={sinif("size-3", sira < dolu && "fill-current")}
-        />
-      ))}
-      <span className="sr-only">{yazi}</span>
+    <span className="text-soluk-yazi">
+      <Yildizlar dolu={puan === undefined ? 0 : Math.round(puan.ortalama)} yazi={yazi} />
     </span>
   );
 }

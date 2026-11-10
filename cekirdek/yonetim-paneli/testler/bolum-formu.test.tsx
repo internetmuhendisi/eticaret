@@ -9,6 +9,8 @@ import { MetinSaglayici } from "../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../metinler/metin.ts";
 import type { BolumDegerleri, BolumTarifi } from "../../vitrin/bolum-kutuphanesi/tarif.ts";
 import { bolumDegerSemasi } from "../../vitrin/bolum-kutuphanesi/tarif.ts";
+import { blogYazilari } from "../../vitrin/bolumler/blog-yazilari/tarif.ts";
+import { musteriYorumlari } from "../../vitrin/bolumler/musteri-yorumlari/tarif.ts";
 import { BolumFormu, type BolumFormuSecenekleri } from "../bolum-formu.tsx";
 
 const metin = metinOkuyucu("tr");
@@ -20,6 +22,7 @@ const secenekler: BolumFormuSecenekleri = {
   urunler: [],
   gorseller: [],
   menuler: [],
+  blogKategorileri: [{ kimlik: "tarifler", ad: "Tarifler" }],
 };
 
 const ciz = (tarif: BolumTarifi, ozellikler: Partial<Parameters<typeof BolumFormu>[0]> = {}) => {
@@ -70,6 +73,24 @@ describe("bölümün düzenleme formu", () => {
     expect(screen.getByLabelText(metin("gelistirme.bolum.alan.sure")).textContent).toBe(
       metin("gelistirme.bolum.alan.sureUzun"),
     );
+  });
+
+  // Kart 0112: açıklama seçim alanında da görünür ve alana bağlıdır; blog kategorisi adres adıyla seçilir.
+  it("seçim ve blog kategorisi alanının açıklaması görünür ve alana bağlıdır", () => {
+    ciz(musteriYorumlari);
+    const kaynak = screen.getByLabelText(metin("vitrin.bolum.musteriYorumlari.kaynak"));
+    expect(kaynak.getAttribute("role")).toBe("combobox");
+    const aciklama = screen.getByText(metin("vitrin.bolum.musteriYorumlari.kaynakAciklamasi"));
+    expect(kaynak.getAttribute("aria-describedby")).toContain(aciklama.id);
+    cleanup();
+    ciz(blogYazilari, { ilkDegerler: { kategori: "tarifler" } });
+    const kategori = screen.getByLabelText(metin("vitrin.bolum.blogYazilari.kategori"));
+    expect(kategori.getAttribute("role")).toBe("combobox");
+    expect(kategori.textContent).toBe("Tarifler");
+    const kategoriAciklamasi = screen.getByText(
+      metin("vitrin.bolum.blogYazilari.kategoriAciklamasi"),
+    );
+    expect(kategori.getAttribute("aria-describedby")).toContain(kategoriAciklamasi.id);
   });
 
   it("tarife alan eklenince formda görünür, çıkınca kaybolur", () => {

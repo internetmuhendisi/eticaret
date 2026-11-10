@@ -182,6 +182,9 @@ describe("Tailwind yalnız tasarım değerlerini tanır", () => {
         .filter((ad) => /\.tsx?$/.test(ad) && !ad.endsWith("tarif.ts"))
         .map((ad) => join(kok, "cekirdek/vitrin/bolumler", ad)),
       join(kok, "cekirdek/vitrin/bolum-kutuphanesi/gorsel.tsx"),
+      // Ortak yıldızlar ve bülten formu (kart 0112).
+      join(kok, "cekirdek/vitrin/yildizlar.tsx"),
+      join(kok, "cekirdek/vitrin/bulten-formu.tsx"),
       // Ürün kartı ve fiyat bileşeni (kart 0109).
       ...readdirSync(join(kok, "cekirdek/vitrin/urun-karti"))
         .filter((ad) => ad.endsWith(".tsx"))

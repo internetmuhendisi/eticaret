@@ -137,7 +137,9 @@ export function SeritOgesi({ className, ...ozellikler }: HTMLAttributes<HTMLDivE
       role="group"
       aria-roledescription={metinler.ogeTanimi}
       data-slot="serit-ogesi"
-      className={sinif("min-w-0 shrink-0 grow-0 basis-full pl-4", className)}
+      // Konumlu: içindeki mutlak konumlu öğe (ekran okuyucu yazısı gibi) şeridin kırpma kutusunda kalır. Kutusu
+      // dışarıdaysa kırpılmaz, kod yüklenene kadar sayfayı yana kaydırıyordu (kart 0112, yük altında ölçüldü).
+      className={sinif("relative min-w-0 shrink-0 grow-0 basis-full pl-4", className)}
       {...ozellikler}
     />
   );

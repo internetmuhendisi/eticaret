@@ -317,6 +317,22 @@
       "kutu-3": "Kutu 3",
       "kutu-4": "Kutu 4",
       "kutu-5": "Kutu 5"
+    },
+    "duzen": {
+      "neden": {
+        "gizli": "Bu bölüm gizli. Göstermek için görünür yapın.",
+        "tanimsiz": "Bu bölümün türü artık yok. Bölümü silin ya da başka bir bölüm ekleyin.",
+        "gecersiz": "Bu bölümün bazı değerleri artık geçerli değil. Bölümü açıp işaretli alanları düzeltin.",
+        "islevYok": {
+          "yorum": "Bu bölüm müşteri yorumları özelliği gelince vitrinde görünür.",
+          "blog": "Bu bölüm blog özelliği gelince vitrinde görünür.",
+          "bulten": "Bu bölüm bülten eklentisi kurulunca vitrinde görünür.",
+          "arama": "Bu bölüm arama özelliği gelince vitrinde görünür.",
+          "favori": "Bu bölüm favoriler özelliği gelince vitrinde görünür.",
+          "sepet": "Bu bölüm sepet özelliği gelince vitrinde görünür.",
+          "odeme": "Bu bölüm ödeme özelliği gelince vitrinde görünür."
+        }
+      }
     }
   },
   "vitrin": {
@@ -359,7 +375,7 @@
       "uyelikBaglanti": "Üyelik sözleşmesini oku (yeni sekmede açılır)",
       "kvkkOnayi": "KVKK aydınlatma metnini okudum.",
       "kvkkBaglanti": "KVKK aydınlatma metnini oku (yeni sekmede açılır)",
-      "pazarlamaIzni": "Kampanya ve duyurular için bana e-posta gönderilsin. (İsteğe bağlı)",
+      "pazarlamaIzni": "{onay} (İsteğe bağlı)",
       "hataEposta": "Geçerli bir e-posta adresi yazın.",
       "hataSifre": "Şifreniz en az {enKisa} karakter olmalı.",
       "hataOnay": "Kayıt olmak için bu kutuyu işaretleyin.",
@@ -411,7 +427,10 @@
         "izgara": "Izgara",
         "kaydirmali": "Kaydırmalı",
         "yanPanelli": "Yan panelli",
-        "panelsiz": "Panelsiz"
+        "panelsiz": "Panelsiz",
+        "kartlar": "Kartlar",
+        "serit": "Şerit",
+        "kutu": "Kutu"
       },
       "alan": {
         "baslik": "Başlık",
@@ -598,6 +617,39 @@
         "markalar": "Markalar",
         "marka": "Marka",
         "etiket": "Markalar"
+      },
+      "musteriYorumlari": {
+        "ad": "Müşteri yorumları",
+        "etiket": "Müşteri yorumları",
+        "kaynak": "Hangi yorumlar",
+        "kaynakAciklamasi": "Yalnız onaylanmış yorumlar görünür. İşaretlenenler: yorum listesinde \"ana sayfada göster\" diye işaretlediğiniz yorumlar.",
+        "isaretlenenler": "İşaretlediğim yorumlar",
+        "enYeni": "En yeni yorumlar",
+        "adet": "Gösterilecek yorum sayısı",
+        "adet3": "3 yorum",
+        "adet6": "6 yorum",
+        "puan": "{enCok} üzerinden {puan} puan"
+      },
+      "blogYazilari": {
+        "ad": "Blog yazıları",
+        "etiket": "Blog yazıları",
+        "kategori": "Blog kategorisi",
+        "kategoriAciklamasi": "Seçmezseniz son yazılar görünür.",
+        "adet": "Gösterilecek yazı sayısı",
+        "adet3": "3 yazı",
+        "adet6": "6 yazı",
+        "devami": "Devamını oku"
+      },
+      "bultenKaydi": {
+        "ad": "Bülten kaydı",
+        "eposta": "E-posta adresiniz",
+        "gonder": "Kaydol",
+        "gonderiliyor": "Kaydınız yapılıyor, lütfen bekleyin.",
+        "tamam": "Teşekkürler, bültenimize kaydınız alındı.",
+        "hataEposta": "Geçerli bir e-posta adresi yazın.",
+        "hataOnay": "Bültene kaydolmak için bu kutuyu işaretleyin.",
+        "hataSinir": "Çok fazla deneme yapıldı. Biraz bekleyip yeniden deneyin.",
+        "hataGenel": "Kaydınız şu an alınamıyor. Biraz sonra yeniden deneyin."
       }
     },
     "cerceve": {
@@ -611,6 +663,9 @@
       "sepeteEkle": "Sepete ekle",
       "puan": "5 üzerinden {ortalama} puan, {sayi} değerlendirme",
       "puanYok": "Henüz puan yok"
+    },
+    "onay": {
+      "pazarlama": "Kampanya ve duyurular için bana e-posta gönderilsin."
     }
   },
   "eposta": {
@@ -892,7 +947,23 @@
           "marka2": "Logolu Marka",
           "marka3": "Uzun adlı bir örnek marka",
           "marka4": "Dördüncü Marka",
-          "marka5": "Beşinci Marka"
+          "marka5": "Beşinci Marka",
+          "yorumBaslik": "Müşterilerimiz ne diyor",
+          "yorum1": "Kulaklığın sesi çok temiz, kargo da ertesi gün geldi.",
+          "yorum1Ad": "Ayşe K.",
+          "yorum2": "Sweatshirt'ün kumaşı kalın ve yumuşak; bedeni tam oldu.",
+          "yorum2Ad": "Mehmet T.",
+          "yorum3": "Kupaları hediye aldım, paketleme özenliydi. Uzun bir yorum da iki üç satıra yayılabilir ve kart yine düzgün durur.",
+          "yorum3Ad": "Zeynep A.",
+          "blogBaslik": "Blogdan",
+          "blog1": "Kış için katmanlı giyinmenin üç yolu",
+          "blog1Ozet": "Soğuk günlerde hem sıcak tutan hem rahat eden kombinler için kısa bir rehber.",
+          "blog2": "Evde kahve köşesi kurmak",
+          "blog2Ozet": "Birkaç kupa, bir masa örtüsü ve doğru ışıkla küçük bir köşe nasıl değişir?",
+          "blog3": "Ses cihazı seçerken nelere bakılır?",
+          "blog3Ozet": "Pil süresi, ses yalıtımı ve rahatlık arasında doğru dengeyi bulmak için.",
+          "bultenBaslik": "Bültenimize katılın",
+          "bultenMetin": "Yeni ürünleri ve fırsatları ilk siz duyun."
         }
       },
       "ustAlt": "Üst ve alt kısım",
@@ -901,7 +972,9 @@
       "anaSayfa": "Ana sayfa bölümleri",
       "anaSayfaAciklamasi": "Kart 0110'un bölümleri her görünümüyle. Görseller ve kategoriler örnektir; vitrinde bölümün seçtiği kayıtlardan gelir.",
       "urunBolumleri": "Ürün bölümleri",
-      "urunBolumleriAciklamasi": "Kart 0111'in bölümleri her görünümüyle. Ürünler, markalar ve indirim bitişleri örnektir; vitrinde bölümün kaynağından ve çekirdeğin indiriminden gelir."
+      "urunBolumleriAciklamasi": "Kart 0111'in bölümleri her görünümüyle. Ürünler, markalar ve indirim bitişleri örnektir; vitrinde bölümün kaynağından ve çekirdeğin indiriminden gelir.",
+      "islevBolumleri": "İşleve bağlı bölümler",
+      "islevBolumleriAciklamasi": "Kart 0112'nin bölümleri her görünümüyle. Yorum ve blog özelliği, bülten eklentisi gelene kadar vitrinde çizilmezler; yorumlar, yazılar ve tarihler örnektir. Bülten formu burada yalnız doğrular, gönderim adresi eklentiyle gelir."
     },
     "urunKarti": {
       "baslik": "Ürün kartı",

@@ -269,6 +269,9 @@ export const vitrinBaglaminiOku = async (
     markalar: markaListesi,
     urunler,
     an,
+    // Yorum, blog ve bülten işlevleri yazılınca doldurulur (kart 0112, islev-verisi.ts).
+    yorumlar: {},
+    blogYazilari: {},
     yerTutucular: yerTutucuDegerleri,
     parcaGorunumleri: tema.tema.tanim.gorunumler,
     islevler: yazilanIslevler,

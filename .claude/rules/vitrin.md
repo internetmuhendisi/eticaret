@@ -43,6 +43,14 @@ paths:
 - Ürün bölümünün ızgarası, başlık satırı ve yan afişi ortak parçalardır (`cekirdek/vitrin/bolumler/ortak/urun-izgarasi.tsx`, alanları `urun-alanlari.ts`).
 - Sayfa açıkken değişen vitrin bilgisi (geri sayım) sunucuda bağlamın anıyla çizilir, tarayıcıda yalnız değişeceği anda yeniden kurulur.
 
+## İşleve bağlı bölümler (karar 0090)
+
+- Yorum, blog ve bülten bölümlerinin verisi vitrin bağlamındadır (`yorumlar`, `blogYazilari`, `bultenKaydi`; türleri `cekirdek/vitrin/bolum-kutuphanesi/islev-verisi.ts`). İşlev yazılınca bağlamı bu türlerle doldur, bölümü değiştirme. Bülten bölümü bağlamda gönderim adresi yoksa çizilmez.
+- Bütün odaklanabilir öğeleri zemin renginde bir kutuda olan renkli bölge `zeminSiniflari(…, { odak: false })` kullanır: renkli zeminin odak kuralı iç kutuya geçip odağı görünmez yapar.
+- Paneldeki çizilmeme nedeninin metni yalnız `cizilmemeNedeniMetni` ile seçilir. Yeni işlev eklenince `islevYokMetinleri`'ne metni eklenir (tür kontrolü ister).
+- Pazarlama onayının metni tektir (`vitrin.onay.pazarlama`). Onay isteyen yeni form da onu kullanır.
+- Her sayfada ya da ana sayfada duran robotlu form `useRobotluGonderim({ ertele: true })` kullanır: sayfa açılınca robot sorusu istenmez.
+
 ## Bölüm kütüphanesi (karar 0081)
 
 - Üst kısım, ana sayfa ve alt kısım bölümlerden kurulur. Bölüm türünün tarifi (`cekirdek/vitrin/bolum-kutuphanesi/tarif.ts`) adını, konabileceği alanları, alanlarını ve türlerini, görünümlerini ve bağlı olduğu işlevi yazar. Alanların şeması, panelin düzenleme formu ve düzen servisi bu tariften çıkar.

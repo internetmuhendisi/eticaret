@@ -703,3 +703,78 @@ test("marka logoları: logolu markada logo, logosuzda adı; her kutu markanın s
   await expect(bolum.getByRole("link", { name: om("marka3") })).toHaveText(om("marka3"));
   expect(await yanaKayma(page)).toBe(0);
 });
+
+// İşleve bağlı bölümler (kart 0112): bölüm kütüphanesi testi sayfanın tamamını iki renkte ve üç genişlikte
+// tarar; burada bülten formu klavyeyle denenir. Katalogda gönderim adresi yoktur: form yalnız doğrular.
+test("bülten kaydı: boş gönderilince odak e-postaya gider, iki hata görünür; doldurulunca hata kalkar", async ({
+  page,
+}) => {
+  const istekler: string[] = [];
+  page.on("request", (istek) => {
+    if (istek.url().includes("/kapi/")) istekler.push(istek.url());
+  });
+  await page.setViewportSize({ width: 375, height: 800 });
+  await ac(page, `${katalogAdresi}/bolum-kutuphanesi`);
+  const bolum = page.getByRole("region", { name: om("bultenBaslik") }).first();
+  const eposta = bolum.getByLabel(metin("vitrin.bolum.bultenKaydi.eposta"));
+  const gonder = bolum.getByRole("button", { name: metin("vitrin.bolum.bultenKaydi.gonder") });
+  await expect(gonder).toBeEnabled();
+  await gonder.focus();
+  await page.keyboard.press("Enter");
+  await expect(eposta).toBeFocused();
+  await expect(eposta).toHaveAttribute("aria-invalid", "true");
+  await expect(bolum.getByText(metin("vitrin.bolum.bultenKaydi.hataOnay"))).toBeVisible();
+  await tara(page, "bülten, hatalar görünürken");
+  await eposta.fill("musteri@ornek.test");
+  // Sıra e-posta, onay, düğme: onay düğmeden önce gelir.
+  await page.keyboard.press("Tab");
+  const onay = bolum.getByRole("checkbox", { name: metin("vitrin.onay.pazarlama") });
+  await expect(onay).toBeFocused();
+  // Odak çerçevesi form kutusunun zemininde okunur (kart 0112 kontrolü: renkli şeridin kuralı onu kutunun zemin
+  // rengine çeviriyordu).
+  const odakOkunur = async (oge: Locator) => {
+    // Düğmenin renk geçişi çerçeve rengini de değiştirir: geçiş bitince ölçülür.
+    await page.evaluate(() =>
+      Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))),
+    );
+    const cerceve = await oge.evaluate((e) => getComputedStyle(e).outlineColor);
+    const arka = await oge.evaluate(
+      (e) => getComputedStyle(e.closest(".bg-zemin") ?? document.body).backgroundColor,
+    );
+    return kontrastOrani(onaltilik(cerceve), onaltilik(arka));
+  };
+  expect(await odakOkunur(onay)).toBeGreaterThanOrEqual(3);
+  await page.keyboard.press("Space");
+  await page.keyboard.press("Tab");
+  await expect(bolum.getByRole("link", { name: metin("vitrin.kayit.kvkkBaglanti") })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(gonder).toBeFocused();
+  expect(await odakOkunur(gonder)).toBeGreaterThanOrEqual(3);
+  await page.keyboard.press("Enter");
+  await expect(bolum.getByText(metin("vitrin.bolum.bultenKaydi.hataOnay"))).toHaveCount(0);
+  await expect(eposta).not.toHaveAttribute("aria-invalid", "true");
+  // Form sayfa açılınca robot sorusu istemez (ertelenmiş), katalogda gönderim de yoktur.
+  expect(istekler).toEqual([]);
+  expect(await yanaKayma(page)).toBe(0);
+});
+
+// Kart 0112 kontrolü: şerit öğesinin içindeki mutlak konumlu öğe (ekran okuyucu yazısı) kırpma kutusunun dışında
+// kalıyor, şeridin kodu yüklenene kadar sayfayı yana kaydırıyordu. Yalnız yük altında görülüyordu: işlemci
+// yavaşlatılır, sayfa yüklenirken çeyrek saniyede bir ölçülür.
+test("bölüm kütüphanesi telefonda yüklenirken de yana kaymaz (yavaş işlemci)", async ({ page }) => {
+  test.setTimeout(90_000);
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Emulation.setCPUThrottlingRate", { rate: 8 });
+  await page.setViewportSize({ width: 375, height: 800 });
+  const yuklenme = page.goto(`${katalogAdresi}/bolum-kutuphanesi`);
+  const olcumler: number[] = [];
+  for (let adim = 0; adim < 30; adim += 1) {
+    await page.waitForTimeout(250);
+    // Sayfa değişirken değerlendirme düşebilir: o adım sayılmaz.
+    const kayma = await yanaKayma(page).catch(() => undefined);
+    if (kayma !== undefined) olcumler.push(kayma);
+  }
+  await yuklenme;
+  expect(olcumler.length).toBeGreaterThan(10);
+  expect(Math.max(...olcumler)).toBe(0);
+});

@@ -30,6 +30,8 @@ import {
   ornekAnaSayfaOtekiGorunumler,
   ornekBaglam,
   ornekGenisLogo,
+  ornekIslevBolumleri,
+  ornekIslevBolumleriOtekiGorunumler,
   ornekOtekiGorunumler,
   ornekUrunBolumleri,
   ornekUrunBolumleriOtekiGorunumler,
@@ -339,6 +341,28 @@ export function KatalogBolumKutuphanesiSayfasi({ secim }: { secim: KatalogSecimi
         </div>
       </section>
       <section
+        aria-label={metin("gelistirme.bolum.islevBolumleri")}
+        className="flex flex-col gap-4 border-t border-kenar pt-6"
+      >
+        <h2>{metin("gelistirme.bolum.islevBolumleri")}</h2>
+        <p>{metin("gelistirme.bolum.islevBolumleriAciklamasi")}</p>
+        <div className="flex flex-col gap-10 border border-kenar py-6 masaustu:gap-12">
+          <DuzenAlaniCizimi
+            bolumler={ornekIslevBolumleri()}
+            gorunumler={bolumGorunumleri}
+            baglam={baglam}
+          />
+        </div>
+        <h3>{metin("gelistirme.bolum.otekiGorunumler")}</h3>
+        <div className="flex flex-col gap-10 border border-kenar py-6 masaustu:gap-12">
+          <DuzenAlaniCizimi
+            bolumler={ornekIslevBolumleriOtekiGorunumler()}
+            gorunumler={bolumGorunumleri}
+            baglam={baglam}
+          />
+        </div>
+      </section>
+      <section
         aria-label={metin("gelistirme.bolum.cizim")}
         className="flex flex-col gap-4 border-t border-kenar pt-6"
       >
@@ -379,6 +403,7 @@ export function KatalogBolumKutuphanesiSayfasi({ secim }: { secim: KatalogSecimi
             urunler: [],
             gorseller: [],
             menuler: [],
+            blogKategorileri: [],
           }}
         />
       </section>

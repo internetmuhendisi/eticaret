@@ -8,6 +8,7 @@ import type { Islev } from "../../kayitlar/islevler.ts";
 import type { OdemeIsareti } from "../../kayitlar/odeme.ts";
 import type { SosyalSite } from "../../kayitlar/sosyal-siteler.ts";
 import type { UrunKartiVerisi } from "../urun-karti/tur.ts";
+import type { BaglamBlogYazisi, BaglamYorumu, BultenKaydi } from "./islev-verisi.ts";
 
 // Menünün vitrinde çizilecek dalı: bağlantının adresi kurulmuştur, başlığın adresi yoktur.
 export type BaglamMenuDali = {
@@ -63,6 +64,12 @@ export type VitrinBaglami = {
   urunler: Readonly<Record<string, readonly UrunKartiVerisi[]>>;
   // Bağlamın okunduğu an (kart 0111): geri sayım sunucuda bu anla çizilir, tarayıcıda saatle sürer.
   an: Date;
+  // İşleve bağlı bölümlerin verisi (kart 0112, islev-verisi.ts): yorumlar ve blog yazıları kaynağın anahtarıyla.
+  // İşlevleri yazılana kadar boştur; bölüm zaten çizilmez.
+  yorumlar: Readonly<Record<string, readonly BaglamYorumu[]>>;
+  blogYazilari: Readonly<Record<string, readonly BaglamBlogYazisi[]>>;
+  // Bülten eklentisi kurulunca kaydın gönderildiği uç; yoksa bülten bölümü çizilmez.
+  bultenKaydi?: BultenKaydi;
   // Bölüm metinlerindeki yer tutucuların değerleri (kart 0110, cekirdek/kayitlar/yer-tutucular.ts).
   yerTutucular: Readonly<Record<string, string>>;
   // Temanın parça görünümleri (cekirdek/kayitlar/tema.ts): ürün kartını çizen bölüm görünümü buradan

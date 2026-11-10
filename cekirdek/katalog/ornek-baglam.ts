@@ -17,6 +17,12 @@ import type {
   VitrinBaglami,
 } from "../vitrin/bolum-kutuphanesi/baglam";
 import type { BolumOrnegi } from "../vitrin/bolum-kutuphanesi/duzen";
+import {
+  type BaglamBlogYazisi,
+  type BaglamYorumu,
+  blogKaynagiAnahtari,
+  yorumKaynagiAnahtari,
+} from "../vitrin/bolum-kutuphanesi/islev-verisi";
 import { type UrunKaynagi, urunKaynagiAnahtari } from "../vitrin/bolum-kutuphanesi/urun-kaynagi";
 import type { UrunKartiVerisi } from "../vitrin/urun-karti/tur";
 import { ornekUrunKartlari } from "./ornek-urun-kartlari";
@@ -172,6 +178,37 @@ const ornekUrunler = (an: Date): Record<string, readonly UrunKartiVerisi[]> => {
   };
 };
 
+// İşleve bağlı bölümlerin örnek verisi (kart 0112): yorumlar ve blog yazıları. Vitrinde yorum ve blog
+// işlevlerinden gelir; tarihler sitenin biçimiyle yazılır.
+const ornekYorumlar = (): BaglamYorumu[] =>
+  ([1, 2, 3] as const).map((sira) => ({
+    kimlik: ornekKimlik(400 + sira),
+    puan: sira === 2 ? 4 : 5,
+    metin: om(`yorum${sira}`),
+    ad: om(`yorum${sira}Ad`),
+  }));
+
+const ornekBlogYazilari = (an: Date): BaglamBlogYazisi[] =>
+  ([1, 2, 3] as const).map((sira) => {
+    // Makine biçimi yazılı tarihle aynı günü göstermeli: gün öğlen (UTC) kurulur, her saat diliminde aynı gündür.
+    const gun = new Date(an.getTime() - sira * 3 * 24 * 60 * 60_000).toISOString().slice(0, 10);
+    const tarih = new Date(`${gun}T12:00:00Z`);
+    return {
+      kimlik: ornekKimlik(500 + sira),
+      baslik: om(`blog${sira}`),
+      ozet: om(`blog${sira}Ozet`),
+      adres: vitrinAdresleri.anasayfa,
+      tarih: { yazili: bicim().tarih(tarih), makine: gun },
+      ...(sira === 3 ? {} : { gorsel: ornekGorselKimligi.genis(sira - 1) }),
+    };
+  });
+
+export const ornekIslevKaynaklari = {
+  yorum: { tur: "isaretlenenler", adet: 3 },
+  yorumEnYeni: { tur: "en-yeni", adet: 6 },
+  blog: { tur: "son", adet: 3 },
+} as const;
+
 export const ornekBaglam = (an: Date = new Date()): VitrinBaglami => ({
   magazaAdi: metin("gelistirme.bolum.ornek.magazaAdi"),
   iletisim: {
@@ -219,6 +256,13 @@ export const ornekBaglam = (an: Date = new Date()): VitrinBaglami => ({
   markalar: ornekMarkalar(),
   urunler: ornekUrunler(an),
   an,
+  yorumlar: {
+    [yorumKaynagiAnahtari(ornekIslevKaynaklari.yorum)]: ornekYorumlar(),
+    [yorumKaynagiAnahtari(ornekIslevKaynaklari.yorumEnYeni)]: ornekYorumlar().toReversed(),
+  },
+  blogYazilari: { [blogKaynagiAnahtari(ornekIslevKaynaklari.blog)]: ornekBlogYazilari(an) },
+  // Katalog bülten formunu örnek kipte çizer: yalnız doğrular, göndermez.
+  bultenKaydi: { tur: "ornek" },
   yerTutucular: { kargoyaVermeSuresi: bicim().sayi(1) },
   parcaGorunumleri: { "urun-karti": "dikey" },
   sayilar: { sepet: 2, favori: 3 },
@@ -451,5 +495,25 @@ export const ornekUrunBolumleriOtekiGorunumler = (): BolumOrnegi[] => [
   ornekBolum("marka-logolari", "kaydirmali", {
     baslik: om("markalar"),
     markalar: [0, 1, 2, 3, 4].map((sira) => ({ marka: ornekMarkaKimligi(sira) })),
+  }),
+];
+
+// İşleve bağlı bölümler (kart 0112): Canlı Çarşı taslağının yorumlar, blog ve bülten bölümleri.
+export const ornekIslevBolumleri = (): BolumOrnegi[] => [
+  ornekBolum("musteri-yorumlari", "kartlar", { baslik: om("yorumBaslik") }),
+  ornekBolum("blog-yazilari", "izgara", {
+    baslik: om("blogBaslik"),
+    tumuBaglantisi: { adres: vitrinAdresleri.anasayfa, yeniSekme: false },
+  }),
+  ornekBolum("bulten-kaydi", "serit", { baslik: om("bultenBaslik"), metin: om("bultenMetin") }),
+];
+
+export const ornekIslevBolumleriOtekiGorunumler = (): BolumOrnegi[] => [
+  ornekBolum("musteri-yorumlari", "kaydirmali", { kaynak: "en-yeni", adet: "alti" }),
+  ornekBolum("blog-yazilari", "kaydirmali", { baslik: om("blogBaslik") }),
+  ornekBolum("bulten-kaydi", "kutu", {
+    baslik: om("bultenBaslik"),
+    metin: om("bultenMetin"),
+    zemin: "kutu-2",
   }),
 ];

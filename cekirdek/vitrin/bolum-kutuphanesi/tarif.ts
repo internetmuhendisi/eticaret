@@ -45,6 +45,9 @@ export type TekAlanTarifi =
   | (Ortak & { tur: "marka" })
   // Sitenin bir menüsü, koduyla (kart 0108): başlangıç düzeni de seçebilir, kod kurulumda değişmez.
   | (Ortak & { tur: "menu" })
+  // Bir blog kategorisi, adres adıyla (kart 0112): blog işlevi yazılana kadar kayıt tablosu yoktur; kod
+  // kurulumda değişmez, başlangıç düzeni de seçebilir. Var olduğunun denetimi blog işleviyle gelir.
+  | (Ortak & { tur: "blog-kategorisi" })
   // Sitenin saat diliminde yerel tarih (saatli: tarih ve saat).
   | (Ortak & { tur: "tarih"; saatli: boolean })
   // Temanın renklerinden biri; yalnız tarifin saydığı renkler.
@@ -208,6 +211,7 @@ const tekAlanSemasi = (alan: TekAlanTarifi, kip: Kip): z.ZodType => {
     case "secim":
       return z.enum(alan.secenekler.map((secenek) => secenek.kod) as [string, ...string[]]);
     case "menu":
+    case "blog-kategorisi":
       return z.string().max(adresAdiUzunlugu).regex(adresAdiKalibi);
   }
 };

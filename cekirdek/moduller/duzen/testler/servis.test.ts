@@ -19,6 +19,11 @@ import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import type { BaslangicDuzeni } from "../../../vitrin/bolum-kutuphanesi/duzen.ts";
+import { bolumKutuphanesi } from "../../../vitrin/bolum-kutuphanesi/kutuphane.ts";
+import {
+  cizilmemeNedeniMetni,
+  islevYokMetinleri,
+} from "../../../yonetim-paneli/cizilmeme-nedeni.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { dosyaSil, gorselKaydet } from "../../dosya/servis.ts";
 import { kategoriler } from "../../kategori/model.ts";
@@ -498,6 +503,47 @@ describe("işleve bağlı bölüm (kart 0106)", () => {
       "deneme-yorumlari",
     ]);
     expect((await servis.panelDuzeni(vt))["ana-sayfa"].every((satir) => satir.cizilir)).toBe(true);
+  });
+
+  // Kart 0112: gerçek kütüphanenin işleve bağlı üç bölümü. Bugün çekirdekte üç işlev de yazılmamıştır.
+  it("yorumlar, blog ve bülten işlevleri yokken çizilmez, panel nedenini işleve göre yazar; açılınca çizilir", async () => {
+    const vt = await siteAc();
+    // Başlangıç düzeni boş: deneme bölümleri gerçek kütüphanede yoktur.
+    const bosSite: Site = {
+      ...ornekSite,
+      duzenBaslangici: { "ust-kisim": [], "ana-sayfa": [], "alt-kisim": [] },
+    };
+    const gercek = duzenServisi(
+      () => bosSite,
+      () => bolumKutuphanesi,
+      () => islevler,
+    );
+    const bolumler = [
+      { tur: "musteri-yorumlari", degerler: { baslik: "Yorumlar" }, islev: "yorum" },
+      { tur: "blog-yazilari", degerler: { kategori: "tarifler" }, islev: "blog" },
+      { tur: "bulten-kaydi", degerler: { baslik: "Bülten" }, islev: "bulten" },
+    ] as const;
+    for (const { tur, degerler } of bolumler) {
+      await gercek.bolumEkle(vt, yonetici(), "ana-sayfa", { tur, degerler });
+    }
+    const cizilenler = async () =>
+      (await gercek.cizilecekBolumler(vt, "ana-sayfa"))
+        .map((bolum) => bolum.tur)
+        .filter((tur) => bolumler.some((bolum) => bolum.tur === tur));
+    expect(yazilanIslevler.yorum || yazilanIslevler.blog || yazilanIslevler.bulten).toBe(false);
+    expect(await cizilenler()).toEqual([]);
+    const panel = (await gercek.panelDuzeni(vt))["ana-sayfa"];
+    for (const { tur, islev } of bolumler) {
+      const satir = panel.find((oge) => oge.bolum.tur === tur);
+      expect(satir).toMatchObject({ cizilir: false, neden: { tur: "islev-yok", islev } });
+      if (satir?.neden === undefined) throw new Error("Neden yok.");
+      expect(cizilmemeNedeniMetni(satir.neden)).toBe(islevYokMetinleri[islev]);
+    }
+    // Her işlev yalnız kendi bölümünü açar.
+    islevler = { ...islevler, blog: true };
+    expect(await cizilenler()).toEqual(["blog-yazilari"]);
+    islevler = { ...islevler, yorum: true, bulten: true };
+    expect(await cizilenler()).toEqual(["musteri-yorumlari", "blog-yazilari", "bulten-kaydi"]);
   });
 
   it("türü kütüphaneden çıkan bölüm vitrini düşürmez: çizilmez, hata süreç başına bir kez kaydedilir", async () => {

@@ -144,7 +144,13 @@ export function KayitFormu() {
             </Baglanti>
           }
         />
-        <OnayKutusu name="pazarlamaIzni" etiket={metin("vitrin.kayit.pazarlamaIzni")} />
+        {/* Pazarlama onayının metni bütün formlarda tektir (vitrin.onay.pazarlama; bülten kaydı, kart 0112). */}
+        <OnayKutusu
+          name="pazarlamaIzni"
+          etiket={doldur(metin("vitrin.kayit.pazarlamaIzni"), {
+            onay: metin("vitrin.onay.pazarlama"),
+          })}
+        />
         {bekliyor ? <p role="status">{metin("vitrin.kayit.gonderiliyor")}</p> : null}
         <GonderDugmesi>{metin("vitrin.kayit.gonder")}</GonderDugmesi>
         <Baglanti href={vitrinAdresleri.giris}>{metin("vitrin.kayit.hesabinVarMi")}</Baglanti>

@@ -37,6 +37,8 @@ export type BolumFormuSecenekleri = {
   gorseller: readonly KayitSecenegi[];
   // Menüler (kart 0108): kimlik yerine menünün kodu.
   menuler: readonly KayitSecenegi[];
+  // Blog kategorileri (kart 0112): kimlik yerine adres adı. Blog işlevi yazılana kadar boştur.
+  blogKategorileri: readonly KayitSecenegi[];
 };
 
 // Radix seçim kutusunun öğesi boş değer alamaz: "seçilmedi" bu değerle gösterilir, değere çevrilmez.
@@ -49,6 +51,7 @@ type Degistir = (deger: unknown) => void;
 
 function KayitSecimi({
   etiket,
+  aciklama,
   hata,
   secenekler,
   deger,
@@ -56,6 +59,8 @@ function KayitSecimi({
   zorunlu,
 }: {
   etiket: string;
+  // Alanın açıklaması (kart 0112): seçim alanında da metin alanındaki gibi alanın altında görünür.
+  aciklama: string | undefined;
   hata: string | undefined;
   secenekler: readonly KayitSecenegi[];
   deger: unknown;
@@ -64,7 +69,11 @@ function KayitSecimi({
 }) {
   const metin = useMetin();
   return (
-    <FormAlani etiket={etiket} {...(hata === undefined ? {} : { hata })}>
+    <FormAlani
+      etiket={etiket}
+      {...(aciklama === undefined ? {} : { aciklama })}
+      {...(hata === undefined ? {} : { hata })}
+    >
       {(alan) => (
         <SecimKutusu
           value={typeof deger === "string" ? deger : secilmedi}
@@ -142,6 +151,7 @@ function UrunKaynagiAlani({
       {kaynak !== undefined && secilenKayitlar !== undefined ? (
         <KayitSecimi
           etiket={metin(`yonetim.bolumFormu.kaynak.${kaynak.tur}` as MetinAnahtari)}
+          aciklama={undefined}
           hata={hata(kaynak.tur)}
           secenekler={secilenKayitlar}
           deger={kaynak[kaynak.tur]}
@@ -172,6 +182,7 @@ function UrunKaynagiAlani({
               <div className="flex-1">
                 <KayitSecimi
                   etiket={`${metin("yonetim.bolumFormu.urun")} ${sira + 1}`}
+                  aciklama={undefined}
                   hata={hata(`urunler.${sira}`)}
                   secenekler={secenekler.urunler}
                   deger={urun}
@@ -224,6 +235,7 @@ function TekAlan({
 }) {
   const metin = useMetin();
   const etiket = metin(alan.ad);
+  const aciklama = alan.aciklama === undefined ? undefined : metin(alan.aciklama);
   const zorunlu = alan.zorunlu === true;
   const metinDegeri = typeof deger === "string" ? deger : "";
   // Boş bırakılan metin "yok" demektir: şema boş metni kabul etmez.
@@ -323,6 +335,7 @@ function TekAlan({
       return (
         <KayitSecimi
           etiket={etiket}
+          aciklama={aciklama}
           hata={hata("")}
           secenekler={secenekler.gorseller}
           deger={deger}
@@ -334,6 +347,7 @@ function TekAlan({
       return (
         <KayitSecimi
           etiket={etiket}
+          aciklama={aciklama}
           hata={hata("")}
           secenekler={secenekler.kategoriler}
           deger={deger}
@@ -345,8 +359,22 @@ function TekAlan({
       return (
         <KayitSecimi
           etiket={etiket}
+          aciklama={aciklama}
           hata={hata("")}
           secenekler={secenekler.markalar}
+          deger={deger}
+          degistir={degistir}
+          zorunlu={zorunlu}
+        />
+      );
+    case "blog-kategorisi":
+      // Blog kategorisi adres adıyla seçilir: seçeneğin kimliği kategorinin adres adıdır.
+      return (
+        <KayitSecimi
+          etiket={etiket}
+          aciklama={aciklama}
+          hata={hata("")}
+          secenekler={secenekler.blogKategorileri}
           deger={deger}
           degistir={degistir}
           zorunlu={zorunlu}
@@ -357,6 +385,7 @@ function TekAlan({
       return (
         <KayitSecimi
           etiket={etiket}
+          aciklama={aciklama}
           hata={hata("")}
           secenekler={secenekler.menuler}
           deger={deger}
@@ -368,6 +397,7 @@ function TekAlan({
       return (
         <KayitSecimi
           etiket={etiket}
+          aciklama={aciklama}
           hata={hata("")}
           secenekler={alan.renkler.map((renk) => ({
             kimlik: renk,
@@ -383,6 +413,7 @@ function TekAlan({
       return (
         <KayitSecimi
           etiket={etiket}
+          aciklama={aciklama}
           hata={hata("")}
           secenekler={alan.secenekler.map((secenek) => ({
             kimlik: secenek.kod,
