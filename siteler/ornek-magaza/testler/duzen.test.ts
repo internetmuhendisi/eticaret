@@ -115,7 +115,7 @@ describe("Örnek Mağaza'nın başlangıç düzeni", () => {
     expect(izlenenler).toEqual([]);
   });
 
-  it("öne çıkanlar elle seçilmiş altı ürün, sırasıyla", async () => {
+  it("öne çıkanlar elle seçilmiş sekiz ürün, sırasıyla", async () => {
     expect(deger((await anaSayfa())[4], "urunler")).toEqual({
       tur: "elle",
       urunler: [
@@ -125,6 +125,8 @@ describe("Örnek Mağaza'nın başlangıç düzeni", () => {
         "keten-masa-ortusu",
         "porselen-kupa",
         "bluetooth-hoparlor",
+        "kosu-ayakkabisi",
+        "keten-gomlek",
       ].map((adresAdi) => kimligi("urun", adresAdi)),
     });
   });
