@@ -10,6 +10,7 @@ import { katalogAdresi, katalogParcalari } from "../../katalog/kayit";
 import kullanimlar from "../../katalog/kullanimlar.json" with { type: "json" };
 import type { MetinAnahtari } from "../../metinler/metin";
 import { metin } from "../../metinler/site-metni";
+import { sayfaHazir } from "./sayfa-hazir";
 
 const genislikler = [
   { ad: "telefon", width: 375, height: 800 },
@@ -24,7 +25,7 @@ const ac = async (page: Page, adres: string) => {
   });
   page.on("pageerror", (hata) => hatalar.push(hata.message));
   const yanit = await page.goto(adres);
-  await page.waitForLoadState("networkidle");
+  await sayfaHazir(page);
   return { hatalar, durum: yanit?.status() };
 };
 
@@ -267,6 +268,31 @@ test("üst kısım: telefonda menü yan pencereden açılır, arama ve sepet sat
   await expect(pencere).toBeHidden();
   await expect(ac2).toBeFocused();
   expect(await yanaKayma(page)).toBe(0);
+  expect(sayfa.hatalar).toEqual([]);
+});
+
+// Hidrasyon yarışı (kart 0121): kontrol hattının yavaş makinesinde sayfa bağlanmadan açılan yan pencere bölümlere
+// aria-hidden yazıyor, React uyuşmazlığı konsola yazıyordu. İşlemci 4 kat yavaşlatılınca bilgisayarda da her seferinde
+// oluyordu (ölçüldü); sayfaHazir beklendiğinde konsol temiz kalır.
+test("yavaş işlemcide yan pencere sayfa hazır olunca açılır, konsolda uyuşmazlık uyarısı yok", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 800 });
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+  const sayfa = await ac(page, `${katalogAdresi}/bolum-kutuphanesi`);
+  const ust = page
+    .getByRole("region", { name: metin("gelistirme.bolum.ustAlt") })
+    .locator("header")
+    .first();
+  await ust.getByRole("button", { name: metin("vitrin.bolum.ustSatir.menuyuAc") }).click();
+  const pencere = page.getByRole("dialog", { name: metin("vitrin.bolum.ustSatir.menuBasligi") });
+  await expect(pencere).toBeVisible();
+  // Bekleyen bağlanma varsa uyarı birazdan gelir: sayfanın bütün bölümleri bağlanana kadar beklenir.
+  await sayfaHazir(page);
+  await page.keyboard.press("Escape");
+  await expect(pencere).toBeHidden();
+  await expect(page.locator("[data-aria-hidden]")).toHaveCount(0);
   expect(sayfa.hatalar).toEqual([]);
 });
 

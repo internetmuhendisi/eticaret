@@ -10,6 +10,7 @@ import {
 import { kontrastOrani } from "../../../bilesenler/tasarim-degerleri/kontrast";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { metin } from "../../metinler/site-metni";
+import { sayfaHazir } from "./sayfa-hazir";
 
 // Tarayıcının verdiği "rgb(r, g, b)" renk, #RRGGBB biçimine çevrilir.
 const onaltilik = (rgb: string) => {
@@ -77,7 +78,7 @@ for (const sayfa of sayfalar) {
         await page.emulateMedia({ colorScheme: tema === "acik" ? "light" : "dark" });
         const disarisi = disIstekleriTopla(page);
         await page.goto(sayfa.adres);
-        await page.waitForLoadState("networkidle");
+        await sayfaHazir(page);
 
         // Zemin ve yazı tipi kök öğeye verilir (tailwind.css).
         const govde = page.locator("html");

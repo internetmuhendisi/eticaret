@@ -15,6 +15,7 @@ import {
   hesaptaEpostaGorunur,
   hesaptanCik,
 } from "./hesap";
+import { sayfaHazir } from "./sayfa-hazir";
 
 const sifre = "uzun-bir-musteri-sifresi";
 const yeniEposta = () => `musteri-${randomBytes(6).toString("hex")}@ornek.test`;
@@ -35,7 +36,7 @@ const pazarlamaKutusu = (page: Page) =>
     { exact: true },
   );
 
-const yuklenmesiniBekle = (page: Page) => page.waitForLoadState("networkidle");
+const yuklenmesiniBekle = sayfaHazir;
 
 const kayitFormunuDoldur = async (page: Page, eposta: string) => {
   await page.goto(vitrinAdresleri.kayit);

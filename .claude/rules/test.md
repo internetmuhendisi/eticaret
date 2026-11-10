@@ -23,4 +23,5 @@ Birim testi tek bir parçayı, entegrasyon testi parçaların birlikte çalışm
 - Test dosyasının adı `*.test.ts` ya da `*.test.tsx` ile biter. Tarayıcı testleri `uctan-uca/` klasöründe durur, öteki testler orada durmaz.
 - `pnpm testler` bütün testleri çalıştırır. Tek aracı çalıştırmak için `pnpm birim-testleri` ya da `pnpm tarayici-testleri`.
 - Test dosyaları da tür kontrolünden geçer (`pnpm tur-kontrolu`).
+- Tarayıcı testi sayfayla etkileşmeden önce `sayfaHazir` ile bekler (`cekirdek/testler/uctan-uca/sayfa-hazir.ts`, karar 0099): yalnız ağ işini beklemek sayfanın tarayıcıda bağlandığını göstermez.
 - Ekran bileşeninin testi dosyanın başına `// @vitest-environment jsdom` yazar ve Testing Library ile çizer (karar 0025). Sunucuda çizimi `react-dom/server` ile denenir.

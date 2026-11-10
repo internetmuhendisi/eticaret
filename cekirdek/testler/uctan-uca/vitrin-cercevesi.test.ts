@@ -11,6 +11,7 @@ import { duzenServisi } from "../../moduller/duzen/servis";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
 import { vitrinAdresleri } from "../../vitrin/adresler";
 import { girisAdresi } from "../../yonetim-paneli/adresler";
+import { sayfaHazir } from "./sayfa-hazir";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
 
@@ -74,7 +75,7 @@ test("telefonda menü penceresi bağlantıya basılınca kapanır", async ({ pag
   try {
     await page.setViewportSize({ width: 320, height: 800 });
     await page.goto(vitrinAdresleri.anasayfa);
-    await page.waitForLoadState("networkidle");
+    await sayfaHazir(page);
     const ust = page.getByRole("banner");
     await ust
       .getByRole("button", { name: metin("vitrin.bolum.ustSatir.menuyuAc") })

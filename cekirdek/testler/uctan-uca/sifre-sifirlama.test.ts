@@ -13,6 +13,7 @@ import { epostaKayitlari } from "../../moduller/eposta/model";
 import { kodAdimi, zamanliKod } from "../../moduller/oturum/iki-asama";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
 import { hesapBaglantisi, hesapDugmesi, hesapMenusunuKapat, hesaptaEpostaGorunur } from "./hesap";
+import { sayfaHazir } from "./sayfa-hazir";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
 const { POSTA_KUTUSU_PORTU: kutuPortu, POSTA_SMTP_PORTU: smtpPortu, SITE_KLASORU } = process.env;
@@ -27,7 +28,7 @@ test.beforeEach(({ page }) =>
   }),
 );
 
-const yuklenmesiniBekle = (page: Page) => page.waitForLoadState("networkidle");
+const yuklenmesiniBekle = sayfaHazir;
 const alan = (page: Page, etiket: string) => page.getByLabel(etiket, { exact: true });
 
 // Kuyruktaki e-postayı gönderir, posta kutusundan okur, içindeki bağlantıyı döner.

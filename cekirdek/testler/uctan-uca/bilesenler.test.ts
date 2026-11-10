@@ -6,6 +6,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { metin } from "../../metinler/site-metni";
+import { sayfaHazir } from "./sayfa-hazir";
 
 const adres = "/gelistirme/bilesenler";
 const m = (anahtar: string) => metin(`gelistirme.ornek.${anahtar}` as MetinAnahtari);
@@ -18,7 +19,7 @@ const ac = async (page: Page) => {
   });
   page.on("pageerror", (hata) => hatalar.push(hata.message));
   await page.goto(adres);
-  await page.waitForLoadState("networkidle");
+  await sayfaHazir(page);
   return hatalar;
 };
 
