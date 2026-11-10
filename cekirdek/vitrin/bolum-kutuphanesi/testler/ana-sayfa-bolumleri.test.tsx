@@ -327,6 +327,8 @@ describe("kampanya afişleri: görsel solda (taslağın ikili tanıtımları, ka
     expect(ikinci?.firstElementChild?.className).toContain("bg-kutu-2");
     // Görselin alanında odaklanan öğe yok: renkli zeminin odak kuralı uygulanmaz.
     expect(alan?.className).not.toContain("odak-yazi-renginde");
+    // Görsel alanı doldurur, iç boşluğu yoktur (taslaktaki gibi, karar 0096).
+    expect(alan?.className.split(" ")).not.toContain("p-6");
     expect(alan?.nextElementSibling?.querySelector("h2")?.className).toContain("text-baslik-3");
   });
 
@@ -376,6 +378,10 @@ describe("geniş afiş", () => {
     const tam = ciz([bolum("genis-afis", "tam-genislik", ornekAnaSayfa()[4]?.degerler ?? {})]);
     expect(yanYana.querySelector("h2")?.className.split(" ")).toContain("text-baslik-1");
     expect(yanYana.querySelector("h2")?.className).not.toContain("text-baslik-2");
+    // İç boşluk her genişlikte 32 px (taslaktaki gibi, karar 0096).
+    expect(
+      yanYana.querySelector("h2")?.closest(".overflow-hidden")?.className.split(" "),
+    ).toContain("p-8");
     expect(tam.querySelector("h2")?.className.split(" ")).toEqual(
       expect.arrayContaining(["text-baslik-2", "tablet:text-baslik-1"]),
     );

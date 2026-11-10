@@ -152,7 +152,7 @@ function GorselSoldaAfisler({
               {gorselli ? (
                 <div
                   className={sinif(
-                    "flex min-w-0 items-center justify-center p-6",
+                    "flex min-w-0 items-center justify-center",
                     // Görselin alanında odaklanan öğe yoktur: renkli zeminin odak kuralı gerekmez.
                     zeminSiniflari(gorselAlaniRengi(afis.zemin, sira), siradakiKutuRengi(sira), {
                       odak: false,

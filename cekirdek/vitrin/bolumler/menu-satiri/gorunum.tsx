@@ -91,7 +91,7 @@ export function MenuSatiriGorunumu({ gorunum, degerler: ham, baglam }: BolumGoru
     >
       <ul
         className={sinif(
-          "mx-auto flex max-w-icerik flex-wrap items-center px-4 tablet:px-6",
+          "mx-auto flex max-w-icerik flex-wrap items-center gap-2 px-4 tablet:px-6",
           gorunum === "ortali" && "justify-center",
         )}
       >

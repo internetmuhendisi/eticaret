@@ -219,6 +219,9 @@ describe("bülten kaydı", () => {
     );
     const bolumOgesi = kap.querySelector("section");
     expect(bolumOgesi?.getAttribute("aria-labelledby")).toBe(kap.querySelector("h2")?.id);
+    // Başlık her genişlikte aynı boyda (taslaktaki gibi, karar 0096).
+    expect(kap.querySelector("h2")?.className.split(" ")).toContain("text-baslik-2");
+    expect(kap.querySelector("h2")?.className).not.toContain("text-baslik-3");
     expect(kap.textContent).toContain("Haberler");
     expect(kap.querySelector('input[type="email"][autocomplete="email"]')).not.toBeNull();
     expect(kap.textContent).toContain(onayMetni);

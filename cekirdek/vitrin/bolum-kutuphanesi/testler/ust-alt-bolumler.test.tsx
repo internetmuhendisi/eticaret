@@ -211,6 +211,8 @@ describe("menü satırı", () => {
       metin("vitrin.bolum.menuSatiri.kategoriler"),
     );
     expect(kap.querySelector('a[href="/a"]')?.textContent).toBe("metin-a");
+    // Menü öğeleri arasında taslaktaki aralık (karar 0096).
+    expect(kap.querySelector("nav > ul")?.className.split(" ")).toContain("gap-2");
   });
 
   it("olmayan ya da boş menüde bölüm çizilmez; kategori menüsü verilmezse düğmesi yoktur", () => {

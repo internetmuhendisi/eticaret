@@ -331,7 +331,7 @@ h3.b3 { margin: 0; font-family: var(--font-baslik); font-weight: var(--baslik-ag
       <div class="kap yan-afisli">
         <div class="yan-afis">
           <div class="bolum" style="gap: 8px"><h2 class="b2" id="b-yeni">Yeni gelenler</h2><p>Kataloğa son eklenen ürünler.</p></div>
-          <img src="../../siteler/ornek-magaza/baslangic/gorseller/kapusonlu-sweatshirt-gri.png" alt="">
+          <img src="../../siteler/ornek-magaza/baslangic/gorseller/sweatshirt-gri.jpg" alt="">
           <a href="#sayfa" class="dugme-koyu">Tümünü gör</a>
         </div>
         <div class="izgara izgara-yeni" id="yeni-gelen"></div>
@@ -377,7 +377,7 @@ h3.b3 { margin: 0; font-family: var(--font-baslik); font-weight: var(--baslik-ag
             <span class="alt-soluk">Yeni yıla özel desenli iki kupalık hediye seti.</span>
             <span class="genis-fiyat">399,90 ₺</span>
           </div>
-          <img src="../../siteler/ornek-magaza/baslangic/gorseller/yilbasi-kupa-seti-1.png" alt="Kırmızı yılbaşı kupası">
+          <img src="../../siteler/ornek-magaza/baslangic/gorseller/yilbasi-kupa-seti.jpg" alt="Kırmızı yılbaşı kupası">
         </a>
       </div>
     </section>
@@ -439,15 +439,15 @@ const yildizlar = (etiket) => `<span class="yildizlar" aria-label="${etiket}">${
 
 const urun = (ad, ust, fiyat, eski, rozet, dosya, alt, tukendi) => ({ ad, ust, fiyat, eski, rozet, img: GORSEL + dosya, alt, tukendi: !!tukendi });
 const U = {
-  kulaklik: urun('Kablosuz Kulaklık', 'Örnek Ses', '999,00 ₺', '1.299,00 ₺', '%23', 'kablosuz-kulaklik-1.png', 'Lacivert kablosuz kulaklık, önden'),
-  sweatLacivert: urun('Kapüşonlu Sweatshirt', 'Giyim', '549,90 ₺', '649,90 ₺', '%15', 'kapusonlu-sweatshirt-lacivert.png', 'Lacivert kapüşonlu sweatshirt, önden'),
-  sweatGri: urun('Kapüşonlu Sweatshirt', 'Giyim', '649,90 ₺', null, null, 'kapusonlu-sweatshirt-gri.png', 'Gri kapüşonlu sweatshirt, önden'),
-  tisortSiyah: urun('Basic Tişört', 'Giyim', '299,90 – 329,90 ₺', null, null, 'basic-tisort-siyah.png', 'Siyah tişört, önden'),
-  tisortBeyaz: urun('Basic Tişört', 'Giyim', '299,90 – 329,90 ₺', null, null, 'basic-tisort-beyaz.png', 'Beyaz tişört, önden'),
-  masaOrtusu: urun('Keten Masa Örtüsü', 'Ev ve Yaşam', '449,90 ₺', null, null, 'keten-masa-ortusu-1.png', 'Gri keten masa örtüsü, katlanmış'),
-  kupa: urun('Porselen Kupa', 'Ev ve Yaşam', '189,90 ₺', null, null, 'porselen-kupa-1.png', 'Mavi porselen kupa, yandan'),
-  kablo: urun('USB-C Şarj Kablosu 1 m', 'Elektronik Aksesuar', '149,90 ₺', null, null, 'usb-c-sarj-kablosu-1-m-1.png', 'Gri USB-C şarj kablosu, iki ucuyla'),
-  canta: urun('Pamuklu Bez Çanta', 'Giyim', '129,90 ₺', null, null, 'pamuklu-bez-canta-1.png', 'Bej pamuklu bez çanta, saplarıyla önden', true)
+  kulaklik: urun('Kablosuz Kulaklık', 'Örnek Ses', '999,00 ₺', '1.299,00 ₺', '%23', 'kablosuz-kulaklik.jpg', 'Lacivert kablosuz kulaklık, önden'),
+  sweatLacivert: urun('Kapüşonlu Sweatshirt', 'Giyim', '549,90 ₺', '649,90 ₺', '%15', 'sweatshirt-lacivert.jpg', 'Lacivert kapüşonlu sweatshirt, önden'),
+  sweatGri: urun('Kapüşonlu Sweatshirt', 'Giyim', '649,90 ₺', null, null, 'sweatshirt-gri.jpg', 'Gri kapüşonlu sweatshirt, önden'),
+  tisortSiyah: urun('Basic Tişört', 'Giyim', '299,90 – 329,90 ₺', null, null, 'basic-tisort-siyah.jpg', 'Siyah tişört, önden'),
+  tisortBeyaz: urun('Basic Tişört', 'Giyim', '299,90 – 329,90 ₺', null, null, 'basic-tisort-beyaz.jpg', 'Beyaz tişört, önden'),
+  masaOrtusu: urun('Keten Masa Örtüsü', 'Ev ve Yaşam', '449,90 ₺', null, null, 'keten-masa-ortusu.jpg', 'Gri keten masa örtüsü, katlanmış'),
+  kupa: urun('Porselen Kupa', 'Ev ve Yaşam', '189,90 ₺', null, null, 'porselen-kupa.jpg', 'Mavi porselen kupa, yandan'),
+  kablo: urun('USB-C Şarj Kablosu 1 m', 'Elektronik Aksesuar', '149,90 ₺', null, null, 'usb-c-sarj-kablosu.jpg', 'Gri USB-C şarj kablosu, iki ucuyla'),
+  canta: urun('Pamuklu Bez Çanta', 'Giyim', '129,90 ₺', null, null, 'pamuklu-bez-canta.jpg', 'Bej pamuklu bez çanta, saplarıyla önden', true)
 };
 
 const fiyatHtml = (u) => `<div class="fiyat"><strong class="${u.eski ? 'indirimli' : ''}">${u.fiyat}</strong>${u.eski ? `<s>${u.eski}</s>` : ''}</div>`;
@@ -479,9 +479,9 @@ const doldur = (id, html) => { document.getElementById(id).innerHTML = html; };
 
 // Kayan afiş
 const slaytlar = [
-  { ust: '%23 indirim', baslik: 'Kablosuz Kulaklık', metin: 'Kablo derdi olmadan müzik ve görüşme için.', fiyat: '999,00 ₺', eski: '1.299,00 ₺', img: 'kablosuz-kulaklik-2.png', alt: 'Lacivert kablosuz kulaklık' },
-  { ust: 'Her gün', baslik: 'Basic Tişört', metin: 'Sade kesimli, yumuşak pamuklu. Siyah ve beyaz, S–XL.', fiyat: '299,90 ₺', eski: '', img: 'basic-tisort-beyaz.png', alt: 'Beyaz tişört, önden' },
-  { ust: 'Ev ve Yaşam', baslik: 'Keten Masa Örtüsü', metin: 'Sofraya doğal bir görünüm katar.', fiyat: '449,90 ₺', eski: '', img: 'keten-masa-ortusu-1.png', alt: 'Gri keten masa örtüsü, katlanmış' }
+  { ust: '%23 indirim', baslik: 'Kablosuz Kulaklık', metin: 'Kablo derdi olmadan müzik ve görüşme için.', fiyat: '999,00 ₺', eski: '1.299,00 ₺', img: 'kablosuz-kulaklik-kutu.jpg', alt: 'Lacivert kablosuz kulaklık' },
+  { ust: 'Her gün', baslik: 'Basic Tişört', metin: 'Sade kesimli, yumuşak pamuklu. Siyah ve beyaz, S–XL.', fiyat: '299,90 ₺', eski: '', img: 'basic-tisort-beyaz.jpg', alt: 'Beyaz tişört, önden' },
+  { ust: 'Ev ve Yaşam', baslik: 'Keten Masa Örtüsü', metin: 'Sofraya doğal bir görünüm katar.', fiyat: '449,90 ₺', eski: '', img: 'keten-masa-ortusu.jpg', alt: 'Gri keten masa örtüsü, katlanmış' }
 ];
 let slayt = 0;
 function slaytGoster(i) {
@@ -508,9 +508,9 @@ doldur('guven', [
 ].map(([i, m]) => `<div class="guven-oge"><span class="guven-ikon">${ikon(i)}</span><span>${m}</span></div>`).join(''));
 
 doldur('kampanyalar', [
-  { rozet: '%15 indirim', baslik: 'Kapüşonlu Sweatshirt', metin: 'Lacivert renkte 15 Kasım – 1 Aralık', zemin: 'k2', img: 'kapusonlu-sweatshirt-lacivert.png', alt: 'Lacivert kapüşonlu sweatshirt' },
-  { rozet: '%23 indirim', baslik: 'Kablosuz Kulaklık', metin: '999,00 ₺', zemin: 'k1', img: 'kablosuz-kulaklik-1.png', alt: 'Lacivert kablosuz kulaklık' },
-  { rozet: 'Yeni', baslik: 'Porselen Kupa', metin: '189,90 ₺', zemin: 'k4', img: 'porselen-kupa-1.png', alt: 'Mavi porselen kupa' }
+  { rozet: '%15 indirim', baslik: 'Kapüşonlu Sweatshirt', metin: 'Lacivert renkte 15 Kasım – 1 Aralık', zemin: 'k2', img: 'sweatshirt-lacivert.jpg', alt: 'Lacivert kapüşonlu sweatshirt' },
+  { rozet: '%23 indirim', baslik: 'Kablosuz Kulaklık', metin: '999,00 ₺', zemin: 'k1', img: 'kablosuz-kulaklik.jpg', alt: 'Lacivert kablosuz kulaklık' },
+  { rozet: 'Yeni', baslik: 'Porselen Kupa', metin: '189,90 ₺', zemin: 'k4', img: 'porselen-kupa.jpg', alt: 'Mavi porselen kupa' }
 ].map((k) => `
   <a href="#sayfa" class="kampanya" style="background: var(--${k.zemin})">
     <div class="kampanya-metin">
@@ -523,9 +523,9 @@ doldur('kampanyalar', [
   </a>`).join(''));
 
 doldur('kategoriler', [
-  { ad: 'Giyim', img: 'basic-tisort-siyah.png', zemin: 'k1' },
-  { ad: 'Ev ve Yaşam', img: 'porselen-kupa-1.png', zemin: 'k2' },
-  { ad: 'Elektronik Aksesuar', img: 'kablosuz-kulaklik-1.png', zemin: 'k3' },
+  { ad: 'Giyim', img: 'basic-tisort-siyah.jpg', zemin: 'k1' },
+  { ad: 'Ev ve Yaşam', img: 'porselen-kupa.jpg', zemin: 'k2' },
+  { ad: 'Elektronik Aksesuar', img: 'kablosuz-kulaklik.jpg', zemin: 'k3' },
   null, null
 ].map((c) => c
   ? `<a href="#sayfa" class="kategori"><span class="kategori-kutu" style="background: var(--${c.zemin})"><img src="${GORSEL + c.img}" alt=""></span>${c.ad}</a>`
@@ -535,8 +535,8 @@ doldur('one-cikan', [U.kulaklik, U.sweatLacivert, U.tisortSiyah, U.masaOrtusu, U
 doldur('yeni-gelen', [U.kablo, U.canta, U.tisortBeyaz, U.sweatGri].map((u) => kartHtml(u)).join(''));
 
 doldur('ikili', [
-  { baslik: 'Keten Masa Örtüsü', metin: 'Sofraya doğal bir görünüm katan keten masa örtüsü.', img: 'keten-masa-ortusu-1.png', alt: 'Gri keten masa örtüsü', zemin: 'k5' },
-  { baslik: 'USB-C Şarj Kablosu', metin: 'Telefon ve tabletler için 1 metrelik şarj kablosu.', img: 'usb-c-sarj-kablosu-1-m-1.png', alt: 'Gri USB-C şarj kablosu', zemin: 'k4' }
+  { baslik: 'Keten Masa Örtüsü', metin: 'Sofraya doğal bir görünüm katan keten masa örtüsü.', img: 'keten-masa-ortusu.jpg', alt: 'Gri keten masa örtüsü', zemin: 'k5' },
+  { baslik: 'USB-C Şarj Kablosu', metin: 'Telefon ve tabletler için 1 metrelik şarj kablosu.', img: 'usb-c-sarj-kablosu.jpg', alt: 'Gri USB-C şarj kablosu', zemin: 'k4' }
 ].map((i) => `
   <div class="ikili-oge">
     <div class="ikili-gorsel" style="background: var(--${i.zemin})"><img src="${GORSEL + i.img}" alt="${i.alt}"></div>

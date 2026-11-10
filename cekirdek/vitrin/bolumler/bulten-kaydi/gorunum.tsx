@@ -25,7 +25,7 @@ export function BultenKaydiGorunumu({ gorunum, degerler: ham, baglam }: BolumGor
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <h2
           id={baslikKimligi}
-          className="font-baslik text-baslik-3 font-baslik-kalinligi wrap-anywhere tablet:text-baslik-2"
+          className="font-baslik text-baslik-2 font-baslik-kalinligi wrap-anywhere"
         >
           {degerler.baslik}
         </h2>

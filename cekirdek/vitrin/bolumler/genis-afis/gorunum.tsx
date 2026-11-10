@@ -91,7 +91,7 @@ export function GenisAfisGorunumu({ gorunum, degerler: ham, baglam }: BolumGorun
       ) : (
         <div
           className={sinif(
-            "relative flex flex-col gap-6 overflow-hidden rounded-orta p-6 tablet:flex-row tablet:items-center tablet:p-8",
+            "relative flex flex-col gap-6 overflow-hidden rounded-orta p-8 tablet:flex-row tablet:items-center",
             zeminSiniflari(zemin, "alt-kisim"),
           )}
         >
