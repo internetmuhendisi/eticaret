@@ -36,6 +36,7 @@ import {
   yorumKaynakTurleri,
 } from "../islev-verisi.ts";
 import { bolumKutuphanesi } from "../kutuphane.ts";
+import { kayitliKip } from "../tarif.ts";
 
 const metin = metinOkuyucu("tr");
 
@@ -97,7 +98,7 @@ const baglamIle = (ek: Partial<VitrinBaglami>): VitrinBaglami => ({
 describe("tarifler ve katalog örnekleri", () => {
   it("katalogdaki örnekler bölüm kütüphanesinin kurallarından geçer", () => {
     for (const ornek of [...ornekIslevBolumleri(), ...ornekIslevBolumleriOtekiGorunumler()]) {
-      const sonuc = bolumuDenetle(bolumKutuphanesi, "ana-sayfa", ornek, [], { baslangic: false });
+      const sonuc = bolumuDenetle(bolumKutuphanesi, "ana-sayfa", ornek, [], kayitliKip);
       expect(sonuc, `${ornek.tur} ${ornek.gorunum}`).not.toHaveProperty("sorunlar");
     }
   });

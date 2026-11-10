@@ -2,7 +2,9 @@
 //
 // - Düzen sürüm sürüm saklanır (model.ts), son sürüm geçerlidir. Sitenin hiç sürümü yoksa ilk okumada
 //   başlangıç düzeniyle (site klasöründeki baslangic/duzen.json ya da başlangıç temasının düzeni) bir kez
-//   yazılır; her bölüme yeni bir kimlik verilir.
+//   yazılır; her bölüme yeni bir kimlik verilir. Sitenin dosyasındaki adres adları kayıtların kimliğine
+//   çevrilir; dosya kataloğa başvuruyorsa düzen katalogdan önce kurulmaz (baslangic.ts, kart 0114). Arka plan
+//   süreci açılırken katalog ve menülerden sonra düzeni kurar (baslangiciKur).
 // - Bölüm işlemleri: ekleme, alan değerlerini ve görünümü değiştirme, gizleme ve gösterme, bir alandaki
 //   bölümleri sıralama, silme. Her işlem bütün düzeni yeni sürüm olarak yazar ve değişiklik kaydına girer,
 //   ikisi aynı veritabanı işleminde. Yazmalar düzen kilidini alır: aynı anda gelen iki işlem sırayla çalışır,
@@ -19,6 +21,7 @@ import { randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
+import { gunluk } from "../../izleme/gunluk.ts";
 import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import { type DegisikligiYapan, sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
@@ -32,6 +35,7 @@ import {
   type BolumOrnegi,
   baslangictanDuzen,
   bolumuDenetle,
+  bosDuzen,
   type Duzen,
   type DuzenSorunu,
   duzenSemasi,
@@ -42,6 +46,7 @@ import {
   type BolumBaglari,
   type BolumDegerleri,
   bolumBaglari,
+  kayitliKip,
 } from "../../vitrin/bolum-kutuphanesi/tarif.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { gorselHazirMi } from "../dosya/servis.ts";
@@ -50,6 +55,7 @@ import { kategoriler } from "../kategori/model.ts";
 import { markalar } from "../marka/model.ts";
 import { menuler } from "../menu/model.ts";
 import { urunler } from "../urun/model.ts";
+import { baslangicDuzeniniBagla, KatalogBekleniyor } from "./baslangic.ts";
 import { duzenSurumleri } from "./model.ts";
 
 // Başlangıç düzenini yazan, değişiklik kaydında "kim" olarak görünür.
@@ -188,7 +194,12 @@ export const duzenServisi = (
   const baslangicliSon = async (islem: VeritabaniIslemi): Promise<Satir> => {
     const son = await sonSatir(islem);
     if (son !== undefined) return son;
-    const duzen = baslangictanDuzen(site().duzenBaslangici, kutuphane(), randomUUID);
+    // Kayda başvuruyorsa ve katalog kurulmamışsa KatalogBekleniyor: hiçbir şey yazılmaz.
+    const { duzen, bulunamayanlar } = await baslangicDuzeniniBagla(
+      islem,
+      baslangictanDuzen(site().duzenBaslangici, kutuphane(), randomUUID),
+      kutuphane(),
+    );
     const denenen = duzenSorunlari(duzen, kutuphane());
     if ("sorunlar" in denenen) {
       throw new Error(
@@ -213,6 +224,17 @@ export const duzenServisi = (
         ),
       },
     });
+    // Kurulumdan önce mağaza sahibi bağlanılan kaydı silmiş ya da adres adını değiştirmiş: o öğe yazılmadı.
+    // Başlangıç düzeni bir kez yazıldığı için hata bir kez kaydedilir (işlem sonradan düşerse yeniden
+    // denenir ve yeniden kaydedilir).
+    if (bulunamayanlar.length > 0) {
+      hatayiKaydet(
+        new Error(
+          `Başlangıç düzeninde bağlanılan kayıt bulunamadı, öğe yazılmadı: ${bulunamayanlar.join(", ")}.`,
+        ),
+        { kaynak: "duzen-baslangici" },
+      );
+    }
     return yazilan;
   };
 
@@ -234,7 +256,7 @@ export const duzenServisi = (
     alan: DuzenAlani,
     bolum: { tur: string; gorunum: string; degerler: unknown },
   ): Promise<BolumDegerleri> => {
-    const sonuc = bolumuDenetle(kutuphane(), alan, bolum, [], { baslangic: false });
+    const sonuc = bolumuDenetle(kutuphane(), alan, bolum, [], kayitliKip);
     if ("sorunlar" in sonuc) throw dogrulama(sorunlariCevir(sonuc.sorunlar));
     const tarif = kutuphane()[bolum.tur];
     if (tarif === undefined) throw dogrulama([{ alan: "tur", kod: "bolum-tanimsiz" }]);
@@ -285,6 +307,32 @@ export const duzenServisi = (
         yeni: sonuc.yeni,
       });
       return sonuc.sonuc;
+    });
+
+  // Vitrinin gördüğü düzen. Katalog henüz kurulmadıysa başlangıç düzeni yazılamaz: vitrin düzeni boş görür.
+  // Açılışın ilk saniyelerinde olağandır; katalog kurulamadıysa sonraki açılışa kadar sürer (katalog hatası
+  // ayrıca kaydedilir). Süreç başına bir kez günlüğe uyarı yazılır.
+  const vitrinDuzeni = async (vt: Veritabani): Promise<Duzen> => {
+    try {
+      return (await duzenOku(vt)).duzen;
+    } catch (hata) {
+      if (!(hata instanceof KatalogBekleniyor)) throw hata;
+      if (!katalogBekleniyorYazildi) {
+        katalogBekleniyorYazildi = true;
+        gunluk.uyari("vitrin düzeni boş görüyor: başlangıç düzeni kataloğu bekliyor");
+      }
+      return bosDuzen();
+    }
+  };
+
+  // Başlangıç düzenini kurar (arka plan süreci açılırken, katalog ve menülerden sonra). Yazıldıysa true;
+  // düzen kuruluysa false.
+  const baslangiciKur = async (vt: Veritabani): Promise<boolean> =>
+    vt.transaction(async (islem) => {
+      await duzenKilidiAl(islem);
+      if ((await sonSatir(islem)) !== undefined) return false;
+      await baslangicliSon(islem);
+      return true;
     });
 
   // Tema değişikliği için (kart 0113): tema servisi tema kilidini aldıktan sonra aynı veritabanı işleminde
@@ -482,7 +530,7 @@ export const duzenServisi = (
     if (bolum.gizli) return { tur: "gizli" };
     const tarif = Object.hasOwn(kutuphane(), bolum.tur) ? kutuphane()[bolum.tur] : undefined;
     if (tarif === undefined) return { tur: "tanimsiz" };
-    if ("sorunlar" in bolumuDenetle(kutuphane(), alan, bolum, [], { baslangic: false })) {
+    if ("sorunlar" in bolumuDenetle(kutuphane(), alan, bolum, [], kayitliKip)) {
       return { tur: "gecersiz" };
     }
     if (tarif.islev !== undefined && !islevler()[tarif.islev]) {
@@ -508,7 +556,7 @@ export const duzenServisi = (
   // Vitrinin çizeceği bölümler, sırasıyla. Türü kütüphaneden çıkmış ya da değerleri artık geçersiz bölüm
   // vitrini düşürmez: çizilmez ve hata süreç başına bir kez kaydedilir.
   const cizilecekBolumler = async (vt: Veritabani, alan: DuzenAlani): Promise<BolumOrnegi[]> => {
-    const { duzen } = await duzenOku(vt);
+    const duzen = await vitrinDuzeni(vt);
     return duzen[alan].filter((bolum) => {
       const neden = cizilmemeNedeni(alan, bolum);
       if (neden?.tur === "tanimsiz" || neden?.tur === "gecersiz") {
@@ -525,7 +573,7 @@ export const duzenServisi = (
   // kategorilerin görsellerini verir. Gizli, geçersiz ya da işlevi yazılmamış bölümün görseli yoktur. Düzen
   // bir kez okunur.
   const vitrindekiGorseller = async (vt: Veritabani): Promise<Set<string>> => {
-    const { duzen } = await duzenOku(vt);
+    const duzen = await vitrinDuzeni(vt);
     const gorseller = new Set<string>();
     for (const alan of duzenAlanlari) {
       for (const bolum of duzen[alan]) {
@@ -541,6 +589,7 @@ export const duzenServisi = (
 
   return {
     duzenOku,
+    baslangiciKur,
     vitrindekiGorseller,
     bolumEkle,
     bolumDegistir,
@@ -554,6 +603,8 @@ export const duzenServisi = (
     islemdeDuzenYaz,
   };
 };
+
+let katalogBekleniyorYazildi = false;
 
 // Vitrinin her isteğinde tekrarlanan sorun süreç başına bir kez kaydedilir.
 const kaydedilenSorunlar = new Set<string>();

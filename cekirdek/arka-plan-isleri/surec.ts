@@ -8,6 +8,7 @@ import { hataIzlemeyiBagla } from "../izleme/hata-izleme-baglantisi.ts";
 import { hatayiKaydet, surecHatalariniBagla } from "../izleme/hata-katmani.ts";
 import { konsoluGunlugeBagla } from "../izleme/konsol.ts";
 import { kuyrukAyari, nabizDosyasi } from "../kayitlar/arka-plan.ts";
+import { duzenServisi } from "../moduller/duzen/servis.ts";
 import { menuBaslangiciniKur } from "../moduller/menu/baslangic.ts";
 import { katalogBaslangiciniKur } from "../moduller/urun/baslangic.ts";
 import { baglantiyiKapat, siteninVeritabani } from "../veritabani/baglanti.ts";
@@ -68,6 +69,17 @@ if (katalogHazir) {
     }
   } catch (hata) {
     hatayiKaydet(hata, { kaynak: "menu-baslangici" });
+  }
+  // Başlangıç düzeni katalogdaki kategori, marka ve ürünlere bağlanır (kart 0114): katalogdan ve menülerden
+  // sonra kurulur. Vitrin daha önce açılırsa düzeni boş görür, yazmaz.
+  try {
+    if (await duzenServisi(calisanSite).baslangiciKur(siteninVeritabani())) {
+      gunluk.bilgi("başlangıç düzeni yazıldı");
+    } else {
+      gunluk.bilgi("başlangıç düzeni yazılmadı: düzen kurulu");
+    }
+  } catch (hata) {
+    hatayiKaydet(hata, { kaynak: "duzen-baslangici" });
   }
 }
 await calistiriciKur({ vt: siteninVeritabani(), isler: kayitliIsler, zamanliIsler }).dongu(

@@ -1,0 +1,24 @@
+{
+  "ust-kisim": [],
+  "ana-sayfa": [
+    {
+      "tur": "kategori-kutulari",
+      "degerler": { "kategoriler": [{ "kategori": "birinci" }, { "kategori": "ikinci" }] }
+    },
+    {
+      "tur": "urun-vitrini",
+      "degerler": { "urunler": { "tur": "elle", "urunler": ["deneme-urunu", "vergisiz-urun"] } }
+    },
+    {
+      "tur": "sekmeli-vitrin",
+      "degerler": {
+        "sekmeler": [
+          { "baslik": "Etiket", "urunler": { "tur": "etiket", "etiket": "etiket-bir", "adet": 4 } },
+          { "baslik": "Marka", "urunler": { "tur": "marka", "marka": "deneme-markasi", "adet": 4 } }
+        ]
+      }
+    },
+    { "tur": "marka-logolari", "degerler": { "markalar": [{ "marka": "deneme-markasi" }] } }
+  ],
+  "alt-kisim": []
+}

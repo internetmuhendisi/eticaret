@@ -89,7 +89,9 @@
   },
   "tema": {
     "ad": {
-      "canliCarsi": "Canlı Çarşı"
+      "canliCarsi": "Canlı Çarşı",
+      "yumusakMevsim": "Yumuşak Mevsim",
+      "keskinCizgi": "Keskin Çizgi"
     }
   },
   "yonetim": {

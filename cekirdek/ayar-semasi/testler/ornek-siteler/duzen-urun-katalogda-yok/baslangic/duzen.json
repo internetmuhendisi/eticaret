@@ -1,0 +1,10 @@
+{
+  "ust-kisim": [],
+  "ana-sayfa": [
+    {
+      "tur": "urun-vitrini",
+      "degerler": { "urunler": { "tur": "elle", "urunler": ["deneme-urunu", "olmayan-urun"] } }
+    }
+  ],
+  "alt-kisim": []
+}

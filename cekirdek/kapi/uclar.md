@@ -254,7 +254,7 @@ Temayı ve ayarlarını yeni sürüm olarak yayınlar (karar 0080). Tema kodu de
 - Girdi: `{ "tema", "ayarlar", "duzen"? }` (`temaYayiniSemasi`, `cekirdek/moduller/tema/semalar.ts`). `duzen`: `uygula` ya da `koru`; tema aynıysa yok sayılır.
 - Servis: `cekirdek/moduller/tema/servis.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "sira", "tema", "ayarlar", "geriDonulenSira": null } }`.
-- Hatalar: `dogrulama` (şemaya uymayan girdi; `tema-kullanilamaz`; temanın açmadığı renk ya da tanımsız seçenek; `kontrast-yetersiz` öneriyle (`oneri`); tema değişiyor ama `duzen` yok: `duzen-yolu-gerekli`), `is-kurali` (`tema-degistirilemez`: "Mağaza sahibi temayı değiştirebilir" kapalı), `yetki` (sahte istek ya da izin yok).
+- Hatalar: `dogrulama` (şemaya uymayan girdi; `tema-kullanilamaz`; temanın açmadığı renk ya da tanımsız seçenek; `kontrast-yetersiz` öneriyle (`oneri`); tema değişiyor ama `duzen` yok: `duzen-yolu-gerekli`), `is-kurali` (`tema-degistirilemez`: "Mağaza sahibi temayı değiştirebilir" kapalı), `yetki` (sahte istek ya da izin yok), `hizmet-kullanilamiyor` (`katalog-bekleniyor`: sitenin başlangıç düzeni kataloğa başvuruyor ve katalog henüz kurulmadı; kart 0114).
 
 ### POST /kapi/yonetici/tema-geri-don
 
@@ -264,4 +264,4 @@ Temayı ve ayarlarını yeni sürüm olarak yayınlar (karar 0080). Tema kodu de
 - Girdi: `{ "sira"? }` (`temaGeriDonusSemasi`). Sıra verilmezse bir önceki sürüm.
 - Servis: `cekirdek/moduller/tema/servis.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "sira", "tema", "ayarlar", "geriDonulenSira" } }`.
-- Hatalar: `dogrulama` (`surum-gecersiz`: olmayan, son ya da bozuk sıra), `is-kurali` (`tema-degistirilemez`; `surum-kullanilamaz`: teması bugün kullanılamayan ya da bugünkü kurallardan geçmeyen sürüm), `yetki`.
+- Hatalar: `dogrulama` (`surum-gecersiz`: olmayan, son ya da bozuk sıra), `is-kurali` (`tema-degistirilemez`; `surum-kullanilamaz`: teması bugün kullanılamayan ya da bugünkü kurallardan geçmeyen sürüm), `yetki`, `hizmet-kullanilamiyor` (`katalog-bekleniyor`: sitenin başlangıç düzeni kataloğa başvuruyor ve katalog henüz kurulmadı; kart 0114).

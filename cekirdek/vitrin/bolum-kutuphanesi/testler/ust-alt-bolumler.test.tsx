@@ -15,6 +15,7 @@ import type { BaglamMenuDali, VitrinBaglami } from "../baglam.ts";
 import { type BolumOrnegi, baslangicDuzeniSorunlari, bolumuDenetle } from "../duzen.ts";
 import { bolumGorunumleri } from "../gorunumler.tsx";
 import { bolumKutuphanesi } from "../kutuphane.ts";
+import type { Kip } from "../tarif.ts";
 
 const metin = metinOkuyucu("tr");
 
@@ -440,20 +441,19 @@ describe("duyuru şeridi", () => {
 
 describe("tarifler", () => {
   it("menü alanı kodla seçilir: başlangıç düzeninde de seçilebilir, kod biçimine uymayan değer geçmez", () => {
-    const denetle = (anaMenu: unknown, baslangic: boolean) =>
+    const denetle = (anaMenu: unknown, kayit: Kip["kayit"]) =>
       bolumuDenetle(
         bolumKutuphanesi,
         "ust-kisim",
         { tur: "menu-satiri", gorunum: "ortali", degerler: { anaMenu } },
         [],
-        {
-          baslangic,
-        },
+        { kayit },
       );
-    expect(denetle("ana-menu", true)).toEqual({ degerler: { anaMenu: "ana-menu" } });
-    expect(denetle("ana-menu", false)).toEqual({ degerler: { anaMenu: "ana-menu" } });
+    for (const kayit of ["yok", "adres-adi", "kimlik"] as const) {
+      expect(denetle("ana-menu", kayit)).toEqual({ degerler: { anaMenu: "ana-menu" } });
+    }
     for (const bozuk of ["Ana Menü", "ana menu", "", 3]) {
-      expect("sorunlar" in denetle(bozuk, false), String(bozuk)).toBe(true);
+      expect("sorunlar" in denetle(bozuk, "kimlik"), String(bozuk)).toBe(true);
     }
   });
 
@@ -465,6 +465,7 @@ describe("tarifler", () => {
         "alt-kisim": [{ tur: "duyuru-seridi", gizli: false, degerler: { metin: "a" } }],
       },
       bolumKutuphanesi,
+      { kayit: "yok" },
     );
     expect(sorunlar.map((sorun) => [sorun.yer.join("."), sorun.kod])).toEqual([
       ["ust-kisim.0.tur", "bolum-alani-uygun-degil"],

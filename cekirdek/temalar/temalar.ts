@@ -8,6 +8,8 @@
 import type { z } from "zod";
 import type { MetinAnahtari } from "../metinler/metin.ts";
 import { canliCarsi } from "./hazir/canli-carsi.ts";
+import { keskinCizgi } from "./hazir/keskin-cizgi.ts";
+import { yumusakMevsim } from "./hazir/yumusak-mevsim.ts";
 import {
   type TemaKutuphanesi,
   type TemaTanimi,
@@ -30,6 +32,8 @@ export const hazirTemalar: Readonly<
   Record<string, { ad: MetinAnahtari; tanim: TemaTanimiGirdisi }>
 > = {
   "canli-carsi": { ad: "tema.ad.canliCarsi", tanim: canliCarsi },
+  "yumusak-mevsim": { ad: "tema.ad.yumusakMevsim", tanim: yumusakMevsim },
+  "keskin-cizgi": { ad: "tema.ad.keskinCizgi", tanim: keskinCizgi },
 };
 
 export const hazirTemaKodlari = (): string[] => Object.keys(hazirTemalar);

@@ -26,6 +26,7 @@ import { kodSemasi, siteTemasiSemasi } from "../temalar/sema.ts";
 import { hazirTemaKodlari, hazirTemayiOku, type Tema } from "../temalar/temalar.ts";
 import {
   type BaslangicDuzeni,
+  baslangicDuzeniBulunamayanlar,
   baslangicDuzeniSemasi,
   baslangicDuzeniSorunlari,
 } from "../vitrin/bolum-kutuphanesi/duzen.ts";
@@ -354,10 +355,12 @@ export const temaBaslangiciniDogrula = (
 export const duzenBaslangicDosyasi = "baslangic/duzen.json";
 
 // Düzenin başlangıç değeri (kart 0106): dosya varsa bölüm kütüphanesinin kurallarından geçer, yoksa sitenin
-// başlangıç temasının düzeni kullanılır (o da tema şemasında aynı kurallardan geçmiştir).
+// başlangıç temasının düzeni kullanılır (o da tema şemasında aynı kurallardan geçmiştir). Sitenin dosyası
+// kategori, marka, etiket ve ürüne adres adıyla başvurur (kart 0114); adres adı başlangıç kataloğunda olmalı.
 export const duzenBaslangiciniDogrula = (
   klasor: string,
   baslangicTemasi: Tema,
+  katalog: KatalogBaslangici,
 ): { gecerli: true; deger: BaslangicDuzeni } | { gecerli: false; hatalar: string[] } => {
   const ham = jsonOku(klasor, duzenBaslangicDosyasi, null);
   if ("hata" in ham) return { gecerli: false, hatalar: [ham.hata] };
@@ -366,11 +369,26 @@ export const duzenBaslangiciniDogrula = (
   if (!sonuc.success) {
     return { gecerli: false, hatalar: sorunlariYaz(duzenBaslangicDosyasi, sonuc.error.issues) };
   }
-  const sorunlar = baslangicDuzeniSorunlari(sonuc.data, bolumKutuphanesi);
+  const sorunlar = baslangicDuzeniSorunlari(sonuc.data, bolumKutuphanesi, { kayit: "adres-adi" });
   if (sorunlar.length > 0) {
     return {
       gecerli: false,
       hatalar: sorunlar.map(({ yer, kod }) => `${duzenBaslangicDosyasi}: ${yer.join(".")}: ${kod}`),
+    };
+  }
+  const bulunamayanlar = baslangicDuzeniBulunamayanlar(sonuc.data, bolumKutuphanesi, {
+    kategori: new Set(katalog.kategoriler.map((kayit) => kayit.adresAdi)),
+    marka: new Set(katalog.markalar.map((kayit) => kayit.adresAdi)),
+    etiket: new Set(katalog.etiketler.map((kayit) => kayit.adresAdi)),
+    urun: new Set(katalog.urunler.map((kayit) => kayit.adresAdi)),
+  });
+  if (bulunamayanlar.length > 0) {
+    return {
+      gecerli: false,
+      hatalar: bulunamayanlar.map(
+        ({ yer, tur, adresAdi }) =>
+          `${duzenBaslangicDosyasi}: ${yer.join(".")}: ${tur} ${adresAdi}: ${katalogBaslangicDosyasi} dosyasında bu adres adı yok`,
+      ),
     };
   }
   return { gecerli: true, deger: sonuc.data };
@@ -523,7 +541,9 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
       ? temalar.temalar.find((tema) => tema.kod === temaBaslangici.deger.tema)
       : undefined;
   const duzenBaslangici =
-    baslangicTemasi === undefined ? undefined : duzenBaslangiciniDogrula(klasor, baslangicTemasi);
+    baslangicTemasi === undefined || !katalogBaslangici.gecerli
+      ? undefined
+      : duzenBaslangiciniDogrula(klasor, baslangicTemasi, katalogBaslangici.deger);
   if (duzenBaslangici !== undefined && !duzenBaslangici.gecerli) {
     hatalar.push(...duzenBaslangici.hatalar);
   }

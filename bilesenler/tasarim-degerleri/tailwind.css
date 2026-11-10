@@ -10,6 +10,8 @@
    parçasındadır; tarayıcı yalnız sayfada geçen harflerin parçasını indirir. */
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/jost";
+@import "@fontsource-variable/manrope";
+@import "@fontsource-variable/archivo";
 
 @config "./tailwind.ayar.ts";
 

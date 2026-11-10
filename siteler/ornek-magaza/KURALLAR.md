@@ -82,3 +82,22 @@ Menüler `baslangic/menuler.json` dosyasındadır. Arka plan süreci açılırke
 | Kategori ağacından kendiliğinden | Kategori menüsü | Kategoriler kendi sırasıyla, ad değişince menü de değişir |
 | Alt bilgi sütunları | Alt bilgi | "Alışveriş" (üç kategori ve Hediye Paketleme), "Sözleşmeler" (üyelik sözleşmesi ve KVKK aydınlatma metni, sitenin kendi adresleri) |
 | Gizli ürün görünür | Alt bilgi | Hediye Paketleme listede yok ama sayfası açılır: menüdeki bağlantısı görünür |
+
+## Tema ve başlangıç düzeni (kart 0114)
+
+Örnek Mağaza üç hazır temayı kullanabilir (`ayarlar.json`): Canlı Çarşı, Yumuşak Mevsim, Keskin Çizgi. Başlangıç teması Canlı Çarşı'dır (`baslangic/tema.json`, karar 0075).
+
+Ana sayfanın ilk düzeni `baslangic/duzen.json` dosyasındadır, sırası karar 0075'tedir. Kategori, marka ve ürünlere adres adıyla bağlanır. Arka plan süreci açılırken, katalogdan ve menülerden sonra, sitede hiç düzen yoksa bir kez yüklenir. Her durumu `testler/duzen.test.ts` gerçek veritabanıyla dener.
+
+| Durum | Bölüm | Nasıl |
+|---|---|---|
+| Üst kısımda duyuru | Duyuru şeridi | "Yeni sezon ürünleri mağazada", Giyim kategorisine bağlantı |
+| Ayardan dolan madde | Güven şeridi | "{kargoyaVermeSuresi} iş gününde kargoda": mağaza ayarındaki sayı görünür (başlangıçta 1) |
+| Elle seçilmiş ürünler | Öne çıkanlar (ürün vitrini) | Kablosuz Kulaklık, Kapüşonlu Sweatshirt, Basic Tişört, Keten Masa Örtüsü, Porselen Kupa |
+| Yan afişli ürün vitrini | Yeni gelenler | En yeni 4 ürün, solda yan afiş (masaüstünde tek sıra) |
+| Kategoriye göre sekmeler | Sekmeli vitrin | Giyim, Ev ve Yaşam, Elektronik Aksesuar; kartlar yatay |
+| Geri sayımlı fırsat | Fırsatlar | Eski fiyatı gösterilen, bitişli indirimdeki ürünler: 15 Kasım–1 Aralık 2026 arası Kapüşonlu Sweatshirt (lacivert). Kablosuz Kulaklık'ın eski fiyatı gösterilmediği için girmez (karar 0088). Fırsat yokken bölüm vitrinde çizilmez |
+| İşlevi yazılmamış bölüm | Müşteri yorumları, blog yazıları, bülten kaydı | Düzende durur, vitrinde çizilmez (karar 0090) |
+| Görseli gelmemiş bölüm gizli | Kayan afiş, kampanya afişleri (üçlü ve ikili), kategori kutuları, geniş afiş, marka logoları | Metni ve bağlantısı yazılı, görsel paketi gelene kadar gizli (kart 0115) |
+
+Güven şeridine ücretsiz kargo ve ödeme yöntemi yazılmadı: kargo hesabı ve ödeme yazılmadan ekrana iddia olarak konmaz.

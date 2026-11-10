@@ -60,8 +60,9 @@ const bosKatalogMu = (katalog: KatalogBaslangici) =>
   katalog.ozellikler.length === 0 &&
   katalog.urunler.length === 0;
 
-// Silinmiş satır da sayılır: mağaza sahibi her şeyi silse de katalog yeniden yazılmaz.
-const kuruluMu = async (islem: VeritabaniIslemi) => {
+// Silinmiş satır da sayılır: mağaza sahibi her şeyi silse de katalog yeniden yazılmaz. Başlangıç düzeni de
+// kataloğa başvurmadan önce bunu sorar (cekirdek/moduller/duzen/baslangic.ts).
+export const katalogKuruluMu = async (islem: VeritabaniIslemi) => {
   for (const tablo of [urunler, kategoriler, markalar, etiketler, ozellikler]) {
     const satir = await islem.select({ kimlik: tablo.kimlik }).from(tablo).limit(1);
     if (satir.length > 0) return true;
@@ -115,7 +116,7 @@ export const katalogBaslangiciniKur = async (
   const katalog = site.katalogBaslangici;
   if (bosKatalogMu(katalog)) return false;
   // Kurulu katalogda görseller boşuna kaydedilmesin. Kesin cevap işlemin içinde, kilitlerden sonradır.
-  if (await vt.transaction(kuruluMu)) return false;
+  if (await vt.transaction(katalogKuruluMu)) return false;
   const kaydedilenler: string[] = [];
   let yazildi = false;
   try {
@@ -152,7 +153,7 @@ const katalogIsleminiYaz = (
     await etiketServisi.kilidiAl(islem);
     await ozellikServisi.kilidiAl(islem);
     await urunKilidiAl(islem);
-    if (await kuruluMu(islem)) return false;
+    if (await katalogKuruluMu(islem)) return false;
 
     // Vergi sınıfı adla bulunur; yalnız silinmemiş sınıflar. Vergi tablosu henüz kurulmamışsa bu okuma
     // onu da başlangıç verisiyle kurar.

@@ -1,0 +1,14 @@
+{
+  "ust-kisim": [],
+  "ana-sayfa": [
+    {
+      "tur": "kategori-kutulari",
+      "degerler": { "kategoriler": [{ "kategori": "birinci" }, { "kategori": "ikinci" }] }
+    },
+    {
+      "tur": "urun-vitrini",
+      "degerler": { "urunler": { "tur": "elle", "urunler": ["deneme-urunu"] } }
+    }
+  ],
+  "alt-kisim": []
+}

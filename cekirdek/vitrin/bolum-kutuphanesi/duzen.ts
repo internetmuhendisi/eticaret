@@ -12,7 +12,10 @@ import {
   type BolumDegerleri,
   type BolumTarifi,
   bolumAlanHatalari,
+  bolumBaglari,
   bolumDegerSemasi,
+  type Kip,
+  kayitliKip,
 } from "./tarif.ts";
 
 export type BolumKutuphanesi = Readonly<Record<string, BolumTarifi>>;
@@ -107,7 +110,7 @@ export const bolumuDenetle = (
   alan: DuzenAlani,
   bolum: { tur: string; gorunum: string; degerler: unknown },
   yer: (string | number)[],
-  kip: { baslangic: boolean },
+  kip: Kip,
 ): { degerler: BolumDegerleri } | { sorunlar: DuzenSorunu[] } => {
   const tarif = Object.hasOwn(kutuphane, bolum.tur) ? kutuphane[bolum.tur] : undefined;
   if (tarif === undefined) return { sorunlar: [{ yer: [...yer, "tur"], kod: "bolum-tanimsiz" }] };
@@ -125,7 +128,8 @@ export const bolumuDenetle = (
 };
 
 // Başlangıç düzeni (temanın ve sitenin başlangıç dosyası): bölümlerin kimliği yoktur, kurulumda üretilir.
-// Görünüm verilmezse ilk görünüm, görünürlük verilmezse görünür. Kayda başvuran alanlar boş kalır.
+// Görünüm verilmezse ilk görünüm, görünürlük verilmezse görünür. Temanın düzeninde kayda başvuran alanlar boş
+// kalır, sitenin düzeninde adres adıyla yazılır (tarif.ts, Kip).
 const baslangicBolumu = z.strictObject({
   tur: z.string().regex(kodKalibi),
   gorunum: z.string().regex(kodKalibi).optional(),
@@ -140,10 +144,12 @@ export const baslangicDuzeniSemasi = z.strictObject(
 export type BaslangicDuzeni = z.output<typeof baslangicDuzeniSemasi>;
 export type BaslangicDuzeniGirdisi = z.input<typeof baslangicDuzeniSemasi>;
 
-// Başlangıç düzeninin kütüphaneye göre sorunları (yer: alan, sıra, alan adı).
+// Başlangıç düzeninin kütüphaneye göre sorunları (yer: alan, sıra, alan adı). kip: temanın düzeni kayda
+// başvuramaz ("yok"), sitenin düzeni adres adıyla başvurur ("adres-adi").
 export const baslangicDuzeniSorunlari = (
   duzen: BaslangicDuzeni,
   kutuphane: BolumKutuphanesi,
+  kip: Kip,
 ): DuzenSorunu[] =>
   duzenAlanlari.flatMap((alan) =>
     duzen[alan].flatMap((bolum, sira) => {
@@ -153,11 +159,165 @@ export const baslangicDuzeniSorunlari = (
         alan,
         { ...bolum, gorunum: bolum.gorunum ?? tarif?.gorunumler[0].kod ?? "" },
         [alan, sira],
-        { baslangic: true },
+        kip,
       );
       return "sorunlar" in sonuc ? sonuc.sorunlar : [];
     }),
   );
+
+// Sitenin başlangıç düzeninin adres adıyla başvurduğu kayıt türleri (kart 0114). Görsel başvurusu kart 0115'te.
+export const baslangicBagTurleri = ["kategori", "marka", "etiket", "urun"] as const;
+export type BaslangicBagTuru = (typeof baslangicBagTurleri)[number];
+
+// Bir bölümün adres adı başvuruları: tür, adres adı ve değerlerdeki yolu ("kutular.0.kategori").
+const adresAdiBaglari = (tarif: BolumTarifi, degerler: BolumDegerleri) => {
+  const baglar = bolumBaglari(tarif, degerler);
+  return baslangicBagTurleri.flatMap((tur) =>
+    [...baglar[tur]].flatMap(([adresAdi, yollar]) => yollar.map((yol) => ({ tur, adresAdi, yol }))),
+  );
+};
+
+// Sitenin başlangıç düzeninde başvurulan ama verilen kümelerde olmayan adres adları (site doğrulaması
+// kümeleri başlangıç kataloğundan kurar). Düzen önce baslangicDuzeniSorunlari'ndan geçmiş olmalı.
+export const baslangicDuzeniBulunamayanlar = (
+  duzen: BaslangicDuzeni,
+  kutuphane: BolumKutuphanesi,
+  varolanlar: Readonly<Record<BaslangicBagTuru, ReadonlySet<string>>>,
+): { yer: (string | number)[]; tur: BaslangicBagTuru; adresAdi: string }[] =>
+  duzenAlanlari.flatMap((alan) =>
+    duzen[alan].flatMap((bolum, sira) => {
+      const tarif = Object.hasOwn(kutuphane, bolum.tur) ? kutuphane[bolum.tur] : undefined;
+      if (tarif === undefined) return [];
+      return adresAdiBaglari(tarif, bolum.degerler)
+        .filter(({ tur, adresAdi }) => !varolanlar[tur].has(adresAdi))
+        .map(({ tur, adresAdi, yol }) => ({
+          yer: [alan, sira, "degerler", ...yol.split(".")],
+          tur,
+          adresAdi,
+        }));
+    }),
+  );
+
+// Kurulacak düzenin türlere göre başvurduğu adres adları.
+export const duzenBaslangicBaglari = (
+  duzen: Duzen,
+  kutuphane: BolumKutuphanesi,
+): Record<BaslangicBagTuru, Set<string>> => {
+  const adlar = {
+    kategori: new Set<string>(),
+    marka: new Set<string>(),
+    etiket: new Set<string>(),
+    urun: new Set<string>(),
+  };
+  for (const alan of duzenAlanlari) {
+    for (const bolum of duzen[alan]) {
+      const tarif = Object.hasOwn(kutuphane, bolum.tur) ? kutuphane[bolum.tur] : undefined;
+      if (tarif === undefined) continue;
+      for (const { tur, adresAdi } of adresAdiBaglari(tarif, bolum.degerler))
+        adlar[tur].add(adresAdi);
+    }
+  }
+  return adlar;
+};
+
+const silinecek = Symbol("silinecek");
+
+// Değerlerin içinde silinmek üzere işaretlenmiş liste öğelerini kaldırır.
+const isaretlileriKaldir = (deger: unknown): unknown => {
+  if (Array.isArray(deger)) {
+    return deger.filter((oge) => oge !== silinecek).map(isaretlileriKaldir);
+  }
+  if (deger !== null && typeof deger === "object") {
+    return Object.fromEntries(
+      Object.entries(deger).map(([anahtar, alt]) => [anahtar, isaretlileriKaldir(alt)]),
+    );
+  }
+  return deger;
+};
+
+// Yolun ucuna yazar. Yolun üstündeki bir öğe silinmek üzere işaretlenmişse (aynı öğenin başka bir bağı
+// bulunamamıştı) yazmaz: öğe zaten düşecektir.
+const yolaYaz = (kok: Record<string, unknown>, yol: string[], deger: unknown) => {
+  let ust: unknown = kok;
+  for (const parca of yol.slice(0, -1)) {
+    ust = (ust as Record<string, unknown>)[parca];
+    if (ust === null || typeof ust !== "object") return;
+  }
+  (ust as Record<string, unknown>)[yol[yol.length - 1] ?? ""] = deger;
+};
+
+const yoldakiDeger = (kok: Record<string, unknown>, yol: string[]): unknown => {
+  let deger: unknown = kok;
+  for (const parca of yol) {
+    if (deger === null || typeof deger !== "object") return undefined;
+    deger = (deger as Record<string, unknown>)[parca];
+  }
+  return deger;
+};
+
+const sayiMi = (parca: string | undefined) => parca !== undefined && /^\d+$/.test(parca);
+
+// Kurulan başlangıç düzenindeki adres adlarını kimliğe çevirir (kart 0114). kimlikler: türe göre adres adından
+// silinmemiş kaydın kimliğine. Bulunamayan adres adı (kurulumdan önce mağaza sahibi kaydı silmiş ya da adres
+// adını değiştirmiş) kendi öğesiyle düşer: elle seçilen listede yalnız o ürün (seçim boş kalırsa onu taşıyan
+// liste öğesi, örneğin sekme), bir listenin öğesindeyse o öğe, bölümün kendi alanındaysa bölüm. Önce bulunan
+// bütün bağlar yazılır, sonra düşenler işaretlenir: aynı öğenin iki bağı bulunamasa da öğe bir kez düşer.
+// Kalan bölüm kayıtlı düzenin kurallarından geçmezse (listenin en az sınırı, boş kalan elle seçim) o da düşer.
+// bulunamayanlar hatanın kaydı içindir.
+export const baslangicBaglariniCoz = (
+  duzen: Duzen,
+  kutuphane: BolumKutuphanesi,
+  kimlikler: Readonly<Record<BaslangicBagTuru, ReadonlyMap<string, string>>>,
+): { duzen: Duzen; bulunamayanlar: string[] } => {
+  const bulunamayanlar: string[] = [];
+  const cozulen = bosDuzen();
+  for (const alan of duzenAlanlari) {
+    for (const bolum of duzen[alan]) {
+      const tarif = Object.hasOwn(kutuphane, bolum.tur) ? kutuphane[bolum.tur] : undefined;
+      if (tarif === undefined) {
+        cozulen[alan].push(bolum);
+        continue;
+      }
+      const degerler = structuredClone(bolum.degerler);
+      const eksikler: string[][] = [];
+      for (const { tur, adresAdi, yol } of adresAdiBaglari(tarif, bolum.degerler)) {
+        const kimlik = kimlikler[tur].get(adresAdi);
+        if (kimlik !== undefined) yolaYaz(degerler, yol.split("."), kimlik);
+        else {
+          bulunamayanlar.push(`${alan} ${bolum.tur}: ${tur} ${adresAdi}`);
+          eksikler.push(yol.split("."));
+        }
+      }
+      // Bölümün kendi alanındaki bağ (liste ya da elle seçim değil) bulunamadı: bölüm düşer.
+      if (
+        eksikler.some((parcalar) => !sayiMi(parcalar[parcalar.length - 1]) && !sayiMi(parcalar[1]))
+      ) {
+        continue;
+      }
+      // Elle seçimden yalnız o ürün; listenin öğesindeki başka bağda o öğe.
+      for (const parcalar of eksikler) {
+        if (sayiMi(parcalar[parcalar.length - 1])) yolaYaz(degerler, parcalar, silinecek);
+        else yolaYaz(degerler, parcalar.slice(0, 2), silinecek);
+      }
+      // Bir liste öğesinin içindeki elle seçim boş kaldıysa o öğe de düşer (örneğin sekmeli vitrinin sekmesi).
+      for (const parcalar of eksikler) {
+        if (!sayiMi(parcalar[parcalar.length - 1]) || !sayiMi(parcalar[1])) continue;
+        const secim = yoldakiDeger(degerler, parcalar.slice(0, -1));
+        if (Array.isArray(secim) && secim.every((oge) => oge === silinecek)) {
+          yolaYaz(degerler, parcalar.slice(0, 2), silinecek);
+        }
+      }
+      const aday = { ...bolum, degerler: isaretlileriKaldir(degerler) as BolumDegerleri };
+      const sonuc = bolumuDenetle(kutuphane, alan, aday, [], kayitliKip);
+      if ("sorunlar" in sonuc) {
+        bulunamayanlar.push(`${alan} ${bolum.tur}: bölüm kurallara uymadığı için yazılmadı`);
+        continue;
+      }
+      cozulen[alan].push({ ...aday, degerler: sonuc.degerler });
+    }
+  }
+  return { duzen: cozulen, bulunamayanlar };
+};
 
 // Başlangıç düzeninden kurulacak düzen: her bölüme yeni bir kimlik verilir. Düzen önce
 // baslangicDuzeniSorunlari ile denetlenmiş olmalı.
@@ -212,7 +372,7 @@ export const duzenSorunlari = (
         sorunlar.push({ yer: [alan, sira, "kimlik"], kod: "kimlik-tekrar" });
       }
       kimlikler.add(bolum.kimlik);
-      const sonuc = bolumuDenetle(kutuphane, alan, bolum, [alan, sira], { baslangic: false });
+      const sonuc = bolumuDenetle(kutuphane, alan, bolum, [alan, sira], kayitliKip);
       if ("sorunlar" in sonuc) sorunlar.push(...sonuc.sorunlar);
       else duzen[alan].push({ ...bolum, degerler: sonuc.degerler });
     });

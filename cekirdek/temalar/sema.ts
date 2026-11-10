@@ -139,6 +139,7 @@ export const temaKurallari = (tema: TemaTanimi, kutuphane: TemaKutuphanesi): Sor
   for (const { yer, kod } of baslangicDuzeniSorunlari(
     tema.baslangicDuzeni,
     kutuphane.bolumTurleri,
+    { kayit: "yok" },
   )) {
     sorunlar.push({ yer: ["baslangicDuzeni", ...yer], kod });
   }

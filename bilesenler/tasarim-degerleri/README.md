@@ -19,7 +19,7 @@ Uygulamaların stil girişleri `cekirdek/uygulama/stil.css` ve `sahip-paneli/sti
 
 ## Tema değerleri
 
-Temadan temaya değişir, sayfa açılırken yazılır. Bu dosyadaki değerler karar 0075'teki Canlı Çarşı yönündendir; panelin değerleridir ve Canlı Çarşı teması bugün bunları kullanır. Bir tema yalnız `yuklenenYaziTipleri` ve cihazın genel yazı tiplerini kullanabilir. Bu belge adları ve ne için olduklarını anlatır; değerlerin kendisi yalnız `degerler.ts`'tedir.
+Temadan temaya değişir, sayfa açılırken yazılır. Başlangıç değerleri (`varsayilanTemaDegerleri`) karar 0075'teki Canlı Çarşı yönündendir; panelin değerleridir ve Canlı Çarşı teması bunları kullanır. Öteki iki hazır temanın değerleri de aynı dosyadadır: `yumusakMevsimDegerleri` ve `keskinCizgiDegerleri` (kart 0114, karar 0092). Bir tema yalnız `yuklenenYaziTipleri` ve cihazın genel yazı tiplerini kullanabilir. Bu belge adları ve ne için olduklarını anlatır; değerlerin kendisi yalnız `degerler.ts`'tedir.
 
 ### Renkler
 
@@ -132,4 +132,4 @@ Koyu değerler `degerler.ts`'te açık değerlerin yanındadır ve cihazın terc
 
 ## Yazı tipleri
 
-Inter ve Jost `@fontsource-variable` paketlerinden gelir ve sitenin kendi sunucusundan yüklenir. Türkçe harfler latin-ext parçasındadır. Yeni bir yazı tipi de aynı yoldan eklenir, dış sunucudan (Google Fonts) yüklenmez.
+Inter, Jost, Manrope ve Archivo `@fontsource-variable` paketlerinden gelir ve sitenin kendi sunucusundan yüklenir (Manrope ve Archivo kart 0114 ile, Yumuşak Mevsim ve Keskin Çizgi temaları için). Türkçe harfler latin-ext parçasındadır. Yeni bir yazı tipi de aynı yoldan eklenir, dış sunucudan (Google Fonts) yüklenmez.

@@ -1,35 +1,16 @@
-// Canlı Çarşı (karar 0075): ilk demo site için seçilen yön. Bugün yalnız değerleri ve mağaza sahibinin
-// seçebileceği ana renk yazılıdır. Yazı tipi, köşe ve düğme seçenekleri ve ana sayfanın
-// başlangıç düzeni kart 0114'te yazılır. Üst ve alt kısım (kart 0108) sitenin menülerine koduyla bağlanır
-// (ana-menu, kategori-menusu, alt-bilgi); sitede o kodda menü yoksa bölüm boş kalır.
+// Canlı Çarşı (karar 0075): ilk demo site için seçilen yön. Yoğun, renkli, sırada 5 ürünlü bir pazar.
+// Değerleri tasarım değerlerinin başlangıç değerleridir (bilesenler/tasarim-degerleri/degerler.ts). Mağaza
+// sahibinin seçenekleri ve başlangıç düzeni üç hazır temada ortaktır (magaza-secenekleri.ts,
+// baslangic-duzeni.ts).
 import { varsayilanTemaDegerleri } from "../../../bilesenler/tasarim-degerleri/degerler.ts";
 import type { TemaTanimiGirdisi } from "../sema.ts";
+import { hazirTemaBaslangicDuzeni } from "./baslangic-duzeni.ts";
+import { hazirTemaSecenekleri } from "./magaza-secenekleri.ts";
 
 export const canliCarsi: TemaTanimiGirdisi = {
   degerler: varsayilanTemaDegerleri,
-  magazaSecenekleri: { renkler: ["birincil"], yaziTipleri: {}, koseler: {}, dugmeBicimleri: {} },
+  magazaSecenekleri: hazirTemaSecenekleri,
   // Taslaktaki ürün kartı dikeydir (karar 0075).
   gorunumler: { "urun-karti": "dikey" },
-  baslangicDuzeni: {
-    "ust-kisim": [
-      {
-        tur: "ust-satir",
-        gorunum: "logo-solda",
-        degerler: { menuler: [{ menu: "ana-menu" }, { menu: "kategori-menusu" }] },
-      },
-      {
-        tur: "menu-satiri",
-        gorunum: "sola-yasli",
-        degerler: { anaMenu: "ana-menu", kategoriMenusu: "kategori-menusu" },
-      },
-    ],
-    "ana-sayfa": [],
-    "alt-kisim": [
-      { tur: "iletisim-bilgileri", gorunum: "liste" },
-      { tur: "baglanti-sutunlari", gorunum: "sutunlu", degerler: { menu: "alt-bilgi" } },
-      { tur: "sosyal-hesaplar", gorunum: "liste" },
-      { tur: "telif-satiri", gorunum: "duz" },
-      { tur: "odeme-isaretleri", gorunum: "yazili" },
-    ],
-  },
+  baslangicDuzeni: hazirTemaBaslangicDuzeni,
 };

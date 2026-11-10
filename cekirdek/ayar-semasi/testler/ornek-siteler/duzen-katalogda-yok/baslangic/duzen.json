@@ -1,0 +1,10 @@
+{
+  "ust-kisim": [],
+  "ana-sayfa": [
+    {
+      "tur": "kategori-kutulari",
+      "degerler": { "kategoriler": [{ "kategori": "birinci" }, { "kategori": "olmayan" }] }
+    }
+  ],
+  "alt-kisim": []
+}

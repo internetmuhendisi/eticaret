@@ -138,24 +138,40 @@ export const tarihGecerliMi = (deger: string, saatli: boolean): boolean => {
   return gercekGunMu(Number(eslesme[1]), Number(eslesme[2]), Number(eslesme[3]));
 };
 
-// Başlangıç değeri (temanın ya da sitenin başlangıç düzeni) veritabanındaki bir kayda başvuramaz: kayıtların
-// kimliği kurulumda üretilir. Bu alanlar başlangıçta boş kalır; adres adıyla bağlanması kart 0114'tedir.
-type Kip = { baslangic: boolean };
+// Değerlerin kayda başvurma biçimi (kip):
+// - kayit "kimlik": kayıtlı düzen; kategori, marka, etiket, ürün ve görsel kimlikle başvurulur.
+// - kayit "adres-adi": sitenin başlangıç düzeni (baslangic/duzen.json, kart 0114). Kayıtların kimliği
+//   kurulumda üretilir; kategori, marka, etiket ve ürün adres adıyla yazılır, kurulumda kimliğe çevrilir
+//   (cekirdek/moduller/duzen/baslangic.ts). Görsel başvurusu henüz yoktur (görsel paketi, kart 0115).
+// - kayit "yok": temanın başlangıç düzeni. Tema bütün sitelerde ortaktır, bir sitenin kaydını bilemez; kayda
+//   başvuran alanlar boş kalır.
+export type Kip = { kayit: "kimlik" | "adres-adi" | "yok" };
+export const kayitliKip: Kip = { kayit: "kimlik" };
 
 const baslangictaYok = z.never({ error: "baslangicta-kayit-secilemez" });
+const adresAdiSemasi = z.string().max(adresAdiUzunlugu).regex(adresAdiKalibi);
 
-const urunKaynagiSemasi = (enCokUrun: number, { baslangic }: Kip) => {
+// Kipin kayda başvuru şeması: kimlik, adres adı ya da hiç.
+const basvuruSemasi = (kip: Kip) =>
+  kip.kayit === "kimlik"
+    ? kimlikSemasi
+    : kip.kayit === "adres-adi"
+      ? adresAdiSemasi
+      : baslangictaYok;
+
+const urunKaynagiSemasi = (enCokUrun: number, kip: Kip) => {
   const adet = z.int().min(1).max(enCokUrun);
-  const kayitli = <T extends string, A extends string>(tur: T, alan: A) =>
-    z.strictObject({ tur: z.literal(tur), [alan]: kimlikSemasi, adet } as {
-      tur: z.ZodLiteral<T>;
-      adet: typeof adet;
-    } & Record<A, typeof kimlikSemasi>);
   const kayitsizlar = [
     z.strictObject({ tur: z.literal("yeni"), adet }),
     z.strictObject({ tur: z.literal("indirimli"), adet }),
   ] as const;
-  if (baslangic) return z.discriminatedUnion("tur", kayitsizlar);
+  if (kip.kayit === "yok") return z.discriminatedUnion("tur", kayitsizlar);
+  const basvuru = kip.kayit === "kimlik" ? kimlikSemasi : adresAdiSemasi;
+  const kayitli = <T extends string, A extends string>(tur: T, alan: A) =>
+    z.strictObject({ tur: z.literal(tur), [alan]: basvuru, adet } as {
+      tur: z.ZodLiteral<T>;
+      adet: typeof adet;
+    } & Record<A, typeof basvuru>);
   return z.discriminatedUnion("tur", [
     ...kayitsizlar,
     kayitli("kategori", "kategori"),
@@ -164,7 +180,7 @@ const urunKaynagiSemasi = (enCokUrun: number, { baslangic }: Kip) => {
     z.strictObject({
       tur: z.literal("elle"),
       urunler: z
-        .array(kimlikSemasi)
+        .array(basvuru)
         .min(1)
         .max(enCokUrun)
         // Kimlik büyük harfle de gelebilir (kart 0119): aynı ürün harf farkıyla iki kez seçilemez.
@@ -187,9 +203,10 @@ const tekAlanSemasi = (alan: TekAlanTarifi, kip: Kip): z.ZodType => {
         "denetim-karakteri",
       );
     case "gorsel":
+      return kip.kayit === "kimlik" ? kimlikSemasi : baslangictaYok;
     case "kategori":
     case "marka":
-      return kip.baslangic ? baslangictaYok : kimlikSemasi;
+      return basvuruSemasi(kip);
     case "baglanti":
       return z.strictObject({
         adres: z
@@ -212,7 +229,7 @@ const tekAlanSemasi = (alan: TekAlanTarifi, kip: Kip): z.ZodType => {
       return z.enum(alan.secenekler.map((secenek) => secenek.kod) as [string, ...string[]]);
     case "menu":
     case "blog-kategorisi":
-      return z.string().max(adresAdiUzunlugu).regex(adresAdiKalibi);
+      return adresAdiSemasi;
   }
 };
 
@@ -238,8 +255,8 @@ const alanSemasi = (alan: AlanTarifi, kip: Kip): z.ZodType => {
 };
 
 // Bir bölümün alan değerlerinin şeması. Bilinmeyen alan geçmez; boş bırakılabilen alan verilmeyebilir.
-// baslangic: temanın ya da sitenin başlangıç düzeni için; kayda başvuran alanlar boş kalmalı.
-export const bolumDegerSemasi = (tarif: BolumTarifi, kip: Kip = { baslangic: false }) =>
+// kip: değerlerin kayda nasıl başvurduğu (yukarıda); verilmezse kayıtlı düzen.
+export const bolumDegerSemasi = (tarif: BolumTarifi, kip: Kip = kayitliKip) =>
   z.strictObject(
     Object.fromEntries(
       Object.entries(tarif.alanlar).map(([kod, alan]) => [kod, alanSemasi(alan, kip)]),

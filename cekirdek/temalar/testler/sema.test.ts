@@ -3,6 +3,8 @@
 // her biri kendi koduyla reddedilir. Hazır temaların hepsi şemadan geçer.
 import { describe, expect, it } from "vitest";
 import { ornekRenk } from "../../../bilesenler/tasarim-degerleri/testler/ornek-renkler.ts";
+import { temaAyariSorunlari, temaAyarlariSemasi } from "../ayarlar.ts";
+import { okunmayanCiftler } from "../okunurluk.ts";
 import { cekirdekKutuphanesi, temaTanimiSemasi } from "../sema.ts";
 import { hazirTemaKodlari, hazirTemalar, hazirTemayiOku } from "../temalar.ts";
 import { denemeKutuphanesi, denemeTemasi, kutuphaneliDenemeTemasi } from "./deneme-temasi.ts";
@@ -28,6 +30,39 @@ describe("geçerli tema", () => {
   it("gizli alanı verilmeyen bölüm görünür başlar", () => {
     const tema = sema.parse(kutuphaneliDenemeTemasi());
     expect(tema.baslangicDuzeni["ana-sayfa"].map((bolum) => bolum.gizli)).toEqual([false, true]);
+  });
+
+  it("üç hazır tema kayıtlı, ilki Canlı Çarşı (karar 0075, kart 0114)", () => {
+    expect(hazirTemaKodlari()).toEqual(["canli-carsi", "yumusak-mevsim", "keskin-cizgi"]);
+  });
+
+  it("her hazır temanın her yazı ve işaret çifti açık ve koyu temada okunur (kart 0114)", () => {
+    for (const kod of hazirTemaKodlari()) {
+      const sonuc = hazirTemayiOku(kod);
+      if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+      for (const mod of ["acik", "koyu"] as const) {
+        expect(okunmayanCiftler(sonuc.tema.tanim.degerler.renkler[mod]), `${kod} ${mod}`).toEqual(
+          [],
+        );
+      }
+    }
+  });
+
+  it("her hazır temanın mağaza sahibine açtığı her seçenek kaydedilebilir (kart 0114)", () => {
+    for (const kod of hazirTemaKodlari()) {
+      const sonuc = hazirTemayiOku(kod);
+      if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+      const { yaziTipleri, koseler, dugmeBicimleri } = sonuc.tema.tanim.magazaSecenekleri;
+      expect(Object.keys(yaziTipleri)).toEqual(["inter-jost", "manrope", "inter-archivo"]);
+      for (const yaziTipi of Object.keys(yaziTipleri)) {
+        for (const kose of Object.keys(koseler)) {
+          for (const dugmeBicimi of Object.keys(dugmeBicimleri)) {
+            const ayarlar = temaAyarlariSemasi.parse({ yaziTipi, kose, dugmeBicimi });
+            expect(temaAyariSorunlari(sonuc.tema.tanim, ayarlar)).toEqual([]);
+          }
+        }
+      }
+    }
   });
 
   it("her hazır tema çekirdeğin kütüphanesiyle geçer", () => {
@@ -116,6 +151,12 @@ describe("bozuk tema açılmaz", () => {
         tur: "deneme-bolumu",
         degerler: { baslik: "Seçkiler", kategori: "8d8f4bb1-7d6c-4f3a-9a52-0c5f3d1e2b7a" },
       },
+      // Tema bir sitenin kaydını bilemez: sitenin düzenindeki gibi adres adıyla da başvuramaz (kart 0114).
+      { tur: "deneme-bolumu", degerler: { baslik: "Seçkiler", marka: "giyim" } },
+      {
+        tur: "deneme-bolumu",
+        degerler: { baslik: "Seçkiler", urunler: { tur: "kategori", kategori: "giyim", adet: 4 } },
+      },
     ];
     const bulunan = sorunlar(tema);
     expect(bulunan).toContainEqual(["baslangicDuzeni.ana-sayfa.0.gorunum", "gorunum-tanimsiz"]);
@@ -125,6 +166,13 @@ describe("bozuk tema açılmaz", () => {
       "baslangicDuzeni.ana-sayfa.3.degerler.kategori",
       "baslangicta-kayit-secilemez",
     ]);
+    expect(bulunan).toContainEqual([
+      "baslangicDuzeni.ana-sayfa.4.degerler.marka",
+      "baslangicta-kayit-secilemez",
+    ]);
+    expect(bulunan.map(([yer]) => yer)).toContain(
+      "baslangicDuzeni.ana-sayfa.5.degerler.urunler.tur",
+    );
   });
 
   it("eksik görünüm, kayıtta olmayan parça ve parçanın görünümlerinde olmayan görünüm", () => {

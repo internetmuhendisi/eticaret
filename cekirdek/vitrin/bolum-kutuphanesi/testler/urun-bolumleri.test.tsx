@@ -34,7 +34,7 @@ import type { VitrinBaglami } from "../baglam.ts";
 import { type BolumOrnegi, bolumuDenetle } from "../duzen.ts";
 import { bolumGorunumleri } from "../gorunumler.tsx";
 import { bolumKutuphanesi } from "../kutuphane.ts";
-import { bolumunUrunKaynaklari } from "../tarif.ts";
+import { bolumunUrunKaynaklari, kayitliKip } from "../tarif.ts";
 import { type UrunKaynagi, urunKaynagiAnahtari } from "../urun-kaynagi.ts";
 
 beforeAll(() => {
@@ -87,7 +87,7 @@ const bitisli = (kart: UrunKartiVerisi | undefined, bitis: Date): UrunKartiVeris
 describe("tarifler ve katalog örnekleri", () => {
   it("katalogdaki örnekler bölüm kütüphanesinin kurallarından geçer", () => {
     for (const ornek of [...ornekUrunBolumleri(), ...ornekUrunBolumleriOtekiGorunumler()]) {
-      const sonuc = bolumuDenetle(bolumKutuphanesi, "ana-sayfa", ornek, [], { baslangic: false });
+      const sonuc = bolumuDenetle(bolumKutuphanesi, "ana-sayfa", ornek, [], kayitliKip);
       expect(sonuc, `${ornek.tur} ${ornek.gorunum}`).not.toHaveProperty("sorunlar");
     }
   });

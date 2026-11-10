@@ -17,6 +17,7 @@ paths:
 - Ortak bileşenle yapılamayan vitrin bölümünü o sitenin klasöründe yaz. İkinci bir sitede de gerekince çekirdeğe taşı.
 - Sepet, ödeme formu, adres formu, stok kontrolü ve sipariş takibi bütün sitelerde aynı koddur. Yalnız görünümü site tasarımıyla değişir.
 - Ana sayfanın ilk düzenini sitenin klasöründe başlangıç değeri olarak yaz (`baslangic/duzen.json`, yoksa temanın düzeni). Sonraki düzen mağaza sahibinin ayarıdır, veritabanında durur ve panelden değişir (karar 0010). Düzen değişikliği kod değişikliği gerektirmesin.
+- Sitenin başlangıç düzeni kategori, marka, etiket ve ürüne adres adıyla başvurur; adres adı başlangıç kataloğunda olmalıdır. Düzen katalogdan sonra kurulur ve adres adları `baslangicDuzeniniBagla` ile kimliğe çevrilir (`cekirdek/moduller/duzen/baslangic.ts`, karar 0092). Temanın düzeni kayda başvurmaz, metin isteyen bölüm de koymaz.
 - Ürünün listede, aramada, önerilerde ve sepette görünen kartını tek bileşenden çıkar.
 - İndirimli fiyatı, üstü çizili eski fiyatı ve para birimini her yerde tek fiyat bileşeniyle göster.
 - Sayfa başlığı, açıklama, yapılandırılmış veri ve paylaşım görselini sayfa türüne göre ortak bir üreticiden al.

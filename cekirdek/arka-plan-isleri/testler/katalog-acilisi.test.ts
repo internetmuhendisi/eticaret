@@ -2,12 +2,15 @@
 // gerçek veritabanı ve örnek site klasörüyle. Kataloğun kuralları cekirdek/moduller/urun/testler/
 // baslangic.test.ts'dedir; burada yalnız açılışın onu çağırdığı ve kuyruğun yine çalıştığı denenir.
 // Başlangıç menüleri (kart 0107) katalogdan sonra yazılır; katalog yazılamazsa menüler de yazılmaz.
+// Başlangıç düzeni (kart 0114) katalogdaki kayıtlara adres adıyla bağlanır: menülerden sonra yazılır, katalog
+// yazılamazsa denenmez.
 import { type ChildProcess, spawn } from "node:child_process";
 import { join } from "node:path";
 import { count, eq } from "drizzle-orm";
 import { afterEach, expect, it } from "vitest";
 import { siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
 import { isDurumu } from "../../kayitlar/arka-plan.ts";
+import { duzenSurumleri } from "../../moduller/duzen/model.ts";
 import { menuler } from "../../moduller/menu/model.ts";
 import { urunler } from "../../moduller/urun/model.ts";
 import { siteninVergiServisi } from "../../moduller/vergi/servis.ts";
@@ -81,6 +84,16 @@ it("açılışta katalog bir kez yazılır, ikinci açılış bir şey değişti
     birinci.cikti(),
   ).toBe(true);
   expect(await menuSayisi()).toBe(3);
+  const duzenSayisi = async () =>
+    (await site.vt.select({ sayi: count() }).from(duzenSurumleri))[0]?.sayi;
+  expect(
+    await bekle(async () => birinci.cikti().includes("başlangıç düzeni yazıldı"), 30_000),
+    birinci.cikti(),
+  ).toBe(true);
+  expect(birinci.cikti().indexOf("başlangıç düzeni yazıldı")).toBeGreaterThan(
+    birinci.cikti().indexOf("başlangıç menüleri yazıldı"),
+  );
+  expect(await duzenSayisi()).toBe(1);
   // Katalogdan sonra kuyruk çalışır: süreç açık kalır.
   expect(birinci.surec.exitCode).toBeNull();
 
@@ -98,6 +111,11 @@ it("açılışta katalog bir kez yazılır, ikinci açılış bir şey değişti
     ikinci.cikti(),
   ).toBe(true);
   expect(await menuSayisi()).toBe(3);
+  expect(
+    await bekle(async () => ikinci.cikti().includes("başlangıç düzeni yazılmadı"), 30_000),
+    ikinci.cikti(),
+  ).toBe(true);
+  expect(await duzenSayisi()).toBe(1);
 }, 90_000);
 
 it("katalog yazılamazsa hata kaydedilir, hiçbir parçası kalmaz, süreç açık kalır", async () => {
@@ -128,4 +146,6 @@ it("katalog yazılamazsa hata kaydedilir, hiçbir parçası kalmaz, süreç aç�
   // Menüler kataloğa bağlanır: katalog yazılamayınca denenmez, sonraki açılışta ikisi birlikte denenir.
   expect((await site.vt.select({ sayi: count() }).from(menuler))[0]?.sayi).toBe(0);
   expect(surec.cikti()).not.toContain("başlangıç menüleri");
+  expect(surec.cikti()).not.toContain("başlangıç düzeni");
+  expect((await site.vt.select({ sayi: count() }).from(duzenSurumleri))[0]?.sayi).toBe(0);
 }, 90_000);

@@ -343,6 +343,19 @@ describe("örnek klasörler", () => {
     // Başlangıç düzeni (kart 0106).
     ["duzen-tanimsiz-bolum", `${duzenBaslangicDosyasi}: ana-sayfa.0.tur: bolum-tanimsiz`],
     ["duzen-bozuk-bicim", `${duzenBaslangicDosyasi}: ana-sayfa: `],
+    // Kayda adres adıyla başvuru (kart 0114): adres adı başlangıç kataloğunda olmalı, görsel başvurusu yok.
+    [
+      "duzen-katalogda-yok",
+      `${duzenBaslangicDosyasi}: ana-sayfa.0.degerler.kategoriler.1.kategori: kategori olmayan: ${katalogBaslangicDosyasi} dosyasında bu adres adı yok`,
+    ],
+    [
+      "duzen-urun-katalogda-yok",
+      `${duzenBaslangicDosyasi}: ana-sayfa.0.degerler.urunler.urunler.1: urun olmayan-urun:`,
+    ],
+    [
+      "duzen-gorselli",
+      `${duzenBaslangicDosyasi}: ana-sayfa.0.degerler.gorsel: baslangicta-kayit-secilemez`,
+    ],
     // Başlangıç menüleri (kart 0107): hata iletileri koddur (cekirdek/moduller/menu/semalar.ts).
     ["menu-hedef-tanimsiz", `${menuBaslangicDosyasi}: 0.ogeler.1.hedef.adresAdi: hedef-yok`],
     ["menu-derinlik", `${menuBaslangicDosyasi}: 0.ogeler.0.altlar.0.altlar: derinlik`],
@@ -659,6 +672,22 @@ describe("başlangıç düzeni (kart 0106)", () => {
     const bos = dogrula("katalog-dolu");
     if (!bos.gecerli) throw new Error(bos.hatalar.join("\n"));
     expect(bos.site.menuBaslangici).toEqual([]);
+  });
+
+  it("dosyadaki düzen kategori, marka, etiket ve ürüne adres adıyla başvurur (kart 0114)", () => {
+    const sonuc = dogrula("duzen-bagli");
+    if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+    expect(sonuc.site.duzenBaslangici["ana-sayfa"].map((bolum) => bolum.degerler)).toEqual([
+      { kategoriler: [{ kategori: "birinci" }, { kategori: "ikinci" }] },
+      { urunler: { tur: "elle", urunler: ["deneme-urunu", "vergisiz-urun"] } },
+      {
+        sekmeler: [
+          { baslik: "Etiket", urunler: { tur: "etiket", etiket: "etiket-bir", adet: 4 } },
+          { baslik: "Marka", urunler: { tur: "marka", marka: "deneme-markasi", adet: 4 } },
+        ],
+      },
+      { markalar: [{ marka: "deneme-markasi" }] },
+    ]);
   });
 
   it("dosyadaki düzen okunur", () => {
