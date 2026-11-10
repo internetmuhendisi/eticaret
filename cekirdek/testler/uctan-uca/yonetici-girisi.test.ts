@@ -7,6 +7,7 @@ import { altyapiAdi } from "../../kayitlar/altyapi";
 import { girisAdimiCerezi, ikiAsamaDenemeSiniri, oturumCerezAdlari } from "../../kayitlar/oturum";
 import { metin } from "../../metinler/site-metni";
 import { kodAdimi, zamanliKod } from "../../moduller/oturum/iki-asama";
+import { sayfaHazir } from "./sayfa-hazir";
 
 // Her test kendi yöneticisini açar: bir kod ikinci kez geçmediği için aynı hesapla aynı 30 saniyede iki
 // kez girilemez (kart 0028).
@@ -27,8 +28,9 @@ test.beforeEach(({ page }) => {
   });
 });
 
-// Sayfanın kodu yüklenmeden gönderilen form çalışmaz (kart 0057): önce yüklenmesi beklenir.
-const yuklenmesiniBekle = (page: Page) => page.waitForLoadState("networkidle");
+// Sayfanın kodu yüklenmeden gönderilen form çalışmaz (kart 0057): önce sayfanın tarayıcıda bağlanması beklenir
+// (karar 0099).
+const yuklenmesiniBekle = sayfaHazir;
 
 const sifreyleGir = async (page: Page, girilen = sifre) => {
   await yuklenmesiniBekle(page);
@@ -67,7 +69,9 @@ const girisYap = async (page: Page) => {
   return kurulumuBitir(page);
 };
 
+// Çıkış düğmesi tarayıcıda bağlanmadan basılırsa istek gitmez (kart 0096, ölçüldü): sayfa hazır olunca basılır.
 const cikisYap = async (page: Page) => {
+  await sayfaHazir(page);
   await page.getByRole("button", { name: metin("yonetim.cikis.dugme") }).click();
   await expect(page).toHaveURL(/\/yonetim\/giris$/);
 };

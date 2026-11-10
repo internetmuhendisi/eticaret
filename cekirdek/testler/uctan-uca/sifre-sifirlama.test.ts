@@ -223,6 +223,8 @@ test("yönetici: sıfırlamadan sonra yine doğrulama kodu ister", async ({ page
   await page.getByRole("button", { name: metin("yonetim.kurulum.gonder") }).click();
   await page.getByRole("button", { name: metin("yonetim.kurulum.devam") }).click();
   await expect(page).toHaveURL(/\/yonetim$/);
+  // Çıkış düğmesi bağlanmadan basılırsa istek gitmez (kart 0096).
+  await yuklenmesiniBekle(page);
   await page.getByRole("button", { name: metin("yonetim.cikis.dugme") }).click();
   await expect(page).toHaveURL(/\/yonetim\/giris$/);
 
