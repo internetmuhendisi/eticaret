@@ -10,6 +10,7 @@
 // Bölümün ekrandaki görünüşü ayrıdır (gorunumler.tsx).
 import { z } from "zod";
 import type { RenkAdi } from "../../../bilesenler/tasarim-degerleri/degerler.ts";
+import { baslangicGorselAdiKalibi } from "../../kayitlar/gorsel.ts";
 import type { Islev } from "../../kayitlar/islevler.ts";
 import type { DuzenAlani } from "../../kayitlar/tema.ts";
 import { adresAdiKalibi, adresAdiUzunlugu } from "../../metinler/adres-adi.ts";
@@ -141,8 +142,9 @@ export const tarihGecerliMi = (deger: string, saatli: boolean): boolean => {
 // Değerlerin kayda başvurma biçimi (kip):
 // - kayit "kimlik": kayıtlı düzen; kategori, marka, etiket, ürün ve görsel kimlikle başvurulur.
 // - kayit "adres-adi": sitenin başlangıç düzeni (baslangic/duzen.json, kart 0114). Kayıtların kimliği
-//   kurulumda üretilir; kategori, marka, etiket ve ürün adres adıyla yazılır, kurulumda kimliğe çevrilir
-//   (cekirdek/moduller/duzen/baslangic.ts). Görsel başvurusu henüz yoktur (görsel paketi, kart 0115).
+//   kurulumda üretilir; kategori, marka, etiket ve ürün adres adıyla, görsel baslangic/gorseller/
+//   klasöründeki dosyanın adıyla yazılır (kart 0115), kurulumda kimliğe çevrilir
+//   (cekirdek/moduller/duzen/baslangic.ts).
 // - kayit "yok": temanın başlangıç düzeni. Tema bütün sitelerde ortaktır, bir sitenin kaydını bilemez; kayda
 //   başvuran alanlar boş kalır.
 export type Kip = { kayit: "kimlik" | "adres-adi" | "yok" };
@@ -203,7 +205,11 @@ const tekAlanSemasi = (alan: TekAlanTarifi, kip: Kip): z.ZodType => {
         "denetim-karakteri",
       );
     case "gorsel":
-      return kip.kayit === "kimlik" ? kimlikSemasi : baslangictaYok;
+      return kip.kayit === "kimlik"
+        ? kimlikSemasi
+        : kip.kayit === "adres-adi"
+          ? z.string().regex(baslangicGorselAdiKalibi)
+          : baslangictaYok;
     case "kategori":
     case "marka":
       return basvuruSemasi(kip);

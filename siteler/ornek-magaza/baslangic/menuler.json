@@ -31,6 +31,18 @@
         ]
       },
       {
+        "hedef": {
+          "tur": "kategori",
+          "adresAdi": "spor-ve-outdoor"
+        }
+      },
+      {
+        "hedef": {
+          "tur": "kategori",
+          "adresAdi": "kisisel-bakim"
+        }
+      },
+      {
         "metin": "Markalar",
         "hedef": {
           "tur": "baslik"
@@ -85,6 +97,18 @@
             "hedef": {
               "tur": "kategori",
               "adresAdi": "elektronik-aksesuar"
+            }
+          },
+          {
+            "hedef": {
+              "tur": "kategori",
+              "adresAdi": "spor-ve-outdoor"
+            }
+          },
+          {
+            "hedef": {
+              "tur": "kategori",
+              "adresAdi": "kisisel-bakim"
             }
           },
           {

@@ -15,6 +15,9 @@
 //   satırlar. Kurulum birden çok kategori satırını kilitler, kategori silme de üstü ve altlarını sırayla
 //   günceller; kategori kilidi olmasa ikisi satırları ters sırayla bekleyip kilitlenebilirdi (menülerdeki
 //   kuralın aynısı, cekirdek/moduller/menu/baslangic.ts). Kategori kilidini alan işler düzen kilidini almaz.
+// - Görseller (kart 0115): dosya kaydetme veritabanı işleminin içinde çağrılamaz (karar 0058). Görsele başvuran
+//   düzeni yalnız açılıştaki kurulum yazar: görselleri önce kaydeder, kimliklerini buraya verir. Vitrin ve
+//   uçlar bu düzeni yazamaz, katalogdaki gibi KatalogBekleniyor alır (vitrin boş görür).
 import { and, inArray, isNull } from "drizzle-orm";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { VeritabaniIslemi } from "../../veritabani/baglanti.ts";
@@ -23,6 +26,7 @@ import {
   type BolumKutuphanesi,
   baslangicBaglariniCoz,
   baslangicBagTurleri,
+  baslangicKayitTurleri,
   type Duzen,
   duzenBaslangicBaglari,
 } from "../../vitrin/bolum-kutuphanesi/duzen.ts";
@@ -53,15 +57,30 @@ export const baslangicDuzeniniBagla = async (
   islem: VeritabaniIslemi,
   duzen: Duzen,
   kutuphane: BolumKutuphanesi,
+  gorseller?: ReadonlyMap<string, string>,
 ): Promise<{ duzen: Duzen; bulunamayanlar: string[] }> => {
   const aranan = duzenBaslangicBaglari(duzen, kutuphane);
   if (baslangicBagTurleri.every((tur) => aranan[tur].size === 0)) {
     return { duzen, bulunamayanlar: [] };
   }
-  if (!(await katalogKuruluMu(islem))) throw new KatalogBekleniyor();
+  // Görseller kaydedilmeden (açılıştaki kurulumun dışında) görsele başvuran düzen yazılmaz.
+  if (aranan.gorsel.size > 0 && gorseller === undefined) throw new KatalogBekleniyor();
+  // Yalnız görsele başvuran düzen kataloğu beklemez: görsellerin kataloğa bağı yoktur.
+  if (
+    baslangicKayitTurleri.some((tur) => aranan[tur].size > 0) &&
+    !(await katalogKuruluMu(islem))
+  ) {
+    throw new KatalogBekleniyor();
+  }
   if (aranan.kategori.size > 0) await kategoriKilidiAl(islem);
-  const kimlikler = {} as Record<BaslangicBagTuru, Map<string, string>>;
-  for (const tur of baslangicBagTurleri) {
+  const kimlikler: Record<BaslangicBagTuru, ReadonlyMap<string, string>> = {
+    kategori: new Map(),
+    marka: new Map(),
+    etiket: new Map(),
+    urun: new Map(),
+    gorsel: gorseller ?? new Map(),
+  };
+  for (const tur of baslangicKayitTurleri) {
     const tablo = tablolar[tur];
     const adlar = [...aranan[tur]];
     const satirlar =

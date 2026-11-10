@@ -23,7 +23,7 @@
 //
 // Site doğrulaması bu dosyayı Node ile doğrudan çalıştırır: veritabanı kodu almaz.
 import { z } from "zod";
-import { galeriSinirlari } from "../../kayitlar/gorsel.ts";
+import { baslangicGorselAdiKalibi, galeriSinirlari } from "../../kayitlar/gorsel.ts";
 import { ozellikSinirlari } from "../../kayitlar/ozellik.ts";
 import { urunDurumVitrini, varyantSinirlari } from "../../kayitlar/urun.ts";
 import type { VideoSitesi } from "../../kayitlar/video-siteleri.ts";
@@ -85,10 +85,13 @@ const adresAdi = z.string().max(adresAdiUzunlugu).regex(adresAdiKalibi);
 // Galeri görselinin dosyası: sitenin baslangic/gorseller/ klasöründe, küçük harfli, tireli ad ve
 // görsel türünün uzantısı. Alt klasör ve ".." yoktur.
 export const katalogGorselKlasoru = "baslangic/gorseller";
-export const katalogGorselAdi = z.string().regex(/^[a-z0-9][a-z0-9-]{0,99}\.(png|jpg|webp)$/);
+export const katalogGorselAdi = z.string().regex(baslangicGorselAdiKalibi);
 const alternatifMetin = galeriGorselGirdisi.shape.alternatifMetin;
 
-const kategori = kategoriGirdisi.pick({ ad: true, aciklama: true }).extend({ adresAdi });
+// Kategorinin görseli de baslangic/gorseller/ klasöründeki dosyanın adıyla (kart 0115).
+const kategori = kategoriGirdisi
+  .pick({ ad: true, aciklama: true })
+  .extend({ adresAdi, gorsel: katalogGorselAdi.optional() });
 // Grup şeması açıklamayı koşullu alır, türü açıklamayı tanımaz: okunan değer açık türe çevrilir.
 const marka = grupGirdisi({ aciklama: true, logo: false })
   .extend({ adresAdi })
@@ -401,3 +404,14 @@ export const katalogKurallari = (
     return sorunlar;
   });
 };
+
+// Kataloğun kullandığı görsel dosyaları: ürün galerileri ve kategoriler.
+export const katalogGorselAdlari = (katalog: KatalogBaslangici): Set<string> =>
+  new Set([
+    ...katalog.urunler.flatMap((urun) =>
+      urun.galeri.flatMap((oge) => ("gorsel" in oge ? [oge.gorsel] : [])),
+    ),
+    ...katalog.kategoriler.flatMap((kategori) =>
+      kategori.gorsel === undefined ? [] : [kategori.gorsel],
+    ),
+  ]);

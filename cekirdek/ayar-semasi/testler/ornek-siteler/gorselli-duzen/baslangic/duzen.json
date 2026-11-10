@@ -1,0 +1,13 @@
+{
+  "ust-kisim": [],
+  "ana-sayfa": [
+    {
+      "tur": "genis-afis",
+      "degerler": {
+        "baslik": "Afiş",
+        "gorsel": "afis.png"
+      }
+    }
+  ],
+  "alt-kisim": []
+}

@@ -40,6 +40,7 @@ const kimlikler = {
     ["kupa", randomUUID()],
     ["atki", randomUUID()],
   ]),
+  gorsel: new Map<string, string>(),
 };
 
 const anaSayfa = (bolumler: Duzen["ana-sayfa"]): Duzen => ({

@@ -165,11 +165,15 @@ export const baslangicDuzeniSorunlari = (
     }),
   );
 
-// Sitenin başlangıç düzeninin adres adıyla başvurduğu kayıt türleri (kart 0114). Görsel başvurusu kart 0115'te.
-export const baslangicBagTurleri = ["kategori", "marka", "etiket", "urun"] as const;
+// Sitenin başlangıç düzeninin adres adıyla başvurduğu kayıt türleri (kart 0114) ve dosya adıyla başvurduğu
+// görsel (kart 0115). Kayıtlar başlangıç kataloğunda, görsel baslangic/gorseller/ klasöründe aranır.
+export const baslangicKayitTurleri = ["kategori", "marka", "etiket", "urun"] as const;
+export type BaslangicKayitTuru = (typeof baslangicKayitTurleri)[number];
+export const baslangicBagTurleri = [...baslangicKayitTurleri, "gorsel"] as const;
 export type BaslangicBagTuru = (typeof baslangicBagTurleri)[number];
 
-// Bir bölümün adres adı başvuruları: tür, adres adı ve değerlerdeki yolu ("kutular.0.kategori").
+// Bir bölümün başlangıç başvuruları: tür, adres adı (görselde dosya adı) ve değerlerdeki yolu
+// ("kutular.0.kategori").
 const adresAdiBaglari = (tarif: BolumTarifi, degerler: BolumDegerleri) => {
   const baglar = bolumBaglari(tarif, degerler);
   return baslangicBagTurleri.flatMap((tur) =>
@@ -182,25 +186,23 @@ const adresAdiBaglari = (tarif: BolumTarifi, degerler: BolumDegerleri) => {
 export const baslangicDuzeniBulunamayanlar = (
   duzen: BaslangicDuzeni,
   kutuphane: BolumKutuphanesi,
-  varolanlar: Readonly<Record<BaslangicBagTuru, ReadonlySet<string>>>,
-): { yer: (string | number)[]; tur: BaslangicBagTuru; adresAdi: string }[] =>
+  varolanlar: Readonly<Record<BaslangicKayitTuru, ReadonlySet<string>>>,
+): { yer: (string | number)[]; tur: BaslangicKayitTuru; adresAdi: string }[] =>
   duzenAlanlari.flatMap((alan) =>
     duzen[alan].flatMap((bolum, sira) => {
       const tarif = Object.hasOwn(kutuphane, bolum.tur) ? kutuphane[bolum.tur] : undefined;
       if (tarif === undefined) return [];
-      return adresAdiBaglari(tarif, bolum.degerler)
-        .filter(({ tur, adresAdi }) => !varolanlar[tur].has(adresAdi))
-        .map(({ tur, adresAdi, yol }) => ({
-          yer: [alan, sira, "degerler", ...yol.split(".")],
-          tur,
-          adresAdi,
-        }));
+      return adresAdiBaglari(tarif, bolum.degerler).flatMap(({ tur, adresAdi, yol }) =>
+        tur === "gorsel" || varolanlar[tur].has(adresAdi)
+          ? []
+          : [{ yer: [alan, sira, "degerler", ...yol.split(".")], tur, adresAdi }],
+      );
     }),
   );
 
-// Kurulacak düzenin türlere göre başvurduğu adres adları.
+// Düzenin türlere göre başvurduğu adres adları ve görsel dosyaları.
 export const duzenBaslangicBaglari = (
-  duzen: Duzen,
+  duzen: Record<DuzenAlani, readonly Pick<BolumOrnegi, "tur" | "degerler">[]>,
   kutuphane: BolumKutuphanesi,
 ): Record<BaslangicBagTuru, Set<string>> => {
   const adlar = {
@@ -208,6 +210,7 @@ export const duzenBaslangicBaglari = (
     marka: new Set<string>(),
     etiket: new Set<string>(),
     urun: new Set<string>(),
+    gorsel: new Set<string>(),
   };
   for (const alan of duzenAlanlari) {
     for (const bolum of duzen[alan]) {
@@ -257,8 +260,9 @@ const yoldakiDeger = (kok: Record<string, unknown>, yol: string[]): unknown => {
 
 const sayiMi = (parca: string | undefined) => parca !== undefined && /^\d+$/.test(parca);
 
-// Kurulan başlangıç düzenindeki adres adlarını kimliğe çevirir (kart 0114). kimlikler: türe göre adres adından
-// silinmemiş kaydın kimliğine. Bulunamayan adres adı (kurulumdan önce mağaza sahibi kaydı silmiş ya da adres
+// Kurulan başlangıç düzenindeki adres adlarını ve görsel dosya adlarını kimliğe çevirir (kart 0114, 0115).
+// kimlikler: türe göre adres adından silinmemiş kaydın kimliğine, görselde dosya adından kaydedilen dosyanın
+// kimliğine. Bulunamayan adres adı (kurulumdan önce mağaza sahibi kaydı silmiş ya da adres
 // adını değiştirmiş) kendi öğesiyle düşer: elle seçilen listede yalnız o ürün (seçim boş kalırsa onu taşıyan
 // liste öğesi, örneğin sekme), bir listenin öğesindeyse o öğe, bölümün kendi alanındaysa bölüm. Önce bulunan
 // bütün bağlar yazılır, sonra düşenler işaretlenir: aynı öğenin iki bağı bulunamasa da öğe bir kez düşer.

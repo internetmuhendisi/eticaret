@@ -38,6 +38,7 @@ import {
   bosDuzen,
   type Duzen,
   type DuzenSorunu,
+  duzenBaslangicBaglari,
   duzenSemasi,
   duzenSorunlari,
 } from "../../vitrin/bolum-kutuphanesi/duzen.ts";
@@ -49,11 +50,12 @@ import {
   kayitliKip,
 } from "../../vitrin/bolum-kutuphanesi/tarif.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
-import { gorselHazirMi } from "../dosya/servis.ts";
+import { dosyaKlasoru, gorselHazirMi } from "../dosya/servis.ts";
 import { etiketler } from "../etiket/model.ts";
 import { kategoriler } from "../kategori/model.ts";
 import { markalar } from "../marka/model.ts";
 import { menuler } from "../menu/model.ts";
+import { baslangicGorselleriyle } from "../urun/baslangic.ts";
 import { urunler } from "../urun/model.ts";
 import { baslangicDuzeniniBagla, KatalogBekleniyor } from "./baslangic.ts";
 import { duzenSurumleri } from "./model.ts";
@@ -191,7 +193,11 @@ export const duzenServisi = (
   };
 
   // Kilit alınmış işlemin içinde: sürüm yoksa başlangıç düzenini yazar ve son satırı döndürür.
-  const baslangicliSon = async (islem: VeritabaniIslemi): Promise<Satir> => {
+  // gorseller: açılıştaki kurulumun kaydettiği görseller, dosya adından kimliğe (kart 0115).
+  const baslangicliSon = async (
+    islem: VeritabaniIslemi,
+    gorseller?: ReadonlyMap<string, string>,
+  ): Promise<Satir> => {
     const son = await sonSatir(islem);
     if (son !== undefined) return son;
     // Kayda başvuruyorsa ve katalog kurulmamışsa KatalogBekleniyor: hiçbir şey yazılmaz.
@@ -199,6 +205,7 @@ export const duzenServisi = (
       islem,
       baslangictanDuzen(site().duzenBaslangici, kutuphane(), randomUUID),
       kutuphane(),
+      gorseller,
     );
     const denenen = duzenSorunlari(duzen, kutuphane());
     if ("sorunlar" in denenen) {
@@ -326,14 +333,25 @@ export const duzenServisi = (
   };
 
   // Başlangıç düzenini kurar (arka plan süreci açılırken, katalog ve menülerden sonra). Yazıldıysa true;
-  // düzen kuruluysa false.
-  const baslangiciKur = async (vt: Veritabani): Promise<boolean> =>
-    vt.transaction(async (islem) => {
-      await duzenKilidiAl(islem);
-      if ((await sonSatir(islem)) !== undefined) return false;
-      await baslangicliSon(islem);
-      return true;
-    });
+  // düzen kuruluysa false. klasor, düzenin görsellerinin kaydedileceği dosya klasörüdür; yalnız düzen görsele
+  // başvuruyorsa sorulur (kart 0115). Görseller işlemden önce kaydedilir, düzen yazılmazsa silinmiş işaretlenir.
+  const baslangiciKur = async (
+    vt: Veritabani,
+    klasor: () => string = dosyaKlasoru,
+  ): Promise<boolean> => {
+    const yaz = (gorseller?: ReadonlyMap<string, string>) =>
+      vt.transaction(async (islem) => {
+        await duzenKilidiAl(islem);
+        if ((await sonSatir(islem)) !== undefined) return false;
+        await baslangicliSon(islem, gorseller);
+        return true;
+      });
+    const adlar = duzenBaslangicBaglari(site().duzenBaslangici, kutuphane()).gorsel;
+    if (adlar.size === 0) return yaz();
+    // Kurulu düzende görseller boşuna kaydedilmesin. Kesin cevap işlemin içinde, kilitten sonradır.
+    if ((await sonSatir(vt)) !== undefined) return false;
+    return baslangicGorselleriyle(vt, site(), adlar, klasor, yaz);
+  };
 
   // Tema değişikliği için (kart 0113): tema servisi tema kilidini aldıktan sonra aynı veritabanı işleminde
   // çağırır. Kilit sırası tema, düzen; düzen işlemleri tema kilidini almaz, kilitlenme olmaz.

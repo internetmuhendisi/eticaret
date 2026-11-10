@@ -343,7 +343,8 @@ describe("örnek klasörler", () => {
     // Başlangıç düzeni (kart 0106).
     ["duzen-tanimsiz-bolum", `${duzenBaslangicDosyasi}: ana-sayfa.0.tur: bolum-tanimsiz`],
     ["duzen-bozuk-bicim", `${duzenBaslangicDosyasi}: ana-sayfa: `],
-    // Kayda adres adıyla başvuru (kart 0114): adres adı başlangıç kataloğunda olmalı, görsel başvurusu yok.
+    // Kayda adres adıyla başvuru (kart 0114): adres adı başlangıç kataloğunda olmalı. Görsel dosya adıyla
+    // başvurulur (kart 0115): dosya baslangic/gorseller/ klasöründe olmalı, ad yol kaçışı içeremez.
     [
       "duzen-katalogda-yok",
       `${duzenBaslangicDosyasi}: ana-sayfa.0.degerler.kategoriler.1.kategori: kategori olmayan: ${katalogBaslangicDosyasi} dosyasında bu adres adı yok`,
@@ -352,10 +353,10 @@ describe("örnek klasörler", () => {
       "duzen-urun-katalogda-yok",
       `${duzenBaslangicDosyasi}: ana-sayfa.0.degerler.urunler.urunler.1: urun olmayan-urun:`,
     ],
-    [
-      "duzen-gorselli",
-      `${duzenBaslangicDosyasi}: ana-sayfa.0.degerler.gorsel: baslangicta-kayit-secilemez`,
-    ],
+    ["duzen-gorselli", "baslangic/gorseller/afis.webp: dosya yok"],
+    ["duzen-gorsel-adi", `${duzenBaslangicDosyasi}: ana-sayfa.0.degerler.gorsel: `],
+    ["katalog-kategori-gorsel-yok", "baslangic/gorseller/yok.png: dosya yok"],
+    ["katalog-kategori-gorsel-adi", `${katalogBaslangicDosyasi}: kategoriler.0.gorsel: `],
     // Başlangıç menüleri (kart 0107): hata iletileri koddur (cekirdek/moduller/menu/semalar.ts).
     ["menu-hedef-tanimsiz", `${menuBaslangicDosyasi}: 0.ogeler.1.hedef.adresAdi: hedef-yok`],
     ["menu-derinlik", `${menuBaslangicDosyasi}: 0.ogeler.0.altlar.0.altlar: derinlik`],
@@ -527,6 +528,17 @@ describe("başlangıç kataloğu (kart 0084)", () => {
     expect(dogrula("katalog-dolu").gecerli && dogrula("katalog-dolu")).toMatchObject({
       site: { katalogGorselleri: {} },
     });
+  });
+
+  it("kategorinin ve başlangıç düzeninin görselleri de site klasöründeki yollarıyla okunur (kart 0115)", () => {
+    const sonuc = dogrula("gorselli-duzen");
+    if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+    expect(Object.keys(sonuc.site.katalogGorselleri).toSorted()).toEqual([
+      "afis.png",
+      "bir.png",
+      "kategori.png",
+    ]);
+    expect(sonuc.site.katalogBaslangici.kategoriler[0]?.gorsel).toBe("kategori.png");
   });
 
   it("katalog görseli bağlantı ya da klasör olamaz (kart 0087)", () => {

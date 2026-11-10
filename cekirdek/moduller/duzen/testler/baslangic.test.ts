@@ -3,8 +3,11 @@
 // boş görür), bulunamayan kaydın kendi öğesiyle düşmesi ve hatanın bir kez kaydedilmesi, kurulumun bir kez
 // yapılması, açık duran silmeyle yarış.
 import { randomUUID } from "node:crypto";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { eq, sql } from "drizzle-orm";
+import { eq, isNull, sql } from "drizzle-orm";
+import sharp from "sharp";
 import { afterEach, describe, expect, it } from "vitest";
 import { type Site, siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
 import { hataIzlemeAraciniBagla, type IzlenenHata } from "../../../izleme/hata-katmani.ts";
@@ -15,6 +18,8 @@ import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import type { BaslangicDuzeni } from "../../../vitrin/bolum-kutuphanesi/duzen.ts";
 import { bolumKutuphanesi } from "../../../vitrin/bolum-kutuphanesi/kutuphane.ts";
+import { dosyalar } from "../../dosya/model.ts";
+import { gorselHazirMi } from "../../dosya/servis.ts";
 import { etiketServisi } from "../../etiket/servis.ts";
 import { kategoriler } from "../../kategori/model.ts";
 import { kategoriEkle, kategoriKilidiAl, kategoriSil } from "../../kategori/servis.ts";
@@ -290,4 +295,140 @@ describe("adres adıyla başvuran başlangıç düzeni", () => {
     const { duzen } = await servis.duzenOku(vt);
     expect(duzen["ana-sayfa"][0]?.degerler).toEqual({ kategoriler: [{ kategori: k.ev }] });
   });
+});
+
+// Görsele dosya adıyla başvuran başlangıç düzeni (kart 0115).
+describe("görsele başvuran başlangıç düzeni", () => {
+  const klasorler: string[] = [];
+  afterEach(() => {
+    for (const klasor of klasorler.splice(0)) rmSync(klasor, { recursive: true, force: true });
+  });
+  const klasorAc = () => {
+    const klasor = mkdtempSync(join(tmpdir(), "duzen-gorsel-"));
+    klasorler.push(klasor);
+    return klasor;
+  };
+  const gorselDosyasi = async (klasor: string, ad: string) => {
+    const yol = join(klasor, ad);
+    writeFileSync(
+      yol,
+      await sharp({
+        create: { width: 600, height: 400, channels: 3, background: { r: 0, g: 90, b: 200 } },
+      })
+        .png()
+        .toBuffer(),
+    );
+    return yol;
+  };
+  const afisler: BaslangicDuzeni["ana-sayfa"] = [
+    { tur: "genis-afis", gizli: false, degerler: { baslik: "Bir", gorsel: "bir.png" } },
+    { tur: "genis-afis", gizli: false, degerler: { baslik: "İki", gorsel: "iki.png" } },
+  ];
+  const gorselliSite = async (bolumler = afisler): Promise<Site> => {
+    const kaynak = klasorAc();
+    return {
+      ...ornekSite,
+      duzenBaslangici: { "ust-kisim": [], "ana-sayfa": bolumler, "alt-kisim": [] },
+      katalogGorselleri: {
+        "bir.png": await gorselDosyasi(kaynak, "bir.png"),
+        "iki.png": await gorselDosyasi(kaynak, "iki.png"),
+      },
+    };
+  };
+  const hizmet = (gorselli: Site) =>
+    duzenServisi(
+      () => gorselli,
+      () => bolumKutuphanesi,
+    );
+  // Görsel başına kaynak ve dört boyut.
+  const gorselDosyalari = 5;
+  const silinmemis = async (vt: Veritabani) =>
+    (await vt.select().from(dosyalar).where(isNull(dosyalar.silinme_zamani))).length;
+  const tumDosyalar = async (vt: Veritabani) => (await vt.select().from(dosyalar)).length;
+
+  it("kurulum görselleri boyutlarıyla kaydeder, dosya adlarını kimliğe çevirir; katalog beklenmez", async () => {
+    const vt = await siteAc();
+    const gorselli = await gorselliSite();
+    const klasor = klasorAc();
+    const servisim = hizmet(gorselli);
+    expect(await servisim.baslangiciKur(vt, () => klasor)).toBe(true);
+    const { duzen } = await servisim.duzenOku(vt);
+    const [bir, iki] = duzen["ana-sayfa"].map((b) => b.degerler["gorsel"] as string);
+    expect(bir).not.toBe(iki);
+    expect(await vt.transaction((i) => gorselHazirMi(i, bir ?? ""))).toBe("hazir");
+    expect(await vt.transaction((i) => gorselHazirMi(i, iki ?? ""))).toBe("hazir");
+    expect(await silinmemis(vt)).toBe(2 * gorselDosyalari);
+    expect([...(await servisim.vitrindekiGorseller(vt))].toSorted()).toEqual([bir, iki].toSorted());
+    expect(duzenHatalari()).toEqual([]);
+  });
+
+  it("vitrin ve uçlar görselli düzeni yazamaz: vitrin boş görür, hiçbir şey yazılmaz", async () => {
+    const vt = await siteAc();
+    const servisim = hizmet(await gorselliSite());
+    await expect(servisim.duzenOku(vt)).rejects.toBeInstanceOf(KatalogBekleniyor);
+    expect(await servisim.cizilecekBolumler(vt, "ana-sayfa")).toEqual([]);
+    expect(await surumSayisi(vt)).toBe(0);
+    expect(await tumDosyalar(vt)).toBe(0);
+  });
+
+  it("ikinci kurulum görsel kaydetmez", async () => {
+    const vt = await siteAc();
+    const servisim = hizmet(await gorselliSite());
+    const klasor = klasorAc();
+    expect(await servisim.baslangiciKur(vt, () => klasor)).toBe(true);
+    expect(await servisim.baslangiciKur(vt, () => klasor)).toBe(false);
+    expect(await tumDosyalar(vt)).toBe(2 * gorselDosyalari);
+    expect(await surumSayisi(vt)).toBe(1);
+  });
+
+  it("düzen yazılamazsa (katalog bekleniyor) kaydedilen görseller silinmiş işaretlenir, sonra yeniden kurulur", async () => {
+    const vt = await siteAc();
+    const gorselli = await gorselliSite([
+      ...afisler,
+      {
+        tur: "kategori-kutulari",
+        gizli: false,
+        degerler: { kategoriler: [{ kategori: "giyim" }] },
+      },
+    ]);
+    const servisim = hizmet(gorselli);
+    const klasor = klasorAc();
+    await expect(servisim.baslangiciKur(vt, () => klasor)).rejects.toBeInstanceOf(
+      KatalogBekleniyor,
+    );
+    expect(await surumSayisi(vt)).toBe(0);
+    expect(await tumDosyalar(vt)).toBe(2 * gorselDosyalari);
+    expect(await silinmemis(vt)).toBe(0);
+    await kategoriEkle(vt, yonetici(), { ad: "Giyim" });
+    expect(await servisim.baslangiciKur(vt, () => klasor)).toBe(true);
+    expect(await silinmemis(vt)).toBe(2 * gorselDosyalari);
+  });
+
+  it("görsel kaydedilemezse (içi bozuk) düzen yazılmaz, önceki görsel silinmiş işaretlenir", async () => {
+    const vt = await siteAc();
+    const gorselli = await gorselliSite();
+    writeFileSync(gorselli.katalogGorselleri["iki.png"] ?? "", "bozuk");
+    const klasor = klasorAc();
+    await expect(hizmet(gorselli).baslangiciKur(vt, () => klasor)).rejects.toThrow(/iki\.png/);
+    expect(await surumSayisi(vt)).toBe(0);
+    expect(await silinmemis(vt)).toBe(0);
+  });
+
+  it("aynı anda üç kurulumdan biri yazar; ötekilerin kaydettiği görseller silinmiş işaretlenir", async () => {
+    const vt = await siteAc();
+    const servisim = hizmet(await gorselliSite());
+    const klasor = klasorAc();
+    const sonuclar = await Promise.all(
+      [1, 2, 3].map(() => servisim.baslangiciKur(vt, () => klasor)),
+    );
+    expect(sonuclar.filter(Boolean)).toHaveLength(1);
+    expect(await surumSayisi(vt)).toBe(1);
+    expect(await silinmemis(vt)).toBe(2 * gorselDosyalari);
+    const { duzen } = await servisim.duzenOku(vt);
+    for (const bolum of duzen["ana-sayfa"]) {
+      expect(
+        await vt.transaction((i) => gorselHazirMi(i, bolum.degerler["gorsel"] as string)),
+      ).toBe("hazir");
+    }
+  }, 20_000);
 });

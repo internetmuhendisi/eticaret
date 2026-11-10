@@ -16,6 +16,7 @@ import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { dosyaBoyutlari, dosyalar } from "../../dosya/model.ts";
+import { gorselHazirMi } from "../../dosya/servis.ts";
 import { etiketler } from "../../etiket/model.ts";
 import { birimFiyatlari, fiyatGecmisi } from "../../fiyat/model.ts";
 import { siteninFiyatServisi } from "../../fiyat/servis.ts";
@@ -398,6 +399,44 @@ describe("galeri görselleri", () => {
     expect(
       urun.birimler.filter((b) => !b.silindi).map((b) => b.gorsel && metni.get(b.gorsel)),
     ).toEqual(["Bir", "İki", undefined]);
+  });
+
+  it("kategorinin görseli boyutlarıyla kaydedilir ve kategoriye bağlanır; görselsiz kategori boş kalır (kart 0115)", async () => {
+    const vt = await siteAc();
+    const klasor = klasorAc();
+    const site = await galerili((katalog) => {
+      const [ilk] = katalog.kategoriler;
+      if (ilk === undefined) throw new Error("Kategori beklenirdi.");
+      ilk.gorsel = "iki.png";
+      katalog.kategoriler.push({ ad: "Görselsiz", adresAdi: "gorselsiz" });
+    });
+    expect(await katalogBaslangiciniKur(vt, site, () => klasor)).toBe(true);
+    const okunan = await kategorileriOku(vt);
+    const ilkAdi = site.katalogBaslangici.kategoriler[0]?.adresAdi;
+    const gorselli = okunan.find((k) => k.adresAdi === ilkAdi);
+    expect(await vt.transaction((i) => gorselHazirMi(i, gorselli?.gorsel ?? ""))).toBe("hazir");
+    expect(okunan.find((k) => k.adresAdi === "gorselsiz")?.gorsel).toBeUndefined();
+    // Galerideki ve kategorideki aynı dosya bir kez kaydedilir.
+    expect(await silinmemisDosyalar(vt)).toBe(dosyaSayisi);
+  });
+
+  it("yalnız kategoride kullanılan görsel de kaydedilir; katalog yazılamazsa silinmiş işaretlenir (kart 0115)", async () => {
+    const vt = await siteAc();
+    const klasor = klasorAc();
+    const bozuk = await galerili((katalog) => {
+      for (const urun of katalog.urunler) {
+        urun.galeri = [];
+        urun.stokKodu = "AYNI-KOD";
+      }
+      const [ilk] = katalog.kategoriler;
+      if (ilk === undefined) throw new Error("Kategori beklenirdi.");
+      ilk.gorsel = "iki.png";
+    });
+    await expect(katalogBaslangiciniKur(vt, bozuk, () => klasor)).rejects.toMatchObject({
+      kod: "cakisma",
+    });
+    expect((await vt.select({ sayi: count() }).from(dosyalar))[0]?.sayi).toBe(5);
+    expect(await silinmemisDosyalar(vt)).toBe(0);
   });
 
   it("kurulu katalogda görsel kaydedilmez", async () => {

@@ -24,6 +24,7 @@
 //   deposuna kaydedilir; katalog işlemi onları kimlikleriyle galeriye bağlar. Katalog yazılmazsa (hata
 //   ya da arada başka bir süreç kurdu) bu çağrının kaydettiği görseller ve boyutları silinmiş
 //   işaretlenir; kayıtsız dosyaların temizliği kart 0093'tedir. Görsel kaydedilemezse katalog yazılmaz.
+//   Kategorinin görseli de aynı yolla kaydedilir (kart 0115).
 import { readFile } from "node:fs/promises";
 import { sql } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
@@ -42,7 +43,7 @@ import { ozellikler } from "../ozellik/model.ts";
 import { ozellikServisi } from "../ozellik/servis.ts";
 import { stokServisi } from "../stok/servis.ts";
 import { siteninVergiServisi } from "../vergi/servis.ts";
-import type { KatalogBaslangici } from "./baslangic-semasi.ts";
+import { type KatalogBaslangici, katalogGorselAdlari } from "./baslangic-semasi.ts";
 import { urunKilidiAl } from "./kilit.ts";
 import { urunler } from "./model.ts";
 import { siteninUrunServisi } from "./servis.ts";
@@ -77,37 +78,50 @@ const kimligi = (harita: Map<string, string>, adresAdi: string) => {
   return kimlik;
 };
 
-// Katalogdaki görselleri boyutlarıyla dosya deposuna kaydeder; dosya adından kaydın kimliğine. Bir
-// görsel kaydedilemezse o ana kadar kaydedilenler silinmiş işaretlenir, hata verilir.
-const gorselleriKaydet = async (
+// Verilen görselleri (baslangic/gorseller/ klasöründeki dosya adları) boyutlarıyla dosya deposuna kaydeder ve
+// dosya adından kaydın kimliğine haritayla yaz'ı çağırır. Dosya kaydetme veritabanı işleminin içinde
+// çağrılamaz (karar 0058), bu yüzden yaz'dan öncedir. Bir görsel kaydedilemezse, yaz hata verirse ya da false
+// dönerse (arada başka bir süreç kurdu) kaydedilenler silinmiş işaretlenir. Başlangıç düzeni de kullanır.
+export const baslangicGorselleriyle = async (
   vt: Veritabani,
   site: Site,
+  adlar: ReadonlySet<string>,
   klasor: () => string,
-  kaydedilenler: string[],
-): Promise<Map<string, string>> => {
-  const kimlikler = new Map<string, string>();
-  const adlar = new Set(
-    site.katalogBaslangici.urunler.flatMap((urun) =>
-      urun.galeri.flatMap((oge) => ("gorsel" in oge ? [oge.gorsel] : [])),
-    ),
-  );
-  for (const ad of adlar) {
-    const yol = site.katalogGorselleri[ad];
-    // Site doğrulaması her adın dosyasını bulur; buraya düşen bir yazılım hatasıdır.
-    if (yol === undefined) throw new Error(`Başlangıç kataloğunun görseli bulunamadı: ${ad}.`);
-    const sonuc = await gorselKaydet(vt, await readFile(yol), klasor());
-    if (!sonuc.tamam) {
-      throw new Error(`Başlangıç kataloğunun görseli kaydedilemedi: ${ad} (${sonuc.hata}).`);
+  yaz: (gorseller: Map<string, string>) => Promise<boolean>,
+): Promise<boolean> => {
+  const kaydedilenler: string[] = [];
+  let yazildi = false;
+  try {
+    const kimlikler = new Map<string, string>();
+    for (const ad of adlar) {
+      const yol = site.katalogGorselleri[ad];
+      // Site doğrulaması her adın dosyasını bulur; buraya düşen bir yazılım hatasıdır.
+      if (yol === undefined) throw new Error(`Başlangıç görseli bulunamadı: ${ad}.`);
+      const sonuc = await gorselKaydet(vt, await readFile(yol), klasor());
+      if (!sonuc.tamam) {
+        throw new Error(`Başlangıç görseli kaydedilemedi: ${ad} (${sonuc.hata}).`);
+      }
+      kaydedilenler.push(sonuc.dosya.kimlik, ...Object.values(sonuc.boyutlar).map((d) => d.kimlik));
+      kimlikler.set(ad, sonuc.dosya.kimlik);
     }
-    kaydedilenler.push(sonuc.dosya.kimlik, ...Object.values(sonuc.boyutlar).map((d) => d.kimlik));
-    kimlikler.set(ad, sonuc.dosya.kimlik);
+    yazildi = await yaz(kimlikler);
+    return yazildi;
+  } finally {
+    // Temizlik hatası asıl hatanın üstüne yazmaz: günlüğe yazılır, kalan dosyaların temizliği kart
+    // 0093'tedir.
+    if (!yazildi) {
+      for (const kimlik of kaydedilenler) {
+        await dosyaSil(vt, kimlik).catch((hata: unknown) =>
+          gunluk.hata("başlangıç görseli silinmiş işaretlenemedi", { hata }),
+        );
+      }
+    }
   }
-  return kimlikler;
 };
 
 // Katalog yazıldıysa true. Dosya boşsa ya da katalog zaten kurulmuşsa hiçbir şey yazılmaz. klasor,
-// galeri görsellerinin kaydedileceği dosya klasörüdür; verilmezse sitenin klasörü (DOSYA_KLASORU),
-// yalnız katalogda görsel varsa sorulur.
+// görsellerin kaydedileceği dosya klasörüdür; verilmezse sitenin klasörü (DOSYA_KLASORU), yalnız katalogda
+// görsel varsa sorulur.
 export const katalogBaslangiciniKur = async (
   vt: Veritabani,
   site: Site,
@@ -117,23 +131,9 @@ export const katalogBaslangiciniKur = async (
   if (bosKatalogMu(katalog)) return false;
   // Kurulu katalogda görseller boşuna kaydedilmesin. Kesin cevap işlemin içinde, kilitlerden sonradır.
   if (await vt.transaction(katalogKuruluMu)) return false;
-  const kaydedilenler: string[] = [];
-  let yazildi = false;
-  try {
-    const gorseller = await gorselleriKaydet(vt, site, klasor, kaydedilenler);
-    yazildi = await katalogIsleminiYaz(vt, site, gorseller);
-    return yazildi;
-  } finally {
-    // Temizlik hatası asıl hatanın üstüne yazmaz: günlüğe yazılır, kalan dosyaların temizliği kart
-    // 0093'tedir.
-    if (!yazildi) {
-      for (const kimlik of kaydedilenler) {
-        await dosyaSil(vt, kimlik).catch((hata: unknown) =>
-          gunluk.hata("başlangıç kataloğunun görseli silinmiş işaretlenemedi", { hata }),
-        );
-      }
-    }
-  }
+  return baslangicGorselleriyle(vt, site, katalogGorselAdlari(katalog), klasor, (gorseller) =>
+    katalogIsleminiYaz(vt, site, gorseller),
+  );
 };
 
 const katalogIsleminiYaz = (
@@ -162,7 +162,15 @@ const katalogIsleminiYaz = (
     );
     const kategoriKimlikleri = new Map<string, string>();
     for (const kategori of katalog.kategoriler) {
-      kategoriKimlikleri.set(kategori.adresAdi, await kategoriEkle(islem, kim, kategori));
+      const { gorsel, ...alanlar } = kategori;
+      kategoriKimlikleri.set(
+        kategori.adresAdi,
+        await kategoriEkle(
+          islem,
+          kim,
+          gorsel === undefined ? alanlar : { ...alanlar, gorsel: kimligi(gorseller, gorsel) },
+        ),
+      );
     }
     const markaKimlikleri = new Map<string, string>();
     for (const marka of katalog.markalar) {

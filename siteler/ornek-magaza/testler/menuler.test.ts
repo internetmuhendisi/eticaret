@@ -60,10 +60,12 @@ describe("Örnek Mağaza'nın menüleri", () => {
       "Giyim",
       "Ev ve Yaşam",
       ["Elektronik Aksesuar", ["Kablosuz Kulaklık"]],
+      "Spor ve Outdoor",
+      "Kişisel Bakım",
       ["Markalar", ["Örnek Ses"]],
     ]);
     expect(once?.[2]?.hedef).toEqual({ tur: "kategori", adresAdi: "elektronik-aksesuar" });
-    expect(once?.[3]?.altlar[0]?.hedef).toEqual({ tur: "marka", adresAdi: "ornek-ses" });
+    expect(once?.[5]?.altlar[0]?.hedef).toEqual({ tur: "marka", adresAdi: "ornek-ses" });
     const sonra = await vitrinMenusu(vt, "ana-menu", { an: aralik });
     expect(metinler(sonra).at(-1)).toBe("Yılbaşı");
     expect(sonra?.at(-1)?.hedef).toEqual({ tur: "urun", adresAdi: "yilbasi-kupa-seti" });
@@ -79,6 +81,8 @@ describe("Örnek Mağaza'nın menüleri", () => {
       "Giyim",
       "Ev ve Yaşam",
       "Elektronik Aksesuar",
+      "Spor ve Outdoor",
+      "Kişisel Bakım",
     ]);
     const [giyim] = await vt
       .select({ kimlik: kategoriler.kimlik })
@@ -94,7 +98,17 @@ describe("Örnek Mağaza'nın menüleri", () => {
   it("alt bilgi: iki sütun; gizli ürün ve sitenin kendi adresleri görünür", async () => {
     const altBilgi = await vitrinMenusu(vt, "alt-bilgi");
     expect(metinler(altBilgi)).toEqual([
-      ["Alışveriş", ["Giyim", "Ev ve Yaşam", "Elektronik Aksesuar", "Hediye Paketleme"]],
+      [
+        "Alışveriş",
+        [
+          "Giyim",
+          "Ev ve Yaşam",
+          "Elektronik Aksesuar",
+          "Spor ve Outdoor",
+          "Kişisel Bakım",
+          "Hediye Paketleme",
+        ],
+      ],
       ["Sözleşmeler", ["Üyelik sözleşmesi", "KVKK aydınlatma metni"]],
     ]);
     expect(altBilgi?.[1]?.altlar.map((dal) => dal.hedef)).toEqual([

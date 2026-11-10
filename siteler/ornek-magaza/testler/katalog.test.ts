@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { siteKlasorunuOku } from "../../../cekirdek/ayar-semasi/site-klasoru.ts";
 import { gorselBoyutAdlari, gorselBoyutlari } from "../../../cekirdek/kayitlar/gorsel.ts";
-import { dosyaOku } from "../../../cekirdek/moduller/dosya/servis.ts";
+import { dosyaOku, gorselHazirMi } from "../../../cekirdek/moduller/dosya/servis.ts";
 import { etiketServisi } from "../../../cekirdek/moduller/etiket/servis.ts";
 import { fiyatGosterimServisi } from "../../../cekirdek/moduller/fiyat/gosterim.ts";
 import { siteninFiyatServisi } from "../../../cekirdek/moduller/fiyat/servis.ts";
@@ -76,12 +76,14 @@ const kategorisi = async (adresAdi: string) => {
 };
 
 describe("katalog", () => {
-  it("on ürün, üç kategori; bütün ürünler %20 sınıfında", async () => {
-    expect(urunlerim.size).toBe(10);
+  it("yirmi bir ürün, beş kategori; bütün ürünler %20 sınıfında", async () => {
+    expect(urunlerim.size).toBe(21);
     expect((await kategorileriOku(vt)).map((k) => k.ad)).toEqual([
       "Giyim",
       "Ev ve Yaşam",
       "Elektronik Aksesuar",
+      "Spor ve Outdoor",
+      "Kişisel Bakım",
     ]);
     const yirmi = (await siteninVergiServisi(site).tabloyuOku(vt)).find((s) => s.ad === "%20");
     expect(yirmi).toBeDefined();
@@ -213,7 +215,7 @@ describe("KURALLAR.md'deki durumlar", () => {
   it("ikinci kurulum hiçbir şey değiştirmez", async () => {
     expect(await katalogBaslangiciniKur(vt, site)).toBe(false);
     const satirlar = await vt.select({ kimlik: urunler.kimlik }).from(urunler);
-    expect(satirlar).toHaveLength(10);
+    expect(satirlar).toHaveLength(21);
     const [kupa] = await vt
       .select({ durum: urunler.durum })
       .from(urunler)
@@ -223,7 +225,7 @@ describe("KURALLAR.md'deki durumlar", () => {
 });
 
 describe("galeri (kart 0087)", () => {
-  it("görselli ürünlerin ana görseli kataloğun ilk görselidir; Hediye Paketleme görselsizdir", async () => {
+  it("görselli ürünlerin ana görseli kataloğun ilk görselidir; hiçbir ürün görselsiz değildir", async () => {
     const analar = await anaGorseller(
       vt,
       [...urunlerim.values()].map((u) => u.kimlik),
@@ -231,14 +233,14 @@ describe("galeri (kart 0087)", () => {
     for (const katalogUrunu of site.katalogBaslangici.urunler) {
       const ilk = katalogUrunu.galeri.find((oge) => "gorsel" in oge);
       const ana = analar.get(urun(katalogUrunu.adresAdi).kimlik);
+      expect(ilk, katalogUrunu.adresAdi).toBeDefined();
       expect(ana?.alternatifMetin, katalogUrunu.adresAdi).toBe(ilk?.alternatifMetin);
     }
-    expect(analar.has(urun("hediye-paketleme").kimlik)).toBe(false);
   });
 
-  it("videolu galeri (Kablosuz Kulaklık): üç görsel ve ikinci sırada YouTube videosu, çerezsiz oynatıcıyla", () => {
+  it("videolu galeri (Kablosuz Kulaklık): iki görsel ve ikinci sırada YouTube videosu, çerezsiz oynatıcıyla", () => {
     const galeri = urun("kablosuz-kulaklik").galeri;
-    expect(galeri.map((oge) => oge.tur)).toEqual(["gorsel", "video", "gorsel", "gorsel"]);
+    expect(galeri.map((oge) => oge.tur)).toEqual(["gorsel", "video", "gorsel"]);
     expect(galeri[1]).toMatchObject({
       tur: "video",
       site: "youtube",
@@ -250,20 +252,19 @@ describe("galeri (kart 0087)", () => {
   it("birden çok görselli ürün (Pamuklu Bez Çanta): iki görsel sırasıyla", () => {
     expect(urun("pamuklu-bez-canta").galeri.map((oge) => oge.alternatifMetin)).toEqual([
       "Bej pamuklu bez çanta, saplarıyla önden",
-      "Yeşil pamuklu bez çanta, saplarıyla önden",
+      "Bez çanta, kapının yanındaki askıda",
     ]);
   });
 
-  it("her görselin bütün boyutları var; 1600 piksellik görsel her boyuta küçülmüş, okunabilir WebP", async () => {
+  it("her görselin bütün boyutları var; en uzun kenarı her boyutun ölçüsüne küçülmüş, okunabilir WebP", async () => {
     for (const u of urunlerim.values()) {
       for (const oge of u.galeri) {
         if (oge.tur !== "gorsel") continue;
         for (const ad of gorselBoyutAdlari) {
           const boyut = oge.boyutlar[ad];
-          expect(boyut, `${u.adresAdi} ${ad}`).toMatchObject({
-            genislik: gorselBoyutlari[ad],
-            yukseklik: gorselBoyutlari[ad],
-          });
+          expect(Math.max(boyut?.genislik ?? 0, boyut?.yukseklik ?? 0), `${u.adresAdi} ${ad}`).toBe(
+            gorselBoyutlari[ad],
+          );
           expect((await dosyaOku(vt, boyut?.kimlik ?? "", klasor))?.tur).toBe("webp");
         }
       }
@@ -443,10 +444,149 @@ describe("varyantlı ürünler ve özellikler (kart 0100)", () => {
       "Makinede yıkanabilir": true,
     });
     const ketenli = await ozellikServisi.urunleri(vt, kumas?.kimlik ?? "", secenek("Keten"));
-    expect(ketenli.urunler).toEqual([urun("keten-masa-ortusu").kimlik]);
+    expect(ketenli.urunler.toSorted()).toEqual(
+      [urun("keten-masa-ortusu").kimlik, urun("keten-gomlek").kimlik].toSorted(),
+    );
     const pamuklu = await ozellikServisi.urunleri(vt, kumas?.kimlik ?? "", secenek("Pamuk"));
     expect(pamuklu.urunler.toSorted()).toEqual(
       [urun("basic-tisort").kimlik, urun("kapusonlu-sweatshirt").kimlik].toSorted(),
     );
+  });
+});
+
+// Yeni kategoriler ve ürünler, kategori görselleri (kart 0115).
+describe("yeni ürünler (kart 0115)", () => {
+  const basitler: [string, number, number][] = [
+    ["yoga-mati-6-mm", 54990, 12],
+    ["spor-corap-seti-3lu", 14990, 50],
+    ["ahsap-sac-fircasi", 21990, 25],
+    ["seramik-saksi", 27990, 18],
+    ["kokulu-mum", 24990, 3],
+    ["kablosuz-sarj-standi", 39990, 22],
+  ];
+  const indirimliler: [string, number, number, number][] = [
+    ["celik-termos-750-ml", 42990, 34990, 20],
+    ["zeytinyagli-sabun-seti-3lu", 17990, 14990, 30],
+    ["bluetooth-hoparlor", 89990, 74990, 15],
+  ];
+  // İstanbul saatiyle 15 Kasım 00:00: indirimin başladığı an.
+  const indirimBasi = new Date("2026-11-14T21:00:00Z");
+  const gosterim = fiyatGosterimServisi(site);
+  const fiyati = async (kimlik: string, an: Date) =>
+    (await gosterim.gosterilecekFiyatlar(vt, [kimlik], { an })).get(kimlik);
+  const canli = (adresAdi: string) => urun(adresAdi).birimler.filter((b) => !b.silindi);
+  const stoklar = async (adresAdi: string) => {
+    const durumlar = await siteninStokDurumlari(
+      vt,
+      site,
+      canli(adresAdi).map((b) => b.kimlik),
+    );
+    return canli(adresAdi).map((b) => durumlar.get(b.kimlik));
+  };
+  const kategorideki = async (adresAdi: string) =>
+    (
+      await kategorininUrunleri(vt, await kategorisi(adresAdi), {
+        vitrin: { yer: "liste", ...goster() },
+      })
+    ).urunler.toSorted();
+  const kimlikleri = (...adlar: string[]) => adlar.map((ad) => urun(ad).kimlik).toSorted();
+
+  it("yeni ürünler kategorilerinde; her birinin önce stüdyo, sonra ortam görseli var", async () => {
+    expect(await kategorideki("spor-ve-outdoor")).toEqual(
+      kimlikleri("yoga-mati-6-mm", "celik-termos-750-ml", "kosu-ayakkabisi", "spor-corap-seti-3lu"),
+    );
+    expect(await kategorideki("kisisel-bakim")).toEqual(
+      kimlikleri("zeytinyagli-sabun-seti-3lu", "ahsap-sac-fircasi"),
+    );
+    for (const adresAdi of [
+      ...basitler.map(([ad]) => ad),
+      ...indirimliler.map(([ad]) => ad),
+      "kosu-ayakkabisi",
+      "keten-gomlek",
+    ]) {
+      expect(
+        urun(adresAdi).galeri.map((oge) => oge.tur),
+        adresAdi,
+      ).toEqual(["gorsel", "gorsel"]);
+    }
+  });
+
+  it("basit ürünlerin fiyatı ve stoğu; Kokulu Mum düşük stokta", async () => {
+    for (const [adresAdi, tutar, miktar] of basitler) {
+      expect(await fiyati(birim(adresAdi), kasim), adresAdi).toMatchObject({
+        tutar,
+        indirimde: false,
+      });
+      expect(await stokDurumu(adresAdi), adresAdi).toMatchObject({ miktar });
+    }
+    expect(await stokDurumu("kokulu-mum")).toMatchObject({
+      dusukStok: true,
+      gosterim: { tur: "son-adet", adet: 3 },
+    });
+  });
+
+  it("üç indirim 15 Kasım 00:00'da başlar, 1 Aralık 00:00'da biter; bitişi fiyatta", async () => {
+    for (const [adresAdi, normal, indirimli, miktar] of indirimliler) {
+      const kimlik = birim(adresAdi);
+      expect(await stokDurumu(adresAdi), adresAdi).toMatchObject({ miktar });
+      expect(await fiyati(kimlik, new Date(indirimBasi.getTime() - 1)), adresAdi).toMatchObject({
+        tutar: normal,
+        indirimde: false,
+      });
+      const suren = await fiyati(kimlik, indirimBasi);
+      expect(suren, adresAdi).toMatchObject({ tutar: indirimli, indirimde: true });
+      expect(suren?.indirimBitisi?.getTime(), adresAdi).toBe(aralik.getTime());
+      expect(await fiyati(kimlik, birOnce), adresAdi).toMatchObject({ tutar: indirimli });
+      expect(await fiyati(kimlik, aralik), adresAdi).toMatchObject({
+        tutar: normal,
+        indirimde: false,
+      });
+    }
+  });
+
+  it("Koşu Ayakkabısı: beş beden, 1.499,90, dörder adet; 42 tükenmiş, ürünün geneli satılabilir", async () => {
+    const ayakkabi = urun("kosu-ayakkabisi");
+    expect(ayakkabi.tur).toBe("varyantli");
+    expect(ayakkabi.secenekler.map((s) => s.degerler.map((d) => d.ad))).toEqual([
+      ["39", "40", "41", "42", "43"],
+    ]);
+    const durumlar = await stoklar("kosu-ayakkabisi");
+    expect(durumlar.map((d) => d?.miktar)).toEqual([4, 4, 4, 0, 4]);
+    expect(durumlar.map((d) => d?.satilabilir)).toEqual([true, true, true, false, true]);
+    for (const b of canli("kosu-ayakkabisi")) {
+      expect(await fiyati(b.kimlik, kasim)).toMatchObject({ tutar: 149990 });
+    }
+    expect(canli("kosu-ayakkabisi").map((b) => b.stokKodu)).toEqual(
+      ["39", "40", "41", "42", "43"].map((beden) => `ORN-SPR-003-${beden}`),
+    );
+  });
+
+  it("Keten Gömlek: dört beden, 799,90, beşer adet; Giyim'de", async () => {
+    expect(urun("keten-gomlek").secenekler.map((s) => s.degerler.map((d) => d.ad))).toEqual([
+      ["S", "M", "L", "XL"],
+    ]);
+    expect((await stoklar("keten-gomlek")).map((d) => d?.miktar)).toEqual([5, 5, 5, 5]);
+    for (const b of canli("keten-gomlek")) {
+      expect(await fiyati(b.kimlik, kasim)).toMatchObject({ tutar: 79990 });
+    }
+    expect(await kategorideki("giyim")).toContain(urun("keten-gomlek").kimlik);
+  });
+
+  it("Bluetooth Hoparlör ve Kablosuz Şarj Standı Örnek Ses markalı", () => {
+    expect(urun("bluetooth-hoparlor").marka).toBe(urun("kablosuz-kulaklik").marka);
+    expect(urun("kablosuz-sarj-standi").marka).toBe(urun("kablosuz-kulaklik").marka);
+    expect(urun("kablosuz-kulaklik").marka).toEqual(expect.any(String));
+  });
+
+  it("beş kategorinin de görseli dört boyutuyla hazır, hiçbiri aynı dosya değil", async () => {
+    const kategoriler = await kategorileriOku(vt);
+    expect(kategoriler).toHaveLength(5);
+    for (const kategori of kategoriler) {
+      expect(
+        await vt.transaction((i) => gorselHazirMi(i, kategori.gorsel ?? "")),
+        kategori.ad,
+      ).toBe("hazir");
+    }
+    expect(new Set(kategoriler.map((k) => k.gorsel)).size).toBe(5);
   });
 });

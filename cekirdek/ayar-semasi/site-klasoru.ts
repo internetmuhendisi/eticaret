@@ -17,6 +17,7 @@ import {
   bosKatalog,
   type KatalogBaslangici,
   katalogBaslangicSemasi,
+  katalogGorselAdlari,
   katalogGorselKlasoru,
   katalogKurallari,
 } from "../moduller/urun/baslangic-semasi.ts";
@@ -29,6 +30,7 @@ import {
   baslangicDuzeniBulunamayanlar,
   baslangicDuzeniSemasi,
   baslangicDuzeniSorunlari,
+  duzenBaslangicBaglari,
 } from "../vitrin/bolum-kutuphanesi/duzen.ts";
 import { bolumKutuphanesi } from "../vitrin/bolum-kutuphanesi/kutuphane.ts";
 import {
@@ -48,8 +50,8 @@ import { type Kimlik, kimlikSemasi } from "./kimlik.ts";
 // Yalnız sitenin vergi tablosu hiç kurulmamışken kullanılır (karar 0060); dosyası yoksa boştur.
 // katalogBaslangici: kategoriler, markalar, etiketler ve ürünler (baslangic/katalog.json, kart 0084).
 // Yalnız sitenin kataloğu hiç kurulmamışken kullanılır (urun/baslangic.ts); dosyası yoksa boştur.
-// katalogGorselleri: kataloğun galeri görsellerinin dosya adından site klasöründeki tam yola
-// (baslangic/gorseller/, kart 0087); katalogda görsel yoksa boştur.
+// katalogGorselleri: başlangıç kataloğunun (galeri, kategori) ve başlangıç düzeninin görsellerinin dosya adından
+// site klasöründeki tam yola (baslangic/gorseller/, kart 0087, 0115); görsel yoksa boştur.
 // temalar: sitenin kullanabileceği temalar, şemadan geçmiş (kart 0105); ilki başlangıç temasıdır.
 // temaBaslangici: tema ayarlarının başlangıç değeri (baslangic/tema.json). Yalnız sitenin tema sürümü hiç
 // yazılmamışken kullanılır; asıl değer veritabanındadır (cekirdek/moduller/tema/).
@@ -175,20 +177,22 @@ export const katalogBaslangiciniDogrula = (
   return hatalar.length > 0 ? { gecerli: false, hatalar } : { gecerli: true, deger: sonuc.data };
 };
 
-// Kataloğun galeri görselleri (kart 0087): her ad baslangic/gorseller/ klasöründe düz bir dosya olmalı;
-// tür içerikten okunur ve uzantıyla aynıdır, boyut dosya sınırını aşmaz. Görseller kurulumda dosya
-// deposuna yüklenirken ayrıca yeniden kodlanır ve boyutları üretilir; bozuk görsel orada da düşer.
+// Başlangıç görselleri (kart 0087, 0115): katalogun (galeri, kategori) ve başlangıç düzeninin kullandığı her ad
+// baslangic/gorseller/ klasöründe düz bir dosya olmalı; tür içerikten okunur ve uzantıyla aynıdır, boyut dosya
+// sınırını aşmaz. Görseller kurulumda dosya deposuna yüklenirken ayrıca yeniden kodlanır ve boyutları üretilir;
+// bozuk görsel orada da düşer. Düzen geçersizse yalnız kataloğunkiler denetlenir, düzenin hatası kendi dosyasında yazar.
 export const katalogGorselleriniDogrula = (
   klasor: string,
   katalog: KatalogBaslangici,
+  duzen?: BaslangicDuzeni,
 ): { gecerli: true; gorseller: Record<string, string> } | { gecerli: false; hatalar: string[] } => {
   const adlar = [
-    ...new Set(
-      katalog.urunler.flatMap((urun) =>
-        urun.galeri.flatMap((oge) => ("gorsel" in oge ? [oge.gorsel] : [])),
-      ),
-    ),
+    ...new Set([
+      ...katalogGorselAdlari(katalog),
+      ...(duzen === undefined ? [] : duzenBaslangicBaglari(duzen, bolumKutuphanesi).gorsel),
+    ]),
   ];
+
   const hatalar: string[] = [];
   const gorseller: Record<string, string> = {};
   // Klasör de site klasörünün içinde gerçek bir klasör olmalı: bağlantıyla dışarıdaki dosyalara
@@ -208,7 +212,7 @@ export const katalogGorselleriniDogrula = (
     const yer = `${katalogGorselKlasoru}/${ad}`;
     const yol = join(klasor, katalogGorselKlasoru, ad);
     if (!existsSync(yol)) {
-      hatalar.push(`${yer}: dosya yok (${katalogBaslangicDosyasi} bu görseli kullanıyor).`);
+      hatalar.push(`${yer}: dosya yok (başlangıç kataloğu ya da düzeni bu görseli kullanıyor).`);
       continue;
     }
     // Sembolik bağlantı ve klasör kabul edilmez: dosya site klasörünün içinde, düz bir dosya olmalı.
@@ -515,12 +519,6 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
       : undefined,
   );
   if (!katalogBaslangici.gecerli) hatalar.push(...katalogBaslangici.hatalar);
-  const katalogGorselleri = katalogBaslangici.gecerli
-    ? katalogGorselleriniDogrula(klasor, katalogBaslangici.deger)
-    : undefined;
-  if (katalogGorselleri !== undefined && !katalogGorselleri.gecerli) {
-    hatalar.push(...katalogGorselleri.hatalar);
-  }
   const menuBaslangici = katalogBaslangici.gecerli
     ? menuBaslangiciniDogrula(klasor, katalogBaslangici.deger)
     : undefined;
@@ -546,6 +544,16 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
       : duzenBaslangiciniDogrula(klasor, baslangicTemasi, katalogBaslangici.deger);
   if (duzenBaslangici !== undefined && !duzenBaslangici.gecerli) {
     hatalar.push(...duzenBaslangici.hatalar);
+  }
+  const katalogGorselleri = katalogBaslangici.gecerli
+    ? katalogGorselleriniDogrula(
+        klasor,
+        katalogBaslangici.deger,
+        duzenBaslangici?.gecerli === true ? duzenBaslangici.deger : undefined,
+      )
+    : undefined;
+  if (katalogGorselleri !== undefined && !katalogGorselleri.gecerli) {
+    hatalar.push(...katalogGorselleri.hatalar);
   }
 
   if (kimlik !== undefined && kimlik.kodAdi !== basename(klasor)) {

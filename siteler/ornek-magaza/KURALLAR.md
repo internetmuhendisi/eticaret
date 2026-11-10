@@ -5,11 +5,11 @@
 - Her yeni özellik ve her yeni çekirdek sürümü önce burada denenir.
 - Gerçek satış yapılmaz, gerçek ödeme alınmaz. Site arama motorlarına kapalıdır.
 - Mağaza sahibi hesabı ve yurt dışı aktarım belgeleri gerekmez, site kimseye teslim edilmez.
-- Ürünler sahtedir: Giyim, Ev ve Yaşam, Elektronik Aksesuar (`planlar/site-ayarlari.md`).
+- Ürünler sahtedir: Giyim, Ev ve Yaşam, Elektronik Aksesuar, Spor ve Outdoor, Kişisel Bakım (`planlar/site-ayarlari.md`, kart 0115).
 
 ## Örnek ürünler (kart 0084)
 
-Ürünler `baslangic/katalog.json` dosyasındadır, katalog hiç kurulmamışsa arka plan süreci açılırken bir kez yüklenir. Basic Tişört ve Kapüşonlu Sweatshirt dışındakiler basit üründür. Fiyatların hepsi KDV dahildir ve %20 sınıfındadır. Her durumu `testler/katalog.test.ts` gerçek veritabanıyla dener; zaman testte sabit verilir.
+Ürünler `baslangic/katalog.json` dosyasındadır, katalog hiç kurulmamışsa arka plan süreci açılırken bir kez yüklenir. Basic Tişört, Kapüşonlu Sweatshirt, Koşu Ayakkabısı ve Keten Gömlek dışındakiler basit üründür. Fiyatların hepsi KDV dahildir ve %20 sınıfındadır. Her durumu `testler/katalog.test.ts` gerçek veritabanıyla dener; zaman testte sabit verilir.
 
 | Durum | Ürün | Nasıl |
 |---|---|---|
@@ -58,16 +58,31 @@ Görseller `baslangic/gorseller/` klasöründedir, katalogdaki ürünün `galeri
 
 | Durum | Ürün | Nasıl |
 |---|---|---|
-| Tek görsel | Yün Atkı, Keten Masa Örtüsü, Porselen Kupa, Yılbaşı Kupa Seti, USB-C Şarj Kablosu 1 m | Ana görsel o görseldir |
-| Birden çok görsel | Pamuklu Bez Çanta | İki görsel, sırasıyla |
-| Videolu galeri | Kablosuz Kulaklık | Üç görsel, ikinci sırada YouTube videosu; ana görsel ilk görseldir |
-| Görselsiz ürün | Hediye Paketleme | Ana görseli yok |
+| Tek görsel | USB-C Şarj Kablosu 1 m, Hediye Paketleme | Ana görsel o görseldir |
+| Birden çok görsel | Yukarıdakiler dışındakiler | Önce stüdyo, sonra ortam görseli |
+| Videolu galeri | Kablosuz Kulaklık | İki görsel, ikinci sırada YouTube videosu; ana görsel ilk görseldir |
 | Renge göre görsel | Basic Tişört, Kapüşonlu Sweatshirt | Her rengin bir görseli; birleşim kendi renginin görselini seçer (kart 0100) |
 
 **Kaynaklar:**
 
-- Görseller projede üretildi (kullanıcı kararı): 1600 × 1600 piksel, yazısız PNG. Her biri açık renkli düz bir zemin üzerine ürünü andıran basit bir biçimdir (çanta, şerit, kare, kupa, kulaklık, daire, kablo; kart 0100 ile tişört ve kapüşonlu). SVG olarak çizilip `sharp` ile PNG'ye çevrildi. Telif ya da lisans gerektirmez.
+- Görseller kullanıcının verdiği paketten gelir (kart 0115): eğitimdeki Örnek Mağaza'nın örnek ürünleri için yapay zekâyla üretilmiş JPEG dosyaları. Paketin notuna göre yalnız bu deneme mağazasında kullanılır, gerçek bir mağazada kullanılmaz.
+- Kullanılmayan dosyalar: `baslangic/bekleyen-gorseller/` klasöründeki üç blog görseli blog özelliği gelene kadar bekler, hiçbir başlangıç dosyası onlara başvurmaz.
 - Video: "Big Buck Bunny", Blender Foundation, Creative Commons Attribution 3.0 lisanslı (https://peach.blender.org). YouTube'da Blender'ın resmî kanalındaki yükleme: https://www.youtube.com/watch?v=aqz-KE-bpKQ (2026-11-08'de YouTube'un oEmbed yanıtıyla var olduğu doğrulandı). Ürünle ilgisi yoktur, yalnız galeride videonun nasıl göründüğünü göstermek içindir. Lisansın istediği atıf alternatif metindedir.
+
+## Yeni ürünler (kart 0115)
+
+Her durumu `testler/katalog.test.ts` dener. Fiyatlar KDV dahildir.
+
+| Durum | Ürün | Nasıl |
+|---|---|---|
+| Basit ürün | Yoga Matı 6 mm, Spor Çorap Seti (3'lü), Ahşap Saç Fırçası, Seramik Saksı, Kablosuz Şarj Standı | 549,90 stok 12; 149,90 stok 50; 219,90 stok 25; 279,90 stok 18; 399,90 stok 22 |
+| Düşük stoklu | Kokulu Mum | 249,90, stok 3: müşteriye "Son 3 ürün" |
+| Tarihli indirim | Çelik Termos 750 ml, Zeytinyağlı Sabun Seti (3'lü), Bluetooth Hoparlör | 429,90'dan 349,90; 179,90'dan 149,90; 899,90'dan 749,90. 15 Kasım 2026 00:00'dan 1 Aralık 2026 00:00'a kadar (İstanbul). Stok 20, 30, 15 |
+| Beden seçenekli, tükenmiş beden | Koşu Ayakkabısı | 39–43, 1.499,90, her bedenden 4, 42 tükenmiş |
+| Beden seçenekli | Keten Gömlek | S, M, L, XL, 799,90, her bedenden 5 |
+| Markalı | Bluetooth Hoparlör, Kablosuz Şarj Standı | Örnek Ses |
+
+Her kategorinin görseli vardır.
 
 ## Menüler (kart 0107)
 
@@ -75,12 +90,12 @@ Menüler `baslangic/menuler.json` dosyasındadır. Arka plan süreci açılırke
 
 | Durum | Menü | Nasıl |
 |---|---|---|
-| Kategoriye bağlı, adını kategoriden alır | Ana menü | Giyim, Ev ve Yaşam, Elektronik Aksesuar |
+| Kategoriye bağlı, adını kategoriden alır | Ana menü | Giyim, Ev ve Yaşam, Elektronik Aksesuar, Spor ve Outdoor, Kişisel Bakım |
 | Açılır alt öğe (ürün) | Ana menü | Elektronik Aksesuar'ın altında Kablosuz Kulaklık |
 | Bağlantısız başlık ve marka | Ana menü | "Markalar" başlığının altında Örnek Ses |
 | Açılmayan ürün görünmez | Ana menü | "Yılbaşı" Yılbaşı Kupa Seti'ne bağlı: 1 Aralık 2026 00:00'a (İstanbul) kadar görünmez, panelde işaretlidir |
 | Kategori ağacından kendiliğinden | Kategori menüsü | Kategoriler kendi sırasıyla, ad değişince menü de değişir |
-| Alt bilgi sütunları | Alt bilgi | "Alışveriş" (üç kategori ve Hediye Paketleme), "Sözleşmeler" (üyelik sözleşmesi ve KVKK aydınlatma metni, sitenin kendi adresleri) |
+| Alt bilgi sütunları | Alt bilgi | "Alışveriş" (beş kategori ve Hediye Paketleme), "Sözleşmeler" (üyelik sözleşmesi ve KVKK aydınlatma metni, sitenin kendi adresleri) |
 | Gizli ürün görünür | Alt bilgi | Hediye Paketleme listede yok ama sayfası açılır: menüdeki bağlantısı görünür |
 
 ## Tema ve başlangıç düzeni (kart 0114)
@@ -93,11 +108,12 @@ Ana sayfanın ilk düzeni `baslangic/duzen.json` dosyasındadır, sırası karar
 |---|---|---|
 | Üst kısımda duyuru | Duyuru şeridi | "Yeni sezon ürünleri mağazada", Giyim kategorisine bağlantı |
 | Ayardan dolan madde | Güven şeridi | "{kargoyaVermeSuresi} iş gününde kargoda": mağaza ayarındaki sayı görünür (başlangıçta 1) |
-| Elle seçilmiş ürünler | Öne çıkanlar (ürün vitrini) | Kablosuz Kulaklık, Kapüşonlu Sweatshirt, Basic Tişört, Keten Masa Örtüsü, Porselen Kupa |
+| Elle seçilmiş ürünler, yan afişli | Öne çıkanlar (ürün vitrini) | Kablosuz Kulaklık, Kapüşonlu Sweatshirt, Basic Tişört, Keten Masa Örtüsü, Porselen Kupa, Bluetooth Hoparlör; "Süreli fırsatlar" yan afişi |
 | Yan afişli ürün vitrini | Yeni gelenler | En yeni 4 ürün, solda yan afiş (masaüstünde tek sıra) |
-| Kategoriye göre sekmeler | Sekmeli vitrin | Giyim, Ev ve Yaşam, Elektronik Aksesuar; kartlar yatay |
-| Geri sayımlı fırsat | Fırsatlar | Eski fiyatı gösterilen, bitişli indirimdeki ürünler: 15 Kasım–1 Aralık 2026 arası Kapüşonlu Sweatshirt (lacivert). Kablosuz Kulaklık'ın eski fiyatı gösterilmediği için girmez (karar 0088). Fırsat yokken bölüm vitrinde çizilmez |
+| Kategoriye göre sekmeler | Sekmeli vitrin | Beş kategori; kartlar yatay |
+| Geri sayımlı fırsat | Fırsatlar | Eski fiyatı gösterilen, bitişli indirimdeki ürünler, en çok dört: 15 Kasım–1 Aralık 2026 arası Kapüşonlu Sweatshirt (lacivert), Çelik Termos, Zeytinyağlı Sabun Seti, Bluetooth Hoparlör. Katalog 15 Kasım'dan önce kurulmuş olmalı (karar 0094). Kablosuz Kulaklık'ın eski fiyatı gösterilmediği için girmez (karar 0088). Fırsat yokken bölüm vitrinde çizilmez |
 | İşlevi yazılmamış bölüm | Müşteri yorumları, blog yazıları, bülten kaydı | Düzende durur, vitrinde çizilmez (karar 0090) |
-| Görseli gelmemiş bölüm gizli | Kayan afiş, kampanya afişleri (üçlü yatay ve ikili "görsel solda", karar 0093), kategori kutuları, geniş afiş, marka logoları | Metni ve bağlantısı yazılı, görsel paketi gelene kadar gizli (kart 0115) |
+| Görselli bölümler | Kayan afiş (görsel arkada), kampanya afişleri (üçlü yatay ve ikili "görsel solda", karar 0093), kategori kutuları, geniş afiş (tam genişlik), iki yan afiş | Görseller `baslangic/gorseller/` klasöründen dosya adıyla (karar 0094) |
+| Logosu gelmemiş bölüm gizli | Marka logoları | Pakette logo yok, gizli kaldı |
 
 Güven şeridine ücretsiz kargo ve ödeme yöntemi yazılmadı: kargo hesabı ve ödeme yazılmadan ekrana iddia olarak konmaz.

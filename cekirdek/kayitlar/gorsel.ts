@@ -36,3 +36,7 @@ export const gorselBoyutBicimi = { tur: "webp", kalite: 80 } as const;
 // Alternatif metin her öğede zorunludur: görselde ekran okuyucunun okuduğu metin, videoda oynatıcının
 // başlığıdır.
 export const galeriSinirlari = { oge: 30, alternatifMetin: 250 } as const;
+
+// Sitenin başlangıç dosyalarındaki görsel adı (kart 0115): baslangic/gorseller/ klasöründeki dosya; küçük
+// harfli, tireli ad ve bilinen uzantı. Yol kaçışı olmasın diye alt klasör yazılamaz.
+export const baslangicGorselAdiKalibi = /^[a-z0-9][a-z0-9-]{0,99}\.(png|jpg|webp)$/;

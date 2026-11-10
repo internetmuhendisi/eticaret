@@ -2,15 +2,28 @@
   "kategoriler": [
     {
       "ad": "Giyim",
-      "adresAdi": "giyim"
+      "adresAdi": "giyim",
+      "gorsel": "kategori-giyim.jpg"
     },
     {
       "ad": "Ev ve Yaşam",
-      "adresAdi": "ev-ve-yasam"
+      "adresAdi": "ev-ve-yasam",
+      "gorsel": "kategori-ev-ve-yasam.jpg"
     },
     {
       "ad": "Elektronik Aksesuar",
-      "adresAdi": "elektronik-aksesuar"
+      "adresAdi": "elektronik-aksesuar",
+      "gorsel": "kategori-elektronik-aksesuar.jpg"
+    },
+    {
+      "ad": "Spor ve Outdoor",
+      "adresAdi": "spor-ve-outdoor",
+      "gorsel": "kategori-spor-ve-outdoor.jpg"
+    },
+    {
+      "ad": "Kişisel Bakım",
+      "adresAdi": "kisisel-bakim",
+      "gorsel": "kategori-kisisel-bakim.jpg"
     }
   ],
   "markalar": [
@@ -65,12 +78,12 @@
       "stok": 0,
       "galeri": [
         {
-          "gorsel": "pamuklu-bez-canta-1.png",
+          "gorsel": "pamuklu-bez-canta.jpg",
           "alternatifMetin": "Bej pamuklu bez çanta, saplarıyla önden"
         },
         {
-          "gorsel": "pamuklu-bez-canta-2.png",
-          "alternatifMetin": "Yeşil pamuklu bez çanta, saplarıyla önden"
+          "gorsel": "pamuklu-bez-canta-katli.jpg",
+          "alternatifMetin": "Bez çanta, kapının yanındaki askıda"
         }
       ]
     },
@@ -89,8 +102,12 @@
       "stok": 10,
       "galeri": [
         {
-          "gorsel": "yun-atki-1.png",
-          "alternatifMetin": "Kırmızı tonlarında yün atkı"
+          "gorsel": "yun-atki.jpg",
+          "alternatifMetin": "Hardal sarısı yün atkı, boyna dolanmış gibi"
+        },
+        {
+          "gorsel": "yun-atki-doku.jpg",
+          "alternatifMetin": "Hardal sarısı yün atkı, koltuğun üstünde"
         }
       ]
     },
@@ -109,8 +126,16 @@
       "stok": 15,
       "galeri": [
         {
-          "gorsel": "keten-masa-ortusu-1.png",
-          "alternatifMetin": "Gri keten masa örtüsü, katlanmış"
+          "gorsel": "keten-masa-ortusu.jpg",
+          "alternatifMetin": "Yeşil keten masa örtüsü, katlanmış"
+        },
+        {
+          "gorsel": "keten-masa-ortusu-masada.jpg",
+          "alternatifMetin": "Yeşil keten örtü serili yemek masası"
+        },
+        {
+          "gorsel": "keten-masa-ortusu-doku.jpg",
+          "alternatifMetin": "Keten örtünün kenarı, yakından"
         }
       ],
       "ozellikler": [
@@ -142,8 +167,12 @@
       "stok": 40,
       "galeri": [
         {
-          "gorsel": "porselen-kupa-1.png",
+          "gorsel": "porselen-kupa.jpg",
           "alternatifMetin": "Mavi porselen kupa, yandan"
+        },
+        {
+          "gorsel": "porselen-kupa-kahveyle.jpg",
+          "alternatifMetin": "Kahve dolu mavi kupa, ahşap masada"
         }
       ]
     },
@@ -163,8 +192,12 @@
       "stok": 20,
       "galeri": [
         {
-          "gorsel": "yilbasi-kupa-seti-1.png",
-          "alternatifMetin": "Kırmızı yılbaşı kupası"
+          "gorsel": "yilbasi-kupa-seti.jpg",
+          "alternatifMetin": "Yılbaşı ağacı desenli iki kupa"
+        },
+        {
+          "gorsel": "yilbasi-kupa-seti-kutuda.jpg",
+          "alternatifMetin": "Hediye kutusunda iki desenli kupa"
         }
       ]
     },
@@ -187,20 +220,16 @@
       "stok": 8,
       "galeri": [
         {
-          "gorsel": "kablosuz-kulaklik-1.png",
-          "alternatifMetin": "Lacivert kablosuz kulaklık, önden"
+          "gorsel": "kablosuz-kulaklik.jpg",
+          "alternatifMetin": "Mercan rengi kablosuz kulaklık, şarj kutusuyla"
         },
         {
           "video": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
           "alternatifMetin": "Örnek tanıtım videosu: Big Buck Bunny (Blender Foundation, CC BY 3.0)"
         },
         {
-          "gorsel": "kablosuz-kulaklik-2.png",
-          "alternatifMetin": "Yeşil kablosuz kulaklık, önden"
-        },
-        {
-          "gorsel": "kablosuz-kulaklik-3.png",
-          "alternatifMetin": "Kulaklığın yastığı, yakından"
+          "gorsel": "kablosuz-kulaklik-kutu.jpg",
+          "alternatifMetin": "Kulaklık ve şarj kutusu, ahşap masada"
         }
       ]
     },
@@ -219,8 +248,8 @@
       "stok": 2,
       "galeri": [
         {
-          "gorsel": "usb-c-sarj-kablosu-1-m-1.png",
-          "alternatifMetin": "Gri USB-C şarj kablosu, iki ucuyla"
+          "gorsel": "usb-c-sarj-kablosu.jpg",
+          "alternatifMetin": "Beyaz USB-C şarj kablosu, rulo hâlinde, iki ucuyla"
         }
       ]
     },
@@ -236,7 +265,13 @@
       "stokTakibi": false,
       "fiyat": {
         "satisFiyati": 4990
-      }
+      },
+      "galeri": [
+        {
+          "gorsel": "hediye-paketleme.jpg",
+          "alternatifMetin": "Altın kurdeleli pembe hediye paketi"
+        }
+      ]
     },
     {
       "ad": "Basic Tişört",
@@ -248,12 +283,16 @@
       "kategoriler": ["giyim"],
       "galeri": [
         {
-          "gorsel": "basic-tisort-siyah.png",
+          "gorsel": "basic-tisort-siyah.jpg",
           "alternatifMetin": "Siyah tişört, önden"
         },
         {
-          "gorsel": "basic-tisort-beyaz.png",
+          "gorsel": "basic-tisort-beyaz.jpg",
           "alternatifMetin": "Beyaz tişört, önden"
+        },
+        {
+          "gorsel": "basic-tisort-kumas-yakin.jpg",
+          "alternatifMetin": "Katlanmış siyah ve beyaz tişörtler, bankın üstünde"
         }
       ],
       "ozellikler": [
@@ -288,7 +327,7 @@
         {
           "degerler": ["S", "Siyah"],
           "stokKodu": "ORN-GYM-003-S-SYH",
-          "gorsel": "basic-tisort-siyah.png",
+          "gorsel": "basic-tisort-siyah.jpg",
           "fiyat": {
             "satisFiyati": 29990
           },
@@ -297,7 +336,7 @@
         {
           "degerler": ["M", "Siyah"],
           "stokKodu": "ORN-GYM-003-M-SYH",
-          "gorsel": "basic-tisort-siyah.png",
+          "gorsel": "basic-tisort-siyah.jpg",
           "fiyat": {
             "satisFiyati": 29990
           },
@@ -306,7 +345,7 @@
         {
           "degerler": ["L", "Siyah"],
           "stokKodu": "ORN-GYM-003-L-SYH",
-          "gorsel": "basic-tisort-siyah.png",
+          "gorsel": "basic-tisort-siyah.jpg",
           "fiyat": {
             "satisFiyati": 29990
           },
@@ -315,7 +354,7 @@
         {
           "degerler": ["XL", "Siyah"],
           "stokKodu": "ORN-GYM-003-XL-SYH",
-          "gorsel": "basic-tisort-siyah.png",
+          "gorsel": "basic-tisort-siyah.jpg",
           "fiyat": {
             "satisFiyati": 32990
           },
@@ -324,7 +363,7 @@
         {
           "degerler": ["S", "Beyaz"],
           "stokKodu": "ORN-GYM-003-S-BYZ",
-          "gorsel": "basic-tisort-beyaz.png",
+          "gorsel": "basic-tisort-beyaz.jpg",
           "fiyat": {
             "satisFiyati": 29990
           },
@@ -333,7 +372,7 @@
         {
           "degerler": ["M", "Beyaz"],
           "stokKodu": "ORN-GYM-003-M-BYZ",
-          "gorsel": "basic-tisort-beyaz.png",
+          "gorsel": "basic-tisort-beyaz.jpg",
           "fiyat": {
             "satisFiyati": 29990
           },
@@ -342,7 +381,7 @@
         {
           "degerler": ["L", "Beyaz"],
           "stokKodu": "ORN-GYM-003-L-BYZ",
-          "gorsel": "basic-tisort-beyaz.png",
+          "gorsel": "basic-tisort-beyaz.jpg",
           "fiyat": {
             "satisFiyati": 29990
           },
@@ -351,7 +390,7 @@
         {
           "degerler": ["XL", "Beyaz"],
           "stokKodu": "ORN-GYM-003-XL-BYZ",
-          "gorsel": "basic-tisort-beyaz.png",
+          "gorsel": "basic-tisort-beyaz.jpg",
           "fiyat": {
             "satisFiyati": 32990
           },
@@ -369,12 +408,16 @@
       "kategoriler": ["giyim"],
       "galeri": [
         {
-          "gorsel": "kapusonlu-sweatshirt-gri.png",
+          "gorsel": "sweatshirt-gri.jpg",
           "alternatifMetin": "Gri kapüşonlu sweatshirt, önden"
         },
         {
-          "gorsel": "kapusonlu-sweatshirt-lacivert.png",
+          "gorsel": "sweatshirt-lacivert.jpg",
           "alternatifMetin": "Lacivert kapüşonlu sweatshirt, önden"
+        },
+        {
+          "gorsel": "sweatshirt-kapusonu-yakin.jpg",
+          "alternatifMetin": "Gri kapüşonlu sweatshirt, koltuğun üstünde"
         }
       ],
       "ozellikler": [
@@ -409,7 +452,7 @@
         {
           "degerler": ["S", "Gri"],
           "stokKodu": "ORN-GYM-004-S-GRI",
-          "gorsel": "kapusonlu-sweatshirt-gri.png",
+          "gorsel": "sweatshirt-gri.jpg",
           "fiyat": {
             "satisFiyati": 64990
           },
@@ -418,7 +461,7 @@
         {
           "degerler": ["M", "Gri"],
           "stokKodu": "ORN-GYM-004-M-GRI",
-          "gorsel": "kapusonlu-sweatshirt-gri.png",
+          "gorsel": "sweatshirt-gri.jpg",
           "fiyat": {
             "satisFiyati": 64990
           },
@@ -427,7 +470,7 @@
         {
           "degerler": ["L", "Gri"],
           "stokKodu": "ORN-GYM-004-L-GRI",
-          "gorsel": "kapusonlu-sweatshirt-gri.png",
+          "gorsel": "sweatshirt-gri.jpg",
           "fiyat": {
             "satisFiyati": 64990
           },
@@ -436,7 +479,7 @@
         {
           "degerler": ["S", "Lacivert"],
           "stokKodu": "ORN-GYM-004-S-LCV",
-          "gorsel": "kapusonlu-sweatshirt-lacivert.png",
+          "gorsel": "sweatshirt-lacivert.jpg",
           "fiyat": {
             "satisFiyati": 64990,
             "indirimliFiyat": 54990,
@@ -448,7 +491,7 @@
         {
           "degerler": ["M", "Lacivert"],
           "stokKodu": "ORN-GYM-004-M-LCV",
-          "gorsel": "kapusonlu-sweatshirt-lacivert.png",
+          "gorsel": "sweatshirt-lacivert.jpg",
           "fiyat": {
             "satisFiyati": 64990,
             "indirimliFiyat": 54990,
@@ -460,7 +503,7 @@
         {
           "degerler": ["L", "Lacivert"],
           "stokKodu": "ORN-GYM-004-L-LCV",
-          "gorsel": "kapusonlu-sweatshirt-lacivert.png",
+          "gorsel": "sweatshirt-lacivert.jpg",
           "fiyat": {
             "satisFiyati": 64990,
             "indirimliFiyat": 54990,
@@ -468,6 +511,373 @@
             "indirimBitisi": "2026-12-01T00:00"
           },
           "stok": 6
+        }
+      ]
+    },
+    {
+      "ad": "Yoga Matı 6 mm",
+      "adresAdi": "yoga-mati-6-mm",
+      "kisaAciklama": "Ev ve stüdyo antrenmanları için 6 mm kalınlığında yoga matı.",
+      "uzunAciklama": "Kalınlığı zemini yumuşatır, dizleri ve bilekleri korur. Zeytin yeşili rengi sade durur. Kullanımdan sonra rulo yapılıp kolayca kaldırılır.",
+      "durum": "yayinda",
+      "vergiSinifi": "%20",
+      "stokKodu": "ORN-SPR-001",
+      "kategoriler": ["spor-ve-outdoor"],
+      "fiyat": {
+        "satisFiyati": 54990
+      },
+      "stok": 12,
+      "galeri": [
+        {
+          "gorsel": "yoga-mati.jpg",
+          "alternatifMetin": "Zeytin yeşili yoga matı, yarısı rulo hâlinde"
+        },
+        {
+          "gorsel": "yoga-mati-evde.jpg",
+          "alternatifMetin": "Yoga matı, aydınlık bir odanın zemininde serili"
+        }
+      ]
+    },
+    {
+      "ad": "Çelik Termos 750 ml",
+      "adresAdi": "celik-termos-750-ml",
+      "kisaAciklama": "Yolda, sporda ve işte yanınızda taşıyacağınız 750 ml çelik termos.",
+      "uzunAciklama": "Çelik gövdesi günlük kullanıma dayanıklıdır. 750 ml hacmiyle içeceğinizi tek seferde yanınıza alırsınız. Mat lacivert rengi çantada da masada da şık durur.",
+      "durum": "yayinda",
+      "vergiSinifi": "%20",
+      "stokKodu": "ORN-SPR-002",
+      "kategoriler": ["spor-ve-outdoor"],
+      "fiyat": {
+        "satisFiyati": 42990,
+        "indirimliFiyat": 34990,
+        "indirimBaslangici": "2026-11-15T00:00",
+        "indirimBitisi": "2026-12-01T00:00"
+      },
+      "stok": 20,
+      "galeri": [
+        {
+          "gorsel": "celik-termos.jpg",
+          "alternatifMetin": "Mat lacivert çelik termos, önden"
+        },
+        {
+          "gorsel": "celik-termos-disarida.jpg",
+          "alternatifMetin": "Lacivert termos, açık havada ahşap bankın üstünde"
+        }
+      ]
+    },
+    {
+      "ad": "Koşu Ayakkabısı",
+      "adresAdi": "kosu-ayakkabisi",
+      "kisaAciklama": "Günlük koşu ve yürüyüşler için hafif, nefes alan spor ayakkabı.",
+      "uzunAciklama": "Örgü üst yüzeyi ayağın nefes almasını sağlar, yastıklı tabanı adımları yumuşatır. Beyaz gövde ve mercan rengi detaylarla gelir. 39'dan 43'e kadar bedenleri var.",
+      "durum": "yayinda",
+      "vergiSinifi": "%20",
+      "kategoriler": ["spor-ve-outdoor"],
+      "galeri": [
+        {
+          "gorsel": "kosu-ayakkabisi.jpg",
+          "alternatifMetin": "Beyaz ve mercan rengi koşu ayakkabısı, yandan"
+        },
+        {
+          "gorsel": "kosu-ayakkabisi-kapida.jpg",
+          "alternatifMetin": "Bir çift koşu ayakkabısı, kapının önünde"
+        }
+      ],
+      "secenekler": [
+        {
+          "ad": "Beden",
+          "degerler": ["39", "40", "41", "42", "43"]
+        }
+      ],
+      "birlesimler": [
+        {
+          "degerler": ["39"],
+          "stokKodu": "ORN-SPR-003-39",
+          "fiyat": {
+            "satisFiyati": 149990
+          },
+          "stok": 4
+        },
+        {
+          "degerler": ["40"],
+          "stokKodu": "ORN-SPR-003-40",
+          "fiyat": {
+            "satisFiyati": 149990
+          },
+          "stok": 4
+        },
+        {
+          "degerler": ["41"],
+          "stokKodu": "ORN-SPR-003-41",
+          "fiyat": {
+            "satisFiyati": 149990
+          },
+          "stok": 4
+        },
+        {
+          "degerler": ["42"],
+          "stokKodu": "ORN-SPR-003-42",
+          "fiyat": {
+            "satisFiyati": 149990
+          },
+          "stok": 0
+        },
+        {
+          "degerler": ["43"],
+          "stokKodu": "ORN-SPR-003-43",
+          "fiyat": {
+            "satisFiyati": 149990
+          },
+          "stok": 4
+        }
+      ]
+    },
+    {
+      "ad": "Spor Çorap Seti (3'lü)",
+      "adresAdi": "spor-corap-seti-3lu",
+      "kisaAciklama": "Antrenmanda ve günlük kullanımda rahat eden üç çift spor çorap.",
+      "uzunAciklama": "Sette beyaz, gri ve lacivert birer çift bulunur. Yumuşak dokusu ayakkabının içinde rahat eder, lastikli konçu yerinde durur.",
+      "durum": "yayinda",
+      "vergiSinifi": "%20",
+      "stokKodu": "ORN-SPR-004",
+      "kategoriler": ["spor-ve-outdoor"],
+      "fiyat": {
+        "satisFiyati": 14990
+      },
+      "stok": 50,
+      "galeri": [
+        {
+          "gorsel": "spor-corap-seti.jpg",
+          "alternatifMetin": "Üst üste katlanmış beyaz, gri ve lacivert çoraplar"
+        },
+        {
+          "gorsel": "spor-corap-seti-yatakta.jpg",
+          "alternatifMetin": "Üç çift çorap ve spor ayakkabı, yatağın üstünde"
+        }
+      ]
+    },
+    {
+      "ad": "Zeytinyağlı Sabun Seti (3'lü)",
+      "adresAdi": "zeytinyagli-sabun-seti-3lu",
+      "kisaAciklama": "Zeytinyağıyla hazırlanmış, üç kalıplık sabun seti.",
+      "uzunAciklama": "Üç kalıp sabun sicimle bağlanmış olarak gelir. Banyoda hafif ve ferah bir koku bırakır. Kendiniz için de hediye olarak da uygundur.",
+      "durum": "yayinda",
+      "vergiSinifi": "%20",
+      "stokKodu": "ORN-BKM-001",
+      "kategoriler": ["kisisel-bakim"],
+      "fiyat": {
+        "satisFiyati": 17990,
+        "indirimliFiyat": 14990,
+        "indirimBaslangici": "2026-11-15T00:00",
+        "indirimBitisi": "2026-12-01T00:00"
+      },
+      "stok": 30,
+      "galeri": [
+        {
+          "gorsel": "zeytinyagli-sabun-seti.jpg",
+          "alternatifMetin": "Sicimle bağlanmış üç kalıp zeytinyağlı sabun"
+        },
+        {
+          "gorsel": "zeytinyagli-sabun-seti-banyoda.jpg",
+          "alternatifMetin": "Sabunlar, banyoda pencerenin önünde"
+        }
+      ]
+    },
+    {
+      "ad": "Ahşap Saç Fırçası",
+      "adresAdi": "ahsap-sac-fircasi",
+      "kisaAciklama": "Ahşap saplı, günlük kullanım için saç fırçası.",
+      "uzunAciklama": "Ahşap gövdesi elde rahat tutulur. Oval başlığı saçı çekmeden tarar. Banyoda ya da çekmecede az yer kaplar.",
+      "durum": "yayinda",
+      "vergiSinifi": "%20",
+      "stokKodu": "ORN-BKM-002",
+      "kategoriler": ["kisisel-bakim"],
+      "fiyat": {
+        "satisFiyati": 21990
+      },
+      "stok": 25,
+      "galeri": [
+        {
+          "gorsel": "ahsap-sac-fircasi.jpg",
+          "alternatifMetin": "Oval başlıklı ahşap saç fırçası, üstten"
+        },
+        {
+          "gorsel": "ahsap-sac-fircasi-sifonyerde.jpg",
+          "alternatifMetin": "Saç fırçası, aynalı şifonyerin üstünde"
+        }
+      ]
+    },
+    {
+      "ad": "Seramik Saksı",
+      "adresAdi": "seramik-saksi",
+      "kisaAciklama": "Salonunuza sıcak bir renk katan kiremit tonlu seramik saksı.",
+      "uzunAciklama": "Mat yüzeyi her odaya uyum sağlar. Orta boy ev bitkileri için uygundur. Bitki ürüne dahil değildir.",
+      "durum": "yayinda",
+      "vergiSinifi": "%20",
+      "stokKodu": "ORN-EV-004",
+      "kategoriler": ["ev-ve-yasam"],
+      "fiyat": {
+        "satisFiyati": 27990
+      },
+      "stok": 18,
+      "galeri": [
+        {
+          "gorsel": "seramik-saksi.jpg",
+          "alternatifMetin": "Yeşil bitkili kiremit rengi seramik saksı"
+        },
+        {
+          "gorsel": "seramik-saksi-salonda.jpg",
+          "alternatifMetin": "Bitkili saksı, salonda ahşap sehpanın üstünde"
+        }
+      ]
+    },
+    {
+      "ad": "Kokulu Mum",
+      "adresAdi": "kokulu-mum",
+      "kisaAciklama": "Cam kapta, ahşap fitilli kokulu mum.",
+      "uzunAciklama": "Ahşap fitili ve kehribar rengi cam kabıyla ortama sıcaklık katar. Kitap okurken ya da misafir ağırlarken yakabilirsiniz. Yanarken gözetimsiz bırakmayın.",
+      "durum": "yayinda",
+      "vergiSinifi": "%20",
+      "stokKodu": "ORN-EV-005",
+      "kategoriler": ["ev-ve-yasam"],
+      "fiyat": {
+        "satisFiyati": 24990
+      },
+      "stok": 3,
+      "galeri": [
+        {
+          "gorsel": "kokulu-mum.jpg",
+          "alternatifMetin": "Kehribar rengi cam kapta ahşap fitilli mum"
+        },
+        {
+          "gorsel": "kokulu-mum-yanarken.jpg",
+          "alternatifMetin": "Yanan mum, şöminenin önünde sehpada açık kitabın yanında"
+        }
+      ]
+    },
+    {
+      "ad": "Bluetooth Hoparlör",
+      "adresAdi": "bluetooth-hoparlor",
+      "kisaAciklama": "Evde, piknikte ve yolda müziğinizi taşıyan Bluetooth hoparlör.",
+      "uzunAciklama": "Kumaş kaplı gövdesi ve taşıma kulpuyla kolayca yanınıza alınır. Telefonunuza Bluetooth ile bağlanır. Antrasit rengi her ortama uyar.",
+      "durum": "yayinda",
+      "vergiSinifi": "%20",
+      "stokKodu": "ORN-ELK-003",
+      "kategoriler": ["elektronik-aksesuar"],
+      "marka": "ornek-ses",
+      "fiyat": {
+        "satisFiyati": 89990,
+        "indirimliFiyat": 74990,
+        "indirimBaslangici": "2026-11-15T00:00",
+        "indirimBitisi": "2026-12-01T00:00"
+      },
+      "stok": 15,
+      "galeri": [
+        {
+          "gorsel": "bluetooth-hoparlor.jpg",
+          "alternatifMetin": "Kumaş kaplı antrasit Bluetooth hoparlör, kulpuyla"
+        },
+        {
+          "gorsel": "bluetooth-hoparlor-piknikte.jpg",
+          "alternatifMetin": "Hoparlör, parkta piknik örtüsünün üstünde"
+        }
+      ]
+    },
+    {
+      "ad": "Kablosuz Şarj Standı",
+      "adresAdi": "kablosuz-sarj-standi",
+      "kisaAciklama": "Telefonunuzu dik tutarak şarj eden kablosuz şarj standı.",
+      "uzunAciklama": "Kablosuz şarjı destekleyen telefonu standa bırakmanız yeter. Şarj olurken ekranı görebilirsiniz. Masada az yer kaplar.",
+      "durum": "yayinda",
+      "vergiSinifi": "%20",
+      "stokKodu": "ORN-ELK-004",
+      "kategoriler": ["elektronik-aksesuar"],
+      "marka": "ornek-ses",
+      "fiyat": {
+        "satisFiyati": 39990
+      },
+      "stok": 22,
+      "galeri": [
+        {
+          "gorsel": "kablosuz-sarj-standi.jpg",
+          "alternatifMetin": "Beyaz kablosuz şarj standı, yandan"
+        },
+        {
+          "gorsel": "kablosuz-sarj-standi-masada.jpg",
+          "alternatifMetin": "Standda şarj olan telefon, ahşap masada"
+        }
+      ]
+    },
+    {
+      "ad": "Keten Gömlek",
+      "adresAdi": "keten-gomlek",
+      "kisaAciklama": "Sıcak günler için hafif, açık mavi keten gömlek.",
+      "uzunAciklama": "Uzun kollu, klasik yakalı ve göğüs cepli bir gömlek. Keten kumaşı nefes alır, yıkandıkça yumuşar. S'den XL'e kadar bedenleri var.",
+      "durum": "yayinda",
+      "vergiSinifi": "%20",
+      "kategoriler": ["giyim"],
+      "galeri": [
+        {
+          "gorsel": "keten-gomlek.jpg",
+          "alternatifMetin": "Açık mavi keten gömlek, önden"
+        },
+        {
+          "gorsel": "keten-gomlek-askida.jpg",
+          "alternatifMetin": "Keten gömlek, aydınlık odada askıda"
+        }
+      ],
+      "ozellikler": [
+        {
+          "ozellik": "Kumaş",
+          "deger": "Keten"
+        },
+        {
+          "ozellik": "Makinede yıkanabilir",
+          "deger": true
+        },
+        {
+          "ozellik": "Bakım notu",
+          "deger": "30 derecede, benzer renklerle yıkayın."
+        }
+      ],
+      "secenekler": [
+        {
+          "ad": "Beden",
+          "degerler": ["S", "M", "L", "XL"]
+        }
+      ],
+      "birlesimler": [
+        {
+          "degerler": ["S"],
+          "stokKodu": "ORN-GYM-005-S",
+          "fiyat": {
+            "satisFiyati": 79990
+          },
+          "stok": 5
+        },
+        {
+          "degerler": ["M"],
+          "stokKodu": "ORN-GYM-005-M",
+          "fiyat": {
+            "satisFiyati": 79990
+          },
+          "stok": 5
+        },
+        {
+          "degerler": ["L"],
+          "stokKodu": "ORN-GYM-005-L",
+          "fiyat": {
+            "satisFiyati": 79990
+          },
+          "stok": 5
+        },
+        {
+          "degerler": ["XL"],
+          "stokKodu": "ORN-GYM-005-XL",
+          "fiyat": {
+            "satisFiyati": 79990
+          },
+          "stok": 5
         }
       ]
     }
