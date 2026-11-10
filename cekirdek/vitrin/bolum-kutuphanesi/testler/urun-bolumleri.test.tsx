@@ -11,11 +11,16 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
 import {
+  ornekAltKisim,
+  ornekAnaSayfa,
+  ornekAnaSayfaOtekiGorunumler,
   ornekBaglam,
   ornekKaynaklar,
   ornekMarkaKimligi,
+  ornekOtekiGorunumler,
   ornekUrunBolumleri,
   ornekUrunBolumleriOtekiGorunumler,
+  ornekUstKisim,
 } from "../../../katalog/ornek-baglam.ts";
 import { ornekUrunKartlari } from "../../../katalog/ornek-urun-kartlari.ts";
 import { urunKartiGorunumleri } from "../../../kayitlar/tema.ts";
@@ -87,6 +92,22 @@ describe("tarifler ve katalog örnekleri", () => {
     }
   });
 
+  it("katalogdaki her örnek listede bölüm kimlikleri tekildir (aynı kapta çizilir, React anahtarı)", () => {
+    const listeler = [
+      ornekUstKisim(),
+      ornekAltKisim(),
+      ornekAnaSayfa(),
+      ornekAnaSayfaOtekiGorunumler(),
+      ornekUrunBolumleri(),
+      ornekUrunBolumleriOtekiGorunumler(),
+      ...Object.values(ornekOtekiGorunumler()),
+    ];
+    for (const liste of listeler) {
+      const kimlikler = liste.map((ornek) => ornek.kimlik);
+      expect(kimlikler.filter((kimlik, sira) => kimlikler.indexOf(kimlik) !== sira)).toEqual([]);
+    }
+  });
+
   it("dört bölüm yalnız ana sayfaya konur; kart görünümü seçenekleri kayıtla aynı", () => {
     for (const tur of ["urun-vitrini", "sekmeli-vitrin", "firsatlar", "marka-logolari"]) {
       expect(bolumKutuphanesi[tur]?.duzenAlanlari).toEqual(["ana-sayfa"]);
@@ -145,6 +166,31 @@ describe("ürün vitrini", () => {
     expect(kap.querySelector('a[href="/tumu"]')?.textContent).toBe("Tümünü gör");
     expect(kap.textContent).toContain("Yan afiş");
     expect(kap.querySelector('a[href="/yan"]')?.textContent).toBe("Git");
+  });
+
+  it("bölümün başlığı yoksa yan afişin başlığı bölümün başlığıdır; varsa yan afişinki düz yazıdır", () => {
+    const baglam = baglamIle({ [urunKaynagiAnahtari(yeni)]: kartlar.slice(0, 2) });
+    const yanBaslikli = ciz(
+      [bolum("urun-vitrini", "izgara", { urunler: yeni, yanBaslik: "Yeni gelenler" })],
+      baglam,
+    );
+    const h2 = yanBaslikli.querySelector("h2");
+    expect(h2?.textContent).toBe("Yeni gelenler");
+    expect(yanBaslikli.querySelector("section")?.getAttribute("aria-labelledby")).toBe(h2?.id);
+    const ikiBaslikli = ciz(
+      [
+        bolum("urun-vitrini", "izgara", {
+          baslik: "Öne çıkanlar",
+          urunler: yeni,
+          yanBaslik: "Yeni gelenler",
+        }),
+      ],
+      baglam,
+    );
+    expect([...ikiBaslikli.querySelectorAll("h2")].map((oge) => oge.textContent)).toEqual([
+      "Öne çıkanlar",
+    ]);
+    expect(ikiBaslikli.textContent).toContain("Yeni gelenler");
   });
 
   it("yan afiş başlıksız çizilmez; kart görünümü bölümün seçimi, yoksa temanınki", () => {
@@ -273,6 +319,9 @@ describe("geri sayımlı fırsatlar", () => {
     expect(kartAdlari(kap)).toEqual([kartlar[0]?.ad, kartlar[3]?.ad]);
     const sureler = [...kap.querySelectorAll("li p")].map((p) => p.textContent);
     expect(sureler).toEqual(["Bitmesine 40 dakika", "Bitmesine 2 gün 5 saat"]);
+    // Kalan süre kartın içinde, markadan önce (Canlı Çarşı taslağı).
+    const ilkKart = kap.querySelector("li article");
+    expect(ilkKart?.querySelector("p")?.textContent).toBe("Bitmesine 40 dakika");
     // Sıfır olan küçük birim yazılmaz.
     const tam = ciz(
       [bolum("firsatlar", "panelsiz", {})],
@@ -284,7 +333,7 @@ describe("geri sayımlı fırsatlar", () => {
     ]);
     const sayac = kap.querySelector('[role="timer"]');
     expect(sayac?.getAttribute("aria-label")).toBe("Kalan süre");
-    expect(sayac?.textContent).toBe("0gün0saat40dakika");
+    expect(sayac?.textContent).toBe("00gün00saat40dakika");
   });
 
   it("bitişi olmayan kart çizilmez; hiçbiri yoksa ya da hepsi bitmişse bölüm yok", () => {
@@ -317,7 +366,7 @@ describe("geri sayımlı fırsatlar", () => {
       ),
     );
     expect(kartAdlari(container)).toHaveLength(2);
-    expect(container.querySelector('[role="timer"]')?.textContent).toBe("0gün0saat1dakika");
+    expect(container.querySelector('[role="timer"]')?.textContent).toBe("00gün00saat01dakika");
     act(() => {
       vi.advanceTimersByTime(60_000 - 1);
     });
@@ -326,12 +375,12 @@ describe("geri sayımlı fırsatlar", () => {
       vi.advanceTimersByTime(1_000);
     });
     expect(kartAdlari(container)).toEqual([kartlar[3]?.ad]);
-    expect(container.querySelector('[role="timer"]')?.textContent).toBe("0gün0saat2dakika");
+    expect(container.querySelector('[role="timer"]')?.textContent).toBe("00gün00saat02dakika");
     // React yeni zamanlayıcıyı act bittikten sonra kurar: saat dakika dakika ilerler.
     act(() => {
       vi.advanceTimersByTime(60_000);
     });
-    expect(container.querySelector('[role="timer"]')?.textContent).toBe("0gün0saat1dakika");
+    expect(container.querySelector('[role="timer"]')?.textContent).toBe("00gün00saat01dakika");
     expect(container.querySelector("section")).not.toBeNull();
     act(() => {
       vi.advanceTimersByTime(60_000);

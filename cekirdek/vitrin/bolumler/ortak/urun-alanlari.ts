@@ -34,6 +34,7 @@ export const yanAfisAlanlari = {
   yanZemin: {
     tur: "renk",
     ad: "vitrin.bolum.alan.zemin",
-    renkler: ["yuzey", "afis", "alt-kisim", "kutu-1", "kutu-2", "kutu-3", "kutu-4", "kutu-5"],
+    // Seçilmezse üçüncü kutu rengi (Canlı Çarşı taslağı, urun-izgarasi.tsx).
+    renkler: ["kutu-3", "kutu-1", "kutu-2", "kutu-4", "kutu-5", "yuzey", "afis", "alt-kisim"],
   },
 } as const satisfies Readonly<Record<string, TekAlanTarifi>>;

@@ -2,7 +2,7 @@
 // - Yan panelli: zemin renginde panelde üst yazı, başlık ve en yakın bitişe büyük sayaç solda; kartlar
 //   sağda. Telefonda panel kartların üstündedir.
 // - Panelsiz: başlık ve sayaç üstte, kartlar bütün genişlikte.
-// Her kartın üstünde kendi kalan süresi yazar. Kartlar ve bitişler bağlamdaki fırsat kaynağındandır (en yakın
+// Her kartın bilgilerinin en üstünde kendi kalan süresi yazar (taslaktaki gibi kartın içinde). Kartlar ve bitişler bağlamdaki fırsat kaynağındandır (en yakın
 // biten önce); bitiş kartın fiyatındandır (fiyatAraliklari), burada hesaplanmaz. Ürünü olmayan bölüm çizilmez.
 import { useId } from "react";
 import { sinif } from "../../../../bilesenler/parcalar/sinif";
@@ -37,7 +37,7 @@ export function FirsatlarGorunumu({ gorunum, degerler: ham, baglam }: BolumGorun
   const ust = (
     <>
       {metinMi(degerler.ustYazi) ? (
-        <p className="font-kalin text-kucuk uppercase">{degerler.ustYazi}</p>
+        <p className="font-en-kalin text-kucuk uppercase">{degerler.ustYazi}</p>
       ) : null}
       <h2
         id={baslikKimligi}
@@ -78,17 +78,10 @@ export function FirsatlarGorunumu({ gorunum, degerler: ham, baglam }: BolumGorun
             kaydirmali={false}
             etiket={baslik}
             yer={panelli ? "iki-sutun" : "tam"}
-            sarici={(kart, icerik) => {
-              const bitis = bitisleri.get(kart.kimlik) ?? 0;
-              return (
-                <FirsatOgesi bitis={bitis}>
-                  <div className="flex h-full flex-col gap-2">
-                    <KalanSure bitis={bitis} />
-                    {icerik}
-                  </div>
-                </FirsatOgesi>
-              );
-            }}
+            ustSatir={(kart) => <KalanSure bitis={bitisleri.get(kart.kimlik) ?? 0} />}
+            sarici={(kart, icerik) => (
+              <FirsatOgesi bitis={bitisleri.get(kart.kimlik) ?? 0}>{icerik}</FirsatOgesi>
+            )}
           />
         </div>
       </section>

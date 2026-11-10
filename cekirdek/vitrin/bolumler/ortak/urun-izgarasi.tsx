@@ -40,33 +40,36 @@ export const bolumunKartGorunumu = (baglam: VitrinBaglami, deger: unknown): Urun
   return urunKartiGorunumu(baglam.parcaGorunumleri, secim === "tema" ? undefined : secim);
 };
 
-// Izgaranın sütunları. Yatay kart dar yerler içindir ama düğmeleri ve fiyatı sığmalı: telefonda bir,
-// masaüstünde en çok üç (dörtte fiyat kırılıyordu, görüntüde ölçüldü). Yan afişin yanında bir sütun azdır;
-// fırsatlarda panelin yanında kartlar iki sütundur (Canlı Çarşı taslağı).
+// Izgaranın sütunları (Canlı Çarşı taslağı). Dikey kart geniş ekranda beş, masaüstünde dört, tablette üç,
+// telefonda iki sütundur; yan afişin yanında bir sütun azdır. Yatay kart dar yerler içindir ama düğmeleri ve
+// fiyatı sığmalı: telefonda bir, masaüstünde en çok üç (dörtte fiyat kırılıyordu, görüntüde ölçüldü); aralığı
+// taslaktaki gibi 12 px'tir. Fırsatlarda panelin yanında kartlar iki sütundur.
 export type IzgaraYeri = "tam" | "yanli" | "iki-sutun";
 const izgaraSiniflari = (kart: UrunKartiGorunumu, yer: IzgaraYeri): string => {
   if (kart === "yatay") {
     return yer === "tam"
-      ? "grid-cols-1 tablet:grid-cols-2 masaustu:grid-cols-3"
-      : "grid-cols-1 tablet:grid-cols-2";
+      ? "gap-3 grid-cols-1 tablet:grid-cols-2 masaustu:grid-cols-3"
+      : "gap-3 grid-cols-1 tablet:grid-cols-2";
   }
-  if (yer === "iki-sutun") return "grid-cols-2";
+  if (yer === "iki-sutun") return "gap-4 grid-cols-2";
   if (kart === "buyuk-gorsel") {
-    return yer === "yanli" ? "grid-cols-2" : "grid-cols-2 masaustu:grid-cols-3";
+    return yer === "yanli" ? "gap-4 grid-cols-2" : "gap-4 grid-cols-2 masaustu:grid-cols-3";
   }
   return yer === "yanli"
-    ? "grid-cols-2 tablet:grid-cols-3"
-    : "grid-cols-2 tablet:grid-cols-3 masaustu:grid-cols-4";
+    ? "gap-4 grid-cols-2 tablet:grid-cols-3 genis:grid-cols-4"
+    : "gap-4 grid-cols-2 tablet:grid-cols-3 masaustu:grid-cols-4 genis:grid-cols-5";
 };
 
 const seritSiniflari: Record<UrunKartiGorunumu, string> = {
-  dikey: "basis-1/2 tablet:basis-1/3 masaustu:basis-1/4",
+  dikey: "basis-1/2 tablet:basis-1/3 masaustu:basis-1/4 genis:basis-1/5",
   yatay: "basis-full tablet:basis-1/2 masaustu:basis-1/3",
   "buyuk-gorsel": "basis-3/4 tablet:basis-1/2 masaustu:basis-1/3",
 };
 
-// Kartı saran parça: fırsatlarda kartın üstünde kalan süre yazar ve biten indirimin kartı düşer.
+// Kartı saran parça (fırsatlarda biten indirimin kartı düşer) ve kartın bilgilerinin üst satırı (fırsatlarda
+// kalan süre, taslaktaki gibi kartın içinde).
 export type KartSarici = (kart: UrunKartiVerisi, icerik: ReactNode) => ReactNode;
+export type KartUstSatiri = (kart: UrunKartiVerisi) => ReactNode;
 
 export function UrunIzgarasi({
   kartlar,
@@ -76,6 +79,7 @@ export function UrunIzgarasi({
   etiket,
   yer = "tam",
   sarici,
+  ustSatir,
 }: {
   kartlar: readonly UrunKartiVerisi[];
   kart: UrunKartiGorunumu;
@@ -85,10 +89,17 @@ export function UrunIzgarasi({
   etiket: string;
   yer?: IzgaraYeri;
   sarici?: KartSarici;
+  ustSatir?: KartUstSatiri;
 }) {
   const ciz = (urun: UrunKartiVerisi) => {
     const icerik = (
-      <UrunKarti urun={urun} gorunum={kart} islevler={baglam.islevler} className="h-full" />
+      <UrunKarti
+        urun={urun}
+        gorunum={kart}
+        islevler={baglam.islevler}
+        ustSatir={ustSatir?.(urun)}
+        className="h-full"
+      />
     );
     return sarici === undefined ? icerik : sarici(urun, icerik);
   };
@@ -116,7 +127,7 @@ export function UrunIzgarasi({
     );
   }
   return (
-    <ul className={sinif("grid min-w-0 gap-4", izgaraSiniflari(kart, yer))}>
+    <ul className={sinif("grid min-w-0", izgaraSiniflari(kart, yer))}>
       {kartlar.map((urun) => (
         // Fırsatlarda biten kartın yeri boş kalmaz (empty:hidden).
         <li key={urun.kimlik} className="min-w-0 empty:hidden">
@@ -177,43 +188,56 @@ type YanAfisDegerleri = {
   yanZemin?: unknown;
 };
 
-// Yan afiş: başlığı verilmişse çizilir. Düğme bağlantı ve yazısıyla birlikte görünür.
+// Yan afiş (Canlı Çarşı taslağının "Yeni gelenler" bölümü): başlığı verilmişse çizilir. Varsayılan zemin
+// üçüncü kutu rengidir; başlık ve metin üstte, görsel sağa yaslı, koyu düğme altta. Bölümün başlığı yoksa yan
+// afişin başlığı bölümün başlığıdır (h2, baslikKimligi ile); varsa yan afişinki düz yazıdır.
 export function YanAfis({
   degerler,
   baglam,
+  baslikKimligi,
 }: {
   degerler: YanAfisDegerleri;
   baglam: VitrinBaglami;
+  baslikKimligi?: string;
 }) {
   if (!metinMi(degerler.yanBaslik)) return null;
   const baglanti = baglantiMi(degerler.yanBaglanti) ? degerler.yanBaglanti : undefined;
-  const zemin = degerler.yanZemin ?? "yuzey";
+  const zemin = degerler.yanZemin ?? "kutu-3";
+  const baslikSinifi =
+    "font-baslik text-baslik-3 font-baslik-kalinligi wrap-anywhere tablet:text-baslik-2";
   return (
     <div
       className={sinif(
-        "flex flex-col gap-4 rounded-orta p-6 tablet:shrink-0 masaustu:w-panel",
-        zeminSiniflari(zemin, "yuzey"),
+        "flex flex-col justify-between gap-4 rounded-orta p-6 tablet:shrink-0 masaustu:w-panel",
+        zeminSiniflari(zemin, "kutu-3"),
       )}
     >
-      <p className="font-baslik text-baslik-3 font-baslik-kalinligi wrap-anywhere">
-        {degerler.yanBaslik}
-      </p>
-      {metinMi(degerler.yanMetin) ? (
-        <p className={sinif("whitespace-pre-line", solukYaziSiniflari(zemin))}>
-          {degerler.yanMetin}
-        </p>
-      ) : null}
+      {/* Başlık ve metin bir grup: aralarında 8 px (taslak). */}
+      <div className="flex flex-col gap-2">
+        {baslikKimligi === undefined ? (
+          <p className={baslikSinifi}>{degerler.yanBaslik}</p>
+        ) : (
+          <h2 id={baslikKimligi} className={baslikSinifi}>
+            {degerler.yanBaslik}
+          </h2>
+        )}
+        {metinMi(degerler.yanMetin) ? (
+          <p className={sinif("whitespace-pre-line", solukYaziSiniflari(zemin))}>
+            {degerler.yanMetin}
+          </p>
+        ) : null}
+      </div>
       <BolumGorseli
         baglam={baglam}
         gorsel={degerler.yanGorsel}
         alternatifMetin={degerler.yanGorselMetni}
         genislik="besteBir"
-        className="hidden aspect-square w-full object-contain masaustu:block"
+        className="aspect-square w-2/3 self-end object-contain"
       />
       {baglanti !== undefined && metinMi(degerler.yanDugmeYazisi) ? (
         <Link
           href={baglanti.adres}
-          className={sinif(dugmeSiniflari({ tur: "birincil" }), "w-fit")}
+          className={sinif(dugmeSiniflari({ tur: "ikincil" }), "w-fit no-underline")}
           {...yeniSekmeOzellikleri(baglanti.yeniSekme)}
         >
           {degerler.yanDugmeYazisi}

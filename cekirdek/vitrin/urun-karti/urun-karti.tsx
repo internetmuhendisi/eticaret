@@ -18,6 +18,7 @@
 // - Favori, sepete ekle ve puan işlevleri yazılınca görünür (cekirdek/kayitlar/islevler.ts). Eylemleri
 //   bu kartta yazılmaz, yalnız yerleri vardır (kart 0109'un sınırı).
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
 import { Rozet } from "../../../bilesenler/parcalar/rozet";
@@ -136,6 +137,7 @@ export function UrunKarti({
   baslikDuzeyi = 3,
   gorselGenisligi,
   oncelikli = false,
+  ustSatir,
   className,
 }: {
   urun: UrunKartiVerisi;
@@ -147,6 +149,9 @@ export function UrunKarti({
   gorselGenisligi?: string;
   // Sayfanın ilk görünen kartları görseli beklemeden yükler.
   oncelikli?: boolean;
+  // Bilgilerin en üstündeki satır, markadan önce (kart 0111: fırsatlarda indirimin kalan süresi; Canlı Çarşı
+  // taslağı). Kartın verisi değildir, kartı çizen bölüm verir.
+  ustSatir?: ReactNode;
   className?: string;
 }) {
   const Baslik = `h${baslikDuzeyi}` as const;
@@ -187,6 +192,7 @@ export function UrunKarti({
         yatay ? "gap-1" : buyuk ? "gap-1.5 p-4" : "gap-1.5 p-3",
       )}
     >
+      {ustSatir}
       {yatay || urun.marka === undefined ? null : (
         <span className="truncate text-kucuk text-soluk-yazi">{urun.marka}</span>
       )}

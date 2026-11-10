@@ -185,3 +185,7 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
     },
   };
 };
+
+// Sayacın kutusundaki gibi iki haneli tam sayı: "05" (kart 0111, Canlı Çarşı taslağı). Dilden bağımsızdır,
+// tarayıcıda da çalışır.
+export const ikiHaneli = (sayi: number): string => String(Math.trunc(sayi)).padStart(2, "0");

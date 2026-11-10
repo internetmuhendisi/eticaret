@@ -8,6 +8,7 @@
 //   sayacı kalanların en yakın bitişine sayar.
 // - Bitiş indirimin bittiği andır (hariç): o anda fiyat artık indirimli değildir.
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react";
+import { ikiHaneli } from "../../../metinler/bicimleyici";
 import { useMetin } from "../../../metinler/istemci-metni";
 import { doldur } from "../../../moduller/eposta/sablon";
 import { kalanSure, sonrakiDegisim } from "./sure";
@@ -97,7 +98,7 @@ export function Sayac({ bitisler }: { bitisler: readonly number[] }) {
           key={kutu.kod}
           className="flex min-w-16 flex-col items-center rounded-kucuk bg-zemin px-2 py-3 text-kucuk text-yazi"
         >
-          <span className="font-kalin text-baslik-2 tabular-nums">{kutu.sayi}</span>
+          <span className="font-en-kalin text-baslik-2 tabular-nums">{ikiHaneli(kutu.sayi)}</span>
           {kutu.ad}
         </span>
       ))}

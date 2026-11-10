@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type BicimAyarlari, bicimleyiciOlustur, yerelZamandan } from "../bicimleyici";
+import { type BicimAyarlari, bicimleyiciOlustur, ikiHaneli, yerelZamandan } from "../bicimleyici";
 
 // Türkiye'nin biçimi (planlar/site-ayarlari.md): binlikte nokta, ondalıkta virgül, simge sonda,
 // Europe/Istanbul. Çekirdekte bir sitenin para simgesi yazmaz (cekirdek/testler/para-simgesi-yok.test.ts):
@@ -180,5 +180,11 @@ describe("yerel zamandan an", () => {
     ["25. saat", "2026-11-08T25:00"],
   ])("%s reddedilir", (_ad, yerel) => {
     expect(yerelZamandan(yerel, "Europe/Istanbul")).toBeUndefined();
+  });
+});
+
+describe("iki haneli sayı (kart 0111, sayacın kutusu)", () => {
+  it("tek haneli sayı sıfırla başlar, büyük sayı değişmez", () => {
+    expect([0, 5, 9, 10, 59, 120].map(ikiHaneli)).toEqual(["00", "05", "09", "10", "59", "120"]);
   });
 });

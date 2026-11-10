@@ -41,7 +41,7 @@ export function MarkaLogolariGorunumu({
     return (
       <Link
         href={marka.adres}
-        className="flex h-20 min-w-0 items-center justify-center rounded-orta border border-kenar bg-zemin px-4 text-center font-baslik text-buyuk font-kalin text-yazi no-underline hover:border-yazi"
+        className="flex h-20 min-w-0 items-center justify-center rounded-orta border border-kenar bg-zemin px-4 text-center font-baslik text-buyuk font-en-kalin text-yazi no-underline hover:border-yazi"
       >
         {logo === undefined ? (
           <span className="min-w-0 wrap-anywhere">{marka.ad}</span>

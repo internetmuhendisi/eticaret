@@ -36,23 +36,30 @@ export function UrunVitriniGorunumu({ gorunum, degerler: ham, baglam }: BolumGor
   if (kartlar.length === 0) return null;
   const baslik = metinMi(degerler.baslik) ? degerler.baslik : undefined;
   const yanli = metinMi(degerler.yanBaslik);
+  // Başlık yoksa ve yan afiş varsa bölümün başlığı yan afişin başlığıdır (Canlı Çarşı taslağı).
+  const yanBaslikli = baslik === undefined && yanli;
   return (
     <section
-      {...(baslik === undefined
+      {...(baslik === undefined && !yanBaslikli
         ? { "aria-label": metin("vitrin.bolum.urunVitrini.etiket") }
         : { "aria-labelledby": baslikKimligi })}
       className="mx-auto flex w-full max-w-icerik flex-col gap-4 px-4 tablet:px-6"
     >
       <BolumBasligi kimlik={baslikKimligi} baslik={baslik} tumu={degerler.tumuBaglantisi} />
       <div className="flex flex-col gap-4 masaustu:flex-row masaustu:items-stretch">
-        <YanAfis degerler={degerler} baglam={baglam} />
+        <YanAfis degerler={degerler} baglam={baglam} {...(yanBaslikli ? { baslikKimligi } : {})} />
         <div className="min-w-0 flex-1">
           <UrunIzgarasi
             kartlar={kartlar}
             kart={bolumunKartGorunumu(baglam, degerler.kartGorunumu)}
             baglam={baglam}
             kaydirmali={gorunum === "kaydirmali"}
-            etiket={baslik ?? metin("vitrin.bolum.urunVitrini.etiket")}
+            etiket={
+              baslik ??
+              (yanBaslikli
+                ? (degerler.yanBaslik as string)
+                : metin("vitrin.bolum.urunVitrini.etiket"))
+            }
             yer={yanli ? "yanli" : "tam"}
           />
         </div>

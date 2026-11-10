@@ -134,6 +134,7 @@ const ornekMarkalar = (): Record<string, BaglamMarkasi> =>
   );
 
 export const ornekKaynaklar = {
+  oneCikan: { tur: "etiket", etiket: ornekKimlik(301), adet: 5 },
   yeni: { tur: "yeni", adet: 8 },
   kategori: { tur: "kategori", kategori: ornekKategoriKimligi(0), adet: 8 },
   indirimli: { tur: "indirimli", adet: 4 },
@@ -159,8 +160,9 @@ const ornekUrunler = (an: Date): Record<string, readonly UrunKartiVerisi[]> => {
   const kartlar = ornekUrunKartlari();
   const firsatlar = ornekFirsatlar(an);
   return {
+    [urunKaynagiAnahtari(ornekKaynaklar.oneCikan)]: kartlar.slice(0, 5),
     [urunKaynagiAnahtari(ornekKaynaklar.yeni)]: kartlar.slice(0, 8),
-    [urunKaynagiAnahtari(ornekKaynaklar.kategori)]: kartlar.slice(2, 8),
+    [urunKaynagiAnahtari(ornekKaynaklar.kategori)]: kartlar.slice(2, 6),
     [urunKaynagiAnahtari(ornekKaynaklar.indirimli)]: [0, 3, 6].flatMap(
       (sira) => kartlar[sira] ?? [],
     ),
@@ -228,8 +230,14 @@ export const ornekBaglam = (an: Date = new Date()): VitrinBaglami => ({
 export const ornekGenisLogo =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='80'%3E%3Crect width='800' height='80'/%3E%3C/svg%3E";
 
-const ornekBolum = (tur: string, gorunum: string, degerler: Record<string, unknown> = {}) => ({
-  kimlik: `ornek-${tur}-${gorunum}`,
+// Aynı tür ve görünümden ikinci bölümün kimliği ekle ayrılır (React anahtarı tekil olmalı).
+const ornekBolum = (
+  tur: string,
+  gorunum: string,
+  degerler: Record<string, unknown> = {},
+  ek = "",
+) => ({
+  kimlik: `ornek-${tur}-${gorunum}${ek}`,
   tur,
   gorunum,
   gizli: false,
@@ -382,12 +390,27 @@ export const ornekAnaSayfaOtekiGorunumler = (): BolumOrnegi[] => [
 
 // Ürün bölümleri (kart 0111): önce her türün ilk görünümü, sonra öteki görünümler. Ürünler, markalar ve indirim
 // bitişleri yukarıdaki örneklerdir.
+// Sıra Canlı Çarşı taslağındaki gibidir: öne çıkanlar, yan afişli yeni gelenler (bölümün başlığı yan afişin
+// başlığıdır), kategoriye göre sekmeler, süreli fırsatlar, markalar.
 export const ornekUrunBolumleri = (): BolumOrnegi[] => [
   ornekBolum("urun-vitrini", "izgara", {
     baslik: om("oneCikanlar"),
-    urunler: ornekKaynaklar.yeni,
+    urunler: ornekKaynaklar.oneCikan,
     tumuBaglantisi: { adres: vitrinAdresleri.anasayfa, yeniSekme: false },
   }),
+  ornekBolum(
+    "urun-vitrini",
+    "izgara",
+    {
+      urunler: ornekKaynaklar.kategori,
+      yanBaslik: om("yeniGelenler"),
+      yanMetin: om("yeniGelenlerMetni"),
+      yanGorsel: ornekGorselKimligi.kare(4),
+      yanDugmeYazisi: om("yanDugme"),
+      yanBaglanti: { adres: vitrinAdresleri.anasayfa, yeniSekme: false },
+    },
+    "-yan-afisli",
+  ),
   ornekBolum("sekmeli-vitrin", "izgara", {
     baslik: om("kategoriyeGore"),
     sekmeler: [
@@ -407,14 +430,15 @@ export const ornekUrunBolumleri = (): BolumOrnegi[] => [
 ];
 
 export const ornekUrunBolumleriOtekiGorunumler = (): BolumOrnegi[] => [
+  // Başlıklı bölümde yan afişin başlığı düz yazıdır.
   ornekBolum("urun-vitrini", "kaydirmali", {
-    baslik: om("yeniGelenler"),
-    urunler: ornekKaynaklar.kategori,
+    baslik: om("oneCikanlar"),
+    urunler: ornekKaynaklar.yeni,
     yanBaslik: om("yeniGelenler"),
     yanMetin: om("yeniGelenlerMetni"),
-    yanGorsel: ornekGorselKimligi.kare(4),
     yanDugmeYazisi: om("yanDugme"),
     yanBaglanti: { adres: vitrinAdresleri.anasayfa, yeniSekme: false },
+    yanZemin: "yuzey",
   }),
   ornekBolum("sekmeli-vitrin", "kaydirmali", {
     sekmeler: [
