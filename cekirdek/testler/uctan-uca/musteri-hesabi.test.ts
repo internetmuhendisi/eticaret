@@ -297,7 +297,12 @@ for (const [ad, width, height] of [
           if (oge.getClientRects().length === 0) return [];
           const sonra = getComputedStyle(oge, "::after");
           let kap: Element | null = oge;
-          if (sonra.position === "absolute" && sonra.content !== "none") {
+          // Yalnız kabını bütünüyle kaplayan (dört kenarı 0) ::after alanı yayar; ince bir alt çizgi yaymaz (bağımsız
+          // kontrolün bulgusu).
+          const kaplar = [sonra.top, sonra.right, sonra.bottom, sonra.left].every(
+            (kenar) => kenar === "0px",
+          );
+          if (sonra.position === "absolute" && sonra.content !== "none" && kaplar) {
             kap = oge.parentElement;
             while (kap !== null && getComputedStyle(kap).position === "static") {
               kap = kap.parentElement;
