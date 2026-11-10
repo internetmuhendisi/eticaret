@@ -21,6 +21,10 @@ export const temaSurumleri = pgTable(
     ayarlar: jsonb().notNull(),
     // Bu sürüm önceki bir sürüme dönüşse o sürümün sırası.
     geri_donulen_sira: integer(),
+    // Bu sürüm yazılmadan hemen önce geçerli olan düzen sürümünün sırası (kart 0113). Bir sürüm geçerliyken
+    // düzenin son hâli, bir sonraki tema sürümünün bu alanıdır: tema kodu değişen geri dönüş düzeni oradan
+    // getirir. Kart 0113'ten önce yazılan sürümlerde boştur.
+    onceki_duzen_sira: integer(),
     zaman: zaman().notNull().defaultNow(),
   },
   (tablo) => [
@@ -29,6 +33,10 @@ export const temaSurumleri = pgTable(
     check(
       "tema_surumleri_geri_donulen",
       sql`${tablo.geri_donulen_sira} is null or (${tablo.geri_donulen_sira} > 0 and ${tablo.geri_donulen_sira} < ${tablo.sira})`,
+    ),
+    check(
+      "tema_surumleri_onceki_duzen",
+      sql`${tablo.onceki_duzen_sira} is null or ${tablo.onceki_duzen_sira} > 0`,
     ),
   ],
 );

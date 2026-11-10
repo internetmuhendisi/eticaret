@@ -232,3 +232,36 @@ Müşterinin kendi hesabını döner. Vitrin oturumu buradan sorar: sayfa çizer
 - Servis: `cekirdek/moduller/musteri/servis.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "eposta": "..." } }`, gerekirse yenilenen oturum çerezleri.
 - Hatalar: `oturum-yok`.
+
+## Yönetici
+
+Yönetici uçları iki aşamalı girişten geçmiş oturum ister. Girişsiz istek `oturum-yok`, izni olmayan rol `yetki` alır.
+
+### GET /kapi/yonetici/tema
+
+Panelin tema ekranının verisi (kart 0113): geçerli tema sürümü, sitenin kullanabileceği temalar ve mağaza sahibinin temayı değiştirip değiştiremeyeceği. Sürüm yoksa başlangıç sürümü bir kez yazılır.
+
+- İzin: `tema.gor`. Sınır: `genel`.
+- Girdi: yok. Adres parametresi verilirse `dogrulama`.
+- Servis: `cekirdek/moduller/tema/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "surum": { "sira", "tema", "ayarlar", "geriDonulenSira" }, "temalar": [{ "kod", "kaynak", "ad" }], "degistirilebilir": true } }`.
+
+### POST /kapi/yonetici/tema
+
+Temayı ve ayarlarını yeni sürüm olarak yayınlar (karar 0080). Tema kodu değişiyorsa düzenin yolu seçilir: yeni temanın düzenini uygulamak ya da düzeni korumak (kart 0113, karar 0091). Tema ve düzen aynı işlemde yazılır, ikisi de değişiklik kaydına girer. Son sürümle aynıysa hiçbir şey yazılmaz.
+
+- İzin: `tema.degistir`. Sınır: `genel`.
+- Girdi: `{ "tema", "ayarlar", "duzen"? }` (`temaYayiniSemasi`, `cekirdek/moduller/tema/semalar.ts`). `duzen`: `uygula` ya da `koru`; tema aynıysa yok sayılır.
+- Servis: `cekirdek/moduller/tema/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "sira", "tema", "ayarlar", "geriDonulenSira": null } }`.
+- Hatalar: `dogrulama` (şemaya uymayan girdi; `tema-kullanilamaz`; temanın açmadığı renk ya da tanımsız seçenek; `kontrast-yetersiz` öneriyle (`oneri`); tema değişiyor ama `duzen` yok: `duzen-yolu-gerekli`), `is-kurali` (`tema-degistirilemez`: "Mağaza sahibi temayı değiştirebilir" kapalı), `yetki` (sahte istek ya da izin yok).
+
+### POST /kapi/yonetici/tema-geri-don
+
+Önceki bir tema sürümüne döner: o sürüm yeni sürüm olarak yazılır (karar 0080). Tema kodu değişiyorsa düzen de, dönülen sürüm geçerliyken son hâliyle getirilir; sonradan yapılan düzen değişiklikleri düzen geçmişinde kalır (kart 0113, karar 0091).
+
+- İzin: `tema.degistir`. Sınır: `genel`.
+- Girdi: `{ "sira"? }` (`temaGeriDonusSemasi`). Sıra verilmezse bir önceki sürüm.
+- Servis: `cekirdek/moduller/tema/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "sira", "tema", "ayarlar", "geriDonulenSira" } }`.
+- Hatalar: `dogrulama` (`surum-gecersiz`: olmayan, son ya da bozuk sıra), `is-kurali` (`tema-degistirilemez`; `surum-kullanilamaz`: teması bugün kullanılamayan ya da bugünkü kurallardan geçmeyen sürüm), `yetki`.

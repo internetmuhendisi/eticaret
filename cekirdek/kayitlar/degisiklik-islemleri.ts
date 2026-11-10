@@ -78,6 +78,11 @@ export const degisiklikIslemleri = [
   "duzen.bolum-gosterildi",
   "duzen.bolumler-siralandi",
   "duzen.bolum-silindi",
+  // Tema değişikliğinin düzeni (kart 0113): yeni temanın düzeni uygulandı ya da düzen korunup görünümü
+  // olmayan bölümler varsayılana düştü; tema kodu değişen geri dönüşte önceki düzen getirildi. Tema
+  // sürümünün kaydıyla aynı işlemde yazılır; değerlerde düzen sürümlerinin sırası ve yol yazar.
+  "duzen.tema-degisti",
+  "duzen.geri-donuldu",
   // Menü ve öğeleri (kart 0107). Öğenin taşınması üstünün değişmesidir: menu-ogesi.degisti. Kardeşlerin
   // sıralanması menünün kaydına yazılır. Silinen menünün ve öğenin alt öğeleri silme kaydında listelenir.
   // Başlangıç menüleri aynı işlemlerle, "baslangic-menu" adlı sistem işlemi olarak yazılır.

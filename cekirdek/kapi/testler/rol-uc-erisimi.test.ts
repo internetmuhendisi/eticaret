@@ -1,7 +1,7 @@
 // Her rolün her uçtaki erişimi, gerçek veritabanıyla (kart 0030, karar 0047, .claude/rules/yetki.md).
 // Uç listesi uygulamanın adres dosyalarından okunur, kimse elle yazmaz. Makinenin gerçekten yakaladığı,
-// yalnız bu testte duran örnek uçlarla gösterilir (ornek-adresler/): bugün uygulamada yönetici ve müşteri
-// ucu yoktur.
+// yalnız bu testte duran örnek uçlarla gösterilir (ornek-adresler/): uygulamada yönetici ve müşteri ucu
+// azdır (kart 0113'ten beri tema uçları).
 import { randomBytes } from "node:crypto";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

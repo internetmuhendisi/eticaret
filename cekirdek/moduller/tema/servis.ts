@@ -12,11 +12,17 @@
 //   önceki sürüme tek adımda dönülür. Dönüş, eski sürümün kopyasını yeni sürüm olarak yazar.
 // - Her yazım değişiklik kaydına aynı veritabanı işleminde girer (karar 0045). Yazmalar tema kilidini alır:
 //   aynı anda gelen iki yayın sırayla yazılır.
+// - Tema kodu değişince düzenin yolu seçilir (kart 0113, karar 0091): yeni temanın düzenini uygulamak ya da
+//   düzeni korumak (cekirdek/moduller/duzen/gecis.ts). Tema ve düzen sürümü aynı işlemde yazılır; kilit
+//   sırası tema, düzen. Her tema sürümü, yazılmadan hemen önce geçerli olan düzen sürümünü saklar. Tema
+//   kodu değişen geri dönüş, dönülen sürüm geçerliyken düzenin son hâlini (bir sonraki sürümün sakladığı
+//   düzen) yeni düzen sürümü olarak getirir; sonradan yapılan düzen değişiklikleri geçmişte kalır
+//   (kullanıcı kararı). Yalnız ayar değişikliğinde ve geri dönüşünde düzene dokunulmaz.
 //
 // İzin kapıda denetlenir (izinler.ts); servis yalnız kimin yaptığını kayda yazar.
+import { randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
-import { desc, eq, sql } from "drizzle-orm";
-import { z } from "zod";
+import { desc, eq, gt, sql } from "drizzle-orm";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
@@ -24,19 +30,22 @@ import { BilinenHata } from "../../kapi/zarf.ts";
 import { type DegisikligiYapan, sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
 import {
   type TemaAyarlari,
-  type TemaAyarlariGirdisi,
   temaAyariSorunlari,
   temaAyarlariSemasi,
 } from "../../temalar/ayarlar.ts";
-import { kodSemasi } from "../../temalar/sema.ts";
 import type { Tema } from "../../temalar/temalar.ts";
 import {
   siteninVeritabani,
   type Veritabani,
   type VeritabaniIslemi,
 } from "../../veritabani/baglanti.ts";
+import type { BolumKutuphanesi, Duzen } from "../../vitrin/bolum-kutuphanesi/duzen.ts";
+import { bolumKutuphanesi } from "../../vitrin/bolum-kutuphanesi/kutuphane.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
+import { duzeniKoru, temaDuzeniniUygula } from "../duzen/gecis.ts";
+import { type DuzenDurumu, duzenServisi } from "../duzen/servis.ts";
 import { temaSurumleri } from "./model.ts";
+import { type TemaYayiniGirdisi, temaYayiniSemasi } from "./semalar.ts";
 
 // Başlangıç sürümünü yazan, değişiklik kaydında "kim" olarak görünür.
 export const temaBaslangicYazari = sistemIslemi("baslangic-temasi");
@@ -49,6 +58,7 @@ export const temaHatalari = [
   "tema-degistirilemez",
   "surum-gecersiz",
   "surum-kullanilamaz",
+  "duzen-yolu-gerekli",
 ] as const;
 
 export type TemaSurumu = {
@@ -57,12 +67,11 @@ export type TemaSurumu = {
   tema: string;
   ayarlar: TemaAyarlari;
   geriDonulenSira: number | null;
+  oncekiDuzenSira: number | null;
   zaman: Date;
 };
 
-export type TemaGirdisi = { tema: string; ayarlar: TemaAyarlariGirdisi };
-
-const girdiSemasi = z.strictObject({ tema: kodSemasi, ayarlar: temaAyarlariSemasi });
+export type TemaGirdisi = TemaYayiniGirdisi;
 
 const alanlar = {
   kimlik: temaSurumleri.kimlik,
@@ -70,6 +79,7 @@ const alanlar = {
   tema: temaSurumleri.tema,
   ayarlar: temaSurumleri.ayarlar,
   geriDonulenSira: temaSurumleri.geri_donulen_sira,
+  oncekiDuzenSira: temaSurumleri.onceki_duzen_sira,
   zaman: temaSurumleri.zaman,
 };
 
@@ -96,6 +106,9 @@ const ayni = (a: { tema: string; ayarlar: unknown }, b: { tema: string; ayarlar:
   a.tema === b.tema &&
   isDeepStrictEqual(JSON.parse(JSON.stringify(a.ayarlar)), JSON.parse(JSON.stringify(b.ayarlar)));
 
+const ayniDuzen = (a: Duzen, b: Duzen) =>
+  isDeepStrictEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+
 const temaKilidiAl = (islem: VeritabaniIslemi) =>
   islem.execute(sql`select pg_advisory_xact_lock(hashtext('tema'))`);
 
@@ -111,7 +124,28 @@ const birKezKaydet = (anahtar: string, ileti: string): void => {
   hatayiKaydet(new Error(ileti), { kaynak: "tema" });
 };
 
-export const temaServisi = (site: () => Site) => {
+// Tema sürümüyle birlikte yazılacak düzen: yeni düzen ve kaydının değerleri.
+type DuzenDegisikligi = {
+  duzen: Duzen;
+  islem: "duzen.tema-degisti" | "duzen.geri-donuldu";
+  eski: Record<string, unknown>;
+  yeni: Record<string, unknown>;
+};
+
+type Hedef = {
+  tema: string;
+  ayarlar: TemaAyarlari;
+  geriDonulenSira: number | null;
+  // Tema kaydına eklenecek değerler (düzenin yolu).
+  kayitEki?: Record<string, unknown>;
+  duzen?: DuzenDegisikligi;
+};
+
+export const temaServisi = (
+  site: () => Site,
+  kutuphane: () => BolumKutuphanesi = () => bolumKutuphanesi,
+) => {
+  const duzen = duzenServisi(site, kutuphane);
   const temayiBul = (kod: string): Tema | undefined =>
     site().temalar.find((tema) => tema.kod === kod);
 
@@ -200,21 +234,27 @@ export const temaServisi = (site: () => Site) => {
     }
   };
 
-  // Sürümü yazar; son sürümle aynıysa yazmaz ve son sürümü döndürür.
+  // Sürümü yazar; son sürümle aynıysa yazmaz ve son sürümü döndürür. Hedef bir düzen değişikliği taşıyorsa
+  // düzen sürümü de aynı işlemde yazılır; tema sürümü yazılmadan önceki düzenin sırasını saklar.
   const surumYaz = async (
     vt: Veritabani,
     kim: DegisikligiYapan,
-    hedef: (
-      son: Satir,
-      islem: VeritabaniIslemi,
-    ) => Promise<{ tema: string; ayarlar: TemaAyarlari; geriDonulenSira: number | null }>,
+    hedef: (son: Satir, islem: VeritabaniIslemi, sonDuzen: DuzenDurumu) => Promise<Hedef>,
   ): Promise<TemaSurumu> =>
     surum(
       await vt.transaction(async (islem) => {
         await temaKilidiAl(islem);
         const son = await baslangicliSon(islem);
-        const yeni = await hedef(son, islem);
-        if (ayni(son, yeni)) return son;
+        const sonDuzen = await duzen.islemdekiDuzen(islem);
+        const yeni = await hedef(son, islem, sonDuzen);
+        // Tema ve ayarlar aynı, düzen de değişmiyorsa hiçbir şey yazılmaz. Düzen geri geliyorsa (A, B, A'dan
+        // ilk A'ya dönüş) tema sürümü de yazılır: düzeni saklama zinciri kopmasın.
+        if (
+          ayni(son, yeni) &&
+          (yeni.duzen === undefined || ayniDuzen(sonDuzen.duzen, yeni.duzen.duzen))
+        ) {
+          return son;
+        }
         const [yazilan] = await islem
           .insert(temaSurumleri)
           .values({
@@ -222,6 +262,7 @@ export const temaServisi = (site: () => Site) => {
             tema: yeni.tema,
             ayarlar: kayitDegeri(yeni).ayarlar,
             geri_donulen_sira: yeni.geriDonulenSira,
+            onceki_duzen_sira: sonDuzen.sira,
           })
           .returning(alanlar);
         if (yazilan === undefined) throw new Error("Tema sürümü yazılamadı.");
@@ -233,8 +274,16 @@ export const temaServisi = (site: () => Site) => {
           yeni: {
             ...kayitDegeri(yeni),
             ...(yeni.geriDonulenSira === null ? {} : { geriDonulenSira: yeni.geriDonulenSira }),
+            ...yeni.kayitEki,
           },
         });
+        if (yeni.duzen !== undefined) {
+          await duzen.islemdeDuzenYaz(islem, kim, sonDuzen, yeni.duzen.duzen, {
+            islem: yeni.duzen.islem,
+            eski: { ...yeni.duzen.eski, temaSurumu: son.sira },
+            yeni: { ...yeni.duzen.yeni, temaSurumu: yazilan.sira },
+          });
+        }
         return yazilan;
       }),
     );
@@ -246,7 +295,7 @@ export const temaServisi = (site: () => Site) => {
     girdi: TemaGirdisi,
   ): Promise<TemaSurumu> => {
     degistirilebilirMi();
-    const sonuc = girdiSemasi.safeParse(girdi);
+    const sonuc = temaYayiniSemasi.safeParse(girdi);
     if (!sonuc.success) {
       throw dogrulama(
         sonuc.error.issues.map((sorun) => ({ alan: sorun.path.join("."), kod: sorun.code })),
@@ -258,11 +307,34 @@ export const temaServisi = (site: () => Site) => {
     if (sorunlar.length > 0) {
       throw dogrulama(sorunlar.map((sorun) => ({ ...sorun, alan: `ayarlar.${sorun.alan}` })));
     }
-    return surumYaz(vt, kim, async () => ({
-      tema: tema.kod,
-      ayarlar: sonuc.data.ayarlar,
-      geriDonulenSira: null,
-    }));
+    const yol = sonuc.data.duzen;
+    // Tema kodu kilit alındıktan sonra karşılaştırılır: aynı anda yazılan bir yayına göre kaymaz.
+    return surumYaz(vt, kim, async (son, _islem, sonDuzen) => {
+      const yeni = { tema: tema.kod, ayarlar: sonuc.data.ayarlar, geriDonulenSira: null };
+      if (son.tema === tema.kod) return yeni;
+      if (yol === undefined) throw dogrulama([{ alan: "duzen", kod: "duzen-yolu-gerekli" }]);
+      const gecis =
+        yol === "koru"
+          ? duzeniKoru(sonDuzen.duzen, kutuphane())
+          : temaDuzeniniUygula(sonDuzen.duzen, tema.tanim.baslangicDuzeni, kutuphane(), randomUUID);
+      return {
+        ...yeni,
+        kayitEki: { duzen: yol },
+        duzen: {
+          duzen: gecis.duzen,
+          islem: "duzen.tema-degisti",
+          eski: { tema: son.tema },
+          yeni: {
+            tema: tema.kod,
+            yol,
+            tasinan: gecis.tasinan,
+            gizlenen: gecis.gizlenen,
+            disaridaKalan: gecis.disaridaKalan,
+            varsayilanaDusen: gecis.varsayilanaDusen,
+          },
+        },
+      };
+    });
   };
 
   // Önceki bir sürüme döner: o sürüm yeni sürüm olarak yazılır. Sıra verilmezse son sürümden bir önceki:
@@ -279,7 +351,7 @@ export const temaServisi = (site: () => Site) => {
       throw dogrulama([{ alan: "sira", kod: "surum-gecersiz" }]);
     }
     // Hedef kilit alındıktan sonra okunur: "bir önceki" aynı anda yazılan bir yayına göre kaymaz.
-    return surumYaz(vt, kim, async (son, islem) => {
+    return surumYaz(vt, kim, async (son, islem, sonDuzen) => {
       const aranan = sira ?? son.sira - 1;
       const [hedef] =
         aranan >= 1 && aranan < son.sira
@@ -293,7 +365,41 @@ export const temaServisi = (site: () => Site) => {
       if (tema === undefined || temaAyariSorunlari(tema.tanim, eski.ayarlar).length > 0) {
         throw new BilinenHata("is-kurali", [{ alan: "sira", kod: "surum-kullanilamaz" }]);
       }
-      return { tema: eski.tema, ayarlar: eski.ayarlar, geriDonulenSira: eski.sira };
+      const sonuc = { tema: eski.tema, ayarlar: eski.ayarlar, geriDonulenSira: eski.sira };
+      // Dönülen sürümden bu yana tema hiç değişmediyse düzene dokunulmaz (yalnız ayar geri dönüşü). Arada
+      // tema değiştiyse, dönülen sürümün teması bugünküyle aynı olsa da düzen geri gelir (A, B, A'dan
+      // ilk A'ya dönüş; kart 0113 bağımsız kontrolü).
+      const aradakiTemalar = await islem
+        .selectDistinct({ tema: temaSurumleri.tema })
+        .from(temaSurumleri)
+        .where(gt(temaSurumleri.sira, eski.sira));
+      if (aradakiTemalar.every((satir) => satir.tema === eski.tema)) return sonuc;
+      // Dönülen sürüm geçerliyken düzenin son hâli, ondan sonraki sürümün yazılmadan önce sakladığı
+      // düzendir (kullanıcı kararı). Kart 0113'ten önceki sürümde bu bilinmez: düzen korunur.
+      const [sonraki] = await islem
+        .select({ oncekiDuzenSira: temaSurumleri.onceki_duzen_sira })
+        .from(temaSurumleri)
+        .where(eq(temaSurumleri.sira, eski.sira + 1));
+      const duzenSira = sonraki?.oncekiDuzenSira ?? null;
+      const getirilen =
+        duzenSira === null ? undefined : await duzen.islemdeSurumOku(islem, duzenSira);
+      if (duzenSira !== null && getirilen === undefined) {
+        throw new Error(`Tema sürümünün sakladığı düzen sürümü yok: sıra ${duzenSira}.`);
+      }
+      const gecis = duzeniKoru(getirilen?.duzen ?? sonDuzen.duzen, kutuphane());
+      return {
+        ...sonuc,
+        duzen: {
+          duzen: gecis.duzen,
+          islem: getirilen === undefined ? "duzen.tema-degisti" : "duzen.geri-donuldu",
+          eski: { tema: son.tema },
+          yeni: {
+            tema: eski.tema,
+            ...(getirilen === undefined ? { yol: "koru" } : { geriDonulenSira: getirilen.sira }),
+            varsayilanaDusen: gecis.varsayilanaDusen,
+          },
+        },
+      };
     });
   };
 
@@ -324,6 +430,10 @@ export const temaServisi = (site: () => Site) => {
 };
 
 const calisanSiteninServisi = temaServisi(calisanSite);
+
+// Çalışan sitenin tema servisi: uçlar bunu kullanır.
+export const siteninTemaServisi = () => calisanSiteninServisi;
+export const temaDegistirilebilirMi = () => calisanSite().ayarlar.temaDegistirilebilir;
 
 export const siteninGecerliTemasi = (vt: Veritabani = siteninVeritabani()) =>
   calisanSiteninServisi.gecerliTema(vt);

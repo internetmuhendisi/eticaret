@@ -17,7 +17,7 @@
 // İzin kapıda denetlenir (izinler.ts); servis yalnız kimin yaptığını kayda yazar.
 import { randomUUID } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
-import { and, desc, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
@@ -287,6 +287,60 @@ export const duzenServisi = (
       return sonuc.sonuc;
     });
 
+  // Tema değişikliği için (kart 0113): tema servisi tema kilidini aldıktan sonra aynı veritabanı işleminde
+  // çağırır. Kilit sırası tema, düzen; düzen işlemleri tema kilidini almaz, kilitlenme olmaz.
+  const islemdekiDuzen = async (islem: VeritabaniIslemi): Promise<DuzenDurumu> => {
+    await duzenKilidiAl(islem);
+    return durum(await baslangicliSon(islem));
+  };
+
+  const islemdeSurumOku = async (
+    islem: VeritabaniIslemi,
+    sira: number,
+  ): Promise<DuzenDurumu | undefined> => {
+    const [satir] = await islem
+      .select(alanlar)
+      .from(duzenSurumleri)
+      .where(eq(duzenSurumleri.sira, sira));
+    return satir === undefined ? undefined : durum(satir);
+  };
+
+  // Düzeni yeni sürüm olarak yazar ve kayda geçirir; son sürümle aynıysa yazmaz, son sürümü döndürür.
+  // islemdekiDuzen ile kilit alınmış olmalı.
+  const islemdeDuzenYaz = async (
+    islem: VeritabaniIslemi,
+    kim: DegisikligiYapan,
+    son: DuzenDurumu,
+    duzen: Duzen,
+    kayit: {
+      islem: Parameters<typeof degisikligiKaydet>[1]["islem"];
+      eski: Record<string, unknown>;
+      yeni: Record<string, unknown>;
+    },
+  ): Promise<DuzenDurumu> => {
+    if (
+      isDeepStrictEqual(JSON.parse(JSON.stringify(son.duzen)), JSON.parse(JSON.stringify(duzen)))
+    ) {
+      return son;
+    }
+    if (!duzenSemasi.safeParse(duzen).success) {
+      throw new Error("Yazılacak düzen biçime uymuyor; sürüm yazılmadı.");
+    }
+    const [yazilan] = await islem
+      .insert(duzenSurumleri)
+      .values({ sira: son.sira + 1, duzen })
+      .returning(alanlar);
+    if (yazilan === undefined) throw new Error("Düzen sürümü yazılamadı.");
+    await degisikligiKaydet(islem, {
+      kim,
+      islem: kayit.islem,
+      kayit: { tur: "duzen-surumu", kimlik: yazilan.kimlik },
+      eski: { ...kayit.eski, sira: son.sira },
+      yeni: { ...kayit.yeni, sira: yazilan.sira },
+    });
+    return durum(yazilan);
+  };
+
   const bolumunuBul = (duzen: Duzen, kimlik: string) => {
     const bulunan = kimlikMi(kimlik) ? bolumuBul(duzen, kimlik) : undefined;
     if (bulunan === undefined) throw new BilinenHata("bulunamadi");
@@ -495,6 +549,9 @@ export const duzenServisi = (
     bolumSil,
     panelDuzeni,
     cizilecekBolumler,
+    islemdekiDuzen,
+    islemdeSurumOku,
+    islemdeDuzenYaz,
   };
 };
 

@@ -50,3 +50,10 @@ Tasarım değeri, renk, yazı boyutu, boşluk gibi tasarımı oluşturan ve tek 
 - Renk okunurluğu tek yerde ölçülür (`cekirdek/temalar/okunurluk.ts`): temanın kendi değerleri, mağaza sahibinin rengi ve panelin ana rengi aynı ölçüden geçer.
 - Yeni CSS dosyası açılmaz. Stil sınıfla yazılır, temel stil `tailwind.css` içindedir.
 - Yazı tipleri sitenin kendi sunucusundan yüklenir (`@fontsource-variable` paketleri), dış sunucudan yüklenmez.
+
+## Tema değişikliği (karar 0091)
+
+- Tema kodu değişen yayın düzen yolunu ister: `uygula` (yeni temanın düzeni, aynı türün içeriği taşınır, karşılıksız bölüm gizli eklenir) ya da `koru`. Yollar `cekirdek/moduller/duzen/gecis.ts`, yazımı tema servisindedir.
+- Tema ve düzen yalnız tema servisi üzerinden, aynı işlemde birlikte değişir. Kilit sırası tema, düzen; düzen servisine tema kilidini alan bir işlem yazılmaz.
+- Her tema sürümü kendinden önceki düzen sürümünü saklar (`onceki_duzen_sira`). Tema kodu değişen geri dönüş düzeni oradan getirir; tema kodu değişmeyen işlem düzene dokunmaz.
+- Tema uçları `cekirdek/kapi/yonetici/tema.ts`, girdi şemaları `cekirdek/moduller/tema/semalar.ts`.

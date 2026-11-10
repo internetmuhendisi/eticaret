@@ -119,6 +119,7 @@ describe("yayın", () => {
         kose: "keskin",
         koyuTema: true,
       },
+      duzen: "koru",
     });
     expect(yeni).toMatchObject({ sira: 2, tema: "ozel-tema", geriDonulenSira: null });
     expect(yeni.ayarlar).toEqual({
@@ -134,6 +135,7 @@ describe("yayın", () => {
     expect(await surumler(vt)).toHaveLength(2);
     const butun = await kayitlar(vt);
     expect(butun.map((kayit) => kayit.islem).sort()).toEqual(["tema.baslangic", "tema.yayinlandi"]);
+    // Tema kodu değişti: kayıt düzenin yolunu taşır, ikinci yayın (aynı tema) düzen yolunu istemedi.
     const yayin = butun.find((kayit) => kayit.islem === "tema.yayinlandi");
     expect(yayin).toMatchObject({
       islem: "tema.yayinlandi",
@@ -144,6 +146,7 @@ describe("yayın", () => {
       yeni_deger: {
         tema: "ozel-tema",
         ayarlar: { renkler: { birincil: ornekRenk.turuncu }, kose: "keskin", koyuTema: true },
+        duzen: "koru",
       },
     });
     expect((await servis.gecerliTema(vt)).tema.kod).toBe("ozel-tema");
@@ -183,7 +186,11 @@ describe("kullanılabilir temalar (kart 0105)", () => {
     const hazir = servisi(hazirTemali);
     expect(hazir.kullanilabilirTemalar().map((tema) => tema.kod)).not.toContain("ozel-tema");
     // Kendi sitesinde seçilir.
-    await servisi(ozelTemali).temayiYayinla(vtOzel, yonetici(), { tema: "ozel-tema", ayarlar: {} });
+    await servisi(ozelTemali).temayiYayinla(vtOzel, yonetici(), {
+      tema: "ozel-tema",
+      ayarlar: {},
+      duzen: "koru",
+    });
     // Öteki sitede seçilemez, hiçbir şey yazılmaz.
     expect(
       await hatasi(hazir.temayiYayinla(vtHazir, yonetici(), { tema: "ozel-tema", ayarlar: {} })),
@@ -300,10 +307,12 @@ describe("önceki sürüme dönüş", () => {
     const ikinci = await servis.temayiYayinla(vt, yonetici(), {
       tema: "ozel-tema",
       ayarlar: { renkler: { birincil: ornekRenk.turuncu }, kose: "keskin", koyuTema: true },
+      duzen: "koru",
     });
     await servis.temayiYayinla(vt, yonetici(), {
       tema: "canli-carsi",
       ayarlar: { renkler: { birincil: ornekRenk.acikTuruncu } },
+      duzen: "koru",
     });
     const donus = await servis.oncekiSurumeDon(vt, yonetici());
     expect(donus).toMatchObject({
@@ -373,10 +382,15 @@ describe("önceki sürüme dönüş", () => {
 
   it("teması artık kullanılamayan sürüme dönülmez", async () => {
     const vt = await siteAc();
-    await servisi(ozelTemali).temayiYayinla(vt, yonetici(), { tema: "ozel-tema", ayarlar: {} });
+    await servisi(ozelTemali).temayiYayinla(vt, yonetici(), {
+      tema: "ozel-tema",
+      ayarlar: {},
+      duzen: "koru",
+    });
     await servisi(ozelTemali).temayiYayinla(vt, yonetici(), {
       tema: "canli-carsi",
       ayarlar: { koyuTema: true },
+      duzen: "koru",
     });
     // Altyapı sahibi özel temayı listeden çıkardı.
     const yalnizHazir: Site = {
