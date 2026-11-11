@@ -28,4 +28,4 @@ Bölüm: Altyapı. Kart 0128'den önce yapılmalı.
 
 ## Durum
 
-yapılacak
+bitti
