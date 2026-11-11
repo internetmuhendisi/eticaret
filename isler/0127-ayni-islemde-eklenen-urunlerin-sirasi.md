@@ -21,4 +21,4 @@ Bölüm: Vitrin.
 
 ## Durum
 
-yapılacak
+bitti
