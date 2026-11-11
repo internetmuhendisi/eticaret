@@ -8,16 +8,19 @@
 // - secenek-<seçenek>: seçeneğin değeri, birden çok ("secenek-beden=m").
 // - ozellik-<özellik>: özelliğin değeri, birden çok ("ozellik-kumas=pamuk").
 // - stok=var: yalnız stoktakiler.
-// - sirala: sıralama; sitenin varsayılanıysa yazılmaz.
+// - ara: aranan metin, yazıldığı gibi (arama sayfası, kart 0137); filtre ve sıralama değişince korunur.
+// - sirala: sıralama; sayfanın varsayılanıysa yazılmaz. Sayfanın tanımadığı sıralama ("en-uygun" kategori
+//   sayfasında) yok sayılır.
 // - sayfa: 1'den büyükse.
 // Tanınmayan parametre yok sayılır. Sıralama ve filtre değişince sayfa başa döner.
-import { type ListeSiralamasi, listeSiralamalari } from "../../kayitlar/liste";
+import { type AramaSiralamasi, listeSiralamalari } from "../../kayitlar/liste";
 import { kendiAlani } from "../../moduller/urun/filtre";
 
 export const listeParametreleri = {
   enAz: "en-az",
   enCok: "en-cok",
   marka: "marka",
+  ara: "ara",
   secenekOneki: "secenek-",
   ozellikOneki: "ozellik-",
   stok: "stok",
@@ -27,14 +30,16 @@ export const listeParametreleri = {
 } as const;
 
 export type ListeDurumu = {
+  // Aranan metin (arama sayfası); kırpılmış, boşsa yok.
+  arama?: string;
   // Yazıldığı gibi; okunamayan tutar filtreye girmez, ekran hatayı gösterir.
   fiyatYazisi: { enAz?: string; enCok?: string };
   markalar: readonly string[];
   secenekler: Readonly<Record<string, readonly string[]>>;
   ozellikler: Readonly<Record<string, readonly string[]>>;
   stoktakiler: boolean;
-  // Verilmemişse sitenin varsayılanı.
-  siralama?: ListeSiralamasi;
+  // Verilmemişse sayfanın varsayılanı.
+  siralama?: AramaSiralamasi;
   sayfa: number;
 };
 
@@ -45,10 +50,16 @@ const listele = (deger: string | string[] | undefined): string[] =>
 
 const tekrarsiz = (degerler: string[]) => [...new Set(degerler)];
 
-const siralamaMi = (deger: string | undefined): deger is ListeSiralamasi =>
-  (listeSiralamalari as readonly (string | undefined)[]).includes(deger);
+const siralamaMi = (
+  deger: string | undefined,
+  izinli: readonly AramaSiralamasi[],
+): deger is AramaSiralamasi => (izinli as readonly (string | undefined)[]).includes(deger);
 
-export const adrestenDurum = (parametreler: AdresParametreleri): ListeDurumu => {
+// izinli: sayfanın sıralamaları (kategori sayfası listeSiralamalari, arama aramaSiralamalari).
+export const adrestenDurum = (
+  parametreler: AdresParametreleri,
+  izinli: readonly AramaSiralamasi[] = listeSiralamalari,
+): ListeDurumu => {
   const p = listeParametreleri;
   const tek = (ad: string) => listele(parametreler[ad])[0];
   const onekli = (onek: string) =>
@@ -62,11 +73,13 @@ export const adrestenDurum = (parametreler: AdresParametreleri): ListeDurumu => 
   const enAz = tek(p.enAz)?.trim();
   const enCok = tek(p.enCok)?.trim();
   const sirala = tek(p.sirala);
+  const arama = tek(p.ara)?.trim();
   // Yalnız rakam: "1e3", "0x10" gibi yazılışlar sayıya çevrilmez.
   const sayfaYazisi = tek(p.sayfa);
   const sayfa =
     sayfaYazisi !== undefined && /^\d{1,9}$/.test(sayfaYazisi) ? Number(sayfaYazisi) : 1;
   return {
+    ...(arama === undefined || arama === "" ? {} : { arama }),
     fiyatYazisi: {
       ...(enAz === undefined || enAz === "" ? {} : { enAz }),
       ...(enCok === undefined || enCok === "" ? {} : { enCok }),
@@ -75,15 +88,16 @@ export const adrestenDurum = (parametreler: AdresParametreleri): ListeDurumu => 
     secenekler: onekli(p.secenekOneki),
     ozellikler: onekli(p.ozellikOneki),
     stoktakiler: tek(p.stok) === p.stokVar,
-    ...(siralamaMi(sirala) ? { siralama: sirala } : {}),
+    ...(siralamaMi(sirala, izinli) ? { siralama: sirala } : {}),
     sayfa: Math.max(sayfa, 1),
   };
 };
 
 // Durumdan sorgu kısmı ("?marka=a&sayfa=2"); boşsa boş metin. Sıra sabittir: aynı durum aynı adrestir.
-export const durumdanSorgu = (durum: ListeDurumu, varsayilanSiralama: ListeSiralamasi): string => {
+export const durumdanSorgu = (durum: ListeDurumu, varsayilanSiralama: AramaSiralamasi): string => {
   const p = listeParametreleri;
   const sorgu = new URLSearchParams();
+  if (durum.arama !== undefined) sorgu.append(p.ara, durum.arama);
   if (durum.fiyatYazisi.enAz !== undefined) sorgu.append(p.enAz, durum.fiyatYazisi.enAz);
   if (durum.fiyatYazisi.enCok !== undefined) sorgu.append(p.enCok, durum.fiyatYazisi.enCok);
   for (const marka of durum.markalar) sorgu.append(p.marka, marka);
@@ -137,7 +151,7 @@ export type ListeDegisikligi =
   | { tur: "stok"; secili: boolean }
   | { tur: "fiyat"; enAz?: string; enCok?: string }
   | { tur: "fiyat-kaldir" }
-  | { tur: "sirala"; siralama: ListeSiralamasi }
+  | { tur: "sirala"; siralama: AramaSiralamasi }
   | { tur: "temizle" };
 
 export const durumuDegistir = (durum: ListeDurumu, degisiklik: ListeDegisikligi): ListeDurumu => {
@@ -188,6 +202,7 @@ export const durumuDegistir = (durum: ListeDurumu, degisiklik: ListeDegisikligi)
       return basa({ ...durum, siralama: degisiklik.siralama });
     case "temizle":
       return {
+        ...(durum.arama === undefined ? {} : { arama: durum.arama }),
         fiyatYazisi: {},
         markalar: [],
         secenekler: {},

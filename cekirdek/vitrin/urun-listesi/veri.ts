@@ -11,7 +11,7 @@
 // - Bedel: kapsamdaki bütün ürünlerin filtre verisi belleğe okunur (karar 0105). Testte yalnız sorgu sayısı ölçülür; büyük katalogdaki süre ölçülmedi (kart 0151).
 import { and, asc, eq, isNull, type SQL, sql } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru";
-import type { ListeSiralamasi } from "../../kayitlar/liste";
+import type { AramaSiralamasi } from "../../kayitlar/liste";
 import type { TukenenUrunDavranisi } from "../../kayitlar/stok";
 import { adresAdiUret } from "../../metinler/adres-adi";
 import { metinOkuyucu } from "../../metinler/metin";
@@ -69,7 +69,9 @@ export type FiltreliListeSecenekleri = {
   // Kapsamın koşulu, urunler satırı üzerinde (kategoriUrunKosulu, grup servisinin urunKosulu).
   kapsam: SQL;
   filtre?: UrunFiltresi;
-  siralama: ListeSiralamasi;
+  // "en-uygun" yalnız aramada: puanı uygunluk verir (urun/arama.ts), yoksa en yeni önce.
+  siralama: AramaSiralamasi;
+  uygunluk?: SQL;
   sayfa: number;
   boyut: number;
   // "Daha fazla göster": ilk sayfadan bu sayfanın sonuna kadar olan ürünler gelir.
@@ -119,7 +121,9 @@ export const filtreliUrunListesi = async (
   const sira =
     secenek.siralama === "onerilen"
       ? sql`${urunler.vitrin_sirasi} asc nulls last, ${urunler.olusturma_zamani} desc, ${urunler.kimlik}`
-      : sql`${urunler.olusturma_zamani} desc, ${urunler.kimlik}`;
+      : secenek.siralama === "en-uygun" && secenek.uygunluk !== undefined
+        ? sql`${secenek.uygunluk} desc, ${urunler.olusturma_zamani} desc, ${urunler.kimlik}`
+        : sql`${urunler.olusturma_zamani} desc, ${urunler.kimlik}`;
 
   const [sirali, markaSatirlari, birimSatirlari, ozellikSatirlari] = await Promise.all([
     vt.execute<{ kimlik: string }>(sql`

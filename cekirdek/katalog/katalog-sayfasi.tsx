@@ -4,6 +4,7 @@
 import type { ReactNode } from "react";
 import { Baglanti } from "../../bilesenler/parcalar/baglanti";
 import { sinif } from "../../bilesenler/parcalar/sinif";
+import { listeSiralamalari } from "../kayitlar/liste";
 import {
   type UrunFiltresiGorunumu,
   urunFiltresiGorunumleri,
@@ -536,6 +537,7 @@ const ornekListeVerisi = (
   durum: adrestenDurum({ marka: "ornek" }),
   siralama: "onerilen",
   varsayilanSiralama: "onerilen",
+  siralamalar: listeSiralamalari,
   birikimli: false,
   boyut: 24,
   filtreYeri,

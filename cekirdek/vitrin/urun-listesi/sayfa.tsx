@@ -17,7 +17,7 @@ import { DahaFazla, Sayfalama } from "../../../bilesenler/parcalar/sayfalama";
 import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { yazilanIslevler } from "../../kayitlar/islevler";
-import type { ListeSiralamasi } from "../../kayitlar/liste";
+import { type AramaSiralamasi, listeSiralamalari } from "../../kayitlar/liste";
 import { type UrunFiltresiGorunumu, urunFiltresiGorunumleri } from "../../kayitlar/tema";
 import { metin, siteninBicimleyicisi } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
@@ -53,8 +53,10 @@ export type UrunListesiVerisi = {
   liste: FiltreliListe;
   kartlar: UrunKartiVerisi[];
   durum: ListeDurumu;
-  siralama: ListeSiralamasi;
-  varsayilanSiralama: ListeSiralamasi;
+  siralama: AramaSiralamasi;
+  varsayilanSiralama: AramaSiralamasi;
+  // Sayfanın sıralamaları (arama "en uygun"u da sunar).
+  siralamalar: readonly AramaSiralamasi[];
   birikimli: boolean;
   boyut: number;
   filtreYeri: UrunFiltresiGorunumu;
@@ -73,10 +75,16 @@ export const urunListesiVerisi = async ({
   kapsam,
   parametreler,
   markaGrubu = true,
+  arama,
 }: {
   kapsam: FiltreliListeSecenekleri["kapsam"];
   parametreler: AdresParametreleri;
   markaGrubu?: boolean;
+  // Arama sayfası (kart 0137): sıralamalara "en uygun" eklenir ve varsayılan olur, puanı uygunluk verir.
+  arama?: {
+    siralamalar: readonly AramaSiralamasi[];
+    uygunluk: FiltreliListeSecenekleri["uygunluk"];
+  };
 }): Promise<UrunListesiVerisi> => {
   const vt = siteninVeritabani();
   const site = calisanSite();
@@ -85,7 +93,8 @@ export const urunListesiVerisi = async ({
     siteninMagazaAyarlari(vt, site),
     siteninGecerliTemasi(vt),
   ]);
-  const durum = adrestenDurum(parametreler);
+  const siralamalar = arama?.siralamalar ?? listeSiralamalari;
+  const durum = adrestenDurum(parametreler, siralamalar);
   const bicim = siteninBicimleyicisi(site.ayarlar);
   const enAz =
     durum.fiyatYazisi.enAz === undefined ? undefined : bicim.paraOku(durum.fiyatYazisi.enAz);
@@ -109,12 +118,15 @@ export const urunListesiVerisi = async ({
     ozellikler: durum.ozellikler,
     stoktakiler: durum.stoktakiler,
   };
-  const siralama = durum.siralama ?? ayarlar.listeSiralamasi;
+  const varsayilanSiralama: AramaSiralamasi =
+    arama === undefined ? ayarlar.listeSiralamasi : (siralamalar[0] ?? ayarlar.listeSiralamasi);
+  const siralama = durum.siralama ?? varsayilanSiralama;
   const birikimli = ayarlar.listeSayfaGecisi === "daha-fazla";
   const liste = await filtreliUrunListesi(vt, site, {
     kapsam,
     filtre,
     siralama,
+    ...(arama?.uygunluk === undefined ? {} : { uygunluk: arama.uygunluk }),
     sayfa: durum.sayfa,
     boyut: ayarlar.listeSayfaBoyutu,
     birikimli,
@@ -131,7 +143,8 @@ export const urunListesiVerisi = async ({
     kartlar,
     durum,
     siralama,
-    varsayilanSiralama: ayarlar.listeSiralamasi,
+    varsayilanSiralama,
+    siralamalar,
     birikimli,
     boyut: ayarlar.listeSayfaBoyutu,
     filtreYeri,
@@ -216,6 +229,7 @@ const filtreGorunumu = (veri: UrunListesiVerisi, yol: string): FiltreGorunumu =>
     yol,
     durum: veri.durum,
     varsayilanSiralama: veri.varsayilanSiralama,
+    siralamalar: veri.siralamalar,
     gruplar,
     fiyat: {
       ipucu: doldur(metin("vitrin.liste.fiyatIpucu"), {

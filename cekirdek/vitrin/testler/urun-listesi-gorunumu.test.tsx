@@ -8,6 +8,7 @@ import { resolve } from "node:path";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
+import { listeSiralamalari } from "../../kayitlar/liste.ts";
 import { MetinSaglayici } from "../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../metinler/metin.ts";
 import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
@@ -62,6 +63,7 @@ const veri = (
   durum: adrestenDurum(adres),
   siralama: "onerilen",
   varsayilanSiralama: "onerilen",
+  siralamalar: listeSiralamalari,
   birikimli: false,
   boyut: 24,
   filtreYeri: "solda",

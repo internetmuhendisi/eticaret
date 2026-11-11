@@ -15,6 +15,11 @@ export const listeSayfasi = {
 export const listeSiralamalari = ["onerilen", "en-yeni", "fiyat-artan", "fiyat-azalan"] as const;
 export type ListeSiralamasi = (typeof listeSiralamalari)[number];
 
+// Arama sayfasının sıralamaları (kart 0137): "en uygun" (aramanın puanı, cekirdek/moduller/urun/arama.ts) ve
+// listelerin sıralamaları. Aramanın varsayılanı "en uygun"dur, mağaza sahibinin sıralama ayarı aramaya uygulanmaz.
+export const aramaSiralamalari = ["en-uygun", ...listeSiralamalari] as const;
+export type AramaSiralamasi = (typeof aramaSiralamalari)[number];
+
 // Vitrindeki ürün listelerinde sayfa geçişi (kart 0136, karar 0102): numaralı sayfalar ya da "Daha fazla
 // göster" (bir sonraki sayfa öncekilerin altına eklenir; adres yine sayfa numarasını taşır).
 export const sayfaGecisleri = ["numarali", "daha-fazla"] as const;

@@ -2,6 +2,7 @@
 // parametre, tanınmayan sıralama ve geçersiz sayfa yok sayılır; varsayılan sıralama yazılmaz; filtre ya da
 // sıralama değişince sayfa başa döner; "temizle" sıralamayı korur; filtre ya da sıralama varsa dizine girmez.
 import { describe, expect, it } from "vitest";
+import { aramaSiralamalari } from "../../kayitlar/liste.ts";
 import { adrestenDurum, durumdanSorgu, durumuDegistir, filtreliMi } from "../urun-listesi/adres.ts";
 
 describe("adresteki durum", () => {
@@ -66,6 +67,28 @@ describe("adresteki durum", () => {
     expect(filtreliMi(adrestenDurum({ sirala: "en-yeni" }))).toBe(true);
     expect(filtreliMi(adrestenDurum({ sayfa: "2" }))).toBe(false);
     expect(filtreliMi(adrestenDurum({ marka: "a" }))).toBe(true);
+  });
+});
+
+// Kart 0137: aranan metin adreste durur, filtre değişince ve temizlenince korunur; "en-uygun" yalnız aramada.
+describe("arama", () => {
+  it("aranan metin okunur, ilk parametredir, değişikliklerde ve temizlemede korunur", () => {
+    const durum = adrestenDurum({ ara: "  keten gömlek ", marka: "a" }, aramaSiralamalari);
+    expect(durum.arama).toBe("keten gömlek");
+    expect(durumdanSorgu(durum, "en-uygun")).toBe("?ara=keten+g%C3%B6mlek&marka=a");
+    expect(durumuDegistir(durum, { tur: "stok", secili: true }).arama).toBe("keten gömlek");
+    expect(durumdanSorgu(durumuDegistir(durum, { tur: "temizle" }), "en-uygun")).toBe(
+      "?ara=keten+g%C3%B6mlek",
+    );
+    expect(adrestenDurum({ ara: "   " }).arama).toBeUndefined();
+  });
+
+  it("en-uygun yalnız aramanın sıralamasıdır; kategori sayfası onu yok sayar", () => {
+    expect(adrestenDurum({ sirala: "en-uygun" }).siralama).toBeUndefined();
+    expect(adrestenDurum({ sirala: "en-uygun" }, aramaSiralamalari).siralama).toBe("en-uygun");
+    expect(durumdanSorgu(adrestenDurum({ sirala: "en-yeni" }, aramaSiralamalari), "en-uygun")).toBe(
+      "?sirala=en-yeni",
+    );
   });
 });
 

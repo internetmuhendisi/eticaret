@@ -37,7 +37,7 @@ import {
   YanPencereKapat,
   YanPencereTetikleyici,
 } from "../../../bilesenler/parcalar/yan-pencere";
-import { type ListeSiralamasi, listeSiralamalari } from "../../kayitlar/liste";
+import type { AramaSiralamasi } from "../../kayitlar/liste";
 import { useMetin } from "../../metinler/istemci-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import { durumdanSorgu, durumuDegistir, type ListeDegisikligi, type ListeDurumu } from "./adres";
@@ -62,7 +62,8 @@ export type FiltreGrupGorunumu =
 export type FiltreGorunumu = {
   yol: string;
   durum: ListeDurumu;
-  varsayilanSiralama: ListeSiralamasi;
+  varsayilanSiralama: AramaSiralamasi;
+  siralamalar: readonly AramaSiralamasi[];
   gruplar: FiltreGrupGorunumu[];
   // Hata yalnız okunamayan alanı işaretler (en az, en çok ya da ikisi).
   fiyat: { ipucu: string; hata?: { metin: string; enAz: boolean; enCok: boolean } };
@@ -242,7 +243,7 @@ function Siralama({
       <SecimKutusu
         value={secili}
         onValueChange={(deger) => {
-          const siralama = listeSiralamalari.find((s) => s === deger);
+          const siralama = gorunum.siralamalar.find((s) => s === deger);
           if (siralama !== undefined) git({ tur: "sirala", siralama });
         }}
       >
@@ -250,7 +251,7 @@ function Siralama({
           <SecimDegeri />
         </SecimTetikleyici>
         <SecimListesi>
-          {listeSiralamalari.map((siralama) => (
+          {gorunum.siralamalar.map((siralama) => (
             <SecimOgesi key={siralama} value={siralama}>
               {metin(`vitrin.liste.siralama.${siralama}`)}
             </SecimOgesi>
