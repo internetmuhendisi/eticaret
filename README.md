@@ -71,7 +71,7 @@ Sitelerin hataları kendi sunucumuzdaki Bugsink'te izlenir (karar 0036). Kurmak 
 
 Site düşünce ya da elle bakıma alınınca ziyaretçi bakım sayfası görür (karar 0038). `pnpm bakim <site klasörü> <ortam> ac|kapat|durum` elle açar ve kapatır, vitrin ve panel birlikte kapanır. `pnpm bakim-denemesi` bütünü deneme adresinde ölçer.
 
-Sitelerin veritabanı her gece 03:00'te ayrı ayrı yedeklenir (karar 0037, `sunucu/yedek/README.md`). `pnpm yedek-kur` kurar, `pnpm yedek-al` elle yedek alır, `pnpm yedek-kaydi` sonuçları gösterir, `pnpm yedek-prova` geçici bir veritabanında dener, `pnpm yedek-geri-yukle` tek siteyi geri yükler, `pnpm yedek-denemesi` bütünü sunucuda ölçer.
+Sitelerin veritabanı her gece 03:00'te ayrı ayrı yedeklenir (karar 0037, `sunucu/yedek/README.md`). `pnpm yedek-kur` kurar, `pnpm yedek-al` elle yedek alır, `pnpm yedek-kaydi` sonuçları gösterir, `pnpm yedek-prova` geçici bir veritabanında dener, `pnpm yedek-geri-yukle` tek siteyi geri yükler, `pnpm site-sifirla` demo siteyi boş veritabanıyla yeniden açar, `pnpm yedek-denemesi` bütünü sunucuda ölçer.
 
 Çekirdeğin çalışan sürümü `cekirdek/surum.ts` dosyasında, her sürümün notu `cekirdek/surum-notlari/<sürüm>.md` dosyasında yazar. Not, sürümde neyin değiştiğini, sitelere etkisini, güvenlik açığı kapatıp kapatmadığını ve veritabanı değişikliklerini söyler. Sürüm değişince not aynı değişiklikte yazılır; notu olmayan sürümü test yakalar. Örnek Mağaza `0.1.0` ile https://ornek-magaza.deneme.eticaretmagazasi.com adresinde çalışır. `pnpm sunucu-denetle` yayındaki her sitenin adresini, arama motorlarına kapalı olduğunu ve sağlık ucundaki sürümü de ölçer.
 

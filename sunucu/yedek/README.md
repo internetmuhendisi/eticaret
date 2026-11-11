@@ -25,6 +25,10 @@ Komut "yarım kalmış" diyorsa (bağlantı kopmuş olabilir) önceki veri `<ver
 
 Veritabanı bozuk olduğu için "yedek alınamadı" diyorsa `--son-yedeksiz` ekleyin: o anki durumun yedeği atlanır, önceki veri yerinde saklanır. Bu verinin yedeği olmadığı için silmek ayrı onay ister: `--eskiyi-sil --yedeksiz-onay`. Veritabanı hiç yoksa önce `pnpm sunucu-veritabani siteler/<kod adı> <ortam>`.
 
+## Demo siteyi sıfırlama
+
+`pnpm site-sifirla siteler/<kod adı> <ortam>` yalnız kimliğinde türü `demo` olan siteyi sıfırlar (karar 0100): bütün verisi silinir, site yayındaki sürümüyle boş veritabanından açılır, arka plan süreci başlangıç verisini (katalog, menüler, düzen) yeniden kurar. Yol geri yüklemeyle aynıdır: boş veritabanı yana açılır, kutu durur, o anki verinin yedeği alınır (`sifirlama-oncesi`), veritabanları yer değiştirir; bir adım tutmazsa eski veri yerine döner. Sıfırlamadan dönmek için o yedeğe geri yüklenir. Dosya klasörüne dokunulmaz. Yönetici hesapları da silinir: sonra `pnpm sunucu-yonetici-ac`.
+
 ## Sunucu kaybolursa
 
 Yeni sunucu (`pnpm sunucu-kur`), gizli bilgiler, veritabanı ve yayın kurulur; `pnpm yedek-kur` çalıştırılır (depoda yedeği olan siteye yeni yedek almaz); sonra her site için 1 ve 3. adımlar uygulanır. Gece işi bu arada boş veritabanını da yedekler, eski yedekler saklama süresi dolunca silinir: geri yüklemeyi hemen yapın. Depo anahtarı `.env` dosyasındadır, açma anahtarları bilgisayarda ve şifre yöneticisindedir. Bu tam senaryo henüz baştan sona denenmedi.

@@ -70,6 +70,7 @@
     "yedek-kaydi": "node komutlar/yedek-kaydi.mts",
     "yedek-prova": "node komutlar/yedek-prova.mts",
     "yedek-geri-yukle": "node komutlar/yedek-geri-yukle.mts",
+    "site-sifirla": "node komutlar/site-sifirla.mts",
     "yedek-denemesi": "node komutlar/yedek-denemesi.mts",
     "prepare": "simple-git-hooks"
   },

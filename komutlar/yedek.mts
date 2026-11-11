@@ -573,9 +573,9 @@ const hataMetni = (hata: unknown): string => (hata as Error).message;
 
 // Yayın komutu yalnız deneme ortamını bilir (karar 0035): canlıda kutu adı bulunamaz, site kutusu
 // durmadan veritabanı değişirdi. Canlı ortam açılınca bu sınır kaldırılır.
-const ortamiDenetle = (ortam: Ortam): void => {
+const ortamiDenetle = (ortam: Ortam, baslik = "Geri yükleme"): void => {
   if (ortam !== yayinOrtami) {
-    throw new Error(`Geri yükleme şimdilik yalnız ${yayinOrtami} ortamında çalışır (karar 0037).`);
+    throw new Error(`${baslik} şimdilik yalnız ${yayinOrtami} ortamında çalışır (karar 0037).`);
   }
 };
 
@@ -670,12 +670,110 @@ export const geriYukle = (
   // silinmez, yedeği yoktur: incelenince --eskiyi-sil ile silinir.
   { sonYedeksiz = false } = {},
 ): Promise<void> =>
+  yerDegistir(
+    ipv4,
+    ortam,
+    site,
+    {
+      ad: "Geri yükleme",
+      tur: "geri-yukleme",
+      dosya,
+      sonYedeksiz,
+      yanaAc: () => {
+        const acilan = sunucudaCalistir(
+          ipv4,
+          yanaAcmaBetigi(ortam, site.kodAdi, dosya, anahtar),
+          uzunSure,
+        );
+        if (!/tablo=[1-9]/.test(acilan)) throw new Error("Yedekten tablo çıkmadı.");
+        yaz(`açıldı      ${dosya} yan veritabanında`);
+      },
+    },
+    yaz,
+  );
+
+// Boş yan veritabanı: sitenin kullanıcısına ait, herkese kapalı, üst bilgi izinleri kapalı. Tablo yok;
+// değişiklikleri yer değiştirdikten sonra yayındaki görüntü uygular (kart 0128).
+export const bosYanaAcmaBetigi = (ortam: Ortam, kodAdi: string): string => {
+  const kutu = veritabaniKutusu(ortam);
+  const ad = siteVeritabaniAdi(kodAdi);
+  const yeni = geciciAd(ad);
+  return kokBetigi(`# adim:bosyana
+exec 9>"$K/.kilit"
+flock -w ${kisaKilitSn} 9
+docker exec ${kutu} psql -U postgres -d postgres -q -v ON_ERROR_STOP=1 -c 'DROP DATABASE IF EXISTS "${yeni}" WITH (FORCE)' -c 'CREATE DATABASE "${yeni}" OWNER "${ad}"' -c 'REVOKE ALL ON DATABASE "${yeni}" FROM PUBLIC' </dev/null >/dev/null
+if ! docker exec -i ${guvenliOturum} ${kutu} psql -U postgres -d "${yeni}" -q -v ON_ERROR_STOP=1 -f - >/dev/null <<'UST_BILGI_SONU'
+${ustBilgiKapatmaSql()}
+UST_BILGI_SONU
+then
+  docker exec ${kutu} psql -U postgres -d postgres -q -c 'DROP DATABASE IF EXISTS "${yeni}" WITH (FORCE)' </dev/null >/dev/null
+  echo "üst bilgi izinleri kapatılamadı, canlı veritabanına dokunulmadı" >&2
+  exit 1
+fi
+printf 'tablo=%s\\n' "$(docker exec ${guvenliOturum} ${kutu} psql -U postgres -d "${yeni}" -Atc "select count(*) from information_schema.tables where table_schema not in ('pg_catalog','information_schema')" </dev/null)"`);
+};
+
+// Yalnız demo site sıfırlanır (kart 0128): gerçek mağazanın verisi bu yolla silinmez.
+export const sifirlamaEngeli = (kimlik: { kodAdi: string; tur: string }): string | undefined =>
+  kimlik.tur === "demo"
+    ? undefined
+    : `${kimlik.kodAdi} demo site değil (tür: ${kimlik.tur}), sıfırlanmaz.`;
+
+// Demo sitenin verisini siler, sitenin yayındaki sürümüyle boş veritabanından açar: arka plan süreci
+// açılırken başlangıç verisini (katalog, menüler, düzen) yeniden kurar (kart 0128). Geri yüklemeyle
+// aynı yol: önce kutu durur ve yedek alınır, veritabanları yer değiştirir, bir adım tutmazsa eski
+// veri yerine döner. Dosya klasörüne dokunulmaz: eski dosyalar kayıtsız kalır (temizliği kart 0093).
+export const sifirla = (
+  ipv4: string,
+  ortam: Ortam,
+  site: { kodAdi: string; tur: string; numara: number },
+  yaz: (satir: string) => void = () => {},
+): Promise<void> => {
+  const engel = sifirlamaEngeli(site);
+  if (engel) return Promise.reject(new Error(engel));
+  return yerDegistir(
+    ipv4,
+    ortam,
+    site,
+    {
+      ad: "Sıfırlama",
+      tur: "sifirlama",
+      dosya: "",
+      sonYedeksiz: false,
+      kutuZorunlu: true,
+      yanaAc: () => {
+        const acilan = sunucudaCalistir(ipv4, bosYanaAcmaBetigi(ortam, site.kodAdi));
+        if (!/tablo=0\b/.test(acilan)) throw new Error("Boş veritabanı açılamadı.");
+        yaz("açıldı      boş yan veritabanı");
+      },
+    },
+    yaz,
+  );
+};
+
+const yerDegistir = (
+  ipv4: string,
+  ortam: Ortam,
+  site: { kodAdi: string; numara: number },
+  is: {
+    ad: string;
+    tur: string;
+    dosya: string;
+    sonYedeksiz: boolean;
+    yanaAc: () => void;
+    // Yayında kutusu olmayan sitede değişiklikleri uygulayacak görüntü yoktur: boş veritabanı tablosuz
+    // kalıp başarılı sayılırdı. Yedekten açılan veritabanında tablolar zaten vardır.
+    kutuZorunlu?: boolean;
+  },
+  yaz: (satir: string) => void,
+): Promise<void> =>
   yayinKilidiyle(ipv4, () => {
-    ortamiDenetle(ortam);
     const { kodAdi } = site;
+    ortamiDenetle(ortam, is.ad);
+    const { ad: baslik, tur, dosya, sonYedeksiz } = is;
     const kaydet = (sonuc: "basarili" | "basarisiz", sebep: string) => {
       try {
-        sunucudaCalistir(ipv4, kaydaYazBetigi(ortam, kodAdi, "geri-yukleme", sonuc, sebep, dosya));
+        sunucudaCalistir(ipv4, kaydaYazBetigi(ortam, kodAdi, tur, sonuc, sebep, dosya));
       } catch (hata) {
         yaz(`uyarı       sonuç kayda yazılamadı: ${hataMetni(hata)}`);
       }
@@ -693,24 +791,21 @@ export const geriYukle = (
       kaydet("basarisiz", sorunlar.length === 0 ? "eski-veritabani-yerinde" : "elle-mudahale");
       if (sorunlar.length > 0) {
         throw new Error(
-          `Geri yükleme tutmadı ve eski hâle dönüş tamamlanmadı. Gerçek veri ${eskiAd(siteVeritabaniAdi(kodAdi))} veritabanında olabilir, silmeyin.\n  ${sorunlar.join("\n  ")}\n  Asıl hata: ${hataMetni(hata)}`,
+          `${baslik} tutmadı ve eski hâle dönüş tamamlanmadı. Gerçek veri ${eskiAd(siteVeritabaniAdi(kodAdi))} veritabanında olabilir, silmeyin.\n  ${sorunlar.join("\n  ")}\n  Asıl hata: ${hataMetni(hata)}`,
         );
       }
-      throw new Error(
-        `Geri yükleme tutmadı, eski veritabanı yerinde, site açık: ${hataMetni(hata)}`,
-      );
+      throw new Error(`${baslik} tutmadı, eski veritabanı yerinde, site açık: ${hataMetni(hata)}`);
     };
 
     artikDurdur(ipv4, ortam, kodAdi);
     const kutu = etkinKutuAdi(ipv4, ortam, kodAdi);
-    try {
-      const acilan = sunucudaCalistir(
-        ipv4,
-        yanaAcmaBetigi(ortam, kodAdi, dosya, anahtar),
-        uzunSure,
+    if (is.kutuZorunlu && !kutu) {
+      throw new Error(
+        `${ortam}/${kodAdi} yayında değil, hiçbir şeye dokunulmadı. Önce: pnpm yayinla`,
       );
-      if (!/tablo=[1-9]/.test(acilan)) throw new Error("Yedekten tablo çıkmadı.");
-      yaz(`açıldı      ${dosya} yan veritabanında`);
+    }
+    try {
+      is.yanaAc();
     } catch (hata) {
       yaniSil();
       kaydet("basarisiz", "site-etkilenmedi");
@@ -722,11 +817,7 @@ export const geriYukle = (
         yaz("uyarı       son yedek istenerek atlandı, önceki veri silinmeyecek");
       } else {
         yaz(
-          sunucudaCalistir(
-            ipv4,
-            yedekAlmaBetigi(ortam, kodAdi, "geri-yukleme-oncesi"),
-            uzunSure,
-          ).trim(),
+          sunucudaCalistir(ipv4, yedekAlmaBetigi(ortam, kodAdi, `${tur}-oncesi`), uzunSure).trim(),
         );
       }
       sunucudaCalistir(ipv4, degistirmeBetigi(ortam, kodAdi));
@@ -737,7 +828,7 @@ export const geriYukle = (
       } catch (okuma) {
         kaydet("basarisiz", "durum-bilinmiyor");
         throw new Error(
-          `Geri yükleme durdu ve veritabanının durumu okunamadı: ${hataMetni(okuma)}\n  Site kapalı bırakıldı (yanlış veriye sipariş yazılmasın). Sunucuya ulaşınca: pnpm yedek-geri-yukle <site klasörü> ${ortam} --eskiye-don. Yer değiştirme olduysa önceki veriye döner, olmadıysa siteyi açar.\n  Asıl hata: ${hataMetni(hata)}`,
+          `${baslik} durdu ve veritabanının durumu okunamadı: ${hataMetni(okuma)}\n  Site kapalı bırakıldı (yanlış veriye sipariş yazılmasın). Sunucuya ulaşınca: pnpm yedek-geri-yukle <site klasörü> ${ortam} --eskiye-don. Yer değiştirme olduysa önceki veriye döner, olmadıysa siteyi açar.\n  Asıl hata: ${hataMetni(hata)}`,
         );
       }
       if (durum.eski) {
@@ -750,10 +841,10 @@ export const geriYukle = (
         kutuyuAc(ipv4, ortam, kodAdi, kutu);
       } catch (acma) {
         throw new Error(
-          `Geri yükleme durdu, veri değişmedi ama site açılamadı: ${hataMetni(acma)}\n  Asıl hata: ${hataMetni(hata)}`,
+          `${baslik} durdu, veri değişmedi ama site açılamadı: ${hataMetni(acma)}\n  Asıl hata: ${hataMetni(hata)}`,
         );
       }
-      throw new Error(`Geri yükleme durdu, veri değişmedi, site açık: ${hataMetni(hata)}`);
+      throw new Error(`${baslik} durdu, veri değişmedi, site açık: ${hataMetni(hata)}`);
     }
     try {
       yeniHaliTamamla(ipv4, ortam, site, kutu, yaz);

@@ -15,6 +15,7 @@ type Durum = {
   basarisiz: string | null;
   kutu: "acik" | "kapali";
   cagrilar: string[];
+  betikler: string[];
   bozuk: Set<string>;
   koptu: Set<string>;
   kalici: Set<string>;
@@ -22,9 +23,12 @@ type Durum = {
   sifreEsit: boolean;
   yanlisVeriyleAcildi: boolean;
   yedeksiz: boolean;
+  yayinda: boolean;
 };
 
 const durum = {} as Durum;
+// Boş yan veritabanının saydığı tablo; bir test bozar.
+let sahteYanTablo = "tablo=0";
 
 const etiket = (metin: string): string => {
   const kural: [RegExp, string][] = [
@@ -68,10 +72,13 @@ const uygula = (ad: string): ReturnType<typeof cevap> => {
           .join("\n"),
       );
     case "yayindakiler":
-      return cevap(0, "ornek-magaza 6\n");
+      return cevap(0, d.yayinda ? "ornek-magaza 6\n" : "");
     case "yana":
       d.yan = "yedek";
       return cevap(0, "tablo=2\n");
+    case "bosyana":
+      d.yan = "bos";
+      return cevap(0, `${sahteYanTablo}\n`);
     case "yanisil":
       d.yan = null;
       return cevap(0);
@@ -128,6 +135,7 @@ const uygula = (ad: string): ReturnType<typeof cevap> => {
 const sahteSsh = (_ip: string, komut: string, secenek?: { girdi?: string }) => {
   const ad = etiket(secenek?.girdi ?? komut);
   durum.cagrilar.push(ad);
+  durum.betikler.push(secenek?.girdi ?? komut);
   const sonra = durum.sonraBozuk;
   if (sonra?.ad === ad && durum.cagrilar.filter((c) => c === ad).length >= sonra.kacinci) {
     return cevap(1, "", `SAHTE-HATA ${ad}`);
@@ -158,7 +166,8 @@ vi.mock("../sunucu.mts", async (asil) => ({
     sahteSsh(ip, komut, secenek),
 }));
 
-const { eskiyeDon, eskiyiSil, geriYuklemeSecimi, geriYukle } = await import("../yedek.mts");
+const { eskiyeDon, eskiyiSil, geriYuklemeSecimi, geriYukle, sifirla, bosYanaAcmaBetigi } =
+  await import("../yedek.mts");
 
 const anahtar = `AGE-SECRET-KEY-1${"Q".repeat(58)}`;
 const dosya = "20261106T000000Z.dump.age";
@@ -173,6 +182,7 @@ beforeEach(() => {
     basarisiz: null,
     kutu: "acik",
     cagrilar: [],
+    betikler: [],
     bozuk: new Set(),
     koptu: new Set(),
     kalici: new Set(),
@@ -180,6 +190,7 @@ beforeEach(() => {
     sifreEsit: true,
     yanlisVeriyleAcildi: false,
     yedeksiz: false,
+    yayinda: true,
   });
 });
 
@@ -520,5 +531,111 @@ exit 0
     expect(sonuc.gunluk).toContain("# adim:eskisil");
     expect(sonuc.gunluk).not.toContain("# adim:yana");
     expect(sonuc.gunluk).not.toContain("# adim:gerial");
+  });
+});
+
+// Sıfırlama geri yüklemeyle aynı yoldan gider; yan veritabanı yedekten değil boş açılır (kart 0128).
+describe("sıfırlama", () => {
+  const demo = { kodAdi: "ornek-magaza", tur: "demo", numara: 1 };
+  const sifirlaCalistir = (tur = "demo") => sifirla("0.0.0.0", "deneme", { ...demo, tur });
+
+  it("sıra doğru: boş yan, durdur, yedek, yer değiştir, şifre, değişiklikler, aç, sağlık, sil", async () => {
+    await sifirlaCalistir();
+    const sira = durum.cagrilar.filter((ad) =>
+      [
+        "bosyana",
+        "yana",
+        "durdur",
+        "yedek",
+        "degistir",
+        "uret",
+        "guncelle",
+        "yeniden",
+        "saglik",
+        "eskisil",
+      ].includes(ad),
+    );
+    expect(sira).toEqual([
+      "bosyana",
+      "durdur",
+      "yedek",
+      "degistir",
+      "uret",
+      "guncelle",
+      "yeniden",
+      "saglik",
+      "eskisil",
+    ]);
+    expect(durum).toMatchObject({ canli: "bos", eski: null, kutu: "acik", sifreEsit: true });
+    const yedek = durum.betikler[durum.cagrilar.indexOf("yedek")];
+    expect(yedek).toMatch(/gece\.sh deneme ornek-magaza sifirlama-oncesi\b/);
+    const kayit = durum.betikler[durum.cagrilar.indexOf("kayit")];
+    expect(kayit).toMatch(/kayit deneme ornek-magaza sifirlama basarili/);
+  });
+
+  it.each(["isletme", "magaza", ""])(
+    "demo olmayan site (%s) sıfırlanmaz, sunucuya gidilmez",
+    async (tur) => {
+      await expect(sifirlaCalistir(tur)).rejects.toThrow(/demo site değil/);
+      expect(durum.cagrilar).toEqual([]);
+      expect(durum.canli).toBe("gercek");
+    },
+  );
+
+  it("yayında olmayan site sıfırlanmaz, veritabanına dokunulmaz", async () => {
+    durum.yayinda = false;
+    await expect(sifirlaCalistir()).rejects.toThrow(/yayında değil, hiçbir şeye dokunulmadı/);
+    expect(durum.cagrilar).not.toContain("bosyana");
+    expect(durum.canli).toBe("gercek");
+  });
+
+  it("deneme dışındaki ortamda iletide sıfırlama yazar", async () => {
+    await expect(sifirla("0.0.0.0", "canli", demo)).rejects.toThrow(/^Sıfırlama şimdilik/);
+  });
+
+  it.each(["bosyana", "durdur", "yedek", "degistir"])(
+    "%s düşerse veri değişmez, site açık kalır",
+    async (ad) => {
+      durum.bozuk.add(ad);
+      await expect(sifirlaCalistir()).rejects.toThrow(/SAHTE-HATA/);
+      expect(durum).toMatchObject({ canli: "gercek", eski: null, yan: null, kutu: "acik" });
+      expect(durum.cagrilar).not.toContain("eskisil");
+    },
+  );
+
+  it("yedek alınamazsa veritabanları yer değiştirmez", async () => {
+    durum.bozuk.add("yedek");
+    await expect(sifirlaCalistir()).rejects.toThrow(/Sıfırlama durdu, veri değişmedi, site açık/);
+    expect(durum.cagrilar).not.toContain("degistir");
+  });
+
+  it.each(["uret", "guncelle", "saglik"])("%s düşerse eski veri yerine döner", async (ad) => {
+    durum.bozuk.add(ad);
+    await expect(sifirlaCalistir()).rejects.toThrow(/Sıfırlama tutmadı, eski veritabanı yerinde/);
+    expect(durum).toMatchObject({ canli: "gercek", eski: null, kutu: "acik", sifreEsit: true });
+  });
+
+  it("boş yan veritabanında tablo çıkarsa durur", async () => {
+    // Boş yanın tablo saydığı satır 0 değilse yer değiştirilmez.
+    const eski = sahteYanTablo;
+    sahteYanTablo = "tablo=3";
+    try {
+      await expect(sifirlaCalistir()).rejects.toThrow(/Boş veritabanı açılamadı/);
+      expect(durum.cagrilar).not.toContain("durdur");
+      expect(durum.canli).toBe("gercek");
+    } finally {
+      sahteYanTablo = eski;
+    }
+  });
+
+  it("boş yan betiği kendi veritabanını açar, sitenin kullanıcısına verir, üst bilgiyi kapatır", () => {
+    const betik = bosYanaAcmaBetigi("deneme", "ornek-magaza");
+    expect(betik).toContain('CREATE DATABASE "site_ornek_magaza__geri" OWNER "site_ornek_magaza"');
+    expect(betik).toContain('REVOKE ALL ON DATABASE "site_ornek_magaza__geri" FROM PUBLIC');
+    expect(betik).toContain("UST_BILGI_SONU");
+    // Silinen tek veritabanı yan veritabanıdır; canlıya dokunulmaz.
+    const silinenler = [...betik.matchAll(/DROP DATABASE IF EXISTS "([^"]+)"/g)].map((m) => m[1]);
+    expect(silinenler.length).toBeGreaterThan(0);
+    expect(new Set(silinenler)).toEqual(new Set(["site_ornek_magaza__geri"]));
   });
 });
