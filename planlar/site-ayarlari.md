@@ -91,6 +91,17 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 |---|---|---|---|---|
 | İade kargosunu kim öder | Mağaza sahibi | Mağaza | — | Seçenekler: mağaza, müşteri. İade koşulları metnine buradan girer. Cayma hakkında yasal kuralı hukukçuya teyit ettirilecek |
 
+## Vitrin listeleri ve ürün sayfası
+
+| Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
+|---|---|---|---|---|
+| Masaüstünde filtrenin yeri | Mağaza sahibi | Solda sütun | — | Temanın görünüm seçeneğidir, tema ayarlarıyla saklanır. Öteki değer: üstte açılır. Telefonda filtre her zaman yan pencerede (karar 0102, kart 0136) |
+| Sayfa geçişi | Mağaza sahibi | Numaralı | — | Öteki değer: "Daha fazla göster". Kategori, marka, etiket ve arama sayfası (karar 0102, kart 0136) |
+| Sayfa başına ürün | Mağaza sahibi | 24 | — | Karar 0102, kart 0136 |
+| Varsayılan sıralama | Mağaza sahibi | Önerilen | — | Önerilen mağaza sahibinin elle sırasıdır. Seçenekler: önerilen, en yeni, fiyat artan, fiyat azalan (kart 0136) |
+| Tükenmiş seçenek | Mağaza sahibi | Üstü çizili, seçilemez | — | Ürün sayfasında tükenmiş beden ya da renk. Öteki değer: gösterilmez (karar 0102, kart 0138) |
+| Filtrede kullanılan özellikler | Mağaza sahibi | Hiçbiri | Kumaş | Ayar değil, ürün özelliğinin "filtrede kullanılsın" alanıdır. Fiyat, marka, seçenekler ve stok durumu her zaman filtrededir (karar 0102, kart 0136) |
+
 ## Yorumlar
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
