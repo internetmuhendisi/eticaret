@@ -108,9 +108,10 @@ describe("logo ve simgeler satırı", () => {
     const adlar = [...kap.querySelectorAll("a")].map((a) => a.textContent);
     expect(adlar).toContain("Deneme Dükkânı");
     expect(adlar).toContain(metin("vitrin.bolum.ustSatir.hesap"));
-    for (const anahtar of ["arama", "favoriler", "sepet"] as const) {
+    for (const anahtar of ["favoriler", "sepet"] as const) {
       expect(adlar).not.toContain(metin(`vitrin.bolum.ustSatir.${anahtar}`));
     }
+    expect(kap.querySelector("search")).toBeNull();
     expect(kap.querySelector("img")).toBeNull();
   });
 
@@ -127,16 +128,20 @@ describe("logo ve simgeler satırı", () => {
       [...kap.querySelectorAll("a")].find((a) =>
         a.textContent?.includes(metin(`vitrin.bolum.ustSatir.${anahtar}`)),
       );
-    expect(baglanti("arama")?.getAttribute("href")).toBe("/arama");
+    // Arama kutusu (kart 0137): logo ortadayken her genişlikte satırın altında, arama sayfasına GET ile gider.
+    const aramalar = kap.querySelectorAll("search");
+    expect(aramalar).toHaveLength(1);
+    expect(aramalar[0]?.querySelector("form")?.getAttribute("action")).toBe("/arama");
+    expect(aramalar[0]?.querySelector("form")?.getAttribute("method")).toBe("get");
+    expect(aramalar[0]?.querySelector("input")?.getAttribute("name")).toBe("ara");
+    expect(aramalar[0]?.parentElement?.className).not.toContain("hidden");
     expect(baglanti("sepet")?.textContent).toContain("2");
     // Sıfır sayı rozet göstermez.
     expect(baglanti("favoriler")?.textContent).toBe(metin("vitrin.bolum.ustSatir.favoriler"));
     for (const anahtar of ["favoriler", "hesap"] as const) {
       expect(baglanti(anahtar)?.className).toContain("hidden tablet:inline-flex");
     }
-    for (const anahtar of ["arama", "sepet"] as const) {
-      expect(baglanti(anahtar)?.className).not.toContain("hidden");
-    }
+    expect(baglanti("sepet")?.className).not.toContain("hidden");
     // Masaüstünde hesap ve sepet yazısıyla, sepet kenarlı bir hap içinde (Canlı Çarşı taslağı).
     for (const anahtar of ["hesap", "sepet"] as const) {
       expect(baglanti(anahtar)?.querySelector("span")?.className).toBe(
@@ -150,6 +155,18 @@ describe("logo ve simgeler satırı", () => {
     const logo = kap.querySelector("img");
     expect(logo?.getAttribute("alt")).toBe("Deneme Dükkânı");
     expect(logo?.getAttribute("src")).toBe("/kapi/herkese-acik/logo?s=ab");
+  });
+
+  it("logo soldayken arama kutusu masaüstünde logonun yanında, daha dar ekranda satırın altındadır (kart 0137)", () => {
+    const kap = belge(ust([bolum("ust-satir", "logo-solda")], { ...bosBaglam, islevler: acik }));
+    const aramalar = [...kap.querySelectorAll("search")];
+    expect(aramalar).toHaveLength(2);
+    expect(aramalar.map((a) => a.className)).toEqual([
+      expect.stringContaining("hidden"),
+      expect.not.stringContaining("hidden"),
+    ]);
+    expect(aramalar[0]?.className).toContain("masaustu:block");
+    expect(aramalar[1]?.parentElement?.className).toContain("masaustu:hidden");
   });
 
   it("menü düğmesi telefonda ve tablette görünür, masaüstünde gizlidir; logo ortadayken telefon numarası tablette görünür, logo soldayken satırda yoktur", () => {

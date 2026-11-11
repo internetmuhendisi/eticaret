@@ -20,6 +20,10 @@ export type ListeSiralamasi = (typeof listeSiralamalari)[number];
 export const aramaSiralamalari = ["en-uygun", ...listeSiralamalari] as const;
 export type AramaSiralamasi = (typeof aramaSiralamalari)[number];
 
+// Aranan metnin sınırları (kart 0137): metnin en çok harf sayısı ve en çok sözcük sayısı. Ötesi kesilir. Arama
+// kutusu da metni bu uzunlukta keser.
+export const aramaSinirlari = { metin: 100, sozcuk: 8 } as const;
+
 // Vitrindeki ürün listelerinde sayfa geçişi (kart 0136, karar 0102): numaralı sayfalar ya da "Daha fazla
 // göster" (bir sonraki sayfa öncekilerin altına eklenir; adres yine sayfa numarasını taşır).
 export const sayfaGecisleri = ["numarali", "daha-fazla"] as const;

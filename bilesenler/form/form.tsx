@@ -5,6 +5,10 @@
 // - Gönder düğmesi kod yüklenene kadar kapalıdır. Düğmesi kapalı formu tarayıcı Enter ile de göndermez,
 //   yazılanlar silinmez.
 // - Yöntem POST'tur: koruma bir şekilde aşılsa da değerler adrese yazılmaz.
+//
+// Arama formu (AramaFormu, kart 0137) bu korumaların dışındadır: aranan metin gizli değildir, adreste durmalıdır
+// (paylaşılır, geri tuşu çalışır). Yöntemi GET'tir, kod yüklenmeden de tarayıcının kendi yöntemiyle gönderilir. Şifre,
+// e-posta ya da kişisel bilgi taşıyan form AramaFormu ile yazılmaz.
 import {
   type ButtonHTMLAttributes,
   createContext,
@@ -14,7 +18,10 @@ import {
   useEffect,
   useState,
 } from "react";
+import { Ikon } from "../ikonlar/ikon.tsx";
 import { type DugmeTuru, dugmeSiniflari } from "../parcalar/dugme.tsx";
+import { GirisAlani } from "../parcalar/giris-alani.tsx";
+import { Ipucu } from "../parcalar/ipucu.tsx";
 import { sinif } from "../parcalar/sinif.ts";
 
 const FormHazir = createContext(false);
@@ -67,5 +74,60 @@ export function GonderDugmesi({
       disabled={disabled === true || !hazir}
       {...ozellikler}
     />
+  );
+}
+
+// Arama formu (kart 0137): <search> öğesinde, tek arama alanı ve gönder düğmesi. Alan adı ve adres kullanan sayfanın.
+// Metinler zorunludur (bilesenler.md). Düğmenin yalnız ikonu vardır, adı ipucunda görünür.
+export function AramaFormu({
+  adres,
+  alanAdi,
+  deger,
+  etiket,
+  yerTutucu,
+  dugmeEtiketi,
+  enCokUzunluk,
+  className,
+}: {
+  adres: string;
+  alanAdi: string;
+  // Alanın başlangıç değeri (aranan metin).
+  deger?: string;
+  // Alanın ve formun ekran okuyucudaki adı.
+  etiket: string;
+  yerTutucu: string;
+  dugmeEtiketi: string;
+  enCokUzunluk?: number;
+  className?: string;
+}) {
+  return (
+    <search aria-label={etiket} data-slot="arama-formu" className={sinif("min-w-0", className)}>
+      <form
+        method="get"
+        action={adres}
+        className="flex min-h-11 min-w-0 items-center overflow-hidden rounded-dugme border border-alan-kenari bg-yuzey"
+      >
+        <GirisAlani
+          type="search"
+          name={alanAdi}
+          defaultValue={deger}
+          aria-label={etiket}
+          placeholder={yerTutucu}
+          enterKeyHint="search"
+          maxLength={enCokUzunluk}
+          className="min-w-0 flex-1 rounded-none border-0 bg-transparent"
+        />
+        <Ipucu metin={dugmeEtiketi}>
+          <button
+            type="submit"
+            aria-label={dugmeEtiketi}
+            data-slot="arama-dugmesi"
+            className={sinif(dugmeSiniflari({ tur: "birincil", ikonlu: "evet" }), "shrink-0")}
+          >
+            <Ikon ad="arama" />
+          </button>
+        </Ipucu>
+      </form>
+    </search>
   );
 }

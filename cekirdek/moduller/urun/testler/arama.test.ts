@@ -10,12 +10,13 @@ import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
+import { aramaSinirlari } from "../../../kayitlar/liste.ts";
 import { baglantiyiKapat } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { filtreliUrunListesi } from "../../../vitrin/urun-listesi/veri.ts";
 import { kategoriEkle, kategoriSil } from "../../kategori/servis.ts";
 import { markaServisi } from "../../marka/servis.ts";
-import { aramaKosulu, aramaSinirlari, aramaSorgusu, uygunlukPuani } from "../arama.ts";
+import { aramaKosulu, aramaSorgusu, uygunlukPuani } from "../arama.ts";
 import type { UrunGirdisi } from "../semalar.ts";
 import { urunServisi } from "../servis.ts";
 

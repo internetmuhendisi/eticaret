@@ -5,15 +5,16 @@
 // - Altında sitenin üst düzey kategorileri kategori kutuları bölümünün ızgara görünümüyle çizilir: kutu, görsel,
 //   renk ve bağlantı o bölümün tek kodundan, veri vitrin bağlamından gelir. Kategori yoksa ya da okunamazsa
 //   (hata kaydedilir) yalnız üst kısım görünür; sayfa düşmez.
-// - Taslaktaki arama kutusu arama işleviyle gelir (kart 0137): üst kısımdaki arama düğmesi gibi işlev açılınca
-//   görünür.
+// - Taslaktaki arama kutusu arama işlevi açıkken görünür (kart 0137).
 import { Baglanti } from "../../bilesenler/parcalar/baglanti";
 import { calisanSite } from "../ayar-semasi/calisan-site";
 import { hatayiKaydet } from "../izleme/hata-katmani";
+import { yazilanIslevler } from "../kayitlar/islevler";
 import { metin } from "../metinler/site-metni";
 import { kategorileriOku } from "../moduller/kategori/servis";
 import { siteninVeritabani } from "../veritabani/baglanti";
 import { vitrinAdresleri } from "./adresler";
+import { AramaKutusu } from "./arama-kutusu";
 import { vitrinBaglaminiOku } from "./baglam-oku";
 import type { BolumOrnegi } from "./bolum-kutuphanesi/duzen";
 import { bolumGorunumleri } from "./bolum-kutuphanesi/gorunumler";
@@ -68,6 +69,16 @@ export async function BulunamadiSayfasi() {
         baslik={metin("vitrin.bulunamadi.baslik")}
         aciklama={metin("vitrin.bulunamadi.aciklama")}
       >
+        {yazilanIslevler.arama ? (
+          <AramaKutusu
+            className="w-full"
+            metinler={{
+              etiket: metin("vitrin.bolum.ustSatir.aramaEtiketi"),
+              yerTutucu: metin("vitrin.bolum.ustSatir.aramaYerTutucu"),
+              dugme: metin("vitrin.bolum.ustSatir.arama"),
+            }}
+          />
+        ) : null}
         <Baglanti href={vitrinAdresleri.anasayfa} gorunum="ikincil">
           {metin("vitrin.bulunamadi.anasayfayaDon")}
         </Baglanti>

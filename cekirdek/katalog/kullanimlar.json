@@ -10,6 +10,7 @@
   ],
   "bilesenler/form/form.tsx": [
     "cekirdek/moduller/oturum/sifirlama-formlari.tsx",
+    "cekirdek/vitrin/arama-kutusu.tsx",
     "cekirdek/vitrin/bulten-formu.tsx",
     "cekirdek/vitrin/giris-formu.tsx",
     "cekirdek/vitrin/kayit-formu.tsx",
@@ -17,6 +18,7 @@
     "cekirdek/yonetim-paneli/kod-formu.tsx"
   ],
   "bilesenler/ikonlar/ikon.tsx": [
+    "bilesenler/form/form.tsx",
     "bilesenler/parcalar/acilir-menu.tsx",
     "bilesenler/parcalar/akordeon.tsx",
     "bilesenler/parcalar/bildirim.tsx",
@@ -70,7 +72,10 @@
     "cekirdek/yonetim-paneli/giris-formu.tsx"
   ],
   "bilesenler/parcalar/bildirim.tsx": [],
-  "bilesenler/parcalar/bos-hal.tsx": ["cekirdek/vitrin/urun-listesi/sayfa.tsx"],
+  "bilesenler/parcalar/bos-hal.tsx": [
+    "cekirdek/vitrin/urun-listesi/arama-sayfasi.tsx",
+    "cekirdek/vitrin/urun-listesi/sayfa.tsx"
+  ],
   "bilesenler/parcalar/dugme.tsx": [
     "bilesenler/form/form.tsx",
     "bilesenler/parcalar/baglanti.tsx",
@@ -97,6 +102,7 @@
     "cekirdek/vitrin/urun-listesi/filtreler.tsx"
   ],
   "bilesenler/parcalar/giris-alani.tsx": [
+    "bilesenler/form/form.tsx",
     "bilesenler/parcalar/secim-kutusu.tsx",
     "cekirdek/moduller/oturum/sifirlama-formlari.tsx",
     "cekirdek/vitrin/bulten-formu.tsx",
@@ -107,7 +113,7 @@
     "cekirdek/yonetim-paneli/giris-formu.tsx",
     "cekirdek/yonetim-paneli/kod-formu.tsx"
   ],
-  "bilesenler/parcalar/ipucu.tsx": ["bilesenler/parcalar/dugme.tsx"],
+  "bilesenler/parcalar/ipucu.tsx": ["bilesenler/form/form.tsx", "bilesenler/parcalar/dugme.tsx"],
   "bilesenler/parcalar/iskelet.tsx": [],
   "bilesenler/parcalar/kart.tsx": [],
   "bilesenler/parcalar/onay-kutusu.tsx": [
@@ -125,9 +131,13 @@
   ],
   "bilesenler/parcalar/sayfa-basligi.tsx": [
     "cekirdek/vitrin/durum-sayfasi.tsx",
-    "cekirdek/vitrin/kayit-sayfasi.tsx"
+    "cekirdek/vitrin/kayit-sayfasi.tsx",
+    "cekirdek/vitrin/urun-listesi/arama-sayfasi.tsx"
   ],
-  "bilesenler/parcalar/sayfa-yolu.tsx": ["cekirdek/vitrin/kayit-sayfasi.tsx"],
+  "bilesenler/parcalar/sayfa-yolu.tsx": [
+    "cekirdek/vitrin/kayit-sayfasi.tsx",
+    "cekirdek/vitrin/urun-listesi/arama-sayfasi.tsx"
+  ],
   "bilesenler/parcalar/sayfalama.tsx": ["cekirdek/vitrin/urun-listesi/sayfa.tsx"],
   "bilesenler/parcalar/secim-kutusu.tsx": [
     "cekirdek/vitrin/urun-listesi/filtreler.tsx",

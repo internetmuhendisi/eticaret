@@ -15,6 +15,7 @@ import { BilinenHata } from "../../kapi/zarf.ts";
 import { altyapiAdi } from "../../kayitlar/altyapi.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import { gorselBoyutAdlari, gorselBoyutlari } from "../../kayitlar/gorsel.ts";
+import { yazilanIslevler } from "../../kayitlar/islevler.ts";
 import { dosyaSil, gorselKaydet } from "../../moduller/dosya/servis.ts";
 import { vitrinGorseliAdresi } from "../../moduller/duzen/gorsel.ts";
 import { duzenServisi } from "../../moduller/duzen/servis.ts";
@@ -79,7 +80,8 @@ describe("vitrin bağlamı", () => {
     expect(bos.magazaAdi).toBe(site.kimlik.gorunenAd);
     expect(bos.logoAdresi).toBeUndefined();
     expect(bos.odemeIsaretleri).toEqual([]);
-    expect(Object.values(bos.islevler).every((acik) => !acik)).toBe(true);
+    // İşlevler çekirdekte yazılmış olanlardır (kart 0137'den beri arama açık).
+    expect(bos.islevler).toEqual(yazilanIslevler);
 
     await siteninServisi(site).degistir(vt, yonetici(), {
       magazaAdi: "Yeni Ad",

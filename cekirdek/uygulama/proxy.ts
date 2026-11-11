@@ -1,4 +1,4 @@
-// Uygulamanın ara katmanı. Üç işi vardır:
+// Uygulamanın ara katmanı. Dört işi vardır (dördüncüsü arama sayfasının istek sınırı, aşağıda):
 // - Panel adresleri (kart 0027, karar 0042). İş cekirdek/kapi/panel-korumasi.ts içindedir. Veritabanına
 //   ulaşılamazsa panel açılmaz.
 // - Geliştirme adresleri, yani bileşen kataloğu (kart 0104, karar 0078). Katalogun açık olmadığı kutuda
@@ -9,11 +9,22 @@
 //   (kart 0150) gövdesiz 404 alır.
 import { type NextRequest, NextResponse } from "next/server";
 import { hatayiKaydet } from "../izleme/hata-katmani";
+import { istegiSay, istemciAdresi, sayacAdresi } from "../kapi/istek-siniri";
 import { panelYoklamasi } from "../kapi/panel-korumasi";
 import { katalogAcikMi } from "../katalog/acik-mi";
+import { vitrinAdresleri } from "../vitrin/adresler";
+import { listeParametreleri } from "../vitrin/urun-listesi/adres";
+import { aramaSiniriBasligi } from "../vitrin/urun-listesi/arama-siniri";
 
 export const config = {
-  matcher: ["/yonetim", "/yonetim/:path*", "/gelistirme", "/gelistirme/:path*", "/favicon.ico"],
+  matcher: [
+    "/yonetim",
+    "/yonetim/:path*",
+    "/gelistirme",
+    "/gelistirme/:path*",
+    "/favicon.ico",
+    "/arama",
+  ],
 };
 
 // Eşleme listesi adresi çözülmüş hâliyle eşler; karşılaştırma da çözülmüş adresle yapılır. Kodlanmış
@@ -31,8 +42,32 @@ const gelistirmeAdresiMi = (hamYol: string) => {
 
 export const siteIkonuYolu = "/favicon.ico";
 
+// Arama sayfası (kart 0137): aranan metinle gelen istek istemci başına sayılır (IPv6 ilk 64 bitiyle). Sınır aşılınca
+// sayfa arama yapmaz: istek 429 ile aynı adrese, bekleme süresini taşıyan başlıkla geçer, sayfa "biraz bekleyin"
+// der (cekirdek/vitrin/urun-listesi/arama-sayfasi.tsx). Başlık dışarıdan gönderilse de silinir.
+const aramaSiniri = (istek: NextRequest): NextResponse => {
+  const basliklar = new Headers(istek.headers);
+  basliklar.delete(aramaSiniriBasligi);
+  if (istek.nextUrl.searchParams.get(listeParametreleri.ara)?.trim()) {
+    const sonuc = istegiSay(
+      `GET ${istek.nextUrl.pathname} ${sayacAdresi(istemciAdresi(istek))}`,
+      "arama",
+    );
+    if (!sonuc.izinli) {
+      basliklar.set(aramaSiniriBasligi, String(sonuc.bekleSaniye));
+      return NextResponse.rewrite(istek.nextUrl, {
+        status: 429,
+        headers: { "Retry-After": String(sonuc.bekleSaniye) },
+        request: { headers: basliklar },
+      });
+    }
+  }
+  return NextResponse.next({ request: { headers: basliklar } });
+};
+
 export async function proxy(istek: NextRequest) {
   if (istek.nextUrl.pathname === siteIkonuYolu) return new NextResponse(null, { status: 404 });
+  if (istek.nextUrl.pathname === vitrinAdresleri.arama) return aramaSiniri(istek);
   if (gelistirmeAdresiMi(istek.nextUrl.pathname)) {
     return katalogAcikMi() ? NextResponse.next() : new NextResponse(null, { status: 404 });
   }

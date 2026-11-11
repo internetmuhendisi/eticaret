@@ -14,12 +14,11 @@
 // - Sözcük karşılaştırması strpos ile yapılır: % ve _ gibi işaretler joker sayılmaz.
 // - Arama metni ve sözcük sayısı sınırlıdır; sınırın ötesi kesilir.
 import { type SQL, sql } from "drizzle-orm";
+import { aramaSinirlari } from "../../kayitlar/liste.ts";
 import { aramaAnahtari, aramaAnahtariSql } from "../../metinler/arama-anahtari.ts";
 import { kategoriler, urunKategorileri } from "../kategori/model.ts";
 import { markalar, urunMarkalari } from "../marka/model.ts";
 import { urunBirimleri, urunler } from "./model.ts";
-
-export const aramaSinirlari = { metin: 100, sozcuk: 8 } as const;
 
 export type AramaSorgusu = {
   // Aranan metnin anahtarı (bütünü).

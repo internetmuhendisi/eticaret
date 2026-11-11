@@ -1,5 +1,5 @@
-// Logo ve simgeler satırının görünüşü (kart 0108; Canlı Çarşı taslağı). Logo yoksa mağaza adı yazılır. Arama,
-// favori ve sepet yalnız işlevi yazılınca görünür; telefonda menü düğmesi seçilen menüleri soldan açılan yan
+// Logo ve simgeler satırının görünüşü (kart 0108; Canlı Çarşı taslağı). Logo yoksa mağaza adı yazılır. Arama kutusu
+// (kart 0137), favori ve sepet yalnız işlevi yazılınca görünür; telefonda menü düğmesi seçilen menüleri soldan açılan yan
 // pencerede gösterir, arama ve sepet satırda kalır. Masaüstünde menüler menü satırındadır; hesap yazısıyla, sepet
 // yazısı ve sayısıyla kenarlı bir hap içinde görünür. Telefon numarası yalnız logo ortada görünümündedir; logo
 // solda görünümünde taslaktaki gibi duyuru şeridindedir.
@@ -9,6 +9,7 @@ import { Baglanti } from "../../../../bilesenler/parcalar/baglanti";
 import { sinif } from "../../../../bilesenler/parcalar/sinif";
 import { metin } from "../../../metinler/site-metni";
 import { vitrinAdresleri } from "../../adresler";
+import { AramaKutusu } from "../../arama-kutusu";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
 import { HesapMenusu } from "./hesap-menusu";
 import { MenuDugmesi } from "./menu-dugmesi";
@@ -170,13 +171,6 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
 
   const simgeler = (
     <div className="flex shrink-0 items-center justify-end gap-1">
-      {islevler.arama ? (
-        <SimgeBaglantisi
-          adres={vitrinAdresleri.arama}
-          ikon="arama"
-          etiket={metin("vitrin.bolum.ustSatir.arama")}
-        />
-      ) : null}
       {favori === undefined ? null : <SimgeBaglantisi {...favori} telefondaGizli />}
       <HesapMenusu
         baglanti={<YaziliBaglanti {...hesap} telefondaGizli />}
@@ -196,6 +190,27 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
     </div>
   );
 
+  // Arama kutusu (kart 0137): işlev açıkken. Logo solda görünümünde masaüstünde logonun yanında, daha dar
+  // ekranda satırın altında; logo ortada görünümünde her genişlikte satırın altında (kullanıcı kararı).
+  const aramaKutusu = (className: string) =>
+    islevler.arama ? (
+      <AramaKutusu
+        className={className}
+        metinler={{
+          etiket: metin("vitrin.bolum.ustSatir.aramaEtiketi"),
+          yerTutucu: metin("vitrin.bolum.ustSatir.aramaYerTutucu"),
+          dugme: metin("vitrin.bolum.ustSatir.arama"),
+        }}
+      />
+    ) : null;
+  const alttakiArama = islevler.arama ? (
+    <div
+      className={sinif("mx-auto max-w-icerik px-4 pb-3 tablet:px-6", !ortada && "masaustu:hidden")}
+    >
+      {aramaKutusu("w-full")}
+    </div>
+  ) : null;
+
   return (
     <div className="border-b border-kenar bg-zemin">
       {ortada ? (
@@ -212,10 +227,13 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
         <div className="mx-auto flex max-w-icerik items-center gap-2 px-4 py-2 tablet:px-6 masaustu:gap-6 masaustu:py-4">
           {menuDugmesi}
           {logo}
-          <div className="flex-1" />
+          <div className="flex flex-1 justify-center">
+            {aramaKutusu("hidden w-full max-w-metin masaustu:block")}
+          </div>
           {simgeler}
         </div>
       )}
+      {alttakiArama}
     </div>
   );
 }

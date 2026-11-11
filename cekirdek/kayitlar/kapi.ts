@@ -26,5 +26,7 @@ export const istekSinirlari = {
   genel: { istek: 120, saniye: 60 },
   siki: { istek: 5, saniye: 60 },
   gorsel: { istek: 600, saniye: 60 },
+  // Vitrinin arama sayfası (kart 0137): insan için bol, toplu taramayı durdurur. Ara katmanda sayılır.
+  arama: { istek: 30, saniye: 60 },
 } as const satisfies Record<string, { istek: number; saniye: number }>;
 export type IstekSiniri = keyof typeof istekSinirlari;

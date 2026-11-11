@@ -474,6 +474,8 @@
         "tumu": "Tümü",
         "anasayfa": "Ana sayfa",
         "arama": "Ara",
+        "aramaEtiketi": "Ürün ara",
+        "aramaYerTutucu": "Ürün, kategori ya da marka ara",
         "favoriler": "Favoriler",
         "sepet": "Sepet",
         "hesap": "Hesabım",
@@ -729,6 +731,19 @@
       "dahaFazlaDurum": "{toplam} ürünün {gorulen} tanesi gösteriliyor",
       "dahaFazla": "Daha fazla göster"
     },
+    "arama": {
+      "baslik": "Arama",
+      "sekmeBasligi": "“{arama}” araması",
+      "sonucBasligi": "“{arama}” için sonuçlar",
+      "sonucYokBaslik": "“{arama}” için sonuç bulunamadı",
+      "sonucYok": "Aradığınızı bulamadık",
+      "sonucYokAciklama": "Yazımı kontrol edin ya da daha genel bir sözcük deneyin.",
+      "kategoriOnerisi": "Kategorilere göz atın",
+      "bosSorguBaslik": "Ne aramak istersiniz?",
+      "bosSorguAciklama": "Üstteki kutuya ürün, kategori ya da marka adı yazın.",
+      "cokFazlaBaslik": "Biraz bekleyin",
+      "cokFazla": "Kısa sürede çok arama yaptınız. {saniye} saniye sonra yeniden deneyin."
+    },
     "bulunamadi": {
       "kod": "404",
       "sekmeBasligi": "Sayfa bulunamadı",
@@ -931,6 +946,9 @@
       "isTelefonu": "İş telefonu",
       "eposta": "E-posta",
       "aboneOl": "Abone ol",
+      "aramaEtiketi": "Ürün ara",
+      "aramaYerTutucu": "Ürün, kategori ya da marka ara",
+      "ara": "Ara",
       "gonderildi": "Form gönderildi.",
       "siparisNotu": "Sipariş notu",
       "siparisNotuAciklama": "Kargoya ya da paketlemeye dair isteğinizi yazın.",

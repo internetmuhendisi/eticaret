@@ -13,7 +13,7 @@ export const yazilanIslevler: Readonly<Record<Islev, boolean>> = {
   yorum: false,
   blog: false,
   bulten: false,
-  arama: false,
+  arama: true,
   favori: false,
   sepet: false,
   odeme: false,
