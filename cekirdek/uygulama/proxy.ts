@@ -13,7 +13,7 @@ import { istegiSay, istemciAdresi, sayacAdresi } from "../kapi/istek-siniri";
 import { panelYoklamasi } from "../kapi/panel-korumasi";
 import { katalogAcikMi } from "../katalog/acik-mi";
 import { vitrinAdresleri } from "../vitrin/adresler";
-import { listeParametreleri } from "../vitrin/urun-listesi/adres";
+import { adresinAramasi } from "../vitrin/urun-listesi/adres";
 import { aramaSiniriBasligi } from "../vitrin/urun-listesi/arama-siniri";
 
 export const config = {
@@ -48,7 +48,7 @@ export const siteIkonuYolu = "/favicon.ico";
 const aramaSiniri = (istek: NextRequest): NextResponse => {
   const basliklar = new Headers(istek.headers);
   basliklar.delete(aramaSiniriBasligi);
-  if (istek.nextUrl.searchParams.get(listeParametreleri.ara)?.trim()) {
+  if (adresinAramasi(istek.nextUrl.searchParams) !== undefined) {
     const sonuc = istegiSay(
       `GET ${istek.nextUrl.pathname} ${sayacAdresi(istemciAdresi(istek))}`,
       "arama",

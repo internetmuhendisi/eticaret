@@ -73,7 +73,8 @@ export async function BulunamadiSayfasi() {
           <AramaKutusu
             className="w-full"
             metinler={{
-              etiket: metin("vitrin.bolum.ustSatir.aramaEtiketi"),
+              // Üst satırdaki kutudan ayrı ad: ekran okuyucu iki arama alanını ayırt eder.
+              etiket: metin("vitrin.bulunamadi.aramaEtiketi"),
               yerTutucu: metin("vitrin.bolum.ustSatir.aramaYerTutucu"),
               dugme: metin("vitrin.bolum.ustSatir.arama"),
             }}

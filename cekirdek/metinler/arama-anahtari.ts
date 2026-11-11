@@ -4,9 +4,10 @@
 // Kural: aşağıdaki tablodaki harfler karşılığına çevrilir, sonra küçük harfe inilir. Çevirme küçültmeden önce
 // yapılır: veritabanının harf ayarı Türkçe olsa da "I" "ı"ya inmez. Tablo hem uygulamanın (aramaAnahtari) hem
 // veritabanının (aramaAnahtariSql) kuralıdır; ikisinin her harfte aynı sonucu verdiği gerçek veritabanıyla
-// test edilir (testler/arama-anahtari.test.ts). Tablo dışındaki harfler yalnız küçültülür; uygulama ile
-// veritabanının küçültmesi bazı harflerde ayrışabilir (ad-anahtari.ts), aranan sözcük bu yüzden yalnız
-// veritabanında karşılaştırılır.
+// test edilir (testler/arama-anahtari.test.ts). Tablo dışındaki harfler yalnız küçültülür: aranan metni uygulama
+// (toLowerCase), alanı veritabanı (lower) küçültür. İkisi Türkçe, şapkalı ve Latin harflerde aynıdır; daire içindeki
+// harfler (Ⓐ) ve yeni Unicode harfleri gibi kırk kadar harfte ayrışır (ölçüldü, kart 0137'nin bağımsız kontrolü):
+// böyle bir harfle aranan sözcük bulunmayabilir.
 //
 // Ad tekilliğinin kuralı (ad-anahtari.ts) bundan farklıdır: orada "Şal" ile "Sal" iki ayrı addır, aramada
 // aynıdır.

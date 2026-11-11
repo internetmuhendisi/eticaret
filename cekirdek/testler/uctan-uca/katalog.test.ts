@@ -226,7 +226,7 @@ test("bölüm kütüphanesi: deneme bölümü ve tarifinden çıkan form iki ren
 
 // Üst ve alt kısım bölümleri (kart 0108): yukarıdaki test sayfanın tamamını iki renkte ve üç genişlikte tarar;
 // burada telefonda yan pencere, masaüstünde açılır menü klavyeyle denenir, açıkken de taranır.
-test("üst kısım: telefonda menü yan pencereden açılır, arama ve sepet satırda kalır, klavyeyle kapanır", async ({
+test("üst kısım: telefonda menü yan pencereden açılır, arama kutusu ve sepet görünür, klavyeyle kapanır", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 375, height: 800 });
@@ -234,7 +234,12 @@ test("üst kısım: telefonda menü yan pencereden açılır, arama ve sepet sat
   const bolum = page.getByRole("region", { name: metin("gelistirme.bolum.ustAlt") });
   // Katalogda üst kısım bir bölümün içindedir: sayfanın başlığı (banner) sayılmaz.
   const ust = bolum.locator("header").first();
-  await expect(ust.getByRole("link", { name: metin("vitrin.bolum.ustSatir.arama") })).toBeVisible();
+  // Arama telefonda satırın altındaki kutudur (kart 0137).
+  await expect(
+    ust
+      .getByRole("searchbox", { name: metin("vitrin.bolum.ustSatir.aramaEtiketi") })
+      .filter({ visible: true }),
+  ).toHaveCount(1);
   await expect(ust.getByRole("link", { name: metin("vitrin.bolum.ustSatir.sepet") })).toBeVisible();
   await expect(ust.getByRole("link", { name: metin("vitrin.bolum.ustSatir.hesap") })).toBeHidden();
   await expect(

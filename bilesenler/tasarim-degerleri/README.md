@@ -69,7 +69,7 @@ Bütün temalarda aynıdır.
 | Tür | Sınıf | Adlar |
 |---|---|---|
 | Boşluk ölçeği | `p-`, `m-`, `gap-`, `w-`, `h-`, `size-`, `min-h-`... | `0`, `px`, `0.5`, `1`, `1.5`, `2`, `3`, `4`, `5`, `6`, `8`, `10`, `11`, `12`, `16`, `20`; `11` parmakla rahat basılan en küçük yüksekliktir |
-| Genişlik sınırı | `max-w-` | `karekod`, `form`, `metin`, `icerik` |
+| Genişlik sınırı | `max-w-` | `karekod`, `panel`, `form`, `arama`, `metin`, `icerik` |
 | Kırılma noktası | önek | `tablet:`, `masaustu:`, `genis:`; önek yoksa telefon |
 | Katman sırası | `z-` | alttan üste `taban`, `ust-kisim`, `yan-pencere`, `pencere`, `acilir`, `bildirim`; açılır parçalar (menü, seçim listesi, ipucu) pencerelerin üstündedir |
 | Kenar ve çizgi kalınlığı | `border`, `outline`, `ring`, `decoration`, `underline-offset`... | öneksiz (1 px), `2`, `0` |

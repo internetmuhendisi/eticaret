@@ -462,6 +462,8 @@ export const sabitDegerler = {
     karekod: "16rem",
     panel: "16rem",
     form: "28rem",
+    // arama: üst satırdaki arama kutusu, masaüstünde logonun yanında (kart 0137, Canlı Çarşı taslağı).
+    arama: "35rem",
     metin: "42rem",
     icerik: "80rem",
   },

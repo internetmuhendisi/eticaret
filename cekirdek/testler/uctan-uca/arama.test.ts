@@ -188,7 +188,13 @@ test("sonuç, sonuçsuz ve boş arama iki renkte ve üç genişlikte taramadan g
 test("bulunamadı sayfasının arama kutusu arama sayfasına gider", async ({ page }) => {
   await page.goto(`/olmayan-${randomUUID().slice(0, 8)}`);
   await sayfaHazir(page);
-  const kutu = page.getByRole("main").getByRole("searchbox");
+  // Üstteki kutudan ayrı adla: ekran okuyucu iki arama alanını ayırt eder.
+  const kutu = page
+    .getByRole("main")
+    .getByRole("searchbox", { name: metin("vitrin.bulunamadi.aramaEtiketi") });
+  await expect(
+    page.getByRole("search", { name: metin("vitrin.bulunamadi.aramaEtiketi") }),
+  ).toHaveCount(1);
   await kutu.fill("kupa");
   await kutu.press("Enter");
   await expect(page).toHaveURL(/\/arama\?ara=kupa/);

@@ -13,7 +13,12 @@
 //   sayfasında) yok sayılır.
 // - sayfa: 1'den büyükse.
 // Tanınmayan parametre yok sayılır. Sıralama ve filtre değişince sayfa başa döner.
-import { type AramaSiralamasi, listeSiralamalari } from "../../kayitlar/liste";
+import {
+  type AramaSiralamasi,
+  aramaSinirlari,
+  aramaSiralamalari,
+  listeSiralamalari,
+} from "../../kayitlar/liste";
 import { kendiAlani } from "../../moduller/urun/filtre";
 
 export const listeParametreleri = {
@@ -30,7 +35,7 @@ export const listeParametreleri = {
 } as const;
 
 export type ListeDurumu = {
-  // Aranan metin (arama sayfası); kırpılmış, boşsa yok.
+  // Aranan metin (arama sayfası); kırpılmış ve sınırda kesilmiş, boşsa yok.
   arama?: string;
   // Yazıldığı gibi; okunamayan tutar filtreye girmez, ekran hatayı gösterir.
   fiyatYazisi: { enAz?: string; enCok?: string };
@@ -55,6 +60,14 @@ const siralamaMi = (
   izinli: readonly AramaSiralamasi[],
 ): deger is AramaSiralamasi => (izinli as readonly (string | undefined)[]).includes(deger);
 
+// Adresin aranan metni; ara katmanın istek sınırı (proxy.ts) ve arama sayfası aynı işlevle okur: "?ara=&ara=x"
+// gibi yazılışlarda ikisi aynı karara varır (kart 0137, bağımsız kontrolün bulgusu).
+export const adresinAramasi = (sorgu: URLSearchParams): string | undefined =>
+  adrestenDurum(
+    Object.fromEntries([...new Set(sorgu.keys())].map((ad) => [ad, sorgu.getAll(ad)])),
+    aramaSiralamalari,
+  ).arama;
+
 // izinli: sayfanın sıralamaları (kategori sayfası listeSiralamalari, arama aramaSiralamalari).
 export const adrestenDurum = (
   parametreler: AdresParametreleri,
@@ -73,13 +86,14 @@ export const adrestenDurum = (
   const enAz = tek(p.enAz)?.trim();
   const enCok = tek(p.enCok)?.trim();
   const sirala = tek(p.sirala);
-  const arama = tek(p.ara)?.trim();
+  // Aranan metin harf sınırında kesilir (kod noktasıyla: emoji bölünmez); kesilen metin hem aranır hem görünür.
+  const arama = [...(tek(p.ara)?.trim() ?? "")].slice(0, aramaSinirlari.metin).join("").trim();
   // Yalnız rakam: "1e3", "0x10" gibi yazılışlar sayıya çevrilmez.
   const sayfaYazisi = tek(p.sayfa);
   const sayfa =
     sayfaYazisi !== undefined && /^\d{1,9}$/.test(sayfaYazisi) ? Number(sayfaYazisi) : 1;
   return {
-    ...(arama === undefined || arama === "" ? {} : { arama }),
+    ...(arama === "" ? {} : { arama }),
     fiyatYazisi: {
       ...(enAz === undefined || enAz === "" ? {} : { enAz }),
       ...(enCok === undefined || enCok === "" ? {} : { enCok }),

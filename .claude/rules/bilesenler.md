@@ -43,7 +43,7 @@ Bileşen, düğme, giriş alanı, pencere gibi tekrar kullanılan arayüz parça
 
   Sınıflar `sinif()` ile birleştirilir. Asıl shadcn hâlleri `bilesenler/shadcn-kaynagi/` altındadır, güncellemesi `pnpm shadcn-farki` ile yapılır.
 - `bilesenler/parcalar/hareket-azaltma.ts`: `useHareketAzaltma` (kart 0110), kullanıcının hareketi azaltma tercihi. Kendiliğinden hareket eden parça bununla durur.
-- `bilesenler/form/`: `Form`, `GonderDugmesi` (kart 0057), `FormAlani` (kart 0027).
+- `bilesenler/form/`: `Form`, `GonderDugmesi` (kart 0057), `FormAlani` (kart 0027), `AramaFormu` (kart 0137: GET ile gönderilir, gizli bilgi taşıyan form onunla yazılmaz).
 - `bilesenler/ikonlar/`: ikon sözlüğü (`sozluk.ts`) ve `Ikon`. Lucide yalnız sözlükte içe aktarılır.
 - `bilesenler/tasarim-degerleri/`: tasarım değerleri ve Tailwind'in ortak girişi (kart 0102, karar 0076).
 - Bileşen kataloğu `/gelistirme/bilesenler` adresindedir (kart 0104, karar 0078). Yalnız geliştirmede ve deneme ortamında açılır. Her parçanın kendi sayfası örneği, dosyayı ve kullanıldığı yerleri gösterir; renk ve genişlik adresten seçilir.

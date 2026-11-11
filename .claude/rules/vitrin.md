@@ -37,6 +37,13 @@ paths:
 - Filtre, sıralama ve sayfa adreste durur; adres yalnız `adres.ts` ile okunur ve kurulur. Müşterinin yazdığı tutar biçimleyicinin `paraOku`'suyla okunur.
 - Önerilen sıra ürünün vitrin sırasıdır, yalnız `vitrinSirasiniDegistir` yazar.
 
+## Arama (karar 0107)
+
+- Aramanın harf kuralı yalnız `cekirdek/metinler/arama-anahtari.ts`'dedir (`aramaAnahtari`, veritabanında `aramaAnahtariSql`); ad tekilliğinin kuralıyla (`ad-anahtari.ts`) karıştırılmaz.
+- Aramanın koşulu ve "en uygun" puanı yalnız `cekirdek/moduller/urun/arama.ts`'den gelir (`aramaSorgusu`, `aramaKosulu`, `uygunlukPuani`); liste `filtreliUrunListesi` ile kurulur, görünürlük orada uygulanır. Sözcük `strpos` ile aranır, `LIKE` kullanılmaz.
+- "En uygun" sıralaması yalnız arama sayfasındadır (`aramaSiralamalari`); kategori sayfası adreste görse de yok sayar.
+- Arama kutusu `AramaKutusu` (`cekirdek/vitrin/arama-kutusu.tsx`) ile çizilir, kütüphanenin `AramaFormu`'nu kullanır. Arama sayfasının istek sınırı ara katmandadır (`proxy.ts`, `istekSinirlari.arama`).
+
 ## Bulunamadı ve hata sayfası (karar 0104)
 
 - Vitrinde olmayan adres ve olmayan kayıt `notFound()` ile `app/(vitrin)/not-found.tsx`'e düşer (`BulunamadiSayfasi`); vitrinin hata sınırı `app/(vitrin)/error.tsx`'tir (`HataSayfasi`). İkisi de çerçevenin içindedir. Sayfa kendi "bulunamadı" ekranını yazmaz.

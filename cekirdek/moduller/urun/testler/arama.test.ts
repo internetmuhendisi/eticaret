@@ -71,6 +71,10 @@ describe("arama sorgusu", () => {
     const uzun = Array.from({ length: 20 }, (_, i) => `s${i}`).join(" ");
     expect(aramaSorgusu(uzun)?.sozcukler).toHaveLength(aramaSinirlari.sozcuk);
     expect(aramaSorgusu("a".repeat(500))?.tamami).toHaveLength(aramaSinirlari.metin);
+    // Sınır harf (kod noktası) sayısıdır: emoji bölünmez.
+    expect(aramaSorgusu(`${"a".repeat(aramaSinirlari.metin - 1)}😀😀`)?.tamami).toBe(
+      `${"a".repeat(aramaSinirlari.metin - 1)}😀`,
+    );
   });
 });
 

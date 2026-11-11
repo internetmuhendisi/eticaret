@@ -4,6 +4,8 @@
 // - DahaFazla: kaç ürünün görüldüğünü söyleyen yazı ve sonraki sayfanın bağlantısı.
 // İkisi de bağlantıdır, kod yüklenmeden de çalışır; sayfa adreste durur. Adresleri ve metinleri kullanan sayfa
 // verir. Tek sayfalık listede hiçbiri çizilmez.
+// Sayfa bağlantıları ön yüklenmez (kart 0137): sayfalar arama ve filtre sonuçlarıdır, ön yükleme her sayfayı
+// veritabanında hesaplatır ve aramanın istek sınırını tüketir.
 import Link from "next/link";
 import { Ikon } from "../ikonlar/ikon.tsx";
 import { Baglanti } from "./baglanti.tsx";
@@ -65,7 +67,12 @@ export function Sayfalama({
         <Ikon ad={ikon} />
       </span>
     ) : (
-      <Link href={adres(hedef)} className={sinif(kutu, "hover:bg-yuzey")} aria-label={ad}>
+      <Link
+        href={adres(hedef)}
+        prefetch={false}
+        className={sinif(kutu, "hover:bg-yuzey")}
+        aria-label={ad}
+      >
         <Ikon ad={ikon} />
       </Link>
     );
@@ -87,6 +94,7 @@ export function Sayfalama({
             <li key={oge}>
               <Link
                 href={adres(oge)}
+                prefetch={false}
                 aria-label={metinler.sayfaAdi(oge)}
                 aria-current={oge === gecerli ? "page" : undefined}
                 className={sinif(
@@ -122,7 +130,7 @@ export function DahaFazla({
     <div data-slot="daha-fazla" className={sinif("flex flex-col items-center gap-3", className)}>
       <p className="text-soluk-yazi">{durum}</p>
       {adres === undefined ? null : (
-        <Baglanti href={adres} gorunum="cerceveli">
+        <Baglanti href={adres} prefetch={false} gorunum="cerceveli">
           {dugmeYazisi}
         </Baglanti>
       )}

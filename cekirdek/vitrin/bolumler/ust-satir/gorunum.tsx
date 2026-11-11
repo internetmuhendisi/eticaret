@@ -227,8 +227,8 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
         <div className="mx-auto flex max-w-icerik items-center gap-2 px-4 py-2 tablet:px-6 masaustu:gap-6 masaustu:py-4">
           {menuDugmesi}
           {logo}
-          <div className="flex flex-1 justify-center">
-            {aramaKutusu("hidden w-full max-w-metin masaustu:block")}
+          <div className="flex min-w-0 flex-1">
+            {aramaKutusu("hidden w-full max-w-arama masaustu:block")}
           </div>
           {simgeler}
         </div>

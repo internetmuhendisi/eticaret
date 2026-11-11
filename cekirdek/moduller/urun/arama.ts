@@ -28,7 +28,7 @@ export type AramaSorgusu = {
 
 // Aranan metinden sorgu; metin boşsa ya da yalnız boşluksa sorgu yoktur.
 export const aramaSorgusu = (metin: string): AramaSorgusu | undefined => {
-  const tamami = aramaAnahtari(metin.slice(0, aramaSinirlari.metin));
+  const tamami = aramaAnahtari([...metin].slice(0, aramaSinirlari.metin).join(""));
   if (tamami === "") return undefined;
   const sozcukler = [...new Set(tamami.split(" "))].slice(0, aramaSinirlari.sozcuk);
   return { tamami, sozcukler };

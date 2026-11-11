@@ -2,8 +2,14 @@
 // parametre, tanınmayan sıralama ve geçersiz sayfa yok sayılır; varsayılan sıralama yazılmaz; filtre ya da
 // sıralama değişince sayfa başa döner; "temizle" sıralamayı korur; filtre ya da sıralama varsa dizine girmez.
 import { describe, expect, it } from "vitest";
-import { aramaSiralamalari } from "../../kayitlar/liste.ts";
-import { adrestenDurum, durumdanSorgu, durumuDegistir, filtreliMi } from "../urun-listesi/adres.ts";
+import { aramaSinirlari, aramaSiralamalari } from "../../kayitlar/liste.ts";
+import {
+  adresinAramasi,
+  adrestenDurum,
+  durumdanSorgu,
+  durumuDegistir,
+  filtreliMi,
+} from "../urun-listesi/adres.ts";
 
 describe("adresteki durum", () => {
   it("okunan durum aynı adresi verir; sıra sabittir", () => {
@@ -81,6 +87,16 @@ describe("arama", () => {
       "?ara=yazl%C4%B1k+yelek",
     );
     expect(adrestenDurum({ ara: "   " }).arama).toBeUndefined();
+  });
+
+  it("aranan metin harf sınırında kesilir, emoji bölünmez; ara katmanın okuması sayfanınkiyle aynı", () => {
+    const uzun = `${"a".repeat(aramaSinirlari.metin - 1)}😀😀`;
+    expect(adrestenDurum({ ara: uzun }).arama).toBe(`${"a".repeat(aramaSinirlari.metin - 1)}😀`);
+    expect(adresinAramasi(new URLSearchParams("ara=&ara=kupa"))).toBe("kupa");
+    expect(adresinAramasi(new URLSearchParams("ara=+&ara=kupa"))).toBe(
+      adrestenDurum({ ara: [" ", "kupa"] }).arama,
+    );
+    expect(adresinAramasi(new URLSearchParams("ara=&ara=+"))).toBeUndefined();
   });
 
   it("en-uygun yalnız aramanın sıralamasıdır; kategori sayfası onu yok sayar", () => {

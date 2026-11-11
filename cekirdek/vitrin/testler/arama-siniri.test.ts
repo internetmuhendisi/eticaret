@@ -38,6 +38,18 @@ describe("arama istek sınırı", () => {
     expect((await proxy(istek("/arama?ara=+++", istemci))).status).toBe(200);
   });
 
+  // Bağımsız kontrolün bulgusu: ilk değeri boş, ikincisi dolu "ara" sayfada aranır; ara katman da onu sayar.
+  it("sayfanın aradığı her yazılış sayılır (?ara=&ara=x)", async () => {
+    const istemci = "203.0.113.70";
+    for (let i = 0; i < sinir; i += 1) {
+      await proxy(istek("/arama?ara=&ara=kupa", istemci));
+    }
+    expect((await proxy(istek("/arama?ara=&ara=kupa", istemci))).status).toBe(429);
+    // Sayfanın aramadığı yazılış sayılmaz (ilk dolu değer yalnız boşluk).
+    expect((await proxy(istek("/arama?ara=+&ara=kupa", istemci))).status).toBe(200);
+    expect((await proxy(istek("/arama?ara=&ara=", istemci))).status).toBe(200);
+  });
+
   it("IPv6 adresi ilk 64 bitiyle sayılır", async () => {
     for (let i = 0; i < sinir; i += 1) {
       await proxy(istek("/arama?ara=kupa", `2001:db8:aa:bb::${i.toString(16)}`));

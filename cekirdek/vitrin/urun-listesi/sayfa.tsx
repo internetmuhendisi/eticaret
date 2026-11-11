@@ -316,6 +316,7 @@ const seciliFiltreler = (
   ];
 };
 
+// Bağlantılar ön yüklenmez: her biri bir liste sorgusudur ve aramada istek sınırına sayılır (kart 0137).
 function SeciliFiltreler({ veri, yol }: { veri: UrunListesiVerisi; yol: string }) {
   const secili = seciliFiltreler(veri, yol);
   if (secili.length === 0) return null;
@@ -329,6 +330,7 @@ function SeciliFiltreler({ veri, yol }: { veri: UrunListesiVerisi; yol: string }
           <Link
             href={filtre.adres}
             scroll={false}
+            prefetch={false}
             className="inline-flex min-h-11 items-center gap-1 rounded-dugme border border-kenar bg-yuzey px-4 text-yazi no-underline hover:border-yazi"
           >
             {filtre.etiket}
@@ -341,6 +343,7 @@ function SeciliFiltreler({ veri, yol }: { veri: UrunListesiVerisi; yol: string }
         <Baglanti
           href={`${yol}${durumdanSorgu(durumuDegistir(veri.durum, { tur: "temizle" }), veri.varsayilanSiralama)}`}
           scroll={false}
+          prefetch={false}
         >
           {metin("vitrin.liste.tumunuTemizle")}
         </Baglanti>
