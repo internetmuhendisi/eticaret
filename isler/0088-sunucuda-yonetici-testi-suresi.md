@@ -31,4 +31,4 @@ Kart 0069 sırasında ölçüldü (2026-11-07): makinenin yük ortalaması 27,8 
 
 ## Durum
 
-yapılacak
+bitti
