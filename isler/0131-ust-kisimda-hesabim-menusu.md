@@ -29,4 +29,4 @@ Kullanıcının kararı: üst kısımdaki "Hesabım", giriş yapmış müşteriy
 
 ## Durum
 
-yapılacak
+bitti
