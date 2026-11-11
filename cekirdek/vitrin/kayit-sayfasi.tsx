@@ -64,10 +64,13 @@ export const kayitSayfasininBilgisi = async (
 export function KayitSayfasi({
   tur,
   kayit,
+  ek,
   children,
 }: {
   tur: AdresliKayitTuru;
   kayit: AdresliKayit;
+  // Başlığın yanındaki soluk yazı, örneğin ürün sayısı (kart 0136).
+  ek?: string;
   children?: ReactNode;
 }) {
   return (
@@ -80,7 +83,7 @@ export function KayitSayfasi({
           { ad: kayit.ad, adres: kayitAdresleri[tur](kayit.adresAdi) },
         ]}
       />
-      <SayfaBasligi baslik={kayit.ad} className="mb-5" />
+      <SayfaBasligi baslik={kayit.ad} {...(ek === undefined ? {} : { ek })} className="mb-5" />
       {children}
     </main>
   );

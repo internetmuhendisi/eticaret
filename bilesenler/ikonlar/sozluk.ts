@@ -33,6 +33,7 @@ import {
   SearchIcon,
   ShieldCheckIcon,
   ShoppingBagIcon,
+  SlidersHorizontalIcon,
   StarIcon,
   TriangleAlertIcon,
   TruckIcon,
@@ -95,6 +96,8 @@ export const ikonlar = {
   hediye: GiftIcon,
   // Vitrinin hata sayfası (kart 0120): sayfayı yeniden dener.
   yenile: RefreshCwIcon,
+  // Ürün listesi (kart 0136): telefonda filtreleri açar.
+  filtre: SlidersHorizontalIcon,
 } satisfies Record<string, LucideIcon>;
 
 export type IkonAdi = keyof typeof ikonlar;

@@ -1,18 +1,16 @@
-// Vitrinin etiket sayfası; ürün listesi kart 0136 (kart 0135: iskelet, adres ve yönlendirme; karar 0103).
+// Vitrinin etiket sayfası: filtreli ürün listesi (kart 0136; iskelet, adres ve yönlendirme kart 0135, karar 0103).
 import type { Metadata } from "next";
+import type { AdresParametreleri, SorguParametreleri } from "../../../../../vitrin/kayit-sayfasi";
 import {
-  type AdresParametreleri,
-  KayitSayfasi,
-  kayitSayfasininBilgisi,
-  type SorguParametreleri,
-  sayfaninKaydi,
-} from "../../../../../vitrin/kayit-sayfasi";
+  KayitListesiSayfasi,
+  kayitListesiBilgisi,
+} from "../../../../../vitrin/urun-listesi/kayit-listesi";
 
 type Ozellikler = { params: AdresParametreleri; searchParams: SorguParametreleri };
 
 export const generateMetadata = ({ params, searchParams }: Ozellikler): Promise<Metadata> =>
-  kayitSayfasininBilgisi("etiket", params, searchParams);
+  kayitListesiBilgisi("etiket", params, searchParams);
 
-export default async function EtiketSayfasi({ params, searchParams }: Ozellikler) {
-  return <KayitSayfasi tur="etiket" kayit={await sayfaninKaydi("etiket", params, searchParams)} />;
+export default function EtiketSayfasi({ params, searchParams }: Ozellikler) {
+  return <KayitListesiSayfasi tur="etiket" parametreler={params} sorgu={searchParams} />;
 }

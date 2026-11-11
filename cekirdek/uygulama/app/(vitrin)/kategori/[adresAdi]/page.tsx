@@ -1,20 +1,16 @@
-// Vitrinin kategori sayfası; ürün listesi, filtre ve sıralama kart 0136 (kart 0135: iskelet, adres ve yönlendirme; karar 0103).
+// Vitrinin kategori sayfası: filtreli ürün listesi (kart 0136; iskelet, adres ve yönlendirme kart 0135, karar 0103).
 import type { Metadata } from "next";
+import type { AdresParametreleri, SorguParametreleri } from "../../../../../vitrin/kayit-sayfasi";
 import {
-  type AdresParametreleri,
-  KayitSayfasi,
-  kayitSayfasininBilgisi,
-  type SorguParametreleri,
-  sayfaninKaydi,
-} from "../../../../../vitrin/kayit-sayfasi";
+  KayitListesiSayfasi,
+  kayitListesiBilgisi,
+} from "../../../../../vitrin/urun-listesi/kayit-listesi";
 
 type Ozellikler = { params: AdresParametreleri; searchParams: SorguParametreleri };
 
 export const generateMetadata = ({ params, searchParams }: Ozellikler): Promise<Metadata> =>
-  kayitSayfasininBilgisi("kategori", params, searchParams);
+  kayitListesiBilgisi("kategori", params, searchParams);
 
-export default async function KategoriSayfasi({ params, searchParams }: Ozellikler) {
-  return (
-    <KayitSayfasi tur="kategori" kayit={await sayfaninKaydi("kategori", params, searchParams)} />
-  );
+export default function KategoriSayfasi({ params, searchParams }: Ozellikler) {
+  return <KayitListesiSayfasi tur="kategori" parametreler={params} sorgu={searchParams} />;
 }

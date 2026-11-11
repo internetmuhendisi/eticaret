@@ -44,14 +44,20 @@ export const bolumunKartGorunumu = (baglam: VitrinBaglami, deger: unknown): Urun
 // telefonda iki sütundur; yan afişin yanında bir sütun azdır. Yatay kart dar yerler içindir ama düğmeleri ve
 // fiyatı sığmalı: telefonda bir, masaüstünde en çok üç (dörtte fiyat kırılıyordu, görüntüde ölçüldü); aralığı
 // taslaktaki gibi 12 px'tir. Fırsatlarda panelin yanında kartlar iki sütundur.
-export type IzgaraYeri = "tam" | "yanli" | "iki-sutun";
-const izgaraSiniflari = (kart: UrunKartiGorunumu, yer: IzgaraYeri): string => {
+// Filtreli liste (kart 0136): solda filtre sütunuyla masaüstünde üç sütun (Canlı Çarşı taslağı).
+export type IzgaraYeri = "tam" | "yanli" | "iki-sutun" | "filtreli";
+export const izgaraSiniflari = (kart: UrunKartiGorunumu, yer: IzgaraYeri): string => {
   if (kart === "yatay") {
     return yer === "tam"
       ? "gap-3 grid-cols-1 tablet:grid-cols-2 masaustu:grid-cols-3"
       : "gap-3 grid-cols-1 tablet:grid-cols-2";
   }
   if (yer === "iki-sutun") return "gap-4 grid-cols-2";
+  if (yer === "filtreli") {
+    return kart === "dikey"
+      ? "gap-4 grid-cols-2 tablet:grid-cols-3"
+      : "gap-3 grid-cols-1 tablet:grid-cols-2";
+  }
   if (kart === "buyuk-gorsel") {
     return yer === "yanli" ? "gap-4 grid-cols-2" : "gap-4 grid-cols-2 masaustu:grid-cols-3";
   }
