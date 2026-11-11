@@ -41,4 +41,4 @@ Uyarıyı React yalnız geliştirme derlemesinde yazar. Kırmızı test ise kont
 
 ## Durum
 
-yapılacak
+bitti
