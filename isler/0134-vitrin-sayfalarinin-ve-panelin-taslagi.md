@@ -33,4 +33,4 @@ Bölüm: Vitrin. Bu bölümün ilk işi.
 
 ## Durum
 
-yapılacak
+bitti
