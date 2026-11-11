@@ -30,7 +30,18 @@ const genislikler = [
   { width: 1280, height: 900 },
 ] as const;
 
+// Tarama sonlu animasyonların ve renk geçişlerinin bitmesini bekler (katalog.test.ts ile aynı). Üstteki şeritte
+// açılan grubun düğmesi 150 ms'lik geçişle renk değiştirir; geçişin ortasında zemin yarı saydam, yazı gridir
+// (ölçüldü) ve tarama o ana denk gelirse kontrastı düşük bulur (bir kez kırmızı oldu).
 const tara = async (page: Page, ne: string) => {
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY)
+        .map((a) => a.finished.catch(() => undefined)),
+    ),
+  );
   const sonuc = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
     .exclude("nextjs-portal")
@@ -165,7 +176,7 @@ test("iki renkte ve üç genişlikte taramadan geçer, yana kaymaz; telefonda fi
         await sayfaHazir(page);
         expect(yanit?.status(), ne).toBe(200);
         await expect(page.getByRole("heading", { level: 1 })).toContainText("Liste");
-        expect(await kartAdlari(page), ne).toEqual([h.adlar.tisort]);
+        await expect.poll(() => kartAdlari(page), ne).toEqual([h.adlar.tisort]);
         await yanaKaymaz(page, ne);
         await tara(page, ne);
         if (genislik.width < 1024) {
@@ -196,9 +207,9 @@ test("filtre klavyeyle kullanılır; adres değişir; 1.000 ile 1000 aynı; bozu
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(h.adres);
     await sayfaHazir(page);
-    expect(await kartAdlari(page)).toEqual(
-      [h.adlar.tisort, h.adlar.gomlek, h.adlar.canta].toSorted(),
-    );
+    await expect
+      .poll(() => kartAdlari(page))
+      .toEqual([h.adlar.tisort, h.adlar.gomlek, h.adlar.canta].toSorted());
     await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
     // Onay kutusu: odaklanıp boşlukla seçilir.
     // Tab'la ilerlenir: sıralamanın ve filtrelerin sırası sayfanın sırasıdır.
@@ -209,7 +220,7 @@ test("filtre klavyeyle kullanılır; adres değişir; 1.000 ile 1000 aynı; bozu
     await page.keyboard.press("Space");
     await expect(page).toHaveURL(/ozellik-dokuma-[a-z0-9]+=keten/);
     await sayfaHazir(page);
-    expect(await kartAdlari(page)).toEqual([h.adlar.gomlek]);
+    await expect.poll(() => kartAdlari(page)).toEqual([h.adlar.gomlek]);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
     // Seçili filtre etiketi kaldırır.
     await page
@@ -220,7 +231,6 @@ test("filtre klavyeyle kullanılır; adres değişir; 1.000 ile 1000 aynı; bozu
     await expect(page).not.toHaveURL(/ozellik-/);
     await sayfaHazir(page);
     // Fiyat: Enter ile uygulanır; "1.000" ile "1000" aynı sonucu verir.
-    const sonuclar: string[][] = [];
     for (const yazi of ["1.000", "1000"]) {
       await page.goto(h.adres);
       await sayfaHazir(page);
@@ -231,18 +241,17 @@ test("filtre klavyeyle kullanılır; adres değişir; 1.000 ile 1000 aynı; bozu
         new RegExp(`en-az=${encodeURIComponent(yazi).replaceAll(".", "\\.")}`),
       );
       await sayfaHazir(page);
-      sonuclar.push(await kartAdlari(page));
+      // Tişört'ün 1.000,00'lik bedeni tükenmiş: kartta görünen fiyatı satılabilir bedenin 300,00'üdür. İki
+      // yazılış da aynı sonucu verir.
+      await expect.poll(() => kartAdlari(page), yazi).toEqual([h.adlar.gomlek]);
     }
-    // Tişört'ün 1.000,00'lik bedeni tükenmiş: kartta görünen fiyatı satılabilir bedenin 300,00'üdür.
-    expect(sonuclar[0]).toEqual([h.adlar.gomlek]);
-    expect(sonuclar[1]).toEqual(sonuclar[0]);
     // Bozuk tutar: filtreye girmez, alanın altında hata.
     await page.goto(`${h.adres}?en-az=1.5`);
     await sayfaHazir(page);
     const alan = page.getByRole("textbox", { name: metin("vitrin.liste.enAz") });
     await expect(alan).toHaveAttribute("aria-invalid", "true");
     await expect(alan).toHaveAccessibleDescription(/Tutar okunamadı/);
-    expect(await kartAdlari(page)).toHaveLength(3);
+    await expect.poll(() => kartAdlari(page)).toHaveLength(3);
     // Sıralama klavyeyle: fiyat artan.
     await page.goto(h.adres);
     await sayfaHazir(page);
@@ -252,12 +261,9 @@ test("filtre klavyeyle kullanılır; adres değişir; 1.000 ile 1000 aynı; bozu
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/sirala=fiyat-artan/);
     await sayfaHazir(page);
-    expect(
-      await page
-        .getByRole("list", { name: metin("vitrin.liste.urunler") })
-        .getByRole("heading")
-        .allTextContents(),
-    ).toEqual([h.adlar.canta, h.adlar.tisort, h.adlar.gomlek]);
+    await expect(
+      page.getByRole("list", { name: metin("vitrin.liste.urunler") }).getByRole("heading"),
+    ).toHaveText([h.adlar.canta, h.adlar.tisort, h.adlar.gomlek]);
   } finally {
     await h.temizle();
   }
@@ -293,7 +299,7 @@ test("telefonda filtre penceresi klavyeyle açılır, adı vardır, içinde seç
     await goster.focus();
     await page.keyboard.press("Enter");
     await expect(pencere).toHaveCount(0);
-    expect(await kartAdlari(page)).toEqual([h.adlar.tisort]);
+    await expect.poll(() => kartAdlari(page)).toEqual([h.adlar.tisort]);
   } finally {
     await h.temizle();
   }
