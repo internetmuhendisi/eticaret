@@ -31,4 +31,4 @@ Bölüm: Vitrin. Kart 0114'te görüldü, ona karıştırılmadı.
 
 ## Durum
 
-yapılacak
+bitti
