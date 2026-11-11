@@ -10,6 +10,8 @@ Kart 0111'in tarayıcı testleri çalışırken sunucu günlüğünde şu hata g
 
 Aynı durum her çekirdek güncellemesinde olabilir: bir görünüm ya da alan kaldırılır ya da adı değişirse, sitelerin veritabanındaki düzende o bölüm sessizce kaybolur. Çekirdek güncellemesi siteye kendiliğinden gitmez. Yine de güncellenen sitede mağaza sahibinin düzeni bozulur.
 
+Bölüm: Vitrin. On birinci bölümde açık kartlardan bu bölüme alındı.
+
 ## Olmazsa olmazlar
 
 - Önce ölçülür: hangi sürüm geçişlerinde hangi görünüm ya da alan kaldırıldı? Yerel ve sunucudaki sitelerin düzenleri bugün geçerli mi?

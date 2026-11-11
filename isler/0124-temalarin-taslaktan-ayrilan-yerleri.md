@@ -4,7 +4,7 @@
 
 Yumuşak Mevsim ve Keskin Çizgi temaları karar 0075'teki taslağa renk, yazı tipi ve köşede uyar. Bazı farklar bugünkü tasarım değerleriyle yazılamadı (kart 0114, karar 0092). Bu kart onları tema değeri ya da görünüm olarak ekler.
 
-Bölüm: Tasarım. Önce 0114 bitmiş olmalı.
+Bölüm: Vitrin (Tasarım bölümünden alındı, tema demolarından önce yapılır). Önce 0114 bitmiş olmalı.
 
 ## Olmazsa olmazlar
 

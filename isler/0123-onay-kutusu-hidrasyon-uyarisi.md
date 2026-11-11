@@ -10,6 +10,8 @@ Bileşen kataloğunun bölüm kütüphanesi sayfasında tarayıcı konsolunda Re
 
 Onay kutusu kayıt formunda ve panelde de kullanılıyor. Aynı uyarı vitrinin gerçek sayfalarında da çıkıyor olabilir, ölçülmedi.
 
+Bölüm: Vitrin. On birinci bölümde açık kartlardan bu bölüme alındı.
+
 ## Olmazsa olmazlar
 
 - Önce ölçülür: uyarı hangi sayfalarda çıkıyor (katalog, vitrin kayıt formu, panel)? Canlı derlemede bir etkisi var mı?

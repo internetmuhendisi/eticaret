@@ -4,6 +4,8 @@
 
 Şemalar (`z.uuid()`) büyük harfli kimliği kabul ediyor, servisler ise kimlikleri metin olarak karşılaştırıyor. Kart 0107'nin bağımsız kontrolü bunu menü servisinde gerçek veritabanıyla ölçtü: üstü büyük harfle yeniden verilen alt öğe taşınmış sayılıp kardeşlerin sonuna düştü, değişiklik kaydına sahte bir değişiklik yazılacaktı. Menüde düzeltildi (kimlik şemada küçük harfe çevrilir). Aynı kalıp kategori servisinde de var: `cekirdek/moduller/kategori/semalar.ts` `ust: z.uuid()`, `servis.ts` `tasindi = ust !== eski.ust` ve döngü denetiminde `ust === kimlik`. Büyük harfle kendi üstü verilen kategori taşınmış sayılır; kendi kimliği büyük harfle verilirse döngü denetimini ıskalar, bilinen hata yerine veritabanının kısıtı (beklenmeyen hata) döner. Bu ikisi koddan çıkarıldı, ölçülmedi.
 
+Bölüm: Vitrin. On birinci bölümde açık kartlardan bu bölüme alındı.
+
 ## Olmazsa olmazlar
 
 - Önce kategoride iki durum gerçek veritabanıyla ölçülür.
