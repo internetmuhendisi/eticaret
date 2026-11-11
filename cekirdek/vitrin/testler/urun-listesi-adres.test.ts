@@ -73,12 +73,12 @@ describe("adresteki durum", () => {
 // Kart 0137: aranan metin adreste durur, filtre değişince ve temizlenince korunur; "en-uygun" yalnız aramada.
 describe("arama", () => {
   it("aranan metin okunur, ilk parametredir, değişikliklerde ve temizlemede korunur", () => {
-    const durum = adrestenDurum({ ara: "  keten gömlek ", marka: "a" }, aramaSiralamalari);
-    expect(durum.arama).toBe("keten gömlek");
-    expect(durumdanSorgu(durum, "en-uygun")).toBe("?ara=keten+g%C3%B6mlek&marka=a");
-    expect(durumuDegistir(durum, { tur: "stok", secili: true }).arama).toBe("keten gömlek");
+    const durum = adrestenDurum({ ara: "  yazlık yelek ", marka: "a" }, aramaSiralamalari);
+    expect(durum.arama).toBe("yazlık yelek");
+    expect(durumdanSorgu(durum, "en-uygun")).toBe("?ara=yazl%C4%B1k+yelek&marka=a");
+    expect(durumuDegistir(durum, { tur: "stok", secili: true }).arama).toBe("yazlık yelek");
     expect(durumdanSorgu(durumuDegistir(durum, { tur: "temizle" }), "en-uygun")).toBe(
-      "?ara=keten+g%C3%B6mlek",
+      "?ara=yazl%C4%B1k+yelek",
     );
     expect(adrestenDurum({ ara: "   " }).arama).toBeUndefined();
   });

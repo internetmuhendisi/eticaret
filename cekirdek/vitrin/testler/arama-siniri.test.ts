@@ -35,7 +35,7 @@ describe("arama istek sınırı", () => {
     // Başka istemci etkilenmez; aranan metinsiz istek sayılmaz.
     expect((await proxy(istek("/arama?ara=kupa", "203.0.113.51"))).status).toBe(200);
     expect((await proxy(istek("/arama", istemci))).status).toBe(200);
-    expect((await proxy(istek("/arama?ara=%20", istemci))).status).toBe(200);
+    expect((await proxy(istek("/arama?ara=+++", istemci))).status).toBe(200);
   });
 
   it("IPv6 adresi ilk 64 bitiyle sayılır", async () => {

@@ -175,7 +175,7 @@ describe("en uygun", () => {
     const markada = await h.ac("Fincan", { marka });
     const kategoride = await h.ac("Fincan Takımı", { kategoriler: [kategori] });
     const stokKoduIcerir = await h.ac("Fincan Seti", { stokKodu: "KUPA-9" });
-    const adIcerir = await h.ac("Porselen Kupa");
+    const adIcerir = await h.ac("Taş Kupa");
     const stokKoduTamami = await h.ac("Bardak", { stokKodu: "kupa" });
     expect(await h.ara("kupa", "en-uygun")).toEqual([
       stokKoduTamami,
