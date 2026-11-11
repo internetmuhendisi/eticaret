@@ -421,7 +421,12 @@ export const urunServisi = (
       await tekligiDenetle(islem, kayit);
       const adresAdi = kayit.adresAdi ?? (await adresAdiBul(islem, kayit.ad, kimlik));
       const yazilacak = { ...kayit, adresAdi, ozellikler: ozellikler.degerler };
-      await islem.insert(urunler).values({ kimlik, ...urunSatiri(yazilacak) });
+      // "En yeni" sırası (urun/liste.ts, urun/ilgili.ts) oluşturma zamanına göredir. now() işlemin başıdır: aynı
+      // işlemde eklenen ürünlerin (başlangıç kataloğu) zamanı eşit olur, sırayı rastgele kimlik belirlerdi. Sonra
+      // eklenen sonra gelir; katalogda dosyanın sırası (kart 0127, galerideki örnek gibi).
+      await islem
+        .insert(urunler)
+        .values({ kimlik, ...urunSatiri(yazilacak), olusturma_zamani: sql`clock_timestamp()` });
       await islem.insert(urunBirimleri).values({ urun_kimligi: kimlik, ...birimSatiri(yazilacak) });
       for (const t of baglantiTanimlari) {
         await gruplariBagla(islem, t, kimlik, gruplari(yazilacak, t.alan));

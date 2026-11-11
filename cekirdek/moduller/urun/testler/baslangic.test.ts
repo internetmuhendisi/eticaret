@@ -7,7 +7,7 @@ import { randomUUID } from "node:crypto";
 import { mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { count, eq, isNull } from "drizzle-orm";
+import { count, eq, isNull, sql } from "drizzle-orm";
 import sharp from "sharp";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { type Site, siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
@@ -30,6 +30,8 @@ import { stokServisi } from "../../stok/servis.ts";
 import { siteninVergiServisi } from "../../vergi/servis.ts";
 import { baslangicKatalogYazari, katalogBaslangiciniKur } from "../baslangic.ts";
 import { bosKatalog, type KatalogBaslangici } from "../baslangic-semasi.ts";
+import { ilgiliUrunleriGetir, ilgiliUrunSiniri } from "../ilgili.ts";
+import { urunListesi } from "../liste.ts";
 import { urunBirimleri, urunGalerisi, urunler, urunSecenekleri } from "../model.ts";
 import { siteninUrunServisi } from "../servis.ts";
 
@@ -693,5 +695,55 @@ describe("özellikler ve varyantlar (kart 0100)", () => {
     });
     await expect(katalogBaslangiciniKur(vt, bozuk)).rejects.toMatchObject({ kod: "cakisma" });
     expect(await sayilar(vt)).toEqual(bos);
+  });
+});
+
+// Kart 0127: aynı işlemde (başlangıç kataloğu) eklenen ürünlerin "en yeni" sırası. Oluşturma zamanı işlemin başı
+// olsaydı hepsi eşit olur, sırayı rastgele kimlik belirlerdi: iki kurulumda "yeni gelenler" farklı ürünleri
+// gösterirdi (ölçüldü). Sonra eklenen sonra gelir; en yeni önce sırası dosyanın tersidir. Aynı sırayı ürün
+// listesi (yeni gelenler, kategori, marka, etiket, özellik listeleri) ve ilgili ürünlerin kategoriden gelen
+// kısmı kullanır.
+describe("en yeni sırası (kart 0127)", () => {
+  const adlar = ["bir", "iki", "uc", "dort", "bes", "alti"].map((ad) => `sira-${ad}`);
+  // Ürünler şemadan geçmiş basit ürünün kopyasıdır (varsayılan alanlarıyla).
+  const sirali = katalogla((katalog) => {
+    const [, basit] = katalog.urunler;
+    if (basit === undefined) throw new Error("Basit ürün beklenirdi.");
+    katalog.urunler.push(
+      ...adlar.map((adresAdi) => ({
+        ...structuredClone(basit),
+        ad: adresAdi,
+        adresAdi,
+        durum: "yayinda" as const,
+        kategoriler: ["birinci"],
+      })),
+    );
+  });
+  const dosyaSirasi = sirali.katalogBaslangici.urunler.map((urun) => urun.adresAdi);
+  const vitrin = { tukenenUrun: "goster" } as const;
+
+  const kur = async () => {
+    const vt = await siteAc();
+    expect(await katalogBaslangiciniKur(vt, sirali)).toBe(true);
+    const satirlar = await vt
+      .select({ kimlik: urunler.kimlik, adresAdi: urunler.adres_adi })
+      .from(urunler);
+    const adresAdi = new Map(satirlar.map((satir) => [satir.kimlik, satir.adresAdi]));
+    const kimlik = new Map(satirlar.map((satir) => [satir.adresAdi, satir.kimlik]));
+    const yeniler = (await urunListesi(vt, sql`true`)).urunler.map((k) => adresAdi.get(k));
+    const ilgili = (await ilgiliUrunleriGetir(vt, kimlik.get("sira-bir") ?? "", vitrin)).map((k) =>
+      adresAdi.get(k),
+    );
+    return { yeniler, ilgili };
+  };
+
+  it("iki ayrı kurulumda aynı sıra: dosyanın tersi; ilgili ürünler de aynı sırayla", async () => {
+    const birinci = await kur();
+    const ikinci = await kur();
+    expect(birinci.yeniler).toEqual(dosyaSirasi.toReversed());
+    expect(ikinci).toEqual(birinci);
+    // sira-bir'in kategorisindeki öteki ürünler, en yeni önce, sınır kadar (sınırdan fazla ürün var).
+    expect(adlar.length - 1).toBeGreaterThan(ilgiliUrunSiniri);
+    expect(birinci.ilgili).toEqual(adlar.slice(1).toReversed().slice(0, ilgiliUrunSiniri));
   });
 });

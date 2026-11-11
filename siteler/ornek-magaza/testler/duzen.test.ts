@@ -225,6 +225,19 @@ describe("Örnek Mağaza'nın başlangıç düzeni", () => {
     expect(await firsatlar(new Date("2026-11-30T21:00:00Z"))).toEqual([]);
   });
 
+  // Kart 0127: katalog tek işlemde yazılır; "en yeni" sırası dosyanın sırasıdır, son eklenenler önce. Her kurulumda
+  // aynı dört ürün aynı sırayla gelir (eskiden rastgele kimlik belirliyordu).
+  it("yeni gelenler kataloğa son eklenen dört ürün, son eklenen önce", async () => {
+    const yeni = { tur: "yeni", adet: 4 } as const;
+    const kartlar =
+      (await kaynaklarinUrunleri(vt, site, [yeni], new Date()))[urunKaynagiAnahtari(yeni)] ?? [];
+    expect(kartlar.map((kart) => kart.kimlik)).toEqual(
+      ["keten-gomlek", "kablosuz-sarj-standi", "bluetooth-hoparlor", "kokulu-mum"].map((adresAdi) =>
+        kimligi("urun", adresAdi),
+      ),
+    );
+  });
+
   it("ikinci açılışta değişmez", async () => {
     const once = await servis.duzenOku(vt);
     expect(await servis.baslangiciKur(vt, () => klasor)).toBe(false);
