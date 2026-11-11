@@ -14,6 +14,7 @@ import { metin } from "../../metinler/site-metni.ts";
 import { doldur } from "../eposta/sablon.ts";
 import { magazaninAdi } from "../magaza-ayarlari/servis.ts";
 import type { AdresliKayit } from "./adres.ts";
+import { sekmeBasligi } from "./sekme-basligi.ts";
 
 // Mağaza adı istek başına bir kez okunur: çerçeve ve sayfa aynı adı kullanır.
 const istekteMagazaAdi = cache(() => magazaninAdi());
@@ -43,10 +44,13 @@ export const vitrinSayfaKalibi = async (): Promise<Metadata> => {
 
 // Bir vitrin sayfasının sekme başlığı: "<sayfa> | <mağaza adı>".
 export const sayfaBasligi = async (baslik: string): Promise<Metadata["title"]> => ({
-  absolute: doldur(metin("vitrin.sayfaBilgisi.kalip"), {
-    baslik,
-    magaza: await istekteMagazaAdi(),
-  }),
+  absolute: sekmeBasligi(metin("vitrin.sayfaBilgisi.kalip"), baslik, await istekteMagazaAdi()),
+});
+
+// "Bulunamadı" sayfasının sekme başlığı (kart 0120, karar 0104): olmayan adres ve olmayan kayıt. Ekran okuyucu sayfa
+// geçişini sekme başlığıyla duyurur; mağaza adı kalsaydı ana sayfadan ayırt edilemezdi.
+export const bulunamadiSayfaBilgisi = async (): Promise<Metadata> => ({
+  title: await sayfaBasligi(metin("vitrin.bulunamadi.sekmeBasligi")),
 });
 
 // Kategori, marka, etiket ve ürün sayfasının başlığı ve açıklaması.

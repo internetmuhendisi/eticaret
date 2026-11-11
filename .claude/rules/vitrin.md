@@ -30,6 +30,13 @@ paths:
 - Sekme başlığı ve açıklama yalnız `cekirdek/moduller/gorunurluk/sayfa-bilgisi.ts` ile üretilir. Sayfa başlığını `sayfaBasligi` ile verir ("<sayfa> | <mağaza adı>", tam başlık); başlık vermeyen sayfa mağaza adını alır. Next.js'in `%s` kalıbı kullanılmaz.
 - Vitrin sayfasının iskeleti kütüphanenin parçalarıyla kurulur: `SayfaYolu`, `SayfaBasligi`, `BosHal`, sayfa geçişinde `Sayfalama` ya da `DahaFazla`. Sayfa bunları kendisi yeniden yazmaz.
 
+## Bulunamadı ve hata sayfası (karar 0104)
+
+- Vitrinde olmayan adres ve olmayan kayıt `notFound()` ile `app/(vitrin)/not-found.tsx`'e düşer (`BulunamadiSayfasi`); vitrinin hata sınırı `app/(vitrin)/error.tsx`'tir (`HataSayfasi`). İkisi de çerçevenin içindedir. Sayfa kendi "bulunamadı" ekranını yazmaz.
+- Eşleşmeyen adresi `app/(vitrin)/[...adres]` yakalar. Kapı, panel ve geliştirme kendi yakalayıcısıyla ondan ayrılır; vitrin dışı yeni bir adres ailesi açan iş kendi yakalayıcısını ekler. Tarayıcının kendiliğinden istediği dosya adresleri (`/favicon.ico`) yakalayıcıya düşmez.
+- `notFound()` veren vitrin sayfası sayfa bilgisinde `bulunamadiSayfaBilgisi`'ni döner: sekme başlığı "Sayfa bulunamadı | <mağaza>" olur.
+- Tarayıcıdaki bir vitrin ekranına çerçevenin verisi gerekirse sağlayıcıyla verilir (`VitrinBilgisiSaglayici`); ekran veritabanına gitmez.
+
 ## Ürün kartı ve fiyat (karar 0085)
 
 - Ürünün kartı `UrunKarti`, fiyatı `FiyatGosterimi` ile çizilir (`cekirdek/vitrin/urun-karti/`). Kartın verisi yalnız `urunKartlari` ile gelir: görünürlük, fiyat aralığı, indirim oranı, stok durumu ve görsel çekirdeğin tek işlevlerinden. Kartta ya da bölümde fiyat, oran ya da stok durumu yeniden hesaplanmaz.

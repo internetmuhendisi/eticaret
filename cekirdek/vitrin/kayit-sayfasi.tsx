@@ -12,7 +12,7 @@ import { SayfaYolu } from "../../bilesenler/parcalar/sayfa-yolu";
 import type { AdresliKayitTuru } from "../kayitlar/adres";
 import { metin } from "../metinler/site-metni";
 import { type AdresliKayit, kayitAdresiniCoz } from "../moduller/gorunurluk/adres";
-import { kayitSayfaBilgisi } from "../moduller/gorunurluk/sayfa-bilgisi";
+import { bulunamadiSayfaBilgisi, kayitSayfaBilgisi } from "../moduller/gorunurluk/sayfa-bilgisi";
 import { siteninVeritabani } from "../veritabani/baglanti";
 import { kayitAdresleri, vitrinAdresleri } from "./adresler";
 
@@ -49,13 +49,17 @@ export const sayfaninKaydi = async (
   return sonuc.kayit;
 };
 
-// Sayfa bilgisi (generateMetadata) da aynı çözümü kullanır: kayıt yoksa ya da eski adresse sayfa bilgisi
-// üretilmez, çizim zaten durur.
+// Sayfa bilgisi (generateMetadata) da aynı çözümü kullanır. Kayıt yoksa "bulunamadı" sayfasının bilgisini verir
+// (kart 0120): çizimi sayfanın notFound()'u durdurur, sekme başlığı bu bilgiden gelir. Eski adresse yönlendirir.
 export const kayitSayfasininBilgisi = async (
   tur: AdresliKayitTuru,
   parametreler: AdresParametreleri,
   sorgu: SorguParametreleri,
-) => kayitSayfaBilgisi(tur, await sayfaninKaydi(tur, parametreler, sorgu));
+) => {
+  const sonuc = await coz(tur, (await parametreler).adresAdi);
+  if (sonuc.sonuc === "yok") return bulunamadiSayfaBilgisi();
+  return kayitSayfaBilgisi(tur, await sayfaninKaydi(tur, parametreler, sorgu));
+};
 
 export function KayitSayfasi({
   tur,

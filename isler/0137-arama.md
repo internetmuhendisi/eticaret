@@ -15,6 +15,7 @@ Bölüm: Vitrin. Önce 0136 bitmiş olmalı.
 - Arama sayfası arama motorlarında dizine girmez.
 - Arama isteği istek sınırına bağlıdır.
 - Arama düğmesinin işlevi açılır, üst kısımdaki arama kutusu telefonda ve bilgisayarda çalışır.
+- Taslaktaki "bulunamadı" sayfasının arama kutusu bu işlevle gelir (`cekirdek/vitrin/bulunamadi-sayfasi.tsx`, kart 0120, karar 0104).
 - Taslakla karşılaştırma: ekran görüntüsü taslakla yan yana, iki temada, telefon ve bilgisayarda; farklar düzeltilir ya da nedeni kullanıcıya söylenir.
 
 ## Sınırlar

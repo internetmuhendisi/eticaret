@@ -187,6 +187,10 @@ describe("Tailwind yalnız tasarım değerlerini tanır", () => {
       join(kok, "cekirdek/vitrin/bulten-formu.tsx"),
       // Kategori, marka, etiket ve ürün sayfasının iskeleti (kart 0135).
       join(kok, "cekirdek/vitrin/kayit-sayfasi.tsx"),
+      // "Bulunamadı" ve hata sayfası (kart 0120).
+      join(kok, "cekirdek/vitrin/durum-sayfasi.tsx"),
+      join(kok, "cekirdek/vitrin/bulunamadi-sayfasi.tsx"),
+      join(kok, "cekirdek/vitrin/hata-sayfasi.tsx"),
       // Ürün kartı ve fiyat bileşeni (kart 0109).
       ...readdirSync(join(kok, "cekirdek/vitrin/urun-karti"))
         .filter((ad) => ad.endsWith(".tsx"))

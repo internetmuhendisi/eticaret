@@ -29,6 +29,7 @@ import {
   PauseIcon,
   PhoneIcon,
   PlayIcon,
+  RefreshCwIcon,
   SearchIcon,
   ShieldCheckIcon,
   ShoppingBagIcon,
@@ -92,6 +93,8 @@ export const ikonlar = {
   guvenlik: ShieldCheckIcon,
   destek: HeadsetIcon,
   hediye: GiftIcon,
+  // Vitrinin hata sayfası (kart 0120): sayfayı yeniden dener.
+  yenile: RefreshCwIcon,
 } satisfies Record<string, LucideIcon>;
 
 export type IkonAdi = keyof typeof ikonlar;

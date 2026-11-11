@@ -7,6 +7,12 @@ import { join, resolve } from "node:path";
 import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { siteOrtamiDegiskeni } from "../../kayitlar/site.ts";
+import HataDenemesi, {
+  generateMetadata as hataDenemesiBilgisi,
+} from "../../uygulama/app/(vitrin)/gelistirme/hata-denemesi/page.tsx";
+import GelistirmedeOlmayanAdres, {
+  generateMetadata as yakalayiciBilgisi,
+} from "../../uygulama/app/gelistirme/[[...adres]]/page.tsx";
 import ParcaSayfasi, {
   generateMetadata as parcaBilgisi,
 } from "../../uygulama/app/gelistirme/bilesenler/[parca]/page.tsx";
@@ -20,7 +26,7 @@ import AnaSayfa, {
 import UrunKartiSayfasi, {
   generateMetadata as urunKartiBilgisi,
 } from "../../uygulama/app/gelistirme/bilesenler/urun-karti/page.tsx";
-import { config, proxy } from "../../uygulama/proxy.ts";
+import { config, proxy, siteIkonuYolu } from "../../uygulama/proxy.ts";
 
 vi.mock("next/navigation", () => ({
   notFound: () => {
@@ -66,6 +72,23 @@ describe("ara katman", () => {
     expect(await yanit.text()).toBe("");
   });
 
+  // Site ikonu (kart 0120, karar 0104): vitrinin bulunamadı sayfası veritabanını okur; tarayıcının her sayfada
+  // istediği ikon oraya düşmez, her ortamda gövdesiz 404 alır.
+  it("site ikonu her ortamda ara katmandan gövdesiz 404 alır", async () => {
+    expect(config.matcher).toContain(siteIkonuYolu);
+    for (const [ortam, site] of [
+      ["development", "deneme"],
+      ["production", "deneme"],
+      ["production", "canli"],
+    ] as const) {
+      vi.stubEnv("NODE_ENV", ortam);
+      vi.stubEnv(siteOrtamiDegiskeni, site);
+      const yanit = await proxy(istek(siteIkonuYolu));
+      expect(yanit.status).toBe(404);
+      expect(await yanit.text()).toBe("");
+    }
+  });
+
   it("deneme ortamında istek sayfaya geçer", async () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv(siteOrtamiDegiskeni, "deneme");
@@ -101,17 +124,51 @@ describe("sayfa içindeki ikinci kapı", () => {
 
   // Yeni bir geliştirme sayfası ikinci kapıyı unutmasın (kart 0106): her sayfa dosyası kapıyı hem sayfada
   // hem sayfa bilgisinde, her düzen dosyası düzende çağırır.
-  it("geliştirme klasöründeki her sayfa ve düzen ikinci kapıyı çağırır", () => {
-    const klasor = resolve(import.meta.dirname, "../../uygulama/app/gelistirme");
-    const dosyalar = readdirSync(klasor, { recursive: true, encoding: "utf8" }).filter((ad) =>
-      /(?:^|\/)(?:page|layout)\.tsx$/.test(ad),
+  // Vitrin çerçevesinin içindeki geliştirme sayfaları da ((vitrin)/gelistirme/, kart 0120: hata sayfasının
+  // denemesi) aynı kurala uyar; adresleri yine /gelistirme altındadır.
+  it("geliştirme klasörlerindeki her sayfa ve düzen ikinci kapıyı çağırır", () => {
+    const uygulama = resolve(import.meta.dirname, "../../uygulama/app");
+    const dosyalar = ["gelistirme", "(vitrin)/gelistirme"].flatMap((alt) =>
+      readdirSync(join(uygulama, alt), { recursive: true, encoding: "utf8" })
+        .filter((ad) => /(?:^|\/)(?:page|layout)\.tsx$/.test(ad))
+        .map((ad) => join(alt, ad)),
     );
-    expect(dosyalar.length).toBeGreaterThanOrEqual(5);
+    expect(dosyalar).toEqual(
+      expect.arrayContaining([
+        "gelistirme/[[...adres]]/page.tsx",
+        "(vitrin)/gelistirme/hata-denemesi/page.tsx",
+      ]),
+    );
+    expect(dosyalar.length).toBeGreaterThanOrEqual(7);
     for (const dosya of dosyalar) {
-      const icerik = readFileSync(join(klasor, dosya), "utf8");
+      const icerik = readFileSync(join(uygulama, dosya), "utf8");
       const cagri = icerik.match(/katalogKapisi\(\)/g)?.length ?? 0;
       expect(cagri, dosya).toBeGreaterThanOrEqual(dosya.endsWith("page.tsx") ? 2 : 1);
     }
+  });
+
+  it("katalog kapalıyken hata denemesi ve geliştirmenin yakalayıcısı bulunamadı verir", () => {
+    kapali();
+    expect(() => hataDenemesiBilgisi()).toThrow("bulunamadi");
+    expect(() => HataDenemesi()).toThrow("bulunamadi");
+    expect(() => yakalayiciBilgisi()).toThrow("bulunamadi");
+    expect(() => GelistirmedeOlmayanAdres()).toThrow("bulunamadi");
+  });
+
+  // Deneme adresi internete açıktır: hata denemesi orada açılsa her istek hata izleme aracına kayıt yazardı.
+  it("deneme ortamında katalog açıkken de hata denemesi bulunamadı verir, yakalayıcı bulunamadı verir", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv(siteOrtamiDegiskeni, "deneme");
+    expect(() => hataDenemesiBilgisi()).toThrow("bulunamadi");
+    expect(() => HataDenemesi()).toThrow("bulunamadi");
+    expect(yakalayiciBilgisi()).toEqual({ robots: { index: false, follow: false } });
+    expect(() => GelistirmedeOlmayanAdres()).toThrow("bulunamadi");
+  });
+
+  it("geliştirmede hata denemesi hata verir", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    expect(hataDenemesiBilgisi()).toEqual({ robots: { index: false, follow: false } });
+    expect(() => HataDenemesi()).toThrow("kart 0120");
   });
 
   it("geliştirmede sayfa çizilir", async () => {

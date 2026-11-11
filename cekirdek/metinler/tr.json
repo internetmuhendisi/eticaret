@@ -680,6 +680,22 @@
     "sayfa": {
       "anasayfa": "Ana sayfa"
     },
+    "bulunamadi": {
+      "kod": "404",
+      "sekmeBasligi": "Sayfa bulunamadı",
+      "baslik": "Aradığınız sayfayı bulamadık",
+      "aciklama": "Sayfa kaldırılmış ya da adresi değişmiş olabilir. Ana sayfaya dönebilir ya da kategorilere göz atabilirsiniz.",
+      "anasayfayaDon": "Ana sayfaya dön",
+      "kategoriler": "Kategoriler"
+    },
+    "hata": {
+      "sekmeBasligi": "Bir şeyler ters gitti",
+      "baslik": "Bir şeyler ters gitti",
+      "aciklama": "Sayfa şu an açılamadı. Birkaç saniye sonra yeniden deneyin.",
+      "aciklamaTelefonlu": "Sayfa şu an açılamadı. Birkaç saniye sonra yeniden deneyin. Sorun sürerse {telefon} numarasından bize ulaşabilirsiniz.",
+      "yenidenDene": "Yeniden dene",
+      "anasayfayaDon": "Ana sayfaya dön"
+    },
     "sayfaBilgisi": {
       "kalip": "{baslik} | {magaza}",
       "aciklama": {

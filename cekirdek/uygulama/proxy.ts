@@ -1,16 +1,19 @@
-// Uygulamanın ara katmanı. İki işi vardır:
+// Uygulamanın ara katmanı. Üç işi vardır:
 // - Panel adresleri (kart 0027, karar 0042). İş cekirdek/kapi/panel-korumasi.ts içindedir. Veritabanına
 //   ulaşılamazsa panel açılmaz.
 // - Geliştirme adresleri, yani bileşen kataloğu (kart 0104, karar 0078). Katalogun açık olmadığı kutuda
 //   istek sayfaya hiç ulaşmaz: gövdesiz 404. Next.js'te düzenin notFound() vermesi sayfanın çizilmesini
 //   durdurmaz; içerik 404'ün gövdesinde ve RSC isteğinde 200 ile gidiyordu (bağımsız kontrol, ölçüldü).
+// - Site ikonu (kart 0120, karar 0104). Tarayıcı her sayfada kendiliğinden /favicon.ico ister. Bu adres vitrinin
+//   yakalayıcısına düşerse çerçeveli "bulunamadı" sayfası veritabanını okuyarak çizilirdi; site ikonu gelene kadar
+//   (kart 0150) gövdesiz 404 alır.
 import { type NextRequest, NextResponse } from "next/server";
 import { hatayiKaydet } from "../izleme/hata-katmani";
 import { panelYoklamasi } from "../kapi/panel-korumasi";
 import { katalogAcikMi } from "../katalog/acik-mi";
 
 export const config = {
-  matcher: ["/yonetim", "/yonetim/:path*", "/gelistirme", "/gelistirme/:path*"],
+  matcher: ["/yonetim", "/yonetim/:path*", "/gelistirme", "/gelistirme/:path*", "/favicon.ico"],
 };
 
 // Eşleme listesi adresi çözülmüş hâliyle eşler; karşılaştırma da çözülmüş adresle yapılır. Kodlanmış
@@ -26,7 +29,10 @@ const gelistirmeAdresiMi = (hamYol: string) => {
   return yol === "/gelistirme" || yol.startsWith("/gelistirme/");
 };
 
+export const siteIkonuYolu = "/favicon.ico";
+
 export async function proxy(istek: NextRequest) {
+  if (istek.nextUrl.pathname === siteIkonuYolu) return new NextResponse(null, { status: 404 });
   if (gelistirmeAdresiMi(istek.nextUrl.pathname)) {
     return katalogAcikMi() ? NextResponse.next() : new NextResponse(null, { status: 404 });
   }

@@ -106,6 +106,24 @@ test("giriş yapıp boş panele ulaşır, çıkınca panele giremez", async ({ p
   await expect(page).toHaveURL(/\/yonetim\/giris$/);
 });
 
+// Panelde olmayan adres vitrinin yakalayıcısına düşmez (kart 0120): vitrin çerçevesi ve vitrinin "bulunamadı"
+// sayfası panelde görünmez, adres 404 alır.
+test("girişli yönetici panelde olmayan adreste 404 alır, vitrinin bulunamadı sayfasını görmez", async ({
+  page,
+}) => {
+  await page.goto("/yonetim/giris");
+  await girisYap(page);
+  await expect(page).toHaveURL(/\/yonetim$/);
+  for (const adres of ["/yonetim/olmayan", "/yonetim/olmayan/ic"]) {
+    const yanit = await page.goto(adres);
+    expect(yanit?.status(), adres).toBe(404);
+    // Önce Next.js'in kendi 404'ü çizilir (tarayıcıda, karar 0104), yokluk ondan sonra ölçülür.
+    await expect(page.getByRole("heading", { level: 1, name: "404" }), adres).toBeVisible();
+    await expect(page.locator("header"), adres).toHaveCount(0);
+    await expect(page.getByText(metin("vitrin.bulunamadi.baslik")), adres).toHaveCount(0);
+  }
+});
+
 test("kısa anahtar dolunca panel açık kalır, yeni anahtar çereze yazılır", async ({ page }) => {
   await page.goto("/yonetim/giris");
   await girisYap(page);

@@ -14,6 +14,7 @@ import { vitrinBaglaminiOku } from "../../../vitrin/baglam-oku";
 import { bolumGorunumleri } from "../../../vitrin/bolum-kutuphanesi/gorunumler";
 import { bolumKutuphanesi } from "../../../vitrin/bolum-kutuphanesi/kutuphane";
 import { AltKisim, UstKisim } from "../../../vitrin/ust-alt-kisim";
+import { VitrinBilgisiSaglayici } from "../../../vitrin/vitrin-bilgisi";
 
 // Varsayılan sekme başlığı (mağaza adı) ve açıklama (kart 0135, karar 0103). Sayfa kendi başlığını
 // sayfaBasligi ile "<sayfa> | <mağaza adı>" kalıbında verir; vermeyen sayfa (ana sayfa) mağaza adını alır.
@@ -42,7 +43,21 @@ export default async function VitrinCercevesi({ children }: { children: ReactNod
       {cerceve === undefined ? null : (
         <UstKisim bolumler={cerceve.ust} gorunumler={bolumGorunumleri} baglam={cerceve.baglam} />
       )}
-      <div className="flex-1">{children}</div>
+      {/* Hata sayfası (error.tsx, kart 0120) mağaza adını ve telefonu buradan alır. */}
+      <VitrinBilgisiSaglayici
+        bilgi={
+          cerceve === undefined
+            ? {}
+            : {
+                magazaAdi: cerceve.baglam.magazaAdi,
+                ...(cerceve.baglam.iletisim.telefon === undefined
+                  ? {}
+                  : { telefon: cerceve.baglam.iletisim.telefon.metin }),
+              }
+        }
+      >
+        <div className="flex-1">{children}</div>
+      </VitrinBilgisiSaglayici>
       {cerceve === undefined ? null : (
         <AltKisim bolumler={cerceve.alt} gorunumler={bolumGorunumleri} baglam={cerceve.baglam} />
       )}
