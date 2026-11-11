@@ -15,8 +15,8 @@ import { bolumGorunumleri } from "../../../vitrin/bolum-kutuphanesi/gorunumler";
 import { bolumKutuphanesi } from "../../../vitrin/bolum-kutuphanesi/kutuphane";
 import { AltKisim, UstKisim } from "../../../vitrin/ust-alt-kisim";
 
-// Sekme başlığının kalıbı ("<sayfa> | <mağaza adı>") ve varsayılan açıklama (kart 0135, karar 0103). Sayfa yalnız
-// kendi adını verir; adı vermeyen sayfa mağaza adını alır.
+// Varsayılan sekme başlığı (mağaza adı) ve açıklama (kart 0135, karar 0103). Sayfa kendi başlığını
+// sayfaBasligi ile "<sayfa> | <mağaza adı>" kalıbında verir; vermeyen sayfa (ana sayfa) mağaza adını alır.
 export const generateMetadata = (): Promise<Metadata> => vitrinSayfaKalibi();
 
 const cerceveyiOku = async () => {

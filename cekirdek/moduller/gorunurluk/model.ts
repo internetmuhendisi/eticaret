@@ -1,13 +1,15 @@
-// Eski adresler (kart 0135, karar 0103). Kategori, marka, etiket ya da ürünün adres adı değişince eski ad
-// burada saklanır; vitrin eski adrese geleni kaydın bugünkü adresine kalıcı olarak yönlendirir.
+// Eski adresler (kart 0135, karar 0103). Kategori, marka, etiket ya da ürünün adres adı değişince ya da kayıt
+// silinince ad burada saklanır (kayıt adı bırakmış sayılır); vitrin eski adrese geleni kaydın bugünkü adresine
+// kalıcı olarak yönlendirir.
 //
-// Satırları yalnız veritabanındaki tetikleyici yazar (eski_adresi_sakla, değişiklik 0031): adres adı hangi
-// yoldan değişirse değişsin eski ad kaybolmaz. Servisler bu tabloya yazmaz.
+// Satırları yalnız veritabanındaki tetikleyici yazar (eski_adresi_sakla, değişiklikler 0031 ve 0032): adres adı
+// hangi yoldan değişirse değişsin eski ad kaybolmaz. Servisler bu tabloya yazmaz.
 //
 // - Bir eski ad, bir türde tek kayda yönlenir. Ad sonradan başka bir kaydın eski adı olursa satır o kayda
 //   geçer (en son bırakan kazanır).
 // - Eski ad bugün yaşayan bir kaydın adıysa yaşayan kayıt kazanır: çözücü önce yaşayan kayıtlara bakar.
-// - Kayıt silinince satır kalır, ama çözücü silinmiş kayda yönlendirmez: eski adres "bulunamadı"ya düşer.
+// - Çözücü silinmiş kayda yönlendirmez: eski adres "bulunamadı"ya düşer. Silme adı en son bırakan olarak
+//   silinen kaydı yazar; böylece silinen kaydın adresi adın daha eski sahibine de yönlenmez.
 // - Yönlendirme her zaman kaydın bugünkü adına gider, zincir kurulmaz.
 //
 // Aranan alanlar:

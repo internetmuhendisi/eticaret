@@ -124,6 +124,35 @@ describe.each(adresliKayitTurleri)("%s", (tur) => {
     });
   });
 
+  it("adı yeni sahibi silinince eski sahibine yönlenmez, bulunamaz", async () => {
+    const vt = await siteAc();
+    const eski = await ekle(vt, "Kış", "kis");
+    await adiDegistir(vt, eski, "kis-yeni");
+    const yeni = await ekle(vt, "Kış Başka", "kis");
+    expect(await kayitAdresiniCoz(vt, tur, "kis")).toMatchObject({
+      sonuc: "kayit",
+      kayit: { kimlik: yeni },
+    });
+    await sil(vt, yeni);
+    expect(await kayitAdresiniCoz(vt, tur, "kis")).toEqual({ sonuc: "yok" });
+    expect(await kayitAdresiniCoz(vt, tur, "kis-yeni")).toMatchObject({
+      sonuc: "kayit",
+      kayit: { kimlik: eski },
+    });
+  });
+
+  it("silinen kaydın adını sonradan alıp bırakan kayıt kazanır", async () => {
+    const vt = await siteAc();
+    const silinen = await ekle(vt, "Yaz", "yaz");
+    await sil(vt, silinen);
+    const yeni = await ekle(vt, "Yaz Yeni", "yaz");
+    await adiDegistir(vt, yeni, "yaz-yeni");
+    expect(await kayitAdresiniCoz(vt, tur, "yaz")).toEqual({
+      sonuc: "yonlendir",
+      adresAdi: "yaz-yeni",
+    });
+  });
+
   it("silinen kaydın ne kendi adresi ne eski adresi açılır", async () => {
     const vt = await siteAc();
     const kimlik = await ekle(vt, "Güz", "guz");
@@ -199,6 +228,24 @@ describe("adresin çözülmesi", () => {
       adresAdi: "ses-markasi",
     });
     expect(await kayitAdresiniCoz(vt, "etiket", "ses")).toEqual({ sonuc: "yok" });
+  });
+
+  it("adı şu an sayfası açılmayan bir ürün taşıyorsa eski sahibine yönlenmez", async () => {
+    const vt = await siteAc();
+    const eski = await turler.urun.ekle(vt, "Eski Kazak", "kazak");
+    await turler.urun.adiDegistir(vt, eski, "eski-kazak");
+    const taslak = await urunSrv.urunEkle(vt, yonetici(), {
+      ad: "Yeni Kazak",
+      adresAdi: "kazak",
+      vergiSinifi: null,
+      durum: "taslak",
+    });
+    expect(await kayitAdresiniCoz(vt, "urun", "kazak")).toEqual({ sonuc: "yok" });
+    await urunSrv.urunDegistir(vt, yonetici(), taslak, { durum: "yayinda" });
+    expect(await kayitAdresiniCoz(vt, "urun", "kazak")).toMatchObject({
+      sonuc: "kayit",
+      kayit: { kimlik: taslak },
+    });
   });
 
   it("servisi atlayan yazıda da eski ad saklanır; aynı ad yazılınca satır eklenmez", async () => {

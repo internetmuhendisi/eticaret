@@ -26,8 +26,8 @@ paths:
 ## Adresler ve sayfa iskeleti (karar 0103)
 
 - Kategori, marka, etiket ve ürün sayfasının adresi `kayitAdresleri` ile kurulur, türler `cekirdek/kayitlar/adres.ts` kaydındadır. Adresteki ad yalnız `kayitAdresiniCoz` (`cekirdek/moduller/gorunurluk/adres.ts`) ile kayda çevrilir: kayıt yoksa sayfa "bulunamadı"dır, eski adres bugünkü adrese kalıcı yönlenir (308), sorgu kısmı korunur. Sayfa bunu `KayitSayfasi` ve `sayfaninKaydi` ile yapar (`cekirdek/vitrin/kayit-sayfasi.tsx`).
-- Eski adresleri yalnız veritabanındaki tetikleyici yazar (`eski_adresler`, değişiklik 0031); servis bu tabloya yazmaz. Yönlendirme zincirsizdir, silinmiş ya da sayfası açılmayan kayda gitmez.
-- Sekme başlığı ve açıklama yalnız `cekirdek/moduller/gorunurluk/sayfa-bilgisi.ts` ile üretilir. Vitrin çerçevesi "<sayfa> | <mağaza adı>" kalıbını kurar; sayfa yalnız kendi adını verir.
+- Eski adresleri yalnız veritabanındaki tetikleyici yazar (`eski_adresler`, değişiklikler 0031 ve 0032): ad değişince ve kayıt silinince. Servis bu tabloya yazmaz. Yönlendirme zincirsizdir, silinmiş ya da sayfası açılmayan kayda gitmez; adı şu an görünmeyen bir kayıt taşıyorsa adres bulunamaz.
+- Sekme başlığı ve açıklama yalnız `cekirdek/moduller/gorunurluk/sayfa-bilgisi.ts` ile üretilir. Sayfa başlığını `sayfaBasligi` ile verir ("<sayfa> | <mağaza adı>", tam başlık); başlık vermeyen sayfa mağaza adını alır. Next.js'in `%s` kalıbı kullanılmaz.
 - Vitrin sayfasının iskeleti kütüphanenin parçalarıyla kurulur: `SayfaYolu`, `SayfaBasligi`, `BosHal`, sayfa geçişinde `Sayfalama` ya da `DahaFazla`. Sayfa bunları kendisi yeniden yazmaz.
 
 ## Ürün kartı ve fiyat (karar 0085)

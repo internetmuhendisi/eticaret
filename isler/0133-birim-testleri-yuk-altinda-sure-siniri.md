@@ -9,7 +9,9 @@ Kart 0092 sırasında (2026-11-11) bütün birim takımı makine çok yüklüyke
 - `cekirdek/moduller/fiyat/testler/gosterim.test.ts` "mağaza sahibinin metni, boş metin ve vergi adı olmayan site": bir kez.
 - `cekirdek/moduller/urun/testler/varyant.test.ts` "en çok yüz birleşim": bir kez.
 
-Kontrol hattında bu testler üç çalışmada da geçti. Hattın makinesi yavaşlarsa düşebilirler.
+Kontrol hattında bu testler üç çalışmada da geçti.
+
+Kart 0135 sırasında (2026-11-11, yük ortalaması 32–50) bütün birim takımı üç kez çalıştı. Yine yalnız "Test timed out in 5000ms" hatası görüldü: tema testi üçünde, varyant testi ikisinde, fiyat testi birinde. Listeye bir test eklendi: `cekirdek/moduller/kategori/testler/servis.test.ts` "alt kategorisiyle birlikte bağlı ürün değişirken silme kilitlenmez" iki çalışmada sınırı aştı (7,7 saniye). Aynı test tek başına yük 38'de beş kez geçti. Kart 0135 kategoriye silmede çalışan bir tetikleyici ekledi (değişiklik 0032, eski adı saklar); düşüşün bununla ilgisi ölçülmedi. Hata iletisi yalnız süre sınırıdır; veritabanının kilitlenme hatası (40P01) görülmedi. Hattın makinesi yavaşlarsa düşebilirler.
 
 ## Olmazsa olmazlar
 

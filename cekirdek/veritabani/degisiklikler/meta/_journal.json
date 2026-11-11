@@ -225,6 +225,13 @@
       "when": 1794409080571,
       "tag": "0031_eski-adresler",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794411505186,
+      "tag": "0032_eski-adres-silme",
+      "breakpoints": true
     }
   ]
 }

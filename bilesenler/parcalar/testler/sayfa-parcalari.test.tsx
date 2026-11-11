@@ -65,22 +65,50 @@ describe("sayfalama", () => {
     }
   });
 
-  it("ilk ve son sayfada gidilemeyen yön bağlantı değildir", () => {
-    const { rerender } = render(
+  it("ilk ve son sayfada gidilemeyen yön bağlantı değildir, ekran okuyucuya okunmaz", () => {
+    const { container, rerender } = render(
       <Sayfalama sayfa={1} toplamSayfa={3} adres={adres} metinler={metinler} />,
     );
     expect(screen.queryByRole("link", { name: "Önceki sayfa" })).toBeNull();
-    expect(screen.getByText("Önceki sayfa").closest("[aria-disabled]")).not.toBeNull();
+    expect(screen.queryByText("Önceki sayfa")).toBeNull();
+    const pasif = container.querySelector("[data-pasif]");
+    expect(pasif?.getAttribute("aria-hidden")).toBe("true");
+    expect(pasif?.closest("a")).toBeNull();
     rerender(<Sayfalama sayfa={3} toplamSayfa={3} adres={adres} metinler={metinler} />);
     expect(screen.queryByRole("link", { name: "Sonraki sayfa" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Önceki sayfa" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Önceki sayfa" }).getAttribute("href")).toBe(adres(2));
   });
 
-  it("tek sayfalık listede çizilmez", () => {
-    const { container } = render(
-      <Sayfalama sayfa={1} toplamSayfa={1} adres={adres} metinler={metinler} />,
+  it("sınır dışı ve tam sayı olmayan sayfa en yakın geçerli sayfaya çekilir", () => {
+    const { rerender } = render(
+      <Sayfalama sayfa={9} toplamSayfa={5} adres={adres} metinler={metinler} />,
     );
-    expect(container.innerHTML).toBe("");
+    expect(screen.getByRole("link", { name: "5. sayfa" }).getAttribute("aria-current")).toBe(
+      "page",
+    );
+    expect(screen.getByRole("link", { name: "Önceki sayfa" }).getAttribute("href")).toBe(adres(4));
+    rerender(<Sayfalama sayfa={2.5} toplamSayfa={5.9} adres={adres} metinler={metinler} />);
+    expect(screen.getByRole("link", { name: "2. sayfa" }).getAttribute("aria-current")).toBe(
+      "page",
+    );
+    expect(screen.getAllByRole("link").map((bag) => bag.getAttribute("href"))).not.toContain(
+      adres(1.5),
+    );
+    expect(screen.queryByRole("link", { name: "6. sayfa" })).toBeNull();
+    rerender(<Sayfalama sayfa={-3} toplamSayfa={4} adres={adres} metinler={metinler} />);
+    expect(screen.getByRole("link", { name: "1. sayfa" }).getAttribute("aria-current")).toBe(
+      "page",
+    );
+  });
+
+  it("tek sayfalık ve boş listede çizilmez", () => {
+    for (const toplamSayfa of [1, 0, -2, 1.7]) {
+      const { container } = render(
+        <Sayfalama sayfa={1} toplamSayfa={toplamSayfa} adres={adres} metinler={metinler} />,
+      );
+      expect(container.innerHTML).toBe("");
+      cleanup();
+    }
   });
 
   it("daha fazla göster sonraki sayfanın bağlantısıdır, son sayfada yalnız durum yazılır", () => {

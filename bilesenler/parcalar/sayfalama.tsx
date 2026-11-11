@@ -52,11 +52,16 @@ export function Sayfalama({
   metinler: SayfalamaMetinleri;
   className?: string;
 }) {
-  if (toplamSayfa <= 1) return null;
+  // Çağıranın verdiği sayfa sınırların dışındaysa ya da tam sayı değilse en yakın geçerli sayfa kullanılır:
+  // gezinme her durumda geçerli sayfayı işaretler ve geri dönülecek bağlantıyı gösterir.
+  const toplam = Math.max(0, Math.floor(toplamSayfa));
+  if (toplam <= 1) return null;
+  const gecerli = Math.min(toplam, Math.max(1, Math.floor(sayfa)));
   const yon = (hedef: number, ad: string, ikon: "onceki" | "sonraki") =>
-    hedef < 1 || hedef > toplamSayfa ? (
-      <span aria-disabled="true" className={sinif(kutu, "text-soluk-yazi")}>
-        <span className="sr-only">{ad}</span>
+    hedef < 1 || hedef > toplam ? (
+      // Gidilemeyen yön yalnız görünüşte soluk bir işarettir: bağlantı değildir, odak almaz, ekran okuyucuya
+      // okunmaz (ilk sayfada "önceki sayfa" bir şey söylemez).
+      <span aria-hidden="true" data-pasif="" className={sinif(kutu, "text-soluk-yazi")}>
         <Ikon ad={ikon} />
       </span>
     ) : (
@@ -67,8 +72,8 @@ export function Sayfalama({
   return (
     <nav aria-label={metinler.etiket} data-slot="sayfalama" className={className}>
       <ul className="flex flex-wrap items-center justify-center gap-1">
-        <li>{yon(sayfa - 1, metinler.onceki, "onceki")}</li>
-        {sayfaNumaralari(sayfa, toplamSayfa).map((oge, sira) =>
+        <li>{yon(gecerli - 1, metinler.onceki, "onceki")}</li>
+        {sayfaNumaralari(gecerli, toplam).map((oge, sira) =>
           oge === "bosluk" ? (
             <li
               // Boşluk en çok iki kez geçer; sırası anahtardır.
@@ -83,10 +88,10 @@ export function Sayfalama({
               <Link
                 href={adres(oge)}
                 aria-label={metinler.sayfaAdi(oge)}
-                aria-current={oge === sayfa ? "page" : undefined}
+                aria-current={oge === gecerli ? "page" : undefined}
                 className={sinif(
                   kutu,
-                  oge === sayfa ? "border-yazi bg-yazi text-zemin" : "hover:bg-yuzey",
+                  oge === gecerli ? "border-yazi bg-yazi text-zemin" : "hover:bg-yuzey",
                 )}
               >
                 {oge}
@@ -94,7 +99,7 @@ export function Sayfalama({
             </li>
           ),
         )}
-        <li>{yon(sayfa + 1, metinler.sonraki, "sonraki")}</li>
+        <li>{yon(gecerli + 1, metinler.sonraki, "sonraki")}</li>
       </ul>
     </nav>
   );

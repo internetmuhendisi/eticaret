@@ -3,12 +3,13 @@
 //
 // Sıra:
 // 1. Adres adı kalıba uymuyorsa sorgu atılmaz, kayıt yoktur.
-// 2. Adı bu olan ve vitrinde sayfası açılan kayıt varsa odur. Ürün yayın durumuyla (vitrinKosulu, sayfa
-//    yeri) süzülür; kategori, marka ve etiket silinmemişse açılır.
-// 3. Yoksa eski adreslerde aranır: adı bir zamanlar bu olan kayıt hâlâ açılıyorsa onun bugünkü adına
-//    yönlendirilir. Zincir yoktur, yönlendirme tek adımdır.
+// 2. Adı bu olan silinmemiş kayıt varsa karar onundur: sayfası açılıyorsa odur, açılmıyorsa kayıt yoktur. Ürün
+//    yayın durumuyla (vitrinKosulu, sayfa yeri) süzülür; kategori, marka ve etiket silinmemişse açılır.
+// 3. Yoksa eski adreslerde aranır: adı en son bırakan kayıt hâlâ açılıyorsa onun bugünkü adına yönlendirilir.
+//    Silinen kayıt da adını bırakmış sayılır (değişiklik 0032); silinmiş kayda yönlendirilmez. Zincir yoktur,
+//    yönlendirme tek adımdır.
 // 4. Hiçbiri değilse kayıt yoktur, sayfa "bulunamadı"dır.
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import type { AdresliKayitTuru } from "../../kayitlar/adres.ts";
 import { adresAdiKalibi, adresAdiUzunlugu } from "../../metinler/adres-adi.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
@@ -64,13 +65,24 @@ export const kayitAdresiniCoz = async (
 ): Promise<AdresSonucu> => {
   if (!adresAdiGecerliMi(adresAdi)) return { sonuc: "yok" };
   const { tablo, aciklama, acik } = kaynaklar(an)[tur];
-  const alanlar = { kimlik: tablo.kimlik, ad: tablo.ad, adresAdi: tablo.adres_adi, aciklama };
-  const [kayit] = await vt
-    .select(alanlar)
+  // Adı şu an silinmemiş bir kayıt taşıyorsa o adın en yeni sahibidir (ad silinmemişler arasında tekildir;
+  // eski sahibi adı ondan önce bırakmıştır). Sayfası açılıyorsa odur, açılmıyorsa (taslak ürün) adres bulunamaz:
+  // adın eski sahibine yönlendirilmez.
+  const [sahip] = await vt
+    .select({
+      kimlik: tablo.kimlik,
+      ad: tablo.ad,
+      adresAdi: tablo.adres_adi,
+      aciklama,
+      acik: sql<boolean>`${acik}`,
+    })
     .from(tablo)
-    .where(and(eq(tablo.adres_adi, adresAdi), acik))
+    .where(and(eq(tablo.adres_adi, adresAdi), isNull(tablo.silinme_zamani)))
     .limit(1);
-  if (kayit !== undefined) return { sonuc: "kayit", kayit };
+  if (sahip !== undefined) {
+    const { acik: acilir, ...kayit } = sahip;
+    return acilir ? { sonuc: "kayit", kayit } : { sonuc: "yok" };
+  }
   // Eski ad türün tablosuna kimlikle bağlanır; kimlikler tablolar arasında da tekil olduğu için başka türün
   // satırı eşleşmez. Tür koşulu doğruluk için değil, aramanın (kayit_turu, adres_adi) indeksini kullanması içindir.
   const [eski] = await vt
