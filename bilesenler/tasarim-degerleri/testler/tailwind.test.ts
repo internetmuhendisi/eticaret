@@ -193,6 +193,8 @@ describe("Tailwind yalnız tasarım değerlerini tanır", () => {
       // "Bulunamadı" ve hata sayfası (kart 0120).
       join(kok, "cekirdek/vitrin/durum-sayfasi.tsx"),
       join(kok, "cekirdek/vitrin/bulunamadi-sayfasi.tsx"),
+      join(kok, "cekirdek/vitrin/arama-kutusu.tsx"),
+      join(kok, "cekirdek/vitrin/urun-listesi/arama-sayfasi.tsx"),
       join(kok, "cekirdek/vitrin/hata-sayfasi.tsx"),
       // Ürün kartı ve fiyat bileşeni (kart 0109).
       ...readdirSync(join(kok, "cekirdek/vitrin/urun-karti"))

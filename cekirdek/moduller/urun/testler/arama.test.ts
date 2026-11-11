@@ -7,6 +7,7 @@
 //   eşit puanda en yeni önce.
 import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
+import { sql } from "drizzle-orm";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
@@ -86,12 +87,26 @@ describe("alanlar", () => {
     expect(await h.ara("ayakkabi")).toEqual([markali]);
     expect(await h.ara("mobilya")).toEqual([kategorili]);
     expect(await h.ara("xyz-42")).toEqual([kodlu]);
-    await markaServisi.sil(h.vt, yonetici(), marka);
-    await kategoriSil(h.vt, yonetici(), kategori);
-    await urunler.urunSil(h.vt, yonetici(), kodlu);
+    // Servisle silmek bağlantıyı da kaldırır; aramanın kendi süzgecini ölçmek için yalnız silinmiş işareti yazılır.
+    await h.vt.execute(sql`update markalar set silinme_zamani = now() where kimlik = ${marka}`);
+    await h.vt.execute(
+      sql`update kategoriler set silinme_zamani = now() where kimlik = ${kategori}`,
+    );
+    await h.vt.execute(
+      sql`update urun_birimleri set silinme_zamani = now() where urun_kimligi = ${kodlu}`,
+    );
     expect(await h.ara("ayakkabi")).toEqual([]);
     expect(await h.ara("mobilya")).toEqual([]);
     expect(await h.ara("xyz-42")).toEqual([]);
+    // Servisle silinenler de.
+    const marka2 = await markaServisi.ekle(h.vt, yonetici(), { ad: "Rüzgar Giyim" });
+    const kategori2 = await kategoriEkle(h.vt, yonetici(), { ad: "Kamp Malzemesi" });
+    await h.ac("Mont", { marka: marka2, kategoriler: [kategori2] });
+    expect(await h.ara("ruzgar kamp")).toHaveLength(1);
+    await markaServisi.sil(h.vt, yonetici(), marka2);
+    await kategoriSil(h.vt, yonetici(), kategori2);
+    expect(await h.ara("ruzgar")).toEqual([]);
+    expect(await h.ara("kamp")).toEqual([]);
   });
 
   it("her sözcük bir alanda geçer; % ve _ joker değildir", async () => {
@@ -152,17 +167,20 @@ describe("en uygun", () => {
     const h = await hazirla();
     const marka = await markaServisi.ekle(h.vt, yonetici(), { ad: "Kupa Evi" });
     const kategori = await kategoriEkle(h.vt, yonetici(), { ad: "Kupalar" });
-    const stokKoduIcerir = await h.ac("Fincan Seti", { stokKodu: "KUPA-9" });
-    const kategoride = await h.ac("Fincan Takımı", { kategoriler: [kategori] });
-    const markada = await h.ac("Fincan", { marka });
-    const adIcerir = await h.ac("Porselen Kupa");
+    // Her basamak, bir alt basamaktaki daha yeni üründen önce gelmelidir: eklenme sırası puanı bozmaz.
+    const adTamami = await h.ac("KUPA");
+    const adBaslarVeStokKodu = await h.ac("Kupa Bardak", { stokKodu: "KUPA-1" });
     const adBaslarEski = await h.ac("Kupa Seti");
     const adBaslarYeni = await h.ac("Kupa Takımı");
-    const adTamami = await h.ac("KUPA");
+    const markada = await h.ac("Fincan", { marka });
+    const kategoride = await h.ac("Fincan Takımı", { kategoriler: [kategori] });
+    const stokKoduIcerir = await h.ac("Fincan Seti", { stokKodu: "KUPA-9" });
+    const adIcerir = await h.ac("Porselen Kupa");
     const stokKoduTamami = await h.ac("Bardak", { stokKodu: "kupa" });
     expect(await h.ara("kupa", "en-uygun")).toEqual([
       stokKoduTamami,
       adTamami,
+      adBaslarVeStokKodu,
       adBaslarYeni,
       adBaslarEski,
       adIcerir,
@@ -172,7 +190,6 @@ describe("en uygun", () => {
     ]);
     // Öteki sıralamalar puanı kullanmaz.
     expect((await h.ara("kupa", "en-yeni"))[0]).toBe(stokKoduTamami);
-    expect((await h.ara("kupa", "en-yeni"))[1]).toBe(adTamami);
-    expect((await h.ara("kupa", "en-yeni")).at(-1)).toBe(stokKoduIcerir);
+    expect((await h.ara("kupa", "en-yeni")).at(-1)).toBe(adTamami);
   });
 });

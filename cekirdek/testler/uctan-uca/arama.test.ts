@@ -9,6 +9,7 @@ import { existsSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
+import { istekSinirlari } from "../../kayitlar/kapi";
 import { metin } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import { siteninFiyatServisi } from "../../moduller/fiyat/servis";
@@ -191,4 +192,27 @@ test("bulunamadı sayfasının arama kutusu arama sayfasına gider", async ({ pa
   await kutu.fill("kupa");
   await kutu.press("Enter");
   await expect(page).toHaveURL(/\/arama\?ara=kupa/);
+});
+
+test("istek sınırı aşılınca sayfa 429 ile bekleme süresini söyler, arama yapmaz", async ({
+  page,
+}) => {
+  // Bu test kendi ağından sınırı doldurur: her çalışmada yeni bir IPv6 ağı (ilk 64 bit), önceki çalışmanın sayacına
+  // takılmaz.
+  const istemci = `2001:db8:${randomUUID().slice(0, 4)}:${randomUUID().slice(0, 4)}::1`;
+  await page.setExtraHTTPHeaders({ "x-forwarded-for": istemci });
+  for (let i = 0; i < istekSinirlari.arama.istek; i += 1) {
+    // page.request sayfanın ek başlıklarını taşımaz, başlık açıkça verilir.
+    const yanit = await page.request.get(`${vitrinAdresleri.arama}?ara=kupa`, {
+      headers: { "x-forwarded-for": istemci },
+    });
+    expect(yanit.status(), `${i + 1}. istek`).toBe(200);
+  }
+  const yanit = await page.goto(`${vitrinAdresleri.arama}?ara=kupa`);
+  expect(yanit?.status()).toBe(429);
+  expect(Number(yanit?.headers()["retry-after"])).toBeGreaterThan(0);
+  await sayfaHazir(page);
+  await expect(page.getByText(metin("vitrin.arama.cokFazlaBaslik"))).toBeVisible();
+  await expect(page.getByRole("list", { name: metin("vitrin.liste.urunler") })).toHaveCount(0);
+  await tara(page, "429");
 });
