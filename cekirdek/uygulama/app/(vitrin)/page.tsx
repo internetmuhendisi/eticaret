@@ -2,9 +2,10 @@
 // çizilir; yoksa mağazanın adı ve ayarı açıksa "Yakında açılıyoruz." yazısı. Hesap alanı başlığın üstündedir
 // (kart 0033). Ad mağaza sahibinin ayarıdır (kart 0071).
 //
+// Sekme başlığı vitrin çerçevesinin varsayılanıdır: mağaza adı (kart 0135).
+//
 // Düzen ve bölümlerin bağlamı burada bir kez okunur. Okunamazsa (veritabanı kapalı) sayfa sade hâliyle açılır,
 // hata kaydedilir: ana sayfa düzen yüzünden düşmez.
-import type { Metadata } from "next";
 import { calisanSite } from "../../../ayar-semasi/calisan-site";
 import { hatayiKaydet } from "../../../izleme/hata-katmani";
 import { duzenServisi } from "../../../moduller/duzen/servis";
@@ -14,8 +15,6 @@ import { AnaSayfa, type AnaSayfaDuzeni } from "../../../vitrin/ana-sayfa";
 import { vitrinBaglaminiOku } from "../../../vitrin/baglam-oku";
 import { bolumGorunumleri } from "../../../vitrin/bolum-kutuphanesi/gorunumler";
 import { bolumKutuphanesi } from "../../../vitrin/bolum-kutuphanesi/kutuphane";
-
-export const generateMetadata = async (): Promise<Metadata> => ({ title: await magazaninAdi() });
 
 const duzeniOku = async (): Promise<AnaSayfaDuzeni | undefined> => {
   try {

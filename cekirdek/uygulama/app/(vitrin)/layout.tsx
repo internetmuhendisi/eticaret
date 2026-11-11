@@ -3,15 +3,21 @@
 //
 // Düzen ve bağlam istek başına bir kez okunur. Okunamazsa (veritabanı kapalı) sayfa üst ve alt kısım olmadan
 // açılır, hata kaydedilir: sayfanın kendisi çerçeve yüzünden düşmez.
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { calisanSite } from "../../../ayar-semasi/calisan-site";
 import { hatayiKaydet } from "../../../izleme/hata-katmani";
 import { duzenServisi } from "../../../moduller/duzen/servis";
+import { vitrinSayfaKalibi } from "../../../moduller/gorunurluk/sayfa-bilgisi";
 import { siteninVeritabani } from "../../../veritabani/baglanti";
 import { vitrinBaglaminiOku } from "../../../vitrin/baglam-oku";
 import { bolumGorunumleri } from "../../../vitrin/bolum-kutuphanesi/gorunumler";
 import { bolumKutuphanesi } from "../../../vitrin/bolum-kutuphanesi/kutuphane";
 import { AltKisim, UstKisim } from "../../../vitrin/ust-alt-kisim";
+
+// Sekme başlığının kalıbı ("<sayfa> | <mağaza adı>") ve varsayılan açıklama (kart 0135, karar 0103). Sayfa yalnız
+// kendi adını verir; adı vermeyen sayfa mağaza adını alır.
+export const generateMetadata = (): Promise<Metadata> => vitrinSayfaKalibi();
 
 const cerceveyiOku = async () => {
   try {

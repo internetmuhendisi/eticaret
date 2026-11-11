@@ -7,6 +7,7 @@ import { AcilirMenuOrnegi } from "./ornekler/acilir-menu";
 import { AkordeonOrnegi } from "./ornekler/akordeon";
 import { BaglantiOrnegi } from "./ornekler/baglanti";
 import { BildirimOrnegi } from "./ornekler/bildirim";
+import { BosHalOrnegi } from "./ornekler/bos-hal";
 import { DugmeOrnegi } from "./ornekler/dugme";
 import { EtiketOrnegi } from "./ornekler/etiket";
 import { FormOrnegi } from "./ornekler/form";
@@ -19,6 +20,9 @@ import { KartOrnegi } from "./ornekler/kart";
 import { OnayKutusuOrnegi } from "./ornekler/onay-kutusu";
 import { PencereOrnegi } from "./ornekler/pencere";
 import { RozetOrnegi } from "./ornekler/rozet";
+import { SayfaBasligiOrnegi } from "./ornekler/sayfa-basligi";
+import { SayfaYoluOrnegi } from "./ornekler/sayfa-yolu";
+import { SayfalamaOrnegi } from "./ornekler/sayfalama";
 import { SecimKutusuOrnegi } from "./ornekler/secim-kutusu";
 import { SekmelerOrnegi } from "./ornekler/sekmeler";
 import { SeritOrnegi } from "./ornekler/serit";
@@ -52,6 +56,10 @@ const ornekler: Record<ParcaKodu, ComponentType> = {
   yukleniyor: YukleniyorOrnegi,
   serit: SeritOrnegi,
   akordeon: AkordeonOrnegi,
+  "sayfa-yolu": SayfaYoluOrnegi,
+  "sayfa-basligi": SayfaBasligiOrnegi,
+  "bos-hal": BosHalOrnegi,
+  sayfalama: SayfalamaOrnegi,
   ikon: IkonOrnegi,
 };
 

@@ -41,7 +41,14 @@
       "seritTanimi": "kaydırmalı şerit",
       "seritOgesi": "öğe",
       "onceki": "Önceki",
-      "sonraki": "Sonraki"
+      "sonraki": "Sonraki",
+      "sayfaYolu": "Sayfa yolu",
+      "sayfalar": "Sayfalar",
+      "oncekiSayfa": "Önceki sayfa",
+      "sonrakiSayfa": "Sonraki sayfa",
+      "sayfaAdi": "{sira}. sayfa",
+      "atlananSayfalar": "…",
+      "sayfaYoluAyraci": "/"
     }
   },
   "ayar": {
@@ -669,6 +676,19 @@
     },
     "onay": {
       "pazarlama": "Kampanya ve duyurular için bana e-posta gönderilsin."
+    },
+    "sayfa": {
+      "anasayfa": "Ana sayfa"
+    },
+    "sayfaBilgisi": {
+      "kalip": "{baslik} | {magaza}",
+      "aciklama": {
+        "varsayilan": "{magaza} çevrimiçi mağazası.",
+        "kategori": "{ad} kategorisindeki ürünleri {magaza} mağazasında inceleyin.",
+        "marka": "{ad} markasının ürünlerini {magaza} mağazasında inceleyin.",
+        "etiket": "“{ad}” etiketli ürünleri {magaza} mağazasında inceleyin.",
+        "urun": "{ad} ürününü {magaza} mağazasında inceleyin."
+      }
     }
   },
   "eposta": {
@@ -741,7 +761,11 @@
         "akordeon": "Akordeon",
         "form": "Form",
         "formAlani": "Form alanı",
-        "ikon": "İkon"
+        "ikon": "İkon",
+        "sayfaYolu": "Sayfa yolu",
+        "sayfaBasligi": "Sayfa başlığı",
+        "bosHal": "Boş hâl",
+        "sayfalama": "Sayfalama"
       },
       "bolumKutuphanesi": "Bölüm kütüphanesi"
     },
@@ -845,7 +869,22 @@
       "gonderildi": "Form gönderildi.",
       "siparisNotu": "Sipariş notu",
       "siparisNotuAciklama": "Kargoya ya da paketlemeye dair isteğinizi yazın.",
-      "siparisNotuHata": "Not en çok 500 harf olabilir."
+      "siparisNotuHata": "Not en çok 500 harf olabilir.",
+      "yolAnasayfa": "Ana sayfa",
+      "yolGiyim": "Giyim",
+      "yolTisort": "Çizgili Pantolon",
+      "baslikGiyim": "Giyim",
+      "urunSayisi": "4 ürün",
+      "uzunBaslik": "Kış için yumuşak dokulu, sıcak tutan bereler ve eldivenler",
+      "bosBaslik": "Bu filtrelere uyan ürün yok",
+      "bosAciklama": "Bir filtreyi kaldırın ya da fiyat aralığını genişletin.",
+      "filtreleriTemizle": "Filtreleri temizle",
+      "favoriBosBaslik": "Favori listeniz boş",
+      "favoriBosAciklama": "Beğendiğiniz ürünlerdeki kalbe dokunun, burada toplansın.",
+      "alisveriseBasla": "Alışverişe başla",
+      "dahaFazlaDurum": "24 ürünün 8'ini gördünüz",
+      "dahaFazlaGoster": "Daha fazla göster",
+      "sonSayfaDurum": "24 ürünün hepsini gördünüz"
     },
     "bolum": {
       "ad": "Deneme bölümü",

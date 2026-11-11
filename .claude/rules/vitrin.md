@@ -23,6 +23,13 @@ paths:
 - Sayfa başlığı, açıklama, yapılandırılmış veri ve paylaşım görselini sayfa türüne göre ortak bir üreticiden al.
 - Ürün ya da kategori adresi değişince eski adresi kalıcı olarak yenisine yönlendir. Site haritası kendiliğinden üretilsin.
 
+## Adresler ve sayfa iskeleti (karar 0103)
+
+- Kategori, marka, etiket ve ürün sayfasının adresi `kayitAdresleri` ile kurulur, türler `cekirdek/kayitlar/adres.ts` kaydındadır. Adresteki ad yalnız `kayitAdresiniCoz` (`cekirdek/moduller/gorunurluk/adres.ts`) ile kayda çevrilir: kayıt yoksa sayfa "bulunamadı"dır, eski adres bugünkü adrese kalıcı yönlenir (308), sorgu kısmı korunur. Sayfa bunu `KayitSayfasi` ve `sayfaninKaydi` ile yapar (`cekirdek/vitrin/kayit-sayfasi.tsx`).
+- Eski adresleri yalnız veritabanındaki tetikleyici yazar (`eski_adresler`, değişiklik 0031); servis bu tabloya yazmaz. Yönlendirme zincirsizdir, silinmiş ya da sayfası açılmayan kayda gitmez.
+- Sekme başlığı ve açıklama yalnız `cekirdek/moduller/gorunurluk/sayfa-bilgisi.ts` ile üretilir. Vitrin çerçevesi "<sayfa> | <mağaza adı>" kalıbını kurar; sayfa yalnız kendi adını verir.
+- Vitrin sayfasının iskeleti kütüphanenin parçalarıyla kurulur: `SayfaYolu`, `SayfaBasligi`, `BosHal`, sayfa geçişinde `Sayfalama` ya da `DahaFazla`. Sayfa bunları kendisi yeniden yazmaz.
+
 ## Ürün kartı ve fiyat (karar 0085)
 
 - Ürünün kartı `UrunKarti`, fiyatı `FiyatGosterimi` ile çizilir (`cekirdek/vitrin/urun-karti/`). Kartın verisi yalnız `urunKartlari` ile gelir: görünürlük, fiyat aralığı, indirim oranı, stok durumu ve görsel çekirdeğin tek işlevlerinden. Kartta ya da bölümde fiyat, oran ya da stok durumu yeniden hesaplanmaz.
@@ -69,7 +76,7 @@ paths:
 
 - Vitrin sayfaları `app/(vitrin)/` altındadır; çerçeve üst ve alt kısmı düzenden `UstKisim` ve `AltKisim` (`cekirdek/vitrin/ust-alt-kisim.tsx`) ile çizer. Yeni vitrin sayfası bu klasöre yazılır.
 - Bölüm mağaza adı, logo, iletişim, sosyal hesaplar, menüler gibi veriyi yalnız vitrin bağlamından alır (`baglam.ts`); bağlam istek başına bir kez `vitrinBaglaminiOku` ile okunur. Bölüm veritabanına kendisi gitmez.
-- Vitrinin adresleri `cekirdek/vitrin/adresler.ts` dosyasındadır; kategori, marka ve ürün sayfasının adresi `kayitAdresleri` ile kurulur.
+- Vitrinin adresleri `cekirdek/vitrin/adresler.ts` dosyasındadır; kategori, marka, etiket ve ürün sayfasının adresi `kayitAdresleri` ile kurulur.
 - Henüz yazılmamış bir sayfaya giden düğme (arama, favori, sepet) işlevine bağlanır; işlev açılınca görünür.
 - Müşterinin oturumu vitrinde yalnız `useHesapDurumu`, çıkış yalnız `cikisYap` ile (`cekirdek/vitrin/hesap-durumu.ts`, karar 0098): sayfada tek istek gider, yalnız 401 girişsizdir. Hesabım menüsü üst satırdadır, katalogun örnek bağlamında (`musteriOturumu: "ornek"`) istek gitmez.
 - Radix tetikleyicisine (`asChild`) verilen ve ipucuyla sarılı parça (ikon düğmesi) sunucuda çizilen bölümde tetikleyicinin özelliklerini almaz; böyle bir parça tarayıcıda çizilen bileşene yazılır (`menu-dugmesi.tsx`).
