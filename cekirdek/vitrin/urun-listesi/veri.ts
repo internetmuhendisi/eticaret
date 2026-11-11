@@ -8,7 +8,7 @@
 //   gelir; filtre, sayılar ve sıralama filtre.ts'nin saf işlevleriyle hesaplanır. Fiyat yalnız fiyat filtresi
 //   ya da sıralaması varken, kartın fiyatını veren işlevle (fiyatAraliklari) hesaplanır. Sorgu sayısı ürün
 //   sayısıyla artmaz.
-// - Bedel: kapsamdaki bütün ürünlerin filtre verisi belleğe okunur (karar 0105). Ölçümü testtedir.
+// - Bedel: kapsamdaki bütün ürünlerin filtre verisi belleğe okunur (karar 0105). Testte yalnız sorgu sayısı ölçülür; büyük katalogdaki süre ölçülmedi (kart 0151).
 import { and, asc, eq, isNull, type SQL, sql } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru";
 import type { ListeSiralamasi } from "../../kayitlar/liste";
@@ -28,6 +28,7 @@ import {
   filtreyeUyarMi,
   fiyataGoreSirala,
   fiyatFiltresiVarMi,
+  kendiAlani,
   secenekSayisi,
   type UrunFiltresi,
 } from "../../moduller/urun/filtre";
@@ -101,8 +102,10 @@ const etiketEkle = (
   else degerEtiketi.sira = Math.min(degerEtiketi.sira, degerSirasi);
 };
 
-const siraliGirdiler = <T extends { ad: string; sira: number }>(harita: Map<string, T>) =>
-  [...harita.entries()].toSorted(([, a], [, b]) => a.sira - b.sira || a.ad.localeCompare(b.ad));
+const siraliGirdiler = <T extends { ad: string; sira: number }>(
+  harita: Map<string, T>,
+  karsilastir: (a: string, b: string) => number,
+) => [...harita.entries()].toSorted(([, a], [, b]) => a.sira - b.sira || karsilastir(a.ad, b.ad));
 
 export const filtreliUrunListesi = async (
   vt: Veritabani,
@@ -328,7 +331,7 @@ export const filtreliUrunListesi = async (
 
   const say = (grup: FiltreGrubu, deger: string) => secenekSayisi(fiyatli, filtre, grup, deger);
   const markaSecenekleri = [...markaAdlari.entries()]
-    .toSorted(([, a], [, b]) => a.localeCompare(b))
+    .toSorted(([, a], [, b]) => bicim.adKarsilastir(a, b))
     .map(([anahtar, ad]) => ({
       anahtar,
       ad,
@@ -340,14 +343,14 @@ export const filtreliUrunListesi = async (
     tur: "secenek" | "ozellik",
     secimler: Readonly<Record<string, readonly string[]>>,
   ): FiltreSecenekGrubu[] =>
-    siraliGirdiler(etiketler).map(([anahtar, grup]) => ({
+    siraliGirdiler(etiketler, bicim.adKarsilastir).map(([anahtar, grup]) => ({
       anahtar,
       ad: grup.ad,
-      secenekler: siraliGirdiler(grup.degerler).map(([deger, { ad }]) => ({
+      secenekler: siraliGirdiler(grup.degerler, bicim.adKarsilastir).map(([deger, { ad }]) => ({
         anahtar: deger,
         ad,
         adet: say({ tur, anahtar }, deger),
-        secili: secimler[anahtar]?.includes(deger) ?? false,
+        secili: kendiAlani(secimler, anahtar)?.includes(deger) ?? false,
       })),
     }));
 

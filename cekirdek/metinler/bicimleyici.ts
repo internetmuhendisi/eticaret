@@ -132,6 +132,8 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
   });
   const yonelmeEki = yonelmeEkleri[ayarlar.dil.split("-")[0] ?? ""] ?? (() => "");
   const ulkeAdlari = new Intl.DisplayNames(ayarlar.dil, { type: "region", fallback: "none" });
+  // Adların sitenin dilindeki alfabe sırası (kart 0136): filtrede markalar ve değerler.
+  const adSiralayici = new Intl.Collator(ayarlar.dil, { sensitivity: "base", numeric: true });
   const tarihSaatBicimi = new Intl.DateTimeFormat(ayarlar.dil, {
     dateStyle: "short",
     timeStyle: "short",
@@ -173,13 +175,18 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
       const { binlikAyirici, ondalikAyirici } = ayarlar.sayi;
       const { ondalikSayisi } = ayarlar.para;
       const kac = (deger: string) => deger.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      // Boşluk türü binlik ayırıcı (bölünmez boşluk) müşterinin yazdığı düz boşlukla da okunur. Binlik
+      // ayırıcı boşsa ya da ondalık ayırıcıyla aynıysa binlikli yazılış yoktur: belirsiz olurdu.
+      const binlik = /^\s$/u.test(binlikAyirici) ? "[\\s\\u00a0\\u202f]" : kac(binlikAyirici);
+      const binlikli = binlikAyirici !== "" && binlikAyirici !== ondalikAyirici;
       const kesir = ondalikSayisi > 0 ? `(?:${kac(ondalikAyirici)}(\\d{1,${ondalikSayisi}}))?` : "";
       const temiz = yazi.trim();
       const eslesme =
-        new RegExp(`^(\\d{1,3}(?:${kac(binlikAyirici)}\\d{3})+)${kesir}$`).exec(temiz) ??
-        new RegExp(`^(\\d+)${kesir}$`).exec(temiz);
+        (binlikli
+          ? new RegExp(`^(\\d{1,3}(?:${binlik}\\d{3})+)${kesir}$`, "u").exec(temiz)
+          : null) ?? new RegExp(`^(\\d+)${kesir}$`).exec(temiz);
       if (eslesme === null) return undefined;
-      const tam = (eslesme[1] ?? "").replaceAll(binlikAyirici, "");
+      const tam = (eslesme[1] ?? "").replace(/\D/g, "");
       const ondalik = (eslesme[2] ?? "").padEnd(ondalikSayisi, "0");
       const deger = Number(tam) * 10 ** ondalikSayisi + Number(ondalik === "" ? 0 : ondalik);
       return Number.isSafeInteger(deger) ? deger : undefined;
@@ -189,6 +196,7 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
     // Oran yüz üzerinden verilir (23 → "%23").
     yuzde: (oran: number): string => yuzdeBicimi.format(oran / 100),
     yonelmeEki,
+    adKarsilastir: (a: string, b: string): number => adSiralayici.compare(a, b),
     tarih: (an: Date): string => tarihBicimi.format(an),
     tarihSaat: (an: Date): string => tarihSaatBicimi.format(an),
     yil: (an: Date): string => yilBicimi.format(an),

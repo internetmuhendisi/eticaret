@@ -104,6 +104,21 @@ describe("filtreye uyma", () => {
   });
 });
 
+describe("nesnenin kalıtılmış alanları", () => {
+  it('"constructor" ve "__proto__" anahtarı kalıtılmış alana düşmez', () => {
+    for (const anahtar of ["constructor", "__proto__", "toString"]) {
+      const secim = Object.fromEntries([[anahtar, ["x"]]]);
+      expect(filtreyeUyarMi(tisort, filtre({ ozellikler: secim }))).toBe(false);
+      expect(filtreyeUyarMi(tisort, filtre({ secenekler: secim }))).toBe(false);
+      const sahibi = aday("sahibi", {
+        ozellikler: Object.fromEntries([[anahtar, "x"]]),
+        birimler: [{ stokta: true, degerler: Object.fromEntries([[anahtar, "x"]]) }],
+      });
+      expect(filtreyeUyarMi(sahibi, filtre({ ozellikler: secim, secenekler: secim }))).toBe(true);
+    }
+  });
+});
+
 describe("seçeneğin sayısı", () => {
   it("grupta yalnız o seçenek seçilmiş gibidir, öteki grupların seçimi yerindedir", () => {
     const f = filtre({ markalar: ["orn"], secenekler: { beden: ["m"] } });
@@ -115,6 +130,16 @@ describe("seçeneğin sayısı", () => {
     expect(secenekSayisi(hepsi, bosFiltre(), { tur: "secenek", anahtar: "renk" }, "beyaz")).toBe(2);
     expect(secenekSayisi(hepsi, bosFiltre(), { tur: "stok" }, "")).toBe(2);
     expect(secenekSayisi(hepsi, f, { tur: "stok" }, "")).toBe(1);
+    // Grubun kendi seçimi sayıya girmez: marka "orn" seçiliyken "baska" seçilseydi gömlek gelirdi.
+    expect(secenekSayisi(hepsi, filtre({ markalar: ["orn"] }), { tur: "marka" }, "baska")).toBe(1);
+    expect(
+      secenekSayisi(
+        hepsi,
+        filtre({ secenekler: { renk: ["siyah"] } }),
+        { tur: "secenek", anahtar: "renk" },
+        "beyaz",
+      ),
+    ).toBe(2);
   });
 });
 

@@ -66,7 +66,6 @@ const veri = (
   boyut: 24,
   filtreYeri: "solda",
   kartGorunumu: "dikey",
-  fiyatHatasi: false,
   fiyat: {},
   markaGrubu: true,
   ...ek,
@@ -165,13 +164,37 @@ describe("seçili filtreler", () => {
     ).toBeTruthy();
   });
 
-  it("bozuk tutar: alan hatalı işaretlenir, açıklaması hatadır, etiketi yoktur", () => {
-    ciz(veri({ fiyatHatasi: true }, { "en-az": "1.5" }));
+  it("bozuk tutar: yalnız o alan hatalı işaretlenir, açıklaması hatadır; okunan öteki alanın etiketi kalır", () => {
+    ciz(
+      veri(
+        { fiyatHatasi: { enAz: true, enCok: false }, fiyat: { enCok: 50_000 } },
+        { "en-az": "1.5", "en-cok": "500" },
+      ),
+    );
     const alan = screen.getByRole("textbox", { name: metin("vitrin.liste.enAz") });
     expect(alan.getAttribute("aria-invalid")).toBe("true");
     const aciklama = document.getElementById(alan.getAttribute("aria-describedby") ?? "");
     expect(aciklama?.textContent).toContain("Tutar okunamadı");
-    expect(screen.queryByRole("list", { name: metin("vitrin.liste.seciliFiltreler") })).toBeNull();
+    expect(aciklama?.parentElement?.getAttribute("aria-live")).toBe("polite");
+    expect(
+      screen
+        .getByRole("textbox", { name: metin("vitrin.liste.enCok") })
+        .getAttribute("aria-invalid"),
+    ).toBeNull();
+    const secili = screen.getByRole("list", { name: metin("vitrin.liste.seciliFiltreler") });
+    expect(within(secili).getAllByRole("link")).toHaveLength(2);
+  });
+
+  it("fiyat alanları adresle eşit kalır: adres değişince yazılan eski değer gider", () => {
+    const { rerender } = ciz(veri({ fiyat: { enAz: 100_000 } }, { "en-az": "1.000" }));
+    const alan = () => screen.getByRole("textbox", { name: metin("vitrin.liste.enAz") });
+    expect((alan() as HTMLInputElement).value).toBe("1.000");
+    rerender(
+      <MetinSaglayici dil="tr">
+        <UrunListesiGorunumu veri={veri()} yol={yol} />
+      </MetinSaglayici>,
+    );
+    expect((alan() as HTMLInputElement).value).toBe("");
   });
 
   it("fiyat Enter ile uygulanır: yazıldığı gibi adrese girer, sayfa başa döner", () => {

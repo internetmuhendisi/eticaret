@@ -110,6 +110,36 @@ describe("para okuma", () => {
     });
     expect(ondaliksiz.paraOku("1.000")).toBe(1000);
     expect(ondaliksiz.paraOku("1.000,5")).toBeUndefined();
+    // Bölünmez boşluk binlik ayırıcı: düz boşlukla yazılış da okunur.
+    const bosluklu = bicimleyiciOlustur({
+      ...turkiye,
+      sayi: { binlikAyirici: "\u00a0", ondalikAyirici: "," },
+    });
+    expect(bosluklu.paraOku("1 000,50")).toBe(100050);
+    expect(bosluklu.paraOku("1\u00a0000")).toBe(100000);
+    expect(bosluklu.paraOku("1 00")).toBeUndefined();
+    // Binlik ayırıcı boşsa ya da ondalıkla aynıysa binlikli yazılış yoktur.
+    const ayni = bicimleyiciOlustur({
+      ...turkiye,
+      sayi: { binlikAyirici: ",", ondalikAyirici: "," },
+    });
+    expect(ayni.paraOku("1,000")).toBeUndefined();
+    expect(ayni.paraOku("1,5")).toBe(150);
+    const binliksiz = bicimleyiciOlustur({
+      ...turkiye,
+      sayi: { binlikAyirici: "", ondalikAyirici: "," },
+    });
+    expect(binliksiz.paraOku("1000,5")).toBe(100050);
+  });
+});
+
+describe("ad karşılaştırma", () => {
+  it("sitenin dilinin alfabe sırası, büyük küçük harf ayrımsız, sayılar sayı olarak", () => {
+    expect(
+      ["Zeytin", "Çam", "ilk", "Işık", "Cam", "Şal", "Sal", "Beden 10", "Beden 9"].toSorted(
+        bicim.adKarsilastir,
+      ),
+    ).toEqual(["Beden 9", "Beden 10", "Cam", "Çam", "Işık", "ilk", "Sal", "Şal", "Zeytin"]);
   });
 });
 

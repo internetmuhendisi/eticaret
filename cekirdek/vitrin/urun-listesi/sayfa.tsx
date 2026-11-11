@@ -59,7 +59,8 @@ export type UrunListesiVerisi = {
   boyut: number;
   filtreYeri: UrunFiltresiGorunumu;
   kartGorunumu: ReturnType<typeof urunKartiGorunumu>;
-  fiyatHatasi: boolean;
+  // Okunamayan fiyat alanları; ikisi de okunduysa yok.
+  fiyatHatasi?: { enAz: boolean; enCok: boolean };
   // Okunan fiyat sınırları, kuruş.
   fiyat: { enAz?: number; enCok?: number };
   // Marka sayfasında marka grubu gösterilmez.
@@ -90,9 +91,10 @@ export const urunListesiVerisi = async ({
     durum.fiyatYazisi.enAz === undefined ? undefined : bicim.paraOku(durum.fiyatYazisi.enAz);
   const enCok =
     durum.fiyatYazisi.enCok === undefined ? undefined : bicim.paraOku(durum.fiyatYazisi.enCok);
-  const fiyatHatasi =
-    (durum.fiyatYazisi.enAz !== undefined && enAz === undefined) ||
-    (durum.fiyatYazisi.enCok !== undefined && enCok === undefined);
+  const hataliAlanlar = {
+    enAz: durum.fiyatYazisi.enAz !== undefined && enAz === undefined,
+    enCok: durum.fiyatYazisi.enCok !== undefined && enCok === undefined,
+  };
   const filtre: UrunFiltresi = {
     ...(enAz === undefined && enCok === undefined
       ? {}
@@ -134,7 +136,7 @@ export const urunListesiVerisi = async ({
     boyut: ayarlar.listeSayfaBoyutu,
     filtreYeri,
     kartGorunumu: urunKartiGorunumu(temaninGorunumleri),
-    fiyatHatasi,
+    ...(hataliAlanlar.enAz || hataliAlanlar.enCok ? { fiyatHatasi: hataliAlanlar } : {}),
     fiyat: filtre.fiyat ?? {},
     markaGrubu,
   };
@@ -220,14 +222,17 @@ const filtreGorunumu = (veri: UrunListesiVerisi, yol: string): FiltreGorunumu =>
         binlikli: ornek.duz,
         duz: "1000",
       }),
-      ...(veri.fiyatHatasi
-        ? {
-            hata: doldur(metin("vitrin.liste.fiyatHatasi"), {
-              ornek: ornek.duz,
-              ondalikli: ornek.ondalikli,
-            }),
-          }
-        : {}),
+      ...(veri.fiyatHatasi === undefined
+        ? {}
+        : {
+            hata: {
+              metin: doldur(metin("vitrin.liste.fiyatHatasi"), {
+                ornek: ornek.duz,
+                ondalikli: ornek.ondalikli,
+              }),
+              ...veri.fiyatHatasi,
+            },
+          }),
     },
     sonucYazisi: doldur(metin("vitrin.liste.sonuclariGoster"), {
       sayi: bicim.sayi(veri.liste.toplam),

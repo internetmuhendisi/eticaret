@@ -9,6 +9,7 @@ import { existsSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
+import { katalogAdresi } from "../../katalog/kayit";
 import { metin } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import { siteninFiyatServisi } from "../../moduller/fiyat/servis";
@@ -200,8 +201,11 @@ test("filtre klavyeyle kullanılır; adres değişir; 1.000 ile 1000 aynı; bozu
     );
     await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
     // Onay kutusu: odaklanıp boşlukla seçilir.
+    // Tab'la ilerlenir: sıralamanın ve filtrelerin sırası sayfanın sırasıdır.
     const keten = page.getByRole("checkbox", { name: /^Keten/ });
-    await keten.focus();
+    await page.getByRole("checkbox", { name: /^Pamuk/ }).focus();
+    await page.keyboard.press("Tab");
+    await expect(keten).toBeFocused();
     await page.keyboard.press("Space");
     await expect(page).toHaveURL(/ozellik-dokuma-[a-z0-9]+=keten/);
     await sayfaHazir(page);
@@ -257,4 +261,84 @@ test("filtre klavyeyle kullanılır; adres değişir; 1.000 ile 1000 aynı; bozu
   } finally {
     await h.temizle();
   }
+});
+
+test("telefonda filtre penceresi klavyeyle açılır, adı vardır, içinde seçilir, sonuç düğmesiyle kapanır", async ({
+  page,
+}) => {
+  const h = await hazirla();
+  try {
+    await page.setViewportSize({ width: 375, height: 800 });
+    await page.goto(h.adres);
+    await sayfaHazir(page);
+    const dugme = page.getByRole("button", { name: metin("vitrin.liste.filtrele") });
+    await dugme.focus();
+    await page.keyboard.press("Enter");
+    const pencere = page.getByRole("dialog", { name: metin("vitrin.liste.filtrele") });
+    await expect(pencere).toBeVisible();
+    // Odak pencerenin içindedir; Tab'la "M" bedenine gidilir, boşlukla seçilir.
+    const m = pencere.getByRole("checkbox", { name: /^M / });
+    for (let i = 0; i < 20; i += 1) {
+      if (await m.evaluate((oge) => oge === document.activeElement)) break;
+      await page.keyboard.press("Tab");
+    }
+    await expect(m).toBeFocused();
+    await page.keyboard.press("Space");
+    await expect(page).toHaveURL(/secenek-beden=m/);
+    await expect(pencere).toBeVisible();
+    const goster = pencere.getByRole("button", {
+      name: doldur(metin("vitrin.liste.sonuclariGoster"), { sayi: "1" }),
+    });
+    await expect(goster).toBeVisible();
+    await goster.focus();
+    await page.keyboard.press("Enter");
+    await expect(pencere).toHaveCount(0);
+    expect(await kartAdlari(page)).toEqual([h.adlar.tisort]);
+  } finally {
+    await h.temizle();
+  }
+});
+
+// Katalogdaki ürün listesi sayfası iki filtre yerini örnek veriyle gösterir: üstteki şerit bugün hiçbir hazır
+// temada seçili değildir, taraması ve klavyesi burada ölçülür.
+test("katalogda iki filtre yeri iki renkte ve üç genişlikte taramadan geçer; üstteki şerit klavyeyle açılır", async ({
+  page,
+}) => {
+  const adres = `${katalogAdresi}/urun-listesi`;
+  for (const renk of ["acik", "koyu"] as const) {
+    for (const genislik of genislikler) {
+      await page.setViewportSize(genislik);
+      const ne = `${renk}, ${genislik.width}`;
+      const yanit = await page.goto(`${adres}?renk=${renk}`);
+      await sayfaHazir(page);
+      expect(yanit?.status(), ne).toBe(200);
+      for (const yer of ["solda", "ustte"] as const) {
+        await expect(
+          page.getByRole("region", { name: metin(`gelistirme.urunListesi.yer.${yer}`) }),
+        ).toBeVisible();
+      }
+      await yanaKaymaz(page, ne);
+      await tara(page, ne);
+    }
+  }
+  // Üstteki şerit: masaüstünde grup düğmesi Enter ile paneli açar, Tab panele girer, boşluk seçer.
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(adres);
+  await sayfaHazir(page);
+  const ustte = page.getByRole("region", { name: metin("gelistirme.urunListesi.yer.ustte") });
+  const beden = ustte.getByRole("button", { name: metin("gelistirme.urunListesi.beden") });
+  await beden.focus();
+  await page.keyboard.press("Enter");
+  await expect(beden).toHaveAttribute("aria-expanded", "true");
+  const panel = ustte.getByRole("group", { name: metin("gelistirme.urunListesi.beden") });
+  await expect(panel).toBeVisible();
+  await tara(page, "üstteki panel açık");
+  const s = panel.getByRole("checkbox", { name: /^S / });
+  for (let i = 0; i < 10; i += 1) {
+    if (await s.evaluate((oge) => oge === document.activeElement)) break;
+    await page.keyboard.press("Tab");
+  }
+  await expect(s).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect(page).toHaveURL(/secenek-beden=s/);
 });

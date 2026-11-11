@@ -10,6 +10,7 @@ Bölüm: Vitrin. Önce 0141 ve 0116 bitmiş olmalı.
 
 - Ekran sitenin kullanabileceği temaları listeler; her temada "Demoyu gez" bağlantısı, "Bu temayı kullan" düğmesi ve seçili temanın işareti olur. Siteye özel tema yalnız o sitede görünür.
 - Tema değişirken düzenin taşınması ya da korunması seçimi kart 0113'teki gibi sorulur.
+- Masaüstünde ürün listesindeki filtrenin yeri (solda sütun ya da üstte) mağaza sahibinin tema ayarı olarak seçilir; bugün temanın görünümüdür (kart 0136, karar 0105, `planlar/site-ayarlari.md`).
 - "Önceki hâline dön" düğmesi tek adımda geri döner.
 - "Mağaza sahibi temayı değiştirebilir" kapalıysa düğmeler görünmez, nedeni yazar.
 - Yalnız tema izinleri olan rol ekranı görür (`tema.gor`, `tema.degistir`).

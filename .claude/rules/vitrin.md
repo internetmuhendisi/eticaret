@@ -30,6 +30,13 @@ paths:
 - Sekme başlığı ve açıklama yalnız `cekirdek/moduller/gorunurluk/sayfa-bilgisi.ts` ile üretilir. Sayfa başlığını `sayfaBasligi` ile verir ("<sayfa> | <mağaza adı>", tam başlık); başlık vermeyen sayfa mağaza adını alır. Next.js'in `%s` kalıbı kullanılmaz.
 - Vitrin sayfasının iskeleti kütüphanenin parçalarıyla kurulur: `SayfaYolu`, `SayfaBasligi`, `BosHal`, sayfa geçişinde `Sayfalama` ya da `DahaFazla`. Sayfa bunları kendisi yeniden yazmaz.
 
+## Filtreli ürün listesi (karar 0105)
+
+- Kategori, marka, etiket ve arama sayfasının ürün listesi yalnız `filtreliUrunListesi` (`cekirdek/vitrin/urun-listesi/veri.ts`) ile kurulur; kapsam koşulu kategori servisinin `kategoriUrunKosulu`'ndan ya da grup servisinin `urunKosulu`'ndan gelir. Sayfa bunu `KayitListesiSayfasi` ile çizer.
+- Filtre kuralları ve sayılar yalnız `cekirdek/moduller/urun/filtre.ts`'dedir. Fiyat filtresi ve sıralaması kartın fiyatıdır (`fiyatAraliklari`); fiyat SQL'de yeniden hesaplanmaz.
+- Filtre, sıralama ve sayfa adreste durur; adres yalnız `adres.ts` ile okunur ve kurulur. Müşterinin yazdığı tutar biçimleyicinin `paraOku`'suyla okunur.
+- Önerilen sıra ürünün vitrin sırasıdır, yalnız `vitrinSirasiniDegistir` yazar.
+
 ## Bulunamadı ve hata sayfası (karar 0104)
 
 - Vitrinde olmayan adres ve olmayan kayıt `notFound()` ile `app/(vitrin)/not-found.tsx`'e düşer (`BulunamadiSayfasi`); vitrinin hata sınırı `app/(vitrin)/error.tsx`'tir (`HataSayfasi`). İkisi de çerçevenin içindedir. Sayfa kendi "bulunamadı" ekranını yazmaz.

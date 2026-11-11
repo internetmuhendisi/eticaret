@@ -1,5 +1,5 @@
 // Vitrin listelerinin filtre kuralları (kart 0136, karar 0102): bir ürünün seçili filtrelere uyup uymadığı,
-// filtre seçeneklerinin yanındaki sayılar ve fiyat sıralaması. Saf işlevlerdir; veriyi liste-sorgusu.ts okur.
+// filtre seçeneklerinin yanındaki sayılar ve fiyat sıralaması. Saf işlevlerdir; veriyi vitrin/urun-listesi/veri.ts okur.
 //
 // - Bir grubun içindeki seçimler "veya", gruplar arası "ve" ile birleşir (Beden: S veya M, ve Renk: Siyah).
 // - Ürün seçenekleri (beden, renk) aynı birimde aranır: "M" ve "Siyah" seçilince M-Siyah birleşimi olan ürün
@@ -12,6 +12,13 @@
 //   sayısıdır.
 // - Gruplar ve değerler adlarından üretilen okunur anahtarlarla eşleşir (metinler/adres-adi.ts): farklı
 //   ürünlerdeki "Beden" seçenekleri tek gruptur, anahtar adreste durur.
+
+// Anahtarla okuma yalnız nesnenin kendi alanından: anahtar addan üretilir, "Constructor" adlı bir özellik
+// "constructor" anahtarını verir ve düz nesnenin kalıtılmış alanına (Object işlevi) düşmemelidir.
+export const kendiAlani = <T>(
+  nesne: Readonly<Record<string, T>>,
+  anahtar: string,
+): T | undefined => (Object.hasOwn(nesne, anahtar) ? nesne[anahtar] : undefined);
 
 export type FiltreBirimi = {
   stokta: boolean;
@@ -87,7 +94,7 @@ export const filtreyeUyarMi = (
   }
   for (const [anahtar, degerler] of doluSecimler(filtre.ozellikler)) {
     if (ayniGrup(haric, "ozellik", anahtar)) continue;
-    const deger = aday.ozellikler[anahtar];
+    const deger = kendiAlani(aday.ozellikler, anahtar);
     if (deger === undefined || !degerler.includes(deger)) return false;
   }
   const stok = filtre.stoktakiler && !ayniGrup(haric, "stok");
@@ -99,7 +106,7 @@ export const filtreyeUyarMi = (
     (birim) =>
       (!stok || birim.stokta) &&
       secenekler.every(([anahtar, degerler]) => {
-        const deger = birim.degerler[anahtar];
+        const deger = kendiAlani(birim.degerler, anahtar);
         return deger !== undefined && degerler.includes(deger);
       }),
   );

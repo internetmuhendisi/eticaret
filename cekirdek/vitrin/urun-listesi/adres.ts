@@ -12,6 +12,7 @@
 // - sayfa: 1'den büyükse.
 // Tanınmayan parametre yok sayılır. Sıralama ve filtre değişince sayfa başa döner.
 import { type ListeSiralamasi, listeSiralamalari } from "../../kayitlar/liste";
+import { kendiAlani } from "../../moduller/urun/filtre";
 
 export const listeParametreleri = {
   enAz: "en-az",
@@ -124,7 +125,7 @@ const degistir = (
   deger: string,
   secili: boolean,
 ): Record<string, readonly string[]> => {
-  const mevcut = (gruplar[anahtar] ?? []).filter((d) => d !== deger);
+  const mevcut = (kendiAlani(gruplar, anahtar) ?? []).filter((d) => d !== deger);
   const yeni = secili ? [...mevcut, deger] : mevcut;
   const { [anahtar]: _, ...digerleri } = gruplar;
   return yeni.length === 0 ? digerleri : { ...digerleri, [anahtar]: yeni };

@@ -19,6 +19,7 @@ import {
   AkordeonOgesi,
 } from "../../../bilesenler/parcalar/akordeon";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
+import { Etiket } from "../../../bilesenler/parcalar/etiket";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { OnayKutusu } from "../../../bilesenler/parcalar/onay-kutusu";
 import {
@@ -31,6 +32,7 @@ import {
 import { sinif } from "../../../bilesenler/parcalar/sinif";
 import {
   YanPencere,
+  YanPencereBasligi,
   YanPencereIcerigi,
   YanPencereKapat,
   YanPencereTetikleyici,
@@ -62,7 +64,8 @@ export type FiltreGorunumu = {
   durum: ListeDurumu;
   varsayilanSiralama: ListeSiralamasi;
   gruplar: FiltreGrupGorunumu[];
-  fiyat: { ipucu: string; hata?: string };
+  // Hata yalnız okunamayan alanı işaretler (en az, en çok ya da ikisi).
+  fiyat: { ipucu: string; hata?: { metin: string; enAz: boolean; enCok: boolean } };
   // "12 ürünü göster".
   sonucYazisi: string;
   seciliSayisi: number;
@@ -115,7 +118,7 @@ function GrupSecenekleri({
   );
 }
 
-function FiyatAraligi({
+function FiyatAlanlari({
   gorunum,
   git,
 }: {
@@ -127,44 +130,62 @@ function FiyatAraligi({
   const [enAz, enAzYaz] = useState(gorunum.durum.fiyatYazisi.enAz ?? "");
   const [enCok, enCokYaz] = useState(gorunum.durum.fiyatYazisi.enCok ?? "");
   const uygula = () => git({ tur: "fiyat", enAz, enCok });
-  const aciklama = gorunum.fiyat.hata === undefined ? `${kimlik}-ipucu` : `${kimlik}-hata`;
-  const alan = (deger: string, yaz: (d: string) => void, etiket: string) => (
-    <GirisAlani
-      value={deger}
-      onChange={(olay) => yaz(olay.target.value)}
-      onKeyDown={(olay) => {
-        if (olay.key === "Enter") uygula();
-      }}
-      inputMode="decimal"
-      aria-label={etiket}
-      placeholder={etiket}
-      aria-describedby={aciklama}
-      {...(gorunum.fiyat.hata === undefined ? {} : { "aria-invalid": true })}
-    />
+  const { hata } = gorunum.fiyat;
+  const aciklama = hata === undefined ? `${kimlik}-ipucu` : `${kimlik}-hata`;
+  const alan = (ad: "enAz" | "enCok", deger: string, yaz: (d: string) => void, etiket: string) => (
+    <div className="flex min-w-0 flex-1 flex-col gap-1">
+      <Etiket htmlFor={`${kimlik}-${ad}`} className="text-kucuk">
+        {etiket}
+      </Etiket>
+      <GirisAlani
+        id={`${kimlik}-${ad}`}
+        value={deger}
+        onChange={(olay) => yaz(olay.target.value)}
+        onKeyDown={(olay) => {
+          if (olay.key === "Enter") uygula();
+        }}
+        inputMode="decimal"
+        aria-describedby={aciklama}
+        {...(hata?.[ad] === true ? { "aria-invalid": true } : {})}
+      />
+    </div>
   );
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-2">
-        {alan(enAz, enAzYaz, metin("vitrin.liste.enAz"))}
-        <span aria-hidden="true" className="text-soluk-yazi">
+      <div className="flex items-end gap-2">
+        {alan("enAz", enAz, enAzYaz, metin("vitrin.liste.enAz"))}
+        <span aria-hidden="true" className="pb-3 text-soluk-yazi">
           {metin("vitrin.liste.aralikAyirici")}
         </span>
-        {alan(enCok, enCokYaz, metin("vitrin.liste.enCok"))}
+        {alan("enCok", enCok, enCokYaz, metin("vitrin.liste.enCok"))}
       </div>
-      {gorunum.fiyat.hata === undefined ? (
-        <span id={`${kimlik}-ipucu`} className="text-kucuk text-soluk-yazi">
-          {gorunum.fiyat.ipucu}
-        </span>
-      ) : (
-        <span id={`${kimlik}-hata`} className="font-kalin text-tehlike-yazi">
-          {gorunum.fiyat.hata}
-        </span>
-      )}
+      {/* Hata sayfa yeniden kurulunca belirir: canlı bölge ekran okuyucuya söyler. */}
+      <div aria-live="polite">
+        {hata === undefined ? (
+          <span id={`${kimlik}-ipucu`} className="text-kucuk text-soluk-yazi">
+            {gorunum.fiyat.ipucu}
+          </span>
+        ) : (
+          <span id={`${kimlik}-hata`} className="font-kalin text-tehlike-yazi">
+            {hata.metin}
+          </span>
+        )}
+      </div>
       <Dugme tur="cerceveli" onClick={uygula} className="self-start">
         {metin("vitrin.liste.uygula")}
       </Dugme>
     </div>
   );
+}
+
+// Alanlar adresteki fiyatla eşit kalır: adres değişince (etiket kaldırılınca, temizlenince, geri tuşunda)
+// yeniden kurulur, yazılan eski değer kalmaz.
+function FiyatAraligi(ozellikler: {
+  gorunum: FiltreGorunumu;
+  git: (degisiklik: ListeDegisikligi) => void;
+}) {
+  const { enAz, enCok } = ozellikler.gorunum.durum.fiyatYazisi;
+  return <FiyatAlanlari key={`${enAz ?? ""}\u0000${enCok ?? ""}`} {...ozellikler} />;
 }
 
 // Grupların akordeonla dizilişi: sütunda ve yan pencerede. Bütün gruplar açık başlar.
@@ -243,14 +264,15 @@ function Siralama({
 // Masaüstünde solda sütun.
 export function FiltreSutunu({ gorunum }: { gorunum: FiltreGorunumu }) {
   const metin = useMetin();
+  const kimlik = useId();
   const { git, bekliyor } = useListeGezgini(gorunum);
   return (
     <section
-      aria-labelledby="liste-filtreleri"
+      aria-labelledby={`${kimlik}-baslik`}
       aria-busy={bekliyor}
       className="hidden flex-col masaustu:flex"
     >
-      <h2 id="liste-filtreleri" className="sr-only">
+      <h2 id={`${kimlik}-baslik`} className="sr-only">
         {metin("vitrin.liste.filtreler")}
       </h2>
       <AkordeonGruplari gorunum={gorunum} git={git} duzey={3} />
@@ -265,7 +287,15 @@ export function UstFiltre({ gorunum }: { gorunum: FiltreGorunumu }) {
   const { git, bekliyor } = useListeGezgini(gorunum);
   const [acik, ac] = useState<string | undefined>(undefined);
   const gruplar = [
-    { kimlik: "fiyat", ad: metin("vitrin.liste.fiyat"), secili: 0 },
+    {
+      kimlik: "fiyat",
+      ad: metin("vitrin.liste.fiyat"),
+      secili:
+        gorunum.durum.fiyatYazisi.enAz !== undefined ||
+        gorunum.durum.fiyatYazisi.enCok !== undefined
+          ? 1
+          : 0,
+    },
     ...gorunum.gruplar.map((grup) => ({
       kimlik: grup.kimlik,
       ad: grup.ad,
@@ -338,9 +368,7 @@ export function ListeAraclari({ gorunum }: { gorunum: FiltreGorunumu }) {
           aria-describedby={undefined}
           aria-busy={bekliyor}
         >
-          <h2 className="font-baslik font-baslik-kalinligi text-baslik-3">
-            {metin("vitrin.liste.filtrele")}
-          </h2>
+          <YanPencereBasligi>{metin("vitrin.liste.filtrele")}</YanPencereBasligi>
           <AkordeonGruplari gorunum={gorunum} git={git} duzey={3} />
           <div className="sticky -bottom-6 -mx-6 mt-auto flex gap-2 border-t border-kenar bg-zemin px-6 py-4">
             <Dugme tur="sade" onClick={() => git({ tur: "temizle" })}>

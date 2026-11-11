@@ -320,7 +320,7 @@ export const grupServisi = (tanim: GrupTanimi) => {
     ).map(okunan);
 
   // Ürünün bu gruba bağlı olduğu koşul (urunler satırı üzerinde). Silinmiş grubun ürünü sağlamaz. Grubun
-  // ürün listesi ve vitrinin filtreli listesi (urun/liste-sorgusu.ts) aynı koşulu kullanır. Kimlik
+  // ürün listesi ve vitrinin filtreli listesi (vitrin/urun-listesi/veri.ts) aynı koşulu kullanır. Kimlik
   // geçerli olmalıdır (kimlikMi).
   const urunKosulu = (kimlik: string): SQL => sql`exists (
     select 1 from ${baglanti} join ${tablo} on ${tablo.kimlik} = ${baglanti.grup_kimligi}

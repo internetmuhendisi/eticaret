@@ -92,7 +92,10 @@
     "cekirdek/yonetim-paneli/cikis-dugmesi.tsx",
     "cekirdek/yonetim-paneli/kurulum-akisi.tsx"
   ],
-  "bilesenler/parcalar/etiket.tsx": ["bilesenler/form/form-alani.tsx"],
+  "bilesenler/parcalar/etiket.tsx": [
+    "bilesenler/form/form-alani.tsx",
+    "cekirdek/vitrin/urun-listesi/filtreler.tsx"
+  ],
   "bilesenler/parcalar/giris-alani.tsx": [
     "bilesenler/parcalar/secim-kutusu.tsx",
     "cekirdek/moduller/oturum/sifirlama-formlari.tsx",

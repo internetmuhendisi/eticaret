@@ -19,9 +19,14 @@ import { siteninFiyatServisi } from "../../moduller/fiyat/servis.ts";
 import { kategoriEkle, kategoriUrunKosulu } from "../../moduller/kategori/servis.ts";
 import { siteninServisi } from "../../moduller/magaza-ayarlari/servis.ts";
 import { markaServisi } from "../../moduller/marka/servis.ts";
+import {
+  ozellikSecenekleri as ozellikSecenekTablosu,
+  ozellikler as ozellikTablosu,
+} from "../../moduller/ozellik/model.ts";
 import { ozellikServisi } from "../../moduller/ozellik/servis.ts";
 import { stokServisi } from "../../moduller/stok/servis.ts";
 import { bosFiltre, type UrunFiltresi } from "../../moduller/urun/filtre.ts";
+import { urunKilidiAl } from "../../moduller/urun/kilit.ts";
 import { urunler as urunTablosu } from "../../moduller/urun/model.ts";
 import type { UrunGirdisi } from "../../moduller/urun/semalar.ts";
 import { urunServisi } from "../../moduller/urun/servis.ts";
@@ -369,6 +374,18 @@ describe("filtreler", () => {
     const sonra = await h.liste();
     expect(sonra.secenekler.ozellikler.map((g) => g.anahtar)).toEqual(["kumas", "yikanir"]);
     expect(sonra.secenekler.ozellikler[0]?.secenekler.map((s) => s.anahtar)).toEqual(["pamuk"]);
+    // İkinci katman: silme işareti servisi atlayıp doğrudan yazılmış olsa da (değerler ürünlerde kalır)
+    // silinmiş özellik ve seçenek filtrede yoktur.
+    await h.vt
+      .update(ozellikTablosu)
+      .set({ silinme_zamani: new Date() })
+      .where(eq(ozellikTablosu.kimlik, yikanir));
+    await h.vt
+      .update(ozellikSecenekTablosu)
+      .set({ silinme_zamani: new Date() })
+      .where(eq(ozellikSecenekTablosu.kimlik, pamuk ?? ""));
+    const dogrudan = await h.liste();
+    expect(dogrudan.secenekler.ozellikler).toEqual([]);
   });
 
   it("fiyat: kartta görünen fiyat (indirim ve vergi gösterimi), sınırlar dahil, fiyatsız ürün yok", async () => {
@@ -478,6 +495,55 @@ describe("vitrin sırası", () => {
     expect(kayitlar.map((k) => k.kimlik).toSorted()).toEqual(
       [a.urun, b.urun, a.urun, b.urun, c.urun].toSorted(),
     );
+  });
+
+  it("silinmiş ürünün sırası bir sonraki yazımda kalkar", async () => {
+    const h = await hazirla();
+    const [a, b] = [await h.urunAc(), await h.urunAc()];
+    await urunler.vitrinSirasiniDegistir(h.vt, yonetici(), [a.urun, b.urun]);
+    await urunler.urunSil(h.vt, yonetici(), a.urun);
+    await urunler.vitrinSirasiniDegistir(h.vt, yonetici(), [b.urun]);
+    const [satir] = await h.vt
+      .select({ sira: urunTablosu.vitrin_sirasi })
+      .from(urunTablosu)
+      .where(eq(urunTablosu.kimlik, a.urun));
+    expect(satir?.sira).toBeNull();
+  });
+
+  // Sıra kurularak: açık duran bir ürün yazması kilidi tutarken başlayan sıralama bekler; açık işlem kendi
+  // sırasını yazıp bitince sıralama güncel satırları okur ve bütünüyle geçerli olur. Kilit olmasaydı sıralama
+  // önce biter, açık işlemin yazdıkları üstüne kalırdı.
+  it("açık duran ürün yazması bitene kadar bekler, sonra güncel sırayı bütünüyle değiştirir", async () => {
+    const h = await hazirla();
+    const kimlikler: string[] = [];
+    for (let i = 0; i < 4; i += 1) kimlikler.push((await h.urunAc()).urun);
+    const sonraki = [kimlikler[3] ?? "", kimlikler[2] ?? ""];
+    let siralama: Promise<void> | undefined;
+    await h.vt.transaction(async (islem) => {
+      await urunKilidiAl(islem);
+      siralama = urunler.vitrinSirasiniDegistir(h.vt, yonetici(), sonraki);
+      await new Promise((bitti) => setTimeout(bitti, 500));
+      for (const [sira, kimlik] of kimlikler.slice(0, 2).entries()) {
+        await islem
+          .update(urunTablosu)
+          .set({ vitrin_sirasi: sira + 1 })
+          .where(eq(urunTablosu.kimlik, kimlik));
+      }
+    });
+    await siralama;
+    const siralar = Object.fromEntries(
+      (
+        await h.vt
+          .select({ kimlik: urunTablosu.kimlik, sira: urunTablosu.vitrin_sirasi })
+          .from(urunTablosu)
+      ).map(({ kimlik, sira }) => [kimlik, sira]),
+    );
+    expect(siralar).toEqual({
+      [kimlikler[0] ?? ""]: null,
+      [kimlikler[1] ?? ""]: null,
+      [kimlikler[3] ?? ""]: 1,
+      [kimlikler[2] ?? ""]: 2,
+    });
   });
 
   it("tekrar, olmayan, silinmiş ve bozuk kimlik reddedilir, hiçbir şey değişmez", async () => {

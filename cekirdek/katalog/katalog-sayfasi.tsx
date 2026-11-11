@@ -4,11 +4,18 @@
 import type { ReactNode } from "react";
 import { Baglanti } from "../../bilesenler/parcalar/baglanti";
 import { sinif } from "../../bilesenler/parcalar/sinif";
-import { urunKartiGorunumleri } from "../kayitlar/tema";
+import {
+  type UrunFiltresiGorunumu,
+  urunFiltresiGorunumleri,
+  urunKartiGorunumleri,
+} from "../kayitlar/tema";
 import { metin } from "../metinler/site-metni";
 import { bolumGorunumleri } from "../vitrin/bolum-kutuphanesi/gorunumler";
 import { DuzenAlaniCizimi } from "../vitrin/duzen-alani";
+import type { UrunKartiVerisi } from "../vitrin/urun-karti/tur";
 import { UrunKarti, type UrunKartiIslevleri } from "../vitrin/urun-karti/urun-karti";
+import { adrestenDurum } from "../vitrin/urun-listesi/adres";
+import { UrunListesiGorunumu, type UrunListesiVerisi } from "../vitrin/urun-listesi/sayfa";
 import { AltKisim, UstKisim } from "../vitrin/ust-alt-kisim";
 import { BolumFormu } from "../yonetim-paneli/bolum-formu";
 import { denemeGorunumleri } from "./deneme-bolumu/gorunum";
@@ -183,6 +190,9 @@ export function KatalogAnaSayfasi({ secim }: { secim: KatalogSecimi }) {
           </Baglanti>
           <Baglanti href={secimAdresi(urunKartiAdresi, secim)}>
             {metin("gelistirme.urunKarti.baslik")}
+          </Baglanti>
+          <Baglanti href={secimAdresi(urunListesiAdresi, secim)}>
+            {metin("gelistirme.urunListesi.baslik")}
           </Baglanti>
         </>
       }
@@ -477,6 +487,89 @@ export function KatalogUrunKartiSayfasi({ secim }: { secim: KatalogSecimi }) {
           ))}
         </div>
       </section>
+    </KatalogDuzeni>
+  );
+}
+
+// Filtreli ürün listesinin katalog sayfası (kart 0136, karar 0105): iki filtre yeri (solda sütun, üstte şerit)
+// örnek kartlar ve örnek filtrelerle. Seçim adresi değiştirir, liste örnek olduğu için değişmez. Tema ikisinden
+// birini seçer; bu sayfa ikisini de taramaya ve klavyeye açar.
+export const urunListesiAdresi = `${katalogAdresi}/urun-listesi`;
+
+const ornekListeVerisi = (
+  filtreYeri: UrunFiltresiGorunumu,
+  kartlar: UrunKartiVerisi[],
+): UrunListesiVerisi => ({
+  liste: {
+    urunler: kartlar.map((kart) => kart.kimlik),
+    toplam: kartlar.length,
+    kapsamToplami: kartlar.length,
+    sayfa: 1,
+    toplamSayfa: 3,
+    secenekler: {
+      markalar: [
+        { anahtar: "ornek", ad: metin("gelistirme.urunKarti.ornek.marka"), adet: 4, secili: true },
+        {
+          anahtar: "uzun",
+          ad: metin("gelistirme.urunKarti.ornek.uzunMarka"),
+          adet: 0,
+          secili: false,
+        },
+      ],
+      secenekler: [
+        {
+          anahtar: "beden",
+          ad: metin("gelistirme.urunListesi.beden"),
+          secenekler: ["S", "M", "L"].map((ad, sira) => ({
+            anahtar: ad.toLowerCase(),
+            ad,
+            adet: 3 - sira,
+            secili: false,
+          })),
+        },
+      ],
+      ozellikler: [],
+      stoktakiler: { adet: 6, secili: false },
+    },
+  },
+  kartlar,
+  durum: adrestenDurum({ marka: "ornek" }),
+  siralama: "onerilen",
+  varsayilanSiralama: "onerilen",
+  birikimli: false,
+  boyut: 24,
+  filtreYeri,
+  kartGorunumu: "dikey",
+  fiyat: {},
+  markaGrubu: true,
+});
+
+export function KatalogUrunListesiSayfasi({ secim }: { secim: KatalogSecimi }) {
+  const kartlar = ornekUrunKartlari().slice(0, 6);
+  return (
+    <KatalogDuzeni
+      yol={urunListesiAdresi}
+      secim={secim}
+      genis
+      baslik={metin("gelistirme.urunListesi.baslik")}
+      ust={<p>{metin("gelistirme.urunListesi.aciklama")}</p>}
+    >
+      {urunFiltresiGorunumleri.map((filtreYeri) => {
+        const baslik = metin(`gelistirme.urunListesi.yer.${filtreYeri}`);
+        return (
+          <section
+            key={filtreYeri}
+            aria-label={baslik}
+            className="flex flex-col gap-4 border-t border-kenar pt-6"
+          >
+            <h2>{baslik}</h2>
+            <UrunListesiGorunumu
+              veri={ornekListeVerisi(filtreYeri, kartlar)}
+              yol={urunListesiAdresi}
+            />
+          </section>
+        );
+      })}
     </KatalogDuzeni>
   );
 }

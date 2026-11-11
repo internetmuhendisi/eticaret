@@ -69,6 +69,22 @@ describe("adresteki durum", () => {
   });
 });
 
+describe("nesnenin kalıtılmış alanları", () => {
+  it('"constructor" ve "__proto__" grubu çökertmez, kendi alanı olarak okunur ve yazılır', () => {
+    for (const anahtar of ["constructor", "__proto__"]) {
+      const okunan = adrestenDurum({ [`ozellik-${anahtar}`]: "x" });
+      expect(Object.hasOwn(okunan.ozellikler, anahtar)).toBe(true);
+      const bos = adrestenDurum({});
+      const eklenen = durumuDegistir(bos, { tur: "ozellik", anahtar, deger: "x", secili: true });
+      expect(Object.hasOwn(eklenen.ozellikler, anahtar)).toBe(true);
+      expect(
+        durumuDegistir(eklenen, { tur: "ozellik", anahtar, deger: "x", secili: false }).ozellikler,
+      ).toEqual({});
+      expect(durumdanSorgu(eklenen, "onerilen")).toBe(`?ozellik-${anahtar}=x`);
+    }
+  });
+});
+
 describe("değişiklikler", () => {
   const durum = adrestenDurum({ marka: "a", "secenek-beden": "m", sirala: "en-yeni", sayfa: "4" });
 

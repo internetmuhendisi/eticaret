@@ -95,7 +95,7 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
 |---|---|---|---|---|
-| Masaüstünde filtrenin yeri | Mağaza sahibi | Solda sütun | — | Temanın görünüm seçeneğidir, tema ayarlarıyla saklanır. Öteki değer: üstte açılır. Telefonda filtre her zaman yan pencerede (karar 0102, kart 0136) |
+| Masaüstünde filtrenin yeri | Mağaza sahibi | Solda sütun | — | Temanın görünüm seçeneğidir (kart 0136: bugün tema belirler); mağaza sahibinin seçimi tema ekranıyla tema ayarlarına girer (kart 0148). Öteki değer: üstte açılır. Telefonda filtre her zaman yan pencerede (karar 0102, kart 0136) |
 | Sayfa geçişi | Mağaza sahibi | Numaralı | — | Öteki değer: "Daha fazla göster". Kategori, marka, etiket ve arama sayfası (karar 0102, kart 0136) |
 | Sayfa başına ürün | Mağaza sahibi | 24 | — | Karar 0102, kart 0136 |
 | Varsayılan sıralama | Mağaza sahibi | Önerilen | — | Önerilen mağaza sahibinin elle sırasıdır. Seçenekler: önerilen, en yeni, fiyat artan, fiyat azalan (kart 0136) |

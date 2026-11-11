@@ -439,7 +439,7 @@ export const kategorininUrunleri = async (
 };
 
 // Ürünün kategoride (ve istenirse alt ağacında) olduğu koşul (urunler satırı üzerinde). Kategorinin ürün
-// listesi ve vitrinin filtreli listesi (urun/liste-sorgusu.ts) aynı koşulu kullanır. Silinmiş kategori ve
+// listesi ve vitrinin filtreli listesi (vitrin/urun-listesi/veri.ts) aynı koşulu kullanır. Silinmiş kategori ve
 // silinmiş alt kategori sayılmaz. Kimlik geçerli olmalıdır (kimlikMi).
 export const kategoriUrunKosulu = (kimlik: string, altKategoriler: boolean): SQL => sql`exists (
   select 1 from ${urunKategorileri}

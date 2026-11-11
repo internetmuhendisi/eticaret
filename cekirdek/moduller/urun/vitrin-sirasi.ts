@@ -1,7 +1,7 @@
 // Önerilen sıralamanın tek yazıcısı (kart 0136, kullanıcı kararı: tek genel sıra). Mağaza sahibi öne
 // almak istediği ürünleri sırasıyla verir; listedeki ürünler 1'den başlayarak sıralanır, listede olmayan
 // her ürünün sırası kalkar. Vitrin listeleri "önerilen"de önce bu sırayla, sonra sırası olmayanları en yeni
-// önce gösterir (urun/liste-sorgusu.ts). Panelin sıralama ekranı bu işlevi çağırır.
+// önce gösterir (vitrin/urun-listesi/veri.ts). Panelin sıralama ekranı bu işlevi çağırır.
 //
 // - Liste tekrarsızdır; her ürün var olmalı ve silinmemiş olmalı. Ürünün vitrinde görünüp görünmediğine
 //   bakılmaz: taslak ürün de önceden sıralanabilir, yayına girince yerinde görünür.

@@ -1082,6 +1082,15 @@
       "islevBolumleri": "İşleve bağlı bölümler",
       "islevBolumleriAciklamasi": "Kart 0112'nin bölümleri her görünümüyle. Yorum ve blog özelliği, bülten eklentisi gelene kadar vitrinde çizilmezler; yorumlar, yazılar ve tarihler örnektir. Bülten formu burada yalnız doğrular, gönderim adresi eklentiyle gelir."
     },
+    "urunListesi": {
+      "baslik": "Ürün listesi",
+      "aciklama": "Kategori, marka ve etiket sayfasının filtreli listesi. Filtrenin masaüstündeki yeri temanın seçimidir; bu sayfa iki yeri de örnek filtrelerle gösterir. Seçimler adresi değiştirir, örnek liste değişmez. Telefonda filtre her iki yerde de yan pencerede açılır.",
+      "beden": "Beden",
+      "yer": {
+        "solda": "Solda sütun",
+        "ustte": "Üstte şerit"
+      }
+    },
     "urunKarti": {
       "baslik": "Ürün kartı",
       "aciklama": "Ürünün listelerde, vitrin bölümlerinde, aramada ve önerilerde görünen kartı ve fiyatı. Tema kartın görünümünü seçer, bölüm kendi seçimiyle değiştirebilir. Örnekler hiçbir siteye ait değildir.",
