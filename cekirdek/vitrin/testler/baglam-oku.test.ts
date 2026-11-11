@@ -218,14 +218,19 @@ describe("vitrin bağlamı", () => {
       ...site,
       temalar: site.temalar.map((tema) => ({
         ...tema,
-        tanim: { ...tema.tanim, gorunumler: { "urun-karti": "yatay" } },
+        tanim: {
+          ...tema.tanim,
+          gorunumler: { "urun-karti": "yatay", "urun-filtresi": "ustte" },
+        },
       })),
     };
     expect((await vitrinBaglaminiOku(vt, site, [], bolumKutuphanesi)).parcaGorunumleri).toEqual({
       "urun-karti": "dikey",
+      "urun-filtresi": "solda",
     });
     expect((await vitrinBaglaminiOku(vt, yatayli, [], bolumKutuphanesi)).parcaGorunumleri).toEqual({
       "urun-karti": "yatay",
+      "urun-filtresi": "ustte",
     });
   });
 });

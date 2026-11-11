@@ -63,6 +63,56 @@ describe("para", () => {
   });
 });
 
+// Kart 0136: fiyat filtresine yazılan tutar sitenin ayırıcılarıyla okunur.
+describe("para okuma", () => {
+  it("binlikli ve binliksiz yazılış aynı tutardır, ondalık ayırıcı sitenindir", () => {
+    for (const yazi of ["1.000", "1000", " 1000 ", "1.000,00", "1000,0"]) {
+      expect(bicim.paraOku(yazi), yazi).toBe(100000);
+    }
+    expect(bicim.paraOku("1.000,50")).toBe(100050);
+    expect(bicim.paraOku("1000,5")).toBe(100050);
+    expect(bicim.paraOku("0,05")).toBe(5);
+    expect(bicim.paraOku("1.234.567,89")).toBe(123456789);
+    expect(bicim.paraOku("0")).toBe(0);
+  });
+
+  it("bozuk yazılış tutar vermez", () => {
+    for (const yazi of [
+      "",
+      "abc",
+      "1.5",
+      "1.00",
+      "10.00.000",
+      "1.000,505",
+      "1,000.50",
+      "-5",
+      "5 ¤",
+      "1e3",
+      "1 000",
+      ",5",
+      "5,",
+      "99999999999999999999",
+    ]) {
+      expect(bicim.paraOku(yazi), yazi).toBeUndefined();
+    }
+  });
+
+  it("ayırıcıları ve ondalık sayısını ayardan alır", () => {
+    const ingiliz = bicimleyiciOlustur({
+      ...turkiye,
+      sayi: { binlikAyirici: ",", ondalikAyirici: "." },
+    });
+    expect(ingiliz.paraOku("1,000.50")).toBe(100050);
+    expect(ingiliz.paraOku("1.000,50")).toBeUndefined();
+    const ondaliksiz = bicimleyiciOlustur({
+      ...turkiye,
+      para: { ...turkiye.para, ondalikSayisi: 0 },
+    });
+    expect(ondaliksiz.paraOku("1.000")).toBe(1000);
+    expect(ondaliksiz.paraOku("1.000,5")).toBeUndefined();
+  });
+});
+
 describe("para aralığı", () => {
   it("simge bir kez, simgenin yerindeki uçta", () => {
     expect(bicim.paraAraligi(29_990, 32_990, " – ")).toBe("299,90 – 329,90 ¤");

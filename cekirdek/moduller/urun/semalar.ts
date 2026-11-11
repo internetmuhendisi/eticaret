@@ -63,6 +63,9 @@ export const urunHatalari = [
   "ozellik-tekrar",
   "ozellik-gecersiz",
   "ozellik-deger-gecersiz",
+  // Önerilen sıralama (kart 0136): aynı ürün iki kez, olmayan ya da silinmiş ürün.
+  "vitrin-sirasi-tekrar",
+  "vitrin-sirasi-gecersiz",
   "ozellik-secenek-gecersiz",
   // Ürün galerisi (kart 0087, karar 0073): olmayan, silinmiş ya da boyutları eksik görsel; aynı görsel
   // iki kez; öğe sınırı; sıralamada eksik ya da fazla öğe; tanınmayan ya da bu sitede kabul edilmeyen
@@ -122,6 +125,8 @@ export const urunHataMetinleri = {
   "video-adresi-gecersiz": "yonetim.urun.hata.video-adresi-gecersiz",
   "video-sitesi-izinsiz": "yonetim.urun.hata.video-sitesi-izinsiz",
   "birim-gorseli-gecersiz": "yonetim.urun.hata.birim-gorseli-gecersiz",
+  "vitrin-sirasi-tekrar": "yonetim.urun.hata.vitrin-sirasi-tekrar",
+  "vitrin-sirasi-gecersiz": "yonetim.urun.hata.vitrin-sirasi-gecersiz",
 } as const satisfies Record<UrunHatasi, MetinAnahtari>;
 
 const hata = (kod: UrunHatasi) => kod;

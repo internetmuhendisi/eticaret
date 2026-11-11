@@ -78,6 +78,7 @@ import {
   varyantIslemleri,
 } from "./varyant.ts";
 import { type VitrinSecenekleri, vitrinKosulu } from "./vitrin.ts";
+import { vitrinSirasiniDegistir } from "./vitrin-sirasi.ts";
 
 export type UrunBirimi = {
   kimlik: string;
@@ -676,6 +677,7 @@ export const urunServisi = (
     urunSil,
     urunuOku,
     vitrindeGorunurMu,
+    vitrinSirasiniDegistir,
     ...varyantIslemleri(yaz),
     ...galeriIslemleri(yaz, videoSiteleri),
   };

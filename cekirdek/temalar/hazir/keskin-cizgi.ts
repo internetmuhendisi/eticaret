@@ -11,6 +11,6 @@ import { hazirTemaSecenekleri } from "./magaza-secenekleri.ts";
 export const keskinCizgi: TemaTanimiGirdisi = {
   degerler: keskinCizgiDegerleri,
   magazaSecenekleri: hazirTemaSecenekleri,
-  gorunumler: { "urun-karti": "dikey" },
+  gorunumler: { "urun-karti": "dikey", "urun-filtresi": "solda" },
   baslangicDuzeni: hazirTemaBaslangicDuzeni,
 };

@@ -11,6 +11,6 @@ import { hazirTemaSecenekleri } from "./magaza-secenekleri.ts";
 export const yumusakMevsim: TemaTanimiGirdisi = {
   degerler: yumusakMevsimDegerleri,
   magazaSecenekleri: hazirTemaSecenekleri,
-  gorunumler: { "urun-karti": "dikey" },
+  gorunumler: { "urun-karti": "dikey", "urun-filtresi": "solda" },
   baslangicDuzeni: hazirTemaBaslangicDuzeni,
 };

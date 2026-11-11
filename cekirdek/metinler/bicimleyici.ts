@@ -165,6 +165,25 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
       const bosluk = simgeBoslugu ? " " : "";
       return simgeYeri === "basta" ? `${simge}${bosluk}${aralik}` : `${aralik}${bosluk}${simge}`;
     },
+    // Müşterinin yazdığı tutarı en küçük birime çevirir (kart 0136): fiyat filtresi. Sitenin ayırıcılarıyla
+    // binlikli ("1.000", "1.000,50") ya da binliksiz ("1000", "1000,5") yazılış aynı tutardır. Binlik
+    // grupları üçer hanedir, ondalık en çok para biriminin ondalık sayısı kadardır; simge, eksi işareti ve
+    // başka yazılış (örneğin binlik ayırıcıyla "1.5") kabul edilmez: tutar yoktur, ekran hatayı gösterir.
+    paraOku: (yazi: string): number | undefined => {
+      const { binlikAyirici, ondalikAyirici } = ayarlar.sayi;
+      const { ondalikSayisi } = ayarlar.para;
+      const kac = (deger: string) => deger.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const kesir = ondalikSayisi > 0 ? `(?:${kac(ondalikAyirici)}(\\d{1,${ondalikSayisi}}))?` : "";
+      const temiz = yazi.trim();
+      const eslesme =
+        new RegExp(`^(\\d{1,3}(?:${kac(binlikAyirici)}\\d{3})+)${kesir}$`).exec(temiz) ??
+        new RegExp(`^(\\d+)${kesir}$`).exec(temiz);
+      if (eslesme === null) return undefined;
+      const tam = (eslesme[1] ?? "").replaceAll(binlikAyirici, "");
+      const ondalik = (eslesme[2] ?? "").padEnd(ondalikSayisi, "0");
+      const deger = Number(tam) * 10 ** ondalikSayisi + Number(ondalik === "" ? 0 : ondalik);
+      return Number.isSafeInteger(deger) ? deger : undefined;
+    },
     sayi: (deger: number, ondalikSayisi = 0): string =>
       ayiricilariUygula(sayiBicimi(ondalikSayisi), deger),
     // Oran yüz üzerinden verilir (23 → "%23").

@@ -11,6 +11,6 @@ export const canliCarsi: TemaTanimiGirdisi = {
   degerler: varsayilanTemaDegerleri,
   magazaSecenekleri: hazirTemaSecenekleri,
   // Taslaktaki ürün kartı dikeydir (karar 0075).
-  gorunumler: { "urun-karti": "dikey" },
+  gorunumler: { "urun-karti": "dikey", "urun-filtresi": "solda" },
   baslangicDuzeni: hazirTemaBaslangicDuzeni,
 };

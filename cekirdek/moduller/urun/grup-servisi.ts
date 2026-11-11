@@ -9,7 +9,7 @@
 // - Bir ürünün gruba bağlanması ürün servisindedir (urun/servis.ts): aynı anda silinen gruba
 //   bağlanmamak için grup satırını paylaşımlı kilitle okur.
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, ne, type SQL, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type {
@@ -319,6 +319,16 @@ export const grupServisi = (tanim: GrupTanimi) => {
         .orderBy(sql`lower(${tablo.ad})`, asc(tablo.kimlik))
     ).map(okunan);
 
+  // Ürünün bu gruba bağlı olduğu koşul (urunler satırı üzerinde). Silinmiş grubun ürünü sağlamaz. Grubun
+  // ürün listesi ve vitrinin filtreli listesi (urun/liste-sorgusu.ts) aynı koşulu kullanır. Kimlik
+  // geçerli olmalıdır (kimlikMi).
+  const urunKosulu = (kimlik: string): SQL => sql`exists (
+    select 1 from ${baglanti} join ${tablo} on ${tablo.kimlik} = ${baglanti.grup_kimligi}
+    where ${baglanti.urun_kimligi} = ${urunler.kimlik}
+      and ${baglanti.grup_kimligi} = ${kimlik}::uuid
+      and ${tablo.silinme_zamani} is null
+  )`;
+
   // Grubun ürünleri tek sorguyla (liste.ts). Silinmiş grubun ürünü gelmez.
   const urunleri = async (
     vt: Veritabani,
@@ -326,17 +336,8 @@ export const grupServisi = (tanim: GrupTanimi) => {
     secenekler: UrunListesiSecenekleri = {},
   ): Promise<UrunListesi> => {
     if (!kimlikMi(kimlik)) return bosUrunListesi();
-    return urunListesi(
-      vt,
-      sql`exists (
-        select 1 from ${baglanti} join ${tablo} on ${tablo.kimlik} = ${baglanti.grup_kimligi}
-        where ${baglanti.urun_kimligi} = ${urunler.kimlik}
-          and ${baglanti.grup_kimligi} = ${kimlik}::uuid
-          and ${tablo.silinme_zamani} is null
-      )`,
-      secenekler,
-    );
+    return urunListesi(vt, urunKosulu(kimlik), secenekler);
   };
 
-  return { ekle, degistir, sil, oku, hepsiniOku, urunleri, kilidiAl };
+  return { ekle, degistir, sil, oku, hepsiniOku, urunleri, urunKosulu, kilidiAl };
 };

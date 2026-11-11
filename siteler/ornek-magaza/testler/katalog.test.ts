@@ -408,11 +408,12 @@ describe("varyantlı ürünler ve özellikler (kart 0100)", () => {
 
   it("özellikler: dört tür, ürünlerin değerleri; Kumaş: Keten yalnız Keten Masa Örtüsü", async () => {
     const tanimlar = await ozellikServisi.hepsiniOku(vt);
-    expect(tanimlar.map((t) => [t.ad, t.tur, t.birim])).toEqual([
-      ["Kumaş", "liste", undefined],
-      ["Gramaj", "sayi", "g/m²"],
-      ["Makinede yıkanabilir", "evet-hayir", undefined],
-      ["Bakım notu", "metin", undefined],
+    // Yalnız Kumaş vitrin filtresindedir (karar 0102, kart 0136).
+    expect(tanimlar.map((t) => [t.ad, t.tur, t.birim, t.filtrede])).toEqual([
+      ["Kumaş", "liste", undefined, true],
+      ["Gramaj", "sayi", "g/m²", false],
+      ["Makinede yıkanabilir", "evet-hayir", undefined, false],
+      ["Bakım notu", "metin", undefined, false],
     ]);
     const tanim = (ad: string) => tanimlar.find((t) => t.ad === ad);
     const kumas = tanim("Kumaş");

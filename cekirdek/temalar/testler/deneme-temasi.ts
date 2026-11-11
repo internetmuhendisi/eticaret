@@ -27,7 +27,7 @@ export const denemeTemasi = (): TemaTanimiGirdisi & {
     dugmeBicimleri: { kare: "0", hap: "9999px" },
   },
   // Çekirdeğin parça kaydıyla geçer (kart 0109).
-  gorunumler: { "urun-karti": "dikey" },
+  gorunumler: { "urun-karti": "dikey", "urun-filtresi": "solda" },
   baslangicDuzeni: { "ust-kisim": [], "ana-sayfa": [], "alt-kisim": [] },
 });
 

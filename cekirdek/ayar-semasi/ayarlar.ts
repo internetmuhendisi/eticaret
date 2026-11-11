@@ -9,6 +9,7 @@
 import { z } from "zod";
 import { postaAdresiSemasi, telefonSemasi } from "../bolgeler/adres.ts";
 import { ulkeGecerliMi } from "../bolgeler/bolgeler.ts";
+import { listeSayfasi, listeSiralamalari, sayfaGecisleri } from "../kayitlar/liste.ts";
 import { type AyarSahibi, ayarSahibi } from "../kayitlar/site.ts";
 import { sosyalHesapKalibi, sosyalHesapSiniri, sosyalSiteler } from "../kayitlar/sosyal-siteler.ts";
 import { tukenenUrunDavranislari } from "../kayitlar/stok.ts";
@@ -278,6 +279,19 @@ export const magazaAyarSemasi = z.strictObject({
   tukenenUrun: ayar(
     z.enum(tukenenUrunDavranislari).default("goster"),
     magazaSahibinin("ayar.aciklama.tukenenUrun"),
+  ),
+  // Vitrindeki ürün listeleri (kart 0136, karar 0102): kategori, marka, etiket ve arama sayfası.
+  listeSiralamasi: ayar(
+    z.enum(listeSiralamalari).default("onerilen"),
+    magazaSahibinin("ayar.aciklama.listeSiralamasi"),
+  ),
+  listeSayfaGecisi: ayar(
+    z.enum(sayfaGecisleri).default("numarali"),
+    magazaSahibinin("ayar.aciklama.listeSayfaGecisi"),
+  ),
+  listeSayfaBoyutu: ayar(
+    z.int().min(1).max(listeSayfasi.enCokBoyut).default(listeSayfasi.varsayilanBoyut),
+    magazaSahibinin("ayar.aciklama.listeSayfaBoyutu"),
   ),
   // Düşük stok eşiği: stok bu sayıya eşit ya da altındaysa (ve sıfırdan büyükse) düşük stoktadır. Ürünün
   // kendi eşiği varsa o geçerlidir. 0 düşük stok uyarısını kapatır.

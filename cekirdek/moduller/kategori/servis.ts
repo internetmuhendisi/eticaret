@@ -12,7 +12,7 @@
 //
 // İzin kapıda denetlenir (izinler.ts); servis yalnız kimin yaptığını kayda yazar.
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, inArray, isNull, max, ne, notInArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, max, ne, notInArray, type SQL, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
@@ -435,23 +435,24 @@ export const kategorininUrunleri = async (
   { altKategoriler = false, ...secenekler }: KategoriUrunleriSecenekleri = {},
 ): Promise<UrunListesi> => {
   if (!kimlikMi(kimlik)) return bosUrunListesi();
-  return urunListesi(
-    vt,
-    sql`exists (
-      select 1 from ${urunKategorileri}
-      where ${urunKategorileri.urun_kimligi} = ${urunler.kimlik}
-        and ${urunKategorileri.kategori_kimligi} in (
-          with recursive agac(kimlik) as (
-            select ${kategoriler.kimlik} from ${kategoriler}
-              where ${kategoriler.kimlik} = ${kimlik}::uuid and ${kategoriler.silinme_zamani} is null
-            union
-            select ${kategoriler.kimlik} from ${kategoriler}
-              join agac on ${kategoriler.ust_kimligi} = agac.kimlik
-              where ${altKategoriler} and ${kategoriler.silinme_zamani} is null
-          )
-          select kimlik from agac
-        )
-    )`,
-    secenekler,
-  );
+  return urunListesi(vt, kategoriUrunKosulu(kimlik, altKategoriler), secenekler);
 };
+
+// Ürünün kategoride (ve istenirse alt ağacında) olduğu koşul (urunler satırı üzerinde). Kategorinin ürün
+// listesi ve vitrinin filtreli listesi (urun/liste-sorgusu.ts) aynı koşulu kullanır. Silinmiş kategori ve
+// silinmiş alt kategori sayılmaz. Kimlik geçerli olmalıdır (kimlikMi).
+export const kategoriUrunKosulu = (kimlik: string, altKategoriler: boolean): SQL => sql`exists (
+  select 1 from ${urunKategorileri}
+  where ${urunKategorileri.urun_kimligi} = ${urunler.kimlik}
+    and ${urunKategorileri.kategori_kimligi} in (
+      with recursive agac(kimlik) as (
+        select ${kategoriler.kimlik} from ${kategoriler}
+          where ${kategoriler.kimlik} = ${kimlik}::uuid and ${kategoriler.silinme_zamani} is null
+        union
+        select ${kategoriler.kimlik} from ${kategoriler}
+          join agac on ${kategoriler.ust_kimligi} = agac.kimlik
+          where ${altKategoriler} and ${kategoriler.silinme_zamani} is null
+      )
+      select kimlik from agac
+    )
+)`;

@@ -50,7 +50,7 @@ Katalog biçimi karar 0074'tedir. Her durumu `testler/katalog.test.ts` dener.
 | Makinede yıkanabilir | Evet/hayır | Evet | Evet | Evet |
 | Bakım notu | Metin | 30 derecede ters yıkayın | Pamuk ve polyester karışımıdır. Kurutma makinesine atmayın. | — |
 
-Kumaş tek seçimlidir (kullanıcı kararı): sweatshirtin karışımı bakım notunda yazar.
+Kumaş tek seçimlidir (kullanıcı kararı): sweatshirtin karışımı bakım notunda yazar. Kumaş vitrin filtresinde kullanılır (karar 0102, kart 0136); öteki özellikler filtrede değildir.
 
 ## Görseller ve video (kart 0087)
 

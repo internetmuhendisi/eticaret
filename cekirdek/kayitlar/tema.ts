@@ -16,8 +16,16 @@ export type DuzenAlani = (typeof duzenAlanlari)[number];
 export const urunKartiGorunumleri = ["dikey", "yatay", "buyuk-gorsel"] as const;
 export type UrunKartiGorunumu = (typeof urunKartiGorunumleri)[number];
 
+// Ürün listesindeki filtrenin yeri (kart 0136, karar 0102), masaüstünde. Telefonda filtre her zaman yan
+// pencerede açılır.
+// - solda: filtreler listenin solunda, açık duran bir sütun.
+// - ustte: filtreler listenin üstünde, her grup kendi düğmesiyle açılır.
+export const urunFiltresiGorunumleri = ["solda", "ustte"] as const;
+export type UrunFiltresiGorunumu = (typeof urunFiltresiGorunumleri)[number];
+
 // Parçaların temanın seçtiği görünüm tipleri: parçanın kodu ve görünümlerinin kodları. Tema listedeki
 // her parça için bir görünüm seçer. İlk parça ürün kartıdır (kart 0109).
 export const parcaGorunumleri: Readonly<Record<string, readonly string[]>> = {
   "urun-karti": urunKartiGorunumleri,
+  "urun-filtresi": urunFiltresiGorunumleri,
 };

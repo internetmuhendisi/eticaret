@@ -152,7 +152,7 @@
     },
     "dugmeBicimleri": {}
   },
-  "gorunumler": { "urun-karti": "dikey" },
+  "gorunumler": { "urun-karti": "dikey", "urun-filtresi": "solda" },
   "baslangicDuzeni": {
     "ust-kisim": [],
     "ana-sayfa": [],

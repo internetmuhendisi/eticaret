@@ -46,6 +46,7 @@
     {
       "ad": "Kumaş",
       "tur": "liste",
+      "filtrede": true,
       "secenekler": ["Pamuk", "Polyester", "Keten"]
     },
     {

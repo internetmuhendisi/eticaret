@@ -232,6 +232,13 @@
       "when": 1794411505186,
       "tag": "0032_eski-adres-silme",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794431385742,
+      "tag": "0033_urun-vitrin-sirasi",
+      "breakpoints": true
     }
   ]
 }

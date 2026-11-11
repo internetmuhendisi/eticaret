@@ -59,6 +59,10 @@ export const urunler = pgTable(
     en_cok_adet: integer(),
     // Boşsa ürün vergisizdir. Silinmiş sınıf da bağlı kalabilir (karar 0060).
     vergi_sinifi_kimligi: uuid().references(() => vergiSiniflari.kimlik, { onDelete: "restrict" }),
+    // Mağaza sahibinin elle sırası (kart 0136, kullanıcı kararı: tek genel sıra): vitrin listelerinin
+    // "önerilen" sıralaması. 1'den başlar; boşsa ürün sıralanmamıştır, sıralananlardan sonra en yeni önce
+    // gelir. Yalnız urunServisi.vitrinSirasiniDegistir yazar.
+    vitrin_sirasi: integer(),
     olusturma_zamani: zaman().notNull().defaultNow(),
     guncellenme_zamani: zaman().notNull().defaultNow(),
     silinme_zamani: zaman(),
@@ -68,6 +72,14 @@ export const urunler = pgTable(
       .on(tablo.adres_adi)
       .where(sql`${tablo.silinme_zamani} is null`),
     index("urunler_vergi_sinifi").on(tablo.vergi_sinifi_kimligi),
+    // Önerilen sıralama (kart 0136): elle sıralanmış ürünler; sıra pozitiftir.
+    index("urunler_vitrin_sirasi")
+      .on(tablo.vitrin_sirasi)
+      .where(sql`${tablo.vitrin_sirasi} is not null`),
+    check(
+      "urunler_vitrin_sirasi",
+      sql`${tablo.vitrin_sirasi} is null or ${tablo.vitrin_sirasi} > 0`,
+    ),
     check(
       "urunler_durum",
       sql`${tablo.durum} in ('taslak', 'yayinda', 'zamanlanmis', 'gizli', 'arsiv')`,
