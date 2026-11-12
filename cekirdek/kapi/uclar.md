@@ -233,6 +233,26 @@ Müşterinin kendi hesabını döner. Vitrin oturumu buradan sorar: sayfa çizer
 - Başarılı (200): `{ "basarili": true, "veri": { "eposta": "..." } }`, gerekirse yenilenen oturum çerezleri.
 - Hatalar: `oturum-yok`.
 
+### GET /kapi/musteri/yorum-izni
+
+Müşteri bu ürüne yorum yazabilir mi (kart 0139, karar 0109). Ürün sayfasındaki "Yorum yaz" düğmesi formu açmadan önce sorar: sayfa çizilirken müşterinin oturumu okunamaz.
+
+- İzin: `yorum.kendi.yaz`. Sınır: `genel`.
+- Girdi: adres parametresi `urun` (ürünün kimliği; `yorumIzniSemasi`, `cekirdek/moduller/yorum/semalar.ts`). Müşterinin kimliği yalnız kapıdan gelir.
+- Servis: `cekirdek/moduller/yorum/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "izin": "yazabilir" | "satin-alma-gerekli" | "yorum-yazildi" } }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `bulunamadi` (`urun-yok`: ürün yok ya da sayfası açılmıyor).
+
+### POST /kapi/musteri/yorum
+
+Müşterinin ürüne yorumu (kart 0139, karar 0109). Yorum onay bekler; mağaza onaylayınca yayınlanır. Görünen ad kayda kısaltılmış girer ("Ayşe Y."). Bir müşteri bir ürüne bir yorum yazar.
+
+- İzin: `yorum.kendi.yaz`. Sınır: `siki`.
+- Girdi: `{ "urun", "puan", "baslik"?, "metin", "ad", "robotCevabi" }` (`yorumGirdisi`). Müşterinin kimliği yalnız kapıdan gelir.
+- Servis: `cekirdek/moduller/yorum/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama` (şemaya uymayan girdi; `metin-gecersiz`), `robot-dogrulamasi`, `oturum-yok`, `bulunamadi` (`urun-yok`), `is-kurali` (`satin-alma-gerekli`: "Yalnız satın alanlar yorum yapabilir" açık ve müşteri ürünü satın almamış), `cakisma` (`yorum-yazildi`: müşterinin bu ürüne yorumu var), `istek-siniri`.
+
 ## Yönetici
 
 Yönetici uçları iki aşamalı girişten geçmiş oturum ister. Girişsiz istek `oturum-yok`, izni olmayan rol `yetki` alır.
@@ -265,3 +285,33 @@ Temayı ve ayarlarını yeni sürüm olarak yayınlar (karar 0080). Tema kodu de
 - Servis: `cekirdek/moduller/tema/servis.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "sira", "tema", "ayarlar", "geriDonulenSira" } }`.
 - Hatalar: `dogrulama` (`surum-gecersiz`: olmayan, son ya da bozuk sıra), `is-kurali` (`tema-degistirilemez`; `surum-kullanilamaz`: teması bugün kullanılamayan ya da bugünkü kurallardan geçmeyen sürüm), `yetki`, `hizmet-kullanilamiyor` (`katalog-bekleniyor`: sitenin başlangıç düzeni kataloğa başvuruyor ve katalog henüz kurulmadı; kart 0114).
+
+### GET /kapi/yonetici/yorumlar
+
+Ürün yorumları, onay bekleyen ve reddedilenler dahil, en yeni önce (kart 0139). Panelin yorum ekranı on dördüncü bölümde gelir.
+
+- İzin: `yorum.gor`. Sınır: `genel`.
+- Girdi: adres parametreleri `durum`? (`onay-bekliyor`, `yayinda`, `reddedildi`) ve `sayfa`? (`yorumListesiSemasi`). Bir sayfa en çok 50 yorumdur.
+- Servis: `cekirdek/moduller/yorum/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "toplam", "yorumlar": [{ "kimlik", "puan", "baslik"?, "metin", "ad", "dogrulanmisAlici", "zaman", "durum", "anaSayfada", "urun", "urunAdi" }] } }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/yorum-karari
+
+Yorumu yayınlar ya da reddeder (kart 0139). Yayındaki yorum reddedilebilir, reddedilen yayınlanabilir; onay bekliyor durumuna dönülmez. Aynı durum yazılmaz, değişiklik kaydına girmez.
+
+- İzin: `yorum.onayla`. Sınır: `genel`.
+- Girdi: `{ "yorum", "durum": "yayinda" | "reddedildi" }` (`yorumKarariSemasi`).
+- Servis: `cekirdek/moduller/yorum/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`, `bulunamadi` (`yorum-yok`).
+
+### POST /kapi/yonetici/yorum-ana-sayfa
+
+Yorumun ana sayfanın müşteri yorumları bölümünde ("işaretlenenler" kaynağı, karar 0090) gösterilmesini işaretler ya da kaldırır. Yalnız yayındaki yorum ana sayfada görünür.
+
+- İzin: `yorum.onayla`. Sınır: `genel`.
+- Girdi: `{ "yorum", "anaSayfada" }` (`yorumAnaSayfaSemasi`).
+- Servis: `cekirdek/moduller/yorum/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`, `bulunamadi` (`yorum-yok`).

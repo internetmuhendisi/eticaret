@@ -16,6 +16,7 @@ import {
   kategorileriOku,
   kategorininUrunleri,
 } from "../../../cekirdek/moduller/kategori/servis.ts";
+import { siteninMagazaAyarlari } from "../../../cekirdek/moduller/magaza-ayarlari/servis.ts";
 import { markaServisi } from "../../../cekirdek/moduller/marka/servis.ts";
 import { ozellikServisi } from "../../../cekirdek/moduller/ozellik/servis.ts";
 import { siteninStokDurumlari, urunStokDurumu } from "../../../cekirdek/moduller/stok/durum.ts";
@@ -26,6 +27,8 @@ import { urunler } from "../../../cekirdek/moduller/urun/model.ts";
 import { siteninUrunServisi, type Urun } from "../../../cekirdek/moduller/urun/servis.ts";
 import type { VitrinSecenekleri } from "../../../cekirdek/moduller/urun/vitrin.ts";
 import { siteninVergiServisi } from "../../../cekirdek/moduller/vergi/servis.ts";
+import { yorumlar } from "../../../cekirdek/moduller/yorum/model.ts";
+import { anaSayfaYorumlari, puanOzetleri } from "../../../cekirdek/moduller/yorum/servis.ts";
 import type { Veritabani } from "../../../cekirdek/veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../cekirdek/veritabani/testler/deneme-sitesi.ts";
 
@@ -589,5 +592,47 @@ describe("yeni ürünler (kart 0115)", () => {
       ).toBe("hazir");
     }
     expect(new Set(kategoriler.map((k) => k.gorsel)).size).toBe(5);
+  });
+});
+
+describe("yorumlar (kart 0139)", () => {
+  it("örnek yorumlar yayında, müşterisiz, doğrulanmış alıcı değil; ortalamalar KURALLAR.md'deki gibi", async () => {
+    const ozetler = await puanOzetleri(
+      vt,
+      [...urunlerim.values()].map((u) => u.kimlik),
+    );
+    const ozet = (adresAdi: string) => ozetler.get(urun(adresAdi).kimlik);
+    expect(ozet("basic-tisort")).toMatchObject({ sayi: 3, dagilim: [2, 1, 0, 0, 0] });
+    expect(ozet("basic-tisort")?.ortalama).toBeCloseTo(14 / 3);
+    expect(ozet("kablosuz-kulaklik")).toMatchObject({ sayi: 2, ortalama: 3.5 });
+    expect(ozet("kosu-ayakkabisi")).toMatchObject({ sayi: 2, ortalama: 4.5 });
+    for (const [adresAdi, puan] of [
+      ["keten-gomlek", 5],
+      ["celik-termos-750-ml", 5],
+      ["kokulu-mum", 4],
+      ["yoga-mati-6-mm", 5],
+    ] as const) {
+      expect(ozet(adresAdi)).toMatchObject({ sayi: 1, ortalama: puan });
+    }
+    expect(ozetler.size).toBe(7);
+    const satirlar = await vt.select().from(yorumlar);
+    expect(satirlar).toHaveLength(11);
+    expect(
+      satirlar.every(
+        (s) => s.durum === "yayinda" && s.musteri_kimligi === null && !s.dogrulanmis_alici,
+      ),
+    ).toBe(true);
+    // Ad kısaltılmış: soyadı yalnız baş harf.
+    expect(satirlar.map((s) => s.ad)).toContain("Elif K.");
+    expect(satirlar.every((s) => /^\S+ \p{Lu}\.$/u.test(s.ad))).toBe(true);
+  });
+
+  it("ana sayfada gösterilenler: Basic Tişört, Kablosuz Kulaklık ve Koşu Ayakkabısı'nın ilk yorumu", async () => {
+    const ana = await anaSayfaYorumlari(vt, { isaretlenenler: true, adet: 10, an: kasim });
+    expect(ana.map((y) => y.ad).toSorted()).toEqual(["Burak D.", "Can Ö.", "Elif K."]);
+  });
+
+  it("yalnız satın alanlar yorum yapabilir bu sitede kapalı", async () => {
+    expect((await siteninMagazaAyarlari(vt, site)).yorumYalnizSatinAlanlar).toBe(false);
   });
 });

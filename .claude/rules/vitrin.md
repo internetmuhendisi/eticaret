@@ -64,6 +64,13 @@ paths:
 - Uzun açıklama yalnız `aciklamayiTemizle` ile temizlenmiş olarak ve `bicimli-metin` stiliyle çizilir.
 - Galeri ürün görseli ucundan boyutlarıyla çizilir; video yalnız oynata basınca yüklenir.
 
+## Ürün yorumları (karar 0109)
+
+- Yorum yalnız `cekirdek/moduller/yorum/servis.ts` ile yazılır ve okunur. Yalnız yayındaki yorum görünür ve ortalamaya girer: ürün sayfası, ürün kartının puanı ve ana sayfa bölümü `puanOzetleri`, `urunYorumlari` ve `anaSayfaYorumlari`'nı kullanır; yorum ya da puan başka yerde sayılmaz.
+- Satın alma denetimi yalnız `satinAldiMi`'dır (`cekirdek/moduller/yorum/satin-alma.ts`). Sipariş modülü onu siparişlere bağlar.
+- Yorum metni düz metindir, yazı olarak çizilir (HTML olarak çizilmez). Görünen ad kısaltılmış saklanır (`kisaAd`).
+- Sayfa çizilirken müşterinin oturumu okunmaz: yazma izni "Yorum yaz" basılınca müşteri ucundan sorulur. Girişe giden müşteri `girisAdresiDonuslu` ile, yalnız vitrinin kendi sayfasına döner (`vitrinDonusu`).
+
 ## Ana sayfa bölümleri ve görseller (karar 0087)
 
 - Ana sayfa düzenin ana sayfa alanını çizer; bölüm yoksa sade sayfa görünür. Bölümün başlığı h2'dir, sayfanın h1'i mağaza adıdır.

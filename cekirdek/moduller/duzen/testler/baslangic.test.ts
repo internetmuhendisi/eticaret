@@ -164,6 +164,8 @@ describe("adres adıyla başvuran başlangıç düzeni", () => {
       "urun-vitrini",
       "urun-vitrini",
       "sekmeli-vitrin",
+      // Yorum işlevi kart 0139'da yazıldı.
+      "musteri-yorumlari",
     ]);
     expect(await surumSayisi(vt)).toBe(1);
   });

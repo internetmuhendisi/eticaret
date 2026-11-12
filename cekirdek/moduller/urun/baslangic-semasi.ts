@@ -33,7 +33,12 @@ import { fiyatAlanKurallari, fiyatGirdisi } from "../fiyat/semalar.ts";
 import { kategoriGirdisi } from "../kategori/semalar.ts";
 import { degerSemalari, ozellikAlanKurallari, ozellikGirdisi } from "../ozellik/semalar.ts";
 import { enCokStok } from "../stok/semalar.ts";
+import { yorumFormuSemasi } from "../yorum/semalar.ts";
 import { grupGirdisi } from "./grup-semalari.ts";
+
+// Başlangıç kataloğunda bir ürünün en çok örnek yorumu.
+const baslangicYorumSiniri = 20;
+
 import {
   birimAlanAdlari,
   birlesimGirdisi,
@@ -163,6 +168,14 @@ const urun = urunGirdisi
     ozellikler: z.array(ozellikDegeri).max(ozellikSinirlari.ozellik).default([]),
     secenekler: z.array(secenek).max(varyantSinirlari.secenek).default([]),
     birlesimler: z.array(birlesim).max(varyantSinirlari.birlesim).default([]),
+    // Örnek yorumlar (kart 0139): yayında, müşterisiz ve doğrulanmış alıcı değil; ad kısaltılır. anaSayfada:
+    // ana sayfanın "işaretlenenler" kaynağı.
+    yorumlar: z
+      .array(
+        yorumFormuSemasi.omit({ urun: true }).extend({ anaSayfada: z.boolean().default(false) }),
+      )
+      .max(baslangicYorumSiniri)
+      .default([]),
   });
 
 // Aynı listede adres adı bir kez geçer.

@@ -96,6 +96,23 @@ export const paraSimgesi = (dil: string, paraBirimi: string): string =>
     .formatToParts(0)
     .find((parca) => parca.type === "currency")?.value ?? paraBirimi;
 
+// Görünen ad (kart 0139, kullanıcı kararı): ad korunur, soyadı verilen dilde büyük baş harfine kısaltılır.
+// "Ayşe Yılmaz" → "Ayşe Y.", "Ali Can demir" → "Ali Can D.". Tek sözcük olduğu gibi kalır, fazla boşluk düşer.
+// Harf kod noktasıyla alınır: birleşik harf ve emoji bölünmez. Yorum servisi bunu doğrudan kullanır (arka plan
+// süreci sitenin biçimleyicisini yüklemez).
+// Harf taşımayan sözcük ("1", ".") atılır; soyadın baş harfi onun ilk harfidir.
+export const kisaAd = (adSoyad: string, dil: string): string => {
+  const sozcukler = adSoyad
+    .normalize("NFC")
+    .trim()
+    .split(/\s+/u)
+    .filter((s) => /\p{L}/u.test(s));
+  const soyad = sozcukler.at(-1);
+  if (sozcukler.length < 2 || soyad === undefined) return sozcukler.join(" ");
+  const harf = Array.from(soyad).find((h) => /\p{L}/u.test(h)) ?? "";
+  return `${sozcukler.slice(0, -1).join(" ")} ${harf.toLocaleUpperCase(dil)}.`;
+};
+
 export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
   const sayiBicimi = (ondalikSayisi: number) =>
     new Intl.NumberFormat(ayarlar.dil, {
@@ -191,6 +208,7 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
       const deger = Number(tam) * 10 ** ondalikSayisi + Number(ondalik === "" ? 0 : ondalik);
       return Number.isSafeInteger(deger) ? deger : undefined;
     },
+    kisaAd: (adSoyad: string): string => kisaAd(adSoyad, ayarlar.dil),
     sayi: (deger: number, ondalikSayisi = 0): string =>
       ayiricilariUygula(sayiBicimi(ondalikSayisi), deger),
     // Oran yüz üzerinden verilir (23 → "%23").

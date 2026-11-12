@@ -107,8 +107,8 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
 |---|---|---|---|---|
-| Yalnız satın alanlar yorum yapabilir | Mağaza sahibi | Açık | — | |
-| Doğrulanmış alıcı etiketi | Mağaza sahibi | Açık | — | |
+| Yalnız satın alanlar yorum yapabilir | Mağaza sahibi | Açık | Kapalı | `yorumYalnizSatinAlanlar`. Satın alma denetimi sipariş modülüyle gelir; o güne kadar açıkken kimse yorum yazamaz. Kapalıyken giriş yapmış her müşteri yazar. Yorumlar her durumda onaydan sonra yayınlanır (karar 0101, 0109, kart 0139) |
+| Doğrulanmış alıcı etiketi | Mağaza sahibi | Açık | — | `dogrulanmisAliciEtiketi`. Etiket yorum yazıldığı anda ürünü satın almış müşterinin yorumunda görünür; Örnek Mağaza'nın örnek yorumlarında yoktur (kart 0139, kullanıcı kararı) |
 
 ## E-posta
 

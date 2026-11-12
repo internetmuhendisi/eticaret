@@ -84,6 +84,19 @@ Her durumu `testler/katalog.test.ts` dener. Fiyatlar KDV dahildir.
 
 Her kategorinin görseli vardır.
 
+## Yorumlar (kart 0139)
+
+Örnek yorumlar `baslangic/katalog.json` dosyasında ürünlerin `yorumlar` alanındadır ve katalogla birlikte bir kez yüklenir: yayında, müşterisiz, doğrulanmış alıcı değil (kullanıcı kararı: etiket demoda da yanıltıcı olur). Adlar uydurmadır, vitrinde soyadı kısaltılır ("Elif K."). "Yalnız satın alanlar yorum yapabilir" bu sitede kapalıdır: giriş yapmış her müşteri yorum yazar, yorum onaydan sonra yayınlanır (karar 0101). Her durumu `testler/katalog.test.ts` gerçek veritabanıyla dener.
+
+| Durum | Ürün | Nasıl |
+|---|---|---|
+| Üç yorum, ortalama 4,7 | Basic Tişört | 5, 4, 5 |
+| İki yorum | Kablosuz Kulaklık, Koşu Ayakkabısı | 4 ve 3; 5 ve 4 |
+| Tek yorum | Keten Gömlek, Çelik Termos 750 ml, Kokulu Mum, Yoga Matı 6 mm | 5, 5, 4, 5 |
+| Başlıksız yorum | Basic Tişört, Kablosuz Kulaklık, Koşu Ayakkabısı, Çelik Termos 750 ml, Yoga Matı 6 mm | Yalnız metin |
+| Ana sayfada gösterilen | Basic Tişört, Kablosuz Kulaklık, Koşu Ayakkabısı | Her birinin ilk yorumu; ana sayfanın "Müşterilerimiz ne diyor" bölümü bunları gösterir |
+| Yorumsuz ürün | Öteki ürünler | Ürün sayfasında "İlk yorumu siz yazın", kartta beş boş yıldız |
+
 ## Menüler (kart 0107)
 
 Menüler `baslangic/menuler.json` dosyasındadır. Arka plan süreci açılırken, katalogdan sonra, sitede hiç menü yoksa bir kez yüklenir. Her durumu `testler/menuler.test.ts` gerçek veritabanıyla dener; zaman testte sabit verilir.

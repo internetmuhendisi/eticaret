@@ -95,6 +95,12 @@ export const degisiklikIslemleri = [
   "menu-ogesi.degisti",
   "menu-ogesi.silindi",
   "menu-ogesi.siralandi",
+  // Ürün yorumu (kart 0139): müşteri yazdı (başlangıç kataloğunun örnek yorumu da), mağaza yayınladı ya da
+  // reddetti, ana sayfa işareti değişti. Metin ve ad kayda girmez: müşterinin yazdığı serbest metin kişisel
+  // bilgi taşıyabilir.
+  "yorum.yazildi",
+  "yorum.durum-degisti",
+  "yorum.ana-sayfa",
 ] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 
@@ -128,6 +134,8 @@ export const degisiklikKayitTurleri = [
   // Kart 0107: menü ve menü öğesi.
   "menu",
   "menu-ogesi",
+  // Kart 0139: ürün yorumu.
+  "yorum",
 ] as const;
 export type DegisiklikKayitTuru = (typeof degisiklikKayitTurleri)[number];
 

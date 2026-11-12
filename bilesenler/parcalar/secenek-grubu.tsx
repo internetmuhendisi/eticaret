@@ -20,6 +20,7 @@ export function SecenekGrubu({
   onDegerDegisti,
   secilemezEki,
   aciklama,
+  hata,
   className,
 }: {
   // Grubun görünen başlığı, örneğin "Beden: M".
@@ -34,10 +35,17 @@ export function SecenekGrubu({
   secilemezEki: string;
   // Grubun altındaki açıklama, örneğin "Üstü çizili bedenler bu renkte tükendi."
   aciklama?: string;
+  // Grubun hatası (kart 0139: seçim yapılmadan gönderilen form). Grup geçersiz işaretlenir, yazı ona bağlanır.
+  hata?: string;
   className?: string;
 }) {
   const id = useId();
   const aciklamaKimligi = `${id}-aciklama`;
+  const hataKimligi = `${id}-hata`;
+  const bagli = [
+    ...(aciklama === undefined ? [] : [aciklamaKimligi]),
+    ...(hata === undefined ? [] : [hataKimligi]),
+  ].join(" ");
   return (
     <fieldset
       data-slot="secenek-grubu"
@@ -46,7 +54,8 @@ export function SecenekGrubu({
       <legend className="mb-2 p-0 text-govde">{baslik}</legend>
       <RadioGroup.Root
         aria-label={etiket}
-        {...(aciklama === undefined ? {} : { "aria-describedby": aciklamaKimligi })}
+        {...(bagli === "" ? {} : { "aria-describedby": bagli })}
+        {...(hata === undefined ? {} : { "aria-invalid": true })}
         value={deger ?? ""}
         onValueChange={(yeni) => {
           if (ogeler.find((oge) => oge.deger === yeni)?.secilemez !== true) onDegerDegisti(yeni);
@@ -68,6 +77,11 @@ export function SecenekGrubu({
       {aciklama === undefined ? null : (
         <span id={aciklamaKimligi} className="text-kucuk text-soluk-yazi">
           {aciklama}
+        </span>
+      )}
+      {hata === undefined ? null : (
+        <span id={hataKimligi} className="font-kalin text-tehlike-yazi">
+          {hata}
         </span>
       )}
     </fieldset>

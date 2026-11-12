@@ -30,6 +30,9 @@ export const baslangicRolleri = {
       // Ürün özelliğini görür, ekler ve değiştirir, silemez (kart 0086, kullanıcı kararı).
       "ozellik.gor",
       "ozellik.degistir",
+      // Yorumları görür, onaylar ya da reddeder ve ana sayfa için işaretler (kart 0139, kullanıcı kararı).
+      "yorum.gor",
+      "yorum.onayla",
     ],
   },
 } as const satisfies Record<

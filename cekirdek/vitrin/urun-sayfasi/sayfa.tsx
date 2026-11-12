@@ -43,6 +43,7 @@ import {
   kayitSayfasininBilgisi,
   type SorguParametreleri,
   sayfaninKaydi,
+  sorguMetni,
 } from "../kayit-sayfasi";
 import { FiyatGosterimi } from "../urun-karti/fiyat";
 import { urunKartiGorunumu } from "../urun-karti/gorunum";
@@ -50,6 +51,10 @@ import { UrunKarti } from "../urun-karti/urun-karti";
 import { ilkSecim } from "./secim";
 import { type DegisenBilgiler, UrunUstKismi } from "./urun-ust";
 import { type StokGosterimiVerisi, type UrunSayfasiVerisi, urunSayfasiVerisi } from "./veri";
+import { PuanSatiri, UrunYorumlari, yorumBolumuKimligi, yorumSayfasiParametresi } from "./yorumlar";
+
+const ilkDeger = (deger: string | string[] | undefined) =>
+  Array.isArray(deger) ? deger[0] : deger;
 
 export const urunSayfasininBilgisi = async (
   parametreler: AdresParametreleri,
@@ -171,9 +176,11 @@ const degisenBilgiler = (
 function AltKisim({
   veri,
   kartGorunumu,
+  sonrakiYorumAdresi,
 }: {
   veri: UrunSayfasiVerisi;
   kartGorunumu: Parameters<typeof UrunKarti>[0]["gorunum"];
+  sonrakiYorumAdresi: string | undefined;
 }) {
   return (
     <div className="mt-12 flex min-w-0 flex-col gap-12">
@@ -212,6 +219,17 @@ function AltKisim({
           </table>
         </section>
       )}
+      {/* Yorumlar özellik tablosundan sonra, ilgili ürünlerden önce (kart 0139); yorum işleviyle çizilir. */}
+      {yazilanIslevler.yorum ? (
+        <UrunYorumlari
+          urun={veri.kimlik}
+          urunAdi={veri.ad}
+          puan={veri.puan}
+          liste={veri.yorumlar}
+          dogrulanmisAliciEtiketi={veri.dogrulanmisAliciEtiketi}
+          sonrakiAdres={sonrakiYorumAdresi}
+        />
+      ) : null}
       {veri.ilgili.length === 0 ? null : (
         <section aria-labelledby="ilgili-urunler" className="flex min-w-0 flex-col gap-4">
           <h2 id="ilgili-urunler" className={bolumBasligiSiniflari}>
@@ -257,13 +275,23 @@ export async function UrunSayfasi({
   sorgu: SorguParametreleri;
 }) {
   const kayit = await sayfaninKaydi("urun", parametreler, sorgu);
+  const sorguDegerleri = await sorgu;
+  const yorumSayfasi = Number(ilkDeger(sorguDegerleri[yorumSayfasiParametresi]) ?? 1);
   const vt = siteninVeritabani();
   const [veri, tema] = await Promise.all([
-    urunSayfasiVerisi(vt, calisanSite(), kayit.kimlik),
+    urunSayfasiVerisi(vt, calisanSite(), kayit.kimlik, { yorumSayfasi }),
     siteninGecerliTemasi(vt),
   ]);
   if (veri === undefined) notFound();
-  const secim = ilkSecim(veri.secenekler, veri.birimler, await sorgu, veri.secenekOnSecimi);
+  const secim = ilkSecim(veri.secenekler, veri.birimler, sorguDegerleri, veri.secenekOnSecimi);
+  // Yorumların bir sonraki sayfası: adresin öteki parametreleri (seçim) korunur, yorumlara inilir.
+  const sonrakiYorumAdresi =
+    veri.yorumlar.sayfa < veri.yorumlar.sayfaSayisi
+      ? `${kayitAdresleri.urun(veri.adresAdi)}${sorguMetni({
+          ...sorguDegerleri,
+          [yorumSayfasiParametresi]: String(veri.yorumlar.sayfa + 1),
+        })}#${yorumBolumuKimligi}`
+      : undefined;
   const kartGorunumu = urunKartiGorunumu(tema.tema.tanim.gorunumler);
   const ustBaglanti = veri.marka ?? veri.kategori;
   const adimlar = [
@@ -292,6 +320,7 @@ export async function UrunSayfasi({
               </Baglanti>
             )}
             <SayfaBasligi baslik={veri.ad} />
+            {yazilanIslevler.yorum ? <PuanSatiri puan={veri.puan} /> : null}
           </div>
         }
         kisaAciklama={veri.kisaAciklama === undefined ? null : <p>{veri.kisaAciklama}</p>}
@@ -315,7 +344,7 @@ export async function UrunSayfasi({
         genelBilgi={degisenBilgiler(veri.genel.fiyat, veri.genel.stok, undefined)}
         tukenmisSecenek={veri.tukenmisSecenek}
       />
-      <AltKisim veri={veri} kartGorunumu={kartGorunumu} />
+      <AltKisim veri={veri} kartGorunumu={kartGorunumu} sonrakiYorumAdresi={sonrakiYorumAdresi} />
     </main>
   );
 }

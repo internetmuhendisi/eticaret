@@ -232,6 +232,20 @@
           "gorsel": "kablosuz-kulaklik-kutu.jpg",
           "alternatifMetin": "Kulaklık ve şarj kutusu, ahşap masada"
         }
+      ],
+      "yorumlar": [
+        {
+          "puan": 4,
+          "baslik": "Ses temiz",
+          "metin": "Şarj kutusu küçük ve pratik. Görüşmelerde karşı taraf beni net duyuyor.",
+          "ad": "Burak Demir",
+          "anaSayfada": true
+        },
+        {
+          "puan": 3,
+          "metin": "Kulağıma biraz büyük geldi ama ses kalitesi iyi.",
+          "ad": "Selin Yıldız"
+        }
       ]
     },
     {
@@ -397,6 +411,26 @@
           },
           "stok": 10
         }
+      ],
+      "yorumlar": [
+        {
+          "puan": 5,
+          "baslik": "Her gün giyiyorum",
+          "metin": "Kumaşı yumuşak, yıkamadan sonra da şeklini korudu. M bedeni tam oldu.",
+          "ad": "Elif Kaya",
+          "anaSayfada": true
+        },
+        {
+          "puan": 4,
+          "metin": "Rengi fotoğraftaki gibi. Boyu biraz daha uzun olabilirdi.",
+          "ad": "Mert Aydın"
+        },
+        {
+          "puan": 5,
+          "baslik": "Fiyatına göre çok iyi",
+          "metin": "İkinci kez aldım, beyazı da siyahı da güzel.",
+          "ad": "Zeynep Arslan"
+        }
       ]
     },
     {
@@ -537,6 +571,13 @@
           "gorsel": "yoga-mati-evde.jpg",
           "alternatifMetin": "Yoga matı, aydınlık bir odanın zemininde serili"
         }
+      ],
+      "yorumlar": [
+        {
+          "puan": 5,
+          "metin": "Kaymıyor, kalınlığı dizlerimi korumaya yetiyor.",
+          "ad": "Nazlı Erdem"
+        }
       ]
     },
     {
@@ -563,6 +604,13 @@
         {
           "gorsel": "celik-termos-disarida.jpg",
           "alternatifMetin": "Lacivert termos, açık havada ahşap bankın üstünde"
+        }
+      ],
+      "yorumlar": [
+        {
+          "puan": 5,
+          "metin": "Sabah koyduğum çay akşama kadar sıcak kaldı.",
+          "ad": "Emre Koç"
         }
       ]
     },
@@ -630,6 +678,20 @@
             "satisFiyati": 149990
           },
           "stok": 4
+        }
+      ],
+      "yorumlar": [
+        {
+          "puan": 5,
+          "baslik": "Hafif ve rahat",
+          "metin": "Haftada üç gün koşuyorum, ilk günden vurmadı.",
+          "ad": "Can Öztürk",
+          "anaSayfada": true
+        },
+        {
+          "puan": 4,
+          "metin": "Kalıbı biraz dar, bir numara büyük almak gerekebilir.",
+          "ad": "Ayşe Çelik"
         }
       ]
     },
@@ -753,6 +815,14 @@
         {
           "gorsel": "kokulu-mum-yanarken.jpg",
           "alternatifMetin": "Yanan mum, şöminenin önünde sehpada açık kitabın yanında"
+        }
+      ],
+      "yorumlar": [
+        {
+          "puan": 4,
+          "baslik": "Kokusu hoş",
+          "metin": "Odayı boğmadan güzel kokutuyor, yanma süresi de uzun.",
+          "ad": "Gizem Aksoy"
         }
       ]
     },
@@ -879,6 +949,14 @@
             "satisFiyati": 79990
           },
           "stok": 5
+        }
+      ],
+      "yorumlar": [
+        {
+          "puan": 5,
+          "baslik": "Yazın vazgeçilmezi",
+          "metin": "Keten olduğu için serin tutuyor, ütüsü de kolay.",
+          "ad": "Deniz Şahin"
         }
       ]
     }

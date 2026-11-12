@@ -10,7 +10,8 @@ export type Islev = (typeof islevler)[number];
 
 // Çekirdekte yazılmış işlevler. Bir işlev gelince aynı değişiklikte burada açılır.
 export const yazilanIslevler: Readonly<Record<Islev, boolean>> = {
-  yorum: false,
+  // Kart 0139: ürün yorumları ve puan.
+  yorum: true,
   blog: false,
   bulten: false,
   arama: true,

@@ -7,6 +7,7 @@
 // - Stok durumu urunStokDurumu ile (karar 0069).
 // - Görsel anaGorseller ile; adresler ürün görseli ucundandır, boyutları kayıttandır (karar 0073).
 // - Marka silinmemiş markanın adıdır.
+// - Puan yayındaki yorumların ortalaması ve sayısıdır (puanOzetleri, kart 0139); yorumu olmayan üründe yoktur.
 //
 // Bütün ürünler birkaç sorguyla gelir, ürün başına sorgu atılmaz. Sonuç verilen sırayla döner.
 import { and, eq, inArray, isNull } from "drizzle-orm";
@@ -21,6 +22,7 @@ import { anaGorseller, type GaleriGorseli } from "../../moduller/urun/galeri.ts"
 import { urunler } from "../../moduller/urun/model.ts";
 import { urunGorseliAdresi } from "../../moduller/urun/urun-gorseli.ts";
 import { vitrinKosulu } from "../../moduller/urun/vitrin.ts";
+import { puanOzetleri } from "../../moduller/yorum/servis.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { kimlikMi } from "../../veritabani/turler.ts";
 import { kayitAdresleri } from "../adresler.ts";
@@ -82,10 +84,11 @@ export const urunKartlari = async (
       ),
     );
   const gorunenler = satirlar.map((satir) => satir.kimlik);
-  const [gorseller, fiyatlar, stoklar] = await Promise.all([
+  const [gorseller, fiyatlar, stoklar, puanlar] = await Promise.all([
     anaGorseller(vt, gorunenler),
     fiyatGosterimServisi(site).fiyatAraliklari(vt, gorunenler, an === undefined ? {} : { an }),
     urunStokDurumlari(vt, gorunenler, ayarlar),
+    puanOzetleri(vt, gorunenler),
   ]);
   const bulunan = new Map(satirlar.map((satir) => [satir.kimlik, satir]));
   return gecerli.flatMap((kimlik) => {
@@ -94,6 +97,7 @@ export const urunKartlari = async (
     const ana = gorseller.get(satir.kimlik);
     const gorsel = ana === undefined ? undefined : kartGorseli(ana);
     const fiyat = fiyatlar.get(satir.kimlik);
+    const puan = puanlar.get(satir.kimlik);
     return [
       {
         kimlik: satir.kimlik,
@@ -103,6 +107,7 @@ export const urunKartlari = async (
         ...(gorsel === undefined ? {} : { gorsel }),
         ...(fiyat === undefined ? {} : { fiyat }),
         tukendi: stoklar.get(satir.kimlik)?.tukendi ?? true,
+        ...(puan === undefined ? {} : { puan: { ortalama: puan.ortalama, sayi: puan.sayi } }),
       },
     ];
   });

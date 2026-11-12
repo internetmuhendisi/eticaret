@@ -6,9 +6,18 @@ import { randomBytes } from "node:crypto";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
+import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
 import { baslangicRolleri } from "../../moduller/ekip/baslangic-rolleri.ts";
+import { siteninServisi } from "../../moduller/magaza-ayarlari/servis.ts";
 import { hesapAc } from "../../moduller/oturum/servis.ts";
+import { robotSorusuUret } from "../../moduller/robot-korumasi/servis.ts";
+import { soruyuCoz } from "../../moduller/robot-korumasi/testler/soru-coz.ts";
+import { urunServisi } from "../../moduller/urun/servis.ts";
+import { yorumlar } from "../../moduller/yorum/model.ts";
+import { yorumServisi } from "../../moduller/yorum/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
 import {
@@ -44,7 +53,48 @@ type MusteriSenaryosu = (b: { kimlik: string; eposta: string }) => Promise<{
 const musteriSenaryolari: Record<string, MusteriSenaryosu> = {
   // Uç girdi almaz, kimliği yalnız kapıdan okur: A kendi e-postasını görür, B'ninkini göremez.
   "GET /kapi/musteri/hesabim": async () => ({}),
+  // B ürüne yorum yazmış; A aynı ürünü sorar. Cevap A'nındır: "yazabilir". B'nin yorumuna bakılsaydı
+  // "yorum-yazildi" dönerdi.
+  "GET /kapi/musteri/yorum-izni": async (b) => {
+    const urun = await yorumluUrun(b.kimlik);
+    return { sorgu: `?urun=${urun}`, aranan: [b.eposta, "yorum-yazildi"] };
+  },
+  // B ürüne yorum yazmış; A aynı ürüne yazar ve yazabilir (B'nin yorumu A'nınki sayılmaz). B'nin yorumu
+  // değişmez (aşağıdaki test ölçer).
+  "POST /kapi/musteri/yorum": async (b) => {
+    const urun = await yorumluUrun(b.kimlik);
+    return {
+      govde: {
+        urun,
+        puan: 4,
+        metin: "A'nın yorumu",
+        ad: "Deneme Müşteri",
+        robotCevabi: await soruyuCoz(await robotSorusuUret()),
+      },
+    };
+  },
 };
+
+// B'nin yorum yazdığı yayındaki bir ürün; "yalnız satın alanlar" kapalı (herkes yazabilsin).
+const yorumluUrun = async (bKimligi: string) => {
+  await siteninServisi(denemeSitesi()).degistir(vt, sistemIslemi("test"), {
+    yorumYalnizSatinAlanlar: false,
+  });
+  const urun = await urunServisi(() => "Europe/Istanbul").urunEkle(vt, sistemIslemi("test"), {
+    ad: `Yorumlu ${randomBytes(4).toString("hex")}`,
+    vergiSinifi: null,
+    durum: "yayinda",
+  });
+  await yorumServisi(denemeSitesi()).yorumYaz(vt, bKimligi, {
+    urun,
+    puan: 2,
+    metin: "B'nin yorumu",
+    ad: "B Müşteri",
+  });
+  return urun;
+};
+const denemeSitesi = () =>
+  siteKlasorunuOku(resolve(import.meta.dirname, "../../ayar-semasi/testler/ornek-siteler/gecerli"));
 
 const senaryosuzUclar = (uclar: readonly KayitliUc[], senaryolar: Record<string, unknown>) =>
   uclar
@@ -140,6 +190,24 @@ describe("uygulamanın uçları", () => {
       if (senaryo === undefined) continue;
       expect((await baskasininKaydi(uc, senaryo)).sorunlar).toEqual([]);
     }
+  });
+
+  it("yorum yazan uç B'nin yorumuna dokunmaz, A'nın yorumunu A adına yazar", async () => {
+    const uc = (await uclariOku(uygulamaAdresleri)).find(
+      ({ baslik }) => baslik === "POST /kapi/musteri/yorum",
+    );
+    const senaryo = musteriSenaryolari["POST /kapi/musteri/yorum"];
+    if (uc === undefined || senaryo === undefined) throw new Error("Yorum ucu yok.");
+    const { a, b, sorunlar } = await baskasininKaydi(uc, senaryo);
+    expect(sorunlar).toEqual([]);
+    const satirlar = await vt
+      .select({ musteri: yorumlar.musteri_kimligi, metin: yorumlar.metin, puan: yorumlar.puan })
+      .from(yorumlar)
+      .where(inArray(yorumlar.musteri_kimligi, [a.kimlik, b.kimlik]));
+    expect(satirlar.toSorted((x, y) => x.metin.localeCompare(y.metin))).toEqual([
+      { musteri: a.kimlik, metin: "A'nın yorumu", puan: 4 },
+      { musteri: b.kimlik, metin: "B'nin yorumu", puan: 2 },
+    ]);
   });
 });
 

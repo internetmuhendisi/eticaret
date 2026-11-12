@@ -43,6 +43,7 @@ import { ozellikler } from "../ozellik/model.ts";
 import { ozellikServisi } from "../ozellik/servis.ts";
 import { stokServisi } from "../stok/servis.ts";
 import { siteninVergiServisi } from "../vergi/servis.ts";
+import { yorumServisi } from "../yorum/servis.ts";
 import { type KatalogBaslangici, katalogGorselAdlari } from "./baslangic-semasi.ts";
 import { urunKilidiAl } from "./kilit.ts";
 import { urunler } from "./model.ts";
@@ -211,6 +212,8 @@ const katalogIsleminiYaz = (
         ozellikler: degerler,
         secenekler,
         birlesimler,
+        // Örnek yorumlar ürünler yazıldıktan sonra yazılır (aşağıda).
+        yorumlar: _yorumlar,
         ...alanlar
       } = urun;
       const sinif = vergiSinifi === null ? null : vergiSiniflari.get(vergiSinifi);
@@ -295,6 +298,18 @@ const katalogIsleminiYaz = (
           ...(gorsel === undefined ? {} : { gorsel: kimligi(galeriOgeleri, gorsel) }),
         });
         await birimiDoldur(birim, birimFiyati, birimStogu);
+      }
+    }
+    // Örnek yorumlar (kart 0139): ürünler yazıldıktan sonra, katalogdaki sırayla (sonra gelen daha yeni).
+    const yorumYazari = yorumServisi(site);
+    for (const urun of katalog.urunler) {
+      for (const yorum of urun.yorumlar) {
+        await yorumYazari.baslangicYorumuEkle(
+          islem,
+          kim,
+          kimligi(urunKimlikleri, urun.adresAdi),
+          yorum,
+        );
       }
     }
     for (const urun of katalog.urunler) {

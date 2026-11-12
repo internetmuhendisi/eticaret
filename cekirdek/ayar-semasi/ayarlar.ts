@@ -304,6 +304,16 @@ export const magazaAyarSemasi = z.strictObject({
     z.enum(secenekOnSecimleri).default("ilk-satilabilir"),
     magazaSahibinin("ayar.aciklama.secenekOnSecimi"),
   ),
+  // Ürün yorumları (kart 0139, karar 0101 ve 0109). Satın alma denetimi sipariş modülüyle gelir: bugün kimse
+  // satın almış sayılmaz, bu yüzden ilk ayar açıkken kimse yorum yazamaz.
+  yorumYalnizSatinAlanlar: ayar(
+    z.boolean().default(true),
+    magazaSahibinin("ayar.aciklama.yorumYalnizSatinAlanlar"),
+  ),
+  dogrulanmisAliciEtiketi: ayar(
+    z.boolean().default(true),
+    magazaSahibinin("ayar.aciklama.dogrulanmisAliciEtiketi"),
+  ),
   // Düşük stok eşiği: stok bu sayıya eşit ya da altındaysa (ve sıfırdan büyükse) düşük stoktadır. Ürünün
   // kendi eşiği varsa o geçerlidir. 0 düşük stok uyarısını kapatır.
   dusukStokEsigi: ayar(

@@ -185,6 +185,8 @@ describe("Örnek Mağaza'nın başlangıç düzeni", () => {
       "kampanya-afisleri",
       "sekmeli-vitrin",
       "firsatlar",
+      // Yorum işlevi kart 0139'da yazıldı: müşteri yorumları bölümü çizilir.
+      "musteri-yorumlari",
       "genis-afis",
     ]);
     expect((await servis.cizilecekBolumler(vt, "ust-kisim")).map((bolum) => bolum.tur)).toEqual([

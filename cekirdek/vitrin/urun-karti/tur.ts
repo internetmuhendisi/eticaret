@@ -25,6 +25,6 @@ export type UrunKartiVerisi = {
   fiyat?: FiyatAraligi;
   // Ürünün genel stok durumu (urunStokDurumu): satılabilir birimi kalmadı.
   tukendi: boolean;
-  // Yorumların ortalaması ve sayısı; yorum işlevi yazılınca gelir.
+  // Yayındaki yorumların ortalaması ve sayısı (kart 0139); yorumu olmayan üründe yoktur.
   puan?: { ortalama: number; sayi: number };
 };

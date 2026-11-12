@@ -15,6 +15,7 @@ import { stokIzinleri } from "../moduller/stok/izinler.ts";
 import { temaIzinleri } from "../moduller/tema/izinler.ts";
 import { urunIzinleri } from "../moduller/urun/izinler.ts";
 import { vergiIzinleri } from "../moduller/vergi/izinler.ts";
+import { yorumIzinleri } from "../moduller/yorum/izinler.ts";
 import type { Kapi } from "./kapi.ts";
 
 // Hesap yalnız kendi kayıtlarını, ekibinin kayıtlarını ya da bütün kayıtları görür.
@@ -41,6 +42,7 @@ export const modulIzinleri = {
   tema: temaIzinleri,
   urun: urunIzinleri,
   vergi: vergiIzinleri,
+  yorum: yorumIzinleri,
 } as const;
 
 export const izinler = {
@@ -58,6 +60,7 @@ export const izinler = {
   ...temaIzinleri,
   ...urunIzinleri,
   ...vergiIzinleri,
+  ...yorumIzinleri,
 } as const satisfies Record<string, IzinTanimi>;
 export type IzinAdi = keyof typeof izinler;
 

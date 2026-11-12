@@ -41,6 +41,9 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `urun.sil` | yonetici | tumu | Ürün siler (silinmiş olarak işaretler). |
 | `vergi.gor` | yonetici | tumu | Vergi sınıflarını ve oran tablosunu görür. |
 | `vergi.degistir` | yonetici | tumu | Vergi sınıflarını ve oranlarını ekler, değiştirir ve siler. |
+| `yorum.kendi.yaz` | musteri | kendi | Müşteri kendi adına ürüne yorum yazar, yazıp yazamayacağını sorar. |
+| `yorum.gor` | yonetici | tumu | Ürün yorumlarını, onay bekleyen ve reddedilenler dahil, görür. |
+| `yorum.onayla` | yonetici | tumu | Yorumu yayınlar ya da reddeder, ana sayfada gösterilmesini işaretler. |
 
 Müşterinin rolü yoktur: geçerli oturumu olan her müşteri müşteri girişinin izinlerine sahiptir, kapsamı yalnız kendi kayıtlarıdır. Sahip girişinin izni sahip paneliyle gelir.
 
@@ -51,6 +54,6 @@ Her sitede hazır gelir. Ekranda görünen adları metin dosyasındadır (`yonet
 | Kod | Görünen ad | İzinler |
 |---|---|---|
 | `magaza-sahibi` | Mağaza sahibi | bütün yönetici izinleri |
-| `gorevli` | Görevli | ekip.kendi-hesabi.gor, urun.gor, urun.degistir, kategori.gor, kategori.degistir, marka.gor, marka.degistir, etiket.gor, etiket.degistir, fiyat.gor, stok.gor, stok.duzelt, ozellik.gor, ozellik.degistir |
+| `gorevli` | Görevli | ekip.kendi-hesabi.gor, urun.gor, urun.degistir, kategori.gor, kategori.degistir, marka.gor, marka.degistir, etiket.gor, etiket.degistir, fiyat.gor, stok.gor, stok.duzelt, ozellik.gor, ozellik.degistir, yorum.gor, yorum.onayla |
 
 Tam yetkili son yöneticinin rolü alınamaz. Görevlinin izinleri ürün ve sipariş gibi modüller geldikçe artar.

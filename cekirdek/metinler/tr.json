@@ -96,7 +96,9 @@
       "sonAdetEsigi": "Stok bu sayıya eşit ya da altına inince müşteriye kalan adet yazılır (Son 3 ürün gibi). 0 yazıyı kapatır.",
       "kargoyaVermeSuresi": "Siparişin kaç iş gününde kargoya verildiği. 0 aynı gün demektir.",
       "tukenmisSecenek": "Ürün sayfasında tükenmiş beden ya da renk üstü çizili görünür ve seçilemez ya da hiç gösterilmez.",
-      "secenekOnSecimi": "Ürün sayfası açılınca stoğu olan ilk beden ve renk seçili gelir ya da müşteri kendisi seçene kadar hiçbiri seçili olmaz."
+      "secenekOnSecimi": "Ürün sayfası açılınca stoğu olan ilk beden ve renk seçili gelir ya da müşteri kendisi seçene kadar hiçbiri seçili olmaz.",
+      "yorumYalnizSatinAlanlar": "Açıksa yalnız ürünü satın almış müşteri yorum yazabilir; kapalıysa giriş yapmış her müşteri yazabilir. Yorumlar her durumda onaydan sonra yayınlanır.",
+      "dogrulanmisAliciEtiketi": "Ürünü satın almış müşterinin yorumunda \"Doğrulanmış alıcı\" etiketi görünür."
     }
   },
   "tema": {
@@ -793,6 +795,43 @@
       "aciklama": "Ürün açıklaması",
       "ozellikler": "Özellikler",
       "ilgili": "Bunlar da ilginizi çekebilir"
+    },
+    "yorum": {
+      "baslik": "Yorumlar",
+      "yorumYaz": "Yorum yaz",
+      "ilkYorum": "Bu ürüne henüz yorum yazılmadı. İlk yorumu siz yazın.",
+      "henuzYorumYok": "Henüz yorum yok",
+      "ortalama": "5 üzerinden {ortalama} puan",
+      "yorumSayisi": "{sayi} yorum",
+      "dagilim": "Puan dağılımı",
+      "yildizSatiri": "{yildiz} yıldız",
+      "yildizSatiriOkunan": "{yildiz} yıldız: {sayi} yorum",
+      "puan": "5 üzerinden {puan} puan",
+      "dogrulanmisAlici": "Doğrulanmış alıcı",
+      "dahaFazla": "Daha fazla yorum",
+      "dahaFazlaDurum": "{toplam} yorumun {gorulen} tanesini gördünüz",
+      "pencereBasligi": "Yorum yaz",
+      "pencereAciklamasi": "{urun} için puanınızı ve yorumunuzu yazın. Yorumunuz onaydan sonra yayınlanır.",
+      "puanAlani": "Puanınız",
+      "puanSecenegi": "{puan} yıldız",
+      "puanSecili": "Puanınız: ",
+      "adAlani": "Adınız ve soyadınız",
+      "adAciklamasi": "Yorumda adınız ve soyadınızın yalnız baş harfi görünür.",
+      "baslikAlani": "Başlık (isteğe bağlı)",
+      "metinAlani": "Yorumunuz",
+      "metinAciklamasi": "En çok {enCok} karakter.",
+      "gonder": "Yorumu gönder",
+      "gonderiliyor": "Yorumunuz gönderiliyor…",
+      "gonderildi": "Teşekkürler. Yorumunuz onaydan sonra yayınlanacak.",
+      "hataPuan": "Bir puan seçin.",
+      "hataAd": "Adınızı ve soyadınızı yazın.",
+      "hataBaslik": "Başlığı en çok {enCok} karakterle yazın.",
+      "hataMetin": "Yorumunuzu en çok {enCok} karakterle yazın.",
+      "satinAlmaGerekli": "Bu ürüne yalnız ürünü satın alan müşteriler yorum yazabilir.",
+      "yorumYazildi": "Bu ürüne yorumunuzu yazdınız. Yorumunuz onaydan sonra yayınlanır.",
+      "hataSinir": "Çok sık denediniz. Bir dakika sonra yeniden gönderin.",
+      "hataGenel": "Yorumunuz gönderilemedi. Biraz sonra yeniden deneyin.",
+      "hataUrun": "Bu ürüne şu an yorum yazılamıyor."
     }
   },
   "eposta": {

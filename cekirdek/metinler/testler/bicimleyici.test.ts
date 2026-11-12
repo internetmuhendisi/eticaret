@@ -268,3 +268,23 @@ describe("iki haneli sayı (kart 0111, sayacın kutusu)", () => {
     expect([0, 5, 9, 10, 59, 120].map(ikiHaneli)).toEqual(["00", "05", "09", "10", "59", "120"]);
   });
 });
+
+describe("kısa ad (kart 0139, yorumun görünen adı)", () => {
+  it("ad korunur, soyadı sitenin dilinde büyük baş harfine kısaltılır", () => {
+    expect(bicim.kisaAd("Ayşe Yılmaz")).toBe("Ayşe Y.");
+    expect(bicim.kisaAd("  ali   can  demir ")).toBe("ali can D.");
+    // Türkçe büyük harf: i → İ, ı → I.
+    expect(bicim.kisaAd("Elif irmak")).toBe("Elif İ.");
+    expect(bicim.kisaAd("Elif ışık")).toBe("Elif I.");
+    expect(bicim.kisaAd("Can Öztürk")).toBe("Can Ö.");
+  });
+
+  it("tek sözcük olduğu gibi kalır; birleşik harf ve emoji bölünmez", () => {
+    expect(bicim.kisaAd(" Deniz ")).toBe("Deniz");
+    expect(bicim.kisaAd("Ali Şahin")).toBe("Ali Ş.");
+    // Harf taşımayan sözcük atılır, baş harf soyadın ilk harfidir (bağımsız kontrolün bulgusu).
+    expect(bicim.kisaAd("Ali 😀mutlu")).toBe("Ali M.");
+    expect(bicim.kisaAd("Ayşe 1")).toBe("Ayşe");
+    expect(bicim.kisaAd("Ayşe . Kaya")).toBe("Ayşe K.");
+  });
+});

@@ -8,5 +8,6 @@
     "adres": "Deneme Sokak No: 1",
     "postaKodu": "06000"
   },
-  "vergiAdi": "KDV"
+  "vergiAdi": "KDV",
+  "yorumYalnizSatinAlanlar": false
 }

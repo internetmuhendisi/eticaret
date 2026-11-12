@@ -13,6 +13,7 @@
 //   biçimleyicisiyle yazılır.
 // - Uzun açıklama aciklamayiTemizle'den geçer.
 // - İlgili ürünler ilgiliUrunleriGetir ile, kartları urunKartlari ile.
+// - Yorumlar (kart 0139) yorum servisinin okumalarıyla: puan özeti ve yayındaki yorumlar, en yeni önce.
 import { and, inArray, isNull } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru";
 import { type GorselBoyutu, gorselBoyutAdlari } from "../../kayitlar/gorsel";
@@ -32,6 +33,7 @@ import { birimGorseli, type GaleriOgesi } from "../../moduller/urun/galeri";
 import { ilgiliUrunleriGetir } from "../../moduller/urun/ilgili";
 import { siteninUrunServisi } from "../../moduller/urun/servis";
 import { urunGorseliAdresi } from "../../moduller/urun/urun-gorseli";
+import { type PuanOzeti, puanOzetleri, urunYorumlari } from "../../moduller/yorum/servis";
 import type { Veritabani } from "../../veritabani/baglanti";
 import { kayitAdresleri } from "../adresler";
 import type { UrunKartiVerisi } from "../urun-karti/tur";
@@ -92,6 +94,10 @@ export type UrunSayfasiVerisi = {
   kargoyaVermeSuresi?: number;
   tukenmisSecenek: TukenmisSecenekGosterimi;
   secenekOnSecimi: SecenekOnSecimi;
+  // Yorumlar (kart 0139): yayındakilerin puan özeti (yorum yoksa yok) ve istenen sayfaya kadar yorumlar.
+  puan?: PuanOzeti;
+  yorumlar: Awaited<ReturnType<typeof urunYorumlari>>;
+  dogrulanmisAliciEtiketi: boolean;
 };
 
 const okunurAnahtar = (ad: string): string => adresAdiUret(ad) || ad.trim();
@@ -145,7 +151,7 @@ export const urunSayfasiVerisi = async (
   vt: Veritabani,
   site: Site,
   kimlik: string,
-  { an = new Date() }: { an?: Date } = {},
+  { an = new Date(), yorumSayfasi = 1 }: { an?: Date; yorumSayfasi?: number } = {},
 ): Promise<UrunSayfasiVerisi | undefined> => {
   const urun = await siteninUrunServisi(site).urunuOku(vt, kimlik);
   if (urun === undefined || urun.silindi) return undefined;
@@ -163,7 +169,7 @@ export const urunSayfasiVerisi = async (
       ozellikServisi.hepsiniOku(vt),
       ilgiliUrunleriGetir(vt, urun.kimlik, { an, tukenenUrun: ayarlar.tukenenUrun }),
     ]);
-  const [kategoriSatirlari, markaSatirlari, ilgili] = await Promise.all([
+  const [kategoriSatirlari, markaSatirlari, ilgili, puanlar, yorumListesi] = await Promise.all([
     urun.kategoriler.length === 0
       ? []
       : vt
@@ -183,7 +189,10 @@ export const urunSayfasiVerisi = async (
           .from(markalar)
           .where(and(inArray(markalar.kimlik, [urun.marka]), isNull(markalar.silinme_zamani))),
     urunKartlari(vt, site, ilgiliKimlikleri, { yer: "liste", an }),
+    puanOzetleri(vt, [urun.kimlik]),
+    urunYorumlari(vt, urun.kimlik, { sayfa: yorumSayfasi }),
   ]);
+  const puan = puanlar.get(urun.kimlik);
 
   // Galeri: boyutu hiç olmayan görsel gösterilemez, atlanır.
   const galeri = urun.galeri.flatMap((oge): SayfaGaleriOgesi[] => {
@@ -298,5 +307,8 @@ export const urunSayfasiVerisi = async (
     ...(urun.kargoGerekmez ? {} : { kargoyaVermeSuresi: ayarlar.kargoyaVermeSuresi }),
     tukenmisSecenek: ayarlar.tukenmisSecenek,
     secenekOnSecimi: ayarlar.secenekOnSecimi,
+    ...(puan === undefined ? {} : { puan }),
+    yorumlar: yorumListesi,
+    dogrulanmisAliciEtiketi: ayarlar.dogrulanmisAliciEtiketi,
   };
 };

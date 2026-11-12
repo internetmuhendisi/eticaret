@@ -28,6 +28,7 @@ import { siteninMagazaAyarlari } from "../moduller/magaza-ayarlari/servis";
 import { markalar } from "../moduller/marka/model";
 import { type MenuDali, type VitrinHedefi, vitrinMenusu } from "../moduller/menu/servis";
 import { temaServisi } from "../moduller/tema/servis";
+import { anaSayfaYorumlari } from "../moduller/yorum/servis";
 import type { Veritabani } from "../veritabani/baglanti";
 import { kimlikMi } from "../veritabani/turler";
 import { kayitAdresleri } from "./adresler";
@@ -39,8 +40,14 @@ import type {
   VitrinBaglami,
 } from "./bolum-kutuphanesi/baglam";
 import type { BolumKutuphanesi, BolumOrnegi } from "./bolum-kutuphanesi/duzen";
+import {
+  type BaglamYorumu,
+  yorumKaynagiAnahtari,
+  yorumKaynakTurleri,
+} from "./bolum-kutuphanesi/islev-verisi";
 import { bolumBaglari, bolumunUrunKaynaklari } from "./bolum-kutuphanesi/tarif";
 import type { UrunKaynagi } from "./bolum-kutuphanesi/urun-kaynagi";
+import { yorumAdetleri } from "./bolumler/musteri-yorumlari/tarif";
 import { kaynaklarinUrunleri } from "./urun-kaynagi";
 
 const hedefAdresi = (hedef: VitrinHedefi): { adres?: string; yeniSekme: boolean } => {
@@ -167,6 +174,31 @@ const bolumlerinUrunKaynaklari = (
     return tarif === undefined ? [] : bolumunUrunKaynaklari(tarif, bolum.degerler);
   });
 
+// Yorum gösteren bölümlerin verisi (kart 0139, karar 0090): yorum işlevine bağlı bölüm varsa iki kaynağın
+// (işaretlenenler, en yeniler) en çok adedi okunur, her adet anahtarı o listenin başıdır. Bölüm yoksa okunmaz.
+const yorumKaynaklari = async (
+  vt: Veritabani,
+  bolumler: readonly BolumOrnegi[],
+  kutuphane: BolumKutuphanesi,
+  an: Date,
+): Promise<Record<string, readonly BaglamYorumu[]>> => {
+  const yorumBolumuVar = bolumler.some(
+    (bolum) => Object.hasOwn(kutuphane, bolum.tur) && kutuphane[bolum.tur]?.islev === "yorum",
+  );
+  if (!yorumBolumuVar || !yazilanIslevler.yorum) return {};
+  const enCok = Math.max(...Object.values(yorumAdetleri));
+  const sonuc: Record<string, readonly BaglamYorumu[]> = {};
+  for (const tur of yorumKaynakTurleri) {
+    const liste = (
+      await anaSayfaYorumlari(vt, { isaretlenenler: tur === "isaretlenenler", adet: enCok, an })
+    ).map(({ kimlik, puan, metin, ad }) => ({ kimlik, puan, metin, ad }));
+    for (const adet of Object.values(yorumAdetleri)) {
+      sonuc[yorumKaynagiAnahtari({ tur, adet })] = liste.slice(0, adet);
+    }
+  }
+  return sonuc;
+};
+
 // Telefonun bağlantısı: yalnız rakam ve baştaki +.
 const telefonAdresi = (telefon: string) => `tel:${telefon.replace(/[^\d+]/g, "")}`;
 
@@ -178,15 +210,17 @@ export const vitrinBaglaminiOku = async (
   an: Date = new Date(),
 ): Promise<VitrinBaglami> => {
   const kodlar = bolumlerinMenuKodlari(bolumler, kutuphane);
-  const [ayarlar, logo, menuler, tema, kategoriListesi, markaListesi, urunler] = await Promise.all([
-    siteninMagazaAyarlari(vt, site),
-    magazaLogosu(vt, { site }),
-    Promise.all(kodlar.map(async (kod) => [kod, await vitrinMenusu(vt, kod)] as const)),
-    temaServisi(() => site).gecerliTema(vt),
-    kategorileriOku(vt, bolumlerinBaglari(bolumler, kutuphane, "kategori")),
-    markalariOku(vt, bolumlerinBaglari(bolumler, kutuphane, "marka")),
-    kaynaklarinUrunleri(vt, site, bolumlerinUrunKaynaklari(bolumler, kutuphane), an),
-  ]);
+  const [ayarlar, logo, menuler, tema, kategoriListesi, markaListesi, urunler, yorumlar] =
+    await Promise.all([
+      siteninMagazaAyarlari(vt, site),
+      magazaLogosu(vt, { site }),
+      Promise.all(kodlar.map(async (kod) => [kod, await vitrinMenusu(vt, kod)] as const)),
+      temaServisi(() => site).gecerliTema(vt),
+      kategorileriOku(vt, bolumlerinBaglari(bolumler, kutuphane, "kategori")),
+      markalariOku(vt, bolumlerinBaglari(bolumler, kutuphane, "marka")),
+      kaynaklarinUrunleri(vt, site, bolumlerinUrunKaynaklari(bolumler, kutuphane), an),
+      yorumKaynaklari(vt, bolumler, kutuphane, an),
+    ]);
   // Bölümlerin ve seçtikleri kategorilerin görselleri tek okumayla (silinmiş görsel yok).
   const gorselKimlikleri = [
     ...new Set([
@@ -270,8 +304,8 @@ export const vitrinBaglaminiOku = async (
     markalar: markaListesi,
     urunler,
     an,
-    // Yorum, blog ve bülten işlevleri yazılınca doldurulur (kart 0112, islev-verisi.ts).
-    yorumlar: {},
+    // Blog ve bülten işlevleri yazılınca doldurulur (kart 0112, islev-verisi.ts); yorumlar kart 0139.
+    yorumlar,
     blogYazilari: {},
     yerTutucular: yerTutucuDegerleri,
     parcaGorunumleri: tema.tema.tanim.gorunumler,

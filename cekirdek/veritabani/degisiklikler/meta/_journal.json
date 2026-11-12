@@ -239,6 +239,13 @@
       "when": 1794431385742,
       "tag": "0033_urun-vitrin-sirasi",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794466452063,
+      "tag": "0034_yorumlar",
+      "breakpoints": true
     }
   ]
 }

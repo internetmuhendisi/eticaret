@@ -28,3 +28,36 @@ export const kayitAdresleri = {
   etiket: (adresAdi: string) => `/etiket/${adresAdi}`,
   urun: (adresAdi: string) => `/urun/${adresAdi}`,
 } as const satisfies Record<AdresliKayitTuru, (adresAdi: string) => string>;
+
+// Müşteri girişinden sonra dönülecek adres (kart 0139: yorum yazmak için girişe giden müşteri ürüne döner).
+// Yalnız vitrinin kendi sayfasına dönülür: başka siteye, panele, kapıya ve giriş sayfasının kendisine dönülmez;
+// geçersiz değer ana sayfadır. Panelin kuralıyla aynı yol (cekirdek/yonetim-paneli/adresler.ts, guvenliDonus).
+export const vitrinDonusParametresi = "donus";
+const cozumKoku = "http://vitrin.invalid";
+const donulmeyenler = ["/yonetim", "/kapi", "/gelistirme", vitrinAdresleri.giris];
+
+export const vitrinDonusu = (deger: string | null | undefined): string => {
+  if (!deger?.startsWith("/") || deger.startsWith("//") || deger.includes("\\")) {
+    return vitrinAdresleri.anasayfa;
+  }
+  let adres: URL;
+  try {
+    adres = new URL(deger, cozumKoku);
+  } catch {
+    return vitrinAdresleri.anasayfa;
+  }
+  const { origin, pathname, search, hash } = adres;
+  // Kodlanmış yazılış ("/y%6Fnetim") da çözülerek karşılaştırılır; çözülemeyen yol ana sayfadır.
+  let cozulmus: string;
+  try {
+    cozulmus = decodeURIComponent(pathname).toLowerCase();
+  } catch {
+    return vitrinAdresleri.anasayfa;
+  }
+  const yasak = donulmeyenler.some((kok) => cozulmus === kok || cozulmus.startsWith(`${kok}/`));
+  if (origin !== cozumKoku || yasak) return vitrinAdresleri.anasayfa;
+  return `${pathname}${search}${hash}`;
+};
+
+export const girisAdresiDonuslu = (donus: string): string =>
+  `${vitrinAdresleri.giris}?${new URLSearchParams({ [vitrinDonusParametresi]: donus })}`;

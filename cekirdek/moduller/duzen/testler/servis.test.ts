@@ -48,7 +48,10 @@ const baslangicDuzeni: BaslangicDuzeni = {
 const site: Site = { ...ornekSite, duzenBaslangici: baslangicDuzeni };
 
 // İşlevler testte açılıp kapanır.
-let islevler: Record<Islev, boolean> = { ...yazilanIslevler };
+// Deneme kütüphanesinin yorum bölümü işlevi yazılmamış bölümü örnekler: yorum işlevi kart 0139'da yazıldı, testler
+// onu kapalı sayar (gerçek işlev listesi aşağıda ayrıca ölçülür).
+const testinIslevleri = (): Record<Islev, boolean> => ({ ...yazilanIslevler, yorum: false });
+let islevler: Record<Islev, boolean> = testinIslevleri();
 const servis = duzenServisi(
   () => site,
   () => denemeKutuphanesi,
@@ -69,7 +72,7 @@ const siteAc = async (): Promise<Veritabani> => {
 };
 afterEach(async () => {
   izlenenler.length = 0;
-  islevler = { ...yazilanIslevler };
+  islevler = testinIslevleri();
   for (const temizle of temizlenecekler.splice(0)) await temizle();
 });
 
@@ -505,7 +508,8 @@ describe("işleve bağlı bölüm (kart 0106)", () => {
     expect((await servis.panelDuzeni(vt))["ana-sayfa"].every((satir) => satir.cizilir)).toBe(true);
   });
 
-  // Kart 0112: gerçek kütüphanenin işleve bağlı üç bölümü. Bugün çekirdekte üç işlev de yazılmamıştır.
+  // Kart 0112: gerçek kütüphanenin işleve bağlı üç bölümü. Yorum kart 0139'da yazıldı, blog ve bülten yazılmadı;
+  // test üçünü de kapalı sayarak başlar.
   it("yorumlar, blog ve bülten işlevleri yokken çizilmez, panel nedenini işleve göre yazar; açılınca çizilir", async () => {
     const vt = await siteAc();
     // Başlangıç düzeni boş: deneme bölümleri gerçek kütüphanede yoktur.
@@ -530,7 +534,11 @@ describe("işleve bağlı bölüm (kart 0106)", () => {
       (await gercek.cizilecekBolumler(vt, "ana-sayfa"))
         .map((bolum) => bolum.tur)
         .filter((tur) => bolumler.some((bolum) => bolum.tur === tur));
-    expect(yazilanIslevler.yorum || yazilanIslevler.blog || yazilanIslevler.bulten).toBe(false);
+    expect([yazilanIslevler.yorum, yazilanIslevler.blog, yazilanIslevler.bulten]).toEqual([
+      true,
+      false,
+      false,
+    ]);
     expect(await cizilenler()).toEqual([]);
     const panel = (await gercek.panelDuzeni(vt))["ana-sayfa"];
     for (const { tur, islev } of bolumler) {

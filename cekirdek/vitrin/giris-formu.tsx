@@ -13,7 +13,8 @@ import { stil } from "./stil";
 
 const girisUcu = "/kapi/herkese-acik/musteri-giris";
 
-export function GirisFormu() {
+// donus: girişten sonra gidilecek vitrin adresi (vitrinDonusu'ndan geçmiş; kart 0139). Verilmezse ana sayfa.
+export function GirisFormu({ donus = vitrinAdresleri.anasayfa }: { donus?: string }) {
   const metin = useMetin();
   const [hata, setHata] = useState<string | null>(null);
   const gonderiliyor = useRef(false);
@@ -38,7 +39,7 @@ export function GirisFormu() {
         body: JSON.stringify(girdi.data),
       });
       if (yanit.ok) {
-        window.location.assign(vitrinAdresleri.anasayfa);
+        window.location.assign(donus);
         return;
       }
       if (yanit.status === 429) setHata(metin("vitrin.giris.hataSinir"));
