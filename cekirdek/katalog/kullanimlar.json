@@ -68,6 +68,7 @@
     "cekirdek/vitrin/bolumler/ust-satir/menu-dugmesi.tsx",
     "cekirdek/vitrin/bulten-formu.tsx",
     "cekirdek/vitrin/bulunamadi-sayfasi.tsx",
+    "cekirdek/vitrin/favoriler-sayfasi.tsx",
     "cekirdek/vitrin/giris-formu.tsx",
     "cekirdek/vitrin/hata-sayfasi.tsx",
     "cekirdek/vitrin/hesap-alani.tsx",
@@ -76,8 +77,9 @@
     "cekirdek/vitrin/urun-sayfasi/sayfa.tsx",
     "cekirdek/yonetim-paneli/giris-formu.tsx"
   ],
-  "bilesenler/parcalar/bildirim.tsx": [],
+  "bilesenler/parcalar/bildirim.tsx": ["cekirdek/vitrin/favori-dugmesi.tsx"],
   "bilesenler/parcalar/bos-hal.tsx": [
+    "cekirdek/vitrin/favoriler-sayfasi.tsx",
     "cekirdek/vitrin/urun-listesi/arama-sayfasi.tsx",
     "cekirdek/vitrin/urun-listesi/sayfa.tsx"
   ],
@@ -94,6 +96,7 @@
     "cekirdek/vitrin/bolumler/ortak/urun-izgarasi.tsx",
     "cekirdek/vitrin/bolumler/ust-satir/hesap-menusu.tsx",
     "cekirdek/vitrin/bolumler/ust-satir/menu-dugmesi.tsx",
+    "cekirdek/vitrin/favori-dugmesi.tsx",
     "cekirdek/vitrin/hata-sayfasi.tsx",
     "cekirdek/vitrin/hesap-alani.tsx",
     "cekirdek/vitrin/urun-karti/urun-karti.tsx",
@@ -122,7 +125,7 @@
     "cekirdek/yonetim-paneli/kod-formu.tsx"
   ],
   "bilesenler/parcalar/ipucu.tsx": ["bilesenler/form/form.tsx", "bilesenler/parcalar/dugme.tsx"],
-  "bilesenler/parcalar/iskelet.tsx": [],
+  "bilesenler/parcalar/iskelet.tsx": ["cekirdek/vitrin/favori-listesi.tsx"],
   "bilesenler/parcalar/kart.tsx": [],
   "bilesenler/parcalar/onay-kutusu.tsx": [
     "cekirdek/vitrin/bulten-formu.tsx",
@@ -145,11 +148,13 @@
   ],
   "bilesenler/parcalar/sayfa-basligi.tsx": [
     "cekirdek/vitrin/durum-sayfasi.tsx",
+    "cekirdek/vitrin/favori-listesi.tsx",
     "cekirdek/vitrin/kayit-sayfasi.tsx",
     "cekirdek/vitrin/urun-listesi/arama-sayfasi.tsx",
     "cekirdek/vitrin/urun-sayfasi/sayfa.tsx"
   ],
   "bilesenler/parcalar/sayfa-yolu.tsx": [
+    "cekirdek/vitrin/favoriler-sayfasi.tsx",
     "cekirdek/vitrin/kayit-sayfasi.tsx",
     "cekirdek/vitrin/urun-listesi/arama-sayfasi.tsx",
     "cekirdek/vitrin/urun-sayfasi/sayfa.tsx"
@@ -181,6 +186,8 @@
     "cekirdek/vitrin/bolumler/ust-satir/hesap-menusu.tsx",
     "cekirdek/vitrin/bolumler/ust-satir/menu-dugmesi.tsx",
     "cekirdek/vitrin/bulten-formu.tsx",
+    "cekirdek/vitrin/favori-listesi.tsx",
+    "cekirdek/vitrin/favoriler-sayfasi.tsx",
     "cekirdek/vitrin/giris-formu.tsx",
     "cekirdek/vitrin/hesap-alani.tsx",
     "cekirdek/vitrin/kayit-formu.tsx",

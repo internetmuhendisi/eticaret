@@ -196,6 +196,10 @@ describe("Tailwind yalnız tasarım değerlerini tanır", () => {
       join(kok, "cekirdek/vitrin/arama-kutusu.tsx"),
       join(kok, "cekirdek/vitrin/urun-listesi/arama-sayfasi.tsx"),
       join(kok, "cekirdek/vitrin/hata-sayfasi.tsx"),
+      // Favori düğmesi ve favoriler sayfası (kart 0140).
+      join(kok, "cekirdek/vitrin/favori-dugmesi.tsx"),
+      join(kok, "cekirdek/vitrin/favori-listesi.tsx"),
+      join(kok, "cekirdek/vitrin/favoriler-sayfasi.tsx"),
       // Ürün sayfası (kart 0138).
       ...readdirSync(join(kok, "cekirdek/vitrin/urun-sayfasi"))
         .filter((ad) => ad.endsWith(".tsx"))

@@ -4,6 +4,7 @@
 import { duzenIzinleri } from "../moduller/duzen/izinler.ts";
 import { ekipIzinleri } from "../moduller/ekip/izinler.ts";
 import { etiketIzinleri } from "../moduller/etiket/izinler.ts";
+import { favoriIzinleri } from "../moduller/favori/izinler.ts";
 import { fiyatIzinleri } from "../moduller/fiyat/izinler.ts";
 import { kategoriIzinleri } from "../moduller/kategori/izinler.ts";
 import { magazaAyarlariIzinleri } from "../moduller/magaza-ayarlari/izinler.ts";
@@ -31,6 +32,7 @@ export const modulIzinleri = {
   duzen: duzenIzinleri,
   ekip: ekipIzinleri,
   etiket: etiketIzinleri,
+  favori: favoriIzinleri,
   fiyat: fiyatIzinleri,
   kategori: kategoriIzinleri,
   "magaza-ayarlari": magazaAyarlariIzinleri,
@@ -49,6 +51,7 @@ export const izinler = {
   ...duzenIzinleri,
   ...ekipIzinleri,
   ...etiketIzinleri,
+  ...favoriIzinleri,
   ...fiyatIzinleri,
   ...kategoriIzinleri,
   ...magazaAyarlariIzinleri,

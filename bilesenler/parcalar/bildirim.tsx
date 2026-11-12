@@ -1,7 +1,7 @@
 "use client";
 // Anlık bildirim (kart 0103; shadcn/ui sonner). "Kaydedildi", "Hata oluştu" gibi bildirimler yalnız
 // buradan gösterilir (.claude/rules/bilesenler.md). Bildirim alanı sayfada bir kez durur; bildirim
-// bildirimGoster ile açılır. Ekran okuyucu bildirimi okur. Metinleri kullanan sayfa verir; Sonner'ın kendi
+// bildirimGoster ile açılır; isteğe bağlı bir eylem düğmesi taşır ("Geri al"). Ekran okuyucu bildirimi okur. Metinleri kullanan sayfa verir; Sonner'ın kendi
 // renkleri kapalıdır (unstyled), görünüş tasarım değerlerindendir. Alan body'nin ayrı bir çocuğu olarak
 // çizilir ve dışarıda kalır işaretini taşır: pencere açıkken etkisiz kılınmaz, pencereden verilen bildirim
 // de okunur ve kapatılabilir (kart 0103, ölçüldü).
@@ -60,6 +60,9 @@ export function BildirimAlani({
             toast:
               "relative flex w-full items-start gap-3 rounded-orta border-2 p-4 pr-12 font-govde text-govde shadow-acilir",
             title: "font-kalin",
+            // Eylem düğmesi yazının altında, bildirimin kendi renginde kenarlı bir düğmedir.
+            actionButton:
+              "mt-2 inline-flex min-h-11 cursor-pointer items-center rounded-dugme border border-current px-4 font-en-kalin hover:bg-kenar",
             icon: "mt-0.5",
             closeButton:
               "absolute top-1 right-1 flex size-11 cursor-pointer items-center justify-center rounded-dugme text-current hover:bg-kenar",
@@ -77,12 +80,23 @@ export function BildirimAlani({
   );
 }
 
-export function bildirimGoster(tur: UyariTuru, metin: string): void {
+// Bildirimin isteğe bağlı eylemi, örneğin "Geri al" (kart 0140). Düğme bildirimin içinde durur, basılınca
+// bildirim kapanır. Eylemli bildirim daha uzun (eylemliSure) açık kalır; üzerine gelince ya da klavyeyle
+// bildirim alanına geçince (Alt+T) süre durur.
+const eylemliSure = 10_000;
+export type BildirimEylemi = { etiket: string; tikla: () => void };
+
+export function bildirimGoster(tur: UyariTuru, metin: string, eylem?: BildirimEylemi): void {
   const goster = {
     tehlike: toast.error,
     uyari: toast.warning,
     basari: toast.success,
     bilgi: toast.info,
   }[tur];
-  goster(metin, { className: sinif(turSiniflari[tur]) });
+  goster(metin, {
+    className: sinif(turSiniflari[tur]),
+    ...(eylem === undefined
+      ? {}
+      : { action: { label: eylem.etiket, onClick: eylem.tikla }, duration: eylemliSure }),
+  });
 }

@@ -5,8 +5,8 @@
 //   taslak, arşiv, silinmiş ve zamanı gelmemiş ürün bulunamadı sayfasına düşer, eski adres yönlenir.
 // - Veri urunSayfasiVerisi'nden gelir. Her birleşimin fiyatı, stok yazısı ve stok kodu burada fiyat
 //   bileşeniyle ve stok metinleriyle çizilir ve tarayıcıdaki üst kısma verilir; tarayıcı seçime göre gösterir.
-// - Sepet, adet, favori, puan ve yorumlar işlevleri yazılınca gelir (yorum kart 0139, sepet Sepet bölümü);
-//   o güne kadar sayfada görünmezler. Yorumların yeri özellik tablosundan sonra, ilgili ürünlerden öncedir.
+// - Sepet, adet, favori, puan ve yorumlar işlevleri yazılınca gelir (yorum kart 0139, favori kart 0140, sepet
+//   Sepet bölümü); o güne kadar sayfada görünmezler. Yorumların yeri özellik tablosundan sonra, ilgili ürünlerden öncedir.
 // - Seçimli adres (?secenek-beden=m) aynı sayfadır: arama motoruna seçimsiz adres bildirilir (canonical). Gizli
 //   ürünün sayfası arama motorlarına kapalıdır.
 import { and, eq, isNull, sql } from "drizzle-orm";
@@ -38,6 +38,7 @@ import { vitrinKosulu } from "../../moduller/urun/vitrin";
 import { siteninVeritabani } from "../../veritabani/baglanti";
 import { kayitAdresleri, vitrinAdresleri } from "../adresler";
 import { seritSiniflari } from "../bolumler/ortak/urun-izgarasi";
+import { FavoriDugmesi } from "../favori-dugmesi";
 import {
   type AdresParametreleri,
   kayitSayfasininBilgisi,
@@ -325,6 +326,13 @@ export async function UrunSayfasi({
         }
         kisaAciklama={veri.kisaAciklama === undefined ? null : <p>{veri.kisaAciklama}</p>}
         altBilgi={<KargoBilgisi gun={veri.kargoyaVermeSuresi} />}
+        eylemler={
+          yazilanIslevler.favori ? (
+            <div className="flex items-center gap-2">
+              <FavoriDugmesi urun={veri.kimlik} urunAdi={veri.ad} tur="cerceveli" />
+            </div>
+          ) : null
+        }
         galeri={veri.galeri}
         anaGorselSirasi={veri.anaGorselSirasi}
         secenekler={veri.secenekler}

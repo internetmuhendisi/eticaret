@@ -10,7 +10,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeAll, describe, expect, it } from "vitest";
 import { siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
 import { urunKartiGorunumleri } from "../../../kayitlar/tema.ts";
+import { MetinSaglayici } from "../../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../../metinler/metin.ts";
+import { doldur } from "../../../moduller/eposta/sablon.ts";
 import type { GosterilecekFiyat } from "../../../moduller/fiyat/gosterim.ts";
 import { urunKartiGorunumu } from "../gorunum.ts";
 import type { UrunKartiVerisi } from "../tur.ts";
@@ -69,8 +71,11 @@ const ciz = (
   gorunum: (typeof urunKartiGorunumleri)[number] = "dikey",
 ) => {
   const kap = document.createElement("div");
+  // Favori düğmesi tarayıcıdaki metin okuyucuyu kullanır (kart 0140): kök düzendeki gibi sağlayıcıyla çizilir.
   kap.innerHTML = renderToStaticMarkup(
-    <UrunKarti urun={veri} gorunum={gorunum} islevler={islevler} />,
+    <MetinSaglayici dil="tr">
+      <UrunKarti urun={veri} gorunum={gorunum} islevler={islevler} />
+    </MetinSaglayici>,
   );
   const kart = kap.querySelector("article");
   if (kart === null) throw new Error("Kart çizilmedi.");
@@ -216,7 +221,7 @@ describe("görsel ve işlevler", () => {
     // Klavye sırası: ürünün adı, sepete ekle, favori.
     expect(adlar).toEqual([
       metin("vitrin.urunKarti.sepeteEkle"),
-      metin("vitrin.urunKarti.favoriyeEkle"),
+      doldur(metin("vitrin.urunKarti.favoriyeEkle"), { urun: puanli.ad }),
     ]);
     // Puan beş yıldızdır (taslak): ortalama 3,6 yuvarlanır, dördü dolu.
     const puan = kart.querySelector('[data-slot="puan"]');
@@ -247,7 +252,7 @@ describe("görsel ve işlevler", () => {
       const adlar = [...ciz(veri, acik).querySelectorAll("button")].map((d) =>
         d.getAttribute("aria-label"),
       );
-      expect(adlar).toEqual([metin("vitrin.urunKarti.favoriyeEkle")]);
+      expect(adlar).toEqual([doldur(metin("vitrin.urunKarti.favoriyeEkle"), { urun: veri.ad })]);
     }
   });
 });

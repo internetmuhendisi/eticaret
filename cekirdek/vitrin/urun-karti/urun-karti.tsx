@@ -15,7 +15,8 @@
 // - Puan beş yıldızdır (taslak): ortalamanın yuvarlandığı kadarı dolu; puanı olmayan üründe beşi boş.
 // - Ad iki satırda üç noktayla biter, tam adı bağlantının kendisidir. Bütün kart ürün sayfasına gider:
 //   adın bağlantısı kartın üstüne yayılır, favori ve sepet düğmeleri onun üstündedir.
-// - Favori, sepete ekle ve puan işlevleri yazılınca görünür (cekirdek/kayitlar/islevler.ts). Eylemleri
+// - Favori, sepete ekle ve puan işlevleri yazılınca görünür (cekirdek/kayitlar/islevler.ts). Favori kart 0140
+//   ile çalışır (FavoriDugmesi, durumu sayfada tek yerden). Öteki eylemleri
 //   bu kartta yazılmaz, yalnız yerleri vardır (kart 0109'un sınırı).
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -28,6 +29,7 @@ import type { Islev } from "../../kayitlar/islevler";
 import type { UrunKartiGorunumu } from "../../kayitlar/tema";
 import { bicim, metin } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
+import { FavoriDugmesi } from "../favori-dugmesi";
 import { Yildizlar } from "../yildizlar";
 import { FiyatGosterimi } from "./fiyat";
 import type { UrunKartiGorseli, UrunKartiVerisi } from "./tur";
@@ -150,12 +152,7 @@ export function UrunKarti({
   // Favori taslaktaki gibi zeminsizdir: görselin köşesindeki yüzeyin üstünde durur. Sepete ekle
   // görselin altına yakın durduğu için zemin rengindedir, görselin üstüne gelse de okunur.
   const favori = islevler.favori ? (
-    <IkonDugmesi
-      ikon="favori"
-      etiket={metin("vitrin.urunKarti.favoriyeEkle")}
-      tur="sade"
-      className="pointer-events-auto relative"
-    />
+    <FavoriDugmesi urun={urun.kimlik} urunAdi={urun.ad} className="pointer-events-auto relative" />
   ) : null;
   const sepet =
     islevler.sepet && !urun.tukendi && urun.fiyat !== undefined ? (

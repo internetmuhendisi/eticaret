@@ -61,6 +61,7 @@ const ciz = (
         basliklar={null}
         kisaAciklama={null}
         altBilgi={null}
+        eylemler={null}
         galeri={[]}
         anaGorselSirasi={undefined}
         secenekler={secenekler}

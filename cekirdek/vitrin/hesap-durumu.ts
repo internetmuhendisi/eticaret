@@ -11,6 +11,7 @@
 import { useSyncExternalStore } from "react";
 import { hataKodlari } from "../kayitlar/kapi";
 import { vitrinAdresleri } from "./adresler";
+import { cereziSil } from "./favori-deposu";
 
 const hesabimUcu = "/kapi/musteri/hesabim";
 const cikisUcu = "/kapi/herkese-acik/musteri-cikis";
@@ -22,10 +23,11 @@ export type HesapDurumu =
 
 const bilinmiyor: HesapDurumu = { tur: "bilinmiyor" };
 let durum: HesapDurumu = bilinmiyor;
-let soruldu = false;
 const dinleyiciler = new Set<() => void>();
 
-const sor = async (): Promise<void> => {
+let cevap: Promise<HesapDurumu> | undefined;
+
+const sor = async (): Promise<HesapDurumu> => {
   // İstek iptal edilmez: yanıtı yenilenen oturum anahtarını taşıyabilir, tarayıcıya ulaşmazsa eski anahtarla
   // kalınır ve oturum kapanır (karar 0039).
   let sonuc: HesapDurumu = bilinmiyor;
@@ -42,14 +44,28 @@ const sor = async (): Promise<void> => {
   }
   durum = sonuc;
   for (const dinleyici of dinleyiciler) dinleyici();
+  return sonuc;
+};
+
+const sorulmadiysaSor = (): Promise<HesapDurumu> => {
+  cevap ??= sor();
+  return cevap;
+};
+
+// Hesap durumunun cevabı (kart 0140): favori durumu oturuma bundan sonra gider, böylece aynı sayfada iki müşteri
+// isteği aynı yenileme anahtarını aynı anda kullanmaz. İstek henüz gitmediyse gönderir.
+export const hesapDurumunuBekle = (): Promise<HesapDurumu> => sorulmadiysaSor();
+
+// Hesap durumunu yeniden sorar (kart 0140): başka sekmede giriş yapılınca girişsiz sanan sekme favorileri
+// hesaptan almalıdır. Bütün kullananlar yeni cevabı görür.
+export const hesapDurumunuYenile = (): Promise<HesapDurumu> => {
+  cevap = undefined;
+  return sorulmadiysaSor();
 };
 
 const abone = (dinleyici: () => void) => {
   dinleyiciler.add(dinleyici);
-  if (!soruldu) {
-    soruldu = true;
-    void sor();
-  }
+  void sorulmadiysaSor();
   return () => {
     dinleyiciler.delete(dinleyici);
   };
@@ -66,11 +82,13 @@ export const useHesapDurumu = (sorulur = true): HesapDurumu =>
     () => bilinmiyor,
   );
 
-// Çıkış yapar ve ana sayfayı baştan yükler. Çıkış olmazsa false döner; kullanan uyarıyı gösterir.
+// Çıkış yapar ve ana sayfayı baştan yükler. Favoriler sayfasının çerezi silinir (kart 0140, kullanıcı kararı:
+// çıkıştan sonra bu cihazda favoriler boş görünür). Çıkış olmazsa false döner; kullanan uyarıyı gösterir.
 export const cikisYap = async (): Promise<boolean> => {
   try {
     const yanit = await fetch(cikisUcu, { method: "POST" });
     if (yanit.ok) {
+      cereziSil();
       window.location.assign(vitrinAdresleri.anasayfa);
       return true;
     }
@@ -83,5 +101,5 @@ export const cikisYap = async (): Promise<boolean> => {
 // Yalnız testler için: bir sonraki kullanan uca yeniden sorar.
 export const hesapDurumunuSifirla = (): void => {
   durum = bilinmiyor;
-  soruldu = false;
+  cevap = undefined;
 };

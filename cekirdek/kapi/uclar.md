@@ -253,6 +253,36 @@ Müşterinin ürüne yorumu (kart 0139, karar 0109). Yorum onay bekler; mağaza 
 - Başarılı (200): `{ "basarili": true, "veri": {} }`.
 - Hatalar: `dogrulama` (şemaya uymayan girdi; `metin-gecersiz`), `robot-dogrulamasi`, `oturum-yok`, `bulunamadi` (`urun-yok`), `is-kurali` (`satin-alma-gerekli`: "Yalnız satın alanlar yorum yapabilir" açık ve müşteri ürünü satın almamış), `cakisma` (`yorum-yazildi`: müşterinin bu ürüne yorumu var), `istek-siniri`.
 
+### GET /kapi/musteri/favoriler
+
+Müşterinin favorileri (kart 0140, karar 0110). Vitrin girişli müşterinin favori durumunu sayfa yüklemesi başına bir kez, hesap durumundan sonra sorar; bütün favori düğmeleri cevabı paylaşır.
+
+- İzin: `favori.kendi.gor`. Sınır: `genel`.
+- Girdi: yok (`favorilerSemasi`, `cekirdek/moduller/favori/semalar.ts`). Müşterinin kimliği yalnız kapıdan gelir.
+- Servis: `cekirdek/moduller/favori/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "favoriler": ["<ürün kimliği>", ...] } }`: yalnız vitrinde sayfası açılan ürünler, en yeni önce.
+- Hatalar: `oturum-yok`.
+
+### POST /kapi/musteri/favori
+
+Ürünü favorilere ekler ya da çıkarır (kart 0140, karar 0110). Zaten favorideki ürünü eklemek ve favoride olmayanı çıkarmak bir şey değiştirmez.
+
+- İzin: `favori.kendi.degistir`. Sınır: `genel`.
+- Girdi: `{ "urun", "favoride" }` (`favoriSemasi`). Müşterinin kimliği yalnız kapıdan gelir.
+- Servis: `cekirdek/moduller/favori/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "favoriler": [...] } }`: güncel liste.
+- Hatalar: `dogrulama`, `oturum-yok`, `bulunamadi` (`urun-yok`: eklenen ürün yok ya da sayfası açılmıyor), `is-kurali` (`favori-siniri`: favori sayısı sitenin sınırında).
+
+### POST /kapi/musteri/favori-birlestir
+
+Üye olmayan müşterinin tarayıcısındaki listeyi giriş ya da kayıttan sonra hesabına birleştirir (kart 0140, karar 0110). Hesapta olan ürün ikinci kez eklenmez; sayfası açılmayan ürün atlanır; sınıra sığmayanlar (tarayıcıdaki en eskiler) eklenmez.
+
+- İzin: `favori.kendi.degistir`. Sınır: `genel`.
+- Girdi: `{ "urunler": ["<ürün kimliği>", ...] }`, en yeni önce, en çok 100 (`favoriBirlestirSemasi`). Müşterinin kimliği yalnız kapıdan gelir.
+- Servis: `cekirdek/moduller/favori/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "favoriler": [...], "sigmayan": 0 } }`.
+- Hatalar: `dogrulama`, `oturum-yok`.
+
 ## Yönetici
 
 Yönetici uçları iki aşamalı girişten geçmiş oturum ister. Girişsiz istek `oturum-yok`, izni olmayan rol `yetki` alır.

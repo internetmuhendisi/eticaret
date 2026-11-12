@@ -11,6 +11,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
 import { baslangicRolleri } from "../../moduller/ekip/baslangic-rolleri.ts";
+import { favoriler } from "../../moduller/favori/model.ts";
+import { favoriServisi } from "../../moduller/favori/servis.ts";
 import { siteninServisi } from "../../moduller/magaza-ayarlari/servis.ts";
 import { hesapAc } from "../../moduller/oturum/servis.ts";
 import { robotSorusuUret } from "../../moduller/robot-korumasi/servis.ts";
@@ -73,6 +75,36 @@ const musteriSenaryolari: Record<string, MusteriSenaryosu> = {
       },
     };
   },
+  // B'nin favorisi var; A kendi listesini ister. B'nin ürünü A'nın listesinde görünmez.
+  "GET /kapi/musteri/favoriler": async (b) => {
+    const urun = await favoriUrunu(b.kimlik);
+    return { aranan: [b.eposta, urun] };
+  },
+  // A, B'nin favorisindeki ürünü çıkarmaya çalışır: yalnız kendi listesinden çıkar (zaten yok). B'nin favorisi
+  // yerinde kalır (aşağıdaki test ölçer).
+  "POST /kapi/musteri/favori": async (b) => {
+    const urun = await favoriUrunu(b.kimlik);
+    return { govde: { urun, favoride: false }, aranan: [b.eposta, urun] };
+  },
+  // A başka bir ürünü birleştirir: cevap yalnız A'nın listesidir, B'nin ürünü yoktur, B'ninki değişmez.
+  "POST /kapi/musteri/favori-birlestir": async (b) => {
+    const urun = await favoriUrunu(b.kimlik);
+    return { govde: { urunler: [await yayindakiUrun()] }, aranan: [b.eposta, urun] };
+  },
+};
+
+const yayindakiUrun = () =>
+  urunServisi(() => "Europe/Istanbul").urunEkle(vt, sistemIslemi("test"), {
+    ad: `Favorili ${randomBytes(4).toString("hex")}`,
+    vergiSinifi: null,
+    durum: "yayinda",
+  });
+
+// B'nin favorisindeki yayında bir ürün.
+const favoriUrunu = async (bKimligi: string) => {
+  const urun = await yayindakiUrun();
+  await favoriServisi(denemeSitesi()).favoriDegistir(vt, bKimligi, urun, true);
+  return urun;
 };
 
 // B'nin yorum yazdığı yayındaki bir ürün; "yalnız satın alanlar" kapalı (herkes yazabilsin).
@@ -209,6 +241,27 @@ describe("uygulamanın uçları", () => {
       { musteri: b.kimlik, metin: "B'nin yorumu", puan: 2 },
     ]);
   });
+});
+
+describe("favori uçları", () => {
+  it.each(["POST /kapi/musteri/favori", "POST /kapi/musteri/favori-birlestir"])(
+    "%s B'nin favorisine dokunmaz",
+    async (baslik) => {
+      const uc = (await uclariOku(uygulamaAdresleri)).find((kayit) => kayit.baslik === baslik);
+      const senaryo = musteriSenaryolari[baslik];
+      if (uc === undefined || senaryo === undefined) throw new Error("Favori ucu yok.");
+      const { a, b, sorunlar } = await baskasininKaydi(uc, senaryo);
+      expect(sorunlar).toEqual([]);
+      const satirlar = await vt
+        .select({ musteri: favoriler.musteri_kimligi })
+        .from(favoriler)
+        .where(inArray(favoriler.musteri_kimligi, [a.kimlik, b.kimlik]));
+      expect(satirlar.filter(({ musteri }) => musteri === b.kimlik)).toHaveLength(1);
+      expect(satirlar.filter(({ musteri }) => musteri === a.kimlik)).toHaveLength(
+        baslik.endsWith("birlestir") ? 1 : 0,
+      );
+    },
+  );
 });
 
 describe("kişi listesi", () => {

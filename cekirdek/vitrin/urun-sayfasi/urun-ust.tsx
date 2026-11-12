@@ -33,6 +33,7 @@ export function UrunUstKismi({
   basliklar,
   kisaAciklama,
   altBilgi,
+  eylemler,
   galeri,
   anaGorselSirasi,
   secenekler,
@@ -48,6 +49,8 @@ export function UrunUstKismi({
   kisaAciklama: ReactNode;
   // Kargo bilgisi gibi seçimden bağımsız satırlar.
   altBilgi: ReactNode;
+  // Satın alma satırı: bugün favori düğmesi (kart 0140); adet ve "Sepete ekle" sepetle gelir (taslak).
+  eylemler: ReactNode;
   galeri: readonly SayfaGaleriOgesi[];
   anaGorselSirasi: number | undefined;
   secenekler: readonly SecimSecenegi[];
@@ -140,6 +143,7 @@ export function UrunUstKismi({
           ) : null}
           {bilgi.stok}
         </div>
+        {eylemler}
         {altBilgi}
         {bilgi.stokKodu}
       </div>

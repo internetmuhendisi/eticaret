@@ -15,7 +15,8 @@ export const yazilanIslevler: Readonly<Record<Islev, boolean>> = {
   blog: false,
   bulten: false,
   arama: true,
-  favori: false,
+  // Kart 0140: favoriler.
+  favori: true,
   sepet: false,
   odeme: false,
 };

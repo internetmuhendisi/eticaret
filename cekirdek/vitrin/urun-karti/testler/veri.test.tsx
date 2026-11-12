@@ -19,6 +19,7 @@ import { urunGorseliUcu } from "../../../kapi/herkese-acik/urun-gorseli.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
 import { gorselBoyutlari } from "../../../kayitlar/gorsel.ts";
 import { yazilanIslevler } from "../../../kayitlar/islevler.ts";
+import { MetinSaglayici } from "../../../metinler/istemci-metni.tsx";
 import { dosyaOku, dosyaSil, gorselKaydet } from "../../../moduller/dosya/servis.ts";
 import { fiyatGosterimServisi } from "../../../moduller/fiyat/gosterim.ts";
 import { siteninFiyatServisi } from "../../../moduller/fiyat/servis.ts";
@@ -129,7 +130,11 @@ const hazirla = async () => {
 };
 
 const ciz = (kart: Parameters<typeof UrunKarti>[0]["urun"]) =>
-  renderToStaticMarkup(<UrunKarti urun={kart} gorunum="dikey" islevler={yazilanIslevler} />);
+  renderToStaticMarkup(
+    <MetinSaglayici dil="tr">
+      <UrunKarti urun={kart} gorunum="dikey" islevler={yazilanIslevler} />
+    </MetinSaglayici>,
+  );
 
 describe("kartın verisi", () => {
   it("fiyat çekirdeğin fiyat aralığıyla birebir aynı; çizilen kartta yazılı tutar, eski fiyat ve vergi metni", async () => {

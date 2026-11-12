@@ -16,6 +16,8 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `etiket.gor` | yonetici | tumu | Etiketleri ve ürünlerini görür. |
 | `etiket.degistir` | yonetici | tumu | Etiket ekler ve değiştirir. |
 | `etiket.sil` | yonetici | tumu | Etiket siler: ürünlerden kalkar. |
+| `favori.kendi.gor` | musteri | kendi | Müşteri kendi favorilerini görür. |
+| `favori.kendi.degistir` | musteri | kendi | Müşteri ürünü kendi favorilerine ekler, çıkarır ve tarayıcısındaki listeyi hesabına birleştirir. |
 | `fiyat.gor` | yonetici | tumu | Satılabilir birimlerin fiyatlarını ve fiyat geçmişini görür. |
 | `fiyat.degistir` | yonetici | tumu | Satış fiyatını ve indirimi değiştirir. |
 | `kategori.gor` | yonetici | tumu | Kategorileri ve ürünlerini görür. |

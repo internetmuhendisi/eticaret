@@ -10,6 +10,7 @@ import { katalogAdresi, katalogParcalari } from "../../katalog/kayit";
 import kullanimlar from "../../katalog/kullanimlar.json" with { type: "json" };
 import type { MetinAnahtari } from "../../metinler/metin";
 import { metin } from "../../metinler/site-metni";
+import { doldur } from "../../moduller/eposta/sablon";
 import { sayfaHazir } from "./sayfa-hazir";
 
 const genislikler = [
@@ -526,7 +527,11 @@ test("ürün kartı: klavyede ad, sepet ve favori sırasıyla; adın odağı kar
   ).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(
-    kart.getByRole("button", { name: metin("vitrin.urunKarti.favoriyeEkle") }),
+    kart.getByRole("button", {
+      name: doldur(metin("vitrin.urunKarti.favoriyeEkle"), {
+        urun: metin("gelistirme.urunKarti.ornek.indirimli"),
+      }),
+    }),
   ).toBeFocused();
 });
 
@@ -556,7 +561,12 @@ test("ürün kartı: görsele tıklayan ürün sayfasına, düğmeye tıklayan d
   expect(await ustteki(gorsel.x + gorsel.width / 2, gorsel.y + gorsel.height / 2)).toBe(
     metin("gelistirme.urunKarti.ornek.indirimli"),
   );
-  for (const ad of [metin("vitrin.urunKarti.sepeteEkle"), metin("vitrin.urunKarti.favoriyeEkle")]) {
+  for (const ad of [
+    metin("vitrin.urunKarti.sepeteEkle"),
+    doldur(metin("vitrin.urunKarti.favoriyeEkle"), {
+      urun: metin("gelistirme.urunKarti.ornek.indirimli"),
+    }),
+  ]) {
     const kutu = await kart.getByRole("button", { name: ad }).boundingBox();
     if (kutu === null) throw new Error("Düğme yok.");
     const bulunan = await kart.evaluate(

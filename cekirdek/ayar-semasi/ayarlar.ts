@@ -9,6 +9,7 @@
 import { z } from "zod";
 import { postaAdresiSemasi, telefonSemasi } from "../bolgeler/adres.ts";
 import { ulkeGecerliMi } from "../bolgeler/bolgeler.ts";
+import { favoriSiniriEnCok } from "../kayitlar/favori.ts";
 import { listeSayfasi, listeSiralamalari, sayfaGecisleri } from "../kayitlar/liste.ts";
 import { type AyarSahibi, ayarSahibi } from "../kayitlar/site.ts";
 import { sosyalHesapKalibi, sosyalHesapSiniri, sosyalSiteler } from "../kayitlar/sosyal-siteler.ts";
@@ -180,6 +181,13 @@ export const ayarSemasi = z.strictObject({
   musteriOturumuGun: ayar(
     z.int().min(1).max(365).default(30),
     altyapiSahibinin("ayar.aciklama.musteriOturumuGun"),
+  ),
+  // Bir müşterinin en çok kaç ürünü favorilerine ekleyebileceği (kart 0140, karar 0110). Hem hesaptaki hem
+  // tarayıcıdaki liste için geçerlidir. Veritabanının yükünü ve favoriler çerezinin boyunu belirlediği için
+  // altyapı sahibinindir; en büyük değeri çerezin sınırından gelir (cekirdek/kayitlar/favori.ts).
+  favoriSiniri: ayar(
+    z.int().min(1).max(favoriSiniriEnCok).default(100),
+    altyapiSahibinin("ayar.aciklama.favoriSiniri"),
   ),
 });
 

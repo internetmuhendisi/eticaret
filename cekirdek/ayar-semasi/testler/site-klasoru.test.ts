@@ -99,6 +99,7 @@ describe("ayar şeması", () => {
       yakindaYazisi: false,
       yoneticiOturumuSaat: 24,
       musteriOturumuGun: 30,
+      favoriSiniri: 100,
     });
   });
 

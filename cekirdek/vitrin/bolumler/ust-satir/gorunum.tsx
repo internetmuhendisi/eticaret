@@ -11,6 +11,7 @@ import { metin } from "../../../metinler/site-metni";
 import { vitrinAdresleri } from "../../adresler";
 import { AramaKutusu } from "../../arama-kutusu";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
+import { FavoriSayisi } from "../../favori-dugmesi";
 import { HesapMenusu } from "./hesap-menusu";
 import { MenuDugmesi } from "./menu-dugmesi";
 
@@ -23,14 +24,16 @@ type Simge = { adres: string; ikon: IkonAdi; etiket: string; sayi?: number | und
 const sayiSiniflari =
   "inline-flex h-5 min-w-5 items-center justify-center rounded-dugme bg-birincil px-1.5 text-kucuk font-kalin text-birincil-ustu";
 
-// Yalnız ikonlu bağlantı (arama, favori); telefonda gizlenebilir.
+// Yalnız ikonlu bağlantı (arama, favori); telefonda gizlenebilir. Favorinin sayısı tarayıcıda, favori durumundan
+// gelir (kart 0140): sayfada tek istek gider, düğmeler değişince sayı da değişir.
 function SimgeBaglantisi({
   adres,
   ikon,
   etiket,
   sayi,
+  favoriSayisi = false,
   telefondaGizli = false,
-}: Simge & { telefondaGizli?: boolean }) {
+}: Simge & { favoriSayisi?: boolean; telefondaGizli?: boolean }) {
   return (
     <Baglanti
       href={adres}
@@ -42,7 +45,12 @@ function SimgeBaglantisi({
     >
       <Ikon ad={ikon} className="size-5" />
       <span className="sr-only">{etiket}</span>
-      {sayi === undefined || sayi === 0 ? null : (
+      {favoriSayisi ? (
+        <FavoriSayisi
+          {...(sayi === undefined ? {} : { ornekSayi: sayi })}
+          className={sinif(sayiSiniflari, "absolute top-0 right-0")}
+        />
+      ) : sayi === undefined || sayi === 0 ? null : (
         <span className={sinif(sayiSiniflari, "absolute top-0 right-0")}>{sayi}</span>
       )}
     </Baglanti>
@@ -171,7 +179,7 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
 
   const simgeler = (
     <div className="flex shrink-0 items-center justify-end gap-1">
-      {favori === undefined ? null : <SimgeBaglantisi {...favori} telefondaGizli />}
+      {favori === undefined ? null : <SimgeBaglantisi {...favori} favoriSayisi telefondaGizli />}
       <HesapMenusu
         baglanti={<YaziliBaglanti {...hesap} telefondaGizli />}
         etiket={hesap.etiket}

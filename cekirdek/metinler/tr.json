@@ -75,6 +75,7 @@
       "bakimMetni": "Bakım sayfasında görünen metin. Boşsa ortak metin görünür.",
       "yoneticiOturumuSaat": "Hiç girilmeyen yönetici oturumunun kapanma süresi, saat olarak.",
       "musteriOturumuGun": "Hiç girilmeyen müşteri oturumunun kapanma süresi, gün olarak.",
+      "favoriSiniri": "Bir müşterinin favorilerine ekleyebileceği en çok ürün sayısı; hesapta ve tarayıcıda saklanan liste için aynıdır.",
       "epostaGonderenAdi": "E-postalarda görünen gönderen adı. Boşsa mağazanın görünen adı kullanılır.",
       "epostaGonderenAdresi": "E-postaların gönderildiği adres. Boşsa e-posta gönderilmez.",
       "epostaYanitAdresi": "Müşterinin yanıtının gideceği adres. Boşsa yanıt gönderen adresine gider.",
@@ -680,10 +681,11 @@
     "urunKarti": {
       "indirim": "{oran} indirim",
       "varanIndirim": "{oran}{ek} varan indirim",
-      "favoriyeEkle": "Favorilere ekle",
+      "favoriyeEkle": "Favorilere ekle: {urun}",
       "sepeteEkle": "Sepete ekle",
       "puan": "5 üzerinden {ortalama} puan, {sayi} değerlendirme",
-      "puanYok": "Henüz puan yok"
+      "puanYok": "Henüz puan yok",
+      "favoridenCikar": "Favorilerden çıkar: {urun}"
     },
     "onay": {
       "pazarlama": "Kampanya ve duyurular için bana e-posta gönderilsin."
@@ -832,6 +834,24 @@
       "hataSinir": "Çok sık denediniz. Bir dakika sonra yeniden gönderin.",
       "hataGenel": "Yorumunuz gönderilemedi. Biraz sonra yeniden deneyin.",
       "hataUrun": "Bu ürüne şu an yorum yazılamıyor."
+    },
+    "favori": {
+      "baslik": "Favorilerim",
+      "sayi": "{sayi} ürün",
+      "urunler": "Favori ürünler",
+      "eklendi": "{urun} favorilerinize eklendi.",
+      "cikarildi": "{urun} favorilerinizden çıkarıldı.",
+      "geriAl": "Geri al",
+      "sinir": "Favorilerinize en çok {sinir} ürün ekleyebilirsiniz. Yenisini eklemek için listeden bir ürün çıkarın.",
+      "urunYok": "Bu ürün artık satışta değil, favorilere eklenemedi.",
+      "hata": "Favoriler şu an güncellenemedi. Sayfayı yenileyip yeniden deneyin.",
+      "sigmayan": "Bu cihazdaki favorilerinizden {sayi} ürün, en çok {sinir} ürün sınırı yüzünden hesabınıza eklenemedi.",
+      "cihazda": "Favorileriniz bu cihazda saklanıyor. Giriş yapınca hesabınıza geçer, öteki cihazlarınızda da görünür.",
+      "girisBaglantisi": "Giriş yap",
+      "yukleniyor": "Favoriler yükleniyor",
+      "bosBaslik": "Favori listeniz boş",
+      "bosAciklama": "Beğendiğiniz ürünlerdeki kalbe dokunun, burada toplansın.",
+      "alisveriseBasla": "Alışverişe başla"
     }
   },
   "eposta": {
@@ -1008,6 +1028,10 @@
       "suzgecleriUygula": "Süzgeçleri uygula",
       "hataBildirimiGoster": "Hata bildirimi göster",
       "hataBildirimMetni": "Değişiklikler kaydedilemedi.",
+      "eylemliBildirimGoster": "Geri alınabilir bildirim göster",
+      "eylemliBildirimMetni": "Ürün listeden çıkarıldı.",
+      "geriAl": "Geri al",
+      "geriAlindi": "Ürün listeye geri kondu.",
       "telefon": "Telefon",
       "telefonAciklama": "Başında 0 olmadan yazın.",
       "telefonHata": "Telefon numarası eksik.",

@@ -15,6 +15,17 @@ export function BildirimOrnegi() {
       <Dugme tur="cerceveli" onClick={() => bildirimGoster("tehlike", m("hataBildirimMetni"))}>
         {m("hataBildirimiGoster")}
       </Dugme>
+      <Dugme
+        tur="cerceveli"
+        onClick={() =>
+          bildirimGoster("bilgi", m("eylemliBildirimMetni"), {
+            etiket: m("geriAl"),
+            tikla: () => bildirimGoster("basari", m("geriAlindi")),
+          })
+        }
+      >
+        {m("eylemliBildirimGoster")}
+      </Dugme>
     </div>
   );
 }

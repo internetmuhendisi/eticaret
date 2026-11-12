@@ -71,6 +71,14 @@ paths:
 - Yorum metni düz metindir, yazı olarak çizilir (HTML olarak çizilmez). Görünen ad kısaltılmış saklanır (`kisaAd`).
 - Sayfa çizilirken müşterinin oturumu okunmaz: yazma izni "Yorum yaz" basılınca müşteri ucundan sorulur. Girişe giden müşteri `girisAdresiDonuslu` ile, yalnız vitrinin kendi sayfasına döner (`vitrinDonusu`).
 
+## Favoriler (karar 0110)
+
+- Favori yalnız `cekirdek/moduller/favori/servis.ts` ile yazılır ve okunur. Listede yalnız sayfası açılan ürün görünür (`vitrinKosulu`, sayfa yeri); sınır sitenin `favoriSiniri` ayarıdır ve yalnız görünen favorileri sayar.
+- Vitrinde favori durumu yalnız `cekirdek/vitrin/favori-durumu.ts`'tedir: düğme `FavoriDugmesi`, sayı `FavoriSayisi` ile (`favori-dugmesi.tsx`). Hesap durumundan sonra tek istek gider; değişiklik istekleri sırayla gider. Favori düğmesini başka yerde yeniden yazma.
+- Üye olmayan müşterinin listesi ve favoriler sayfasının çerezi yalnız `favori-deposu.ts` ile okunur ve yazılır; yalnız ürün kimlikleri saklanır. Çıkış (`cikisYap`) çerezi siler.
+- Favoriler sayfası kartları çerezdeki listeyle sunucuda `urunKartlari` ile çizer; sırayı ve görünenleri tarayıcıdaki durum seçer (`favori-listesi.tsx`).
+- Vitrinin bildirim alanı çerçevededir (`VitrinBildirimleri`); vitrin ekranı bildirimi `bildirimGoster` ile verir, ikinci bir alan açmaz.
+
 ## Ana sayfa bölümleri ve görseller (karar 0087)
 
 - Ana sayfa düzenin ana sayfa alanını çizer; bölüm yoksa sade sayfa görünür. Bölümün başlığı h2'dir, sayfanın h1'i mağaza adıdır.
