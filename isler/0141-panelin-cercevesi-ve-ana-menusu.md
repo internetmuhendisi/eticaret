@@ -30,4 +30,4 @@ Bölüm: Vitrin. Önce 0134 bitmiş olmalı.
 
 ## Durum
 
-yapılacak
+bitti
