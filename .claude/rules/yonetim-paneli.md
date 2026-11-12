@@ -23,5 +23,12 @@ paths:
 ## Panelin kapısı (karar 0042)
 
 - Girişsiz panel adresi `cekirdek/uygulama/proxy.ts` ile giriş sayfasına yönlenir, `(panel)` düzeni anahtarı değiştirmeden ikinci kez sorar. Yeni panel sayfası `app/yonetim/(panel)/` altına yazılır; yalnız giriş sayfası dışarıda durur.
-- Sayfa çizerken `istektenOturumAl` çağrılmaz, `oturumAcikMi` kullanılır. Bu ve yukarıdaki yer kuralını `cekirdek/kapi/testler/panel-katmanlari.test.ts` denetler.
+- Sayfa çizerken `istektenOturumAl` çağrılmaz; oturum anahtarı değiştirmeden okunur: `oturumAcikMi`, yöneticinin kendisi gerekiyorsa `panelOturumu` (`oturumunHesabi`, kart 0141). Bu ve yukarıdaki yer kuralını `cekirdek/kapi/testler/panel-katmanlari.test.ts` denetler (adres dosyaları ve `cekirdek/yonetim-paneli/`).
 - Girişten sonraki dönüş adresi yalnız `guvenliDonus` ile kullanılır (`cekirdek/yonetim-paneli/adresler.ts`).
+
+## Çerçeve ve sayfa ağacı (karar 0111)
+
+- Panelin sayfaları `cekirdek/yonetim-paneli/sayfa-agaci.ts` dosyasındadır. Yeni ekran önce ağaca yazılır, sonra `app/yonetim/(panel)/` altına; sayfa `<PanelSayfasi kod="...">` ile çizilir. Ağaç ile sayfa dosyalarının aynı olmasını `cekirdek/yonetim-paneli/testler/sayfa-agaci.test.ts` denetler.
+- Menüdeki ve sayfadaki izin ağaçtaki `izin` alanından okunur, yöneticinin izinleri `panelOturumu` ile istek başına bir kez gelir. İzni olmayan sayfa bulunamadı verir (`panelSayfasiniAc`).
+- Komut çubuğunun eylemleri `EylemDugmesi` ve `EylemBaglantisi` ile, kodu `cekirdek/yonetim-paneli/eylemler.ts` kaydında yazılır. Asıl eylem `asil` alır.
+- Elle sıralanan küçük listeler `SiralanabilirListe` ile, metinleri `siralamaMetinleri` ile yazılır.

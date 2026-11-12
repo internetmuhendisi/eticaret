@@ -1,68 +1,33 @@
 // Yönetici girişi tarayıcıda baştan sona (kart 0027). Deneme yöneticisini gerçek komut açar; şifreyi
 // komutun çıktısından okur. Her çalışma yeni bir hesap açar, e-postası rastgeledir.
-import { execFileSync } from "node:child_process";
-import { randomBytes } from "node:crypto";
 import { expect, type Page, test } from "@playwright/test";
 import { altyapiAdi } from "../../kayitlar/altyapi";
 import { girisAdimiCerezi, ikiAsamaDenemeSiniri, oturumCerezAdlari } from "../../kayitlar/oturum";
 import { metin } from "../../metinler/site-metni";
 import { kodAdimi, zamanliKod } from "../../moduller/oturum/iki-asama";
 import { sayfaHazir } from "./sayfa-hazir";
+import {
+  ayriBaglanti,
+  gizliOku,
+  kurulumuBitir,
+  sifreyleGir as ortakSifreyleGir,
+  yoneticiAc,
+} from "./yonetici";
 
 // Her test kendi yöneticisini açar: bir kod ikinci kez geçmediği için aynı hesapla aynı 30 saniyede iki
-// kez girilemez (kart 0028).
+// kez girilemez (kart 0028). Adımlar ortak yardımcıdadır (yonetici.ts).
 let eposta = "";
 let sifre = "";
 
-// Sıkı istek sınırı dakikada birkaç denemedir; her test kendi bağlantısından gelir.
 test.beforeEach(({ page }) => {
-  const { SITE_KLASORU } = process.env;
-  eposta = `deneme-${randomBytes(6).toString("hex")}@ornek.test`;
-  const cikti = execFileSync("pnpm", ["-s", "yonetici-ac", SITE_KLASORU ?? "", eposta], {
-    encoding: "utf8",
-  });
-  sifre = /^şifre\s+(\S+)$/m.exec(cikti)?.[1] ?? "";
-  expect(sifre).not.toBe("");
-  return page.setExtraHTTPHeaders({
-    "x-forwarded-for": `198.51.100.${1 + ((randomBytes(1)[0] ?? 0) % 250)}`,
-  });
+  ({ eposta, sifre } = yoneticiAc());
+  return ayriBaglanti(page);
 });
 
-// Sayfanın kodu yüklenmeden gönderilen form çalışmaz (kart 0057): önce sayfanın tarayıcıda bağlanması beklenir
-// (karar 0099).
 const yuklenmesiniBekle = sayfaHazir;
 
-const sifreyleGir = async (page: Page, girilen = sifre) => {
-  await yuklenmesiniBekle(page);
-  await page.getByLabel(metin("yonetim.giris.eposta")).fill(eposta);
-  await page.getByLabel(metin("yonetim.giris.sifre")).fill(girilen);
-  await page.getByRole("button", { name: metin("yonetim.giris.gonder") }).click();
-};
-
-// Karekodu okutamayanın elle gireceği anahtar: açıklamasının hemen altındadır.
-const gizliOku = async (page: Page) =>
-  (
-    await page
-      .getByText(metin("yonetim.kurulum.metinAnahtar"), { exact: true })
-      .locator("+ p")
-      .textContent()
-  )?.trim() ?? "";
-
-// Kurulum ekranındaki metin anahtardan gerçek uygulamanın üreteceği kodu üretir, kurulumu bitirir.
-const kurulumuBitir = async (page: Page) => {
-  await expect(page).toHaveURL(/\/yonetim\/giris\/kurulum/);
-  await yuklenmesiniBekle(page);
-  const gizli = await gizliOku(page);
-  const adim = kodAdimi();
-  await page.getByLabel(metin("yonetim.kurulum.alan")).fill(zamanliKod(gizli, adim));
-  await page.getByRole("button", { name: metin("yonetim.kurulum.gonder") }).click();
-  await expect(page.getByRole("heading", { level: 2 })).toHaveText(
-    metin("yonetim.kurulum.yedekBaslik"),
-  );
-  const yedekKodlari = await page.getByRole("listitem").allTextContents();
-  await page.getByRole("button", { name: metin("yonetim.kurulum.devam") }).click();
-  return { gizli, adim, yedekKodlari };
-};
+const sifreyleGir = (page: Page, girilen = sifre) =>
+  ortakSifreyleGir(page, { eposta, sifre: girilen });
 
 const girisYap = async (page: Page) => {
   await sifreyleGir(page);
@@ -88,7 +53,7 @@ test("giriş yapıp boş panele ulaşır, çıkınca panele giremez", async ({ p
   await girisYap(page);
   await expect(page).toHaveURL(/\/yonetim$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    metin("yonetim.anasayfa.baslik"),
+    metin("yonetim.sayfa.karsilama.ad"),
   );
   await expect(page.getByText(altyapiAdi, { exact: true })).toBeVisible();
 
@@ -133,7 +98,7 @@ test("kısa anahtar dolunca panel açık kalır, yeni anahtar çereze yazılır"
   await page.goto("/yonetim");
   await expect(page).toHaveURL(/\/yonetim$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    metin("yonetim.anasayfa.baslik"),
+    metin("yonetim.sayfa.karsilama.ad"),
   );
   const cerezler = await page.context().cookies();
   expect(cerezler.map(({ name }) => name)).toContain(kisa);
@@ -226,7 +191,7 @@ test("kurulumlu yönetici yalnız şifreyle giremez, kodla girer; yanlış kod s
   await page.getByRole("button", { name: metin("yonetim.kod.gonder") }).click();
   await expect(page).toHaveURL(/\/yonetim$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    metin("yonetim.anasayfa.baslik"),
+    metin("yonetim.sayfa.karsilama.ad"),
   );
 });
 

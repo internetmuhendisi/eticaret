@@ -2,8 +2,10 @@
 // burada kavramın adıyla tanımlanır. Bir kavramın ikonu her yerde aynıdır: sayfa ve parça ikonu
 // <Ikon ad="kapat" /> ile ister, Lucide'yi doğrudan içe aktarmaz. Yeni bir kavram önce buraya eklenir.
 import {
+  ArrowDownIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
+  ArrowUpIcon,
   BanknoteIcon,
   CheckIcon,
   ChevronDownIcon,
@@ -12,14 +14,18 @@ import {
   CircleCheckIcon,
   CircleIcon,
   CreditCardIcon,
+  ExternalLinkIcon,
   GiftIcon,
+  GripVerticalIcon,
   HeadsetIcon,
   HeartIcon,
+  HouseIcon,
   ImageIcon,
   InfoIcon,
   LandmarkIcon,
   LinkIcon,
   LoaderCircleIcon,
+  LogOutIcon,
   type LucideIcon,
   MailIcon,
   MapPinIcon,
@@ -29,6 +35,7 @@ import {
   PauseIcon,
   PhoneIcon,
   PlayIcon,
+  PlusIcon,
   RefreshCwIcon,
   SearchIcon,
   ShieldCheckIcon,
@@ -98,6 +105,15 @@ export const ikonlar = {
   yenile: RefreshCwIcon,
   // Ürün listesi (kart 0136): telefonda filtreleri açar.
   filtre: SlidersHorizontalIcon,
+  // Yönetim paneli (kart 0141): karşılama sayfası, yeni kayıt ekleme, vitrini yeni sekmede açma, çıkış.
+  ev: HouseIcon,
+  ekle: PlusIcon,
+  "yeni-sekme": ExternalLinkIcon,
+  cikis: LogOutIcon,
+  // Sıralanabilir liste (kart 0141): sürükleme tutamağı, bir yukarı ve bir aşağı taşıma.
+  tutamak: GripVerticalIcon,
+  "yukari-al": ArrowUpIcon,
+  "asagi-al": ArrowDownIcon,
 } satisfies Record<string, LucideIcon>;
 
 export type IkonAdi = keyof typeof ikonlar;

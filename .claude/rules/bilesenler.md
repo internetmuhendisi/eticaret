@@ -41,6 +41,8 @@ Bileşen, düğme, giriş alanı, pencere gibi tekrar kullanılan arayüz parça
   - `IskeletGorunum`, `YukleniyorGostergesi`, `Serit`, `Akordeon`
   - Sayfa iskeleti (kart 0135, karar 0103): `SayfaYolu`, `SayfaBasligi`, `BosHal`, `Sayfalama` ile `DahaFazla`
   - `SecenekGrubu` (kart 0138, karar 0108): radyo grubu; seçilemeyen değer üstü çizili, odak alır, seçilmez; hata gösterir (kart 0139)
+  - `SiralanabilirListe` (kart 0141, karar 0111): elle sıralanan küçük liste; tutamakla sürükleme (@dnd-kit), klavyeyle boşluk ve ok tuşları, her genişlikte yukarı ve aşağı al düğmeleri, ekran okuyucu duyuruları. Kullanan yeni sırayı hemen verir, kaydı arkadan yapar. Metinleri `cekirdek/metinler/siralama-metinleri.ts`.
+  - `SayfaBasligi` panelde `gorunum="panel"` ile çizilir (kart 0141).
 
   Sınıflar `sinif()` ile birleştirilir. Asıl shadcn hâlleri `bilesenler/shadcn-kaynagi/` altındadır, güncellemesi `pnpm shadcn-farki` ile yapılır.
 - `bilesenler/parcalar/hareket-azaltma.ts`: `useHareketAzaltma` (kart 0110), kullanıcının hareketi azaltma tercihi. Kendiliğinden hareket eden parça bununla durur.

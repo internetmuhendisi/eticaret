@@ -42,6 +42,32 @@ export const yoneticininIzniVarMi = async (
   return bulunan !== undefined;
 };
 
+// Yöneticinin bütün izinleri tek sorguyla (kart 0141): panel menüsü her sayfanın iznini ayrı sormaz.
+// Kural yukarıdakiyle aynıdır: silinmiş hesabın izni yoktur, tam yetkili rol her izni verir. İkisinin her
+// rol ve her izinde aynı cevabı verdiği testte ölçülür (testler/servis.test.ts).
+export type YoneticiYetkileri = (izin: GirisIzni<"yonetici">) => boolean;
+
+export const yoneticininYetkileri = async (
+  vt: Veritabani,
+  yoneticiKimligi: string,
+): Promise<YoneticiYetkileri> => {
+  const satirlar = await vt
+    .select({ tamYetki: roller.tam_yetki, izin: rolIzinleri.izin })
+    .from(yoneticiRolleri)
+    .innerJoin(roller, eq(roller.kimlik, yoneticiRolleri.rol_kimligi))
+    .innerJoin(yoneticiler, eq(yoneticiler.kimlik, yoneticiRolleri.yonetici_kimligi))
+    .leftJoin(rolIzinleri, eq(rolIzinleri.rol_kimligi, roller.kimlik))
+    .where(
+      and(
+        eq(yoneticiRolleri.yonetici_kimligi, yoneticiKimligi),
+        isNull(yoneticiler.silinme_zamani),
+      ),
+    );
+  if (satirlar.some((satir) => satir.tamYetki)) return () => true;
+  const izinler = new Set(satirlar.map((satir) => satir.izin));
+  return (izin) => izinler.has(izin);
+};
+
 // Yetki işlemlerinin ortak kilidi: tam yetkili rollerin satırları. Bir sahibin rolünü almak ya da hesabını
 // kapatmak aynı anda iki kez geçemez, sahipsiz mağaza kalmaz (karar 0040). Rol verme de alır: kapatılmakta
 // olan hesaba rol verilmez. Her yetki işlemi önce bunu alır, kilitlenme (deadlock) olmaz.

@@ -300,24 +300,25 @@ export const cikisYap = async (
   return bulunan ?? null;
 };
 
-// Anahtarı değiştirmeden oturumun açık olup olmadığını söyler. Sayfa çizerken kullanılır: çerez
-// yazılamayan yerde oturumu yenilemek onu kapatırdı (karar 0039, 0042). Kısa anahtarı dolmuş
+// Anahtarı değiştirmeden oturumun hesabını söyler, oturum açık değilse null. Sayfa çizerken kullanılır:
+// çerez yazılamayan yerde oturumu yenilemek onu kapatırdı (karar 0039, 0042). Kısa anahtarı dolmuş
 // oturumun yenileme anahtarı da sayılır; az önce değiştiyse eskisi tolerans süresince geçerlidir.
-export const oturumAcikMi = async (
+export const oturumunHesabi = async (
   vt: Veritabani,
   tur: HesapTuru,
   anahtarlar: Partial<Anahtarlar>,
-): Promise<boolean> => {
+): Promise<string | null> => {
   const { hesap, oturum } = tablolar[tur];
   const { kisaAnahtar, yenilemeAnahtari } = anahtarlar;
-  if (kisaAnahtar !== undefined && (await oturumuDogrula(vt, tur, kisaAnahtar)) !== null) {
-    return true;
+  if (kisaAnahtar !== undefined) {
+    const dogrulanan = await oturumuDogrula(vt, tur, kisaAnahtar);
+    if (dogrulanan !== null) return dogrulanan.hesapKimligi;
   }
-  if (yenilemeAnahtari === undefined) return false;
+  if (yenilemeAnahtari === undefined) return null;
   const ozet = anahtarOzeti(yenilemeAnahtari);
   const simdi = new Date();
   const [bulunan] = await vt
-    .select({ kimlik: oturum.kimlik })
+    .select({ hesapKimligi: oturum.hesap_kimligi })
     .from(oturum)
     .innerJoin(hesap, eq(hesap.kimlik, oturum.hesap_kimligi))
     .where(
@@ -335,5 +336,12 @@ export const oturumAcikMi = async (
         ),
       ),
     );
-  return bulunan !== undefined;
+  return bulunan?.hesapKimligi ?? null;
 };
+
+// Anahtarı değiştirmeden oturumun açık olup olmadığını söyler (yukarıdakiyle aynı kural).
+export const oturumAcikMi = async (
+  vt: Veritabani,
+  tur: HesapTuru,
+  anahtarlar: Partial<Anahtarlar>,
+): Promise<boolean> => (await oturumunHesabi(vt, tur, anahtarlar)) !== null;

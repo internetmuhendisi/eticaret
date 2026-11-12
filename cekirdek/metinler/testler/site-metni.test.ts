@@ -21,7 +21,7 @@ describe("site metni", () => {
     vi.stubEnv("SITE_KLASORU", gecerliSite);
     const { siteDili, metin, bicim } = await import("../site-metni.ts");
     expect(siteDili()).toBe("tr");
-    expect(metin("yonetim.anasayfa.baslik")).toBeTypeOf("string");
+    expect(metin("yonetim.sayfa.karsilama.ad")).toBeTypeOf("string");
     expect(bicim()).toBe(bicim());
   });
 });

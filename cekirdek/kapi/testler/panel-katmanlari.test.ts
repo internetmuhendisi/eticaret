@@ -4,6 +4,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { NextRequest } from "next/server";
+import type { ReactElement } from "react";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { oturumCerezAdlari } from "../../kayitlar/oturum.ts";
 import { girisYap, hesapAc } from "../../moduller/oturum/servis.ts";
@@ -140,13 +141,18 @@ describe("ikinci katman", () => {
     await expect(PanelDuzeni({ children: null })).rejects.toThrow(`yonlendir ${girisAdresi}`);
   });
 
+  // Düzen içeriği panelin çerçevesine koyar (kart 0141).
+  const icerigi = async () =>
+    ((await PanelDuzeni({ children: "icerik" })) as ReactElement<{ children: unknown }>).props
+      .children;
+
   it("açık oturumda içeriği çizer, yalnız yenileme anahtarı da yeter", async () => {
     const { kisaAnahtar, yenilemeAnahtari } = await anahtarlarAl();
     cerezDeposu.set(adlar.kisa, kisaAnahtar);
-    await expect(PanelDuzeni({ children: "icerik" })).resolves.toBe("icerik");
+    await expect(icerigi()).resolves.toBe("icerik");
     cerezDeposu.clear();
     cerezDeposu.set(adlar.yenileme, yenilemeAnahtari);
-    await expect(PanelDuzeni({ children: "icerik" })).resolves.toBe("icerik");
+    await expect(icerigi()).resolves.toBe("icerik");
   });
 });
 
@@ -175,11 +181,19 @@ describe("panel dosyalarının yeri", () => {
     ]);
   });
 
-  it("sayfa ve düzenler oturumu yenileyen işlevi çağırmaz", () => {
-    const cagiranlar = sayfalar.filter(
-      (yol) =>
-        yol.endsWith(".tsx") &&
-        readFileSync(join(appKlasoru, yol), "utf8").includes("istektenOturumAl"),
+  // Panel sayfalarının çizerken çağırdığı ortak parçalar (panelOturumu, PanelSayfasi) yonetim-paneli klasöründedir
+  // (kart 0141): onlar da taranır.
+  it("sayfa, düzen ve panelin ortak parçaları oturumu yenileyen işlevi çağırmaz", () => {
+    const panelKlasoru = resolve(import.meta.dirname, "../../yonetim-paneli");
+    const taranacaklar = [
+      ...sayfalar.filter((yol) => yol.endsWith(".tsx")).map((yol) => join(appKlasoru, yol)),
+      ...dosyalar(panelKlasoru).filter(
+        (yol) => /\.tsx?$/.test(yol) && !yol.includes(`${"/"}testler${"/"}`),
+      ),
+    ];
+    expect(taranacaklar.some((yol) => yol.endsWith("panel-oturumu.ts"))).toBe(true);
+    const cagiranlar = taranacaklar.filter((yol) =>
+      readFileSync(yol, "utf8").includes("istektenOturumAl"),
     );
     expect(cagiranlar).toEqual([]);
   });

@@ -23,7 +23,7 @@ import { siteninBicimleyicisi } from "../metinler/site-metni";
 import { type GorselBoyutDosyasi, gorselBoyutlariniOku } from "../moduller/dosya/servis";
 import { vitrinGorseliAdresi } from "../moduller/duzen/gorsel";
 import { kategoriler } from "../moduller/kategori/model";
-import { logoUcuYolu, magazaLogosu } from "../moduller/magaza-ayarlari/logo";
+import { logonunYolu, magazaLogosu } from "../moduller/magaza-ayarlari/logo";
 import { siteninMagazaAyarlari } from "../moduller/magaza-ayarlari/servis";
 import { markalar } from "../moduller/marka/model";
 import { type MenuDali, type VitrinHedefi, vitrinMenusu } from "../moduller/menu/servis";
@@ -260,7 +260,7 @@ export const vitrinBaglaminiOku = async (
   return {
     magazaAdi: ayarlar.magazaAdi ?? site.kimlik.gorunenAd,
     musteriOturumu: "sorulur",
-    ...(logo === undefined ? {} : { logoAdresi: `${logoUcuYolu}?s=${logo.etiket.slice(0, 16)}` }),
+    ...(logo === undefined ? {} : { logoAdresi: logonunYolu(logo) }),
     iletisim: {
       ...(ayarlar.iletisimTelefonu === undefined
         ? {}

@@ -106,10 +106,12 @@ export const magazaLogosu = async (
 // istekten değil kimlikten ya da kutunun ortamından gelir (siteAdresi). Adres logonun özetini taşır:
 // logo değişince e-posta istemcisinin önbelleği eskisini göstermez. Adres ya da logo yoksa undefined.
 export const logoUcuYolu = "/kapi/herkese-acik/logo";
+// Sitenin kendi sayfalarındaki (vitrin, panel) göreli adresi; özet aynı işi görür.
+export const logonunYolu = (logo: Logo): string => `${logoUcuYolu}?s=${logo.etiket.slice(0, 16)}`;
 export const logonunAdresi = (site: Site, logo: Logo | undefined): string | undefined => {
   if (logo === undefined) return undefined;
   const adres = siteAdresi(site.kimlik);
-  return adres === undefined ? undefined : `${adres}${logoUcuYolu}?s=${logo.etiket.slice(0, 16)}`;
+  return adres === undefined ? undefined : `${adres}${logonunYolu(logo)}`;
 };
 
 // Yeni logoyu kaydeder (kart 0072'deki güvenli yolla) ve ayarı ona çevirir; ayar değişikliği

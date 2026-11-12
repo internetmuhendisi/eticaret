@@ -8,7 +8,7 @@ import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { hesapAc } from "../../oturum/servis.ts";
 import { baslangicRolleri } from "../baslangic-rolleri.ts";
 import { rolIzinleri, roller, yoneticiler } from "../model.ts";
-import { rolAl, rolVer, yoneticininIzniVarMi } from "../servis.ts";
+import { rolAl, rolVer, yoneticininIzniVarMi, yoneticininYetkileri } from "../servis.ts";
 
 const testIslemi = sistemIslemi("test");
 
@@ -90,6 +90,53 @@ describe("izin sorusu", () => {
         sinirliRolunIzinleri.includes(izin),
       );
     }
+  });
+});
+
+// Panel menüsünün tek sorgusu (kart 0141) izin sorusuyla her durumda aynı cevabı verir.
+describe("yöneticinin bütün izinleri", () => {
+  const ikisiAyni = async (kimlik: string) => {
+    const yetkiler = await yoneticininYetkileri(vt, kimlik);
+    for (const izin of yoneticiIzinleri) {
+      expect(yetkiler(izin), izin).toBe(await yoneticininIzniVarMi(vt, kimlik, izin));
+    }
+    return yetkiler;
+  };
+
+  it("rolsüz, sınırlı, tam yetkili, iki rollü ve silinmiş yöneticide izin sorusuyla aynı", async () => {
+    const rolsuz = await yeniYonetici();
+    const yetkiler = await ikisiAyni(rolsuz);
+    expect(yoneticiIzinleri.some(yetkiler)).toBe(false);
+
+    const sinirli = await yeniYonetici();
+    await rolVer(vt, { yoneticiKimligi: sinirli, rolKodu: sinirliKod }, testIslemi);
+    const sinirliYetkiler = await ikisiAyni(sinirli);
+    expect(yoneticiIzinleri.filter(sinirliYetkiler)).toEqual(
+      yoneticiIzinleri.filter((izin) => sinirliRolunIzinleri.includes(izin)),
+    );
+
+    const tamYetkili = await yeniYonetici();
+    await rolVer(vt, { yoneticiKimligi: tamYetkili, rolKodu: tamYetkiliKod }, testIslemi);
+    expect(yoneticiIzinleri.every(await ikisiAyni(tamYetkili))).toBe(true);
+
+    const ikiRollu = await yeniYonetici();
+    await rolVer(vt, { yoneticiKimligi: ikiRollu, rolKodu: sinirliKod }, testIslemi);
+    await rolVer(vt, { yoneticiKimligi: ikiRollu, rolKodu: tamYetkiliKod }, testIslemi);
+    expect(yoneticiIzinleri.every(await ikisiAyni(ikiRollu))).toBe(true);
+
+    await vt
+      .update(yoneticiler)
+      .set({ silinme_zamani: new Date() })
+      .where(eq(yoneticiler.kimlik, tamYetkili));
+    expect(yoneticiIzinleri.some(await ikisiAyni(tamYetkili))).toBe(false);
+  });
+
+  it("alınan rolün izni bir sonraki okumada gider", async () => {
+    const kimlik = await yeniYonetici();
+    await rolVer(vt, { yoneticiKimligi: kimlik, rolKodu: sinirliKod }, testIslemi);
+    await ikisiAyni(kimlik);
+    await rolAl(vt, { yoneticiKimligi: kimlik, rolKodu: sinirliKod }, testIslemi);
+    expect(yoneticiIzinleri.some(await ikisiAyni(kimlik))).toBe(false);
   });
 });
 

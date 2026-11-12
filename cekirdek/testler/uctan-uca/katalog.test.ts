@@ -129,6 +129,155 @@ test("seçenek grubu: ok tuşları seçer, seçilemeyen değer odak alır ama se
   expect(hatalar).toEqual([]);
 });
 
+// Sıralanabilir liste (kart 0141): tutamağa odaklanıp boşlukla alınan satır ok tuşuyla taşınır, boşlukla bırakılır;
+// Escape taşımayı geri alır; fareyle tutamaktan sürüklenir; yukarı ve aşağı al düğmeleri telefonda da vardır ve
+// dokunarak taşır (sürüklemeye tek dokunuşluk karşılık, WCAG 2.5.7). Her taşıma ekran okuyucuya duyurulur.
+test("sıralanabilir liste: klavyeyle, düğmeyle ve fareyle taşınır, Escape geri alır", async ({
+  page,
+}) => {
+  const { hatalar } = await ac(page, `${katalogAdresi}/siralanabilir-liste`);
+  const liste = page.getByRole("list", { name: metin("gelistirme.ornek.siralanabilirListe") });
+  const ad = (kod: string) => metin(`gelistirme.ornek.${kod}` as MetinAnahtari);
+  const sira = async () =>
+    (await liste.locator('[data-slot="siralanabilir-satir"] .font-kalin').allTextContents()).map(
+      (yazi) => yazi.trim(),
+    );
+  const baslangic = [
+    "bolumSlider",
+    "bolumGuvenSeridi",
+    "bolumKampanya",
+    "bolumUrunVitrini",
+    "bolumBulten",
+  ].map(ad);
+  await expect.poll(sira).toEqual(baslangic);
+  const tutamak = (kod: string) =>
+    liste.getByRole("button", {
+      name: doldur(metin("ortak.parca.siralama.tasi"), { ad: ad(kod) }),
+    });
+
+  // Her klavye adımının duyurusu beklenir: sürükleme bir sonraki tuştan önce yerini ölçer.
+  const duyuruldu = (anahtar: MetinAnahtari, kod: string, sirasi: number) =>
+    expect(
+      page.getByText(doldur(metin(anahtar), { ad: ad(kod), sira: String(sirasi), toplam: "5" }), {
+        exact: true,
+      }),
+    ).toBeAttached();
+
+  // @dnd-kit sürükleme başlayınca ok tuşu dinleyicisini sayfanın bir sonraki işinde bağlar (setTimeout): "alındı"
+  // duyurusundan hemen sonra basılan tuş yük altında kaçıyordu (ölçüldü). Sayfanın sırasındaki o iş bitince basılır.
+  const dinleyiciBaglansin = () =>
+    page.evaluate(() => new Promise<void>((tamam) => setTimeout(tamam, 0)));
+
+  // Klavye: boşlukla al, iki kez aşağı, boşlukla bırak.
+  await tutamak("bolumSlider").focus();
+  await page.keyboard.press("Space");
+  await duyuruldu("ortak.parca.siralama.alindi", "bolumSlider", 1);
+  await dinleyiciBaglansin();
+  await page.keyboard.press("ArrowDown");
+  await duyuruldu("ortak.parca.siralama.tasindi", "bolumSlider", 2);
+  await page.keyboard.press("ArrowDown");
+  await duyuruldu("ortak.parca.siralama.tasindi", "bolumSlider", 3);
+  await page.keyboard.press("Space");
+  await duyuruldu("ortak.parca.siralama.birakildi", "bolumSlider", 3);
+  await expect
+    .poll(sira)
+    .toEqual([
+      ad("bolumGuvenSeridi"),
+      ad("bolumKampanya"),
+      ad("bolumSlider"),
+      ad("bolumUrunVitrini"),
+      ad("bolumBulten"),
+    ]);
+  await expect(tutamak("bolumSlider")).toBeFocused();
+
+  // Escape taşımayı geri alır.
+  await page.keyboard.press("Space");
+  await duyuruldu("ortak.parca.siralama.alindi", "bolumSlider", 3);
+  await dinleyiciBaglansin();
+  await page.keyboard.press("ArrowUp");
+  await duyuruldu("ortak.parca.siralama.tasindi", "bolumSlider", 2);
+  await page.keyboard.press("Escape");
+  await duyuruldu("ortak.parca.siralama.vazgecildi", "bolumSlider", 3);
+  await expect
+    .poll(sira)
+    .toEqual([
+      ad("bolumGuvenSeridi"),
+      ad("bolumKampanya"),
+      ad("bolumSlider"),
+      ad("bolumUrunVitrini"),
+      ad("bolumBulten"),
+    ]);
+
+  // Düğme: Enter ile bir yukarı; odak düğmede kalır, duyurulur.
+  const yukari = liste.getByRole("button", {
+    name: doldur(metin("ortak.parca.siralama.yukari"), { ad: ad("bolumSlider") }),
+  });
+  await yukari.focus();
+  await page.keyboard.press("Enter");
+  await expect
+    .poll(sira)
+    .toEqual([
+      ad("bolumGuvenSeridi"),
+      ad("bolumSlider"),
+      ad("bolumKampanya"),
+      ad("bolumUrunVitrini"),
+      ad("bolumBulten"),
+    ]);
+  await expect(yukari).toBeFocused();
+  await expect(
+    page.getByText(
+      doldur(metin("ortak.parca.siralama.tasindi"), {
+        ad: ad("bolumSlider"),
+        sira: "2",
+        toplam: "5",
+      }),
+    ),
+  ).toBeAttached();
+
+  // Fare: tutamaktan tutup son satırın üstüne bırakır.
+  const kutu = await tutamak("bolumGuvenSeridi").boundingBox();
+  const hedef = await liste.locator('[data-slot="siralanabilir-satir"]').last().boundingBox();
+  if (kutu === null || hedef === null) throw new Error("Satırın yeri ölçülemedi.");
+  await page.mouse.move(kutu.x + kutu.width / 2, kutu.y + kutu.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(kutu.x + kutu.width / 2, hedef.y + hedef.height / 2, { steps: 12 });
+  await page.mouse.up();
+  await expect
+    .poll(sira)
+    .toEqual([
+      ad("bolumSlider"),
+      ad("bolumKampanya"),
+      ad("bolumUrunVitrini"),
+      ad("bolumBulten"),
+      ad("bolumGuvenSeridi"),
+    ]);
+
+  // Telefonda da tutamak ve yukarı, aşağı al düğmeleri vardır; dokunuşla taşınır, sayfa yana kaymaz.
+  await page.setViewportSize({ width: 375, height: 800 });
+  await expect(tutamak("bolumSlider")).toBeVisible();
+  await expect(yukari).toBeVisible();
+  await liste
+    .getByRole("button", {
+      name: doldur(metin("ortak.parca.siralama.yukari"), { ad: ad("bolumGuvenSeridi") }),
+    })
+    .click();
+  await expect
+    .poll(sira)
+    .toEqual([
+      ad("bolumSlider"),
+      ad("bolumKampanya"),
+      ad("bolumUrunVitrini"),
+      ad("bolumGuvenSeridi"),
+      ad("bolumBulten"),
+    ]);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    ),
+  ).toBe(0);
+  expect(hatalar).toEqual([]);
+});
+
 test("olmayan parçanın sayfası yoktur", async ({ page }) => {
   expect((await ac(page, `${katalogAdresi}/olmayan-parca`)).durum).toBe(404);
 });

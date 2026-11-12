@@ -48,7 +48,17 @@
       "sonrakiSayfa": "Sonraki sayfa",
       "sayfaAdi": "{sira}. sayfa",
       "atlananSayfalar": "…",
-      "sayfaYoluAyraci": "/"
+      "sayfaYoluAyraci": "/",
+      "siralama": {
+        "tasi": "Taşı: {ad}",
+        "yukari": "Yukarı al: {ad}",
+        "asagi": "Aşağı al: {ad}",
+        "talimat": "Taşımak için boşluk tuşuna basın. Ok tuşlarıyla yerini değiştirin, yeniden boşlukla bırakın. Vazgeçmek için Escape'e basın.",
+        "alindi": "{ad} alındı. Sırası {sira} / {toplam}.",
+        "tasindi": "{ad} {sira}. sıraya taşındı, toplam {toplam}.",
+        "birakildi": "{ad} bırakıldı. Sırası {sira} / {toplam}.",
+        "vazgecildi": "Taşıma bırakıldı. {ad} yerinde kaldı: {sira} / {toplam}."
+      }
     }
   },
   "ayar": {
@@ -110,8 +120,26 @@
     }
   },
   "yonetim": {
-    "anasayfa": {
-      "baslik": "Yönetim paneli"
+    "cerceve": {
+      "menu": "Panel menüsü",
+      "menuyuAc": "Panel menüsünü aç",
+      "menuyuKapat": "Panel menüsünü kapat",
+      "sekmeBasligi": "{sayfa} | {magaza} paneli"
+    },
+    "grup": {
+      "vitrin": "Vitrin"
+    },
+    "sayfa": {
+      "karsilama": {
+        "ad": "Karşılama",
+        "aciklama": "Mağazanızın yönetim paneline hoş geldiniz. Yönetmek istediğiniz bölümü panel menüsünden seçin."
+      }
+    },
+    "eylem": {
+      "ekle": "{ne} ekle",
+      "oncekiHaleDon": "Önceki hâline dön",
+      "vitrineGit": "Vitrine git",
+      "vitrineGitYeniSekme": "Vitrine git (yeni sekmede açılır)"
     },
     "rol": {
       "magaza-sahibi": "Mağaza sahibi",
@@ -929,7 +957,8 @@
         "sayfaBasligi": "Sayfa başlığı",
         "bosHal": "Boş hâl",
         "sayfalama": "Sayfalama",
-        "secenekGrubu": "Seçenek grubu"
+        "secenekGrubu": "Seçenek grubu",
+        "siralanabilirListe": "Sıralanabilir liste"
       },
       "bolumKutuphanesi": "Bölüm kütüphanesi"
     },
@@ -1014,6 +1043,13 @@
       "soruUc": "Hangi ödeme yollarıyla ödenir?",
       "cevapUc": "Kredi kartı ve havale ile ödenir.",
       "baglantiMetni": "Sipariş takibi",
+      "siralanabilirListe": "Ana sayfanın bölümleri",
+      "bolumSlider": "Slider",
+      "bolumGuvenSeridi": "Güven şeridi",
+      "bolumKampanya": "Kampanya afişleri",
+      "bolumUrunVitrini": "Ürün vitrini",
+      "bolumBulten": "Bülten kaydı",
+      "satirAciklamasi": "{sira}. bölüm",
       "baglantiDugme": "Alışverişe başla",
       "not": "Sipariş notu",
       "kargoFirmasi": "Kargo firması",

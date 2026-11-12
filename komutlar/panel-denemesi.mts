@@ -116,7 +116,7 @@ try {
   await page.getByRole("button", { name: metin("yonetim.kurulum.devam") }).click();
   olc("kurulumla boş panele giriliyor", await adresiBekle(page, /\/yonetim$/));
   const baslik = await page.getByRole("heading", { level: 1 }).textContent();
-  olc("panelin başlığı görünüyor", baslik === metin("yonetim.anasayfa.baslik"), baslik ?? "");
+  olc("panelin başlığı görünüyor", baslik === metin("yonetim.sayfa.karsilama.ad"), baslik ?? "");
 
   await page.reload();
   olc("sayfa yenilenince panel açık kalıyor", await adresiBekle(page, /\/yonetim$/));

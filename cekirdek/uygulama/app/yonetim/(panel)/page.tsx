@@ -1,15 +1,9 @@
-// Yönetim panelinin ana sayfası. Şimdilik boş (kart 0009).
+// Panelin açılış sayfası: karşılama (kart 0141). Pano bugün yoktur, on dördüncü bölümde bu sayfaya gelir.
 import type { Metadata } from "next";
-import { metin } from "../../../../metinler/site-metni";
-import { CikisDugmesi } from "../../../../yonetim-paneli/cikis-dugmesi";
+import { PanelSayfasi, panelSayfaBilgisi } from "../../../../yonetim-paneli/panel-sayfasi";
 
-export const generateMetadata = (): Metadata => ({ title: metin("yonetim.anasayfa.baslik") });
+export const generateMetadata = (): Promise<Metadata> => panelSayfaBilgisi("karsilama");
 
-export default function YonetimAnaSayfa() {
-  return (
-    <main>
-      <h1>{metin("yonetim.anasayfa.baslik")}</h1>
-      <CikisDugmesi />
-    </main>
-  );
+export default function KarsilamaSayfasi() {
+  return <PanelSayfasi kod="karsilama" />;
 }

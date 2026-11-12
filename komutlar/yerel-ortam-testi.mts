@@ -562,7 +562,7 @@ const calistir = async (): Promise<void> => {
     // Panel kapısı (karar 0042): girişsiz panel görünmez; adresi başka yazmak ya da ara katmanı
     // atlatmaya çalışan başlık sayfayı açmaz.
     const panelSitesi = denemeSitesi.kimlik.kodAdi;
-    const panelBasligi = metinOkuyucu("tr")("yonetim.anasayfa.baslik");
+    const panelBasligi = metinOkuyucu("tr")("yonetim.sayfa.karsilama.ad");
     const girissiz = await iste(panelSitesi, "/yonetim");
     olc(
       "girişsiz panel giriş sayfasına yönleniyor, adres ön kapının arkasında da doğru",

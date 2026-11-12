@@ -458,9 +458,11 @@ export const sabitDegerler = {
   kirilmaNoktalari: { tablet: "40rem", masaustu: "64rem", genis: "80rem" },
   // İçeriğin en çok genişliği.
   // panel: ürün bölümlerinin yan afişi ve fırsat paneli (kart 0111), masaüstünde.
+  // yan-menu: yönetim panelinin yan menüsü (kart 0141), masaüstünde.
   genislikler: {
     karekod: "16rem",
     panel: "16rem",
+    "yan-menu": "15.5rem",
     form: "28rem",
     // arama: üst satırdaki arama kutusu, masaüstünde logonun yanında (kart 0137, Canlı Çarşı taslağı).
     arama: "35rem",

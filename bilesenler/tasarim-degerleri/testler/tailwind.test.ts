@@ -177,6 +177,10 @@ describe("Tailwind yalnız tasarım değerlerini tanır", () => {
       ),
       join(kok, "cekirdek/vitrin/stil.ts"),
       join(kok, "cekirdek/yonetim-paneli/stil.ts"),
+      // Panelin çerçevesi, menüsü ve sayfa iskeleti (kart 0141).
+      ...readdirSync(join(kok, "cekirdek/yonetim-paneli"))
+        .filter((ad) => ad.endsWith(".tsx"))
+        .map((ad) => join(kok, "cekirdek/yonetim-paneli", ad)),
       // Vitrin bölümlerinin görünüşleri ve ortak parçaları, bölümlerin görseli (kart 0110).
       ...readdirSync(join(kok, "cekirdek/vitrin/bolumler"), { recursive: true, encoding: "utf8" })
         .filter((ad) => /\.tsx?$/.test(ad) && !ad.endsWith("tarif.ts"))
