@@ -180,6 +180,26 @@ describe("seçimin doğrulanması ve kaydı", () => {
     ).rejects.toThrow();
   });
 
+  // Kart 0119: büyük harfle yazılmış kimlik aynı ürün sayılır.
+  it("büyük harfle yazılmış kendisi ve aynı ürün reddedilir, beklenmeyen hata vermez", async () => {
+    const vt = await siteAc();
+    const ana = await urun(vt);
+    const bir = await urun(vt);
+    expect(
+      await hatasi(
+        servis.urunDegistir(vt, yonetici(), ana, { ilgiliUrunler: [ana.toUpperCase()] }),
+      ),
+    ).toEqual(gecersiz("ilgili-kendisi"));
+    expect(
+      await hatasi(
+        servis.urunDegistir(vt, yonetici(), ana.toUpperCase(), { ilgiliUrunler: [ana] }),
+      ),
+    ).toEqual(gecersiz("ilgili-kendisi"));
+    expect(await hatasi(urun(vt, { ilgiliUrunler: [bir, bir.toUpperCase()] }))).toEqual(
+      gecersiz("ilgili-tekrar"),
+    );
+  });
+
   it("seçim sırası okunur ve kayda sırasıyla girer; değişiklik listeyi baştan yazar", async () => {
     const vt = await siteAc();
     const [a, b, c] = [await urun(vt), await urun(vt), await urun(vt)];

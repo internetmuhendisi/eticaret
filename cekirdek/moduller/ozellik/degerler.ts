@@ -14,7 +14,7 @@ import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { type OzellikTuru, ozellikDegerAlanlari } from "../../kayitlar/ozellik.ts";
 import { adAnahtariSql } from "../../metinler/ad-anahtari.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { dogrulamaHatasi, type Sorun } from "../urun/dogrulama.ts";
 import { urunHatalari } from "../urun/semalar.ts";
 import { ozellikler, ozellikSecenekleri, urunOzellikDegerleri } from "./model.ts";
@@ -219,6 +219,6 @@ export const degerKosulu = (deger: OzellikDegeri) => {
   const metin = deger.trim().normalize("NFC");
   const metinKosulu = sql`${adAnahtariSql(urunOzellikDegerleri.metin_degeri)} = ${adAnahtariSql(metin)}`;
   return kimlikMi(metin)
-    ? sql`(${urunOzellikDegerleri.secenek_kimligi} = ${metin.toLowerCase()}::uuid or ${metinKosulu})`
+    ? sql`(${urunOzellikDegerleri.secenek_kimligi} = ${kimligiDuzelt(metin)}::uuid or ${metinKosulu})`
     : metinKosulu;
 };

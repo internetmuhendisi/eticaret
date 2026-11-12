@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { adresAdiKalibi, adresAdiUzunlugu } from "../../metinler/adres-adi.ts";
 import type { MetinAnahtari } from "../../metinler/metin.ts";
+import { kimlikSemasi } from "../../veritabani/kimlik.ts";
 import { kayitMetni } from "../degisiklik-kaydi/deger.ts";
 
 export const kategoriHatalari = [
@@ -41,14 +42,10 @@ const alanlar = {
   adresAdi: z.string().trim().max(adresAdiUzunlugu).regex(adresAdiKalibi, hata("adres-adi-bicimi")),
   aciklama: kayitMetni(10_000),
   // Üst kategorinin kimliği; null kategoriyi en üste koyar.
-  ust: z.uuid().nullable(),
+  ust: kimlikSemasi.nullable(),
   sira: z.int().min(0).max(9999),
   // Görselin dosya kimliği (kart 0110); null görseli kaldırır.
-  // Büyük harfle verilen kimlik küçük harfe çevrilir: veritabanı ve vitrin görseli ucu küçük harfle karşılaştırır.
-  gorsel: z
-    .uuid()
-    .transform((kimlik) => kimlik.toLowerCase())
-    .nullable(),
+  gorsel: kimlikSemasi.nullable(),
 };
 
 // Yeni kategori. Verilmeyen adres adı addan üretilir, verilmeyen üst en üsttür, verilmeyen sıra

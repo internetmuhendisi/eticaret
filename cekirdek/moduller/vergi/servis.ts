@@ -24,6 +24,7 @@ import {
   type Veritabani,
   type VeritabaniIslemi,
 } from "../../veritabani/baglanti.ts";
+import { kimligiDuzelt } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
 import { type HesapGirdisi, hesapla, type VergiBolgesi, type VergiSonucu } from "./hesap.ts";
@@ -454,9 +455,11 @@ export const vergiServisi = (baslangic: () => VergiBaslangici) => {
   const kargoSinifiniDegistir = async (
     vt: Veritabani,
     kim: DegisikligiYapan,
-    kimlik: string | null,
+    kimlikGirdisi: string | null,
   ) =>
     yaz(vt, async (islem) => {
+      // Büyük harfle yazılmış aynı sınıf aynı seçimdir (kart 0119).
+      const kimlik = kimlikGirdisi === null ? null : kimligiDuzelt(kimlikGirdisi);
       const [eski] = await islem
         .select({ kimlik: vergiSiniflari.kimlik })
         .from(vergiSiniflari)

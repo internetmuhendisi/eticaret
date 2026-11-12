@@ -264,8 +264,9 @@ describe("birleşimler", () => {
     expect(await ekle([deger.S])).toEqual(hata("birlesim-eksik"));
     // Aynı seçenekten iki değer.
     expect(await ekle([deger.S, deger.M])).toEqual(hata("birlesim-eksik"));
-    // Aynı değer iki kez.
+    // Aynı değer iki kez, ikincisi büyük harfle de (kart 0119).
     expect(await ekle([deger.S, deger.S])).toEqual(hata("deger-tekrar"));
+    expect(await ekle([deger.S, deger.S.toUpperCase()])).toEqual(hata("deger-tekrar"));
     // Başka ürünün değeri, olmayan değer.
     expect(await ekle([deger.S, baska.deger.Beyaz])).toEqual(hata("birlesim-gecersiz"));
     expect(await ekle([deger.S, randomUUID()])).toEqual(hata("birlesim-gecersiz"));
@@ -730,6 +731,41 @@ describe("fiyat ve stok birleşimde", () => {
         ),
       ),
     ).toMatchObject({ kod: "cakisma", ayrinti: [{ kod: "birim-gecersiz" }] });
+  });
+});
+
+// Kart 0119: büyük harfle verilen ürün, değer ve görsel kimliği aynı kayıttır.
+describe("büyük harfli kimlik", () => {
+  it("büyük harfle okunan varyantlı ürünün seçenekleri gelir; büyük harfli ürüne seçenek ve birleşim eklenir", async () => {
+    const vt = await siteAc();
+    const { urun, deger } = await varyantliUrun(vt);
+    const okunan = await servis.urunuOku(vt, urun.toUpperCase());
+    expect(okunan?.secenekler.map((s) => s.ad)).toEqual(["Beden", "Renk"]);
+    // Ürün zaten varyantlıdır: üçüncü seçenek eklenir, basit birim yeniden açılmaz.
+    const kolKimligi = await servis.secenekEkle(vt, yonetici(), urun.toUpperCase(), {
+      ad: "Kol",
+      degerler: ["Uzun"],
+    });
+    expect(await canliBirimSayisi(vt, urun)).toBe(0);
+    // Değişiklik kaydı ürünü veritabanının yazdığı biçimde (küçük harfle) taşır.
+    const [kayit] = await kayitlar(vt, kolKimligi);
+    expect(kayit?.yeni_deger).toMatchObject({ urun });
+    const kol = (await servis.urunuOku(vt, urun))?.secenekler.find((s) => s.ad === "Kol");
+    const uzun = kol?.degerler[0]?.kimlik ?? "";
+    const birlesim = await servis.birlesimEkle(vt, yonetici(), urun.toUpperCase(), {
+      degerler: [deger.S.toUpperCase(), deger.Beyaz.toUpperCase(), uzun.toUpperCase()],
+    });
+    expect(await canliBirimSayisi(vt, urun)).toBe(1);
+    expect((await servis.urunuOku(vt, urun))?.birimler.map((b) => b.kimlik)).toContain(birlesim);
+  });
+
+  it("büyük harfle verilen varyantlı ürün silinir, birleşimleri de silinir", async () => {
+    const vt = await siteAc();
+    const { urun, deger } = await varyantliUrun(vt);
+    await servis.birlesimEkle(vt, yonetici(), urun, { degerler: [deger.S, deger.Beyaz] });
+    await servis.urunSil(vt, yonetici(), urun.toUpperCase());
+    expect((await servis.urunuOku(vt, urun))?.silindi).toBe(true);
+    expect(await canliBirimSayisi(vt, urun)).toBe(0);
   });
 });
 

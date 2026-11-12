@@ -25,7 +25,7 @@ import {
   type Veritabani,
   type VeritabaniIslemi,
 } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { urunKilidiAl } from "../urun/kilit.ts";
 import { urunBirimleri, urunler } from "../urun/model.ts";
@@ -184,7 +184,7 @@ export const fiyatServisi = (ayarlar: () => FiyatAyarlari) => {
   // da okunur (eski kayıtlar ona bağlıdır). Birimin satılıp satılamayacağına (silinmiş, görünmeyen
   // ürün) burada bakılmaz: sepet ve vitrin birimi önce kendi koşuluyla süzer (karar 0066).
   const fiyatlariOku = async (vt: Veritabani, birimler: string[]): Promise<Map<string, Fiyat>> => {
-    const gecerli = birimler.filter(kimlikMi);
+    const gecerli = birimler.filter(kimlikMi).map(kimligiDuzelt);
     if (gecerli.length === 0) return new Map();
     const satirlar = await vt
       .select(fiyatAlanlari)
@@ -194,7 +194,7 @@ export const fiyatServisi = (ayarlar: () => FiyatAyarlari) => {
   };
 
   const fiyatOku = async (vt: Veritabani, birim: string): Promise<Fiyat | undefined> =>
-    (await fiyatlariOku(vt, [birim])).get(birim);
+    (await fiyatlariOku(vt, [birim])).get(kimligiDuzelt(birim));
 
   // Birimlerin verilen andaki geçerli fiyatları, tek sorguyla. Fiyatı olmayan birim haritada yoktur:
   // satılamaz. Para birimi uyuşmayan fiyat da yoktur ve hata kaydedilir: ayar değişmiş, fiyatlar
@@ -264,7 +264,7 @@ export const fiyatServisi = (ayarlar: () => FiyatAyarlari) => {
     birimler: string[],
     an: Date,
   ): Promise<Map<string, FiyatGecmisiSatiri[]>> => {
-    const gecerli = birimler.filter(kimlikMi);
+    const gecerli = birimler.filter(kimlikMi).map(kimligiDuzelt);
     const sonuc = new Map<string, FiyatGecmisiSatiri[]>(gecerli.map((birim) => [birim, []]));
     if (gecerli.length === 0) return sonuc;
     const satirlar = await vt

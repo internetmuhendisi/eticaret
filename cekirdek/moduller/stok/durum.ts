@@ -24,7 +24,7 @@ import type { MagazaAyarlari } from "../../ayar-semasi/ayarlar.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import type { StokGosterimi } from "../../kayitlar/stok.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
 import { urunBirimleri, urunler } from "../urun/model.ts";
 import { urunlerinBirimleri } from "../urun/varyant.ts";
@@ -123,7 +123,7 @@ export const birimStokBilgileri = async (
   vt: Veritabani,
   birimler: string[],
 ): Promise<Map<string, BirimStokBilgisi>> => {
-  const gecerli = birimler.filter(kimlikMi);
+  const gecerli = birimler.filter(kimlikMi).map(kimligiDuzelt);
   if (gecerli.length === 0) return new Map();
   const satirlar = await vt
     .select({
@@ -161,7 +161,7 @@ export const urunStokDurumlari = async (
   urunKimlikleri: string[],
   ayarlar: StokDurumAyarlari,
 ): Promise<Map<string, UrunStokDurumu>> => {
-  const gecerli = urunKimlikleri.filter(kimlikMi);
+  const gecerli = urunKimlikleri.filter(kimlikMi).map(kimligiDuzelt);
   if (gecerli.length === 0) return new Map();
   const bulunan = await vt
     .select({ kimlik: urunler.kimlik })

@@ -392,6 +392,35 @@ describe("şemaya uymayan değer kaydedilmez (kart 0106)", () => {
     });
   });
 
+  // Kart 0119: büyük harfle verilen kayıt ve görsel kimliği bulunur, düzene küçük harfle yazılır.
+  it("büyük harfle verilen kayıt ve görsel başvurusu kaydedilir, küçük harfle yazılır", async () => {
+    const vt = await siteAc();
+    await servis.duzenOku(vt);
+    const kategori = await kategoriEkle(vt, yonetici(), { ad: "Giyim" });
+    const marka = await markaServisi.ekle(vt, yonetici(), { ad: "Marka" });
+    const urun = await urunler.urunEkle(vt, yonetici(), { ad: "Kupa", vergiSinifi: null });
+    const gorsel = await gorselAc(vt);
+    const kimlik = await servis.bolumEkle(vt, yonetici(), "ana-sayfa", {
+      tur: "deneme-bolumu",
+      degerler: {
+        baslik: "S",
+        kategori: kategori.toUpperCase(),
+        marka: marka.toUpperCase(),
+        gorsel: gorsel.toUpperCase(),
+        urunler: { tur: "elle", urunler: [urun.toUpperCase()] },
+      },
+    });
+    const eklenen = (await servis.duzenOku(vt)).duzen["ana-sayfa"].find(
+      (bolum) => bolum.kimlik === kimlik,
+    );
+    expect(eklenen?.degerler).toMatchObject({
+      kategori,
+      marka,
+      gorsel,
+      urunler: { tur: "elle", urunler: [urun] },
+    });
+  });
+
   it("hata başvuran alanın yoluyla döner", async () => {
     const vt = await siteAc();
     await servis.duzenOku(vt);
@@ -482,6 +511,31 @@ describe("şemaya uymayan değer kaydedilmez (kart 0106)", () => {
       expect(ayrinti).toEqual([{ alan: "kimlikler", kod: "siralama-gecersiz" }]);
     }
     expect(await surumler(vt)).toHaveLength(1);
+  });
+});
+
+// Kart 0119: büyük harfle yazılmış bölüm kimliği aynı bölümdür.
+describe("büyük harfli kimlik", () => {
+  it("büyük harfle verilen sıralama yapılır, büyük harfle tekrarlanan bölüm reddedilir", async () => {
+    const vt = await siteAc();
+    const [seckiler, yorumlar] = (await anaSayfa(vt)) as [string, string];
+    const { ayrinti } = await hatasi(
+      servis.bolumleriSirala(vt, yonetici(), "ana-sayfa", [seckiler, seckiler.toUpperCase()]),
+    );
+    expect(ayrinti).toEqual([{ alan: "kimlikler", kod: "siralama-gecersiz" }]);
+    await servis.bolumleriSirala(vt, yonetici(), "ana-sayfa", [
+      yorumlar.toUpperCase(),
+      seckiler.toUpperCase(),
+    ]);
+    expect(await anaSayfa(vt)).toEqual([yorumlar, seckiler]);
+  });
+
+  it("büyük harfle verilen bölüm bulunur, gizlenir ve silinir", async () => {
+    const vt = await siteAc();
+    const [seckiler] = (await anaSayfa(vt)) as [string];
+    await servis.bolumGorunurlugu(vt, yonetici(), seckiler.toUpperCase(), false);
+    await servis.bolumSil(vt, yonetici(), seckiler.toUpperCase());
+    expect(await anaSayfa(vt)).not.toContain(seckiler);
   });
 });
 

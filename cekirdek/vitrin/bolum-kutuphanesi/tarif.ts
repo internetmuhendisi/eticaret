@@ -20,6 +20,7 @@ import {
   kayitMetni,
   kayitMetniHatasi,
 } from "../../moduller/degisiklik-kaydi/deger.ts";
+import { kimligiDuzelt, kimlikSemasi } from "../../veritabani/kimlik.ts";
 import type { UrunKaynagi } from "./urun-kaynagi.ts";
 
 // Alanın panelde görünen adı ve boş bırakılıp bırakılamayacağı. Açıklama metin alanlarının altında görünür
@@ -112,8 +113,6 @@ export const bolumAlanHatalari = [
 ] as const;
 export type BolumAlanHatasi = (typeof bolumAlanHatalari)[number];
 
-const kimlikSemasi = z.uuid();
-
 // Bağlantı: sitenin kendi adresi (tek / ile başlar) ya da kullanıcı adı, şifre ve port taşımayan https
 // adresi. javascript:, data: ve http: geçmez.
 export const baglantiGecerliMi = (adres: string): boolean => {
@@ -187,7 +186,7 @@ const urunKaynagiSemasi = (enCokUrun: number, kip: Kip) => {
         .max(enCokUrun)
         // Kimlik büyük harfle de gelebilir (kart 0119): aynı ürün harf farkıyla iki kez seçilemez.
         .refine(
-          (liste) => new Set(liste.map((kimlik) => kimlik.toLowerCase())).size === liste.length,
+          (liste) => new Set(liste.map(kimligiDuzelt)).size === liste.length,
           "ayni-urun-iki-kez",
         ),
     }),

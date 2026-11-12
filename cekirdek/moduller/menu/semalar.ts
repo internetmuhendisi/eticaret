@@ -14,6 +14,7 @@ import {
 } from "../../kayitlar/menu.ts";
 import { adresAdiKalibi, adresAdiUzunlugu } from "../../metinler/adres-adi.ts";
 import type { MetinAnahtari } from "../../metinler/metin.ts";
+import { kimlikSemasi } from "../../veritabani/kimlik.ts";
 import { baglantiGecerliMi } from "../../vitrin/bolum-kutuphanesi/tarif.ts";
 import { kayitDegeriYasakMi, kayitMetni, kayitMetniHatasi } from "../degisiklik-kaydi/deger.ts";
 
@@ -63,10 +64,6 @@ export const menuHataMetinleri = {
 
 const hata = (kod: MenuHatasi) => kod;
 
-// Kimlik küçük harfe çevrilir: büyük harfle yazılmış aynı kimlik başka bir kimlik sayılmasın (taşıma ve döngü
-// denetimi kimlikleri metin olarak karşılaştırır).
-const kimlikAlani = z.uuid().transform((deger) => deger.toLowerCase());
-
 // Değişiklik kaydına girer ve vitrinde yazılır: denetim karakteri taşımaz.
 const metin = (enCok: number) =>
   kayitMetni(enCok).refine((deger) => !/\p{Cc}/u.test(deger), hata("denetim-karakteri"));
@@ -91,10 +88,10 @@ const baslikHedefi = z.strictObject({ tur: z.literal("baslik") });
 // Panelin verdiği hedef: kayıtlı hedef kimliğiyle.
 export const menuHedefi = z
   .discriminatedUnion("tur", [
-    z.strictObject({ tur: z.literal("kategori"), kimlik: kimlikAlani }),
-    z.strictObject({ tur: z.literal("marka"), kimlik: kimlikAlani }),
-    z.strictObject({ tur: z.literal("urun"), kimlik: kimlikAlani }),
-    z.strictObject({ tur: z.literal("sayfa"), kimlik: kimlikAlani }),
+    z.strictObject({ tur: z.literal("kategori"), kimlik: kimlikSemasi }),
+    z.strictObject({ tur: z.literal("marka"), kimlik: kimlikSemasi }),
+    z.strictObject({ tur: z.literal("urun"), kimlik: kimlikSemasi }),
+    z.strictObject({ tur: z.literal("sayfa"), kimlik: kimlikSemasi }),
     adresHedefi,
     baslikHedefi,
   ])
@@ -127,7 +124,7 @@ export const ogeGirdisi = z
   .strictObject({
     metin: metin(menuSinirlari.ogeMetni).nullable().default(null),
     hedef: menuHedefi,
-    ust: kimlikAlani.nullable().default(null),
+    ust: kimlikSemasi.nullable().default(null),
     sira: sira.optional(),
   })
   .refine((oge) => oge.metin !== null || !metinGerekirMi(oge.hedef.tur), {
@@ -141,7 +138,7 @@ export type OgeGirdisi = z.input<typeof ogeGirdisi>;
 export const ogeDegisikligi = z.strictObject({
   metin: metin(menuSinirlari.ogeMetni).nullable().optional(),
   hedef: menuHedefi.optional(),
-  ust: kimlikAlani.nullable().optional(),
+  ust: kimlikSemasi.nullable().optional(),
   sira: sira.optional(),
 });
 export type OgeDegisikligi = z.input<typeof ogeDegisikligi>;

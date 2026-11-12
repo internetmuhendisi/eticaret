@@ -6,6 +6,7 @@
 import { z } from "zod";
 import { type OzellikTuru, ozellikSinirlari, ozellikTurleri } from "../../kayitlar/ozellik.ts";
 import type { MetinAnahtari } from "../../metinler/metin.ts";
+import { kimlikSemasi } from "../../veritabani/kimlik.ts";
 import { kayitMetni } from "../degisiklik-kaydi/deger.ts";
 
 export const ozellikHatalari = [
@@ -98,7 +99,7 @@ export const degerSemalari = {
   metin: kayitMetni(ozellikSinirlari.metin),
   sayi: z.number().min(-ozellikSinirlari.sayi).max(ozellikSinirlari.sayi).refine(ondalikUygun),
   "evet-hayir": z.boolean(),
-  liste: z.uuid().transform((kimlik) => kimlik.toLowerCase()),
+  liste: kimlikSemasi,
 } as const satisfies Record<OzellikTuru, z.ZodType>;
 
 export type OzellikDegeri = string | number | boolean;
@@ -106,7 +107,7 @@ export type OzellikDegeri = string | number | boolean;
 // Ürün girdisindeki bir özellik değeri: türü henüz bilinmez, ham değer servis tarafından türün
 // şemasıyla doğrulanır.
 export const urunOzellikDegeri = z.strictObject({
-  ozellik: z.uuid().transform((kimlik) => kimlik.toLowerCase()),
+  ozellik: kimlikSemasi,
   // NaN gibi hiçbir türe uymayan değer de türüne uymayan değerdir.
   deger: z.union([z.string(), z.number(), z.boolean()], { error: "ozellik-deger-gecersiz" }),
 });

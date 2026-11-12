@@ -32,7 +32,7 @@ import {
   type Veritabani,
   type VeritabaniIslemi,
 } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import {
   kilitliUrunOzellikleri,
@@ -502,9 +502,10 @@ export const urunServisi = (
   const urunDegistir = async (
     vt: Veritabani | VeritabaniIslemi,
     kim: DegisikligiYapan,
-    kimlik: string,
+    kimlikGirdisi: string,
     ham: UrunDegisikligi,
   ): Promise<void> => {
+    const kimlik = kimligiDuzelt(kimlikGirdisi);
     const girdi = girdiyiDogrula(urunDegisikligi.safeParse(ham));
     const yayinZamani = yayinZamaniniCevir(girdi.yayinZamani);
     await yaz(vt, async (islem) => {
@@ -593,8 +594,9 @@ export const urunServisi = (
   };
 
   // Silinmiş işaretiyle: ürün ve birimleri birlikte işaretlenir, satırlar kalır.
-  const urunSil = (vt: Veritabani, kim: DegisikligiYapan, kimlik: string) =>
+  const urunSil = (vt: Veritabani, kim: DegisikligiYapan, kimlikGirdisi: string) =>
     yaz(vt, async (islem) => {
+      const kimlik = kimligiDuzelt(kimlikGirdisi);
       const { kayit } = await degisebilenUrun(islem, kimlik);
       // Varyantlı üründe her birleşim kendi satırıyla kayda girer; basit birimin alanları ürünün
       // kaydındadır.
@@ -619,8 +621,9 @@ export const urunServisi = (
   // Ürün, silinmiş olsa da okunur (eski kayıtlar ona bağlı kalır). İki sorgu.
   const urunuOku = async (
     vt: Veritabani | VeritabaniIslemi,
-    kimlik: string,
+    kimlikGirdisi: string,
   ): Promise<Urun | undefined> => {
+    const kimlik = kimligiDuzelt(kimlikGirdisi);
     if (!kimlikMi(kimlik)) return undefined;
     const [urun] = await vt.select(urunAlanlari).from(urunler).where(eq(urunler.kimlik, kimlik));
     if (urun === undefined) return undefined;

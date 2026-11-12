@@ -16,8 +16,3 @@ export const tutar = () => bigint({ mode: "number" });
 // ondalık basamak. Değer veritabanında yuvarlanmadan saklanır; şema daha fazla basamağı reddeder.
 // JavaScript'e sayı olarak okunur.
 export const ondalikSayi = () => numeric({ precision: 16, scale: 4, mode: "number" });
-
-// Kimlik biçiminde bir metin mi? Dışarıdan gelen kimlik sorguya girmeden denetlenir: biçimi bozuk
-// metin veritabanında beklenmeyen hataya (22P02) dönmesin, "bulunamadı" sayılsın (kart 0077).
-const kimlikKalibi = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export const kimlikMi = (deger: string): boolean => kimlikKalibi.test(deger);

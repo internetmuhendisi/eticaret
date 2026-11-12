@@ -5,6 +5,7 @@
 // HTML ya da bağlantı ayıklanmaz, çünkü hiçbir yerde HTML olarak çizilmez (vitrin yazı olarak çizer).
 import { z } from "zod";
 import { yorumDurumlari, yorumKararlari, yorumSinirlari } from "../../kayitlar/yorum.ts";
+import { kimlikSemasi } from "../../veritabani/kimlik.ts";
 import { robotCevabiSemasi } from "../robot-korumasi/semalar.ts";
 
 // Hata kodları ve ekrandaki metinleri. Kod bir kez yayınlandıktan sonra adı değişmez.
@@ -33,7 +34,7 @@ const duzMetin = (enCok: number) =>
     .transform((deger) => deger.normalize("NFC"));
 
 export const yorumFormuSemasi = z.strictObject({
-  urun: z.uuid(),
+  urun: kimlikSemasi,
   puan: z.int().min(yorumSinirlari.enDusukPuan).max(yorumSinirlari.enYuksekPuan),
   // Başlık isteğe bağlıdır: boş bırakılırsa yoktur.
   baslik: z.preprocess(
@@ -53,7 +54,7 @@ export type YorumFormu = z.output<typeof yorumFormuSemasi>;
 export const yorumGirdisi = yorumFormuSemasi.extend({ robotCevabi: robotCevabiSemasi });
 
 // Müşteri bu ürüne yorum yazabilir mi (GET, sorgu kısmından).
-export const yorumIzniSemasi = z.strictObject({ urun: z.uuid() });
+export const yorumIzniSemasi = z.strictObject({ urun: kimlikSemasi });
 
 // Yöneticinin listesi: duruma göre, en yeni önce, sayfa sayfa.
 export const yorumListesiSemasi = z.strictObject({
@@ -62,11 +63,11 @@ export const yorumListesiSemasi = z.strictObject({
 });
 
 export const yorumKarariSemasi = z.strictObject({
-  yorum: z.uuid(),
+  yorum: kimlikSemasi,
   durum: z.enum(yorumKararlari),
 });
 
 export const yorumAnaSayfaSemasi = z.strictObject({
-  yorum: z.uuid(),
+  yorum: kimlikSemasi,
   anaSayfada: z.boolean(),
 });

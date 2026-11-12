@@ -6,7 +6,7 @@ import { randomUUID } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { eq, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import sharp from "sharp";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BilinenHata } from "../../../kapi/zarf.ts";
@@ -172,6 +172,70 @@ describe("taşıma ve döngü", () => {
       ]);
       expect(dogrudan.filter((s) => s.status === "fulfilled")).toHaveLength(1);
     }
+  });
+});
+
+// Kimlik büyük harfle de verilebilir (kart 0119): aynı kimlik başka bir kategori sayılmaz.
+describe("büyük harfli kimlik", () => {
+  const kayitSayisi = async (vt: Veritabani) =>
+    (
+      await vt
+        .select()
+        .from(degisiklikKayitlari)
+        .where(eq(degisiklikKayitlari.kayit_turu, "kategori"))
+    ).length;
+
+  it("büyük harfle kendi üstü verilen kategori yerinden ve sırasından oynamaz, kayda girmez", async () => {
+    const vt = await siteAc();
+    const ev = await ekle(vt, "Ev");
+    const mum = await ekle(vt, "Mum", ev);
+    const vazo = await ekle(vt, "Vazo", ev);
+    const once = await kayitSayisi(vt);
+    await kategoriDegistir(vt, yonetici(), mum, { ust: ev.toUpperCase() });
+    expect(await kategoriyiOku(mum, vt)).toMatchObject({ ust: ev, sira: 0 });
+    expect(await kategoriyiOku(vazo, vt)).toMatchObject({ ust: ev, sira: 1 });
+    expect(await kayitSayisi(vt)).toBe(once);
+  });
+
+  it("büyük harfle kendi altına taşınan kategori döngü hatasıyla reddedilir", async () => {
+    const vt = await siteAc();
+    const a = await ekle(vt, "A");
+    const b = await ekle(vt, "B", a);
+    const beklenen = { kod: "is-kurali", ayrinti: [{ alan: "ust", kod: "dongu" }] };
+    expect(await hatasi(kategoriDegistir(vt, yonetici(), a, { ust: a.toUpperCase() }))).toEqual(
+      beklenen,
+    );
+    expect(await hatasi(kategoriDegistir(vt, yonetici(), a.toUpperCase(), { ust: a }))).toEqual(
+      beklenen,
+    );
+    expect(await hatasi(kategoriDegistir(vt, yonetici(), a, { ust: b.toUpperCase() }))).toEqual(
+      beklenen,
+    );
+    expect(await ustu(vt, a)).toBeNull();
+  });
+
+  it("büyük harfle silinen kategorinin altlarının kaydında üst küçük harfle yazılır", async () => {
+    const vt = await siteAc();
+    const ev = await ekle(vt, "Ev");
+    const mum = await ekle(vt, "Mum", ev);
+    await kategoriSil(vt, yonetici(), ev.toUpperCase());
+    expect(await ustu(vt, mum)).toBeNull();
+    const [tasinma] = await vt
+      .select()
+      .from(degisiklikKayitlari)
+      .where(eq(degisiklikKayitlari.kayit_kimligi, mum))
+      .orderBy(desc(degisiklikKayitlari.zaman))
+      .limit(1);
+    expect(JSON.stringify(tasinma?.eski_deger)).toContain(ev);
+    expect(JSON.stringify(tasinma?.eski_deger)).not.toContain(ev.toUpperCase());
+  });
+
+  it("büyük harfle verilen kategorinin kendisi bulunur, büyük harfli üstle eklenen kategorinin üstü küçük harfle okunur", async () => {
+    const vt = await siteAc();
+    const ev = await ekle(vt, "Ev");
+    const mum = await ekle(vt, "Mum", ev.toUpperCase());
+    expect(await kategoriyiOku(mum, vt)).toMatchObject({ ust: ev });
+    expect((await kategoriyiOku(mum.toUpperCase(), vt))?.kimlik).toBe(mum);
   });
 });
 

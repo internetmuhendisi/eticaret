@@ -28,7 +28,7 @@ import {
   menuSinirlari,
 } from "../../kayitlar/menu.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { kategoriler } from "../kategori/model.ts";
 import { kategorileriOku } from "../kategori/servis.ts";
@@ -546,8 +546,8 @@ export const ogeleriSirala = (
       throw dogrulama([{ alan: "ust", kod: "ust-gecersiz" }]);
     }
     // Veritabanı kimlikleri küçük harfle verir; karşılaştırma metinle yapılır.
-    const ust = ustGirdisi?.toLowerCase() ?? null;
-    const yeniSira = kimlikler.map((kimlik) => kimlik.toLowerCase());
+    const ust = ustGirdisi === undefined || ustGirdisi === null ? null : kimligiDuzelt(ustGirdisi);
+    const yeniSira = kimlikler.map(kimligiDuzelt);
     const kardesler = await islem
       .select({ kimlik: menuOgeleri.kimlik, sira: menuOgeleri.sira })
       .from(menuOgeleri)

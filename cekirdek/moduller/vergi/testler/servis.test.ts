@@ -508,6 +508,8 @@ describe("kargo sınıfı (kart 0075)", () => {
     const kim = yonetici();
     await kargolu.kargoSinifiniDegistir(vt, kim, diger.kimlik);
     await kargolu.kargoSinifiniDegistir(vt, kim, diger.kimlik);
+    // Büyük harfle yazılmış aynı sınıf aynı seçimdir, kayda girmez (kart 0119).
+    await kargolu.kargoSinifiniDegistir(vt, kim, diger.kimlik.toUpperCase());
     expect(await kargoSinifi(vt)).toEqual(["Diğer"]);
     await kargolu.kargoSinifiniDegistir(vt, kim, null);
     expect(await kargoSinifi(vt)).toEqual([]);

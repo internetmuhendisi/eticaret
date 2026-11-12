@@ -23,7 +23,7 @@ import {
   type Veritabani,
   type VeritabaniIslemi,
 } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import {
   bosUrunListesi,
@@ -501,9 +501,10 @@ const okunan = (satir: OzellikSatiri, secenekler: OzellikSecenegi[]): Ozellik =>
 
 // Özellik, silinmiş olsa da okunur. İki sorgu.
 const oku = async (
-  kimlik: string,
+  kimlikGirdisi: string,
   vt: Veritabani | VeritabaniIslemi = siteninVeritabani(),
 ): Promise<Ozellik | undefined> => {
+  const kimlik = kimligiDuzelt(kimlikGirdisi);
   if (!kimlikMi(kimlik)) return undefined;
   const [satir] = await vt
     .select(ozellikAlanlari)
@@ -545,7 +546,7 @@ const urunleri = async (
       select 1 from ${urunOzellikDegerleri}
       join ${ozellikler} on ${ozellikler.kimlik} = ${urunOzellikDegerleri.ozellik_kimligi}
       where ${urunOzellikDegerleri.urun_kimligi} = ${urunler.kimlik}
-        and ${urunOzellikDegerleri.ozellik_kimligi} = ${ozellik.toLowerCase()}::uuid
+        and ${urunOzellikDegerleri.ozellik_kimligi} = ${kimligiDuzelt(ozellik)}::uuid
         and ${ozellikler.silinme_zamani} is null
         and ${degerKosulu(deger)}
         and (${urunOzellikDegerleri.secenek_kimligi} is null or exists (

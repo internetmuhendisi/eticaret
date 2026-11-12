@@ -11,7 +11,7 @@ import { and, eq } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import type { GorselBoyutu } from "../../kayitlar/gorsel.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimlikMi } from "../../veritabani/kimlik.ts";
 import { type GorselDosyasi, gorselBoyutunuOku } from "../dosya/gorsel-boyutu.ts";
 import { dosyaKlasoru } from "../dosya/servis.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";

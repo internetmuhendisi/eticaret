@@ -13,6 +13,7 @@ import { IkonDugmesi } from "../../bilesenler/parcalar/dugme";
 import { sinif } from "../../bilesenler/parcalar/sinif";
 import { useMetin } from "../metinler/istemci-metni";
 import { doldur } from "../moduller/eposta/sablon";
+import { kimligiDuzelt } from "../veritabani/kimlik";
 import {
   type FavoriSonucu,
   favoriDegistir,
@@ -42,7 +43,7 @@ export function FavoriDugmesi({
   const ayarlar = useFavoriAyarlari();
   const durum = useFavoriler();
   const sayfada = useContext(FavoriSayfasiBaglami);
-  const kimlik = urun.toLowerCase();
+  const kimlik = kimligiDuzelt(urun);
   const favoride = durum.tur === "hazir" && durum.urunler.includes(kimlik);
 
   const bildir = (sonuc: FavoriSonucu, eskiSira: number) => {

@@ -147,6 +147,16 @@ describe("geçerli fiyat sitenin saat diliminde", () => {
   });
 });
 
+// Kart 0119: büyük harfle verilen birim aynı birimdir.
+describe("büyük harfli birim", () => {
+  it("büyük harfle okunan birimin fiyatı gelir", async () => {
+    const vt = await siteAc();
+    const { birim } = await birimAc(vt);
+    await servis.fiyatYaz(vt, yonetici(), birim, { satisFiyati: 1000 });
+    expect((await servis.fiyatOku(vt, birim.toUpperCase()))?.satisFiyati).toBe(1000);
+  });
+});
+
 describe("fiyat geçmişi", () => {
   it("her değişiklik geçmişte bir satır, aynı kalan fiyat hiçbir yere yazılmaz", async () => {
     const vt = await siteAc();

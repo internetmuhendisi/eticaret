@@ -24,7 +24,7 @@ import { urunGorseliAdresi } from "../../moduller/urun/urun-gorseli.ts";
 import { vitrinKosulu } from "../../moduller/urun/vitrin.ts";
 import { puanOzetleri } from "../../moduller/yorum/servis.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { kayitAdresleri } from "../adresler.ts";
 import type { UrunKartiGorseli, UrunKartiVerisi } from "./tur.ts";
 
@@ -55,9 +55,7 @@ export const urunKartlari = async (
   secenekler: { yer: VitrinYeri; an?: Date },
 ): Promise<UrunKartiVerisi[]> => {
   // Kimlik büyük harfle de gelebilir (kart 0119); veritabanı küçük harfle döner.
-  const gecerli = [
-    ...new Set(urunKimlikleri.filter(kimlikMi).map((kimlik) => kimlik.toLowerCase())),
-  ];
+  const gecerli = [...new Set(urunKimlikleri.filter(kimlikMi).map(kimligiDuzelt))];
   if (gecerli.length === 0) return [];
   const ayarlar = await siteninMagazaAyarlari(vt, site);
   const an = secenekler.an;

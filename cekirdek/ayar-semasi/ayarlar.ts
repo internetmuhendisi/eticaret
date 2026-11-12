@@ -26,6 +26,7 @@ import {
   vergiYuvarlamalari,
 } from "../moduller/vergi/semalar.ts";
 import { kodSemasi } from "../temalar/sema.ts";
+import { kimlikSemasi } from "../veritabani/kimlik.ts";
 
 export type AyarBilgisi = {
   aciklama: MetinAnahtari;
@@ -241,7 +242,10 @@ export const magazaAyarSemasi = z.strictObject({
   // Mağaza sahibinin yüklediği logo: dosya deposundaki kaydın kimliği (kart 0073, karar 0059).
   // Boşsa sitenin ilk logosu (marka/ klasörü), o da yoksa mağaza adı görünür.
   // Yalnız logoyuDegistir ve logoyuKaldir değiştirir: herhangi bir dosya kimliği logo yapılamaz.
-  logo: ayar(z.uuid().optional(), magazaSahibinin("ayar.aciklama.logo", { kendiIsleviyle: true })),
+  logo: ayar(
+    kimlikSemasi.optional(),
+    magazaSahibinin("ayar.aciklama.logo", { kendiIsleviyle: true }),
+  ),
   // Vergi (kart 0074, karar 0060). Kapalıysa vergi tutarı sıfırdır (kart 0075). Vergi adının çekirdekte
   // varsayılanı yoktur: çekirdekte bir ülkenin vergi adı yazılmaz, site başlangıç dosyasında verir.
   // Oranın kendi adı yoksa bu ad kullanılır. Sınıflar ve oranlar ayar değil, vergi modülünün tablosudur.

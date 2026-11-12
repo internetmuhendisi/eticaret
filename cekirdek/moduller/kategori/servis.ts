@@ -23,7 +23,7 @@ import {
   type Veritabani,
   type VeritabaniIslemi,
 } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { gorselHazirMi } from "../dosya/servis.ts";
 import { urunKilidiAl } from "../urun/kilit.ts";
@@ -291,9 +291,10 @@ export const kategoriEkle = async (
 export const kategoriDegistir = async (
   vt: Veritabani,
   kim: DegisikligiYapan,
-  kimlik: string,
+  kimlikGirdisi: string,
   ham: KategoriDegisikligi,
 ): Promise<void> => {
+  const kimlik = kimligiDuzelt(kimlikGirdisi);
   const girdi = girdiyiDogrula(kategoriDegisikligi.safeParse(ham));
   await yaz(vt, async (islem) => {
     const eski = await degisebilenKategori(islem, kimlik);
@@ -345,8 +346,9 @@ export const kategoriDegistir = async (
 
 // Silme kuralı (kullanıcı kararı, karar 0063): kategori işaretlenir, alt kategorileri onun üstüne
 // çıkar, ürün bağlantıları kalkar. Önce bütün çakışmalar aranır: biri bile varsa hiçbir şey değişmez.
-export const kategoriSil = (vt: Veritabani, kim: DegisikligiYapan, kimlik: string) =>
+export const kategoriSil = (vt: Veritabani, kim: DegisikligiYapan, kimlikGirdisi: string) =>
   yaz(vt, async (islem) => {
+    const kimlik = kimligiDuzelt(kimlikGirdisi);
     // Birden çok kategori satırı güncellenir: ürün değişikliğiyle kilitlenmemek için önce ürün kilidi
     // alınır (urun/kilit.ts).
     await urunKilidiAl(islem);

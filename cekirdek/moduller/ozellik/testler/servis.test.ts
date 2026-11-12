@@ -325,6 +325,19 @@ describe("özellik tanımı", () => {
   });
 });
 
+// Kart 0119: büyük harfle verilen özellik kimliği aynı özelliktir.
+describe("büyük harfli kimlik", () => {
+  it("büyük harfle okunan liste özelliğinin seçenekleri gelir", async () => {
+    const vt = await siteAc();
+    const o = await ornekOzellikler(vt);
+    expect((await servis.oku(o.malzeme.toUpperCase(), vt))?.secenekler.map((s) => s.ad)).toEqual([
+      "Pamuk",
+      "Yün",
+      "Keten",
+    ]);
+  });
+});
+
 describe("ürünün değerleri", () => {
   it("her türün değeri yazılır ve özelliklerin sırasıyla okunur", async () => {
     const vt = await siteAc();

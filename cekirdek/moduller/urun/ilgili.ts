@@ -12,7 +12,7 @@
 // açılmıyorsa (taslak, arşiv, silinmiş) liste boştur (kart 0079 kontrolü).
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimlikMi } from "../../veritabani/kimlik.ts";
 import { kategoriler, urunKategorileri } from "../kategori/model.ts";
 import { urunIlgilileri, urunler } from "./model.ts";
 import type { UrunHatasi } from "./semalar.ts";

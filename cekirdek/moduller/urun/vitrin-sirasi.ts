@@ -10,7 +10,7 @@
 import { and, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { dogrulamaHatasi } from "./dogrulama.ts";
 import { urunKilidiAl } from "./kilit.ts";
@@ -24,7 +24,7 @@ export const vitrinSirasiniDegistir = async (
   kim: DegisikligiYapan,
   kimlikler: readonly string[],
 ): Promise<void> => {
-  const kucuk = kimlikler.map((kimlik) => kimlik.toLowerCase());
+  const kucuk = kimlikler.map(kimligiDuzelt);
   if (kucuk.length > vitrinSirasiSiniri) {
     throw dogrulamaHatasi([{ alan: "vitrinSirasi", kod: "vitrin-sirasi-gecersiz" }]);
   }

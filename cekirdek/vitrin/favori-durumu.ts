@@ -24,6 +24,7 @@ import {
 import { favoriDepoAnahtari, favoriSiniriEnCok } from "../kayitlar/favori";
 import { hataKodlari } from "../kayitlar/kapi";
 import type { BirlesmeSonucu, FavoriHatasi, FavoriListesi } from "../moduller/favori/semalar";
+import { kimligiDuzelt } from "../veritabani/kimlik";
 import { cereziSil, cereziYaz, yereldenOku, yereleYaz } from "./favori-deposu";
 import { hesapDurumunuBekle, hesapDurumunuYenile } from "./hesap-durumu";
 
@@ -217,7 +218,7 @@ export const favoriDegistir = async (
   await kur(ayarlar);
   const simdiki = durum;
   if (simdiki.tur !== "hazir") return "hata";
-  const urun = ham.toLowerCase();
+  const urun = kimligiDuzelt(ham);
   const tamam: FavoriSonucu = favoride ? "eklendi" : "cikarildi";
   if (simdiki.urunler.includes(urun) === favoride) return tamam;
   if (favoride && simdiki.urunler.length >= sinir) return "sinir";

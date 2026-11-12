@@ -33,7 +33,7 @@ import {
   stokSebepleri,
 } from "../../kayitlar/stok.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { urunBirimleri, urunler } from "../urun/model.ts";
 import { birimStokBilgileri } from "./durum.ts";

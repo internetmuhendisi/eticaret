@@ -17,6 +17,7 @@ import {
 } from "../../kayitlar/urun.ts";
 import { adresAdiKalibi, adresAdiUzunlugu } from "../../metinler/adres-adi.ts";
 import type { MetinAnahtari } from "../../metinler/metin.ts";
+import { kimlikSemasi } from "../../veritabani/kimlik.ts";
 import { kayitMetni } from "../degisiklik-kaydi/deger.ts";
 import { urunOzellikDegeri } from "../ozellik/semalar.ts";
 import { barkoduDogrula } from "./barkod.ts";
@@ -145,7 +146,8 @@ export const tekrarsizListe = <T extends z.ZodType>(oge: T, enCok: number, tekra
     .max(enCok)
     .refine((liste) => new Set(liste).size === liste.length, hata(tekrar));
 
-const kimlikListesi = (tekrar: UrunHatasi) => tekrarsizListe(z.uuid(), listeSinirlari.grup, tekrar);
+const kimlikListesi = (tekrar: UrunHatasi) =>
+  tekrarsizListe(kimlikSemasi, listeSinirlari.grup, tekrar);
 
 // Alanlar arası kurallar: zamanlanmış ürünün yayın zamanı olur, en çok adet en az adetten küçük olmaz.
 // Servis birleşmiş kayda uygular (değişiklikte yalnız bir alan gelebilir); başlangıç kataloğunun
@@ -187,7 +189,7 @@ const alanlar = {
   enCokAdet: adet,
   // Vergi sınıfının kimliği; null ürünü vergisiz yapar. Bilerek zorunludur: unutulan sınıf vergisiz
   // satış olmasın.
-  vergiSinifi: z.uuid().nullable(),
+  vergiSinifi: kimlikSemasi.nullable(),
   stokKodu: metin(64),
   barkod: z.string().transform((barkod, ctx) => {
     const temiz = barkoduDogrula(barkod);
@@ -206,10 +208,10 @@ const alanlar = {
   kategoriler: kimlikListesi("kategori-tekrar"),
   etiketler: kimlikListesi("etiket-tekrar"),
   // Ürünün markası (kart 0078); null ürünü markasız yapar.
-  marka: z.uuid().nullable(),
+  marka: kimlikSemasi.nullable(),
   // Elle seçilen ilgili ürünler (kart 0079): sırası tutulur. Vitrinde en çok ilgiliUrunSiniri kadarı
   // görünür (ilgili.ts); fazlası, öncekiler vitrinden çıkarsa yerlerini alır.
-  ilgiliUrunler: tekrarsizListe(z.uuid(), listeSinirlari.ilgili, "ilgili-tekrar"),
+  ilgiliUrunler: tekrarsizListe(kimlikSemasi, listeSinirlari.ilgili, "ilgili-tekrar"),
   // Ürünün özellik değerleri (kart 0086): her özellikte en çok bir değer. Değerin özelliğin türüne
   // uyduğunu servis özelliği okuyunca denetler (cekirdek/moduller/ozellik/degerler.ts).
   ozellikler: z
@@ -324,7 +326,7 @@ export type DegerDegisikligi = z.input<typeof degerDegisikligi>;
 // Yeni birleşim: her seçenekten bir değerin kimliği ve birimin alanları. Birleşim sonradan değişmez:
 // başka bir birleşim yeni birimdir (stok ve fiyat geçmişi birime bağlıdır).
 export const birlesimGirdisi = z.strictObject({
-  degerler: tekrarsizListe(z.uuid(), varyantSinirlari.secenek, "deger-tekrar").min(1),
+  degerler: tekrarsizListe(kimlikSemasi, varyantSinirlari.secenek, "deger-tekrar").min(1),
   sira: sira.optional(),
   stokKodu: alanlar.stokKodu.optional(),
   barkod: alanlar.barkod.optional(),
@@ -334,7 +336,7 @@ export const birlesimGirdisi = z.strictObject({
   yukseklikMm: alanlar.yukseklikMm.optional(),
   // Birleşimin görseli: ürünün galerisindeki bir görsel öğesinin kimliği (kart 0087). Verilmezse ana
   // görsel gösterilir.
-  gorsel: z.uuid().optional(),
+  gorsel: kimlikSemasi.optional(),
 });
 export type BirlesimGirdisi = z.input<typeof birlesimGirdisi>;
 
@@ -348,7 +350,7 @@ export const birlesimDegisikligi = z.strictObject({
   boyMm: alanlar.boyMm.nullable().optional(),
   yukseklikMm: alanlar.yukseklikMm.nullable().optional(),
   // null seçimi kaldırır: ana görsel gösterilir.
-  gorsel: z.uuid().nullable().optional(),
+  gorsel: kimlikSemasi.nullable().optional(),
 });
 export type BirlesimDegisikligi = z.input<typeof birlesimDegisikligi>;
 
@@ -359,7 +361,7 @@ const alternatifMetin = metin(galeriSinirlari.alternatifMetin);
 // Galeriye görsel: dosya deposunda boyutlarıyla kaydedilmiş görselin kimliği (gorselKaydet,
 // cekirdek/moduller/dosya/servis.ts). Sıra verilmezse sona eklenir.
 export const galeriGorselGirdisi = z.strictObject({
-  dosya: z.uuid(),
+  dosya: kimlikSemasi,
   alternatifMetin,
   sira: sira.optional(),
 });
@@ -385,6 +387,6 @@ export type GaleriOgesiDegisikligi = z.input<typeof galeriOgesiDegisikligi>;
 // Galerinin yeni sırası: silinmemiş bütün öğelerin kimlikleri, tekrarsız. Eksik ya da fazla öğe
 // servis tarafından reddedilir.
 export const galeriSiralamasi = z.strictObject({
-  ogeler: tekrarsizListe(z.uuid(), galeriSinirlari.oge, "galeri-sira-gecersiz"),
+  ogeler: tekrarsizListe(kimlikSemasi, galeriSinirlari.oge, "galeri-sira-gecersiz"),
 });
 export type GaleriSiralamasi = z.input<typeof galeriSiralamasi>;

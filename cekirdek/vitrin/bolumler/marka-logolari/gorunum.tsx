@@ -11,6 +11,7 @@ import {
   SeritOgesi,
 } from "../../../../bilesenler/parcalar/serit";
 import { metin } from "../../../metinler/site-metni";
+import { kimligiDuzelt } from "../../../veritabani/kimlik";
 import type { BaglamMarkasi } from "../../bolum-kutuphanesi/baglam";
 import { BolumGorseli } from "../../bolum-kutuphanesi/gorsel";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
@@ -30,7 +31,7 @@ export function MarkaLogolariGorunumu({
   ).flatMap((oge, sira) => {
     // Kimlik tarifin şemasından geçmiştir; bağlamda olmayan marka silinmiş ya da yoktur.
     const marka =
-      typeof oge.marka === "string" ? baglam.markalar[oge.marka.toLowerCase()] : undefined;
+      typeof oge.marka === "string" ? baglam.markalar[kimligiDuzelt(oge.marka)] : undefined;
     return marka === undefined ? [] : [{ anahtar: String(sira), marka }];
   });
   if (markalar.length === 0) return null;

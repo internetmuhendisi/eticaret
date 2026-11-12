@@ -350,6 +350,40 @@ describe("marka tekildir", () => {
     ]);
   });
 
+  // Kart 0119: büyük harfle yazılmış aynı kimlik tekrar sayılır, beklenmeyen hata vermez.
+  it("aynı etiket büyük harfle ikinci kez verilemez; büyük harfli marka küçük harfle yazılır", async () => {
+    const vt = await siteAc();
+    const e = await etiketServisi.ekle(vt, yonetici(), { ad: "E" });
+    expect(await hatasi(urunEkle(vt, { etiketler: [e, e.toUpperCase()] }))).toEqual({
+      kod: "dogrulama",
+      ayrinti: [{ alan: "etiketler", kod: "etiket-tekrar" }],
+    });
+    const m = await markaServisi.ekle(vt, yonetici(), { ad: "M" });
+    const urun = await urunEkle(vt, { marka: m.toUpperCase(), etiketler: [e.toUpperCase()] });
+    expect(await urunSrv.urunuOku(vt, urun)).toMatchObject({ marka: m, etiketler: [e] });
+  });
+
+  it("aynı etiket ve marka büyük harfle yeniden verilince değişiklik yazılmaz", async () => {
+    const vt = await siteAc();
+    const e = await etiketServisi.ekle(vt, yonetici(), { ad: "E" });
+    const m = await markaServisi.ekle(vt, yonetici(), { ad: "M" });
+    const urun = await urunEkle(vt, { marka: m, etiketler: [e] });
+    const sayi = async () =>
+      (
+        await vt
+          .select()
+          .from(degisiklikKayitlari)
+          .where(eq(degisiklikKayitlari.kayit_kimligi, urun))
+      ).length;
+    const once = await sayi();
+    await urunSrv.urunDegistir(vt, yonetici(), urun, {
+      marka: m.toUpperCase(),
+      etiketler: [e.toUpperCase()],
+    });
+    expect(await sayi()).toBe(once);
+    expect(await urunSrv.urunuOku(vt, urun)).toMatchObject({ marka: m, etiketler: [e] });
+  });
+
   it("aynı etiket iki kez verilemez", async () => {
     const vt = await siteAc();
     const e = await etiketServisi.ekle(vt, yonetici(), { ad: "E" });

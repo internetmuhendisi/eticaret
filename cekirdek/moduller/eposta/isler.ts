@@ -5,12 +5,13 @@ import { z } from "zod";
 import { isTanimla } from "../../arka-plan-isleri/kuyruk.ts";
 import { gunluk } from "../../izleme/gunluk.ts";
 import { epostaAyari } from "../../kayitlar/eposta.ts";
+import { kimlikSemasi } from "../../veritabani/kimlik.ts";
 import { epostaBasarisizYap, epostaKaydiniGonder } from "./gonderim.ts";
 import { epostaKayitlari } from "./model.ts";
 
 export const epostaGonderIsi = isTanimla({
   tur: "eposta-gonder",
-  sema: z.strictObject({ kayitKimligi: z.uuid() }),
+  sema: z.strictObject({ kayitKimligi: kimlikSemasi }),
   calistir: ({ kayitKimligi }, { vt, sinyal }) => epostaKaydiniGonder(vt, kayitKimligi, { sinyal }),
   sonHata: ({ kayitKimligi }, vt, hata) => epostaBasarisizYap(vt, kayitKimligi, hata),
 });

@@ -21,7 +21,7 @@ import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import { type GorselBoyutu, galeriSinirlari } from "../../kayitlar/gorsel.ts";
 import type { VideoSitesi } from "../../kayitlar/video-siteleri.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { dosyalar } from "../dosya/model.ts";
 import { type GorselBoyutDosyasi, gorselBoyutlariniOku, gorselHazirMi } from "../dosya/servis.ts";
@@ -94,7 +94,7 @@ export const urunGalerileri = async (
   secenek: { sadeceGorsel?: boolean } = {},
 ): Promise<Map<string, GaleriOgesi[]>> => {
   const sonuc = new Map<string, GaleriOgesi[]>();
-  const gecerli = [...new Set(urunKimlikleri.filter(kimlikMi))];
+  const gecerli = [...new Set(urunKimlikleri.filter(kimlikMi).map(kimligiDuzelt))];
   if (gecerli.length === 0) return sonuc;
   const satirlar = await vt
     .select(ogeAlanlari)

@@ -344,6 +344,21 @@ describe("düşürme", () => {
   });
 });
 
+// Kart 0119: büyük harfle yazılmış aynı birim aynı kalemdir.
+describe("büyük harfli birim", () => {
+  it("aynı birimin iki yazılışı tek kalem olarak toplanır, geçmişe bir satır yazılır", async () => {
+    const vt = await siteAc();
+    const { birim } = await birimAc(vt, 5);
+    await siparisVer(vt, [
+      { birim, adet: 1 },
+      { birim: birim.toUpperCase(), adet: 2 },
+    ]);
+    expect(await miktari(vt, birim)).toBe(2);
+    const satirlar = (await gecmis(vt, birim)).filter((satir) => satir.sebep === "siparis");
+    expect(satirlar.map((satir) => [satir.onceki_miktar, satir.sonraki_miktar])).toEqual([[5, 2]]);
+  });
+});
+
 describe("artırma", () => {
   it("iptal ve iadede artar; satırı olmayan ve silinmiş birimde de; takip kapalıysa değişmez", async () => {
     const vt = await siteAc();

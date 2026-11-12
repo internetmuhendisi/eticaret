@@ -23,7 +23,7 @@ import type { DegisikligiYapan, DegisiklikIslemi } from "../../kayitlar/degisikl
 import { varyantSinirlari } from "../../kayitlar/urun.ts";
 import { adAnahtariSql } from "../../metinler/ad-anahtari.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import {
   cakisma,
@@ -73,7 +73,7 @@ export const secenekleriOku = async (
   secenek: { silinmisler: boolean },
 ): Promise<Map<string, UrunSecenegi[]>> => {
   const sonuc = new Map<string, UrunSecenegi[]>();
-  const gecerli = urunKimlikleri.filter(kimlikMi);
+  const gecerli = urunKimlikleri.filter(kimlikMi).map(kimligiDuzelt);
   if (gecerli.length === 0) return sonuc;
   const satirlar = await vt
     .select({
@@ -448,9 +448,10 @@ export const varyantIslemleri = (yaz: Yaz) => {
   const secenekEkle = async (
     vt: Veritabani | VeritabaniIslemi,
     kim: DegisikligiYapan,
-    urun: string,
+    urunGirdisi: string,
     ham: SecenekGirdisi,
   ): Promise<string> => {
+    const urun = kimligiDuzelt(urunGirdisi);
     const girdi = girdiyiDogrula(secenekGirdisi.safeParse(ham));
     return yaz(vt, async (islem) => {
       await urunuDenetle(islem, urun);
@@ -721,9 +722,10 @@ export const varyantIslemleri = (yaz: Yaz) => {
   const birlesimEkle = async (
     vt: Veritabani | VeritabaniIslemi,
     kim: DegisikligiYapan,
-    urun: string,
+    urunGirdisi: string,
     ham: BirlesimGirdisi,
   ): Promise<string> => {
+    const urun = kimligiDuzelt(urunGirdisi);
     const girdi = girdiyiDogrula(birlesimGirdisi.safeParse(ham));
     return yaz(vt, async (islem) => {
       await urunuDenetle(islem, urun);
@@ -859,7 +861,7 @@ export const urunlerinBirimleri = async (
   urunKimlikleri: string[],
 ): Promise<Map<string, string[]>> => {
   const sonuc = new Map<string, string[]>();
-  const gecerli = urunKimlikleri.filter(kimlikMi);
+  const gecerli = urunKimlikleri.filter(kimlikMi).map(kimligiDuzelt);
   if (gecerli.length === 0) return sonuc;
   const satirlar = await vt
     .select({ urun: urunBirimleri.urun_kimligi, birim: urunBirimleri.kimlik })

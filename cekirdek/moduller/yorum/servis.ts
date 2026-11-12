@@ -17,7 +17,7 @@ import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import { type YorumDurumu, yorumSinirlari } from "../../kayitlar/yorum.ts";
 import { kisaAd } from "../../metinler/bicimleyici.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
 import { urunler } from "../urun/model.ts";
@@ -221,7 +221,7 @@ export const puanOzetleri = async (
   vt: Veritabani | VeritabaniIslemi,
   urunKimlikleri: readonly string[],
 ): Promise<Map<string, PuanOzeti>> => {
-  const gecerli = [...new Set(urunKimlikleri.filter(kimlikMi).map((k) => k.toLowerCase()))];
+  const gecerli = [...new Set(urunKimlikleri.filter(kimlikMi).map(kimligiDuzelt))];
   const sonuc = new Map<string, PuanOzeti>();
   if (gecerli.length === 0) return sonuc;
   const satirlar = await vt
@@ -282,7 +282,7 @@ export const urunYorumlari = async (
   { sayfa, boyut = yorumSinirlari.sayfa }: { sayfa: number; boyut?: number },
 ): Promise<{ yorumlar: VitrinYorumu[]; toplam: number; sayfa: number; sayfaSayisi: number }> => {
   if (!kimlikMi(urun)) return { yorumlar: [], toplam: 0, sayfa: 1, sayfaSayisi: 1 };
-  const kosul = and(eq(yorumlar.urun_kimligi, urun.toLowerCase()), eq(yorumlar.durum, "yayinda"));
+  const kosul = and(eq(yorumlar.urun_kimligi, kimligiDuzelt(urun)), eq(yorumlar.durum, "yayinda"));
   const [sayim] = await vt.select({ toplam: count() }).from(yorumlar).where(kosul);
   const toplam = sayim?.toplam ?? 0;
   const sayfaSayisi = Math.min(Math.max(1, Math.ceil(toplam / boyut)), yorumSinirlari.enCokSayfa);

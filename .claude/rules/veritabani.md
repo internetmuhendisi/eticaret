@@ -27,6 +27,7 @@ paths:
 ## Araçlar ve komutlar (karar 0022)
 
 - Erişim Drizzle ile yapılır. Kimlik, zaman ve tutar alanları yalnız `cekirdek/veritabani/turler.ts` dosyasından alınır.
+- Dışarıdan gelen kimlik koda girmeden küçük harfe çevrilir (karar 0112): şemalarda yalnız `kimlikSemasi`, şemadan geçmeyen kimlikte (servisin kimlik değişkeni) kodda karşılaştırmadan önce `kimligiDuzelt`; kimlik biçimi `kimlikMi` ile denetlenir (üçü `cekirdek/veritabani/kimlik.ts`). Zod'un kimlik doğrulayıcısını başka yerde çağırmak testte kırmızıdır (`cekirdek/testler/kimlik-semasi.test.ts`); servis değişkeninin çevrilmesi yalnız disiplindir.
 - Değişiklik üretmek: `pnpm veritabani-degisikligi-uret --name <kisa-ad>`, sonra dosyanın ilk satırına geri dönüş notu yazılır. Uygulamak: `pnpm veritabani-guncelle siteler/<kod-adi>`.
 - Yerel veritabanı (yerel posta kutusuyla birlikte açılır): `pnpm veritabani-baslat`, `pnpm veritabani-durdur`. Siteye veritabanı açmak: `pnpm site-veritabani-ac siteler/<kod-adi>`.
 - Sunucuda (karar 0034): `pnpm sunucu-veritabani siteler/<kod-adi> <ortam>` veritabanını açar ve değişiklikleri sitenin kendi kutu kullanıcısıyla uygular. Değişiklikleri uygulayan parça çekirdeğin görüntüsündedir (`cekirdek/veritabani/sunucuda-guncelle.ts`); yeni değişiklik eklenince görüntü yeniden üretilir.

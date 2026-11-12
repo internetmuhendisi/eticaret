@@ -7,6 +7,7 @@
 import { z } from "zod";
 import { type DuzenAlani, duzenAlanlari } from "../../kayitlar/tema.ts";
 import { kayitAlaniYasakMi } from "../../moduller/degisiklik-kaydi/deger.ts";
+import { kimlikSemasi } from "../../veritabani/kimlik.ts";
 import {
   type AlanTarifi,
   type BolumDegerleri,
@@ -347,7 +348,7 @@ export const baslangictanDuzen = (
 
 // Kayıtlı düzenin biçimi. Değerler ayrıca kütüphaneye göre denetlenir (duzenSorunlari).
 const bolumOrnegiSemasi = z.strictObject({
-  kimlik: z.uuid(),
+  kimlik: kimlikSemasi,
   tur: z.string(),
   gorunum: z.string(),
   gizli: z.boolean(),

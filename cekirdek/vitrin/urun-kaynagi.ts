@@ -24,6 +24,7 @@ import { siteninMagazaAyarlari } from "../moduller/magaza-ayarlari/servis";
 import { markaServisi } from "../moduller/marka/servis";
 import { urunListesi } from "../moduller/urun/liste";
 import type { Veritabani } from "../veritabani/baglanti";
+import { kimligiDuzelt } from "../veritabani/kimlik";
 import { type UrunKaynagi, urunKaynagiAnahtari } from "./bolum-kutuphanesi/urun-kaynagi";
 import type { UrunKartiVerisi } from "./urun-karti/tur";
 import { urunKartlari } from "./urun-karti/veri";
@@ -42,7 +43,7 @@ export const kaynaklarinUrunleri = async (
     switch (kaynak.tur) {
       case "elle":
         // Şema aynı ürünü iki kez kabul etmez; harf farkıyla gelen eski bir değer de tek kart verir.
-        return [...new Set(kaynak.urunler.map((urun) => urun.toLowerCase()))];
+        return [...new Set(kaynak.urunler.map(kimligiDuzelt))];
       case "kategori":
         return (
           await kategorininUrunleri(vt, kaynak.kategori, {
@@ -92,7 +93,7 @@ export const kaynaklarinUrunleri = async (
   return Object.fromEntries(
     listeler.map(([anahtar, kaynak, kimlikler]) => {
       const bulunan = kimlikler.flatMap((kimlik) => {
-        const kart = kartlarim.get(kimlik.toLowerCase());
+        const kart = kartlarim.get(kimligiDuzelt(kimlik));
         return kart === undefined ? [] : [kart];
       });
       if (kaynak.tur === "indirimli") {

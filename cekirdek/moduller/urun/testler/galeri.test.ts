@@ -277,6 +277,21 @@ describe("galeri ve ana görsel", () => {
     expect((await galerisi(vt, urun)).map((o) => o.kimlik)).toEqual([bir, iki]);
   });
 
+  // Kart 0119: büyük harfle yazılmış kimlikler aynı öğelerdir.
+  it("büyük harfle verilen sıralama yapılır, büyük harfle tekrarlanan öğe reddedilir", async () => {
+    const { vt, klasor } = await siteAc();
+    const urun = await urunEkle(vt);
+    const bir = await gorselEkle(vt, klasor, urun);
+    const iki = await gorselEkle(vt, klasor, urun);
+    const sirala = (ogeler: string[]) => servis.galeriyiSirala(vt, yonetici(), urun, { ogeler });
+    await sirala([iki.toUpperCase(), bir.toUpperCase()]);
+    expect((await galerisi(vt, urun)).map((o) => o.kimlik)).toEqual([iki, bir]);
+    expect(await hatasi(sirala([bir, bir.toUpperCase()]))).toEqual(
+      dogrulama("ogeler", "galeri-sira-gecersiz"),
+    );
+    expect((await galerisi(vt, urun)).map((o) => o.kimlik)).toEqual([iki, bir]);
+  });
+
   it("alternatif metin zorunlu, sınırlı ve değiştirilebilir", async () => {
     const { vt, klasor } = await siteAc();
     const urun = await urunEkle(vt);

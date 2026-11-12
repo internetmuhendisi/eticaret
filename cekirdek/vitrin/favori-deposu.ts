@@ -9,23 +9,19 @@
 //
 // Depo ve çerez okunamazsa (gizli pencere, kapalı depo) liste boş sayılır, hata vermez.
 
-import { z } from "zod";
 import { favoriCerezi, favoriDepoAnahtari, favoriSiniriEnCok } from "../kayitlar/favori";
+import { kimlikSemasi } from "../veritabani/kimlik";
 
-// Tarayıcı paketine veritabanı türleri girmesin diye kimlik zod'un kalıbıyla denetlenir (veritabanı v4 üretir).
-const kimlikSemasi = z.uuid();
-
-// Dışarıdan gelen değeri kimlik listesine çevirir: kimlik olmayan, tekrar eden ve fazla olan atılır. Kimlikler
-// küçük harfe çevrilir (veritabanı küçük harfle döner).
+// Dışarıdan gelen değeri kimlik listesine çevirir: kimlik olmayan, tekrar eden ve fazla olan atılır. Kimlikler ortak
+// şemayla küçük harfe çevrilir (veritabanı küçük harfle döner, kart 0119); şema dosyası yalnız zod alır, tarayıcı
+// paketine veritabanı kodu girmez.
 export const kimlikListesi = (degerler: readonly unknown[]): string[] =>
   [
     ...new Set(
-      degerler
-        .filter(
-          (deger): deger is string =>
-            typeof deger === "string" && kimlikSemasi.safeParse(deger).success,
-        )
-        .map((deger) => deger.toLowerCase()),
+      degerler.flatMap((deger) => {
+        const sonuc = kimlikSemasi.safeParse(deger);
+        return sonuc.success ? [sonuc.data] : [];
+      }),
     ),
   ].slice(0, favoriSiniriEnCok);
 

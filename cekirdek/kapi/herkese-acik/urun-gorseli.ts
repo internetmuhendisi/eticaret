@@ -5,7 +5,7 @@ import { type GorselBoyutu, gorselBoyutAdlari } from "../../kayitlar/gorsel.ts";
 import { herkeseAcik } from "../../kayitlar/izinler.ts";
 import { urunGorseli } from "../../moduller/urun/urun-gorseli.ts";
 import { siteninVeritabani } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimlikSemasi } from "../../veritabani/kimlik.ts";
 import { ucTanimla } from "../uc.ts";
 import { BilinenHata, DosyaYaniti } from "../zarf.ts";
 
@@ -14,7 +14,7 @@ export const urunGorseliUcu = ucTanimla({
   giris: "herkese-acik",
   sema: z.strictObject({
     // Galeri öğesinin kimliği.
-    o: z.string().refine(kimlikMi),
+    o: kimlikSemasi,
     // Kayıttaki boyutun adı; özgün görsel verilmez.
     b: z.enum(gorselBoyutAdlari as [GorselBoyutu, ...GorselBoyutu[]]),
   }),

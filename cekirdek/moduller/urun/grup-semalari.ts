@@ -3,6 +3,7 @@
 // kendi metin anahtarlarını verir (marka/semalar.ts, etiket/semalar.ts).
 import { z } from "zod";
 import { adresAdiKalibi, adresAdiUzunlugu } from "../../metinler/adres-adi.ts";
+import { kimlikSemasi } from "../../veritabani/kimlik.ts";
 import { kayitMetni } from "../degisiklik-kaydi/deger.ts";
 
 export const grupHatalari = [
@@ -23,7 +24,7 @@ const alanlar = {
   adresAdi: z.string().trim().max(adresAdiUzunlugu).regex(adresAdiKalibi, hata("adres-adi-bicimi")),
   aciklama: kayitMetni(10_000),
   // Dosya deposundaki görselin kimliği (kart 0111). Büyük harfle verilen kimlik küçük harfe çevrilir.
-  logo: z.uuid().transform((kimlik) => kimlik.toLowerCase()),
+  logo: kimlikSemasi,
 };
 
 // Grubun girilen ek alanları: açıklama markada, logo markada (kart 0111) girilir, etikette ikisi de yoktur.

@@ -8,6 +8,8 @@
 //
 // Bu dosya yalnız tür ve düz işlevdir, sunucu kodu almaz: bölümlerin görünüşleri tarayıcıda da çalışır.
 
+import { kimligiDuzelt } from "../../veritabani/kimlik";
+
 export type UrunKaynagi =
   | { tur: "elle"; urunler: readonly string[] }
   | { tur: "kategori"; kategori: string; adet: number }
@@ -20,13 +22,13 @@ export type UrunKaynagi =
 export const urunKaynagiAnahtari = (kaynak: UrunKaynagi): string => {
   switch (kaynak.tur) {
     case "elle":
-      return `elle:${kaynak.urunler.map((urun) => urun.toLowerCase()).join(",")}`;
+      return `elle:${kaynak.urunler.map(kimligiDuzelt).join(",")}`;
     case "kategori":
-      return `kategori:${kaynak.kategori.toLowerCase()}:${kaynak.adet}`;
+      return `kategori:${kimligiDuzelt(kaynak.kategori)}:${kaynak.adet}`;
     case "marka":
-      return `marka:${kaynak.marka.toLowerCase()}:${kaynak.adet}`;
+      return `marka:${kimligiDuzelt(kaynak.marka)}:${kaynak.adet}`;
     case "etiket":
-      return `etiket:${kaynak.etiket.toLowerCase()}:${kaynak.adet}`;
+      return `etiket:${kimligiDuzelt(kaynak.etiket)}:${kaynak.adet}`;
     case "yeni":
     case "indirimli":
     case "firsat":

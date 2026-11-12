@@ -10,7 +10,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import type { GorselBoyutu } from "../../kayitlar/gorsel.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import type { BolumKutuphanesi } from "../../vitrin/bolum-kutuphanesi/duzen.ts";
 import { bolumKutuphanesi } from "../../vitrin/bolum-kutuphanesi/kutuphane.ts";
 import { type GorselDosyasi, gorselBoyutunuOku } from "../dosya/gorsel-boyutu.ts";
@@ -33,7 +33,7 @@ export const vitrindeKullaniliyorMu = async (
   kutuphane: BolumKutuphanesi = bolumKutuphanesi,
 ): Promise<boolean> => {
   if (!kimlikMi(dosya)) return false;
-  const kimlik = dosya.toLowerCase();
+  const kimlik = kimligiDuzelt(dosya);
   const [kategori] = await vt
     .select({ kimlik: kategoriler.kimlik })
     .from(kategoriler)
@@ -62,5 +62,5 @@ export const vitrinGorseliOku = async (
   secenekler: { klasor?: string; kutuphane?: BolumKutuphanesi } = {},
 ): Promise<GorselDosyasi | undefined> => {
   if (!(await vitrindeKullaniliyorMu(vt, site, dosya, secenekler.kutuphane))) return undefined;
-  return gorselBoyutunuOku(vt, dosya.toLowerCase(), boyut, secenekler.klasor ?? dosyaKlasoru());
+  return gorselBoyutunuOku(vt, kimligiDuzelt(dosya), boyut, secenekler.klasor ?? dosyaKlasoru());
 };

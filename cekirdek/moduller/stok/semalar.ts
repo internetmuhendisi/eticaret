@@ -7,6 +7,7 @@
 import { z } from "zod";
 import { elleStokSebepleri, type StokGosterimi, type StokSebebi } from "../../kayitlar/stok.ts";
 import type { MetinAnahtari } from "../../metinler/metin.ts";
+import { kimligiDuzelt } from "../../veritabani/kimlik.ts";
 import { kayitDegeriYasakMi, kayitMetniHatasi } from "../degisiklik-kaydi/deger.ts";
 
 export const stokHatalari = [
@@ -98,7 +99,7 @@ export type ElleDuzeltme = z.input<typeof elleDuzeltme>;
 
 // Düşürme ve artırmanın kalemleri: aynı birim birden çok kez gelebilir, servis toplar.
 export const stokKalemleri = z
-  .array(z.strictObject({ birim: z.string(), adet }))
+  .array(z.strictObject({ birim: z.string().transform(kimligiDuzelt), adet }))
   .min(1)
   .max(500);
 export type StokKalemi = z.input<typeof stokKalemleri>[number];

@@ -30,7 +30,7 @@ import { type MenuDali, type VitrinHedefi, vitrinMenusu } from "../moduller/menu
 import { temaServisi } from "../moduller/tema/servis";
 import { anaSayfaYorumlari } from "../moduller/yorum/servis";
 import type { Veritabani } from "../veritabani/baglanti";
-import { kimlikMi } from "../veritabani/turler";
+import { kimligiDuzelt, kimlikMi } from "../veritabani/kimlik";
 import { kayitAdresleri } from "./adresler";
 import type {
   BaglamGorseli,
@@ -141,7 +141,7 @@ const markalariOku = async (
   vt: Veritabani,
   kimlikler: string[],
 ): Promise<Record<string, BaglamMarkasi>> => {
-  const gecerli = kimlikler.filter(kimlikMi).map((kimlik) => kimlik.toLowerCase());
+  const gecerli = kimlikler.filter(kimlikMi).map(kimligiDuzelt);
   if (gecerli.length === 0) return {};
   const satirlar = await vt
     .select({

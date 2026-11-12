@@ -24,7 +24,7 @@ import {
   type Veritabani,
   type VeritabaniIslemi,
 } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { gorselHazirMi } from "../dosya/servis.ts";
 import type { GrupBaglantisi, GrupTablosu } from "./grup.ts";

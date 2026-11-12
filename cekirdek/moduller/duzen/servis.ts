@@ -28,7 +28,7 @@ import { type DegisikligiYapan, sistemIslemi } from "../../kayitlar/degisiklik-i
 import { type Islev, yazilanIslevler } from "../../kayitlar/islevler.ts";
 import { type DuzenAlani, duzenAlanlari } from "../../kayitlar/tema.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import {
   alandakiEnCokBolum,
   type BolumKutuphanesi,
@@ -123,7 +123,9 @@ const bolumKaydi = (bolum: BolumOrnegi, alan: DuzenAlani) => ({
   degerler: JSON.parse(JSON.stringify(bolum.degerler)) as Record<string, unknown>,
 });
 
-const bolumuBul = (duzen: Duzen, kimlik: string) => {
+// Kimlik dışarıdan gelir: büyük harfle de yazılabilir, düzendeki kimlikler küçük harflidir (kart 0119).
+const bolumuBul = (duzen: Duzen, kimlikGirdisi: string) => {
+  const kimlik = kimligiDuzelt(kimlikGirdisi);
   for (const alan of duzenAlanlari) {
     const sira = duzen[alan].findIndex((bolum) => bolum.kimlik === kimlik);
     const bolum = duzen[alan][sira];
@@ -505,8 +507,9 @@ export const duzenServisi = (
     vt: Veritabani,
     kim: DegisikligiYapan,
     alan: DuzenAlani,
-    kimlikler: readonly string[],
+    kimliklerGirdisi: readonly string[],
   ): Promise<void> => {
+    const kimlikler = kimliklerGirdisi.map(kimligiDuzelt);
     if (!(duzenAlanlari as readonly string[]).includes(alan)) {
       throw dogrulama([{ alan: "alan", kod: "invalid_value" }]);
     }

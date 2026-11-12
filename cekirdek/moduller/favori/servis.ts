@@ -16,7 +16,7 @@ import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/turler.ts";
+import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { musteriler } from "../musteri/model.ts";
 import { urunler } from "../urun/model.ts";
 import { vitrinKosulu } from "../urun/vitrin.ts";
@@ -125,9 +125,7 @@ export const favoriServisi = (site: Site) => {
     tarayicidakiler: readonly string[],
     an?: Date,
   ): Promise<BirlesmeSonucu> => {
-    const istenen = [
-      ...new Set(tarayicidakiler.filter(kimlikMi).map((kimlik) => kimlik.toLowerCase())),
-    ];
+    const istenen = [...new Set(tarayicidakiler.filter(kimlikMi).map(kimligiDuzelt))];
     return vt.transaction(async (islem) => {
       await musteriyiKilitle(islem, musteri);
       if (istenen.length === 0)
