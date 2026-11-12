@@ -14,7 +14,6 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { Dugme, IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
-import { useHareketAzaltma } from "../../../bilesenler/parcalar/hareket-azaltma";
 import {
   Pencere,
   PencereBasligi,
@@ -102,18 +101,20 @@ export function UrunGalerisi({
 }) {
   const metin = useMetin();
   const serit = useRef<HTMLElement>(null);
-  const hareketAzaltma = useHareketAzaltma();
   const [buyuk, setBuyuk] = useState<number | undefined>(undefined);
   // Pencere kapanınca odak büyütme düğmesine döner (pencerenin tetikleyicisi yoktur, açılışı denetlenir).
   const buyukKutu = useRef<HTMLDivElement>(null);
   // Kaydırma ile gelen değişiklik şeridi yeniden kaydırmasın.
   const kaydirmadanGelen = useRef(false);
   // İlk açılışta gösterilen öğe (seçili birleşimin görseli olabilir): hemen yüklenen odur, ötekiler ekrana
-  // girince. Şerit sunucuda ilk öğede çizilir; sayfa bağlanınca bu öğeye kaydırmasız (anında) gider.
+  // girince. Şerit sunucuda ilk öğede çizilir; sayfa bağlanınca bu öğeye gider.
   const [ilkAktif] = useState(aktif);
-  const ilkKonum = useRef(true);
 
-  // Aktif öğe değişince şerit o öğeye gider (küçük görsel, ok tuşu ya da seçilen birleşimin görseli).
+  // Aktif öğe değişince şerit o öğeye anında gider (küçük görsel, ok tuşu ya da seçilen birleşimin görseli).
+  // Yumuşak kaydırma kullanılmaz: kaydırma sürerken geçilen ara konumlar kaydırma olayıyla aktif öğe sayılıyordu,
+  // kaydırma bitmeden pencere açılınca (sayfa kaydırması kilitlenir) galeri iki öğenin arasında, başka bir öğede
+  // kalıyordu (kart 0138 kapanış kontrolü, ölçüldü). Anında kaydırma tek olayla son konuma varır. Telefonda parmakla
+  // kaydırma tarayıcının kendisidir, değişmez.
   useEffect(() => {
     const kutu = serit.current;
     if (kutu === null) return;
@@ -121,14 +122,9 @@ export function UrunGalerisi({
       kaydirmadanGelen.current = false;
       return;
     }
-    const anlik = ilkKonum.current;
-    ilkKonum.current = false;
-    if (anlik && aktif === 0) return;
-    kutu.scrollTo({
-      left: aktif * kutu.clientWidth,
-      behavior: hareketAzaltma || anlik ? "auto" : "smooth",
-    });
-  }, [aktif, hareketAzaltma]);
+    if (kutu.scrollLeft === aktif * kutu.clientWidth) return;
+    kutu.scrollTo({ left: aktif * kutu.clientWidth, behavior: "instant" });
+  }, [aktif]);
 
   if (ogeler.length === 0) {
     return (
