@@ -5,7 +5,7 @@
   "adresler": {
     "deneme": "https://ornek-magaza.deneme.eticaretmagazasi.com"
   },
-  "cekirdekSurumu": "0.57.0",
+  "cekirdekSurumu": "0.58.0",
   "teslimDurumu": {
     "magazaSahibiHesabi": "gerekmez",
     "yurtDisiAktarimBelgeleri": "gerekmez"

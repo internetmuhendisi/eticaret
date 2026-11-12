@@ -13,6 +13,7 @@ import { listeSayfasi, listeSiralamalari, sayfaGecisleri } from "../kayitlar/lis
 import { type AyarSahibi, ayarSahibi } from "../kayitlar/site.ts";
 import { sosyalHesapKalibi, sosyalHesapSiniri, sosyalSiteler } from "../kayitlar/sosyal-siteler.ts";
 import { tukenenUrunDavranislari } from "../kayitlar/stok.ts";
+import { secenekOnSecimleri, tukenmisSecenekGosterimleri } from "../kayitlar/urun.ts";
 import { videoSiteAdlari } from "../kayitlar/video-siteleri.ts";
 import { saatDilimiGecerliMi } from "../metinler/bicimleyici.ts";
 import { diller, type MetinAnahtari } from "../metinler/metin.ts";
@@ -292,6 +293,16 @@ export const magazaAyarSemasi = z.strictObject({
   listeSayfaBoyutu: ayar(
     z.int().min(1).max(listeSayfasi.enCokBoyut).default(listeSayfasi.varsayilanBoyut),
     magazaSahibinin("ayar.aciklama.listeSayfaBoyutu"),
+  ),
+  // Ürün sayfası (kart 0138, karar 0102 ve 0108): tükenmiş seçenek değerinin gösterimi ve sayfa ilk
+  // açıldığında seçili birleşim. Seçenekler cekirdek/kayitlar/urun.ts'dedir.
+  tukenmisSecenek: ayar(
+    z.enum(tukenmisSecenekGosterimleri).default("ustu-cizili"),
+    magazaSahibinin("ayar.aciklama.tukenmisSecenek"),
+  ),
+  secenekOnSecimi: ayar(
+    z.enum(secenekOnSecimleri).default("ilk-satilabilir"),
+    magazaSahibinin("ayar.aciklama.secenekOnSecimi"),
   ),
   // Düşük stok eşiği: stok bu sayıya eşit ya da altındaysa (ve sıfırdan büyükse) düşük stoktadır. Ürünün
   // kendi eşiği varsa o geçerlidir. 0 düşük stok uyarısını kapatır.

@@ -66,7 +66,7 @@ export const izgaraSiniflari = (kart: UrunKartiGorunumu, yer: IzgaraYeri): strin
     : "gap-4 grid-cols-2 tablet:grid-cols-3 masaustu:grid-cols-4 genis:grid-cols-5";
 };
 
-const seritSiniflari: Record<UrunKartiGorunumu, string> = {
+export const seritSiniflari: Record<UrunKartiGorunumu, string> = {
   dikey: "basis-1/2 tablet:basis-1/3 masaustu:basis-1/4 genis:basis-1/5",
   yatay: "basis-full tablet:basis-1/2 masaustu:basis-1/3",
   "buyuk-gorsel": "basis-3/4 tablet:basis-1/2 masaustu:basis-1/3",

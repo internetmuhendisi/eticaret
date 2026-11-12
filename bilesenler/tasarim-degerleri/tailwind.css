@@ -48,6 +48,35 @@
   }
 }
 
+/* Biçimli metin (kart 0138): ürünün uzun açıklaması gibi temizlenmiş HTML'in etiketleri (aciklamaEtiketleri,
+   cekirdek/moduller/urun/aciklama.ts). Temel stil listeleri, başlıkları ve paragraf aralarını sıfırladığı için
+   bu etiketler burada tasarım değerleriyle yazılır. */
+@utility bicimli-metin {
+  & > * + * {
+    @apply mt-3;
+  }
+  & a {
+    @apply underline underline-offset-2;
+  }
+  & ul {
+    @apply list-disc pl-6;
+  }
+  & ol {
+    @apply list-decimal pl-6;
+  }
+  & h3 {
+    @apply font-baslik text-buyuk font-baslik-kalinligi;
+  }
+  & h4,
+  & strong,
+  & b {
+    @apply font-en-kalin;
+  }
+  & blockquote {
+    @apply border-l-2 border-kenar pl-4 text-soluk-yazi;
+  }
+}
+
 /* Animasyonların hareketi (kart 0103). Adları ve süreleri tailwind.ayar.ts'tedir; Tailwind 4 ayar
    dosyasındaki keyframes alanını CSS'e yazmadığı için hareket burada tanımlanır. */
 @keyframes geciken-gorunum {

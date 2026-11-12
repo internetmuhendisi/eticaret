@@ -233,6 +233,42 @@ export const fiyatGosterimServisi = (site: Site) => {
   const aralikBicimi = siteninBicimleyicisi(site.ayarlar);
   const aralikAyirici = metinOkuyucu(site.ayarlar.dil)("vitrin.fiyat.aralikAyirici");
 
+  // Adaylardan aralık (kural yukarıda). Ürün sayfası tek birleşimin fiyatını da bununla tek adaylı aralık olarak
+  // kurar (kart 0138): rozet, bitiş ve yazılış kartla aynı kuraldan gelir.
+  const araliginiKur = (adaylar: GosterilecekFiyat[]): FiyatAraligi | undefined => {
+    const [ilk] = adaylar;
+    if (ilk === undefined) return undefined;
+    let enDusuk = ilk;
+    let enYuksek = ilk;
+    for (const fiyat of adaylar) {
+      if (fiyat.tutar < enDusuk.tutar) enDusuk = fiyat;
+      if (fiyat.tutar > enYuksek.tutar) enYuksek = fiyat;
+    }
+    const indirim = araliginIndirimi(adaylar);
+    // Bitiş yalnız indirimi kartta görünen adaylardan (oranı en az 1, rozetle aynı ölçü; kart 0111 kontrolü):
+    // eski fiyatı gösterilemeyen (30 gün kuralı) indirime geri sayılmaz, sayaç ile kart ayrışmaz.
+    const bitisler = adaylar.flatMap((fiyat) =>
+      fiyat.indirimBitisi === undefined || indirimOrani(fiyat) < 1
+        ? []
+        : [fiyat.indirimBitisi.getTime()],
+    );
+    return {
+      enDusuk,
+      enYuksek,
+      ...(indirim === undefined ? {} : { indirim }),
+      ...(bitisler.length === 0 ? {} : { indirimBitisi: new Date(Math.min(...bitisler)) }),
+      yaziliAralik: aralikBicimi.paraAraligi(enDusuk.tutar, enYuksek.tutar, aralikAyirici),
+      // Bütün adaylar aynı tutar ve eski fiyattaysa: eşit tutarda iki uç aynı birleşimden gelir,
+      // ötekinin farklı eski fiyatı yalnız bütün adaylara bakılınca görülür.
+      tek: adaylar.every(
+        (fiyat) =>
+          fiyat.tutar === ilk.tutar &&
+          fiyat.eskiTutar === ilk.eskiTutar &&
+          fiyat.indirimde === ilk.indirimde,
+      ),
+    };
+  };
+
   const fiyatAraliklari = async (
     vt: Veritabani,
     urunKimlikleri: string[],
@@ -249,41 +285,13 @@ export const fiyatGosterimServisi = (site: Site) => {
         return fiyat === undefined ? [] : [{ fiyat, satilabilir: stoklar.get(birim)?.satilabilir }];
       });
       const satilabilir = fiyatli.filter((birim) => birim.satilabilir === true);
-      const adaylar = (satilabilir.length > 0 ? satilabilir : fiyatli).map((birim) => birim.fiyat);
-      const [ilk] = adaylar;
-      if (ilk === undefined) continue;
-      let enDusuk = ilk;
-      let enYuksek = ilk;
-      for (const fiyat of adaylar) {
-        if (fiyat.tutar < enDusuk.tutar) enDusuk = fiyat;
-        if (fiyat.tutar > enYuksek.tutar) enYuksek = fiyat;
-      }
-      const indirim = araliginIndirimi(adaylar);
-      // Bitiş yalnız indirimi kartta görünen adaylardan (oranı en az 1, rozetle aynı ölçü; kart 0111 kontrolü):
-      // eski fiyatı gösterilemeyen (30 gün kuralı) indirime geri sayılmaz, sayaç ile kart ayrışmaz.
-      const bitisler = adaylar.flatMap((fiyat) =>
-        fiyat.indirimBitisi === undefined || indirimOrani(fiyat) < 1
-          ? []
-          : [fiyat.indirimBitisi.getTime()],
+      const aralik = araliginiKur(
+        (satilabilir.length > 0 ? satilabilir : fiyatli).map((b) => b.fiyat),
       );
-      sonuc.set(urun, {
-        enDusuk,
-        enYuksek,
-        ...(indirim === undefined ? {} : { indirim }),
-        ...(bitisler.length === 0 ? {} : { indirimBitisi: new Date(Math.min(...bitisler)) }),
-        yaziliAralik: aralikBicimi.paraAraligi(enDusuk.tutar, enYuksek.tutar, aralikAyirici),
-        // Bütün adaylar aynı tutar ve eski fiyattaysa: eşit tutarda iki uç aynı birleşimden gelir,
-        // ötekinin farklı eski fiyatı yalnız bütün adaylara bakılınca görülür.
-        tek: adaylar.every(
-          (fiyat) =>
-            fiyat.tutar === ilk.tutar &&
-            fiyat.eskiTutar === ilk.eskiTutar &&
-            fiyat.indirimde === ilk.indirimde,
-        ),
-      });
+      if (aralik !== undefined) sonuc.set(urun, aralik);
     }
     return sonuc;
   };
 
-  return { gosterilecekFiyatlar, fiyatAraliklari };
+  return { gosterilecekFiyatlar, fiyatAraliklari, araliginiKur };
 };

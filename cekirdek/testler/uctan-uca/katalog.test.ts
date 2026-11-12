@@ -105,6 +105,29 @@ test("ana sayfa her parçayı kendi bölümünde ve sayfasına bağlantıyla gö
   expect(hatalar).toEqual([]);
 });
 
+// Seçenek grubu (kart 0138): Tab gruba girer, ok tuşları değerleri gezer ve seçer; seçilemeyen değer odak alır
+// ama seçilmez, adı ekiyle okunur, aria-disabled'dır. Radix ok tuşunda seçimi tuş basılıyken yapar: tuşa gerçek bir
+// süre basılır.
+test("seçenek grubu: ok tuşları seçer, seçilemeyen değer odak alır ama seçilmez", async ({
+  page,
+}) => {
+  const { hatalar } = await ac(page, `${katalogAdresi}/secenek-grubu`);
+  const grup = page.getByRole("radiogroup", { name: metin("gelistirme.ornek.beden") });
+  await expect(grup.getByRole("radio", { checked: true })).toHaveText("S");
+  const ek = metin("gelistirme.ornek.tukendiEki").trim();
+  const secilemez = grup.getByRole("radio", { name: new RegExp(`^M\\s*${ek}$`) });
+  await expect(secilemez).toHaveAttribute("aria-disabled", "true");
+  await grup.getByRole("radio", { checked: true }).focus();
+  await page.keyboard.press("ArrowRight", { delay: 50 });
+  await expect(secilemez).toBeFocused();
+  await expect(grup.getByRole("radio", { checked: true })).toHaveText("S");
+  await page.keyboard.press("ArrowRight", { delay: 50 });
+  await expect(grup.getByRole("radio", { name: "L", exact: true })).toBeFocused();
+  await expect(grup.getByRole("radio", { checked: true })).toHaveText("L");
+  await expect(page.getByText(metin("gelistirme.ornek.bedenAciklamasi"))).toBeVisible();
+  expect(hatalar).toEqual([]);
+});
+
 test("olmayan parçanın sayfası yoktur", async ({ page }) => {
   expect((await ac(page, `${katalogAdresi}/olmayan-parca`)).durum).toBe(404);
 });

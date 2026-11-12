@@ -7,7 +7,8 @@
 // Bağlanma, öğenin React'ın iç alanını (__reactFiber...) taşımasıyla ölçülür. Bu React'ın iç adıdır, yalnız testte
 // kullanılır: React adı değiştirirse bekleme süresini doldurup kırmızıya düşer, sessizce geçmez. React'ın dışında
 // açılan öğeler sayılmaz: Next.js'in betikleri, geliştirme göstergesi ve sayfa duyurucusu; pencere açıkken Radix'in
-// sayfanın iki ucuna koyduğu odak koruyucuları.
+// sayfanın iki ucuna koyduğu odak koruyucuları; hazır HTML olarak yazılan biçimli metnin içi (ürünün uzun açıklaması,
+// `data-slot="bicimli-metin"`, kart 0138): React o öğeleri bağlamaz, kabın kendisi bağlanır.
 import type { Page } from "@playwright/test";
 
 export const sayfaHazir = async (page: Page): Promise<void> => {
@@ -16,7 +17,9 @@ export const sayfaHazir = async (page: Page): Promise<void> => {
     [...document.body.querySelectorAll("*")]
       .filter(
         (oge) =>
-          !oge.matches("script, nextjs-portal, next-route-announcer, [data-radix-focus-guard]"),
+          !oge.matches(
+            "script, nextjs-portal, next-route-announcer, [data-radix-focus-guard], [data-slot=bicimli-metin] *",
+          ),
       )
       .every((oge) => Object.keys(oge).some((alan) => alan.startsWith("__reactFiber"))),
   );

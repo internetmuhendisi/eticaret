@@ -36,3 +36,17 @@ export type UrunTuru = (typeof urunTurleri)[number];
 // Varyantların sınırları: bir üründe en çok bu kadar silinmemiş seçenek, seçenek başına değer ve
 // birleşim olur. Panel ve sorgular sınırsız birleşimle yavaşlar.
 export const varyantSinirlari = { secenek: 3, deger: 50, birlesim: 100 } as const;
+
+// Ürün sayfasında tükenmiş seçenek değeri (kart 0138, karar 0102). Mağaza sahibinin ayarıdır (tukenmisSecenek).
+// Değer, öncekilerde seçilenlerle birlikte satılabilir bir birleşime götürmüyorsa tükenmiştir.
+// - ustu-cizili: değer görünür, üstü çizilidir ve seçilemez; ekran okuyucu "tükendi" duyar.
+// - gizle: değer gösterilmez.
+export const tukenmisSecenekGosterimleri = ["ustu-cizili", "gizle"] as const;
+export type TukenmisSecenekGosterimi = (typeof tukenmisSecenekGosterimleri)[number];
+
+// Ürün sayfası ilk açıldığında seçili birleşim (kart 0138, kullanıcı kararı). Mağaza sahibinin ayarıdır
+// (secenekOnSecimi). Adreste geçerli bir seçim varsa o kullanılır.
+// - ilk-satilabilir: birimlerin sırasında ilk satılabilir birleşim seçili gelir; hiçbiri satılamıyorsa seçim yoktur.
+// - secimsiz: müşteri seçene kadar hiçbir değer seçili değildir, ürünün fiyat aralığı görünür.
+export const secenekOnSecimleri = ["ilk-satilabilir", "secimsiz"] as const;
+export type SecenekOnSecimi = (typeof secenekOnSecimleri)[number];

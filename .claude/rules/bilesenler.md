@@ -40,6 +40,7 @@ Bileşen, düğme, giriş alanı, pencere gibi tekrar kullanılan arayüz parça
   - `Kart`, `Rozet`, `Uyari`, `BildirimAlani` ile `bildirimGoster`, `Ipucu`
   - `IskeletGorunum`, `YukleniyorGostergesi`, `Serit`, `Akordeon`
   - Sayfa iskeleti (kart 0135, karar 0103): `SayfaYolu`, `SayfaBasligi`, `BosHal`, `Sayfalama` ile `DahaFazla`
+  - `SecenekGrubu` (kart 0138, karar 0108): radyo grubu; seçilemeyen değer üstü çizili, odak alır, seçilmez
 
   Sınıflar `sinif()` ile birleştirilir. Asıl shadcn hâlleri `bilesenler/shadcn-kaynagi/` altındadır, güncellemesi `pnpm shadcn-farki` ile yapılır.
 - `bilesenler/parcalar/hareket-azaltma.ts`: `useHareketAzaltma` (kart 0110), kullanıcının hareketi azaltma tercihi. Kendiliğinden hareket eden parça bununla durur.

@@ -102,7 +102,12 @@ for (const tur of turler) {
           doldur(metin("vitrin.sayfaBilgisi.kalip"), { baslik: ad, magaza }),
         );
         const yol = page.getByRole("navigation", { name: metin("ortak.parca.sayfaYolu") });
-        await expect(yol.getByRole("link")).toHaveText([metin("vitrin.sayfa.anasayfa")]);
+        // Ürün sayfasının yolunda ürünün kategorisi de vardır (kart 0138); öteki sayfalarda yalnız ana sayfa.
+        if (tur === "urun") {
+          await expect(yol.getByRole("link").first()).toHaveText(metin("vitrin.sayfa.anasayfa"));
+        } else {
+          await expect(yol.getByRole("link")).toHaveText([metin("vitrin.sayfa.anasayfa")]);
+        }
         await expect(yol.locator('[aria-current="page"]')).toHaveText(ad);
         // Üst ve alt kısım çerçevedendir.
         await expect(page.locator("header").first()).toBeVisible();

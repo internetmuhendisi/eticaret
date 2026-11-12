@@ -99,7 +99,8 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Sayfa geçişi | Mağaza sahibi | Numaralı | — | Öteki değer: "Daha fazla göster". Kategori, marka, etiket ve arama sayfası (karar 0102, kart 0136) |
 | Sayfa başına ürün | Mağaza sahibi | 24 | — | Karar 0102, kart 0136 |
 | Varsayılan sıralama | Mağaza sahibi | Önerilen | — | Önerilen mağaza sahibinin elle sırasıdır. Seçenekler: önerilen, en yeni, fiyat artan, fiyat azalan (kart 0136) |
-| Tükenmiş seçenek | Mağaza sahibi | Üstü çizili, seçilemez | — | Ürün sayfasında tükenmiş beden ya da renk. Öteki değer: gösterilmez (karar 0102, kart 0138) |
+| Tükenmiş seçenek | Mağaza sahibi | Üstü çizili, seçilemez | — | `tukenmisSecenek`. Ürün sayfasında tükenmiş beden ya da renk. Öteki değer: gösterilmez (karar 0102, kart 0138) |
+| Ürün sayfasında ilk seçim | Mağaza sahibi | Stoğu olan ilk birleşim seçili | — | `secenekOnSecimi`. Öteki değer: müşteri seçene kadar seçimsiz, fiyat aralığı görünür. Adresteki seçim önce gelir (karar 0108, kart 0138) |
 | Filtrede kullanılan özellikler | Mağaza sahibi | Hiçbiri | Kumaş | Ayar değil, ürün özelliğinin "filtrede kullanılsın" alanıdır. Fiyat, marka, seçenekler ve stok durumu her zaman filtrededir (karar 0102, kart 0136) |
 
 ## Yorumlar

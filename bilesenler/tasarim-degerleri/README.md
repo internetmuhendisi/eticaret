@@ -109,6 +109,8 @@ Radix'in açılır parçalara verdiği ölçüler için üç adlı sınıf vard�
 
 Renkli zeminli bölgede (vitrinin alt kısmı, duyuru şeridi) odak çerçevesi `odak-yazi-renginde` ile bölgenin yazı rengini alır: `odak` rengi yalnız `zemin` ve `yuzey` üstünde ölçülür (kart 0108).
 
+Temizlenmiş biçimli metin (ürünün uzun açıklaması) `bicimli-metin` ile çizilir: paragraf arası, liste işaretleri, bağlantının alt çizgisi, başlık ve alıntı bu stilde tasarım değerleriyle yazılıdır (kart 0138). İzinli etiketler `cekirdek/moduller/urun/aciklama.ts`'tedir; listeye etiket eklenince stili de eklenir (testi `aciklama.test.ts`).
+
 Animasyonlar `animate-` ile yazılır:
 - `belir`, `kaybol`: açılır parça
 - `ortu-belir`, `ortu-kaybol`: örtü

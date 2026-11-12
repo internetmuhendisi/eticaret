@@ -94,7 +94,9 @@
       "listeSayfaBoyutu": "Ürün listelerinde bir sayfada gösterilen ürün sayısı.",
       "dusukStokEsigi": "Stok bu sayıya eşit ya da altına inince ürün düşük stokta sayılır. Ürünün kendi eşiği varsa o geçerlidir. 0 uyarıyı kapatır.",
       "sonAdetEsigi": "Stok bu sayıya eşit ya da altına inince müşteriye kalan adet yazılır (Son 3 ürün gibi). 0 yazıyı kapatır.",
-      "kargoyaVermeSuresi": "Siparişin kaç iş gününde kargoya verildiği. 0 aynı gün demektir."
+      "kargoyaVermeSuresi": "Siparişin kaç iş gününde kargoya verildiği. 0 aynı gün demektir.",
+      "tukenmisSecenek": "Ürün sayfasında tükenmiş beden ya da renk üstü çizili görünür ve seçilemez ya da hiç gösterilmez.",
+      "secenekOnSecimi": "Ürün sayfası açılınca stoğu olan ilk beden ve renk seçili gelir ya da müşteri kendisi seçene kadar hiçbiri seçili olmaz."
     }
   },
   "tema": {
@@ -770,6 +772,27 @@
         "etiket": "“{ad}” etiketli ürünleri {magaza} mağazasında inceleyin.",
         "urun": "{ad} ürününü {magaza} mağazasında inceleyin."
       }
+    },
+    "urunSayfasi": {
+      "galeri": "Ürün görselleri, {sira} / {toplam}",
+      "galeriTanimi": "galeri",
+      "kucukGorsel": "{sira}. görsel: {ad}",
+      "buyut": "Görseli büyüt",
+      "oncekiGorsel": "Önceki görsel",
+      "sonrakiGorsel": "Sonraki görsel",
+      "videoyuOynat": "Videoyu oynat: {ad}",
+      "videoNotu": "Video, oynata basınca yüklenir.",
+      "secimBasligi": "{secenek}: ",
+      "tukendiEki": ", tükendi",
+      "tukenmisAciklamasi": "Üstü çizili seçenekler bu seçimle tükendi.",
+      "secimIstegi": "Fiyatı ve stok durumunu görmek için seçim yapın.",
+      "stokKodu": "Stok kodu: {kod}",
+      "kargo": "{gun} iş gününde kargoda",
+      "ayniGunKargo": "Aynı gün kargoda",
+      "indirimBitisi": "İndirimin bitişi: {tarih}",
+      "aciklama": "Ürün açıklaması",
+      "ozellikler": "Özellikler",
+      "ilgili": "Bunlar da ilginizi çekebilir"
     }
   },
   "eposta": {
@@ -846,11 +869,16 @@
         "sayfaYolu": "Sayfa yolu",
         "sayfaBasligi": "Sayfa başlığı",
         "bosHal": "Boş hâl",
-        "sayfalama": "Sayfalama"
+        "sayfalama": "Sayfalama",
+        "secenekGrubu": "Seçenek grubu"
       },
       "bolumKutuphanesi": "Bölüm kütüphanesi"
     },
     "ornek": {
+      "beden": "Beden",
+      "bedenBasligi": "Beden: {deger}",
+      "bedenAciklamasi": "Üstü çizili bedenler tükendi.",
+      "tukendiEki": ", tükendi",
       "birincil": "Kaydet",
       "ikincil": "Önizle",
       "cerceveli": "Dışa aktar",

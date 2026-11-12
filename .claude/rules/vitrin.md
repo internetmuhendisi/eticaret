@@ -57,6 +57,13 @@ paths:
 - Kartın görünümü `urunKartiGorunumu` ile bulunur: bölümün seçimi, yoksa temanınki (vitrin bağlamındaki `parcaGorunumleri`). Görünümler `cekirdek/kayitlar/tema.ts` kaydındadır.
 - Ürün görseli yalnız ürün görseli ucundan (`urunGorseliAdresi`) gösterilir; dosyanın kimliği vitrinde adres olmaz.
 
+## Ürün sayfası (karar 0108)
+
+- Ürün sayfası `UrunSayfasi` (`cekirdek/vitrin/urun-sayfasi/sayfa.tsx`) ile çizilir, verisi yalnız `urunSayfasiVerisi`'nden (`veri.ts`) gelir. Her birleşimin fiyatı, stok yazısı ve stok kodu sunucuda fiyat bileşeniyle çizilir; tarayıcı yalnız seçili birleşiminkini gösterir, hesap yapmaz. Tek birleşimin fiyatı `araliginiKur` ile kurulur (rozet ve bitiş kartla aynı kural).
+- Renk ve beden seçiminin kuralları ve adresi yalnız `secim.ts`'tedir (`degerDurumu`, `secimiDegistir`, `ilkSecim`, `secimdenSorgu`). Parametre ürün listesinin filtresiyle aynıdır (`secenek-<seçenek>`). İlk seçim ve tükenmiş değerin gösterimi mağaza sahibinin ayarıdır (`secenekOnSecimi`, `tukenmisSecenek`).
+- Uzun açıklama yalnız `aciklamayiTemizle` ile temizlenmiş olarak ve `bicimli-metin` stiliyle çizilir.
+- Galeri ürün görseli ucundan boyutlarıyla çizilir; video yalnız oynata basınca yüklenir.
+
 ## Ana sayfa bölümleri ve görseller (karar 0087)
 
 - Ana sayfa düzenin ana sayfa alanını çizer; bölüm yoksa sade sayfa görünür. Bölümün başlığı h2'dir, sayfanın h1'i mağaza adıdır.
