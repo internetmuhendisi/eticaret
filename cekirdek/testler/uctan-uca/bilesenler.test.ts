@@ -84,6 +84,7 @@ for (const tema of ["light", "dark"] as const) {
       for (const [acan, baslik] of [
         ["pencereyiAc", "pencereBasligi"],
         ["yanPencereyiAc", "yanPencereBasligi"],
+        ["altCubukluPencereyiAc", "altCubukluPencereBasligi"],
       ]) {
         await dugme(page, m(acan ?? "")).click();
         const pencere = page.getByRole("dialog", { name: m(baslik ?? "") });

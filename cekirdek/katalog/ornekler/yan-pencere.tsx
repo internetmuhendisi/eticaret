@@ -49,11 +49,11 @@ function YanPencereAltCubuguOrnegi() {
   return (
     <YanPencere>
       <YanPencereTetikleyici asChild>
-        <Dugme tur="cerceveli">{m("yanPencereyiAc")}</Dugme>
+        <Dugme tur="cerceveli">{m("altCubukluPencereyiAc")}</Dugme>
       </YanPencereTetikleyici>
       <YanPencereIcerigi kapatEtiketi={metin("ortak.parca.kapat")}>
         <YanPencereUstu>
-          <YanPencereBasligi>{m("yanPencereBasligi")}</YanPencereBasligi>
+          <YanPencereBasligi>{m("altCubukluPencereBasligi")}</YanPencereBasligi>
           <YanPencereAciklamasi>{m("yanPencereAciklamasi")}</YanPencereAciklamasi>
         </YanPencereUstu>
         <OnayKutusu name="alt-cubuk-suzgec" etiket={m("stokta")} />
