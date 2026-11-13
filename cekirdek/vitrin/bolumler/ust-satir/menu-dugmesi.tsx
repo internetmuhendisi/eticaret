@@ -4,7 +4,8 @@
 // çizilen düğme ipucunun sarmalına dönüşür ve pencere açılmaz (ölçüldü). Metinler sunucudan gelir. Hesap öğesi
 // girişli müşteride e-postayı ve "Çıkış yap"ı gösterir, oturum ortak durumdan gelir (kart 0131). Kategori menüsü
 // masaüstündeki menü satırı gibi önce, tek bir "Kategoriler" dalı olarak çizilir (kart 0168, kullanıcı kararı):
-// ana menüde de geçen kategoriler en üst düzeyde iki kez görünmez.
+// ana menüde de geçen kategoriler en üst düzeyde iki kez görünmez. Kategori menülerinin hepsi aynı ağacı taşır:
+// birden çok seçilse de yalnız ilki çizilir (masaüstündeki menü satırının da tek kategori alanı vardır).
 import { useState } from "react";
 import { Ikon } from "../../../../bilesenler/ikonlar/ikon";
 import type { IkonAdi } from "../../../../bilesenler/ikonlar/sozluk";
@@ -44,6 +45,7 @@ export function MenuDugmesi({
   const kapat = () => setAcik(false);
   const metin = useMetin();
   const durum = useHesapDurumu(hesapSorulur);
+  const kategoriMenusu = menuler.find((menu) => menu.kategori);
   const [cikisHatasi, setCikisHatasi] = useState(false);
   const cik = async () => {
     setCikisHatasi(false);
@@ -70,17 +72,14 @@ export function MenuDugmesi({
       <YanPencereIcerigi taraf="sol" kapatEtiketi={metinler.kapat}>
         <YanPencereBasligi>{metinler.baslik}</YanPencereBasligi>
         <nav aria-label={metinler.baslik} className="flex flex-col gap-6">
-          {menuler
-            .filter((menu) => menu.kategori)
-            .map(({ kod, dallar }) => (
-              <YanMenuGrubu
-                key={kod}
-                baslik={metinler.kategoriler}
-                dallar={dallar}
-                tumu={metinler.tumu}
-                tiklayinca={kapat}
-              />
-            ))}
+          {kategoriMenusu === undefined ? null : (
+            <YanMenuGrubu
+              baslik={metinler.kategoriler}
+              dallar={kategoriMenusu.dallar}
+              tumu={metinler.tumu}
+              tiklayinca={kapat}
+            />
+          )}
           {menuler
             .filter((menu) => !menu.kategori)
             .map(({ kod, dallar }) => (

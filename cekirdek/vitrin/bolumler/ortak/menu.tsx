@@ -45,10 +45,13 @@ export function YanMenu({
   dallar,
   tumu,
   tiklayinca,
+  duzey = 3,
 }: {
   dallar: readonly BaglamMenuDali[];
   tumu: string;
   tiklayinca?: () => void;
+  // Akordeon başlıklarının düzeyi: pencerenin başlığı h2'dir; "Kategoriler" grubunun içindekiler h4 (kart 0168).
+  duzey?: 3 | 4;
 }) {
   const kapatma = tiklayinca === undefined ? {} : { tiklayinca };
   const satir = "min-h-11 w-full py-2";
@@ -63,7 +66,7 @@ export function YanMenu({
           <li key={dal.kimlik} className="border-b border-kenar">
             <Akordeon type="single" collapsible>
               <AkordeonOgesi value={dal.kimlik}>
-                <AkordeonBasligi duzey={3}>{dal.metin}</AkordeonBasligi>
+                <AkordeonBasligi duzey={duzey}>{dal.metin}</AkordeonBasligi>
                 <AkordeonIcerigi>
                   <ul className="flex flex-col pl-4">
                     {dal.adres === undefined ? null : (
@@ -116,6 +119,7 @@ export function YanMenuGrubu({
                 <YanMenu
                   dallar={dallar}
                   tumu={tumu}
+                  duzey={4}
                   {...(tiklayinca === undefined ? {} : { tiklayinca })}
                 />
               </div>

@@ -26,6 +26,8 @@ Müşteri gezisinde (2026-11-13) ölçüldü: telefonda yan menü önce ana men�
 
 - Önce ve sonra görüntüsü (taze kurulmuş Örnek Mağaza, 390 px): önce yan pencerede Giyim, Ev ve Yaşam, Elektronik Aksesuar, Spor ve Outdoor, Kişisel Bakım iki kez, başlıksız listeleniyordu. Sonra en üstte kapalı tek "Kategoriler" satırı, altında ana menü; "Kategoriler" açılınca kategoriler girintili içinde.
 - Karar 0120.
+- Bağımsız kontrolün bulgularıyla düzeltildi: "Kategoriler" açıkken koyu temada da taranır; iç akordeonun başlıkları h4 (pencere h2, "Kategoriler" h3); logo satırı birden çok kategori menüsü seçse de tek "Kategoriler" çizilir; sıra ve başlık düzeyi jsdom testinde.
+- Kabul edilen fark (bağımsız kontrol): masaüstündeki menü satırı "Kategoriler" düğmesini kendi `kategoriMenusu` alanından alır (elle kurulmuş bir menü de seçilebilir), telefon menünün türüne bakar. Menü satırına elle kurulmuş bir menü kategori diye konursa masaüstünde düğmenin altında, telefonda düz listede görünür. Bugün böyle bir site yok.
 
 ## Durum
 

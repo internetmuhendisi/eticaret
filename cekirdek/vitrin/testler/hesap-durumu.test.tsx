@@ -43,7 +43,13 @@ const ciz = (sorulur = true) =>
         yandakiler={[]}
         hesap={{ adres: "/giris", ikon: "hesap", etiket }}
         hesapSorulur={sorulur}
-        metinler={{ ac: "aç", kapat: "kapat", baslik: "Menü", tumu: "Tümü" }}
+        metinler={{
+          ac: "aç",
+          kapat: "kapat",
+          baslik: "Menü",
+          tumu: "Tümü",
+          kategoriler: "Kategoriler",
+        }}
       />
       {sorulur ? <HesapAlani /> : null}
     </MetinSaglayici>,

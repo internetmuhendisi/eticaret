@@ -398,70 +398,77 @@ test("bölüm kütüphanesi: deneme bölümü ve tarifinden çıkan form iki ren
 
 // Üst ve alt kısım bölümleri (kart 0108): yukarıdaki test sayfanın tamamını iki renkte ve üç genişlikte tarar;
 // burada telefonda yan pencere, masaüstünde açılır menü klavyeyle denenir, açıkken de taranır.
-test("üst kısım: telefonda menü yan pencereden açılır, arama kutusu ve sepet görünür, klavyeyle kapanır", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 375, height: 800 });
-  const sayfa = await ac(page, `${katalogAdresi}/bolum-kutuphanesi`);
-  const bolum = page.getByRole("region", { name: metin("gelistirme.bolum.ustAlt") });
-  // Katalogda üst kısım bir bölümün içindedir: sayfanın başlığı (banner) sayılmaz.
-  const ust = bolum.locator("header").first();
-  // Arama telefonda satırın altındaki kutudur (kart 0137).
-  await expect(
-    ust
-      .getByRole("searchbox", { name: metin("vitrin.bolum.ustSatir.aramaEtiketi") })
-      .filter({ visible: true }),
-  ).toHaveCount(1);
-  await expect(ust.getByRole("link", { name: metin("vitrin.bolum.ustSatir.sepet") })).toBeVisible();
-  await expect(ust.getByRole("link", { name: metin("vitrin.bolum.ustSatir.hesap") })).toBeHidden();
-  await expect(
-    ust.getByRole("navigation", { name: metin("vitrin.bolum.menuSatiri.gezinme") }),
-  ).toBeHidden();
-  const ac2 = ust.getByRole("button", { name: metin("vitrin.bolum.ustSatir.menuyuAc") });
-  await ac2.focus();
-  await page.keyboard.press("Enter");
-  const pencere = page.getByRole("dialog", { name: metin("vitrin.bolum.ustSatir.menuBasligi") });
-  await expect(pencere).toBeVisible();
-  await expect(
-    pencere.getByRole("link", { name: metin("gelistirme.bolum.ornek.menu.yeni") }),
-  ).toBeVisible();
-  await expect(
-    pencere.getByRole("link", { name: metin("vitrin.bolum.ustSatir.hesap") }),
-  ).toBeVisible();
-  // Kategori menüsü tek bir "Kategoriler" dalıdır (kart 0168): ana menüde de geçen kategori en üst düzeyde bir
-  // kez görünür; "Kategoriler" açılınca kategoriler onun içindedir.
-  const giyimler = pencere.getByRole("button", {
-    name: metin("gelistirme.bolum.ornek.menu.giyim"),
+// Kart 0168 kontrolü: "Kategoriler" açıkken yan pencere iki renkte taranır.
+for (const renk of ["acik", "koyu"] as const) {
+  test(`üst kısım: telefonda menü yan pencereden açılır, arama kutusu ve sepet görünür, klavyeyle kapanır (${renk})`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 800 });
+    const sayfa = await ac(page, `${katalogAdresi}/bolum-kutuphanesi?renk=${renk}`);
+    const bolum = page.getByRole("region", { name: metin("gelistirme.bolum.ustAlt") });
+    // Katalogda üst kısım bir bölümün içindedir: sayfanın başlığı (banner) sayılmaz.
+    const ust = bolum.locator("header").first();
+    // Arama telefonda satırın altındaki kutudur (kart 0137).
+    await expect(
+      ust
+        .getByRole("searchbox", { name: metin("vitrin.bolum.ustSatir.aramaEtiketi") })
+        .filter({ visible: true }),
+    ).toHaveCount(1);
+    await expect(
+      ust.getByRole("link", { name: metin("vitrin.bolum.ustSatir.sepet") }),
+    ).toBeVisible();
+    await expect(
+      ust.getByRole("link", { name: metin("vitrin.bolum.ustSatir.hesap") }),
+    ).toBeHidden();
+    await expect(
+      ust.getByRole("navigation", { name: metin("vitrin.bolum.menuSatiri.gezinme") }),
+    ).toBeHidden();
+    const ac2 = ust.getByRole("button", { name: metin("vitrin.bolum.ustSatir.menuyuAc") });
+    await ac2.focus();
+    await page.keyboard.press("Enter");
+    const pencere = page.getByRole("dialog", { name: metin("vitrin.bolum.ustSatir.menuBasligi") });
+    await expect(pencere).toBeVisible();
+    await expect(
+      pencere.getByRole("link", { name: metin("gelistirme.bolum.ornek.menu.yeni") }),
+    ).toBeVisible();
+    await expect(
+      pencere.getByRole("link", { name: metin("vitrin.bolum.ustSatir.hesap") }),
+    ).toBeVisible();
+    // Kategori menüsü tek bir "Kategoriler" dalıdır (kart 0168): ana menüde de geçen kategori en üst düzeyde bir
+    // kez görünür; "Kategoriler" açılınca kategoriler onun içindedir.
+    const giyimler = pencere.getByRole("button", {
+      name: metin("gelistirme.bolum.ornek.menu.giyim"),
+    });
+    await expect(giyimler).toHaveCount(1);
+    const kategoriler = pencere.getByRole("button", {
+      name: metin("vitrin.bolum.menuSatiri.kategoriler"),
+    });
+    await expect(kategoriler).toHaveCount(1);
+    await kategoriler.focus();
+    await page.keyboard.press("Enter");
+    await expect(kategoriler).toHaveAttribute("aria-expanded", "true");
+    await expect(giyimler).toHaveCount(2);
+    await tara(page, "yan pencerede kategoriler açık");
+    await page.keyboard.press("Enter");
+    await expect(giyimler).toHaveCount(1);
+    // Alt düzeyi olan dal akordeonla açılır; dalın kendisi "Tümü" bağlantısıdır.
+    const giyim = giyimler.first();
+    await giyim.focus();
+    await page.keyboard.press("Enter");
+    await expect(
+      pencere.getByRole("link", { name: metin("gelistirme.bolum.ornek.menu.kadin") }).first(),
+    ).toBeVisible();
+    await expect(
+      pencere.getByRole("link", { name: metin("vitrin.bolum.ustSatir.tumu") }).first(),
+    ).toHaveAttribute("href", "/kategori/giyim");
+    await tara(page, "yan pencere açık");
+    await page.keyboard.press("Escape");
+    await expect(pencere).toBeHidden();
+    await expect(ac2).toBeFocused();
+    expect(await yanaKayma(page)).toBe(0);
+    expect(sayfa.hatalar).toEqual([]);
   });
-  await expect(giyimler).toHaveCount(1);
-  const kategoriler = pencere.getByRole("button", {
-    name: metin("vitrin.bolum.menuSatiri.kategoriler"),
-  });
-  await expect(kategoriler).toHaveCount(1);
-  await kategoriler.focus();
-  await page.keyboard.press("Enter");
-  await expect(kategoriler).toHaveAttribute("aria-expanded", "true");
-  await expect(giyimler).toHaveCount(2);
-  await tara(page, "yan pencerede kategoriler açık");
-  await page.keyboard.press("Enter");
-  await expect(giyimler).toHaveCount(1);
-  // Alt düzeyi olan dal akordeonla açılır; dalın kendisi "Tümü" bağlantısıdır.
-  const giyim = giyimler.first();
-  await giyim.focus();
-  await page.keyboard.press("Enter");
-  await expect(
-    pencere.getByRole("link", { name: metin("gelistirme.bolum.ornek.menu.kadin") }).first(),
-  ).toBeVisible();
-  await expect(
-    pencere.getByRole("link", { name: metin("vitrin.bolum.ustSatir.tumu") }).first(),
-  ).toHaveAttribute("href", "/kategori/giyim");
-  await tara(page, "yan pencere açık");
-  await page.keyboard.press("Escape");
-  await expect(pencere).toBeHidden();
-  await expect(ac2).toBeFocused();
-  expect(await yanaKayma(page)).toBe(0);
-  expect(sayfa.hatalar).toEqual([]);
-});
+}
 
 // Hidrasyon yarışı (kart 0121): kontrol hattının yavaş makinesinde sayfa bağlanmadan açılan yan pencere bölümlere
 // aria-hidden yazıyor, React uyuşmazlığı konsola yazıyordu. İşlemci 4 kat yavaşlatılınca bilgisayarda da her seferinde
