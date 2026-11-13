@@ -62,7 +62,7 @@ paths:
 - Ürün sayfası `UrunSayfasi` (`cekirdek/vitrin/urun-sayfasi/sayfa.tsx`) ile çizilir, verisi yalnız `urunSayfasiVerisi`'nden (`veri.ts`) gelir. Her birleşimin fiyatı, stok yazısı ve stok kodu sunucuda fiyat bileşeniyle çizilir; tarayıcı yalnız seçili birleşiminkini gösterir, hesap yapmaz. Tek birleşimin fiyatı `araliginiKur` ile kurulur (rozet ve bitiş kartla aynı kural).
 - Renk ve beden seçiminin kuralları ve adresi yalnız `secim.ts`'tedir (`degerDurumu`, `secimiDegistir`, `ilkSecim`, `secimdenSorgu`). Parametre ürün listesinin filtresiyle aynıdır (`secenek-<seçenek>`). İlk seçim ve tükenmiş değerin gösterimi mağaza sahibinin ayarıdır (`secenekOnSecimi`, `tukenmisSecenek`).
 - Uzun açıklama yalnız `aciklamayiTemizle` ile temizlenmiş olarak ve `bicimli-metin` stiliyle çizilir.
-- Galeri ürün görseli ucundan boyutlarıyla çizilir; video yalnız oynata basınca yüklenir.
+- Galeri ürün görseli ucundan boyutlarıyla çizilir; video yalnız oynata basınca yüklenir. Seçili birleşimin görseli ilk öğe değilse şerit, sayfanın kodu bağlanmadan satır içi küçük bir betikle o öğeye kaydırılır (karar 0122).
 - Eklentilerin ürün sayfası parçası yalnız yuvadan gelir (`UrunSayfasiYuvalari`, karar 0117): stok yazısının altında, seçili birimi `useSeciliBirim` ile okur. Bir eklenti tükenmiş birim için iş görüyorsa tükenmiş değer seçilebilir (`tukenmisSecilebilir`, kart 0144); kural `secimiDegistir`'dedir. Müşterinin elle seçtiği değer sessizce değişmez: tükenmiş değer seçilebiliyorsa korunur, değişmek zorundaysa `degisenSecimler` ile söylenir. Tercih sayfa açılırken yalnız adresteki seçimdir (`adrestekiSecim`); ayarın ilk seçimi tercih değildir (kararlar 0118, 0119).
 
 ## Ürün yorumları (karar 0109)

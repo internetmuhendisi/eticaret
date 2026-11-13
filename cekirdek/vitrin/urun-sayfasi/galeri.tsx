@@ -107,7 +107,10 @@ export function UrunGalerisi({
   // Kaydırma ile gelen değişiklik şeridi yeniden kaydırmasın.
   const kaydirmadanGelen = useRef(false);
   // İlk açılışta gösterilen öğe (seçili birleşimin görseli olabilir): hemen yüklenen odur, ötekiler ekrana
-  // girince. Şerit sunucuda ilk öğede çizilir; sayfa bağlanınca bu öğeye gider.
+  // girince. Kaydırmalı şerit HTML'de ilk öğede başlar; seçili öğe ilk öğe değilse şeridin hemen ardındaki küçük
+  // betik şeridi, görünür olduğu ilk karede o öğeye kaydırır (kart 0173): telefonda sayfanın kodu bağlanana kadar
+  // (ölçüldü: 0,5–1 saniye) başka renkteki ürünün görseli görünüyordu. CSS'te kaydırıcının başlangıç konumu bütün
+  // tarayıcılarda verilemez. Sayfa bağlanınca aşağıdaki etki konumu aynı bulur, kaydırmaz.
   const [ilkAktif] = useState(aktif);
 
   // Aktif öğe değişince şerit o öğeye anında gider (küçük görsel, ok tuşu ya da seçilen birleşimin görseli).
@@ -191,6 +194,16 @@ export function UrunGalerisi({
             </div>
           ))}
         </section>
+        {ilkAktif > 0 ? (
+          <script
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: yalnız sayı taşıyan sabit betik; şeridi ilk açılıştaki öğeye kaydırır (kart 0173).
+            dangerouslySetInnerHTML={{
+              // Sayfa akışla geldiği için şerit önce gizli bir kapta çizilebilir (genişliği 0): betik genişlik
+              // oluşana kadar her karede yeniden dener (en çok iki saniye).
+              __html: `(function(s,n,k){(function f(){if(s.clientWidth>0){s.scrollLeft=n*s.clientWidth}else if(k++<120){requestAnimationFrame(f)}})()})(document.currentScript.previousElementSibling,${Math.trunc(ilkAktif)},0)`,
+            }}
+          />
+        ) : null}
         {aktifOge?.tur === "gorsel" ? (
           <IkonDugmesi
             ikon="arama"

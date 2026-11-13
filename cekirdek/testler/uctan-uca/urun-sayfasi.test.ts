@@ -308,6 +308,43 @@ test("elle seçilen beden başka renkte tükenmişse korunur: Tükendi ve haber 
   await expect(page.getByText(stokKoduYazisi(h.birlesimler.acikM.stokKodu))).toBeVisible();
 });
 
+// Kart 0173: telefonun kaydırmalı galerisi adresle seçili gelen birleşimin görseliyle açılır, sayfanın kodu
+// bağlanmadan da. Eski hâlde şerit HTML'de ilk öğede başlıyordu; kod bağlanana kadar (ölçüldü: 0,5–1 saniye) başka
+// renkteki ürünün görseli görünüyordu. Kod yüklüyken aynı adreste hidrasyon uyarısı yoktur.
+test("telefonda seçili birleşimin görseli sayfanın kodu bağlanmadan görünür, hidrasyon uyarısı yok", async ({
+  page,
+  context,
+}) => {
+  const adres = `${h.adres}?secenek-renk=koyu&secenek-beden=m`;
+  const gorunenGorsel = (sayfa: Page) =>
+    sayfa.evaluate(() => {
+      const serit = document.querySelector('[data-slot="urun-galerisi"] section');
+      if (serit === null) return "şerit yok";
+      const r = serit.getBoundingClientRect();
+      const orta = r.left + r.width / 2;
+      const img = [...serit.querySelectorAll("img")].find((oge) => {
+        const b = oge.getBoundingClientRect();
+        return b.left <= orta && b.right >= orta;
+      });
+      return img?.alt ?? "görsel yok";
+    });
+  const kodsuz = await context.newPage();
+  try {
+    await kodsuz.setViewportSize({ width: 375, height: 800 });
+    await kodsuz.route("**/_next/static/**/*.js", (istek) => istek.abort());
+    await kodsuz.goto(adres, { waitUntil: "load" });
+    await expect.poll(() => gorunenGorsel(kodsuz)).toMatch(/^Koyu gömlek/);
+  } finally {
+    await kodsuz.close();
+  }
+  const hatalar = konsoluDinle(page, { haric: (metin) => metin.includes("401") });
+  await page.setViewportSize({ width: 375, height: 800 });
+  await page.goto(adres);
+  await sayfaHazir(page);
+  await expect.poll(() => gorunenGorsel(page)).toMatch(/^Koyu gömlek/);
+  expect(hatalar).toEqual([]);
+});
+
 test("galeri klavyeyle gezilir, büyütme penceresi görselleri gezer; video oynata basılana kadar yüklenmez", async ({
   page,
 }) => {
