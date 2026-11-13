@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { useId } from "react";
 import { Ikon } from "../../bilesenler/ikonlar/ikon";
 import type { IkonAdi } from "../../bilesenler/ikonlar/sozluk";
+import { Rozet } from "../../bilesenler/parcalar/rozet";
 import { sinif } from "../../bilesenler/parcalar/sinif";
 import { panelAdresi } from "./adresler";
 
@@ -15,7 +16,7 @@ export type CizilenMenuGrubu = {
   kod: string;
   // Grupsuz sayfaların başlığı yoktur.
   ad: string | null;
-  sayfalar: { kod: string; adres: string; ad: string; ikon: IkonAdi }[];
+  sayfalar: { kod: string; adres: string; ad: string; ikon: IkonAdi; isaret?: string }[];
 };
 
 // Kök yalnız kendi adresinde seçilidir; öteki sayfa alt sayfalarında da seçili kalır.
@@ -66,6 +67,11 @@ export function PanelMenusu({
                       className={sinif("size-5", secili ? "text-yazi" : "text-soluk-yazi")}
                     />
                     {sayfa.ad}
+                    {sayfa.isaret === undefined ? null : (
+                      <Rozet tur="cerceveli" className="ml-auto font-orta">
+                        {sayfa.isaret}
+                      </Rozet>
+                    )}
                   </Link>
                 </li>
               );

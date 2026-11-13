@@ -33,6 +33,14 @@ Bölüm: Vitrin. Önce 0141, 0122, 0125 ve 0123 bitmiş olmalı.
 - Ekran klavyeyle kullanılıyor, iki temada ve üç genişlikte taramadan geçiyor.
 - Taslakla karşılaştırma yapıldı.
 
+## Notlar (2026-11-13)
+
+- Görsel alanı yalnız sitede kayıtlı görsellerden seçer (kullanıcı kararı); yükleme kart 0160.
+- Önceki hâline dönüş ve "Geri al" ekranın gördüğü sürüme göredir; tema değişikliğinin yazdığı düzen buradan geri alınmaz (karar 0115).
+- Taslakla karşılaştırma: liste taslağa uydu (görünürlük ikonu, bilgi kutusu, menüde "Kısayol" işareti düzeltildi). Sekmeler ortak `Sekmeler` parçasının hap biçimindedir, taslakta alt çizgili. Sayfa yolunda "Vitrin" adımı yoktur (karar 0111). Bölüm formunun farkları (slayt akordeonu, renk örnekleri, sayaçlar) kart 0163.
+- Açılan kartlar: 0160 (görsel yükleme), 0161 (kayıtları arayarak seçme), 0162 (terim sözlüğü dosyası yok), 0163 (bölüm formu ve taslak), 0164 (tam takımda giriş yönlendirmesi süre aşımı).
+- Tam tarayıcı takımı bir kez çalıştı: 206 testten 198'i geçti. Bu kartın uzun testi süreyi aştı ve bölündü. Öteki yedi düşüşün dosyaları aynı yükte tek başına 52/52 geçti (kart 0152, 0157, 0164).
+
 ## Durum
 
 yapılacak

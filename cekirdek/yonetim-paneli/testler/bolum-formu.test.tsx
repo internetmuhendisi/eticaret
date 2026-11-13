@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { denemeBolumu, denemeSeridi } from "../../katalog/deneme-bolumu/tarif.ts";
 import { MetinSaglayici } from "../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../metinler/metin.ts";
+import { doldur } from "../../moduller/eposta/sablon.ts";
 import type { BolumDegerleri, BolumTarifi } from "../../vitrin/bolum-kutuphanesi/tarif.ts";
 import { bolumDegerSemasi } from "../../vitrin/bolum-kutuphanesi/tarif.ts";
 import { blogYazilari } from "../../vitrin/bolumler/blog-yazilari/tarif.ts";
@@ -54,8 +55,12 @@ describe("bölümün düzenleme formu", () => {
     expect(
       (screen.getByLabelText(metin("gelistirme.bolum.alan.bitis")) as HTMLInputElement).type,
     ).toBe("datetime-local");
-    // Seçim kutuları: görsel, kategori, marka, renk, sabit seçim ve ürünlerin kaynağı.
-    for (const ad of ["gorsel", "kategori", "marka", "zemin", "sure"] as const) {
+    // Görsel, görselleri pencerede açan düğmeyle seçilir (kart 0142).
+    const gorsel = screen.getByLabelText(metin("gelistirme.bolum.alan.gorsel"));
+    expect(gorsel.tagName).toBe("BUTTON");
+    expect(gorsel.getAttribute("aria-haspopup")).toBe("dialog");
+    // Seçim kutuları: kategori, marka, renk, sabit seçim ve ürünlerin kaynağı.
+    for (const ad of ["kategori", "marka", "zemin", "sure"] as const) {
       expect(screen.getByLabelText(metin(`gelistirme.bolum.alan.${ad}`)).getAttribute("role")).toBe(
         "combobox",
       );
@@ -131,7 +136,11 @@ describe("bölümün düzenleme formu", () => {
   it("liste öğesi eklenir, alanları çizilir, sınırda ekleme düğmesi kapanır, öğe kaldırılır", () => {
     const { son } = ciz(denemeBolumu);
     const liste = screen.getByRole("group", { name: metin("gelistirme.bolum.alan.maddeler") });
-    const ekle = within(liste).getByRole("button", { name: metin("yonetim.bolumFormu.ekle") });
+    const ekle = within(liste).getByRole("button", {
+      name: doldur(metin("yonetim.bolumFormu.ogeEkle"), {
+        ad: metin("gelistirme.bolum.alan.madde"),
+      }),
+    });
     for (let i = 0; i < 3; i += 1) fireEvent.click(ekle);
     expect(within(liste).getAllByLabelText(metin("gelistirme.bolum.alan.maddeMetni"))).toHaveLength(
       3,
@@ -179,5 +188,47 @@ describe("bölümün düzenleme formu", () => {
     expect(
       (screen.getByLabelText(metin("gelistirme.bolum.alan.bitis")) as HTMLInputElement).value,
     ).toBe("2026-12-31T23:59");
+  });
+
+  // Kart 0142: görsel sitede kayıtlı görsellerden seçilir. Pencere görselleri ölçüleriyle adlandırır; birine basınca
+  // seçilir, pencere kapanır, seçili görselin önizlemesi ve ölçüsü görünür. Zorunlu olmayan görsel kaldırılabilir.
+  it("görsel pencereden seçilir ve kaldırılır", () => {
+    const kimlik = "3f1c2b4a-5d6e-4f70-8a9b-0c1d2e3f4a5b";
+    const { son } = ciz(denemeBolumu, {
+      secenekler: { ...secenekler, gorseller: [{ kimlik, genislik: 1920, yukseklik: 800 }] },
+    });
+    fireEvent.click(screen.getByLabelText(metin("gelistirme.bolum.alan.gorsel")));
+    const pencere = screen.getByRole("dialog", { name: metin("yonetim.gorselSecimi.baslik") });
+    const secenek = within(pencere).getByRole("button", {
+      name: doldur(metin("yonetim.gorselSecimi.gorselAdi"), {
+        sira: "1",
+        genislik: "1920",
+        yukseklik: "800",
+      }),
+    });
+    expect(secenek.getAttribute("aria-pressed")).toBe("false");
+    expect(secenek.querySelector("img")?.getAttribute("src")).toBe(
+      `/kapi/yonetici/panel-gorseli?d=${kimlik}&b=kucuk`,
+    );
+    fireEvent.click(secenek);
+    expect(son.degerler?.["gorsel"]).toBe(kimlik);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByText("1920 × 800")).toBeDefined();
+    expect(screen.getByLabelText(metin("gelistirme.bolum.alan.gorsel")).textContent).toBe(
+      metin("yonetim.gorselSecimi.degistir"),
+    );
+    fireEvent.click(screen.getByRole("button", { name: metin("yonetim.gorselSecimi.kaldir") }));
+    expect(son.degerler?.["gorsel"]).toBeUndefined();
+    // Kaldır düğmesi kalkar, odak alanın kendi düğmesindedir.
+    expect(document.activeElement).toBe(
+      screen.getByLabelText(metin("gelistirme.bolum.alan.gorsel")),
+    );
+    expect(screen.getByText(metin("yonetim.gorselSecimi.secilmedi"))).toBeDefined();
+  });
+
+  it("kayıtlı görsel yoksa pencere bunu söyler", () => {
+    ciz(denemeBolumu);
+    fireEvent.click(screen.getByLabelText(metin("gelistirme.bolum.alan.gorsel")));
+    expect(screen.getByText(metin("yonetim.gorselSecimi.bos"))).toBeDefined();
   });
 });

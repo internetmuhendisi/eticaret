@@ -85,6 +85,9 @@ export const degisiklikIslemleri = [
   // sürümünün kaydıyla aynı işlemde yazılır; değerlerde düzen sürümlerinin sırası ve yol yazar.
   "duzen.tema-degisti",
   "duzen.geri-donuldu",
+  // Panelden "Önceki hâline dön" (kart 0142, karar 0115): bir önceki düzen sürümü yeni sürüm olarak yazıldı.
+  // Değerlerde dönülen sürümün sırası yazar. Tema geri dönüşünün düzeninden (duzen.geri-donuldu) ayrıdır.
+  "duzen.onceki-hale-donuldu",
   // Menü ve öğeleri (kart 0107). Öğenin taşınması üstünün değişmesidir: menu-ogesi.degisti. Kardeşlerin
   // sıralanması menünün kaydına yazılır. Silinen menünün ve öğenin alt öğeleri silme kaydında listelenir.
   // Başlangıç menüleri aynı işlemlerle, "baslangic-menu" adlı sistem işlemi olarak yazılır.

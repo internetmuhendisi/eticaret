@@ -48,8 +48,10 @@ import {
   type BolumBaglari,
   type BolumDegerleri,
   bolumBaglari,
+  bosBaglar,
   kayitliKip,
 } from "../../vitrin/bolum-kutuphanesi/tarif.ts";
+import { degisiklikKayitlari } from "../degisiklik-kaydi/model.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { dosyaKlasoru, gorselHazirMi } from "../dosya/servis.ts";
 import { etiketler } from "../etiket/model.ts";
@@ -65,7 +67,17 @@ import { duzenSurumleri } from "./model.ts";
 // Başlangıç düzenini yazan, değişiklik kaydında "kim" olarak görünür.
 export const duzenBaslangicYazari = sistemIslemi("baslangic-duzeni");
 
-export const duzenServisHatalari = ["siralama-gecersiz", "alan-dolu"] as const;
+export const duzenServisHatalari = [
+  "siralama-gecersiz",
+  "alan-dolu",
+  "onceki-surum-yok",
+  "surum-kullanilamaz",
+  "tema-degisikligi",
+  "duzen-degisti",
+] as const;
+
+// Tema servisinin düzene yazdığı işlemler (kart 0113): bu sürümler panelin "Önceki hâline dön"üyle geri alınmaz.
+const temaninDuzenIslemleri = ["duzen.tema-degisti", "duzen.geri-donuldu"] as const;
 
 // Bölümün vitrinde çizilmeme nedeni: panel bunu gösterir.
 export type CizilmemeNedeni =
@@ -82,8 +94,8 @@ export type DuzenDurumu = {
 
 export type BolumGirdisi = {
   tur: string;
-  gorunum?: string;
-  gizli?: boolean;
+  gorunum?: string | undefined;
+  gizli?: boolean | undefined;
   degerler: BolumDegerleri;
 };
 
@@ -470,7 +482,7 @@ export const duzenServisi = (
     vt: Veritabani,
     kim: DegisikligiYapan,
     kimlik: string,
-    girdi: { gorunum?: string; degerler?: BolumDegerleri },
+    girdi: { gorunum?: string | undefined; degerler?: BolumDegerleri | undefined },
   ): Promise<void> =>
     degistir(vt, kim, async (duzen, islem) => {
       const { alan, sira, bolum } = bolumunuBul(duzen, kimlik);
@@ -545,16 +557,90 @@ export const duzenServisi = (
     });
   };
 
-  const bolumSil = async (vt: Veritabani, kim: DegisikligiYapan, kimlik: string): Promise<void> =>
-    degistir(vt, kim, async (duzen) => {
+  // Yeni sürümün sırasını döndürür: panelin "Geri al"ı yalnız bu silme hâlâ son değişiklikse döner (karar 0115).
+  const bolumSil = async (vt: Veritabani, kim: DegisikligiYapan, kimlik: string): Promise<number> =>
+    degistir(vt, kim, async (duzen, islem) => {
       const { alan, sira, bolum } = bolumunuBul(duzen, kimlik);
+      const son = await sonSatir(islem);
       duzen[alan].splice(sira, 1);
       return {
         duzen,
         islem: "duzen.bolum-silindi",
         eski: { ...bolumKaydi(bolum, alan), sira },
         yeni: null,
-        sonuc: undefined,
+        sonuc: (son?.sira ?? 0) + 1,
+      };
+    });
+
+  // Düzenin önceki hâline döner (kart 0142, karar 0080 ve 0115): son sürümden bir önceki sürümün düzeni yeni
+  // sürüm olarak yazılır, "son değişikliği geri al". Art arda çağrılırsa son iki hâl arasında gidip gelir
+  // (temanın geri dönüşüyle aynı kural).
+  // - beklenenSon, çağıranın son gördüğü sürümün sırasıdır. Kilit alındıktan sonra son sürüm başkaysa (arada
+  //   başka bir değişiklik, aynı düğmeye ikinci basış) hiçbir şey yazılmaz: geri alınan, kullanıcının gördüğü
+  //   değişiklik olmalı.
+  // - Son değişiklik bir tema değişikliğiyle geldiyse dönülmez: tema ve düzen yalnız tema servisi üzerinden
+  //   birlikte değişir (karar 0091); düzeni tek başına geri almak yeni temaya eski temanın düzenini koyardı.
+  // - Önceki hâlin başvurduğu bir kayıt (kategori, ürün, menü, görsel...) sonradan silindiyse dönülmez: silinmiş
+  //   kayda başvuran bölüm yazılmasın. Türü kütüphaneden çıkmış bölüm olduğu gibi döner (vitrinde zaten çizilmez).
+  // Yeni sürümün sırasını döndürür.
+  const oncekiHaleDon = async (
+    vt: Veritabani,
+    kim: DegisikligiYapan,
+    beklenenSon: number,
+  ): Promise<number> =>
+    degistir(vt, kim, async (duzen, islem) => {
+      const son = await sonSatir(islem);
+      if (son === undefined || son.sira !== beklenenSon) {
+        throw new BilinenHata("cakisma", [{ alan: "son", kod: "duzen-degisti" }]);
+      }
+      const hedef = await islemdeSurumOku(islem, son.sira - 1);
+      if (hedef === undefined) {
+        throw new BilinenHata("is-kurali", [{ alan: "sira", kod: "onceki-surum-yok" }]);
+      }
+      const [temadan] = await islem
+        .select({ islem: degisiklikKayitlari.islem })
+        .from(degisiklikKayitlari)
+        .where(
+          and(
+            eq(degisiklikKayitlari.kayit_turu, "duzen-surumu"),
+            eq(degisiklikKayitlari.kayit_kimligi, son.kimlik),
+            inArray(degisiklikKayitlari.islem, temaninDuzenIslemleri),
+          ),
+        )
+        .limit(1);
+      if (temadan !== undefined) {
+        throw new BilinenHata("is-kurali", [{ alan: "sira", kod: "tema-degisikligi" }]);
+      }
+      const baglar = bosBaglar();
+      for (const alan of duzenAlanlari) {
+        for (const bolum of hedef.duzen[alan]) {
+          const tarif = Object.hasOwn(kutuphane(), bolum.tur) ? kutuphane()[bolum.tur] : undefined;
+          if (tarif === undefined) continue;
+          for (const [tur, harita] of Object.entries(bolumBaglari(tarif, bolum.degerler))) {
+            for (const [kimlik, yollar] of harita) {
+              const hepsi = baglar[tur as keyof BolumBaglari];
+              hepsi.set(kimlik, [...(hepsi.get(kimlik) ?? []), ...yollar]);
+            }
+          }
+        }
+      }
+      if ((await baglariDenetle(islem, baglar)).length > 0) {
+        throw new BilinenHata("is-kurali", [{ alan: "sira", kod: "surum-kullanilamaz" }]);
+      }
+      if (
+        isDeepStrictEqual(
+          JSON.parse(JSON.stringify(duzen)),
+          JSON.parse(JSON.stringify(hedef.duzen)),
+        )
+      ) {
+        return { degismedi: son.sira };
+      }
+      return {
+        duzen: hedef.duzen,
+        islem: "duzen.onceki-hale-donuldu",
+        eski: { sira: son.sira },
+        yeni: { geriDonulenSira: hedef.sira },
+        sonuc: son.sira + 1,
       };
     });
 
@@ -573,9 +659,14 @@ export const duzenServisi = (
   };
 
   // Panelin düzen ekranı: her alandaki bölümler sırasıyla ve vitrinde çizilmeme nedenleriyle.
-  const panelDuzeni = async (vt: Veritabani) => {
-    const { duzen } = await duzenOku(vt);
-    return Object.fromEntries(
+  // Sürümün sırasıyla birlikte (kart 0142): panel "önceki hâline dön"ü yalnız önceki sürüm varken gösterir.
+  const panelDuzenDurumu = async (vt: Veritabani) => {
+    const { sira, duzen } = await duzenOku(vt);
+    return { sira, alanlar: panelAlanlari(duzen) };
+  };
+  const panelDuzeni = async (vt: Veritabani) => panelAlanlari((await duzenOku(vt)).duzen);
+  const panelAlanlari = (duzen: Duzen) =>
+    Object.fromEntries(
       duzenAlanlari.map((alan) => [
         alan,
         duzen[alan].map((bolum) => {
@@ -584,7 +675,6 @@ export const duzenServisi = (
         }),
       ]),
     ) as Record<DuzenAlani, { bolum: BolumOrnegi; cizilir: boolean; neden?: CizilmemeNedeni }[]>;
-  };
 
   // Vitrinin çizeceği bölümler, sırasıyla. Türü kütüphaneden çıkmış ya da değerleri artık geçersiz bölüm
   // vitrini düşürmez: çizilmez ve hata süreç başına bir kez kaydedilir.
@@ -629,7 +719,9 @@ export const duzenServisi = (
     bolumGorunurlugu,
     bolumleriSirala,
     bolumSil,
+    oncekiHaleDon,
     panelDuzeni,
+    panelDuzenDurumu,
     cizilecekBolumler,
     islemdekiDuzen,
     islemdeSurumOku,

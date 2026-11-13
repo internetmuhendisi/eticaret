@@ -387,7 +387,9 @@ test("bölüm kütüphanesi: deneme bölümü ve tarifinden çıkan form iki ren
   }
   // Formda liste öğesi eklenir ve sınırda ekleme düğmesi kapanır.
   const liste = page.getByRole("group", { name: metin("gelistirme.bolum.alan.maddeler") });
-  const ekle = liste.getByRole("button", { name: metin("yonetim.bolumFormu.ekle") });
+  const ekle = liste.getByRole("button", {
+    name: doldur(metin("yonetim.bolumFormu.ogeEkle"), { ad: metin("gelistirme.bolum.alan.madde") }),
+  });
   await ekle.click();
   await expect(liste.getByLabel(metin("gelistirme.bolum.alan.maddeMetni"))).toHaveCount(3);
   await expect(ekle).toBeDisabled();

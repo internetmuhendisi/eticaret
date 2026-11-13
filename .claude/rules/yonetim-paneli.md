@@ -32,3 +32,12 @@ paths:
 - Menüdeki ve sayfadaki izin ağaçtaki `izin` alanından okunur, yöneticinin izinleri `panelOturumu` ile istek başına bir kez gelir. İzni olmayan sayfa bulunamadı verir (`panelSayfasiniAc`).
 - Komut çubuğunun eylemleri `EylemDugmesi` ve `EylemBaglantisi` ile, kodu `cekirdek/yonetim-paneli/eylemler.ts` kaydında yazılır. Asıl eylem `asil` alır.
 - Elle sıralanan küçük listeler `SiralanabilirListe` ile, metinleri `siralamaMetinleri` ile yazılır.
+
+## Vitrin bölümleri ekranı (karar 0115)
+
+- Panel ekranı kapıya yalnız `panelIstegi` ile gider (`cekirdek/yonetim-paneli/panel-istegi.ts`); sonucu bildirimle verir (`bildirimGoster`). Bildirim alanı çerçevededir, ekran ikinci bir alan açmaz.
+- Sayfa izni `panelSayfasiniAc` ile veriden önce denetlenir; veri sunucuda servisle okunur, değişiklik uçlardan gider, sonra `router.refresh()`.
+- Bölümün formu `BolumDuzenleyici` ile (`vitrin-bolumleri/bolum-duzenleyici.tsx`): görünüm, tariften çıkan alanlar (`BolumFormu`), "Kaydet ve yayınla"; formun hatası formun içindedir, bildirim verilmez. Görsel alanı `GorselSecimi` ile, önizlemesi `panel-gorseli` ucundandır.
+- Geri dönüş ekranın gördüğü sürümün sırasını gönderir (`son`); "Geri al" kendi işleminin yazdığı sürümün sırasını. Son sürüme göre koşulsuz geri dönüş yazma.
+- Menüdeki sayfanın adının yanındaki işaret ağaçtaki `isaret` alanıdır ("Kısayol").
+

@@ -70,10 +70,15 @@ test("masaüstünde karşılama komut çubuğuyla açılır, yan menü klavyeyle
   await expect(page.getByText(altyapiAdi, { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: metin("yonetim.cerceve.menuyuAc") })).toBeHidden();
 
-  // Klavye sırası: menünün sayfaları, vitrine git, çıkış.
+  // Klavye sırası: menünün sayfaları (kart 0142'den beri Vitrin grubu da), vitrine git, çıkış.
   await page.locator("body").focus();
   await page.keyboard.press("Tab");
   await expect(bag).toBeFocused();
+  const sayfalar = menu.getByRole("link");
+  for (let sira = 1; sira < (await sayfalar.count()); sira += 1) {
+    await page.keyboard.press("Tab");
+    await expect(sayfalar.nth(sira)).toBeFocused();
+  }
   const vitrine = page.getByRole("link", { name: metin("yonetim.eylem.vitrineGitYeniSekme") });
   await page.keyboard.press("Tab");
   await expect(vitrine).toBeFocused();

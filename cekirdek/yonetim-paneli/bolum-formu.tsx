@@ -20,12 +20,15 @@ import {
 import { UzunMetinAlani } from "../../bilesenler/parcalar/uzun-metin-alani";
 import { useMetin } from "../metinler/istemci-metni";
 import type { MetinAnahtari } from "../metinler/metin";
+import type { GorselSecenegi } from "../moduller/duzen/secenekler";
+import { doldur } from "../moduller/eposta/sablon";
 import type {
   AlanTarifi,
   BolumDegerleri,
   BolumTarifi,
   TekAlanTarifi,
 } from "../vitrin/bolum-kutuphanesi/tarif";
+import { GorselSecimi } from "./gorsel-secimi";
 
 // Kayıt seçeneği: kimliği ve panelde görünen adı.
 export type KayitSecenegi = { kimlik: string; ad: string };
@@ -34,7 +37,8 @@ export type BolumFormuSecenekleri = {
   markalar: readonly KayitSecenegi[];
   etiketler: readonly KayitSecenegi[];
   urunler: readonly KayitSecenegi[];
-  gorseller: readonly KayitSecenegi[];
+  // Sitede kayıtlı görseller (kart 0142): önizlemeyle seçilir (gorsel-secimi.tsx).
+  gorseller: readonly GorselSecenegi[];
   // Menüler (kart 0108): kimlik yerine menünün kodu.
   menuler: readonly KayitSecenegi[];
   // Blog kategorileri (kart 0112): kimlik yerine adres adı. Blog işlevi yazılana kadar boştur.
@@ -333,11 +337,11 @@ function TekAlan({
     }
     case "gorsel":
       return (
-        <KayitSecimi
+        <GorselSecimi
           etiket={etiket}
           aciklama={aciklama}
           hata={hata("")}
-          secenekler={secenekler.gorseller}
+          gorseller={secenekler.gorseller}
           deger={deger}
           degistir={degistir}
           zorunlu={zorunlu}
@@ -493,7 +497,7 @@ function ListeAlani({
         disabled={ogeler.length >= alan.enCok}
         onClick={() => degistir([...ogeler, {}])}
       >
-        {metin("yonetim.bolumFormu.ekle")}
+        {doldur(metin("yonetim.bolumFormu.ogeEkle"), { ad: metin(alan.ogeAdi) })}
       </Dugme>
       {listeHatasi === undefined ? null : (
         <span id={`${kimlik}-hata`} className="font-kalin text-tehlike-yazi">

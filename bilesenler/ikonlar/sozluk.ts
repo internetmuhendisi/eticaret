@@ -14,7 +14,11 @@ import {
   CircleCheckIcon,
   CircleIcon,
   CreditCardIcon,
+  EllipsisIcon,
   ExternalLinkIcon,
+  EyeIcon,
+  EyeOffIcon,
+  GalleryHorizontalIcon,
   GiftIcon,
   GripVerticalIcon,
   HeadsetIcon,
@@ -32,7 +36,9 @@ import {
   MenuIcon,
   OctagonXIcon,
   PackageIcon,
+  PanelsTopLeftIcon,
   PauseIcon,
+  PencilIcon,
   PhoneIcon,
   PlayIcon,
   PlusIcon,
@@ -42,6 +48,7 @@ import {
   ShoppingBagIcon,
   SlidersHorizontalIcon,
   StarIcon,
+  Trash2Icon,
   TriangleAlertIcon,
   TruckIcon,
   Undo2Icon,
@@ -114,6 +121,15 @@ export const ikonlar = {
   tutamak: GripVerticalIcon,
   "yukari-al": ArrowUpIcon,
   "asagi-al": ArrowDownIcon,
+  // Vitrin bölümleri ekranı (kart 0142): menüdeki iki sayfa (slider kısayolu, bölümler); görünürlük düğmesi
+  // bölümün bugünkü durumunu gösterir (görünür: goster, gizli: gizle; taslak); düzenle, satırın öteki işlemleri, sil.
+  slider: GalleryHorizontalIcon,
+  bolumler: PanelsTopLeftIcon,
+  goster: EyeIcon,
+  gizle: EyeOffIcon,
+  duzenle: PencilIcon,
+  diger: EllipsisIcon,
+  sil: Trash2Icon,
 } satisfies Record<string, LucideIcon>;
 
 export type IkonAdi = keyof typeof ikonlar;

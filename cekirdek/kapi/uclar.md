@@ -316,6 +316,86 @@ Temayı ve ayarlarını yeni sürüm olarak yayınlar (karar 0080). Tema kodu de
 - Başarılı (200): `{ "basarili": true, "veri": { "sira", "tema", "ayarlar", "geriDonulenSira" } }`.
 - Hatalar: `dogrulama` (`surum-gecersiz`: olmayan, son ya da bozuk sıra), `is-kurali` (`tema-degistirilemez`; `surum-kullanilamaz`: teması bugün kullanılamayan ya da bugünkü kurallardan geçmeyen sürüm), `yetki`, `hizmet-kullanilamiyor` (`katalog-bekleniyor`: sitenin başlangıç düzeni kataloğa başvuruyor ve katalog henüz kurulmadı; kart 0114).
 
+### GET /kapi/yonetici/duzen
+
+Panelin vitrin bölümleri ekranının verisi (kart 0142): üst kısım, ana sayfa ve alt kısmın bölümleri sırasıyla, vitrinde çizilmeyen bölümün nedeniyle; geçerli düzen sürümünün sırası ve bölüm formunun seçenekleri (silinmemiş kategori, marka, etiket, ürün, menü ve sitede kayıtlı görseller; her liste üst sınırlı, `panelSecenekSinirlari`). Sürüm yoksa başlangıç düzeni bir kez yazılır.
+
+- İzin: `duzen.gor`. Sınır: `genel`.
+- Girdi: yok (`duzenDurumuSemasi`, `cekirdek/moduller/duzen/semalar.ts`). Adres parametresi verilirse `dogrulama`.
+- Servis: `cekirdek/moduller/duzen/servis.ts`, seçenekler `cekirdek/moduller/duzen/secenekler.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "sira", "alanlar": { "ust-kisim": [{ "bolum": { "kimlik", "tur", "gorunum", "gizli", "degerler" }, "cizilir", "neden"? }], "ana-sayfa": [...], "alt-kisim": [...] }, "secenekler": { "kategoriler", "markalar", "etiketler", "urunler", "menuler", "gorseller" } } }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`, `hizmet-kullanilamiyor` (`katalog-bekleniyor`; kart 0114).
+
+### POST /kapi/yonetici/duzen-bolum-ekle
+
+Alana yeni bölüm ekler (kart 0142). Düzenin yeni sürümü olarak hemen yayınlanır (karar 0080). Sıra verilmezse alanın sonuna, `0` en üste.
+
+- İzin: `duzen.degistir`. Sınır: `genel`.
+- Girdi: `{ "alan", "tur", "gorunum"?, "gizli"?, "degerler", "sira"? }` (`bolumEklemeSemasi`). Değerler bölümün tarifinden denetlenir.
+- Servis: `cekirdek/moduller/duzen/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
+- Hatalar: `dogrulama` (şemaya ya da tarife uymayan değer, alanın yolu ve koduyla; `bolum-tanimsiz`, `bolum-alani-uygun-degil`, `gorunum-tanimsiz`; `kayit-yok`, `gorsel-gecersiz`: başvurulan kayıt yok ya da silinmiş; `alan-dolu`), `oturum-yok`, `yetki`, `hizmet-kullanilamiyor` (`katalog-bekleniyor`).
+
+### POST /kapi/yonetici/duzen-bolum-degistir
+
+Bölümün değerlerini (bütün olarak) ve görünümünü değiştirir (kart 0142). Aynı değer yazılırsa sürüm yazılmaz.
+
+- İzin: `duzen.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "gorunum"?, "degerler"? }` (`bolumDegisikligiSemasi`).
+- Servis: `cekirdek/moduller/duzen/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama` (ekleme ile aynı kodlar), `bulunamadi` (bölüm yok), `oturum-yok`, `yetki`, `hizmet-kullanilamiyor` (`katalog-bekleniyor`).
+
+### POST /kapi/yonetici/duzen-bolum-gorunurlugu
+
+Bölümü gizler ya da gösterir (kart 0142). Değerlerine bakılmaz.
+
+- İzin: `duzen.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "gizli" }` (`bolumGorunurluguSemasi`).
+- Servis: `cekirdek/moduller/duzen/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`, `hizmet-kullanilamiyor` (`katalog-bekleniyor`).
+
+### POST /kapi/yonetici/duzen-bolum-sil
+
+Bölümü düzenden kaldırır (kart 0142). Bölüm önceki sürümlerde kalır: "önceki hâline dön" onu geri getirir.
+
+- İzin: `duzen.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }` (`bolumSilmeSemasi`).
+- Servis: `cekirdek/moduller/duzen/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "sira" } }`: silmenin yazdığı sürümün sırası. Panelin "Geri al"ı bu sırayla döner.
+- Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`, `hizmet-kullanilamiyor` (`katalog-bekleniyor`).
+
+### POST /kapi/yonetici/duzen-sirala
+
+Bir alandaki bölümlerin yeni sırası (kart 0142): alandaki bütün bölümlerin kimlikleri, her biri bir kez.
+
+- İzin: `duzen.degistir`. Sınır: `genel`.
+- Girdi: `{ "alan", "kimlikler" }` (`bolumSiralamaSemasi`).
+- Servis: `cekirdek/moduller/duzen/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama` (`siralama-gecersiz`: eksik, fazla, tekrarlı ya da başka alanın kimliği), `oturum-yok`, `yetki`, `hizmet-kullanilamiyor` (`katalog-bekleniyor`).
+
+### POST /kapi/yonetici/duzen-geri-don
+
+Düzenin önceki hâline döner (kart 0142, karar 0080 ve 0115): bir önceki sürümün düzeni yeni sürüm olarak yazılır. Art arda çağrılırsa son iki hâl arasında gidip gelir. Çağıran gördüğü son sürümün sırasını verir: arada başka bir sürüm yazıldıysa (başka bir değişiklik, aynı düğmeye ikinci basış) hiçbir şey yazılmaz.
+
+- İzin: `duzen.degistir`. Sınır: `genel`.
+- Girdi: `{ "son" }` (`duzenGeriDonusSemasi`): ekranın gördüğü son sürümün sırası.
+- Servis: `cekirdek/moduller/duzen/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "sira" } }`: geçerli sürümün sırası.
+- Hatalar: `cakisma` (`duzen-degisti`: son sürüm `son` değil), `is-kurali` (`onceki-surum-yok`: düzenin tek sürümü var; `surum-kullanilamaz`: önceki hâlin başvurduğu bir kayıt sonradan silinmiş; `tema-degisikligi`: son sürümü tema değişikliği yazdı, tema geri dönüşüyle alınır), `dogrulama`, `oturum-yok`, `yetki`, `hizmet-kullanilamiyor` (`katalog-bekleniyor`).
+
+### GET /kapi/yonetici/panel-gorseli
+
+Paneldeki görsel önizlemesi (kart 0142): sitede kayıtlı bir görselin kayıttaki boyutu. Vitrin görseli ucu yalnız vitrinde kullanılan görseli verir; panel henüz seçilmemiş görseli de gösterir. Yanıt zarf değil, dosyanın kendisidir (`nosniff`, etiket, 304); yetkili uç olduğu için `Cache-Control: private` (ortak önbelleğe girmez). Hata zarfla döner.
+
+- İzin: `duzen.gor`. Sınır: `gorsel`.
+- Girdi: adres parametreleri `d` (görselin dosya kimliği) ve `b` (boyutun adı: `kucuk`, `orta`, `buyuk`, `tam`; `panelGorseliSemasi`).
+- Servis: `cekirdek/moduller/dosya/gorsel-boyutu.ts`.
+- Başarılı (200): görselin o boyuttaki dosyası. Özgün görsel ve boyut dosyasının kendi kimliği verilmez.
+- Hatalar: `dogrulama`, `bulunamadi` (görsel yok, silinmiş ya da o boyutu yok), `oturum-yok`, `yetki`.
+
 ### GET /kapi/yonetici/yorumlar
 
 Ürün yorumları, onay bekleyen ve reddedilenler dahil, en yeni önce (kart 0139). Panelin yorum ekranı on dördüncü bölümde gelir.

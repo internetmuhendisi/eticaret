@@ -4,6 +4,7 @@
 // (PanelSayfasi) çizilir. Tarayıcıda çizilir: yan pencerenin tetikleyicisi özelliklerini ancak düğme burada
 // çizilirse alır (kart 0108'de ölçüldü). Metinler ve menü sunucudan gelir.
 import { type ReactNode, useState } from "react";
+import { BildirimAlani } from "../../bilesenler/parcalar/bildirim";
 import { IkonDugmesi } from "../../bilesenler/parcalar/dugme";
 import {
   YanPencere,
@@ -59,6 +60,11 @@ export function PanelCercevesi({
         </div>
         <main className="flex min-w-0 flex-1 flex-col">{children}</main>
       </div>
+      {/* Panel ekranlarının bildirimleri (kart 0142): alan sayfada bir kez durur. */}
+      <BildirimAlani
+        alanEtiketi={metin("ortak.parca.bildirimler")}
+        kapatEtiketi={metin("ortak.parca.bildirimiKapat")}
+      />
     </div>
   );
 }

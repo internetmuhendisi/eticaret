@@ -856,3 +856,201 @@ describe("sürümler değiştirilemez", () => {
     expect(await surumler(vt)).toHaveLength(1);
   });
 });
+
+// Kart 0142 (karar 0080): düzenin önceki hâline tek adımda dönülür. Dönüş yeni bir sürümdür; art arda dönüş son
+// iki hâl arasında gidip gelir.
+describe("önceki hâline dönüş (kart 0142)", () => {
+  it("son değişiklik geri alınır, yeni sürüm ve kayıt yazılır; ikinci dönüş değişikliği geri getirir", async () => {
+    const vt = await siteAc();
+    const ilk = await servis.duzenOku(vt);
+    const kimlik = await servis.bolumEkle(vt, yonetici(), "ana-sayfa", {
+      tur: "deneme-bolumu",
+      degerler: { baslik: "Yeni" },
+    });
+    const eklenmis = await servis.duzenOku(vt);
+    expect(await servis.oncekiHaleDon(vt, yonetici(), 2)).toBe(3);
+    const donulen = await servis.panelDuzenDurumu(vt);
+    expect(donulen.sira).toBe(3);
+    expect((await servis.duzenOku(vt)).duzen).toEqual(ilk.duzen);
+    expect(donulen.alanlar["ana-sayfa"].map((satir) => satir.bolum.kimlik)).not.toContain(kimlik);
+    const kayit = (await kayitlar(vt)).at(-1);
+    expect(kayit).toMatchObject({
+      islem: "duzen.onceki-hale-donuldu",
+      kim_turu: "yonetici",
+      eski_deger: { sira: 2 },
+      yeni_deger: { geriDonulenSira: 1 },
+    });
+    expect(await servis.oncekiHaleDon(vt, yonetici(), 3)).toBe(4);
+    expect((await servis.duzenOku(vt)).duzen).toEqual(eklenmis.duzen);
+    expect(await surumler(vt)).toHaveLength(4);
+  });
+
+  it("yalnız başlangıç düzeni varken dönülmez, hiçbir şey yazılmaz", async () => {
+    const vt = await siteAc();
+    await servis.duzenOku(vt);
+    expect(await hatasi(servis.oncekiHaleDon(vt, yonetici(), 1))).toEqual({
+      kod: "is-kurali",
+      ayrinti: [{ alan: "sira", kod: "onceki-surum-yok" }],
+    });
+    expect(await surumler(vt)).toHaveLength(1);
+    expect(await kayitlar(vt)).toHaveLength(1);
+  });
+
+  // Bağımsız kontrolün bulgusu: dönüş her zaman son sürüme göreydi. Silmenin "Geri al"ı arada yazılan başka bir
+  // değişikliği, düğmeye ikinci basış da ilk dönüşü geri alıyordu. Çağıran gördüğü son sürümü verir; arada başka
+  // sürüm yazıldıysa hiçbir şey yazılmaz.
+  it("çağıranın gördüğü sürüm son değilse dönülmez: arada yazılan değişiklik ve ikinci basış", async () => {
+    const vt = await siteAc();
+    await servis.duzenOku(vt);
+    const silinen = await servis.bolumEkle(vt, yonetici(), "ust-kisim", {
+      tur: "deneme-seridi",
+      degerler: { metin: "Silinecek" },
+    });
+    const silmeSirasi = await servis.bolumSil(vt, yonetici(), silinen);
+    expect(silmeSirasi).toBe(3);
+    // Arada başka bir değişiklik: silmenin "Geri al"ı onu geri almaz.
+    await servis.bolumEkle(vt, yonetici(), "ust-kisim", {
+      tur: "deneme-seridi",
+      degerler: { metin: "Sonra eklenen" },
+    });
+    expect(await hatasi(servis.oncekiHaleDon(vt, yonetici(), silmeSirasi))).toEqual({
+      kod: "cakisma",
+      ayrinti: [{ alan: "son", kod: "duzen-degisti" }],
+    });
+    expect(await surumler(vt)).toHaveLength(4);
+    // Aynı sürümü görerek iki kez basılır: ilki döner, ikincisi hiçbir şey yazmaz.
+    const ikiBasis = await Promise.allSettled([
+      servis.oncekiHaleDon(vt, yonetici(), 4),
+      servis.oncekiHaleDon(vt, yonetici(), 4),
+    ]);
+    expect(ikiBasis.filter((sonuc) => sonuc.status === "fulfilled")).toHaveLength(1);
+    expect(await surumler(vt)).toHaveLength(5);
+    const ust = (await servis.duzenOku(vt)).duzen["ust-kisim"].map(
+      (bolum) => bolum.degerler["metin"],
+    );
+    expect(ust).not.toContain("Sonra eklenen");
+    expect(ust).not.toContain("Silinecek");
+  });
+
+  // Bağımsız kontrolün bulgusu: tema değişikliğinin yazdığı düzen sürümü düzen ekranından geri alınsaydı yeni
+  // temaya eski temanın düzeni konurdu (tema ve düzen yalnız tema servisi üzerinden birlikte değişir, karar 0091).
+  it("son değişiklik tema değişikliğinden geldiyse dönülmez", async () => {
+    const vt = await siteAc();
+    await servis.duzenOku(vt);
+    await servis.bolumEkle(vt, yonetici(), "ust-kisim", {
+      tur: "deneme-seridi",
+      degerler: { metin: "Birinci" },
+    });
+    for (const islemAdi of ["duzen.tema-degisti", "duzen.geri-donuldu"] as const) {
+      const sira = await vt.transaction(async (islem) => {
+        const son = await servis.islemdekiDuzen(islem);
+        const duzen = structuredClone(son.duzen);
+        duzen["ust-kisim"].reverse();
+        duzen["ust-kisim"].push({
+          kimlik: randomUUID(),
+          tur: "deneme-seridi",
+          gorunum: "duz",
+          gizli: false,
+          degerler: { metin: islemAdi },
+        });
+        return (
+          await servis.islemdeDuzenYaz(islem, yonetici(), son, duzen, {
+            islem: islemAdi,
+            eski: {},
+            yeni: {},
+          })
+        ).sira;
+      });
+      expect(await hatasi(servis.oncekiHaleDon(vt, yonetici(), sira)), islemAdi).toEqual({
+        kod: "is-kurali",
+        ayrinti: [{ alan: "sira", kod: "tema-degisikligi" }],
+      });
+    }
+    expect(await surumler(vt)).toHaveLength(4);
+    // Tema değişikliğinden sonra yapılan bölüm değişikliği yine geri alınır: yalnız son sürümün kaydına bakılır.
+    await servis.bolumEkle(vt, yonetici(), "ust-kisim", {
+      tur: "deneme-seridi",
+      degerler: { metin: "Sonraki" },
+    });
+    expect(await servis.oncekiHaleDon(vt, yonetici(), 5)).toBe(6);
+  });
+
+  it("önceki hâlin başvurduğu kayıt sonradan silindiyse dönülmez, hiçbir şey yazılmaz", async () => {
+    const vt = await siteAc();
+    await servis.duzenOku(vt);
+    const kategori = await kategoriEkle(vt, yonetici(), { ad: "Giyim" });
+    const gorsel = await gorselAc(vt);
+    const bolum = await servis.bolumEkle(vt, yonetici(), "ana-sayfa", {
+      tur: "deneme-bolumu",
+      degerler: { baslik: "S", kategori, gorsel },
+    });
+    const sira = await servis.bolumSil(vt, yonetici(), bolum);
+    await kategoriSil(vt, yonetici(), kategori);
+    expect(await hatasi(servis.oncekiHaleDon(vt, yonetici(), sira))).toEqual({
+      kod: "is-kurali",
+      ayrinti: [{ alan: "sira", kod: "surum-kullanilamaz" }],
+    });
+    expect(await surumler(vt)).toHaveLength(3);
+    // Görsel silinince de dönülmez (kategori yerine yalnız görsele başvuran bölümle).
+    const vt2 = await siteAc();
+    await servis.duzenOku(vt2);
+    const gorsel2 = await gorselAc(vt2);
+    const bolum2 = await servis.bolumEkle(vt2, yonetici(), "ana-sayfa", {
+      tur: "deneme-bolumu",
+      degerler: { baslik: "S", gorsel: gorsel2 },
+    });
+    const sira2 = await servis.bolumSil(vt2, yonetici(), bolum2);
+    await dosyaSil(vt2, gorsel2);
+    expect((await hatasi(servis.oncekiHaleDon(vt2, yonetici(), sira2))).ayrinti).toEqual([
+      { alan: "sira", kod: "surum-kullanilamaz" },
+    ]);
+  });
+
+  // Hedef kilit alındıktan sonra okunur. Dönüş kilidi beklerken yazılan değişiklik, çağıranın gördüğü sürümü
+  // eskitir: dönüş hiçbir şey yazmaz (hedef kilitten önce okunsaydı aradaki değişiklik sessizce silinirdi).
+  it("kilidi beklerken yazılan değişiklikten sonra dönülmez, aradaki değişiklik korunur", async () => {
+    const vt = await siteAc();
+    await servis.duzenOku(vt);
+    const birinci = await servis.bolumEkle(vt, yonetici(), "ust-kisim", {
+      tur: "deneme-seridi",
+      degerler: { metin: "Birinci" },
+    });
+    let birak: () => void = () => undefined;
+    const tut = new Promise<void>((coz) => {
+      birak = coz;
+    });
+    let tuttu: () => void = () => undefined;
+    const tutuldu = new Promise<void>((coz) => {
+      tuttu = coz;
+    });
+    let ikinci = "";
+    const tutan = vt.transaction(async (islem) => {
+      const son = await servis.islemdekiDuzen(islem);
+      tuttu();
+      await tut;
+      const duzen = structuredClone(son.duzen);
+      ikinci = randomUUID();
+      duzen["ust-kisim"].push({
+        kimlik: ikinci,
+        tur: "deneme-seridi",
+        gorunum: "duz",
+        gizli: false,
+        degerler: { metin: "İkinci" },
+      });
+      await servis.islemdeDuzenYaz(islem, yonetici(), son, duzen, {
+        islem: "duzen.bolum-eklendi",
+        eski: {},
+        yeni: {},
+      });
+    });
+    await tutuldu;
+    const donus = servis.oncekiHaleDon(vt, yonetici(), 2);
+    await kilitBekleyeniGor(vt, 1);
+    birak();
+    await tutan;
+    expect((await hatasi(donus)).kod).toBe("cakisma");
+    const ust = (await servis.duzenOku(vt)).duzen["ust-kisim"].map((bolum) => bolum.kimlik);
+    expect(ust).toContain(birinci);
+    expect(ust).toContain(ikinci);
+  });
+});

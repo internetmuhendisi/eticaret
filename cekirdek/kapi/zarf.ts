@@ -31,10 +31,20 @@ export class DosyaYaniti {
   readonly mime: string;
   readonly etiket: string;
 
-  constructor(icerik: Uint8Array, mime: string, etiket: string) {
+  // Yetkili uçların dosyası (panelin görsel önizlemesi, kart 0142) yalnız tarayıcının kendi önbelleğinde tutulur:
+  // aradaki ortak bir önbellek onu oturumu olmayan birine veremez.
+  readonly onbellek: "ortak" | "ozel";
+
+  constructor(
+    icerik: Uint8Array,
+    mime: string,
+    etiket: string,
+    onbellek: "ortak" | "ozel" = "ortak",
+  ) {
     this.icerik = icerik;
     this.mime = mime;
     this.etiket = etiket;
+    this.onbellek = onbellek;
   }
 }
 
@@ -46,7 +56,7 @@ export const dosyaYanitla = (dosya: DosyaYaniti, istek: Request): Response => {
   const basliklar = {
     "Content-Type": dosya.mime,
     "X-Content-Type-Options": "nosniff",
-    "Cache-Control": `public, max-age=${dosyaOnbellekSuresi}`,
+    "Cache-Control": `${dosya.onbellek === "ozel" ? "private" : "public"}, max-age=${dosyaOnbellekSuresi}`,
     ETag: etiket,
   };
   const eslesen = istek.headers

@@ -27,6 +27,8 @@ export type PanelSayfaTanimi = {
   grup: PanelGrubu | null;
   // Bir alt sayfa (form, detay) menüde görünmez, sayfa yolunda üstünün altında durur.
   ust?: string;
+  // Menüde adın yanındaki küçük işaret, örneğin "Kısayol" (kart 0142, taslak).
+  isaret?: MetinAnahtari;
 };
 
 // Sıra menüdeki sıradır. İlk sayfa panelin kökü ve girişten sonraki açılış sayfasıdır; sayfa yolu onunla başlar.
@@ -40,11 +42,38 @@ export const panelSayfalari = [
     izin: null,
     grup: null,
   },
+  // Slider kısayolu (kart 0142, karar 0101): ana sayfadaki ilk kayan afişin formu. Kayıtta düzeni değiştirir.
+  {
+    kod: "slider",
+    adres: `${panelAdresi}/slider`,
+    // Ad bölümün kendi adıdır (tek yerde, karar 0101): kayan afiş panelde "Slider".
+    ad: "vitrin.bolum.kayanAfis.ad",
+    aciklama: "yonetim.sayfa.sliderAciklamasi",
+    ikon: "slider",
+    izin: "duzen.degistir",
+    grup: "vitrin",
+    isaret: "yonetim.cerceve.kisayol",
+  },
+  {
+    kod: "vitrin-bolumleri",
+    adres: `${panelAdresi}/vitrin-bolumleri`,
+    ad: "yonetim.sayfa.vitrinBolumleri.ad",
+    aciklama: "yonetim.sayfa.vitrinBolumleri.aciklama",
+    ikon: "bolumler",
+    izin: "duzen.gor",
+    grup: "vitrin",
+  },
 ] as const satisfies readonly PanelSayfaTanimi[];
 
 export type PanelSayfaKodu = (typeof panelSayfalari)[number]["kod"];
 
-export type MenuSayfasi = { kod: string; adres: string; ad: MetinAnahtari; ikon: IkonAdi };
+export type MenuSayfasi = {
+  kod: string;
+  adres: string;
+  ad: MetinAnahtari;
+  ikon: IkonAdi;
+  isaret?: MetinAnahtari;
+};
 export type MenuGrubu = { grup: PanelGrubu | null; sayfalar: MenuSayfasi[] };
 
 // Yöneticinin göreceği menü: yalnız izni olan ve alt sayfa olmayan sayfalar, gruplar menü sırasıyla, boş grup yok.
@@ -62,7 +91,13 @@ export const menuyuKur = (
       grup,
       sayfalar: gorunenler
         .filter((sayfa) => sayfa.grup === grup)
-        .map(({ kod, adres, ad, ikon }) => ({ kod, adres, ad, ikon })),
+        .map(({ kod, adres, ad, ikon, isaret }) => ({
+          kod,
+          adres,
+          ad,
+          ikon,
+          ...(isaret === undefined ? {} : { isaret }),
+        })),
     }))
     .filter((grup) => grup.sayfalar.length > 0);
 };

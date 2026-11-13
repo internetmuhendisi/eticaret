@@ -19,7 +19,11 @@ export default async function PanelDuzeni({ children }: { children: ReactNode })
   const gruplar = menuyuKur(panelSayfalari, yetkili).map(({ grup, sayfalar }) => ({
     kod: grup ?? "",
     ad: grup === null ? null : metin(panelGruplari[grup]),
-    sayfalar: sayfalar.map((sayfa) => ({ ...sayfa, ad: metin(sayfa.ad) })),
+    sayfalar: sayfalar.map(({ isaret, ...sayfa }) => ({
+      ...sayfa,
+      ad: metin(sayfa.ad),
+      ...(isaret === undefined ? {} : { isaret: metin(isaret) }),
+    })),
   }));
   return (
     <PanelCercevesi

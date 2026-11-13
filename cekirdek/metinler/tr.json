@@ -124,7 +124,8 @@
       "menu": "Panel menüsü",
       "menuyuAc": "Panel menüsünü aç",
       "menuyuKapat": "Panel menüsünü kapat",
-      "sekmeBasligi": "{sayfa} | {magaza} paneli"
+      "sekmeBasligi": "{sayfa} | {magaza} paneli",
+      "kisayol": "Kısayol"
     },
     "grup": {
       "vitrin": "Vitrin"
@@ -133,7 +134,12 @@
       "karsilama": {
         "ad": "Karşılama",
         "aciklama": "Mağazanızın yönetim paneline hoş geldiniz. Yönetmek istediğiniz bölümü panel menüsünden seçin."
-      }
+      },
+      "vitrinBolumleri": {
+        "ad": "Vitrin bölümleri",
+        "aciklama": "Vitrinin üst kısmındaki, ana sayfasındaki ve alt kısmındaki bölümler. Değişiklik kaydedilince hemen yayınlanır; önceki hâline tek adımda dönebilirsiniz."
+      },
+      "sliderAciklamasi": "Ana sayfadaki kayan büyük afiş. Kaydedince hemen yayınlanır; önceki hâline Vitrin bölümleri ekranından dönebilirsiniz."
     },
     "eylem": {
       "ekle": "{ne} ekle",
@@ -339,7 +345,6 @@
       "adet": "Gösterilecek ürün sayısı",
       "urun": "Ürün",
       "urunEkle": "Ürün ekle",
-      "ekle": "Ekle",
       "kaldir": "Kaldır",
       "adres": "Adres",
       "adresAciklamasi": "Mağazanın kendi sayfası için / ile başlayın (/kategori/giyim). Başka bir site için https:// ile yazın.",
@@ -351,7 +356,19 @@
         "marka": "Marka",
         "etiket": "Etiket",
         "elle": "Elle seçilen ürünler"
-      }
+      },
+      "hata": {
+        "zorunlu": "Bu alanı doldurun.",
+        "uzun": "Bu alan izin verilenden uzun ya da fazla.",
+        "baglanti": "Bağlantı mağazanın kendi sayfası için / ile, başka bir site için https:// ile başlamalı.",
+        "karakter": "Bu alanda kullanılamayan bir karakter var.",
+        "tarih": "Geçerli bir tarih girin.",
+        "ayniUrun": "Aynı ürün iki kez seçilemez.",
+        "kayitYok": "Seçilen kayıt artık yok. Başka bir kayıt seçin.",
+        "gorsel": "Seçilen görsel artık kullanılamıyor. Başka bir görsel seçin.",
+        "gecersiz": "Bu alanın değeri geçerli değil."
+      },
+      "ogeEkle": "{ad} ekle"
     },
     "renk": {
       "zemin": "Sayfa zemini",
@@ -380,6 +397,109 @@
           "odeme": "Bu bölüm ödeme özelliği gelince vitrinde görünür."
         }
       }
+    },
+    "bolumler": {
+      "alanlar": {
+        "ust-kisim": "Üst kısım",
+        "ana-sayfa": "Ana sayfa",
+        "alt-kisim": "Alt kısım"
+      },
+      "alanSecimi": "Vitrinin alanı",
+      "listeEtiketi": "{alan}: bölümler",
+      "siralamaBilgisi": "Sıralamak için tutamaktan sürükleyin ya da tutamağa odaklanıp boşluk ve ok tuşlarını kullanın. Yukarı al ve aşağı al düğmeleri de bölümü bir sıra taşır.",
+      "bos": {
+        "baslik": "Bu alanda bölüm yok",
+        "metin": "Bölüm ekle düğmesiyle bu alana ilk bölümü ekleyin."
+      },
+      "bolum": "Bölüm",
+      "gizliRozet": "Gizli",
+      "gorunmuyorRozet": "Vitrinde görünmüyor",
+      "goster": "Göster: {ad}",
+      "gizle": "Gizle: {ad}",
+      "duzenle": "Düzenle: {ad}",
+      "diger": "Diğer işlemler: {ad}",
+      "sil": "Sil",
+      "ogeSayisi": "{ad}: {sayi}",
+      "tanimsizTur": "Artık olmayan bölüm türü",
+      "kaydedildi": "Değişiklik yayınlandı.",
+      "eklendi": "Bölüm eklendi ve yayınlandı.",
+      "silindi": "Bölüm silindi.",
+      "geriAl": "Geri al",
+      "gizlendi": "Bölüm gizlendi.",
+      "gosterildi": "Bölüm görünür yapıldı.",
+      "siralandi": "Yeni sıra yayınlandı.",
+      "geriDonuldu": "Düzen önceki hâline döndü.",
+      "hata": {
+        "genel": "Değişiklik kaydedilemedi. Sayfayı yenileyip yeniden deneyin.",
+        "ag": "Sunucuya ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
+        "oturum": "Oturumunuz kapandı. Yeniden giriş yapın.",
+        "yetki": "Bu değişikliği yapma izniniz yok.",
+        "katalog": "Vitrin hazırlanıyor. Birkaç saniye sonra yeniden deneyin.",
+        "oncekiYok": "Dönülecek önceki bir hâl yok.",
+        "surumKullanilamaz": "Önceki hâl sonradan silinen bir kayda (ürün, kategori, marka, etiket, menü ya da görsel) başvuruyor; bu yüzden dönülemiyor.",
+        "form": "Formda düzeltilmesi gereken alanlar var.",
+        "bulunamadi": "Bu bölüm artık yok; liste yenilendi.",
+        "alanDolu": "Bu alana daha fazla bölüm konamaz. Önce bir bölümü silin.",
+        "siralama": "Liste bu arada değişti; yeni sırayı yeniden deneyin.",
+        "duzenDegisti": "Düzen bu arada değişti; liste yenilendi. Gerekirse yeniden deneyin.",
+        "temaDegisikligi": "Son değişiklik bir tema değişikliğiyle geldi. Onu tema ekranından geri alın."
+      },
+      "ekle": {
+        "baslik": "Bölüm ekle",
+        "aciklama": "{alan} · Yalnız bu alana konabilen bölümler listelenir. Seçtiğiniz bölüm alanın sonuna eklenir."
+      },
+      "form": {
+        "konum": "{alan} · {sira}. bölüm · {durum}",
+        "yeniKonum": "{alan} · Yeni bölüm",
+        "gorunur": "Görünür",
+        "gizli": "Gizli",
+        "gorunum": "Görünüm",
+        "kaydet": "Kaydet ve yayınla",
+        "kaydedilmedi": "Kaydedilmemiş değişiklikler var. Pencereyi kapatırsanız kaybolur.",
+        "birak": "Değişiklikleri bırak",
+        "don": "Düzenlemeye dön"
+      },
+      "slider": {
+        "yok": "Ana sayfada henüz slider yok. Formu doldurup kaydedince slider ana sayfanın en üstüne eklenir.",
+        "birdenCok": "Ana sayfada {sayi} slider var; bu form sıradaki ilkini düzenler. Ötekileri Vitrin bölümleri ekranından düzenleyebilirsiniz.",
+        "gizli": "Bu slider gizli: vitrinde görünmüyor.",
+        "gorunurYap": "Görünür yap",
+        "vitrinBolumleri": "Vitrin bölümlerine git"
+      },
+      "turAciklamasi": {
+        "duyuru-seridi": "Sayfanın en üstünde kısa bir duyuru",
+        "ust-satir": "Logo, arama, hesap ve sepet satırı",
+        "menu-satiri": "Seçilen menünün satırı",
+        "baglanti-sutunlari": "Başlıklı bağlantı sütunları",
+        "iletisim-bilgileri": "Telefon, e-posta ve adres",
+        "sosyal-hesaplar": "Sosyal medya hesapları",
+        "odeme-isaretleri": "Kabul edilen ödeme yolları",
+        "telif-satiri": "Yıl ve mağaza adıyla telif yazısı",
+        "kayan-afis": "Kayan büyük afiş, birden çok slayt",
+        "guven-seridi": "Kargo, iade ve ödeme güvenceleri",
+        "kampanya-afisleri": "Yan yana kampanya afişleri",
+        "genis-afis": "Tek, sayfa genişliğinde afiş",
+        "kategori-kutulari": "Seçilen kategoriler görselleriyle",
+        "urun-vitrini": "Seçilen kaynaktan ürünler",
+        "sekmeli-vitrin": "Sekme sekme ürün grupları",
+        "firsatlar": "Bitişi yaklaşan indirimler, geri sayımla",
+        "marka-logolari": "Markalar logolarıyla",
+        "musteri-yorumlari": "Müşterilerin ürün yorumları",
+        "blog-yazilari": "Son blog yazıları",
+        "bulten-kaydi": "E-posta bülteni kayıt formu"
+      },
+      "ayniTurAdi": "{ad}, {sira}. sıradaki"
+    },
+    "gorselSecimi": {
+      "sec": "Görsel seç",
+      "degistir": "Değiştir",
+      "kaldir": "Kaldır",
+      "baslik": "Görsel seç",
+      "aciklama": "Sitede kayıtlı görsellerden birini seçin.",
+      "bos": "Sitede kayıtlı görsel yok.",
+      "gorselAdi": "Görsel {sira}, {genislik} × {yukseklik} piksel",
+      "secilmedi": "Görsel seçilmedi",
+      "olcu": "{genislik} × {yukseklik}"
     }
   },
   "vitrin": {
