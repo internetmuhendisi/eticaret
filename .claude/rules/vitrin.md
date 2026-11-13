@@ -117,6 +117,7 @@ paths:
 - Menüler ve alt bilgi bağlantıları mağaza sahibinin verisidir. Yalnız `cekirdek/moduller/menu/servis.ts` ile okunur ve değişir. Türler, hedefler, derinlik ve sınırlar `cekirdek/kayitlar/menu.ts` kaydındadır: derinliği ya da hedef türünü kodda elle yazma.
 - Vitrin menüyü koduyla `vitrinMenusu` ile alır. Görünmeyen öğeyi (silinmiş ya da açılmayan hedef, boş başlık) süzmek servisin işidir, bölüm yeniden süzmez. Kategori menüsü ağaçtan gelir, kategori listesini bölümde ayrıca okuma.
 - Başlangıç menüleri sitenin `baslangic/menuler.json` dosyasındadır. Kayıtlı hedef adres adıyla yazılır, başlangıç kataloğunda olmalıdır.
+- Panel menüleri menü uçlarıyla değiştirir (`cekirdek/kapi/yonetici/menu.ts`, kart 0143, karar 0116). Öğe uçta nesne olarak alınır, ortak şemayla serviste doğrulanır.
 
 ## Üst ve alt kısım (karar 0083)
 

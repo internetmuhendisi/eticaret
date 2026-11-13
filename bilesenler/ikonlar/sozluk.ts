@@ -28,6 +28,7 @@ import {
   InfoIcon,
   LandmarkIcon,
   LinkIcon,
+  ListTreeIcon,
   LoaderCircleIcon,
   LogOutIcon,
   type LucideIcon,
@@ -130,6 +131,8 @@ export const ikonlar = {
   duzenle: PencilIcon,
   diger: EllipsisIcon,
   sil: Trash2Icon,
+  // Menüler ekranı (kart 0143): menüdeki sayfa.
+  menuler: ListTreeIcon,
 } satisfies Record<string, LucideIcon>;
 
 export type IkonAdi = keyof typeof ikonlar;

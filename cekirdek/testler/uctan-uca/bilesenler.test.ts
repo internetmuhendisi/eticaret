@@ -256,6 +256,31 @@ test.describe("klavye", () => {
     await odakta(tetik);
   });
 
+  // Onay penceresi (kart 0143): uyarı penceresidir, odak "Vazgeç"te açılır, Tab içeride kalır, Escape onaylamadan
+  // kapatır ve odak açan düğmeye döner; onay, işi bitince pencereyi kapatır.
+  test("onay penceresi: odak Vazgeç'te, Escape onaylamadan kapatır, odak geri döner, onay kapatır", async ({
+    page,
+  }) => {
+    const tetik = dugme(page, m("onayAc"));
+    await tetik.focus();
+    await page.keyboard.press("Enter");
+    const pencere = page.getByRole("alertdialog", { name: m("onayBaslik") });
+    await expect(pencere).toBeVisible();
+    await expect(pencere.getByRole("button", { name: metin("ortak.islem.vazgec") })).toBeFocused();
+    for (let sira = 0; sira < 4; sira++) {
+      await page.keyboard.press("Tab");
+      expect(await pencere.evaluate((p) => p.contains(document.activeElement))).toBe(true);
+    }
+    await page.keyboard.press("Escape");
+    await expect(pencere).toHaveCount(0);
+    await odakta(tetik);
+    await expect(page.getByText(m("onaySilindi"))).toHaveCount(0);
+    await page.keyboard.press("Enter");
+    await pencere.getByRole("button", { name: m("onaySil") }).press("Enter");
+    await expect(pencere).toHaveCount(0);
+    await expect(page.getByText(m("onaySilindi"))).toBeVisible();
+  });
+
   for (const [acan, baslik] of [
     ["pencereyiAc", "pencereBasligi"],
     ["yanPencereyiAc", "yanPencereBasligi"],

@@ -230,3 +230,29 @@ export const menuBaslangicKurallari = (
   });
   return sorunlar;
 };
+
+// Panelin menü uçlarının girdileri (kart 0143, karar 0116). Öğenin kendisi (ogeGirdisi, ogeDegisikligi) yalnız nesne
+// olarak alınır, ortak şemayla menü serviste doğrulanır: kapı hata kodu olarak şemanın kendi kodunu yazar, menünün
+// kodları ("metin-gerekli", "derinlik") serviste korunur.
+const ogeNesnesi = z.record(z.string(), z.unknown());
+
+export const menulerSemasi = z.strictObject({});
+export const menuOkumaSemasi = z.strictObject({ kimlik: kimlikSemasi });
+export const menuEklemeSemasi = z.strictObject({
+  kod: z.string().max(adresAdiUzunlugu),
+  ad: z.string().max(menuSinirlari.menuAdi * 2),
+  tur: z.enum(menuTurleri),
+});
+export const menuDegisikligiSemasi = z.strictObject({
+  kimlik: kimlikSemasi,
+  ad: z.string().max(menuSinirlari.menuAdi * 2),
+});
+export const menuSilmeSemasi = z.strictObject({ kimlik: kimlikSemasi });
+export const ogeEklemeSemasi = z.strictObject({ menu: kimlikSemasi, oge: ogeNesnesi });
+export const ogeDegisikligiSemasi = z.strictObject({ kimlik: kimlikSemasi, oge: ogeNesnesi });
+export const ogeSilmeSemasi = z.strictObject({ kimlik: kimlikSemasi });
+export const ogeSiralamaSemasi = z.strictObject({
+  menu: kimlikSemasi,
+  ust: kimlikSemasi.nullable(),
+  kimlikler: z.array(kimlikSemasi).max(menuSinirlari.ogeSayisi),
+});

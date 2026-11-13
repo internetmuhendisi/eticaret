@@ -53,6 +53,9 @@ export type SatirIslemleri = {
 };
 
 type Yon = "yukari" | "asagi";
+// Satırın içi ile tutamağın dikey hizası. Satırın içinde alt liste duran listede (menü öğeleri) üst: tutamak
+// satırın başlığıyla aynı hizada kalır, bütün bloğun ortasına düşmez (kart 0143).
+type Hizalama = "orta" | "ust";
 
 function Satir({
   anahtar,
@@ -61,6 +64,7 @@ function Satir({
   toplam,
   metinler,
   tasi,
+  hizalama,
   children,
 }: {
   anahtar: string;
@@ -69,6 +73,7 @@ function Satir({
   toplam: number;
   metinler: SiralamaMetinleri;
   tasi: (anahtar: string, yon: Yon) => void;
+  hizalama: Hizalama;
   children: ReactNode;
 }) {
   const {
@@ -88,7 +93,8 @@ function Satir({
       // Sürüklenirken satırın yeri tarayıcıda hesaplanır; ölçü değil, hareket değeridir.
       style={{ transform: CSS.Translate.toString(transform), transition }}
       className={sinif(
-        "relative flex min-h-16 items-center gap-2 border-b border-kenar bg-zemin py-2 pr-3 pl-1 last:border-b-0",
+        "relative flex min-h-16 gap-2 border-b border-kenar bg-zemin py-2 pr-3 pl-1 last:border-b-0",
+        hizalama === "ust" ? "items-start" : "items-center",
         isDragging && "z-acilir shadow-acilir",
       )}
     >
@@ -126,7 +132,14 @@ function Satir({
           className="size-8 min-h-8"
         />
       </div>
-      <div className="flex min-w-0 flex-1 items-center gap-2">{children}</div>
+      <div
+        className={sinif(
+          "flex min-w-0 flex-1 gap-2",
+          hizalama === "ust" ? "items-start" : "items-center",
+        )}
+      >
+        {children}
+      </div>
     </li>
   );
 }
@@ -139,6 +152,7 @@ export function SiralanabilirListe<T>({
   etiket,
   metinler,
   satir,
+  hizalama = "orta",
   className,
 }: {
   ogeler: readonly T[];
@@ -152,6 +166,7 @@ export function SiralanabilirListe<T>({
   metinler: SiralamaMetinleri;
   // Satırın içi: tutamak ve sıra düğmelerinden sonra gelir.
   satir: (oge: T, islemler: SatirIslemleri) => ReactNode;
+  hizalama?: Hizalama;
   className?: string;
 }) {
   const kimlik = useId();
@@ -252,6 +267,7 @@ export function SiralanabilirListe<T>({
                 toplam={toplam}
                 metinler={metinler}
                 tasi={tasi}
+                hizalama={hizalama}
               >
                 {satir(oge, {
                   yukariAl: () => tasi(anahtari, "yukari"),

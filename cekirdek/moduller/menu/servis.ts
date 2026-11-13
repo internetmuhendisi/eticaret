@@ -76,6 +76,9 @@ export type PanelOgesi = {
   // Vitrinde görünecek (ya da hedef silinmişse görünecek olan) metin.
   gorunenMetin: string;
   hedef: SaklananHedef;
+  // Kayıtlı hedefin bugünkü adı ve adres adı (kart 0143): panel seçili kaydı adıyla ve vitrindeki adresiyle
+  // gösterir. Hedef silinmişse de son hâli gelir.
+  kayit?: { ad: string; adresAdi: string };
   durum: OgeDurumu;
   altlar: PanelOgesi[];
 };
@@ -664,6 +667,9 @@ const panelAgaci = (satirlar: OkunanOge[]): PanelOgesi[] => {
       metin: satir.metin,
       gorunenMetin: satir.metin ?? bagli?.ad ?? "",
       hedef: satirinHedefi(satir),
+      ...(bagli === undefined
+        ? {}
+        : { kayit: { ad: bagli.ad ?? "", adresAdi: bagli.adresAdi ?? "" } }),
       durum,
       altlar: [],
     });

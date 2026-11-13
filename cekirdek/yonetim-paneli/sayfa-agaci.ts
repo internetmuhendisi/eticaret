@@ -63,6 +63,15 @@ export const panelSayfalari = [
     izin: "duzen.gor",
     grup: "vitrin",
   },
+  {
+    kod: "menuler",
+    adres: `${panelAdresi}/menuler`,
+    ad: "yonetim.sayfa.menuler.ad",
+    aciklama: "yonetim.sayfa.menuler.aciklama",
+    ikon: "menuler",
+    izin: "menu.gor",
+    grup: "vitrin",
+  },
 ] as const satisfies readonly PanelSayfaTanimi[];
 
 export type PanelSayfaKodu = (typeof panelSayfalari)[number]["kod"];

@@ -113,6 +113,7 @@ export function BolumDuzenleyici({
           onDegerDegisti={(yeni) => {
             setGorunum(yeni);
             setDegisti(true);
+            degisince?.(true);
           }}
           secilemezEki=""
         />
@@ -127,6 +128,8 @@ export function BolumDuzenleyici({
         degisince={(yeni) => {
           degerler.current = yeni;
           setDegisti(true);
+          // Çizimi beklemeden: hemen basılan Escape de sorsun.
+          degisince?.(true);
         }}
       />
       <div className="sticky bottom-0 flex flex-wrap justify-end gap-2 border-t border-kenar bg-zemin py-3">

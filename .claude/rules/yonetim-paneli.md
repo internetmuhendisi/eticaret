@@ -41,3 +41,11 @@ paths:
 - Geri dönüş ekranın gördüğü sürümün sırasını gönderir (`son`); "Geri al" kendi işleminin yazdığı sürümün sırasını. Son sürüme göre koşulsuz geri dönüş yazma.
 - Menüdeki sayfanın adının yanındaki işaret ağaçtaki `isaret` alanıdır ("Kısayol").
 
+## Menüler ekranı ve ortak parçalar (karar 0116)
+
+- Değiştiren işlem `usePanelIslemi` ile yapılır (`cekirdek/yonetim-paneli/panel-islemi.ts`): uca gönderir, sayfayı yeniler, bildirir; formun hatası formda kalır. Ekran kendi işlem kalıbını yazmaz.
+- Kategori, marka ve ürün yalnız `KayitArama` ile, arayarak seçilir (`cekirdek/yonetim-paneli/kayit-arama.tsx`, uç `kayit-ara`). Çevreleyen pencere öneri listesi açıkken Escape'i yok sayar (`kayitAramaAcikMi`).
+- Pencerede kaydedilmemiş değişiklik sorusu `useKapatmaSorusu` iledir (`cekirdek/yonetim-paneli/kapatma-sorusu.tsx`); ekran kendi kopyasını yazmaz.
+- Geri dönüşsüz eylem (silme) `OnayPenceresi` ile sorulur. Açılır menüden açılan pencere menü kapandıktan sonra açılır (`onCloseAutoFocus`): aynı anda açılınca menü sonra yeniden açılmıyordu.
+- Menü öğesinin taşınması yalnız derinlik sınırını aşmayan yerleri sunar; kural menü kaydındadır (`menuSinirlari.derinlik`), ekran onu yeniden yazmaz, servis yine denetler.
+

@@ -13,7 +13,6 @@
 //
 // Komut çubuğu sayfa iskeletinindir (PanelSayfasi, sunucuda): eylemler ile liste aynı durumu bu sağlayıcıdan
 // paylaşır. Yetkisi olmayan yönetici değiştiren düğmeleri hiç görmez.
-import { useRouter } from "next/navigation";
 import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
 import {
   AcilirMenu,
@@ -21,7 +20,6 @@ import {
   AcilirMenuOgesi,
   AcilirMenuTetikleyici,
 } from "../../../bilesenler/parcalar/acilir-menu";
-import { bildirimGoster } from "../../../bilesenler/parcalar/bildirim";
 import { BosHal } from "../../../bilesenler/parcalar/bos-hal";
 import { Dugme, IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
 import { Rozet } from "../../../bilesenler/parcalar/rozet";
@@ -43,7 +41,9 @@ import { doldur } from "../../moduller/eposta/sablon";
 import { bolumKutuphanesi } from "../../vitrin/bolum-kutuphanesi/kutuphane";
 import type { BolumTarifi } from "../../vitrin/bolum-kutuphanesi/tarif";
 import { EylemDugmesi } from "../eylem-dugmesi";
-import { type PanelSonucu, panelIstegi } from "../panel-istegi";
+import { useKapatmaSorusu } from "../kapatma-sorusu";
+import { usePanelIslemi } from "../panel-islemi";
+import type { PanelSonucu } from "../panel-istegi";
 import { BolumDuzenleyici, yeniDegerler } from "./bolum-duzenleyici";
 import { islemHatasiMetni } from "./hatalar";
 import { bolumOzeti, bolumunAdi, turAciklamalari } from "./ozet";
@@ -101,30 +101,19 @@ export function BolumlerSaglayici({
   children: ReactNode;
 }) {
   const metin = useMetin();
-  const router = useRouter();
   const [alan, setAlan] = useState<DuzenAlani>("ana-sayfa");
   const [pencere, setPencere] = useState<Pencere>(null);
   // Süren geri dönüş: aynı düğmeye ikinci basış dikkate alınmaz.
   const donuluyor = useRef(false);
-  const islem: Baglam["islem"] = async (yol, govde, basari, secenekler = {}) => {
-    const sonuc = await panelIstegi<{ sira?: number }>(yol, govde);
-    if (sonuc.tamam) {
-      router.refresh();
-      const silmeSirasi = sonuc.veri.sira;
-      bildirimGoster(
-        "basari",
-        metin(basari),
-        secenekler.geriAlinir === true && silmeSirasi !== undefined
-          ? { etiket: metin("yonetim.bolumler.geriAl"), tikla: () => geriDon(silmeSirasi) }
+  const panelIslemi = usePanelIslemi(islemHatasiMetni);
+  const islem: Baglam["islem"] = (yol, govde, basari, secenekler = {}) =>
+    panelIslemi<{ sira?: number }>(yol, govde, basari, {
+      ...(secenekler.formda === undefined ? {} : { formda: secenekler.formda }),
+      eylem: ({ sira }) =>
+        secenekler.geriAlinir === true && sira !== undefined
+          ? { etiket: metin("yonetim.bolumler.geriAl"), tikla: () => geriDon(sira) }
           : undefined,
-      );
-      return sonuc;
-    }
-    // Liste ekrandakinden farklıysa (bölüm yok, düzen arada değişti) güncel hâli gösterilir.
-    if (sonuc.kod === "bulunamadi" || sonuc.kod === "cakisma") router.refresh();
-    if (secenekler.formda !== true) bildirimGoster("tehlike", metin(islemHatasiMetni(sonuc)));
-    return sonuc;
-  };
+    });
   const geriDon = (son: number) => {
     if (donuluyor.current) return;
     donuluyor.current = true;
@@ -354,14 +343,7 @@ function BolumPenceresi() {
   const metin = useMetin();
   const { veri, alan, pencere, setPencere, islem } = useBolumler();
   // Formda kaydedilmemiş değişiklik varken pencere kapatılmak istenirse önce sorulur.
-  const [kirli, setKirli] = useState(false);
-  const [soruluyor, setSoruluyor] = useState(false);
-  const kapat = () => {
-    setPencere(null);
-    setKirli(false);
-    setSoruluyor(false);
-  };
-  const kapatmayiIste = () => (kirli ? setSoruluyor(true) : kapat());
+  const { kapat, kapatmayiIste, degisince, soru } = useKapatmaSorusu(() => setPencere(null));
   const alanAdi = metin(`yonetim.bolumler.alanlar.${alan}`);
   const duzenleyici = (
     tarif: BolumTarifi,
@@ -380,7 +362,7 @@ function BolumPenceresi() {
       kaydet={kaydet}
       kaydedince={kapat}
       vazgec={kapatmayiIste}
-      degisince={setKirli}
+      degisince={degisince}
     />
   );
   let icerik: { baslik: string; aciklama: string; govde: ReactNode } | null = null;
@@ -453,21 +435,7 @@ function BolumPenceresi() {
             <YanPencereBasligi>{icerik.baslik}</YanPencereBasligi>
             <YanPencereAciklamasi>{icerik.aciklama}</YanPencereAciklamasi>
           </YanPencereUstu>
-          {soruluyor ? (
-            <Uyari tur="uyari">
-              <span className="flex flex-col items-start gap-2">
-                {metin("yonetim.bolumler.form.kaydedilmedi")}
-                <span className="flex flex-wrap gap-2">
-                  <Dugme tur="cerceveli" onClick={kapat}>
-                    {metin("yonetim.bolumler.form.birak")}
-                  </Dugme>
-                  <Dugme tur="sade" autoFocus onClick={() => setSoruluyor(false)}>
-                    {metin("yonetim.bolumler.form.don")}
-                  </Dugme>
-                </span>
-              </span>
-            </Uyari>
-          ) : null}
+          {soru}
           {icerik.govde}
         </YanPencereIcerigi>
       )}

@@ -27,6 +27,13 @@ Bölüm: Vitrin. Önce 0141 ve 0142 bitmiş olmalı.
 - Ekran klavyeyle kullanılıyor, iki temada ve üç genişlikte taramadan geçiyor.
 - Taslakla karşılaştırma yapıldı.
 
+## Notlar (2026-11-13)
+
+- Düzey değiştirme satır menüsünden ("Şunun altına taşı", "En üst düzeye çıkar") ya da formdaki "Üst öğe" seçimiyle yapılır; sürükleyerek yalnız aynı düzeyde sıralanır (kullanıcı kararı, karar 0116).
+- Kayıt arama ortak parçadır (`KayitArama`, uç `kayit-ara`); kart 0161 onu vitrin bölümlerinin formuna bağlar. Silme ortak onay penceresiyle sorulur (`OnayPenceresi`, kütüphanede yeni).
+- Taslakla karşılaştırma: adres hedefi taslaktaki gibi "Sitenin sayfası" ve "Dış bağlantı" olarak ayrıldı, öğe metninin yer tutucusu kaydın adı. Kalan farklar: menü listesinde öğe sayısı ve "menü satırında" gibi kullanıldığı yer yazmıyor (tür yazıyor); alt öğeler taslaktaki gibi aynı listede girintili değil, kendi sıralanabilir listesindedir (kardeş sırası o listede); zamanlanmış ürünün öğesinde tarih yerine "Vitrinde görünmüyor" ve açıklaması var (servis yayın zamanını vermiyor); öneri satırında kaydın ürün sayısı yok; yeni öğenin düğmesi "Ekle" yerine "Kaydet ve yayınla" (değişiklik hemen yayınlanır).
+- Açılan kart: 0165 (sıralanabilir liste testi animasyon sırasında ölçüyor; ana dalda da 8 denemede 3 kırmızı, ölçüldü).
+
 ## Durum
 
 yapılacak

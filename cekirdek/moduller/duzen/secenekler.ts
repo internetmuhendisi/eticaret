@@ -14,6 +14,7 @@ import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { dosyaBoyutlari, dosyalar } from "../dosya/model.ts";
 import { etiketler } from "../etiket/model.ts";
 import { kategorileriOku } from "../kategori/servis.ts";
+import { kategoriYollari } from "../kategori/yol.ts";
 import { markalar } from "../marka/model.ts";
 import { menuler } from "../menu/model.ts";
 import { urunler } from "../urun/model.ts";
@@ -35,29 +36,6 @@ export type DuzenSecenekleri = {
 };
 
 const adSirasi = (ad: AnyPgColumn) => [sql`lower(${ad})`];
-
-// Kategori ağacı sırasıyla ve yoluyla. Ağacın yolu bütün ağacı ister: kategoriler bir kez, sınırsız okunur
-// (kategorileriOku; kategori sayısı mağazada küçüktür), liste sonra sınırlanır.
-const kategoriYoluAyraci = " › ";
-const agacSirasiyla = (
-  kategoriler: readonly { kimlik: string; ad: string; ust: string | null }[],
-): KayitSecenegi[] => {
-  const altlari = new Map<string | null, typeof kategoriler>();
-  for (const kategori of kategoriler) {
-    const ust = kategoriler.some((k) => k.kimlik === kategori.ust) ? kategori.ust : null;
-    altlari.set(ust, [...(altlari.get(ust) ?? []), kategori]);
-  }
-  const sonuc: KayitSecenegi[] = [];
-  const gez = (ust: string | null, yol: string[]) => {
-    for (const kategori of altlari.get(ust) ?? []) {
-      const ad = [...yol, kategori.ad];
-      sonuc.push({ kimlik: kategori.kimlik, ad: ad.join(kategoriYoluAyraci) });
-      gez(kategori.kimlik, ad);
-    }
-  };
-  gez(null, []);
-  return sonuc;
-};
 
 export const duzenSecenekleri = async (vt: Veritabani): Promise<DuzenSecenekleri> => {
   const [kategoriListesi, markaListesi, etiketListesi, urunListesi, menuListesi, gorselListesi] =
@@ -106,7 +84,7 @@ export const duzenSecenekleri = async (vt: Veritabani): Promise<DuzenSecenekleri
         .limit(panelSecenekSinirlari.gorsel),
     ]);
   return {
-    kategoriler: agacSirasiyla(kategoriListesi).slice(0, panelSecenekSinirlari.kayit),
+    kategoriler: kategoriYollari(kategoriListesi).slice(0, panelSecenekSinirlari.kayit),
     markalar: markaListesi,
     etiketler: etiketListesi,
     urunler: urunListesi,

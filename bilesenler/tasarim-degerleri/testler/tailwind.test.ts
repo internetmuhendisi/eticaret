@@ -177,9 +177,10 @@ describe("Tailwind yalnız tasarım değerlerini tanır", () => {
       ),
       join(kok, "cekirdek/vitrin/stil.ts"),
       join(kok, "cekirdek/yonetim-paneli/stil.ts"),
-      // Panelin çerçevesi, menüsü ve sayfa iskeleti (kart 0141).
-      ...readdirSync(join(kok, "cekirdek/yonetim-paneli"))
-        .filter((ad) => ad.endsWith(".tsx"))
+      // Panelin çerçevesi, menüsü ve sayfa iskeleti (kart 0141); alt klasörlerdeki ekranlar da (kart 0143:
+      // vitrin bölümleri ve menüler ekranı, bağımsız kontrolün bulgusu).
+      ...readdirSync(join(kok, "cekirdek/yonetim-paneli"), { recursive: true, encoding: "utf8" })
+        .filter((ad) => ad.endsWith(".tsx") && !ad.includes("testler"))
         .map((ad) => join(kok, "cekirdek/yonetim-paneli", ad)),
       // Vitrin bölümlerinin görünüşleri ve ortak parçaları, bölümlerin görseli (kart 0110).
       ...readdirSync(join(kok, "cekirdek/vitrin/bolumler"), { recursive: true, encoding: "utf8" })

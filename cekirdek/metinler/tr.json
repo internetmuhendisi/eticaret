@@ -139,7 +139,11 @@
         "ad": "Vitrin bölümleri",
         "aciklama": "Vitrinin üst kısmındaki, ana sayfasındaki ve alt kısmındaki bölümler. Değişiklik kaydedilince hemen yayınlanır; önceki hâline tek adımda dönebilirsiniz."
       },
-      "sliderAciklamasi": "Ana sayfadaki kayan büyük afiş. Kaydedince hemen yayınlanır; önceki hâline Vitrin bölümleri ekranından dönebilirsiniz."
+      "sliderAciklamasi": "Ana sayfadaki kayan büyük afiş. Kaydedince hemen yayınlanır; önceki hâline Vitrin bölümleri ekranından dönebilirsiniz.",
+      "menuler": {
+        "ad": "Menüler",
+        "aciklama": "Vitrinin üst kısmındaki menüler ve alt kısımdaki bağlantı sütunları. Değişiklik kaydedilince hemen yayınlanır."
+      }
     },
     "eylem": {
       "ekle": "{ne} ekle",
@@ -337,7 +341,101 @@
         "menu-dolu": "Bu menüde öğe sınırına ulaşıldı. Yeni öğe eklemek için önce bir öğeyi silin.",
         "menu-sayisi": "Menü sınırına ulaşıldı. Yeni menü açmak için önce bir menüyü silin.",
         "siralama-gecersiz": "Sıralama eski kaldı: bu sırada başka bir değişiklik yapılmış. Sayfayı yenileyip yeniden sıralayın."
-      }
+      },
+      "liste": "Menüler",
+      "menu": "Menü",
+      "oge": "Öğe",
+      "turElle": "Elle kurulan",
+      "turKategori": "Kategorilerden kendiliğinden",
+      "kategoriAciklamasi": "Bu menü kategori ağacından kendiliğinden kurulur: kategorilerin adı ve sırası değişince menü de değişir. Ona öğe eklenmez; kategorileri Kategoriler ekranında düzenleyin.",
+      "bos": {
+        "baslik": "Bu menüde öğe yok",
+        "metin": "Öğe ekle düğmesiyle ilk öğeyi ekleyin."
+      },
+      "menuYok": {
+        "baslik": "Henüz menü yok",
+        "metin": "Menü ekle düğmesiyle ilk menüyü açın."
+      },
+      "siralamaBilgisi": "Aynı düzeydeki öğeleri tutamaktan sürükleyerek ya da tutamağa odaklanıp boşluk ve ok tuşlarıyla sıralayın. Bir öğeyi başka bir öğenin altına almak için satırın \"Diğer işlemler\" menüsünü kullanın.",
+      "listeEtiketi": "{menu}: öğeler",
+      "altListeEtiketi": "{oge}: alt öğeler",
+      "hedef": {
+        "kategori": "Kategori",
+        "marka": "Marka",
+        "urun": "Ürün",
+        "sayfa": "Sayfa",
+        "adres": "Adres",
+        "baslik": "Başlık"
+      },
+      "baslikAciklamasi": "Bağlantısız, alt öğeleri açar",
+      "durum": {
+        "hedef-silindi": "Bağlı kayıt silindi",
+        "hedef-gorunmuyor": "Vitrinde görünmüyor",
+        "bos-baslik": "Altında görünen öğe yok"
+      },
+      "durumAciklamasi": {
+        "hedef-silindi": "Bu öğe vitrinde görünmüyor. Düzenleyip başka bir kayıt seçin ya da silin.",
+        "hedef-gorunmuyor": "Bağlı ürünün sayfası şu an açılmıyor (taslak, arşivde ya da zamanı gelmemiş); öğe o zamana kadar vitrinde görünmez.",
+        "bos-baslik": "Bu başlığın altında vitrinde görünen öğe yok, başlık da görünmez."
+      },
+      "duzenle": "Düzenle: {ad}",
+      "diger": "Diğer işlemler: {ad}",
+      "altinaTasi": "Şunun altına taşı",
+      "enUsteCikar": "En üst düzeye çıkar",
+      "sil": "Sil",
+      "menuIslemleri": "Menünün işlemleri: {ad}",
+      "adDegistir": "Adını değiştir",
+      "menuyuSil": "Menüyü sil",
+      "kaydedildi": "Değişiklik yayınlandı.",
+      "eklendi": "Öğe eklendi ve yayınlandı.",
+      "tasindi": "Öğe taşındı.",
+      "siralandi": "Yeni sıra yayınlandı.",
+      "silindi": "Öğe silindi.",
+      "menuEklendi": "Menü açıldı.",
+      "menuDegisti": "Menünün adı değişti.",
+      "menuSilindi": "Menü silindi.",
+      "ogeSilOnay": {
+        "baslik": "\"{ad}\" silinsin mi?",
+        "metin": "Öğe vitrinin menüsünden kalkar. Bu işlem geri alınamaz.",
+        "metinAltli": "Öğe ve altındaki {sayi} öğe vitrinin menüsünden kalkar. Bu işlem geri alınamaz."
+      },
+      "menuSilOnay": {
+        "baslik": "\"{ad}\" menüsü silinsin mi?",
+        "metin": "Menü ve bütün öğeleri silinir. Bu menüyü gösteren vitrin bölümü menü olmadan görünmez. Bu işlem geri alınamaz."
+      },
+      "form": {
+        "yeniOge": "Öğe ekle",
+        "ogeyiDuzenle": "Öğeyi düzenle",
+        "yeniMenu": "Menü ekle",
+        "menuAdi": "Menünün adı",
+        "hedefTuru": "Neye bağlansın?",
+        "metin": "Menüde görünen yazı",
+        "metinAciklamasi": "Boş bırakırsanız kaydın adı görünür; ad değişince menü de değişir.",
+        "adres": "Adres",
+        "yeniSekme": "Yeni sekmede aç",
+        "ust": "Üst öğe",
+        "enUstDuzey": "En üst düzey",
+        "ustAciklamasi": "Menü en çok iki düzeydir: alt öğenin altına öğe konmaz.",
+        "ustKapali": "Bu öğenin altında öğeler var: başka bir öğenin altına taşınamaz.",
+        "menuTuru": "Menünün türü",
+        "turElleAciklamasi": "Öğelerini siz kurarsınız.",
+        "turKategoriAciklamasi": "Kategori ağacından kendiliğinden kurulur, öğe eklenmez.",
+        "kaydet": "Kaydet ve yayınla",
+        "hata": "Formda düzeltilmesi gereken alanlar var.",
+        "kayitSecin": "Bir kayıt seçin.",
+        "secim": {
+          "site-adresi": "Sitenin sayfası",
+          "dis-adres": "Dış bağlantı"
+        },
+        "siteAdresiAciklamasi": "Mağazanın kendi sayfasının adresi, / ile başlar: /kategori/giyim.",
+        "disAdresAciklamasi": "Başka bir sitenin tam adresi, https:// ile başlar."
+      },
+      "genelHata": "Değişiklik kaydedilemedi. Sayfayı yenileyip yeniden deneyin.",
+      "agHatasi": "Sunucuya ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
+      "yetkiHatasi": "Bu değişikliği yapma izniniz yok.",
+      "oturumHatasi": "Oturumunuz kapandı. Yeniden giriş yapın.",
+      "bulunamadi": "Bu kayıt artık yok; liste yenilendi.",
+      "ayniAdli": "{ad}, {sira}. sıradaki"
     },
     "bolumFormu": {
       "secilmedi": "Seçilmedi",
@@ -500,6 +598,16 @@
       "gorselAdi": "Görsel {sira}, {genislik} × {yukseklik} piksel",
       "secilmedi": "Görsel seçilmedi",
       "olcu": "{genislik} × {yukseklik}"
+    },
+    "kayitArama": {
+      "aciklama": "Yazmaya başlayın, eşleşen kayıtlar listelenir.",
+      "yukleniyor": "Aranıyor…",
+      "sonucYok": "Eşleşen kayıt yok.",
+      "sonucSayisi": "{sayi} sonuç",
+      "dahaFazla": "Daha fazla göster",
+      "hata": "Arama yapılamadı. Yeniden deneyin.",
+      "secili": "Seçili: {ad}",
+      "yetki": "Kayıtları arama izniniz yok. Mağaza sahibinden ürünleri görme izni isteyin."
     }
   },
   "vitrin": {
@@ -1078,7 +1186,8 @@
         "bosHal": "Boş hâl",
         "sayfalama": "Sayfalama",
         "secenekGrubu": "Seçenek grubu",
-        "siralanabilirListe": "Sıralanabilir liste"
+        "siralanabilirListe": "Sıralanabilir liste",
+        "onayPenceresi": "Onay penceresi"
       },
       "bolumKutuphanesi": "Bölüm kütüphanesi"
     },
@@ -1215,7 +1324,12 @@
       "alisveriseBasla": "Alışverişe başla",
       "dahaFazlaDurum": "24 ürünün 8'ini gördünüz",
       "dahaFazlaGoster": "Daha fazla göster",
-      "sonSayfaDurum": "24 ürünün hepsini gördünüz"
+      "sonSayfaDurum": "24 ürünün hepsini gördünüz",
+      "onayAc": "Kaydı sil",
+      "onayBaslik": "Bu kayıt silinsin mi?",
+      "onayAciklama": "Silinen kayıt geri getirilemez.",
+      "onaySil": "Sil",
+      "onaySilindi": "Kayıt silindi."
     },
     "bolum": {
       "ad": "Deneme bölümü",

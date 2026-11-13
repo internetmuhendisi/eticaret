@@ -18,6 +18,7 @@ import { IpucuOrnegi } from "./ornekler/ipucu";
 import { IskeletOrnegi } from "./ornekler/iskelet";
 import { KartOrnegi } from "./ornekler/kart";
 import { OnayKutusuOrnegi } from "./ornekler/onay-kutusu";
+import { OnayPenceresiOrnegi } from "./ornekler/onay-penceresi";
 import { PencereOrnegi } from "./ornekler/pencere";
 import { RozetOrnegi } from "./ornekler/rozet";
 import { SayfaBasligiOrnegi } from "./ornekler/sayfa-basligi";
@@ -49,6 +50,7 @@ const ornekler: Record<ParcaKodu, ComponentType> = {
   form: FormOrnegi,
   "acilir-menu": AcilirMenuOrnegi,
   pencere: PencereOrnegi,
+  "onay-penceresi": OnayPenceresiOrnegi,
   "yan-pencere": YanPencereOrnegi,
   sekmeler: SekmelerOrnegi,
   kart: KartOrnegi,

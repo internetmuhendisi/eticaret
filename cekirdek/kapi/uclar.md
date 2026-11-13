@@ -396,6 +396,106 @@ Paneldeki görsel önizlemesi (kart 0142): sitede kayıtlı bir görselin kayıt
 - Başarılı (200): görselin o boyuttaki dosyası. Özgün görsel ve boyut dosyasının kendi kimliği verilmez.
 - Hatalar: `dogrulama`, `bulunamadi` (görsel yok, silinmiş ya da o boyutu yok), `oturum-yok`, `yetki`.
 
+### GET /kapi/yonetici/menuler
+
+Panelin menüler ekranının menü listesi (kart 0143): silinmemiş menüler, koduna göre.
+
+- İzin: `menu.gor`. Sınır: `genel`.
+- Girdi: yok (`menulerSemasi`, `cekirdek/moduller/menu/semalar.ts`).
+- Servis: `cekirdek/moduller/menu/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "menuler": [{ "kimlik", "kod", "ad", "tur" }] } }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`.
+
+### GET /kapi/yonetici/menu
+
+Bir menü öğeleriyle (kart 0143, karar 0082): her öğenin metni, görünen metni, hedefi, bağlı kaydın adı ve adres adı (`kayit`), durumu (`gecerli`, `hedef-silindi`, `hedef-gorunmuyor`, `bos-baslik`) ve altları. Kategori menüsünde öğe yerine kategori ağacı gelir (`kategoriAgaci`).
+
+- İzin: `menu.gor`. Sınır: `genel`.
+- Girdi: adres parametresi `kimlik` (`menuOkumaSemasi`).
+- Servis: `cekirdek/moduller/menu/servis.ts` (`panelMenusu`).
+- Başarılı (200): `{ "basarili": true, "veri": { "menu": { "kimlik", "kod", "ad", "tur" }, "ogeler": [...] } }` ya da `{ ..., "kategoriAgaci": [...] }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/menu-ekle
+
+Yeni menü (kart 0143). Kod ve tür açılırken verilir, sonra değişmez.
+
+- İzin: `menu.degistir`. Sınır: `genel`.
+- Girdi: `{ "kod", "ad", "tur" }` (`menuEklemeSemasi`; kurallar `menuGirdisi`).
+- Servis: `cekirdek/moduller/menu/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
+- Hatalar: `dogrulama` (`kod-bicimi`, `kayda-uygun-degil`, `denetim-karakteri`), `cakisma` (`kod-tekrar`), `is-kurali` (`menu-sayisi`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/menu-degistir
+
+Menünün adı (kart 0143).
+
+- İzin: `menu.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "ad" }` (`menuDegisikligiSemasi`).
+- Servis: `cekirdek/moduller/menu/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/menu-sil
+
+Menüyü ve öğelerini siler (kart 0143). Menüye başvuran vitrin bölümü değişmez; menü olmadan çizilmez.
+
+- İzin: `menu.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }` (`menuSilmeSemasi`).
+- Servis: `cekirdek/moduller/menu/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/menu-ogesi-ekle
+
+Menüye öğe ekler (kart 0143). Verilmeyen üst en üst düzeydir, verilmeyen sıra kardeşlerin sonudur.
+
+- İzin: `menu.degistir`. Sınır: `genel`.
+- Girdi: `{ "menu", "oge": { "metin"?, "hedef", "ust"?, "sira"? } }` (`ogeEklemeSemasi`; öğe ortak `ogeGirdisi` ile serviste doğrulanır).
+- Servis: `cekirdek/moduller/menu/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
+- Hatalar: `dogrulama` (`metin-gerekli`, `baglanti-gecersiz`, `hedef-kullanilamaz`, `hedef-yok`, `ust-gecersiz`, ...), `is-kurali` (`derinlik`, `kategori-menusu`, `menu-dolu`), `bulunamadi`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/menu-ogesi-degistir
+
+Öğeyi değiştirir ya da taşır (kart 0143): yalnız verilen alan değişir, üstün değişmesi taşımadır ve öğe yeni kardeşlerin sonuna gelir.
+
+- İzin: `menu.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "oge": { "metin"?, "hedef"?, "ust"?, "sira"? } }` (`ogeDegisikligiSemasi`; öğe ortak `ogeDegisikligi` ile serviste doğrulanır).
+- Servis: `cekirdek/moduller/menu/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: ekleme ile aynı kodlar, `bulunamadi`.
+
+### POST /kapi/yonetici/menu-ogesi-sil
+
+Öğeyi ve altlarını siler (kart 0143).
+
+- İzin: `menu.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }` (`ogeSilmeSemasi`).
+- Servis: `cekirdek/moduller/menu/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/menu-sirala
+
+Aynı üstün altındaki öğelerin yeni sırası (kart 0143): kardeşlerin hepsi, her biri bir kez.
+
+- İzin: `menu.degistir`. Sınır: `genel`.
+- Girdi: `{ "menu", "ust", "kimlikler" }` (`ogeSiralamaSemasi`); en üst düzey için `ust` `null`.
+- Servis: `cekirdek/moduller/menu/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama` (`siralama-gecersiz`, `ust-gecersiz`), `bulunamadi`, `oturum-yok`, `yetki`.
+
+### GET /kapi/yonetici/kayit-ara
+
+Panelde kategori, marka ya da ürünü yazdıkça arayarak seçmek (kart 0143, karar 0116). Yalnız silinmemiş kayıtlar gelir; harf kuralı aramanınkidir (Türkçe harfsiz, büyük küçük harf ayrımsız), aranan metin adın herhangi bir yerinde geçebilir. Kategoriler üstlerinin adıyla ("Kadın › Tişört") ve ağaç sırasında gelir, bu yolda aranır (yol ayracı aranmaz). Marka ve ürün ada göre sıralı ve adres adlarıyla gelir: aynı adlı ürünler ayrılır. Sayfa başına 20 kayıt.
+
+- İzin: `urun.gor`. Sınır: `genel`.
+- Girdi: adres parametreleri `tur` (`kategori`, `marka`, `urun`), `ara`? (en çok 100 karakter) ve `sayfa`? (`kayitAramaSemasi`, `cekirdek/kapi/yonetici/kayit-ara.ts`).
+- Servis: `cekirdek/moduller/urun/kayit-arama.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "kayitlar": [{ "kimlik", "ad", "adresAdi"? }], "dahaVar": false } }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`.
+
 ### GET /kapi/yonetici/yorumlar
 
 Ürün yorumları, onay bekleyen ve reddedilenler dahil, en yeni önce (kart 0139). Panelin yorum ekranı on dördüncü bölümde gelir.
