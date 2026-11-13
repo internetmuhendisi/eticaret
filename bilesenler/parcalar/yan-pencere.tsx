@@ -72,14 +72,16 @@ export function YanPencereIcerigi({
 
 // Uzun formun sabit alt çubuğu (kart 0169): Vazgeç ve Kaydet pencere kaydırılırken altta durur. Kaydırılan
 // içeriğin iç boşluğu yüzünden tarayıcı "sticky bottom-0" çubuğu kenardan bir iç boşluk yukarıda tutuyordu, form o
-// aralıkta çubuğun altında görünüyordu (ölçüldü). Çubuk iç boşluk kadar aşağıya yapışır, iç boşluğu kendi alt boşluğuyla ve negatif kenar boşluğuyla kaplar: alt kenara ve
-// iki yana uzanır, altında içerik görünmez.
+// aralıkta çubuğun altında görünüyordu (ölçüldü). Çubuk iç boşluk kadar aşağıya yapışır (-bottom-6) ve iki yana
+// uzanır (-mx-6); değerler içeriğin iç boşluğuyla (icBosluk, p-6) aynıdır, biri değişirse öteki de değişir.
+// Pencere dışında (sayfadaki kartta) kullanan, kenara uzanmayı ve aşağıya yapışmayı sınıfla kapatır:
+// "bottom-0 mx-0 px-0" (Slider sayfası; bağımsız kontrolün bulgusu: kartın iç boşluğu daha küçüktü, çubuk taşıyordu).
 export function YanPencereAltCubugu({ className, ...ozellikler }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       data-slot="yan-pencere-alt-cubugu"
       className={sinif(
-        "sticky -bottom-6 -mx-6 -mb-6 flex flex-wrap justify-end gap-2 border-t border-kenar bg-zemin px-6 pt-3 pb-6",
+        "sticky -bottom-6 -mx-6 flex flex-wrap justify-end gap-2 border-t border-kenar bg-zemin px-6 py-3",
         className,
       )}
       {...ozellikler}

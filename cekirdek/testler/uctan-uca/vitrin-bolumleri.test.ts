@@ -177,7 +177,7 @@ test("mağaza sahibi klavyeyle bölüm ekler ve düzenler, kaydedilmemiş deği�
   }
 });
 
-// Kart 0169: uzun formun kaydet çubuğu pencerenin alt kenarındadır; kaydırılan içeriğin iç boşluğu yüzünden çubuğun
+// Kart 0169: uzun formun kaydet çubuğu pencerenin alt kenarındadır, Slider sayfasında kartın içindedir; kaydırılan içeriğin iç boşluğu yüzünden çubuğun
 // altında 24 px'lik bir aralık kalıyor, form orada görünüyordu (eski hâlde üç genişlikte ölçüldü).
 test("uzun formda kaydet çubuğu pencerenin alt kenarındadır, altında form görünmez", async ({
   page,
@@ -221,6 +221,32 @@ test("uzun formda kaydet çubuğu pencerenin alt kenarındadır, altında form g
   }
   await page.keyboard.press("Escape");
   await expect(form).toHaveCount(0);
+
+  // Aynı form Slider sayfasında kartın içindedir: çubuk kartın dışına taşmaz (bağımsız kontrolün bulgusu: telefonda
+  // kartın iç boşluğu pencereninkinden küçüktü, çubuk iki yandan 8 px taşıyordu).
+  await page.goto(sliderAdresi);
+  await sayfaHazir(page);
+  for (const genislik of genislikler) {
+    await page.setViewportSize(genislik);
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            const cubuk = document.querySelector('[data-slot="yan-pencere-alt-cubugu"]');
+            const kart = cubuk?.closest('[data-slot="kart"]');
+            if (cubuk === null || kart === null || kart === undefined)
+              return "çubuk ya da kart yok";
+            const c = cubuk.getBoundingClientRect();
+            const k = kart.getBoundingClientRect();
+            if (c.left < k.left - 0.5 || c.right > k.right + 0.5)
+              return "çubuk kartın yanından taşıyor";
+            if (c.bottom > window.innerHeight + 0.5) return "çubuk ekranın altında";
+            return "tamam";
+          }),
+        { message: genislik.ad },
+      )
+      .toBe("tamam");
+  }
 });
 
 test("mağaza sahibi sıralar, gizler, siler, silmeyi geri alır ve önceki hâline döner; vitrinde görünür", async ({

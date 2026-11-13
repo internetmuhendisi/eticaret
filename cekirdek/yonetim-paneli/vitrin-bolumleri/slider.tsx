@@ -79,6 +79,7 @@ export function SliderEkrani({
       <Kart className="p-4 tablet:p-6">
         <BolumDuzenleyici
           key={slider?.kimlik ?? "yeni"}
+          sayfada
           tarif={kayanAfis}
           ilk={
             slider === undefined

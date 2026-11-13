@@ -32,6 +32,7 @@ import {
 import { sinif } from "../../../bilesenler/parcalar/sinif";
 import {
   YanPencere,
+  YanPencereAltCubugu,
   YanPencereBasligi,
   YanPencereIcerigi,
   YanPencereKapat,
@@ -371,7 +372,7 @@ export function ListeAraclari({ gorunum }: { gorunum: FiltreGorunumu }) {
         >
           <YanPencereBasligi>{metin("vitrin.liste.filtrele")}</YanPencereBasligi>
           <AkordeonGruplari gorunum={gorunum} git={git} duzey={3} />
-          <div className="sticky -bottom-6 -mx-6 mt-auto flex gap-2 border-t border-kenar bg-zemin px-6 py-4">
+          <YanPencereAltCubugu className="mt-auto flex-nowrap justify-start py-4">
             <Dugme tur="sade" onClick={() => git({ tur: "temizle" })}>
               {metin("vitrin.liste.temizle")}
             </Dugme>
@@ -380,7 +381,7 @@ export function ListeAraclari({ gorunum }: { gorunum: FiltreGorunumu }) {
                 {gorunum.sonucYazisi}
               </Dugme>
             </YanPencereKapat>
-          </div>
+          </YanPencereAltCubugu>
         </YanPencereIcerigi>
       </YanPencere>
       <Siralama gorunum={gorunum} git={git} />

@@ -35,6 +35,7 @@ export function BolumDuzenleyici({
   kaydet,
   kaydedince,
   vazgec,
+  sayfada = false,
   degisince,
 }: {
   tarif: BolumTarifi;
@@ -45,6 +46,8 @@ export function BolumDuzenleyici({
   kaydedince: () => void;
   // Verilirse formun altında Vazgeç durur (pencere).
   vazgec?: () => void;
+  // Form pencerede değil sayfada (Slider sayfası, kart 0169): alt çubuk kenara uzanmaz, sayfanın altına yapışır.
+  sayfada?: boolean;
   // Kaydedilmemiş değişiklik olup olmadığı: pencere kapatılmadan önce sorar.
   degisince?: (degisti: boolean) => void;
 }) {
@@ -133,7 +136,7 @@ export function BolumDuzenleyici({
           degisince?.(true);
         }}
       />
-      <YanPencereAltCubugu>
+      <YanPencereAltCubugu {...(sayfada ? { className: "bottom-0 mx-0 px-0" } : {})}>
         {vazgec === undefined ? null : (
           <Dugme tur="sade" onClick={vazgec}>
             {metin("ortak.islem.vazgec")}
