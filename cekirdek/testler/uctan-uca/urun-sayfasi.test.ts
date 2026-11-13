@@ -23,6 +23,7 @@ import { stokServisi } from "../../moduller/stok/servis";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { baglan, type Veritabani, veritabaniAdresi } from "../../veritabani/baglanti";
 import { kayitAdresleri } from "../../vitrin/adresler";
+import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
@@ -321,12 +322,8 @@ test("galeri klavyeyle gezilir, büyütme penceresi görselleri gezer; video oyn
 test("iki renkte ve üç genişlikte taramadan geçer, yana kaymaz, konsolda hata yok", async ({
   page,
 }) => {
-  const hatalar: string[] = [];
-  page.on("console", (ileti) => {
-    // Girişsiz ziyaretçinin oturum sorusu 401 alır (karar 0098); bu bir hata değildir.
-    if (ileti.type() === "error" && !ileti.text().includes("401")) hatalar.push(ileti.text());
-  });
-  page.on("pageerror", (hata) => hatalar.push(hata.message));
+  // Girişsiz ziyaretçinin oturum sorusu 401 alır (karar 0098); bu bir hata değildir.
+  const hatalar = konsoluDinle(page, { haric: (metin) => metin.includes("401") });
   for (const renk of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: renk });
     for (const genislik of genislikler) {

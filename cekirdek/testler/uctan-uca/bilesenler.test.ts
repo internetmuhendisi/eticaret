@@ -6,6 +6,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { metin } from "../../metinler/site-metni";
+import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
 
 const adres = "/gelistirme/bilesenler";
@@ -13,11 +14,7 @@ const m = (anahtar: string) => metin(`gelistirme.ornek.${anahtar}` as MetinAnaht
 const dugme = (page: Page, ad: string) => page.getByRole("button", { name: ad, exact: true });
 
 const ac = async (page: Page) => {
-  const hatalar: string[] = [];
-  page.on("console", (ileti) => {
-    if (ileti.type() === "error") hatalar.push(ileti.text());
-  });
-  page.on("pageerror", (hata) => hatalar.push(hata.message));
+  const hatalar = konsoluDinle(page);
   await page.goto(adres);
   await sayfaHazir(page);
   return hatalar;

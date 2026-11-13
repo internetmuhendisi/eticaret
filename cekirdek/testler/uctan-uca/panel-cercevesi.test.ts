@@ -6,6 +6,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import { altyapiAdi } from "../../kayitlar/altyapi";
 import { metin } from "../../metinler/site-metni";
+import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
 import { ayriBaglanti, type DenemeYoneticisi, paneleGir, yoneticiAc } from "./yonetici";
 
@@ -172,11 +173,7 @@ test("geniş logo yan menüden ve üst çubuktan taşmaz, oranını korur, ad g�
 test("panel iki renkte ve üç genişlikte taramadan geçer, yana kaymaz, konsolda hata yok", async ({
   page,
 }) => {
-  const hatalar: string[] = [];
-  page.on("console", (ileti) => {
-    if (ileti.type() === "error") hatalar.push(ileti.text());
-  });
-  page.on("pageerror", (hata) => hatalar.push(hata.message));
+  const hatalar = konsoluDinle(page);
   await paneleGir(page, yonetici);
   for (const renk of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: renk });

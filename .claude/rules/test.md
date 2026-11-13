@@ -24,4 +24,5 @@ Birim testi tek bir parçayı, entegrasyon testi parçaların birlikte çalışm
 - `pnpm testler` bütün testleri çalıştırır. Tek aracı çalıştırmak için `pnpm birim-testleri` ya da `pnpm tarayici-testleri`.
 - Test dosyaları da tür kontrolünden geçer (`pnpm tur-kontrolu`).
 - Tarayıcı testi sayfayla etkileşmeden önce `sayfaHazir` ile bekler (`cekirdek/testler/uctan-uca/sayfa-hazir.ts`, karar 0099): yalnız ağ işini beklemek sayfanın tarayıcıda bağlandığını göstermez.
+- Konsolu denetleyen tarayıcı testi `konsoluDinle` kullanır (`cekirdek/testler/uctan-uca/konsol.ts`, kart 0123): hatalar, yakalanmamış hatalar ve hangi seviyede yazılırsa yazılsın hidrasyon uyarısı sayılır; beklenen hata (ör. girişsiz oturum sorusunun 401'i) `haric` ile ayıklanır, hidrasyon uyarısı ayıklanamaz.
 - Ekran bileşeninin testi dosyanın başına `// @vitest-environment jsdom` yazar ve Testing Library ile çizer (karar 0025). Sunucuda çizimi `react-dom/server` ile denenir.

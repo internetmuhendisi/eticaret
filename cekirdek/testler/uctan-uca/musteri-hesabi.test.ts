@@ -15,6 +15,7 @@ import {
   hesaptaEpostaGorunur,
   hesaptanCik,
 } from "./hesap";
+import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
 
 const sifre = "uzun-bir-musteri-sifresi";
@@ -118,6 +119,24 @@ test("pazarlama kutusu işaretsiz gelir, zorunlu kutular işaretlenmeden kayıt 
   await expect(page.getByText(metin("vitrin.kayit.hataOnay"))).toHaveCount(2);
   await expect(alan(page, "vitrin.kayit.uyelikOnayi")).toBeFocused();
   expect(kayitIstegi).toBe(0);
+});
+
+// Kart 0123: onay kutuları (Radix) sayfa canlanırken sunucunun HTML'iyle uyuşur; konsolda hata ve hidrasyon uyarısı
+// yok. Girişsiz ziyaretçinin oturum sorusu 401 alır (karar 0098), o bir hata değildir.
+test("kayıt sayfasında konsolda hata ve hidrasyon uyarısı yok, onay kutuları klavyeyle işaretlenir", async ({
+  page,
+}) => {
+  const hatalar = konsoluDinle(page, { haric: (metin) => metin.includes("401") });
+  await page.goto(vitrinAdresleri.kayit);
+  await yuklenmesiniBekle(page);
+  for (const anahtar of ["vitrin.kayit.uyelikOnayi", "vitrin.kayit.kvkkOnayi"] as const) {
+    await alan(page, anahtar).focus();
+    await page.keyboard.press("Space");
+    await expect(alan(page, anahtar)).toBeChecked();
+  }
+  await page.keyboard.press("Space");
+  await expect(alan(page, "vitrin.kayit.kvkkOnayi")).not.toBeChecked();
+  expect(hatalar).toEqual([]);
 });
 
 test("kısa şifre ve bozuk e-posta alanın altında yazıyla söylenir", async ({ page }) => {

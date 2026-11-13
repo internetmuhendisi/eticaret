@@ -63,7 +63,8 @@
         "komutlar/**",
         "denetim/*.mts",
         "cekirdek/izleme/istemci-hata-katmani.ts",
-        "cekirdek/izleme/testler/konsol.test.ts"
+        "cekirdek/izleme/testler/konsol.test.ts",
+        "cekirdek/testler/uctan-uca/konsol.test.ts"
       ],
       "linter": {
         "rules": {

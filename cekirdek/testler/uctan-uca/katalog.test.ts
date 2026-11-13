@@ -11,6 +11,7 @@ import kullanimlar from "../../katalog/kullanimlar.json" with { type: "json" };
 import type { MetinAnahtari } from "../../metinler/metin";
 import { metin } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
+import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
 
 const genislikler = [
@@ -20,11 +21,7 @@ const genislikler = [
 ] as const;
 
 const ac = async (page: Page, adres: string) => {
-  const hatalar: string[] = [];
-  page.on("console", (ileti) => {
-    if (ileti.type() === "error") hatalar.push(ileti.text());
-  });
-  page.on("pageerror", (hata) => hatalar.push(hata.message));
+  const hatalar = konsoluDinle(page);
   const yanit = await page.goto(adres);
   await sayfaHazir(page);
   return { hatalar, durum: yanit?.status() };
