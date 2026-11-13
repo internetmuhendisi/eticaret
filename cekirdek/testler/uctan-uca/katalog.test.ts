@@ -1025,7 +1025,7 @@ test("ürün vitrininin yan afişi: görsel masaüstünde altı doldurur, daha d
     exact: true,
   });
   const bolum = page.locator("section").filter({ has: baslik }).first();
-  for (const genislik of genislikler) {
+  for (const genislik of [{ ad: "dar telefon", width: 320, height: 700 }, ...genislikler]) {
     await page.setViewportSize(genislik);
     await bolum.scrollIntoViewIfNeeded();
     await expect
@@ -1045,6 +1045,13 @@ test("ürün vitrininin yan afişi: görsel masaüstünde altı doldurur, daha d
               a.width - Number.parseFloat(stil.paddingLeft) - Number.parseFloat(stil.paddingRight);
             if (r.right > a.right + 0.5 || r.bottom > a.bottom + 0.5)
               return "görsel afişten taşıyor";
+            // Yazı ve düğme dar sütunda kırılır, görselin üstüne ya da afişin dışına taşmaz.
+            for (const oge of afis.querySelectorAll("p, h2, a")) {
+              const o = oge.getBoundingClientRect();
+              if (o.right > r.left + 0.5 && o.left < r.left && o.bottom > r.top && o.top < r.bottom)
+                return `yazı görselin üstüne taşıyor: ${oge.tagName}`;
+              if (o.right > a.right + 0.5) return `yazı afişten taşıyor: ${oge.tagName}`;
+            }
             if (masaustu) {
               if (Math.abs(r.width - ic) > 1)
                 return `görsel genişliği ${Math.round(r.width)}, iç ${Math.round(ic)}`;
@@ -1058,7 +1065,7 @@ test("ürün vitrininin yan afişi: görsel masaüstünde altı doldurur, daha d
             return Math.abs(oran - dogal) < 0.03
               ? "tamam"
               : `oran ${oran.toFixed(2)}, doğal ${dogal.toFixed(2)}`;
-          }, genislik.ad === "masaüstü"),
+          }, genislik.width >= 1024),
         { message: genislik.ad },
       )
       .toBe("tamam");

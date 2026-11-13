@@ -453,7 +453,8 @@ export const ornekUrunBolumleri = (): BolumOrnegi[] => [
       urunler: ornekKaynaklar.kategori,
       yanBaslik: om("yeniGelenler"),
       yanMetin: om("yeniGelenlerMetni"),
-      yanGorsel: ornekGorselKimligi.kare(4),
+      // Dikey görsel (kart 0171): dar ekranda oranının korunduğu tarayıcı testinde ölçülür.
+      yanGorsel: ornekGorselKimligi.dikey,
       yanDugmeYazisi: om("yanDugme"),
       yanBaglanti: { adres: vitrinAdresleri.anasayfa, yeniSekme: false },
     },

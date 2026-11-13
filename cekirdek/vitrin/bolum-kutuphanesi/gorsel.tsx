@@ -17,7 +17,9 @@ export const gorselGenislikleri = {
   yarim: `(min-width: ${tablet}) 50vw, 100vw`,
   ucteBir: `(min-width: ${masaustu}) 33vw, (min-width: ${tablet}) 50vw, 100vw`,
   besteBir: `(min-width: ${masaustu}) 20vw, 33vw`,
-  panel: `(min-width: ${masaustu}) ${panel}, (min-width: ${tablet}) 25vw, 33vw`,
+  // Masaüstünde görsel kırpılarak afişi doldurur: yatay görselin yüksekliği doldurması için panelin iki katı
+  // genişlikte kaynak gerekir (bağımsız kontrolün bulgusu: panel genişliği bulanık kaynak seçtiriyordu).
+  panel: `(min-width: ${masaustu}) calc(2 * ${panel}), (min-width: ${tablet}) 25vw, 33vw`,
 } as const;
 export type GorselGenisligi = keyof typeof gorselGenislikleri;
 

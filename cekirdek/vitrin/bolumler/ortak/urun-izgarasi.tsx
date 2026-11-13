@@ -214,6 +214,8 @@ export function YanAfis({
   // Görselin yeri (kart 0171, kullanıcı kararları): masaüstünde yan afiş ızgaranın boyuna uzar, görsel yazının altında
   // tam genişlikte kalan yüksekliği kırpılarak doldurur. Daha darda afiş ızgaranın üstündedir ve yataydır: yazı
   // solda, görsel sağda kendi oranıyla, kırpılmadan (dikey görsel geniş kutuya kırpılınca konusu kadrajdan çıkıyordu).
+  // Bağımsız kontrolün bulgularıyla: ızgara kısaysa görsel masaüstünde 80 px'in altına inmez (afiş uzar); dar
+  // sütunda uzun sözcük ve düğme yazısı kırılır, görselin üstüne taşmaz.
   return (
     <div
       className={sinif(
@@ -231,14 +233,17 @@ export function YanAfis({
           </h2>
         )}
         {metinMi(degerler.yanMetin) ? (
-          <p className={sinif("whitespace-pre-line", solukYaziSiniflari(zemin))}>
+          <p className={sinif("whitespace-pre-line wrap-anywhere", solukYaziSiniflari(zemin))}>
             {degerler.yanMetin}
           </p>
         ) : null}
         {baglanti !== undefined && metinMi(degerler.yanDugmeYazisi) ? (
           <Link
             href={baglanti.adres}
-            className={sinif(dugmeSiniflari({ tur: "ikincil" }), "mt-2 w-fit no-underline")}
+            className={sinif(
+              dugmeSiniflari({ tur: "ikincil" }),
+              "mt-2 w-fit max-w-full wrap-anywhere no-underline",
+            )}
             {...yeniSekmeOzellikleri(baglanti.yeniSekme)}
           >
             {degerler.yanDugmeYazisi}
@@ -250,7 +255,7 @@ export function YanAfis({
         gorsel={degerler.yanGorsel}
         alternatifMetin={degerler.yanGorselMetni}
         genislik="panel"
-        className="w-1/3 shrink-0 rounded-kucuk tablet:w-1/4 masaustu:w-full masaustu:min-h-0 masaustu:flex-1 masaustu:basis-0 masaustu:object-cover"
+        className="w-1/3 shrink-0 rounded-kucuk tablet:w-1/4 masaustu:w-full masaustu:min-h-20 masaustu:flex-1 masaustu:basis-0 masaustu:object-cover"
       />
     </div>
   );

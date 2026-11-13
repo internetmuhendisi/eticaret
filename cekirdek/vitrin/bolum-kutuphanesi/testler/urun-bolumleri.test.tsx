@@ -196,6 +196,7 @@ describe("ürün vitrini", () => {
         "masaustu:w-full",
         "masaustu:flex-1",
         "masaustu:basis-0",
+        "masaustu:min-h-20",
         "masaustu:object-cover",
         "rounded-kucuk",
       ]),
