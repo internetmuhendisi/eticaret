@@ -195,7 +195,7 @@ type YanAfisDegerleri = {
 };
 
 // Yan afiş (Canlı Çarşı taslağının "Yeni gelenler" bölümü): başlığı verilmişse çizilir. Varsayılan zemin
-// üçüncü kutu rengidir; başlık ve metin üstte, görsel sağa yaslı, koyu düğme altta. Bölümün başlığı yoksa yan
+// üçüncü kutu rengidir; başlık, metin ve koyu düğme bir grupta, görselin yeri aşağıda (kart 0171). Bölümün başlığı yoksa yan
 // afişin başlığı bölümün başlığıdır (h2, baslikKimligi ile); varsa yan afişinki düz yazıdır.
 export function YanAfis({
   degerler,
@@ -211,15 +211,18 @@ export function YanAfis({
   const zemin = degerler.yanZemin ?? "kutu-3";
   const baslikSinifi =
     "font-baslik text-baslik-3 font-baslik-kalinligi wrap-anywhere tablet:text-baslik-2";
+  // Görselin yeri (kart 0171, kullanıcı kararları): masaüstünde yan afiş ızgaranın boyuna uzar, görsel yazının altında
+  // tam genişlikte kalan yüksekliği kırpılarak doldurur. Daha darda afiş ızgaranın üstündedir ve yataydır: yazı
+  // solda, görsel sağda kendi oranıyla, kırpılmadan (dikey görsel geniş kutuya kırpılınca konusu kadrajdan çıkıyordu).
   return (
     <div
       className={sinif(
-        "flex flex-col justify-between gap-4 rounded-orta p-6 tablet:shrink-0 masaustu:w-panel",
+        "flex items-start gap-4 rounded-orta p-6 tablet:shrink-0 masaustu:w-panel masaustu:flex-col masaustu:items-stretch",
         zeminSiniflari(zemin, "kutu-3"),
       )}
     >
       {/* Başlık ve metin bir grup: aralarında 8 px (taslak). */}
-      <div className="flex flex-col gap-2">
+      <div className="flex min-w-0 flex-1 flex-col items-start gap-2 masaustu:flex-none">
         {baslikKimligi === undefined ? (
           <p className={baslikSinifi}>{degerler.yanBaslik}</p>
         ) : (
@@ -232,23 +235,23 @@ export function YanAfis({
             {degerler.yanMetin}
           </p>
         ) : null}
+        {baglanti !== undefined && metinMi(degerler.yanDugmeYazisi) ? (
+          <Link
+            href={baglanti.adres}
+            className={sinif(dugmeSiniflari({ tur: "ikincil" }), "mt-2 w-fit no-underline")}
+            {...yeniSekmeOzellikleri(baglanti.yeniSekme)}
+          >
+            {degerler.yanDugmeYazisi}
+          </Link>
+        ) : null}
       </div>
       <BolumGorseli
         baglam={baglam}
         gorsel={degerler.yanGorsel}
         alternatifMetin={degerler.yanGorselMetni}
-        genislik="besteBir"
-        className="aspect-square w-2/3 self-end object-contain"
+        genislik="panel"
+        className="w-1/3 shrink-0 rounded-kucuk tablet:w-1/4 masaustu:w-full masaustu:min-h-0 masaustu:flex-1 masaustu:basis-0 masaustu:object-cover"
       />
-      {baglanti !== undefined && metinMi(degerler.yanDugmeYazisi) ? (
-        <Link
-          href={baglanti.adres}
-          className={sinif(dugmeSiniflari({ tur: "ikincil" }), "w-fit no-underline")}
-          {...yeniSekmeOzellikleri(baglanti.yeniSekme)}
-        >
-          {degerler.yanDugmeYazisi}
-        </Link>
-      ) : null}
     </div>
   );
 }

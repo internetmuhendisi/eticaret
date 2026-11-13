@@ -20,6 +20,12 @@ Müşteri gezisinde (2026-11-13) görüldü: ürün vitrininin yan afişindeki g
 - Görsel üç genişlikte yan afişin iç genişliğini dolduruyor, oranı korunuyor (tarayıcı testi).
 - Önce ve sonra ekran görüntüsü karşılaştırıldı.
 
+## Notlar (2026-11-14)
+
+- Önce ve sonra ölçümü (taze kurulmuş Örnek Mağaza, "Yeni gelenler"): 1280 px'te görsel 139×139 px kare ve afişin iç genişliği 208 px iken, sonra 208×259 px, afiş ızgarayla aynı boyda (380 px). Telefonda (390 px) önce 207 px kare ve afiş 326 px; sonra görsel sağda 103×139 px kendi oranında, afiş 187 px.
+- Dar ekranda ilk uygulama görseli 16:9 kırpıyordu; telefonda konu kadrajdan çıktı (görüntüyle görüldü). Kullanıcı dar ekranda yatay afişi seçti (karar 0121).
+- Masaüstünde görselin kendi boyunu dayatıp afişi ızgaradan 19 px uzattığı ölçüldü; tabanı sıfır yapılarak (`basis-0`) düzeldi.
+
 ## Durum
 
 yapılacak

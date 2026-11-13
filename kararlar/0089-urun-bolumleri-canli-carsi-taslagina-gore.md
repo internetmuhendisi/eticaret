@@ -1,5 +1,7 @@
 # 0089 · Ürün bölümleri Canlı Çarşı taslağına göre
 
+Bu kararın yan afiş görselinin yerine ilişkin maddesinin yerine 0121 numaralı karar geçti.
+
 ## Tarih
 
 2026-11-10

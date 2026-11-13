@@ -168,6 +168,50 @@ describe("ürün vitrini", () => {
     expect(kap.querySelector('a[href="/yan"]')?.textContent).toBe("Git");
   });
 
+  // Kart 0171 (kullanıcı kararları): masaüstünde görsel yazının altında tam genişlikte kalan yüksekliği kırpılarak
+  // doldurur; daha darda afiş yataydır, görsel sağda kendi oranıyla. Düğme yazının grubundadır.
+  it("yan afişin görseli: masaüstünde altta, dolduran; daha darda sağda, kırpılmadan; düğme yazının yanında", () => {
+    const baglam = baglamIle({ [urunKaynagiAnahtari(yeni)]: kartlar.slice(0, 3) });
+    const gorsel = Object.keys(baglam.gorseller)[0] ?? "";
+    const kap = ciz(
+      [
+        bolum("urun-vitrini", "izgara", {
+          urunler: yeni,
+          yanBaslik: "Yeni gelenler",
+          yanGorsel: gorsel,
+          yanGorselMetni: "Görsel",
+          yanDugmeYazisi: "Git",
+          yanBaglanti: { adres: "/yan", yeniSekme: false },
+        }),
+      ],
+      baglam,
+    );
+    const img = kap.querySelector('img[alt="Görsel"]');
+    const afis = img?.parentElement;
+    const siniflar = (img?.getAttribute("class") ?? "").split(" ");
+    expect(siniflar).toEqual(
+      expect.arrayContaining([
+        "w-1/3",
+        "tablet:w-1/4",
+        "masaustu:w-full",
+        "masaustu:flex-1",
+        "masaustu:basis-0",
+        "masaustu:object-cover",
+        "rounded-kucuk",
+      ]),
+    );
+    // Dar ekranda kırpılmaz: oran sınıfı ve kırpma yalnız masaüstündedir.
+    expect(
+      siniflar.filter((sinif) => sinif.startsWith("aspect-") || sinif === "object-cover"),
+    ).toEqual([]);
+    expect((afis?.getAttribute("class") ?? "").split(" ")).toEqual(
+      expect.arrayContaining(["flex", "masaustu:flex-col"]),
+    );
+    // Görsel afişin son öğesidir; başlık, metin ve düğme önceki grupta.
+    expect(afis?.lastElementChild).toBe(img);
+    expect(afis?.firstElementChild?.querySelector('a[href="/yan"]')?.textContent).toBe("Git");
+  });
+
   it("bölümün başlığı yoksa yan afişin başlığı bölümün başlığıdır; varsa yan afişinki düz yazıdır", () => {
     const baglam = baglamIle({ [urunKaynagiAnahtari(yeni)]: kartlar.slice(0, 2) });
     const yanBaslikli = ciz(

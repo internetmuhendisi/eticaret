@@ -92,7 +92,7 @@ paths:
 
 - Ürün gösteren bölüm ürünlerini yalnız ürün kaynağından, vitrin bağlamı üzerinden alır (`kaynaklarinUrunleri`, `cekirdek/vitrin/urun-kaynagi.ts`; anahtar `urunKaynagiAnahtari`). Kaynakta görünürlük, tükenen ürün ve sıra sorgudadır; bölüm ürünü yeniden süzmez, sıralamaz.
 - İndirimdeki ürünün listesi yalnız `indirimdekiUrunKosulu` ile süzülür. Kartta görünen indirim tek ölçüdür: rozeti çıkaran oran (`fiyat.indirim`); geri sayım, "indirimdekiler" ve fırsatlar ona bakar. İndirimin bitişi kartın fiyatından (`indirimBitisi`) okunur; geri sayımın bitişi elle girilmez, bölümde hesaplanmaz.
-- Ürün bölümünün ızgarası, başlık satırı ve yan afişi ortak parçalardır (`cekirdek/vitrin/bolumler/ortak/urun-izgarasi.tsx`, alanları `urun-alanlari.ts`).
+- Ürün bölümünün ızgarası, başlık satırı ve yan afişi ortak parçalardır (`cekirdek/vitrin/bolumler/ortak/urun-izgarasi.tsx`, alanları `urun-alanlari.ts`). Yan afişin görseli masaüstünde altta kalan yüksekliği doldurur, daha darda sağda kendi oranıyla durur (karar 0121).
 - Sayfa açıkken değişen vitrin bilgisi (geri sayım) sunucuda bağlamın anıyla çizilir, tarayıcıda yalnız değişeceği anda yeniden kurulur.
 
 ## İşleve bağlı bölümler (karar 0090)

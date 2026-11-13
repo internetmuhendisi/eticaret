@@ -1012,3 +1012,55 @@ test("bölüm kütüphanesi telefonda yüklenirken de yana kaymaz (yavaş işlem
   expect(olcumler.length).toBeGreaterThan(10);
   expect(Math.max(...olcumler)).toBe(0);
 });
+
+// Kart 0171: ürün vitrininin yan afişi. Masaüstünde görsel afişin iç genişliğini doldurur ve afiş ızgarayla aynı
+// boydadır (eski hâlde görsel üçte iki genişlikte küçük bir kareydi); daha darda görsel sağda kendi oranıyla,
+// kırpılmadan durur (dikey görsel geniş kutuya kırpılınca konusu kadrajdan çıkıyordu).
+test("ürün vitrininin yan afişi: görsel masaüstünde altı doldurur, daha darda oranını korur", async ({
+  page,
+}) => {
+  await ac(page, `${katalogAdresi}/bolum-kutuphanesi`);
+  const baslik = page.getByRole("heading", {
+    name: metin("gelistirme.bolum.ornek.anaSayfa.yeniGelenler"),
+    exact: true,
+  });
+  const bolum = page.locator("section").filter({ has: baslik }).first();
+  for (const genislik of genislikler) {
+    await page.setViewportSize(genislik);
+    await bolum.scrollIntoViewIfNeeded();
+    await expect
+      .poll(
+        () =>
+          bolum.evaluate((kap, masaustu) => {
+            const img = [...kap.querySelectorAll("img")].find((oge) =>
+              oge.parentElement?.className.includes("masaustu:w-panel"),
+            );
+            const afis = img?.parentElement;
+            if (img === undefined || afis === null || afis === undefined || !img.complete)
+              return "görsel yok";
+            const r = img.getBoundingClientRect();
+            const a = afis.getBoundingClientRect();
+            const stil = getComputedStyle(afis);
+            const ic =
+              a.width - Number.parseFloat(stil.paddingLeft) - Number.parseFloat(stil.paddingRight);
+            if (r.right > a.right + 0.5 || r.bottom > a.bottom + 0.5)
+              return "görsel afişten taşıyor";
+            if (masaustu) {
+              if (Math.abs(r.width - ic) > 1)
+                return `görsel genişliği ${Math.round(r.width)}, iç ${Math.round(ic)}`;
+              const izgara = afis.nextElementSibling?.getBoundingClientRect();
+              if (izgara === undefined || Math.abs(a.height - izgara.height) > 1)
+                return "afiş ızgaradan uzun";
+              return "tamam";
+            }
+            const oran = r.width / r.height;
+            const dogal = img.naturalWidth / img.naturalHeight;
+            return Math.abs(oran - dogal) < 0.03
+              ? "tamam"
+              : `oran ${oran.toFixed(2)}, doğal ${dogal.toFixed(2)}`;
+          }, genislik.ad === "masaüstü"),
+        { message: genislik.ad },
+      )
+      .toBe("tamam");
+  }
+});
