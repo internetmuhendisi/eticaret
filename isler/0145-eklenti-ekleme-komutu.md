@@ -61,4 +61,4 @@ Kullanıcı komutun küçük bir deneme eklentisiyle uçtan uca denenmesini iste
 
 ## Durum
 
-yapılacak
+bitti
