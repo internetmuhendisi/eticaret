@@ -8,6 +8,7 @@ import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
+import { YanPencereAltCubugu } from "../../../bilesenler/parcalar/yan-pencere";
 import { useMetin } from "../../metinler/istemci-metni";
 import type { MetinAnahtari } from "../../metinler/metin";
 import type { BolumDegerleri, BolumTarifi } from "../../vitrin/bolum-kutuphanesi/tarif";
@@ -132,14 +133,14 @@ export function BolumDuzenleyici({
           degisince?.(true);
         }}
       />
-      <div className="sticky bottom-0 flex flex-wrap justify-end gap-2 border-t border-kenar bg-zemin py-3">
+      <YanPencereAltCubugu>
         {vazgec === undefined ? null : (
           <Dugme tur="sade" onClick={vazgec}>
             {metin("ortak.islem.vazgec")}
           </Dugme>
         )}
         <GonderDugmesi>{metin("yonetim.bolumler.form.kaydet")}</GonderDugmesi>
-      </div>
+      </YanPencereAltCubugu>
     </Form>
   );
 }

@@ -19,6 +19,12 @@ Müşteri gezisinde (2026-11-13) ölçüldü: vitrin bölümleri ekranında böl
 - Pencerede çubuğun altında form öğesi görünmüyor (tarayıcı testi, eski hâlde kırmızı).
 - Önce ve sonra ekran görüntüsü karşılaştırıldı.
 
+## Notlar (2026-11-14)
+
+- Neden ölçüldü: yan pencerenin kaydırılan içeriği `p-6` iç boşlukludur, tarayıcı `sticky bottom-0` çubuğu bu iç boşluk kadar yukarıda tutar. Negatif kenar boşluğu tek başına yetmedi (ölçüldü). Çubuk iç boşluk kadar aşağıya yapışır (`-bottom-6`) ve iç boşluğu kendi alt boşluğuyla kaplar.
+- Ortak parça `YanPencereAltCubugu` (kütüphane): vitrin bölümleri ve menüler formları aynı çubuğu kopyalamıştı, ikisi de ona çevrildi.
+- Önce ve sonra ölçümü (taze Örnek Mağaza, Slider düzenleme ve menü öğesi formu, 1280, 768 ve 390 px): önce üç genişlikte çubuğun altında 24 px kalıyor, o aralıkta form görünüyordu (6 ölçüm noktası). Sonra çubuk pencerenin alt kenarında, altında görünen öğe 0. Menü öğesi formu kısadır, çubuk yapışmaz; orada önce de sorun yoktu.
+
 ## Durum
 
 yapılacak

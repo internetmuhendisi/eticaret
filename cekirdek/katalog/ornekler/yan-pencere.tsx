@@ -4,6 +4,7 @@ import { OnayKutusu } from "../../../bilesenler/parcalar/onay-kutusu";
 import {
   YanPencere,
   YanPencereAciklamasi,
+  YanPencereAltCubugu,
   YanPencereAlti,
   YanPencereBasligi,
   YanPencereIcerigi,
@@ -36,6 +37,32 @@ export function YanPencereOrnegi() {
           </YanPencereAlti>
         </YanPencereIcerigi>
       </YanPencere>
+      <YanPencereAltCubuguOrnegi />
     </div>
+  );
+}
+
+// Uzun formun sabit alt çubuğu (kart 0169): içerik kayarken düğmeler altta kalır.
+function YanPencereAltCubuguOrnegi() {
+  const metin = useMetin();
+  const m = useOrnekMetni();
+  return (
+    <YanPencere>
+      <YanPencereTetikleyici asChild>
+        <Dugme tur="cerceveli">{m("yanPencereyiAc")}</Dugme>
+      </YanPencereTetikleyici>
+      <YanPencereIcerigi kapatEtiketi={metin("ortak.parca.kapat")}>
+        <YanPencereUstu>
+          <YanPencereBasligi>{m("yanPencereBasligi")}</YanPencereBasligi>
+          <YanPencereAciklamasi>{m("yanPencereAciklamasi")}</YanPencereAciklamasi>
+        </YanPencereUstu>
+        <OnayKutusu name="alt-cubuk-suzgec" etiket={m("stokta")} />
+        <YanPencereAltCubugu>
+          <YanPencereKapat asChild>
+            <Dugme>{m("suzgecleriUygula")}</Dugme>
+          </YanPencereKapat>
+        </YanPencereAltCubugu>
+      </YanPencereIcerigi>
+    </YanPencere>
   );
 }

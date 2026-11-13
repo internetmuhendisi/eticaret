@@ -277,6 +277,7 @@
     "cekirdek/vitrin/urun-listesi/filtreler.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/panel-cercevesi.tsx",
+    "cekirdek/yonetim-paneli/vitrin-bolumleri/bolum-duzenleyici.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx"
   ],
   "bilesenler/parcalar/yukleniyor.tsx": []

@@ -37,6 +37,7 @@ Bileşen, düğme, giriş alanı, pencere gibi tekrar kullanılan arayüz parça
   - `Dugme`, `IkonDugmesi`, `Baglanti`
   - `GirisAlani`, `UzunMetinAlani` (kart 0106), `Etiket`, `SecimKutusu`, `OnayKutusu`
   - `AcilirMenu`, `Pencere`, `YanPencere`, `Sekmeler`
+  - `YanPencereAltCubugu` (kart 0169): yan pencerede uzun formun sabit Vazgeç ve Kaydet çubuğu; içeriğin iç boşluğunu kaplar, altında form görünmez. Formun alt çubuğu elle `sticky` yazılmaz.
   - `Kart`, `Rozet`, `Uyari`, `BildirimAlani` ile `bildirimGoster`, `Ipucu`
   - `IskeletGorunum`, `YukleniyorGostergesi`, `Serit`, `Akordeon`
   - Sayfa iskeleti (kart 0135, karar 0103): `SayfaYolu`, `SayfaBasligi`, `BosHal`, `Sayfalama` ile `DahaFazla`

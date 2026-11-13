@@ -177,6 +177,52 @@ test("mağaza sahibi klavyeyle bölüm ekler ve düzenler, kaydedilmemiş deği�
   }
 });
 
+// Kart 0169: uzun formun kaydet çubuğu pencerenin alt kenarındadır; kaydırılan içeriğin iç boşluğu yüzünden çubuğun
+// altında 24 px'lik bir aralık kalıyor, form orada görünüyordu (eski hâlde üç genişlikte ölçüldü).
+test("uzun formda kaydet çubuğu pencerenin alt kenarındadır, altında form görünmez", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await paneleGir(page, yonetici);
+  await page.goto(bolumlerAdresi);
+  await sayfaHazir(page);
+  await page.getByRole("button", { name: metin("yonetim.bolumler.ekle.baslik") }).click();
+  await page
+    .getByRole("dialog", { name: metin("yonetim.bolumler.ekle.baslik") })
+    .getByRole("button", { name: new RegExp(metin("vitrin.bolum.kayanAfis.ad")) })
+    .click();
+  const form = page.getByRole("dialog", { name: metin("vitrin.bolum.kayanAfis.ad") });
+  await expect(form).toBeVisible();
+  for (const genislik of genislikler) {
+    await page.setViewportSize(genislik);
+    await expect
+      .poll(
+        () =>
+          form.evaluate((pencere) => {
+            const cubuk = pencere.querySelector('[data-slot="yan-pencere-alt-cubugu"]');
+            if (cubuk === null) return "çubuk yok";
+            if (pencere.scrollHeight <= pencere.clientHeight) return "form kaymıyor";
+            const c = cubuk.getBoundingClientRect();
+            const p = pencere.getBoundingClientRect();
+            const alt = Math.min(p.bottom, window.innerHeight);
+            if (alt - c.bottom > 1) return `çubuğun altında ${Math.round(alt - c.bottom)} px`;
+            // Çubuğun bölgesinde en üstte çizilen öğe her yerde çubuğun kendisidir.
+            for (let y = c.top + 2; y < alt; y += 4) {
+              for (const x of [p.left + 8, (p.left + p.right) / 2, p.right - 8]) {
+                const oge = document.elementFromPoint(x, y);
+                if (oge !== null && !cubuk.contains(oge)) return `çubuğun üstünde öğe: ${y}`;
+              }
+            }
+            return "tamam";
+          }),
+        { message: genislik.ad },
+      )
+      .toBe("tamam");
+  }
+  await page.keyboard.press("Escape");
+  await expect(form).toHaveCount(0);
+});
+
 test("mağaza sahibi sıralar, gizler, siler, silmeyi geri alır ve önceki hâline döner; vitrinde görünür", async ({
   page,
   context,

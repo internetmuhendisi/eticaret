@@ -2,7 +2,7 @@
 // Yan pencere (kart 0103; shadcn/ui sheet). Pencerenin kenardan kayan biçimidir: menü, sepet, süzgeç gibi.
 // Odak ve klavye davranışı pencereyle aynıdır. Telefonda ekranın tamamını kaplar.
 import { Dialog } from "radix-ui";
-import type { ComponentProps } from "react";
+import type { ComponentProps, HTMLAttributes } from "react";
 import { disaridaKalanaTiklama, disariyiKapatanRef } from "./disariyi-kapat.ts";
 import { IkonDugmesi } from "./dugme.tsx";
 import { ortuSiniflari } from "./pencere.tsx";
@@ -17,6 +17,9 @@ export {
   PencereBasligi as YanPencereBasligi,
   PencereUstu as YanPencereUstu,
 } from "./pencere.tsx";
+
+// İçeriğin iç boşluğu. Sabit alt çubuk aynı değerle kenara uzanır (YanPencereAltCubugu).
+const icBosluk = "p-6";
 
 const taraflar = {
   sag: "inset-y-0 right-0 h-full w-full border-l tablet:max-w-form acik:animate-sagdan-gir kapali:animate-saga-cik",
@@ -51,7 +54,8 @@ export function YanPencereIcerigi({
           onInteractOutside?.(olay);
         }}
         className={sinif(
-          "fixed z-yan-pencere flex flex-col gap-4 overflow-y-auto border-kenar bg-zemin p-6 text-yazi shadow-pencere",
+          "fixed z-yan-pencere flex flex-col gap-4 overflow-y-auto border-kenar bg-zemin text-yazi shadow-pencere",
+          icBosluk,
           taraflar[taraf],
           className,
         )}
@@ -63,5 +67,22 @@ export function YanPencereIcerigi({
         </Dialog.Close>
       </Dialog.Content>
     </Dialog.Portal>
+  );
+}
+
+// Uzun formun sabit alt çubuğu (kart 0169): Vazgeç ve Kaydet pencere kaydırılırken altta durur. Kaydırılan
+// içeriğin iç boşluğu yüzünden tarayıcı "sticky bottom-0" çubuğu kenardan bir iç boşluk yukarıda tutuyordu, form o
+// aralıkta çubuğun altında görünüyordu (ölçüldü). Çubuk iç boşluk kadar aşağıya yapışır, iç boşluğu kendi alt boşluğuyla ve negatif kenar boşluğuyla kaplar: alt kenara ve
+// iki yana uzanır, altında içerik görünmez.
+export function YanPencereAltCubugu({ className, ...ozellikler }: HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      data-slot="yan-pencere-alt-cubugu"
+      className={sinif(
+        "sticky -bottom-6 -mx-6 -mb-6 flex flex-wrap justify-end gap-2 border-t border-kenar bg-zemin px-6 pt-3 pb-6",
+        className,
+      )}
+      {...ozellikler}
+    />
   );
 }

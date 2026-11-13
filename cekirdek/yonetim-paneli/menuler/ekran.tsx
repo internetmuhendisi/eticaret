@@ -51,6 +51,7 @@ import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import {
   YanPencere,
   YanPencereAciklamasi,
+  YanPencereAltCubugu,
   YanPencereBasligi,
   YanPencereIcerigi,
   YanPencereUstu,
@@ -781,12 +782,12 @@ function OgeFormu({
 function FormAlti({ vazgec, kaydet }: { vazgec: () => void; kaydet: string }) {
   const metin = useMetin();
   return (
-    <div className="sticky bottom-0 flex flex-wrap justify-end gap-2 border-t border-kenar bg-zemin py-3">
+    <YanPencereAltCubugu>
       <Dugme tur="sade" onClick={vazgec}>
         {metin("ortak.islem.vazgec")}
       </Dugme>
       <GonderDugmesi>{kaydet}</GonderDugmesi>
-    </div>
+    </YanPencereAltCubugu>
   );
 }
 
