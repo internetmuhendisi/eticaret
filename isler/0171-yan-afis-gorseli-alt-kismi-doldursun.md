@@ -17,7 +17,7 @@ Müşteri gezisinde (2026-11-13) görüldü: ürün vitrininin yan afişindeki g
 
 ## Bitti sayılır
 
-- Görsel üç genişlikte yan afişin iç genişliğini dolduruyor, oranı korunuyor (tarayıcı testi).
+- Bilgisayarda görsel afişin iç genişliğini dolduruyor; telefon ve tablette sağda kendi oranıyla, kırpılmadan duruyor (tarayıcı testi; madde karar 0121'e göre kullanıcının onayıyla güncellendi).
 - Önce ve sonra ekran görüntüsü karşılaştırıldı.
 
 ## Notlar (2026-11-14)
@@ -31,4 +31,4 @@ Müşteri gezisinde (2026-11-13) görüldü: ürün vitrininin yan afişindeki g
 
 ## Durum
 
-yapılacak
+bitti
