@@ -11,7 +11,7 @@
 // - Video çerezsiz oynatıcıyla ve yalnız müşteri oynata basınca yüklenir (karar 0073): o ana kadar sayfada
 //   video sitesine hiçbir istek gitmez.
 // - Seçilen birleşimin görseli dışarıdan verilir (aktif); müşteri galeride gezince aktif değişir.
-import { type KeyboardEvent, useEffect, useRef, useState } from "react";
+import { type KeyboardEvent, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { Dugme, IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
 import {
@@ -24,6 +24,17 @@ import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { useMetin } from "../../metinler/istemci-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import type { SayfaGaleriOgesi, SayfaGorseli } from "./veri";
+
+// Sunucu çiziminde ve sayfanın ilk bağlanmasında true, tarayıcıda baştan çizimde (bağlantıyla gelinen sayfa) false.
+// React tarayıcıda çizilen <script> için konsola hata yazar; ilk konum betiği yalnız HTML'de gerekir (kart 0173,
+// bağımsız kontrolün bulgusu).
+const hicAbone = () => () => {};
+const useHtmldeMi = () =>
+  useSyncExternalStore(
+    hicAbone,
+    () => false,
+    () => true,
+  );
 
 // Tarayıcının yere göre boyut seçimi: telefonda tam genişlik, tablet ve üstünde sayfanın yarısı kadar.
 const gorselBoyutlari = "(min-width: 40rem) 50vw, 100vw";
@@ -112,6 +123,7 @@ export function UrunGalerisi({
   // (ölçüldü: 0,5–1 saniye) başka renkteki ürünün görseli görünüyordu. CSS'te kaydırıcının başlangıç konumu bütün
   // tarayıcılarda verilemez. Sayfa bağlanınca aşağıdaki etki konumu aynı bulur, kaydırmaz.
   const [ilkAktif] = useState(aktif);
+  const htmlde = useHtmldeMi();
 
   // Aktif öğe değişince şerit o öğeye anında gider (küçük görsel, ok tuşu ya da seçilen birleşimin görseli).
   // Yumuşak kaydırma kullanılmaz: kaydırma sürerken geçilen ara konumlar kaydırma olayıyla aktif öğe sayılıyordu,
@@ -194,7 +206,7 @@ export function UrunGalerisi({
             </div>
           ))}
         </section>
-        {ilkAktif > 0 ? (
+        {htmlde && ilkAktif > 0 ? (
           <script
             // biome-ignore lint/security/noDangerouslySetInnerHtml: yalnız sayı taşıyan sabit betik; şeridi ilk açılıştaki öğeye kaydırır (kart 0173).
             dangerouslySetInnerHTML={{

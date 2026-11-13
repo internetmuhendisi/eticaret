@@ -333,7 +333,8 @@ test("telefonda seçili birleşimin görseli sayfanın kodu bağlanmadan görün
     await kodsuz.setViewportSize({ width: 375, height: 800 });
     await kodsuz.route("**/_next/static/**/*.js", (istek) => istek.abort());
     await kodsuz.goto(adres, { waitUntil: "load" });
-    await expect.poll(() => gorunenGorsel(kodsuz)).toMatch(/^Koyu gömlek/);
+    // Görünür olduğu ilk karede: sayfa yüklendikten sonra en çok bir saniye (bağımsız kontrolün bulgusu).
+    await expect.poll(() => gorunenGorsel(kodsuz), { timeout: 1_000 }).toMatch(/^Koyu gömlek/);
   } finally {
     await kodsuz.close();
   }
