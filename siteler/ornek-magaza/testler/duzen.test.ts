@@ -115,8 +115,10 @@ describe("Örnek Mağaza'nın başlangıç düzeni", () => {
     expect(izlenenler).toEqual([]);
   });
 
-  it("öne çıkanlar elle seçilmiş sekiz ürün, sırasıyla", async () => {
-    expect(deger((await anaSayfa())[4], "urunler")).toEqual({
+  // Kart 0170 (kullanıcı kararı): öne çıkanlar taslaktaki gibi yan afişsiz, beş ürünlü tam genişlikte ızgaradır.
+  it("öne çıkanlar elle seçilmiş beş ürün, sırasıyla, yan afişsiz", async () => {
+    const bolum = (await anaSayfa())[4];
+    expect(deger(bolum, "urunler")).toEqual({
       tur: "elle",
       urunler: [
         "kablosuz-kulaklik",
@@ -124,11 +126,11 @@ describe("Örnek Mağaza'nın başlangıç düzeni", () => {
         "basic-tisort",
         "keten-masa-ortusu",
         "porselen-kupa",
-        "bluetooth-hoparlor",
-        "kosu-ayakkabisi",
-        "keten-gomlek",
       ].map((adresAdi) => kimligi("urun", adresAdi)),
     });
+    for (const alan of ["yanBaslik", "yanMetin", "yanGorsel", "yanGorselMetni"]) {
+      expect(deger(bolum, alan), alan).toBeUndefined();
+    }
   });
 
   it("sekmeli vitrin beş kategoriye, kategori kutuları beş kategoriye, marka logoları Örnek Ses'e bağlı", async () => {
@@ -160,13 +162,12 @@ describe("Örnek Mağaza'nın başlangıç düzeni", () => {
     const gorseller = [
       ...listedekiler(0, "slaytlar"),
       ...listedekiler(2, "afisler"),
-      deger(bolumler[4], "yanGorsel"),
       deger(bolumler[5], "yanGorsel"),
       ...listedekiler(6, "afisler"),
       deger(bolumler[10], "gorsel"),
     ] as string[];
-    expect(gorseller).toHaveLength(11);
-    expect(new Set(gorseller).size).toBe(11);
+    expect(gorseller).toHaveLength(10);
+    expect(new Set(gorseller).size).toBe(10);
     const vitrindekiler = await servis.vitrindekiGorseller(vt);
     for (const gorsel of gorseller) {
       expect(await vt.transaction((islem) => gorselHazirMi(islem, gorsel))).toBe("hazir");

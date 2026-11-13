@@ -121,12 +121,12 @@ Ana sayfanın ilk düzeni `baslangic/duzen.json` dosyasındadır, sırası karar
 |---|---|---|
 | Üst kısımda duyuru | Duyuru şeridi | "Yeni sezon ürünleri mağazada", Giyim kategorisine bağlantı |
 | Ayardan dolan madde | Güven şeridi | "{kargoyaVermeSuresi} iş gününde kargoda": mağaza ayarındaki sayı görünür (başlangıçta 1) |
-| Elle seçilmiş ürünler, yan afişli | Öne çıkanlar (ürün vitrini) | Kablosuz Kulaklık, Kapüşonlu Sweatshirt, Basic Tişört, Keten Masa Örtüsü, Porselen Kupa, Bluetooth Hoparlör, Koşu Ayakkabısı, Keten Gömlek; "Süreli fırsatlar" yan afişi |
+| Elle seçilmiş ürünler | Öne çıkanlar (ürün vitrini) | Kablosuz Kulaklık, Kapüşonlu Sweatshirt, Basic Tişört, Keten Masa Örtüsü, Porselen Kupa; yan afişsiz, tam genişlikte (kart 0170, kullanıcı kararı: "Süreli fırsatlar" yan afişi ürünlerle çelişiyordu, taslaktaki gibi beş ürün) |
 | Yan afişli ürün vitrini | Yeni gelenler | En yeni 4 ürün, solda yan afiş (masaüstünde tek sıra). Katalog tek işlemde yazılır, en yeni kataloğun son ürünüdür: Keten Gömlek, Kablosuz Şarj Standı, Bluetooth Hoparlör, Kokulu Mum (kart 0127) |
 | Kategoriye göre sekmeler | Sekmeli vitrin | Beş kategori; kartlar yatay |
 | Geri sayımlı fırsat | Fırsatlar | Eski fiyatı gösterilen, bitişli indirimdeki ürünler, en çok dört: 15 Kasım–1 Aralık 2026 arası Kapüşonlu Sweatshirt (lacivert), Çelik Termos, Zeytinyağlı Sabun Seti, Bluetooth Hoparlör. Katalog 15 Kasım'dan önce kurulmuş olmalı (karar 0094). Kablosuz Kulaklık'ın eski fiyatı gösterilmediği için girmez (karar 0088). Fırsat yokken bölüm vitrinde çizilmez |
 | İşlevi yazılmamış bölüm | Müşteri yorumları, blog yazıları, bülten kaydı | Düzende durur, vitrinde çizilmez (karar 0090) |
-| Görselli bölümler | Kayan afiş (görsel arkada), kampanya afişleri (üçlü yatay ve ikili "görsel solda", karar 0093), kategori kutuları, geniş afiş (tam genişlik), iki yan afiş | Görseller `baslangic/gorseller/` klasöründen dosya adıyla (karar 0094) |
+| Görselli bölümler | Kayan afiş (görsel arkada), kampanya afişleri (üçlü yatay ve ikili "görsel solda", karar 0093), kategori kutuları, geniş afiş (tam genişlik), yeni gelenlerin yan afişi | Görseller `baslangic/gorseller/` klasöründen dosya adıyla (karar 0094) |
 | Logosu gelmemiş bölüm gizli | Marka logoları | Pakette logo yok, gizli kaldı |
 
 Güven şeridine ücretsiz kargo ve ödeme yöntemi yazılmadı: kargo hesabı ve ödeme yazılmadan ekrana iddia olarak konmaz.

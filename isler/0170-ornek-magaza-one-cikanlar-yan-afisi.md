@@ -20,6 +20,14 @@ Müşteri gezisinde (2026-11-13) görüldü: Örnek Mağaza'nın ana sayfasında
 - Taze kurulan Örnek Mağaza'da "Öne çıkanlar" yan afişsiz (sitenin düzen testi).
 - Önce ve sonra ekran görüntüsü karşılaştırıldı.
 
+## Notlar (2026-11-14)
+
+- Yan afişsiz ızgara 1280 px'te beş sütundur (karar 0089); sekiz ürün 5+3 dizilirdi. Taslaktaki gibi beş ürün bırakıldı (ilk beşi: Kablosuz Kulaklık, Kapüşonlu Sweatshirt, Basic Tişört, Keten Masa Örtüsü, Porselen Kupa). Bu beşi "Yeni gelenler"le de çakışmaz (kart 0184'ün bir maddesi kendiliğinden kalkar). Telefonda 2+2+1 dizilir.
+- Kullanılmayan görsel `afis-yan-2-firsat.jpg` silindi.
+- Önce ve sonra görüntüsü (taze kurulmuş Örnek Mağaza, 1280 ve 390 px): önce sekiz ürün ve sol yanda "Süreli fırsatlar, indirimdeki ürünleri bitmeden yakalayın" afişi; sonra beş ürün, tam genişlikte, afiş yok.
+- Sitenin düzen testi eski düzen dosyasıyla kırmızıya düştü (ölçüldü).
+- Ölçerken bulunan: kayan afişin ekran okuyucudaki adı da "Öne çıkanlar"; ana sayfada iki bölge aynı adı taşıyor (kart 0189).
+
 ## Durum
 
 yapılacak
