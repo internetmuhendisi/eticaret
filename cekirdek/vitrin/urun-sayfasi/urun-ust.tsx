@@ -14,6 +14,7 @@ import type { TukenmisSecenekGosterimi } from "../../kayitlar/urun";
 import { useMetin } from "../../metinler/istemci-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import { UrunGalerisi } from "./galeri";
+import { SeciliBirimBaglami } from "./secili-birim";
 import {
   degerDurumu,
   type Secim,
@@ -34,6 +35,7 @@ export function UrunUstKismi({
   kisaAciklama,
   altBilgi,
   eylemler,
+  yuvalar,
   galeri,
   anaGorselSirasi,
   secenekler,
@@ -42,6 +44,7 @@ export function UrunUstKismi({
   bilgiler,
   genelBilgi,
   tukenmisSecenek,
+  tukenmisSecilebilir = false,
 }: {
   urunAdi: string;
   // Marka ve ürünün adı (h1).
@@ -51,6 +54,9 @@ export function UrunUstKismi({
   altBilgi: ReactNode;
   // Satın alma satırı: bugün favori düğmesi (kart 0140); adet ve "Sepete ekle" sepetle gelir (taslak).
   eylemler: ReactNode;
+  // Açık eklentilerin ürün sayfası yuvası (kart 0144, karar 0117): stok yazısının altında, seçili birimi
+  // SeciliBirimBaglami'ndan okur.
+  yuvalar?: ReactNode;
   galeri: readonly SayfaGaleriOgesi[];
   anaGorselSirasi: number | undefined;
   secenekler: readonly SecimSecenegi[];
@@ -59,6 +65,8 @@ export function UrunUstKismi({
   bilgiler: Readonly<Record<string, DegisenBilgiler>>;
   genelBilgi: DegisenBilgiler;
   tukenmisSecenek: TukenmisSecenekGosterimi;
+  // Tükenmiş değer seçilebilir mi (kart 0144): yuvadaki bir eklenti tükenmiş birim için iş görüyorsa.
+  tukenmisSecilebilir?: boolean;
 }) {
   const metin = useMetin();
   const [secim, setSecim] = useState<Secim>(ilkSecim);
@@ -69,13 +77,24 @@ export function UrunUstKismi({
     ?.gorselSirasi;
   const [aktif, setAktif] = useState(birimSirasi ?? anaGorselSirasi ?? 0);
   const bilgi = (birim === undefined ? undefined : bilgiler[birim.kimlik]) ?? genelBilgi;
-  // Satılabilir birleşim yoksa seçim istenmez: ürün tükenmiştir, yalnız "Tükendi" görünür.
+  // Satılabilir birleşim yoksa seçim istenmez: ürün tükenmiştir, yalnız "Tükendi" görünür. Tükenmiş değer
+  // seçilebiliyorsa (kart 0144) seçim yine istenir: müşteri hangi birleşimi beklediğini seçer.
   const eksikSecim =
-    secenekler.length > 0 && birim === undefined && birimler.some((aday) => aday.satilabilir);
+    secenekler.length > 0 &&
+    birim === undefined &&
+    (tukenmisSecilebilir || birimler.some((aday) => aday.satilabilir));
 
   const sec = (sira: number, deger: string) => {
     const yeniTercih = secenekler.map((_, i) => (i === sira ? deger : tercih[i]));
-    const yeni = secimiDegistir(secenekler, birimler, secim, sira, deger, yeniTercih);
+    const yeni = secimiDegistir(
+      secenekler,
+      birimler,
+      secim,
+      sira,
+      deger,
+      yeniTercih,
+      tukenmisSecilebilir,
+    );
     if (yeni === secim) return;
     setTercih(yeniTercih);
     setSecim(yeni);
@@ -111,7 +130,12 @@ export function UrunUstKismi({
               if (tukenmisSecenek === "gizle" && secim[sira] !== deger.kimlik) return [];
               tukenmisVar = true;
             }
-            return [{ deger: deger.kimlik, ad: deger.ad, secilemez: durum === "tukendi" }];
+            const tukenmis = durum === "tukendi";
+            return [
+              tukenmis && tukenmisSecilebilir
+                ? { deger: deger.kimlik, ad: deger.ad, tukenmis }
+                : { deger: deger.kimlik, ad: deger.ad, secilemez: tukenmis },
+            ];
           });
           if (ogeler.length === 0) return null;
           const secili = secenek.degerler.find((deger) => deger.kimlik === secim[sira]);
@@ -143,6 +167,7 @@ export function UrunUstKismi({
           ) : null}
           {bilgi.stok}
         </div>
+        <SeciliBirimBaglami.Provider value={birim?.kimlik}>{yuvalar}</SeciliBirimBaglami.Provider>
         {eylemler}
         {altBilgi}
         {bilgi.stokKodu}

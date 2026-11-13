@@ -18,7 +18,6 @@ import { and, inArray, isNull } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru";
 import { type GorselBoyutu, gorselBoyutAdlari } from "../../kayitlar/gorsel";
 import type { SecenekOnSecimi, TukenmisSecenekGosterimi } from "../../kayitlar/urun";
-import { adresAdiUret } from "../../metinler/adres-adi";
 import { metinOkuyucu } from "../../metinler/metin";
 import { siteninBicimleyicisi } from "../../metinler/site-metni";
 import { type FiyatAraligi, fiyatGosterimServisi } from "../../moduller/fiyat/gosterim";
@@ -38,7 +37,8 @@ import type { Veritabani } from "../../veritabani/baglanti";
 import { kayitAdresleri } from "../adresler";
 import type { UrunKartiVerisi } from "../urun-karti/tur";
 import { urunKartlari } from "../urun-karti/veri";
-import { type SecimBirimi, type SecimSecenegi, tekilAnahtarlar } from "./secim";
+import { sayfaSecenekleri } from "./secenekler";
+import type { SecimBirimi, SecimSecenegi } from "./secim";
 
 // Galerinin görsel öğesi: adresler küçükten büyüğe (srcset), genişlik ve yükseklik en büyük boyutundandır.
 export type SayfaGorseli = {
@@ -99,8 +99,6 @@ export type UrunSayfasiVerisi = {
   yorumlar: Awaited<ReturnType<typeof urunYorumlari>>;
   dogrulanmisAliciEtiketi: boolean;
 };
-
-const okunurAnahtar = (ad: string): string => adresAdiUret(ad) || ad.trim();
 
 const sayfaGorseli = (oge: Extract<GaleriOgesi, { tur: "gorsel" }>): SayfaGorseli | undefined => {
   const boyutlar = gorselBoyutAdlari.flatMap((boyut: GorselBoyutu) => {
@@ -215,27 +213,7 @@ export const urunSayfasiVerisi = async (
   };
 
   // Seçenekler: yalnız silinmemiş ve en az bir silinmemiş birleşimde geçen değerler, ürünün sırasıyla.
-  const kullanilan = new Set(birimler.flatMap((birim) => birim.degerler));
-  const secenekler = urun.secenekler
-    .filter((secenek) => !secenek.silindi)
-    .map((secenek) => {
-      const degerler = secenek.degerler.filter(
-        (deger) => !deger.silindi && kullanilan.has(deger.kimlik),
-      );
-      const anahtarlar = tekilAnahtarlar(degerler.map((deger) => okunurAnahtar(deger.ad)));
-      return {
-        kimlik: secenek.kimlik,
-        ad: secenek.ad,
-        degerler: degerler.map((deger, i) => ({
-          kimlik: deger.kimlik,
-          ad: deger.ad,
-          anahtar: anahtarlar[i] ?? deger.kimlik,
-        })),
-      };
-    });
-  const secenekAnahtarlari = tekilAnahtarlar(
-    secenekler.map((secenek) => okunurAnahtar(secenek.ad)),
-  );
+  const secenekler = sayfaSecenekleri(urun.secenekler, birimler);
 
   const sayfaBirimleri = birimler.map((birim): SayfaBirimi => {
     const fiyat = fiyatlar.get(birim.kimlik);
@@ -292,10 +270,7 @@ export const urunSayfasiVerisi = async (
       : { kategori: { ad: kategori.ad, adres: kayitAdresleri.kategori(kategori.adresAdi) } }),
     galeri,
     ...(anaGorselSirasi === undefined ? {} : { anaGorselSirasi }),
-    secenekler: secenekler.map((secenek, i) => ({
-      ...secenek,
-      anahtar: secenekAnahtarlari[i] ?? secenek.kimlik,
-    })),
+    secenekler,
     birimler: sayfaBirimleri,
     genel: {
       ...(genelFiyat === undefined ? {} : { fiyat: genelFiyat }),

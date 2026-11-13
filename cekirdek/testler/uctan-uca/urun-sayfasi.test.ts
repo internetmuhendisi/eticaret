@@ -2,7 +2,9 @@
 // adı çekirdeğin testine yazılmaz): Renk (Açık, Koyu) ve Beden (S, M) seçenekli bir ürün; Açık-M tükenmiş, Koyu-S
 // son adette, Koyu birleşimleri kendi görselini seçmiş; galeride iki görsel ve bir video. Ayrıca bir taslak ve
 // bir gizli ürün.
-// - İlk satılabilir birleşim seçili açılır; tükenmiş beden seçilemez, adı "tükendi" der; klavyeyle renk
+// - İlk satılabilir birleşim seçili açılır; tükenmiş beden üstü çizili görünür, adı "tükendi" der; testlerin sitesinde
+//   stoğa gelince haber ver eklentisi açık olduğu için seçilebilir ve "Tükendi" ile haber ver kutusunu gösterir
+//   (kart 0144; eklentisiz sitedeki "seçilemez" kuralı birim testlerindedir: secim.test.ts, urun-ust.test.tsx); klavyeyle renk
 //   değişince fiyat, stok yazısı, stok kodu, galerinin görseli ve adres değişir; sayfa yenilenince seçim kalır.
 // - Galeri klavyeyle gezilir, büyütme penceresi ok tuşlarıyla görselleri gezer ve kapanınca odağı geri verir;
 //   video oynata basılana kadar video sitesine istek gitmez.
@@ -203,7 +205,7 @@ test.afterAll(async () => {
   await h?.temizle();
 });
 
-test("ilk satılabilir birleşim seçili; tükenmiş beden seçilemez; klavyeyle seçim fiyatı, stoğu, görseli ve adresi değiştirir", async ({
+test("ilk satılabilir birleşim seçili; tükenmiş beden haber için seçilir; klavyeyle seçim fiyatı, stoğu, görseli ve adresi değiştirir", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -216,19 +218,25 @@ test("ilk satılabilir birleşim seçili; tükenmiş beden seçilemez; klavyeyle
   await expect(page.getByText(stokKoduYazisi(h.birlesimler.acikS.stokKodu))).toBeVisible();
   await expect(page.locator("main").getByText(h.birlesimler.acikS.fiyat).first()).toBeVisible();
 
-  // Açık-M tükenmiş: görünür, adı "tükendi" der, seçilemez (ok tuşuyla da, tıklamayla da).
+  // Açık-M tükenmiş: görünür, adı "tükendi" der. Eklenti açık: klavyeyle seçilir, "Tükendi" ve haber ver kutusu
+  // görünür; S'ye dönülünce kutu kalkar.
   // Ekin önüne tarayıcı ekran okuyucu yazısı için boşluk koyabilir ("M , tükendi").
   const ek = metin("vitrin.urunSayfasi.tukendiEki").trim();
   const tukenmis = beden.getByRole("radio", { name: new RegExp(`^M\\s*${ek}$`) });
-  await expect(tukenmis).toHaveAttribute("aria-disabled", "true");
+  await expect(tukenmis).not.toHaveAttribute("aria-disabled");
+  const haberKutusu = page.getByRole("region", {
+    name: metin("eklenti.stokBildirimi.form.baslik"),
+  });
+  await expect(haberKutusu).toHaveCount(0);
   await beden.getByRole("radio", { checked: true }).focus();
   await okTusu(page, "ArrowRight");
-  await expect(tukenmis).toBeFocused();
+  await expect(tukenmis).toBeChecked();
+  await expect(page.locator('[data-slot="stok-durumu"]')).toHaveText(metin("vitrin.stok.tukendi"));
+  await expect(page).toHaveURL(/\?secenek-renk=acik&secenek-beden=m$/);
+  await expect(haberKutusu).toBeVisible();
+  await okTusu(page, "ArrowLeft");
   await expect(beden.getByRole("radio", { checked: true })).toHaveText("S");
-  // Playwright aria-disabled öğeye tıklamayı bekletir; müşteri tıklayabilir, zorlanarak tıklanır.
-  await tukenmis.click({ force: true });
-  await expect(beden.getByRole("radio", { checked: true })).toHaveText("S");
-  expect(new URL(page.url()).search).toBe("");
+  await expect(haberKutusu).toHaveCount(0);
 
   // Koyu'ya geçilir: Koyu-S son adette; kendi görseli (galerinin üçüncü öğesi) görünür.
   await renk.getByRole("radio", { checked: true }).focus();

@@ -137,3 +137,11 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Kayıtta e-posta doğrulaması | Altyapı sahibi | Kapalı | — | Kapalıyken kayıtla oturum açılır, kayıtlı e-posta söylenir. "Açık" davranışı henüz yok, şemada değil (kart 0062, karar 0051). Üyeliği gizli kalması gereken mağazada açılır |
 | Vitrinde koyu tema | Mağaza sahibi | Kapalı | Açık | Mağazanın tasarımına göre açılır. Tema ayarlarının parçasıdır, başlangıç değeri `baslangic/tema.json` (kart 0105) |
 | Düzen (üst kısım, ana sayfa, alt kısım bölümleri) | Mağaza sahibi | `baslangic/duzen.json`, yoksa başlangıç temasının düzeni | Temanın düzeni (bugün boş; kart 0114) | Sıra, görünürlük, görünüm ve alan değerleri; sürüm sürüm saklanır. Kayda başvuran alanlar başlangıçta boş kalır (kart 0106, karar 0081) |
+
+## Eklentiler
+
+| Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
+|---|---|---|---|---|
+| Açık eklentiler | Altyapı sahibi | Hiçbiri | Stoğa gelince haber ver | `eklentiler`, eklenti kodlarının listesi (`ayarlar.json`). Kurulu eklenti listede yoksa kapalıdır (kart 0144, karar 0117) |
+| Stoğa gelince haber ver: üye olmayan müşteri de isteyebilir | Mağaza sahibi | Açık | — | `stokBildirimiUyeOlmayan`. Kapalıysa formda giriş bağlantısı görünür; giriş yapmış müşteri hesabının e-postasıyla ister (kart 0144) |
+| Stoğa gelince haber ver: talep saklama süresi | Mağaza sahibi | 90 gün | — | `stokBildirimiSaklamaGun`, 1–365. Süresi dolan talep, e-postası gitmemiş olsa da silinir (kart 0144) |

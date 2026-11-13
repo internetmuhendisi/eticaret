@@ -3,6 +3,8 @@
 // oturumAcikMi ile aynı kural): sayfa çizerken çerez yazılamaz (karar 0039, 0042). Menü sayfa ağacından ve
 // yöneticinin sunucudan okunan izinlerinden kurulur; izni olmayan sayfa menüde görünmez.
 import type { ReactNode } from "react";
+import { calisanSite } from "../../../../ayar-semasi/calisan-site";
+import { eklentiAcikMi } from "../../../../eklentiler/acik";
 import { altyapiAdi } from "../../../../kayitlar/altyapi";
 import { metin } from "../../../../metinler/site-metni";
 import { logonunYolu, magazaLogosu } from "../../../../moduller/magaza-ayarlari/logo";
@@ -16,7 +18,9 @@ export default async function PanelDuzeni({ children }: { children: ReactNode })
   const { eposta, yetkili } = await panelOturumu();
   const vt = siteninVeritabani();
   const [ad, logo] = await Promise.all([magazaninAdi(vt), magazaLogosu(vt)]);
-  const gruplar = menuyuKur(panelSayfalari, yetkili).map(({ grup, sayfalar }) => ({
+  const gruplar = menuyuKur(panelSayfalari, yetkili, (kod) =>
+    eklentiAcikMi(calisanSite(), kod),
+  ).map(({ grup, sayfalar }) => ({
     kod: grup ?? "",
     ad: grup === null ? null : metin(panelGruplari[grup]),
     sayfalar: sayfalar.map(({ isaret, ...sayfa }) => ({

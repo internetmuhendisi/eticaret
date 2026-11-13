@@ -14,6 +14,8 @@ export const epostaSablonlari = [
   "hos-geldin",
   "sifre-sifirlama",
   "sifre-degisti",
+  // Stoğa gelince haber ver eklentisi (kart 0144, karar 0117).
+  "stok-bildirimi",
 ] as const;
 export type EpostaSablonu = (typeof epostaSablonlari)[number];
 

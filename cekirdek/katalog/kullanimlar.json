@@ -1,5 +1,6 @@
 {
   "bilesenler/form/form-alani.tsx": [
+    "cekirdek/eklentiler/stoga-gelince-haber-ver/form.tsx",
     "cekirdek/moduller/oturum/sifirlama-formlari.tsx",
     "cekirdek/vitrin/bulten-formu.tsx",
     "cekirdek/vitrin/giris-formu.tsx",
@@ -13,6 +14,7 @@
     "cekirdek/yonetim-paneli/menuler/ekran.tsx"
   ],
   "bilesenler/form/form.tsx": [
+    "cekirdek/eklentiler/stoga-gelince-haber-ver/form.tsx",
     "cekirdek/moduller/oturum/sifirlama-formlari.tsx",
     "cekirdek/vitrin/arama-kutusu.tsx",
     "cekirdek/vitrin/bulten-formu.tsx",
@@ -68,6 +70,8 @@
   ],
   "bilesenler/parcalar/baglanti.tsx": [
     "bilesenler/parcalar/sayfalama.tsx",
+    "cekirdek/eklentiler/stoga-gelince-haber-ver/form.tsx",
+    "cekirdek/eklentiler/stoga-gelince-haber-ver/panel.tsx",
     "cekirdek/moduller/oturum/sifirlama-formlari.tsx",
     "cekirdek/vitrin/bolumler/duyuru-seridi/gorunum.tsx",
     "cekirdek/vitrin/bolumler/iletisim-bilgileri/gorunum.tsx",
@@ -96,6 +100,7 @@
     "cekirdek/yonetim-paneli/vitrin-bolumleri/slider.tsx"
   ],
   "bilesenler/parcalar/bos-hal.tsx": [
+    "cekirdek/eklentiler/stoga-gelince-haber-ver/panel.tsx",
     "cekirdek/vitrin/favoriler-sayfasi.tsx",
     "cekirdek/vitrin/urun-listesi/arama-sayfasi.tsx",
     "cekirdek/vitrin/urun-listesi/sayfa.tsx",
@@ -142,6 +147,7 @@
   "bilesenler/parcalar/giris-alani.tsx": [
     "bilesenler/form/form.tsx",
     "bilesenler/parcalar/secim-kutusu.tsx",
+    "cekirdek/eklentiler/stoga-gelince-haber-ver/form.tsx",
     "cekirdek/moduller/oturum/sifirlama-formlari.tsx",
     "cekirdek/vitrin/bulten-formu.tsx",
     "cekirdek/vitrin/giris-formu.tsx",
@@ -160,7 +166,11 @@
     "bilesenler/parcalar/siralanabilir-liste.tsx"
   ],
   "bilesenler/parcalar/iskelet.tsx": ["cekirdek/vitrin/favori-listesi.tsx"],
-  "bilesenler/parcalar/kart.tsx": ["cekirdek/yonetim-paneli/vitrin-bolumleri/slider.tsx"],
+  "bilesenler/parcalar/kart.tsx": [
+    "cekirdek/eklentiler/stoga-gelince-haber-ver/form.tsx",
+    "cekirdek/eklentiler/stoga-gelince-haber-ver/panel.tsx",
+    "cekirdek/yonetim-paneli/vitrin-bolumleri/slider.tsx"
+  ],
   "bilesenler/parcalar/onay-kutusu.tsx": [
     "cekirdek/vitrin/bulten-formu.tsx",
     "cekirdek/vitrin/kayit-formu.tsx",
@@ -236,6 +246,7 @@
   ],
   "bilesenler/parcalar/uyari.tsx": [
     "bilesenler/parcalar/bildirim.tsx",
+    "cekirdek/eklentiler/stoga-gelince-haber-ver/form.tsx",
     "cekirdek/moduller/oturum/sifirlama-formlari.tsx",
     "cekirdek/uygulama/app/yonetim/(panel)/slider/page.tsx",
     "cekirdek/uygulama/app/yonetim/(panel)/vitrin-bolumleri/page.tsx",

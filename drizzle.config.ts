@@ -9,6 +9,7 @@ export default defineConfig({
   schema: [
     "./cekirdek/veritabani/tablolar",
     "./cekirdek/moduller/*/model.ts",
+    "./cekirdek/eklentiler/*/model.ts",
     "./cekirdek/arka-plan-isleri/model.ts",
   ],
   // cekirdek/veritabani/guncelle.ts dosyasındaki degisiklikKlasoru ile aynıdır (testle denetlenir).

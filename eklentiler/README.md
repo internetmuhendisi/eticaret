@@ -35,7 +35,7 @@ Her tarif aynı başlıklarla yazılır.
 8. **Yayın:** Eklenti tek komutla canlıya çıkar, kullanıcı ayarı panelden açar.
 9. **Kayıt:** Tarihçeye giriş yazılır, eklenti sitenin ayarlarında açık olarak görünür.
 
-Eklenti ekleme komutu henüz yok. İlk eklenti (stoğa gelince haber ver) derste adım adım elle kurulur ve komut o derste birlikte yazılır. Çalışma kopyası, tek komutla yayın ve bağımsız denetim de eğitimin ilerleyen bölümlerinde kurulur.
+Eklenti ekleme komutu henüz yok. İlk eklenti (stoğa gelince haber ver) elle kuruldu (kart 0144); komut bu kurulumdan çıkarılır (kart 0145). Eklentinin çekirdekteki yeri ve bağlantı noktaları: karar 0117, `.claude/rules/eklentiler.md`. Çalışma kopyası, tek komutla yayın ve bağımsız denetim de eğitimin ilerleyen bölümlerinde kurulur.
 
 ## Katalog
 
@@ -286,3 +286,4 @@ Parantez içindeki ad, eklentinin önerilen kod adıdır. Tarif dosyası bu adla
 ## Bu sürümde tarifi yazılmış eklentiler
 
 - Sepette kalan hatırlatma (`sepette-kalan-hatirlatma.md`)
+- Stoğa gelince haber ver (`stoga-gelince-haber-ver.md`): kuruldu (kart 0144, karar 0117), Örnek Mağaza'da açık

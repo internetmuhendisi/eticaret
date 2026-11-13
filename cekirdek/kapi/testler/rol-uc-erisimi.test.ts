@@ -9,6 +9,8 @@ import { join, resolve } from "node:path";
 import { inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
+import { stokBildirimiTalepleri } from "../../eklentiler/stoga-gelince-haber-ver/model.ts";
+import { stokBildirimiServisi } from "../../eklentiler/stoga-gelince-haber-ver/servis.ts";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
 import { baslangicRolleri } from "../../moduller/ekip/baslangic-rolleri.ts";
 import { favoriler } from "../../moduller/favori/model.ts";
@@ -87,6 +89,12 @@ const musteriSenaryolari: Record<string, MusteriSenaryosu> = {
     return { govde: { urun, favoride: false }, aranan: [b.eposta, urun] };
   },
   // A başka bir ürünü birleştirir: cevap yalnız A'nın listesidir, B'nin ürünü yoktur, B'ninki değişmez.
+  // B tükenmiş birim için talep bırakmış; A aynı birimi ister. Talep A'nın hesabının e-postasıyla yazılır, B'nin
+  // talebi değişmez (ucu yazan aşağıda ölçer).
+  "POST /kapi/musteri/stok-bildirimi": async (b) => {
+    const birim = await talepliBirim(b.eposta);
+    return { govde: { birim } };
+  },
   "POST /kapi/musteri/favori-birlestir": async (b) => {
     const urun = await favoriUrunu(b.kimlik);
     return { govde: { urunler: [await yayindakiUrun()] }, aranan: [b.eposta, urun] };
@@ -105,6 +113,21 @@ const favoriUrunu = async (bKimligi: string) => {
   const urun = await yayindakiUrun();
   await favoriServisi(denemeSitesi()).favoriDegistir(vt, bKimligi, urun, true);
   return urun;
+};
+
+// Stoğu olmayan yayındaki ürünün birimi; B'nin e-postasıyla bekleyen bir talebi var. Deneme sitesinde eklenti
+// açıktır (ornek-siteler/gecerli/ayarlar.json).
+const talepliBirim = async (bEpostasi: string) => {
+  const urunSrv = urunServisi(() => "Europe/Istanbul");
+  const urun = await urunSrv.urunEkle(vt, sistemIslemi("test"), {
+    ad: `Tükenmiş ${randomBytes(4).toString("hex")}`,
+    vergiSinifi: null,
+    durum: "yayinda",
+  });
+  const birim = (await urunSrv.urunuOku(vt, urun))?.birimler[0]?.kimlik;
+  if (birim === undefined) throw new Error("Birim yok.");
+  await stokBildirimiServisi(denemeSitesi()).talepYaz(vt, birim, bEpostasi);
+  return birim;
 };
 
 // B'nin yorum yazdığı yayındaki bir ürün; "yalnız satın alanlar" kapalı (herkes yazabilsin).
@@ -262,6 +285,28 @@ describe("favori uçları", () => {
       );
     },
   );
+});
+
+describe("stoğa gelince haber ver ucu", () => {
+  it("B'nin talebine dokunmaz, A'nın talebini A'nın hesabının e-postasıyla yazar", async () => {
+    const baslik = "POST /kapi/musteri/stok-bildirimi";
+    const uc = (await uclariOku(uygulamaAdresleri)).find((kayit) => kayit.baslik === baslik);
+    const senaryo = musteriSenaryolari[baslik];
+    if (uc === undefined || senaryo === undefined) throw new Error("Stok bildirimi ucu yok.");
+    const { a, b, sorunlar } = await baskasininKaydi(uc, senaryo);
+    expect(sorunlar).toEqual([]);
+    const satirlar = await vt
+      .select({ eposta: stokBildirimiTalepleri.eposta, durum: stokBildirimiTalepleri.durum })
+      .from(stokBildirimiTalepleri)
+      .where(inArray(stokBildirimiTalepleri.eposta, [a.eposta, b.eposta]));
+    expect(satirlar).toHaveLength(2);
+    expect(satirlar).toEqual(
+      expect.arrayContaining([
+        { eposta: a.eposta, durum: "bekliyor" },
+        { eposta: b.eposta, durum: "bekliyor" },
+      ]),
+    );
+  });
 });
 
 describe("kişi listesi", () => {

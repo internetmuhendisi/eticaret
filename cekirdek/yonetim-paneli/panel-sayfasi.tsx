@@ -7,6 +7,8 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { SayfaBasligi } from "../../bilesenler/parcalar/sayfa-basligi";
 import { SayfaYolu } from "../../bilesenler/parcalar/sayfa-yolu";
+import { calisanSite } from "../ayar-semasi/calisan-site";
+import { eklentiAcikMi } from "../eklentiler/acik";
 import { metin } from "../metinler/site-metni";
 import { doldur } from "../moduller/eposta/sablon";
 import { magazaninAdi } from "../moduller/magaza-ayarlari/servis";
@@ -15,9 +17,14 @@ import {
   type PanelSayfaKodu,
   type PanelSayfaTanimi,
   panelSayfalari,
+  sayfaAcikMi,
   sayfaTanimi,
   sayfaYolunuKur,
 } from "./sayfa-agaci";
+
+// Eklentinin getirdiği sayfa yalnız eklenti sitede açıkken vardır (karar 0117).
+const sitedeAcik = (sayfa: PanelSayfaTanimi) =>
+  sayfaAcikMi(sayfa, (kod) => eklentiAcikMi(calisanSite(), kod));
 
 // Sayfanın tanımı ve kökten yolu; izni yoksa bulunamadı. Ağaç yalnız testte değişir.
 export const panelSayfasiniAc = async (
@@ -25,7 +32,7 @@ export const panelSayfasiniAc = async (
   agac: readonly PanelSayfaTanimi[] = panelSayfalari,
 ): Promise<{ sayfa: PanelSayfaTanimi; yol: PanelSayfaTanimi[] }> => {
   const sayfa = sayfaTanimi(agac, kod);
-  if (sayfa === undefined) notFound();
+  if (sayfa === undefined || !sitedeAcik(sayfa)) notFound();
   const { yetkili } = await panelOturumu();
   if (sayfa.izin !== null && !yetkili(sayfa.izin)) notFound();
   return { sayfa, yol: sayfaYolunuKur(agac, kod) };
@@ -38,7 +45,7 @@ export const panelSayfaBilgisi = async (
   agac: readonly PanelSayfaTanimi[] = panelSayfalari,
 ): Promise<Metadata> => {
   const sayfa = sayfaTanimi(agac, kod);
-  if (sayfa === undefined) return {};
+  if (sayfa === undefined || !sitedeAcik(sayfa)) return {};
   const { yetkili } = await panelOturumu();
   if (sayfa.izin !== null && !yetkili(sayfa.izin)) return {};
   return {

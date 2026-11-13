@@ -253,6 +253,13 @@
       "when": 1794511680169,
       "tag": "0035_favoriler",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794581737731,
+      "tag": "0036_stok-bildirimi-talepleri",
+      "breakpoints": true
     }
   ]
 }

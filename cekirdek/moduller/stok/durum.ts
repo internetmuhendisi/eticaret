@@ -23,7 +23,7 @@ import { eq, inArray, type SQL, sql } from "drizzle-orm";
 import type { MagazaAyarlari } from "../../ayar-semasi/ayarlar.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import type { StokGosterimi } from "../../kayitlar/stok.ts";
-import type { Veritabani } from "../../veritabani/baglanti.ts";
+import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
 import { urunBirimleri, urunler } from "../urun/model.ts";
@@ -120,7 +120,7 @@ export const urunStokDurumu = (birimler: StokDurumu[]): UrunStokDurumu => {
 // silinmiş diye işaretlenir. Ürünün vitrinde görünüp görünmediğine (taslak, gizli) burada bakılmaz: o
 // vitrinKosulu'nun işidir, sepet ikisini birlikte sınar.
 export const birimStokBilgileri = async (
-  vt: Veritabani,
+  vt: Veritabani | VeritabaniIslemi,
   birimler: string[],
 ): Promise<Map<string, BirimStokBilgisi>> => {
   const gecerli = birimler.filter(kimlikMi).map(kimligiDuzelt);
@@ -142,7 +142,7 @@ export const birimStokBilgileri = async (
 
 // Birimlerin stok durumu, verilen ayarlarla.
 export const stokDurumlari = async (
-  vt: Veritabani,
+  vt: Veritabani | VeritabaniIslemi,
   birimler: string[],
   ayarlar: StokDurumAyarlari,
 ): Promise<Map<string, StokDurumu>> => {

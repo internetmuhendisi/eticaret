@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import type { ReactElement } from "react";
 import { renderToString } from "react-dom/server";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import { altyapiAdi } from "../../kayitlar/altyapi.ts";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
 import { oturumCerezAdlari } from "../../kayitlar/oturum.ts";
@@ -21,7 +22,7 @@ import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
 import { girisAdresi } from "../adresler.ts";
 import { panelOturumu } from "../panel-oturumu.ts";
 import { panelSayfaBilgisi, panelSayfasiniAc } from "../panel-sayfasi.tsx";
-import { menuyuKur, type PanelSayfaKodu } from "../sayfa-agaci.ts";
+import { menuyuKur, type PanelSayfaKodu, type PanelSayfaTanimi } from "../sayfa-agaci.ts";
 import { denemeAgaci } from "./deneme-agaci.ts";
 
 const { cerezDeposu } = vi.hoisted(() => ({ cerezDeposu: new Map<string, string>() }));
@@ -120,6 +121,32 @@ describe("sayfa izni", () => {
     await yoneticiyleGir("magaza-sahibi");
     const oge = await panelSayfasiniAc("menu-ogesi", denemeAgaci);
     expect(oge.yol.map(({ kod }) => kod)).toEqual(["karsilama", "menuler", "menu-ogesi"]);
+  });
+
+  it("eklentinin getirdiği sayfa eklenti sitede kapalıyken bulunamadı verir, açıkken açılır (kart 0144)", async () => {
+    await yoneticiyleGir("magaza-sahibi");
+    const agac: PanelSayfaTanimi[] = [
+      ...denemeAgaci,
+      {
+        ...denemeAgaci[1],
+        kod: "eklentili",
+        adres: "/yonetim/eklentili",
+        izin: null,
+        eklenti: "stoga-gelince-haber-ver",
+      } as PanelSayfaTanimi,
+    ];
+    // Deneme sitesinde eklenti açıktır (ornek-siteler/gecerli/ayarlar.json).
+    expect((await panelSayfasiniAc("eklentili", agac)).sayfa.kod).toBe("eklentili");
+    const anahtar = Symbol.for("cekirdek.calisanSite");
+    const ortak = globalThis as { [anahtar]?: unknown };
+    const acikSite = calisanSite();
+    ortak[anahtar] = { ...acikSite, ayarlar: { ...acikSite.ayarlar, eklentiler: [] } };
+    try {
+      await expect(panelSayfasiniAc("eklentili", agac)).rejects.toThrow("bulunamadi");
+      expect(await panelSayfaBilgisi("eklentili" as PanelSayfaKodu, agac)).toEqual({});
+    } finally {
+      ortak[anahtar] = acikSite;
+    }
   });
 
   // Bulunamadı veren sayfanın adı sekme başlığında da görünmez (bağımsız kontrolün bulgusu).

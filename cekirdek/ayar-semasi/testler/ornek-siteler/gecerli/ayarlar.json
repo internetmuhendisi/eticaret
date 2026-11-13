@@ -1,3 +1,5 @@
 {
-  "paraBirimi": "XTS"
+  "paraBirimi": "XTS",
+  "epostaGonderenAdresi": "gonderen@ornek.test",
+  "eklentiler": ["stoga-gelince-haber-ver"]
 }

@@ -62,6 +62,35 @@ describe("değerin durumu", () => {
   });
 });
 
+describe("tükenmiş değer seçilebilirken (stoğa gelince haber ver, kart 0144)", () => {
+  const sec = (secim: (string | undefined)[], sira: number, deger: string, tercih = secim) =>
+    secimiDegistir(secenekler, birimler, secim, sira, deger, tercih, true);
+
+  it("tükenmiş değer seçilir; seçilemez kuralı yalnız seçenek kapalıyken geçerlidir", () => {
+    expect(sec(["beyaz", "s"], 1, "m")).toEqual(["beyaz", "m"]);
+    expect(secimiDegistir(secenekler, birimler, ["beyaz", "s"], 1, "m")).toEqual(["beyaz", "s"]);
+    expect(seciliBirim(birimler, sec(["beyaz", "s"], 1, "m"), 2)?.kimlik).toBe("beyaz-m");
+  });
+
+  it("birleşimi olmayan değer yine seçilemez", () => {
+    const secim = ["beyaz", "s"];
+    expect(sec(secim, 1, "l")).toBe(secim);
+  });
+
+  it("sonraki seçenekte önce satılabilir değer, yoksa birleşimi olan tükenmiş değer seçilir", () => {
+    // Siyah-M seçiliyken Beyaz'a geçilince M tükenmiş ama satılabilir S var: S'ye geçer.
+    expect(sec(["siyah", "m"], 0, "beyaz")).toEqual(["beyaz", "s"]);
+    const hepsiBitti = birimler.map((b) => ({ ...b, satilabilir: false }));
+    // Hiçbiri satılamıyorsa seçili (tükenmiş) değer kalır, birleşimi yoksa ilk birleşimi olan değere geçer.
+    expect(
+      secimiDegistir(secenekler, hepsiBitti, ["siyah", "m"], 0, "beyaz", ["siyah", "m"], true),
+    ).toEqual(["beyaz", "m"]);
+    expect(
+      secimiDegistir(secenekler, hepsiBitti, ["siyah", "l"], 0, "beyaz", ["siyah", "l"], true),
+    ).toEqual(["beyaz", "s"]);
+  });
+});
+
 describe("seçimi değiştirmek", () => {
   it("sonraki seçimde satılamayan değer ilk satılabilir değere geçer", () => {
     // Siyah-L seçiliyken Beyaz'a geçilince Beyaz'da L yok: S'ye geçer.

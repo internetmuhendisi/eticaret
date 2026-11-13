@@ -36,6 +36,12 @@ const sablonlar: Record<EpostaSablonu, SablonTanimi> = {
     baslik: "eposta.sifreDegisti.baslik",
     govde: ["eposta.sifreDegisti.govde", "eposta.sifreDegisti.uyari"],
   },
+  "stok-bildirimi": {
+    konu: "eposta.stokBildirimi.konu",
+    baslik: "eposta.stokBildirimi.baslik",
+    govde: ["eposta.stokBildirimi.govde", "eposta.stokBildirimi.bilgi"],
+    baglanti: "eposta.stokBildirimi.baglanti",
+  },
 };
 
 const htmlKacir = (metin: string): string =>

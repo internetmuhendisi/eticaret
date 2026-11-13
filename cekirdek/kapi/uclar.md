@@ -162,6 +162,16 @@ Müşteri hesabı açar, onayları kaydeder, hoş geldin e-postasını kuyruğa 
 - Başarılı (200): `{ "basarili": true, "veri": {} }` ve iki oturum çerezi.
 - Hatalar: `cakisma` (e-posta kayıtlı; müşteriye söylenir, karar 0051), `robot-dogrulamasi`, `istek-siniri` (`Retry-After` ile), `dogrulama` (bozuk e-posta, kısa şifre, işaretlenmemiş zorunlu onay, fazla alan), `yetki` (sahte istek).
 
+### POST /kapi/herkese-acik/stok-bildirimi
+
+Üye olmayan müşteri tükenmiş birim (basit ürünün birimi ya da birleşim) için "stoğa gelince haber ver" talebi bırakır (eklenti, kart 0144, karar 0117). Birim stoğa girince e-postasına bir kez haber gider. Aynı e-posta aynı birime bekleyen talep olarak bir kez yazılır; ikinci istek de başarı alır (adresin kayıtlı olup olmadığı belli olmaz).
+
+- İzin: `herkese-acik`. Sınır: `siki`.
+- Girdi: `{ "birim", "eposta", "robotCevabi" }` (`stokBildirimiTalebiSemasi`, `cekirdek/eklentiler/stoga-gelince-haber-ver/semalar.ts`).
+- Servis: `cekirdek/eklentiler/stoga-gelince-haber-ver/servis.ts`. Robot cevabı veritabanına bakılmadan önce denetlenir.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `bulunamadi` (eklenti kapalı; birim yok, silinmiş ya da ürünün sayfası açılmıyor), `oturum-yok` (mağaza sahibi üye olmayanın talebini kapattı: `stokBildirimiUyeOlmayan`), `is-kurali` (`talep-alinamaz`: birim satılabilir ya da ürünün stok takibi kapalı), `robot-dogrulamasi`, `istek-siniri` (`Retry-After` ile), `dogrulama`, `yetki` (sahte istek).
+
 ### POST /kapi/herkese-acik/musteri-giris
 
 Şifre doğruysa müşteri oturumu açar. Müşterinin iki aşamalı girişi yoktur.
@@ -282,6 +292,16 @@ Müşterinin favorileri (kart 0140, karar 0110). Vitrin girişli müşterinin fa
 - Servis: `cekirdek/moduller/favori/servis.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "favoriler": [...], "sigmayan": 0 } }`.
 - Hatalar: `dogrulama`, `oturum-yok`.
+
+### POST /kapi/musteri/stok-bildirimi
+
+Giriş yapmış müşteri tükenmiş birim için "stoğa gelince haber ver" talebi bırakır (eklenti, kart 0144, karar 0117). E-posta müşterinin hesabındandır, girdiden alınmaz. Kurallar herkese açık uçla aynıdır; robot sorusu sorulmaz.
+
+- İzin: `stok-bildirimi.kendi.iste`. Sınır: `genel`.
+- Girdi: `{ "birim" }` (`uyeStokBildirimiTalebiSemasi`). Müşterinin kimliği yalnız kapıdan gelir.
+- Servis: `cekirdek/eklentiler/stoga-gelince-haber-ver/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `bulunamadi` (eklenti kapalı; birim yok, silinmiş ya da ürünün sayfası açılmıyor), `is-kurali` (`talep-alinamaz`), `oturum-yok`, `dogrulama`, `istek-siniri`.
 
 ## Yönetici
 

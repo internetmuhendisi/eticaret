@@ -2,8 +2,14 @@
 // kayitliIsler listesine ekle. Zamanlı iş: zamanliIs ile zamanliIsler listesine de ekle. Modüle ait
 // iş kendi modülünde tanımlanır, kaydı buradadır.
 import { z } from "zod";
+import {
+  stokBildirimiGonderIsi,
+  stokBildirimiTaramasiIsi,
+  stokBildirimiTemizligiIsi,
+} from "../eklentiler/stoga-gelince-haber-ver/isler.ts";
 import { gunluk } from "../izleme/gunluk.ts";
 import { denemeIsaretiBicimi } from "../kayitlar/arka-plan.ts";
+import { stokBildirimiAyari } from "../kayitlar/eklentiler.ts";
 import { epostaGonderIsi, epostaKayitTemizligiIsi } from "../moduller/eposta/isler.ts";
 import { type ZamanliIs, zamanliIs } from "./calistirici.ts";
 import { bitenIsleriSil, type IsTanimi, isTanimla } from "./kuyruk.ts";
@@ -45,9 +51,15 @@ export const kayitliIsler: readonly IsTanimi[] = [
   kuyrukTemizligiIsi,
   epostaGonderIsi,
   epostaKayitTemizligiIsi,
+  // Stoğa gelince haber ver eklentisi (kart 0144, karar 0117).
+  stokBildirimiGonderIsi,
+  stokBildirimiTaramasiIsi,
+  stokBildirimiTemizligiIsi,
 ];
 
 export const zamanliIsler: readonly ZamanliIs[] = [
   zamanliIs(kuyrukTemizligiIsi, {}, { herDakika: 24 * 60 }),
   zamanliIs(epostaKayitTemizligiIsi, {}, { herDakika: 24 * 60 }),
+  zamanliIs(stokBildirimiTemizligiIsi, {}, { herDakika: 24 * 60 }),
+  zamanliIs(stokBildirimiTaramasiIsi, {}, { herDakika: stokBildirimiAyari.taramaDakika }),
 ];

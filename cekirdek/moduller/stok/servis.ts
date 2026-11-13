@@ -18,12 +18,16 @@
 //   da artırmadan sonra ürünün işlem kilidini almaz (ürün ya da fiyat yazmaz): ürün değişikliği önce o
 //   kilidi alıp sonra bu işlemin paylaşımlı kilitlediği ürün satırını bekler, iki işlem birbirini
 //   bekleyip kilitlenir. Gerekirse kilit düşürmeden önce alınır (kart 0082 kontrolü).
+// - Stoğu sıfırdan (ya da altından) yukarı çıkan birim, artırmada ve elle düzeltmede aynı işlemin içinde
+//   eklentilerin stok kancalarına bildirilir (cekirdek/eklentiler/stok-kancalari.ts, karar 0117). Kanca yalnız işi
+//   kuyruğa koyar; işlem geri alınırsa iş de girmez.
 // - Düşürme ya da artırma bir kalemde reddedilirse o çağrının bütün kalemleri geri alınır (iç kayıt
 //   noktası); çağıranın işlemi hatayı yakalarsa geri kalanı bozulmadan sürebilir.
 //
 // İzin kapıda denetlenir (izinler.ts); servis yalnız kimin yaptığını kayda yazar.
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { z } from "zod";
+import { stokGeldi } from "../../eklentiler/stok-kancalari.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import {
@@ -209,6 +213,7 @@ export const stokServisi = () => {
     kaynakDenetle(secenekler.kaynak);
     await islem.transaction(async (ic) => {
       const sorunlar: Sorun[] = [];
+      const gelenler: string[] = [];
       for (const { birim, adet } of kalemler) {
         const durum = kimlikMi(birim) ? await birimiKilitle(ic, birim) : undefined;
         if (durum === undefined) {
@@ -241,8 +246,11 @@ export const stokServisi = () => {
           kaynak: secenekler.kaynak,
           kim,
         });
+        if (yeni.miktar - adet <= 0 && yeni.miktar > 0) gelenler.push(birim);
       }
       if (sorunlar.length > 0) throw new BilinenHata("cakisma", sorunlar);
+      // Stoğu sıfırdan yukarı çıkan birimler eklentilere bildirilir, aynı işlemde (karar 0117).
+      await stokGeldi(ic, gelenler);
     });
   };
 
@@ -287,6 +295,10 @@ export const stokServisi = () => {
         not: girdi.not,
         kim,
       });
+      // Stoğu sıfırdan yukarı çıkan birim eklentilere bildirilir, aynı işlemde (karar 0117). Takibi kapalı üründe
+      // stok hiç tükenmez: bildirilmez.
+      if (durum.takip && mevcut.miktar <= 0 && girdi.yeniMiktar > 0)
+        await stokGeldi(islem, [birim]);
       await degisikligiKaydet(islem, {
         kim,
         islem: "stok.duzeltildi",

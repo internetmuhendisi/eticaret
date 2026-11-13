@@ -5,12 +5,20 @@
 //
 // - Seçilemeyen değer (tükenmiş) görünür, üstü çizilidir ve seçilemez; odak alır, ekran okuyucu adının sonunda
 //   "tükendi" ekini duyar (aria-disabled). Ok tuşuyla üstüne gelinince seçim değişmez.
+// - Tükenmiş ama seçilebilen değer (kart 0144: stoğa gelince haber ver açıkken) aynı biçimde üstü çizili görünür ve
+//   eki duyulur, seçilebilir.
 // - Başlık (legend) ve ekler kullanan sayfadan gelir: parça metin yazmaz.
 import { RadioGroup } from "radix-ui";
 import { type ReactNode, useId } from "react";
 import { sinif } from "./sinif.ts";
 
-export type SecenekGrubuOgesi = { deger: string; ad: string; secilemez?: boolean };
+export type SecenekGrubuOgesi = {
+  deger: string;
+  ad: string;
+  secilemez?: boolean;
+  // Seçilebilir ama tükenmiş: üstü çizili görünür, eki duyulur (secilemez ile birlikte verilmez).
+  tukenmis?: boolean;
+};
 
 export function SecenekGrubu({
   baslik,
@@ -31,7 +39,7 @@ export function SecenekGrubu({
   // Seçili değer; seçim yoksa undefined.
   deger: string | undefined;
   onDegerDegisti: (deger: string) => void;
-  // Seçilemeyen değerin adına eklenen, yalnız ekran okuyucuda duyulan yazı: ", tükendi".
+  // Seçilemeyen ya da tükenmiş değerin adına eklenen, yalnız ekran okuyucuda duyulan yazı: ", tükendi".
   secilemezEki: string;
   // Grubun altındaki açıklama, örneğin "Üstü çizili bedenler bu renkte tükendi."
   aciklama?: string;
@@ -67,10 +75,15 @@ export function SecenekGrubu({
             key={oge.deger}
             value={oge.deger}
             {...(oge.secilemez === true ? { "aria-disabled": true } : {})}
-            className="inline-flex h-11 min-w-12 cursor-pointer items-center justify-center rounded-kucuk border border-alan-kenari bg-zemin px-4 text-govde font-orta text-yazi transition-colors duration-kisa hover:bg-yuzey isaretli:border-2 isaretli:border-yazi isaretli:font-en-kalin aria-disabled:cursor-not-allowed aria-disabled:border-dashed aria-disabled:bg-zemin aria-disabled:text-soluk-yazi aria-disabled:line-through"
+            className={sinif(
+              "inline-flex h-11 min-w-12 cursor-pointer items-center justify-center rounded-kucuk border border-alan-kenari bg-zemin px-4 text-govde font-orta text-yazi transition-colors duration-kisa hover:bg-yuzey isaretli:border-2 isaretli:border-yazi isaretli:font-en-kalin aria-disabled:cursor-not-allowed aria-disabled:border-dashed aria-disabled:bg-zemin aria-disabled:text-soluk-yazi aria-disabled:line-through",
+              oge.tukenmis === true ? "border-dashed text-soluk-yazi line-through" : undefined,
+            )}
           >
             {oge.ad}
-            {oge.secilemez === true ? <span className="sr-only">{secilemezEki}</span> : null}
+            {oge.secilemez === true || oge.tukenmis === true ? (
+              <span className="sr-only">{secilemezEki}</span>
+            ) : null}
           </RadioGroup.Item>
         ))}
       </RadioGroup.Root>

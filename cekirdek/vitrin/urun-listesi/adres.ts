@@ -18,8 +18,8 @@ import {
   aramaSinirlari,
   aramaSiralamalari,
   listeSiralamalari,
-} from "../../kayitlar/liste";
-import { kendiAlani } from "../../moduller/urun/filtre";
+} from "../../kayitlar/liste.ts";
+import { kendiAlani } from "../../moduller/urun/filtre.ts";
 
 export const listeParametreleri = {
   enAz: "en-az",

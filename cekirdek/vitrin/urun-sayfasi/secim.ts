@@ -17,8 +17,11 @@
 //   yoksa adresteki değerlerden öncekilerle birlikte bir birleşimi olanlar (uyumsuz sonraki değer düşer) ve
 //   onlara uyan ilk satılabilir birleşim; o da yoksa ayara göre ilk satılabilir birleşim ya da seçimsiz (kalan
 //   adres değerleriyle).
-import type { SecenekOnSecimi } from "../../kayitlar/urun";
-import { listeParametreleri } from "../urun-listesi/adres";
+// - Stoğa gelince haber ver eklentisi açıkken (kart 0144, kullanıcı kararı) tükenmiş değer seçilebilir: seçilince
+//   "Tükendi" ve eklentinin formu görünür, satın alınamaz. Sonraki seçeneklerde önce satılabilir değer aranır, yoksa
+//   birleşimi olan (tükenmiş) değer seçili kalır. Tükenmiş değeri gizleyen sitede değer görünmediği için seçilemez.
+import type { SecenekOnSecimi } from "../../kayitlar/urun.ts";
+import { listeParametreleri } from "../urun-listesi/adres.ts";
 
 export type SecimDegeri = { kimlik: string; anahtar: string; ad: string };
 export type SecimSecenegi = {
@@ -68,8 +71,8 @@ export const seciliBirim = (
   );
 };
 
-// Müşteri bir değeri seçince yeni seçim. Satılamayan değer seçilemez: seçim değişmez. Tercih, müşterinin her
-// seçenekte elle seçtiği son değerdir (verilmezse seçimin kendisi).
+// Müşteri bir değeri seçince yeni seçim. Satılamayan değer seçilemez (tukenmisSecilebilir değilse): seçim değişmez.
+// Tercih, müşterinin her seçenekte elle seçtiği son değerdir (verilmezse seçimin kendisi).
 export const secimiDegistir = (
   secenekler: readonly SecimSecenegi[],
   birimler: readonly SecimBirimi[],
@@ -77,16 +80,23 @@ export const secimiDegistir = (
   sira: number,
   deger: string,
   tercih: Secim = secim,
+  tukenmisSecilebilir = false,
 ): Secim => {
-  if (degerDurumu(birimler, secim, sira, deger) !== "satilabilir") return secim;
+  const durum = degerDurumu(birimler, secim, sira, deger);
+  if (durum === "yok" || (durum === "tukendi" && !tukenmisSecilebilir)) return secim;
   const yeni = secenekler.map((_, i) => (i === sira ? deger : secim[i]));
   for (let j = sira + 1; j < secenekler.length; j++) {
     const adaylar = [tercih[j], yeni[j]].filter((aday) => aday !== undefined);
     if (adaylar.length === 0) continue;
     const satilabilir = (aday: string) => degerDurumu(birimler, yeni, j, aday) === "satilabilir";
+    const birlesimiVar = (aday: string) => degerDurumu(birimler, yeni, j, aday) !== "yok";
+    const degerler = secenekler[j]?.degerler.map((aday) => aday.kimlik) ?? [];
     yeni[j] =
       adaylar.find(satilabilir) ??
-      secenekler[j]?.degerler.map((aday) => aday.kimlik).find(satilabilir);
+      degerler.find(satilabilir) ??
+      (tukenmisSecilebilir
+        ? (adaylar.find(birlesimiVar) ?? degerler.find(birlesimiVar))
+        : undefined);
   }
   return yeni;
 };

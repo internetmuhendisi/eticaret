@@ -113,6 +113,29 @@ describe("menü", () => {
     ]);
   });
 
+  it("eklentinin getirdiği sayfa yalnız eklenti açıkken menüdedir (kart 0144)", () => {
+    const kodlar = (acik: boolean) =>
+      menuyuKur(
+        agac,
+        () => true,
+        () => acik,
+      ).flatMap(({ sayfalar }) => sayfalar.map(({ kod }) => kod));
+    expect(kodlar(true)).toContain("stok-bildirimleri");
+    expect(kodlar(false)).not.toContain("stok-bildirimleri");
+    // Eklenti açıklığı verilmezse kapalı sayılır.
+    expect(
+      menuyuKur(agac, () => true).flatMap(({ sayfalar }) => sayfalar.map(({ kod }) => kod)),
+    ).not.toContain("stok-bildirimleri");
+    // Açık eklentinin sayfası izni olmayana yine görünmez.
+    expect(
+      menuyuKur(
+        agac,
+        () => false,
+        () => true,
+      ).flatMap(({ sayfalar }) => sayfalar.map(({ kod }) => kod)),
+    ).not.toContain("stok-bildirimleri");
+  });
+
   it("panelin bugünkü menüsü izinsiz yöneticide de karşılamayı gösterir", () => {
     expect(menuyuKur(agac, () => false)[0]?.sayfalar[0]?.kod).toBe("karsilama");
   });

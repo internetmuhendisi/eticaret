@@ -3,12 +3,14 @@
 // önce buraya eklenir, sonra `app/yonetim/(panel)/` altına yazılır ve PanelSayfasi'na kendi kodunu verir.
 // Ekranı yazılmamış sayfa ağaca girmez: menüdeki bağlantı bulunamadı sayfasına gitmesin.
 import type { IkonAdi } from "../../bilesenler/ikonlar/sozluk";
+import type { EklentiKodu } from "../kayitlar/eklentiler";
 import type { GirisIzni } from "../kayitlar/izinler";
 import type { MetinAnahtari } from "../metinler/metin";
 import { panelAdresi } from "./adresler";
 
 // Menüdeki gruplar, menüdeki sırasıyla. Grubun adı yalnız menüde görünür; grubun kendi sayfası yoktur.
 export const panelGruplari = {
+  urunler: "yonetim.grup.urunler",
   vitrin: "yonetim.grup.vitrin",
 } as const satisfies Record<string, MetinAnahtari>;
 export type PanelGrubu = keyof typeof panelGruplari;
@@ -29,6 +31,8 @@ export type PanelSayfaTanimi = {
   ust?: string;
   // Menüde adın yanındaki küçük işaret, örneğin "Kısayol" (kart 0142, taslak).
   isaret?: MetinAnahtari;
+  // Sayfayı getiren eklenti (kart 0144, karar 0117): eklenti sitede kapalıysa sayfa menüde yoktur ve açılmaz.
+  eklenti?: EklentiKodu;
 };
 
 // Sıra menüdeki sıradır. İlk sayfa panelin kökü ve girişten sonraki açılış sayfasıdır; sayfa yolu onunla başlar.
@@ -53,6 +57,17 @@ export const panelSayfalari = [
     izin: "duzen.degistir",
     grup: "vitrin",
     isaret: "yonetim.cerceve.kisayol",
+  },
+  // Stoğa gelince haber ver eklentisi (kart 0144, karar 0117): bekleyen talepler stok bilgisidir, stok.gor ister.
+  {
+    kod: "stok-bildirimleri",
+    adres: `${panelAdresi}/stok-bildirimleri`,
+    ad: "yonetim.sayfa.stokBildirimleri.ad",
+    aciklama: "yonetim.sayfa.stokBildirimleri.aciklama",
+    ikon: "eposta",
+    izin: "stok.gor",
+    grup: "urunler",
+    eklenti: "stoga-gelince-haber-ver",
   },
   {
     kod: "vitrin-bolumleri",
@@ -85,14 +100,24 @@ export type MenuSayfasi = {
 };
 export type MenuGrubu = { grup: PanelGrubu | null; sayfalar: MenuSayfasi[] };
 
-// Yöneticinin göreceği menü: yalnız izni olan ve alt sayfa olmayan sayfalar, gruplar menü sırasıyla, boş grup yok.
-// Grupsuz sayfalar en üstte durur. İzin sunucuda okunur (yoneticininYetkileri), burada yalnız sorulur.
+// Sayfa sitede açık mı: eklentinin getirdiği sayfa yalnız eklenti açıkken vardır.
+export const sayfaAcikMi = (
+  sayfa: Pick<PanelSayfaTanimi, "eklenti">,
+  eklentiAcik: (kod: EklentiKodu) => boolean,
+): boolean => sayfa.eklenti === undefined || eklentiAcik(sayfa.eklenti);
+
+// Yöneticinin göreceği menü: yalnız izni olan, sitede açık ve alt sayfa olmayan sayfalar, gruplar menü sırasıyla,
+// boş grup yok. Grupsuz sayfalar en üstte durur. İzin sunucuda okunur (yoneticininYetkileri), burada yalnız sorulur.
 export const menuyuKur = (
   agac: readonly PanelSayfaTanimi[],
   yetkili: (izin: GirisIzni<"yonetici">) => boolean,
+  eklentiAcik: (kod: EklentiKodu) => boolean = () => false,
 ): MenuGrubu[] => {
   const gorunenler = agac.filter(
-    (sayfa) => sayfa.ust === undefined && (sayfa.izin === null || yetkili(sayfa.izin)),
+    (sayfa) =>
+      sayfa.ust === undefined &&
+      (sayfa.izin === null || yetkili(sayfa.izin)) &&
+      sayfaAcikMi(sayfa, eklentiAcik),
   );
   const gruplar: (PanelGrubu | null)[] = [null, ...(Object.keys(panelGruplari) as PanelGrubu[])];
   return gruplar

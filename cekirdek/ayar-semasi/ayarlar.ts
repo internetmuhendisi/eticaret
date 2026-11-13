@@ -9,6 +9,7 @@
 import { z } from "zod";
 import { postaAdresiSemasi, telefonSemasi } from "../bolgeler/adres.ts";
 import { ulkeGecerliMi } from "../bolgeler/bolgeler.ts";
+import { eklentiKodlari, stokBildirimiAyari } from "../kayitlar/eklentiler.ts";
 import { favoriSiniriEnCok } from "../kayitlar/favori.ts";
 import { listeSayfasi, listeSiralamalari, sayfaGecisleri } from "../kayitlar/liste.ts";
 import { type AyarSahibi, ayarSahibi } from "../kayitlar/site.ts";
@@ -190,6 +191,16 @@ export const ayarSemasi = z.strictObject({
     z.int().min(1).max(favoriSiniriEnCok).default(100),
     altyapiSahibinin("ayar.aciklama.favoriSiniri"),
   ),
+  // Sitede açık eklentiler (kart 0144, karar 0117). Eklentinin kodu çekirdektedir; kurulu eklenti kapalı
+  // başlar, bu listeye yazılınca açılır. Eklenti başka bir hizmeti ya da ücreti getirebileceği için altyapı
+  // sahibinindir.
+  eklentiler: ayar(
+    z
+      .array(z.enum(eklentiKodlari))
+      .refine((liste) => new Set(liste).size === liste.length, "Aynı eklenti iki kez yazılmış.")
+      .default([]),
+    altyapiSahibinin("ayar.aciklama.eklentiler"),
+  ),
 });
 
 // Mağaza sahibinin ayarları. Her ayarın varsayılanı olur (ya da boş kalabilir); veritabanında JSON
@@ -344,6 +355,20 @@ export const magazaAyarSemasi = z.strictObject({
   kargoyaVermeSuresi: ayar(
     z.int().min(0).max(60).default(1),
     magazaSahibinin("ayar.aciklama.kargoyaVermeSuresi"),
+  ),
+  // Stoğa gelince haber ver eklentisi (kart 0144, karar 0117): üye olmayan müşteri de talep bırakabilir mi,
+  // talep kaç gün saklanır. Eklenti kapalıyken okunmaz.
+  stokBildirimiUyeOlmayan: ayar(
+    z.boolean().default(true),
+    magazaSahibinin("ayar.aciklama.stokBildirimiUyeOlmayan"),
+  ),
+  stokBildirimiSaklamaGun: ayar(
+    z
+      .int()
+      .min(stokBildirimiAyari.saklamaGunEnAz)
+      .max(stokBildirimiAyari.saklamaGunEnCok)
+      .default(stokBildirimiAyari.saklamaGunVarsayilan),
+    magazaSahibinin("ayar.aciklama.stokBildirimiSaklamaGun"),
   ),
 });
 export type MagazaAyarlari = z.output<typeof magazaAyarSemasi>;

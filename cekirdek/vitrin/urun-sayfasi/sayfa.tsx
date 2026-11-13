@@ -26,6 +26,10 @@ import {
 } from "../../../bilesenler/parcalar/serit";
 import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
+import {
+  tukenmisBirimSecilebilirMi,
+  UrunSayfasiYuvalari,
+} from "../../eklentiler/urun-sayfasi-yuvalari";
 import { Bolum } from "../../izleme/bolum";
 import { yazilanIslevler } from "../../kayitlar/islevler";
 import { metin, siteninBicimleyicisi } from "../../metinler/site-metni";
@@ -333,6 +337,17 @@ export async function UrunSayfasi({
             </div>
           ) : null
         }
+        yuvalar={
+          // Eklentilerin yuvası (karar 0117): her biri kendi parçasını verir ya da çizmez. Bozulan eklenti sayfayı
+          // düşürmez.
+          <Bolum>
+            <UrunSayfasiYuvalari
+              vt={vt}
+              site={calisanSite()}
+              birimler={veri.birimler.map(({ kimlik }) => kimlik)}
+            />
+          </Bolum>
+        }
         galeri={veri.galeri}
         anaGorselSirasi={veri.anaGorselSirasi}
         secenekler={veri.secenekler}
@@ -351,6 +366,7 @@ export async function UrunSayfasi({
         )}
         genelBilgi={degisenBilgiler(veri.genel.fiyat, veri.genel.stok, undefined)}
         tukenmisSecenek={veri.tukenmisSecenek}
+        tukenmisSecilebilir={tukenmisBirimSecilebilirMi(calisanSite())}
       />
       <AltKisim veri={veri} kartGorunumu={kartGorunumu} sonrakiYorumAdresi={sonrakiYorumAdresi} />
     </main>

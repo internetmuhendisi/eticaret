@@ -1,6 +1,7 @@
 // İzinlerin tek kaydı (.claude/rules/yetki.md, karar 0040). Her modül kendi izinlerini izinler.ts
 // dosyasında yazar, burada toplanır. Roller bu izinlerden oluşur. Liste belgede de yazar:
 // cekirdek/moduller/ekip/izinler-ve-roller.md.
+import { stokBildirimiIzinleri } from "../eklentiler/stoga-gelince-haber-ver/izinler.ts";
 import { duzenIzinleri } from "../moduller/duzen/izinler.ts";
 import { ekipIzinleri } from "../moduller/ekip/izinler.ts";
 import { etiketIzinleri } from "../moduller/etiket/izinler.ts";
@@ -41,6 +42,8 @@ export const modulIzinleri = {
   musteri: musteriIzinleri,
   ozellik: ozellikIzinleri,
   stok: stokIzinleri,
+  // Eklenti (kart 0144, karar 0117).
+  "stok-bildirimi": stokBildirimiIzinleri,
   tema: temaIzinleri,
   urun: urunIzinleri,
   vergi: vergiIzinleri,
@@ -60,6 +63,7 @@ export const izinler = {
   ...musteriIzinleri,
   ...ozellikIzinleri,
   ...stokIzinleri,
+  ...stokBildirimiIzinleri,
   ...temaIzinleri,
   ...urunIzinleri,
   ...vergiIzinleri,
