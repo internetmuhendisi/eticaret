@@ -27,4 +27,4 @@ Müşteri gezisinde (2026-11-13) ölçüldü: telefonda `?secenek-renk=beyaz` ad
 
 ## Durum
 
-yapılacak
+bitti
