@@ -30,4 +30,4 @@ Bölüm: Vitrin. Kart 0114'te kurulumun kilidi yazılırken görüldü, ölçül
 
 ## Durum
 
-yapılacak
+bitti
