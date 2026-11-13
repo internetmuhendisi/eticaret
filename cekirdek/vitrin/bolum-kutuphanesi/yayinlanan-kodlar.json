@@ -1,0 +1,241 @@
+{
+  "baglanti-sutunlari": {
+    "gorunumler": ["sutunlu", "tek-satir"],
+    "alanlar": ["menu"]
+  },
+  "blog-yazilari": {
+    "gorunumler": ["izgara", "kaydirmali"],
+    "alanlar": ["adet", "adet=alti", "adet=uc", "baslik", "kategori", "tumuBaglantisi"]
+  },
+  "bulten-kaydi": {
+    "gorunumler": ["kutu", "serit"],
+    "alanlar": [
+      "baslik",
+      "metin",
+      "zemin",
+      "zemin=afis",
+      "zemin=alt-kisim",
+      "zemin=birincil",
+      "zemin=kutu-1",
+      "zemin=kutu-2",
+      "zemin=kutu-3",
+      "zemin=kutu-4",
+      "zemin=kutu-5",
+      "zemin=yuzey"
+    ]
+  },
+  "duyuru-seridi": {
+    "gorunumler": ["iki-yana", "ince", "ortali"],
+    "alanlar": ["baglanti", "metin", "zemin", "zemin=afis", "zemin=alt-kisim", "zemin=birincil"]
+  },
+  "firsatlar": {
+    "gorunumler": ["panelsiz", "yan-panelli"],
+    "alanlar": [
+      "adet",
+      "adet=alti",
+      "adet=dort",
+      "adet=iki",
+      "adet=sekiz",
+      "baslik",
+      "kartGorunumu",
+      "kartGorunumu=buyuk-gorsel",
+      "kartGorunumu=dikey",
+      "kartGorunumu=tema",
+      "kartGorunumu=yatay",
+      "ustYazi",
+      "zemin",
+      "zemin=afis",
+      "zemin=alt-kisim",
+      "zemin=birincil",
+      "zemin=kutu-1",
+      "zemin=kutu-2",
+      "zemin=kutu-3",
+      "zemin=kutu-4",
+      "zemin=kutu-5",
+      "zemin=yuzey"
+    ]
+  },
+  "genis-afis": {
+    "gorunumler": ["tam-genislik", "yan-yana"],
+    "alanlar": [
+      "baglanti",
+      "baslik",
+      "dugmeYazisi",
+      "gorsel",
+      "gorselMetni",
+      "metin",
+      "ustYazi",
+      "zemin",
+      "zemin=afis",
+      "zemin=alt-kisim",
+      "zemin=kutu-1",
+      "zemin=kutu-2",
+      "zemin=kutu-3",
+      "zemin=kutu-4",
+      "zemin=kutu-5",
+      "zemin=yuzey"
+    ]
+  },
+  "guven-seridi": {
+    "gorunumler": ["ikonlu", "kutulu"],
+    "alanlar": [
+      "maddeler",
+      "maddeler.ikon",
+      "maddeler.ikon=destek",
+      "maddeler.ikon=guvenlik",
+      "maddeler.ikon=havale",
+      "maddeler.ikon=hediye",
+      "maddeler.ikon=iade",
+      "maddeler.ikon=kapida-odeme",
+      "maddeler.ikon=kargo",
+      "maddeler.ikon=kart",
+      "maddeler.ikon=paket",
+      "maddeler.metin"
+    ]
+  },
+  "iletisim-bilgileri": {
+    "gorunumler": ["liste", "yatay"],
+    "alanlar": ["baslik"]
+  },
+  "kampanya-afisleri": {
+    "gorunumler": ["dikey", "gorsel-solda", "yatay"],
+    "alanlar": [
+      "afisler",
+      "afisler.baglanti",
+      "afisler.baslik",
+      "afisler.dugmeYazisi",
+      "afisler.gorsel",
+      "afisler.gorselMetni",
+      "afisler.metin",
+      "afisler.rozet",
+      "afisler.zemin",
+      "afisler.zemin=afis",
+      "afisler.zemin=kutu-1",
+      "afisler.zemin=kutu-2",
+      "afisler.zemin=kutu-3",
+      "afisler.zemin=kutu-4",
+      "afisler.zemin=kutu-5",
+      "afisler.zemin=yuzey"
+    ]
+  },
+  "kategori-kutulari": {
+    "gorunumler": ["izgara", "kaydirmali"],
+    "alanlar": [
+      "baslik",
+      "kategoriler",
+      "kategoriler.kategori",
+      "kategoriler.zemin",
+      "kategoriler.zemin=kutu-1",
+      "kategoriler.zemin=kutu-2",
+      "kategoriler.zemin=kutu-3",
+      "kategoriler.zemin=kutu-4",
+      "kategoriler.zemin=kutu-5",
+      "kategoriler.zemin=yuzey"
+    ]
+  },
+  "kayan-afis": {
+    "gorunumler": ["gorsel-arkada", "yazi-solda"],
+    "alanlar": [
+      "gecis",
+      "gecis=kapali",
+      "gecis=kisa",
+      "gecis=orta",
+      "gecis=uzun",
+      "slaytlar",
+      "slaytlar.baglanti",
+      "slaytlar.baslik",
+      "slaytlar.darEkranGorseli",
+      "slaytlar.dugmeYazisi",
+      "slaytlar.gorsel",
+      "slaytlar.gorselMetni",
+      "slaytlar.metin",
+      "slaytlar.ustYazi",
+      "zemin",
+      "zemin=afis",
+      "zemin=kutu-1",
+      "zemin=kutu-2",
+      "zemin=kutu-3",
+      "zemin=kutu-4",
+      "zemin=kutu-5",
+      "zemin=yuzey"
+    ]
+  },
+  "marka-logolari": {
+    "gorunumler": ["izgara", "kaydirmali"],
+    "alanlar": ["baslik", "markalar", "markalar.marka"]
+  },
+  "menu-satiri": {
+    "gorunumler": ["ortali", "sola-yasli"],
+    "alanlar": ["anaMenu", "kategoriMenusu"]
+  },
+  "musteri-yorumlari": {
+    "gorunumler": ["kartlar", "kaydirmali"],
+    "alanlar": [
+      "adet",
+      "adet=alti",
+      "adet=uc",
+      "baslik",
+      "kaynak",
+      "kaynak=en-yeni",
+      "kaynak=isaretlenenler"
+    ]
+  },
+  "odeme-isaretleri": {
+    "gorunumler": ["yalniz-isaret", "yazili"],
+    "alanlar": []
+  },
+  "sekmeli-vitrin": {
+    "gorunumler": ["izgara", "kaydirmali"],
+    "alanlar": [
+      "baslik",
+      "kartGorunumu",
+      "kartGorunumu=buyuk-gorsel",
+      "kartGorunumu=dikey",
+      "kartGorunumu=tema",
+      "kartGorunumu=yatay",
+      "sekmeler",
+      "sekmeler.baslik",
+      "sekmeler.urunler"
+    ]
+  },
+  "sosyal-hesaplar": {
+    "gorunumler": ["liste", "yatay"],
+    "alanlar": ["baslik"]
+  },
+  "telif-satiri": {
+    "gorunumler": ["duz", "iki-yana", "ortali"],
+    "alanlar": ["ekMetin"]
+  },
+  "urun-vitrini": {
+    "gorunumler": ["izgara", "kaydirmali"],
+    "alanlar": [
+      "baslik",
+      "kartGorunumu",
+      "kartGorunumu=buyuk-gorsel",
+      "kartGorunumu=dikey",
+      "kartGorunumu=tema",
+      "kartGorunumu=yatay",
+      "tumuBaglantisi",
+      "urunler",
+      "yanBaglanti",
+      "yanBaslik",
+      "yanDugmeYazisi",
+      "yanGorsel",
+      "yanGorselMetni",
+      "yanMetin",
+      "yanZemin",
+      "yanZemin=afis",
+      "yanZemin=alt-kisim",
+      "yanZemin=kutu-1",
+      "yanZemin=kutu-2",
+      "yanZemin=kutu-3",
+      "yanZemin=kutu-4",
+      "yanZemin=kutu-5",
+      "yanZemin=yuzey"
+    ]
+  },
+  "ust-satir": {
+    "gorunumler": ["logo-ortada", "logo-solda"],
+    "alanlar": ["menuler", "menuler.menu"]
+  }
+}

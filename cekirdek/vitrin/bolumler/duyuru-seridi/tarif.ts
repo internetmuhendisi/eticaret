@@ -21,4 +21,6 @@ export const duyuruSeridi = {
     { kod: "iki-yana", ad: "vitrin.bolum.gorunum.ikiYana" },
     { kod: "ortali", ad: "vitrin.bolum.gorunum.ortali" },
   ],
+  // 0.40.0'da ince görünüm kalktı (kart 0108, karar 0084): ortalanmış duyurunun ince yazılı çeşidiydi.
+  eskiKodlar: { gorunumler: { ince: "ortali" } },
 } as const satisfies BolumTarifi;

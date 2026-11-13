@@ -20,6 +20,7 @@ import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import type { BaslangicDuzeni } from "../../../vitrin/bolum-kutuphanesi/duzen.ts";
 import { bolumKutuphanesi } from "../../../vitrin/bolum-kutuphanesi/kutuphane.ts";
+import type { BolumTarifi } from "../../../vitrin/bolum-kutuphanesi/tarif.ts";
 import {
   cizilmemeNedeniMetni,
   islevYokMetinleri,
@@ -628,6 +629,128 @@ describe("işleve bağlı bölüm (kart 0106)", () => {
       cizilir: false,
       neden: { tur: "tanimsiz" },
     });
+  });
+});
+
+// Kart 0122, karar 0113: eski bir çekirdeğin yazdığı düzen. Kaldırılan görünüm ve alan bugünkü karşılığıyla okunur,
+// bölüm vitrinde çizilir, hata kaydı düşmez; düzen bir sonraki kaydedilişinde yeni kodla yazılır.
+describe("eski çekirdeğin yazdığı düzen", () => {
+  const telif = randomUUID();
+  const duyuru = randomUUID();
+  // 0.39.0'ın kütüphanesiyle yazılmış düzen: telif satırı "ortali", duyuru şeridi "ince" görünümünde.
+  const eskiDuzen = {
+    "ust-kisim": [
+      {
+        kimlik: duyuru,
+        tur: "duyuru-seridi",
+        gorunum: "ince",
+        gizli: false,
+        degerler: { metin: "Duyuru" },
+      },
+    ],
+    "ana-sayfa": [],
+    "alt-kisim": [
+      { kimlik: telif, tur: "telif-satiri", gorunum: "ortali", gizli: false, degerler: {} },
+    ],
+  };
+  const magazaninServisi = duzenServisi(
+    () => site,
+    () => bolumKutuphanesi,
+    () => islevler,
+  );
+  const duzendeHata = () =>
+    izlenenler.filter((olay) => (olay.baglam as { kaynak?: string }).kaynak === "duzen");
+
+  it("0.40.0'da kaldırılan görünümler bugünkü karşılığıyla okunur, çizilir ve hata kaydı düşmez", async () => {
+    const vt = await siteAc();
+    await vt.insert(duzenSurumleri).values({ sira: 1, duzen: eskiDuzen });
+    const { duzen } = await magazaninServisi.duzenOku(vt);
+    expect(duzen["alt-kisim"][0]).toMatchObject({ kimlik: telif, gorunum: "duz" });
+    expect(duzen["ust-kisim"][0]).toMatchObject({ kimlik: duyuru, gorunum: "ortali" });
+    expect(
+      (await magazaninServisi.cizilecekBolumler(vt, "alt-kisim")).map((b) => b.kimlik),
+    ).toEqual([telif]);
+    expect(
+      (await magazaninServisi.cizilecekBolumler(vt, "ust-kisim")).map((b) => b.kimlik),
+    ).toEqual([duyuru]);
+    expect((await magazaninServisi.panelDuzeni(vt))["alt-kisim"][0]).toMatchObject({
+      cizilir: true,
+    });
+    expect(duzendeHata()).toEqual([]);
+    // Eski sürüm de çevrilerek okunur (tema geri dönüşü önceki düzeni buradan alır).
+    const ilk = await vt.transaction((islem) => magazaninServisi.islemdeSurumOku(islem, 1));
+    expect(ilk?.duzen["alt-kisim"][0]?.gorunum).toBe("duz");
+  });
+
+  it("düzen bir sonraki kaydedilişinde yeni kodla yazılır, eski sürüm olduğu gibi kalır", async () => {
+    const vt = await siteAc();
+    await vt.insert(duzenSurumleri).values({ sira: 1, duzen: eskiDuzen });
+    await magazaninServisi.bolumGorunurlugu(vt, yonetici(), duyuru, true);
+    const [eski, yeni] = await surumler(vt);
+    expect(eski?.duzen).toEqual(eskiDuzen);
+    expect(yeni?.duzen).toMatchObject({
+      "ust-kisim": [{ kimlik: duyuru, gorunum: "ortali", gizli: true }],
+      "alt-kisim": [{ kimlik: telif, gorunum: "duz" }],
+    });
+  });
+
+  it("eşlemesi olmayan kütüphanede aynı düzenin bölümleri çizilmez, hata kaydedilir (eski davranış)", async () => {
+    const vt = await siteAc();
+    await vt.insert(duzenSurumleri).values({ sira: 1, duzen: eskiDuzen });
+    const { eskiKodlar: _telif, ...telifSatiri } = bolumKutuphanesi["telif-satiri"] as BolumTarifi;
+    const eslemesiz = duzenServisi(
+      () => site,
+      () => ({ ...bolumKutuphanesi, "telif-satiri": telifSatiri }),
+      () => islevler,
+    );
+    expect(await eslemesiz.cizilecekBolumler(vt, "alt-kisim")).toEqual([]);
+    expect(duzendeHata().map((olay) => JSON.stringify(olay))).toEqual([
+      expect.stringContaining(`Düzendeki bölüm çizilemiyor (gecersiz): telif-satiri ${telif}`),
+    ]);
+  });
+
+  it("kaldırılan ya da adı değişen alanın değeri bugünkü alana taşınır, kaldırılan alanınki atılır", async () => {
+    const vt = await siteAc();
+    const kimlik = randomUUID();
+    await vt.insert(duzenSurumleri).values({
+      sira: 1,
+      duzen: {
+        "ust-kisim": [],
+        "ana-sayfa": [
+          {
+            kimlik,
+            tur: "deneme-bolumu",
+            gorunum: "eski",
+            gizli: false,
+            degerler: { eskiBaslik: "Seçkiler", kaldirilan: "atılır", sure: "orta" },
+          },
+        ],
+        "alt-kisim": [],
+      },
+    });
+    const eskiKodlu = duzenServisi(
+      () => site,
+      () => ({
+        ...denemeKutuphanesi,
+        "deneme-bolumu": {
+          ...denemeKutuphanesi["deneme-bolumu"],
+          eskiKodlar: {
+            gorunumler: { eski: "dar" },
+            alanlar: { eskiBaslik: "baslik", kaldirilan: null },
+            secenekler: { sure: { orta: "kisa" } },
+          },
+        } as BolumTarifi,
+      }),
+      () => islevler,
+    );
+    const [bolum] = await eskiKodlu.cizilecekBolumler(vt, "ana-sayfa");
+    expect(bolum).toMatchObject({
+      kimlik,
+      gorunum: "dar",
+      degerler: { baslik: "Seçkiler", sure: "kisa" },
+    });
+    expect(bolum?.degerler).not.toHaveProperty("kaldirilan");
+    expect(duzendeHata()).toEqual([]);
   });
 });
 

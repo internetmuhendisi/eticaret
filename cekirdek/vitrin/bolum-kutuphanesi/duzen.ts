@@ -17,6 +17,7 @@ import {
   bolumDegerSemasi,
   type Kip,
   kayitliKip,
+  type ListeTarifi,
 } from "./tarif.ts";
 
 export type BolumKutuphanesi = Readonly<Record<string, BolumTarifi>>;
@@ -343,6 +344,113 @@ export const baslangictanDuzen = (
           degerler: bolum.degerler,
         }),
       ),
+    ]),
+  ) as Duzen;
+
+// Kütüphanenin kodları (kart 0122): her türün görünümleri ve alanları. Listenin alt alanı "liste.alt", seçim
+// alanının her seçeneği ve renk alanının her rengi "alan=seçenek" yazılır. Yayınlanan kodların kaydıyla karşılaştırılır
+// (testler/yayinlanan-kodlar.test.ts): kayıttaki bir kod ya tarifte ya da tarifin eski kodlarında durur.
+export type KutuphaneKodlari = Record<string, { gorunumler: string[]; alanlar: string[] }>;
+
+// Seçim alanının seçenekleri ve renk alanının renkleri düzende kod olarak saklanır.
+const secenekKodlari = (
+  alan: AlanTarifi | ListeTarifi["alanlar"][string],
+  yol: string,
+): string[] => {
+  if (alan.tur === "secim") return alan.secenekler.map((secenek) => `${yol}=${secenek.kod}`);
+  if (alan.tur === "renk") return alan.renkler.map((renk) => `${yol}=${renk}`);
+  return [];
+};
+
+export const kutuphaneKodlari = (kutuphane: BolumKutuphanesi): KutuphaneKodlari =>
+  Object.fromEntries(
+    Object.entries(kutuphane).map(([tur, tarif]) => [
+      tur,
+      {
+        gorunumler: tarif.gorunumler.map((gorunum) => gorunum.kod),
+        alanlar: Object.entries(tarif.alanlar).flatMap(([kod, alan]) => [
+          kod,
+          ...secenekKodlari(alan, kod),
+          ...(alan.tur === "liste"
+            ? Object.entries(alan.alanlar).flatMap(([altKod, alt]) => [
+                `${kod}.${altKod}`,
+                ...secenekKodlari(alt, `${kod}.${altKod}`),
+              ])
+            : []),
+        ]),
+      },
+    ]),
+  );
+
+type Degerler = Record<string, unknown>;
+const nesneMi = (deger: unknown): deger is Degerler =>
+  typeof deger === "object" && deger !== null && !Array.isArray(deger);
+
+// Bir nesnede eski alan kodunu yenisine taşır ya da (null) atar. Yeni kodda zaten değer varsa eski değer atılır.
+const alaniTasi = (degerler: Degerler, eski: string, yeni: string | null) => {
+  if (!Object.hasOwn(degerler, eski)) return;
+  const deger = degerler[eski];
+  delete degerler[eski];
+  if (yeni !== null && !Object.hasOwn(degerler, yeni)) degerler[yeni] = deger;
+};
+
+// "alan" ya da "liste.alt" yolundaki her nesneye (listede her öğeye) işi uygular.
+const yoldakiler = (
+  degerler: Degerler,
+  yol: string,
+  is: (nesne: Degerler, kod: string) => void,
+) => {
+  const [ust, alt] = yol.split(".");
+  if (ust === undefined) return;
+  if (alt === undefined) {
+    is(degerler, ust);
+    return;
+  }
+  const liste = degerler[ust];
+  if (!Array.isArray(liste)) return;
+  for (const oge of liste) if (nesneMi(oge)) is(oge, alt);
+};
+
+// Kayıtlı bölümdeki eski kodları tarifin eski kodlarına göre bugünkü karşılıklarına çevirir (kart 0122, karar
+// 0113). Bugün de geçerli olan kod değişmez; türü kütüphanede olmayan bölüm olduğu gibi kalır. Girdiyi değiştirmez.
+export const eskiKodlariCevir = (kutuphane: BolumKutuphanesi, bolum: BolumOrnegi): BolumOrnegi => {
+  const tarif = Object.hasOwn(kutuphane, bolum.tur) ? kutuphane[bolum.tur] : undefined;
+  const eski = tarif?.eskiKodlar;
+  if (tarif === undefined || eski === undefined) return bolum;
+  const gecerliGorunum = tarif.gorunumler.some((gorunum) => gorunum.kod === bolum.gorunum);
+  const gorunum =
+    !gecerliGorunum &&
+    eski.gorunumler !== undefined &&
+    Object.hasOwn(eski.gorunumler, bolum.gorunum)
+      ? (eski.gorunumler[bolum.gorunum] ?? bolum.gorunum)
+      : bolum.gorunum;
+  const degerler = structuredClone(bolum.degerler) as Degerler;
+  for (const [eskiYol, yeniYol] of Object.entries(eski.alanlar ?? {})) {
+    const yeniKod = yeniYol === null ? null : (yeniYol.split(".").at(-1) ?? null);
+    yoldakiler(degerler, eskiYol, (nesne, kod) => alaniTasi(nesne, kod, yeniKod));
+  }
+  // Bugün de geçerli seçenek değişmez (görünümdeki gibi): yanlış bir eşleme mağaza sahibinin seçimini bozmasın.
+  const bugunkuKodlar = new Set(kutuphaneKodlari({ [bolum.tur]: tarif })[bolum.tur]?.alanlar);
+  for (const [yol, harita] of Object.entries(eski.secenekler ?? {})) {
+    yoldakiler(degerler, yol, (nesne, kod) => {
+      const secili = nesne[kod];
+      if (
+        typeof secili === "string" &&
+        !bugunkuKodlar.has(`${yol}=${secili}`) &&
+        Object.hasOwn(harita, secili)
+      ) {
+        nesne[kod] = harita[secili];
+      }
+    });
+  }
+  return { ...bolum, gorunum, degerler: degerler as BolumDegerleri };
+};
+
+export const duzeniCevir = (duzen: Duzen, kutuphane: BolumKutuphanesi): Duzen =>
+  Object.fromEntries(
+    duzenAlanlari.map((alan) => [
+      alan,
+      duzen[alan].map((bolum) => eskiKodlariCevir(kutuphane, bolum)),
     ]),
   ) as Duzen;
 

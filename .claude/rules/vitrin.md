@@ -108,6 +108,7 @@ paths:
 - Yeni bölüm türü `cekirdek/vitrin/bolumler/<tür>/` klasörüne yazılır, tarifi `kutuphane.ts`'e, görünüşü `gorunumler.tsx`'e kaydedilir. Bölüm kodunda elle içerik (ürün adı, fiyat, görsel adresi, bağlantı, cümle) yazmak denetimde hatadır; içerik alan değerlerinden ve veriden gelir.
 - Düzen yalnız `cekirdek/moduller/duzen/servis.ts` ile okunur ve değişir. Vitrin bölümleri `cizilecekBolumler` ile alır ve `DuzenAlaniCizimi` ile çizer: her bölüm kendi hata sınırının içindedir.
 - Bölümün bağlı olduğu işlev `cekirdek/kayitlar/islevler.ts` kaydındadır. İşlev yazılınca orada açılır; bölüm kendiliğinden çizilir.
+- Yayınlanmış bir görünüm, alan, seçim seçeneği ya da renk tariften ancak `eskiKodlar`'da bugünkü karşılığı yazılarak kaldırılır ya da adı değişir (karar 0113): eski düzen okunurken karşılığına çevrilir. Tarife eklenen her yeni kod `yayinlanan-kodlar.json`'a da eklenir; kayıt yalnız büyür. İkisini `testler/yayinlanan-kodlar.test.ts` denetler. Bölüm türü kaldırmak ayrı karar ister.
 
 ## Menüler (karar 0082)
 

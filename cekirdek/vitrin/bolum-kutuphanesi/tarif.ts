@@ -98,6 +98,20 @@ export type BolumTarifi = {
   // indirimlerle dolar. alan, kaç ürün gösterileceğini taşıyan seçim alanının kodudur; adetler her seçeneğin
   // ürün sayısıdır (seçeneklerle aynı kodlar, testler/kutuphane.test.ts).
   firsatAdedi?: { alan: string; adetler: Readonly<Record<string, number>> };
+  // Kaldırılan ya da adı değişen kodlar (kart 0122, karar 0113). Sitelerin veritabanındaki düzen eski bir
+  // çekirdekte yazılmış olabilir: okunurken eski kod bugünkü karşılığına çevrilir (eskiKodlariCevir, duzen.ts),
+  // düzen bir sonraki kaydedilişinde yeni kodla yazılır. Yayınlanmış bir kod tariften ancak burada karşılığı
+  // yazılarak çıkarılır; bunu yayınlanan kodların kaydı denetler (testler/yayinlanan-kodlar.test.ts).
+  eskiKodlar?: {
+    // Eski görünüm kodu: bugünkü görünüm kodu.
+    gorunumler?: Readonly<Record<string, string>>;
+    // Eski alan kodu: bugünkü alan kodu ya da null (alan kaldırıldı, değeri atılır). Listenin alt alanı
+    // "liste.alt" yazılır.
+    alanlar?: Readonly<Record<string, string | null>>;
+    // Seçim alanının eski seçenek ve renk alanının eski renk kodları: alan kodu ("liste.alt" de olur), eski kod,
+    // bugünkü kod.
+    secenekler?: Readonly<Record<string, Readonly<Record<string, string>>>>;
+  };
 };
 
 // Alan değerlerinin hata kodları. Şemanın kendi hataları (tür, uzunluk) zod kodlarıyla döner.

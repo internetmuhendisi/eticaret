@@ -39,6 +39,7 @@ import {
   type Duzen,
   type DuzenSorunu,
   duzenBaslangicBaglari,
+  duzeniCevir,
   duzenSemasi,
   duzenSorunlari,
 } from "../../vitrin/bolum-kutuphanesi/duzen.ts";
@@ -102,15 +103,17 @@ const alanlar = {
 type Satir = { kimlik: string; sira: number; duzen: unknown };
 
 // Kayıtlı düzenin biçimi. Biçime uymuyorsa hata verir: bir veri değişikliğiyle düzeltilmeli. Değerler burada
-// kütüphaneye göre denetlenmez (kütüphaneden çıkan tür düzeni okunmaz yapmasın).
-const durum = (satir: Satir): DuzenDurumu => {
+// kütüphaneye göre denetlenmez (kütüphaneden çıkan tür düzeni okunmaz yapmasın). Eski bir çekirdeğin kaldırdığı
+// görünüm, alan ve seçenek kodları bugünkü karşılıklarına çevrilir (kart 0122, karar 0113): düzen her okunduğunda
+// buradan geçer, bir sonraki kaydedilişinde yeni kodla yazılır.
+const durum = (satir: Satir, kutuphane: BolumKutuphanesi): DuzenDurumu => {
   const sonuc = duzenSemasi.safeParse(satir.duzen);
   if (!sonuc.success) {
     throw new Error(
       `Düzen sürümü biçime uymuyor: sıra ${satir.sira}. Bir veri değişikliğiyle düzeltilmeli.`,
     );
   }
-  return { kimlik: satir.kimlik, sira: satir.sira, duzen: sonuc.data };
+  return { kimlik: satir.kimlik, sira: satir.sira, duzen: duzeniCevir(sonuc.data, kutuphane) };
 };
 
 // Bölümün değişiklik kaydındaki hâli.
@@ -250,12 +253,13 @@ export const duzenServisi = (
   // Geçerli düzen. Sürüm yoksa başlangıç düzeni bir kez yazılır.
   const duzenOku = async (vt: Veritabani): Promise<DuzenDurumu> => {
     const son = await sonSatir(vt);
-    if (son !== undefined) return durum(son);
+    if (son !== undefined) return durum(son, kutuphane());
     return durum(
       await vt.transaction(async (islem) => {
         await duzenKilidiAl(islem);
         return baslangicliSon(islem);
       }),
+      kutuphane(),
     );
   };
 
@@ -295,7 +299,7 @@ export const duzenServisi = (
   ): Promise<T> =>
     vt.transaction(async (islem) => {
       await duzenKilidiAl(islem);
-      const son = durum(await baslangicliSon(islem));
+      const son = durum(await baslangicliSon(islem), kutuphane());
       const sonuc = await degistir(structuredClone(son.duzen), islem);
       if ("degismedi" in sonuc) return sonuc.degismedi;
       // Yazılan düzen okunacak biçimde olmalı: biçimi bozuk bir sürüm her okumayı düşürürdü ve sürümler
@@ -359,7 +363,7 @@ export const duzenServisi = (
   // çağırır. Kilit sırası tema, düzen; düzen işlemleri tema kilidini almaz, kilitlenme olmaz.
   const islemdekiDuzen = async (islem: VeritabaniIslemi): Promise<DuzenDurumu> => {
     await duzenKilidiAl(islem);
-    return durum(await baslangicliSon(islem));
+    return durum(await baslangicliSon(islem), kutuphane());
   };
 
   const islemdeSurumOku = async (
@@ -370,7 +374,7 @@ export const duzenServisi = (
       .select(alanlar)
       .from(duzenSurumleri)
       .where(eq(duzenSurumleri.sira, sira));
-    return satir === undefined ? undefined : durum(satir);
+    return satir === undefined ? undefined : durum(satir, kutuphane());
   };
 
   // Düzeni yeni sürüm olarak yazar ve kayda geçirir; son sürümle aynıysa yazmaz, son sürümü döndürür.
@@ -406,7 +410,7 @@ export const duzenServisi = (
       eski: { ...kayit.eski, sira: son.sira },
       yeni: { ...kayit.yeni, sira: yazilan.sira },
     });
-    return durum(yazilan);
+    return durum(yazilan, kutuphane());
   };
 
   const bolumunuBul = (duzen: Duzen, kimlik: string) => {
