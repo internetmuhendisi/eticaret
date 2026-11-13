@@ -43,4 +43,4 @@ Bölüm: Vitrin. Önce 0141, 0122, 0125 ve 0123 bitmiş olmalı.
 
 ## Durum
 
-yapılacak
+bitti
