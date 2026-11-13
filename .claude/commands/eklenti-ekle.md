@@ -18,6 +18,7 @@ Bu adımda hiçbir dosya yazma.
 - Kod adı küçük harf, rakam ve tireden oluşmuyorsa söyle ve dur.
 - `eklentiler/<kod>.md` yoksa dur. "Bu eklentinin tarifi yok" de ve önce tarifin yazılmasını öner: `eklentiler/README.md`'deki on iki başlıkla. Katalogda adı varsa satırını göster. Yoksa katalogda olmadığını söyle. Tarifi kullanıcı istemeden yazma.
 - Tarifte on iki başlıktan biri eksikse eksikleri söyle ve dur.
+- Tarif var ama kod katalogda yoksa bunu kullanıcıya söyle ve devam edip etmeyeceğini sor.
 - Kod `cekirdek/kayitlar/eklentiler.ts`'teki `eklentiKodlari` listesinde zaten varsa ya da `cekirdek/eklentiler/<kod>/` klasörü varsa "eklenti kurulu" de ve dur.
 - Ana klasörde kaydedilmemiş değişiklik varsa söyle ve dur.
 
@@ -57,6 +58,11 @@ ln -s ../../../.env .env
 
 Her madde tarifte karşılığı varsa yapılır. Sıra 0144'teki sıradır. Eklenti kapalı başlar: hiçbir sitenin `eklentiler` ayarına kendiliğinden eklenmez. Tek istisna 5.13'teki Örnek Mağaza satırıdır ve kullanıcı onayıyla yazılır.
 
+İki kural her maddede geçerlidir:
+
+- **Site adı:** `cekirdek/` ve `bilesenler/` altındaki hiçbir dosyada site adı ya da kod adı geçmez. Buna test yorumları ve sürüm notu da dahildir. Yerine "tarayıcı testlerinin sitesi" gibi genel bir ad yaz. Bunu `site-adi-yok.test.ts` yakalar. Bu kural 0144'te de, komutun denemesinde de ilk çalışmada kırmızı verdi.
+- **Kullanım listesi:** Kütüphaneden bir parça (`BosHal`, `Kart`, `Baglanti`...) kullanan dosya eklenince ya da kalkınca `pnpm katalog-kullanimlari` çalıştırılır. Bu kural vitrin ve panel ekranları için de geçerlidir.
+
 1. **Kayıt:** `cekirdek/kayitlar/eklentiler.ts`'teki `eklentiKodlari` listesine kodu ekle. Eklentinin durumları, sınırları ve sabitleri aynı dosyaya girer.
 2. **Site ayarları:** `cekirdek/ayar-semasi/ayarlar.ts`'teki mağaza ayarlarına `<ad>…` önekiyle ayarlar, varsayılan değer ve açıklama anahtarıyla eklenir. Açıklamalar `tr.json`'da `ayar.aciklama.<ayar>` altına yazılır. Ayarlar `planlar/site-ayarlari.md`'nin "Eklentiler" bölümüne de girer. Varsayılanlar değişince `cekirdek/ayar-semasi/testler/site-klasoru.test.ts` güncellenir.
 3. **Veri:** Tablo `cekirdek/eklentiler/<kod>/model.ts` dosyasına yazılır, aranan alanlar ve indeksler dosyanın başında belirtilir. Ardından `pnpm veritabani-degisikligi-uret --name <kisa-ad>` çalıştırılır ve dosyanın başına geri dönüş notu ile kart satırı yazılır. Son olarak `pnpm veritabani-guncelle siteler/ornek-magaza` çalıştırılır. Tablo yoksa bu madde atlanır.
@@ -74,7 +80,7 @@ Her madde tarifte karşılığı varsa yapılır. Sıra 0144'teki sıradır. Ekl
    - Müşteri ucu için `rol-uc-erisimi.test.ts`'e senaryo ve başkasının kaydına dokunmama testi eklenir.
    - Testlerin deneme sitesinde (`cekirdek/ayar-semasi/testler/ornek-siteler/gecerli/ayarlar.json`) eklenti açılır.
 9. **Metinler:** `tr.json`'da `eklenti.<ad>.…` altına yazılır. Anahtar adı, testlerin metin olarak aradığı işlev adlarıyla başlamasın. 0144'teki örnek: `girisYap` anahtarı `iki-asamali-giris.test.ts`'i kırmızıya düşürdü.
-10. **Vitrin ekranı:** Parça önce ortak kütüphanede aranır. Kütüphanedeki bir parçayı kullanan dosya eklenince `pnpm katalog-kullanimlari` çalıştırılır. Var olan bir davranış değişirse var olan testi de güncellenir.
+10. **Vitrin ekranı:** Parça önce ortak kütüphanede aranır. Var olan bir davranış değişirse var olan testi de güncellenir.
 11. **Panel ekranı:** Sayfa `cekirdek/yonetim-paneli/sayfa-agaci.ts`'e `eklenti` alanıyla eklenir. Ekran `app/yonetim/(panel)/<sayfa>/page.tsx` dosyasına yazılır. Sayfa önce `panelSayfasiniAc` ile açılır, başlığını `panelSayfaBilgisi`'nden alır ve `PanelSayfasi` ile çizilir. Metinler `tr.json`'da `yonetim.sayfa.<ad>` altına girer.
 12. **Belge:** Tarif, `eklentiler/README.md`'nin "Bu sürümde tarifi yazılmış eklentiler" listesinde "kuruldu" diye işaretlenir.
 13. **Örnek Mağaza:** Kullanıcı onaylarsa `siteler/ornek-magaza/ayarlar.json`'daki `eklentiler` listesine kod eklenir. Tarayıcı testlerinin sitesi Örnek Mağaza olduğu için eklenti tarayıcıda yalnız açıkken denenebilir.
@@ -83,7 +89,13 @@ Her madde tarifte karşılığı varsa yapılır. Sıra 0144'teki sıradır. Ekl
 
 Eklentinin testleri `cekirdek/eklentiler/<kod>/testler/` altında, tarayıcı testi `cekirdek/testler/uctan-uca/<kod>.test.ts` dosyasındadır.
 
-- **Kapalı ve açık hâl:** Eklenti kapalıyken servis hiçbir şey yapmaz, uç bulunamadı verir, panel sayfası menüde yoktur ve açılmaz, vitrin yuvası çizilmez, iş çalışmaz. Açıkken hepsi vardır. Kapalı hâl birim testiyle denenir: testte çalışan sitenin ortak alanı (`Symbol.for("cekirdek.calisanSite")`) geçici olarak değiştirilir.
+- **Kapalı ve açık hâl:** Eklenti kapalıyken servis hiçbir şey yapmaz, uç bulunamadı verir, panel sayfası menüde yoktur ve açılmaz, vitrin yuvası çizilmez, iş çalışmaz. Açıkken hepsi vardır. Kapalı hâl birim testiyle denenir: testte çalışan sitenin ortak alanı (`Symbol.for("cekirdek.calisanSite")`) geçici olarak değiştirilir. Panel sayfası gerçek sayfa ağacıyla denenir (`panelSayfasiniAc("<sayfa>")`, deneme ağacıyla değil).
+- **Kapalı hâl gerçek uygulamada (bir kez):** Bu ölçüm testte kalmaz. Adımları:
+  1. Örnek Mağaza'nın `ayarlar.json`'ından kodu geçici olarak çıkar.
+  2. Geçici bir tarayıcı testiyle, eklentinin her ekranının kapalıyken görünmediğini ölç: menüde yok, adres 404, yuva yok.
+  3. Ayarı geri koy. Aynı geçici test bu sefer kırmızıya düşmeli; düşmüyorsa ölçüm boştur.
+  4. Geçici testi sil.
+  Çalışan bir geliştirme sunucusu varsa önce kapat: ayar süreç başına bir kez okunur, tarayıcı testleri açık sunucuyu yeniden kullanır.
 - **Panel sayfası:** `sayfa-agaci.test.ts`'te ağaç ile sayfa dosyaları aynı olmalı. `panel-yetkisi.test.tsx`'te sayfa kapalıyken menüde yok ve bulunamadı veriyor, açıkken var.
 - **Gerçek veritabanı:** Servis gerçek veritabanıyla, e-posta varsa gerçek posta kutusuyla denenir. Yarışlar sıra kurularak denenir. İki site ayrı kalmalı.
 - **Tür kontrolü:** Eklenti dosyaları `pnpm tur-kontrolu` kapsamında değildir (kart 0056). Geçici bir `tsconfig` ile `pnpm exec tsc --noEmit -p <geçici>` çalıştırılır, iş bitince silinir.
@@ -91,7 +103,10 @@ Eklentinin testleri `cekirdek/eklentiler/<kod>/testler/` altında, tarayıcı te
 
 ## 7. Kontroller
 
-1. **Bilerek bozma:** Her denetim tek tek bozulur, ilgili test çalıştırılır, sonra bozma geri alınır. Yeşil kalan bozmada testi güçlendir ya da denetimin gereksiz olduğunu göster. Sonucu karta yaz.
+1. **Bilerek bozma:** Her denetim tek tek bozulur, ilgili test çalıştırılır, sonra bozma geri alınır. Yeşil kalan bozmada testi güçlendir ya da denetimin gereksiz olduğunu göster. Sonucu karta yaz. Her eklentide şu bozmalar zorunludur:
+   - Her `eklentiAcikMi` denetimi kaldırılır.
+   - Panel sayfası varsa ağaçtaki `eklenti` alanı kaldırılır.
+   Bu bozmalarda kapalı hâl testi kırmızıya düşmeli.
 2. **Taslakla karşılaştırma:** Ekran varsa taslakla iki temada, telefonda ve bilgisayarda karşılaştır. Karşılaştırma için açtığın geliştirme sunucusunu sonra kapat: tarayıcı testleri onu yeniden kullanır ve görselli testler düşer.
 3. **Bitti sayılır listesi:** Tarifin ve kartın bitti sayılır listesini tek tek ölç. Tahminle "tamam" deme.
 4. **Bağımsız denetim:** İşi yapmayan bir ajana kartı, tarifi ve değişiklikleri ver. Bulguları düzelt ve testini ekle.

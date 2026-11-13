@@ -35,7 +35,7 @@ Her tarif aynı başlıklarla yazılır.
 8. **Yayın:** Eklenti tek komutla canlıya çıkar, kullanıcı ayarı panelden açar.
 9. **Kayıt:** Tarihçeye giriş yazılır, eklenti sitenin ayarlarında açık olarak görünür.
 
-Eklenti ekleme komutu henüz yok. İlk eklenti (stoğa gelince haber ver) elle kuruldu (kart 0144); komut bu kurulumdan çıkarılır (kart 0145). Eklentinin çekirdekteki yeri ve bağlantı noktaları: karar 0117, `.claude/rules/eklentiler.md`. Çalışma kopyası, tek komutla yayın ve bağımsız denetim de eğitimin ilerleyen bölümlerinde kurulur.
+Bu adımları `/eklenti-ekle <kod adı>` komutu yürütür (`.claude/commands/eklenti-ekle.md`, kart 0145). Komut ilk eklentinin (stoğa gelince haber ver, kart 0144) elle kurulumundan çıkarıldı. Tarifi olmayan eklentide durur, kullanıcı onayı olmadan yayın yapmaz. Eklentinin çekirdekteki yeri ve bağlantı noktaları: karar 0117, `.claude/rules/eklentiler.md`. Çalışma kopyası, tek komutla yayın ve bağımsız denetim de eğitimin ilerleyen bölümlerinde kurulur.
 
 ## Katalog
 

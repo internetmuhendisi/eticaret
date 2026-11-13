@@ -7,7 +7,7 @@ paths:
 
 # Eklentiler (karar 0117)
 
-Eklenti temel pakette olmayan özelliktir (`temel-paket.md`). Tarifi `eklentiler/<kod>.md`, kodu `cekirdek/eklentiler/<kod>/` klasöründedir.
+Eklenti temel pakette olmayan özelliktir (`temel-paket.md`). Tarifi `eklentiler/<kod>.md`, kodu `cekirdek/eklentiler/<kod>/` klasöründedir. Eklenti `/eklenti-ekle <kod>` komutuyla kurulur (`.claude/commands/eklenti-ekle.md`, kart 0145). Komutun adımlarına uyulması yalnız disiplindir, otomatik kontrolü yoktur.
 
 - Eklentinin kodu modülle aynı parçalardan oluşur: `model.ts`, `servis.ts`, `semalar.ts`, `izinler.ts`, `isler.ts`, ekran parçaları ve `testler/`. Kodu `cekirdek/kayitlar/eklentiler.ts` kaydına yazılır.
 - Kurulu eklenti kapalı başlar. Sitede açık olması altyapı sahibinin `eklentiler` ayarıdır; açıklık yalnız `eklentiAcikMi` ile sorulur (`cekirdek/eklentiler/acik.ts`). Eklentinin servisi, uçları, işleri ve ekranları kapalıyken hiçbir şey yapmaz; uç bulunamadı verir. Kişisel veriyi silen saklama işi kapalıyken de çalışır.

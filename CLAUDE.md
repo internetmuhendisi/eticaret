@@ -51,7 +51,7 @@ Bu üç kural hiçbir zaman çiğnenmez:
 - Temel paketin listesi `temel-paket.md` dosyasındadır. Temel paket dışındaki her özellik bir eklentidir.
 - Her eklentinin tarifi `eklentiler/` klasöründedir. Bir eklentiyi eklerken önce tarifini, ilgili kural dosyalarını ve karar kayıtlarını oku.
 - Katalogdaki bir eklentiyi kullanıcı istemeden kurma.
-- Eklenti ekleme komutu henüz yok. İlk eklenti (stoğa gelince haber ver) elle kuruldu; komut bu kurulumdan çıkarılacak (kart 0145). Eklentinin yapısı: `.claude/rules/eklentiler.md`.
+- Eklenti `/eklenti-ekle <kod adı>` komutuyla kurulur (kart 0145). Komut tarifi olmayan eklentide durur ve yayın yapmaz. Eklentinin yapısı: `.claude/rules/eklentiler.md`.
 
 ## Yasaklar
 
