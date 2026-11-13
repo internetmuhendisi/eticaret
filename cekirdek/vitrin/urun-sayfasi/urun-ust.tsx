@@ -6,7 +6,8 @@
 //   işlevlerinden çizilmiş gelir (bilgiler); burada yalnız seçili birleşiminki gösterilir, hesap yapılmaz.
 //   Seçim tamamlanmamışsa ürünün genel bilgisi (fiyat aralığı ve genel stok durumu) görünür.
 // - Seçim değişince adres yenilenir (sayfa yeniden yüklenmez), galeri birleşimin görseline geçer, fiyat ve stok
-//   bölgesi ekran okuyucuya duyurulur.
+//   bölgesi ekran okuyucuya duyurulur. Sonraki bir seçenekte müşterinin seçtiği değerden başkasına geçildiyse bu
+//   stok bölgesinde bir satırla söylenir (kart 0167).
 import { type ReactNode, useState } from "react";
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
 import { Bolum } from "../../izleme/bolum";
@@ -16,7 +17,9 @@ import { doldur } from "../../moduller/eposta/sablon";
 import { UrunGalerisi } from "./galeri";
 import { SeciliBirimBaglami } from "./secili-birim";
 import {
+  type DegisenSecim,
   degerDurumu,
+  degisenSecimler,
   type Secim,
   type SecimBirimi,
   type SecimSecenegi,
@@ -72,6 +75,8 @@ export function UrunUstKismi({
   const [secim, setSecim] = useState<Secim>(ilkSecim);
   // Müşterinin her seçenekte elle seçtiği son değer (secimiDegistir'in tercihi).
   const [tercih, setTercih] = useState<Secim>(ilkSecim);
+  // Son seçimde müşterinin seçtiğinden başkasına geçen değerler (kart 0167).
+  const [degisenler, setDegisenler] = useState<readonly DegisenSecim[]>([]);
   const birim = seciliBirim(birimler, secim, secenekler.length);
   const birimSirasi = (birimler.find((aday) => aday.kimlik === birim?.kimlik) ?? undefined)
     ?.gorselSirasi;
@@ -98,6 +103,7 @@ export function UrunUstKismi({
     if (yeni === secim) return;
     setTercih(yeniTercih);
     setSecim(yeni);
+    setDegisenler(degisenSecimler(secenekler, birimler, secim, yeni, yeniTercih, sira));
     const yeniBirim = seciliBirim(birimler, yeni, secenekler.length);
     const gorsel = birimler.find((aday) => aday.kimlik === yeniBirim?.kimlik)?.gorselSirasi;
     if (gorsel !== undefined) setAktif(gorsel);
@@ -165,6 +171,18 @@ export function UrunUstKismi({
           {eksikSecim ? (
             <span className="text-soluk-yazi">{metin("vitrin.urunSayfasi.secimIstegi")}</span>
           ) : null}
+          {degisenler.map((degisen) => (
+            <span key={degisen.secenek}>
+              {doldur(
+                metin(
+                  degisen.neden === "yok"
+                    ? "vitrin.urunSayfasi.secimDegistiYok"
+                    : "vitrin.urunSayfasi.secimDegistiTukendi",
+                ),
+                { secenek: degisen.secenek, eski: degisen.eski, yeni: degisen.yeni },
+              )}
+            </span>
+          ))}
           {bilgi.stok}
         </div>
         <SeciliBirimBaglami.Provider value={birim?.kimlik}>{yuvalar}</SeciliBirimBaglami.Provider>

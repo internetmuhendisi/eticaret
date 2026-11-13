@@ -18,8 +18,12 @@
 //   onlara uyan ilk satılabilir birleşim; o da yoksa ayara göre ilk satılabilir birleşim ya da seçimsiz (kalan
 //   adres değerleriyle).
 // - Stoğa gelince haber ver eklentisi açıkken (kart 0144, kullanıcı kararı) tükenmiş değer seçilebilir: seçilince
-//   "Tükendi" ve eklentinin formu görünür, satın alınamaz. Sonraki seçeneklerde önce satılabilir değer aranır, yoksa
-//   birleşimi olan (tükenmiş) değer seçili kalır. Tükenmiş değeri gizleyen sitede değer görünmediği için seçilemez.
+//   "Tükendi" ve eklentinin formu görünür, satın alınamaz. Sonraki seçeneklerde müşterinin seçtiği değer, birleşimi
+//   varsa tükenmiş olsa da korunur (kart 0167, kullanıcı kararı): beyazı seçip M'ye geçen müşteri "M Beyaz tükendi"
+//   görür, sessizce siyaha geçmez. Seçtiği değerin bu seçimle birleşimi yoksa ilk satılabilir, o da yoksa birleşimi
+//   olan değere geçilir. Tükenmiş değeri gizleyen sitede değer görünmediği için seçilemez.
+// - Sonraki bir seçenekteki değer müşterinin seçtiğinden başkasına geçince bu bir satırla söylenir
+//   (degisenSecimler, kart 0167): "Renk: Beyaz bu seçimle tükendi, Siyah seçildi."
 import type { SecenekOnSecimi } from "../../kayitlar/urun.ts";
 import { listeParametreleri } from "../urun-listesi/adres.ts";
 
@@ -90,9 +94,11 @@ export const secimiDegistir = (
     if (adaylar.length === 0) continue;
     const satilabilir = (aday: string) => degerDurumu(birimler, yeni, j, aday) === "satilabilir";
     const birlesimiVar = (aday: string) => degerDurumu(birimler, yeni, j, aday) !== "yok";
+    // Tükenmiş değer seçilebiliyorsa müşterinin seçtiği değer tükenmiş olsa da korunur (kart 0167).
+    const korunur = tukenmisSecilebilir ? birlesimiVar : satilabilir;
     const degerler = secenekler[j]?.degerler.map((aday) => aday.kimlik) ?? [];
     yeni[j] =
-      adaylar.find(satilabilir) ??
+      adaylar.find(korunur) ??
       degerler.find(satilabilir) ??
       (tukenmisSecilebilir
         ? (adaylar.find(birlesimiVar) ?? degerler.find(birlesimiVar))
@@ -100,6 +106,39 @@ export const secimiDegistir = (
   }
   return yeni;
 };
+
+export type DegisenSecim = {
+  secenek: string;
+  eski: string;
+  yeni: string;
+  // Müşterinin seçtiği değerin bu seçimle durumu: birleşimi tükenmiş ya da hiç yok.
+  neden: "tukendi" | "yok";
+};
+
+// Seçim değişince sonraki seçeneklerde müşterinin seçtiği (tercih) değerden başkasına geçilenler (kart 0167).
+// Önceki seçimde de başka değerdeyse yeniden söylenmez; seçim kalktıysa (değer yok) söylenecek yeni değer yoktur.
+export const degisenSecimler = (
+  secenekler: readonly SecimSecenegi[],
+  birimler: readonly SecimBirimi[],
+  onceki: Secim,
+  yeni: Secim,
+  tercih: Secim,
+  sira: number,
+): DegisenSecim[] =>
+  secenekler.flatMap((secenek, j) => {
+    const istenen = tercih[j];
+    const secilen = yeni[j];
+    if (j <= sira || istenen === undefined || secilen === undefined) return [];
+    if (secilen === istenen || secilen === onceki[j]) return [];
+    const ad = (kimlik: string) => secenek.degerler.find((deger) => deger.kimlik === kimlik)?.ad;
+    const eski = ad(istenen);
+    const yeniAd = ad(secilen);
+    if (eski === undefined || yeniAd === undefined) return [];
+    const durum = degerDurumu(birimler, yeni, j, istenen);
+    return [
+      { secenek: secenek.ad, eski, yeni: yeniAd, neden: durum === "yok" ? "yok" : "tukendi" },
+    ];
+  });
 
 const adrestenDegerler = (
   secenekler: readonly SecimSecenegi[],

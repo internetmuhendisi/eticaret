@@ -1,5 +1,7 @@
 # 0117 · İlk eklenti ve eklentilerin bağlantı noktaları: stoğa gelince haber ver
 
+Bu kararın sonraki seçeneklerde önce satılabilir değerin arandığı maddesinin yerine 0118 numaralı karar geçti.
+
 ## Tarih
 
 2026-11-13

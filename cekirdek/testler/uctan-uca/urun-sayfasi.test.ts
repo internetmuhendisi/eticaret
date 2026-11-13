@@ -6,6 +6,7 @@
 //   stoğa gelince haber ver eklentisi açık olduğu için seçilebilir ve "Tükendi" ile haber ver kutusunu gösterir
 //   (kart 0144; eklentisiz sitedeki "seçilemez" kuralı birim testlerindedir: secim.test.ts, urun-ust.test.tsx); klavyeyle renk
 //   değişince fiyat, stok yazısı, stok kodu, galerinin görseli ve adres değişir; sayfa yenilenince seçim kalır.
+// - Seçilen beden başka renkte tükenmişse korunur, "Tükendi" ve haber ver kutusu görünür (kart 0167).
 // - Galeri klavyeyle gezilir, büyütme penceresi ok tuşlarıyla görselleri gezer ve kapanınca odağı geri verir;
 //   video oynata basılana kadar video sitesine istek gitmez.
 // - İki renkte ve üç genişlikte taramadan geçer, yana kaymaz, konsolda hata yoktur.
@@ -280,6 +281,25 @@ test("ilk satılabilir birleşim seçili; tükenmiş beden haber için seçilir;
   await sayfaHazir(page);
   await expect(beden.getByRole("radio", { checked: true })).toContainText("M");
   await expect(page.locator('[data-slot="stok-durumu"]')).toHaveText(metin("vitrin.stok.tukendi"));
+  await expect(page.getByText(stokKoduYazisi(h.birlesimler.acikM.stokKodu))).toBeVisible();
+});
+
+// Kart 0167: müşterinin seçtiği beden başka renkte tükenmişse sessizce başka bedene geçilmez; eski kural satılabilir
+// S'ye geçiyordu (müşteri M istediğini sanırken S'yi seçmiş oluyordu).
+test("seçilen beden başka renkte tükenmişse korunur: Tükendi ve haber ver kutusu görünür", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(`${h.adres}?secenek-renk=koyu&secenek-beden=m`);
+  await sayfaHazir(page);
+  const beden = grup(page, "Beden");
+  await grup(page, "Renk").getByRole("radio", { name: "Açık", exact: true }).click();
+  await expect(page).toHaveURL(/\?secenek-renk=acik&secenek-beden=m$/);
+  await expect(beden.getByRole("radio", { checked: true })).toContainText("M");
+  await expect(page.locator('[data-slot="stok-durumu"]')).toHaveText(metin("vitrin.stok.tukendi"));
+  await expect(
+    page.getByRole("region", { name: metin("eklenti.stokBildirimi.form.baslik") }),
+  ).toBeVisible();
   await expect(page.getByText(stokKoduYazisi(h.birlesimler.acikM.stokKodu))).toBeVisible();
 });
 

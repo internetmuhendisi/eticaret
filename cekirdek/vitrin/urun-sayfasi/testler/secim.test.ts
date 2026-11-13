@@ -4,6 +4,7 @@
 import { describe, expect, it } from "vitest";
 import {
   degerDurumu,
+  degisenSecimler,
   ilkSecim,
   type SecimBirimi,
   type SecimSecenegi,
@@ -77,9 +78,21 @@ describe("tükenmiş değer seçilebilirken (stoğa gelince haber ver, kart 0144
     expect(sec(secim, 1, "l")).toBe(secim);
   });
 
-  it("sonraki seçenekte önce satılabilir değer, yoksa birleşimi olan tükenmiş değer seçilir", () => {
-    // Siyah-M seçiliyken Beyaz'a geçilince M tükenmiş ama satılabilir S var: S'ye geçer.
-    expect(sec(["siyah", "m"], 0, "beyaz")).toEqual(["beyaz", "s"]);
+  it("müşterinin seçtiği değer tükenmiş olsa da korunur, sessizce başkasına geçilmez (kart 0167)", () => {
+    // Siyah-M seçiliyken Beyaz'a geçilince Beyaz-M tükenmiş: M kalır, sayfa "Tükendi" der. Eski kural satılabilir
+    // S'ye geçiyordu; müşteri M istediğini sanırken S'yi seçmiş oluyordu.
+    expect(sec(["siyah", "m"], 0, "beyaz")).toEqual(["beyaz", "m"]);
+    expect(seciliBirim(birimler, sec(["siyah", "m"], 0, "beyaz"), 2)?.kimlik).toBe("beyaz-m");
+    // Müşterinin elle seçtiği değer (tercih M) o an seçili değerden (L) önce gelir.
+    expect(sec(["siyah", "l"], 0, "beyaz", ["siyah", "m"])).toEqual(["beyaz", "m"]);
+  });
+
+  it("seçtiği değerin birleşimi yoksa önce satılabilir değere geçilir", () => {
+    // Siyah-L seçiliyken Beyaz'a geçilince Beyaz'da L yok: satılabilir S'ye geçer.
+    expect(sec(["siyah", "l"], 0, "beyaz")).toEqual(["beyaz", "s"]);
+  });
+
+  it("hiçbiri satılamıyorsa birleşimi olan tükenmiş değer seçilir", () => {
     const hepsiBitti = birimler.map((b) => ({ ...b, satilabilir: false }));
     // Hiçbiri satılamıyorsa seçili (tükenmiş) değer kalır, birleşimi yoksa ilk birleşimi olan değere geçer.
     expect(
@@ -88,6 +101,42 @@ describe("tükenmiş değer seçilebilirken (stoğa gelince haber ver, kart 0144
     expect(
       secimiDegistir(secenekler, hepsiBitti, ["siyah", "l"], 0, "beyaz", ["siyah", "l"], true),
     ).toEqual(["beyaz", "s"]);
+  });
+});
+
+describe("değişen seçimin söylenmesi (kart 0167)", () => {
+  const degisen = (onceki: (string | undefined)[], sira: number, deger: string, acik = false) => {
+    const tercih = secenekler.map((_, i) => (i === sira ? deger : onceki[i]));
+    const yeni = secimiDegistir(secenekler, birimler, onceki, sira, deger, tercih, acik);
+    return degisenSecimler(secenekler, birimler, onceki, yeni, tercih, sira);
+  };
+
+  it("tükenmiş değer seçilemezken başka değere geçilince neden ve iki değer söylenir", () => {
+    expect(degisen(["siyah", "m"], 0, "beyaz")).toEqual([
+      { secenek: "Beden", eski: "M", yeni: "S", neden: "tukendi" },
+    ]);
+    expect(degisen(["siyah", "l"], 0, "beyaz")).toEqual([
+      { secenek: "Beden", eski: "L", yeni: "S", neden: "yok" },
+    ]);
+  });
+
+  it("tükenmiş değer seçilebilirken değer korunur, yalnız birleşimi olmayan değer söylenir", () => {
+    expect(degisen(["siyah", "m"], 0, "beyaz", true)).toEqual([]);
+    expect(degisen(["siyah", "l"], 0, "beyaz", true)).toEqual([
+      { secenek: "Beden", eski: "L", yeni: "S", neden: "yok" },
+    ]);
+  });
+
+  it("değer değişmediyse, seçilen seçenekte ve önceki seçimde zaten başka değerdeyse söylenmez", () => {
+    expect(degisen(["beyaz", "s"], 0, "siyah", true)).toEqual([]);
+    expect(degisen(["siyah", "m"], 0, "beyaz", false).length).toBe(1);
+    // Tercih L, seçim zaten S'de (önceki değişiklikte söylendi): aynı renge yeniden basınca tekrar söylenmez.
+    const yeni = secimiDegistir(secenekler, birimler, ["beyaz", "s"], 0, "beyaz", ["beyaz", "l"]);
+    expect(degisenSecimler(secenekler, birimler, ["beyaz", "s"], yeni, ["beyaz", "l"], 0)).toEqual(
+      [],
+    );
+    // Seçilmemiş sonraki seçenek söylenmez.
+    expect(degisen([undefined, undefined], 0, "siyah")).toEqual([]);
   });
 });
 

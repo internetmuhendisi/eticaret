@@ -63,7 +63,7 @@ paths:
 - Renk ve beden seçiminin kuralları ve adresi yalnız `secim.ts`'tedir (`degerDurumu`, `secimiDegistir`, `ilkSecim`, `secimdenSorgu`). Parametre ürün listesinin filtresiyle aynıdır (`secenek-<seçenek>`). İlk seçim ve tükenmiş değerin gösterimi mağaza sahibinin ayarıdır (`secenekOnSecimi`, `tukenmisSecenek`).
 - Uzun açıklama yalnız `aciklamayiTemizle` ile temizlenmiş olarak ve `bicimli-metin` stiliyle çizilir.
 - Galeri ürün görseli ucundan boyutlarıyla çizilir; video yalnız oynata basınca yüklenir.
-- Eklentilerin ürün sayfası parçası yalnız yuvadan gelir (`UrunSayfasiYuvalari`, karar 0117): stok yazısının altında, seçili birimi `useSeciliBirim` ile okur. Bir eklenti tükenmiş birim için iş görüyorsa tükenmiş değer seçilebilir (`tukenmisSecilebilir`, kart 0144); kural `secimiDegistir`'dedir.
+- Eklentilerin ürün sayfası parçası yalnız yuvadan gelir (`UrunSayfasiYuvalari`, karar 0117): stok yazısının altında, seçili birimi `useSeciliBirim` ile okur. Bir eklenti tükenmiş birim için iş görüyorsa tükenmiş değer seçilebilir (`tukenmisSecilebilir`, kart 0144); kural `secimiDegistir`'dedir. Müşterinin elle seçtiği değer sessizce değişmez: tükenmiş değer seçilebiliyorsa korunur, değişmek zorundaysa `degisenSecimler` ile söylenir (karar 0118).
 
 ## Ürün yorumları (karar 0109)
 

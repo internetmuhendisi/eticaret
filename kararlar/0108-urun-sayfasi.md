@@ -1,5 +1,7 @@
 # 0108 · Ürün sayfası: seçim, ilk seçim ayarı ve açıklamanın temizlenmesi
 
+Bu kararın sonraki seçeneklerin satılabilir değere geçtiği maddesinin yerine 0118 numaralı karar geçti.
+
 ## Tarih
 
 2026-11-12

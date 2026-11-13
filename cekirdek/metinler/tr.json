@@ -1054,6 +1054,8 @@
       "tukendiEki": ", tükendi",
       "tukenmisAciklamasi": "Üstü çizili seçenekler bu seçimle tükendi.",
       "secimIstegi": "Fiyatı ve stok durumunu görmek için seçim yapın.",
+      "secimDegistiTukendi": "{secenek}: {eski} bu seçimle tükendi, {yeni} seçildi.",
+      "secimDegistiYok": "{secenek}: {eski} bu seçimle bulunmuyor, {yeni} seçildi.",
       "stokKodu": "Stok kodu: {kod}",
       "kargo": "{gun} iş gününde kargoda",
       "ayniGunKargo": "Aynı gün kargoda",
