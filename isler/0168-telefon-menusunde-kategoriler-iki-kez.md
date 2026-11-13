@@ -22,6 +22,11 @@ Müşteri gezisinde (2026-11-13) ölçüldü: telefonda yan menü önce ana men�
 - Pencere açıkken iki renkte taramadan geçiyor, Escape odağı geri veriyor.
 - Önce ve sonra ekran görüntüsü karşılaştırıldı.
 
+## Notlar (2026-11-14)
+
+- Önce ve sonra görüntüsü (taze kurulmuş Örnek Mağaza, 390 px): önce yan pencerede Giyim, Ev ve Yaşam, Elektronik Aksesuar, Spor ve Outdoor, Kişisel Bakım iki kez, başlıksız listeleniyordu. Sonra en üstte kapalı tek "Kategoriler" satırı, altında ana menü; "Kategoriler" açılınca kategoriler girintili içinde.
+- Karar 0120.
+
 ## Durum
 
 yapılacak

@@ -250,6 +250,7 @@ export const ornekBaglam = (an: Date = new Date()): VitrinBaglami => ({
       ]),
     ],
   },
+  kategoriMenuleri: ["kategori-menusu"],
   islevler: Object.fromEntries(islevler.map((islev) => [islev, true])) as VitrinBaglami["islevler"],
   gorseller: ornekGorseller(),
   kategoriler: ornekKategoriler(),

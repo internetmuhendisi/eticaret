@@ -1,5 +1,7 @@
 # 0083 · Üst kısım ve alt kısım bölümleri
 
+Bu kararın yan pencerede seçilen menülerin alt alta çizildiği maddesinin yerine 0120 numaralı karar geçti.
+
 ## Tarih
 
 2026-11-09

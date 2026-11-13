@@ -105,7 +105,9 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
     : [];
   const menuler = kodlar.flatMap((kod) => {
     const dallar = baglam.menuler[kod];
-    return dallar === undefined || dallar.length === 0 ? [] : [{ kod, dallar }];
+    return dallar === undefined || dallar.length === 0
+      ? []
+      : [{ kod, dallar, kategori: baglam.kategoriMenuleri.includes(kod) }];
   });
   const { islevler, sayilar, iletisim } = baglam;
   const ortada = gorunum === "logo-ortada";
@@ -140,6 +142,7 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
         kapat: metin("vitrin.bolum.ustSatir.menuyuKapat"),
         baslik: metin("vitrin.bolum.ustSatir.menuBasligi"),
         tumu: metin("vitrin.bolum.ustSatir.tumu"),
+        kategoriler: metin("vitrin.bolum.menuSatiri.kategoriler"),
       }}
     />
   );

@@ -26,7 +26,12 @@ import { kategoriler } from "../moduller/kategori/model";
 import { logonunYolu, magazaLogosu } from "../moduller/magaza-ayarlari/logo";
 import { siteninMagazaAyarlari } from "../moduller/magaza-ayarlari/servis";
 import { markalar } from "../moduller/marka/model";
-import { type MenuDali, type VitrinHedefi, vitrinMenusu } from "../moduller/menu/servis";
+import {
+  kategoriMenuleriniSec,
+  type MenuDali,
+  type VitrinHedefi,
+  vitrinMenusu,
+} from "../moduller/menu/servis";
 import { temaServisi } from "../moduller/tema/servis";
 import { anaSayfaYorumlari } from "../moduller/yorum/servis";
 import type { Veritabani } from "../veritabani/baglanti";
@@ -210,17 +215,27 @@ export const vitrinBaglaminiOku = async (
   an: Date = new Date(),
 ): Promise<VitrinBaglami> => {
   const kodlar = bolumlerinMenuKodlari(bolumler, kutuphane);
-  const [ayarlar, logo, menuler, tema, kategoriListesi, markaListesi, urunler, yorumlar] =
-    await Promise.all([
-      siteninMagazaAyarlari(vt, site),
-      magazaLogosu(vt, { site }),
-      Promise.all(kodlar.map(async (kod) => [kod, await vitrinMenusu(vt, kod)] as const)),
-      temaServisi(() => site).gecerliTema(vt),
-      kategorileriOku(vt, bolumlerinBaglari(bolumler, kutuphane, "kategori")),
-      markalariOku(vt, bolumlerinBaglari(bolumler, kutuphane, "marka")),
-      kaynaklarinUrunleri(vt, site, bolumlerinUrunKaynaklari(bolumler, kutuphane), an),
-      yorumKaynaklari(vt, bolumler, kutuphane, an),
-    ]);
+  const [
+    ayarlar,
+    logo,
+    menuler,
+    kategoriMenuKodlari,
+    tema,
+    kategoriListesi,
+    markaListesi,
+    urunler,
+    yorumlar,
+  ] = await Promise.all([
+    siteninMagazaAyarlari(vt, site),
+    magazaLogosu(vt, { site }),
+    Promise.all(kodlar.map(async (kod) => [kod, await vitrinMenusu(vt, kod)] as const)),
+    kategoriMenuleriniSec(vt, kodlar),
+    temaServisi(() => site).gecerliTema(vt),
+    kategorileriOku(vt, bolumlerinBaglari(bolumler, kutuphane, "kategori")),
+    markalariOku(vt, bolumlerinBaglari(bolumler, kutuphane, "marka")),
+    kaynaklarinUrunleri(vt, site, bolumlerinUrunKaynaklari(bolumler, kutuphane), an),
+    yorumKaynaklari(vt, bolumler, kutuphane, an),
+  ]);
   // Bölümlerin ve seçtikleri kategorilerin görselleri tek okumayla (silinmiş görsel yok).
   const gorselKimlikleri = [
     ...new Set([
@@ -299,6 +314,7 @@ export const vitrinBaglaminiOku = async (
         dallar === undefined ? [] : [[kod, menuDallari(dallar)]],
       ),
     ),
+    kategoriMenuleri: kategoriMenuKodlari,
     gorseller,
     kategoriler: kategoriListesi,
     markalar: markaListesi,

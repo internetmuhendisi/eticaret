@@ -196,6 +196,33 @@ describe("vitrin bağlamı", () => {
     ]);
   });
 
+  // Kart 0168: telefonun yan penceresi kategori menüsünü tek bir "Kategoriler" dalı olarak çizer.
+  it("kategori menüleri: yalnız seçilen, silinmemiş ve kategori ağacından gelen menülerin kodları", async () => {
+    const vt = await siteAc();
+    await menuEkle(vt, yonetici(), { kod: "ana-menu", ad: "Ana", tur: "elle" });
+    await menuEkle(vt, yonetici(), { kod: "kategoriler", ad: "K", tur: "kategori-agaci" });
+    await menuEkle(vt, yonetici(), { kod: "secilmeyen", ad: "S", tur: "kategori-agaci" });
+    const silinen = await menuEkle(vt, yonetici(), {
+      kod: "silinen",
+      ad: "S",
+      tur: "kategori-agaci",
+    });
+    await menuSil(vt, yonetici(), silinen);
+    await kategoriEkle(vt, yonetici(), { ad: "Giyim", adresAdi: "giyim" });
+    const baglam = await vitrinBaglaminiOku(
+      vt,
+      site,
+      [
+        bolum("ust-satir", {
+          menuler: [{ menu: "ana-menu" }, { menu: "kategoriler" }, { menu: "silinen" }],
+        }),
+      ],
+      bolumKutuphanesi,
+    );
+    expect(baglam.kategoriMenuleri).toEqual(["kategoriler"]);
+    expect(Object.keys(baglam.menuler).sort()).toEqual(["ana-menu", "kategoriler"]);
+  });
+
   it("altyapı adı yalnız altyapı sahibinin ayarı açıkken; yıl sitenin saat diliminde", async () => {
     const vt = await siteAc();
     // İstanbul'da yılbaşı geçti, UTC'de daha 31 Aralık.

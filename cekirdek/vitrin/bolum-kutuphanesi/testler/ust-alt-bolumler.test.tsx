@@ -51,6 +51,7 @@ const bosBaglam: VitrinBaglami = {
   iletisim: {},
   sosyalHesaplar: [],
   odemeIsaretleri: [],
+  kategoriMenuleri: [],
   menuler: {},
   islevler: kapali,
   gorseller: {},

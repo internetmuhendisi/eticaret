@@ -37,6 +37,7 @@ const baglam: VitrinBaglami = {
   iletisim: {},
   sosyalHesaplar: [],
   odemeIsaretleri: [],
+  kategoriMenuleri: [],
   menuler: {},
   islevler: yazilanIslevler,
   gorseller: {},

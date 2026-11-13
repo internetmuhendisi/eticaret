@@ -51,6 +51,9 @@ export type VitrinBaglami = {
   odemeIsaretleri: readonly OdemeIsareti[];
   // Bölümlerin seçtiği menüler, koduyla. Silinmiş ya da olmayan menü burada yoktur.
   menuler: Readonly<Record<string, readonly BaglamMenuDali[]>>;
+  // Bu menülerden kategori ağacından gelenlerin kodları (kart 0168): telefonun yan penceresi onları tek bir
+  // "Kategoriler" dalı olarak çizer.
+  kategoriMenuleri: readonly string[];
   islevler: Readonly<Record<Islev, boolean>>;
   // Bölümlerin ve kategorilerin görselleri, dosya kimliğiyle (kart 0110). Silinmiş ya da boyutu olmayan görsel
   // burada yoktur; bölüm o görseli çizmez.

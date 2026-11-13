@@ -428,10 +428,25 @@ test("üst kısım: telefonda menü yan pencereden açılır, arama kutusu ve se
   await expect(
     pencere.getByRole("link", { name: metin("vitrin.bolum.ustSatir.hesap") }),
   ).toBeVisible();
+  // Kategori menüsü tek bir "Kategoriler" dalıdır (kart 0168): ana menüde de geçen kategori en üst düzeyde bir
+  // kez görünür; "Kategoriler" açılınca kategoriler onun içindedir.
+  const giyimler = pencere.getByRole("button", {
+    name: metin("gelistirme.bolum.ornek.menu.giyim"),
+  });
+  await expect(giyimler).toHaveCount(1);
+  const kategoriler = pencere.getByRole("button", {
+    name: metin("vitrin.bolum.menuSatiri.kategoriler"),
+  });
+  await expect(kategoriler).toHaveCount(1);
+  await kategoriler.focus();
+  await page.keyboard.press("Enter");
+  await expect(kategoriler).toHaveAttribute("aria-expanded", "true");
+  await expect(giyimler).toHaveCount(2);
+  await tara(page, "yan pencerede kategoriler açık");
+  await page.keyboard.press("Enter");
+  await expect(giyimler).toHaveCount(1);
   // Alt düzeyi olan dal akordeonla açılır; dalın kendisi "Tümü" bağlantısıdır.
-  const giyim = pencere
-    .getByRole("button", { name: metin("gelistirme.bolum.ornek.menu.giyim") })
-    .first();
+  const giyim = giyimler.first();
   await giyim.focus();
   await page.keyboard.press("Enter");
   await expect(

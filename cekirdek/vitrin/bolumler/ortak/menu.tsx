@@ -90,3 +90,39 @@ export function YanMenu({
     </ul>
   );
 }
+
+// Yan penceredeki adlı menü grubu (kart 0168): kategori menüsü masaüstündeki "Kategoriler" düğmesi gibi tek bir
+// satırdır, dokununca açılır; içinde kategoriler YanMenu ile (alt kategorisi olan akordeonla) durur. Böylece ana
+// menüde de geçen kategoriler pencerenin en üst düzeyinde iki kez görünmez.
+export function YanMenuGrubu({
+  baslik,
+  dallar,
+  tumu,
+  tiklayinca,
+}: {
+  baslik: string;
+  dallar: readonly BaglamMenuDali[];
+  tumu: string;
+  tiklayinca?: () => void;
+}) {
+  return (
+    <ul className="flex flex-col">
+      <li className="border-b border-kenar">
+        <Akordeon type="single" collapsible>
+          <AkordeonOgesi value={baslik}>
+            <AkordeonBasligi duzey={3}>{baslik}</AkordeonBasligi>
+            <AkordeonIcerigi>
+              <div className="pl-4">
+                <YanMenu
+                  dallar={dallar}
+                  tumu={tumu}
+                  {...(tiklayinca === undefined ? {} : { tiklayinca })}
+                />
+              </div>
+            </AkordeonIcerigi>
+          </AkordeonOgesi>
+        </Akordeon>
+      </li>
+    </ul>
+  );
+}

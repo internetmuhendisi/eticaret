@@ -2,7 +2,9 @@
 // Logo satırının telefondaki menü düğmesi ve yan penceresi (kart 0108). Tarayıcıda çizilir: yan pencerenin
 // tetikleyicisi özelliklerini (aria-haspopup, tıklama) düğmeye ancak düğme burada çizilirse verebilir; sunucuda
 // çizilen düğme ipucunun sarmalına dönüşür ve pencere açılmaz (ölçüldü). Metinler sunucudan gelir. Hesap öğesi
-// girişli müşteride e-postayı ve "Çıkış yap"ı gösterir, oturum ortak durumdan gelir (kart 0131).
+// girişli müşteride e-postayı ve "Çıkış yap"ı gösterir, oturum ortak durumdan gelir (kart 0131). Kategori menüsü
+// masaüstündeki menü satırı gibi önce, tek bir "Kategoriler" dalı olarak çizilir (kart 0168, kullanıcı kararı):
+// ana menüde de geçen kategoriler en üst düzeyde iki kez görünmez.
 import { useState } from "react";
 import { Ikon } from "../../../../bilesenler/ikonlar/ikon";
 import type { IkonAdi } from "../../../../bilesenler/ikonlar/sozluk";
@@ -18,7 +20,7 @@ import {
 import { useMetin } from "../../../metinler/istemci-metni";
 import type { BaglamMenuDali } from "../../bolum-kutuphanesi/baglam";
 import { cikisYap, useHesapDurumu } from "../../hesap-durumu";
-import { YanMenu } from "../ortak/menu";
+import { YanMenu, YanMenuGrubu } from "../ortak/menu";
 
 export type YandakiBaglanti = { adres: string; ikon: IkonAdi; etiket: string };
 
@@ -29,12 +31,13 @@ export function MenuDugmesi({
   hesapSorulur,
   metinler,
 }: {
-  menuler: readonly { kod: string; dallar: readonly BaglamMenuDali[] }[];
+  // kategori: menü kategori ağacından gelir (bağlamın kategoriMenuleri).
+  menuler: readonly { kod: string; dallar: readonly BaglamMenuDali[]; kategori: boolean }[];
   yandakiler: readonly YandakiBaglanti[];
   hesap: YandakiBaglanti;
   // Bağlamın müşteri oturumu "sorulur" ise; katalogda istek gitmez.
   hesapSorulur: boolean;
-  metinler: { ac: string; kapat: string; baslik: string; tumu: string };
+  metinler: { ac: string; kapat: string; baslik: string; tumu: string; kategoriler: string };
 }) {
   // Bağlantıya basılınca pencere kapanır: vitrinin çerçevesi sayfalar arasında yeniden çizilmez, açık kalırdı.
   const [acik, setAcik] = useState(false);
@@ -67,9 +70,22 @@ export function MenuDugmesi({
       <YanPencereIcerigi taraf="sol" kapatEtiketi={metinler.kapat}>
         <YanPencereBasligi>{metinler.baslik}</YanPencereBasligi>
         <nav aria-label={metinler.baslik} className="flex flex-col gap-6">
-          {menuler.map(({ kod, dallar }) => (
-            <YanMenu key={kod} dallar={dallar} tumu={metinler.tumu} tiklayinca={kapat} />
-          ))}
+          {menuler
+            .filter((menu) => menu.kategori)
+            .map(({ kod, dallar }) => (
+              <YanMenuGrubu
+                key={kod}
+                baslik={metinler.kategoriler}
+                dallar={dallar}
+                tumu={metinler.tumu}
+                tiklayinca={kapat}
+              />
+            ))}
+          {menuler
+            .filter((menu) => !menu.kategori)
+            .map(({ kod, dallar }) => (
+              <YanMenu key={kod} dallar={dallar} tumu={metinler.tumu} tiklayinca={kapat} />
+            ))}
           <ul className="flex flex-col">
             {yandakiler.map(baglantiOgesi)}
             {durum.tur === "girisli" ? (

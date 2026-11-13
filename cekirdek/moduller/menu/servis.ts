@@ -582,6 +582,27 @@ export const ogeleriSirala = (
 
 const menuAlanlari = { kimlik: menuler.kimlik, kod: menuler.kod, ad: menuler.ad, tur: menuler.tur };
 
+// Verilen kodlardan kategori ağacından gelen (silinmemiş) menülerin kodları (kart 0168): telefonun yan penceresi
+// kategori menüsünü tek bir "Kategoriler" dalı olarak çizer, masaüstündeki menü satırının düğmesi gibi.
+export const kategoriMenuleriniSec = async (
+  vt: Veritabani,
+  kodlar: readonly string[],
+): Promise<string[]> =>
+  kodlar.length === 0
+    ? []
+    : (
+        await vt
+          .select({ kod: menuler.kod })
+          .from(menuler)
+          .where(
+            and(
+              inArray(menuler.kod, [...kodlar]),
+              eq(menuler.tur, "kategori-agaci"),
+              isNull(menuler.silinme_zamani),
+            ),
+          )
+      ).map((satir) => satir.kod);
+
 // Silinmemiş menüler, koduna göre.
 export const menuleriOku = async (vt: Veritabani): Promise<Menu[]> =>
   (await vt
