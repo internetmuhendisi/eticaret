@@ -28,7 +28,7 @@ import {
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { dosyaSil, gorselKaydet } from "../../dosya/servis.ts";
 import { kategoriler } from "../../kategori/model.ts";
-import { kategoriEkle, kategoriSil } from "../../kategori/servis.ts";
+import { kategoriDegistir, kategoriEkle, kategoriSil } from "../../kategori/servis.ts";
 import { markaServisi } from "../../marka/servis.ts";
 import { urunServisi } from "../../urun/servis.ts";
 import { duzenSurumleri } from "../model.ts";
@@ -755,6 +755,55 @@ describe("eski çekirdeğin yazdığı düzen", () => {
 });
 
 describe("aynı anda gelen işlemler", () => {
+  // Kart 0125: iki kategoriye başvuran bölüm eklemesi ile o kategorilerin üstünü silen işlem aynı anda. Sıra kurulur:
+  // silme üstü günceller, ilk güncellediği alt kategoride (A) tutulur; ekleme öteki alt kategoriyi (B) kilitleyip
+  // A'yı bekler; A bırakılınca silme B'yi günceller. Bölüm satırları kimlik sırasıyla kilitler, silme altları sıra
+  // numarasıyla günceller: B'nin kimliği küçük, sırası büyük seçilir ki iki sıra her çalışmada ters düşsün.
+  it("iki kategoriye başvuran bölüm eklemesi ile üst kategoriyi silme birlikte kilitlenmez", async () => {
+    const vt = await siteAc();
+    await servis.duzenOku(vt);
+    const ust = await kategoriEkle(vt, yonetici(), { ad: "Üst" });
+    const x = await kategoriEkle(vt, yonetici(), { ad: "X", ust });
+    const y = await kategoriEkle(vt, yonetici(), { ad: "Y", ust });
+    const [a, b] = x > y ? [x, y] : [y, x];
+    await kategoriDegistir(vt, yonetici(), a, { sira: 0 });
+    await kategoriDegistir(vt, yonetici(), b, { sira: 1 });
+    let birak: () => void = () => undefined;
+    const tut = new Promise<void>((coz) => {
+      birak = coz;
+    });
+    let tuttu: () => void = () => undefined;
+    const tutuldu = new Promise<void>((coz) => {
+      tuttu = coz;
+    });
+    const tutan = vt.transaction(async (islem) => {
+      await islem.select().from(kategoriler).where(eq(kategoriler.kimlik, a)).for("update");
+      tuttu();
+      await tut;
+    });
+    await tutuldu;
+    const silme = kategoriSil(vt, yonetici(), ust);
+    await kilitBekleyeniGor(vt, 1);
+    const ekleme = servis.bolumEkle(vt, yonetici(), "ana-sayfa", {
+      tur: "deneme-bolumu",
+      degerler: { baslik: "S", kategori: a, urunler: { tur: "kategori", kategori: b, adet: 4 } },
+    });
+    await kilitBekleyeniGor(vt, 2);
+    birak();
+    await tutan;
+    const sonuclar = await Promise.allSettled([silme, ekleme]);
+    const hatalar = sonuclar.flatMap((sonuc) =>
+      sonuc.status === "rejected" ? [String((sonuc.reason as Error).cause ?? sonuc.reason)] : [],
+    );
+    expect(hatalar.filter((hata) => hata.includes("deadlock"))).toEqual([]);
+    // Ekleme silmenin bitmesini bekler; A ve B silinmedi, en üste çıktı: bölüm ikisine de bağlanır.
+    expect(hatalar).toEqual([]);
+    const eklenen = (await servis.duzenOku(vt)).duzen["ana-sayfa"].find(
+      (bolum) => bolum.kimlik === (sonuclar[1] as PromiseFulfilledResult<string>).value,
+    );
+    expect(eklenen?.degerler).toMatchObject({ kategori: a, urunler: { kategori: b } });
+  });
+
   it("aynı anda altı ekleme sırayla yazılır, hiçbiri ötekini ezmez", async () => {
     const vt = await siteAc();
     await servis.duzenOku(vt);

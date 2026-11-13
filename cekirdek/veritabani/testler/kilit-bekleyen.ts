@@ -1,11 +1,12 @@
 // Bu veritabanında kilit bekleyen bir sorgu görünene kadar bekler: yarış testleri ikinci isteğin
 // gerçekten kilitte beklediğini görmeden birinciyi bitirmez (kart 0082, kart 0085). Site kullanıcısı
-// öteki oturumları göremez (karar 0053): gözlem yönetici bağlantısıyla yapılır.
+// öteki oturumları göremez (karar 0053): gözlem yönetici bağlantısıyla yapılır. enAz: en az bu kadar sorgu kilit
+// beklerken döner (kart 0125: iki işlemin ikisi de beklemeye düştüğünde).
 import { sql } from "drizzle-orm";
 import { baglan, type Veritabani } from "../baglanti.ts";
 import { yoneticiAdresi } from "./adresler.ts";
 
-export const kilitBekleyeniGor = async (vt: Veritabani) => {
+export const kilitBekleyeniGor = async (vt: Veritabani, enAz = 1) => {
   const ad = (await vt.execute<{ ad: string }>(sql`select current_database() as ad`)).rows[0]?.ad;
   const yonetici = baglan(yoneticiAdresi("postgres"));
   try {
@@ -14,7 +15,7 @@ export const kilitBekleyeniGor = async (vt: Veritabani) => {
       const sonuc = await yonetici.execute<{ sayi: number }>(
         sql`select count(*)::int as sayi from pg_stat_activity where datname = ${ad} and wait_event_type = 'Lock'`,
       );
-      if ((sonuc.rows[0]?.sayi ?? 0) > 0) return;
+      if ((sonuc.rows[0]?.sayi ?? 0) >= enAz) return;
       await new Promise((bitti) => setTimeout(bitti, 25));
     }
     throw new Error("Kilit bekleyen sorgu görülmedi.");

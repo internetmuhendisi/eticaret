@@ -54,6 +54,7 @@ import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { dosyaKlasoru, gorselHazirMi } from "../dosya/servis.ts";
 import { etiketler } from "../etiket/model.ts";
 import { kategoriler } from "../kategori/model.ts";
+import { kategoriKilidiAl } from "../kategori/servis.ts";
 import { markalar } from "../marka/model.ts";
 import { menuler } from "../menu/model.ts";
 import { baslangicGorselleriyle } from "../urun/baslangic.ts";
@@ -139,8 +140,13 @@ const bolumuBul = (duzen: Duzen, kimlikGirdisi: string) => {
 
 // Başvurulan kayıtların var ve silinmemiş olduğu, aynı işlemde paylaşımlı kilitlenerek. Görsel boyutlarıyla
 // hazır olmalı (galerideki kuralın aynısı).
+// Kategoriye başvuran yazma önce kategori kilidini alır (kart 0125, karar 0114): kategori silme üstü ve altlarını
+// sırayla günceller, bölüm aynı satırları ters sırayla kilitlerse ikisi birbirini bekleyip kilitlenir (gerçek
+// veritabanıyla ölçüldü). Kilit sırası düzen, kategori, satırlar (başlangıç düzeniyle aynı, baslangic.ts);
+// kategori servisi düzen kilidini almaz. Satırlar kimlik sırasıyla kilitlenir.
 const baglariDenetle = async (islem: VeritabaniIslemi, baglar: BolumBaglari): Promise<Sorun[]> => {
   const sorunlar: Sorun[] = [];
+  if (baglar.kategori.size > 0) await kategoriKilidiAl(islem);
   const eksik = (yollar: string[] | undefined, kod: string) => {
     for (const yol of yollar ?? []) sorunlar.push({ alan: `degerler.${yol}`, kod });
   };
@@ -157,6 +163,7 @@ const baglariDenetle = async (islem: VeritabaniIslemi, baglar: BolumBaglari): Pr
       .select({ kimlik: tablo.kimlik })
       .from(tablo)
       .where(and(inArray(tablo.kimlik, kimlikler.filter(kimlikMi)), isNull(tablo.silinme_zamani)))
+      .orderBy(tablo.kimlik)
       .for("share");
     const varolan = new Set(bulunan.map((satir) => satir.kimlik));
     for (const kimlik of kimlikler) {
@@ -171,6 +178,7 @@ const baglariDenetle = async (islem: VeritabaniIslemi, baglar: BolumBaglari): Pr
       .select({ kod: menuler.kod })
       .from(menuler)
       .where(and(inArray(menuler.kod, menuKodlari), isNull(menuler.silinme_zamani)))
+      .orderBy(menuler.kod)
       .for("share");
     const varolan = new Set(bulunan.map((satir) => satir.kod));
     for (const kod of menuKodlari) {

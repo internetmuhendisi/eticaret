@@ -21,6 +21,13 @@ Bölüm: Vitrin. Kart 0114'te kurulumun kilidi yazılırken görüldü, ölçül
 - Ölçümün sonucu yazıldı.
 - Kilitlenme varsa düzeltildi ve testte; yoksa nedeni karta yazıldı.
 
+## Ölçüm (2026-11-13)
+
+- Gerçek veritabanıyla, sıra kurularak ölçüldü: üst kategori ve iki alt kategori; bölüm iki alt kategoriye başvuruyor; kategori silme ilk güncellediği alt kategoride bir test işlemiyle tutuldu, bölüm eklemesi öteki alt kategoriyi kilitleyip ilkini bekledi, test işlemi bırakıldı.
+- Sonuç: üç ölçümün üçünde veritabanı bölüm eklemeyi "deadlock detected" ile düşürdü. Kilitlenme gerçek.
+- Düzeltme: bölüm yazması kategoriye başvurunca önce kategori kilidini alır, satırlar kimlik sırasıyla kilitlenir (karar 0114). Düzeltmeyle üç çalışmanın üçü yeşil, kategori kilidi kaldırılınca üçü kırmızı.
+- Aynı kalıp ürünlerin vitrin sırasında da ölçüldü ve kilitleniyor: kart 0159.
+
 ## Durum
 
 yapılacak
