@@ -30,4 +30,4 @@ Müşteri gezisinde (2026-11-13) görüldü: Örnek Mağaza'nın ana sayfasında
 
 ## Durum
 
-yapılacak
+bitti
