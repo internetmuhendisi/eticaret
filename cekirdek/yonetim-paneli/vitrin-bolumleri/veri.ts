@@ -8,6 +8,7 @@
 //
 // Katalog henüz kurulmadıysa (açılışın ilk saniyeleri, kart 0114) düzen okunamaz: ekran bunu söyler, sayfa düşmez.
 import { calisanSite } from "../../ayar-semasi/calisan-site";
+import { hatayiKaydet } from "../../izleme/hata-katmani";
 import { type DuzenAlani, duzenAlanlari } from "../../kayitlar/tema";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { KatalogBekleniyor } from "../../moduller/duzen/baslangic";
@@ -49,7 +50,9 @@ export const bolumlerEkraniVerisi = async (): Promise<BolumlerEkraniVerisi> => {
       duzenServisi(calisanSite).panelDuzenDurumu(vt),
       duzenSecenekleri(vt),
     ]);
-    // Vitrinin çizeceği bölümlerin bağlamı: vitrinle aynı okuma.
+    // Vitrinin çizeceği bölümlerin bağlamı: vitrinle aynı okuma. Okunamazsa (bozuk bir mağaza ayarı gibi) ekran
+    // düşmez: hata kaydedilir, boşluk bilgisi olmadan açılır (vitrin de bu durumda sayfayı sade açar; bağımsız
+    // kontrolün bulgusu).
     const baglam = await vitrinBaglaminiOku(
       vt,
       calisanSite(),
@@ -57,10 +60,13 @@ export const bolumlerEkraniVerisi = async (): Promise<BolumlerEkraniVerisi> => {
         durum.alanlar[alan].filter(({ cizilir }) => cizilir).map(({ bolum }) => bolum),
       ),
       bolumKutuphanesi,
-    );
+    ).catch((hata: unknown) => {
+      hatayiKaydet(hata, { kaynak: "panel-vitrin-baglami" });
+      return undefined;
+    });
     const bosMetni = (bolum: { tur: string; degerler: BolumDegerleri }) => {
       const tur = bolum.tur as keyof typeof bolumBosluklari;
-      if (!Object.hasOwn(bolumBosluklari, tur)) return undefined;
+      if (baglam === undefined || !Object.hasOwn(bolumBosluklari, tur)) return undefined;
       return bolumBosluklari[tur](bolum.degerler, baglam) ? bosBolumMetinleri[tur] : undefined;
     };
     const alanlar = Object.fromEntries(

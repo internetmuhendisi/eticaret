@@ -99,4 +99,27 @@ describe("bölümlerin boşluğu", () => {
         .sort(),
     );
   });
+
+  // Bağımsız kontrolün bulgusu: fırsatların gerçek boş hâli, kaynağın kartı olup hiçbirinin bitişi olmamasıdır.
+  it("fırsatlarda kartı olup bitişi olmayan kaynak boştur ve çizilmez", () => {
+    const ornek = ornekler().find((bolum) => bolum.tur === "firsatlar");
+    if (ornek === undefined) throw new Error("fırsatlar örneği yok");
+    const baglam = ornekBaglam(an);
+    const bitissiz: VitrinBaglami = {
+      ...baglam,
+      urunler: Object.fromEntries(
+        Object.entries(baglam.urunler).map(([anahtar, kartlar]) => [
+          anahtar,
+          kartlar.map((kart) =>
+            kart.fiyat === undefined
+              ? kart
+              : { ...kart, fiyat: { ...kart.fiyat, indirimBitisi: undefined } },
+          ),
+        ]),
+      ),
+    };
+    expect(bolumBosluklari.firsatlar(ornek.degerler, bitissiz)).toBe(true);
+    expect(cizim(ornek, bitissiz)).toBe("");
+    expect(bolumBosluklari.firsatlar(ornek.degerler, baglam)).toBe(false);
+  });
 });

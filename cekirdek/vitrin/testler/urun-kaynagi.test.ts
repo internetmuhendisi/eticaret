@@ -11,6 +11,7 @@ import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { type Site, siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
+import { ornekBaglam } from "../../katalog/ornek-baglam.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import { etiketServisi } from "../../moduller/etiket/servis.ts";
 import { indirimSuruyorMu } from "../../moduller/fiyat/gecerli.ts";
@@ -25,8 +26,9 @@ import type { UrunGirdisi } from "../../moduller/urun/semalar.ts";
 import { urunServisi } from "../../moduller/urun/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
+import { bolumBosluklari } from "../bolum-kutuphanesi/gorunumler.tsx";
 import { bolumKutuphanesi } from "../bolum-kutuphanesi/kutuphane.ts";
-import { bolumDegerSemasi } from "../bolum-kutuphanesi/tarif.ts";
+import { bolumDegerSemasi, bolumunUrunKaynaklari, kayitliKip } from "../bolum-kutuphanesi/tarif.ts";
 import type { UrunKaynagi } from "../bolum-kutuphanesi/urun-kaynagi.ts";
 import { urunKaynagiAnahtari } from "../bolum-kutuphanesi/urun-kaynagi.ts";
 import { kaynaklarinUrunleri } from "../urun-kaynagi.ts";
@@ -201,6 +203,25 @@ describe("kaynaklar yalnız vitrinde görünen ürünleri getirir", () => {
 });
 
 describe("indirimdekiler ve fırsatlar", () => {
+  // Kart 0172: panel fırsatlar bölümünün boşluğunu görünüşün işleviyle bulur. Gerçek veritabanıyla: yalnız bitişsiz
+  // indirim varken bölüm boştur, bitişli indirim gelince değildir.
+  it("fırsatlar bölümü yalnız bitişsiz indirim varken boş, bitişli indirim gelince dolu", async () => {
+    // Örnek bağlamın metinleri çalışan siteden okunur.
+    (globalThis as Record<symbol, unknown>)[Symbol.for("cekirdek.calisanSite")] = site;
+    const h = await hazirla();
+    const bolum = bolumKutuphanesi.firsatlar;
+    const degerler = bolumDegerSemasi(bolum, kayitliKip).parse({});
+    const [kaynak] = bolumunUrunKaynaklari(bolum, degerler);
+    if (kaynak === undefined) throw new Error("fırsatların kaynağı yok");
+    const baglam = async () => ({ ...ornekBaglam(an), urunler: await h.oku([kaynak]) });
+    const suresiz = await h.urunAc();
+    await h.indirim(suresiz.birim);
+    expect(bolumBosluklari.firsatlar(degerler, await baglam())).toBe(true);
+    const bitisli = await h.urunAc();
+    await h.indirim(bitisli.birim, { bitis: "2030-02-01T00:00" });
+    expect(bolumBosluklari.firsatlar(degerler, await baglam())).toBe(false);
+  });
+
   it("indirimdekiler yalnız süren indirimi sayar; fırsatlar yalnız bitişi olanları, en yakın biten önce", async () => {
     const h = await hazirla();
     // En yakın biten en eski üründür: fırsatların sırası "en yeni önce" sırasının tersidir.

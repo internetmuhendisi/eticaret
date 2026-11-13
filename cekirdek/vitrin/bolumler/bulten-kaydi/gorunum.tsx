@@ -12,8 +12,8 @@ import { BultenFormu } from "../../bulten-formu";
 import { metinMi } from "../ortak/deger";
 import { solukYaziSiniflari, zeminSiniflari } from "../ortak/zemin";
 
-// Eklentisi kurulmamış sitede gönderilecek yer yoktur (görünüş aynı alana bakar). Panel boşluğu bununla bulur
-// (kart 0172).
+// Eklentisi kurulmamış sitede gönderilecek yer yoktur. Görünüş ve panel boşluğu bununla bulur (kart 0172); görünüşteki
+// ikinci denetim yalnız türü daraltır.
 export const bultenKaydiBosMu = (baglam: VitrinBaglami) => baglam.bultenKaydi === undefined;
 
 export function BultenKaydiGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunumuOzellikleri) {
@@ -22,7 +22,7 @@ export function BultenKaydiGorunumu({ gorunum, degerler: ham, baglam }: BolumGor
   const degerler = ham as Partial<Record<"baslik" | "metin" | "zemin", unknown>>;
   // Eklentisi kurulmamış sitede gönderilecek yer yoktur: bölüm çizilmez (işlev açık olsa da).
   const kayit = baglam.bultenKaydi;
-  if (!metinMi(degerler.baslik) || kayit === undefined) return null;
+  if (!metinMi(degerler.baslik) || bultenKaydiBosMu(baglam) || kayit === undefined) return null;
   const zemin = degerler.zemin ?? "birincil";
   const serit = gorunum === "serit";
   const icerik = (

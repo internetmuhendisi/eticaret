@@ -345,6 +345,7 @@ Panelin vitrin bölümleri ekranının verisi (kart 0142): üst kısım, ana say
 - Servis: `cekirdek/moduller/duzen/servis.ts`, seçenekler `cekirdek/moduller/duzen/secenekler.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "sira", "alanlar": { "ust-kisim": [{ "bolum": { "kimlik", "tur", "gorunum", "gizli", "degerler" }, "cizilir", "neden"? }], "ana-sayfa": [...], "alt-kisim": [...] }, "secenekler": { "kategoriler", "markalar", "etiketler", "urunler", "menuler", "gorseller" } } }`.
 - Hatalar: `dogrulama`, `oturum-yok`, `yetki`, `hizmet-kullanilamiyor` (`katalog-bekleniyor`; kart 0114).
+- `cizilir` düzenin kuralıdır (gizli, işlevsiz, geçersiz). Vitrinde içeriği boş kaldığı için bugün çizilmeyen bölümü uç ayırmaz; panelin ekranı sunucuda vitrinin bağlamını okuyarak ayrıca işaretler (kart 0172, `bolumBosluklari`).
 
 ### POST /kapi/yonetici/duzen-bolum-ekle
 
