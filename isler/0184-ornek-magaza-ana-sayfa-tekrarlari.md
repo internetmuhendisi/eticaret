@@ -18,6 +18,10 @@ Müşteri gezisinde (2026-11-13) görüldü: Keten Gömlek ve Bluetooth Hoparlö
 
 - Sitenin testleri güncel; önce ve sonra ekran görüntüsü.
 
+## Notlar (2026-11-14)
+
+- Öne çıkanlar ile yeni gelenlerin çakışması kart 0170 ile karşılandı: öne çıkanlar artık beş ürün (Kablosuz Kulaklık, Kapüşonlu Sweatshirt, Basic Tişört, Keten Masa Örtüsü, Porselen Kupa), yeni gelenlerle ortak ürün yok. Bu kartta kalanlar geniş afiş ve yorum tarihleri.
+
 ## Durum
 
 yapılacak
