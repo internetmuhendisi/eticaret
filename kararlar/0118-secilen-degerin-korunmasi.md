@@ -1,5 +1,7 @@
 # 0118 · Ürün sayfasında müşterinin seçtiği değer sessizce değişmez
 
+Bu kararın kural ve satır maddelerinin yerine 0119 numaralı karar geçti.
+
 ## Tarih
 
 2026-11-14

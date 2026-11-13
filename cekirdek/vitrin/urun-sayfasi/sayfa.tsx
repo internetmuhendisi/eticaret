@@ -53,7 +53,7 @@ import {
 import { FiyatGosterimi } from "../urun-karti/fiyat";
 import { urunKartiGorunumu } from "../urun-karti/gorunum";
 import { UrunKarti } from "../urun-karti/urun-karti";
-import { ilkSecim } from "./secim";
+import { adrestekiSecim, ilkSecim } from "./secim";
 import { type DegisenBilgiler, UrunUstKismi } from "./urun-ust";
 import { type StokGosterimiVerisi, type UrunSayfasiVerisi, urunSayfasiVerisi } from "./veri";
 import { PuanSatiri, UrunYorumlari, yorumBolumuKimligi, yorumSayfasiParametresi } from "./yorumlar";
@@ -358,6 +358,7 @@ export async function UrunSayfasi({
           ...(gorselSirasi === undefined ? {} : { gorselSirasi }),
         }))}
         ilkSecim={secim}
+        ilkTercih={adrestekiSecim(veri.secenekler, veri.birimler, sorguDegerleri)}
         bilgiler={Object.fromEntries(
           veri.birimler.map((birim) => [
             birim.kimlik,

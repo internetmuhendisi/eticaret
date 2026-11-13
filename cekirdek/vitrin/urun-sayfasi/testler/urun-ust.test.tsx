@@ -54,6 +54,7 @@ const ciz = (
   tukenmisSecenek: TukenmisSecenekGosterimi = "ustu-cizili",
   birimListesi: SecimBirimi[] = birimler,
   tukenmisSecilebilir = false,
+  ilkTercih: Secim = [],
 ) =>
   render(
     <MetinSaglayici dil="tr">
@@ -68,6 +69,7 @@ const ciz = (
         secenekler={secenekler}
         birimler={birimListesi}
         ilkSecim={ilkSecim}
+        ilkTercih={ilkTercih}
         bilgiler={Object.fromEntries(birimListesi.map((b) => [b.kimlik, bilgi(b.kimlik)]))}
         genelBilgi={bilgi("genel")}
         tukenmisSecenek={tukenmisSecenek}
@@ -153,17 +155,32 @@ describe("seçim", () => {
     expect(screen.getByText("fiyat siyah-l")).toBeTruthy();
   });
 
-  // Kart 0167: müşterinin seçtiği değer sessizce değişmez.
-  it("tükenmiş değer seçilebilirken müşterinin seçtiği beden başka renkte tükenmişse korunur", () => {
-    ciz(["siyah", "m"], "ustu-cizili", birimler, true);
+  // Kart 0167: müşterinin elle seçtiği değer sessizce değişmez.
+  it("tükenmiş değer seçilebilirken elle seçilen beden başka renkte tükenmişse korunur", () => {
+    ciz(["siyah", "l"], "ustu-cizili", birimler, true);
+    fireEvent.click(screen.getByRole("radio", { name: "M" }));
     fireEvent.click(screen.getByRole("radio", { name: "Beyaz" }));
     expect(screen.getByText("stok beyaz-m")).toBeTruthy();
     expect(window.location.search).toBe("?utm_source=bulten&secenek-renk=beyaz&secenek-beden=m");
     expect(screen.queryByText(/seçildi\.$/)).toBeNull();
   });
 
-  it("tükenmiş değer seçilemezken başka bedene geçilince satırla söylenir, sonraki seçimde kalkar", () => {
-    ciz(["siyah", "m"]);
+  it("sayfanın kendiliğinden seçtiği beden korunmaz: satılabilir bedene geçilir, satır yok", () => {
+    ciz(["beyaz", "s"], "ustu-cizili", birimler, true);
+    fireEvent.click(screen.getByRole("radio", { name: "Siyah" }));
+    expect(screen.getByText("stok siyah-m")).toBeTruthy();
+    expect(screen.queryByText(/seçildi\.$/)).toBeNull();
+  });
+
+  it("adresteki beden müşterinin seçimidir: renk değişince korunur", () => {
+    ciz(["siyah", "m"], "ustu-cizili", birimler, true, ["siyah", "m"]);
+    fireEvent.click(screen.getByRole("radio", { name: "Beyaz" }));
+    expect(screen.getByText("stok beyaz-m")).toBeTruthy();
+  });
+
+  it("tükenmiş değer seçilemezken elle seçilen beden değişince satırla söylenir, ona dönünce kalkar", () => {
+    ciz(["siyah", "l"]);
+    fireEvent.click(screen.getByRole("radio", { name: "M" }));
     fireEvent.click(screen.getByRole("radio", { name: "Beyaz" }));
     expect(screen.getByText("fiyat beyaz-s")).toBeTruthy();
     const satir = screen.getByText(
@@ -173,8 +190,9 @@ describe("seçim", () => {
         .replace("{yeni}", "S"),
     );
     // Satır stok bölgesindedir: ekran okuyucuya duyurulur.
-    expect(satir.closest("[aria-live]")).not.toBeNull();
+    expect(satir.closest("[aria-live]")?.textContent).toContain("stok beyaz-s");
     fireEvent.click(screen.getByRole("radio", { name: "Siyah" }));
+    expect(screen.getByText("fiyat siyah-m")).toBeTruthy();
     expect(screen.queryByText(/seçildi\.$/)).toBeNull();
   });
 });

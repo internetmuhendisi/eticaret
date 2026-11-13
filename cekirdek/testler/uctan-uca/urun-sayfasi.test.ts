@@ -284,16 +284,21 @@ test("ilk satılabilir birleşim seçili; tükenmiş beden haber için seçilir;
   await expect(page.getByText(stokKoduYazisi(h.birlesimler.acikM.stokKodu))).toBeVisible();
 });
 
-// Kart 0167: müşterinin seçtiği beden başka renkte tükenmişse sessizce başka bedene geçilmez; eski kural satılabilir
-// S'ye geçiyordu (müşteri M istediğini sanırken S'yi seçmiş oluyordu).
-test("seçilen beden başka renkte tükenmişse korunur: Tükendi ve haber ver kutusu görünür", async ({
+// Kart 0167: müşterinin elle seçtiği beden başka renkte tükenmişse sessizce başka bedene geçilmez; eski kural
+// satılabilir S'ye geçiyordu (müşteri M istediğini sanırken S'yi seçmiş oluyordu). Seçim adresle değil tıklamayla
+// yapılır (bağımsız kontrolün bulgusu): sonraki seçenekte elle seçilen değer, önceki seçenek değişince korunur.
+test("elle seçilen beden başka renkte tükenmişse korunur: Tükendi ve haber ver kutusu görünür", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto(`${h.adres}?secenek-renk=koyu&secenek-beden=m`);
+  await page.goto(h.adres);
   await sayfaHazir(page);
+  const renk = grup(page, "Renk");
   const beden = grup(page, "Beden");
-  await grup(page, "Renk").getByRole("radio", { name: "Açık", exact: true }).click();
+  await renk.getByRole("radio", { name: "Koyu", exact: true }).click();
+  await beden.getByRole("radio", { name: "M", exact: true }).click();
+  await expect(page).toHaveURL(/\?secenek-renk=koyu&secenek-beden=m$/);
+  await renk.getByRole("radio", { name: "Açık", exact: true }).click();
   await expect(page).toHaveURL(/\?secenek-renk=acik&secenek-beden=m$/);
   await expect(beden.getByRole("radio", { checked: true })).toContainText("M");
   await expect(page.locator('[data-slot="stok-durumu"]')).toHaveText(metin("vitrin.stok.tukendi"));

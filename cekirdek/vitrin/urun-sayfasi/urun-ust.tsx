@@ -17,7 +17,6 @@ import { doldur } from "../../moduller/eposta/sablon";
 import { UrunGalerisi } from "./galeri";
 import { SeciliBirimBaglami } from "./secili-birim";
 import {
-  type DegisenSecim,
   degerDurumu,
   degisenSecimler,
   type Secim,
@@ -44,6 +43,7 @@ export function UrunUstKismi({
   secenekler,
   birimler,
   ilkSecim,
+  ilkTercih,
   bilgiler,
   genelBilgi,
   tukenmisSecenek,
@@ -65,6 +65,9 @@ export function UrunUstKismi({
   secenekler: readonly SecimSecenegi[];
   birimler: readonly (SecimBirimi & { gorselSirasi?: number })[];
   ilkSecim: Secim;
+  // Müşterinin tercihi sayfa açılırken: yalnız adresteki seçim (adrestekiSecim, kart 0167). Ayarın kendiliğinden
+  // seçtiği değer müşterinin seçimi sayılmaz.
+  ilkTercih: Secim;
   bilgiler: Readonly<Record<string, DegisenBilgiler>>;
   genelBilgi: DegisenBilgiler;
   tukenmisSecenek: TukenmisSecenekGosterimi;
@@ -74,9 +77,9 @@ export function UrunUstKismi({
   const metin = useMetin();
   const [secim, setSecim] = useState<Secim>(ilkSecim);
   // Müşterinin her seçenekte elle seçtiği son değer (secimiDegistir'in tercihi).
-  const [tercih, setTercih] = useState<Secim>(ilkSecim);
-  // Son seçimde müşterinin seçtiğinden başkasına geçen değerler (kart 0167).
-  const [degisenler, setDegisenler] = useState<readonly DegisenSecim[]>([]);
+  const [tercih, setTercih] = useState<Secim>(ilkTercih);
+  // Müşterinin seçtiğinden başkası seçili kalan seçenekler (kart 0167).
+  const degisenler = degisenSecimler(secenekler, birimler, secim, tercih);
   const birim = seciliBirim(birimler, secim, secenekler.length);
   const birimSirasi = (birimler.find((aday) => aday.kimlik === birim?.kimlik) ?? undefined)
     ?.gorselSirasi;
@@ -103,7 +106,6 @@ export function UrunUstKismi({
     if (yeni === secim) return;
     setTercih(yeniTercih);
     setSecim(yeni);
-    setDegisenler(degisenSecimler(secenekler, birimler, secim, yeni, yeniTercih, sira));
     const yeniBirim = seciliBirim(birimler, yeni, secenekler.length);
     const gorsel = birimler.find((aday) => aday.kimlik === yeniBirim?.kimlik)?.gorselSirasi;
     if (gorsel !== undefined) setAktif(gorsel);
@@ -172,7 +174,7 @@ export function UrunUstKismi({
             <span className="text-soluk-yazi">{metin("vitrin.urunSayfasi.secimIstegi")}</span>
           ) : null}
           {degisenler.map((degisen) => (
-            <span key={degisen.secenek}>
+            <span key={degisen.kimlik}>
               {doldur(
                 metin(
                   degisen.neden === "yok"

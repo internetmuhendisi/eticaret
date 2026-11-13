@@ -18,12 +18,14 @@
 //   onlara uyan ilk satılabilir birleşim; o da yoksa ayara göre ilk satılabilir birleşim ya da seçimsiz (kalan
 //   adres değerleriyle).
 // - Stoğa gelince haber ver eklentisi açıkken (kart 0144, kullanıcı kararı) tükenmiş değer seçilebilir: seçilince
-//   "Tükendi" ve eklentinin formu görünür, satın alınamaz. Sonraki seçeneklerde müşterinin seçtiği değer, birleşimi
-//   varsa tükenmiş olsa da korunur (kart 0167, kullanıcı kararı): beyazı seçip M'ye geçen müşteri "M Beyaz tükendi"
-//   görür, sessizce siyaha geçmez. Seçtiği değerin bu seçimle birleşimi yoksa ilk satılabilir, o da yoksa birleşimi
-//   olan değere geçilir. Tükenmiş değeri gizleyen sitede değer görünmediği için seçilemez.
-// - Sonraki bir seçenekteki değer müşterinin seçtiğinden başkasına geçince bu bir satırla söylenir
-//   (degisenSecimler, kart 0167): "Renk: Beyaz bu seçimle tükendi, Siyah seçildi."
+//   "Tükendi" ve eklentinin formu görünür, satın alınamaz. Sonraki seçeneklerde müşterinin elle seçtiği değer (tercih),
+//   birleşimi varsa tükenmiş olsa da korunur (kart 0167, kullanıcı kararı): beyazı seçip M'ye geçen müşteri "M Beyaz
+//   tükendi" görür, sessizce siyaha geçmez. Müşterinin seçmediği (sayfanın kendiliğinden seçtiği) değer yalnız
+//   satılabilirse kalır. Tercih sayfa açılırken yalnız adresteki değerlerdir (adrestekiSecim): yenilenen ya da
+//   paylaşılan bağlantıdaki seçim müşterinindir, ayarın ilk seçimi değildir (bağımsız kontrolün bulgusu). Tükenmiş
+//   değeri gizleyen sitede değer görünmediği için seçilemez.
+// - Bir seçenekteki değer müşterinin seçtiğinden başkası kaldıkça bu bir satırla söylenir (degisenSecimler,
+//   kart 0167): "Beden: M bu seçimle tükendi, S seçildi."
 import type { SecenekOnSecimi } from "../../kayitlar/urun.ts";
 import { listeParametreleri } from "../urun-listesi/adres.ts";
 
@@ -90,15 +92,19 @@ export const secimiDegistir = (
   if (durum === "yok" || (durum === "tukendi" && !tukenmisSecilebilir)) return secim;
   const yeni = secenekler.map((_, i) => (i === sira ? deger : secim[i]));
   for (let j = sira + 1; j < secenekler.length; j++) {
-    const adaylar = [tercih[j], yeni[j]].filter((aday) => aday !== undefined);
+    const istenen = tercih[j];
+    const mevcut = yeni[j];
+    const adaylar = [istenen, mevcut].filter((aday) => aday !== undefined);
     if (adaylar.length === 0) continue;
     const satilabilir = (aday: string) => degerDurumu(birimler, yeni, j, aday) === "satilabilir";
     const birlesimiVar = (aday: string) => degerDurumu(birimler, yeni, j, aday) !== "yok";
-    // Tükenmiş değer seçilebiliyorsa müşterinin seçtiği değer tükenmiş olsa da korunur (kart 0167).
+    // Tükenmiş değer seçilebiliyorsa müşterinin elle seçtiği değer tükenmiş olsa da korunur (kart 0167); o an
+    // seçili ama elle seçilmemiş değer yalnız satılabilirse kalır.
     const korunur = tukenmisSecilebilir ? birlesimiVar : satilabilir;
     const degerler = secenekler[j]?.degerler.map((aday) => aday.kimlik) ?? [];
     yeni[j] =
-      adaylar.find(korunur) ??
+      (istenen !== undefined && korunur(istenen) ? istenen : undefined) ??
+      (mevcut !== undefined && satilabilir(mevcut) ? mevcut : undefined) ??
       degerler.find(satilabilir) ??
       (tukenmisSecilebilir
         ? (adaylar.find(birlesimiVar) ?? degerler.find(birlesimiVar))
@@ -108,6 +114,8 @@ export const secimiDegistir = (
 };
 
 export type DegisenSecim = {
+  // Seçeneğin kimliği (React anahtarı) ve adı.
+  kimlik: string;
   secenek: string;
   eski: string;
   yeni: string;
@@ -115,28 +123,32 @@ export type DegisenSecim = {
   neden: "tukendi" | "yok";
 };
 
-// Seçim değişince sonraki seçeneklerde müşterinin seçtiği (tercih) değerden başkasına geçilenler (kart 0167).
-// Önceki seçimde de başka değerdeyse yeniden söylenmez; seçim kalktıysa (değer yok) söylenecek yeni değer yoktur.
+// Müşterinin elle seçtiği (tercih) değerden başkası seçili kalan seçenekler (kart 0167). Seçimden ve tercihten
+// türetilir: satır, müşteri o seçeneği yeniden seçene ya da seçtiği değere dönülene kadar durur. Seçimi kalkmış
+// seçenek söylenmez (sayfa seçim ister).
 export const degisenSecimler = (
   secenekler: readonly SecimSecenegi[],
   birimler: readonly SecimBirimi[],
-  onceki: Secim,
-  yeni: Secim,
+  secim: Secim,
   tercih: Secim,
-  sira: number,
 ): DegisenSecim[] =>
   secenekler.flatMap((secenek, j) => {
     const istenen = tercih[j];
-    const secilen = yeni[j];
-    if (j <= sira || istenen === undefined || secilen === undefined) return [];
-    if (secilen === istenen || secilen === onceki[j]) return [];
+    const secilen = secim[j];
+    if (istenen === undefined || secilen === undefined || secilen === istenen) return [];
     const ad = (kimlik: string) => secenek.degerler.find((deger) => deger.kimlik === kimlik)?.ad;
     const eski = ad(istenen);
     const yeniAd = ad(secilen);
     if (eski === undefined || yeniAd === undefined) return [];
-    const durum = degerDurumu(birimler, yeni, j, istenen);
+    const durum = degerDurumu(birimler, secim, j, istenen);
     return [
-      { secenek: secenek.ad, eski, yeni: yeniAd, neden: durum === "yok" ? "yok" : "tukendi" },
+      {
+        kimlik: secenek.kimlik,
+        secenek: secenek.ad,
+        eski,
+        yeni: yeniAd,
+        neden: durum === "yok" ? "yok" : "tukendi",
+      },
     ];
   });
 
@@ -150,6 +162,22 @@ const adrestenDegerler = (
     return secenek.degerler.find((deger) => deger.anahtar === anahtar)?.kimlik;
   });
 
+// Adresteki seçim: adresteki değerlerden öncekilerle birlikte bir birleşimi olanlar (uyumsuz sonraki değer düşer).
+// Sayfa açılırken müşterinin tercihidir (kart 0167): yenilenen ya da paylaşılan bağlantıdaki seçim.
+export const adrestekiSecim = (
+  secenekler: readonly SecimSecenegi[],
+  birimler: readonly SecimBirimi[],
+  sorgu: Readonly<Record<string, string | readonly string[] | undefined>>,
+): Secim => {
+  const adresten = adrestenDegerler(secenekler, sorgu);
+  const kalan: (string | undefined)[] = [];
+  adresten.forEach((deger, i) => {
+    kalan[i] =
+      deger !== undefined && degerDurumu(birimler, kalan, i, deger) !== "yok" ? deger : undefined;
+  });
+  return kalan;
+};
+
 export const ilkSecim = (
   secenekler: readonly SecimSecenegi[],
   birimler: readonly SecimBirimi[],
@@ -159,12 +187,7 @@ export const ilkSecim = (
   if (secenekler.length === 0) return [];
   const adresten = adrestenDegerler(secenekler, sorgu);
   if (seciliBirim(birimler, adresten, secenekler.length) !== undefined) return adresten;
-  // Adresteki değerlerden öncekilerle birlikte bir birleşimi olanlar kalır.
-  const kalan: (string | undefined)[] = [];
-  adresten.forEach((deger, i) => {
-    kalan[i] =
-      deger !== undefined && degerDurumu(birimler, kalan, i, deger) !== "yok" ? deger : undefined;
-  });
+  const kalan = adrestekiSecim(secenekler, birimler, sorgu);
   const adresteDeger = kalan.some((deger) => deger !== undefined);
   const birim =
     (adresteDeger
