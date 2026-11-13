@@ -57,6 +57,7 @@ const ciz = (ilkSecim: Secim, { tukenmisSecilebilir = true, uyeOlmayan = true } 
         secenekler={secenekler}
         birimler={birimler}
         ilkSecim={ilkSecim}
+        ilkTercih={[]}
         bilgiler={Object.fromEntries(birimler.map((b) => [b.kimlik, bilgi(b.kimlik)]))}
         genelBilgi={bilgi("genel")}
         tukenmisSecenek="ustu-cizili"

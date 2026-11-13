@@ -27,6 +27,7 @@ Müşteri gezisinde (2026-11-13) ölçüldü: Basic Tişört'te önce Beyaz, son
 - Önce ve sonra görüntüsü (Basic Tişört, taze kurulmuş Örnek Mağaza, bilgisayar ve telefon): önce Beyaz, sonra M seçilince eski kodda sayfa M Siyah'a geçiyor, siyah görsel ve "Stokta" görünüyordu. Yeni kodda M Beyaz seçili kalıyor, beyaz görsel, "Tükendi" ve haber ver kutusu görünüyor.
 - Bağımsız kontrolün bulgularıyla düzeltildi (karar 0119): ilk uygulama tercihi sayfanın ilk seçimiyle başlatıyordu, müşterinin seçmediği değeri de koruyordu. Tarayıcı testi bedeni adresle veriyordu, artık seçimi tıklayarak yapıyor. Satır seçim tercihe dönene kadar duruyor, anahtarı seçeneğin kimliği.
 - Bağımsız kontrolün kabul edilen sınırı: satırın ekran okuyucuda gerçekten okunması ölçülmez, satırın stok bölgesinin (aria-live) içinde olduğu ölçülür.
+- Kaçak: düzeltmeyle zorunlu olan `ilkTercih` özelliğini eklentinin form testi (`cekirdek/eklentiler/stoga-gelince-haber-ver/testler/form.test.tsx`) vermiyordu, dokuz testi kırmızıydı. Eklenti testleri tür denetiminden geçmediği için (kart 0056) tür kontrolü yakalamadı; düzeltmeden sonra yalnız vitrin testleri çalıştırılmıştı. Bütün birim takımında görüldü, test düzeltildi.
 
 ## Durum
 
