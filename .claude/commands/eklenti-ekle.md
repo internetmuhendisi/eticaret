@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Eklenti ekle: $ARGUMENTS
 
-Eklentinin kod adı: `$ARGUMENTS`. Bu komut ilk eklentinin (stoğa gelince haber ver, kart 0144) elle kurulumundan çıkarıldı. Adımların ayrıntısı ve o kurulumda karşılaşılan tuzaklar kart 0144'ün "Notlar" bölümündedir. Her adımda o notun aynı numaralı maddesini de oku. Eklentinin yapısı ve bağlantı noktaları `.claude/rules/eklentiler.md` dosyasında, nedenleri karar 0117'dedir.
+Eklentinin kod adı: `$ARGUMENTS`. Bu komut ilk eklentinin (stoğa gelince haber ver, kart 0144) elle kurulumundan çıkarıldı. Adımların ayrıntısı ve o kurulumda karşılaşılan tuzaklar kart 0144'ün "Notlar" bölümündedir. Her adımda o notun aynı konudaki maddesini de oku: notun numaraları bu komutun numaralarıyla aynı değildir. Eklentinin yapısı ve bağlantı noktaları `.claude/rules/eklentiler.md` dosyasında, nedenleri karar 0117'dedir.
 
 Adımları sırayla yap. Bir adımda dur dendiyse sonraki adımlara geçme. Aşağıda `<kod>` eklentinin kod adı, `<ad>` kodda kullanılan kısa addır (ör. `stokBildirimi`).
 
@@ -29,20 +29,12 @@ Bu adımda hiçbir dosya yazma.
 - Tarifte ekran varsa taslakta karşılığını ara (`planlar/tasarim-yonu/`).
 - Eklentinin hangi bağlantı noktalarına bağlanacağını belirle. Bugün olanlar: stok kancası, ürün sayfası yuvası, panel sayfası, e-posta, arka plan işi, izin, uç, metin. Gereken nokta yoksa (ör. sepet ya da sipariş) planda bunu ayrı madde olarak yaz. Nokta çekirdekte, kullanıcının onayıyla ve eklentiden önce kurulur.
 
-## 2. Plan ve onay
+## 2. Kart ve çalışma kopyası
 
-- Planı `planlar/<kod>.md` dosyasına yaz: tariften bu siteye uyarlananlar, ayarlar, veri, ekranlar, bağlantı noktaları, testler. Bu dosya 4. adımda çalışma kopyasına taşınır.
-- Kullanıcıya sade bir özet sun:
-  - Tarifin "Ayarlar" başlığındaki her davranışı varsayılan değeriyle site ayarı olarak öner ve Örnek Mağaza için önerdiğin değeri söyle.
-  - Ürün kararlarını sor: müşterinin göreceği ve yaşayacağı, tariften çıkmayan şeyler.
-- Kullanıcı onaylamadan devam etme.
-- Uygulama sırasında yeni bir ürün kararı çıkarsa dur ve sor. Var olan bir kararı ya da kuralı değiştiren davranış özellikle sorulur. 0144'te örneği şuydu: tükenmiş değer seçilebilir mi (karar 0108).
+Ana klasöre hiçbir dosya yazılmaz: kart da plan da çalışma kopyasında yazılır.
 
-## 3. Kart
-
-- Eklenti için açık bir kart yoksa `isler/sablon.md` ile bir kart aç. Kartın bitti sayılır listesi tarifin "Bitti sayılır" listesini içersin.
-
-## 4. Çalışma kopyası
+- Eklentinin açık kartı varsa onun numarasını kullan. Yoksa yeni kartın numarası `isler/` klasöründeki en büyük numaradan bir fazladır.
+- Çalışma kopyasını aç:
 
 ```
 git worktree add .claude/worktrees/<kart> -b kart-<kart>
@@ -51,8 +43,24 @@ pnpm install --frozen-lockfile
 ln -s ../../../.env .env
 ```
 
-- Plan dosyasını çalışma kopyasına taşı. Bundan sonra her dosya çalışma kopyasında yazılır.
 - `.env` bağlantıdır, kayda girmez.
+- Kart yoksa çalışma kopyasında `isler/sablon.md` ile aç. Kartın bitti sayılır listesi tarifin "Bitti sayılır" listesini içersin.
+
+## 3. Plan ve onay
+
+- Planı çalışma kopyasında `planlar/<kod>.md` dosyasına yaz: tariften bu siteye uyarlananlar, ayarlar, veri, ekranlar, bağlantı noktaları, testler.
+- Kullanıcıya sade bir özet sun:
+  - Tarifin "Ayarlar" başlığındaki her davranışı varsayılan değeriyle site ayarı olarak öner ve Örnek Mağaza için önerdiğin değeri söyle.
+  - Ürün kararlarını sor: müşterinin göreceği ve yaşayacağı, tariften çıkmayan şeyler.
+- Kullanıcı onaylamadan devam etme.
+- Kullanıcı planı değiştirirse planı güncelle ve yeniden sun.
+- Kullanıcı eklentiden vazgeçerse çalışma kopyasını ve dalı kaldır. Kayıt yapılmadığı için kaldırma zorlama ister; önce kullanıcıya sor.
+- Uygulama sırasında yeni bir ürün kararı çıkarsa dur ve sor. Var olan bir kararı ya da kuralı değiştiren davranış özellikle sorulur. 0144'te örneği şuydu: tükenmiş değer seçilebilir mi (karar 0108).
+
+## 4. Kurulumdan önce
+
+- Bundan sonra her dosya çalışma kopyasında yazılır.
+- Plan onaylandıysa kartı ve planı çalışma kopyasının dalında kaydet. Sonraki adımlarda bir şey ters giderse onaylanan plan kaybolmaz.
 
 ## 5. Kurulum
 
