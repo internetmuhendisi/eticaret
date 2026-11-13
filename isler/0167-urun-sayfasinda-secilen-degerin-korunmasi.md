@@ -31,4 +31,4 @@ Müşteri gezisinde (2026-11-13) ölçüldü: Basic Tişört'te önce Beyaz, son
 
 ## Durum
 
-yapılacak
+bitti
