@@ -41,4 +41,4 @@ Bölüm: Vitrin. On birinci bölümde açık kartlardan bu bölüme alındı.
 
 ## Durum
 
-yapılacak
+bitti
