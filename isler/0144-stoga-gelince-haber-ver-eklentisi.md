@@ -160,4 +160,4 @@ Eklenti ekleme komutu (kart 0145) bu adımlardan çıkarılacak. Her adımda ney
 
 ## Durum
 
-yapılacak
+bitti
