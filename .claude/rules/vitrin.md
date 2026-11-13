@@ -99,6 +99,7 @@ paths:
 
 - Yorum, blog ve bülten bölümlerinin verisi vitrin bağlamındadır (`yorumlar`, `blogYazilari`, `bultenKaydi`; türleri `cekirdek/vitrin/bolum-kutuphanesi/islev-verisi.ts`). İşlev yazılınca bağlamı bu türlerle doldur, bölümü değiştirme. Bülten bölümü bağlamda gönderim adresi yoksa çizilmez.
 - Bütün odaklanabilir öğeleri zemin renginde bir kutuda olan renkli bölge `zeminSiniflari(…, { odak: false })` kullanır: renkli zeminin odak kuralı iç kutuya geçip odağı görünmez yapar.
+- Vitrinde içeriği boş kaldığı için çizilmeyen bölüm türü boşluğunu tek işlevle bulur ve kaydeder (`bolumBosluklari`, `cekirdek/vitrin/bolum-kutuphanesi/gorunumler.tsx`, kart 0172): görünüş o işlevle `null` döner, panel aynı işlevle vitrinin bağlamını okuyarak "şu an vitrinde görünmüyor" der (`bosBolumMetinleri`). Boşluğu veriye bağlı yeni tür kayda ve metin listesine eklenir (tür kontrolü ister); görünüş boşluğu ayrıca yazmaz.
 - Paneldeki çizilmeme nedeninin metni yalnız `cizilmemeNedeniMetni` ile seçilir. Yeni işlev eklenince `islevYokMetinleri`'ne metni eklenir (tür kontrolü ister).
 - Pazarlama onayının metni tektir (`vitrin.onay.pazarlama`). Onay isteyen yeni form da onu kullanır.
 - Her sayfada ya da ana sayfada duran robotlu form `useRobotluGonderim({ ertele: true })` kullanır: sayfa açılınca robot sorusu istenmez.

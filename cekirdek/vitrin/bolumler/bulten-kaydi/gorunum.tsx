@@ -6,10 +6,15 @@
 // - Kutu: içerik genişliğinde köşeli kutu.
 import { useId } from "react";
 import { sinif } from "../../../../bilesenler/parcalar/sinif";
+import type { VitrinBaglami } from "../../bolum-kutuphanesi/baglam";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
 import { BultenFormu } from "../../bulten-formu";
 import { metinMi } from "../ortak/deger";
 import { solukYaziSiniflari, zeminSiniflari } from "../ortak/zemin";
+
+// Eklentisi kurulmamış sitede gönderilecek yer yoktur (görünüş aynı alana bakar). Panel boşluğu bununla bulur
+// (kart 0172).
+export const bultenKaydiBosMu = (baglam: VitrinBaglami) => baglam.bultenKaydi === undefined;
 
 export function BultenKaydiGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunumuOzellikleri) {
   const baslikKimligi = useId();

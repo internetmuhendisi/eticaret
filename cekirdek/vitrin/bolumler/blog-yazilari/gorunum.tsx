@@ -11,6 +11,7 @@ import {
   SeritOgesi,
 } from "../../../../bilesenler/parcalar/serit";
 import { metin } from "../../../metinler/site-metni";
+import type { VitrinBaglami } from "../../bolum-kutuphanesi/baglam";
 import { BolumGorseli } from "../../bolum-kutuphanesi/gorsel";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
 import {
@@ -18,18 +19,16 @@ import {
   type BlogKaynagi,
   blogKaynagiAnahtari,
 } from "../../bolum-kutuphanesi/islev-verisi";
+import type { BolumDegerleri } from "../../bolum-kutuphanesi/tarif";
 import { secimDegeri } from "../../bolum-kutuphanesi/tarif";
 import { metinMi } from "../ortak/deger";
 import { kartBaglantisi } from "../ortak/kart-baglantisi";
 import { BolumBasligi } from "../ortak/urun-izgarasi";
 import { blogAdetleri, blogYazilari } from "./tarif";
 
-export function BlogYazilariGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunumuOzellikleri) {
-  const baslikKimligi = useId();
-  // Değerler tarifin şemasından geçmiştir (kart 0106); türleri tarifteki alanlardır.
-  const degerler = ham as Partial<
-    Record<"baslik" | "kategori" | "adet" | "tumuBaglantisi", unknown>
-  >;
+// Seçilen kaynağın yazıları, adet kadar. Panel de bölümün boş olup olmadığını bununla bulur (kart 0172).
+export const blogYazilariYazilari = (ham: BolumDegerleri, baglam: VitrinBaglami) => {
+  const degerler = ham as Partial<Record<"kategori" | "adet", unknown>>;
   const adet =
     blogAdetleri[
       secimDegeri(blogYazilari.alanlar.adet, degerler.adet) as keyof typeof blogAdetleri
@@ -37,7 +36,16 @@ export function BlogYazilariGorunumu({ gorunum, degerler: ham, baglam }: BolumGo
   const kaynak: BlogKaynagi = metinMi(degerler.kategori)
     ? { tur: "kategori", kategori: degerler.kategori, adet }
     : { tur: "son", adet };
-  const yazilar = (baglam.blogYazilari[blogKaynagiAnahtari(kaynak)] ?? []).slice(0, adet);
+  return (baglam.blogYazilari[blogKaynagiAnahtari(kaynak)] ?? []).slice(0, adet);
+};
+
+export function BlogYazilariGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunumuOzellikleri) {
+  const baslikKimligi = useId();
+  // Değerler tarifin şemasından geçmiştir (kart 0106); türleri tarifteki alanlardır.
+  const degerler = ham as Partial<
+    Record<"baslik" | "kategori" | "adet" | "tumuBaglantisi", unknown>
+  >;
+  const yazilar = blogYazilariYazilari(ham, baglam);
   if (yazilar.length === 0) return null;
   const baslik = metinMi(degerler.baslik) ? degerler.baslik : undefined;
   const etiket = baslik ?? metin("vitrin.bolum.blogYazilari.etiket");

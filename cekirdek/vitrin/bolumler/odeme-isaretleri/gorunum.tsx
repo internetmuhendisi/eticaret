@@ -5,6 +5,7 @@ import { Ikon } from "../../../../bilesenler/ikonlar/ikon";
 import type { OdemeIsareti } from "../../../kayitlar/odeme";
 import type { MetinAnahtari } from "../../../metinler/metin";
 import { metin } from "../../../metinler/site-metni";
+import type { VitrinBaglami } from "../../bolum-kutuphanesi/baglam";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
 
 const isaretAdlari = {
@@ -13,8 +14,11 @@ const isaretAdlari = {
   "kapida-odeme": "vitrin.bolum.odemeIsaretleri.isaret.kapida-odeme",
 } as const satisfies Record<OdemeIsareti, MetinAnahtari>;
 
+// Sitede açık ödeme yöntemi yok. Panel de boşluğu bununla bulur (kart 0172).
+export const odemeIsaretleriBosMu = (baglam: VitrinBaglami) => baglam.odemeIsaretleri.length === 0;
+
 export function OdemeIsaretleriGorunumu({ gorunum, baglam }: BolumGorunumuOzellikleri) {
-  if (baglam.odemeIsaretleri.length === 0) return null;
+  if (odemeIsaretleriBosMu(baglam)) return null;
   const yalnizIsaret = gorunum === "yalniz-isaret";
   return (
     <section aria-label={metin("vitrin.bolum.odemeIsaretleri.baslik")}>

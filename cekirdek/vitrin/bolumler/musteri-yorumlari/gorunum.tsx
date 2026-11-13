@@ -10,17 +10,31 @@ import {
 } from "../../../../bilesenler/parcalar/serit";
 import { bicim, metin } from "../../../metinler/site-metni";
 import { doldur } from "../../../moduller/eposta/sablon";
+import type { VitrinBaglami } from "../../bolum-kutuphanesi/baglam";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
 import {
   type BaglamYorumu,
   yorumKaynagiAnahtari,
   yorumKaynakTurleri,
 } from "../../bolum-kutuphanesi/islev-verisi";
+import type { BolumDegerleri } from "../../bolum-kutuphanesi/tarif";
 import { secimDegeri } from "../../bolum-kutuphanesi/tarif";
 import { Yildizlar, yildizSayisi } from "../../yildizlar";
 import { metinMi } from "../ortak/deger";
 import { BolumBasligi } from "../ortak/urun-izgarasi";
 import { musteriYorumlari, yorumAdetleri } from "./tarif";
+
+// Seçilen kaynağın yorumları, adet kadar. Panel de bölümün boş olup olmadığını bununla bulur (kart 0172).
+export const musteriYorumlariYorumlari = (ham: BolumDegerleri, baglam: VitrinBaglami) => {
+  const degerler = ham as Partial<Record<"kaynak" | "adet", unknown>>;
+  const kaynakTuru = secimDegeri(musteriYorumlari.alanlar.kaynak, degerler.kaynak);
+  const adet =
+    yorumAdetleri[
+      secimDegeri(musteriYorumlari.alanlar.adet, degerler.adet) as keyof typeof yorumAdetleri
+    ];
+  const tur = yorumKaynakTurleri.find((kod) => kod === kaynakTuru) ?? yorumKaynakTurleri[0];
+  return (baglam.yorumlar[yorumKaynagiAnahtari({ tur, adet })] ?? []).slice(0, adet);
+};
 
 export function MusteriYorumlariGorunumu({
   gorunum,
@@ -30,13 +44,7 @@ export function MusteriYorumlariGorunumu({
   const baslikKimligi = useId();
   // Değerler tarifin şemasından geçmiştir (kart 0106); türleri tarifteki alanlardır.
   const degerler = ham as Partial<Record<"baslik" | "kaynak" | "adet", unknown>>;
-  const kaynakTuru = secimDegeri(musteriYorumlari.alanlar.kaynak, degerler.kaynak);
-  const adet =
-    yorumAdetleri[
-      secimDegeri(musteriYorumlari.alanlar.adet, degerler.adet) as keyof typeof yorumAdetleri
-    ];
-  const tur = yorumKaynakTurleri.find((kod) => kod === kaynakTuru) ?? yorumKaynakTurleri[0];
-  const yorumlar = (baglam.yorumlar[yorumKaynagiAnahtari({ tur, adet })] ?? []).slice(0, adet);
+  const yorumlar = musteriYorumlariYorumlari(ham, baglam);
   if (yorumlar.length === 0) return null;
   const baslik = metinMi(degerler.baslik) ? degerler.baslik : undefined;
   const etiket = baslik ?? metin("vitrin.bolum.musteriYorumlari.etiket");

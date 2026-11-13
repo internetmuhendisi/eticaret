@@ -18,6 +18,7 @@ import { metin } from "../../metinler/site-metni";
 import { dosyaSil, gorselKaydet } from "../../moduller/dosya/servis";
 import { duzenServisi } from "../../moduller/duzen/servis";
 import { doldur } from "../../moduller/eposta/sablon";
+import { menuEkle, menuSil, ogeEkle } from "../../moduller/menu/servis";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
 import { vitrinAdresleri } from "../../vitrin/adresler";
 import type { BolumOrnegi } from "../../vitrin/bolum-kutuphanesi/duzen";
@@ -246,6 +247,47 @@ test("uzun formda kaydet çubuğu pencerenin alt kenarındadır, altında form g
         { message: genislik.ad },
       )
       .toBe("tamam");
+  }
+});
+
+// Kart 0172: vitrinde içeriği boş kaldığı için bugün çizilmeyen bölüm panelde "vitrinde görünmüyor" işaretini ve
+// türüne göre nedenini alır; içerik gelince işaret kalkar. Test kendi boş menüsünü ve ona bağlı alt kısım bölümünü
+// açar, sonunda kaldırır.
+test("boş içerikli bölüm panelde nedeniyle işaretli, içerik gelince işaret kalkar", async ({
+  page,
+}) => {
+  const ek = randomBytes(4).toString("hex");
+  const menu = await menuEkle(vt, kim, { kod: `bos-${ek}`, ad: `Boş ${ek}`, tur: "elle" });
+  const bolum = await servis.bolumEkle(vt, kim, "alt-kisim", {
+    tur: "baglanti-sutunlari",
+    gorunum: "sutunlu",
+    degerler: { menu: `bos-${ek}` },
+  });
+  try {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await paneleGir(page, yonetici);
+    await page.goto(bolumlerAdresi);
+    await sayfaHazir(page);
+    await alanSekmesi(page, "alt-kisim").click();
+    const satirlar = page.getByRole("listitem").filter({
+      hasText: metin("vitrin.bolum.baglantiSutunlari.ad"),
+    });
+    const neden = metin("yonetim.duzen.neden.bos.baglanti-sutunlari");
+    await expect(satirlar.filter({ hasText: neden })).toHaveCount(1);
+    await expect(
+      satirlar
+        .filter({ hasText: neden })
+        .getByText(metin("yonetim.bolumler.gorunmuyorRozet"), { exact: true }),
+    ).toBeVisible();
+    // Menüye öğe eklenince bölüm vitrinde çizilir: işaret kalkar.
+    await ogeEkle(vt, kim, menu, { metin: `Öğe ${ek}`, hedef: { tur: "adres", adres: "/" } });
+    await page.reload();
+    await sayfaHazir(page);
+    await alanSekmesi(page, "alt-kisim").click();
+    await expect(satirlar.filter({ hasText: neden })).toHaveCount(0);
+  } finally {
+    await servis.bolumSil(vt, kim, bolum);
+    await menuSil(vt, kim, menu);
   }
 });
 

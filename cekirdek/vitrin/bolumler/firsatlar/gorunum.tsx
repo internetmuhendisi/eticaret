@@ -7,7 +7,9 @@
 import { useId } from "react";
 import { sinif } from "../../../../bilesenler/parcalar/sinif";
 import { metin } from "../../../metinler/site-metni";
+import type { VitrinBaglami } from "../../bolum-kutuphanesi/baglam";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
+import type { BolumDegerleri } from "../../bolum-kutuphanesi/tarif";
 import { bolumunUrunKaynaklari } from "../../bolum-kutuphanesi/tarif";
 import { metinMi } from "../ortak/deger";
 import { bolumunKartGorunumu, kaynaginKartlari, UrunIzgarasi } from "../ortak/urun-izgarasi";
@@ -15,17 +17,22 @@ import { zeminSiniflari } from "../ortak/zemin";
 import { FirsatOgesi, FirsatSaati, KalanSure, Sayac } from "./sayac";
 import { firsatlar } from "./tarif";
 
+// Kaynağın bitişli kartları. Panel de bölümün boş olup olmadığını bununla bulur (kart 0172, bolumBosluklari).
+export const firsatKartlari = (degerler: BolumDegerleri, baglam: VitrinBaglami) => {
+  const [kaynak] = bolumunUrunKaynaklari(firsatlar, degerler);
+  return kaynaginKartlari(baglam, kaynak).flatMap((kart) => {
+    const bitis = kart.fiyat?.indirimBitisi?.getTime();
+    return bitis === undefined ? [] : [{ kart, bitis }];
+  });
+};
+
 export function FirsatlarGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunumuOzellikleri) {
   const baslikKimligi = useId();
   // Değerler tarifin şemasından geçmiştir (kart 0106); türleri tarifteki alanlardır.
   const degerler = ham as Partial<
     Record<"ustYazi" | "baslik" | "adet" | "kartGorunumu" | "zemin", unknown>
   >;
-  const [kaynak] = bolumunUrunKaynaklari(firsatlar, degerler);
-  const kartlar = kaynaginKartlari(baglam, kaynak).flatMap((kart) => {
-    const bitis = kart.fiyat?.indirimBitisi?.getTime();
-    return bitis === undefined ? [] : [{ kart, bitis }];
-  });
+  const kartlar = firsatKartlari(ham, baglam);
   if (kartlar.length === 0) return null;
   const bitisler = kartlar.map(({ bitis }) => bitis);
   const bitisleri = new Map(kartlar.map(({ kart, bitis }) => [kart.kimlik, bitis]));

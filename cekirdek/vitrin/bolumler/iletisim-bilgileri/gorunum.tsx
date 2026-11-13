@@ -6,9 +6,16 @@ import { Ikon } from "../../../../bilesenler/ikonlar/ikon";
 import { Baglanti } from "../../../../bilesenler/parcalar/baglanti";
 import { sinif } from "../../../../bilesenler/parcalar/sinif";
 import { metin } from "../../../metinler/site-metni";
+import type { VitrinBaglami } from "../../bolum-kutuphanesi/baglam";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
 import { altKisimSiniflari as s } from "../ortak/alt-kisim";
 import { metinMi } from "../ortak/deger";
+
+// Mağaza ayarlarında telefon, e-posta ve adresin hiçbiri yok. Panel de boşluğu bununla bulur (kart 0172).
+export const iletisimBosMu = (baglam: VitrinBaglami) => {
+  const { telefon, eposta, adres } = baglam.iletisim;
+  return telefon === undefined && eposta === undefined && adres === undefined;
+};
 
 export function IletisimBilgileriGorunumu({
   gorunum,
@@ -18,7 +25,7 @@ export function IletisimBilgileriGorunumu({
   // Değerler tarifin şemasından geçmiştir (kart 0106); türleri tarifteki alanlardır.
   const degerler = ham as { baslik?: unknown };
   const { telefon, eposta, adres } = baglam.iletisim;
-  if (telefon === undefined && eposta === undefined && adres === undefined) return null;
+  if (iletisimBosMu(baglam)) return null;
   const yatay = gorunum === "yatay";
   const baslik = metinMi(degerler.baslik) ? degerler.baslik : baglam.magazaAdi;
   const ikon = (ad: "telefon" | "eposta" | "konum") => (yatay ? <Ikon ad={ad} /> : null);

@@ -12,11 +12,25 @@ import {
 } from "../../../../bilesenler/parcalar/serit";
 import { metin } from "../../../metinler/site-metni";
 import { kimligiDuzelt } from "../../../veritabani/kimlik";
-import type { BaglamMarkasi } from "../../bolum-kutuphanesi/baglam";
+import type { BaglamMarkasi, VitrinBaglami } from "../../bolum-kutuphanesi/baglam";
 import { BolumGorseli } from "../../bolum-kutuphanesi/gorsel";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
+import type { BolumDegerleri } from "../../bolum-kutuphanesi/tarif";
 import { metinMi } from "../ortak/deger";
 import { BolumBasligi } from "../ortak/urun-izgarasi";
+
+// Bağlamda olan (silinmemiş) seçili markalar. Panel de bölümün boş olup olmadığını bununla bulur (kart 0172).
+export const markaLogolariMarkalari = (ham: BolumDegerleri, baglam: VitrinBaglami) => {
+  const degerler = ham as { markalar?: unknown };
+  return (
+    Array.isArray(degerler.markalar) ? (degerler.markalar as { marka?: unknown }[]) : []
+  ).flatMap((oge, sira) => {
+    // Kimlik tarifin şemasından geçmiştir; bağlamda olmayan marka silinmiş ya da yoktur.
+    const marka =
+      typeof oge.marka === "string" ? baglam.markalar[kimligiDuzelt(oge.marka)] : undefined;
+    return marka === undefined ? [] : [{ anahtar: String(sira), marka }];
+  });
+};
 
 export function MarkaLogolariGorunumu({
   gorunum,
@@ -26,14 +40,7 @@ export function MarkaLogolariGorunumu({
   const baslikKimligi = useId();
   // Değerler tarifin şemasından geçmiştir (kart 0106); türleri tarifteki alanlardır.
   const degerler = ham as { baslik?: unknown; markalar?: unknown };
-  const markalar = (
-    Array.isArray(degerler.markalar) ? (degerler.markalar as { marka?: unknown }[]) : []
-  ).flatMap((oge, sira) => {
-    // Kimlik tarifin şemasından geçmiştir; bağlamda olmayan marka silinmiş ya da yoktur.
-    const marka =
-      typeof oge.marka === "string" ? baglam.markalar[kimligiDuzelt(oge.marka)] : undefined;
-    return marka === undefined ? [] : [{ anahtar: String(sira), marka }];
-  });
+  const markalar = markaLogolariMarkalari(ham, baglam);
   if (markalar.length === 0) return null;
   const baslik = metinMi(degerler.baslik) ? degerler.baslik : undefined;
   const etiket = baslik ?? metin("vitrin.bolum.markaLogolari.etiket");

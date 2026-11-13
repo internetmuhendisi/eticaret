@@ -3,7 +3,9 @@
 import { Ikon } from "../../../../bilesenler/ikonlar/ikon";
 import { sinif } from "../../../../bilesenler/parcalar/sinif";
 import { metin } from "../../../metinler/site-metni";
+import type { VitrinBaglami } from "../../bolum-kutuphanesi/baglam";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
+import type { BolumDegerleri } from "../../bolum-kutuphanesi/tarif";
 import { secimDegeri } from "../../bolum-kutuphanesi/tarif";
 import { yerTutuculariDoldur } from "../../bolum-kutuphanesi/yer-tutucu";
 import { metinMi } from "../ortak/deger";
@@ -11,10 +13,10 @@ import { type guvenIkonlari, guvenSeridi } from "./tarif";
 
 const ikonAlani = guvenSeridi.alanlar.maddeler.alanlar.ikon;
 
-export function GuvenSeridiGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunumuOzellikleri) {
-  // Değerler tarifin şemasından geçmiştir (kart 0106); türleri tarifteki alanlardır.
+// Değeri olan maddeler (yer tutucusu dolanlar). Panel de bölümün boş olup olmadığını bununla bulur (kart 0172).
+export const guvenSeridiMaddeleri = (ham: BolumDegerleri, baglam: VitrinBaglami) => {
   const degerler = ham as { maddeler?: unknown };
-  const maddeler = (
+  return (
     Array.isArray(degerler.maddeler)
       ? (degerler.maddeler as { ikon?: unknown; metin?: unknown }[])
       : []
@@ -26,6 +28,10 @@ export function GuvenSeridiGorunumu({ gorunum, degerler: ham, baglam }: BolumGor
     const ikon = secimDegeri(ikonAlani, madde.ikon) as (typeof guvenIkonlari)[number];
     return [{ sira, ikon, yazi }];
   });
+};
+
+export function GuvenSeridiGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunumuOzellikleri) {
+  const maddeler = guvenSeridiMaddeleri(ham, baglam);
   if (maddeler.length === 0) return null;
   const kutulu = gorunum === "kutulu";
   return (

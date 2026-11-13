@@ -10,7 +10,9 @@ import {
   Sekmeler,
 } from "../../../../bilesenler/parcalar/sekmeler";
 import { metin } from "../../../metinler/site-metni";
+import type { VitrinBaglami } from "../../bolum-kutuphanesi/baglam";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
+import type { BolumDegerleri } from "../../bolum-kutuphanesi/tarif";
 import { metinMi } from "../ortak/deger";
 import {
   BolumBasligi,
@@ -19,15 +21,10 @@ import {
   UrunIzgarasi,
 } from "../ortak/urun-izgarasi";
 
-export function SekmeliVitrinGorunumu({
-  gorunum,
-  degerler: ham,
-  baglam,
-}: BolumGorunumuOzellikleri) {
-  const baslikKimligi = useId();
-  // Değerler tarifin şemasından geçmiştir (kart 0106); türleri tarifteki alanlardır.
-  const degerler = ham as { baslik?: unknown; sekmeler?: unknown; kartGorunumu?: unknown };
-  const sekmeler = (
+// Ürünü olan sekmeler. Panel de bölümün boş olup olmadığını bununla bulur (kart 0172, bolumBosluklari).
+export const sekmeliVitrinSekmeleri = (ham: BolumDegerleri, baglam: VitrinBaglami) => {
+  const degerler = ham as { sekmeler?: unknown };
+  return (
     Array.isArray(degerler.sekmeler)
       ? (degerler.sekmeler as { baslik?: unknown; urunler?: unknown }[])
       : []
@@ -37,6 +34,17 @@ export function SekmeliVitrinGorunumu({
       ? [{ kod: String(sira), baslik: sekme.baslik, kartlar }]
       : [];
   });
+};
+
+export function SekmeliVitrinGorunumu({
+  gorunum,
+  degerler: ham,
+  baglam,
+}: BolumGorunumuOzellikleri) {
+  const baslikKimligi = useId();
+  // Değerler tarifin şemasından geçmiştir (kart 0106); türleri tarifteki alanlardır.
+  const degerler = ham as { baslik?: unknown; sekmeler?: unknown; kartGorunumu?: unknown };
+  const sekmeler = sekmeliVitrinSekmeleri(ham, baglam);
   const [ilk] = sekmeler;
   if (ilk === undefined) return null;
   const bolumBasligi = metinMi(degerler.baslik) ? degerler.baslik : undefined;

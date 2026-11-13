@@ -6,6 +6,7 @@ import { sinif } from "../../../../bilesenler/parcalar/sinif";
 import type { SosyalSite } from "../../../kayitlar/sosyal-siteler";
 import type { MetinAnahtari } from "../../../metinler/metin";
 import { metin } from "../../../metinler/site-metni";
+import type { VitrinBaglami } from "../../bolum-kutuphanesi/baglam";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
 import { altKisimSiniflari as s } from "../ortak/alt-kisim";
 import { metinMi } from "../ortak/deger";
@@ -21,6 +22,9 @@ const siteAdlari = {
   linkedin: "vitrin.bolum.sosyalHesaplar.site.linkedin",
 } as const satisfies Record<SosyalSite, MetinAnahtari>;
 
+// Mağaza ayarlarında sosyal hesap yok. Panel de boşluğu bununla bulur (kart 0172).
+export const sosyalHesaplarBosMu = (baglam: VitrinBaglami) => baglam.sosyalHesaplar.length === 0;
+
 export function SosyalHesaplarGorunumu({
   gorunum,
   degerler: ham,
@@ -28,7 +32,7 @@ export function SosyalHesaplarGorunumu({
 }: BolumGorunumuOzellikleri) {
   // Değerler tarifin şemasından geçmiştir (kart 0106); türleri tarifteki alanlardır.
   const degerler = ham as { baslik?: unknown };
-  if (baglam.sosyalHesaplar.length === 0) return null;
+  if (sosyalHesaplarBosMu(baglam)) return null;
   const yatay = gorunum === "yatay";
   const baslik = metinMi(degerler.baslik)
     ? degerler.baslik

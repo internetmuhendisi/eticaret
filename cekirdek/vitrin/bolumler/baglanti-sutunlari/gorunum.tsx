@@ -5,8 +5,9 @@
 // bir satırda yan yana dizilir.
 import { sinif } from "../../../../bilesenler/parcalar/sinif";
 import { metin } from "../../../metinler/site-metni";
-import type { BaglamMenuDali } from "../../bolum-kutuphanesi/baglam";
+import type { BaglamMenuDali, VitrinBaglami } from "../../bolum-kutuphanesi/baglam";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
+import type { BolumDegerleri } from "../../bolum-kutuphanesi/tarif";
 import { altKisimSiniflari as s } from "../ortak/alt-kisim";
 import { metinMi } from "../ortak/deger";
 import { MenuBaglantisi } from "../ortak/menu";
@@ -33,14 +34,18 @@ function Baglantilar({ dallar }: { dallar: readonly BaglamMenuDali[] }) {
   );
 }
 
+// Seçilen menünün dalları; menü silinmişse ya da yoksa yok. Panel de boşluğu bununla bulur (kart 0172).
+export const baglantiSutunlariDallari = (ham: BolumDegerleri, baglam: VitrinBaglami) => {
+  const { menu } = ham as { menu?: unknown };
+  return metinMi(menu) ? baglam.menuler[menu] : undefined;
+};
+
 export function BaglantiSutunlariGorunumu({
   gorunum,
   degerler: ham,
   baglam,
 }: BolumGorunumuOzellikleri) {
-  // Değerler tarifin şemasından geçmiştir (kart 0106); türleri tarifteki alanlardır.
-  const degerler = ham as { menu?: unknown };
-  const dallar = metinMi(degerler.menu) ? baglam.menuler[degerler.menu] : undefined;
+  const dallar = baglantiSutunlariDallari(ham, baglam);
   if (dallar === undefined || dallar.length === 0) return null;
   if (gorunum === "tek-satir") {
     const hepsi = dallar.flatMap((dal) => [

@@ -501,6 +501,22 @@
           "favori": "Bu bölüm favoriler özelliği gelince vitrinde görünür.",
           "sepet": "Bu bölüm sepet özelliği gelince vitrinde görünür.",
           "odeme": "Bu bölüm ödeme özelliği gelince vitrinde görünür."
+        },
+        "bos": {
+          "menu-satiri": "Şu an vitrinde görünmüyor: seçilen menüler boş ya da silinmiş. Menüler ekranından öğe ekleyin ya da bölümü açıp başka bir menü seçin.",
+          "baglanti-sutunlari": "Şu an vitrinde görünmüyor: seçilen menü boş ya da silinmiş. Menüler ekranından öğe ekleyin ya da bölümü açıp başka bir menü seçin.",
+          "iletisim-bilgileri": "Şu an vitrinde görünmüyor: mağaza ayarlarında telefon, e-posta ya da adres yok. Biri girilince görünür.",
+          "sosyal-hesaplar": "Şu an vitrinde görünmüyor: mağaza ayarlarında sosyal hesap yok. Hesap eklenince görünür.",
+          "odeme-isaretleri": "Şu an vitrinde görünmüyor: sitede açık ödeme yöntemi yok. Ödeme açılınca görünür.",
+          "guven-seridi": "Şu an vitrinde görünmüyor: maddelerin kullandığı mağaza ayarları boş. Ayar girilince görünür.",
+          "kategori-kutulari": "Şu an vitrinde görünmüyor: seçilen kategoriler silinmiş. Bölümü açıp kategori seçin.",
+          "urun-vitrini": "Şu an vitrinde görünmüyor: seçilen ürünlerden vitrinde görünen yok. Ürünler yayına ya da stoğa girince görünür.",
+          "sekmeli-vitrin": "Şu an vitrinde görünmüyor: hiçbir sekmede vitrinde görünen ürün yok. Ürünler yayına ya da stoğa girince görünür.",
+          "firsatlar": "Şu an vitrinde görünmüyor: bitiş tarihi olan, süren bir indirim yok. Bitiş tarihli indirim girilince görünür.",
+          "marka-logolari": "Şu an vitrinde görünmüyor: seçilen markalar silinmiş. Bölümü açıp marka seçin.",
+          "musteri-yorumlari": "Şu an vitrinde görünmüyor: gösterilecek yayınlanmış yorum yok. Yorumlar yayınlanınca görünür.",
+          "blog-yazilari": "Şu an vitrinde görünmüyor: gösterilecek yayınlanmış yazı yok. Yazı yayınlanınca görünür.",
+          "bulten-kaydi": "Şu an vitrinde görünmüyor: bültenin gönderim adresi tanımlı değil. Tanımlanınca görünür."
         }
       }
     },

@@ -10,19 +10,17 @@ import {
 } from "../../../../bilesenler/parcalar/serit";
 import { sinif } from "../../../../bilesenler/parcalar/sinif";
 import { metin } from "../../../metinler/site-metni";
+import type { VitrinBaglami } from "../../bolum-kutuphanesi/baglam";
 import { BolumGorseli } from "../../bolum-kutuphanesi/gorsel";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
+import type { BolumDegerleri } from "../../bolum-kutuphanesi/tarif";
 import { metinMi } from "../ortak/deger";
 import { siradakiKutuRengi, zeminSiniflari } from "../ortak/zemin";
 
-export function KategoriKutulariGorunumu({
-  gorunum,
-  degerler: ham,
-  baglam,
-}: BolumGorunumuOzellikleri) {
-  // Değerler tarifin şemasından geçmiştir (kart 0106); türleri tarifteki alanlardır.
-  const degerler = ham as { baslik?: unknown; kategoriler?: unknown };
-  const kutular = (
+// Bağlamda olan (silinmemiş) seçili kategoriler. Panel de bölümün boş olup olmadığını bununla bulur (kart 0172).
+export const kategoriKutulari = (ham: BolumDegerleri, baglam: VitrinBaglami) => {
+  const degerler = ham as { kategoriler?: unknown };
+  return (
     Array.isArray(degerler.kategoriler)
       ? (degerler.kategoriler as { kategori?: unknown; zemin?: unknown }[])
       : []
@@ -40,6 +38,16 @@ export function KategoriKutulariGorunumu({
           },
         ];
   });
+};
+
+export function KategoriKutulariGorunumu({
+  gorunum,
+  degerler: ham,
+  baglam,
+}: BolumGorunumuOzellikleri) {
+  // Değerler tarifin şemasından geçmiştir (kart 0106); türleri tarifteki alanlardır.
+  const degerler = ham as { baslik?: unknown; kategoriler?: unknown };
+  const kutular = kategoriKutulari(ham, baglam);
   if (kutular.length === 0) return null;
   const baslik = metinMi(degerler.baslik) ? degerler.baslik : undefined;
   const kaydirmali = gorunum === "kaydirmali";

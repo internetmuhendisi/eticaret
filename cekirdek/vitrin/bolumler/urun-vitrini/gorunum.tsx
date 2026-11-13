@@ -3,7 +3,9 @@
 // kartların solunda, daha dar ekranda üstündedir. Ürünü olmayan bölüm çizilmez.
 import { useId } from "react";
 import { metin } from "../../../metinler/site-metni";
+import type { VitrinBaglami } from "../../bolum-kutuphanesi/baglam";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
+import type { BolumDegerleri } from "../../bolum-kutuphanesi/tarif";
 import { metinMi } from "../ortak/deger";
 import {
   BolumBasligi,
@@ -12,6 +14,10 @@ import {
   UrunIzgarasi,
   YanAfis,
 } from "../ortak/urun-izgarasi";
+
+// Kaynağın kartları. Panel de bölümün boş olup olmadığını bununla bulur (kart 0172, bolumBosluklari).
+export const urunVitriniKartlari = (degerler: BolumDegerleri, baglam: VitrinBaglami) =>
+  kaynaginKartlari(baglam, (degerler as { urunler?: unknown }).urunler);
 
 export function UrunVitriniGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunumuOzellikleri) {
   const baslikKimligi = useId();
@@ -32,7 +38,7 @@ export function UrunVitriniGorunumu({ gorunum, degerler: ham, baglam }: BolumGor
       unknown
     >
   >;
-  const kartlar = kaynaginKartlari(baglam, degerler.urunler);
+  const kartlar = urunVitriniKartlari(ham, baglam);
   if (kartlar.length === 0) return null;
   const baslik = metinMi(degerler.baslik) ? degerler.baslik : undefined;
   const yanli = metinMi(degerler.yanBaslik);

@@ -17,8 +17,9 @@ import {
 import { Dugme } from "../../../../bilesenler/parcalar/dugme";
 import { sinif } from "../../../../bilesenler/parcalar/sinif";
 import { metin } from "../../../metinler/site-metni";
-import type { BaglamMenuDali } from "../../bolum-kutuphanesi/baglam";
+import type { BaglamMenuDali, VitrinBaglami } from "../../bolum-kutuphanesi/baglam";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
+import type { BolumDegerleri } from "../../bolum-kutuphanesi/tarif";
 import { metinMi } from "../ortak/deger";
 import { MenuBaglantisi, yeniSekmeOzellikleri } from "../ortak/menu";
 
@@ -76,14 +77,24 @@ function AcilirDal({
   );
 }
 
-export function MenuSatiriGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunumuOzellikleri) {
-  // Değerler tarifin şemasından geçmiştir (kart 0106); türleri tarifteki alanlardır.
+// Seçilen ana menü ve kategori menüsü. Panel de boşluğu bununla bulur (kart 0172, menuSatiriBosMu).
+export const menuSatiriMenuleri = (ham: BolumDegerleri, baglam: VitrinBaglami) => {
   const degerler = ham as { anaMenu?: unknown; kategoriMenusu?: unknown };
-  const anaMenu = metinMi(degerler.anaMenu) ? baglam.menuler[degerler.anaMenu] : undefined;
-  const kategoriler = metinMi(degerler.kategoriMenusu)
-    ? baglam.menuler[degerler.kategoriMenusu]
-    : undefined;
-  if ((anaMenu?.length ?? 0) === 0 && (kategoriler?.length ?? 0) === 0) return null;
+  return {
+    anaMenu: metinMi(degerler.anaMenu) ? baglam.menuler[degerler.anaMenu] : undefined,
+    kategoriler: metinMi(degerler.kategoriMenusu)
+      ? baglam.menuler[degerler.kategoriMenusu]
+      : undefined,
+  };
+};
+export const menuSatiriBosMu = (ham: BolumDegerleri, baglam: VitrinBaglami) => {
+  const { anaMenu, kategoriler } = menuSatiriMenuleri(ham, baglam);
+  return (anaMenu?.length ?? 0) === 0 && (kategoriler?.length ?? 0) === 0;
+};
+
+export function MenuSatiriGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunumuOzellikleri) {
+  const { anaMenu, kategoriler } = menuSatiriMenuleri(ham, baglam);
+  if (menuSatiriBosMu(ham, baglam)) return null;
   return (
     <nav
       aria-label={metin("vitrin.bolum.menuSatiri.gezinme")}

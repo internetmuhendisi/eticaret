@@ -19,6 +19,13 @@ Müşteri gezisinde (2026-11-13) görüldü: "Geri sayımlı fırsatlar" panelde
 - Bitiş tarihli indirim yokken "Geri sayımlı fırsatlar" panelde nedeniyle işaretli (test).
 - Önce ve sonra ekran görüntüsü karşılaştırıldı.
 
+## Notlar (2026-11-14)
+
+- Tek kural: her türün görünüşü öğelerini dışa açılan bir işlevle hesaplar (`firsatKartlari`, `urunVitriniKartlari`, `sekmeliVitrinSekmeleri` gibi), boşluk kaydı (`bolumBosluklari`) onları kullanır; panel verisi vitrinin bağlamını vitrinle aynı okumayla (`vitrinBaglaminiOku`) okur. 14 tür kayıtta: menü satırı, bağlantı sütunları, iletişim, sosyal hesaplar, ödeme işaretleri, güven şeridi, kategori kutuları, ürün vitrini, sekmeli vitrin, fırsatlar, marka logoları, yorumlar, blog, bülten. Kayan afiş, kampanya ve geniş afişin boşluğu yalnız değerlere bağlıdır, şema boşu kabul etmez.
+- Önce ve sonra görüntüsü (taze Örnek Mağaza, indirimler 15 Kasım'da başlıyor): önce "Geri sayımlı fırsatlar" panelde işaretsiz, vitrinde yok; sonra "Vitrinde görünmüyor" rozeti ve "Şu an vitrinde görünmüyor: bitiş tarihi olan, süren bir indirim yok. Bitiş tarihli indirim girilince görünür."
+- Ölçülen sınır: fırsatlarda boş kartı `FirsatSaati` de çizmez (ikinci katman); görünüşün koşulu tek başına bozulunca test yeşil kaldı. Ürün vitrini ve marka logolarında aynı bozma kırmızıya düştü.
+- Tam tarayıcı takımında (yük ortalaması 20–25) iki test düştü, bu karttan bağımsız: sıralanabilir liste (animasyon sırasında ölçüm, kart 0165) ve yavaş işlemcide yan pencere (60 saniye sınırı aşıldı, yük altı süre kartlarıyla aynı sınıf). İkisi tek başına üçer kez geçti.
+
 ## Durum
 
 yapılacak
