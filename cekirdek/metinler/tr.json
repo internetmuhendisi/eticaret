@@ -782,7 +782,6 @@
       "iletisimBilgileri": {
         "ad": "İletişim bilgileri",
         "telefon": "Telefon",
-        "eposta": "E-posta",
         "epostaBaglantisi": "E-posta {adres}",
         "adres": "Adres"
       },

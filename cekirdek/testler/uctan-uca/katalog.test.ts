@@ -664,8 +664,9 @@ test("ürün kartı: her görünüm her durumla iki renkte ve üç genişlikte t
 });
 
 // Kart 0190: dar telefonda fiyat iki satıra iner ama para simgesi (ya da aralığın çizgisi) tek başına bir satırda
-// durmaz; her satırda bir tutar vardır. Dikey ve büyük görselli kart ölçülür. Yatay kartta sepet ve favori
-// birlikteyken 320 px'te fiyata 70 px kalır, tek tutar bile sığmaz (kart 0193; sepet bugün vitrinde yok).
+// durmaz; fiyatın ve üstü çizili eski fiyatın her satırında bir tutar vardır. Dikey ve büyük görselli kart ölçülür.
+// Yatay kartta sepet ve favori birlikteyken 320 px'te fiyata 70 px kalır, tek tutar bile sığmaz (kart 0193; sepet
+// bugün vitrinde yok). Kart genişliğine hiç sığmayan büyük tutar kendi içinde kırılır (kart 0109).
 for (const genislik of [320, 360]) {
   test(`ürün kartı: fiyatın her satırında tutar var, simge tek başına kalmaz (${genislik} px)`, async ({
     page,
@@ -676,7 +677,7 @@ for (const genislik of [320, 360]) {
     for (const gorunum of ["dikey", "buyuk-gorsel"] as const) {
       const fiyatlar = page
         .getByRole("region", { name: metin(`gelistirme.urunKarti.gorunum.${gorunum}`) })
-        .locator("[data-slot=fiyat] strong");
+        .locator("[data-slot=fiyat] :is(strong, s)");
       expect(await fiyatlar.count()).toBeGreaterThan(0);
       for (const fiyat of await fiyatlar.all()) {
         const satirlar = await satirlarinYazisi(fiyat);
