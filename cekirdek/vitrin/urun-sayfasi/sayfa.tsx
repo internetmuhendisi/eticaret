@@ -319,7 +319,8 @@ export async function UrunSayfasi({
             {ustBaglanti === undefined ? null : (
               <Baglanti
                 href={ustBaglanti.adres}
-                className="w-fit text-kucuk font-kalin text-soluk-yazi"
+                // Kısa ad ("Giyim") 44 px'ten dardır: basılan alan dokunma-alani ile 44 × 44 px'tir (kart 0146).
+                className="dokunma-alani w-fit text-kucuk font-kalin text-soluk-yazi"
               >
                 {ustBaglanti.ad}
               </Baglanti>
