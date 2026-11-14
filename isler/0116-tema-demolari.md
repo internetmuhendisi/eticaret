@@ -29,4 +29,4 @@ Bölüm: Vitrin. Gezilebilir demo vitrin sayfalarını gerektirir, bu yüzden Vi
 
 ## Durum
 
-yapılacak
+bitti
