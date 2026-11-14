@@ -32,7 +32,12 @@ export function DuyuruSeridiGorunumu({ gorunum, degerler: ham, baglam }: BolumGo
     ) : (
       <Baglanti
         href={baglanti.adres}
-        className={sinif("min-h-11 min-w-0 shrink", ikiYana && "font-normal", renk.yazi)}
+        // Bağlantı kendiliğinden sola yaslıdır (kart 0130); ortalı şeritte iki satıra inen yazı da ortalı kalır.
+        className={sinif(
+          "min-h-11 min-w-0 shrink",
+          ikiYana ? "font-normal" : "text-center",
+          renk.yazi,
+        )}
         {...yeniSekmeOzellikleri(baglanti.yeniSekme)}
       >
         {degerler.metin}

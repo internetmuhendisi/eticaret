@@ -16,6 +16,7 @@ import {
   hesaptanCik,
 } from "./hesap";
 import { konsoluDinle } from "./konsol";
+import { satirlarinSolu } from "./satir-hizasi";
 import { sayfaHazir } from "./sayfa-hazir";
 
 const sifre = "uzun-bir-musteri-sifresi";
@@ -292,6 +293,27 @@ test("yasal metinlerin bağlantıları yeni sekmede açılır, doldurulan form k
   }
   await expect(alan(page, "vitrin.kayit.eposta")).toHaveValue(eposta);
 });
+
+// Kart 0130: aydınlatma metni bağlantısı dar telefonda iki satıra iner, iki satırı da onay kutusunun hizasında
+// sola yaslıdır (390 px'te tek satırdır).
+for (const genislik of [320, 360]) {
+  test(`kayıt formunda aydınlatma bağlantısının iki satırı da sola yaslı (${genislik} px)`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: genislik, height: 800 });
+    await page.goto(vitrinAdresleri.kayit);
+    await yuklenmesiniBekle(page);
+    const satirlar = await satirlarinSolu(
+      page.getByRole("link", { name: metin("vitrin.kayit.kvkkBaglanti") }),
+      '[data-slot="onay-kutusu"]',
+    );
+    expect(satirlar.length, "bağlantı iki satıra inmeli").toBeGreaterThanOrEqual(2);
+    expect(
+      satirlar.every((sol) => sol === 0),
+      `satırların solu: ${satirlar}`,
+    ).toBe(true);
+  });
+}
 
 for (const [ad, width, height] of [
   ["telefon", 360, 740],

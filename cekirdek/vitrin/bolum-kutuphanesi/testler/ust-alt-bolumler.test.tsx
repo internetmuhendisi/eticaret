@@ -458,6 +458,20 @@ describe("duyuru şeridi", () => {
     const ortali = belge(ust([bolum("duyuru-seridi", "ortali", { metin: "Duyuru" })], baglam));
     expect(ortali.querySelector('a[href="tel:+90000"]')).toBeNull();
   });
+
+  // Kart 0130: bağlantı parçası sola yaslıdır; ortalı şeritte iki satıra inen bağlantı ortalı kalır, iki yana
+  // görünümünde sola yaslıdır.
+  it("bağlantının yazısı ortalı görünümde ortalı, iki yana görünümünde sola yaslı", () => {
+    const baglanti = { adres: "https://ornek.test/a", yeniSekme: false };
+    const sinifi = (gorunum: string) =>
+      belge(ust([bolum("duyuru-seridi", gorunum, { metin: "Duyuru", baglanti })]))
+        .querySelector('a[href="https://ornek.test/a"]')
+        ?.className.split(" ");
+    expect(sinifi("ortali")).toContain("text-center");
+    expect(sinifi("ortali")).not.toContain("text-left");
+    expect(sinifi("iki-yana")).toContain("text-left");
+    expect(sinifi("iki-yana")).not.toContain("text-center");
+  });
 });
 
 describe("tarifler", () => {

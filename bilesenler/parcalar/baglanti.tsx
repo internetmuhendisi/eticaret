@@ -15,7 +15,8 @@ export function Baglanti({
       data-slot="baglanti"
       className={sinif(
         dugmeSiniflari({ tur: gorunum }),
-        gorunum === "baglanti" && "justify-start font-kalin",
+        // Düz bağlantı sola yaslıdır: iki satıra inen yazı da öyle kalır (düğmenin text-center'ı ortalardı, kart 0130).
+        gorunum === "baglanti" && "justify-start text-left font-kalin",
         className,
       )}
       {...ozellikler}

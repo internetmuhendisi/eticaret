@@ -12,6 +12,7 @@ import type { MetinAnahtari } from "../../metinler/metin";
 import { metin } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import { konsoluDinle } from "./konsol";
+import { satirlarinSolu } from "./satir-hizasi";
 import { sayfaHazir } from "./sayfa-hazir";
 
 const genislikler = [
@@ -991,6 +992,30 @@ test("bülten kaydı: boş gönderilince odak e-postaya gider, iki hata görün�
   expect(istekler).toEqual([]);
   expect(await yanaKayma(page)).toBe(0);
 });
+
+// Kart 0130: aydınlatma metni bağlantısı telefonda iki satıra iner; satırlar formun öteki öğeleri gibi sola
+// yaslıdır (düğmenin text-center'ı ikinci satırı ortalıyordu). Her bülten görünümü ölçülür.
+for (const genislik of [320, 390]) {
+  test(`bülten kaydı: aydınlatma bağlantısının iki satırı da sola yaslı (${genislik} px)`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: genislik, height: 800 });
+    await ac(page, `${katalogAdresi}/bolum-kutuphanesi`);
+    const baglantilar = page
+      .getByRole("region", { name: om("bultenBaslik") })
+      .getByRole("link", { name: metin("vitrin.kayit.kvkkBaglanti") });
+    expect(await baglantilar.count()).toBeGreaterThan(0);
+    for (const baglanti of await baglantilar.all()) {
+      const satirlar = await satirlarinSolu(baglanti, '[data-slot="onay-kutusu"]');
+      expect(satirlar.length, "bağlantı iki satıra inmeli").toBeGreaterThanOrEqual(2);
+      expect(
+        satirlar.every((sol) => sol === 0),
+        `satırların solu: ${satirlar}`,
+      ).toBe(true);
+    }
+    await tara(page, `bülten bağlantısı ${genislik} px`);
+  });
+}
 
 // Kart 0112 kontrolü: şerit öğesinin içindeki mutlak konumlu öğe (ekran okuyucu yazısı) kırpma kutusunun dışında
 // kalıyor, şeridin kodu yüklenene kadar sayfayı yana kaydırıyordu. Yalnız yük altında görülüyordu: işlemci
