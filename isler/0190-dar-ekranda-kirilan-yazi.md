@@ -24,4 +24,4 @@ Bölüm: Vitrin. Kart 0146'dan önce kapanır.
 
 ## Durum
 
-yapılacak
+bitti
