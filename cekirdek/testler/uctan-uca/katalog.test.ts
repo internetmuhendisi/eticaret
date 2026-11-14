@@ -12,7 +12,7 @@ import type { MetinAnahtari } from "../../metinler/metin";
 import { metin } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import { konsoluDinle } from "./konsol";
-import { satirlarinSolu } from "./satir-hizasi";
+import { satirlarinSolu, satirlarinYazisi } from "./satir-hizasi";
 import { sayfaHazir } from "./sayfa-hazir";
 
 const genislikler = [
@@ -662,6 +662,35 @@ test("ürün kartı: her görünüm her durumla iki renkte ve üç genişlikte t
   }
   expect(hatalar).toEqual([]);
 });
+
+// Kart 0190: dar telefonda fiyat iki satıra iner ama para simgesi (ya da aralığın çizgisi) tek başına bir satırda
+// durmaz; her satırda bir tutar vardır. Dikey ve büyük görselli kart ölçülür. Yatay kartta sepet ve favori
+// birlikteyken 320 px'te fiyata 70 px kalır, tek tutar bile sığmaz (kart 0193; sepet bugün vitrinde yok).
+for (const genislik of [320, 360]) {
+  test(`ürün kartı: fiyatın her satırında tutar var, simge tek başına kalmaz (${genislik} px)`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: genislik, height: 800 });
+    await ac(page, `${katalogAdresi}/urun-karti`);
+    let kirilan = 0;
+    for (const gorunum of ["dikey", "buyuk-gorsel"] as const) {
+      const fiyatlar = page
+        .getByRole("region", { name: metin(`gelistirme.urunKarti.gorunum.${gorunum}`) })
+        .locator("[data-slot=fiyat] strong");
+      expect(await fiyatlar.count()).toBeGreaterThan(0);
+      for (const fiyat of await fiyatlar.all()) {
+        const satirlar = await satirlarinYazisi(fiyat);
+        if (satirlar.length > 1) kirilan += 1;
+        expect(
+          satirlar.filter((satir) => !/\d/u.test(satir)),
+          `${gorunum}: ${satirlar.join(" | ")}`,
+        ).toEqual([]);
+      }
+    }
+    // Ölçüm boşa gitmesin: bu genişlikte en az bir fiyat aralığı iki satıra iner.
+    expect(kirilan).toBeGreaterThan(0);
+  });
+}
 
 // Kartın klavyesi: sırayla ürünün adı, sepete ekle ve favori; adın odağı bütün kartın çevresinde görünür.
 test("ürün kartı: klavyede ad, sepet ve favori sırasıyla; adın odağı kartın çevresinde", async ({

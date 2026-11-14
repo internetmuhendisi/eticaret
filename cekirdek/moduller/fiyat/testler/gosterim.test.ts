@@ -225,7 +225,7 @@ describe("eski fiyat geçmişten", () => {
     // Pencere gün 11–41: en düşük 105,00 (gün 16–18 indirimi); 120,00 dışarıda.
     const sonuc = await gosterileni(h, gun(45));
     expect(sonuc).toMatchObject({ tutar: 10_000, eskiTutar: 10_500, indirimde: true });
-    expect(sonuc.yazili).toEqual({ tutar: "100,00 XTS", eskiTutar: "105,00 XTS" });
+    expect(sonuc.yazili).toEqual({ tutar: "100,00\u00a0XTS", eskiTutar: "105,00\u00a0XTS" });
     expect(await gosterileni(h, gun(30))).toMatchObject({ tutar: 13_000, indirimde: false });
   });
 
@@ -269,7 +269,7 @@ describe("sitenin para biçimi", () => {
       },
     });
     const sonuc = (await bicimli.gosterilecekFiyatlar(h.vt, [h.birim])).get(h.birim);
-    expect(sonuc?.yazili.tutar).toBe("¤ 1.234,56");
+    expect(sonuc?.yazili.tutar).toBe("¤\u00a01.234,56");
   });
 });
 

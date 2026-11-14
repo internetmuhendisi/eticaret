@@ -2,10 +2,12 @@
 // bağlamla gelir; boş olan gösterilmez, hiçbiri yoksa bölüm çizilmez. Liste görünümünde başlık verilmezse mağazanın
 // adıdır, bilgiler ikonsuz alt alta durur; yatay görünüm alt kısmın bütün satırını alır, bilgiler ikonlu yan
 // yanadır.
+import { Fragment } from "react";
 import { Ikon } from "../../../../bilesenler/ikonlar/ikon";
 import { Baglanti } from "../../../../bilesenler/parcalar/baglanti";
 import { sinif } from "../../../../bilesenler/parcalar/sinif";
 import { metin } from "../../../metinler/site-metni";
+import { doldur } from "../../../moduller/eposta/sablon";
 import type { VitrinBaglami } from "../../bolum-kutuphanesi/baglam";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
 import { altKisimSiniflari as s } from "../ortak/alt-kisim";
@@ -16,6 +18,26 @@ export const iletisimBosMu = (baglam: VitrinBaglami) => {
   const { telefon, eposta, adres } = baglam.iletisim;
   return telefon === undefined && eposta === undefined && adres === undefined;
 };
+
+// E-posta adresinin yazısı (kart 0190): satır yalnız "@" ve noktadan sonra kırılır, tireden kırılmaz
+// ("satis@kucuk-" / "dukkan.test" olmaz). Her parça satıra hiç sığmazsa kendi içinde kırılır, sayfa yana kaymaz.
+function EpostaYazisi({ adres }: { adres: string }) {
+  // Her parça "@" ya da noktayla biter (son parça hariç); yeri parçanın anahtarıdır.
+  const parcalar = [...adres.matchAll(/[^@.]*[@.]|[^@.]+$/gu)].map((eslesme) => ({
+    yer: eslesme.index,
+    parca: eslesme[0],
+  }));
+  return (
+    <span className="min-w-0">
+      {parcalar.map(({ yer, parca }) => (
+        <Fragment key={yer}>
+          {yer === 0 ? null : <wbr />}
+          <span className="inline-block max-w-full wrap-anywhere">{parca}</span>
+        </Fragment>
+      ))}
+    </span>
+  );
+}
 
 export function IletisimBilgileriGorunumu({
   gorunum,
@@ -62,10 +84,17 @@ export function IletisimBilgileriGorunumu({
         )}
         {eposta === undefined ? null : (
           <li>
-            <Baglanti href={eposta.adres} className={sinif(s.baglanti, "gap-2 wrap-anywhere")}>
+            {/* Ad adresin tamamıdır: parçalar satır içi blok olduğu için tarayıcı adda aralarına boşluk koyardı
+                ("satis@ kucuk-dukkan. test"). */}
+            <Baglanti
+              href={eposta.adres}
+              aria-label={doldur(metin("vitrin.bolum.iletisimBilgileri.epostaBaglantisi"), {
+                adres: eposta.metin,
+              })}
+              className={sinif(s.baglanti, "gap-2")}
+            >
               {ikon("eposta")}
-              <span className="sr-only">{metin("vitrin.bolum.iletisimBilgileri.eposta")}</span>
-              {eposta.metin}
+              <EpostaYazisi adres={eposta.metin} />
             </Baglanti>
           </li>
         )}

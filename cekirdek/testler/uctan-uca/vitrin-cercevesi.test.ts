@@ -8,9 +8,11 @@ import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri";
 import { metin } from "../../metinler/site-metni";
 import { duzenServisi } from "../../moduller/duzen/servis";
+import { doldur } from "../../moduller/eposta/sablon";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
 import { vitrinAdresleri } from "../../vitrin/adresler";
 import { girisAdresi } from "../../yonetim-paneli/adresler";
+import { satirlarinYazisi } from "./satir-hizasi";
 import { sayfaHazir } from "./sayfa-hazir";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
@@ -67,6 +69,37 @@ test("vitrin sayfaları üst ve alt kısmı düzenden çizer; gizlenen bölüm g
     await servis.bolumSil(vt, kim, telifBolumu);
   }
 });
+
+// Kart 0190: alt kısımdaki e-posta adresi dar telefonda yalnız "@" ya da noktadan sonra kırılır, tireden kırılmaz
+// (demo sitenin adresi tirelidir: "satis@kucuk-" / "dukkan.test" gibi kırılmaz). Test kendi iletişim bölümünü koyar.
+for (const genislik of [320, 360]) {
+  test(`alt kısımdaki e-posta tireden kırılmaz (${genislik} px)`, async ({ page }) => {
+    const bolum = await servis.bolumEkle(vt, kim, "alt-kisim", {
+      tur: "iletisim-bilgileri",
+      degerler: {},
+    });
+    try {
+      await page.setViewportSize({ width: genislik, height: 800 });
+      await page.goto(vitrinAdresleri.giris);
+      await sayfaHazir(page);
+      const baglanti = page.getByRole("contentinfo").locator('a[href^="mailto:"]').last();
+      const adres = (await baglanti.getAttribute("href"))?.replace(/^mailto:/u, "") ?? "";
+      expect(adres).toContain("-");
+      const satirlar = await satirlarinYazisi(baglanti);
+      expect(satirlar.length, satirlar.join(" | ")).toBeGreaterThanOrEqual(2);
+      expect(satirlar.join("")).toBe(adres);
+      for (const satir of satirlar.slice(0, -1)) {
+        expect(satir, satirlar.join(" | ")).toMatch(/[@.]$/u);
+      }
+      // Ekran okuyucu adresi bölmeden okur (parçalar satır içi blok: adda aralarına boşluk girmez).
+      await expect(baglanti).toHaveAccessibleName(
+        doldur(metin("vitrin.bolum.iletisimBilgileri.epostaBaglantisi"), { adres }),
+      );
+    } finally {
+      await servis.bolumSil(vt, kim, bolum);
+    }
+  });
+}
 
 // Telefonda menü penceresi bir bağlantıya basılınca kapanır: vitrinin çerçevesi sayfalar arasında yeniden çizilmez
 // (kart 0108 kontrolü). Logonun oranı katalogda geniş örnek logoyla ölçülür (katalog.test.ts).

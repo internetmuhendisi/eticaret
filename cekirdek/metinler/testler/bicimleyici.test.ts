@@ -15,18 +15,18 @@ const bicim = bicimleyiciOlustur(turkiye);
 
 describe("para", () => {
   it("tutarı binlikte nokta, ondalıkta virgül ve simge sonda yazar", () => {
-    expect(bicim.para(124700)).toBe("1.247,00 ¤");
-    expect(bicim.para(123456)).toBe("1.234,56 ¤");
+    expect(bicim.para(124700)).toBe("1.247,00\u00a0¤");
+    expect(bicim.para(123456)).toBe("1.234,56\u00a0¤");
   });
 
   it("büyük, küçük ve sıfır tutarları doğru yazar", () => {
-    expect(bicim.para(123456789)).toBe("1.234.567,89 ¤");
-    expect(bicim.para(5)).toBe("0,05 ¤");
-    expect(bicim.para(0)).toBe("0,00 ¤");
+    expect(bicim.para(123456789)).toBe("1.234.567,89\u00a0¤");
+    expect(bicim.para(5)).toBe("0,05\u00a0¤");
+    expect(bicim.para(0)).toBe("0,00\u00a0¤");
   });
 
   it("eksi tutarı eksi işaretiyle yazar", () => {
-    expect(bicim.para(-124700)).toBe("-1.247,00 ¤");
+    expect(bicim.para(-124700)).toBe("-1.247,00\u00a0¤");
   });
 
   it("simgenin yerini ve ayırıcıları ayardan alır", () => {
@@ -52,10 +52,10 @@ describe("para", () => {
         dil,
         para: { ...turkiye.para, paraBirimi, simge: undefined },
       });
-    expect(simgesiz("en", "USD").para(100)).toBe("1,00 $");
-    expect(simgesiz("de", "EUR").para(100)).toBe("1,00 €");
+    expect(simgesiz("en", "USD").para(100)).toBe("1,00\u00a0$");
+    expect(simgesiz("de", "EUR").para(100)).toBe("1,00\u00a0€");
     // Dil verisinde simgesi olmayan kod kendisi olarak yazılır.
-    expect(simgesiz("tr", "XTS").para(100)).toBe("1,00 XTS");
+    expect(simgesiz("tr", "XTS").para(100)).toBe("1,00\u00a0XTS");
   });
 
   it("en küçük birimde tam sayı olmayan tutarı reddeder", () => {
@@ -145,12 +145,30 @@ describe("ad karşılaştırma", () => {
 
 describe("para aralığı", () => {
   it("simge bir kez, simgenin yerindeki uçta", () => {
-    expect(bicim.paraAraligi(29_990, 32_990, " – ")).toBe("299,90 – 329,90 ¤");
+    expect(bicim.paraAraligi(29_990, 32_990, " – ")).toBe("299,90 – 329,90\u00a0¤");
     const basta = bicimleyiciOlustur({
       ...turkiye,
       para: { ...turkiye.para, simgeYeri: "basta", simgeBoslugu: false },
     });
     expect(basta.paraAraligi(29_990, 123_456, " – ")).toBe("¤299,90 – 1.234,56");
+  });
+
+  // Kart 0190: dar ekranda simge tutardan ayrılıp tek başına alt satıra düşüyordu. Simgeyle tutarın arasında
+  // satır kırılabilecek boşluk yoktur; aralığın ayırıcısı kırılabilir kalır.
+  it("simgeyle tutarın arası bölünmez boşluk, simge sonda da başta da", () => {
+    const basta = bicimleyiciOlustur({
+      ...turkiye,
+      para: { ...turkiye.para, simgeYeri: "basta" },
+    });
+    for (const yazi of [
+      bicim.para(124700),
+      bicim.paraAraligi(29_990, 32_990, " – "),
+      basta.para(124700),
+      basta.paraAraligi(29_990, 32_990, " – "),
+    ]) {
+      expect(yazi).toMatch(/(\d ¤|¤ \d)/u);
+      expect(yazi).not.toMatch(/(\d ¤|¤ \d)/u);
+    }
   });
 });
 

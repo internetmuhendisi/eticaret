@@ -132,6 +132,9 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
       .join("");
 
   const paraSayisi = sayiBicimi(ayarlar.para.ondalikSayisi);
+  // Simgeyle tutarın arası bölünmez boşluktur (kart 0190): dar ekranda simge tutardan ayrılıp tek başına alt
+  // satıra düşmez; satır kırılacaksa simge yanındaki tutarla birlikte iner.
+  const simgeyleTutarArasi = "\u00a0";
   const simge = ayarlar.para.simge ?? paraSimgesi(ayarlar.dil, ayarlar.para.paraBirimi);
   const tarihBicimi = new Intl.DateTimeFormat(ayarlar.dil, {
     dateStyle: "short",
@@ -165,7 +168,7 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
       }
       const { simgeYeri, simgeBoslugu, ondalikSayisi } = ayarlar.para;
       const tutar = ayiricilariUygula(paraSayisi, enKucukBirimde / 10 ** ondalikSayisi);
-      const bosluk = simgeBoslugu ? " " : "";
+      const bosluk = simgeBoslugu ? simgeyleTutarArasi : "";
       return simgeYeri === "basta" ? `${simge}${bosluk}${tutar}` : `${tutar}${bosluk}${simge}`;
     },
     // Fiyat aralığı (kart 0109, Canlı Çarşı taslağı): simge bir kez, aralığın simgenin yerindeki ucunda
@@ -181,7 +184,7 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
         ayiricilariUygula(paraSayisi, tutar / 10 ** ondalikSayisi),
       );
       const aralik = `${a}${ayirici}${b}`;
-      const bosluk = simgeBoslugu ? " " : "";
+      const bosluk = simgeBoslugu ? simgeyleTutarArasi : "";
       return simgeYeri === "basta" ? `${simge}${bosluk}${aralik}` : `${aralik}${bosluk}${simge}`;
     },
     // Müşterinin yazdığı tutarı en küçük birime çevirir (kart 0136): fiyat filtresi. Sitenin ayırıcılarıyla
