@@ -3,12 +3,11 @@
 // <Ikon ad="kapat" /> ile ister, Lucide'yi doğrudan içe aktarmaz. Yeni bir kavram önce buraya eklenir.
 import {
   ArrowDownIcon,
-  ArrowLeftIcon,
-  ArrowRightIcon,
   ArrowUpIcon,
   BanknoteIcon,
   CheckIcon,
   ChevronDownIcon,
+  ChevronLeftIcon,
   ChevronRightIcon,
   ChevronUpIcon,
   CircleCheckIcon,
@@ -69,9 +68,9 @@ export const ikonlar = {
   yukari: ChevronUpIcon,
   // Alt menüye geçer.
   "alt-menu": ChevronRightIcon,
-  // Kaydırmalı şerit: önceki ve sonraki.
-  onceki: ArrowLeftIcon,
-  sonraki: ArrowRightIcon,
+  // Önceki ve sonraki: kaydırmalı şerit, kayan afiş, sayfalama, galeri. Köşeli ok (Canlı Çarşı taslağı, karar 0128).
+  onceki: ChevronLeftIcon,
+  sonraki: ChevronRightIcon,
   // Yükleniyor göstergesi (döner).
   yukleniyor: LoaderCircleIcon,
   // Bildirim ve uyarı türleri.
