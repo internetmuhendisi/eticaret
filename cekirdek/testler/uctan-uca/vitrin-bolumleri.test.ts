@@ -43,6 +43,12 @@ const genislikler = [
 
 let yonetici: DenemeYoneticisi;
 
+// Kart 0197: tıklama ve odaklanmanın Playwright'ta kendi sınırı yoktur; bulunamayan öğeyi bekleyen eylem testin
+// 60 saniyelik sınırına kadar bekliyordu. Sınır dolunca dosyanın bağlantısı kapanır, testin temizliği "Cannot use a
+// pool after calling end" ile düşer: bu ileti takılan eylemi gizler ve eklenen bölümler paylaşılan düzende kalır
+// (ölçüldü). Eylem bu sınırla kendi iletisiyle düşer, temizlik bağlantı açıkken çalışır.
+test.use({ actionTimeout: 15_000 });
+
 test.beforeEach(({ page }) => {
   yonetici = yoneticiAc();
   return ayriBaglanti(page);
@@ -295,11 +301,19 @@ test("mağaza sahibi sıralar, gizler, siler, silmeyi geri alır ve önceki hâl
   page,
   context,
 }) => {
+  // Kart 0197: aynı türden birden çok bölümün paneldeki adı sırasını taşır ("Duyuru şeridi, 4. sıradaki").
+  // Paylaşılan düzende başka duyuru şeridi olup olmadığı bilinmez (sitenin başlangıç düzeninde vardır, yereldeki
+  // düzende silinmiş olabilir); test kendi eşlik bölümünü de koyar, ad her zaman sıralı biçimdedir.
+  const eslik = `duyuru-${randomBytes(4).toString("hex")}`;
   const ikinci = `duyuru-${randomBytes(4).toString("hex")}`;
-  await servis.bolumEkle(vt, kim, "ust-kisim", {
-    tur: "duyuru-seridi",
-    degerler: { metin: ikinci },
-  });
+  for (const deger of [eslik, ikinci]) {
+    await servis.bolumEkle(vt, kim, "ust-kisim", {
+      tur: "duyuru-seridi",
+      degerler: { metin: deger },
+    });
+  }
+  const sirali = (sira: number) =>
+    doldur(metin("yonetim.bolumler.ayniTurAdi"), { ad: duyuruAdi(), sira: String(sira) });
   const vitrin = await context.newPage();
   try {
     await vitrin.goto(vitrinAdresleri.anasayfa);
@@ -314,20 +328,26 @@ test("mağaza sahibi sıralar, gizler, siler, silmeyi geri alır ve önceki hâl
 
     // Sıralama klavyeyle: tutamağa odaklanıp boşluk, yukarı ok, boşluk.
     const once = await ustKisimSirasi();
+    const yer = once.indexOf(ikinci) + 1;
     // Her adımın duyurusu beklenir; @dnd-kit ok tuşu dinleyicisini sayfanın bir sonraki işinde bağlar (katalog.test.ts).
+    // Taşıma sürerken liste değişmez: duyurudaki ad bölümün alındığı sıradaki adıdır.
     const duyuruldu = (anahtar: Parameters<typeof metin>[0], sira: number) =>
       expect(
         page.getByText(
           doldur(metin(anahtar), {
-            ad: duyuruAdi(),
+            ad: sirali(yer),
             sira: String(sira),
             toplam: String(once.length),
           }),
           { exact: true },
         ),
       ).toBeAttached();
-    const yer = once.indexOf(ikinci) + 1;
-    await satir2.getByRole("button", { name: eylemAdi("ortak.parca.siralama.tasi") }).focus();
+    await satir2
+      .getByRole("button", {
+        name: doldur(metin("ortak.parca.siralama.tasi"), { ad: sirali(yer) }),
+        exact: true,
+      })
+      .focus();
     await page.keyboard.press("Space");
     await duyuruldu("ortak.parca.siralama.alindi", yer);
     await page.evaluate(() => new Promise<void>((tamam) => setTimeout(tamam, 0)));
@@ -380,7 +400,7 @@ test("mağaza sahibi sıralar, gizler, siler, silmeyi geri alır ve önceki hâl
     await vitrin.reload();
     await expect(vitrin.getByText(ikinci)).toHaveCount(0);
   } finally {
-    await ustKisimdakileriSil([ikinci]);
+    await ustKisimdakileriSil([eslik, ikinci]);
   }
 });
 
