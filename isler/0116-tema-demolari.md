@@ -14,6 +14,7 @@ Bölüm: Vitrin. Gezilebilir demo vitrin sayfalarını gerektirir, bu yüzden Vi
 - Demoda sipariş verilemez, hesap açılamaz, e-posta gitmez.
 - Demo arama motorlarına kapalıdır.
 - Panelin tema seçme ekranı her temanın demosuna bağlantı verir.
+- Demonun ürün bölümlerinde ürün sayısı o temanın geniş ekrandaki sütun sayısının katıdır (kart 0124): Yumuşak Mevsim'de 4 ya da 8, Canlı Çarşı ve Keskin Çizgi'de 5 ya da 10. Yoksa son sıra yarım kalır; Örnek Mağaza'nın 5 ürünlü "Öne çıkanlar"ı Yumuşak Mevsim'de dört ve bir olarak dizilir.
 
 ## Sınırlar
 
