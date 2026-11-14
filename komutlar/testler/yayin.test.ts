@@ -401,6 +401,8 @@ describe("hat korumasının özeti", () => {
     ["tsconfig.temel.json", true],
     ["vitest.config.ts", true],
     ["playwright.config.ts", true],
+    ["playwright.hiz.config.ts", true],
+    ["playwright.config.yedek", false],
     ["denetim/kurallar/ham-renk.grit", true],
     ["pnpm-workspace.yaml", true],
     [".npmrc", true],

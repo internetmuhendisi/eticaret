@@ -77,7 +77,7 @@ paths:
 - Favori yalnız `cekirdek/moduller/favori/servis.ts` ile yazılır ve okunur. Listede yalnız sayfası açılan ürün görünür (`vitrinKosulu`, sayfa yeri); sınır sitenin `favoriSiniri` ayarıdır ve yalnız görünen favorileri sayar.
 - Vitrinde favori durumu yalnız `cekirdek/vitrin/favori-durumu.ts`'tedir: düğme `FavoriDugmesi`, sayı `FavoriSayisi` ile (`favori-dugmesi.tsx`). Hesap durumundan sonra tek istek gider; değişiklik istekleri sırayla gider. Favori düğmesini başka yerde yeniden yazma.
 - Üye olmayan müşterinin listesi ve favoriler sayfasının çerezi yalnız `favori-deposu.ts` ile okunur ve yazılır; yalnız ürün kimlikleri saklanır. Çıkış (`cikisYap`) çerezi siler.
-- Favoriler sayfası kartları çerezdeki listeyle sunucuda `urunKartlari` ile çizer; sırayı ve görünenleri tarayıcıdaki durum seçer (`favori-listesi.tsx`).
+- Favoriler sayfası kartları çerezdeki listeyle sunucuda `urunKartlari` ile çizer; sırayı ve görünenleri tarayıcıdaki durum seçer (`favori-listesi.tsx`). Çerezde ürün yoksa boş hâl durum bilinmeden çizilir (karar 0125).
 - Vitrinin bildirim alanı çerçevededir (`VitrinBildirimleri`); vitrin ekranı bildirimi `bildirimGoster` ile verir, ikinci bir alan açmaz.
 
 ## Ana sayfa bölümleri ve görseller (karar 0087)

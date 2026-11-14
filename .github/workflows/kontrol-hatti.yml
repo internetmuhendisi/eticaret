@@ -76,6 +76,11 @@ jobs:
       - name: Tarayıcı testleri
         run: pnpm tarayici-testleri
 
+      # Kart 0146: vitrinin her sayfa türü canlıdaki gibi derlenmiş çekirdekte yavaş telefon koşuluyla ölçülür;
+      # hedefi aşan sayfa hattı durdurur (cekirdek/testler/hiz/hedefler.ts, karar 0124).
+      - name: Hız ölçümü
+        run: pnpm hiz-olcumu
+
       - name: Çekirdeğin Docker görüntüsü ve denetimi
         run: pnpm cekirdek-goruntusu
 
