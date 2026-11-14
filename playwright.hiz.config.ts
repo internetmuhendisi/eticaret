@@ -42,6 +42,9 @@ export default defineConfig({
     // Derleme hattın makinesinde birkaç dakika sürer.
     timeout: 600_000,
     reuseExistingServer: false,
+    // Sunucu SIGTERM ile kapanır: vekil kapanır, sertifika klasörü silinir. Kapanış belirtilmezse Playwright süreç
+    // grubunu öldürür ve klasör geçici dizinde kalırdı (bağımsız kontrolün bulgusu).
+    gracefulShutdown: { signal: "SIGTERM", timeout: 10_000 },
     stdout: "pipe",
   },
 });

@@ -3,16 +3,19 @@
 // yavaş telefon koşuluyla (hedefler.ts) olcumSayisi kez açılır; her ölçüm temiz bir tarayıcı bağlamıdır (önbellek yok).
 // - Ana içerik (LCP) ve kayma (CLS) tarayıcının kendi ölçümüyle (PerformanceObserver) okunur; kayma web-vitals'ın
 //   pencere kuralıyladır (1 sn ara, en çok 5 sn).
-// - Tepki (INP) üst kısmın ilk düğmesine (telefonda menü) basılıp Escape ile kapatılarak ölçülür: etkileşimin en uzun
-//   olayı.
-// - Kod, sayfa yüklenince inen JavaScript dosyalarının sıkıştırılmış boyutudur.
-// - İşlemci yavaşlatması makinenin hızına göre ayarlanır: aynı hesap bu makinede referansIslemciSuresi'nden ne kadar
-//   uzun sürerse yavaşlatma o kadar azalır (en az 1). Hattın makinesi bilgisayardan yaklaşık iki kat yavaştır
-//   (playwright.config.ts); sabit 4 kat orada 8 kat telefon demek olurdu.
+// - Tepki (INP) sayfa bağlandıktan sonra (sayfaHazir, karar 0099) üst kısmın ilk düğmesine (telefonda menü) basılıp
+//   pencerenin açıldığı görülerek, Escape ile kapatılarak ölçülür: etkileşimin en uzun olayı.
+// - Kod, sayfa yüklenince inen JavaScript dosyalarının sıkıştırılmış boyutudur (yanıt başlıkları dahil; sayfanın
+//   içine gömülü veri sayılmaz).
+// - İşlemci yavaşlatması makinenin hızına göre, her sayfadan önce yeniden ayarlanır: aynı hesap bu makinede
+//   referansIslemciSuresi'nden ne kadar uzun sürerse yavaşlatma o kadar azalır, en az enAzYavaslatma. Hattın makinesi
+//   bilgisayardan yaklaşık iki kat yavaştır (playwright.config.ts); sabit 4 kat orada 8 kat telefon demek olurdu.
+//   Bir kez yapılan ayar anlık yüke denk gelince bütün ölçüm yavaşlatmasız kalıyordu (bağımsız kontrolün bulgusu).
 // Ortanca ölçüm hedefi aşarsa test kırmızıdır. Ölçümler test çıktısına yazılır.
 import { type Browser, expect, test } from "@playwright/test";
+import { sayfaHazir } from "../uctan-uca/sayfa-hazir";
 import { ekranSayfalari } from "../uctan-uca/vitrin-sayfalari";
-import { hizHedefleri, olcumSayisi, yavasTelefon } from "./hedefler";
+import { bilinenAsimlar, hizHedefleri, olcumSayisi, yavasTelefon } from "./hedefler";
 
 type Olcum = { anaIcerik: number; kayma: number; tepki: number; kod: number };
 
@@ -39,7 +42,7 @@ const islemciYavaslatmasi = async (tarayici: Browser) => {
   await sayfa.close();
   const oran =
     (yavasTelefon.islemciYavaslatma * yavasTelefon.referansIslemciSuresi) / ortanca(sureler);
-  return Math.max(1, Math.round(oran * 10) / 10);
+  return Math.max(yavasTelefon.enAzYavaslatma, Math.round(oran * 10) / 10);
 };
 
 const olc = async (tarayici: Browser, adres: string, yavaslatma: number): Promise<Olcum> => {
@@ -101,13 +104,13 @@ const olc = async (tarayici: Browser, adres: string, yavaslatma: number): Promis
         .filter((giris) => /\.js(\?|$)/u.test(giris.name))
         .reduce((toplam, giris) => toplam + (giris.transferSize || giris.encodedBodySize), 0),
     );
-    const dugme = sayfa.getByRole("banner").getByRole("button").first();
-    if ((await dugme.count()) > 0) {
-      await dugme.click();
-      await sayfa.waitForTimeout(800);
-      await sayfa.keyboard.press("Escape");
-      await sayfa.waitForTimeout(500);
-    }
+    // Etkileşim sayfa bağlandıktan sonra yapılır; düğme pencereyi açmazsa ölçüm boştur, test kırmızıdır.
+    await sayfaHazir(sayfa);
+    await sayfa.getByRole("banner").getByRole("button").first().click();
+    await expect(sayfa.getByRole("dialog")).toBeVisible();
+    await sayfa.keyboard.press("Escape");
+    await expect(sayfa.getByRole("dialog")).toBeHidden();
+    await sayfa.waitForTimeout(500);
     const sonuc = await sayfa.evaluate(
       () => (window as unknown as { __hiz: Omit<Olcum, "kod"> }).__hiz,
     );
@@ -117,13 +120,9 @@ const olc = async (tarayici: Browser, adres: string, yavaslatma: number): Promis
   }
 };
 
-let yavaslatma: number = yavasTelefon.islemciYavaslatma;
-test.beforeAll(async ({ browser }) => {
-  yavaslatma = await islemciYavaslatmasi(browser);
-});
-
 for (const [tur, { adres }] of Object.entries(ekranSayfalari)) {
   test(`hız ölçümü: ${tur}`, async ({ browser }) => {
+    const yavaslatma = await islemciYavaslatmasi(browser);
     const olcumler: Olcum[] = [];
     for (let sira = 0; sira < olcumSayisi; sira += 1)
       olcumler.push(await olc(browser, adres, yavaslatma));
@@ -137,9 +136,16 @@ for (const [tur, { adres }] of Object.entries(ekranSayfalari)) {
     test.info().annotations.push({ type: "ölçüm", description: ozet });
     process.stdout.write(`${ozet}\n`);
     expect(sonuc.anaIcerik, ozet).toBeGreaterThan(0);
-    expect(sonuc.anaIcerik, ozet).toBeLessThanOrEqual(hizHedefleri.anaIcerik);
-    expect(sonuc.kayma, ozet).toBeLessThanOrEqual(hizHedefleri.kayma);
-    expect(sonuc.tepki, ozet).toBeLessThanOrEqual(hizHedefleri.tepki);
-    expect(sonuc.kod, ozet).toBeLessThanOrEqual(hizHedefleri.kod);
+    // Bilinen aşımdaki ölçü hedef yerine kendi üst sınırıyla karşılaştırılır (hedefler.ts).
+    const asim = bilinenAsimlar[tur];
+    for (const olcu of Object.keys(hizHedefleri) as (keyof typeof hizHedefleri)[]) {
+      const sinir = asim?.olcu === olcu ? asim.ustSinir : hizHedefleri[olcu];
+      expect(sonuc[olcu], `${ozet}; ${olcu} sınırı ${sinir}`).toBeLessThanOrEqual(sinir);
+    }
+    if (asim !== undefined && sonuc[asim.olcu] <= hizHedefleri[asim.olcu]) {
+      process.stdout.write(
+        `${tur}: bilinen aşım (kart ${asim.kart}) bu ölçümde hedefin içinde; düzeldiyse listeden çıkarılır.\n`,
+      );
+    }
   });
 }

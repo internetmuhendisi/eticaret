@@ -8,6 +8,14 @@
 const kimlikKalibi = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const kimlikMi = (deger: string): boolean => kimlikKalibi.test(deger);
 
+// Şemanın (`kimlikSemasi`, zod'un kimlik doğrulayıcısı) kabul ettiği kimlik mi? `kimlikMi`'den sıkıdır: RFC 9562
+// sürüm ve varyant hanelerine bakar. Tarayıcıda tutulup sonra şemadan geçecek kimlik (favori deposu, kart 0146) bununla
+// süzülür: gevşek kalıptan geçen bir değer birleştirme isteğinin tamamını reddettirirdi (bağımsız kontrolün bulgusu).
+// Kalıp zod'unkiyle aynıdır; ikisinin aynı sonucu verdiği testtedir (cekirdek/testler/kimlik-semasi.test.ts).
+const semaKalibi =
+  /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/;
+export const semayaUyanKimlikMi = (deger: string): boolean => semaKalibi.test(deger);
+
 // Kimliği veritabanının yazdığı biçime (küçük harf) çevirir. Biçimi denetlemez: bozuk metin bozuk kalır, `kimlikMi`
 // ya da sorgu onu bulunamadı sayar.
 export const kimligiDuzelt = (deger: string): string => deger.toLowerCase();

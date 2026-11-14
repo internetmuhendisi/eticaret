@@ -13,17 +13,34 @@ export const hizHedefleri = {
   kod: 320,
 } as const;
 
-// Yavaş telefon koşulu: Lighthouse'un telefon ölçümüyle aynı ağ (yavaş 4G) ve 390 px ekran. İşlemci yavaşlatması
-// makinenin hızına göre ayarlanır (hiz-olcumu.test.ts): referans makinede 4 kat.
+// Yavaş telefon koşulu: Lighthouse'un telefon ayarının (yavaş 4G, 150 ms, 1,6 Mbit/s) tarayıcı içi yavaşlatmadaki
+// karşılığı: Lighthouse bu yöntemde gecikmeyi 3,75 katına, hızı 0,9 katına çeker (gecikme her isteğe bir kez eklenir,
+// bağlantı kurma gidiş-dönüşleri ayrıca taklit edilmez). Ekran 390 px. İşlemci yavaşlatması makinenin hızına göre
+// ayarlanır (hiz-olcumu.test.ts): referans makinede 4 kat, hiçbir makinede enAzYavaslatma'dan az değil.
 export const yavasTelefon = {
   ekran: { width: 390, height: 844 },
-  gecikme: 150,
-  indirme: (1.6 * 1024 * 1024) / 8,
-  yukleme: (750 * 1024) / 8,
+  gecikme: 150 * 3.75,
+  indirme: (1.6 * 1024 * 1024 * 0.9) / 8,
+  yukleme: (750 * 1024 * 0.9) / 8,
   islemciYavaslatma: 4,
   // Referans makinede işlemci ölçüsünün süresi (milisaniye): bu makinede yavaşlatma 4 kattır.
   referansIslemciSuresi: 170,
+  // Ölçünün anlık bir yüke denk gelmesi yavaşlatmayı 1 kata düşürebiliyordu (bağımsız kontrolde ölçüldü: 3,8; 3,4;
+  // 1,03): hattın makinesi referanstan yaklaşık iki kat yavaştır, alt sınır onun karşılığıdır.
+  enAzYavaslatma: 2,
 } as const;
+
+// Bilinen aşımlar (kart 0146, kullanıcı kararı): hedefi bugün aşan sayfa ve ölçü, düzeltecek kartla. Listedeki ölçü
+// hedefi aşabilir ama üst sınırını aşamaz (bugünkü ölçüm ve hattın dalgalanması için pay): sayfa daha da kötüleşirse
+// hat durur. Listede olmayan her aşım hattı durdurur. Liste yalnız küçülebilir: düzelen sayfa listeden çıkarılır,
+// yeni sayfa eklenmez (yalnız disiplin). Ölçüm, listedeki sayfa hedefe girince bunu çıktıya yazar.
+// Ölçüldü (2026-11-14, yerelde, Lighthouse ağ değerleriyle): kategori 2,75 sn, bulunamadı 3,89 sn.
+export const bilinenAsimlar: Readonly<
+  Record<string, { olcu: keyof typeof hizHedefleri; ustSinir: number; kart: string }>
+> = {
+  kategori: { olcu: "anaIcerik", ustSinir: 3500, kart: "0196" },
+  bulunamadi: { olcu: "anaIcerik", ustSinir: 4500, kart: "0196" },
+};
 
 // Her sayfa kaç kez ölçülür; ortancası hedefle karşılaştırılır.
 export const olcumSayisi = 3;

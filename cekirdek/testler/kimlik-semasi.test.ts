@@ -6,6 +6,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import { kimligiDuzelt, kimlikMi, kimlikSemasi } from "../veritabani/kimlik";
+import { semayaUyanKimlikMi } from "../veritabani/kimlik-bicimi";
 
 const kok = join(import.meta.dirname, "..", "..");
 const atlananlar = new Set(["node_modules", ".next", "test-results", "testler"]);
@@ -92,5 +93,28 @@ describe("kimlik şeması", () => {
     expect(kimligiDuzelt(kimlik)).toBe(kimlik.toLowerCase());
     expect(kimlikMi(kimlik)).toBe(true);
     expect(kimlikMi("0e598bad-2c93-4b15-bf6e")).toBe(false);
+  });
+
+  // Kart 0146: tarayıcıdaki favori deposu kimliği zod'suz, şemanın kuralıyla süzer; şema ne kabul ediyorsa o.
+  it("zod'suz şema kalıbı her örnekte kimlik şemasıyla aynı sonucu verir", () => {
+    const ornekler = [
+      "0e598bad-2c93-4b15-bf6e-8fb3bca5bc0b",
+      "0E598BAD-2C93-4B15-BF6E-8FB3BCA5BC0B",
+      "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "0e598bad-2c93-0b15-bf6e-8fb3bca5bc0b",
+      "0e598bad-2c93-9b15-bf6e-8fb3bca5bc0b",
+      "0e598bad-2c93-4b15-7f6e-8fb3bca5bc0b",
+      "0e598bad-2c93-7b15-cf6e-8fb3bca5bc0b",
+      "00000000-0000-0000-0000-000000000000",
+      "ffffffff-ffff-ffff-ffff-ffffffffffff",
+      "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF",
+      "0e598bad-2c93-4b15-bf6e-8fb3bca5bc0",
+      "0e598bad2c934b15bf6e8fb3bca5bc0b",
+      " 0e598bad-2c93-4b15-bf6e-8fb3bca5bc0b",
+      "",
+    ];
+    for (const ornek of ornekler) {
+      expect(semayaUyanKimlikMi(ornek), ornek).toBe(kimlikSemasi.safeParse(ornek).success);
+    }
   });
 });

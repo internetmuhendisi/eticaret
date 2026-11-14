@@ -13,7 +13,8 @@ import { hataKodlari } from "../kayitlar/kapi";
 import { vitrinAdresleri } from "./adresler";
 import { cereziSil } from "./favori-deposu";
 
-const hesabimUcu = "/kapi/musteri/hesabim";
+// Müşterinin oturum sorusu; girişsiz ziyaretçide 401 alır (ekran ölçümü bu 401'i bekler, kart 0146).
+export const hesabimUcu = "/kapi/musteri/hesabim";
 const cikisUcu = "/kapi/herkese-acik/musteri-cikis";
 
 export type HesapDurumu =

@@ -23,9 +23,11 @@ const olc = async (
     // Yalnız sayfanın kendi belgesindeki öğeler: geliştirme sunucusunun araç düğmesi (nextjs-portal) gölge DOM'dadır,
     // canlıda yoktur.
     if (oge.getRootNode() !== document) continue;
-    if (oge.closest("[inert], [aria-hidden=true]")) continue;
+    if (oge.closest("[inert], [aria-hidden=true], .sr-only")) continue;
     const stil = getComputedStyle(oge);
     if (stil.visibility === "hidden" || oge.getClientRects().length === 0) continue;
+    // Basılamayan ya da görünmeyen öğe ölçülmez: tıklamaya kapalı ya da tamamen saydam (bağımsız kontrolün bulgusu).
+    if (stil.pointerEvents === "none" || Number(stil.opacity) === 0) continue;
     let hedef: Element = oge;
     const onay =
       oge.getAttribute("role") === "checkbox" ||
