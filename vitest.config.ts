@@ -11,7 +11,8 @@ export default defineConfig({
   oxc: { jsx: { runtime: "automatic" } },
   test: {
     include: ["**/*.test.ts", "**/*.test.tsx"],
-    exclude: [...configDefaults.exclude, "**/uctan-uca/**", ".claude/**"],
+    // Tarayıcı testleri (uctan-uca/) ve hız ölçümü (hiz/) Playwright'ındır.
+    exclude: [...configDefaults.exclude, "**/uctan-uca/**", "**/hiz/**", ".claude/**"],
     passWithNoTests: false,
   },
 });

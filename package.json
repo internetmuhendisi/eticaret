@@ -24,6 +24,7 @@
     "testler": "pnpm birim-testleri && pnpm tarayici-testleri",
     "birim-testleri": "vitest run",
     "tarayici-testleri": "playwright test",
+    "hiz-olcumu": "playwright test --config playwright.hiz.config.ts",
     "denetim": "biome check --error-on-warnings",
     "bicimle": "biome format --write",
     "denetim-kendi-testi": "node denetim/kendi-kendini-denetle.mts",
