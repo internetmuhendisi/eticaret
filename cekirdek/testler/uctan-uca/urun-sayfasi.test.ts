@@ -26,6 +26,7 @@ import { stokServisi } from "../../moduller/stok/servis";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { baglan, type Veritabani, veritabaniAdresi } from "../../veritabani/baglanti";
 import { kayitAdresleri } from "../../vitrin/adresler";
+import { basilmayanNoktalar } from "./basilan-alan";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
 
@@ -413,6 +414,33 @@ test("iki renkte ve üç genişlikte taramadan geçer, yana kaymaz, konsolda hat
   }
   expect(hatalar).toEqual([]);
 });
+
+// Kart 0191: küçük görünen bağlantıların basılan alanı en az 44 × 44 px; görünüşleri değişmez. Sayfa yolunun
+// bağlantıları (32 px satır), yorumsuz ürünün "henüz yorum yok" bağlantısı ve üst kısmın logosu.
+for (const genislik of [320, 390, 768]) {
+  test(`sayfa yolu, yorum bağlantısı ve logo 44 × 44 px basılır (${genislik} px)`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: genislik, height: 900 });
+    await page.goto(h.adres);
+    await sayfaHazir(page);
+    const ogeler = [
+      ...(await page
+        .getByRole("navigation", { name: metin("ortak.parca.sayfaYolu") })
+        .getByRole("link")
+        .all()),
+      page.getByRole("link", { name: metin("vitrin.yorum.henuzYorumYok") }),
+      // Logo ana sayfaya giden ilk bağlantıdır (logo yoksa mağazanın adı).
+      page.getByRole("banner").locator('a[href="/"]').first(),
+    ];
+    expect(ogeler.length).toBeGreaterThanOrEqual(3);
+    for (const oge of ogeler) {
+      await expect(oge).toBeVisible();
+      const ad = (await oge.getAttribute("aria-label")) ?? (await oge.textContent()) ?? "";
+      expect(await basilmayanNoktalar(oge), ad).toEqual([]);
+    }
+  });
+}
 
 test("uzun açıklama temizlenmiş çizilir: biçim kalır, betik çalışmaz, bağlantı güvenli", async ({
   page,

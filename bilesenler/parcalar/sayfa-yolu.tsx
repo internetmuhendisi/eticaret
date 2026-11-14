@@ -1,7 +1,7 @@
 // Sayfa yolu (kart 0135, karar 0102): ana sayfadan bulunulan sayfaya kadar olan adımlar. Son adım bulunulan
 // sayfadır, bağlantı değildir ve ekran okuyucuya "geçerli sayfa" diye okunur. Adlar, ayraç ve gezinme bölgesinin
 // adı kullanan sayfadan gelir. Bağlantılar gezinme bölgesinde durduğu için menüdeki gibi alt çizgisizdir, fare
-// üstüne gelince çizilir.
+// üstüne gelince çizilir. Satır sıkı durur (32 px), basılan alan 44 × 44 px'tir (dokunma-alani, kart 0191).
 import Link from "next/link";
 import { sinif } from "./sinif.ts";
 
@@ -40,7 +40,7 @@ export function SayfaYolu({
               ) : (
                 <Link
                   href={adim.adres}
-                  className="inline-flex min-h-8 items-center text-soluk-yazi no-underline hover:text-yazi hover:underline"
+                  className="dokunma-alani inline-flex min-h-8 items-center text-soluk-yazi no-underline hover:text-yazi hover:underline"
                 >
                   {adim.ad}
                 </Link>

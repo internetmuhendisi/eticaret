@@ -9,6 +9,9 @@
 //   bekler; kullanıcı durdurduysa bir daha kendiliğinden geçmez.
 // - Hareket azaltma tercihinde kendiliğinden geçmez; kullanıcı başlat düğmesiyle isterse geçer.
 // - Önceki, sonraki ve nokta düğmeleri klavyeyle kullanılır; etkin noktanın aria-current'ı vardır.
+// - Noktalar 44 px basılır, yalnız tablet ve üstünde durur; telefonda yerlerinde "1 / 3" sayacı vardır, gezinme
+//   önceki ve sonraki düğmeleriyledir (kart 0191, karar 0123: 44 px noktalar telefonda satıra sığmıyordu). Sayaç
+//   ekran okuyucudan gizlidir: etkin slaytın adı aynı yazıyı söyler.
 // Geçişte hareket yoktur: slayt yer değiştirir, kaymaz. Metinler sunucudan gelir.
 import { type ReactNode, useEffect, useState } from "react";
 import { Dugme, IkonDugmesi } from "../../../../bilesenler/parcalar/dugme";
@@ -88,14 +91,17 @@ export function Kaydirici({
           className="border-current text-current"
           onClick={() => git(etkin - 1)}
         />
-        <div className="flex">
+        <span aria-hidden="true" className="min-w-11 text-center font-kalin tablet:hidden">
+          {metinler.slaytAdlari[etkin]}
+        </span>
+        <div className="hidden tablet:flex">
           {slaytlar.map((oge, sira) => (
             <Dugme
               key={oge.kimlik}
               tur="sade"
               aria-label={metinler.noktaAdlari[sira]}
               aria-current={sira === etkin ? "true" : undefined}
-              className="w-8 px-0"
+              className="w-11 px-0"
               onClick={() => git(sira)}
             >
               <span

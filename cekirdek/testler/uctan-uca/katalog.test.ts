@@ -11,6 +11,7 @@ import kullanimlar from "../../katalog/kullanimlar.json" with { type: "json" };
 import type { MetinAnahtari } from "../../metinler/metin";
 import { metin } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
+import { basilmayanNoktalar } from "./basilan-alan";
 import { konsoluDinle } from "./konsol";
 import { satirlarinSolu, satirlarinYazisi } from "./satir-hizasi";
 import { sayfaHazir } from "./sayfa-hazir";
@@ -865,6 +866,50 @@ test("kayan afiş: klavyeyle durdurulur, önceki, sonraki ve noktalarla gezilir"
   await expect(etkinSlayt(afis)).toHaveAttribute("aria-label", "1 / 3");
 });
 
+// Kart 0191, karar 0123: telefonda noktaların yerinde "1 / 3" sayacı durur, denetimler tek satırdadır ve sonraki
+// düğmesiyle sayaç ilerler; tablet ve üstünde her nokta 44 × 44 px basılır, komşusuyla çakışmaz.
+for (const genislik of [320, 390, 768]) {
+  test(`kayan afiş: telefonda sayaç, tablette 44 px noktalar (${genislik} px)`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: genislik, height: 900 });
+    await ac(page, `${katalogAdresi}/bolum-kutuphanesi`);
+    const afis = kayanAfis(page);
+    await afis.getByRole("button", { name: metin("vitrin.bolum.kayanAfis.durdur") }).click();
+    const sonraki = afis.getByRole("button", { name: metin("vitrin.bolum.kayanAfis.sonraki") });
+    const noktalar = [1, 2, 3].map((sira) =>
+      afis.getByRole("button", {
+        name: doldur(metin("vitrin.bolum.kayanAfis.slaytaGit"), { sira: String(sira) }),
+        exact: true,
+      }),
+    );
+    if (genislik < 768) {
+      for (const nokta of noktalar) await expect(nokta).toBeHidden();
+      const sayac = afis.getByText("1 / 3", { exact: true });
+      await expect(sayac).toBeVisible();
+      // Denetimler tek satırdadır: durdur, önceki, sayaç ve sonraki aynı yükseklikte.
+      const ustler = await afis
+        .locator("button:visible")
+        .evaluateAll((liste) => [
+          ...new Set(liste.map((b) => Math.round(b.getBoundingClientRect().top))),
+        ]);
+      expect(ustler).toHaveLength(1);
+      expect(await basilmayanNoktalar(sonraki)).toEqual([]);
+      await sonraki.click();
+      await expect(afis.getByText("2 / 3", { exact: true })).toBeVisible();
+    } else {
+      for (const nokta of noktalar) {
+        await expect(nokta).toBeVisible();
+        expect(
+          await basilmayanNoktalar(nokta),
+          (await nokta.getAttribute("aria-label")) ?? "",
+        ).toEqual([]);
+      }
+    }
+    expect(await yanaKayma(page)).toBe(0);
+  });
+}
+
 test("kayan afiş: hareket azaltma tercihinde kendiliğinden geçmez, başlat düğmesiyle geçer", async ({
   page,
 }) => {
@@ -895,7 +940,8 @@ test("kayan afiş: telefonda telefon görseli, masaüstünde asıl görsel", asy
     await ac(page, `${katalogAdresi}/bolum-kutuphanesi`);
     const afis = kayanAfis(page);
     await afis.getByRole("button", { name: metin("vitrin.bolum.kayanAfis.durdur") }).click();
-    await afis.getByRole("button", { name: "2. slaytı göster" }).click();
+    // Telefonda nokta yoktur (kart 0191): ikinci slayta sonraki düğmesiyle geçilir.
+    await afis.getByRole("button", { name: metin("vitrin.bolum.kayanAfis.sonraki") }).click();
     const gorsel = etkinSlayt(afis).locator("img");
     const { dogal, kaynaklar } = await gorsel.evaluate((img: HTMLImageElement) => ({
       dogal: img.naturalHeight > img.naturalWidth,

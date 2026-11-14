@@ -151,7 +151,7 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
     <Baglanti
       href={vitrinAdresleri.anasayfa}
       gorunum="sade"
-      className="min-w-0 shrink px-0 no-underline"
+      className="dokunma-alani min-w-0 shrink px-0 no-underline"
     >
       {baglam.logoAdresi === undefined ? (
         <span className="min-w-0 truncate font-baslik text-buyuk font-baslik-kalinligi masaustu:text-baslik-3">

@@ -39,6 +39,24 @@
   max-height: var(--radix-dropdown-menu-content-available-height);
 }
 
+/* Dokunma alanı (kart 0191): küçük görünen bağlantı ya da düğmenin basılan alanı ortasında en az 44 × 44 px'tir
+   (.claude/rules/telefon-gorunumu.md). Görünüş ve yerleşim değişmez: alan görünmez bir ::before'dur, öğe büyükse
+   öğenin kendisi kadardır. ::after'ı kullanan kalıplarla (kartın kabına yayılan bağlantı) çakışmaz. Komşu basılan
+   öğeyle arası alanı yetmeyecek kadar darsa alanlar üst üste biner: kullanan aralığı ona göre verir. */
+@utility dokunma-alani {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    transform: translate(-50%, -50%);
+    @apply min-h-11 min-w-11;
+  }
+}
+
 /* Renkli zeminli bölge (vitrinin alt kısmı, duyuru şeridi; kart 0108): odak çerçevesi o bölgenin yazı
    rengindedir. Odak rengi yalnız zemin ve yüzey üstünde okunur ölçülmüştür; yazı rengi bölgenin zemininde en az
    4,5:1 okunur olduğu için çerçeve de 3:1'i geçer. */

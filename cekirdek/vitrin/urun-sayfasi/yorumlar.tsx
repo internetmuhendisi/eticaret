@@ -34,7 +34,10 @@ export function PuanSatiri({ puan }: { puan: PuanOzeti | undefined }) {
           }
         />
       </span>
-      <a href={`#${yorumBolumuKimligi}`} className="text-yazi underline underline-offset-2">
+      <a
+        href={`#${yorumBolumuKimligi}`}
+        className="dokunma-alani text-yazi underline underline-offset-2"
+      >
         {puan === undefined
           ? metin("vitrin.yorum.henuzYorumYok")
           : doldur(metin("vitrin.yorum.yorumSayisi"), { sayi: bicim().sayi(puan.sayi) })}
