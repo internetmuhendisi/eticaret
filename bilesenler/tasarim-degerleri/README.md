@@ -109,7 +109,7 @@ Radix'in açılır parçalara verdiği ölçüler için üç adlı sınıf vard�
 
 Renkli zeminli bölgede (vitrinin alt kısmı, duyuru şeridi) odak çerçevesi `odak-yazi-renginde` ile bölgenin yazı rengini alır: `odak` rengi yalnız `zemin` ve `yuzey` üstünde ölçülür (kart 0108).
 
-Küçük görünen bağlantı ya da düğme (sayfa yolu, satır içi bağlantı, kare logo) `dokunma-alani` ile en az 44 × 44 px basılır: alan görünmez bir `::before`'dur, görünüş ve yerleşim değişmez (kart 0191). Kabına yayılan bağlantının `::after`'ıyla çakışmaz. Yan yana duran küçük öğelerde alanlar üst üste binerdi: onların kendisi 44 px yapılır. Basılan alanı tarayıcı testleri `basilmayanNoktalar` ile ölçer (`cekirdek/testler/uctan-uca/basilan-alan.ts`).
+Küçük görünen bağlantı ya da düğme (sayfa yolu, satır içi bağlantı, kare logo) `dokunma-alani` ile en az 44 × 44 px basılır: alan görünmez bir `::before`'dur, görünüş ve yerleşim değişmez (kart 0191). Kabına yayılan bağlantının `::after`'ıyla çakışmaz. Alan, komşu basılabilir öğenin üstüne binmemelidir: yan yana duran küçük öğeler (slayt noktaları, sayfa yolu adımları) en az 44 px genişlikte yapılır, alt alta satıra inen öğelerin satır arası alanın taşması kadar olur. Alan komşu düz yazının (başlığın) kenarına binebilir. Basılan alanı tarayıcı testleri `basilmayanNoktalar` ile ölçer (`cekirdek/testler/uctan-uca/basilan-alan.ts`).
 
 Temizlenmiş biçimli metin (ürünün uzun açıklaması) `bicimli-metin` ile çizilir: paragraf arası, liste işaretleri, bağlantının alt çizgisi, başlık ve alıntı bu stilde tasarım değerleriyle yazılıdır (kart 0138). İzinli etiketler `cekirdek/moduller/urun/aciklama.ts`'tedir; listeye etiket eklenince stili de eklenir (testi `aciklama.test.ts`).
 
