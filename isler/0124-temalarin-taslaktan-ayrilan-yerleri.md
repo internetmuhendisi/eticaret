@@ -27,4 +27,4 @@ Bölüm: Vitrin (Tasarım bölümünden alındı, tema demolarından önce yapı
 
 ## Durum
 
-yapılacak
+bitti
