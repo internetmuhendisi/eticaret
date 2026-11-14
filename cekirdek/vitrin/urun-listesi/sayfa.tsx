@@ -22,11 +22,11 @@ import { type UrunFiltresiGorunumu, urunFiltresiGorunumleri } from "../../kayitl
 import { metin, siteninBicimleyicisi } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
-import { siteninGecerliTemasi } from "../../moduller/tema/servis";
 import type { UrunFiltresi } from "../../moduller/urun/filtre";
 import { siteninVeritabani } from "../../veritabani/baglanti";
 import { vitrinAdresleri } from "../adresler";
 import { izgaraSiniflari } from "../bolumler/ortak/urun-izgarasi";
+import { vitrinTemasi } from "../tema-secimi";
 import { urunKartiGorunumu } from "../urun-karti/gorunum";
 import type { UrunKartiVerisi } from "../urun-karti/tur";
 import { oncelikliKartSayisi, UrunKarti } from "../urun-karti/urun-karti";
@@ -91,7 +91,7 @@ export const urunListesiVerisi = async ({
   const an = new Date();
   const [ayarlar, tema] = await Promise.all([
     siteninMagazaAyarlari(vt, site),
-    siteninGecerliTemasi(vt),
+    vitrinTemasi(vt, calisanSite()),
   ]);
   const siralamalar = arama?.siralamalar ?? listeSiralamalari;
   const durum = adrestenDurum(parametreler, siralamalar);

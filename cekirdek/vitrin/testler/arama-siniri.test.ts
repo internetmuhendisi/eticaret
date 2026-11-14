@@ -2,8 +2,10 @@
 // aşan istek 429 ve Retry-After ile aynı adrese, bekleme süresini taşıyan başlıkla geçer (sayfa arama yapmaz).
 // Aranan metinsiz istek sayılmaz; başka istemci etkilenmez; IPv6 ilk 64 bitiyle sayılır; dışarıdan gönderilen
 // başlık silinir.
+
+import { resolve } from "node:path";
 import { NextRequest } from "next/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { istekSinirlari } from "../../kayitlar/kapi.ts";
 import { proxy } from "../../uygulama/proxy.ts";
 import { aramaSiniriBasligi } from "../urun-listesi/arama-siniri.ts";
@@ -18,6 +20,15 @@ const gecenBaslik = (yanit: Response, ad: string) =>
   yanit.headers.get(`x-middleware-request-${ad}`);
 
 const sinir = istekSinirlari.arama.istek;
+
+// Ara katman her istekte sitenin tema demosu ayarına bakar (kart 0116): uygulamada site her zaman vardır.
+beforeEach(() => {
+  vi.stubEnv(
+    "SITE_KLASORU",
+    resolve(import.meta.dirname, "../../ayar-semasi/testler/ornek-siteler/gecerli"),
+  );
+});
+afterEach(() => vi.unstubAllEnvs());
 
 describe("arama istek sınırı", () => {
   it("sınıra kadar geçer, sonraki 429 ve bekleme başlığıyla aynı adrese gider", async () => {

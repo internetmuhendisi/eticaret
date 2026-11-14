@@ -47,6 +47,8 @@ Kapıdaki her uç burada yazar (`.claude/rules/sunucu-arayuzu.md`). Yeni ya da d
 
 **Çerez.** Uç yanıta çerezi yalnız `cerezYaz` ile yazar. Oturum çerezleri `cekirdek/kapi/oturum-cerezi.ts` dosyasındadır, hatalı yanıtta da gider.
 
+**Tema demosu** (kart 0116, karar 0127). Site ayarı `temaDemosu` açıkken ziyaretçi yalnız gezer: kapalı uç, sahte isteğe, sınıra ve girdiye bakmadan `bulunamadi` döner. Müşteri girişindeki her uç kapalıdır. Herkese açık her uç tanımında demodaki durumunu beyan eder (`temaDemosunda`, tür kontrolü ister): hesap, sipariş, yorum, bildirim ya da e-posta doğuran uç `kapali`, vitrinin okuduğu ve panelin kullandığı uç `acik`. Yönetici ve sahip uçları açıktır. Bugün kapalı herkese açık uçlar: `musteri-kayit`, `musteri-giris`, `musteri-cikis`, `musteri-sifre-sifirlama`, `musteri-sifre-yenile`, `stok-bildirimi`; listeyi `cekirdek/kapi/testler/tema-demosu.test.ts` denetler.
+
 ## Herkese açık
 
 ### GET /kapi/herkese-acik/saglik

@@ -516,6 +516,7 @@ describe("makine gerçekten yakalıyor", () => {
         giris: "herkese-acik" as const,
         izin: "herkese-acik" as const,
         sinir: "genel" as const,
+        temaDemosunda: "acik" as const,
       },
     });
     const hatalar = await erisimleriDene(

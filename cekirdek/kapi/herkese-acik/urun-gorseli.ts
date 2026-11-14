@@ -12,6 +12,7 @@ import { BilinenHata, DosyaYaniti } from "../zarf.ts";
 // Hangi görselin verileceğine servis karar verir (yalnız vitrinde sayfası açılan ürünün canlı görseli).
 export const urunGorseliUcu = ucTanimla({
   giris: "herkese-acik",
+  temaDemosunda: "acik",
   sema: z.strictObject({
     // Galeri öğesinin kimliği.
     o: kimlikSemasi,

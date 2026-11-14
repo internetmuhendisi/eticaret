@@ -29,3 +29,12 @@ export const parcaGorunumleri: Readonly<Record<string, readonly string[]>> = {
   "urun-karti": urunKartiGorunumleri,
   "urun-filtresi": urunFiltresiGorunumleri,
 };
+
+// Tema demosu (kart 0116, karar 0127): ziyaretçinin seçtiği tema adreste bu parametreyle gelir, ara katman onu
+// çereze yazar; sonraki sayfalar çerezden okur. Yalnız temaDemosu ayarı açık sitede okunur. Demo sitesinin sayfası
+// kökünde oznitelik'i taşır: tarayıcıdaki kod (hesap durumu) ziyaretçinin yalnız gezdiğini buradan bilir.
+export const temaDemosu = {
+  parametre: "tema",
+  cerez: "tema-demosu",
+  oznitelik: "data-tema-demosu",
+} as const;

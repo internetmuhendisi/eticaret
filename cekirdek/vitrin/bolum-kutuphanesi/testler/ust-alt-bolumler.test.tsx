@@ -116,6 +116,26 @@ describe("logo ve simgeler satırı", () => {
     expect(kap.querySelector("img")).toBeNull();
   });
 
+  // Kart 0116: tema demosunda ziyaretçi yalnız gezer; hesap öğesi (masaüstünde Hesabım, telefonda yan pencerede) yok.
+  it("tema demosunda (müşteri oturumu yok) hesap öğesi çizilmez, favori kalır", () => {
+    const kap = belge(
+      ust([bolum("ust-satir", "logo-solda")], {
+        ...bosBaglam,
+        islevler: acik,
+        musteriOturumu: "yok",
+      }),
+    );
+    const hesap = metin("vitrin.bolum.ustSatir.hesap");
+    expect([...kap.querySelectorAll("a, button")].map((o) => o.textContent ?? "")).not.toContain(
+      hesap,
+    );
+    expect(kap.innerHTML).not.toContain(hesap);
+    expect(kap.innerHTML).toContain(metin("vitrin.bolum.ustSatir.favoriler"));
+    // Aynı bağlamda oturum sorulursa hesap öğesi vardır.
+    const gercek = belge(ust([bolum("ust-satir", "logo-solda")], { ...bosBaglam, islevler: acik }));
+    expect(gercek.innerHTML).toContain(hesap);
+  });
+
   it("işlevler açıkken arama, favori ve sepet görünür, sayılar rozettedir; telefonda yalnız arama ve sepet satırdadır", () => {
     const kap = belge(
       ust([bolum("ust-satir", "logo-ortada")], {

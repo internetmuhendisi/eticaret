@@ -12,6 +12,7 @@ const istek = (yol: string, secenekler?: RequestInit) =>
 const ornekUc = (isle: (girdi: { ad: string }) => Promise<unknown>) =>
   ucTanimla({
     giris: "herkese-acik",
+    temaDemosunda: "acik",
     sema: z.strictObject({ ad: z.string().min(1) }),
     izin: herkeseAcik,
     sinir: "genel",
@@ -98,6 +99,7 @@ describe("uç tanımı", () => {
   it("sınır aşılınca istek sınırı koduyla ve bekleme süresiyle cevap verir", async () => {
     const uc = ucTanimla({
       giris: "herkese-acik",
+      temaDemosunda: "acik",
       sema: z.strictObject({}),
       izin: herkeseAcik,
       sinir: "siki",
@@ -119,6 +121,7 @@ describe("uç tanımı", () => {
   it("izin beyanını ve sınırı uçla birlikte taşır", () => {
     expect(ornekUc(async () => ({})).tanim).toEqual({
       giris: "herkese-acik",
+      temaDemosunda: "acik",
       izin: "herkese-acik",
       sinir: "genel",
     });

@@ -44,6 +44,7 @@ describe("kapıdan geçen istek", () => {
   const ucAc = () =>
     ucTanimla({
       giris: "herkese-acik",
+      temaDemosunda: "acik",
       sema: z.strictObject({}),
       izin: herkeseAcik,
       sinir: "siki",

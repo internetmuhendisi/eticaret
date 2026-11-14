@@ -9,6 +9,7 @@ import { BilinenHata, DosyaYaniti } from "../zarf.ts";
 // aşmak içindir (e-postadaki adres), yanıtı değiştirmez.
 export const logoUcu = ucTanimla({
   giris: "herkese-acik",
+  temaDemosunda: "acik",
   sema: z.strictObject({
     s: z
       .string()

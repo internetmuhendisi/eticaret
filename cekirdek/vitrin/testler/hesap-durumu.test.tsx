@@ -4,12 +4,13 @@
 // ve ağ hatasında girişli müşteri "Giriş yap" görmez (karar 0051). Katalogun örnek kipinde istek gitmez.
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { temaDemosu } from "../../kayitlar/tema.ts";
 import { MetinSaglayici } from "../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../metinler/metin.ts";
 import { HesapMenusu } from "../bolumler/ust-satir/hesap-menusu.tsx";
 import { MenuDugmesi } from "../bolumler/ust-satir/menu-dugmesi.tsx";
 import { HesapAlani } from "../hesap-alani.tsx";
-import { hesapDurumunuSifirla } from "../hesap-durumu.ts";
+import { hesapDurumunuBekle, hesapDurumunuSifirla } from "../hesap-durumu.ts";
 
 const metin = metinOkuyucu("tr");
 const hesabimUcu = "/kapi/musteri/hesabim";
@@ -131,6 +132,36 @@ describe("oturum durumu", () => {
     await bekle();
     expect(istek).not.toHaveBeenCalled();
     expect(screen.getByRole("link", { name: etiket })).toBeDefined();
+  });
+
+  // Kart 0116: tema demosunda müşteri uçları kapalıdır; sayfa kökündeki işaret varken oturum sorulmaz, ziyaretçi
+  // girişsizdir (favoriler üye olmayan müşteri gibi tarayıcıda durur).
+  it("tema demosunun işareti varken istek gitmez, ziyaretçi girişsizdir", async () => {
+    const istek = ucuTaklitEt({ [hesabimUcu]: girisli });
+    document.documentElement.setAttribute(temaDemosu.oznitelik, "");
+    try {
+      expect(await hesapDurumunuBekle()).toEqual({ tur: "girissiz" });
+      expect(istek).not.toHaveBeenCalled();
+    } finally {
+      document.documentElement.removeAttribute(temaDemosu.oznitelik);
+    }
+  });
+
+  it("tema demosunda yan pencerede hesap öğesi yoktur", async () => {
+    render(
+      <MetinSaglayici dil="tr">
+        <MenuDugmesi
+          menuler={[]}
+          yandakiler={[]}
+          hesap={undefined}
+          hesapSorulur={false}
+          metinler={{ ac: "aç", kapat: "kapat", baslik: "Menü", tumu: "Tümü", kategoriler: "K" }}
+        />
+      </MetinSaglayici>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "aç" }));
+    expect(screen.getByRole("dialog")).toBeDefined();
+    expect(screen.queryByRole("link", { name: etiket })).toBeNull();
   });
 
   it("telefondaki yan pencerede girişli müşteri e-postayı ve çıkış düğmesini görür", async () => {

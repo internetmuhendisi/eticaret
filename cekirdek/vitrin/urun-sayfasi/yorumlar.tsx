@@ -128,6 +128,7 @@ export function UrunYorumlari({
   liste,
   dogrulanmisAliciEtiketi,
   sonrakiAdres,
+  yorumYazilir = true,
 }: {
   urun: string;
   urunAdi: string;
@@ -136,6 +137,8 @@ export function UrunYorumlari({
   dogrulanmisAliciEtiketi: boolean;
   // Bir sonraki sayfanın adresi; son sayfadaysa yok.
   sonrakiAdres: string | undefined;
+  // Tema demosunda (kart 0116) ziyaretçi yalnız gezer: "Yorum yaz" yok.
+  yorumYazilir?: boolean;
 }) {
   return (
     <section
@@ -150,7 +153,7 @@ export function UrunYorumlari({
         >
           {metin("vitrin.yorum.baslik")}
         </h2>
-        <YorumYaz urun={urun} urunAdi={urunAdi} />
+        {yorumYazilir ? <YorumYaz urun={urun} urunAdi={urunAdi} /> : null}
       </div>
       {puan === undefined || liste.yorumlar.length === 0 ? (
         <p className="text-soluk-yazi">{metin("vitrin.yorum.ilkYorum")}</p>

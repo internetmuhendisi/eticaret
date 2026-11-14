@@ -79,6 +79,7 @@
       "siparisOneki": "Sipariş numarasının başındaki harfler. Verilmezse mağaza adının ilk üç harfi kullanılır.",
       "siparisBaslangici": "İlk siparişin numarası.",
       "temaDegistirilebilir": "Mağaza sahibi yönetim panelinden temayı değiştirebilir.",
+      "temaDemosu": "Bu site bir tema demosudur: ziyaretçi temaları adresten seçip gezer, hesap açamaz, sipariş veremez; site arama motorlarına kapalıdır.",
       "temalar": "Mağaza sahibinin seçebileceği temalar. İlki sitenin başlangıç temasıdır. Verilmezse bütün hazır temalar.",
       "vitrindeAltyapiAdi": "Vitrinde altyapının adı görünür.",
       "yakindaYazisi": "Vitrinin ana sayfasında başlığın altında \"Yakında açılıyoruz.\" yazısı görünür.",
@@ -1029,6 +1030,11 @@
       "bosSorguAciklama": "Üstteki kutuya ürün, kategori ya da marka adı yazın.",
       "cokFazlaBaslik": "Biraz bekleyin",
       "cokFazla": "Kısa sürede çok arama yaptınız. {saniye} saniye sonra yeniden deneyin."
+    },
+    "temaDemosu": {
+      "seritAdi": "Tema demosu",
+      "aciklama": "Bu bir tema demosudur: alışveriş yapılamaz, hesap açılamaz.",
+      "temalar": "Temalar"
     },
     "bulunamadi": {
       "aramaEtiketi": "Aradığınız ürünü bulun",

@@ -35,8 +35,9 @@ export function MenuDugmesi({
   // kategori: menü kategori ağacından gelir (bağlamın kategoriMenuleri).
   menuler: readonly { kod: string; dallar: readonly BaglamMenuDali[]; kategori: boolean }[];
   yandakiler: readonly YandakiBaglanti[];
-  hesap: YandakiBaglanti;
-  // Bağlamın müşteri oturumu "sorulur" ise; katalogda istek gitmez.
+  // Tema demosunda (bağlamın müşteri oturumu "yok", kart 0116) hesap öğesi yoktur.
+  hesap: YandakiBaglanti | undefined;
+  // Bağlamın müşteri oturumu "sorulur" ise; katalogda ve demoda istek gitmez.
   hesapSorulur: boolean;
   metinler: { ac: string; kapat: string; baslik: string; tumu: string; kategoriler: string };
 }) {
@@ -87,7 +88,7 @@ export function MenuDugmesi({
             ))}
           <ul className="flex flex-col">
             {yandakiler.map(baglantiOgesi)}
-            {durum.tur === "girisli" ? (
+            {hesap === undefined ? null : durum.tur === "girisli" ? (
               <li className="flex flex-col items-start gap-2 pt-2">
                 <span className="flex items-center gap-2 wrap-anywhere">
                   <Ikon ad={hesap.ikon} className="size-5 shrink-0" />

@@ -32,7 +32,6 @@ import {
   type VitrinHedefi,
   vitrinMenusu,
 } from "../moduller/menu/servis";
-import { temaServisi } from "../moduller/tema/servis";
 import { anaSayfaYorumlari } from "../moduller/yorum/servis";
 import type { Veritabani } from "../veritabani/baglanti";
 import { kimligiDuzelt, kimlikMi } from "../veritabani/kimlik";
@@ -53,6 +52,7 @@ import {
 import { bolumBaglari, bolumunUrunKaynaklari } from "./bolum-kutuphanesi/tarif";
 import type { UrunKaynagi } from "./bolum-kutuphanesi/urun-kaynagi";
 import { yorumAdetleri } from "./bolumler/musteri-yorumlari/tarif";
+import { vitrinTemasi } from "./tema-secimi";
 import { kaynaklarinUrunleri } from "./urun-kaynagi";
 
 const hedefAdresi = (hedef: VitrinHedefi): { adres?: string; yeniSekme: boolean } => {
@@ -230,7 +230,7 @@ export const vitrinBaglaminiOku = async (
     magazaLogosu(vt, { site }),
     Promise.all(kodlar.map(async (kod) => [kod, await vitrinMenusu(vt, kod)] as const)),
     kategoriMenuleriniSec(vt, kodlar),
-    temaServisi(() => site).gecerliTema(vt),
+    vitrinTemasi(vt, site),
     kategorileriOku(vt, bolumlerinBaglari(bolumler, kutuphane, "kategori")),
     markalariOku(vt, bolumlerinBaglari(bolumler, kutuphane, "marka")),
     kaynaklarinUrunleri(vt, site, bolumlerinUrunKaynaklari(bolumler, kutuphane), an),
@@ -274,7 +274,7 @@ export const vitrinBaglaminiOku = async (
           .join(" / ");
   return {
     magazaAdi: ayarlar.magazaAdi ?? site.kimlik.gorunenAd,
-    musteriOturumu: "sorulur",
+    musteriOturumu: site.ayarlar.temaDemosu ? "yok" : "sorulur",
     ...(logo === undefined ? {} : { logoAdresi: logonunYolu(logo) }),
     iletisim: {
       ...(ayarlar.iletisimTelefonu === undefined

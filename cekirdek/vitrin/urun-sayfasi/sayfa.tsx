@@ -36,7 +36,6 @@ import { metin, siteninBicimleyicisi } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import type { FiyatAraligi } from "../../moduller/fiyat/gosterim";
 import { stokGosterimMetinleri } from "../../moduller/stok/semalar";
-import { siteninGecerliTemasi } from "../../moduller/tema/servis";
 import { urunler } from "../../moduller/urun/model";
 import { vitrinKosulu } from "../../moduller/urun/vitrin";
 import { siteninVeritabani } from "../../veritabani/baglanti";
@@ -50,9 +49,11 @@ import {
   sayfaninKaydi,
   sorguMetni,
 } from "../kayit-sayfasi";
+import { vitrinTemasi } from "../tema-secimi";
 import { FiyatGosterimi } from "../urun-karti/fiyat";
 import { urunKartiGorunumu } from "../urun-karti/gorunum";
 import { UrunKarti } from "../urun-karti/urun-karti";
+import { yalnizGezintiMi } from "../yalniz-gezinti";
 import { adrestekiSecim, ilkSecim } from "./secim";
 import { type DegisenBilgiler, UrunUstKismi } from "./urun-ust";
 import { type StokGosterimiVerisi, type UrunSayfasiVerisi, urunSayfasiVerisi } from "./veri";
@@ -233,6 +234,7 @@ function AltKisim({
           liste={veri.yorumlar}
           dogrulanmisAliciEtiketi={veri.dogrulanmisAliciEtiketi}
           sonrakiAdres={sonrakiYorumAdresi}
+          yorumYazilir={!yalnizGezintiMi()}
         />
       ) : null}
       {veri.ilgili.length === 0 ? null : (
@@ -285,7 +287,7 @@ export async function UrunSayfasi({
   const vt = siteninVeritabani();
   const [veri, tema] = await Promise.all([
     urunSayfasiVerisi(vt, calisanSite(), kayit.kimlik, { yorumSayfasi }),
-    siteninGecerliTemasi(vt),
+    vitrinTemasi(vt, calisanSite()),
   ]);
   if (veri === undefined) notFound();
   const secim = ilkSecim(veri.secenekler, veri.birimler, sorguDegerleri, veri.secenekOnSecimi);

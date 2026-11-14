@@ -125,6 +125,7 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 |---|---|---|---|---|
 | Mağaza sahibi temayı değiştirebilir | Altyapı sahibi | Açık | — | Kapalıyken mağaza sahibi ne temayı ne tema ayarlarını değiştirir, önceki sürüme de dönemez; logo bu ayara bağlı değil (kart 0105, karar 0080) |
 | Kullanılabilir temalar | Altyapı sahibi | Bütün hazır temalar | — (bugün tek hazır tema Canlı Çarşı) | İlki sitenin başlangıç temasıdır. Siteye özel tema `tema/` klasöründe durur ve bu listede yazılır (kart 0105) |
+| Tema demosu | Altyapı sahibi | Kapalı | Kapalı | Açık sitede ziyaretçi temayı adresten seçip gezer (`?tema=`), vitrinin üstünde demo şeridi ve temalar arası geçiş durur; hesap, giriş, sipariş, yorum ve bildirim yoktur, uçlar da reddeder; site arama motorlarına kapalıdır. Yalnız türü `demo` olan, e-posta göndermeyen ve eklentisi olmayan site açabilir (site doğrulaması). Temaların demosu Tema Galerisi sitesidir (kart 0116, karar 0127) |
 | Tema | Mağaza sahibi | Kullanılabilir temaların ilki | Canlı Çarşı | Tema ayarlarıyla birlikte sürüm sürüm saklanır, önceki sürüme tek adımda dönülür (kart 0105) |
 | Tema rengi | Mağaza sahibi | Temanın kendi rengi | Temanın kendi rengi | Yalnız temanın açtığı renkler (Canlı Çarşı'da ana renk). Açık temada okunmayan renk kaydedilmez, okunur ton önerilir; koyu temada okunur tonu kullanılır (kart 0105) |
 | Tema yazı tipi, köşe ve düğme biçimi | Mağaza sahibi | Temanın kendi değerleri | Temanın kendi değerleri | Temanın seçeneklerinden biri; Canlı Çarşı'nın seçenekleri kart 0114'te |

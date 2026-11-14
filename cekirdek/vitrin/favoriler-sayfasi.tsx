@@ -15,15 +15,16 @@ import { favoriCerezi } from "../kayitlar/favori";
 import { yazilanIslevler } from "../kayitlar/islevler";
 import { metin } from "../metinler/site-metni";
 import { sayfaBasligi } from "../moduller/gorunurluk/sayfa-bilgisi";
-import { siteninGecerliTemasi } from "../moduller/tema/servis";
 import { siteninVeritabani } from "../veritabani/baglanti";
 import { girisAdresiDonuslu, vitrinAdresleri } from "./adresler";
 import { izgaraSiniflari } from "./bolumler/ortak/urun-izgarasi";
 import { cerezMetniniOku } from "./favori-deposu";
 import { FavoriListesi } from "./favori-listesi";
+import { vitrinTemasi } from "./tema-secimi";
 import { urunKartiGorunumu } from "./urun-karti/gorunum";
 import { oncelikliKartSayisi, UrunKarti } from "./urun-karti/urun-karti";
 import { urunKartlari } from "./urun-karti/veri";
+import { yalnizGezintiMi } from "./yalniz-gezinti";
 
 // Kişiye özel sayfa: arama motorlarına kapalıdır.
 export const favorilerSayfaBilgisi = async (): Promise<Metadata> => ({
@@ -36,7 +37,7 @@ export async function FavorilerSayfasi() {
   const vt = siteninVeritabani();
   const [kartlar, tema] = await Promise.all([
     urunKartlari(vt, calisanSite(), denetlenenler, { yer: "sayfa" }),
-    siteninGecerliTemasi(vt),
+    vitrinTemasi(vt, calisanSite()),
   ]);
   const gorunum = urunKartiGorunumu(tema.tema.tanim.gorunumler);
   return (
@@ -71,9 +72,15 @@ export async function FavorilerSayfasi() {
             {/* Bağlantı dokunma alanı için 44 px yüksektir: yazı onunla ortada hizalanır. */}
             <span className="flex flex-wrap items-center gap-x-4">
               {metin("vitrin.favori.cihazda")}
-              <Baglanti href={girisAdresiDonuslu(vitrinAdresleri.favoriler)} className="font-kalin">
-                {metin("vitrin.favori.girisBaglantisi")}
-              </Baglanti>
+              {/* Tema demosunda (kart 0116) giriş yoktur: favoriler yalnız bu cihazda durur. */}
+              {yalnizGezintiMi() ? null : (
+                <Baglanti
+                  href={girisAdresiDonuslu(vitrinAdresleri.favoriler)}
+                  className="font-kalin"
+                >
+                  {metin("vitrin.favori.girisBaglantisi")}
+                </Baglanti>
+              )}
             </span>
           </Uyari>
         }

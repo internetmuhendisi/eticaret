@@ -10,6 +10,7 @@ import { ucTanimla } from "../uc.ts";
 
 export const musteriKayitUcu = ucTanimla({
   giris: "herkese-acik",
+  temaDemosunda: "kapali",
   sema: kayitSemasi,
   izin: herkeseAcik,
   sinir: "siki",

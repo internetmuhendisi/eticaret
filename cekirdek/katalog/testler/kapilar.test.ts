@@ -5,7 +5,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { NextRequest } from "next/server";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { siteOrtamiDegiskeni } from "../../kayitlar/site.ts";
 import HataDenemesi, {
   generateMetadata as hataDenemesiBilgisi,
@@ -48,6 +48,10 @@ const istek = (yol: string, yontem = "GET", basliklar: Record<string, string> = 
   new NextRequest(new URL(yol, "http://site.localhost"), { method: yontem, headers: basliklar });
 
 describe("ara katman", () => {
+  // Ara katman her istekte sitenin tema demosu ayarına bakar (kart 0116): uygulamada site her zaman vardır.
+  beforeEach(() => {
+    vi.stubEnv("SITE_KLASORU", ornekSite);
+  });
   it("geliştirme adreslerinin tamamı ara katmandan geçer", () => {
     expect(config.matcher).toEqual(expect.arrayContaining(["/gelistirme", "/gelistirme/:path*"]));
   });

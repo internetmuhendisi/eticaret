@@ -80,6 +80,7 @@ describe("kapıda sahte istek ve çerez", () => {
   const ornekUc = (isle: Parameters<typeof ucTanimla>[0]["isle"]) =>
     ucTanimla({
       giris: "herkese-acik",
+      temaDemosunda: "acik",
       sema: z.strictObject({}),
       izin: herkeseAcik,
       sinir: "genel",
@@ -99,6 +100,7 @@ describe("kapıda sahte istek ve çerez", () => {
   it("sahte istek ziyaretçinin istek sınırını doldurmaz", async () => {
     const uc = ucTanimla({
       giris: "herkese-acik",
+      temaDemosunda: "acik",
       sema: z.strictObject({}),
       izin: herkeseAcik,
       sinir: "siki",

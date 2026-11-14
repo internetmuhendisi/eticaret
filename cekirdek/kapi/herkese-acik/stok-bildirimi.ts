@@ -12,6 +12,7 @@ import { BilinenHata } from "../zarf.ts";
 
 export const stokBildirimiUcu = ucTanimla({
   giris: "herkese-acik",
+  temaDemosunda: "kapali",
   sema: stokBildirimiTalebiSemasi,
   izin: herkeseAcik,
   sinir: "siki",

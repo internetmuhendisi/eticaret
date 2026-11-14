@@ -5,12 +5,16 @@ import { sayfaBasligi } from "../../../../moduller/gorunurluk/sayfa-bilgisi";
 import { SifremiUnuttumFormu } from "../../../../moduller/oturum/sifirlama-formlari";
 import { vitrinAdresleri } from "../../../../vitrin/adresler";
 import { stil } from "../../../../vitrin/stil";
+import { musteriSayfasiBilgisi, musteriSayfasiniAc } from "../../../../vitrin/yalniz-gezinti";
 
-export const generateMetadata = async (): Promise<Metadata> => ({
-  title: await sayfaBasligi(metin("ortak.sifirlama.istekBaslik")),
-});
+export const generateMetadata = musteriSayfasiBilgisi(
+  async (): Promise<Metadata> => ({
+    title: await sayfaBasligi(metin("ortak.sifirlama.istekBaslik")),
+  }),
+);
 
 export default function Sayfa() {
+  musteriSayfasiniAc();
   return (
     <main className={stil.icerik}>
       <h1>{metin("ortak.sifirlama.istekBaslik")}</h1>

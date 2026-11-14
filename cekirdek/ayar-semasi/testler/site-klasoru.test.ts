@@ -100,6 +100,7 @@ describe("ayar şeması", () => {
       yoneticiOturumuSaat: 24,
       musteriOturumuGun: 30,
       favoriSiniri: 100,
+      temaDemosu: false,
       eklentiler: [],
     });
   });

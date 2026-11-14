@@ -73,7 +73,8 @@ export type VitrinBaglami = {
   blogYazilari: Readonly<Record<string, readonly BaglamBlogYazisi[]>>;
   // Müşterinin oturumu (kart 0131): gerçek vitrinde Hesabım öğesi oturumu uçtan sorar; katalogda örnek kipte
   // istek gitmez, öğe girişsiz bağlantı olarak kalır (gerçek müşterisi yoktur, girişsiz istek konsola hata yazar).
-  musteriOturumu: "sorulur" | "ornek";
+  // Tema demosunda (kart 0116, site ayarı temaDemosu) "yok": ziyaretçi yalnız gezer, hesap öğesi hiç çizilmez.
+  musteriOturumu: "sorulur" | "ornek" | "yok";
   // Bülten eklentisi kurulunca kaydın gönderildiği uç; yoksa bülten bölümü çizilmez.
   bultenKaydi?: BultenKaydi;
   // Bölüm metinlerindeki yer tutucuların değerleri (kart 0110, cekirdek/kayitlar/yer-tutucular.ts).

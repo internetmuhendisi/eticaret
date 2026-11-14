@@ -191,6 +191,10 @@ export const ayarSemasi = z.strictObject({
     z.int().min(1).max(favoriSiniriEnCok).default(100),
     altyapiSahibinin("ayar.aciklama.favoriSiniri"),
   ),
+  // Tema demosu (kart 0116, karar 0127): ziyaretçi temayı adresten seçer (?tema=), vitrinin üstünde demo şeridi
+  // ve temalar arası geçiş durur, site arama motorlarına kapalıdır, ziyaretçi yalnız gezer (kayıt, giriş,
+  // sipariş, yorum, bildirim yok; uçlar da reddeder, cekirdek/kapi/uc.ts). Gerçek mağazada açılmaz.
+  temaDemosu: ayar(z.boolean().default(false), altyapiSahibinin("ayar.aciklama.temaDemosu")),
   // Sitede açık eklentiler (kart 0144, karar 0117). Eklentinin kodu çekirdektedir; kurulu eklenti kapalı
   // başlar, bu listeye yazılınca açılır. Eklenti başka bir hizmeti ya da ücreti getirebileceği için altyapı
   // sahibinindir.

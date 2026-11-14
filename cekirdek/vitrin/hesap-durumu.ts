@@ -10,6 +10,7 @@
 // kalır: girişli müşteri oturumu kapanmış sanmasın (karar 0051).
 import { useSyncExternalStore } from "react";
 import { hataKodlari } from "../kayitlar/kapi";
+import { temaDemosu } from "../kayitlar/tema";
 import { vitrinAdresleri } from "./adresler";
 import { cereziSil } from "./favori-deposu";
 
@@ -29,6 +30,13 @@ const dinleyiciler = new Set<() => void>();
 let cevap: Promise<HesapDurumu> | undefined;
 
 const sor = async (): Promise<HesapDurumu> => {
+  // Tema demosunda (kart 0116) ziyaretçi yalnız gezer: müşteri uçları kapalıdır, oturum sorulmaz, ziyaretçi girişsizdir.
+  // Favoriler üye olmayan müşteri gibi tarayıcıda durur.
+  if (document.documentElement.hasAttribute(temaDemosu.oznitelik)) {
+    durum = { tur: "girissiz" };
+    for (const dinleyici of dinleyiciler) dinleyici();
+    return durum;
+  }
   // İstek iptal edilmez: yanıtı yenilenen oturum anahtarını taşıyabilir, tarayıcıya ulaşmazsa eski anahtarla
   // kalınır ve oturum kapanır (karar 0039).
   let sonuc: HesapDurumu = bilinmiyor;

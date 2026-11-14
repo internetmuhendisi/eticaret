@@ -6,6 +6,7 @@ import { ucTanimla } from "../uc.ts";
 
 export const saglikUcu = ucTanimla({
   giris: "herkese-acik",
+  temaDemosunda: "acik",
   sema: z.strictObject({}),
   izin: herkeseAcik,
   sinir: "genel",

@@ -40,6 +40,7 @@ Tasarım değeri, renk, yazı boyutu, boşluk gibi tasarımı oluşturan ve tek 
 - Radix parçalarının durumları adlı durumla yazılır (`acik:`, `etkin:`, `isaretli:`...), sınıflar `sinif()` ile birleştirilir (kart 0103, belgesi aynı README).
 - İkonlar yalnız ikon sözlüğünden gelir (`bilesenler/ikonlar/sozluk.ts`); Lucide'yi başka yerde içe aktarmak denetimde hatadır.
 - Sitenin değerlerini yalnız `cekirdek/temalar/birlesim.ts` verir. Kök düzen onları sayfaya CSS değişkeni olarak yazar, panel düzeni panelin değerlerini onların üstüne yazar.
+- Vitrin hangi temayla çizileceğini yalnız `vitrinTemasi`'ndan öğrenir (karar 0127): tema demosunda ziyaretçinin seçtiği tema, öteki sitelerde kayıtlı tema.
 
 ## Tema yapısı (karar 0080)
 

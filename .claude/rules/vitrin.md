@@ -130,3 +130,11 @@ paths:
 - Henüz yazılmamış bir sayfaya giden düğme (arama, favori, sepet) işlevine bağlanır; işlev açılınca görünür.
 - Müşterinin oturumu vitrinde yalnız `useHesapDurumu`, çıkış yalnız `cikisYap` ile (`cekirdek/vitrin/hesap-durumu.ts`, karar 0098): sayfada tek istek gider, yalnız 401 girişsizdir. Hesabım menüsü üst satırdadır, katalogun örnek bağlamında (`musteriOturumu: "ornek"`) istek gitmez.
 - Radix tetikleyicisine (`asChild`) verilen ve ipucuyla sarılı parça (ikon düğmesi) sunucuda çizilen bölümde tetikleyicinin özelliklerini almaz; böyle bir parça tarayıcıda çizilen bileşene yazılır (`menu-dugmesi.tsx`).
+
+## Tema demosu (karar 0127)
+
+- Vitrin temayı yalnız `vitrinTemasi` ile okur (`cekirdek/vitrin/tema-secimi.ts`): tema demosunda (site ayarı `temaDemosu`) ziyaretçinin seçtiği tema, öteki sitelerde kayıtlı tema. Panel kayıtlı temayı okur (`siteninGecerliTemasi`).
+- Seçim adreste `?tema=<kod>` ile gelir; ara katman çereze yazıp parametresiz adrese yönlendirir (`cekirdek/uygulama/proxy.ts`). Sitenin kullanamayacağı tema yok sayılır. Sabitler `temaDemosu` kaydındadır (`cekirdek/kayitlar/tema.ts`).
+- Demoda ziyaretçi yalnız gezer: müşterinin hesabına giden sayfa `musteriSayfasiniAc` ve `musteriSayfasiBilgisi` ile bulunamadı verir (`cekirdek/vitrin/yalniz-gezinti.ts`), bağlamın müşteri oturumu `"yok"`tur (hesap öğesi çizilmez), "Yorum yaz" ve favoriler sayfasının giriş bağlantısı yoktur, tarayıcıdaki hesap durumu sayfa kökündeki işaretle oturum sormaz. Yeni bir müşteri işlemi aynı yolla kapanır.
+- Demo şeridi (`TemaDemosuSeridi`) vitrinin en üstündedir; tema geçişi sayfayı baştan yükler, çünkü temanın değerleri kök düzendedir.
+- Demo arama motorlarına kapalıdır: ara katman her yanıta `X-Robots-Tag`, çerçeve `noindex` yazar.

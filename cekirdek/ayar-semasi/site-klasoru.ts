@@ -237,6 +237,30 @@ export const katalogGorselleriniDogrula = (
 
 export const temaKlasoru = "tema";
 
+// Tema demosu (kart 0116, karar 0127): ziyaretçi yalnız gezer. Demo sitesi gerçek mağaza olamaz, e-posta göndermez
+// (gönderen adresi yok) ve eklenti açmaz (eklentinin müşteri formu demoda çalışmazdı). Uçların kapalılığı kapıdadır.
+export const temaDemosuSorunlari = (
+  kimlik: Kimlik | undefined,
+  ayarlar: z.output<typeof ayarSemasi>,
+): string[] => {
+  if (!ayarlar.temaDemosu) return [];
+  const sorunlar: string[] = [];
+  if (kimlik !== undefined && kimlik.tur !== "demo") {
+    sorunlar.push(
+      'ayarlar.json: temaDemosu: yalnız türü "demo" olan site tema demosu olabilir (kimlik.json).',
+    );
+  }
+  if (ayarlar.epostaGonderenAdresi !== undefined) {
+    sorunlar.push(
+      "ayarlar.json: epostaGonderenAdresi: tema demosu e-posta göndermez, gönderen adresi yazılmaz.",
+    );
+  }
+  if (ayarlar.eklentiler.length > 0) {
+    sorunlar.push("ayarlar.json: eklentiler: tema demosunda eklenti açılmaz.");
+  }
+  return sorunlar;
+};
+
 // Sitenin kullanabileceği temalar (kart 0105): "temalar" ayarındaki her kod ya hazır bir tema ya da sitenin
 // tema/ klasöründeki bir temadır. Siteye özel tema dosyası <kod>.json adlı düz bir dosyadır, kodu hazır
 // bir temanınkiyle aynı olamaz ve listede yazılı olmalıdır (kullanılmayan tema dosyası kalmasın). Her tema
@@ -503,6 +527,8 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
     if (sonuc.success) ayarlar = sonuc.data;
     else hatalar.push(...sorunlariYaz("ayarlar.json", sonuc.error.issues));
   }
+
+  if (ayarlar !== undefined) hatalar.push(...temaDemosuSorunlari(kimlik, ayarlar));
 
   const baslangic = baslangicDosyasiniDogrula(klasor, magazaAyarSemasi);
   if (!baslangic.gecerli) hatalar.push(...baslangic.hatalar);

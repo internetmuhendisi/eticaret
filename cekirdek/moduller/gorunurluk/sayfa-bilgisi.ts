@@ -9,6 +9,7 @@
 //   kalıbından üretir. Kayda özel başlık ve açıklama alanı panelle gelir (Görünürlük); o gün buraya eklenir.
 import type { Metadata } from "next";
 import { cache } from "react";
+import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import type { AdresliKayitTuru } from "../../kayitlar/adres.ts";
 import { metin } from "../../metinler/site-metni.ts";
 import { doldur } from "../eposta/sablon.ts";
@@ -39,6 +40,8 @@ export const vitrinSayfaKalibi = async (): Promise<Metadata> => {
   return {
     title: magaza,
     description: doldur(metin("vitrin.sayfaBilgisi.aciklama.varsayilan"), { magaza }),
+    // Tema demosu arama motorlarına kapalıdır (kart 0116): sayfanın kendi değeri de kapalı yöndedir, açan sayfa yoktur.
+    ...(calisanSite().ayarlar.temaDemosu ? { robots: { index: false, follow: false } } : {}),
   };
 };
 

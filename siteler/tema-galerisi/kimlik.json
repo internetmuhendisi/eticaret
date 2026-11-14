@@ -1,0 +1,13 @@
+{
+  "kodAdi": "tema-galerisi",
+  "gorunenAd": "Tema Galerisi",
+  "tur": "demo",
+  "adresler": {
+    "deneme": "https://tema-galerisi.deneme.eticaretmagazasi.com"
+  },
+  "cekirdekSurumu": "0.75.0",
+  "teslimDurumu": {
+    "magazaSahibiHesabi": "gerekmez",
+    "yurtDisiAktarimBelgeleri": "gerekmez"
+  }
+}

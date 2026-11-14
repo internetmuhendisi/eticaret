@@ -12,6 +12,7 @@ import { BilinenHata, DosyaYaniti } from "../zarf.ts";
 // Hangi görselin verileceğine servis karar verir (yalnız vitrinde kullanılan bölüm ve kategori görseli).
 export const vitrinGorseliUcu = ucTanimla({
   giris: "herkese-acik",
+  temaDemosunda: "acik",
   sema: z.strictObject({
     // Görselin dosya kimliği.
     d: kimlikSemasi,

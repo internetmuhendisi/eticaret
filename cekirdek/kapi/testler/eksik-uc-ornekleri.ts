@@ -7,6 +7,23 @@ import { herkeseAcik } from "../../kayitlar/izinler.ts";
 import { ucTanimla } from "../uc.ts";
 
 export const eksikUcOrnekleri = () => [
+  // @ts-expect-error tema demosundaki durumu beyan edilmemiş herkese açık uç (kart 0116)
+  ucTanimla({
+    giris: "herkese-acik",
+    sema: z.strictObject({}),
+    izin: herkeseAcik,
+    sinir: "genel",
+    isle: async () => 1,
+  }),
+  ucTanimla({
+    giris: "yonetici",
+    sema: z.strictObject({}),
+    izin: "ekip.gor",
+    sinir: "genel",
+    // @ts-expect-error tema demosu beyanı yalnız herkese açık girişte yazılır
+    temaDemosunda: "kapali",
+    isle: async () => 1,
+  }),
   // @ts-expect-error şemasız uç
   ucTanimla({ giris: "herkese-acik", izin: herkeseAcik, sinir: "genel", isle: async () => 1 }),
   // @ts-expect-error izinsiz uç

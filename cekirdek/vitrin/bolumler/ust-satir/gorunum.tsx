@@ -112,6 +112,8 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
   const { islevler, sayilar, iletisim } = baglam;
   const ortada = gorunum === "logo-ortada";
 
+  // Tema demosunda (kart 0116) ziyaretçi yalnız gezer: hesap öğesi yok.
+  const hesapVar = baglam.musteriOturumu !== "yok";
   const hesap: Simge = {
     adres: vitrinAdresleri.giris,
     ikon: "hesap",
@@ -135,7 +137,7 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
           ? []
           : [{ adres: favori.adres, ikon: favori.ikon, etiket: favori.etiket }]
       }
-      hesap={{ adres: hesap.adres, ikon: hesap.ikon, etiket: hesap.etiket }}
+      hesap={hesapVar ? { adres: hesap.adres, ikon: hesap.ikon, etiket: hesap.etiket } : undefined}
       hesapSorulur={baglam.musteriOturumu === "sorulur"}
       metinler={{
         ac: metin("vitrin.bolum.ustSatir.menuyuAc"),
@@ -183,12 +185,14 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
   const simgeler = (
     <div className="flex shrink-0 items-center justify-end gap-1">
       {favori === undefined ? null : <SimgeBaglantisi {...favori} favoriSayisi telefondaGizli />}
-      <HesapMenusu
-        baglanti={<YaziliBaglanti {...hesap} telefondaGizli />}
-        etiket={hesap.etiket}
-        className={yaziliSiniflar({ telefondaGizli: true })}
-        sorulur={baglam.musteriOturumu === "sorulur"}
-      />
+      {hesapVar ? (
+        <HesapMenusu
+          baglanti={<YaziliBaglanti {...hesap} telefondaGizli />}
+          etiket={hesap.etiket}
+          className={yaziliSiniflar({ telefondaGizli: true })}
+          sorulur={baglam.musteriOturumu === "sorulur"}
+        />
+      ) : null}
       {islevler.sepet ? (
         <YaziliBaglanti
           adres={vitrinAdresleri.sepet}

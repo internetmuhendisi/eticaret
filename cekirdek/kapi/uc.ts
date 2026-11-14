@@ -3,6 +3,7 @@
 // geçmez. Uç yalnız yönlendirir: sınırı sayar, girdiyi doğrular, işi servise verir,
 // sonucu zarfa koyar. İzin beyanı burada yazılır, kapı her istekte kontrol eder (karar 0040).
 import type { z } from "zod";
+import { calisanSite } from "../ayar-semasi/calisan-site.ts";
 import { hatayiKaydet } from "../izleme/hata-katmani.ts";
 import type { GirisIzni, HerkeseAcik, IzinAdi } from "../kayitlar/izinler.ts";
 import type { IstekSiniri, Kapi } from "../kayitlar/kapi.ts";
@@ -17,7 +18,15 @@ export type UcIzni<Giris extends Kapi> = Giris extends "herkese-acik"
   ? HerkeseAcik
   : GirisIzni<Giris>;
 
-export type UcTanimi<Giris extends Kapi, Sema extends z.ZodType, Veri> = {
+// Tema demosunda (site ayarı temaDemosu, kart 0116) ziyaretçi yalnız gezer: müşteri girişindeki her uç kapalıdır,
+// herkese açık uç açık mı kapalı mı olduğunu beyan eder (tür kontrolü ister). Hesap, sipariş, yorum, bildirim ve
+// e-posta doğuran uç kapalıdır; vitrinin okuduğu ve panelin kullandığı uç açıktır.
+export type TemaDemosunda = "acik" | "kapali";
+type DemoBeyani<Giris extends Kapi> = Giris extends "herkese-acik"
+  ? { temaDemosunda: TemaDemosunda }
+  : { temaDemosunda?: never };
+
+export type UcTanimi<Giris extends Kapi, Sema extends z.ZodType, Veri> = DemoBeyani<Giris> & {
   giris: Giris;
   sema: Sema;
   izin: UcIzni<Giris>;
@@ -35,8 +44,17 @@ export type UcTanimi<Giris extends Kapi, Sema extends z.ZodType, Veri> = {
 export type YanitYazici = { cerezYaz: (...cerezler: string[]) => void };
 
 export type Uc = ((istek: Request) => Promise<Response>) & {
-  readonly tanim: { giris: Kapi; izin: HerkeseAcik | IzinAdi; sinir: IstekSiniri };
+  readonly tanim: {
+    giris: Kapi;
+    izin: HerkeseAcik | IzinAdi;
+    sinir: IstekSiniri;
+    temaDemosunda: TemaDemosunda;
+  };
 };
+
+// Ucun tema demosundaki durumu: müşteri girişi kapalı, yönetici ve sahip girişi açık, herkese açık uç beyanıyla.
+const demodakiDurumu = (giris: Kapi, beyan: TemaDemosunda | undefined): TemaDemosunda =>
+  giris === "musteri" ? "kapali" : (beyan ?? "acik");
 
 const govdesizYontemler = new Set(["GET", "HEAD", "DELETE"]);
 
@@ -58,8 +76,15 @@ const girdiyiOku = async (istek: Request): Promise<unknown> => {
 export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
   tanim: UcTanimi<Giris, Sema, Veri>,
 ): Uc => {
+  const temaDemosunda = demodakiDurumu(tanim.giris, tanim.temaDemosunda);
   const yanitla = async (istek: Request, yanit: YanitYazici): Promise<Response> => {
     try {
+      // Tema demosunda kapalı uç yokmuş gibi bulunamadı verir (kapalı eklentinin ucu gibi, kart 0144); sınırı
+      // saymaz, girdiye bakmaz.
+      if (temaDemosunda === "kapali" && calisanSite().ayarlar.temaDemosu) {
+        return hataliYanit("bulunamadi");
+      }
+
       // Sınırdan önce: başka bir sayfa ziyaretçinin tarayıcısından istek atarak onun sınırını
       // dolduramasın.
       if (sahteIstekMi(istek)) return hataliYanit("yetki");
@@ -105,6 +130,6 @@ export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
     return yanit;
   };
   return Object.assign(isleyici, {
-    tanim: { giris: tanim.giris, izin: tanim.izin, sinir: tanim.sinir },
+    tanim: { giris: tanim.giris, izin: tanim.izin, sinir: tanim.sinir, temaDemosunda },
   });
 };

@@ -18,6 +18,8 @@ const yenilemeYollari: Record<HesapTuru, string> = {
 const sifirlamaIstekUcu = (tur: HesapTuru) =>
   ucTanimla({
     giris: "herkese-acik",
+    // Müşterinin şifre sıfırlaması tema demosunda kapalıdır; yöneticininki panelin işidir, açıktır.
+    temaDemosunda: tur === "musteri" ? "kapali" : "acik",
     sema: sifirlamaIstekSemasi,
     izin: herkeseAcik,
     sinir: "siki",
@@ -34,6 +36,8 @@ const sifirlamaIstekUcu = (tur: HesapTuru) =>
 const sifreYenileUcu = (tur: HesapTuru) =>
   ucTanimla({
     giris: "herkese-acik",
+    // Müşterinin şifre sıfırlaması tema demosunda kapalıdır; yöneticininki panelin işidir, açıktır.
+    temaDemosunda: tur === "musteri" ? "kapali" : "acik",
     sema: sifreYenileSemasi,
     izin: herkeseAcik,
     sinir: "siki",

@@ -1,0 +1,371 @@
+{
+  "ust-kisim": [
+    {
+      "tur": "duyuru-seridi",
+      "gorunum": "iki-yana",
+      "degerler": {
+        "metin": "Yeni sezon ürünleri mağazada",
+        "baglanti": {
+          "adres": "/kategori/giyim"
+        },
+        "zemin": "alt-kisim"
+      }
+    },
+    {
+      "tur": "ust-satir",
+      "gorunum": "logo-solda",
+      "degerler": {
+        "menuler": [
+          {
+            "menu": "ana-menu"
+          },
+          {
+            "menu": "kategori-menusu"
+          }
+        ]
+      }
+    },
+    {
+      "tur": "menu-satiri",
+      "gorunum": "sola-yasli",
+      "degerler": {
+        "anaMenu": "ana-menu",
+        "kategoriMenusu": "kategori-menusu"
+      }
+    }
+  ],
+  "ana-sayfa": [
+    {
+      "tur": "kayan-afis",
+      "gorunum": "gorsel-arkada",
+      "degerler": {
+        "slaytlar": [
+          {
+            "gorsel": "afis-slider-1-elektronik.jpg",
+            "gorselMetni": "Turuncu zeminde kulaklık ve hoparlör",
+            "ustYazi": "Elektronik Aksesuar",
+            "baslik": "Müziği yanınızda taşıyın",
+            "metin": "Kulaklık, hoparlör ve şarj aksesuarları.",
+            "dugmeYazisi": "İncele",
+            "baglanti": {
+              "adres": "/kategori/elektronik-aksesuar"
+            }
+          },
+          {
+            "gorsel": "afis-slider-2-giyim.jpg",
+            "gorselMetni": "Lacivert duvar önünde askılıkta sweatshirt ve gömlek",
+            "ustYazi": "Giyim",
+            "baslik": "Yeni sezon giyim",
+            "metin": "Keten gömlekten kapüşonluya, her güne bir parça.",
+            "dugmeYazisi": "İncele",
+            "baglanti": {
+              "adres": "/kategori/giyim"
+            }
+          },
+          {
+            "gorsel": "afis-slider-3-ev.jpg",
+            "gorselMetni": "Yeşil duvar önünde sehpada kupa, mum ve saksı",
+            "ustYazi": "Ev ve Yaşam",
+            "baslik": "Evinize sıcak dokunuşlar",
+            "metin": "Kupadan muma, eviniz için seçtiklerimiz.",
+            "dugmeYazisi": "İncele",
+            "baglanti": {
+              "adres": "/kategori/ev-ve-yasam"
+            }
+          }
+        ],
+        "zemin": "afis"
+      }
+    },
+    {
+      "tur": "guven-seridi",
+      "gorunum": "ikonlu",
+      "degerler": {
+        "maddeler": [
+          {
+            "ikon": "paket",
+            "metin": "{kargoyaVermeSuresi} iş gününde kargoda"
+          },
+          {
+            "ikon": "iade",
+            "metin": "14 gün içinde iade"
+          },
+          {
+            "ikon": "hediye",
+            "metin": "Hediye paketi seçeneği"
+          }
+        ]
+      }
+    },
+    {
+      "tur": "kampanya-afisleri",
+      "gorunum": "yatay",
+      "degerler": {
+        "afisler": [
+          {
+            "gorsel": "afis-kampanya-1-sari.jpg",
+            "gorselMetni": "Sarı zeminde mercan rengi kulaklık",
+            "baslik": "Kablosuz ses",
+            "metin": "Kablo derdi olmadan müzik ve görüşme için.",
+            "dugmeYazisi": "İncele",
+            "baglanti": {
+              "adres": "/kategori/elektronik-aksesuar"
+            },
+            "zemin": "kutu-2"
+          },
+          {
+            "gorsel": "afis-kampanya-2-mavi.jpg",
+            "gorselMetni": "Mavi zeminde katlanmış açık mavi gömlek",
+            "rozet": "Yeni",
+            "baslik": "Keten Gömlek",
+            "metin": "Sıcak günler için hafif ve nefes alan.",
+            "dugmeYazisi": "İncele",
+            "baglanti": {
+              "adres": "/urun/keten-gomlek"
+            },
+            "zemin": "kutu-1"
+          },
+          {
+            "gorsel": "afis-kampanya-3-kirmizi.jpg",
+            "gorselMetni": "Kırmızı zeminde bitkili saksı ve mum",
+            "baslik": "Seramik Saksı",
+            "metin": "Salonunuza sıcak bir renk katar.",
+            "dugmeYazisi": "İncele",
+            "baglanti": {
+              "adres": "/urun/seramik-saksi"
+            },
+            "zemin": "kutu-4"
+          }
+        ]
+      }
+    },
+    {
+      "tur": "kategori-kutulari",
+      "gorunum": "izgara",
+      "degerler": {
+        "baslik": "Kategoriler",
+        "kategoriler": [
+          {
+            "kategori": "giyim",
+            "zemin": "kutu-1"
+          },
+          {
+            "kategori": "ev-ve-yasam",
+            "zemin": "kutu-2"
+          },
+          {
+            "kategori": "elektronik-aksesuar",
+            "zemin": "kutu-3"
+          },
+          {
+            "kategori": "spor-ve-outdoor",
+            "zemin": "kutu-4"
+          },
+          {
+            "kategori": "kisisel-bakim",
+            "zemin": "kutu-5"
+          }
+        ]
+      }
+    },
+    {
+      "tur": "urun-vitrini",
+      "gorunum": "izgara",
+      "degerler": {
+        "baslik": "Öne çıkanlar",
+        "urunler": {
+          "tur": "elle",
+          "urunler": [
+            "kablosuz-kulaklik",
+            "kapusonlu-sweatshirt",
+            "basic-tisort",
+            "keten-masa-ortusu",
+            "porselen-kupa",
+            "yoga-mati-6-mm",
+            "kosu-ayakkabisi",
+            "seramik-saksi",
+            "celik-termos-750-ml",
+            "zeytinyagli-sabun-seti-3lu"
+          ]
+        }
+      }
+    },
+    {
+      "tur": "urun-vitrini",
+      "gorunum": "izgara",
+      "degerler": {
+        "urunler": {
+          "tur": "yeni",
+          "adet": 4
+        },
+        "yanBaslik": "Yeni gelenler",
+        "yanMetin": "Kataloğa son eklenen ürünler.",
+        "yanGorsel": "afis-yan-1-yeni.jpg",
+        "yanGorselMetni": "Pembe zeminde katlanmış gömlek ve bez çanta"
+      }
+    },
+    {
+      "tur": "kampanya-afisleri",
+      "gorunum": "gorsel-solda",
+      "degerler": {
+        "afisler": [
+          {
+            "gorsel": "afis-gorselli-1-spor.jpg",
+            "gorselMetni": "Aydınlık odada serili yoga matı ve termos",
+            "baslik": "Spor ve Outdoor",
+            "metin": "Matınızı serin, termosunuzu doldurun.",
+            "dugmeYazisi": "İncele",
+            "baglanti": {
+              "adres": "/kategori/spor-ve-outdoor"
+            },
+            "zemin": "kutu-5"
+          },
+          {
+            "gorsel": "afis-gorselli-2-ev.jpg",
+            "gorselMetni": "Salonda sehpanın üstünde mum ve kupa",
+            "baslik": "Kokulu Mum",
+            "metin": "Ahşap fitiliyle akşamlara sıcaklık katar.",
+            "dugmeYazisi": "İncele",
+            "baglanti": {
+              "adres": "/urun/kokulu-mum"
+            },
+            "zemin": "kutu-4"
+          }
+        ]
+      }
+    },
+    {
+      "tur": "sekmeli-vitrin",
+      "gorunum": "izgara",
+      "degerler": {
+        "baslik": "Kategoriye göre",
+        "sekmeler": [
+          {
+            "baslik": "Giyim",
+            "urunler": {
+              "tur": "kategori",
+              "kategori": "giyim",
+              "adet": 6
+            }
+          },
+          {
+            "baslik": "Ev ve Yaşam",
+            "urunler": {
+              "tur": "kategori",
+              "kategori": "ev-ve-yasam",
+              "adet": 6
+            }
+          },
+          {
+            "baslik": "Elektronik Aksesuar",
+            "urunler": {
+              "tur": "kategori",
+              "kategori": "elektronik-aksesuar",
+              "adet": 6
+            }
+          },
+          {
+            "baslik": "Spor ve Outdoor",
+            "urunler": {
+              "tur": "kategori",
+              "kategori": "spor-ve-outdoor",
+              "adet": 6
+            }
+          },
+          {
+            "baslik": "Kişisel Bakım",
+            "urunler": {
+              "tur": "kategori",
+              "kategori": "kisisel-bakim",
+              "adet": 6
+            }
+          }
+        ],
+        "kartGorunumu": "yatay"
+      }
+    },
+    {
+      "tur": "firsatlar",
+      "gorunum": "yan-panelli",
+      "degerler": {
+        "ustYazi": "Süreli fırsatlar",
+        "baslik": "Bitmeden yakalayın",
+        "adet": "dort"
+      }
+    },
+    {
+      "tur": "musteri-yorumlari",
+      "degerler": {
+        "baslik": "Müşterilerimiz ne diyor"
+      }
+    },
+    {
+      "tur": "genis-afis",
+      "gorunum": "tam-genislik",
+      "degerler": {
+        "ustYazi": "Elektronik Aksesuar",
+        "baslik": "Bluetooth Hoparlör",
+        "metin": "Evde, piknikte ve yolda müziğiniz yanınızda.",
+        "dugmeYazisi": "İncele",
+        "baglanti": {
+          "adres": "/urun/bluetooth-hoparlor"
+        },
+        "zemin": "kutu-4",
+        "gorsel": "afis-genis-serit.jpg",
+        "gorselMetni": "Koyu zeminde kulaklık ve Bluetooth hoparlör"
+      }
+    },
+    {
+      "tur": "blog-yazilari",
+      "degerler": {
+        "baslik": "Blogdan"
+      }
+    },
+    {
+      "tur": "marka-logolari",
+      "gorunum": "izgara",
+      "gizli": true,
+      "degerler": {
+        "baslik": "Markalar",
+        "markalar": [
+          {
+            "marka": "ornek-ses"
+          }
+        ]
+      }
+    },
+    {
+      "tur": "bulten-kaydi",
+      "gorunum": "serit",
+      "degerler": {
+        "baslik": "Bültenimize katılın",
+        "metin": "Yeni ürünlerden ve indirimlerden ilk siz haberdar olun."
+      }
+    }
+  ],
+  "alt-kisim": [
+    {
+      "tur": "iletisim-bilgileri",
+      "gorunum": "liste"
+    },
+    {
+      "tur": "baglanti-sutunlari",
+      "gorunum": "sutunlu",
+      "degerler": {
+        "menu": "alt-bilgi"
+      }
+    },
+    {
+      "tur": "sosyal-hesaplar",
+      "gorunum": "liste"
+    },
+    {
+      "tur": "telif-satiri",
+      "gorunum": "duz"
+    },
+    {
+      "tur": "odeme-isaretleri",
+      "gorunum": "yazili"
+    }
+  ]
+}

@@ -93,6 +93,13 @@ describe("yorum bölümü", () => {
     expect(kap.textContent).toContain(metin("vitrin.yorum.yorumYaz"));
   });
 
+  // Kart 0116: tema demosunda ziyaretçi yalnız gezer, yorumlar okunur ama "Yorum yaz" yoktur.
+  it("tema demosunda (yorum yazılmaz) düğme yok, yorumlar görünür", () => {
+    const kap = ciz({ yorumYazilir: false, liste: { yorumlar: [yorum()], toplam: 1 } });
+    expect(kap.textContent).not.toContain(metin("vitrin.yorum.yorumYaz"));
+    expect(kap.querySelector("ul")).not.toBeNull();
+  });
+
   it("daha fazla yorum: toplam görülenden çoksa bağlantı, son sayfada bağlantısız durum yazısı", () => {
     const iki = { yorumlar: [yorum(), yorum()], toplam: 7 };
     const kap = ciz({ liste: iki, sonrakiAdres: "/urun/x?yorum-sayfasi=2#yorumlar" });

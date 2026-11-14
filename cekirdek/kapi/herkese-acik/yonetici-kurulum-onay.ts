@@ -17,6 +17,7 @@ import { ucTanimla } from "../uc.ts";
 
 export const yoneticiKurulumOnayUcu = ucTanimla({
   giris: "herkese-acik",
+  temaDemosunda: "acik",
   sema: kodSemasi,
   izin: herkeseAcik,
   sinir: "siki",
