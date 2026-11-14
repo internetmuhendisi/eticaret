@@ -49,15 +49,19 @@ const acikRenkler = (tema: TemaTanimi, ayarlar: TemaAyarlari): Record<RenkAdi, s
 export const temaAyariSorunlari = (tema: TemaTanimi, ayarlar: TemaAyarlari): TemaAyariSorunu[] => {
   const sorunlar: TemaAyariSorunu[] = [];
   const secenekler = tema.magazaSecenekleri;
-  const renkler = acikRenkler(tema, ayarlar);
+  const olcu = {
+    renkler: acikRenkler(tema, ayarlar),
+    baglar: tema.degerler.renkBaglari,
+    mod: "acik" as const,
+  };
   for (const [ad, renk] of Object.entries(ayarlar.renkler) as [RenkAdi, string][]) {
     const alan = `renkler.${ad}`;
     if (!secenekler.renkler.includes(ad)) {
       sorunlar.push({ alan, kod: "renk-degistirilemez" });
       continue;
     }
-    if (okunmayanCiftler(renkler, ad).length > 0) {
-      const oneri = okunurRenk(renkler, ad, renk);
+    if (okunmayanCiftler(olcu, ad).length > 0) {
+      const oneri = okunurRenk(olcu, ad, renk);
       sorunlar.push({ alan, kod: "kontrast-yetersiz", ...(oneri === undefined ? {} : { oneri }) });
     }
   }

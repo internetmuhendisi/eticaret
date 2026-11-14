@@ -22,6 +22,7 @@ import {
 } from "../../bilesenler/tasarim-degerleri/css.ts";
 import {
   genelYaziTipleri,
+  renkAdiMi,
   renkAdlari,
   type TemaDegerleri,
   yuklenenYaziTipleri,
@@ -95,8 +96,11 @@ const yukluMu = (liste: string): boolean =>
 
 const kontrastSorunlari = (degerler: TemaDegerleri): Sorun[] =>
   (["acik", "koyu"] as const).flatMap((mod) =>
-    okunmayanCiftler(degerler.renkler[mod]).map(
-      ({ on }): Sorun => ({ yer: ["degerler", "renkler", mod, on], kod: "kontrast-yetersiz" }),
+    okunmayanCiftler({ renkler: degerler.renkler[mod], baglar: degerler.renkBaglari, mod }).map(
+      ({ on }): Sorun => ({
+        yer: renkAdiMi(on) ? ["degerler", "renkler", mod, on] : ["degerler", "renkBaglari", on],
+        kod: "kontrast-yetersiz",
+      }),
     ),
   );
 

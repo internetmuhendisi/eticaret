@@ -47,6 +47,7 @@ Tasarım değeri, renk, yazı boyutu, boşluk gibi tasarımı oluşturan ve tek 
 - Temanın başvurduğu bölüm türleri ve parça görünümleri `cekirdek/kayitlar/tema.ts` kaydındadır. Yeni bölüm ya da görünüm önce kayda eklenir; kayıtta olmayana başvuran tema açılmaz.
 - Tema yalnız sitede barındırılan yazı tiplerini (`yuklenenYaziTipleri`) ve cihazın genel yazı tiplerini kullanır.
 - Hazır temalar Canlı Çarşı, Yumuşak Mevsim ve Keskin Çizgi'dir (karar 0092). Değerleri `degerler.ts`'tedir (ham renk yalnız orada yazılır), mağaza sahibinin seçenekleri ve başlangıç düzeni üç temada ortaktır (`cekirdek/temalar/hazir/magaza-secenekleri.ts`, `baslangic-duzeni.ts`).
+- Temadan temaya değişen görünüş tema değeriyle yazılır, bileşende temaya göre koşul yazılmaz (karar 0126). Başka bir renkle aynı olan ya da onu izlemesi gereken renk bağlı renktir (`renkBaglari`); okunurluk bağlar çözülerek ölçülür. Başlık biçimi `font-baslik`'e bağlıdır, tema boşlukları ve ürün sütunu kendi sınıflarıyla okunur.
 - Mağaza sahibinin tema ayarlarının şeması `cekirdek/temalar/ayarlar.ts`, sürümleri `cekirdek/moduller/tema/` modülündedir. Başlangıç değeri `siteler/<kod>/baslangic/tema.json`.
 - Renk okunurluğu tek yerde ölçülür (`cekirdek/temalar/okunurluk.ts`): temanın kendi değerleri, mağaza sahibinin rengi ve panelin ana rengi aynı ölçüden geçer.
 - Yeni CSS dosyası açılmaz. Stil sınıfla yazılır, temel stil `tailwind.css` içindedir.

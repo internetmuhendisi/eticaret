@@ -3,11 +3,13 @@
 // adları tanır. Adlar ve sabit değerler degerler.ts'ten okunur, burada değer yazılmaz.
 // Tema değerleri CSS değişkenidir: sınıf değişkeni okur, değişkenin değerini sayfa yazar (css.ts).
 import {
+  bagliRenkAdlari,
   golgeAdlari,
   kalinlikAdlari,
   koseAdlari,
   renkAdlari,
   sabitDegerler,
+  temaBoslukAdlari,
   yaziBoyuAdlari,
   yaziTipiAdlari,
 } from "./degerler.ts";
@@ -28,6 +30,7 @@ export default {
       current: "currentcolor",
       inherit: "inherit",
       ...eslestir(renkAdlari, (ad) => degisken(degiskenAdi.renk(ad))),
+      ...eslestir(bagliRenkAdlari, (ad) => degisken(degiskenAdi.renk(ad))),
     },
     boxShadow: {
       none: "none",
@@ -43,7 +46,18 @@ export default {
       none: "0px",
       ...eslestir(koseAdlari, (ad) => degisken(degiskenAdi.kose(ad))),
     },
-    spacing: sabitDegerler.bosluklar,
+    // Sabit ölçek ve temadan gelen boşluklar (kart 0124: p-kart-ici, gap-bolum).
+    spacing: {
+      ...sabitDegerler.bosluklar,
+      ...eslestir(temaBoslukAdlari, (ad) => degisken(degiskenAdi.bosluk(ad))),
+    },
+    // Tam genişlikteki ürün ızgarasının ve şeridinin geniş ekrandaki sütunları temanın sayısıdır (kart 0124).
+    gridTemplateColumns: {
+      urun: `repeat(${degisken(degiskenAdi.urunSutunu)}, minmax(0, 1fr))`,
+    },
+    flexBasis: {
+      urun: `calc(100% / ${degisken(degiskenAdi.urunSutunu)})`,
+    },
     screens: sabitDegerler.kirilmaNoktalari,
     maxWidth: sabitDegerler.genislikler,
     zIndex: sabitDegerler.katmanlar,

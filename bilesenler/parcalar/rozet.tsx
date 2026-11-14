@@ -9,7 +9,8 @@ export const rozetSiniflari = cva(
   {
     variants: {
       tur: {
-        birincil: "border-transparent bg-birincil text-birincil-ustu",
+        // Temanın rozet rengi (kart 0124): çoğu temada ana renge bağlıdır, Keskin Çizgi'de sarıdır.
+        birincil: "border-transparent bg-rozet text-rozet-ustu",
         ikincil: "border-transparent bg-yuzey text-yazi",
         cerceveli: "border-yazi bg-transparent text-yazi",
         // Koyu rozet: "Tükendi" ve öne çıkan etiketler.

@@ -55,7 +55,7 @@ export function GuvenSeridiGorunumu({ gorunum, degerler: ham, baglam }: BolumGor
               kutulu ? "rounded-orta border border-kenar p-4" : "justify-center",
             )}
           >
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-dugme bg-yuzey text-yazi">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-dugme bg-yuzey text-vurgu-yazi">
               <Ikon ad={madde.ikon} />
             </span>
             <span className="min-w-0 wrap-anywhere">{madde.yazi}</span>

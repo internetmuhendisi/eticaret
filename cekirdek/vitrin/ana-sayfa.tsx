@@ -30,7 +30,7 @@ export function AnaSayfa({
 }) {
   if (duzen !== undefined && duzen.bolumler.length > 0) {
     return (
-      <main className="flex flex-col gap-10 pb-10 masaustu:gap-12 masaustu:pb-12">
+      <main className="flex flex-col gap-bolum pb-bolum masaustu:gap-bolum-masaustu masaustu:pb-bolum-masaustu">
         <h1 className="sr-only">{magazaAdi}</h1>
         <DuzenAlaniCizimi {...duzen} />
       </main>

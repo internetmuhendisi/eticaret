@@ -3,7 +3,10 @@
 // kapatılması ve şemaya uymayan ya da okunamayan değerde sayfanın düşmemesi.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { temaDegerleriCss } from "../../../bilesenler/tasarim-degerleri/css.ts";
-import { varsayilanTemaDegerleri } from "../../../bilesenler/tasarim-degerleri/degerler.ts";
+import {
+  type TemaDegerleri,
+  varsayilanTemaDegerleri,
+} from "../../../bilesenler/tasarim-degerleri/degerler.ts";
 import { degiskenAdi } from "../../../bilesenler/tasarim-degerleri/degisken-adlari.ts";
 import { kontrastOrani } from "../../../bilesenler/tasarim-degerleri/kontrast.ts";
 import { ornekRenk } from "../../../bilesenler/tasarim-degerleri/testler/ornek-renkler.ts";
@@ -30,6 +33,12 @@ const tema = temaTanimiSemasi().parse(denemeTemasi());
 const ayar = (girdi: Parameters<typeof temaAyarlariSemasi.parse>[0]) =>
   temaAyarlariSemasi.parse(girdi);
 
+// Değerlerin bir temadaki okunurluk ölçüsü (bağlarıyla, kart 0124).
+const olcu = (degerler: TemaDegerleri, mod: "acik" | "koyu") => ({
+  renkler: degerler.renkler[mod],
+  baglar: degerler.renkBaglari,
+  mod,
+});
 describe("temanın değerleri ile mağaza sahibinin ayarları", () => {
   it("ayar yoksa temanın kendi değerleri", () => {
     expect(temaBirlesimi(tema, ayar({}))).toEqual(tema.degerler);
@@ -54,8 +63,8 @@ describe("temanın değerleri ile mağaza sahibinin ayarları", () => {
     );
     expect(degerler.renkler.acik.birincil).toBe(ornekRenk.koyuKirmizi);
     expect(degerler.renkler.koyu.birincil).not.toBe(ornekRenk.koyuKirmizi);
-    expect(okunmayanCiftler(degerler.renkler.koyu, "birincil")).toEqual([]);
-    expect(okunmayanCiftler(degerler.renkler.acik, "birincil")).toEqual([]);
+    expect(okunmayanCiftler(olcu(degerler, "koyu"), "birincil")).toEqual([]);
+    expect(okunmayanCiftler(olcu(degerler, "acik"), "birincil")).toEqual([]);
   });
 
   it("birbirine bağlı iki renk birlikte seçilince açık temada aynen çizilir, kaydın sırası fark etmez", () => {
@@ -71,7 +80,7 @@ describe("temanın değerleri ile mağaza sahibinin ayarları", () => {
       const degerler = temaBirlesimi(ikiRenkli, ayar({ renkler }));
       expect(degerler.renkler.acik.birincil).toBe(ornekRenk.sari);
       expect(degerler.renkler.acik["birincil-ustu"]).toBe(ornekRenk.siyah);
-      expect(okunmayanCiftler(degerler.renkler.koyu, "birincil")).toEqual([]);
+      expect(okunmayanCiftler(olcu(degerler, "koyu"), "birincil")).toEqual([]);
     }
   });
 

@@ -139,7 +139,18 @@
       "kucuk": "4px",
       "orta": "8px",
       "dugme": "9999px"
-    }
+    },
+    "renkBaglari": {
+      "rozet": "birincil",
+      "rozet-ustu": "birincil-ustu",
+      "afis-dugmesi": "yazi",
+      "afis-dugmesi-ustu": "zemin",
+      "vurgu-yazi": "yazi",
+      "kart-kenari": "kenar"
+    },
+    "baslikBicimi": { "donusum": "none", "harfAraligi": "normal" },
+    "bosluklar": { "kart-ici": "0.75rem", "bolum": "2.5rem", "bolum-masaustu": "3rem" },
+    "urunSutunu": 5
   },
   "magazaSecenekleri": {
     "renkler": ["birincil"],

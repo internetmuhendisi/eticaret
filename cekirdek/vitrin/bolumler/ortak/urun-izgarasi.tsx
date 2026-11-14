@@ -40,8 +40,9 @@ export const bolumunKartGorunumu = (baglam: VitrinBaglami, deger: unknown): Urun
   return urunKartiGorunumu(baglam.parcaGorunumleri, secim === "tema" ? undefined : secim);
 };
 
-// Izgaranın sütunları (Canlı Çarşı taslağı). Dikey kart geniş ekranda beş, masaüstünde dört, tablette üç,
-// telefonda iki sütundur; yan afişin yanında bir sütun azdır. Yatay kart dar yerler içindir ama düğmeleri ve
+// Izgaranın sütunları (Canlı Çarşı taslağı). Dikey kart geniş ekranda temanın sayısı kadar (urunSutunu, kart 0124:
+// Canlı Çarşı beş, Yumuşak Mevsim dört), masaüstünde dört, tablette üç, telefonda iki sütundur; yan afişin yanında
+// geniş ekranda dörttür (üç temanın taslağı). Yatay kart dar yerler içindir ama düğmeleri ve
 // fiyatı sığmalı: telefonda bir, masaüstünde en çok üç (dörtte fiyat kırılıyordu, görüntüde ölçüldü); aralığı
 // taslaktaki gibi 12 px'tir. Fırsatlarda panelin yanında kartlar iki sütundur.
 // Filtreli liste (kart 0136): solda filtre sütunuyla masaüstünde üç sütun (Canlı Çarşı taslağı).
@@ -63,11 +64,11 @@ export const izgaraSiniflari = (kart: UrunKartiGorunumu, yer: IzgaraYeri): strin
   }
   return yer === "yanli"
     ? "gap-4 grid-cols-2 tablet:grid-cols-3 genis:grid-cols-4"
-    : "gap-4 grid-cols-2 tablet:grid-cols-3 masaustu:grid-cols-4 genis:grid-cols-5";
+    : "gap-4 grid-cols-2 tablet:grid-cols-3 masaustu:grid-cols-4 genis:grid-cols-urun";
 };
 
 export const seritSiniflari: Record<UrunKartiGorunumu, string> = {
-  dikey: "basis-1/2 tablet:basis-1/3 masaustu:basis-1/4 genis:basis-1/5",
+  dikey: "basis-1/2 tablet:basis-1/3 masaustu:basis-1/4 genis:basis-urun",
   yatay: "basis-full tablet:basis-1/2 masaustu:basis-1/3",
   "buyuk-gorsel": "basis-3/4 tablet:basis-1/2 masaustu:basis-1/3",
 };
@@ -174,7 +175,7 @@ export function BolumBasligi({
       {baglanti === undefined ? null : (
         <Link
           href={baglanti.adres}
-          className="inline-flex min-h-11 items-center font-kalin text-yazi underline"
+          className="inline-flex min-h-11 items-center font-kalin text-vurgu-yazi underline"
           {...yeniSekmeOzellikleri(baglanti.yeniSekme)}
         >
           {metin("vitrin.bolum.urun.tumunuGor")}

@@ -41,9 +41,11 @@ describe("geçerli tema", () => {
       const sonuc = hazirTemayiOku(kod);
       if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
       for (const mod of ["acik", "koyu"] as const) {
-        expect(okunmayanCiftler(sonuc.tema.tanim.degerler.renkler[mod]), `${kod} ${mod}`).toEqual(
-          [],
-        );
+        const { degerler } = sonuc.tema.tanim;
+        expect(
+          okunmayanCiftler({ renkler: degerler.renkler[mod], baglar: degerler.renkBaglari, mod }),
+          `${kod} ${mod}`,
+        ).toEqual([]);
       }
     }
   });
@@ -207,6 +209,16 @@ describe("bozuk tema açılmaz", () => {
     const bulunan = sorunlar(tema);
     expect(bulunan).toContainEqual(["degerler.renkler.koyu.soluk-yazi", "kontrast-yetersiz"]);
     expect(bulunan).toContainEqual(["degerler.renkler.acik.odak", "kontrast-yetersiz"]);
+  });
+
+  // Kart 0124: bağlı renk çözülerek ölçülür; sorun bağın yeriyle döner.
+  it("bağlı rengi okunmayan tema açılmaz", () => {
+    const tema = kutuphaneliDenemeTemasi();
+    tema.degerler.renkBaglari.rozet = ornekRenk.beyaz;
+    tema.degerler.renkBaglari["rozet-ustu"] = { acik: "zemin", koyu: "yazi" };
+    const bulunan = sorunlar(tema);
+    expect(bulunan).toContainEqual(["degerler.renkBaglari.rozet-ustu", "kontrast-yetersiz"]);
+    expect(bulunan.filter(([yer]) => String(yer).startsWith("degerler.renkler"))).toEqual([]);
   });
 
   it("çekirdeğin kütüphanesiyle kütüphaneli deneme teması geçmez", () => {

@@ -48,6 +48,19 @@ Sınıfta `bg-`, `text-`, `border-`, `outline-`, `accent-` önekleriyle yazılı
 
 `birincil` işaret değildir: açık zeminde 3:1'in altında kalabilir. Düğmeyi üstündeki yazı tanıtır. Birincil renk tek başına bir durumu göstermek için (onay kutusu, ilerleme) kullanılmaz.
 
+#### Bağlı renkler (kart 0124, karar 0126)
+
+Tema bu renkleri ya kendi rengiyle verir ya da bir renk adına bağlar (`renkBaglari`); bağ açık ve koyu temada ayrı olabilir. Bağlı renk sayfada bağlandığı rengin değişkenini okur: mağaza sahibi ana rengi değiştirince ana renge bağlı olanlar da değişir. Sınıfta öteki renkler gibi yazılır (`bg-rozet`).
+
+| Ad | Ne için | Canlı Çarşı | Yumuşak Mevsim | Keskin Çizgi |
+|---|---|---|---|---|
+| `rozet`, `rozet-ustu` | İndirim rozeti, afişin üst yazısı, üst satırdaki sayı (`Rozet`'in varsayılan türü) | ana renk | ana renk | sarı, koyu yazı |
+| `afis-dugmesi`, `afis-dugmesi-ustu` | Kayan afişin düğmesi (`Dugme`'nin `afis` türü) | yazı rengi | ana renk | sarı, koyu yazı |
+| `vurgu-yazi` | "Tümünü gör" bağlantısı, güven şeridinin ikonu | yazı rengi | ana renk | ana renk |
+| `kart-kenari` | Ürün kartının kenarı | kenar | kartın zemini (kenarsız) | kenar |
+
+Okunurluk bağları çözerek ölçülür (`renkleriCoz`, `cekirdek/temalar/okunurluk.ts`): bir rengin çiftleri ona bağlı renklerin çiftlerini de kapsar. Bu yüzden Yumuşak Mevsim'de ve Keskin Çizgi'de mağaza sahibinin ana rengi zeminde yazı olarak da okunur olmalıdır.
+
 ### Öteki tema değerleri
 
 | Tür | Sınıf | Adlar |
@@ -56,7 +69,10 @@ Sınıfta `bg-`, `text-`, `border-`, `outline-`, `accent-` önekleriyle yazılı
 | Kalınlık | `font-` | `normal`, `orta`, `kalin`, `en-kalin` (düğme ve rozet), `baslik-kalinligi` |
 | Yazı boyu (satır yüksekliğiyle) | `text-` | küçükten büyüğe `kucuk`, `govde`, `orta`, `buyuk`, `baslik-4`, `baslik-3`, `baslik-2`, `baslik-1`, `afis-basligi` |
 | Köşe | `rounded-` | `kucuk` (rozet), `orta` (kart, alan), `dugme`; ayrıca `none`, `full` |
-| Gölge | `shadow-` | `kart`, `acilir`, `pencere`; ayrıca `none` |
+| Gölge | `shadow-` | `kart`, `acilir`, `pencere`; ayrıca `none`. Gölge virgülle ayrılmış birkaç katman olabilir |
+| Tema boşluğu (kart 0124) | `p-`, `gap-`... | `kart-ici` (dikey ürün kartının yazı alanı), `bolum` ve `bolum-masaustu` (ana sayfada bölümler arası) |
+| Ürün sütunu (kart 0124) | `grid-cols-urun`, `basis-urun` | geniş ekranda tam genişlikteki ürün ızgarasının ve şeridinin sütun sayısı (`urunSutunu`); yan afişli ızgara üç temada dörttür |
+| Başlık biçimi (kart 0124) | `baslik-bicimi` | büyük harfe çevirme ve harf aralığı (`baslikBicimi`); `font-baslik` sınıflı her yazı ve `h1`–`h4` temel katmanda kendiliğinden alır, başka bir öğe (afiş düğmesi) bu sınıfla alır |
 
 Tailwind'de renk ile yazı boyu (`text-`), yazı tipi ile kalınlık (`font-`) aynı önekle yazılır. Bu yüzden iki türün adları çakışmaz; bunu `testler/tailwind.test.ts` denetler.
 
@@ -132,7 +148,7 @@ Koyu değerler `degerler.ts`'te açık değerlerin yanındadır ve cihazın terc
 
 ## Kontrast
 
-`yaziCiftleri` ve `isaretCiftleri` her iki temada ölçülür (`testler/kontrast.test.ts`): yazı en az 4,5:1, alan kenarı, odak ve hatalı alanın kenarı gibi işaretler en az 3:1. Yeni bir yazı-zemin eşleşmesi kullanılacaksa önce listeye eklenir. Tarayıcı testi (`cekirdek/testler/uctan-uca/tasarim-degerleri.test.ts`) form parçalarının gerçekten çizilen renklerini de ölçer.
+`yaziCiftleri` ve `isaretCiftleri` üç hazır temanın her iki renk temasında, bağlı renkler çözülerek ölçülür (`testler/kontrast.test.ts`): yazı en az 4,5:1, alan kenarı, odak ve hatalı alanın kenarı gibi işaretler en az 3:1. Yeni bir yazı-zemin eşleşmesi kullanılacaksa önce listeye eklenir. Tarayıcı testi (`cekirdek/testler/uctan-uca/tasarim-degerleri.test.ts`) form parçalarının gerçekten çizilen renklerini de ölçer.
 
 ## Yazı tipleri
 

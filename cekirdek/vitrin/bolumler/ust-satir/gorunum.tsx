@@ -22,7 +22,7 @@ type Simge = { adres: string; ikon: IkonAdi; etiket: string; sayi?: number | und
 // Sepetteki ve favorilerdeki ürün sayısı: yuvarlak, ana renkte. Simge köşesinde durur; yazılı haptaki sayı satırın
 // içindedir. Sıfır yalnız haptaki sayıda görünür.
 const sayiSiniflari =
-  "inline-flex h-5 min-w-5 items-center justify-center rounded-dugme bg-birincil px-1.5 text-kucuk font-kalin text-birincil-ustu";
+  "inline-flex h-5 min-w-5 items-center justify-center rounded-dugme bg-rozet px-1.5 text-kucuk font-kalin text-rozet-ustu";
 
 // Yalnız ikonlu bağlantı (arama, favori); telefonda gizlenebilir. Favorinin sayısı tarayıcıda, favori durumundan
 // gelir (kart 0140): sayfada tek istek gider, düğmeler değişince sayı da değişir.

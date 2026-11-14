@@ -7,11 +7,13 @@ import { compile } from "@tailwindcss/node";
 import { describe, expect, it } from "vitest";
 import { temaDegerleriCss } from "../css.ts";
 import {
+  bagliRenkAdlari,
   golgeAdlari,
   kalinlikAdlari,
   koseAdlari,
   renkAdlari,
   sabitDegerler,
+  temaBoslukAdlari,
   varsayilanTemaDegerleri,
   yaziBoyuAdlari,
   yaziTipiAdlari,
@@ -79,6 +81,12 @@ describe("Tailwind yalnız tasarım değerlerini tanır", () => {
       ...Object.keys(sabitDegerler.genislikler).map((ad) => `max-w-${ad}`),
       ...Object.keys(sabitDegerler.katmanlar).map((ad) => `z-${ad}`),
       ...Object.keys(sabitDegerler.kirilmaNoktalari).map((ad) => `${ad}:p-4`),
+      // Kart 0124: bağlı renkler, tema boşlukları, ürün sütunu ve başlık biçimi.
+      ...bagliRenkAdlari.flatMap((ad) => [`bg-${ad}`, `text-${ad}`, `border-${ad}`]),
+      ...temaBoslukAdlari.flatMap((ad) => [`p-${ad}`, `gap-${ad}`]),
+      "grid-cols-urun",
+      "basis-urun",
+      "baslik-bicimi",
     ];
     for (const derle of [uygulama, sahipPaneli]) {
       for (const sinif of beklenen) expect(uretir(derle, sinif), sinif).toBe(true);
@@ -128,6 +136,11 @@ describe("Tailwind yalnız tasarım değerlerini tanır", () => {
       ...kalinlikAdlari.map((ad) => `font-${ad}`),
       ...yaziBoyuAdlari.map((ad) => `text-${ad}`),
       ...koseAdlari.map((ad) => `rounded-${ad}`),
+      ...bagliRenkAdlari.map((ad) => `bg-${ad}`),
+      ...temaBoslukAdlari.map((ad) => `p-${ad}`),
+      "grid-cols-urun",
+      "basis-urun",
+      "baslik-bicimi",
     ];
     const okunan = new Set(
       [...uygulama(siniflar).matchAll(/var\((--[a-z0-9-]+)\)/g)]
@@ -141,6 +154,26 @@ describe("Tailwind yalnız tasarım değerlerini tanır", () => {
     );
     expect(okunan.size).toBeGreaterThan(renkAdlari.length);
     for (const ad of okunan) expect(tanimli.has(ad), ad).toBe(true);
+  });
+
+  // Kart 0124: temanın başlık biçimi "font-baslik" sınıflı her yazıya ve sınıfsız başlıklara temel katmanda
+  // uygulanır; bir öğenin kendi sınıfı (normal-case) onu geçer.
+  it("başlık biçimi font-baslik'e ve başlıklara temel katmanda bağlıdır", () => {
+    const cikti = uygulama([]);
+    // Kuralın bulunduğu katman: kuraldan önceki en yakın "@layer" bloğu.
+    const katmani = (kalip: RegExp) => {
+      const bulunan = kalip.exec(cikti);
+      if (bulunan === null) return null;
+      const oncesi = [...cikti.slice(0, bulunan.index).matchAll(/@layer ([a-z]+) \{/g)];
+      return oncesi.at(-1)?.[1] ?? null;
+    };
+    expect(
+      katmani(
+        /\.font-baslik\s*\{[^}]*text-transform:\s*var\(--baslik-donusumu\);[^}]*letter-spacing:\s*var\(--baslik-harf-araligi\)/,
+      ),
+    ).toBe("base");
+    expect(katmani(/h4\s*\{[^}]*text-transform:\s*var\(--baslik-donusumu\)[^}]*\}/)).toBe("base");
+    expect(uygulama(["grid-cols-urun"])).toContain("repeat(var(--urun-sutunu), minmax(0, 1fr))");
   });
 
   // Tailwind 4 ayar dosyasındaki keyframes alanını CSS'e yazmaz (ölçüldü): hareket tanımı olmayan

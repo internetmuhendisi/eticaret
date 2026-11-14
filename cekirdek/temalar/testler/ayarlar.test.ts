@@ -71,12 +71,49 @@ describe("ayarların temaya göre sorunları", () => {
     const oneri = sorun?.oneri ?? "";
     expect(oneri).toMatch(/^#[0-9A-F]{6}$/);
     expect(
-      okunmayanCiftler({ ...tema.degerler.renkler.acik, birincil: oneri }, "birincil"),
+      okunmayanCiftler(
+        {
+          renkler: { ...tema.degerler.renkler.acik, birincil: oneri },
+          baglar: tema.degerler.renkBaglari,
+          mod: "acik",
+        },
+        "birincil",
+      ),
     ).toEqual([]);
     // Öneri asıl renkten açıktır ve okunur olan tonların en yakınıdır: bir adım koyusu okunmaz.
     expect(kontrastOrani(tema.degerler.renkler.acik["birincil-ustu"], oneri)).toBeLessThan(4.6);
     // Önerinin kendisi kaydedilebilir.
     expect(sorunlari({ renkler: { birincil: oneri } })).toEqual([]);
+  });
+
+  // Kart 0124 (kullanıcı kararı): vurgu yazısı ana renge bağlıysa (Yumuşak Mevsim, Keskin Çizgi) mağaza
+  // sahibinin ana rengi zeminde yazı olarak da okunur olmalıdır; bağ yokken aynı renk kaydedilir.
+  it("ana renge bağlı vurgu yazısı varsa ana renk zeminde de okunur olmalı", () => {
+    const bagli = structuredClone(tema);
+    bagli.degerler.renkBaglari["vurgu-yazi"] = "birincil";
+    const sorunlariBagli = (birincil: string) =>
+      temaAyariSorunlari(bagli, temaAyarlariSemasi.parse({ renkler: { birincil } }));
+    const olcu = (birincil: string) => ({
+      renkler: { ...bagli.degerler.renkler.acik, birincil },
+      baglar: bagli.degerler.renkBaglari,
+      mod: "acik" as const,
+    });
+    // Bağ yokken turuncu kaydedilir (ana rengin üstündeki yazı koyudur); bağ varken turuncu beyaz zeminde
+    // bağlantı olarak okunmaz. Koyu yazı açık, bağlantı koyu ton ister: ikisini birden sağlayan ton yoktur.
+    expect(sorunlari({ renkler: { birincil: ornekRenk.turuncu } })).toEqual([]);
+    expect(sorunlariBagli(ornekRenk.turuncu)).toEqual([
+      { alan: "renkler.birincil", kod: "kontrast-yetersiz" },
+    ]);
+    // Ana rengin çiftleri ona bağlı vurgunun çiftlerini de kapsar.
+    expect(okunmayanCiftler(olcu(ornekRenk.turuncu), "birincil")).toContainEqual(
+      expect.objectContaining({ on: "vurgu-yazi", arka: "zemin" }),
+    );
+    // Ana rengin üstündeki yazı beyazken (Yumuşak Mevsim, Keskin Çizgi) iki çift de koyu ton ister: önerilen
+    // ton ikisinde de geçer.
+    bagli.degerler.renkler.acik["birincil-ustu"] = ornekRenk.beyaz;
+    const [sorun] = sorunlariBagli(ornekRenk.turuncu);
+    expect(sorun?.oneri).toMatch(/^#[0-9A-F]{6}$/);
+    expect(okunmayanCiftler(olcu(sorun?.oneri ?? ""), "birincil")).toEqual([]);
   });
 
   it("hiçbir tonu okunur olmayan renkte öneri yoktur", () => {

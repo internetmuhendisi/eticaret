@@ -39,6 +39,14 @@
   max-height: var(--radix-dropdown-menu-content-available-height);
 }
 
+/* Temanın başlık biçimi (kart 0124): büyük harf ve harf aralığı. "font-baslik" sınıflı her yazı bunu alır
+   (aşağıdaki temel kural); başlık olmayan bir öğe (kayan afişin düğmesi) aynı biçimi bu sınıfla alır. Değerler
+   sayfaya temadan yazılır (css.ts). */
+@utility baslik-bicimi {
+  text-transform: var(--baslik-donusumu);
+  letter-spacing: var(--baslik-harf-araligi);
+}
+
 /* Dokunma alanı (kart 0191): küçük görünen bağlantı ya da düğmenin basılan alanı ortasında en az 44 × 44 px'tir
    (.claude/rules/telefon-gorunumu.md). Görünüş ve yerleşim değişmez: alan görünmez bir ::before'dur, öğe büyükse
    öğenin kendisi kadardır. ::after'ı kullanan kalıplarla (kartın kabına yayılan bağlantı) çakışmaz. Komşu basılan
@@ -83,7 +91,7 @@
     @apply list-decimal pl-6;
   }
   & h3 {
-    @apply font-baslik text-buyuk font-baslik-kalinligi;
+    @apply font-baslik text-buyuk font-baslik-kalinligi baslik-bicimi;
   }
   & h4,
   & strong,
@@ -216,7 +224,12 @@
   h2,
   h3,
   h4 {
-    @apply font-baslik font-baslik-kalinligi;
+    @apply font-baslik font-baslik-kalinligi baslik-bicimi;
+  }
+
+  /* Temel katmandadır: bir öğenin kendi sınıfı (normal-case) bunu geçersiz kılar. */
+  .font-baslik {
+    @apply baslik-bicimi;
   }
 
   h1 {

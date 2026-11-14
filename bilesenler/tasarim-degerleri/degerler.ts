@@ -51,6 +51,49 @@ export const renkAdlari = [
 ] as const;
 export type RenkAdi = (typeof renkAdlari)[number];
 
+// Bağlı renkler (kart 0124): tema her birini ya kendi rengiyle verir ya da bir renk adına bağlar. Bağlı renk
+// sayfada o rengin değişkenini okur: mağaza sahibi ana rengi değiştirince ana renge bağlı rozet de değişir
+// (renkBaglari). Bağ her temada (açık ve koyu) ayrı verilebilir.
+// - rozet / rozet-ustu: indirim rozeti, afişin üst yazısı, üst satırdaki sayı.
+// - afis-dugmesi / afis-dugmesi-ustu: kayan afişin düğmesi.
+// - vurgu-yazi: "Tümünü gör" bağlantısı ve güven şeridinin ikonları.
+// - kart-kenari: ürün kartının kenarı (kartın kendi zeminine bağlanınca kenarsız görünür).
+export const bagliRenkAdlari = [
+  "rozet",
+  "rozet-ustu",
+  "afis-dugmesi",
+  "afis-dugmesi-ustu",
+  "vurgu-yazi",
+  "kart-kenari",
+] as const;
+export type BagliRenkAdi = (typeof bagliRenkAdlari)[number];
+export type TumRenkAdi = RenkAdi | BagliRenkAdi;
+
+// Bir renk adı ya da "#rrggbb" (ayrımı renkAdiMi yapar; biçimi css.ts'teki şema denetler).
+export type RenkKaynagi = string;
+export type RenkBagi = RenkKaynagi | { acik: RenkKaynagi; koyu: RenkKaynagi };
+
+export const renkAdiMi = (kaynak: string): kaynak is RenkAdi =>
+  (renkAdlari as readonly string[]).includes(kaynak);
+
+// Bağlı rengin verilen temadaki kaynağı: renk adı ya da renk.
+export const bagKaynagi = (bag: RenkBagi, mod: "acik" | "koyu"): RenkKaynagi =>
+  typeof bag === "string" ? bag : bag[mod];
+
+// Bir temanın bütün renkleri (bağlı renkler çözülmüş): okunurluk ve kontrast ölçüsü bunu kullanır.
+export const renkleriCoz = (
+  renkler: Readonly<Record<RenkAdi, string>>,
+  baglar: Readonly<Record<BagliRenkAdi, RenkBagi>>,
+  mod: "acik" | "koyu",
+): Record<TumRenkAdi, string> => {
+  const cozulmus = { ...renkler } as Record<TumRenkAdi, string>;
+  for (const ad of bagliRenkAdlari) {
+    const kaynak = bagKaynagi(baglar[ad], mod);
+    cozulmus[ad] = renkAdiMi(kaynak) ? renkler[kaynak] : kaynak;
+  }
+  return cozulmus;
+};
+
 export const golgeAdlari = ["kart", "acilir", "pencere"] as const;
 export type GolgeAdi = (typeof golgeAdlari)[number];
 
@@ -101,13 +144,29 @@ export type YaziBoyuAdi = (typeof yaziBoyuAdlari)[number];
 export const koseAdlari = ["kucuk", "orta", "dugme"] as const;
 export type KoseAdi = (typeof koseAdlari)[number];
 
+// Temadan temaya değişen boşluklar (kart 0124); öteki boşluklar sabit ölçektedir (sabitDegerler.bosluklar).
+// - kart-ici: dikey ürün kartının yazı alanının iç boşluğu.
+// - bolum / bolum-masaustu: ana sayfada bölümler arası boşluk; telefon ve tablette, masaüstünde.
+export const temaBoslukAdlari = ["kart-ici", "bolum", "bolum-masaustu"] as const;
+export type TemaBoslukAdi = (typeof temaBoslukAdlari)[number];
+
+// Başlıkların biçimi (kart 0124): büyük harfe çevrilmesi ve harf aralığı. "font-baslik" sınıflı her yazıya
+// uygulanır (tailwind.css); kayan afişin düğmesi de aynı biçimi alır.
+export const baslikDonusumleri = ["none", "uppercase"] as const;
+
 export type TemaDegerleri = {
   renkler: { acik: Record<RenkAdi, string>; koyu: Record<RenkAdi, string> };
+  renkBaglari: Record<BagliRenkAdi, RenkBagi>;
   golgeler: { acik: Record<GolgeAdi, string>; koyu: Record<GolgeAdi, string> };
   yaziTipleri: Record<YaziTipiAdi, string>;
   kalinliklar: Record<KalinlikAdi, string>;
   yaziBoylari: Record<YaziBoyuAdi, { boy: string; satir: string }>;
   koseler: Record<KoseAdi, string>;
+  baslikBicimi: { donusum: (typeof baslikDonusumleri)[number]; harfAraligi: string };
+  bosluklar: Record<TemaBoslukAdi, string>;
+  // Geniş ekranda (kirilmaNoktalari.genis) tam genişlikteki ürün ızgarasının ve şeridinin bir sıradaki kart
+  // sayısı. Yan afişin yanındaki ızgara üç temada da dört sütundur (taslak).
+  urunSutunu: number;
 };
 
 // Yazı tiplerinin adları: dosyaları sitede barındırılır (tailwind.css, @fontsource-variable paketleri),
@@ -224,6 +283,18 @@ export const varsayilanTemaDegerleri: TemaDegerleri = {
     "afis-basligi": { boy: "3rem", satir: "1.08" },
   },
   koseler: { kucuk: "4px", orta: "8px", dugme: "9999px" },
+  // Rozet ana renktir, afiş düğmesi koyu (yazı renginde), vurgu yazı rengindedir, kartın ince kenarı vardır.
+  renkBaglari: {
+    rozet: "birincil",
+    "rozet-ustu": "birincil-ustu",
+    "afis-dugmesi": "yazi",
+    "afis-dugmesi-ustu": "zemin",
+    "vurgu-yazi": "yazi",
+    "kart-kenari": "kenar",
+  },
+  baslikBicimi: { donusum: "none", harfAraligi: "normal" },
+  bosluklar: { "kart-ici": "0.75rem", bolum: "2.5rem", "bolum-masaustu": "3rem" },
+  urunSutunu: 5,
 };
 
 // Öteki iki hazır temanın değerleri (kart 0114, karar 0075'in B ve C yönleri). Renkler
@@ -307,12 +378,12 @@ export const yumusakMevsimDegerleri: TemaDegerleri = {
   },
   golgeler: {
     acik: {
-      kart: "0 6px 18px rgb(35 33 30 / 0.08)",
+      kart: "0 1px 3px rgb(35 33 30 / 0.08), 0 6px 18px rgb(35 33 30 / 0.05)",
       acilir: "0 8px 24px rgb(35 33 30 / 0.12)",
       pencere: "0 16px 48px rgb(35 33 30 / 0.18)",
     },
     koyu: {
-      kart: "0 6px 18px rgb(0 0 0 / 0.35)",
+      kart: "0 1px 3px rgb(0 0 0 / 0.4), 0 6px 18px rgb(0 0 0 / 0.3)",
       acilir: "0 8px 24px rgb(0 0 0 / 0.45)",
       pencere: "0 16px 48px rgb(0 0 0 / 0.6)",
     },
@@ -330,6 +401,18 @@ export const yumusakMevsimDegerleri: TemaDegerleri = {
     "afis-basligi": { boy: "3.25rem", satir: "1.08" },
   },
   koseler: { kucuk: "8px", orta: "16px", dugme: "12px" },
+  // Afiş düğmesi ve vurgu ana renktir; kart kenarsızdır (kenar kartın kendi zeminindedir), gölgesi iki katlıdır.
+  renkBaglari: {
+    rozet: "birincil",
+    "rozet-ustu": "birincil-ustu",
+    "afis-dugmesi": "birincil",
+    "afis-dugmesi-ustu": "birincil-ustu",
+    "vurgu-yazi": "birincil",
+    "kart-kenari": "zemin",
+  },
+  baslikBicimi: { donusum: "none", harfAraligi: "-0.01em" },
+  bosluklar: { "kart-ici": "1rem", bolum: "3.5rem", "bolum-masaustu": "5rem" },
+  urunSutunu: 4,
 };
 
 // Keskin Çizgi: beyaz zemin, koyu lacivert afiş, elektrik mavisi düğme, Archivo başlık, köşesiz kutular.
@@ -430,6 +513,18 @@ export const keskinCizgiDegerleri: TemaDegerleri = {
     "afis-basligi": { boy: "3.25rem", satir: "1.08" },
   },
   koseler: { kucuk: "0", orta: "0", dugme: "0" },
+  // Rozet ve afiş düğmesi sarıdır (taslaktaki #FFD43B), üstündeki yazı koyudur; vurgu ana renktir.
+  renkBaglari: {
+    rozet: "#FFD43B",
+    "rozet-ustu": { acik: "yazi", koyu: "zemin" },
+    "afis-dugmesi": "#FFD43B",
+    "afis-dugmesi-ustu": { acik: "yazi", koyu: "zemin" },
+    "vurgu-yazi": "birincil",
+    "kart-kenari": "kenar",
+  },
+  baslikBicimi: { donusum: "uppercase", harfAraligi: "0.02em" },
+  bosluklar: { "kart-ici": "0.75rem", bolum: "2.5rem", "bolum-masaustu": "3.5rem" },
+  urunSutunu: 5,
 };
 
 // Sabit değerler: bütün temalarda aynıdır.
@@ -491,7 +586,9 @@ export const sabitDegerler = {
 // (testler/kontrast.test.ts). Yazı en az 4,5:1, alan kenarı ve odak gibi işaretler en az 3:1.
 // Birincil renk işaret değildir: düğmeyi üstündeki yazı tanıtır (birincil-ustu / birincil çifti).
 // Bu yüzden birincil renk tek başına bir şeyi göstermek için (onay kutusu, ilerleme) kullanılmaz.
-export const yaziCiftleri: readonly (readonly [RenkAdi, RenkAdi])[] = [
+// Bağlı renkler çözülerek ölçülür (renkleriCoz): ana renge bağlı vurgu, mağaza sahibinin seçtiği ana renkle de
+// ölçülür.
+export const yaziCiftleri: readonly (readonly [TumRenkAdi, TumRenkAdi])[] = [
   ["yazi", "zemin"],
   ["yazi", "yuzey"],
   ["soluk-yazi", "zemin"],
@@ -520,11 +617,17 @@ export const yaziCiftleri: readonly (readonly [RenkAdi, RenkAdi])[] = [
   // İkincil düğmenin ve menü öğesinin üzerine gelinmiş hâli.
   ["yazi", "kenar"],
   ["soluk-yazi", "kenar"],
+  // Bağlı renkler (kart 0124): rozet, afiş düğmesi, "Tümünü gör" bağlantısı.
+  ["rozet-ustu", "rozet"],
+  ["afis-dugmesi-ustu", "afis-dugmesi"],
+  ["vurgu-yazi", "zemin"],
 ];
 
-export const isaretCiftleri: readonly (readonly [RenkAdi, RenkAdi])[] = [
+export const isaretCiftleri: readonly (readonly [TumRenkAdi, TumRenkAdi])[] = [
   ["alan-kenari", "zemin"],
   ["odak", "zemin"],
   ["odak", "yuzey"],
   ["tehlike", "zemin"],
+  // Güven şeridinin ikonu yüzey renginde bir dairededir; yanında yazısı vardır (kart 0124).
+  ["vurgu-yazi", "yuzey"],
 ];

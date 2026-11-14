@@ -62,7 +62,7 @@ export function KayanAfisGorunumu({ gorunum, degerler: ham, baglam }: BolumGorun
         baglanti === undefined || !metinMi(slayt.dugmeYazisi) ? null : (
           <Baglanti
             href={baglanti.adres}
-            gorunum="ikincil"
+            gorunum="afis"
             className="no-underline"
             {...yeniSekmeOzellikleri(baglanti.yeniSekme)}
           >

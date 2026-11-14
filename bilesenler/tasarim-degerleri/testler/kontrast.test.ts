@@ -1,7 +1,14 @@
 // Tasarım değerlerinin kontrastı (kart 0102, .claude/rules/erisilebilirlik.md). Her yazı-zemin çifti
 // açık ve koyu temada en az 4,5:1, alan kenarı ve odak gibi işaretler en az 3:1'dir (WCAG 2.2 AA).
 import { describe, expect, it } from "vitest";
-import { isaretCiftleri, varsayilanTemaDegerleri, yaziCiftleri } from "../degerler.ts";
+import {
+  isaretCiftleri,
+  keskinCizgiDegerleri,
+  renkleriCoz,
+  varsayilanTemaDegerleri,
+  yaziCiftleri,
+  yumusakMevsimDegerleri,
+} from "../degerler.ts";
 import { kontrastOrani } from "../kontrast.ts";
 
 describe("kontrast oranı", () => {
@@ -19,9 +26,15 @@ describe("kontrast oranı", () => {
   });
 });
 
-describe("başlangıç tema değerlerinin kontrastı", () => {
+// Bağlı renkler çözülerek ölçülür (kart 0124): Keskin Çizgi'nin sarı rozeti ve öteki temaların ana renge bağlı
+// vurgusu da çiftlerdedir.
+describe.each([
+  ["başlangıç (Canlı Çarşı)", varsayilanTemaDegerleri],
+  ["Yumuşak Mevsim", yumusakMevsimDegerleri],
+  ["Keskin Çizgi", keskinCizgiDegerleri],
+] as const)("%s tema değerlerinin kontrastı", (_ad, degerler) => {
   for (const tema of ["acik", "koyu"] as const) {
-    const renkler = varsayilanTemaDegerleri.renkler[tema];
+    const renkler = renkleriCoz(degerler.renkler[tema], degerler.renkBaglari, tema);
     it.each(yaziCiftleri)(`${tema}: %s yazısı %s zemininde en az 4,5:1`, (yazi, zemin) => {
       expect(kontrastOrani(renkler[yazi], renkler[zemin])).toBeGreaterThanOrEqual(4.5);
     });

@@ -25,6 +25,8 @@ export const dugmeSiniflari = cva(
         tehlike: "rounded-dugme bg-tehlike px-5 text-tehlike-ustu hover:bg-tehlike-yazi",
         // Bağlantı gibi görünen düğme.
         baglanti: "px-0 text-yazi underline underline-offset-2 hover:no-underline",
+        // Afişin düğmesi (kart 0124): rengi ve harf biçimi temanındır (afis-dugmesi, baslik-bicimi).
+        afis: "rounded-dugme bg-afis-dugmesi px-5 text-afis-dugmesi-ustu baslik-bicimi hover:bg-afis-dugmesi/85",
       },
       // Yalnız ikonu olan düğme kare ve hap biçimindedir.
       ikonlu: { evet: "size-11 rounded-dugme px-0", hayir: "" },

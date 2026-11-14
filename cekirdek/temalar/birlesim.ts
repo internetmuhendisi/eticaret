@@ -31,15 +31,19 @@ type Mod = "acik" | "koyu";
 // birbirine bağlı iki renk ayrı ayrı ölçülseydi doğru bir seçim bozulurdu). Okunmayan her renk, öteki
 // seçilen renkler yerindeyken okunur en yakın tonuna, o da yoksa temanın kendi rengine döner. Sıra renk
 // adlarının sırasıdır, kaydın sırası değil.
+// Ölçü temanın bağlarıyla yapılır (kart 0124): ana renge bağlı renklerin çiftleri de ana rengin çiftleridir.
 const renkleriKoy = (
-  renkler: Record<RenkAdi, string>,
+  degerler: TemaDegerleri,
+  mod: Mod,
   secilenler: readonly (readonly [RenkAdi, string])[],
 ): void => {
+  const renkler = degerler.renkler[mod];
+  const olcu = { renkler, baglar: degerler.renkBaglari, mod };
   const asil = { ...renkler };
   for (const [ad, renk] of secilenler) renkler[ad] = renk;
   for (const [ad, renk] of secilenler) {
-    if (okunmayanCiftler(renkler, ad).length === 0) continue;
-    renkler[ad] = okunurRenk(renkler, ad, renk) ?? asil[ad];
+    if (okunmayanCiftler(olcu, ad).length === 0) continue;
+    renkler[ad] = okunurRenk(olcu, ad, renk) ?? asil[ad];
   }
 };
 
@@ -52,8 +56,8 @@ export function temaBirlesimi(tema: TemaTanimi, ayarlar: TemaAyarlari): TemaDege
       ? [[ad, renk] as const]
       : [];
   });
-  renkleriKoy(degerler.renkler.acik, secilenler);
-  renkleriKoy(degerler.renkler.koyu, secilenler);
+  renkleriKoy(degerler, "acik", secilenler);
+  renkleriKoy(degerler, "koyu", secilenler);
   const secenekler = tema.magazaSecenekleri;
   const yaziTipi =
     ayarlar.yaziTipi === undefined ? undefined : secenekler.yaziTipleri[ayarlar.yaziTipi];
@@ -76,8 +80,8 @@ export function temaBirlesimi(tema: TemaTanimi, ayarlar: TemaAyarlari): TemaDege
 export function panelDegerleri(anaRenk: Readonly<Record<Mod, string>> | undefined): TemaDegerleri {
   const degerler = structuredClone(varsayilanTemaDegerleri);
   if (anaRenk !== undefined) {
-    renkleriKoy(degerler.renkler.acik, [["birincil", anaRenk.acik]]);
-    renkleriKoy(degerler.renkler.koyu, [["birincil", anaRenk.koyu]]);
+    renkleriKoy(degerler, "acik", [["birincil", anaRenk.acik]]);
+    renkleriKoy(degerler, "koyu", [["birincil", anaRenk.koyu]]);
   }
   return degerler;
 }

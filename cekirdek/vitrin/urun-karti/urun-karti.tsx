@@ -182,7 +182,7 @@ export function UrunKarti({
     <div
       className={sinif(
         "flex min-w-0 flex-1 flex-col",
-        yatay ? "gap-1" : buyuk ? "gap-1.5 p-4" : "gap-1.5 p-3",
+        yatay ? "gap-1" : buyuk ? "gap-1.5 p-4" : "gap-1.5 p-kart-ici",
       )}
     >
       {ustSatir}
@@ -223,7 +223,7 @@ export function UrunKarti({
         data-slot="urun-karti"
         data-gorunum={gorunum}
         className={sinif(
-          "relative flex min-w-0 flex-row items-center gap-3 overflow-hidden rounded-orta border border-kenar bg-zemin p-3 text-yazi shadow-kart",
+          "relative flex min-w-0 flex-row items-center gap-3 overflow-hidden rounded-orta border border-kart-kenari bg-zemin p-3 text-yazi shadow-kart",
           className,
         )}
       >
@@ -241,7 +241,7 @@ export function UrunKarti({
       data-slot="urun-karti"
       data-gorunum={gorunum}
       className={sinif(
-        "relative flex min-w-0 flex-col overflow-hidden rounded-orta border border-kenar bg-zemin text-yazi shadow-kart",
+        "relative flex min-w-0 flex-col overflow-hidden rounded-orta border border-kart-kenari bg-zemin text-yazi shadow-kart",
         className,
       )}
     >

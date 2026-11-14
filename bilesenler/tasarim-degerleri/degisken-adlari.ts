@@ -8,4 +8,8 @@ export const degiskenAdi = {
   yaziBoyu: (ad: string) => `--yazi-boyu-${ad}`,
   satirYuksekligi: (ad: string) => `--satir-yuksekligi-${ad}`,
   kose: (ad: string) => `--kose-${ad}`,
+  bosluk: (ad: string) => `--bosluk-${ad}`,
+  baslikDonusumu: "--baslik-donusumu",
+  baslikHarfAraligi: "--baslik-harf-araligi",
+  urunSutunu: "--urun-sutunu",
 };
