@@ -25,7 +25,10 @@ jobs:
   kontroller:
     name: Kontroller
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    # Kart 0146: ekran ve hız ölçümü eklenince 45 dakika yetmez. Ölçüldü: hattın tamamı 34 dakika (tarayıcı testleri
+    # 21,6 dk), bir çalışma tarayıcı testlerinde 45 dakikaya takıldı; ekran ölçümü ve hız ölçümü (derleme dahil)
+    # yaklaşık 15–20 dakika ekler.
+    timeout-minutes: 90
     steps:
       - name: Kodu al
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
