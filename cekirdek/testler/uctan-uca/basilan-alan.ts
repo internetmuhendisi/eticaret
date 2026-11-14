@@ -1,5 +1,5 @@
-// Basılan alanın ölçüsü (kart 0191): öğenin ortasına ve ortasından dört yöne 22 px uzağa (44 × 44 px karenin kenar
-// ortaları) basılınca o öğeye mi basılıyor? Görünmez genişletilmiş alan (dokunma-alani) da sayılır; komşu bir öğe
+// Basılan alanın ölçüsü (kart 0191): öğenin ortasına ve ortasından dört yöne 21 px uzağa (44 × 44 px karenin kenar
+// ortalarının 1 px içi) basılınca o öğeye mi basılıyor? Görünmez genişletilmiş alan (dokunma-alani) da sayılır; komşu bir öğe
 // alanın üstüne biniyorsa o noktada komşu çıkar ve ölçüm düşer. Köşelere basılmaz: tarayıcı yuvarlak düğmenin
 // köşesini basılan alana saymaz, 44 px'lik yuvarlak düğme de geçmeliydi. Dönen dizi, öğeye gitmeyen noktalardır.
 import type { Locator } from "@playwright/test";

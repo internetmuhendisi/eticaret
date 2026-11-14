@@ -9,14 +9,18 @@
 //   bekler; kullanıcı durdurduysa bir daha kendiliğinden geçmez.
 // - Hareket azaltma tercihinde kendiliğinden geçmez; kullanıcı başlat düğmesiyle isterse geçer.
 // - Önceki, sonraki ve nokta düğmeleri klavyeyle kullanılır; etkin noktanın aria-current'ı vardır.
-// - Noktalar 44 px basılır, yalnız tablet ve üstünde durur; telefonda yerlerinde "1 / 3" sayacı vardır, gezinme
-//   önceki ve sonraki düğmeleriyledir (kart 0191, karar 0123: 44 px noktalar telefonda satıra sığmıyordu). Sayaç
-//   ekran okuyucudan gizlidir: etkin slaytın adı aynı yazıyı söyler.
+// - Noktalar 44 px basılır, yalnız tablet ve üstünde ve en çok dört slaytta durur; telefonda ve beş ya da daha çok
+//   slaytta yerlerinde "1 / 3" sayacı vardır, gezinme önceki ve sonraki düğmeleriyledir (kart 0191, karar 0123: 44 px
+//   noktalar satıra sığmayınca denetimler iki satıra iniyordu). Sayaç ekran okuyucudan gizlidir: etkin slaytın adı
+//   aynı yazıyı söyler.
 // Geçişte hareket yoktur: slayt yer değiştirir, kaymaz. Metinler sunucudan gelir.
 import { type ReactNode, useEffect, useState } from "react";
 import { Dugme, IkonDugmesi } from "../../../../bilesenler/parcalar/dugme";
 import { useHareketAzaltma } from "../../../../bilesenler/parcalar/hareket-azaltma";
 import { sinif } from "../../../../bilesenler/parcalar/sinif";
+
+// Noktaların gösterildiği en çok slayt sayısı (karar 0123); daha çok slaytta sayaç her genişlikte durur.
+export const noktaSiniri = 4;
 
 export type KaydiriciSlayti = {
   kimlik: string;
@@ -51,6 +55,9 @@ export function Kaydirici({
   gorunum: "yazi-solda" | "gorsel-arkada";
 }) {
   const sayi = slaytlar.length;
+  // Dört noktayla denetim satırı (durdur, önceki, noktalar, sonraki) iki görünümde de tablette tek satırdır; beş ve
+  // altıda "görsel arkada" kutusunda (400 px) ya da 768–900 px'te "yazı solda"da iki satıra iniyordu (ölçüldü).
+  const noktali = sayi <= noktaSiniri;
   const [etkin, setEtkin] = useState(0);
   // Kullanıcının tercihi: durdurdu ya da (hareket azaltmada) başlattı.
   const [kullanici, setKullanici] = useState<"durdurdu" | "baslatti" | undefined>(undefined);
@@ -91,10 +98,13 @@ export function Kaydirici({
           className="border-current text-current"
           onClick={() => git(etkin - 1)}
         />
-        <span aria-hidden="true" className="min-w-11 text-center font-kalin tablet:hidden">
+        <span
+          aria-hidden="true"
+          className={sinif("min-w-11 text-center font-kalin", noktali && "tablet:hidden")}
+        >
           {metinler.slaytAdlari[etkin]}
         </span>
-        <div className="hidden tablet:flex">
+        <div className={sinif("hidden", noktali && "tablet:flex")}>
           {slaytlar.map((oge, sira) => (
             <Dugme
               key={oge.kimlik}

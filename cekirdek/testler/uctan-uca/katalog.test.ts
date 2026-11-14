@@ -910,6 +910,35 @@ for (const genislik of [320, 390, 768]) {
   });
 }
 
+// Kart 0191: sayfa yolunun her bağlantısı 44 × 44 px basılır, kısa adlı komşu adımların ve iki satıra inen yolun
+// alanları üst üste binmez. Katalogdaki ikinci yol kısa adları ve uzun bir adı taşır.
+for (const genislik of [320, 390, 768]) {
+  test(`sayfa yolu: her bağlantı 44 × 44 px basılır, komşular çakışmaz (${genislik} px)`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: genislik, height: 900 });
+    await ac(page, `${katalogAdresi}/sayfa-yolu`);
+    const yollar = page.getByRole("navigation", { name: metin("ortak.parca.sayfaYolu") });
+    expect(await yollar.count()).toBe(2);
+    if (genislik === 320) {
+      // Ölçüm boşa gitmesin: uzun yol bu genişlikte iki satıra iner.
+      const satirlar = await yollar
+        .nth(1)
+        .getByRole("listitem")
+        .evaluateAll(
+          (liste) => new Set(liste.map((li) => Math.round(li.getBoundingClientRect().top))).size,
+        );
+      expect(satirlar).toBeGreaterThanOrEqual(2);
+    }
+    const baglantilar = await yollar.getByRole("link").all();
+    expect(baglantilar.length).toBe(6);
+    for (const baglanti of baglantilar) {
+      expect(await basilmayanNoktalar(baglanti), (await baglanti.textContent()) ?? "").toEqual([]);
+    }
+    expect(await yanaKayma(page)).toBe(0);
+  });
+}
+
 test("kayan afiş: hareket azaltma tercihinde kendiliğinden geçmez, başlat düğmesiyle geçer", async ({
   page,
 }) => {

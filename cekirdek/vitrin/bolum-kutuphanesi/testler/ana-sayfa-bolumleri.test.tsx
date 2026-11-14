@@ -183,6 +183,37 @@ describe("kayan afiş", () => {
     expect(odaklanabilenler.at(-1)).toBe("İncele");
   });
 
+  // Karar 0123: noktalar yalnız tablet ve üstünde ve en çok dört slaytta görünür; telefonda ve daha çok slaytta
+  // yerlerinde ekran okuyucudan gizli "1 / n" sayacı durur.
+  it("dört slayta kadar noktalar tablette görünür; beş ve üstünde her genişlikte sayaç", () => {
+    const siniflar = (sayi: number) => {
+      const kap = ciz([
+        bolum("kayan-afis", "yazi-solda", {
+          slaytlar: Array.from({ length: sayi }, (_, sira) => ({ baslik: `Slayt ${sira + 1}` })),
+        }),
+      ]);
+      const nokta = [...kap.querySelectorAll("button")].find(
+        (d) => d.getAttribute("aria-label") === "1. slaytı göster",
+      );
+      const sayac = [...kap.querySelectorAll('span[aria-hidden="true"]')].find(
+        (s) => s.textContent === `1 / ${sayi}`,
+      );
+      return {
+        noktalar: nokta?.parentElement?.className.split(" ") ?? [],
+        sayac: sayac?.className.split(" ") ?? [],
+      };
+    };
+    for (const sayi of [3, 4]) {
+      expect(siniflar(sayi).noktalar, String(sayi)).toEqual(["hidden", "tablet:flex"]);
+      expect(siniflar(sayi).sayac, String(sayi)).toContain("tablet:hidden");
+    }
+    for (const sayi of [5, 6]) {
+      expect(siniflar(sayi).noktalar, String(sayi)).toEqual(["hidden"]);
+      expect(siniflar(sayi).sayac, String(sayi)).not.toContain("tablet:hidden");
+      expect(siniflar(sayi).sayac, String(sayi)).not.toContain("hidden");
+    }
+  });
+
   it("kendiliğinden geçmeyen afişte durdurma düğmesi yok, slayt duyurulur; tek slaytta gezinme yok", () => {
     const kapali = ciz([bolum("kayan-afis", "yazi-solda", { slaytlar, gecis: "kapali" })]);
     const adlar = [...kapali.querySelectorAll("button")].map((d) => d.getAttribute("aria-label"));
