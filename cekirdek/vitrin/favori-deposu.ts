@@ -10,17 +10,16 @@
 // Depo ve çerez okunamazsa (gizli pencere, kapalı depo) liste boş sayılır, hata vermez.
 
 import { favoriCerezi, favoriDepoAnahtari, favoriSiniriEnCok } from "../kayitlar/favori";
-import { kimlikSemasi } from "../veritabani/kimlik";
+import { kimligiDuzelt, kimlikMi } from "../veritabani/kimlik-bicimi";
 
-// Dışarıdan gelen değeri kimlik listesine çevirir: kimlik olmayan, tekrar eden ve fazla olan atılır. Kimlikler ortak
-// şemayla küçük harfe çevrilir (veritabanı küçük harfle döner, kart 0119); şema dosyası yalnız zod alır, tarayıcı
-// paketine veritabanı kodu girmez.
+// Dışarıdan gelen değeri kimlik listesine çevirir: kimlik olmayan, tekrar eden ve fazla olan atılır. Kimlikler
+// küçük harfe çevrilir (veritabanı küçük harfle döner, kart 0119). Biçim zod'suz denetlenir (kimlik-bicimi.ts):
+// bu dosya her vitrin sayfasının üst kısmıyla tarayıcıya gider, zod'u taşımamalı (kart 0146).
 export const kimlikListesi = (degerler: readonly unknown[]): string[] =>
   [
     ...new Set(
       degerler.flatMap((deger) => {
-        const sonuc = kimlikSemasi.safeParse(deger);
-        return sonuc.success ? [sonuc.data] : [];
+        return typeof deger === "string" && kimlikMi(deger) ? [kimligiDuzelt(deger)] : [];
       }),
     ),
   ].slice(0, favoriSiniriEnCok);

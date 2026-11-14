@@ -2,7 +2,10 @@
 // Favoriler sayfasının listesi (kart 0140, karar 0110). Kartlar sunucuda çizilmiş gelir; hangilerinin ve hangi
 // sırayla görüneceği tarayıcıdaki favori durumundandır (favori-durumu.ts):
 //
-// - Durum bilinmezken iskelet görünür; okunamazsa hata yazar. İkisinde de "liste boş" denmez.
+// - Durum bilinmezken iskelet görünür; okunamazsa hata yazar. İkisinde de "liste boş" denmez. Tek ayrık: sunucu
+//   çerezde hiç ürün görmediyse boş hâl hemen, sunucuda çizilir (kart 0146, kullanıcı kararı): yavaş telefonda
+//   içerik iskelet yüzünden 3,3 saniyede geliyordu. Hesabında favori olan üye bu cihazda ilk kez gelirse boş hâli
+//   kısa bir an görür; listesi gelince sayfa aşağıdaki kuralla bir kez yenilenir.
 // - Durumda olup sunucunun denetlemediği ürün varsa (başka cihazda eklenmiş, sayfa çerezsiz açılmış) sayfa bir kez
 //   yenilenir; çerez o ana kadar yazılmıştır. Aynı liste için ikinci kez yenilenmez (çerez yazılamıyorsa döngü olmaz).
 // - Sunucunun denetleyip kartını çizmediği ürün (taslak, arşiv, silinmiş) görünmez ve sayılmaz; üye olmayan
@@ -102,7 +105,8 @@ export function FavoriListesi({
     oge?.focus();
   }, [gorunenImza]);
 
-  if (durum.tur === "bilinmiyor" || yenilenecek) {
+  const bosBilinen = denetlenenler.length === 0;
+  if ((durum.tur === "bilinmiyor" && !bosBilinen) || yenilenecek) {
     return (
       <>
         <SayfaBasligi baslik={baslik} className="mb-5" />

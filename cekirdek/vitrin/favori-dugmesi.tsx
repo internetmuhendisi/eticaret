@@ -13,7 +13,7 @@ import { IkonDugmesi } from "../../bilesenler/parcalar/dugme";
 import { sinif } from "../../bilesenler/parcalar/sinif";
 import { useMetin } from "../metinler/istemci-metni";
 import { doldur } from "../moduller/eposta/sablon";
-import { kimligiDuzelt } from "../veritabani/kimlik";
+import { kimligiDuzelt } from "../veritabani/kimlik-bicimi";
 import {
   type FavoriSonucu,
   favoriDegistir,

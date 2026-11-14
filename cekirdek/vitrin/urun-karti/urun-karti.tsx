@@ -40,6 +40,11 @@ export type UrunKartiIslevleri = Readonly<
 
 const { tablet, masaustu } = sabitDegerler.kirilmaNoktalari;
 
+// Listenin ilk kaç kartının görseli öncelikli yüklenir (kart 0146): telefonda ilk satır. Ölçüldü: yavaş telefonda
+// kategori sayfasının ana içeriği ilk kartın görselidir, tembel ve öncelik verilmeden yüklenince kodla aynı anda
+// iniyor, 2,5 saniyeyi aşıyordu.
+export const oncelikliKartSayisi = 2;
+
 // Tarayıcının görsel boyutunu seçmesi için kartın yaklaşık genişliği; ızgarayı bilen çağıran
 // değiştirebilir. Yatay kartın görseli 5rem'dir (size-20).
 const varsayilanGenislikler: Record<UrunKartiGorunumu, string> = {
@@ -76,6 +81,7 @@ function KartGorseli({
         width={gorsel.genislik}
         height={gorsel.yukseklik}
         loading={oncelikli ? "eager" : "lazy"}
+        fetchPriority={oncelikli ? "high" : "auto"}
         decoding="async"
         className="size-7/8 object-contain"
       />

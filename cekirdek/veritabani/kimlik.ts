@@ -4,16 +4,12 @@
 // girmeden küçük harfe çevrilir: şemalar `kimlikSemasi`, şemadan geçmeyen kimlik (servisin kimlik değişkeni)
 // `kimligiDuzelt` kullanır. Ekranla paylaşılan şemalar da kullandığı için bu dosya yalnız zod alır.
 // Kimlik şemasını başka yerde yazmak testte kırmızıdır (cekirdek/testler/kimlik-semasi.test.ts).
+// `kimlikMi` ve `kimligiDuzelt` zod'suz dosyadadır (kimlik-bicimi.ts): tarayıcıda çalışan kod onları zod'u
+// taşımadan alır (kart 0146). Buradan da alınabilirler.
 import { z } from "zod";
+import { kimligiDuzelt } from "./kimlik-bicimi.ts";
 
-// Kimlik biçiminde bir metin mi? Dışarıdan gelen kimlik sorguya girmeden denetlenir: biçimi bozuk metin veritabanında
-// beklenmeyen hataya (22P02) dönmesin, "bulunamadı" sayılsın (kart 0077).
-const kimlikKalibi = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export const kimlikMi = (deger: string): boolean => kimlikKalibi.test(deger);
-
-// Kimliği veritabanının yazdığı biçime (küçük harf) çevirir. Biçimi denetlemez: bozuk metin bozuk kalır, `kimlikMi`
-// ya da sorgu onu bulunamadı sayar.
-export const kimligiDuzelt = (deger: string): string => deger.toLowerCase();
+export { kimligiDuzelt, kimlikMi } from "./kimlik-bicimi.ts";
 
 // Girdideki kimlik: UUID biçiminde, küçük harfe çevrilmiş.
 export const kimlikSemasi = z.uuid().transform(kimligiDuzelt);

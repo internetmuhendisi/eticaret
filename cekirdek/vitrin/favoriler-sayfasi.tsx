@@ -22,7 +22,7 @@ import { izgaraSiniflari } from "./bolumler/ortak/urun-izgarasi";
 import { cerezMetniniOku } from "./favori-deposu";
 import { FavoriListesi } from "./favori-listesi";
 import { urunKartiGorunumu } from "./urun-karti/gorunum";
-import { UrunKarti } from "./urun-karti/urun-karti";
+import { oncelikliKartSayisi, UrunKarti } from "./urun-karti/urun-karti";
 import { urunKartlari } from "./urun-karti/veri";
 
 // Kişiye özel sayfa: arama motorlarına kapalıdır.
@@ -52,7 +52,7 @@ export async function FavorilerSayfasi() {
       <FavoriListesi
         baslik={metin("vitrin.favori.baslik")}
         denetlenenler={denetlenenler}
-        kartlar={kartlar.map((urun) => ({
+        kartlar={kartlar.map((urun, sira) => ({
           kimlik: urun.kimlik,
           kart: (
             <UrunKarti
@@ -60,6 +60,7 @@ export async function FavorilerSayfasi() {
               gorunum={gorunum}
               islevler={yazilanIslevler}
               baslikDuzeyi={2}
+              oncelikli={sira < oncelikliKartSayisi}
               className="h-full"
             />
           ),

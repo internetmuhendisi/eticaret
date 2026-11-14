@@ -24,7 +24,7 @@ import {
 import { favoriDepoAnahtari, favoriSiniriEnCok } from "../kayitlar/favori";
 import { hataKodlari } from "../kayitlar/kapi";
 import type { BirlesmeSonucu, FavoriHatasi, FavoriListesi } from "../moduller/favori/semalar";
-import { kimligiDuzelt } from "../veritabani/kimlik";
+import { kimligiDuzelt } from "../veritabani/kimlik-bicimi";
 import { cereziSil, cereziYaz, yereldenOku, yereleYaz } from "./favori-deposu";
 import { hesapDurumunuBekle, hesapDurumunuYenile } from "./hesap-durumu";
 

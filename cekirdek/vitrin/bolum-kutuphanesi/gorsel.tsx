@@ -60,6 +60,7 @@ export function BolumGorseli({
       width={varsayilan.genislik}
       height={varsayilan.yukseklik}
       loading={oncelikli ? "eager" : "lazy"}
+      fetchPriority={oncelikli ? "high" : "auto"}
       decoding="async"
       className={className}
     />

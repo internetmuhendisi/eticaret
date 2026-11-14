@@ -1,12 +1,11 @@
 "use client";
 // Kök düzenin kendisi bozulursa gösterilen ekran (kart 0014). Kök düzen yokken sitenin dili
-// bilinmez; ayar şemasının varsayılan dili kullanılır.
+// bilinmez; dil ayarının varsayılanı kullanılır. Ayar şeması içe aktarılmaz: bu ekran her sayfayla tarayıcıya
+// gider, şema zod'u ve bütün şemaları taşırdı (kart 0146).
 import { useEffect } from "react";
-import { ayarSemasi } from "../../ayar-semasi/ayarlar";
 import { istemciHatasiniKaydet } from "../../izleme/istemci-hata-katmani";
-import { metinOkuyucu } from "../../metinler/metin";
+import { metinOkuyucu, varsayilanDil } from "../../metinler/metin";
 
-const varsayilanDil = ayarSemasi.shape.dil.parse(undefined);
 const metin = metinOkuyucu(varsayilanDil);
 
 export default function KokHatasi({ error }: { error: unknown }) {

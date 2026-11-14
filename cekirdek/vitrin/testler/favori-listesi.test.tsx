@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 // Favoriler sayfasının listesi (kart 0140, karar 0110):
-// - Durum bilinmezken iskelet, okunamazsa hata görünür; "liste boş" denmez.
+// - Durum bilinmezken iskelet, okunamazsa hata görünür; "liste boş" denmez. Sunucu çerezde hiç ürün görmediyse
+//   boş hâl hemen görünür; hesapta favori çıkarsa sayfa yenilenir (kart 0146).
 // - Sunucunun denetlemediği ürün varsa sayfa bir kez yenilenir, aynı liste için ikinci kez yenilenmez.
 // - Sunucunun kartını çizmediği ürün (görünmeyen) gösterilmez ve sayılmaz; sıra tarayıcıdaki durumun sırasıdır.
 // - Üye olmayan müşteriye "bu cihazda" bilgisi liste doluyken görünür; girişli müşteriye görünmez.
@@ -93,10 +94,21 @@ const dugmeliCiz = (denetlenenler: string[]) =>
   );
 
 describe("favoriler sayfasının listesi", () => {
-  it("durum bilinmezken iskelet görünür, boş denmez", () => {
+  it("çerezde ürün varken durum bilinmezse iskelet görünür, boş denmez", () => {
     hesap(false);
-    ciz([], []);
+    ciz([a], [a]);
     expect(screen.getByRole("status").textContent).toBe(metin("vitrin.favori.yukleniyor"));
+    expect(screen.queryByTestId("bos")).toBeNull();
+  });
+
+  // Kart 0146 (kullanıcı kararı): çerezsiz açılan sayfa iskeleti beklemeden boş hâli gösterir.
+  it("çerezde ürün yokken boş hâl durum bilinmeden görünür; hesapta favori çıkarsa sayfa yenilenir", async () => {
+    hesap(true, [a]);
+    ciz([], []);
+    expect(screen.getByTestId("bos")).toBeDefined();
+    expect(screen.queryByRole("status")).toBeNull();
+    await bekle();
+    expect(yenile).toHaveBeenCalledTimes(1);
     expect(screen.queryByTestId("bos")).toBeNull();
   });
 

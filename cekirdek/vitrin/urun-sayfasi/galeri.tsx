@@ -61,6 +61,7 @@ function Gorsel({
       width={gorsel.genislik}
       height={gorsel.yukseklik}
       loading={oncelikli ? "eager" : "lazy"}
+      fetchPriority={oncelikli ? "high" : "auto"}
       decoding="async"
       className="size-7/8 object-contain"
     />

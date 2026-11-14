@@ -18,7 +18,7 @@ import { tukenenUrunDavranislari } from "../kayitlar/stok.ts";
 import { secenekOnSecimleri, tukenmisSecenekGosterimleri } from "../kayitlar/urun.ts";
 import { videoSiteAdlari } from "../kayitlar/video-siteleri.ts";
 import { saatDilimiGecerliMi } from "../metinler/bicimleyici.ts";
-import { diller, type MetinAnahtari } from "../metinler/metin.ts";
+import { diller, type MetinAnahtari, varsayilanDil } from "../metinler/metin.ts";
 import { kayitDegeriYasakMi, kayitMetniHatasi } from "../moduller/degisiklik-kaydi/deger.ts";
 import {
   fiyatGirisleri,
@@ -77,7 +77,7 @@ export const ayarSemasi = z.strictObject({
     ulkeListesi.default(["TR"]),
     altyapiSahibinin("ayar.aciklama.teslimatUlkeleri"),
   ),
-  dil: ayar(z.enum(diller).default("tr"), altyapiSahibinin("ayar.aciklama.dil")),
+  dil: ayar(z.enum(diller).default(varsayilanDil), altyapiSahibinin("ayar.aciklama.dil")),
   // Para biriminin çekirdekte varsayılanı yoktur: çekirdekte bir ülkenin para birimi ya da simgesi
   // yazılmaz (kart 0081, karar 0067). Site ayarlar.json dosyasında yazar.
   paraBirimi: ayar(

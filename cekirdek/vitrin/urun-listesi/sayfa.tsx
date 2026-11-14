@@ -29,7 +29,7 @@ import { vitrinAdresleri } from "../adresler";
 import { izgaraSiniflari } from "../bolumler/ortak/urun-izgarasi";
 import { urunKartiGorunumu } from "../urun-karti/gorunum";
 import type { UrunKartiVerisi } from "../urun-karti/tur";
-import { UrunKarti } from "../urun-karti/urun-karti";
+import { oncelikliKartSayisi, UrunKarti } from "../urun-karti/urun-karti";
 import { urunKartlari } from "../urun-karti/veri";
 import {
   type AdresParametreleri,
@@ -395,13 +395,14 @@ export function UrunListesiGorunumu({ veri, yol }: { veri: UrunListesiVerisi; yo
             izgaraSiniflari(veri.kartGorunumu, solda ? "filtreli" : "tam"),
           )}
         >
-          {veri.kartlar.map((urun) => (
+          {veri.kartlar.map((urun, sira) => (
             <li key={urun.kimlik} className="min-w-0">
               <UrunKarti
                 urun={urun}
                 gorunum={veri.kartGorunumu}
                 islevler={yazilanIslevler}
                 baslikDuzeyi={2}
+                oncelikli={sira < oncelikliKartSayisi}
                 className="h-full"
               />
             </li>

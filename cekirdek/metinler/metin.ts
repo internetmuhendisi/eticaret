@@ -18,6 +18,10 @@ export type Dil = keyof typeof sozlukler;
 // Metin dosyası olan diller. Sitenin dil ayarı yalnız bunlardan biri olabilir.
 export const diller = Object.keys(sozlukler) as [Dil, ...Dil[]];
 
+// Dil ayarının varsayılanı (ayar şeması onu kullanır). Burada durur: sitenin dili bilinmezken metin gösteren ekran
+// (kök hata ekranı) ayar şemasını, onunla da zod'u ve bütün şemaları tarayıcıya taşımasın (kart 0146, ölçüldü).
+export const varsayilanDil: Dil = "tr";
+
 export const metinOkuyucu = (dil: Dil) => {
   const sozluk: unknown = sozlukler[dil];
   return (anahtar: MetinAnahtari): string => {
