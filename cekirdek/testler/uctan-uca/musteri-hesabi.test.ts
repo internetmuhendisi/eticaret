@@ -312,6 +312,7 @@ for (const genislik of [320, 360]) {
       satirlar.every((sol) => sol === 0),
       `satırların solu: ${satirlar}`,
     ).toBe(true);
+    await taraHesap(page, `kayıt formu ${genislik} px`);
   });
 }
 
