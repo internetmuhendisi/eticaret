@@ -39,4 +39,4 @@ Hattın koşulunda ölçüldü (temiz veritabanı, `taskset -c 0-3`, `--workers=
 
 ## Durum
 
-yapılacak
+bitti
