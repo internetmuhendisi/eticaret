@@ -68,4 +68,4 @@ Hız ölçümü bu kartta yalnız yerelde çalıştı; hattaki ilk çalışması
 
 ## Durum
 
-yapılacak
+bitti
