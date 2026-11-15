@@ -18,6 +18,18 @@ vi.mock("next/headers", () => ({
   }),
 }));
 
+// Mağaza adı sahte okunur (kart 0201): bulunamadı sayfasının başlığı adı veritabanından okur. Gerçek okuma ilk
+// seferde başlangıç ayarlarını yazar; deneme sitesi çalışırken bu, kontrol hattının ortak site veritabanına deneme
+// sitesinin ayarlarını yazıyordu ve sonraki tarayıcı testleri yanlış adla açılıyordu.
+const magazaAdiOkumalari = vi.hoisted(() => ({ sayi: 0 }));
+vi.mock("../../moduller/magaza-ayarlari/servis.ts", async (asil) => ({
+  ...(await asil<typeof import("../../moduller/magaza-ayarlari/servis.ts")>()),
+  magazaninAdi: async () => {
+    magazaAdiOkumalari.sayi += 1;
+    return "Deneme Galerisi";
+  },
+}));
+
 const { demodaSecilenTema, vitrinTemasi } = await import("../tema-secimi.ts");
 const { proxy } = await import("../../uygulama/proxy.ts");
 const { musteriSayfasiBilgisi, musteriSayfasiniAc } = await import("../yalniz-gezinti.ts");
@@ -136,6 +148,8 @@ describe("müşteri sayfaları", () => {
     expect(() => musteriSayfasiniAc()).toThrow();
     const bilgi = await musteriSayfasiBilgisi(async () => ({ title: "Giriş yap" }))();
     expect(bilgi.title).not.toBe("Giriş yap");
+    // Sahte okuma gerçekten kullanıldı: test veritabanına gitmez.
+    expect(magazaAdiOkumalari.sayi).toBeGreaterThan(0);
   });
 
   it("demo olmayan sitede açılır", async () => {

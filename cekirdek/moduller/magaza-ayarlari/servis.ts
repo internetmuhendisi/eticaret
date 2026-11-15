@@ -27,7 +27,7 @@ export const baslangicYazari = sistemIslemi("baslangic-ayarlari");
 
 // Değer JSON olarak saklanır; boş (undefined) ayar null olur. Nesne ayarının içindeki boş alan
 // düşer: veritabanı onu zaten saklamaz, değişiklik kaydı da boş değeri kabul etmez.
-const saklanan = (deger: unknown): unknown =>
+export const saklanan = (deger: unknown): unknown =>
   deger === undefined ? null : JSON.parse(JSON.stringify(deger));
 
 type Satir = { kimlik: string; anahtar: string; deger: unknown };

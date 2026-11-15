@@ -73,6 +73,10 @@ jobs:
       - name: Birim ve entegrasyon testleri (veri ayrımı dahil)
         run: pnpm birim-testleri
 
+      # Kart 0201: birim testleri Örnek Mağaza'nın veritabanına başka sitenin mağaza ayarlarını yazmadı.
+      - name: Birim testlerinden sonra Örnek Mağaza'nın mağaza ayarları
+        run: pnpm baslangic-ayarlari-denetle siteler/ornek-magaza
+
       - name: Tarayıcıyı kur
         run: pnpm exec playwright install --with-deps chromium
 

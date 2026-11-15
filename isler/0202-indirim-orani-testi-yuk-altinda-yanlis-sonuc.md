@@ -1,0 +1,29 @@
+# 0202 · İndirim oranı testi yük altında yanlış sonuç veriyor
+
+## Amaç
+
+Kart 0201'in ölçümünde (2026-11-15) bütün birim takımı temiz veritabanında, dört işlemciyle (`taskset -c 0-3`) çalışınca bir kez düştü:
+
+- `cekirdek/moduller/fiyat/testler/gosterim.test.ts` "yüzde 1'in altındaki indirimin ve eski fiyatı gösterilmeyen indirimin oranı yoktur": satır 484, `kucuk?.enDusuk.eskiTutar` 10000 yerine `undefined`.
+
+Dosya tek başına üç kez geçti. Düşüş süre aşımı değil, yanlış sonuçtur; bu yüzden kart 0133'ün (yük altında süre sınırı) kapsamında değildir. Sebep ölçülmedi. Eski fiyatın gösterilmesi fiyat geçmişinin zamanına bağlıdır (kart 0081): uygulama ile veritabanı saati ya da aynı anda yazılan satırlar ilk şüphelilerdir, ama bu bir tahmindir.
+
+Bölüm: Testler.
+
+## Olmazsa olmazlar
+
+- Düşüş yük altında yeniden üretilsin ve sebebi ölçümle bulunsun.
+- Sebep testteyse test düzeltilsin. Sebep eski fiyat kuralındaysa (vitrinde yanlış eski fiyat) düzeltme kuralda yapılsın ve bozmayla gösterilsin.
+
+## Sınırlar
+
+- Eski fiyat kuralının davranışı (kart 0081) bilerek değişmez; değişmesi gerekiyorsa kullanıcıya sorulur.
+
+## Bitti sayılır
+
+- Sebep ölçümle yazıldı.
+- Düzeltmeden sonra aynı yükte takım en az beş kez bu testte düşmeden geçti.
+
+## Durum
+
+yapılacak
