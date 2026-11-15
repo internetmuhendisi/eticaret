@@ -29,8 +29,9 @@ const ac = async (page: Page, adres: string) => {
   return { hatalar, durum: yanit?.status() };
 };
 
-const tara = async (page: Page, ne: string) => {
-  await page.evaluate(() =>
+// Sonlu her hareketin (animasyon ve geçiş) bitmesini bekler; sonsuz hareketler (ör. yükleniyor göstergesi) beklenmez.
+const hareketlerBitsin = (page: Page) =>
+  page.evaluate(() =>
     Promise.all(
       document
         .getAnimations()
@@ -38,6 +39,9 @@ const tara = async (page: Page, ne: string) => {
         .map((a) => a.finished.catch(() => undefined)),
     ),
   );
+
+const tara = async (page: Page, ne: string) => {
+  await hareketlerBitsin(page);
   const sonuc = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
     .exclude("nextjs-portal")
@@ -250,6 +254,14 @@ test("sıralanabilir liste: klavyeyle, düğmeyle ve fareyle taşınır, Escape 
       ad("bolumBulten"),
       ad("bolumGuvenSeridi"),
     ]);
+  // @dnd-kit fareyle bırakmadan sonra 50 ms boyunca belgeye gelen tıklamayı durdurur (AbstractPointerSensor.detach:
+  // setTimeout(documentListeners.removeAll, 50)), sürüklemenin sonundaki tıklama bir şey açmasın diye. Bırakmadan
+  // ~30 ms sonra basılan düğme sayfaya hiç ulaşmıyordu, 50 ms'den sonra basılan ulaşıyordu (kart 0158, ölçüldü).
+  // Kütüphane bırakmada önce bu zamanlayıcıyı kurar, sonra sırayı değiştirir: yukarıdaki yoklama bırakılan sırayı
+  // gördüğünde zamanlayıcı kurulmuştur. Sayfada aynı süreyle sonradan kurulan zamanlayıcı ondan sonra çalışır (HTML
+  // zamanlayıcı sırası): aşağıdaki ilk tıklama bu pencereden sonra gelir ve sürüklemeden sonraki ilk tıklamanın
+  // kaybolmadığını ölçer.
+  await page.evaluate(() => new Promise<void>((tamam) => setTimeout(tamam, 50)));
 
   // Telefonda da tutamak ve yukarı, aşağı al düğmeleri vardır; dokunuşla taşınır, sayfa yana kaymaz.
   await page.setViewportSize({ width: 375, height: 800 });
@@ -269,11 +281,19 @@ test("sıralanabilir liste: klavyeyle, düğmeyle ve fareyle taşınır, Escape 
       ad("bolumGuvenSeridi"),
       ad("bolumBulten"),
     ]);
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    ),
-  ).toBe(0);
+  // Taşınan satırlar yeni yerlerine geçişle (transform) gelir. @dnd-kit geçişin başlangıcını satırın sürüklemede
+  // ölçtüğü yerden alır: genişlik sürüklemeden hemen sonra 1280'den 375'e inince satır 304 px sağdan gelir ve sayfa
+  // geçiş süresince (~130 ms) 287 px yana kayar, sonra 0'a iner (kart 0165, ölçüldü; yalnız telefonda ve
+  // araya bekleme konunca kayma yok). Yana kayma geçiş bitince ölçülür: geçişin başladığı kare beklenir, sonra
+  // sonlu her hareketin bitmesi.
+  await page.evaluate(
+    () =>
+      new Promise<void>((tamam) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => tamam())),
+      ),
+  );
+  await hareketlerBitsin(page);
+  expect(await yanaKayma(page)).toBe(0);
   expect(hatalar).toEqual([]);
 });
 
@@ -972,6 +992,11 @@ test("kayan afiş: telefonda telefon görseli, masaüstünde asıl görsel", asy
     // Telefonda nokta yoktur (kart 0191): ikinci slayta sonraki düğmesiyle geçilir.
     await afis.getByRole("button", { name: metin("vitrin.bolum.kayanAfis.sonraki") }).click();
     const gorsel = etkinSlayt(afis).locator("img");
+    // Slayt görseli tembel yüklenir: "sonraki"den hemen sonra okununca hattın koşulunda altı ölçümün ikisinde
+    // görsel henüz yüklenmemişti (doğal boyut 0 × 0, kart 0204). Doğal boyut görsel yüklenince okunur.
+    await expect
+      .poll(() => gorsel.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
+      .toBe(true);
     const { dogal, kaynaklar } = await gorsel.evaluate((img: HTMLImageElement) => ({
       dogal: img.naturalHeight > img.naturalWidth,
       kaynaklar: [...(img.parentElement?.querySelectorAll("source") ?? [])].length,
