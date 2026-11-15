@@ -10,3 +10,5 @@ allowBuilds:
   simple-git-hooks: false
   # drizzle-kit'in kullandığı esbuild, ikili dosyasını kurulum betiği olmadan da bulur.
   esbuild: false
+patchedDependencies:
+  playwright-core@1.64.1: yamalar/playwright-core@1.64.1.patch

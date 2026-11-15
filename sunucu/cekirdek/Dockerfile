@@ -21,6 +21,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # kurulum da böyle çalışır ve kilit dosyası iki yerde aynı okunur (karar 0027).
 RUN npm install --global --silent "pnpm@${PNPM_SURUMU}"
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Bağımlılık yamaları (karar 0130): pnpm kurulumda okur, yoksa kurulum durur.
+COPY yamalar/ yamalar/
 COPY cekirdek/uygulama/package.json cekirdek/uygulama/
 COPY bilesenler/package.json bilesenler/
 COPY sahip-paneli/package.json sahip-paneli/

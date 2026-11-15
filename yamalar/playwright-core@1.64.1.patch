@@ -1,0 +1,16 @@
+diff --git a/lib/coreBundle.js b/lib/coreBundle.js
+index 6893f1cf133efec2c5dccc35c77cc7a53870ccbc..e49a4cafeb17c87d7f873b540ef040542e606ee7 100644
+--- a/lib/coreBundle.js
++++ b/lib/coreBundle.js
+@@ -25855,7 +25855,10 @@ var init_frames = __esm({
+       }
+       _startNetworkIdleTimer() {
+         assert(!this._networkIdleTimer);
+-        if (this._firedLifecycleEvents.has("networkidle") || this._detachedScope.isClosed())
++        // Proje yaması (kart 0203, karar 0130): "networkidle" bir kez verildikten sonra başlayıp biten istek
++        // zamanlayıcıyı yeniden kurmuyordu; geç gelen domcontentloaded/load olayı sinyali silince sinyal bir daha
++        // hiç gelmiyordu. Zamanlayıcı sinyal verilmiş olsa da kurulur.
++        if (this._detachedScope.isClosed())
+           return;
+         this._networkIdleTimer = setTimeout(() => {
+           this._firedNetworkIdleSelf = true;

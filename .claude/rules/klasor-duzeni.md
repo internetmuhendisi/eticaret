@@ -56,6 +56,7 @@ siteler/<kod-adi>/     kimlik.json, ayarlar.json, baslangic/, marka/, tema/, vit
 sunucu/                Docker, Caddy (yerel caddy/, sunucudaki ön kapı on-kapi/), sunucu kurulumu
                        (kurulum/), sunucu kaydı (sunucular.json),
                        sitelerin kutu kullanıcıları (site-kullanicilari.json) ve yedek (yedek/)
+yamalar/               bağımlılık yamaları (pnpm `patchedDependencies`, karar 0130)
 denetim/               kod denetiminin projeye özel kuralları (kurallar/), bozuk örnekleri
                        (bozuk-ornekler/) ve kendi kendini denetleme betiği (karar 0017)
 ```

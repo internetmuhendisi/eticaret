@@ -6,6 +6,7 @@
 !package.json
 !pnpm-lock.yaml
 !pnpm-workspace.yaml
+!yamalar/
 !tsconfig.json
 !tsconfig.temel.json
 !cekirdek/
