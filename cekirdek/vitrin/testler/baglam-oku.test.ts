@@ -24,6 +24,7 @@ import { siteninServisi } from "../../moduller/magaza-ayarlari/servis.ts";
 import { markaServisi } from "../../moduller/marka/servis.ts";
 import { menuler } from "../../moduller/menu/model.ts";
 import { menuEkle, menuSil, ogeEkle } from "../../moduller/menu/servis.ts";
+import { temaServisi } from "../../moduller/tema/servis.ts";
 import { urunServisi } from "../../moduller/urun/servis.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
@@ -259,6 +260,18 @@ describe("vitrin bağlamı", () => {
     });
     expect((await vitrinBaglaminiOku(vt, yatayli, [], bolumKutuphanesi)).parcaGorunumleri).toEqual({
       "urun-karti": "yatay",
+      "urun-filtresi": "ustte",
+    });
+  });
+
+  // Kart 0148: masaüstünde filtrenin yeri mağaza sahibinin tema ayarıdır; seçilince temanınkinin yerine geçer.
+  it("mağaza sahibinin seçtiği filtre yeri temanınkinin yerine geçer, öteki görünümler temanın", async () => {
+    const vt = await siteAc();
+    const temalar = temaServisi(() => site);
+    const { tema } = await temalar.temaDurumu(vt);
+    await temalar.temayiYayinla(vt, yonetici(), { tema, ayarlar: { urunFiltresi: "ustte" } });
+    expect((await vitrinBaglaminiOku(vt, site, [], bolumKutuphanesi)).parcaGorunumleri).toEqual({
+      "urun-karti": "dikey",
       "urun-filtresi": "ustte",
     });
   });

@@ -60,3 +60,5 @@ Tasarım değeri, renk, yazı boyutu, boşluk gibi tasarımı oluşturan ve tek 
 - Tema ve düzen yalnız tema servisi üzerinden, aynı işlemde birlikte değişir. Kilit sırası tema, düzen; düzen servisine tema kilidini alan bir işlem yazılmaz.
 - Her tema sürümü kendinden önceki düzen sürümünü saklar (`onceki_duzen_sira`). Tema kodu değişen geri dönüş düzeni oradan getirir; tema kodu değişmeyen işlem düzene dokunmaz.
 - Tema uçları `cekirdek/kapi/yonetici/tema.ts`, girdi şemaları `cekirdek/moduller/tema/semalar.ts`.
+- Yeni temaya geçerken mağaza sahibinin ayarlarından yeni temanın kabul etmediği renk ve seçenek atılır, gerisi kalır (`yeniTemaninAyarlari`, karar 0129). Uymayan ayarı atan tek işlev `sorunluAyarlariAt`'tır.
+- Masaüstünde filtrenin yeri mağaza sahibinin tema ayarıdır (`urunFiltresi`); seçilmemişse temanın görünümü. Vitrin parça görünümlerini yalnız `parcaGorunumleriniKur` ile okur (`cekirdek/temalar/ayarlar.ts`).

@@ -13,9 +13,11 @@ export const temaYayiniSemasi = z.strictObject({
 });
 export type TemaYayiniGirdisi = z.input<typeof temaYayiniSemasi>;
 
-// Önceki bir sürüme dönüş. Sıra verilmezse bir önceki sürüm: "son değişikliği geri al".
+// Önceki bir sürüme dönüş. Sıra verilmezse bir önceki sürüm: "son değişikliği geri al". son: ekranın gördüğü son
+// sürümün sırası (kart 0148); verilirse ve son sürüm o değilse hiçbir şey yazılmaz.
 export const temaGeriDonusSemasi = z.strictObject({
   sira: z.number().int().positive().optional(),
+  son: z.number().int().positive().optional(),
 });
 
 // Tema durumunu okuma: girdi yok.

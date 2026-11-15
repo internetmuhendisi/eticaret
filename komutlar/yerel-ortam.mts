@@ -39,6 +39,7 @@ import { denemeSitesiAyarDosyasi } from "./deneme-sitesi-ayarlari.mts";
 import { siteNumaralariniOku } from "./gizli-bilgi.mts";
 import { arkaPlanServisi, kaliciKutu, siteSaglikYoklamasi } from "./kutu-kurali.mts";
 import { veritabaniVeKullaniciAc } from "./site-veritabani.mts";
+import { demoSitesi, temaDemosuOrtami, yereldekiDemoAdresi } from "./tema-demosu-adresi.mts";
 
 export const kok = join(import.meta.dirname, "..");
 const sunucu = join(kok, "sunucu");
@@ -197,7 +198,15 @@ const dosyaBiriminiSil = (kodAdi: string): void => {
 };
 
 // Bir sitenin kutu tanımı. Yeniden başlama kuralı tek yerden gelir (kutu-kurali.mts).
-export const siteKutusu = (kodAdi: string, klasor: string, etiket: string, kullanici: number) => ({
+// temaDemosuAdresi: açılan siteler arasında tema demosu varsa onun yerel adresi (kart 0148): panelin "Demoyu gez"
+// bağlantısı ona gider.
+export const siteKutusu = (
+  kodAdi: string,
+  klasor: string,
+  etiket: string,
+  kullanici: number,
+  temaDemosuAdresi?: string,
+) => ({
   image: etiket,
   container_name: kutuAdi(kodAdi),
   ...kaliciKutu,
@@ -213,6 +222,7 @@ export const siteKutusu = (kodAdi: string, klasor: string, etiket: string, kulla
     IKI_ASAMA_ANAHTARI: `\${IKI_ASAMA_ANAHTARI:?iki aşamalı giriş anahtarı verilmedi}`,
     EPOSTA_SUNUCUSU: "smtp://posta-kutusu:1025",
     SITE_ADRESI: `http://${kodAdi}.localhost:${yerelPort()}`,
+    ...temaDemosuOrtami(temaDemosuAdresi),
   },
   volumes: [`${klasor}:/siteler/${kodAdi}:ro`, `${dosyaBirimi(kodAdi)}:${kutudakiDosyaKlasoru}`],
   depends_on: {
@@ -233,15 +243,16 @@ const ayarlariUret = (siteler: (OrtamSitesi & { etiket: string; kullanici: numbe
       ),
     },
   };
+  const demoAdresi = yereldekiDemoAdresi(demoSitesi(siteler), yerelPort());
   for (const { kimlik, klasor, etiket, kullanici } of siteler) {
     const { kodAdi } = kimlik;
     writeFileSync(
       join(caddyKlasoru, `${kodAdi}.caddy`),
       `http://${kodAdi}.localhost {\n\treverse_proxy ${servisAdi(kodAdi)}:3000\n}\n`,
     );
-    servisler[servisAdi(kodAdi)] = siteKutusu(kodAdi, klasor, etiket, kullanici);
+    servisler[servisAdi(kodAdi)] = siteKutusu(kodAdi, klasor, etiket, kullanici, demoAdresi);
     servisler[`${servisAdi(kodAdi)}-arka-plan`] = arkaPlanServisi(
-      siteKutusu(kodAdi, klasor, etiket, kullanici),
+      siteKutusu(kodAdi, klasor, etiket, kullanici, demoAdresi),
     );
   }
   // Dosya birimleri açılıştan önce hazırlanır (dosyaBiriminiHazirla), tanım onları dışarıdan alır.

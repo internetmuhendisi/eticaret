@@ -29,6 +29,7 @@ import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import { type DegisikligiYapan, sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
 import {
+  sorunluAyarlariAt,
   type TemaAyarlari,
   temaAyariSorunlari,
   temaAyarlariSemasi,
@@ -59,6 +60,7 @@ export const temaHatalari = [
   "surum-gecersiz",
   "surum-kullanilamaz",
   "duzen-yolu-gerekli",
+  "tema-degisti",
 ] as const;
 
 export type TemaSurumu = {
@@ -217,15 +219,7 @@ export const temaServisi = (
       `uymuyor:${tema.kod}:${alanlar.join(",")}`,
       `Kayıtlı tema ayarları temaya uymuyor: ${alanlar.join(", ")}.`,
     );
-    const ayarlar = structuredClone(durum.ayarlar);
-    for (const alan of alanlar) {
-      if (alan.startsWith("renkler.")) {
-        delete ayarlar.renkler[alan.slice("renkler.".length) as keyof TemaAyarlari["renkler"]];
-      } else if (alan === "yaziTipi" || alan === "kose" || alan === "dugmeBicimi") {
-        delete ayarlar[alan];
-      }
-    }
-    return { tema, ayarlar };
+    return { tema, ayarlar: sorunluAyarlariAt(durum.ayarlar, sorunlar) };
   };
 
   const degistirilebilirMi = () => {
@@ -341,10 +335,13 @@ export const temaServisi = (
   // "son değişikliği geri al". Art arda çağrılırsa son iki sürüm arasında gidip gelir; daha eskisine sırası
   // verilerek dönülür. Dönülen sürüm şimdikiyle aynıysa hiçbir şey yazılmaz, son sürüm döner. Dönülen
   // sürümün teması bugün kullanılabilir ve ayarları bugünkü kurallardan geçmeli.
+  // beklenenSon: ekranın gördüğü son sürümün sırası (kart 0148, karar 0115'teki kural). Verilirse ve son sürüm o
+  // değilse (arada başka bir değişiklik, aynı düğmeye ikinci basış) hiçbir şey yazılmaz.
   const oncekiSurumeDon = async (
     vt: Veritabani,
     kim: DegisikligiYapan,
     sira?: number,
+    beklenenSon?: number,
   ): Promise<TemaSurumu> => {
     degistirilebilirMi();
     if (sira !== undefined && (!Number.isSafeInteger(sira) || sira < 1)) {
@@ -352,6 +349,9 @@ export const temaServisi = (
     }
     // Hedef kilit alındıktan sonra okunur: "bir önceki" aynı anda yazılan bir yayına göre kaymaz.
     return surumYaz(vt, kim, async (son, islem, sonDuzen) => {
+      if (beklenenSon !== undefined && son.sira !== beklenenSon) {
+        throw new BilinenHata("cakisma", [{ alan: "son", kod: "tema-degisti" }]);
+      }
       const aranan = sira ?? son.sira - 1;
       const [hedef] =
         aranan >= 1 && aranan < son.sira

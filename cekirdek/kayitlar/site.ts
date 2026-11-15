@@ -26,3 +26,8 @@ export type SiteOrtami = (typeof siteOrtamlari)[number];
 // Kutunun hangi sunucu ortamında çalıştığını söyleyen değişken. Değerini yayın komutu ortamın adıyla verir.
 // Değişkeni okuyan davranış, değer yoksa canlı ortamdaki gibi davranır (cekirdek/katalog/acik-mi.ts).
 export const siteOrtamiDegiskeni = "SITE_ORTAMI";
+
+// Tema demosunun adresi (kart 0148, karar 0127). Panelin tema ekranının "Demoyu gez" bağlantısı bu adrese
+// "?tema=<kod>" ekler. Değeri demo sitesinin kimliğinden komutlar verir (komutlar/tema-demosu-adresi.mts): çekirdek
+// demo sitesinin adını bilmez. Değer yoksa ya da geçerli bir adres değilse bağlantı çizilmez.
+export const temaDemosuAdresiDegiskeni = "TEMA_DEMOSU_ADRESI";

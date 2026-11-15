@@ -87,6 +87,16 @@ export const panelSayfalari = [
     izin: "menu.gor",
     grup: "vitrin",
   },
+  // Tema ekranı (kart 0148, karar 0101): temalar, demoları, seçim, filtrenin yeri ve geri dönüş.
+  {
+    kod: "tema",
+    adres: `${panelAdresi}/tema`,
+    ad: "yonetim.sayfa.tema.ad",
+    aciklama: "yonetim.sayfa.tema.aciklama",
+    ikon: "tema",
+    izin: "tema.gor",
+    grup: "vitrin",
+  },
 ] as const satisfies readonly PanelSayfaTanimi[];
 
 export type PanelSayfaKodu = (typeof panelSayfalari)[number]["kod"];

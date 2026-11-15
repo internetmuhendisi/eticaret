@@ -5,7 +5,8 @@
 // - Logo logo ucundan: mağaza sahibinin yüklediği, yoksa sitenin ilk logosu; ikisi de yoksa adres yoktur.
 // - Menüler yalnız çizilecek bölümlerin seçtikleri, koduyla; menünün görünmeyen öğeleri menü servisinde süzülür.
 //   Bağlantıların adresi burada kurulur (cekirdek/vitrin/adresler.ts).
-// - Parça görünümleri sitenin geçerli temasından (kart 0109): kayıtlı tema kullanılamıyorsa başlangıç teması.
+// - Parça görünümleri sitenin geçerli temasından (kart 0109): kayıtlı tema kullanılamıyorsa başlangıç teması;
+//   mağaza sahibinin filtre yeri seçimi temanınkinin üstüne yazılır (parcaGorunumleriniKur, kart 0148).
 // - Bölümlerin seçtiği kategoriler (silinmemişler) ve bölümlerin ve kategorilerin görselleri, vitrin görseli
 //   ucunun adresleriyle (kart 0110). Yer tutucuların değerleri mağaza ayarlarından.
 // - Bölümlerin seçtiği markalar (silinmemişler) ve logoları; ürün bölümlerinin kaynaklarının ürün kartları
@@ -33,6 +34,7 @@ import {
   vitrinMenusu,
 } from "../moduller/menu/servis";
 import { anaSayfaYorumlari } from "../moduller/yorum/servis";
+import { parcaGorunumleriniKur } from "../temalar/ayarlar";
 import type { Veritabani } from "../veritabani/baglanti";
 import { kimligiDuzelt, kimlikMi } from "../veritabani/kimlik";
 import { kayitAdresleri } from "./adresler";
@@ -324,7 +326,7 @@ export const vitrinBaglaminiOku = async (
     yorumlar,
     blogYazilari: {},
     yerTutucular: yerTutucuDegerleri,
-    parcaGorunumleri: tema.tema.tanim.gorunumler,
+    parcaGorunumleri: parcaGorunumleriniKur(tema.tema.tanim, tema.ayarlar),
     islevler: yazilanIslevler,
     sayilar: {},
     yil: bicim.yil(an),

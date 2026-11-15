@@ -359,6 +359,35 @@ describe("önceki sürüme dönüş", () => {
     expect(await surumler(vt)).toHaveLength(2);
   });
 
+  // Kart 0148: tema ekranının "Önceki hâline dön"ü gördüğü son sürümü gönderir (karar 0115'teki kural).
+  it("ekranın gördüğü sürüm son değilse hiçbir şey yazılmaz; aynı basış iki kez dönmez", async () => {
+    const vt = await siteAc();
+    const servis = servisi(hazirTemali);
+    await servis.temayiYayinla(vt, yonetici(), {
+      tema: "canli-carsi",
+      ayarlar: { koyuTema: true },
+    });
+    const ekranin = (await servis.temaDurumu(vt)).sira;
+    // Ekran açıkken başka bir sekmede yeni bir yayın.
+    await servis.temayiYayinla(vt, yonetici(), {
+      tema: "canli-carsi",
+      ayarlar: { urunFiltresi: "ustte" },
+    });
+    expect(await hatasi(servis.oncekiSurumeDon(vt, yonetici(), undefined, ekranin))).toEqual({
+      kod: "cakisma",
+      ayrinti: [{ alan: "son", kod: "tema-degisti" }],
+    });
+    expect(await surumler(vt)).toHaveLength(3);
+    // Gördüğü son sürümle dönülür; aynı istek ikinci kez gelirse son sürüm artık o değildir.
+    const donus = await servis.oncekiSurumeDon(vt, yonetici(), undefined, 3);
+    expect(donus).toMatchObject({ sira: 4, geriDonulenSira: 2 });
+    expect(donus.ayarlar.urunFiltresi).toBeUndefined();
+    expect((await hatasi(servis.oncekiSurumeDon(vt, yonetici(), undefined, 3))).kod).toBe(
+      "cakisma",
+    );
+    expect(await surumler(vt)).toHaveLength(4);
+  });
+
   it("bugün okunmayan rengi taşıyan sürüme dönülmez", async () => {
     const vt = await siteAc();
     const servis = servisi(hazirTemali);

@@ -106,7 +106,14 @@ describe("tema uçları", () => {
       veri: { sira: 2, tema: "ozel-tema", geriDonulenSira: null },
     });
 
-    const donus = await temaGeriDonusUcu(istek("tema-geri-don", sahip, {}));
+    // Kart 0148: ekranın gördüğü son sürüm eskiyse 409 ve hiçbir şey yazılmaz; doğru sürümle döner.
+    const eski = await temaGeriDonusUcu(istek("tema-geri-don", sahip, { son: 1 }));
+    expect(eski.status).toBe(409);
+    expect(await eski.json()).toEqual({
+      basarili: false,
+      hata: { kod: "cakisma", ayrinti: [{ alan: "son", kod: "tema-degisti" }] },
+    });
+    const donus = await temaGeriDonusUcu(istek("tema-geri-don", sahip, { son: 2 }));
     expect(donus.status).toBe(200);
     expect(await donus.json()).toMatchObject({
       basarili: true,

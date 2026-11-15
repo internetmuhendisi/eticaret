@@ -123,6 +123,18 @@ describe("sayfa izni", () => {
     expect(oge.yol.map(({ kod }) => kod)).toEqual(["karsilama", "menuler", "menu-ogesi"]);
   });
 
+  // Kart 0148: panelin gerçek tema ekranı yalnız tema izni olan role açılır.
+  it("gerçek tema ekranı: görevli ve rolsüz yönetici bulunamadı alır, mağaza sahibi açar", async () => {
+    for (const rol of ["gorevli", undefined] as const) {
+      await yoneticiyleGir(rol);
+      await expect(panelSayfasiniAc("tema")).rejects.toThrow("bulunamadi");
+      expect(await panelSayfaBilgisi("tema")).toEqual({});
+    }
+    await yoneticiyleGir("magaza-sahibi");
+    const { yol } = await panelSayfasiniAc("tema");
+    expect(yol.map(({ kod }) => kod)).toEqual(["karsilama", "tema"]);
+  });
+
   it("eklentinin getirdiği sayfa eklenti sitede kapalıyken bulunamadı verir, açıkken açılır (kart 0144)", async () => {
     await yoneticiyleGir("magaza-sahibi");
     const agac: PanelSayfaTanimi[] = [

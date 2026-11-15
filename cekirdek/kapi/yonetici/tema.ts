@@ -59,12 +59,13 @@ export const temaGeriDonusUcu = ucTanimla({
   sema: temaGeriDonusSemasi,
   izin: "tema.degistir",
   sinir: "genel",
-  isle: async ({ sira }, _istek, _yanit, { hesapKimligi }) =>
+  isle: async ({ sira, son }, _istek, _yanit, { hesapKimligi }) =>
     surumYaniti(
       await siteninTemaServisi().oncekiSurumeDon(
         siteninVeritabani(),
         { tur: "yonetici", kimlik: hesapKimligi },
         sira,
+        son,
       ),
     ),
 });

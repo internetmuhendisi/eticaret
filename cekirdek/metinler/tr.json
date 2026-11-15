@@ -152,6 +152,10 @@
       "menuler": {
         "ad": "Menüler",
         "aciklama": "Vitrinin üst kısmındaki menüler ve alt kısımdaki bağlantı sütunları. Değişiklik kaydedilince hemen yayınlanır."
+      },
+      "tema": {
+        "ad": "Tema",
+        "aciklama": "Vitrininizin teması. Temaları demolarında gezip karşılaştırın. Seçtiğiniz tema hemen yayınlanır; önceki hâline tek adımda dönebilirsiniz."
       }
     },
     "eylem": {
@@ -633,6 +637,52 @@
       "hata": "Arama yapılamadı. Yeniden deneyin.",
       "secili": "Seçili: {ad}",
       "yetki": "Kayıtları arama izniniz yok. Mağaza sahibinden ürünleri görme izni isteyin."
+    },
+    "tema": {
+      "temalar": "Temalar",
+      "kullaniliyor": "Kullanılıyor",
+      "siteyeOzel": "Mağazanıza özel",
+      "demoyuGez": "Demoyu gez",
+      "demoyuGezEtiketi": "Demoyu gez: {ad} (yeni sekmede açılır)",
+      "demosuYok": "Mağazanıza özel hazırlandığı için demosu yok.",
+      "kullan": "Bu temayı kullan",
+      "kullanEtiketi": "Bu temayı kullan: {ad}",
+      "kapali": "Temayı değiştirmek bu mağazada kapalı. Değiştirmek isterseniz bize yazın.",
+      "pencere": {
+        "baslik": "{ad} temasını kullan",
+        "aciklama": "Tema hemen yayınlanır ve vitrinde görünür. Ürünleriniz, içerikleriniz ve menüleriniz değişmez.",
+        "duzen": "Vitrin bölümleri",
+        "uygula": "Yeni temanın düzenini uygula",
+        "uygulaAciklamasi": "Bölümler yeni temanın sırasına ve görünümüne geçer. Aynı türdeki bölümlerin içeriği taşınır; yeni temada karşılığı olmayan bölümler gizlenerek listenin sonunda saklanır.",
+        "koru": "Şu anki düzenimi koru",
+        "koruAciklamasi": "Bölümleriniz ve sıraları aynen kalır, yeni temanın görünümüyle çizilir.",
+        "secimYok": "Vitrin bölümleri için bir seçenek seçin.",
+        "yayinla": "Temayı yayınla"
+      },
+      "liste": {
+        "baslik": "Ürün listesi",
+        "aciklama": "Kategori, marka, etiket ve arama sayfalarındaki ürün listesi.",
+        "filtreYeri": "Masaüstünde filtrenin yeri",
+        "solda": "Solda sütun",
+        "ustte": "Üstte",
+        "filtreAciklamasi": "Telefonda ve tablette filtre her zaman yan pencerede açılır.",
+        "kaydet": "Kaydet ve yayınla"
+      },
+      "yayinlandi": "Tema yayınlandı.",
+      "filtreKaydedildi": "Filtrenin yeri yayınlandı.",
+      "geriDonuldu": "Tema önceki hâline döndü.",
+      "hata": {
+        "genel": "Değişiklik kaydedilemedi. Sayfayı yenileyip yeniden deneyin.",
+        "ag": "Sunucuya ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
+        "oturum": "Oturumunuz kapandı. Yeniden giriş yapın.",
+        "yetki": "Bu değişikliği yapma izniniz yok.",
+        "katalog": "Vitrin hazırlanıyor. Birkaç saniye sonra yeniden deneyin.",
+        "degistirilemez": "Temayı değiştirmek bu mağazada kapalı.",
+        "kullanilamaz": "Bu tema artık mağazanızda kullanılamıyor; ekran yenilendi.",
+        "temaDegisti": "Tema bu arada değişti; ekran yenilendi. Gerekirse yeniden deneyin.",
+        "oncekiYok": "Dönülecek önceki bir hâl yok.",
+        "surumKullanilamaz": "Önceki hâlin teması ya da renkleri artık kullanılamıyor; bu yüzden dönülemiyor."
+      }
     }
   },
   "vitrin": {

@@ -333,10 +333,10 @@ Temayı ve ayarlarını yeni sürüm olarak yayınlar (karar 0080). Tema kodu de
 Önceki bir tema sürümüne döner: o sürüm yeni sürüm olarak yazılır (karar 0080). Tema kodu değişiyorsa düzen de, dönülen sürüm geçerliyken son hâliyle getirilir; sonradan yapılan düzen değişiklikleri düzen geçmişinde kalır (kart 0113, karar 0091).
 
 - İzin: `tema.degistir`. Sınır: `genel`.
-- Girdi: `{ "sira"? }` (`temaGeriDonusSemasi`). Sıra verilmezse bir önceki sürüm.
+- Girdi: `{ "sira"?, "son"? }` (`temaGeriDonusSemasi`). Sıra verilmezse bir önceki sürüm. `son`: ekranın gördüğü son sürümün sırası (kart 0148); verilirse ve son sürüm o değilse hiçbir şey yazılmaz.
 - Servis: `cekirdek/moduller/tema/servis.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "sira", "tema", "ayarlar", "geriDonulenSira" } }`.
-- Hatalar: `dogrulama` (`surum-gecersiz`: olmayan, son ya da bozuk sıra), `is-kurali` (`tema-degistirilemez`; `surum-kullanilamaz`: teması bugün kullanılamayan ya da bugünkü kurallardan geçmeyen sürüm), `yetki`, `hizmet-kullanilamiyor` (`katalog-bekleniyor`: sitenin başlangıç düzeni kataloğa başvuruyor ve katalog henüz kurulmadı; kart 0114).
+- Hatalar: `dogrulama` (`surum-gecersiz`: olmayan, son ya da bozuk sıra), `cakisma` (`tema-degisti`: `son` verildi ve son sürüm o değil), `is-kurali` (`tema-degistirilemez`; `surum-kullanilamaz`: teması bugün kullanılamayan ya da bugünkü kurallardan geçmeyen sürüm), `yetki`, `hizmet-kullanilamiyor` (`katalog-bekleniyor`: sitenin başlangıç düzeni kataloğa başvuruyor ve katalog henüz kurulmadı; kart 0114).
 
 ### GET /kapi/yonetici/duzen
 

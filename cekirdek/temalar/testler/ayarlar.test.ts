@@ -3,7 +3,13 @@
 import { describe, expect, it } from "vitest";
 import { kontrastOrani, okunurTon } from "../../../bilesenler/tasarim-degerleri/kontrast.ts";
 import { ornekRenk } from "../../../bilesenler/tasarim-degerleri/testler/ornek-renkler.ts";
-import { temaAyariSorunlari, temaAyarlariSemasi } from "../ayarlar.ts";
+import {
+  parcaGorunumleriniKur,
+  sorunluAyarlariAt,
+  temaAyariSorunlari,
+  temaAyarlariSemasi,
+  yeniTemaninAyarlari,
+} from "../ayarlar.ts";
 import { okunmayanCiftler } from "../okunurluk.ts";
 import { temaTanimiSemasi } from "../sema.ts";
 import { denemeTemasi } from "./deneme-temasi.ts";
@@ -29,6 +35,8 @@ describe("ayarların şeması", () => {
       { renkler: { birincil: ornekRenk.kacisli } },
       { renkler: { mor: ornekRenk.turuncu } },
       { yaziTipi: "Inter Variable" },
+      { urunFiltresi: "sagda" },
+      { urunFiltresi: "" },
       { fazla: true },
     ]) {
       expect(temaAyarlariSemasi.safeParse(bozuk).success, JSON.stringify(bozuk)).toBe(false);
@@ -146,5 +154,64 @@ describe("okunur ton", () => {
   it("hiç geçen yoksa undefined, bozuk renkte hata", () => {
     expect(okunurTon(ornekRenk.turuncu, () => false)).toBeUndefined();
     expect(() => okunurTon("FFB020", () => true)).toThrow();
+  });
+});
+
+// Kart 0148: filtrenin yeri mağaza sahibinin tema ayarıdır; yeni temaya geçerken uymayan ayar atılır.
+describe("filtrenin yeri (kart 0148)", () => {
+  it("iki yer de her temada kaydedilebilir, seçilmemişse ayarda yoktur", () => {
+    expect(temaAyarlariSemasi.parse({}).urunFiltresi).toBeUndefined();
+    for (const yer of ["solda", "ustte"] as const) {
+      expect(sorunlari({ urunFiltresi: yer })).toEqual([]);
+      expect(temaAyarlariSemasi.parse({ urunFiltresi: yer }).urunFiltresi).toBe(yer);
+    }
+  });
+
+  it("vitrinin görünümü: seçilmemişse temanınki, seçilmişse mağaza sahibininki; öteki parçalar temanın", () => {
+    expect(parcaGorunumleriniKur(tema, temaAyarlariSemasi.parse({}))).toEqual(tema.gorunumler);
+    expect(
+      parcaGorunumleriniKur(tema, temaAyarlariSemasi.parse({ urunFiltresi: "ustte" })),
+    ).toEqual({ ...tema.gorunumler, "urun-filtresi": "ustte" });
+    expect(tema.gorunumler["urun-filtresi"]).toBe("solda");
+  });
+});
+
+describe("yeni temaya geçerken kalan ayarlar (kart 0148)", () => {
+  const ayarlar = temaAyarlariSemasi.parse({
+    renkler: { birincil: ornekRenk.turuncu, zemin: ornekRenk.beyaz },
+    yaziTipi: "roboto",
+    kose: "yumusak",
+    dugmeBicimi: "yildiz",
+    koyuTema: true,
+    urunFiltresi: "ustte",
+  });
+
+  it("yeni temanın açmadığı renk ve tanımsız seçenek atılır; geçerli seçim, koyu tema ve filtrenin yeri kalır", () => {
+    const kalan = yeniTemaninAyarlari(tema, ayarlar);
+    expect(kalan).toEqual({
+      renkler: { birincil: ornekRenk.turuncu },
+      kose: "yumusak",
+      koyuTema: true,
+      urunFiltresi: "ustte",
+    });
+    expect(temaAyariSorunlari(tema, kalan)).toEqual([]);
+    // Girdi değişmez.
+    expect(ayarlar.renkler.zemin).toBe(ornekRenk.beyaz);
+  });
+
+  it("okunmayan renk de atılır: yayın kurallardan geçer", () => {
+    const okunmayan = temaAyarlariSemasi.parse({ renkler: { birincil: ornekRenk.koyuLacivert } });
+    expect(temaAyariSorunlari(tema, okunmayan).map((sorun) => sorun.kod)).toEqual([
+      "kontrast-yetersiz",
+    ]);
+    expect(yeniTemaninAyarlari(tema, okunmayan).renkler).toEqual({});
+  });
+
+  it("verilen sorunlar dışındaki ayara dokunulmaz", () => {
+    expect(sorunluAyarlariAt(ayarlar, [{ alan: "yaziTipi" }])).toEqual({
+      ...ayarlar,
+      yaziTipi: undefined,
+    });
+    expect(sorunluAyarlariAt(ayarlar, [])).toEqual(ayarlar);
   });
 });

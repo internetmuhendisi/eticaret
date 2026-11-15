@@ -2,7 +2,8 @@
 // durumu okur (adres.ts), filtreli listeyi alır (veri.ts), kartları ürün kartının tek veri işleviyle kurar ve
 // çizer. Arama sayfası (kart 0137) aynı parçayı kullanır.
 //
-// - Filtrenin yeri temanın görünümüdür (kayitlar/tema.ts, urun-filtresi): masaüstünde solda sütun ya da üstte
+// - Filtrenin yeri mağaza sahibinin tema ayarıdır, seçilmemişse temanın görünümü (kayitlar/tema.ts, urun-filtresi;
+//   kart 0148): masaüstünde solda sütun ya da üstte
 //   şerit; telefonda ve tablette yan pencere.
 // - Sıralamanın, sayfa geçişinin ve sayfa başına ürünün varsayılanı mağaza sahibinin ayarıdır.
 // - Fiyat filtresi sitenin para biçimiyle okunur (biçimleyicinin paraOku'su); okunamayan tutar filtreye
@@ -23,6 +24,7 @@ import { metin, siteninBicimleyicisi } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
 import type { UrunFiltresi } from "../../moduller/urun/filtre";
+import { parcaGorunumleriniKur } from "../../temalar/ayarlar";
 import { siteninVeritabani } from "../../veritabani/baglanti";
 import { vitrinAdresleri } from "../adresler";
 import { izgaraSiniflari } from "../bolumler/ortak/urun-izgarasi";
@@ -134,7 +136,7 @@ export const urunListesiVerisi = async ({
     an,
   });
   const kartlar = await urunKartlari(vt, site, liste.urunler, { yer: "liste", an });
-  const temaninGorunumleri = tema.tema.tanim.gorunumler;
+  const temaninGorunumleri = parcaGorunumleriniKur(tema.tema.tanim, tema.ayarlar);
   const filtreYeri =
     urunFiltresiGorunumleri.find((g) => g === temaninGorunumleri["urun-filtresi"]) ??
     urunFiltresiGorunumleri[0];

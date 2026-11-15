@@ -36,6 +36,7 @@ import {
   MenuIcon,
   OctagonXIcon,
   PackageIcon,
+  PaletteIcon,
   PanelsTopLeftIcon,
   PauseIcon,
   PencilIcon,
@@ -132,6 +133,8 @@ export const ikonlar = {
   sil: Trash2Icon,
   // Menüler ekranı (kart 0143): menüdeki sayfa.
   menuler: ListTreeIcon,
+  // Tema ekranı (kart 0148): menüdeki sayfa.
+  tema: PaletteIcon,
 } satisfies Record<string, LucideIcon>;
 
 export type IkonAdi = keyof typeof ikonlar;

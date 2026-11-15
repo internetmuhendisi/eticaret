@@ -24,6 +24,7 @@
     "cekirdek/yonetim-paneli/giris-formu.tsx",
     "cekirdek/yonetim-paneli/kod-formu.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
+    "cekirdek/yonetim-paneli/tema/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/bolum-duzenleyici.tsx"
   ],
   "bilesenler/ikonlar/ikon.tsx": [
@@ -56,7 +57,8 @@
     "cekirdek/vitrin/urun-sayfasi/sayfa.tsx",
     "cekirdek/vitrin/yildizlar.tsx",
     "cekirdek/yonetim-paneli/eylem-dugmesi.tsx",
-    "cekirdek/yonetim-paneli/panel-menusu.tsx"
+    "cekirdek/yonetim-paneli/panel-menusu.tsx",
+    "cekirdek/yonetim-paneli/tema/ekran.tsx"
   ],
   "bilesenler/parcalar/acilir-menu.tsx": [
     "cekirdek/vitrin/bolumler/menu-satiri/gorunum.tsx",
@@ -91,6 +93,7 @@
     "cekirdek/vitrin/urun-sayfasi/sayfa.tsx",
     "cekirdek/yonetim-paneli/eylem-dugmesi.tsx",
     "cekirdek/yonetim-paneli/giris-formu.tsx",
+    "cekirdek/yonetim-paneli/tema/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/slider.tsx"
   ],
   "bilesenler/parcalar/bildirim.tsx": [
@@ -136,6 +139,7 @@
     "cekirdek/yonetim-paneli/kurulum-akisi.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/panel-cercevesi.tsx",
+    "cekirdek/yonetim-paneli/tema/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/bolum-duzenleyici.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/slider.tsx"
@@ -169,6 +173,7 @@
   "bilesenler/parcalar/kart.tsx": [
     "cekirdek/eklentiler/stoga-gelince-haber-ver/form.tsx",
     "cekirdek/eklentiler/stoga-gelince-haber-ver/panel.tsx",
+    "cekirdek/yonetim-paneli/tema/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/slider.tsx"
   ],
   "bilesenler/parcalar/onay-kutusu.tsx": [
@@ -184,7 +189,8 @@
     "bilesenler/parcalar/yan-pencere.tsx",
     "cekirdek/vitrin/urun-sayfasi/galeri.tsx",
     "cekirdek/vitrin/urun-sayfasi/yorum-yaz.tsx",
-    "cekirdek/yonetim-paneli/gorsel-secimi.tsx"
+    "cekirdek/yonetim-paneli/gorsel-secimi.tsx",
+    "cekirdek/yonetim-paneli/tema/ekran.tsx"
   ],
   "bilesenler/parcalar/rozet.tsx": [
     "cekirdek/vitrin/bolumler/genis-afis/gorunum.tsx",
@@ -195,6 +201,7 @@
     "cekirdek/vitrin/urun-sayfasi/yorumlar.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/panel-menusu.tsx",
+    "cekirdek/yonetim-paneli/tema/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx"
   ],
   "bilesenler/parcalar/sayfa-basligi.tsx": [
@@ -220,6 +227,7 @@
     "cekirdek/vitrin/urun-sayfasi/urun-ust.tsx",
     "cekirdek/vitrin/urun-sayfasi/yorum-yaz.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
+    "cekirdek/yonetim-paneli/tema/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/bolum-duzenleyici.tsx"
   ],
   "bilesenler/parcalar/secim-kutusu.tsx": [
@@ -264,6 +272,7 @@
     "cekirdek/yonetim-paneli/kapatma-sorusu.tsx",
     "cekirdek/yonetim-paneli/kod-formu.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
+    "cekirdek/yonetim-paneli/tema/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/bolum-duzenleyici.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/slider.tsx"

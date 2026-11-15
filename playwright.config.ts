@@ -4,6 +4,13 @@ import { mkdirSync } from "node:fs";
 import { basename, join } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 import { dosyaKlasoruDegiskeni } from "./cekirdek/kayitlar/dosya";
+import { temaDemosuAdresiDegiskeni } from "./cekirdek/kayitlar/site";
+import {
+  demoSitesi,
+  projedekiSiteler,
+  temaDemosuOrtami,
+  yereldekiDemoAdresi,
+} from "./komutlar/tema-demosu-adresi.mts";
 
 // Testler başka bir site verilmezse demo site Örnek Mağaza'yla çalışır (karar 0007, 0021).
 // Değişken hem uygulamaya hem testlere geçer.
@@ -21,13 +28,24 @@ const {
 } = process.env;
 mkdirSync(DOSYA_KLASORU, { recursive: true, mode: 0o700 });
 Object.assign(process.env, { SITE_KLASORU, [dosyaKlasoruDegiskeni]: DOSYA_KLASORU });
+// Panelin "Demoyu gez" bağlantısı (kart 0148): projedeki demo sitesinin yerel adresi. Testlerde demo sitesi
+// açılmaz; tema ekranı testi bağlantıyı ve açılan sekmenin adresini ölçer.
+if (process.env[temaDemosuAdresiDegiskeni] === undefined) {
+  Object.assign(
+    process.env,
+    temaDemosuOrtami(yereldekiDemoAdresi(demoSitesi(projedekiSiteler()), 3000)),
+  );
+}
+
+// Kalıplar tam yola göre eşleşir. Çalışma kopyaları (.claude/worktrees/) bu klasörün içinde durduğu için yalnız
+// bu kopyanın kendi .claude klasörü dışarıda bırakılır.
+const ortakDislananlar = ["**/node_modules/**", `${import.meta.dirname}/.claude/**`];
+const temaDegisikligiTesti = "**/uctan-uca/tema.test.ts";
 
 export default defineConfig({
   testDir: ".",
   testMatch: ["**/uctan-uca/**/*.test.ts", "**/uctan-uca/**/*.test.tsx"],
-  // Kalıplar tam yola göre eşleşir. Çalışma kopyaları (.claude/worktrees/) bu klasörün
-  // içinde durduğu için yalnız bu kopyanın kendi .claude klasörü dışarıda bırakılır.
-  testIgnore: ["**/node_modules/**", `${import.meta.dirname}/.claude/**`],
+  testIgnore: ortakDislananlar,
   // Sitenin başlangıç kataloğu, menüleri ve düzeni testlerden önce kurulur (kart 0129).
   globalSetup: "./cekirdek/testler/uctan-uca/hazirlik.ts",
   // Bir testin süre sınırı (kart 0129). Playwright'ın 30 saniyesi kontrol hattında yetmiyor: hattın makinesi
@@ -45,5 +63,19 @@ export default defineConfig({
     url: "http://localhost:3000",
     reuseExistingServer: true,
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  // Tema değişikliği bütün vitrinin görünüşünü değiştirir (kart 0148): tema ekranının testi öteki testler bittikten
+  // sonra kendi aşamasında çalışır, aynı anda çalışan bir testin ölçtüğü renkleri değiştirmez.
+  projects: [
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
+      testIgnore: [...ortakDislananlar, temaDegisikligiTesti],
+    },
+    {
+      name: "tema-degisikligi",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: temaDegisikligiTesti,
+      dependencies: ["chromium"],
+    },
+  ],
 });

@@ -47,6 +47,12 @@ import {
   siteVeritabaniniHazirla,
   sunucudaCalistir,
 } from "./sunucu-veritabani.mts";
+import {
+  demoSitesi,
+  projedekiSiteler,
+  sunucudakiDemoAdresi,
+  temaDemosuOrtami,
+} from "./tema-demosu-adresi.mts";
 
 // --- Adlar ve yerleşim ---
 
@@ -120,6 +126,8 @@ export const yayinKutusuTanimi = (
   // Sitenin hata izleme projesinin gönderim adresi (kart 0022). Gizli değildir: tarayıcıya da
   // gider, yalnız o projeye hata göndermeye izin verir (karar 0036).
   hataIzlemeAdresi?: string,
+  // Tema demosunun bu ortamdaki adresi (kart 0148): panelin "Demoyu gez" bağlantısı. Yoksa bağlantı çizilmez.
+  temaDemosuAdresi?: string,
 ) => {
   const gizli = kutuGizliTanimi(ortam, kodAdi, siteNumarasi);
   const ag = siteAgiAdi(ortam, kodAdi);
@@ -143,6 +151,7 @@ export const yayinKutusuTanimi = (
             [hataIzlemeDegiskenleri.adres]: hataIzlemeAdresi,
             [hataIzlemeDegiskenleri.ortam]: ortam,
           }),
+      ...temaDemosuOrtami(temaDemosuAdresi),
     },
     cap_drop: ["ALL"],
     cap_add: [] as string[],
@@ -537,6 +546,9 @@ const yayinlaKilitli = async (girdi: YayinGirdisi): Promise<YayinKaydi> => {
     yaz(`yayın       ${ortam}/${kodAdi} ${no} (sürüm ${surum}, kayıt ${girdi.kayit.slice(0, 12)})`);
     const hatalar = goruntuyuDenetle(girdi.etiket);
     if (hatalar.length > 0) throw new Error(`Görüntü denetimden geçmedi: ${hatalar.join("; ")}`);
+    // Panelin "Demoyu gez" bağlantısı (kart 0148): demo sitesi projenin siteler/ klasöründen bulunur. Birden çok
+    // demo varsa sunucuya dokunulmadan durulur.
+    const temaDemosuAdresi = sunucudakiDemoAdresi(demoSitesi(projedekiSiteler()), ortam);
     // Hataları izlenmeyen bir site yayına çıkmaz: proje hazırlanamazsa yayın durur (kart 0022).
     // Veritabanı değişikliklerinden önce: araç yanıt vermezse veritabanına hiç dokunulmamış olur.
     const hataIzlemeAdresi = projeAdresiniHazirla(ipv4, ortam, kodAdi);
@@ -561,7 +573,7 @@ const yayinlaKilitli = async (girdi: YayinGirdisi): Promise<YayinKaydi> => {
         ortam,
         kodAdi,
         no,
-        yayinKutusuTanimi(ortam, kodAdi, siteNumarasi, no, hataIzlemeAdresi),
+        yayinKutusuTanimi(ortam, kodAdi, siteNumarasi, no, hataIzlemeAdresi, temaDemosuAdresi),
         goruntu,
       ),
     );

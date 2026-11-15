@@ -36,6 +36,7 @@ paths:
 - Filtre kuralları ve sayılar yalnız `cekirdek/moduller/urun/filtre.ts`'dedir. Fiyat filtresi ve sıralaması kartın fiyatıdır (`fiyatAraliklari`); fiyat SQL'de yeniden hesaplanmaz.
 - Filtre, sıralama ve sayfa adreste durur; adres yalnız `adres.ts` ile okunur ve kurulur. Müşterinin yazdığı tutar biçimleyicinin `paraOku`'suyla okunur.
 - Önerilen sıra ürünün vitrin sırasıdır, yalnız `vitrinSirasiniDegistir` yazar.
+- Masaüstünde filtrenin yeri `parcaGorunumleriniKur` ile okunur: mağaza sahibinin seçimi, yoksa temanın görünümü (karar 0129).
 
 ## Arama (karar 0107)
 

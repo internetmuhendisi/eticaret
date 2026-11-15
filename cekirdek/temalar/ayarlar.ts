@@ -5,11 +5,14 @@
 //   (birlesim.ts; kullanıcı kararı: mağaza sahibi tek renk seçer).
 // - yaziTipi, kose, dugmeBicimi: temanın seçeneklerinden birinin kodu. Seçilmemişse temanın kendi değeri.
 // - koyuTema: vitrinde koyu tema (cihazın tercihine göre) açık mı. Varsayılan kapalıdır.
+// - urunFiltresi: masaüstünde ürün listesindeki filtrenin yeri (kart 0148). Seçilmemişse temanın görünümü. Her
+//   temada iki yer de seçilebilir; temaya bağlı değildir, tema değişince kalır.
 //
 // Değerler sitenin veritabanında sürüm sürüm saklanır (cekirdek/moduller/tema/).
 import { z } from "zod";
 import { renkSemasi } from "../../bilesenler/tasarim-degerleri/css.ts";
 import { type RenkAdi, renkAdlari } from "../../bilesenler/tasarim-degerleri/degerler.ts";
+import { urunFiltresiGorunumleri } from "../kayitlar/tema.ts";
 import { okunmayanCiftler, okunurRenk } from "./okunurluk.ts";
 import { kodSemasi, type TemaTanimi } from "./sema.ts";
 
@@ -24,6 +27,7 @@ export const temaAyarlariSemasi = z.strictObject({
   kose: kodSemasi.optional(),
   dugmeBicimi: kodSemasi.optional(),
   koyuTema: z.boolean().default(false),
+  urunFiltresi: z.enum(urunFiltresiGorunumleri).optional(),
 });
 export type TemaAyarlari = z.output<typeof temaAyarlariSemasi>;
 export type TemaAyarlariGirdisi = z.input<typeof temaAyarlariSemasi>;
@@ -78,3 +82,35 @@ export const temaAyariSorunlari = (tema: TemaTanimi, ayarlar: TemaAyarlari): Tem
   }
   return sorunlar;
 };
+
+// Sorunlu ayarları atar, gerisini korur (kart 0148). Vitrin kayıtlı ayarlardan temaya uymayanı atar (kontrastı
+// sonradan yetersiz kalan renk hariç, birleşim onun okunur tonunu kullanır); tema ekranı yeni temaya geçerken
+// yeni temanın kabul etmediği her ayarı atar. Temaya bağlı olmayan ayarlar (koyu tema, filtrenin yeri) kalır.
+export const sorunluAyarlariAt = (
+  ayarlar: TemaAyarlari,
+  sorunlar: readonly Pick<TemaAyariSorunu, "alan">[],
+): TemaAyarlari => {
+  const sonuc = structuredClone(ayarlar);
+  for (const { alan } of sorunlar) {
+    if (alan.startsWith("renkler.")) {
+      delete sonuc.renkler[alan.slice("renkler.".length) as RenkAdi];
+    } else if (alan === "yaziTipi" || alan === "kose" || alan === "dugmeBicimi") {
+      delete sonuc[alan];
+    }
+  }
+  return sonuc;
+};
+
+// Yeni temaya geçerken kalan ayarlar: yeni temanın kabul etmediği renk ve seçenek atılır.
+export const yeniTemaninAyarlari = (tema: TemaTanimi, ayarlar: TemaAyarlari): TemaAyarlari =>
+  sorunluAyarlariAt(ayarlar, temaAyariSorunlari(tema, ayarlar));
+
+// Vitrinin parça görünümleri: temanın seçimi, mağaza sahibinin seçtiği filtre yeriyle (kart 0148). Vitrin bağlamı
+// ve ürün listesi görünümleri yalnız buradan okur.
+export const parcaGorunumleriniKur = (
+  tema: TemaTanimi,
+  ayarlar: TemaAyarlari,
+): Readonly<Record<string, string>> => ({
+  ...tema.gorunumler,
+  ...(ayarlar.urunFiltresi === undefined ? {} : { "urun-filtresi": ayarlar.urunFiltresi }),
+});
