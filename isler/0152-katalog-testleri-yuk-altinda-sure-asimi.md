@@ -56,4 +56,4 @@ Sonuç: sebep kart 0203'te bulunan Playwright yarışıdır. Kart 0203'ün yamas
 
 ## Durum
 
-yapılacak
+bitti
