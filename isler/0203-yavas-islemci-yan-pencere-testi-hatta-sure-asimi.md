@@ -57,4 +57,4 @@ Bölüm: Testler.
 
 ## Durum
 
-yapılacak
+bitti
