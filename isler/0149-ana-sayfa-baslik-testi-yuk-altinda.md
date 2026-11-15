@@ -26,6 +26,12 @@ Bölüm: Vitrin. Kart 0135'te görüldü, ona karıştırılmadı.
 - Sebep ölçümle yazıldı.
 - Test yük altında art arda en az beş tam takımda geçiyor ya da sebep kodda bulunup düzeltildi.
 
+## Ölçüm (2026-11-16, kart 0152)
+
+- Test yamalı Playwright'la (karar 0130) ayrı kutuda temiz veritabanıyla çalıştırıldı. On işçiyle, dosyanın her testi 30 kez, üç tur. Turun başındaki yük ortalaması 19, 37 ve 41'di.
+- 270 denemenin 270'i geçti. İleti yakalanamadı.
+- Kart 0152'deki "ağ durdu" yarışı bu testi etkilemez: test `networkidle` beklemez. 0152 ile ortak sebep yok.
+
 ## Durum
 
 yapılacak
