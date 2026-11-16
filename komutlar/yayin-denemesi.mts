@@ -6,7 +6,8 @@
 // - Yayın: deneme adresi şifreli açılıyor, sağlık ucu kimlikteki sürümü söylüyor, vitrin sitenin adını.
 // - İki sitenin kutusu birbirine ulaşamıyor (adla da, adresle de).
 // - Bilerek bozulmuş bir görüntüyle yayın başarısız oluyor; site eski yayınıyla açık kalıyor.
-// - İkinci bir yayından (başka bir adla) sonra geri dönüş siteyi önceki yayına döndürüyor.
+// - İkinci bir yayından (başka bir logoyla) sonra geri dönüş siteyi önceki yayına döndürüyor. Yayınlar
+//   sitenin ilk logosuyla ayırt edilir; mağaza adı veritabanında kaldığı için ayırt etmez (kart 0209).
 // - Yayın kaydında bütün çalıştırmalar sırasıyla görünüyor.
 // - Elle bakım yalnız o sitenin vitrinini kapatıyor; yayın bakım açıkken çalışıyor, bakımı kapatmıyor.
 // - Gizli bilgi yenilenince yayındaki kutu yeni değerle yeniden başlıyor; kesinti ölçülür.
@@ -16,7 +17,11 @@
 import { spawnSync } from "node:child_process";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { type Site, siteKlasorunuDogrula } from "../cekirdek/ayar-semasi/site-klasoru.ts";
+import {
+  markaKlasoru,
+  type Site,
+  siteKlasorunuDogrula,
+} from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { cekirdekSurumu } from "../cekirdek/surum.ts";
 import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
 import { denemeSitesiAyarDosyasi } from "./deneme-sitesi-ayarlari.mts";
@@ -57,6 +62,7 @@ import {
   yayinKlasoru,
   yayinla,
 } from "./yayin.mts";
+import { denemeLogolari, logoUcu, logoYayiniGosteriyor } from "./yayin-denemesi-logosu.mts";
 import { yayinGoruntusunuHazirla, yayinKilitleri } from "./yayin-hazirligi.mts";
 import { vitrinBasligi } from "./yerel-ortam.mts";
 
@@ -65,6 +71,7 @@ const a = { kodAdi: "yayin-deneme-a", numara: denemeSiteNumarasi };
 const b = { kodAdi: "yayin-deneme-b", numara: ikinciDenemeSiteNumarasi };
 const klasorKoku = join(kok, "sunucu", "olusan", "yayin-denemesi");
 const bozukEtiket = `altyapi-cekirdek-bozuk:${cekirdekSurumu}`;
+const logolar = await denemeLogolari();
 
 // Ctrl-C: o anki ssh adımı yarıda kalır; deneme sonraki adıma geçmez, temizlik yine çalışır.
 let kesildi = false;
@@ -87,7 +94,11 @@ const olc = (ad: string, gecti: boolean, ayrinti = "") => {
 };
 
 // Deneme sitesinin klasörü bilgisayarda üretilir ve şemadan geçer.
-const siteKlasoru = (kodAdi: string, gorunenAd: string): { klasor: string; site: Site } => {
+const siteKlasoru = (
+  kodAdi: string,
+  gorunenAd: string,
+  logo: Buffer,
+): { klasor: string; site: Site } => {
   const klasor = join(klasorKoku, kodAdi);
   rmSync(klasor, { recursive: true, force: true });
   mkdirSync(klasor, { recursive: true });
@@ -101,6 +112,8 @@ const siteKlasoru = (kodAdi: string, gorunenAd: string): { klasor: string; site:
   };
   writeFileSync(join(klasor, "kimlik.json"), `${JSON.stringify(kimlik, null, 2)}\n`);
   writeFileSync(join(klasor, "ayarlar.json"), denemeSitesiAyarDosyasi());
+  mkdirSync(join(klasor, markaKlasoru));
+  writeFileSync(join(klasor, markaKlasoru, "logo.webp"), logo);
   const sonuc = siteKlasorunuDogrula(klasor);
   if (!sonuc.gecerli) throw new Error(`Deneme sitesi geçersiz: ${sonuc.hatalar.join("; ")}`);
   return { klasor, site: sonuc.site };
@@ -111,6 +124,18 @@ const vitrin = async (ipv4: string, kodAdi: string) => {
   // Adı yerel ortam denemesiyle aynı işlev okur: bölümlü ana sayfada başlık sınıf taşır (kart 0208).
   return { durum: yanit.durum, ad: vitrinBasligi(yanit.govde) };
 };
+
+// Yayının işareti: logo ucunun dışarıdan verdiği dosya (kart 0209).
+const logo = async (ipv4: string, kodAdi: string) => {
+  const yanit = await disaridanIste(ipv4, kodAdi, logoUcu);
+  return yanit.durum === 200 ? yanit.ham : Buffer.alloc(0);
+};
+const hangiLogo = (gelen: Buffer) =>
+  gelen.equals(logolar.birinci)
+    ? "birinci logo"
+    : gelen.equals(logolar.ikinci)
+      ? "ikinci logo"
+      : `başka (${gelen.length} bayt)`;
 
 const saglik = async (ipv4: string, kodAdi: string) => {
   const yanit = await disaridanIste(ipv4, kodAdi, "/kapi/herkese-acik/saglik");
@@ -221,8 +246,13 @@ try {
   const etiket = yayinGoruntusunuHazirla(cekirdekSurumu, kayit);
   bozukGoruntuUret(etiket);
   temizlikGerekli = true;
-  const yayinGirdisi = (site: typeof a, gorunenAd: string, kullanilacak = etiket) => {
-    const { klasor, site: okunan } = siteKlasoru(site.kodAdi, gorunenAd);
+  const yayinGirdisi = (
+    site: typeof a,
+    gorunenAd: string,
+    kullanilacakLogo: Buffer,
+    kullanilacak = etiket,
+  ) => {
+    const { klasor, site: okunan } = siteKlasoru(site.kodAdi, gorunenAd, kullanilacakLogo);
     return {
       ipv4,
       ortam,
@@ -234,15 +264,19 @@ try {
     };
   };
 
-  const ilk = await yayinla(yayinGirdisi(a, "Yayın Denemesi A1"));
+  const ilk = await yayinla(yayinGirdisi(a, "Yayın Denemesi A", logolar.birinci));
   const ilkVitrin = await vitrin(ipv4, a.kodAdi);
   const ilkSaglik = await saglik(ipv4, a.kodAdi);
+  const ilkLogo = await logo(ipv4, a.kodAdi);
   olc(
-    "yayın: deneme adresi şifreli açılıyor, sağlık ucu sürümü söylüyor",
-    ilk.sonuc === "basarili" && !ilkSaglik && ilkVitrin.ad === "Yayın Denemesi A1",
-    ilk.neden ?? ilkSaglik ?? `vitrin "${ilkVitrin.ad}"`,
+    "yayın: deneme adresi şifreli açılıyor, sağlık ucu sürümü söylüyor, vitrin adını ve logosunu",
+    ilk.sonuc === "basarili" &&
+      !ilkSaglik &&
+      ilkVitrin.ad === "Yayın Denemesi A" &&
+      logoYayiniGosteriyor(ilkLogo, logolar.birinci, logolar.ikinci),
+    ilk.neden ?? ilkSaglik ?? `vitrin "${ilkVitrin.ad}", ${hangiLogo(ilkLogo)}`,
   );
-  const ikinciSite = await yayinla(yayinGirdisi(b, "Yayın Denemesi B1"));
+  const ikinciSite = await yayinla(yayinGirdisi(b, "Yayın Denemesi B", logolar.birinci));
   olc("ikinci deneme sitesi yayınlandı", ikinciSite.sonuc === "basarili", ikinciSite.neden ?? "");
 
   // Ön kapı iki sitenin ağına bağlıyken ön kapının bütün ölçümleri (sunucu denetimindekiyle aynı):
@@ -281,15 +315,16 @@ try {
     );
   }
 
-  const bozuk = await yayinla(yayinGirdisi(a, "Yayın Denemesi A-bozuk", bozukEtiket));
+  const bozuk = await yayinla(yayinGirdisi(a, "Yayın Denemesi A", logolar.ikinci, bozukEtiket));
   const bozuktanSonra = await vitrin(ipv4, a.kodAdi);
+  const bozuktanSonraLogo = await logo(ipv4, a.kodAdi);
   olc(
     "bozuk sürüm yayınlanınca yayın başarısız, site eski yayınıyla açık",
     bozuk.sonuc === "basarisiz" &&
       bozuktanSonra.durum === 200 &&
-      bozuktanSonra.ad === "Yayın Denemesi A1" &&
+      logoYayiniGosteriyor(bozuktanSonraLogo, logolar.birinci, logolar.ikinci) &&
       !(await saglik(ipv4, a.kodAdi)),
-    `${bozuk.neden ?? "başarılı oldu"}; vitrin "${bozuktanSonra.ad}"`,
+    `${bozuk.neden ?? "başarılı oldu"}; vitrin ${bozuktanSonra.durum}, ${hangiLogo(bozuktanSonraLogo)}`,
   );
 
   // Elle bakım (kart 0043): yalnız o sitenin vitrini kapanır, ikinci yayın bakım açıkken çalışır ve
@@ -302,7 +337,7 @@ try {
     bakimdaA.durum === 503 && bakimdaB.durum === 200,
     `${a.kodAdi} ${bakimdaA.durum}, ${b.kodAdi} ${bakimdaB.durum}`,
   );
-  const ikinci = await yayinla(yayinGirdisi(a, "Yayın Denemesi A2"));
+  const ikinci = await yayinla(yayinGirdisi(a, "Yayın Denemesi A", logolar.ikinci));
   const yayindanSonraBakim = await vitrin(ipv4, a.kodAdi);
   olc(
     "yayın bakım açıkken çalışıyor, bakım yayından sonra sürüyor",
@@ -311,22 +346,29 @@ try {
   );
   await bakimDegistir(ipv4, a.kodAdi, false);
   const ikinciVitrin = await vitrin(ipv4, a.kodAdi);
+  const ikinciLogo = await logo(ipv4, a.kodAdi);
   olc(
-    "ikinci yayın: vitrin yeni adı gösteriyor",
-    ikinci.sonuc === "basarili" && ikinciVitrin.ad === "Yayın Denemesi A2",
-    ikinci.neden ?? `vitrin "${ikinciVitrin.ad}"`,
+    "ikinci yayın: site yeni yayının logosunu veriyor",
+    ikinci.sonuc === "basarili" &&
+      ikinciVitrin.durum === 200 &&
+      logoYayiniGosteriyor(ikinciLogo, logolar.ikinci, logolar.birinci),
+    ikinci.neden ?? `vitrin ${ikinciVitrin.durum}, ${hangiLogo(ikinciLogo)}`,
   );
 
   const donus = await geriDon({ ipv4, ortam, kodAdi: a.kodAdi });
   const donusVitrin = await vitrin(ipv4, a.kodAdi);
   const donusSaglik = await saglik(ipv4, a.kodAdi);
+  const donusLogo = await logo(ipv4, a.kodAdi);
   olc(
     "geri dönüş: site önceki yayına döndü",
     donus.sonuc === "basarili" &&
       donus.etkin === ilk.etkin &&
-      donusVitrin.ad === "Yayın Denemesi A1" &&
+      donusVitrin.durum === 200 &&
+      logoYayiniGosteriyor(donusLogo, logolar.birinci, logolar.ikinci) &&
       !donusSaglik,
-    donus.neden ?? donusSaglik ?? `vitrin "${donusVitrin.ad}", etkin ${donus.etkin}`,
+    donus.neden ??
+      donusSaglik ??
+      `vitrin ${donusVitrin.durum}, ${hangiLogo(donusLogo)}, etkin ${donus.etkin}`,
   );
 
   // Geri dönüşte iki süreç birlikte döner: eski kutu ayakta, ikinci yayının kutusu kapalı.

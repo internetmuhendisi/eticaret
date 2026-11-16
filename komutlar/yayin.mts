@@ -442,27 +442,30 @@ export const saglikHatasi = (saglik: Saglik, surum: string): string | undefined 
 };
 
 // Deneme adresini dışarıdan, ön kapı üzerinden ve şifreli bağlantıyla ister. Ad çözümlemesine
-// bağlı kalmamak için doğrudan sunucunun adresine bağlanılır, sertifika adla denetlenir.
+// bağlı kalmamak için doğrudan sunucunun adresine bağlanılır, sertifika adla denetlenir. Gövde
+// yazı olarak ve bayt bayt (ham; logo gibi ikili dosyalar için, kart 0209) döner.
 export const disaridanIste = async (
   ipv4: string,
   kodAdi: string,
   yol: string,
-): Promise<{ durum: number; govde: string }> => {
+): Promise<{ durum: number; govde: string; ham: Buffer }> => {
   const { request } = await import("node:https");
   const adres = denemeAdresi(kodAdi);
   return new Promise((coz) => {
     const istek = request(
       { host: ipv4, servername: adres, port: 443, path: yol, headers: { host: adres } },
       (yanit) => {
-        let govde = "";
-        yanit.setEncoding("utf8");
-        yanit.on("data", (parca) => {
-          govde += parca;
+        const parcalar: Buffer[] = [];
+        yanit.on("data", (parca: Buffer) => {
+          parcalar.push(parca);
         });
-        yanit.on("end", () => coz({ durum: yanit.statusCode ?? 0, govde }));
+        yanit.on("end", () => {
+          const ham = Buffer.concat(parcalar);
+          coz({ durum: yanit.statusCode ?? 0, govde: ham.toString("utf8"), ham });
+        });
       },
     );
-    istek.on("error", () => coz({ durum: 0, govde: "" }));
+    istek.on("error", () => coz({ durum: 0, govde: "", ham: Buffer.alloc(0) }));
     istek.setTimeout(10_000, () => istek.destroy());
     istek.end();
   });
