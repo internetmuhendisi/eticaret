@@ -15,10 +15,19 @@
 import { sinif } from "../../../bilesenler/parcalar/sinif";
 import type { GosterimFiyati } from "./fiyat-turu";
 
-export type FiyatBoyutu = "normal" | "buyuk";
+// kucuk: sepet satırının birim fiyatı (kart 0211 taslağı).
+export type FiyatBoyutu = "kucuk" | "normal" | "buyuk";
 
-const tutarBoyutu: Record<FiyatBoyutu, string> = { normal: "text-orta", buyuk: "text-baslik-4" };
-const eskiBoyutu: Record<FiyatBoyutu, string> = { normal: "text-kucuk", buyuk: "text-govde" };
+const tutarBoyutu: Record<FiyatBoyutu, string> = {
+  kucuk: "text-govde",
+  normal: "text-orta",
+  buyuk: "text-baslik-4",
+};
+const eskiBoyutu: Record<FiyatBoyutu, string> = {
+  kucuk: "text-kucuk",
+  normal: "text-kucuk",
+  buyuk: "text-govde",
+};
 
 // Ekran okuyucunun iki tutarı ayırt ettiği adlar ("İndirimli fiyat", "Eski fiyat").
 export type FiyatEtiketleri = { indirimliFiyat: string; eskiFiyat: string };
@@ -27,11 +36,14 @@ export function FiyatCizimi({
   fiyat,
   etiketler,
   boyut = "normal",
+  vergiMetni = true,
   className,
 }: {
   fiyat: GosterimFiyati;
   etiketler: FiyatEtiketleri;
   boyut?: FiyatBoyutu;
+  // Vergi metni ("KDV dahil") fiyatın altında. Sepet satırında yazılmaz: sepetin özeti vergiyi bir kez söyler.
+  vergiMetni?: boolean;
   className?: string;
 }) {
   const { enDusuk, enYuksek } = fiyat;
@@ -70,7 +82,7 @@ export function FiyatCizimi({
           {fiyat.yaziliAralik}
         </strong>
       )}
-      {enDusuk.ekMetin === undefined ? null : (
+      {!vergiMetni || enDusuk.ekMetin === undefined ? null : (
         <span className="w-full text-kucuk text-soluk-yazi">{enDusuk.ekMetin}</span>
       )}
     </div>

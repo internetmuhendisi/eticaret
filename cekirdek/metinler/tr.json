@@ -1045,7 +1045,7 @@
       "indirim": "{oran} indirim",
       "varanIndirim": "{oran}{ek} varan indirim",
       "favoriyeEkle": "Favorilere ekle: {urun}",
-      "sepeteEkle": "Sepete ekle",
+      "sepeteEkle": "Sepete ekle: {urun}",
       "puan": "5 üzerinden {ortalama} puan, {sayi} değerlendirme",
       "puanYok": "Henüz puan yok",
       "favoridenCikar": "Favorilerden çıkar: {urun}"
@@ -1269,7 +1269,8 @@
         "enAz": "Bu üründen en az {sayi} adet alınabilir. Adedi artırın.",
         "tukendi": "Tükendi. Sepetten çıkarın.",
         "kaldirildi": "Bu ürün artık satılmıyor. Sepetten çıkarın."
-      }
+      },
+      "adetSayisi": "{sayi} adet"
     }
   },
   "eposta": {

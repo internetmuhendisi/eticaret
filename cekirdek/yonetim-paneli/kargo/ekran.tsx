@@ -10,6 +10,7 @@ import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { Kart } from "../../../bilesenler/parcalar/kart";
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
+import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { YanPencereAltCubugu } from "../../../bilesenler/parcalar/yan-pencere";
 import { type UcretsizKargoTutari, ucretsizKargoTutarlari } from "../../kayitlar/sepet";
@@ -101,8 +102,8 @@ export function KargoEkrani({ veri, izinli }: { veri: KargoEkraniVerisi; izinli:
       {...(hatalar[alan] === undefined ? {} : { hata: metin(hatalar[alan]) })}
     >
       {(baglanti) => (
-        <span className="flex items-center gap-2">
-          {veri.simgeYeri === "basta" ? <span aria-hidden="true">{veri.simge}</span> : null}
+        // Para simgesi alanın içinde, yazının önünde ya da sonunda (taslak); ekran okuyucu etiketi okur.
+        <span className="relative flex items-center">
           <GirisAlani
             {...baglanti}
             name={alan}
@@ -111,9 +112,17 @@ export function KargoEkrani({ veri, izinli }: { veri: KargoEkraniVerisi; izinli:
             value={form[alan]}
             disabled={!izinli}
             onChange={(olay) => degistir(alan, olay.target.value)}
-            className="tablet:max-w-form"
+            className={veri.simgeYeri === "basta" ? "pl-10" : "pr-10"}
           />
-          {veri.simgeYeri === "sonda" ? <span aria-hidden="true">{veri.simge}</span> : null}
+          <span
+            aria-hidden="true"
+            className={sinif(
+              "pointer-events-none absolute text-soluk-yazi",
+              veri.simgeYeri === "basta" ? "left-4" : "right-4",
+            )}
+          >
+            {veri.simge}
+          </span>
         </span>
       )}
     </FormAlani>
@@ -124,7 +133,7 @@ export function KargoEkrani({ veri, izinli }: { veri: KargoEkraniVerisi; izinli:
       kodGerekliMetni={metin("ortak.form.kodGerekli")}
       yukleniyorMetni={metin("ortak.form.yukleniyor")}
       onSubmit={gonder}
-      className="flex max-w-form flex-col gap-5"
+      className="flex max-w-metin flex-col gap-5"
     >
       {genelHata === null ? null : (
         <div ref={uyariRef} tabIndex={-1}>
@@ -133,14 +142,20 @@ export function KargoEkrani({ veri, izinli }: { veri: KargoEkraniVerisi; izinli:
       )}
       <Kart className="flex flex-col gap-5 p-4 tablet:p-6">
         <h2 className="font-baslik text-baslik-4 font-baslik-kalinligi">{veri.bolge}</h2>
-        {tutarAlani(
-          "kargoUcreti",
-          "yonetim.kargo.ucret",
-          veri.fiyatGirisi === "vergi-dahil"
-            ? "yonetim.kargo.ucretAciklamasi.dahil"
-            : "yonetim.kargo.ucretAciklamasi.haric",
-        )}
-        {tutarAlani("ucretsizKargoSiniri", "yonetim.kargo.sinir", "yonetim.kargo.sinirAciklamasi")}
+        <div className="grid gap-5 tablet:grid-cols-2">
+          {tutarAlani(
+            "kargoUcreti",
+            "yonetim.kargo.ucret",
+            veri.fiyatGirisi === "vergi-dahil"
+              ? "yonetim.kargo.ucretAciklamasi.dahil"
+              : "yonetim.kargo.ucretAciklamasi.haric",
+          )}
+          {tutarAlani(
+            "ucretsizKargoSiniri",
+            "yonetim.kargo.sinir",
+            "yonetim.kargo.sinirAciklamasi",
+          )}
+        </div>
         <SecenekGrubu
           baslik={metin("yonetim.kargo.sinirTutari")}
           etiket={metin("yonetim.kargo.sinirTutari")}
@@ -175,23 +190,23 @@ export function KargoEkrani({ veri, izinli }: { veri: KargoEkraniVerisi; izinli:
             />
           )}
         </FormAlani>
+        {izinli ? (
+          <YanPencereAltCubugu className="bottom-0 mx-0 px-0">
+            <Dugme
+              tur="sade"
+              disabled={!degisti}
+              onClick={() => {
+                setForm(veri.form);
+                setHatalar({});
+                setGenelHata(null);
+              }}
+            >
+              {metin("ortak.islem.vazgec")}
+            </Dugme>
+            <GonderDugmesi>{metin("yonetim.kargo.kaydet")}</GonderDugmesi>
+          </YanPencereAltCubugu>
+        ) : null}
       </Kart>
-      {izinli ? (
-        <YanPencereAltCubugu className="bottom-0 mx-0 px-0">
-          <Dugme
-            tur="sade"
-            disabled={!degisti}
-            onClick={() => {
-              setForm(veri.form);
-              setHatalar({});
-              setGenelHata(null);
-            }}
-          >
-            {metin("ortak.islem.vazgec")}
-          </Dugme>
-          <GonderDugmesi>{metin("yonetim.kargo.kaydet")}</GonderDugmesi>
-        </YanPencereAltCubugu>
-      ) : null}
     </Form>
   );
 }

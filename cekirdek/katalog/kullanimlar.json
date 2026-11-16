@@ -9,6 +9,7 @@
     "cekirdek/yonetim-paneli/bolum-formu.tsx",
     "cekirdek/yonetim-paneli/giris-formu.tsx",
     "cekirdek/yonetim-paneli/gorsel-secimi.tsx",
+    "cekirdek/yonetim-paneli/kargo/ekran.tsx",
     "cekirdek/yonetim-paneli/kayit-arama.tsx",
     "cekirdek/yonetim-paneli/kod-formu.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx"
@@ -22,6 +23,7 @@
     "cekirdek/vitrin/kayit-formu.tsx",
     "cekirdek/vitrin/urun-sayfasi/yorum-yaz.tsx",
     "cekirdek/yonetim-paneli/giris-formu.tsx",
+    "cekirdek/yonetim-paneli/kargo/ekran.tsx",
     "cekirdek/yonetim-paneli/kod-formu.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
@@ -151,6 +153,7 @@
     "cekirdek/yonetim-paneli/eylem-dugmesi.tsx",
     "cekirdek/yonetim-paneli/gorsel-secimi.tsx",
     "cekirdek/yonetim-paneli/kapatma-sorusu.tsx",
+    "cekirdek/yonetim-paneli/kargo/ekran.tsx",
     "cekirdek/yonetim-paneli/kurulum-akisi.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/panel-cercevesi.tsx",
@@ -175,6 +178,7 @@
     "cekirdek/vitrin/urun-sayfasi/yorum-yaz.tsx",
     "cekirdek/yonetim-paneli/bolum-formu.tsx",
     "cekirdek/yonetim-paneli/giris-formu.tsx",
+    "cekirdek/yonetim-paneli/kargo/ekran.tsx",
     "cekirdek/yonetim-paneli/kayit-arama.tsx",
     "cekirdek/yonetim-paneli/kod-formu.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx"
@@ -192,6 +196,7 @@
   "bilesenler/parcalar/kart.tsx": [
     "cekirdek/eklentiler/stoga-gelince-haber-ver/form.tsx",
     "cekirdek/eklentiler/stoga-gelince-haber-ver/panel.tsx",
+    "cekirdek/yonetim-paneli/kargo/ekran.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/slider.tsx"
   ],
@@ -247,6 +252,7 @@
   "bilesenler/parcalar/secenek-grubu.tsx": [
     "cekirdek/vitrin/urun-sayfasi/urun-ust.tsx",
     "cekirdek/vitrin/urun-sayfasi/yorum-yaz.tsx",
+    "cekirdek/yonetim-paneli/kargo/ekran.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/bolum-duzenleyici.tsx"
@@ -292,6 +298,7 @@
     "cekirdek/yonetim-paneli/cikis-dugmesi.tsx",
     "cekirdek/yonetim-paneli/giris-formu.tsx",
     "cekirdek/yonetim-paneli/kapatma-sorusu.tsx",
+    "cekirdek/yonetim-paneli/kargo/ekran.tsx",
     "cekirdek/yonetim-paneli/kod-formu.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
@@ -307,6 +314,7 @@
     "cekirdek/vitrin/bolumler/ust-satir/menu-dugmesi.tsx",
     "cekirdek/vitrin/sepet/sepet-penceresi.tsx",
     "cekirdek/vitrin/urun-listesi/filtreler.tsx",
+    "cekirdek/yonetim-paneli/kargo/ekran.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/panel-cercevesi.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/bolum-duzenleyici.tsx",

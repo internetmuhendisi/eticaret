@@ -41,7 +41,9 @@ export function SepetPenceresi() {
       >
         <YanPencereUstu>
           <YanPencereBasligi>
-            {doldur(metin("vitrin.sepet.pencereBaslik"), { sayi: String(sepet.kalemler.length) })}
+            {doldur(metin("vitrin.sepet.pencereBaslik"), {
+              sayi: String(sepet.kalemler.reduce((toplam, kalem) => toplam + kalem.adet, 0)),
+            })}
           </YanPencereBasligi>
         </YanPencereUstu>
         <div className="flex-1">
@@ -52,7 +54,9 @@ export function SepetPenceresi() {
             {metin("vitrin.sepet.sepeteGit")}
           </Baglanti>
           <YanPencereKapat asChild>
-            <Dugme tur="sade">{metin("vitrin.sepet.alisveriseDevam")}</Dugme>
+            <Dugme tur="baglanti" className="self-center">
+              {metin("vitrin.sepet.alisveriseDevam")}
+            </Dugme>
           </YanPencereKapat>
         </YanPencereAltCubugu>
       </YanPencereIcerigi>

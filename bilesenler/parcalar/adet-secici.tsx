@@ -37,7 +37,10 @@ export function AdetSecici({
         onClick={() => onDegerDegisti(Math.max(deger - 1, enAz))}
         className="disabled:bg-transparent"
       />
-      <output aria-live="polite" className="min-w-8 text-center font-en-kalin">
+      <output
+        aria-live="polite"
+        className="min-w-8 self-stretch border-x border-alan-kenari px-2 text-center leading-11 font-en-kalin"
+      >
         {deger}
       </output>
       <IkonDugmesi

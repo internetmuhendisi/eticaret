@@ -8,10 +8,12 @@ import type { GosterimFiyati } from "../urun-karti/fiyat-turu";
 export function SepetFiyati({
   fiyat,
   boyut = "normal",
+  vergiMetni = true,
   className,
 }: {
   fiyat: GosterimFiyati;
   boyut?: FiyatBoyutu;
+  vergiMetni?: boolean;
   className?: string;
 }) {
   const metin = useMetin();
@@ -19,6 +21,7 @@ export function SepetFiyati({
     <FiyatCizimi
       fiyat={fiyat}
       boyut={boyut}
+      vergiMetni={vergiMetni}
       {...(className === undefined ? {} : { className })}
       etiketler={{
         indirimliFiyat: metin("vitrin.fiyat.indirimliFiyat"),

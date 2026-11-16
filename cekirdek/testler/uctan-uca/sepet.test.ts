@@ -150,10 +150,17 @@ test("ürün sayfasından klavyeyle sepete ekleme: pencere açılır, taramadan 
   await ekle.focus();
   await page.keyboard.press("Enter");
   const pencere = page.getByRole("dialog", {
-    name: doldur(metin("vitrin.sepet.pencereBaslik"), { sayi: "1" }),
+    // Başlıktaki sayı adetlerin toplamıdır: bir ürün, iki adet.
+    name: doldur(metin("vitrin.sepet.pencereBaslik"), { sayi: "2" }),
   });
   await expect(pencere).toBeVisible();
-  await expect(pencere.getByRole("link", { name: urun(0).ad })).toBeVisible();
+  // Pencerenin üstünde eklenen ürünün bildirimi.
+  await expect(
+    pencere.getByText(doldur(metin("vitrin.sepet.eklendi"), { urun: urun(0).ad })),
+  ).toBeVisible();
+  await expect(
+    pencere.getByRole("list", { name: metin("vitrin.sepet.satirlar") }).getByText(urun(0).ad),
+  ).toBeVisible();
   await expect(pencere.getByText(bicim().para(24_000)).first()).toBeVisible();
   await tara(page, "sepet penceresi");
   await page.keyboard.press("Escape");
@@ -174,9 +181,15 @@ test("arama sonucundaki ürün kartının sepet düğmesi bir adet ekler", async
   await page.goto(`${vitrinAdresleri.arama}?ara=${encodeURIComponent(`Sepet deneme 2 ${ek}`)}`);
   await sayfaHazir(page);
   const kart = page.locator("article", { hasText: urun(1).ad });
-  await kart.getByRole("button", { name: metin("vitrin.urunKarti.sepeteEkle") }).click();
+  await kart
+    .getByRole("button", {
+      name: doldur(metin("vitrin.urunKarti.sepeteEkle"), { urun: urun(1).ad }),
+    })
+    .click();
   const pencere = page.getByRole("dialog");
-  await expect(pencere.getByRole("link", { name: urun(1).ad })).toBeVisible();
+  await expect(
+    pencere.getByRole("list", { name: metin("vitrin.sepet.satirlar") }).getByText(urun(1).ad),
+  ).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(ustSayi(page, 1)).toBeAttached();
 });

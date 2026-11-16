@@ -784,7 +784,11 @@ test("ürün kartı: klavyede ad, sepet ve favori sırasıyla; adın odağı kar
   expect(Number.parseFloat(cerceve.genislik)).toBeCloseTo(cerceve.kart ?? 0, 0);
   await page.keyboard.press("Tab");
   await expect(
-    kart.getByRole("button", { name: metin("vitrin.urunKarti.sepeteEkle") }),
+    kart.getByRole("button", {
+      name: doldur(metin("vitrin.urunKarti.sepeteEkle"), {
+        urun: metin("gelistirme.urunKarti.ornek.indirimli"),
+      }),
+    }),
   ).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(
@@ -812,7 +816,11 @@ for (const genislik of [320, 1280]) {
     ).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(
-      kart.getByRole("button", { name: metin("vitrin.urunKarti.sepeteEkle") }),
+      kart.getByRole("button", {
+        name: doldur(metin("vitrin.urunKarti.sepeteEkle"), {
+          urun: metin("gelistirme.urunKarti.ornek.indirimli"),
+        }),
+      }),
     ).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(
@@ -852,7 +860,9 @@ test("ürün kartı: görsele tıklayan ürün sayfasına, düğmeye tıklayan d
     metin("gelistirme.urunKarti.ornek.indirimli"),
   );
   for (const ad of [
-    metin("vitrin.urunKarti.sepeteEkle"),
+    doldur(metin("vitrin.urunKarti.sepeteEkle"), {
+      urun: metin("gelistirme.urunKarti.ornek.indirimli"),
+    }),
     doldur(metin("vitrin.urunKarti.favoriyeEkle"), {
       urun: metin("gelistirme.urunKarti.ornek.indirimli"),
     }),

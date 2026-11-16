@@ -7,7 +7,7 @@ import { SayfaYolu } from "../../../bilesenler/parcalar/sayfa-yolu";
 import { metin } from "../../metinler/site-metni";
 import { sayfaBasligi } from "../../moduller/gorunurluk/sayfa-bilgisi";
 import { vitrinAdresleri } from "../adresler";
-import { SepetSayfasiIcerigi } from "./sepet-gorunumu";
+import { SepetSayfasiIcerigi, SepetUrunSayisi } from "./sepet-gorunumu";
 
 export const sepetSayfaBilgisi = async (): Promise<Metadata> => ({
   title: await sayfaBasligi(metin("vitrin.sepet.sayfaBasligi")),
@@ -25,7 +25,11 @@ export function SepetSayfasi() {
           { ad: metin("vitrin.sepet.sayfaBasligi"), adres: vitrinAdresleri.sepet },
         ]}
       />
-      <SayfaBasligi baslik={metin("vitrin.sepet.baslik")} className="mb-3" />
+      <SayfaBasligi
+        baslik={metin("vitrin.sepet.baslik")}
+        ek={<SepetUrunSayisi />}
+        className="mb-3"
+      />
       <SepetSayfasiIcerigi />
     </main>
   );

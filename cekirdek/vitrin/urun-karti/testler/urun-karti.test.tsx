@@ -221,7 +221,7 @@ describe("görsel ve işlevler", () => {
     const adlar = [...kart.querySelectorAll("button")].map((d) => d.getAttribute("aria-label"));
     // Klavye sırası: ürünün adı, sepete ekle, favori.
     expect(adlar).toEqual([
-      metin("vitrin.urunKarti.sepeteEkle"),
+      doldur(metin("vitrin.urunKarti.sepeteEkle"), { urun: puanli.ad }),
       doldur(metin("vitrin.urunKarti.favoriyeEkle"), { urun: puanli.ad }),
     ]);
     // Seçenekli üründe (sepet birimi yok) sepet düğmesi ürün sayfasını açan bağlantıdır (kart 0212, karar 0132).

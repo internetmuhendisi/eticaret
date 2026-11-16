@@ -44,7 +44,13 @@ export function SepetSaglayici({
 
 export const useSepetAyarlari = () => useContext(AyarBaglami);
 
-type Durum = { hazir: boolean; kalemler: readonly YerelKalem[]; pencereAcik: boolean };
+// eklenen: pencereyi açan eklemenin ürün adı; pencerenin üstünde "… sepete eklendi." yazar.
+type Durum = {
+  hazir: boolean;
+  kalemler: readonly YerelKalem[];
+  pencereAcik: boolean;
+  eklenen?: string | undefined;
+};
 const ilk: Durum = { hazir: false, kalemler: [], pencereAcik: false };
 let durum: Durum = ilk;
 let kip: SepetAyarlari["kip"] | undefined;
@@ -151,9 +157,9 @@ export const geriKoy = (kalem: YerelKalem, sira: number): void => {
 // Pencere bir tetikleyiciyle değil durumla açılır: Radix odağı geri vereceği öğeyi bilmez. Açılırken odaktaki öğe
 // (sepete ekle düğmesi) saklanır, pencere kapanınca odak ona döner (penceredenDonulecekOge).
 let donulecekOge: HTMLElement | null = null;
-export const pencereyiAc = (): void => {
+export const pencereyiAc = (eklenen?: string): void => {
   donulecekOge = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-  yay({ pencereAcik: true });
+  yay({ pencereAcik: true, eklenen });
 };
 export const pencereyiKapat = (): void => yay({ pencereAcik: false });
 export const penceredenDonulecekOge = (): HTMLElement | null => {

@@ -2,8 +2,9 @@
 // Sepetin görünüşü (kart 0212, karar 0135; kart 0211'in taslağı): sepet sayfası ve sepet penceresi. Veri sunucuda
 // hesaplanmış gelir (useSepetGorunumu, veri.ts); burada hesap yapılmaz, yalnız yazılır.
 //
-// - Satır: görsel, ad (ürün sayfasına bağlantı), seçim, birim fiyatı (fiyat bileşeni), uyarılar, adet seçici, satır
-//   tutarı ve "Sepetten çıkar". Satılamayan satırın adedi değişmez, tutarı yoktur, yalnız çıkarılır.
+// - Satır: görsel, ad (ürün sayfasına bağlantı), seçim, birim fiyatı (fiyat bileşeni, vergi metni özette), uyarılar,
+//   adet seçici, satır tutarı ve "Sepetten çıkar". Satılamayan satırın adedi değişmez, tutarı yoktur, yalnız çıkarılır.
+// - Pencere: eklenen ürünün bildirimi, sade satırlar (adet ve tutar; değişiklik sepet sayfasında) ve ara toplam.
 // - Uyarılar yazıyla ve ikonla verilir, yalnız renkle değil (.claude/rules/erisilebilirlik.md).
 // - Çıkarılan ürünün bildiriminde "Geri al" vardır: ürün eski yerine döner. Odak bir sonraki satırın çıkar düğmesine,
 //   sepet boşalınca boş hâlin bağlantısına geçer.
@@ -57,13 +58,13 @@ const uyariYazisi = (
 export const satirAdi = (metin: Metin, satir: SepetGorunumuSatiri) =>
   satir.urun?.ad ?? metin("vitrin.sepet.kaldirilanUrun");
 
+// Sepet sayfasının satırı. Telefonda bilgi üstte, adet ve tutar altta, sil sağ üstte; masaüstünde hepsi tek sırada
+// (taslak). Odak sırası her genişlikte ad, adet, sil: sil telefonda yalnız görünüşte sağ üsttedir.
 function SepetSatiri({
   satir,
-  kucuk,
   sonraki,
 }: {
   satir: SepetGorunumuSatiri;
-  kucuk: boolean;
   // Çıkarınca odağın gideceği yer.
   sonraki: () => void;
 }) {
@@ -87,62 +88,43 @@ function SepetSatiri({
     <li
       data-slot="sepet-satiri"
       data-birim={satir.birim}
-      className="flex items-start gap-3 border-b border-kenar py-4 tablet:gap-4"
+      className="relative flex items-start gap-3 border-b border-kenar py-4 tablet:gap-4 masaustu:items-center"
     >
-      <span
-        className={sinif(
-          "flex shrink-0 items-center justify-center overflow-hidden rounded-orta bg-yuzey",
-          kucuk ? "size-16" : "size-20 tablet:size-24",
-          !satir.satilabilir && "opacity-50",
-        )}
-      >
-        {satir.gorsel === undefined ? (
-          <Ikon ad="gorsel" className="text-soluk-yazi" />
-        ) : (
-          // biome-ignore lint/performance/noImgElement: boyutlar çekirdekte üretilir (karar 0073), srcset ile seçilir.
-          <img
-            src={satir.gorsel.kaynaklar[0]?.adres}
-            srcSet={satir.gorsel.kaynaklar.map((k) => `${k.adres} ${k.genislik}w`).join(", ")}
-            sizes="6rem"
-            alt=""
-            width={satir.gorsel.genislik}
-            height={satir.gorsel.yukseklik}
-            loading="lazy"
-            className="size-7/8 object-contain"
-          />
-        )}
-      </span>
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        {satir.urun === undefined ? (
-          <span className="font-kalin">{ad}</span>
-        ) : (
-          <Baglanti
-            href={satir.urun.adres}
-            gorunum="baglanti"
-            className="min-h-0 no-underline hover:underline"
-          >
-            {ad}
-          </Baglanti>
-        )}
-        {satir.secim.length === 0 ? null : (
-          <span className="text-kucuk text-soluk-yazi">
-            {satir.secim.map((secim) => doldur(metin("vitrin.sepet.secim"), secim)).join(" · ")}
-          </span>
-        )}
-        {satir.fiyat === undefined ? null : <SepetFiyati fiyat={satir.fiyat} />}
-        {satir.uyarilar.map((uyari) => (
-          <span
-            key={uyari.kod}
-            className={sinif(
-              "flex items-start gap-1.5 text-kucuk font-kalin",
-              durdurur(uyari.kod) ? "text-tehlike-yazi" : "text-uyari-yazi",
-            )}
-          >
-            <Ikon ad={durdurur(uyari.kod) ? "uyari" : "bilgi"} className="mt-0.5 size-4 shrink-0" />
-            {uyariYazisi(metin, satir, uyari)}
-          </span>
-        ))}
-        <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
+      <SatirGorseli satir={satir} buyukluk="size-20" />
+      <div className="flex min-w-0 flex-1 flex-col gap-3 masaustu:flex-row masaustu:items-center masaustu:gap-6">
+        <div className="flex min-w-0 flex-col gap-1 pr-10 masaustu:flex-1 masaustu:pr-0">
+          {satir.urun === undefined ? (
+            <span className="font-kalin">{ad}</span>
+          ) : (
+            <Baglanti
+              href={satir.urun.adres}
+              gorunum="baglanti"
+              className="min-h-0 self-start no-underline hover:underline"
+            >
+              {ad}
+            </Baglanti>
+          )}
+          <SecimYazisi satir={satir} />
+          {satir.fiyat === undefined ? null : (
+            <SepetFiyati fiyat={satir.fiyat} boyut="kucuk" vergiMetni={false} />
+          )}
+          {satir.uyarilar.map((uyari) => (
+            <span
+              key={uyari.kod}
+              className={sinif(
+                "flex items-start gap-1.5 text-kucuk font-kalin",
+                durdurur(uyari.kod) ? "text-tehlike-yazi" : "text-uyari-yazi",
+              )}
+            >
+              <Ikon
+                ad={durdurur(uyari.kod) ? "uyari" : "bilgi"}
+                className="mt-0.5 size-4 shrink-0"
+              />
+              {uyariYazisi(metin, satir, uyari)}
+            </span>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 masaustu:flex-nowrap masaustu:gap-6">
           {satir.satilabilir ? (
             <AdetSecici
               deger={gosterilenAdet}
@@ -157,7 +139,9 @@ function SepetSatiri({
             />
           ) : null}
           {satir.yaziliTutar === undefined ? null : (
-            <span className="ml-auto whitespace-nowrap font-en-kalin">{satir.yaziliTutar}</span>
+            <span className="ml-auto whitespace-nowrap text-right font-en-kalin">
+              {satir.yaziliTutar}
+            </span>
           )}
         </div>
       </div>
@@ -166,13 +150,92 @@ function SepetSatiri({
         etiket={doldur(metin("vitrin.sepet.cikar"), { urun: ad })}
         onClick={cikar}
         data-sepet-cikar=""
-        className="-mt-2 -mr-2"
+        className="absolute top-2 right-0 masaustu:static"
       />
     </li>
   );
 }
 
-function SepetSatirlari({ gorunum, kucuk }: { gorunum: SepetGorunumu; kucuk: boolean }) {
+function SatirGorseli({ satir, buyukluk }: { satir: SepetGorunumuSatiri; buyukluk: string }) {
+  return (
+    <span
+      className={sinif(
+        "flex shrink-0 items-center justify-center overflow-hidden rounded-orta bg-yuzey",
+        buyukluk,
+        !satir.satilabilir && "opacity-50",
+      )}
+    >
+      {satir.gorsel === undefined ? (
+        <Ikon ad="gorsel" className="text-soluk-yazi" />
+      ) : (
+        // biome-ignore lint/performance/noImgElement: boyutlar çekirdekte üretilir (karar 0073), srcset ile seçilir.
+        <img
+          src={satir.gorsel.kaynaklar[0]?.adres}
+          srcSet={satir.gorsel.kaynaklar.map((k) => `${k.adres} ${k.genislik}w`).join(", ")}
+          sizes="5rem"
+          alt=""
+          width={satir.gorsel.genislik}
+          height={satir.gorsel.yukseklik}
+          loading="lazy"
+          className="size-7/8 object-contain"
+        />
+      )}
+    </span>
+  );
+}
+
+function SecimYazisi({ satir }: { satir: SepetGorunumuSatiri }) {
+  const metin = useMetin();
+  if (satir.secim.length === 0) return null;
+  return (
+    <span className="text-kucuk text-soluk-yazi">
+      {satir.secim.map((secim) => doldur(metin("vitrin.sepet.secim"), secim)).join(" · ")}
+    </span>
+  );
+}
+
+// Sepet penceresinin satırı (taslak): küçük görsel ve üstünde adet, ad, seçim, "n adet" ve tutar. Pencerede adet
+// değişmez, ürün çıkarılmaz: bunlar sepet sayfasındadır.
+function PencereSatiri({ satir }: { satir: SepetGorunumuSatiri }) {
+  const metin = useMetin();
+  const ad = satirAdi(metin, satir);
+  return (
+    <li data-slot="sepet-satiri" data-birim={satir.birim} className="flex items-start gap-3 py-2">
+      <span className="relative shrink-0">
+        <SatirGorseli satir={satir} buyukluk="size-12" />
+        <span
+          aria-hidden="true"
+          className="absolute -top-1.5 -left-1.5 flex size-5 items-center justify-center rounded-dugme bg-yazi text-kucuk font-en-kalin text-zemin"
+        >
+          {satir.adet}
+        </span>
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <span className="text-govde font-kalin">{ad}</span>
+        <SecimYazisi satir={satir} />
+        <span className="text-kucuk text-soluk-yazi">
+          {doldur(metin("vitrin.sepet.adetSayisi"), { sayi: String(satir.adet) })}
+        </span>
+        {satir.uyarilar.map((uyari) => (
+          <span
+            key={uyari.kod}
+            className={sinif(
+              "text-kucuk font-kalin",
+              durdurur(uyari.kod) ? "text-tehlike-yazi" : "text-uyari-yazi",
+            )}
+          >
+            {uyariYazisi(metin, satir, uyari)}
+          </span>
+        ))}
+      </div>
+      {satir.yaziliTutar === undefined ? null : (
+        <span className="whitespace-nowrap text-govde">{satir.yaziliTutar}</span>
+      )}
+    </li>
+  );
+}
+
+function SepetSatirlari({ gorunum }: { gorunum: SepetGorunumu }) {
   const metin = useMetin();
   const liste = useRef<HTMLUListElement>(null);
   // Çıkarılan satırdan sonra odak bir sonraki satırın çıkar düğmesine, son satırsa bir öncekine geçer.
@@ -189,7 +252,7 @@ function SepetSatirlari({ gorunum, kucuk }: { gorunum: SepetGorunumu; kucuk: boo
   return (
     <ul ref={liste} aria-label={metin("vitrin.sepet.satirlar")} className="border-t border-kenar">
       {gorunum.satirlar.map((satir) => (
-        <SepetSatiri key={satir.birim} satir={satir} kucuk={kucuk} sonraki={odakla(satir.birim)} />
+        <SepetSatiri key={satir.birim} satir={satir} sonraki={odakla(satir.birim)} />
       ))}
     </ul>
   );
@@ -262,10 +325,19 @@ function Yukleniyor() {
   return (
     <div role="status" className="flex flex-col gap-3">
       <span className="sr-only">{metin("vitrin.sepet.yukleniyor")}</span>
-      <IskeletGorunum className="h-24 w-full" />
-      <IskeletGorunum className="h-24 w-full" />
+      <IskeletGorunum className="h-20 w-full" />
+      <IskeletGorunum className="h-20 w-full" />
     </div>
   );
+}
+
+// Sepet sayfasının başlığındaki ürün sayısı (adetlerin toplamı); sepet bilinmeden ya da boşken yazılmaz.
+export function SepetUrunSayisi() {
+  const metin = useMetin();
+  const { hazir, kalemler } = useSepet();
+  const adet = kalemler.reduce((toplam, kalem) => toplam + kalem.adet, 0);
+  if (!hazir || adet === 0) return null;
+  return doldur(metin("vitrin.sepet.urunSayisi"), { sayi: String(adet) });
 }
 
 // Sepet sayfasının içi. ornek: katalogun örnek kipinde gösterilen veri.
@@ -299,8 +371,8 @@ export function SepetSayfasiIcerigi({ ornek }: { ornek?: SepetGorunumu }) {
       {degisiklik ? <Uyari tur="uyari">{metin("vitrin.sepet.degisiklikVar")}</Uyari> : null}
       <div className="flex flex-col gap-6 masaustu:flex-row masaustu:items-start masaustu:gap-8">
         <div className="flex min-w-0 flex-1 flex-col gap-4">
-          <SepetSatirlari gorunum={gorunum} kucuk={false} />
-          <Baglanti href={vitrinAdresleri.anasayfa} gorunum="sade" className="self-start">
+          <SepetSatirlari gorunum={gorunum} />
+          <Baglanti href={vitrinAdresleri.anasayfa} gorunum="cerceveli" className="self-start">
             <Ikon ad="onceki" />
             {metin("vitrin.sepet.alisveriseDevam")}
           </Baglanti>
@@ -327,6 +399,7 @@ export function SepetSayfasiIcerigi({ ornek }: { ornek?: SepetGorunumu }) {
 export function SepetPenceresiIcerigi({ acik }: { acik: boolean }) {
   const metin = useMetin();
   const durum = useSepetGorunumu(acik);
+  const { eklenen } = useSepet();
   if (durum.tur === "yukleniyor") return <Yukleniyor />;
   if (durum.tur === "hata") return <Uyari tur="tehlike">{metin("vitrin.sepet.hata")}</Uyari>;
   const { gorunum } = durum;
@@ -335,13 +408,22 @@ export function SepetPenceresiIcerigi({ acik }: { acik: boolean }) {
   }
   return (
     <div className="flex flex-col gap-4">
-      <SepetSatirlari gorunum={gorunum} kucuk />
-      <dl className="flex flex-col gap-1">
-        <OzetSatiri
-          ad={doldur(metin("vitrin.sepet.araToplam"), { sayi: String(gorunum.adet) })}
-          deger={gorunum.yazili.araToplam}
-          vurgu
-        />
+      {eklenen === undefined ? null : (
+        <p className="flex items-center gap-2 rounded-orta bg-basari-zemin px-4 py-3 text-basari-yazi">
+          <Ikon ad="basari" className="shrink-0" />
+          <span>{doldur(metin("vitrin.sepet.eklendi"), { urun: eklenen })}</span>
+        </p>
+      )}
+      <ul aria-label={metin("vitrin.sepet.satirlar")} className="flex flex-col gap-1">
+        {gorunum.satirlar.map((satir) => (
+          <PencereSatiri key={satir.birim} satir={satir} />
+        ))}
+      </ul>
+      <dl className="flex flex-col gap-1 border-t border-kenar pt-4">
+        <div className="flex justify-between gap-3 font-kalin">
+          <dt>{doldur(metin("vitrin.sepet.araToplam"), { sayi: String(gorunum.adet) })}</dt>
+          <dd className="whitespace-nowrap font-en-kalin">{gorunum.yazili.araToplam}</dd>
+        </div>
       </dl>
       <p className="text-kucuk text-soluk-yazi">{metin("vitrin.sepet.pencereNotu")}</p>
     </div>

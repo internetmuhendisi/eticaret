@@ -55,7 +55,7 @@ const eklendiktenSonra = (
     );
     return;
   }
-  if (ayarlar.sepeteEkleyince === "yan-pencere") pencereyiAc();
+  if (ayarlar.sepeteEkleyince === "yan-pencere") pencereyiAc(urunAdi);
   else if (ayarlar.sepeteEkleyince === "sepet-sayfasi") sepeteGit();
   else {
     bildirimGoster("basari", doldur(metin("vitrin.sepet.eklendi"), { urun: urunAdi }), {
@@ -149,7 +149,7 @@ export function KartSepetDugmesi({
   return (
     <IkonDugmesi
       ikon="sepet"
-      etiket={metin("vitrin.urunKarti.sepeteEkle")}
+      etiket={doldur(metin("vitrin.urunKarti.sepeteEkle"), { urun: urunAdi })}
       tur="cerceveli"
       className={className}
       onClick={() =>
