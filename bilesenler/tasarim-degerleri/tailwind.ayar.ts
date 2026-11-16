@@ -59,6 +59,7 @@ export default {
       urun: `calc(100% / ${degisken(degiskenAdi.urunSutunu)})`,
     },
     screens: sabitDegerler.kirilmaNoktalari,
+    containers: sabitDegerler.kapsayicilar,
     maxWidth: sabitDegerler.genislikler,
     zIndex: sabitDegerler.katmanlar,
     // Açılış ve kapanış hareketleri (kart 0103). Süreler degerler.ts'ten gelir; hareketin kendisi

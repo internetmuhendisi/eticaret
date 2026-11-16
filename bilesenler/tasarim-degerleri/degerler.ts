@@ -551,6 +551,10 @@ export const sabitDegerler = {
   },
   // Kırılma noktaları: telefon varsayılandır, tablet ve masaüstü bu genişliklerden başlar.
   kirilmaNoktalari: { tablet: "40rem", masaustu: "64rem", genis: "80rem" },
+  // Kapsayıcı genişlikleri (kart 0193): ekranın değil, parçanın kendi genişliğine göre yerleşim
+  // (`@container` ile `@kart:`, `@max-kart:`).
+  // kart: yatay ürün kartında sepet ve favori bu genişliğin altında fiyatın altına iner (karar 0134).
+  kapsayicilar: { kart: "22rem" },
   // İçeriğin en çok genişliği.
   // panel: ürün bölümlerinin yan afişi ve fırsat paneli (kart 0111), masaüstünde.
   // yan-menu: yönetim panelinin yan menüsü (kart 0141), masaüstünde.

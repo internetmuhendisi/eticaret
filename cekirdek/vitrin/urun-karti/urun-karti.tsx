@@ -199,12 +199,13 @@ export function UrunKarti({
         </Link>
       </Baslik>
       {islevler.yorum && !yatay ? <Puan puan={urun.puan} /> : null}
-      {/* Yatay kartta düğmeler fiyatın sağındadır; fiyat yanlarına bütün olarak sığmazsa satır kayar, düğmeler
-          altına iner ve sağa yaslanır (kart 0193, karar 0134). Karar kartın kendi genişliğine göre verilir. */}
+      {/* Yatay kartta düğmeler fiyatın sağındadır; kart dar olunca (kapsayıcı genişliği "kart"ın altında) fiyat
+          bütün satırı alır, düğmeler altına iner ve sağa yaslanır (kart 0193, karar 0134). Karar ekranın değil
+          kartın kendi genişliğine göre verilir: telefonda da dört sütunlu ızgarada da aynı kural. */}
       <div
         className={sinif(
           "mt-auto flex min-w-0 items-end justify-between gap-2",
-          yatay && "flex-wrap gap-y-1",
+          yatay && "@max-kart:flex-col @max-kart:items-stretch",
         )}
       >
         {urun.fiyat === undefined ? null : (
@@ -231,7 +232,7 @@ export function UrunKarti({
         data-slot="urun-karti"
         data-gorunum={gorunum}
         className={sinif(
-          "relative flex min-w-0 flex-row items-center gap-3 overflow-hidden rounded-orta border border-kart-kenari bg-zemin p-3 text-yazi shadow-kart",
+          "@container relative flex min-w-0 flex-row items-center gap-3 overflow-hidden rounded-orta border border-kart-kenari bg-zemin p-3 text-yazi shadow-kart",
           className,
         )}
       >

@@ -38,10 +38,10 @@ const derleyici = async (giris: string) => {
 const uygulama = await derleyici("cekirdek/uygulama/stil.css");
 const sahipPaneli = await derleyici("sahip-paneli/stil.css");
 
-// Sınıfın seçicisi Tailwind'in kaçışıyla yazılır (tablet:p-4 → .tablet\:p-4) ve tam adla biter:
-// .text-tehlike-yaz, .text-tehlike-yazi'nin başı olduğu için bulunmuş sayılmaz.
+// Sınıfın seçicisi Tailwind'in kaçışıyla yazılır (tablet:p-4 → .tablet\:p-4, @kart:p-4 → .\@kart\:p-4) ve tam
+// adla biter: .text-tehlike-yaz, .text-tehlike-yazi'nin başı olduğu için bulunmuş sayılmaz.
 const sinifKurali = (cikti: string, sinif: string) => {
-  const secici = `.${sinif.replaceAll(/[:.[\]()/]/g, (k) => `\\${k}`)}`;
+  const secici = `.${sinif.replaceAll(/[:.[\]()/@]/g, (k) => `\\${k}`)}`;
   const kalip = secici.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(`${kalip}(?![a-z0-9_\\\\-])`).test(cikti);
 };
@@ -81,6 +81,9 @@ describe("Tailwind yalnız tasarım değerlerini tanır", () => {
       ...Object.keys(sabitDegerler.genislikler).map((ad) => `max-w-${ad}`),
       ...Object.keys(sabitDegerler.katmanlar).map((ad) => `z-${ad}`),
       ...Object.keys(sabitDegerler.kirilmaNoktalari).map((ad) => `${ad}:p-4`),
+      // Kart 0193: kapsayıcı genişlikleri.
+      "@container",
+      ...Object.keys(sabitDegerler.kapsayicilar).flatMap((ad) => [`@${ad}:p-4`, `@max-${ad}:p-4`]),
       // Kart 0124: bağlı renkler, tema boşlukları, ürün sütunu ve başlık biçimi.
       ...bagliRenkAdlari.flatMap((ad) => [`bg-${ad}`, `text-${ad}`, `border-${ad}`]),
       ...temaBoslukAdlari.flatMap((ad) => [`p-${ad}`, `gap-${ad}`]),
@@ -125,6 +128,13 @@ describe("Tailwind yalnız tasarım değerlerini tanır", () => {
   it("kırılma noktaları tasarım değerlerindeki genişlikten başlar", () => {
     for (const [ad, genislik] of Object.entries(sabitDegerler.kirilmaNoktalari)) {
       expect(uygulama([`${ad}:p-4`])).toContain(`(width >= ${genislik})`);
+    }
+  });
+
+  it("kapsayıcı sorguları tasarım değerlerindeki genişlikten başlar (kart 0193)", () => {
+    for (const [ad, genislik] of Object.entries(sabitDegerler.kapsayicilar)) {
+      expect(uygulama([`@${ad}:p-4`])).toContain(`(width >= ${genislik})`);
+      expect(uygulama([`@max-${ad}:p-4`])).toContain(`(width < ${genislik})`);
     }
   });
 
