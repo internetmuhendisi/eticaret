@@ -796,6 +796,35 @@ test("ürün kartı: klavyede ad, sepet ve favori sırasıyla; adın odağı kar
   ).toBeFocused();
 });
 
+// Kart 0193: yatay kartta düğmeler dar kartta fiyatın altına inse de klavye sırası ad, sepet, favoridir.
+for (const genislik of [320, 1280]) {
+  test(`yatay ürün kartı: klavyede ad, sepet ve favori sırasıyla (${genislik} px)`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: genislik, height: 900 });
+    await ac(page, `${katalogAdresi}/urun-karti`);
+    const bolum = page.getByRole("region", { name: metin("gelistirme.urunKarti.gorunum.yatay") });
+    const kart = bolum.locator("article").first();
+    await bolum.getByRole("heading", { level: 2 }).click();
+    await page.keyboard.press("Tab");
+    await expect(
+      kart.getByRole("link", { name: metin("gelistirme.urunKarti.ornek.indirimli") }),
+    ).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(
+      kart.getByRole("button", { name: metin("vitrin.urunKarti.sepeteEkle") }),
+    ).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(
+      kart.getByRole("button", {
+        name: doldur(metin("vitrin.urunKarti.favoriyeEkle"), {
+          urun: metin("gelistirme.urunKarti.ornek.indirimli"),
+        }),
+      }),
+    ).toBeFocused();
+  });
+}
+
 // Bütün kart ürün sayfasına gider: görselin ortasında en üstteki öğe adın bağlantısıdır; düğmeler onun üstündedir.
 test("ürün kartı: görsele tıklayan ürün sayfasına, düğmeye tıklayan düğmeye basar", async ({
   page,
