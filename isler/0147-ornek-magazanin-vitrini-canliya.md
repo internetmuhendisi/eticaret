@@ -49,4 +49,4 @@ Açık: 16 Kasım 18:00'den sonra eski fiyatın ve fırsatlarda dört ürünün 
 
 ## Durum
 
-yapılacak
+bitti
