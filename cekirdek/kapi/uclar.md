@@ -164,6 +164,16 @@ Müşteri hesabı açar, onayları kaydeder, hoş geldin e-postasını kuyruğa 
 - Başarılı (200): `{ "basarili": true, "veri": {} }` ve iki oturum çerezi.
 - Hatalar: `cakisma` (e-posta kayıtlı; müşteriye söylenir, karar 0051), `robot-dogrulamasi`, `istek-siniri` (`Retry-After` ile), `dogrulama` (bozuk e-posta, kısa şifre, işaretlenmemiş zorunlu onay, fazla alan), `yetki` (sahte istek).
 
+### POST /kapi/herkese-acik/sepet
+
+Tarayıcıdaki sepetin vitrin verisini hesaplar (kart 0212, karar 0135). Sepet yalnız müşterinin tarayıcısındadır; uç birimleri ve adetleri alır, fiyatı, stoğu, kargoyu ve vergiyi sunucuda yeniden hesaplar. Hiçbir şey yazmaz, oturum istemez. Tema demosunda açıktır.
+
+- İzin: `herkese-acik`. Sınır: `genel`.
+- Girdi: `{ "kalemler": [{ "birim", "adet", "gorulenTutar"? }] }` (`sepetSemasi`, `cekirdek/moduller/sepet/semalar.ts`); en çok 50 kalem, adet 1–999. Aynı birim iki kez gelirse adetleri toplanır; kimlik olmayan birim atılır.
+- Servis: hesap `cekirdek/moduller/sepet/hesap.ts` (`sepetiHesapla`), gösterim `cekirdek/vitrin/sepet/veri.ts` (`sepetGorunumu`).
+- Başarılı (200): `{ "basarili": true, "veri": { "satirlar", "adet", "gosterim", "kargo", "vergiDokumu", "yazili", "odemeyeGecilebilir" } }`. Satırın uyarıları `cekirdek/kayitlar/sepet.ts` kaydındadır (`fiyat-degisti`, `stok-azaldi`, `en-az`, `en-cok`, `tukendi`, `kaldirildi`).
+- Hatalar: `dogrulama` (bozuk girdi, sınır dışı adet, fazla kalem), `istek-siniri` (`Retry-After` ile), `yetki` (sahte istek).
+
 ### POST /kapi/herkese-acik/stok-bildirimi
 
 Üye olmayan müşteri tükenmiş birim (basit ürünün birimi ya da birleşim) için "stoğa gelince haber ver" talebi bırakır (eklenti, kart 0144, karar 0117). Birim stoğa girince e-postasına bir kez haber gider. Aynı e-posta aynı birime bekleyen talep olarak bir kez yazılır; ikinci istek de başarı alır (adresin kayıtlı olup olmadığı belli olmaz).
