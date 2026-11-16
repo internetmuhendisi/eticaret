@@ -34,4 +34,4 @@ Bölüm: Sepet ve ödeme. Önce 0211, 0155 ve 0193 bitmiş olmalı.
 
 ## Durum
 
-yapılacak
+bitti
