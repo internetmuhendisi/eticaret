@@ -38,4 +38,4 @@ Bölüm: Yayın. Kart 0147 ve 0208'in kontrolünde görüldü, onlara karıştı
 
 ## Durum
 
-yapılacak
+bitti
