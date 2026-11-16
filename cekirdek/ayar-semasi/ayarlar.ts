@@ -12,6 +12,11 @@ import { ulkeGecerliMi } from "../bolgeler/bolgeler.ts";
 import { eklentiKodlari, stokBildirimiAyari } from "../kayitlar/eklentiler.ts";
 import { favoriSiniriEnCok } from "../kayitlar/favori.ts";
 import { listeSayfasi, listeSiralamalari, sayfaGecisleri } from "../kayitlar/liste.ts";
+import {
+  sepeteEkleyinceSecenekleri,
+  sepetTutariEnCok,
+  ucretsizKargoTutarlari,
+} from "../kayitlar/sepet.ts";
 import { type AyarSahibi, ayarSahibi } from "../kayitlar/site.ts";
 import { sosyalHesapKalibi, sosyalHesapSiniri, sosyalSiteler } from "../kayitlar/sosyal-siteler.ts";
 import { tukenenUrunDavranislari } from "../kayitlar/stok.ts";
@@ -359,6 +364,27 @@ export const magazaAyarSemasi = z.strictObject({
   kargoyaVermeSuresi: ayar(
     z.int().min(0).max(60).default(1),
     magazaSahibinin("ayar.aciklama.kargoyaVermeSuresi"),
+  ),
+  // Kargo (kart 0212, karar 0135; planlar/site-ayarlari.md): başlangıçta tek teslimat bölgesi, sabit ücret ve
+  // ücretsiz kargo sınırı. Tutarlar kuruş, fiyat girişi ayarına göre (vergi dahil ya da hariç). Ücret 0 kargoyu
+  // her zaman ücretsiz yapar (varsayılan, kullanıcı kararı); sınır boşsa ücretsiz kargo sınırı yoktur. Sınır
+  // sepetin indirimden sonraki ya da önceki tutarıyla karşılaştırılır. Hesap: cekirdek/moduller/kargo/hesap.ts.
+  kargoUcreti: ayar(
+    z.int().min(0).max(sepetTutariEnCok).default(0),
+    magazaSahibinin("ayar.aciklama.kargoUcreti"),
+  ),
+  ucretsizKargoSiniri: ayar(
+    z.int().min(0).max(sepetTutariEnCok).optional(),
+    magazaSahibinin("ayar.aciklama.ucretsizKargoSiniri"),
+  ),
+  ucretsizKargoTutari: ayar(
+    z.enum(ucretsizKargoTutarlari).default("indirimden-sonra"),
+    magazaSahibinin("ayar.aciklama.ucretsizKargoTutari"),
+  ),
+  // Ürün sepete eklenince ne olur (karar 0132): seçenekler cekirdek/kayitlar/sepet.ts'tedir.
+  sepeteEkleyince: ayar(
+    z.enum(sepeteEkleyinceSecenekleri).default("yan-pencere"),
+    magazaSahibinin("ayar.aciklama.sepeteEkleyince"),
   ),
   // Stoğa gelince haber ver eklentisi (kart 0144, karar 0117): üye olmayan müşteri de talep bırakabilir mi,
   // talep kaç gün saklanır. Eklenti kapalıyken okunmaz.

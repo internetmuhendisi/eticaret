@@ -113,7 +113,11 @@
       "dogrulanmisAliciEtiketi": "Ürünü satın almış müşterinin yorumunda \"Doğrulanmış alıcı\" etiketi görünür.",
       "eklentiler": "Sitede açık eklentiler. Listede olmayan eklenti kurulu olsa da kapalıdır.",
       "stokBildirimiUyeOlmayan": "Üye olmayan müşteri de \"stoğa gelince haber ver\" talebi bırakabilir. Kapalıysa yalnız giriş yapmış müşteri bırakır.",
-      "stokBildirimiSaklamaGun": "\"Stoğa gelince haber ver\" talebinin kaç gün saklanacağı. Süresi dolan talep, e-postası gitmemiş olsa da silinir."
+      "stokBildirimiSaklamaGun": "\"Stoğa gelince haber ver\" talebinin kaç gün saklanacağı. Süresi dolan talep, e-postası gitmemiş olsa da silinir.",
+      "kargoUcreti": "Sepete eklenen kargo ücreti. Fiyatlar gibi vergi dahil ya da hariç girilir. 0 kargoyu her zaman ücretsiz yapar.",
+      "ucretsizKargoSiniri": "Bu tutar ve üstündeki sepette kargo ücretsizdir. Boşsa ücretsiz kargo sınırı yoktur.",
+      "ucretsizKargoTutari": "Ücretsiz kargo sınırının sepetin indirimden sonraki mi önceki mi tutarıyla karşılaştırılacağı.",
+      "sepeteEkleyince": "Ürün sepete eklenince ne olur: sepet penceresi açılır, kısa bildirim çıkar ya da sepet sayfasına gidilir."
     }
   },
   "tema": {
