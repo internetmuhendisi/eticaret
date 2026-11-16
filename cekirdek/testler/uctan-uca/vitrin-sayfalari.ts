@@ -33,6 +33,8 @@ export const ekranSayfalari: Record<string, { adres: string; durum: number }> = 
     durum: 200,
   },
   favoriler: { adres: vitrinAdresleri.favoriler, durum: 200 },
+  // Kart 0212: boş sepet (testin tarayıcısında sepet yoktur).
+  sepet: { adres: vitrinAdresleri.sepet, durum: 200 },
   giris: { adres: vitrinAdresleri.giris, durum: 200 },
   kayit: { adres: vitrinAdresleri.kayit, durum: 200 },
   bulunamadi: { adres: "/olcum-icin-olmayan-sayfa", durum: 404 },

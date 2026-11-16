@@ -1,7 +1,8 @@
 "use client";
 // Sepet penceresi (kart 0212, karar 0132; kart 0211'in taslağı): "Sepete ekleyince" ayarı "yan pencere"yse ürün
 // eklenince sağdan açılır. Sepetin satırları, ara toplamı, "Sepete git" ve "Alışverişe devam et" durur. Pencere vitrin
-// çerçevesinde bir kez durur; açıklığı sepet durumundadır (pencereyiAc). Kapanınca odak açan düğmeye döner (Radix).
+// çerçevesinde bir kez durur; açıklığı sepet durumundadır (pencereyiAc). Kapanınca odak açan düğmeye döner
+// (durum açılırken odaktaki öğeyi saklar).
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import {
@@ -15,7 +16,7 @@ import {
 import { useMetin } from "../../metinler/istemci-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import { vitrinAdresleri } from "../adresler";
-import { pencereyiKapat, useSepet } from "./durum";
+import { penceredenDonulecekOge, pencereyiKapat, useSepet } from "./durum";
 import { SepetPenceresiIcerigi } from "./sepet-gorunumu";
 
 export function SepetPenceresi() {
@@ -28,7 +29,16 @@ export function SepetPenceresi() {
         if (!acik) pencereyiKapat();
       }}
     >
-      <YanPencereIcerigi kapatEtiketi={metin("ortak.parca.kapat")} aria-describedby={undefined}>
+      <YanPencereIcerigi
+        kapatEtiketi={metin("ortak.parca.kapat")}
+        aria-describedby={undefined}
+        onCloseAutoFocus={(olay) => {
+          const oge = penceredenDonulecekOge();
+          if (oge === null) return;
+          olay.preventDefault();
+          oge.focus();
+        }}
+      >
         <YanPencereUstu>
           <YanPencereBasligi>
             {doldur(metin("vitrin.sepet.pencereBaslik"), { sayi: String(sepet.kalemler.length) })}

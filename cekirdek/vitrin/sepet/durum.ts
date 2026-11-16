@@ -148,8 +148,19 @@ export const geriKoy = (kalem: YerelKalem, sira: number): void => {
   kaydet([...durum.kalemler.slice(0, yer), kalem, ...durum.kalemler.slice(yer)]);
 };
 
-export const pencereyiAc = (): void => yay({ pencereAcik: true });
+// Pencere bir tetikleyiciyle değil durumla açılır: Radix odağı geri vereceği öğeyi bilmez. Açılırken odaktaki öğe
+// (sepete ekle düğmesi) saklanır, pencere kapanınca odak ona döner (penceredenDonulecekOge).
+let donulecekOge: HTMLElement | null = null;
+export const pencereyiAc = (): void => {
+  donulecekOge = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  yay({ pencereAcik: true });
+};
 export const pencereyiKapat = (): void => yay({ pencereAcik: false });
+export const penceredenDonulecekOge = (): HTMLElement | null => {
+  const oge = donulecekOge;
+  donulecekOge = null;
+  return oge?.isConnected ? oge : null;
+};
 
 // Sunucunun gösterdiği birim fiyatını depoya yazar: fiyat değişikliği bir kez söylenir. İstek anahtarı yalnız birim
 // ve adettir, bu yazım yeni istek göndermez.
@@ -163,6 +174,16 @@ const gordugunuYaz = (gorunum: SepetGorunumu) => {
     return { ...kalem, gorulenTutar };
   });
   if (degisti) kaydet(kalemler);
+};
+
+const bosGorunum: SepetGorunumu = {
+  satirlar: [],
+  adet: 0,
+  gosterim: "yok",
+  kargo: "yok",
+  vergiDokumu: [],
+  yazili: { araToplam: "", vergi: "", toplam: "" },
+  odemeyeGecilebilir: false,
 };
 
 export type GorunumDurumu =
@@ -181,6 +202,11 @@ export const useSepetGorunumu = (etkin: boolean, ornek?: SepetGorunumu): Gorunum
     if (!etkin || !sepet.hazir) return;
     if (ayarKipi === "ornek") {
       setSonuc(ornek === undefined ? { tur: "hata" } : { tur: "hazir", gorunum: ornek });
+      return;
+    }
+    // Boş sepet için istek gitmez: boş hâl hemen çizilir.
+    if (durum.kalemler.length === 0) {
+      setSonuc({ tur: "hazir", gorunum: bosGorunum });
       return;
     }
     let gecerli = true;
