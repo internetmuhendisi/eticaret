@@ -1,0 +1,217 @@
+"use client";
+// Vitrinde müşterinin sepeti, tek yerden (kart 0212, karar 0135). Ürün kartının ve ürün sayfasının sepete ekle
+// düğmeleri, üst kısmın sayısı, sepet penceresi ve sepet sayfası bu durumu paylaşır.
+//
+// - Sepet tarayıcının deposundadır (depo.ts); sunucuya kaydedilmez, hesaba bağlanmaz. Bu yüzden hesap durumu
+//   beklenmez, sayfa açılınca istek gitmez: üst kısmın sayısı depodan okunur.
+// - Sepetin tutarları yalnız sunucuda hesaplanır (POST /kapi/herkese-acik/sepet). İstek yalnız sepeti gösteren bir
+//   parça (sayfa ya da açık pencere) varken gider; sepet her değişince yeniden sorulur, eski cevap yenisini ezmez.
+// - Sunucunun gösterdiği birim fiyatı depoya yazılır: fiyat değişikliği bir kez söylenir, sonraki bakışta tekrar
+//   etmez. Düzeltilen adet (stok, alım sınırı) depoya kendiliğinden yazılmaz: sunucu her hesapta adedi sınıra indirir,
+//   uyarı müşteri adedi değiştirene kadar görünür (yazılsaydı yeni istek uyarıyı hemen kaldırırdı).
+// - Başka sekmedeki değişiklik görülür (storage olayı).
+// - Katalogun örnek kipinde depo kullanılmaz, istek gitmez; sepet yalnız bellekte durur.
+import {
+  createContext,
+  createElement,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { type SepeteEkleyince, sepetDepoAnahtari, sepetSinirlari } from "../../kayitlar/sepet";
+import { kimligiDuzelt } from "../../veritabani/kimlik-bicimi";
+import { kalemListesi, type YerelKalem, yereldenOku, yereleYaz } from "./depo";
+import type { SepetGorunumu } from "./veri";
+
+const sepetUcu = "/kapi/herkese-acik/sepet";
+
+// Vitrin çerçevesi verir: istek gider mi ve ürün eklenince ne olur. Sağlayıcı yoksa (katalog) örnek kiptir.
+export type SepetAyarlari = { kip: "sorulur" | "ornek"; sepeteEkleyince: SepeteEkleyince };
+const AyarBaglami = createContext<SepetAyarlari>({ kip: "ornek", sepeteEkleyince: "yan-pencere" });
+
+export function SepetSaglayici({
+  ayarlar,
+  children,
+}: {
+  ayarlar: SepetAyarlari;
+  children: ReactNode;
+}) {
+  return createElement(AyarBaglami.Provider, { value: ayarlar }, children);
+}
+
+export const useSepetAyarlari = () => useContext(AyarBaglami);
+
+type Durum = { hazir: boolean; kalemler: readonly YerelKalem[]; pencereAcik: boolean };
+const ilk: Durum = { hazir: false, kalemler: [], pencereAcik: false };
+let durum: Durum = ilk;
+let kip: SepetAyarlari["kip"] | undefined;
+const dinleyiciler = new Set<() => void>();
+
+const yay = (yeni: Partial<Durum>) => {
+  durum = { ...durum, ...yeni };
+  for (const dinleyici of dinleyiciler) dinleyici();
+};
+
+const depoDegisti = (olay: StorageEvent) => {
+  if (olay.key !== sepetDepoAnahtari && olay.key !== null) return;
+  yay({ kalemler: yereldenOku() });
+};
+
+const kur = (yeniKip: SepetAyarlari["kip"]) => {
+  if (kip !== undefined) return;
+  kip = yeniKip;
+  if (yeniKip === "sorulur") {
+    window.addEventListener("storage", depoDegisti);
+    yay({ hazir: true, kalemler: yereldenOku() });
+  } else yay({ hazir: true, kalemler: [] });
+};
+
+const kaydet = (kalemler: readonly YerelKalem[]) => {
+  const temiz = kalemListesi(kalemler);
+  if (kip === "sorulur") yereleYaz(temiz);
+  yay({ kalemler: temiz });
+};
+
+// Sunucuda ve hidrasyonda sepet bilinmiyordur (boş): sunucunun çizdiğiyle tarayıcının ilk çizimi aynı kalır.
+export const useSepet = (): Durum => {
+  const ayarlar = useSepetAyarlari();
+  const abone = useCallback(
+    (dinleyici: () => void) => {
+      dinleyiciler.add(dinleyici);
+      kur(ayarlar.kip);
+      return () => {
+        dinleyiciler.delete(dinleyici);
+      };
+    },
+    [ayarlar.kip],
+  );
+  return useSyncExternalStore(
+    abone,
+    () => durum,
+    () => ilk,
+  );
+};
+
+export type EklemeSonucu = "eklendi" | "sinir" | "adet-siniri";
+
+// Birimi sepete ekler; sepette varsa adedi artar. Adet ürünün sınırlarını sunucu denetler, burada yalnız sepetin
+// sınırları vardır.
+export const sepeteEkle = (
+  ayarlar: SepetAyarlari,
+  ham: string,
+  adet: number,
+  gorulenTutar?: number,
+): EklemeSonucu => {
+  kur(ayarlar.kip);
+  const birim = kimligiDuzelt(ham);
+  const onceki = durum.kalemler.find((kalem) => kalem.birim === birim);
+  if (onceki === undefined && durum.kalemler.length >= sepetSinirlari.kalemEnCok) return "sinir";
+  const yeniAdet = (onceki?.adet ?? 0) + adet;
+  if (yeniAdet > sepetSinirlari.adetEnCok) return "adet-siniri";
+  const kalem: YerelKalem = {
+    birim,
+    adet: yeniAdet,
+    ...(gorulenTutar === undefined ? {} : { gorulenTutar }),
+  };
+  kaydet(
+    onceki === undefined
+      ? [...durum.kalemler, kalem]
+      : durum.kalemler.map((eski) => (eski.birim === birim ? kalem : eski)),
+  );
+  return "eklendi";
+};
+
+export const adetDegistir = (ham: string, adet: number): void => {
+  const birim = kimligiDuzelt(ham);
+  const sinirli = Math.min(Math.max(adet, 1), sepetSinirlari.adetEnCok);
+  kaydet(
+    durum.kalemler.map((kalem) => (kalem.birim === birim ? { ...kalem, adet: sinirli } : kalem)),
+  );
+};
+
+// Çıkarılan kalem ve eski yeri döner: "Geri al" onu yerine koyar.
+export const sepettenCikar = (ham: string): { kalem: YerelKalem; sira: number } | undefined => {
+  const birim = kimligiDuzelt(ham);
+  const sira = durum.kalemler.findIndex((kalem) => kalem.birim === birim);
+  const kalem = durum.kalemler[sira];
+  if (kalem === undefined) return undefined;
+  kaydet(durum.kalemler.filter((eski) => eski.birim !== birim));
+  return { kalem, sira };
+};
+
+export const geriKoy = (kalem: YerelKalem, sira: number): void => {
+  if (durum.kalemler.some((eski) => eski.birim === kalem.birim)) return;
+  const yer = Math.min(Math.max(sira, 0), durum.kalemler.length);
+  kaydet([...durum.kalemler.slice(0, yer), kalem, ...durum.kalemler.slice(yer)]);
+};
+
+export const pencereyiAc = (): void => yay({ pencereAcik: true });
+export const pencereyiKapat = (): void => yay({ pencereAcik: false });
+
+// Sunucunun gösterdiği birim fiyatını depoya yazar: fiyat değişikliği bir kez söylenir. İstek anahtarı yalnız birim
+// ve adettir, bu yazım yeni istek göndermez.
+const gordugunuYaz = (gorunum: SepetGorunumu) => {
+  let degisti = false;
+  const kalemler = durum.kalemler.map((kalem) => {
+    const satir = gorunum.satirlar.find((aday) => aday.birim === kalem.birim);
+    const gorulenTutar = satir?.birimTutari;
+    if (gorulenTutar === undefined || gorulenTutar === kalem.gorulenTutar) return kalem;
+    degisti = true;
+    return { ...kalem, gorulenTutar };
+  });
+  if (degisti) kaydet(kalemler);
+};
+
+export type GorunumDurumu =
+  | { tur: "yukleniyor" }
+  | { tur: "hata" }
+  | { tur: "hazir"; gorunum: SepetGorunumu };
+
+// Sepetin sunucuda hesaplanmış görünümü. Etkin değilse istek gitmez. Örnek kipte örnek görünüm verilir.
+export const useSepetGorunumu = (etkin: boolean, ornek?: SepetGorunumu): GorunumDurumu => {
+  const { kip: ayarKipi } = useSepetAyarlari();
+  const sepet = useSepet();
+  const [sonuc, setSonuc] = useState<GorunumDurumu>({ tur: "yukleniyor" });
+  const anahtar = JSON.stringify(sepet.kalemler.map(({ birim, adet }) => [birim, adet]));
+  // biome-ignore lint/correctness/useExhaustiveDependencies: istek yalnız birim ve adet değişince yenilenir; son görülen fiyat yazılınca yenilenmez.
+  useEffect(() => {
+    if (!etkin || !sepet.hazir) return;
+    if (ayarKipi === "ornek") {
+      setSonuc(ornek === undefined ? { tur: "hata" } : { tur: "hazir", gorunum: ornek });
+      return;
+    }
+    let gecerli = true;
+    void (async () => {
+      try {
+        const yanit = await fetch(sepetUcu, {
+          method: "POST",
+          cache: "no-store",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ kalemler: durum.kalemler }),
+        });
+        const zarf = (await yanit.json()) as { basarili: boolean; veri?: SepetGorunumu };
+        if (!gecerli) return;
+        if (zarf.basarili && zarf.veri !== undefined) {
+          setSonuc({ tur: "hazir", gorunum: zarf.veri });
+          gordugunuYaz(zarf.veri);
+        } else setSonuc({ tur: "hata" });
+      } catch {
+        if (gecerli) setSonuc({ tur: "hata" });
+      }
+    })();
+    return () => {
+      gecerli = false;
+    };
+  }, [etkin, sepet.hazir, anahtar, ayarKipi]);
+  return sonuc;
+};
+
+// Yalnız testler için: bir sonraki kullanan durumu yeniden kurar.
+export const sepetDurumunuSifirla = (): void => {
+  durum = ilk;
+  kip = undefined;
+  if (typeof window !== "undefined") window.removeEventListener("storage", depoDegisti);
+};

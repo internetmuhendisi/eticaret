@@ -34,6 +34,7 @@ import {
   MailIcon,
   MapPinIcon,
   MenuIcon,
+  MinusIcon,
   OctagonXIcon,
   PackageIcon,
   PaletteIcon,
@@ -116,6 +117,8 @@ export const ikonlar = {
   // Yönetim paneli (kart 0141): karşılama sayfası, yeni kayıt ekleme, vitrini yeni sekmede açma, çıkış.
   ev: HouseIcon,
   ekle: PlusIcon,
+  // Adedi azaltır (kart 0212: sepette ve ürün sayfasında adet seçici; artırmak "ekle"dir).
+  azalt: MinusIcon,
   "yeni-sekme": ExternalLinkIcon,
   cikis: LogOutIcon,
   // Sıralanabilir liste (kart 0141): sürükleme tutamağı, bir yukarı ve bir aşağı taşıma.

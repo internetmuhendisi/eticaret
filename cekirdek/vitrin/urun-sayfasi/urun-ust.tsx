@@ -55,7 +55,7 @@ export function UrunUstKismi({
   kisaAciklama: ReactNode;
   // Kargo bilgisi gibi seçimden bağımsız satırlar.
   altBilgi: ReactNode;
-  // Satın alma satırı: bugün favori düğmesi (kart 0140); adet ve "Sepete ekle" sepetle gelir (taslak).
+  // Satın alma satırı: adet, "Sepete ekle" (kart 0212) ve favori düğmesi (kart 0140).
   eylemler: ReactNode;
   // Açık eklentilerin ürün sayfası yuvası (kart 0144, karar 0117): stok yazısının altında, seçili birimi
   // SeciliBirimBaglami'ndan okur.
@@ -187,8 +187,11 @@ export function UrunUstKismi({
           ))}
           {bilgi.stok}
         </div>
-        <SeciliBirimBaglami.Provider value={birim?.kimlik}>{yuvalar}</SeciliBirimBaglami.Provider>
-        {eylemler}
+        {/* Eklentilerin yuvası ve satın alma satırı seçili birimi okur (kart 0144, 0212). */}
+        <SeciliBirimBaglami.Provider value={birim?.kimlik}>
+          {yuvalar}
+          {eylemler}
+        </SeciliBirimBaglami.Provider>
         {altBilgi}
         {bilgi.stokKodu}
       </div>

@@ -18,8 +18,9 @@ import { fiyatGosterimServisi } from "../../moduller/fiyat/gosterim.ts";
 import { markalar, urunMarkalari } from "../../moduller/marka/model.ts";
 import { siteninStokAyarlari, urunStokDurumlari } from "../../moduller/stok/durum.ts";
 import { anaGorseller, type GaleriGorseli } from "../../moduller/urun/galeri.ts";
-import { urunler } from "../../moduller/urun/model.ts";
+import { urunler, urunSecenekleri } from "../../moduller/urun/model.ts";
 import { urunGorseliAdresi } from "../../moduller/urun/urun-gorseli.ts";
+import { urunlerinBirimleri } from "../../moduller/urun/varyant.ts";
 import { vitrinKosulu, vitrinStokSecenegi } from "../../moduller/urun/vitrin.ts";
 import { puanOzetleri } from "../../moduller/yorum/servis.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
@@ -81,12 +82,27 @@ export const urunKartlari = async (
       ),
     );
   const gorunenler = satirlar.map((satir) => satir.kimlik);
-  const [gorseller, fiyatlar, stoklar, puanlar] = await Promise.all([
+  const [gorseller, fiyatlar, stoklar, puanlar, birimler, secenekliler] = await Promise.all([
     anaGorseller(vt, gorunenler),
     fiyatGosterimServisi(site).fiyatAraliklari(vt, gorunenler, an === undefined ? {} : { an }),
     urunStokDurumlari(vt, gorunenler, ayarlar),
     puanOzetleri(vt, gorunenler),
+    // Basit ürünün tek birimi: kartın sepet düğmesi onu ekler (kart 0212). Ürün, silinmemiş seçeneği yoksa basittir
+    // (ürün servisinin türü, urunuOku).
+    urunlerinBirimleri(vt, gorunenler),
+    gorunenler.length === 0
+      ? []
+      : vt
+          .selectDistinct({ urun: urunSecenekleri.urun_kimligi })
+          .from(urunSecenekleri)
+          .where(
+            and(
+              inArray(urunSecenekleri.urun_kimligi, gorunenler),
+              isNull(urunSecenekleri.silinme_zamani),
+            ),
+          ),
   ]);
+  const secenekli = new Set(secenekliler.map((satir) => satir.urun));
   const bulunan = new Map(satirlar.map((satir) => [satir.kimlik, satir]));
   return gecerli.flatMap((kimlik) => {
     const satir = bulunan.get(kimlik);
@@ -95,6 +111,8 @@ export const urunKartlari = async (
     const gorsel = ana === undefined ? undefined : kartGorseli(ana);
     const fiyat = fiyatlar.get(satir.kimlik);
     const puan = puanlar.get(satir.kimlik);
+    const tukendi = stoklar.get(satir.kimlik)?.tukendi ?? true;
+    const [sepetBirimi] = secenekli.has(satir.kimlik) ? [] : (birimler.get(satir.kimlik) ?? []);
     return [
       {
         kimlik: satir.kimlik,
@@ -103,7 +121,8 @@ export const urunKartlari = async (
         ...(satir.marka === null ? {} : { marka: satir.marka }),
         ...(gorsel === undefined ? {} : { gorsel }),
         ...(fiyat === undefined ? {} : { fiyat }),
-        tukendi: stoklar.get(satir.kimlik)?.tukendi ?? true,
+        tukendi,
+        ...(sepetBirimi === undefined || tukendi || fiyat === undefined ? {} : { sepetBirimi }),
         ...(puan === undefined ? {} : { puan: { ortalama: puan.ortalama, sayi: puan.sayi } }),
       },
     ];

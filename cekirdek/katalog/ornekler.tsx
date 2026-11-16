@@ -4,6 +4,7 @@
 import type { ComponentType } from "react";
 import type { katalogParcalari } from "./kayit";
 import { AcilirMenuOrnegi } from "./ornekler/acilir-menu";
+import { AdetSeciciOrnegi } from "./ornekler/adet-secici";
 import { AkordeonOrnegi } from "./ornekler/akordeon";
 import { BaglantiOrnegi } from "./ornekler/baglanti";
 import { BildirimOrnegi } from "./ornekler/bildirim";
@@ -51,6 +52,7 @@ const ornekler: Record<ParcaKodu, ComponentType> = {
   "acilir-menu": AcilirMenuOrnegi,
   pencere: PencereOrnegi,
   "onay-penceresi": OnayPenceresiOrnegi,
+  "adet-secici": AdetSeciciOrnegi,
   "yan-pencere": YanPencereOrnegi,
   sekmeler: SekmelerOrnegi,
   kart: KartOrnegi,

@@ -22,7 +22,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
-import { IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
 import { Rozet } from "../../../bilesenler/parcalar/rozet";
 import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { sabitDegerler } from "../../../bilesenler/tasarim-degerleri/degerler";
@@ -31,6 +30,7 @@ import type { UrunKartiGorunumu } from "../../kayitlar/tema";
 import { bicim, metin } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import { FavoriDugmesi } from "../favori-dugmesi";
+import { KartSepetDugmesi } from "../sepet/sepete-ekle";
 import { Yildizlar } from "../yildizlar";
 import { FiyatGosterimi } from "./fiyat";
 import type { UrunKartiGorseli, UrunKartiVerisi } from "./tur";
@@ -161,12 +161,15 @@ export function UrunKarti({
   const favori = islevler.favori ? (
     <FavoriDugmesi urun={urun.kimlik} urunAdi={urun.ad} className="pointer-events-auto relative" />
   ) : null;
+  // Basit üründe sepete bir adet ekler; seçenekli üründe ürün sayfasını açar (kart 0212, karar 0132).
   const sepet =
     islevler.sepet && !urun.tukendi && urun.fiyat !== undefined ? (
-      <IkonDugmesi
-        ikon="sepet"
-        etiket={metin("vitrin.urunKarti.sepeteEkle")}
-        tur="cerceveli"
+      <KartSepetDugmesi
+        urunAdi={urun.ad}
+        adres={urun.adres}
+        {...(urun.sepetBirimi === undefined
+          ? {}
+          : { birim: { kimlik: urun.sepetBirimi, tutar: urun.fiyat.enDusuk.tutar } })}
         className={sinif("pointer-events-auto relative shrink-0", !yatay && "bg-zemin")}
       />
     ) : null;

@@ -17,6 +17,7 @@ export const yazilanIslevler: Readonly<Record<Islev, boolean>> = {
   arama: true,
   // Kart 0140: favoriler.
   favori: true,
-  sepet: false,
+  // Kart 0212: sepet (tarayıcıda, karar 0135).
+  sepet: true,
   odeme: false,
 };

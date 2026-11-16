@@ -65,8 +65,14 @@ const urun = (
   gorsel: gorsel(sira),
   fiyat: tek(29_990),
   tukendi: false,
+  // Basit ürünün birimi (kart 0212): kartın sepet düğmesi onu ekler. Seçenekli örneklerde yoktur, düğme "Seçenekleri
+  // gör" bağlantısıdır.
+  sepetBirimi: `ornek-birim-${sira}`,
   ...degisiklik,
 });
+
+// Seçenekli ürünün kartında sepet birimi yoktur.
+const secenekli = ({ sepetBirimi: _birim, ...kart }: UrunKartiVerisi): UrunKartiVerisi => kart;
 
 export const ornekUrunKartlari = (): UrunKartiVerisi[] => {
   const { gorsel: _gorsel, ...gorselsiz } = urun(4, "gelistirme.urunKarti.ornek.gorselsiz");
@@ -77,23 +83,27 @@ export const ornekUrunKartlari = (): UrunKartiVerisi[] => {
       fiyat: { ...tek(22_500, 29_990), indirim: { oran: 24, varan: false } },
     }),
     urun(1, "gelistirme.urunKarti.ornek.tukenmis", { tukendi: true }),
-    urun(2, "gelistirme.urunKarti.ornek.varyantli", {
-      fiyat: {
-        enDusuk: fiyat(24_990),
-        enYuksek: fiyat(27_990),
-        tek: false,
-        yaziliAralik: yazili(24_990, 27_990),
-      },
-    }),
-    urun(3, "gelistirme.urunKarti.ornek.varanIndirimli", {
-      fiyat: {
-        enDusuk: fiyat(14_000, 20_000),
-        enYuksek: fiyat(25_000),
-        tek: false,
-        yaziliAralik: yazili(14_000, 25_000),
-        indirim: { oran: 30, varan: true },
-      },
-    }),
+    secenekli(
+      urun(2, "gelistirme.urunKarti.ornek.varyantli", {
+        fiyat: {
+          enDusuk: fiyat(24_990),
+          enYuksek: fiyat(27_990),
+          tek: false,
+          yaziliAralik: yazili(24_990, 27_990),
+        },
+      }),
+    ),
+    secenekli(
+      urun(3, "gelistirme.urunKarti.ornek.varanIndirimli", {
+        fiyat: {
+          enDusuk: fiyat(14_000, 20_000),
+          enYuksek: fiyat(25_000),
+          tek: false,
+          yaziliAralik: yazili(14_000, 25_000),
+          indirim: { oran: 30, varan: true },
+        },
+      }),
+    ),
     gorselsiz,
     urun(5, "gelistirme.urunKarti.ornek.uzunAdli", {
       marka: metin("gelistirme.urunKarti.ornek.uzunMarka"),

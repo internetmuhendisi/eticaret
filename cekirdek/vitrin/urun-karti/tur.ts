@@ -25,6 +25,9 @@ export type UrunKartiVerisi = {
   fiyat?: FiyatAraligi;
   // Ürünün genel stok durumu (urunStokDurumu): satılabilir birimi kalmadı.
   tukendi: boolean;
+  // Basit ürünün tek birimi, satılabilir ve fiyatlıysa: kartın sepet düğmesi onu bir adet ekler (kart 0212). Seçenekli
+  // üründe yoktur, düğme ürün sayfasını açar (karar 0132).
+  sepetBirimi?: string;
   // Yayındaki yorumların ortalaması ve sayısı (kart 0139); yorumu olmayan üründe yoktur.
   puan?: { ortalama: number; sayi: number };
 };

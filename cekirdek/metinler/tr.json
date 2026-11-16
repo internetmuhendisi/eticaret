@@ -1194,6 +1194,54 @@
       "bosBaslik": "Favori listeniz boş",
       "bosAciklama": "Beğendiğiniz ürünlerdeki kalbe dokunun, burada toplansın.",
       "alisveriseBasla": "Alışverişe başla"
+    },
+    "sepet": {
+      "baslik": "Sepetim",
+      "sayfaBasligi": "Sepet",
+      "urunSayisi": "{sayi} ürün",
+      "bosBaslik": "Sepetiniz boş",
+      "bosAciklama": "Beğendiğiniz ürünleri sepete ekleyin, burada görünsün.",
+      "alisveriseBasla": "Alışverişe başla",
+      "alisveriseDevam": "Alışverişe devam et",
+      "sepeteGit": "Sepete git",
+      "sepeteEkle": "Sepete ekle",
+      "secenekleriGor": "Seçenekleri gör: {urun}",
+      "secimIstegi": "Sepete eklemek için seçenekleri seçin.",
+      "eklendi": "{urun} sepete eklendi.",
+      "sinir": "Sepete en çok {sinir} farklı ürün eklenebilir.",
+      "adetSiniri": "Bu üründen sepete en çok {sayi} adet eklenebilir.",
+      "hata": "Sepet şu an gösterilemiyor. Sayfayı yenileyip yeniden deneyin.",
+      "yukleniyor": "Sepet yükleniyor",
+      "adet": "Adet",
+      "adetUrun": "Adet: {urun}",
+      "azalt": "Azalt: {urun}",
+      "artir": "Artır: {urun}",
+      "cikar": "Sepetten çıkar: {urun}",
+      "cikarildi": "{urun} sepetten çıkarıldı.",
+      "geriAl": "Geri al",
+      "secim": "{secenek}: {deger}",
+      "satirlar": "Sepetteki ürünler",
+      "ozet": "Sipariş özeti",
+      "araToplam": "Ara toplam ({sayi} ürün)",
+      "kargo": "Kargo",
+      "kargoUcretsiz": "Ücretsiz",
+      "toplam": "Toplam",
+      "vergiDahil": "Toplama dahil {vergi} ({oran})",
+      "vergi": "{vergi} ({oran})",
+      "vergiAdsiz": "Vergi",
+      "pencereBaslik": "Sepetiniz ({sayi} ürün)",
+      "pencereNotu": "Kargo ve vergi sepette hesaplanır.",
+      "degisiklikVar": "Sepetinizde değişiklik var. Son bakışınızdan bu yana bazı ürünlerin fiyatı ya da stoğu değişti; işaretli satırlara bakın.",
+      "kaldirilanUrun": "Satılmayan ürün",
+      "sayi": "Sepette {sayi} ürün",
+      "uyari": {
+        "fiyatDegisti": "Fiyatı değişti: {eski} yerine {yeni}.",
+        "stokAzaldi": "Stokta {sayi} adet var, adet buna göre düzeltildi.",
+        "enCok": "Bu üründen en çok {sayi} adet alınabilir.",
+        "enAz": "Bu üründen en az {sayi} adet alınabilir. Adedi artırın.",
+        "tukendi": "Tükendi. Sepetten çıkarın.",
+        "kaldirildi": "Bu ürün artık satılmıyor. Sepetten çıkarın."
+      }
     }
   },
   "eposta": {
@@ -1280,7 +1328,8 @@
         "sayfalama": "Sayfalama",
         "secenekGrubu": "Seçenek grubu",
         "siralanabilirListe": "Sıralanabilir liste",
-        "onayPenceresi": "Onay penceresi"
+        "onayPenceresi": "Onay penceresi",
+        "adetSecici": "Adet seçici"
       },
       "bolumKutuphanesi": "Bölüm kütüphanesi"
     },
@@ -1427,7 +1476,10 @@
       "onayBaslik": "Bu kayıt silinsin mi?",
       "onayAciklama": "Silinen kayıt geri getirilemez.",
       "onaySil": "Sil",
-      "onaySilindi": "Kayıt silindi."
+      "onaySilindi": "Kayıt silindi.",
+      "adet": "Adet",
+      "adetAzalt": "Azalt",
+      "adetArtir": "Artır"
     },
     "bolum": {
       "ad": "Deneme bölümü",

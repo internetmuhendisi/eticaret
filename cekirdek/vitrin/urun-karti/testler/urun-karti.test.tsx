@@ -40,6 +40,7 @@ const urun = (degisiklik: Partial<UrunKartiVerisi> = {}): UrunKartiVerisi => ({
   kimlik: "u1",
   ad: "Deneme ürünü",
   adres: "/urun/deneme",
+  sepetBirimi: "b1",
   marka: "Deneme markası",
   gorsel: {
     alternatifMetin: "Mavi kupa",
@@ -223,6 +224,13 @@ describe("görsel ve işlevler", () => {
       metin("vitrin.urunKarti.sepeteEkle"),
       doldur(metin("vitrin.urunKarti.favoriyeEkle"), { urun: puanli.ad }),
     ]);
+    // Seçenekli üründe (sepet birimi yok) sepet düğmesi ürün sayfasını açan bağlantıdır (kart 0212, karar 0132).
+    const { sepetBirimi: _birim, ...secenekli } = puanli;
+    const baglanti = ciz(secenekli, acik).querySelector(`a[href="${puanli.adres}"][aria-label]`);
+    expect(baglanti?.getAttribute("aria-label")).toBe(
+      doldur(metin("vitrin.sepet.secenekleriGor"), { urun: puanli.ad }),
+    );
+    expect(ciz(secenekli, acik).querySelectorAll("button")).toHaveLength(1);
     // Puan beş yıldızdır (taslak): ortalama 3,6 yuvarlanır, dördü dolu.
     const puan = kart.querySelector('[data-slot="puan"]');
     expect(puan?.querySelectorAll("svg")).toHaveLength(5);

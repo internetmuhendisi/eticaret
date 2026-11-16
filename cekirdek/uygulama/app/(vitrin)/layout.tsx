@@ -9,12 +9,15 @@ import { calisanSite } from "../../../ayar-semasi/calisan-site";
 import { hatayiKaydet } from "../../../izleme/hata-katmani";
 import { duzenServisi } from "../../../moduller/duzen/servis";
 import { vitrinSayfaKalibi } from "../../../moduller/gorunurluk/sayfa-bilgisi";
+import { siteninMagazaAyarlari } from "../../../moduller/magaza-ayarlari/servis";
 import { siteninVeritabani } from "../../../veritabani/baglanti";
 import { vitrinBaglaminiOku } from "../../../vitrin/baglam-oku";
 import { bolumGorunumleri } from "../../../vitrin/bolum-kutuphanesi/gorunumler";
 import { bolumKutuphanesi } from "../../../vitrin/bolum-kutuphanesi/kutuphane";
 import { VitrinBildirimleri } from "../../../vitrin/favori-dugmesi";
 import { FavoriSaglayici } from "../../../vitrin/favori-durumu";
+import { SepetSaglayici } from "../../../vitrin/sepet/durum";
+import { SepetPenceresi } from "../../../vitrin/sepet/sepet-penceresi";
 import { TemaDemosuSeridi } from "../../../vitrin/tema-demosu-seridi";
 import { vitrinTemasi } from "../../../vitrin/tema-secimi";
 import { AltKisim, UstKisim } from "../../../vitrin/ust-alt-kisim";
@@ -32,8 +35,11 @@ const cerceveyiOku = async () => {
       servis.cizilecekBolumler(vt, "ust-kisim"),
       servis.cizilecekBolumler(vt, "alt-kisim"),
     ]);
-    const baglam = await vitrinBaglaminiOku(vt, calisanSite(), [...ust, ...alt], bolumKutuphanesi);
-    return { ust, alt, baglam };
+    const [baglam, ayarlar] = await Promise.all([
+      vitrinBaglaminiOku(vt, calisanSite(), [...ust, ...alt], bolumKutuphanesi),
+      siteninMagazaAyarlari(vt, calisanSite()),
+    ]);
+    return { ust, alt, baglam, sepeteEkleyince: ayarlar.sepeteEkleyince };
   } catch (hata) {
     hatayiKaydet(hata, { kaynak: "vitrin-cercevesi" });
     return undefined;
@@ -56,34 +62,49 @@ const demoSeridi = async () => {
 
 export default async function VitrinCercevesi({ children }: { children: ReactNode }) {
   const [cerceve, serit] = await Promise.all([cerceveyiOku(), demoSeridi()]);
-  // Favori düğmeleri, sayısı ve favoriler sayfası durumu tarayıcıda paylaşır (kart 0140, karar 0110).
+  // Favori düğmeleri, sayısı ve favoriler sayfası durumu tarayıcıda paylaşır (kart 0140, karar 0110). Sepet de öyle
+  // (kart 0212, karar 0135): sepete ekle düğmeleri, sayı, sepet penceresi ve sepet sayfası; çerçeve okunamazsa ürün
+  // eklenince sepet penceresi açılır (ayarın varsayılanı).
   return (
     <FavoriSaglayici ayarlar={{ kip: "sorulur", sinir: calisanSite().ayarlar.favoriSiniri }}>
-      <div className="flex min-h-dvh flex-col">
-        {serit}
-        {cerceve === undefined ? null : (
-          <UstKisim bolumler={cerceve.ust} gorunumler={bolumGorunumleri} baglam={cerceve.baglam} />
-        )}
-        {/* Hata sayfası (error.tsx, kart 0120) mağaza adını ve telefonu buradan alır. */}
-        <VitrinBilgisiSaglayici
-          bilgi={
-            cerceve === undefined
-              ? {}
-              : {
-                  magazaAdi: cerceve.baglam.magazaAdi,
-                  ...(cerceve.baglam.iletisim.telefon === undefined
-                    ? {}
-                    : { telefon: cerceve.baglam.iletisim.telefon.metin }),
-                }
-          }
-        >
-          <div className="flex-1">{children}</div>
-        </VitrinBilgisiSaglayici>
-        {cerceve === undefined ? null : (
-          <AltKisim bolumler={cerceve.alt} gorunumler={bolumGorunumleri} baglam={cerceve.baglam} />
-        )}
-      </div>
-      <VitrinBildirimleri />
+      <SepetSaglayici
+        ayarlar={{ kip: "sorulur", sepeteEkleyince: cerceve?.sepeteEkleyince ?? "yan-pencere" }}
+      >
+        <div className="flex min-h-dvh flex-col">
+          {serit}
+          {cerceve === undefined ? null : (
+            <UstKisim
+              bolumler={cerceve.ust}
+              gorunumler={bolumGorunumleri}
+              baglam={cerceve.baglam}
+            />
+          )}
+          {/* Hata sayfası (error.tsx, kart 0120) mağaza adını ve telefonu buradan alır. */}
+          <VitrinBilgisiSaglayici
+            bilgi={
+              cerceve === undefined
+                ? {}
+                : {
+                    magazaAdi: cerceve.baglam.magazaAdi,
+                    ...(cerceve.baglam.iletisim.telefon === undefined
+                      ? {}
+                      : { telefon: cerceve.baglam.iletisim.telefon.metin }),
+                  }
+            }
+          >
+            <div className="flex-1">{children}</div>
+          </VitrinBilgisiSaglayici>
+          {cerceve === undefined ? null : (
+            <AltKisim
+              bolumler={cerceve.alt}
+              gorunumler={bolumGorunumleri}
+              baglam={cerceve.baglam}
+            />
+          )}
+        </div>
+        <SepetPenceresi />
+        <VitrinBildirimleri />
+      </SepetSaglayici>
     </FavoriSaglayici>
   );
 }

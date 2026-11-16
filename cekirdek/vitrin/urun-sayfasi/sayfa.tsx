@@ -32,6 +32,7 @@ import {
 } from "../../eklentiler/urun-sayfasi-yuvalari";
 import { Bolum } from "../../izleme/bolum";
 import { yazilanIslevler } from "../../kayitlar/islevler";
+import { sepetSinirlari } from "../../kayitlar/sepet";
 import { metin, siteninBicimleyicisi } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import type { FiyatAraligi } from "../../moduller/fiyat/gosterim";
@@ -49,6 +50,7 @@ import {
   sayfaninKaydi,
   sorguMetni,
 } from "../kayit-sayfasi";
+import { SepeteEkleAlani } from "../sepet/sepete-ekle";
 import { vitrinTemasi } from "../tema-secimi";
 import { FiyatGosterimi } from "../urun-karti/fiyat";
 import { urunKartiGorunumu } from "../urun-karti/gorunum";
@@ -333,13 +335,31 @@ export async function UrunSayfasi({
         }
         kisaAciklama={veri.kisaAciklama === undefined ? null : <p>{veri.kisaAciklama}</p>}
         altBilgi={<KargoBilgisi gun={veri.kargoyaVermeSuresi} />}
-        eylemler={
-          yazilanIslevler.favori ? (
-            <div className="flex items-center gap-2">
-              <FavoriDugmesi urun={veri.kimlik} urunAdi={veri.ad} tur="cerceveli" />
-            </div>
-          ) : null
-        }
+        eylemler={(() => {
+          const favori = yazilanIslevler.favori ? (
+            <FavoriDugmesi urun={veri.kimlik} urunAdi={veri.ad} tur="cerceveli" />
+          ) : null;
+          // Sepete ekle (kart 0212): satılabilir birleşimlerin gösterilen birim fiyatı; seçili birim üst kısımdandır.
+          if (!yazilanIslevler.sepet) {
+            return favori === null ? null : <div className="flex items-center gap-2">{favori}</div>;
+          }
+          return (
+            <SepeteEkleAlani
+              urunAdi={veri.ad}
+              birimler={Object.fromEntries(
+                veri.birimler.flatMap((birim) =>
+                  birim.satilabilir && birim.fiyat !== undefined
+                    ? [[birim.kimlik, birim.fiyat.enDusuk.tutar]]
+                    : [],
+                ),
+              )}
+              enAz={veri.alimAdedi.enAz}
+              enCok={veri.alimAdedi.enCok ?? sepetSinirlari.adetEnCok}
+            >
+              {favori}
+            </SepeteEkleAlani>
+          );
+        })()}
         yuvalar={
           // Eklentilerin yuvası (karar 0117): her biri kendi parçasını verir ya da çizmez. Bozulan eklenti sayfayı
           // düşürmez.

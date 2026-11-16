@@ -97,6 +97,8 @@ export type UrunSayfasiVerisi = {
   ilgili: UrunKartiVerisi[];
   // Kargoya verme süresi (iş günü); kargo gerekmeyen üründe yoktur.
   kargoyaVermeSuresi?: number;
+  // Ürünün alım adedi sınırları (sepete ekle, kart 0212); en çok yoksa sınır sepetinkidir.
+  alimAdedi: { enAz: number; enCok?: number };
   tukenmisSecenek: TukenmisSecenekGosterimi;
   secenekOnSecimi: SecenekOnSecimi;
   // Yorumlar (kart 0139): yayındakilerin puan özeti (yorum yoksa yok) ve istenen sayfaya kadar yorumlar.
@@ -282,6 +284,10 @@ export const urunSayfasiVerisi = async (
     ozellikler: ozellikSatirlari,
     ilgili,
     ...(urun.kargoGerekmez ? {} : { kargoyaVermeSuresi: ayarlar.kargoyaVermeSuresi }),
+    alimAdedi: {
+      enAz: urun.enAzAdet,
+      ...(urun.enCokAdet === null || urun.enCokAdet === undefined ? {} : { enCok: urun.enCokAdet }),
+    },
     tukenmisSecenek: ayarlar.tukenmisSecenek,
     secenekOnSecimi: ayarlar.secenekOnSecimi,
     ...(puan === undefined ? {} : { puan }),

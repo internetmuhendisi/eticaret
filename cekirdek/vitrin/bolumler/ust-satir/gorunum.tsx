@@ -12,6 +12,7 @@ import { vitrinAdresleri } from "../../adresler";
 import { AramaKutusu } from "../../arama-kutusu";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
 import { FavoriSayisi } from "../../favori-dugmesi";
+import { SepetSayisi } from "../../sepet/sepet-sayisi";
 import { HesapMenusu } from "./hesap-menusu";
 import { MenuDugmesi } from "./menu-dugmesi";
 
@@ -68,6 +69,8 @@ const yaziliSiniflar = ({ hap = false, telefondaGizli = false }) =>
     telefondaGizli && "hidden tablet:inline-flex",
   );
 
+// Sepetin sayısı tarayıcıda, sepet durumundan gelir (kart 0212): sepet tarayıcının deposundadır, istek gitmez; sıfırsa
+// görünmez. Katalogun örnek kipinde bağlamın örnek sayısıdır.
 function YaziliBaglanti({
   adres,
   ikon,
@@ -75,12 +78,18 @@ function YaziliBaglanti({
   sayi,
   hap = false,
   telefondaGizli = false,
-}: Simge & { hap?: boolean; telefondaGizli?: boolean }) {
+  sepetSayisi = false,
+}: Simge & { hap?: boolean; telefondaGizli?: boolean; sepetSayisi?: boolean }) {
   return (
     <Baglanti href={adres} gorunum="sade" className={yaziliSiniflar({ hap, telefondaGizli })}>
       <Ikon ad={ikon} className="size-5" />
       <span className="sr-only masaustu:not-sr-only">{etiket}</span>
-      {sayi === undefined ? null : (
+      {sepetSayisi ? (
+        <SepetSayisi
+          {...(sayi === undefined ? {} : { ornekSayi: sayi })}
+          className={sinif(sayiSiniflari, "absolute top-0 right-0 masaustu:static")}
+        />
+      ) : sayi === undefined ? null : (
         <span
           className={sinif(
             sayiSiniflari,
@@ -200,6 +209,7 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
           etiket={metin("vitrin.bolum.ustSatir.sepet")}
           sayi={sayilar.sepet}
           hap
+          sepetSayisi
         />
       ) : null}
     </div>
