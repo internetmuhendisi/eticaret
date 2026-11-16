@@ -4,7 +4,8 @@
 // Görünüm temadan ya da bölümün seçiminden gelir (gorunum.ts):
 // - dikey: kare görsel üstte, marka, ad, puan ve fiyat altta (Canlı Çarşı taslağı, karar 0075).
 // - yatay: küçük görsel solda; ad, fiyat ve tükenmişse "Tükendi" yazısı sağda (taslağın kompakt kartı:
-//   marka ve rozet yok, indirimi fiyatın rengi ve eski fiyat söyler); dar yerler için.
+//   marka ve rozet yok, indirimi fiyatın rengi ve eski fiyat söyler); dar yerler için. Sepet ve favori fiyatın
+//   sağındadır, fiyata yer kalmayınca altına iner (kart 0193, karar 0134).
 // - buyuk-gorsel: uzun görsel büyük boyuttan, ad ve fiyat daha büyük.
 //
 // - Rozet görselin sol üstündedir. Tükenmiş üründe yalnız "Tükendi" (koyu); değilse indirim oranı
@@ -198,12 +199,19 @@ export function UrunKarti({
         </Link>
       </Baslik>
       {islevler.yorum && !yatay ? <Puan puan={urun.puan} /> : null}
-      <div className="mt-auto flex min-w-0 items-end justify-between gap-2">
+      {/* Yatay kartta düğmeler fiyatın sağındadır; fiyat yanlarına bütün olarak sığmazsa satır kayar, düğmeler
+          altına iner ve sağa yaslanır (kart 0193, karar 0134). Karar kartın kendi genişliğine göre verilir. */}
+      <div
+        className={sinif(
+          "mt-auto flex min-w-0 items-end justify-between gap-2",
+          yatay && "flex-wrap gap-y-1",
+        )}
+      >
         {urun.fiyat === undefined ? null : (
           <FiyatGosterimi fiyat={urun.fiyat} boyut={buyuk ? "buyuk" : "normal"} />
         )}
         {yatay && (sepet !== null || favori !== null) ? (
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="ml-auto flex shrink-0 items-center gap-1">
             {sepet}
             {favori}
           </div>

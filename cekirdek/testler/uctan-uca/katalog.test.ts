@@ -685,17 +685,17 @@ test("ürün kartı: her görünüm her durumla iki renkte ve üç genişlikte t
 });
 
 // Kart 0190: dar telefonda fiyat iki satıra iner ama para simgesi (ya da aralığın çizgisi) tek başına bir satırda
-// durmaz; fiyatın ve üstü çizili eski fiyatın her satırında bir tutar vardır. Dikey ve büyük görselli kart ölçülür.
-// Yatay kartta sepet ve favori birlikteyken 320 px'te fiyata 70 px kalır, tek tutar bile sığmaz (kart 0193; sepet
-// bugün vitrinde yok). Kart genişliğine hiç sığmayan büyük tutar kendi içinde kırılır (kart 0109).
-for (const genislik of [320, 360]) {
+// durmaz; fiyatın ve üstü çizili eski fiyatın her satırında bir tutar vardır. Dikey, büyük görselli ve yatay kart
+// ölçülür. Kart 0193: yatay kartta sepet ve favori fiyata sığmayınca fiyatın altına iner (karar 0134); eski hâlinde
+// 320 px'te fiyata 70 px kalıyordu. Kart genişliğine hiç sığmayan büyük tutar kendi içinde kırılır (kart 0109).
+for (const genislik of [320, 360, 390]) {
   test(`ürün kartı: fiyatın her satırında tutar var, simge tek başına kalmaz (${genislik} px)`, async ({
     page,
   }) => {
     await page.setViewportSize({ width: genislik, height: 800 });
     await ac(page, `${katalogAdresi}/urun-karti`);
     let kirilan = 0;
-    for (const gorunum of ["dikey", "buyuk-gorsel"] as const) {
+    for (const gorunum of ["dikey", "buyuk-gorsel", "yatay"] as const) {
       const fiyatlar = page
         .getByRole("region", { name: metin(`gelistirme.urunKarti.gorunum.${gorunum}`) })
         .locator("[data-slot=fiyat] :is(strong, s)");
@@ -709,8 +709,47 @@ for (const genislik of [320, 360]) {
         ).toEqual([]);
       }
     }
-    // Ölçüm boşa gitmesin: bu genişlikte en az bir fiyat aralığı iki satıra iner.
-    expect(kirilan).toBeGreaterThan(0);
+    // Ölçüm boşa gitmesin: 320 ve 360 px'te en az bir fiyat aralığı iki satıra iner (390 px'te hepsi sığar).
+    if (genislik < 390) expect(kirilan).toBeGreaterThan(0);
+    // Yatay kartın düğmeleri 44 px kalır ve fiyatın üstüne binmez; 320 px'te en az bir kartta fiyatın altına iner.
+    let alttaki = 0;
+    for (const kart of await page
+      .getByRole("region", { name: metin("gelistirme.urunKarti.gorunum.yatay") })
+      .locator("article")
+      .all()) {
+      // Fiyatı olmayan örnekte fiyat yoktur, sepet de yoktur.
+      if ((await kart.locator("[data-slot=fiyat]").count()) === 0) continue;
+      const fiyat = await kart.locator("[data-slot=fiyat]").boundingBox();
+      const kartKutusu = await kart.boundingBox();
+      let enSag = 0;
+      let altta = false;
+      for (const dugme of await kart.getByRole("button").all()) {
+        const kutu = await dugme.boundingBox();
+        if (kutu === null || fiyat === null) continue;
+        expect(Math.round(kutu.width), "düğme genişliği").toBeGreaterThanOrEqual(44);
+        expect(Math.round(kutu.height), "düğme yüksekliği").toBeGreaterThanOrEqual(44);
+        const biner =
+          kutu.x < fiyat.x + fiyat.width &&
+          fiyat.x < kutu.x + kutu.width &&
+          kutu.y < fiyat.y + fiyat.height &&
+          fiyat.y < kutu.y + kutu.height;
+        expect(biner, "düğme fiyatın üstüne biniyor").toBe(false);
+        if (kutu.y >= fiyat.y + fiyat.height - 1) {
+          alttaki += 1;
+          altta = true;
+        }
+        enSag = Math.max(enSag, kutu.x + kutu.width);
+      }
+      // Alta inen düğmeler sağa yaslıdır: en sağdaki, kartın iç boşluğu kadar sağ kenardan uzaktadır.
+      if (altta && kartKutusu !== null) {
+        expect(
+          kartKutusu.x + kartKutusu.width - enSag,
+          "alttaki düğmeler sağa yaslı değil",
+        ).toBeLessThan(20);
+      }
+    }
+    if (genislik === 320)
+      expect(alttaki, "320 px'te düğme fiyatın altına inmedi").toBeGreaterThan(0);
   });
 }
 
