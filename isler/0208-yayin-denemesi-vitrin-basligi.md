@@ -37,4 +37,4 @@ Bölüm: Yayın. Kart 0147'de görüldü, ona karıştırılmadı. Kart 0147'nin
 
 ## Durum
 
-yapılacak
+bitti
