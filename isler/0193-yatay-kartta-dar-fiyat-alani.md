@@ -23,4 +23,4 @@ Bölüm: Vitrin. Sepet işlevi açılmadan önce yapılır.
 
 ## Durum
 
-yapılacak
+bitti
