@@ -58,6 +58,7 @@ import {
   yayinla,
 } from "./yayin.mts";
 import { yayinGoruntusunuHazirla, yayinKilitleri } from "./yayin-hazirligi.mts";
+import { vitrinBasligi } from "./yerel-ortam.mts";
 
 const ortam: Ortam = yayinOrtami;
 const a = { kodAdi: "yayin-deneme-a", numara: denemeSiteNumarasi };
@@ -105,11 +106,10 @@ const siteKlasoru = (kodAdi: string, gorunenAd: string): { klasor: string; site:
   return { klasor, site: sonuc.site };
 };
 
-const baslik = (govde: string): string => govde.match(/<h1>([^<]*)<\/h1>/)?.[1] ?? "";
-
 const vitrin = async (ipv4: string, kodAdi: string) => {
   const yanit = await disaridanIste(ipv4, kodAdi, "/");
-  return { durum: yanit.durum, ad: baslik(yanit.govde) };
+  // Adı yerel ortam denemesiyle aynı işlev okur: bölümlü ana sayfada başlık sınıf taşır (kart 0208).
+  return { durum: yanit.durum, ad: vitrinBasligi(yanit.govde) };
 };
 
 const saglik = async (ipv4: string, kodAdi: string) => {
