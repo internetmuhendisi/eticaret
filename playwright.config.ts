@@ -56,7 +56,10 @@ export default defineConfig({
   timeout: 60_000,
   forbidOnly: true,
   reporter: "list",
-  use: { baseURL: "http://localhost:3000" },
+  // Düşen testin izi (kart 0207, karar 0131): her adımın zamanı, ağ istekleri ve sayfanın görüntüleri test-results/
+  // altında kalır; geçen testinki silinir. Kontrol hattı düşüşte bu klasörü saklar: yerelde üretilemeyen düşüşün
+  // hangi adımda beklediği izden okunur.
+  use: { baseURL: "http://localhost:3000", trace: "retain-on-failure" },
   // Çekirdek uygulamasını testten önce açar; açıksa olanı kullanır.
   webServer: {
     command: "pnpm cekirdek",
