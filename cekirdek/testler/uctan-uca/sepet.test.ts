@@ -1,7 +1,7 @@
 // Sepet gerçek tarayıcıda (kart 0212, karar 0135). Test kendi ürünlerini açar (fiyatlı ve stoklu), sonunda siler. Kargo
 // paylaşılan veritabanında varsayılanıyla (ücretsiz) ölçülür: ayarı değiştirmek öteki testleri etkiler; kargonun öteki
 // hâlleri sepet hesabının testindedir.
-// - Ürün sayfasında adet klavyeyle artırılır, "Sepete ekle" ile sepet penceresi açılır (Örnek Mağaza'nın ayarı); pencere
+// - Ürün sayfasında adet klavyeyle artırılır, "Sepete ekle" ile sepet penceresi açılır (sitenin "Sepete ekleyince" ayarı varsayılanında); pencere
 //   taramadan geçer, Escape kapatır ve odak düğmeye döner; üst kısımdaki sayı artar.
 // - Arama sonucundaki ürün kartının sepet düğmesi ürünü bir adet ekler.
 // - Sepet sayfası: stoktan fazla adet düzeltilir ve söylenir, adet klavyeyle değişince toplam değişir, çıkarılan ürün
@@ -297,7 +297,7 @@ test("panelin Kargo ekranı: klavyeyle hata ve kayıt; sepette kargo ücreti ve 
   await page.emulateMedia({ colorScheme: "light" });
   await page.setViewportSize({ width: 1280, height: 900 });
   // Okunamayan tutar: alanın hatası, odak alanda, hiçbir şey kaydedilmez.
-  await ucret.fill("59,90 TL");
+  await ucret.fill("59,90 x");
   await ucret.press("Enter");
   await expect(page.getByText(metin("yonetim.kargo.hata.tutarOkunamadi"))).toBeVisible();
   await expect(ucret).toBeFocused();

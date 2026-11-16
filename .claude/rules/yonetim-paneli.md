@@ -55,3 +55,8 @@ paths:
 - Ekran `cekirdek/yonetim-paneli/tema/` klasöründedir; verisi `temaEkraniVerisi` ile sunucuda kurulur. Her temaya geçerken gönderilecek ayarlar orada `yeniTemaninAyarlari` ile hazırlanır; tarayıcı tema tanımını taşımaz.
 - "Demoyu gez" bağlantısı yalnız `temaDemosuBaglantisi` ile kurulur (`cekirdek/ayar-semasi/tema-demosu-adresi.ts`). Adres kutuya `TEMA_DEMOSU_ADRESI` ile gelir; değeri komutlar demo sitesinin kimliğinden üretir (`komutlar/tema-demosu-adresi.mts`). Siteye özel temanın bağlantısı yoktur.
 - Tema değişikliği düzenin yolunu pencerede sorar; varsayılan seçim yoktur. Geri dönüş ekranın gördüğü sürümü gönderir (`son`).
+
+## Kargo ekranı (karar 0135)
+
+- Ekran `cekirdek/yonetim-paneli/kargo/` klasöründe, menüde "Satış" altındadır. Ayarlar mağaza ayarlarıdır: görmek `magaza-ayarlari.gor`, değiştirmek `magaza-ayarlari.degistir` ister.
+- Tutar sitenin para biçimiyle yazılı gider, sunucuda `kargoAyarlariniDegistir` (`cekirdek/moduller/kargo/servis.ts`) biçimleyicinin `paraOku`'suyla okur. Ekran tutarı kendisi çevirmez; alanın hatası koduyla döner.

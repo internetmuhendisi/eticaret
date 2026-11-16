@@ -77,14 +77,16 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Ödenmeyen havale siparişinin iptal süresi | Mağaza sahibi | 3 gün | — | Süre sonunda stok geri döner |
 | Kapıda ödeme | Mağaza sahibi | Kapalı | Açık | İsteyen mağaza açar |
 | Kapıda ödeme seçenekleri | Mağaza sahibi | Nakit | Nakit ve kart | Seçenekler: nakit, kart. Müşteri ödeme adımında seçer, kartı kurye çeker |
-| Sepete ekleyince | Mağaza sahibi | Yan pencerede sepet | Yan pencerede sepet | Seçenekler: yan pencerede sepet, kısa bildirim, sepet sayfasına git (karar 0132, kart 0212) |
+| Sepete ekleyince | Mağaza sahibi | Yan pencerede sepet | Yan pencerede sepet | Seçenekler: yan pencerede sepet, kısa bildirim, sepet sayfasına git (karar 0132, kart 0212). Şemada `sepeteEkleyince` |
 | Ürün sayfasında taksit satırı | Mağaza sahibi | Göster | Göster | Kartla ödeme eklentisinin ayarı; eklenti kapalıyken satır yoktur (karar 0132, kart 0215) |
 
 ## Kargo
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
 |---|---|---|---|---|
-| Ücretsiz kargo sınırının hesaplandığı tutar | Mağaza sahibi | İndirimden sonraki tutar | — | Seçenekler: indirimden önce, indirimden sonra |
+| Kargo ücreti | Mağaza sahibi | 0 (kargo her zaman ücretsiz) | — | Kullanıcı kararı (kart 0212). Fiyatlar gibi vergi dahil ya da hariç girilir. Başlangıçta tek teslimat bölgesi. Şemada `kargoUcreti`, panelde Satış > Kargo (karar 0135) |
+| Ücretsiz kargo sınırı | Mağaza sahibi | Yok | — | Bu tutar ve üstündeki sepette kargo ücretsiz. Şemada `ucretsizKargoSiniri` (kart 0212) |
+| Ücretsiz kargo sınırının hesaplandığı tutar | Mağaza sahibi | İndirimden sonraki tutar | — | Seçenekler: indirimden önce, indirimden sonra. Şemada `ucretsizKargoTutari` (kart 0212) |
 | Kargoya verme süresi | Mağaza sahibi | 1 iş günü | — | Sayı olarak tutulur. Ürün sayfasında "1 iş gününde kargoda" yazar, ön bilgilendirme metnindeki teslim süresi de buradan gelir. Şemada `kargoyaVermeSuresi` (kart 0110); bugün güven şeridinin yer tutucusu okur |
 
 ## İade

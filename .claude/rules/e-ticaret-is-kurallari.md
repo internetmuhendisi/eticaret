@@ -26,7 +26,7 @@ paths:
 - Sepet, ödeme, sipariş, fatura ve e-postadaki tutarı aynı hesaplama fonksiyonundan al.
 - Ödemeye geçerken fiyatı, indirimi, kargoyu ve vergiyi sunucuda yeniden hesapla. Tarayıcıdan gelen tutarı kullanma.
 - Vergi ve indirimin satır satır mı toplamda mı yuvarlanacağını tek yerde tanımla.
-- Kargo ücretini, ücretsiz kargo sınırını ve bölge kurallarını tek kargo hesabında tut.
+- Kargo ücretini, ücretsiz kargo sınırını ve bölge kurallarını tek kargo hesabında tut. Kargo yalnız `kargoHesapla` (`cekirdek/moduller/kargo/hesap.ts`) ile, sepetin satırları, kargosu, vergisi ve toplamı yalnız `sepetiHesapla` (`cekirdek/moduller/sepet/hesap.ts`) ile hesaplanır; ödeme ve sipariş de onu kullanır (karar 0135).
 - Para tutarını küsuratlı sayı olarak tutma. Yuvarlama hatası olmayan biçimde, para birimiyle birlikte sakla.
 - Kupon, otomatik indirim ve kampanyaları tek kampanya motorunda hesapla. Birleşme kurallarını orada tanımla.
 - Vergi oranlarını ve hesabını tek modülde yap. Vergi yalnız `hesapla` (`cekirdek/moduller/vergi/hesap.ts`) ile, sitenin ayarları ve tablosuyla `vergiHesapla` ile hesaplanır. Kuruş yalnız `cekirdek/moduller/vergi/yuvarlama.ts` ile yuvarlanır (karar 0061).

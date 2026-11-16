@@ -42,7 +42,7 @@ export function FiyatCizimi({
   fiyat: GosterimFiyati;
   etiketler: FiyatEtiketleri;
   boyut?: FiyatBoyutu;
-  // Vergi metni ("KDV dahil") fiyatın altında. Sepet satırında yazılmaz: sepetin özeti vergiyi bir kez söyler.
+  // Vergi metni fiyatın altında. Sepet satırında yazılmaz: sepetin özeti vergiyi bir kez söyler.
   vergiMetni?: boolean;
   className?: string;
 }) {

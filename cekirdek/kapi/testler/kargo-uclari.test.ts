@@ -131,11 +131,7 @@ describe("kargo ayarları uçları", () => {
       { kargoUcreti: "1,234" },
       [{ alan: "kargoUcreti", kod: "tutar-okunamadi" }],
     ],
-    [
-      "simgeli ücret",
-      { kargoUcreti: "59,90 ₺" },
-      [{ alan: "kargoUcreti", kod: "tutar-okunamadi" }],
-    ],
+    ["harfli ücret", { kargoUcreti: "59,90 x" }, [{ alan: "kargoUcreti", kod: "tutar-okunamadi" }]],
     [
       "sıfır sınır",
       { ucretsizKargoSiniri: "0" },

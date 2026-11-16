@@ -81,6 +81,13 @@ paths:
 - Favoriler sayfası kartları çerezdeki listeyle sunucuda `urunKartlari` ile çizer; sırayı ve görünenleri tarayıcıdaki durum seçer (`favori-listesi.tsx`). Çerezde ürün yoksa boş hâl durum bilinmeden çizilir (karar 0125).
 - Vitrinin bildirim alanı çerçevededir (`VitrinBildirimleri`); vitrin ekranı bildirimi `bildirimGoster` ile verir, ikinci bir alan açmaz.
 
+## Sepet (karar 0135)
+
+- Sepet tarayıcının deposundadır, hesaba bağlanmaz. Durum yalnız `cekirdek/vitrin/sepet/durum.ts`'tedir (`useSepet`, `sepeteEkle`, `adetDegistir`, `sepettenCikar`, `geriKoy`); depo `depo.ts` ile okunur ve yazılır. Sepet durumunu başka yerde yeniden yazma.
+- Sepetin tutarları yalnız sunucuda, `sepetiHesapla` (`cekirdek/moduller/sepet/hesap.ts`) ve vitrin verisi `sepetGorunumu` (`veri.ts`) ile, herkese açık sepet ucundan gelir (`useSepetGorunumu`). Tarayıcıda tutar, kargo ya da vergi hesaplanmaz. Satırın birim fiyatı fiyat bileşeniyle çizilir (`SepetFiyati`, `FiyatCizimi`).
+- Ürün kartının sepet düğmesi `KartSepetDugmesi`, ürün sayfasınınki `SepeteEkleAlani`'dır (`sepete-ekle.tsx`); eklemeden sonrası "Sepete ekleyince" ayarıdır (karar 0132). Üst kısmın sayısı `SepetSayisi`'dır.
+- Sepet sayfası `app/(vitrin)/sepet/`, sepet penceresi çerçevede bir kezdir (`SepetPenceresi`). Kargo yalnız `kargoHesapla` ile hesaplanır (`cekirdek/moduller/kargo/hesap.ts`).
+
 ## Ana sayfa bölümleri ve görseller (karar 0087)
 
 - Ana sayfa düzenin ana sayfa alanını çizer; bölüm yoksa sade sayfa görünür. Bölümün başlığı h2'dir, sayfanın h1'i mağaza adıdır.
