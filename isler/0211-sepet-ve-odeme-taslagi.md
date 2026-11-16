@@ -40,4 +40,4 @@ Bölüm: Sepet ve ödeme. Bu bölümün ilk işi.
 
 ## Durum
 
-yapılacak
+bitti
