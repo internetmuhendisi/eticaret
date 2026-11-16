@@ -20,7 +20,7 @@ import type { TukenenUrunDavranisi } from "../kayitlar/stok.ts";
 import { birimFiyatlari } from "../moduller/fiyat/model.ts";
 import { siteninFiyatServisi } from "../moduller/fiyat/servis.ts";
 import { kategoriEkle, kategoriUrunKosulu } from "../moduller/kategori/servis.ts";
-import { siteninMagazaAyarlari } from "../moduller/magaza-ayarlari/servis.ts";
+import { siteninMagazaAyarlari, siteninServisi } from "../moduller/magaza-ayarlari/servis.ts";
 import { siteninStokDurumlari, siteninUrunStokDurumlari } from "../moduller/stok/durum.ts";
 import { stokServisi } from "../moduller/stok/servis.ts";
 import { bosFiltre } from "../moduller/urun/filtre.ts";
@@ -201,7 +201,7 @@ describe("fiyatsız birim satılamaz", () => {
     expect(await listele(h.vt, h.kategori, "goster", true)).toEqual(new Set([h.urun.satilir]));
   });
 
-  it("ilgili ürünler: 'gizle' ayarında yalnız satılabilir ürün gelir", async () => {
+  it("ilgili ürünler: 'gizle' ayarında yalnız satılabilir ürün gelir, ürün sayfasında da sitenin ayarıyla", async () => {
     const h = await hazirla();
     const ayarlar = await siteninMagazaAyarlari(h.vt, site);
     const goster = await ilgiliUrunleriGetir(
@@ -218,6 +218,12 @@ describe("fiyatsız birim satılamaz", () => {
       new Set([h.urun.varyantli, h.urun.takipsiz, h.urun.yabanci, h.urun.satilir]),
     );
     expect(gizle).toEqual([h.urun.satilir]);
+    // Ürün sayfası ilgili ürünleri sitenin kendi ayarıyla getirir: "gizle"de yalnız satılabilir ürün.
+    const sayfadaki = async () =>
+      (await urunSayfasiVerisi(h.vt, site, h.bakilan))?.ilgili.map((kart) => kart.kimlik);
+    expect(new Set(await sayfadaki())).toEqual(new Set(goster));
+    await siteninServisi(site).degistir(h.vt, yonetici(), { tukenenUrun: "gizle" });
+    expect(await sayfadaki()).toEqual([h.urun.satilir]);
   });
 
   it("ürün sayfası: fiyatsız birleşim satılamaz, ürünün genel durumu 'tükendi'", async () => {
