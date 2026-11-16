@@ -33,4 +33,5 @@ Böylece kart, liste ("tükeneni gizle"), filtre, ilgili ürünler, ürün böl�
 - Stoğa gelince haber verde fiyatsız birime talep yazılır, e-posta fiyat girilip birim satılabilir olunca gider (davranış değişmedi, kural çekirdeğe taşındı).
 - Fiyatsız ürün kuran eski testler fiyat yazmak zorundadır: satılabilir saydıkları ürün artık tükenmiştir.
 - Stok servisinin yalnız miktar ve takip okuması (`birimStoklariniOku`) fiyata bakmaz.
+- Ürün sayfasının ilgili ürünleri iki katmanla süzülür: `ilgiliUrunleriGetir` ve kartların vitrin koşulu (`urunKartlari`); ikisi de sitenin ayarını `vitrinStokSecenegi` ile alır.
 - Sepet ve sipariş bu kuralı kendi işlerinde kullanır (bölüm 12); bu karar onlara dokunmaz.
