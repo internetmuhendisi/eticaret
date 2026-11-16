@@ -25,4 +25,4 @@ Bölüm: Ürün ve stok. Benzer: karar 0069, 0071.
 
 ## Durum
 
-yapılacak
+bitti
