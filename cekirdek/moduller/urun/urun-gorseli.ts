@@ -17,7 +17,7 @@ import { dosyaKlasoru } from "../dosya/servis.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
 import { canliOge } from "./galeri.ts";
 import { urunGalerisi, urunler } from "./model.ts";
-import { vitrinKosulu } from "./vitrin.ts";
+import { vitrinKosulu, vitrinStokSecenegi } from "./vitrin.ts";
 
 export const urunGorseliYolu = "/kapi/herkese-acik/urun-gorseli";
 
@@ -33,7 +33,7 @@ export const urunGorseli = async (
   secenekler: { an?: Date; klasor?: string } = {},
 ): Promise<GorselDosyasi | undefined> => {
   if (!kimlikMi(oge)) return undefined;
-  const { tukenenUrun } = await siteninMagazaAyarlari(vt, site);
+  const ayarlar = await siteninMagazaAyarlari(vt, site);
   const [satir] = await vt
     .select({ dosya: urunGalerisi.dosya_kimligi })
     .from(urunGalerisi)
@@ -45,7 +45,7 @@ export const urunGorseli = async (
         canliOge(),
         vitrinKosulu("sayfa", {
           ...(secenekler.an === undefined ? {} : { an: secenekler.an }),
-          tukenenUrun,
+          ...vitrinStokSecenegi(site, ayarlar),
         }),
       ),
     );

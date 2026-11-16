@@ -5,9 +5,9 @@
 //   adresin çözümündedir (kayitAdresiniCoz), bu işlev açılan ürünün kimliğiyle çağrılır.
 // - Her birleşimin fiyatı gosterilecekFiyatlar ile, fiyat bileşeninin biçimine araliginiKur ile (tek adaylı
 //   aralık: rozet ve indirim bitişi kartla aynı kuraldan). Ürünün seçimsiz fiyatı fiyatAraliklari ile.
-// - Stok yazısı stokDurumu ile (birim) ve urunStokDurumu ile (seçimsiz ürün). Birleşim satılabilirse ve fiyatı
-//   varsa müşteri onu seçebilir. Fiyatı olmayan birim satın alınamaz (karar 0071): kendi yazısı "tükendi"dir ve
-//   ürünün genel durumuna sayılmaz.
+// - Stok yazısı stokDurumu ile (birim) ve urunStokDurumu ile (seçimsiz ürün). Birleşim satılabilirse müşteri onu
+//   seçebilir. Fiyatı olmayan birim satın alınamaz: stokDurumu onu tükenmiş sayar (kart 0155, karar 0133), sayfa
+//   ayrıca bakmaz.
 // - Birleşimin görseli birimGorseli ile; adresler ürün görseli ucundan, boyutları kayıttandır (karar 0073).
 // - Özellik tablosu ürünün değerlerinden, özelliklerin sırasıyla (urununOzellikleri); değer sitenin
 //   biçimleyicisiyle yazılır.
@@ -22,16 +22,21 @@ import { metinOkuyucu } from "../../metinler/metin";
 import { siteninBicimleyicisi } from "../../metinler/site-metni";
 import { type FiyatAraligi, fiyatGosterimServisi } from "../../moduller/fiyat/gosterim";
 import { kategoriler } from "../../moduller/kategori/model";
-import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
 import { markalar } from "../../moduller/marka/model";
 import { urununOzellikleri } from "../../moduller/ozellik/degerler";
 import { ozellikServisi } from "../../moduller/ozellik/servis";
-import { type StokDurumu, stokDurumlari, urunStokDurumu } from "../../moduller/stok/durum";
+import {
+  type StokDurumu,
+  siteninStokAyarlari,
+  stokDurumlari,
+  urunStokDurumu,
+} from "../../moduller/stok/durum";
 import { aciklamayiTemizle } from "../../moduller/urun/aciklama";
 import { birimGorseli, type GaleriOgesi } from "../../moduller/urun/galeri";
 import { ilgiliUrunleriGetir } from "../../moduller/urun/ilgili";
 import { siteninUrunServisi } from "../../moduller/urun/servis";
 import { urunGorseliAdresi } from "../../moduller/urun/urun-gorseli";
+import { vitrinStokSecenegi } from "../../moduller/urun/vitrin";
 import { type PuanOzeti, puanOzetleri, urunYorumlari } from "../../moduller/yorum/servis";
 import type { Veritabani } from "../../veritabani/baglanti";
 import { kayitAdresleri } from "../adresler";
@@ -153,7 +158,7 @@ export const urunSayfasiVerisi = async (
 ): Promise<UrunSayfasiVerisi | undefined> => {
   const urun = await siteninUrunServisi(site).urunuOku(vt, kimlik);
   if (urun === undefined || urun.silindi) return undefined;
-  const ayarlar = await siteninMagazaAyarlari(vt, site);
+  const ayarlar = await siteninStokAyarlari(vt, site);
   const gosterim = fiyatGosterimServisi(site);
 
   const birimler = urun.birimler.filter((birim) => !birim.silindi);
@@ -165,7 +170,7 @@ export const urunSayfasiVerisi = async (
       gosterim.fiyatAraliklari(vt, [urun.kimlik], { an }),
       urununOzellikleri(vt, urun.kimlik),
       ozellikServisi.hepsiniOku(vt),
-      ilgiliUrunleriGetir(vt, urun.kimlik, { an, tukenenUrun: ayarlar.tukenenUrun }),
+      ilgiliUrunleriGetir(vt, urun.kimlik, { an, ...vitrinStokSecenegi(site, ayarlar) }),
     ]);
   const [kategoriSatirlari, markaSatirlari, ilgili, puanlar, yorumListesi] = await Promise.all([
     urun.kategoriler.length === 0
@@ -223,20 +228,17 @@ export const urunSayfasiVerisi = async (
     return {
       kimlik: birim.kimlik,
       degerler: birim.degerler,
-      satilabilir: stok?.satilabilir === true && aralik !== undefined,
-      // Fiyatı olmayan birim satın alınamaz (karar 0071): stoğu olsa da tükenmiş yazılır.
-      stok: aralik === undefined ? { tur: "tukendi" } : (stok?.gosterim ?? { tur: "tukendi" }),
+      satilabilir: stok?.satilabilir === true,
+      stok: stok?.gosterim ?? { tur: "tukendi" },
       ...(birim.stokKodu === undefined ? {} : { stokKodu: birim.stokKodu }),
       ...(aralik === undefined ? {} : { fiyat: aralik }),
       ...(gorselSirasi === undefined ? {} : { gorselSirasi }),
     };
   });
-  // Ürünün genel durumu yalnız fiyatı olan birimlerden: fiyatsız birim satılabilir sayılmaz (fiyat aralığıyla
-  // aynı kural).
   const genelStok = urunStokDurumu(
     birimKimlikleri.flatMap((birim) => {
       const durum = stoklar.get(birim);
-      return durum === undefined || !fiyatlar.has(birim) ? [] : [durum];
+      return durum === undefined ? [] : [durum];
     }),
   );
   const genelFiyat = araliklar.get(urun.kimlik);

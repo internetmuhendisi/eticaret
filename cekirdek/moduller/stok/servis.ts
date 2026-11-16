@@ -40,7 +40,7 @@ import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts"
 import { kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { urunBirimleri, urunler } from "../urun/model.ts";
-import { birimStokBilgileri } from "./durum.ts";
+import { birimStoklariniOku } from "./durum.ts";
 import { birimStoklari, stokGecmisi } from "./model.ts";
 import {
   type ElleDuzeltme,
@@ -319,13 +319,7 @@ export const stokServisi = () => {
   const stoklariOku = async (
     vt: Veritabani,
     birimler: string[],
-  ): Promise<Map<string, BirimStogu>> =>
-    new Map(
-      [...(await birimStokBilgileri(vt, birimler))].map(([birim, { miktar, takip }]) => [
-        birim,
-        { miktar, takip },
-      ]),
-    );
+  ): Promise<Map<string, BirimStogu>> => birimStoklariniOku(vt, birimler);
 
   // Birimin stok geçmişi, en yeni önce, en çok bir sayfa. `sonra` bir önceki sayfanın son satırının
   // kimliğidir; karşılaştırma veritabanında satırın kendi zamanı ve kimliğiyle yapılır (fiyat geçmişiyle

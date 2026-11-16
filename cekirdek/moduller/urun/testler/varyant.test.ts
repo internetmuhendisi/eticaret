@@ -23,7 +23,8 @@ import { urunServisi } from "../servis.ts";
 const servis = urunServisi(() => "Europe/Istanbul");
 const fiyat = fiyatServisi(() => ({ saatDilimi: "Europe/Istanbul", paraBirimi: "XTS" }));
 const stok = stokServisi();
-const ayarlar = { dusukStokEsigi: 5, sonAdetEsigi: 5 };
+// Fiyat servisiyle aynı para birimi: fiyatı olan birim satılabilir (kart 0155).
+const ayarlar = { dusukStokEsigi: 5, sonAdetEsigi: 5, paraBirimi: "XTS" };
 
 const yonetici = (): DegisikligiYapan => ({ tur: "yonetici", kimlik: randomUUID() });
 

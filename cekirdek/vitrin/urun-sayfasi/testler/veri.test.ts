@@ -27,7 +27,7 @@ import { siteninServisi } from "../../../moduller/magaza-ayarlari/servis.ts";
 import { markalar } from "../../../moduller/marka/model.ts";
 import { markaServisi } from "../../../moduller/marka/servis.ts";
 import { ozellikServisi } from "../../../moduller/ozellik/servis.ts";
-import { stokDurumlari } from "../../../moduller/stok/durum.ts";
+import { siteninStokAyarlari, stokDurumlari } from "../../../moduller/stok/durum.ts";
 import { stokServisi } from "../../../moduller/stok/servis.ts";
 import { urunServisi } from "../../../moduller/urun/servis.ts";
 import { urunGorseliAdresi } from "../../../moduller/urun/urun-gorseli.ts";
@@ -173,14 +173,15 @@ describe("birleşimler", () => {
     expect(veri.birimler.map((b) => b.kimlik)).toEqual(canli);
     const gosterim = fiyatGosterimServisi(site);
     const fiyatlar = await gosterim.gosterilecekFiyatlar(h.vt, canli);
-    const ayarlar = await siteninServisi(site).oku(h.vt);
-    const stoklar = await stokDurumlari(h.vt, canli, ayarlar);
+    const stoklar = await stokDurumlari(h.vt, canli, await siteninStokAyarlari(h.vt, site));
     for (const birim of veri.birimler) {
       const beklenen = fiyatlar.get(birim.kimlik);
       expect(birim.fiyat).toEqual(
         beklenen === undefined ? undefined : gosterim.araliginiKur([beklenen]),
       );
-      if (beklenen !== undefined) expect(birim.stok).toEqual(stoklar.get(birim.kimlik)?.gosterim);
+      // Fiyatsız birleşim de dahil: sayfa stok yazısını yalnız stokDurumu'ndan alır (kart 0155).
+      expect(birim.stok).toEqual(stoklar.get(birim.kimlik)?.gosterim);
+      expect(birim.satilabilir).toBe(stoklar.get(birim.kimlik)?.satilabilir);
     }
     const birim = (kimlik: string) => veri.birimler.find((b) => b.kimlik === kimlik);
     expect(veri.birimler.map((b) => b.satilabilir)).toEqual([true, true, false, true, false]);

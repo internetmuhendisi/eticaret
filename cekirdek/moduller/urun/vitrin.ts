@@ -7,22 +7,39 @@
 //
 // Tükenen ürün (kart 0083, karar 0069): mağaza sahibinin tukenenUrun ayarı "gizle" ise tükenmiş ürün
 // listelerde (liste yeri) görünmez; kendi sayfası (sayfa yeri) açılır, ürün satılamaz (kullanıcı
-// kararı). Tükenmişlik stok modülünün tek kuralıyla sınanır (stok/durum.ts). Ayar zorunlu değerdir:
-// koşulu kuran her yer onu vermeden derlenmez, unutulamaz. Stok gelince ürün kendiliğinden döner.
+// kararı). Tükenmişlik stok modülünün tek kuralıyla sınanır (stok/durum.ts); fiyatı olmayan birim de
+// satılamaz (kart 0155, karar 0133), bu yüzden "gizle" sitenin para birimini de taşır. Ayar zorunlu
+// değerdir: koşulu kuran her yer onu vermeden derlenmez, unutulamaz. Siteden okunan ayar
+// vitrinStokSecenegi ile kurulur. Stok ya da fiyat gelince ürün kendiliğinden döner.
 import { and, inArray, isNull, lte, not, or, type SQL, sql } from "drizzle-orm";
+import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import type { TukenenUrunDavranisi } from "../../kayitlar/stok.ts";
 import { urunDurumlari, urunDurumVitrini, type VitrinYeri } from "../../kayitlar/urun.ts";
 import { tukenmisUrunKosulu } from "../stok/durum.ts";
 import { urunler } from "./model.ts";
 
-export type VitrinSecenekleri = {
+// Mağaza sahibinin tukenenUrun ayarı (magaza-ayarlari servisinden okunur); "gizle"de tükenmişliği
+// sınamak için sitenin para birimi.
+export type VitrinStokSecenegi =
+  | { tukenenUrun: "goster" }
+  | { tukenenUrun: "gizle"; paraBirimi: string };
+
+export type VitrinSecenekleri = VitrinStokSecenegi & {
   // Verilmezse veritabanının şimdiki zamanı: sunucuların saati farklı olsa da sonuç aynıdır.
   an?: Date;
-  // Mağaza sahibinin tukenenUrun ayarı (magaza-ayarlari servisinden okunur).
-  tukenenUrun: TukenenUrunDavranisi;
 };
 
-export const vitrinKosulu = (yer: VitrinYeri, { an, tukenenUrun }: VitrinSecenekleri): SQL => {
+// Sitenin ayarından vitrin stok seçeneği.
+export const vitrinStokSecenegi = (
+  site: Site,
+  ayarlar: { tukenenUrun: TukenenUrunDavranisi },
+): VitrinStokSecenegi =>
+  ayarlar.tukenenUrun === "gizle"
+    ? { tukenenUrun: "gizle", paraBirimi: site.ayarlar.paraBirimi }
+    : { tukenenUrun: "goster" };
+
+export const vitrinKosulu = (yer: VitrinYeri, secenekler: VitrinSecenekleri): SQL => {
+  const { an } = secenekler;
   const simdi = an === undefined ? sql`now()` : sql`${an.toISOString()}::timestamptz`;
   const gorunen = urunDurumlari.filter((durum) => urunDurumVitrini[durum][yer]);
   const herZaman = gorunen.filter((durum) => !urunDurumVitrini[durum].zamanli);
@@ -35,7 +52,9 @@ export const vitrinKosulu = (yer: VitrinYeri, { an, tukenenUrun }: VitrinSecenek
         ? and(inArray(urunler.durum, zamanli), lte(urunler.yayin_zamani, simdi))
         : sql`false`,
     ),
-    yer === "liste" && tukenenUrun === "gizle" ? not(tukenmisUrunKosulu()) : undefined,
+    yer === "liste" && secenekler.tukenenUrun === "gizle"
+      ? not(tukenmisUrunKosulu(secenekler.paraBirimi))
+      : undefined,
   );
   if (kosul === undefined) throw new Error("Vitrin koşulu kurulamadı.");
   return kosul;

@@ -117,7 +117,11 @@ describe("KURALLAR.md'deki durumlar", () => {
       gosterim: { tur: "tukendi" },
     });
     expect(await gorunur("pamuklu-bez-canta", "liste", goster())).toBe(true);
-    const gizle: VitrinSecenekleri = { an: kasim, tukenenUrun: "gizle" };
+    const gizle: VitrinSecenekleri = {
+      an: kasim,
+      tukenenUrun: "gizle",
+      paraBirimi: site.ayarlar.paraBirimi,
+    };
     expect(await gorunur("pamuklu-bez-canta", "liste", gizle)).toBe(false);
     expect(await gorunur("pamuklu-bez-canta", "sayfa", gizle)).toBe(true);
   });

@@ -23,6 +23,7 @@ import { kategorininUrunleri } from "../moduller/kategori/servis";
 import { siteninMagazaAyarlari } from "../moduller/magaza-ayarlari/servis";
 import { markaServisi } from "../moduller/marka/servis";
 import { urunListesi } from "../moduller/urun/liste";
+import { vitrinStokSecenegi } from "../moduller/urun/vitrin";
 import type { Veritabani } from "../veritabani/baglanti";
 import { kimligiDuzelt } from "../veritabani/kimlik";
 import { type UrunKaynagi, urunKaynagiAnahtari } from "./bolum-kutuphanesi/urun-kaynagi";
@@ -37,8 +38,8 @@ export const kaynaklarinUrunleri = async (
 ): Promise<Record<string, readonly UrunKartiVerisi[]>> => {
   const tekil = new Map(kaynaklar.map((kaynak) => [urunKaynagiAnahtari(kaynak), kaynak]));
   if (tekil.size === 0) return {};
-  const { tukenenUrun } = await siteninMagazaAyarlari(vt, site);
-  const vitrin = { yer: "liste" as const, an, tukenenUrun };
+  const ayarlar = await siteninMagazaAyarlari(vt, site);
+  const vitrin = { yer: "liste" as const, an, ...vitrinStokSecenegi(site, ayarlar) };
   const kimlikleri = async (kaynak: UrunKaynagi): Promise<readonly string[]> => {
     switch (kaynak.tur) {
       case "elle":

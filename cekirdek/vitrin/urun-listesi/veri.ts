@@ -19,7 +19,7 @@ import { siteninBicimleyicisi } from "../../metinler/site-metni";
 import { fiyatGosterimServisi } from "../../moduller/fiyat/gosterim";
 import { markalar, urunMarkalari } from "../../moduller/marka/model";
 import { ozellikler, ozellikSecenekleri, urunOzellikDegerleri } from "../../moduller/ozellik/model";
-import { birimStoklari } from "../../moduller/stok/model";
+import { birimSatilabilirKosulu } from "../../moduller/stok/durum";
 import {
   bosFiltre,
   type FiltreAdayi,
@@ -39,7 +39,7 @@ import {
   urunSecenekDegerleri,
   urunSecenekleri,
 } from "../../moduller/urun/model";
-import { vitrinKosulu } from "../../moduller/urun/vitrin";
+import { vitrinKosulu, vitrinStokSecenegi } from "../../moduller/urun/vitrin";
 import type { Veritabani } from "../../veritabani/baglanti";
 
 export type FiltreSecenegi = { anahtar: string; ad: string; adet: number; secili: boolean };
@@ -115,7 +115,10 @@ export const filtreliUrunListesi = async (
   secenek: FiltreliListeSecenekleri,
 ): Promise<FiltreliListe> => {
   const filtre = secenek.filtre ?? bosFiltre();
-  const gorunur = vitrinKosulu("liste", { an: secenek.an, tukenenUrun: secenek.tukenenUrun });
+  const gorunur = vitrinKosulu("liste", {
+    an: secenek.an,
+    ...vitrinStokSecenegi(site, { tukenenUrun: secenek.tukenenUrun }),
+  });
   const adaySorgusu = sql`select ${urunler.kimlik} from ${urunler}
     where ${urunler.silinme_zamani} is null and ${secenek.kapsam} and ${gorunur}`;
   const sira =
@@ -140,12 +143,13 @@ export const filtreliUrunListesi = async (
           sql`${urunMarkalari.urun_kimligi} in (${adaySorgusu})`,
         ),
       ),
-    // Birim, stokta mı, ve seçenek değerleri (basit ürünün biriminin değeri yoktur: tek satır, değersiz).
+    // Birim, stokta mı (satılabilir mi: stok/durum.ts'in tek tanımı, fiyat dahil; kart 0155), ve seçenek değerleri
+    // (basit ürünün biriminin değeri yoktur: tek satır, değersiz).
     vt
       .select({
         urun: urunBirimleri.urun_kimligi,
         birim: urunBirimleri.kimlik,
-        stokta: sql<boolean>`(not ${urunler.stok_takibi} or coalesce(${birimStoklari.miktar}, 0) > 0)`,
+        stokta: sql<boolean>`${birimSatilabilirKosulu(site.ayarlar.paraBirimi)}`,
         secenek: urunSecenekleri.ad,
         secenekSirasi: urunSecenekleri.sira,
         deger: urunSecenekDegerleri.ad,
@@ -153,7 +157,6 @@ export const filtreliUrunListesi = async (
       })
       .from(urunBirimleri)
       .innerJoin(urunler, eq(urunler.kimlik, urunBirimleri.urun_kimligi))
-      .leftJoin(birimStoklari, eq(birimStoklari.birim_kimligi, urunBirimleri.kimlik))
       .leftJoin(urunBirimiDegerleri, eq(urunBirimiDegerleri.birim_kimligi, urunBirimleri.kimlik))
       .leftJoin(
         urunSecenekDegerleri,

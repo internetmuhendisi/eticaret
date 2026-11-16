@@ -4,6 +4,8 @@
 // stokDurumu ile aynı sonucu vermesi; ayarların varsayılanı ve sitenin kendi ayarıyla okunması.
 // Kart 0085: ürünün genel durumu birimlerinden (tek ve çok birimli, silinmiş birleşim, birimsiz ürün) ve
 // çok birimli üründe listedeki tükenmişlik kuralıyla aynı sonuç.
+// Kart 0155 (karar 0133): fiyatı olmayan birim satılamaz; test ürünleri sitenin para biriminde fiyatla kurulur,
+// fiyatsız birim ayrıca denenir. Ürünler arası karşılaştırma cekirdek/testler/fiyatsiz-birim.test.ts'tedir.
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { eq, inArray, sql } from "drizzle-orm";
@@ -15,6 +17,7 @@ import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts
 import type { TukenenUrunDavranisi } from "../../../kayitlar/stok.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
+import { fiyatServisi } from "../../fiyat/servis.ts";
 import { kategoriEkle, kategorininUrunleri } from "../../kategori/servis.ts";
 import { siteninServisi } from "../../magaza-ayarlari/servis.ts";
 import { ilgiliUrunleriGetir } from "../../urun/ilgili.ts";
@@ -33,7 +36,10 @@ import { stokServisi } from "../servis.ts";
 
 const stok = stokServisi();
 const urunSrv = urunServisi(() => "Europe/Istanbul");
-const ayarlar: StokDurumAyarlari = { dusukStokEsigi: 5, sonAdetEsigi: 5 };
+// Deneme sitelerinin para birimi (ayar-semasi/testler/ornek-siteler/gecerli): fiyatı olan birim satılabilir.
+const paraBirimi = "XTS";
+const fiyat = fiyatServisi(() => ({ saatDilimi: "Europe/Istanbul", paraBirimi }));
+const ayarlar: StokDurumAyarlari = { dusukStokEsigi: 5, sonAdetEsigi: 5, paraBirimi };
 
 const yonetici = (): DegisikligiYapan => ({ tur: "yonetici", kimlik: randomUUID() });
 
@@ -47,11 +53,17 @@ afterEach(async () => {
   await Promise.all(silinecekler.splice(0).map((sil) => sil()));
 });
 
-// Yayındaki ürün, tek birimi ve stoğu.
+// Yayındaki ürün, tek birimi, fiyatı (fiyatsiz verilmezse) ve stoğu.
 const urunAc = async (
   vt: Veritabani,
   miktar: number,
-  ek: { takip?: boolean; esik?: number; kategori?: string; ilgili?: string[] } = {},
+  ek: {
+    takip?: boolean;
+    esik?: number;
+    kategori?: string;
+    ilgili?: string[];
+    fiyatsiz?: boolean;
+  } = {},
 ) => {
   const urun = await urunSrv.urunEkle(vt, yonetici(), {
     ad: `Ürün ${randomUUID().slice(0, 8)}`,
@@ -64,6 +76,7 @@ const urunAc = async (
   });
   const birim = (await urunSrv.urunuOku(vt, urun))?.birimler[0]?.kimlik;
   if (birim === undefined) throw new Error("Birim yok.");
+  if (ek.fiyatsiz !== true) await fiyat.fiyatYaz(vt, yonetici(), birim, { satisFiyati: 10_000 });
   if (miktar > 0) {
     await stok.stokDuzelt(vt, yonetici(), birim, {
       yeniMiktar: miktar,
@@ -74,12 +87,15 @@ const urunAc = async (
   return { urun, birim };
 };
 
-const secenek = (tukenenUrun: TukenenUrunDavranisi) => ({ tukenenUrun });
+const secenek = (tukenenUrun: TukenenUrunDavranisi) =>
+  tukenenUrun === "gizle"
+    ? { tukenenUrun: "gizle" as const, paraBirimi }
+    : { tukenenUrun: "goster" as const };
 
 describe("stok durumu", () => {
   const durum = (
     miktar: number,
-    ek: { takip?: boolean; esik?: number | null; silinmis?: boolean } = {},
+    ek: { takip?: boolean; esik?: number | null; silinmis?: boolean; fiyatli?: boolean } = {},
   ) =>
     stokDurumu(
       {
@@ -87,6 +103,7 @@ describe("stok durumu", () => {
         takip: ek.takip ?? true,
         dusukStokEsigi: ek.esik ?? null,
         silinmis: ek.silinmis ?? false,
+        fiyatli: ek.fiyatli ?? true,
       },
       ayarlar,
     );
@@ -108,6 +125,19 @@ describe("stok durumu", () => {
     for (const ek of [{ takip: false }, { takip: true }]) {
       for (const miktar of [0, 9]) {
         expect(durum(miktar, { ...ek, silinmis: true })).toMatchObject({
+          satilabilir: false,
+          tukendi: true,
+          dusukStok: false,
+          gosterim: { tur: "tukendi" },
+        });
+      }
+    }
+  });
+
+  it("fiyatı olmayan birim, stoğu ya da takibi ne olursa olsun satılamaz (kart 0155)", () => {
+    for (const ek of [{ takip: false }, { takip: true }]) {
+      for (const miktar of [0, 9]) {
+        expect(durum(miktar, { ...ek, fiyatli: false })).toMatchObject({
           satilabilir: false,
           tukendi: true,
           dusukStok: false,
@@ -143,7 +173,7 @@ describe("stok durumu", () => {
     expect(durum(1, { esik: 0 }).dusukStok).toBe(false);
     expect(
       stokDurumu(
-        { miktar: 1, takip: true, dusukStokEsigi: null, silinmis: false },
+        { miktar: 1, takip: true, dusukStokEsigi: null, silinmis: false, fiyatli: true },
         { ...ayarlar, dusukStokEsigi: 0 },
       ).dusukStok,
     ).toBe(false);
@@ -156,7 +186,7 @@ describe("stok durumu", () => {
     expect(durum(3, { esik: 1 }).gosterim).toEqual({ tur: "son-adet", adet: 3 });
     expect(
       stokDurumu(
-        { miktar: 1, takip: true, dusukStokEsigi: null, silinmis: false },
+        { miktar: 1, takip: true, dusukStokEsigi: null, silinmis: false, fiyatli: true },
         { ...ayarlar, sonAdetEsigi: 0 },
       ).gosterim,
     ).toEqual({ tur: "stokta" });
@@ -182,15 +212,16 @@ describe("veritabanıyla stok durumu", () => {
     const b = await urunAc(vt, 3);
     const c = await urunAc(vt, 3, { esik: 2 });
     const d = await urunAc(vt, 0, { takip: false });
+    const e = await urunAc(vt, 3, { fiyatsiz: true });
     const sorgu = vi.spyOn(vt.$client, "query");
     const sonuc = await stokDurumlari(
       vt,
-      [a, b, c, d].map((x) => x.birim).concat("bozuk"),
+      [a, b, c, d, e].map((x) => x.birim).concat("bozuk"),
       ayarlar,
     );
     expect(sorgu).toHaveBeenCalledTimes(1);
     sorgu.mockRestore();
-    expect([a, b, c, d].map((x) => sonuc.get(x.birim))).toMatchObject([
+    expect([a, b, c, d, e].map((x) => sonuc.get(x.birim))).toMatchObject([
       { tukendi: true, satilabilir: false, dusukStok: false },
       {
         tukendi: false,
@@ -200,8 +231,12 @@ describe("veritabanıyla stok durumu", () => {
       },
       { tukendi: false, dusukStok: false },
       { tukendi: false, satilabilir: true, takip: false },
+      { tukendi: true, satilabilir: false, dusukStok: false, gosterim: { tur: "tukendi" } },
     ]);
-    expect(sonuc.size).toBe(4);
+    expect(sonuc.size).toBe(5);
+    // Başka para birimiyle okununca fiyat yok sayılır: birim satılamaz.
+    const baskaBirimde = await stokDurumlari(vt, [b.birim], { ...ayarlar, paraBirimi: "XXX" });
+    expect(baskaBirimde.get(b.birim)).toMatchObject({ satilabilir: false, tukendi: true });
   });
 
   it("sitenin kendi ayarıyla okunur, ayar değişince sonuç değişir", async () => {
@@ -270,6 +305,9 @@ describe("veritabanıyla stok durumu", () => {
     }
     const silinen = await urunAc(vt, 3);
     await urunSrv.urunSil(vt, yonetici(), silinen.urun);
+    // Fiyatsız ürünler: stoklu ve takipsiz (kart 0155).
+    const fiyatsiz = await urunAc(vt, 4, { fiyatsiz: true });
+    const takipsizFiyatsiz = await urunAc(vt, 0, { takip: false, fiyatsiz: true });
     // Yalnız ürünü silinmiş, birimi silinmemiş (servis ikisini birlikte siler; doğrudan yazıyla kurulur).
     const yalnizUrunuSilinen = await urunAc(vt, 3, { takip: false });
     await vt
@@ -283,6 +321,8 @@ describe("veritabanıyla stok durumu", () => {
       takipsizBirimiSilinen,
       silinen,
       yalnizUrunuSilinen,
+      fiyatsiz,
+      takipsizFiyatsiz,
     ];
     const tukenmis = await vt
       .select({ kimlik: urunTablosu.kimlik })
@@ -291,7 +331,7 @@ describe("veritabanıyla stok durumu", () => {
         sql`${inArray(
           urunTablosu.kimlik,
           hepsi.map((u) => u.urun),
-        )} and ${tukenmisUrunKosulu()}`,
+        )} and ${tukenmisUrunKosulu(paraBirimi)}`,
       );
     const durumlar = await stokDurumlari(
       vt,
@@ -306,8 +346,15 @@ describe("veritabanıyla stok durumu", () => {
         .map((u) => u.urun)
         .toSorted(),
     );
-    expect(tukenmis).toHaveLength(5);
-    for (const u of [birimiSilinen, takipsizBirimiSilinen, silinen, yalnizUrunuSilinen]) {
+    expect(tukenmis).toHaveLength(7);
+    for (const u of [
+      birimiSilinen,
+      takipsizBirimiSilinen,
+      silinen,
+      yalnizUrunuSilinen,
+      fiyatsiz,
+      takipsizFiyatsiz,
+    ]) {
       expect(durumlar.get(u.birim)).toMatchObject({ satilabilir: false, tukendi: true });
     }
   });
@@ -397,7 +444,7 @@ describe("tükenen ürün ayarı vitrinde", () => {
 
 describe("ürünün genel durumu (kart 0085)", () => {
   const birim = (miktar: number, takip = true) =>
-    stokDurumu({ miktar, takip, dusukStokEsigi: null, silinmis: false }, ayarlar);
+    stokDurumu({ miktar, takip, dusukStokEsigi: null, silinmis: false, fiyatli: true }, ayarlar);
 
   it("tek birimli üründe birimin durumudur, kalan adet dahil", () => {
     expect(urunStokDurumu([birim(3)])).toEqual({
@@ -448,6 +495,7 @@ describe("ürünün genel durumu (kart 0085)", () => {
         const kimlik = await urunSrv.birlesimEkle(vt, yonetici(), urun, {
           degerler: [degerler[i]?.kimlik ?? ""],
         });
+        await fiyat.fiyatYaz(vt, yonetici(), kimlik, { satisFiyati: 10_000 });
         if (miktar > 0) {
           await stok.stokDuzelt(vt, yonetici(), kimlik, {
             yeniMiktar: miktar,
@@ -488,7 +536,7 @@ describe("ürünün genel durumu (kart 0085)", () => {
     const tukenmis = await vt
       .select({ kimlik: urunTablosu.kimlik })
       .from(urunTablosu)
-      .where(sql`${inArray(urunTablosu.kimlik, kimlikler)} and ${tukenmisUrunKosulu()}`);
+      .where(sql`${inArray(urunTablosu.kimlik, kimlikler)} and ${tukenmisUrunKosulu(paraBirimi)}`);
     expect(tukenmis.map((t) => t.kimlik).toSorted()).toEqual(
       kimlikler.filter((k) => durumlar.get(k)?.tukendi).toSorted(),
     );

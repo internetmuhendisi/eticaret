@@ -20,12 +20,10 @@ import { BilinenHata } from "../../kapi/zarf.ts";
 import { stokBildirimiAyari } from "../../kayitlar/eklentiler.ts";
 import { metinOkuyucu } from "../../metinler/metin.ts";
 import { epostaGonder } from "../../moduller/eposta/servis.ts";
-import { siteninFiyatServisi } from "../../moduller/fiyat/servis.ts";
-import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis.ts";
-import { stokDurumlari } from "../../moduller/stok/durum.ts";
+import { siteninStokAyarlari, stokDurumlari } from "../../moduller/stok/durum.ts";
 import { urunBirimleri, urunler } from "../../moduller/urun/model.ts";
 import { birimDegerleri, secenekleriOku, urunlerinBirimleri } from "../../moduller/urun/varyant.ts";
-import { vitrinKosulu } from "../../moduller/urun/vitrin.ts";
+import { vitrinKosulu, vitrinStokSecenegi } from "../../moduller/urun/vitrin.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { kayitAdresleri } from "../../vitrin/adresler.ts";
@@ -116,10 +114,9 @@ export const stokBildirimiServisi = (site: Site) => {
   // Eklenti açık ve site e-posta gönderebiliyor mu: gönderen adresi olmayan sitede e-posta hiç gitmez, talep de
   // alınmaz (bağımsız kontrolün bulgusu; bülten bölümüyle aynı kural, karar 0090).
   const acik = () => eklentiAcikMi(site, kod) && site.ayarlar.epostaGonderenAdresi !== undefined;
-  // Birimlerden geçerli fiyatı olanlar: fiyatsız birim satın alınamaz (karar 0071), ürün sayfası "Tükendi" yazar.
-  const fiyatlilar = async (vt: Veritabani, birimler: string[]): Promise<Set<string>> =>
-    new Set((await siteninFiyatServisi(site).gecerliFiyatlar(vt, birimler)).keys());
-  const ayarlar = (vt: Veritabani) => siteninMagazaAyarlari(vt, site);
+  // Mağaza ayarları ve sitenin para birimi: fiyatsız birim satın alınamaz, stokDurumu onu tükenmiş sayar
+  // (kart 0155, karar 0133).
+  const ayarlar = (vt: Veritabani) => siteninStokAyarlari(vt, site);
   type Ayarlar = Awaited<ReturnType<typeof ayarlar>>;
 
   // Verilen birimlerden silinmemiş ve ürününün sayfası açılanlar (vitrinKosulu, sayfa yeri). Talep, gönderim ve
@@ -138,15 +135,15 @@ export const stokBildirimiServisi = (site: Site) => {
         and(
           inArray(urunBirimleri.kimlik, birimler),
           isNull(urunBirimleri.silinme_zamani),
-          vitrinKosulu("sayfa", { tukenenUrun: okunan.tukenenUrun }),
+          vitrinKosulu("sayfa", vitrinStokSecenegi(site, okunan)),
         ),
       );
     return new Set(satirlar.map(({ birim }) => birim));
   };
 
   // Birimlerin hangilerine talep yazılabilir: sayfası açılan ürünün silinmemiş, satın alınamayan birimleri: stoğu
-  // tükenmiş (stokDurumu; takibi kapalı birim hiç tükenmez) ya da fiyatı olmayan (ürün sayfasıyla aynı kural, karar
-  // 0108). Eklenti kapalıysa hiçbiri. Ürün sayfası formu bununla çizer; talep yazarken aynı kural yeniden sınanır.
+  // tükenmiş ya da fiyatı olmayan (stokDurumu, kart 0155; takibi kapalı fiyatlı birim hiç tükenmez). Eklenti
+  // kapalıysa hiçbiri. Ürün sayfası formu bununla çizer; talep yazarken aynı kural yeniden sınanır.
   const talepAlinabilirBirimler = async (
     vt: Veritabani,
     birimler: string[],
@@ -154,14 +151,11 @@ export const stokBildirimiServisi = (site: Site) => {
     const gecerli = [...new Set(birimler.filter(kimlikMi).map(kimligiDuzelt))];
     if (!acik() || gecerli.length === 0) return new Set();
     const okunan = await ayarlar(vt);
-    const [durumlar, gorunen, fiyatli] = await Promise.all([
+    const [durumlar, gorunen] = await Promise.all([
       stokDurumlari(vt, gecerli, okunan),
       gorunenBirimler(vt, gecerli, okunan),
-      fiyatlilar(vt, gecerli),
     ]);
-    return new Set(
-      [...gorunen].filter((birim) => durumlar.get(birim)?.tukendi === true || !fiyatli.has(birim)),
-    );
+    return new Set([...gorunen].filter((birim) => durumlar.get(birim)?.tukendi === true));
   };
 
   // Birim sayfası açılan bir üründe var mı ve silinmemiş mi (talep yazılamayan birimin hatasını seçmek için).
@@ -199,8 +193,6 @@ export const stokBildirimiServisi = (site: Site) => {
     const okunan = await ayarlar(vt);
     let gonderilen = 0;
     for (;;) {
-      // Fiyat partiden önce okunur (fiyat okuması işlemin dışındadır); stok ve sayfa işlemin içinde.
-      if (!(await fiyatlilar(vt, [kimlik])).has(kimlik)) return gonderilen;
       const partide = await vt.transaction(async (islem) => {
         // Her partide yeniden: stok bittiyse ya da ürün kapandıysa kalan talepler bekler.
         if (!(await gonderilebilirMi(islem, kimlik, okunan))) return 0;
@@ -250,7 +242,7 @@ export const stokBildirimiServisi = (site: Site) => {
     }
   };
 
-  // Birimin stoğu satılabilir ve sayfası açık mı (fiyatı ayrıca, partiden önce sınanır). Stok kilitlenmez: parti yazılırken gelen sipariş beklemesin.
+  // Birim satılabilir (stoğu ve fiyatı var, stokDurumu) ve sayfası açık mı. Stok kilitlenmez: parti yazılırken gelen sipariş beklemesin.
   // Bu sırada stok biterse bu partinin e-postaları yine gider, sonraki parti bekler.
   const gonderilebilirMi = async (
     islem: VeritabaniIslemi,
@@ -292,7 +284,7 @@ export const stokBildirimiServisi = (site: Site) => {
     });
   };
 
-  // Bekleyen talebi olup şu an gönderilebilecek birimler: stoğu satılabilir, fiyatı var, sayfası açık. Stoğun sıfırdan
+  // Bekleyen talebi olup şu an gönderilebilecek birimler: satılabilir (stoğu ve fiyatı var), sayfası açık. Stoğun sıfırdan
   // çıktığı anda gönderilemeyen talepler (eklenti kapalıydı, ürün taslaktaydı, fiyat sonradan girildi, talep stokla
   // aynı anda yazıldı) zamanlı taramayla bunlardan gider (bağımsız kontrolün bulgusu). Eklenti kapalıysa hiçbiri.
   const gonderilebilirBekleyenler = async (vt: Veritabani): Promise<string[]> => {
@@ -304,14 +296,12 @@ export const stokBildirimiServisi = (site: Site) => {
     const birimler = satirlar.map(({ birim }) => birim);
     if (birimler.length === 0) return [];
     const okunan = await ayarlar(vt);
-    const [durumlar, gorunen, fiyatli] = await Promise.all([
+    const [durumlar, gorunen] = await Promise.all([
       stokDurumlari(vt, birimler, okunan),
       gorunenBirimler(vt, birimler, okunan),
-      fiyatlilar(vt, birimler),
     ]);
     return birimler.filter(
-      (birim) =>
-        gorunen.has(birim) && fiyatli.has(birim) && durumlar.get(birim)?.satilabilir === true,
+      (birim) => gorunen.has(birim) && durumlar.get(birim)?.satilabilir === true,
     );
   };
 
