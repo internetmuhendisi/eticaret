@@ -77,6 +77,8 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Ödenmeyen havale siparişinin iptal süresi | Mağaza sahibi | 3 gün | — | Süre sonunda stok geri döner |
 | Kapıda ödeme | Mağaza sahibi | Kapalı | Açık | İsteyen mağaza açar |
 | Kapıda ödeme seçenekleri | Mağaza sahibi | Nakit | Nakit ve kart | Seçenekler: nakit, kart. Müşteri ödeme adımında seçer, kartı kurye çeker |
+| Sepete ekleyince | Mağaza sahibi | Yan pencerede sepet | Yan pencerede sepet | Seçenekler: yan pencerede sepet, kısa bildirim, sepet sayfasına git (karar 0132, kart 0212) |
+| Ürün sayfasında taksit satırı | Mağaza sahibi | Göster | Göster | Kartla ödeme eklentisinin ayarı; eklenti kapalıyken satır yoktur (karar 0132, kart 0215) |
 
 ## Kargo
 

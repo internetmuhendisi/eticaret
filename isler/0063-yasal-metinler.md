@@ -12,6 +12,7 @@ Kart 0033 kayıt kutularını taslak olduğunu söyleyen yer tutucu sayfalara ba
 - Hukukçuya sorulur: KVKK aydınlatmasının zorunlu onay kutusuyla alınması doğru mu, onay kaydında bağlantı adresi gerekir mi, onay satırları ne kadar saklanır.
 - Yer tutucu metinle gerçek mağazanın açılmasını engelleyen bir kontrol kurulur.
 - Kart 0087'den not: ürün galerisindeki video müşteriyi video sitesine bağlar (YouTube, Vimeo; sitede hangilerinin açık olduğu `videoSiteleri` ayarı, karar 0073). KVKK aydınlatmasında ve çerez politikasında bu siteler anılır; hukukçuya oynatıcının çerez onayından önce yüklenip yüklenemeyeceği sorulur.
+- Kart 0211'den not: ödeme adımının taslağında (karar 0132) "Siparişi onayla" düğmesinin altında "Siparişi onaylayınca ödeme yükümlülüğü doğar." cümlesi, ön bilgilendirme ve mesafeli satış onay kutuları ve "Kişisel verileriniz KVKK aydınlatma metnine göre işlenir." satırı var. Hukukçuya düğme metninin ve bu cümlenin mevzuata uygun olup olmadığı, ön bilgilendirme formunun onay kutusuyla mı yoksa yalnız gösterilerek mi alınacağı sorulur.
 - Kart 0140'tan not: vitrin üye olmayan müşterinin favorilerini tarayıcı deposunda (`localStorage`, anahtar `favoriler`) ve favoriler sayfası için yalnız `/favoriler` yoluna giden, tarayıcı kapanınca silinen bir çerezde (`favoriler`) tutar; ikisi de yalnız ürün kimliklerini taşır (karar 0110). Hukukçuya bunların zorunlu (işlevsel) sayılıp onaysız kullanılıp kullanılamayacağı sorulur; çerez politikasında ve aydınlatma metninde anılır.
 
 ## Sınırlar
