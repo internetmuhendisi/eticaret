@@ -25,4 +25,4 @@ Bölüm: Yayın. Önce 0115 ve 0129 bitmiş olmalı.
 
 ## Durum
 
-yapılacak
+bitti
