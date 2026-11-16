@@ -1,7 +1,9 @@
 // Yerel ortam denemesinin "vitrin kendi adını gösteriyor" ölçümü adı ana sayfanın başlığından okur (kart 0129).
 // Ana sayfanın sunucuda çizdiği gerçek HTML ile: bölümsüz sade sayfada ve bölümlü sayfada (başlık yalnız ekran
-// okuyucuda, sınıflı; kart 0110) aynı ad okunur.
-import { resolve } from "node:path";
+// okuyucuda, sınıflı; kart 0110) aynı ad okunur. Komutların hiçbiri başlığı kendi kalıbıyla okumaz (kart 0208:
+// yayın denemesi eski kalıpla boş ad okuyordu).
+import { readdirSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { siteKlasorunuOku } from "../../cekirdek/ayar-semasi/site-klasoru.ts";
@@ -49,5 +51,13 @@ describe("vitrin başlığı", () => {
   it("başlık yoksa boş döner; h1 ile başlayan başka öğe başlık sayılmaz", () => {
     expect(vitrinBasligi("<main><p>ad</p></main>")).toBe("");
     expect(vitrinBasligi(`<h10>${ad}</h10>`)).toBe("");
+  });
+
+  it("komutlar başlığı yalnız bu işlevle okur, kendi h1 kalıbı yazmaz", () => {
+    const klasor = resolve(import.meta.dirname, "..");
+    const kendiKalibi = readdirSync(klasor)
+      .filter((dosya) => dosya.endsWith(".mts") && dosya !== "yerel-ortam.mts")
+      .filter((dosya) => /<h1|h1>/.test(readFileSync(join(klasor, dosya), "utf8")));
+    expect(kendiKalibi).toEqual([]);
   });
 });
