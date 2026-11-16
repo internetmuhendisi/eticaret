@@ -10,6 +10,7 @@ import { panelAdresi } from "./adresler";
 
 // Menüdeki gruplar, menüdeki sırasıyla. Grubun adı yalnız menüde görünür; grubun kendi sayfası yoktur.
 export const panelGruplari = {
+  satis: "yonetim.grup.satis",
   urunler: "yonetim.grup.urunler",
   vitrin: "yonetim.grup.vitrin",
 } as const satisfies Record<string, MetinAnahtari>;
@@ -45,6 +46,16 @@ export const panelSayfalari = [
     ikon: "ev",
     izin: null,
     grup: null,
+  },
+  // Kargo ayarları (kart 0212, karar 0135): mağaza ayarlarıdır, yalnız mağaza sahibinin izinleriyle.
+  {
+    kod: "kargo",
+    adres: `${panelAdresi}/kargo`,
+    ad: "yonetim.sayfa.kargo.ad",
+    aciklama: "yonetim.sayfa.kargo.aciklama",
+    ikon: "kargo",
+    izin: "magaza-ayarlari.gor",
+    grup: "satis",
   },
   // Slider kısayolu (kart 0142, karar 0101): ana sayfadaki ilk kayan afişin formu. Kayıtta düzeni değiştirir.
   {

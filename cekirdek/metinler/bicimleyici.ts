@@ -161,6 +161,18 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
   });
 
   return {
+    // Tutar alanı (kart 0212, panelin kargo ekranı): simgesiz tutar, paraOku'nun okuduğu biçimde; simge ve yeri
+    // alanın yanında ayrıca gösterilir.
+    paraSimgesi: (): { simge: string; yer: "basta" | "sonda" } => ({
+      simge,
+      yer: ayarlar.para.simgeYeri,
+    }),
+    paraYazisi: (enKucukBirimde: number): string => {
+      if (!Number.isSafeInteger(enKucukBirimde)) {
+        throw new Error(`Para tutarı en küçük birimde tam sayı olmalı: ${enKucukBirimde}`);
+      }
+      return ayiricilariUygula(paraSayisi, enKucukBirimde / 10 ** ayarlar.para.ondalikSayisi);
+    },
     // Tutar, para biriminin en küçük biriminde (kuruş, sent) tam sayıdır.
     para: (enKucukBirimde: number): string => {
       if (!Number.isSafeInteger(enKucukBirimde)) {

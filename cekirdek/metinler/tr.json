@@ -136,6 +136,7 @@
       "kisayol": "Kısayol"
     },
     "grup": {
+      "satis": "Satış",
       "urunler": "Ürünler",
       "vitrin": "Vitrin"
     },
@@ -160,6 +161,10 @@
       "tema": {
         "ad": "Tema",
         "aciklama": "Vitrininizin teması. Temaları demolarında gezip karşılaştırın. Seçtiğiniz tema hemen yayınlanır; önceki hâline tek adımda dönebilirsiniz."
+      },
+      "kargo": {
+        "ad": "Kargo",
+        "aciklama": "Sepette ve ödemede hesaplanan kargo ücreti. Değişiklik kaydedilince hemen yayınlanır."
       }
     },
     "eylem": {
@@ -686,6 +691,29 @@
         "temaDegisti": "Tema bu arada değişti; ekran yenilendi. Gerekirse yeniden deneyin.",
         "oncekiYok": "Dönülecek önceki bir hâl yok.",
         "surumKullanilamaz": "Önceki hâlin teması ya da renkleri artık kullanılamıyor; bu yüzden dönülemiyor."
+      }
+    },
+    "kargo": {
+      "ucret": "Kargo ücreti",
+      "ucretAciklamasi": {
+        "dahil": "Vergi dahil, fiyatlarınız gibi. 0 yazarsanız kargo her zaman ücretsiz olur.",
+        "haric": "Vergi hariç, fiyatlarınız gibi. 0 yazarsanız kargo her zaman ücretsiz olur."
+      },
+      "sinir": "Ücretsiz kargo sınırı (isteğe bağlı)",
+      "sinirAciklamasi": "Bu tutar ve üstündeki siparişlerde kargo ücretsizdir. Boş bırakırsanız sınır olmaz.",
+      "sinirTutari": "Sınır hangi tutara göre hesaplansın?",
+      "indirimdenSonra": "İndirimden sonraki tutar",
+      "indirimdenOnce": "İndirimden önceki tutar",
+      "sure": "Kargoya verme süresi",
+      "sureAciklamasi": "İş günü. Ürün sayfasında siparişin kaç iş gününde kargoya verildiği yazar; 0 aynı gün demektir.",
+      "kaydet": "Kaydet",
+      "kaydedildi": "Kargo ayarları kaydedildi.",
+      "hata": {
+        "tutarOkunamadi": "Tutar okunamadı. Yalnız rakam ve ayırıcı yazın, örneğin 59,90.",
+        "tutarSinirDisi": "Bu tutar kullanılamaz. Ücretsiz kargo sınırı 0 olamaz; çok büyük tutarlar kabul edilmez.",
+        "gunGecersiz": "Gün sayısını tam sayı olarak yazın; çok uzun süreler kabul edilmez.",
+        "yetki": "Kargo ayarlarını değiştirme izniniz yok.",
+        "genel": "Kargo ayarları kaydedilemedi. Sayfayı yenileyip yeniden deneyin."
       }
     }
   },

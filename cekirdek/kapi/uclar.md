@@ -319,6 +319,25 @@ Giriş yapmış müşteri tükenmiş birim için "stoğa gelince haber ver" tale
 
 Yönetici uçları iki aşamalı girişten geçmiş oturum ister. Girişsiz istek `oturum-yok`, izni olmayan rol `yetki` alır.
 
+### GET /kapi/yonetici/kargo-ayarlari
+
+Panelin kargo ekranının verisi (kart 0212): kargo ücreti, ücretsiz kargo sınırı, kargoya verme süresi (iş günü) ve sınırın indirimden önceki mi sonraki mi tutara baktığı. Tutarlar kuruştur.
+
+- İzin: `magaza-ayarlari.gor`. Sınır: `genel`.
+- Girdi: yok. Adres parametresi verilirse `dogrulama`.
+- Servis: `cekirdek/moduller/kargo/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "kargoUcreti", "ucretsizKargoSiniri"?, "ucretsizKargoTutari", "kargoyaVermeSuresi" } }`. Sınır yoksa `ucretsizKargoSiniri` yoktur.
+
+### POST /kapi/yonetici/kargo-ayarlari
+
+Kargo ayarlarını birlikte değiştirir (kart 0212, karar 0135). Tutarlar sitenin para biçimiyle yazılı gelir, sunucuda kuruşa çevrilir. Değişen her ayar değişiklik kaydına girer (`magaza-ayari.degisti`); aynı kalan girmez.
+
+- İzin: `magaza-ayarlari.degistir`. Sınır: `genel`.
+- Girdi: `{ "kargoUcreti", "ucretsizKargoSiniri", "ucretsizKargoTutari", "kargoyaVermeSuresi" }` (`kargoAyarlariSemasi`, `cekirdek/moduller/kargo/semalar.ts`). `ucretsizKargoSiniri` boşsa sınır kalkar. `ucretsizKargoTutari`: `indirimden-sonra` ya da `indirimden-once`.
+- Servis: `cekirdek/moduller/kargo/servis.ts`.
+- Başarılı (200): GET ile aynı veri, değişiklikten sonraki hâl.
+- Hatalar: `dogrulama` (şemaya uymayan girdi; alanın koduyla `tutar-okunamadi`, `tutar-sinir-disi` ya da `gun-gecersiz`; hiçbir ayar değişmez), `yetki` (sahte istek ya da izin yok).
+
 ### GET /kapi/yonetici/tema
 
 Panelin tema ekranının verisi (kart 0113): geçerli tema sürümü, sitenin kullanabileceği temalar ve mağaza sahibinin temayı değiştirip değiştiremeyeceği. Sürüm yoksa başlangıç sürümü bir kez yazılır.

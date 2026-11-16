@@ -7,6 +7,10 @@
 // - Sepet sayfası: stoktan fazla adet düzeltilir ve söylenir, adet klavyeyle değişince toplam değişir, çıkarılan ürün
 //   "Geri al" ile döner, sepet boşalınca boş hâl görünür. Dolu ve boş sayfa iki renkte ve üç genişlikte taramadan geçer,
 //   yana kaymaz, konsolda hata yok; sayfa arama motorlarına kapalıdır.
+// - Panelin Kargo ekranı (aynı dosyada, öteki testlerden sonra sırayla: paylaşılan kargo ayarını değiştirir, sonunda
+//   eski hâline döner): mağaza sahibi menüden klavyeyle gelir, okunamayan tutar alanın hatasıyla döner ve odak alana
+//   gider, ücret ve sınır Enter ile kaydedilir; sepette sınırın altında kargo ücreti eklenir, üstünde kargo ücretsizdir.
+//   Ekran (hatalı hâli de) iki renkte ve üç genişlikte taramadan geçer, yana kaymaz.
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
@@ -17,12 +21,14 @@ import { sepetDepoAnahtari } from "../../kayitlar/sepet";
 import { metin, siteninBicimleyicisi } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import { calisanSiteninFiyatServisi } from "../../moduller/fiyat/servis";
+import { siteninServisi } from "../../moduller/magaza-ayarlari/servis";
 import { stokServisi } from "../../moduller/stok/servis";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { baglan, type Veritabani, veritabaniAdresi } from "../../veritabani/baglanti";
 import { kayitAdresleri, vitrinAdresleri } from "../../vitrin/adresler";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
+import { ayriBaglanti, paneleGir, yoneticiAc } from "./yonetici";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
 
@@ -39,8 +45,20 @@ const ek = randomUUID().slice(0, 8);
 const urunler: { kimlik: string; birim: string; ad: string; adres: string; tutar: number }[] = [];
 const temizlik: (() => Promise<unknown>)[] = [];
 
+// Testten önceki kargo ayarları: Kargo ekranı testi sonunda onlara döner.
+let ilkKargo: Parameters<ReturnType<typeof magazaAyarlari>["degistir"]>[2] = {};
+const magazaAyarlari = () => siteninServisi(calisanSite());
+
 test.beforeAll(async () => {
   vt = baglan(veritabaniAdresi());
+  const ayarlar = await magazaAyarlari().oku(vt);
+  ilkKargo = {
+    kargoUcreti: ayarlar.kargoUcreti,
+    ucretsizKargoSiniri: ayarlar.ucretsizKargoSiniri,
+    ucretsizKargoTutari: ayarlar.ucretsizKargoTutari,
+    kargoyaVermeSuresi: ayarlar.kargoyaVermeSuresi,
+  };
+  temizlik.push(() => magazaAyarlari().degistir(vt, yapan, ilkKargo));
   const servis = calisanSiteninUrunServisi();
   for (const [sira, tutar, stok] of [
     [1, 12_000, 3],
@@ -231,5 +249,76 @@ test("sepet sayfası: stok düzeltmesi, klavyeyle adet, çıkarma ve geri alma, 
       await yanaKaymaz(page, `boş sepet ${renk} ${boyut.width}`);
     }
   }
+  expect(hatalar).toEqual([]);
+});
+
+test("panelin Kargo ekranı: klavyeyle hata ve kayıt; sepette kargo ücreti ve ücretsiz kargo sınırı", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const hatalar = konsoluDinle(page, {
+    // Okunamayan tutarın kaydı bilerek gönderilir: uç 400 (dogrulama) döner, tarayıcı bunu konsola yazar.
+    haric: (m) => m.includes("401") || m.includes("status of 400"),
+  });
+  await ayriBaglanti(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await paneleGir(page, yoneticiAc());
+  const menudeki = page
+    .getByRole("navigation", { name: metin("yonetim.cerceve.menu") })
+    .getByRole("link", { name: metin("yonetim.sayfa.kargo.ad") });
+  await menudeki.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/yonetim\/kargo$/);
+  await sayfaHazir(page);
+  await expect(page).toHaveTitle(new RegExp(`^${metin("yonetim.sayfa.kargo.ad")} \\|`));
+  const ucret = page.getByLabel(metin("yonetim.kargo.ucret"));
+  const sinir = page.getByLabel(metin("yonetim.kargo.sinir"));
+  for (const renk of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: renk });
+    for (const boyut of genislikler) {
+      await page.setViewportSize(boyut);
+      await tara(page, `kargo ekranı ${renk} ${boyut.width}`);
+      await yanaKaymaz(page, `kargo ekranı ${renk} ${boyut.width}`);
+    }
+  }
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  // Okunamayan tutar: alanın hatası, odak alanda, hiçbir şey kaydedilmez.
+  await ucret.fill("59,90 TL");
+  await ucret.press("Enter");
+  await expect(page.getByText(metin("yonetim.kargo.hata.tutarOkunamadi"))).toBeVisible();
+  await expect(ucret).toBeFocused();
+  await expect(ucret).toHaveAttribute("aria-invalid", "true");
+  await tara(page, "kargo ekranı hatalı");
+  expect((await magazaAyarlari().oku(vt)).kargoUcreti).toBe(ilkKargo.kargoUcreti);
+  // Ücret 59,90, sınır 200,00: kaydedilir, sayfa yenilenince alanlar sunucunun yazdığı hâlle gelir.
+  await ucret.fill("59,9");
+  await sinir.fill("200");
+  await sinir.press("Enter");
+  await expect(page.getByText(metin("yonetim.kargo.kaydedildi"))).toBeVisible();
+  await expect(ucret).toHaveValue(bicim().paraYazisi(5_990));
+  await expect(sinir).toHaveValue(bicim().paraYazisi(20_000));
+  const ayarlar = await magazaAyarlari().oku(vt);
+  expect([ayarlar.kargoUcreti, ayarlar.ucretsizKargoSiniri]).toEqual([5_990, 20_000]);
+
+  // Sepet: 45,00 sınırın altında, kargo eklenir; 5 adet (225,00) sınırın üstünde, kargo ücretsiz.
+  await page.evaluate(([anahtar, deger]) => window.localStorage.setItem(anahtar, deger), [
+    sepetDepoAnahtari,
+    JSON.stringify([{ birim: urun(1).birim, adet: 1 }]),
+  ] as const);
+  await page.goto(vitrinAdresleri.sepet);
+  await sayfaHazir(page);
+  const ozet = page.getByRole("region", { name: metin("vitrin.sepet.ozet") });
+  await expect(ozet.getByText(bicim().para(5_990)).first()).toBeVisible();
+  await expect(ozet.getByText(bicim().para(4_500 + 5_990)).first()).toBeVisible();
+  const artir = page.getByRole("button", {
+    name: doldur(metin("vitrin.sepet.artir"), { urun: urun(1).ad }),
+  });
+  for (let i = 0; i < 4; i += 1) {
+    await artir.focus();
+    await page.keyboard.press("Enter");
+  }
+  await expect(ozet.getByText(metin("vitrin.sepet.kargoUcretsiz"))).toBeVisible();
+  await expect(ozet.getByText(bicim().para(22_500)).first()).toBeVisible();
   expect(hatalar).toEqual([]);
 });

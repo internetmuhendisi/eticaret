@@ -24,7 +24,7 @@ import { useMetin } from "../../metinler/istemci-metni";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { doldur } from "../../moduller/eposta/sablon";
 import { vitrinAdresleri } from "../adresler";
-import { adetDegistir, geriKoy, sepettenCikar, useSepetGorunumu } from "./durum";
+import { adetDegistir, geriKoy, sepettenCikar, useSepet, useSepetGorunumu } from "./durum";
 import { SepetFiyati } from "./fiyat";
 import type { SepetGorunumu, SepetGorunumuSatiri } from "./veri";
 
@@ -69,6 +69,11 @@ function SepetSatiri({
 }) {
   const metin = useMetin();
   const ad = satirAdi(metin, satir);
+  // Gösterilen adet: müşterinin değiştirdiği adedin cevabı henüz gelmediyse tarayıcıdaki adet, gelince sunucunun
+  // (sınıra indirilmiş) adedi. Sunucunun adedi gösterilse, cevap gelmeden ikinci basış eski adetten sayardı.
+  const yerel = useSepet().kalemler.find((kalem) => kalem.birim === satir.birim);
+  const gosterilenAdet =
+    yerel !== undefined && yerel.adet !== satir.istenenAdet ? yerel.adet : satir.adet;
   const cikar = () => {
     const cikan = sepettenCikar(satir.birim);
     sonraki();
@@ -140,9 +145,9 @@ function SepetSatiri({
         <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           {satir.satilabilir ? (
             <AdetSecici
-              deger={satir.adet}
+              deger={gosterilenAdet}
               enAz={1}
-              enCok={Math.max(satir.enCok, satir.adet)}
+              enCok={Math.max(satir.enCok, gosterilenAdet)}
               onDegerDegisti={(adet) => adetDegistir(satir.birim, adet)}
               etiketler={{
                 grup: doldur(metin("vitrin.sepet.adetUrun"), { urun: ad }),
