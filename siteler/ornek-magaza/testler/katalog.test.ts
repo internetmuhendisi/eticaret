@@ -35,11 +35,14 @@ import { denemeSitesiAc } from "../../../cekirdek/veritabani/testler/deneme-site
 const site = siteKlasorunuOku(join(import.meta.dirname, ".."));
 const urunServisi = siteninUrunServisi(site);
 
-// İstanbul saatiyle 15 Kasım öğlen: indirim sürüyor, Yılbaşı Kupa Seti henüz yayında değil.
-const kasim = new Date("2026-11-15T09:00:00Z");
-// 1 Aralık 00:00 İstanbul: indirim bittiği ve Kupa Seti yayına girdiği an.
+// İstanbul saatiyle 20 Kasım öğlen: indirim sürüyor, Yılbaşı Kupa Seti henüz yayında değil.
+const kasim = new Date("2026-11-20T09:00:00Z");
+// 1 Aralık 00:00 İstanbul: Kupa Seti'nin yayına girdiği an.
 const aralik = new Date("2026-11-30T21:00:00Z");
 const birOnce = new Date(aralik.getTime() - 1);
+// 8 Aralık 00:00 İstanbul: tarihli indirimlerin bittiği an.
+const indirimSonu = new Date("2026-12-07T21:00:00Z");
+const indirimSonundanOnce = new Date(indirimSonu.getTime() - 1);
 
 let vt: Veritabani;
 let sil: () => Promise<void>;
@@ -171,16 +174,16 @@ describe("KURALLAR.md'deki durumlar", () => {
     expect(await stokDurumu("kablosuz-kulaklik")).toMatchObject({ miktar: 8, dusukStok: false });
   });
 
-  it("tarihli indirimli ürün (Kablosuz Kulaklık): 1 Aralık 00:00'a kadar 999,00, o andan sonra 1.299,00; eski fiyat yok", async () => {
+  it("tarihli indirimli ürün (Kablosuz Kulaklık): 8 Aralık 00:00'a kadar 999,00, o andan sonra 1.299,00; eski fiyat yok", async () => {
     const gosterim = fiyatGosterimServisi(site);
     const kulaklik = birim("kablosuz-kulaklik");
-    const once = (await gosterim.gosterilecekFiyatlar(vt, [kulaklik], { an: birOnce })).get(
-      kulaklik,
-    );
+    const once = (
+      await gosterim.gosterilecekFiyatlar(vt, [kulaklik], { an: indirimSonundanOnce })
+    ).get(kulaklik);
     expect(once).toMatchObject({ tutar: 99900, indirimde: true, paraBirimi: "TRY" });
     // İndirimden önceki 30 günde fiyat yok: eski fiyat gösterilmez (karar 0067).
     expect(once?.eskiTutar).toBeUndefined();
-    const sonra = (await gosterim.gosterilecekFiyatlar(vt, [kulaklik], { an: aralik })).get(
+    const sonra = (await gosterim.gosterilecekFiyatlar(vt, [kulaklik], { an: indirimSonu })).get(
       kulaklik,
     );
     expect(sonra).toMatchObject({ tutar: 129900, indirimde: false });
@@ -277,8 +280,8 @@ describe("galeri (kart 0087)", () => {
 
 // Varyantlı ürünler ve özellikler (kart 0100).
 describe("varyantlı ürünler ve özellikler (kart 0100)", () => {
-  // İndirim 15 Kasım 00:00'da başlar, 1 Aralık 00:00'da biter (İstanbul).
-  const indirimBasi = new Date("2026-11-14T21:00:00Z");
+  // İndirim 16 Kasım 18:00'de başlar, 8 Aralık 00:00'da biter (İstanbul).
+  const indirimBasi = new Date("2026-11-16T15:00:00Z");
   const indirimde = new Date("2026-11-20T09:00:00Z");
 
   // Birleşimin birimi, değer adlarıyla (seçeneklerin sırasıyla).
@@ -351,7 +354,7 @@ describe("varyantlı ürünler ve özellikler (kart 0100)", () => {
     });
   });
 
-  it("Kapüşonlu Sweatshirt: 6 birleşim, 6'şar adet; Lacivert 15 Kasım–1 Aralık 549,90, Gri indirimsiz", async () => {
+  it("Kapüşonlu Sweatshirt: 6 birleşim, 6'şar adet; Lacivert 16 Kasım 18:00–8 Aralık 549,90, Gri indirimsiz", async () => {
     expect(urun("kapusonlu-sweatshirt").secenekler.map((s) => s.degerler.map((d) => d.ad))).toEqual(
       [sweatBedenleri, ["Gri", "Lacivert"]],
     );
@@ -375,8 +378,8 @@ describe("varyantlı ürünler ve özellikler (kart 0100)", () => {
         tutar: 54990,
         indirimde: true,
       });
-      expect(await fiyati("Lacivert", beden, birOnce)).toMatchObject({ tutar: 54990 });
-      expect(await fiyati("Lacivert", beden, aralik)).toMatchObject({
+      expect(await fiyati("Lacivert", beden, indirimSonundanOnce)).toMatchObject({ tutar: 54990 });
+      expect(await fiyati("Lacivert", beden, indirimSonu)).toMatchObject({
         tutar: 64990,
         indirimde: false,
       });
@@ -473,8 +476,8 @@ describe("yeni ürünler (kart 0115)", () => {
     ["zeytinyagli-sabun-seti-3lu", 17990, 14990, 30],
     ["bluetooth-hoparlor", 89990, 74990, 15],
   ];
-  // İstanbul saatiyle 15 Kasım 00:00: indirimin başladığı an.
-  const indirimBasi = new Date("2026-11-14T21:00:00Z");
+  // İstanbul saatiyle 16 Kasım 18:00: indirimin başladığı an.
+  const indirimBasi = new Date("2026-11-16T15:00:00Z");
   const gosterim = fiyatGosterimServisi(site);
   const fiyati = async (kimlik: string, an: Date) =>
     (await gosterim.gosterilecekFiyatlar(vt, [kimlik], { an })).get(kimlik);
@@ -529,7 +532,7 @@ describe("yeni ürünler (kart 0115)", () => {
     });
   });
 
-  it("üç indirim 15 Kasım 00:00'da başlar, 1 Aralık 00:00'da biter; bitişi fiyatta", async () => {
+  it("üç indirim 16 Kasım 18:00'de başlar, 8 Aralık 00:00'da biter; bitişi fiyatta", async () => {
     for (const [adresAdi, normal, indirimli, miktar] of indirimliler) {
       const kimlik = birim(adresAdi);
       expect(await stokDurumu(adresAdi), adresAdi).toMatchObject({ miktar });
@@ -539,9 +542,11 @@ describe("yeni ürünler (kart 0115)", () => {
       });
       const suren = await fiyati(kimlik, indirimBasi);
       expect(suren, adresAdi).toMatchObject({ tutar: indirimli, indirimde: true });
-      expect(suren?.indirimBitisi?.getTime(), adresAdi).toBe(aralik.getTime());
-      expect(await fiyati(kimlik, birOnce), adresAdi).toMatchObject({ tutar: indirimli });
-      expect(await fiyati(kimlik, aralik), adresAdi).toMatchObject({
+      expect(suren?.indirimBitisi?.getTime(), adresAdi).toBe(indirimSonu.getTime());
+      expect(await fiyati(kimlik, indirimSonundanOnce), adresAdi).toMatchObject({
+        tutar: indirimli,
+      });
+      expect(await fiyati(kimlik, indirimSonu), adresAdi).toMatchObject({
         tutar: normal,
         indirimde: false,
       });

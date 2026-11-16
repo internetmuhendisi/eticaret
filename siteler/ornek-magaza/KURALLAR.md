@@ -22,12 +22,12 @@
 | Stok takibi kapalı | Hediye Paketleme | 49,90, her zaman satılabilir |
 | Kargo gerektirmez | Hediye Paketleme | Kargo gerektirmeyen tek ürün |
 | Düşük stoklu | USB-C Şarj Kablosu 1 m | 149,90, stok 2: genel eşik 5, müşteriye "Son 2 ürün" |
-| Tarihli indirim | Kablosuz Kulaklık | 1.299,00, 1 Aralık 2026 00:00'a kadar 999,00, stok 8. İndirimden önce fiyat geçmişi olmadığı için eski fiyat görünmez (karar 0067) |
+| Tarihli indirim | Kablosuz Kulaklık | 1.299,00, 8 Aralık 2026 00:00'a kadar 999,00, stok 8. İndirimden önce fiyat geçmişi olmadığı için eski fiyat görünmez (karar 0067) |
 | Markası ve etiketleri olan | Kablosuz Kulaklık | Marka Örnek Ses (uydurma ad), etiketler kablosuz ve yeni |
 | En az ve en çok alım adedi | Porselen Kupa | 189,90, stok 40, en az 2, en çok 6 |
 | Elle seçilmiş ilgili ürün | Porselen Kupa | Keten Masa Örtüsü ve Yılbaşı Kupa Seti; Kupa Seti yayına girene kadar atlanır |
 
-Tarihler gerçektir: 1 Aralık 2026'dan sonra demoda indirim görünmez, Kupa Seti yayındadır.
+Tarihler gerçektir: 1 Aralık 2026'dan sonra Kupa Seti yayındadır, 8 Aralık 2026'dan sonra demoda indirim görünmez.
 
 ## Varyantlı ürünler ve özellikler (kart 0100)
 
@@ -38,7 +38,7 @@ Katalog biçimi karar 0074'tedir. Her durumu `testler/katalog.test.ts` dener.
 | İki seçenekli ürün | Basic Tişört | Beden S, M, L, XL × Renk Siyah, Beyaz: 8 birleşim, her biri kendi stok koduyla (`ORN-GYM-003-<beden>-<renk>`) |
 | Birleşime göre fiyat | Basic Tişört | 299,90; XL bedenler 329,90. Fiyat aralığı 299,90–329,90 |
 | Tükenmiş birleşim | Basic Tişört | M Beyaz stok 0, öteki birleşimler 10; ürünün geneli satılabilir |
-| Birleşime göre tarihli indirim | Kapüşonlu Sweatshirt | Beden S, M, L × Renk Gri, Lacivert, 6'şar adet, 649,90. Lacivert birleşimler 15 Kasım 2026 00:00'dan 1 Aralık 2026 00:00'a kadar (İstanbul) 549,90; Gri indirimsiz. Katalog 15 Kasım'dan önce kurulursa üstü çizili 649,90 görünür (karar 0067, 0074) |
+| Birleşime göre tarihli indirim | Kapüşonlu Sweatshirt | Beden S, M, L × Renk Gri, Lacivert, 6'şar adet, 649,90. Lacivert birleşimler 16 Kasım 2026 18:00'den 8 Aralık 2026 00:00'a kadar (İstanbul) 549,90; Gri indirimsiz. Katalog 16 Kasım 18:00'den önce kurulursa üstü çizili 649,90 görünür (karar 0067, 0074) |
 | Birleşimin kendi görseli | Basic Tişört, Kapüşonlu Sweatshirt | Her renk kendi görselini gösterir |
 
 Özellikler:
@@ -77,7 +77,7 @@ Her durumu `testler/katalog.test.ts` dener. Fiyatlar KDV dahildir.
 |---|---|---|
 | Basit ürün | Yoga Matı 6 mm, Spor Çorap Seti (3'lü), Ahşap Saç Fırçası, Seramik Saksı, Kablosuz Şarj Standı | 549,90 stok 12; 149,90 stok 50; 219,90 stok 25; 279,90 stok 18; 399,90 stok 22 |
 | Düşük stoklu | Kokulu Mum | 249,90, stok 3: müşteriye "Son 3 ürün" |
-| Tarihli indirim | Çelik Termos 750 ml, Zeytinyağlı Sabun Seti (3'lü), Bluetooth Hoparlör | 429,90'dan 349,90; 179,90'dan 149,90; 899,90'dan 749,90. 15 Kasım 2026 00:00'dan 1 Aralık 2026 00:00'a kadar (İstanbul). Stok 20, 30, 15 |
+| Tarihli indirim | Çelik Termos 750 ml, Zeytinyağlı Sabun Seti (3'lü), Bluetooth Hoparlör | 429,90'dan 349,90; 179,90'dan 149,90; 899,90'dan 749,90. 16 Kasım 2026 18:00'den 8 Aralık 2026 00:00'a kadar (İstanbul). Stok 20, 30, 15 |
 | Beden seçenekli, tükenmiş beden | Koşu Ayakkabısı | 39–43, 1.499,90, her bedenden 4, 42 tükenmiş |
 | Beden seçenekli | Keten Gömlek | S, M, L, XL, 799,90, her bedenden 5 |
 | Markalı | Bluetooth Hoparlör, Kablosuz Şarj Standı | Örnek Ses |
@@ -124,7 +124,7 @@ Ana sayfanın ilk düzeni `baslangic/duzen.json` dosyasındadır, sırası karar
 | Elle seçilmiş ürünler | Öne çıkanlar (ürün vitrini) | Kablosuz Kulaklık, Kapüşonlu Sweatshirt, Basic Tişört, Keten Masa Örtüsü, Porselen Kupa; yan afişsiz, tam genişlikte (kart 0170, kullanıcı kararı: "Süreli fırsatlar" yan afişi ürünlerle çelişiyordu, taslaktaki gibi beş ürün) |
 | Yan afişli ürün vitrini | Yeni gelenler | En yeni 4 ürün, solda yan afiş (masaüstünde tek sıra). Katalog tek işlemde yazılır, en yeni kataloğun son ürünüdür: Keten Gömlek, Kablosuz Şarj Standı, Bluetooth Hoparlör, Kokulu Mum (kart 0127) |
 | Kategoriye göre sekmeler | Sekmeli vitrin | Beş kategori; kartlar yatay |
-| Geri sayımlı fırsat | Fırsatlar | Eski fiyatı gösterilen, bitişli indirimdeki ürünler, en çok dört: 15 Kasım–1 Aralık 2026 arası Kapüşonlu Sweatshirt (lacivert), Çelik Termos, Zeytinyağlı Sabun Seti, Bluetooth Hoparlör. Katalog 15 Kasım'dan önce kurulmuş olmalı (karar 0094). Kablosuz Kulaklık'ın eski fiyatı gösterilmediği için girmez (karar 0088). Fırsat yokken bölüm vitrinde çizilmez |
+| Geri sayımlı fırsat | Fırsatlar | Eski fiyatı gösterilen, bitişli indirimdeki ürünler, en çok dört: 16 Kasım 18:00–8 Aralık 2026 arası Kapüşonlu Sweatshirt (lacivert), Çelik Termos, Zeytinyağlı Sabun Seti, Bluetooth Hoparlör. Katalog 16 Kasım 18:00'den önce kurulmuş olmalı (karar 0094). Kablosuz Kulaklık'ın eski fiyatı gösterilmediği için girmez (karar 0088). Fırsat yokken bölüm vitrinde çizilmez |
 | İşlevi yazılmamış bölüm | Müşteri yorumları, blog yazıları, bülten kaydı | Düzende durur, vitrinde çizilmez (karar 0090) |
 | Görselli bölümler | Kayan afiş (görsel arkada), kampanya afişleri (üçlü yatay ve ikili "görsel solda", karar 0093), kategori kutuları, geniş afiş (tam genişlik), yeni gelenlerin yan afişi | Görseller `baslangic/gorseller/` klasöründen dosya adıyla (karar 0094) |
 | Logosu gelmemiş bölüm gizli | Marka logoları | Pakette logo yok, gizli kaldı |

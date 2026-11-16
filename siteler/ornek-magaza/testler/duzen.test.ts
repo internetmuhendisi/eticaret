@@ -204,7 +204,7 @@ describe("Örnek Mağaza'nın başlangıç düzeni", () => {
           urunKaynagiAnahtari({ tur: "firsat", adet: 4 })
         ] ?? []
       ).map((kart) => kart.kimlik);
-    // 15 Kasım 00:00 İstanbul'dan önce hiçbir indirim fırsat değildir: indirimler başlamamıştır, kulaklığın
+    // 16 Kasım 18:00 İstanbul'dan önce hiçbir indirim fırsat değildir: indirimler başlamamıştır, kulaklığın
     // eski fiyatı yoktur.
     expect(deger((await anaSayfa())[8], "adet")).toBe("dort");
     expect(await firsatlar(new Date("2026-11-12T09:00:00Z"))).toEqual([]);
@@ -212,7 +212,7 @@ describe("Örnek Mağaza'nın başlangıç düzeni", () => {
     expect(sure).not.toContain(kimligi("urun", "kablosuz-kulaklik"));
     // Eski fiyat kataloğun kurulduğu ana bağlıdır (karar 0074): katalog indirimin başlangıcından önce
     // kurulduysa fiyat geçmişinde indirimsiz fiyat vardır ve ürünler fırsattır.
-    const indirimdenOnceKuruldu = Date.now() < Date.parse("2026-11-14T21:00:00Z");
+    const indirimdenOnceKuruldu = Date.now() < Date.parse("2026-11-16T15:00:00Z");
     expect(sure.toSorted()).toEqual(
       indirimdenOnceKuruldu
         ? [
@@ -225,7 +225,8 @@ describe("Örnek Mağaza'nın başlangıç düzeni", () => {
             .toSorted()
         : [],
     );
-    expect(await firsatlar(new Date("2026-11-30T21:00:00Z"))).toEqual([]);
+    // 8 Aralık 00:00 İstanbul: indirimler biter.
+    expect(await firsatlar(new Date("2026-12-07T21:00:00Z"))).toEqual([]);
   });
 
   // Kart 0127: katalog tek işlemde yazılır; "en yeni" sırası dosyanın sırasıdır, son eklenenler önce. Her kurulumda
