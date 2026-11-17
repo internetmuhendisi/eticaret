@@ -7,6 +7,7 @@ import { FormAlani } from "../../../bilesenler/form/form-alani";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
+import { kapiyaIstek } from "../../kapi/istemci";
 import { hataKodlari } from "../../kayitlar/kapi";
 import { sifreSifirlamaAyari, sifreSiniri } from "../../kayitlar/oturum";
 import { useMetin } from "../../metinler/istemci-metni";
@@ -165,7 +166,7 @@ export function SifreYenileFormu({
     setAlanHatasi(undefined);
     gonderiliyor.current = true;
     try {
-      const yanit = await fetch(yenileUcu, {
+      const yanit = await kapiyaIstek(yenileUcu, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(girdi.data),

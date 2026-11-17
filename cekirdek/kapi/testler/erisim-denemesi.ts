@@ -14,6 +14,7 @@ import { hesapAc, oturumAc } from "../../moduller/oturum/servis.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { oturumCerezleri } from "../oturum-cerezi.ts";
 import type { Uc } from "../uc.ts";
+import { zarfOnbellegi } from "../zarf.ts";
 
 export const uygulamaAdresleri = join(import.meta.dirname, "..", "..", "uygulama", "app", "kapi");
 const yontemler = ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"] as const;
@@ -188,6 +189,17 @@ export const erisimleriDene = async (
         }),
       );
       const govde = await yanit.text();
+      // Önbellek (kart 0065, karar 0139): dosya yanıtı dışındaki her yanıt, başarılı ve hatalı, önbelleğe alınmaz.
+      // Dosya yanıtı başarılıdır, türü tahmin ettirmez ve etiket taşır (zarf.ts, dosyaYanitla).
+      const dosyaYaniti =
+        yanit.status < 400 &&
+        yanit.headers.get("x-content-type-options") === "nosniff" &&
+        yanit.headers.has("etag");
+      if (!dosyaYaniti && yanit.headers.get("cache-control") !== zarfOnbellegi) {
+        hatalar.push(
+          `${baslik}: ${kisi.ad} yanıtı önbelleğe alınabilir (${yanit.status}, Cache-Control: ${String(yanit.headers.get("cache-control"))})`,
+        );
+      }
       let kod: string | undefined;
       try {
         kod = (JSON.parse(govde) as { hata?: { kod?: string } }).hata?.kod;

@@ -21,6 +21,7 @@ import {
   useContext,
   useSyncExternalStore,
 } from "react";
+import { kapiyaIstek } from "../kapi/istemci";
 import { favoriDepoAnahtari, favoriSiniriEnCok } from "../kayitlar/favori";
 import { hataKodlari } from "../kayitlar/kapi";
 import type { BirlesmeSonucu, FavoriHatasi, FavoriListesi } from "../moduller/favori/semalar";
@@ -89,7 +90,7 @@ class FavoriIstekHatasi extends Error {
 
 // Kapıya istek: zarfın verisini döner, hatada nedeni taşıyan hata atar.
 const istek = async <Veri>(adres: string, govde?: unknown): Promise<Veri> => {
-  const yanit = await fetch(adres, {
+  const yanit = await kapiyaIstek(adres, {
     cache: "no-store",
     ...(govde === undefined
       ? {}

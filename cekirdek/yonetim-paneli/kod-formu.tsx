@@ -6,6 +6,7 @@ import { Form, GonderDugmesi } from "../../bilesenler/form/form";
 import { FormAlani } from "../../bilesenler/form/form-alani";
 import { GirisAlani } from "../../bilesenler/parcalar/giris-alani";
 import { Uyari } from "../../bilesenler/parcalar/uyari";
+import { kapiyaIstek } from "../kapi/istemci";
 import { useMetin } from "../metinler/istemci-metni";
 import { kodSemasi } from "../moduller/oturum/semalar";
 import { girisAdresi } from "./adresler";
@@ -38,7 +39,7 @@ export function KodFormu<Veri>({
       return;
     }
     try {
-      const yanit = await fetch(uc, {
+      const yanit = await kapiyaIstek(uc, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(girdi.data),

@@ -16,6 +16,7 @@ import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { Kart, KartAciklamasi, KartBasligi } from "../../../bilesenler/parcalar/kart";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
+import { kapiyaIstek } from "../../kapi/istemci";
 import { hataKodlari } from "../../kayitlar/kapi";
 import { useMetin } from "../../metinler/istemci-metni";
 import { doldur } from "../../moduller/eposta/sablon";
@@ -103,7 +104,7 @@ function BirimFormu({
     let istek: () => Promise<Response>;
     if (hesap.tur === "girisli") {
       istek = () =>
-        fetch(musteriUcu, {
+        kapiyaIstek(musteriUcu, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ birim }),

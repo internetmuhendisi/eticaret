@@ -1,6 +1,8 @@
 // Panel ekranlarının kapıya isteği (kart 0142): yönetici uçlarına JSON gövdeyle POST ya da adres parametreli GET.
 // Zarfı açar: başarıda veri, hatada hata kodu ve ayrıntısı (cekirdek/kapi/zarf.ts). Ağ hatası "ag" koduyla döner.
 // Metni ekran seçer (.claude/rules/metinler.md).
+import { kapiyaIstek } from "../kapi/istemci";
+
 export type PanelHatasi = {
   kod: string;
   ayrinti: { alan: string; kod: string }[];
@@ -15,7 +17,7 @@ export const panelIstegi = async <Veri>(
 ): Promise<PanelSonucu<Veri>> => {
   let yanit: Response;
   try {
-    yanit = await fetch(yoneticiUcu(yol), {
+    yanit = await kapiyaIstek(yoneticiUcu(yol), {
       cache: "no-store",
       ...(govde === undefined
         ? {}

@@ -15,6 +15,8 @@ Kapıdaki her uç burada yazar (`.claude/rules/sunucu-arayuzu.md`). Yeni ya da d
 
 `ayrinti` yalnız gerekince vardır, kişisel veri ve iç hata mesajı taşımaz.
 
+**Önbellek** (kart 0065, karar 0139). Zarfla dönen her yanıt, başarılı ve hatalı, her girişte `Cache-Control: no-store` taşır; değer `zarfOnbellegi` (`cekirdek/kapi/zarf.ts`). Ucun eklediği başlık bunu açamaz. Tek istisna dosya yanıtıdır (logo, ürün görseli, vitrin görseli, panel görseli): kendi süresini taşır (`public` ya da `private`, `dosyaOnbellekSuresi`); hatası zarfladır, önbelleksizdir. Tarayıcı bu uçlara `kapiyaIstek` ile istek gönderir (`cekirdek/kapi/istemci.ts`): okunmayan `no-store` gövdesi isteği bitmemiş bırakır.
+
 **Hata kodları** (`cekirdek/kayitlar/kapi.ts`):
 
 | Kod | HTTP | Ne zaman |

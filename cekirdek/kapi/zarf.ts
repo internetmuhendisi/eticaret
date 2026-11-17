@@ -71,8 +71,19 @@ export const dosyaYanitla = (dosya: DosyaYaniti, istek: Request): Response => {
   });
 };
 
+// Zarfla dönen her yanıt önbelleğe alınmaz (kart 0065, karar 0139): başarılı ve hatalı, her girişte. Yanıt kişiye
+// özel olabilir (hesap, favoriler, panel verisi); aradaki ya da tarayıcının önbelleği onu başkasına ya da sonradan
+// geri veremez. Tek istisna dosya yanıtıdır (logo, görseller): kendi süresini yukarıda yazar, hatası yine buradan.
+export const zarfOnbellegi = "no-store";
+
+const zarfBasliklari = (basliklar?: HeadersInit): Headers => {
+  const sonuc = new Headers(basliklar);
+  sonuc.set("Cache-Control", zarfOnbellegi);
+  return sonuc;
+};
+
 export const basariliYanit = <Veri>(veri: Veri): Response =>
-  Response.json({ basarili: true, veri } satisfies Zarf<Veri>);
+  Response.json({ basarili: true, veri } satisfies Zarf<Veri>, { headers: zarfBasliklari() });
 
 export const hataliYanit = (kod: HataKodu, ayrinti?: unknown, basliklar?: HeadersInit): Response =>
   Response.json(
@@ -80,5 +91,5 @@ export const hataliYanit = (kod: HataKodu, ayrinti?: unknown, basliklar?: Header
       basarili: false,
       hata: ayrinti === undefined ? { kod } : { kod, ayrinti },
     } satisfies Zarf<never>,
-    { status: hataKodlari[kod], ...(basliklar === undefined ? {} : { headers: basliklar }) },
+    { status: hataKodlari[kod], headers: zarfBasliklari(basliklar) },
   );

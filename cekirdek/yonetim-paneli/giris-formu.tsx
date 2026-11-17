@@ -6,6 +6,7 @@ import { FormAlani } from "../../bilesenler/form/form-alani";
 import { Baglanti } from "../../bilesenler/parcalar/baglanti";
 import { GirisAlani } from "../../bilesenler/parcalar/giris-alani";
 import { Uyari } from "../../bilesenler/parcalar/uyari";
+import { kapiyaIstek } from "../kapi/istemci";
 import { useMetin } from "../metinler/istemci-metni";
 import { girisSemasi } from "../moduller/oturum/semalar";
 import { adimAdresi, donusParametresi, sifremiUnuttumAdresi } from "./adresler";
@@ -32,7 +33,7 @@ export function GirisFormu({ donus }: { donus: string }) {
       return;
     }
     try {
-      const yanit = await fetch(girisUcu, {
+      const yanit = await kapiyaIstek(girisUcu, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(girdi.data),

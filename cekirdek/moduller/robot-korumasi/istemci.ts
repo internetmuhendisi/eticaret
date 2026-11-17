@@ -3,6 +3,7 @@
 import { solveChallenge } from "altcha-lib";
 import { deriveKey } from "altcha-lib/algorithms/web/pbkdf2";
 import { useEffect, useRef } from "react";
+import { kapiyaIstek } from "../../kapi/istemci";
 import { hataKodlari } from "../../kayitlar/kapi";
 import { robotKorumasiAyari } from "../../kayitlar/robot-korumasi";
 
@@ -10,7 +11,7 @@ const soruUcu = "/kapi/herkese-acik/robot-sorusu";
 
 export const robotCevabiAl = async (): Promise<string | null> => {
   try {
-    const yanit = await fetch(soruUcu, { cache: "no-store" });
+    const yanit = await kapiyaIstek(soruUcu, { cache: "no-store" });
     if (!yanit.ok) return null;
     const { veri: soru } = await yanit.json();
     const cozum = await solveChallenge({
@@ -47,7 +48,7 @@ export const useRobotluGonderim = ({ ertele = false }: { ertele?: boolean } = {}
   };
 
   const istekGonder = async (ucAdresi: string, girdi: object) =>
-    fetch(ucAdresi, {
+    kapiyaIstek(ucAdresi, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ ...girdi, robotCevabi: await siradakiCevap() }),

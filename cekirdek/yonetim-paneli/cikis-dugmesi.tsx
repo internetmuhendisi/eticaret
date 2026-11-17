@@ -3,6 +3,7 @@
 // kaydından gelir (kart 0141).
 import { useState } from "react";
 import { Uyari } from "../../bilesenler/parcalar/uyari";
+import { kapiyaIstek } from "../kapi/istemci";
 import { useMetin } from "../metinler/istemci-metni";
 import { girisAdresi } from "./adresler";
 import { EylemDugmesi } from "./eylem-dugmesi";
@@ -16,7 +17,7 @@ export function CikisDugmesi({ className }: { className?: string }) {
   const cik = async () => {
     setHata(false);
     try {
-      const yanit = await fetch(cikisUcu, { method: "POST" });
+      const yanit = await kapiyaIstek(cikisUcu, { method: "POST" });
       if (yanit.ok) {
         window.location.assign(girisAdresi);
         return;

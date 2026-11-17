@@ -9,6 +9,7 @@
 // Cevap gelene kadar durum "bilinmiyor"dur. Yalnız 401 girişsiz sayılır; sunucu ve ağ hatasında durum bilinmiyor
 // kalır: girişli müşteri oturumu kapanmış sanmasın (karar 0051).
 import { useSyncExternalStore } from "react";
+import { kapiyaIstek } from "../kapi/istemci";
 import { hataKodlari } from "../kayitlar/kapi";
 import { temaDemosu } from "../kayitlar/tema";
 import { vitrinAdresleri } from "./adresler";
@@ -41,7 +42,7 @@ const sor = async (): Promise<HesapDurumu> => {
   // kalınır ve oturum kapanır (karar 0039).
   let sonuc: HesapDurumu = bilinmiyor;
   try {
-    const yanit = await fetch(hesabimUcu, { cache: "no-store" });
+    const yanit = await kapiyaIstek(hesabimUcu, { cache: "no-store" });
     if (yanit.ok) {
       const { veri } = (await yanit.json()) as { veri: { eposta: string } };
       sonuc = { tur: "girisli", eposta: veri.eposta };
@@ -95,7 +96,7 @@ export const useHesapDurumu = (sorulur = true): HesapDurumu =>
 // çıkıştan sonra bu cihazda favoriler boş görünür). Çıkış olmazsa false döner; kullanan uyarıyı gösterir.
 export const cikisYap = async (): Promise<boolean> => {
   try {
-    const yanit = await fetch(cikisUcu, { method: "POST" });
+    const yanit = await kapiyaIstek(cikisUcu, { method: "POST" });
     if (yanit.ok) {
       cereziSil();
       window.location.assign(vitrinAdresleri.anasayfa);

@@ -24,6 +24,7 @@ import { yorumlar } from "../../moduller/yorum/model.ts";
 import { yorumServisi } from "../../moduller/yorum/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
+import { DosyaYaniti, dosyaYanitla, hataliYanit } from "../zarf.ts";
 import {
   belgedekiIzinler,
   erisebilirMi,
@@ -533,6 +534,52 @@ describe("makine gerçekten yakalıyor", () => {
       belgeUret({ "GET /kapi/herkese-acik/x": "herkese-acik" }),
     );
     expect(hatalar.join("\n")).toContain("erişmeliydi");
+  });
+
+  it("önbellek başlığı olmayan yanıt kırmızı, dosya yanıtı kendi önbelleğiyle geçer (kart 0065)", async () => {
+    const tanim = {
+      giris: "herkese-acik" as const,
+      izin: "herkese-acik" as const,
+      sinir: "genel" as const,
+      temaDemosunda: "acik" as const,
+    };
+    const dene = (uc: KayitliUc["uc"]) =>
+      erisimleriDene(
+        vt,
+        [
+          {
+            baslik: "GET /kapi/herkese-acik/x",
+            yontem: "GET",
+            yol: "/kapi/herkese-acik/x",
+            giris: "herkese-acik",
+            uc,
+          },
+        ],
+        belgeUret({ "GET /kapi/herkese-acik/x": "herkese-acik" }),
+      );
+    const basliksiz = await dene(
+      Object.assign(async () => Response.json({ basarili: true, veri: {} }), { tanim }),
+    );
+    expect(basliksiz).toHaveLength(kisiler.length);
+    expect(basliksiz.join("\n")).toContain("girişsiz ziyaretçi yanıtı önbelleğe alınabilir (200");
+    const dosya = new DosyaYaniti(new Uint8Array([1]), "image/webp", "etiket");
+    expect(
+      await dene(Object.assign(async (istek: Request) => dosyaYanitla(dosya, istek), { tanim })),
+    ).toEqual([]);
+    // Dosya ucunun hatası zarfladır, önbelleksizdir; başlıksız hata kırmızı.
+    expect(await dene(Object.assign(async () => hataliYanit("bulunamadi"), { tanim }))).toEqual([]);
+    expect(
+      await dene(
+        Object.assign(
+          async () =>
+            new Response("{}", {
+              status: 404,
+              headers: { "X-Content-Type-Options": "nosniff", ETag: '"x"' },
+            }),
+          { tanim },
+        ),
+      ),
+    ).toHaveLength(kisiler.length);
   });
 
   it("kapı dışındaki ve route.ts adı dışındaki adres yakalanır", () => {

@@ -21,6 +21,7 @@ import {
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
+import { kapiyaIstek } from "../../kapi/istemci";
 import { hataKodlari } from "../../kayitlar/kapi";
 import { yorumSinirlari } from "../../kayitlar/yorum";
 import { useMetin } from "../../metinler/istemci-metni";
@@ -210,7 +211,7 @@ export function YorumYaz({ urun, urunAdi }: { urun: string; urunAdi: string }) {
     if (durum === "soruluyor") return;
     setDurum("soruluyor");
     try {
-      const yanit = await fetch(`${izinUcu}?${new URLSearchParams({ urun })}`, {
+      const yanit = await kapiyaIstek(`${izinUcu}?${new URLSearchParams({ urun })}`, {
         cache: "no-store",
       });
       if (yanit.status === hataKodlari["oturum-yok"]) {

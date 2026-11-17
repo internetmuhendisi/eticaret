@@ -24,6 +24,8 @@ Uç, ekranın ya da başka bir yazılımın sunucudan veri istediği adrestir.
 ## Kapının yapısı (karar 0024)
 
 - Her uç `ucTanimla` ile yazılır (`cekirdek/kapi/uc.ts`): giriş, şema, izin beyanı ve istek sınırı zorunludur. Adres dosyası (`app/kapi/.../route.ts`) yalnız ucu bağlar.
+- Zarfla dönen her yanıt önbelleğe alınmaz (`Cache-Control: no-store`, `zarfOnbellegi`, karar 0139); yalnız dosya yanıtı kendi süresini taşır. Erişim testi her uçta her kişinin yanıtını bununla ölçer.
+- Tarayıcıdan kapıya istek yalnız `kapiyaIstek` ile gider (`cekirdek/kapi/istemci.ts`, karar 0139): gövdeyi her zaman okur, okunmayan `no-store` gövdesi isteği bitmemiş bırakır. Doğrudan `fetch` denetimde hatadır.
 - Yanıtlar yalnız `cekirdek/kapi/zarf.ts` ile kurulur. Tek istisna dosya veren uçtur: servis `DosyaYaniti` döndürür, kapı dosyanın kendisini doğru tür ve `nosniff` ile verir; hata yine zarfla döner (karar 0059). Hata kodları, HTTP karşılıkları ve istek sınırları `cekirdek/kayitlar/kapi.ts` dosyasındadır. Servis bilinen hatayı `BilinenHata` ile bildirir.
 - Uç belgesi: `cekirdek/kapi/uclar.md`.
 - Herkese açık uç tema demosundaki durumunu beyan eder (`temaDemosunda: "acik" | "kapali"`, karar 0127): hesap, sipariş, yorum, bildirim ya da e-posta doğuran uç kapalıdır. Müşteri girişindeki uç demoda her zaman kapalıdır, beyan yazılmaz.

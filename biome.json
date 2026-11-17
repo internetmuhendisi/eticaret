@@ -34,7 +34,8 @@
     "./denetim/kurallar/satir-ici-olcu.grit",
     "./denetim/kurallar/ham-oge.grit",
     "./denetim/kurallar/ikon-sozlugu.grit",
-    "./denetim/kurallar/bolum-icerigi.grit"
+    "./denetim/kurallar/bolum-icerigi.grit",
+    "./denetim/kurallar/dogrudan-istek.grit"
   ],
   "css": {
     "parser": {

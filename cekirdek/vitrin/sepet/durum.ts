@@ -22,6 +22,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { kapiyaIstek } from "../../kapi/istemci";
 import { type SepeteEkleyince, sepetDepoAnahtari, sepetSinirlari } from "../../kayitlar/sepet";
 import { kimligiDuzelt } from "../../veritabani/kimlik-bicimi";
 import { cereziYaz, kalemListesi, type YerelKalem, yereldenOku, yereleYaz } from "./depo";
@@ -223,7 +224,7 @@ export const useSepetGorunumu = (etkin: boolean, ornek?: SepetGorunumu): Gorunum
     let gecerli = true;
     void (async () => {
       try {
-        const yanit = await fetch(sepetUcu, {
+        const yanit = await kapiyaIstek(sepetUcu, {
           method: "POST",
           cache: "no-store",
           headers: { "content-type": "application/json" },
