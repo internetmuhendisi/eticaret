@@ -56,4 +56,4 @@ Son kontroller (çalışma kopyasında, yerel ortak veritabanı): biçim, deneti
 
 ## Durum
 
-yapılacak
+bitti
