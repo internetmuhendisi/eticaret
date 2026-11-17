@@ -10,6 +10,7 @@
 //   etmez. Düzeltilen adet (stok, alım sınırı) depoya kendiliğinden yazılmaz: sunucu her hesapta adedi sınıra indirir,
 //   uyarı müşteri adedi değiştirene kadar görünür (yazılsaydı yeni istek uyarıyı hemen kaldırırdı).
 // - Başka sekmedeki değişiklik görülür (storage olayı).
+// - Depoya her yazımda ve durum kurulunca sepet sayfasının çerezi kalem sayısıyla eşitlenir (depo.ts, karar 0136).
 // - Katalogun örnek kipinde depo kullanılmaz, istek gitmez; sepet yalnız bellekte durur.
 import {
   createContext,
@@ -23,7 +24,7 @@ import {
 } from "react";
 import { type SepeteEkleyince, sepetDepoAnahtari, sepetSinirlari } from "../../kayitlar/sepet";
 import { kimligiDuzelt } from "../../veritabani/kimlik-bicimi";
-import { kalemListesi, type YerelKalem, yereldenOku, yereleYaz } from "./depo";
+import { cereziYaz, kalemListesi, type YerelKalem, yereldenOku, yereleYaz } from "./depo";
 import type { SepetGorunumu } from "./veri";
 
 const sepetUcu = "/kapi/herkese-acik/sepet";
@@ -71,7 +72,11 @@ const kur = (yeniKip: SepetAyarlari["kip"]) => {
   kip = yeniKip;
   if (yeniKip === "sorulur") {
     window.addEventListener("storage", depoDegisti);
-    yay({ hazir: true, kalemler: yereldenOku() });
+    const kalemler = yereldenOku();
+    // Sepet sayfasının çerezi depoyla eşitlenir (karar 0136): çerez silinmiş ya da çerezden önce dolmuş sepet,
+    // vitrinin herhangi bir sayfası açılınca yeniden doğru sayıyı taşır.
+    cereziYaz(kalemler.length);
+    yay({ hazir: true, kalemler });
   } else yay({ hazir: true, kalemler: [] });
 };
 

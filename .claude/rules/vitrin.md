@@ -86,6 +86,7 @@ paths:
 - Sepet tarayıcının deposundadır, hesaba bağlanmaz. Durum yalnız `cekirdek/vitrin/sepet/durum.ts`'tedir (`useSepet`, `sepeteEkle`, `adetDegistir`, `sepettenCikar`, `geriKoy`); depo `depo.ts` ile okunur ve yazılır. Sepet durumunu başka yerde yeniden yazma.
 - Sepetin tutarları yalnız sunucuda, `sepetiHesapla` (`cekirdek/moduller/sepet/hesap.ts`) ve vitrin verisi `sepetGorunumu` (`veri.ts`) ile, herkese açık sepet ucundan gelir (`useSepetGorunumu`). Tarayıcıda tutar, kargo ya da vergi hesaplanmaz. Satırın birim fiyatı fiyat bileşeniyle çizilir (`SepetFiyati`, `FiyatCizimi`).
 - Ürün kartının sepet düğmesi `KartSepetDugmesi`, ürün sayfasınınki `SepeteEkleAlani`'dır (`sepete-ekle.tsx`); eklemeden sonrası "Sepete ekleyince" ayarıdır (karar 0132). Üst kısmın sayısı `SepetSayisi`'dır.
+- Sepet sayfasının çerezi (`sepetCerezi`) yalnız kalem sayısını taşır, yalnız `depo.ts` ile okunur ve yazılır: depoya her yazımda ve durum kurulunca eşitlenir. Çerezde kalem yoksa sepet sayfası boş hâli sunucuda çizer (karar 0136).
 - Sepet sayfası `app/(vitrin)/sepet/`, sepet penceresi çerçevede bir kezdir (`SepetPenceresi`). Kargo yalnız `kargoHesapla` ile hesaplanır (`cekirdek/moduller/kargo/hesap.ts`).
 
 ## Ana sayfa bölümleri ve görseller (karar 0087)

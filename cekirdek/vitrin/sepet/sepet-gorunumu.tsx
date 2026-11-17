@@ -11,7 +11,7 @@
 // - Özet: ara toplam, kargo, toplam ve vergi dökümü (vergi dahil gösterimde "toplama dahil"). Ödeme adımı kart 0213
 //   ile gelir: o güne kadar "Ödemeye geç" yoktur.
 // - Telefonda sepet sayfasının toplamı altta sabit durur.
-import { useEffect, useRef } from "react";
+import { type Ref, useEffect, useRef } from "react";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { AdetSecici } from "../../../bilesenler/parcalar/adet-secici";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
@@ -340,31 +340,46 @@ export function SepetUrunSayisi() {
   return doldur(metin("vitrin.sepet.urunSayisi"), { sayi: String(adet) });
 }
 
-// Sepet sayfasının içi. ornek: katalogun örnek kipinde gösterilen veri.
-export function SepetSayfasiIcerigi({ ornek }: { ornek?: SepetGorunumu }) {
+// Sepet sayfasının boş hâli: sonraki adımın bağlantısıyla.
+function BosSepet({ baglanti }: { baglanti: Ref<HTMLAnchorElement> }) {
   const metin = useMetin();
+  return (
+    <BosHal
+      ikon="sepet"
+      baslik={metin("vitrin.sepet.bosBaslik")}
+      aciklama={metin("vitrin.sepet.bosAciklama")}
+    >
+      <Baglanti ref={baglanti} href={vitrinAdresleri.anasayfa} gorunum="birincil">
+        {metin("vitrin.sepet.alisveriseBasla")}
+      </Baglanti>
+    </BosHal>
+  );
+}
+
+// Sepet sayfasının içi. ornek: katalogun örnek kipinde gösterilen veri. cerezdeBos: sunucu sepet sayfasının çerezinde
+// kalem görmedi (karar 0136); sepet bilinene kadar iskelet yerine boş hâl çizilir. Sunucunun ve tarayıcının ilk
+// çizimi aynıdır (sepet ikisinde de bilinmiyor). Depoda kalem çıkarsa (çerez silinmiş) iskelete, sonra satırlara geçer.
+export function SepetSayfasiIcerigi({
+  ornek,
+  cerezdeBos = false,
+}: {
+  ornek?: SepetGorunumu;
+  cerezdeBos?: boolean;
+}) {
+  const metin = useMetin();
+  const sepet = useSepet();
   const durum = useSepetGorunumu(true, ornek);
   const bosBaglanti = useRef<HTMLAnchorElement>(null);
   const bos = durum.tur === "hazir" && durum.gorunum.satirlar.length === 0;
   useEffect(() => {
     if (bos && document.activeElement === document.body) bosBaglanti.current?.focus();
   }, [bos]);
-  if (durum.tur === "yukleniyor") return <Yukleniyor />;
+  const bosBilinir = cerezdeBos && (!sepet.hazir || sepet.kalemler.length === 0);
+  if (durum.tur === "yukleniyor")
+    return bosBilinir ? <BosSepet baglanti={bosBaglanti} /> : <Yukleniyor />;
   if (durum.tur === "hata") return <Uyari tur="tehlike">{metin("vitrin.sepet.hata")}</Uyari>;
   const { gorunum } = durum;
-  if (gorunum.satirlar.length === 0) {
-    return (
-      <BosHal
-        ikon="sepet"
-        baslik={metin("vitrin.sepet.bosBaslik")}
-        aciklama={metin("vitrin.sepet.bosAciklama")}
-      >
-        <Baglanti ref={bosBaglanti} href={vitrinAdresleri.anasayfa} gorunum="birincil">
-          {metin("vitrin.sepet.alisveriseBasla")}
-        </Baglanti>
-      </BosHal>
-    );
-  }
+  if (gorunum.satirlar.length === 0) return <BosSepet baglanti={bosBaglanti} />;
   const degisiklik = gorunum.satirlar.some((satir) => satir.uyarilar.length > 0);
   return (
     <div className="flex flex-col gap-4">

@@ -1,10 +1,10 @@
 // Sepetin tarayıcıdaki saklaması (kart 0212, karar 0135). Sepet yalnız tarayıcının deposundadır (localStorage), üye ve
 // üye olmayan müşteride aynıdır, sunucuya yalnız hesap için gider. Yalnız birim kimlikleri, adetler ve müşterinin son
-// gördüğü birim fiyatı saklanır; kişisel bilgi yazılmaz.
+// gördüğü birim fiyatı saklanır; kişisel bilgi yazılmaz. Sepet sayfasının çerezi de yalnız burada okunur ve yazılır.
 //
 // Depo okunamazsa (gizli pencere, kapalı depo) sepet boş sayılır, hata vermez. Bozuk değer atılır. Bu dosya her vitrin
 // sayfasının üst kısmıyla tarayıcıya gider: zod'u taşımaz, biçim kimlik-bicimi.ts'in kuralıyla denetlenir (kart 0146).
-import { sepetDepoAnahtari, sepetSinirlari } from "../../kayitlar/sepet";
+import { sepetCerezi, sepetDepoAnahtari, sepetSinirlari } from "../../kayitlar/sepet";
 import { kimligiDuzelt, semayaUyanKimlikMi } from "../../veritabani/kimlik-bicimi";
 
 export type YerelKalem = { birim: string; adet: number; gorulenTutar?: number };
@@ -44,8 +44,30 @@ export const yereldenOku = (): YerelKalem[] => {
   }
 };
 
-// Yazılamazsa (dolu ya da kapalı depo) false döner: sepet yalnız bu sayfada kalır.
+// Sepet sayfasının çerezi (kart 0218, karar 0136): yalnız kalem sayısı. Sunucu bunu okuyup boş sepeti hemen çizer.
+// Bozuk ya da olmayan değer 0'dır (boş sepet).
+export const cerezdekiSayi = (metin: string | undefined): number => {
+  if (metin === undefined || !/^\d{1,3}$/.test(metin)) return 0;
+  return Math.min(Number(metin), sepetSinirlari.kalemEnCok);
+};
+
+// Çerezi depodaki sepetle eşitler: boş sepette siler. Yazılamazsa sepet sayfası bir an boş hâli gösterebilir.
+export const cereziYaz = (kalemSayisi: number): void => {
+  try {
+    const ek = `; Path=${sepetCerezi.yol}; SameSite=Lax${window.location.protocol === "https:" ? "; Secure" : ""}`;
+    // biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API her tarayıcıda yok; çerez yalnız sayı taşır.
+    document.cookie =
+      kalemSayisi > 0
+        ? `${sepetCerezi.ad}=${kalemSayisi}${ek}; Max-Age=${sepetCerezi.saniye}`
+        : `${sepetCerezi.ad}=${ek}; Max-Age=0`;
+  } catch {
+    // Çerez yazılamazsa sepet yine depodadır.
+  }
+};
+
+// Yazılamazsa (dolu ya da kapalı depo) false döner: sepet yalnız bu sayfada kalır. Çerez her yazımda eşitlenir.
 export const yereleYaz = (kalemler: readonly YerelKalem[]): boolean => {
+  cereziYaz(kalemler.length);
   try {
     if (kalemler.length === 0) window.localStorage.removeItem(sepetDepoAnahtari);
     else window.localStorage.setItem(sepetDepoAnahtari, JSON.stringify(kalemler));
