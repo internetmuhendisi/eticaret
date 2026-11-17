@@ -21,4 +21,4 @@ Kart 0218 sırasında (2026-11-17) `pnpm guvenlik-taramasi` kırmızı çıktı:
 
 ## Durum
 
-yapılacak
+bitti
