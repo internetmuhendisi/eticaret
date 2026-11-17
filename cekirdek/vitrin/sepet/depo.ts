@@ -54,12 +54,14 @@ export const cerezdekiSayi = (metin: string | undefined): number => {
 // Çerezi depodaki sepetle eşitler: boş sepette siler. Yazılamazsa sepet sayfası bir an boş hâli gösterebilir.
 export const cereziYaz = (kalemSayisi: number): void => {
   try {
-    const ek = `; Path=${sepetCerezi.yol}; SameSite=Lax${window.location.protocol === "https:" ? "; Secure" : ""}`;
-    // biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API her tarayıcıda yok; çerez yalnız sayı taşır.
-    document.cookie =
-      kalemSayisi > 0
-        ? `${sepetCerezi.ad}=${kalemSayisi}${ek}; Max-Age=${sepetCerezi.saniye}`
-        : `${sepetCerezi.ad}=${ek}; Max-Age=0`;
+    for (const yol of sepetCerezi.yollar) {
+      const ek = `; Path=${yol}; SameSite=Lax${window.location.protocol === "https:" ? "; Secure" : ""}`;
+      // biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API her tarayıcıda yok; çerez yalnız sayı taşır.
+      document.cookie =
+        kalemSayisi > 0
+          ? `${sepetCerezi.ad}=${kalemSayisi}${ek}; Max-Age=${sepetCerezi.saniye}`
+          : `${sepetCerezi.ad}=${ek}; Max-Age=0`;
+    }
   } catch {
     // Çerez yazılamazsa sepet yine depodadır.
   }

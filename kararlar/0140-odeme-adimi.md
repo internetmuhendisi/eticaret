@@ -27,6 +27,7 @@ Teknik kurallar:
 - Kişisel veri taşıdığı için siparişe dönmeyen oturum süresi dolduktan 24 saat sonra zamanlı işle silinir.
 - Üç yeni mağaza ayarı: `uyeOlmadanAlisveris` (açık), `telefonZorunlu` (açık), `stokAyirmaSuresi` (15 dakika, 5–60). Örnek Mağaza varsayılanları kullanır.
 - Telefon ülke içindeki yazılışla da girilir, ülkenin veri dosyasındaki telefon koduyla uluslararası biçime çevrilir. Kurumsal faturanın vergi numarası ülkenin kuralına uyan herhangi bir işletme türüyle geçer (şirketin vergi kimlik numarası ya da şahsın kimlik numarası; kart 0091'in kuralları).
+- Sayfa hız hedefi için form sunucuda hemen çizilir; özet ve iletişim bölümü bilgileri gelene kadar iskelettir. Sepet sayfasının kalem sayısı çerezi (karar 0136) ödeme sayfasının yoluna da yazılır (her yol için aynı adla ayrı çerez): çerezde kalem yoksa boş hâl sunucuda çizilir. Ölçüldü: boş sepetle ana içerik 4444 ms'den 2024 ms'ye indi (hedef 2500). Sade çerçevede menü olmadığı için hız ölçümü bu sayfada tepkiyi ölçmez.
 - Tarayıcıdan kapıya istek `kapiyaIstek` ile gider (karar 0139). Uçlar: herkese açık `odeme` (üye olmayan, robot korumalı, sıkı sınır, tema demosunda kapalı) ve müşteri `odeme` (`odeme.kendi.baslat`).
 
 ## Neden

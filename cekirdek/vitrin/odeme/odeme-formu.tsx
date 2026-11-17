@@ -85,6 +85,8 @@ export type OdemeSayfasiVerisi = {
   satici: readonly string[];
   teslimMetni: string;
   sinirlar: { not: number; sifreEnKisa: number };
+  // Sunucu ödeme sayfasının çerezinde kalem görmedi (karar 0136): boş hâl sepet bilinmeden çizilir.
+  cerezdeBos: boolean;
 };
 
 type Adres = { ulke: string; il: string; ilce: string; adres: string; postaKodu: string };
@@ -526,6 +528,16 @@ const genelHataMetinleri: Record<GenelHata, MetinAnahtari> = {
   genel: "vitrin.odeme.hata.genel",
 };
 
+function Yukleniyor() {
+  const metin = useMetin();
+  return (
+    <div role="status" className="flex flex-col gap-3">
+      <span className="sr-only">{metin("vitrin.odeme.yukleniyor")}</span>
+      <IskeletGorunum className="h-20 w-full" />
+    </div>
+  );
+}
+
 const depodan = (is: (depo: Storage) => string | null | undefined) => {
   try {
     return is(window.sessionStorage) ?? undefined;
@@ -600,7 +612,7 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
 
   const gonder = async (olay: FormEvent<HTMLFormElement>) => {
     olay.preventDefault();
-    if (gonderiliyor.current || durum.tur !== "hazir") return;
+    if (gonderiliyor.current || durum.tur !== "hazir" || bilinmiyor) return;
     const form = new FormData(olay.currentTarget);
     const deger = (ad: string) => String(form.get(ad) ?? "");
     const teslimatAdres = teslimat;
@@ -751,7 +763,10 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
     setAlici(satirlar);
   };
 
-  if (sepet.hazir && sepet.kalemler.length === 0 && sonuc === null) {
+  // Boş sepet: sunucu çerezde kalem görmediyse (karar 0136) boş hâl sepet bilinmeden de çizilir; depoda kalem çıkarsa
+  // form çizilir.
+  const bosBilinir = veri.cerezdeBos && (!sepet.hazir || sepet.kalemler.length === 0);
+  if (sonuc === null && ((sepet.hazir && sepet.kalemler.length === 0) || bosBilinir)) {
     return (
       <BosHal
         ikon="sepet"
@@ -764,17 +779,6 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
       </BosHal>
     );
   }
-  if (durum.tur === "yukleniyor" || bilinmiyor) {
-    return (
-      <div role="status" className="flex flex-col gap-3">
-        <span className="sr-only">{metin("vitrin.odeme.yukleniyor")}</span>
-        <IskeletGorunum className="h-20 w-full" />
-        <IskeletGorunum className="h-20 w-full" />
-      </div>
-    );
-  }
-  if (durum.tur === "hata") return <Uyari tur="tehlike">{metin("vitrin.odeme.sepetHata")}</Uyari>;
-  const { gorunum } = durum;
   if (sonuc !== null) {
     return (
       <Uyari tur="basari" baslik={metin("vitrin.odeme.basariBaslik")}>
@@ -782,8 +786,10 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
       </Uyari>
     );
   }
+  // Form sunucuda hemen çizilir; özet ve iletişim bölümü bilgileri gelene kadar iskelettir (hız hedefi, karar 0124).
+  const gorunum = durum.tur === "hazir" ? durum.gorunum : undefined;
   // Satılamayan satır ya da alım adedi ödemeyi durdurur: müşteri sepette düzeltir (karar 0132).
-  if (!gorunum.odemeyeGecilebilir) {
+  if (gorunum !== undefined && !gorunum.odemeyeGecilebilir) {
     return (
       <Uyari tur="tehlike">
         <p>{metin("vitrin.sepet.odemeEngeli")}</p>
@@ -791,7 +797,16 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
       </Uyari>
     );
   }
-  const degisiklik = adetIndi || gorunum.satirlar.some((satir) => satir.uyarilar.length > 0);
+  const degisiklik =
+    adetIndi || (gorunum?.satirlar.some((satir) => satir.uyarilar.length > 0) ?? false);
+  const ozetIcerigi =
+    gorunum !== undefined ? (
+      <Ozet gorunum={gorunum} />
+    ) : durum.tur === "hata" ? (
+      <Uyari tur="tehlike">{metin("vitrin.odeme.sepetHata")}</Uyari>
+    ) : (
+      <Yukleniyor />
+    );
 
   const hataSayisi = Object.keys(hatalar).length;
   const odak = (ad: string) => () => {
@@ -850,14 +865,14 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
               <AkordeonBasligi duzey={2}>
                 <span className="flex flex-1 justify-between gap-3">
                   <span>
-                    {doldur(metin("vitrin.odeme.ozetAdetli"), { sayi: String(gorunum.adet) })}
+                    {gorunum === undefined
+                      ? metin("vitrin.odeme.ozet")
+                      : doldur(metin("vitrin.odeme.ozetAdetli"), { sayi: String(gorunum.adet) })}
                   </span>
-                  <span className="whitespace-nowrap">{gorunum.yazili.toplam}</span>
+                  <span className="whitespace-nowrap">{gorunum?.yazili.toplam}</span>
                 </span>
               </AkordeonBasligi>
-              <AkordeonIcerigi>
-                <Ozet gorunum={gorunum} />
-              </AkordeonIcerigi>
+              <AkordeonIcerigi>{ozetIcerigi}</AkordeonIcerigi>
             </AkordeonOgesi>
           </Akordeon>
 
@@ -865,14 +880,16 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
             no={1}
             baslik={metin("vitrin.odeme.bolum.iletisim")}
             ek={
-              uye ? null : (
+              uye || bilinmiyor ? null : (
                 <Baglanti href={girisAdresiDonuslu(vitrinAdresleri.odeme)}>
                   {metin("vitrin.odeme.girisBaglanti")}
                 </Baglanti>
               )
             }
           >
-            {hesap.tur === "girisli" ? (
+            {bilinmiyor ? (
+              <Yukleniyor />
+            ) : hesap.tur === "girisli" ? (
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="wrap-anywhere">{hesap.eposta}</span>
                 <Dugme tur="baglanti" onClick={() => void cikisYap()}>
@@ -1069,7 +1086,7 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
             <h2 id="odeme-ozet-basligi" className="font-baslik text-baslik-4 font-baslik-kalinligi">
               {metin("vitrin.odeme.ozet")}
             </h2>
-            <Ozet gorunum={gorunum} />
+            {ozetIcerigi}
           </section>
           <div className="flex flex-col gap-2 rounded-orta border border-kenar bg-zemin p-5">
             <OnayKutusu

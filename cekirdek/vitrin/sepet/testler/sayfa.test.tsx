@@ -14,6 +14,7 @@ import { siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
 import { sepetCerezi, sepetDepoAnahtari, sepetSinirlari } from "../../../kayitlar/sepet.ts";
 import { MetinSaglayici } from "../../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../../metinler/metin.ts";
+import { vitrinAdresleri } from "../../adresler.ts";
 import { cerezdekiSayi } from "../depo.ts";
 import {
   type SepetAyarlari,
@@ -45,7 +46,7 @@ const sar = (icerik: ReactNode) => (
   </MetinSaglayici>
 );
 
-// Çerez yalnız sepet sayfasının yoluna gider: tarayıcı onu yalnız o adreste gösterir.
+// Çerez yalnız sepet ve ödeme sayfasının yoluna gider: tarayıcı onu yalnız o adreslerde gösterir.
 const cerez = () =>
   document.cookie
     .split("; ")
@@ -53,8 +54,10 @@ const cerez = () =>
     ?.slice(sepetCerezi.ad.length + 1);
 
 const cereziSil = () => {
-  // biome-ignore lint/suspicious/noDocumentCookie: testin çerezi temizlemesi.
-  document.cookie = `${sepetCerezi.ad}=; Path=${sepetCerezi.yol}; Max-Age=0`;
+  for (const yol of sepetCerezi.yollar) {
+    // biome-ignore lint/suspicious/noDocumentCookie: testin çerezi temizlemesi.
+    document.cookie = `${sepetCerezi.ad}=; Path=${yol}; Max-Age=0`;
+  }
 };
 
 beforeAll(() => {
@@ -63,7 +66,7 @@ beforeAll(() => {
   );
 });
 beforeEach(() => {
-  window.history.replaceState(null, "", sepetCerezi.yol);
+  window.history.replaceState(null, "", vitrinAdresleri.sepet);
   window.localStorage.clear();
   cereziSil();
   cerezler.clear();
@@ -75,7 +78,7 @@ afterEach(() => {
 });
 
 describe("sepet sayfasının çerezi", () => {
-  it("depoya her yazımda kalem sayısıyla eşitlenir, boşalınca silinir; yalnız sepet sayfasının yolunda", () => {
+  it("depoya her yazımda kalem sayısıyla eşitlenir, boşalınca silinir; yalnız sepet ve ödeme sayfasının yolunda", () => {
     sepeteEkle(sorulur, a, 3);
     expect(cerez()).toBe("1");
     sepeteEkle(sorulur, b, 1);
@@ -85,7 +88,12 @@ describe("sepet sayfasının çerezi", () => {
     sepettenCikar(b);
     expect(cerez()).toBeUndefined();
     sepeteEkle(sorulur, a, 1);
+    window.history.replaceState(null, "", vitrinAdresleri.odeme);
+    expect(cerez()).toBe("1");
     window.history.replaceState(null, "", "/");
+    expect(cerez()).toBeUndefined();
+    sepettenCikar(a);
+    window.history.replaceState(null, "", vitrinAdresleri.odeme);
     expect(cerez()).toBeUndefined();
   });
 
@@ -97,7 +105,7 @@ describe("sepet sayfasının çerezi", () => {
     sepetDurumunuSifirla();
     window.localStorage.clear();
     // biome-ignore lint/suspicious/noDocumentCookie: sepetten önceki kalmış çerez.
-    document.cookie = `${sepetCerezi.ad}=4; Path=${sepetCerezi.yol}`;
+    document.cookie = `${sepetCerezi.ad}=4; Path=${vitrinAdresleri.sepet}`;
     render(sar(<SepetSayfasiIcerigi />));
     expect(cerez()).toBeUndefined();
   });

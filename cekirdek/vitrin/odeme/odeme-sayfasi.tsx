@@ -1,19 +1,23 @@
 // Ödeme sayfası (kart 0213, karar 0140): /odeme. Sayfa sunucuda başlığı ve formun verisini hazırlar: üye olmadan
 // alışveriş ve telefon ayarı, sitenin teslimat ülkeleri il ve ilçe listeleriyle, ön bilgilendirme formu ve mesafeli
 // satış sözleşmesinin satıcı satırları (satıcı bilgileri, mağaza adresi ve iletişim; kart 0091) ve teslim süresi.
-// Sepet tarayıcıdadır: form ve özet tarayıcıda çizilir. Kişiye özel sayfa: arama motorlarına kapalıdır. Tema
+// Sepet tarayıcıdadır: form sunucuda hemen çizilir, özet tarayıcıda gelir; sepetin çerezinde kalem yoksa boş hâl
+// sunucuda çizilir (karar 0136). Kişiye özel sayfa: arama motorlarına kapalıdır. Tema
 // demosunda bulunamadı verir (ziyaretçi sipariş vermez).
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { SayfaBasligi } from "../../../bilesenler/parcalar/sayfa-basligi";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { ilAdi, ilceAdi, postaKoduZorunluMu, ulkeninIlleri } from "../../bolgeler/bolgeler";
 import { odemeSinirlari } from "../../kayitlar/odeme";
 import { sifreSiniri } from "../../kayitlar/oturum";
+import { sepetCerezi } from "../../kayitlar/sepet";
 import { metin, siteninBicimleyicisi } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import { sayfaBasligi } from "../../moduller/gorunurluk/sayfa-bilgisi";
 import { magazaninAdi, siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
 import { siteninVeritabani } from "../../veritabani/baglanti";
+import { cerezdekiSayi } from "../sepet/depo";
 import { musteriSayfasiBilgisi, musteriSayfasiniAc } from "../yalniz-gezinti";
 import { OdemeFormu, type OdemeSayfasiVerisi } from "./odeme-formu";
 
@@ -83,6 +87,7 @@ const sayfaVerisi = async (): Promise<OdemeSayfasiVerisi> => {
             gun: String(ayarlar.kargoyaVermeSuresi),
           }),
     sinirlar: { not: odemeSinirlari.notEnCok, sifreEnKisa: sifreSiniri.enKisa },
+    cerezdeBos: cerezdekiSayi((await cookies()).get(sepetCerezi.ad)?.value) === 0,
   };
 };
 

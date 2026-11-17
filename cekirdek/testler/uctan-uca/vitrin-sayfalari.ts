@@ -16,7 +16,9 @@ const ilk = <T>(liste: readonly T[] | undefined, ne: string): T => {
   return deger;
 };
 
-export const ekranSayfalari: Record<string, { adres: string; durum: number }> = {
+// menu: false olan sayfanın üst kısmında menü düğmesi yoktur (ödeme adımının sade çerçevesi, karar 0132): hız ölçümü
+// orada menüye basmaz, tepkiyi ölçmez.
+export const ekranSayfalari: Record<string, { adres: string; durum: number; menu?: false }> = {
   "ana sayfa": { adres: vitrinAdresleri.anasayfa, durum: 200 },
   kategori: {
     adres: kayitAdresleri.kategori(ilk(katalog.kategoriler, "kategori").adresAdi),
@@ -36,7 +38,7 @@ export const ekranSayfalari: Record<string, { adres: string; durum: number }> = 
   // Kart 0212: boş sepet (testin tarayıcısında sepet yoktur).
   sepet: { adres: vitrinAdresleri.sepet, durum: 200 },
   // Kart 0213: ödeme adımı, boş sepetle (boş hâl); dolu formun taraması ödeme testindedir.
-  odeme: { adres: vitrinAdresleri.odeme, durum: 200 },
+  odeme: { adres: vitrinAdresleri.odeme, durum: 200, menu: false },
   giris: { adres: vitrinAdresleri.giris, durum: 200 },
   kayit: { adres: vitrinAdresleri.kayit, durum: 200 },
   bulunamadi: { adres: "/olcum-icin-olmayan-sayfa", durum: 404 },

@@ -45,7 +45,12 @@ const islemciYavaslatmasi = async (tarayici: Browser) => {
   return Math.max(yavasTelefon.enAzYavaslatma, Math.round(oran * 10) / 10);
 };
 
-const olc = async (tarayici: Browser, adres: string, yavaslatma: number): Promise<Olcum> => {
+const olc = async (
+  tarayici: Browser,
+  adres: string,
+  yavaslatma: number,
+  menu: boolean,
+): Promise<Olcum> => {
   const baglam = await tarayici.newContext({
     viewport: yavasTelefon.ekran,
     isMobile: true,
@@ -104,12 +109,15 @@ const olc = async (tarayici: Browser, adres: string, yavaslatma: number): Promis
         .filter((giris) => /\.js(\?|$)/u.test(giris.name))
         .reduce((toplam, giris) => toplam + (giris.transferSize || giris.encodedBodySize), 0),
     );
-    // Etkileşim sayfa bağlandıktan sonra yapılır; düğme pencereyi açmazsa ölçüm boştur, test kırmızıdır.
+    // Etkileşim sayfa bağlandıktan sonra yapılır; düğme pencereyi açmazsa ölçüm boştur, test kırmızıdır. Menüsü olmayan
+    // sayfada (ödeme adımı, kart 0213) etkileşim yoktur, tepki 0 kalır.
     await sayfaHazir(sayfa);
-    await sayfa.getByRole("banner").getByRole("button").first().click();
-    await expect(sayfa.getByRole("dialog")).toBeVisible();
-    await sayfa.keyboard.press("Escape");
-    await expect(sayfa.getByRole("dialog")).toBeHidden();
+    if (menu) {
+      await sayfa.getByRole("banner").getByRole("button").first().click();
+      await expect(sayfa.getByRole("dialog")).toBeVisible();
+      await sayfa.keyboard.press("Escape");
+      await expect(sayfa.getByRole("dialog")).toBeHidden();
+    }
     await sayfa.waitForTimeout(500);
     const sonuc = await sayfa.evaluate(
       () => (window as unknown as { __hiz: Omit<Olcum, "kod"> }).__hiz,
@@ -120,12 +128,12 @@ const olc = async (tarayici: Browser, adres: string, yavaslatma: number): Promis
   }
 };
 
-for (const [tur, { adres }] of Object.entries(ekranSayfalari)) {
+for (const [tur, { adres, menu = true }] of Object.entries(ekranSayfalari)) {
   test(`hız ölçümü: ${tur}`, async ({ browser }) => {
     const yavaslatma = await islemciYavaslatmasi(browser);
     const olcumler: Olcum[] = [];
     for (let sira = 0; sira < olcumSayisi; sira += 1)
-      olcumler.push(await olc(browser, adres, yavaslatma));
+      olcumler.push(await olc(browser, adres, yavaslatma, menu));
     const sonuc = {
       anaIcerik: ortanca(olcumler.map((o) => o.anaIcerik)),
       kayma: ortanca(olcumler.map((o) => o.kayma)),

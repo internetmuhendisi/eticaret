@@ -8,13 +8,14 @@
 // Tarayıcı deposundaki anahtar. Yalnız birim kimlikleri, adetler ve müşterinin son gördüğü birim fiyatı saklanır.
 export const sepetDepoAnahtari = "sepet";
 
-// Sepet sayfasına giden çerez (kart 0218, karar 0136): yalnız sepetteki kalem sayısını taşır, birim ya da fiyat
-// taşımaz. Sunucu sepeti bilmez; çerezde kalem yoksa sepet sayfası boş hâli hemen çizer. Çerez yalnız bu yola gider.
+// Sepet ve ödeme sayfasına giden çerez (kart 0218, karar 0136; kart 0213): yalnız sepetteki kalem sayısını taşır, birim
+// ya da fiyat taşımaz. Sunucu sepeti bilmez; çerezde kalem yoksa sepet ve ödeme sayfası boş hâli hemen çizer. Çerez
+// yalnız bu iki yola gider (her yol için aynı adla ayrı çerez yazılır).
 // Süresi depo kadar uzundur (tarayıcıların izin verdiği en uzun süre, 400 gün): tarayıcı kapanınca silinseydi dolu
 // sepetle gelen müşteri bir an boş ekran görürdü. Sepet boşalınca çerez silinir.
 export const sepetCerezi = {
   ad: "sepet-sayisi",
-  yol: "/sepet",
+  yollar: ["/sepet", "/odeme"],
   saniye: 400 * 24 * 60 * 60,
 } as const;
 
