@@ -6,6 +6,8 @@ Kart 0201'in ölçümünde (2026-11-15) bütün birim takımı temiz veritabanı
 
 - `cekirdek/moduller/fiyat/testler/gosterim.test.ts` "yüzde 1'in altındaki indirimin ve eski fiyatı gösterilmeyen indirimin oranı yoktur": satır 484, `kucuk?.enDusuk.eskiTutar` 10000 yerine `undefined`.
 
+Kart 0219'un yerel hat denemesinde (2026-11-17, aynı koşul) aynı dosyada başka bir test düştü: "oran aşağı yuvarlanır: 299,90'dan 225,00'a", satır 472, `indirim` `{ oran: 24, varan: false }` yerine `undefined`. Belirti aynı: eski fiyat görünmüyor. Bir sonraki denemede bu iki test birlikte düştü, dosya tek başına üç kez geçti, `taskset -c 0-3` ile iki denemenin birinde düştü. Not: `taskset` işçi sayısını değiştirmez, araçlar işçi sayısını 32 işlemciden seçip dört işlemciye sıkıştırır; bu koşul hattaki dört işlemcili makineden ağırdır.
+
 Dosya tek başına üç kez geçti. Düşüş süre aşımı değil, yanlış sonuçtur; bu yüzden kart 0133'ün (yük altında süre sınırı) kapsamında değildir. Sebep ölçülmedi. Eski fiyatın gösterilmesi fiyat geçmişinin zamanına bağlıdır (kart 0081): uygulama ile veritabanı saati ya da aynı anda yazılan satırlar ilk şüphelilerdir, ama bu bir tahmindir.
 
 Bölüm: Testler.
