@@ -15,16 +15,42 @@ const bedenler = [
 export function SecenekGrubuOrnegi() {
   const m = useOrnekMetni();
   const [secili, setSecili] = useState<string | undefined>("s");
+  const [teslimat, setTeslimat] = useState<string | undefined>("standart");
   const ad = bedenler.find((beden) => beden.deger === secili)?.ad ?? "";
   return (
-    <SecenekGrubu
-      baslik={doldur(m("bedenBasligi"), { deger: ad })}
-      etiket={m("beden")}
-      ogeler={bedenler}
-      deger={secili}
-      onDegerDegisti={setSecili}
-      secilemezEki={m("tukendiEki")}
-      aciklama={m("bedenAciklamasi")}
-    />
+    <div className="flex flex-col gap-6">
+      <SecenekGrubu
+        baslik={doldur(m("bedenBasligi"), { deger: ad })}
+        etiket={m("beden")}
+        ogeler={bedenler}
+        deger={secili}
+        onDegerDegisti={setSecili}
+        secilemezEki={m("tukendiEki")}
+        aciklama={m("bedenAciklamasi")}
+      />
+      {/* Kart görünümü (kart 0214): ödeme yöntemi gibi açıklamalı seçenekler. */}
+      <SecenekGrubu
+        baslik={m("teslimatSekli")}
+        etiket={m("teslimatSekli")}
+        gorunum="kart"
+        ogeler={[
+          {
+            deger: "standart",
+            ad: m("standartTeslimat"),
+            aciklama: m("standartAciklama"),
+            ikon: "kargo",
+          },
+          {
+            deger: "magaza",
+            ad: m("magazadanAl"),
+            aciklama: m("magazadanAlAciklama"),
+            ikon: "konum",
+          },
+        ]}
+        deger={teslimat}
+        onDegerDegisti={setTeslimat}
+        secilemezEki={m("tukendiEki")}
+      />
+    </div>
   );
 }

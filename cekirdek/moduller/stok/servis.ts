@@ -5,7 +5,7 @@
 // - Üç yol vardır:
 //   - stokDus: sipariş oluşurken, çağıranın veritabanı işleminin içinde. "Yeterliyse düş" tek sorgudur:
 //     satır kilidi aynı anda gelen iki isteği sıraya koyar, ikincisi koşulu güncel miktarla yeniden
-//     sınar; son ürün iki kez düşmez.
+//     sınar; son ürün iki kez düşmez. Başka ödemelerin süresi dolmamış ayırmaları düşülmüş sayılır (kart 0214).
 //   - stokArtir: iptal ve iadede, çağıranın işleminin içinde.
 //   - stokDuzelt: panelden elle, sebeple ve ekranın gördüğü miktarla; kendi işlemini açar.
 //   - stokAyir ve ayirmayiBirak: ödemede stoğa dokunmadan birimi süreli ayırır (kart 0213).
@@ -149,6 +149,12 @@ const birimiKilitle = async (islem: VeritabaniIslemi, birim: string) => {
   };
 };
 
+// Birimin başka oturumlarının süresi dolmamış ayırmalarının toplamı (alt sorgu). Süre veritabanının saatiyle.
+const digerAyirmalar = (birim: string, oturum: string | undefined) =>
+  sql`(select coalesce(sum(${stokAyirmalari.adet}), 0) from ${stokAyirmalari} where ${stokAyirmalari.birim_kimligi} = ${birim} and ${stokAyirmalari.bitis_zamani} > now()${
+    oturum === undefined ? sql`` : sql` and ${stokAyirmalari.oturum_kimligi} <> ${oturum}`
+  })`;
+
 const kaynakDenetle = (kaynak: string | undefined) => {
   if (kaynak !== undefined && !kimlikMi(kaynak)) {
     throw dogrulamaHatasi([{ alan: "kaynak", kod: "invalid_format" }]);
@@ -159,14 +165,20 @@ export const stokServisi = () => {
   // Sipariş oluşurken: her kalemin stoğu yeterliyse düşer. Bir kalem yetmezse ya da birimi satılamazsa
   // hiçbir kalem düşmez ve çakışma hatası bütün sorunlu birimleri söyler. Çağıranın işleminde çalışır:
   // sipariş kaydıyla birlikte yazılır, birlikte geri alınır.
+  // Başka ödeme oturumlarının süresi dolmamış ayırmaları stoktan düşülmüş sayılır (kart 0214, karar 0140): siparişin
+  // kendi oturumu (oturum) sayılmaz, onun ayırması siparişe geçer. Ayırma da birimin stok satırını kilitler; düşürme
+  // satırı koşuldan önce kilitlediği için koşul öteki işlemin ayırmasını görür.
   const stokDus = async (
     islem: VeritabaniIslemi,
     kim: DegisikligiYapan,
     hamKalemler: StokKalemi[],
-    secenekler: { sebep: DusmeSebebi; kaynak?: string },
+    secenekler: { sebep: DusmeSebebi; kaynak?: string; oturum?: string },
   ): Promise<void> => {
     const kalemler = kalemleriTopla(hamKalemler);
     kaynakDenetle(secenekler.kaynak);
+    if (secenekler.oturum !== undefined && !kimlikMi(secenekler.oturum)) {
+      throw dogrulamaHatasi([{ alan: "oturum", kod: "invalid_format" }]);
+    }
     await islem.transaction(async (ic) => {
       const sorunlar: Sorun[] = [];
       for (const { birim, adet } of kalemler) {
@@ -176,13 +188,24 @@ export const stokServisi = () => {
           continue;
         }
         if (!durum.takip) continue;
+        // Önce stok satırı kilitlenir (kart 0214 kontrolü): koşuldaki ayırma toplamı alt sorgudur ve kilit beklenip
+        // satır yeniden sınanınca yeniden okunmaz. Kilit bu sorguda beklenirse sonraki sorgu yeni anın görüntüsüyle
+        // çalışır; bekleyen işlem öncekinin miktarını ve ayırmasını görür.
+        await ic
+          .select({ birim: birimStoklari.birim_kimligi })
+          .from(birimStoklari)
+          .where(eq(birimStoklari.birim_kimligi, birim))
+          .for("update");
         // Yeterliyse düş: koşul ile değişiklik tek sorgudadır. Satırı başka bir işlem kilitlemişse bu
         // sorgu bekler, sonra koşulu o işlemin yazdığı miktarla yeniden sınar.
         const [yeni] = await ic
           .update(birimStoklari)
           .set({ miktar: sql`${birimStoklari.miktar} - ${adet}`, guncellenme_zamani: sql`now()` })
           .where(
-            and(eq(birimStoklari.birim_kimligi, birim), sql`${birimStoklari.miktar} >= ${adet}`),
+            and(
+              eq(birimStoklari.birim_kimligi, birim),
+              sql`${birimStoklari.miktar} - ${digerAyirmalar(birim, secenekler.oturum)} >= ${adet}`,
+            ),
           )
           .returning({ miktar: birimStoklari.miktar });
         if (yeni === undefined) {

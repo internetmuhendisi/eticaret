@@ -279,7 +279,13 @@ function OzetSatiri({ ad, deger, vurgu = false }: { ad: string; deger: string; v
   );
 }
 
-export function SepetOzeti({ gorunum }: { gorunum: SepetGorunumu }) {
+// Sipariş alındı sayfası da aynı özeti siparişin saklanan tutarlarıyla çizer (kart 0214).
+export type OzetTutarlari = Pick<
+  SepetGorunumu,
+  "adet" | "kargo" | "gosterim" | "vergiDokumu" | "yazili"
+>;
+
+export function SepetOzeti({ gorunum }: { gorunum: OzetTutarlari }) {
   const metin = useMetin();
   const vergiAdi = (ad?: string) => ad ?? metin("vitrin.sepet.vergiAdsiz");
   return (

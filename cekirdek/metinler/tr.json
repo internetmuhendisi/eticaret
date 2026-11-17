@@ -59,6 +59,12 @@
         "birakildi": "{ad} bırakıldı. Sırası {sira} / {toplam}.",
         "vazgecildi": "Taşıma bırakıldı. {ad} yerinde kaldı: {sira} / {toplam}."
       }
+    },
+    "odemeYontemi": {
+      "havale": "Havale / EFT",
+      "kapidaOdeme": "Kapıda ödeme",
+      "nakit": "Nakit",
+      "kart": "Kart"
     }
   },
   "ayar": {
@@ -121,7 +127,11 @@
       "sepeteEkleyince": "Ürün sepete eklenince ne olur: sepet penceresi açılır, kısa bildirim çıkar ya da sepet sayfasına gidilir.",
       "uyeOlmadanAlisveris": "Müşteri hesap açmadan sipariş verebilir mi. Kapalıysa ödeme adımı girişe yönlendirir.",
       "telefonZorunlu": "Ödeme adımında teslimat telefonu zorunlu mu. Kargo firmaları teslimat için telefon ister.",
-      "stokAyirmaSuresi": "Müşteri siparişi onaylayınca sepetindeki ürünlerin kaç dakika onun için ayrıldığı. Süre dolunca stok serbest kalır."
+      "stokAyirmaSuresi": "Müşteri siparişi onaylayınca sepetindeki ürünlerin kaç dakika onun için ayrıldığı. Süre dolunca stok serbest kalır.",
+      "odemeYontemleri": "Müşterinin ödeme adımında gördüğü ödeme yöntemleri, sırasıyla; her yöntemin açık ya da kapalı olduğu.",
+      "kapidaOdemeSecenekleri": "Kapıda ödemede müşterinin seçebileceği seçenekler: nakit, kart.",
+      "havaleIptalSuresi": "Ödenmeyen havale siparişinin kaç gün sonra kendiliğinden iptal olduğu. Süre sonunda stok geri döner.",
+      "bankaHesaplari": "Havalede müşteriye gösterilen banka hesapları: banka, hesap sahibi ve IBAN."
     }
   },
   "tema": {
@@ -169,6 +179,14 @@
       "kargo": {
         "ad": "Kargo",
         "aciklama": "Sepette ve ödemede hesaplanan kargo ücreti. Değişiklik kaydedilince hemen yayınlanır."
+      },
+      "odemeYontemleri": {
+        "ad": "Ödeme yöntemleri",
+        "aciklama": "Müşterinin ödeme adımında gördüğü yöntemler ve sırası. Değişiklik kaydedilince hemen yayınlanır."
+      },
+      "bankaHesaplari": {
+        "ad": "Banka hesapları",
+        "aciklama": "Havalede müşteriye gösterilen hesaplar, gördüğü sırayla. Hesap yoksa havale ödeme adımında görünmez."
       }
     },
     "eylem": {
@@ -718,6 +736,66 @@
         "gunGecersiz": "Gün sayısını tam sayı olarak yazın; çok uzun süreler kabul edilmez.",
         "yetki": "Kargo ayarlarını değiştirme izniniz yok.",
         "genel": "Kargo ayarları kaydedilemedi. Sayfayı yenileyip yeniden deneyin."
+      }
+    },
+    "odemeYontemleri": {
+      "havaleAciklamasi": "Ödenmeyen sipariş {gun} gün sonra iptal olur.",
+      "kapidaAciklamasi": "Kurye teslimatta tahsil eder.",
+      "secenekler": "Kapıda ödemenin seçenekleri",
+      "vitrindeYok": "Vitrinde görünmüyor",
+      "vitrindeAcik": "Vitrinde açık: {ad}",
+      "acik": "Açık",
+      "kapali": "Kapalı",
+      "kaydet": "Kaydet",
+      "kaydedildi": "Ödeme yöntemleri kaydedildi.",
+      "iptalSuresi": "Ödenmeyen siparişin iptal süresi",
+      "iptalSuresiAciklamasi": "Gün. Süre sonunda sipariş kendiliğinden iptal olur, stok geri döner. Ödediğini bildiren müşterinin siparişi iptal olmaz.",
+      "hesaplaraGit": "Banka hesaplarını düzenle ({sayi} hesap)",
+      "hesapYok": "Havale açık ama banka hesabı yok: hesap ekleyene kadar havale ödeme adımında görünmez.",
+      "hata": {
+        "yetki": "Ödeme yöntemlerini değiştirme izniniz yok.",
+        "genel": "Ödeme yöntemleri kaydedilemedi. Sayfayı yenileyip yeniden deneyin.",
+        "enAzBir": "Müşterinin kullanabileceği en az bir ödeme yöntemi açık olmalı. Havale yalnız banka hesabı varken kullanılır; bir yöntemi açın ya da önce banka hesabı ekleyin.",
+        "secenekGerekli": "Kapıda ödemenin en az bir seçeneğini işaretleyin.",
+        "gunGecersiz": "Gün sayısını 1 ile 30 arasında tam sayı olarak yazın."
+      }
+    },
+    "bankaHesaplari": {
+      "hesap": "Hesap",
+      "duzenle": "Düzenle: {ad}",
+      "sil": "Sil: {ad}",
+      "siralandi": "Hesapların sırası kaydedildi.",
+      "bosBaslik": "Banka hesabı yok",
+      "bosAciklama": "Havale açıkken müşteriye en az bir hesap gösterilmeli. Hesap ekleyene kadar havale ödeme adımında görünmez.",
+      "banka": "Banka adı",
+      "sahip": "Hesap sahibi",
+      "sahipAciklamasi": "Müşteri havalede bu adı yazar; bankadaki adla aynı olmalı.",
+      "iban": "IBAN",
+      "ibanAciklamasi": "Boşluklu ya da boşluksuz yazabilirsiniz.",
+      "kaydet": "Kaydet",
+      "eklendi": "Hesap eklendi.",
+      "degisti": "Hesap kaydedildi.",
+      "silindi": "Hesap silindi.",
+      "yeniHesap": "Hesap ekle",
+      "hesabiDuzenle": "Hesabı düzenle",
+      "formAciklamasi": "Havalede müşteriye gösterilen hesap. Kaydedilince hemen yayınlanır.",
+      "silOnay": {
+        "baslik": "{ad} hesabı silinsin mi?",
+        "metin": "Hesap müşterilere gösterilmez. Bu hesaba yapılmış eski bildirimler siparişlerde kalır.",
+        "sil": "Hesabı sil"
+      },
+      "hata": {
+        "yetki": "Banka hesaplarını değiştirme izniniz yok.",
+        "sinir": "En çok 10 hesap eklenebilir. Bir hesabı silip yeniden deneyin.",
+        "degisti": "Hesaplar bu arada değişti. Güncel liste yüklendi, yeniden deneyin.",
+        "genel": "Hesap kaydedilemedi. Sayfayı yenileyip yeniden deneyin.",
+        "gerekli": "Bu alanı doldurun.",
+        "ibanBicimi": "IBAN iki harfli ülke kodu, iki rakam ve hesap numarasından oluşur, örneğin TR ile başlar.",
+        "ibanUlke": "IBAN'ın başındaki ülke kodu tanınmadı.",
+        "ibanUzunluk": "IBAN'ın uzunluğu bu ülke için doğru değil. Eksik ya da fazla karakter var.",
+        "ibanKontrol": "IBAN geçerli değil; rakamları kontrol edin.",
+        "ibanAyni": "Bu IBAN başka bir hesapta zaten var.",
+        "sonYontem": "Bu son banka hesabı ve müşterinin kullanabileceği başka ödeme yöntemi yok. Önce Ödeme yöntemleri'nden başka bir yöntemi açın."
       }
     }
   },
@@ -1285,7 +1363,8 @@
         "iletisim": "İletişim",
         "teslimat": "Teslimat adresi",
         "fatura": "Fatura bilgisi",
-        "not": "Sipariş notu"
+        "not": "Sipariş notu",
+        "yontem": "Ödeme yöntemi"
       },
       "girisBaglanti": "Hesabınız var mı? Giriş yapın",
       "eposta": "E-posta",
@@ -1328,8 +1407,6 @@
       "yukumluluk": "Siparişi onaylayınca ödeme yükümlülüğü doğar.",
       "gonderiliyor": "Siparişiniz onaylanıyor, lütfen bekleyin.",
       "yukleniyor": "Ödeme sayfası yükleniyor",
-      "basariBaslik": "Bilgileriniz alındı",
-      "basariAciklama": "Sepetinizdeki ürünler sizin için ayrıldı. Ayırma {saat} saatine kadar sürer.",
       "sepetHata": "Sepet şu an gösterilemiyor. Sayfayı yenileyip yeniden deneyin.",
       "hata": {
         "ozet": "Siparişi vermek için {sayi} alanı düzeltin:",
@@ -1349,7 +1426,9 @@
         "stokAyrildi": "Sepetinizdeki bir ürün şu an başka bir müşterinin ödemesinde ayrılmış ya da stokta yeterli değil. Biraz sonra yeniden deneyin ya da ürünü sepetinizden çıkarın.",
         "kayitli": "Bu e-postayla bir hesap var. Giriş yapın ya da hesap açmadan devam edin.",
         "sinir": "Çok fazla deneme yapıldı. Biraz bekleyip yeniden deneyin.",
-        "genel": "Sipariş şu an onaylanamadı. Biraz sonra yeniden deneyin."
+        "genel": "Sipariş şu an onaylanamadı. Biraz sonra yeniden deneyin.",
+        "yontem": "Bir ödeme yöntemi seçin.",
+        "yontemKapali": "Bu ödeme yöntemi artık kullanılamıyor. Sayfayı yenileyip başka bir yöntem seçin."
       },
       "sozlesme": {
         "onBilgilendirme": "Ön bilgilendirme formu",
@@ -1362,7 +1441,84 @@
         "teslim": "Sipariş {gun} iş günü içinde kargoya verilir.",
         "teslimAyniGun": "Sipariş aynı gün kargoya verilir.",
         "iade": "Cayma hakkı ve iade koşulları",
-        "bilinmiyor": "Henüz yazılmadı"
+        "bilinmiyor": "Henüz yazılmadı",
+        "odemeYontemi": "Ödeme yöntemi: {yontem}"
+      },
+      "yontemYok": "Bu mağaza şu an sipariş alamıyor: açık bir ödeme yöntemi yok. Lütfen daha sonra yeniden deneyin.",
+      "siparisAlindi": "Siparişiniz alındı, sipariş sayfası açılıyor.",
+      "oncekiAdres": "Son siparişinizin teslimat adresi",
+      "oncekiAdresiKullan": "Bu adresi kullan",
+      "yontem": {
+        "havaleAciklamasi": "Siparişten sonra banka hesaplarımız gösterilir. {gun} gün içinde ödenmeyen sipariş iptal olur.",
+        "kapida": "Kapıda ödeme · {secenek}",
+        "nakit": "nakit",
+        "kart": "kartla",
+        "nakitAciklamasi": "Ödemeyi teslimatta kuryeye nakit yaparsınız.",
+        "kartAciklamasi": "Kurye teslimatta kartınızdan çeker."
+      },
+      "oncekiAdresSatiri": "{ad} {soyad}, {adres}",
+      "oncekiAdresKullanildi": "Teslimat alanları son siparişinizin adresiyle dolduruldu."
+    },
+    "siparisAlindi": {
+      "baslik": "Siparişiniz alındı",
+      "numara": "Sipariş no: {numara}",
+      "tesekkur": "Teşekkür ederiz, {ad}. Sipariş numaranızı not edin.",
+      "iptal": "Bu sipariş ödeme süresi içinde ödenmediği için iptal edildi.",
+      "havaleBasligi": "Ödemenizi {zaman} tarihine kadar yapın",
+      "havaleAciklamasi": "Aşağıdaki hesaplardan birine {toplam} gönderin. Açıklamaya sipariş numaranızı yazın: {numara}. Bu süre içinde ödenmeyen sipariş iptal olur.",
+      "hesapSahibi": "Hesap sahibi: {sahip}",
+      "bildir": "Ödemeyi yaptım, bildir",
+      "kapidaBasligi": "Ödemeyi teslimatta yapacaksınız",
+      "kapidaNakit": "Kuryeye {toplam} nakit ödeyeceksiniz.",
+      "kapidaKart": "Kurye teslimatta kartınızdan {toplam} çekecek.",
+      "kargo": "Siparişiniz {gun} iş gününde kargoya verilir.",
+      "kargoAyniGun": "Siparişiniz aynı gün kargoya verilir.",
+      "teslimatVeFatura": "Teslimat ve fatura",
+      "teslimatAdresi": "Teslimat adresi",
+      "fatura": "Fatura",
+      "odemeYontemi": "Ödeme yöntemi",
+      "odemeBekleniyor": "{yontem} · ödeme bekleniyor",
+      "eposta": "E-posta",
+      "ozet": "Sipariş özeti",
+      "alisveriseDevam": "Alışverişe devam et",
+      "kurumsal": "Kurumsal · {firma}, {vergiDairesi} {vergiNumarasi}",
+      "bireysel": "Bireysel",
+      "teslimatAdresiyle": "teslimat adresiyle aynı",
+      "ibanKopyala": "IBAN'ı kopyala",
+      "ibanKopyalaAdi": "IBAN'ı kopyala: {banka}",
+      "kopyalandi": "IBAN kopyalandı.",
+      "kopyalanamadi": "IBAN kopyalanamadı; numarayı seçip kopyalayabilirsiniz."
+    },
+    "havaleBildirimi": {
+      "baslik": "Havale bildirimi",
+      "aciklama": "Havale ya da EFT ile ödediyseniz bize bildirin, siparişinizi daha hızlı hazırlayalım.",
+      "numara": "Sipariş numarası",
+      "numaraAciklamasi": "Sipariş alındı sayfasındaki gibi, örneğin ORN-1001.",
+      "eposta": "Siparişteki e-posta",
+      "gonderen": "Gönderenin adı soyadı",
+      "hesap": "Gönderdiğiniz hesap",
+      "tutar": "Tutar",
+      "tutarAciklamasi": "{ornek} gibi yazın.",
+      "tarih": "Ödeme tarihi",
+      "not": "Not (isteğe bağlı)",
+      "gonder": "Bildirimi gönder",
+      "gonderiliyor": "Bildirim gönderiliyor.",
+      "alindi": "Bildiriminiz alındı",
+      "alindiAciklamasi": "Ödemeniz hesabımıza geçince {numara} numaralı siparişiniz hazırlanmaya başlar.",
+      "hesapYok": "Mağazanın şu an gösterilen bir banka hesabı yok. Ödemeyle ilgili mağazayla iletişime geçin.",
+      "hata": {
+        "numara": "Sipariş numarasını onay sayfasındaki gibi yazın, örneğin ORN-1001.",
+        "tutar": "Tutarı rakamla yazın, örneğin 1.399,60.",
+        "tarih": "Geçerli bir ödeme tarihi seçin; siparişten önceki ya da ileri bir tarih olamaz.",
+        "hesap": "Gönderdiğiniz hesabı listeden seçin.",
+        "eposta": "Siparişte kullandığınız e-postayı yazın.",
+        "bulunamadi": "Bu sipariş numarası ve e-posta ile bir sipariş bulamadık. Numarayı onay sayfasındaki gibi yazın ve siparişte kullandığınız e-postayı girin.",
+        "bulunamadiUye": "Hesabınızda bu numarayla bir sipariş bulamadık. Numarayı kontrol edin; siparişi üye olmadan verdiyseniz çıkış yapıp e-postanızla bildirin.",
+        "beklemiyor": "Bu sipariş havaleyle ödeme beklemiyor: ödeme yöntemi farklı ya da sipariş iptal edilmiş.",
+        "sinir": "Çok fazla deneme yapıldı. Biraz bekleyip yeniden deneyin.",
+        "genel": "Bildirim şu an gönderilemedi. Biraz sonra yeniden deneyin.",
+        "bildirimSiniri": "Bu sipariş için yeterince bildirim aldık. Ödemeniz hesabımıza geçince siparişiniz hazırlanır; sorunuz varsa mağazayla iletişime geçin.",
+        "hesapBilinmiyor": "Sayfa şu an hazırlanamadı. Sayfayı yenileyip yeniden deneyin."
       }
     }
   },
@@ -1449,6 +1605,7 @@
         "bosHal": "Boş hâl",
         "sayfalama": "Sayfalama",
         "secenekGrubu": "Seçenek grubu",
+        "anahtar": "Anahtar",
         "siralanabilirListe": "Sıralanabilir liste",
         "onayPenceresi": "Onay penceresi",
         "adetSecici": "Adet seçici"
@@ -1601,7 +1758,16 @@
       "onaySilindi": "Kayıt silindi.",
       "adet": "Adet",
       "adetAzalt": "Azalt",
-      "adetArtir": "Artır"
+      "adetArtir": "Artır",
+      "teslimatSekli": "Teslimat şekli",
+      "standartAciklama": "İki iş günü içinde kargoya verilir.",
+      "magazadanAl": "Mağazadan teslim al",
+      "magazadanAlAciklama": "Hazır olunca size haber verilir.",
+      "anahtarEtiketi": "Bültene abone",
+      "anahtarIkinci": "Kampanya e-postaları",
+      "anahtarKapali": "Kapalı",
+      "anahtarAcik": "Açık",
+      "standartTeslimat": "Standart teslimat"
     },
     "bolum": {
       "ad": "Deneme bölümü",

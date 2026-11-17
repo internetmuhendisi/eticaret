@@ -21,6 +21,7 @@ const ankara = {
   postaKodu: "06420",
 };
 const gecerli = {
+  odemeYontemi: { yontem: "havale" },
   teslimat: { ad: "Deniz", soyad: "Yılmaz", telefon: "0555 000 00 00", adres: ankara },
   fatura: { tur: "bireysel", adresAyni: true },
   onBilgilendirmeOnayi: true,
@@ -202,5 +203,32 @@ describe("uç girdisi", () => {
         hesap: { ac: true, sifre: "uzun-bir-sifre-123", uyelikOnayi: true, kvkkOnayi: true },
       }).success,
     ).toBe(true);
+  });
+});
+
+// Ödeme yöntemi (kart 0214): havale ya da kapıda ödemenin seçeneği zorunludur; yöntemin sitede açık olup olmadığını
+// servis denetler.
+describe("ödeme yöntemi", () => {
+  it("havale ve kapıda ödemenin iki seçeneği geçer", () => {
+    for (const odemeYontemi of [
+      { yontem: "havale" },
+      { yontem: "kapida-odeme", secenek: "nakit" },
+      { yontem: "kapida-odeme", secenek: "kart" },
+    ]) {
+      expect(odemeBilgileriSemasi.safeParse({ ...gecerli, odemeYontemi }).success).toBe(true);
+    }
+  });
+
+  it("yöntemsiz, seçeneksiz kapıda ödeme, bilinmeyen yöntem ve seçenek geçmez", () => {
+    const { odemeYontemi: _yok, ...yontemsiz } = gecerli;
+    expect(odemeBilgileriSemasi.safeParse(yontemsiz).success).toBe(false);
+    for (const odemeYontemi of [
+      { yontem: "kapida-odeme" },
+      { yontem: "kapida-odeme", secenek: "cek" },
+      { yontem: "kart" },
+      { yontem: "havale", secenek: "nakit" },
+    ]) {
+      expect(odemeBilgileriSemasi.safeParse({ ...gecerli, odemeYontemi }).success).toBe(false);
+    }
   });
 });

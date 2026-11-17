@@ -9,11 +9,18 @@
 import { z } from "zod";
 import { postaAdresiSemasi, telefonSemasi } from "../bolgeler/adres.ts";
 import { ulkeGecerliMi } from "../bolgeler/bolgeler.ts";
+import { ibanSemasi } from "../bolgeler/iban.ts";
 import { saticiBilgileriSemasi } from "../bolgeler/satici.ts";
 import { eklentiKodlari, stokBildirimiAyari } from "../kayitlar/eklentiler.ts";
 import { favoriSiniriEnCok } from "../kayitlar/favori.ts";
 import { listeSayfasi, listeSiralamalari, sayfaGecisleri } from "../kayitlar/liste.ts";
-import { stokAyirmaSuresiSinirlari } from "../kayitlar/odeme.ts";
+import {
+  bankaHesabiSinirlari,
+  havaleIptalSuresiSinirlari,
+  kapidaOdemeSecenekleri,
+  odemeYontemleri,
+  stokAyirmaSuresiSinirlari,
+} from "../kayitlar/odeme.ts";
 import {
   sepeteEkleyinceSecenekleri,
   sepetTutariEnCok,
@@ -409,6 +416,65 @@ export const magazaAyarSemasi = z.strictObject({
       .max(stokAyirmaSuresiSinirlari.enCok)
       .default(stokAyirmaSuresiSinirlari.varsayilan),
     magazaSahibinin("ayar.aciklama.stokAyirmaSuresi"),
+  ),
+  // Ödeme yöntemleri (kart 0214, karar 0141; cekirdek/kayitlar/odeme.ts). Liste müşterinin ödeme adımında gördüğü
+  // sıradır, her yöntemin açık ya da kapalı olduğunu yazar; listede olmayan yöntem kapalıdır ve sona eklenir
+  // (odemeYontemleriniOku). Havale açık, kapıda ödeme kapalı başlar (planlar/site-ayarlari.md). Yöntemlerin ekranı
+  // kendi izniyle yazar (odeme-yontemi.degistir): genel ayar değiştirmeyle değişmez.
+  odemeYontemleri: ayar(
+    z
+      .array(z.strictObject({ kod: z.enum(odemeYontemleri), acik: z.boolean() }))
+      .refine(
+        (liste) => new Set(liste.map((yontem) => yontem.kod)).size === liste.length,
+        "Aynı yöntem iki kez yazılmış.",
+      )
+      .default([
+        { kod: "havale", acik: true },
+        { kod: "kapida-odeme", acik: false },
+      ]),
+    magazaSahibinin("ayar.aciklama.odemeYontemleri", { kendiIsleviyle: true }),
+  ),
+  // Kapıda ödemenin seçenekleri: müşteri ödeme adımında seçer, kartı kurye çeker. En az biri seçilidir.
+  kapidaOdemeSecenekleri: ayar(
+    z
+      .array(z.enum(kapidaOdemeSecenekleri))
+      .min(1)
+      .refine((liste) => new Set(liste).size === liste.length, "Aynı seçenek iki kez yazılmış.")
+      .default(["nakit"]),
+    magazaSahibinin("ayar.aciklama.kapidaOdemeSecenekleri", { kendiIsleviyle: true }),
+  ),
+  // Ödenmeyen havale siparişi bu kadar gün sonra kendiliğinden iptal olur, stok geri döner.
+  havaleIptalSuresi: ayar(
+    z
+      .int()
+      .min(havaleIptalSuresiSinirlari.enAz)
+      .max(havaleIptalSuresiSinirlari.enCok)
+      .default(havaleIptalSuresiSinirlari.varsayilan),
+    magazaSahibinin("ayar.aciklama.havaleIptalSuresi", { kendiIsleviyle: true }),
+  ),
+  // Havalenin banka hesapları, müşterinin gördüğü sırayla. Hesap yoksa havale ödeme adımında görünmez. Numara her
+  // müşteriye gösterildiği için kayıtta gizli değildir: değişikliği kayıtta görülür (paranın gittiği hesap).
+  bankaHesaplari: ayar(
+    z
+      .array(
+        z.strictObject({
+          kimlik: kimlikSemasi,
+          banka: z.string().trim().min(1).max(bankaHesabiSinirlari.bankaEnCok),
+          sahip: z.string().trim().min(1).max(bankaHesabiSinirlari.sahipEnCok),
+          iban: ibanSemasi,
+        }),
+      )
+      .max(bankaHesabiSinirlari.enCok)
+      .refine(
+        (hesaplar) => new Set(hesaplar.map((hesap) => hesap.kimlik)).size === hesaplar.length,
+        "Aynı hesap iki kez yazılmış.",
+      )
+      .refine(
+        (hesaplar) => new Set(hesaplar.map((hesap) => hesap.iban)).size === hesaplar.length,
+        "Aynı IBAN iki kez yazılmış.",
+      )
+      .default([]),
+    magazaSahibinin("ayar.aciklama.bankaHesaplari", { kendiIsleviyle: true }),
   ),
   // Stoğa gelince haber ver eklentisi (kart 0144, karar 0117): üye olmayan müşteri de talep bırakabilir mi,
   // talep kaç gün saklanır. Eklenti kapalıyken okunmaz.

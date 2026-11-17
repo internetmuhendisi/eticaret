@@ -1,7 +1,8 @@
 "use client";
 // Ödeme adımı (kart 0213, karar 0140; kart 0211'in taslağı, karar 0132): tek sayfa. Solda iletişim, teslimat adresi,
 // fatura bilgisi ve sipariş notu alt alta; sağda sipariş özeti, onaylar ve "Siparişi onayla". Telefonda özet en üstte
-// kapalı durur (toplamı görünür), onaylar ve düğme formun sonundadır. Ödeme yöntemi bölümü kart 0214 ile gelir.
+// kapalı durur (toplamı görünür), onaylar ve düğme formun sonundadır. Ödeme yöntemi dördüncü bölümdür (kart 0214):
+// sitede kullanılabilen yöntemler mağaza sahibinin sırasıyla, kapıda ödemenin her seçeneği ayrı satır.
 //
 // - Şema uçla ortaktır (cekirdek/moduller/odeme/semalar.ts): form gönderilmeden önce aynı şemayla denetlenir, hata
 //   alanın altında yazılır ve üstte alanlara giden bağlantılarla özetlenir; odak özete geçer.
@@ -12,6 +13,10 @@
 // - Sunucu sepetin değiştiğini söylerse özet yeniden istenir; stok başka bir ödemede ayrılmışsa söylenir.
 // - Müşterinin bir önceki onayının oturumu sekmede saklanır ve yeniden basınca gönderilir: kendi ayırması kendisine
 //   engel olmaz.
+// - Sipariş oluşunca (kart 0214) siparişe giren kalemler sepetten çıkar, müşteri sipariş alındı sayfasına gider; o
+//   sayfayı yalnız bu tarayıcı açar (erişim çerezi).
+// - Giriş yapmış müşterinin son siparişinin teslimat bilgisi teslimat bölümünde önerilir; "Bu adresi kullan" alanları
+//   doldurur.
 import {
   type ComponentProps,
   type FormEvent,
@@ -52,15 +57,21 @@ import {
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
 import { postaKoduGecerliMi } from "../../bolgeler/bolgeler";
+import { kapiyaIstek } from "../../kapi/istemci";
 import { hataKodlari } from "../../kayitlar/kapi";
 import { useMetin } from "../../metinler/istemci-metni";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { doldur } from "../../moduller/eposta/sablon";
-import { misafirOdemeFormuSemasi, uyeOdemeFormuSemasi } from "../../moduller/odeme/semalar";
+import {
+  misafirOdemeFormuSemasi,
+  type OdemeYontemiSecimi,
+  type Teslimat,
+  uyeOdemeFormuSemasi,
+} from "../../moduller/odeme/semalar";
 import { useRobotluGonderim } from "../../moduller/robot-korumasi/istemci";
 import { girisAdresiDonuslu, vitrinAdresleri } from "../adresler";
-import { cikisYap, hesapDurumunuYenile, useHesapDurumu } from "../hesap-durumu";
-import { adetDegistir, useSepet, useSepetGorunumu } from "../sepet/durum";
+import { cikisYap, useHesapDurumu } from "../hesap-durumu";
+import { adetDegistir, siparisKalemleriniCikar, useSepet, useSepetGorunumu } from "../sepet/durum";
 import { SatirGorseli, SepetOzeti, satirAdi } from "../sepet/sepet-gorunumu";
 import type { SepetGorunumu } from "../sepet/veri";
 
@@ -76,8 +87,17 @@ export type BolgeUlkesi = {
   postaKoduZorunlu: boolean;
 };
 
+// Ödeme adımındaki bir yöntem satırı: anahtar seçimin adıdır ("havale", "kapida-odeme-nakit").
+export type OdemeYontemiSatiri = {
+  anahtar: string;
+  secim: OdemeYontemiSecimi;
+};
+
 export type OdemeSayfasiVerisi = {
   uyeOlmadanAlisveris: boolean;
+  // Sitede kullanılabilen ödeme yöntemleri, mağaza sahibinin sırasıyla; havalenin iptal süresi (gün).
+  yontemler: readonly OdemeYontemiSatiri[];
+  havaleIptalSuresi: number;
   telefonZorunlu: boolean;
   // Sitenin teslimat ülkeleri, il ve ilçe listeleriyle.
   ulkeler: readonly BolgeUlkesi[];
@@ -124,6 +144,7 @@ const ozelHatalar: Record<string, MetinAnahtari> = {
   "vergi-numarasi-bicimi": "vitrin.odeme.hata.vergiNumarasiBicimi",
   "vergi-numarasi-kontrol": "vitrin.odeme.hata.vergiNumarasiKontrol",
   "ulke-teslimat-disi": "vitrin.odeme.hata.ulke",
+  "yontem-kapali": "vitrin.odeme.hata.yontemKapali",
 };
 const onayAlanlari = new Set([
   "bilgiler.onBilgilendirmeOnayi",
@@ -139,6 +160,7 @@ const hataMetni = (metin: Metin, alan: string, kod: string, sifreEnKisa: number)
   const ozel = ozelHatalar[kod];
   if (ozel !== undefined) return metin(ozel);
   if (alan === "eposta") return metin("vitrin.odeme.hata.eposta");
+  if (alan === "bilgiler.odemeYontemi") return metin("vitrin.odeme.hata.yontem");
   if (alan === "hesap.sifre") {
     return doldur(metin("vitrin.kayit.hataSifre"), { enKisa: String(sifreEnKisa) });
   }
@@ -173,6 +195,7 @@ const alanAdlari: Record<string, MetinAnahtari> = {
   "bilgiler.fatura.adres.adres": "vitrin.odeme.adres",
   "bilgiler.fatura.adres.postaKodu": "vitrin.odeme.postaKodu",
   "bilgiler.not": "vitrin.odeme.notu",
+  "bilgiler.odemeYontemi": "vitrin.odeme.bolum.yontem",
   "bilgiler.onBilgilendirmeOnayi": "vitrin.odeme.onBilgilendirmeOnayi",
   "bilgiler.mesafeliSatisOnayi": "vitrin.odeme.mesafeliSatisOnayi",
 };
@@ -228,10 +251,12 @@ function MetinAlani({
   inputMode?: "text" | "tel" | "email" | "numeric";
   // Verilirse alan durumdan çizilir (posta kodu: özetin vergi bölgesi ona bağlıdır).
   deger?: string;
+  // Alanın ilk değeri (önceki siparişin adresi): alan durumdan çizilmez, müşteri değiştirir.
+  varsayilan?: string;
   onDegisti?: (deger: string) => void;
 }) {
   const hata = hatalar[ad];
-  const { deger, onDegisti, ...giris } = ozellikler;
+  const { deger, onDegisti, varsayilan, ...giris } = ozellikler;
   return (
     <FormAlani
       etiket={etiket}
@@ -246,6 +271,7 @@ function MetinAlani({
             name={ad}
             {...giris}
             {...(deger === undefined ? {} : { value: deger })}
+            {...(varsayilan === undefined ? {} : { defaultValue: varsayilan })}
             {...(onDegisti === undefined
               ? {}
               : { onChange: (olay) => onDegisti(olay.currentTarget.value) })}
@@ -447,11 +473,14 @@ function SozlesmePenceresi({
   veri,
   alici,
   gorunum,
+  yontem,
 }: {
   baslik: string;
   veri: OdemeSayfasiVerisi;
   alici: readonly string[];
   gorunum: SepetGorunumu | undefined;
+  // Seçili ödeme yöntemi (kart 0214): ön bilgilendirmenin içeriğidir.
+  yontem: string | undefined;
 }) {
   const metin = useMetin();
   // Tetikleyiciyle açılır: kapanınca odak açan düğmeye döner.
@@ -507,6 +536,9 @@ function SozlesmePenceresi({
               </p>
             </section>
           )}
+          {yontem === undefined ? null : (
+            <p>{doldur(metin("vitrin.odeme.sozlesme.odemeYontemi"), { yontem })}</p>
+          )}
           <p>{veri.teslimMetni}</p>
           <section className="flex flex-col gap-1">
             <h3 className="font-kalin">{metin("vitrin.odeme.sozlesme.iade")}</h3>
@@ -527,6 +559,32 @@ const genelHataMetinleri: Record<GenelHata, MetinAnahtari> = {
   sinir: "vitrin.odeme.hata.sinir",
   genel: "vitrin.odeme.hata.genel",
 };
+
+// Yöntem satırının adı, açıklaması ve ikonu (taslak, kart 0211). Havalenin açıklaması iptal süresini söyler.
+const yontemGorunusu = (
+  metin: Metin,
+  secim: OdemeYontemiSecimi,
+  iptalGunu: number,
+): { ad: string; aciklama: string; ikon: "havale" | "kapida-odeme" | "kart" } =>
+  secim.yontem === "havale"
+    ? {
+        ad: metin("ortak.odemeYontemi.havale"),
+        aciklama: doldur(metin("vitrin.odeme.yontem.havaleAciklamasi"), { gun: String(iptalGunu) }),
+        ikon: "havale",
+      }
+    : {
+        ad: doldur(metin("vitrin.odeme.yontem.kapida"), {
+          secenek: metin(
+            secim.secenek === "nakit" ? "vitrin.odeme.yontem.nakit" : "vitrin.odeme.yontem.kart",
+          ),
+        }),
+        aciklama: metin(
+          secim.secenek === "nakit"
+            ? "vitrin.odeme.yontem.nakitAciklamasi"
+            : "vitrin.odeme.yontem.kartAciklamasi",
+        ),
+        ikon: secim.secenek === "nakit" ? "kapida-odeme" : "kart",
+      };
 
 function Yukleniyor() {
   const metin = useMetin();
@@ -567,7 +625,13 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
   const [alici, setAlici] = useState<string[]>([]);
   const [hatalar, setHatalar] = useState<HataHaritasi>({});
   const [genelHata, setGenelHata] = useState<GenelHata | null>(null);
-  const [sonuc, setSonuc] = useState<{ bitisYazili: string } | null>(null);
+  // Seçili ödeme yöntemi satırının anahtarı: ilk yöntem seçili başlar.
+  const [yontem, setYontem] = useState<string | undefined>(veri.yontemler[0]?.anahtar);
+  // Giriş yapmış müşterinin son siparişinin teslimatı (öneri) ve uygulanınca teslimat alanlarının ilk değerleri.
+  const [onceki, setOnceki] = useState<Teslimat | null>(null);
+  const [kisi, setKisi] = useState({ ad: "", soyad: "", telefon: "", surum: 0 });
+  // Sipariş oluştu, sipariş alındı sayfasına gidiliyor.
+  const [gidiyor, setGidiyor] = useState(false);
   const [bekliyor, setBekliyor] = useState(false);
   const [yenileme, setYenileme] = useState(0);
   // Sepetteki adet sunucunun hesabına göre indirildi: özet yenilenince de söylenir.
@@ -606,7 +670,49 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
     if (Object.keys(hatalar).length > 0 || genelHata !== null) ozetKutusu.current?.focus();
   }, [hatalar, genelHata]);
 
+  // Giriş yapmış müşterinin son siparişinin teslimatı sorulur (tek istek); siparişi yoksa öneri görünmez.
+  useEffect(() => {
+    if (hesap.tur !== "girisli") return;
+    let gecerli = true;
+    void kapiyaIstek("/kapi/musteri/son-teslimat")
+      .then((yanit) => (yanit.ok ? yanit.json() : undefined))
+      .then((zarf: { veri?: { teslimat: Teslimat | null } } | undefined) => {
+        if (gecerli) setOnceki(zarf?.veri?.teslimat ?? null);
+      })
+      .catch(() => undefined);
+    return () => {
+      gecerli = false;
+    };
+  }, [hesap.tur]);
+
+  const oncekiniKullan = (teslimatBilgisi: Teslimat) => {
+    const { adres } = teslimatBilgisi;
+    setTeslimat({
+      ulke: adres.ulke,
+      il: adres.il ?? "",
+      ilce: adres.ilce ?? "",
+      adres: adres.adres,
+      postaKodu: adres.postaKodu ?? "",
+    });
+    setKisi((eski) => ({
+      ad: teslimatBilgisi.ad,
+      soyad: teslimatBilgisi.soyad,
+      telefon: teslimatBilgisi.telefon ?? "",
+      surum: eski.surum + 1,
+    }));
+  };
+
   const uye = hesap.tur === "girisli";
+  const seciliYontem = veri.yontemler.find((satir) => satir.anahtar === yontem)?.secim;
+  const seciliYontemAdi =
+    seciliYontem === undefined
+      ? undefined
+      : yontemGorunusu(metin, seciliYontem, veri.havaleIptalSuresi).ad;
+  // Önceki siparişin adresi yalnız ülkesine bugün teslimat yapılıyorsa önerilir.
+  const oneri =
+    uye && onceki !== null && veri.ulkeler.some((ulke) => ulke.kod === onceki.adres.ulke)
+      ? onceki
+      : null;
   const bilinmiyor =
     hesap.tur === "bilinmiyor" || (hesap.tur === "girissiz" && !veri.uyeOlmadanAlisveris);
 
@@ -630,6 +736,7 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
         : {}),
     };
     const bilgiler = {
+      odemeYontemi: veri.yontemler.find((satir) => satir.anahtar === yontem)?.secim,
       teslimat: {
         ad: deger("bilgiler.teslimat.ad"),
         soyad: deger("bilgiler.teslimat.soyad"),
@@ -690,19 +797,20 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
       });
       const zarf = (await yanit.json().catch(() => undefined)) as
         | {
-            veri?: { oturum: string; bitisYazili: string };
+            veri?: { oturum: string; siparis: string };
             hata?: { kod: string; ayrinti?: { alan: string; kod: string }[] };
           }
         | undefined;
       if (yanit.ok && zarf?.veri !== undefined) {
-        const { oturum, bitisYazili } = zarf.veri;
+        // Sipariş oluştu: oturum siparişe döndü, sepetin siparişe giren kalemleri çıkar. Sipariş alındı sayfası
+        // siparişi çerezdeki erişim anahtarıyla açar.
         depodan((depo) => {
-          depo.setItem(oncekiAnahtari, oturum);
+          depo.removeItem(oncekiAnahtari);
           return undefined;
         });
-        setSonuc({ bitisYazili });
-        // Ödemede hesap açıldıysa çerezler yazıldı: hesap durumu yeniden sorulur.
-        if (!uye && hesapAc) void hesapDurumunuYenile();
+        siparisKalemleriniCikar(sepet.kalemler.map((kalem) => kalem.birim));
+        setGidiyor(true);
+        window.location.assign(vitrinAdresleri.siparisAlindi);
         return;
       }
       const ayrinti = zarf?.hata?.ayrinti ?? [];
@@ -711,7 +819,9 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
         return;
       }
       if (
-        yanit.status === hataKodlari.dogrulama &&
+        (yanit.status === hataKodlari.dogrulama ||
+          (yanit.status === hataKodlari["is-kurali"] &&
+            ayrinti.some(({ kod }) => kod === "yontem-kapali"))) &&
         ayrinti.length > 0 &&
         ayrinti.every(({ alan }) => alan in alanAdlari)
       ) {
@@ -766,7 +876,15 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
   // Boş sepet: sunucu çerezde kalem görmediyse (karar 0136) boş hâl sepet bilinmeden de çizilir; depoda kalem çıkarsa
   // form çizilir.
   const bosBilinir = veri.cerezdeBos && (!sepet.hazir || sepet.kalemler.length === 0);
-  if (sonuc === null && ((sepet.hazir && sepet.kalemler.length === 0) || bosBilinir)) {
+  if (gidiyor) {
+    return (
+      <div role="status" className="flex flex-col gap-3">
+        <p>{metin("vitrin.odeme.siparisAlindi")}</p>
+        <IskeletGorunum className="h-20 w-full" />
+      </div>
+    );
+  }
+  if ((sepet.hazir && sepet.kalemler.length === 0) || bosBilinir) {
     return (
       <BosHal
         ikon="sepet"
@@ -777,13 +895,6 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
           {metin("vitrin.sepet.alisveriseBasla")}
         </Baglanti>
       </BosHal>
-    );
-  }
-  if (sonuc !== null) {
-    return (
-      <Uyari tur="basari" baslik={metin("vitrin.odeme.basariBaslik")}>
-        {doldur(metin("vitrin.odeme.basariAciklama"), { saat: sonuc.bitisYazili })}
-      </Uyari>
     );
   }
   // Form sunucuda hemen çizilir; özet ve iletişim bölümü bilgileri gelene kadar iskelettir (hız hedefi, karar 0124).
@@ -956,11 +1067,32 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
           </Bolum>
 
           <Bolum no={2} baslik={metin("vitrin.odeme.bolum.teslimat")}>
-            <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
+            {oneri !== null ? (
+              <Uyari tur="bilgi" baslik={metin("vitrin.odeme.oncekiAdres")}>
+                <span className="flex flex-col items-start gap-2">
+                  <span className="wrap-anywhere">
+                    {doldur(metin("vitrin.odeme.oncekiAdresSatiri"), {
+                      ad: oneri.ad,
+                      soyad: oneri.soyad,
+                      adres: oneri.adres.adres,
+                    })}
+                  </span>
+                  <Dugme tur="cerceveli" onClick={() => oncekiniKullan(oneri)}>
+                    {metin("vitrin.odeme.oncekiAdresiKullan")}
+                  </Dugme>
+                  {/* Alanlar dolunca ekran okuyucuya söylenir. */}
+                  <span role="status" className="text-kucuk">
+                    {kisi.surum === 0 ? null : metin("vitrin.odeme.oncekiAdresKullanildi")}
+                  </span>
+                </span>
+              </Uyari>
+            ) : null}
+            <div key={kisi.surum} className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
               <MetinAlani
                 ad="bilgiler.teslimat.ad"
                 etiket={metin("vitrin.odeme.ad")}
                 autoComplete="given-name"
+                {...(kisi.surum === 0 ? {} : { varsayilan: kisi.ad })}
                 hatalar={hatalar}
                 kimlikler={kimlikler}
               />
@@ -968,6 +1100,7 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
                 ad="bilgiler.teslimat.soyad"
                 etiket={metin("vitrin.odeme.soyad")}
                 autoComplete="family-name"
+                {...(kisi.surum === 0 ? {} : { varsayilan: kisi.soyad })}
                 hatalar={hatalar}
                 kimlikler={kimlikler}
               />
@@ -982,6 +1115,7 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
                   aciklama={metin("vitrin.odeme.telefonAciklama")}
                   type="tel"
                   autoComplete="tel"
+                  {...(kisi.surum === 0 ? {} : { varsayilan: kisi.telefon })}
                   hatalar={hatalar}
                   kimlikler={kimlikler}
                 />
@@ -1055,7 +1189,42 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
             )}
           </Bolum>
 
-          <Bolum no={4} baslik={metin("vitrin.odeme.bolum.not")}>
+          <Bolum no={4} baslik={metin("vitrin.odeme.bolum.yontem")}>
+            {veri.yontemler.length === 0 ? (
+              <Uyari tur="tehlike">{metin("vitrin.odeme.yontemYok")}</Uyari>
+            ) : (
+              <div
+                ref={(oge) => {
+                  // Hata özetindeki bağlantı seçili yönteme odaklanır.
+                  const radyo =
+                    oge?.querySelector<HTMLElement>('[role="radio"][data-state="checked"]') ??
+                    oge?.querySelector<HTMLElement>('[role="radio"]');
+                  if (radyo !== null && radyo !== undefined) {
+                    if (radyo.id === "") radyo.id = "odeme-yontemi";
+                    kimlikler["bilgiler.odemeYontemi"] = radyo.id;
+                  }
+                }}
+              >
+                <SecenekGrubu
+                  baslik={<span className="sr-only">{metin("vitrin.odeme.bolum.yontem")}</span>}
+                  etiket={metin("vitrin.odeme.bolum.yontem")}
+                  gorunum="kart"
+                  ogeler={veri.yontemler.map(({ anahtar, secim }) => ({
+                    deger: anahtar,
+                    ...yontemGorunusu(metin, secim, veri.havaleIptalSuresi),
+                  }))}
+                  deger={yontem}
+                  onDegerDegisti={setYontem}
+                  secilemezEki=""
+                  {...(hatalar["bilgiler.odemeYontemi"] === undefined
+                    ? {}
+                    : { hata: hatalar["bilgiler.odemeYontemi"] })}
+                />
+              </div>
+            )}
+          </Bolum>
+
+          <Bolum no={5} baslik={metin("vitrin.odeme.bolum.not")}>
             <FormAlani
               etiket={metin("vitrin.odeme.notu")}
               aciklama={doldur(metin("vitrin.odeme.notAciklama"), {
@@ -1101,6 +1270,7 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
                     veri={veri}
                     alici={alici}
                     gorunum={gorunum}
+                    yontem={seciliYontemAdi}
                   />
                 </span>
               }
@@ -1117,6 +1287,7 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
                     veri={veri}
                     alici={alici}
                     gorunum={gorunum}
+                    yontem={seciliYontemAdi}
                   />
                 </span>
               }

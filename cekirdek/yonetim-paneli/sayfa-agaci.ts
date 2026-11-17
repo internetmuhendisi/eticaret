@@ -47,6 +47,25 @@ export const panelSayfalari = [
     izin: null,
     grup: null,
   },
+  // Ödeme yöntemleri ve banka hesapları (kart 0214, karar 0141): görevli görür, yalnız mağaza sahibi değiştirir.
+  {
+    kod: "odeme-yontemleri",
+    adres: `${panelAdresi}/odeme-yontemleri`,
+    ad: "yonetim.sayfa.odemeYontemleri.ad",
+    aciklama: "yonetim.sayfa.odemeYontemleri.aciklama",
+    ikon: "kart",
+    izin: "odeme-yontemi.gor",
+    grup: "satis",
+  },
+  {
+    kod: "banka-hesaplari",
+    adres: `${panelAdresi}/banka-hesaplari`,
+    ad: "yonetim.sayfa.bankaHesaplari.ad",
+    aciklama: "yonetim.sayfa.bankaHesaplari.aciklama",
+    ikon: "havale",
+    izin: "odeme-yontemi.gor",
+    grup: "satis",
+  },
   // Kargo ayarları (kart 0212, karar 0135): mağaza ayarlarıdır, yalnız mağaza sahibinin izinleriyle.
   {
     kod: "kargo",

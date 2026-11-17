@@ -12,6 +12,7 @@ import {
   ChevronUpIcon,
   CircleCheckIcon,
   CircleIcon,
+  CopyIcon,
   CreditCardIcon,
   EllipsisIcon,
   ExternalLinkIcon,
@@ -138,6 +139,8 @@ export const ikonlar = {
   menuler: ListTreeIcon,
   // Tema ekranı (kart 0148): menüdeki sayfa.
   tema: PaletteIcon,
+  // Sipariş alındı sayfası (kart 0214): IBAN'ı kopyala.
+  kopyala: CopyIcon,
 } satisfies Record<string, LucideIcon>;
 
 export type IkonAdi = keyof typeof ikonlar;

@@ -50,6 +50,15 @@ const site: Site = {
   baslangic: {
     ...klasor.baslangic,
     vergiAdi: "Deneme vergisi",
+    // Ödeme yöntemi (kart 0214): havale bir banka hesabıyla açık.
+    bankaHesaplari: [
+      {
+        kimlik: randomUUID(),
+        banka: "Deneme Bankası",
+        sahip: "Deneme",
+        iban: "TR420001000000000000000001",
+      },
+    ],
     magazaAdresi: {
       ulke: "TR",
       il: "TR-06",
@@ -125,6 +134,7 @@ const teslimat = {
 
 const bilgiler = (ek: Record<string, unknown> = {}) =>
   odemeBilgileriSemasi.parse({
+    odemeYontemi: { yontem: "havale" },
     teslimat,
     fatura: { tur: "bireysel", adresAyni: true },
     onBilgilendirmeOnayi: true,

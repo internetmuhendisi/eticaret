@@ -161,6 +161,13 @@ export const geriKoy = (kalem: YerelKalem, sira: number): void => {
   kaydet([...durum.kalemler.slice(0, yer), kalem, ...durum.kalemler.slice(yer)]);
 };
 
+// Sipariş verilince siparişe giren kalemler sepetten çıkar (kart 0214); sepet boşalınca çerez de silinir (depo.ts).
+// Başka sekmede arada eklenen kalem sepette kalır.
+export const siparisKalemleriniCikar = (birimler: readonly string[]): void => {
+  const cikanlar = new Set(birimler.map(kimligiDuzelt));
+  kaydet(durum.kalemler.filter((kalem) => !cikanlar.has(kalem.birim)));
+};
+
 // Pencere bir tetikleyiciyle değil durumla açılır: Radix odağı geri vereceği öğeyi bilmez. Açılırken odaktaki öğe
 // (sepete ekle düğmesi) saklanır, pencere kapanınca odak ona döner (penceredenDonulecekOge).
 let donulecekOge: HTMLElement | null = null;

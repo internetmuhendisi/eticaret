@@ -56,6 +56,9 @@ export type SepetHesapSatiri = {
   // Satılabilir satırda: gösterim biçiminde birim fiyat ve satırın tutarı, kuruş.
   birimTutari?: number;
   tutar?: number;
+  // Satılabilir satırda vergi hesabının sonucu: vergisiz tutar, vergi ve uygulanan oranlar (sipariş kalemine yazılır,
+  // kart 0214). Vergi kapalıysa vergi 0, oran yoktur.
+  vergi?: { vergisiz: number; vergi: number; oranlar: { ad?: string; oran: number }[] };
 };
 
 export type SepetHesabi = {
@@ -216,7 +219,13 @@ export const sepetiHesapla = async (
     gosterim === "vergi-haric" ? sonuc.vergisiz : sonuc.vergili;
   kalemTutarlari.forEach(({ satir }, sira) => {
     const sonuc = vergi?.satirlar[sira];
-    if (sonuc !== undefined) satir.tutar = goster(sonuc);
+    if (sonuc === undefined) return;
+    satir.tutar = goster(sonuc);
+    satir.vergi = {
+      vergisiz: sonuc.vergisiz,
+      vergi: sonuc.vergi,
+      oranlar: sonuc.oranlar.map(({ ad, oran }) => (ad === undefined ? { oran } : { ad, oran })),
+    };
   });
   const araToplam = satilanlar.reduce((toplam, satir) => toplam + (satir.tutar ?? 0), 0);
   const odemeyiDurduran = hesapSatirlari.some(

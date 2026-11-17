@@ -19,5 +19,30 @@
     "kepAdresi": "ornek-magaza@deneme.kep.tr"
   },
   "vergiAdi": "KDV",
-  "yorumYalnizSatinAlanlar": false
+  "yorumYalnizSatinAlanlar": false,
+  "odemeYontemleri": [
+    {
+      "kod": "havale",
+      "acik": true
+    },
+    {
+      "kod": "kapida-odeme",
+      "acik": true
+    }
+  ],
+  "kapidaOdemeSecenekleri": ["nakit", "kart"],
+  "bankaHesaplari": [
+    {
+      "kimlik": "5a0d6c1e-2f3b-4c8d-9e7a-1b2c3d4e5f01",
+      "banka": "Deneme Bankası",
+      "sahip": "Örnek Mağaza Deneme Ticaret A.Ş.",
+      "iban": "TR399990100000000000000001"
+    },
+    {
+      "kimlik": "5a0d6c1e-2f3b-4c8d-9e7a-1b2c3d4e5f02",
+      "banka": "Örnek Katılım Bankası",
+      "sahip": "Örnek Mağaza Deneme Ticaret A.Ş.",
+      "iban": "TR539990200000000000000002"
+    }
+  ]
 }

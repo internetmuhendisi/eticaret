@@ -41,7 +41,8 @@ Bileşen, düğme, giriş alanı, pencere gibi tekrar kullanılan arayüz parça
   - `Kart`, `Rozet`, `Uyari`, `BildirimAlani` ile `bildirimGoster`, `Ipucu`
   - `IskeletGorunum`, `YukleniyorGostergesi`, `Serit`, `Akordeon`
   - Sayfa iskeleti (kart 0135, karar 0103): `SayfaYolu`, `SayfaBasligi`, `BosHal`, `Sayfalama` ile `DahaFazla`
-  - `SecenekGrubu` (kart 0138, karar 0108): radyo grubu; seçilemeyen değer üstü çizili, odak alır, seçilmez; hata gösterir (kart 0139); seçilebilir tükenmiş değer (`tukenmis`) üstü çizili ve seçilir (kart 0144)
+  - `SecenekGrubu` (kart 0138, karar 0108): radyo grubu; seçilemeyen değer üstü çizili, odak alır, seçilmez; hata gösterir (kart 0139); seçilebilir tükenmiş değer (`tukenmis`) üstü çizili ve seçilir (kart 0144); `gorunum="kart"` alt alta tam genişlikte satırlar, açıklama ve ikonla (ödeme yöntemi, kart 0214)
+  - `Anahtar` (kart 0214, karar 0141): açma-kapama (Radix Switch); ekran okuyucu adı etiketten, durumun yazısı (açık, kapalı) yanında görünür
   - `SiralanabilirListe` (kart 0141, karar 0111): elle sıralanan küçük liste; tutamakla sürükleme (@dnd-kit), klavyeyle boşluk ve ok tuşları, her genişlikte yukarı ve aşağı al düğmeleri, ekran okuyucu duyuruları. Kullanan yeni sırayı hemen verir, kaydı arkadan yapar. Metinleri `cekirdek/metinler/siralama-metinleri.ts`. Satırın içinde alt liste duran listede `hizalama="ust"` (kart 0143).
   - `OnayPenceresi` (kart 0143, karar 0116): silme ve iptal gibi geri dönüşsüz eylemlerin tek onayı; uyarı penceresi, odak "Vazgeç"te, Escape vazgeçer, onay işi bitince kapanır, odak açan öğeye döner.
   - `SayfaBasligi` panelde `gorunum="panel"` ile çizilir (kart 0141).

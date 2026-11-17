@@ -47,3 +47,32 @@ export const odemeHatalari = [
   "vergi-numarasi-kontrol",
 ] as const;
 export type OdemeHatasi = (typeof odemeHatalari)[number];
+
+// Ödeme yöntemleri (kart 0214, karar 0141). Kayıttaki sıra yöntemin kendi sırası değildir: müşterinin gördüğü sıra ve
+// hangilerinin açık olduğu mağaza sahibinin ayarıdır (odemeYontemleri). Kartla ödeme eklentisi (kart 0215) kendi
+// yöntemini buraya eklentisiyle ekler: eklentisi kapalı sitede yöntem kapalı sayılır.
+// - havale: müşteri siparişten sonra mağazanın banka hesaplarından birine öder. Banka hesabı yoksa ödeme adımında
+//   görünmez. Ödenmeyen sipariş havaleIptalSuresi kadar gün sonra kendiliğinden iptal olur.
+// - kapida-odeme: müşteri teslimatta kuryeye öder; seçenekleri (nakit, kart) mağaza sahibinin ayarıdır
+//   (kapidaOdemeSecenekleri). Müşteri seçeneği ödeme adımında seçer, sipariş seçenekle saklanır.
+export const odemeYontemleri = ["havale", "kapida-odeme"] as const;
+export type OdemeYontemi = (typeof odemeYontemleri)[number];
+
+export const kapidaOdemeSecenekleri = ["nakit", "kart"] as const;
+export type KapidaOdemeSecenegi = (typeof kapidaOdemeSecenekleri)[number];
+
+// Ödenmeyen havale siparişinin iptal süresi, gün (mağaza sahibinin ayarı havaleIptalSuresi).
+export const havaleIptalSuresiSinirlari = { enAz: 1, enCok: 30, varsayilan: 3 } as const;
+
+// Banka hesapları (havale): en çok kaç hesap, alanların en çok karakter sayısı.
+export const bankaHesabiSinirlari = { enCok: 10, bankaEnCok: 100, sahipEnCok: 150 } as const;
+
+// Havale bildirimi (kart 0214): müşterinin "ödemeyi yaptım" bildirimi. Not ve gönderen adının sınırları; bir siparişe
+// en çok kaç bildirim yazılır (bildirimli sipariş kendiliğinden iptal olmaz, sınırsız bildirim yığılmasın); formdaki
+// tutar örneği (kuruş, sitenin biçimiyle yazılır).
+export const havaleBildirimiSinirlari = {
+  notEnCok: 500,
+  gonderenEnCok: 150,
+  siparisBasinaEnCok: 5,
+  tutarOrnegi: 139_960,
+} as const;

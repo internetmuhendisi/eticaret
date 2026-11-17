@@ -267,6 +267,13 @@
       "when": 1794893585698,
       "tag": "0037_odeme-oturumlari",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1794910838461,
+      "tag": "0038_siparisler",
+      "breakpoints": true
     }
   ]
 }

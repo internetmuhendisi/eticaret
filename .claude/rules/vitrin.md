@@ -96,6 +96,13 @@ paths:
 - Özetin tutarları sepet ucundan, teslimat ve fatura bölgesiyle gelir (`useSepetGorunumu`, `vergiBolgeleri`); tarayıcı tutar göndermez.
 - Sepetin "Ödemeye geç"i `OdemeyeGec`'tir (`sepet-gorunumu.tsx`): ödemeye geçilemiyorsa kapalı görünür, odak alır, nedenini söyler.
 
+## Sipariş alındı ve havale bildirimi (karar 0141)
+
+- Ödeme adımının yöntemleri sunucuda `kullanilabilirYontemler` ile gelir, form yöntem kartlarını `SecenekGrubu` (`gorunum="kart"`) ile çizer. Sipariş oluşunca siparişe giren kalemler `siparisKalemleriniCikar` ile sepetten çıkar, müşteri `/siparis-alindi`'ye gider.
+- Sipariş alındı sayfası (`cekirdek/vitrin/siparis/alindi-sayfasi.tsx`) siparişi yalnız erişim çereziyle (`siparisErisimCerezi`, `siparisServisi.erisimleOku`) okur; çerez yoksa bulunamadı. Tutarlar siparişin saklanan değerleridir, yeniden hesaplanmaz; özet `SepetOzeti` ile çizilir. Adresi `vitrinAdresleri.siparisAlindi`, çerezin yoluyla tektir.
+- Havale bildirimi formu (`havale-bildirimi-formu.tsx`) üyede müşteri ucuna, üye olmayanda ertelenmiş robotlu gönderimle herkese açık uca gider; numarayı adresten (`?siparis=`) alır, e-posta adrese yazılmaz.
+- Giriş yapmış müşteriye son siparişinin teslimatı önerilir (`/kapi/musteri/son-teslimat`); sayfa çizilirken oturum okunmaz.
+
 ## Ana sayfa bölümleri ve görseller (karar 0087)
 
 - Ana sayfa düzenin ana sayfa alanını çizer; bölüm yoksa sade sayfa görünür. Bölümün başlığı h2'dir, sayfanın h1'i mağaza adıdır.

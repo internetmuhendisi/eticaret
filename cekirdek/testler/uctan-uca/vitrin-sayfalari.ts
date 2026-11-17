@@ -39,6 +39,9 @@ export const ekranSayfalari: Record<string, { adres: string; durum: number; menu
   sepet: { adres: vitrinAdresleri.sepet, durum: 200 },
   // Kart 0213: ödeme adımı, boş sepetle (boş hâl); dolu formun taraması ödeme testindedir.
   odeme: { adres: vitrinAdresleri.odeme, durum: 200, menu: false },
+  // Kart 0214: havale bildirimi (boş form). Sipariş alındı sayfası erişim çereziyle açılır, burada ölçülmez; taraması
+  // ödeme testindedir.
+  "havale bildirimi": { adres: vitrinAdresleri.havaleBildirimi, durum: 200 },
   giris: { adres: vitrinAdresleri.giris, durum: 200 },
   kayit: { adres: vitrinAdresleri.kayit, durum: 200 },
   bulunamadi: { adres: "/olcum-icin-olmayan-sayfa", durum: 404 },

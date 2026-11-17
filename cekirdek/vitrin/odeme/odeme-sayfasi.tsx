@@ -1,6 +1,7 @@
 // Ödeme sayfası (kart 0213, karar 0140): /odeme. Sayfa sunucuda başlığı ve formun verisini hazırlar: üye olmadan
 // alışveriş ve telefon ayarı, sitenin teslimat ülkeleri il ve ilçe listeleriyle, ön bilgilendirme formu ve mesafeli
-// satış sözleşmesinin satıcı satırları (satıcı bilgileri, mağaza adresi ve iletişim; kart 0091) ve teslim süresi.
+// satış sözleşmesinin satıcı satırları (satıcı bilgileri, mağaza adresi ve iletişim; kart 0091), teslim süresi ve
+// sitede kullanılabilen ödeme yöntemleri (kart 0214).
 // Sepet tarayıcıdadır: form sunucuda hemen çizilir, özet tarayıcıda gelir; sepetin çerezinde kalem yoksa boş hâl
 // sunucuda çizilir (karar 0136). Kişiye özel sayfa: arama motorlarına kapalıdır. Tema
 // demosunda bulunamadı verir (ziyaretçi sipariş vermez).
@@ -16,6 +17,7 @@ import { metin, siteninBicimleyicisi } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import { sayfaBasligi } from "../../moduller/gorunurluk/sayfa-bilgisi";
 import { magazaninAdi, siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
+import { kullanilabilirYontemler } from "../../moduller/odeme/yontemler";
 import { siteninVeritabani } from "../../veritabani/baglanti";
 import { cerezdekiSayi } from "../sepet/depo";
 import { musteriSayfasiBilgisi, musteriSayfasiniAc } from "../yalniz-gezinti";
@@ -77,6 +79,12 @@ const sayfaVerisi = async (): Promise<OdemeSayfasiVerisi> => {
   ].filter((satir): satir is string => satir !== undefined && satir !== "");
   return {
     uyeOlmadanAlisveris: ayarlar.uyeOlmadanAlisveris,
+    // Sitede kullanılabilen ödeme yöntemleri (kart 0214): kapıda ödemenin her seçeneği ayrı satır.
+    yontemler: kullanilabilirYontemler(ayarlar).map((secim) => ({
+      anahtar: secim.yontem === "havale" ? secim.yontem : `${secim.yontem}-${secim.secenek}`,
+      secim,
+    })),
+    havaleIptalSuresi: ayarlar.havaleIptalSuresi,
     telefonZorunlu: ayarlar.telefonZorunlu,
     ulkeler,
     satici: saticiSatirlari,

@@ -1,20 +1,26 @@
-// Ödeme uçları gerçek istek ve gerçek veritabanıyla (kart 0213, karar 0140):
-// - Üye olmayan müşteri robot cevabıyla oturum açar; yanıt önbelleğe alınmaz; hesap açarsa iki oturum çerezi gelir ve
-//   bu çerezle müşteri ucu da çalışır.
+// Ödeme uçları gerçek istek ve gerçek veritabanıyla (kartlar 0213 ve 0214, kararlar 0140 ve 0141):
+// - Üye olmayan müşteri robot cevabıyla sipariş verir: yanıtta oturum ve sipariş numarası, sipariş alındı sayfasının
+//   erişim çerezi (yalnız o sayfanın yoluna, tarayıcının koduna kapalı); yanıt önbelleğe alınmaz. Hesap açarsa iki oturum
+//   çerezi de gelir ve bu çerezle müşteri ucu da çalışır.
+// - Sitede kapalı ödeme yöntemiyle sipariş verilmez (is-kurali, yontem-kapali), hiçbir şey yazılmaz.
 // - Uydurma robot cevabında, onaysız formda ve tutar taşıyan girdide hiçbir şey yazılmaz (tutar tarayıcıdan gelmez).
 // - Üye olmadan alışveriş kapalıyken herkese açık uç oturum-yok döner; giriş yapmış müşteri yine geçer.
 // - Müşteri ucu oturumsuz istekte oturum-yok döner.
 import { randomBytes } from "node:crypto";
 import { resolve } from "node:path";
+import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
 import { siteninFiyatServisi } from "../../moduller/fiyat/servis.ts";
 import { siteninServisi } from "../../moduller/magaza-ayarlari/servis.ts";
 import { odemeOturumlari } from "../../moduller/odeme/model.ts";
+import { odemeYontemiServisi } from "../../moduller/odeme/yontemler.ts";
 import { girisYap, hesapAc } from "../../moduller/oturum/servis.ts";
 import { robotSorusuUret } from "../../moduller/robot-korumasi/servis.ts";
 import { soruyuCoz } from "../../moduller/robot-korumasi/testler/soru-coz.ts";
+import { siparisler } from "../../moduller/siparis/model.ts";
+import { erisimOzeti } from "../../moduller/siparis/servis.ts";
 import { stokServisi } from "../../moduller/stok/servis.ts";
 import { urunServisi } from "../../moduller/urun/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
@@ -61,6 +67,7 @@ const birimAc = async () => {
 };
 
 const bilgiler = {
+  odemeYontemi: { yontem: "havale" },
   teslimat: {
     ad: "Deniz",
     soyad: "Yılmaz",
@@ -118,6 +125,12 @@ beforeAll(async () => {
     resolve(import.meta.dirname, "../../ayar-semasi/testler/ornek-siteler/gecerli"),
   );
   await baglantiyiKapat();
+  // Havale bir hesapla açık (kart 0214); kapıda ödeme kapalı.
+  await odemeYontemiServisi(calisanSite()).hesapEkle(vt, yapan, {
+    banka: "Deneme",
+    sahip: "Deneme",
+    iban: "TR420001000000000000000001",
+  });
 });
 afterAll(async () => {
   await baglantiyiKapat();
@@ -126,17 +139,41 @@ afterAll(async () => {
 });
 
 describe("herkese açık ödeme ucu", () => {
-  it("robot cevabıyla oturum açılır, yanıt önbelleğe alınmaz, çerez yazılmaz", async () => {
+  it("robot cevabıyla sipariş verilir, yanıt önbelleğe alınmaz, yalnız erişim çerezi yazılır", async () => {
     const birim = await birimAc();
     const once = await oturumSayisi();
     const yanit = await misafir(await misafirGovdesi(birim));
     expect(yanit.status).toBe(200);
     expect(yanit.headers.get("cache-control")).toBe("no-store");
-    expect(yanit.headers.getSetCookie()).toEqual([]);
-    const { veri } = (await yanit.json()) as { veri: { oturum: string; bitis: string } };
+    const { veri } = (await yanit.json()) as { veri: { oturum: string; siparis: string } };
     expect(veri.oturum).toMatch(/^[0-9a-f-]{36}$/);
-    expect(Number.isNaN(Date.parse(veri.bitis))).toBe(false);
+    expect(veri.siparis).toMatch(/^[A-Z]{2,5}-\d+$/);
     expect(await oturumSayisi()).toBe(once + 1);
+    // Erişim çerezi: yalnız sipariş alındı sayfasının yoluna, HttpOnly, Secure; değeri siparişin anahtarıdır.
+    const cerezler = yanit.headers.getSetCookie();
+    expect(cerezler).toHaveLength(1);
+    const [cerez = ""] = cerezler;
+    expect(cerez).toMatch(
+      /^siparis-erisim=[A-Za-z0-9_-]+; Path=\/siparis-alindi; Max-Age=86400; HttpOnly; Secure; SameSite=Lax$/,
+    );
+    const anahtar = cerez.split(";")[0]?.split("=")[1] ?? "";
+    const [kayit] = await vt.select().from(siparisler).where(eq(siparisler.numara, veri.siparis));
+    expect(kayit?.erisim_ozeti).toBe(erisimOzeti(anahtar));
+  });
+
+  it("kapalı ödeme yöntemiyle sipariş verilmez, hiçbir şey yazılmaz", async () => {
+    const birim = await birimAc();
+    const once = await oturumSayisi();
+    const yanit = await misafir(
+      await misafirGovdesi(birim, {
+        bilgiler: { ...bilgiler, odemeYontemi: { yontem: "kapida-odeme", secenek: "nakit" } },
+      }),
+    );
+    expect(yanit.status).toBe(422);
+    expect(((await yanit.json()) as { hata: { ayrinti: unknown } }).hata.ayrinti).toEqual([
+      { alan: "bilgiler.odemeYontemi", kod: "yontem-kapali" },
+    ]);
+    expect(await oturumSayisi()).toBe(once);
   });
 
   it("uydurma robot cevabı, onaysız form ve tutar taşıyan girdi hiçbir şey yazmaz", async () => {
@@ -166,7 +203,9 @@ describe("herkese açık ödeme ucu", () => {
       }),
     );
     expect(yanit.status).toBe(200);
-    const cerezler = yanit.headers.getSetCookie();
+    const cerezler = yanit.headers
+      .getSetCookie()
+      .filter((satir) => !satir.startsWith("siparis-erisim="));
     expect(cerezler).toHaveLength(2);
     expect((await uye(birim, cerezSatiri(cerezler))).status).toBe(200);
   });

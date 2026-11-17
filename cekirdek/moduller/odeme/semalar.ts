@@ -10,11 +10,12 @@
 // - Not ve adlar düz metindir (cekirdek/metinler/duz-metin.ts).
 // - Ön bilgilendirme ve mesafeli satış onayı zorunludur (true dışında bir değer geçmez). Pazarlama izni işaretsiz
 //   gelir, işaretlenmezse verilmez (kayıt formuyla aynı kural, kart 0033).
+// - Ödeme yöntemi zorunludur: havale ya da kapıda ödemenin seçeneği (kart 0214).
 // - Tutar hiçbir şemada yoktur: tarayıcıdan yalnız sepetin kalemleri gelir, tutar sunucuda hesaplanır.
 import { z } from "zod";
 import { postaAdresiSemasi, telefonGecerliMi, telefonuDuzelt } from "../../bolgeler/adres.ts";
 import { faturaVergiNumarasiHatasi } from "../../bolgeler/satici.ts";
-import { faturaTurleri, odemeSinirlari } from "../../kayitlar/odeme.ts";
+import { faturaTurleri, kapidaOdemeSecenekleri, odemeSinirlari } from "../../kayitlar/odeme.ts";
 import { sepetSinirlari } from "../../kayitlar/sepet.ts";
 import { duzMetinSemasi } from "../../metinler/duz-metin.ts";
 import { kimlikSemasi } from "../../veritabani/kimlik.ts";
@@ -76,8 +77,17 @@ export const faturaSemasi = z
   });
 export type Fatura = z.output<typeof faturaSemasi>;
 
+// Müşterinin seçtiği ödeme yöntemi (kart 0214, karar 0141): havale ya da kapıda ödemenin bir seçeneği. Yöntemin
+// sitede açık olup olmadığını servis ayarla denetler.
+export const odemeYontemiSecimiSemasi = z.discriminatedUnion("yontem", [
+  z.strictObject({ yontem: z.literal("havale") }),
+  z.strictObject({ yontem: z.literal("kapida-odeme"), secenek: z.enum(kapidaOdemeSecenekleri) }),
+]);
+export type OdemeYontemiSecimi = z.output<typeof odemeYontemiSecimiSemasi>;
+
 export const odemeBilgileriSemasi = z
   .strictObject({
+    odemeYontemi: odemeYontemiSecimiSemasi,
     teslimat: teslimatSemasi,
     fatura: faturaSemasi,
     not: z.preprocess(bosIseYok, duzMetinSemasi(odemeSinirlari.notEnCok).optional()),

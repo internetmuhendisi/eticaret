@@ -12,8 +12,9 @@ import { magazaAyarlariIzinleri } from "../moduller/magaza-ayarlari/izinler.ts";
 import { markaIzinleri } from "../moduller/marka/izinler.ts";
 import { menuIzinleri } from "../moduller/menu/izinler.ts";
 import { musteriIzinleri } from "../moduller/musteri/izinler.ts";
-import { odemeIzinleri } from "../moduller/odeme/izinler.ts";
+import { odemeIzinleri, odemeYontemiIzinleri } from "../moduller/odeme/izinler.ts";
 import { ozellikIzinleri } from "../moduller/ozellik/izinler.ts";
+import { siparisIzinleri } from "../moduller/siparis/izinler.ts";
 import { stokIzinleri } from "../moduller/stok/izinler.ts";
 import { temaIzinleri } from "../moduller/tema/izinler.ts";
 import { urunIzinleri } from "../moduller/urun/izinler.ts";
@@ -42,7 +43,10 @@ export const modulIzinleri = {
   menu: menuIzinleri,
   musteri: musteriIzinleri,
   odeme: odemeIzinleri,
+  // Ödeme yöntemleri ve banka hesapları (kart 0214): ödeme modülünün ayrı izin adı.
+  "odeme-yontemi": odemeYontemiIzinleri,
   ozellik: ozellikIzinleri,
+  siparis: siparisIzinleri,
   stok: stokIzinleri,
   // Eklenti (kart 0144, karar 0117).
   "stok-bildirimi": stokBildirimiIzinleri,
@@ -64,7 +68,9 @@ export const izinler = {
   ...menuIzinleri,
   ...musteriIzinleri,
   ...odemeIzinleri,
+  ...odemeYontemiIzinleri,
   ...ozellikIzinleri,
+  ...siparisIzinleri,
   ...stokIzinleri,
   ...stokBildirimiIzinleri,
   ...temaIzinleri,

@@ -5,6 +5,7 @@
 // düğmeleri ilgili işlev yazılana kadar görünmez (cekirdek/kayitlar/islevler.ts). Kategori, marka, etiket ve
 // ürün sayfasının iskeleti kart 0135'te açıldı; içeriği kartlar 0136 ve 0138'de gelir.
 import type { AdresliKayitTuru } from "../kayitlar/adres";
+import { siparisErisimCerezi } from "../kayitlar/siparis.ts";
 
 export const vitrinAdresleri = {
   anasayfa: "/",
@@ -18,6 +19,10 @@ export const vitrinAdresleri = {
   sepet: "/sepet",
   // Ödeme adımı (kart 0213): vitrinin çerçevesinin dışında, sade üst ve alt kısımla.
   odeme: "/odeme",
+  // Sipariş alındı sayfası (kart 0214): erişim çerezi yalnız bu yola gider, adres tek yerde.
+  siparisAlindi: siparisErisimCerezi.yol,
+  // Havale bildirimi (kart 0214).
+  havaleBildirimi: "/havale-bildirimi",
   favoriler: "/favoriler",
 } as const;
 

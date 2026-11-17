@@ -49,7 +49,7 @@ Kapıdaki her uç burada yazar (`.claude/rules/sunucu-arayuzu.md`). Yeni ya da d
 
 **Çerez.** Uç yanıta çerezi yalnız `cerezYaz` ile yazar. Oturum çerezleri `cekirdek/kapi/oturum-cerezi.ts` dosyasındadır, hatalı yanıtta da gider.
 
-**Tema demosu** (kart 0116, karar 0127). Site ayarı `temaDemosu` açıkken ziyaretçi yalnız gezer: kapalı uç, sahte isteğe, sınıra ve girdiye bakmadan `bulunamadi` döner. Müşteri girişindeki her uç kapalıdır. Herkese açık her uç tanımında demodaki durumunu beyan eder (`temaDemosunda`, tür kontrolü ister): hesap, sipariş, yorum, bildirim ya da e-posta doğuran uç `kapali`, vitrinin okuduğu ve panelin kullandığı uç `acik`. Yönetici ve sahip uçları açıktır. Bugün kapalı herkese açık uçlar: `musteri-kayit`, `musteri-giris`, `musteri-cikis`, `musteri-sifre-sifirlama`, `musteri-sifre-yenile`, `stok-bildirimi`; listeyi `cekirdek/kapi/testler/tema-demosu.test.ts` denetler.
+**Tema demosu** (kart 0116, karar 0127). Site ayarı `temaDemosu` açıkken ziyaretçi yalnız gezer: kapalı uç, sahte isteğe, sınıra ve girdiye bakmadan `bulunamadi` döner. Müşteri girişindeki her uç kapalıdır. Herkese açık her uç tanımında demodaki durumunu beyan eder (`temaDemosunda`, tür kontrolü ister): hesap, sipariş, yorum, bildirim ya da e-posta doğuran uç `kapali`, vitrinin okuduğu ve panelin kullandığı uç `acik`. Yönetici ve sahip uçları açıktır. Bugün kapalı herkese açık uçlar: `musteri-kayit`, `musteri-giris`, `musteri-cikis`, `musteri-sifre-sifirlama`, `musteri-sifre-yenile`, `stok-bildirimi`, `odeme`, `havale-bildirimi`; listeyi `cekirdek/kapi/testler/tema-demosu.test.ts` denetler.
 
 ## Herkese açık
 
@@ -188,13 +188,23 @@ Tarayıcıdaki sepetin vitrin verisini hesaplar (kart 0212, karar 0135). Sepet y
 
 ### POST /kapi/herkese-acik/odeme
 
-Üye olmayan müşteri ödeme adımında "Siparişi onayla"ya basar (kart 0213, karar 0140): ödeme oturumu açılır, sepetin takibi açık birimleri stok ayırma süresi kadar ayrılır (`stokAyirmaSuresi`), isterse hesap açılır. Tutar sunucuda hesaplanır, tarayıcıdan gelmez; vergi teslimat ve fatura adresinin bölgesiyle (`vergiAdresi`). Sipariş kart 0214'te oturumdan kurulur. Tema demosunda kapalıdır.
+Üye olmayan müşteri ödeme adımında "Siparişi onayla"ya basar (kart 0213, karar 0140): ödeme oturumu açılır, sepetin takibi açık birimleri stok ayırma süresi kadar ayrılır (`stokAyirmaSuresi`), isterse hesap açılır. Havale ve kapıda ödemede sipariş aynı işlemde oturumdan kurulur, stok düşer, ayırma siparişe geçer (kart 0214, karar 0141). Tutar sunucuda hesaplanır, tarayıcıdan gelmez; vergi teslimat ve fatura adresinin bölgesiyle (`vergiAdresi`). Tema demosunda kapalıdır.
 
 - İzin: `herkese-acik`. Sınır: `siki`.
-- Girdi: `{ "eposta", "hesap": { "ac": false } | { "ac": true, "sifre", "uyelikOnayi", "kvkkOnayi" }, "bilgiler": { "teslimat", "fatura", "not"?, "onBilgilendirmeOnayi", "mesafeliSatisOnayi", "pazarlamaIzni" }, "kalemler", "robotCevabi", "onceki"?, "gorulenToplam"? }` (`misafirOdemeGirdisi`, `cekirdek/moduller/odeme/semalar.ts`). `onceki` müşterinin bir önceki onayının oturumudur: yalnız üye olmayanın oturumuysa silinir, ayırması serbest kalır. `gorulenToplam` müşterinin özette gördüğü toplamdır (kuruş): sunucunun toplamından farklıysa `sepet-degisti`; tutar olarak kullanılmaz.
+- Girdi: `{ "eposta", "hesap": { "ac": false } | { "ac": true, "sifre", "uyelikOnayi", "kvkkOnayi" }, "bilgiler": { "odemeYontemi", "teslimat", "fatura", "not"?, "onBilgilendirmeOnayi", "mesafeliSatisOnayi", "pazarlamaIzni" }, "kalemler", "robotCevabi", "onceki"?, "gorulenToplam"? }` (`misafirOdemeGirdisi`, `cekirdek/moduller/odeme/semalar.ts`). `onceki` müşterinin bir önceki onayının oturumudur: yalnız üye olmayanın oturumuysa silinir, ayırması serbest kalır. `gorulenToplam` müşterinin özette gördüğü toplamdır (kuruş): sunucunun toplamından farklıysa `sepet-degisti`; tutar olarak kullanılmaz. `odemeYontemi`: `{ "yontem": "havale" }` ya da `{ "yontem": "kapida-odeme", "secenek": "nakit" | "kart" }`.
 - Servis: `cekirdek/moduller/odeme/servis.ts`. Robot cevabı veritabanına bakılmadan önce denetlenir.
-- Başarılı (200): `{ "basarili": true, "veri": { "oturum", "bitis", "bitisYazili" } }` (`bitisYazili` ayırmanın bittiği an, sitenin saat dilimiyle); hesap açıldıysa iki oturum çerezi.
-- Hatalar: `oturum-yok` (üye olmadan alışveriş kapalı: `uyeOlmadanAlisveris`), `dogrulama` (şemaya uymayan girdi; `telefon-gerekli`, `telefon-bicimi`, `fatura-adresi-gerekli`, `vergi-numarasi-bicimi`, `vergi-numarasi-kontrol`, `ulke-teslimat-disi`, bölge ve adres kodları), `is-kurali` (`sepet-bos`, `sepet-degisti`: sepet ödemeye geçilemez ya da müşterinin görmediği bir değişiklik var), `cakisma` (`stok-ayrildi`: birimin stoğu başka bir ödemede ayrılmış ya da yetmiyor, birimle; ya da hesap açılırken e-posta kayıtlı), `robot-dogrulamasi`, `istek-siniri` (`Retry-After` ile), `yetki` (sahte istek), tema demosunda `bulunamadi`.
+- Başarılı (200): `{ "basarili": true, "veri": { "oturum", "siparis" } }` (`siparis` siparişin numarası); sipariş alındı sayfasının erişim çerezi (`siparis-erisim`, yalnız `/siparis-alindi` yoluna, `cekirdek/kapi/siparis-cerezi.ts`); hesap açıldıysa iki oturum çerezi.
+- Hatalar: `oturum-yok` (üye olmadan alışveriş kapalı: `uyeOlmadanAlisveris`), `dogrulama` (şemaya uymayan girdi; `telefon-gerekli`, `telefon-bicimi`, `fatura-adresi-gerekli`, `vergi-numarasi-bicimi`, `vergi-numarasi-kontrol`, `ulke-teslimat-disi`, bölge ve adres kodları), `is-kurali` (`sepet-bos`, `sepet-degisti`: sepet ödemeye geçilemez ya da müşterinin görmediği bir değişiklik var; `yontem-kapali`: seçilen ödeme yöntemi ya da seçeneği sitede kapalı ya da havalenin banka hesabı yok), `cakisma` (`stok-ayrildi`: birimin stoğu başka bir ödemede ayrılmış ya da yetmiyor, birimle; ya da hesap açılırken e-posta kayıtlı), `robot-dogrulamasi`, `istek-siniri` (`Retry-After` ile), `yetki` (sahte istek), tema demosunda `bulunamadi`.
+
+### POST /kapi/herkese-acik/havale-bildirimi
+
+Üye olmayan müşteri havaleyle ödediğini bildirir (kart 0214, karar 0141): sipariş numarası ve siparişteki e-postayla. Bildirim siparişe yazılır; bildirimli sipariş süre dolunca kendiliğinden iptal olmaz (kullanıcı kararı). Tema demosunda kapalıdır.
+
+- İzin: `herkese-acik`. Sınır: `siki`.
+- Girdi: `{ "numara", "eposta", "gonderen", "hesap", "tutar", "odemeTarihi", "not"?, "robotCevabi" }` (`misafirHavaleBildirimiGirdisi`, `cekirdek/moduller/siparis/semalar.ts`). `hesap` mağazanın banka hesaplarından birinin kimliği; `tutar` sitenin para biçimiyle yazılı ("1.399,60"); `odemeTarihi` `YYYY-AA-GG`.
+- Servis: `cekirdek/moduller/siparis/servis.ts`. Robot cevabı veritabanına bakılmadan önce denetlenir.
+- Başarılı (200): `{ "basarili": true, "veri": { "numara" } }`.
+- Hatalar: `bulunamadi` (numara ile e-posta eşleşmedi; siparişin var olup olmadığı belli olmaz), `is-kurali` (`havale-beklemiyor`: sipariş havale değil ya da ödeme beklemiyor; `bildirim-siniri`: siparişe en çok 5 bildirim), `dogrulama` (`numara-bicimi`, `tutar-okunamadi`, `tarih-bicimi`, `tarih-gecersiz`: siparişten önceki ya da ileri tarih, `hesap-yok`), `robot-dogrulamasi`, `istek-siniri`, `yetki` (sahte istek), tema demosunda `bulunamadi`.
 
 ### POST /kapi/herkese-acik/musteri-giris
 
@@ -319,13 +329,33 @@ Müşterinin favorileri (kart 0140, karar 0110). Vitrin girişli müşterinin fa
 
 ### POST /kapi/musteri/odeme
 
-Giriş yapmış müşterinin ödeme adımı (kart 0213, karar 0140): herkese açık ödeme ucuyla aynı, oturum müşterinin hesabına açılır. E-posta hesabındandır; pazarlama izni işaretlenirse hesabın onaylarına da yeni satır olarak yazılır (işaretsiz bırakmak var olan izni geri almaz).
+Giriş yapmış müşterinin ödeme adımı (kart 0213, karar 0140): herkese açık ödeme ucuyla aynı, oturum ve sipariş müşterinin hesabına açılır (kart 0214). E-posta hesabındandır; pazarlama izni işaretlenirse hesabın onaylarına da yeni satır olarak yazılır (işaretsiz bırakmak var olan izni geri almaz).
 
 - İzin: `odeme.kendi.baslat`. Sınır: `siki`.
 - Girdi: `{ "bilgiler", "kalemler", "robotCevabi", "onceki"?, "gorulenToplam"? }` (`uyeOdemeGirdisi`). Müşterinin kimliği yalnız kapıdan gelir; `onceki` müşterinin kendi oturumuysa ya da üye olmadan açılmış oturumsa (aynı sekmede giriş yapıp yeniden onaylayan müşteri) silinir, başka üyeninki silinmez.
 - Servis: `cekirdek/moduller/odeme/servis.ts`.
-- Başarılı (200): `{ "basarili": true, "veri": { "oturum", "bitis", "bitisYazili" } }`.
+- Başarılı (200): `{ "basarili": true, "veri": { "oturum", "siparis" } }` ve sipariş alındı sayfasının erişim çerezi.
 - Hatalar: herkese açık ödeme ucunun hataları (hesap açma ve `uyeOlmadanAlisveris` dışında), `oturum-yok`.
+
+### POST /kapi/musteri/havale-bildirimi
+
+Giriş yapmış müşteri kendi havale siparişi için ödediğini bildirir (kart 0214, karar 0141). Kurallar herkese açık uçla aynıdır; e-posta istenmez, sipariş yalnız müşterinin kendi hesabınınsa bulunur. Robot sorusu sorulmaz.
+
+- İzin: `siparis.kendi.havale-bildir`. Sınır: `siki`.
+- Girdi: `{ "numara", "gonderen", "hesap", "tutar", "odemeTarihi", "not"? }` (`uyeHavaleBildirimiGirdisi`). Müşterinin kimliği yalnız kapıdan gelir.
+- Servis: `cekirdek/moduller/siparis/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "numara" } }`.
+- Hatalar: `bulunamadi` (sipariş yok ya da başka hesabın), `is-kurali` (`havale-beklemiyor`, `bildirim-siniri`), `dogrulama`, `oturum-yok`, `istek-siniri`.
+
+### GET /kapi/musteri/son-teslimat
+
+Giriş yapmış müşterinin en son siparişinin teslimat bilgisi (kart 0214, karar 0141): ödeme adımı onu "Son siparişimdeki adresi kullan" ile önerir.
+
+- İzin: `odeme.kendi.baslat`. Sınır: `genel`.
+- Girdi: yok. Müşterinin kimliği yalnız kapıdan gelir.
+- Servis: `cekirdek/moduller/siparis/servis.ts` (`sonTeslimat`).
+- Başarılı (200): `{ "basarili": true, "veri": { "teslimat": { "ad", "soyad", "telefon"?, "adres" } | null } }`. Siparişi yoksa `null`.
+- Hatalar: `oturum-yok`, `istek-siniri`.
 
 ### POST /kapi/musteri/stok-bildirimi
 
@@ -340,6 +370,54 @@ Giriş yapmış müşteri tükenmiş birim için "stoğa gelince haber ver" tale
 ## Yönetici
 
 Yönetici uçları iki aşamalı girişten geçmiş oturum ister. Girişsiz istek `oturum-yok`, izni olmayan rol `yetki` alır.
+
+### GET /kapi/yonetici/odeme-yontemleri
+
+Panelin ödeme yöntemleri ve banka hesapları ekranlarının verisi (kart 0214, karar 0141): kayıttaki bütün yöntemler ayarın sırasıyla ve açık olup olmadıklarıyla (listede olmayan kapalı ve sonda), kapıda ödemenin seçenekleri, havalenin iptal süresi (gün) ve banka hesapları.
+
+- İzin: `odeme-yontemi.gor`. Sınır: `genel`.
+- Girdi: yok.
+- Servis: `cekirdek/moduller/odeme/yontemler.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "yontemler": [{ "kod", "acik" }], "kapidaOdemeSecenekleri", "havaleIptalSuresi", "bankaHesaplari": [{ "kimlik", "banka", "sahip", "iban" }] } }`.
+
+### POST /kapi/yonetici/odeme-yontemleri
+
+Yöntemleri, sıralarını, kapıda ödemenin seçeneklerini ve havalenin iptal süresini birlikte kaydeder. Her değişen ayar değişiklik kaydına girer (`magaza-ayari.degisti`); aynı kalan girmez.
+
+- İzin: `odeme-yontemi.degistir` (yalnız mağaza sahibi, kullanıcı kararı). Sınır: `genel`.
+- Girdi: `{ "yontemler": [{ "kod", "acik" }], "kapidaOdemeSecenekleri", "havaleIptalSuresi" }` (`odemeYontemleriSemasi`, `cekirdek/moduller/odeme/yontem-semalari.ts`). Liste kayıttaki her yöntemi bir kez taşır; süre gün olarak yazılıdır.
+- Başarılı (200): GET ile aynı veri.
+- Hatalar: `dogrulama` (`yontem-listesi`, `secenek-gerekli`, `secenek-tekrari`; alanın koduyla `en-az-bir-yontem`: müşterinin kullanabileceği yöntem kalmıyor, banka hesabı olmayan havale sayılmaz; `gun-gecersiz`; hiçbir ayar değişmez), `yetki`.
+
+### POST /kapi/yonetici/banka-hesabi-ekle
+
+Havalenin banka hesaplarına hesap ekler; numara IBAN olarak doğrulanır (`cekirdek/bolgeler/iban.ts`) ve boşluksuz saklanır.
+
+- İzin: `odeme-yontemi.degistir`. Sınır: `genel`.
+- Girdi: `{ "banka", "sahip", "iban" }` (`bankaHesabiSemasi`).
+- Başarılı (200): GET ile aynı veri.
+- Hatalar: `dogrulama` (alan `iban`: `iban-bicimi`, `iban-ulke`, `iban-uzunluk`, `iban-kontrol`, `iban-ayni`), `is-kurali` (`hesap-siniri`), `yetki`.
+
+### POST /kapi/yonetici/banka-hesabi-degistir
+
+- İzin: `odeme-yontemi.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "banka", "sahip", "iban" }` (`bankaHesabiDegisikligiSemasi`).
+- Başarılı (200): GET ile aynı veri.
+- Hatalar: `bulunamadi`, ekleme ucunun `dogrulama` kodları, `yetki`.
+
+### POST /kapi/yonetici/banka-hesabi-sil
+
+- İzin: `odeme-yontemi.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }`.
+- Başarılı (200): GET ile aynı veri. Son hesap silinince havale ödeme adımında görünmez.
+- Hatalar: `bulunamadi`, `is-kurali` (`son-yontem`: son hesap ve müşterinin kullanabileceği başka yöntem yok), `yetki`.
+
+### POST /kapi/yonetici/banka-hesaplari-sirala
+
+- İzin: `odeme-yontemi.degistir`. Sınır: `genel`.
+- Girdi: `{ "sira": [kimlik] }`: ekranın gördüğü bütün hesaplar yeni sırasıyla.
+- Başarılı (200): GET ile aynı veri.
+- Hatalar: `cakisma` (`liste-degisti`: eksik, fazla ya da tekrarlı liste; arada hesap eklendi ya da silindi), `yetki`.
 
 ### GET /kapi/yonetici/kargo-ayarlari
 

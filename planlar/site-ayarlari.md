@@ -24,8 +24,8 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Saat dilimi | Altyapı sahibi | İstanbul (Europe/Istanbul) | — | |
 | Ağırlık birimi | Altyapı sahibi | kg | — | |
 | Boyut birimi | Altyapı sahibi | cm | — | |
-| Sipariş numarası öneki | Altyapı sahibi | Mağaza adından 3 harf | ORN | Kurulumda mağaza adından önerilir |
-| Sipariş numarası başlangıcı | Altyapı sahibi | 1001 | — | |
+| Sipariş numarası öneki | Altyapı sahibi | Mağaza adından 3 harf | ORN | Kurulumda mağaza adından önerilir. Numara siparişte tam yazılışıyla saklanır: önek sonradan değişse de eski numara değişmez (kart 0214) |
+| Sipariş numarası başlangıcı | Altyapı sahibi | 1001 | — | İlk siparişin numarası; numara veritabanının sırasından gelir (kart 0214, karar 0141). İlk siparişten sonra değiştirilmez |
 | Mağaza adı | Mağaza sahibi | Kimlikteki görünen ad | — | Vitrinde, panelde ve e-postalarda görünür; kimlikteki ad altyapının iç adıdır, bakım sayfası onu gösterir (kart 0071, karar 0057) |
 | İletişim e-postası | Mağaza sahibi | Boş | `iletisim@ornek-magaza.test` | Değeri değişiklik kaydına yazılmaz |
 | İletişim telefonu | Mağaza sahibi | Boş | `+90 312 000 00 00` | Ülke koduyla. Değeri değişiklik kaydına yazılmaz |
@@ -74,10 +74,11 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 |---|---|---|---|---|
 | Üye olmadan alışveriş | Mağaza sahibi | Açık | — | `uyeOlmadanAlisveris`. Kapalıysa ödeme adımı girişe yönlendirir; açıkken müşteri ödeme sırasında isteğe bağlı hesap açar (kart 0213) |
 | Telefon zorunlu | Mağaza sahibi | Açık | — | `telefonZorunlu`. Kargo firmaları telefon ister (kart 0213) |
-| Havale | Mağaza sahibi | Açık | — | |
-| Ödenmeyen havale siparişinin iptal süresi | Mağaza sahibi | 3 gün | — | Süre sonunda stok geri döner |
-| Kapıda ödeme | Mağaza sahibi | Kapalı | Açık | İsteyen mağaza açar |
-| Kapıda ödeme seçenekleri | Mağaza sahibi | Nakit | Nakit ve kart | Seçenekler: nakit, kart. Müşteri ödeme adımında seçer, kartı kurye çeker |
+| Havale | Mağaza sahibi | Açık | — | `odemeYontemleri` (yöntemlerin açıklığı ve müşterinin gördüğü sıra, kart 0214, karar 0141). Banka hesabı yoksa ödeme adımında görünmez. Panelde Satış > Ödeme yöntemleri; değiştirmek yalnız mağaza sahibinin (`odeme-yontemi.degistir`, kullanıcı kararı) |
+| Ödenmeyen havale siparişinin iptal süresi | Mağaza sahibi | 3 gün | — | `havaleIptalSuresi`, 1–30 gün. Süre sonunda sipariş iptal olur, stok geri döner; ödediğini bildiren müşterinin siparişi iptal olmaz (kullanıcı kararı, kart 0214) |
+| Kapıda ödeme | Mağaza sahibi | Kapalı | Açık | `odemeYontemleri`. İsteyen mağaza açar |
+| Kapıda ödeme seçenekleri | Mağaza sahibi | Nakit | Nakit ve kart | `kapidaOdemeSecenekleri`. Seçenekler: nakit, kart. Müşteri ödeme adımında seçer, kartı kurye çeker; her seçenek ödeme adımında ayrı satırdır (kart 0214) |
+| Banka hesapları (havale) | Mağaza sahibi | Yok | İki örnek hesap (geçersiz olmayan deneme IBAN'ları) | `bankaHesaplari`: banka, hesap sahibi, IBAN (doğrulanır, en çok 10). Sipariş alındı sayfasında gösterilir. Panelde Satış > Banka hesapları (kart 0214) |
 | Sepete ekleyince | Mağaza sahibi | Yan pencerede sepet | Yan pencerede sepet | Seçenekler: yan pencerede sepet, kısa bildirim, sepet sayfasına git (karar 0132, kart 0212). Şemada `sepeteEkleyince` |
 | Ürün sayfasında taksit satırı | Mağaza sahibi | Göster | Göster | Kartla ödeme eklentisinin ayarı; eklenti kapalıyken satır yoktur (karar 0132, kart 0215) |
 

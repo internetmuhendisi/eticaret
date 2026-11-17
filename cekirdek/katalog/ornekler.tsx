@@ -6,6 +6,7 @@ import type { katalogParcalari } from "./kayit";
 import { AcilirMenuOrnegi } from "./ornekler/acilir-menu";
 import { AdetSeciciOrnegi } from "./ornekler/adet-secici";
 import { AkordeonOrnegi } from "./ornekler/akordeon";
+import { AnahtarOrnegi } from "./ornekler/anahtar";
 import { BaglantiOrnegi } from "./ornekler/baglanti";
 import { BildirimOrnegi } from "./ornekler/bildirim";
 import { BosHalOrnegi } from "./ornekler/bos-hal";
@@ -47,6 +48,7 @@ const ornekler: Record<ParcaKodu, ComponentType> = {
   "secim-kutusu": SecimKutusuOrnegi,
   "onay-kutusu": OnayKutusuOrnegi,
   "secenek-grubu": SecenekGrubuOrnegi,
+  anahtar: AnahtarOrnegi,
   "siralanabilir-liste": SiralanabilirListeOrnegi,
   form: FormOrnegi,
   "acilir-menu": AcilirMenuOrnegi,

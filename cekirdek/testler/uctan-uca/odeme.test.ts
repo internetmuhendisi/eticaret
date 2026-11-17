@@ -1,22 +1,29 @@
-// Ödeme adımı gerçek tarayıcıda (kart 0213, karar 0140). Test kendi ürününü açar (fiyatlı ve stoklu), sonunda siler;
-// açtığı ödeme oturumlarını ve hesapları siler.
+// Ödeme adımı ve sipariş gerçek tarayıcıda (kartlar 0213 ve 0214, kararlar 0140 ve 0141). Test kendi ürününü açar
+// (fiyatlı ve stoklu), sonunda siler; siparişe dönmeyen ödeme oturumlarını siler. Sipariş kalıcıdır (silinmez): tarayıcı
+// testlerinin siparişleri paylaşılan veritabanında kalır.
 // - Sepet sayfasındaki "Ödemeye geç" ödeme sayfasını açar; sayfa sade çerçevelidir ("Güvenli ödeme"), arama
 //   motorlarına kapalıdır.
-// - Üye olmayan müşteri formu klavyeyle baştan sona doldurur (il ve ilçe listeden, onay kutuları boşlukla, gönderim
-//   Enter'la); oturum yazılır, stok ayrılır, başarı ve ayırmanın bitiş saati söylenir.
+// - Üye olmayan müşteri formu klavyeyle baştan sona doldurur (il ve ilçe listeden, ödeme yöntemi ok tuşuyla, onay
+//   kutuları boşlukla, gönderim Enter'la); kapıda nakitle sipariş oluşur, stok düşer, sepet boşalır, sipariş alındı
+//   sayfası numarayla ve kapıda ödemenin bilgisiyle açılır.
+// - Havaleyle sipariş: sipariş alındı sayfası son ödeme anını, tutarı, numarayı ve mağazanın hesaplarını gösterir;
+//   "Ödemeyi yaptım, bildir" havale bildirimini numarayla açar, boş gönderimde hata alana bağlıdır, klavyeyle gönderilen
+//   bildirim siparişe yazılır, teşekkür odağı alır. Sayfalar iki renkte ve üç genişlikte taramadan geçer.
+// - Sipariş alındı sayfası erişim çerezi olmadan bulunamadıdır.
 // - Stok sepetteki adedin altına indiyse ödeme sayfası sepetteki adedi stoğa indirir, değişikliği söyler; müşteri
 //   onaylayabilir (bağımsız kontrolün bulgusu: onay her seferinde "sepet değişti" alıyordu).
 // - Boş gönderimde hatalar alanların altında ve üstte özetlenir, odak özete gider, özetteki bağlantı alana götürür;
 //   hatalı form iki renkte ve üç genişlikte taramadan geçer, yana kaymaz.
 // - Dolu form iki renkte ve üç genişlikte taramadan geçer, yana kaymaz; konsolda hata yok.
 // - Ön bilgilendirme formu pencerede siparişin bilgileriyle açılır, Escape kapatır, odak bağlantıya döner.
-// - Üye müşteri iletişim bölümünün bağlantısıyla girer, ödeme sayfasına döner; e-postası hesabındandır.
+// - Üye müşteri iletişim bölümünün bağlantısıyla girer, ödeme sayfasına döner; e-postası hesabındandır. Bir sonraki
+//   ödemede son siparişinin teslimat adresi önerilir, "Bu adresi kullan" alanları doldurur.
 // - Üye olmadan alışveriş kapalıyken girişsiz müşteri girişe yönlenir.
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri";
 import { sepetDepoAnahtari } from "../../kayitlar/sepet";
@@ -26,7 +33,8 @@ import { calisanSiteninFiyatServisi } from "../../moduller/fiyat/servis";
 import { siteninServisi } from "../../moduller/magaza-ayarlari/servis";
 import { odemeOturumlari } from "../../moduller/odeme/model";
 import { hesapAc } from "../../moduller/oturum/servis";
-import { stokAyirmalari } from "../../moduller/stok/model";
+import { havaleBildirimleri, siparisler } from "../../moduller/siparis/model";
+import { birimStoklari, stokAyirmalari } from "../../moduller/stok/model";
 import { stokServisi } from "../../moduller/stok/servis";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { baglan, type Veritabani, veritabaniAdresi } from "../../veritabani/baglanti";
@@ -83,8 +91,18 @@ test.beforeAll(async () => {
     gorulenMiktar: 0,
     sebep: "sayim",
   });
-  // Oturumlar ürünü silmeden önce gider (ayırma birime bağlıdır).
-  temizlik.push(() => vt.delete(odemeOturumlari).where(inArray(odemeOturumlari.eposta, epostalar)));
+  // Siparişe dönmeyen oturumlar ürünü silmeden önce gider (ayırma birime bağlıdır); siparişe dönen oturum ve sipariş
+  // kalıcıdır.
+  temizlik.push(() =>
+    vt
+      .delete(odemeOturumlari)
+      .where(
+        and(
+          inArray(odemeOturumlari.eposta, epostalar),
+          sql`not exists (select 1 from ${siparisler} where ${siparisler.oturum_kimligi} = ${odemeOturumlari.kimlik})`,
+        ),
+      ),
+  );
 });
 test.afterAll(async () => {
   for (const adim of temizlik.reverse()) await adim();
@@ -132,11 +150,17 @@ const ikiRenkUcGenislik = async (page: Page, ne: string) => {
   await page.setViewportSize({ width: 1280, height: 900 });
 };
 
+// Sepet sekmede bir kez kurulur: betik her sayfa açılışında çalışır, siparişten sonra boşalan sepeti yeniden
+// doldurmasın (her çağrının kendi işareti vardır, ikinci çağrı sepeti yeniden kurar).
 const sepetiKur = async (page: Page, kalemler = [{ birim, adet: 1 }]) => {
-  await page.addInitScript(([anahtar, deger]) => window.localStorage.setItem(anahtar, deger), [
-    sepetDepoAnahtari,
-    JSON.stringify(kalemler),
-  ] as const);
+  await page.addInitScript(
+    ([anahtar, deger, isaret]) => {
+      if (window.sessionStorage.getItem(isaret) !== null) return;
+      window.sessionStorage.setItem(isaret, "1");
+      window.localStorage.setItem(anahtar, deger);
+    },
+    [sepetDepoAnahtari, JSON.stringify(kalemler), `sepet-kuruldu-${randomUUID()}`] as const,
+  );
 };
 
 const odemeyiAc = async (page: Page) => {
@@ -190,10 +214,28 @@ const onayla = async (page: Page) => {
   await page.keyboard.press("Enter");
 };
 
-const basariBekle = (page: Page) =>
-  expect(
-    page.getByRole("status").filter({ hasText: metin("vitrin.odeme.basariBaslik") }),
+// Sipariş oluşunca sipariş alındı sayfası açılır.
+const basariBekle = async (page: Page) => {
+  await expect(page).toHaveURL(new RegExp(`${vitrinAdresleri.siparisAlindi}$`));
+  await expect(
+    page.getByRole("heading", { level: 1, name: metin("vitrin.siparisAlindi.baslik") }),
   ).toBeVisible();
+  await sayfaHazir(page);
+};
+
+const siparisi = async (eposta: string) => {
+  const [kayit] = await vt.select().from(siparisler).where(eq(siparisler.eposta, eposta));
+  if (kayit === undefined) throw new Error("Sipariş yok.");
+  return kayit;
+};
+
+const stok = async (hangi: string) =>
+  (
+    await vt
+      .select({ miktar: birimStoklari.miktar })
+      .from(birimStoklari)
+      .where(eq(birimStoklari.birim_kimligi, hangi))
+  )[0]?.miktar;
 
 test("sepetteki düğme ödeme sayfasını açar; sayfa sade çerçeveli ve arama motorlarına kapalı", async ({
   page,
@@ -217,43 +259,161 @@ test("sepetteki düğme ödeme sayfasını açar; sayfa sade çerçeveli ve aram
   ).toBeVisible();
 });
 
-test("üye olmayan müşteri formu klavyeyle doldurur; stok ayrılır, başarı ve bitiş saati söylenir", async ({
+test("üye olmayan müşteri formu klavyeyle doldurur, kapıda nakit seçer; sipariş oluşur, sepet boşalır", async ({
   page,
 }) => {
+  test.setTimeout(120_000);
   const hatalar = konsoluDinle(page, { haric: (m) => m.includes("401") });
   const eposta = `misafir-${ek}@ornek.test`;
   epostalar.push(eposta);
+  const onceki = (await stok(birim)) ?? 0;
   await sepetiKur(page);
   await odemeyiAc(page);
   await alan(page, metin("vitrin.odeme.eposta")).fill(eposta);
   await teslimatiDoldur(page);
   await alan(page, metin("vitrin.odeme.notu")).fill("Akşam teslim edin.");
+  // Ödeme yöntemi: seçili yönteme odaklanılır, ok tuşu sonrakini (kapıda ödeme, nakit) seçer.
+  const yontemler = page.getByRole("radiogroup", { name: metin("vitrin.odeme.bolum.yontem") });
+  await yontemler.getByRole("radio", { checked: true }).focus();
+  // Radix'in radyo grubu ok tuşunda seçimi tuş bırakılmadan önce yapar: tuşa gerçek bir süre basılı tutulur.
+  await page.keyboard.press("ArrowDown", { delay: 50 });
+  const nakit = yontemler.getByRole("radio", {
+    name: doldur(metin("vitrin.odeme.yontem.kapida"), {
+      secenek: metin("vitrin.odeme.yontem.nakit"),
+    }),
+  });
+  await expect(nakit).toBeChecked();
   await onaylariVer(page);
   await ikiRenkUcGenislik(page, "dolu form");
   await onayla(page);
   await basariBekle(page);
-  const [oturum] = await vt
-    .select()
-    .from(odemeOturumlari)
-    .where(eq(odemeOturumlari.eposta, eposta));
-  expect(oturum).toMatchObject({
+  const kayit = await siparisi(eposta);
+  expect(kayit).toMatchObject({
     musteri_kimligi: null,
     not: "Akşam teslim edin.",
-    kalemler: [{ birim, adet: 1 }],
+    odeme_yontemi: "kapida-odeme",
+    kapida_secenegi: "nakit",
+    durum: "odeme-bekleniyor",
     toplam: 15_000,
   });
-  expect(oturum?.teslimat).toMatchObject({
+  expect(kayit.teslimat).toMatchObject({
     ad: "Deniz",
     telefon: "+90 555 000 00 00",
     adres: { il: "TR-06", postaKodu: "06420" },
   });
-  expect(oturum?.onaylar.find((o) => o.tur === "pazarlama")?.verildi).toBe(false);
-  const ayirmalar = await vt
-    .select()
-    .from(stokAyirmalari)
-    .where(eq(stokAyirmalari.oturum_kimligi, oturum?.kimlik ?? ""));
-  expect(ayirmalar.map((s) => [s.birim_kimligi, s.adet])).toEqual([[birim, 1]]);
+  expect(kayit.onaylar.find((o) => o.tur === "pazarlama")?.verildi).toBe(false);
+  // Stok düştü, ayırma siparişe geçti, sepet boşaldı.
+  expect(await stok(birim)).toBe(onceki - 1);
+  expect(
+    await vt
+      .select()
+      .from(stokAyirmalari)
+      .where(eq(stokAyirmalari.oturum_kimligi, kayit.oturum_kimligi)),
+  ).toEqual([]);
+  expect(
+    await page.evaluate((anahtar) => window.localStorage.getItem(anahtar), sepetDepoAnahtari),
+  ).toBeNull();
+  // Sipariş alındı sayfası: numara, kapıda ödemenin bilgisi, ürün ve toplam.
+  await expect(
+    page.getByText(doldur(metin("vitrin.siparisAlindi.numara"), { numara: kayit.numara })),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 2, name: metin("vitrin.siparisAlindi.kapidaBasligi") }),
+  ).toBeVisible();
+  await expect(page.getByText(`Ödeme deneme ${ek}`)).toBeVisible();
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  await ikiRenkUcGenislik(page, "sipariş alındı (kapıda)");
   expect(hatalar).toEqual([]);
+});
+
+test("havaleyle sipariş: hesaplar ve son ödeme anı; bildirim numarayla açılır, klavyeyle gönderilir", async ({
+  page,
+}) => {
+  test.setTimeout(150_000);
+  const hatalar = konsoluDinle(page, {
+    // Boş gönderim sunucuya gitmez; bildirim ucu robot sorusunu ertelemiştir.
+    haric: (m) => m.includes("401"),
+  });
+  const eposta = `havale-${ek}@ornek.test`;
+  epostalar.push(eposta);
+  await sepetiKur(page);
+  await odemeyiAc(page);
+  await alan(page, metin("vitrin.odeme.eposta")).fill(eposta);
+  await teslimatiDoldur(page);
+  await expect(
+    page
+      .getByRole("radiogroup", { name: metin("vitrin.odeme.bolum.yontem") })
+      .getByRole("radio", { name: metin("ortak.odemeYontemi.havale") }),
+  ).toBeChecked();
+  await onaylariVer(page);
+  await onayla(page);
+  await basariBekle(page);
+  const kayit = await siparisi(eposta);
+  expect(kayit).toMatchObject({ odeme_yontemi: "havale", durum: "odeme-bekleniyor" });
+  // Mağazanın hesapları numarası gruplanmış olarak, kopyalama düğmesiyle.
+  const { bankaHesaplari } = await siteninServisi(calisanSite()).oku(vt);
+  expect(bankaHesaplari.length).toBeGreaterThan(0);
+  for (const hesap of bankaHesaplari) {
+    await expect(page.getByText(hesap.iban.replace(/(.{4})/g, "$1 ").trim())).toBeVisible();
+    await expect(
+      page.getByRole("button", {
+        name: doldur(metin("vitrin.siparisAlindi.ibanKopyalaAdi"), { banka: hesap.banka }),
+      }),
+    ).toBeVisible();
+  }
+  await expect(page.getByText(kayit.numara, { exact: false }).first()).toBeVisible();
+  await ikiRenkUcGenislik(page, "sipariş alındı (havale)");
+
+  // "Ödemeyi yaptım, bildir": bildirim formu numarayla açılır.
+  const bildir = page.getByRole("link", { name: metin("vitrin.siparisAlindi.bildir") });
+  await bildir.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(new RegExp(`${vitrinAdresleri.havaleBildirimi}\\?siparis=`));
+  await sayfaHazir(page);
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  await expect(alan(page, metin("vitrin.havaleBildirimi.numara"))).toHaveValue(kayit.numara);
+  // Boş gönderim: hatalar alanlarda, odak ilk hatalı alanda.
+  const gonder = page.getByRole("button", { name: metin("vitrin.havaleBildirimi.gonder") });
+  await gonder.focus();
+  await page.keyboard.press("Enter");
+  const epostaAlani = alan(page, metin("vitrin.havaleBildirimi.eposta"));
+  await expect(epostaAlani).toBeFocused();
+  await expect(epostaAlani).toHaveAttribute("aria-invalid", "true");
+  await ikiRenkUcGenislik(page, "havale bildirimi hatalı");
+  await epostaAlani.fill(eposta);
+  await alan(page, metin("vitrin.havaleBildirimi.gonderen")).fill("Deniz Yılmaz");
+  const [ilkHesap] = bankaHesaplari;
+  if (ilkHesap === undefined) throw new Error("Hesap yok.");
+  await listedenSec(
+    page,
+    metin("vitrin.havaleBildirimi.hesap"),
+    `${ilkHesap.banka} · ${ilkHesap.iban.slice(-4)}`,
+    "D",
+  );
+  await alan(page, metin("vitrin.havaleBildirimi.tutar")).fill("150,00");
+  await alan(page, metin("vitrin.havaleBildirimi.tarih")).fill(
+    new Date().toISOString().slice(0, 10),
+  );
+  await gonder.focus();
+  await page.keyboard.press("Enter");
+  const tesekkur = page
+    .getByRole("status")
+    .filter({ hasText: metin("vitrin.havaleBildirimi.alindi") });
+  await expect(tesekkur).toBeFocused();
+  const bildirimler = await vt
+    .select()
+    .from(havaleBildirimleri)
+    .where(eq(havaleBildirimleri.siparis_kimligi, kayit.kimlik));
+  expect(bildirimler).toMatchObject([
+    { gonderen: "Deniz Yılmaz", tutar: 15_000, iban: ilkHesap.iban },
+  ]);
+  await ikiRenkUcGenislik(page, "havale bildirimi teşekkür");
+  expect(hatalar).toEqual([]);
+});
+
+test("sipariş alındı sayfası erişim çerezi olmadan bulunamadıdır", async ({ page }) => {
+  const yanit = await page.goto(vitrinAdresleri.siparisAlindi);
+  expect(yanit?.status()).toBe(404);
 });
 
 test("stok sepetteki adedin altına indiyse adet stoğa iner, söylenir ve müşteri onaylayabilir", async ({
@@ -273,10 +433,11 @@ test("stok sepetteki adedin altına indiyse adet stoğa iner, söylenir ve müş
   await onaylariVer(page);
   await onayla(page);
   await basariBekle(page);
+  const kayit = await siparisi(eposta);
   const [oturum] = await vt
     .select()
     .from(odemeOturumlari)
-    .where(eq(odemeOturumlari.eposta, eposta));
+    .where(eq(odemeOturumlari.kimlik, kayit.oturum_kimligi));
   expect(oturum?.kalemler).toEqual([{ birim: azBirim, adet: 2 }]);
 });
 
@@ -361,11 +522,22 @@ test("üye müşteri iletişimdeki bağlantıyla girer, döner; e-postası hesab
   await onaylariVer(page);
   await onayla(page);
   await basariBekle(page);
-  const [oturum] = await vt
-    .select()
-    .from(odemeOturumlari)
-    .where(eq(odemeOturumlari.musteri_kimligi, hesapKimligi));
-  expect(oturum?.eposta).toBe(eposta);
+  const kayit = await siparisi(eposta);
+  expect(kayit.musteri_kimligi).toBe(hesapKimligi);
+  // Bir sonraki ödemede son siparişin teslimatı önerilir; "Bu adresi kullan" alanları doldurur.
+  await sepetiKur(page);
+  await odemeyiAc(page);
+  const kullan = page.getByRole("button", { name: metin("vitrin.odeme.oncekiAdresiKullan") });
+  await expect(kullan).toBeVisible();
+  await kullan.focus();
+  await page.keyboard.press("Enter");
+  await expect(alan(page, metin("vitrin.odeme.ad"))).toHaveValue("Deniz");
+  await expect(alan(page, metin("vitrin.odeme.adres"))).toHaveValue(
+    "Atatürk Bulvarı No: 10 Daire 3",
+  );
+  await expect(
+    page.getByRole("combobox", { name: metin("vitrin.odeme.il"), exact: true }),
+  ).toContainText("Ankara");
 });
 
 test("üye olmadan alışveriş kapalıyken girişsiz müşteri girişe yönlenir", async ({ page }) => {

@@ -60,3 +60,10 @@ paths:
 
 - Ekran `cekirdek/yonetim-paneli/kargo/` klasöründe, menüde "Satış" altındadır. Ayarlar mağaza ayarlarıdır: görmek `magaza-ayarlari.gor`, değiştirmek `magaza-ayarlari.degistir` ister.
 - Tutar sitenin para biçimiyle yazılı gider, sunucuda `kargoAyarlariniDegistir` (`cekirdek/moduller/kargo/servis.ts`) biçimleyicinin `paraOku`'suyla okur. Ekran tutarı kendisi çevirmez; alanın hatası koduyla döner.
+
+## Ödeme yöntemleri ve banka hesapları (karar 0141)
+
+- Ekranlar `cekirdek/yonetim-paneli/odeme-yontemleri/` klasöründe, menüde "Satış" altındadır. Görmek `odeme-yontemi.gor` (görevli de), değiştirmek `odeme-yontemi.degistir` (yalnız mağaza sahibi) ister; izni olmayan yönetici yalnız okur, anahtar ve düğmeler kapalıdır ya da yoktur.
+- Ödeme yöntemleri tek formdur (sıra, anahtarlar, kapıda seçenekleri, iptal süresi birlikte kaydedilir). Banka hesabı yan pencerede eklenir ve düzenlenir, onay penceresiyle silinir, sıralama hemen kaydedilir. IBAN'ın hatası alanın koduyla döner, ekran doğrulamaz.
+- Açma-kapama yalnız `Anahtar` parçasıyladır (`bilesenler/parcalar/anahtar.tsx`); durumun yazısı yanında görünür.
+

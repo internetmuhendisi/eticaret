@@ -31,10 +31,13 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `menu.gor` | yonetici | tumu | Menüleri ve öğelerini, hedefi silinmiş öğelerin işaretiyle görür. |
 | `menu.degistir` | yonetici | tumu | Menü ve öğe ekler, değiştirir, sıralar ve siler. |
 | `musteri.kendi-hesabi.gor` | musteri | kendi | Müşteri kendi hesabını görür. |
-| `odeme.kendi.baslat` | musteri | kendi | Giriş yapmış müşteri kendi adına ödeme adımını tamamlar: ödeme oturumu açılır, sepetin stoğu ayrılır (kart 0213). |
+| `odeme.kendi.baslat` | musteri | kendi | Giriş yapmış müşteri kendi adına ödeme adımını tamamlar: ödeme oturumu açılır, sepetin stoğu ayrılır, havale ya da kapıda ödemede sipariş oluşur (kartlar 0213, 0214). |
+| `odeme-yontemi.gor` | yonetici | tumu | Ödeme yöntemlerini, sıralarını, kapıda ödemenin seçeneklerini, havalenin iptal süresini ve banka hesaplarını görür (kart 0214). |
+| `odeme-yontemi.degistir` | yonetici | tumu | Ödeme yöntemlerini açar, kapatır ve sıralar; banka hesabı ekler, değiştirir, siler ve sıralar (kart 0214). |
 | `ozellik.gor` | yonetici | tumu | Ürün özelliklerini ve seçeneklerini görür. |
 | `ozellik.degistir` | yonetici | tumu | Özellik ve seçenek ekler ve değiştirir. |
 | `ozellik.sil` | yonetici | tumu | Özellik ya da seçenek siler: değerleri ürünlerden kalkar. |
+| `siparis.kendi.havale-bildir` | musteri | kendi | Giriş yapmış müşteri kendi havale siparişi için ödediğini bildirir (kart 0214). |
 | `stok.gor` | yonetici | tumu | Satılabilir birimlerin stoğunu ve stok geçmişini görür. |
 | `stok.duzelt` | yonetici | tumu | Stoğu sebebiyle elle düzeltir. |
 | `stok-bildirimi.kendi.iste` | musteri | kendi | Giriş yapmış müşteri tükenmiş birim için kendi hesabının e-postasıyla "stoğa gelince haber ver" talebi bırakır (eklenti, kart 0144). |
@@ -58,6 +61,6 @@ Her sitede hazır gelir. Ekranda görünen adları metin dosyasındadır (`yonet
 | Kod | Görünen ad | İzinler |
 |---|---|---|
 | `magaza-sahibi` | Mağaza sahibi | bütün yönetici izinleri |
-| `gorevli` | Görevli | ekip.kendi-hesabi.gor, urun.gor, urun.degistir, kategori.gor, kategori.degistir, marka.gor, marka.degistir, etiket.gor, etiket.degistir, fiyat.gor, stok.gor, stok.duzelt, ozellik.gor, ozellik.degistir, yorum.gor, yorum.onayla |
+| `gorevli` | Görevli | ekip.kendi-hesabi.gor, urun.gor, urun.degistir, kategori.gor, kategori.degistir, marka.gor, marka.degistir, etiket.gor, etiket.degistir, fiyat.gor, stok.gor, stok.duzelt, ozellik.gor, ozellik.degistir, yorum.gor, yorum.onayla, odeme-yontemi.gor |
 
 Tam yetkili son yöneticinin rolü alınamaz. Görevlinin izinleri ürün ve sipariş gibi modüller geldikçe artar.

@@ -33,6 +33,8 @@ export const baslangicRolleri = {
       // Yorumları görür, onaylar ya da reddeder ve ana sayfa için işaretler (kart 0139, kullanıcı kararı).
       "yorum.gor",
       "yorum.onayla",
+      // Ödeme yöntemlerini ve banka hesaplarını görür, değiştiremez (kart 0214, kullanıcı kararı).
+      "odeme-yontemi.gor",
     ],
   },
 } as const satisfies Record<

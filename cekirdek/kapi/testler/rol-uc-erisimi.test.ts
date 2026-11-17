@@ -6,7 +6,7 @@ import { randomBytes } from "node:crypto";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
 import { stokBildirimiTalepleri } from "../../eklentiler/stoga-gelince-haber-ver/model.ts";
@@ -20,9 +20,11 @@ import { siteninServisi } from "../../moduller/magaza-ayarlari/servis.ts";
 import { odemeOturumlari } from "../../moduller/odeme/model.ts";
 import { odemeBilgileriSemasi } from "../../moduller/odeme/semalar.ts";
 import { odemeServisi } from "../../moduller/odeme/servis.ts";
+import { odemeYontemiServisi } from "../../moduller/odeme/yontemler.ts";
 import { hesapAc } from "../../moduller/oturum/servis.ts";
 import { robotSorusuUret } from "../../moduller/robot-korumasi/servis.ts";
 import { soruyuCoz } from "../../moduller/robot-korumasi/testler/soru-coz.ts";
+import { havaleBildirimleri, siparisler } from "../../moduller/siparis/model.ts";
 import { stokAyirmalari } from "../../moduller/stok/model.ts";
 import { stokServisi } from "../../moduller/stok/servis.ts";
 import { urunServisi } from "../../moduller/urun/servis.ts";
@@ -56,7 +58,11 @@ const belgeUret = (satirlar: Record<string, string>): string =>
 // Senaryo A'nın oturumuyla B'nin kaydını ister. İstek gerçekten işlenmeli (200): reddedilen ya da şemadan
 // geçmeyen istek hiçbir şey kanıtlamaz. Senaryo B'ye veri hazırlayıp aranan değerleri verir (adres, sipariş
 // gibi); verilmezse B'nin e-postası aranır. Yazma yapan uçta B'nin kaydının değişmediğini ucu yazan ölçer.
-type MusteriSenaryosu = (b: { kimlik: string; eposta: string }) => Promise<{
+type Musteri = { kimlik: string; eposta: string };
+type MusteriSenaryosu = (
+  b: Musteri,
+  a: Musteri,
+) => Promise<{
   sorgu?: string;
   govde?: unknown;
   aranan?: string[];
@@ -102,6 +108,19 @@ const musteriSenaryolari: Record<string, MusteriSenaryosu> = {
     const birim = await talepliBirim(b.eposta);
     return { govde: { birim } };
   },
+  // A ve B'nin havale siparişi var; A kendi siparişini bildirir. Yanıtta B'nin numarası ve e-postası yoktur; A'nın
+  // B'nin numarasıyla gönderdiği bildirim bulunamaz, B'nin siparişine bildirim yazılmaz (aşağıdaki test ölçer).
+  "POST /kapi/musteri/havale-bildirimi": async (b, a) => {
+    const bninki = await siparisVer(b.kimlik);
+    const aninki = await siparisVer(a.kimlik);
+    return { govde: havaleBildirimi(aninki), aranan: [b.eposta, bninki] };
+  },
+  // B'nin siparişi ayırt edilebilir bir adla teslim ediliyor; A'nın siparişi yok: A'ya öneri boş gelir.
+  "GET /kapi/musteri/son-teslimat": async (b) => {
+    const ad = `B${randomBytes(4).toString("hex")}`;
+    await siparisVer(b.kimlik, ad);
+    return { aranan: [b.eposta, ad] };
+  },
   "POST /kapi/musteri/favori-birlestir": async (b) => {
     const urun = await favoriUrunu(b.kimlik);
     return { govde: { urunler: [await yayindakiUrun()] }, aranan: [b.eposta, urun] };
@@ -122,7 +141,35 @@ const musteriSenaryolari: Record<string, MusteriSenaryosu> = {
   },
 };
 
+// Müşterinin havaleyle verdiği sipariş (kart 0214); teslimatın adı ayırt edilebilir.
+const siparisVer = async (musteri: string, ad = "Teslim") => {
+  const { birim } = await odemedekiBirim(musteri, false);
+  const { siparis } = await odemeServisi(denemeSitesi()).siparisVer(
+    vt,
+    {
+      kim: { tur: "uye", musteri },
+      bilgiler: odemeBilgileriSemasi.parse({
+        ...odemeBilgileri,
+        odemeYontemi: { yontem: "havale" },
+        teslimat: { ...odemeBilgileri.teslimat, ad },
+      }),
+      kalemler: [{ birim, adet: 1 }],
+    },
+    3600,
+  );
+  return siparis.numara;
+};
+
+const havaleBildirimi = (numara: string) => ({
+  numara,
+  gonderen: "A Müşteri",
+  hesap: bankaHesabi,
+  tutar: "10,00",
+  odemeTarihi: new Date().toISOString().slice(0, 10),
+});
+
 const odemeBilgileri = {
+  odemeYontemi: { yontem: "kapida-odeme", secenek: "nakit" },
   teslimat: {
     ad: "A",
     soyad: "Müşteri",
@@ -141,8 +188,8 @@ const odemeBilgileri = {
   pazarlamaIzni: false,
 };
 
-// Stoğu 2 olan yayındaki ürünün birimi; B'nin ödeme oturumu bir adedini ayırmış.
-const odemedekiBirim = async (bKimligi: string) => {
+// Stoğu 2 olan yayındaki ürünün birimi; B'nin ödeme oturumu bir adedini ayırmış (ayir: false ise ayırma yok).
+const odemedekiBirim = async (bKimligi: string, ayir = true) => {
   const site = denemeSitesi();
   const urunSrv = urunServisi(() => "Europe/Istanbul");
   const urun = await urunSrv.urunEkle(vt, sistemIslemi("test"), {
@@ -158,6 +205,7 @@ const odemedekiBirim = async (bKimligi: string) => {
     gorulenMiktar: 0,
     sebep: "sayim",
   });
+  if (!ayir) return { birim, oturum: "" };
   const { oturum } = await odemeServisi(site).odemeOturumuAc(
     vt,
     {
@@ -228,6 +276,8 @@ const senaryosuzUclar = (uclar: readonly KayitliUc[], senaryolar: Record<string,
 
 let vt: Veritabani;
 let sil: () => Promise<void>;
+// Havalenin banka hesabı (beforeAll ekler); kapıda ödeme açıktır.
+let bankaHesabi = "";
 let sayac = 0;
 
 const yeniMusteri = async () => {
@@ -244,7 +294,7 @@ const yeniMusteri = async () => {
 const baskasininKaydi = async ({ yontem, yol, uc }: KayitliUc, senaryo: MusteriSenaryosu) => {
   const a = await yeniMusteri();
   const b = await yeniMusteri();
-  const { sorgu = "", govde, aranan = [b.eposta] } = await senaryo(b);
+  const { sorgu = "", govde, aranan = [b.eposta] } = await senaryo(b, a);
   const yanit = await uc(
     new Request(`http://yerel${yol}${sorgu}`, {
       method: yontem,
@@ -274,6 +324,22 @@ beforeAll(async () => {
     resolve(import.meta.dirname, "../../ayar-semasi/testler/ornek-siteler/gecerli"),
   );
   await baglantiyiKapat();
+  // Ödeme yöntemleri (kart 0214): havale bir hesapla ve kapıda ödeme açık.
+  const yontemler = odemeYontemiServisi(denemeSitesi());
+  await yontemler.yontemleriDegistir(vt, sistemIslemi("test"), {
+    yontemler: [
+      { kod: "havale", acik: true },
+      { kod: "kapida-odeme", acik: true },
+    ],
+    kapidaOdemeSecenekleri: ["nakit"],
+    havaleIptalSuresi: "3",
+  });
+  const { bankaHesaplari } = await yontemler.hesapEkle(vt, sistemIslemi("test"), {
+    banka: "Deneme",
+    sahip: "Deneme",
+    iban: "TR420001000000000000000001",
+  });
+  bankaHesabi = bankaHesaplari[0]?.kimlik ?? "";
 });
 
 afterAll(async () => {
@@ -411,6 +477,35 @@ describe("ödeme ucu", () => {
         .from(stokAyirmalari)
         .where(inArray(stokAyirmalari.oturum_kimligi, [bninki])),
     ).toHaveLength(1);
+  });
+});
+
+describe("havale bildirimi ucu", () => {
+  it("A, B'nin siparişine bildirim yazamaz; A'nın bildirimi A'nın siparişine yazılır", async () => {
+    const baslik = "POST /kapi/musteri/havale-bildirimi";
+    const uc = (await uclariOku(uygulamaAdresleri)).find((kayit) => kayit.baslik === baslik);
+    const senaryo = musteriSenaryolari[baslik];
+    if (uc === undefined || senaryo === undefined) throw new Error("Havale bildirimi ucu yok.");
+    const { a, b, sorunlar } = await baskasininKaydi(uc, senaryo);
+    expect(sorunlar).toEqual([]);
+    const bninki = await siparisVer(b.kimlik);
+    const yanit = await uc.uc(
+      new Request(`http://yerel${uc.yol}`, {
+        method: "POST",
+        headers: {
+          "x-forwarded-for": `2001:db8:${randomBytes(2).toString("hex")}::1`,
+          cookie: await oturumCerezi(vt, "musteri", a.kimlik),
+        },
+        body: JSON.stringify(havaleBildirimi(bninki)),
+      }),
+    );
+    expect(yanit.status).toBe(404);
+    const bildirimler = await vt
+      .select({ siparis: siparisler.musteri_kimligi })
+      .from(havaleBildirimleri)
+      .innerJoin(siparisler, eq(siparisler.kimlik, havaleBildirimleri.siparis_kimligi))
+      .where(inArray(siparisler.musteri_kimligi, [a.kimlik, b.kimlik]));
+    expect(bildirimler).toEqual([{ siparis: a.kimlik }]);
   });
 });
 

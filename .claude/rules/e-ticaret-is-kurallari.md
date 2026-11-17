@@ -57,7 +57,7 @@ paths:
 - Bir birimin satılabilir olup olmadığı, tükenip tükenmediği, düşük stokta olup olmadığı ve müşteriye yazılan durum yalnız `stokDurumu` (`cekirdek/moduller/stok/durum.ts`) ile, birimlerin durumu tek sorguyla `stokDurumlari` ile bulunur. Tükenen ürünün listelerde gizlenmesi vitrin koşulundadır; koşul tükenen ürün ayarını zorunlu değer olarak alır (karar 0069).
 - Fiyatı olmayan birim (fiyat satırı yok ya da sitenin para biriminde değil) satılamaz ve tükenmiş sayılır, stoğu olsa da takibi kapalı olsa da (karar 0133). Stok ayarları sitenin para birimini taşır (`siteninStokAyarlari`). Veritabanında "satılabilir birim" yalnız `birimSatilabilirKosulu` ile yazılır; sorguda stok ya da fiyat koşulunu elle yazma. Vitrin koşulunun "gizle" seçeneği siteden `vitrinStokSecenegi` ile kurulur.
 - Sipariş oluşurken stoğu "yeterliyse düş" koşuluyla ve siparişin kaydıyla aynı veritabanı işleminde düş. Aynı anda gelen iki sipariş son ürünü iki kez satmasın.
-- Ödemeye geçen sepetin ürünlerini belli bir süre ayır. Ödeme başarısız olur ya da süre dolarsa geri bırak. Ayırma yalnız `stokAyir` ile, oturumla aynı işlemde yapılır; süresi `stokAyirmaSuresi` ayarıdır, süresi dolan ayırma sayılmaz, `ayirmayiBirak` serbest bırakır (karar 0140).
+- Ödemeye geçen sepetin ürünlerini belli bir süre ayır. Ödeme başarısız olur ya da süre dolarsa geri bırak. Ayırma yalnız `stokAyir` ile, oturumla aynı işlemde yapılır; süresi `stokAyirmaSuresi` ayarıdır, süresi dolan ayırma sayılmaz, `ayirmayiBirak` serbest bırakır (karar 0140). Sipariş `stokDus`'a kendi oturumunu verir: başka oturumların süresi dolmamış ayırmaları düşülmüş sayılır, kendi ayırması siparişe geçer (karar 0141).
 - Beden ve renk gibi seçeneklerin her birleşiminin kendi stok kodu, stoğu ve fiyatı olsun.
 
 ## Ödeme
@@ -75,6 +75,9 @@ paths:
 - Siparişin ve stoğun her değişikliğini kimin, ne zaman, neden yaptığıyla geçmişe yaz.
 - Siparişin içinde verildiği andaki ürün adını, fiyatı, vergiyi ve adresi sakla. Ürün fiyatı sonradan değişince eski sipariş değişmesin.
 - Her siparişin müşteriye gösterilen kısa ve tekil bir numarası olsun. Öneki ve başlangıç numarası site ayarıdır.
+- Sipariş yalnız `siparisServisi.siparisiKur` (`cekirdek/moduller/siparis/servis.ts`) ile, ödeme oturumundan ve çağıranın işleminde kurulur; havale ve kapıda ödemede "Siparişi onayla" oturum, ayırma ve siparişi tek işlemde yazar (`odemeServisi.siparisVer`, karar 0141). Numara veritabanının sırasından gelir, tam yazılışıyla saklanır. Durumlar ve geçişleri `cekirdek/kayitlar/siparis.ts` kaydındadır; geçmiş yalnız `gecmiseYaz` (`gecmis.ts`) ile yazılır ve değiştirilemez.
+- Ödeme yöntemleri ve kapıda ödemenin seçenekleri `cekirdek/kayitlar/odeme.ts` kaydındadır; açıklığı, sırası, havalenin iptal süresi ve banka hesapları mağaza ayarıdır, yalnız `odemeYontemiServisi` (`cekirdek/moduller/odeme/yontemler.ts`) değiştirir. Müşterinin gördüğü yöntemler yalnız `kullanilabilirYontemler` ile bulunur. IBAN yalnız `cekirdek/bolgeler/iban.ts` ile doğrulanır.
+- Ödenmeyen havalenin iptali yalnız `havaleIptalTaramasi` (`cekirdek/moduller/siparis/iptal.ts`) ile, saatlik işle yapılır. Ödediğini bildiren müşterinin siparişi kendiliğinden iptal olmaz (kullanıcı kararı).
 
 ## E-posta, dış servis ve arka plan işleri
 
