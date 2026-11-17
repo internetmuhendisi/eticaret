@@ -54,6 +54,9 @@ export type SepetGorunumu = {
   kargo: SepetHesabi["kargo"]["tur"];
   vergiDokumu: { ad?: string; oran: string; yazili: string }[];
   yazili: { araToplam: string; kargo?: string; vergi: string; toplam: string };
+  // Toplam, kuruş: ödeme adımı müşterinin gördüğü toplamı onayla birlikte gönderir (kart 0213), sunucu kendi hesabıyla
+  // karşılaştırır; tutar olarak kullanılmaz.
+  toplam: number;
   odemeyeGecilebilir: boolean;
 };
 
@@ -194,6 +197,7 @@ export const sepetGorunumu = async (
       vergi: bicim.para(hesap.vergi.toplam),
       toplam: bicim.para(hesap.toplam),
     },
+    toplam: hesap.toplam,
     odemeyeGecilebilir: hesap.odemeyeGecilebilir,
   };
 };

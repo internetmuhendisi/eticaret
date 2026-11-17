@@ -19,8 +19,8 @@ Kullanıcının kararları (kart 0213):
 Teknik kurallar:
 
 - Ayrılabilir miktar stoktan, süresi dolmamış ayırmalar düşülerek bulunur. Ayırma birimin stok satırını kilitler: aynı anda iki ödeme sıraya girer, son ürün iki kez ayrılmaz. Süre veritabanının saatiyle karşılaştırılır; süresi dolan ayırma sayılmaz, satırı oturumuyla birlikte silinir.
-- Oturum açılmaz: sepet ödemeye geçilemez durumdaysa ya da müşterinin görmediği bir değişiklik varsa (fiyat değişmiş, adet stoğa ya da sınıra inmiş). Müşteri güncel özeti görüp yeniden onaylar.
-- Müşterinin bir önceki oturumu (sekmede saklanır) yeniden basınca aynı işlemde silinir, ayırması serbest kalır; yalnız aynı müşterinin (üye olmayanda yine üye olmayanın) oturumu silinir.
+- Oturum açılmaz: sepet ödemeye geçilemez durumdaysa ya da müşterinin görmediği bir değişiklik varsa (fiyat değişmiş, adet stoğa ya da sınıra inmiş, özette gördüğü toplam bugünkünden farklı). Tarayıcı gördüğü toplamı gönderir; sunucu yalnız karşılaştırır, tutar olarak kullanmaz. Ödeme sayfası sunucunun stoğa ya da sınıra indirdiği adedi sepetin deposuna da yazar ve bunu söyler: müşteri özette gördüğünü onaylar. Ödemeye geçilemeyen sepette form yerine sepete dönüş bağlantısı görünür.
+- Müşterinin bir önceki oturumu (sekmede saklanır) yeniden basınca aynı işlemde silinir, ayırması serbest kalır. Üye olmayan yalnız üye olmayanın oturumunu, üye kendi oturumunu ve üye olmadan açılmış oturumu siler (aynı sekmede giriş yapıp yeniden onaylayan müşteri); başka üyenin oturumu silinmez. Oturumun kimliği yalnız onu açan sekmeye döner.
 - Tutar tarayıcıdan gelmez; vergi teslimat ve fatura adresinin bölgesiyle `sepetiHesapla` içinde hesaplanır (`vergiAdresi`, karar 0061). Sepet ucu ödeme adımının bölgelerini de alır, özet aynı hesaptan gelir.
 - Onaylar: ön bilgilendirme ve mesafeli satış zorunlu, metin sürümüyle oturuma yazılır (`siparisOnayTurleri`). Pazarlama izni yalnız işaretlenince verilir: üye müşteride hesabın onaylarına yeni satır olarak da yazılır (işaretsiz bırakmak var olan izni geri almaz).
 - Ödemede hesap açma müşteri kaydının işleviyle (`musteriHesabiAc`, karar 0051), oturumla aynı işlemde yapılır.

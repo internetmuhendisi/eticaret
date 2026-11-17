@@ -171,6 +171,7 @@ describe("sepetin vitrin verisi", () => {
         araToplam: bicim.para(174_970),
         toplam: bicim.para(174_970),
       },
+      toplam: 174_970,
       odemeyeGecilebilir: false,
     });
     expect(veri.vergiDokumu).toEqual([

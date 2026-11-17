@@ -33,13 +33,15 @@ import { urunServisi } from "../../urun/servis.ts";
 import { siteninVergiServisi } from "../../vergi/servis.ts";
 import { odemeOturumlari } from "../model.ts";
 import { odemeBilgileriSemasi } from "../semalar.ts";
-import { eskiOdemeOturumlariniSil, type OdemeGirdisi, odemeServisi } from "../servis.ts";
+import { type OdemeGirdisi, odemeServisi } from "../servis.ts";
+import { eskiOdemeOturumlariniSil } from "../temizlik.ts";
 
 vi.setConfig({ testTimeout: 60_000 });
 
 const yonetici = (): DegisikligiYapan => ({ tur: "yonetici", kimlik: randomUUID() });
 
-// Vergi tablosu dolu deneme sitesi: Genel %18, İstanbul'un 34000 posta kodunda ek %0,5. Mağaza Ankara'da.
+// Vergi tablosu dolu deneme sitesi: Genel sınıfın Türkiye oranı, İstanbul'un 34000 posta kodunda ek oran. Mağaza
+// Ankara'da.
 const klasor = siteKlasorunuOku(
   resolve(import.meta.dirname, "../../../ayar-semasi/testler/ornek-siteler/vergi-dolu"),
 );
@@ -152,7 +154,7 @@ describe("ödeme oturumu", () => {
     const h = await hazirla();
     const a = await h.urunAc();
     const b = await h.urunAc({ satis: 5_900 });
-    const sonuc = await servis.oturumAc(
+    const sonuc = await servis.odemeOturumuAc(
       h.vt,
       {
         kim: misafir(),
@@ -213,7 +215,7 @@ describe("ödeme oturumu", () => {
     const h = await hazirla();
     await h.ayarla({ stokAyirmaSuresi: 7 });
     const a = await h.urunAc();
-    await servis.oturumAc(
+    await servis.odemeOturumuAc(
       h.vt,
       { kim: misafir(), bilgiler: bilgiler(), kalemler: [{ birim: a, adet: 1 }] },
       oturumSuresi,
@@ -233,7 +235,7 @@ describe("ödeme oturumu", () => {
     ]) {
       expect(
         await hatasi(
-          servis.oturumAc(
+          servis.odemeOturumuAc(
             h.vt,
             { kim: misafir(), bilgiler: bilgiler(), kalemler: [kalem] },
             oturumSuresi,
@@ -245,13 +247,31 @@ describe("ödeme oturumu", () => {
     expect(await h.ayirmalar()).toEqual([]);
   });
 
+  it("özette görülen toplam bugünkü toplamdan farklıysa oturum açılmaz; aynıysa açılır", async () => {
+    const h = await hazirla();
+    const a = await h.urunAc();
+    const ac = (gorulenToplam: number) =>
+      servis.odemeOturumuAc(
+        h.vt,
+        { kim: misafir(), bilgiler: bilgiler(), kalemler: [{ birim: a, adet: 1 }], gorulenToplam },
+        oturumSuresi,
+      );
+    expect(await hatasi(ac(11_799))).toEqual({
+      kod: "is-kurali",
+      ayrinti: [{ alan: "kalemler", kod: "sepet-degisti" }],
+    });
+    expect(await h.oturumlar()).toEqual([]);
+    await ac(11_800);
+    expect(await h.oturumlar()).toHaveLength(1);
+  });
+
   it("satılamayan ürün ve boş sepet oturum açmaz", async () => {
     const h = await hazirla();
     const a = await h.urunAc();
     const tukenmis = await h.urunAc({ miktar: 0 });
     expect(
       await hatasi(
-        servis.oturumAc(
+        servis.odemeOturumuAc(
           h.vt,
           {
             kim: misafir(),
@@ -267,7 +287,7 @@ describe("ödeme oturumu", () => {
     ).toEqual({ kod: "is-kurali", ayrinti: [{ alan: "kalemler", kod: "sepet-degisti" }] });
     expect(
       await hatasi(
-        servis.oturumAc(
+        servis.odemeOturumuAc(
           h.vt,
           { kim: misafir(), bilgiler: bilgiler(), kalemler: [{ birim: tukenmis, adet: 1 }] },
           oturumSuresi,
@@ -283,7 +303,7 @@ describe("ödeme oturumu", () => {
     const a = await h.urunAc();
     expect(
       await hatasi(
-        servis.oturumAc(
+        servis.odemeOturumuAc(
           h.vt,
           { kim: misafir(), bilgiler: bilgiler(), kalemler: [{ birim: a, adet: 1 }] },
           oturumSuresi,
@@ -291,7 +311,7 @@ describe("ödeme oturumu", () => {
       ),
     ).toEqual({ kod: "oturum-yok", ayrinti: undefined });
     const musteri = await h.musteriAc();
-    await servis.oturumAc(
+    await servis.odemeOturumuAc(
       h.vt,
       { kim: { tur: "uye", musteri }, bilgiler: bilgiler(), kalemler: [{ birim: a, adet: 1 }] },
       oturumSuresi,
@@ -310,7 +330,7 @@ describe("ödeme oturumu", () => {
     const a = await h.urunAc();
     const telefonsuz = bilgiler({ teslimat: { ...teslimat, telefon: "" } });
     const ac = (b: ReturnType<typeof bilgiler>) =>
-      servis.oturumAc(
+      servis.odemeOturumuAc(
         h.vt,
         { kim: misafir(), bilgiler: b, kalemler: [{ birim: a, adet: 1 }] },
         oturumSuresi,
@@ -358,7 +378,7 @@ describe("ödeme oturumu", () => {
       adres: istanbul,
     };
     const toplam = async (ek: Record<string, unknown>) => {
-      const { oturum } = await servis.oturumAc(
+      const { oturum } = await servis.odemeOturumuAc(
         h.vt,
         { kim: misafir(), bilgiler: bilgiler(ek), kalemler: [{ birim: a, adet: 1 }] },
         oturumSuresi,
@@ -369,7 +389,7 @@ describe("ödeme oturumu", () => {
         .where(eq(odemeOturumlari.kimlik, oturum));
       return satir;
     };
-    // Teslimat Ankara (%18), fatura İstanbul 34000: orada en özel oran, ek %0,5 geçerlidir (karar 0061).
+    // Teslimat Ankara (Türkiye oranı), fatura İstanbul 34000: orada en özel oran, ek oran geçerlidir (karar 0061).
     const teslimataGore = await toplam({ fatura: kurumsal });
     expect(teslimataGore?.fatura).toEqual(kurumsal);
     expect(teslimataGore?.toplam).toBe(11_800);
@@ -386,7 +406,7 @@ describe("ödeme oturumu", () => {
     const a = await h.urunAc();
     const musteri = await h.musteriAc();
     const ac = (pazarlamaIzni: boolean) =>
-      servis.oturumAc(
+      servis.odemeOturumuAc(
         h.vt,
         {
           kim: { tur: "uye", musteri },
@@ -411,7 +431,7 @@ describe("ödeme oturumu", () => {
     const a = await h.urunAc();
     const eposta = `yeni-${randomUUID().slice(0, 8)}@ornek.test`;
     const ac = () =>
-      servis.oturumAc(
+      servis.odemeOturumuAc(
         h.vt,
         {
           kim: {
@@ -450,7 +470,7 @@ describe("ödeme oturumu", () => {
 
 describe("stok ayırma", () => {
   const ac = (h: Awaited<ReturnType<typeof hazirla>>, birim: string, onceki?: string) =>
-    servis.oturumAc(
+    servis.odemeOturumuAc(
       h.vt,
       { kim: misafir(), bilgiler: bilgiler(), kalemler: [{ birim, adet: 1 }], onceki },
       oturumSuresi,
@@ -529,17 +549,18 @@ describe("stok ayırma", () => {
     expect(await h.oturumlar()).toHaveLength(2);
   });
 
-  it("müşterinin bir önceki oturumu serbest kalır; başkasının oturumu kalmaz", async () => {
+  it("müşterinin bir önceki oturumu serbest kalır; başka üyenin oturumu kalmaz", async () => {
     const h = await hazirla();
     const son = await h.urunAc({ miktar: 1 });
     const ilk = await ac(h, son);
     const ikinci = await ac(h, son, ilk.oturum);
     expect((await h.oturumlar()).map((o) => o.kimlik)).toEqual([ikinci.oturum]);
-    // Üye müşteri üye olmayanın oturumunu, başka üye onunkini silemez.
+    // Üye olmadan onaylayıp sonra giriş yapan müşteri aynı sekmedeki oturumunu serbest bırakır (bağımsız kontrolün
+    // bulgusu: kendi ayırması kendisine engel oluyordu). Başka üye üyenin oturumunu, üye olmayan üyeninkini silemez.
     const musteri = await h.musteriAc();
     const baska = await h.musteriAc();
     const uyeAc = (kim: string, onceki: string) =>
-      servis.oturumAc(
+      servis.odemeOturumuAc(
         h.vt,
         {
           kim: { tur: "uye", musteri: kim },
@@ -549,9 +570,8 @@ describe("stok ayırma", () => {
         },
         oturumSuresi,
       );
-    expect((await hatasi(uyeAc(musteri, ikinci.oturum))).kod).toBe("cakisma");
-    await h.vt.delete(odemeOturumlari);
-    const uyeninki = await uyeAc(musteri, randomUUID());
+    const uyeninki = await uyeAc(musteri, ikinci.oturum);
+    expect((await h.oturumlar()).map((o) => o.kimlik)).toEqual([uyeninki.oturum]);
     expect((await hatasi(uyeAc(baska, uyeninki.oturum))).kod).toBe("cakisma");
     expect((await hatasi(ac(h, son, uyeninki.oturum))).kod).toBe("cakisma");
     await uyeAc(musteri, uyeninki.oturum);

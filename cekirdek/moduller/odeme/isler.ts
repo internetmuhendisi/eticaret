@@ -2,7 +2,7 @@
 import { z } from "zod";
 import { isTanimla } from "../../arka-plan-isleri/kuyruk.ts";
 import { gunluk } from "../../izleme/gunluk.ts";
-import { eskiOdemeOturumlariniSil } from "./servis.ts";
+import { eskiOdemeOturumlariniSil } from "./temizlik.ts";
 
 // Süresi dolup saklama süresini geçen ödeme oturumları silinir: kişisel veri gereğinden uzun saklanmaz. Süresi dolan
 // stok ayırması zaten sayılmaz; satırı oturumla gider.

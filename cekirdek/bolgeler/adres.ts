@@ -80,13 +80,20 @@ export const telefonGecerliMi = (telefon: string): boolean => {
 
 // Müşterinin ülke içindeki yazılışı (0555 000 00 00) ülkenin telefon koduyla uluslararası biçime çevrilir
 // (+90 555 000 00 00, kart 0213): müşteri numarasını alıştığı gibi yazar, kayıtta tek biçim durur. "00" ile başlayan
-// uluslararası yazılış "+" olur. Kodu bilinmeyen ülkede ve "+" ile başlayan numarada değer olduğu gibi kalır.
+// uluslararası yazılış "+" olur; ülke kodundan sonra yazılan ülke içi sıfır atılır. Kodu bilinmeyen ülkede değer
+// olduğu gibi kalır ("00" dışında).
 export const telefonuDuzelt = (ulke: string, telefon: string): string => {
   const temiz = telefon.trim();
-  if (temiz.startsWith("00")) return `+${temiz.slice(2)}`;
+  const uluslararasi = temiz.startsWith("00") ? `+${temiz.slice(2)}` : temiz;
   const kod = ulkeTelefonKodu(ulke);
-  if (kod === undefined || !temiz.startsWith("0")) return temiz;
-  return `+${kod} ${temiz.slice(1).trimStart()}`;
+  if (kod === undefined) return uluslararasi;
+  // Ülke kodundan sonra yazılan ülke içi sıfır atılır (+90 0555 → +90 555).
+  if (uluslararasi.startsWith(`+${kod}`)) {
+    const kalan = uluslararasi.slice(kod.length + 1).trimStart();
+    return kalan.startsWith("0") ? `+${kod} ${kalan.slice(1).trimStart()}` : uluslararasi;
+  }
+  if (!uluslararasi.startsWith("0")) return uluslararasi;
+  return `+${kod} ${uluslararasi.slice(1).trimStart()}`;
 };
 
 export const telefonSemasi = z

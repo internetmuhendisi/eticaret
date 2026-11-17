@@ -15,12 +15,17 @@ export const uyeOdemeUcu = ucTanimla({
   sema: uyeOdemeGirdisi,
   izin: "odeme.kendi.baslat",
   sinir: "siki",
-  isle: async ({ robotCevabi, bilgiler, kalemler, onceki }, _istek, _yanit, { hesapKimligi }) => {
+  isle: async (
+    { robotCevabi, bilgiler, kalemler, onceki, gorulenToplam },
+    _istek,
+    _yanit,
+    { hesapKimligi },
+  ) => {
     await robotCevabiniDogrula(robotCevabi);
     const site = calisanSite();
-    const sonuc = await odemeServisi(site).oturumAc(
+    const sonuc = await odemeServisi(site).odemeOturumuAc(
       siteninVeritabani(),
-      { kim: { tur: "uye", musteri: hesapKimligi }, bilgiler, kalemler, onceki },
+      { kim: { tur: "uye", musteri: hesapKimligi }, bilgiler, kalemler, onceki, gorulenToplam },
       oturumSuresiSaniye("musteri", site.ayarlar),
     );
     // Ayırmanın bittiği an sitenin saat dilimiyle yazılı da gelir: ekran tarih biçimlendirmez.

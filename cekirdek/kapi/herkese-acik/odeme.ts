@@ -18,14 +18,18 @@ export const odemeUcu = ucTanimla({
   sema: misafirOdemeGirdisi,
   izin: herkeseAcik,
   sinir: "siki",
-  isle: async ({ robotCevabi, eposta, hesap, bilgiler, kalemler, onceki }, _istek, yanit) => {
+  isle: async (
+    { robotCevabi, eposta, hesap, bilgiler, kalemler, onceki, gorulenToplam },
+    _istek,
+    yanit,
+  ) => {
     // Veritabanına bakmadan önce: robot stoğu ya da e-postanın kayıtlı olup olmadığını soramasın.
     await robotCevabiniDogrula(robotCevabi);
     const site = calisanSite();
     const sure = oturumSuresiSaniye("musteri", site.ayarlar);
-    const sonuc = await odemeServisi(site).oturumAc(
+    const sonuc = await odemeServisi(site).odemeOturumuAc(
       siteninVeritabani(),
-      { kim: { tur: "misafir", eposta, hesap }, bilgiler, kalemler, onceki },
+      { kim: { tur: "misafir", eposta, hesap }, bilgiler, kalemler, onceki, gorulenToplam },
       sure,
     );
     if (sonuc.anahtarlar !== undefined) {

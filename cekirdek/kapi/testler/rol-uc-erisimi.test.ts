@@ -158,7 +158,7 @@ const odemedekiBirim = async (bKimligi: string) => {
     gorulenMiktar: 0,
     sebep: "sayim",
   });
-  const { oturum } = await odemeServisi(site).oturumAc(
+  const { oturum } = await odemeServisi(site).odemeOturumuAc(
     vt,
     {
       kim: { tur: "uye", musteri: bKimligi },

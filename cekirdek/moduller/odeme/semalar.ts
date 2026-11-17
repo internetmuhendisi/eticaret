@@ -124,6 +124,9 @@ const ucEkleri = {
   kalemler: z.array(sepetKalemiSemasi).min(1).max(sepetSinirlari.kalemEnCok),
   robotCevabi: robotCevabiSemasi,
   onceki: kimlikSemasi.optional(),
+  // Müşterinin özette gördüğü toplam (kuruş): sunucunun toplamından farklıysa onay durur ("sepet-degisti"). Tutar
+  // olarak kullanılmaz.
+  gorulenToplam: z.int().min(0).optional(),
 };
 
 export const misafirOdemeGirdisi = misafirOdemeFormuSemasi.extend(ucEkleri);

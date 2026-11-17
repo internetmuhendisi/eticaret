@@ -5,7 +5,8 @@
 // - Tutar yalnız sunucunun hesabıdır (sepetiHesapla, karar 0135): tarayıcıdan yalnız kalemler gelir. Vergi teslimat ve
 //   fatura adresinin bölgesiyle hesaplanır, hangisinin kullanılacağı vergiAdresi ayarıdır (karar 0061).
 // - Sepet ödemeye geçilemez durumdaysa (satılamayan satır, alım adedi) ya da müşterinin görmediği bir değişiklik
-//   varsa (fiyat, stok, adet sınırı) oturum açılmaz: "sepet-degisti", müşteri güncel özeti görüp yeniden onaylar.
+//   varsa (fiyat, stok, adet sınırı, özette gördüğü toplam bugünkü toplamdan farklı) oturum açılmaz: "sepet-degisti",
+//   müşteri güncel özeti görüp yeniden onaylar. Görülen toplam yalnız karşılaştırılır, tutar olarak kullanılmaz.
 // - Üye olmadan alışveriş kapalıysa üye olmayan müşteri "oturum-yok" alır (ekran girişe yönlendirir). Telefonun
 //   zorunluluğu ayardır. Teslimat adresi sitenin teslimat ülkelerinden birinde olmalıdır.
 // - Üye olmayan müşteri isterse hesap açar: müşteri kaydıyla aynı işlev (karar 0051), oturumla aynı işlemde. Kayıtlı
@@ -14,13 +15,13 @@
 //   onaylarına da yeni satır olarak yazılır (işaretsiz bırakmak var olan izni geri almaz), hesap açan müşteride kayıtla
 //   birlikte yazılır, üye olmayanda yalnız oturumdadır.
 // - Stok ayırması oturumla aynı işlemdedir: ayrılamayan birim "stok-ayrildi" ile döner, oturum da yazılmaz.
-// - Müşterinin bir önceki oturumu (yeniden basınca) aynı işlemde silinir, ayırmaları serbest kalır; yalnız aynı
-//   müşterinin (üye olmayanda yine üye olmayanın) oturumu silinir.
-import { and, eq, isNull, lte, sql } from "drizzle-orm";
+// - Müşterinin bir önceki oturumu (yeniden basınca) aynı işlemde silinir, ayırmaları serbest kalır. Üye olmayan yalnız
+//   üye olmayanın oturumunu, üye kendi oturumunu ve aynı sekmede üye olmadan açtığı oturumu (giriş yapıp yeniden
+//   onaylayınca) siler; başka üyenin oturumu silinmez. Oturumun kimliği yalnız onu açan sekmeye döner.
+import { and, eq, isNull, or, sql } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import { musteriOnayTurleri, siparisOnayTurleri } from "../../kayitlar/musteri-onaylari.ts";
-import { odemeOturumuSaklamaSaat } from "../../kayitlar/odeme.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
 import { musteriOnaylari } from "../musteri/model.ts";
@@ -41,6 +42,8 @@ export type OdemeGirdisi = {
   bilgiler: OdemeBilgileri;
   kalemler: SepetKalemi[];
   onceki?: string | undefined;
+  // Müşterinin özette gördüğü toplam (kuruş): yalnız karşılaştırılır, tutar olarak kullanılmaz.
+  gorulenToplam?: number | undefined;
 };
 
 export type OdemeSonucu = {
@@ -70,7 +73,7 @@ export const faturaAdresi = (bilgiler: OdemeBilgileri) =>
   bilgiler.fatura.adres ?? bilgiler.teslimat.adres;
 
 export const odemeServisi = (site: Site) => {
-  const oturumAc = async (
+  const odemeOturumuAc = async (
     vt: Veritabani,
     girdi: OdemeGirdisi,
     oturumSuresiSaniye: number,
@@ -95,7 +98,11 @@ export const odemeServisi = (site: Site) => {
       throw new BilinenHata("is-kurali", [{ alan: "kalemler", kod: "sepet-bos" }]);
     }
     // Müşterinin görmediği her değişiklik (adet sınıra inmiş, fiyat değişmiş) onayı durdurur.
-    if (!hesap.odemeyeGecilebilir || hesap.satirlar.some((satir) => satir.uyarilar.length > 0)) {
+    if (
+      !hesap.odemeyeGecilebilir ||
+      hesap.satirlar.some((satir) => satir.uyarilar.length > 0) ||
+      (girdi.gorulenToplam !== undefined && girdi.gorulenToplam !== hesap.toplam)
+    ) {
       throw new BilinenHata("is-kurali", [{ alan: "kalemler", kod: "sepet-degisti" }]);
     }
 
@@ -194,8 +201,8 @@ export const odemeServisi = (site: Site) => {
     });
   };
 
-  // Müşterinin bir önceki oturumu: yalnız aynı sahibin oturumu silinir, ayırmaları onunla gider. Başkasının oturumu
-  // ya da olmayan oturum sessizce atlanır (oturumun var olup olmadığı belli olmaz).
+  // Müşterinin bir önceki oturumu: üye olmayanınki ya da üyenin kendisininki silinir, ayırmaları onunla gider.
+  // Başka üyenin oturumu ya da olmayan oturum sessizce atlanır (oturumun var olup olmadığı belli olmaz).
   const oncekiniSil = async (
     islem: VeritabaniIslemi,
     onceki: string,
@@ -208,7 +215,10 @@ export const odemeServisi = (site: Site) => {
           eq(odemeOturumlari.kimlik, onceki),
           musteri === undefined
             ? isNull(odemeOturumlari.musteri_kimligi)
-            : eq(odemeOturumlari.musteri_kimligi, musteri),
+            : or(
+                isNull(odemeOturumlari.musteri_kimligi),
+                eq(odemeOturumlari.musteri_kimligi, musteri),
+              ),
         ),
       );
   };
@@ -217,20 +227,5 @@ export const odemeServisi = (site: Site) => {
   const ayirmayiBirak = (vt: Veritabani, oturum: string) =>
     vt.transaction((islem) => stok.ayirmayiBirak(islem, oturum));
 
-  return { oturumAc, ayirmayiBirak };
-};
-
-// Süresi dolup saklama süresini de geçen oturumlar silinir (kişisel veri taşır); ayırmaları onunla gider. Siparişe
-// dönen oturumun kuralı kart 0214'tedir.
-export const eskiOdemeOturumlariniSil = async (vt: Veritabani): Promise<number> => {
-  const silinen = await vt
-    .delete(odemeOturumlari)
-    .where(
-      lte(
-        odemeOturumlari.bitis_zamani,
-        sql`now() - make_interval(hours => ${odemeOturumuSaklamaSaat})`,
-      ),
-    )
-    .returning({ kimlik: odemeOturumlari.kimlik });
-  return silinen.length;
+  return { odemeOturumuAc, ayirmayiBirak };
 };

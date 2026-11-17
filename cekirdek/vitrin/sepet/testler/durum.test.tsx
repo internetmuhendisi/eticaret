@@ -64,6 +64,7 @@ const gorunum = (satirlar: Partial<SepetGorunumu["satirlar"][number]>[]): SepetG
   kargo: "ucretsiz",
   vergiDokumu: [],
   yazili: { araToplam: "1", vergi: "0", toplam: "1" },
+  toplam: 1,
   odemeyeGecilebilir: true,
 });
 

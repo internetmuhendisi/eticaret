@@ -4,6 +4,8 @@
 //   motorlarına kapalıdır.
 // - Üye olmayan müşteri formu klavyeyle baştan sona doldurur (il ve ilçe listeden, onay kutuları boşlukla, gönderim
 //   Enter'la); oturum yazılır, stok ayrılır, başarı ve ayırmanın bitiş saati söylenir.
+// - Stok sepetteki adedin altına indiyse ödeme sayfası sepetteki adedi stoğa indirir, değişikliği söyler; müşteri
+//   onaylayabilir (bağımsız kontrolün bulgusu: onay her seferinde "sepet değişti" alıyordu).
 // - Boş gönderimde hatalar alanların altında ve üstte özetlenir, odak özete gider, özetteki bağlantı alana götürür;
 //   hatalı form iki renkte ve üç genişlikte taramadan geçer, yana kaymaz.
 // - Dolu form iki renkte ve üç genişlikte taramadan geçer, yana kaymaz; konsolda hata yok.
@@ -45,6 +47,8 @@ const sifre = "uzun-bir-deneme-sifresi";
 let vt: Veritabani;
 const ek = randomUUID().slice(0, 8);
 let birim = "";
+// Stoğu 2 olan ürün: sepette 3 adet durur (bağımsız kontrolün bulgusu).
+let azBirim = "";
 const epostalar: string[] = [];
 const temizlik: (() => Promise<unknown>)[] = [];
 
@@ -62,6 +66,20 @@ test.beforeAll(async () => {
   await calisanSiteninFiyatServisi().fiyatYaz(vt, yapan, birim, { satisFiyati: 15_000 });
   await stokServisi().stokDuzelt(vt, yapan, birim, {
     yeniMiktar: 20,
+    gorulenMiktar: 0,
+    sebep: "sayim",
+  });
+  const az = await servis.urunEkle(vt, yapan, {
+    ad: `Ödeme az stok ${ek}`,
+    adresAdi: `odeme-az-stok-${ek}`,
+    vergiSinifi: null,
+    durum: "yayinda",
+  });
+  temizlik.push(() => servis.urunSil(vt, yapan, az));
+  azBirim = (await servis.urunuOku(vt, az))?.birimler[0]?.kimlik ?? "";
+  await calisanSiteninFiyatServisi().fiyatYaz(vt, yapan, azBirim, { satisFiyati: 5_000 });
+  await stokServisi().stokDuzelt(vt, yapan, azBirim, {
+    yeniMiktar: 2,
     gorulenMiktar: 0,
     sebep: "sayim",
   });
@@ -114,10 +132,10 @@ const ikiRenkUcGenislik = async (page: Page, ne: string) => {
   await page.setViewportSize({ width: 1280, height: 900 });
 };
 
-const sepetiKur = async (page: Page) => {
+const sepetiKur = async (page: Page, kalemler = [{ birim, adet: 1 }]) => {
   await page.addInitScript(([anahtar, deger]) => window.localStorage.setItem(anahtar, deger), [
     sepetDepoAnahtari,
-    JSON.stringify([{ birim, adet: 1 }]),
+    JSON.stringify(kalemler),
   ] as const);
 };
 
@@ -236,6 +254,30 @@ test("üye olmayan müşteri formu klavyeyle doldurur; stok ayrılır, başarı 
     .where(eq(stokAyirmalari.oturum_kimligi, oturum?.kimlik ?? ""));
   expect(ayirmalar.map((s) => [s.birim_kimligi, s.adet])).toEqual([[birim, 1]]);
   expect(hatalar).toEqual([]);
+});
+
+test("stok sepetteki adedin altına indiyse adet stoğa iner, söylenir ve müşteri onaylayabilir", async ({
+  page,
+}) => {
+  const eposta = `az-stok-${ek}@ornek.test`;
+  epostalar.push(eposta);
+  await sepetiKur(page, [{ birim: azBirim, adet: 3 }]);
+  await odemeyiAc(page);
+  await expect(page.getByText(metin("vitrin.sepet.degisiklikVar"))).toBeVisible();
+  // Sepetin deposundaki adet 2'ye iner: özet ve onay aynı adedi görür.
+  await expect
+    .poll(() => page.evaluate((anahtar) => window.localStorage.getItem(anahtar), sepetDepoAnahtari))
+    .toContain('"adet":2');
+  await alan(page, metin("vitrin.odeme.eposta")).fill(eposta);
+  await teslimatiDoldur(page);
+  await onaylariVer(page);
+  await onayla(page);
+  await basariBekle(page);
+  const [oturum] = await vt
+    .select()
+    .from(odemeOturumlari)
+    .where(eq(odemeOturumlari.eposta, eposta));
+  expect(oturum?.kalemler).toEqual([{ birim: azBirim, adet: 2 }]);
 });
 
 test("boş gönderimde hatalar özetlenir, odak özete gider, bağlantı alana götürür; hatalı form taramadan geçer", async ({

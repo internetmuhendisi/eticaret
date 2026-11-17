@@ -1,5 +1,5 @@
 // Sepet ucu gerçek istek ve gerçek veritabanıyla (kart 0213): ödeme adımının verdiği teslimat ve fatura bölgesi vergi
-// hesabına ulaşır. Deneme sitesinin tablosunda Türkiye %18, İstanbul'un 34000 posta kodunda yalnız ek %0,5 vardır
+// hesabına ulaşır. Deneme sitesinin tablosunda Türkiye'nin oranı ve İstanbul'un 34000 posta kodunda yalnız ek oran vardır
 // (en özel oran, karar 0061); vergi teslimat adresine göre hesaplanır (vergiAdresi varsayılanı).
 import { randomBytes } from "node:crypto";
 import { resolve } from "node:path";

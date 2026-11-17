@@ -38,6 +38,8 @@ describe("tema demosunda kapı", () => {
         "POST /kapi/herkese-acik/musteri-kayit",
         "POST /kapi/herkese-acik/musteri-sifre-sifirlama",
         "POST /kapi/herkese-acik/musteri-sifre-yenile",
+        // Kart 0213: ödeme adımı sipariş doğurur.
+        "POST /kapi/herkese-acik/odeme",
         "POST /kapi/herkese-acik/stok-bildirimi",
       ].toSorted(),
     );

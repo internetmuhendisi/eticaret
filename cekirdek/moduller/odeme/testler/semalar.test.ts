@@ -55,6 +55,9 @@ describe("telefon", () => {
     expect(telefonuDuzelt("TR", " 0 555 000 00 00 ")).toBe("+90 555 000 00 00");
     expect(telefonuDuzelt("TR", "0090 555 000 00 00")).toBe("+90 555 000 00 00");
     expect(telefonuDuzelt("TR", "+90 555 000 00 00")).toBe("+90 555 000 00 00");
+    // Ülke kodundan sonra yazılan ülke içi sıfır atılır (bağımsız kontrolün bulgusu).
+    expect(telefonuDuzelt("TR", "+90 0555 000 00 00")).toBe("+90 555 000 00 00");
+    expect(telefonuDuzelt("TR", "0090 0555 000 00 00")).toBe("+90 555 000 00 00");
     // Telefon kodu veri dosyasında olmayan ülkede değer olduğu gibi kalır.
     expect(telefonuDuzelt("DE", "030 1234567")).toBe("030 1234567");
   });

@@ -198,6 +198,7 @@ describe("sepet sayfasının bağlanması", () => {
               kargo: "ucretsiz",
               vergiDokumu: [],
               yazili: { araToplam: "1", vergi: "0", toplam: "1" },
+              toplam: 1,
               odemeyeGecilebilir: true,
             },
           }),

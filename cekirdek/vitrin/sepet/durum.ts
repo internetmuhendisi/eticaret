@@ -196,6 +196,7 @@ const bosGorunum: SepetGorunumu = {
   kargo: "yok",
   vergiDokumu: [],
   yazili: { araToplam: "", vergi: "", toplam: "" },
+  toplam: 0,
   odemeyeGecilebilir: false,
 };
 

@@ -51,6 +51,7 @@ import {
 } from "../../../bilesenler/parcalar/secim-kutusu";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
+import { postaKoduGecerliMi } from "../../bolgeler/bolgeler";
 import { hataKodlari } from "../../kayitlar/kapi";
 import { useMetin } from "../../metinler/istemci-metni";
 import type { MetinAnahtari } from "../../metinler/metin";
@@ -59,7 +60,7 @@ import { misafirOdemeFormuSemasi, uyeOdemeFormuSemasi } from "../../moduller/ode
 import { useRobotluGonderim } from "../../moduller/robot-korumasi/istemci";
 import { girisAdresiDonuslu, vitrinAdresleri } from "../adresler";
 import { cikisYap, hesapDurumunuYenile, useHesapDurumu } from "../hesap-durumu";
-import { useSepet, useSepetGorunumu } from "../sepet/durum";
+import { adetDegistir, useSepet, useSepetGorunumu } from "../sepet/durum";
 import { SatirGorseli, SepetOzeti, satirAdi } from "../sepet/sepet-gorunumu";
 import type { SepetGorunumu } from "../sepet/veri";
 
@@ -98,11 +99,16 @@ const adresGirdisi = (adres: Adres) => ({
   adres: adres.adres,
   postaKodu: bosIseYok(adres.postaKodu),
 });
-const vergiBolgesi = (adres: Adres) => ({
-  ulke: adres.ulke,
-  ...(adres.il === "" ? {} : { il: adres.il }),
-  ...(adres.postaKodu.trim() === "" ? {} : { postaKodu: adres.postaKodu.trim() }),
-});
+// Özetin vergi bölgesi. Posta kodu yalnız ülkenin biçimine uyunca girer: yazılırken her harfte özet istenmez, yarım
+// kod bölgeyi değiştirmez.
+const vergiBolgesi = (adres: Adres) => {
+  const postaKodu = adres.postaKodu.trim();
+  return {
+    ulke: adres.ulke,
+    ...(adres.il === "" ? {} : { il: adres.il }),
+    ...(postaKodu !== "" && postaKoduGecerliMi(adres.ulke, postaKodu) ? { postaKodu } : {}),
+  };
+};
 
 // Şemanın ve sunucunun hata kodundan alanın altındaki metin.
 const ozelHatalar: Record<string, MetinAnahtari> = {
@@ -217,12 +223,13 @@ function MetinAlani({
   kimlikler: AlanKimlikleri;
   type?: NonNullable<ComponentProps<typeof GirisAlani>["type"]>;
   autoComplete?: string;
-  defaultValue?: string;
   inputMode?: "text" | "tel" | "email" | "numeric";
-  onBlur?: (deger: string) => void;
+  // Verilirse alan durumdan çizilir (posta kodu: özetin vergi bölgesi ona bağlıdır).
+  deger?: string;
+  onDegisti?: (deger: string) => void;
 }) {
   const hata = hatalar[ad];
-  const { onBlur, ...giris } = ozellikler;
+  const { deger, onDegisti, ...giris } = ozellikler;
   return (
     <FormAlani
       etiket={etiket}
@@ -236,9 +243,10 @@ function MetinAlani({
             {...alan}
             name={ad}
             {...giris}
-            {...(onBlur === undefined
+            {...(deger === undefined ? {} : { value: deger })}
+            {...(onDegisti === undefined
               ? {}
-              : { onBlur: (olay) => onBlur(olay.currentTarget.value) })}
+              : { onChange: (olay) => onDegisti(olay.currentTarget.value) })}
           />
         );
       }}
@@ -375,8 +383,8 @@ function AdresAlanlari({
             : "vitrin.odeme.postaKodu",
         )}
         autoComplete="postal-code"
-        defaultValue={adres.postaKodu}
-        onBlur={(deger) => degistir({ ...adres, postaKodu: deger })}
+        deger={adres.postaKodu}
+        onDegisti={(deger) => degistir({ ...adres, postaKodu: deger })}
         hatalar={hatalar}
         kimlikler={kimlikler}
       />
@@ -550,6 +558,8 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
   const [sonuc, setSonuc] = useState<{ bitisYazili: string } | null>(null);
   const [bekliyor, setBekliyor] = useState(false);
   const [yenileme, setYenileme] = useState(0);
+  // Sepetteki adet sunucunun hesabına göre indirildi: özet yenilenince de söylenir.
+  const [adetIndi, setAdetIndi] = useState(false);
   const gonderiliyor = useRef(false);
   const kimlikler = useRef<AlanKimlikleri>({}).current;
   const ozetKutusu = useRef<HTMLDivElement>(null);
@@ -567,6 +577,18 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
     }
   }, [hesap.tur, veri.uyeOlmadanAlisveris]);
 
+  // Sunucu adedi stoğa ya da alım sınırına indirdiyse sepetteki adet de iner: müşteri özette ne görüyorsa onu
+  // onaylar, aynı fark onayı yeniden durdurmaz. Fark özetin üstünde söylenir.
+  useEffect(() => {
+    if (durum.tur !== "hazir") return;
+    for (const satir of durum.gorunum.satirlar) {
+      if (satir.satilabilir && satir.adet >= 1 && satir.adet < satir.istenenAdet) {
+        adetDegistir(satir.birim, satir.adet);
+        setAdetIndi(true);
+      }
+    }
+  }, [durum]);
+
   // Hata olunca odak özete geçer: klavyeyle dolduran kişi neyi düzelteceğini duyar ve bağlantıyla alana gider.
   useEffect(() => {
     if (Object.keys(hatalar).length > 0 || genelHata !== null) ozetKutusu.current?.focus();
@@ -581,8 +603,8 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
     if (gonderiliyor.current || durum.tur !== "hazir") return;
     const form = new FormData(olay.currentTarget);
     const deger = (ad: string) => String(form.get(ad) ?? "");
-    const teslimatAdres = { ...teslimat, postaKodu: deger("bilgiler.teslimat.adres.postaKodu") };
-    const faturaAdres = { ...faturaAdresi, postaKodu: deger("bilgiler.fatura.adres.postaKodu") };
+    const teslimatAdres = teslimat;
+    const faturaAdres = faturaAdresi;
     const fatura = {
       tur: faturaTuru,
       adresAyni: faturaAyni,
@@ -650,6 +672,8 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
       const yanit = await robotluGonder(uye ? uyeUcu : misafirUcu, {
         ...girdi.data,
         kalemler: sepet.kalemler,
+        // Özette görülen toplam: sunucu kendi hesabından farklıysa onaylamaz (tutar olarak kullanılmaz).
+        gorulenToplam: durum.gorunum.toplam,
         ...(onceki === undefined ? {} : { onceki }),
       });
       const zarf = (await yanit.json().catch(() => undefined)) as
@@ -674,7 +698,11 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
         window.location.assign(girisAdresiDonuslu(vitrinAdresleri.odeme));
         return;
       }
-      if (yanit.status === hataKodlari.dogrulama && ayrinti.length > 0) {
+      if (
+        yanit.status === hataKodlari.dogrulama &&
+        ayrinti.length > 0 &&
+        ayrinti.every(({ alan }) => alan in alanAdlari)
+      ) {
         setHatalar(
           Object.fromEntries(
             ayrinti.map(({ alan, kod }) => [
@@ -683,7 +711,11 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
             ]),
           ),
         );
-      } else if (yanit.status === hataKodlari["is-kurali"]) {
+      } else if (
+        yanit.status === hataKodlari["is-kurali"] ||
+        yanit.status === hataKodlari.dogrulama
+      ) {
+        // Alanı formda olmayan doğrulama hatası (sepetin kalemleri) sepetin değiştiği sayılır.
         setGenelHata(
           ayrinti.some(({ kod }) => kod === "sepet-bos") ? "sepet-bos" : "sepet-degisti",
         );
@@ -750,6 +782,16 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
       </Uyari>
     );
   }
+  // Satılamayan satır ya da alım adedi ödemeyi durdurur: müşteri sepette düzeltir (karar 0132).
+  if (!gorunum.odemeyeGecilebilir) {
+    return (
+      <Uyari tur="tehlike">
+        <p>{metin("vitrin.sepet.odemeEngeli")}</p>
+        <Baglanti href={vitrinAdresleri.sepet}>{metin("vitrin.sepet.sepeteGit")}</Baglanti>
+      </Uyari>
+    );
+  }
+  const degisiklik = adetIndi || gorunum.satirlar.some((satir) => satir.uyarilar.length > 0);
 
   const hataSayisi = Object.keys(hatalar).length;
   const odak = (ad: string) => () => {
@@ -781,6 +823,9 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
               ))}
             </ul>
           </Uyari>
+        ) : null}
+        {degisiklik && genelHata === null ? (
+          <Uyari tur="uyari">{metin("vitrin.sepet.degisiklikVar")}</Uyari>
         ) : null}
         {genelHata === null ? null : (
           <Uyari tur="tehlike">
