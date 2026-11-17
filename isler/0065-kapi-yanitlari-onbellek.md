@@ -19,4 +19,4 @@ Kapının yanıtlarında önbellek başlığı yok (`cekirdek/kapi/zarf.ts`). Ka
 
 ## Durum
 
-yapılacak
+bitti
