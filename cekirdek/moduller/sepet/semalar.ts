@@ -13,6 +13,22 @@ export const sepetKalemiSemasi = z.strictObject({
 });
 export type SepetKalemi = z.output<typeof sepetKalemiSemasi>;
 
+// Ödeme adımında vergi müşterinin adresine göre hesaplanır (kart 0213): teslimat ve fatura adresinin bölgesi gelir,
+// hangisinin kullanılacağı vergiAdresi ayarıdır. Bölge vergi tablosunda yoksa mağaza adresi kullanılır (karar 0061);
+// bu yüzden burada yalnız biçim denetlenir.
+const bolgeMetni = z.string().trim().min(1).max(20);
+export const vergiBolgesiSemasi = z.strictObject({
+  ulke: bolgeMetni,
+  il: bolgeMetni.optional(),
+  postaKodu: bolgeMetni.optional(),
+});
+export const vergiBolgeleriSemasi = z.strictObject({
+  teslimat: vergiBolgesiSemasi.optional(),
+  fatura: vergiBolgesiSemasi.optional(),
+});
+export type VergiBolgeleri = z.output<typeof vergiBolgeleriSemasi>;
+
 export const sepetSemasi = z.strictObject({
   kalemler: z.array(sepetKalemiSemasi).max(sepetSinirlari.kalemEnCok),
+  vergiBolgeleri: vergiBolgeleriSemasi.optional(),
 });

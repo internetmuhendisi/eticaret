@@ -171,7 +171,7 @@ Müşteri hesabı açar, onayları kaydeder, hoş geldin e-postasını kuyruğa 
 Tarayıcıdaki sepetin vitrin verisini hesaplar (kart 0212, karar 0135). Sepet yalnız müşterinin tarayıcısındadır; uç birimleri ve adetleri alır, fiyatı, stoğu, kargoyu ve vergiyi sunucuda yeniden hesaplar. Hiçbir şey yazmaz, oturum istemez. Tema demosunda açıktır.
 
 - İzin: `herkese-acik`. Sınır: `genel`.
-- Girdi: `{ "kalemler": [{ "birim", "adet", "gorulenTutar"? }] }` (`sepetSemasi`, `cekirdek/moduller/sepet/semalar.ts`); en çok 50 kalem, adet 1–999. Aynı birim iki kez gelirse adetleri toplanır; kimlik olmayan birim atılır.
+- Girdi: `{ "kalemler": [{ "birim", "adet", "gorulenTutar"? }], "vergiBolgeleri"?: { "teslimat"?, "fatura"? } }` (`sepetSemasi`, `cekirdek/moduller/sepet/semalar.ts`); en çok 50 kalem, adet 1–999. Aynı birim iki kez gelirse adetleri toplanır; kimlik olmayan birim atılır. Ödeme adımı teslimat ve fatura adresinin bölgesini (`ulke`, `il`?, `postaKodu`?) verir, vergi ona göre hesaplanır (kart 0213, `vergiAdresi`).
 - Servis: hesap `cekirdek/moduller/sepet/hesap.ts` (`sepetiHesapla`), gösterim `cekirdek/vitrin/sepet/veri.ts` (`sepetGorunumu`).
 - Başarılı (200): `{ "basarili": true, "veri": { "satirlar", "adet", "gosterim", "kargo", "vergiDokumu", "yazili", "odemeyeGecilebilir" } }`. Satırın uyarıları `cekirdek/kayitlar/sepet.ts` kaydındadır (`fiyat-degisti`, `stok-azaldi`, `en-az`, `en-cok`, `tukendi`, `kaldirildi`).
 - Hatalar: `dogrulama` (bozuk girdi, sınır dışı adet, fazla kalem), `istek-siniri` (`Retry-After` ile), `yetki` (sahte istek).
@@ -185,6 +185,16 @@ Tarayıcıdaki sepetin vitrin verisini hesaplar (kart 0212, karar 0135). Sepet y
 - Servis: `cekirdek/eklentiler/stoga-gelince-haber-ver/servis.ts`. Robot cevabı veritabanına bakılmadan önce denetlenir.
 - Başarılı (200): `{ "basarili": true, "veri": {} }`.
 - Hatalar: `bulunamadi` (eklenti kapalı; birim yok, silinmiş ya da ürünün sayfası açılmıyor), `oturum-yok` (mağaza sahibi üye olmayanın talebini kapattı: `stokBildirimiUyeOlmayan`), `is-kurali` (`talep-alinamaz`: birim satılabilir ya da ürünün stok takibi kapalı), `robot-dogrulamasi`, `istek-siniri` (`Retry-After` ile), `dogrulama`, `yetki` (sahte istek).
+
+### POST /kapi/herkese-acik/odeme
+
+Üye olmayan müşteri ödeme adımında "Siparişi onayla"ya basar (kart 0213, karar 0140): ödeme oturumu açılır, sepetin takibi açık birimleri stok ayırma süresi kadar ayrılır (`stokAyirmaSuresi`), isterse hesap açılır. Tutar sunucuda hesaplanır, tarayıcıdan gelmez; vergi teslimat ve fatura adresinin bölgesiyle (`vergiAdresi`). Sipariş kart 0214'te oturumdan kurulur. Tema demosunda kapalıdır.
+
+- İzin: `herkese-acik`. Sınır: `siki`.
+- Girdi: `{ "eposta", "hesap": { "ac": false } | { "ac": true, "sifre", "uyelikOnayi", "kvkkOnayi" }, "bilgiler": { "teslimat", "fatura", "not"?, "onBilgilendirmeOnayi", "mesafeliSatisOnayi", "pazarlamaIzni" }, "kalemler", "robotCevabi", "onceki"? }` (`misafirOdemeGirdisi`, `cekirdek/moduller/odeme/semalar.ts`). `onceki` müşterinin bir önceki onayının oturumudur: yalnız üye olmayanın oturumuysa silinir, ayırması serbest kalır.
+- Servis: `cekirdek/moduller/odeme/servis.ts`. Robot cevabı veritabanına bakılmadan önce denetlenir.
+- Başarılı (200): `{ "basarili": true, "veri": { "oturum", "bitis" } }`; hesap açıldıysa iki oturum çerezi.
+- Hatalar: `oturum-yok` (üye olmadan alışveriş kapalı: `uyeOlmadanAlisveris`), `dogrulama` (şemaya uymayan girdi; `telefon-gerekli`, `telefon-bicimi`, `fatura-adresi-gerekli`, `vergi-numarasi-bicimi`, `vergi-numarasi-kontrol`, `ulke-teslimat-disi`, bölge ve adres kodları), `is-kurali` (`sepet-bos`, `sepet-degisti`: sepet ödemeye geçilemez ya da müşterinin görmediği bir değişiklik var), `cakisma` (`stok-ayrildi`: birimin stoğu başka bir ödemede ayrılmış ya da yetmiyor, birimle; ya da hesap açılırken e-posta kayıtlı), `robot-dogrulamasi`, `istek-siniri` (`Retry-After` ile), `yetki` (sahte istek), tema demosunda `bulunamadi`.
 
 ### POST /kapi/herkese-acik/musteri-giris
 
@@ -306,6 +316,16 @@ Müşterinin favorileri (kart 0140, karar 0110). Vitrin girişli müşterinin fa
 - Servis: `cekirdek/moduller/favori/servis.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "favoriler": [...], "sigmayan": 0 } }`.
 - Hatalar: `dogrulama`, `oturum-yok`.
+
+### POST /kapi/musteri/odeme
+
+Giriş yapmış müşterinin ödeme adımı (kart 0213, karar 0140): herkese açık ödeme ucuyla aynı, oturum müşterinin hesabına açılır. E-posta hesabındandır; pazarlama izni işaretlenirse hesabın onaylarına da yeni satır olarak yazılır (işaretsiz bırakmak var olan izni geri almaz).
+
+- İzin: `odeme.kendi.baslat`. Sınır: `siki`.
+- Girdi: `{ "bilgiler", "kalemler", "robotCevabi", "onceki"? }` (`uyeOdemeGirdisi`). Müşterinin kimliği yalnız kapıdan gelir; `onceki` yalnız müşterinin kendi oturumuysa silinir.
+- Servis: `cekirdek/moduller/odeme/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "oturum", "bitis" } }`.
+- Hatalar: herkese açık ödeme ucunun hataları (hesap açma ve `uyeOlmadanAlisveris` dışında), `oturum-yok`.
 
 ### POST /kapi/musteri/stok-bildirimi
 

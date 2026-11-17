@@ -118,7 +118,10 @@
       "kargoUcreti": "Sepete eklenen kargo ücreti. Fiyatlar gibi vergi dahil ya da hariç girilir. 0 kargoyu her zaman ücretsiz yapar.",
       "ucretsizKargoSiniri": "Bu tutar ve üstündeki sepette kargo ücretsizdir. Boşsa ücretsiz kargo sınırı yoktur.",
       "ucretsizKargoTutari": "Ücretsiz kargo sınırının sepetin indirimden sonraki mi önceki mi tutarıyla karşılaştırılacağı.",
-      "sepeteEkleyince": "Ürün sepete eklenince ne olur: sepet penceresi açılır, kısa bildirim çıkar ya da sepet sayfasına gidilir."
+      "sepeteEkleyince": "Ürün sepete eklenince ne olur: sepet penceresi açılır, kısa bildirim çıkar ya da sepet sayfasına gidilir.",
+      "uyeOlmadanAlisveris": "Müşteri hesap açmadan sipariş verebilir mi. Kapalıysa ödeme adımı girişe yönlendirir.",
+      "telefonZorunlu": "Ödeme adımında teslimat telefonu zorunlu mu. Kargo firmaları teslimat için telefon ister.",
+      "stokAyirmaSuresi": "Müşteri siparişi onaylayınca sepetindeki ürünlerin kaç dakika onun için ayrıldığı. Süre dolunca stok serbest kalır."
     }
   },
   "tema": {

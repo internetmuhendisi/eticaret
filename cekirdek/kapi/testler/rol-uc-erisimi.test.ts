@@ -15,10 +15,16 @@ import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
 import { baslangicRolleri } from "../../moduller/ekip/baslangic-rolleri.ts";
 import { favoriler } from "../../moduller/favori/model.ts";
 import { favoriServisi } from "../../moduller/favori/servis.ts";
+import { siteninFiyatServisi } from "../../moduller/fiyat/servis.ts";
 import { siteninServisi } from "../../moduller/magaza-ayarlari/servis.ts";
+import { odemeOturumlari } from "../../moduller/odeme/model.ts";
+import { odemeBilgileriSemasi } from "../../moduller/odeme/semalar.ts";
+import { odemeServisi } from "../../moduller/odeme/servis.ts";
 import { hesapAc } from "../../moduller/oturum/servis.ts";
 import { robotSorusuUret } from "../../moduller/robot-korumasi/servis.ts";
 import { soruyuCoz } from "../../moduller/robot-korumasi/testler/soru-coz.ts";
+import { stokAyirmalari } from "../../moduller/stok/model.ts";
+import { stokServisi } from "../../moduller/stok/servis.ts";
 import { urunServisi } from "../../moduller/urun/servis.ts";
 import { yorumlar } from "../../moduller/yorum/model.ts";
 import { yorumServisi } from "../../moduller/yorum/servis.ts";
@@ -100,6 +106,68 @@ const musteriSenaryolari: Record<string, MusteriSenaryosu> = {
     const urun = await favoriUrunu(b.kimlik);
     return { govde: { urunler: [await yayindakiUrun()] }, aranan: [b.eposta, urun] };
   },
+  // B'nin ödeme oturumu birimin bir adedini ayırmış (stok 2); A bir önceki oturum olarak B'ninkini verir. A'nın
+  // oturumu kendi hesabına açılır, B'nin oturumu ve ayırması silinmez (aşağıdaki test ölçer), yanıtta B yoktur.
+  "POST /kapi/musteri/odeme": async (b) => {
+    const { birim, oturum } = await odemedekiBirim(b.kimlik);
+    return {
+      govde: {
+        bilgiler: odemeBilgileri,
+        kalemler: [{ birim, adet: 1 }],
+        robotCevabi: await soruyuCoz(await robotSorusuUret()),
+        onceki: oturum,
+      },
+      aranan: [b.eposta, oturum],
+    };
+  },
+};
+
+const odemeBilgileri = {
+  teslimat: {
+    ad: "A",
+    soyad: "Müşteri",
+    telefon: "+90 555 000 00 00",
+    adres: {
+      ulke: "TR",
+      il: "TR-06",
+      ilce: "TR-06-007",
+      adres: "Deneme No: 1",
+      postaKodu: "06420",
+    },
+  },
+  fatura: { tur: "bireysel", adresAyni: true },
+  onBilgilendirmeOnayi: true,
+  mesafeliSatisOnayi: true,
+  pazarlamaIzni: false,
+};
+
+// Stoğu 2 olan yayındaki ürünün birimi; B'nin ödeme oturumu bir adedini ayırmış.
+const odemedekiBirim = async (bKimligi: string) => {
+  const site = denemeSitesi();
+  const urunSrv = urunServisi(() => "Europe/Istanbul");
+  const urun = await urunSrv.urunEkle(vt, sistemIslemi("test"), {
+    ad: `Ödemede ${randomBytes(4).toString("hex")}`,
+    vergiSinifi: null,
+    durum: "yayinda",
+  });
+  const birim = (await urunSrv.urunuOku(vt, urun))?.birimler[0]?.kimlik;
+  if (birim === undefined) throw new Error("Birim yok.");
+  await siteninFiyatServisi(site).fiyatYaz(vt, sistemIslemi("test"), birim, { satisFiyati: 1_000 });
+  await stokServisi().stokDuzelt(vt, sistemIslemi("test"), birim, {
+    yeniMiktar: 2,
+    gorulenMiktar: 0,
+    sebep: "sayim",
+  });
+  const { oturum } = await odemeServisi(site).oturumAc(
+    vt,
+    {
+      kim: { tur: "uye", musteri: bKimligi },
+      bilgiler: odemeBilgileriSemasi.parse(odemeBilgileri),
+      kalemler: [{ birim, adet: 1 }],
+    },
+    3600,
+  );
+  return { birim, oturum };
 };
 
 const yayindakiUrun = () =>
@@ -307,6 +375,42 @@ describe("stoğa gelince haber ver ucu", () => {
         { eposta: b.eposta, durum: "bekliyor" },
       ]),
     );
+  });
+});
+
+describe("ödeme ucu", () => {
+  it("B'nin oturumuna ve ayırmasına dokunmaz, A'nın oturumunu A'nın hesabına açar", async () => {
+    const baslik = "POST /kapi/musteri/odeme";
+    const uc = (await uclariOku(uygulamaAdresleri)).find((kayit) => kayit.baslik === baslik);
+    const senaryo = musteriSenaryolari[baslik];
+    if (uc === undefined || senaryo === undefined) throw new Error("Ödeme ucu yok.");
+    const { a, b, sorunlar } = await baskasininKaydi(uc, senaryo);
+    expect(sorunlar).toEqual([]);
+    const oturumlar = await vt
+      .select({
+        kimlik: odemeOturumlari.kimlik,
+        musteri: odemeOturumlari.musteri_kimligi,
+        eposta: odemeOturumlari.eposta,
+      })
+      .from(odemeOturumlari)
+      .where(inArray(odemeOturumlari.musteri_kimligi, [a.kimlik, b.kimlik]));
+    expect(
+      oturumlar
+        .map(({ musteri, eposta }) => ({ musteri, eposta }))
+        .toSorted((x, y) => x.eposta.localeCompare(y.eposta)),
+    ).toEqual(
+      [
+        { musteri: a.kimlik, eposta: a.eposta },
+        { musteri: b.kimlik, eposta: b.eposta },
+      ].toSorted((x, y) => x.eposta.localeCompare(y.eposta)),
+    );
+    const bninki = oturumlar.find(({ musteri }) => musteri === b.kimlik)?.kimlik ?? "";
+    expect(
+      await vt
+        .select()
+        .from(stokAyirmalari)
+        .where(inArray(stokAyirmalari.oturum_kimligi, [bninki])),
+    ).toHaveLength(1);
   });
 });
 

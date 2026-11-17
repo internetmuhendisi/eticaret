@@ -31,6 +31,7 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `menu.gor` | yonetici | tumu | Menüleri ve öğelerini, hedefi silinmiş öğelerin işaretiyle görür. |
 | `menu.degistir` | yonetici | tumu | Menü ve öğe ekler, değiştirir, sıralar ve siler. |
 | `musteri.kendi-hesabi.gor` | musteri | kendi | Müşteri kendi hesabını görür. |
+| `odeme.kendi.baslat` | musteri | kendi | Giriş yapmış müşteri kendi adına ödeme adımını tamamlar: ödeme oturumu açılır, sepetin stoğu ayrılır (kart 0213). |
 | `ozellik.gor` | yonetici | tumu | Ürün özelliklerini ve seçeneklerini görür. |
 | `ozellik.degistir` | yonetici | tumu | Özellik ve seçenek ekler ve değiştirir. |
 | `ozellik.sil` | yonetici | tumu | Özellik ya da seçenek siler: değerleri ürünlerden kalkar. |

@@ -9,8 +9,9 @@
 // - Adet ürünün en çok alım adedine, sepetin adet sınırına ve takibi açık üründe stoğa indirilir ("en-cok",
 //   "stok-azaldi"); ürünün en az alım adedinin altındaysa "en-az" (ödemeye geçmeyi durdurur, adet değişmez).
 // - Müşterinin son gördüğü birim fiyatı bugünkünden farklıysa "fiyat-degisti".
-// - Vergi vergiHesapla ile, satırın girildiği biçimdeki geçerli tutarıyla; kargo kargoHesapla ile. Müşterinin adresi
-//   bilinmediği için vergi bölgesi mağaza adresidir (ödeme adımı adresi verir).
+// - Vergi vergiHesapla ile, satırın girildiği biçimdeki geçerli tutarıyla; kargo kargoHesapla ile. Sepette müşterinin
+//   adresi bilinmediği için vergi bölgesi mağaza adresidir. Ödeme adımı teslimat ve fatura adresinin bölgesini verir
+//   (kart 0213); hangisinin kullanılacağı vergiAdresi ayarıdır (karar 0061).
 // - Gösterilen tutarlar fiyat gösterimi ayarına göredir (vergi dahil ya da hariç): satır tutarı vergi hesabının
 //   satırından, ara toplam satırların toplamı, toplam vergi hesabının vergili toplamıdır. Böylece ara toplam, kargo
 //   ve vergi her zaman toplamı verir; birim fiyatla adetin çarpımı bir kuruş farklı olabilir.
@@ -29,7 +30,7 @@ import { type KargoSonucu, kargoHesapla } from "../kargo/hesap.ts";
 import { siteninStokAyarlari, stokDurumlari } from "../stok/durum.ts";
 import { urunBirimleri, urunler } from "../urun/model.ts";
 import { vitrinKosulu } from "../urun/vitrin.ts";
-import type { DokumSatiri } from "../vergi/hesap.ts";
+import type { DokumSatiri, VergiBolgesi } from "../vergi/hesap.ts";
 import type { FiyatGirisi } from "../vergi/semalar.ts";
 import { vergiHesapla } from "../vergi/servis.ts";
 import type { SepetKalemi } from "./semalar.ts";
@@ -93,7 +94,13 @@ export const sepetiHesapla = async (
   vt: Veritabani,
   site: Site,
   kalemler: readonly SepetKalemi[],
-  { an = new Date() }: { an?: Date } = {},
+  {
+    an = new Date(),
+    adresler = {},
+  }: {
+    an?: Date;
+    adresler?: { teslimat?: VergiBolgesi | undefined; fatura?: VergiBolgesi | undefined };
+  } = {},
 ): Promise<SepetHesabi> => {
   const temiz = birlestir(kalemler);
   const birimler = temiz.map((kalem) => kalem.birim);
@@ -198,6 +205,8 @@ export const sepetiHesapla = async (
               sinif,
             })),
             ...(kargo.tur === "ucretli" ? { kargo: { tutar: kargo.tutar } } : {}),
+            ...(adresler.teslimat === undefined ? {} : { teslimatAdresi: adresler.teslimat }),
+            ...(adresler.fatura === undefined ? {} : { faturaAdresi: adresler.fatura }),
           },
           site,
         );

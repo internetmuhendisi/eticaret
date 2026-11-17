@@ -9,7 +9,12 @@ import ulkeVerisi from "./ulkeler.json" with { type: "json" };
 
 export type Ilce = { kod: string; ad: string };
 export type Il = { kod: string; ad: string; ilceler: readonly Ilce[] };
-type UlkeBolgeleri = { ulke: string; postaKoduBicimi?: string; iller: readonly Il[] };
+type UlkeBolgeleri = {
+  ulke: string;
+  postaKoduBicimi?: string;
+  telefonKodu?: string;
+  iller: readonly Il[];
+};
 
 // Dışarı verilen listeler dondurulur: çağıran değiştiremez.
 const dondur = <T>(liste: readonly T[]): readonly T[] => Object.freeze([...liste]);
@@ -97,6 +102,10 @@ export const bolgeyiDogrula = (bolge: {
   }
   return { gecerli: true };
 };
+
+// Ülkenin uluslararası telefon kodu (ülke kodu, başında + olmadan); bilinmeyen ülkede yoktur (kart 0213).
+export const ulkeTelefonKodu = (ulke: string): string | undefined =>
+  ulkeninBolgeleri.get(ulke)?.telefonKodu;
 
 // Posta kodu biçimi bilinen ülkede adreste posta kodu zorunludur.
 export const postaKoduZorunluMu = (ulke: string): boolean => postaKoduBicimleri.has(ulke);

@@ -5,6 +5,7 @@
 // HTML ya da bağlantı ayıklanmaz, çünkü hiçbir yerde HTML olarak çizilmez (vitrin yazı olarak çizer).
 import { z } from "zod";
 import { yorumDurumlari, yorumKararlari, yorumSinirlari } from "../../kayitlar/yorum.ts";
+import { duzMetinSemasi } from "../../metinler/duz-metin.ts";
 import { kimlikSemasi } from "../../veritabani/kimlik.ts";
 import { robotCevabiSemasi } from "../robot-korumasi/semalar.ts";
 
@@ -21,17 +22,8 @@ export const yorumHatalari = [
 ] as const;
 export type YorumHatasi = (typeof yorumHatalari)[number];
 
-// Satır sonu ve sekme serbest, öteki denetim karakterleri değil (bölüm tarifinin uzun metniyle aynı kural).
-const denetimKarakteri = /[^\P{Cc}\n\r\t]/u;
-
-const duzMetin = (enCok: number) =>
-  z
-    .string()
-    .trim()
-    .min(1)
-    .max(enCok)
-    .refine((deger) => !denetimKarakteri.test(deger), "metin-gecersiz")
-    .transform((deger) => deger.normalize("NFC"));
+// Düz metnin kuralı ortaktır (cekirdek/metinler/duz-metin.ts).
+const duzMetin = duzMetinSemasi;
 
 export const yorumFormuSemasi = z.strictObject({
   urun: kimlikSemasi,

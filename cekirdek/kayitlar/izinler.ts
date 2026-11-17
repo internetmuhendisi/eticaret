@@ -12,6 +12,7 @@ import { magazaAyarlariIzinleri } from "../moduller/magaza-ayarlari/izinler.ts";
 import { markaIzinleri } from "../moduller/marka/izinler.ts";
 import { menuIzinleri } from "../moduller/menu/izinler.ts";
 import { musteriIzinleri } from "../moduller/musteri/izinler.ts";
+import { odemeIzinleri } from "../moduller/odeme/izinler.ts";
 import { ozellikIzinleri } from "../moduller/ozellik/izinler.ts";
 import { stokIzinleri } from "../moduller/stok/izinler.ts";
 import { temaIzinleri } from "../moduller/tema/izinler.ts";
@@ -40,6 +41,7 @@ export const modulIzinleri = {
   marka: markaIzinleri,
   menu: menuIzinleri,
   musteri: musteriIzinleri,
+  odeme: odemeIzinleri,
   ozellik: ozellikIzinleri,
   stok: stokIzinleri,
   // Eklenti (kart 0144, karar 0117).
@@ -61,6 +63,7 @@ export const izinler = {
   ...markaIzinleri,
   ...menuIzinleri,
   ...musteriIzinleri,
+  ...odemeIzinleri,
   ...ozellikIzinleri,
   ...stokIzinleri,
   ...stokBildirimiIzinleri,

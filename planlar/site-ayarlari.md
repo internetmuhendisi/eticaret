@@ -66,14 +66,14 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Tükenen ürün | Mağaza sahibi | Gösterilir ama satılmaz | — | `tukenenUrun`. Seçenekler: göster ama satma, gizle. Gizlenen ürün listelerden, aramadan ve ilgili ürünlerden çıkar; kendi sayfası bağlantıyla açılır, Tükendi yazar, satılmaz (kart 0083, karar 0069) |
 | Düşük stok uyarı eşiği | Mağaza sahibi | 5 adet | — | `dusukStokEsigi`. Ürün bazında değiştirilebilir. Eşik dahil, 0 kapatır (kart 0083) |
 | "Son X ürün" yazısı | Mağaza sahibi | 5 adet ve altında | — | `sonAdetEsigi`. 0 yazıyı kapatır (kart 0083) |
-| Ödeme sırasında stok ayırma süresi | Mağaza sahibi | 15 dakika | — | |
+| Ödeme sırasında stok ayırma süresi | Mağaza sahibi | 15 dakika | — | `stokAyirmaSuresi`, 5–60 dakika. Müşteri "Siparişi onayla"ya basınca sepetin birimleri ayrılır (kullanıcı kararı: sayfa açılınca değil). Ayrılan ürün vitrinde stokta görünür, ödemeye geçen başka müşteriye ayrılmış olduğu söylenir (kart 0213, karar 0140) |
 
 ## Sepet ve ödeme
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
 |---|---|---|---|---|
-| Üye olmadan alışveriş | Mağaza sahibi | Açık | — | |
-| Telefon zorunlu | Mağaza sahibi | Açık | — | Kargo firmaları telefon ister |
+| Üye olmadan alışveriş | Mağaza sahibi | Açık | — | `uyeOlmadanAlisveris`. Kapalıysa ödeme adımı girişe yönlendirir; açıkken müşteri ödeme sırasında isteğe bağlı hesap açar (kart 0213) |
+| Telefon zorunlu | Mağaza sahibi | Açık | — | `telefonZorunlu`. Kargo firmaları telefon ister (kart 0213) |
 | Havale | Mağaza sahibi | Açık | — | |
 | Ödenmeyen havale siparişinin iptal süresi | Mağaza sahibi | 3 gün | — | Süre sonunda stok geri döner |
 | Kapıda ödeme | Mağaza sahibi | Kapalı | Açık | İsteyen mağaza açar |

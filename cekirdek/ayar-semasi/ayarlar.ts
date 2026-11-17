@@ -13,6 +13,7 @@ import { saticiBilgileriSemasi } from "../bolgeler/satici.ts";
 import { eklentiKodlari, stokBildirimiAyari } from "../kayitlar/eklentiler.ts";
 import { favoriSiniriEnCok } from "../kayitlar/favori.ts";
 import { listeSayfasi, listeSiralamalari, sayfaGecisleri } from "../kayitlar/liste.ts";
+import { stokAyirmaSuresiSinirlari } from "../kayitlar/odeme.ts";
 import {
   sepeteEkleyinceSecenekleri,
   sepetTutariEnCok,
@@ -392,6 +393,22 @@ export const magazaAyarSemasi = z.strictObject({
   sepeteEkleyince: ayar(
     z.enum(sepeteEkleyinceSecenekleri).default("yan-pencere"),
     magazaSahibinin("ayar.aciklama.sepeteEkleyince"),
+  ),
+  // Ödeme adımı (kart 0213, karar 0140; planlar/site-ayarlari.md). Üye olmadan alışveriş kapalıysa ödeme adımı
+  // girişe yönlendirir; telefon kargo firmaları için varsayılan zorunludur. Stok ayırma süresi dakikadır: müşteri
+  // "Siparişi onayla"ya basınca sepetin birimleri bu kadar ayrılır (cekirdek/kayitlar/odeme.ts).
+  uyeOlmadanAlisveris: ayar(
+    z.boolean().default(true),
+    magazaSahibinin("ayar.aciklama.uyeOlmadanAlisveris"),
+  ),
+  telefonZorunlu: ayar(z.boolean().default(true), magazaSahibinin("ayar.aciklama.telefonZorunlu")),
+  stokAyirmaSuresi: ayar(
+    z
+      .int()
+      .min(stokAyirmaSuresiSinirlari.enAz)
+      .max(stokAyirmaSuresiSinirlari.enCok)
+      .default(stokAyirmaSuresiSinirlari.varsayilan),
+    magazaSahibinin("ayar.aciklama.stokAyirmaSuresi"),
   ),
   // Stoğa gelince haber ver eklentisi (kart 0144, karar 0117): üye olmayan müşteri de talep bırakabilir mi,
   // talep kaç gün saklanır. Eklenti kapalıyken okunmaz.

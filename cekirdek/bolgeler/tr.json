@@ -33,6 +33,7 @@
   },
   "ulke": "TR",
   "postaKoduBicimi": "^[0-9]{5}$",
+  "telefonKodu": "90",
   "saticiKimligi": {
     "vergiNumarasi": {
       "sirket": { "bicim": "^[0-9]{10}$", "denetim": "vergi-kimlik-numarasi" },

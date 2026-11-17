@@ -8,6 +8,7 @@
 //     sınar; son ürün iki kez düşmez.
 //   - stokArtir: iptal ve iadede, çağıranın işleminin içinde.
 //   - stokDuzelt: panelden elle, sebeple ve ekranın gördüğü miktarla; kendi işlemini açar.
+//   - stokAyir ve ayirmayiBirak: ödemede stoğa dokunmadan birimi süreli ayırır (kart 0213).
 // - Her değişiklik stok geçmişine aynı işlemde yazılır (kim, ne zaman, neden, önceki ve sonraki miktar);
 //   geçmiş sonradan değiştirilemez (tetikleyici). Elle düzeltme değişiklik kaydına da girer; siparişin
 //   düşürmesi girmez, siparişin kendi geçmişi vardır.
@@ -25,7 +26,7 @@
 //   noktası); çağıranın işlemi hatayı yakalarsa geri kalanı bozulmadan sürebilir.
 //
 // İzin kapıda denetlenir (izinler.ts); servis yalnız kimin yaptığını kayda yazar.
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { stokGeldi } from "../../eklentiler/stok-kancalari.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
@@ -41,7 +42,7 @@ import { kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { urunBirimleri, urunler } from "../urun/model.ts";
 import { birimStoklariniOku } from "./durum.ts";
-import { birimStoklari, stokGecmisi } from "./model.ts";
+import { birimStoklari, stokAyirmalari, stokGecmisi } from "./model.ts";
 import {
   type ElleDuzeltme,
   elleDuzeltme,
@@ -363,7 +364,74 @@ export const stokServisi = () => {
     }));
   };
 
-  return { stokDus, stokArtir, stokDuzelt, stoklariOku, stokGecmisiniOku };
+  // Ödemede (kart 0213, karar 0140): her kalemin takibi açık birimi oturum için bitis'e kadar ayrılır. Ayrılabilir
+  // miktar stoktan, başka oturumların süresi dolmamış ayırmaları düşülerek bulunur. Birimin stok satırı kilitlenir:
+  // aynı anda iki ödeme sıraya girer, ikincisi birincinin ayırmasını görür; son ürün iki kez ayrılmaz. Bir kalem
+  // ayrılamazsa hiçbiri ayrılmaz ve çakışma hatası sorunlu birimleri söyler ("stok-yetersiz"). Stoğa ve geçmişe
+  // dokunmaz: stok sipariş kurulurken düşer (kart 0214). Takibi kapalı birim ayrılmaz. Çağıranın işleminde çalışır,
+  // oturumun kaydıyla birlikte yazılır. Süre veritabanının saatiyle karşılaştırılır (bitis de onun saatinden gelir).
+  const stokAyir = async (
+    islem: VeritabaniIslemi,
+    oturum: string,
+    hamKalemler: StokKalemi[],
+    bitis: Date,
+  ): Promise<void> => {
+    const kalemler = kalemleriTopla(hamKalemler);
+    await islem.transaction(async (ic) => {
+      const sorunlar: Sorun[] = [];
+      for (const { birim, adet } of kalemler) {
+        const durum = kimlikMi(birim) ? await birimiKilitle(ic, birim) : undefined;
+        if (durum === undefined || durum.silinmis) {
+          sorunlar.push(sorun("kalemler", "birim-gecersiz", birim));
+          continue;
+        }
+        if (!durum.takip) continue;
+        // Stok satırının kilidi ayırmaları sıraya koyar: bekleyen işlem sonraki sorguda öncekinin ayırmasını görür.
+        const [stok] = await ic
+          .select({ miktar: birimStoklari.miktar })
+          .from(birimStoklari)
+          .where(eq(birimStoklari.birim_kimligi, birim))
+          .for("update");
+        const [ayrilan] = await ic
+          .select({ adet: sql<number>`coalesce(sum(${stokAyirmalari.adet}), 0)::int` })
+          .from(stokAyirmalari)
+          .where(
+            and(
+              eq(stokAyirmalari.birim_kimligi, birim),
+              sql`${stokAyirmalari.bitis_zamani} > now()`,
+              ne(stokAyirmalari.oturum_kimligi, oturum),
+            ),
+          );
+        if ((stok?.miktar ?? 0) - (ayrilan?.adet ?? 0) < adet) {
+          sorunlar.push(sorun("kalemler", "stok-yetersiz", birim));
+          continue;
+        }
+        await ic.insert(stokAyirmalari).values({
+          oturum_kimligi: oturum,
+          birim_kimligi: birim,
+          adet,
+          bitis_zamani: bitis,
+        });
+      }
+      if (sorunlar.length > 0) throw new BilinenHata("cakisma", sorunlar);
+    });
+  };
+
+  // Oturumun ayırmaları serbest kalır (ödeme başarısız oldu, müşteri yeniden onayladı). Süresi dolan ayırma zaten
+  // sayılmaz; satırı oturumuyla birlikte silinir.
+  const ayirmayiBirak = async (islem: VeritabaniIslemi, oturum: string): Promise<void> => {
+    await islem.delete(stokAyirmalari).where(eq(stokAyirmalari.oturum_kimligi, oturum));
+  };
+
+  return {
+    stokDus,
+    stokArtir,
+    stokDuzelt,
+    stoklariOku,
+    stokGecmisiniOku,
+    stokAyir,
+    ayirmayiBirak,
+  };
 };
 
 const servis = stokServisi();

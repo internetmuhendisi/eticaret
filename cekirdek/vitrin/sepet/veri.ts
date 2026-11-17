@@ -15,7 +15,7 @@ import {
   type SepetSatirUyarisi,
   sepetiHesapla,
 } from "../../moduller/sepet/hesap.ts";
-import type { SepetKalemi } from "../../moduller/sepet/semalar.ts";
+import type { SepetKalemi, VergiBolgeleri } from "../../moduller/sepet/semalar.ts";
 import { birimGorseli, urunGalerileri } from "../../moduller/urun/galeri.ts";
 import {
   urunBirimiDegerleri,
@@ -75,9 +75,9 @@ export const sepetGorunumu = async (
   vt: Veritabani,
   site: Site,
   kalemler: readonly SepetKalemi[],
-  { an = new Date() }: { an?: Date } = {},
+  { an = new Date(), adresler = {} }: { an?: Date; adresler?: VergiBolgeleri } = {},
 ): Promise<SepetGorunumu> => {
-  const hesap = await sepetiHesapla(vt, site, kalemler, { an });
+  const hesap = await sepetiHesapla(vt, site, kalemler, { an, adresler });
   const bicim = siteninBicimleyicisi(site.ayarlar);
   const gosterim = fiyatGosterimServisi(site);
   const satilanlar = hesap.satirlar

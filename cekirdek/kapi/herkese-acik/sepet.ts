@@ -1,6 +1,7 @@
 // POST /kapi/herkese-acik/sepet (kart 0212, karar 0135; uç belgesi: cekirdek/kapi/uclar.md). Tarayıcıdaki sepetin
 // birimleri ve adetleri gelir, sepetin vitrin verisi döner: satırlar, uyarılar, ara toplam, kargo, vergi dökümü ve
-// toplam. Hiçbir şey yazmaz, oturum istemez (sepet tarayıcıdadır). Uç yalnız yönlendirir: hesap sepet modülünde,
+// toplam. Ödeme adımı teslimat ve fatura adresinin bölgesini de verir, vergi ona göre hesaplanır (kart 0213).
+// Hiçbir şey yazmaz, oturum istemez (sepet tarayıcıdadır). Uç yalnız yönlendirir: hesap sepet modülünde,
 // gösterim vitrinin sepet verisindedir. Tema demosunda açıktır: sepet gezintinin parçasıdır, sipariş doğurmaz.
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import { herkeseAcik } from "../../kayitlar/izinler.ts";
@@ -15,5 +16,8 @@ export const sepetUcu = ucTanimla({
   sema: sepetSemasi,
   izin: herkeseAcik,
   sinir: "genel",
-  isle: ({ kalemler }) => sepetGorunumu(siteninVeritabani(), calisanSite(), kalemler),
+  isle: ({ kalemler, vergiBolgeleri }) =>
+    sepetGorunumu(siteninVeritabani(), calisanSite(), kalemler, {
+      ...(vergiBolgeleri === undefined ? {} : { adresler: vergiBolgeleri }),
+    }),
 });

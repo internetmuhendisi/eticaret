@@ -9,6 +9,7 @@ import {
   ilListesiVarMi,
   postaKoduGecerliMi,
   postaKoduZorunluMu,
+  ulkeTelefonKodu,
 } from "./bolgeler.ts";
 
 export const adresHatalari = [
@@ -75,6 +76,17 @@ export const telefonGecerliMi = (telefon: string): boolean => {
   if (!/^\+[0-9 ()-]+$/.test(temiz)) return false;
   const rakamlar = temiz.replace(/[^0-9]/g, "");
   return !rakamlar.startsWith("0") && rakamlar.length >= 10 && rakamlar.length <= 15;
+};
+
+// Müşterinin ülke içindeki yazılışı (0555 000 00 00) ülkenin telefon koduyla uluslararası biçime çevrilir
+// (+90 555 000 00 00, kart 0213): müşteri numarasını alıştığı gibi yazar, kayıtta tek biçim durur. "00" ile başlayan
+// uluslararası yazılış "+" olur. Kodu bilinmeyen ülkede ve "+" ile başlayan numarada değer olduğu gibi kalır.
+export const telefonuDuzelt = (ulke: string, telefon: string): string => {
+  const temiz = telefon.trim();
+  if (temiz.startsWith("00")) return `+${temiz.slice(2)}`;
+  const kod = ulkeTelefonKodu(ulke);
+  if (kod === undefined || !temiz.startsWith("0")) return temiz;
+  return `+${kod} ${temiz.slice(1).trimStart()}`;
 };
 
 export const telefonSemasi = z

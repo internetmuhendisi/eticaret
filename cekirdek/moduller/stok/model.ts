@@ -15,6 +15,7 @@
 import { sql } from "drizzle-orm";
 import { check, index, integer, pgTable, text, uuid } from "drizzle-orm/pg-core";
 import { kimlik, zaman } from "../../veritabani/turler.ts";
+import { odemeOturumlari } from "../odeme/model.ts";
 import { urunBirimleri } from "../urun/model.ts";
 
 export const birimStoklari = pgTable(
@@ -72,5 +73,34 @@ export const stokGecmisi = pgTable(
       "stok_gecmisi_kim_dolu",
       sql`(${tablo.kim_turu} = 'sistem' and length(${tablo.kim_adi}) > 0 and ${tablo.kim_kimligi} is null) or (${tablo.kim_turu} in ('yonetici', 'musteri', 'sahip') and ${tablo.kim_kimligi} is not null and ${tablo.kim_adi} is null)`,
     ),
+  ],
+);
+
+// Ödemede ayrılan stok (kart 0213, karar 0140). Müşteri "Siparişi onayla"ya basınca sepetin takibi açık birimleri
+// ödeme oturumu için bitis_zamani'na kadar ayrılır. Birimin ayrılabilir miktarı stoktan, süresi dolmamış öteki
+// ayırmalar düşülerek bulunur; ayırma birimin stok satırının kilidiyle sıraya girer, son ürün iki kez ayrılmaz.
+// Süresi dolan ayırma sayılmaz (sorgu koşulu); satırı oturumuyla birlikte silinir. Ayırma vitrindeki stok durumunu
+// değiştirmez (kullanıcı kararı): ürün stokta görünür, ödemeye geçen başka müşteriye ayrılmış olduğu söylenir.
+//
+// Aranan alanlar:
+// - birim_kimligi ve bitis_zamani: bir birimin süresi dolmamış ayırmaları, indeksli.
+// - oturum_kimligi: oturumun ayırmaları (serbest bırakma), indeksli.
+export const stokAyirmalari = pgTable(
+  "stok_ayirmalari",
+  {
+    kimlik: kimlik(),
+    oturum_kimligi: uuid()
+      .notNull()
+      .references(() => odemeOturumlari.kimlik, { onDelete: "cascade" }),
+    birim_kimligi: uuid()
+      .notNull()
+      .references(() => urunBirimleri.kimlik, { onDelete: "restrict" }),
+    adet: integer().notNull(),
+    bitis_zamani: zaman().notNull(),
+  },
+  (tablo) => [
+    index("stok_ayirmalari_birim_bitis").on(tablo.birim_kimligi, tablo.bitis_zamani),
+    index("stok_ayirmalari_oturum").on(tablo.oturum_kimligi),
+    check("stok_ayirmalari_adet", sql`${tablo.adet} > 0 and ${tablo.adet} <= 1000000000`),
   ],
 );

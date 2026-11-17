@@ -68,6 +68,26 @@ const genelNumara = /^[A-Za-z0-9][A-Za-z0-9 -]{0,29}$/;
 
 const hata = (kod: SaticiHatasi) => kod;
 
+// Kurumsal faturadaki vergi numarası (kart 0213): müşterinin işletme türü sorulmaz, numara ülkenin işletme türlerinden
+// birinin kuralına uyarsa geçer (şirketin vergi kimlik numarası ya da şahıs işletmesinin kimlik numarası). Biçimi
+// tutan ama kontrol hanesi tutmayan numara "vergi-numarasi-kontrol", hiçbir biçime uymayan "vergi-numarasi-bicimi"
+// alır. Kuralı olmayan ülkede genel biçim denetlenir.
+export const faturaVergiNumarasiHatasi = (
+  ulke: string,
+  numara: string,
+): Extract<SaticiHatasi, "vergi-numarasi-bicimi" | "vergi-numarasi-kontrol"> | undefined => {
+  const numaraKurallari = Object.values(kurallar.get(ulke)?.vergiNumarasi ?? {});
+  if (numaraKurallari.length === 0) {
+    return genelNumara.test(numara) ? undefined : "vergi-numarasi-bicimi";
+  }
+  const uyanlar = numaraKurallari.filter((kural) => new RegExp(kural.bicim).test(numara));
+  if (uyanlar.length === 0) return "vergi-numarasi-bicimi";
+  const tutan = uyanlar.some(
+    (kural) => kural.denetim === undefined || denetimler[kural.denetim](numara),
+  );
+  return tutan ? undefined : "vergi-numarasi-kontrol";
+};
+
 export const saticiBilgileriSemasi = z
   .strictObject({
     ulke: z.string().trim(),

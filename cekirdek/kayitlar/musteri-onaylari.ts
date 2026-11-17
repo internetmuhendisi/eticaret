@@ -7,3 +7,12 @@ export const musteriOnayTurleri = {
   pazarlama: { metinSurumu: "taslak-1" },
 } as const satisfies Record<string, { metinSurumu: string }>;
 export type MusteriOnayTuru = keyof typeof musteriOnayTurleri;
+
+// Siparişin onayları (kart 0213, karar 0140): müşteri ödeme adımında ön bilgilendirme formunu ve mesafeli satış
+// sözleşmesini onaylar. Onay hesaba değil ödeme oturumuna (sonra siparişe, kart 0214) metin sürümüyle yazılır: üye
+// olmayan müşterinin de siparişi vardır. Metinler bugün siparişin bilgileriyle dolan yer tutucu şablondur (kart 0063).
+export const siparisOnayTurleri = {
+  "on-bilgilendirme": { metinSurumu: "taslak-1" },
+  "mesafeli-satis": { metinSurumu: "taslak-1" },
+} as const satisfies Record<string, { metinSurumu: string }>;
+export type SiparisOnayTuru = keyof typeof siparisOnayTurleri;

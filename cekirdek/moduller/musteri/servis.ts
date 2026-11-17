@@ -4,7 +4,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import type { z } from "zod";
 import { gunluk } from "../../izleme/gunluk.ts";
 import { type MusteriOnayTuru, musteriOnayTurleri } from "../../kayitlar/musteri-onaylari.ts";
-import type { Veritabani } from "../../veritabani/baglanti.ts";
+import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { epostaGonder } from "../eposta/servis.ts";
 import { sinirliSifreDogrula } from "../oturum/giris.ts";
 import { type Anahtarlar, hesapAc, oturumAc, sifreDegismediyse } from "../oturum/servis.ts";
@@ -19,26 +19,36 @@ export const musteriKaydet = (
   oturumSuresiSaniye: number,
 ): Promise<Anahtarlar> =>
   vt.transaction(async (islem) => {
-    const { eposta, sifre, pazarlamaIzni } = girdi;
-    const { hesapKimligi } = await hesapAc(islem, "musteri", { eposta, sifre });
-    const verilenler: Record<MusteriOnayTuru, boolean> = {
-      "uyelik-sozlesmesi": girdi.uyelikOnayi,
-      "kvkk-aydinlatma": girdi.kvkkOnayi,
-      pazarlama: pazarlamaIzni,
-    };
-    await islem.insert(musteriOnaylari).values(
-      Object.entries(verilenler).map(([tur, verildi]) => ({
-        musteri_kimligi: hesapKimligi,
-        tur,
-        verildi,
-        metin_surumu: musteriOnayTurleri[tur as MusteriOnayTuru].metinSurumu,
-      })),
-    );
-    await epostaGonder(islem, { kime: eposta, sablon: "hos-geldin" });
-    const anahtarlar = await oturumAc(islem, "musteri", hesapKimligi, oturumSuresiSaniye);
-    gunluk.bilgi("Müşteri hesabı açıldı.", { hesapTuru: "musteri", eposta });
+    const { anahtarlar } = await musteriHesabiAc(islem, girdi, oturumSuresiSaniye);
     return anahtarlar;
   });
+
+// Çağıranın işleminde hesap, onaylar, hoş geldin e-postası ve oturum (ödemede hesap açma da kullanır, kart 0213).
+export const musteriHesabiAc = async (
+  islem: VeritabaniIslemi,
+  girdi: z.output<typeof kayitFormuSemasi>,
+  oturumSuresiSaniye: number,
+): Promise<{ anahtarlar: Anahtarlar; musteri: string }> => {
+  const { eposta, sifre, pazarlamaIzni } = girdi;
+  const { hesapKimligi } = await hesapAc(islem, "musteri", { eposta, sifre });
+  const verilenler: Record<MusteriOnayTuru, boolean> = {
+    "uyelik-sozlesmesi": girdi.uyelikOnayi,
+    "kvkk-aydinlatma": girdi.kvkkOnayi,
+    pazarlama: pazarlamaIzni,
+  };
+  await islem.insert(musteriOnaylari).values(
+    Object.entries(verilenler).map(([tur, verildi]) => ({
+      musteri_kimligi: hesapKimligi,
+      tur,
+      verildi,
+      metin_surumu: musteriOnayTurleri[tur as MusteriOnayTuru].metinSurumu,
+    })),
+  );
+  await epostaGonder(islem, { kime: eposta, sablon: "hos-geldin" });
+  const anahtarlar = await oturumAc(islem, "musteri", hesapKimligi, oturumSuresiSaniye);
+  gunluk.bilgi("Müşteri hesabı açıldı.", { hesapTuru: "musteri", eposta });
+  return { anahtarlar, musteri: hesapKimligi };
+};
 
 export const musteriGirisi = async (
   vt: Veritabani,
@@ -54,7 +64,7 @@ export const musteriGirisi = async (
 
 // Kimlik kapıdan gelir, girdiden alınmaz (karar 0040).
 export const musteriHesabi = async (
-  vt: Veritabani,
+  vt: Veritabani | VeritabaniIslemi,
   hesapKimligi: string,
 ): Promise<{ eposta: string } | null> => {
   const [bulunan] = await vt
