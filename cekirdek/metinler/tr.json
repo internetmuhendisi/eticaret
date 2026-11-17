@@ -69,6 +69,7 @@
       "iletisimEpostasi": "Müşterilerin mağazaya yazacağı e-posta adresi.",
       "iletisimTelefonu": "Müşterilerin mağazayı arayacağı telefon, ülke koduyla.",
       "magazaAdresi": "Mağazanın adresi. Yasal metinlerde görünür, vergi hesabında bölgesi bulunamayan adres yerine kullanılır.",
+      "saticiBilgileri": "Satıcının unvanı, işletme türü, vergi dairesi ve numarası, MERSİS ve ticaret sicil numarası, KEP adresi. Mesafeli satış sözleşmesinde ve ön bilgilendirme formunda görünür.",
       "dil": "Vitrinin, yönetim panelinin ve e-postaların dili.",
       "paraBirimi": "Fiyatların ve siparişlerin para birimi.",
       "paraBicimi": "Tutarların yazılışı: simge ve yeri, binlik ve ondalık ayırıcı, ondalık sayısı.",

@@ -9,9 +9,10 @@ Mağaza adresi, vergi bölgesi ve teslimat adresi bölgelerini buradan okur (kar
 | Dosya | İçinde ne var |
 |---|---|
 | `ulkeler.json` | ISO 3166-1 iki harfli ülke kodları (249). Ad yok. |
-| `tr.json` | Türkiye'nin 81 ili ve 973 ilçesi, kodlarıyla; posta kodu biçimi (5 rakam). |
+| `tr.json` | Türkiye'nin 81 ili ve 973 ilçesi, kodlarıyla; posta kodu biçimi (5 rakam); satıcı kimliği kuralları (`saticiKimligi`: şirkette 10 haneli vergi kimlik numarası, şahısta 11 haneli kimlik numarası, ikisi de kontrol haneli; 16 haneli MERSİS numarası; KEP adresinin alan adı). |
 | `bolgeler.ts` | Okuma işlevleri ve tek bölge doğrulaması (`bolgeyiDogrula`), posta kodu biçimi. |
 | `adres.ts` | Posta adresinin ve telefonun ortak şeması (kart 0071, karar 0057). Hata iletileri koddur. |
+| `satici.ts` | Satıcı bilgilerinin şeması (kart 0091, karar 0138). Numaraların biçimini ve kontrol hanesini ülkenin dosyasındaki `saticiKimligi` seçer; kontrol hanesi hesapları adlarıyla buradadır (adları `cekirdek/kayitlar/satici.ts`). Kuralı olmayan ülkede numara yalnız genel biçimle denetlenir. |
 
 İl ve ilçe listesi olan yeni bir ülke `<ülke kodu>.json` dosyasıyla gelir ve `bolgeler.ts` içindeki `bolgeliUlkeler` listesine eklenir.
 

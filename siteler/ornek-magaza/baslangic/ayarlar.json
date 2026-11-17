@@ -8,6 +8,16 @@
     "adres": "Deneme Sokak No: 1",
     "postaKodu": "06000"
   },
+  "saticiBilgileri": {
+    "ulke": "TR",
+    "isletmeTuru": "sirket",
+    "unvan": "Örnek Mağaza Deneme Ticaret A.Ş.",
+    "vergiDairesi": "Çankaya",
+    "vergiNumarasi": "1111111114",
+    "mersisNumarasi": "0111111111400015",
+    "ticaretSicilNumarasi": "000000",
+    "kepAdresi": "ornek-magaza@deneme.kep.tr"
+  },
   "vergiAdi": "KDV",
   "yorumYalnizSatinAlanlar": false
 }

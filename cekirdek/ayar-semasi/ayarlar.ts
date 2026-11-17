@@ -9,6 +9,7 @@
 import { z } from "zod";
 import { postaAdresiSemasi, telefonSemasi } from "../bolgeler/adres.ts";
 import { ulkeGecerliMi } from "../bolgeler/bolgeler.ts";
+import { saticiBilgileriSemasi } from "../bolgeler/satici.ts";
 import { eklentiKodlari, stokBildirimiAyari } from "../kayitlar/eklentiler.ts";
 import { favoriSiniriEnCok } from "../kayitlar/favori.ts";
 import { listeSayfasi, listeSiralamalari, sayfaGecisleri } from "../kayitlar/liste.ts";
@@ -240,6 +241,12 @@ export const magazaAyarSemasi = z.strictObject({
   magazaAdresi: ayar(
     postaAdresiSemasi.optional(),
     magazaSahibinin("ayar.aciklama.magazaAdresi", { kayittaGizli: true }),
+  ),
+  // Satıcı bilgileri (kart 0091, karar 0138): unvan, vergi kimlik bilgileri, MERSİS, ticaret sicil, KEP. Boş başlar.
+  // Şahıs işletmesinde unvan ve kimlik numarası kişisel veridir: değeri değişiklik kaydına yazılmaz.
+  saticiBilgileri: ayar(
+    saticiBilgileriSemasi.optional(),
+    magazaSahibinin("ayar.aciklama.saticiBilgileri", { kayittaGizli: true }),
   ),
   // Mağazanın sosyal hesapları (kart 0108, karar 0083): site ve kullanıcı adı, adres kayıttan kurulur
   // (cekirdek/kayitlar/sosyal-siteler.ts). Alt kısmın sosyal hesaplar bölümü buradan okur. Boş başlar.

@@ -33,6 +33,14 @@
   },
   "ulke": "TR",
   "postaKoduBicimi": "^[0-9]{5}$",
+  "saticiKimligi": {
+    "vergiNumarasi": {
+      "sirket": { "bicim": "^[0-9]{10}$", "denetim": "vergi-kimlik-numarasi" },
+      "sahis": { "bicim": "^[1-9][0-9]{10}$", "denetim": "kimlik-numarasi" }
+    },
+    "mersisNumarasi": "^[0-9]{16}$",
+    "kepAlanAdi": "\\.kep\\.tr$"
+  },
   "iller": [
     {
       "kod": "TR-01",

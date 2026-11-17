@@ -29,8 +29,8 @@ cekirdek/
   katalog/             bileşen kataloğu: parça listesi, örnekler, sayfa, kaynak taraması (karar 0078)
   kapi/                dört giriş: herkese-acik/, musteri/, yonetici/, sahip/; uç belgesi uclar.md
   ayar-semasi/         bütün site ayarlarının şeması
-  bolgeler/            ülke, il ve ilçe listesi (veri dosyaları), bölge doğrulaması ve ortak adres
-                       şeması (kararlar 0056, 0057)
+  bolgeler/            ülke, il ve ilçe listesi (veri dosyaları), bölge doğrulaması, ortak adres şeması ve
+                       satıcı bilgilerinin şeması (kararlar 0056, 0057, 0138)
   vitrin/              vitrin ekranları; bolum-kutuphanesi/ (bölüm tarifi, düzen kuralları, tür ve görünüş
                        kaydı, vitrin bağlamı), bolumler/<tür>/ (her bölüm türünün kodu, elle içerik taşımaz;
                        ortak/ bölümlerin ortak parçaları), urun-karti/ (ürün kartı, fiyat bileşeni ve
