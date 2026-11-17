@@ -36,10 +36,12 @@ import type { OdemeYontemleriEkraniVerisi, OdemeYontemleriFormu } from "./veri";
 export const yontemAdlari: Record<OdemeYontemi, MetinAnahtari> = {
   havale: "ortak.odemeYontemi.havale",
   "kapida-odeme": "ortak.odemeYontemi.kapidaOdeme",
+  kart: "ortak.odemeYontemi.kartla",
 };
 const yontemAciklamalari: Record<OdemeYontemi, MetinAnahtari> = {
   havale: "yonetim.odemeYontemleri.havaleAciklamasi",
   "kapida-odeme": "yonetim.odemeYontemleri.kapidaAciklamasi",
+  kart: "yonetim.odemeYontemleri.kartAciklamasi",
 };
 export const secenekAdlari: Record<KapidaOdemeSecenegi, MetinAnahtari> = {
   nakit: "ortak.odemeYontemi.nakit",

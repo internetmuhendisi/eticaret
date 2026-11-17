@@ -287,3 +287,4 @@ Parantez içindeki ad, eklentinin önerilen kod adıdır. Tarif dosyası bu adla
 
 - Sepette kalan hatırlatma (`sepette-kalan-hatirlatma.md`)
 - Stoğa gelince haber ver (`stoga-gelince-haber-ver.md`): kuruldu (kart 0144, karar 0117), Örnek Mağaza'da açık
+- Kartla ödeme ve taksit (`kartla-odeme.md`): kuruldu (kart 0215, karar 0142), Örnek Mağaza'da deneme ortamında açık

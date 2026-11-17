@@ -225,7 +225,8 @@ describe("ödeme yöntemi", () => {
     for (const odemeYontemi of [
       { yontem: "kapida-odeme" },
       { yontem: "kapida-odeme", secenek: "cek" },
-      { yontem: "kart" },
+      { yontem: "kart", secenek: "nakit" },
+      { yontem: "cek" },
       { yontem: "havale", secenek: "nakit" },
     ]) {
       expect(odemeBilgileriSemasi.safeParse({ ...gecerli, odemeYontemi }).success).toBe(false);

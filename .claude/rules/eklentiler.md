@@ -18,7 +18,9 @@ Eklenti temel pakette olmayan özelliktir (`temel-paket.md`). Tarifi `eklentiler
   - Stok değişikliği: `cekirdek/eklentiler/stok-kancalari.ts`. Kanca stoğu değiştiren işlemin içinde çalışır, site bilgisi almaz, yalnız işi kuyruğa koyar.
   - Ürün sayfası: `cekirdek/eklentiler/urun-sayfasi-yuvalari.tsx`. Parça seçili birimi `useSeciliBirim` ile okur.
   - Panel: sayfa ağacındaki sayfa `eklenti` alanını taşır; eklenti kapalıyken menüde yoktur ve açılmaz.
+  - Ödeme yöntemi: `cekirdek/eklentiler/odeme-yontemleri.ts` (kart 0215, karar 0142). Kayıttaki yöntem eklentiye bağlıdır (`eklentiliOdemeYontemleri`); eklenti `hazirMi` ve `baslat` verir. Ödeme servisi oturum ve ayırmadan sonra `baslat`'ı çağırır, sipariş ödeme doğrulanınca `eklentiliSiparisiKur` ile kurulur.
   - E-posta şablonu, arka plan işi, izin, uç ve metin çekirdeğin var olan kayıtlarına eklenir; metinler `tr.json`'da `eklenti.` altındadır.
 - Eklentinin tablosu kendi `model.ts`'indedir; değişiklik üreten araç onu da okur.
 - Arka plan sürecinin ulaştığı dosyalar Node ile doğrudan çalışır: içe aktarmalar uzantıyla yazılır (`katalog-acilisi.test.ts` gerçek süreçle yakalar).
 - Eklentinin kapalı hâli birim testiyle denenir (uç, servis, panel): tarayıcı testlerinin sitesinde (Örnek Mağaza) eklentiler açıktır.
+- Dış servise bağlanan eklenti (ödeme kuruluşu) kuruluşa özgü her şeyi tek dosyada tutar (`iyzico.ts`), isteği `disServiseIstek` ile gönderir (`cekirdek/dis-servis/istek.ts`), anahtarını dışarıdan gelen gizli bilgi olarak okur (`disaridanGizliBilgi`). Testleri ve tarayıcı testleri gerçek kuruluşa değil yerel sahte kuruluşa gider; gerçek deneme ortamı elle denenir.

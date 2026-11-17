@@ -42,6 +42,7 @@ cekirdek/
   metinler/            ortak metinler, biçimleyiciler, terim sözlüğü
   kayitlar/            durum, izin, ikon, işlev gibi kayıt dosyaları
   izleme/              hata yakalama, sağlık ucu, yoklamalar
+  dis-servis/          sunucunun dış servise isteği (zaman aşımı, gövde okuma; kart 0215)
   eklentiler/          eklentilerin kodu (<kod>/ modülle aynı parçalar) ve bağlantı noktaları: açıklık, stok
                        kancaları, ürün sayfası yuvaları (karar 0117)
   testler/             modüller arası testler; tarayıcı testleri uctan-uca/ altında

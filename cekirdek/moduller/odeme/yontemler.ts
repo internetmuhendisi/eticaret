@@ -11,11 +11,16 @@
 //   sayılmaz. Bu durumu doğuran kaydetme "en-az-bir-yontem", son hesabın silinmesi "son-yontem" ile durur.
 // - Banka hesabının numarası IBAN olarak doğrulanır (cekirdek/bolgeler/iban.ts). Aynı numara iki kez eklenmez.
 // - Sıralama ekranın gördüğü bütün hesapları ister: arada eklenen ya da silinen hesap varsa "cakisma" döner.
+// - Eklentiyle gelen yöntem (kart, kart 0215) eklentisi kapalı sitede yoktur: ne ekranda ne ödeme adımında görünür.
+//   Ekranın kaydettiği liste sitede var olan yöntemleri taşır; görünmeyen yöntemin kayıtlı yeri ve açıklığı korunur
+//   (eklenti yeniden açılınca eski hâline döner). Açık ama çalışamayan eklentili yöntem (anahtarı yok) müşteriye
+//   görünmez ve "en az bir yöntem" sayımına girmez. Bağlantı noktası: cekirdek/eklentiler/odeme-yontemleri.ts.
 import { randomUUID } from "node:crypto";
 import type { MagazaAyarlari } from "../../ayar-semasi/ayarlar.ts";
 import { magazaAyarSemasi } from "../../ayar-semasi/ayarlar.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { ibanDuzelt, ibanHatasi } from "../../bolgeler/iban.ts";
+import { yontemHazirMi, yontemSitedeVarMi } from "../../eklentiler/odeme-yontemleri.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import {
@@ -51,23 +56,41 @@ export const odemeYontemleriniSirala = (ayar: readonly YontemAyari[]): YontemAya
     .map((kod) => ({ kod, acik: false })),
 ];
 
+// Sitenin eklentileri: eklentili yöntemin sitede olup olmadığı buradan sorulur.
+export type YontemSitesi = Pick<Site, "ayarlar" | "kimlik">;
+
+// Sitede var olan yöntemler (ekranın gösterdiği ve kaydettiği liste), ayarın sırasıyla.
+export const sitedekiYontemler = (
+  site: YontemSitesi,
+  ayar: readonly YontemAyari[],
+): YontemAyari[] =>
+  odemeYontemleriniSirala(ayar).filter((yontem) => yontemSitedeVarMi(site, yontem.kod));
+
+type YontemAyarlari = Pick<
+  MagazaAyarlari,
+  "odemeYontemleri" | "kapidaOdemeSecenekleri" | "bankaHesaplari"
+>;
+
 // Müşterinin ödeme adımında seçebileceği yöntemler, sırasıyla.
 export const kullanilabilirYontemler = (
-  ayarlar: Pick<MagazaAyarlari, "odemeYontemleri" | "kapidaOdemeSecenekleri" | "bankaHesaplari">,
+  site: YontemSitesi,
+  ayarlar: YontemAyarlari,
 ): OdemeYontemiSecimi[] =>
   odemeYontemleriniSirala(ayarlar.odemeYontemleri).flatMap((yontem): OdemeYontemiSecimi[] => {
-    if (!yontem.acik) return [];
+    if (!yontem.acik || !yontemHazirMi(site, yontem.kod)) return [];
     if (yontem.kod === "havale") {
       return ayarlar.bankaHesaplari.length === 0 ? [] : [{ yontem: "havale" }];
     }
+    if (yontem.kod === "kart") return [{ yontem: "kart" }];
     return ayarlar.kapidaOdemeSecenekleri.map((secenek) => ({ yontem: "kapida-odeme", secenek }));
   });
 
 export const yontemKullanilabilirMi = (
-  ayarlar: Pick<MagazaAyarlari, "odemeYontemleri" | "kapidaOdemeSecenekleri" | "bankaHesaplari">,
+  site: YontemSitesi,
+  ayarlar: YontemAyarlari,
   secim: OdemeYontemiSecimi,
 ): boolean =>
-  kullanilabilirYontemler(ayarlar).some(
+  kullanilabilirYontemler(site, ayarlar).some(
     (yontem) =>
       yontem.yontem === secim.yontem &&
       (yontem.yontem !== "kapida-odeme" ||
@@ -87,7 +110,7 @@ export const odemeYontemiServisi = (site: Site) => {
   const oku = async (vt: Veritabani): Promise<OdemeYontemiAyarlari> => {
     const ayarlar = await ayarServisi.oku(vt);
     return {
-      yontemler: odemeYontemleriniSirala(ayarlar.odemeYontemleri),
+      yontemler: sitedekiYontemler(site, ayarlar.odemeYontemleri),
       kapidaOdemeSecenekleri: ayarlar.kapidaOdemeSecenekleri,
       havaleIptalSuresi: ayarlar.havaleIptalSuresi,
       bankaHesaplari: ayarlar.bankaHesaplari,
@@ -102,10 +125,25 @@ export const odemeYontemiServisi = (site: Site) => {
     girdi: OdemeYontemleriGirdisi,
   ): Promise<OdemeYontemiAyarlari> => {
     const hatalar: { alan: string; kod: string }[] = [];
-    const { bankaHesaplari } = await oku(vt);
+    const kayitli = await ayarServisi.oku(vt);
+    const { bankaHesaplari } = kayitli;
+    // Liste sitede var olan yöntemleri tam olarak taşır; görünmeyenin kayıtlı satırı sona korunur.
+    const gorunen = sitedekiYontemler(site, kayitli.odemeYontemleri);
     if (
-      kullanilabilirYontemler({
-        odemeYontemleri: girdi.yontemler,
+      girdi.yontemler.length !== gorunen.length ||
+      gorunen.some((yontem) => !girdi.yontemler.some((gelen) => gelen.kod === yontem.kod))
+    ) {
+      throw new BilinenHata("dogrulama", [{ alan: "yontemler", kod: "yontem-listesi" }]);
+    }
+    const yontemler = [
+      ...girdi.yontemler,
+      ...odemeYontemleriniSirala(kayitli.odemeYontemleri).filter(
+        (yontem) => !gorunen.some((gelen) => gelen.kod === yontem.kod),
+      ),
+    ];
+    if (
+      kullanilabilirYontemler(site, {
+        odemeYontemleri: yontemler,
         kapidaOdemeSecenekleri: girdi.kapidaOdemeSecenekleri,
         bankaHesaplari,
       }).length === 0
@@ -128,7 +166,7 @@ export const odemeYontemiServisi = (site: Site) => {
       vt,
       kim,
       {
-        odemeYontemleri: girdi.yontemler,
+        odemeYontemleri: yontemler,
         kapidaOdemeSecenekleri: girdi.kapidaOdemeSecenekleri,
         havaleIptalSuresi,
       },
@@ -197,8 +235,8 @@ export const odemeYontemiServisi = (site: Site) => {
     const kalan = bankaHesaplari.filter((hesap) => hesap.kimlik !== kimlik);
     // Son hesap silinince müşterinin kullanabileceği yöntem kalmıyorsa silinmez: önce başka bir yöntem açılır.
     if (
-      kullanilabilirYontemler({
-        odemeYontemleri: ayarlar.yontemler,
+      kullanilabilirYontemler(site, {
+        odemeYontemleri: (await ayarServisi.oku(vt)).odemeYontemleri,
         kapidaOdemeSecenekleri: ayarlar.kapidaOdemeSecenekleri,
         bankaHesaplari: kalan,
       }).length === 0

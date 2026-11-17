@@ -39,6 +39,17 @@ if (process.env[temaDemosuAdresiDegiskeni] === undefined) {
 
 // Kalıplar tam yola göre eşleşir. Çalışma kopyaları (.claude/worktrees/) bu klasörün içinde durduğu için yalnız
 // bu kopyanın kendi .claude klasörü dışarıda bırakılır.
+// Kartla ödeme eklentisi (kart 0215): tarayıcı testlerinde uygulama gerçek ödeme kuruluşuna değil, ayrı süreçte açılan
+// sahte kuruluşa bağlanır (deneme ortamında yalnız yerel adres kabul edilir, iyzico.ts). Anahtarlar yalnız bu
+// sahte kuruluş içindir; .env'deki gerçek deneme anahtarları burada kullanılmaz. Dönüş adresi bu uygulamadır.
+const sahteKurulusPortu = 3999;
+Object.assign(process.env, {
+  KARTLA_ODEME_ANAHTARI: "tarayici-testi-anahtari",
+  KARTLA_ODEME_GIZLI_ANAHTARI: "tarayici-testi-gizli-anahtari",
+  KARTLA_ODEME_DENEME_ADRESI: `http://127.0.0.1:${sahteKurulusPortu}`,
+  SITE_ADRESI: process.env["SITE_ADRESI"] || "http://localhost:3000",
+});
+
 const ortakDislananlar = ["**/node_modules/**", `${import.meta.dirname}/.claude/**`];
 const temaDegisikligiTesti = "**/uctan-uca/tema.test.ts";
 
@@ -61,11 +72,18 @@ export default defineConfig({
   // hangi adımda beklediği izden okunur.
   use: { baseURL: "http://localhost:3000", trace: "retain-on-failure" },
   // Çekirdek uygulamasını testten önce açar; açıksa olanı kullanır.
-  webServer: {
-    command: "pnpm cekirdek",
-    url: "http://localhost:3000",
-    reuseExistingServer: true,
-  },
+  webServer: [
+    {
+      command: "pnpm cekirdek",
+      url: "http://localhost:3000",
+      reuseExistingServer: true,
+    },
+    {
+      command: "node cekirdek/eklentiler/kartla-odeme/testler/sahte-kurulus-sunucusu.ts",
+      url: `http://127.0.0.1:${sahteKurulusPortu}/saglik`,
+      reuseExistingServer: true,
+    },
+  ],
   // Tema değişikliği bütün vitrinin görünüşünü değiştirir (kart 0148): tema ekranının testi öteki testler bittikten
   // sonra kendi aşamasında çalışır, aynı anda çalışan bir testin ölçtüğü renkleri değiştirmez.
   projects: [

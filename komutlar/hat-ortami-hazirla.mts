@@ -53,6 +53,10 @@ const degerler: Record<string, string> = {
   // Yedek deposunun anahtarı da hatta yoktur: yedek komutları hatta çalışmaz (karar 0037).
   YEDEK_DEPO_ERISIM_ANAHTARI: "",
   YEDEK_DEPO_GIZLI_ANAHTARI: "",
+  // Ödeme kuruluşunun gerçek anahtarı da hatta yoktur: tarayıcı testleri sahte kuruluşun anahtarını kullanır
+  // (playwright.config.ts), birim testleri kendi anahtarını verir (kart 0215, karar 0142).
+  KARTLA_ODEME_ANAHTARI: "",
+  KARTLA_ODEME_GIZLI_ANAHTARI: "",
 };
 
 // .env.example'a eklenen her anahtar burada da üretilmeli; eksik kalırsa hat burada durur.

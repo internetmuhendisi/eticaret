@@ -77,10 +77,11 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Havale | Mağaza sahibi | Açık | — | `odemeYontemleri` (yöntemlerin açıklığı ve müşterinin gördüğü sıra, kart 0214, karar 0141). Banka hesabı yoksa ödeme adımında görünmez. Panelde Satış > Ödeme yöntemleri; değiştirmek yalnız mağaza sahibinin (`odeme-yontemi.degistir`, kullanıcı kararı) |
 | Ödenmeyen havale siparişinin iptal süresi | Mağaza sahibi | 3 gün | — | `havaleIptalSuresi`, 1–30 gün. Süre sonunda sipariş iptal olur, stok geri döner; ödediğini bildiren müşterinin siparişi iptal olmaz (kullanıcı kararı, kart 0214) |
 | Kapıda ödeme | Mağaza sahibi | Kapalı | Açık | `odemeYontemleri`. İsteyen mağaza açar |
+| Kartla öde | Mağaza sahibi | Kapalı | Açık (deneme ortamında) | `odemeYontemleri`. Kartla ödeme eklentisinin yöntemi: eklenti kapalıyken ödeme adımında ve panelde yoktur, kayıtlı yeri korunur (kart 0215) |
 | Kapıda ödeme seçenekleri | Mağaza sahibi | Nakit | Nakit ve kart | `kapidaOdemeSecenekleri`. Seçenekler: nakit, kart. Müşteri ödeme adımında seçer, kartı kurye çeker; her seçenek ödeme adımında ayrı satırdır (kart 0214) |
 | Banka hesapları (havale) | Mağaza sahibi | Yok | İki örnek hesap (geçersiz olmayan deneme IBAN'ları) | `bankaHesaplari`: banka, hesap sahibi, IBAN (doğrulanır, en çok 10). Sipariş alındı sayfasında gösterilir. Panelde Satış > Banka hesapları (kart 0214) |
 | Sepete ekleyince | Mağaza sahibi | Yan pencerede sepet | Yan pencerede sepet | Seçenekler: yan pencerede sepet, kısa bildirim, sepet sayfasına git (karar 0132, kart 0212). Şemada `sepeteEkleyince` |
-| Ürün sayfasında taksit satırı | Mağaza sahibi | Göster | Göster | Kartla ödeme eklentisinin ayarı; eklenti kapalıyken satır yoktur (karar 0132, kart 0215) |
+| Ürün sayfasında taksit satırı | Mağaza sahibi | Göster | Göster | Kartla ödeme eklentisinin ayarı (`kartlaOdemeUrunSayfasindaTaksit`, Eklentiler bölümünde); eklenti kapalıyken satır yoktur (karar 0132, kart 0215) |
 
 ## Kargo
 
@@ -149,6 +150,9 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
 |---|---|---|---|---|
-| Açık eklentiler | Altyapı sahibi | Hiçbiri | Stoğa gelince haber ver | `eklentiler`, eklenti kodlarının listesi (`ayarlar.json`). Kurulu eklenti listede yoksa kapalıdır (kart 0144, karar 0117) |
+| Açık eklentiler | Altyapı sahibi | Hiçbiri | Stoğa gelince haber ver, kartla ödeme | `eklentiler`, eklenti kodlarının listesi (`ayarlar.json`). Kurulu eklenti listede yoksa kapalıdır (kart 0144, karar 0117) |
 | Stoğa gelince haber ver: üye olmayan müşteri de isteyebilir | Mağaza sahibi | Açık | — | `stokBildirimiUyeOlmayan`. Kapalıysa formda giriş bağlantısı görünür; giriş yapmış müşteri hesabının e-postasıyla ister (kart 0144) |
 | Stoğa gelince haber ver: talep saklama süresi | Mağaza sahibi | 90 gün | — | `stokBildirimiSaklamaGun`, 1–365. Süresi dolan talep, e-postası gitmemiş olsa da silinir (kart 0144) |
+| Kartla ödeme: ödeme kuruluşunun ortamı | Altyapı sahibi | Deneme | Deneme | `kartlaOdemeOrtami` (`deneme`, `canli`). Canlı ortam gerçek ödeme alır, mağazanın sözleşmesi ve anahtarlarıyla, kullanıcının onayıyla açılır. Anahtarlar gizli bilgidir (`KARTLA_ODEME_ANAHTARI`, `KARTLA_ODEME_GIZLI_ANAHTARI`) (kart 0215, karar 0142) |
+| Kartla ödeme: ürün sayfasında taksit satırı | Mağaza sahibi | Göster | Göster | `kartlaOdemeUrunSayfasindaTaksit`. "Kartla N taksite kadar · Taksit seçenekleri" (karar 0132) |
+| Kartla ödeme: en çok taksit | Mağaza sahibi | 12 | 6 | `kartlaOdemeEnCokTaksit`: 1, 2, 3, 6, 9, 12. 1 yalnız tek çekimdir (kart 0215) |

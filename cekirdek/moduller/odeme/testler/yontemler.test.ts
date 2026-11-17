@@ -52,7 +52,7 @@ const hesap = { kimlik: randomUUID(), banka: "B", sahip: "S", iban: "TR420001000
 describe("müşterinin gördüğü yöntemler", () => {
   it("ayarın sırasıyla, yalnız açık ve kullanılabilir olanlar", () => {
     expect(
-      kullanilabilirYontemler({
+      kullanilabilirYontemler(site, {
         odemeYontemleri: [
           { kod: "kapida-odeme", acik: true },
           { kod: "havale", acik: true },
@@ -67,7 +67,7 @@ describe("müşterinin gördüğü yöntemler", () => {
     ]);
     // Banka hesabı yoksa havale yoktur; kapalı kapıda ödeme yoktur.
     expect(
-      kullanilabilirYontemler({
+      kullanilabilirYontemler(site, {
         odemeYontemleri: [
           { kod: "havale", acik: true },
           { kod: "kapida-odeme", acik: false },
@@ -78,7 +78,7 @@ describe("müşterinin gördüğü yöntemler", () => {
     ).toEqual([]);
     // Listede olmayan yöntem kapalıdır.
     expect(
-      kullanilabilirYontemler({
+      kullanilabilirYontemler(site, {
         odemeYontemleri: [{ kod: "havale", acik: true }],
         kapidaOdemeSecenekleri: ["nakit"],
         bankaHesaplari: [hesap],

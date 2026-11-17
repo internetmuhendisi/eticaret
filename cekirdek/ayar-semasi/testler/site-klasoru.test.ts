@@ -102,6 +102,7 @@ describe("ayar şeması", () => {
       favoriSiniri: 100,
       temaDemosu: false,
       eklentiler: [],
+      kartlaOdemeOrtami: "deneme",
     });
   });
 

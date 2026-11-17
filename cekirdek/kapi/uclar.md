@@ -35,6 +35,8 @@ Kapıdaki her uç burada yazar (`.claude/rules/sunucu-arayuzu.md`). Yeni ya da d
 
 **Girdi.** `GET`, `HEAD` ve `DELETE` isteklerinde girdi adres parametreleridir, ötekilerde JSON gövdedir. Şemada olmayan alan doğrulama hatasıdır.
 
+**Dış kuruluşun dönüşü** (kart 0215, karar 0142). Ödeme kuruluşunun sunucudan bildirimi ve müşterinin tarayıcısıyla geri gönderdiği form `disKurulus` beyanıyla yazılır: yalnız herkese açık girişte ve `bildirim` sınırıyla. Başka siteden geldiği için sahte istek denetimi uygulanmaz, gövde JSON ya da form (`application/x-www-form-urlencoded`) olabilir, şemada olmayan alan yok sayılır. Uç çerez okumaz; doğruluğu imzadan ya da kuruluşa yapılan sorgudan kurar. Uç `Yonlendirme` döndürerek `303` ile sitenin kendi bir sayfasına yönlendirebilir (yanıt önbelleksizdir).
+
 **İstek sınırı.** Her uç bir sınır seçer. Sayaç yöntem, adres ve istemci başınadır, süre dolunca sıfırlanır: aynı uca `HEAD` ve `GET` ayrı sayılır. IPv4 istemci tam adresiyle, IPv6 istemci adresinin ilk 64 bitiyle sayılır (karar 0041).
 
 | Sınır | Sınır değeri |
@@ -42,6 +44,7 @@ Kapıdaki her uç burada yazar (`.claude/rules/sunucu-arayuzu.md`). Yeni ya da d
 | `genel` | 60 saniyede 120 istek |
 | `siki` | 60 saniyede 5 istek (giriş, şifre sıfırlama gibi hassas uçlar) |
 | `gorsel` | 60 saniyede 600 istek (ürün görseli: bir sayfa aynı uca onlarca kez gider) |
+| `bildirim` | 60 saniyede 600 istek (ödeme kuruluşunun bildirimi ve dönüşü: sıradan sınırdan muaf, bol sınır yalnız taşkını durdurur) |
 
 **İzin.** Herkese açık girişteki uçların izni `herkese-acik`tır. Öteki girişlerdeki uçlar yalnız o girişin iznini ister (`cekirdek/kayitlar/izinler.ts`, liste `cekirdek/moduller/ekip/izinler-ve-roller.md`). Kapı her istekte sırayla sahte isteğe, istek sınırına, oturuma, izne ve girdiye bakar: yetkisiz istek girdi hatası görmez. Uç, hesabın kimliğini ve iznin kapsamını kapıdan alır, girdiden almaz (karar 0040). Sahip girişinin henüz izni yoktur, oraya uç yazılamaz.
 
@@ -49,7 +52,7 @@ Kapıdaki her uç burada yazar (`.claude/rules/sunucu-arayuzu.md`). Yeni ya da d
 
 **Çerez.** Uç yanıta çerezi yalnız `cerezYaz` ile yazar. Oturum çerezleri `cekirdek/kapi/oturum-cerezi.ts` dosyasındadır, hatalı yanıtta da gider.
 
-**Tema demosu** (kart 0116, karar 0127). Site ayarı `temaDemosu` açıkken ziyaretçi yalnız gezer: kapalı uç, sahte isteğe, sınıra ve girdiye bakmadan `bulunamadi` döner. Müşteri girişindeki her uç kapalıdır. Herkese açık her uç tanımında demodaki durumunu beyan eder (`temaDemosunda`, tür kontrolü ister): hesap, sipariş, yorum, bildirim ya da e-posta doğuran uç `kapali`, vitrinin okuduğu ve panelin kullandığı uç `acik`. Yönetici ve sahip uçları açıktır. Bugün kapalı herkese açık uçlar: `musteri-kayit`, `musteri-giris`, `musteri-cikis`, `musteri-sifre-sifirlama`, `musteri-sifre-yenile`, `stok-bildirimi`, `odeme`, `havale-bildirimi`; listeyi `cekirdek/kapi/testler/tema-demosu.test.ts` denetler.
+**Tema demosu** (kart 0116, karar 0127). Site ayarı `temaDemosu` açıkken ziyaretçi yalnız gezer: kapalı uç, sahte isteğe, sınıra ve girdiye bakmadan `bulunamadi` döner. Müşteri girişindeki her uç kapalıdır. Herkese açık her uç tanımında demodaki durumunu beyan eder (`temaDemosunda`, tür kontrolü ister): hesap, sipariş, yorum, bildirim ya da e-posta doğuran uç `kapali`, vitrinin okuduğu ve panelin kullandığı uç `acik`. Yönetici ve sahip uçları açıktır. Bugün kapalı herkese açık uçlar: `musteri-kayit`, `musteri-giris`, `musteri-cikis`, `musteri-sifre-sifirlama`, `musteri-sifre-yenile`, `stok-bildirimi`, `odeme`, `havale-bildirimi`, `kartla-odeme/donus`, `kartla-odeme/bildirim`, `kartla-odeme/taksitler`; listeyi `cekirdek/kapi/testler/tema-demosu.test.ts` denetler.
 
 ## Herkese açık
 
@@ -191,10 +194,40 @@ Tarayıcıdaki sepetin vitrin verisini hesaplar (kart 0212, karar 0135). Sepet y
 Üye olmayan müşteri ödeme adımında "Siparişi onayla"ya basar (kart 0213, karar 0140): ödeme oturumu açılır, sepetin takibi açık birimleri stok ayırma süresi kadar ayrılır (`stokAyirmaSuresi`), isterse hesap açılır. Havale ve kapıda ödemede sipariş aynı işlemde oturumdan kurulur, stok düşer, ayırma siparişe geçer (kart 0214, karar 0141). Tutar sunucuda hesaplanır, tarayıcıdan gelmez; vergi teslimat ve fatura adresinin bölgesiyle (`vergiAdresi`). Tema demosunda kapalıdır.
 
 - İzin: `herkese-acik`. Sınır: `siki`.
-- Girdi: `{ "eposta", "hesap": { "ac": false } | { "ac": true, "sifre", "uyelikOnayi", "kvkkOnayi" }, "bilgiler": { "odemeYontemi", "teslimat", "fatura", "not"?, "onBilgilendirmeOnayi", "mesafeliSatisOnayi", "pazarlamaIzni" }, "kalemler", "robotCevabi", "onceki"?, "gorulenToplam"? }` (`misafirOdemeGirdisi`, `cekirdek/moduller/odeme/semalar.ts`). `onceki` müşterinin bir önceki onayının oturumudur: yalnız üye olmayanın oturumuysa silinir, ayırması serbest kalır. `gorulenToplam` müşterinin özette gördüğü toplamdır (kuruş): sunucunun toplamından farklıysa `sepet-degisti`; tutar olarak kullanılmaz. `odemeYontemi`: `{ "yontem": "havale" }` ya da `{ "yontem": "kapida-odeme", "secenek": "nakit" | "kart" }`.
-- Servis: `cekirdek/moduller/odeme/servis.ts`. Robot cevabı veritabanına bakılmadan önce denetlenir.
-- Başarılı (200): `{ "basarili": true, "veri": { "oturum", "siparis" } }` (`siparis` siparişin numarası); sipariş alındı sayfasının erişim çerezi (`siparis-erisim`, yalnız `/siparis-alindi` yoluna, `cekirdek/kapi/siparis-cerezi.ts`); hesap açıldıysa iki oturum çerezi.
-- Hatalar: `oturum-yok` (üye olmadan alışveriş kapalı: `uyeOlmadanAlisveris`), `dogrulama` (şemaya uymayan girdi; `telefon-gerekli`, `telefon-bicimi`, `fatura-adresi-gerekli`, `vergi-numarasi-bicimi`, `vergi-numarasi-kontrol`, `ulke-teslimat-disi`, bölge ve adres kodları), `is-kurali` (`sepet-bos`, `sepet-degisti`: sepet ödemeye geçilemez ya da müşterinin görmediği bir değişiklik var; `yontem-kapali`: seçilen ödeme yöntemi ya da seçeneği sitede kapalı ya da havalenin banka hesabı yok), `cakisma` (`stok-ayrildi`: birimin stoğu başka bir ödemede ayrılmış ya da yetmiyor, birimle; ya da hesap açılırken e-posta kayıtlı), `robot-dogrulamasi`, `istek-siniri` (`Retry-After` ile), `yetki` (sahte istek), tema demosunda `bulunamadi`.
+- Girdi: `{ "eposta", "hesap": { "ac": false } | { "ac": true, "sifre", "uyelikOnayi", "kvkkOnayi" }, "bilgiler": { "odemeYontemi", "teslimat", "fatura", "not"?, "onBilgilendirmeOnayi", "mesafeliSatisOnayi", "pazarlamaIzni" }, "kalemler", "robotCevabi", "onceki"?, "gorulenToplam"? }` (`misafirOdemeGirdisi`, `cekirdek/moduller/odeme/semalar.ts`). `onceki` müşterinin bir önceki onayının oturumudur: yalnız üye olmayanın oturumuysa silinir, ayırması serbest kalır. `gorulenToplam` müşterinin özette gördüğü toplamdır (kuruş): sunucunun toplamından farklıysa `sepet-degisti`; tutar olarak kullanılmaz. `odemeYontemi`: `{ "yontem": "havale" }`, `{ "yontem": "kapida-odeme", "secenek": "nakit" | "kart" }` ya da `{ "yontem": "kart" }` (kartla ödeme eklentisi, kart 0215).
+- Servis: `cekirdek/moduller/odeme/servis.ts` (`onayla`). Robot cevabı veritabanına bakılmadan önce denetlenir.
+- Başarılı (200): `{ "basarili": true, "veri": { "oturum", "siparis" } }` (`siparis` siparişin numarası). Kartla ödemede sipariş henüz yoktur: `{ "basarili": true, "veri": { "oturum", "yonlendir" } }`, `yonlendir` müşterinin gideceği ödeme kuruluşu sayfası; erişim çerezi yazılmaz; sipariş alındı sayfasının erişim çerezi (`siparis-erisim`, yalnız `/siparis-alindi` yoluna, `cekirdek/kapi/siparis-cerezi.ts`); hesap açıldıysa iki oturum çerezi.
+- Hatalar: `oturum-yok` (üye olmadan alışveriş kapalı: `uyeOlmadanAlisveris`), `dogrulama` (şemaya uymayan girdi; `telefon-gerekli`, `telefon-bicimi`, `fatura-adresi-gerekli`, `vergi-numarasi-bicimi`, `vergi-numarasi-kontrol`, `ulke-teslimat-disi`, bölge ve adres kodları), `is-kurali` (`sepet-bos`, `sepet-degisti`: sepet ödemeye geçilemez ya da müşterinin görmediği bir değişiklik var; `yontem-kapali`: seçilen ödeme yöntemi ya da seçeneği sitede kapalı ya da havalenin banka hesabı yok; `yontem-ulasilamadi`: kartla ödeme başlatılamadı, ayırma bırakıldı), `cakisma` (`stok-ayrildi`: birimin stoğu başka bir ödemede ayrılmış ya da yetmiyor, birimle; ya da hesap açılırken e-posta kayıtlı), `robot-dogrulamasi`, `istek-siniri` (`Retry-After` ile), `yetki` (sahte istek), tema demosunda `bulunamadi`.
+
+### POST /kapi/herkese-acik/kartla-odeme/donus
+
+Ödeme kuruluşu müşterinin tarayıcısını ödeme sayfasından geri gönderir (kartla ödeme eklentisi, kart 0215, karar 0142): form, başka siteden, yalnız belirteçle. Ödemenin sonucu kuruluşa imzalı sorguyla sorulur; tarayıcıdan gelen başka hiçbir bilgi kullanılmaz. Ödendiyse sipariş "hazırlanıyor" ve tahsilatla kurulur (ikinci dönüş aynı siparişi bulur). Ödeme alındı ama sipariş kurulamadıysa (stok yok, fiyat değişti) ödeme aynı gün iptal edilir. Eklenti kapalıyken de başlatılmış ödemeyi tamamlar. Tema demosunda kapalıdır.
+
+- İzin: `herkese-acik`. Sınır: `bildirim`. Dış kuruluşun dönüşü (`disKurulus`).
+- Girdi: `{ "token" }` (form; `donusSemasi`, `cekirdek/eklentiler/kartla-odeme/semalar.ts`).
+- Servis: `cekirdek/eklentiler/kartla-odeme/servis.ts` (`tamamla`).
+- Başarılı (303): sipariş kurulduysa `Location: /siparis-alindi` ve erişim çerezi (`siparis-erisim`); yoksa `Location: /odeme?kart=<sonuç>`, sonuç `reddedildi`, `yarida-kaldi`, `stok-yok`, `sepet-degisti` ya da `bilinmiyor` (`odemeDonusSonuclari`, `cekirdek/kayitlar/odeme.ts`).
+- Hatalar: `dogrulama` (belirteç yok ya da biçimsiz), `istek-siniri`, tema demosunda `bulunamadi`.
+
+### POST /kapi/herkese-acik/kartla-odeme/bildirim
+
+Ödeme kuruluşunun sunucudan bildirimi (iyzico'nun webhook'u, ödeme formu biçimi). İmzası `X-IYZ-SIGNATURE-V3` başlığıyla gizli anahtardan doğrulanır; tutarsa dönüşle aynı tamamlama çalışır: müşteri dönmese de sipariş kurulur. Aynı bildirim iki kez gelse de sipariş bir kez kurulur. Tema demosunda kapalıdır.
+
+- İzin: `herkese-acik`. Sınır: `bildirim`. Dış kuruluşun dönüşü (`disKurulus`).
+- Girdi: `{ "token", "paymentConversationId", "iyziEventType"?, "iyziPaymentId"?, "status"? }` (JSON; `bildirimSemasi`).
+- Servis: `cekirdek/eklentiler/kartla-odeme/servis.ts` (`tamamla`), imza `iyzico.ts` (`bildirimiDogrula`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `yetki` (imza yok ya da tutmuyor, anahtar yok), `dogrulama`, `istek-siniri`, tema demosunda `bulunamadi`.
+
+### GET /kapi/herkese-acik/kartla-odeme/taksitler
+
+Ürün sayfasının taksit penceresi: birimin bir adedinin vergi dahil tutarıyla bankalara göre taksitler, mağaza sahibinin en çok taksit sayısına kadar. Tablo ödeme kuruluşundan gelir (kart numarasız), tutarlar sitenin biçimiyle yazılıdır. Tema demosunda kapalıdır.
+
+- İzin: `herkese-acik`. Sınır: `genel`.
+- Girdi: `?birim=<kimlik>` (`taksitlerSemasi`).
+- Servis: `cekirdek/eklentiler/kartla-odeme/servis.ts` (`taksitTablosu`).
+- Başarılı (200): `{ "basarili": true, "veri": { "enCok", "bankalar": [{ "banka", "aile", "taksitler": [{ "sayi", "aylik", "toplam" }] }] } }`.
+- Hatalar: `bulunamadi` (eklenti kapalı, anahtar yok, mağaza sahibi satırı göstermiyor, birim satılamıyor), `hizmet-kullanilamiyor` (kuruluşa ulaşılamadı), `dogrulama`, `istek-siniri`, tema demosunda `bulunamadi`.
 
 ### POST /kapi/herkese-acik/havale-bildirimi
 
@@ -334,7 +367,7 @@ Giriş yapmış müşterinin ödeme adımı (kart 0213, karar 0140): herkese aç
 - İzin: `odeme.kendi.baslat`. Sınır: `siki`.
 - Girdi: `{ "bilgiler", "kalemler", "robotCevabi", "onceki"?, "gorulenToplam"? }` (`uyeOdemeGirdisi`). Müşterinin kimliği yalnız kapıdan gelir; `onceki` müşterinin kendi oturumuysa ya da üye olmadan açılmış oturumsa (aynı sekmede giriş yapıp yeniden onaylayan müşteri) silinir, başka üyeninki silinmez.
 - Servis: `cekirdek/moduller/odeme/servis.ts`.
-- Başarılı (200): `{ "basarili": true, "veri": { "oturum", "siparis" } }` ve sipariş alındı sayfasının erişim çerezi.
+- Başarılı (200): `{ "basarili": true, "veri": { "oturum", "siparis" } }` ve sipariş alındı sayfasının erişim çerezi; kartla ödemede `{ "oturum", "yonlendir" }` (kart 0215), çerezsiz.
 - Hatalar: herkese açık ödeme ucunun hataları (hesap açma ve `uyeOlmadanAlisveris` dışında), `oturum-yok`.
 
 ### POST /kapi/musteri/havale-bildirimi

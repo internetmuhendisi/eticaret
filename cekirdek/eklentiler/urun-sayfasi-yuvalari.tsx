@@ -7,6 +7,7 @@ import { Fragment, type ReactNode } from "react";
 import type { Site } from "../ayar-semasi/site-klasoru";
 import type { EklentiKodu } from "../kayitlar/eklentiler";
 import type { Veritabani } from "../veritabani/baglanti";
+import { kartlaOdemeTukenmisBirimIster, kartlaOdemeYuvasi } from "./kartla-odeme/urun-sayfasi";
 import {
   stokBildirimiTukenmisBirimIster,
   stokBildirimiYuvasi,
@@ -30,6 +31,11 @@ const yuvalar: readonly {
     kod: "stoga-gelince-haber-ver",
     yuva: stokBildirimiYuvasi,
     tukenmisBirimIster: stokBildirimiTukenmisBirimIster,
+  },
+  {
+    kod: "kartla-odeme",
+    yuva: kartlaOdemeYuvasi,
+    tukenmisBirimIster: kartlaOdemeTukenmisBirimIster,
   },
 ];
 

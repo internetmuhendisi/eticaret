@@ -15,16 +15,23 @@
 // - Onaylar oturuma metin sürümüyle yazılır. Pazarlama izni yalnız işaretlenince verilir: üye müşteride hesabın
 //   onaylarına da yeni satır olarak yazılır (işaretsiz bırakmak var olan izni geri almaz), hesap açan müşteride kayıtla
 //   birlikte yazılır, üye olmayanda yalnız oturumdadır.
-// - Ödeme yöntemi sitede kullanılabilir olmalıdır (açık, havalede banka hesabı var, kapıda ödemede seçenek açık):
-//   değilse "yontem-kapali" (cekirdek/moduller/odeme/yontemler.ts).
+// - Ödeme yöntemi sitede kullanılabilir olmalıdır (açık, havalede banka hesabı var, kapıda ödemede seçenek açık,
+//   eklentili yöntemde eklenti açık ve hazır): değilse "yontem-kapali" (cekirdek/moduller/odeme/yontemler.ts).
+// - Eklentiyle gelen yöntemde (kart, kart 0215) "Siparişi onayla" (onayla) oturumu ve ayırmayı yazar, siparişi kurmaz:
+//   eklentinin ödemesini başlatır (bağlantı noktası cekirdek/eklentiler/odeme-yontemleri.ts) ve müşterinin gideceği
+//   adresi döner. Başlatılamazsa ayırma bırakılır, "yontem-ulasilamadi" döner. Sipariş, ödeme doğrulanınca
+//   eklentili ödemenin siparişiyle (eklentiliSiparisiKur) aynı siparisiKur'dan kurulur.
 // - Stok ayırması oturumla aynı işlemdedir: ayrılamayan birim "stok-ayrildi" ile döner, oturum da yazılmaz.
 // - Müşterinin bir önceki oturumu (yeniden basınca) aynı işlemde silinir, ayırmaları serbest kalır. Üye olmayan yalnız
 //   üye olmayanın oturumunu, üye kendi oturumunu ve aynı sekmede üye olmadan açtığı oturumu (giriş yapıp yeniden
 //   onaylayınca) siler; başka üyenin oturumu silinmez. Oturumun kimliği yalnız onu açan sekmeye döner.
 import { and, eq, isNull, or, sql } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
+import { eklentiliMi, eklentiliOdemeyiBaslat } from "../../eklentiler/odeme-yontemleri.ts";
+import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import { musteriOnayTurleri, siparisOnayTurleri } from "../../kayitlar/musteri-onaylari.ts";
+import { odemeBaslatilamadi } from "../../kayitlar/odeme.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
 import { musteriOnaylari } from "../musteri/model.ts";
@@ -36,6 +43,7 @@ import { siparisler } from "../siparis/model.ts";
 import { siparisServisi } from "../siparis/servis.ts";
 import { stokServisi } from "../stok/servis.ts";
 import { type OturumOnayi, odemeOturumlari } from "./model.ts";
+import { bolge, faturaAdresi } from "./oturum-hesabi.ts";
 import type { MisafirOdemeFormu, OdemeBilgileri } from "./semalar.ts";
 import { yontemKullanilabilirMi } from "./yontemler.ts";
 
@@ -50,6 +58,8 @@ export type OdemeGirdisi = {
   onceki?: string | undefined;
   // Müşterinin özette gördüğü toplam (kuruş): yalnız karşılaştırılır, tutar olarak kullanılmaz.
   gorulenToplam?: number | undefined;
+  // Müşterinin adresi: eklentili yöntemde ödeme kuruluşuna gider (sahtecilik denetimi).
+  ip?: string | undefined;
 };
 
 export type OdemeSonucu = {
@@ -63,24 +73,16 @@ export type OdemeSonucu = {
 // çerez olarak yazar).
 export type SiparisSonucu = OdemeSonucu & { siparis: { numara: string; erisimAnahtari: string } };
 
+// "Siparişi onayla"nın sonucu: havale ve kapıda ödemede sipariş, eklentili yöntemde müşterinin gideceği adres.
+export type OnaySonucu =
+  | (SiparisSonucu & { tur: "siparis" })
+  | (OdemeSonucu & { tur: "yonlendir"; adres: string });
+
 const stok = stokServisi();
 
 const dogrulama = (alan: string, kod: string) => new BilinenHata("dogrulama", [{ alan, kod }]);
 
-// Verginin bölgesi: posta adresinin ülkesi, ili ve posta kodu.
-const bolge = (adres: {
-  ulke: string;
-  il?: string | undefined;
-  postaKodu?: string | undefined;
-}) => ({
-  ulke: adres.ulke,
-  ...(adres.il === undefined ? {} : { il: adres.il }),
-  ...(adres.postaKodu === undefined ? {} : { postaKodu: adres.postaKodu }),
-});
-
-// "Aynı" işaretliyse faturanın adresi teslimat adresidir.
-export const faturaAdresi = (bilgiler: OdemeBilgileri) =>
-  bilgiler.fatura.adres ?? bilgiler.teslimat.adres;
+export { faturaAdresi };
 
 export const odemeServisi = (site: Site) => {
   // Oturum ve ayırma; siparisKur verilirse aynı işlemde sipariş de kurulur (havale ve kapıda ödeme, kart 0214).
@@ -89,7 +91,15 @@ export const odemeServisi = (site: Site) => {
     girdi: OdemeGirdisi,
     oturumSuresiSaniye: number,
     siparisKur: boolean,
-  ): Promise<OdemeSonucu & { siparis?: SiparisSonucu["siparis"] }> => {
+    disarida = false,
+  ): Promise<
+    OdemeSonucu & {
+      siparis?: SiparisSonucu["siparis"];
+      hesap: Awaited<ReturnType<typeof sepetiHesapla>>;
+      eposta: string;
+      musteri: string | null;
+    }
+  > => {
     const ayarlar = await siteninMagazaAyarlari(vt, site);
     if (girdi.kim.tur === "misafir" && !ayarlar.uyeOlmadanAlisveris) {
       throw new BilinenHata("oturum-yok");
@@ -101,7 +111,7 @@ export const odemeServisi = (site: Site) => {
     if (!site.ayarlar.teslimatUlkeleri.includes(teslimat.adres.ulke)) {
       throw dogrulama("bilgiler.teslimat.adres.ulke", "ulke-teslimat-disi");
     }
-    if (!yontemKullanilabilirMi(ayarlar, girdi.bilgiler.odemeYontemi)) {
+    if (!yontemKullanilabilirMi(site, ayarlar, girdi.bilgiler.odemeYontemi)) {
       throw new BilinenHata("is-kurali", [{ alan: "bilgiler.odemeYontemi", kod: "yontem-kapali" }]);
     }
 
@@ -190,6 +200,7 @@ export const odemeServisi = (site: Site) => {
           para_birimi: hesap.paraBirimi,
           onaylar,
           bitis_zamani: bitis,
+          odeme_disarida: disarida,
         })
         .returning({ kimlik: odemeOturumlari.kimlik });
       if (yazilan === undefined) throw new Error("Ödeme oturumu yazılamadı.");
@@ -212,6 +223,9 @@ export const odemeServisi = (site: Site) => {
         oturum: yazilan.kimlik,
         bitis,
         ...(anahtarlar === undefined ? {} : { anahtarlar }),
+        hesap,
+        eposta,
+        musteri: musteri ?? null,
       };
       if (!siparisKur) return sonuc;
       const siparis = await siparisServisi(site).siparisiKur(islem, {
@@ -241,7 +255,13 @@ export const odemeServisi = (site: Site) => {
     girdi: OdemeGirdisi,
     oturumSuresiSaniye: number,
   ): Promise<OdemeSonucu> => {
-    const { siparis: _yok, ...sonuc } = await oturumuAc(vt, girdi, oturumSuresiSaniye, false);
+    const {
+      siparis: _yok,
+      hesap: _h,
+      eposta: _e,
+      musteri: _m,
+      ...sonuc
+    } = await oturumuAc(vt, girdi, oturumSuresiSaniye, false);
     return sonuc;
   };
 
@@ -251,9 +271,54 @@ export const odemeServisi = (site: Site) => {
     girdi: OdemeGirdisi,
     oturumSuresiSaniye: number,
   ): Promise<SiparisSonucu> => {
-    const sonuc = await oturumuAc(vt, girdi, oturumSuresiSaniye, true);
+    const {
+      hesap: _h,
+      eposta: _e,
+      musteri: _m,
+      ...sonuc
+    } = await oturumuAc(vt, girdi, oturumSuresiSaniye, true);
     if (sonuc.siparis === undefined) throw new Error("Sipariş kurulmadı.");
     return { ...sonuc, siparis: sonuc.siparis };
+  };
+
+  // "Siparişi onayla" (uçların çağırdığı): havale ve kapıda ödemede siparisVer, eklentili yöntemde oturum ve ayırmadan
+  // sonra eklentinin ödemesi başlatılır. Ödeme kuruluşuna gidilen çağrı veritabanı işleminin dışındadır.
+  const onayla = async (
+    vt: Veritabani,
+    girdi: OdemeGirdisi,
+    oturumSuresiSaniye: number,
+  ): Promise<OnaySonucu> => {
+    const yontem = girdi.bilgiler.odemeYontemi.yontem;
+    if (!eklentiliMi(yontem)) {
+      return { tur: "siparis", ...(await siparisVer(vt, girdi, oturumSuresiSaniye)) };
+    }
+    const {
+      siparis: _yok,
+      hesap,
+      eposta,
+      musteri,
+      ...sonuc
+    } = await oturumuAc(vt, girdi, oturumSuresiSaniye, false, true);
+    try {
+      const { adres } = await eklentiliOdemeyiBaslat(vt, site, yontem, {
+        oturum: sonuc.oturum,
+        eposta,
+        musteri,
+        teslimat: girdi.bilgiler.teslimat,
+        fatura: girdi.bilgiler.fatura,
+        hesap,
+        ip: girdi.ip,
+      });
+      return { tur: "yonlendir", ...sonuc, adres };
+    } catch (hata) {
+      // Ödeme başlamadı: ayrılan stok başka müşteriye kalır. Oturum süresi dolunca temizlenir.
+      await ayirmayiBirak(vt, sonuc.oturum);
+      if (hata instanceof BilinenHata) throw hata;
+      hatayiKaydet(hata, { islem: "eklentili-odeme-baslat", yontem });
+      throw new BilinenHata("is-kurali", [
+        { alan: "bilgiler.odemeYontemi", kod: odemeBaslatilamadi },
+      ]);
+    }
   };
 
   // Müşterinin bir önceki oturumu: üye olmayanınki ya da üyenin kendisininki silinir, ayırmaları onunla gider.
@@ -263,24 +328,30 @@ export const odemeServisi = (site: Site) => {
     onceki: string,
     musteri: string | undefined,
   ): Promise<void> => {
-    await islem.delete(odemeOturumlari).where(
-      and(
-        eq(odemeOturumlari.kimlik, onceki),
-        // Siparişe dönmüş oturum silinmez (kart 0214): sipariş ona bağlıdır, ayırması zaten siparişe geçti.
-        sql`not exists (select 1 from ${siparisler} where ${siparisler.oturum_kimligi} = ${odemeOturumlari.kimlik})`,
-        musteri === undefined
-          ? isNull(odemeOturumlari.musteri_kimligi)
-          : or(
-              isNull(odemeOturumlari.musteri_kimligi),
-              eq(odemeOturumlari.musteri_kimligi, musteri),
-            ),
-      ),
+    const sahibi = and(
+      eq(odemeOturumlari.kimlik, onceki),
+      // Siparişe dönmüş oturum silinmez (kart 0214): sipariş ona bağlıdır, ayırması zaten siparişe geçti.
+      sql`not exists (select 1 from ${siparisler} where ${siparisler.oturum_kimligi} = ${odemeOturumlari.kimlik})`,
+      musteri === undefined
+        ? isNull(odemeOturumlari.musteri_kimligi)
+        : or(isNull(odemeOturumlari.musteri_kimligi), eq(odemeOturumlari.musteri_kimligi, musteri)),
     );
+    // Ödemesi dışarıda başlamış oturum silinmez (kart 0215, bağımsız kontrolün bulgusu): ödeme sonradan başarılı
+    // olabilir, kaydı kalmalı. Yalnız ayırması bırakılır; sipariş kurulurken stok yetmezse ödeme iptal edilir.
+    const [disarida] = await islem
+      .select({ kimlik: odemeOturumlari.kimlik })
+      .from(odemeOturumlari)
+      .where(and(sahibi, eq(odemeOturumlari.odeme_disarida, true)));
+    if (disarida !== undefined) {
+      await stok.ayirmayiBirak(islem, disarida.kimlik);
+      return;
+    }
+    await islem.delete(odemeOturumlari).where(sahibi);
   };
 
   // Ödeme başarısız olunca (kartla ödeme, kart 0215) oturumun ayırmaları serbest kalır.
   const ayirmayiBirak = (vt: Veritabani, oturum: string) =>
     vt.transaction((islem) => stok.ayirmayiBirak(islem, oturum));
 
-  return { odemeOturumuAc, siparisVer, ayirmayiBirak };
+  return { odemeOturumuAc, siparisVer, onayla, ayirmayiBirak };
 };

@@ -11,7 +11,12 @@ import { postaAdresiSemasi, telefonSemasi } from "../bolgeler/adres.ts";
 import { ulkeGecerliMi } from "../bolgeler/bolgeler.ts";
 import { ibanSemasi } from "../bolgeler/iban.ts";
 import { saticiBilgileriSemasi } from "../bolgeler/satici.ts";
-import { eklentiKodlari, stokBildirimiAyari } from "../kayitlar/eklentiler.ts";
+import {
+  eklentiKodlari,
+  kartlaOdemeAyari,
+  kartlaOdemeOrtamlari,
+  stokBildirimiAyari,
+} from "../kayitlar/eklentiler.ts";
 import { favoriSiniriEnCok } from "../kayitlar/favori.ts";
 import { listeSayfasi, listeSiralamalari, sayfaGecisleri } from "../kayitlar/liste.ts";
 import {
@@ -218,6 +223,12 @@ export const ayarSemasi = z.strictObject({
       .refine((liste) => new Set(liste).size === liste.length, "Aynı eklenti iki kez yazılmış.")
       .default([]),
     altyapiSahibinin("ayar.aciklama.eklentiler"),
+  ),
+  // Kartla ödeme eklentisi (kart 0215, karar 0142): ödeme kuruluşunun deneme ortamı mı canlı ortamı mı. Canlı ortam
+  // gerçek ödeme alır: mağazanın sözleşmesi ve anahtarlarıyla, kullanıcının onayıyla açılır.
+  kartlaOdemeOrtami: ayar(
+    z.enum(kartlaOdemeOrtamlari).default("deneme"),
+    altyapiSahibinin("ayar.aciklama.kartlaOdemeOrtami"),
   ),
 });
 
@@ -489,6 +500,19 @@ export const magazaAyarSemasi = z.strictObject({
       .max(stokBildirimiAyari.saklamaGunEnCok)
       .default(stokBildirimiAyari.saklamaGunVarsayilan),
     magazaSahibinin("ayar.aciklama.stokBildirimiSaklamaGun"),
+  ),
+  // Kartla ödeme eklentisi (kart 0215, karar 0142): ürün sayfasında "Kartla N taksite kadar" satırı görünsün mü
+  // (karar 0132), müşteriye en çok kaç taksit sunulsun. Eklenti kapalıyken okunmaz.
+  kartlaOdemeUrunSayfasindaTaksit: ayar(
+    z.boolean().default(true),
+    magazaSahibinin("ayar.aciklama.kartlaOdemeUrunSayfasindaTaksit"),
+  ),
+  kartlaOdemeEnCokTaksit: ayar(
+    z
+      .int()
+      .refine((sayi) => (kartlaOdemeAyari.taksitSecenekleri as readonly number[]).includes(sayi))
+      .default(kartlaOdemeAyari.enCokTaksitVarsayilan),
+    magazaSahibinin("ayar.aciklama.kartlaOdemeEnCokTaksit"),
   ),
 });
 export type MagazaAyarlari = z.output<typeof magazaAyarSemasi>;

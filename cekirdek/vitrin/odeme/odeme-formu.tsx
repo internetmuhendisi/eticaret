@@ -59,6 +59,7 @@ import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
 import { postaKoduGecerliMi } from "../../bolgeler/bolgeler";
 import { kapiyaIstek } from "../../kapi/istemci";
 import { hataKodlari } from "../../kayitlar/kapi";
+import type { OdemeDonusSonucu } from "../../kayitlar/odeme";
 import { useMetin } from "../../metinler/istemci-metni";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { doldur } from "../../moduller/eposta/sablon";
@@ -74,11 +75,17 @@ import { cikisYap, useHesapDurumu } from "../hesap-durumu";
 import { adetDegistir, siparisKalemleriniCikar, useSepet, useSepetGorunumu } from "../sepet/durum";
 import { SatirGorseli, SepetOzeti, satirAdi } from "../sepet/sepet-gorunumu";
 import type { SepetGorunumu } from "../sepet/veri";
+import {
+  donusSonucunuAl,
+  type OdemeTaslagi,
+  odemeOturumuAnahtari,
+  taslagiAl,
+  taslagiSakla,
+} from "./kart-donusu";
 
 const misafirUcu = "/kapi/herkese-acik/odeme";
 const uyeUcu = "/kapi/musteri/odeme";
-// Sekmenin deposunda müşterinin bir önceki onayının oturumu (yalnız kimlik).
-const oncekiAnahtari = "odeme-oturumu";
+const oncekiAnahtari = odemeOturumuAnahtari;
 
 export type BolgeUlkesi = {
   kod: string;
@@ -145,6 +152,7 @@ const ozelHatalar: Record<string, MetinAnahtari> = {
   "vergi-numarasi-kontrol": "vitrin.odeme.hata.vergiNumarasiKontrol",
   "ulke-teslimat-disi": "vitrin.odeme.hata.ulke",
   "yontem-kapali": "vitrin.odeme.hata.yontemKapali",
+  "yontem-ulasilamadi": "vitrin.odeme.hata.yontemUlasilamadi",
 };
 const onayAlanlari = new Set([
   "bilgiler.onBilgilendirmeOnayi",
@@ -572,19 +580,25 @@ const yontemGorunusu = (
         aciklama: doldur(metin("vitrin.odeme.yontem.havaleAciklamasi"), { gun: String(iptalGunu) }),
         ikon: "havale",
       }
-    : {
-        ad: doldur(metin("vitrin.odeme.yontem.kapida"), {
-          secenek: metin(
-            secim.secenek === "nakit" ? "vitrin.odeme.yontem.nakit" : "vitrin.odeme.yontem.kart",
+    : secim.yontem === "kart"
+      ? {
+          ad: metin("ortak.odemeYontemi.kartla"),
+          aciklama: metin("vitrin.odeme.yontem.kartlaAciklamasi"),
+          ikon: "kart",
+        }
+      : {
+          ad: doldur(metin("vitrin.odeme.yontem.kapida"), {
+            secenek: metin(
+              secim.secenek === "nakit" ? "vitrin.odeme.yontem.nakit" : "vitrin.odeme.yontem.kart",
+            ),
+          }),
+          aciklama: metin(
+            secim.secenek === "nakit"
+              ? "vitrin.odeme.yontem.nakitAciklamasi"
+              : "vitrin.odeme.yontem.kartAciklamasi",
           ),
-        }),
-        aciklama: metin(
-          secim.secenek === "nakit"
-            ? "vitrin.odeme.yontem.nakitAciklamasi"
-            : "vitrin.odeme.yontem.kartAciklamasi",
-        ),
-        ikon: secim.secenek === "nakit" ? "kapida-odeme" : "kart",
-      };
+          ikon: secim.secenek === "nakit" ? "kapida-odeme" : "kart",
+        };
 
 function Yukleniyor() {
   const metin = useMetin();
@@ -630,8 +644,12 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
   // Giriş yapmış müşterinin son siparişinin teslimatı (öneri) ve uygulanınca teslimat alanlarının ilk değerleri.
   const [onceki, setOnceki] = useState<Teslimat | null>(null);
   const [kisi, setKisi] = useState({ ad: "", soyad: "", telefon: "", surum: 0 });
-  // Sipariş oluştu, sipariş alındı sayfasına gidiliyor.
-  const [gidiyor, setGidiyor] = useState(false);
+  // Sipariş oluştu, sipariş alındı sayfasına gidiliyor; ya da müşteri ödeme kuruluşunun sayfasına gidiyor.
+  const [gidiyor, setGidiyor] = useState<"siparis" | "kurulus" | false>(false);
+  // Kartla ödemeden dönüş (kart 0215): sonucun kodu ve geri konan form bilgisi. taslakSurum alanları yeniden kurar.
+  const [donusSonucu, setDonusSonucu] = useState<OdemeDonusSonucu | null>(null);
+  const [taslak, setTaslak] = useState<OdemeTaslagi | null>(null);
+  const [oncekiKullanildi, setOncekiKullanildi] = useState(false);
   const [bekliyor, setBekliyor] = useState(false);
   const [yenileme, setYenileme] = useState(0);
   // Sepetteki adet sunucunun hesabına göre indirildi: özet yenilenince de söylenir.
@@ -639,6 +657,7 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
   const gonderiliyor = useRef(false);
   const kimlikler = useRef<AlanKimlikleri>({}).current;
   const ozetKutusu = useRef<HTMLDivElement>(null);
+  const donusKutusu = useRef<HTMLDivElement>(null);
 
   const vergiBolgeleri = {
     teslimat: vergiBolgesi(teslimat),
@@ -670,6 +689,37 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
     if (Object.keys(hatalar).length > 0 || genelHata !== null) ozetKutusu.current?.focus();
   }, [hatalar, genelHata]);
 
+  // Kartla ödemeden dönülünce odak sonucun kutusuna geçer.
+  useEffect(() => {
+    if (donusSonucu !== null) donusKutusu.current?.focus();
+  }, [donusSonucu]);
+
+  // Kartla ödemeden dönüş: sonuç adresten okunur, form gitmeden önceki bilgilerle doldurulur.
+  useEffect(() => {
+    const sonuc = donusSonucunuAl();
+    if (sonuc === undefined) return;
+    setDonusSonucu(sonuc);
+    const geri = taslagiAl();
+    if (geri === undefined) return;
+    setTeslimat(geri.teslimat);
+    setFaturaTuru(geri.faturaTuru);
+    setFaturaAyni(geri.faturaAyni);
+    setFaturaAdresi(geri.faturaAdresi);
+    if (
+      geri.yontem !== undefined &&
+      veri.yontemler.some((satir) => satir.anahtar === geri.yontem)
+    ) {
+      setYontem(geri.yontem);
+    }
+    setKisi((eski) => ({
+      ad: geri.ad,
+      soyad: geri.soyad,
+      telefon: geri.telefon,
+      surum: eski.surum + 1,
+    }));
+    setTaslak(geri);
+  }, [veri.yontemler]);
+
   // Giriş yapmış müşterinin son siparişinin teslimatı sorulur (tek istek); siparişi yoksa öneri görünmez.
   useEffect(() => {
     if (hesap.tur !== "girisli") return;
@@ -700,6 +750,7 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
       telefon: teslimatBilgisi.telefon ?? "",
       surum: eski.surum + 1,
     }));
+    setOncekiKullanildi(true);
   };
 
   const uye = hesap.tur === "girisli";
@@ -764,6 +815,7 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
           bilgiler,
         });
     setGenelHata(null);
+    setDonusSonucu(null);
     const yeniHatalar: HataHaritasi = {};
     // Telefonun zorunluluğu sitenin ayarıdır: şema yalnız biçimi denetler.
     if (veri.telefonZorunlu && bilgiler.teslimat.telefon.trim() === "") {
@@ -797,10 +849,37 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
       });
       const zarf = (await yanit.json().catch(() => undefined)) as
         | {
-            veri?: { oturum: string; siparis: string };
+            veri?: { oturum: string; siparis?: string; yonlendir?: string };
             hata?: { kod: string; ayrinti?: { alan: string; kod: string }[] };
           }
         | undefined;
+      if (yanit.ok && zarf?.veri?.yonlendir !== undefined) {
+        // Kartla ödeme (kart 0215): müşteri ödeme kuruluşunun sayfasına gider. Sepet ödeme olana kadar kalır; dönüşte
+        // form bu bilgilerle dolar. Oturum bir sonraki onayda serbest kalsın diye saklanır.
+        const oturum = zarf.veri.oturum;
+        depodan((depo) => {
+          depo.setItem(oncekiAnahtari, oturum);
+          return undefined;
+        });
+        taslagiSakla({
+          eposta: deger("eposta"),
+          ad: bilgiler.teslimat.ad,
+          soyad: bilgiler.teslimat.soyad,
+          telefon: bilgiler.teslimat.telefon,
+          teslimat: teslimatAdres,
+          faturaTuru,
+          faturaAyni,
+          faturaAdresi: faturaAdres,
+          firma: deger("bilgiler.fatura.firma"),
+          vergiDairesi: deger("bilgiler.fatura.vergiDairesi"),
+          vergiNumarasi: deger("bilgiler.fatura.vergiNumarasi"),
+          not: deger("bilgiler.not"),
+          yontem,
+        });
+        setGidiyor("kurulus");
+        window.location.assign(zarf.veri.yonlendir);
+        return;
+      }
       if (yanit.ok && zarf?.veri !== undefined) {
         // Sipariş oluştu: oturum siparişe döndü, sepetin siparişe giren kalemleri çıkar. Sipariş alındı sayfası
         // siparişi çerezdeki erişim anahtarıyla açar.
@@ -809,7 +888,7 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
           return undefined;
         });
         siparisKalemleriniCikar(sepet.kalemler.map((kalem) => kalem.birim));
-        setGidiyor(true);
+        setGidiyor("siparis");
         window.location.assign(vitrinAdresleri.siparisAlindi);
         return;
       }
@@ -821,7 +900,7 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
       if (
         (yanit.status === hataKodlari.dogrulama ||
           (yanit.status === hataKodlari["is-kurali"] &&
-            ayrinti.some(({ kod }) => kod === "yontem-kapali"))) &&
+            ayrinti.some(({ kod }) => kod === "yontem-kapali" || kod === "yontem-ulasilamadi"))) &&
         ayrinti.length > 0 &&
         ayrinti.every(({ alan }) => alan in alanAdlari)
       ) {
@@ -876,10 +955,14 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
   // Boş sepet: sunucu çerezde kalem görmediyse (karar 0136) boş hâl sepet bilinmeden de çizilir; depoda kalem çıkarsa
   // form çizilir.
   const bosBilinir = veri.cerezdeBos && (!sepet.hazir || sepet.kalemler.length === 0);
-  if (gidiyor) {
+  if (gidiyor !== false) {
     return (
       <div role="status" className="flex flex-col gap-3">
-        <p>{metin("vitrin.odeme.siparisAlindi")}</p>
+        <p>
+          {metin(
+            gidiyor === "kurulus" ? "vitrin.odeme.yonlendiriliyor" : "vitrin.odeme.siparisAlindi",
+          )}
+        </p>
         <IskeletGorunum className="h-20 w-full" />
       </div>
     );
@@ -1010,7 +1093,9 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
             ) : (
               <>
                 <MetinAlani
+                  key={`eposta-${kisi.surum}`}
                   ad="eposta"
+                  {...(taslak === null ? {} : { varsayilan: taslak.eposta })}
                   etiket={metin("vitrin.odeme.eposta")}
                   aciklama={metin("vitrin.odeme.epostaAciklama")}
                   type="email"
@@ -1082,7 +1167,7 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
                   </Dugme>
                   {/* Alanlar dolunca ekran okuyucuya söylenir. */}
                   <span role="status" className="text-kucuk">
-                    {kisi.surum === 0 ? null : metin("vitrin.odeme.oncekiAdresKullanildi")}
+                    {oncekiKullanildi ? metin("vitrin.odeme.oncekiAdresKullanildi") : null}
                   </span>
                 </span>
               </Uyari>
@@ -1146,10 +1231,11 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
               secilemezEki=""
             />
             {faturaTuru === "kurumsal" ? (
-              <div className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
+              <div key={kisi.surum} className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
                 <div className="tablet:col-span-2">
                   <MetinAlani
                     ad="bilgiler.fatura.firma"
+                    {...(taslak === null ? {} : { varsayilan: taslak.firma })}
                     etiket={metin("vitrin.odeme.firma")}
                     autoComplete="organization"
                     hatalar={hatalar}
@@ -1158,12 +1244,14 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
                 </div>
                 <MetinAlani
                   ad="bilgiler.fatura.vergiDairesi"
+                  {...(taslak === null ? {} : { varsayilan: taslak.vergiDairesi })}
                   etiket={metin("vitrin.odeme.vergiDairesi")}
                   hatalar={hatalar}
                   kimlikler={kimlikler}
                 />
                 <MetinAlani
                   ad="bilgiler.fatura.vergiNumarasi"
+                  {...(taslak === null ? {} : { varsayilan: taslak.vergiNumarasi })}
                   etiket={metin("vitrin.odeme.vergiNumarasi")}
                   aciklama={metin("vitrin.odeme.vergiNumarasiAciklama")}
                   inputMode="numeric"
@@ -1190,6 +1278,14 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
           </Bolum>
 
           <Bolum no={4} baslik={metin("vitrin.odeme.bolum.yontem")}>
+            {/* Kartla ödemeden dönüş (kart 0215): taslaktaki gibi yöntemlerin üstünde; dönüşte odak buradadır. */}
+            {donusSonucu === null ? null : (
+              <div ref={donusKutusu} tabIndex={-1}>
+                <Uyari tur="tehlike" baslik={metin("vitrin.odeme.kartDonusu.baslik")}>
+                  <p>{metin(`vitrin.odeme.kartDonusu.${donusSonucu}`)}</p>
+                </Uyari>
+              </div>
+            )}
             {veri.yontemler.length === 0 ? (
               <Uyari tur="tehlike">{metin("vitrin.odeme.yontemYok")}</Uyari>
             ) : (
@@ -1236,7 +1332,9 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
                 kimlikler["bilgiler.not"] = alan.id;
                 return (
                   <UzunMetinAlani
+                    key={`not-${kisi.surum}`}
                     {...alan}
+                    {...(taslak === null ? {} : { defaultValue: taslak.not })}
                     name="bilgiler.not"
                     rows={3}
                     maxLength={veri.sinirlar.not}

@@ -51,6 +51,7 @@
     "bilesenler/parcalar/siralanabilir-liste.tsx",
     "bilesenler/parcalar/uyari.tsx",
     "bilesenler/parcalar/yukleniyor.tsx",
+    "cekirdek/eklentiler/kartla-odeme/taksit-satiri.tsx",
     "cekirdek/vitrin/bolumler/duyuru-seridi/gorunum.tsx",
     "cekirdek/vitrin/bolumler/guven-seridi/gorunum.tsx",
     "cekirdek/vitrin/bolumler/iletisim-bilgileri/gorunum.tsx",
@@ -156,6 +157,7 @@
     "bilesenler/parcalar/serit.tsx",
     "bilesenler/parcalar/siralanabilir-liste.tsx",
     "bilesenler/parcalar/yan-pencere.tsx",
+    "cekirdek/eklentiler/kartla-odeme/taksit-satiri.tsx",
     "cekirdek/vitrin/bolumler/genis-afis/gorunum.tsx",
     "cekirdek/vitrin/bolumler/kampanya-afisleri/gorunum.tsx",
     "cekirdek/vitrin/bolumler/kayan-afis/kaydirici.tsx",
@@ -221,6 +223,7 @@
     "cekirdek/vitrin/sepet/sepete-ekle.tsx"
   ],
   "bilesenler/parcalar/iskelet.tsx": [
+    "cekirdek/eklentiler/kartla-odeme/taksit-satiri.tsx",
     "cekirdek/vitrin/favori-listesi.tsx",
     "cekirdek/vitrin/odeme/odeme-formu.tsx",
     "cekirdek/vitrin/sepet/sepet-gorunumu.tsx"
@@ -251,6 +254,7 @@
   "bilesenler/parcalar/pencere.tsx": [
     "bilesenler/parcalar/onay-penceresi.tsx",
     "bilesenler/parcalar/yan-pencere.tsx",
+    "cekirdek/eklentiler/kartla-odeme/taksit-satiri.tsx",
     "cekirdek/vitrin/odeme/odeme-formu.tsx",
     "cekirdek/vitrin/urun-sayfasi/galeri.tsx",
     "cekirdek/vitrin/urun-sayfasi/yorum-yaz.tsx",
@@ -331,6 +335,7 @@
   ],
   "bilesenler/parcalar/uyari.tsx": [
     "bilesenler/parcalar/bildirim.tsx",
+    "cekirdek/eklentiler/kartla-odeme/taksit-satiri.tsx",
     "cekirdek/eklentiler/stoga-gelince-haber-ver/form.tsx",
     "cekirdek/moduller/oturum/sifirlama-formlari.tsx",
     "cekirdek/uygulama/app/yonetim/(panel)/slider/page.tsx",

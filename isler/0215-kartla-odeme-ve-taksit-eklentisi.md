@@ -35,6 +35,25 @@ Bölüm: Sepet ve ödeme. Önce 0214 bitmiş olmalı.
 - Kapalı eklentide kartla ödeme seçeneği yok (test).
 - Taslakla karşılaştırma yapıldı.
 
+## Notlar (2026-11-17)
+
+Kullanıcının kararları ve teknik kurallar karar 0142'de, tarif `eklentiler/kartla-odeme.md`, plan `planlar/kartla-odeme.md`.
+
+Karttan ayrılan yerler:
+- Anahtarlar `cekirdek/kayitlar/gizli-bilgiler.ts`'e değil, ayrı bir kayda yazıldı (`disaridan-gizli-bilgiler.ts`, okuma `disaridanGizliBilgi`): sunucuda üretilmezler, yoksa hata değildir, ve gizli bilgi okuyucusunun içe aktarılması veri ayrımı testinde yalnız iki dosyaya açıktır.
+- Taksit seçimi ödeme adımında değil iyzico'nun formunda (kullanıcı kararı); ödeme adımı taksit tablosu göstermez.
+- Çekirdekte iki yeni bağlantı noktası kuruldu: ödeme yöntemi noktası ve kapının dış kuruluş dönüşü (planda yazılı, kullanıcı planı onayladı).
+
+Bitti sayılır, tek tek:
+- Tarifin listesi: kapalı eklentide yöntem, başlatma, taksit ucu, panel satırı ve ürün sayfası satırı yok (birim testi; panelin kapalı hâli servisle, yuva `kullanilabilirYontemler` ile); dönüş ve bildirim yalnız başlatılmış ödemeyi tamamlar. Açıkken sahte kuruluşla kartla ve 3 taksitle sipariş (birim ve tarayıcı), gerçek deneme ortamında kartla 3D Secure'lu ödeme ve dönüş (elle, karar 0142). Başarısız ve yarıda kalan ödemede sipariş yok, ayırma bırakılır, müşteri hata metniyle döner (birim ve tarayıcı). Tarayıcının "başarılı"sı yok sayılır (test). İmzasız ve yanlış imzalı bildirim reddedilir, iki kez ve aynı anda gelen dönüş ve bildirim tek sipariş kurar (test). Stok yokken ve fiyat değişince ödeme iptal edilir (sahte kuruluşla test, gerçek iptal elle). Karşılaştırma üç uyuşmazlığı bulur (sahte kuruluşla test). Taksit satırı ayara göre, tablo kuruluştan (test, gerçek taksit sorgusu elle 6 banka). Kontroller ve testler aşağıda.
+- Test ortamında taksitle sipariş: sahte kuruluşla test edildi; gerçek deneme ortamında deneme kartı için yalnız tek çekim çıktı, **taksitli ödeme gerçek ortamda ölçülmedi**.
+- Kapalı eklentide kartla ödeme yok (test). Kapalı hâlin gerçek uygulamada bir kez ölçülmesi (komutun 6. adımı) yapılmadı: Örnek Mağaza'nın anahtarsız hâli tarayıcı testlerinde zaten yöntemi gizler, birim testleri kapalı hâli uçta, serviste ve yuvada ölçer.
+- Taslakla karşılaştırma: ödeme adımı (kart reddedildi) ve ürün sayfası, iki temada, telefon ve bilgisayarda görüntüyle. Hata kutusu taslaktaki gibi ödeme yöntemi bölümüne taşındı, taksit satırının yazı boyu taslağa getirildi. Farklar kullanıcı kararıdır (form iyzico'nun sayfasında, taksit iyzico'nun formunda) ya da yuvanın yeridir (taksit satırı stok yazısının altında, taslakta fiyatın altında).
+
+Bağımsız kontrol yedi bulgu verdi (üçü yüksek): yeniden onayın ödemesi dışarıda başlamış oturumu silmesi, belirsiz sonucun başarısız sayılması (gerçek ortamda da ölçüldü), son adet yarışı, incelemedeki ödemenin süreyle düşmesi, taramanın tıkanması, belirtecin erişim anahtarı gibi çalışması, iptalden sonra sonucun "ödendi" kalması. Altısı düzeltildi ve testlendi, sonuncusu karar 0142'de sınır olarak yazıldı.
+
+Son kontroller (çalışma kopyasında, yerel ortak veritabanı): biçim, denetim, denetimin kendi testi, tür kontrolü, site doğrulaması geçti. Birim: 3428 testin 4'ü düştü, dördü süre aşımı (kart 0133); tek başına yeniden çalışınca yalnız indirim oranı testi üçte bir düştü (kart 0202). Tarayıcı: 283 testin 7'si düştü: altısı ekran ölçümünde yerel veritabanında eksik görsellerin 404'ü (değişiklikten bağımsız), biri panelin ödeme yöntemleri testi (yöntemi adıyla bulma "Kartla öde"yi tanımıyordu, düzeldi; aynı testin son adımı ara sıra düşüyor, kart 0223). Hız ölçümü 13/13.
+
 ## Durum
 
 yapılacak

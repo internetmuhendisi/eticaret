@@ -28,6 +28,10 @@
     {
       "kod": "kapida-odeme",
       "acik": true
+    },
+    {
+      "kod": "kart",
+      "acik": true
     }
   ],
   "kapidaOdemeSecenekleri": ["nakit", "kart"],
@@ -44,5 +48,6 @@
       "sahip": "Örnek Mağaza Deneme Ticaret A.Ş.",
       "iban": "TR539990200000000000000002"
     }
-  ]
+  ],
+  "kartlaOdemeEnCokTaksit": 6
 }

@@ -10,7 +10,15 @@ import type { IstekSiniri, Kapi } from "../kayitlar/kapi.ts";
 import { istegiSay, istemciAdresi, sayacAdresi } from "./istek-siniri.ts";
 import { erisimiDenetle, type UcErisimi } from "./izin-kontrolu.ts";
 import { sahteIstekMi } from "./sahte-istek.ts";
-import { BilinenHata, basariliYanit, DosyaYaniti, dosyaYanitla, hataliYanit } from "./zarf.ts";
+import {
+  BilinenHata,
+  basariliYanit,
+  DosyaYaniti,
+  dosyaYanitla,
+  hataliYanit,
+  Yonlendirme,
+  yonlendir,
+} from "./zarf.ts";
 
 // Herkese açık girişteki uç yalnız herkese açık beyanını, öteki girişlerdeki uç yalnız o girişin
 // iznini alır.
@@ -26,18 +34,27 @@ type DemoBeyani<Giris extends Kapi> = Giris extends "herkese-acik"
   ? { temaDemosunda: TemaDemosunda }
   : { temaDemosunda?: never };
 
-export type UcTanimi<Giris extends Kapi, Sema extends z.ZodType, Veri> = DemoBeyani<Giris> & {
-  giris: Giris;
-  sema: Sema;
-  izin: UcIzni<Giris>;
-  sinir: IstekSiniri;
-  isle: (
-    girdi: z.output<Sema>,
-    istek: Request,
-    yanit: YanitYazici,
-    erisim: UcErisimi<Giris>,
-  ) => Promise<Veri>;
-};
+// Dış kuruluşun kapıya dönüşü (kart 0215): ödeme kuruluşunun sunucudan sunucuya bildirimi ya da müşterinin tarayıcısıyla
+// geri gönderdiği form. İstek başka bir siteden gelir: sahte istek denetimi uygulanmaz, gövde JSON ya da form olabilir.
+// Yalnız herkese açık girişte ve "bildirim" sınırıyla yazılır; uç çerez okumaz, doğruluğu imzadan ya da kuruluşa
+// yapılan sorgudan kurar.
+type DisKurulusBeyani<Giris extends Kapi> = Giris extends "herkese-acik"
+  ? { disKurulus?: true }
+  : { disKurulus?: never };
+
+export type UcTanimi<Giris extends Kapi, Sema extends z.ZodType, Veri> = DemoBeyani<Giris> &
+  DisKurulusBeyani<Giris> & {
+    giris: Giris;
+    sema: Sema;
+    izin: UcIzni<Giris>;
+    sinir: IstekSiniri;
+    isle: (
+      girdi: z.output<Sema>,
+      istek: Request,
+      yanit: YanitYazici,
+      erisim: UcErisimi<Giris>,
+    ) => Promise<Veri>;
+  };
 
 // Servisin yanıta eklediği çerezler (oturum-cerezi.ts). Hatalı yanıtta da gider: geçersiz oturumun
 // çerezleri böyle silinir.
@@ -58,11 +75,15 @@ const demodakiDurumu = (giris: Kapi, beyan: TemaDemosunda | undefined): TemaDemo
 
 const govdesizYontemler = new Set(["GET", "HEAD", "DELETE"]);
 
-// Gövdesiz isteklerde girdi adres parametreleridir, ötekilerde JSON gövdedir.
-// Gövde JSON değilse undefined döner.
-const girdiyiOku = async (istek: Request): Promise<unknown> => {
+// Gövdesiz isteklerde girdi adres parametreleridir, ötekilerde JSON gövdedir. Dış kuruluşun dönüşünde gövde form da
+// olabilir. Gövde okunamazsa undefined döner.
+const girdiyiOku = async (istek: Request, formOlabilir: boolean): Promise<unknown> => {
   if (govdesizYontemler.has(istek.method)) {
     return Object.fromEntries(new URL(istek.url).searchParams);
+  }
+  const tur = istek.headers.get("content-type") ?? "";
+  if (formOlabilir && tur.startsWith("application/x-www-form-urlencoded")) {
+    return Object.fromEntries(new URLSearchParams(await istek.text()));
   }
   const metin = await istek.text();
   if (metin === "") return {};
@@ -76,6 +97,9 @@ const girdiyiOku = async (istek: Request): Promise<unknown> => {
 export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
   tanim: UcTanimi<Giris, Sema, Veri>,
 ): Uc => {
+  if (tanim.disKurulus === true && tanim.sinir !== "bildirim") {
+    throw new Error("Dış kuruluşun dönüşü yalnız bildirim sınırıyla tanımlanır.");
+  }
   const temaDemosunda = demodakiDurumu(tanim.giris, tanim.temaDemosunda);
   const yanitla = async (istek: Request, yanit: YanitYazici): Promise<Response> => {
     try {
@@ -87,7 +111,7 @@ export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
 
       // Sınırdan önce: başka bir sayfa ziyaretçinin tarayıcısından istek atarak onun sınırını
       // dolduramasın.
-      if (sahteIstekMi(istek)) return hataliYanit("yetki");
+      if (!tanim.disKurulus && sahteIstekMi(istek)) return hataliYanit("yetki");
 
       const { pathname } = new URL(istek.url);
       const sinir = istegiSay(
@@ -103,7 +127,7 @@ export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
       // Doğrulamadan önce: yetkisiz kişi ucun girdi yapısını öğrenemesin.
       const erisim = await erisimiDenetle(tanim.giris, tanim.izin, istek, yanit.cerezYaz);
 
-      const sonuc = tanim.sema.safeParse(await girdiyiOku(istek));
+      const sonuc = tanim.sema.safeParse(await girdiyiOku(istek, tanim.disKurulus === true));
       if (!sonuc.success) {
         return hataliYanit(
           "dogrulama",
@@ -115,6 +139,7 @@ export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
       }
 
       const veri = await tanim.isle(sonuc.data, istek, yanit, erisim as UcErisimi<Giris>);
+      if (veri instanceof Yonlendirme) return yonlendir(veri);
       return veri instanceof DosyaYaniti ? dosyaYanitla(veri, istek) : basariliYanit(veri);
     } catch (hata) {
       if (hata instanceof BilinenHata) return hataliYanit(hata.kod, hata.ayrinti, hata.basliklar);

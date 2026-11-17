@@ -1,3 +1,5 @@
+import type { EklentiKodu } from "./eklentiler.ts";
+
 // Ödeme işaretleri (kart 0108, karar 0083): alt kısımda gösterilen ödeme yöntemi işaretlerinin türleri.
 // İşaretler sitede gerçekten açık olan ödeme yöntemlerinden gelir (kullanıcı kararı): mağaza kabul etmediği bir
 // yöntemin işaretini göstermez. Ödeme modülü yazılınca açık yöntemler buradaki türlere çevrilir; o güne kadar
@@ -29,6 +31,9 @@ export const stokAyirmaSuresiSinirlari = { enAz: 5, enCok: 60, varsayilan: 15 } 
 // Süresi dolan ödeme oturumu (siparişe dönmemiş) bu kadar saat sonra silinir: kişisel veri (adres, telefon,
 // e-posta) gereğinden uzun saklanmaz.
 export const odemeOturumuSaklamaSaat = 24;
+// Ödemesi dışarıda (ödeme kuruluşunda) başlamış oturum daha uzun saklanır (kart 0215, bağımsız kontrolün bulgusu): kuruluşun
+// sonucu, iptal ve günlük karşılaştırma onun kaydına bağlıdır; parası çekilmiş ödemenin kaydı erken silinmesin.
+export const odemeOturumuDisaridaSaklamaGun = 30;
 
 // Fatura türleri: bireysel (müşterinin adına) ya da kurumsal (firma adı, vergi dairesi ve vergi numarasıyla).
 export const faturaTurleri = ["bireysel", "kurumsal"] as const;
@@ -46,6 +51,28 @@ export const odemeHatalari = [
   "vergi-numarasi-bicimi",
   "vergi-numarasi-kontrol",
 ] as const;
+
+// Eklentiyle gelen bir yöntemin ödemesi başlatılamadı (ödeme kuruluşuna ulaşılamadı): ayırma bırakılır, müşteri ödeme
+// adımında kalır.
+export const odemeBaslatilamadi = "yontem-ulasilamadi";
+
+// Kartla ödemeden dönüşün sonucu (kart 0215): müşteri ödeme adımına bu kodla döner (adres parametresi
+// odemeDonusParametresi), ekran kodun metnini hata kutusunda yazar.
+// - reddedildi: kart reddedildi ya da 3D Secure geçmedi.
+// - yarida-kaldi: müşteri ödeme sayfasından vazgeçti ya da sonuç alınamadı; ödeme alınmadı.
+// - stok-yok: ödeme alındı ama ürün bu arada tükendi, ödeme iptal edildi.
+// - sepet-degisti: ödeme alındı ama ürünün fiyatı ya da vergisi bu arada değişti, ödeme iptal edildi.
+// - bilinmiyor: ödeme kuruluşuna ulaşılamadı; ödeme alındıysa sipariş sonradan kurulur.
+export const odemeDonusSonuclari = [
+  "reddedildi",
+  "yarida-kaldi",
+  "stok-yok",
+  "sepet-degisti",
+  "bilinmiyor",
+] as const;
+export type OdemeDonusSonucu = (typeof odemeDonusSonuclari)[number];
+export const odemeDonusParametresi = "kart";
+
 export type OdemeHatasi = (typeof odemeHatalari)[number];
 
 // Ödeme yöntemleri (kart 0214, karar 0141). Kayıttaki sıra yöntemin kendi sırası değildir: müşterinin gördüğü sıra ve
@@ -55,8 +82,16 @@ export type OdemeHatasi = (typeof odemeHatalari)[number];
 //   görünmez. Ödenmeyen sipariş havaleIptalSuresi kadar gün sonra kendiliğinden iptal olur.
 // - kapida-odeme: müşteri teslimatta kuryeye öder; seçenekleri (nakit, kart) mağaza sahibinin ayarıdır
 //   (kapidaOdemeSecenekleri). Müşteri seçeneği ödeme adımında seçer, sipariş seçenekle saklanır.
-export const odemeYontemleri = ["havale", "kapida-odeme"] as const;
+// - kart: müşteri ödeme kuruluşunun sayfasında kartla, isterse taksitle öder (kartla ödeme eklentisi, kart 0215).
+//   Sipariş ödeme kuruluşu ödemeyi doğrulayınca kurulur.
+export const odemeYontemleri = ["havale", "kapida-odeme", "kart"] as const;
 export type OdemeYontemi = (typeof odemeYontemleri)[number];
+
+// Bir eklentiyle gelen yöntemler: eklentisi sitede kapalıysa yöntem kapalı sayılır, ödeme adımında ve panelde görünmez
+// (bağlantı noktası: cekirdek/eklentiler/odeme-yontemleri.ts).
+export const eklentiliOdemeYontemleri = { kart: "kartla-odeme" } as const satisfies Partial<
+  Record<OdemeYontemi, EklentiKodu>
+>;
 
 export const kapidaOdemeSecenekleri = ["nakit", "kart"] as const;
 export type KapidaOdemeSecenegi = (typeof kapidaOdemeSecenekleri)[number];

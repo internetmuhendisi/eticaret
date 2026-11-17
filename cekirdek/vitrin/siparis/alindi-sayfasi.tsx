@@ -29,6 +29,7 @@ import { vitrinAdresleri } from "../adresler";
 import { SepetOzeti } from "../sepet/sepet-gorunumu";
 import { musteriSayfasiBilgisi, musteriSayfasiniAc } from "../yalniz-gezinti";
 import { IbanKopyala } from "./iban-kopyala";
+import { SepetiTemizle } from "./sepeti-temizle";
 
 export const siparisAlindiSayfaBilgisi = musteriSayfasiBilgisi(
   async (): Promise<Metadata> => ({
@@ -87,18 +88,28 @@ export async function SiparisAlindiSayfasi() {
   const toplam = bicim.para(siparis.toplam);
   const havale = siparis.odeme_yontemi === "havale";
   const iptal = siparis.durum === "iptal";
+  // Ödemesi sipariş kurulurken alınmış sipariş (kartla ödeme, kart 0215): tahsilat siparişte durur.
+  const { tahsilat } = siparis;
   const yontemYazisi = havale
     ? metin("ortak.odemeYontemi.havale")
-    : doldur(metin("vitrin.odeme.yontem.kapida"), {
-        secenek: metin(
-          // Kapıda ödemede seçenek veritabanında zorunludur (siparisler_odeme_yontemi denetimi).
-          secenekAdlari[siparis.kapida_secenegi as KapidaOdemeSecenegi],
-        ),
-      });
+    : siparis.odeme_yontemi === "kart"
+      ? metin("ortak.odemeYontemi.kartla")
+      : doldur(metin("vitrin.odeme.yontem.kapida"), {
+          secenek: metin(
+            // Kapıda ödemede seçenek veritabanında zorunludur (siparisler_odeme_yontemi denetimi).
+            secenekAdlari[siparis.kapida_secenegi as KapidaOdemeSecenegi],
+          ),
+        });
   const adet = kalemler.reduce((toplamAdet, kalem) => toplamAdet + kalem.adet, 0);
 
   return (
     <main className="mx-auto flex w-full max-w-icerik flex-col gap-6 px-4 pt-5 pb-12 tablet:px-6">
+      {tahsilat === null ? null : (
+        <SepetiTemizle
+          oturum={siparis.oturum_kimligi}
+          birimler={kalemler.map((kalem) => kalem.birim_kimligi)}
+        />
+      )}
       <div className="flex flex-col items-center gap-2 py-4 text-center">
         <span className="flex size-12 items-center justify-center rounded-dugme bg-basari-zemin text-basari-yazi">
           <Ikon ad="basari" className="size-6" />
@@ -161,6 +172,27 @@ export async function SiparisAlindiSayfasi() {
                 {metin("vitrin.siparisAlindi.bildir")}
               </Baglanti>
             </Kart>
+          ) : tahsilat !== null ? (
+            <Kart aria-labelledby="kart-basligi" className="flex flex-col gap-2 p-4 tablet:p-6">
+              <h2 id="kart-basligi" className="font-baslik text-baslik-4 font-baslik-kalinligi">
+                {metin("vitrin.siparisAlindi.kartBasligi")}
+              </h2>
+              <p>
+                {doldur(
+                  metin(
+                    tahsilat.taksit > 1
+                      ? "vitrin.siparisAlindi.kartTaksitli"
+                      : "vitrin.siparisAlindi.kartTekCekim",
+                  ),
+                  { toplam: bicim.para(tahsilat.odenen), taksit: String(tahsilat.taksit) },
+                )}{" "}
+                {ayarlar.kargoyaVermeSuresi === 0
+                  ? metin("vitrin.siparisAlindi.kargoAyniGun")
+                  : doldur(metin("vitrin.siparisAlindi.kargo"), {
+                      gun: String(ayarlar.kargoyaVermeSuresi),
+                    })}
+              </p>
+            </Kart>
           ) : (
             <Kart aria-labelledby="kapida-basligi" className="flex flex-col gap-2 p-4 tablet:p-6">
               <h2 id="kapida-basligi" className="font-baslik text-baslik-4 font-baslik-kalinligi">
@@ -204,7 +236,9 @@ export async function SiparisAlindiSayfasi() {
               <dd className="tablet:col-span-3">
                 {havale && !iptal
                   ? doldur(metin("vitrin.siparisAlindi.odemeBekleniyor"), { yontem: yontemYazisi })
-                  : yontemYazisi}
+                  : tahsilat !== null && !iptal
+                    ? doldur(metin("vitrin.siparisAlindi.kartOdendi"), { yontem: yontemYazisi })
+                    : yontemYazisi}
               </dd>
               <dt className="text-soluk-yazi">{metin("vitrin.siparisAlindi.eposta")}</dt>
               <dd className="wrap-anywhere tablet:col-span-3">{siparis.eposta}</dd>

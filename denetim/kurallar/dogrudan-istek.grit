@@ -1,7 +1,8 @@
 // Doğrudan istek yasağı (kart 0065, karar 0139, .claude/rules/sunucu-arayuzu.md). Kapının zarflı yanıtları
 // önbelleğe alınmaz; tarayıcı okunmayan gövdeyi indirmez, istek bitmez ve bağlantı tutulur. Kapıya istek
 // yalnız gövdeyi her zaman okuyan kapiyaIstek ile gider (cekirdek/kapi/istemci.ts).
-// Muaf: ortak işlevin kendisi, hata izleme aracına gönderim (kapı yanıtı değil), testler ve komutlar.
+// Muaf: ortak işlevin kendisi, hata izleme aracına gönderim (kapı yanıtı değil), sunucunun dış servise isteği
+// (cekirdek/dis-servis/istek.ts, kart 0215), testler ve komutlar.
 // Muafiyet yalnız projenin kökündeki klasör içindir: başka bir klasörün içindeki aynı adlı klasör muaf değildir
 // (kart 0103).
 language js
@@ -10,8 +11,8 @@ JsCallExpression(callee=$cagri) as $istek where {
   $cagri <: r"(?:(?:globalThis|window|self)\.)?fetch",
   $filename <: not r".*/(?:testler/.*|[^/]*\.test\.tsx?)",
   or {
-    $filename <: not r".*/(?:cekirdek/kapi/istemci\.ts|cekirdek/izleme/hata-izleme-araci\.ts|komutlar/.*)",
-    $filename <: r".*/(?:cekirdek|siteler|sahip-paneli|komutlar|denetim|bilesenler)/(?:.*/)?(?:cekirdek/kapi/istemci\.ts|cekirdek/izleme/hata-izleme-araci\.ts|komutlar/.*)"
+    $filename <: not r".*/(?:cekirdek/kapi/istemci\.ts|cekirdek/izleme/hata-izleme-araci\.ts|cekirdek/dis-servis/istek\.ts|komutlar/.*)",
+    $filename <: r".*/(?:cekirdek|siteler|sahip-paneli|komutlar|denetim|bilesenler)/(?:.*/)?(?:cekirdek/kapi/istemci\.ts|cekirdek/izleme/hata-izleme-araci\.ts|cekirdek/dis-servis/istek\.ts|komutlar/.*)"
   },
   register_diagnostic(span=$istek, message="Doğrudan istek gönderilemez. Kapıya isteği kapiyaIstek ile gönderin (cekirdek/kapi/istemci.ts).", severity="error")
 }

@@ -3,12 +3,14 @@
 // Veritabanındaki denetimler (siparisler_durum, siparis_gecmisi_neden) bu listelerle aynıdır, bunu
 // cekirdek/moduller/siparis/testler/servis.test.ts denetler.
 
-// Sipariş durumları. Bu kartta yalnız ikisi yazılır; hazırlanıyor, kargoda, teslim edildi ve iade on üçüncü bölümde.
+// Sipariş durumları. Kargoda, teslim edildi ve iade on üçüncü bölümde.
 // - odeme-bekleniyor: havale ve kapıda ödemede sipariş ödeme alınana kadar bu durumdadır.
+// - hazirlaniyor: ödeme alındı, sipariş hazırlanıyor (kartla ödemede sipariş bu durumla kurulur, kart 0215).
 // - iptal: sipariş iptal oldu, düşen stok geri kondu.
 // gecis: durumun geçebileceği durumlar (tek durum tanımı; panel, e-posta ve rapor bunu kullanır).
 export const siparisDurumTanimlari = {
-  "odeme-bekleniyor": { gecis: ["iptal"] },
+  "odeme-bekleniyor": { gecis: ["hazirlaniyor", "iptal"] },
+  hazirlaniyor: { gecis: ["iptal"] },
   iptal: { gecis: [] },
 } as const satisfies Record<string, { gecis: readonly string[] }>;
 export type SiparisDurumu = keyof typeof siparisDurumTanimlari;

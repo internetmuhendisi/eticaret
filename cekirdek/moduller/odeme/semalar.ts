@@ -82,6 +82,8 @@ export type Fatura = z.output<typeof faturaSemasi>;
 export const odemeYontemiSecimiSemasi = z.discriminatedUnion("yontem", [
   z.strictObject({ yontem: z.literal("havale") }),
   z.strictObject({ yontem: z.literal("kapida-odeme"), secenek: z.enum(kapidaOdemeSecenekleri) }),
+  // Kartla ödeme (eklenti, kart 0215): müşteri ödeme kuruluşunun sayfasına gider, sipariş dönüşte kurulur.
+  z.strictObject({ yontem: z.literal("kart") }),
 ]);
 export type OdemeYontemiSecimi = z.output<typeof odemeYontemiSecimiSemasi>;
 

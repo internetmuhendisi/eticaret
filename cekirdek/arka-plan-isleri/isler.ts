@@ -3,13 +3,17 @@
 // iş kendi modülünde tanımlanır, kaydı buradadır.
 import { z } from "zod";
 import {
+  kartlaOdemeKarsilastirmasiIsi,
+  kartlaOdemeTaramasiIsi,
+} from "../eklentiler/kartla-odeme/isler.ts";
+import {
   stokBildirimiGonderIsi,
   stokBildirimiTaramasiIsi,
   stokBildirimiTemizligiIsi,
 } from "../eklentiler/stoga-gelince-haber-ver/isler.ts";
 import { gunluk } from "../izleme/gunluk.ts";
 import { denemeIsaretiBicimi } from "../kayitlar/arka-plan.ts";
-import { stokBildirimiAyari } from "../kayitlar/eklentiler.ts";
+import { kartlaOdemeAyari, stokBildirimiAyari } from "../kayitlar/eklentiler.ts";
 import { epostaGonderIsi, epostaKayitTemizligiIsi } from "../moduller/eposta/isler.ts";
 import { odemeOturumuTemizligiIsi } from "../moduller/odeme/isler.ts";
 import { havaleIptalIsi } from "../moduller/siparis/isler.ts";
@@ -61,6 +65,9 @@ export const kayitliIsler: readonly IsTanimi[] = [
   stokBildirimiGonderIsi,
   stokBildirimiTaramasiIsi,
   stokBildirimiTemizligiIsi,
+  // Kartla ödeme eklentisi (kart 0215, karar 0142).
+  kartlaOdemeTaramasiIsi,
+  kartlaOdemeKarsilastirmasiIsi,
 ];
 
 export const zamanliIsler: readonly ZamanliIs[] = [
@@ -70,4 +77,6 @@ export const zamanliIsler: readonly ZamanliIs[] = [
   zamanliIs(havaleIptalIsi, {}, { herDakika: 60 }),
   zamanliIs(stokBildirimiTemizligiIsi, {}, { herDakika: 24 * 60 }),
   zamanliIs(stokBildirimiTaramasiIsi, {}, { herDakika: stokBildirimiAyari.taramaDakika }),
+  zamanliIs(kartlaOdemeTaramasiIsi, {}, { herDakika: kartlaOdemeAyari.taramaDakika }),
+  zamanliIs(kartlaOdemeKarsilastirmasiIsi, {}, { herDakika: 24 * 60 }),
 ];

@@ -17,7 +17,7 @@ Uç, ekranın ya da başka bir yazılımın sunucudan veri istediği adrestir.
 - İstekleri karşılayan katman yalnız yönlendirsin. İş kurallarını servis katmanına yaz.
 - Herkese açık, müşteri, yönetici ve sahip uçlarını ayrı adres önekleriyle başlat.
 - Her uca makul bir istek sınırı koy. Giriş ve şifre sıfırlama gibi hassas uçlara sıkı sınır uygula.
-- Ödeme ve kargo bildirim uçlarını istek sınırından muaf tut, imzayla doğrula.
+- Ödeme ve kargo bildirim uçlarını istek sınırından muaf tut, imzayla doğrula. Böyle uç `disKurulus` beyanıyla ve `bildirim` sınırıyla yazılır (kart 0215, karar 0142): başka siteden gelen form ya da sunucudan bildirim kabul eder, sahte istek denetimi uygulanmaz, doğruluk imzadan ya da kuruluşa sorgudan gelir. Tarayıcıyı yönlendiren uç `Yonlendirme` döndürür (yalnız sitenin kendi yolu).
 - Mobil uygulama ya da dış entegrasyonun kullandığı bir alanı kaldırma, adını ya da türünü değiştirme. Önce yeni alanı ekle, eskisini kullanımını ölçerek kaldır.
 - Her yeni ya da değişen ucu aynı değişiklikte uç belgesine yaz.
 

@@ -1,0 +1,4 @@
+-- Geri dönüş: geri alınabilir. Eski kodun denetimine dönmek "hazırlanıyor" geçmiş satırı varsa o satırları reddeder: denetim yeni hâlinde bırakılır.
+-- Kart 0215: sipariş geçmişinin durum denetimi "hazırlanıyor" durumunu tanır (karar 0142).
+ALTER TABLE "siparis_gecmisi" DROP CONSTRAINT "siparis_gecmisi_durum";--> statement-breakpoint
+ALTER TABLE "siparis_gecmisi" ADD CONSTRAINT "siparis_gecmisi_durum" CHECK ("siparis_gecmisi"."sonraki_durum" in ('odeme-bekleniyor', 'hazirlaniyor', 'iptal') and ("siparis_gecmisi"."onceki_durum" is null or "siparis_gecmisi"."onceki_durum" in ('odeme-bekleniyor', 'hazirlaniyor', 'iptal')));

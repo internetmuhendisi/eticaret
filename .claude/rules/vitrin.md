@@ -103,6 +103,12 @@ paths:
 - Havale bildirimi formu (`havale-bildirimi-formu.tsx`) üyede müşteri ucuna, üye olmayanda ertelenmiş robotlu gönderimle herkese açık uca gider; numarayı adresten (`?siparis=`) alır, e-posta adrese yazılmaz.
 - Giriş yapmış müşteriye son siparişinin teslimatı önerilir (`/kapi/musteri/son-teslimat`); sayfa çizilirken oturum okunmaz.
 
+## Kartla ödeme (karar 0142)
+
+- "Kartla öde" seçilince ödeme ucu siparişi değil müşterinin gideceği adresi döner (`yonlendir`); form gitmeden önce bilgileri sekmenin deposuna yazar (`taslagiSakla`, `cekirdek/vitrin/odeme/kart-donusu.ts`; şifre ve onaylar yazılmaz). Ödeme olmazsa müşteri `/odeme?kart=<sonuç>` ile döner: form doldurulur, sonuç hata kutusunda yazar, adresten silinir.
+- Kartla ödenen sipariş alındı sayfasında tahsilatı gösterir; sepeti `SepetiTemizle` yalnız ödemeyi başlatan sekmede ve sepet hazır olunca temizler.
+- Ürün sayfasının taksit satırı eklenti yuvasındadır (`kartlaOdemeYuvasi`); tablo pencere açılınca taksit ucundan, tutarlar sunucuda biçimlenmiş gelir.
+
 ## Ana sayfa bölümleri ve görseller (karar 0087)
 
 - Ana sayfa düzenin ana sayfa alanını çizer; bölüm yoksa sade sayfa görünür. Bölümün başlığı h2'dir, sayfanın h1'i mağaza adıdır.

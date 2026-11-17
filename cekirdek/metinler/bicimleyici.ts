@@ -63,6 +63,12 @@ const duvarSaati = (an: Date, saatDilimi: string): number[] => {
   return [al("year"), al("month"), al("day"), al("hour"), al("minute")];
 };
 
+// Bir anın bir saat dilimindeki takvim günü, "YYYY-AA-GG" (kart 0215: ödeme kuruluşunun günlük raporu).
+export const takvimGunu = (an: Date, saatDilimi: string): string => {
+  const [yil = 0, ay = 1, gun = 1] = duvarSaati(an, saatDilimi);
+  return `${String(yil).padStart(4, "0")}-${ikiHaneli(ay)}-${ikiHaneli(gun)}`;
+};
+
 // Sitenin saat diliminde yazılmış yerel zamanı ("2026-11-08T09:30") ana çevirir (kart 0076). Biçim
 // dışı metin, takvimde olmayan gün ve o saat diliminde hiç yaşanmayan saat (yaz saatine geçişteki
 // atlanan saat) undefined döner. Saat geri alınırken iki kez yaşanan saatte önceki an seçilir.

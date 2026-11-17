@@ -28,5 +28,8 @@ export const istekSinirlari = {
   gorsel: { istek: 600, saniye: 60 },
   // Vitrinin arama sayfası (kart 0137): insan için bol, toplu taramayı durdurur. Ara katmanda sayılır.
   arama: { istek: 30, saniye: 60 },
+  // Ödeme kuruluşunun bildirimi ve tarayıcıyla dönüşü (kart 0215, .claude/rules/sunucu-arayuzu.md): sıradan istek
+  // sınırından muaftır, doğruluğu imzadan ve kuruluşa yapılan sorgudan gelir. Bol sınır yalnız taşkını durdurur.
+  bildirim: { istek: 600, saniye: 60 },
 } as const satisfies Record<string, { istek: number; saniye: number }>;
 export type IstekSiniri = keyof typeof istekSinirlari;

@@ -64,7 +64,8 @@
       "havale": "Havale / EFT",
       "kapidaOdeme": "Kapıda ödeme",
       "nakit": "Nakit",
-      "kart": "Kart"
+      "kart": "Kart",
+      "kartla": "Kartla öde"
     }
   },
   "ayar": {
@@ -131,7 +132,10 @@
       "odemeYontemleri": "Müşterinin ödeme adımında gördüğü ödeme yöntemleri, sırasıyla; her yöntemin açık ya da kapalı olduğu.",
       "kapidaOdemeSecenekleri": "Kapıda ödemede müşterinin seçebileceği seçenekler: nakit, kart.",
       "havaleIptalSuresi": "Ödenmeyen havale siparişinin kaç gün sonra kendiliğinden iptal olduğu. Süre sonunda stok geri döner.",
-      "bankaHesaplari": "Havalede müşteriye gösterilen banka hesapları: banka, hesap sahibi ve IBAN."
+      "bankaHesaplari": "Havalede müşteriye gösterilen banka hesapları: banka, hesap sahibi ve IBAN.",
+      "kartlaOdemeOrtami": "Kartla ödemenin ödeme kuruluşunda hangi ortamı kullandığı. Deneme ortamı gerçek ödeme almaz; canlı ortam mağazanın sözleşmesi ve anahtarlarıyla açılır.",
+      "kartlaOdemeUrunSayfasindaTaksit": "Ürün sayfasında fiyatın altında \"Kartla taksit\" satırı ve taksit tablosu görünsün mü.",
+      "kartlaOdemeEnCokTaksit": "Kartla ödemede müşteriye sunulan en çok taksit sayısı. 1 yalnız tek çekim demektir."
     }
   },
   "tema": {
@@ -758,7 +762,8 @@
         "enAzBir": "Müşterinin kullanabileceği en az bir ödeme yöntemi açık olmalı. Havale yalnız banka hesabı varken kullanılır; bir yöntemi açın ya da önce banka hesabı ekleyin.",
         "secenekGerekli": "Kapıda ödemenin en az bir seçeneğini işaretleyin.",
         "gunGecersiz": "Gün sayısını 1 ile 30 arasında tam sayı olarak yazın."
-      }
+      },
+      "kartAciklamasi": "Eklenti. Müşteri iyzico'nun sayfasında kartla, isterse taksitle öder."
     },
     "bankaHesaplari": {
       "hesap": "Hesap",
@@ -1428,7 +1433,8 @@
         "sinir": "Çok fazla deneme yapıldı. Biraz bekleyip yeniden deneyin.",
         "genel": "Sipariş şu an onaylanamadı. Biraz sonra yeniden deneyin.",
         "yontem": "Bir ödeme yöntemi seçin.",
-        "yontemKapali": "Bu ödeme yöntemi artık kullanılamıyor. Sayfayı yenileyip başka bir yöntem seçin."
+        "yontemKapali": "Bu ödeme yöntemi artık kullanılamıyor. Sayfayı yenileyip başka bir yöntem seçin.",
+        "yontemUlasilamadi": "Kartla ödeme şu an başlatılamadı. Biraz sonra yeniden deneyin ya da başka bir ödeme yöntemi seçin."
       },
       "sozlesme": {
         "onBilgilendirme": "Ön bilgilendirme formu",
@@ -1454,10 +1460,20 @@
         "nakit": "nakit",
         "kart": "kartla",
         "nakitAciklamasi": "Ödemeyi teslimatta kuryeye nakit yaparsınız.",
-        "kartAciklamasi": "Kurye teslimatta kartınızdan çeker."
+        "kartAciklamasi": "Kurye teslimatta kartınızdan çeker.",
+        "kartlaAciklamasi": "Banka ya da kredi kartı. Kart bilgilerinizi iyzico'nun güvenli sayfasında girersiniz; taksit seçenekleri orada kartınıza göre gösterilir."
       },
       "oncekiAdresSatiri": "{ad} {soyad}, {adres}",
-      "oncekiAdresKullanildi": "Teslimat alanları son siparişinizin adresiyle dolduruldu."
+      "oncekiAdresKullanildi": "Teslimat alanları son siparişinizin adresiyle dolduruldu.",
+      "yonlendiriliyor": "Güvenli ödeme sayfasına yönlendiriliyorsunuz.",
+      "kartDonusu": {
+        "baslik": "Ödeme tamamlanmadı",
+        "reddedildi": "Kartınız ödemeyi onaylamadı. Kartınızdan para çekilmedi. Başka bir kartla ya da başka bir ödeme yöntemiyle yeniden deneyin.",
+        "yarida-kaldi": "Ödeme yarıda kaldı ve kartınızdan para çekilmedi. Siparişi yeniden onaylayabilirsiniz.",
+        "stok-yok": "Sepetinizdeki bir ürün siz öderken tükendi. Ödemeniz iptal edildi, kartınızdan para çekilmeyecek. Sepetinizi kontrol edip yeniden deneyin.",
+        "sepet-degisti": "Siz öderken sepetinizdeki bir ürünün fiyatı değişti. Ödemeniz iptal edildi, kartınızdan para çekilmeyecek. Güncel tutarı kontrol edip yeniden onaylayın.",
+        "bilinmiyor": "Ödemenizin sonucunu şu an öğrenemedik. Kartınızdan para çekildiyse siparişiniz kurulur; birkaç dakika sonra bize ulaşın, aynı siparişi yeniden vermeyin."
+      }
     },
     "siparisAlindi": {
       "baslik": "Siparişiniz alındı",
@@ -1487,7 +1503,11 @@
       "ibanKopyala": "IBAN'ı kopyala",
       "ibanKopyalaAdi": "IBAN'ı kopyala: {banka}",
       "kopyalandi": "IBAN kopyalandı.",
-      "kopyalanamadi": "IBAN kopyalanamadı; numarayı seçip kopyalayabilirsiniz."
+      "kopyalanamadi": "IBAN kopyalanamadı; numarayı seçip kopyalayabilirsiniz.",
+      "kartBasligi": "Ödemeniz alındı",
+      "kartTekCekim": "Kartınızdan {toplam} tek çekimle alındı.",
+      "kartTaksitli": "Kartınızdan {toplam}, {taksit} taksitle alındı.",
+      "kartOdendi": "{yontem} · ödendi"
     },
     "havaleBildirimi": {
       "baslik": "Havale bildirimi",
@@ -1964,6 +1984,23 @@
         "bosAciklama": "Müşteriler tükenmiş ürünün sayfasında e-postasını bırakınca burada görünür.",
         "sinir": "En çok bekleyen {sayi} ürün gösteriliyor."
       }
+    },
+    "kartlaOdeme": {
+      "taksitSatiri": "Kartla {sayi} taksite kadar",
+      "taksitSecenekleri": "Taksit seçenekleri",
+      "taksitPenceresi": "Taksit seçenekleri",
+      "taksitAciklamasi": "Taksit seçenekleri bankaya ve kartınıza göre değişir. Kesin taksitler ödeme sayfasında kartınıza göre gösterilir.",
+      "taksitSutun": "Taksit",
+      "aylikSutun": "Aylık",
+      "toplamSutun": "Toplam",
+      "tekCekim": "Tek çekim",
+      "taksitSayisi": "{sayi} taksit",
+      "taksitYok": "Taksit seçenekleri şu an gösterilemiyor.",
+      "yukleniyor": "Taksit seçenekleri yükleniyor.",
+      "urunAdi": "Sipariş {numara}",
+      "kategori": "Ürün",
+      "kargo": "Kargo",
+      "ayrac": "·"
     }
   }
 }

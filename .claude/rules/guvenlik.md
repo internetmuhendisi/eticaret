@@ -20,7 +20,8 @@ paths:
 - Oturumu kısa ömürlü bir anahtar ve onu yenileyen ikinci bir anahtarla yürüt. Anahtarları güvenli çerezde tut. Motor `cekirdek/moduller/oturum/`, çerezler `cekirdek/kapi/oturum-cerezi.ts`, sahte istek kontrolü `cekirdek/kapi/sahte-istek.ts`; süreler ve sınırlar `cekirdek/kayitlar/oturum.ts` (karar 0039).
 - Şifre, anahtar ve kart bilgisini kayıtlara (günlüğe) yazma. E-posta ve telefonu kısaltarak yaz.
 - Tarayıcıda çalışan kod yalnız açık olması güvenli değişkenleri okusun.
-- Kart bilgisi ödeme kuruluşunun formunda girilsin ve sitenin sunucusundan geçmesin.
+- Kart bilgisi ödeme kuruluşunun formunda girilsin ve sitenin sunucusundan geçmesin. Kartla ödeme eklentisinde form kuruluşun sayfasındadır, sonuç kuruluşa imzalı sorguyla sorulur (kart 0215, karar 0142).
+- Bir hizmetin verdiği anahtar (ödeme kuruluşu) dışarıdan gelen gizli bilgidir: kaydı `cekirdek/kayitlar/disaridan-gizli-bilgiler.ts`, okuması yalnız `disaridanGizliBilgi`. Yoksa hizmet o sitede kullanılamaz; kayda ve günlüğe yazılmaz.
 - Yüklenen dosyanın türünü, boyutunu ve içeriğini yükleme anında sunucuda kontrol et.
 - Siteyi yalnız şifreli bağlantıyla aç. Güvenlik başlıklarını aç. Başka sitelerden gelen sahte istekleri kabul etme.
 - Yönetici girişinde iki aşamalı doğrulama ve giriş deneme sınırı olsun. Deneme sınırı `cekirdek/moduller/oturum/giris.ts`, değerleri `cekirdek/kayitlar/oturum.ts` (karar 0042). Yeni bir giriş ucu `sinirliSifreDogrula` kullanır. İki aşamalı giriş `cekirdek/moduller/oturum/iki-asamali-giris.ts`, karar 0044: yönetici oturumu yalnız oradan açılır, başka yerden `oturumAc` çağırmak testte kırmızıdır, iki aşamadan geçmemiş oturum reddedilir. Şifreleme anahtarı `IKI_ASAMA_ANAHTARI` değişirse kurulu girişler açılamaz.

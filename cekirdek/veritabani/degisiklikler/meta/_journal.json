@@ -274,6 +274,27 @@
       "when": 1794910838461,
       "tag": "0038_siparisler",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1794935500284,
+      "tag": "0039_kartla-odeme",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1794935809257,
+      "tag": "0040_siparis-gecmisi-hazirlaniyor",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1794937744217,
+      "tag": "0041_kartla-odeme-korumalari",
+      "breakpoints": true
     }
   ]
 }

@@ -4,5 +4,5 @@
   "epostaGonderenAdresi": "ornek-magaza@posta.eticaretmagazasi.com",
   "yakindaYazisi": true,
   "temalar": ["canli-carsi", "yumusak-mevsim", "keskin-cizgi"],
-  "eklentiler": ["stoga-gelince-haber-ver"]
+  "eklentiler": ["stoga-gelince-haber-ver", "kartla-odeme"]
 }

@@ -10,6 +10,8 @@
 // - Siparişe o anki her şey yazılır: ürün adı, seçim, stok kodu, birim fiyat, vergi oranları ve tutarı, kargo,
 //   toplam, vergi dökümü (vergi adıyla), teslimat ve fatura, not, onaylar ve ödeme yöntemi.
 // - Numara sitenin öneki ve sıradan gelir (siparisNumarasi); geri alınan işlemin numarası boşta kalır.
+// - Ödemesi sipariş kurulurken alınmış siparişte (kartla ödeme, kart 0215; tahsilat verilir) durum "hazırlanıyor"dur,
+//   tahsilat (ödenen tutar, taksit, ödeme kimliği) siparişe yazılır.
 // - Havalede ödeme son anı veritabanının saatiyle şimdi artı havaleIptalSuresi gündür. Süresi dolan, ödeme bekleyen
 //   ve bildirimsiz havale siparişi kendiliğinden iptal olur (havaleIptalTaramasi): stok yalnız o siparişin stok
 //   geçmişinde düşürdüğü adet kadar geri konur, geçmişe yazılır. Bildirimli sipariş iptal olmaz (kullanıcı kararı).
@@ -26,6 +28,7 @@ import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import { havaleBildirimiSinirlari } from "../../kayitlar/odeme.ts";
+import type { SiparisDurumu } from "../../kayitlar/siparis.ts";
 
 import { yerelZamandan } from "../../metinler/bicimleyici.ts";
 import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
@@ -50,6 +53,7 @@ import {
   type SiparisKalemi,
   siparisKalemleri,
   siparisler,
+  type Tahsilat,
 } from "./model.ts";
 import type { HavaleBildirimiFormu } from "./semalar.ts";
 
@@ -119,6 +123,7 @@ export const siparisServisi = (site: Site) => {
       hesap: SepetHesabi;
       odeme: OdemeYontemiSecimi;
       havaleIptalSuresi: number;
+      tahsilat?: Tahsilat;
     },
   ): Promise<KurulanSiparis> => {
     const { oturum, hesap, odeme } = girdi;
@@ -131,6 +136,8 @@ export const siparisServisi = (site: Site) => {
     const numara = await numaraAl(islem);
     const erisimAnahtari = randomBytes(32).toString("base64url");
     const havale = odeme.yontem === "havale";
+    // Ödemesi alınmış sipariş hazırlanıyor, ötekiler ödeme bekliyor.
+    const durum: SiparisDurumu = girdi.tahsilat === undefined ? "odeme-bekleniyor" : "hazirlaniyor";
     const [yazilan] = await islem
       .insert(siparisler)
       .values({
@@ -144,7 +151,7 @@ export const siparisServisi = (site: Site) => {
         onaylar: oturum.onaylar,
         odeme_yontemi: odeme.yontem,
         kapida_secenegi: odeme.yontem === "kapida-odeme" ? odeme.secenek : null,
-        durum: "odeme-bekleniyor",
+        durum,
         para_birimi: hesap.paraBirimi,
         gosterim: hesap.gosterim,
         ara_toplam: hesap.araToplam,
@@ -162,6 +169,7 @@ export const siparisServisi = (site: Site) => {
         odeme_son_zamani: havale
           ? sql`now() + make_interval(days => ${girdi.havaleIptalSuresi})`
           : null,
+        tahsilat: girdi.tahsilat ?? null,
         erisim_ozeti: erisimOzeti(erisimAnahtari),
       })
       .onConflictDoNothing({ target: siparisler.oturum_kimligi })
@@ -224,7 +232,7 @@ export const siparisServisi = (site: Site) => {
     await gecmiseYaz(islem, {
       siparis: yazilan.kimlik,
       onceki: null,
-      sonraki: "odeme-bekleniyor",
+      sonraki: durum,
       neden: "olusturuldu",
       kim,
     });

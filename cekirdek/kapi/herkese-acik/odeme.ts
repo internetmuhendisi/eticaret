@@ -8,6 +8,7 @@ import { misafirOdemeGirdisi } from "../../moduller/odeme/semalar.ts";
 import { odemeServisi } from "../../moduller/odeme/servis.ts";
 import { robotCevabiniDogrula } from "../../moduller/robot-korumasi/servis.ts";
 import { siteninVeritabani } from "../../veritabani/baglanti.ts";
+import { istemciAdresi } from "../istek-siniri.ts";
 import { oturumCerezleri, oturumSuresiSaniye } from "../oturum-cerezi.ts";
 import { siparisErisimCereziYaz } from "../siparis-cerezi.ts";
 import { ucTanimla } from "../uc.ts";
@@ -20,21 +21,30 @@ export const odemeUcu = ucTanimla({
   sinir: "siki",
   isle: async (
     { robotCevabi, eposta, hesap, bilgiler, kalemler, onceki, gorulenToplam },
-    _istek,
+    istek,
     yanit,
   ) => {
     // Veritabanına bakmadan önce: robot stoğu ya da e-postanın kayıtlı olup olmadığını soramasın.
     await robotCevabiniDogrula(robotCevabi);
     const site = calisanSite();
     const sure = oturumSuresiSaniye("musteri", site.ayarlar);
-    const sonuc = await odemeServisi(site).siparisVer(
+    const sonuc = await odemeServisi(site).onayla(
       siteninVeritabani(),
-      { kim: { tur: "misafir", eposta, hesap }, bilgiler, kalemler, onceki, gorulenToplam },
+      {
+        kim: { tur: "misafir", eposta, hesap },
+        bilgiler,
+        kalemler,
+        onceki,
+        gorulenToplam,
+        ip: istemciAdresi(istek),
+      },
       sure,
     );
     if (sonuc.anahtarlar !== undefined) {
       yanit.cerezYaz(...oturumCerezleri("musteri", sonuc.anahtarlar, sure));
     }
+    // Eklentili yöntemde (kartla ödeme, kart 0215) müşteri ödeme kuruluşunun sayfasına gider; sipariş dönüşte kurulur.
+    if (sonuc.tur === "yonlendir") return { oturum: sonuc.oturum, yonlendir: sonuc.adres };
     // Sipariş alındı sayfası siparişi yalnız bu tarayıcıya verilen anahtarla açar.
     yanit.cerezYaz(siparisErisimCereziYaz(sonuc.siparis.erisimAnahtari));
     return { oturum: sonuc.oturum, siparis: sonuc.siparis.numara };

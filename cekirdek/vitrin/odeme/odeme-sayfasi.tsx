@@ -80,8 +80,8 @@ const sayfaVerisi = async (): Promise<OdemeSayfasiVerisi> => {
   return {
     uyeOlmadanAlisveris: ayarlar.uyeOlmadanAlisveris,
     // Sitede kullanılabilen ödeme yöntemleri (kart 0214): kapıda ödemenin her seçeneği ayrı satır.
-    yontemler: kullanilabilirYontemler(ayarlar).map((secim) => ({
-      anahtar: secim.yontem === "havale" ? secim.yontem : `${secim.yontem}-${secim.secenek}`,
+    yontemler: kullanilabilirYontemler(site, ayarlar).map((secim) => ({
+      anahtar: secim.yontem === "kapida-odeme" ? `${secim.yontem}-${secim.secenek}` : secim.yontem,
       secim,
     })),
     havaleIptalSuresi: ayarlar.havaleIptalSuresi,

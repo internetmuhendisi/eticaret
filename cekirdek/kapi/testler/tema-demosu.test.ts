@@ -43,6 +43,10 @@ describe("tema demosunda kapı", () => {
         // Kart 0214: havale bildirimi siparişe yazar.
         "POST /kapi/herkese-acik/havale-bildirimi",
         "POST /kapi/herkese-acik/stok-bildirimi",
+        // Kart 0215: kartla ödemenin dönüşü ve bildirimi sipariş doğurur, taksit tablosu kuruluşa gider.
+        "POST /kapi/herkese-acik/kartla-odeme/donus",
+        "POST /kapi/herkese-acik/kartla-odeme/bildirim",
+        "GET /kapi/herkese-acik/kartla-odeme/taksitler",
       ].toSorted(),
     );
     // Panel ve sahip girişleri açıktır: demonun paneli altyapı sahibinindir.

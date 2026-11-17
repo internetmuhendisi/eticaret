@@ -68,6 +68,7 @@ paths:
   - Ödeme kuruluşundan gelen bildirim iki kez gelse de siparişi bir kez işle.
   - Ödemenin başarılı olup olmadığını tarayıcıdan gelen bilgiyle değil, ödeme kuruluşunun doğrulamasıyla kabul et.
   - Sitedeki siparişleri her gün ödeme kuruluşunun kayıtlarıyla karşılaştır. Uyuşmayanları yöneticiye bildir.
+  - Kartla ödeme eklentisi (kart 0215, karar 0142): sonuç yalnız `kartlaOdemeServisi.tamamla` ile işlenir (dönüş, bildirim ve tarama aynısını çağırır); sipariş ödeme satırı kilitliyken bir kez kurulur. Ödeme alındı ama sipariş kurulamadıysa ödeme aynı gün iptal edilir (kullanıcı kararı). Kart bilgisi sunucuya gelmez; form kuruluşun sayfasındadır.
 
 ## Sipariş ve iade
 
@@ -82,7 +83,7 @@ paths:
 ## E-posta, dış servis ve arka plan işleri
 
 - Bütün müşteri ve yönetici e-postalarını tek şablon sistemiyle, site tasarım değerleriyle üret. E-posta yalnız `epostaGonder` ile gönderilir, kuyruktan gider. Gönderim hizmeti tek dosyada bağlanır: `cekirdek/moduller/eposta/gonderici.ts` (karar 0050).
-- Kargo, fatura, pazaryeri ve ödeme bağlantılarını aynı kalıpla yaz: zaman aşımı, yeniden deneme, kayıt ve hata bildirimi her birinde olsun.
+- Kargo, fatura, pazaryeri ve ödeme bağlantılarını aynı kalıpla yaz: zaman aşımı, yeniden deneme, kayıt ve hata bildirimi her birinde olsun. Sunucunun dış servise isteği yalnız `disServiseIstek` ile gider (`cekirdek/dis-servis/istek.ts`, kart 0215): zaman aşımı zorunlu, gövde okunur.
 - Dış servisten beklenmeyen yanıt gelince işlemi yarım bırakma. Geri al ve yöneticiye bildir.
 - E-posta, fatura, pazaryeri eşitleme gibi uzun işleri kuyrukta yürüt. Başarısız işi sınırlı sayıda yeniden dene, yine olmazsa ayrı listeye düşür ve yöneticiye bildir.
 - Yeni arka plan işi `isTanimla` ile tanımlanır, `cekirdek/arka-plan-isleri/isler.ts` listesine eklenir (karar 0049). Dış servise giden iş, yeniden çalışabileceği için `isKimligi` ile tekrarı önler.

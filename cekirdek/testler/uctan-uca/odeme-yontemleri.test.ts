@@ -89,6 +89,13 @@ const menudenGit = async (page: Page, ad: string, yol: RegExp) => {
   await sayfaHazir(page);
 };
 
+// Yöntemin panelde görünen adı (kart 0215: kartla ödeme eklentisi açıkken "Kartla öde" de vardır).
+const yontemAdlari = {
+  havale: "ortak.odemeYontemi.havale",
+  "kapida-odeme": "ortak.odemeYontemi.kapidaOdeme",
+  kart: "ortak.odemeYontemi.kartla",
+} as const;
+
 test("ödeme yöntemleri: tarama, en az bir yöntem, iptal süresinin kaydı", async ({ page }) => {
   test.setTimeout(120_000);
   const hatalar = konsoluDinle(page, {
@@ -107,9 +114,7 @@ test("ödeme yöntemleri: tarama, en az bir yöntem, iptal süresinin kaydı", a
   for (const yontem of ilk.yontemler.filter((y) => y.acik)) {
     const anahtar = page.getByRole("switch", {
       name: doldur(metin("yonetim.odemeYontemleri.vitrindeAcik"), {
-        ad: metin(
-          yontem.kod === "havale" ? "ortak.odemeYontemi.havale" : "ortak.odemeYontemi.kapidaOdeme",
-        ),
+        ad: metin(yontemAdlari[yontem.kod]),
       }),
     });
     await anahtar.focus();

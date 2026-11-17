@@ -11,14 +11,15 @@ import { kimlikSemasi } from "../../veritabani/kimlik.ts";
 
 export const odemeYontemleriDurumuSemasi = z.strictObject({});
 
-// Liste kayıttaki her yöntemi bir kez taşır: ekran bütün yöntemleri sırasıyla gönderir.
+// Liste her yöntemi en çok bir kez taşır: ekran sitede var olan bütün yöntemleri sırasıyla gönderir (eklentisi kapalı
+// yöntem sitede yoktur; listenin sitedekilerle aynı olduğunu servis denetler, kart 0215).
 export const odemeYontemleriSemasi = z.strictObject({
   yontemler: z
     .array(z.strictObject({ kod: z.enum(odemeYontemleri), acik: z.boolean() }))
+    .min(1)
+    .max(odemeYontemleri.length)
     .refine(
-      (liste) =>
-        liste.length === odemeYontemleri.length &&
-        new Set(liste.map((yontem) => yontem.kod)).size === liste.length,
+      (liste) => new Set(liste.map((yontem) => yontem.kod)).size === liste.length,
       "yontem-listesi",
     ),
   kapidaOdemeSecenekleri: z

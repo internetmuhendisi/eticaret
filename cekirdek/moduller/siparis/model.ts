@@ -11,6 +11,8 @@
 // - erisim_ozeti: siparişi veren tarayıcıya verilen anahtarın SHA-256 özeti (sipariş alındı sayfası); anahtarın
 //   kendisi saklanmaz.
 // - odeme_son_zamani: yalnız havalede; bu andan sonra ödenmemiş (bildirimsiz) sipariş kendiliğinden iptal olur.
+// - tahsilat: yalnız ödemesi sipariş kurulurken alınmış siparişte (kartla ödeme, kart 0215): müşterinin ödediği tutar
+//   (taksit farkıyla, kuruş), taksit sayısı ve ödeme kuruluşunun ödeme kimliği. Kart numarası saklanmaz.
 //
 // Aranan alanlar:
 // - numara: havale bildirimi ve müşterinin sorusu, tekil indeks.
@@ -41,6 +43,8 @@ import { urunBirimleri } from "../urun/model.ts";
 export const siparisNumarasiSirasi = pgSequence("siparis_numarasi", { startWith: 1 });
 
 export type VergiDokumu = { ad?: string; oran: number; matrah: number; vergi: number }[];
+
+export type Tahsilat = { odenen: number; taksit: number; odemeKimligi: string };
 
 export const siparisler = pgTable(
   "siparisler",
@@ -74,6 +78,7 @@ export const siparisler = pgTable(
     toplam: tutar().notNull(),
     vergi_dokumu: jsonb().$type<VergiDokumu>().notNull(),
     odeme_son_zamani: zaman(),
+    tahsilat: jsonb().$type<Tahsilat>(),
     erisim_ozeti: text().notNull(),
     olusturma_zamani: zaman().notNull().defaultNow(),
   },
@@ -86,11 +91,13 @@ export const siparisler = pgTable(
       .on(tablo.odeme_son_zamani)
       .where(sql`${tablo.durum} = 'odeme-bekleniyor' and ${tablo.odeme_son_zamani} is not null`),
     // Kayıt dosyalarıyla aynıdır (cekirdek/kayitlar/siparis.ts, odeme.ts); bunu servis testi denetler.
-    check("siparisler_durum", sql`${tablo.durum} in ('odeme-bekleniyor', 'iptal')`),
+    check("siparisler_durum", sql`${tablo.durum} in ('odeme-bekleniyor', 'hazirlaniyor', 'iptal')`),
     check(
       "siparisler_odeme_yontemi",
-      sql`(${tablo.odeme_yontemi} = 'havale' and ${tablo.kapida_secenegi} is null and ${tablo.odeme_son_zamani} is not null) or (${tablo.odeme_yontemi} = 'kapida-odeme' and ${tablo.kapida_secenegi} in ('nakit', 'kart') and ${tablo.odeme_son_zamani} is null)`,
+      sql`(${tablo.odeme_yontemi} = 'havale' and ${tablo.kapida_secenegi} is null and ${tablo.odeme_son_zamani} is not null) or (${tablo.odeme_yontemi} = 'kapida-odeme' and ${tablo.kapida_secenegi} in ('nakit', 'kart') and ${tablo.odeme_son_zamani} is null) or (${tablo.odeme_yontemi} = 'kart' and ${tablo.kapida_secenegi} is null and ${tablo.odeme_son_zamani} is null and ${tablo.tahsilat} is not null)`,
     ),
+    // Tahsilat yalnız kartla ödemede vardır (yukarıdaki denetim kartta ister).
+    check("siparisler_tahsilat", sql`${tablo.tahsilat} is null or ${tablo.odeme_yontemi} = 'kart'`),
     check(
       "siparisler_kargo",
       sql`(${tablo.kargo_turu} = 'ucretli' and ${tablo.kargo_tutari} > 0) or (${tablo.kargo_turu} in ('yok', 'ucretsiz') and ${tablo.kargo_tutari} = 0)`,
@@ -173,7 +180,7 @@ export const siparisGecmisi = pgTable(
     ),
     check(
       "siparis_gecmisi_durum",
-      sql`${tablo.sonraki_durum} in ('odeme-bekleniyor', 'iptal') and (${tablo.onceki_durum} is null or ${tablo.onceki_durum} in ('odeme-bekleniyor', 'iptal'))`,
+      sql`${tablo.sonraki_durum} in ('odeme-bekleniyor', 'hazirlaniyor', 'iptal') and (${tablo.onceki_durum} is null or ${tablo.onceki_durum} in ('odeme-bekleniyor', 'hazirlaniyor', 'iptal'))`,
     ),
     check(
       "siparis_gecmisi_kim_dolu",

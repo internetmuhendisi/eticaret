@@ -13,7 +13,7 @@
 // - kimlik: müşterinin önceki oturumu (yeniden basınca serbest bırakılır), sipariş kurulurken oturum.
 // - bitis_zamani: süresi dolan oturumların temizliği, indeksli.
 import { sql } from "drizzle-orm";
-import { check, index, jsonb, pgTable, text, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, index, jsonb, pgTable, text, uuid } from "drizzle-orm/pg-core";
 import { kimlik, tutar, zaman } from "../../veritabani/turler.ts";
 import { musteriler } from "../musteri/model.ts";
 import type { SepetKalemi } from "../sepet/semalar.ts";
@@ -39,6 +39,9 @@ export const odemeOturumlari = pgTable(
     olusturma_zamani: zaman().notNull().defaultNow(),
     // Stok ayırmasının bittiği an; oturum bu ana kadar siparişe dönebilir.
     bitis_zamani: zaman().notNull(),
+    // Ödeme dışarıda başladı (eklentili yöntem, kart 0215): müşterinin yeniden onayı oturumu silmez (yalnız ayırmasını
+    // bırakır), temizlik odemeOturumuDisaridaSaklamaGun gün sonra siler.
+    odeme_disarida: boolean().notNull().default(false),
   },
   (tablo) => [
     index("odeme_oturumlari_bitis").on(tablo.bitis_zamani),

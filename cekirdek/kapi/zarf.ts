@@ -93,3 +93,22 @@ export const hataliYanit = (kod: HataKodu, ayrinti?: unknown, basliklar?: Header
     } satisfies Zarf<never>,
     { status: hataKodlari[kod], headers: zarfBasliklari(basliklar) },
   );
+
+// Tarayıcıyı başka bir sayfaya gönderen yanıt (kart 0215): ödeme kuruluşunun tarayıcıyla geri gönderdiği form isteği
+// (dış kuruluşun dönüşü, uc.ts) müşteriyi sitenin bir sayfasına götürür. Yalnız sitenin kendi yolu verilir (başka
+// siteye yönlendirme yok); yanıt önbelleğe alınmaz.
+export class Yonlendirme {
+  readonly yol: string;
+  constructor(yol: string) {
+    this.yol = yol;
+    if (!yol.startsWith("/") || yol.startsWith("//") || yol.includes("\\")) {
+      throw new Error("Yönlendirme yalnız sitenin kendi yoluna yapılır.");
+    }
+  }
+}
+
+export const yonlendir = (yonlendirme: Yonlendirme): Response =>
+  new Response(null, {
+    status: 303,
+    headers: zarfBasliklari({ Location: yonlendirme.yol }),
+  });

@@ -1,10 +1,10 @@
 // Sitenin dilinde metin okuyucu ve sitenin biçimleyicisi. Ekranlar metni ve biçimi buradan okur.
 // Dil, saat dilimi ve para biçimi çalışan sitenin ayarlarından gelir. Site bu dosya yüklenirken
 // değil, ilk çağrıda okunur; böylece uygulama site olmadan derlenir (kart 0035, karar 0026).
-import type { SiteAyarlari } from "../ayar-semasi/ayarlar";
-import { calisanSite } from "../ayar-semasi/calisan-site";
-import { type Bicimleyici, bicimleyiciOlustur } from "./bicimleyici";
-import { type Dil, type MetinAnahtari, metinOkuyucu } from "./metin";
+import type { SiteAyarlari } from "../ayar-semasi/ayarlar.ts";
+import { calisanSite } from "../ayar-semasi/calisan-site.ts";
+import { type Bicimleyici, bicimleyiciOlustur } from "./bicimleyici.ts";
+import { type Dil, type MetinAnahtari, metinOkuyucu } from "./metin.ts";
 
 export const siteDili = (): Dil => calisanSite().ayarlar.dil;
 
