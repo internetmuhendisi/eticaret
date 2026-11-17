@@ -10,5 +10,10 @@ allowBuilds:
   simple-git-hooks: false
   # drizzle-kit'in kullandığı esbuild, ikili dosyasını kurulum betiği olmadan da bulur.
   esbuild: false
+# Güvenlik taramasının süreli istisnaları (karar 0143). Yalnız geliştirme paketindeki,
+# düzeltilmiş sürümü olmayan açık; düzeltme çıkınca kaldırılır (kart 0225).
+auditConfig:
+  ignoreGhsas:
+    - GHSA-fc5q-39xc-vjpf
 patchedDependencies:
   playwright-core@1.64.1: yamalar/playwright-core@1.64.1.patch
