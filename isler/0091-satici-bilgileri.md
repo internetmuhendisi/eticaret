@@ -21,4 +21,4 @@ Mesafeli satış sözleşmesi ve ön bilgilendirme formu satıcının ticari unv
 
 ## Durum
 
-yapılacak
+bitti
