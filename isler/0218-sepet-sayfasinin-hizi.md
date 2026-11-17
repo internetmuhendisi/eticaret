@@ -29,4 +29,4 @@ Kodda görülen neden: sepet tarayıcının deposunda durur (karar 0135), sunucu
 
 ## Durum
 
-yapılacak
+bitti
