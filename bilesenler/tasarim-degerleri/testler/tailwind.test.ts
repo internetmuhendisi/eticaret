@@ -260,6 +260,10 @@ describe("Tailwind yalnız tasarım değerlerini tanır", () => {
       ...readdirSync(join(kok, "cekirdek/vitrin/sepet"))
         .filter((ad) => ad.endsWith(".tsx"))
         .map((ad) => join(kok, "cekirdek/vitrin/sepet", ad)),
+      // Ödeme adımı ve sade çerçevesi (kart 0213).
+      ...readdirSync(join(kok, "cekirdek/vitrin/odeme"))
+        .filter((ad) => ad.endsWith(".tsx"))
+        .map((ad) => join(kok, "cekirdek/vitrin/odeme", ad)),
     ];
     const onek =
       /^(?:[a-z-]+:)*-?(?:flex|grid|inline|block|hidden|items|justify|self|place|gap|p[xytrbl]?|m[xytrbl]?|w|h|size|min|max|inset|top|right|bottom|left|fixed|absolute|relative|sticky|bg|text|border|rounded|shadow|font|z|overflow|outline|cursor|select|pointer|animate|transition|duration|opacity|translate|rotate|scale|sr|underline|no-underline|shrink|grow|basis|whitespace|truncate|list|accent|invisible|visible|last|first|fill|secim|menu|wrap|col|row|order|leading|tracking|aspect|group|line|object)(?:-|$)/;

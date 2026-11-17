@@ -1,8 +1,8 @@
 "use client";
 // Sepet penceresi (kart 0212, karar 0132; kart 0211'in taslağı): "Sepete ekleyince" ayarı "yan pencere"yse ürün
-// eklenince sağdan açılır. Sepetin satırları, ara toplamı, "Sepete git" ve "Alışverişe devam et" durur. Pencere vitrin
-// çerçevesinde bir kez durur; açıklığı sepet durumundadır (pencereyiAc). Kapanınca odak açan düğmeye döner
-// (durum açılırken odaktaki öğeyi saklar).
+// eklenince sağdan açılır. Sepetin satırları, ara toplamı, "Ödemeye geç" (kart 0213), "Sepete git" ve "Alışverişe devam
+// et" durur. Pencere vitrin çerçevesinde bir kez durur; açıklığı sepet durumundadır (pencereyiAc). Kapanınca odak açan
+// düğmeye döner (durum açılırken odaktaki öğeyi saklar).
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import {
@@ -50,7 +50,10 @@ export function SepetPenceresi() {
           <SepetPenceresiIcerigi acik={sepet.pencereAcik} />
         </div>
         <YanPencereAltCubugu className="flex-col items-stretch">
-          <Baglanti href={vitrinAdresleri.sepet} gorunum="birincil" onClick={pencereyiKapat}>
+          <Baglanti href={vitrinAdresleri.odeme} gorunum="birincil" onClick={pencereyiKapat}>
+            {metin("vitrin.sepet.odemeyeGec")}
+          </Baglanti>
+          <Baglanti href={vitrinAdresleri.sepet} gorunum="cerceveli" onClick={pencereyiKapat}>
             {metin("vitrin.sepet.sepeteGit")}
           </Baglanti>
           <YanPencereKapat asChild>

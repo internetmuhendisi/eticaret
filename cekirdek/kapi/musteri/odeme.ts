@@ -2,6 +2,7 @@
 // adımında "Siparişi onayla"ya basar: ödeme oturumu kendi hesabına açılır, sepetin stoğu ayrılır. E-posta hesabındandır,
 // müşterinin kimliği yalnız kapıdan gelir; bir önceki oturum yalnız kendisininse serbest kalır.
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
+import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
 import { uyeOdemeGirdisi } from "../../moduller/odeme/semalar.ts";
 import { odemeServisi } from "../../moduller/odeme/servis.ts";
 import { robotCevabiniDogrula } from "../../moduller/robot-korumasi/servis.ts";
@@ -22,6 +23,11 @@ export const uyeOdemeUcu = ucTanimla({
       { kim: { tur: "uye", musteri: hesapKimligi }, bilgiler, kalemler, onceki },
       oturumSuresiSaniye("musteri", site.ayarlar),
     );
-    return { oturum: sonuc.oturum, bitis: sonuc.bitis.toISOString() };
+    // Ayırmanın bittiği an sitenin saat dilimiyle yazılı da gelir: ekran tarih biçimlendirmez.
+    return {
+      oturum: sonuc.oturum,
+      bitis: sonuc.bitis.toISOString(),
+      bitisYazili: siteninBicimleyicisi(site.ayarlar).tarihSaat(sonuc.bitis),
+    };
   },
 });

@@ -558,16 +558,25 @@ describe("stok ayırma", () => {
     expect(await h.oturumlar()).toHaveLength(1);
   });
 
-  it("temizlik süresi dolup saklama süresini geçen oturumu ayırmasıyla siler", async () => {
+  it("temizlik süresi dolup saklama süresini geçen oturumu ayırmasıyla siler; süresi yeni dolanı silmez", async () => {
     const h = await hazirla();
     const a = await h.urunAc();
     const eski = await ac(h, a);
-    const yeni = await ac(h, a);
+    const yeniDolan = await ac(h, a);
+    const suren = await ac(h, a);
     await h.vt.execute(
       sql`update odeme_oturumlari set olusturma_zamani = now() - make_interval(hours => ${odemeOturumuSaklamaSaat + 2}), bitis_zamani = now() - make_interval(hours => ${odemeOturumuSaklamaSaat}, secs => 1) where kimlik = ${eski.oturum}`,
     );
+    // Süresi bir saat önce doldu: saklama süresi içindedir, silinmez.
+    await h.vt.execute(
+      sql`update odeme_oturumlari set olusturma_zamani = now() - interval '2 hours', bitis_zamani = now() - interval '1 hour' where kimlik = ${yeniDolan.oturum}`,
+    );
     expect(await eskiOdemeOturumlariniSil(h.vt)).toBe(1);
-    expect((await h.oturumlar()).map((o) => o.kimlik)).toEqual([yeni.oturum]);
-    expect((await h.ayirmalar()).map((s) => s.oturum_kimligi)).toEqual([yeni.oturum]);
+    expect((await h.oturumlar()).map((o) => o.kimlik).toSorted()).toEqual(
+      [yeniDolan.oturum, suren.oturum].toSorted(),
+    );
+    expect((await h.ayirmalar()).map((s) => s.oturum_kimligi).toSorted()).toEqual(
+      [yeniDolan.oturum, suren.oturum].toSorted(),
+    );
   });
 });

@@ -16,6 +16,8 @@ export const vitrinAdresleri = {
   kvkkAydinlatma: "/yasal/kvkk-aydinlatma",
   arama: "/arama",
   sepet: "/sepet",
+  // Ödeme adımı (kart 0213): vitrinin çerçevesinin dışında, sade üst ve alt kısımla.
+  odeme: "/odeme",
   favoriler: "/favoriler",
 } as const;
 

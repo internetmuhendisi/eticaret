@@ -178,7 +178,10 @@ export const odemeServisi = (site: Site) => {
         if (hata instanceof BilinenHata && hata.kod === "cakisma") {
           throw new BilinenHata(
             "cakisma",
-            (hata.ayrinti ?? []).map((sorun) => ({ ...sorun, kod: "stok-ayrildi" })),
+            (Array.isArray(hata.ayrinti) ? (hata.ayrinti as object[]) : []).map((sorun) => ({
+              ...sorun,
+              kod: "stok-ayrildi",
+            })),
           );
         }
         throw hata;

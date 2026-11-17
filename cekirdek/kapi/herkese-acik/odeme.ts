@@ -4,6 +4,7 @@
 // kapalıysa oturum-yok (ekran girişe yönlendirir). Tema demosunda kapalıdır: ziyaretçi sipariş vermez.
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import { herkeseAcik } from "../../kayitlar/izinler.ts";
+import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
 import { misafirOdemeGirdisi } from "../../moduller/odeme/semalar.ts";
 import { odemeServisi } from "../../moduller/odeme/servis.ts";
 import { robotCevabiniDogrula } from "../../moduller/robot-korumasi/servis.ts";
@@ -30,6 +31,11 @@ export const odemeUcu = ucTanimla({
     if (sonuc.anahtarlar !== undefined) {
       yanit.cerezYaz(...oturumCerezleri("musteri", sonuc.anahtarlar, sure));
     }
-    return { oturum: sonuc.oturum, bitis: sonuc.bitis.toISOString() };
+    // Ayırmanın bittiği an sitenin saat dilimiyle yazılı da gelir: ekran tarih biçimlendirmez.
+    return {
+      oturum: sonuc.oturum,
+      bitis: sonuc.bitis.toISOString(),
+      bitisYazili: siteninBicimleyicisi(site.ayarlar).tarihSaat(sonuc.bitis),
+    };
   },
 });

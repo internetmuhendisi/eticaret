@@ -20,6 +20,7 @@ Bölüm: Sepet ve ödeme. Önce 0213 bitmiş olmalı.
 - Panel: ödeme yöntemleri (açma, kapama, sıra) ve banka hesapları ekranları. Değişiklik kaydına girer.
 - Testler gerçek veritabanıyla: sipariş anındaki değerlerin saklanması ve sonra değişmemesi, aynı anda iki siparişte son ürün, numara tekilliği, kapalı yöntemle sipariş verilememesi, sıra, havalenin süre sonunda bir kez iptali ve stoğun dönmesi, süresinden bir an önce iptal olmaması, havale bildirimi (başkasının siparişine bildirim yazılamaması), iki site. Tarayıcıda havale ve kapıda ödemeyle baştan sona sipariş, sipariş alındı sayfası, iki renkte ve üç genişlikte tarama. Her yeni denetim bilerek bozularak kırmızıya düşüyor.
 - Taslakla karşılaştırma: ekran görüntüsü taslakla yan yana, iki temada, telefon ve bilgisayarda; farklar düzeltilir ya da nedeni kullanıcıya söylenir.
+- Kart 0213'ten (karar 0140, kullanıcı kararı): ödeme sayfasının ödeme yöntemi bölümü bu kartta eklenir (taslaktaki 4. bölüm). Sipariş ödeme oturumundan (`odeme_oturumlari`) kurulur: stok düşerken başka oturumların süresi dolmamış ayırmaları hesaba katılır, oturumun ayırması silinir, oturum siparişe dönmüş olarak işaretlenir (temizlik onu silmez). Onaylar oturumdan siparişe sürümleriyle geçer. Giriş yapmış müşterinin önceki siparişteki adresi teslimat adresi olarak önerilir. Onaydan sonra bugün gösterilen "ürünleriniz ayrıldı" iletisi sipariş alındı sayfasına yönlendirmeyle değişir.
 
 ## Sınırlar
 

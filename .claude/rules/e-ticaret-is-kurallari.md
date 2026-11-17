@@ -57,7 +57,7 @@ paths:
 - Bir birimin satılabilir olup olmadığı, tükenip tükenmediği, düşük stokta olup olmadığı ve müşteriye yazılan durum yalnız `stokDurumu` (`cekirdek/moduller/stok/durum.ts`) ile, birimlerin durumu tek sorguyla `stokDurumlari` ile bulunur. Tükenen ürünün listelerde gizlenmesi vitrin koşulundadır; koşul tükenen ürün ayarını zorunlu değer olarak alır (karar 0069).
 - Fiyatı olmayan birim (fiyat satırı yok ya da sitenin para biriminde değil) satılamaz ve tükenmiş sayılır, stoğu olsa da takibi kapalı olsa da (karar 0133). Stok ayarları sitenin para birimini taşır (`siteninStokAyarlari`). Veritabanında "satılabilir birim" yalnız `birimSatilabilirKosulu` ile yazılır; sorguda stok ya da fiyat koşulunu elle yazma. Vitrin koşulunun "gizle" seçeneği siteden `vitrinStokSecenegi` ile kurulur.
 - Sipariş oluşurken stoğu "yeterliyse düş" koşuluyla ve siparişin kaydıyla aynı veritabanı işleminde düş. Aynı anda gelen iki sipariş son ürünü iki kez satmasın.
-- Ödemeye geçen sepetin ürünlerini belli bir süre ayır. Ödeme başarısız olur ya da süre dolarsa geri bırak.
+- Ödemeye geçen sepetin ürünlerini belli bir süre ayır. Ödeme başarısız olur ya da süre dolarsa geri bırak. Ayırma yalnız `stokAyir` ile, oturumla aynı işlemde yapılır; süresi `stokAyirmaSuresi` ayarıdır, süresi dolan ayırma sayılmaz, `ayirmayiBirak` serbest bırakır (karar 0140).
 - Beden ve renk gibi seçeneklerin her birleşiminin kendi stok kodu, stoğu ve fiyatı olsun.
 
 ## Ödeme

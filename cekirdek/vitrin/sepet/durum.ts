@@ -24,6 +24,7 @@ import {
 } from "react";
 import { kapiyaIstek } from "../../kapi/istemci";
 import { type SepeteEkleyince, sepetDepoAnahtari, sepetSinirlari } from "../../kayitlar/sepet";
+import type { VergiBolgeleri } from "../../moduller/sepet/semalar";
 import { kimligiDuzelt } from "../../veritabani/kimlik-bicimi";
 import { cereziYaz, kalemListesi, type YerelKalem, yereldenOku, yereleYaz } from "./depo";
 import type { SepetGorunumu } from "./veri";
@@ -204,12 +205,19 @@ export type GorunumDurumu =
   | { tur: "hazir"; gorunum: SepetGorunumu };
 
 // Sepetin sunucuda hesaplanmış görünümü. Etkin değilse istek gitmez. Örnek kipte örnek görünüm verilir.
-export const useSepetGorunumu = (etkin: boolean, ornek?: SepetGorunumu): GorunumDurumu => {
+// Ödeme adımı teslimat ve fatura adresinin bölgesini verir, vergi ona göre hesaplanır (kart 0213); yenileme sayısı
+// artınca görünüm yeniden istenir (sunucu sepetin değiştiğini söyleyince).
+export const useSepetGorunumu = (
+  etkin: boolean,
+  ornek?: SepetGorunumu,
+  { vergiBolgeleri, yenileme = 0 }: { vergiBolgeleri?: VergiBolgeleri; yenileme?: number } = {},
+): GorunumDurumu => {
   const { kip: ayarKipi } = useSepetAyarlari();
   const sepet = useSepet();
   const [sonuc, setSonuc] = useState<GorunumDurumu>({ tur: "yukleniyor" });
   const anahtar = JSON.stringify(sepet.kalemler.map(({ birim, adet }) => [birim, adet]));
-  // biome-ignore lint/correctness/useExhaustiveDependencies: istek yalnız birim ve adet değişince yenilenir; son görülen fiyat yazılınca yenilenmez.
+  const bolgeAnahtari = JSON.stringify(vergiBolgeleri ?? null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: istek yalnız birim, adet, vergi bölgesi ve yenileme değişince gider; son görülen fiyat yazılınca gitmez.
   useEffect(() => {
     if (!etkin || !sepet.hazir) return;
     if (ayarKipi === "ornek") {
@@ -228,7 +236,10 @@ export const useSepetGorunumu = (etkin: boolean, ornek?: SepetGorunumu): Gorunum
           method: "POST",
           cache: "no-store",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ kalemler: durum.kalemler }),
+          body: JSON.stringify({
+            kalemler: durum.kalemler,
+            ...(vergiBolgeleri === undefined ? {} : { vergiBolgeleri }),
+          }),
         });
         const zarf = (await yanit.json()) as { basarili: boolean; veri?: SepetGorunumu };
         if (!gecerli) return;
@@ -243,7 +254,7 @@ export const useSepetGorunumu = (etkin: boolean, ornek?: SepetGorunumu): Gorunum
     return () => {
       gecerli = false;
     };
-  }, [etkin, sepet.hazir, anahtar, ayarKipi]);
+  }, [etkin, sepet.hazir, anahtar, bolgeAnahtari, yenileme, ayarKipi]);
   return sonuc;
 };
 

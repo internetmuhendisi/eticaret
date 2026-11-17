@@ -26,7 +26,7 @@
 //   noktası); çağıranın işlemi hatayı yakalarsa geri kalanı bozulmadan sürebilir.
 //
 // İzin kapıda denetlenir (izinler.ts); servis yalnız kimin yaptığını kayda yazar.
-import { and, desc, eq, ne, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { stokGeldi } from "../../eklentiler/stok-kancalari.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
@@ -365,7 +365,7 @@ export const stokServisi = () => {
   };
 
   // Ödemede (kart 0213, karar 0140): her kalemin takibi açık birimi oturum için bitis'e kadar ayrılır. Ayrılabilir
-  // miktar stoktan, başka oturumların süresi dolmamış ayırmaları düşülerek bulunur. Birimin stok satırı kilitlenir:
+  // miktar stoktan, süresi dolmamış ayırmalar düşülerek bulunur. Birimin stok satırı kilitlenir:
   // aynı anda iki ödeme sıraya girer, ikincisi birincinin ayırmasını görür; son ürün iki kez ayrılmaz. Bir kalem
   // ayrılamazsa hiçbiri ayrılmaz ve çakışma hatası sorunlu birimleri söyler ("stok-yetersiz"). Stoğa ve geçmişe
   // dokunmaz: stok sipariş kurulurken düşer (kart 0214). Takibi kapalı birim ayrılmaz. Çağıranın işleminde çalışır,
@@ -399,7 +399,6 @@ export const stokServisi = () => {
             and(
               eq(stokAyirmalari.birim_kimligi, birim),
               sql`${stokAyirmalari.bitis_zamani} > now()`,
-              ne(stokAyirmalari.oturum_kimligi, oturum),
             ),
           );
         if ((stok?.miktar ?? 0) - (ayrilan?.adet ?? 0) < adet) {

@@ -8,16 +8,16 @@
 // - Uyarılar yazıyla ve ikonla verilir, yalnız renkle değil (.claude/rules/erisilebilirlik.md).
 // - Çıkarılan ürünün bildiriminde "Geri al" vardır: ürün eski yerine döner. Odak bir sonraki satırın çıkar düğmesine,
 //   sepet boşalınca boş hâlin bağlantısına geçer.
-// - Özet: ara toplam, kargo, toplam ve vergi dökümü (vergi dahil gösterimde "toplama dahil"). Ödeme adımı kart 0213
-//   ile gelir: o güne kadar "Ödemeye geç" yoktur.
+// - Özet: ara toplam, kargo, toplam ve vergi dökümü (vergi dahil gösterimde "toplama dahil") ve "Ödemeye geç" (kart
+//   0213). Satılamayan satır varken düğme kapalıdır ama odak alır, nedeni altında yazar (karar 0132).
 // - Telefonda sepet sayfasının toplamı altta sabit durur.
-import { type Ref, useEffect, useRef } from "react";
+import { type Ref, useEffect, useId, useRef } from "react";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { AdetSecici } from "../../../bilesenler/parcalar/adet-secici";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
 import { bildirimGoster } from "../../../bilesenler/parcalar/bildirim";
 import { BosHal } from "../../../bilesenler/parcalar/bos-hal";
-import { IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
+import { Dugme, IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
 import { IskeletGorunum } from "../../../bilesenler/parcalar/iskelet";
 import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
@@ -156,7 +156,14 @@ function SepetSatiri({
   );
 }
 
-function SatirGorseli({ satir, buyukluk }: { satir: SepetGorunumuSatiri; buyukluk: string }) {
+// Satırın görseli: sepet sayfası, sepet penceresi ve ödeme adımının özeti (kart 0213).
+export function SatirGorseli({
+  satir,
+  buyukluk,
+}: {
+  satir: SepetGorunumuSatiri;
+  buyukluk: string;
+}) {
   return (
     <span
       className={sinif(
@@ -320,6 +327,33 @@ export function SepetOzeti({ gorunum }: { gorunum: SepetGorunumu }) {
   );
 }
 
+// Ödeme adımına geçiş (kart 0213). Ödemeye geçilemiyorsa düğme kapalı görünür, odak alır, nedenini söyler.
+export function OdemeyeGec({ gorunum, className }: { gorunum: SepetGorunumu; className?: string }) {
+  const metin = useMetin();
+  const nedenKimligi = useId();
+  if (gorunum.odemeyeGecilebilir) {
+    return (
+      <Baglanti href={vitrinAdresleri.odeme} gorunum="birincil" className={className}>
+        {metin("vitrin.sepet.odemeyeGec")}
+      </Baglanti>
+    );
+  }
+  return (
+    <div className={sinif("flex flex-col gap-1", className)}>
+      <Dugme
+        aria-disabled="true"
+        aria-describedby={nedenKimligi}
+        className="aria-disabled:cursor-not-allowed aria-disabled:bg-yuzey aria-disabled:text-soluk-yazi"
+      >
+        {metin("vitrin.sepet.odemeyeGec")}
+      </Dugme>
+      <span id={nedenKimligi} className="text-kucuk font-kalin text-tehlike-yazi">
+        {metin("vitrin.sepet.odemeEngeli")}
+      </span>
+    </div>
+  );
+}
+
 function Yukleniyor() {
   const metin = useMetin();
   return (
@@ -400,11 +434,15 @@ export function SepetSayfasiIcerigi({
             {metin("vitrin.sepet.ozet")}
           </h2>
           <SepetOzeti gorunum={gorunum} />
+          <OdemeyeGec gorunum={gorunum} className="hidden tablet:flex" />
         </section>
       </div>
       <div className="sticky bottom-0 -mx-4 flex items-center justify-between gap-3 border-t border-kenar bg-zemin px-4 py-3 shadow-kart tablet:hidden">
-        <span className="text-kucuk text-soluk-yazi">{metin("vitrin.sepet.toplam")}</span>
-        <strong className="text-buyuk font-en-kalin">{gorunum.yazili.toplam}</strong>
+        <span className="flex flex-col">
+          <span className="text-kucuk text-soluk-yazi">{metin("vitrin.sepet.toplam")}</span>
+          <strong className="text-buyuk font-en-kalin">{gorunum.yazili.toplam}</strong>
+        </span>
+        <OdemeyeGec gorunum={gorunum} />
       </div>
     </div>
   );

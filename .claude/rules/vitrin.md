@@ -89,6 +89,13 @@ paths:
 - Sepet sayfasının çerezi (`sepetCerezi`) yalnız kalem sayısını taşır, yalnız `depo.ts` ile okunur ve yazılır: depoya her yazımda ve durum kurulunca eşitlenir. Çerezde kalem yoksa sepet sayfası boş hâli sunucuda çizer (karar 0136).
 - Sepet sayfası `app/(vitrin)/sepet/`, sepet penceresi çerçevede bir kezdir (`SepetPenceresi`). Kargo yalnız `kargoHesapla` ile hesaplanır (`cekirdek/moduller/kargo/hesap.ts`).
 
+## Ödeme adımı (karar 0140)
+
+- Ödeme sayfası `/odeme` vitrinin çerçevesinin dışındadır, sade çerçevesi `OdemeCercevesi`'dir (`cekirdek/vitrin/odeme/cerceve.tsx`; `app/(odeme)/`). Form `OdemeFormu` (`odeme-formu.tsx`), şeması uçla ortaktır (`cekirdek/moduller/odeme/semalar.ts`).
+- Oturum ve stok ayırması yalnız ödeme servisindedir (`odemeServisi`, `cekirdek/moduller/odeme/servis.ts`); stok ayırma yalnız `stokAyir` ve `ayirmayiBirak` ile (stok servisi). Ayırma vitrindeki stok durumunu değiştirmez (kullanıcı kararı).
+- Özetin tutarları sepet ucundan, teslimat ve fatura bölgesiyle gelir (`useSepetGorunumu`, `vergiBolgeleri`); tarayıcı tutar göndermez.
+- Sepetin "Ödemeye geç"i `OdemeyeGec`'tir (`sepet-gorunumu.tsx`): ödemeye geçilemiyorsa kapalı görünür, odak alır, nedenini söyler.
+
 ## Ana sayfa bölümleri ve görseller (karar 0087)
 
 - Ana sayfa düzenin ana sayfa alanını çizer; bölüm yoksa sade sayfa görünür. Bölümün başlığı h2'dir, sayfanın h1'i mağaza adıdır.

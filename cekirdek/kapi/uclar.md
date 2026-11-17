@@ -193,7 +193,7 @@ Tarayıcıdaki sepetin vitrin verisini hesaplar (kart 0212, karar 0135). Sepet y
 - İzin: `herkese-acik`. Sınır: `siki`.
 - Girdi: `{ "eposta", "hesap": { "ac": false } | { "ac": true, "sifre", "uyelikOnayi", "kvkkOnayi" }, "bilgiler": { "teslimat", "fatura", "not"?, "onBilgilendirmeOnayi", "mesafeliSatisOnayi", "pazarlamaIzni" }, "kalemler", "robotCevabi", "onceki"? }` (`misafirOdemeGirdisi`, `cekirdek/moduller/odeme/semalar.ts`). `onceki` müşterinin bir önceki onayının oturumudur: yalnız üye olmayanın oturumuysa silinir, ayırması serbest kalır.
 - Servis: `cekirdek/moduller/odeme/servis.ts`. Robot cevabı veritabanına bakılmadan önce denetlenir.
-- Başarılı (200): `{ "basarili": true, "veri": { "oturum", "bitis" } }`; hesap açıldıysa iki oturum çerezi.
+- Başarılı (200): `{ "basarili": true, "veri": { "oturum", "bitis", "bitisYazili" } }` (`bitisYazili` ayırmanın bittiği an, sitenin saat dilimiyle); hesap açıldıysa iki oturum çerezi.
 - Hatalar: `oturum-yok` (üye olmadan alışveriş kapalı: `uyeOlmadanAlisveris`), `dogrulama` (şemaya uymayan girdi; `telefon-gerekli`, `telefon-bicimi`, `fatura-adresi-gerekli`, `vergi-numarasi-bicimi`, `vergi-numarasi-kontrol`, `ulke-teslimat-disi`, bölge ve adres kodları), `is-kurali` (`sepet-bos`, `sepet-degisti`: sepet ödemeye geçilemez ya da müşterinin görmediği bir değişiklik var), `cakisma` (`stok-ayrildi`: birimin stoğu başka bir ödemede ayrılmış ya da yetmiyor, birimle; ya da hesap açılırken e-posta kayıtlı), `robot-dogrulamasi`, `istek-siniri` (`Retry-After` ile), `yetki` (sahte istek), tema demosunda `bulunamadi`.
 
 ### POST /kapi/herkese-acik/musteri-giris
@@ -324,7 +324,7 @@ Giriş yapmış müşterinin ödeme adımı (kart 0213, karar 0140): herkese aç
 - İzin: `odeme.kendi.baslat`. Sınır: `siki`.
 - Girdi: `{ "bilgiler", "kalemler", "robotCevabi", "onceki"? }` (`uyeOdemeGirdisi`). Müşterinin kimliği yalnız kapıdan gelir; `onceki` yalnız müşterinin kendi oturumuysa silinir.
 - Servis: `cekirdek/moduller/odeme/servis.ts`.
-- Başarılı (200): `{ "basarili": true, "veri": { "oturum", "bitis" } }`.
+- Başarılı (200): `{ "basarili": true, "veri": { "oturum", "bitis", "bitisYazili" } }`.
 - Hatalar: herkese açık ödeme ucunun hataları (hesap açma ve `uyeOlmadanAlisveris` dışında), `oturum-yok`.
 
 ### POST /kapi/musteri/stok-bildirimi
