@@ -52,6 +52,7 @@ import { doldur } from "../../moduller/eposta/sablon";
 import { EylemDugmesi } from "../eylem-dugmesi";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelSonucu } from "../panel-istegi";
+import { useSunucuFormu } from "../sunucu-formu";
 import { temaHatasiMetni, temaUclari } from "./hatalar";
 import type { EkranTemasi, TemaEkraniVerisi } from "./veri";
 
@@ -287,10 +288,15 @@ function TemaFormu({ tema }: { tema: EkranTemasi }) {
 function FiltreYeri() {
   const metin = useMetin();
   const { veri, degistirebilir, islem } = useTema();
-  const [yer, setYer] = useState<UrunFiltresiGorunumu>(veri.filtreYeri);
+  // Sunucunun yeni verisi gelince (geri dönüş, başka sekme) seçim ona döner; kayıttan sonra arada yapılan seçim
+  // yenilemeyle ezilmez (kart 0223).
+  const {
+    form: yer,
+    setForm: setYer,
+    degisti,
+    kaydedildi,
+  } = useSunucuFormu<UrunFiltresiGorunumu>(veri.filtreYeri);
   const [gonderiliyor, setGonderiliyor] = useState(false);
-  // Sunucunun yeni verisi gelince (geri dönüş, başka sekme) seçim ona döner.
-  useEffect(() => setYer(veri.filtreYeri), [veri.filtreYeri]);
   const adlar: Record<UrunFiltresiGorunumu, MetinAnahtari> = {
     solda: "yonetim.tema.liste.solda",
     ustte: "yonetim.tema.liste.ustte",
@@ -300,11 +306,16 @@ function FiltreYeri() {
     olay.preventDefault();
     if (secili === undefined || gonderiliyor) return;
     setGonderiliyor(true);
+    const gonderilen = yer;
     void islem(
       temaUclari.yayinla,
-      { tema: secili.kod, ayarlar: { ...secili.ayarlar, urunFiltresi: yer } },
+      { tema: secili.kod, ayarlar: { ...secili.ayarlar, urunFiltresi: gonderilen } },
       "yonetim.tema.filtreKaydedildi",
-    ).finally(() => setGonderiliyor(false));
+    )
+      .then((sonuc) => {
+        if (sonuc.tamam) kaydedildi(gonderilen);
+      })
+      .finally(() => setGonderiliyor(false));
   };
   return (
     <section aria-labelledby="tema-urun-listesi" className="flex flex-col gap-3">
@@ -330,7 +341,7 @@ function FiltreYeri() {
               aciklama={metin("yonetim.tema.liste.filtreAciklamasi")}
             />
             <div>
-              <GonderDugmesi disabled={gonderiliyor || yer === veri.filtreYeri}>
+              <GonderDugmesi disabled={gonderiliyor || !degisti}>
                 {metin("yonetim.tema.liste.kaydet")}
               </GonderDugmesi>
             </div>

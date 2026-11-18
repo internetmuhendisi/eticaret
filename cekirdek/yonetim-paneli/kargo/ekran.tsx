@@ -18,6 +18,7 @@ import { useMetin } from "../../metinler/istemci-metni";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
+import { useSunucuFormu } from "../sunucu-formu";
 import type { KargoEkraniVerisi, KargoFormu } from "./veri";
 
 type Alan = keyof KargoFormu;
@@ -40,12 +41,13 @@ const sinirTutariAdlari: Record<UcretsizKargoTutari, MetinAnahtari> = {
 export function KargoEkrani({ veri, izinli }: { veri: KargoEkraniVerisi; izinli: boolean }) {
   const metin = useMetin();
   const islem = usePanelIslemi(genelHataMetni);
-  const [form, setForm] = useState<KargoFormu>(veri.form);
+  // Kayıttan sonra sayfa yenilenir: sunucunun yazdığı hâl (örneğin "60" yerine "60,00") kaydedilmemiş değişiklik
+  // yoksa formun yeni başlangıcıdır; arada yazılan değer ezilmez (kart 0223).
+  const { form, setForm, degisti, kaydedildi, vazgec } = useSunucuFormu<KargoFormu>(veri.form);
   const [hatalar, setHatalar] = useState<Partial<Record<Alan, MetinAnahtari>>>({});
   const [genelHata, setGenelHata] = useState<MetinAnahtari | null>(null);
   const gonderiliyor = useRef(false);
   const uyariRef = useRef<HTMLDivElement>(null);
-  const degisti = (Object.keys(form) as Alan[]).some((alan) => form[alan] !== veri.form[alan]);
 
   // Kaydedilmemiş değişiklikle sayfadan çıkarken tarayıcı sorar.
   useEffect(() => {
@@ -59,11 +61,6 @@ export function KargoEkrani({ veri, izinli }: { veri: KargoEkraniVerisi; izinli:
     if (genelHata !== null) uyariRef.current?.focus();
   }, [genelHata]);
 
-  // Kayıttan sonra sayfa yenilenir: sunucunun yazdığı hâl (örneğin "60" yerine "60,00") formun yeni başlangıcıdır.
-  const ilkAnahtar = JSON.stringify(veri.form);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: form yalnız sunucunun verisi değişince baştan kurulur.
-  useEffect(() => setForm(veri.form), [ilkAnahtar]);
-
   const degistir = (alan: Alan, deger: string) =>
     setForm((onceki) => ({ ...onceki, [alan]: deger }));
 
@@ -71,9 +68,13 @@ export function KargoEkrani({ veri, izinli }: { veri: KargoEkraniVerisi; izinli:
     olay.preventDefault();
     if (gonderiliyor.current) return;
     gonderiliyor.current = true;
-    const sonuc = await islem("kargo-ayarlari", form, "yonetim.kargo.kaydedildi", { formda: true });
+    const gonderilen = form;
+    const sonuc = await islem("kargo-ayarlari", gonderilen, "yonetim.kargo.kaydedildi", {
+      formda: true,
+    });
     gonderiliyor.current = false;
     if (sonuc.tamam) {
+      kaydedildi(gonderilen);
       setHatalar({});
       setGenelHata(null);
       return;
@@ -196,7 +197,7 @@ export function KargoEkrani({ veri, izinli }: { veri: KargoEkraniVerisi; izinli:
               tur="sade"
               disabled={!degisti}
               onClick={() => {
-                setForm(veri.form);
+                vazgec();
                 setHatalar({});
                 setGenelHata(null);
               }}

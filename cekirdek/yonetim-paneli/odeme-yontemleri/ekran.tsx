@@ -31,6 +31,7 @@ import type { YontemAyari } from "../../moduller/odeme/yontemler";
 import { panelAdresi } from "../adresler";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
+import { useSunucuFormu } from "../sunucu-formu";
 import type { OdemeYontemleriEkraniVerisi, OdemeYontemleriFormu } from "./veri";
 
 export const yontemAdlari: Record<OdemeYontemi, MetinAnahtari> = {
@@ -72,14 +73,15 @@ export function OdemeYontemleriEkrani({
 }) {
   const metin = useMetin();
   const islem = usePanelIslemi(genelHataMetni);
-  const [form, setForm] = useState<OdemeYontemleriFormu>(veri.form);
+  const { form, setForm, degisti, kaydedildi, vazgec } = useSunucuFormu<OdemeYontemleriFormu>(
+    veri.form,
+  );
   const [hatalar, setHatalar] = useState<
     Partial<Record<"yontemler" | "secenekler" | "sure", MetinAnahtari>>
   >({});
   const [genelHata, setGenelHata] = useState<MetinAnahtari | null>(null);
   const gonderiliyor = useRef(false);
   const uyariRef = useRef<HTMLDivElement>(null);
-  const degisti = JSON.stringify(form) !== JSON.stringify(veri.form);
 
   useEffect(() => {
     if (!degisti) return;
@@ -91,10 +93,6 @@ export function OdemeYontemleriEkrani({
   useEffect(() => {
     if (genelHata !== null || hatalar.yontemler !== undefined) uyariRef.current?.focus();
   }, [genelHata, hatalar.yontemler]);
-
-  const ilkAnahtar = JSON.stringify(veri.form);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: form yalnız sunucunun verisi değişince baştan kurulur.
-  useEffect(() => setForm(veri.form), [ilkAnahtar]);
 
   const yontemiDegistir = (kod: OdemeYontemi, acik: boolean) =>
     setForm((onceki) => ({
@@ -116,11 +114,18 @@ export function OdemeYontemleriEkrani({
     olay.preventDefault();
     if (gonderiliyor.current) return;
     gonderiliyor.current = true;
-    const sonuc = await islem("odeme-yontemleri", form, "yonetim.odemeYontemleri.kaydedildi", {
-      formda: true,
-    });
+    const gonderilen = form;
+    const sonuc = await islem(
+      "odeme-yontemleri",
+      gonderilen,
+      "yonetim.odemeYontemleri.kaydedildi",
+      {
+        formda: true,
+      },
+    );
     gonderiliyor.current = false;
     if (sonuc.tamam) {
+      kaydedildi(gonderilen);
       setHatalar({});
       setGenelHata(null);
       return;
@@ -260,7 +265,7 @@ export function OdemeYontemleriEkrani({
             tur="sade"
             disabled={!degisti}
             onClick={() => {
-              setForm(veri.form);
+              vazgec();
               setHatalar({});
               setGenelHata(null);
             }}

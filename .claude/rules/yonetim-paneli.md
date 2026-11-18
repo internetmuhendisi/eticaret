@@ -45,6 +45,7 @@ paths:
 ## Menüler ekranı ve ortak parçalar (karar 0116)
 
 - Değiştiren işlem `usePanelIslemi` ile yapılır (`cekirdek/yonetim-paneli/panel-islemi.ts`): uca gönderir, sayfayı yeniler, bildirir; formun hatası formda kalır. Ekran kendi işlem kalıbını yazmaz.
+- Sunucunun verisinden kurulan form `useSunucuFormu` ile tutulur (`cekirdek/yonetim-paneli/sunucu-formu.ts`, kart 0223): başarıda `kaydedildi(gonderilen)` çağrılır, "Vazgeç" `vazgec`'tir. Kaydın yankısı olan yenileme formu ezmez; farklı veri yalnız kaydedilmemiş değişiklik yoksa forma geçer. Ekran sunucunun verisi değişince formu `useEffect` ile baştan kurmaz.
 - Kategori, marka ve ürün yalnız `KayitArama` ile, arayarak seçilir (`cekirdek/yonetim-paneli/kayit-arama.tsx`, uç `kayit-ara`). Çevreleyen pencere öneri listesi açıkken Escape'i yok sayar (`kayitAramaAcikMi`).
 - Pencerede kaydedilmemiş değişiklik sorusu `useKapatmaSorusu` iledir (`cekirdek/yonetim-paneli/kapatma-sorusu.tsx`); ekran kendi kopyasını yazmaz.
 - Geri dönüşsüz eylem (silme) `OnayPenceresi` ile sorulur. Açılır menüden açılan pencere menü kapandıktan sonra açılır (`onCloseAutoFocus`): aynı anda açılınca menü sonra yeniden açılmıyordu.

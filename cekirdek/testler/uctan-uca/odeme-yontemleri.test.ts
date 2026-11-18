@@ -2,6 +2,7 @@
 // - Mağaza sahibi menüden klavyeyle "Ödeme yöntemleri"ne gelir; ekran iki renkte ve üç genişlikte taramadan geçer, yana
 //   kaymaz. Bütün yöntemler anahtarla kapatılıp kaydedilince "en az bir yöntem" uyarısı görünür, hiçbir şey kaydedilmez;
 //   Vazgeç formu geri alır. İptal süresi klavyeyle değişip kaydedilir, sonra eski hâline döner.
+// - Kayıttan sonraki yenileme geç gelirse arada yazılan değer ezilmez (kart 0223).
 // - "Banka hesapları"nda komut çubuğundaki "Hesap ekle" yan pencereyi açar; boş gönderimde alanlar hatalıdır, hatalı
 //   IBAN alanın altında söylenir, doğru IBAN kaydedilir ve listede gruplanmış görünür; pencere iki renkte ve üç
 //   genişlikte taramadan geçer. Hesap onay penceresiyle silinir (önce Vazgeç).
@@ -148,6 +149,59 @@ test("ödeme yöntemleri: tarama, en az bir yöntem, iptal süresinin kaydı", a
   await expect
     .poll(async () => (await servis().oku(vt)).havaleIptalSuresi)
     .toBe(ilk.havaleIptalSuresi);
+  expect(hatalar).toEqual([]);
+});
+
+// Kart 0223: kayıttan sonraki yenileme (router.refresh) geç gelirse, o arada yazılan değer ezilmez. Yenileme isteği
+// test izin verene kadar tutulur: değer yazıldıktan sonra serbest kalır. Eski hâlde ekran yenileme gelince formu
+// kayıtlı değerle baştan kuruyor, Enter onu kaydediyordu (hattaki "3 beklendi, 4 kaldı").
+test("kayıttan sonra geç gelen yenileme arada yazılan değeri ezmez", async ({ page }) => {
+  test.setTimeout(120_000);
+  const hatalar = konsoluDinle(page, { haric: (m) => m.includes("401") });
+  const ilk = await servis().oku(vt);
+  await ayriBaglanti(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await paneleGir(page, yoneticiAc());
+  await menudenGit(page, metin("yonetim.sayfa.odemeYontemleri.ad"), /\/yonetim\/odeme-yontemleri$/);
+
+  const yenilemeMi = (istek: { method: () => string; headers: () => Record<string, string> }) =>
+    istek.method() === "GET" && istek.headers()["rsc"] === "1";
+  let serbestBirak = () => {};
+  const kapi = new Promise<void>((bitti) => {
+    serbestBirak = bitti;
+  });
+  await page.route("**/yonetim/odeme-yontemleri**", async (yol) => {
+    if (yenilemeMi(yol.request())) await kapi;
+    await yol.fallback();
+  });
+
+  const sure = page.getByLabel(metin("yonetim.odemeYontemleri.iptalSuresi"));
+  const yeni = String(ilk.havaleIptalSuresi === 30 ? 29 : ilk.havaleIptalSuresi + 1);
+  const eski = String(ilk.havaleIptalSuresi);
+  try {
+    await sure.fill(yeni);
+    const yenileme = page.waitForResponse((yanit) => yenilemeMi(yanit.request()));
+    await sure.press("Enter");
+    await expect(page.getByText(metin("yonetim.odemeYontemleri.kaydedildi"))).toBeVisible();
+    // Yenileme tutuluyor: müşteri alanı hemen yeniden değiştirir, sonra yenileme gelir.
+    await sure.fill(eski);
+    serbestBirak();
+    await yenileme;
+    // Yanıtın ekrana uygulanması React'ın sonraki işidir.
+    await page.waitForTimeout(500);
+    await expect(sure).toHaveValue(eski);
+    await sure.press("Enter");
+    await expect.poll(async () => (await servis().oku(vt)).havaleIptalSuresi).toBe(Number(eski));
+  } finally {
+    await page.unroute("**/yonetim/odeme-yontemleri**");
+    if ((await servis().oku(vt)).havaleIptalSuresi !== ilk.havaleIptalSuresi) {
+      await servis().yontemleriDegistir(vt, sistemIslemi("uctan-uca-odeme-yontemleri"), {
+        yontemler: ilk.yontemler,
+        kapidaOdemeSecenekleri: ilk.kapidaOdemeSecenekleri,
+        havaleIptalSuresi: eski,
+      });
+    }
+  }
   expect(hatalar).toEqual([]);
 });
 
