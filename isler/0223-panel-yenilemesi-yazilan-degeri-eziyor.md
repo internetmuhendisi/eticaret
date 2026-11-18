@@ -61,4 +61,4 @@ Sebep, kod okumasıyla (ölçülmedi): `usePanelIslemi` başarıda `router.refre
 
 ## Durum
 
-yapılacak
+bitti
