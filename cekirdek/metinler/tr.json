@@ -186,7 +186,7 @@
       },
       "odemeYontemleri": {
         "ad": "Ödeme yöntemleri",
-        "aciklama": "Müşterinin ödeme adımında gördüğü yöntemler ve sırası. Değişiklik kaydedilince hemen yayınlanır."
+        "aciklama": "Müşterinin ödeme adımında gördüğü yöntemler ve sırası. Sıra taşıdığınız anda kaydedilir; öteki değişiklikler \"Kaydet\" ile hemen yayınlanır."
       },
       "bankaHesaplari": {
         "ad": "Banka hesapları",
@@ -752,6 +752,7 @@
       "kapali": "Kapalı",
       "kaydet": "Kaydet",
       "kaydedildi": "Ödeme yöntemleri kaydedildi.",
+      "siralandi": "Yöntemlerin sırası kaydedildi.",
       "iptalSuresi": "Ödenmeyen siparişin iptal süresi",
       "iptalSuresiAciklamasi": "Gün. Süre sonunda sipariş kendiliğinden iptal olur, stok geri döner. Ödediğini bildiren müşterinin siparişi iptal olmaz.",
       "hesaplaraGit": "Banka hesaplarını düzenle ({sayi} hesap)",
@@ -759,6 +760,7 @@
       "hata": {
         "yetki": "Ödeme yöntemlerini değiştirme izniniz yok.",
         "genel": "Ödeme yöntemleri kaydedilemedi. Sayfayı yenileyip yeniden deneyin.",
+        "listeDegisti": "Ödeme yöntemleri başka bir yerde değişti, sıra kaydedilmedi. Liste güncellendi; sırayı yeniden düzenleyin.",
         "enAzBir": "Müşterinin kullanabileceği en az bir ödeme yöntemi açık olmalı. Havale yalnız banka hesabı varken kullanılır; bir yöntemi açın ya da önce banka hesabı ekleyin.",
         "secenekGerekli": "Kapıda ödemenin en az bir seçeneğini işaretleyin.",
         "gunGecersiz": "Gün sayısını 1 ile 30 arasında tam sayı olarak yazın."

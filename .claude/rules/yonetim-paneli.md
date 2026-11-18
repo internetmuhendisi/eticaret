@@ -65,6 +65,6 @@ paths:
 ## Ödeme yöntemleri ve banka hesapları (karar 0141)
 
 - Ekranlar `cekirdek/yonetim-paneli/odeme-yontemleri/` klasöründe, menüde "Satış" altındadır. Görmek `odeme-yontemi.gor` (görevli de), değiştirmek `odeme-yontemi.degistir` (yalnız mağaza sahibi) ister; izni olmayan yönetici yalnız okur, anahtar ve düğmeler kapalıdır ya da yoktur.
-- Ödeme yöntemleri tek formdur (sıra, anahtarlar, kapıda seçenekleri, iptal süresi birlikte kaydedilir). Banka hesabı yan pencerede eklenir ve düzenlenir, onay penceresiyle silinir, sıralama hemen kaydedilir. IBAN'ın hatası alanın koduyla döner, ekran doğrulamaz.
+- Ödeme yöntemlerinin anahtarları, kapıda seçenekleri ve iptal süresi tek formdur, birlikte "Kaydet" ile kaydedilir. Yöntemlerin sırası taşınır taşınmaz kendi ucuyla (`odeme-yontemleri-sirala`) kaydedilir ve formun kaydedilmemiş değişikliğini götürmez (karar 0144). Banka hesabı yan pencerede eklenir ve düzenlenir, onay penceresiyle silinir, sıralama hemen kaydedilir. IBAN'ın hatası alanın koduyla döner, ekran doğrulamaz.
 - Açma-kapama yalnız `Anahtar` parçasıyladır (`bilesenler/parcalar/anahtar.tsx`); durumun yazısı yanında görünür.
 

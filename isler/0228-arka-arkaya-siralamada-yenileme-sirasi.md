@@ -7,7 +7,7 @@ Kart 0223'ün bağımsız kontrolü kod okumasıyla buldu (ölçülmedi): hemen 
 - A sıralaması yapılıp, A'nın yenilemesi gelmeden B yapılırsa A'nın yenilemesi liste kısa süre A sırasını gösterir; B'nin yenilemesi doğru sırayı getirir. Kullanıcı arada gösterilen eski sıradan yeni bir taşıma yaparsa B geri alınabilir.
 - Sıralama istekleri beklenmeden üst üste gider (`void islem(...)`). Sunucuya ters sırada ulaşırlarsa son sıra kaybolabilir (varsayım).
 
-Kart 0224 ile ödeme yöntemlerinin sıralaması da hemen kaydedilir; aynı kalıbı kullanır.
+Kart 0224 ile ödeme yöntemlerinin sıralaması da hemen kaydedilir. O ekranın istekleri sırayla gider (kuyruk) ve formu `useSunucuFormu` ile tutar; öteki listeler için örnek olabilir.
 
 ## Olmazsa olmazlar
 

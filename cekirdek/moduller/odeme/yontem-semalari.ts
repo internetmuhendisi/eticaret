@@ -39,6 +39,12 @@ export type BankaHesabiGirdisi = z.output<typeof bankaHesabiSemasi>;
 
 export const bankaHesabiDegisikligiSemasi = bankaHesabiSemasi.extend({ kimlik: kimlikSemasi });
 export const bankaHesabiSilmeSemasi = z.strictObject({ kimlik: kimlikSemasi });
+// Yöntemlerin sırası tek başına, hemen kaydedilir (kart 0224, karar 0144): ekranın gördüğü bütün yöntemlerin kodu yeni
+// sırasıyla. Açık-kapalı bilgisi taşımaz; listenin sitedekilerle aynı olduğunu servis denetler.
+export const odemeYontemleriSiralamaSemasi = z.strictObject({
+  sira: z.array(z.enum(odemeYontemleri)).max(odemeYontemleri.length),
+});
+
 export const bankaHesaplariSiralamaSemasi = z.strictObject({
   sira: z.array(kimlikSemasi).max(bankaHesabiSinirlari.enCok),
 });

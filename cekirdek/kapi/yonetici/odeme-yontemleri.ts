@@ -10,6 +10,7 @@ import {
   bankaHesaplariSiralamaSemasi,
   odemeYontemleriDurumuSemasi,
   odemeYontemleriSemasi,
+  odemeYontemleriSiralamaSemasi,
 } from "../../moduller/odeme/yontem-semalari.ts";
 import { odemeYontemiServisi } from "../../moduller/odeme/yontemler.ts";
 import { siteninVeritabani } from "../../veritabani/baglanti.ts";
@@ -35,6 +36,16 @@ export const odemeYontemleriUcu = ucTanimla({
   sinir: "genel",
   isle: (girdi, _istek, _yanit, { hesapKimligi }) =>
     servis().yontemleriDegistir(siteninVeritabani(), yonetici(hesapKimligi), girdi),
+});
+
+// POST /kapi/yonetici/odeme-yontemleri-sirala: yalnız yöntemlerin sırası, hemen (kart 0224, karar 0144).
+export const odemeYontemleriSiralamaUcu = ucTanimla({
+  giris: "yonetici",
+  sema: odemeYontemleriSiralamaSemasi,
+  izin: "odeme-yontemi.degistir",
+  sinir: "genel",
+  isle: ({ sira }, _istek, _yanit, { hesapKimligi }) =>
+    servis().yontemleriSirala(siteninVeritabani(), yonetici(hesapKimligi), sira),
 });
 
 // POST /kapi/yonetici/banka-hesabi-ekle

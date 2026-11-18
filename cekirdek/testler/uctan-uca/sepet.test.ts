@@ -46,7 +46,10 @@ const urunler: { kimlik: string; birim: string; ad: string; adres: string; tutar
 const temizlik: (() => Promise<unknown>)[] = [];
 
 // Testten önceki kargo ayarları: Kargo ekranı testi sonunda onlara döner.
-let ilkKargo: Parameters<ReturnType<typeof magazaAyarlari>["degistir"]>[2] = {};
+let ilkKargo: Exclude<
+  Parameters<ReturnType<typeof magazaAyarlari>["degistir"]>[2],
+  (...girdi: never[]) => unknown
+> = {};
 const magazaAyarlari = () => siteninServisi(calisanSite());
 
 test.beforeAll(async () => {

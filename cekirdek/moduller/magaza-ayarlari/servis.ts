@@ -128,24 +128,31 @@ export const magazaAyarlariServisi = <S extends z.ZodObject>(
   // Verilen ayarları değiştirir; değeri aynı kalan ayar kayda girmez. Bilinmeyen ayar, şemaya
   // uymayan değer ya da bütün şemaya konan bir kurala aykırı sonuç hiçbir şeyi değiştirmez.
   // kendiIslevi: kendi işleviyle değişen ayarları (ayarlar.ts, kendiIsleviyle) yalnız o işlev verir.
+  // Yeni değerler, bugünkü ayarlardan kurulacaksa işlev olarak verilir (kart 0224): işlev kilitli satırlardan okunan
+  // ayarlarla kilidin içinde çağrılır, aynı anda gelen değişikliğin sonucunu görür. Kilidin dışında okuyup bütün
+  // değeri yazmak arada yazılanı geri alırdı. İşlevin attığı hata işlemi geri alır.
   const degistir = async (
     vt: Veritabani,
     kim: DegisikligiYapan,
-    yeniler: Partial<z.input<S>>,
+    yeniler: Partial<z.input<S>> | ((bugunku: z.output<S>) => Partial<z.input<S>>),
     { kendiIslevi = false }: { kendiIslevi?: boolean } = {},
   ): Promise<z.output<S>> => {
-    const yeniDegerler = new Map<string, unknown>();
-    for (const [anahtar, ham] of Object.entries(yeniler)) {
-      const alan = Object.hasOwn(sema.shape, anahtar) ? sema.shape[anahtar] : undefined;
-      if (alan === undefined) throw new Error(`Bilinmeyen mağaza ayarı: ${anahtar}.`);
-      if (!kendiIslevi && ayarBilgileri.get(alan)?.kendiIsleviyle === true) {
-        throw new Error(`Bu mağaza ayarı yalnız kendi işleviyle değişir: ${anahtar}.`);
+    const degerleriHazirla = (verilen: Partial<z.input<S>>) => {
+      const degerler = new Map<string, unknown>();
+      for (const [anahtar, ham] of Object.entries(verilen)) {
+        const alan = Object.hasOwn(sema.shape, anahtar) ? sema.shape[anahtar] : undefined;
+        if (alan === undefined) throw new Error(`Bilinmeyen mağaza ayarı: ${anahtar}.`);
+        if (!kendiIslevi && ayarBilgileri.get(alan)?.kendiIsleviyle === true) {
+          throw new Error(`Bu mağaza ayarı yalnız kendi işleviyle değişir: ${anahtar}.`);
+        }
+        const sonuc = alan.safeParse(ham);
+        if (!sonuc.success) throw new Error(`Mağaza ayarının değeri geçersiz: ${anahtar}.`);
+        degerler.set(anahtar, saklanan(sonuc.data));
       }
-      const sonuc = alan.safeParse(ham);
-      if (!sonuc.success) throw new Error(`Mağaza ayarının değeri geçersiz: ${anahtar}.`);
-      yeniDegerler.set(anahtar, saklanan(sonuc.data));
-    }
-    if (yeniDegerler.size === 0) return oku(vt);
+      return degerler;
+    };
+    const verilenDegerler = typeof yeniler === "function" ? undefined : degerleriHazirla(yeniler);
+    if (verilenDegerler?.size === 0) return oku(vt);
     await eksikleriYaz(vt, await satirlariOku(vt));
     await vt.transaction(async (islem) => {
       // Bütün ayar satırları kilitlenir: aynı anda gelen iki değişiklik sırayla çalışır, eski değer
@@ -159,6 +166,9 @@ export const magazaAyarlariServisi = <S extends z.ZodObject>(
         .from(magazaAyarlari)
         .orderBy(magazaAyarlari.anahtar)
         .for("update");
+      const yeniDegerler =
+        verilenDegerler ??
+        (typeof yeniler === "function" ? degerleriHazirla(yeniler(coz(butun))) : new Map());
       // Sonuç yazılmadan önce bütün şemadan geçer; geçmezse işlem geri alınır.
       try {
         coz(

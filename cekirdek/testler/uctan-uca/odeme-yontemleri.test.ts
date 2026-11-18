@@ -3,20 +3,28 @@
 //   kaymaz. Bütün yöntemler anahtarla kapatılıp kaydedilince "en az bir yöntem" uyarısı görünür, hiçbir şey kaydedilmez;
 //   Vazgeç formu geri alır. İptal süresi klavyeyle değişip kaydedilir, sonra eski hâline döner.
 // - Kayıttan sonraki yenileme geç gelirse arada yazılan değer ezilmez (kart 0223).
+// - Yöntemlerin sırası taşınır taşınmaz kaydedilir, vitrinde yeni sırayla görünür; kaydedilmemiş anahtar birlikte
+//   gitmez (kart 0224, karar 0144).
 // - "Banka hesapları"nda komut çubuğundaki "Hesap ekle" yan pencereyi açar; boş gönderimde alanlar hatalıdır, hatalı
 //   IBAN alanın altında söylenir, doğru IBAN kaydedilir ve listede gruplanmış görünür; pencere iki renkte ve üç
 //   genişlikte taramadan geçer. Hesap onay penceresiyle silinir (önce Vazgeç).
 // Ödeme yöntemleri sitenin paylaşılan ayarıdır: test yalnız iptal süresini ve kendi eklediği hesabı değiştirir, sonunda
 // geri alır (öteki tarayıcı testleri ödeme adımında yöntemleri ve hesapları kullanır).
+import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri";
+import { sepetDepoAnahtari } from "../../kayitlar/sepet";
 import { metin } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
+import { calisanSiteninFiyatServisi } from "../../moduller/fiyat/servis";
 import { odemeYontemiServisi } from "../../moduller/odeme/yontemler";
+import { stokServisi } from "../../moduller/stok/servis";
+import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
+import { vitrinAdresleri } from "../../vitrin/adresler";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
 import { ayriBaglanti, paneleGir, yoneticiAc } from "./yonetici";
@@ -25,6 +33,7 @@ if (existsSync(".env")) process.loadEnvFile(".env");
 
 const vt = baglan(veritabaniAdresi());
 const servis = () => odemeYontemiServisi(calisanSite());
+const yapan = sistemIslemi("uctan-uca-odeme-yontemleri");
 // Testin eklediği hesabın numarası: geçerli, mağazanın hesaplarında olmayan bir örnek.
 const denemeIbani = "TR750009900000000000000099";
 const genislikler = [
@@ -201,6 +210,175 @@ test("kayıttan sonra geç gelen yenileme arada yazılan değeri ezmez", async (
         havaleIptalSuresi: eski,
       });
     }
+  }
+  expect(hatalar).toEqual([]);
+});
+
+// Kart 0224, karar 0144: yöntemlerin sırası taşınır taşınmaz kaydedilir ve vitrinin ödeme adımında yeni sırayla
+// görünür; ekrandaki kaydedilmemiş anahtar değişikliği sıralamayla birlikte kaydedilmez, ekranda kalır. Eski hâlde
+// sıra yalnız "Kaydet"le gidiyordu, "Kaydet"e basmadan çıkan mağaza sahibinin sırası kayboluyordu (ölçüldü).
+test("sıralama hemen kaydedilir, vitrinde yeni sırayla görünür; kaydedilmemiş anahtar birlikte gitmez", async ({
+  page,
+  context,
+}) => {
+  test.setTimeout(120_000);
+  const hatalar = konsoluDinle(page, { haric: (m) => m.includes("401") });
+  const ilk = await servis().oku(vt);
+  const urunServisi = calisanSiteninUrunServisi();
+  const ek = randomUUID().slice(0, 8);
+  const urun = await urunServisi.urunEkle(vt, yapan, {
+    ad: `Sıralama deneme ${ek}`,
+    adresAdi: `siralama-deneme-${ek}`,
+    vergiSinifi: null,
+    durum: "yayinda",
+  });
+  const birim = (await urunServisi.urunuOku(vt, urun))?.birimler[0]?.kimlik ?? "";
+  await calisanSiteninFiyatServisi().fiyatYaz(vt, yapan, birim, { satisFiyati: 15_000 });
+  await stokServisi().stokDuzelt(vt, yapan, birim, {
+    yeniMiktar: 5,
+    gorulenMiktar: 0,
+    sebep: "sayim",
+  });
+
+  // Vitrinin ödeme adımındaki yöntemlerin sırası (yöntemin adıyla).
+  const vitrindekiSira = async () => {
+    const vitrin = await context.newPage();
+    await vitrin.addInitScript(([anahtar, deger]) => window.localStorage.setItem(anahtar, deger), [
+      sepetDepoAnahtari,
+      JSON.stringify([{ birim, adet: 1 }]),
+    ] as const);
+    await vitrin.goto(vitrinAdresleri.odeme);
+    await sayfaHazir(vitrin);
+    const yazilar = await vitrin
+      .getByRole("radiogroup", { name: metin("vitrin.odeme.bolum.yontem") })
+      .getByRole("radio")
+      .allTextContents();
+    await vitrin.close();
+    const kodlar = yazilar.flatMap((yazi) =>
+      (Object.keys(yontemAdlari) as (keyof typeof yontemAdlari)[]).filter((kod) =>
+        yazi.startsWith(metin(yontemAdlari[kod])),
+      ),
+    );
+    return kodlar.filter((kod, sira) => kodlar.indexOf(kod) === sira);
+  };
+
+  const [birinci, ikinci] = ilk.yontemler;
+  const sonuncu = ilk.yontemler.at(-1);
+  if (birinci === undefined || ikinci === undefined || sonuncu === undefined) {
+    throw new Error("En az iki yöntem gerekir.");
+  }
+  try {
+    // Örnek Mağaza'da ilk iki yöntem açık ve kullanılabilir: vitrin onları ayarın sırasıyla gösterir.
+    expect((await vitrindekiSira()).slice(0, 2)).toEqual([birinci.kod, ikinci.kod]);
+    await ayriBaglanti(page);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await paneleGir(page, yoneticiAc());
+    await menudenGit(
+      page,
+      metin("yonetim.sayfa.odemeYontemleri.ad"),
+      /\/yonetim\/odeme-yontemleri$/,
+    );
+    // Kaydedilmemiş değişiklik: son yöntemin anahtarı.
+    const anahtar = page.getByRole("switch", {
+      name: doldur(metin("yonetim.odemeYontemleri.vitrindeAcik"), {
+        ad: metin(yontemAdlari[sonuncu.kod]),
+      }),
+    });
+    await anahtar.focus();
+    await page.keyboard.press("Space");
+    await expect(anahtar).toHaveAttribute("aria-checked", String(!sonuncu.acik));
+    // İlk yöntem bir aşağı alınır; "Kaydet"e basılmaz.
+    await page
+      .getByRole("button", {
+        name: doldur(metin("ortak.parca.siralama.asagi"), { ad: metin(yontemAdlari[birinci.kod]) }),
+      })
+      .click();
+    await expect(page.getByText(metin("yonetim.odemeYontemleri.siralandi"))).toBeVisible();
+    const beklenen = [ikinci, birinci, ...ilk.yontemler.slice(2)];
+    await expect
+      .poll(async () => (await servis().oku(vt)).yontemler)
+      .toEqual(beklenen.map(({ kod, acik }) => ({ kod, acik })));
+    // Yenilemeden sonra da anahtar kaydedilmemiş değişikliğiyle ekranda kalır.
+    await page.waitForLoadState("networkidle");
+    await expect(anahtar).toHaveAttribute("aria-checked", String(!sonuncu.acik));
+    await expect(page.getByRole("button", { name: metin("ortak.islem.vazgec") })).toBeEnabled();
+    // Vitrin yeni sırayı gösterir.
+    expect((await vitrindekiSira()).slice(0, 2)).toEqual([ikinci.kod, birinci.kod]);
+  } finally {
+    await servis().yontemleriDegistir(vt, yapan, {
+      yontemler: ilk.yontemler,
+      kapidaOdemeSecenekleri: ilk.kapidaOdemeSecenekleri,
+      havaleIptalSuresi: String(ilk.havaleIptalSuresi),
+    });
+    await urunServisi.urunSil(vt, yapan, urun);
+  }
+  expect(hatalar).toEqual([]);
+});
+
+// Kart 0224 bağımsız kontrolünün bulgusu: "Kaydet" sürerken yapılan sıralama Kaydet'i bekler. Kaydet isteği test izin
+// verene kadar tutulur; o sırada satır taşınır. Eski hâlde sıralama önce biter, Kaydet eski sırayı yazıp onu geri
+// alırdı.
+test("Kaydet sürerken yapılan sıralama kaybolmaz; anahtar da sıra da kaydedilir", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const hatalar = konsoluDinle(page, { haric: (m) => m.includes("401") });
+  const ilk = await servis().oku(vt);
+  const [birinci, ikinci] = ilk.yontemler;
+  const sonuncu = ilk.yontemler.at(-1);
+  if (birinci === undefined || ikinci === undefined || sonuncu === undefined) {
+    throw new Error("En az iki yöntem gerekir.");
+  }
+  let serbestBirak = () => {};
+  const kapi = new Promise<void>((bitti) => {
+    serbestBirak = bitti;
+  });
+  try {
+    await ayriBaglanti(page);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await paneleGir(page, yoneticiAc());
+    await menudenGit(
+      page,
+      metin("yonetim.sayfa.odemeYontemleri.ad"),
+      /\/yonetim\/odeme-yontemleri$/,
+    );
+    await page.route("**/kapi/yonetici/odeme-yontemleri", async (yol) => {
+      await kapi;
+      await yol.fallback();
+    });
+    const anahtar = page.getByRole("switch", {
+      name: doldur(metin("yonetim.odemeYontemleri.vitrindeAcik"), {
+        ad: metin(yontemAdlari[sonuncu.kod]),
+      }),
+    });
+    await anahtar.focus();
+    await page.keyboard.press("Space");
+    const kaydetIstegi = page.waitForRequest("**/kapi/yonetici/odeme-yontemleri");
+    await page.getByRole("button", { name: metin("yonetim.odemeYontemleri.kaydet") }).click();
+    await kaydetIstegi;
+    await page
+      .getByRole("button", {
+        name: doldur(metin("ortak.parca.siralama.asagi"), { ad: metin(yontemAdlari[birinci.kod]) }),
+      })
+      .click();
+    serbestBirak();
+    await expect(page.getByText(metin("yonetim.odemeYontemleri.siralandi"))).toBeVisible();
+    const beklenen = [ikinci, birinci, ...ilk.yontemler.slice(2)].map(({ kod, acik }) => ({
+      kod,
+      acik: kod === sonuncu.kod ? !acik : acik,
+    }));
+    await expect.poll(async () => (await servis().oku(vt)).yontemler).toEqual(beklenen);
+    await page.waitForLoadState("networkidle");
+    await expect(anahtar).toHaveAttribute("aria-checked", String(!sonuncu.acik));
+    await expect(page.getByRole("button", { name: metin("ortak.islem.vazgec") })).toBeDisabled();
+  } finally {
+    serbestBirak();
+    await page.unroute("**/kapi/yonetici/odeme-yontemleri");
+    await servis().yontemleriDegistir(vt, yapan, {
+      yontemler: ilk.yontemler,
+      kapidaOdemeSecenekleri: ilk.kapidaOdemeSecenekleri,
+      havaleIptalSuresi: String(ilk.havaleIptalSuresi),
+    });
   }
   expect(hatalar).toEqual([]);
 });

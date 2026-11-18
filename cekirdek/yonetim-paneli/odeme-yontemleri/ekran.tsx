@@ -2,7 +2,9 @@
 // Ödeme yöntemleri ekranı (kart 0214, karar 0141; kart 0211'in taslağı): müşterinin ödeme adımında gördüğü yöntemler
 // ve sırası. Satırlar sürüklenerek, klavyeyle ya da yukarı ve aşağı al düğmeleriyle sıralanır; anahtar yöntemi açar
 // ya da kapatır; kapıda ödemenin seçenekleri (nakit, kart) satırın içindedir. Altta havalenin kartı: ödenmeyen
-// siparişin iptal süresi ve banka hesaplarına bağlantı. Hepsi birlikte "Kaydet" ile kaydedilir, hemen yayınlanır.
+// siparişin iptal süresi ve banka hesaplarına bağlantı. Sıra taşınır taşınmaz kendi ucuyla kaydedilir (kart 0224, karar
+// 0144: "Kaydet"e basmadan çıkan mağaza sahibinin sırası kayboluyordu); anahtarlar, seçenekler ve süre birlikte
+// "Kaydet" ile kaydedilir, hemen yayınlanır. Sıralama ekrandaki kaydedilmemiş değişikliği birlikte kaydetmez.
 // Hiç açık yöntem kalmazsa kaydedilmez. Değiştirme izni olmayan yönetici (görevli) yalnız görür: anahtarlar ve
 // seçenekler kapalıdır, liste sıralanmaz, düğmeler yoktur.
 import { type FormEvent, useEffect, useRef, useState } from "react";
@@ -49,10 +51,17 @@ export const secenekAdlari: Record<KapidaOdemeSecenegi, MetinAnahtari> = {
   kart: "ortak.odemeYontemi.kart",
 };
 
+// Yöntemleri verilen kod sırasıyla dizer; her yöntem kendi açık-kapalı bilgisini korur.
+const siraylaDiz = (yontemler: YontemAyari[], sira: OdemeYontemi[]): YontemAyari[] =>
+  sira.flatMap((kod) => yontemler.filter((yontem) => yontem.kod === kod));
+
+// Sıralamanın çakışması (sitedeki yöntemler arada değişti): sayfa kendiliğinden yenilenir, metin bunu söyler.
 const genelHataMetni = (hata: PanelHatasi): MetinAnahtari =>
   hata.kod === "yetki"
     ? "yonetim.odemeYontemleri.hata.yetki"
-    : "yonetim.odemeYontemleri.hata.genel";
+    : hata.kod === "cakisma"
+      ? "yonetim.odemeYontemleri.hata.listeDegisti"
+      : "yonetim.odemeYontemleri.hata.genel";
 
 // Alanın koduna göre metin; alanı formda olmayan kod formun üstünde yazılır.
 const alanHatalari: Record<
@@ -73,9 +82,8 @@ export function OdemeYontemleriEkrani({
 }) {
   const metin = useMetin();
   const islem = usePanelIslemi(genelHataMetni);
-  const { form, setForm, degisti, kaydedildi, vazgec } = useSunucuFormu<OdemeYontemleriFormu>(
-    veri.form,
-  );
+  const { form, setForm, degisti, kaydedildi, vazgec, bilinen } =
+    useSunucuFormu<OdemeYontemleriFormu>(veri.form);
   const [hatalar, setHatalar] = useState<
     Partial<Record<"yontemler" | "secenekler" | "sure", MetinAnahtari>>
   >({});
@@ -110,19 +118,59 @@ export function OdemeYontemleriEkrani({
       ),
     }));
 
+  // Ekranın istekleri (sıralamalar ve "Kaydet") sırayla gider (bağımsız kontrolün bulgusu): birbirini beklemeyen
+  // istekler sunucuya ters sırada ulaşıp son sırayı ya da kaydedilen anahtarı geri alabiliyordu. İstek sırası
+  // gelince formun o anki hâlini okur; bunun için form ve bilinen hâl her çizimde ref'e yazılır.
+  const kuyruk = useRef<Promise<unknown>>(Promise.resolve());
+  const [bekleyen, setBekleyen] = useState(0);
+  const sirayla = <Sonuc,>(is: () => Promise<Sonuc>): Promise<Sonuc> => {
+    setBekleyen((sayi) => sayi + 1);
+    const sonuc = kuyruk.current.then(is).finally(() => setBekleyen((sayi) => sayi - 1));
+    kuyruk.current = sonuc.catch(() => undefined);
+    return sonuc;
+  };
+  const formRef = useRef(form);
+  const bilinenRef = useRef(bilinen);
+  useEffect(() => {
+    formRef.current = form;
+    bilinenRef.current = bilinen;
+  });
+
+  // Sıralama (kart 0224): ekran yeni sırayı hemen gösterir, uç yalnız sırayı yazar. Başarıda bilinen hâlin sırası
+  // değişir (anahtarlar kayıtlı hâliyle kalır); son sıralama düşerse ekran sunucuda olduğu bilinen sıraya döner.
+  const sonSiralama = useRef(0);
+  const sirala = (yeni: YontemAyari[]) => {
+    const sira = yeni.map((yontem) => yontem.kod);
+    setForm((onceki) => ({ ...onceki, yontemler: siraylaDiz(onceki.yontemler, sira) }));
+    const bu = ++sonSiralama.current;
+    void sirayla(() =>
+      islem("odeme-yontemleri-sirala", { sira }, "yonetim.odemeYontemleri.siralandi"),
+    ).then((sonuc) => {
+      if (sonuc.tamam) {
+        kaydedildi((onceki) => ({ ...onceki, yontemler: siraylaDiz(onceki.yontemler, sira) }));
+      } else if (bu === sonSiralama.current) {
+        const bilinenSira = bilinenRef.current.yontemler.map((yontem) => yontem.kod);
+        setForm((onceki) => ({ ...onceki, yontemler: siraylaDiz(onceki.yontemler, bilinenSira) }));
+      }
+    });
+  };
+
   const gonder = async (olay: FormEvent<HTMLFormElement>) => {
     olay.preventDefault();
     if (gonderiliyor.current) return;
     gonderiliyor.current = true;
-    const gonderilen = form;
-    const sonuc = await islem(
-      "odeme-yontemleri",
-      gonderilen,
-      "yonetim.odemeYontemleri.kaydedildi",
-      {
-        formda: true,
-      },
-    );
+    const { gonderilen, sonuc } = await sirayla(async () => {
+      const gonderilen = formRef.current;
+      const sonuc = await islem(
+        "odeme-yontemleri",
+        gonderilen,
+        "yonetim.odemeYontemleri.kaydedildi",
+        {
+          formda: true,
+        },
+      );
+      return { gonderilen, sonuc };
+    });
     gonderiliyor.current = false;
     if (sonuc.tamam) {
       kaydedildi(gonderilen);
@@ -212,7 +260,7 @@ export function OdemeYontemleriEkrani({
           ad={adi}
           etiket={metin("yonetim.sayfa.odemeYontemleri.ad")}
           metinler={siralamaMetinleri(metin)}
-          siralaninca={(yeni) => setForm((onceki) => ({ ...onceki, yontemler: yeni }))}
+          siralaninca={sirala}
           hizalama="ust"
           satir={satir}
         />
@@ -263,7 +311,8 @@ export function OdemeYontemleriEkrani({
         <YanPencereAltCubugu className="bottom-0 mx-0 px-0">
           <Dugme
             tur="sade"
-            disabled={!degisti}
+            // İstek sürerken Vazgeç kapalıdır: geri alınan sıra arkadan kaydedilen sırayla ayrışırdı.
+            disabled={!degisti || bekleyen > 0}
             onClick={() => {
               vazgec();
               setHatalar({});

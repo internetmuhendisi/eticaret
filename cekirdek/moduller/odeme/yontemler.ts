@@ -11,9 +11,10 @@
 //   sayılmaz. Bu durumu doğuran kaydetme "en-az-bir-yontem", son hesabın silinmesi "son-yontem" ile durur.
 // - Banka hesabının numarası IBAN olarak doğrulanır (cekirdek/bolgeler/iban.ts). Aynı numara iki kez eklenmez.
 // - Sıralama ekranın gördüğü bütün hesapları ister: arada eklenen ya da silinen hesap varsa "cakisma" döner.
+//   Yöntemlerin sırası da tek başına, aynı kuralla kaydedilir (kart 0224, karar 0144).
 // - Eklentiyle gelen yöntem (kart, kart 0215) eklentisi kapalı sitede yoktur: ne ekranda ne ödeme adımında görünür.
-//   Ekranın kaydettiği liste sitede var olan yöntemleri taşır; görünmeyen yöntemin kayıtlı yeri ve açıklığı korunur
-//   (eklenti yeniden açılınca eski hâline döner). Açık ama çalışamayan eklentili yöntem (anahtarı yok) müşteriye
+//   Ekranın kaydettiği liste sitede var olan yöntemleri taşır; görünmeyen yöntemin kayıtlı açıklığı korunur, satırı
+//   listenin sonuna geçer (eklenti yeniden açılınca açıklığıyla, listenin sonunda döner). Açık ama çalışamayan eklentili yöntem (anahtarı yok) müşteriye
 //   görünmez ve "en az bir yöntem" sayımına girmez. Bağlantı noktası: cekirdek/eklentiler/odeme-yontemleri.ts.
 import { randomUUID } from "node:crypto";
 import type { MagazaAyarlari } from "../../ayar-semasi/ayarlar.ts";
@@ -175,6 +176,36 @@ export const odemeYontemiServisi = (site: Site) => {
     return oku(vt);
   };
 
+  // Yalnız sıra (kart 0224, karar 0144): ekranın gördüğü bütün yöntemler yeni sırasıyla gelir; açık-kapalı bilgisi,
+  // kapıda ödemenin seçenekleri ve iptal süresi kayıtlı hâliyle kalır (ekrandaki kaydedilmemiş değişiklik birlikte
+  // yazılmaz). Eksik, fazla ya da tekrarlı liste "cakisma"dır. Görünmeyen yöntemin kayıtlı satırı sona korunur.
+  // Ayar kilidin içinde okunur (bağımsız kontrolün bulgusu): aynı anda kaydedilen açık-kapalı değişikliği sıralamayla
+  // geri alınmaz.
+  const yontemleriSirala = async (vt: Veritabani, kim: DegisikligiYapan, sira: OdemeYontemi[]) => {
+    const kumesi = new Set(sira);
+    await ayarServisi.degistir(
+      vt,
+      kim,
+      (bugunku) => {
+        const gorunen = sitedekiYontemler(site, bugunku.odemeYontemleri);
+        // Uzunluk aynı ve her yöntem listedeyse tekrar olamaz.
+        if (sira.length !== gorunen.length || gorunen.some((yontem) => !kumesi.has(yontem.kod))) {
+          throw new BilinenHata("cakisma", [{ alan: "sira", kod: "liste-degisti" }]);
+        }
+        return {
+          odemeYontemleri: [
+            ...sira.flatMap((kod) => gorunen.filter((yontem) => yontem.kod === kod)),
+            ...odemeYontemleriniSirala(bugunku.odemeYontemleri).filter(
+              (yontem) => !kumesi.has(yontem.kod),
+            ),
+          ],
+        };
+      },
+      { kendiIslevi: true },
+    );
+    return oku(vt);
+  };
+
   type HesapGirdisi = { banka: string; sahip: string; iban: string };
 
   // Hesabın alanları denetlenir; IBAN hatası alanın koduyla döner. Aynı numara başka hesapta varsa "iban-ayni".
@@ -269,5 +300,13 @@ export const odemeYontemiServisi = (site: Site) => {
     );
   };
 
-  return { oku, yontemleriDegistir, hesapEkle, hesapDegistir, hesapSil, hesaplariSirala };
+  return {
+    oku,
+    yontemleriDegistir,
+    yontemleriSirala,
+    hesapEkle,
+    hesapDegistir,
+    hesapSil,
+    hesaplariSirala,
+  };
 };

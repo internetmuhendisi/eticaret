@@ -14,7 +14,9 @@ import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts
 import { bankaHesabiSinirlari } from "../../../kayitlar/odeme.ts";
 import { baglantiyiKapat } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
+import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
+import { magazaAyarlari } from "../../magaza-ayarlari/model.ts";
 import { siteninServisi } from "../../magaza-ayarlari/servis.ts";
 import { kullanilabilirYontemler, odemeYontemiServisi } from "../yontemler.ts";
 
@@ -138,6 +140,105 @@ describe("ödeme yöntemi ayarları", () => {
       { kendiIslevi: true },
     );
     expect((await servis.oku(vt)).yontemler).toEqual([
+      { kod: "kapida-odeme", acik: true },
+      { kod: "havale", acik: false },
+    ]);
+  });
+
+  // Kart 0224, karar 0144: sıra tek başına, hemen kaydedilir.
+  it("yalnız sıra: açık-kapalı, seçenekler ve süre kalır; görünmeyen yöntem sonda; eksik, fazla, tekrarlı liste çakışma", async () => {
+    const vt = await hazirla();
+    const kim = yonetici();
+    const kayitSayisi = async () =>
+      (
+        await vt
+          .select()
+          .from(degisiklikKayitlari)
+          .where(eq(degisiklikKayitlari.islem, "magaza-ayari.degisti"))
+      ).length;
+    const once = await servis.oku(vt);
+    const sonuc = await servis.yontemleriSirala(vt, kim, ["kapida-odeme", "havale"]);
+    expect(sonuc).toEqual({
+      ...once,
+      yontemler: [
+        { kod: "kapida-odeme", acik: false },
+        { kod: "havale", acik: true },
+      ],
+    });
+    expect(await kayitSayisi()).toBe(1);
+    // Aynı sıra kayda girmez.
+    await servis.yontemleriSirala(vt, kim, ["kapida-odeme", "havale"]);
+    expect(await kayitSayisi()).toBe(1);
+    // Sitede görünmeyen (eklentisi olmayan) yöntemin kayıtlı satırı sona korunur.
+    await siteninServisi(site).degistir(
+      vt,
+      kim,
+      {
+        odemeYontemleri: [
+          { kod: "kart", acik: true },
+          { kod: "havale", acik: true },
+          { kod: "kapida-odeme", acik: false },
+        ],
+      },
+      { kendiIslevi: true },
+    );
+    await servis.yontemleriSirala(vt, kim, ["kapida-odeme", "havale"]);
+    expect((await siteninServisi(site).oku(vt)).odemeYontemleri).toEqual([
+      { kod: "kapida-odeme", acik: false },
+      { kod: "havale", acik: true },
+      { kod: "kart", acik: true },
+    ]);
+    const sayi = await kayitSayisi();
+    for (const sira of [
+      ["havale"],
+      ["havale", "havale"],
+      ["havale", "kapida-odeme", "havale"],
+      ["havale", "kart"],
+      ["kart", "havale", "kapida-odeme"],
+    ] as const) {
+      expect(await hatasi(servis.yontemleriSirala(vt, kim, [...sira]))).toEqual({
+        kod: "cakisma",
+        ayrinti: [{ alan: "sira", kod: "liste-degisti" }],
+      });
+    }
+    expect(await kayitSayisi()).toBe(sayi);
+  });
+
+  // Bağımsız kontrolün bulgusu: sıralama ayarı kilidin dışında okuyup bütün listeyi yazarsa, aynı anda kaydedilen
+  // açık-kapalı değişikliğini geri alır. Açık duran bir işlem ayar satırlarını kilitler ve açık-kapalıyı değiştirir;
+  // sıralama kilitte beklerken işlem kaydedilir.
+  it("aynı anda kaydedilen açık-kapalı değişikliği sıralamayla geri alınmaz (sıra kurularak)", async () => {
+    const vt = await hazirla();
+    const kim = yonetici();
+    await servis.oku(vt);
+    let birak = () => {};
+    const kapi = new Promise<void>((bitti) => {
+      birak = bitti;
+    });
+    let kilitlendi = () => {};
+    const kilitAlindi = new Promise<void>((bitti) => {
+      kilitlendi = bitti;
+    });
+    const acikIslem = vt.transaction(async (islem) => {
+      await islem.select().from(magazaAyarlari).for("update");
+      kilitlendi();
+      await kapi;
+      await islem
+        .update(magazaAyarlari)
+        .set({
+          deger: [
+            { kod: "havale", acik: false },
+            { kod: "kapida-odeme", acik: true },
+          ],
+        })
+        .where(eq(magazaAyarlari.anahtar, "odemeYontemleri"));
+    });
+    await kilitAlindi;
+    const siralama = servis.yontemleriSirala(vt, kim, ["kapida-odeme", "havale"]);
+    await kilitBekleyeniGor(vt);
+    birak();
+    await acikIslem;
+    expect((await siralama).yontemler).toEqual([
       { kod: "kapida-odeme", acik: true },
       { kod: "havale", acik: false },
     ]);

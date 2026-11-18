@@ -422,6 +422,17 @@ Yöntemleri, sıralarını, kapıda ödemenin seçeneklerini ve havalenin iptal 
 - Başarılı (200): GET ile aynı veri.
 - Hatalar: `dogrulama` (`yontem-listesi`, `secenek-gerekli`, `secenek-tekrari`; alanın koduyla `en-az-bir-yontem`: müşterinin kullanabileceği yöntem kalmıyor, banka hesabı olmayan havale sayılmaz; `gun-gecersiz`; hiçbir ayar değişmez), `yetki`.
 
+Ekran sıralamayı bu uçla değil, aşağıdaki sıralama ucuyla hemen kaydeder (kart 0224, karar 0144); bu uç sırayı yine kabul eder.
+
+### POST /kapi/yonetici/odeme-yontemleri-sirala
+
+Yalnız yöntemlerin sırasını kaydeder (kart 0224, karar 0144). Açık-kapalı bilgisi, kapıda ödemenin seçenekleri ve iptal süresi kayıtlı hâliyle kalır. Sitede görünmeyen yöntemin kayıtlı satırı sona korunur. Değişiklik kaydına girer (`magaza-ayari.degisti`); aynı sıra girmez.
+
+- İzin: `odeme-yontemi.degistir`. Sınır: `genel`.
+- Girdi: `{ "sira": [kod] }` (`odemeYontemleriSiralamaSemasi`): ekranın gördüğü bütün yöntemlerin kodu yeni sırasıyla.
+- Başarılı (200): GET ile aynı veri.
+- Hatalar: `cakisma` (`liste-degisti`: eksik, fazla ya da tekrarlı liste; sitedeki yöntemler değişti), `yetki`.
+
 ### POST /kapi/yonetici/banka-hesabi-ekle
 
 Havalenin banka hesaplarına hesap ekler; numara IBAN olarak doğrulanır (`cekirdek/bolgeler/iban.ts`) ve boşluksuz saklanır.

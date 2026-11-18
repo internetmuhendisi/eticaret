@@ -32,9 +32,12 @@ export const useSunucuFormu = <Form>(sunucu: Form) => {
   return {
     form,
     setForm,
+    // Sunucuda olduğu bilinen hâl: bir işlem düşünce ekran ona döner (kart 0224).
+    bilinen,
     degisti: !ayni(form, bilinen),
-    // Uç kaydı kabul etti: gönderilen hâl artık sunucudadır.
-    kaydedildi: (gonderilen: Form) => setBilinen(gonderilen),
+    // Uç kaydı kabul etti: gönderilen hâl artık sunucudadır. Formun bir kısmını kaydeden işlem (ödeme yöntemlerinin
+    // sırası, kart 0224) yeni hâli bilinen hâlden kurar.
+    kaydedildi: (gonderilen: Form | ((bilinen: Form) => Form)) => setBilinen(gonderilen),
     vazgec: () => setForm(bilinen),
   };
 };
