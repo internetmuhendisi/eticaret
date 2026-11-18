@@ -31,6 +31,38 @@ Bu sıranın hatta nasıl tersine döndüğü ölçülmedi. Olası sebep veritab
 - Öteki yarış testlerinin taraması yazıldı; aynı eksik bulunanlar düzeltildi ya da kart olarak yazıldı.
 - Kontrol hattı yeşil.
 
+## Ölçüm ve düzeltme (2026-11-18)
+
+**Sebep doğrulandı: rakip, ilk işlem kilidi almadan başlıyordu.**
+
+- **Kendiliğinden üretildi.** Değişikliksiz test yerelde art arda on kez çalıştırıldı (yük ortalaması 18–20). İkisinde hattaki hata birebir görüldü: `kilitBekleyeniGor` süre aşımı, "Hata bekleniyordu" ve `cakisma` / `stok-yetersiz`.
+- **Zorla üretildi.** Ayıran işleme `stokAyir`'den önce 1 saniyelik geçici bir bekleme konduğunda (kayda girmedi) düzeltmesiz test 3/3 kırmızı oldu, aynı üç hatayla.
+
+**Düzeltme (yalnız testte).** Ayıran işlem `stokAyir` bitince bir söz verir. Test, düşüren işlemi `Promise.race([kilitli, ayiran])` beklendikten sonra başlatır; ayıran işlem düşerse hata da buradan çıkar. Aynı kalıbı galeri ve özellik testlerinin `acikIslem` yardımcısı zaten kullanıyor. Stok kuralları ve kilit sırası değişmedi.
+
+- Geçici bekleme yerindeyken: düzeltmeyle 10/10 yeşil, düzeltmesiz 3/3 kırmızı.
+
+**Tarama: `kilitBekleyeniGor` kullanan 15 test dosyası, 29 çağrı.** Her çağrının rakibi ilk işlemin kilidi aldığı görüldükten sonra mı başlıyor, ona bakıldı:
+
+- **Aynı eksik, bu işte düzeltildi:**
+  - `cekirdek/moduller/siparis/testler/servis.test.ts`, "açık duran siparişin arkasındaki sipariş stok satırının kilidinde bekler": ikinci sipariş, birincinin `for update`'inden önce başlayabiliyordu.
+  - `cekirdek/moduller/tema/testler/tema-degisikligi.test.ts`, "tema değişikliği açık duran düzen işlemini bekler": `temayiYayinla`, açık işlemin düzen kilidinden önce başlayabiliyordu.
+  
+  İkisinde de ilk işleme 1 saniyelik geçici bekleme konunca düzeltmesiz 3/3 kırmızı, düzeltmeyle 10/10 yeşil.
+- **Güvenli (26 çağrı):**
+  - Rakip, ilk işlemin içinde kilidi alan satırdan sonra başlıyor: stok (2), ödeme servisi, favori, yorum.
+  - Rakip, kilit alındıktan sonra verilen bir sözü bekliyor: ödeme yöntemleri, düzen (4) ve başlangıcı (2), menü (2) ve başlangıcı (2), vitrin bağlamı, varyant; galeri (3) ve özellik (5) `acikIslem` ile.
+  - Düzen testinin ikinci `kilitBekleyeniGor(vt, 2)` çağrısı, ilk bekleyen görüldükten sonra başlıyor.
+
+**Kontroller.**
+
+- Geçici beklemeler kaldırıldıktan sonra iki dosya art arda 10/10 yeşil.
+- İki dosya geçici bir ayarla tür denetiminden geçti (kart 0056); `pnpm tur-kontrolu` ve `pnpm denetim` temiz.
+
+**Yazılı kural.** Yeni yarış testlerinin aynı eksiği taşımaması için kural `.claude/rules/test.md`'ye yazıldı. Kontrolü yoktur, yalnız disiplindir.
+
+**Kalan madde.** "Kontrol hattı yeşil" maddesi gönderimde görülecek.
+
 ## Durum
 
 yapılacak

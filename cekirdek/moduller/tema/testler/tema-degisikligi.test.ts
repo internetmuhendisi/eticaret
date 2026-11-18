@@ -564,6 +564,10 @@ describe("aynı anda", () => {
       birak = cozul;
     });
     // Düzen servisinin bir işlemi gibi: düzen kilidini alır, yeni sürümü yazar, bitmeden bekler.
+    let kilitlendi = () => {};
+    const kilitli = new Promise<void>((cozul) => {
+      kilitlendi = cozul;
+    });
     const acik = vt.transaction(async (islem) => {
       await islem.execute(sql`select pg_advisory_xact_lock(hashtext('duzen'))`);
       const yeni: Duzen = {
@@ -580,8 +584,11 @@ describe("aynı anda", () => {
         ],
       };
       await islem.insert(duzenSurumleri).values({ sira: ilk.sira + 1, duzen: yeni });
+      kilitlendi();
       await bekle;
     });
+    // Tema değişikliği ancak açık işlem düzen kilidini alıp yazdıktan sonra başlar (kart 0230).
+    await Promise.race([kilitli, acik]);
     const degisiklik = servis.temayiYayinla(vt, yonetici(), {
       tema: "tema-b",
       ayarlar: { renkler: {} },

@@ -14,6 +14,7 @@ Birim testi tek bir parçayı, entegrasyon testi parçaların birlikte çalışm
 - Yazılan her test yayın kontrolünde çalışsın. Kırmızı test yayını durdurur.
 - Veri ayrımı ve yetki testlerini taklit değil gerçek veritabanıyla yap.
 - Her test kendi verisini hazırlasın ve başka teste bağlı olmasın.
+- Sırayı kuran yarış testinde (`kilitBekleyeniGor`) rakip, ilk işlem kilidi aldıktan sonra başlatılır. İlk işlem kilidi alınca bir söz verir, test o sözü (`Promise.race` ile işlemle birlikte) bekleyip sonra rakibi başlatır (kart 0230). Art arda başlatılan iki işlemde rakip kilidi önce alabilir. Yalnız disiplindir.
 - Önemli akışları tarayıcıda gerçek kullanıcı gibi tıklayarak dene.
 - Bir işin bitip bitmediğini işi yapmayan ikinci bir kontrol onaylasın. İşi yapan kendi işini onaylamaz.
 

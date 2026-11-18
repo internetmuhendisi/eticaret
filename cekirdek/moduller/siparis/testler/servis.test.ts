@@ -382,18 +382,25 @@ describe("sipariş", () => {
     const bekle = new Promise<void>((tamam) => {
       birak = tamam;
     });
+    let kilitlendi = () => {};
+    const kilitli = new Promise<void>((tamam) => {
+      kilitlendi = tamam;
+    });
     const birinci = h.vt.transaction(async (islem) => {
       await islem
         .select()
         .from(birimStoklari)
         .where(eq(birimStoklari.birim_kimligi, a.birim))
         .for("update");
+      kilitlendi();
       await bekle;
       await islem
         .update(birimStoklari)
         .set({ miktar: 0 })
         .where(eq(birimStoklari.birim_kimligi, a.birim));
     });
+    // İkinci sipariş ancak birinci stok satırını kilitledikten sonra başlar (kart 0230).
+    await Promise.race([kilitli, birinci]);
     const ikinci = hatasi(ver(h.vt, [{ birim: a.birim, adet: 1 }]));
     await kilitBekleyeniGor(h.vt);
     birak();
@@ -464,10 +471,18 @@ describe("sipariş", () => {
     const bekle = new Promise<void>((tamam) => {
       birak = tamam;
     });
+    let kilitlendi = () => {};
+    const kilitli = new Promise<void>((tamam) => {
+      kilitlendi = tamam;
+    });
     const ayiran = h.vt.transaction(async (islem) => {
       await stok.stokAyir(islem, oturum.oturum, [{ birim: a.birim, adet: 1 }], oturum.bitis);
+      kilitlendi();
       await bekle;
     });
+    // Düşüren işlem ancak ayıran stok satırını kilitledikten sonra başlar; yoksa kilidi önce o
+    // alıp ayırmasız stoğu düşürebilir (hat 44273517233, kart 0230). Ayıran düşerse hata buradan çıkar.
+    await Promise.race([kilitli, ayiran]);
     // Başka bir oturumun siparişi aynı birimi düşürmek ister: stok satırının kilidinde bekler.
     const dusen = hatasi(
       h.vt.transaction((islem) =>
