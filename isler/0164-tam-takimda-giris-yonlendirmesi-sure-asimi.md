@@ -76,4 +76,4 @@ Bütün birim takımı 3441/3441 (tarayıcı turu eklendikten sonra). Hız ölç
 
 ## Durum
 
-yapılacak
+bitti
