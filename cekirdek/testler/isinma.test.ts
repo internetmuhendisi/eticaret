@@ -2,7 +2,14 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { dosyaAdresi, isinmaAdresleri } from "./uctan-uca/isinma";
+import {
+  dosyaAdresi,
+  girisliGirisSayfalari,
+  girissizSayfalar,
+  isinmaAdresleri,
+  panelAdresleri,
+  sayfaAdresleri,
+} from "./uctan-uca/isinma";
 
 // Ayar dosyaları yazı olarak okunur: içe aktarılınca ortam değişkenleri ve klasörler kurulur.
 const ayar = (dosya: string) => readFileSync(join(import.meta.dirname, "..", "..", dosya), "utf8");
@@ -48,5 +55,30 @@ describe("ısınma adresleri", () => {
     expect(adresler).not.toContain("/gelistirme/hata-denemesi");
     expect(new Set(adresler).size).toBe(adresler.length);
     expect(adresler.every((adres) => !/[[\]()]/.test(adres))).toBe(true);
+  });
+
+  // Kart 0164: tarayıcı turu her sayfayı tam bir yoldan açar.
+  it("her sayfa dosyası tam bir gruba düşer: girişsiz, panel, girişli giriş sayfası ya da ısıtılmayan", () => {
+    const sayfalar = sayfaAdresleri();
+    const girissiz = girissizSayfalar();
+    const panel = panelAdresleri();
+    const gruplar = [girissiz, panel, [...girisliGirisSayfalari], ["/gelistirme/hata-denemesi"]];
+    for (const adres of sayfalar) {
+      expect(
+        gruplar.filter((grup) => grup.includes(adres)),
+        adres,
+      ).toHaveLength(1);
+    }
+    // Girişli giriş sayfaları gerçekten vardır: adı değişirse ısınmadan sessizce düşmez.
+    for (const adres of girisliGirisSayfalari) expect(sayfalar, adres).toContain(adres);
+    expect(panel).toEqual(
+      expect.arrayContaining(["/yonetim", "/yonetim/kargo", "/yonetim/menuler"]),
+    );
+    expect(girissiz).toEqual(expect.arrayContaining(["/", "/yonetim/giris", "/odeme"]));
+    expect(
+      girissiz.some(
+        (adres) => adres.startsWith("/yonetim/") && !adres.startsWith("/yonetim/giris"),
+      ),
+    ).toBe(false);
   });
 });

@@ -30,6 +30,50 @@ Kart 0142 tarayıcı takımına sekiz giriş yapan test ekledi; aynı anda giden
 - Neden ölçülüp karta yazıldı.
 - Tam takım yükte art arda en az üç kez bu dört test düşmeden geçiyor.
 
+## Ölçüm ve düzeltme (2026-11-18)
+
+**Sebep: geliştirme sunucusunun ilk derlemesi** (kart 0222 ile aynı mekanizma). Ne yük ne istek sınırı.
+
+- **Hattın izi (44244153259, `menuler.test.ts:114`).** "Giriş yap"a basıldıktan 0,65 sn sonra tarayıcıda `[Fast Refresh] rebuilding`, ardından `done in 4476ms` görüldü. Kurulum sayfasının isteği (`/yonetim/giris/kurulum`) derleme bitene kadar bekledi; `yonetici.ts:43`'teki 5 saniyelik beklenti düştü. Giriş ucunun yanıtı 200'dü, istek sınırı değildi.
+- **Neden ısınma yetmedi?** Kart 0222'nin ısınması yolları fetch ile istiyordu. Girişsiz istekte girişe yönlenen sayfalar ise derlenmiyordu: panel sayfaları, giriş kodu ve kurulum. 0222'nin ısınmalı yerel takımında testler sırasında bu sayfaların derleme payı şöyleydi: kurulum 859 ms, giriş kodu 417 ms, panel sayfaları 492–995 ms.
+
+**Düzeltme.** Isınmaya tarayıcı turu eklendi (`cekirdek/testler/uctan-uca/isinma.ts`):
+- Girişsiz sayfalar gerçek tarayıcıda açılır.
+- Deneme yöneticisiyle şifre ve iki aşamalı kurulumdan geçilir (kurulum sayfası) ve panelin her sayfası açılır.
+- Kurulumu bitmiş hesapla yeniden girilir (giriş kodu sayfası).
+- Testlerin giriş yardımcıları kullanılır: `paneleGir` ve `kurulumuBitir` isteğe bağlı bekleme süresi alır, testlerin davranışı değişmez.
+
+**Tur iki kez yapılır.** Boş önbellekle tek turdan sonra ilk test kurulum sayfasında 967 ms, menüler sayfasında 837 ms derleme bekledi. İki turdan sonra bu süreler 6 ve 10 ms oldu (birer deneme). Sebebin, sonradan derlenen sayfaların öncekileri yeniden derletmesi olduğu tahmindir, ölçülmedi. Hattaki düşüş de buna uyuyor: menüler testi 139. sıradaydı ve kurulum sayfası önceki testlerde zaten açılmıştı.
+
+**Üç tam takım** (temiz veritabanı, boş önbellek, iki işlemci, tek işçi). Testler sırasında en uzun derleme payı:
+
+| Sayfa | Önce (yalnız fetch ısınması) | 1. çalışma | 2. çalışma | 3. çalışma |
+|---|---|---|---|---|
+| Kurulum | 859 ms | 44 ms | 229 ms | 115 ms |
+| Giriş kodu | 417 ms | 29 ms | 170 ms | 179 ms |
+| Panel sayfaları | 492–995 ms | 38–130 ms | 145–397 ms | 84–224 ms |
+
+Üçüncü çalışmada vitrin bölümleri sayfası bir kez 760 ms aldı.
+
+- **Kartın dört testi ve hattı düşüren menüler testi:** üç çalışmanın üçünde geçti.
+- **Bütün takım:** birinci çalışmada 286/286. İkinci ve üçüncüde birer başka test (`katalog.test.ts:65`, `vitrin-bolumleri.test.ts:534`) `net::ERR_NETWORK_CHANGED` ile düştü. Tarayıcı, bu bilgisayarda Docker ağları değişince isteği kesiyor; yerel ortama ait, hatta görülmedi.
+
+**Bağımsız kontrolün bulgularıyla düzelenler.**
+- Her tur kendi istemci adresinden gelir. Giriş ucu dakikada beş istekle sınırlı; iki turun dört girişi tek adresin payını neredeyse dolduruyordu.
+- Düşen tur bir kez yeniden denenir. Isınmadaki tek bir ağ hatası bütün takımı düşürüyordu.
+- Her adımın tarayıcı bağlamı işi bitince kapanır.
+- Birim testi her sayfa dosyasının tam bir gruba düştüğünü ve giriş kodu ile kurulum sayfalarının var olduğunu denetler. Ad değişince kırmızı; ölçüldü.
+
+Bu değişikliklerden sonra dördüncü bir tam takım aynı koşulda çalıştırıldı.
+- Sonuç: 286/286; kartın dört testi ve menüler testi geçti.
+- Testler sırasında en uzun derleme payı: kurulum 265 ms, giriş kodu 139 ms, menüler 338 ms, vitrin bölümleri 696 ms.
+
+Bütün birim takımı 3441/3441 (tarayıcı turu eklendikten sonra). Hız ölçümü bu değişikliği kullanmıyor: hız ayarı ne ısınmayı ne giriş yardımcısını içe aktarıyor.
+
+**Bilinen sınırlar.**
+- Tarayıcı turunun gerçekten giriş yapıp sayfaları derlediği birim testinde değil, tam takım ölçümündedir.
+- Isınmanın hattaki süresi henüz ölçülmedi (yerelde istek süreleri toplamı 63–171 sn).
+
 ## Durum
 
 yapılacak

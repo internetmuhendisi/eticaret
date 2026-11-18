@@ -38,9 +38,14 @@ export const gizliOku = async (page: Page) =>
       .textContent()
   )?.trim() ?? "";
 
+// Beklemelerin süresi: testlerde beklentilerin kendi sınırı. Testlerden önceki ısınma (isinma.ts, kart 0164) sayfaların
+// ilk derlemesini beklediği için daha uzun süre verir.
+type Bekleme = { beklemeSuresi?: number };
+
 // Kurulum ekranındaki metin anahtardan gerçek uygulamanın üreteceği kodu üretir, kurulumu bitirir.
-export const kurulumuBitir = async (page: Page) => {
-  await expect(page).toHaveURL(/\/yonetim\/giris\/kurulum/);
+export const kurulumuBitir = async (page: Page, { beklemeSuresi }: Bekleme = {}) => {
+  const sure = beklemeSuresi === undefined ? {} : { timeout: beklemeSuresi };
+  await expect(page).toHaveURL(/\/yonetim\/giris\/kurulum/, sure);
   await sayfaHazir(page);
   const gizli = await gizliOku(page);
   const adim = kodAdimi();
@@ -48,6 +53,7 @@ export const kurulumuBitir = async (page: Page) => {
   await page.getByRole("button", { name: metin("yonetim.kurulum.gonder") }).click();
   await expect(page.getByRole("heading", { level: 2 })).toHaveText(
     metin("yonetim.kurulum.yedekBaslik"),
+    sure,
   );
   const yedekKodlari = await page.getByRole("listitem").allTextContents();
   await page.getByRole("button", { name: metin("yonetim.kurulum.devam") }).click();
@@ -63,10 +69,13 @@ export const sifreyleGir = async (page: Page, { eposta, sifre }: DenemeYoneticis
 };
 
 // Giriş sayfasından kurulumu bitirip panelin açılış sayfasına girer.
-export const paneleGir = async (page: Page, yonetici: DenemeYoneticisi) => {
+export const paneleGir = async (page: Page, yonetici: DenemeYoneticisi, bekleme: Bekleme = {}) => {
   await page.goto("/yonetim/giris");
   await sifreyleGir(page, yonetici);
-  const sonuc = await kurulumuBitir(page);
-  await expect(page).toHaveURL(/\/yonetim$/);
+  const sonuc = await kurulumuBitir(page, bekleme);
+  await expect(page).toHaveURL(
+    /\/yonetim$/,
+    bekleme.beklemeSuresi === undefined ? {} : { timeout: bekleme.beklemeSuresi },
+  );
   return sonuc;
 };
