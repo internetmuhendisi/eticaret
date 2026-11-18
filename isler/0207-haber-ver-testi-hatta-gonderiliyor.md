@@ -60,6 +60,23 @@ Sonuç: düşüş yerelde yeniden üretilemedi, sebep bilinmiyor. Kullanıcı ka
   - Hat adımının gerçekten çalışması ilk kırmızı hatta görülecek, yerelde denenemez.
 - **Bir sonraki adım.** Bu test hatta yeniden düşerse hattın sonucundaki izden üç adımın süresi okunur, sebep oradan aranır.
 
+## Ölçüm (2026-11-18): izden sebep
+
+Test, kart 0147'nin hattında (43893063883, 2026-11-16) yine düştü; iz saklanmıştı.
+
+| Adım | İzdeki süre |
+|---|---|
+| Robot sorusunun alınması | 22 ms |
+| Tarayıcıda çözüm | yaklaşık 0,2 sn |
+| Talebin gönderilmesi (POST) | 4905 ms; bunun 4904 ms'si sunucunun ilk baytı |
+
+- **Sunucunun iş süresi değil.** Enter'dan 0,41 saniye sonra, POST sunucuya varınca tarayıcının konsolunda `[Fast Refresh] rebuilding` yazıyor. 4,6 saniye sonra `done in 4567ms` geliyor, POST da hemen arkasından 200 ile dönüyor.
+- **Sebep geliştirme sunucusunun ilk istekteki derlemesi.** Ödeme testinin düşüşüyle (kart 0222) aynı sebep.
+- **Ne yapıldı.** Kart 0222'nin ısınmasıyla yollar testlerden önce derleniyor.
+- **Yerelde hattın yüküne yakın koşul.** Temiz veritabanı, iki işlemci, tek işçi, her seferinde boş önbellek ve baştan açılan sunucu. Bu dosya ödeme dosyasıyla birlikte on kez art arda çalıştı: 10/10. Stok bildirimi POST'unun framework payı her seferinde 0,4–4 ms; ısınmasız takımda bu pay 42 ms'ydi.
+- **Isınmalı bütün takım:** 283/283.
+- **Kalan madde.** "Hat yeşil" maddesi bir sonraki gönderimde görülecek.
+
 ## Durum
 
 yapılacak
