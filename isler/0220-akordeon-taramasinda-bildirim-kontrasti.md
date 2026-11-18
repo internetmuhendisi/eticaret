@@ -68,4 +68,4 @@ Tahmin, ölçülmedi: bildirim, akordeona basılınca bir geçişe giriyor (kapa
 
 ## Durum
 
-yapılacak
+bitti
