@@ -79,4 +79,4 @@ Test, kart 0147'nin hattında (43893063883, 2026-11-16) yine düştü; iz saklan
 
 ## Durum
 
-yapılacak
+bitti
