@@ -1,7 +1,23 @@
 // Tarayıcı testlerinden önceki ısınmanın adresleri (kart 0222, cekirdek/testler/uctan-uca/isinma.ts).
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { dosyaAdresi, isinmaAdresleri } from "./uctan-uca/isinma";
+
+// Ayar dosyaları yazı olarak okunur: içe aktarılınca ortam değişkenleri ve klasörler kurulur.
+const ayar = (dosya: string) => readFileSync(join(import.meta.dirname, "..", "..", dosya), "utf8");
+
+describe("ısınmanın yeri", () => {
+  // Hız ölçümü kendinden imzalı sertifikalı vekilin arkasındaki canlı derlemede ölçer: ısınma orada hazırlığı
+  // düşürdü (hat 44220561276).
+  it("tarayıcı testleri ısınmayı kurulumdan sonra çağırır, hız ölçümü çağırmaz", () => {
+    expect(ayar("playwright.config.ts")).toMatch(
+      /globalSetup: \[\s*"\.\/cekirdek\/testler\/uctan-uca\/hazirlik\.ts",\s*"\.\/cekirdek\/testler\/uctan-uca\/isinma\.ts",?\s*\]/,
+    );
+    expect(ayar("playwright.hiz.config.ts")).not.toContain("isinma");
+    expect(ayar("cekirdek/testler/uctan-uca/hazirlik.ts")).not.toContain("yollariIsit");
+  });
+});
 
 describe("ısınma adresleri", () => {
   it("dosya yolundan adres: grup klasörü düşer, değişken parça örnek değer alır, isteğe bağlı parça boş kalır", () => {

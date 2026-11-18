@@ -9,8 +9,14 @@
 // kurulum sayfaları (yonetim/giris/kod, yonetim/giris/kurulum). Bunlar testlerde ilk açıldıklarında derlenir;
 // hatta düştükleri görülmedi. Yalnız page.tsx ve route.ts okunur; başka türden yol dosyası (ör. sitemap.ts)
 // eklenirse buraya da eklenmelidir.
+//
+// Tarayıcı testlerinin ikinci hazırlığıdır (playwright.config.ts), kurulumdan sonra çalışır. Hız ölçümünde yoktur:
+// orada sunucu canlıdaki gibi önceden derlenmiştir ve kendinden imzalı sertifikalı vekilin arkasındadır; ısınma ilk
+// gönderimde hız ölçümünün hazırlığına konmuştu, Node'un isteği sertifikayı reddedip hazırlığı düşürdü (hat
+// 44220561276).
 import { readdirSync } from "node:fs";
 import { join, sep } from "node:path";
+import type { FullConfig } from "@playwright/test";
 
 const uygulamaKlasoru = join(import.meta.dirname, "..", "..", "uygulama", "app");
 
@@ -58,3 +64,10 @@ export const yollariIsit = async (kokAdres: string): Promise<void> => {
     await yanit.arrayBuffer();
   }
 };
+
+// Playwright'ın hazırlık olarak çağırdığı işlev: kök adres tarayıcı testlerinin ayarından.
+export default async function isinma(ayar: FullConfig): Promise<void> {
+  const kokAdres = ayar.projects[0]?.use.baseURL;
+  if (kokAdres === undefined) throw new Error("Yolların ısınması: kök adres yok.");
+  await yollariIsit(kokAdres);
+}

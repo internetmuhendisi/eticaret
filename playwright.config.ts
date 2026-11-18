@@ -57,8 +57,13 @@ export default defineConfig({
   testDir: ".",
   testMatch: ["**/uctan-uca/**/*.test.ts", "**/uctan-uca/**/*.test.tsx"],
   testIgnore: ortakDislananlar,
-  // Sitenin başlangıç kataloğu, menüleri ve düzeni testlerden önce kurulur (kart 0129).
-  globalSetup: "./cekirdek/testler/uctan-uca/hazirlik.ts",
+  // Sitenin başlangıç kataloğu, menüleri ve düzeni testlerden önce kurulur (kart 0129), sonra uygulamanın yolları
+  // geliştirme sunucusunda bir kez derlenir (kart 0222). Sıra önemlidir: hazırlıklar yazıldıkları sırayla çalışır.
+  // Hız ölçümü ısınmayı kullanmaz: canlıdaki gibi derlenmiş sunucuda ölçer.
+  globalSetup: [
+    "./cekirdek/testler/uctan-uca/hazirlik.ts",
+    "./cekirdek/testler/uctan-uca/isinma.ts",
+  ],
   // Bir testin süre sınırı (kart 0129). Playwright'ın 30 saniyesi kontrol hattında yetmiyor: hattın makinesi
   // bilgisayarın yüksüz hâlinin yaklaşık iki katı sürer (bütün takım 14,4 ve 3,8 dakika). Ölçüldü: iki renkte ve üç
   // genişlikte tarayan bölüm kütüphanesi testi bilgisayarda yüksüz 15, yük ortalaması 23'te 31 saniye sürdü, hatta

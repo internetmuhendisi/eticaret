@@ -55,6 +55,13 @@ Tahmin, ölçülmedi: geliştirme sunucusu ucu ilk istekte derliyor ve hattın m
 
 **Kalan madde.** "Kontrol hattı yeşil" maddesi bir sonraki gönderimde görülecek.
 
+## Hattan sonra (2026-11-18)
+
+- **Hat 44220561276.** Birim testleri 3440/3440, tarayıcı testleri 286/286 geçti; ödeme ve stok bildirimi testleri yeşil. Hız ölçümü hiçbir sayfayı ölçmeden düştü.
+- **Sebep: ısınmanın yeri.** Isınma `hazirlik.ts`'ye konmuştu; hız ölçümü de bu hazırlığı kullanıyor. Orada sunucu kendinden imzalı sertifikalı vekilin arkasında, Node'un `fetch`'i sertifikayı reddedince hazırlık düştü ("self-signed certificate"). Göndermeden önce hız ölçümü yerelde çalıştırılmamıştı.
+- **Düzeltme.** Isınma tarayıcı testlerinin ikinci hazırlığı oldu (`isinma.ts`'nin varsayılan işlevi, `playwright.config.ts`); hız ölçümünün ayarı değişmedi. Birim testi ikisinin yerini denetler; eski hâlle kırmızı.
+- **Yerel doğrulama (temiz veritabanı, iki işlemci).** Hız ölçümü 13/13. Ödeme ve stok bildirimi 12/12. Isınma ilk testten önce 98 istekle yapıldı; testlerde POST'ların derleme payı en çok 2 ms.
+
 ## Durum
 
 bitti
