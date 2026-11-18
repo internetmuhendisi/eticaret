@@ -73,4 +73,4 @@ Adaylar 2, 3 ve 4 ölçümle elendi: kaydedilen sıra sunucuya ulaşıyor, yenil
 
 ## Durum
 
-yapılacak
+bitti
