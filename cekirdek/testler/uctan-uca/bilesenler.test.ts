@@ -6,6 +6,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { metin } from "../../metinler/site-metni";
+import { bildirimSuresiniDurdur } from "./bildirim-suresi";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
 
@@ -23,6 +24,8 @@ const ac = async (page: Page) => {
 // Açılış animasyonu sürerken öğeler yarı saydamdır, kontrast yanlış ölçülür: tarama sonlu animasyonların
 // bitmesini bekler. Next.js'in geliştirme göstergesi sayfanın parçası değildir, taranmaz.
 const tara = async (page: Page, ne: string) => {
+  // Bildirimin süresi tarama sürerken dolmasın (kart 0220).
+  await bildirimSuresiniDurdur(page);
   await page.evaluate(() =>
     Promise.all(
       document

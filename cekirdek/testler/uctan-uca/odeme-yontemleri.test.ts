@@ -25,6 +25,7 @@ import { stokServisi } from "../../moduller/stok/servis";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
 import { vitrinAdresleri } from "../../vitrin/adresler";
+import { bildirimSuresiniDurdur } from "./bildirim-suresi";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
 import { ayriBaglanti, paneleGir, yoneticiAc } from "./yonetici";
@@ -52,6 +53,8 @@ test.afterAll(async () => {
 });
 
 const tara = async (page: Page, ne: string) => {
+  // Bildirimin süresi tarama sürerken dolmasın (kart 0220).
+  await bildirimSuresiniDurdur(page);
   await page.evaluate(() =>
     Promise.all(
       document
