@@ -10,7 +10,7 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 
 - Kategoriler: Giyim (tişört, sweatshirt; beden ve renk seçenekli), Ev ve Yaşam (mum, vazo, kupa), Elektronik Aksesuar (şarj kablosu, telefon kılıfı, kulaklık). Özel kurallı ürün yok.
 - Ürünler demoda %20 KDV sınıfıyla girilir. Giyimin doğru oranı gerçek mağazada muhasebeciye sorulur.
-- Kargo ücreti ve ücretsiz kargo sınırı sonra panelden girilir.
+- Kargo ücreti ve ücretsiz kargo sınırı sonra panelden girilir. Kart 0216'da kullanıcı kararı: 49,90 TL, 750 TL ve üstü ücretsiz. Değer başlangıç dosyasına yazılmaz, çünkü tarayıcı testleri bu sitenin klasörüyle çalışır ve kargoyu varsayılanında (ücretsiz) ölçer. Sunucudaki siteye panelden girilir.
 
 ## Mağaza
 
@@ -75,7 +75,7 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Üye olmadan alışveriş | Mağaza sahibi | Açık | — | `uyeOlmadanAlisveris`. Kapalıysa ödeme adımı girişe yönlendirir; açıkken müşteri ödeme sırasında isteğe bağlı hesap açar (kart 0213) |
 | Telefon zorunlu | Mağaza sahibi | Açık | — | `telefonZorunlu`. Kargo firmaları telefon ister (kart 0213) |
 | Havale | Mağaza sahibi | Açık | — | `odemeYontemleri` (yöntemlerin açıklığı ve müşterinin gördüğü sıra, kart 0214, karar 0141). Banka hesabı yoksa ödeme adımında görünmez. Panelde Satış > Ödeme yöntemleri; değiştirmek yalnız mağaza sahibinin (`odeme-yontemi.degistir`, kullanıcı kararı) |
-| Ödenmeyen havale siparişinin iptal süresi | Mağaza sahibi | 3 gün | — | `havaleIptalSuresi`, 1–30 gün. Süre sonunda sipariş iptal olur, stok geri döner; ödediğini bildiren müşterinin siparişi iptal olmaz (kullanıcı kararı, kart 0214) |
+| Ödenmeyen havale siparişinin iptal süresi | Mağaza sahibi | 3 gün | 1 gün (kart 0216: demoda verilen siparişlerin stoğu bir günde geri döner) | `havaleIptalSuresi`, 1–30 gün. Süre sonunda sipariş iptal olur, stok geri döner; ödediğini bildiren müşterinin siparişi iptal olmaz (kullanıcı kararı, kart 0214) |
 | Kapıda ödeme | Mağaza sahibi | Kapalı | Açık | `odemeYontemleri`. İsteyen mağaza açar |
 | Kartla öde | Mağaza sahibi | Kapalı | Açık (deneme ortamında) | `odemeYontemleri`. Kartla ödeme eklentisinin yöntemi: eklenti kapalıyken ödeme adımında ve panelde yoktur, kayıtlı yeri korunur (kart 0215) |
 | Kapıda ödeme seçenekleri | Mağaza sahibi | Nakit | Nakit ve kart | `kapidaOdemeSecenekleri`. Seçenekler: nakit, kart. Müşteri ödeme adımında seçer, kartı kurye çeker; her seçenek ödeme adımında ayrı satırdır (kart 0214) |
@@ -87,8 +87,8 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
 |---|---|---|---|---|
-| Kargo ücreti | Mağaza sahibi | 0 (kargo her zaman ücretsiz) | — | Kullanıcı kararı (kart 0212). Fiyatlar gibi vergi dahil ya da hariç girilir. Başlangıçta tek teslimat bölgesi. Şemada `kargoUcreti`, panelde Satış > Kargo (karar 0135) |
-| Ücretsiz kargo sınırı | Mağaza sahibi | Yok | — | Bu tutar ve üstündeki sepette kargo ücretsiz. Şemada `ucretsizKargoSiniri` (kart 0212) |
+| Kargo ücreti | Mağaza sahibi | 0 (kargo her zaman ücretsiz) | 49,90 TL, panelden (kart 0216) | Kullanıcı kararı (kart 0212). Fiyatlar gibi vergi dahil ya da hariç girilir. Başlangıçta tek teslimat bölgesi. Şemada `kargoUcreti`, panelde Satış > Kargo (karar 0135) |
+| Ücretsiz kargo sınırı | Mağaza sahibi | Yok | 750 TL, panelden (kart 0216) | Bu tutar ve üstündeki sepette kargo ücretsiz. Şemada `ucretsizKargoSiniri` (kart 0212) |
 | Ücretsiz kargo sınırının hesaplandığı tutar | Mağaza sahibi | İndirimden sonraki tutar | — | Seçenekler: indirimden önce, indirimden sonra. Şemada `ucretsizKargoTutari` (kart 0212) |
 | Kargoya verme süresi | Mağaza sahibi | 1 iş günü | — | Sayı olarak tutulur. Ürün sayfasında "1 iş gününde kargoda" yazar, ön bilgilendirme metnindeki teslim süresi de buradan gelir. Şemada `kargoyaVermeSuresi` (kart 0110); bugün güven şeridinin yer tutucusu okur |
 
