@@ -23,6 +23,7 @@ Birim testi tek bir parçayı, entegrasyon testi parçaların birlikte çalışm
 - Test dosyasının adı `*.test.ts` ya da `*.test.tsx` ile biter. Tarayıcı testleri `uctan-uca/` klasöründe durur, öteki testler orada durmaz.
 - `pnpm testler` bütün testleri çalıştırır. Tek aracı çalıştırmak için `pnpm birim-testleri` ya da `pnpm tarayici-testleri`.
 - Test dosyaları da tür kontrolünden geçer (`pnpm tur-kontrolu`).
+- Tarayıcı testlerinden önce hazırlık (`cekirdek/testler/uctan-uca/hazirlik.ts`) uygulamanın her yolunu bir kez ister (`isinma.ts`, kart 0222): geliştirme sunucusu yolu ilk istekte derler, hatta bu derleme takımın ortasında 5 saniyelik beklemeyi aştı. Yollar uygulamanın klasöründen okunur; girişsiz istekte girişe yönlenen sayfalar (panel, giriş kodu, kurulum) ısınmaz.
 - Tarayıcı testi sayfayla etkileşmeden önce `sayfaHazir` ile bekler (`cekirdek/testler/uctan-uca/sayfa-hazir.ts`, karar 0099): yalnız ağ işini beklemek sayfanın tarayıcıda bağlandığını göstermez.
 - Düşen tarayıcı testinin izi (adımların zamanı, ağ istekleri, görüntüler) `test-results/` altında kalır, kontrol hattı onu 14 gün saklar (karar 0131). Hatta ara sıra düşen testin sebebi önce bu izden okunur; `pnpm exec playwright show-trace <dosya>` ile açılır.
 - Playwright yamalıdır (karar 0130): "networkidle" sinyali yavaş işlemcide bir daha gelmeyebiliyordu. Playwright yükseltilirken yama yeniden uygulanır ya da yarışın düzeldiği ölçülür; `cekirdek/testler/playwright-yamasi.test.ts` yamanın durduğunu denetler.
