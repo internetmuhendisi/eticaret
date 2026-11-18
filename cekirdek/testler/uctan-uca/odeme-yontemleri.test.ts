@@ -268,7 +268,7 @@ test("sıralama hemen kaydedilir, vitrinde yeni sırayla görünür; kaydedilmem
     throw new Error("En az iki yöntem gerekir.");
   }
   try {
-    // Örnek Mağaza'da ilk iki yöntem açık ve kullanılabilir: vitrin onları ayarın sırasıyla gösterir.
+    // Tarayıcı testlerinin sitesinde ilk iki yöntem açık ve kullanılabilir: vitrin onları ayarın sırasıyla gösterir.
     expect((await vitrindekiSira()).slice(0, 2)).toEqual([birinci.kod, ikinci.kod]);
     await ayriBaglanti(page);
     await page.setViewportSize({ width: 1280, height: 900 });
