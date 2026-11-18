@@ -57,4 +57,4 @@ Tahmin, ölçülmedi: geliştirme sunucusu ucu ilk istekte derliyor ve hattın m
 
 ## Durum
 
-yapılacak
+bitti
