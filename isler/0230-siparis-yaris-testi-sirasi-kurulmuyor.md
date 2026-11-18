@@ -65,4 +65,4 @@ Bu sıranın hatta nasıl tersine döndüğü ölçülmedi. Olası sebep veritab
 
 ## Durum
 
-yapılacak
+bitti
