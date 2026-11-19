@@ -8,6 +8,8 @@ Testlerin hepsi geçmesine rağmen yakalanmamış hata Vitest'i 1 ile bitirir: k
 
 Kart 0073 sırasında görüldü (2026-11-07): takımın bir tam çalıştırmasında bir kez; dosya tek başına bu dalda ve ana dalda beşer kez temiz geçti.
 
+Bölüm: Sipariş ve müşteri hesabı. Kart 0240 ile birlikte yapılır.
+
 ## Olmazsa olmazlar
 
 - Önce ölçülür: iptalden sonra bağlantıyı kim açıyor (kitaplığın yeniden denemesi, havuz, zamanlayıcı).
