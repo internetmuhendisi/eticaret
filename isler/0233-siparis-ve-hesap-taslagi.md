@@ -40,4 +40,4 @@ Bölüm: Sipariş ve müşteri hesabı. Bu bölümün ilk işi.
 
 ## Durum
 
-yapılacak
+bitti
