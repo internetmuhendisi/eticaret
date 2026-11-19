@@ -70,6 +70,34 @@ const ozelAlanlar: Record<string, MetinAnahtari> = {
   kalemler: "yonetim.elleSiparis.hata.sepetBos",
 };
 
+// Ekrandaki sıra: odak ilk hatalı alana gider (hata toplanma sırası değil).
+const alanSirasi = [
+  "kalemler",
+  "musteri.kimlik",
+  "musteri.eposta",
+  "bilgiler.teslimat.ad",
+  "bilgiler.teslimat.soyad",
+  "bilgiler.teslimat.telefon",
+  "bilgiler.teslimat.adres.ulke",
+  "bilgiler.teslimat.adres.il",
+  "bilgiler.teslimat.adres.ilce",
+  "bilgiler.teslimat.adres.adres",
+  "bilgiler.teslimat.adres.postaKodu",
+  "bilgiler.fatura.firma",
+  "bilgiler.fatura.vergiDairesi",
+  "bilgiler.fatura.vergiNumarasi",
+  "bilgiler.fatura.adres.ulke",
+  "bilgiler.fatura.adres.il",
+  "bilgiler.fatura.adres.ilce",
+  "bilgiler.fatura.adres.adres",
+  "bilgiler.fatura.adres.postaKodu",
+  "bilgiler.odemeYontemi",
+  "bilgiler.not",
+  "bilgiler.metinlerIletildi",
+];
+const ilkHata = (hatalar: HataHaritasi): string | undefined =>
+  alanSirasi.find((alan) => hatalar[alan] !== undefined) ?? Object.keys(hatalar)[0];
+
 export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
   const metin = useMetin();
   const router = useRouter();
@@ -125,6 +153,14 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
     };
   }, [anahtar]);
 
+  // Düzeltilen seçimin hatası kalkar (öteki alanlar bir sonraki gönderimde denetlenir).
+  const temizle = (alan: string) =>
+    setHatalar((onceki) => {
+      if (onceki[alan] === undefined) return onceki;
+      const { [alan]: _kalkan, ...kalan } = onceki;
+      return kalan;
+    });
+
   const satirOf = (birim: string) => gorunum?.satirlar.find((satir) => satir.birim === birim);
 
   const urunAra = async (aranan: string) => {
@@ -179,7 +215,7 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
           )
         : [...onceki, { birim: oneri.kimlik, ad: oneri.ad, adet: 1 }],
     );
-    setHatalar((onceki) => ({ ...onceki, kalemler: "" }));
+    temizle("kalemler");
   };
 
   const sonAdresiKullan = (son: Teslimat) => {
@@ -253,7 +289,7 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
       }
     }
     setHatalar(yeni);
-    const ilk = Object.keys(yeni)[0];
+    const ilk = ilkHata(yeni);
     if (!girdi.success || ilk !== undefined) {
       if (ilk !== undefined) odak(ilk);
       return;
@@ -283,7 +319,7 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
       .find((k) => k !== undefined);
     if (Object.keys(alanHatalari).length > 0 && bilinen === undefined) {
       setHatalar(alanHatalari);
-      const ilkAlan = Object.keys(alanHatalari)[0];
+      const ilkAlan = ilkHata(alanHatalari);
       if (ilkAlan !== undefined) odak(ilkAlan);
       return;
     }
@@ -301,7 +337,7 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
     genelKutu.current?.focus();
   };
 
-  const kalemHatasi = hatalar["kalemler"] === "" ? undefined : hatalar["kalemler"];
+  const kalemHatasi = hatalar["kalemler"];
   const yontemAdi = (secim: ElleSiparisOdemesi) =>
     odemeYazisi(metin, secim.yontem, secim.yontem === "kapida-odeme" ? secim.secenek : null);
   const yontemAciklamasi = (secim: ElleSiparisOdemesi) =>
@@ -454,7 +490,10 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
                 etiket={metin("yonetim.elleSiparis.musteriAra")}
                 aciklama={metin("yonetim.elleSiparis.musteriAraAciklamasi")}
                 secili={musteri}
-                sec={setMusteri}
+                sec={(secilen) => {
+                  setMusteri(secilen);
+                  if (secilen !== undefined) temizle("musteri.kimlik");
+                }}
                 {...(hatalar["musteri.kimlik"] === undefined
                   ? {}
                   : { hata: hatalar["musteri.kimlik"] })}
@@ -635,7 +674,10 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
                   aciklama: yontemAciklamasi(yontem.secim),
                 }))}
                 deger={odeme}
-                onDegerDegisti={setOdeme}
+                onDegerDegisti={(deger) => {
+                  setOdeme(deger);
+                  temizle("bilgiler.odemeYontemi");
+                }}
                 {...(hatalar["bilgiler.odemeYontemi"] === undefined
                   ? {}
                   : { hata: hatalar["bilgiler.odemeYontemi"] })}
@@ -667,7 +709,10 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
               {...(hatalar["bilgiler.metinlerIletildi"] === undefined
                 ? {}
                 : { "aria-describedby": "elle-metin-hatasi" })}
-              onCheckedChange={(isaretli) => setIletildi(isaretli === true)}
+              onCheckedChange={(isaretli) => {
+                setIletildi(isaretli === true);
+                temizle("bilgiler.metinlerIletildi");
+              }}
             />
             {hatalar["bilgiler.metinlerIletildi"] === undefined ? null : (
               <p id="elle-metin-hatasi" className="text-kucuk text-tehlike-yazi">

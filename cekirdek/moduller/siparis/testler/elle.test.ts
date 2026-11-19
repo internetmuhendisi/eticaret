@@ -325,17 +325,20 @@ describe("elle sipariş", () => {
         pazarlamaIzni: false,
       }).success,
     ).toBe(false);
+    // Veritabanı: "elden" siparişte ödeme anı zorunlu, son ödeme anı yok.
+    const numara = await ver(h.vt, [{ birim, adet: 1 }], havale);
     await expect(
-      h.vt.insert(siparisler).values({
-        ...(await oku(h.vt, await ver(h.vt, [{ birim, adet: 1 }], havale))),
-        kimlik: randomUUID(),
-        numara: `X-${randomUUID().slice(0, 6)}`,
-        oturum_kimligi: null,
-        odeme_yontemi: "elden",
-        odeme_son_zamani: null,
-        odeme_zamani: null,
-      }),
+      h.vt
+        .update(siparisler)
+        .set({ odeme_yontemi: "elden", odeme_son_zamani: null })
+        .where(eq(siparisler.numara, numara)),
     ).rejects.toThrow();
+    await expect(
+      h.vt
+        .update(siparisler)
+        .set({ odeme_yontemi: "elden", odeme_son_zamani: null, odeme_zamani: sql`now()` })
+        .where(eq(siparisler.numara, numara)),
+    ).resolves.toBeDefined();
   });
 
   it("geçmişe panelden nedeni ve siparişi giren yönetici, değişiklik kaydı; onaylar yöneticinin beyanı", async () => {
