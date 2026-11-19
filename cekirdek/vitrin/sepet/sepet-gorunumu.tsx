@@ -41,10 +41,11 @@ const uyariMetinleri = {
 } as const satisfies Record<SepetGorunumuSatiri["uyarilar"][number]["kod"], MetinAnahtari>;
 
 // Satırı durduran uyarı tehlike renginde, öteki uyarılar uyarı renginde.
-const durdurur = (kod: SepetGorunumuSatiri["uyarilar"][number]["kod"]) =>
+// Satırın uyarısı ve durdurup durdurmadığı: panelin elle siparişi de aynı metni yazar (kart 0236).
+export const durdurur = (kod: SepetGorunumuSatiri["uyarilar"][number]["kod"]) =>
   kod === "tukendi" || kod === "kaldirildi" || kod === "en-az";
 
-const uyariYazisi = (
+export const uyariYazisi = (
   metin: Metin,
   satir: SepetGorunumuSatiri,
   uyari: SepetGorunumuSatiri["uyarilar"][number],

@@ -525,14 +525,16 @@ Elle siparişe eklenebilecek ürün birimleri (kart 0236, karar 0148): vitrin ar
 - Girdi (sorgu): `ara` (`elleSiparisAramaSemasi`).
 - Servis: `cekirdek/moduller/siparis/elle.ts`.
 - Başarılı (200): `{ "birimler": [{ "birim", "ad", "secim", "yaziliFiyat", "satilabilir" }] }`.
+- Hatalar: `dogrulama` (boş arama), `yetki`.
 
 ### GET /kapi/yonetici/elle-siparis-musterileri
 
 E-postasında aranan üye müşteriler (silinmiş hesap yok, en çok 10), her birinin son siparişindeki teslimat (kişisel bilgisi silinmemiş) adres önerisi olarak.
 
 - İzin: `siparis.yonet`. Sınır: `genel`.
-- Girdi (sorgu): `ara`.
+- Girdi (sorgu): `ara` (en az 3 harf, `elleSiparisMusteriAramasiSemasi`: e-postalar harf harf denenerek toplanmaz).
 - Başarılı (200): `{ "musteriler": [{ "kimlik", "eposta", "sonTeslimat" }] }` (`sonTeslimat` yoksa `null`).
+- Hatalar: `dogrulama` (3 harften kısa arama), `yetki`.
 
 ### POST /kapi/yonetici/elle-siparis-hesabi
 
@@ -549,7 +551,7 @@ Panelden sipariş kurar: vitrin siparişiyle aynı yoldan, oturum, stok ayırmas
 - İzin: `siparis.yonet`; "elden" yöntemi ayrıca `siparis.elden-tahsil` ister (görevlide yok), yoksa `yetki`. Sınır: `genel`.
 - Girdi: `{ "musteri": { "tur": "uye", "kimlik" } | { "tur": "misafir", "eposta" }, "kalemler", "bilgiler": { "odemeYontemi": { "yontem": "havale" } | { "yontem": "kapida-odeme", "secenek" } | { "yontem": "elden" }, "teslimat", "fatura", "not"?, "metinlerIletildi": true }, "gorulenToplam"? }` (`elleSiparisSemasi`).
 - Başarılı (200): `{ "numara" }`.
-- Hatalar: `is-kurali` (`sepet-degisti`, `sepet-bos`, `yontem-kapali`), `cakisma` (`stok-ayrildi`), `oturum-yok` (seçilen üyenin hesabı yok), `dogrulama`, `yetki`.
+- Hatalar: `is-kurali` (`sepet-degisti`, `sepet-bos`, `yontem-kapali`), `cakisma` (`stok-ayrildi`), `dogrulama` (alan `musteri.kimlik`: `musteri-yok`, seçilen üyenin hesabı silinmiş; şemanın alan hataları), `yetki`.
 
 ### POST /kapi/yonetici/siparis-notu
 

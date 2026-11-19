@@ -7,7 +7,7 @@
 // - Geçmişte "panelden-olusturuldu" ve siparişi giren yönetici; değişiklik kaydı; onaylar yöneticinin beyanı, pazarlama
 //   izni yok.
 // - Üye olmadan alışveriş kapalıyken de üye olmayan müşteri girilir; üyenin e-postası hesabından, silinmiş hesap
-//   oturum-yok. Ürün araması yalnız vitrinde sayfası açılan ürünleri, müşteri araması silinmemiş hesapları ve son
+//   alanın hatası (musteri-yok). Ürün araması yalnız vitrinde sayfası açılan ürünleri, müşteri araması silinmemiş hesapları ve son
 //   teslimatı verir. İki site ayrı.
 import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
@@ -533,7 +533,10 @@ describe("elle sipariş", () => {
           elle([{ birim, adet: 1 }], { musteri: { tur: "uye", kimlik: hesapKimligi } }),
         ),
       ),
-    ).toMatchObject({ kod: "oturum-yok" });
+    ).toMatchObject({
+      kod: "dogrulama",
+      ayrinti: [{ alan: "musteri.kimlik", kod: "musteri-yok" }],
+    });
   });
 
   it("ürün aramasının sınırını görünmeyen ürünler doldurmaz", async () => {

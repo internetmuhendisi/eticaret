@@ -195,5 +195,10 @@ export const elleSiparisSemasi = z.strictObject({
 });
 export type ElleSiparisGirdisi = z.output<typeof elleSiparisSemasi>;
 
-// Elle siparişin ürün ve müşteri araması (panelin arama kutuları).
+// Elle siparişin ürün ve müşteri araması (panelin arama kutuları). Müşteri araması en az 3 harf ister: e-postalar ve son
+// teslimat harf harf denenerek toplanmasın (bağımsız kontrolün bulgusu).
 export const elleSiparisAramaSemasi = z.strictObject({ ara: z.string().trim().min(1).max(100) });
+export const elleSiparisMusteriAramaSiniri = 3;
+export const elleSiparisMusteriAramasiSemasi = z.strictObject({
+  ara: z.string().trim().min(elleSiparisMusteriAramaSiniri).max(100),
+});

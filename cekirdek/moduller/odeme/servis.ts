@@ -157,7 +157,12 @@ export const odemeServisi = (site: Site) => {
       let anahtarlar: Anahtarlar | undefined;
       if (girdi.kim.tur === "uye") {
         const hesabi = await musteriHesabi(islem, girdi.kim.musteri);
-        if (hesabi === null) throw new BilinenHata("oturum-yok");
+        // Panelde seçilen üyenin hesabı silinmişse alanın hatası (yöneticinin oturumu düşmedi).
+        if (hesabi === null) {
+          throw panel === undefined
+            ? new BilinenHata("oturum-yok")
+            : dogrulama("musteri.kimlik", "musteri-yok");
+        }
         eposta = hesabi.eposta;
         if (girdi.bilgiler.pazarlamaIzni) {
           await islem.insert(musteriOnaylari).values({

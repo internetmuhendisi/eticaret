@@ -10,6 +10,7 @@ import { elleSiparisMusterileri, elleSiparisUrunleri } from "../../moduller/sipa
 import { iadeServisi } from "../../moduller/siparis/iade.ts";
 import {
   elleSiparisAramaSemasi,
+  elleSiparisMusteriAramasiSemasi,
   elleSiparisSemasi,
   havaleOnayiSemasi,
   iadeYenidenDenemeSemasi,
@@ -160,7 +161,7 @@ export const elleSiparisUrunleriUcu = ucTanimla({
 // GET /kapi/yonetici/elle-siparis-musterileri?ara=: e-postasında aranan üye müşteriler, son teslimat adresiyle.
 export const elleSiparisMusterileriUcu = ucTanimla({
   giris: "yonetici",
-  sema: elleSiparisAramaSemasi,
+  sema: elleSiparisMusteriAramasiSemasi,
   izin: "siparis.yonet",
   sinir: "genel",
   isle: async ({ ara }) => ({ musteriler: await elleSiparisMusterileri(siteninVeritabani(), ara) }),

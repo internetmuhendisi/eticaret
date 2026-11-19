@@ -1173,7 +1173,7 @@
       "uye": "Üye müşteri",
       "misafir": "Üye olmayan müşteri",
       "musteriAra": "Müşteri ara",
-      "musteriAraAciklamasi": "Üye müşterinin e-postasını yazın, listeden seçin.",
+      "musteriAraAciklamasi": "Üye müşterinin e-postasından en az 3 harf yazın, listeden seçin.",
       "sonAdres": "Son siparişin adresi: {ad}, {adres}",
       "sonAdresiKullan": "Bu adresi kullan",
       "teslimat": "Teslimat",
@@ -1199,8 +1199,12 @@
         "musteriSec": "Listeden bir üye müşteri seçin ya da üye olmayan müşteriyi seçin.",
         "musteriYok": "Seçilen müşterinin hesabı artık yok. Başka bir müşteri seçin.",
         "metinler": "Metinlerin müşteriye iletildiğini işaretleyin. Mesafeli satışta bu zorunludur.",
-        "genel": "Sipariş oluşturulamadı. Sayfayı yenileyip yeniden deneyin."
-      }
+        "genel": "Sipariş oluşturulamadı. Sayfayı yenileyip yeniden deneyin.",
+        "ozetYok": "Özet henüz hesaplanmadı. Özetteki toplamı görünce yeniden gönderin.",
+        "oturum": "Oturumunuz kapandı. Yeniden giriş yapıp siparişi yeniden girin."
+      },
+      "not": "Sipariş notu (isteğe bağlı)",
+      "toplamDuyurusu": "Toplam: {toplam}"
     }
   },
   "vitrin": {

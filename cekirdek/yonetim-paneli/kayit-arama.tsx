@@ -73,6 +73,12 @@ export function KayitArama<Kayit extends AramaOnerisi = AramaOnerisi>({
   const ara = async (aranan: string, istenenSayfa: number) => {
     istekSirasi.current += 1;
     const bu = istekSirasi.current;
+    // Kendi araması boş yazıda istek göndermez (uçları boş aramayı reddeder; kart 0236).
+    if (kendiAramasi !== undefined && aranan.trim() === "") {
+      setKayitlar([]);
+      setDurum("bos");
+      return;
+    }
     setDurum("yukleniyor");
     const sonuc =
       kendiAramasi === undefined
@@ -82,6 +88,7 @@ export function KayitArama<Kayit extends AramaOnerisi = AramaOnerisi>({
         : await kendiAramasi(aranan, istenenSayfa);
     if (bu !== istekSirasi.current) return;
     if (!sonuc.tamam) {
+      setKayitlar([]);
       setDurum(sonuc.kod === "yetki" ? "yetki" : "hata");
       return;
     }

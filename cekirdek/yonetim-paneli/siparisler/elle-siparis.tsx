@@ -23,6 +23,7 @@ import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { Kart } from "../../../bilesenler/parcalar/kart";
 import { OnayKutusu } from "../../../bilesenler/parcalar/onay-kutusu";
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
+import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
 import { useMetin } from "../../metinler/istemci-metni";
@@ -30,7 +31,11 @@ import type { MetinAnahtari } from "../../metinler/metin";
 import { doldur } from "../../moduller/eposta/sablon";
 import type { Teslimat } from "../../moduller/odeme/semalar";
 import type { ElleSiparisBirimi, ElleSiparisMusterisi } from "../../moduller/siparis/elle";
-import { type ElleSiparisOdemesi, elleSiparisSemasi } from "../../moduller/siparis/semalar";
+import {
+  type ElleSiparisOdemesi,
+  elleSiparisMusteriAramaSiniri,
+  elleSiparisSemasi,
+} from "../../moduller/siparis/semalar";
 import {
   type Adres,
   AdresAlanlari,
@@ -42,7 +47,7 @@ import {
   MetinAlani,
   vergiBolgesi,
 } from "../../vitrin/odeme/alanlar";
-import { SepetOzeti } from "../../vitrin/sepet/sepet-gorunumu";
+import { durdurur, SepetOzeti, uyariYazisi } from "../../vitrin/sepet/sepet-gorunumu";
 import type { SepetGorunumu } from "../../vitrin/sepet/veri";
 import { panelAdresi } from "../adresler";
 import { type AramaOnerisi, KayitArama } from "../kayit-arama";
@@ -187,6 +192,10 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
   };
 
   const musteriAra = async (aranan: string) => {
+    // En az 3 harf (uç da ister): kısa yazıda istek gitmez, öneri yoktur.
+    if (aranan.trim().length < elleSiparisMusteriAramaSiniri) {
+      return { tamam: true as const, veri: { dahaVar: false, kayitlar: [] as MusteriOnerisi[] } };
+    }
     const sonuc = await panelIstegi<{ musteriler: ElleSiparisMusterisi[] }>(
       `elle-siparis-musterileri?${new URLSearchParams({ ara: aranan })}`,
     );
@@ -232,13 +241,20 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
   const secilenOdeme = (): ElleSiparisOdemesi | undefined =>
     veri.yontemler.find((yontem) => yontem.anahtar === odeme)?.secim;
 
+  // Odak alanın kendisine: kutuysa içindeki seçili radyo, arama kutusu ya da onay kutusu.
   const odak = (alan: string) => {
     const kimlik = kimlikler[alan];
-    const oge =
-      kimlik === undefined
-        ? document.querySelector<HTMLElement>(`[data-elle-alani="${alan}"]`)
-        : document.getElementById(kimlik);
-    oge?.focus();
+    if (kimlik !== undefined) {
+      document.getElementById(kimlik)?.focus();
+      return;
+    }
+    const kutu = document.querySelector<HTMLElement>(`[data-elle-alani="${alan}"]`);
+    const icindeki =
+      kutu?.querySelector<HTMLElement>('[role="radio"][aria-checked="true"]') ??
+      kutu?.querySelector<HTMLElement>(
+        '[role="radio"], [role="combobox"], button[role="checkbox"]',
+      );
+    (icindeki ?? kutu)?.focus();
   };
 
   const gonder = async (olay: FormEvent<HTMLFormElement>) => {
@@ -294,6 +310,12 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
       if (ilk !== undefined) odak(ilk);
       return;
     }
+    // Özet görülmeden (henüz gelmedi ya da okunamadı) sipariş gönderilmez: sunucu görülen toplamı karşılaştırır.
+    if (gorunum === null) {
+      setGenelHata(metin("yonetim.elleSiparis.hata.ozetYok"));
+      requestAnimationFrame(() => genelKutu.current?.focus());
+      return;
+    }
     gonderiliyor.current = true;
     const sonuc = await panelIstegi<{ numara: string }>("elle-siparis", girdi.data);
     gonderiliyor.current = false;
@@ -312,7 +334,12 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
     for (const sorun of sonuc.ayrinti) {
       const genel = genelHatalar[sorun.kod];
       if (genel !== undefined) continue;
-      if (sorun.alan !== "") alanHatalari[sorun.alan] = hataMetni(metin, sorun.alan, sorun.kod, 0);
+      if (sorun.alan !== "") {
+        alanHatalari[sorun.alan] =
+          sorun.kod === "musteri-yok"
+            ? metin("yonetim.elleSiparis.hata.musteriYok")
+            : hataMetni(metin, sorun.alan, sorun.kod, 0);
+      }
     }
     const bilinen = sonuc.ayrinti
       .map((sorun) => genelHatalar[sorun.kod])
@@ -329,12 +356,13 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
           (sonuc.kod === "yetki"
             ? "yonetim.siparis.hata.yetki"
             : sonuc.kod === "oturum-yok"
-              ? "yonetim.elleSiparis.hata.musteriYok"
+              ? "yonetim.elleSiparis.hata.oturum"
               : "yonetim.elleSiparis.hata.genel"),
       ),
     );
     setYenileme((onceki) => onceki + 1);
-    genelKutu.current?.focus();
+    // Kutu bir sonraki çizimde vardır.
+    requestAnimationFrame(() => genelKutu.current?.focus());
   };
 
   const kalemHatasi = hatalar["kalemler"];
@@ -359,9 +387,11 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
       className="flex flex-col gap-4 masaustu:flex-row masaustu:items-start"
     >
       <div className="flex min-w-0 flex-col gap-4 masaustu:w-2/3">
-        <div ref={genelKutu} tabIndex={-1}>
-          {genelHata === null ? null : <Uyari tur="tehlike">{genelHata}</Uyari>}
-        </div>
+        {genelHata === null ? null : (
+          <div ref={genelKutu} tabIndex={-1}>
+            <Uyari tur="tehlike">{genelHata}</Uyari>
+          </div>
+        )}
         <Kart className="gap-4 p-4 tablet:p-5">
           <h2 className="font-baslik text-baslik-4 font-baslik-kalinligi">
             {metin("yonetim.elleSiparis.urunler")}
@@ -388,6 +418,7 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
               className="w-full border-collapse text-left"
               data-elle-alani="kalemler"
               tabIndex={-1}
+              {...(kalemHatasi === undefined ? {} : { "aria-describedby": "elle-kalem-hatasi" })}
             >
               <caption className="sr-only">{metin("yonetim.elleSiparis.urunler")}</caption>
               <thead>
@@ -414,22 +445,36 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
                       <td className="py-3 align-middle">
                         <span className="flex min-w-0 flex-col">
                           <span className="font-kalin wrap-anywhere">{kalem.ad}</span>
-                          {satir !== undefined && !satir.satilabilir ? (
+                          {satir?.fiyat === undefined ? null : (
+                            <span className="text-kucuk text-soluk-yazi">
+                              {satir.fiyat.enDusuk.yazili.tutar}
+                            </span>
+                          )}
+                          {satir !== undefined &&
+                          !satir.satilabilir &&
+                          satir.uyarilar.length === 0 ? (
                             <span className="text-kucuk text-tehlike-yazi">
                               {metin("yonetim.elleSiparis.satilamaz")}
                             </span>
-                          ) : satir !== undefined && satir.adet < kalem.adet ? (
-                            <span className="text-kucuk text-uyari-yazi">
-                              {doldur(metin("yonetim.elleSiparis.adetIndi"), {
-                                adet: String(satir.adet),
-                              })}
-                            </span>
                           ) : null}
+                          {/* Sepetin uyarıları (en az, en çok, stok azaldı, tükendi): vitrinin sepetiyle aynı metin. */}
+                          {(satir?.uyarilar ?? []).map((uyari) => (
+                            <span
+                              key={uyari.kod}
+                              className={sinif(
+                                "text-kucuk",
+                                durdurur(uyari.kod) ? "text-tehlike-yazi" : "text-uyari-yazi",
+                              )}
+                            >
+                              {satir === undefined ? "" : uyariYazisi(metin, satir, uyari)}
+                            </span>
+                          ))}
                         </span>
                       </td>
                       <td className="px-2 py-3 align-middle">
                         <AdetSecici
                           deger={kalem.adet}
+                          enAz={Math.min(kalem.adet, satir?.enAz ?? 1)}
                           enCok={Math.max(1, satir?.enCok ?? kalem.adet + 1)}
                           onDegerDegisti={(adet) =>
                             setKalemler((onceki) =>
@@ -685,7 +730,7 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
             </div>
           )}
           <FormAlani
-            etiket={metin("vitrin.odeme.notu")}
+            etiket={metin("yonetim.elleSiparis.not")}
             {...(hatalar["bilgiler.not"] === undefined ? {} : { hata: hatalar["bilgiler.not"] })}
           >
             {(alan) => {
@@ -700,25 +745,16 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
               );
             }}
           </FormAlani>
-          <div className="flex flex-col gap-1">
+          <div data-elle-alani="bilgiler.metinlerIletildi">
             <OnayKutusu
               etiket={metin("yonetim.elleSiparis.metinlerIletildi")}
               checked={iletildi}
-              data-elle-alani="bilgiler.metinlerIletildi"
-              aria-invalid={hatalar["bilgiler.metinlerIletildi"] === undefined ? undefined : true}
-              {...(hatalar["bilgiler.metinlerIletildi"] === undefined
-                ? {}
-                : { "aria-describedby": "elle-metin-hatasi" })}
+              hata={hatalar["bilgiler.metinlerIletildi"]}
               onCheckedChange={(isaretli) => {
                 setIletildi(isaretli === true);
                 temizle("bilgiler.metinlerIletildi");
               }}
             />
-            {hatalar["bilgiler.metinlerIletildi"] === undefined ? null : (
-              <p id="elle-metin-hatasi" className="text-kucuk text-tehlike-yazi">
-                {hatalar["bilgiler.metinlerIletildi"]}
-              </p>
-            )}
           </div>
         </Kart>
       </div>
@@ -731,7 +767,14 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
           <h2 id="elle-ozet" className="font-baslik text-baslik-4 font-baslik-kalinligi">
             {metin("yonetim.elleSiparis.ozet")}
           </h2>
-          <div aria-live="polite">
+          <span className="sr-only" aria-live="polite">
+            {gorunum === null
+              ? ""
+              : doldur(metin("yonetim.elleSiparis.toplamDuyurusu"), {
+                  toplam: gorunum.yazili.toplam,
+                })}
+          </span>
+          <div>
             {gorunum === null ? (
               <p className="text-kucuk text-soluk-yazi">{metin("yonetim.elleSiparis.ozetBos")}</p>
             ) : (

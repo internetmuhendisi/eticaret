@@ -213,6 +213,16 @@ describe("elle sipariş uçları", () => {
     expect(await siparisSayisi()).toBe(once);
   });
 
+  it("müşteri araması en az 3 harf ister", async () => {
+    const sahip = await cerez("magaza-sahibi");
+    expect(
+      (await elleSiparisMusterileriUcu(istek("elle-siparis-musterileri?ara=el", sahip))).status,
+    ).toBe(400);
+    expect(
+      (await elleSiparisMusterileriUcu(istek("elle-siparis-musterileri?ara=ell", sahip))).status,
+    ).toBe(200);
+  });
+
   it("ürün araması birimleri fiyatıyla verir", async () => {
     const sahip = await cerez("magaza-sahibi");
     const birim = await birimAc();

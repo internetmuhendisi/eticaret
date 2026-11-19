@@ -59,6 +59,29 @@ function Deneme() {
   );
 }
 
+// Kendi aramasıyla kutu (kart 0236): çağrılar ve hata testten ayarlanır.
+const cagrilar: string[] = [];
+const durum = { hata: false };
+function KendiAramasi() {
+  return (
+    <KayitArama
+      ara={async (aranan) => {
+        cagrilar.push(aranan);
+        return durum.hata
+          ? { tamam: false as const, kod: "dogrulama", ayrinti: [] }
+          : {
+              tamam: true as const,
+              veri: { kayitlar: [{ kimlik: "u1", ad: "Termos" }], dahaVar: false },
+            };
+      }}
+      etiket={etiket}
+      secili={undefined}
+      sec={() => {}}
+      secinceBosalt
+    />
+  );
+}
+
 const ciz = () =>
   render(
     <MetinSaglayici dil="tr">
@@ -114,6 +137,32 @@ describe("kayıt arama", () => {
     await yaz(kutu, "yok");
     expect(kutu.getAttribute("aria-expanded")).toBe("false");
     expect(screen.getByRole("status").textContent).toBe(metin("yonetim.kayitArama.sonucYok"));
+  });
+
+  it("kendi araması boş yazıda çağrılmaz; hatada öneriler kalmaz (kart 0236)", async () => {
+    cagrilar.length = 0;
+    durum.hata = false;
+    render(
+      <MetinSaglayici dil="tr">
+        <KendiAramasi />
+      </MetinSaglayici>,
+    );
+    const kutu = screen.getByRole("combobox", { name: etiket });
+    fireEvent.focus(kutu);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(cagrilar).toEqual([]);
+    expect(screen.queryByText(metin("yonetim.kayitArama.hata"))).toBeNull();
+    await yaz(kutu, "ter");
+    expect(cagrilar).toEqual(["ter"]);
+    expect(screen.getByRole("option", { name: "Termos" })).toBeTruthy();
+    durum.hata = true;
+    await yaz(kutu, "term");
+    expect(screen.queryByRole("option", { name: "Termos" })).toBeNull();
+    await yaz(kutu, "");
+    expect(cagrilar).toEqual(["ter", "term"]);
+    expect(istekler).toEqual([]);
   });
 
   it("yetkisi olmayana nedeni yazar", async () => {
