@@ -46,7 +46,7 @@ paths:
 
 - Değiştiren işlem `usePanelIslemi` ile yapılır (`cekirdek/yonetim-paneli/panel-islemi.ts`): uca gönderir, sayfayı yeniler, bildirir; formun hatası formda kalır. Ekran kendi işlem kalıbını yazmaz.
 - Sunucunun verisinden kurulan form `useSunucuFormu` ile tutulur (`cekirdek/yonetim-paneli/sunucu-formu.ts`, kart 0223): başarıda `kaydedildi(gonderilen)` çağrılır, "Vazgeç" `vazgec`'tir. Kaydın yankısı olan yenileme formu ezmez; farklı veri yalnız kaydedilmemiş değişiklik yoksa forma geçer. Ekran sunucunun verisi değişince formu `useEffect` ile baştan kurmaz.
-- Kategori, marka ve ürün yalnız `KayitArama` ile, arayarak seçilir (`cekirdek/yonetim-paneli/kayit-arama.tsx`, uç `kayit-ara`). Çevreleyen pencere öneri listesi açıkken Escape'i yok sayar (`kayitAramaAcikMi`).
+- Kategori, marka ve ürün yalnız `KayitArama` ile, arayarak seçilir (`cekirdek/yonetim-paneli/kayit-arama.tsx`, uç `kayit-ara`). Başka bir kaynakta arama aynı kutuyu kendi `ara` işleviyle kullanır (elle siparişin ürün ve müşterisi, kart 0236); seçilemeyen öneri `secilemez` ile işaretlenir. Çevreleyen pencere öneri listesi açıkken Escape'i yok sayar (`kayitAramaAcikMi`).
 - Pencerede kaydedilmemiş değişiklik sorusu `useKapatmaSorusu` iledir (`cekirdek/yonetim-paneli/kapatma-sorusu.tsx`); ekran kendi kopyasını yazmaz.
 - Geri dönüşsüz eylem (silme) `OnayPenceresi` ile sorulur. Açılır menüden açılan pencere menü kapandıktan sonra açılır (`onCloseAutoFocus`): aynı anda açılınca menü sonra yeniden açılmıyordu.
 - Menü öğesinin taşınması yalnız derinlik sınırını aşmayan yerleri sunar; kural menü kaydındadır (`menuSinirlari.derinlik`), ekran onu yeniden yazmaz, servis yine denetler.
@@ -68,6 +68,7 @@ paths:
 - Hangi işlemin görüneceği sunucuda siparişin durumu, ödeme yöntemi ve yöneticinin izniyle bulunur (`siparisAyrintisiVerisi`); ekran işlemi yeniden süzmez. İşlem ekranın gördüğü durumu gönderir.
 - Durumun rozeti ve metni kayıttan okunur (`siparisDurumTanimlari`, `durumMetni`); durum adını ekranda elle yazma.
 - Sipariş araması aranan metni adrese yazmaz: liste ucuna gider. Durum sekmesi ve sayfa adrestedir.
+- Elle sipariş (karar 0148) Siparişler'in alt sayfasıdır (`elle-siparis.tsx`, verisi `elle-veri.ts`): ürün ve müşteri `KayitArama`'nın kendi aramasıyla, adres alanları vitrinin ödeme adımınınkilerle (`cekirdek/vitrin/odeme/alanlar.tsx`), özet elle sipariş hesabı ucundan (`sepetGorunumu`). Hata odağı ekranın alan sırasıyla ilk hatalı alana gider.
 - İptal ve iade (karar 0147) yan penceredir (`iade-penceresi.tsx`), yalnız `siparis.iade` izni olana ve durumu izin veren siparişte görünür; tutar ve vergi önizlemesi sunucunun `iadeyiHesapla`'sıyla ve sitenin biçim ayarlarıyla (`siteninBicimAyarlari`) çizilir, gönderilen yalnız seçimdir.
 
 ## Ödeme yöntemleri ve banka hesapları (karar 0141)

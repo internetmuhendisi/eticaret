@@ -536,6 +536,54 @@ describe("elle sipariş", () => {
     ).toMatchObject({ kod: "oturum-yok" });
   });
 
+  it("ürün aramasının sınırını görünmeyen ürünler doldurmaz", async () => {
+    const h = await hazirla();
+    const ek = randomUUID().slice(0, 6);
+    const srv = urunServisi(() => site.ayarlar.saatDilimi);
+    const ac = async (durum: "yayinda" | "taslak") =>
+      srv.urunEkle(h.vt, yapan(), {
+        ad: `Sınır ${ek} ${randomUUID().slice(0, 4)}`,
+        vergiSinifi: null,
+        durum,
+      });
+    // Görünen ürün önce, sonra sınırdan çok taslak (en yeni önce sırasında taslaklar öne geçer).
+    const gorunen = await ac("yayinda");
+    for (let sira = 0; sira < 12; sira += 1) await ac("taslak");
+    const birimler = await elleSiparisUrunleri(h.vt, site, `Sınır ${ek}`);
+    const gorunenBirimi = (await srv.urunuOku(h.vt, gorunen))?.birimler[0]?.kimlik;
+    expect(birimler.map((birim) => birim.birim)).toEqual([gorunenBirimi]);
+  });
+
+  it("ödeme adımı şemayı atlasa da elden yöntemiyle sipariş kurmaz", async () => {
+    const h = await hazirla();
+    const birim = await h.urunAc();
+    const bilgiler = odemeBilgileriSemasi.parse({
+      odemeYontemi: havale,
+      teslimat: teslimatBilgisi,
+      fatura: { tur: "bireysel", adresAyni: true },
+      onBilgilendirmeOnayi: true,
+      mesafeliSatisOnayi: true,
+      pazarlamaIzni: false,
+    });
+    expect(
+      await hatasi(
+        odeme.siparisVer(
+          h.vt,
+          {
+            kim: { tur: "misafir", eposta: "vitrin@ornek.test", hesap: { ac: false } },
+            // Şemanın reddettiği yöntem doğrudan verilir: servis de reddeder (ikinci katman).
+            bilgiler: {
+              ...bilgiler,
+              odemeYontemi: { yontem: "elden" } as unknown as OdemeYontemiSecimi,
+            },
+            kalemler: [{ birim, adet: 1 }],
+          },
+          3600,
+        ),
+      ),
+    ).toMatchObject({ kod: "is-kurali", ayrinti: [{ kod: "yontem-kapali" }] });
+  });
+
   it("ürün araması yalnız vitrinde sayfası açılan ürünleri, satılamayanı işaretli verir", async () => {
     const h = await hazirla();
     const ek = randomUUID().slice(0, 6);

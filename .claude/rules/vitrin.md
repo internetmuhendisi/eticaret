@@ -91,6 +91,7 @@ paths:
 
 ## Ödeme adımı (karar 0140)
 
+- Ödeme bilgilerinin alanları (metin, il ve ilçe seçimi, adres, hata metni) `cekirdek/vitrin/odeme/alanlar.tsx`'tedir, teslimat ülkeleri `teslimatUlkeleri` (`ulkeler.ts`) ile kurulur; panelin elle siparişi de onları kullanır (kart 0236).
 - Ödeme sayfası `/odeme` vitrinin çerçevesinin dışındadır, sade çerçevesi `OdemeCercevesi`'dir (`cekirdek/vitrin/odeme/cerceve.tsx`; `app/(odeme)/`). Form `OdemeFormu` (`odeme-formu.tsx`), şeması uçla ortaktır (`cekirdek/moduller/odeme/semalar.ts`).
 - Oturum ve stok ayırması yalnız ödeme servisindedir (`odemeServisi`, `cekirdek/moduller/odeme/servis.ts`); stok ayırma yalnız `stokAyir` ve `ayirmayiBirak` ile (stok servisi). Ayırma vitrindeki stok durumunu değiştirmez (kullanıcı kararı).
 - Özetin tutarları sepet ucundan, teslimat ve fatura bölgesiyle gelir (`useSepetGorunumu`, `vergiBolgeleri`); tarayıcı tutar göndermez.
