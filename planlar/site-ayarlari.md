@@ -91,12 +91,16 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Ücretsiz kargo sınırı | Mağaza sahibi | Yok | 750 TL, panelden (kart 0216) | Bu tutar ve üstündeki sepette kargo ücretsiz. Şemada `ucretsizKargoSiniri` (kart 0212) |
 | Ücretsiz kargo sınırının hesaplandığı tutar | Mağaza sahibi | İndirimden sonraki tutar | — | Seçenekler: indirimden önce, indirimden sonra. Şemada `ucretsizKargoTutari` (kart 0212) |
 | Kargoya verme süresi | Mağaza sahibi | 1 iş günü | — | Sayı olarak tutulur. Ürün sayfasında "1 iş gününde kargoda" yazar, ön bilgilendirme metnindeki teslim süresi de buradan gelir. Şemada `kargoyaVermeSuresi` (kart 0110); bugün güven şeridinin yer tutucusu okur |
+| Kargo firmaları | Mağaza sahibi | Boş liste | Bir deneme firması (açıkça deneme adıyla, `.test` alan adlı takip adresi) | Ad ve takip adresi kalıbı (`{takip numarası}` yerine siparişin takip numarası konur). Siparişi kargoya verirken listeden seçilir; takip bağlantısı müşterinin sipariş sayfasında ve e-postasında görünür. Panelde Satış > Sipariş ayarları (kart 0233 önerisi, karar 0145; şemaya kart 0234 ile girer) |
 
 ## İade
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
 |---|---|---|---|---|
 | İade kargosunu kim öder | Mağaza sahibi | Mağaza | — | Seçenekler: mağaza, müşteri. İade koşulları metnine buradan girer. Cayma hakkında yasal kuralı hukukçuya teyit ettirilecek |
+| Müşterinin kendi iptali | Mağaza sahibi | Ödeme beklenirken | — | Seçenekler: kapalı, ödeme beklenirken, kargoya verilene kadar. Müşteri sipariş sayfasından onay penceresiyle iptal eder; ödenmişse para iade akışıyla döner (kart 0233 önerisi, karar 0145; kart 0239) |
+| İade talebi süresi | Mağaza sahibi | 14 gün | — | Teslimden sonra gün. Süre içinde müşteri hesabından ya da sipariş takibinden iade talebi açar. Cayma süresiyle ilişkisi hukukçuya teyit ettirilir (kart 0233 önerisi, karar 0145; kart 0239) |
+| Siparişteki kişisel bilgilerin saklama süresi | Altyapı sahibi | 10 yıl (hukukçu teyidine kadar öneri) | — | Süre sonunda ad, adres, telefon ve e-posta siparişten silinir; tutarlar, ürünler ve vergi dökümü kalır. Ödeme oturumunun kişisel verisi de bu süreye bağlanır (kullanıcı kararı, karar 0145; süre kart 0063'te hukukçuya sorulur) |
 
 ## Vitrin listeleri ve ürün sayfası
 
@@ -124,6 +128,8 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Gönderen adı | Altyapı sahibi | Mağazanın görünen adı | — | Panelden düzenlenmesi panel işidir |
 | Gönderen adresi | Altyapı sahibi | Yok, e-posta gönderilmez | `ornek-magaza@posta.eticaretmagazasi.com` | Alan adı henüz doğrulanmadı, bugün yalnız yerel kutuya gider (karar 0050) |
 | Yanıt adresi | Altyapı sahibi | Gönderen adresi | — | |
+| Yönetici bildirimlerinin alıcıları | Mağaza sahibi | Boş: mağaza sahibi rolündeki yöneticiler | — | En çok 5 adres (kart 0233 önerisi, karar 0145; kart 0241) |
+| Açık yönetici bildirimleri | Mağaza sahibi | Hepsi açık | — | Yeni sipariş, havale bildirimi, iade talebi, müşterinin ya da taramanın iptali, düşük ve tükenen stok, onay bekleyen yorum, kartla ödeme uyuşmazlığı ve bekleyen iade; her biri ayrı açılıp kapanır (kart 0233 önerisi, karar 0145; kart 0241) |
 | Logo | Mağaza sahibi | Sitenin ilk logosu (`marka/` klasörü), yoksa mağaza adı yazı olarak | Yer tutucu ilk logo (`marka/logo.png`) | Yüklenen logo dosya deposunda; vitrin, panel ve e-posta tek uçtan alır (kart 0073, karar 0059). Yükleme ekranı kart 0094 |
 
 ## Tasarım ve marka
