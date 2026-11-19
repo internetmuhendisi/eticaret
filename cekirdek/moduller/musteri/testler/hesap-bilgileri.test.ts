@@ -10,9 +10,10 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { girisDenemeSiniri } from "../../../kayitlar/oturum.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
+import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import { epostaKayitlari } from "../../eposta/model.ts";
 import { girisYap, oturumAc, oturumuDogrula } from "../../oturum/servis.ts";
-import { musteriOnaylari } from "../model.ts";
+import { musteriler, musteriOnaylari } from "../model.ts";
 import {
   hesapBilgileri,
   musteriKaydet,
@@ -75,12 +76,27 @@ describe("kampanya izni", () => {
     expect(await pazarlamaSatirlari(kimlik)).toHaveLength(3);
   });
 
-  it("aynı anda gelen iki değişiklik tek satır yazar", async () => {
+  it("açık duran değişikliğin arkasındaki değişiklik kilitte bekler ve aynı hâli ikinci kez yazmaz", async () => {
     const { kimlik } = await musteriAc(false);
-    await Promise.all([
-      pazarlamaIzniniDegistir(vt, kimlik, true),
-      pazarlamaIzniniDegistir(vt, kimlik, true),
-    ]);
+    let ikinci: Promise<unknown> | undefined;
+    await vt.transaction(async (islem) => {
+      // Birinci değişiklik kaydedilmeden durur: ikincinin okuması onu kilitten sonra görmelidir.
+      await islem
+        .select({ kimlik: musteriler.kimlik })
+        .from(musteriler)
+        .where(eq(musteriler.kimlik, kimlik))
+        .for("update");
+      await islem.insert(musteriOnaylari).values({
+        musteri_kimligi: kimlik,
+        tur: "pazarlama",
+        verildi: true,
+        metin_surumu: "taslak-1",
+      });
+      ikinci = pazarlamaIzniniDegistir(vt, kimlik, true);
+      await kilitBekleyeniGor(vt);
+    });
+    await ikinci;
+    // Kayıttaki "verilmedi" ve açık duran işlemin "verildi" satırı; ikinci değişiklik yazmadı.
     expect(await pazarlamaSatirlari(kimlik)).toHaveLength(2);
   });
 
