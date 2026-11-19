@@ -33,6 +33,8 @@ describe("tema demosunda kapı", () => {
     expect(kapali.toSorted()).toEqual(
       [
         ...musteriGirisi,
+        // Hesap durumu (kart 0187): demoda tarayıcı oturum sormaz, uç da kapalıdır.
+        "GET /kapi/herkese-acik/hesap-durumu",
         "POST /kapi/herkese-acik/musteri-cikis",
         "POST /kapi/herkese-acik/musteri-giris",
         "POST /kapi/herkese-acik/musteri-kayit",

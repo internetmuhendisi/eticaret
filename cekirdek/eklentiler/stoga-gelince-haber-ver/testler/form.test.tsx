@@ -18,7 +18,7 @@ import { UrunUstKismi } from "../../../vitrin/urun-sayfasi/urun-ust.tsx";
 import { StokBildirimiFormu } from "../form.tsx";
 
 const metin = metinOkuyucu("tr");
-const hesabimUcu = "/kapi/musteri/hesabim";
+const hesabimUcu = "/kapi/herkese-acik/hesap-durumu";
 const herkeseAcikUc = "/kapi/herkese-acik/stok-bildirimi";
 const musteriUcu = "/kapi/musteri/stok-bildirimi";
 const baslik = metin("eklenti.stokBildirimi.form.baslik");
@@ -75,8 +75,9 @@ const ucuTaklitEt = (cevaplar: Record<string, () => Response>) =>
     const cevap = cevaplar[String(hedef)];
     return cevap === undefined ? new Response("", { status: 503 }) : cevap();
   });
-const girissiz = () => yanit(401);
-const girisli = () => yanit(200, { basarili: true, veri: { eposta: "uye@ornek.test" } });
+const girissiz = () => yanit(200, { basarili: true, veri: { girisli: false } });
+const girisli = () =>
+  yanit(200, { basarili: true, veri: { girisli: true, eposta: "uye@ornek.test" } });
 
 const bekle = () => act(async () => {});
 const kutu = () => screen.queryByRole("region", { name: baslik });

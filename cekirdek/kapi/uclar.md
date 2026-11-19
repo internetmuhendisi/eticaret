@@ -52,9 +52,19 @@ Kapıdaki her uç burada yazar (`.claude/rules/sunucu-arayuzu.md`). Yeni ya da d
 
 **Çerez.** Uç yanıta çerezi yalnız `cerezYaz` ile yazar. Oturum çerezleri `cekirdek/kapi/oturum-cerezi.ts` dosyasındadır, hatalı yanıtta da gider.
 
-**Tema demosu** (kart 0116, karar 0127). Site ayarı `temaDemosu` açıkken ziyaretçi yalnız gezer: kapalı uç, sahte isteğe, sınıra ve girdiye bakmadan `bulunamadi` döner. Müşteri girişindeki her uç kapalıdır. Herkese açık her uç tanımında demodaki durumunu beyan eder (`temaDemosunda`, tür kontrolü ister): hesap, sipariş, yorum, bildirim ya da e-posta doğuran uç `kapali`, vitrinin okuduğu ve panelin kullandığı uç `acik`. Yönetici ve sahip uçları açıktır. Bugün kapalı herkese açık uçlar: `musteri-kayit`, `musteri-giris`, `musteri-cikis`, `musteri-sifre-sifirlama`, `musteri-sifre-yenile`, `stok-bildirimi`, `odeme`, `havale-bildirimi`, `kartla-odeme/donus`, `kartla-odeme/bildirim`, `kartla-odeme/taksitler`; listeyi `cekirdek/kapi/testler/tema-demosu.test.ts` denetler.
+**Tema demosu** (kart 0116, karar 0127). Site ayarı `temaDemosu` açıkken ziyaretçi yalnız gezer: kapalı uç, sahte isteğe, sınıra ve girdiye bakmadan `bulunamadi` döner. Müşteri girişindeki her uç kapalıdır. Herkese açık her uç tanımında demodaki durumunu beyan eder (`temaDemosunda`, tür kontrolü ister): hesap, sipariş, yorum, bildirim ya da e-posta doğuran uç `kapali`, vitrinin okuduğu ve panelin kullandığı uç `acik`. Yönetici ve sahip uçları açıktır. Bugün kapalı herkese açık uçlar: `hesap-durumu`, `musteri-kayit`, `musteri-giris`, `musteri-cikis`, `musteri-sifre-sifirlama`, `musteri-sifre-yenile`, `stok-bildirimi`, `odeme`, `havale-bildirimi`, `kartla-odeme/donus`, `kartla-odeme/bildirim`, `kartla-odeme/taksitler`; listeyi `cekirdek/kapi/testler/tema-demosu.test.ts` denetler.
 
 ## Herkese açık
+
+### GET /kapi/herkese-acik/hesap-durumu
+
+Vitrinin hesap durumu (kart 0187, 0237). Sayfa başına bir kez sorulur (`cekirdek/vitrin/hesap-durumu.ts`). Girişsiz ziyaretçi hata değil başarılı bir cevap alır: tarayıcı konsoluna 401 düşmez. Oturum çerezi tarayıcı koduna kapalı olduğu için (HttpOnly) soru oturumsuz da gider. Oturum kapıdaki gibi okunur: kısa anahtarın süresi dolduysa yenilenir.
+
+- İzin: `herkese-acik`. Sınır: `genel`. Tema demosunda kapalı.
+- Girdi: yok (`hesapDurumuSemasi`, `cekirdek/moduller/musteri/semalar.ts`).
+- Servis: `cekirdek/moduller/musteri/servis.ts` (`musteriHesabi`).
+- Başarılı (200): `{ "basarili": true, "veri": { "girisli": false } }` ya da `{ "basarili": true, "veri": { "girisli": true, "eposta": "..." } }`, gerekirse yenilenen oturum çerezleri.
+- Hatalar: yok.
 
 ### GET /kapi/herkese-acik/saglik
 
@@ -302,13 +312,93 @@ Müşterinin ucuyla aynı. Ayrıca yarım kalmış giriş adımlarını siler, d
 
 ### GET /kapi/musteri/hesabim
 
-Müşterinin kendi hesabını döner. Vitrin oturumu buradan sorar: sayfa çizerken oturum okunamaz (karar 0039). Girişsiz ziyaretçi için 401 olağandır, tarayıcı konsolunda görünür (karar 0051).
+Müşterinin kendi hesabını döner. Kart 0187'ye kadar vitrin oturumu buradan soruyordu; bugün vitrin `GET /kapi/herkese-acik/hesap-durumu` ile sorar, girişsiz ziyaretçinin konsoluna 401 düşmez. Uç, müşteri girişi isteyen öteki istemciler için kalır.
 
 - İzin: `musteri.kendi-hesabi.gor`. Sınır: `genel`.
 - Girdi: yok. Kimlik yalnız kapıdan gelir.
 - Servis: `cekirdek/moduller/musteri/servis.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "eposta": "..." } }`, gerekirse yenilenen oturum çerezleri.
 - Hatalar: `oturum-yok`.
+
+### GET /kapi/musteri/hesap-bilgileri
+
+Hesap bilgileri ekranının verisi (kart 0237): e-posta ve kampanya izninin bugünkü hâli (en yeni onay satırı).
+
+- İzin: `musteri.kendi-hesabi.gor`. Sınır: `genel`.
+- Girdi: yok (`hesapBilgileriSemasi`, `cekirdek/moduller/musteri/semalar.ts`). Kimlik yalnız kapıdan gelir.
+- Servis: `cekirdek/moduller/musteri/servis.ts` (`hesapBilgileri`).
+- Başarılı (200): `{ "basarili": true, "veri": { "eposta": "...", "pazarlamaIzni": true | false } }`.
+- Hatalar: `oturum-yok`.
+
+### POST /kapi/musteri/pazarlama-izni
+
+Kampanya iznini verir ya da geri alır (kart 0237). Onaylar değiştirilemez, yeni satır yazılır (karar 0051); izin zaten istenen hâldeyse satır yazılmaz.
+
+- İzin: `musteri.kendi-hesabi.degistir`. Sınır: `genel`.
+- Girdi: `{ "verildi": true | false }` (`pazarlamaIzniSemasi`). Kimlik yalnız kapıdan gelir.
+- Servis: `cekirdek/moduller/musteri/servis.ts` (`pazarlamaIzniniDegistir`).
+- Başarılı (200): `{ "basarili": true, "veri": { "verildi": true | false } }`.
+- Hatalar: `dogrulama`, `oturum-yok`.
+
+### POST /kapi/musteri/sifre-degistir
+
+Müşteri şifresini değiştirir (kart 0237). Şu anki şifre girişle aynı deneme sınırıyla doğrulanır. Şifre değişince hesabın bütün oturumları kapanır, bu cihaz için yeni oturum çerezi yazılır, müşteriye "şifreniz değişti" e-postası gider.
+
+- İzin: `musteri.kendi-hesabi.degistir`. Sınır: `siki`.
+- Girdi: `{ "mevcutSifre", "yeniSifre" }` (`sifreDegistirSemasi`). Kimlik yalnız kapıdan gelir.
+- Servis: `cekirdek/moduller/musteri/servis.ts` (`musteriSifreDegistir`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }` ve yeni oturum çerezleri.
+- Hatalar: `dogrulama` (`mevcutSifre` alanında `sifre-yanlis`; yeni şifre kurala uymuyor), `oturum-yok`, `istek-siniri` (deneme sınırı).
+
+### GET /kapi/musteri/adresler
+
+Müşterinin adres defteri (kart 0237, karar 0149): önce varsayılan teslimat adresi, sonra en yeni. Hesabım'ın Adreslerim ekranı ve ödeme adımının kayıtlı adres seçimi kullanır.
+
+- İzin: `musteri.kendi-adresleri.gor`. Sınır: `genel`.
+- Girdi: yok (`adreslerSemasi`, `cekirdek/moduller/musteri/adres-semalari.ts`). Kimlik yalnız kapıdan gelir.
+- Servis: `cekirdek/moduller/musteri/adres.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "adresler": [{ "kimlik", "baslik", "teslimat": { "ad", "soyad", "telefon"?, "adres": { "ulke", "il"?, "ilce"?, "adres", "postaKodu"? } }, "varsayilanTeslimat", "varsayilanFatura" }, ...] } }`.
+- Hatalar: `oturum-yok`.
+
+### POST /kapi/musteri/adres
+
+Yeni adres (kart 0237, karar 0149). Varsayılanı olmayan türde ilk adres o türde varsayılan olur; işaretlenen tür öncekini bırakır.
+
+- İzin: `musteri.kendi-adresleri.degistir`. Sınır: `genel`.
+- Girdi: `{ "baslik", "teslimat", "varsayilanTeslimat", "varsayilanFatura" }` (`adresEkleSemasi`; teslimat ödeme adımının şemasıyla).
+- Servis: `cekirdek/moduller/musteri/adres.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "adresler": [...] } }`: güncel liste.
+- Hatalar: `dogrulama` (şema; `teslimat.telefon` alanında `telefon-gerekli`, `teslimat.adres.ulke` alanında `ulke-teslimat-disi`), `oturum-yok`, `is-kurali` (`adres-siniri`: kayıtlı adres sayısı sınırda).
+
+### POST /kapi/musteri/adres-degistir
+
+Adresin bütün alanlarını yeniden yazar (kart 0237). İşareti kaldırılan varsayılan tür boş kalır.
+
+- İzin: `musteri.kendi-adresleri.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "baslik", "teslimat", "varsayilanTeslimat", "varsayilanFatura" }` (`adresDegistirSemasi`).
+- Servis: `cekirdek/moduller/musteri/adres.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "adresler": [...] } }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `bulunamadi` (`adres-yok`: adres yok ya da başka müşterinin).
+
+### POST /kapi/musteri/adres-sil
+
+Adresi kalıcı siler (kart 0237, karar 0149). Varsayılan adres silinince kalanların en yenisi o türde varsayılan olur. Siparişlerdeki adres değişmez.
+
+- İzin: `musteri.kendi-adresleri.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }` (`adresSilSemasi`).
+- Servis: `cekirdek/moduller/musteri/adres.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "adresler": [...] } }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `bulunamadi` (`adres-yok`).
+
+### POST /kapi/musteri/adres-varsayilan
+
+"Varsayılan yap" (kart 0237): adres verilen türlerde varsayılan olur, önceki varsayılan bırakılır.
+
+- İzin: `musteri.kendi-adresleri.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "turler": ["teslimat" | "fatura", ...] }` (`adresVarsayilanSemasi`).
+- Servis: `cekirdek/moduller/musteri/adres.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "adresler": [...] } }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `bulunamadi` (`adres-yok`).
 
 ### GET /kapi/musteri/yorum-izni
 

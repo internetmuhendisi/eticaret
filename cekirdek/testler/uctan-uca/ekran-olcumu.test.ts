@@ -7,11 +7,10 @@
 // ortak düzeni ve menüleri değiştiren öteki tarayıcı testleri (vitrin bölümleri, menüler) başka işçide aynı anda
 // çalışabilir, onların geçici bölümü ölçüme girebilir (bilinen sınır, yalnız disiplin).
 // Konsol: Chromium "yüklenemedi" iletisine adres yazmaz. Bu yüzden ileti ayıklanırken yanıtlar ayrıca denetlenir:
-// 400 ve üstü yanıt alan her istek bulgudur, yalnız girişsiz oturum sorusunun 401'i (karar 0098) ve bulunamadı
-// sayfasının kendi belgesinin 404'ü beklenir.
+// 400 ve üstü yanıt alan her istek bulgudur, yalnız bulunamadı sayfasının kendi belgesinin 404'ü beklenir. Girişsiz
+// ziyaretçinin hesap sorusu kart 0187'den beri 401 almaz.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
-import { hesabimUcu } from "../../vitrin/hesap-durumu";
 import { basilmayanOgeler } from "./basilan-alan";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
@@ -39,17 +38,15 @@ const tara = async (page: Page) => {
 for (const [tur, { adres, durum }] of Object.entries(ekranSayfalari)) {
   test(`ekran ölçümü: ${tur} dört genişlikte ve iki temada`, async ({ page }) => {
     test.setTimeout(120_000);
+    // Girişsiz ziyaretçinin hesap sorusu 401 almaz (kart 0187): konsolda hiçbir 401 beklenmez.
     const hatalar = konsoluDinle(page, {
-      haric: (metin) =>
-        metin.includes("status of 401") || (durum === 404 && metin.includes("status of 404")),
+      haric: (metin) => durum === 404 && metin.includes("status of 404"),
     });
     const bulgular: string[] = [];
     page.on("response", (yanit) => {
       if (yanit.status() < 400) return;
       const istek = yanit.request();
-      const beklenen =
-        (yanit.status() === 401 && new URL(yanit.url()).pathname === hesabimUcu) ||
-        (yanit.status() === durum && istek.resourceType() === "document");
+      const beklenen = yanit.status() === durum && istek.resourceType() === "document";
       if (!beklenen) bulgular.push(`${yanit.status()} ${istek.resourceType()} ${yanit.url()}`);
     });
     for (const renk of ["light", "dark"] as const) {

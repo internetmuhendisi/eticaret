@@ -30,11 +30,11 @@ const yanit = (durum: number, govde: unknown) =>
   new Response(JSON.stringify(govde), { status: durum });
 const hesap = (girisli: boolean | "hata", favoriler: string[] = []) =>
   vi.spyOn(globalThis, "fetch").mockImplementation(async (hedef) => {
-    if (String(hedef) === "/kapi/musteri/hesabim") {
+    if (String(hedef) === "/kapi/herkese-acik/hesap-durumu") {
       if (girisli === "hata") return yanit(500, {});
       return girisli
-        ? yanit(200, { basarili: true, veri: { eposta: "m@ornek.test" } })
-        : yanit(401, { basarili: false, hata: { kod: "oturum-yok" } });
+        ? yanit(200, { basarili: true, veri: { girisli: true, eposta: "m@ornek.test" } })
+        : yanit(200, { basarili: true, veri: { girisli: false } });
     }
     return yanit(200, { basarili: true, veri: { favoriler } });
   });

@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 // Müşterinin oturum durumu ve Hesabım öğeleri (kart 0131): sade ana sayfanın hesap alanı, üst satırın Hesabım
-// menüsü ve telefondaki yan pencere aynı durumu kullanır; sayfada tek istek gider. Yalnız 401 girişsizdir; sunucu
-// ve ağ hatasında girişli müşteri "Giriş yap" görmez (karar 0051). Katalogun örnek kipinde istek gitmez.
+// menüsü ve telefondaki yan pencere aynı durumu kullanır; sayfada tek istek gider. Girişsiz ziyaretçi başarılı bir
+// "girişsiz" cevabı alır (kart 0187); sunucu ve ağ hatasında girişli müşteri "Giriş yap" görmez (karar 0051). Katalogun
+// örnek kipinde istek gitmez.
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { temaDemosu } from "../../kayitlar/tema.ts";
@@ -13,14 +14,15 @@ import { HesapAlani } from "../hesap-alani.tsx";
 import { hesapDurumunuBekle, hesapDurumunuSifirla } from "../hesap-durumu.ts";
 
 const metin = metinOkuyucu("tr");
-const hesabimUcu = "/kapi/musteri/hesabim";
+const hesabimUcu = "/kapi/herkese-acik/hesap-durumu";
 const cikisUcu = "/kapi/herkese-acik/musteri-cikis";
 const eposta = "musteri@ornek.test";
 const etiket = metin("vitrin.bolum.ustSatir.hesap");
 
 const yanit = (durum: number, govde: unknown = {}) =>
   new Response(JSON.stringify(govde), { status: durum });
-const girisli = () => yanit(200, { basarili: true, veri: { eposta } });
+const girisli = () => yanit(200, { basarili: true, veri: { girisli: true, eposta } });
+const girissiz = () => yanit(200, { basarili: true, veri: { girisli: false } });
 
 // Uçlara giden istekleri sayar; cevabı adrese göre verir.
 const ucuTaklitEt = (cevaplar: Record<string, () => Response | Promise<Response>>) =>
@@ -95,8 +97,8 @@ describe("oturum durumu", () => {
     expect(screen.getByRole("menu").textContent).toContain(metin("vitrin.hesap.cikisHata"));
   });
 
-  it("401 girişsizdir: Hesabım bağlantıdır, sade sayfada giriş ve kayıt bağlantısı görünür", async () => {
-    const istek = ucuTaklitEt({ [hesabimUcu]: () => yanit(401) });
+  it("girişsiz cevabında Hesabım bağlantıdır, sade sayfada giriş ve kayıt bağlantısı görünür", async () => {
+    const istek = ucuTaklitEt({ [hesabimUcu]: girissiz });
     ciz();
     await bekle();
     expect(istek).toHaveBeenCalledTimes(1);

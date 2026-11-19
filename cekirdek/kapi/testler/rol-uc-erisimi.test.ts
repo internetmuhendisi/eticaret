@@ -17,11 +17,15 @@ import { favoriler } from "../../moduller/favori/model.ts";
 import { favoriServisi } from "../../moduller/favori/servis.ts";
 import { siteninFiyatServisi } from "../../moduller/fiyat/servis.ts";
 import { siteninServisi } from "../../moduller/magaza-ayarlari/servis.ts";
+import { adresServisi } from "../../moduller/musteri/adres.ts";
+import { adresFormuSemasi } from "../../moduller/musteri/adres-semalari.ts";
+import { musteriAdresleri, musteriler, musteriOnaylari } from "../../moduller/musteri/model.ts";
 import { odemeOturumlari } from "../../moduller/odeme/model.ts";
 import { odemeBilgileriSemasi } from "../../moduller/odeme/semalar.ts";
 import { odemeServisi } from "../../moduller/odeme/servis.ts";
 import { odemeYontemiServisi } from "../../moduller/odeme/yontemler.ts";
 import { hesapAc } from "../../moduller/oturum/servis.ts";
+import { sifreDogrula } from "../../moduller/oturum/sifre.ts";
 import { robotSorusuUret } from "../../moduller/robot-korumasi/servis.ts";
 import { soruyuCoz } from "../../moduller/robot-korumasi/testler/soru-coz.ts";
 import { havaleBildirimleri, siparisler } from "../../moduller/siparis/model.ts";
@@ -58,6 +62,8 @@ const belgeUret = (satirlar: Record<string, string>): string =>
 // Senaryo A'nın oturumuyla B'nin kaydını ister. İstek gerçekten işlenmeli (200): reddedilen ya da şemadan
 // geçmeyen istek hiçbir şey kanıtlamaz. Senaryo B'ye veri hazırlayıp aranan değerleri verir (adres, sipariş
 // gibi); verilmezse B'nin e-postası aranır. Yazma yapan uçta B'nin kaydının değişmediğini ucu yazan ölçer.
+// Kaydı kimliğiyle hedefleyen uçta (adres değiştir, sil, varsayılan yap; kart 0237) B'nin kaydı A için yoktur:
+// senaryo beklenen durumu (404) verir ve B'nin kaydının değişmediğini ucu yazan ölçer.
 type Musteri = { kimlik: string; eposta: string };
 type MusteriSenaryosu = (
   b: Musteri,
@@ -66,6 +72,7 @@ type MusteriSenaryosu = (
   sorgu?: string;
   govde?: unknown;
   aranan?: string[];
+  durum?: number;
 }>;
 const musteriSenaryolari: Record<string, MusteriSenaryosu> = {
   // Uç girdi almaz, kimliği yalnız kapıdan okur: A kendi e-postasını görür, B'ninkini göremez.
@@ -127,6 +134,38 @@ const musteriSenaryolari: Record<string, MusteriSenaryosu> = {
   },
   // B'nin ödeme oturumu birimin bir adedini ayırmış (stok 2); A bir önceki oturum olarak B'ninkini verir. A'nın
   // oturumu kendi hesabına açılır, B'nin oturumu ve ayırması silinmez (aşağıdaki test ölçer), yanıtta B yoktur.
+  // B'nin ayırt edilebilir adlı adresi var; A kendi defterini ister: B'nin adresi görünmez (kart 0237).
+  "GET /kapi/musteri/adresler": async (b) => {
+    const { ad } = await adresliMusteri(b.kimlik);
+    return { aranan: [b.eposta, ad] };
+  },
+  // A kendi adresini ekler: cevap yalnız A'nın defteridir. B'nin adresi değişmez (aşağıdaki test ölçer).
+  "POST /kapi/musteri/adres": async (b) => {
+    const { ad } = await adresliMusteri(b.kimlik);
+    return { govde: adresGirdisi("A"), aranan: [b.eposta, ad] };
+  },
+  // A, B'nin adresini kimliğiyle değiştirmeye, silmeye ve varsayılan yapmaya çalışır: adres A için yoktur (404),
+  // B'nin adresi değişmez (aşağıdaki test ölçer).
+  "POST /kapi/musteri/adres-degistir": async (b) => {
+    const { ad, kimlik } = await adresliMusteri(b.kimlik);
+    return { govde: { kimlik, ...adresGirdisi("A") }, aranan: [b.eposta, ad], durum: 404 };
+  },
+  "POST /kapi/musteri/adres-sil": async (b) => {
+    const { ad, kimlik } = await adresliMusteri(b.kimlik);
+    return { govde: { kimlik }, aranan: [b.eposta, ad], durum: 404 };
+  },
+  "POST /kapi/musteri/adres-varsayilan": async (b) => {
+    const { ad, kimlik } = await adresliMusteri(b.kimlik);
+    return { govde: { kimlik, turler: ["teslimat"] }, aranan: [b.eposta, ad], durum: 404 };
+  },
+  // Uç girdi almaz: A kendi e-postasını ve iznini görür (kart 0237).
+  "GET /kapi/musteri/hesap-bilgileri": async () => ({}),
+  // A kendi iznini verir; B'nin onay satırı yazılmaz (aşağıdaki test ölçer).
+  "POST /kapi/musteri/pazarlama-izni": async () => ({ govde: { verildi: true } }),
+  // A kendi şifresini değiştirir (testin müşterisinin şifresi); B'nin şifresi değişmez (aşağıdaki test ölçer).
+  "POST /kapi/musteri/sifre-degistir": async () => ({
+    govde: { mevcutSifre: musteriSifresi, yeniSifre: "yepyeni-bir-deneme-sifresi" },
+  }),
   "POST /kapi/musteri/odeme": async (b) => {
     const { birim, oturum } = await odemedekiBirim(b.kimlik);
     return {
@@ -186,6 +225,29 @@ const odemeBilgileri = {
   onBilgilendirmeOnayi: true,
   mesafeliSatisOnayi: true,
   pazarlamaIzni: false,
+};
+
+// Testin müşterilerinin şifresi (şifre değiştirme senaryosu şu anki şifre olarak verir).
+const musteriSifresi = "uzun-bir-deneme-sifresi";
+
+// Adres defterinin girdisi (kart 0237); adı ayırt edilebilir.
+const adresGirdisi = (ad: string) => ({
+  baslik: "Ev",
+  teslimat: { ...odemeBilgileri.teslimat, ad },
+  varsayilanTeslimat: false,
+  varsayilanFatura: false,
+});
+
+// Müşterinin defterine ayırt edilebilir adlı bir adres yazar.
+const adresliMusteri = async (musteri: string) => {
+  const ad = `B${randomBytes(4).toString("hex")}`;
+  const [adres] = await adresServisi(denemeSitesi()).adresEkle(
+    vt,
+    musteri,
+    adresFormuSemasi.parse(adresGirdisi(ad)),
+  );
+  if (adres === undefined) throw new Error("Adres yazılamadı.");
+  return { ad, kimlik: adres.kimlik };
 };
 
 // Stoğu 2 olan yayındaki ürünün birimi; B'nin ödeme oturumu bir adedini ayırmış (ayir: false ise ayırma yok).
@@ -285,7 +347,7 @@ const yeniMusteri = async () => {
   const eposta = `musteri${sayac}@ornek.test`;
   const { hesapKimligi } = await hesapAc(vt, "musteri", {
     eposta,
-    sifre: "uzun-bir-deneme-sifresi",
+    sifre: musteriSifresi,
   });
   return { kimlik: hesapKimligi, eposta };
 };
@@ -294,7 +356,7 @@ const yeniMusteri = async () => {
 const baskasininKaydi = async ({ yontem, yol, uc }: KayitliUc, senaryo: MusteriSenaryosu) => {
   const a = await yeniMusteri();
   const b = await yeniMusteri();
-  const { sorgu = "", govde, aranan = [b.eposta] } = await senaryo(b, a);
+  const { sorgu = "", govde, aranan = [b.eposta], durum = 200 } = await senaryo(b, a);
   const yanit = await uc(
     new Request(`http://yerel${yol}${sorgu}`, {
       method: yontem,
@@ -307,7 +369,7 @@ const baskasininKaydi = async ({ yontem, yol, uc }: KayitliUc, senaryo: MusteriS
   );
   const metin = await yanit.text();
   const sorunlar = [
-    ...(yanit.status === 200 ? [] : [`istek işlenmedi (${yanit.status})`]),
+    ...(yanit.status === durum ? [] : [`istek işlenmedi (${yanit.status}, beklenen ${durum})`]),
     ...aranan.filter((deger) => metin.includes(deger)).map((deger) => `yanıtta ${deger}`),
   ];
   return { durum: yanit.status, metin, a, b, sorunlar };
@@ -398,6 +460,73 @@ describe("uygulamanın uçları", () => {
       { musteri: a.kimlik, metin: "A'nın yorumu", puan: 4 },
       { musteri: b.kimlik, metin: "B'nin yorumu", puan: 2 },
     ]);
+  });
+});
+
+describe("adres ve hesap bilgileri uçları (kart 0237)", () => {
+  it.each([
+    "POST /kapi/musteri/adres",
+    "POST /kapi/musteri/adres-degistir",
+    "POST /kapi/musteri/adres-sil",
+    "POST /kapi/musteri/adres-varsayilan",
+  ])("%s B'nin adresine dokunmaz", async (baslik) => {
+    const uc = (await uclariOku(uygulamaAdresleri)).find((kayit) => kayit.baslik === baslik);
+    const senaryo = musteriSenaryolari[baslik];
+    if (uc === undefined || senaryo === undefined) throw new Error("Adres ucu yok.");
+    const { a, b, sorunlar } = await baskasininKaydi(uc, senaryo);
+    expect(sorunlar).toEqual([]);
+    const satirlar = await vt
+      .select({
+        musteri: musteriAdresleri.musteri_kimligi,
+        ad: musteriAdresleri.ad,
+        varsayilan: musteriAdresleri.varsayilan_teslimat,
+        guncellenme: musteriAdresleri.guncellenme_zamani,
+        olusturulma: musteriAdresleri.olusturulma_zamani,
+      })
+      .from(musteriAdresleri)
+      .where(inArray(musteriAdresleri.musteri_kimligi, [a.kimlik, b.kimlik]));
+    const bninkiler = satirlar.filter(({ musteri }) => musteri === b.kimlik);
+    expect(bninkiler).toHaveLength(1);
+    // B'nin tek adresi ilk adres olduğu için varsayılandır, A'nın isteğiyle değişmedi.
+    expect(bninkiler[0]?.ad.startsWith("B")).toBe(true);
+    expect(bninkiler[0]?.varsayilan).toBe(true);
+    expect(bninkiler[0]?.guncellenme).toEqual(bninkiler[0]?.olusturulma);
+    expect(satirlar.filter(({ musteri }) => musteri === a.kimlik)).toHaveLength(
+      baslik === "POST /kapi/musteri/adres" ? 1 : 0,
+    );
+  });
+
+  it("pazarlama izni yalnız A'nın onayını yazar, şifre değiştirme yalnız A'nın şifresini değiştirir", async () => {
+    const uclar = await uclariOku(uygulamaAdresleri);
+    for (const baslik of [
+      "POST /kapi/musteri/pazarlama-izni",
+      "POST /kapi/musteri/sifre-degistir",
+    ]) {
+      const uc = uclar.find((kayit) => kayit.baslik === baslik);
+      const senaryo = musteriSenaryolari[baslik];
+      if (uc === undefined || senaryo === undefined) throw new Error(`${baslik} yok.`);
+      const { a, b, sorunlar } = await baskasininKaydi(uc, senaryo);
+      expect(sorunlar).toEqual([]);
+      const onaylar = await vt
+        .select({ musteri: musteriOnaylari.musteri_kimligi })
+        .from(musteriOnaylari)
+        .where(inArray(musteriOnaylari.musteri_kimligi, [a.kimlik, b.kimlik]));
+      expect(onaylar.filter(({ musteri }) => musteri === b.kimlik)).toEqual([]);
+      const hesaplar = await vt
+        .select({
+          kimlik: musteriler.kimlik,
+          ozet: musteriler.sifre_ozeti,
+          guncellenme: musteriler.guncellenme_zamani,
+        })
+        .from(musteriler)
+        .where(inArray(musteriler.kimlik, [a.kimlik, b.kimlik]));
+      const bninki = hesaplar.find(({ kimlik }) => kimlik === b.kimlik);
+      expect(await sifreDogrula(musteriSifresi, bninki?.ozet ?? "")).toBe(true);
+      const aninki = hesaplar.find(({ kimlik }) => kimlik === a.kimlik);
+      expect(await sifreDogrula(musteriSifresi, aninki?.ozet ?? "")).toBe(
+        baslik.endsWith("pazarlama-izni"),
+      );
+    }
   });
 });
 
@@ -697,7 +826,9 @@ describe("makine gerçekten yakalıyor", () => {
     const [bozuk] = await uclariOku(join(ornekler, "baskasinin"));
     if (bozuk === undefined) throw new Error("Örnek uç yok.");
     const bosSenaryo: MusteriSenaryosu = async () => ({});
-    expect((await baskasininKaydi(bozuk, bosSenaryo)).sorunlar).toEqual(["istek işlenmedi (400)"]);
+    expect((await baskasininKaydi(bozuk, bosSenaryo)).sorunlar).toEqual([
+      "istek işlenmedi (400, beklenen 200)",
+    ]);
   });
 
   it("senaryonun verdiği değer aranır: e-posta dönmese de sızıntı görünür", async () => {

@@ -1,9 +1,7 @@
 // Ödeme adımının ortak şemaları (kart 0213, karar 0140; .claude/rules/formlar.md). Form ve uç aynı kuralları kullanır.
 // Sınırlar ve fatura türleri cekirdek/kayitlar/odeme.ts kaydındadır.
 //
-// - Teslimat: ad, soyad, telefon ve ortak posta adresi (il ve ilçe listeden, karar 0056, 0057). Telefon ülke içindeki
-//   yazılışla da girilir, ülkenin koduyla uluslararası biçime çevrilir. Telefonun zorunluluğu mağaza ayarıdır: şema
-//   yalnız biçimi denetler, zorunluluğu servis ayarla denetler (form da ayarı bilir).
+// - Teslimat: teslimat-semasi.ts (adres defteriyle ortak, kart 0237).
 // - Fatura: bireysel ya da kurumsal; "fatura adresi teslimat adresiyle aynı" işaretli değilse fatura adresi zorunlu.
 //   Kurumsalda firma adı, vergi dairesi ve vergi numarası; numaranın biçimi faturanın ülkesinin veri dosyasından
 //   (cekirdek/bolgeler/satici.ts), kodda ülkeye özgü biçim yazmaz.
@@ -13,7 +11,7 @@
 // - Ödeme yöntemi zorunludur: havale ya da kapıda ödemenin seçeneği (kart 0214).
 // - Tutar hiçbir şemada yoktur: tarayıcıdan yalnız sepetin kalemleri gelir, tutar sunucuda hesaplanır.
 import { z } from "zod";
-import { postaAdresiSemasi, telefonGecerliMi, telefonuDuzelt } from "../../bolgeler/adres.ts";
+import { postaAdresiSemasi } from "../../bolgeler/adres.ts";
 import { faturaVergiNumarasiHatasi } from "../../bolgeler/satici.ts";
 import { faturaTurleri, kapidaOdemeSecenekleri, odemeSinirlari } from "../../kayitlar/odeme.ts";
 import { sepetSinirlari } from "../../kayitlar/sepet.ts";
@@ -22,30 +20,10 @@ import { kimlikSemasi } from "../../veritabani/kimlik.ts";
 import { epostaSemasi, sifreSemasi } from "../oturum/semalar.ts";
 import { robotCevabiSemasi } from "../robot-korumasi/semalar.ts";
 import { sepetKalemiSemasi } from "../sepet/semalar.ts";
+import { adSemasi, bosIseYok, type Teslimat, teslimatSemasi } from "./teslimat-semasi.ts";
 
-// Boş yazılan isteğe bağlı alan yoktur.
-const bosIseYok = (deger: unknown) =>
-  typeof deger === "string" && deger.trim() === "" ? undefined : deger;
-
-const adSemasi = duzMetinSemasi(odemeSinirlari.adEnCok);
-
-export const teslimatSemasi = z
-  .strictObject({
-    ad: adSemasi,
-    soyad: adSemasi,
-    telefon: z.preprocess(bosIseYok, z.string().max(40).optional()),
-    adres: postaAdresiSemasi,
-  })
-  .transform((teslimat, ctx) => {
-    if (teslimat.telefon === undefined) return { ...teslimat, telefon: undefined };
-    const telefon = telefonuDuzelt(teslimat.adres.ulke, teslimat.telefon);
-    if (!telefonGecerliMi(telefon)) {
-      ctx.addIssue({ code: "custom", message: "telefon-bicimi", path: ["telefon"] });
-      return z.NEVER;
-    }
-    return { ...teslimat, telefon };
-  });
-export type Teslimat = z.output<typeof teslimatSemasi>;
+// Teslimatın şeması adres defteriyle ortaktır; buradan da alınır (ödemenin öteki şemalarıyla birlikte).
+export { type Teslimat, teslimatSemasi };
 
 const adresAyniSemasi = z.boolean();
 

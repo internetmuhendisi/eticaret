@@ -339,7 +339,7 @@ test("telefonda seçili birleşimin görseli sayfanın kodu bağlanmadan görün
   } finally {
     await kodsuz.close();
   }
-  const hatalar = konsoluDinle(page, { haric: (metin) => metin.includes("401") });
+  const hatalar = konsoluDinle(page);
   await page.setViewportSize({ width: 375, height: 800 });
   await page.goto(adres);
   await sayfaHazir(page);
@@ -394,8 +394,8 @@ test("galeri klavyeyle gezilir, büyütme penceresi görselleri gezer; video oyn
 test("iki renkte ve üç genişlikte taramadan geçer, yana kaymaz, konsolda hata yok", async ({
   page,
 }) => {
-  // Girişsiz ziyaretçinin oturum sorusu 401 alır (karar 0098); bu bir hata değildir.
-  const hatalar = konsoluDinle(page, { haric: (metin) => metin.includes("401") });
+  // Girişsiz ziyaretçinin hesap sorusu 401 almaz (kart 0187): konsolda hiçbir hata beklenmez.
+  const hatalar = konsoluDinle(page);
   for (const renk of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: renk });
     for (const genislik of genislikler) {

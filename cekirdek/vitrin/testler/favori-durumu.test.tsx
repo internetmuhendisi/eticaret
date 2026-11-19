@@ -36,7 +36,7 @@ vi.mock("../../../bilesenler/parcalar/bildirim", async (asil) => ({
 
 const metin = metinOkuyucu("tr");
 const uclar = {
-  hesabim: "/kapi/musteri/hesabim",
+  hesabim: "/kapi/herkese-acik/hesap-durumu",
   liste: "/kapi/musteri/favoriler",
   degistir: "/kapi/musteri/favori",
   birlestir: "/kapi/musteri/favori-birlestir",
@@ -57,8 +57,8 @@ const hatali = (durum: number, kod: string, neden?: string) =>
     basarili: false,
     hata: { kod, ...(neden === undefined ? {} : { ayrinti: [{ alan: "urun", kod: neden }] }) },
   });
-const girisli = () => basarili({ eposta: "m@ornek.test" });
-const girissiz = () => hatali(401, "oturum-yok");
+const girisli = () => basarili({ girisli: true, eposta: "m@ornek.test" });
+const girissiz = () => basarili({ girisli: false });
 
 type Istek = { adres: string; govde?: unknown };
 // Uçlara giden istekleri sırasıyla kaydeder; cevabı adrese göre verir.

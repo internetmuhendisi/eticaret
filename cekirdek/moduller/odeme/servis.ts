@@ -46,6 +46,7 @@ import { stokServisi } from "../stok/servis.ts";
 import { type OturumOnayi, odemeOturumlari } from "./model.ts";
 import { bolge, faturaAdresi } from "./oturum-hesabi.ts";
 import type { MisafirOdemeFormu, OdemeBilgileri, OdemeYontemiSecimi } from "./semalar.ts";
+import { teslimatKuraliHatasi } from "./teslimat-kurallari.ts";
 import { yontemKullanilabilirMi } from "./yontemler.ts";
 
 export type OdemeyiYapan =
@@ -119,11 +120,9 @@ export const odemeServisi = (site: Site) => {
       throw new BilinenHata("oturum-yok");
     }
     const { teslimat } = girdi.bilgiler;
-    if (ayarlar.telefonZorunlu && teslimat.telefon === undefined) {
-      throw dogrulama("bilgiler.teslimat.telefon", "telefon-gerekli");
-    }
-    if (!site.ayarlar.teslimatUlkeleri.includes(teslimat.adres.ulke)) {
-      throw dogrulama("bilgiler.teslimat.adres.ulke", "ulke-teslimat-disi");
+    const teslimatHatasi = teslimatKuraliHatasi(site, ayarlar, teslimat);
+    if (teslimatHatasi !== undefined) {
+      throw dogrulama(`bilgiler.teslimat.${teslimatHatasi.alan}`, teslimatHatasi.kod);
     }
     const odeme = girdi.bilgiler.odemeYontemi;
     if (

@@ -12,8 +12,8 @@ const hidrasyonKaliplari = [/hydrat/i, /did not match\. Server:/i];
 export const hidrasyonUyarisiMi = (metin: string): boolean =>
   hidrasyonKaliplari.some((kalip) => kalip.test(metin));
 
-// Sayfayı açmadan önce çağrılır; dönen dizi sayfa boyunca dolar. haric, beklenen hata iletilerini ayıklar (girişsiz
-// ziyaretçinin oturum sorusunun 401'i gibi, karar 0098); hidrasyon uyarısı hiçbir zaman ayıklanmaz.
+// Sayfayı açmadan önce çağrılır; dönen dizi sayfa boyunca dolar. haric, beklenen hata iletilerini ayıklar (bulunamadı
+// sayfasının kendi 404'ü gibi); hidrasyon uyarısı hiçbir zaman ayıklanmaz.
 export const konsoluDinle = (
   page: Page,
   { haric = () => false }: { haric?: (metin: string) => boolean } = {},

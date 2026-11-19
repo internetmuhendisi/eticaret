@@ -6,17 +6,18 @@
 // istek gider ve bütün kullananlar onun cevabını paylaşır: yanıt yenilenen oturum anahtarını taşıyabilir, aynı anda
 // giden iki istek aynı yenileme anahtarını iki kez kullanırdı. Giriş, kayıt ve çıkış sayfayı baştan yükler.
 //
-// Cevap gelene kadar durum "bilinmiyor"dur. Yalnız 401 girişsiz sayılır; sunucu ve ağ hatasında durum bilinmiyor
-// kalır: girişli müşteri oturumu kapanmış sanmasın (karar 0051).
+// Cevap gelene kadar durum "bilinmiyor"dur. Uç girişsiz ziyaretçiye de başarılı cevap verir (kart 0187: eski soru
+// 401 ile dönüyor, her sayfada konsola hata düşüyordu); sunucu ve ağ hatasında durum bilinmiyor kalır: girişli
+// müşteri oturumu kapanmış sanmasın (karar 0051).
 import { useSyncExternalStore } from "react";
 import { kapiyaIstek } from "../kapi/istemci";
-import { hataKodlari } from "../kayitlar/kapi";
 import { temaDemosu } from "../kayitlar/tema";
+import type { HesapDurumuCevabi } from "../moduller/musteri/semalar";
 import { vitrinAdresleri } from "./adresler";
 import { cereziSil } from "./favori-deposu";
 
-// Müşterinin oturum sorusu; girişsiz ziyaretçide 401 alır (ekran ölçümü bu 401'i bekler, kart 0146).
-export const hesabimUcu = "/kapi/musteri/hesabim";
+// Müşterinin oturum sorusu (herkese açık, kart 0187): girişsiz ziyaretçi de 200 alır.
+export const hesapDurumuUcu = "/kapi/herkese-acik/hesap-durumu";
 const cikisUcu = "/kapi/herkese-acik/musteri-cikis";
 
 export type HesapDurumu =
@@ -42,12 +43,10 @@ const sor = async (): Promise<HesapDurumu> => {
   // kalınır ve oturum kapanır (karar 0039).
   let sonuc: HesapDurumu = bilinmiyor;
   try {
-    const yanit = await kapiyaIstek(hesabimUcu, { cache: "no-store" });
+    const yanit = await kapiyaIstek(hesapDurumuUcu, { cache: "no-store" });
     if (yanit.ok) {
-      const { veri } = (await yanit.json()) as { veri: { eposta: string } };
-      sonuc = { tur: "girisli", eposta: veri.eposta };
-    } else if (yanit.status === hataKodlari["oturum-yok"]) {
-      sonuc = { tur: "girissiz" };
+      const { veri } = (await yanit.json()) as { veri: HesapDurumuCevabi };
+      sonuc = veri.girisli ? { tur: "girisli", eposta: veri.eposta } : { tur: "girissiz" };
     }
   } catch {
     // Durum bilinmiyor kalır.

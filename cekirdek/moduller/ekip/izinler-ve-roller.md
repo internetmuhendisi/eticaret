@@ -31,6 +31,9 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `menu.gor` | yonetici | tumu | Menüleri ve öğelerini, hedefi silinmiş öğelerin işaretiyle görür. |
 | `menu.degistir` | yonetici | tumu | Menü ve öğe ekler, değiştirir, sıralar ve siler. |
 | `musteri.kendi-hesabi.gor` | musteri | kendi | Müşteri kendi hesabını görür. |
+| `musteri.kendi-hesabi.degistir` | musteri | kendi | Müşteri kendi şifresini değiştirir ve kampanya iznini verir ya da geri alır (kart 0237). |
+| `musteri.kendi-adresleri.gor` | musteri | kendi | Müşteri kendi adres defterini görür (kart 0237). |
+| `musteri.kendi-adresleri.degistir` | musteri | kendi | Müşteri kendi adres defterine adres ekler, değiştirir, siler ve varsayılan adresini seçer (kart 0237). |
 | `odeme.kendi.baslat` | musteri | kendi | Giriş yapmış müşteri kendi adına ödeme adımını tamamlar: ödeme oturumu açılır, sepetin stoğu ayrılır, havale ya da kapıda ödemede sipariş oluşur (kartlar 0213, 0214). |
 | `odeme-yontemi.gor` | yonetici | tumu | Ödeme yöntemlerini, sıralarını, kapıda ödemenin seçeneklerini, havalenin iptal süresini ve banka hesaplarını görür (kart 0214). |
 | `odeme-yontemi.degistir` | yonetici | tumu | Ödeme yöntemlerini açar, kapatır ve sıralar; banka hesabı ekler, değiştirir, siler ve sıralar (kart 0214). |
