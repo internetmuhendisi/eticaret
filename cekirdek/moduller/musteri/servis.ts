@@ -10,7 +10,12 @@ import { epostaGonder } from "../eposta/servis.ts";
 import { sinirliSifreDogrula } from "../oturum/giris.ts";
 import { type Anahtarlar, hesapAc, oturumAc, sifreDegismediyse } from "../oturum/servis.ts";
 import { sifreOzetle } from "../oturum/sifre.ts";
-import { musteriler, musteriOnaylari, musteriOturumlari } from "./model.ts";
+import {
+  musteriler,
+  musteriOnaylari,
+  musteriOturumlari,
+  musteriSifreSifirlamalari,
+} from "./model.ts";
 import type { kayitFormuSemasi } from "./semalar.ts";
 
 // Hesap, onaylar, hoş geldin e-postası ve oturum aynı işlemdedir: biri olmazsa hiçbiri olmaz. Kayıtlı
@@ -112,7 +117,8 @@ export const pazarlamaIzniniDegistir = (
   });
 
 // Şifre değiştirme (kart 0237): şu anki şifre girişle aynı deneme sınırıyla doğrulanır. Yanlışsa alanın hatası
-// ("sifre-yanlis"). Doğruysa şifre değişir, hesabın bütün oturumları kapanır ve bu cihaz için yeni oturum açılır
+// ("sifre-yanlis"). Doğruysa şifre değişir, hesabın bütün oturumları ve açık sıfırlama bağlantıları kapanır, bu cihaz
+// için yeni oturum açılır
 // (uç çerezi yazar); şifre sıfırlamayla aynı ilke: başka cihazda açık kalan oturum eski şifreyle açılmıştır.
 // Müşteriye "şifreniz değişti" e-postası gider.
 export const musteriSifreDegistir = async (
@@ -140,24 +146,44 @@ export const musteriSifreDegistir = async (
   }
   if (dogrulanan.hesapKimligi !== hesapKimligi) throw new BilinenHata("oturum-yok");
   const yeniOzet = await sifreOzetle(girdi.yeniSifre);
-  const anahtarlar = await sifreDegismediyse(vt, "musteri", dogrulanan, async (islem) => {
-    const simdi = new Date();
-    await islem
-      .update(musteriler)
-      .set({ sifre_ozeti: yeniOzet, guncellenme_zamani: simdi })
-      .where(eq(musteriler.kimlik, hesapKimligi));
-    await islem
-      .update(musteriOturumlari)
-      .set({ kapanma_zamani: simdi })
-      .where(
-        and(
-          eq(musteriOturumlari.hesap_kimligi, hesapKimligi),
-          isNull(musteriOturumlari.kapanma_zamani),
-        ),
-      );
-    await epostaGonder(islem, { kime: hesap.eposta, sablon: "sifre-degisti" });
-    return oturumAc(islem, "musteri", hesapKimligi, oturumSuresiSaniye);
-  });
+  let anahtarlar: Anahtarlar;
+  try {
+    anahtarlar = await sifreDegismediyse(
+      vt,
+      "musteri",
+      dogrulanan,
+      async (islem) => {
+        const simdi = new Date();
+        await islem
+          .update(musteriler)
+          .set({ sifre_ozeti: yeniOzet, guncellenme_zamani: simdi })
+          .where(eq(musteriler.kimlik, hesapKimligi));
+        await islem
+          .update(musteriOturumlari)
+          .set({ kapanma_zamani: simdi })
+          .where(
+            and(
+              eq(musteriOturumlari.hesap_kimligi, hesapKimligi),
+              isNull(musteriOturumlari.kapanma_zamani),
+            ),
+          );
+        // Açık şifre sıfırlama bağlantıları da ölür: şifre sıfırlamayla aynı ilke (bağımsız kontrolün bulgusu).
+        await islem
+          .delete(musteriSifreSifirlamalari)
+          .where(eq(musteriSifreSifirlamalari.hesap_kimligi, hesapKimligi));
+        await epostaGonder(islem, { kime: hesap.eposta, sablon: "sifre-degisti" });
+        return oturumAc(islem, "musteri", hesapKimligi, oturumSuresiSaniye);
+      },
+      "update",
+    );
+  } catch (hata) {
+    // Doğrulamayla bu işlem arasında şifre değişti (aynı anda iki değişiklik): şu anki şifre artık yanlıştır. Oturumun
+    // düştüğü sanılmasın diye 401 değil alanın hatası döner.
+    if (hata instanceof BilinenHata && hata.kod === "giris-hatasi") {
+      throw new BilinenHata("dogrulama", [{ alan: "mevcutSifre", kod: "sifre-yanlis" }]);
+    }
+    throw hata;
+  }
   gunluk.bilgi("Müşteri şifresini değiştirdi, oturumlar kapatıldı.", {
     hesapTuru: "musteri",
     eposta: hesap.eposta,

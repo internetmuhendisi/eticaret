@@ -13,7 +13,7 @@ import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import { epostaKayitlari } from "../../eposta/model.ts";
 import { girisYap, oturumAc, oturumuDogrula } from "../../oturum/servis.ts";
-import { musteriler, musteriOnaylari } from "../model.ts";
+import { musteriler, musteriOnaylari, musteriSifreSifirlamalari } from "../model.ts";
 import {
   hesapBilgileri,
   musteriKaydet,
@@ -143,6 +143,51 @@ describe("şifre değiştirme", () => {
       .from(epostaKayitlari)
       .where(eq(epostaKayitlari.alici, eposta));
     expect(epostalar.map(({ sablon }) => sablon)).toContain("sifre-degisti");
+  });
+
+  it("açık şifre sıfırlama bağlantısı şifre değişince ölür", async () => {
+    const { kimlik } = await musteriAc();
+    await vt.insert(musteriSifreSifirlamalari).values({
+      hesap_kimligi: kimlik,
+      anahtar_ozeti: `ozet-${randomUUID()}`,
+      bitis: new Date(Date.now() + 3_600_000),
+    });
+    await musteriSifreDegistir(
+      vt,
+      kimlik,
+      { mevcutSifre: sifre, yeniSifre },
+      "test-sifirlama",
+      sure,
+    );
+    expect(
+      await vt
+        .select()
+        .from(musteriSifreSifirlamalari)
+        .where(eq(musteriSifreSifirlamalari.hesap_kimligi, kimlik)),
+    ).toEqual([]);
+  });
+
+  it("aynı anda iki değişiklikten biri geçer, öteki 'şifre yanlış' alır; kilitlenme ve 500 yok", async () => {
+    const { kimlik, eposta } = await musteriAc();
+    const sonuclar = await Promise.all(
+      ["birinci-yeni-sifre-1", "ikinci-yeni-sifre-2"].map((yeni) =>
+        hatasi(
+          musteriSifreDegistir(
+            vt,
+            kimlik,
+            { mevcutSifre: sifre, yeniSifre: yeni },
+            `test-ayni-anda-${randomUUID()}`,
+            sure,
+          ),
+        ),
+      ),
+    );
+    expect(sonuclar.filter((sonuc) => sonuc === undefined)).toHaveLength(1);
+    expect(sonuclar.filter((sonuc) => sonuc !== undefined)).toEqual([
+      { kod: "dogrulama", ayrinti: [{ alan: "mevcutSifre", kod: "sifre-yanlis" }] },
+    ]);
+    const gecen = sonuclar[0] === undefined ? "birinci-yeni-sifre-1" : "ikinci-yeni-sifre-2";
+    expect(await girisYap(vt, "musteri", { eposta, sifre: gecen }, sure)).not.toBeNull();
   });
 
   it("yanlış denemeler girişin deneme sınırına sayılır", async () => {

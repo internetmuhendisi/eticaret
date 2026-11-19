@@ -122,11 +122,14 @@ export const hesapSifresiniDogrula = async (
 // oturum açılana kadar sıfırlama bitmiş olabilir: eski şifreyle başlayan giriş, "oturumlar kapatıldı"dan sonra
 // açık oturum bırakırdı. Hesap satırı paylaşımlı kilitlenir: sıfırlama sürüyorsa beklenir, sonra şifre değişmiş
 // bulunur; önce bu işlem başladıysa sıfırlama onu bekler ve açılan oturumu da kapatır.
+// kilit: hesap satırını aynı işlemde güncelleyen iş (müşterinin şifre değiştirmesi, kart 0237) "update" verir: iki
+// paylaşımlı kilidin yükseltilmesi aynı anda gelen iki değişikliği kilitlenmeye düşürürdü (bağımsız kontrolün bulgusu).
 export const sifreDegismediyse = <Sonuc>(
   vt: Veritabani,
   tur: HesapTuru,
   dogrulanan: DogrulananSifre,
   is: (islem: VeritabaniIslemi) => Promise<Sonuc>,
+  kilit: "share" | "update" = "share",
 ): Promise<Sonuc> =>
   vt.transaction(async (islem) => {
     const { hesap } = tablolar[tur];
@@ -134,7 +137,7 @@ export const sifreDegismediyse = <Sonuc>(
       .select({ sifre_ozeti: hesap.sifre_ozeti })
       .from(hesap)
       .where(and(eq(hesap.kimlik, dogrulanan.hesapKimligi), isNull(hesap.silinme_zamani)))
-      .for("share");
+      .for(kilit);
     if (guncel?.sifre_ozeti !== dogrulanan.sifreOzeti) throw new BilinenHata("giris-hatasi");
     return is(islem);
   });

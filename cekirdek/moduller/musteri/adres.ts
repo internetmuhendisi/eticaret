@@ -70,13 +70,15 @@ const teslimatAlanlari = (teslimat: Teslimat) => ({
   posta_kodu: teslimat.adres.postaKodu ?? null,
 });
 
-// Müşterinin satırını kilitler: aynı müşterinin adres işlemleri sırayla çalışır.
+// Müşterinin satırını kilitler: aynı müşterinin adres işlemleri sırayla çalışır. "no key update" müşteriye bağlı
+// satırların eklenmesini (favori, ödeme oturumu, sipariş) bekletmez; ödeme işleminin içinde de çağrılır (bağımsız
+// kontrolün bulgusu).
 const musteriyiKilitle = async (islem: VeritabaniIslemi, musteri: string) => {
   await islem
     .select({ kimlik: musteriler.kimlik })
     .from(musteriler)
     .where(eq(musteriler.kimlik, musteri))
-    .for("update");
+    .for("no key update");
 };
 
 const adresSayisi = async (islem: VeritabaniIslemi, musteri: string): Promise<number> => {
