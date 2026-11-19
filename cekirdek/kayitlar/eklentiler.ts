@@ -38,6 +38,12 @@ export const stokBildirimiAyari = {
 export const kartOdemesiDurumlari = ["baslatildi", "odendi", "basarisiz", "iptal-edildi"] as const;
 export type KartOdemesiDurumu = (typeof kartOdemesiDurumlari)[number];
 
+// Kartla iadenin kuruluşa giden parçasının durumu (kart 0235, karar 0147): gönderilecek (yazıldı, istek gitmedi),
+// tamam (kuruluş iade etti), red (kuruluş açıkça reddetti), belirsiz (yanıt gelmedi ya da okunamadı; tarama günlük
+// rapordan sorar).
+export const kartIadesiDurumlari = ["gonderilecek", "tamam", "red", "belirsiz"] as const;
+export type KartIadesiDurumu = (typeof kartIadesiDurumlari)[number];
+
 // Ödeme kuruluşunun ortamı (altyapı sahibinin ayarı kartlaOdemeOrtami): deneme ortamı gerçek ödeme almaz.
 export const kartlaOdemeOrtamlari = ["deneme", "canli"] as const;
 export type KartlaOdemeOrtami = (typeof kartlaOdemeOrtamlari)[number];
@@ -60,4 +66,8 @@ export const kartlaOdemeAyari = {
   kapandiktanSonraGun: 7,
   // Alıcının kimlik numarası sorulmaz (kullanıcı kararı): bireyselde bu yer tutucu gider.
   kimlikYerTutucu: "11111111111",
+  // Yanıtı gelmeyen iade parçası (kart 0235) bu kadar dakika sonra günlük rapordan sorulur; bu kadar gün içinde
+  // raporda bulunmazsa gönderilmemiş sayılır (red): iade "bekliyor"da kalır, mağaza sahibi yeniden dener.
+  iadeSorguDakika: 30,
+  iadeBulunamazsaGun: 2,
 } as const;

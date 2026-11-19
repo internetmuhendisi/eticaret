@@ -1,6 +1,6 @@
 // Sipariş ekranlarının ortak metin seçimleri (kart 0234): durum, ödeme yöntemi, geçmişin nedeni ve yazanı. Sunucuda
 // çizilen liste ile tarayıcıdaki ayrıntı aynı seçimi kullanır; metni çağıranın metin işlevi okur.
-import type { SiparisDurumu, SiparisGecmisiNedeni } from "../../kayitlar/siparis";
+import type { IadeNedeni, SiparisDurumu, SiparisGecmisiNedeni } from "../../kayitlar/siparis";
 import type { MetinAnahtari } from "../../metinler/metin";
 
 // Kayıttaki her durumun ve nedenin metni (tür kontrolü eksik olanı yakalar).
@@ -45,6 +45,8 @@ const nedenler: Record<SiparisGecmisiNedeni, MetinAnahtari> = {
   "kargoya-verildi": "yonetim.siparis.neden.kargoya-verildi",
   "kargo-duzeltildi": "yonetim.siparis.neden.kargo-duzeltildi",
   "teslim-edildi": "yonetim.siparis.neden.teslim-edildi",
+  "yonetici-iptali": "yonetim.siparis.neden.yonetici-iptali",
+  "iade-yapildi": "yonetim.siparis.neden.iade-yapildi",
 };
 export const nedenMetni = (neden: string): MetinAnahtari =>
   nedenler[neden as SiparisGecmisiNedeni] ?? "yonetim.siparis.neden.olusturuldu";
@@ -52,6 +54,7 @@ export const nedenMetni = (neden: string): MetinAnahtari =>
 const sistemYazanlari: Record<string, MetinAnahtari> = {
   "havale-suresi": "yonetim.siparis.yazan.sistem.havale-suresi",
   "uye-olmayan-musteri": "yonetim.siparis.yazan.sistem.uye-olmayan-musteri",
+  "kartla-odeme-taramasi": "yonetim.siparis.yazan.sistem.kartla-odeme-taramasi",
 };
 
 export const yazanYazisi = (
@@ -67,3 +70,14 @@ export const yazanYazisi = (
     yazan.tur === "musteri" ? "yonetim.siparis.yazan.musteri" : "yonetim.siparis.yazan.yonetici",
   );
 };
+
+// İptal ve iade nedenleri (kart 0235): kayıttaki iadeNedenleri.
+const iadeNedenleri: Record<IadeNedeni, MetinAnahtari> = {
+  "musteri-vazgecti": "yonetim.iade.neden.musteri-vazgecti",
+  "beklentiyi-karsilamadi": "yonetim.iade.neden.beklentiyi-karsilamadi",
+  "kusurlu-hasarli": "yonetim.iade.neden.kusurlu-hasarli",
+  "yanlis-urun": "yonetim.iade.neden.yanlis-urun",
+  "stok-yok": "yonetim.iade.neden.stok-yok",
+  diger: "yonetim.iade.neden.diger",
+};
+export const iadeNedenMetni = (neden: IadeNedeni): MetinAnahtari => iadeNedenleri[neden];

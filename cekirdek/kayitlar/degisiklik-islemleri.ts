@@ -104,6 +104,9 @@ export const degisiklikIslemleri = [
   "yorum.yazildi",
   "yorum.durum-degisti",
   "yorum.ana-sayfa",
+  // Kart 0235: siparişin iptali ve iadesi (tutar, vergi, kalemler, neden). Durumun kendisi sipariş geçmişindedir.
+  "siparis.iptal-edildi",
+  "siparis.iade-edildi",
 ] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 
@@ -139,6 +142,8 @@ export const degisiklikKayitTurleri = [
   "menu-ogesi",
   // Kart 0139: ürün yorumu.
   "yorum",
+  // Kart 0235: sipariş (iptal ve iade).
+  "siparis",
 ] as const;
 export type DegisiklikKayitTuru = (typeof degisiklikKayitTurleri)[number];
 

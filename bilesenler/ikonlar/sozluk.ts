@@ -12,6 +12,7 @@ import {
   ChevronUpIcon,
   CircleCheckIcon,
   CircleIcon,
+  CircleXIcon,
   CopyIcon,
   CreditCardIcon,
   EllipsisIcon,
@@ -78,6 +79,8 @@ export const ikonlar = {
   yukleniyor: LoaderCircleIcon,
   // Bildirim ve uyarı türleri.
   basari: CircleCheckIcon,
+  // Siparişin iptali (kart 0235).
+  iptal: CircleXIcon,
   bilgi: InfoIcon,
   uyari: TriangleAlertIcon,
   hata: OctagonXIcon,

@@ -73,6 +73,7 @@ paths:
 ## Sipariş ve iade
 
 - İptal, tam iade ve kısmi iadeyi tek akıştan yürüt. İade tutarını ve vergisini fiyat hesabıyla aynı fonksiyondan al. Stoğa geri koymak seçimlidir (kusurlu ürün geri konmaz).
+- İptal ve iade yalnız `iadeServisi(site).iadeYap` (`cekirdek/moduller/siparis/iade.ts`) ile yapılır; tutarı ve vergisi yalnız `iadeyiHesapla` (`iade-hesabi.ts`) siparişin saklanan kalem değerlerinden hesaplar, panelin önizlemesi de onu kullanır. Para kartla ödemede ödeme yöntemi bağlantı noktasının `iadeEt`'iyle kuruluştan döner, iade sonuç gelene kadar "bekliyor"dur ve bekleyen iade varken ne durum işlemi ne yeni iade yapılır; öteki yöntemlerde kaydedilince yapılmış sayılır. Kuruluşa kalem kalem iade gider, her parça bir kez (karar 0147).
 - Siparişin ve stoğun her değişikliğini kimin, ne zaman, neden yaptığıyla geçmişe yaz.
 - Siparişin içinde verildiği andaki ürün adını, fiyatı, vergiyi ve adresi sakla. Ürün fiyatı sonradan değişince eski sipariş değişmesin.
 - Her siparişin müşteriye gösterilen kısa ve tekil bir numarası olsun. Öneki ve başlangıç numarası site ayarıdır.

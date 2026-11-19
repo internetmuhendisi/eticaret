@@ -15,6 +15,9 @@ export const panelEylemleri = {
   "kargoya-ver": { ikon: "kargo", ad: "yonetim.eylem.kargoyaVer" },
   "kargo-duzelt": { ikon: "duzenle", ad: "yonetim.eylem.kargoDuzelt" },
   "teslim-edildi": { ikon: "basari", ad: "yonetim.eylem.teslimEdildi" },
+  // İptal ve iade (kart 0235).
+  "siparis-iptal": { ikon: "iptal", ad: "yonetim.eylem.siparisIptal" },
+  "iade-yap": { ikon: "iade", ad: "yonetim.eylem.iadeYap" },
 } as const satisfies Record<string, { ikon: IkonAdi; ad: MetinAnahtari }>;
 
 export type PanelEylemi = keyof typeof panelEylemleri;

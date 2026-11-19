@@ -3,11 +3,14 @@
 // kendi izniyle ayrı uçtur (yalnız mağaza sahibi, kullanıcı kararı); öteki durum işlemleri yönetim iznini ister.
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import { siparisAyarlari } from "../../moduller/siparis/ayarlar.ts";
+import { iadeServisi } from "../../moduller/siparis/iade.ts";
 import {
   havaleOnayiSemasi,
+  iadeYenidenDenemeSemasi,
   kargoFirmalariDurumuSemasi,
   kargoFirmalariSemasi,
   siparisAyrintisiSemasi,
+  siparisIadesiSemasi,
   siparisIslemiSemasi,
   siparisListesiSemasi,
   siparisNotuSemasi,
@@ -101,5 +104,34 @@ export const siparisAyarlariUcu = ucTanimla({
       siteninVeritabani(),
       { tur: "yonetici", kimlik: hesapKimligi },
       girdi,
+    ),
+});
+
+// POST /kapi/yonetici/siparis-iadesi: iptal ya da iade (kart 0235, karar 0147). Tutar ve vergiyi servis hesaplar;
+// kartla ödemede para ödeme kuruluşundan döner (yanıt gelmezse iade bekler).
+export const siparisIadesiUcu = ucTanimla({
+  giris: "yonetici",
+  sema: siparisIadesiSemasi,
+  izin: "siparis.iade",
+  sinir: "genel",
+  isle: (girdi, _istek, _yanit, { hesapKimligi }) =>
+    iadeServisi(calisanSite()).iadeYap(
+      siteninVeritabani(),
+      { tur: "yonetici", kimlik: hesapKimligi },
+      girdi,
+    ),
+});
+
+// POST /kapi/yonetici/siparis-iadesi-yeniden: kuruluşun yanıtını bekleyen iadeyi yeniden dener.
+export const siparisIadesiYenidenUcu = ucTanimla({
+  giris: "yonetici",
+  sema: iadeYenidenDenemeSemasi,
+  izin: "siparis.iade",
+  sinir: "genel",
+  isle: ({ numara }, _istek, _yanit, { hesapKimligi }) =>
+    iadeServisi(calisanSite()).yenidenDene(
+      siteninVeritabani(),
+      { tur: "yonetici", kimlik: hesapKimligi },
+      numara,
     ),
 });

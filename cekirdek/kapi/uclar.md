@@ -478,7 +478,7 @@ Bir siparişin ayrıntısı: sipariş satırı (erişim anahtarının özeti olm
 
 - İzin: `siparis.gor`. Sınır: `genel`.
 - Girdi (sorgu): `numara` (büyük küçük harf ve boşluk düzelir).
-- Başarılı (200): `{ "siparis", "kalemler", "gecmis": [{ "zaman", "onceki", "sonraki", "neden", "yazan" }], "notlar": [{ "zaman", "tur", "metin", "yazan" }], "bildirimler" }`.
+- Başarılı (200): `{ "siparis", "kalemler", "gecmis": [{ "zaman", "onceki", "sonraki", "neden", "yazan" }], "notlar": [{ "zaman", "tur", "metin", "yazan" }], "bildirimler", "iadeler": [{ "kimlik", "tur", "durum", "yontem", "tutar", "vergi_dokumu", "kalemler", "kargo_tutari", "stoga_konacak", "neden", "aciklama", "olusturma_zamani", "sonuc_zamani", "yazan" }] }` (iadeler kart 0235).
 - Hatalar: `bulunamadi`, `dogrulama`.
 
 ### POST /kapi/yonetici/siparis-islemi
@@ -498,6 +498,24 @@ Havale siparişinin ödemesi alındı: ödeme bekleniyor → hazırlanıyor, öd
 - Girdi: `{ "numara", "gorulenDurum" }` (`havaleOnayiSemasi`).
 - Başarılı (200): `{ "numara", "durum" }`.
 - Hatalar: işlem ucunun `cakisma`, `is-kurali` ve `bulunamadi` kodları, `yetki`.
+
+### POST /kapi/yonetici/siparis-iadesi
+
+Siparişin iptali ya da iadesi (kart 0235, karar 0147). İptal ödeme bekleniyor ve hazırlanıyor durumunda, iade teslim edildi ve kısmi iade durumunda yapılır; bütün ürünler ve kargo iptale girer. Tutar ve vergi siparişin saklanan değerlerinden hesaplanır (`iadeyiHesapla`, `cekirdek/moduller/siparis/iade-hesabi.ts`); siparişin kalanının tamamı seçildiyse ödenen kalan (taksit farkı dahil) iade edilir. Elle tutar hesaplananın yerine geçer, ödenen kalanı aşamaz. Kartla ödenen siparişte para ödeme kuruluşundan döner: kuruluş onaylayınca iade tamamlanır, reddederse iade başarısızdır ve sipariş değişmez, yanıt gelmezse iade bekler (tarama sonucu sorar). Öteki yöntemlerde para mağaza sahibince elle gönderilir, iade kaydedilince yapılmış sayılır (kullanıcı kararı). Tamamlanan iade siparişin durumunu (iptal, kısmi iade, iade edildi), seçildiyse stoğu (yalnız siparişin düşürdüğü adet), geçmişi ve değişiklik kaydını aynı işlemde yazar.
+
+- İzin: `siparis.iade` (yalnız mağaza sahibi, kullanıcı kararı). Sınır: `genel`.
+- Girdi: `{ "numara", "tur": "iptal" | "iade", "gorulenDurum", "kalemler": [{ "sira", "adet" }], "kargo", "tutar"?, "stogaKoy", "neden", "aciklama"? }` (`siparisIadesiSemasi`). `tutar` sitenin para biçimiyle yazıdır; iptalde ürün ve tutar yok sayılır.
+- Başarılı (200): `{ "numara", "durum", "iade": "tamamlandi" | "bekliyor" | "basarisiz" }`.
+- Hatalar: `cakisma` (`durum-degisti`; `iade-bekliyor`: kuruluşun yanıtını bekleyen iade var), `is-kurali` (`gecis-yok`; alan `tutar`: `tutar-fazla`, `odenmemis`), `dogrulama` (alan `kalemler.<sıra>`: `kalem-yok`, `adet-fazla`; alan `kargo`: `kargo-iade-edildi`; alan `kalemler`: `bos-iade`; alan `tutar`: `tutar-okunamadi`, `tutar-gecersiz`), `bulunamadi`, `yetki`.
+
+### POST /kapi/yonetici/siparis-iadesi-yeniden
+
+Kuruluşun yanıtını bekleyen iadeyi yeniden dener: reddedilen parçalar yeniden gönderilir, yanıtı gelmeyen parçalar gönderilmez (tarama sorar).
+
+- İzin: `siparis.iade`. Sınır: `genel`.
+- Girdi: `{ "numara" }` (`iadeYenidenDenemeSemasi`).
+- Başarılı (200): siparis-iadesi ile aynı.
+- Hatalar: `cakisma` (`iade-yok`: bekleyen iade yok), `yetki`.
 
 ### POST /kapi/yonetici/siparis-notu
 

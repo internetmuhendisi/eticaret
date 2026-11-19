@@ -4,6 +4,9 @@
 import { z } from "zod";
 import { havaleBildirimiSinirlari } from "../../kayitlar/odeme.ts";
 import {
+  iadeNedenleri,
+  iadeSinirlari,
+  iadeTurleri,
   siparisDurumlari,
   siparisNotTurleri,
   siparisNumarasiKalibi,
@@ -122,3 +125,30 @@ export const kargoFirmalariSemasi = z.strictObject({
 export type KargoFirmalariGirdisi = z.output<typeof kargoFirmalariSemasi>;
 
 export const kargoFirmalariDurumuSemasi = z.strictObject({});
+
+// İptal ve iade (kart 0235, karar 0147). Ekran ürünleri sırasıyla ve adediyle, kargonun iade edilip edilmeyeceğini ve
+// isterse elle tutarı (sitenin para biçimiyle yazı, servis kuruşa çevirir) gönderir; tutarı servis hesaplar. İptalde
+// ürün seçilmez: bütün ürünler ve kargo iptale girer.
+export const siparisIadesiSemasi = z.strictObject({
+  numara: siparisNumarasiSemasi,
+  tur: z.enum(iadeTurleri),
+  gorulenDurum: z.enum(siparisDurumlari),
+  kalemler: z
+    .array(
+      z.strictObject({
+        sira: z.number().int().min(0),
+        adet: z.number().int().min(0).max(1_000_000),
+      }),
+    )
+    .max(1000)
+    .default([]),
+  kargo: z.boolean().default(false),
+  tutar: z.preprocess(bosIseYok, z.string().trim().max(40).optional()),
+  stogaKoy: z.boolean(),
+  neden: z.enum(iadeNedenleri),
+  aciklama: z.preprocess(bosIseYok, duzMetinSemasi(iadeSinirlari.aciklamaEnCok).optional()),
+});
+export type SiparisIadesiGirdisi = z.output<typeof siparisIadesiSemasi>;
+
+// Bekleyen (kuruluşun yanıtını bekleyen) iadeyi yeniden dener.
+export const iadeYenidenDenemeSemasi = z.strictObject({ numara: siparisNumarasiSemasi });

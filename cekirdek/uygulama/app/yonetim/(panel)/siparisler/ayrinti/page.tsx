@@ -15,6 +15,7 @@ import {
   AyrintiBasligi,
   SiparisAyrintisi,
 } from "../../../../../../yonetim-paneli/siparisler/ayrinti";
+import { IadeIslemleri } from "../../../../../../yonetim-paneli/siparisler/iade-penceresi";
 import { SiparisIslemleri } from "../../../../../../yonetim-paneli/siparisler/islemler";
 import { siparisAyrintisiVerisi } from "../../../../../../yonetim-paneli/siparisler/veri";
 
@@ -36,18 +37,21 @@ export default async function SiparisAyrintisiSayfasi({
       kod="siparis-ayrintisi"
       baslik={doldur(metin("yonetim.siparis.baslik"), { numara: veri.numara })}
       eylemler={
-        <SiparisIslemleri
-          numara={veri.numara}
-          durum={veri.durum}
-          tutar={veri.tutarlar.toplam}
-          islemler={veri.islemler}
-          kargoFirmalari={veri.kargoFirmalari}
-          kargo={
-            veri.kargo === null
-              ? null
-              : { firma: veri.kargo.firma, takipNumarasi: veri.kargo.takipNumarasi }
-          }
-        />
+        <>
+          {veri.iade === null ? null : <IadeIslemleri numara={veri.numara} veri={veri.iade} />}
+          <SiparisIslemleri
+            numara={veri.numara}
+            durum={veri.durum}
+            tutar={veri.tutarlar.toplam}
+            islemler={veri.islemler}
+            kargoFirmalari={veri.kargoFirmalari}
+            kargo={
+              veri.kargo === null
+                ? null
+                : { firma: veri.kargo.firma, takipNumarasi: veri.kargo.takipNumarasi }
+            }
+          />
+        </>
       }
     >
       <AyrintiBasligi veri={veri} />

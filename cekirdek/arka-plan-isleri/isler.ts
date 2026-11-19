@@ -3,6 +3,7 @@
 // iş kendi modülünde tanımlanır, kaydı buradadır.
 import { z } from "zod";
 import {
+  kartlaIadeTaramasiIsi,
   kartlaOdemeKarsilastirmasiIsi,
   kartlaOdemeTaramasiIsi,
 } from "../eklentiler/kartla-odeme/isler.ts";
@@ -69,6 +70,8 @@ export const kayitliIsler: readonly IsTanimi[] = [
   // Kartla ödeme eklentisi (kart 0215, karar 0142).
   kartlaOdemeTaramasiIsi,
   kartlaOdemeKarsilastirmasiIsi,
+  // İptal ve iade (kart 0235, karar 0147).
+  kartlaIadeTaramasiIsi,
 ];
 
 export const zamanliIsler: readonly ZamanliIs[] = [
@@ -81,4 +84,5 @@ export const zamanliIsler: readonly ZamanliIs[] = [
   zamanliIs(stokBildirimiTaramasiIsi, {}, { herDakika: stokBildirimiAyari.taramaDakika }),
   zamanliIs(kartlaOdemeTaramasiIsi, {}, { herDakika: kartlaOdemeAyari.taramaDakika }),
   zamanliIs(kartlaOdemeKarsilastirmasiIsi, {}, { herDakika: 24 * 60 }),
+  zamanliIs(kartlaIadeTaramasiIsi, {}, { herDakika: kartlaOdemeAyari.taramaDakika }),
 ];

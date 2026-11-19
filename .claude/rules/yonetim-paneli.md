@@ -68,6 +68,7 @@ paths:
 - Hangi işlemin görüneceği sunucuda siparişin durumu, ödeme yöntemi ve yöneticinin izniyle bulunur (`siparisAyrintisiVerisi`); ekran işlemi yeniden süzmez. İşlem ekranın gördüğü durumu gönderir.
 - Durumun rozeti ve metni kayıttan okunur (`siparisDurumTanimlari`, `durumMetni`); durum adını ekranda elle yazma.
 - Sipariş araması aranan metni adrese yazmaz: liste ucuna gider. Durum sekmesi ve sayfa adrestedir.
+- İptal ve iade (karar 0147) yan penceredir (`iade-penceresi.tsx`), yalnız `siparis.iade` izni olana ve durumu izin veren siparişte görünür; tutar ve vergi önizlemesi sunucunun `iadeyiHesapla`'sıyla ve sitenin biçim ayarlarıyla (`siteninBicimAyarlari`) çizilir, gönderilen yalnız seçimdir.
 
 ## Ödeme yöntemleri ve banka hesapları (karar 0141)
 

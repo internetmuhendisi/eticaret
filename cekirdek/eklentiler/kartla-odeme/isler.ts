@@ -6,6 +6,7 @@ import { isTanimla } from "../../arka-plan-isleri/kuyruk.ts";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import { gunluk } from "../../izleme/gunluk.ts";
 import { takvimGunu } from "../../metinler/bicimleyici.ts";
+import { belirsizIadeleriSor } from "./iade.ts";
 import { kartlaOdemeServisi } from "./servis.ts";
 
 // Sonucu bilinmeyen ödemeleri sorar: müşteri dönmediyse ve bildirim gelmediyse sipariş yine kurulur.
@@ -31,5 +32,15 @@ export const kartlaOdemeKarsilastirmasiIsi = isTanimla({
       gun: dun,
       uyusmazlik: uyusmazliklar?.length ?? "yapilmadi",
     });
+  },
+});
+
+// Yanıtı gelmeyen iade parçalarını günlük rapordan sorar (kart 0235): para döndüyse iade tamamlanır.
+export const kartlaIadeTaramasiIsi = isTanimla({
+  tur: "kartla-iade-taramasi",
+  sema: z.strictObject({}),
+  calistir: async (_, { vt }) => {
+    const cozulen = await belirsizIadeleriSor(vt, calisanSite());
+    gunluk.bilgi("kartla iade taraması", { cozulen });
   },
 });

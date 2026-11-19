@@ -25,13 +25,14 @@ import {
   check,
   index,
   integer,
+  jsonb,
   pgTable,
   text,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 import { odemeOturumlari } from "../../moduller/odeme/model.ts";
-import { siparisler } from "../../moduller/siparis/model.ts";
+import { siparisIadeleri, siparisler } from "../../moduller/siparis/model.ts";
 import { kimlik, tutar, zaman } from "../../veritabani/turler.ts";
 
 export const kartOdemeleri = pgTable(
@@ -59,6 +60,10 @@ export const kartOdemeleri = pgTable(
     // Taramanın bu ödemeyi en son sorduğu an: tarama en az sorulandan başlar, sonuçlanamayan ödemeler yenilerini
     // tıkamaz.
     son_sorgu_zamani: zaman(),
+    // Ödeme kuruluşunun sepet kalemi işlemleri (kart 0235): kalem (birimin kimliği ya da "kargo"), kuruluşun işlem
+    // kimliği (paymentTransactionId) ve kalemin ödenen tutarı (taksit farkıyla, kuruş). İade kalem kalem bunlarla
+    // gider. Bu alandan önce ödenmiş siparişte yoktur; o siparişin iadesi ödemenin kimliğiyle tutarla gider.
+    kalem_islemleri: jsonb().$type<{ kalem: string; islem: string; odenen: number }[]>(),
   },
   (tablo) => [
     uniqueIndex("kart_odemeleri_belirtec").on(tablo.belirtec),
@@ -85,3 +90,44 @@ export const kartOdemeleri = pgTable(
   ],
 );
 export type KartOdemesi = typeof kartOdemeleri.$inferSelect;
+
+// Kartla ödemenin iadesinin kuruluşa giden parçaları (kart 0235, karar 0147): bir sipariş iadesi kalem kalem (sepet
+// kalemi başına bir istek) ya da kalem işlemi bilinmeyen eski ödemede tek istekle ("tumu") gider. Satırın kimliği
+// isteğin conversationId'sidir: yanıtı gelmeyen istek günlük raporda bu kimlikle bulunur. Aynı iadenin aynı kalemi
+// iki kez gönderilmez (tekil indeks; yalnız "gonderilecek" satır gönderilir).
+//
+// Aranan alanlar: iade_kimligi (iadenin parçaları), tekil; belirsiz parçalar (tarama), kısmi indeks.
+export const kartIadeleri = pgTable(
+  "kart_iadeleri",
+  {
+    kimlik: kimlik(),
+    iade_kimligi: uuid()
+      .notNull()
+      .references(() => siparisIadeleri.kimlik, { onDelete: "restrict" }),
+    kart_odemesi_kimligi: uuid()
+      .notNull()
+      .references(() => kartOdemeleri.kimlik, { onDelete: "restrict" }),
+    kalem: text().notNull(),
+    // Kuruluşun kalem işlem kimliği; "tumu" parçasında yoktur (ödemenin kimliğiyle gider).
+    islem: text(),
+    tutar: tutar().notNull(),
+    // cekirdek/kayitlar/eklentiler.ts: kartIadesiDurumlari.
+    durum: text().notNull(),
+    hata: text(),
+    olusturma_zamani: zaman().notNull().defaultNow(),
+    sonuc_zamani: zaman(),
+    son_sorgu_zamani: zaman(),
+  },
+  (tablo) => [
+    uniqueIndex("kart_iadeleri_kalem").on(tablo.iade_kimligi, tablo.kalem),
+    index("kart_iadeleri_belirsiz")
+      .on(tablo.son_sorgu_zamani, tablo.olusturma_zamani)
+      .where(sql`${tablo.durum} = 'belirsiz'`),
+    check(
+      "kart_iadeleri_durum",
+      sql`${tablo.durum} in ('gonderilecek', 'tamam', 'red', 'belirsiz')`,
+    ),
+    check("kart_iadeleri_tutar", sql`${tablo.tutar} > 0`),
+  ],
+);
+export type KartIadesi = typeof kartIadeleri.$inferSelect;

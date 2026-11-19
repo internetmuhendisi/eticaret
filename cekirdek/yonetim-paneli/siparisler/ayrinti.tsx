@@ -5,12 +5,14 @@ import type { ReactNode } from "react";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
 import { Kart } from "../../../bilesenler/parcalar/kart";
+import { Rozet } from "../../../bilesenler/parcalar/rozet";
 import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { metin } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
+import { IadeyiYenidenDene } from "./iade-penceresi";
 import { DurumRozeti } from "./liste";
-import { durumMetni, nedenMetni, odemeYazisi, yazanYazisi } from "./metinler";
+import { durumMetni, iadeNedenMetni, nedenMetni, odemeYazisi, yazanYazisi } from "./metinler";
 import { NotFormu } from "./not-formu";
 import type { SiparisAyrintisiVerisi } from "./veri";
 
@@ -77,6 +79,14 @@ export function SiparisAyrintisi({ veri }: { veri: SiparisAyrintisiVerisi }) {
   return (
     <div className="flex flex-col gap-4 masaustu:flex-row masaustu:items-start">
       <div className="flex min-w-0 flex-col gap-4 masaustu:w-2/3">
+        {veri.iadeler.some((iade) => iade.durum === "bekliyor") ? (
+          <Uyari tur="uyari">
+            <span className="flex flex-col gap-2">
+              <span>{metin("yonetim.iade.bekleyenUyarisi")}</span>
+              {veri.iadeYenidenDenenebilir ? <IadeyiYenidenDene numara={veri.numara} /> : null}
+            </span>
+          </Uyari>
+        ) : null}
         {veri.kisiselSilindi ? (
           <Uyari tur="bilgi">{metin("yonetim.siparis.kisiselSilindi")}</Uyari>
         ) : null}
@@ -177,6 +187,78 @@ export function SiparisAyrintisi({ veri }: { veri: SiparisAyrintisiVerisi }) {
               : null}
           </dl>
         </Bolum>
+        {veri.iadeler.length === 0 ? null : (
+          <Bolum baslik={metin("yonetim.iade.liste.baslik")} kimlik="siparis-iadeleri">
+            <ul className="flex flex-col gap-3">
+              {veri.iadeler.map((iade) => (
+                <li
+                  key={iade.kimlik}
+                  className="flex flex-col gap-1 border-b border-kenar pb-3 last:border-b-0 last:pb-0"
+                >
+                  <span className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-kalin">
+                      {metin(
+                        iade.tur === "iptal"
+                          ? "yonetim.iade.liste.iptal"
+                          : "yonetim.iade.liste.iade",
+                      )}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <Rozet
+                        tur={
+                          iade.durum === "tamamlandi"
+                            ? "basari"
+                            : iade.durum === "bekliyor"
+                              ? "uyari"
+                              : "tehlike"
+                        }
+                      >
+                        {metin(`yonetim.iade.durum.${iade.durum}`)}
+                      </Rozet>
+                      <span className="font-kalin whitespace-nowrap">{iade.tutar}</span>
+                    </span>
+                  </span>
+                  {iade.kalemler.length === 0 && iade.kargo === null ? null : (
+                    <span className="text-kucuk">
+                      {[
+                        ...iade.kalemler.map((kalem) =>
+                          doldur(metin("yonetim.iade.liste.kalem"), {
+                            adet: String(kalem.adet),
+                            ad: kalem.ad,
+                          }),
+                        ),
+                        ...(iade.kargo === null
+                          ? []
+                          : [doldur(metin("yonetim.iade.liste.kargo"), { tutar: iade.kargo })]),
+                      ].join(" · ")}
+                    </span>
+                  )}
+                  {iade.vergiler.map((vergi) => (
+                    <span key={`${vergi.ad}-${vergi.oran}`} className="text-kucuk text-soluk-yazi">
+                      {doldur(metin("yonetim.iade.liste.vergi"), {
+                        ad: vergi.ad ?? metin("yonetim.siparis.vergi"),
+                        oran: vergi.oran,
+                        tutar: vergi.tutar,
+                      })}
+                    </span>
+                  ))}
+                  <span className="text-kucuk text-soluk-yazi">
+                    {[
+                      metin(iadeNedenMetni(iade.neden)),
+                      metin(`yonetim.iade.yontem.${iade.yontem}`),
+                      ...(iade.stogaKondu ? [metin("yonetim.iade.liste.stogaKondu")] : []),
+                      yazanYazisi(metin, iade.yazan),
+                      iade.zaman,
+                    ].join(" · ")}
+                  </span>
+                  {iade.aciklama === null ? null : (
+                    <span className="text-kucuk wrap-anywhere">{iade.aciklama}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </Bolum>
+        )}
         {veri.kargo === null ? null : (
           <Bolum baslik={metin("yonetim.siparis.kargoBilgisi.baslik")} kimlik="siparis-kargosu">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-orta bg-yuzey px-4 py-3">

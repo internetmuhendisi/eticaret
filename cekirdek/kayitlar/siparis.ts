@@ -46,6 +46,8 @@ export const satinAlmaDurumlari = [
 // - havale-bildirildi: müşteri ödediğini bildirdi; durum değişmez, bildirim siparişe yazılır.
 // - havale-onaylandi, hazirlamaya-alindi, kargoya-verildi, teslim-edildi: panelin işlemleri (siparisIslemleri).
 // - kargo-duzeltildi: kargodaki siparişin firması ya da takip numarası düzeltildi; durum değişmez.
+// - yonetici-iptali, iade-yapildi: mağaza sahibinin iptali ve iadesi (kart 0235, iadeYap). Bir kısmi iadeden sonraki
+//   kısmi iade durumu değiştirmez (kismi-iade → kismi-iade).
 export const siparisGecmisiNedenleri = [
   "olusturuldu",
   "havale-suresi-doldu",
@@ -55,6 +57,8 @@ export const siparisGecmisiNedenleri = [
   "kargoya-verildi",
   "kargo-duzeltildi",
   "teslim-edildi",
+  "yonetici-iptali",
+  "iade-yapildi",
 ] as const;
 export type SiparisGecmisiNedeni = (typeof siparisGecmisiNedenleri)[number];
 
@@ -136,6 +140,34 @@ export const kargoIslemleri = [
   "kargoya-ver",
   "kargo-duzelt",
 ] as const satisfies readonly SiparisIslemi[];
+
+// İptal ve iade (kart 0235, karar 0147). Tek akıştır (cekirdek/moduller/siparis/iade.ts):
+// - iptal: ödeme bekleyen ya da hazırlanan sipariş; ödeme alınmışsa ödenen tutarın tamamı geri döner.
+// - iade: teslim edilmiş ya da kısmen iade edilmiş siparişin ürünleri (adet adet), kargosu ya da elle yazılan tutar.
+//   Bütün ürünler ve kargo iade edilince sipariş "iade edildi", değilse "kısmi iade" olur.
+// Para kartla ödemede ödeme kuruluşu üzerinden döner (eklenti); öteki yöntemlerde mağaza sahibi kendisi gönderir, iade
+// kaydedilince yapılmış sayılır (kullanıcı kararı). Kuruluşun yanıtı gelmezse iade "bekliyor"da kalır, sipariş
+// değişmez; reddedilen iade "basarisiz"dır, hiçbir şey değişmez.
+export const iadeTurleri = ["iptal", "iade"] as const;
+export type IadeTuru = (typeof iadeTurleri)[number];
+export const iadeDurumlari = ["bekliyor", "tamamlandi", "basarisiz"] as const;
+export type IadeDurumu = (typeof iadeDurumlari)[number];
+// İptal ve iadenin nedenleri (panelde seçilir, kayda yazılır).
+export const iadeNedenleri = [
+  "musteri-vazgecti",
+  "beklentiyi-karsilamadi",
+  "kusurlu-hasarli",
+  "yanlis-urun",
+  "stok-yok",
+  "diger",
+] as const;
+export type IadeNedeni = (typeof iadeNedenleri)[number];
+// Hangi durumdaki siparişte hangi tür yapılır.
+export const iadeyeAcikDurumlar: Record<IadeTuru, readonly SiparisDurumu[]> = {
+  iptal: ["odeme-bekleniyor", "hazirlaniyor"],
+  iade: ["teslim-edildi", "kismi-iade"],
+};
+export const iadeSinirlari = { aciklamaEnCok: 500 } as const;
 
 // Siparişin notları (kart 0234): iç not yalnız panelde, müşteriye not müşterinin sipariş ayrıntısında görünür
 // (e-postası kart 0240). Not sonradan değiştirilemez.

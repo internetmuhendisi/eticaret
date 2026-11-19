@@ -225,7 +225,9 @@
       "hazirlamayaAl": "Hazırlamaya al",
       "kargoyaVer": "Kargoya ver",
       "kargoDuzelt": "Kargo bilgisini düzelt",
-      "teslimEdildi": "Teslim edildi"
+      "teslimEdildi": "Teslim edildi",
+      "siparisIptal": "İptal et",
+      "iadeYap": "İade yap"
     },
     "rol": {
       "magaza-sahibi": "Mağaza sahibi",
@@ -912,14 +914,17 @@
         "hazirlamaya-alindi": "Hazırlamaya alındı",
         "kargoya-verildi": "Kargoya verildi",
         "kargo-duzeltildi": "Kargo bilgisi düzeltildi",
-        "teslim-edildi": "Teslim edildi"
+        "teslim-edildi": "Teslim edildi",
+        "yonetici-iptali": "Sipariş iptal edildi",
+        "iade-yapildi": "İade yapıldı"
       },
       "yazan": {
         "musteri": "Müşteri",
         "yonetici": "Yönetici",
         "sistem": {
           "havale-suresi": "Otomatik iptal",
-          "uye-olmayan-musteri": "Müşteri (üye değil)"
+          "uye-olmayan-musteri": "Müşteri (üye değil)",
+          "kartla-odeme-taramasi": "Kartla ödeme taraması"
         },
         "sistemGenel": "Sistem"
       },
@@ -1050,6 +1055,88 @@
         "genel": "Kaydedilemedi. Sayfayı yenileyip yeniden deneyin."
       },
       "firmaEkleNe": "Firma"
+    },
+    "iade": {
+      "iptalBaslik": "Siparişi iptal et",
+      "iptalAciklamasi": "Sipariş iptal edilir. Ödemesi alınmışsa para geri ödenir.",
+      "iadeBaslik": "İade yap",
+      "iadeAciklamasi": "İade edilecek ürünleri ve adetleri seçin. Tutar ve vergisi siparişteki fiyat ve oranlarla hesaplanır.",
+      "iptalUyarisi": "Bu işlem geri alınamaz. Ödemesi alınmış siparişte ödenen tutarın tamamı geri ödenir.",
+      "urunler": "Ürünler",
+      "adetAlindi": "{adet} adet alındı",
+      "adetIadeli": "{adet} adet alındı, {iade} adedi iade edildi",
+      "hepsiIadeli": "Tamamı iade edildi",
+      "adetGrubu": "İade adedi: {ad}",
+      "azalt": "Azalt: {ad}",
+      "artir": "Artır: {ad}",
+      "kargo": "Kargo ücreti",
+      "kargoHayir": "İade etme",
+      "kargoEvet": "İade et ({tutar})",
+      "stogaKoy": "İade edilen ürünleri stoğa geri koy",
+      "stogaKoyIptal": "Ürünleri stoğa geri koy",
+      "tutar": "İade tutarı",
+      "tutarAciklamasi": "Seçilen ürünlerden hesaplandı. Elle değiştirebilirsiniz; iade edilebilir kalan tutarı ({kalan}) aşamaz.",
+      "iptalNedeni": "İptal nedeni",
+      "iadeNedeni": "İade nedeni",
+      "nedenSec": "Neden seçin",
+      "aciklama": "Açıklama",
+      "aciklamaAciklamasi": "İsteğe bağlı. Yalnız panelde görünür.",
+      "iadeEdilecek": "İade edilecek",
+      "geriOdenecek": "Geri ödenecek",
+      "icindekiVergi": "İçindeki {ad} ({oran})",
+      "iptalDugmesi": "Siparişi iptal et",
+      "iadeDugmesi": "{tutar} iade et",
+      "yenidenDene": "Yeniden dene",
+      "bekleyenUyarisi": "Bir iade ödeme kuruluşunun yanıtını bekliyor. Yanıt gelene kadar siparişin durumu değişmez ve yeni iade yapılamaz. Kuruluş reddettiyse yeniden deneyebilirsiniz.",
+      "para": {
+        "kurulus": "Kartla ödenen siparişte para ödeme kuruluşu üzerinden karta geri döner. Kuruluş onaylayana kadar iade \"bekliyor\" görünür.",
+        "elle": "Parayı müşteriye kendiniz gönderin. Kaydettiğinizde iade yapılmış sayılır.",
+        "yok": "Bu siparişin ödemesi alınmadı, geri ödenecek para yok."
+      },
+      "neden": {
+        "musteri-vazgecti": "Müşteri vazgeçti",
+        "beklentiyi-karsilamadi": "Beklentiyi karşılamadı",
+        "kusurlu-hasarli": "Kusurlu ya da hasarlı",
+        "yanlis-urun": "Yanlış ürün gönderildi",
+        "stok-yok": "Stokta yok",
+        "diger": "Diğer"
+      },
+      "yontem": {
+        "kurulus": "Ödeme kuruluşundan",
+        "elle": "Elle geri ödenir",
+        "yok": "Ödeme alınmamıştı"
+      },
+      "durum": {
+        "bekliyor": "Bekliyor",
+        "tamamlandi": "Tamamlandı",
+        "basarisiz": "Başarısız"
+      },
+      "liste": {
+        "baslik": "İptal ve iadeler",
+        "iptal": "İptal",
+        "iade": "İade",
+        "kalem": "{adet} × {ad}",
+        "kargo": "Kargo ({tutar})",
+        "vergi": "İçindeki {ad} ({oran}): {tutar}",
+        "stogaKondu": "Stoğa geri kondu"
+      },
+      "basari": {
+        "iptal": "Sipariş iptal edildi.",
+        "iade": "İade yapıldı.",
+        "bekliyor": "İade ödeme kuruluşuna gönderildi, yanıtı bekleniyor. Sonuç gelince siparişin durumu değişir.",
+        "basarisiz": "Ödeme kuruluşu iadeyi reddetti, para dönmedi. Siparişin durumu değişmedi."
+      },
+      "hata": {
+        "kalem": "Seçilen adet iade edilebilir adedi aşıyor. Sayfayı yenileyip yeniden seçin.",
+        "kargo": "Kargo ücreti daha önce iade edildi.",
+        "bos": "İade edilecek bir ürün, kargo ya da tutar seçin.",
+        "tutarFazla": "Tutar iade edilebilir kalanı aşıyor. Daha küçük bir tutar yazın.",
+        "tutarGecersiz": "Tutar sıfırdan büyük olmalı.",
+        "tutarOkunamadi": "Tutar okunamadı. Örneğin 349,90 biçiminde yazın.",
+        "odenmemis": "Bu siparişin ödemesi alınmadı, iade yapılamaz. Siparişi iptal edin.",
+        "neden": "Bir neden seçin.",
+        "bekliyor": "Bu siparişte ödeme kuruluşunun yanıtını bekleyen bir iade var. Yanıt gelince yeniden deneyin."
+      }
     }
   },
   "vitrin": {

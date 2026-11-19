@@ -30,16 +30,19 @@ import { odemeBilgileriSemasi } from "../../../moduller/odeme/semalar.ts";
 import { odemeServisi } from "../../../moduller/odeme/servis.ts";
 import { eskiOdemeOturumlariniSil } from "../../../moduller/odeme/temizlik.ts";
 import { kullanilabilirYontemler, odemeYontemiServisi } from "../../../moduller/odeme/yontemler.ts";
-import { siparisler } from "../../../moduller/siparis/model.ts";
+import { iadeServisi } from "../../../moduller/siparis/iade.ts";
+import { siparisIadeleri, siparisKalemleri, siparisler } from "../../../moduller/siparis/model.ts";
 import { siparisServisi } from "../../../moduller/siparis/servis.ts";
+import { siparisYonetimi } from "../../../moduller/siparis/yonetim.ts";
 import { birimStoklari, stokAyirmalari } from "../../../moduller/stok/model.ts";
 import { stokServisi } from "../../../moduller/stok/servis.ts";
 import { urunServisi } from "../../../moduller/urun/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { kartlaOdemeHazirMi } from "../baslat.ts";
+import { belirsizIadeleriSor, iadeyiDagit, kartlaIadeEt } from "../iade.ts";
 import { kurulusAdresi } from "../iyzico.ts";
-import { kartOdemeleri } from "../model.ts";
+import { kartIadeleri, kartOdemeleri } from "../model.ts";
 import { donusSemasi } from "../semalar.ts";
 import { kartlaOdemeServisi } from "../servis.ts";
 import { type SahteKurulus, sahteKurulusAc } from "./sahte-kurulus.ts";
@@ -50,6 +53,7 @@ const anahtar = "deneme-anahtari";
 const gizli = "deneme-gizli-anahtari";
 const yapan = sistemIslemi("test");
 
+const kargoFirmasi = randomUUID();
 const okunan = siteKlasorunuOku(
   resolve(import.meta.dirname, "../../../ayar-semasi/testler/ornek-siteler/gecerli"),
 );
@@ -65,6 +69,7 @@ const site: Site = {
       { kod: "kapida-odeme", acik: true },
     ],
     kartlaOdemeEnCokTaksit: 6,
+    kargoFirmalari: [{ kimlik: kargoFirmasi, ad: "Deneme Kargo" }],
   },
 };
 const kapali: Site = { ...site, ayarlar: { ...site.ayarlar, eklentiler: [] } };
@@ -945,5 +950,354 @@ describe("veritabanı ve iki site", () => {
       sonuc: "yarida-kaldi",
     });
     expect(await odemeSatiri(belirtec, vtB)).toBeUndefined();
+  });
+});
+
+// İptal ve iade (kart 0235, karar 0147): para kalem kalem kuruluştan döner, aynı parça bir kez gider; ret ve belirsiz
+// yanıtta sipariş iade edilmiş sayılmaz, tarama günlük rapordan sorar.
+describe("kartla ödenen siparişin iptali ve iadesi", () => {
+  const iade = iadeServisi(site);
+  const yonetim = siparisYonetimi(site);
+  const yonetici = { tur: "yonetici" as const, kimlik: randomUUID() };
+  const iptalGirdisi = (numara: string) => ({
+    numara,
+    tur: "iptal" as const,
+    gorulenDurum: "hazirlaniyor" as const,
+    kalemler: [],
+    kargo: false,
+    stogaKoy: true,
+    neden: "musteri-vazgecti" as const,
+  });
+
+  // İki ürünlü, ödenmiş kart siparişi (taksitle: ödenen tutar taksit farkını taşır).
+  const odenmisSiparis = async (taksit = 1) => {
+    const a = await birimAc();
+    const b = await birimAc();
+    const sonuc = await odemeServisi(site).onayla(
+      vt,
+      {
+        kim: { tur: "misafir", eposta: "iade@ornek.test", hesap: { ac: false } },
+        bilgiler: bilgiler(),
+        kalemler: [
+          { birim: a, adet: 2 },
+          { birim: b, adet: 1 },
+        ],
+        ip: "203.0.113.5",
+      },
+      3600,
+    );
+    if (sonuc.tur !== "yonlendir") throw new Error("Kartla ödeme yönlendirmeliydi.");
+    const [odeme] = await vt
+      .select()
+      .from(kartOdemeleri)
+      .where(eq(kartOdemeleri.oturum_kimligi, sonuc.oturum));
+    if (odeme === undefined) throw new Error("Kart ödemesi yok.");
+    odemeAyarla(odeme.belirtec, "basarili", taksit);
+    await servis.tamamla(vt, odeme.belirtec, { erisimVer: false });
+    const [siparis] = await oturumunSiparisleri(sonuc.oturum);
+    if (siparis === undefined) throw new Error("Sipariş kurulmadı.");
+    const kurulustaki = kurulus.odemeler.get(odeme.belirtec);
+    if (kurulustaki === undefined) throw new Error("Kuruluşta ödeme yok.");
+    return { siparis, a, b, kurulustaki };
+  };
+  const teslimEt = async (numara: string) => {
+    await yonetim.islemYap(vt, yonetici, {
+      numara,
+      islem: "kargoya-ver",
+      gorulenDurum: "hazirlaniyor",
+      kargo: { firma: kargoFirmasi },
+    });
+    await yonetim.islemYap(vt, yonetici, {
+      numara,
+      islem: "teslim-edildi",
+      gorulenDurum: "kargoda",
+    });
+  };
+  const iadeler = (siparis: string) =>
+    vt.select().from(siparisIadeleri).where(eq(siparisIadeleri.siparis_kimligi, siparis));
+  const parcalar = (iadeKimligi: string) =>
+    vt.select().from(kartIadeleri).where(eq(kartIadeleri.iade_kimligi, iadeKimligi));
+  const durumu = async (kimlik: string) =>
+    (
+      await vt
+        .select({ durum: siparisler.durum })
+        .from(siparisler)
+        .where(eq(siparisler.kimlik, kimlik))
+    )[0]?.durum;
+  const iadeSayisi = () =>
+    (kurulus.istekSayisi.get("/payment/refund") ?? 0) +
+    (kurulus.istekSayisi.get("/v2/payment/refund") ?? 0);
+  const arizayiKaldir = () => {
+    kurulus.ariza.iadeReddi = false;
+    kurulus.ariza.iadeYanitsiz = false;
+    kurulus.ariza.reddedilenKalem = null;
+    kurulus.ariza.ulasilamaz = false;
+  };
+
+  it("sonuç kalemlerin işlemleriyle saklanır; taksitli siparişin iptali ödenen tutarın tamamını kalem kalem döndürür", async () => {
+    const { siparis, kurulustaki } = await odenmisSiparis(3);
+    const [odeme] = await vt
+      .select()
+      .from(kartOdemeleri)
+      .where(eq(kartOdemeleri.siparis_kimligi, siparis.kimlik));
+    expect(odeme?.kalem_islemleri?.map((kalem) => kalem.islem).sort()).toEqual(
+      kurulustaki.kalemler.map((kalem) => kalem.islem).sort(),
+    );
+    expect(odeme?.kalem_islemleri?.reduce((t, kalem) => t + kalem.odenen, 0)).toBe(odeme?.odenen);
+    const once = iadeSayisi();
+    expect(await iade.iadeYap(vt, yonetici, iptalGirdisi(siparis.numara))).toEqual({
+      numara: siparis.numara,
+      durum: "iptal",
+      iade: "tamamlandi",
+    });
+    const [kayit] = await iadeler(siparis.kimlik);
+    // Taksit farkı dahil (kullanıcı kararı).
+    expect(odeme?.odenen).toBeGreaterThan(siparis.toplam);
+    expect(kayit).toMatchObject({
+      tur: "iptal",
+      durum: "tamamlandi",
+      yontem: "kurulus",
+      tutar: odeme?.odenen,
+    });
+    const giden = await parcalar(kayit?.kimlik ?? "");
+    expect(giden.every((parca) => parca.durum === "tamam")).toBe(true);
+    expect(giden.reduce((t, parca) => t + parca.tutar, 0)).toBe(odeme?.odenen);
+    expect(kurulustaki.iadeler.map((satir) => satir.parca).sort()).toEqual(
+      giden.map((parca) => parca.kimlik).sort(),
+    );
+    expect(iadeSayisi() - once).toBe(giden.length);
+    expect(kurulustaki.iptal).toBe(false);
+  });
+
+  it("kısmi iade yalnız seçilen kalemden döner; aynı iadenin ikinci çağrısı kuruluşa gitmez", async () => {
+    const { siparis, a, kurulustaki } = await odenmisSiparis();
+    await teslimEt(siparis.numara);
+    const kalemler = await vt
+      .select()
+      .from(siparisKalemleri)
+      .where(eq(siparisKalemleri.siparis_kimligi, siparis.kimlik));
+    const kalemA = kalemler.find((kalem) => kalem.birim_kimligi === a);
+    expect(
+      await iade.iadeYap(vt, yonetici, {
+        numara: siparis.numara,
+        tur: "iade",
+        gorulenDurum: "teslim-edildi",
+        kalemler: [{ sira: kalemA?.sira ?? 0, adet: 1 }],
+        kargo: false,
+        stogaKoy: false,
+        neden: "beklentiyi-karsilamadi",
+      }),
+    ).toEqual({ numara: siparis.numara, durum: "kismi-iade", iade: "tamamlandi" });
+    const [kayit] = await iadeler(siparis.kimlik);
+    const islemA = kurulustaki.kalemler.find((kalem) => kalem.id === a)?.islem;
+    expect(kurulustaki.iadeler).toEqual([
+      expect.objectContaining({ islem: islemA, tutar: kayit?.tutar }),
+    ]);
+    const once = iadeSayisi();
+    expect(
+      await kartlaIadeEt(vt, site, {
+        iade: kayit?.kimlik ?? "",
+        siparis: siparis.kimlik,
+        tutar: kayit?.tutar ?? 0,
+        kalemler: [{ birim: a, tutar: kayit?.tutar ?? 0 }],
+        kargoTutari: 0,
+      }),
+    ).toBe("tamam");
+    expect(iadeSayisi()).toBe(once);
+    expect(kurulustaki.iadeler).toHaveLength(1);
+  });
+
+  it("aynı anda iki çağrıda her parça kuruluşa bir kez gider", async () => {
+    const { siparis, a, b, kurulustaki } = await odenmisSiparis();
+    const [satir] = await vt
+      .insert(siparisIadeleri)
+      .values({
+        siparis_kimligi: siparis.kimlik,
+        tur: "iptal",
+        durum: "bekliyor",
+        yontem: "kurulus",
+        tutar: siparis.toplam,
+        vergi_dokumu: [],
+        kalemler: [],
+        kargo_tutari: 0,
+        stoga_konacak: true,
+        neden: "diger",
+        kim_turu: "sistem",
+        kim_adi: "test",
+      })
+      .returning();
+    const istek = {
+      iade: satir?.kimlik ?? "",
+      siparis: siparis.kimlik,
+      tutar: siparis.toplam,
+      kalemler: [
+        { birim: a, tutar: 1 },
+        { birim: b, tutar: 1 },
+      ],
+      kargoTutari: 0,
+    };
+    const sonuclar = await Promise.all([
+      kartlaIadeEt(vt, site, istek),
+      kartlaIadeEt(vt, site, istek),
+      kartlaIadeEt(vt, site, istek),
+    ]);
+    expect(sonuclar).toContain("tamam");
+    const giden = await parcalar(satir?.kimlik ?? "");
+    expect(kurulustaki.iadeler).toHaveLength(giden.length);
+    expect(kurulustaki.iadeler.reduce((t, satir_) => t + satir_.tutar, 0)).toBe(siparis.toplam);
+  });
+
+  it("kuruluş reddederse iade başarısızdır, sipariş değişmez, yeni iade yapılabilir", async () => {
+    const { siparis, kurulustaki } = await odenmisSiparis();
+    kurulus.ariza.iadeReddi = true;
+    try {
+      expect(await iade.iadeYap(vt, yonetici, iptalGirdisi(siparis.numara))).toEqual({
+        numara: siparis.numara,
+        durum: "hazirlaniyor",
+        iade: "basarisiz",
+      });
+    } finally {
+      arizayiKaldir();
+    }
+    expect(await durumu(siparis.kimlik)).toBe("hazirlaniyor");
+    const [kayit] = await iadeler(siparis.kimlik);
+    expect(kayit?.durum).toBe("basarisiz");
+    expect((await parcalar(kayit?.kimlik ?? "")).every((parca) => parca.durum === "red")).toBe(
+      true,
+    );
+    expect(kurulustaki.iadeler).toEqual([]);
+    // Ret para döndürmedi: aynı iptal yeniden yapılır.
+    expect((await iade.iadeYap(vt, yonetici, iptalGirdisi(siparis.numara))).iade).toBe(
+      "tamamlandi",
+    );
+  });
+
+  it("yanıt gelmezse iade bekler, sipariş değişmez; tarama günlük rapordan bulup bir kez tamamlar", async () => {
+    const { siparis } = await odenmisSiparis();
+    kurulus.ariza.iadeYanitsiz = true;
+    let sonuc: Awaited<ReturnType<typeof iade.iadeYap>>;
+    try {
+      sonuc = await iade.iadeYap(vt, yonetici, iptalGirdisi(siparis.numara));
+    } finally {
+      arizayiKaldir();
+    }
+    expect(sonuc).toEqual({ numara: siparis.numara, durum: "hazirlaniyor", iade: "bekliyor" });
+    const [kayit] = await iadeler(siparis.kimlik);
+    expect((await parcalar(kayit?.kimlik ?? "")).every((parca) => parca.durum === "belirsiz")).toBe(
+      true,
+    );
+    expect(
+      await hatasi(
+        yonetim.islemYap(vt, yonetici, {
+          numara: siparis.numara,
+          islem: "kargoya-ver",
+          gorulenDurum: "hazirlaniyor",
+          kargo: { firma: kargoFirmasi },
+        }),
+      ),
+    ).toMatchObject({ kod: "cakisma", ayrinti: [{ kod: "iade-bekliyor" }] });
+    // Yeniden deneme belirsiz parçayı göndermez.
+    const once = iadeSayisi();
+    expect((await iade.yenidenDene(vt, yonetici, siparis.numara)).iade).toBe("bekliyor");
+    expect(iadeSayisi()).toBe(once);
+    // Tarama yalnız sorma süresi geçmiş parçayı sorar.
+    expect(await belirsizIadeleriSor(vt, site)).toBe(0);
+    await vt
+      .update(kartIadeleri)
+      .set({ son_sorgu_zamani: sql`now() - interval '1 hour'` })
+      .where(eq(kartIadeleri.iade_kimligi, kayit?.kimlik ?? ""));
+    expect(await belirsizIadeleriSor(vt, site)).toBeGreaterThan(0);
+    expect(await durumu(siparis.kimlik)).toBe("iptal");
+    expect((await iadeler(siparis.kimlik))[0]?.durum).toBe("tamamlandi");
+    expect(iadeSayisi()).toBe(once);
+    expect(await belirsizIadeleriSor(vt, site)).toBe(0);
+  });
+
+  it("bir kalem reddedilince iade bekler, yeniden deneme yalnız onu gönderir", async () => {
+    const { siparis, b, kurulustaki } = await odenmisSiparis();
+    kurulus.ariza.reddedilenKalem = b;
+    try {
+      expect((await iade.iadeYap(vt, yonetici, iptalGirdisi(siparis.numara))).iade).toBe(
+        "bekliyor",
+      );
+    } finally {
+      arizayiKaldir();
+    }
+    const [kayit] = await iadeler(siparis.kimlik);
+    const ilk = await parcalar(kayit?.kimlik ?? "");
+    expect(ilk.filter((parca) => parca.durum === "red").map((parca) => parca.kalem)).toEqual([b]);
+    expect(await durumu(siparis.kimlik)).toBe("hazirlaniyor");
+    const donen = kurulustaki.iadeler.length;
+    expect((await iade.yenidenDene(vt, yonetici, siparis.numara)).iade).toBe("tamamlandi");
+    expect(kurulustaki.iadeler.length).toBe(donen + 1);
+    expect(await durumu(siparis.kimlik)).toBe("iptal");
+    expect(await hatasi(iade.yenidenDene(vt, yonetici, siparis.numara))).toMatchObject({
+      kod: "cakisma",
+    });
+  });
+
+  it("kuruluşa hiç ulaşmayan parça raporda bulunmaz, süresi geçince gönderilmemiş sayılır", async () => {
+    const { siparis } = await odenmisSiparis();
+    kurulus.ariza.ulasilamaz = true;
+    try {
+      expect((await iade.iadeYap(vt, yonetici, iptalGirdisi(siparis.numara))).iade).toBe(
+        "bekliyor",
+      );
+    } finally {
+      arizayiKaldir();
+    }
+    const [bekleyen] = await iadeler(siparis.kimlik);
+    await vt
+      .update(kartIadeleri)
+      .set({
+        son_sorgu_zamani: sql`now() - interval '1 hour'`,
+        olusturma_zamani: sql`now() - interval '3 days'`,
+      })
+      .where(eq(kartIadeleri.iade_kimligi, bekleyen?.kimlik ?? ""));
+    await belirsizIadeleriSor(vt, site);
+    expect(
+      (await parcalar(bekleyen?.kimlik ?? "")).every((parca) => parca.hata === "raporda-yok"),
+    ).toBe(true);
+    expect((await iadeler(siparis.kimlik))[0]?.durum).toBe("basarisiz");
+    expect(await durumu(siparis.kimlik)).toBe("hazirlaniyor");
+  });
+
+  it("kalem işlemi bilinmeyen eski ödemenin iadesi ödemenin kimliğiyle tek parça gider", async () => {
+    const { siparis, kurulustaki } = await odenmisSiparis();
+    await vt
+      .update(kartOdemeleri)
+      .set({ kalem_islemleri: null })
+      .where(eq(kartOdemeleri.siparis_kimligi, siparis.kimlik));
+    await iade.iadeYap(vt, yonetici, iptalGirdisi(siparis.numara));
+    const [kayit] = await iadeler(siparis.kimlik);
+    expect(await parcalar(kayit?.kimlik ?? "")).toMatchObject([
+      { kalem: "tumu", islem: null, durum: "tamam" },
+    ]);
+    expect(kurulustaki.iadeler).toEqual([
+      expect.objectContaining({ islem: null, tutar: kayit?.tutar }),
+    ]);
+  });
+
+  it("dağıtım: istenen kalemlere kalanları kadar, fark kalanı olan kalemlere, sığmazsa yok", () => {
+    const kalanlar = [
+      { kalem: "a", kalan: 1000 },
+      { kalem: "b", kalan: 500 },
+      { kalem: "kargo", kalan: 300 },
+    ];
+    expect(
+      iadeyiDagit(
+        { tutar: 1200, kalemler: [{ birim: "a", tutar: 1000 }], kargoTutari: 0 },
+        kalanlar,
+      ),
+    ).toEqual([
+      { kalem: "a", tutar: 1000 },
+      { kalem: "b", tutar: 200 },
+    ]);
+    expect(iadeyiDagit({ tutar: 1800, kalemler: [], kargoTutari: 300 }, kalanlar)).toEqual([
+      { kalem: "kargo", tutar: 300 },
+      { kalem: "a", tutar: 1000 },
+      { kalem: "b", tutar: 500 },
+    ]);
+    expect(iadeyiDagit({ tutar: 1801, kalemler: [], kargoTutari: 0 }, kalanlar)).toBeUndefined();
   });
 });

@@ -18,6 +18,7 @@
     "cekirdek/yonetim-paneli/odeme-yontemleri/banka-hesaplari.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayarlar.tsx",
+    "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
     "cekirdek/yonetim-paneli/siparisler/not-formu.tsx"
   ],
@@ -38,6 +39,7 @@
     "cekirdek/yonetim-paneli/odeme-yontemleri/banka-hesaplari.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayarlar.tsx",
+    "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
     "cekirdek/yonetim-paneli/siparisler/not-formu.tsx",
     "cekirdek/yonetim-paneli/siparisler/siparis-aramasi.tsx",
@@ -95,7 +97,8 @@
   ],
   "bilesenler/parcalar/adet-secici.tsx": [
     "cekirdek/vitrin/sepet/sepet-gorunumu.tsx",
-    "cekirdek/vitrin/sepet/sepete-ekle.tsx"
+    "cekirdek/vitrin/sepet/sepete-ekle.tsx",
+    "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx"
   ],
   "bilesenler/parcalar/akordeon.tsx": [
     "cekirdek/vitrin/bolumler/ortak/menu.tsx",
@@ -203,6 +206,7 @@
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
     "cekirdek/yonetim-paneli/panel-cercevesi.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayarlar.tsx",
+    "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
     "cekirdek/yonetim-paneli/siparisler/siparis-aramasi.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
@@ -236,6 +240,7 @@
     "cekirdek/yonetim-paneli/odeme-yontemleri/banka-hesaplari.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayarlar.tsx",
+    "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
     "cekirdek/yonetim-paneli/siparisler/siparis-aramasi.tsx"
   ],
@@ -272,7 +277,8 @@
     "cekirdek/vitrin/urun-listesi/filtreler.tsx",
     "cekirdek/yonetim-paneli/bolum-formu.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
-    "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx"
+    "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
+    "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx"
   ],
   "bilesenler/parcalar/onay-penceresi.tsx": [
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
@@ -301,6 +307,7 @@
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
     "cekirdek/yonetim-paneli/panel-menusu.tsx",
+    "cekirdek/yonetim-paneli/siparisler/ayrinti.tsx",
     "cekirdek/yonetim-paneli/siparisler/liste.tsx",
     "cekirdek/yonetim-paneli/siparisler/siparis-aramasi.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
@@ -337,6 +344,7 @@
     "cekirdek/vitrin/urun-sayfasi/yorum-yaz.tsx",
     "cekirdek/yonetim-paneli/kargo/ekran.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
+    "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/not-formu.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/bolum-duzenleyici.tsx"
@@ -347,6 +355,7 @@
     "cekirdek/vitrin/urun-listesi/filtreler.tsx",
     "cekirdek/yonetim-paneli/bolum-formu.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
+    "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx"
   ],
   "bilesenler/parcalar/sekmeler.tsx": [
@@ -396,8 +405,10 @@
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/banka-hesaplari.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
+    "cekirdek/yonetim-paneli/panel-islemi.ts",
     "cekirdek/yonetim-paneli/siparisler/ayarlar.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayrinti.tsx",
+    "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
     "cekirdek/yonetim-paneli/siparisler/siparis-aramasi.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
@@ -410,6 +421,7 @@
     "cekirdek/vitrin/siparis/havale-bildirimi-formu.tsx",
     "cekirdek/vitrin/urun-sayfasi/yorum-yaz.tsx",
     "cekirdek/yonetim-paneli/bolum-formu.tsx",
+    "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/not-formu.tsx"
   ],
   "bilesenler/parcalar/yan-pencere.tsx": [
@@ -422,6 +434,7 @@
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
     "cekirdek/yonetim-paneli/panel-cercevesi.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayarlar.tsx",
+    "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/bolum-duzenleyici.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx"

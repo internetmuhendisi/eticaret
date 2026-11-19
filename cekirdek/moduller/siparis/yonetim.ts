@@ -34,8 +34,10 @@ import { gecmiseYaz, kimSutunlari } from "./gecmis.ts";
 import {
   havaleBildirimleri,
   type Siparis,
+  type SiparisIadesi,
   type SiparisKalemi,
   siparisGecmisi,
+  siparisIadeleri,
   siparisKalemleri,
   siparisler,
   siparisNotlari,
@@ -94,6 +96,8 @@ export type SiparisAyrintisi = {
     odemeTarihi: string;
     not: string | null;
   }[];
+  // İptal ve iadeler, en yeni önce (kart 0235); başarısız olanlar da (para dönmedi).
+  iadeler: (Omit<SiparisIadesi, "kim_turu" | "kim_kimligi" | "kim_adi"> & { yazan: Yazan })[];
 };
 
 const yazan = (satir: {
@@ -189,7 +193,9 @@ export const siparisYonetimi = (site: Site) => {
     };
     const yonetici = alias(yoneticiler, "yazan_yonetici");
     const musteri = alias(musteriler, "yazan_musteri");
-    const yazanSutunlari = (tablo: typeof siparisGecmisi | typeof siparisNotlari) => ({
+    const yazanSutunlari = (
+      tablo: typeof siparisGecmisi | typeof siparisNotlari | typeof siparisIadeleri,
+    ) => ({
       kimTuru: tablo.kim_turu,
       kimAdi: tablo.kim_adi,
       yoneticiEpostasi: yonetici.eposta,
@@ -255,6 +261,25 @@ export const siparisYonetimi = (site: Site) => {
       .from(havaleBildirimleri)
       .where(eq(havaleBildirimleri.siparis_kimligi, siparis.kimlik))
       .orderBy(desc(havaleBildirimleri.olusturma_zamani), desc(havaleBildirimleri.kimlik));
+    const iadeler = await vt
+      .select({ iade: siparisIadeleri, ...yazanSutunlari(siparisIadeleri) })
+      .from(siparisIadeleri)
+      .leftJoin(
+        yonetici,
+        and(
+          eq(siparisIadeleri.kim_turu, "yonetici"),
+          eq(yonetici.kimlik, siparisIadeleri.kim_kimligi),
+        ),
+      )
+      .leftJoin(
+        musteri,
+        and(
+          eq(siparisIadeleri.kim_turu, "musteri"),
+          eq(musteri.kimlik, siparisIadeleri.kim_kimligi),
+        ),
+      )
+      .where(eq(siparisIadeleri.siparis_kimligi, siparis.kimlik))
+      .orderBy(desc(siparisIadeleri.olusturma_zamani), desc(siparisIadeleri.kimlik));
     return {
       siparis,
       kalemler,
@@ -272,6 +297,10 @@ export const siparisYonetimi = (site: Site) => {
         yazan: yazan(kim),
       })),
       bildirimler,
+      iadeler: iadeler.map(({ iade: { kim_turu, kim_kimligi: _k, kim_adi, ...iade }, ...kim }) => ({
+        ...iade,
+        yazan: yazan({ ...kim, kimTuru: kim_turu, kimAdi: kim_adi }),
+      })),
     };
   };
 
@@ -331,6 +360,20 @@ export const siparisYonetimi = (site: Site) => {
       if (siparis === undefined) throw new BilinenHata("bulunamadi");
       if (siparis.durum !== girdi.gorulenDurum) {
         throw new BilinenHata("cakisma", [{ alan: "durum", kod: "durum-degisti" }]);
+      }
+      // Kuruluşun yanıtını bekleyen iade varken durum değişmez (kart 0235): iade tamamlanınca durumu kendisi yazar.
+      const [bekleyen] = await islem
+        .select({ kimlik: siparisIadeleri.kimlik })
+        .from(siparisIadeleri)
+        .where(
+          and(
+            eq(siparisIadeleri.siparis_kimligi, siparis.kimlik),
+            eq(siparisIadeleri.durum, "bekliyor"),
+          ),
+        )
+        .limit(1);
+      if (bekleyen !== undefined) {
+        throw new BilinenHata("cakisma", [{ alan: "iade", kod: "iade-bekliyor" }]);
       }
       if (siparis.durum !== tanim.onceki) {
         throw new BilinenHata("is-kurali", [{ alan: "islem", kod: "gecis-yok" }]);

@@ -6,6 +6,9 @@
 // - Ödeme sayfası (/odeme-sayfasi/<belirteç>) müşterinin ödemesini taklit eder: Öde, taksitle öde, reddet; her düğme
 //   belirteci dönüş adresine form olarak gönderir (gerçek kuruluşun tarayıcı dönüşü gibi).
 // - Testler sonucu ve arızaları denetim uçlarından ya da süreç içinde nesneden ayarlar.
+// - İade (kart 0235): sepet kalemi başına (/payment/refund, kalemin ödenen kalanı aşılamaz) ve ödemenin kimliğiyle
+//   (/v2/payment/refund); iadeler raporda REFUND satırı olarak conversationId ile görünür. Arızalar: iade reddi ve
+//   yanıtsız iade (kuruluş iadeyi yapar ama bağlantı kesilir: sonuç belirsiz).
 import { createHmac, randomUUID } from "node:crypto";
 import { createServer, type IncomingMessage, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -35,6 +38,10 @@ export type SahteOdeme = {
   iptal: boolean;
   // Ödemenin kuruluşun takvimindeki günü (YYYY-AA-GG): rapor yalnız istenen günün ödemelerini verir (gerçek kuruluş gibi).
   gun: string;
+  // Sepet kalemleri: kuruluşun kalem işlem kimliği ve tutarı (kuruş).
+  kalemler: { id: string; islem: string; tutar: number }[];
+  // Yapılan iadeler: conversationId, kalem işlemi (v2'de yok), tutar (kuruş), gün.
+  iadeler: { parca: string; islem: string | null; tutar: number; gun: string }[];
 };
 
 export type SahteKurulus = {
@@ -48,6 +55,10 @@ export type SahteKurulus = {
     iptalReddi: boolean;
     taksitReddi: boolean;
     geciciHata: boolean;
+    iadeReddi: boolean;
+    iadeYanitsiz: boolean;
+    // Yalnız bu sepet kaleminin (itemId) iadesi reddedilir.
+    reddedilenKalem: string | null;
   };
   // Rapora sitede olmayan ya da farklı tutarlı ödeme eklemek için.
   ekRapor: Record<string, unknown>[];
@@ -131,10 +142,34 @@ export const sahteKurulusAc = async ({
     iptalReddi: false,
     taksitReddi: false,
     geciciHata: false,
+    iadeReddi: false,
+    iadeYanitsiz: false,
+    reddedilenKalem: null as string | null,
   };
   const ekRapor: Record<string, unknown>[] = [];
   const istekSayisi = new Map<string, number>();
   let adres = "";
+
+  const kalemOdenenleri = (odeme: SahteOdeme, odenen: number) => {
+    const toplam = odeme.kalemler.reduce((t, k) => t + k.tutar, 0);
+    let dagitilan = 0;
+    return odeme.kalemler.map((kalem, sira) => {
+      const pay =
+        sira === odeme.kalemler.length - 1
+          ? odenen - dagitilan
+          : Math.floor((odenen * kalem.tutar) / toplam);
+      dagitilan += pay;
+      return { ...kalem, odenen: pay };
+    });
+  };
+  const odemeninOdenen = (odeme: SahteOdeme) =>
+    Math.round(
+      Number(
+        odeme.taksit > 1
+          ? (Number(odeme.tutar) * (1 + (odeme.taksit - 1) / 100)).toFixed(2)
+          : odeme.tutar,
+      ) * 100,
+    );
 
   const sonucYaniti = (odeme: SahteOdeme) => {
     const durum =
@@ -159,6 +194,16 @@ export const sahteKurulusAc = async ({
       basketId: odeme.oturum,
       token: odeme.belirtec,
       paymentStatus: durum,
+      // Kalemlerin ödenen tutarı taksit farkıyla: fark kalemlere tutarlarıyla, artan kuruş sonuncuya.
+      itemTransactions: kalemOdenenleri(
+        odeme,
+        Math.round(Number(odeme.taksit > 1 ? odenen : odeme.tutar) * 100),
+      ).map((kalem) => ({
+        itemId: kalem.id,
+        paymentTransactionId: kalem.islem,
+        price: (kalem.tutar / 100).toFixed(2),
+        paidPrice: (kalem.odenen / 100).toFixed(2),
+      })),
     };
     const imza = hmac(
       gizli,
@@ -254,6 +299,12 @@ export const sahteKurulusAc = async ({
         odemeKimligi: String(Math.floor(Math.random() * 1e9) + 1e9),
         iptal: false,
         gun: takvimGunu(new Date(), kurulusSaatDilimi),
+        kalemler: (girdi["basketItems"] as { id: string; price: string }[]).map((kalem) => ({
+          id: kalem.id,
+          islem: String(Math.floor(Math.random() * 1e9) + 1e9),
+          tutar: Math.round(Number(kalem.price) * 100),
+        })),
+        iadeler: [],
       };
       odemeler.set(belirtec, odeme);
       return json({
@@ -289,6 +340,67 @@ export const sahteKurulusAc = async ({
       }
       odeme.iptal = true;
       return json({ status: "success", paymentId: odeme.odemeKimligi });
+    }
+    if (yol === "/payment/refund" || yol === "/v2/payment/refund") {
+      const tutar = Math.round(Number(girdi["price"]) * 100);
+      const v2 = yol === "/v2/payment/refund";
+      const odeme = [...odemeler.values()].find((aday) =>
+        v2
+          ? aday.odemeKimligi === String(girdi["paymentId"])
+          : aday.kalemler.some((kalem) => kalem.islem === String(girdi["paymentTransactionId"])),
+      );
+      const islem = v2 ? null : String(girdi["paymentTransactionId"]);
+      // İade edilebilir kalan: kalemin (v2'de ödemenin) ödenen tutarı eksi önceki iadeleri.
+      const odenen =
+        odeme === undefined
+          ? 0
+          : v2
+            ? odemeninOdenen(odeme)
+            : (kalemOdenenleri(odeme, odemeninOdenen(odeme)).find((kalem) => kalem.islem === islem)
+                ?.odenen ?? 0);
+      const onceki =
+        odeme?.iadeler
+          .filter((iade) => v2 || iade.islem === islem)
+          .reduce((t, iade) => t + iade.tutar, 0) ?? 0;
+      const reddedilen =
+        ariza.reddedilenKalem !== null &&
+        odeme?.kalemler.find((kalem) => kalem.islem === islem)?.id === ariza.reddedilenKalem;
+      if (
+        odeme === undefined ||
+        odeme.sonuc !== "basarili" ||
+        ariza.iadeReddi ||
+        reddedilen ||
+        tutar <= 0 ||
+        tutar > odenen - onceki
+      ) {
+        return json(
+          {
+            status: "failure",
+            errorCode: "5094",
+            errorMessage: "İade edilemedi",
+            retryable: false,
+          },
+          400,
+        );
+      }
+      odeme.iadeler.push({
+        parca: String(girdi["conversationId"]),
+        islem,
+        tutar,
+        gun: takvimGunu(new Date(), kurulusSaatDilimi),
+      });
+      if (ariza.iadeYanitsiz) {
+        istek.socket.destroy();
+        return;
+      }
+      return json({
+        status: "success",
+        conversationId: girdi["conversationId"],
+        paymentId: odeme.odemeKimligi,
+        ...(islem === null ? {} : { paymentTransactionId: islem }),
+        price: Number(girdi["price"]),
+        currency: girdi["currency"],
+      });
     }
     if (yol === "/payment/iyzipos/installment") {
       if (ariza.taksitReddi) return json({ status: "failure", errorCode: "1", errorMessage: "x" });
@@ -326,9 +438,20 @@ export const sahteKurulusAc = async ({
           };
           return odeme.iptal ? [satir, { ...satir, transactionType: "CANCEL" }] : [satir];
         });
+      const iadeler = [...odemeler.values()].flatMap((odeme) =>
+        odeme.iadeler
+          .filter((iade) => iade.gun === gun)
+          .map((iade) => ({
+            transactionType: "REFUND",
+            paymentId: Number(odeme.odemeKimligi),
+            conversationId: iade.parca,
+            paidPrice: Number((iade.tutar / 100).toFixed(2)),
+            transactionStatus: 1,
+          })),
+      );
       return json({
         status: "success",
-        transactions: [...islemler, ...ekRapor],
+        transactions: [...islemler, ...iadeler, ...ekRapor],
         currentPage: 1,
         totalPageCount: 1,
       });

@@ -234,6 +234,9 @@ export type OdemeSonucu =
       odenen: number;
       paraBirimi: string;
       taksit: number;
+      // Sepet kalemlerinin işlemleri (kart 0235): kalem kimliği, işlem kimliği, ödenen tutar. İade kalem kalem
+      // bunlarla gider. Yanıt kalemleri taşımıyorsa boştur (o ödemenin iadesi ödemenin kimliğiyle tutarla gider).
+      kalemIslemleri: { kalem: string; islem: string; odenen: number }[];
     }
   | { tur: "basarisiz"; oturum: string | undefined }
   // Ödeme sürüyor (3D Secure adımında) ya da kuruluş henüz sonuç vermedi. inceleme: ödeme alındı ama kuruluşun
@@ -313,6 +316,23 @@ export const odemeSonucu = async (
     odenen,
     paraBirimi: yanit["currency"],
     taksit,
+    kalemIslemleri: (Array.isArray(yanit["itemTransactions"])
+      ? (yanit["itemTransactions"] as Yanit[])
+      : []
+    ).flatMap((kalem) => {
+      const odenenTutar = tutarOku(kalem["paidPrice"]);
+      return typeof kalem["itemId"] === "string" &&
+        kalem["paymentTransactionId"] !== undefined &&
+        odenenTutar !== undefined
+        ? [
+            {
+              kalem: kalem["itemId"],
+              islem: String(kalem["paymentTransactionId"]),
+              odenen: odenenTutar,
+            },
+          ]
+        : [];
+    }),
   };
 };
 
@@ -332,6 +352,45 @@ export const odemeyiIptalEt = async (
   if (!basariliMi(yanit) || String(yanit["paymentId"]) !== odemeKimligi) {
     throw new KurulusHatasi(`Ödeme iptal edilemedi: ${hataAyrintisi(yanit)}`);
   }
+};
+
+// --- İade (kart 0235, karar 0147; refund-and-cancel) ---
+//
+// Sepet kalemi başına iade (/payment/refund): kalemin işlem kimliği ve tutarı; tutar kalemin ödenen kalanını aşamaz.
+// Kalem işlemi bilinmeyen eski ödemenin iadesi ödemenin kimliğiyle tutarla gider (/v2/payment/refund; belge çok
+// kalemli sepette önermez, yalnız bu ödemeler için). conversationId iadenin parçasının kimliğidir: yanıtı gelmeyen iade
+// günlük raporda bu kimlikle bulunur. Kuruluş açıkça "failure" derse sonuç "red"dir (hata kodu yazılır); ulaşılamayan ya
+// da okunamayan yanıt KurulusHatasi atar (sonuç belirsiz). Belge iade yanıtındaki imzanın alanlarını yazmaz:
+// doğrulanmaz; iade sonucu yalnız paranın geri dönüşüdür, sipariş kurmaz.
+
+export type IadeYaniti = { tur: "tamam" } | { tur: "red"; hata: string };
+
+export const iadeEt = async (
+  ortam: KartlaOdemeOrtami,
+  anahtarlar: KurulusAnahtarlari,
+  girdi: {
+    parca: string;
+    islem: string | null;
+    odemeKimligi: string;
+    tutar: number;
+    paraBirimi: string;
+  },
+): Promise<IadeYaniti> => {
+  const yol = girdi.islem === null ? "/v2/payment/refund" : "/payment/refund";
+  const yanit = await cagir(ortam, anahtarlar, "POST", yol, {
+    locale: "tr",
+    conversationId: girdi.parca,
+    ...(girdi.islem === null
+      ? { paymentId: girdi.odemeKimligi }
+      : { paymentTransactionId: girdi.islem }),
+    price: tutarYaz(girdi.tutar),
+    currency: girdi.paraBirimi,
+  });
+  if (yanit["status"] === "failure") return { tur: "red", hata: hataAyrintisi(yanit) };
+  if (!basariliMi(yanit) || tutarOku(yanit["price"]) !== girdi.tutar) {
+    throw new KurulusHatasi(`İade yanıtı beklenmeyen biçimde: ${hataAyrintisi(yanit)}`);
+  }
+  return { tur: "tamam" };
 };
 
 // --- Taksit sorgusu (kart numarasız: bankalara göre genel tablo) ---

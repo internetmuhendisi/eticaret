@@ -239,6 +239,7 @@ export const kartlaOdemeServisi = (site: Site) => {
                 odeme_kimligi: sonuc.odemeKimligi,
                 odenen: sonuc.odenen,
                 taksit: sonuc.taksit,
+                kalem_islemleri: sonuc.kalemIslemleri.length === 0 ? null : sonuc.kalemIslemleri,
                 siparis_kimligi: kurulan.kimlik,
                 sonuc_zamani: sql`now()`,
                 erisim_verildi: erisimVer,

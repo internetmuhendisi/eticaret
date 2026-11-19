@@ -31,6 +31,7 @@
 // - olusturma_zamani (kişisel bilgisi silinmemiş): saklama süresi temizliği, kısmi indeks.
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   check,
   index,
   integer,
@@ -209,7 +210,7 @@ export const siparisGecmisi = pgTable(
     index("siparis_gecmisi_siparis").on(tablo.siparis_kimligi, tablo.zaman),
     check(
       "siparis_gecmisi_neden",
-      sql`${tablo.neden} in ('olusturuldu', 'havale-suresi-doldu', 'havale-bildirildi', 'havale-onaylandi', 'hazirlamaya-alindi', 'kargoya-verildi', 'kargo-duzeltildi', 'teslim-edildi')`,
+      sql`${tablo.neden} in ('olusturuldu', 'havale-suresi-doldu', 'havale-bildirildi', 'havale-onaylandi', 'hazirlamaya-alindi', 'kargoya-verildi', 'kargo-duzeltildi', 'teslim-edildi', 'yonetici-iptali', 'iade-yapildi')`,
     ),
     check(
       "siparis_gecmisi_durum",
@@ -279,3 +280,64 @@ export const siparisNotlari = pgTable(
   ],
 );
 export type SiparisNotu = typeof siparisNotlari.$inferSelect;
+
+// Siparişin iptalleri ve iadeleri (kart 0235, karar 0147). Her satır bir iptal ya da iadedir; bir siparişte birden çok
+// iade olabilir, toplamları ödenen tutarı aşamaz (servis). Tutarlar kuruş, siparişin para birimindedir: tutar müşteriye
+// geri dönen paradır (vergi dahil), vergi_dokumu onun oran oran vergisidir. kalemler: iade edilen sipariş kalemleri
+// (sıra, adet, tutar). Kartla ödemede para ödeme kuruluşundan döner (yontem "kurulus"); kuruluşun yanıtı beklenirken
+// satır "bekliyor"dur, sipariş değişmez. Satır silinmez.
+//
+// Aranan alanlar: siparis_kimligi (siparişin iadeleri, bekleyen iade), indeksli; bekleyen iadeler (kuruluşun
+// taraması), kısmi indeks.
+export const siparisIadeleri = pgTable(
+  "siparis_iadeleri",
+  {
+    kimlik: kimlik(),
+    siparis_kimligi: uuid()
+      .notNull()
+      .references(() => siparisler.kimlik, { onDelete: "restrict" }),
+    // cekirdek/kayitlar/siparis.ts: iadeTurleri, iadeDurumlari, iadeNedenleri.
+    tur: text().notNull(),
+    durum: text().notNull(),
+    // Para nereden döner: kuruluş (kartla ödeme eklentisi) ya da elle (mağaza sahibi gönderir); tutar 0 ise yok.
+    yontem: text().notNull(),
+    tutar: tutar().notNull(),
+    vergi_dokumu: jsonb().$type<VergiDokumu>().notNull(),
+    kalemler: jsonb().$type<{ sira: number; adet: number; tutar: number }[]>().notNull(),
+    kargo_tutari: tutar().notNull(),
+    stoga_konacak: boolean().notNull(),
+    neden: text().notNull(),
+    aciklama: text(),
+    kim_turu: text().notNull(),
+    kim_kimligi: uuid(),
+    kim_adi: text(),
+    olusturma_zamani: zaman().notNull().defaultNow(),
+    sonuc_zamani: zaman(),
+  },
+  (tablo) => [
+    index("siparis_iadeleri_siparis").on(tablo.siparis_kimligi, tablo.olusturma_zamani),
+    index("siparis_iadeleri_bekleyen")
+      .on(tablo.olusturma_zamani)
+      .where(sql`${tablo.durum} = 'bekliyor'`),
+    // Bir siparişte aynı anda en çok bir bekleyen iade.
+    uniqueIndex("siparis_iadeleri_tek_bekleyen")
+      .on(tablo.siparis_kimligi)
+      .where(sql`${tablo.durum} = 'bekliyor'`),
+    check("siparis_iadeleri_tur", sql`${tablo.tur} in ('iptal', 'iade')`),
+    check("siparis_iadeleri_durum", sql`${tablo.durum} in ('bekliyor', 'tamamlandi', 'basarisiz')`),
+    check("siparis_iadeleri_yontem", sql`${tablo.yontem} in ('kurulus', 'elle', 'yok')`),
+    check(
+      "siparis_iadeleri_neden",
+      sql`${tablo.neden} in ('musteri-vazgecti', 'beklentiyi-karsilamadi', 'kusurlu-hasarli', 'yanlis-urun', 'stok-yok', 'diger')`,
+    ),
+    check(
+      "siparis_iadeleri_tutar",
+      sql`${tablo.tutar} >= 0 and ${tablo.kargo_tutari} >= 0 and (${tablo.yontem} = 'yok') = (${tablo.tutar} = 0)`,
+    ),
+    check(
+      "siparis_iadeleri_kim_dolu",
+      sql`(${tablo.kim_turu} = 'sistem' and length(${tablo.kim_adi}) > 0 and ${tablo.kim_kimligi} is null) or (${tablo.kim_turu} in ('yonetici', 'musteri', 'sahip') and ${tablo.kim_kimligi} is not null and ${tablo.kim_adi} is null)`,
+    ),
+  ],
+);
+export type SiparisIadesi = typeof siparisIadeleri.$inferSelect;
