@@ -30,4 +30,4 @@ Bölüm: Sipariş ve müşteri hesabı. Önce 0234 bitmiş olmalı.
 
 ## Durum
 
-yapılacak
+bitti
