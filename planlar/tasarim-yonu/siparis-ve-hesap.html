@@ -1,0 +1,1496 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Örnek Mağaza sipariş ve hesap taslağı</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Jost:wght@500;600;700&display=swap">
+<style>
+/* Kart 0233 taslağı: Canlı Çarşı yönünde (karar 0075) müşteri hesabı, sipariş takibi, iade talebi, e-postalar ve panelin sipariş
+   ekranları. Ürün kodu değildir; renkler burada yalnız taslağı göstermek için yazılıdır. Ortak stiller, üst ve alt kısım ile
+   ödeme parçaları sepet-ve-odeme.html (kart 0211) ile aynıdır. */
+* { box-sizing: border-box; }
+body { margin: 0; background: #E9EBEF; font-family: 'Inter', system-ui, sans-serif; }
+p { margin: 0; }
+img { display: block; }
+
+/* Seçim çubuğu (taslağın parçası, mağazanın değil) */
+.arac-cubugu { position: sticky; top: 0; z-index: 20; display: flex; flex-direction: column; gap: 8px; padding: 10px 16px; background: #16181D; color: #F2F3F5; font-size: 14px; }
+.arac-satir { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; }
+.grup { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.grup > span { color: #B8BDC7; margin-right: 4px; }
+.arac-cubugu button { min-height: 36px; padding: 0 12px; border: 1px solid #5A606C; background: transparent; color: #F2F3F5; border-radius: 6px; font: inherit; cursor: pointer; }
+.arac-cubugu button[aria-pressed="true"] { background: #F2F3F5; color: #16181D; border-color: #F2F3F5; }
+.arac-cubugu .secim button[aria-pressed="true"] { background: #F5A623; color: #16181D; border-color: #F5A623; }
+.arac-cubugu a { color: #F2F3F5; }
+.secim > span, .secim-baslik { color: #F5C66B; }
+.secim-baslik { font-weight: 600; }
+.secim-alt-baslik { color: #B8BDC7; }
+.sahne { position: relative; }
+.sahne.telefon { max-width: 390px; margin: 24px auto; box-shadow: 0 0 0 1px #C9CDD5, 0 12px 32px rgba(0, 0, 0, 0.15); overflow: hidden; }
+.taslak-not { display: block; margin: 0; padding: 8px 12px; border: 2px dashed #9AA1AE; border-radius: 6px; background: transparent; color: var(--soluk); font-size: 12px; line-height: 1.4; }
+
+/* Canlı Çarşı'nın renkleri (karar 0075). Panel de aynı ortak değerleri kullanır (karar 0080). */
+.sayfa[data-tema="acik"], .e-posta-cerceve .e-posta { --zemin: #FFFFFF; --yuzey: #F5F6F8; --yazi: #1B1F27; --soluk: #5A6170; --kenar: #E3E6EB; --alan-kenari: #7A8190; --birincil: #F29F05; --birincil-yazi: #1B1F27; --indirim: #C62F21; --alt: #1E2533; --alt-yazi: #E6E9EF; --alt-soluk: #A9B1BF; --rozet: #F29F05; --rozet-yazi: #1B1F27; --bag: #1B1F27; --k1: #FDF1D6; --k2: #E2F0FF; --k3: #FFE3E3; --k4: #E4F6E8; --k5: #EFE6FF; --afis: #FFE2A8; --tehlike-yazi: #B42318; --tehlike-zemin: #FEECEB; --basari-yazi: #067647; --basari-zemin: #E6F6EC; --uyari-yazi: #8A5300; --uyari-zemin: #FEF4E2; --odak: #1D5FD1; --ortu: rgba(18, 21, 27, 0.5); }
+.sayfa[data-tema="koyu"] { --zemin: #12151B; --yuzey: #1B2029; --yazi: #EEF0F4; --soluk: #A3AAB8; --kenar: #2A303B; --alan-kenari: #7C8496; --birincil: #F5A623; --birincil-yazi: #12151B; --indirim: #FF8577; --alt: #0B0D11; --alt-yazi: #E6E9EF; --alt-soluk: #A3AAB8; --rozet: #F5A623; --rozet-yazi: #12151B; --bag: #EEF0F4; --k1: #2E2716; --k2: #17263A; --k3: #3A1F22; --k4: #1A2E22; --k5: #262037; --afis: #33270F; --tehlike-yazi: #FF8577; --tehlike-zemin: #3A1F22; --basari-yazi: #6CD49A; --basari-zemin: #1A2E22; --uyari-yazi: #F5C66B; --uyari-zemin: #2E2716; --odak: #8DB4FF; --ortu: rgba(0, 0, 0, 0.6); }
+.sayfa { --font-govde: 'Inter', system-ui, sans-serif; --font-baslik: 'Jost', 'Inter', sans-serif; --baslik-agirlik: 600; --r: 8px; --r-kucuk: 4px; --r-dugme: 999px; --bolum-arasi: 48px; --kart-ic: 12px; --h1: 32px; --h2: 24px; --sutun: 4; --kenar-bosluk: 24px;
+  container-type: inline-size; container-name: sayfa; position: relative; background: var(--zemin); color: var(--yazi); font-family: var(--font-govde); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+.yalniz-tel { display: none; }
+.gizli { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+:focus-visible { outline: 2px solid var(--odak); outline-offset: 2px; }
+.kap { max-width: 1240px; margin: 0 auto; padding: 0 var(--kenar-bosluk); }
+svg.ikon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+svg.ikon.dolu { fill: currentColor; }
+.ikon-dugme { width: 44px; height: 44px; border: 0; background: transparent; color: var(--yazi); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; border-radius: var(--r-kucuk); flex-shrink: 0; }
+.soluk { color: var(--soluk); }
+.izgara { display: grid; gap: 16px; }
+
+@container sayfa (max-width: 640px) {
+  .sayfa, .icerik { --sutun: 2; --kenar-bosluk: 16px; --bolum-arasi: 40px; --h1: 26px; --h2: 22px; }
+  .icerik .yalniz-masa { display: none; }
+  .icerik .yalniz-tel { display: flex; }
+}
+
+/* Üst kısım (secenekler.html ile aynı) */
+.duyuru { background: var(--alt); color: var(--alt-yazi); font-size: 13px; }
+.duyuru-kap { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px; }
+.ikonlu { display: inline-flex; align-items: center; gap: 6px; }
+.ikonlu svg.ikon { width: 16px; height: 16px; }
+header.ust { background: var(--zemin); border-bottom: 1px solid var(--kenar); }
+.ust-satir { display: flex; align-items: center; gap: 28px; padding-top: 18px; padding-bottom: 18px; }
+.logo { display: flex; align-items: center; gap: 10px; color: var(--yazi); text-decoration: none; flex-shrink: 0; }
+.logo-isaret { width: 36px; height: 36px; border-radius: var(--r-kucuk); background: var(--birincil); color: var(--birincil-yazi); display: flex; align-items: center; justify-content: center; font-family: var(--font-baslik); font-weight: 700; font-size: 18px; flex-shrink: 0; }
+.logo-ad { font-family: var(--font-baslik); font-weight: var(--baslik-agirlik); font-size: 22px; }
+.arama { flex-grow: 1; max-width: 560px; display: flex; align-items: center; height: 44px; border: 1px solid var(--kenar); border-radius: var(--r-dugme); background: var(--yuzey); overflow: hidden; }
+.arama-girdi { flex-grow: 1; min-width: 0; height: 100%; border: 0; background: transparent; padding: 0 18px; color: var(--yazi); font: inherit; font-size: 14px; }
+.arama-girdi::placeholder { color: var(--soluk); }
+.arama-dugme { width: 44px; height: 44px; border: 0; background: var(--birincil); color: var(--birincil-yazi); display: flex; align-items: center; justify-content: center; border-radius: var(--r-dugme); cursor: pointer; flex-shrink: 0; }
+.ust-eylemler { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.ust-bag { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 10px; color: var(--yazi); text-decoration: none; font-size: 14px; }
+.sepet { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: var(--r-dugme); background: var(--yuzey); border: 1px solid var(--kenar); color: var(--yazi); text-decoration: none; font-size: 14px; font-weight: 600; }
+.sayi { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--rozet); color: var(--rozet-yazi); font-size: 12px; display: flex; align-items: center; justify-content: center; }
+.simge-sayili { position: relative; }
+.simge-sayili .sayi { position: absolute; top: 2px; right: 0; }
+.menu { border-top: 1px solid var(--kenar); }
+.menu-kap { display: flex; align-items: center; gap: 8px; }
+.kategori-dugme { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 18px; margin: 6px 12px 6px 0; border: 0; border-radius: var(--r-kucuk); background: var(--birincil); color: var(--birincil-yazi); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.menu-bag { display: flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--yazi); text-decoration: none; font-size: 14px; font-weight: 500; }
+.menu-bag[aria-current="page"] { font-weight: 700; box-shadow: inset 0 -2px 0 var(--birincil); }
+.tel-ust { flex-direction: column; gap: 10px; padding: 10px var(--kenar-bosluk); }
+.tel-satir { display: flex; align-items: center; gap: 4px; }
+.isaret-kucuk { width: 30px; height: 30px; font-size: 16px; }
+.ad-kucuk { font-size: 18px; }
+.arama-genis { max-width: none; }
+.girdi-buyuk { font-size: 16px; }
+
+/* Alt kısım (secenekler.html ile aynı) */
+.alt { background: var(--alt); color: var(--alt-yazi); }
+.alt-kap { padding-top: 44px; padding-bottom: 24px; display: flex; flex-direction: column; gap: 32px; }
+.alt-sutunlar { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; }
+.alt-sutun { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.alt-baslik { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.alt-bag { color: var(--alt-soluk); text-decoration: none; min-height: 32px; display: flex; align-items: center; }
+.iletisim { display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: var(--alt-soluk); }
+.alt-logo { font-size: 18px; color: var(--alt-yazi); }
+.alt-satir { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding-top: 20px; border-top: 1px solid var(--alt-soluk); font-size: 13px; color: var(--alt-soluk); }
+.odemeler { display: flex; gap: 8px; }
+.odeme { padding: 4px 10px; border: 1px solid var(--alt-soluk); border-radius: var(--r-kucuk); }
+@container sayfa (max-width: 640px) { .alt-sutunlar { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Ortak sayfa iskeleti: sayfa yolu, başlık, boş hâl, sayfalama (kart 0135) */
+main.sayfa-ic { padding: 20px 0 var(--bolum-arasi); }
+.sayfa-yolu ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--soluk); }
+.sayfa-yolu a { color: var(--soluk); text-decoration: none; min-height: 32px; display: inline-flex; align-items: center; }
+.sayfa-yolu li + li::before { content: "/"; margin-right: 6px; color: var(--kenar); }
+.sayfa-yolu [aria-current] { color: var(--yazi); font-weight: 600; }
+.sayfa-basligi { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 8px 0 20px; }
+h1.b1 { margin: 0; font-family: var(--font-baslik); font-weight: var(--baslik-agirlik); font-size: var(--h1); line-height: 1.15; }
+h2.b2 { margin: 0; font-family: var(--font-baslik); font-weight: var(--baslik-agirlik); font-size: var(--h2); line-height: 1.2; }
+h3.b3 { margin: 0; font-size: 16px; font-weight: 700; }
+.bos-hal { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 56px 16px; border-radius: var(--r); background: var(--yuzey); }
+.bos-ikon { width: 64px; height: 64px; border-radius: 999px; background: var(--zemin); display: flex; align-items: center; justify-content: center; color: var(--soluk); }
+.bos-ikon svg.ikon { width: 28px; height: 28px; }
+.bos-hal p { max-width: 420px; }
+.dugme { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 22px; border-radius: var(--r-dugme); border: 1.5px solid transparent; font: inherit; font-size: 14px; font-weight: 700; text-decoration: none; cursor: pointer; white-space: nowrap; }
+.dugme-birincil { background: var(--birincil); color: var(--birincil-yazi); }
+.dugme-koyu { background: var(--yazi); color: var(--zemin); }
+.dugme-cerceve { background: transparent; color: var(--yazi); border-color: var(--yazi); }
+.dugme-sade { background: transparent; color: var(--yazi); border-color: var(--kenar); }
+.dugme-buyuk { min-height: 52px; font-size: 16px; }
+.cipler { display: flex; flex-wrap: wrap; gap: 8px; }
+.cip { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 8px 0 14px; border-radius: 999px; background: var(--yuzey); border: 1px solid var(--kenar); color: var(--yazi); font: inherit; font-size: 13px; font-weight: 500; text-decoration: none; cursor: pointer; }
+.cip svg.ikon { width: 16px; height: 16px; }
+.cip-bag { padding: 0 14px; }
+.sayfalama { display: flex; justify-content: center; align-items: center; gap: 4px; margin-top: 32px; flex-wrap: wrap; }
+.sayfa-no { min-width: 44px; height: 44px; padding: 0 6px; border-radius: var(--r-dugme); border: 1px solid var(--kenar); background: var(--zemin); color: var(--yazi); display: inline-flex; align-items: center; justify-content: center; font: inherit; font-weight: 600; text-decoration: none; }
+.sayfa-no[aria-current="page"] { background: var(--yazi); color: var(--zemin); border-color: var(--yazi); }
+.daha-fazla { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 32px; }
+.ilerleme { width: 200px; height: 4px; border-radius: 999px; background: var(--kenar); overflow: hidden; }
+.ilerleme span { display: block; height: 100%; width: 33%; background: var(--yazi); }
+
+/* Ürün kartı (kart 0109'daki gibi) */
+.izgara-urun { grid-template-columns: repeat(var(--sutun), minmax(0, 1fr)); }
+.izgara-urun.uc { --sutun: 3; }
+.kart { position: relative; display: flex; flex-direction: column; background: var(--zemin); border: 1px solid var(--kenar); border-radius: var(--r); overflow: hidden; min-width: 0; }
+.kart-gorsel { position: relative; background: var(--yuzey); aspect-ratio: 1; display: flex; align-items: center; justify-content: center; }
+.kart-gorsel img { width: 86%; height: 86%; object-fit: contain; }
+.kart-rozet { position: absolute; top: 10px; left: 10px; padding: 3px 8px; border-radius: var(--r-kucuk); background: var(--rozet); color: var(--rozet-yazi); font-size: 12px; font-weight: 700; }
+.kart-rozet.tukendi { background: var(--yazi); color: var(--zemin); }
+.kart-gorsel .ikon-dugme { position: absolute; top: 4px; right: 4px; z-index: 1; }
+.kart-gorsel .ikon-dugme::before { content: ""; position: absolute; width: 32px; height: 32px; border-radius: 999px; background: var(--zemin); z-index: -1; }
+.kart-gorsel .ikon-dugme.secili { color: var(--indirim); }
+.kart-govde { padding: var(--kart-ic); display: flex; flex-direction: column; gap: 6px; flex-grow: 1; }
+.ust-metin { font-size: 12px; color: var(--soluk); }
+.kart-ad { color: var(--yazi); text-decoration: none; font-size: 14px; font-weight: 500; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.yildizlar { display: flex; align-items: center; gap: 2px; color: var(--soluk); }
+.yildizlar svg.ikon { width: 13px; height: 13px; }
+.yildizlar.dolu-yildiz svg.ikon.dolu { color: var(--birincil); }
+.fiyat { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+.fiyat strong { font-size: 16px; }
+.fiyat .indirimli { color: var(--indirim); }
+.fiyat s { font-size: 13px; color: var(--soluk); }
+.stok-yazi { font-size: 12px; font-weight: 600; color: var(--uyari-yazi); }
+
+/* Kategori ve arama: filtre ve sıralama (kartlar 0136, 0137) */
+.liste-duzen { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 32px; align-items: start; }
+.liste-duzen.ust-filtre { grid-template-columns: minmax(0, 1fr); }
+.filtreler { display: flex; flex-direction: column; }
+.filtre-grup { border-bottom: 1px solid var(--kenar); padding: 14px 0; display: flex; flex-direction: column; gap: 10px; }
+.filtre-grup:first-child { padding-top: 0; }
+.filtre-baslik { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 700; min-height: 32px; }
+.secenek-satir { display: flex; align-items: center; gap: 10px; min-height: 36px; font-size: 14px; cursor: pointer; }
+.kutucuk { width: 20px; height: 20px; border: 1.5px solid var(--alan-kenari); border-radius: var(--r-kucuk); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.kutucuk.isaretli { background: var(--yazi); border-color: var(--yazi); color: var(--zemin); }
+.kutucuk svg.ikon { width: 14px; height: 14px; stroke-width: 3; }
+.secenek-satir .say-adet { margin-left: auto; color: var(--soluk); font-size: 13px; }
+.renk-nokta { width: 18px; height: 18px; border-radius: 999px; border: 1px solid var(--alan-kenari); flex-shrink: 0; }
+/* Ürünün renk seçeneklerinin örnek renkleri (ürün verisidir, temanın değeri değildir) */
+.renk-siyah { background: #1B1F27; }
+.renk-beyaz { background: #FFFFFF; }
+.renk-gri { background: #9AA0A8; }
+.renk-lacivert { background: #22325C; }
+.fiyat-araligi { display: flex; align-items: center; gap: 8px; }
+.alan { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-size: 14px; }
+.alan > label, .alan-ad { font-weight: 600; font-size: 13px; }
+.girdi { height: 44px; min-width: 0; width: 100%; border: 1px solid var(--alan-kenari); border-radius: var(--r-kucuk); background: var(--zemin); color: var(--yazi); padding: 0 12px; font: inherit; font-size: 14px; }
+.girdi::placeholder { color: var(--soluk); }
+textarea.girdi { height: 88px; padding: 10px 12px; resize: vertical; }
+.ipucu { font-size: 12px; color: var(--soluk); }
+.hata-yazi { font-size: 12px; color: var(--tehlike-yazi); font-weight: 600; }
+.girdi.hatali { border-color: var(--tehlike-yazi); }
+.liste-ust { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.siralama { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.secim-kutusu { display: inline-flex; align-items: center; justify-content: space-between; gap: 10px; height: 44px; min-width: 190px; padding: 0 12px 0 14px; border: 1px solid var(--alan-kenari); border-radius: var(--r-kucuk); background: var(--zemin); color: var(--yazi); font: inherit; font-size: 14px; cursor: pointer; }
+.ust-filtre-serit { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.acilir-filtre { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px 0 16px; border: 1px solid var(--alan-kenari); border-radius: var(--r-dugme); background: var(--zemin); color: var(--yazi); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+.acilir-filtre[aria-expanded="true"] { border-color: var(--yazi); box-shadow: inset 0 0 0 1px var(--yazi); }
+.acilir-filtre .sayi { position: static; }
+.acilir-panel { position: absolute; z-index: 5; margin-top: 4px; width: 280px; padding: 16px; border: 1px solid var(--kenar); border-radius: var(--r); background: var(--zemin); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12); display: flex; flex-direction: column; gap: 12px; }
+.panel-sar { position: relative; }
+.tel-liste-cubugu { gap: 8px; margin-bottom: 12px; }
+.tel-liste-cubugu .dugme { flex: 1 1 0; }
+.sonuc-baslik { font-size: 15px; }
+.oneri { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
+
+/* Yan pencere ve pencere */
+.ortu { position: absolute; inset: 0; z-index: 10; background: var(--ortu); }
+.yan-pencere { position: absolute; z-index: 11; top: 0; bottom: 0; right: 0; width: min(420px, 100%); background: var(--zemin); color: var(--yazi); display: flex; flex-direction: column; box-shadow: -8px 0 24px rgba(0, 0, 0, 0.18); }
+.yan-pencere.genis { width: min(560px, 100%); }
+.yan-pencere.sol { right: auto; left: 0; }
+.pencere-ust { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 12px 12px 20px; border-bottom: 1px solid var(--kenar); }
+.pencere-baslik { margin: 0; font-size: 18px; font-weight: 700; }
+.pencere-govde { flex-grow: 1; overflow: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; }
+.pencere-alt { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 20px; border-top: 1px solid var(--kenar); flex-wrap: wrap; }
+.pencere-alt .dugme { flex: 0 0 auto; }
+@container sayfa (max-width: 640px) { .pencere-alt .dugme { flex: 1 1 0; } }
+
+/* Ürün sayfası (kart 0138) */
+.urun-ust { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+.galeri { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; }
+.galeri-buyuk { position: relative; aspect-ratio: 1; border-radius: var(--r); background: var(--yuzey); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.galeri-buyuk img { width: 88%; height: 88%; object-fit: contain; }
+.galeri-buyuk .ikon-dugme { position: absolute; top: 8px; right: 8px; background: var(--zemin); border-radius: 999px; }
+.galeri-kucukler { display: flex; flex-direction: column; gap: 8px; }
+.kucuk { position: relative; width: 72px; height: 72px; padding: 0; border: 1px solid var(--kenar); border-radius: var(--r-kucuk); background: var(--yuzey); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--yazi); }
+.kucuk[aria-current="true"] { border: 2px solid var(--yazi); }
+.kucuk img { width: 86%; height: 86%; object-fit: contain; }
+.video-isareti { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.video-isareti span { width: 32px; height: 32px; border-radius: 999px; background: var(--yazi); color: var(--zemin); display: flex; align-items: center; justify-content: center; }
+.video-isareti svg.ikon { width: 14px; height: 14px; }
+.video-kutu { width: 100%; height: 100%; background: #000; color: #FFF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 16px; font-size: 13px; }
+.video-kutu .oynat { width: 64px; height: 64px; border-radius: 999px; background: #FFF; color: #000; display: flex; align-items: center; justify-content: center; }
+.galeri-noktalar { display: flex; justify-content: center; gap: 2px; }
+.galeri-noktalar span { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
+.galeri-noktalar span::before { content: ""; width: 8px; height: 8px; border-radius: 999px; border: 1.5px solid var(--yazi); }
+.galeri-noktalar span.secili::before { background: var(--yazi); }
+.urun-bilgi { display: flex; flex-direction: column; gap: 16px; }
+.urun-ad-satir { display: flex; flex-direction: column; gap: 6px; }
+.puan-satir { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.puan-satir a { color: var(--yazi); }
+.urun-fiyat { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.urun-fiyat strong { font-size: 28px; line-height: 1.2; }
+.urun-fiyat strong.indirimli { color: var(--indirim); }
+.urun-fiyat s { font-size: 17px; color: var(--soluk); }
+.urun-fiyat .kart-rozet { position: static; }
+.urun-fiyat .ek { flex-basis: 100%; font-size: 12px; color: var(--soluk); }
+.secenek-grup { display: flex; flex-direction: column; gap: 8px; border: 0; margin: 0; padding: 0; min-width: 0; }
+.secenek-grup legend { padding: 0; margin-bottom: 8px; font-size: 14px; }
+.secenek-grup strong { font-weight: 700; }
+.secenekler { display: flex; flex-wrap: wrap; gap: 8px; }
+.secenek { position: relative; min-width: 52px; height: 44px; padding: 0 14px; border: 1px solid var(--alan-kenari); border-radius: var(--r-kucuk); background: var(--zemin); color: var(--yazi); font: inherit; font-size: 14px; font-weight: 500; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
+.secenek[aria-checked="true"] { border: 2px solid var(--yazi); font-weight: 700; }
+.secenek.tukenmis { color: var(--soluk); border-style: dashed; cursor: not-allowed; background: linear-gradient(to top right, transparent calc(50% - 1px), var(--soluk) calc(50% - 1px), var(--soluk) calc(50% + 1px), transparent calc(50% + 1px)); }
+.stok-durum { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+.stok-durum::before { content: ""; width: 8px; height: 8px; border-radius: 999px; background: currentColor; }
+.stok-durum.var { color: var(--basari-yazi); }
+.stok-durum.az { color: var(--uyari-yazi); }
+.stok-durum.yok { color: var(--tehlike-yazi); }
+.satin-al { display: flex; gap: 8px; align-items: stretch; }
+.satin-al .dugme-birincil { flex: 1 1 auto; }
+.satin-al .ikon-dugme { width: 52px; height: 52px; border: 1px solid var(--kenar); border-radius: var(--r-dugme); }
+.adet { display: inline-flex; align-items: center; height: 52px; border: 1px solid var(--alan-kenari); border-radius: var(--r-dugme); }
+.adet .ikon-dugme { border-radius: var(--r-dugme); }
+.adet span { min-width: 28px; text-align: center; font-weight: 700; }
+.bilgi-listesi { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: var(--r); background: var(--yuzey); font-size: 14px; }
+.bilgi-listesi div { display: flex; align-items: center; gap: 10px; }
+.bilgi-listesi svg.ikon { width: 18px; height: 18px; color: var(--soluk); }
+.haber-ver { display: flex; flex-direction: column; gap: 10px; padding: 16px; border: 1px solid var(--kenar); border-radius: var(--r); }
+.haber-satir { display: flex; gap: 8px; flex-wrap: wrap; }
+.haber-satir .girdi { flex: 1 1 200px; height: 48px; }
+.urun-alt { display: flex; flex-direction: column; gap: var(--bolum-arasi); margin-top: var(--bolum-arasi); }
+.bolum { display: flex; flex-direction: column; gap: 16px; }
+.aciklama { max-width: 760px; font-size: 15px; line-height: 1.65; display: flex; flex-direction: column; gap: 12px; }
+.ozellik-tablosu { width: 100%; max-width: 760px; border-collapse: collapse; font-size: 14px; }
+.ozellik-tablosu th, .ozellik-tablosu td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--kenar); vertical-align: top; }
+.ozellik-tablosu th { width: 38%; font-weight: 600; color: var(--soluk); background: var(--yuzey); }
+.yorum-ozet { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 32px; align-items: start; }
+.puan-kutu { display: flex; flex-direction: column; gap: 10px; padding: 20px; border-radius: var(--r); background: var(--yuzey); }
+.puan-buyuk { font-family: var(--font-baslik); font-size: 44px; font-weight: 600; line-height: 1; }
+.puan-kutu svg.ikon { width: 18px; height: 18px; }
+.dagilim { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.dagilim div { display: grid; grid-template-columns: 52px minmax(0, 1fr) 24px; align-items: center; gap: 8px; }
+.cubuk { height: 8px; border-radius: 999px; background: var(--kenar); overflow: hidden; }
+.cubuk span { display: block; height: 100%; background: var(--birincil); }
+.yorum-listesi { display: flex; flex-direction: column; }
+.yorum-oge { display: flex; flex-direction: column; gap: 8px; padding: 18px 0; border-bottom: 1px solid var(--kenar); }
+.yorum-oge:first-child { padding-top: 0; }
+.yorum-ust { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 13px; }
+.yorum-oge h3 { margin: 0; font-size: 15px; }
+.yer { border: 2px dashed var(--kenar); color: var(--soluk); }
+.kaydirmali { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 3 * 16px) / 4); gap: 16px; overflow-x: auto; padding-bottom: 4px; }
+@container sayfa (max-width: 640px) {
+  .liste-duzen { grid-template-columns: minmax(0, 1fr); }
+  .izgara-urun.uc { --sutun: 2; }
+  .urun-ust { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .galeri { grid-template-columns: minmax(0, 1fr); }
+  .galeri-kucukler { display: none; }
+  .yorum-ozet { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .kaydirmali { grid-auto-columns: 46%; }
+  .urun-fiyat strong { font-size: 24px; }
+  .ozellik-tablosu th, .ozellik-tablosu td { padding: 10px 12px; }
+}
+
+/* Bulunamadı ve hata (kart 0120) */
+.durum-sayfasi { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; padding: 56px 0 24px; max-width: 560px; margin: 0 auto; }
+.durum-kod { font-family: var(--font-baslik); font-size: 88px; font-weight: 600; line-height: 1; color: var(--birincil); }
+.durum-sayfasi .arama { width: 100%; max-width: 440px; }
+.durum-sayfasi .dugmeler { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.durum-kategoriler { display: flex; flex-direction: column; gap: 16px; padding-bottom: 8px; }
+.kategori-izgara { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.kategori { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--yazi); text-decoration: none; min-width: 0; font-size: 14px; font-weight: 600; text-align: center; }
+.kategori-kutu { width: 100%; aspect-ratio: 1; border-radius: var(--r); overflow: hidden; }
+.kategori-kutu img { width: 100%; height: 100%; object-fit: cover; }
+@container sayfa (max-width: 640px) { .kategori-izgara { grid-template-columns: repeat(3, minmax(0, 1fr)); } .durum-kod { font-size: 64px; } }
+
+/* Favoriler (kart 0140) */
+.bilgi-serit { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 12px 16px; border-radius: var(--r); background: var(--uyari-zemin); color: var(--yazi); font-size: 14px; margin-bottom: 20px; }
+.bilgi-serit svg.ikon { color: var(--uyari-yazi); }
+.bilgi-serit a { color: var(--yazi); font-weight: 700; }
+
+/* Panel (kartlar 0141–0143): ortak değerler, Örnek Mağaza'nın ana rengi */
+.panel { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; background: var(--yuzey); }
+.panel.ust-menulu { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+.panel-yan { display: flex; flex-direction: column; gap: 4px; padding: 16px 12px; background: var(--zemin); border-right: 1px solid var(--kenar); }
+.panel-logo { display: flex; align-items: center; gap: 10px; padding: 4px 8px 16px; font-weight: 700; font-size: 15px; }
+.panel-logo .logo-isaret { width: 32px; height: 32px; font-size: 16px; }
+.panel-grup-ad { padding: 14px 10px 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--soluk); }
+.panel-bag { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 10px; border-radius: var(--r-kucuk); color: var(--yazi); text-decoration: none; font-size: 14px; font-weight: 500; }
+.panel-bag svg.ikon { width: 18px; height: 18px; color: var(--soluk); }
+.panel-bag[aria-current="page"] { background: var(--yuzey); font-weight: 700; box-shadow: inset 3px 0 0 var(--birincil); }
+.satir-sira svg.ikon { width: 16px; height: 16px; }
+.yer-isareti svg.ikon { width: 18px; height: 18px; }
+.panel-bag[aria-current="page"] svg.ikon { color: var(--yazi); }
+.kisayol-isaret { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--soluk); border: 1px solid var(--kenar); border-radius: var(--r-kucuk); padding: 0 6px; }
+.panel-alt { margin-top: auto; display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--kenar); font-size: 13px; }
+.panel-kullanici { padding: 6px 10px; color: var(--soluk); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.altyapi-adi { padding: 8px 10px 0; font-size: 11px; color: var(--soluk); }
+.panel-ust-menu { display: flex; align-items: center; gap: 4px; padding: 8px 16px; background: var(--zemin); border-bottom: 1px solid var(--kenar); overflow-x: auto; }
+.panel-ust-menu .panel-logo { padding: 0 12px 0 0; }
+.panel-ust-menu .panel-bag[aria-current="page"] { box-shadow: inset 0 -3px 0 var(--birincil); border-radius: 0; background: transparent; }
+.panel-ust-menu .panel-alt { margin: 0 0 0 auto; padding: 0; border: 0; flex-direction: row; align-items: center; }
+.panel-tel-ust { display: none; align-items: center; gap: 8px; padding: 6px 8px; background: var(--zemin); border-bottom: 1px solid var(--kenar); }
+.panel-tel-ust strong { font-size: 15px; }
+.panel-ic { min-width: 0; display: flex; flex-direction: column; }
+.komut-cubugu { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 24px; padding: 20px 28px 16px; background: var(--zemin); border-bottom: 1px solid var(--kenar); }
+.komut-cubugu .sayfa-yolu { margin-bottom: 4px; }
+.komut-baslik { display: flex; flex-direction: column; gap: 4px; min-width: 0; max-width: 640px; }
+.komut-baslik h1 { margin: 0; font-size: 22px; font-weight: 700; }
+.komut-baslik p { font-size: 13px; color: var(--soluk); }
+.komut-eylemler { display: flex; flex-wrap: wrap; gap: 8px; }
+.panel .dugme { min-height: 40px; padding: 0 16px; border-radius: var(--r-kucuk); font-size: 14px; }
+.panel-govde { padding: 20px 28px 40px; display: flex; flex-direction: column; gap: 16px; }
+.sekme-serit { display: flex; gap: 4px; border-bottom: 1px solid var(--kenar); overflow-x: auto; }
+.sekme-serit a { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; color: var(--soluk); text-decoration: none; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.sekme-serit a[aria-selected="true"] { color: var(--yazi); box-shadow: inset 0 -2px 0 var(--yazi); }
+.sekme-serit .say { font-size: 12px; font-weight: 600; padding: 0 6px; border-radius: 999px; background: var(--yuzey); border: 1px solid var(--kenar); }
+.kutu-liste { list-style: none; margin: 0; padding: 0; border: 1px solid var(--kenar); border-radius: var(--r); background: var(--zemin); }
+.satir { display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 4px; border-bottom: 1px solid var(--kenar); min-height: 60px; }
+.satir:last-child { border-bottom: 0; }
+.satir.ic { padding-left: 36px; }
+.satir.ic2 { padding-left: 68px; }
+.tutamak { width: 32px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--soluk); cursor: grab; border: 0; background: transparent; flex-shrink: 0; }
+.satir-sira { display: flex; flex-direction: column; flex-shrink: 0; }
+.satir-sira .ikon-dugme { width: 32px; height: 26px; }
+.satir-bilgi { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.satir-ad { font-weight: 600; font-size: 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.satir-alt { font-size: 12px; color: var(--soluk); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.satir.soluk-satir .satir-ad { color: var(--soluk); }
+.durum-rozet { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.durum-rozet.gizli-rozet { background: var(--yuzey); color: var(--soluk); border: 1px solid var(--kenar); }
+.durum-rozet.uyari { background: var(--uyari-zemin); color: var(--uyari-yazi); }
+.durum-rozet.tur { background: var(--yuzey); color: var(--yazi); border: 1px solid var(--kenar); font-weight: 500; }
+.durum-rozet.tehlike { background: var(--tehlike-zemin); color: var(--tehlike-yazi); }
+.satir-eylem { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.satir-eylem .ikon-dugme { width: 40px; height: 40px; }
+.satir-eylem .ikon-dugme svg.ikon { width: 18px; height: 18px; }
+.yer-isareti { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: var(--r); background: var(--zemin); border: 1px solid var(--kenar); font-size: 13px; color: var(--soluk); }
+.akordeon { border: 1px solid var(--kenar); border-radius: var(--r); }
+.akordeon-baslik { display: flex; align-items: center; gap: 8px; padding: 4px 8px 4px 4px; min-height: 52px; }
+.akordeon-baslik .satir-bilgi { cursor: pointer; }
+.akordeon + .akordeon { margin-top: 8px; }
+.akordeon-ic { display: flex; flex-direction: column; gap: 14px; padding: 4px 16px 16px; border-top: 1px solid var(--kenar); padding-top: 16px; }
+.gorsel-alani { display: flex; align-items: center; gap: 12px; padding: 8px; border: 1px solid var(--alan-kenari); border-radius: var(--r-kucuk); }
+.gorsel-alani img { width: 88px; height: 56px; object-fit: cover; border-radius: var(--r-kucuk); background: var(--yuzey); }
+.gorsel-alani .yer-gorsel { width: 88px; height: 56px; border-radius: var(--r-kucuk); border: 2px dashed var(--kenar); display: flex; align-items: center; justify-content: center; color: var(--soluk); }
+.gorsel-alani .dugmeler { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.iki-sutun { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.renk-secimi { display: flex; flex-wrap: wrap; gap: 8px; }
+.renk-secimi span { width: 36px; height: 36px; border-radius: 999px; border: 1px solid var(--alan-kenari); }
+.renk-secimi span.secili { box-shadow: 0 0 0 2px var(--zemin), 0 0 0 4px var(--yazi); }
+.radyo-satir { display: flex; flex-wrap: wrap; gap: 8px; }
+.radyo { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1px solid var(--alan-kenari); border-radius: var(--r-kucuk); font-size: 14px; cursor: pointer; }
+.radyo.secili { border: 2px solid var(--yazi); font-weight: 600; }
+.radyo-nokta { width: 16px; height: 16px; border-radius: 999px; border: 1.5px solid var(--alan-kenari); }
+.radyo.secili .radyo-nokta { border: 5px solid var(--yazi); }
+.tur-izgara { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.tur-kart { display: flex; flex-direction: column; gap: 4px; padding: 14px; border: 1px solid var(--kenar); border-radius: var(--r); background: var(--zemin); color: var(--yazi); text-align: left; font: inherit; cursor: pointer; }
+.tur-kart strong { font-size: 14px; }
+.tur-kart span { font-size: 12px; color: var(--soluk); }
+.kayit-arama { display: flex; flex-direction: column; border: 1px solid var(--alan-kenari); border-radius: var(--r-kucuk); }
+.kayit-arama .girdi { border: 0; border-bottom: 1px solid var(--kenar); border-radius: 0; }
+.kayit-oneri { display: flex; align-items: center; justify-content: space-between; min-height: 40px; padding: 0 12px; font-size: 14px; }
+.kayit-oneri.secili { background: var(--yuzey); font-weight: 600; }
+.kayit-oneri span { font-size: 12px; color: var(--soluk); font-weight: 400; }
+.menu-sekmeleri { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px; align-items: start; }
+.menu-listesi { display: flex; flex-direction: column; gap: 4px; }
+.menu-listesi a { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: var(--r-kucuk); color: var(--yazi); text-decoration: none; border: 1px solid transparent; }
+.menu-listesi a[aria-current="true"] { background: var(--zemin); border-color: var(--kenar); font-weight: 700; }
+.menu-listesi a span { font-size: 12px; color: var(--soluk); font-weight: 400; }
+@container sayfa (max-width: 640px) {
+  .panel { grid-template-columns: minmax(0, 1fr); }
+  .panel-yan, .panel-ust-menu { display: none; }
+  .panel-tel-ust { display: flex; }
+  .komut-cubugu { padding: 14px 16px 12px; }
+  .komut-cubugu .sayfa-yolu { display: none; }
+  .komut-eylemler { width: 100%; }
+  .komut-eylemler .dugme { flex: 1 1 0; }
+  .panel-govde { padding: 16px 12px 32px; }
+  .satir-alt { white-space: normal; }
+  .satir .gorunum-dugme { display: none; }
+  .satir.ic { padding-left: 20px; }
+  .iki-sutun, .tur-izgara { grid-template-columns: minmax(0, 1fr); }
+  .menu-sekmeleri { grid-template-columns: minmax(0, 1fr); }
+  .menu-listesi { flex-direction: row; overflow-x: auto; }
+  .menu-listesi a { flex-shrink: 0; }
+  .menu-listesi a span { display: none; }
+}
+
+</style>
+<style>
+/* ——— Kart 0211: sepet, ödeme ve sipariş (ayrı blok: ortak stillerden sonra gelir) ——— */
+legend a { font-size: 14px; font-weight: 600; color: var(--yazi); }
+.uyari-kutu { display: flex; gap: 10px; align-items: flex-start; padding: 12px 16px; border-radius: var(--r); font-size: 14px; color: var(--yazi); }
+.satir-uyari { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+.sepet-duzen { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 32px; align-items: start; }
+.sepet-listesi { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--kenar); }
+.sepet-satir { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto auto 44px; gap: 16px; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--kenar); }
+.satir-gorsel { width: 96px; height: 96px; border-radius: var(--r); background: var(--yuzey); display: flex; align-items: center; justify-content: center; }
+.satir-urun { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.satir-tutar { font-weight: 700; font-size: 15px; text-align: right; min-width: 96px; white-space: nowrap; }
+.ozet { display: flex; flex-direction: column; gap: 12px; padding: 20px; border: 1px solid var(--kenar); border-radius: var(--r); background: var(--zemin); position: sticky; top: 16px; }
+.ozet-satir { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+.ozet-urunler { display: flex; flex-direction: column; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--kenar); }
+.ozet-urun { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 13px; }
+.guven-satir { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--soluk); }
+.tel-alt-cubuk { position: sticky; bottom: 0; z-index: 4; display: none; align-items: center; gap: 12px; padding: 12px 16px; background: var(--zemin); border-top: 1px solid var(--kenar); box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08); }
+.bildirim-kutu { position: absolute; z-index: 12; right: 24px; bottom: 24px; width: min(380px, calc(100% - 32px)); display: flex; gap: 12px; align-items: center; padding: 12px 12px 12px 16px; border-radius: var(--r); background: var(--yazi); color: var(--zemin); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); font-size: 14px; }
+.kart-sepet { position: absolute; right: 8px; bottom: 8px; z-index: 1; width: 40px; height: 40px; border-radius: 999px; border: 1px solid var(--alan-kenari); background: var(--zemin); color: var(--yazi); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.taksit-bag { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.sade-ust { background: var(--zemin); border-bottom: 1px solid var(--kenar); }
+.sade-alt { padding: 24px 0 32px; border-top: 1px solid var(--kenar); font-size: 13px; color: var(--soluk); }
+.odeme-duzen { display: grid; grid-template-columns: minmax(0, 1fr) 380px; grid-template-rows: auto 1fr; gap: 16px 32px; align-items: start; }
+.odeme-sol { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.odeme-bolum { margin: 0; padding: 20px; border: 1px solid var(--kenar); border-radius: var(--r); background: var(--zemin); display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.bolum-no { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin-right: 10px; border-radius: 999px; background: var(--yazi); color: var(--zemin); font-size: 14px; }
+.alanlar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.odeme-sol { grid-row: span 2; }
+.ozet-sag { grid-column: 2; position: sticky; top: 16px; display: flex; flex-direction: column; }
+.onay-alani { grid-column: 2; align-self: start; }
+.zorunlu { color: var(--tehlike-yazi); }
+.secim-ic { position: relative; display: block; }
+.onay-satir { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.45; cursor: pointer; }
+.onay-grup { display: flex; flex-direction: column; gap: 12px; }
+.yontemler { display: flex; flex-direction: column; gap: 10px; }
+.yontem { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; border: 1px solid var(--alan-kenari); border-radius: var(--r); cursor: pointer; }
+.yontem-ust { display: flex; align-items: flex-start; gap: 12px; }
+.yontem-ad { display: flex; flex-direction: column; gap: 2px; flex-grow: 1; }
+.yontem-ic { display: flex; flex-direction: column; gap: 12px; padding-left: 28px; }
+.kart-formu-yeri { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 140px; padding: 16px; border: 2px dashed var(--kenar); border-radius: var(--r); color: var(--soluk); font-size: 13px; text-align: center; }
+.taksitler { width: 100%; border-collapse: collapse; font-size: 14px; }
+.taksit-radyo { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.adim-serit { list-style: none; margin: 0 0 20px; padding: 0; display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.ozet-kucuk { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; font-size: 14px; }
+.adres-kart { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border: 1px solid var(--alan-kenari); border-radius: var(--r); font-size: 14px; }
+.giris-secimi { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; max-width: 880px; }
+.akordeon-ozet { display: none; }
+.alindi-ust { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 24px 0 8px; }
+.basari-ikon { width: 64px; height: 64px; border-radius: 999px; background: var(--basari-zemin); color: var(--basari-yazi); display: flex; align-items: center; justify-content: center; }
+.siparis-no { font-family: var(--font-baslik); font-size: 22px; font-weight: 600; }
+.alindi-duzen { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 32px; align-items: start; margin-top: 24px; }
+.kutu { padding: 20px; border: 1px solid var(--kenar); border-radius: var(--r); background: var(--zemin); display: flex; flex-direction: column; gap: 14px; }
+.vurgu-kutu { border: 2px solid var(--birincil); }
+.bankalar { display: flex; flex-direction: column; gap: 10px; }
+.banka { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: var(--r); background: var(--yuzey); font-size: 14px; }
+.banka-ust { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.iban { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 15px; font-weight: 600; letter-spacing: 0.02em; overflow-wrap: anywhere; }
+.bilgi-satirlari { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 16px; font-size: 14px; margin: 0; }
+.dar-form { max-width: 640px; margin: 0 auto; }
+.anahtar { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; min-height: 44px; cursor: pointer; }
+.anahtar-iz { width: 40px; height: 24px; border-radius: 999px; background: var(--alan-kenari); position: relative; flex-shrink: 0; }
+.satir-ic-secenekler { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 4px; }
+.panel-kart { padding: 20px; border: 1px solid var(--kenar); border-radius: var(--r); background: var(--zemin); display: flex; flex-direction: column; gap: 16px; max-width: 760px; }
+.girdi-ekli { display: flex; align-items: stretch; border: 1px solid var(--alan-kenari); border-radius: var(--r-kucuk); overflow: hidden; }
+.kaydet-cubugu { display: flex; justify-content: flex-end; gap: 8px; max-width: 760px; }
+.uyari-kutu ul { margin: 4px 0 0; padding-left: 18px; }
+.uyari-kutu a { color: var(--yazi); font-weight: 600; }
+.satir-gorsel img { width: 86%; height: 86%; object-fit: contain; }
+.satir-urun a { color: var(--yazi); font-weight: 600; text-decoration: none; }
+.ozet h2 { margin: 0; font-size: 18px; font-weight: 700; }
+.ozet-urun strong { font-weight: 600; display: block; }
+.bildirim-kutu img { width: 44px; height: 44px; object-fit: contain; border-radius: var(--r-kucuk); background: var(--yuzey); }
+.bildirim-kutu a { color: var(--zemin); font-weight: 700; white-space: nowrap; min-height: 44px; display: inline-flex; align-items: center; }
+.taksit-bag a { color: var(--yazi); font-weight: 600; }
+.sade-alt a { color: var(--soluk); min-height: 32px; display: inline-flex; align-items: center; }
+.odeme-bolum > legend { float: left; width: 100%; padding: 0; margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 17px; font-weight: 700; }
+.odeme-bolum > legend + * { clear: both; }
+.bolum-baslik a { font-size: 14px; font-weight: 600; color: var(--yazi); }
+.onay-satir a { color: var(--yazi); font-weight: 600; }
+.yontem-ad strong { font-size: 15px; }
+.yontem-ad span { font-size: 13px; color: var(--soluk); }
+.taksitler caption { text-align: left; font-weight: 700; padding-bottom: 8px; }
+.taksitler th { padding: 0 12px; height: 48px; border-bottom: 1px solid var(--kenar); text-align: left; }
+.taksitler td { padding: 0 12px; height: 48px; border-bottom: 1px solid var(--kenar); text-align: left; }
+.adim-serit li { display: flex; align-items: center; gap: 8px; color: var(--soluk); }
+.ozet-kucuk span { color: var(--soluk); }
+.kutu h2 { margin: 0; font-size: 17px; font-weight: 700; }
+.bilgi-satirlari dt { color: var(--soluk); }
+.bilgi-satirlari dd { margin: 0; font-weight: 600; }
+.panel-kart h2 { margin: 0; font-size: 16px; font-weight: 700; }
+.girdi-ekli span { display: flex; align-items: center; padding: 0 12px; background: var(--yuzey); color: var(--soluk); border-left: 1px solid var(--alan-kenari); font-size: 14px; }
+.taksitler thead th { height: 36px; font-size: 12px; color: var(--soluk); font-weight: 600; }
+.uyari-kutu.tehlike { background: var(--tehlike-zemin); }
+.uyari-kutu.uyari { background: var(--uyari-zemin); }
+.uyari-kutu.basari { background: var(--basari-zemin); }
+.uyari-kutu.bilgi { background: var(--yuzey); }
+.satir-uyari.tehlike { color: var(--tehlike-yazi); }
+.satir-uyari.uyari { color: var(--uyari-yazi); }
+.satir-urun .secim { font-size: 13px; color: var(--soluk); }
+.satir-urun .birim { font-size: 13px; display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.adet.kucuk { height: 44px; width: max-content; }
+.ozet-satir .soluk { font-size: 13px; }
+.ozet-satir.toplam { padding-top: 12px; border-top: 1px solid var(--kenar); font-size: 18px; font-weight: 700; }
+.ozet-satir.vergi { font-size: 13px; color: var(--soluk); }
+.ozet .dugme { width: 100%; }
+.ozet-urun .satir-gorsel { width: 52px; height: 52px; position: relative; }
+.ozet-urun .adet-isaret { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: var(--yazi); color: var(--zemin); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.tel-alt-cubuk .tutar { display: flex; flex-direction: column; font-size: 12px; color: var(--soluk); }
+.tel-alt-cubuk .dugme { flex: 1 1 auto; }
+.bildirim-kutu .ikon-dugme { color: var(--zemin); }
+.sayi.vurgu { box-shadow: 0 0 0 3px var(--zemin), 0 0 0 5px var(--rozet); }
+.sade-ust .kap { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 72px; }
+.sade-ust .guven-satir { font-size: 13px; }
+.sade-alt .kap { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.odeme-bolum > .bolum-baslik { float: left; width: 100%; padding: 0; margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 17px; font-weight: 700; }
+.alanlar .genis { grid-column: 1 / -1; }
+.alanlar > .alan { align-self: start; }
+.ozet-sag .ozet { position: static; }
+.alanlar .uc { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.secim-alani .girdi { appearance: none; padding-right: 36px; text-align: left; display: flex; align-items: center; cursor: pointer; }
+.onay-satir .kutucuk { margin-top: 1px; }
+.kutucuk.hatali { border-color: var(--tehlike-yazi); border-width: 2px; }
+.yontem.secili { border: 2px solid var(--yazi); padding: 13px 15px; }
+.yontem-ust .radyo-nokta { margin-top: 2px; flex-shrink: 0; }
+.adres-kart.secili { border: 2px solid var(--yazi); padding: 13px 15px; }
+.adres-kart .radyo-nokta { margin-top: 2px; flex-shrink: 0; }
+.panel-kart .alanlar { gap: 16px; }
+.girdi-ekli .girdi { border: 0; border-radius: 0; }
+.uyari-kutu svg.ikon { margin-top: 1px; }
+.satir-uyari svg.ikon { width: 16px; height: 16px; }
+.satir-urun .birim s { color: var(--soluk); }
+.guven-satir svg.ikon { width: 16px; height: 16px; }
+.tel-alt-cubuk .tutar strong { font-size: 17px; color: var(--yazi); }
+.kart-sepet svg.ikon { width: 18px; height: 18px; }
+.taksit-bag svg.ikon { color: var(--soluk); }
+.secim-alani svg.ikon { position: absolute; right: 10px; top: 12px; pointer-events: none; color: var(--soluk); }
+.taksitler th:first-child { width: 44px; padding-right: 0; }
+.taksitler td:last-child { text-align: right; }
+.taksitler th:last-child { text-align: right; }
+.adim-serit li[aria-current="step"] { color: var(--yazi); font-weight: 700; }
+.adim-serit li .bolum-no { margin: 0; background: var(--yuzey); color: var(--soluk); border: 1px solid var(--kenar); }
+.basari-ikon svg.ikon { width: 30px; height: 30px; stroke-width: 2.4; }
+.anahtar-iz::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 999px; background: var(--zemin); }
+.taksitler tr.secili td { background: var(--yuzey); font-weight: 700; }
+.taksitler tr.secili th { background: var(--yuzey); font-weight: 700; }
+.adim-serit li + li::before { content: ""; width: 32px; height: 1px; background: var(--kenar); margin-right: 8px; }
+.satir-urun .birim .indirimli { color: var(--indirim); font-weight: 600; }
+.adet.kucuk .ikon-dugme { width: 40px; height: 40px; }
+.adet .ikon-dugme[disabled] { color: var(--soluk); cursor: not-allowed; }
+.ozet .dugme[aria-disabled="true"] { opacity: 1; background: var(--yuzey); color: var(--soluk); border-color: var(--kenar); cursor: not-allowed; }
+.taksit-radyo[aria-checked="true"] .radyo-nokta { border: 5px solid var(--yazi); }
+.adres-kart.secili .radyo-nokta { border: 5px solid var(--yazi); }
+.anahtar[aria-checked="true"] .anahtar-iz { background: var(--basari-yazi); }
+.uyari-kutu.tehlike svg.ikon { color: var(--tehlike-yazi); }
+.uyari-kutu.uyari svg.ikon { color: var(--uyari-yazi); }
+.uyari-kutu.basari svg.ikon { color: var(--basari-yazi); }
+.uyari-kutu.bilgi svg.ikon { color: var(--soluk); }
+.sepet-satir.tukenmis-satir .satir-gorsel img { opacity: 0.45; }
+.adim-serit li[aria-current="step"] .bolum-no { background: var(--birincil); color: var(--birincil-yazi); }
+.adim-serit li.bitti .bolum-no { background: var(--yazi); color: var(--zemin); border-color: var(--yazi); }
+.yontem.secili .yontem-ust .radyo-nokta { border: 5px solid var(--yazi); }
+.anahtar[aria-checked="true"] .anahtar-iz::after { left: 19px; }
+
+@container sayfa (max-width: 640px) {
+  .sepet-duzen { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .odeme-duzen { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .alindi-duzen { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .giris-secimi { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .sepet-satir { grid-template-columns: 72px minmax(0, 1fr) auto; grid-template-areas: "g u k" "g a t"; gap: 8px 12px; align-items: start; }
+  .ozet { position: static; }
+  .ozet-sag { position: static; }
+  .tel-alt-cubuk { display: flex; }
+  .alanlar { grid-template-columns: minmax(0, 1fr); }
+  .odeme-bolum { padding: 16px; }
+  .yontem-ic { padding-left: 0; }
+  .akordeon-ozet { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 0 16px; border: 1px solid var(--kenar); border-radius: var(--r); background: var(--yuzey); color: var(--yazi); font: inherit; font-weight: 600; cursor: pointer; }
+  .odeme-sol { grid-row: auto; }
+  .ozet-sag { grid-column: auto; }
+  .onay-alani { grid-column: auto; }
+  .bildirim-kutu { right: 16px; bottom: 16px; }
+  .bilgi-satirlari { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .kaydet-cubugu { position: sticky; bottom: 0; background: var(--yuzey); padding: 12px 0; }
+  .bilgi-satirlari dd { margin-bottom: 8px; }
+  .sepet-satir .satir-gorsel { grid-area: g; width: 72px; height: 72px; }
+  .sepet-satir .satir-urun { grid-area: u; }
+  .sepet-satir .adet { grid-area: a; justify-self: start; }
+  .sepet-satir .satir-tutar { grid-area: t; align-self: center; min-width: 0; }
+  .sepet-satir .kaldir { grid-area: k; margin-top: -10px; justify-self: end; }
+  .alanlar.uc { grid-template-columns: minmax(0, 1fr); }
+  .odeme-duzen > .ozet-sag { order: -1; }
+  .kaydet-cubugu .dugme { flex: 1 1 0; }
+  .ozet .dugme-buyuk.masa-dugme { display: none; }
+  .ozet-sag .ozet.kapali { padding: 0; border: 0; }
+  .odeme-duzen > .ozet-sag .ozet.kapali > :not(.ozet-tel-gizlenmez) { display: none; }
+}
+</style>
+<style>
+/* ——— Kart 0233: müşteri hesabı, sipariş takibi, iade, e-postalar ve panelin sipariş ekranları ——— */
+.giris-duzen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; max-width: 920px; margin: 0 auto; }
+.madde-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+.hesap-duzen { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 32px; align-items: start; }
+.hesap-menu { display: flex; flex-direction: column; gap: 2px; padding: 12px; border: 1px solid var(--kenar); border-radius: var(--r); }
+.hesap-bag { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 10px; border-radius: var(--r-kucuk); color: var(--yazi); text-decoration: none; font-size: 14px; font-weight: 500; }
+.hesap-sekmeler { display: flex; gap: 4px; border-bottom: 1px solid var(--kenar); overflow-x: auto; }
+.hesap-ic { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.hesap-baslik { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.siparis-listesi { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.siparis-kart { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 16px; padding: 16px; border: 1px solid var(--kenar); border-radius: var(--r); }
+.siparis-kart-ust { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 13px; color: var(--soluk); }
+.siparis-gorseller { display: flex; gap: 8px; grid-column: 1; }
+.siparis-kart-sag { grid-column: 2; grid-row: 1 / span 2; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; gap: 8px; text-align: right; }
+.ilerleme-serit { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.ayrinti-duzen { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
+.ayrinti-sol { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.kalem-listesi { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.kalem { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--kenar); font-size: 14px; }
+.kalem-ad { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.kalem-tutar { text-align: right; font-weight: 700; white-space: nowrap; }
+.zaman-cizgisi { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.kargo-kutu { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: var(--r); background: var(--yuzey); font-size: 14px; }
+.eylem-satiri { display: flex; flex-wrap: wrap; gap: 8px; }
+.adres-izgara { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.adres-kutu { display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid var(--kenar); border-radius: var(--r); font-size: 14px; }
+.adres-kutu-ust { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.adres-ekle { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 160px; border: 2px dashed var(--kenar); border-radius: var(--r); background: transparent; color: var(--yazi); font: inherit; font-weight: 700; cursor: pointer; }
+.iade-urunler { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.iade-urun { display: grid; grid-template-columns: 24px 56px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--alan-kenari); border-radius: var(--r); font-size: 14px; }
+.e-posta-cerceve { background: var(--yuzey); padding: 24px 16px; }
+.e-posta-baslik { max-width: 600px; margin: 0 auto 12px; display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--soluk); }
+.e-posta { max-width: 600px; margin: 0 auto; background: var(--zemin); color: var(--yazi); border: 1px solid var(--kenar); border-radius: var(--r); overflow: hidden; font-size: 15px; line-height: 1.55; }
+.e-posta-ust { display: flex; align-items: center; gap: 10px; padding: 18px 24px; border-bottom: 1px solid var(--kenar); }
+.e-posta-govde { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.e-posta-tablo { width: 100%; border-collapse: collapse; font-size: 14px; }
+.e-posta-alt { padding: 18px 24px; border-top: 1px solid var(--kenar); background: var(--yuzey); font-size: 12px; color: var(--soluk); display: flex; flex-direction: column; gap: 4px; }
+.panel-tablo { width: 100%; border-collapse: collapse; background: var(--zemin); border: 1px solid var(--kenar); border-radius: var(--r); font-size: 14px; }
+.tel-siparis-listesi { display: none; }
+.suzgec-satir { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.panel-ayrinti { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+.panel-kart-baslik { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.bildirim-satir { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: var(--r); background: var(--uyari-zemin); font-size: 14px; }
+.not-formu { display: flex; flex-direction: column; gap: 10px; }
+.not-turu { display: flex; flex-wrap: wrap; gap: 8px; }
+.tutar-tablo { width: 100%; border-collapse: collapse; font-size: 14px; }
+.iade-tablo { width: 100%; border-collapse: collapse; font-size: 14px; }
+.secim-karti { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid var(--alan-kenari); border-radius: var(--r); font-size: 14px; }
+.ayar-satir { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-top: 1px solid var(--kenar); font-size: 14px; }
+.elle-duzen { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+.madde-liste li { display: flex; gap: 10px; align-items: flex-start; }
+.siparis-kart-ust strong { color: var(--yazi); font-size: 15px; }
+.siparis-gorseller span { width: 56px; height: 56px; border-radius: var(--r-kucuk); background: var(--yuzey); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--soluk); }
+.siparis-gorseller img { width: 86%; height: 86%; object-fit: contain; }
+.siparis-kart-sag strong { font-size: 16px; }
+.ilerleme-serit li { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--soluk); }
+.ilerleme-serit small { font-weight: 400; color: var(--soluk); }
+.kalem-ad a { color: var(--yazi); font-weight: 600; text-decoration: none; }
+.kalem-tutar s { display: block; font-weight: 400; color: var(--soluk); font-size: 13px; }
+.zaman-cizgisi li { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 0 0 16px 24px; font-size: 14px; }
+.adres-kutu-ust strong { font-size: 15px; }
+.e-posta-baslik strong { color: var(--yazi); font-size: 16px; }
+.e-posta-govde h1 { margin: 0; font-family: var(--font-baslik); font-weight: var(--baslik-agirlik); font-size: 24px; line-height: 1.2; }
+.e-posta-tablo td, .e-posta-tablo th { padding: 8px 0; border-bottom: 1px solid var(--kenar); text-align: left; vertical-align: top; font-weight: 400; }
+.e-posta-alt a { color: var(--soluk); }
+.panel-tablo th { text-align: left; font-size: 12px; font-weight: 600; color: var(--soluk); padding: 10px 12px; border-bottom: 1px solid var(--kenar); white-space: nowrap; }
+.panel-tablo td { padding: 12px; border-bottom: 1px solid var(--kenar); vertical-align: middle; }
+.panel-tablo a { color: var(--yazi); font-weight: 700; }
+.panel-ayrinti > div { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.tutar-tablo td { padding: 6px 0; }
+.iade-tablo th { text-align: left; font-size: 12px; font-weight: 600; color: var(--soluk); padding: 0 8px 8px 0; }
+.iade-tablo td { padding: 8px 8px 8px 0; border-top: 1px solid var(--kenar); vertical-align: middle; }
+.secim-karti strong { display: flex; align-items: center; gap: 8px; }
+.elle-duzen > div { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.giris-duzen .kutu { gap: 16px; }
+.giris-duzen + .taslak-not, .dar-form .taslak-not, .hesap-ic + .taslak-not { margin-top: 16px; }
+.giris-duzen .yan-bilgi { background: var(--yuzey); border-color: var(--yuzey); }
+.hesap-duzen.sekmeli { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.hesap-menu .merhaba { padding: 6px 10px 12px; border-bottom: 1px solid var(--kenar); margin-bottom: 6px; font-size: 13px; color: var(--soluk); }
+.hesap-bag[aria-current="page"] { background: var(--yuzey); font-weight: 700; box-shadow: inset 3px 0 0 var(--birincil); }
+.hesap-sekmeler .hesap-bag { border-radius: 0; white-space: nowrap; flex-shrink: 0; }
+.durum-rozet.basari { background: var(--basari-zemin); color: var(--basari-yazi); }
+.durum-rozet.bilgi { background: var(--yuzey); color: var(--yazi); border: 1px solid var(--kenar); }
+.durum-rozet.koyu { background: var(--yazi); color: var(--zemin); }
+.kalem:last-child { border-bottom: 0; padding-bottom: 0; }
+.kalem:first-child { padding-top: 0; }
+.kalem .satir-gorsel { width: 64px; height: 64px; }
+.kalem-ad .soluk { font-size: 13px; }
+.kalem .yorum-bag { font-size: 13px; color: var(--yazi); font-weight: 600; min-height: 32px; display: inline-flex; align-items: center; gap: 4px; }
+.zaman-cizgisi time, .zaman-cizgisi .kim { font-size: 12px; color: var(--soluk); }
+.zaman-cizgisi .not-metin { margin-top: 4px; padding: 8px 12px; border-radius: var(--r-kucuk); background: var(--yuzey); }
+.kargo-kutu .takip { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-weight: 600; }
+.adres-kutu.varsayilan { border: 2px solid var(--yazi); padding: 15px; }
+.adres-kutu .eylem-satiri { margin-top: auto; }
+.adres-kutu .dugme { min-height: 44px; padding: 0 14px; }
+.iade-urun.secili { border: 2px solid var(--yazi); padding: 11px; }
+.iade-urun.kapali { color: var(--soluk); border-style: dashed; }
+.iade-urun .satir-gorsel { width: 56px; height: 56px; }
+.e-posta-govde .dugme { align-self: flex-start; }
+.e-posta .banka { background: var(--yuzey); }
+.e-posta-yonetici .e-posta-ust { background: var(--alt); color: var(--alt-yazi); border-bottom: 0; }
+.panel-tablo .sag { text-align: right; white-space: nowrap; }
+.panel-tablo .isaret { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--uyari-yazi); }
+.suzgec-satir .arama { max-width: 320px; height: 40px; background: var(--zemin); }
+.panel-ayrinti .panel-kart { max-width: none; }
+.panel .kalem { grid-template-columns: 48px minmax(0, 1fr) auto; }
+.secim-karti.secili { border: 2px solid var(--yazi); padding: 11px 13px; }
+.ayar-satir:first-of-type { border-top: 0; padding-top: 0; }
+.ayar-satir .satir-bilgi { gap: 2px; }
+.elle-duzen .panel-kart { max-width: none; }
+.madde-liste svg.ikon { color: var(--basari-yazi); width: 18px; height: 18px; margin-top: 1px; }
+.hesap-menu .merhaba strong { display: block; font-size: 15px; color: var(--yazi); }
+.hesap-bag svg.ikon { width: 18px; height: 18px; color: var(--soluk); }
+.ilerleme-serit li.bitti, .ilerleme-serit li[aria-current="step"] { color: var(--yazi); font-weight: 600; }
+.zaman-cizgisi li:last-child { padding-bottom: 0; }
+.iade-urun .kalem-ad span { font-size: 13px; }
+.e-posta-tablo td:last-child, .e-posta-tablo th:last-child { text-align: right; white-space: nowrap; padding-left: 12px; }
+.tutar-tablo td:last-child { text-align: right; white-space: nowrap; }
+.iade-tablo td:last-child, .iade-tablo th:last-child { text-align: right; padding-right: 0; }
+.secim-karti span.soluk { font-size: 13px; padding-left: 24px; }
+.ilerleme-serit li::before { content: ""; height: 4px; border-radius: 999px; background: var(--kenar); }
+.zaman-cizgisi li::before { content: ""; position: absolute; left: 4px; top: 6px; width: 10px; height: 10px; border-radius: 999px; background: var(--alan-kenari); }
+.zaman-cizgisi li::after { content: ""; position: absolute; left: 8px; top: 18px; bottom: 0; width: 2px; background: var(--kenar); }
+.e-posta-tablo tr.toplam td { font-weight: 700; font-size: 16px; border-bottom: 0; }
+.e-posta-tablo tr.vergi td { color: var(--soluk); font-size: 13px; border-bottom: 0; padding-top: 0; }
+.e-posta-tablo tr.iade td { color: var(--basari-yazi); font-weight: 600; }
+.panel-tablo tr:last-child td { border-bottom: 0; }
+.tutar-tablo tr.toplam td { font-weight: 700; font-size: 16px; border-top: 1px solid var(--kenar); padding-top: 10px; }
+.tutar-tablo tr.vergi td { color: var(--soluk); font-size: 13px; }
+.hesap-sekmeler .hesap-bag[aria-current="page"] { background: transparent; box-shadow: inset 0 -2px 0 var(--birincil); }
+.zaman-cizgisi .ic-not .not-metin { background: var(--uyari-zemin); }
+.iade-urun .adet.kucuk { height: 44px; }
+.panel .kalem .satir-gorsel { width: 48px; height: 48px; }
+.iade-tablo .adet.kucuk { height: 40px; }
+.secim-karti.secili .radyo-nokta { border: 5px solid var(--yazi); }
+.hesap-bag[aria-current="page"] svg.ikon { color: var(--yazi); }
+.panel-tablo .isaret svg.ikon { width: 14px; height: 14px; }
+.ilerleme-serit li.bitti::before { background: var(--basari-yazi); }
+.ilerleme-serit li[aria-current="step"]::before { background: var(--birincil); }
+.zaman-cizgisi li:last-child::after { display: none; }
+.zaman-cizgisi li:first-child::before { background: var(--birincil); box-shadow: 0 0 0 3px var(--zemin), 0 0 0 4px var(--birincil); }
+.iade-tablo .adet.kucuk .ikon-dugme { width: 36px; height: 36px; }
+@container sayfa (max-width: 640px) {
+  .giris-duzen, .hesap-duzen, .ayrinti-duzen, .adres-izgara, .panel-ayrinti, .elle-duzen { grid-template-columns: minmax(0, 1fr); }
+  .hesap-duzen { gap: 16px; }
+  .hesap-menu { flex-direction: row; overflow-x: auto; padding: 0; border: 0; border-bottom: 1px solid var(--kenar); border-radius: 0; gap: 0; }
+  .hesap-menu .merhaba { display: none; }
+  .hesap-menu .hesap-bag { flex-shrink: 0; white-space: nowrap; border-radius: 0; }
+  .hesap-menu .hesap-bag[aria-current="page"] { background: transparent; box-shadow: inset 0 -2px 0 var(--birincil); }
+  .siparis-kart { grid-template-columns: minmax(0, 1fr); }
+  .siparis-kart-sag { grid-column: 1; grid-row: auto; flex-direction: row; align-items: center; text-align: left; }
+  .ilerleme-serit { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 12px; }
+  .e-posta-cerceve { padding: 0; }
+  .e-posta { border-radius: 0; border-left: 0; border-right: 0; }
+  .e-posta-baslik { padding: 12px 16px 0; }
+  .e-posta-govde, .e-posta-ust, .e-posta-alt { padding-left: 16px; padding-right: 16px; }
+  .panel-tablo.masa-tablo { display: none; }
+  .tel-siparis-listesi { display: flex; flex-direction: column; gap: 0; }
+  .iade-urun { grid-template-columns: 24px 48px minmax(0, 1fr); }
+  .iade-urun .satir-gorsel { width: 48px; height: 48px; }
+  .iade-urun .adet { grid-column: 3; justify-self: start; }
+  .suzgec-satir .arama { max-width: none; flex: 1 1 100%; }
+}
+</style>
+</head>
+<body>
+
+<div class="arac-cubugu" role="toolbar" aria-label="Taslak seçimi">
+  <div class="arac-satir"><div class="grup" id="sayfa-grubu"></div></div>
+  <div class="arac-satir">
+    <div class="grup"><span>Tema</span>
+      <button type="button" data-tema="acik">Açık</button>
+      <button type="button" data-tema="koyu">Koyu</button>
+    </div>
+    <div class="grup"><span>Genişlik</span>
+      <button type="button" data-gorunum="masaustu">Masaüstü</button>
+      <button type="button" data-gorunum="telefon">Telefon</button>
+    </div>
+    <div class="grup" id="hal-grubu"></div>
+    <a href="sepet-ve-odeme.html">Sepet ve ödeme taslağı</a>
+  </div>
+  <div class="arac-satir" id="secim-satiri"></div>
+</div>
+
+<div class="sahne" id="sahne">
+<div class="sayfa" id="sayfa" data-tema="acik">
+<div class="icerik" id="icerik"></div>
+</div>
+</div>
+
+<script>
+const GORSEL = '../../siteler/ornek-magaza/baslangic/gorseller/';
+const IKON = {
+  kalp: '<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>',
+  yildiz: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+  ara: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  kisi: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+  canta: '<path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+  menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+  asagi: '<path d="m6 9 6 6 6-6"/>',
+  yukari: '<path d="m18 15-6-6-6 6"/>',
+  sag: '<path d="m9 18 6-6-6-6"/>',
+  sol: '<path d="m15 18-6-6 6-6"/>',
+  kapat: '<path d="M6 6l12 12M18 6 6 18"/>',
+  tik: '<path d="m5 12 5 5 9-10"/>',
+  filtre: '<path d="M4 6h16M7 12h10M10 18h4"/>',
+  kargo: '<path d="M3 6h11v10H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>',
+  iade: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
+  odeme: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M16 15h2"/>',
+  oynat: '<path d="M7 4v16l13-8z"/>',
+  zil: '<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/>',
+  bilgi: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+  yenile: '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
+  ev: '<path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z"/>',
+  sayfa: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+  bolumler: '<rect x="3" y="4" width="18" height="5" rx="1"/><rect x="3" y="11" width="18" height="9" rx="1"/>',
+  slider: '<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M9 21h6"/><circle cx="10" cy="11" r="0.5"/><circle cx="12" cy="11" r="0.5"/><circle cx="14" cy="11" r="0.5"/>',
+  tema: '<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18c1 0 2-1 1.5-2-1-2 .5-3 2.5-3H19a2 2 0 0 0 2-2"/>',
+  agac: '<path d="M4 5h6M4 12h6M4 19h6M13 5h7M15 12h5M15 19h5M13 5v14"/>',
+  tutamak: '<circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/>',
+  goz: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  gozKapali: '<path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6 0 10 7 10 7a17 17 0 0 1-3.2 3.9M6.6 6.6C3.8 8.4 2 12 2 12s4 7 10 7c1.6 0 3-.4 4.3-1"/>',
+  kalem: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/>',
+  sil: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+  arti: '<path d="M12 5v14M5 12h14"/>',
+  geri: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
+  cikis: '<path d="M15 4h4v16h-4"/><path d="M10 8l-4 4 4 4M6 12h10"/>',
+  dis: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v6H4V6h6"/>',
+  uc: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'
+};
+const ikon = (ad, ek = '') => `<svg class="ikon ${ek}" viewBox="0 0 24 24" aria-hidden="true">${IKON[ad]}</svg>`;
+const yildizlar = (etiket, dolu = 0) => `<span class="yildizlar dolu-yildiz" role="img" aria-label="${etiket}">${[1, 2, 3, 4, 5].map((n) => ikon('yildiz', n <= dolu ? 'dolu' : '')).join('')}</span>`;
+const not = (metin) => `<p class="taslak-not">Taslak notu: ${metin}</p>`;
+// Üst ve alt kısım: secenekler.html ile aynı, menü sitenin başlangıç menüsünden.
+const anaMenu = ['Giyim', 'Ev ve Yaşam', 'Elektronik Aksesuar', 'Spor ve Outdoor', 'Kişisel Bakım', 'Markalar', 'Yılbaşı'];
+function ustKisim(secili, aramaDegeri = '') {
+  return `
+  <div class="duyuru"><div class="kap duyuru-kap"><span>[TUTAR] üzeri siparişlerde ücretsiz kargo</span><span class="ikonlu yalniz-masa"><svg class="ikon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>+90 312 000 00 00</span></div></div>
+  <header class="ust">
+    <div class="yalniz-masa" style="flex-direction: column">
+      <div class="kap ust-satir">
+        <a href="#" class="logo"><span class="logo-isaret">Ö</span><span class="logo-ad">Örnek Mağaza</span></a>
+        <form class="arama" role="search" onsubmit="return false"><input class="arama-girdi" type="search" aria-label="Ürün ara" placeholder="Ürün, kategori ya da marka ara" value="${aramaDegeri}"><button type="submit" class="arama-dugme" aria-label="Ara">${ikon('ara')}</button></form>
+        <div class="ust-eylemler">
+          <a href="#" class="ust-bag">${ikon('kisi')}Giriş yap</a>
+          <a href="#" class="ikon-dugme simge-sayili"><span class="gizli">Favoriler, 3 ürün</span>${ikon('kalp')}<span class="sayi" aria-hidden="true">3</span></a>
+          <a href="#" class="sepet">${ikon('canta')}Sepet <span class="sayi">0</span></a>
+        </div>
+      </div>
+      <nav class="menu" aria-label="Ana menü"><div class="kap menu-kap">
+        <button type="button" class="kategori-dugme">${ikon('menu')}Kategoriler${ikon('asagi')}</button>
+        ${anaMenu.map((m) => `<a class="menu-bag" href="#"${m === secili ? ' aria-current="page"' : ''}>${m}</a>`).join('')}
+      </div></nav>
+    </div>
+    <div class="yalniz-tel tel-ust">
+      <div class="tel-satir">
+        <button type="button" class="ikon-dugme" aria-label="Menüyü aç" style="margin-left: -10px">${ikon('menu')}</button>
+        <a href="#" class="logo"><span class="logo-isaret isaret-kucuk">Ö</span><span class="logo-ad ad-kucuk">Örnek Mağaza</span></a>
+        <a href="#" class="ikon-dugme simge-sayili" style="margin-left: auto"><span class="gizli">Favoriler, 3 ürün</span>${ikon('kalp')}<span class="sayi" aria-hidden="true">3</span></a>
+        <a href="#" class="ikon-dugme" style="margin-right: -10px"><span class="gizli">Sepet, 0 ürün</span>${ikon('canta')}</a>
+      </div>
+      <form class="arama arama-genis" role="search" onsubmit="return false"><input class="arama-girdi girdi-buyuk" type="search" aria-label="Ürün ara" placeholder="Ürün ara" value="${aramaDegeri}"><button type="submit" class="arama-dugme" aria-label="Ara">${ikon('ara')}</button></form>
+    </div>
+  </header>`;
+}
+function altKisim() {
+  const sutun = (b, l) => `<nav class="alt-sutun" aria-label="${b}"><span class="alt-baslik">${b}</span>${l.map((x) => `<a class="alt-bag" href="#">${x}</a>`).join('')}</nav>`;
+  return `
+  <footer class="alt"><div class="kap alt-kap">
+    <div class="izgara alt-sutunlar">
+      <div class="iletisim"><span class="logo-ad alt-logo">Örnek Mağaza</span><span>Deneme Sokak No: 1<br>06000 Çankaya / Ankara</span><span>+90 312 000 00 00</span><span>iletisim@ornek-magaza.test</span></div>
+      ${sutun('Alışveriş', ['Giyim', 'Ev ve Yaşam', 'Elektronik Aksesuar', 'Spor ve Outdoor', 'Kişisel Bakım'])}
+      ${sutun('Hesabım', ['Giriş yap', 'Favorilerim', 'Sipariş takibi'])}
+      ${sutun('Sözleşmeler', ['Üyelik sözleşmesi', 'KVKK aydınlatma metni'])}
+    </div>
+    <div class="alt-satir"><span>© 2026 Örnek Mağaza</span><div class="odemeler"><span class="odeme">Havale</span><span class="odeme">Kapıda ödeme</span></div></div>
+  </div></footer>`;
+}
+const sayfaYolu = (yol) => `<nav class="sayfa-yolu" aria-label="Sayfa yolu"><ol>${yol.map((y, i) => i === yol.length - 1 ? `<li><span aria-current="page">${y}</span></li>` : `<li><a href="#">${y}</a></li>`).join('')}</ol></nav>`;
+function panel(secili, ic, pencere = '') {
+  const bag = ([k, i, a]) => `<a href="#" class="panel-bag"${k === secili ? ' aria-current="page"' : ''}>${ikon(i)}${a}${k === 'slider' ? '<span class="kisayol-isaret">Kısayol</span>' : ''}</a>`;
+  const alt = `<div class="panel-alt"><span class="panel-kullanici">sahip@ornek-magaza.test</span><a href="#" class="panel-bag">${ikon('dis')}Vitrine git</a><a href="#" class="panel-bag">${ikon('cikis')}Çıkış yap</a>${durum.panelMenu === 'ust' ? '' : '<span class="altyapi-adi">eticaret</span>'}</div>`;
+  const logo = `<div class="panel-logo"><span class="logo-isaret">Ö</span>Örnek Mağaza</div>`;
+  const menu = durum.panelMenu === 'ust'
+    ? `<nav class="panel-ust-menu" aria-label="Panel menüsü">${logo}${panelMenusu.flatMap((g) => g.ogeler).map(bag).join('')}${alt}</nav>`
+    : `<nav class="panel-yan" aria-label="Panel menüsü">${logo}${panelMenusu.map((g) => `${g.grup ? `<span class="panel-grup-ad">${g.grup}</span>` : ''}${g.ogeler.map(bag).join('')}`).join('')}${alt}</nav>`;
+  return `<div class="panel ${durum.panelMenu === 'ust' ? 'ust-menulu' : ''}">
+    ${menu}
+    <div class="panel-ic">
+      <div class="panel-tel-ust"><button type="button" class="ikon-dugme" aria-label="Panel menüsünü aç">${ikon('menu')}</button><span class="logo-isaret isaret-kucuk">Ö</span><strong>Örnek Mağaza</strong></div>
+      ${ic}
+    </div>
+  </div>${pencere}`;
+}
+const komut = (yol, baslik, aciklama, eylemler) => `
+  <div class="komut-cubugu">
+    <div class="komut-baslik">${sayfaYolu(yol)}<h1>${baslik}</h1><p>${aciklama}</p></div>
+    <div class="komut-eylemler">${eylemler}</div>
+  </div>`;
+
+// ——— Kart 0211: sepet, ödeme ve sipariş ———
+// İçerik Örnek Mağaza'nın başlangıç kataloğundan (siteler/ornek-magaza/baslangic/katalog.json); fiyatlar 16 Kasım –
+// 8 Aralık indirimleri sürerken görüldüğü gibidir. Bütün ürünler %20 vergi sınıfındadır, kargonun vergi sınıfı da %20.
+// Kargo ücreti (59,90) ve ücretsiz kargo sınırı (750,00) örnektir: Örnek Mağaza'nın değerleri kart 0216'da sorulur.
+// Banka hesapları açıkça örnektir (geçersiz IBAN). Kişi ve adres uydurmadır.
+const ek = {
+  bilgi: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+  uyari: '<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17v.5"/>',
+  kilit: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  kopyala: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
+  banka: '<path d="M3 10h18M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18M12 3l9 5H3z"/>',
+  eksi: '<path d="M5 12h14"/>',
+  kart: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/>',
+  nakit: '<rect x="3" y="7" width="18" height="10" rx="2"/><circle cx="12" cy="12" r="2.5"/>',
+  saat: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
+};
+Object.assign(IKON, ek);
+
+const urunS = {
+  sweat: { ad: 'Kapüşonlu Sweatshirt', secim: 'Renk: Lacivert · Beden: M', img: `${GORSEL}sweatshirt-lacivert.jpg`, alt: 'Lacivert kapüşonlu sweatshirt, önden', fiyat: '549,90 ₺', eski: '649,90 ₺' },
+  termos: { ad: 'Çelik Termos 750 ml', img: `${GORSEL}celik-termos.jpg`, alt: 'Mat lacivert çelik termos, önden', fiyat: '349,90 ₺', eski: '429,90 ₺' },
+  sabun: { ad: "Zeytinyağlı Sabun Seti (3'lü)", img: `${GORSEL}zeytinyagli-sabun-seti.jpg`, alt: 'Üç zeytinyağlı sabun, ip ile bağlanmış', fiyat: '149,90 ₺', eski: '179,90 ₺' },
+  mum: { ad: 'Kokulu Mum', img: `${GORSEL}kokulu-mum.jpg`, alt: 'Kehribar rengi cam kapta ahşap fitilli mum', fiyat: '249,90 ₺' },
+  kupa: { ad: 'Porselen Kupa', img: `${GORSEL}porselen-kupa.jpg`, alt: 'Beyaz porselen kupa', fiyat: '189,90 ₺' }
+};
+
+// Üst kısım: kopyalanan üst kısmın sepet sayısını sayfanın sepetine göre değiştirir.
+function ustKisimSepetli(n, vurgu = false) {
+  // Sıfır rozetsizdir (kart 0108): yalnız ekran okuyucu sayıyı okur.
+  if (n === 0) return ustKisim(null).replace('Sepet <span class="sayi">0</span>', 'Sepet<span class="gizli">, boş</span>');
+  return ustKisim(null)
+    .replace('Sepet <span class="sayi">0</span>', `Sepet <span class="sayi${vurgu ? ' vurgu' : ''}">${n}</span><span class="gizli"> ürün</span>`)
+    .replace(`<a href="#" class="ikon-dugme" style="margin-right: -10px"><span class="gizli">Sepet, 0 ürün</span>${ikon('canta')}</a>`,
+      `<a href="#" class="ikon-dugme simge-sayili" style="margin-right: -10px"><span class="gizli">Sepet, ${n} ürün</span>${ikon('canta')}<span class="sayi${vurgu ? ' vurgu' : ''}" aria-hidden="true">${n}</span></a>`);
+}
+const vitrinS = (ic, n, vurgu) => `${ustKisimSepetli(n, vurgu)}<main class="sayfa-ic"><div class="kap">${ic}</div></main>${altKisim()}`;
+const uyariKutu = (tur, ikonAd, ic, rol = '') => `<div class="uyari-kutu ${tur}"${rol ? ` role="${rol}"` : ''}>${ikon(ikonAd)}<div>${ic}</div></div>`;
+const onayKutusu = (id, metin, { isaretli = false, hata = '' } = {}) => `
+  <div class="alan"><div class="onay-satir"><span class="kutucuk ${isaretli ? 'isaretli' : ''} ${hata ? 'hatali' : ''}" id="${id}" role="checkbox" tabindex="0" aria-checked="${isaretli}" aria-labelledby="${id}-y"${hata ? ` aria-invalid="true" aria-describedby="${id}-h"` : ''}>${isaretli ? ikon('tik') : ''}</span><span id="${id}-y">${metin}</span></div>${hata ? `<span class="hata-yazi" id="${id}-h">${hata}</span>` : ''}</div>`;
+const alan = (id, etiket, deger = '', { zorunlu = true, ipucu = '', hata = '', tur = 'text', oto = '', genis = false, secim = false, yer = '' } = {}) => `
+  <div class="alan ${genis ? 'genis' : ''} ${secim ? 'secim-alani' : ''}"><label for="${id}">${etiket}${zorunlu ? ' <span class="zorunlu" aria-hidden="true">*</span>' : ' <span class="soluk">(isteğe bağlı)</span>'}</label>
+    ${secim ? `<span class="secim-ic"><button type="button" id="${id}" class="girdi ${hata ? 'hatali' : ''}" aria-haspopup="listbox"${hata ? ` aria-invalid="true" aria-describedby="${id}-h"` : ''}>${deger || `<span class="soluk">${yer || 'Seçin'}</span>`}</button>${ikon('asagi')}</span>`
+    : tur === 'uzun' ? `<textarea id="${id}" class="girdi ${hata ? 'hatali' : ''}"${oto ? ` autocomplete="${oto}"` : ''}${hata ? ` aria-invalid="true" aria-describedby="${id}-h"` : ''}>${deger}</textarea>`
+    : `<input id="${id}" type="${tur}" class="girdi ${hata ? 'hatali' : ''}" value="${deger}"${oto ? ` autocomplete="${oto}"` : ''}${yer ? ` placeholder="${yer}"` : ''}${zorunlu ? ' required' : ''}${hata ? ` aria-invalid="true" aria-describedby="${id}-h"` : ipucu ? ` aria-describedby="${id}-i"` : ''}>`}
+    ${hata ? `<span class="hata-yazi" id="${id}-h">${hata}</span>` : ipucu ? `<span class="ipucu" id="${id}-i">${ipucu}</span>` : ''}</div>`;
+const BANKALAR = [['Örnek Bankası', 'TR00 0000 0000 0000 0000 0000 01'], ['Deneme Bankası', 'TR00 0000 0000 0000 0000 0000 02']];
+
+// ——— Kart 0233: müşteri hesabı, sipariş takibi, iade talebi, e-postalar ve panelin sipariş ekranları ———
+// İçerik Örnek Mağaza'nın başlangıç kataloğundan (siteler/ornek-magaza/baslangic/katalog.json); fiyatlar sepet ve ödeme
+// taslağıyla (kart 0211) aynıdır, bütün ürünler %20 vergi sınıfındadır. Kişi, adres, e-posta, kargo firması ve takip
+// numarası uydurmadır; kargo firmasının adresi .test alan adındadır. Bugün: 19 Kasım 2026.
+Object.assign(IKON, {
+  liste: '<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+  konum: '<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+  ayar: '<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/>',
+  posta: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+  kutu: '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
+  yazici: '<path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>'
+});
+Object.assign(urunS, {
+  yoga: { ad: 'Yoga Matı 6 mm', img: `${GORSEL}yoga-mati.jpg`, alt: 'Rulo hâlinde yoga matı', fiyat: '549,90 ₺' },
+  kablo: { ad: 'USB-C Şarj Kablosu 1 m', img: `${GORSEL}usb-c-sarj-kablosu.jpg`, alt: 'Örgülü USB-C kablo', fiyat: '149,90 ₺' },
+  canta2: { ad: 'Pamuklu Bez Çanta', img: `${GORSEL}pamuklu-bez-canta.jpg`, alt: 'Doğal renkli bez çanta', fiyat: '129,90 ₺' }
+});
+const KISI = { ad: 'Deniz Yılmaz', eposta: 'deniz@ornek.test', tel: '0555 000 00 00' };
+const ADRES = 'Kızılay Mahallesi, Atatürk Bulvarı No: 10 Daire 3, 06420 Çankaya / Ankara';
+const KARGO = { firma: 'Örnek Kargo', no: 'ORK 4821 7730 15', bag: 'takip.ornek-kargo.test' };
+// Durumların görünüşü: kayıttaki durum adı (cekirdek/kayitlar/siparis.ts) ile müşteriye ve panele yazılan ad.
+const DURUM = {
+  bekleniyor: ['Ödeme bekleniyor', 'uyari'], hazirlaniyor: ['Hazırlanıyor', 'bilgi'], kargoda: ['Kargoda', 'koyu'],
+  teslim: ['Teslim edildi', 'basari'], iptal: ['İptal edildi', 'gizli-rozet'], iade: ['İade edildi', 'gizli-rozet'], kismi: ['Kısmi iade', 'uyari']
+};
+const rozet = (d) => `<span class="durum-rozet ${DURUM[d][1]}">${DURUM[d][0]}</span>`;
+// Müşterinin siparişleri, en yeni önce. ORN-1007 ayrıntısı açılan siparişdir (sepet taslağının dolu sepeti).
+const SIPARISLER = [
+  { no: 'ORN-1012', tarih: '18 Kasım 2026', durum: 'bekleniyor', yontem: 'Havale / EFT', toplam: '589,60 ₺', urunler: ['sabun', 'kupa'], adet: 3 },
+  { no: 'ORN-1007', tarih: '16 Kasım 2026', durum: 'kargoda', yontem: 'Kapıda ödeme · nakit', toplam: '1.399,60 ₺', urunler: ['sweat', 'termos', 'sabun'], adet: 4 },
+  { no: 'ORN-1003', tarih: '4 Kasım 2026', durum: 'teslim', yontem: 'Havale / EFT', toplam: '799,80 ₺', urunler: ['yoga', 'mum'], adet: 2 },
+  { no: 'ORN-1002', tarih: '2 Kasım 2026', durum: 'kismi', yontem: 'Kapıda ödeme · kartla', toplam: '359,70 ₺', urunler: ['kablo'], adet: 2, ek: '149,90 ₺ iade edildi' },
+  { no: 'ORN-1001', tarih: '1 Kasım 2026', durum: 'iptal', yontem: 'Havale / EFT', toplam: '189,80 ₺', urunler: ['canta2'], adet: 1, ek: 'Ödeme süresi doldu' }
+];
+// ORN-1007'nin kalemleri: ürün, adet, birim fiyat, satır tutarı.
+const KALEMLER = [['sweat', 1, '549,90 ₺', '549,90 ₺'], ['termos', 2, '349,90 ₺', '699,80 ₺'], ['sabun', 1, '149,90 ₺', '149,90 ₺']];
+const tutarSatirlari = (iade = false) => `<table class="tutar-tablo"><tbody>
+  <tr><td>Ara toplam</td><td>1.399,60 ₺</td></tr><tr><td>Kargo</td><td>Ücretsiz</td></tr>
+  <tr class="toplam"><td>Toplam</td><td>1.399,60 ₺</td></tr><tr class="vergi"><td>Toplama dahil KDV (%20)</td><td>233,27 ₺</td></tr>
+  ${iade ? '<tr><td style="color: var(--basari-yazi); font-weight: 600">İade edilen (1 × Çelik Termos)</td><td style="color: var(--basari-yazi); font-weight: 600">−349,90 ₺</td></tr><tr class="vergi"><td>İadenin KDV\'si (%20)</td><td>58,32 ₺</td></tr>' : ''}
+</tbody></table>`;
+
+// Vitrin çerçevesi: giriş yapmış müşteride üst kısımda "Hesabım".
+const uyeUst = (ic, n = 0) => vitrinS(ic, n).replace(`${ikon('kisi')}Giriş yap`, `${ikon('kisi')}Hesabım`);
+
+// ——— Giriş ve kayıt ———
+function girisSayfasi() {
+  const kayit = durum.hal === 'kayit';
+  const hata = durum.hal === 'hata';
+  const giris = `<section class="kutu" aria-labelledby="gk-b"><h1 class="b2" id="gk-b">Giriş yap</h1>
+    ${hata ? uyariKutu('tehlike', 'uyari', '<strong>E-posta ya da şifre yanlış.</strong> Yeniden deneyin ya da şifrenizi sıfırlayın.', 'alert') : ''}
+    ${alan('gk-eposta', 'E-posta', hata ? 'deniz@ornek.test' : '', { tur: 'email', oto: 'email' })}
+    ${alan('gk-sifre', 'Şifre', '', { tur: 'password', oto: 'current-password', hata: hata ? 'Şifrenizi yeniden yazın.' : '' })}
+    <a href="#" style="color: var(--yazi); font-size: 14px; font-weight: 600; min-height: 32px; display: inline-flex; align-items: center">Şifremi unuttum</a>
+    <button type="submit" class="dugme dugme-koyu dugme-buyuk">Giriş yap</button></section>`;
+  const yan = `<section class="kutu yan-bilgi" aria-labelledby="gk-y"><h2 class="b2" id="gk-y">Hesabınız yok mu?</h2>
+    <ul class="madde-liste"><li>${ikon('tik')}Siparişlerinizi ve kargonuzu takip edin</li><li>${ikon('tik')}Adreslerinizi kaydedin, ödemeyi hızlı geçin</li><li>${ikon('tik')}Favorilerinizi her cihazda görün</li><li>${ikon('tik')}İade talebini hesabınızdan açın</li></ul>
+    <a href="#" class="dugme dugme-cerceve">Hesap oluştur</a>
+    <p class="soluk" style="font-size: 13px">Üye olmadan sipariş verdiyseniz <a href="#" style="color: var(--yazi); font-weight: 600">siparişinizi numarasıyla takip edin</a>.</p></section>`;
+  const kayitForm = `<section class="kutu" aria-labelledby="kk-b"><h1 class="b2" id="kk-b">Hesap oluştur</h1>
+    <div class="alanlar">${alan('kk-ad', 'Ad', '', { oto: 'given-name' })}${alan('kk-soyad', 'Soyad', '', { oto: 'family-name' })}</div>
+    ${alan('kk-eposta', 'E-posta', '', { tur: 'email', oto: 'email' })}
+    ${alan('kk-sifre', 'Şifre', '', { tur: 'password', oto: 'new-password', ipucu: 'En az 10 karakter.' })}
+    <div class="onay-grup">${onayKutusu('kk-u', 'Üyelik sözleşmesini okudum, kabul ediyorum. <span class="zorunlu" aria-hidden="true">*</span>')}${onayKutusu('kk-p', 'Kampanya ve yeniliklerden e-postayla haberdar olmak istiyorum.')}<p class="soluk" style="font-size: 13px">Kişisel verileriniz <a href="#" style="color: var(--yazi); font-weight: 600">KVKK aydınlatma metnindeki</a> gibi işlenir.</p></div>
+    <div class="robot-yeri taslak-not" style="border-style: solid">Robot koruması (kart 0033) burada çalışır.</div>
+    <button type="submit" class="dugme dugme-birincil dugme-buyuk">Hesap oluştur</button>
+    <p class="soluk" style="font-size: 14px">Hesabınız var mı? <a href="#" style="color: var(--yazi); font-weight: 700">Giriş yapın</a></p></section>`;
+  return vitrinS(`${sayfaYolu(['Ana sayfa', kayit ? 'Hesap oluştur' : 'Giriş yap'])}
+    <form class="giris-duzen" style="margin-top: 16px" onsubmit="return false">${kayit ? kayitForm + yan.replace('Hesabınız yok mu?', 'Neden hesap?').replace('<a href="#" class="dugme dugme-cerceve">Hesap oluştur</a>', '') : giris + yan}</form>
+    ${not(kayit ? 'Kayıt formunun alanları ve kuralları kart 0033 ile aynıdır, yalnız görünüş değişir. Pazarlama kutusu işaretsiz gelir. Kayıttan sonra müşteri geldiği sayfaya döner.' : 'Giriş ve şifremi unuttum davranışı kart 0033 ve 0034 ile aynıdır. Girişten sonra müşteri geldiği sayfaya, doğrudan geldiyse hesabın ilk sayfasına gider. Bugünkü giriş sayfası tek sütundur; taslakta yanında hesabın yararları ve üye olmayanın takip bağlantısı durur.')}`, 0);
+}
+
+// ——— Hesabım ———
+const HESAP_MENU = [['ozet', 'ev', 'Hesabım'], ['siparisler', 'kutu', 'Siparişlerim'], ['adresler', 'konum', 'Adreslerim'], ['favoriler', 'kalp', 'Favorilerim'], ['bilgiler', 'kisi', 'Hesap bilgileri']];
+function hesapCercevesi(secili, baslik, ic, yol = []) {
+  const menuOgeleri = HESAP_MENU.filter(([k]) => k !== 'ozet' || durum.hesapIlk === 'ozet');
+  const bag = ([k, i, a]) => `<a href="#" class="hesap-bag"${k === secili ? ' aria-current="page"' : ''}>${ikon(i)}${a}</a>`;
+  const cikis = `<a href="#" class="hesap-bag">${ikon('cikis')}Çıkış yap</a>`;
+  const menu = durum.hesapDuzen === 'sekme'
+    ? `<nav class="hesap-sekmeler" aria-label="Hesap menüsü">${menuOgeleri.map(bag).join('')}${cikis}</nav>`
+    : `<nav class="hesap-menu" aria-label="Hesap menüsü"><span class="merhaba">Merhaba<strong>${KISI.ad}</strong></span>${menuOgeleri.map(bag).join('')}${cikis}</nav>`;
+  return uyeUst(`${sayfaYolu(['Ana sayfa', 'Hesabım', ...yol])}
+    <div class="hesap-duzen ${durum.hesapDuzen === 'sekme' ? 'sekmeli' : ''}" style="margin-top: 16px">${menu}<div class="hesap-ic">${baslik ? `<div class="hesap-baslik"><h1 class="b1">${baslik}</h1></div>` : ''}${ic}</div></div>`);
+}
+function siparisKarti(s) {
+  return `<li class="siparis-kart">
+    <div class="siparis-kart-ust"><strong>${s.no}</strong><span>${s.tarih}</span><span>${s.adet} ürün</span></div>
+    <div class="siparis-kart-sag">${rozet(s.durum)}<strong>${s.toplam}</strong></div>
+    <div class="siparis-gorseller">${s.urunler.map((k) => `<span><img src="${urunS[k].img}" alt="${urunS[k].ad}"></span>`).join('')}</div>
+    <div style="grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px">${s.ek ? `<span class="soluk" style="font-size: 13px">${s.ek}</span>` : '<span></span>'}<a href="#" class="dugme dugme-sade" aria-label="Sipariş ayrıntısı: ${s.no}">Ayrıntı${ikon('sag')}</a></div></li>`;
+}
+function siparislerim(bos = false) {
+  const ic = bos ? `<div class="bos-hal"><span class="bos-ikon">${ikon('kutu')}</span><h2 class="b2">Henüz siparişiniz yok</h2><p class="soluk">Verdiğiniz siparişler burada durumuyla görünür.</p><a href="#" class="dugme dugme-birincil">Alışverişe başla</a></div>`
+    : `<ul class="siparis-listesi" aria-label="Siparişler">${SIPARISLER.map(siparisKarti).join('')}</ul>${not('En yeni önce, 10 sipariş bir sayfa; fazlası sayfa numaralarıyla (kart 0135\'in parçası). Üye olmadan verilmiş siparişler, aynı e-postayla hesap açılsa da burada görünmez: hesabın kimliğine bağlı değildir (kart 0238\'de kararlaştırılırsa bağlanır).')}`;
+  return hesapCercevesi('siparisler', 'Siparişlerim', ic, ['Siparişlerim']);
+}
+function hesapOzeti() {
+  const s = SIPARISLER[1];
+  return hesapCercevesi('ozet', `Merhaba, Deniz`, `
+    <section class="kutu" aria-labelledby="ho-s"><div class="panel-kart-baslik"><h2 id="ho-s">Son siparişiniz</h2><a href="#" style="color: var(--yazi); font-weight: 600; font-size: 14px">Tüm siparişler</a></div><ul class="siparis-listesi">${siparisKarti(s)}</ul></section>
+    <div class="adres-izgara">
+      <section class="kutu" aria-labelledby="ho-a"><h2 id="ho-a">Varsayılan adres</h2><p>${KISI.ad}<br><span class="soluk">${ADRES}</span></p><a href="#" style="color: var(--yazi); font-weight: 600; font-size: 14px">Adreslerim</a></section>
+      <section class="kutu" aria-labelledby="ho-f"><h2 id="ho-f">Favorileriniz</h2><p class="soluk">3 ürün</p><a href="#" style="color: var(--yazi); font-weight: 600; font-size: 14px">Favorilerim</a></section>
+    </div>
+    ${not('"Hesap özeti" seçeneğinde girişten sonra bu sayfa açılır. "Siparişlerim" seçeneğinde bu sayfa yoktur, hesap doğrudan siparişlerle açılır.')}`);
+}
+// Sipariş ayrıntısı: durum hâli seçilir. Ödeme bekleniyor, kargoda, teslim edildi, iade.
+function siparisAyrintisi(d) {
+  const kart = { bekleniyor: 1, kargoda: 3, teslim: 4, iade: 4 }[d];
+  const adimlar = [['Sipariş alındı', '16 Kasım 18.42'], ['Hazırlanıyor', '17 Kasım 10.05'], ['Kargoda', '18 Kasım 14.20'], ['Teslim edildi', d === 'teslim' || d === 'iade' ? '19 Kasım 11.30' : '']];
+  const serit = `<ol class="ilerleme-serit" aria-label="Sipariş durumu">${adimlar.map(([a, z], i) => `<li class="${i + 1 < kart || (i + 1 === kart && kart === 4) ? 'bitti' : ''}"${i + 1 === kart && kart < 4 ? ' aria-current="step"' : ''}>${a}${z && i + 1 <= kart ? `<small>${z}</small>` : ''}</li>`).join('')}</ol>`;
+  const yorumGorunur = (durum.satinAldi === 'kargoda' && (d === 'kargoda' || d === 'teslim' || d === 'iade')) || (durum.satinAldi === 'teslim' && (d === 'teslim' || d === 'iade'));
+  const kalemler = `<ul class="kalem-listesi">${KALEMLER.map(([k, n, b, t]) => { const u = urunS[k]; return `<li class="kalem"><span class="satir-gorsel"><img src="${u.img}" alt=""></span><span class="kalem-ad"><a href="#">${u.ad}</a>${u.secim ? `<span class="soluk">${u.secim}</span>` : ''}<span class="soluk">${n} × ${b}</span>${d === 'iade' && k === 'termos' ? '<span class="durum-rozet basari" style="align-self: flex-start">1 adet iade edildi</span>' : ''}${yorumGorunur ? `<a href="#" class="yorum-bag">${ikon('yildiz')}Yorum yaz</a>` : ''}</span><span class="kalem-tutar">${t}</span></li>`; }).join('')}</ul>`;
+  const durumRozet = d === 'iade' ? rozet('kismi') : rozet(d);
+  const kargoKutu = d === 'bekleniyor' ? '' : `<div class="kargo-kutu"><span>${ikon('kargo')} <strong>${KARGO.firma}</strong> · Takip no: <span class="takip">${KARGO.no}</span></span><a href="#" class="dugme dugme-sade">Kargoyu takip et${ikon('dis')}</a></div>`;
+  const musteriNotu = d === 'bekleniyor' ? '' : `<li><strong>Mağazadan not</strong><span class="not-metin">Termosunuzu hediye paketiyle gönderdik, iyi günlerde kullanın.</span><time>17 Kasım 10.06</time></li>`;
+  const gecmis = `<ol class="zaman-cizgisi">${[
+    d === 'iade' ? '<li><strong>İade talebiniz onaylandı, 349,90 ₺ iade edildi</strong><time>22 Kasım 15.10</time></li><li><strong>İade talebiniz alındı</strong><span class="kim">1 × Çelik Termos 750 ml · Beklentimi karşılamadı</span><time>20 Kasım 09.12</time></li>' : '',
+    d === 'teslim' || d === 'iade' ? '<li><strong>Teslim edildi</strong><time>19 Kasım 11.30</time></li>' : '',
+    d !== 'bekleniyor' ? `<li><strong>Kargoya verildi</strong><span class="kim">${KARGO.firma} · ${KARGO.no}</span><time>18 Kasım 14.20</time></li>${musteriNotu}<li><strong>Hazırlanıyor</strong><time>17 Kasım 10.05</time></li>` : '',
+    '<li><strong>Sipariş alındı</strong><time>16 Kasım 18.42</time></li>'].join('')}</ol>`;
+  const iptalDugmesi = d === 'bekleniyor' && durum.musteriIptal !== 'kapali' ? `<button type="button" class="dugme dugme-sade">Siparişi iptal et</button>` : '';
+  const iadeDugmesi = d === 'teslim' ? `<a href="#" class="dugme dugme-cerceve">${ikon('iade')}İade talebi oluştur</a>` : '';
+  const odemeKutu = d === 'bekleniyor' ? uyariKutu('uyari', 'saat', `<strong>Ödemenizi 21 Kasım 2026 18.42'ye kadar yapın.</strong> 589,60 ₺ tutarını banka hesaplarımızdan birine gönderin, açıklamaya ORN-1012 yazın. <a href="#">Hesap bilgileri</a> · <a href="#">Ödemeyi yaptım, bildir</a>`) : '';
+  const pencere = durum.hal === 'iptalPencere' ? `<div class="ortu"></div><div class="yan-pencere" role="alertdialog" aria-modal="true" aria-labelledby="ip-b" aria-describedby="ip-a" style="top: auto; bottom: auto; inset: 50% auto auto 50%; transform: translate(-50%, -50%); width: min(440px, calc(100% - 32px)); border-radius: var(--r)">
+    <div class="pencere-ust"><h2 class="pencere-baslik" id="ip-b">Sipariş iptal edilsin mi?</h2></div>
+    <div class="pencere-govde"><p id="ip-a">ORN-1012 iptal edilir, ürünler stoğa döner. Bu işlem geri alınamaz.</p>${alan('ip-neden', 'İptal nedeni', '', { zorunlu: false, secim: true, yer: 'Seçin' })}</div>
+    <div class="pencere-alt"><button type="button" class="dugme dugme-sade">Vazgeç</button><button type="button" class="dugme dugme-koyu">Siparişi iptal et</button></div></div>` : '';
+  const no = d === 'bekleniyor' ? 'ORN-1012' : 'ORN-1007';
+  const ic = `
+    <div class="hesap-baslik"><div><h1 class="b1">Sipariş ${no}</h1><span class="soluk">${d === 'bekleniyor' ? '18 Kasım 2026 · Havale / EFT' : '16 Kasım 2026 · Kapıda ödeme · nakit'}</span></div>${durumRozet}</div>
+    ${d === 'bekleniyor' ? odemeKutu : serit}
+    ${kargoKutu}
+    <div class="ayrinti-duzen"><div class="ayrinti-sol">
+      <section class="kutu" aria-labelledby="sa-u"><h2 id="sa-u">Ürünler</h2>${d === 'bekleniyor' ? `<ul class="kalem-listesi">${[['sabun', 1, '149,90 ₺', '149,90 ₺'], ['kupa', 2, '189,90 ₺', '379,80 ₺']].map(([k, n, b, t]) => `<li class="kalem"><span class="satir-gorsel"><img src="${urunS[k].img}" alt=""></span><span class="kalem-ad"><a href="#">${urunS[k].ad}</a><span class="soluk">${n} × ${b}</span></span><span class="kalem-tutar">${t}</span></li>`).join('')}</ul>` : kalemler}</section>
+      <section class="kutu" aria-labelledby="sa-g"><h2 id="sa-g">Sipariş geçmişi</h2>${gecmis}</section>
+    </div><div class="ayrinti-sol">
+      <section class="kutu" aria-labelledby="sa-t"><h2 id="sa-t">Tutar</h2>${d === 'bekleniyor' ? '<table class="tutar-tablo"><tbody><tr><td>Ara toplam</td><td>529,70 ₺</td></tr><tr><td>Kargo</td><td>59,90 ₺</td></tr><tr class="toplam"><td>Toplam</td><td>589,60 ₺</td></tr><tr class="vergi"><td>Toplama dahil KDV (%20)</td><td>98,27 ₺</td></tr></tbody></table>' : tutarSatirlari(d === 'iade')}</section>
+      <section class="kutu" aria-labelledby="sa-a"><h2 id="sa-a">Teslimat ve fatura</h2><dl class="bilgi-satirlari"><dt>Teslimat</dt><dd>${KISI.ad} · ${KISI.tel}<br>${ADRES}</dd><dt>Fatura</dt><dd>Bireysel · teslimat adresiyle aynı</dd></dl></section>
+      ${iptalDugmesi || iadeDugmesi ? `<div class="eylem-satiri">${iadeDugmesi}${iptalDugmesi}<a href="#" class="dugme dugme-sade">${ikon('yazici')}Yazdır</a></div>` : ''}
+    </div></div>
+    ${not({
+      bekleniyor: `Ödeme bekleyen sipariş. "Siparişi iptal et" müşterinin kendi iptali ayarına bağlıdır (öneri: yalnız ödeme beklenirken; seçimi sağdaki satırda). Ödenmiş siparişte iptal düğmesi yoktur, müşteri mağazaya yazar ya da teslimden sonra iade ister.`,
+      kargoda: `Kargoya verilen sipariş. Takip bağlantısı kargo firmasının kayıttaki adres kalıbından kurulur. "Mağazadan not" mağaza sahibinin müşteriye notudur; iç not burada görünmez. ${yorumGorunur ? '"Yorum yaz" bu durumda görünür: seçili kurala göre sipariş kargoya verilince "satın aldı" sayılır.' : '"Yorum yaz" henüz görünmez: seçili kurala göre yalnız teslim edilen sipariş "satın aldı" sayılır.'}`,
+      teslim: `Teslim edilen sipariş: iade talebi süresi içinde (öneri 14 gün, site ayarı) "İade talebi oluştur" görünür. Süre geçince düğme yerine "İade süresi 3 Aralık'ta doldu" yazar.`,
+      iade: 'Kısmi iade yapılmış sipariş: iade edilen ürün satırında, tutarı ve vergisi özette, talep ve sonucu geçmişte görünür. Kalan ürünler için yeni talep açılıp açılamayacağı panelin iade kararına bağlıdır.'
+    }[d])}`;
+  return hesapCercevesi('siparisler', '', ic, ['Siparişlerim', no]) + pencere;
+}
+function adreslerim(form = false, bos = false) {
+  const adresler = [
+    { baslik: 'Ev', ad: KISI.ad, adres: ADRES, tel: KISI.tel, v: 'Varsayılan teslimat ve fatura' },
+    { baslik: 'İş', ad: KISI.ad, adres: 'Mustafa Kemal Mahallesi, 2120. Cadde No: 5 Kat 4, 06510 Çankaya / Ankara', tel: KISI.tel, v: '' }
+  ];
+  const liste = bos ? `<div class="bos-hal"><span class="bos-ikon">${ikon('konum')}</span><h2 class="b2">Kayıtlı adresiniz yok</h2><p class="soluk">Adres eklerseniz ödeme adımında tek dokunuşla seçersiniz.</p><button type="button" class="dugme dugme-birincil">${ikon('arti')}Adres ekle</button></div>`
+    : `<div class="adres-izgara">${adresler.map((a) => `<section class="adres-kutu ${a.v ? 'varsayilan' : ''}" aria-label="${a.baslik} adresi"><div class="adres-kutu-ust"><strong>${a.baslik}</strong>${a.v ? `<span class="durum-rozet bilgi">${a.v}</span>` : ''}</div><p>${a.ad} · ${a.tel}<br><span class="soluk">${a.adres}</span></p><div class="eylem-satiri"><button type="button" class="dugme dugme-sade" aria-label="Düzenle: ${a.baslik}">${ikon('kalem')}Düzenle</button>${a.v ? '' : `<button type="button" class="dugme dugme-sade" aria-label="Varsayılan yap: ${a.baslik}">Varsayılan yap</button>`}<button type="button" class="dugme dugme-sade" aria-label="Sil: ${a.baslik}">${ikon('sil')}Sil</button></div></section>`).join('')}<button type="button" class="adres-ekle">${ikon('arti')}Yeni adres ekle</button></div>`;
+  const pencere = form ? `<div class="ortu"></div><div class="yan-pencere genis" role="dialog" aria-modal="true" aria-labelledby="af-b">
+    <div class="pencere-ust"><h2 class="pencere-baslik" id="af-b">Yeni adres</h2><button type="button" class="ikon-dugme" aria-label="Kapat">${ikon('kapat')}</button></div>
+    <div class="pencere-govde"><div class="alanlar">
+      ${alan('af-baslik', 'Adres adı', 'İş', { ipucu: 'Örneğin Ev, İş.' })}<span></span>
+      ${alan('af-ad', 'Ad', 'Deniz', { oto: 'given-name' })}${alan('af-soyad', 'Soyad', 'Yılmaz', { oto: 'family-name' })}
+      ${alan('af-tel', 'Telefon', KISI.tel, { tur: 'tel', oto: 'tel' })}<span></span>
+      ${alan('af-il', 'İl', 'Ankara', { secim: true })}${alan('af-ilce', 'İlçe', '', { secim: true, hata: 'İlçe seçin.' })}
+      ${alan('af-adres', 'Adres', 'Mustafa Kemal Mahallesi, 2120. Cadde No: 5 Kat 4', { tur: 'uzun', genis: true, oto: 'street-address' })}
+      ${alan('af-pk', 'Posta kodu', '06510', { zorunlu: false, oto: 'postal-code' })}
+    </div><div class="onay-grup">${onayKutusu('af-vt', 'Varsayılan teslimat adresim olsun')}${onayKutusu('af-vf', 'Varsayılan fatura adresim olsun')}</div></div>
+    <div class="pencere-alt"><button type="button" class="dugme dugme-sade">Vazgeç</button><button type="button" class="dugme dugme-birincil">Kaydet</button></div></div>` : '';
+  return hesapCercevesi('adresler', 'Adreslerim', `${liste}${not('Adres ödeme adımındaki ortak adres şemasıyla girilir (il ve ilçe listeden, karar 0056, 0057). Ödeme adımında giriş yapmış müşteri kayıtlı adreslerinden seçer, yeni girdiği adresi "Adreslerime kaydet" ile ekler. Fatura bilgisi (bireysel ya da kurumsal) adreste değil ödeme adımındadır. En çok 20 adres. Silme onay penceresiyle sorulur; siparişlerdeki adres değişmez.')}`, ['Adreslerim']) + pencere;
+}
+function favorilerim() {
+  const kartlar = ['termos', 'mum', 'kupa'].map((k) => { const u = urunS[k]; return `<article class="kart"><div class="kart-gorsel"><img src="${u.img}" alt="${u.alt}"><button type="button" class="ikon-dugme secili" aria-pressed="true" aria-label="Favorilerden çıkar: ${u.ad}">${ikon('kalp', 'dolu')}</button><button type="button" class="kart-sepet" aria-label="Sepete ekle: ${u.ad}">${ikon('canta')}</button></div><div class="kart-govde"><a href="#" class="kart-ad">${u.ad}</a><div class="fiyat"><strong class="${u.eski ? 'indirimli' : ''}">${u.fiyat}</strong>${u.eski ? `<s><span class="gizli">Eski fiyat </span>${u.eski}</s>` : ''}</div></div></article>`; }).join('');
+  return hesapCercevesi('favoriler', 'Favorilerim', `<div class="izgara izgara-urun uc">${kartlar}</div>${not('Bugünkü favoriler sayfasının (kart 0140) listesi hesabın çerçevesinde açılır: aynı veri, aynı Geri al. Üst kısımdaki kalp de bu sayfaya gider; üye olmayan ziyaretçide bugünkü favoriler sayfası kalır.')}`, ['Favorilerim']);
+}
+function hesapBilgileri() {
+  return hesapCercevesi('bilgiler', 'Hesap bilgileri', `
+    <section class="kutu" aria-labelledby="hb-k"><h2 id="hb-k">Kişisel bilgiler</h2><div class="alanlar">${alan('hb-ad', 'Ad', 'Deniz', { oto: 'given-name' })}${alan('hb-soyad', 'Soyad', 'Yılmaz', { oto: 'family-name' })}${alan('hb-eposta', 'E-posta', KISI.eposta, { tur: 'email', ipucu: 'E-posta değiştirmek bu bölümde yok.' })}${alan('hb-tel', 'Telefon', KISI.tel, { zorunlu: false, tur: 'tel' })}</div><button type="button" class="dugme dugme-birincil" style="align-self: flex-start">Kaydet</button></section>
+    <section class="kutu" aria-labelledby="hb-s"><h2 id="hb-s">Şifre</h2><div class="alanlar">${alan('hb-es', 'Şu anki şifre', '', { tur: 'password', oto: 'current-password' })}<span></span>${alan('hb-ys', 'Yeni şifre', '', { tur: 'password', oto: 'new-password', ipucu: 'En az 10 karakter.' })}</div><button type="button" class="dugme dugme-sade" style="align-self: flex-start">Şifreyi değiştir</button></section>
+    <section class="kutu" aria-labelledby="hb-i"><h2 id="hb-i">İletişim izni</h2>${onayKutusu('hb-p', 'Kampanya ve yeniliklerden e-postayla haberdar olmak istiyorum.')}<p class="soluk" style="font-size: 13px">İzni istediğiniz zaman geri alabilirsiniz; sipariş e-postaları her durumda gelir.</p></section>
+    ${not('Hesap bilgileri bu bölümün en az ekranıdır: ad, telefon, şifre ve pazarlama izni. E-posta değiştirme ve hesabı silme sonraki bir işe kalır (kart 0237\'nin sınırı).')}`, ['Hesap bilgileri']);
+}
+function hesapSayfasi() {
+  switch (durum.hal) {
+    case 'ilk': return durum.hesapIlk === 'ozet' ? hesapOzeti() : siparislerim();
+    case 'siparisler': return siparislerim();
+    case 'bos': return siparislerim(true);
+    case 'adresler': return adreslerim();
+    case 'adresForm': return adreslerim(true);
+    case 'adresBos': return adreslerim(false, true);
+    case 'favoriler': return favorilerim();
+    default: return hesapBilgileri();
+  }
+}
+function ayrintiSayfasi() {
+  if (durum.hal === 'iptalPencere') return siparisAyrintisi('bekleniyor');
+  return siparisAyrintisi(durum.hal);
+}
+
+// ——— Üye olmayanın sipariş takibi ———
+function takipSayfasi() {
+  if (durum.hal === 'sonuc') {
+    const tam = durum.takipAdres === 'tam';
+    return vitrinS(`${sayfaYolu(['Ana sayfa', 'Sipariş takibi', 'ORN-1007'])}
+      <div class="hesap-baslik" style="margin: 8px 0 16px"><div><h1 class="b1">Sipariş ORN-1007</h1><span class="soluk">16 Kasım 2026 · Kapıda ödeme · nakit</span></div>${rozet('kargoda')}</div>
+      <div class="hesap-ic">
+        <ol class="ilerleme-serit" aria-label="Sipariş durumu"><li class="bitti">Sipariş alındı<small>16 Kasım 18.42</small></li><li class="bitti">Hazırlanıyor<small>17 Kasım 10.05</small></li><li aria-current="step">Kargoda<small>18 Kasım 14.20</small></li><li>Teslim edildi</li></ol>
+        <div class="kargo-kutu"><span>${ikon('kargo')} <strong>${KARGO.firma}</strong> · Takip no: <span class="takip">${KARGO.no}</span></span><a href="#" class="dugme dugme-sade">Kargoyu takip et${ikon('dis')}</a></div>
+        <div class="ayrinti-duzen"><div class="ayrinti-sol"><section class="kutu" aria-labelledby="tk-u"><h2 id="tk-u">Ürünler</h2><ul class="kalem-listesi">${KALEMLER.map(([k, n, b, t]) => `<li class="kalem"><span class="satir-gorsel"><img src="${urunS[k].img}" alt=""></span><span class="kalem-ad"><a href="#">${urunS[k].ad}</a>${urunS[k].secim ? `<span class="soluk">${urunS[k].secim}</span>` : ''}<span class="soluk">${n} × ${b}</span></span><span class="kalem-tutar">${t}</span></li>`).join('')}</ul></section></div>
+        <div class="ayrinti-sol"><section class="kutu" aria-labelledby="tk-t"><h2 id="tk-t">Tutar</h2>${tutarSatirlari()}</section>
+        <section class="kutu" aria-labelledby="tk-a"><h2 id="tk-a">Teslimat</h2><p>${tam ? `${KISI.ad} · ${KISI.tel}<br><span class="soluk">${ADRES}</span>` : 'D*** Y*** · 0555 *** ** 00<br><span class="soluk">Çankaya / Ankara</span>'}</p></section>
+        <a href="#" class="dugme dugme-cerceve">${ikon('iade')}İade talebi oluştur</a></div></div>
+      </div>
+      ${not(tam ? 'Adres ve telefon tam görünür: numarayı ve e-postayı bilen herkes bunları görür. Sayfa 30 dakika sonra yeniden numara ve e-posta ister.' : 'Ad, telefon ve sokak adresi kısaltılır; il ve ilçe görünür. Numarayı ve e-postayı ele geçiren biri adresi öğrenemez. Tam adres sipariş e-postasında durur.')} ${not('İade talebi düğmesi teslimden sonra ve süre içinde görünür (taslakta kargodaki siparişte yalnız yerini göstermek için duruyor). Sorgu oturumu 30 dakika açık kalır, talep o oturumla açılır.')}`, 0);
+  }
+  const hata = durum.hal === 'hata';
+  return vitrinS(`${sayfaYolu(['Ana sayfa', 'Sipariş takibi'])}
+    <div class="dar-form"><div class="sayfa-basligi"><h1 class="b1">Sipariş takibi</h1></div>
+    <p class="soluk" style="margin-bottom: 20px">Sipariş numaranızı ve siparişte kullandığınız e-postayı yazın. Numara sipariş e-postasında ve sipariş alındı sayfasında yazar.</p>
+    ${hata ? `<div style="margin-bottom: 16px">${uyariKutu('tehlike', 'uyari', '<strong>Bu sipariş numarası ve e-posta ile bir sipariş bulamadık.</strong> Numarayı e-postadaki gibi yazın (örneğin ORN-1007) ve siparişte kullandığınız e-postayı girin.', 'alert')}</div>` : ''}
+    <form class="kutu" onsubmit="return false"><div class="alanlar">
+      ${alan('tk-no', 'Sipariş numarası', hata ? 'ORN-1070' : '', { yer: 'ORN-1007', hata: hata ? 'Sipariş numarasını kontrol edin.' : '' })}
+      ${alan('tk-eposta', 'Siparişteki e-posta', hata ? KISI.eposta : '', { tur: 'email', oto: 'email', hata: hata ? 'Siparişte kullandığınız e-postayı yazın.' : '' })}
+    </div><button type="submit" class="dugme dugme-birincil dugme-buyuk" style="align-self: flex-start">Siparişi bul</button></form>
+    <p class="soluk" style="margin-top: 16px; font-size: 14px">Üye misiniz? <a href="#" style="color: var(--yazi); font-weight: 700">Giriş yapın</a>, siparişleriniz hesabınızda.</p>
+    ${not('Form robot korumalı ve istek sınırlıdır (havale bildirimiyle aynı kural). Numara ile e-posta eşleşmezse siparişin var olup olmadığı söylenmez. Sayfa alt kısımdaki "Hesabım" sütununda ve sipariş alındı sayfasında bağlıdır.')}</div>`, 0);
+}
+
+// ——— Sipariş alındı: bu bölümün eki ———
+function alindiEki() {
+  const uye = durum.hal === 'uye';
+  return vitrinS(`
+    <div class="alindi-ust" role="status"><span class="basari-ikon">${ikon('tik')}</span><h1 class="b1">Siparişiniz alındı</h1><span class="siparis-no">Sipariş no: ORN-1007</span>
+      <p class="soluk">Teşekkür ederiz, Deniz. Sipariş bilgilerini <strong style="color: var(--yazi)">${KISI.eposta}</strong> adresine gönderdik.</p>
+      <div class="eylem-satiri" style="justify-content: center">${uye ? '<a href="#" class="dugme dugme-koyu">Siparişimi görüntüle</a>' : '<a href="#" class="dugme dugme-koyu">Siparişimi takip et</a>'}<a href="#" class="dugme dugme-sade">Alışverişe devam et</a></div></div>
+    <div style="max-width: 640px; margin: 24px auto 0">${uye ? '' : uyariKutu('bilgi', 'bilgi', 'Siparişinizi istediğiniz zaman <a href="#">Sipariş takibi</a> sayfasından numara ve e-postanızla görebilirsiniz. Hesap açarsanız sonraki siparişleriniz hesabınızda durur.')}</div>
+    ${not('Yalnız bu bölümde değişen üst kısım çizildi; altındaki ödeme bilgisi, teslimat ve özet sepet ve ödeme taslağındaki gibidir. Üye müşteride düğme siparişin hesaptaki ayrıntısına, üye olmayanda takip sayfasına gider (numara ve e-posta dolu açılır).')}`, 0);
+}
+
+// ——— İade talebi ———
+function iadeSayfasi() {
+  if (durum.hal === 'gonderildi') {
+    return uyeUst(`${sayfaYolu(['Ana sayfa', 'Hesabım', 'Siparişlerim', 'ORN-1007', 'İade talebi'])}<div class="dar-form"><div class="alindi-ust" role="status" tabindex="-1"><span class="basari-ikon">${ikon('tik')}</span><h1 class="b1">İade talebiniz alındı</h1><p class="soluk">Talebinizi 2 iş günü içinde inceleyip e-postayla yanıtlayacağız. Onaylanınca ürünü nasıl göndereceğinizi yazacağız; ürünü onaydan önce göndermeyin.</p><a href="#" class="dugme dugme-sade">Siparişe dön</a></div></div>
+    ${not('Talep siparişin geçmişinde "İade talebi alındı" olarak görünür, müşteriye ve mağazaya e-posta gider. Talebin durumu: bekliyor, onaylandı, reddedildi.')}`);
+  }
+  const hata = durum.hal === 'hata';
+  const satir = (k, n, secili, adet, kapali = '') => { const u = urunS[k]; return `<li class="iade-urun ${secili ? 'secili' : ''} ${kapali ? 'kapali' : ''}"><span class="kutucuk ${secili ? 'isaretli' : ''} ${hata ? 'hatali' : ''}" role="checkbox" tabindex="${kapali ? -1 : 0}" aria-checked="${secili}" aria-disabled="${!!kapali}" aria-label="İade et: ${u.ad}">${secili ? ikon('tik') : ''}</span><span class="satir-gorsel"><img src="${u.img}" alt=""></span><span class="kalem-ad"><strong>${u.ad}</strong>${u.secim ? `<span class="soluk">${u.secim}</span>` : ''}<span class="soluk">${kapali || `${n} adet alındı · ${u.fiyat}`}</span></span>${secili && n > 1 ? `<div class="adet kucuk" role="group" aria-label="İade adedi: ${u.ad}"><button type="button" class="ikon-dugme" aria-label="Azalt" disabled>${ikon('eksi')}</button><span>${adet}</span><button type="button" class="ikon-dugme" aria-label="Artır">${ikon('arti')}</button></div>` : '<span></span>'}</li>`; };
+  const kargo = durum.iadeKargosu === 'magaza' ? 'İade kargosu bizden: onaydan sonra size kargo kodu göndereceğiz, ürünü bu kodla ücretsiz gönderirsiniz.' : 'İade kargosu sizden: onaydan sonra ürünü dilediğiniz kargoyla gönderirsiniz, kargo ücreti iadeye eklenmez.';
+  return uyeUst(`${sayfaYolu(['Ana sayfa', 'Hesabım', 'Siparişlerim', 'ORN-1007', 'İade talebi'])}
+    <div class="dar-form" style="max-width: 720px"><div class="sayfa-basligi"><h1 class="b1">İade talebi</h1><span class="soluk">ORN-1007 · 19 Kasım'da teslim edildi · Son gün 3 Aralık</span></div>
+    ${hata ? `<div style="margin-bottom: 16px">${uyariKutu('tehlike', 'uyari', '<strong>Talebi göndermek için 2 alanı düzeltin:</strong><ul><li><a href="#">İade edilecek ürün</a></li><li><a href="#ia-neden">İade nedeni</a></li></ul>', 'alert')}</div>` : ''}
+    <form class="kutu" onsubmit="return false">
+      <fieldset class="secenek-grup"><legend><strong>Hangi ürünleri iade etmek istiyorsunuz?</strong></legend>
+        <ul class="iade-urunler">${hata ? satir('sweat', 1, false, 1) + satir('termos', 2, false, 1) : satir('sweat', 1, false, 1) + satir('termos', 2, true, 1)}${satir('sabun', 1, false, 1, 'Kişisel bakım ürünü, açılmışsa iade edilemez')}</ul>
+        ${hata ? '<span class="hata-yazi">En az bir ürün seçin.</span>' : ''}</fieldset>
+      <div class="alanlar">${alan('ia-neden', 'İade nedeni', hata ? '' : 'Beklentimi karşılamadı', { secim: true, hata: hata ? 'İade nedenini seçin.' : '' })}<span></span>
+      ${alan('ia-aciklama', 'Açıklama', '', { zorunlu: false, tur: 'uzun', genis: true, ipucu: 'Kusurlu ya da hasarlı üründe ne olduğunu yazın. En çok 1000 karakter.' })}</div>
+      ${uyariKutu('bilgi', 'kargo', kargo)}
+      <button type="submit" class="dugme dugme-birincil dugme-buyuk" style="align-self: flex-start">Talebi gönder</button>
+    </form>
+    ${not(`Talep yalnız teslim edilmiş siparişte ve iade talebi süresi içinde (öneri 14 gün, site ayarı) açılır. Zaten iade edilmiş adet seçilemez. Nedenler kayıttan gelir (beklentimi karşılamadı, kusurlu ya da hasarlı, yanlış ürün geldi, bedeni uymadı, diğer). Kişisel bakım satırındaki gibi ürünün iade edilemez olması bugün yalnız örnektir: ürün düzeyinde "iade edilemez" bilgisi temel pakette yok, gerekirse ayrı kart açılır. İade kargosunu kimin ödediği site ayarından gelir (Örnek Mağaza: mağaza).`)}
+    </div>`);
+}
+
+// ——— E-postalar ———
+function epostaCercevesi(konu, kime, ic, yonetici = false) {
+  return `<div class="e-posta-cerceve"><div class="e-posta-baslik"><strong>${konu}</strong><span>Örnek Mağaza &lt;ornek-magaza@posta.eticaretmagazasi.com&gt; → ${kime}</span></div>
+    <div class="e-posta ${yonetici ? 'e-posta-yonetici' : ''}"><div class="e-posta-ust"><span class="logo-isaret isaret-kucuk">Ö</span><span class="logo-ad ad-kucuk">Örnek Mağaza</span>${yonetici ? '<span style="margin-left: auto; font-size: 12px">Yönetici bildirimi</span>' : ''}</div>
+    <div class="e-posta-govde">${ic}</div>
+    <div class="e-posta-alt">${yonetici ? '<span>Bu bildirimleri panelde Satış &gt; Sipariş ayarları &gt; Bildirimler bölümünden kapatabilirsiniz.</span>' : '<span>Örnek Mağaza Deneme Ticaret A.Ş. · Deneme Sokak No: 1, 06000 Çankaya / Ankara</span><span>Sorunuz mu var? Bu e-postayı yanıtlayın ya da +90 312 000 00 00 numarasını arayın.</span><span>Bu e-postayı siparişiniz olduğu için aldınız.</span>'}</div></div></div>`;
+}
+const epostaKalemleri = (kalemler, { iade = null, kargo = 'Ücretsiz', toplam = '1.399,60 ₺', kdv = '233,27 ₺' } = {}) => `<table class="e-posta-tablo"><tbody>
+  ${kalemler.map(([k, n, , t]) => `<tr><td>${urunS[k].ad}${urunS[k].secim ? `<br><span class="soluk" style="font-size: 13px">${urunS[k].secim}</span>` : ''}<br><span class="soluk" style="font-size: 13px">${n} adet</span></td><td>${t}</td></tr>`).join('')}
+  ${iade ? '' : `<tr><td>Kargo</td><td>${kargo}</td></tr><tr class="toplam"><td>Toplam</td><td>${toplam}</td></tr><tr class="vergi"><td>Toplama dahil KDV (%20)</td><td>${kdv}</td></tr>`}
+  ${iade ? `<tr class="toplam"><td>İade tutarı</td><td>${iade[0]}</td></tr><tr class="vergi"><td>İadenin KDV'si (%20)</td><td>${iade[1]}</td></tr>` : ''}
+</tbody></table>`;
+const teslimatSatiri = `<p style="font-size: 14px"><strong>Teslimat adresi</strong><br>${KISI.ad} · ${KISI.tel}<br>${ADRES}</p>`;
+const siparisDugmesi2 = (uye = true) => `<a href="#" class="dugme dugme-koyu">${uye ? 'Siparişi görüntüle' : 'Siparişimi takip et'}</a>`;
+function musteriEpostasi() {
+  const K2 = [['sabun', 1, '149,90 ₺', '149,90 ₺'], ['kupa', 2, '189,90 ₺', '379,80 ₺']];
+  const e = {
+    alindiHavale: ['Siparişiniz alındı: ORN-1012', `<h1>Siparişiniz alındı</h1><p>Merhaba Deniz, ORN-1012 numaralı siparişinizi aldık. Ödemeniz hesabımıza geçince hazırlamaya başlayacağız.</p>
+      <div class="kutu vurgu-kutu" style="gap: 10px"><strong>Ödemenizi 21 Kasım 2026 18.42'ye kadar yapın</strong><span>Aşağıdaki hesaplardan birine <strong>589,60 ₺</strong> gönderin. Açıklamaya <strong>ORN-1012</strong> yazın. Bu süre içinde ödenmeyen sipariş iptal olur.</span>
+      ${BANKALAR.map(([b, iban]) => `<div class="banka"><strong>${b}</strong><span class="soluk">Örnek Mağaza Ticaret Ltd. Şti.</span><span class="iban">${iban}</span></div>`).join('')}<a href="#" class="dugme dugme-birincil">Ödemeyi yaptım, bildir</a></div>
+      ${epostaKalemleri(K2, { kargo: '59,90 ₺', toplam: '589,60 ₺', kdv: '98,27 ₺' })}${teslimatSatiri}${siparisDugmesi2(durum.epostaUye === 'uye')}`],
+    alindiKapida: ['Siparişiniz alındı: ORN-1007', `<h1>Siparişiniz alındı</h1><p>Merhaba Deniz, ORN-1007 numaralı siparişinizi aldık, 1 iş gününde kargoya vereceğiz. Ödemeyi teslimatta kuryeye <strong>nakit</strong> yapacaksınız.</p>${epostaKalemleri(KALEMLER)}${teslimatSatiri}${siparisDugmesi2(durum.epostaUye === 'uye')}`],
+    havaleOnay: ['Ödemeniz alındı: ORN-1012', `<h1>Ödemeniz alındı</h1><p>Merhaba Deniz, ORN-1012 numaralı siparişinizin 589,60 ₺ ödemesi hesabımıza geçti. Siparişinizi hazırlıyoruz, kargoya verince yeniden yazacağız.</p>${siparisDugmesi2(durum.epostaUye === 'uye')}`],
+    kargo: ['Siparişiniz kargoda: ORN-1007', `<h1>Siparişiniz kargoya verildi</h1><p>Merhaba Deniz, ORN-1007 numaralı siparişiniz yola çıktı.</p><div class="kargo-kutu"><span><strong>${KARGO.firma}</strong><br>Takip no: <span class="takip">${KARGO.no}</span></span><a href="#" class="dugme dugme-koyu">Kargoyu takip et</a></div>${epostaKalemleri(KALEMLER)}${teslimatSatiri}`],
+    teslim: ['Siparişiniz teslim edildi: ORN-1007', `<h1>Siparişiniz teslim edildi</h1><p>Merhaba Deniz, ORN-1007 numaralı siparişinizi teslim aldığınızı gördük. İyi günlerde kullanın.</p><p>Ürünleri beğendiniz mi? Yorumunuz başka müşterilere yol gösterir.</p><a href="#" class="dugme dugme-birincil">Ürünlere yorum yaz</a><p class="soluk" style="font-size: 13px">Ürünü iade etmek isterseniz 3 Aralık 2026'ya kadar siparişin sayfasından iade talebi açabilirsiniz.</p>`],
+    iptal: ['Siparişiniz iptal edildi: ORN-1012', `<h1>Siparişiniz iptal edildi</h1><p>Merhaba Deniz, ORN-1012 numaralı siparişiniz ödeme süresi içinde ödenmediği için iptal edildi. Ürünler stoğa geri döndü; dilerseniz yeniden sipariş verebilirsiniz.</p>${epostaKalemleri(K2, { kargo: '59,90 ₺', toplam: '589,60 ₺', kdv: '98,27 ₺' })}<a href="#" class="dugme dugme-koyu">Alışverişe devam et</a><p class="soluk" style="font-size: 13px">İptal nedeni duruma göre değişir: ödeme süresi doldu, sizin isteğinizle, mağaza tarafından (nedeniyle).</p>`],
+    iadeTam: ['İadeniz yapıldı: ORN-1003', `<h1>İadeniz yapıldı</h1><p>Merhaba Deniz, ORN-1003 numaralı siparişinizin tamamı iade edildi. <strong>799,80 ₺</strong> ödemeyi yaptığınız hesaba gönderdik; bankanıza göre 1–3 iş gününde geçer.</p>${epostaKalemleri([['yoga', 1, '', '549,90 ₺'], ['mum', 1, '', '249,90 ₺']], { iade: ['799,80 ₺', '133,30 ₺'] })}<p class="soluk" style="font-size: 13px">Kartla ödenen siparişte cümle "kartınıza iade edildi, bankanıza göre ... gün" olur.</p>`],
+    iadeKismi: ['Siparişinizin bir kısmı iade edildi: ORN-1007', `<h1>Kısmi iadeniz yapıldı</h1><p>Merhaba Deniz, ORN-1007 numaralı siparişinizde aşağıdaki ürün iade edildi. <strong>349,90 ₺</strong> hesabınıza gönderildi. Siparişin öteki ürünleri sizde kalır.</p>${epostaKalemleri([['termos', 1, '', '349,90 ₺']], { iade: ['349,90 ₺', '58,32 ₺'] })}${siparisDugmesi2(durum.epostaUye === 'uye')}`],
+    not: ['Siparişiniz hakkında bir not: ORN-1007', `<h1>Mağazadan bir not</h1><p>Merhaba Deniz, ORN-1007 numaralı siparişiniz için mağazanın notu:</p><p class="kutu" style="background: var(--yuzey); border: 0">Termosunuzu hediye paketiyle gönderdik, iyi günlerde kullanın.</p>${siparisDugmesi2(durum.epostaUye === 'uye')}`],
+    talepAlindi: ['İade talebiniz alındı: ORN-1007', `<h1>İade talebiniz alındı</h1><p>Merhaba Deniz, ORN-1007 numaralı siparişiniz için iade talebinizi aldık. 2 iş günü içinde inceleyip yanıtlayacağız. Ürünü onaydan önce göndermeyin.</p>${epostaKalemleri([['termos', 1, '', '349,90 ₺']], { iade: ['349,90 ₺', '58,32 ₺'] }).replace('İade tutarı', 'Talep edilen').replace(/<tr class="vergi">.*?<\/tr>/, '')}<p><strong>Neden:</strong> Beklentimi karşılamadı</p>`],
+    talepSonuc: [durum.epostaTalep === 'ret' ? 'İade talebiniz hakkında: ORN-1007' : 'İade talebiniz onaylandı: ORN-1007', durum.epostaTalep === 'ret'
+      ? '<h1>İade talebinizi kabul edemedik</h1><p>Merhaba Deniz, ORN-1007 numaralı siparişinizdeki iade talebinizi inceledik ve kabul edemedik.</p><p class="kutu" style="background: var(--yuzey); border: 0"><strong>Mağazanın açıklaması:</strong> Ürün kullanılmış olarak geldiği için iade alamıyoruz.</p><p>Sorunuz varsa bu e-postayı yanıtlayın.</p>'
+      : `<h1>İade talebiniz onaylandı</h1><p>Merhaba Deniz, ORN-1007 numaralı siparişinizdeki 1 × Çelik Termos 750 ml için iade talebinizi onayladık.</p><div class="kutu vurgu-kutu" style="gap: 8px"><strong>Ürünü nasıl göndereceksiniz?</strong><span>${durum.iadeKargosu === 'magaza' ? `Ürünü ${KARGO.firma} şubesine <strong>İADE-48210</strong> koduyla ücretsiz teslim edin.` : 'Ürünü dilediğiniz kargoyla aşağıdaki adrese gönderin. Kargo ücreti size aittir.'}</span><span class="soluk">Örnek Mağaza · Deneme Sokak No: 1, 06000 Çankaya / Ankara</span></div><p>Ürün bize ulaşınca iadenizi yapıp e-postayla bildireceğiz.</p>`]
+  }[durum.hal];
+  return `${e ? epostaCercevesi(e[0], KISI.eposta, e[1]) : ''}<div class="kap" style="padding-bottom: 24px">${not(`Bütün e-postalar tek şablondan (kart 0032) sitenin renkleri ve logosuyla, düz metin karşılığıyla gider. Tutarlar sipariş kaydından, oran oran vergi dökümüyle gelir. Üye olmayan müşteride "Siparişi görüntüle" yerine "Siparişimi takip et" durur ve takip sayfasını numara ve e-posta dolu açar; bağlantının kendisi siparişi açmaz. Koyu temada e-posta istemcisinin yaptığı kadar koyulaşır, sitenin koyu teması e-postaya uygulanmaz. Gönderen adresi site ayarıdır; Örnek Mağaza'da sunucuda gerçek gönderim yoktur (kart 0060).`)}</div>`;
+}
+function yoneticiEpostasi() {
+  const P = 'sahip@ornek-magaza.test';
+  const panelDugme = (m) => `<a href="#" class="dugme dugme-koyu">${m}</a>`;
+  const e = {
+    yeni: ['Yeni sipariş: ORN-1007 · 1.399,60 ₺', `<h1>Yeni sipariş: ORN-1007</h1><table class="e-posta-tablo"><tbody><tr><td>Müşteri</td><td>Deniz Y. (üye)</td></tr><tr><td>Ödeme</td><td>Kapıda ödeme · nakit</td></tr><tr><td>Teslimat</td><td>Çankaya / Ankara</td></tr><tr><td>Ürünler</td><td>4 adet, 3 kalem</td></tr><tr class="toplam"><td>Toplam</td><td>1.399,60 ₺</td></tr></tbody></table>${panelDugme('Siparişi panelde aç')}`],
+    havale: ['Havale bildirimi: ORN-1012 · 589,60 ₺', `<h1>Müşteri ödediğini bildirdi</h1><p>ORN-1012 numaralı siparişin müşterisi havaleyle ödediğini bildirdi. Hesabınızı kontrol edip panelden onaylayın; bildirimli sipariş süresi dolunca kendiliğinden iptal olmaz.</p><table class="e-posta-tablo"><tbody><tr><td>Gönderen</td><td>Deniz Yılmaz</td></tr><tr><td>Hesap</td><td>Örnek Bankası</td></tr><tr><td>Ödeme tarihi</td><td>19.11.2026</td></tr><tr class="toplam"><td>Bildirilen tutar</td><td>589,60 ₺</td></tr></tbody></table>${panelDugme('Havaleyi panelde onayla')}`],
+    iade: ['İade talebi: ORN-1007', `<h1>Yeni iade talebi</h1><p>ORN-1007 numaralı siparişte müşteri iade istiyor.</p><table class="e-posta-tablo"><tbody><tr><td>Ürün</td><td>1 × Çelik Termos 750 ml</td></tr><tr><td>Neden</td><td>Beklentimi karşılamadı</td></tr><tr><td>Teslim tarihi</td><td>19 Kasım 2026</td></tr></tbody></table>${panelDugme('Talebi panelde incele')}`],
+    iptal: ['Sipariş iptal edildi: ORN-1012', `<h1>Sipariş iptal edildi</h1><p>ORN-1012 numaralı sipariş <strong>ödeme süresi dolduğu için</strong> kendiliğinden iptal edildi, ürünler stoğa döndü.</p><p class="soluk" style="font-size: 13px">Müşteri iptal ettiğinde "müşteri iptal etti" ve nedeni yazar. Mağaza sahibinin kendi yaptığı iptalde e-posta gitmez.</p>${panelDugme('Siparişi panelde aç')}`],
+    stok: ['Stok uyarısı: 2 ürün', `<h1>Stok uyarısı</h1><table class="e-posta-tablo"><tbody><tr><td>Kapüşonlu Sweatshirt · Lacivert / M<br><span class="soluk" style="font-size: 13px">Stok kodu SWT-LAC-M</span></td><td><span class="durum-rozet tehlike">Tükendi</span></td></tr><tr><td>Çelik Termos 750 ml<br><span class="soluk" style="font-size: 13px">Stok kodu TRM-750</span></td><td><span class="durum-rozet uyari">3 adet kaldı</span></td></tr></tbody></table><p class="soluk" style="font-size: 13px">Bir ürün eşiği geçtiğinde bir kez yazılır; aynı gün içindeki uyarılar tek e-postada toplanır.</p>${panelDugme('Stokları panelde aç')}`],
+    yorum: ['Onay bekleyen yorum: Porselen Kupa', `<h1>Onay bekleyen yorum</h1><p><strong>Porselen Kupa</strong> için yeni bir yorum var. Yorum siz onaylayınca yayınlanır.</p><p class="kutu" style="background: var(--yuzey); border: 0">${yildizlar('5 üzerinden 4 puan', 4)}<span><strong>Kahve için ideal boyut</strong><br>Sabah kahvem için aldım, tutması rahat.</span></p>${panelDugme('Yorumu panelde incele')}`]
+  }[durum.hal];
+  return `${e ? epostaCercevesi(e[0], P, e[1], true) : ''}<div class="kap" style="padding-bottom: 24px">${not('Yönetici bildirimleri kısa tutulur ve müşterinin adresini, telefonunu ve e-postasını taşımaz (ad kısaltılır, yalnız il ve ilçe); ayrıntı panelde. Alıcılar ve hangi bildirimin açık olduğu site ayarıdır (panel: Sipariş ayarları). Kartla ödeme karşılaştırmasının uyuşmazlığı ve kuruluşta bekleyen iade de aynı biçimde gider.')}</div>`;
+}
+
+// ——— Panel: siparişler ———
+Object.assign(IKON, { siparis: IKON.kutu });
+const panelMenusu = [
+  { grup: null, ogeler: [['karsilama', 'ev', 'Karşılama']] },
+  { grup: 'Satış', ogeler: [['siparisler', 'kutu', 'Siparişler'], ['ayarlar', 'ayar', 'Sipariş ayarları'], ['yontemler', 'odeme', 'Ödeme yöntemleri'], ['hesaplar', 'banka', 'Banka hesapları'], ['kargo', 'kargo', 'Kargo']] },
+  { grup: 'Vitrin', ogeler: [['slider', 'slider', 'Slider'], ['bolumler', 'bolumler', 'Vitrin bölümleri'], ['menuler', 'agac', 'Menüler'], ['tema', 'tema', 'Tema']] }
+];
+const PANEL_SIPARIS = [
+  ['ORN-1014', '19 Kas 09.40', 'Ayşe K.', 'hazirlaniyor', 'Kartla öde', '449,90 ₺', ''],
+  ['ORN-1012', '18 Kas 21.05', 'Deniz Y.', 'bekleniyor', 'Havale / EFT', '589,60 ₺', 'Havale bildirildi'],
+  ['ORN-1011', '18 Kas 16.22', 'Mert A. · üye değil', 'bekleniyor', 'Kapıda · nakit', '209,80 ₺', ''],
+  ['ORN-1007', '16 Kas 18.42', 'Deniz Y.', 'kargoda', 'Kapıda · nakit', '1.399,60 ₺', 'İade talebi'],
+  ['ORN-1005', '12 Kas 13.10', 'Selin B.', 'teslim', 'Havale / EFT', '899,80 ₺', ''],
+  ['ORN-1001', '1 Kas 08.55', 'Deniz Y.', 'iptal', 'Havale / EFT', '189,80 ₺', '']
+];
+function siparislerPaneli() {
+  const bos = durum.hal === 'bos';
+  const sekmeler = [['Tümü', 6, true], ['Ödeme bekleniyor', 2], ['Hazırlanıyor', 1], ['Kargoda', 1], ['İade talepleri', 1]];
+  const tablo = bos ? `<div class="bos-hal"><span class="bos-ikon">${ikon('kutu')}</span><h2 class="b2">Henüz sipariş yok</h2><p class="soluk">Müşterilerin verdiği ve sizin panelden girdiğiniz siparişler burada görünür.</p><a href="#" class="dugme dugme-birincil">${ikon('arti')}Elle sipariş</a></div>`
+    : `<table class="panel-tablo masa-tablo"><caption class="gizli">Siparişler, en yeni önce</caption><thead><tr><th scope="col">Sipariş</th><th scope="col">Tarih</th><th scope="col">Müşteri</th><th scope="col">Durum</th><th scope="col">Ödeme</th><th scope="col" class="sag">Tutar</th></tr></thead><tbody>
+      ${PANEL_SIPARIS.map(([no, t, m, d, y, tutar, isaret]) => `<tr><td><a href="#">${no}</a>${isaret ? `<br><span class="isaret">${ikon('zil')}${isaret}</span>` : ''}</td><td>${t}</td><td>${m}</td><td>${rozet(d)}</td><td>${y}</td><td class="sag">${tutar}</td></tr>`).join('')}</tbody></table>
+      <ul class="kutu-liste tel-siparis-listesi" aria-label="Siparişler">${PANEL_SIPARIS.map(([no, t, m, d, , tutar, isaret]) => `<li class="satir" style="padding-left: 12px"><div class="satir-bilgi"><span class="satir-ad"><a href="#" style="color: var(--yazi)">${no}</a>${rozet(d)}</span><span class="satir-alt">${t} · ${m} · ${tutar}</span>${isaret ? `<span class="isaret" style="font-size: 12px; font-weight: 600; color: var(--uyari-yazi)">${isaret}</span>` : ''}</div>${ikon('sag')}</li>`).join('')}</ul>`;
+  return panel('siparisler', `
+    ${komut(['Panel', 'Satış', 'Siparişler'], 'Siparişler', 'Müşterilerin verdiği ve panelden girilen siparişler. Bir siparişe girip durumunu değiştirin, kargoya verin ya da iade yapın.', `<a href="#" class="dugme dugme-birincil">${ikon('arti')}Elle sipariş</a>`)}
+    <div class="panel-govde">
+      <nav class="sekme-serit" aria-label="Durum süzgeci">${sekmeler.map(([a, n, s]) => `<a href="#" aria-selected="${!!s}">${a}<span class="say">${n}</span></a>`).join('')}</nav>
+      <div class="suzgec-satir"><form class="arama" role="search" onsubmit="return false"><input class="arama-girdi" type="search" aria-label="Sipariş ara" placeholder="Sipariş no, müşteri adı ya da e-posta"><button type="submit" class="arama-dugme" aria-label="Ara">${ikon('ara')}</button></form></div>
+      ${tablo}
+      ${not('Bu bölümün en az ekranıdır: durum sekmeleri, numara ve müşteri araması, sayfalama. Tarih aralığı, ödeme yöntemine göre süzgeç, toplu işlem ve CSV on dördüncü bölümde. "Havale bildirildi" ve "İade talebi" işaretleri bakılması gereken siparişleri gösterir. Telefonda tablo yerine liste.')}
+    </div>`);
+}
+function siparisPaneli() {
+  const h = durum.hal;
+  const d = { havale: 'bekleniyor', hazirlaniyor: 'hazirlaniyor', kargoForm: 'hazirlaniyor', kargoda: 'kargoda', iadeForm: 'teslim', talep: 'teslim', iptalForm: 'hazirlaniyor' }[h];
+  const no = h === 'havale' ? 'ORN-1012' : 'ORN-1007';
+  const havale = h === 'havale';
+  const kalemler = havale ? [['sabun', 1, '149,90 ₺', '149,90 ₺'], ['kupa', 2, '189,90 ₺', '379,80 ₺']] : KALEMLER;
+  const eylemler = {
+    bekleniyor: `<button type="button" class="dugme dugme-birincil">${ikon('tik')}Havaleyi onayla</button><button type="button" class="dugme dugme-sade">İptal et</button>`,
+    hazirlaniyor: `<button type="button" class="dugme dugme-birincil">${ikon('kargo')}Kargoya ver</button><button type="button" class="dugme dugme-sade">İptal ve iade</button>`,
+    kargoda: `${durum.teslimElle === 'elle' ? `<button type="button" class="dugme dugme-birincil">${ikon('tik')}Teslim edildi</button>` : ''}<button type="button" class="dugme dugme-sade">Kargo bilgisini düzelt</button>${durum.kargodaIptal === 'evet' ? '<button type="button" class="dugme dugme-sade">İptal ve iade</button>' : ''}`,
+    teslim: `<button type="button" class="dugme dugme-sade">${ikon('iade')}İade yap</button>`
+  }[d];
+  const talepKutu = h === 'talep' ? `<section class="panel-kart" aria-labelledby="pt-b" style="border: 2px solid var(--birincil)"><div class="panel-kart-baslik"><h2 id="pt-b">İade talebi</h2><span class="durum-rozet uyari">Bekliyor</span></div>
+    <p>1 × Çelik Termos 750 ml · <strong>Beklentimi karşılamadı</strong><br><span class="soluk">20 Kasım 09.12 · Açıklama yok · İade kargosu mağazadan (ayar)</span></p>
+    <div class="eylem-satiri"><button type="button" class="dugme dugme-birincil">Onayla</button><button type="button" class="dugme dugme-sade">Reddet</button></div>
+    <p class="soluk" style="font-size: 13px">Onaylamak parayı geri ödemez: ürün size ulaşınca "İade yap" ile tutarı belirleyip iade edersiniz. Reddederken müşteriye açıklama yazılır.</p></section>` : '';
+  const bildirim = havale ? `<section class="panel-kart" aria-labelledby="pb-b" style="border: 2px solid var(--birincil)"><h2 id="pb-b">Havale bildirimi</h2><div class="bildirim-satir"><strong>Deniz Yılmaz · Örnek Bankası · 589,60 ₺</strong><span>Ödeme tarihi 19.11.2026 · 19 Kasım 10.22'de bildirildi</span></div><p class="soluk" style="font-size: 13px">Bildirimli sipariş süre dolunca kendiliğinden iptal olmaz (karar 0141). Hesabınızda ödemeyi görünce "Havaleyi onayla"ya basın; sipariş hazırlanıyor durumuna geçer ve müşteriye e-posta gider.</p></section>` : '';
+  const gecmis = `<ol class="zaman-cizgisi">
+    ${h === 'talep' ? '<li><strong>İade talebi alındı</strong><span class="kim">Müşteri · 1 × Çelik Termos</span><time>20 Kasım 09.12</time></li><li><strong>Teslim edildi</strong><span class="kim">sahip@ornek-magaza.test</span><time>19 Kasım 11.30</time></li>' : ''}
+    ${d === 'kargoda' || d === 'teslim' ? `<li><strong>Kargoya verildi</strong><span class="kim">sahip@ornek-magaza.test · ${KARGO.firma} ${KARGO.no}</span><time>18 Kasım 14.20</time></li>` : ''}
+    ${havale ? '<li><strong>Havale bildirildi</strong><span class="kim">Müşteri · Örnek Bankası · 589,60 ₺</span><time>19 Kasım 10.22</time></li>' : ''}
+    ${havale ? '' : '<li class="ic-not"><strong>İç not</strong><span class="not-metin">Müşteri hediye paketi istedi, termosa paket yapıldı.</span><span class="kim">sahip@ornek-magaza.test</span><time>17 Kasım 10.04</time></li><li><strong>Müşteriye not gönderildi</strong><span class="not-metin">Termosunuzu hediye paketiyle gönderdik, iyi günlerde kullanın.</span><span class="kim">sahip@ornek-magaza.test</span><time>17 Kasım 10.06</time></li><li><strong>Ödeme bekleniyor → Hazırlanıyor</strong><span class="kim">sahip@ornek-magaza.test · kapıda ödeme, hazırlamaya alındı</span><time>17 Kasım 10.05</time></li>'}
+    <li><strong>Sipariş oluşturuldu</strong><span class="kim">Müşteri · vitrin</span><time>${havale ? '18 Kasım 21.05' : '16 Kasım 18.42'}</time></li></ol>`;
+  const notFormu = `<div class="not-formu">${alan('pn-not', 'Not ekle', '', { zorunlu: false, tur: 'uzun' })}<div class="radyo-satir" role="radiogroup" aria-label="Not türü"><span class="radyo secili" role="radio" aria-checked="true" tabindex="0"><span class="radyo-nokta"></span>İç not (yalnız panel)</span><span class="radyo" role="radio" aria-checked="false" tabindex="-1"><span class="radyo-nokta"></span>Müşteriye not (e-posta gider)</span></div><button type="button" class="dugme dugme-sade" style="align-self: flex-start">Notu ekle</button></div>`;
+  let pencere = '';
+  const pencereKabi = (id, baslik, govde, dugme, genis = false) => `<div class="ortu"></div><div class="yan-pencere ${genis ? 'genis' : ''}" role="dialog" aria-modal="true" aria-labelledby="${id}"><div class="pencere-ust"><h2 class="pencere-baslik" id="${id}">${baslik}</h2><button type="button" class="ikon-dugme" aria-label="Kapat">${ikon('kapat')}</button></div><div class="pencere-govde">${govde}</div><div class="pencere-alt"><button type="button" class="dugme dugme-sade">Vazgeç</button>${dugme}</div></div>`;
+  if (h === 'kargoForm') {
+    pencere = pencereKabi('kf-b', 'Kargoya ver', `${alan('kf-firma', 'Kargo firması', KARGO.firma, { secim: true, ipucu: 'Liste Sipariş ayarlarındadır.' })}${alan('kf-no', 'Takip numarası', 'ORK 4821 7730 15', { zorunlu: false, ipucu: 'Boş bırakırsanız müşteriye takip bağlantısı gitmez.' })}${onayKutusu('kf-e', 'Müşteriye "Siparişiniz kargoda" e-postası gönder', { isaretli: true })}`, '<button type="button" class="dugme dugme-birincil">Kargoya ver</button>');
+  } else if (h === 'iadeForm' || h === 'iptalForm') {
+    const iptal = h === 'iptalForm';
+    const satir = ([k, n, b, t], secili, adet) => `<tr><td><span class="kalem-ad"><strong>${urunS[k].ad}</strong><span class="soluk">${n} × ${b}${!iptal && k === 'termos' ? '' : ''}</span></span></td><td>${iptal ? `${n}` : `<div class="adet kucuk" role="group" aria-label="İade adedi: ${urunS[k].ad}"><button type="button" class="ikon-dugme" aria-label="Azalt" ${adet === 0 ? 'disabled' : ''}>${ikon('eksi')}</button><span>${adet}</span><button type="button" class="ikon-dugme" aria-label="Artır" ${adet === n ? 'disabled' : ''}>${ikon('arti')}</button></div>`}</td><td>${secili ? (iptal ? t : '349,90 ₺') : '0,00 ₺'}</td></tr>`;
+    const tablo = `<table class="iade-tablo"><thead><tr><th scope="col">Ürün</th><th scope="col">${iptal ? 'Adet' : 'İade adedi'}</th><th scope="col">Tutar</th></tr></thead><tbody>${KALEMLER.map((k) => satir(k, iptal || k[0] === 'termos', k[0] === 'termos' ? 1 : 0)).join('')}</tbody></table>`;
+    const govde = `${iptal ? uyariKutu('uyari', 'uyari', 'Sipariş iptal edilir ve müşteriye e-posta gider. Ödemesi alınmış siparişte para da geri ödenir; kapıda ödemede henüz ödeme yoktur.') : ''}
+      ${tablo}
+      ${iptal ? '' : `<fieldset class="secenek-grup"><legend>Kargo ücreti</legend><div class="radyo-satir" role="radiogroup"><span class="radyo secili" role="radio" aria-checked="true" tabindex="0"><span class="radyo-nokta"></span>İade etme</span><span class="radyo" role="radio" aria-checked="false" tabindex="-1"><span class="radyo-nokta"></span>İade et (0,00 ₺)</span></div></fieldset>`}
+      ${onayKutusu('if-stok', iptal ? 'Ürünleri stoğa geri koy' : 'İade edilen ürünü stoğa geri koy', { isaretli: true })}
+      <div class="alanlar">${alan('if-tutar', 'İade tutarı', iptal ? '0,00' : '349,90', { ipucu: iptal ? 'Kapıda ödemede ödeme alınmadı, iade tutarı 0.' : 'Seçilen ürünlerden hesaplandı. Elle değiştirebilirsiniz; ödenen kalan tutarı (1.399,60 ₺) aşamaz.' })}${alan('if-neden', iptal ? 'İptal nedeni' : 'İade nedeni', iptal ? 'Müşteri vazgeçti' : 'Beklentimi karşılamadı', { secim: true })}</div>
+      <table class="tutar-tablo"><tbody><tr class="toplam"><td>${iptal ? 'Geri ödenecek' : 'İade edilecek'}</td><td>${iptal ? '0,00 ₺' : '349,90 ₺'}</td></tr><tr class="vergi"><td>İçindeki KDV (%20)</td><td>${iptal ? '0,00 ₺' : '58,32 ₺'}</td></tr></tbody></table>
+      ${uyariKutu('bilgi', 'bilgi', iptal ? 'Kartla ödenen siparişte para ödeme kuruluşu üzerinden karta geri döner.' : 'Kapıda nakit ödenmiş: parayı müşteriye kendiniz gönderin (IBAN müşteriden istenir). Kartla ödenen siparişte bu tutar ödeme kuruluşu üzerinden karta iade edilir; kuruluş onaylayana kadar iade "bekliyor" görünür.')}
+      ${onayKutusu('if-e', 'Müşteriye e-posta gönder', { isaretli: true })}`;
+    pencere = pencereKabi('if-b', iptal ? 'Siparişi iptal et' : 'İade yap', govde, `<button type="button" class="dugme dugme-birincil">${iptal ? 'Siparişi iptal et' : '349,90 ₺ iade et'}</button>`, true);
+  }
+  const notMetni = {
+    havale: 'Ödeme bekleyen havale siparişi, müşteri ödediğini bildirmiş. "İptal et" stoğu geri koyar.',
+    hazirlaniyor: '"Kargoya ver" pencerede firma ve takip numarası ister. "İptal ve iade" aynı pencereyi açar: ödenmiş siparişte iptal, paranın iadesiyle birlikte yapılır (tek akış).',
+    kargoForm: 'Kargo firmaları Sipariş ayarlarındaki listeden gelir; her firmanın takip adresi kalıbı vardır. E-posta seçimi varsayılan işaretlidir.',
+    kargoda: `${durum.teslimElle === 'elle' ? '"Teslim edildi" elle işaretlenir; kargo entegrasyonu yokken teslimi mağaza sahibi bilir.' : 'Teslim edildi düğmesi yok: sipariş kargoya verildikten belirli gün sonra (öneri 7 gün, site ayarı) kendiliğinden teslim edildi sayılır; mağaza sahibi beklemeden de işaretleyebilir (menüde).'} ${durum.kargodaIptal === 'evet' ? 'Kargodaki sipariş iptal edilebilir (müşteri kargoyu almadıysa).' : 'Kargodaki sipariş iptal edilemez; ürün dönünce teslimden sonra iade yapılır.'}`,
+    iadeForm: `Kısmi iade: ürün ve adet seçilir, tutar ve vergisi siparişteki oranlarla hesaplanır, elle değiştirilebilir. ${durum.tekrarIade === 'evet' ? 'Bir siparişte birden çok kısmi iade yapılabilir; toplamı ödenen tutarı aşamaz.' : 'Bir siparişte yalnız bir iade yapılır: kısmi iadeden sonra kalan ürünler iade edilemez.'}`,
+    iptalForm: 'İptal penceresi iadeyle aynıdır, bütün ürünler seçili gelir. Kapıda ödemede para alınmadığı için iade tutarı 0.',
+    talep: 'Müşterinin iade talebi siparişin en üstünde durur. Onay ve ret müşteriye e-postayla bildirilir.'
+  }[h];
+  return panel('siparisler', `
+    ${komut(['Panel', 'Satış', 'Siparişler', no], `Sipariş ${no}`, `${havale ? '18 Kasım 2026 21.05 · Havale / EFT' : '16 Kasım 2026 18.42 · Kapıda ödeme · nakit'} · ${DURUM[d][0]}`, eylemler)}
+    <div class="panel-govde">
+      <div class="panel-ayrinti"><div>
+        ${bildirim}${talepKutu}
+        <section class="panel-kart" aria-labelledby="pu-b"><div class="panel-kart-baslik"><h2 id="pu-b">Ürünler</h2>${rozet(d)}</div><ul class="kalem-listesi">${kalemler.map(([k, n, b, t]) => `<li class="kalem"><span class="satir-gorsel"><img src="${urunS[k].img}" alt=""></span><span class="kalem-ad"><a href="#">${urunS[k].ad}</a><span class="soluk">${urunS[k].secim ? `${urunS[k].secim} · ` : ''}${n} × ${b}</span></span><span class="kalem-tutar">${t}</span></li>`).join('')}</ul>
+          ${havale ? '<table class="tutar-tablo"><tbody><tr><td>Ara toplam</td><td>529,70 ₺</td></tr><tr><td>Kargo</td><td>59,90 ₺</td></tr><tr class="toplam"><td>Toplam</td><td>589,60 ₺</td></tr><tr class="vergi"><td>Toplama dahil KDV (%20)</td><td>98,27 ₺</td></tr></tbody></table>' : tutarSatirlari()}</section>
+        ${d === 'kargoda' || d === 'teslim' ? `<section class="panel-kart" aria-labelledby="pk-b"><h2 id="pk-b">Kargo</h2><div class="kargo-kutu"><span><strong>${KARGO.firma}</strong> · <span class="takip">${KARGO.no}</span></span><a href="#" class="dugme dugme-sade">Takip${ikon('dis')}</a></div></section>` : ''}
+        <section class="panel-kart" aria-labelledby="pg-b"><h2 id="pg-b">Geçmiş ve notlar</h2>${notFormu}${gecmis}</section>
+      </div><div>
+        <section class="panel-kart" aria-labelledby="pm-b"><h2 id="pm-b">Müşteri</h2><dl class="bilgi-satirlari"><dt>Ad</dt><dd>${KISI.ad} · üye</dd><dt>E-posta</dt><dd>${KISI.eposta}</dd><dt>Telefon</dt><dd>${KISI.tel}</dd></dl></section>
+        <section class="panel-kart" aria-labelledby="pa-b"><h2 id="pa-b">Teslimat ve fatura</h2><dl class="bilgi-satirlari"><dt>Teslimat</dt><dd>${ADRES}</dd><dt>Fatura</dt><dd>Bireysel · teslimat adresiyle aynı</dd><dt>Sipariş notu</dt><dd>Zil çalışmıyor, lütfen arayın.</dd></dl></section>
+        <section class="panel-kart" aria-labelledby="po-b"><h2 id="po-b">Ödeme</h2><dl class="bilgi-satirlari"><dt>Yöntem</dt><dd>${havale ? 'Havale / EFT' : 'Kapıda ödeme · nakit'}</dd><dt>Durum</dt><dd>${havale ? 'Bekleniyor · son gün 21 Kasım 21.05' : d === 'teslim' ? 'Teslimde alındı' : 'Teslimde alınacak'}</dd><dt>Onaylar</dt><dd>Ön bilgilendirme ve mesafeli satış (sürüm 1)</dd></dl></section>
+      </div></div>
+      ${not(notMetni)}
+    </div>`, pencere);
+}
+function elleSiparisPaneli() {
+  return panel('siparisler', `
+    ${komut(['Panel', 'Satış', 'Siparişler', 'Elle sipariş'], 'Elle sipariş', 'Telefonla ya da yüz yüze aldığınız siparişi girin. Tutar, vergi ve stok vitrin siparişiyle aynı kuralla hesaplanır.', '')}
+    <div class="panel-govde"><div class="elle-duzen"><div>
+      <section class="panel-kart" aria-labelledby="es-u"><h2 id="es-u">Ürünler</h2>
+        <div class="alan"><label for="es-ara">Ürün ekle</label><div class="kayit-arama"><input id="es-ara" class="girdi" value="term" role="combobox" aria-expanded="true" aria-controls="es-oneri"><div id="es-oneri" role="listbox"><div class="kayit-oneri secili" role="option" aria-selected="true">Çelik Termos 750 ml<span>349,90 ₺ · 12 stokta</span></div><div class="kayit-oneri" role="option" aria-selected="false">Çelik Termos 750 ml (eski stok)<span>tükendi</span></div></div></div></div>
+        <table class="iade-tablo"><thead><tr><th scope="col">Ürün</th><th scope="col">Adet</th><th scope="col">Tutar</th></tr></thead><tbody>
+          <tr><td><span class="kalem-ad"><strong>Kapüşonlu Sweatshirt</strong><span class="soluk">Lacivert / M · 549,90 ₺</span></span></td><td><div class="adet kucuk" role="group" aria-label="Adet: Kapüşonlu Sweatshirt"><button type="button" class="ikon-dugme" aria-label="Azalt" disabled>${ikon('eksi')}</button><span>1</span><button type="button" class="ikon-dugme" aria-label="Artır">${ikon('arti')}</button></div></td><td>549,90 ₺</td></tr>
+          <tr><td><span class="kalem-ad"><strong>Zeytinyağlı Sabun Seti (3'lü)</strong><span class="soluk">149,90 ₺</span></span></td><td><div class="adet kucuk" role="group" aria-label="Adet: Zeytinyağlı Sabun Seti"><button type="button" class="ikon-dugme" aria-label="Azalt" disabled>${ikon('eksi')}</button><span>1</span><button type="button" class="ikon-dugme" aria-label="Artır">${ikon('arti')}</button></div></td><td>149,90 ₺</td></tr>
+        </tbody></table></section>
+      <section class="panel-kart" aria-labelledby="es-m"><h2 id="es-m">Müşteri</h2>
+        <div class="radyo-satir" role="radiogroup" aria-label="Müşteri"><span class="radyo secili" role="radio" aria-checked="true" tabindex="0"><span class="radyo-nokta"></span>Üye müşteri</span><span class="radyo" role="radio" aria-checked="false" tabindex="-1"><span class="radyo-nokta"></span>Üye olmayan müşteri</span></div>
+        <div class="alan"><label for="es-mus">Müşteri ara</label><div class="kayit-arama"><input id="es-mus" class="girdi" value="deniz@ornek.test" role="combobox" aria-expanded="false"></div></div>
+        <div class="adres-kart secili"><span class="radyo-nokta"></span><span><strong>Ev</strong> · ${KISI.ad}<br><span class="soluk">${ADRES}</span></span></div>
+        <div class="adres-kart"><span class="radyo-nokta"></span><span><strong>Yeni adres gir</strong></span></div></section>
+      <section class="panel-kart" aria-labelledby="es-o"><h2 id="es-o">Ödeme</h2>
+        <div class="secim-karti"><strong><span class="radyo-nokta"></span>Havale / EFT</strong><span class="soluk">Sipariş ödeme bekleniyor durumunda açılır, iptal süresi işler.</span></div>
+        <div class="secim-karti"><strong><span class="radyo-nokta"></span>Kapıda ödeme</strong><span class="soluk">Nakit ya da kart, teslimde.</span></div>
+        <div class="secim-karti secili"><strong><span class="radyo-nokta"></span>Ödeme alındı</strong><span class="soluk">Elden ya da POS ile aldınız; sipariş hazırlanıyor durumunda açılır.</span></div>
+        ${alan('es-not', 'Sipariş notu', '', { zorunlu: false, tur: 'uzun' })}
+        ${onayKutusu('es-e', 'Müşteriye sipariş e-postası gönder', { isaretli: true })}
+        ${onayKutusu('es-onb', 'Ön bilgilendirme formu ve mesafeli satış sözleşmesi müşteriye iletildi', { isaretli: false })}</section>
+    </div><div>
+      <aside class="panel-kart" aria-labelledby="es-oz" style="position: sticky; top: 16px"><h2 id="es-oz">Özet</h2><table class="tutar-tablo"><tbody><tr><td>Ara toplam</td><td>699,80 ₺</td></tr><tr><td>Kargo</td><td>59,90 ₺</td></tr><tr class="toplam"><td>Toplam</td><td>759,70 ₺</td></tr><tr class="vergi"><td>Toplama dahil KDV (%20)</td><td>126,62 ₺</td></tr></tbody></table><button type="button" class="dugme dugme-birincil">Siparişi oluştur</button></aside>
+    </div></div>
+    ${not('Elle sipariş vitrin siparişiyle aynı servisten kurulur; tutar sunucuda hesaplanır, stok "yeterliyse düş" ile düşer. Kartla ödeme panelden alınmaz. Sözleşme onayları elle siparişte nasıl saklanacağı kart 0236\'da sorulacak; taslakta "iletildi" kutusu bir öneridir. Kargo ücreti sepetteki kuralla gelir (taslakta 59,90 ₺ örneği).')}
+    </div>`);
+}
+function siparisAyarlariPaneli() {
+  const bildirimler = [['Yeni sipariş', true], ['Havale bildirimi', true], ['İade talebi', true], ['Müşterinin ya da taramanın iptali', true], ['Düşük ve tükenen stok', true], ['Onay bekleyen yorum', true], ['Kartla ödeme uyuşmazlığı ve bekleyen iade', true]];
+  return panel('ayarlar', `
+    ${komut(['Panel', 'Satış', 'Sipariş ayarları'], 'Sipariş ayarları', 'Müşterinin iptali, iade talebi, kargo firmaları ve yönetici bildirimleri. Değişiklik kaydedilince hemen yayınlanır.', '')}
+    <div class="panel-govde">
+      <section class="panel-kart" aria-labelledby="sa-i"><h2 id="sa-i">İptal ve iade</h2>
+        <fieldset class="secenek-grup"><legend>Müşteri siparişini kendisi iptal edebilsin mi?</legend><div class="radyo-satir" role="radiogroup">${[['kapali', 'Hayır'], ['bekleniyor', 'Ödeme beklenirken'], ['hazirlaniyor', 'Kargoya verilene kadar']].map(([k, a]) => `<span class="radyo ${durum.musteriIptal === k ? 'secili' : ''}" role="radio" aria-checked="${durum.musteriIptal === k}" tabindex="${durum.musteriIptal === k ? 0 : -1}"><span class="radyo-nokta"></span>${a}</span>`).join('')}</div></fieldset>
+        <div class="alanlar">${alan('sa-sure', 'İade talebi süresi', '14', { ipucu: 'Teslimden sonra gün. Müşteri bu süre içinde hesabından ya da takip sayfasından iade ister.' })}
+        <div class="alan"><span class="alan-ad">İade kargosunu kim öder</span><div class="radyo-satir" role="radiogroup" aria-label="İade kargosunu kim öder">${[['magaza', 'Mağaza'], ['musteri', 'Müşteri']].map(([k, a]) => `<span class="radyo ${durum.iadeKargosu === k ? 'secili' : ''}" role="radio" aria-checked="${durum.iadeKargosu === k}" tabindex="${durum.iadeKargosu === k ? 0 : -1}"><span class="radyo-nokta"></span>${a}</span>`).join('')}</div><span class="ipucu">İade koşulları metnine ve talep formuna girer.</span></div></div>
+        ${durum.teslimElle === 'otomatik' ? alan('sa-teslim', 'Kargodan sonra teslim edildi sayılma süresi', '7', { ipucu: 'Gün. Kargo entegrasyonu yokken sipariş bu süre sonunda teslim edildi olur.' }) : ''}
+      </section>
+      <section class="panel-kart" aria-labelledby="sa-k"><div class="panel-kart-baslik"><h2 id="sa-k">Kargo firmaları</h2><button type="button" class="dugme dugme-sade">${ikon('arti')}Firma ekle</button></div>
+        <ol class="kutu-liste" aria-label="Kargo firmaları"><li class="satir" style="padding-left: 12px"><div class="satir-bilgi"><span class="satir-ad">${KARGO.firma}</span><span class="satir-alt">https://${KARGO.bag}/{takip numarası}</span></div><div class="satir-eylem"><button type="button" class="ikon-dugme" aria-label="Düzenle: ${KARGO.firma}">${ikon('kalem')}</button><button type="button" class="ikon-dugme" aria-label="Sil: ${KARGO.firma}">${ikon('sil')}</button></div></li><li class="satir" style="padding-left: 12px"><div class="satir-bilgi"><span class="satir-ad">Elden teslim</span><span class="satir-alt">Takip bağlantısı yok</span></div><div class="satir-eylem"><button type="button" class="ikon-dugme" aria-label="Düzenle: Elden teslim">${ikon('kalem')}</button><button type="button" class="ikon-dugme" aria-label="Sil: Elden teslim">${ikon('sil')}</button></div></li></ol>
+        <p class="ipucu">Takip adresinde {takip numarası} yazan yere siparişin takip numarası konur.</p></section>
+      <section class="panel-kart" aria-labelledby="sa-b"><h2 id="sa-b">Yönetici bildirimleri</h2>
+        ${alan('sa-alici', 'Bildirimlerin gideceği adresler', 'sahip@ornek-magaza.test', { ipucu: 'Virgülle en çok 5 adres. Boşsa mağaza sahibi rolündeki yöneticilere gider.' })}
+        <div>${bildirimler.map(([a, acik]) => `<div class="ayar-satir"><div class="satir-bilgi"><span class="satir-ad">${a}</span></div><span class="anahtar" role="switch" tabindex="0" aria-checked="${acik}" aria-label="${a}"><span class="anahtar-iz"></span>${acik ? 'Açık' : 'Kapalı'}</span></div>`).join('')}</div></section>
+      <section class="panel-kart" aria-labelledby="sa-s"><h2 id="sa-s">Kişisel verinin saklanması</h2>
+        ${durum.saklama === 'sil' ? '<p>Siparişteki ad, adres, telefon ve e-posta siparişten <strong>10 yıl</strong> sonra silinir; tutarlar, ürünler ve vergi dökümü kalır.</p>' : '<p>Siparişteki kişisel bilgiler silinmez; müşteri hesabını silerse ya da silinmesini isterse ad, adres, telefon ve e-posta siparişten çıkarılır.</p>'}
+        <p class="soluk" style="font-size: 13px">Altyapı sahibinin ayarı, panelde yalnız görünür. Süre hukukçuya teyit ettirilir.</p></section>
+      <div class="kaydet-cubugu"><button type="button" class="dugme dugme-sade">Vazgeç</button><button type="button" class="dugme dugme-birincil">Kaydet</button></div>
+      ${not('Bu ekrandaki her ayar siteden siteye değişebilir; varsayılanlar ve Örnek Mağaza için önerilenler kart 0233\'ün sonunda tabloya girer. Öneri: müşteri iptali "ödeme beklenirken", iade talebi 14 gün, iade kargosu mağaza (Örnek Mağaza\'nın bugünkü değeri), kargo firması listesi boş başlar, bildirimler açık ve iletişim e-postasına gider.')}
+    </div>`);
+}
+
+// ——— Seçim çubuğu ———
+const SAYFALAR = [
+  ['giris', 'Giriş ve kayıt'], ['hesap', 'Hesabım'], ['ayrinti', 'Sipariş ayrıntısı'], ['takip', 'Sipariş takibi'], ['alindi', 'Sipariş alındı (ek)'], ['iade', 'İade talebi'],
+  ['epostaM', 'E-posta: müşteri'], ['epostaY', 'E-posta: yönetici'], ['psiparisler', 'Panel: Siparişler'], ['psiparis', 'Panel: Sipariş'], ['pelle', 'Panel: Elle sipariş'], ['payarlar', 'Panel: Sipariş ayarları']
+];
+const HALLER = {
+  giris: [['giris', 'Giriş'], ['hata', 'Yanlış şifre'], ['kayit', 'Kayıt']],
+  hesap: [['ilk', 'Girişten sonra'], ['siparisler', 'Siparişlerim'], ['bos', 'Sipariş yok'], ['adresler', 'Adreslerim'], ['adresForm', 'Adres ekle (hatalı)'], ['adresBos', 'Adres yok'], ['favoriler', 'Favorilerim'], ['bilgiler', 'Hesap bilgileri']],
+  ayrinti: [['bekleniyor', 'Ödeme bekleniyor'], ['iptalPencere', 'Müşteri iptali'], ['kargoda', 'Kargoda'], ['teslim', 'Teslim edildi'], ['iade', 'Kısmi iade']],
+  takip: [['form', 'Form'], ['hata', 'Bulunamadı'], ['sonuc', 'Sonuç']],
+  alindi: [['misafir', 'Üye olmayan'], ['uye', 'Üye']],
+  iade: [['form', 'Form'], ['hata', 'Hatalar'], ['gonderildi', 'Gönderildi']],
+  epostaM: [['alindiHavale', 'Alındı · havale'], ['alindiKapida', 'Alındı · kapıda'], ['havaleOnay', 'Havale onaylandı'], ['kargo', 'Kargoda'], ['teslim', 'Teslim edildi'], ['iptal', 'İptal'], ['iadeTam', 'Tam iade'], ['iadeKismi', 'Kısmi iade'], ['not', 'Müşteriye not'], ['talepAlindi', 'Talep alındı'], ['talepSonuc', 'Talep sonucu']],
+  epostaY: [['yeni', 'Yeni sipariş'], ['havale', 'Havale bildirimi'], ['iade', 'İade talebi'], ['iptal', 'İptal'], ['stok', 'Stok'], ['yorum', 'Yorum']],
+  psiparisler: [['liste', 'Liste'], ['bos', 'Boş']],
+  psiparis: [['havale', 'Havale bildirimli'], ['hazirlaniyor', 'Hazırlanıyor'], ['kargoForm', 'Kargoya ver'], ['kargoda', 'Kargoda'], ['talep', 'İade talebi'], ['iadeForm', 'Kısmi iade'], ['iptalForm', 'İptal']],
+  pelle: [], payarlar: []
+};
+const SECIMLER = {
+  satinAldi: { ad: '"Satın aldı" sayılan durum', sayfalar: ['ayrinti'], degerler: [['teslim', 'Teslim edildi'], ['kargoda', 'Kargoya verildi']] },
+  hesapDuzen: { ad: 'Hesabım yerleşimi', sayfalar: ['hesap', 'ayrinti'], degerler: [['yan', 'Yan menü'], ['sekme', 'Sekmeler']] },
+  hesapIlk: { ad: 'Girişten sonra', sayfalar: ['hesap'], degerler: [['siparisler', 'Siparişlerim'], ['ozet', 'Hesap özeti']] },
+  takipAdres: { ad: 'Takipte adres', sayfalar: ['takip'], degerler: [['kisa', 'Kısaltılmış'], ['tam', 'Tam']] },
+  teslimElle: { ad: 'Teslim edildi', sayfalar: ['psiparis', 'payarlar'], degerler: [['elle', 'Elle işaretlenir'], ['otomatik', 'Süre sonunda kendiliğinden']] },
+  kargodaIptal: { ad: 'Kargodaki sipariş iptal', sayfalar: ['psiparis'], degerler: [['hayir', 'Edilemez'], ['evet', 'Edilebilir']] },
+  tekrarIade: { ad: 'Kısmi iadeden sonra', sayfalar: ['psiparis'], degerler: [['evet', 'Yeni iade yapılabilir'], ['hayir', 'Yapılamaz']] },
+  saklama: { ad: 'Kişisel veri', sayfalar: ['payarlar'], degerler: [['sil', 'Süre sonunda silinir'], ['tut', 'İstenene kadar kalır']] },
+  musteriIptal: { ad: 'Ayar: müşteri iptali', sayfalar: ['ayrinti', 'payarlar'], degerler: [['bekleniyor', 'Ödeme beklenirken'], ['hazirlaniyor', 'Kargoya kadar'], ['kapali', 'Kapalı']], ayar: true },
+  iadeKargosu: { ad: 'Ayar: iade kargosu', sayfalar: ['iade', 'epostaM', 'payarlar'], degerler: [['magaza', 'Mağaza'], ['musteri', 'Müşteri']], ayar: true },
+  epostaUye: { ad: 'Alıcı', sayfalar: ['epostaM'], degerler: [['uye', 'Üye'], ['misafir', 'Üye olmayan']], ayar: true },
+  epostaTalep: { ad: 'Talep sonucu', sayfalar: ['epostaM'], degerler: [['onay', 'Onay'], ['ret', 'Ret']], ayar: true }
+};
+const durum = { sayfa: 'hesap', tema: 'acik', gorunum: 'masaustu', hal: 'ilk', satinAldi: 'teslim', hesapDuzen: 'yan', hesapIlk: 'siparisler', takipAdres: 'kisa', teslimElle: 'elle', kargodaIptal: 'hayir', tekrarIade: 'evet', saklama: 'sil', musteriIptal: 'bekleniyor', iadeKargosu: 'magaza', epostaUye: 'uye', epostaTalep: 'onay', panelMenu: 'sol' };
+const adres = new URLSearchParams(location.search);
+for (const k of Object.keys(durum)) if (adres.get(k) !== null) durum[k] = adres.get(k);
+
+const CIZICILER = {
+  giris: girisSayfasi, hesap: hesapSayfasi, ayrinti: ayrintiSayfasi, takip: takipSayfasi, alindi: alindiEki, iade: iadeSayfasi,
+  epostaM: musteriEpostasi, epostaY: yoneticiEpostasi, psiparisler: siparislerPaneli, psiparis: siparisPaneli, pelle: elleSiparisPaneli, payarlar: siparisAyarlariPaneli
+};
+document.getElementById('sayfa-grubu').innerHTML = `<span>Sayfa</span>${SAYFALAR.map(([k, a]) => `<button type="button" data-sayfa="${k}">${a}</button>`).join('')}`;
+function uygula() {
+  const haller = HALLER[durum.sayfa];
+  if (haller.length && !haller.some(([k]) => k === durum.hal)) durum.hal = haller[0][0];
+  document.getElementById('hal-grubu').innerHTML = haller.length ? `<span>Hâl</span>${haller.map(([k, a]) => `<button type="button" data-hal="${k}">${a}</button>`).join('')}` : '';
+  const secimler = Object.entries(SECIMLER).filter(([, s]) => s.sayfalar.includes(durum.sayfa));
+  const grup = ([k, s]) => `<div class="grup ${s.ayar ? '' : 'secim'}"><span>${s.ad}</span>${s.degerler.map(([d, a]) => `<button type="button" data-${k.replace(/[A-Z]/g, (h) => `-${h.toLowerCase()}`)}="${d}">${a}</button>`).join('')}</div>`;
+  const karar = secimler.filter(([, s]) => !s.ayar);
+  const ayar = secimler.filter(([, s]) => s.ayar);
+  document.getElementById('secim-satiri').innerHTML = `${karar.length ? `<span class="secim-baslik">Seçilecekler:</span>${karar.map(grup).join('')}` : ''}${ayar.length ? `<span class="secim-alt-baslik">Göster:</span>${ayar.map(grup).join('')}` : ''}`;
+  document.getElementById('sayfa').dataset.tema = durum.tema;
+  document.getElementById('sahne').classList.toggle('telefon', durum.gorunum === 'telefon');
+  document.getElementById('icerik').innerHTML = CIZICILER[durum.sayfa]();
+  for (const b of document.querySelectorAll('.arac-cubugu button')) {
+    const [k] = Object.keys(b.dataset);
+    b.setAttribute('aria-pressed', String(String(durum[k]) === b.dataset[k]));
+  }
+  try { history.replaceState(null, '', `?${new URLSearchParams(durum)}`); } catch (e) { /* file:// adresinde izin verilmeyebilir */ }
+}
+document.querySelector('.arac-cubugu').onclick = (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const [k] = Object.keys(b.dataset);
+  durum[k] = b.dataset[k];
+  uygula();
+};
+uygula();
+</script>
+</body>
+</html>
