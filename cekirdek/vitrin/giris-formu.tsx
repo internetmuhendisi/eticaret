@@ -86,7 +86,8 @@ export function GirisFormu({
           />
         )}
       </FormAlani>
-      <GonderDugmesi>{metin("vitrin.giris.gonder")}</GonderDugmesi>
+      {/* Giriş düğmesi koyudur, kayıt düğmesi ana renktedir (kart 0237, taslak). */}
+      <GonderDugmesi tur="ikincil">{metin("vitrin.giris.gonder")}</GonderDugmesi>
       <Baglanti href={vitrinAdresleri.sifremiUnuttum}>{metin("ortak.sifirlama.baglanti")}</Baglanti>
       <Baglanti href={kayitAdresi}>{metin("vitrin.giris.hesabinYokMu")}</Baglanti>
     </Form>

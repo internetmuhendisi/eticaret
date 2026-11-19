@@ -19,6 +19,7 @@ import {
   PencereUstu,
 } from "../../../bilesenler/parcalar/pencere";
 import { Rozet } from "../../../bilesenler/parcalar/rozet";
+import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { adresSatiri } from "../../bolgeler/adres-satiri";
 import { kapiyaIstek } from "../../kapi/istemci";
@@ -292,8 +293,11 @@ const varsayilanMetni = (adres: KayitliAdres): MetinAnahtari | undefined =>
         ? "vitrin.hesap.adresler.varsayilanFatura"
         : undefined;
 
-// Silmeden sonra odağın gideceği düğme.
+// Silmeden sonra odağın gideceği düğme ("Yeni adres ekle": boş hâlde ya da ızgaranın sonunda; sınırdayken yoktur).
 const ekleKimligi = "adres-ekle";
+
+// Kartın düğmeleri kenarlıdır (taslak).
+const kartDugmesi = "border border-kenar px-3";
 
 export function AdresDefteri({ veri }: { veri: AdresDefteriVerisi }) {
   const metin = useMetin();
@@ -343,18 +347,6 @@ export function AdresDefteri({ veri }: { veri: AdresDefteriVerisi }) {
   };
 
   const sinirda = adresler.length >= veri.sinir;
-  const ekle = (
-    <Dugme
-      id={ekleKimligi}
-      tur={adresler.length === 0 ? "birincil" : "cerceveli"}
-      onClick={() => setForm({ duzenlenen: undefined })}
-      disabled={sinirda}
-      aria-haspopup="dialog"
-    >
-      <Ikon ad="ekle" />
-      {metin("vitrin.hesap.adresler.ekle")}
-    </Dugme>
-  );
 
   return (
     <>
@@ -364,7 +356,15 @@ export function AdresDefteri({ veri }: { veri: AdresDefteriVerisi }) {
           baslik={metin("vitrin.hesap.adresler.bosBaslik")}
           aciklama={metin("vitrin.hesap.adresler.bosAciklama")}
         >
-          {ekle}
+          <Dugme
+            id={ekleKimligi}
+            tur="birincil"
+            onClick={() => setForm({ duzenlenen: undefined })}
+            aria-haspopup="dialog"
+          >
+            <Ikon ad="ekle" />
+            {metin("vitrin.hesap.adresler.ekle")}
+          </Dugme>
         </BosHal>
       ) : (
         <>
@@ -376,9 +376,17 @@ export function AdresDefteri({ veri }: { veri: AdresDefteriVerisi }) {
               const rozet = varsayilanMetni(adres);
               return (
                 <li key={adres.kimlik}>
-                  <Kart className="flex h-full flex-col gap-3 p-4">
+                  <Kart
+                    className={sinif(
+                      "flex h-full flex-col gap-3 p-4",
+                      // Varsayılan teslimat adresi kalın kenarlıdır (taslak).
+                      adres.varsayilanTeslimat && "border-2 border-yazi",
+                    )}
+                  >
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h2 className="font-kalin wrap-anywhere">{adres.baslik}</h2>
+                      <h2 className="font-govde text-govde font-en-kalin wrap-anywhere">
+                        {adres.baslik}
+                      </h2>
                       {rozet === undefined ? null : <Rozet tur="ikincil">{metin(rozet)}</Rozet>}
                     </div>
                     <p className="flex flex-col wrap-anywhere">
@@ -392,6 +400,7 @@ export function AdresDefteri({ veri }: { veri: AdresDefteriVerisi }) {
                     <div className="mt-auto flex flex-wrap gap-1">
                       <Dugme
                         tur="sade"
+                        className={kartDugmesi}
                         aria-label={doldur(metin("vitrin.hesap.adresler.duzenleEtiket"), {
                           baslik: adres.baslik,
                         })}
@@ -404,6 +413,7 @@ export function AdresDefteri({ veri }: { veri: AdresDefteriVerisi }) {
                       {adres.varsayilanTeslimat && adres.varsayilanFatura ? null : (
                         <Dugme
                           tur="sade"
+                          className={kartDugmesi}
                           aria-label={doldur(metin("vitrin.hesap.adresler.varsayilanYapEtiket"), {
                             baslik: adres.baslik,
                           })}
@@ -414,6 +424,7 @@ export function AdresDefteri({ veri }: { veri: AdresDefteriVerisi }) {
                       )}
                       <Dugme
                         tur="sade"
+                        className={kartDugmesi}
                         aria-label={doldur(metin("vitrin.hesap.adresler.silEtiket"), {
                           baslik: adres.baslik,
                         })}
@@ -427,9 +438,22 @@ export function AdresDefteri({ veri }: { veri: AdresDefteriVerisi }) {
                 </li>
               );
             })}
+            {sinirda ? null : (
+              <li>
+                <Dugme
+                  id={ekleKimligi}
+                  tur="sade"
+                  className="h-full w-full flex-col gap-2 rounded-orta border-2 border-dashed border-kenar py-12 font-kalin"
+                  onClick={() => setForm({ duzenlenen: undefined })}
+                  aria-haspopup="dialog"
+                >
+                  <Ikon ad="ekle" />
+                  {metin("vitrin.hesap.adresler.ekle")}
+                </Dugme>
+              </li>
+            )}
           </ul>
           <div className="flex flex-wrap items-center gap-3">
-            {ekle}
             <p className="text-kucuk text-soluk-yazi">
               {doldur(
                 metin(sinirda ? "vitrin.hesap.adresler.sinir" : "vitrin.hesap.adresler.sayi"),

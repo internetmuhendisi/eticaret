@@ -124,7 +124,7 @@ function SifreFormu({ sifreEnKisa }: { sifreEnKisa: number }) {
             kimlikler={kimlikler}
           />
         </div>
-        <GonderDugmesi className="self-start">
+        <GonderDugmesi tur="sade" className="self-start border border-kenar">
           {metin("vitrin.hesap.bilgiler.sifreDegistir")}
         </GonderDugmesi>
       </Form>
@@ -192,7 +192,9 @@ export function HesapBilgileri({
   return (
     <div className="flex flex-col gap-4">
       <Kart className="flex flex-col gap-3 p-4 tablet:p-5">
-        <h2 className="font-kalin">{metin("vitrin.hesap.bilgiler.kisiselBaslik")}</h2>
+        <h2 className="font-govde text-buyuk font-en-kalin">
+          {metin("vitrin.hesap.bilgiler.kisiselBaslik")}
+        </h2>
         <p className="flex flex-col gap-1">
           <span className="font-kalin">{metin("vitrin.hesap.bilgiler.eposta")}</span>
           <span className="wrap-anywhere">{eposta}</span>
@@ -202,11 +204,15 @@ export function HesapBilgileri({
         </p>
       </Kart>
       <Kart className="flex flex-col gap-3 p-4 tablet:p-5">
-        <h2 className="font-kalin">{metin("vitrin.hesap.bilgiler.sifreBaslik")}</h2>
+        <h2 className="font-govde text-buyuk font-en-kalin">
+          {metin("vitrin.hesap.bilgiler.sifreBaslik")}
+        </h2>
         <SifreFormu sifreEnKisa={sifreEnKisa} />
       </Kart>
       <Kart className="flex flex-col gap-3 p-4 tablet:p-5">
-        <h2 className="font-kalin">{metin("vitrin.hesap.bilgiler.izinBaslik")}</h2>
+        <h2 className="font-govde text-buyuk font-en-kalin">
+          {metin("vitrin.hesap.bilgiler.izinBaslik")}
+        </h2>
         <KampanyaIzni ilk={pazarlamaIzni} />
         <p className="text-kucuk text-soluk-yazi">{metin("vitrin.hesap.bilgiler.izinAciklama")}</p>
       </Kart>

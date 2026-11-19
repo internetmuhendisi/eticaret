@@ -37,8 +37,9 @@ const menu: readonly { sayfa: HesapSayfasi; adres: string; ikon: IkonAdi; ad: Me
   },
 ];
 
+// Taslaktaki gibi: telefonda seçili öğenin altında, masaüstünde solunda ana renkte çizgi.
 const ogeSinifi =
-  "min-h-11 shrink-0 justify-start gap-2 rounded-dugme px-3 font-orta text-yazi no-underline hover:bg-yuzey";
+  "min-h-11 shrink-0 justify-start gap-2 rounded-none border-b-2 border-transparent px-3 font-orta text-yazi no-underline hover:bg-yuzey masaustu:rounded-kucuk masaustu:border-b-0 masaustu:border-l-2";
 
 export function HesapCercevesi({
   secili,
@@ -71,14 +72,14 @@ export function HesapCercevesi({
       <div className="flex flex-col gap-6 masaustu:flex-row masaustu:items-start masaustu:gap-8">
         <nav
           aria-label={metin("vitrin.hesap.menu")}
-          className="flex min-w-0 flex-col gap-2 masaustu:w-64 masaustu:shrink-0 masaustu:rounded-orta masaustu:border masaustu:border-kenar masaustu:p-3"
+          className="flex min-w-0 flex-col gap-2 masaustu:w-full masaustu:max-w-yan-menu masaustu:shrink-0 masaustu:rounded-orta masaustu:border masaustu:border-kenar masaustu:p-3"
         >
           <p className="hidden flex-col px-3 pb-2 text-kucuk text-soluk-yazi masaustu:flex">
             {metin("vitrin.hesap.merhaba")}
             <span className="font-kalin text-yazi wrap-anywhere">{eposta}</span>
           </p>
           {/* Telefonda yatay kayan şerit: yalnız kendi kutusu kayar, sayfa yana kaymaz. */}
-          <ul className="-mx-4 flex gap-1 overflow-x-auto px-4 tablet:-mx-6 tablet:px-6 masaustu:mx-0 masaustu:flex-col masaustu:overflow-visible masaustu:px-0">
+          <ul className="-mx-4 flex gap-1 overflow-x-auto border-b border-kenar px-4 tablet:-mx-6 tablet:px-6 masaustu:mx-0 masaustu:flex-col masaustu:overflow-visible masaustu:border-b-0 masaustu:px-0">
             {menu.map((oge) => (
               <li key={oge.sayfa} className="shrink-0">
                 <Baglanti
@@ -87,7 +88,7 @@ export function HesapCercevesi({
                   className={sinif(
                     ogeSinifi,
                     "w-full",
-                    oge.sayfa === secili && "bg-yuzey font-en-kalin",
+                    oge.sayfa === secili && "border-birincil font-en-kalin masaustu:bg-yuzey",
                   )}
                 >
                   <Ikon ad={oge.ikon} />
