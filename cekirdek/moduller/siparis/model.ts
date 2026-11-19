@@ -13,6 +13,12 @@
 // - odeme_son_zamani: yalnız havalede; bu andan sonra ödenmemiş (bildirimsiz) sipariş kendiliğinden iptal olur.
 // - tahsilat: yalnız ödemesi sipariş kurulurken alınmış siparişte (kartla ödeme, kart 0215): müşterinin ödediği tutar
 //   (taksit farkıyla, kuruş), taksit sayısı ve ödeme kuruluşunun ödeme kimliği. Kart numarası saklanmaz.
+// - odeme_zamani: ödemenin alındığı an (kart 0234): kartla ödemede sipariş kurulurken, havalede onayda, kapıda
+//   ödemede teslimde (siparisIslemleri). Ödeme alınmamış siparişte boştur.
+// - kargo_firmasi, takip_numarasi, takip_adresi, kargo_zamani: kargoya verildiği andaki firma adı, takip numarası ve
+//   firmanın kalıbından kurulmuş takip adresi (kart 0234). Firma listesi sonradan değişse de sipariş değişmez.
+// - teslim_zamani: mağaza sahibinin teslim edildi dediği an (karar 0145).
+// - kisisel_veri_silinme_zamani: saklama süresi dolunca ad, adres, telefon, e-posta ve not silindi (karar 0145).
 //
 // Aranan alanlar:
 // - numara: havale bildirimi ve müşterinin sorusu, tekil indeks.
@@ -20,6 +26,9 @@
 // - durum ve odeme_son_zamani: havalenin iptal taraması, kısmi indeks (yalnız ödeme bekleyen havale).
 // - musteri_kimligi: müşterinin önceki siparişi (adres önerisi), siparişlerim (on üçüncü bölüm), indeksli.
 // - erisim_ozeti: sipariş alındı sayfası, indeksli.
+// - durum ve olusturma_zamani: panelin durum sekmeleri ve sayıları (kart 0234), indeksli. Panelin aramasındaki ad ve
+//   e-posta indekssizdir: liste sayfalıdır, bir site birkaç bin siparişe kadar tam taramayla yeter.
+// - olusturma_zamani (kişisel bilgisi silinmemiş): saklama süresi temizliği, kısmi indeks.
 import { sql } from "drizzle-orm";
 import {
   check,
@@ -79,6 +88,13 @@ export const siparisler = pgTable(
     vergi_dokumu: jsonb().$type<VergiDokumu>().notNull(),
     odeme_son_zamani: zaman(),
     tahsilat: jsonb().$type<Tahsilat>(),
+    odeme_zamani: zaman(),
+    kargo_firmasi: text(),
+    takip_numarasi: text(),
+    takip_adresi: text(),
+    kargo_zamani: zaman(),
+    teslim_zamani: zaman(),
+    kisisel_veri_silinme_zamani: zaman(),
     erisim_ozeti: text().notNull(),
     olusturma_zamani: zaman().notNull().defaultNow(),
   },
@@ -87,11 +103,28 @@ export const siparisler = pgTable(
     uniqueIndex("siparisler_oturum").on(tablo.oturum_kimligi),
     index("siparisler_musteri").on(tablo.musteri_kimligi, tablo.olusturma_zamani),
     index("siparisler_erisim").on(tablo.erisim_ozeti),
+    index("siparisler_durum_zaman").on(tablo.durum, tablo.olusturma_zamani),
+    index("siparisler_kisisel_veri")
+      .on(tablo.olusturma_zamani)
+      .where(sql`${tablo.kisisel_veri_silinme_zamani} is null`),
     index("siparisler_havale_bekleyen")
       .on(tablo.odeme_son_zamani)
       .where(sql`${tablo.durum} = 'odeme-bekleniyor' and ${tablo.odeme_son_zamani} is not null`),
     // Kayıt dosyalarıyla aynıdır (cekirdek/kayitlar/siparis.ts, odeme.ts); bunu servis testi denetler.
-    check("siparisler_durum", sql`${tablo.durum} in ('odeme-bekleniyor', 'hazirlaniyor', 'iptal')`),
+    check(
+      "siparisler_durum",
+      sql`${tablo.durum} in ('odeme-bekleniyor', 'hazirlaniyor', 'kargoda', 'teslim-edildi', 'kismi-iade', 'iade-edildi', 'iptal')`,
+    ),
+    // Kargo bilgisi birlikte yazılır: firma ve an ya ikisi de var ya ikisi de yok; takip numarası ve adresi firmasız
+    // olamaz. Kargoya verilmiş (ve sonrasındaki) siparişte firma vardır.
+    check(
+      "siparisler_kargo_bilgisi",
+      sql`(${tablo.kargo_firmasi} is null) = (${tablo.kargo_zamani} is null) and (${tablo.kargo_firmasi} is not null or (${tablo.takip_numarasi} is null and ${tablo.takip_adresi} is null)) and (${tablo.durum} not in ('kargoda', 'teslim-edildi') or ${tablo.kargo_firmasi} is not null)`,
+    ),
+    check(
+      "siparisler_teslim",
+      sql`(${tablo.teslim_zamani} is null) = (${tablo.durum} in ('odeme-bekleniyor', 'hazirlaniyor', 'kargoda', 'iptal'))`,
+    ),
     check(
       "siparisler_odeme_yontemi",
       sql`(${tablo.odeme_yontemi} = 'havale' and ${tablo.kapida_secenegi} is null and ${tablo.odeme_son_zamani} is not null) or (${tablo.odeme_yontemi} = 'kapida-odeme' and ${tablo.kapida_secenegi} in ('nakit', 'kart') and ${tablo.odeme_son_zamani} is null) or (${tablo.odeme_yontemi} = 'kart' and ${tablo.kapida_secenegi} is null and ${tablo.odeme_son_zamani} is null and ${tablo.tahsilat} is not null)`,
@@ -176,11 +209,11 @@ export const siparisGecmisi = pgTable(
     index("siparis_gecmisi_siparis").on(tablo.siparis_kimligi, tablo.zaman),
     check(
       "siparis_gecmisi_neden",
-      sql`${tablo.neden} in ('olusturuldu', 'havale-suresi-doldu', 'havale-bildirildi')`,
+      sql`${tablo.neden} in ('olusturuldu', 'havale-suresi-doldu', 'havale-bildirildi', 'havale-onaylandi', 'hazirlamaya-alindi', 'kargoya-verildi', 'kargo-duzeltildi', 'teslim-edildi')`,
     ),
     check(
       "siparis_gecmisi_durum",
-      sql`${tablo.sonraki_durum} in ('odeme-bekleniyor', 'hazirlaniyor', 'iptal') and (${tablo.onceki_durum} is null or ${tablo.onceki_durum} in ('odeme-bekleniyor', 'hazirlaniyor', 'iptal'))`,
+      sql`${tablo.sonraki_durum} in ('odeme-bekleniyor', 'hazirlaniyor', 'kargoda', 'teslim-edildi', 'kismi-iade', 'iade-edildi', 'iptal') and (${tablo.onceki_durum} is null or ${tablo.onceki_durum} in ('odeme-bekleniyor', 'hazirlaniyor', 'kargoda', 'teslim-edildi', 'kismi-iade', 'iade-edildi', 'iptal'))`,
     ),
     check(
       "siparis_gecmisi_kim_dolu",
@@ -215,3 +248,34 @@ export const havaleBildirimleri = pgTable(
     check("havale_bildirimleri_tutar", sql`${tablo.tutar} > 0`),
   ],
 );
+
+// Siparişin notları (kart 0234): iç not yalnız panelde, müşteriye not müşterinin sipariş ayrıntısında görünür. Not
+// sonradan değiştirilemez ve silinmez (tetikleyici, geçmişle aynı kural). Yazanı geçmişle aynı biçimde saklanır.
+//
+// Aranan alanlar: siparis_kimligi ve zaman (siparişin notları, zaman sırasıyla), indeksli.
+export const siparisNotlari = pgTable(
+  "siparis_notlari",
+  {
+    kimlik: kimlik(),
+    siparis_kimligi: uuid()
+      .notNull()
+      .references(() => siparisler.kimlik, { onDelete: "restrict" }),
+    zaman: zaman().notNull().defaultNow(),
+    // cekirdek/kayitlar/siparis.ts: siparisNotTurleri.
+    tur: text().notNull(),
+    metin: text().notNull(),
+    kim_turu: text().notNull(),
+    kim_kimligi: uuid(),
+    kim_adi: text(),
+  },
+  (tablo) => [
+    index("siparis_notlari_siparis").on(tablo.siparis_kimligi, tablo.zaman),
+    check("siparis_notlari_tur", sql`${tablo.tur} in ('ic', 'musteri')`),
+    check("siparis_notlari_metin", sql`length(${tablo.metin}) between 1 and 1000`),
+    check(
+      "siparis_notlari_kim_dolu",
+      sql`(${tablo.kim_turu} = 'sistem' and length(${tablo.kim_adi}) > 0 and ${tablo.kim_kimligi} is null) or (${tablo.kim_turu} in ('yonetici', 'musteri', 'sahip') and ${tablo.kim_kimligi} is not null and ${tablo.kim_adi} is null)`,
+    ),
+  ],
+);
+export type SiparisNotu = typeof siparisNotlari.$inferSelect;

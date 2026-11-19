@@ -60,11 +60,15 @@ export const panelSayfaBilgisi = async (
 
 export async function PanelSayfasi({
   kod,
+  baslik,
   eylemler,
   children,
   agac = panelSayfalari,
 }: {
   kod: PanelSayfaKodu;
+  // Ağaçtaki addan farklı başlık: kaydın kendisini gösteren alt sayfa (sipariş ayrıntısında "Sipariş ORN-1007").
+  // Sayfa yolu ve sekme başlığı ağaçtaki adla kalır.
+  baslik?: string;
   // Komut çubuğundaki eylemler (EylemDugmesi, EylemBaglantisi); asıl eylem en sonda.
   eylemler?: ReactNode;
   children?: ReactNode;
@@ -83,7 +87,7 @@ export async function PanelSayfasi({
               className="hidden tablet:block"
             />
           ) : null}
-          <SayfaBasligi baslik={metin(sayfa.ad)} gorunum="panel" />
+          <SayfaBasligi baslik={baslik ?? metin(sayfa.ad)} gorunum="panel" />
           <p className="text-kucuk text-soluk-yazi">{metin(sayfa.aciklama)}</p>
         </div>
         {eylemler === undefined ? null : (

@@ -38,6 +38,9 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `ozellik.degistir` | yonetici | tumu | Özellik ve seçenek ekler ve değiştirir. |
 | `ozellik.sil` | yonetici | tumu | Özellik ya da seçenek siler: değerleri ürünlerden kalkar. |
 | `siparis.kendi.havale-bildir` | musteri | kendi | Giriş yapmış müşteri kendi havale siparişi için ödediğini bildirir (kart 0214). |
+| `siparis.gor` | yonetici | tumu | Siparişleri, ayrıntısını, geçmişini, notlarını ve havale bildirimlerini görür (kart 0234). |
+| `siparis.yonet` | yonetici | tumu | Kapıda ödeme siparişini hazırlamaya alır, siparişi kargoya verir, kargo bilgisini düzeltir, teslim edildi işaretler ve not ekler (kart 0234). |
+| `siparis.havale-onayla` | yonetici | tumu | Havale siparişinin ödemesini onaylar, sipariş hazırlanıyor olur (kart 0234; görevlide yok, kullanıcı kararı). |
 | `stok.gor` | yonetici | tumu | Satılabilir birimlerin stoğunu ve stok geçmişini görür. |
 | `stok.duzelt` | yonetici | tumu | Stoğu sebebiyle elle düzeltir. |
 | `stok-bildirimi.kendi.iste` | musteri | kendi | Giriş yapmış müşteri tükenmiş birim için kendi hesabının e-postasıyla "stoğa gelince haber ver" talebi bırakır (eklenti, kart 0144). |
@@ -61,6 +64,6 @@ Her sitede hazır gelir. Ekranda görünen adları metin dosyasındadır (`yonet
 | Kod | Görünen ad | İzinler |
 |---|---|---|
 | `magaza-sahibi` | Mağaza sahibi | bütün yönetici izinleri |
-| `gorevli` | Görevli | ekip.kendi-hesabi.gor, urun.gor, urun.degistir, kategori.gor, kategori.degistir, marka.gor, marka.degistir, etiket.gor, etiket.degistir, fiyat.gor, stok.gor, stok.duzelt, ozellik.gor, ozellik.degistir, yorum.gor, yorum.onayla, odeme-yontemi.gor |
+| `gorevli` | Görevli | ekip.kendi-hesabi.gor, urun.gor, urun.degistir, kategori.gor, kategori.degistir, marka.gor, marka.degistir, etiket.gor, etiket.degistir, fiyat.gor, stok.gor, stok.duzelt, ozellik.gor, ozellik.degistir, yorum.gor, yorum.onayla, odeme-yontemi.gor, siparis.gor, siparis.yonet |
 
 Tam yetkili son yöneticinin rolü alınamaz. Görevlinin izinleri ürün ve sipariş gibi modüller geldikçe artar.

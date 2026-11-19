@@ -62,6 +62,13 @@ paths:
 - Ekran `cekirdek/yonetim-paneli/kargo/` klasöründe, menüde "Satış" altındadır. Ayarlar mağaza ayarlarıdır: görmek `magaza-ayarlari.gor`, değiştirmek `magaza-ayarlari.degistir` ister.
 - Tutar sitenin para biçimiyle yazılı gider, sunucuda `kargoAyarlariniDegistir` (`cekirdek/moduller/kargo/servis.ts`) biçimleyicinin `paraOku`'suyla okur. Ekran tutarı kendisi çevirmez; alanın hatası koduyla döner.
 
+## Siparişler (karar 0146)
+
+- Ekranlar `cekirdek/yonetim-paneli/siparisler/` klasöründe, menüde "Satış" altındadır: Siparişler, Sipariş ayrıntısı (alt sayfa, `?numara=`), Sipariş ayarları. Görmek `siparis.gor`, işlemler `siparis.yonet`, havale onayı `siparis.havale-onayla` (görevlide yok); sipariş ayarları mağaza ayarıdır.
+- Hangi işlemin görüneceği sunucuda siparişin durumu, ödeme yöntemi ve yöneticinin izniyle bulunur (`siparisAyrintisiVerisi`); ekran işlemi yeniden süzmez. İşlem ekranın gördüğü durumu gönderir.
+- Durumun rozeti ve metni kayıttan okunur (`siparisDurumTanimlari`, `durumMetni`); durum adını ekranda elle yazma.
+- Sipariş araması aranan metni adrese yazmaz: liste ucuna gider. Durum sekmesi ve sayfa adrestedir.
+
 ## Ödeme yöntemleri ve banka hesapları (karar 0141)
 
 - Ekranlar `cekirdek/yonetim-paneli/odeme-yontemleri/` klasöründe, menüde "Satış" altındadır. Görmek `odeme-yontemi.gor` (görevli de), değiştirmek `odeme-yontemi.degistir` (yalnız mağaza sahibi) ister; izni olmayan yönetici yalnız okur, anahtar ve düğmeler kapalıdır ya da yoktur.

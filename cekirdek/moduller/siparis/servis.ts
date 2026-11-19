@@ -170,6 +170,8 @@ export const siparisServisi = (site: Site) => {
           ? sql`now() + make_interval(days => ${girdi.havaleIptalSuresi})`
           : null,
         tahsilat: girdi.tahsilat ?? null,
+        // Kartla ödemede ödeme sipariş kurulurken alınmıştır (kart 0234).
+        odeme_zamani: girdi.tahsilat === undefined ? null : sql`now()`,
         erisim_ozeti: erisimOzeti(erisimAnahtari),
       })
       .onConflictDoNothing({ target: siparisler.oturum_kimligi })

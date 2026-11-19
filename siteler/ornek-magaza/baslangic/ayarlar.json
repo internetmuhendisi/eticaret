@@ -50,5 +50,12 @@
       "iban": "TR539990200000000000000002"
     }
   ],
-  "kartlaOdemeEnCokTaksit": 6
+  "kartlaOdemeEnCokTaksit": 6,
+  "kargoFirmalari": [
+    {
+      "kimlik": "6f1d2c3a-8b4e-4c7a-9d2e-5a1b3c4d5e6f",
+      "ad": "Deneme Kargo",
+      "takipAdresi": "https://takip.deneme-kargo.test/{takip}"
+    }
+  ]
 }

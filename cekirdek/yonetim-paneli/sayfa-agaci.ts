@@ -47,6 +47,37 @@ export const panelSayfalari = [
     izin: null,
     grup: null,
   },
+  // Siparişler (kart 0234, karar 0145): görevli görür ve yönetir, havaleyi yalnız mağaza sahibi onaylar. Ayrıntı alt
+  // sayfadır: numara adresin sorgusundadır (?numara=), sayfa yolunda listenin altında durur.
+  {
+    kod: "siparisler",
+    adres: `${panelAdresi}/siparisler`,
+    ad: "yonetim.sayfa.siparisler.ad",
+    aciklama: "yonetim.sayfa.siparisler.aciklama",
+    ikon: "paket",
+    izin: "siparis.gor",
+    grup: "satis",
+  },
+  {
+    kod: "siparis-ayrintisi",
+    adres: `${panelAdresi}/siparisler/ayrinti`,
+    ad: "yonetim.sayfa.siparisAyrintisi.ad",
+    aciklama: "yonetim.sayfa.siparisAyrintisi.aciklama",
+    ikon: "paket",
+    izin: "siparis.gor",
+    grup: "satis",
+    ust: "siparisler",
+  },
+  // Sipariş ayarları (kart 0234): kargo firmaları; mağaza ayarıdır, yalnız mağaza sahibinin izinleriyle.
+  {
+    kod: "siparis-ayarlari",
+    adres: `${panelAdresi}/siparis-ayarlari`,
+    ad: "yonetim.sayfa.siparisAyarlari.ad",
+    aciklama: "yonetim.sayfa.siparisAyarlari.aciklama",
+    ikon: "duzenle",
+    izin: "magaza-ayarlari.gor",
+    grup: "satis",
+  },
   // Ödeme yöntemleri ve banka hesapları (kart 0214, karar 0141): görevli görür, yalnız mağaza sahibi değiştirir.
   {
     kod: "odeme-yontemleri",

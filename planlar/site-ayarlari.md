@@ -91,7 +91,7 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Ücretsiz kargo sınırı | Mağaza sahibi | Yok | 750 TL, panelden (kart 0216) | Bu tutar ve üstündeki sepette kargo ücretsiz. Şemada `ucretsizKargoSiniri` (kart 0212) |
 | Ücretsiz kargo sınırının hesaplandığı tutar | Mağaza sahibi | İndirimden sonraki tutar | — | Seçenekler: indirimden önce, indirimden sonra. Şemada `ucretsizKargoTutari` (kart 0212) |
 | Kargoya verme süresi | Mağaza sahibi | 1 iş günü | — | Sayı olarak tutulur. Ürün sayfasında "1 iş gününde kargoda" yazar, ön bilgilendirme metnindeki teslim süresi de buradan gelir. Şemada `kargoyaVermeSuresi` (kart 0110); bugün güven şeridinin yer tutucusu okur |
-| Kargo firmaları | Mağaza sahibi | Boş liste | Bir deneme firması (açıkça deneme adıyla, `.test` alan adlı takip adresi) | Ad ve takip adresi kalıbı (`{takip numarası}` yerine siparişin takip numarası konur). Siparişi kargoya verirken listeden seçilir; takip bağlantısı müşterinin sipariş sayfasında ve e-postasında görünür. Panelde Satış > Sipariş ayarları (kart 0233 önerisi, karar 0145; şemaya kart 0234 ile girer) |
+| Kargo firmaları | Mağaza sahibi | Boş liste | Bir deneme firması (açıkça deneme adıyla, `.test` alan adlı takip adresi) | Ad ve takip adresi kalıbı (`{takip numarası}` yerine siparişin takip numarası konur). Siparişi kargoya verirken listeden seçilir; takip bağlantısı müşterinin sipariş sayfasında ve e-postasında görünür. Şemada `kargoFirmalari`, panelde Satış > Sipariş ayarları (kart 0234, karar 0145, 0146). Örnek Mağaza'nın firması "Deneme Kargo" (`takip.deneme-kargo.test`) |
 
 ## İade
 
@@ -100,7 +100,7 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | İade kargosunu kim öder | Mağaza sahibi | Mağaza | — | Seçenekler: mağaza, müşteri. İade koşulları metnine buradan girer. Cayma hakkında yasal kuralı hukukçuya teyit ettirilecek |
 | Müşterinin kendi iptali | Mağaza sahibi | Ödeme beklenirken | — | Seçenekler: kapalı, ödeme beklenirken, kargoya verilene kadar. Müşteri sipariş sayfasından onay penceresiyle iptal eder; ödenmişse para iade akışıyla döner (kart 0233 önerisi, karar 0145; kart 0239) |
 | İade talebi süresi | Mağaza sahibi | 14 gün | — | Teslimden sonra gün. Süre içinde müşteri hesabından ya da sipariş takibinden iade talebi açar. Cayma süresiyle ilişkisi hukukçuya teyit ettirilir (kart 0233 önerisi, karar 0145; kart 0239) |
-| Siparişteki kişisel bilgilerin saklama süresi | Altyapı sahibi | 10 yıl (hukukçu teyidine kadar öneri) | — | Süre sonunda ad, adres, telefon ve e-posta siparişten silinir; tutarlar, ürünler ve vergi dökümü kalır. Ödeme oturumunun kişisel verisi de bu süreye bağlanır (kullanıcı kararı, karar 0145; süre kart 0063'te hukukçuya sorulur) |
+| Siparişteki kişisel bilgilerin saklama süresi | Altyapı sahibi | 10 yıl (hukukçu teyidine kadar öneri) | — | Süre sonunda ad, adres, telefon ve e-posta siparişten silinir; tutarlar, ürünler ve vergi dökümü kalır. Ödeme oturumunun kişisel verisi de bu süreye bağlanır Şemada `kisiselVeriSaklamaYili` (1–30 yıl), günlük işle silinir (kullanıcı kararı, karar 0145, 0146; süre kart 0063'te hukukçuya sorulur) |
 
 ## Vitrin listeleri ve ürün sayfası
 
@@ -118,7 +118,7 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
 |---|---|---|---|---|
-| Yalnız satın alanlar yorum yapabilir | Mağaza sahibi | Açık | Kapalı | `yorumYalnizSatinAlanlar`. Satın alma denetimi sipariş modülüyle gelir; o güne kadar açıkken kimse yorum yazamaz. Kapalıyken giriş yapmış her müşteri yazar. Yorumlar her durumda onaydan sonra yayınlanır (karar 0101, 0109, kart 0139) |
+| Yalnız satın alanlar yorum yapabilir | Mağaza sahibi | Açık | Kapalı | `yorumYalnizSatinAlanlar`. Satın almış sayılan: o ürünü içeren teslim edilmiş ya da kısmen iade edilmiş siparişi olan müşteri (karar 0145, 0146). Kapalıyken giriş yapmış her müşteri yazar. Yorumlar her durumda onaydan sonra yayınlanır (karar 0101, 0109, kart 0139) |
 | Doğrulanmış alıcı etiketi | Mağaza sahibi | Açık | — | `dogrulanmisAliciEtiketi`. Etiket yorum yazıldığı anda ürünü satın almış müşterinin yorumunda görünür; Örnek Mağaza'nın örnek yorumlarında yoktur (kart 0139, kullanıcı kararı) |
 
 ## E-posta

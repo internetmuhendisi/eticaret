@@ -66,6 +66,15 @@
       "nakit": "Nakit",
       "kart": "Kart",
       "kartla": "Kartla öde"
+    },
+    "siparisDurumu": {
+      "odeme-bekleniyor": "Ödeme bekleniyor",
+      "hazirlaniyor": "Hazırlanıyor",
+      "kargoda": "Kargoda",
+      "teslim-edildi": "Teslim edildi",
+      "kismi-iade": "Kısmi iade",
+      "iade-edildi": "İade edildi",
+      "iptal": "İptal edildi"
     }
   },
   "ayar": {
@@ -86,6 +95,7 @@
       "videoSiteleri": "Ürün galerisine bağlantısı eklenebilen video siteleri.",
       "siparisOneki": "Sipariş numarasının başındaki harfler. Verilmezse mağaza adının ilk üç harfi kullanılır.",
       "siparisBaslangici": "İlk siparişin numarası.",
+      "kisiselVeriSaklamaYili": "Siparişteki ad, adres, telefon ve e-postanın kaç yıl saklandığı. Süre dolunca bu bilgiler silinir; tutarlar ve ürünler kalır.",
       "temaDegistirilebilir": "Mağaza sahibi yönetim panelinden temayı değiştirebilir.",
       "temaDemosu": "Bu site bir tema demosudur: ziyaretçi temaları adresten seçip gezer, hesap açamaz, sipariş veremez; site arama motorlarına kapalıdır.",
       "temalar": "Mağaza sahibinin seçebileceği temalar. İlki sitenin başlangıç temasıdır. Verilmezse bütün hazır temalar.",
@@ -125,6 +135,7 @@
       "kargoUcreti": "Sepete eklenen kargo ücreti. Fiyatlar gibi vergi dahil ya da hariç girilir. 0 kargoyu her zaman ücretsiz yapar.",
       "ucretsizKargoSiniri": "Bu tutar ve üstündeki sepette kargo ücretsizdir. Boşsa ücretsiz kargo sınırı yoktur.",
       "ucretsizKargoTutari": "Ücretsiz kargo sınırının sepetin indirimden sonraki mi önceki mi tutarıyla karşılaştırılacağı.",
+      "kargoFirmalari": "Siparişi kargoya verirken seçilen kargo firmaları ve takip adresleri.",
       "sepeteEkleyince": "Ürün sepete eklenince ne olur: sepet penceresi açılır, kısa bildirim çıkar ya da sepet sayfasına gidilir.",
       "uyeOlmadanAlisveris": "Müşteri hesap açmadan sipariş verebilir mi. Kapalıysa ödeme adımı girişe yönlendirir.",
       "telefonZorunlu": "Ödeme adımında teslimat telefonu zorunlu mu. Kargo firmaları teslimat için telefon ister.",
@@ -191,13 +202,30 @@
       "bankaHesaplari": {
         "ad": "Banka hesapları",
         "aciklama": "Havalede müşteriye gösterilen hesaplar, gördüğü sırayla. Hesap yoksa havale ödeme adımında görünmez."
+      },
+      "siparisler": {
+        "ad": "Siparişler",
+        "aciklama": "Müşterilerin verdiği siparişler. Bir siparişe girip ödemesini onaylayın, kargoya verin ya da teslim edildi işaretleyin."
+      },
+      "siparisAyrintisi": {
+        "ad": "Sipariş ayrıntısı",
+        "aciklama": "Siparişin ürünleri, tutarı, müşterisi ve geçmişi. Durum değişikliği hemen kaydedilir ve geçmişe yazılır."
+      },
+      "siparisAyarlari": {
+        "ad": "Sipariş ayarları",
+        "aciklama": "Siparişi kargoya verirken seçilen kargo firmaları. Değişiklik kaydedilince hemen yayınlanır."
       }
     },
     "eylem": {
       "ekle": "{ne} ekle",
       "oncekiHaleDon": "Önceki hâline dön",
       "vitrineGit": "Vitrine git",
-      "vitrineGitYeniSekme": "Vitrine git (yeni sekmede açılır)"
+      "vitrineGitYeniSekme": "Vitrine git (yeni sekmede açılır)",
+      "havaleOnayla": "Havaleyi onayla",
+      "hazirlamayaAl": "Hazırlamaya al",
+      "kargoyaVer": "Kargoya ver",
+      "kargoDuzelt": "Kargo bilgisini düzelt",
+      "teslimEdildi": "Teslim edildi"
     },
     "rol": {
       "magaza-sahibi": "Mağaza sahibi",
@@ -804,6 +832,218 @@
         "ibanAyni": "Bu IBAN başka bir hesapta zaten var.",
         "sonYontem": "Bu son banka hesabı ve müşterinin kullanabileceği başka ödeme yöntemi yok. Önce Ödeme yöntemleri'nden başka bir yöntemi açın."
       }
+    },
+    "siparisler": {
+      "tumu": "Tümü",
+      "durumSuzgeci": "Durum süzgeci",
+      "ara": "Sipariş ara",
+      "araYer": "Sipariş no, müşteri adı ya da e-posta",
+      "araDugme": "Ara",
+      "aramayiTemizle": "Aramayı temizle",
+      "aramaSonucu": "\"{aranan}\" için {sayi} sipariş bulundu.",
+      "aramaFazla": "İlk {sayi} sipariş gösteriliyor. Aramayı daraltın.",
+      "aramaYok": {
+        "baslik": "Sipariş bulunamadı",
+        "metin": "\"{aranan}\" ile eşleşen sipariş yok. Numarayı, adı ya da e-postayı kontrol edin."
+      },
+      "aramaHatasi": "Arama yapılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
+      "liste": "Siparişler, en yeni önce",
+      "sutun": {
+        "siparis": "Sipariş",
+        "tarih": "Tarih",
+        "musteri": "Müşteri",
+        "durum": "Durum",
+        "odeme": "Ödeme",
+        "tutar": "Tutar"
+      },
+      "uyeDegil": "üye değil",
+      "havaleBildirildi": "Havale bildirildi",
+      "ayrintiAdi": "{numara} siparişinin ayrıntısı",
+      "kisiselSilindi": "Bilgiler silindi",
+      "bos": {
+        "baslik": "Henüz sipariş yok",
+        "metin": "Müşteriler sipariş verdikçe burada en yeni önce görünür. Vitrininizi gezip bir deneme siparişi verebilirsiniz.",
+        "dugme": "Vitrine git"
+      },
+      "bosDurum": {
+        "baslik": "Bu durumda sipariş yok",
+        "metin": "Başka bir durumu seçin ya da bütün siparişlere dönün.",
+        "dugme": "Bütün siparişler"
+      }
+    },
+    "siparis": {
+      "baslik": "Sipariş {numara}",
+      "ust": "{zaman} · {yontem}",
+      "urunler": "Ürünler",
+      "adet": "{adet} × {fiyat}",
+      "araToplam": "Ara toplam",
+      "kargo": "Kargo",
+      "kargoUcretsiz": "Ücretsiz",
+      "kargoYok": "Kargo gerekmiyor",
+      "toplam": "Toplam",
+      "vergiDahil": "Toplama dahil {ad} ({oran})",
+      "vergiHaric": "{ad} ({oran})",
+      "vergi": "Vergi",
+      "kargoBilgisi": {
+        "baslik": "Kargo",
+        "takipNo": "Takip no: {no}",
+        "takipYok": "Takip numarası yok",
+        "takipEt": "Kargoyu takip et",
+        "verildi": "{zaman} kargoya verildi"
+      },
+      "bildirimler": {
+        "baslik": "Havale bildirimleri",
+        "satir": "{gonderen} · {banka} · {tutar}",
+        "ayrinti": "Ödeme günü {gun} · {zaman} bildirildi",
+        "aciklama": "Bildirimli sipariş ödeme süresi dolunca kendiliğinden iptal olmaz. Hesabınızda ödemeyi görünce havaleyi onaylayın."
+      },
+      "gecmis": {
+        "baslik": "Geçmiş ve notlar",
+        "olusturuldu": "Sipariş oluşturuldu",
+        "gecis": "{onceki} → {sonraki}",
+        "ayniDurum": "{durum}",
+        "yazanZaman": "{yazan} · {zaman}"
+      },
+      "neden": {
+        "olusturuldu": "Sipariş verildi",
+        "havale-suresi-doldu": "Ödeme süresi doldu",
+        "havale-bildirildi": "Müşteri havaleyi bildirdi",
+        "havale-onaylandi": "Havale onaylandı",
+        "hazirlamaya-alindi": "Hazırlamaya alındı",
+        "kargoya-verildi": "Kargoya verildi",
+        "kargo-duzeltildi": "Kargo bilgisi düzeltildi",
+        "teslim-edildi": "Teslim edildi"
+      },
+      "yazan": {
+        "musteri": "Müşteri",
+        "yonetici": "Yönetici",
+        "sistem": {
+          "havale-suresi": "Otomatik iptal",
+          "uye-olmayan-musteri": "Müşteri (üye değil)"
+        },
+        "sistemGenel": "Sistem"
+      },
+      "musteri": {
+        "baslik": "Müşteri",
+        "ad": "Ad",
+        "eposta": "E-posta",
+        "telefon": "Telefon",
+        "uye": "Üye",
+        "uyeDegil": "Üye değil",
+        "hesap": "Hesap"
+      },
+      "teslimat": {
+        "baslik": "Teslimat ve fatura",
+        "teslimat": "Teslimat",
+        "fatura": "Fatura",
+        "bireysel": "Bireysel",
+        "kurumsal": "Kurumsal · {firma}, {vergiDairesi} {vergiNumarasi}",
+        "adresAyni": "teslimat adresiyle aynı",
+        "siparisNotu": "Sipariş notu"
+      },
+      "odeme": {
+        "baslik": "Ödeme",
+        "yontem": "Yöntem",
+        "durum": "Durum",
+        "alindi": "{zaman} alındı",
+        "bekleniyor": "Bekleniyor · son gün {zaman}",
+        "teslimde": "Teslimde alınacak",
+        "iptal": "Alınmadı"
+      },
+      "kisiselSilindi": "Saklama süresi dolduğu için bu siparişin kişisel bilgileri silindi.",
+      "pencere": {
+        "kargoBaslik": "Kargoya ver",
+        "kargoDuzeltBaslik": "Kargo bilgisini düzelt",
+        "kargoAciklamasi": "Firma ve takip numarası müşterinin sipariş sayfasında görünür.",
+        "firma": "Kargo firması",
+        "firmaSec": "Firma seçin",
+        "takip": "Takip numarası (isteğe bağlı)",
+        "takipAciklamasi": "Boş bırakırsanız müşteriye takip bağlantısı gösterilmez.",
+        "kaydet": "Kaydet",
+        "firmaYok": "Kargo firması eklenmemiş. Önce sipariş ayarlarından bir firma ekleyin.",
+        "firmaYokBaglanti": "Sipariş ayarları"
+      },
+      "onay": {
+        "havale": {
+          "baslik": "Havale onaylansın mı?",
+          "metin": "{numara} siparişinin {tutar} ödemesi hesabınıza geçtiyse onaylayın. Sipariş hazırlanıyor durumuna geçer.",
+          "dugme": "Havaleyi onayla"
+        },
+        "hazirla": {
+          "baslik": "Sipariş hazırlamaya alınsın mı?",
+          "metin": "{numara} siparişi hazırlanıyor durumuna geçer. Ödeme teslimatta alınacak.",
+          "dugme": "Hazırlamaya al"
+        },
+        "teslim": {
+          "baslik": "Teslim edildi işaretlensin mi?",
+          "metin": "{numara} siparişi teslim edildi durumuna geçer. Müşteri bundan sonra iade talebi açabilir ve yorum yazabilir.",
+          "dugme": "Teslim edildi"
+        }
+      },
+      "basari": {
+        "havale-onayla": "Havale onaylandı, sipariş hazırlanıyor.",
+        "hazirlamaya-al": "Sipariş hazırlamaya alındı.",
+        "kargoya-ver": "Sipariş kargoya verildi.",
+        "kargo-duzelt": "Kargo bilgisi düzeltildi.",
+        "teslim-edildi": "Sipariş teslim edildi olarak işaretlendi."
+      },
+      "hata": {
+        "cakisma": "Sipariş bu arada değişti. Sayfa yenilendi; güncel durumuna bakıp yeniden deneyin.",
+        "gecis": "Bu işlem siparişin şu anki durumunda yapılamaz.",
+        "yetki": "Bu işlemi yapma izniniz yok.",
+        "genel": "İşlem yapılamadı. Sayfayı yenileyip yeniden deneyin.",
+        "takipNumarasi": "Takip numarasında yalnız harf, rakam, boşluk ve tire olabilir.",
+        "firma": "Firma seçin.",
+        "firmaYok": "Bu firma artık listede yok. Sayfayı yenileyip başka bir firma seçin."
+      },
+      "notlar": {
+        "etiket": "Not ekle",
+        "tur": "Not türü",
+        "ic": "İç not (yalnız panelde)",
+        "musteri": "Müşteriye not (müşteri siparişinde görür)",
+        "kaydet": "Notu ekle",
+        "eklendi": "Not eklendi.",
+        "icBaslik": "İç not",
+        "musteriBaslik": "Müşteriye not",
+        "gerekli": "Notu yazın.",
+        "uzun": "Not en çok 1000 harf olabilir.",
+        "genel": "Not eklenemedi. Yeniden deneyin.",
+        "yetki": "Not ekleme izniniz yok."
+      }
+    },
+    "siparisAyarlari": {
+      "kargoFirmalari": "Kargo firmaları",
+      "kargoAciklamasi": "Siparişi kargoya verirken bu listeden seçersiniz. Takip adresi verilen firmada müşteri takip numarasıyla kargoyu izleyebilir.",
+      "ad": "Firma adı",
+      "takipAdresi": "Takip adresi (isteğe bağlı)",
+      "takipAciklamasi": "https:// ile başlayan adres. Takip numarasının geleceği yere {takip} yazın, örneğin https://kargo.example/takip/{takip}.",
+      "takipYok": "Takip bağlantısı yok",
+      "yeniFirma": "Yeni kargo firması",
+      "firmayiDuzenle": "Kargo firmasını düzenle",
+      "formAciklamasi": "Firmanın adı siparişte ve müşterinin sipariş sayfasında görünür.",
+      "kaydet": "Kaydet",
+      "eklendi": "Kargo firması eklendi.",
+      "degisti": "Kargo firması kaydedildi.",
+      "silindi": "Kargo firması silindi.",
+      "duzenle": "Düzenle: {ad}",
+      "sil": "Sil: {ad}",
+      "silOnay": {
+        "baslik": "{ad} silinsin mi?",
+        "metin": "Firma listeden kalkar. Bu firmayla kargoya verilmiş siparişler değişmez.",
+        "sil": "Sil"
+      },
+      "bos": {
+        "baslik": "Kargo firması yok",
+        "metin": "Siparişi kargoya verebilmek için en az bir firma ekleyin."
+      },
+      "hata": {
+        "gerekli": "Firma adını yazın.",
+        "takipAdresi": "Adres https:// ile başlamalı ve {takip} işaretini bir kez taşımalı.",
+        "cakisma": "Liste bu arada değişti. Sayfa yenilendi; değişikliğinizi yeniden yapın.",
+        "yetki": "Sipariş ayarlarını değiştirme izniniz yok.",
+        "genel": "Kaydedilemedi. Sayfayı yenileyip yeniden deneyin."
+      },
+      "firmaEkleNe": "Firma"
     }
   },
   "vitrin": {

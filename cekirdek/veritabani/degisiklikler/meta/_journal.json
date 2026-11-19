@@ -295,6 +295,13 @@
       "when": 1794937744217,
       "tag": "0041_kartla-odeme-korumalari",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1795082099870,
+      "tag": "0042_siparis-durumlari",
+      "breakpoints": true
     }
   ]
 }

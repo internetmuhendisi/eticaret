@@ -16,7 +16,7 @@ import { denemeIsaretiBicimi } from "../kayitlar/arka-plan.ts";
 import { kartlaOdemeAyari, stokBildirimiAyari } from "../kayitlar/eklentiler.ts";
 import { epostaGonderIsi, epostaKayitTemizligiIsi } from "../moduller/eposta/isler.ts";
 import { odemeOturumuTemizligiIsi } from "../moduller/odeme/isler.ts";
-import { havaleIptalIsi } from "../moduller/siparis/isler.ts";
+import { havaleIptalIsi, kisiselVeriTemizligiIsi } from "../moduller/siparis/isler.ts";
 import { type ZamanliIs, zamanliIs } from "./calistirici.ts";
 import { bitenIsleriSil, type IsTanimi, isTanimla } from "./kuyruk.ts";
 
@@ -61,6 +61,7 @@ export const kayitliIsler: readonly IsTanimi[] = [
   odemeOturumuTemizligiIsi,
   // Ödenmeyen havale siparişinin iptali (kart 0214).
   havaleIptalIsi,
+  kisiselVeriTemizligiIsi,
   // Stoğa gelince haber ver eklentisi (kart 0144, karar 0117).
   stokBildirimiGonderIsi,
   stokBildirimiTaramasiIsi,
@@ -75,6 +76,7 @@ export const zamanliIsler: readonly ZamanliIs[] = [
   zamanliIs(epostaKayitTemizligiIsi, {}, { herDakika: 24 * 60 }),
   zamanliIs(odemeOturumuTemizligiIsi, {}, { herDakika: 60 }),
   zamanliIs(havaleIptalIsi, {}, { herDakika: 60 }),
+  zamanliIs(kisiselVeriTemizligiIsi, {}, { herDakika: 24 * 60 }),
   zamanliIs(stokBildirimiTemizligiIsi, {}, { herDakika: 24 * 60 }),
   zamanliIs(stokBildirimiTaramasiIsi, {}, { herDakika: stokBildirimiAyari.taramaDakika }),
   zamanliIs(kartlaOdemeTaramasiIsi, {}, { herDakika: kartlaOdemeAyari.taramaDakika }),

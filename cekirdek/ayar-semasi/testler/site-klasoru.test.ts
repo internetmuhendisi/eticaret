@@ -94,6 +94,7 @@ describe("ayar şeması", () => {
       boyutBirimi: "cm",
       videoSiteleri: ["youtube", "vimeo"],
       siparisBaslangici: 1001,
+      kisiselVeriSaklamaYili: 10,
       temaDegistirilebilir: true,
       vitrindeAltyapiAdi: false,
       yakindaYazisi: false,

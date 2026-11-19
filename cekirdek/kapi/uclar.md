@@ -463,6 +463,69 @@ Havalenin banka hesaplarına hesap ekler; numara IBAN olarak doğrulanır (`ceki
 - Başarılı (200): GET ile aynı veri.
 - Hatalar: `cakisma` (`liste-degisti`: eksik, fazla ya da tekrarlı liste; arada hesap eklendi ya da silindi), `yetki`.
 
+### GET /kapi/yonetici/siparisler
+
+Panelin sipariş listesi (kart 0234, karar 0145): en yeni önce, sayfa başına `siparisSinirlari.sayfaBoyu`. Durum süzgeci, aranan metin (numara, e-posta ya da ad soyad; harf ayrımsız, `%` ve `_` joker değildir) ve sayfa. Durum sayıları aranan metinden bağımsızdır. `havaleBildirildi` yalnız ödeme bekleyen ve bildirimi olan siparişte doğrudur.
+
+- İzin: `siparis.gor`. Sınır: `genel`.
+- Girdi (sorgu): `durum` (`siparisDurumlari`), `ara`, `sayfa` (`siparisListesiSemasi`, `cekirdek/moduller/siparis/semalar.ts`). Sınır dışı sayfa son sayfaya çekilir.
+- Servis: `cekirdek/moduller/siparis/yonetim.ts`.
+- Başarılı (200): `{ "satirlar": [{ "kimlik", "numara", "zaman", "ad", "soyad", "uye", "durum", "odemeYontemi", "kapidaSecenegi", "toplam", "paraBirimi", "havaleBildirildi" }], "toplam", "sayfa", "sayfaSayisi", "sayilar": { "<durum>": sayı } }`.
+
+### GET /kapi/yonetici/siparis
+
+Bir siparişin ayrıntısı: sipariş satırı (erişim anahtarının özeti olmadan), kalemleri, geçmişi ve notları (en yeni önce, yazanın e-postası ya da sistem işleminin adıyla) ve havale bildirimleri.
+
+- İzin: `siparis.gor`. Sınır: `genel`.
+- Girdi (sorgu): `numara` (büyük küçük harf ve boşluk düzelir).
+- Başarılı (200): `{ "siparis", "kalemler", "gecmis": [{ "zaman", "onceki", "sonraki", "neden", "yazan" }], "notlar": [{ "zaman", "tur", "metin", "yazan" }], "bildirimler" }`.
+- Hatalar: `bulunamadi`, `dogrulama`.
+
+### POST /kapi/yonetici/siparis-islemi
+
+Siparişin durum işlemi (`siparisIslemleri`, `cekirdek/kayitlar/siparis.ts`): `hazirlamaya-al` (kapıda ödeme, ödeme bekleniyor → hazırlanıyor), `kargoya-ver` (hazırlanıyor → kargoda), `kargo-duzelt` (kargoda kalır, firma ve takip numarası değişir), `teslim-edildi` (kargoda → teslim edildi; kapıda ödemede ödemenin alındığı an yazılır). Siparişin satırı kilitlenir; geçmişe kim, ne zaman, neden ile yazılır.
+
+- İzin: `siparis.yonet`. Sınır: `genel`.
+- Girdi: `{ "numara", "islem", "gorulenDurum", "kargo"?: { "firma", "takipNumarasi"? } }` (`siparisIslemiSemasi`). `kargo` yalnız kargo işlemlerinde verilir; firma sipariş ayarlarındaki listedeki kimliktir.
+- Başarılı (200): `{ "numara", "durum" }`.
+- Hatalar: `cakisma` (`durum-degisti`: ekranın gördüğü durum artık geçerli değil; hiçbir şey yazılmaz), `is-kurali` (`gecis-yok`, `yontem-uymuyor`), `dogrulama` (`kargo-gerekli`, `kargo-fazla`, alan `kargo.firma`: `firma-yok`; `takip-numarasi-bicimi`), `bulunamadi`, `yetki`.
+
+### POST /kapi/yonetici/siparis-havale-onayi
+
+Havale siparişinin ödemesi alındı: ödeme bekleniyor → hazırlanıyor, ödemenin alındığı an yazılır. Onaylanan siparişi iptal taraması iptal etmez.
+
+- İzin: `siparis.havale-onayla` (görevlide yok, kullanıcı kararı). Sınır: `genel`.
+- Girdi: `{ "numara", "gorulenDurum" }` (`havaleOnayiSemasi`).
+- Başarılı (200): `{ "numara", "durum" }`.
+- Hatalar: işlem ucunun `cakisma`, `is-kurali` ve `bulunamadi` kodları, `yetki`.
+
+### POST /kapi/yonetici/siparis-notu
+
+Siparişe not ekler. İç not (`ic`) yalnız panelde, müşteriye not (`musteri`) müşterinin sipariş ayrıntısında görünür (e-postası kart 0240). Not değiştirilemez.
+
+- İzin: `siparis.yonet`. Sınır: `genel`.
+- Girdi: `{ "numara", "tur", "metin" }` (`siparisNotuSemasi`; en çok `siparisSinirlari.notEnCok` harf, düz metin).
+- Başarılı (200): `{ "numara" }`.
+- Hatalar: `bulunamadi`, `dogrulama`, `yetki`.
+
+### GET /kapi/yonetici/siparis-ayarlari
+
+Sipariş ayarları ekranının verisi: kargo firmaları (`kargoFirmalari`, mağaza ayarı).
+
+- İzin: `magaza-ayarlari.gor`. Sınır: `genel`.
+- Girdi: yok.
+- Servis: `cekirdek/moduller/siparis/ayarlar.ts`.
+- Başarılı (200): `{ "kargoFirmalari": [{ "kimlik", "ad", "takipAdresi"? }] }`.
+
+### POST /kapi/yonetici/siparis-ayarlari
+
+Kargo firmaları listesini ekranın gördüğü hâlinden yeni hâline değiştirir. Liste kilidin içinde okunur; yeni firmaya kimlik servis verir. Değişiklik kaydına girer (`magaza-ayari.degisti`); aynı liste girmez.
+
+- İzin: `magaza-ayarlari.degistir`. Sınır: `genel`.
+- Girdi: `{ "onceki": [kimlik], "firmalar": [{ "kimlik"?, "ad", "takipAdresi"? }] }` (`kargoFirmalariSemasi`). Takip adresi `https://` ile başlar ve `{takip}` işaretini tam bir kez taşır.
+- Başarılı (200): GET ile aynı veri.
+- Hatalar: `cakisma` (`liste-degisti`: arada firma eklendi ya da silindi), `dogrulama` (alan `firmalar.<sıra>.takipAdresi`: `takip-adresi-gecersiz`), `yetki`.
+
 ### GET /kapi/yonetici/kargo-ayarlari
 
 Panelin kargo ekranının verisi (kart 0212): kargo ücreti, ücretsiz kargo sınırı, kargoya verme süresi (iş günü) ve sınırın indirimden önceki mi sonraki mi tutara baktığı. Tutarlar kuruştur.

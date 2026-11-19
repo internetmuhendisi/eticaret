@@ -31,6 +31,11 @@ import {
   sepetTutariEnCok,
   ucretsizKargoTutarlari,
 } from "../kayitlar/sepet.ts";
+import {
+  kisiselVeriSaklamaSinirlari,
+  siparisSinirlari,
+  takipAdresiGecerliMi,
+} from "../kayitlar/siparis.ts";
 import { type AyarSahibi, ayarSahibi } from "../kayitlar/site.ts";
 import { sosyalHesapKalibi, sosyalHesapSiniri, sosyalSiteler } from "../kayitlar/sosyal-siteler.ts";
 import { tukenenUrunDavranislari } from "../kayitlar/stok.ts";
@@ -153,6 +158,17 @@ export const ayarSemasi = z.strictObject({
   siparisBaslangici: ayar(
     z.int().positive().default(1001),
     altyapiSahibinin("ayar.aciklama.siparisBaslangici"),
+  ),
+  // Siparişteki kişisel bilgilerin saklama süresi, yıl (kart 0234, karar 0145). Süre dolunca ad, adres, telefon,
+  // e-posta ve not siparişten silinir; tutarlar, ürünler ve vergi dökümü kalır. Süre hukukçuya teyit ettirilir
+  // (kart 0063); varsayılan teyide kadar öneridir.
+  kisiselVeriSaklamaYili: ayar(
+    z
+      .int()
+      .min(kisiselVeriSaklamaSinirlari.enAz)
+      .max(kisiselVeriSaklamaSinirlari.enCok)
+      .default(kisiselVeriSaklamaSinirlari.varsayilan),
+    altyapiSahibinin("ayar.aciklama.kisiselVeriSaklamaYili"),
   ),
   temaDegistirilebilir: ayar(
     z.boolean().default(true),
@@ -406,6 +422,32 @@ export const magazaAyarSemasi = z.strictObject({
   ucretsizKargoTutari: ayar(
     z.enum(ucretsizKargoTutarlari).default("indirimden-sonra"),
     magazaSahibinin("ayar.aciklama.ucretsizKargoTutari"),
+  ),
+  // Kargo firmaları (kart 0234, karar 0145): sipariş kargoya verilirken listeden seçilir. Takip adresi şifreli
+  // bağlantıdır ve takip numarasının yerini ({takip}) taşır; verilmezse müşteriye takip bağlantısı gösterilmez
+  // (elden teslim gibi). Siparişe kargoya verildiği andaki ad ve kurulmuş adres yazılır. Liste yalnız sipariş
+  // ayarları işleviyle değişir (cekirdek/moduller/siparis/ayarlar.ts).
+  kargoFirmalari: ayar(
+    z
+      .array(
+        z.strictObject({
+          kimlik: kimlikSemasi,
+          ad: z.string().trim().min(1).max(siparisSinirlari.kargoFirmasiAdEnCok),
+          takipAdresi: z
+            .string()
+            .trim()
+            .max(siparisSinirlari.takipAdresiEnCok)
+            .refine(takipAdresiGecerliMi, "takip-adresi-gecersiz")
+            .optional(),
+        }),
+      )
+      .max(siparisSinirlari.kargoFirmasiEnCok)
+      .refine(
+        (liste) => new Set(liste.map((firma) => firma.kimlik)).size === liste.length,
+        "Aynı firma iki kez yazılmış.",
+      )
+      .default([]),
+    magazaSahibinin("ayar.aciklama.kargoFirmalari", { kendiIsleviyle: true }),
   ),
   // Ürün sepete eklenince ne olur (karar 0132): seçenekler cekirdek/kayitlar/sepet.ts'tedir.
   sepeteEkleyince: ayar(

@@ -9,6 +9,12 @@ export const panelEylemleri = {
   "onceki-hale-don": { ikon: "iade", ad: "yonetim.eylem.oncekiHaleDon" },
   "vitrine-git": { ikon: "yeni-sekme", ad: "yonetim.eylem.vitrineGit" },
   cikis: { ikon: "cikis", ad: "yonetim.cikis.dugme" },
+  // Siparişin durum işlemleri (kart 0234): kodlar siparisIslemleri'ndekiyle aynıdır.
+  "havale-onayla": { ikon: "havale", ad: "yonetim.eylem.havaleOnayla" },
+  "hazirlamaya-al": { ikon: "paket", ad: "yonetim.eylem.hazirlamayaAl" },
+  "kargoya-ver": { ikon: "kargo", ad: "yonetim.eylem.kargoyaVer" },
+  "kargo-duzelt": { ikon: "duzenle", ad: "yonetim.eylem.kargoDuzelt" },
+  "teslim-edildi": { ikon: "basari", ad: "yonetim.eylem.teslimEdildi" },
 } as const satisfies Record<string, { ikon: IkonAdi; ad: MetinAnahtari }>;
 
 export type PanelEylemi = keyof typeof panelEylemleri;

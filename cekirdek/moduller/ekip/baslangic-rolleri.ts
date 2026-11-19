@@ -35,6 +35,10 @@ export const baslangicRolleri = {
       "yorum.onayla",
       // Ödeme yöntemlerini ve banka hesaplarını görür, değiştiremez (kart 0214, kullanıcı kararı).
       "odeme-yontemi.gor",
+      // Siparişleri görür, hazırlamaya alır, kargoya verir, teslim işaretler ve not ekler; havaleyi onaylayamaz
+      // (kart 0234, kullanıcı kararı).
+      "siparis.gor",
+      "siparis.yonet",
     ],
   },
 } as const satisfies Record<

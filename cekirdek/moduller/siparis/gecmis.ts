@@ -12,7 +12,7 @@ export const havaleIptalYapani = sistemIslemi("havale-suresi");
 // Üye olmayan müşterinin siparişi geçmişe bu adla yazılır (hesabı yoktur).
 export const uyeOlmayanMusteri = sistemIslemi("uye-olmayan-musteri");
 
-const kimSutunlari = (kim: DegisikligiYapan) => ({
+export const kimSutunlari = (kim: DegisikligiYapan) => ({
   kim_turu: kim.tur,
   kim_kimligi: kim.tur === "sistem" ? null : kim.kimlik,
   kim_adi: kim.tur === "sistem" ? kim.ad : null,
