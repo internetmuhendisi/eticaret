@@ -34,4 +34,4 @@ Kart 0236'nın gönderimiyle kontrol hattı (44528927734) yalnız hız ölçüm�
 
 ## Durum
 
-yapılacak
+bitti
