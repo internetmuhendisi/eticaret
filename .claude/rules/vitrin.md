@@ -102,7 +102,7 @@ paths:
 - Ödeme adımının yöntemleri sunucuda `kullanilabilirYontemler` ile gelir, form yöntem kartlarını `SecenekGrubu` (`gorunum="kart"`) ile çizer. Sipariş oluşunca siparişe giren kalemler `siparisKalemleriniCikar` ile sepetten çıkar, müşteri `/siparis-alindi`'ye gider.
 - Sipariş alındı sayfası (`cekirdek/vitrin/siparis/alindi-sayfasi.tsx`) siparişi yalnız erişim çereziyle (`siparisErisimCerezi`, `siparisServisi.erisimleOku`) okur; çerez yoksa bulunamadı. Tutarlar siparişin saklanan değerleridir, yeniden hesaplanmaz; özet `SepetOzeti` ile çizilir. Adresi `vitrinAdresleri.siparisAlindi`, çerezin yoluyla tektir.
 - Havale bildirimi formu (`havale-bildirimi-formu.tsx`) üyede müşteri ucuna, üye olmayanda ertelenmiş robotlu gönderimle herkese açık uca gider; numarayı adresten (`?siparis=`) alır, e-posta adrese yazılmaz.
-- Giriş yapmış müşteriye son siparişinin teslimatı önerilir (`/kapi/musteri/son-teslimat`); sayfa çizilirken oturum okunmaz.
+- Giriş yapmış müşteri adres defterinden seçer (`/kapi/musteri/adresler`, kart 0237): varsayılan teslimat adresi seçili gelir, varsayılan fatura adresi başkaysa fatura adresi dolar. Defteri boşsa son siparişinin teslimatı önerilir (`/kapi/musteri/son-teslimat`) ve "Adreslerime kaydet" işaretli gelir; kayıtlı adresi olanda "Yeni adres" seçilince işaretsiz görünür (kullanıcı kararları, karar 0149). Kayıt ödeme oturumunun işleminde `odemedenKaydet` ile yapılır. Ödeme sayfası çizilirken oturum okunmaz.
 
 ## Kartla ödeme (karar 0142)
 
@@ -158,8 +158,16 @@ paths:
 - Bölüm mağaza adı, logo, iletişim, sosyal hesaplar, menüler gibi veriyi yalnız vitrin bağlamından alır (`baglam.ts`); bağlam istek başına bir kez `vitrinBaglaminiOku` ile okunur. Bölüm veritabanına kendisi gitmez.
 - Vitrinin adresleri `cekirdek/vitrin/adresler.ts` dosyasındadır; kategori, marka, etiket ve ürün sayfasının adresi `kayitAdresleri` ile kurulur.
 - Henüz yazılmamış bir sayfaya giden düğme (arama, favori, sepet) işlevine bağlanır; işlev açılınca görünür.
-- Müşterinin oturumu vitrinde yalnız `useHesapDurumu`, çıkış yalnız `cikisYap` ile (`cekirdek/vitrin/hesap-durumu.ts`, karar 0098): sayfada tek istek gider, yalnız 401 girişsizdir. Hesabım menüsü üst satırdadır, katalogun örnek bağlamında (`musteriOturumu: "ornek"`) istek gitmez.
+- Müşterinin oturumu vitrinde yalnız `useHesapDurumu`, çıkış yalnız `cikisYap` ile (`cekirdek/vitrin/hesap-durumu.ts`, karar 0098): sayfada tek istek gider (`GET /kapi/herkese-acik/hesap-durumu`, kart 0187): girişsiz ziyaretçi 401 değil "girişsiz" cevabı alır, konsola hata düşmez; sunucu ve ağ hatası "bilinmiyor"dur. Hesabım menüsü üst satırdadır, katalogun örnek bağlamında (`musteriOturumu: "ornek"`) istek gitmez.
 - Radix tetikleyicisine (`asChild`) verilen ve ipucuyla sarılı parça (ikon düğmesi) sunucuda çizilen bölümde tetikleyicinin özelliklerini almaz; böyle bir parça tarayıcıda çizilen bileşene yazılır (`menu-dugmesi.tsx`).
+
+## Müşteri hesabı (karar 0149)
+
+- Hesabım `/hesabim` altındadır (adresler `vitrinAdresleri`, açılış sayfası `hesapIlkSayfasi`). Sayfa önce `hesapSayfasiniAc(adres)` ile açılır (`cekirdek/vitrin/hesap/oturum.ts`): demoda bulunamadı, girişsiz müşteri girişe gider ve döner. Oturum sunucuda anahtar değiştirilmeden okunur (`hesapOturumu`); hesap sayfası verisini sunucuda çizer, arama motorlarına kapalıdır (`hesapSayfaBilgisi`).
+- Sayfa `HesapCercevesi` içinde çizilir (`cerceve.tsx`): masaüstünde yan menü, telefonda yatay kayan şerit (karar 0145). Yeni hesap sayfası menüye ve üst satırın Hesabım menüsüne (`hesap-menusu.tsx`) birlikte eklenir.
+- Adres defteri yalnız `adresServisi` ile okunur ve değişir (`cekirdek/moduller/musteri/adres.ts`); alanlar ödemenin teslimat şemasıdır, kuralları ödemeyle aynı işlevdir. Ekran `AdresDefteri`'dir, alanları ödemenin alanlarıdır (`odeme/alanlar.tsx`). Adres satırı `adresSatiri` ile, adlar tarayıcıda `ulkeVerisindenAdlar` ile bulunur: il ve ilçe listesi tarayıcı koduna ayrıca alınmaz.
+- Girişli müşteride favori bağlantısı Favorilerim'e gider (`HesapliBaglanti`); Favorilerim favoriler sayfasının listesini (`FavoriListesi`) hesabın favorileriyle çizer.
+- Giriş, kayıt ve şifre sayfaları `GirisDuzeni` ile çizilir (`giris-duzeni.tsx`). Doğrudan girişe gelen müşteri hesabına gider; girişten kayda geçen müşterinin dönüş adresi taşınır (`kayitAdresiDonuslu`). Hesabın yararları kutusunda (`HesapYararlari`) yalnız bugün olan işler yazar.
 
 ## Tema demosu (karar 0127)
 

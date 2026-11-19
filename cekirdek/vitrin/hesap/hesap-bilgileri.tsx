@@ -135,13 +135,15 @@ function SifreFormu({ sifreEnKisa }: { sifreEnKisa: number }) {
 function KampanyaIzni({ ilk }: { ilk: boolean }) {
   const metin = useMetin();
   const [verildi, setVerildi] = useState(ilk);
-  const [bekliyor, setBekliyor] = useState(false);
+  // İstek sürerken gelen basış yok sayılır. Kutu kapatılmaz: kapatılan kutu klavye odağını kaybederdi (tarayıcı
+  // testinin bulgusu).
+  const bekliyor = useRef(false);
 
   const degistir = async (yeni: boolean) => {
-    if (bekliyor) return;
+    if (bekliyor.current) return;
     const eski = verildi;
     setVerildi(yeni);
-    setBekliyor(true);
+    bekliyor.current = true;
     try {
       const yanit = await kapiyaIstek(uclar.izin, {
         method: "POST",
@@ -164,7 +166,7 @@ function KampanyaIzni({ ilk }: { ilk: boolean }) {
       setVerildi(eski);
       bildirimGoster("tehlike", metin("vitrin.hesap.bilgiler.izinHata"));
     } finally {
-      setBekliyor(false);
+      bekliyor.current = false;
     }
   };
 
@@ -172,7 +174,6 @@ function KampanyaIzni({ ilk }: { ilk: boolean }) {
     <OnayKutusu
       etiket={metin("vitrin.onay.pazarlama")}
       checked={verildi}
-      disabled={bekliyor}
       onCheckedChange={(deger) => void degistir(deger === true)}
     />
   );

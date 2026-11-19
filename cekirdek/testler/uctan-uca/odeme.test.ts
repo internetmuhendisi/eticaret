@@ -16,8 +16,10 @@
 //   hatalı form iki renkte ve üç genişlikte taramadan geçer, yana kaymaz.
 // - Dolu form iki renkte ve üç genişlikte taramadan geçer, yana kaymaz; konsolda hata yok.
 // - Ön bilgilendirme formu pencerede siparişin bilgileriyle açılır, Escape kapatır, odak bağlantıya döner.
-// - Üye müşteri iletişim bölümünün bağlantısıyla girer, ödeme sayfasına döner; e-postası hesabındandır. Bir sonraki
-//   ödemede son siparişinin teslimat adresi önerilir, "Bu adresi kullan" alanları doldurur.
+// - Üye müşteri iletişim bölümünün bağlantısıyla girer, ödeme sayfasına döner; e-postası hesabındandır. Defteri boşken
+//   "Adreslerime kaydet" işaretli gelir (kaldırılınca kaydedilmez), son siparişinin teslimat adresi önerilir, "Bu adresi
+//   kullan" alanları doldurur; kaydedilen adres sonraki ödemede seçili ve dolu gelir, öneri görünmez, "Yeni adres"
+//   alanları boşaltır (kart 0237). Seçimli form iki renkte ve üç genişlikte taramadan geçer.
 // - Üye olmadan alışveriş kapalıyken girişsiz müşteri girişe yönlenir.
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
@@ -31,6 +33,7 @@ import { metin } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import { calisanSiteninFiyatServisi } from "../../moduller/fiyat/servis";
 import { siteninServisi } from "../../moduller/magaza-ayarlari/servis";
+import { musteriAdresleri } from "../../moduller/musteri/model";
 import { odemeOturumlari } from "../../moduller/odeme/model";
 import { hesapAc } from "../../moduller/oturum/servis";
 import { havaleBildirimleri, siparisler } from "../../moduller/siparis/model";
@@ -494,9 +497,10 @@ test("ön bilgilendirme formu pencerede siparişin bilgileriyle açılır, Escap
   await expect(ac).toBeFocused();
 });
 
-test("üye müşteri iletişimdeki bağlantıyla girer, döner; e-postası hesabındandır", async ({
+test("üye müşteri iletişimdeki bağlantıyla girer, döner; e-postası hesabındandır; adres defterinden seçer", async ({
   page,
 }) => {
+  test.setTimeout(180_000);
   const eposta = `uye-${ek}@ornek.test`;
   epostalar.push(eposta);
   const { hesapKimligi } = await hesapAc(vt, "musteri", { eposta, sifre });
@@ -519,12 +523,25 @@ test("üye müşteri iletişimdeki bağlantıyla girer, döner; e-postası hesab
   await expect(page.getByText(eposta)).toBeVisible();
   await expect(alan(page, metin("vitrin.odeme.eposta"))).toHaveCount(0);
   await teslimatiDoldur(page);
+  // Defteri boş üyede "Adreslerime kaydet" işaretli gelir (kart 0237, kullanıcı kararı); bu sipariş kaydetmez.
+  const kaydet = page.getByRole("checkbox", { name: metin("vitrin.odeme.adresiKaydet") });
+  await expect(kaydet).toBeChecked();
+  await kaydet.focus();
+  await page.keyboard.press("Space");
+  await expect(kaydet).not.toBeChecked();
   await onaylariVer(page);
   await onayla(page);
   await basariBekle(page);
   const kayit = await siparisi(eposta);
   expect(kayit.musteri_kimligi).toBe(hesapKimligi);
-  // Bir sonraki ödemede son siparişin teslimatı önerilir; "Bu adresi kullan" alanları doldurur.
+  const defter = () =>
+    vt
+      .select({ baslik: musteriAdresleri.baslik, adres: musteriAdresleri.adres })
+      .from(musteriAdresleri)
+      .where(eq(musteriAdresleri.musteri_kimligi, hesapKimligi));
+  expect(await defter()).toEqual([]);
+
+  // Defter boşken son siparişin teslimatı önerilir; "Bu adresi kullan" alanları doldurur. Bu kez adres kaydedilir.
   await sepetiKur(page);
   await odemeyiAc(page);
   const kullan = page.getByRole("button", { name: metin("vitrin.odeme.oncekiAdresiKullan") });
@@ -538,6 +555,39 @@ test("üye müşteri iletişimdeki bağlantıyla girer, döner; e-postası hesab
   await expect(
     page.getByRole("combobox", { name: metin("vitrin.odeme.il"), exact: true }),
   ).toContainText("Ankara");
+  await expect(kaydet).toBeChecked();
+  await expect(alan(page, metin("vitrin.hesap.adresler.baslikAlani"))).toHaveValue(
+    metin("vitrin.odeme.adresAdiVarsayilan"),
+  );
+  await onaylariVer(page);
+  await onayla(page);
+  await basariBekle(page);
+  expect(await defter()).toEqual([
+    { baslik: metin("vitrin.odeme.adresAdiVarsayilan"), adres: "Atatürk Bulvarı No: 10 Daire 3" },
+  ]);
+
+  // Kayıtlı adresi olan üyede varsayılan adres seçili ve alanlar dolu gelir, önceki siparişin önerisi yoktur.
+  // "Yeni adres" alanları boşaltır, "Adreslerime kaydet" işaretsiz görünür.
+  await sepetiKur(page);
+  await odemeyiAc(page);
+  const kayitli = page.getByRole("radiogroup", { name: metin("vitrin.odeme.kayitliAdresler") });
+  await expect(
+    kayitli.getByRole("radio", { name: new RegExp(metin("vitrin.odeme.adresAdiVarsayilan")) }),
+  ).toBeChecked();
+  await expect(alan(page, metin("vitrin.odeme.ad"))).toHaveValue("Deniz");
+  await expect(alan(page, metin("vitrin.odeme.adres"))).toHaveValue(
+    "Atatürk Bulvarı No: 10 Daire 3",
+  );
+  await expect(kullan).toHaveCount(0);
+  await expect(kaydet).toHaveCount(0);
+  const yeni = kayitli.getByRole("radio", { name: metin("vitrin.odeme.yeniAdres") });
+  await yeni.focus();
+  await page.keyboard.press("Space");
+  await expect(yeni).toBeChecked();
+  await expect(alan(page, metin("vitrin.odeme.ad"))).toHaveValue("");
+  await expect(alan(page, metin("vitrin.odeme.adres"))).toHaveValue("");
+  await expect(kaydet).not.toBeChecked();
+  await ikiRenkUcGenislik(page, "kayıtlı adresli ödeme");
 });
 
 test("üye olmadan alışveriş kapalıyken girişsiz müşteri girişe yönlenir", async ({ page }) => {

@@ -25,7 +25,7 @@ import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import { siteninFiyatServisi } from "../../fiyat/servis.ts";
 import { siteninServisi } from "../../magaza-ayarlari/servis.ts";
-import { musteriler, musteriOnaylari } from "../../musteri/model.ts";
+import { musteriAdresleri, musteriler, musteriOnaylari } from "../../musteri/model.ts";
 import { hesapAc } from "../../oturum/servis.ts";
 import { birimStoklari, stokAyirmalari } from "../../stok/model.ts";
 import { stokServisi } from "../../stok/servis.ts";
@@ -475,6 +475,63 @@ describe("ödeme oturumu", () => {
     expect((await hatasi(ac())).kod).toBe("cakisma");
     expect(await h.oturumlar()).toHaveLength(1);
     expect(await h.ayirmalar()).toHaveLength(1);
+  });
+});
+
+describe("adreslerime kaydet (kart 0237)", () => {
+  const defter = (h: Awaited<ReturnType<typeof hazirla>>, musteri: string) =>
+    h.vt
+      .select({ baslik: musteriAdresleri.baslik, adres: musteriAdresleri.adres })
+      .from(musteriAdresleri)
+      .where(eq(musteriAdresleri.musteri_kimligi, musteri));
+
+  it("işaretliyse teslimat adresi oturumla aynı işlemde deftere yazılır; işaretsizse yazılmaz", async () => {
+    const h = await hazirla();
+    const a = await h.urunAc();
+    const musteri = await h.musteriAc();
+    await servis.odemeOturumuAc(
+      h.vt,
+      { kim: { tur: "uye", musteri }, bilgiler: bilgiler(), kalemler: [{ birim: a, adet: 1 }] },
+      oturumSuresi,
+    );
+    expect(await defter(h, musteri)).toEqual([]);
+    await servis.odemeOturumuAc(
+      h.vt,
+      {
+        kim: { tur: "uye", musteri, adresiKaydet: { baslik: "Ev" } },
+        bilgiler: bilgiler(),
+        kalemler: [{ birim: a, adet: 1 }],
+      },
+      oturumSuresi,
+    );
+    expect(await defter(h, musteri)).toEqual([{ baslik: "Ev", adres: teslimat.adres.adres }]);
+  });
+
+  it("oturum açılamazsa (stok ayrılmış) adres de yazılmaz", async () => {
+    const h = await hazirla();
+    const son = await h.urunAc({ miktar: 1 });
+    await servis.odemeOturumuAc(
+      h.vt,
+      { kim: misafir(), bilgiler: bilgiler(), kalemler: [{ birim: son, adet: 1 }] },
+      oturumSuresi,
+    );
+    const musteri = await h.musteriAc();
+    expect(
+      (
+        await hatasi(
+          servis.odemeOturumuAc(
+            h.vt,
+            {
+              kim: { tur: "uye", musteri, adresiKaydet: { baslik: "Ev" } },
+              bilgiler: bilgiler(),
+              kalemler: [{ birim: son, adet: 1 }],
+            },
+            oturumSuresi,
+          ),
+        )
+      ).kod,
+    ).toBe("cakisma");
+    expect(await defter(h, musteri)).toEqual([]);
   });
 });
 

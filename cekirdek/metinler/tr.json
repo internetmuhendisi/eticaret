@@ -1260,7 +1260,8 @@
         "sayi": "{sayi} / {sinir} adres",
         "sinir": "En çok {sinir} adres kaydedebilirsiniz. Yenisini eklemek için bir adresi silin.",
         "yok": "Bu adres artık yok. Sayfayı yenileyip yeniden deneyin.",
-        "hata": "Adres şu an kaydedilemedi. Biraz sonra yeniden deneyin."
+        "hata": "Adres şu an kaydedilemedi. Biraz sonra yeniden deneyin.",
+        "liste": "Kayıtlı adresler"
       },
       "bilgiler": {
         "baslik": "Hesap bilgileri",

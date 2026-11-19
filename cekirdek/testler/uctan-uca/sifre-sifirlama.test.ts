@@ -12,6 +12,9 @@ import { epostaKaydiniGonder } from "../../moduller/eposta/gonderim";
 import { epostaKayitlari } from "../../moduller/eposta/model";
 import { kodAdimi, zamanliKod } from "../../moduller/oturum/iki-asama";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
+import { hesapIlkSayfasi } from "../../vitrin/adresler";
+import { hesapDurumuUcu } from "../../vitrin/hesap-durumu";
+import { basilmayanNoktalar } from "./basilan-alan";
 import { hesapBaglantisi, hesapDugmesi, hesapMenusunuKapat, hesaptaEpostaGorunur } from "./hesap";
 import { sayfaHazir } from "./sayfa-hazir";
 
@@ -118,16 +121,17 @@ test("müşteri: istek, e-postadaki bağlantı, yeni şifre, yeni şifreyle giri
   await alan(page, metin("vitrin.giris.sifre")).fill(sifre);
   await yuklenmesiniBekle(page);
   await page.getByRole("button", { name: metin("vitrin.giris.gonder") }).click();
-  await expect(page).toHaveURL(/\/$/);
+  // Dönüş adresi olmadan girişe gelen müşteri hesabına gider (kart 0237).
+  await expect(page).toHaveURL(hesapIlkSayfasi);
   await hesaptaEpostaGorunur(page, eposta);
 
-  // Sıfırlamadan önceki çerezlerle ana sayfa girişsiz görünür: oturum ucu 401 verir, Hesabım giriş bağlantısıdır
-  // (kart 0131).
+  // Sıfırlamadan önceki çerezlerle ana sayfa girişsiz görünür: oturum sorusu girişsiz der (kart 0187), Hesabım giriş
+  // bağlantısıdır (kart 0131).
   await context.clearCookies();
   await context.addCookies(eskiCerezler);
-  const oturum = page.waitForResponse("**/kapi/musteri/hesabim");
+  const oturum = page.waitForResponse(`**${hesapDurumuUcu}`);
   await page.goto("/");
-  expect((await oturum).status()).toBe(401);
+  expect(((await (await oturum).json()) as { veri: unknown }).veri).toEqual({ girisli: false });
   await expect(hesapBaglantisi(page)).toBeVisible();
   await expect(hesapDugmesi(page)).toHaveCount(0);
 
@@ -285,11 +289,15 @@ for (const [ad, width, height] of [
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
         width,
       );
-      const ogeler = page.locator("main input, main button, main a");
+      // Sayfa yolunun bağlantısı alanını dokunma-alani ile genişletir: basılan noktalarla ölçülür (kart 0191).
+      const ogeler = page.locator("main input, main button, main a:not([data-slot=sayfa-yolu] a)");
       const adet = await ogeler.count();
       expect(adet).toBeGreaterThan(0);
       for (let sira = 0; sira < adet; sira++) {
         expect((await ogeler.nth(sira).boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+      }
+      for (const baglanti of await page.locator("main [data-slot=sayfa-yolu] a").all()) {
+        expect(await basilmayanNoktalar(baglanti)).toEqual([]);
       }
     });
   }

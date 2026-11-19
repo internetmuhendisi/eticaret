@@ -368,7 +368,10 @@ export function AdresDefteri({ veri }: { veri: AdresDefteriVerisi }) {
         </BosHal>
       ) : (
         <>
-          <ul className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
+          <ul
+            aria-label={metin("vitrin.hesap.adresler.liste")}
+            className="grid grid-cols-1 gap-4 tablet:grid-cols-2"
+          >
             {adresler.map((adres) => {
               const rozet = varsayilanMetni(adres);
               return (

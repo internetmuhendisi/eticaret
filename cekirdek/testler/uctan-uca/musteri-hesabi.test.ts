@@ -7,7 +7,9 @@ import { oturumCerezAdlari, sifreSiniri } from "../../kayitlar/oturum";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { metin } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
-import { vitrinAdresleri } from "../../vitrin/adresler";
+import { hesapIlkSayfasi, vitrinAdresleri } from "../../vitrin/adresler";
+import { hesapDurumuUcu } from "../../vitrin/hesap-durumu";
+import { basilmayanNoktalar } from "./basilan-alan";
 import {
   hesapBaglantisi,
   hesapDugmesi,
@@ -84,7 +86,8 @@ test("kayıt olur, çıkar, ana sayfadan yeniden girer", async ({ page }) => {
   await alan(page, "vitrin.giris.eposta").fill(eposta);
   await alan(page, "vitrin.giris.sifre").fill(sifre);
   await page.getByRole("button", { name: metin("vitrin.giris.gonder") }).click();
-  await expect(page).toHaveURL(/\/$/);
+  // Dönüş adresi olmadan girişe gelen müşteri hesabına gider (kart 0237).
+  await expect(page).toHaveURL(hesapIlkSayfasi);
   await hesaptaEpostaGorunur(page, eposta);
 });
 
@@ -197,8 +200,8 @@ test("robot sorusu ilk seferde alınamazsa gönderirken yeniden alınır", async
 test("sunucu hatasında girişli müşteri ana sayfada 'Giriş yap' görmez", async ({ page }) => {
   const eposta = yeniEposta();
   await kayitOl(page, eposta);
-  await page.route("**/kapi/musteri/hesabim", (yol) => yol.fulfill({ status: 500, body: "{}" }));
-  const yanit = page.waitForResponse("**/kapi/musteri/hesabim");
+  await page.route(`**${hesapDurumuUcu}`, (yol) => yol.fulfill({ status: 500, body: "{}" }));
+  const yanit = page.waitForResponse(`**${hesapDurumuUcu}`);
   await page.reload();
   await yanit;
   await expect(page.getByRole("link", { name: metin("vitrin.hesap.giris") })).toHaveCount(0);
@@ -259,7 +262,8 @@ test("giriş formu yalnız klavyeyle doldurulur ve gönderilir", async ({ page }
   await page.keyboard.press("Tab");
   await expect(page.getByRole("button", { name: metin("vitrin.giris.gonder") })).toBeFocused();
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/$/);
+  // Dönüş adresi olmadan girişe gelen müşteri hesabına gider (kart 0237).
+  await expect(page).toHaveURL(hesapIlkSayfasi);
   await hesaptaEpostaGorunur(page, eposta);
 });
 
@@ -328,10 +332,13 @@ for (const [ad, width, height] of [
       await yuklenmesiniBekle(page);
       const genislik = await page.evaluate(() => document.documentElement.scrollWidth);
       expect(genislik).toBeLessThanOrEqual(width);
-      const ogeler = page.locator(
-        // Onay kutusu (Radix'te rolü checkbox olan düğme) etiketiyle ölçülür: dokunma alanı yazısıdır.
-        "main input:not([type=checkbox]), main button:not([role=checkbox]), main a, nav a, nav button",
-      );
+      const ogeler = page
+        .locator(
+          // Onay kutusu (Radix'te rolü checkbox olan düğme) etiketiyle ölçülür: dokunma alanı yazısıdır.
+          // Sayfa yolunun bağlantısı alanını dokunma-alani ile genişletir: aşağıda basılan noktalarla ölçülür (kart 0191).
+          "main input:not([type=checkbox]), main button:not([role=checkbox]), main a, nav a, nav button",
+        )
+        .and(page.locator(":not([data-slot=sayfa-yolu] a)"));
       // Dokunma alanı basılan yerdir: ekranda çizilmeyen öğe (telefonda gizli menü satırı) basılamaz, sayılmaz;
       // alanını ::after ile kabına yayan bağlantının (ürün kartının adı) alanı o kaptır (kart 0129).
       const alanlar = await ogeler.evaluateAll((liste) =>
@@ -359,6 +366,9 @@ for (const [ad, width, height] of [
       for (const kutu of await page.getByRole("checkbox").all()) {
         const etiket = await kutu.locator("xpath=ancestor::label").boundingBox();
         expect(etiket?.height ?? 0).toBeGreaterThanOrEqual(44);
+      }
+      for (const baglanti of await page.locator("[data-slot=sayfa-yolu] a").all()) {
+        expect(await basilmayanNoktalar(baglanti)).toEqual([]);
       }
     });
   }
@@ -394,19 +404,27 @@ test("Hesabım menüsü klavyeyle açılır, e-postayı gösterir, taramadan ge�
   await page.keyboard.press("Enter");
   const menu = page.getByRole("menu");
   await expect(menu.getByText(eposta, { exact: true })).toBeVisible();
+  // İlk öğe hesabın ilk sayfasıdır (kart 0237); End çıkışa gider.
+  await expect(
+    menu.getByRole("menuitem", { name: metin("vitrin.hesap.adresler.baslik") }),
+  ).toBeFocused();
   const cikis = menu.getByRole("menuitem", { name: metin("vitrin.hesap.cikis") });
+  await page.keyboard.press("End");
   await expect(cikis).toBeFocused();
   await taraHesap(page, "menü açık");
   await page.keyboard.press("Escape");
   await expect(menu).toHaveCount(0);
   await expect(dugme).toBeFocused();
   await page.keyboard.press("Enter");
+  await page.keyboard.press("End");
   await expect(cikis).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(hesapBaglantisi(page)).toBeVisible();
   await expect(page.getByText(eposta, { exact: true })).toHaveCount(0);
   // Çıkış gerçekten oturumu kapattı: uç girişsiz der.
-  expect((await page.request.get("/kapi/musteri/hesabim")).status()).toBe(401);
+  const durum = await page.request.get(hesapDurumuUcu);
+  expect(durum.status()).toBe(200);
+  expect((await durum.json()) as unknown).toEqual({ basarili: true, veri: { girisli: false } });
 });
 
 test("çıkış olmazsa uyarı menünün içinde görünür, müşteri girişli kalır", async ({ page }) => {
@@ -441,11 +459,9 @@ test("telefonda yan pencerede e-posta ve çıkış görünür, çıkış yapıl�
   await cikis.click();
   expect((await cikti).ok()).toBe(true);
   // Çıkış sayfayı baştan yükler; yeni sayfanın oturum sorusu girişsiz cevabını alınca yan pencere açılır.
-  const oturum = page.waitForResponse(
-    (gelen) => gelen.url().endsWith("/kapi/musteri/hesabim") && gelen.status() === 401,
-  );
+  const oturum = page.waitForResponse((gelen) => gelen.url().endsWith(hesapDurumuUcu));
   await page.waitForURL(/\/$/);
-  await oturum;
+  expect(((await (await oturum).json()) as { veri: unknown }).veri).toEqual({ girisli: false });
   await yuklenmesiniBekle(page);
   await page
     .getByRole("banner")
@@ -467,7 +483,7 @@ test("sayfa başına oturum ucuna tek istek gider", async ({ page }) => {
     await page.setViewportSize({ width, height });
     let istek = 0;
     const say = (gelen: { url: () => string }) => {
-      if (gelen.url().endsWith("/kapi/musteri/hesabim")) istek += 1;
+      if (gelen.url().endsWith(hesapDurumuUcu)) istek += 1;
     };
     page.on("request", say);
     await page.reload();
