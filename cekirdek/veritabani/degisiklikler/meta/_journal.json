@@ -309,6 +309,13 @@
       "when": 1795085920134,
       "tag": "0043_iptal-ve-iade",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1795090253293,
+      "tag": "0044_elle-siparis",
+      "breakpoints": true
     }
   ]
 }

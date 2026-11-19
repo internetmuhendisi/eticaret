@@ -2,9 +2,15 @@
 // sipariş yönetimi (cekirdek/moduller/siparis/yonetim.ts) ve sipariş ayarları (ayarlar.ts) servisindedir. Havale onayı
 // kendi izniyle ayrı uçtur (yalnız mağaza sahibi, kullanıcı kararı); öteki durum işlemleri yönetim iznini ister.
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
+import { yoneticininIzniVarMi } from "../../moduller/ekip/servis.ts";
+import { odemeServisi } from "../../moduller/odeme/servis.ts";
+import { sepetSemasi } from "../../moduller/sepet/semalar.ts";
 import { siparisAyarlari } from "../../moduller/siparis/ayarlar.ts";
+import { elleSiparisMusterileri, elleSiparisUrunleri } from "../../moduller/siparis/elle.ts";
 import { iadeServisi } from "../../moduller/siparis/iade.ts";
 import {
+  elleSiparisAramaSemasi,
+  elleSiparisSemasi,
   havaleOnayiSemasi,
   iadeYenidenDenemeSemasi,
   kargoFirmalariDurumuSemasi,
@@ -17,6 +23,7 @@ import {
 } from "../../moduller/siparis/semalar.ts";
 import { siparisYonetimi } from "../../moduller/siparis/yonetim.ts";
 import { siteninVeritabani } from "../../veritabani/baglanti.ts";
+import { sepetGorunumu } from "../../vitrin/sepet/veri.ts";
 import { ucTanimla } from "../uc.ts";
 import { BilinenHata } from "../zarf.ts";
 
@@ -134,4 +141,57 @@ export const siparisIadesiYenidenUcu = ucTanimla({
       { tur: "yonetici", kimlik: hesapKimligi },
       numara,
     ),
+});
+
+// Elle sipariş (kart 0236, karar 0148). Sipariş vitrin siparişiyle aynı yoldan kurulur (odemeServisi.elleSiparisVer);
+// tutarı sunucu hesaplar. "Ödeme alındı" (elden) ayrı izin ister (siparis.elden-tahsil, görevlide yok).
+
+// GET /kapi/yonetici/elle-siparis-urunleri?ara=: eklenebilecek birimler, fiyat ve satılabilirlikle.
+export const elleSiparisUrunleriUcu = ucTanimla({
+  giris: "yonetici",
+  sema: elleSiparisAramaSemasi,
+  izin: "siparis.yonet",
+  sinir: "genel",
+  isle: async ({ ara }) => ({
+    birimler: await elleSiparisUrunleri(siteninVeritabani(), calisanSite(), ara),
+  }),
+});
+
+// GET /kapi/yonetici/elle-siparis-musterileri?ara=: e-postasında aranan üye müşteriler, son teslimat adresiyle.
+export const elleSiparisMusterileriUcu = ucTanimla({
+  giris: "yonetici",
+  sema: elleSiparisAramaSemasi,
+  izin: "siparis.yonet",
+  sinir: "genel",
+  isle: async ({ ara }) => ({ musteriler: await elleSiparisMusterileri(siteninVeritabani(), ara) }),
+});
+
+// POST /kapi/yonetici/elle-siparis-hesabi: ekranın özeti, sepetin hesabıyla (vitrinin sepetiyle aynı görünüm).
+export const elleSiparisHesabiUcu = ucTanimla({
+  giris: "yonetici",
+  sema: sepetSemasi,
+  izin: "siparis.yonet",
+  sinir: "genel",
+  isle: ({ kalemler, vergiBolgeleri }) =>
+    sepetGorunumu(siteninVeritabani(), calisanSite(), kalemler, {
+      ...(vergiBolgeleri === undefined ? {} : { adresler: vergiBolgeleri }),
+    }),
+});
+
+// POST /kapi/yonetici/elle-siparis: siparişi kurar.
+export const elleSiparisUcu = ucTanimla({
+  giris: "yonetici",
+  sema: elleSiparisSemasi,
+  izin: "siparis.yonet",
+  sinir: "genel",
+  isle: async (girdi, _istek, _yanit, { hesapKimligi }) => {
+    const vt = siteninVeritabani();
+    if (
+      girdi.bilgiler.odemeYontemi.yontem === "elden" &&
+      !(await yoneticininIzniVarMi(vt, hesapKimligi, "siparis.elden-tahsil"))
+    ) {
+      throw new BilinenHata("yetki");
+    }
+    return odemeServisi(calisanSite()).elleSiparisVer(vt, hesapKimligi, girdi);
+  },
 });

@@ -2,7 +2,8 @@
 // şemayı kullanır. Tutar sitenin para biçimiyle yazılı gelir ("1.399,60"); kuruşa çeviren sipariş servisidir, çünkü
 // biçim sitenin ayarıdır. Ödeme günü YYYY-AA-GG'dir (tarih alanı); takvimde olup olmadığını servis denetler.
 import { z } from "zod";
-import { havaleBildirimiSinirlari } from "../../kayitlar/odeme.ts";
+import { havaleBildirimiSinirlari, kapidaOdemeSecenekleri } from "../../kayitlar/odeme.ts";
+import { sepetSinirlari } from "../../kayitlar/sepet.ts";
 import {
   iadeNedenleri,
   iadeSinirlari,
@@ -15,8 +16,15 @@ import {
 import { duzMetinSemasi } from "../../metinler/duz-metin.ts";
 import { kimlikSemasi } from "../../veritabani/kimlik.ts";
 import { kayitDegeriYasakMi, kayitMetniHatasi } from "../degisiklik-kaydi/deger.ts";
+import {
+  faturaSemasi,
+  faturaVergiDenetimi,
+  odemeNotuSemasi,
+  teslimatSemasi,
+} from "../odeme/semalar.ts";
 import { epostaSemasi } from "../oturum/semalar.ts";
 import { robotCevabiSemasi } from "../robot-korumasi/semalar.ts";
+import { sepetKalemiSemasi } from "../sepet/semalar.ts";
 
 const bosIseYok = (deger: unknown) =>
   typeof deger === "string" && deger.trim() === "" ? undefined : deger;
@@ -155,3 +163,37 @@ export type SiparisIadesiGirdisi = z.output<typeof siparisIadesiSemasi>;
 
 // Bekleyen (kuruluşun yanıtını bekleyen) iadeyi yeniden dener.
 export const iadeYenidenDenemeSemasi = z.strictObject({ numara: siparisNumarasiSemasi });
+
+// Panelden elle sipariş (kart 0236, karar 0148). Müşteri ya hesabıyla seçilir (kimlik) ya da üye olmayan müşterinin
+// e-postası yazılır. Teslimat, fatura ve not ödeme adımının şemasıyladır. Ödeme havale, kapıda ödemenin seçeneği ya da
+// "elden" (ödeme alındı); kartla ödeme panelden alınmaz. Ön bilgilendirme formu ve mesafeli satış sözleşmesinin
+// müşteriye iletildiği yöneticinin zorunlu beyanıdır (kullanıcı kararı). Tutar yoktur; görülen toplam yalnız
+// karşılaştırılır.
+export const elleSiparisOdemesiSemasi = z.discriminatedUnion("yontem", [
+  z.strictObject({ yontem: z.literal("havale") }),
+  z.strictObject({ yontem: z.literal("kapida-odeme"), secenek: z.enum(kapidaOdemeSecenekleri) }),
+  z.strictObject({ yontem: z.literal("elden") }),
+]);
+export type ElleSiparisOdemesi = z.output<typeof elleSiparisOdemesiSemasi>;
+
+export const elleSiparisSemasi = z.strictObject({
+  musteri: z.discriminatedUnion("tur", [
+    z.strictObject({ tur: z.literal("uye"), kimlik: kimlikSemasi }),
+    z.strictObject({ tur: z.literal("misafir"), eposta: epostaSemasi }),
+  ]),
+  kalemler: z.array(sepetKalemiSemasi).min(1).max(sepetSinirlari.kalemEnCok),
+  bilgiler: z
+    .strictObject({
+      odemeYontemi: elleSiparisOdemesiSemasi,
+      teslimat: teslimatSemasi,
+      fatura: faturaSemasi,
+      not: odemeNotuSemasi,
+      metinlerIletildi: z.literal(true),
+    })
+    .superRefine(faturaVergiDenetimi),
+  gorulenToplam: z.int().min(0).optional(),
+});
+export type ElleSiparisGirdisi = z.output<typeof elleSiparisSemasi>;
+
+// Elle siparişin ürün ve müşteri araması (panelin arama kutuları).
+export const elleSiparisAramaSemasi = z.strictObject({ ara: z.string().trim().min(1).max(100) });

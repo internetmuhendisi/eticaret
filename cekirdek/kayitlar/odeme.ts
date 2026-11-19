@@ -87,6 +87,14 @@ export type OdemeHatasi = (typeof odemeHatalari)[number];
 export const odemeYontemleri = ["havale", "kapida-odeme", "kart"] as const;
 export type OdemeYontemi = (typeof odemeYontemleri)[number];
 
+// Yalnız panelden girilen siparişin yöntemleri (kart 0236, karar 0148): "elden" ödemesi mağaza sahibinin elden ya da
+// kendi POS cihazıyla aldığı ödemedir; sipariş hazırlanıyor durumunda açılır. Müşterinin ödeme adımında ve mağaza
+// sahibinin yöntem ayarlarında yoktur; yalnız siparişin yöntemi olarak saklanır.
+export const paneldenOdemeYontemleri = ["elden"] as const;
+export type PaneldenOdemeYontemi = (typeof paneldenOdemeYontemleri)[number];
+export const siparisOdemeYontemleri = [...odemeYontemleri, ...paneldenOdemeYontemleri] as const;
+export type SiparisOdemeYontemi = (typeof siparisOdemeYontemleri)[number];
+
 // Bir eklentiyle gelen yöntemler: eklentisi sitede kapalıysa yöntem kapalı sayılır, ödeme adımında ve panelde görünmez
 // (bağlantı noktası: cekirdek/eklentiler/odeme-yontemleri.ts).
 export const eklentiliOdemeYontemleri = { kart: "kartla-odeme" } as const satisfies Partial<

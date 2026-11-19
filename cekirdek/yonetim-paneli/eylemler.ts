@@ -18,6 +18,8 @@ export const panelEylemleri = {
   // İptal ve iade (kart 0235).
   "siparis-iptal": { ikon: "iptal", ad: "yonetim.eylem.siparisIptal" },
   "iade-yap": { ikon: "iade", ad: "yonetim.eylem.iadeYap" },
+  // Elle sipariş (kart 0236): sipariş listesinin komut çubuğundaki bağlantı.
+  "elle-siparis": { ikon: "ekle", ad: "yonetim.eylem.elleSiparis" },
 } as const satisfies Record<string, { ikon: IkonAdi; ad: MetinAnahtari }>;
 
 export type PanelEylemi = keyof typeof panelEylemleri;

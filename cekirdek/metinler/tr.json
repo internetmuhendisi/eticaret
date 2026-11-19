@@ -65,7 +65,8 @@
       "kapidaOdeme": "Kapıda ödeme",
       "nakit": "Nakit",
       "kart": "Kart",
-      "kartla": "Kartla öde"
+      "kartla": "Kartla öde",
+      "elden": "Ödeme alındı (elden)"
     },
     "siparisDurumu": {
       "odeme-bekleniyor": "Ödeme bekleniyor",
@@ -214,6 +215,10 @@
       "siparisAyarlari": {
         "ad": "Sipariş ayarları",
         "aciklama": "Siparişi kargoya verirken seçilen kargo firmaları. Değişiklik kaydedilince hemen yayınlanır."
+      },
+      "elleSiparis": {
+        "ad": "Elle sipariş",
+        "aciklama": "Telefonla ya da yüz yüze aldığınız siparişi girin. Tutar, vergi ve stok vitrin siparişiyle aynı kuralla hesaplanır."
       }
     },
     "eylem": {
@@ -227,7 +232,8 @@
       "kargoDuzelt": "Kargo bilgisini düzelt",
       "teslimEdildi": "Teslim edildi",
       "siparisIptal": "İptal et",
-      "iadeYap": "İade yap"
+      "iadeYap": "İade yap",
+      "elleSiparis": "Elle sipariş"
     },
     "rol": {
       "magaza-sahibi": "Mağaza sahibi",
@@ -916,7 +922,8 @@
         "kargo-duzeltildi": "Kargo bilgisi düzeltildi",
         "teslim-edildi": "Teslim edildi",
         "yonetici-iptali": "Sipariş iptal edildi",
-        "iade-yapildi": "İade yapıldı"
+        "iade-yapildi": "İade yapıldı",
+        "panelden-olusturuldu": "Panelden girildi"
       },
       "yazan": {
         "musteri": "Müşteri",
@@ -1144,6 +1151,55 @@
         "adet": "Adet",
         "iadeAdedi": "İade adedi",
         "tutar": "Tutar"
+      }
+    },
+    "elleSiparis": {
+      "urunler": "Ürünler",
+      "urunEkle": "Ürün ekle",
+      "urunEkleAciklamasi": "Ürünün adını ya da stok kodunu yazın, listeden seçin. Yalnız vitrinde satılan ürünler eklenir.",
+      "urunYok": "Henüz ürün eklenmedi. Yukarıdaki kutudan ürün arayıp ekleyin.",
+      "satilamaz": "Satılamaz (stokta yok ya da fiyatı yok)",
+      "adetIndi": "Stok yetmiyor: en çok {adet} adet satılabilir.",
+      "adetGrubu": "Adet: {ad}",
+      "cikar": "Çıkar: {ad}",
+      "sutun": {
+        "urun": "Ürün",
+        "adet": "Adet",
+        "tutar": "Tutar",
+        "islem": "İşlem"
+      },
+      "musteri": "Müşteri",
+      "musteriTuru": "Müşteri türü",
+      "uye": "Üye müşteri",
+      "misafir": "Üye olmayan müşteri",
+      "musteriAra": "Müşteri ara",
+      "musteriAraAciklamasi": "Üye müşterinin e-postasını yazın, listeden seçin.",
+      "sonAdres": "Son siparişin adresi: {ad}, {adres}",
+      "sonAdresiKullan": "Bu adresi kullan",
+      "teslimat": "Teslimat",
+      "fatura": "Fatura",
+      "odeme": "Ödeme",
+      "odemeYontemi": "Ödeme yöntemi",
+      "yontem": {
+        "havale": "Sipariş ödeme bekleniyor durumunda açılır; {gun} gün içinde ödenmezse iptal olur.",
+        "kapida": "Sipariş ödeme bekleniyor durumunda açılır, ödeme teslimde alınır.",
+        "elden": "Elden ya da kendi POS cihazınızla aldınız; sipariş hazırlanıyor durumunda açılır."
+      },
+      "yontemYok": "Sitede panelden kullanılabilecek ödeme yöntemi yok. Ödeme yöntemleri ekranından havale ya da kapıda ödemeyi açın.",
+      "metinlerIletildi": "Ön bilgilendirme formu ve mesafeli satış sözleşmesi müşteriye iletildi",
+      "ozet": "Özet",
+      "ozetBos": "Ürün ekleyince tutar, kargo ve vergi burada hesaplanır.",
+      "olustur": "Siparişi oluştur",
+      "basari": "{numara} numaralı sipariş oluşturuldu.",
+      "hata": {
+        "sepetDegisti": "Ürünlerin fiyatı ya da stoğu değişti. Özeti kontrol edip yeniden gönderin.",
+        "sepetBos": "Siparişe en az bir satılabilir ürün ekleyin.",
+        "stokAyrildi": "Bir ürünün stoğu başka bir ödemede ayrılmış ya da yetmiyor. Adedi azaltın ya da ürünü çıkarın.",
+        "yontemKapali": "Seçilen ödeme yöntemi artık kapalı. Başka bir yöntem seçin.",
+        "musteriSec": "Listeden bir üye müşteri seçin ya da üye olmayan müşteriyi seçin.",
+        "musteriYok": "Seçilen müşterinin hesabı artık yok. Başka bir müşteri seçin.",
+        "metinler": "Metinlerin müşteriye iletildiğini işaretleyin. Mesafeli satışta bu zorunludur.",
+        "genel": "Sipariş oluşturulamadı. Sayfayı yenileyip yeniden deneyin."
       }
     }
   },

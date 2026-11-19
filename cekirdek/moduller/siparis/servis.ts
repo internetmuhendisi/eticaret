@@ -33,6 +33,7 @@ import type { SiparisDurumu } from "../../kayitlar/siparis.ts";
 import { yerelZamandan } from "../../metinler/bicimleyici.ts";
 import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
+import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
 import type { OturumOnayi } from "../odeme/model.ts";
 import type { Fatura, OdemeYontemiSecimi, Teslimat } from "../odeme/semalar.ts";
@@ -121,9 +122,11 @@ export const siparisServisi = (site: Site) => {
     girdi: {
       oturum: KurulacakOturum;
       hesap: SepetHesabi;
-      odeme: OdemeYontemiSecimi;
+      odeme: OdemeYontemiSecimi | { yontem: "elden" };
       havaleIptalSuresi: number;
       tahsilat?: Tahsilat;
+      // Panelden elle sipariş (kart 0236): geçmişe ve değişiklik kaydına siparişi giren yönetici yazılır.
+      panel?: { yonetici: string };
     },
   ): Promise<KurulanSiparis> => {
     const { oturum, hesap, odeme } = girdi;
@@ -132,12 +135,17 @@ export const siparisServisi = (site: Site) => {
       throw new BilinenHata("is-kurali", [{ alan: "kalemler", kod: "sepet-bos" }]);
     }
     const kim: DegisikligiYapan =
-      oturum.musteri === null ? uyeOlmayanMusteri : { tur: "musteri", kimlik: oturum.musteri };
+      girdi.panel !== undefined
+        ? { tur: "yonetici", kimlik: girdi.panel.yonetici }
+        : oturum.musteri === null
+          ? uyeOlmayanMusteri
+          : { tur: "musteri", kimlik: oturum.musteri };
     const numara = await numaraAl(islem);
     const erisimAnahtari = randomBytes(32).toString("base64url");
     const havale = odeme.yontem === "havale";
-    // Ödemesi alınmış sipariş hazırlanıyor, ötekiler ödeme bekliyor.
-    const durum: SiparisDurumu = girdi.tahsilat === undefined ? "odeme-bekleniyor" : "hazirlaniyor";
+    // Ödemesi alınmış sipariş (kartla ödeme, panelden "elden") hazırlanıyor, ötekiler ödeme bekliyor.
+    const odendi = girdi.tahsilat !== undefined || odeme.yontem === "elden";
+    const durum: SiparisDurumu = odendi ? "hazirlaniyor" : "odeme-bekleniyor";
     const [yazilan] = await islem
       .insert(siparisler)
       .values({
@@ -171,7 +179,7 @@ export const siparisServisi = (site: Site) => {
           : null,
         tahsilat: girdi.tahsilat ?? null,
         // Kartla ödemede ödeme sipariş kurulurken alınmıştır (kart 0234).
-        odeme_zamani: girdi.tahsilat === undefined ? null : sql`now()`,
+        odeme_zamani: odendi ? sql`now()` : null,
         erisim_ozeti: erisimOzeti(erisimAnahtari),
       })
       .onConflictDoNothing({ target: siparisler.oturum_kimligi })
@@ -235,9 +243,25 @@ export const siparisServisi = (site: Site) => {
       siparis: yazilan.kimlik,
       onceki: null,
       sonraki: durum,
-      neden: "olusturuldu",
+      neden: girdi.panel === undefined ? "olusturuldu" : "panelden-olusturuldu",
       kim,
     });
+    if (girdi.panel !== undefined) {
+      await degisikligiKaydet(islem, {
+        kim,
+        islem: "siparis.panelden-olusturuldu",
+        kayit: { tur: "siparis", kimlik: yazilan.kimlik },
+        eski: null,
+        yeni: {
+          numara,
+          durum,
+          toplam: hesap.toplam,
+          odemeYontemi: odeme.yontem,
+          uye: oturum.musteri !== null,
+          metinlerIletildi: true,
+        },
+      });
+    }
     return { kimlik: yazilan.kimlik, numara, erisimAnahtari };
   };
 

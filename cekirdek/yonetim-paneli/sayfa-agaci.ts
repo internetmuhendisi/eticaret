@@ -68,6 +68,17 @@ export const panelSayfalari = [
     grup: "satis",
     ust: "siparisler",
   },
+  // Elle sipariş (kart 0236, karar 0148): telefonla ya da yüz yüze alınan sipariş; görevli de girer.
+  {
+    kod: "elle-siparis",
+    adres: `${panelAdresi}/siparisler/elle`,
+    ad: "yonetim.sayfa.elleSiparis.ad",
+    aciklama: "yonetim.sayfa.elleSiparis.aciklama",
+    ikon: "ekle",
+    izin: "siparis.yonet",
+    grup: "satis",
+    ust: "siparisler",
+  },
   // Sipariş ayarları (kart 0234): kargo firmaları; mağaza ayarıdır, yalnız mağaza sahibinin izinleriyle.
   {
     kod: "siparis-ayarlari",

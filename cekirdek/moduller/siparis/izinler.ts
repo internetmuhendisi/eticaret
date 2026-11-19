@@ -12,4 +12,7 @@ export const siparisIzinleri = {
   "siparis.havale-onayla": { giris: "yonetici", kapsam: "tumu" },
   // İptal ve iade (kart 0235, karar 0147): para işidir, yalnız mağaza sahibi (kullanıcı kararı).
   "siparis.iade": { giris: "yonetici", kapsam: "tumu" },
+  // Elle sipariş (kart 0236, karar 0148): görevli de girer (siparis.yonet); "ödeme alındı" ile açmak para işidir, ayrı
+  // izindir (görevlide yok, kullanıcı kararı).
+  "siparis.elden-tahsil": { giris: "yonetici", kapsam: "tumu" },
 } as const satisfies Record<string, IzinTanimi>;

@@ -19,7 +19,9 @@ import { musteriler } from "../musteri/model.ts";
 import type { SepetKalemi } from "../sepet/semalar.ts";
 import type { Fatura, Teslimat } from "./semalar.ts";
 
-export type OturumOnayi = { tur: string; verildi: boolean; metinSurumu: string };
+// beyan: onayı müşteri değil yönetici beyan etti (panelden elle sipariş, kart 0236, karar 0148): metinlerin müşteriye
+// iletildiğini işaretleyen yöneticinin kimliği. Müşterinin kendi onayı sayılmaz.
+export type OturumOnayi = { tur: string; verildi: boolean; metinSurumu: string; beyan?: string };
 
 export const odemeOturumlari = pgTable(
   "odeme_oturumlari",

@@ -71,7 +71,8 @@ export const siparisler = pgTable(
     fatura: jsonb().$type<Fatura>().notNull(),
     not: text(),
     onaylar: jsonb().$type<OturumOnayi[]>().notNull(),
-    // cekirdek/kayitlar/odeme.ts: odemeYontemleri; kapıda ödemede seçenek (kapidaOdemeSecenekleri).
+    // cekirdek/kayitlar/odeme.ts: siparisOdemeYontemleri (panelden "elden", kart 0236); kapıda ödemede seçenek
+    // (kapidaOdemeSecenekleri).
     odeme_yontemi: text().notNull(),
     kapida_secenegi: text(),
     // cekirdek/kayitlar/siparis.ts: siparisDurumTanimlari.
@@ -128,7 +129,7 @@ export const siparisler = pgTable(
     ),
     check(
       "siparisler_odeme_yontemi",
-      sql`(${tablo.odeme_yontemi} = 'havale' and ${tablo.kapida_secenegi} is null and ${tablo.odeme_son_zamani} is not null) or (${tablo.odeme_yontemi} = 'kapida-odeme' and ${tablo.kapida_secenegi} in ('nakit', 'kart') and ${tablo.odeme_son_zamani} is null) or (${tablo.odeme_yontemi} = 'kart' and ${tablo.kapida_secenegi} is null and ${tablo.odeme_son_zamani} is null and ${tablo.tahsilat} is not null)`,
+      sql`(${tablo.odeme_yontemi} = 'havale' and ${tablo.kapida_secenegi} is null and ${tablo.odeme_son_zamani} is not null) or (${tablo.odeme_yontemi} = 'kapida-odeme' and ${tablo.kapida_secenegi} in ('nakit', 'kart') and ${tablo.odeme_son_zamani} is null) or (${tablo.odeme_yontemi} = 'kart' and ${tablo.kapida_secenegi} is null and ${tablo.odeme_son_zamani} is null and ${tablo.tahsilat} is not null) or (${tablo.odeme_yontemi} = 'elden' and ${tablo.kapida_secenegi} is null and ${tablo.odeme_son_zamani} is null and ${tablo.odeme_zamani} is not null)`,
     ),
     // Tahsilat yalnız kartla ödemede vardır (yukarıdaki denetim kartta ister).
     check("siparisler_tahsilat", sql`${tablo.tahsilat} is null or ${tablo.odeme_yontemi} = 'kart'`),
@@ -210,7 +211,7 @@ export const siparisGecmisi = pgTable(
     index("siparis_gecmisi_siparis").on(tablo.siparis_kimligi, tablo.zaman),
     check(
       "siparis_gecmisi_neden",
-      sql`${tablo.neden} in ('olusturuldu', 'havale-suresi-doldu', 'havale-bildirildi', 'havale-onaylandi', 'hazirlamaya-alindi', 'kargoya-verildi', 'kargo-duzeltildi', 'teslim-edildi', 'yonetici-iptali', 'iade-yapildi')`,
+      sql`${tablo.neden} in ('olusturuldu', 'panelden-olusturuldu', 'havale-suresi-doldu', 'havale-bildirildi', 'havale-onaylandi', 'hazirlamaya-alindi', 'kargoya-verildi', 'kargo-duzeltildi', 'teslim-edildi', 'yonetici-iptali', 'iade-yapildi')`,
     ),
     check(
       "siparis_gecmisi_durum",

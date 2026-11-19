@@ -19,6 +19,7 @@ const yontemler: Record<string, MetinAnahtari> = {
   havale: "ortak.odemeYontemi.havale",
   "kapida-odeme": "ortak.odemeYontemi.kapidaOdeme",
   kart: "ortak.odemeYontemi.kartla",
+  elden: "ortak.odemeYontemi.elden",
 };
 const secenekler: Record<string, MetinAnahtari> = {
   nakit: "ortak.odemeYontemi.nakit",
@@ -38,6 +39,7 @@ export const odemeYazisi = (
 
 const nedenler: Record<SiparisGecmisiNedeni, MetinAnahtari> = {
   olusturuldu: "yonetim.siparis.neden.olusturuldu",
+  "panelden-olusturuldu": "yonetim.siparis.neden.panelden-olusturuldu",
   "havale-suresi-doldu": "yonetim.siparis.neden.havale-suresi-doldu",
   "havale-bildirildi": "yonetim.siparis.neden.havale-bildirildi",
   "havale-onaylandi": "yonetim.siparis.neden.havale-onaylandi",

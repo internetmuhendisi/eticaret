@@ -107,6 +107,8 @@ export const degisiklikIslemleri = [
   // Kart 0235: siparişin iptali ve iadesi (tutar, vergi, kalemler, neden). Durumun kendisi sipariş geçmişindedir.
   "siparis.iptal-edildi",
   "siparis.iade-edildi",
+  // Kart 0236: panelden girilen sipariş (numara, toplam, ödeme yöntemi, metinlerin iletildi beyanı).
+  "siparis.panelden-olusturuldu",
 ] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 

@@ -87,26 +87,38 @@ export const odemeYontemiSecimiSemasi = z.discriminatedUnion("yontem", [
 ]);
 export type OdemeYontemiSecimi = z.output<typeof odemeYontemiSecimiSemasi>;
 
+// Kurumsal faturanın vergi numarası faturanın ülkesinin kuralıyla (ödeme adımı ve panelin elle siparişi, kart 0236).
+export const faturaVergiDenetimi = (
+  bilgiler: { fatura: Fatura; teslimat: Teslimat },
+  ctx: z.RefinementCtx,
+) => {
+  const { fatura, teslimat } = bilgiler;
+  if (fatura.tur !== "kurumsal") return;
+  // Numaranın kuralı faturanın ülkesinden: ayrı fatura adresi yoksa teslimatın ülkesi.
+  const ulke = (fatura.adres ?? teslimat.adres).ulke;
+  const hata = faturaVergiNumarasiHatasi(ulke, fatura.vergiNumarasi);
+  if (hata !== undefined) {
+    ctx.addIssue({ code: "custom", message: hata, path: ["fatura", "vergiNumarasi"] });
+  }
+};
+
+// Ödemenin bilgileri; notun şeması panelin elle siparişiyle ortaktır.
+export const odemeNotuSemasi = z.preprocess(
+  bosIseYok,
+  duzMetinSemasi(odemeSinirlari.notEnCok).optional(),
+);
+
 export const odemeBilgileriSemasi = z
   .strictObject({
     odemeYontemi: odemeYontemiSecimiSemasi,
     teslimat: teslimatSemasi,
     fatura: faturaSemasi,
-    not: z.preprocess(bosIseYok, duzMetinSemasi(odemeSinirlari.notEnCok).optional()),
+    not: odemeNotuSemasi,
     onBilgilendirmeOnayi: z.literal(true),
     mesafeliSatisOnayi: z.literal(true),
     pazarlamaIzni: z.boolean(),
   })
-  .superRefine((bilgiler, ctx) => {
-    const { fatura, teslimat } = bilgiler;
-    if (fatura.tur !== "kurumsal") return;
-    // Numaranın kuralı faturanın ülkesinden: ayrı fatura adresi yoksa teslimatın ülkesi.
-    const ulke = (fatura.adres ?? teslimat.adres).ulke;
-    const hata = faturaVergiNumarasiHatasi(ulke, fatura.vergiNumarasi);
-    if (hata !== undefined) {
-      ctx.addIssue({ code: "custom", message: hata, path: ["fatura", "vergiNumarasi"] });
-    }
-  });
+  .superRefine(faturaVergiDenetimi);
 export type OdemeBilgileri = z.output<typeof odemeBilgileriSemasi>;
 
 // Üye olmayan müşteri e-postasını verir, isterse hesap açar (müşteri kaydının kuralıyla, karar 0051).

@@ -9,7 +9,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { SayfaBasligi } from "../../../bilesenler/parcalar/sayfa-basligi";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
-import { ilAdi, ilceAdi, postaKoduZorunluMu, ulkeninIlleri } from "../../bolgeler/bolgeler";
+import { ilAdi, ilceAdi } from "../../bolgeler/bolgeler";
 import { odemeSinirlari } from "../../kayitlar/odeme";
 import { sifreSiniri } from "../../kayitlar/oturum";
 import { sepetCerezi } from "../../kayitlar/sepet";
@@ -22,6 +22,7 @@ import { siteninVeritabani } from "../../veritabani/baglanti";
 import { cerezdekiSayi } from "../sepet/depo";
 import { musteriSayfasiBilgisi, musteriSayfasiniAc } from "../yalniz-gezinti";
 import { OdemeFormu, type OdemeSayfasiVerisi } from "./odeme-formu";
+import { teslimatUlkeleri } from "./ulkeler";
 
 export const odemeSayfaBilgisi = musteriSayfasiBilgisi(
   async (): Promise<Metadata> => ({
@@ -38,16 +39,7 @@ const sayfaVerisi = async (): Promise<OdemeSayfasiVerisi> => {
     magazaninAdi(vt, site),
   ]);
   const bicim = siteninBicimleyicisi(site.ayarlar);
-  const ulkeler = site.ayarlar.teslimatUlkeleri.map((kod) => ({
-    kod,
-    ad: bicim.ulkeAdi(kod),
-    iller: ulkeninIlleri(kod).map((il) => ({
-      kod: il.kod,
-      ad: il.ad,
-      ilceler: il.ilceler.map((ilce) => ({ kod: ilce.kod, ad: ilce.ad })),
-    })),
-    postaKoduZorunlu: postaKoduZorunluMu(kod),
-  }));
+  const ulkeler = teslimatUlkeleri(site);
   // Satıcının satırları: unvan (yoksa mağaza adı), adres, iletişim ve kimlik numaraları; boş olan yazılmaz.
   const satici = ayarlar.saticiBilgileri;
   const adres = ayarlar.magazaAdresi;

@@ -2,6 +2,9 @@
 // sekmesi ve sayfa adresin sorgusundadır; tanınmayan durum yok sayılır, sayfa sınırlara çekilir.
 import type { Metadata } from "next";
 import { type SiparisDurumu, siparisDurumlari } from "../../../../../kayitlar/siparis";
+import { panelAdresi } from "../../../../../yonetim-paneli/adresler";
+import { EylemBaglantisi } from "../../../../../yonetim-paneli/eylem-dugmesi";
+import { panelOturumu } from "../../../../../yonetim-paneli/panel-oturumu";
 import {
   PanelSayfasi,
   panelSayfaBilgisi,
@@ -25,8 +28,17 @@ export default async function SiparislerSayfasi({
       ? Math.max(1, Number(sorgu.sayfa))
       : 1;
   const veri = await siparisListesiVerisi({ durum, sayfa });
+  const { yetkili } = await panelOturumu();
   return (
-    <PanelSayfasi kod="siparisler">
+    <PanelSayfasi
+      kod="siparisler"
+      eylemler={
+        // Elle sipariş (kart 0236): yalnız izni olana; sayfanın asıl eylemi.
+        yetkili("siparis.yonet") ? (
+          <EylemBaglantisi eylem="elle-siparis" asil href={`${panelAdresi}/siparisler/elle`} />
+        ) : null
+      }
+    >
       <SiparisListesi veri={veri} />
     </PanelSayfasi>
   );

@@ -42,6 +42,7 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `siparis.yonet` | yonetici | tumu | Kapıda ödeme siparişini hazırlamaya alır, siparişi kargoya verir, kargo bilgisini düzeltir, teslim edildi işaretler ve not ekler (kart 0234). |
 | `siparis.havale-onayla` | yonetici | tumu | Havale siparişinin ödemesini onaylar, sipariş hazırlanıyor olur (kart 0234; görevlide yok, kullanıcı kararı). |
 | `siparis.iade` | yonetici | tumu | Siparişi iptal eder, tam ya da kısmi iade yapar (kart 0235; görevlide yok, kullanıcı kararı: para işidir). |
+| `siparis.elden-tahsil` | yonetici | tumu | Elle siparişi "ödeme alındı" (elden) ile açar (kart 0236; görevlide yok, kullanıcı kararı: para işidir). |
 | `stok.gor` | yonetici | tumu | Satılabilir birimlerin stoğunu ve stok geçmişini görür. |
 | `stok.duzelt` | yonetici | tumu | Stoğu sebebiyle elle düzeltir. |
 | `stok-bildirimi.kendi.iste` | musteri | kendi | Giriş yapmış müşteri tükenmiş birim için kendi hesabının e-postasıyla "stoğa gelince haber ver" talebi bırakır (eklenti, kart 0144). |

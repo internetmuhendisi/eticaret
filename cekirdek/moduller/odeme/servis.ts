@@ -40,11 +40,12 @@ import type { Anahtarlar } from "../oturum/servis.ts";
 import { sepetiHesapla } from "../sepet/hesap.ts";
 import type { SepetKalemi } from "../sepet/semalar.ts";
 import { siparisler } from "../siparis/model.ts";
+import type { ElleSiparisGirdisi } from "../siparis/semalar.ts";
 import { siparisServisi } from "../siparis/servis.ts";
 import { stokServisi } from "../stok/servis.ts";
 import { type OturumOnayi, odemeOturumlari } from "./model.ts";
 import { bolge, faturaAdresi } from "./oturum-hesabi.ts";
-import type { MisafirOdemeFormu, OdemeBilgileri } from "./semalar.ts";
+import type { MisafirOdemeFormu, OdemeBilgileri, OdemeYontemiSecimi } from "./semalar.ts";
 import { yontemKullanilabilirMi } from "./yontemler.ts";
 
 export type OdemeyiYapan =
@@ -61,6 +62,17 @@ export type OdemeGirdisi = {
   // Müşterinin adresi: eklentili yöntemde ödeme kuruluşuna gider (sahtecilik denetimi).
   ip?: string | undefined;
 };
+
+// Siparişin ödeme seçimi: müşterinin seçtiği yöntem ya da panelden "elden" (kart 0236).
+export type SiparisinOdemesi = OdemeYontemiSecimi | { yontem: "elden" };
+
+// Oturum açmanın iç girdisi: panelin elle siparişi "elden" yöntemini de verir.
+type IcGirdi = Omit<OdemeGirdisi, "bilgiler"> & {
+  bilgiler: Omit<OdemeBilgileri, "odemeYontemi"> & { odemeYontemi: SiparisinOdemesi };
+};
+
+// Panelden elle sipariş (kart 0236): siparişi giren yönetici.
+type Panelden = { yonetici: string };
 
 export type OdemeSonucu = {
   oturum: string;
@@ -88,10 +100,11 @@ export const odemeServisi = (site: Site) => {
   // Oturum ve ayırma; siparisKur verilirse aynı işlemde sipariş de kurulur (havale ve kapıda ödeme, kart 0214).
   const oturumuAc = async (
     vt: Veritabani,
-    girdi: OdemeGirdisi,
+    girdi: IcGirdi,
     oturumSuresiSaniye: number,
     siparisKur: boolean,
     disarida = false,
+    panel?: Panelden,
   ): Promise<
     OdemeSonucu & {
       siparis?: SiparisSonucu["siparis"];
@@ -101,7 +114,8 @@ export const odemeServisi = (site: Site) => {
     }
   > => {
     const ayarlar = await siteninMagazaAyarlari(vt, site);
-    if (girdi.kim.tur === "misafir" && !ayarlar.uyeOlmadanAlisveris) {
+    // Ayar vitrini bağlar: panelden üye olmayan müşterinin siparişi her zaman girilir (kullanıcı kararı, kart 0236).
+    if (panel === undefined && girdi.kim.tur === "misafir" && !ayarlar.uyeOlmadanAlisveris) {
       throw new BilinenHata("oturum-yok");
     }
     const { teslimat } = girdi.bilgiler;
@@ -111,7 +125,10 @@ export const odemeServisi = (site: Site) => {
     if (!site.ayarlar.teslimatUlkeleri.includes(teslimat.adres.ulke)) {
       throw dogrulama("bilgiler.teslimat.adres.ulke", "ulke-teslimat-disi");
     }
-    if (!yontemKullanilabilirMi(site, ayarlar, girdi.bilgiler.odemeYontemi)) {
+    const odeme = girdi.bilgiler.odemeYontemi;
+    if (
+      odeme.yontem === "elden" ? panel === undefined : !yontemKullanilabilirMi(site, ayarlar, odeme)
+    ) {
       throw new BilinenHata("is-kurali", [{ alan: "bilgiler.odemeYontemi", kod: "yontem-kapali" }]);
     }
 
@@ -164,16 +181,20 @@ export const odemeServisi = (site: Site) => {
         }
       }
 
+      // Panelden: metinlerin iletildiği yöneticinin beyanıdır (kullanıcı kararı, karar 0148).
+      const beyan = panel === undefined ? {} : { beyan: panel.yonetici };
       const onaylar: OturumOnayi[] = [
         {
           tur: "on-bilgilendirme",
           verildi: girdi.bilgiler.onBilgilendirmeOnayi,
           metinSurumu: siparisOnayTurleri["on-bilgilendirme"].metinSurumu,
+          ...beyan,
         },
         {
           tur: "mesafeli-satis",
           verildi: girdi.bilgiler.mesafeliSatisOnayi,
           metinSurumu: siparisOnayTurleri["mesafeli-satis"].metinSurumu,
+          ...beyan,
         },
         {
           tur: "pazarlama",
@@ -239,8 +260,9 @@ export const odemeServisi = (site: Site) => {
           onaylar,
         },
         hesap,
-        odeme: girdi.bilgiler.odemeYontemi,
+        odeme,
         havaleIptalSuresi: ayarlar.havaleIptalSuresi,
+        ...(panel === undefined ? {} : { panel }),
       });
       return {
         ...sonuc,
@@ -279,6 +301,43 @@ export const odemeServisi = (site: Site) => {
     } = await oturumuAc(vt, girdi, oturumSuresiSaniye, true);
     if (sonuc.siparis === undefined) throw new Error("Sipariş kurulmadı.");
     return { ...sonuc, siparis: sonuc.siparis };
+  };
+
+  // Panelden elle sipariş (kart 0236, karar 0148): vitrin siparişiyle aynı yoldan (oturum, ayırma ve sipariş tek
+  // işlemde, tutar sunucunun hesabı). Ayrımlar: üye olmadan alışveriş ayarı bağlamaz; "elden" yöntemi vardır; onaylar
+  // yöneticinin beyanıdır, pazarlama izni verilmez; geçmişe ve değişiklik kaydına siparişi giren yönetici yazılır.
+  // Üye seçildiyse e-posta hesabındandır.
+  const elleSiparisVer = async (
+    vt: Veritabani,
+    yonetici: string,
+    girdi: ElleSiparisGirdisi,
+  ): Promise<{ numara: string }> => {
+    const { siparis } = await oturumuAc(
+      vt,
+      {
+        kim:
+          girdi.musteri.tur === "uye"
+            ? { tur: "uye", musteri: girdi.musteri.kimlik }
+            : { tur: "misafir", eposta: girdi.musteri.eposta, hesap: { ac: false } },
+        bilgiler: {
+          odemeYontemi: girdi.bilgiler.odemeYontemi,
+          teslimat: girdi.bilgiler.teslimat,
+          fatura: girdi.bilgiler.fatura,
+          not: girdi.bilgiler.not,
+          onBilgilendirmeOnayi: true,
+          mesafeliSatisOnayi: true,
+          pazarlamaIzni: false,
+        },
+        kalemler: girdi.kalemler,
+        gorulenToplam: girdi.gorulenToplam,
+      },
+      0,
+      true,
+      false,
+      { yonetici },
+    );
+    if (siparis === undefined) throw new Error("Sipariş kurulmadı.");
+    return { numara: siparis.numara };
   };
 
   // "Siparişi onayla" (uçların çağırdığı): havale ve kapıda ödemede siparisVer, eklentili yöntemde oturum ve ayırmadan
@@ -353,5 +412,5 @@ export const odemeServisi = (site: Site) => {
   const ayirmayiBirak = (vt: Veritabani, oturum: string) =>
     vt.transaction((islem) => stok.ayirmayiBirak(islem, oturum));
 
-  return { odemeOturumuAc, siparisVer, onayla, ayirmayiBirak };
+  return { odemeOturumuAc, siparisVer, elleSiparisVer, onayla, ayirmayiBirak };
 };

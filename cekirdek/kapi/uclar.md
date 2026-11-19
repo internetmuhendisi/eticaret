@@ -517,6 +517,40 @@ Kuruluşun yanıtını bekleyen iadeyi yeniden dener: reddedilen parçalar yenid
 - Başarılı (200): siparis-iadesi ile aynı.
 - Hatalar: `cakisma` (`iade-yok`: bekleyen iade yok), `yetki`.
 
+### GET /kapi/yonetici/elle-siparis-urunleri
+
+Elle siparişe eklenebilecek ürün birimleri (kart 0236, karar 0148): vitrin aramasının kuralıyla yalnız sayfası vitrinde açılan ürünler (en çok 10, en uygun önce), her birinin silinmemiş birimleri, sepetin hesabıyla fiyat ve satılabilirlik.
+
+- İzin: `siparis.yonet`. Sınır: `genel`.
+- Girdi (sorgu): `ara` (`elleSiparisAramaSemasi`).
+- Servis: `cekirdek/moduller/siparis/elle.ts`.
+- Başarılı (200): `{ "birimler": [{ "birim", "ad", "secim", "yaziliFiyat", "satilabilir" }] }`.
+
+### GET /kapi/yonetici/elle-siparis-musterileri
+
+E-postasında aranan üye müşteriler (silinmiş hesap yok, en çok 10), her birinin son siparişindeki teslimat (kişisel bilgisi silinmemiş) adres önerisi olarak.
+
+- İzin: `siparis.yonet`. Sınır: `genel`.
+- Girdi (sorgu): `ara`.
+- Başarılı (200): `{ "musteriler": [{ "kimlik", "eposta", "sonTeslimat" }] }` (`sonTeslimat` yoksa `null`).
+
+### POST /kapi/yonetici/elle-siparis-hesabi
+
+Elle sipariş ekranının özeti: vitrinin sepet ucuyla aynı hesap ve görünüm (`sepetGorunumu`); teslimat ve fatura bölgesi verilirse vergi onlarla hesaplanır.
+
+- İzin: `siparis.yonet`. Sınır: `genel`.
+- Girdi: `{ "kalemler": [{ "birim", "adet" }], "vergiBolgeleri"? }` (`sepetSemasi`).
+- Başarılı (200): sepet ucuyla aynı.
+
+### POST /kapi/yonetici/elle-siparis
+
+Panelden sipariş kurar: vitrin siparişiyle aynı yoldan, oturum, stok ayırması ve sipariş tek işlemde (`odemeServisi.elleSiparisVer`). Tutar sunucunun hesabıdır; stok "yeterliyse düş" ile düşer, başka oturumların ayırmaları sayılır. Üye olmadan alışveriş ayarı bağlamaz. Havale ve kapıda ödemede sipariş "ödeme bekleniyor", "elden" ödemede "hazırlanıyor" açılır. Ön bilgilendirme formu ve mesafeli satış sözleşmesinin iletildiği yöneticinin beyanıdır, siparişin onaylarına beyan eden yöneticiyle yazılır; pazarlama izni verilmez. Geçmişe "panelden-olusturuldu" nedeniyle ve değişiklik kaydına (`siparis.panelden-olusturuldu`) siparişi giren yönetici yazılır.
+
+- İzin: `siparis.yonet`; "elden" yöntemi ayrıca `siparis.elden-tahsil` ister (görevlide yok), yoksa `yetki`. Sınır: `genel`.
+- Girdi: `{ "musteri": { "tur": "uye", "kimlik" } | { "tur": "misafir", "eposta" }, "kalemler", "bilgiler": { "odemeYontemi": { "yontem": "havale" } | { "yontem": "kapida-odeme", "secenek" } | { "yontem": "elden" }, "teslimat", "fatura", "not"?, "metinlerIletildi": true }, "gorulenToplam"? }` (`elleSiparisSemasi`).
+- Başarılı (200): `{ "numara" }`.
+- Hatalar: `is-kurali` (`sepet-degisti`, `sepet-bos`, `yontem-kapali`), `cakisma` (`stok-ayrildi`), `oturum-yok` (seçilen üyenin hesabı yok), `dogrulama`, `yetki`.
+
 ### POST /kapi/yonetici/siparis-notu
 
 Siparişe not ekler. İç not (`ic`) yalnız panelde, müşteriye not (`musteri`) müşterinin sipariş ayrıntısında görünür (e-postası kart 0240). Not değiştirilemez.

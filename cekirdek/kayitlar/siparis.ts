@@ -48,8 +48,10 @@ export const satinAlmaDurumlari = [
 // - kargo-duzeltildi: kargodaki siparişin firması ya da takip numarası düzeltildi; durum değişmez.
 // - yonetici-iptali, iade-yapildi: mağaza sahibinin iptali ve iadesi (kart 0235, iadeYap). Bir kısmi iadeden sonraki
 //   kısmi iade durumu değiştirmez (kismi-iade → kismi-iade).
+// - panelden-olusturuldu: mağaza sahibi ya da görevli siparişi panelden girdi (kart 0236, elleSiparisVer).
 export const siparisGecmisiNedenleri = [
   "olusturuldu",
+  "panelden-olusturuldu",
   "havale-suresi-doldu",
   "havale-bildirildi",
   "havale-onaylandi",

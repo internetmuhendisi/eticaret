@@ -4,6 +4,8 @@
 // listesi (listbox), aşağı ve yukarı ok önerilerde gezer, Enter seçer, Escape listeyi kapatır (pencereyi değil),
 // sonuç sayısı ekran okuyucuya duyurulur. Daha çok sonuç varsa "Daha fazla göster" sonraki sayfayı ekler.
 // Öneriler alanın altında, sayfanın akışındadır (sayfa başına 20). Seçilince alanda kaydın adı yazar. İstek yazma durunca gider (bekleme), eski isteğin cevabı yenisini ezmez.
+// Elle sipariş (kart 0236) aynı kutuyu kendi aramasıyla kullanır (ara): öneri açıklama satırı taşıyabilir, seçilemeyen
+// öneri (satılamayan birim) aria-disabled'dır ve seçilmez; seçince kutu boşalabilir (eklemeli liste).
 import { useEffect, useId, useRef, useState } from "react";
 import { FormAlani } from "../../bilesenler/form/form-alani";
 import { GirisAlani } from "../../bilesenler/parcalar/giris-alani";
@@ -11,7 +13,7 @@ import { sinif } from "../../bilesenler/parcalar/sinif";
 import { useMetin } from "../metinler/istemci-metni";
 import { doldur } from "../moduller/eposta/sablon";
 import type { AranabilirKayit, BulunanKayit, KayitAramaSonucu } from "../moduller/urun/kayit-arama";
-import { panelIstegi } from "./panel-istegi";
+import { type PanelSonucu, panelIstegi } from "./panel-istegi";
 
 // Yazma durduktan sonra isteğin gitmesi için beklenen süre.
 const beklemeSuresi = 250;
@@ -20,26 +22,40 @@ const beklemeSuresi = 250;
 export const kayitAramaAcikMi = (oge: Element | null): boolean =>
   oge?.getAttribute("role") === "combobox" && oge.getAttribute("aria-expanded") === "true";
 
-export function KayitArama({
+export type AramaOnerisi = BulunanKayit & { aciklama?: string; secilemez?: boolean };
+
+export function KayitArama<Kayit extends AramaOnerisi = AramaOnerisi>({
   tur,
+  ara: kendiAramasi,
   etiket,
+  aciklama,
   secili,
   sec,
+  secinceBosalt = false,
   hata,
 }: {
-  tur: AranabilirKayit;
+  // Kayıt arama ucunun türü; kendi araması verilirse kullanılmaz.
+  tur?: AranabilirKayit;
+  ara?: (
+    aranan: string,
+    sayfa: number,
+  ) => Promise<PanelSonucu<{ kayitlar: Kayit[]; dahaVar: boolean }>>;
   etiket: string;
+  // Alanın açıklaması (seçim yokken); verilmezse kayıt aramanın açıklaması.
+  aciklama?: string;
   // Seçili kayıt (kimliği ve adı); yoksa undefined.
-  secili: BulunanKayit | undefined;
+  secili: Kayit | undefined;
   // Seçim; yazı seçili kaydın adından başka olunca seçim bırakılır (undefined).
-  sec: (kayit: BulunanKayit | undefined) => void;
+  sec: (kayit: Kayit | undefined) => void;
+  // Seçince kutu boşalır (listeye ekleme): seçim alanda kalmaz.
+  secinceBosalt?: boolean;
   hata?: string;
 }) {
   const metin = useMetin();
   const kimlik = useId();
   const [yazi, setYazi] = useState(secili?.ad ?? "");
   const [acik, setAcik] = useState(false);
-  const [kayitlar, setKayitlar] = useState<BulunanKayit[]>([]);
+  const [kayitlar, setKayitlar] = useState<Kayit[]>([]);
   const [dahaVar, setDahaVar] = useState(false);
   const [sayfa, setSayfa] = useState(0);
   const [durum, setDurum] = useState<"bos" | "yukleniyor" | "hazir" | "hata" | "yetki">("bos");
@@ -58,8 +74,12 @@ export function KayitArama({
     istekSirasi.current += 1;
     const bu = istekSirasi.current;
     setDurum("yukleniyor");
-    const sorgu = new URLSearchParams({ tur, ara: aranan, sayfa: String(istenenSayfa) });
-    const sonuc = await panelIstegi<KayitAramaSonucu>(`kayit-ara?${sorgu}`);
+    const sonuc =
+      kendiAramasi === undefined
+        ? await panelIstegi<KayitAramaSonucu & { kayitlar: Kayit[] }>(
+            `kayit-ara?${new URLSearchParams({ tur: tur ?? "urun", ara: aranan, sayfa: String(istenenSayfa) })}`,
+          )
+        : await kendiAramasi(aranan, istenenSayfa);
     if (bu !== istekSirasi.current) return;
     if (!sonuc.tamam) {
       setDurum(sonuc.kod === "yetki" ? "yetki" : "hata");
@@ -94,9 +114,9 @@ export function KayitArama({
       return;
     }
     const kayit = kayitlar[sira];
-    if (kayit === undefined) return;
+    if (kayit === undefined || kayit.secilemez === true) return;
     sec(kayit);
-    setYazi(kayit.ad);
+    setYazi(secinceBosalt ? "" : kayit.ad);
     setAcik(false);
     setEtkin(-1);
   };
@@ -121,7 +141,7 @@ export function KayitArama({
       etiket={etiket}
       aciklama={
         secili === undefined
-          ? metin("yonetim.kayitArama.aciklama")
+          ? (aciklama ?? metin("yonetim.kayitArama.aciklama"))
           : doldur(metin("yonetim.kayitArama.secili"), { ad: secili.ad })
       }
       {...(hata === undefined ? {} : { hata })}
@@ -185,8 +205,10 @@ export function KayitArama({
                 id={secenekKimligi(sira)}
                 role="option"
                 aria-selected={sira === etkin}
+                {...(kayit.secilemez === true ? { "aria-disabled": true } : {})}
                 className={sinif(
                   "flex min-h-11 cursor-pointer flex-col justify-center rounded-kucuk px-3 hover:bg-yuzey",
+                  kayit.secilemez === true && "cursor-not-allowed text-soluk-yazi",
                   // Klavyeyle gelinen öneri yazının renginde zemindir: odak yazı alanındadır, öneri belirgin olmalı.
                   sira === etkin && "bg-yazi text-zemin",
                   kayit.kimlik === secili?.kimlik && "font-kalin",
@@ -197,6 +219,9 @@ export function KayitArama({
                 {kayit.ad}
                 {kayit.adresAdi === undefined ? null : (
                   <span className="text-kucuk opacity-80">{kayit.adresAdi}</span>
+                )}
+                {kayit.aciklama === undefined ? null : (
+                  <span className="text-kucuk opacity-80">{kayit.aciklama}</span>
                 )}
               </div>
             ))}
