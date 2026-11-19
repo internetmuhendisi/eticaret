@@ -66,8 +66,8 @@ export const kartlaOdemeAyari = {
   kapandiktanSonraGun: 7,
   // Alıcının kimlik numarası sorulmaz (kullanıcı kararı): bireyselde bu yer tutucu gider.
   kimlikYerTutucu: "11111111111",
-  // Yanıtı gelmeyen iade parçası (kart 0235) bu kadar dakika sonra günlük rapordan sorulur; bu kadar gün içinde
-  // raporda bulunmazsa gönderilmemiş sayılır (red): iade "bekliyor"da kalır, mağaza sahibi yeniden dener.
+  // Yanıtı gelmeyen iade parçası (kart 0235) bu kadar dakika sonra günlük rapordan sorulur. Bu kadar gün içinde raporda
+  // bulunmazsa hatası bir kez kaydedilir; parça yine "red" sayılmaz (para dönmüş olabilir), sormaGun boyunca sorulur.
   iadeSorguDakika: 30,
   iadeBulunamazsaGun: 2,
 } as const;

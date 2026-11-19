@@ -246,7 +246,11 @@ export function SiparisAyrintisi({ veri }: { veri: SiparisAyrintisiVerisi }) {
                     {[
                       metin(iadeNedenMetni(iade.neden)),
                       metin(`yonetim.iade.yontem.${iade.yontem}`),
-                      ...(iade.stogaKondu ? [metin("yonetim.iade.liste.stogaKondu")] : []),
+                      ...(iade.stogaKondu && iade.durum === "tamamlandi"
+                        ? [metin("yonetim.iade.liste.stogaKondu")]
+                        : iade.stogaKondu && iade.durum === "bekliyor"
+                          ? [metin("yonetim.iade.liste.stogaKonacak")]
+                          : []),
                       yazanYazisi(metin, iade.yazan),
                       iade.zaman,
                     ].join(" · ")}

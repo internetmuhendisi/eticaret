@@ -189,6 +189,20 @@ describe("kısmi iade", () => {
     });
   });
 
+  it("aynı kalem iki kez seçilemez: adetler ayrı ayrı sığsa da", () => {
+    expect(
+      hatasi(() =>
+        iadeyiHesapla(siparis(), [], "iade", {
+          kalemler: [
+            { sira: 0, adet: 2 },
+            { sira: 0, adet: 1 },
+          ],
+          kargo: false,
+        }),
+      ),
+    ).toEqual({ kod: "kalem-tekrar", alan: "kalemler.0" });
+  });
+
   it("iade edilmiş adet yeniden seçilemez; olmayan kalem ve ödenmemiş sipariş reddedilir", () => {
     expect(
       hatasi(() =>

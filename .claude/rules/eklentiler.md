@@ -10,7 +10,7 @@ paths:
 Eklenti temel pakette olmayan özelliktir (`temel-paket.md`). Tarifi `eklentiler/<kod>.md`, kodu `cekirdek/eklentiler/<kod>/` klasöründedir. Eklenti `/eklenti-ekle <kod>` komutuyla kurulur (`.claude/commands/eklenti-ekle.md`, kart 0145). Komutun adımlarına uyulması yalnız disiplindir, otomatik kontrolü yoktur.
 
 - Eklentinin kodu modülle aynı parçalardan oluşur: `model.ts`, `servis.ts`, `semalar.ts`, `izinler.ts`, `isler.ts`, ekran parçaları ve `testler/`. Kodu `cekirdek/kayitlar/eklentiler.ts` kaydına yazılır.
-- Kurulu eklenti kapalı başlar. Sitede açık olması altyapı sahibinin `eklentiler` ayarıdır; açıklık yalnız `eklentiAcikMi` ile sorulur (`cekirdek/eklentiler/acik.ts`). Eklentinin servisi, uçları, işleri ve ekranları kapalıyken hiçbir şey yapmaz; uç bulunamadı verir. Kişisel veriyi silen saklama işi kapalıyken de çalışır.
+- Kurulu eklenti kapalı başlar. Sitede açık olması altyapı sahibinin `eklentiler` ayarıdır; açıklık yalnız `eklentiAcikMi` ile sorulur (`cekirdek/eklentiler/acik.ts`). Eklentinin servisi, uçları, işleri ve ekranları kapalıyken hiçbir şey yapmaz; uç bulunamadı verir. Kişisel veriyi silen saklama işi kapalıyken de çalışır. Para işleri de kapalıyken çalışır: başlatılmış ödemenin taraması, günlük karşılaştırma ve iade (kart 0235, karar 0147; para ödendiği yoldan döner).
 - E-posta gönderen eklenti, gönderen adresi olmayan sitede çalışmaz.
 - Kancanın anı kaçabilir (eklenti kapalıydı, ürün taslaktaydı): kancaya bağlı iş yapan eklentinin zamanlı bir taraması da olur (`stok-bildirimi-taramasi`).
 - Eklentinin site başına davranışı mağaza sahibinin ayarıdır, çekirdeğin ayar şemasında eklentinin adıyla başlayan bir ayardır (`stokBildirimi…`).

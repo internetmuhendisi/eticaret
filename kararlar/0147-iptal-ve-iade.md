@@ -13,7 +13,7 @@
 - Havale ve kapıda ödemede para elle geri ödenir: iade kaydedilince yapılmış sayılır (kullanıcı kararı, tek adım).
 - Kartla ödemede para ödeme kuruluşundan döner. Çekirdek eklentiyi tanımaz: ödeme yöntemi bağlantı noktasına `iadeEt` eklendi. İade önce "bekliyor" yazılır, işlem kapanır, kuruluşa işlemin dışında gidilir. Sonuç tamamsa iade tamamlanır (durum, stok, geçmiş, değişiklik kaydı aynı işlemde); redse "başarısız" olur ve sipariş değişmez; yanıt gelmezse bekler. Bekleyen iade varken ne durum işlemi ne yeni iade yapılır (veritabanında tekil indeks).
 - Kuruluşa her zaman kalem kalem iade gider (`/payment/refund`, sepet kaleminin işlem kimliği ve tutarı); iptal (`/payment/cancel`) kullanılmaz. Ödemenin sonucundaki kalem işlemleri `kart_odemeleri.kalem_islemleri`'ne yazılır. Bu alandan önce ödenmiş siparişte tek parça ödemenin kimliğiyle gider (`/v2/payment/refund`).
-- Her parça önce `kart_iadeleri`'ne yazılır, gönderilmeden önce tek güncellemeyle "belirsiz"e alınır: aynı parça iki kez gönderilmez. conversationId parçanın kimliğidir; yanıtı gelmeyen parçayı 15 dakikalık tarama günlük rapordaki REFUND satırında bu kimlikle bulur. İki günde bulunamayan parça gönderilmemiş sayılır. Reddedilen parça mağaza sahibinin "Yeniden dene"siyle yeniden gönderilir.
+- Her parça önce `kart_iadeleri`'ne yazılır, gönderilmeden önce tek güncellemeyle "belirsiz"e alınır: aynı parça iki kez gönderilmez. conversationId parçanın kimliğidir; yanıtı gelmeyen parçayı 15 dakikalık tarama günlük rapordaki REFUND satırında bu kimlikle bulur. Bulunamayan parça hiçbir zaman kendiliğinden reddedilmiş sayılmaz: kuruluş parayı döndürmüş olabilir, red yeniden gönderime ve ikinci iadeye yol açardı (bağımsız kontrolün bulgusu). İki günde bulunamazsa hatası bir kez kaydedilir, yedi gün sorulmaya devam eder; iade bekler. Yalnız kuruluşun açıkça reddettiği parça mağaza sahibinin "Yeniden dene"siyle yeniden gönderilir.
 - İptal ve iade yalnız mağaza sahibinindir (`siparis.iade`, görevlide yok; kullanıcı kararı).
 - Stoğa geri koymak seçimlidir; geri konan adet yalnız siparişin düşürüp geri konmamış adedidir.
 
@@ -35,5 +35,8 @@
 
 - Gerçek iyzico deneme ortamında iade ölçülmedi (kullanıcı kararı: şimdilik ölçme); yerel sahte kuruluşla denenir. Ölçümü kart 0243'tedir. Ölçülene kadar kalem işlemlerinin ve REFUND satırının alan adları belgeye dayanır.
 - Bir kalemi reddedilen iade bekler: para kısmen dönmüştür, siparişin durumu değişmez; mağaza sahibi yeniden dener. Yöneticiye bildirim bugün hata izleme aracındandır, e-postası kart 0241.
-- Kuruluşa ulaşmayan parça iki gün "bekliyor"da kalabilir.
+- Kuruluşa ulaşmayan ya da raporda bulunmayan parçanın iadesi kendiliğinden çözülmez, sipariş beklemede kalır: mağaza sahibinin "elle tamamla" ya da "vazgeç" yolu bir ürün kararıdır (kart 0245).
+- Siparişte oran başına vergi saklanmaz, yalnız kalemin toplam vergisi ve oranları: iki oranlı kalemde iadenin vergisi oranların büyüklüğüyle yeniden bölünür; vergi hariç girişte oran başına bir kuruş fark çıkabilir.
+- Süresi dolan havalenin kendiliğinden iptali (`havaleIptalTaramasi`) bu akışa girmez, kendi stok geri koymasını yapar: o siparişte para alınmamıştır. Geri koyma kuralı iki yerdedir (kart 0246).
+- Bütün kalanlar seçilip kalandan az elle tutar yazılınca sipariş "iade edildi" olur ve kalan para artık iade edilemez; pencere bunu uyarır.
 - Müşteriye iade e-postası kart 0240'tadır.

@@ -54,6 +54,7 @@ import type { IadePenceresiVerisi } from "./veri";
 
 const hataMetinleri: Record<IadeHatasi | "tutar-okunamadi", MetinAnahtari> = {
   "kalem-yok": "yonetim.iade.hata.kalem",
+  "kalem-tekrar": "yonetim.iade.hata.kalem",
   "adet-fazla": "yonetim.iade.hata.kalem",
   "kargo-iade-edildi": "yonetim.iade.hata.kargo",
   "bos-iade": "yonetim.iade.hata.bos",
@@ -294,6 +295,10 @@ function IadeFormu({
       oran: b.yuzde(satir.oran / 10_000),
     });
   const tutar = sonuc?.tutar ?? 0;
+  // Bütün kalanlar seçilip ödenen kalandan az elle tutar yazılınca sipariş "iade edildi" olur, kalan para artık iade
+  // edilemez (bağımsız kontrolün bulgusu): pencere uyarır.
+  const kalanKalir =
+    !iptal && sonuc?.tam === true && elleKurus !== undefined && tutar < kalanOdenen;
 
   return (
     <Form
@@ -304,69 +309,88 @@ function IadeFormu({
     >
       {genelHata === null ? null : <Uyari tur="tehlike">{genelHata}</Uyari>}
       {iptal ? <Uyari tur="uyari">{metin("yonetim.iade.iptalUyarisi")}</Uyari> : null}
-      <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
-        <legend className="mb-2 font-kalin">{metin("yonetim.iade.urunler")}</legend>
-        <ul
-          className="flex flex-col"
-          // Hata ve odak: ürün listesinin ilk seçicisine gider.
+      <div className="flex min-w-0 flex-col gap-2">
+        <table
+          className="w-full border-collapse text-left"
+          // Hatada odak tabloya gelir; hata yazısı tabloya bağlıdır (iade edilebilir satır olmasa da).
+          data-iade-alani="kalemler"
+          tabIndex={-1}
           aria-describedby={hatalar.kalemler === undefined ? undefined : "iade-kalem-hatasi"}
         >
-          {veri.kalemler.map((kalem, sira) => {
-            const enCok = kalan(kalem);
-            return (
-              <li
-                key={kalem.sira}
-                className="flex flex-wrap items-center justify-between gap-3 border-b border-kenar py-3 first:pt-0 last:border-b-0"
-              >
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="font-kalin wrap-anywhere">{kalem.ad}</span>
-                  {kalem.secim === "" ? null : (
-                    <span className="text-kucuk text-soluk-yazi">{kalem.secim}</span>
-                  )}
-                  <span className="text-kucuk text-soluk-yazi">
-                    {kalem.iadeEdilen > 0
-                      ? doldur(metin("yonetim.iade.adetIadeli"), {
-                          adet: String(kalem.adet),
-                          iade: String(kalem.iadeEdilen),
-                        })
-                      : doldur(metin("yonetim.iade.adetAlindi"), { adet: String(kalem.adet) })}
-                  </span>
-                </span>
-                {iptal ? (
-                  <span className="font-kalin">{enCok}</span>
-                ) : enCok === 0 ? (
-                  <span className="text-kucuk text-soluk-yazi">
-                    {metin("yonetim.iade.hepsiIadeli")}
-                  </span>
-                ) : (
-                  <span
-                    data-iade-alani={sira === 0 ? "kalemler" : undefined}
-                    tabIndex={-1}
-                    className="rounded-dugme"
-                  >
-                    <AdetSecici
-                      deger={adetler[kalem.sira] ?? 0}
-                      enAz={0}
-                      enCok={enCok}
-                      onDegerDegisti={(adet) => adetDegistir(kalem.sira, adet)}
-                      etiketler={{
-                        grup: doldur(metin("yonetim.iade.adetGrubu"), { ad: kalem.ad }),
-                        azalt: doldur(metin("yonetim.iade.azalt"), { ad: kalem.ad }),
-                        artir: doldur(metin("yonetim.iade.artir"), { ad: kalem.ad }),
-                      }}
-                    />
-                  </span>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+          <caption className="sr-only">{metin("yonetim.iade.urunler")}</caption>
+          <thead>
+            <tr className="border-b border-kenar text-kucuk text-soluk-yazi">
+              <th scope="col" className="pb-2 font-kalin">
+                {metin("yonetim.iade.sutun.urun")}
+              </th>
+              <th scope="col" className="px-2 pb-2 font-kalin">
+                {metin(iptal ? "yonetim.iade.sutun.adet" : "yonetim.iade.sutun.iadeAdedi")}
+              </th>
+              <th scope="col" className="pb-2 text-right font-kalin">
+                {metin("yonetim.iade.sutun.tutar")}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {veri.kalemler.map((kalem) => {
+              const enCok = kalan(kalem);
+              return (
+                <tr key={kalem.sira} className="border-b border-kenar last:border-b-0">
+                  <td className="py-3 align-middle">
+                    <span className="flex min-w-0 flex-col">
+                      <span className="font-kalin wrap-anywhere">{kalem.ad}</span>
+                      {kalem.secim === "" ? null : (
+                        <span className="text-kucuk text-soluk-yazi">{kalem.secim}</span>
+                      )}
+                      <span className="text-kucuk text-soluk-yazi">
+                        {kalem.iadeEdilen > 0
+                          ? doldur(metin("yonetim.iade.adetIadeli"), {
+                              adet: String(kalem.adet),
+                              iade: String(kalem.iadeEdilen),
+                            })
+                          : doldur(metin("yonetim.iade.adetAlindi"), {
+                              adet: String(kalem.adet),
+                            })}
+                      </span>
+                    </span>
+                  </td>
+                  <td className="px-2 py-3 align-middle">
+                    {iptal ? (
+                      <span className="font-kalin">{enCok}</span>
+                    ) : enCok === 0 ? (
+                      <span className="text-kucuk text-soluk-yazi">
+                        {metin("yonetim.iade.hepsiIadeli")}
+                      </span>
+                    ) : (
+                      <AdetSecici
+                        deger={adetler[kalem.sira] ?? 0}
+                        enAz={0}
+                        enCok={enCok}
+                        onDegerDegisti={(adet) => adetDegistir(kalem.sira, adet)}
+                        etiketler={{
+                          grup: doldur(metin("yonetim.iade.adetGrubu"), { ad: kalem.ad }),
+                          azalt: doldur(metin("yonetim.iade.azalt"), { ad: kalem.ad }),
+                          artir: doldur(metin("yonetim.iade.artir"), { ad: kalem.ad }),
+                        }}
+                      />
+                    )}
+                  </td>
+                  <td className="py-3 text-right align-middle font-kalin whitespace-nowrap">
+                    {b.para(
+                      sonuc?.kalemler.find((secilen) => secilen.sira === kalem.sira)?.tutar ?? 0,
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
         {hatalar.kalemler === undefined ? null : (
           <p id="iade-kalem-hatasi" className="text-kucuk text-tehlike-yazi">
             {hatalar.kalemler}
           </p>
         )}
-      </fieldset>
+      </div>
       {!iptal && veri.kargoIadeEdilebilir ? (
         <SecenekGrubu
           baslik={metin("yonetim.iade.kargo")}
@@ -399,55 +423,57 @@ function IadeFormu({
           degistir();
         }}
       />
-      {iptal ? null : (
+      <div className="grid gap-4 tablet:grid-cols-2 tablet:items-start">
+        {iptal ? null : (
+          <FormAlani
+            etiket={metin("yonetim.iade.tutar")}
+            aciklama={doldur(metin("yonetim.iade.tutarAciklamasi"), { kalan: b.para(kalanOdenen) })}
+            {...(hatalar.tutar === undefined ? {} : { hata: hatalar.tutar })}
+          >
+            {(alan) => (
+              <GirisAlani
+                {...alan}
+                data-iade-alani="tutar"
+                name="iade-tutari"
+                inputMode="decimal"
+                autoComplete="off"
+                value={alanDegeri}
+                onChange={(olay) => {
+                  setElleTutar(olay.target.value);
+                  setHatalar((onceki) => ({ ...onceki, tutar: undefined }));
+                  degistir();
+                }}
+              />
+            )}
+          </FormAlani>
+        )}
         <FormAlani
-          etiket={metin("yonetim.iade.tutar")}
-          aciklama={doldur(metin("yonetim.iade.tutarAciklamasi"), { kalan: b.para(kalanOdenen) })}
-          {...(hatalar.tutar === undefined ? {} : { hata: hatalar.tutar })}
+          etiket={metin(iptal ? "yonetim.iade.iptalNedeni" : "yonetim.iade.iadeNedeni")}
+          {...(hatalar.neden === undefined ? {} : { hata: hatalar.neden })}
         >
           {(alan) => (
-            <GirisAlani
-              {...alan}
-              data-iade-alani="tutar"
-              name="iade-tutari"
-              inputMode="decimal"
-              autoComplete="off"
-              value={alanDegeri}
-              onChange={(olay) => {
-                setElleTutar(olay.target.value);
-                setHatalar((onceki) => ({ ...onceki, tutar: undefined }));
+            <SecimKutusu
+              value={neden}
+              onValueChange={(deger) => {
+                setNeden(deger as IadeNedeni);
+                setHatalar((onceki) => ({ ...onceki, neden: undefined }));
                 degistir();
               }}
-            />
+            >
+              <SecimTetikleyici {...alan} data-iade-alani="neden">
+                <SecimDegeri placeholder={metin("yonetim.iade.nedenSec")} />
+              </SecimTetikleyici>
+              <SecimListesi>
+                {iadeNedenleri.map((secenek) => (
+                  <SecimOgesi key={secenek} value={secenek}>
+                    {metin(iadeNedenMetni(secenek))}
+                  </SecimOgesi>
+                ))}
+              </SecimListesi>
+            </SecimKutusu>
           )}
         </FormAlani>
-      )}
-      <FormAlani
-        etiket={metin(iptal ? "yonetim.iade.iptalNedeni" : "yonetim.iade.iadeNedeni")}
-        {...(hatalar.neden === undefined ? {} : { hata: hatalar.neden })}
-      >
-        {(alan) => (
-          <SecimKutusu
-            value={neden}
-            onValueChange={(deger) => {
-              setNeden(deger as IadeNedeni);
-              setHatalar((onceki) => ({ ...onceki, neden: undefined }));
-              degistir();
-            }}
-          >
-            <SecimTetikleyici {...alan} data-iade-alani="neden">
-              <SecimDegeri placeholder={metin("yonetim.iade.nedenSec")} />
-            </SecimTetikleyici>
-            <SecimListesi>
-              {iadeNedenleri.map((secenek) => (
-                <SecimOgesi key={secenek} value={secenek}>
-                  {metin(iadeNedenMetni(secenek))}
-                </SecimOgesi>
-              ))}
-            </SecimListesi>
-          </SecimKutusu>
-        )}
-      </FormAlani>
+      </div>
       <FormAlani
         etiket={metin("yonetim.iade.aciklama")}
         aciklama={metin("yonetim.iade.aciklamaAciklamasi")}
@@ -465,11 +491,8 @@ function IadeFormu({
           />
         )}
       </FormAlani>
-      <dl
-        className="flex flex-col gap-1 rounded-orta bg-yuzey px-4 py-3 text-kucuk"
-        aria-live="polite"
-      >
-        <div className="flex justify-between gap-3 font-kalin">
+      <dl className="flex flex-col gap-1 border-t border-kenar pt-4 text-kucuk" aria-live="polite">
+        <div className="flex justify-between gap-3 font-baslik text-baslik-4 font-baslik-kalinligi">
           <dt>{metin(iptal ? "yonetim.iade.geriOdenecek" : "yonetim.iade.iadeEdilecek")}</dt>
           <dd className="whitespace-nowrap">{b.para(tutar)}</dd>
         </div>
@@ -483,6 +506,11 @@ function IadeFormu({
           </div>
         ))}
       </dl>
+      {kalanKalir ? (
+        <Uyari tur="uyari">
+          {doldur(metin("yonetim.iade.kalanKalir"), { kalan: b.para(kalanOdenen - tutar) })}
+        </Uyari>
+      ) : null}
       <Uyari tur="bilgi">
         {metin(
           veri.para === "kurulus"

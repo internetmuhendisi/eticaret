@@ -141,6 +141,9 @@ export const siparisIadesiSemasi = z.strictObject({
       }),
     )
     .max(1000)
+    .refine((kalemler) => new Set(kalemler.map((kalem) => kalem.sira)).size === kalemler.length, {
+      message: "kalem-tekrar",
+    })
     .default([]),
   kargo: z.boolean().default(false),
   tutar: z.preprocess(bosIseYok, z.string().trim().max(40).optional()),

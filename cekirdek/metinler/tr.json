@@ -1118,7 +1118,8 @@
         "kalem": "{adet} × {ad}",
         "kargo": "Kargo ({tutar})",
         "vergi": "İçindeki {ad} ({oran}): {tutar}",
-        "stogaKondu": "Stoğa geri kondu"
+        "stogaKondu": "Stoğa geri kondu",
+        "stogaKonacak": "Tamamlanınca stoğa geri konacak"
       },
       "basari": {
         "iptal": "Sipariş iptal edildi.",
@@ -1136,6 +1137,13 @@
         "odenmemis": "Bu siparişin ödemesi alınmadı, iade yapılamaz. Siparişi iptal edin.",
         "neden": "Bir neden seçin.",
         "bekliyor": "Bu siparişte ödeme kuruluşunun yanıtını bekleyen bir iade var. Yanıt gelince yeniden deneyin."
+      },
+      "kalanKalir": "Bütün ürünler seçili ve tutar kalandan az: iade sonrasında sipariş \"iade edildi\" olur ve kalan {kalan} artık iade edilemez.",
+      "sutun": {
+        "urun": "Ürün",
+        "adet": "Adet",
+        "iadeAdedi": "İade adedi",
+        "tutar": "Tutar"
       }
     }
   },

@@ -11,7 +11,7 @@
 // - Sonuç: bütün parçalar tamamsa "tamam"; hiçbiri tamam ya da belirsiz değilse "red" (para dönmedi); öteki durumlar
 //   "belirsiz" (iade bekler; reddedilen parça mağaza sahibinin yeniden denemesiyle yeniden gönderilir).
 // - Eklenti kapansa da iade çalışır: para ödendiği yoldan döner.
-import { and, asc, eq, inArray, lt, ne, or, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lt, ne, or, sql } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
 import { kartlaOdemeAyari } from "../../kayitlar/eklentiler.ts";
@@ -217,7 +217,8 @@ export const kartlaIadeEt = async (
 };
 
 // Belirsiz parçaları kuruluşun günlük raporundan sorar (zamanlı tarama). Raporda başarılı iade satırı (conversationId =
-// parçanın kimliği) bulunan parça tamamdır; süresi içinde bulunamayan gönderilmemiş sayılır (red). Parçaları çözülen
+// parçanın kimliği) bulunan parça tamamdır; iadeBulunamazsaGun içinde bulunamayanın hatası kaydedilir, parça belirsiz
+// kalır ve sormaGun boyunca sorulur. Parçaları çözülen
 // iadenin sonucu çekirdeğe bildirilir. Dönen sayı çözülen parça sayısıdır.
 export const belirsizIadeleriSor = async (vt: Veritabani, site: Site): Promise<number> => {
   const anahtarlar = kurulusAnahtarlari();
@@ -229,6 +230,11 @@ export const belirsizIadeleriSor = async (vt: Veritabani, site: Site): Promise<n
     .where(
       and(
         eq(kartIadeleri.durum, "belirsiz"),
+        // Rapor bu kadar günden eskisini artık bulmaz: parça belirsiz kalır, hatası kaydedilmiştir.
+        gte(
+          kartIadeleri.olusturma_zamani,
+          sql`now() - make_interval(days => ${kartlaOdemeAyari.sormaGun})`,
+        ),
         or(
           sql`${kartIadeleri.son_sorgu_zamani} is null`,
           lt(
@@ -243,13 +249,10 @@ export const belirsizIadeleriSor = async (vt: Veritabani, site: Site): Promise<n
   if (parcalar.length === 0) return 0;
   const simdi = Date.now();
   const gunMs = 24 * 60 * 60 * 1000;
-  // Raporun günleri: en eski parçanın gününden bugüne (en çok iadeBulunamazsaGun + 1 gün).
+  // Raporun günleri: her parçanın gününden bugüne (parçalar en çok sormaGun eskidir).
   const gunler = new Map<string, Set<string>>();
   for (const { parca, ortam } of parcalar) {
-    const ilk = Math.max(
-      parca.olusturma_zamani.getTime(),
-      simdi - (kartlaOdemeAyari.iadeBulunamazsaGun + 1) * gunMs,
-    );
+    const ilk = parca.olusturma_zamani.getTime();
     for (let an = ilk; an <= simdi + gunMs; an += gunMs) {
       const gun = takvimGunu(new Date(Math.min(an, simdi)), site.ayarlar.saatDilimi);
       if (!gunler.has(ortam)) gunler.set(ortam, new Set());
@@ -281,18 +284,22 @@ export const belirsizIadeleriSor = async (vt: Veritabani, site: Site): Promise<n
     const bulundu = bulunanlar.has(parca.kimlik);
     const suresiDoldu =
       simdi - parca.olusturma_zamani.getTime() > kartlaOdemeAyari.iadeBulunamazsaGun * gunMs;
+    // Bulunamayan parça hiçbir zaman kendiliğinden "red" sayılmaz (bağımsız kontrolün bulgusu): kuruluş parayı
+    // döndürmüş olabilir, red yeniden gönderime ve ikinci iadeye yol açardı. Süresi geçince hatası bir kez kaydedilir;
+    // iade bekler, mağaza sahibi kuruluşun panelinden bakar (karar 0147).
+    if (!bulundu && suresiDoldu && parca.hata === null) {
+      hatayiKaydet(new Error("İade parçası kuruluşun raporunda bulunamadı: elle bakılmalı."), {
+        islem: "kartla-iade-taramasi",
+        iade: parca.iade_kimligi,
+      });
+    }
     const [degisen] = await vt
       .update(kartIadeleri)
       .set(
         bulundu
-          ? { durum: "tamam", sonuc_zamani: sql`now()`, son_sorgu_zamani: sql`now()` }
+          ? { durum: "tamam", hata: null, sonuc_zamani: sql`now()`, son_sorgu_zamani: sql`now()` }
           : suresiDoldu
-            ? {
-                durum: "red",
-                hata: "raporda-yok",
-                sonuc_zamani: sql`now()`,
-                son_sorgu_zamani: sql`now()`,
-              }
+            ? { hata: "raporda-yok", son_sorgu_zamani: sql`now()` }
             : { son_sorgu_zamani: sql`now()` },
       )
       .where(and(eq(kartIadeleri.kimlik, parca.kimlik), eq(kartIadeleri.durum, "belirsiz")))

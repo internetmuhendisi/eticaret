@@ -18,6 +18,7 @@ import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { siteninFiyatServisi } from "../../fiyat/servis.ts";
+import { siteninServisi } from "../../magaza-ayarlari/servis.ts";
 import { type OdemeYontemiSecimi, odemeBilgileriSemasi } from "../../odeme/semalar.ts";
 import { odemeServisi } from "../../odeme/servis.ts";
 import { birimStoklari } from "../../stok/model.ts";
@@ -26,6 +27,7 @@ import { urunServisi } from "../../urun/servis.ts";
 import { siteninVergiServisi } from "../../vergi/servis.ts";
 import { type IadeGirdisi, iadeServisi } from "../iade.ts";
 import { siparisGecmisi, siparisIadeleri, siparisKalemleri, siparisler } from "../model.ts";
+import { siparisIadesiSemasi } from "../semalar.ts";
 import { siparisYonetimi } from "../yonetim.ts";
 
 vi.setConfig({ testTimeout: 90_000 });
@@ -439,6 +441,90 @@ describe("iade", () => {
     expect(sonuclar[1]).toBeInstanceOf(BilinenHata);
     expect((sonuclar[1] as BilinenHata).kod).toBe("cakisma");
     expect(await iadeleri(h.vt, numara)).toHaveLength(1);
+  });
+
+  it("kısmi iade durumundaki siparişte aynı anda iki iade toplamda ödeneni aşamaz (sıra kurularak)", async () => {
+    const h = await hazirla();
+    const birim = await h.urunAc();
+    const numara = await ver(h.vt, [{ birim, adet: 3 }]);
+    await teslimEt(h.vt, numara);
+    const [kalem] = await kalemleri(h.vt, numara);
+    await iade.iadeYap(
+      h.vt,
+      yapan(),
+      girdi(numara, { kalemler: [{ sira: kalem?.sira ?? 0, adet: 1 }] }),
+    );
+    const siparis = await oku(h.vt, numara);
+    const kalan =
+      siparis.toplam - (await iadeleri(h.vt, numara)).reduce((t, satir) => t + satir.tutar, 0);
+    // Her biri kalanın bir eksiği: tek başına sığar, ikisi birlikte aşar. Durum değişmez (kısmi iade kalır).
+    const yarim = girdi(numara, { gorulenDurum: "kismi-iade", tutar: siteninBicim(kalan - 1) });
+    let birak = () => {};
+    const bekle = new Promise<void>((tamam) => {
+      birak = tamam;
+    });
+    let kilitlendi = () => {};
+    const kilitli = new Promise<void>((tamam) => {
+      kilitlendi = tamam;
+    });
+    const tutan = h.vt.transaction(async (islem) => {
+      await islem.select().from(siparisler).where(eq(siparisler.numara, numara)).for("update");
+      kilitlendi();
+      await bekle;
+    });
+    await Promise.race([kilitli, tutan]);
+    const birinci = iade.iadeYap(h.vt, yapan(), yarim);
+    await kilitBekleyeniGor(h.vt);
+    const ikinci = iade.iadeYap(h.vt, yapan(), yarim).then(
+      (sonuc) => sonuc,
+      (hata: unknown) => hata,
+    );
+    await kilitBekleyeniGor(h.vt, 2);
+    birak();
+    await tutan;
+    const [ilkSonuc, ikinciSonuc] = await Promise.all([birinci, ikinci]);
+    expect(ilkSonuc).toMatchObject({ durum: "kismi-iade", iade: "tamamlandi" });
+    expect(ikinciSonuc).toBeInstanceOf(BilinenHata);
+    expect((ikinciSonuc as BilinenHata).ayrinti).toEqual([{ alan: "tutar", kod: "tutar-fazla" }]);
+    const toplam = (await iadeleri(h.vt, numara)).reduce((t, satir) => t + satir.tutar, 0);
+    expect(toplam).toBe(siparis.toplam - 1);
+  });
+
+  it("vergi hariç girişli sitede iadenin tutarı ve vergisi siparişin kaleminden (yeniden hesaplanmaz)", async () => {
+    const h = await hazirla();
+    await siteninServisi(site).degistir(h.vt, yapan(), { fiyatGirisi: "vergi-haric" });
+    const birim = await h.urunAc({ fiyat: 10_000 });
+    const numara = await ver(h.vt, [{ birim, adet: 2 }]);
+    await teslimEt(h.vt, numara);
+    const [kalem] = await kalemleri(h.vt, numara);
+    if (kalem === undefined) throw new Error("Kalem yok.");
+    // Vergi hariç girişte kalemin vergisiz tutarı fiyatın kendisidir.
+    expect(kalem.vergisiz).toBe(20_000);
+    expect(kalem.vergi).toBeGreaterThan(0);
+    // Fiyat ve vergi oranı sonradan değişse de iade siparişin değerinden.
+    await siteninFiyatServisi(site).fiyatYaz(h.vt, yapan(), birim, { satisFiyati: 99_000 });
+    await iade.iadeYap(h.vt, yapan(), girdi(numara, { kalemler: [{ sira: kalem.sira, adet: 1 }] }));
+    const [kayit] = await iadeleri(h.vt, numara);
+    expect(kayit?.tutar).toBe(Math.round((kalem.vergisiz + kalem.vergi) / 2));
+    expect(kayit?.vergi_dokumu.reduce((t, satir) => t + satir.vergi, 0)).toBe(
+      Math.round(kalem.vergi / 2),
+    );
+    expect(kayit?.vergi_dokumu.reduce((t, satir) => t + satir.matrah, 0)).toBe(10_000);
+  });
+
+  it("uç şeması aynı kalemi iki kez kabul etmez", () => {
+    const sonuc = siparisIadesiSemasi.safeParse({
+      numara: "ORN-1",
+      tur: "iade",
+      gorulenDurum: "teslim-edildi",
+      kalemler: [
+        { sira: 0, adet: 1 },
+        { sira: 0, adet: 1 },
+      ],
+      stogaKoy: true,
+      neden: "diger",
+    });
+    expect(sonuc.success).toBe(false);
   });
 
   it("bekleyen iade varken durum işlemi ve yeni iade yapılmaz; veritabanı ikinci bekleyeni reddeder", async () => {

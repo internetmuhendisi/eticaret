@@ -60,6 +60,7 @@ export type IadeHesabi = {
 
 export type IadeHatasi =
   | "kalem-yok"
+  | "kalem-tekrar"
   | "adet-fazla"
   | "kargo-iade-edildi"
   | "bos-iade"
@@ -159,6 +160,12 @@ export const iadeyiHesapla = (
   const dokum = new Map<string, DokumSatiri>();
   const kalemler: IadeHesabi["kalemler"] = [];
   let hesaplanan = 0n;
+  // Aynı kalem iki kez seçilemez (bağımsız kontrolün bulgusu: adet denetimi tek tek geçiyordu).
+  const secilenSiralar = new Set<number>();
+  for (const { sira } of secilen.kalemler) {
+    if (secilenSiralar.has(sira)) throw new IadeHesapHatasi("kalem-tekrar", `kalemler.${sira}`);
+    secilenSiralar.add(sira);
+  }
   for (const { sira, adet } of secilen.kalemler) {
     if (adet === 0) continue;
     const kalem = siparis.kalemler.find((k) => k.sira === sira);

@@ -199,7 +199,10 @@ export const siparisAyrintisiVerisi = async (
   const { siparis } = ayrinti;
   const durum = siparis.durum as SiparisDurumu;
   const kisiselSilindi = siparis.kisisel_veri_silinme_zamani !== null;
-  const islemler = yapilabilirIslemler(durum, siparis.odeme_yontemi, yetkili);
+  // Kuruluşun yanıtını bekleyen iade varken durum işlemi yapılmaz (sunucu da reddeder): düğmeler görünmez.
+  const islemler = ayrinti.iadeler.some((iade) => iade.durum === "bekliyor")
+    ? []
+    : yapilabilirIslemler(durum, siparis.odeme_yontemi, yetkili);
   const yazan = (y: (typeof ayrinti.gecmis)[number]["yazan"]): SatirYazani => y;
   const gecmis: SiparisAyrintisiVerisi["gecmis"] = [
     ...ayrinti.gecmis.map((satir) => ({

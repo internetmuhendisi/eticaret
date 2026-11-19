@@ -1236,7 +1236,7 @@ describe("kartla ödenen siparişin iptali ve iadesi", () => {
     });
   });
 
-  it("kuruluşa hiç ulaşmayan parça raporda bulunmaz, süresi geçince gönderilmemiş sayılır", async () => {
+  it("kuruluşa hiç ulaşmayan parça raporda bulunmaz: süresi geçince red sayılmaz, hatası yazılır, iade bekler; sorma süresinden eskisi sorulmaz", async () => {
     const { siparis } = await odenmisSiparis();
     kurulus.ariza.ulasilamaz = true;
     try {
@@ -1255,11 +1255,29 @@ describe("kartla ödenen siparişin iptali ve iadesi", () => {
       })
       .where(eq(kartIadeleri.iade_kimligi, bekleyen?.kimlik ?? ""));
     await belirsizIadeleriSor(vt, site);
+    expect(await parcalar(bekleyen?.kimlik ?? "")).toEqual(
+      expect.arrayContaining([expect.objectContaining({ durum: "belirsiz", hata: "raporda-yok" })]),
+    );
     expect(
-      (await parcalar(bekleyen?.kimlik ?? "")).every((parca) => parca.hata === "raporda-yok"),
+      (await parcalar(bekleyen?.kimlik ?? "")).every((parca) => parca.durum === "belirsiz"),
     ).toBe(true);
-    expect((await iadeler(siparis.kimlik))[0]?.durum).toBe("basarisiz");
+    expect((await iadeler(siparis.kimlik))[0]?.durum).toBe("bekliyor");
     expect(await durumu(siparis.kimlik)).toBe("hazirlaniyor");
+    // Yeniden deneme belirsiz parçayı göndermez.
+    const once = iadeSayisi();
+    expect((await iade.yenidenDene(vt, yonetici, siparis.numara)).iade).toBe("bekliyor");
+    expect(iadeSayisi()).toBe(once);
+    // Sorma süresinden eski parça sorulmaz.
+    await vt
+      .update(kartIadeleri)
+      .set({
+        son_sorgu_zamani: sql`now() - interval '1 hour'`,
+        olusturma_zamani: sql`now() - interval '8 days'`,
+      })
+      .where(eq(kartIadeleri.iade_kimligi, bekleyen?.kimlik ?? ""));
+    const sorgular = kurulus.istekSayisi.get("/v2/reporting/payment/transactions") ?? 0;
+    await belirsizIadeleriSor(vt, site);
+    expect(kurulus.istekSayisi.get("/v2/reporting/payment/transactions") ?? 0).toBe(sorgular);
   });
 
   it("kalem işlemi bilinmeyen eski ödemenin iadesi ödemenin kimliğiyle tek parça gider", async () => {

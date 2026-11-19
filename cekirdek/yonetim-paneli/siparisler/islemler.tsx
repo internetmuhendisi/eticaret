@@ -37,7 +37,11 @@ import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
 
 const hataMetni = (hata: PanelHatasi): MetinAnahtari => {
-  if (hata.kod === "cakisma") return "yonetim.siparis.hata.cakisma";
+  if (hata.kod === "cakisma") {
+    return hata.ayrinti.some((sorun) => sorun.kod === "iade-bekliyor")
+      ? "yonetim.iade.hata.bekliyor"
+      : "yonetim.siparis.hata.cakisma";
+  }
   if (hata.kod === "is-kurali") return "yonetim.siparis.hata.gecis";
   if (hata.kod === "yetki") return "yonetim.siparis.hata.yetki";
   return "yonetim.siparis.hata.genel";
