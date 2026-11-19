@@ -23,7 +23,7 @@ import { type OdemeYontemiSecimi, odemeBilgileriSemasi } from "../../moduller/od
 import { odemeServisi } from "../../moduller/odeme/servis";
 import { odemeYontemiServisi } from "../../moduller/odeme/yontemler";
 import { siparisAyarlari } from "../../moduller/siparis/ayarlar";
-import { havaleBildirimiFormuSemasi } from "../../moduller/siparis/semalar";
+import { havaleBildirimiFormuSemasi } from "../../moduller/siparis/havale-bildirimi-semalari";
 import { siparisServisi } from "../../moduller/siparis/servis";
 import { siparisYonetimi } from "../../moduller/siparis/yonetim";
 import { stokServisi } from "../../moduller/stok/servis";

@@ -47,6 +47,7 @@ import {
   urunSecenekleri,
 } from "../urun/model.ts";
 import { gecmiseYaz, uyeOlmayanMusteri } from "./gecmis.ts";
+import type { HavaleBildirimiFormu } from "./havale-bildirimi-semalari.ts";
 import { havaleIptalTaramasi } from "./iptal.ts";
 import {
   havaleBildirimleri,
@@ -56,7 +57,6 @@ import {
   siparisler,
   type Tahsilat,
 } from "./model.ts";
-import type { HavaleBildirimiFormu } from "./semalar.ts";
 
 const stok = stokServisi();
 

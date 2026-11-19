@@ -1,8 +1,8 @@
-// Siparişin uç ve form şemaları (kart 0214, karar 0141; .claude/rules/formlar.md). Havale bildirimi formu ile uç aynı
-// şemayı kullanır. Tutar sitenin para biçimiyle yazılı gelir ("1.399,60"); kuruşa çeviren sipariş servisidir, çünkü
-// biçim sitenin ayarıdır. Ödeme günü YYYY-AA-GG'dir (tarih alanı); takvimde olup olmadığını servis denetler.
+// Panelin sipariş uçlarının ve formlarının şemaları (kart 0234–0236; .claude/rules/formlar.md). Vitrinin havale
+// bildirimi ve sipariş numarası şemaları havale-bildirimi-semalari.ts'tedir: bu dosya ödeme adımının adres ve fatura
+// şemalarını içe aktarır, vitrin formuna alınırsa tarayıcıya gereksiz kod taşır (kart 0248).
 import { z } from "zod";
-import { havaleBildirimiSinirlari, kapidaOdemeSecenekleri } from "../../kayitlar/odeme.ts";
+import { kapidaOdemeSecenekleri } from "../../kayitlar/odeme.ts";
 import { sepetSinirlari } from "../../kayitlar/sepet.ts";
 import {
   iadeNedenleri,
@@ -10,7 +10,6 @@ import {
   iadeTurleri,
   siparisDurumlari,
   siparisNotTurleri,
-  siparisNumarasiKalibi,
   siparisSinirlari,
 } from "../../kayitlar/siparis.ts";
 import { duzMetinSemasi } from "../../metinler/duz-metin.ts";
@@ -23,38 +22,8 @@ import {
   teslimatSemasi,
 } from "../odeme/semalar.ts";
 import { epostaSemasi } from "../oturum/semalar.ts";
-import { robotCevabiSemasi } from "../robot-korumasi/semalar.ts";
 import { sepetKalemiSemasi } from "../sepet/semalar.ts";
-
-const bosIseYok = (deger: unknown) =>
-  typeof deger === "string" && deger.trim() === "" ? undefined : deger;
-
-// Numara büyük ya da küçük harfle, boşluklu yazılabilir: karşılaştırmadan önce düzelir.
-export const siparisNumarasiSemasi = z
-  .string()
-  .max(40)
-  .transform((yazi) => yazi.replace(/\s+/g, "").toUpperCase())
-  .pipe(z.string().regex(siparisNumarasiKalibi, "numara-bicimi"));
-
-export const havaleBildirimiFormuSemasi = z.strictObject({
-  numara: siparisNumarasiSemasi,
-  gonderen: duzMetinSemasi(havaleBildirimiSinirlari.gonderenEnCok),
-  hesap: kimlikSemasi,
-  tutar: z.string().trim().min(1).max(40),
-  odemeTarihi: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "tarih-bicimi"),
-  not: z.preprocess(bosIseYok, duzMetinSemasi(havaleBildirimiSinirlari.notEnCok).optional()),
-});
-export type HavaleBildirimiFormu = z.output<typeof havaleBildirimiFormuSemasi>;
-
-// Üye olmayan müşteri siparişteki e-postayı da verir; üye olanın siparişi hesabından bulunur.
-export const misafirHavaleBildirimiFormuSemasi = havaleBildirimiFormuSemasi.extend({
-  eposta: epostaSemasi,
-});
-
-export const misafirHavaleBildirimiGirdisi = misafirHavaleBildirimiFormuSemasi.extend({
-  robotCevabi: robotCevabiSemasi,
-});
-export const uyeHavaleBildirimiGirdisi = havaleBildirimiFormuSemasi;
+import { bosIseYok, siparisNumarasiSemasi } from "./havale-bildirimi-semalari.ts";
 
 // Panelin sipariş uçları (kart 0234). Liste: durum süzgeci, aranan metin (numara, ad ya da e-posta) ve sayfa. İşlem:
 // ekranın gördüğü durumla gelir; arada durum değiştiyse servis "cakisma" verir. Kargo işleminde firma listedeki

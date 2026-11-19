@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { metin } from "../../../../../../metinler/site-metni";
 import { doldur } from "../../../../../../moduller/eposta/sablon";
-import { siparisNumarasiSemasi } from "../../../../../../moduller/siparis/semalar";
+import { siparisNumarasiSemasi } from "../../../../../../moduller/siparis/havale-bildirimi-semalari";
 import { panelOturumu } from "../../../../../../yonetim-paneli/panel-oturumu";
 import {
   PanelSayfasi,

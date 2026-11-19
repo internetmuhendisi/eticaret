@@ -35,12 +35,9 @@ import { yorumlar } from "../../yorum/model.ts";
 import { satinAldiMi } from "../../yorum/satin-alma.ts";
 import { yorumServisi } from "../../yorum/servis.ts";
 import { siparisAyarlari } from "../ayarlar.ts";
+import { havaleBildirimiFormuSemasi } from "../havale-bildirimi-semalari.ts";
 import { havaleBildirimleri, siparisGecmisi, siparisler, siparisNotlari } from "../model.ts";
-import {
-  havaleBildirimiFormuSemasi,
-  kargoFirmalariSemasi,
-  siparisListesiSemasi,
-} from "../semalar.ts";
+import { kargoFirmalariSemasi, siparisListesiSemasi } from "../semalar.ts";
 import { siparisServisi } from "../servis.ts";
 import { kisiselVeriTemizligi } from "../temizlik.ts";
 import { siparisYonetimi } from "../yonetim.ts";

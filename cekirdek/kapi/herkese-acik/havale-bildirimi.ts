@@ -5,7 +5,7 @@
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import { herkeseAcik } from "../../kayitlar/izinler.ts";
 import { robotCevabiniDogrula } from "../../moduller/robot-korumasi/servis.ts";
-import { misafirHavaleBildirimiGirdisi } from "../../moduller/siparis/semalar.ts";
+import { misafirHavaleBildirimiGirdisi } from "../../moduller/siparis/havale-bildirimi-semalari.ts";
 import { siparisServisi } from "../../moduller/siparis/servis.ts";
 import { siteninVeritabani } from "../../veritabani/baglanti.ts";
 import { ucTanimla } from "../uc.ts";

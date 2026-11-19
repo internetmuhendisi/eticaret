@@ -24,6 +24,14 @@ Kart 0236'nın gönderimiyle kontrol hattı (44528927734) yalnız hız ölçüm�
 - Öteki sayfaların kodu büyümedi.
 - Kontrol hattı yeşil.
 
+## Ölçüm
+
+- Derlenmiş paket (`next build`, sayfanın istemci parçaları, gzip): havale bildirimi 197,2 KB, favoriler 173,1 KB. Fazla parçalardan 13,5 KB'lık olanda adres, il ve ilçe listesi, vergi numarası, MERSİS ve KEP kuralları vardı (ödeme şemasından), 4,3 KB'lık olanda sipariş kayıtları ve form.
+- Düzeltme: havale bildirimi ve sipariş numarası şemaları `cekirdek/moduller/siparis/havale-bildirimi-semalari.ts`'e taşındı; vitrinin formu, iki uç ve testler oradan alır, panelin şemaları `semalar.ts`'te kaldı. Sonra havale bildirimi 182,5 KB (−14,7 KB), adres parçası yok.
+- Hız ölçümü hattın koşulunda (temiz veritabanı, iki işlemci): havale bildirimi 333 KB'tan 318 KB'a indi, ana içerik 2012 ms. Öteki sayfaların kodu hattakiyle aynı. Aynı çalışmada ürün sayfasının ana içeriği 2516 ms ile sınırı aştı; kodu değişmedi, yeniden ölçümde 2516, 2480, 2480 ms (kart 0249).
+- Öteki vitrin formlarının şema dosyaları (favori, müşteri, ödeme, oturum, sepet, yorum) yalnız kendi ihtiyacını içe aktarıyor; ödeme formu adres şemasını gerçekten kullanır.
+- Payı yalnız 2 KB'tır: vitrinde yeni ortak kod sınırı yine aşabilir (genel küçültme kart 0194).
+
 ## Durum
 
 yapılacak

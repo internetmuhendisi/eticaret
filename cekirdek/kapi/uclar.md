@@ -234,7 +234,7 @@ Tarayıcıdaki sepetin vitrin verisini hesaplar (kart 0212, karar 0135). Sepet y
 Üye olmayan müşteri havaleyle ödediğini bildirir (kart 0214, karar 0141): sipariş numarası ve siparişteki e-postayla. Bildirim siparişe yazılır; bildirimli sipariş süre dolunca kendiliğinden iptal olmaz (kullanıcı kararı). Tema demosunda kapalıdır.
 
 - İzin: `herkese-acik`. Sınır: `siki`.
-- Girdi: `{ "numara", "eposta", "gonderen", "hesap", "tutar", "odemeTarihi", "not"?, "robotCevabi" }` (`misafirHavaleBildirimiGirdisi`, `cekirdek/moduller/siparis/semalar.ts`). `hesap` mağazanın banka hesaplarından birinin kimliği; `tutar` sitenin para biçimiyle yazılı ("1.399,60"); `odemeTarihi` `YYYY-AA-GG`.
+- Girdi: `{ "numara", "eposta", "gonderen", "hesap", "tutar", "odemeTarihi", "not"?, "robotCevabi" }` (`misafirHavaleBildirimiGirdisi`, `cekirdek/moduller/siparis/havale-bildirimi-semalari.ts`). `hesap` mağazanın banka hesaplarından birinin kimliği; `tutar` sitenin para biçimiyle yazılı ("1.399,60"); `odemeTarihi` `YYYY-AA-GG`.
 - Servis: `cekirdek/moduller/siparis/servis.ts`. Robot cevabı veritabanına bakılmadan önce denetlenir.
 - Başarılı (200): `{ "basarili": true, "veri": { "numara" } }`.
 - Hatalar: `bulunamadi` (numara ile e-posta eşleşmedi; siparişin var olup olmadığı belli olmaz), `is-kurali` (`havale-beklemiyor`: sipariş havale değil ya da ödeme beklemiyor; `bildirim-siniri`: siparişe en çok 5 bildirim), `dogrulama` (`numara-bicimi`, `tutar-okunamadi`, `tarih-bicimi`, `tarih-gecersiz`: siparişten önceki ya da ileri tarih, `hesap-yok`), `robot-dogrulamasi`, `istek-siniri`, `yetki` (sahte istek), tema demosunda `bulunamadi`.

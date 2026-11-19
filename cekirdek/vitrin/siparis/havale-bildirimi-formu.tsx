@@ -1,7 +1,7 @@
 "use client";
 // Havale bildirimi formu (kart 0214, karar 0141; kart 0211'in taslağı). Müşteri havaleyle ödediğini bildirir: sipariş
 // numarası, siparişteki e-posta (üye değilse), gönderenin adı, gönderdiği hesap, tutar, ödeme günü ve not. Şema uçla
-// ortaktır (cekirdek/moduller/siparis/semalar.ts). Üye olmayan müşterinin isteği robot korumalıdır ve ertelenmiştir
+// ortaktır (cekirdek/moduller/siparis/havale-bildirimi-semalari.ts). Üye olmayan müşterinin isteği robot korumalıdır ve ertelenmiştir
 // (sayfa açılınca soru istenmez); giriş yapmış müşterininki kendi ucuna gider, e-posta sorulmaz. Numara ile e-posta
 // eşleşmezse siparişin var olup olmadığı söylenmez. Başarıda teşekkür görünür ve odağı alır.
 import { type FormEvent, useEffect, useRef, useState } from "react";
@@ -29,7 +29,7 @@ import { useRobotluGonderim } from "../../moduller/robot-korumasi/istemci";
 import {
   havaleBildirimiFormuSemasi,
   misafirHavaleBildirimiFormuSemasi,
-} from "../../moduller/siparis/semalar";
+} from "../../moduller/siparis/havale-bildirimi-semalari";
 import { vitrinAdresleri } from "../adresler";
 import { useHesapDurumu } from "../hesap-durumu";
 

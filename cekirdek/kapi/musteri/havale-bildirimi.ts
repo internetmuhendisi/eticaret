@@ -1,7 +1,7 @@
 // POST /kapi/musteri/havale-bildirimi (kart 0214, karar 0141; uç belgesi: cekirdek/kapi/uclar.md). Giriş yapmış müşteri
 // kendi havale siparişi için ödediğini bildirir; sipariş yalnız kendi hesabınınsa bulunur. Kimlik yalnız kapıdan gelir.
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
-import { uyeHavaleBildirimiGirdisi } from "../../moduller/siparis/semalar.ts";
+import { uyeHavaleBildirimiGirdisi } from "../../moduller/siparis/havale-bildirimi-semalari.ts";
 import { siparisServisi } from "../../moduller/siparis/servis.ts";
 import { siteninVeritabani } from "../../veritabani/baglanti.ts";
 import { ucTanimla } from "../uc.ts";

@@ -38,8 +38,8 @@ import { birimStoklari, stokAyirmalari, stokGecmisi } from "../../stok/model.ts"
 import { stokServisi } from "../../stok/servis.ts";
 import { urunServisi } from "../../urun/servis.ts";
 import { siteninVergiServisi } from "../../vergi/servis.ts";
+import { havaleBildirimiFormuSemasi } from "../havale-bildirimi-semalari.ts";
 import { havaleBildirimleri, siparisGecmisi, siparisKalemleri, siparisler } from "../model.ts";
-import { havaleBildirimiFormuSemasi } from "../semalar.ts";
 import { siparisServisi } from "../servis.ts";
 
 vi.setConfig({ testTimeout: 90_000 });
