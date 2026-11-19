@@ -12,13 +12,22 @@ import { vitrinAdresleri } from "../../adresler";
 import { AramaKutusu } from "../../arama-kutusu";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
 import { FavoriSayisi } from "../../favori-dugmesi";
+import { HesapliBaglanti } from "../../hesap/hesapli-baglanti";
 import { SepetSayisi } from "../../sepet/sepet-sayisi";
 import { HesapMenusu } from "./hesap-menusu";
 import { MenuDugmesi } from "./menu-dugmesi";
 
 // Telefonda yalnız arama ve sepet satırda kalır (kart 0108); hesap ve favoriler yan penceredeki listededir,
 // böylece logoya yer kalır.
-type Simge = { adres: string; ikon: IkonAdi; etiket: string; sayi?: number | undefined };
+// girisliAdres: girişli müşteride gidilen adres (favoriler, kart 0237); hesap durumu tarayıcıda okunur.
+type Simge = {
+  adres: string;
+  ikon: IkonAdi;
+  etiket: string;
+  sayi?: number | undefined;
+  girisliAdres?: string | undefined;
+  hesapSorulur?: boolean | undefined;
+};
 
 // Sepetteki ve favorilerdeki ürün sayısı: yuvarlak, ana renkte. Simge köşesinde durur; yazılı haptaki sayı satırın
 // içindedir. Sıfır yalnız haptaki sayıda görünür.
@@ -32,18 +41,20 @@ function SimgeBaglantisi({
   ikon,
   etiket,
   sayi,
+  girisliAdres,
+  hesapSorulur = false,
   favoriSayisi = false,
   telefondaGizli = false,
 }: Simge & { favoriSayisi?: boolean; telefondaGizli?: boolean }) {
-  return (
-    <Baglanti
-      href={adres}
-      gorunum="sade"
-      className={sinif(
-        "relative size-11 px-0 no-underline",
-        telefondaGizli && "hidden tablet:inline-flex",
-      )}
-    >
+  const ozellikler = {
+    gorunum: "sade" as const,
+    className: sinif(
+      "relative size-11 px-0 no-underline",
+      telefondaGizli && "hidden tablet:inline-flex",
+    ),
+  };
+  const ic = (
+    <>
       <Ikon ad={ikon} className="size-5" />
       <span className="sr-only">{etiket}</span>
       {favoriSayisi ? (
@@ -54,7 +65,21 @@ function SimgeBaglantisi({
       ) : sayi === undefined || sayi === 0 ? null : (
         <span className={sinif(sayiSiniflari, "absolute top-0 right-0")}>{sayi}</span>
       )}
+    </>
+  );
+  return girisliAdres === undefined ? (
+    <Baglanti href={adres} {...ozellikler}>
+      {ic}
     </Baglanti>
+  ) : (
+    <HesapliBaglanti
+      href={adres}
+      girisliAdres={girisliAdres}
+      sorulur={hesapSorulur}
+      {...ozellikler}
+    >
+      {ic}
+    </HesapliBaglanti>
   );
 }
 
@@ -131,6 +156,9 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
   const favori: Simge | undefined = islevler.favori
     ? {
         adres: vitrinAdresleri.favoriler,
+        // Girişli müşteride Hesabım'ın Favorilerim'i (kart 0237).
+        girisliAdres: vitrinAdresleri.hesapFavorileri,
+        hesapSorulur: baglam.musteriOturumu === "sorulur",
         ikon: "favori",
         etiket: metin("vitrin.bolum.ustSatir.favoriler"),
         sayi: sayilar.favori,
@@ -144,7 +172,14 @@ export function UstSatirGorunumu({ gorunum, degerler: ham, baglam }: BolumGorunu
       yandakiler={
         favori === undefined
           ? []
-          : [{ adres: favori.adres, ikon: favori.ikon, etiket: favori.etiket }]
+          : [
+              {
+                adres: favori.adres,
+                girisliAdres: vitrinAdresleri.hesapFavorileri,
+                ikon: favori.ikon,
+                etiket: favori.etiket,
+              },
+            ]
       }
       hesap={hesapVar ? { adres: hesap.adres, ikon: hesap.ikon, etiket: hesap.etiket } : undefined}
       hesapSorulur={baglam.musteriOturumu === "sorulur"}

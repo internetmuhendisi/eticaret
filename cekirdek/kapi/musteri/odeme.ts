@@ -17,7 +17,7 @@ export const uyeOdemeUcu = ucTanimla({
   izin: "odeme.kendi.baslat",
   sinir: "siki",
   isle: async (
-    { robotCevabi, bilgiler, kalemler, onceki, gorulenToplam },
+    { robotCevabi, bilgiler, kalemler, onceki, gorulenToplam, adresiKaydet },
     istek,
     yanit,
     { hesapKimligi },
@@ -27,7 +27,7 @@ export const uyeOdemeUcu = ucTanimla({
     const sonuc = await odemeServisi(site).onayla(
       siteninVeritabani(),
       {
-        kim: { tur: "uye", musteri: hesapKimligi },
+        kim: { tur: "uye", musteri: hesapKimligi, adresiKaydet },
         bilgiler,
         kalemler,
         onceki,

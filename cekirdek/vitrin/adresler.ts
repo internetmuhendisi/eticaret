@@ -24,7 +24,16 @@ export const vitrinAdresleri = {
   // Havale bildirimi (kart 0214).
   havaleBildirimi: "/havale-bildirimi",
   favoriler: "/favoriler",
+  // Hesabım (kart 0237, karar 0149): girişli müşterinin sayfaları. Hesabın açılış sayfası hesapIlkSayfasi'dır.
+  hesabim: "/hesabim",
+  hesapAdresleri: "/hesabim/adreslerim",
+  hesapFavorileri: "/hesabim/favorilerim",
+  hesapBilgileri: "/hesabim/hesap-bilgileri",
 } as const;
+
+// Hesabın açılış sayfası: girişten sonra ve /hesabim adresinde açılır. Karar 0145'e göre Siparişlerim'dir; Siparişlerim
+// kart 0238 ile gelene kadar Adreslerim'dir.
+export const hesapIlkSayfasi = vitrinAdresleri.hesapAdresleri;
 
 // Kaydın vitrindeki sayfası, adres adıyla (kart 0135: etiket). Türler cekirdek/kayitlar/adres.ts kaydındadır;
 // eksik ya da fazla tür tür kontrolünde hatadır. Adres adı değişen kaydın eski adresi yenisine kalıcı olarak
@@ -68,3 +77,9 @@ export const vitrinDonusu = (deger: string | null | undefined): string => {
 
 export const girisAdresiDonuslu = (donus: string): string =>
   `${vitrinAdresleri.giris}?${new URLSearchParams({ [vitrinDonusParametresi]: donus })}`;
+
+// Girişten kayda geçen müşterinin dönüş adresi kayda taşınır (kart 0237): kayıttan sonra geldiği sayfaya döner.
+export const kayitAdresiDonuslu = (donus: string | undefined): string =>
+  donus === undefined
+    ? vitrinAdresleri.kayit
+    : `${vitrinAdresleri.kayit}?${new URLSearchParams({ [vitrinDonusParametresi]: donus })}`;

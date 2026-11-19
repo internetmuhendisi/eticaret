@@ -15,7 +15,14 @@ import { stil } from "./stil";
 const girisUcu = "/kapi/herkese-acik/musteri-giris";
 
 // donus: girişten sonra gidilecek vitrin adresi (vitrinDonusu'ndan geçmiş; kart 0139). Verilmezse ana sayfa.
-export function GirisFormu({ donus = vitrinAdresleri.anasayfa }: { donus?: string }) {
+// kayitAdresi: "Kayıt olun" bağlantısı; dönüş adresini taşır (kart 0237).
+export function GirisFormu({
+  donus = vitrinAdresleri.anasayfa,
+  kayitAdresi = vitrinAdresleri.kayit,
+}: {
+  donus?: string;
+  kayitAdresi?: string;
+}) {
   const metin = useMetin();
   const [hata, setHata] = useState<string | null>(null);
   const gonderiliyor = useRef(false);
@@ -81,7 +88,7 @@ export function GirisFormu({ donus = vitrinAdresleri.anasayfa }: { donus?: strin
       </FormAlani>
       <GonderDugmesi>{metin("vitrin.giris.gonder")}</GonderDugmesi>
       <Baglanti href={vitrinAdresleri.sifremiUnuttum}>{metin("ortak.sifirlama.baglanti")}</Baglanti>
-      <Baglanti href={vitrinAdresleri.kayit}>{metin("vitrin.giris.hesabinYokMu")}</Baglanti>
+      <Baglanti href={kayitAdresi}>{metin("vitrin.giris.hesabinYokMu")}</Baglanti>
     </Form>
   );
 }

@@ -1,8 +1,10 @@
 "use client";
 // Üst satırın Hesabım öğesi (kart 0131). Girişsiz müşteride ve durum bilinmezken sunucunun çizdiği bağlantıdır
-// (giriş sayfası); girişli müşteride aynı görünüşte bir düğme, e-postayı ve "Çıkış yap"ı gösteren bir menü açar.
+// (giriş sayfası); girişli müşteride aynı görünüşte bir düğme, e-postayı, hesabın sayfalarını (kart 0237) ve
+// "Çıkış yap"ı gösteren bir menü açar.
 // Oturum ortak durumdan gelir (hesap-durumu.ts): sayfada tek istek gider. Tarayıcıda çizilir: menünün tetikleyicisi
 // özelliklerini düğmeye ancak burada verebilir (vitrin kuralı, menu-dugmesi.tsx ile aynı).
+import Link from "next/link";
 import { type ReactNode, useState } from "react";
 import { Ikon } from "../../../../bilesenler/ikonlar/ikon";
 import {
@@ -16,7 +18,16 @@ import {
 import { Dugme } from "../../../../bilesenler/parcalar/dugme";
 import { Uyari } from "../../../../bilesenler/parcalar/uyari";
 import { useMetin } from "../../../metinler/istemci-metni";
+import type { MetinAnahtari } from "../../../metinler/metin";
+import { vitrinAdresleri } from "../../adresler";
 import { cikisYap, useHesapDurumu } from "../../hesap-durumu";
+
+// Menüdeki hesap sayfaları (Hesabım çerçevesinin menüsüyle aynı sıra; Siparişlerim kart 0238 ile gelir).
+const hesapSayfalari: readonly { adres: string; ad: MetinAnahtari }[] = [
+  { adres: vitrinAdresleri.hesapAdresleri, ad: "vitrin.hesap.adresler.baslik" },
+  { adres: vitrinAdresleri.hesapFavorileri, ad: "vitrin.favori.baslik" },
+  { adres: vitrinAdresleri.hesapBilgileri, ad: "vitrin.hesap.bilgiler.baslik" },
+];
 
 export function HesapMenusu({
   baglanti,
@@ -46,6 +57,14 @@ export function HesapMenusu({
       </AcilirMenuTetikleyici>
       <AcilirMenuIcerigi align="end" className="max-w-form">
         <AcilirMenuBasligi className="wrap-anywhere">{durum.eposta}</AcilirMenuBasligi>
+        <AcilirMenuAyraci />
+        {hesapSayfalari.map((sayfa) => (
+          <AcilirMenuOgesi key={sayfa.adres} asChild>
+            <Link href={sayfa.adres} className="no-underline">
+              {metin(sayfa.ad)}
+            </Link>
+          </AcilirMenuOgesi>
+        ))}
         <AcilirMenuAyraci />
         {cikisHatasi ? (
           <Uyari tur="tehlike" className="m-1">

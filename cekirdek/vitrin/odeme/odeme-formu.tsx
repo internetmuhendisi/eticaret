@@ -17,7 +17,7 @@
 //   sayfayı yalnız bu tarayıcı açar (erişim çerezi).
 // - Giriş yapmış müşterinin son siparişinin teslimat bilgisi teslimat bölümünde önerilir; "Bu adresi kullan" alanları
 //   doldurur.
-import { type FormEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import { type FormEvent, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
 import { FormAlani } from "../../../bilesenler/form/form-alani";
 import {
@@ -41,12 +41,14 @@ import {
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
+import { adresSatiri } from "../../bolgeler/adres-satiri";
 import { kapiyaIstek } from "../../kapi/istemci";
 import { hataKodlari } from "../../kayitlar/kapi";
 import type { OdemeDonusSonucu } from "../../kayitlar/odeme";
 import { useMetin } from "../../metinler/istemci-metni";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { doldur } from "../../moduller/eposta/sablon";
+import type { AdresListesi, KayitliAdres } from "../../moduller/musteri/adres-semalari";
 import {
   misafirOdemeFormuSemasi,
   type OdemeYontemiSecimi,
@@ -71,6 +73,7 @@ import {
   hataMetni,
   type Metin,
   MetinAlani,
+  ulkeVerisindenAdlar,
   vergiBolgesi,
 } from "./alanlar";
 import {
@@ -327,6 +330,18 @@ const depodan = (is: (depo: Storage) => string | null | undefined) => {
   }
 };
 
+// Kayıtlı adreslerden "Yeni adres" seçeneğinin değeri (kayıt kimliği olamaz).
+const yeniAdres = "yeni";
+
+// Teslimatın posta adresi formun adres alanlarına.
+const formAdresi = ({ adres }: Teslimat): Adres => ({
+  ulke: adres.ulke,
+  il: adres.il ?? "",
+  ilce: adres.ilce ?? "",
+  adres: adres.adres,
+  postaKodu: adres.postaKodu ?? "",
+});
+
 export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
   const metin = useMetin();
   const hesap = useHesapDurumu();
@@ -359,6 +374,13 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
   const [donusSonucu, setDonusSonucu] = useState<OdemeDonusSonucu | null>(null);
   const [taslak, setTaslak] = useState<OdemeTaslagi | null>(null);
   const [oncekiKullanildi, setOncekiKullanildi] = useState(false);
+  // Giriş yapmış müşterinin adres defteri (kart 0237, karar 0149): bilinmezken null. Seçili kayıtlı adres ya da "yeni".
+  const [kayitli, setKayitli] = useState<KayitliAdres[] | null>(null);
+  const [secilenAdres, setSecilenAdres] = useState<string | undefined>(undefined);
+  // "Adreslerime kaydet": defteri boş müşteride işaretli, kayıtlı adresi olanda işaretsiz gelir (kullanıcı kararı).
+  const [adresiKaydet, setAdresiKaydet] = useState(false);
+  // Kartla ödemeden dönüşte form taslaktan doldu: kayıtlı adres onun üstüne yazılmaz.
+  const taslaktanDoldu = useRef(false);
   const [bekliyor, setBekliyor] = useState(false);
   const [yenileme, setYenileme] = useState(0);
   // Sepetteki adet sunucunun hesabına göre indirildi: özet yenilenince de söylenir.
@@ -426,51 +448,96 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
       telefon: geri.telefon,
       surum: eski.surum + 1,
     }));
+    taslaktanDoldu.current = true;
     setTaslak(geri);
   }, [veri.yontemler]);
 
-  // Giriş yapmış müşterinin son siparişinin teslimatı sorulur (tek istek); siparişi yoksa öneri görünmez.
-  useEffect(() => {
-    if (hesap.tur !== "girisli") return;
-    let gecerli = true;
-    void kapiyaIstek("/kapi/musteri/son-teslimat")
-      .then((yanit) => (yanit.ok ? yanit.json() : undefined))
-      .then((zarf: { veri?: { teslimat: Teslimat | null } } | undefined) => {
-        if (gecerli) setOnceki(zarf?.veri?.teslimat ?? null);
-      })
-      .catch(() => undefined);
-    return () => {
-      gecerli = false;
-    };
-  }, [hesap.tur]);
-
-  const oncekiniKullan = (teslimatBilgisi: Teslimat) => {
-    const { adres } = teslimatBilgisi;
-    setTeslimat({
-      ulke: adres.ulke,
-      il: adres.il ?? "",
-      ilce: adres.ilce ?? "",
-      adres: adres.adres,
-      postaKodu: adres.postaKodu ?? "",
-    });
+  // Teslimat alanlarını doldurur (kayıtlı adres ya da önceki siparişin adresi). Yalnız durum ayarlayıcılarını kullanır.
+  const teslimatiDoldur = useCallback((teslimatBilgisi: Teslimat) => {
+    setTeslimat(formAdresi(teslimatBilgisi));
     setKisi((eski) => ({
       ad: teslimatBilgisi.ad,
       soyad: teslimatBilgisi.soyad,
       telefon: teslimatBilgisi.telefon ?? "",
       surum: eski.surum + 1,
     }));
+  }, []);
+
+  // Giriş yapmış müşterinin adres defteri sorulur (kart 0237). Kayıtlı adresi varsa varsayılan teslimat adresi seçili
+  // gelir, varsayılan fatura adresi başkaysa fatura adresi de dolar. Defteri boşsa son siparişinin teslimatı önerilir
+  // (kullanıcı kararı) ve "Adreslerime kaydet" işaretli gelir. Bugün teslimat yapılmayan ülkedeki adres listelenmez.
+  useEffect(() => {
+    if (hesap.tur !== "girisli") return;
+    let gecerli = true;
+    const sor = async () => {
+      const yanit = await kapiyaIstek("/kapi/musteri/adresler");
+      const zarf = yanit.ok ? ((await yanit.json()) as { veri?: AdresListesi }) : undefined;
+      const uygun = (zarf?.veri?.adresler ?? []).filter((adres) =>
+        veri.ulkeler.some((ulke) => ulke.kod === adres.teslimat.adres.ulke),
+      );
+      if (!gecerli) return;
+      setKayitli(uygun);
+      const ilk = uygun.find((adres) => adres.varsayilanTeslimat) ?? uygun[0];
+      if (ilk !== undefined) {
+        if (taslaktanDoldu.current) return;
+        teslimatiDoldur(ilk.teslimat);
+        setSecilenAdres(ilk.kimlik);
+        const fatura = uygun.find((adres) => adres.varsayilanFatura);
+        if (fatura !== undefined && fatura.kimlik !== ilk.kimlik) {
+          setFaturaAyni(false);
+          setFaturaAdresi(formAdresi(fatura.teslimat));
+        }
+        return;
+      }
+      setAdresiKaydet(true);
+      const sonYanit = await kapiyaIstek("/kapi/musteri/son-teslimat");
+      const son = sonYanit.ok
+        ? ((await sonYanit.json()) as { veri?: { teslimat: Teslimat | null } })
+        : undefined;
+      if (gecerli) setOnceki(son?.veri?.teslimat ?? null);
+    };
+    void sor().catch(() => undefined);
+    return () => {
+      gecerli = false;
+    };
+  }, [hesap.tur, veri.ulkeler, teslimatiDoldur]);
+
+  // Kayıtlı adreslerden seçim: adres alanları doldurur; "yeni" alanları boşaltır (kart 0237).
+  const kayitliSec = (deger: string) => {
+    setSecilenAdres(deger);
+    setAdresiKaydet(false);
+    const adres = kayitli?.find((kayit) => kayit.kimlik === deger);
+    if (adres !== undefined) {
+      teslimatiDoldur(adres.teslimat);
+      return;
+    }
+    setTeslimat(bosAdres(ilkUlke));
+    setKisi((eski) => ({ ad: "", soyad: "", telefon: "", surum: eski.surum + 1 }));
+  };
+
+  const oncekiniKullan = (teslimatBilgisi: Teslimat) => {
+    teslimatiDoldur(teslimatBilgisi);
     setOncekiKullanildi(true);
   };
 
   const uye = hesap.tur === "girisli";
+  // "Adreslerime kaydet" defteri boş müşteride ya da "Yeni adres" seçiliyken görünür.
+  const kaydetGorunur =
+    uye && kayitli !== null && (kayitli.length === 0 || secilenAdres === yeniAdres);
+  const adlar = ulkeVerisindenAdlar(veri.ulkeler);
   const seciliYontem = veri.yontemler.find((satir) => satir.anahtar === yontem)?.secim;
   const seciliYontemAdi =
     seciliYontem === undefined
       ? undefined
       : yontemGorunusu(metin, seciliYontem, veri.havaleIptalSuresi).ad;
   // Önceki siparişin adresi yalnız ülkesine bugün teslimat yapılıyorsa önerilir.
+  // Kayıtlı adresi olan müşteriye önerilmez (kullanıcı kararı, kart 0237).
   const oneri =
-    uye && onceki !== null && veri.ulkeler.some((ulke) => ulke.kod === onceki.adres.ulke)
+    uye &&
+    kayitli !== null &&
+    kayitli.length === 0 &&
+    onceki !== null &&
+    veri.ulkeler.some((ulke) => ulke.kod === onceki.adres.ulke)
       ? onceki
       : null;
   const bilinmiyor =
@@ -510,7 +577,12 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
       pazarlamaIzni: onaylar.pazarlama,
     };
     const girdi = uye
-      ? uyeOdemeFormuSemasi.safeParse({ bilgiler })
+      ? uyeOdemeFormuSemasi.safeParse({
+          bilgiler,
+          ...(kaydetGorunur && adresiKaydet
+            ? { adresiKaydet: { baslik: deger("adresiKaydet.baslik") } }
+            : {}),
+        })
       : misafirOdemeFormuSemasi.safeParse({
           eposta: deger("eposta"),
           hesap: hesapAc
@@ -861,6 +933,25 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
           </Bolum>
 
           <Bolum no={2} baslik={metin("vitrin.odeme.bolum.teslimat")}>
+            {uye && kayitli !== null && kayitli.length > 0 ? (
+              <SecenekGrubu
+                baslik={metin("vitrin.odeme.kayitliAdresler")}
+                etiket={metin("vitrin.odeme.kayitliAdresler")}
+                gorunum="kart"
+                ogeler={[
+                  ...kayitli.map((adres) => ({
+                    deger: adres.kimlik,
+                    ad: adres.baslik,
+                    aciklama: `${adres.teslimat.ad} ${adres.teslimat.soyad} · ${adresSatiri(adres.teslimat.adres, adlar)}`,
+                    ikon: "konum" as const,
+                  })),
+                  { deger: yeniAdres, ad: metin("vitrin.odeme.yeniAdres"), ikon: "ekle" as const },
+                ]}
+                deger={secilenAdres}
+                onDegerDegisti={kayitliSec}
+                secilemezEki=""
+              />
+            ) : null}
             {oneri !== null ? (
               <Uyari tur="bilgi" baslik={metin("vitrin.odeme.oncekiAdres")}>
                 <span className="flex flex-col items-start gap-2">
@@ -923,6 +1014,25 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
               hatalar={hatalar}
               kimlikler={kimlikler}
             />
+            {kaydetGorunur ? (
+              <div className="flex flex-col gap-3">
+                <OnayKutusu
+                  etiket={metin("vitrin.odeme.adresiKaydet")}
+                  checked={adresiKaydet}
+                  onCheckedChange={(deger) => setAdresiKaydet(deger === true)}
+                />
+                {adresiKaydet ? (
+                  <MetinAlani
+                    ad="adresiKaydet.baslik"
+                    etiket={metin("vitrin.hesap.adresler.baslikAlani")}
+                    aciklama={metin("vitrin.hesap.adresler.baslikAciklama")}
+                    varsayilan={metin("vitrin.odeme.adresAdiVarsayilan")}
+                    hatalar={hatalar}
+                    kimlikler={kimlikler}
+                  />
+                ) : null}
+              </div>
+            ) : null}
           </Bolum>
 
           <Bolum no={3} baslik={metin("vitrin.odeme.bolum.fatura")}>

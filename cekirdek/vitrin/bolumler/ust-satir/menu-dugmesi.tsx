@@ -19,11 +19,18 @@ import {
   YanPencereTetikleyici,
 } from "../../../../bilesenler/parcalar/yan-pencere";
 import { useMetin } from "../../../metinler/istemci-metni";
+import { vitrinAdresleri } from "../../adresler";
 import type { BaglamMenuDali } from "../../bolum-kutuphanesi/baglam";
 import { cikisYap, useHesapDurumu } from "../../hesap-durumu";
 import { YanMenu, YanMenuGrubu } from "../ortak/menu";
 
-export type YandakiBaglanti = { adres: string; ikon: IkonAdi; etiket: string };
+// girisliAdres: girişli müşteride gidilen adres (favoriler, kart 0237).
+export type YandakiBaglanti = {
+  adres: string;
+  ikon: IkonAdi;
+  etiket: string;
+  girisliAdres?: string;
+};
 
 export function MenuDugmesi({
   menuler,
@@ -55,7 +62,11 @@ export function MenuDugmesi({
   const baglantiOgesi = (baglanti: YandakiBaglanti) => (
     <li key={baglanti.adres}>
       <Baglanti
-        href={baglanti.adres}
+        href={
+          durum.tur === "girisli" && baglanti.girisliAdres !== undefined
+            ? baglanti.girisliAdres
+            : baglanti.adres
+        }
         gorunum="sade"
         className="w-full justify-start px-0"
         onClick={kapat}
@@ -90,10 +101,16 @@ export function MenuDugmesi({
             {yandakiler.map(baglantiOgesi)}
             {hesap === undefined ? null : durum.tur === "girisli" ? (
               <li className="flex flex-col items-start gap-2 pt-2">
-                <span className="flex items-center gap-2 wrap-anywhere">
+                <Baglanti
+                  href={vitrinAdresleri.hesabim}
+                  gorunum="sade"
+                  className="w-full justify-start px-0"
+                  onClick={kapat}
+                >
                   <Ikon ad={hesap.ikon} className="size-5 shrink-0" />
-                  {durum.eposta}
-                </span>
+                  {hesap.etiket}
+                </Baglanti>
+                <span className="wrap-anywhere text-kucuk text-soluk-yazi">{durum.eposta}</span>
                 {cikisHatasi ? (
                   <Uyari tur="tehlike">{metin("vitrin.hesap.cikisHata")}</Uyari>
                 ) : null}

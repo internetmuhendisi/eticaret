@@ -14,6 +14,7 @@ import {
   SecimTetikleyici,
 } from "../../../bilesenler/parcalar/secim-kutusu";
 import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
+import type { AdresAdlari } from "../../bolgeler/adres-satiri";
 import { postaKoduGecerliMi } from "../../bolgeler/bolgeler";
 import { useMetin } from "../../metinler/istemci-metni";
 import type { MetinAnahtari } from "../../metinler/metin";
@@ -27,6 +28,17 @@ export type BolgeUlkesi = {
 };
 
 export type Adres = { ulke: string; il: string; ilce: string; adres: string; postaKodu: string };
+
+// Adres satırının adları sunucunun verdiği ülke verisinden (kart 0237: adres defteri ve ödemedeki kayıtlı adresler; il
+// ve ilçe listesi tarayıcı koduna alınmaz).
+export const ulkeVerisindenAdlar = (ulkeler: readonly BolgeUlkesi[]): AdresAdlari => {
+  const iller = ulkeler.flatMap((ulke) => ulke.iller);
+  return {
+    ulke: (kod) => ulkeler.find((ulke) => ulke.kod === kod)?.ad ?? kod,
+    il: (kod) => iller.find((il) => il.kod === kod)?.ad,
+    ilce: (kod) => iller.flatMap((il) => il.ilceler).find((ilce) => ilce.kod === kod)?.ad,
+  };
+};
 export type HataHaritasi = Record<string, string>;
 
 export const bosAdres = (ulke: string): Adres => ({
@@ -119,6 +131,7 @@ export const alanAdlari: Record<string, MetinAnahtari> = {
   "bilgiler.fatura.adres.adres": "vitrin.odeme.adres",
   "bilgiler.fatura.adres.postaKodu": "vitrin.odeme.postaKodu",
   "bilgiler.not": "vitrin.odeme.notu",
+  "adresiKaydet.baslik": "vitrin.hesap.adresler.baslikAlani",
   "bilgiler.odemeYontemi": "vitrin.odeme.bolum.yontem",
   "bilgiler.onBilgilendirmeOnayi": "vitrin.odeme.onBilgilendirmeOnayi",
   "bilgiler.mesafeliSatisOnayi": "vitrin.odeme.mesafeliSatisOnayi",

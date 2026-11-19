@@ -21,7 +21,8 @@ const kayitUcu = "/kapi/herkese-acik/musteri-kayit";
 type AlanHatalari = Partial<Record<"eposta" | "sifre" | "uyelikOnayi" | "kvkkOnayi", string>>;
 type GenelHata = "kayitli" | "sinir" | "genel";
 
-export function KayitFormu() {
+// donus: kayıttan sonra gidilecek vitrin adresi (vitrinDonusu'ndan geçmiş; kart 0237). Verilmezse ana sayfa.
+export function KayitFormu({ donus = vitrinAdresleri.anasayfa }: { donus?: string }) {
   const metin = useMetin();
   const [alanHatalari, setAlanHatalari] = useState<AlanHatalari>({});
   const [genelHata, setGenelHata] = useState<GenelHata | null>(null);
@@ -66,7 +67,7 @@ export function KayitFormu() {
     try {
       const yanit = await robotluGonder(kayitUcu, girdi.data);
       if (yanit.ok) {
-        window.location.assign(vitrinAdresleri.anasayfa);
+        window.location.assign(donus);
         return;
       }
       if (yanit.status === hataKodlari.cakisma) setGenelHata("kayitli");

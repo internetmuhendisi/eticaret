@@ -13,6 +13,7 @@
 import { z } from "zod";
 import { postaAdresiSemasi } from "../../bolgeler/adres.ts";
 import { faturaVergiNumarasiHatasi } from "../../bolgeler/satici.ts";
+import { musteriAdresiSinirlari } from "../../kayitlar/musteri-adresleri.ts";
 import { faturaTurleri, kapidaOdemeSecenekleri, odemeSinirlari } from "../../kayitlar/odeme.ts";
 import { sepetSinirlari } from "../../kayitlar/sepet.ts";
 import { duzMetinSemasi } from "../../metinler/duz-metin.ts";
@@ -117,8 +118,14 @@ export const misafirOdemeFormuSemasi = z.strictObject({
 });
 export type MisafirOdemeFormu = z.output<typeof misafirOdemeFormuSemasi>;
 
-// Giriş yapmış müşterinin e-postası hesabındandır, girdiden alınmaz.
-export const uyeOdemeFormuSemasi = z.strictObject({ bilgiler: odemeBilgileriSemasi });
+// Giriş yapmış müşterinin e-postası hesabındandır, girdiden alınmaz. "Adreslerime kaydet" işaretliyse teslimat adresi
+// verilen adla adres defterine yazılır (kart 0237, karar 0149).
+export const uyeOdemeFormuSemasi = z.strictObject({
+  bilgiler: odemeBilgileriSemasi,
+  adresiKaydet: z
+    .strictObject({ baslik: duzMetinSemasi(musteriAdresiSinirlari.baslikEnCok) })
+    .optional(),
+});
 
 // Uçların girdisi: formun üstüne sepetin kalemleri, robot cevabı ve müşterinin bir önceki onayının oturumu (aynı
 // müşteri yeniden basınca kendi ayırması kendisine engel olmasın; o oturum serbest bırakılır).

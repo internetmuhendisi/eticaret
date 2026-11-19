@@ -614,8 +614,9 @@ describe("oturum açma yolu", () => {
     expect(kullananlar(/\bgirisYap\b/)).toEqual(["moduller/oturum/servis.ts"]);
     const musteriServisi = readFileSync(join(kok, "moduller/musteri/servis.ts"), "utf8");
     expect(musteriServisi).not.toContain("yonetici");
+    // Kayıt, giriş ve şifre değiştirmeden sonra bu cihazın yeni oturumu (kart 0237).
     expect([...musteriServisi.matchAll(/\boturumAc\(\s*\w+,\s*"(\w+)"/g)].map((m) => m[1])).toEqual(
-      ["musteri", "musteri"],
+      ["musteri", "musteri", "musteri"],
     );
   });
 });

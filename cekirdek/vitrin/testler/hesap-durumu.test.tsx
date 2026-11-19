@@ -166,7 +166,7 @@ describe("oturum durumu", () => {
     expect(screen.queryByRole("link", { name: etiket })).toBeNull();
   });
 
-  it("telefondaki yan pencerede girişli müşteri e-postayı ve çıkış düğmesini görür", async () => {
+  it("telefondaki yan pencerede girişli müşteri Hesabım'ı, e-postayı ve çıkış düğmesini görür", async () => {
     ucuTaklitEt({ [hesabimUcu]: girisli });
     ciz();
     await bekle();
@@ -180,6 +180,8 @@ describe("oturum durumu", () => {
         (dugme) => dugme.textContent === metin("vitrin.hesap.cikis"),
       ),
     ).toBe(true);
-    expect([...pencere.querySelectorAll("a")].some((a) => a.textContent === etiket)).toBe(false);
+    // Hesabım bağlantısı girişe değil hesaba gider (kart 0237).
+    const hesabim = [...pencere.querySelectorAll("a")].filter((a) => a.textContent === etiket);
+    expect(hesabim.map((a) => a.getAttribute("href"))).toEqual(["/hesabim"]);
   });
 });

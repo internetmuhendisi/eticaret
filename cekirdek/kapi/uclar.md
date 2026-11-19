@@ -455,7 +455,7 @@ Müşterinin favorileri (kart 0140, karar 0110). Vitrin girişli müşterinin fa
 Giriş yapmış müşterinin ödeme adımı (kart 0213, karar 0140): herkese açık ödeme ucuyla aynı, oturum ve sipariş müşterinin hesabına açılır (kart 0214). E-posta hesabındandır; pazarlama izni işaretlenirse hesabın onaylarına da yeni satır olarak yazılır (işaretsiz bırakmak var olan izni geri almaz).
 
 - İzin: `odeme.kendi.baslat`. Sınır: `siki`.
-- Girdi: `{ "bilgiler", "kalemler", "robotCevabi", "onceki"?, "gorulenToplam"? }` (`uyeOdemeGirdisi`). Müşterinin kimliği yalnız kapıdan gelir; `onceki` müşterinin kendi oturumuysa ya da üye olmadan açılmış oturumsa (aynı sekmede giriş yapıp yeniden onaylayan müşteri) silinir, başka üyeninki silinmez.
+- Girdi: `{ "bilgiler", "kalemler", "robotCevabi", "onceki"?, "gorulenToplam"?, "adresiKaydet"? }` (`uyeOdemeGirdisi`). `adresiKaydet: { "baslik" }` verilirse teslimat adresi bu adla müşterinin adres defterine oturumla aynı işlemde yazılır; sınır doluysa ya da aynı adres kayıtlıysa yazılmaz, ödeme durmaz (kart 0237). Müşterinin kimliği yalnız kapıdan gelir; `onceki` müşterinin kendi oturumuysa ya da üye olmadan açılmış oturumsa (aynı sekmede giriş yapıp yeniden onaylayan müşteri) silinir, başka üyeninki silinmez.
 - Servis: `cekirdek/moduller/odeme/servis.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "oturum", "siparis" } }` ve sipariş alındı sayfasının erişim çerezi; kartla ödemede `{ "oturum", "yonlendir" }` (kart 0215), çerezsiz.
 - Hatalar: herkese açık ödeme ucunun hataları (hesap açma ve `uyeOlmadanAlisveris` dışında), `oturum-yok`.

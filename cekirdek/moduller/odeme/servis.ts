@@ -34,6 +34,7 @@ import { musteriOnayTurleri, siparisOnayTurleri } from "../../kayitlar/musteri-o
 import { odemeBaslatilamadi } from "../../kayitlar/odeme.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
+import { adresServisi } from "../musteri/adres.ts";
 import { musteriOnaylari } from "../musteri/model.ts";
 import { musteriHesabi, musteriHesabiAc } from "../musteri/servis.ts";
 import type { Anahtarlar } from "../oturum/servis.ts";
@@ -49,8 +50,9 @@ import type { MisafirOdemeFormu, OdemeBilgileri, OdemeYontemiSecimi } from "./se
 import { teslimatKuraliHatasi } from "./teslimat-kurallari.ts";
 import { yontemKullanilabilirMi } from "./yontemler.ts";
 
+// adresiKaydet: üyenin "Adreslerime kaydet"i (kart 0237): teslimat adresi oturumla aynı işlemde deftere yazılır.
 export type OdemeyiYapan =
-  | { tur: "uye"; musteri: string }
+  | { tur: "uye"; musteri: string; adresiKaydet?: { baslik: string } | undefined }
   | { tur: "misafir"; eposta: string; hesap: MisafirOdemeFormu["hesap"] };
 
 export type OdemeGirdisi = {
@@ -163,6 +165,13 @@ export const odemeServisi = (site: Site) => {
             : dogrulama("musteri.kimlik", "musteri-yok");
         }
         eposta = hesabi.eposta;
+        // Sınır doluysa ya da adres zaten kayıtlıysa hiçbir şey yazılmaz, ödeme durmaz (karar 0149).
+        if (girdi.kim.adresiKaydet !== undefined) {
+          await adresServisi(site).odemedenKaydet(islem, girdi.kim.musteri, {
+            baslik: girdi.kim.adresiKaydet.baslik,
+            teslimat: girdi.bilgiler.teslimat,
+          });
+        }
         if (girdi.bilgiler.pazarlamaIzni) {
           await islem.insert(musteriOnaylari).values({
             musteri_kimligi: girdi.kim.musteri,
