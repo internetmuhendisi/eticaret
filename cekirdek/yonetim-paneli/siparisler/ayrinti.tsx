@@ -90,7 +90,10 @@ export function SiparisAyrintisi({ veri }: { veri: SiparisAyrintisiVerisi }) {
                 >
                   <span className="font-kalin">
                     {doldur(metin("yonetim.siparis.bildirimler.satir"), {
-                      gonderen: bildirim.gonderen,
+                      gonderen:
+                        bildirim.gonderen === ""
+                          ? metin("yonetim.siparisler.kisiselSilindi")
+                          : bildirim.gonderen,
                       banka: bildirim.banka,
                       tutar: bildirim.tutar,
                     })}
@@ -293,13 +296,15 @@ export function SiparisAyrintisi({ veri }: { veri: SiparisAyrintisiVerisi }) {
             </Bilgi>
             <Bilgi ad={metin("yonetim.siparis.teslimat.fatura")}>
               <span className="block">
-                {veri.fatura.tur === "kurumsal"
-                  ? doldur(metin("yonetim.siparis.teslimat.kurumsal"), {
-                      firma: veri.fatura.firma,
-                      vergiDairesi: veri.fatura.vergiDairesi,
-                      vergiNumarasi: veri.fatura.vergiNumarasi,
-                    })
-                  : metin("yonetim.siparis.teslimat.bireysel")}
+                {veri.fatura.tur === "kurumsal" && veri.kisiselSilindi
+                  ? metin("yonetim.siparisler.kisiselSilindi")
+                  : veri.fatura.tur === "kurumsal"
+                    ? doldur(metin("yonetim.siparis.teslimat.kurumsal"), {
+                        firma: veri.fatura.firma,
+                        vergiDairesi: veri.fatura.vergiDairesi,
+                        vergiNumarasi: veri.fatura.vergiNumarasi,
+                      })
+                    : metin("yonetim.siparis.teslimat.bireysel")}
               </span>
               {veri.fatura.adresAyni ? (
                 <span className="block font-normal text-soluk-yazi">

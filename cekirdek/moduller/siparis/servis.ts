@@ -23,7 +23,7 @@
 //   ve e-posta eşleşmezse "bulunamadi" döner (siparişin var olup olmadığı belli olmaz). Yalnız ödeme bekleyen havale
 //   siparişine bildirim yazılır.
 import { createHash, randomBytes } from "node:crypto";
-import { asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
@@ -344,7 +344,13 @@ export const siparisServisi = (site: Site) => {
     const [son] = await vt
       .select({ teslimat: siparisler.teslimat })
       .from(siparisler)
-      .where(eq(siparisler.musteri_kimligi, musteri))
+      // Kişisel bilgisi silinmiş sipariş öneri vermez (kart 0234, bağımsız kontrolün bulgusu).
+      .where(
+        and(
+          eq(siparisler.musteri_kimligi, musteri),
+          isNull(siparisler.kisisel_veri_silinme_zamani),
+        ),
+      )
       .orderBy(desc(siparisler.olusturma_zamani), desc(siparisler.kimlik))
       .limit(1);
     return son?.teslimat ?? null;

@@ -195,7 +195,7 @@ export function SiparisListesi({ veri }: { veri: SiparisListesiVerisi }) {
                   href={listeAdresi(durum)}
                   aria-current={secili ? "page" : undefined}
                   className={sinif(
-                    "flex min-h-11 items-center gap-2 border-b-2 px-3 text-kucuk font-kalin whitespace-nowrap",
+                    "flex min-h-11 items-center gap-2 border-b-2 px-3 text-kucuk font-kalin whitespace-nowrap no-underline",
                     secili ? "border-yazi text-yazi" : "border-transparent text-soluk-yazi",
                   )}
                 >

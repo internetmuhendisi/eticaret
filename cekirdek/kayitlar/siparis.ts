@@ -116,6 +116,22 @@ export const siparisIslemleri = {
   }
 >;
 export type SiparisIslemi = keyof typeof siparisIslemleri;
+
+// Siparişin bu durumunda ve ödeme yönteminde, verilen izinlerle yapılabilen işlemler (panelin düğmeleri). Ekran
+// işlemi yeniden süzmez; servis yine denetler.
+export const yapilabilirIslemler = (
+  durum: SiparisDurumu,
+  yontem: string,
+  yetkili: (izin: "siparis.yonet" | "siparis.havale-onayla") => boolean,
+): SiparisIslemi[] =>
+  (Object.keys(siparisIslemleri) as SiparisIslemi[]).filter((islem) => {
+    const tanim = siparisIslemleri[islem];
+    return (
+      tanim.onceki === durum &&
+      (tanim.yontem === null || tanim.yontem === yontem) &&
+      yetkili(tanim.izin)
+    );
+  });
 export const kargoIslemleri = [
   "kargoya-ver",
   "kargo-duzelt",
@@ -141,9 +157,11 @@ export const siparisSinirlari = {
 export const takipNumarasiYeri = "{takip}";
 
 // Takip adresinin kuralı (ayar şeması ve sipariş ayarları servisi bunu kullanır): şifreli bağlantı, takip
-// numarasının yeri tam bir kez.
+// numarasının yeri tam bir kez, "@" yok (adreste kullanıcı adı olmaz; değişiklik kaydı "@"li değeri e-posta sayar
+// ve reddeder, bağımsız kontrolün bulgusu).
 export const takipAdresiGecerliMi = (adres: string): boolean =>
   adres.startsWith("https://") &&
+  !adres.includes("@") &&
   adres.split(takipNumarasiYeri).length === 2 &&
   URL.canParse(adres.replace(takipNumarasiYeri, "0"));
 

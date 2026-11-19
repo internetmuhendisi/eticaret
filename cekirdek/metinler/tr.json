@@ -1008,7 +1008,13 @@
         "gerekli": "Notu yazın.",
         "uzun": "Not en çok 1000 harf olabilir.",
         "genel": "Not eklenemedi. Yeniden deneyin.",
-        "yetki": "Not ekleme izniniz yok."
+        "yetki": "Not ekleme izniniz yok.",
+        "gecersiz": "Notta kullanılamayan bir karakter var. Düz metin yazın.",
+        "onay": {
+          "baslik": "Not müşteriye gösterilsin mi?",
+          "metin": "Müşteriye not siparişin müşteri sayfasında görünür ve sonradan değiştirilemez ya da silinemez.",
+          "dugme": "Notu gönder"
+        }
       }
     },
     "siparisAyarlari": {

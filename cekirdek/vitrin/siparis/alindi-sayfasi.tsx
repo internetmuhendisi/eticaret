@@ -13,7 +13,7 @@ import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
 import { Kart } from "../../../bilesenler/parcalar/kart";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
-import { ilAdi, ilceAdi } from "../../bolgeler/bolgeler";
+import { adresYazisi } from "../../bolgeler/adres-yazisi";
 import { ibanYazisi } from "../../bolgeler/iban-yazisi";
 import type { KapidaOdemeSecenegi } from "../../kayitlar/odeme";
 import { siparisErisimCerezi } from "../../kayitlar/siparis";
@@ -40,21 +40,9 @@ export const siparisAlindiSayfaBilgisi = musteriSayfasiBilgisi(
 
 type Bicim = ReturnType<typeof siteninBicimleyicisi>;
 
-// Posta adresinin tek satırı: açık adres, posta kodu, ilçe / il, ülke.
+// Posta adresinin tek satırı: açık adres, posta kodu, ilçe / il, ülke (adresYazisi).
 const adresSatiri = (bicim: Bicim, adres: Teslimat["adres"]): string =>
-  [
-    adres.adres,
-    adres.postaKodu,
-    [
-      adres.ilce === undefined ? undefined : ilceAdi(adres.ilce),
-      adres.il === undefined ? undefined : ilAdi(adres.il),
-    ]
-      .filter((parca) => parca !== undefined)
-      .join(" / "),
-    bicim.ulkeAdi(adres.ulke),
-  ]
-    .filter((parca) => parca !== undefined && parca !== "")
-    .join(", ");
+  adresYazisi(adres, bicim.ulkeAdi);
 
 const faturaSatiri = (bicim: Bicim, fatura: Fatura): string => {
   const tur =

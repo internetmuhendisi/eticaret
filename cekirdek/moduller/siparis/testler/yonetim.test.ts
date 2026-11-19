@@ -18,11 +18,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { type Site, siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
 import { BilinenHata } from "../../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
-import { siparisDurumlari, siparisDurumTanimlari } from "../../../kayitlar/siparis.ts";
+import { yapilabilirIslemler } from "../../../kayitlar/siparis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import { siteninFiyatServisi } from "../../fiyat/servis.ts";
+import { siteninServisi } from "../../magaza-ayarlari/servis.ts";
 import { odemeOturumlari } from "../../odeme/model.ts";
 import { type OdemeYontemiSecimi, odemeBilgileriSemasi } from "../../odeme/semalar.ts";
 import { type OdemeGirdisi, odemeServisi } from "../../odeme/servis.ts";
@@ -30,10 +31,16 @@ import { hesapAc } from "../../oturum/servis.ts";
 import { stokServisi } from "../../stok/servis.ts";
 import { urunServisi } from "../../urun/servis.ts";
 import { siteninVergiServisi } from "../../vergi/servis.ts";
+import { yorumlar } from "../../yorum/model.ts";
 import { satinAldiMi } from "../../yorum/satin-alma.ts";
+import { yorumServisi } from "../../yorum/servis.ts";
 import { siparisAyarlari } from "../ayarlar.ts";
 import { havaleBildirimleri, siparisGecmisi, siparisler, siparisNotlari } from "../model.ts";
-import { havaleBildirimiFormuSemasi, siparisListesiSemasi } from "../semalar.ts";
+import {
+  havaleBildirimiFormuSemasi,
+  kargoFirmalariSemasi,
+  siparisListesiSemasi,
+} from "../semalar.ts";
 import { siparisServisi } from "../servis.ts";
 import { kisiselVeriTemizligi } from "../temizlik.ts";
 import { siparisYonetimi } from "../yonetim.ts";
@@ -136,7 +143,26 @@ const hazirla = async () => {
   return { vt, urunAc, yonetici, musteriAc };
 };
 
-const bilgiler = (odemeYontemi: OdemeYontemiSecimi, ad = "Deniz") =>
+const kurumsalFatura = {
+  tur: "kurumsal",
+  firma: "Deniz Yılmaz Ticaret",
+  vergiDairesi: "Çankaya",
+  vergiNumarasi: "1111111114",
+  adresAyni: false,
+  adres: {
+    ulke: "TR",
+    il: "TR-06",
+    ilce: "TR-06-007",
+    adres: "İş Sokak No: 5",
+    postaKodu: "06510",
+  },
+};
+
+const bilgiler = (
+  odemeYontemi: OdemeYontemiSecimi,
+  ad = "Deniz",
+  fatura: object = { tur: "bireysel", adresAyni: true },
+) =>
   odemeBilgileriSemasi.parse({
     odemeYontemi,
     teslimat: {
@@ -151,7 +177,7 @@ const bilgiler = (odemeYontemi: OdemeYontemiSecimi, ad = "Deniz") =>
         postaKodu: "06420",
       },
     },
-    fatura: { tur: "bireysel", adresAyni: true },
+    fatura,
     not: "Zil çalışmıyor",
     onBilgilendirmeOnayi: true,
     mesafeliSatisOnayi: true,
@@ -165,7 +191,7 @@ const ver = async (
   vt: Veritabani,
   birim: string,
   yontem: OdemeYontemiSecimi,
-  ek: { musteri?: string; eposta?: string; ad?: string } = {},
+  ek: { musteri?: string; eposta?: string; ad?: string; fatura?: object } = {},
 ) => {
   const kim: OdemeGirdisi["kim"] =
     ek.musteri === undefined
@@ -173,7 +199,7 @@ const ver = async (
       : { tur: "uye", musteri: ek.musteri };
   const sonuc = await odeme.siparisVer(
     vt,
-    { kim, bilgiler: bilgiler(yontem, ek.ad), kalemler: [{ birim, adet: 1 }] },
+    { kim, bilgiler: bilgiler(yontem, ek.ad, ek.fatura), kalemler: [{ birim, adet: 1 }] },
     3600,
   );
   return sonuc.siparis.numara;
@@ -402,7 +428,7 @@ describe("durum işlemleri", () => {
     expect((await oku(h.vt, numara)).durum).toBe("iptal");
   });
 
-  it("veritabanı kayıtta olmayan geçişi reddeder; tetikleyicinin geçişleri kayıtla aynıdır", async () => {
+  it("veritabanı kayıtta olmayan geçişi reddeder", async () => {
     const h = await hazirla();
     const { birim } = await h.urunAc();
     const numara = await ver(h.vt, birim, kapida);
@@ -425,19 +451,7 @@ describe("durum işlemleri", () => {
     await expect(
       h.vt.execute(sql`update siparisler set durum = 'odeme-bekleniyor' where numara = ${numara}`),
     ).rejects.toThrow();
-    const tanim =
-      (
-        await h.vt.execute<{ tanim: string }>(
-          sql`select pg_get_functiondef('siparis_durum_gecisi'::regproc) as tanim`,
-        )
-      ).rows[0]?.tanim ?? "";
-    const tetikleyicide = [...tanim.matchAll(/\('([a-z-]+)', '([a-z-]+)'\)/g)].map(
-      ([, a, b]) => `${a}>${b}`,
-    );
-    const kayitta = siparisDurumlari.flatMap((durum) =>
-      siparisDurumTanimlari[durum].gecis.map((sonraki) => `${durum}>${sonraki}`),
-    );
-    expect(tetikleyicide.toSorted()).toEqual(kayitta.toSorted());
+    // Tetikleyicinin geçişlerinin kayıtla aynı olduğu durum.test.ts'tedir.
   });
 });
 
@@ -519,6 +533,8 @@ describe("liste", () => {
     ]);
     // Arama: numara, e-posta, ad soyad; "%" ve "_" joker değildir. Sayılar aramadan bağımsızdır.
     expect((await liste({ ara: "ayşe yıl" })).satirlar.map((s) => s.numara)).toEqual([birinci]);
+    // Aramanın harf kuralı: Türkçe harfsiz ve büyük harfle de bulur.
+    expect((await liste({ ara: "AYSE YIL" })).satirlar.map((s) => s.numara)).toEqual([birinci]);
     expect((await liste({ ara: birinci.toLowerCase() })).satirlar.map((s) => s.numara)).toEqual([
       birinci,
     ]);
@@ -526,6 +542,15 @@ describe("liste", () => {
     expect((await liste({ ara: "%" })).satirlar.map((s) => s.numara)).toEqual([ikinci]);
     expect((await liste({ ara: "_" })).toplam).toBe(0);
     expect((await liste({ ara: "yok" })).sayilar.hazirlaniyor).toBe(1);
+    // Havale onaylanınca bildirim artık bakılacak iş değildir: işaret kalkar.
+    await yonetim.islemYap(h.vt, kim, {
+      numara: birinci,
+      islem: "havale-onayla",
+      gorulenDurum: "odeme-bekleniyor",
+    });
+    expect((await liste({})).satirlar.find((s) => s.numara === birinci)?.havaleBildirildi).toBe(
+      false,
+    );
     // Sınır dışı sayfa son sayfaya çekilir.
     expect(await liste({ sayfa: 99 })).toMatchObject({ sayfa: 1, sayfaSayisi: 1, toplam: 2 });
   });
@@ -566,13 +591,14 @@ describe("kargo firmaları", () => {
     const h = await hazirla();
     const kim = await h.yonetici();
     const ayarlar = siparisAyarlari(site);
+    const uydurma = randomUUID();
     const sonuc = await ayarlar.kargoFirmalariniKaydet(h.vt, kim, {
       onceki: [firmaKimligi],
       firmalar: [
         { kimlik: firmaKimligi, ad: "Deneme Kargo" },
         { ad: "Elden teslim" },
         // Listede olmayan kimlik yeni firma sayılır.
-        { kimlik: randomUUID(), ad: "Üçüncü", takipAdresi: "https://a.test/{takip}" },
+        { kimlik: uydurma, ad: "Üçüncü", takipAdresi: "https://a.test/{takip}" },
       ],
     });
     expect(sonuc.kargoFirmalari.map((f) => f.ad)).toEqual([
@@ -582,6 +608,7 @@ describe("kargo firmaları", () => {
     ]);
     expect(sonuc.kargoFirmalari[0]).toEqual({ kimlik: firmaKimligi, ad: "Deneme Kargo" });
     expect(new Set(sonuc.kargoFirmalari.map((f) => f.kimlik)).size).toBe(3);
+    expect(sonuc.kargoFirmalari.map((f) => f.kimlik)).not.toContain(uydurma);
     expect(
       await hatasi(
         ayarlar.kargoFirmalariniKaydet(h.vt, kim, { onceki: [firmaKimligi], firmalar: [] }),
@@ -663,5 +690,149 @@ describe("kişisel verinin saklanması", () => {
     expect(await kisiselVeriTemizligi(h.vt, site)).toBe(0);
     // Geçmiş satırları değişmez.
     expect((await h.vt.select().from(siparisGecmisi)).length).toBeGreaterThan(0);
+  });
+});
+
+describe("bağımsız kontrolün bulguları", () => {
+  it("panelin düğmeleri durum, ödeme yöntemi ve izinle bulunur; görevli havale onayını görmez", () => {
+    const sahip = () => true;
+    const gorevli = (izin: string) => izin === "siparis.yonet";
+    expect(yapilabilirIslemler("odeme-bekleniyor", "havale", sahip)).toEqual(["havale-onayla"]);
+    expect(yapilabilirIslemler("odeme-bekleniyor", "havale", gorevli)).toEqual([]);
+    expect(yapilabilirIslemler("odeme-bekleniyor", "kapida-odeme", gorevli)).toEqual([
+      "hazirlamaya-al",
+    ]);
+    expect(yapilabilirIslemler("hazirlaniyor", "havale", gorevli)).toEqual(["kargoya-ver"]);
+    expect(yapilabilirIslemler("kargoda", "kart", gorevli)).toEqual([
+      "kargo-duzelt",
+      "teslim-edildi",
+    ]);
+    expect(yapilabilirIslemler("teslim-edildi", "kart", sahip)).toEqual([]);
+  });
+
+  it("değişmeyen kargo düzeltmesi geçmişe yazılmaz; ayrıntı oturum ve ödeme kimliğini vermez", async () => {
+    const h = await hazirla();
+    const { birim } = await h.urunAc();
+    const numara = await ver(h.vt, birim, kapida);
+    const kim = await h.yonetici();
+    await yonetim.islemYap(h.vt, kim, {
+      numara,
+      islem: "hazirlamaya-al",
+      gorulenDurum: "odeme-bekleniyor",
+    });
+    const kargo = { firma: firmaKimligi, takipNumarasi: "A 1" };
+    await yonetim.islemYap(h.vt, kim, {
+      numara,
+      islem: "kargoya-ver",
+      gorulenDurum: "hazirlaniyor",
+      kargo,
+    });
+    const once = await gecmisSayisi(h.vt);
+    await yonetim.islemYap(h.vt, kim, {
+      numara,
+      islem: "kargo-duzelt",
+      gorulenDurum: "kargoda",
+      kargo,
+    });
+    expect(await gecmisSayisi(h.vt)).toBe(once);
+    const ayrinti = await yonetim.ayrinti(h.vt, numara);
+    expect(ayrinti?.siparis).not.toHaveProperty("oturum_kimligi");
+    expect(ayrinti?.siparis.tahsilat).toBeNull();
+  });
+
+  it("firma adında ve takip adresinde e-posta biçimi alanın hatasıdır", () => {
+    const sonuc = kargoFirmalariSemasi.safeParse({
+      onceki: [],
+      firmalar: [{ ad: "destek@kargo" }],
+    });
+    expect(sonuc.success).toBe(false);
+    expect(sonuc.error?.issues[0]?.path).toEqual(["firmalar", 0, "ad"]);
+  });
+
+  it("takip adresinde kullanıcı adı reddedilir", async () => {
+    const h = await hazirla();
+    const kim = await h.yonetici();
+    expect(
+      await hatasi(
+        siparisAyarlari(site).kargoFirmalariniKaydet(h.vt, kim, {
+          onceki: [firmaKimligi],
+          firmalar: [{ ad: "Kargo", takipAdresi: "https://kullanici@kargo.test/{takip}" }],
+        }),
+      ),
+    ).toMatchObject({ kod: "dogrulama", ayrinti: [{ alan: "firmalar.0.takipAdresi" }] });
+  });
+
+  it("teslim edilen siparişin müşterisi yorum servisinden yazar ve doğrulanmış alıcı işareti alır", async () => {
+    const h = await hazirla();
+    const { urun, birim } = await h.urunAc();
+    await siteninServisi(site).degistir(h.vt, sistemYonetici(), { yorumYalnizSatinAlanlar: true });
+    const musteri = await h.musteriAc();
+    const kim = await h.yonetici();
+    const numara = await ver(h.vt, birim, kapida, { musteri });
+    const servis = yorumServisi(site);
+    expect(await servis.yorumIzni(h.vt, musteri, urun)).toBe("satin-alma-gerekli");
+    await yonetim.islemYap(h.vt, kim, {
+      numara,
+      islem: "hazirlamaya-al",
+      gorulenDurum: "odeme-bekleniyor",
+    });
+    await yonetim.islemYap(h.vt, kim, {
+      numara,
+      islem: "kargoya-ver",
+      gorulenDurum: "hazirlaniyor",
+      kargo: { firma: firmaKimligi },
+    });
+    expect(await servis.yorumIzni(h.vt, musteri, urun)).toBe("satin-alma-gerekli");
+    await yonetim.islemYap(h.vt, kim, { numara, islem: "teslim-edildi", gorulenDurum: "kargoda" });
+    expect(await servis.yorumIzni(h.vt, musteri, urun)).toBe("yazabilir");
+    await servis.yorumYaz(h.vt, musteri, {
+      urun,
+      puan: 5,
+      metin: "Güzel ürün",
+      ad: "Deniz Yılmaz",
+    });
+    const [yorum] = await h.vt.select().from(yorumlar);
+    expect(yorum?.dogrulanmis_alici).toBe(true);
+  });
+
+  it("kurumsal faturanın firma, vergi bilgisi ve ayrı adresi silinir; silinmiş sipariş adres önermez", async () => {
+    const h = await hazirla();
+    const { birim } = await h.urunAc();
+    const musteri = await h.musteriAc();
+    const numara = await ver(h.vt, birim, havale, { musteri, fatura: kurumsalFatura });
+    expect((await siparisServisi(site).sonTeslimat(h.vt, musteri))?.ad).toBe("Deniz");
+    await h.vt.execute(
+      sql`update siparisler set olusturma_zamani = now() - make_interval(years => ${site.ayarlar.kisiselVeriSaklamaYili}, days => 1) where numara = ${numara}`,
+    );
+    expect(await kisiselVeriTemizligi(h.vt, site)).toBe(1);
+    const satir = await oku(h.vt, numara);
+    expect(satir.fatura).toEqual({
+      tur: "kurumsal",
+      adresAyni: false,
+      firma: "",
+      vergiDairesi: "",
+      vergiNumarasi: "",
+      adres: { ulke: "TR", il: "TR-06", ilce: "TR-06-007", adres: "" },
+    });
+    expect(await siparisServisi(site).sonTeslimat(h.vt, musteri)).toBeNull();
+  });
+
+  it("bir sitenin siparişi başka sitede görünmez", async () => {
+    const h = await hazirla();
+    const { birim } = await h.urunAc();
+    const numara = await ver(h.vt, birim, havale);
+    const baska = await denemeSitesiAc("siparis-yonetim-b");
+    temizlenecekler.push(baska.sil);
+    expect(await yonetim.ayrinti(baska.vt, numara)).toBeNull();
+    expect((await yonetim.liste(baska.vt, siparisListesiSemasi.parse({}))).toplam).toBe(0);
+    expect(
+      await hatasi(
+        yonetim.islemYap(baska.vt, await h.yonetici(), {
+          numara,
+          islem: "havale-onayla",
+          gorulenDurum: "odeme-bekleniyor",
+        }),
+      ),
+    ).toMatchObject({ kod: "bulunamadi" });
   });
 });

@@ -11,6 +11,7 @@ import {
 } from "../../kayitlar/siparis.ts";
 import { duzMetinSemasi } from "../../metinler/duz-metin.ts";
 import { kimlikSemasi } from "../../veritabani/kimlik.ts";
+import { kayitDegeriYasakMi, kayitMetniHatasi } from "../degisiklik-kaydi/deger.ts";
 import { epostaSemasi } from "../oturum/semalar.ts";
 import { robotCevabiSemasi } from "../robot-korumasi/semalar.ts";
 
@@ -98,9 +99,15 @@ export type SiparisNotuGirdisi = z.output<typeof siparisNotuSemasi>;
 
 // Sipariş ayarlarının kargo firmaları bölümü: ekran bütün listeyi gördüğü hâliyle (onceki) ve yeni hâliyle verir;
 // yeni firmanın kimliği yoktur, servis verir. Arada liste değiştiyse "cakisma".
+// Firma adı değişiklik kaydına girer: kayda yazılamayan değer (e-posta gibi) ve denetim karakteri alanın hatasıdır.
+export const kargoFirmasiAdiSemasi = duzMetinSemasi(siparisSinirlari.kargoFirmasiAdEnCok).refine(
+  (ad) => !kayitDegeriYasakMi(ad),
+  kayitMetniHatasi,
+);
+
 const firmaGirdisi = z.strictObject({
   kimlik: kimlikSemasi.optional(),
-  ad: z.string().trim().min(1).max(siparisSinirlari.kargoFirmasiAdEnCok),
+  ad: kargoFirmasiAdiSemasi,
   takipAdresi: z.preprocess(
     bosIseYok,
     z.string().trim().max(siparisSinirlari.takipAdresiEnCok).optional(),

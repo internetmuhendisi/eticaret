@@ -278,7 +278,8 @@
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/banka-hesaplari.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayarlar.tsx",
-    "cekirdek/yonetim-paneli/siparisler/islemler.tsx"
+    "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
+    "cekirdek/yonetim-paneli/siparisler/not-formu.tsx"
   ],
   "bilesenler/parcalar/pencere.tsx": [
     "bilesenler/parcalar/onay-penceresi.tsx",

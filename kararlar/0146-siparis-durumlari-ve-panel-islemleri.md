@@ -35,7 +35,7 @@ Teknik kurallar:
 - Notlar ayrı tablodadır (`siparis_notlari`), değiştirilemez. İç not yalnız panelde, müşteriye not müşterinin sipariş ayrıntısında görünür (e-postası kart 0240).
 - "Yalnız satın alanlar yorum yapabilir" `satinAldiMi` ile siparişe bağlandı: müşterinin o ürünü içeren teslim edilmiş ya da kısmen iade edilmiş siparişi varsa (`satinAlmaDurumlari`).
 - Kişisel verinin saklama süresi altyapı sahibinin ayarıdır (`kisiselVeriSaklamaYili`, varsayılan 10 yıl, hukukçu teyidine kadar öneri). Günlük iş süresi dolan siparişte ad, soyad, telefon, e-posta, sokak adresi, posta kodu, not ve kurumsal faturanın firma ve vergi bilgisini siler; ülke, il, ilçe, tutarlar, ürünler ve vergi dökümü kalır. Siparişin ödeme oturumunda ve havale bildirimlerinde aynı bilgiler silinir.
-- Panelde üç ekran: Siparişler (durum sekmeleri ve sayfa adreste; arama adrese yazılmaz, liste ucuna gider), Sipariş ayrıntısı (`/yonetim/siparisler/ayrinti?numara=`), Sipariş ayarları (kargo firmaları). Liste motoru henüz olmadığı için tablo ekranda yazılıdır.
+- Panelde üç ekran: Siparişler (durum sekmeleri ve sayfa adreste; aranan metin sayfanın adresine yazılmaz, liste ucuna sorguyla gider; arama numara, e-posta ve ad soyadda aramanın harf kuralıyla yapılır, `aramaAnahtari`), Sipariş ayrıntısı (`/yonetim/siparisler/ayrinti?numara=`), Sipariş ayarları (kargo firmaları). Liste motoru henüz olmadığı için tablo ekranda yazılıdır.
 
 ## Neden
 
@@ -43,7 +43,7 @@ Teknik kurallar:
 - Kapıda ödemede mağaza sahibinin siparişe bakması (gerekirse müşteriyi araması) sahte siparişin hazırlanmasını önler; müşterinin kendi iptali bu ana kadar açık kalabilir.
 - Geçişin tek kayıtta ve veritabanında da denetlenmesi panelin, e-postanın ve raporun aynı kuralı görmesini sağlar; doğrudan yazan bir kod da yanlış geçiş yapamaz.
 - Firma adını ve takip adresini siparişe yazmak, sipariş verildiği andaki her şeyi saklama kuralıyla aynıdır.
-- Aramanın adrese yazılmaması müşterinin adını ve e-postasını tarayıcı geçmişinden ve sunucu kayıtlarının adres satırından uzak tutar (formlar kuralı).
+- Aramanın sayfanın adresine yazılmaması müşterinin adını ve e-postasını tarayıcı geçmişinden uzak tutar (formlar kuralı). Ucun sorgusunda yine durur: istek kaydı tutan bir katman eklenirse arama gövdeli isteğe çevrilmelidir.
 
 ## Düşünülen diğer yollar
 
@@ -57,6 +57,8 @@ Teknik kurallar:
 
 - Mağaza sahibi teslimi işaretlemezse müşteri yorum yazamaz, iade talebi açamaz (karar 0145'in bedeli).
 - Arama sonucu liste ucundan ilk sayfa kadar gelir ve kısa gösterilir (numara, ad, durum); fazlası için aramayı daraltmak gerekir.
+- Kargo düzeltme formu firmayı siparişteki adla seçer: firma sonradan yeniden adlandırıldıysa seçim boş açılır, yeniden seçilir.
+- "Firma ekle" sipariş ayarlarının kargo firmaları bölümünün başlığındadır, komut çubuğunda değildir: ekranda başka bölümler de olacak (kart 0239, 0241), eylem kendi bölümünün yanında durur (taslak da böyle).
 - Siparişin notları saklama süresinde silinmez: not değiştirilemez tablodadır. Nota kişisel bilgi yazılmaması yalnız disiplindir.
 - Liste motoru gelince sipariş tablosu ona taşınır.
 - Sipariş e-postaları (kart 0240), iptal ve iade (kart 0235), müşterinin sipariş ekranları (kart 0238) bu durumları ve işlemleri kullanır.

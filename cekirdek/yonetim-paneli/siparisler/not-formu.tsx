@@ -1,9 +1,12 @@
 "use client";
 // Siparişe not ekleme formu (kart 0234): iç not yalnız panelde, müşteriye not müşterinin sipariş ayrıntısında görünür.
 // Not değiştirilemez; eklenince sayfa yenilenir ve geçmişin en üstünde görünür. Boş not sunucuya gitmeden söylenir.
-import { type FormEvent, useRef, useState } from "react";
+// Müşteriye not onay penceresiyle sorulur (geri alınamaz, müşteri görür); yazılmış ama eklenmemiş notla sayfadan
+// çıkarken tarayıcı sorar (bağımsız kontrolün bulguları).
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
 import { FormAlani } from "../../../bilesenler/form/form-alani";
+import { OnayPenceresi } from "../../../bilesenler/parcalar/onay-penceresi";
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
 import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
 import { type SiparisNotTuru, siparisNotTurleri, siparisSinirlari } from "../../kayitlar/siparis";
@@ -26,15 +29,30 @@ export function NotFormu({ numara }: { numara: string }) {
   const [tur, setTur] = useState<SiparisNotTuru>("ic");
   const [yazi, setYazi] = useState("");
   const [hata, setHata] = useState<string | null>(null);
+  const [onay, setOnay] = useState(false);
   const gonderiliyor = useRef(false);
+  const yazildi = yazi.trim() !== "";
+  useEffect(() => {
+    if (!yazildi) return;
+    const uyar = (olay: BeforeUnloadEvent) => olay.preventDefault();
+    window.addEventListener("beforeunload", uyar);
+    return () => window.removeEventListener("beforeunload", uyar);
+  }, [yazildi]);
   const ekle = async (olay: FormEvent<HTMLFormElement>) => {
     olay.preventDefault();
     if (gonderiliyor.current) return;
-    if (yazi.trim() === "") {
+    if (!yazildi) {
       setHata(metin("yonetim.siparis.notlar.gerekli"));
       document.querySelector<HTMLTextAreaElement>('[name="siparis-notu"]')?.focus();
       return;
     }
+    if (tur === "musteri") {
+      setOnay(true);
+      return;
+    }
+    await gonder();
+  };
+  const gonder = async () => {
     gonderiliyor.current = true;
     const sonuc = await islem(
       "siparis-notu",
@@ -50,7 +68,15 @@ export function NotFormu({ numara }: { numara: string }) {
       setHata(null);
       return;
     }
-    setHata(metin(sonuc.kod === "dogrulama" ? "yonetim.siparis.notlar.uzun" : hataMetni(sonuc)));
+    setHata(
+      metin(
+        sonuc.kod !== "dogrulama"
+          ? hataMetni(sonuc)
+          : sonuc.ayrinti.some((sorun) => sorun.kod === "too_big")
+            ? "yonetim.siparis.notlar.uzun"
+            : "yonetim.siparis.notlar.gecersiz",
+      ),
+    );
   };
   return (
     <Form
@@ -84,6 +110,16 @@ export function NotFormu({ numara }: { numara: string }) {
       <GonderDugmesi tur="sade" className="w-fit">
         {metin("yonetim.siparis.notlar.kaydet")}
       </GonderDugmesi>
+      <OnayPenceresi
+        acik={onay}
+        acikDegisince={setOnay}
+        tur="birincil"
+        baslik={metin("yonetim.siparis.notlar.onay.baslik")}
+        aciklama={metin("yonetim.siparis.notlar.onay.metin")}
+        onayEtiketi={metin("yonetim.siparis.notlar.onay.dugme")}
+        vazgecEtiketi={metin("ortak.islem.vazgec")}
+        onayla={gonder}
+      />
     </Form>
   );
 }

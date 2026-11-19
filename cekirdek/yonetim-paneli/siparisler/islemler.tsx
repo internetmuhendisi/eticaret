@@ -220,6 +220,7 @@ function KargoFormu({
     if (gonderiliyor.current) return;
     if (form.firma === "") {
       setHatalar({ firma: metin("yonetim.siparis.hata.firma") });
+      document.querySelector<HTMLElement>('[data-alan="kargo-firmasi"]')?.focus();
       return;
     }
     gonderiliyor.current = true;
@@ -234,6 +235,12 @@ function KargoFormu({
         ...(firma ? { firma: metin("yonetim.siparis.hata.firmaYok") } : {}),
       });
       setGenelHata(null);
+      // Odak hatalı ilk alana.
+      document
+        .querySelector<HTMLElement>(
+          firma ? '[data-alan="kargo-firmasi"]' : '[name="takip-numarasi"]',
+        )
+        ?.focus();
       return;
     }
     setHatalar({});
@@ -253,7 +260,7 @@ function KargoFormu({
       >
         {(alan) => (
           <SecimKutusu value={form.firma} onValueChange={(deger) => degistir("firma", deger)}>
-            <SecimTetikleyici {...alan}>
+            <SecimTetikleyici {...alan} data-alan="kargo-firmasi">
               <SecimDegeri placeholder={metin("yonetim.siparis.pencere.firmaSec")} />
             </SecimTetikleyici>
             <SecimListesi>

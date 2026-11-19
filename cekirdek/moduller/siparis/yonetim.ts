@@ -12,7 +12,7 @@
 //   yazılır (firma listesi sonradan değişse de sipariş değişmez). Takip numarası yoksa takip adresi de yoktur.
 // - Not: iç not yalnız panelde, müşteriye not müşterinin sipariş ayrıntısında görünür; not değiştirilemez.
 // - Kişisel bilgileri silinmiş siparişte (saklama süresi, temizlik.ts) ad, adres, telefon ve e-posta boştur.
-import { and, asc, count, desc, eq, exists, ilike, or, type SQL, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, or, type SQL, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
@@ -25,6 +25,7 @@ import {
   siparisSinirlari,
   takipNumarasiYeri,
 } from "../../kayitlar/siparis.ts";
+import { aramaAnahtari, aramaAnahtariSql } from "../../metinler/arama-anahtari.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { yoneticiler } from "../ekip/model.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
@@ -70,9 +71,12 @@ export type Yazan =
   | { tur: "yonetici" | "musteri" | "sahip"; eposta: string | null }
   | { tur: "sistem"; ad: string };
 
-// Erişim anahtarının özeti panele ve uca çıkmaz.
+// Erişim anahtarının özeti, ödeme oturumunun kimliği ve ödeme kuruluşunun ödeme kimliği panele ve uca çıkmaz
+// (bağımsız kontrolün bulgusu): ekran kullanmaz, görevli de görür.
 export type SiparisAyrintisi = {
-  siparis: Omit<Siparis, "erisim_ozeti">;
+  siparis: Omit<Siparis, "erisim_ozeti" | "oturum_kimligi" | "tahsilat"> & {
+    tahsilat: { odenen: number; taksit: number } | null;
+  };
   kalemler: SiparisKalemi[];
   gecmis: {
     zaman: Date;
@@ -92,9 +96,6 @@ export type SiparisAyrintisi = {
   }[];
 };
 
-// LIKE'ın joker karakterleri müşterinin yazdığı metinde düz harftir.
-const desen = (metin: string): string => `%${metin.replace(/[\\%_]/g, (h) => `\\${h}`)}%`;
-
 const yazan = (satir: {
   kimTuru: string;
   kimAdi: string | null;
@@ -113,11 +114,13 @@ export const siparisYonetimi = (site: Site) => {
     const kosullar: SQL[] = [];
     if (girdi.durum !== undefined) kosullar.push(eq(siparisler.durum, girdi.durum));
     if (girdi.ara !== undefined) {
-      const aranan = desen(girdi.ara);
+      // Aramanın harf kuralıyla (cekirdek/metinler/arama-anahtari.ts): "deniz" "DENİZ"i, "ayse" "Ayşe"yi bulur.
+      // strpos ile aranır: "%" ve "_" düz harftir.
+      const aranan = aramaAnahtari(girdi.ara);
       const kosul = or(
-        ilike(siparisler.numara, aranan),
-        ilike(siparisler.eposta, aranan),
-        sql`(${siparisler.teslimat}->>'ad') || ' ' || (${siparisler.teslimat}->>'soyad') ilike ${aranan}`,
+        sql`strpos(${aramaAnahtariSql(siparisler.numara)}, ${aranan}) > 0`,
+        sql`strpos(${aramaAnahtariSql(siparisler.eposta)}, ${aranan}) > 0`,
+        sql`strpos(${aramaAnahtariSql(sql`(${siparisler.teslimat}->>'ad') || ' ' || (${siparisler.teslimat}->>'soyad')`)}, ${aranan}) > 0`,
       );
       if (kosul !== undefined) kosullar.push(kosul);
     }
@@ -179,7 +182,11 @@ export const siparisYonetimi = (site: Site) => {
   const ayrinti = async (vt: Veritabani, numara: string): Promise<SiparisAyrintisi | null> => {
     const [satir] = await vt.select().from(siparisler).where(eq(siparisler.numara, numara));
     if (satir === undefined) return null;
-    const { erisim_ozeti: _ozet, ...siparis } = satir;
+    const { erisim_ozeti: _ozet, oturum_kimligi: _oturum, tahsilat, ...geri } = satir;
+    const siparis = {
+      ...geri,
+      tahsilat: tahsilat === null ? null : { odenen: tahsilat.odenen, taksit: tahsilat.taksit },
+    };
     const yonetici = alias(yoneticiler, "yazan_yonetici");
     const musteri = alias(musteriler, "yazan_musteri");
     const yazanSutunlari = (tablo: typeof siparisGecmisi | typeof siparisNotlari) => ({
@@ -315,6 +322,8 @@ export const siparisYonetimi = (site: Site) => {
           numara: siparisler.numara,
           durum: siparisler.durum,
           yontem: siparisler.odeme_yontemi,
+          kargoFirmasi: siparisler.kargo_firmasi,
+          takipNumarasi: siparisler.takip_numarasi,
         })
         .from(siparisler)
         .where(eq(siparisler.numara, girdi.numara))
@@ -328,6 +337,15 @@ export const siparisYonetimi = (site: Site) => {
       }
       if (tanim.yontem !== null && siparis.yontem !== tanim.yontem) {
         throw new BilinenHata("is-kurali", [{ alan: "islem", kod: "yontem-uymuyor" }]);
+      }
+      // Hiçbir şeyi değiştirmeyen kargo düzeltmesi geçmişe yazılmaz (bağımsız kontrolün bulgusu).
+      if (
+        girdi.islem === "kargo-duzelt" &&
+        kargoAlanlari !== null &&
+        siparis.kargoFirmasi === kargoAlanlari.kargo_firmasi &&
+        siparis.takipNumarasi === kargoAlanlari.takip_numarasi
+      ) {
+        return { numara: siparis.numara, durum: tanim.sonraki };
       }
       await islem
         .update(siparisler)

@@ -432,7 +432,12 @@ export const magazaAyarSemasi = z.strictObject({
       .array(
         z.strictObject({
           kimlik: kimlikSemasi,
-          ad: z.string().trim().min(1).max(siparisSinirlari.kargoFirmasiAdEnCok),
+          ad: z
+            .string()
+            .trim()
+            .min(1)
+            .max(siparisSinirlari.kargoFirmasiAdEnCok)
+            .refine((ad) => !kayitDegeriYasakMi(ad), kayitMetniHatasi),
           takipAdresi: z
             .string()
             .trim()

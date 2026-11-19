@@ -2,11 +2,12 @@
 // servisiyle okunur, tutar ve zaman sitenin biçimleyicisiyle yazıya çevrilir (tarayıcı biçimlemez). Hangi işlemin
 // görüneceği siparişin durumundan, ödeme yönteminden ve yöneticinin izinlerinden çıkar (siparisIslemleri).
 import { calisanSite } from "../../ayar-semasi/calisan-site";
+import { adresYazisi, type YazilacakAdres } from "../../bolgeler/adres-yazisi";
 import {
   type SiparisDurumu,
   type SiparisIslemi,
   siparisDurumlari,
-  siparisIslemleri,
+  yapilabilirIslemler,
 } from "../../kayitlar/siparis";
 import { yerelZamandan } from "../../metinler/bicimleyici";
 import { siteninBicimleyicisi } from "../../metinler/site-metni";
@@ -140,21 +141,10 @@ export type SiparisAyrintisiVerisi = {
   kargoFirmalari: { kimlik: string; ad: string }[];
 };
 
-// Adresin satırları: sokak adresi, sonra "ilçe / il posta kodu", ülke kodu yalnız sitenin satış ülkesi dışındaysa.
-const adresSatirlari = (adres: {
-  adres: string;
-  il?: string | undefined;
-  ilce?: string | undefined;
-  postaKodu?: string | undefined;
-  ulke: string;
-}): string[] => {
-  const yer = [adres.ilce, adres.il]
-    .filter((parca) => parca !== undefined && parca !== "")
-    .join(" / ");
-  return [
-    adres.adres,
-    [adres.postaKodu, yer].filter((parca) => parca !== undefined && parca !== "").join(" "),
-  ].filter((satir) => satir.trim() !== "");
+// Adresin satırları: ad (varsa) ve tek satırlık adres yazısı (il ve ilçe adlarıyla, ülkeyle; adresYazisi).
+const adresSatirlari = (adres: YazilacakAdres): string[] => {
+  const yazi = adresYazisi(adres, bicim().ulkeAdi);
+  return yazi === "" ? [] : [yazi];
 };
 
 export const siparisAyrintisiVerisi = async (
@@ -169,14 +159,7 @@ export const siparisAyrintisiVerisi = async (
   const { siparis } = ayrinti;
   const durum = siparis.durum as SiparisDurumu;
   const kisiselSilindi = siparis.kisisel_veri_silinme_zamani !== null;
-  const islemler = (Object.keys(siparisIslemleri) as SiparisIslemi[]).filter((islem) => {
-    const tanim = siparisIslemleri[islem];
-    return (
-      tanim.onceki === durum &&
-      (tanim.yontem === null || tanim.yontem === siparis.odeme_yontemi) &&
-      yetkili(tanim.izin)
-    );
-  });
+  const islemler = yapilabilirIslemler(durum, siparis.odeme_yontemi, yetkili);
   const yazan = (y: (typeof ayrinti.gecmis)[number]["yazan"]): SatirYazani => y;
   const gecmis: SiparisAyrintisiVerisi["gecmis"] = [
     ...ayrinti.gecmis.map((satir) => ({
