@@ -137,6 +137,48 @@ describe("gönderici", () => {
     sunucu.close();
   });
 
+  // Kart 0095: sinyal kitaplık yüklenirken gelince gönderim yine başlıyor, sunucu kapandıktan sonra
+  // bağlanıp yakalanmamış ECONNREFUSED bırakıyordu (ölçüldü). Gönderim hiç başlamamalı.
+  it("iptal edilmiş gönderim bağlanmaz ve sonradan yakalanmamış hata bırakmaz", async () => {
+    const yakalanmamislar: unknown[] = [];
+    const dinleyici = (hata: unknown) => yakalanmamislar.push(hata);
+    process.on("unhandledRejection", dinleyici);
+    let baglantiSayisi = 0;
+    const sunucu = createServer((baglanti) => {
+      baglantiSayisi++;
+      baglanti.destroy();
+    });
+    await new Promise<void>((coz) => sunucu.listen(0, "127.0.0.1", coz));
+    const { port } = sunucu.address() as AddressInfo;
+    try {
+      const gonderici = epostaGondericisi(`smtp://127.0.0.1:${port}`);
+      if (!gonderici) throw new Error("gönderici yok");
+      const durdur = new AbortController();
+      durdur.abort(new Error("durduruldu"));
+      await expect(
+        gonderici(
+          {
+            kimden: { ad: "A", adres: "a@ornek.test" },
+            kime: "b@ornek.test",
+            konu: "k",
+            metin: "m",
+            html: "h",
+            mesajKimligi: "<x@ornek.test>",
+          },
+          durdur.signal,
+        ),
+      ).rejects.toThrow("durduruldu");
+      await new Promise<void>((coz) => sunucu.close(() => coz()));
+      // Kitaplığın sonradan bağlanma denemesi bu sürede biterdi (ölçümde hemen düşüyordu).
+      await new Promise((coz) => setTimeout(coz, 1000));
+      expect(baglantiSayisi).toBe(0);
+      expect(yakalanmamislar).toEqual([]);
+    } finally {
+      process.off("unhandledRejection", dinleyici);
+      if (sunucu.listening) sunucu.close();
+    }
+  });
+
   it("yerel posta kutusuna bağlanır", () => {
     expect(epostaGondericisi("smtp://posta-kutusu:1025")).toBeDefined();
     expect(epostaGondericisi("smtp://localhost:51025")).toBeDefined();

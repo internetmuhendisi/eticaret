@@ -40,6 +40,9 @@ export const epostaGondericisi = (
   if (sunucu.protocol !== "smtp:" || !yerelSunucular.has(sunucu.hostname)) return undefined;
   return async (ileti, sinyal) => {
     const { createTransport } = await import("nodemailer");
+    // Sinyal kitaplık yüklenirken gelmiş olabilir: gönderim hiç başlamaz. Başlamış gönderim iptalden
+    // sonra bağlanıp hata verirse onu yakalayan kimse kalmazdı (kart 0095, ölçüldü: ECONNREFUSED/CONN).
+    sinyal?.throwIfAborted();
     const tasiyici = createTransport({
       host: sunucu.hostname,
       port: Number(sunucu.port),
@@ -65,10 +68,14 @@ export const epostaGondericisi = (
       await gonderim;
       return;
     }
-    sinyal.throwIfAborted();
     let dinleyici: (() => void) | undefined;
     const durduruldu = new Promise<never>((_, reddet) => {
-      dinleyici = () => reddet(sinyal.reason);
+      dinleyici = () => {
+        // Bırakılan gönderimin sonraki hatası kimseye ulaşmaz; bağlantı da açık kalmaz.
+        gonderim.catch(() => {});
+        tasiyici.close();
+        reddet(sinyal.reason);
+      };
       sinyal.addEventListener("abort", dinleyici, { once: true });
     });
     try {
