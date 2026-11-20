@@ -1,8 +1,8 @@
 // Üye olmayanın sipariş takibi sayfası (kart 0238, karar 0145, 0150; Canlı Çarşı taslağı siparis-ve-hesap.html):
 // /siparis-takibi. Takip çerezi geçerliyse sipariş, hesaptaki ayrıntıyla aynı görünüşte (SiparisAyrintisi) kısaltılmış
 // adresle çizilir; değilse numara ve e-posta formu. Adresteki numara (?siparis=, sipariş alındı sayfasından) formu
-// doldurur; çerezdeki siparişten başka bir numarayla gelinirse ya da "Başka bir sipariş sorgula" ile (?yeni) form
-// açılır. E-posta adrese yazılmaz. Kişiye özel sayfa: arama motorlarına kapalıdır. Tema demosunda bulunamadıdır.
+// doldurur; çerezdeki siparişten başka bir numarayla gelinirse form açılır. "Başka bir sipariş sorgula" takibi kapatır
+// (çerez ve anahtar silinir), kapatılamazsa formu ?yeni ile açar.
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
@@ -19,6 +19,7 @@ import { siteninVeritabani } from "../../veritabani/baglanti";
 import { girisAdresiDonuslu, vitrinAdresleri } from "../adresler";
 import { musteriSayfasiBilgisi, musteriSayfasiniAc } from "../yalniz-gezinti";
 import { SiparisAyrintisi } from "./ayrinti";
+import { TakibiKapat } from "./takibi-kapat";
 import { SiparisTakibiFormu } from "./takip-formu";
 import { siparisUrunleri } from "./urunler";
 
@@ -87,13 +88,7 @@ export async function SiparisTakibiSayfasi({
             })}
           </p>
         </div>
-        <Baglanti
-          href={`${vitrinAdresleri.siparisTakibi}?yeni`}
-          gorunum="cerceveli"
-          className="self-start"
-        >
-          {metin("vitrin.siparisTakibi.baskaSiparis")}
-        </Baglanti>
+        <TakibiKapat etiket={metin("vitrin.siparisTakibi.baskaSiparis")} />
       </main>
     );
   }

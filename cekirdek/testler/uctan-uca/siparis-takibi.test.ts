@@ -6,7 +6,9 @@
 // - Üye olmayan sipariş alındı sayfasındaki bağlantıyla (numara adreste) takip sayfasına gelir: sayfa arama
 //   motorlarına kapalı, numara dolu. Boş gönderimde iki alanın hatası ve odak numarada; bozuk numara alanın hatası;
 //   eşleşmeyen e-posta tek uyarı ve odak uyarıda. Doğru e-postayla sipariş kısaltılmış adresle görünür (sokak adresi
-//   yok). Form (hatalı) ve sonuç iki renkte ve üç genişlikte taramadan geçer. "Başka bir sipariş sorgula" formu açar.
+//   yok; HTML'de tam ad, telefon, posta kodu ve e-posta geçmez, sipariş geçmişi yok). Form (hatalı) ve sonuç iki renkte
+//   ve üç genişlikte taramadan geçer. Başka numarayla gelinince form açılır; "Başka bir sipariş sorgula" takibi
+//   klavyeyle kapatır (çerez gider). Başkasının siparişinde sekme başlığı "Sayfa bulunamadı"dır.
 // Siparişler sitenin paylaşılan verisidir: test kendi ürününü ve müşterilerini açar (siparişler silinmez).
 import { randomBytes, randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
@@ -227,6 +229,7 @@ test("üye siparişlerini ve ayrıntısını görür; başkasının siparişi bu
   // Başka müşterinin siparişi bulunamadıdır.
   const yanit = await page.goto(hesapSiparisiAdresi(baskasinin));
   expect(yanit?.status()).toBe(404);
+  await expect(page).toHaveTitle(new RegExp(metin("vitrin.bulunamadi.sekmeBasligi")));
   await expect(page.getByText(baskasinin)).toHaveCount(0);
   expect(hatalar).toEqual([]);
 });
@@ -283,15 +286,33 @@ test("üye olmayan numara ve e-postayla siparişini bulur; eşleşmeyen e-posta 
   await expect(page).toHaveURL(vitrinAdresleri.siparisTakibi);
   await sayfaHazir(page);
   await expect(page.getByText("D*** M*** · *** *** ** 42")).toBeVisible();
-  await expect(page.getByText("Takip Sokak")).toHaveCount(0);
-  await expect(page.getByText(eposta)).toHaveCount(0);
+  // Sayfanın HTML'inde ve RSC verisinde tam ad, telefon, açık adres, posta kodu ve e-posta yoktur.
+  const html = await page.content();
+  for (const gizli of ["Müşteri", "0555", "555 000", "Takip Sokak", "06420", eposta]) {
+    expect(html, gizli).not.toContain(gizli);
+  }
+  await expect(
+    page.getByRole("heading", { level: 2, name: metin("vitrin.siparis.gecmis") }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole("link", { name: metin("vitrin.siparisAlindi.bildir") }),
   ).toBeVisible();
   await ikiRenkUcGenislik(page, "takip sonucu");
 
-  // "Başka bir sipariş sorgula" boş formu açar.
-  await page.getByRole("link", { name: metin("vitrin.siparisTakibi.baskaSiparis") }).click();
+  // Çerezdeki siparişten başka bir numarayla gelinince form o numarayla açılır.
+  await page.goto(siparisTakibiAdresi("ORN-987654321"));
+  await expect(alan(page, metin("vitrin.siparisTakibi.numara"))).toHaveValue("ORN-987654321");
+  await page.goto(vitrinAdresleri.siparisTakibi);
+  await sayfaHazir(page);
+  // "Başka bir sipariş sorgula" takibi kapatır: çerez gider, sayfa yenilense de form açılır.
+  const kapat = page.getByRole("button", { name: metin("vitrin.siparisTakibi.baskaSiparis") });
+  await kapat.focus();
+  await page.keyboard.press("Enter");
   await expect(alan(page, metin("vitrin.siparisTakibi.numara"))).toHaveValue("");
+  expect(
+    (await page.context().cookies()).filter((cerez) => cerez.name === "siparis-takip"),
+  ).toEqual([]);
+  await page.reload();
+  await expect(alan(page, metin("vitrin.siparisTakibi.numara"))).toBeVisible();
   expect(hatalar).toEqual([]);
 });

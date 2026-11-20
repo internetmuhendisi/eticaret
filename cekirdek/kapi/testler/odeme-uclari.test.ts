@@ -8,7 +8,8 @@
 // - Müşteri ucu oturumsuz istekte oturum-yok döner.
 // - Sipariş takibi (kart 0238): numara (küçük harf, boşluklu) ve e-posta (büyük harf) eşleşince takip çerezi yalnız
 //   takip sayfasının yoluna, 30 dakika; veritabanında özeti. Eşleşmeyen e-posta ile olmayan numara aynı cevabı alır.
-//   Uydurma robot cevabında takip açılmaz; aynı bağlantıdan altıncı istek sınıra takılır.
+//   Uydurma robot cevabında takip açılmaz; aynı bağlantıdan altıncı istek sınıra takılır. DELETE takibi kapatır:
+//   anahtarın satırı ve çerez silinir; çerezsiz istek de başarılıdır.
 import { randomBytes } from "node:crypto";
 import { resolve } from "node:path";
 import { eq } from "drizzle-orm";
@@ -29,7 +30,7 @@ import { urunServisi } from "../../moduller/urun/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
 import { odemeUcu } from "../herkese-acik/odeme.ts";
-import { siparisTakibiUcu } from "../herkese-acik/siparis-takibi.ts";
+import { siparisTakibiKapatUcu, siparisTakibiUcu } from "../herkese-acik/siparis-takibi.ts";
 import { uyeOdemeUcu } from "../musteri/odeme.ts";
 import { oturumCerezleri } from "../oturum-cerezi.ts";
 
@@ -288,6 +289,28 @@ describe("sipariş takibi ucu", () => {
     expect(await yanlis.text()).toBe(await olmayan.text());
     expect(yanlis.headers.getSetCookie()).toEqual([]);
     expect(await takipSayisi()).toBe(once);
+  });
+
+  it("takip kapatılınca anahtarın satırı ve çerez silinir; çerezsiz istek de başarılıdır", async () => {
+    const { numara, eposta } = await siparisVer();
+    const yanit = await takip({ numara, eposta, robotCevabi: await robotCevabi() });
+    const cerez = (yanit.headers.getSetCookie()[0] ?? "").split(";")[0] ?? "";
+    const anahtar = cerez.split("=")[1] ?? "";
+    const kapat = (basliklar: Record<string, string>) =>
+      siparisTakibiKapatUcu(
+        new Request("http://yerel/kapi/herkese-acik/siparis-takibi", {
+          method: "DELETE",
+          headers: { "x-forwarded-for": yeniAg(), ...basliklar },
+        }),
+      );
+    const kapali = await kapat({ cookie: cerez });
+    expect(kapali.status).toBe(200);
+    expect(kapali.headers.getSetCookie()).toEqual([
+      "siparis-takip=; Path=/siparis-takibi; Max-Age=0; HttpOnly; Secure; SameSite=Lax",
+    ]);
+    const satirlar = await vt.select().from(siparisTakipErisimleri);
+    expect(satirlar.some((satir) => satir.ozet === erisimOzeti(anahtar))).toBe(false);
+    expect((await kapat({})).status).toBe(200);
   });
 
   it("uydurma robot cevabında takip açılmaz; aynı bağlantıdan altıncı istek sınıra takılır", async () => {

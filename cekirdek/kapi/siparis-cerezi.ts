@@ -8,3 +8,6 @@ export const siparisErisimCereziYaz = (anahtar: string): string =>
 
 export const siparisTakipCereziYaz = (anahtar: string): string =>
   `${siparisTakipCerezi.ad}=${anahtar}; Path=${siparisTakipCerezi.yol}; Max-Age=${siparisTakipCerezi.saniye}; HttpOnly; Secure; SameSite=Lax`;
+
+export const siparisTakipCereziSil = (): string =>
+  `${siparisTakipCerezi.ad}=; Path=${siparisTakipCerezi.yol}; Max-Age=0; HttpOnly; Secure; SameSite=Lax`;

@@ -47,6 +47,7 @@ describe("tema demosunda kapı", () => {
         "POST /kapi/herkese-acik/stok-bildirimi",
         // Kart 0238: sipariş takibi kişisel veri gösterir.
         "POST /kapi/herkese-acik/siparis-takibi",
+        "DELETE /kapi/herkese-acik/siparis-takibi",
         // Kart 0215: kartla ödemenin dönüşü ve bildirimi sipariş doğurur, taksit tablosu kuruluşa gider.
         "POST /kapi/herkese-acik/kartla-odeme/donus",
         "POST /kapi/herkese-acik/kartla-odeme/bildirim",

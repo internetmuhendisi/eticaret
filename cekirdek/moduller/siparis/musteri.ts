@@ -12,7 +12,8 @@
 //
 // Takip: numara ve siparişteki e-posta (harf büyüklüğü ayrımsız) eşleşirse 30 dakikalık anahtar verilir; eşleşmezse
 // sipariş yokmuş gibi bulunamadıdır (siparişin var olduğu belli olmaz). Takipte teslimatın adı, soyadı ve telefonu
-// kısaltılır, sokak adresi, posta kodu, fatura ve e-posta görünmez; il ve ilçe görünür (karar 0145).
+// kısaltılır, sokak adresi, posta kodu, fatura, e-posta ve mağazanın notları görünmez; il ve ilçe görünür (karar
+// 0145, 0150). Müşteri takibi kapatabilir (takipKapat).
 import { createHash, randomBytes } from "node:crypto";
 import { and, asc, count, desc, eq, gt, inArray, lte, ne, sql } from "drizzle-orm";
 import { BilinenHata } from "../../kapi/zarf.ts";
@@ -97,6 +98,8 @@ export type MusteriSiparisi = {
     zaman: Date;
   }[];
   kisiselVeriSilindi: boolean;
+  // Takipte teslimat kısaltılmıştır: telefon yalnız son iki rakamdır.
+  kisaltilmis: boolean;
 };
 
 export type MusteriSiparisOzeti = {
@@ -123,10 +126,11 @@ export const adiKisalt = (ad: string): string =>
     .map((sozcuk) => `${Array.from(sozcuk)[0] ?? ""}***`)
     .join(" ");
 
-// Telefonun yalnız son iki rakamı görünür: "+905550000012" → "*** *** ** 12".
+// Telefonun yalnız son iki rakamı kalır: "+905550000012" → "12". Maskeyi ekran metin dosyasından yazar
+// (vitrin.siparis.kisaTelefon): rakam gruplaması ülkeye göre değişir.
 export const telefonuKisalt = (telefon: string): string => {
   const rakamlar = telefon.replace(/\D/g, "");
-  return rakamlar.length < 2 ? "" : `*** *** ** ${rakamlar.slice(-2)}`;
+  return rakamlar.length < 2 ? "" : rakamlar.slice(-2);
 };
 
 const kisaltilmisTeslimat = (teslimat: Teslimat): Teslimat => ({
@@ -191,7 +195,9 @@ const musteriHali = async (
   ]);
   const iadeAdetleri = new Map<number, number>();
   for (const iade of iadeler) {
-    if (iade.durum !== "tamamlandi") continue;
+    // İptal siparişin bütün kalemlerini taşır ama ürün dönmez: iade edilen adede yalnız tamamlanan iade sayılır
+    // (bağımsız kontrolün bulgusu).
+    if (iade.durum !== "tamamlandi" || iade.tur !== "iade") continue;
     for (const kalem of iade.kalemler) {
       iadeAdetleri.set(kalem.sira, (iadeAdetleri.get(kalem.sira) ?? 0) + kalem.adet);
     }
@@ -240,7 +246,9 @@ const musteriHali = async (
       iadeAdedi: iadeAdetleri.get(kalem.sira) ?? 0,
     })),
     gecmis: gecmis.map((satir) => ({ ...satir, durum: satir.durum as SiparisDurumu })),
-    notlar,
+    // Takipte mağazanın notları görünmez: nota kişisel bilgi yazılmış olabilir, taslağın takip sonucunda geçmiş
+    // yoktur (bağımsız kontrolün bulgusu, karar 0150).
+    notlar: kisalt ? [] : notlar,
     iadeler: iadeler.map((iade) => ({
       tur: iade.tur as "iptal" | "iade",
       durum: iade.durum as "bekliyor" | "tamamlandi",
@@ -250,6 +258,7 @@ const musteriHali = async (
       zaman: iade.zaman,
     })),
     kisiselVeriSilindi: siparis.kisisel_veri_silinme_zamani !== null,
+    kisaltilmis: kisalt,
   };
 };
 
@@ -399,5 +408,11 @@ export const musteriSiparisleri = () => {
     return satir === undefined ? null : musteriHali(vt, satir.siparis, true);
   };
 
-  return { liste, ayrinti, takipBaslat, takipleOku };
+  // Takibi kapatır (ortak bilgisayar): anahtarın satırı silinir. Anahtar yoksa ya da bozuksa bir şey yapmaz.
+  const takipKapat = async (vt: Veritabani, anahtar: string | undefined): Promise<void> => {
+    if (anahtar === undefined || !anahtarKalibi.test(anahtar)) return;
+    await vt.delete(siparisTakipErisimleri).where(eq(siparisTakipErisimleri.ozet, ozet(anahtar)));
+  };
+
+  return { liste, ayrinti, takipBaslat, takipleOku, takipKapat };
 };

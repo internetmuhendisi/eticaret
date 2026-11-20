@@ -8,7 +8,8 @@
 // - Takip: numara ve e-posta (harf büyüklüğü ayrımsız) eşleşince anahtar; eşleşmeyen e-posta, olmayan numara ve
 //   kişisel bilgisi silinmiş sipariş aynı hatayı alır. Anahtarla okunan sipariş kısaltılmıştır (ad, soyad, telefon;
 //   açık adres, posta kodu, fatura ve e-posta yok). Süresi dolan ve bozuk anahtar okumaz; yeni takip süresi
-//   dolanları siler. Bir sitenin siparişi başka sitede takip edilemez.
+//   dolanları siler; kapatılan anahtar okumaz; kişisel bilgi silinince anahtar kapanır. Takipte mağazanın notu yoktur.
+//   Bir sitenin siparişi başka sitede takip edilemez. İptal edilen siparişte iade edilen adet sıfırdır.
 import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { eq, sql } from "drizzle-orm";
@@ -28,6 +29,7 @@ import { siteninVergiServisi } from "../../vergi/servis.ts";
 import { iadeServisi } from "../iade.ts";
 import { siparisIadeleri, siparisler, siparisTakipErisimleri } from "../model.ts";
 import { adiKisalt, musteriSiparisleri, telefonuKisalt } from "../musteri.ts";
+import { erisimOzeti } from "../servis.ts";
 import { kisiselVeriTemizligi } from "../temizlik.ts";
 import { siparisYonetimi } from "../yonetim.ts";
 
@@ -354,6 +356,26 @@ describe("ayrıntı", () => {
     expect(ayrinti?.eposta).toMatch(/@ornek\.test$/);
   });
 
+  it("iptal edilen siparişte ürünler iade edilmiş sayılmaz", async () => {
+    const h = await hazirla();
+    const { birim } = await h.urunAc();
+    const a = await h.musteriAc();
+    const numara = await ver(h.vt, [{ birim, adet: 2 }], { musteri: a });
+    await iadeServisi(site).iadeYap(h.vt, yonetici(), {
+      numara,
+      tur: "iptal",
+      gorulenDurum: "odeme-bekleniyor",
+      kalemler: [],
+      kargo: false,
+      stogaKoy: true,
+      neden: "musteri-vazgecti",
+    });
+    const ayrinti = await musteri.ayrinti(h.vt, a, numara);
+    expect(ayrinti?.durum).toBe("iptal");
+    expect(ayrinti?.iadeler).toMatchObject([{ tur: "iptal", durum: "tamamlandi", tutar: 0 }]);
+    expect(ayrinti?.kalemler.map((kalem) => kalem.iadeAdedi)).toEqual([0]);
+  });
+
   it("ürünün adı ve fiyatı sonradan değişince ayrıntı değişmez", async () => {
     const h = await hazirla();
     const { urun, birim } = await h.urunAc();
@@ -378,6 +400,8 @@ describe("takip", () => {
     const h = await hazirla();
     const { birim } = await h.urunAc();
     const numara = await ver(h.vt, [{ birim, adet: 1 }], { eposta: "Deniz@Ornek.test" });
+    // Mağazanın müşteriye notu takipte görünmez (nota kişisel bilgi yazılmış olabilir, karar 0150).
+    await yonetim.notEkle(h.vt, yonetici(), { numara, tur: "musteri", metin: "Kapı kodu 1234" });
     const { anahtar } = await musteri.takipBaslat(h.vt, { numara, eposta: "DENIZ@ornek.TEST" });
     expect(anahtar).toMatch(/^[A-Za-z0-9_-]{43}$/);
     const okunan = await musteri.takipleOku(h.vt, anahtar);
@@ -385,13 +409,16 @@ describe("takip", () => {
     expect(okunan?.teslimat).toEqual({
       ad: "D*** C***",
       soyad: "Y***",
-      telefon: "*** *** ** 42",
+      telefon: "42",
       adres: { ulke: "TR", adres: "", il: "TR-06", ilce: "TR-06-007" },
     });
+    expect(okunan?.kisaltilmis).toBe(true);
     expect(okunan?.fatura).toBeNull();
     expect(okunan?.eposta).toBeNull();
     expect(JSON.stringify(okunan)).not.toContain("Atatürk");
     expect(JSON.stringify(okunan)).not.toContain("06420");
+    expect(okunan?.notlar).toEqual([]);
+    expect(JSON.stringify(okunan)).not.toContain("Kapı kodu");
   });
 
   it("eşleşmeyen e-posta, olmayan numara ve kişisel bilgisi silinmiş sipariş aynı hatayı alır", async () => {
@@ -404,11 +431,13 @@ describe("takip", () => {
     );
     expect(yanlis).toEqual({ kod: "bulunamadi", ayrinti: undefined });
     expect(olmayan).toEqual(yanlis);
-    // Kişisel bilgiler silinince e-posta boştur: hiçbir e-posta eşleşmez.
+    // Kişisel bilgiler silinince e-posta boştur: hiçbir e-posta eşleşmez; açık takip anahtarı da kapanır.
+    const { anahtar } = await musteri.takipBaslat(h.vt, { numara, eposta: "deniz@ornek.test" });
     await h.vt.execute(
       sql`update siparisler set olusturma_zamani = now() - interval '40 years' where numara = ${numara}`,
     );
     expect(await kisiselVeriTemizligi(h.vt, site)).toBe(1);
+    expect(await musteri.takipleOku(h.vt, anahtar)).toBeNull();
     expect(await hatasi(musteri.takipBaslat(h.vt, { numara, eposta: "deniz@ornek.test" }))).toEqual(
       yanlis,
     );
@@ -432,16 +461,34 @@ describe("takip", () => {
     expect(bitis?.fark).toBeGreaterThan(1790);
     expect(bitis?.fark).toBeLessThanOrEqual(1800);
     await h.vt.execute(
-      sql`update siparis_takip_erisimleri set bitis_zamani = now() - interval '1 second' where olusturma_zamani = (select min(olusturma_zamani) from siparis_takip_erisimleri)`,
+      sql`update siparis_takip_erisimleri set bitis_zamani = now() - interval '1 second' where ozet = ${erisimOzeti(eski)}`,
     );
     expect(await musteri.takipleOku(h.vt, eski)).toBeNull();
     expect(await musteri.takipleOku(h.vt, acik)).not.toBeNull();
     expect(await musteri.takipleOku(h.vt, undefined)).toBeNull();
     expect(await musteri.takipleOku(h.vt, "kisa")).toBeNull();
-    expect(await musteri.takipleOku(h.vt, `${acik.slice(0, -1)}A`)).toBeNull();
+    // Tek harfi değişmiş anahtar (son harf her zaman başka bir harfe çevrilir).
+    expect(
+      await musteri.takipleOku(h.vt, `${acik.slice(0, -1)}${acik.endsWith("A") ? "B" : "A"}`),
+    ).toBeNull();
     await musteri.takipBaslat(h.vt, girdi);
     expect(await h.vt.select().from(siparisTakipErisimleri)).toHaveLength(2);
     expect(await musteri.takipleOku(h.vt, acik)).not.toBeNull();
+  });
+
+  it("takip kapatılınca anahtar okumaz; başka anahtar açık kalır; bozuk ve olmayan anahtar bir şey yapmaz", async () => {
+    const h = await hazirla();
+    const { birim } = await h.urunAc();
+    const numara = await ver(h.vt, [{ birim, adet: 1 }], { eposta: "deniz@ornek.test" });
+    const girdi = { numara, eposta: "deniz@ornek.test" };
+    const { anahtar: kapanan } = await musteri.takipBaslat(h.vt, girdi);
+    const { anahtar: kalan } = await musteri.takipBaslat(h.vt, girdi);
+    await musteri.takipKapat(h.vt, undefined);
+    await musteri.takipKapat(h.vt, "bozuk");
+    await musteri.takipKapat(h.vt, kapanan);
+    expect(await musteri.takipleOku(h.vt, kapanan)).toBeNull();
+    expect(await musteri.takipleOku(h.vt, kalan)).not.toBeNull();
+    expect(await h.vt.select().from(siparisTakipErisimleri)).toHaveLength(1);
   });
 
   it("bir sitenin siparişi başka sitede takip edilemez, başka sitede listelenmez", async () => {
@@ -465,7 +512,7 @@ describe("kısaltma", () => {
     expect(adiKisalt("  Deniz   Can ")).toBe("D*** C***");
     expect(adiKisalt("Ömer")).toBe("Ö***");
     expect(adiKisalt("")).toBe("");
-    expect(telefonuKisalt("+90 555 000 00 42")).toBe("*** *** ** 42");
+    expect(telefonuKisalt("+90 555 000 00 42")).toBe("42");
     expect(telefonuKisalt("7")).toBe("");
   });
 });

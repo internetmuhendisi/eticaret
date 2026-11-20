@@ -1,7 +1,8 @@
 // Siparişteki kişisel bilgilerin silinmesi (kart 0234, karar 0145). Saklama süresi (kisiselVeriSaklamaYili, altyapı
 // sahibinin ayarı) dolan siparişte ad, soyad, telefon, e-posta, sokak adresi, posta kodu, not ve kurumsal faturanın
 // firma ve vergi bilgisi silinir; ülke, il ve ilçe, tutarlar, ürünler ve vergi dökümü kalır. Siparişin ödeme
-// oturumunda ve havale bildirimlerinde aynı bilgiler silinir. Süre veritabanının saatiyle karşılaştırılır.
+// oturumunda ve havale bildirimlerinde aynı bilgiler silinir; açık takip anahtarları kapanır. Süre veritabanının
+// saatiyle karşılaştırılır.
 //
 // Siparişin notları silinmez: not mağaza sahibinin yazısıdır, değiştirilemez (yalnız disiplin: nota kişisel bilgi
 // yazılmaması mağaza sahibine bırakılır). Arka plan süreci yükler: içe aktarmalar uzantılıdır.
@@ -47,6 +48,9 @@ export const kisiselVeriTemizligi = async (vt: Veritabani, site: Site): Promise<
     await islem.execute(sql`
       update havale_bildirimleri set gonderen = '', "not" = null
       where siparis_kimligi in (${liste})`);
+    // Açık takip anahtarları da kapanır (kart 0238, bağımsız kontrolün bulgusu).
+    await islem.execute(sql`
+      delete from siparis_takip_erisimleri where siparis_kimligi in (${liste})`);
     return kimlikler.length;
   });
 };

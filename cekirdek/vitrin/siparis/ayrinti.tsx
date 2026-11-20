@@ -138,13 +138,17 @@ type Olay = { zaman: Date; baslik: string; ayrinti?: string; not?: true };
 
 const olaylariKur = (siparis: MusteriSiparisi, bicim: Bicim): Olay[] => {
   const kalemAdi = new Map(siparis.kalemler.map((kalem) => [kalem.sira, kalem.urun_adi]));
+  // Kargo bilgisi siparişin bugünkü hâlidir: yalnız en son kargo olayına yazılır (düzeltilmeden önceki numara
+  // geçmişte saklanmaz, bağımsız kontrolün bulgusu).
+  const sonKargoOlayi = siparis.gecmis.findLastIndex(
+    (satir) => satir.neden === "kargoya-verildi" || satir.neden === "kargo-duzeltildi",
+  );
   const liste: Olay[] = [
-    ...siparis.gecmis.flatMap((satir): Olay[] => {
+    ...siparis.gecmis.flatMap((satir, sira): Olay[] => {
       const anahtar = olaylar[satir.neden as SiparisGecmisiNedeni];
       if (anahtar === null || anahtar === undefined) return [];
       const kargo =
-        (satir.neden === "kargoya-verildi" || satir.neden === "kargo-duzeltildi") &&
-        siparis.kargo !== null
+        sira === sonKargoOlayi && siparis.kargo !== null
           ? [siparis.kargo.firma, siparis.kargo.takipNumarasi].filter(Boolean).join(" · ")
           : undefined;
       return [{ zaman: satir.zaman, baslik: metin(anahtar), ...(kargo ? { ayrinti: kargo } : {}) }];
@@ -350,41 +354,49 @@ export function SiparisAyrintisi({
               })}
             </ul>
           </Bolum>
-          <Bolum kimlik="siparis-gecmisi" baslik={metin("vitrin.siparis.gecmis")}>
-            <ol className="flex flex-col gap-4 border-l-2 border-kenar pl-4">
-              {olayListesi.map((olay, sira) => (
-                <li
-                  // Olaylar sabit sıradadır; aynı anda yazılan iki olayın zamanı aynı olabilir.
-                  // biome-ignore lint/suspicious/noArrayIndexKey: liste sunucuda bir kez çizilir.
-                  key={sira}
-                  className="relative flex flex-col gap-1"
-                >
-                  {/* Çizginin üstündeki nokta; en yeni olay ana renkte. */}
-                  <span
-                    aria-hidden="true"
-                    className={sinif(
-                      "absolute top-1 -left-6 size-3 rounded-dugme border-2 border-zemin",
-                      sira === 0 ? "bg-birincil" : "bg-soluk-yazi",
-                    )}
-                  />
-                  <span className="font-kalin">{olay.baslik}</span>
-                  {olay.ayrinti === undefined ? null : (
+          {/* Takipte geçmiş yoktur (taslak; mağazanın notları takipte görünmez, karar 0150). */}
+          {yol === "takip" ? null : (
+            <Bolum kimlik="siparis-gecmisi" baslik={metin("vitrin.siparis.gecmis")}>
+              <ol className="flex flex-col gap-4 border-l-2 border-kenar pl-4">
+                {olayListesi.map((olay, sira) => (
+                  <li
+                    // Olaylar sabit sıradadır; aynı anda yazılan iki olayın zamanı aynı olabilir.
+                    // biome-ignore lint/suspicious/noArrayIndexKey: liste sunucuda bir kez çizilir.
+                    key={sira}
+                    className="relative flex flex-col gap-1"
+                  >
+                    {/* Çizginin üstündeki nokta; en yeni olay ana renkte. */}
                     <span
+                      aria-hidden="true"
                       className={sinif(
-                        "whitespace-pre-line wrap-anywhere",
-                        olay.not ? "rounded-orta bg-yuzey px-3 py-2" : "text-kucuk text-soluk-yazi",
+                        "absolute top-1 -left-6 size-3 rounded-dugme border-2 border-zemin",
+                        sira === 0 ? "bg-birincil" : "bg-soluk-yazi",
                       )}
+                    />
+                    <span className="font-kalin">{olay.baslik}</span>
+                    {olay.ayrinti === undefined ? null : (
+                      <span
+                        className={sinif(
+                          "whitespace-pre-line wrap-anywhere",
+                          olay.not
+                            ? "rounded-orta bg-yuzey px-3 py-2"
+                            : "text-kucuk text-soluk-yazi",
+                        )}
+                      >
+                        {olay.ayrinti}
+                      </span>
+                    )}
+                    <time
+                      dateTime={olay.zaman.toISOString()}
+                      className="text-kucuk text-soluk-yazi"
                     >
-                      {olay.ayrinti}
-                    </span>
-                  )}
-                  <time dateTime={olay.zaman.toISOString()} className="text-kucuk text-soluk-yazi">
-                    {bicim.tarihSaat(olay.zaman)}
-                  </time>
-                </li>
-              ))}
-            </ol>
-          </Bolum>
+                      {bicim.tarihSaat(olay.zaman)}
+                    </time>
+                  </li>
+                ))}
+              </ol>
+            </Bolum>
+          )}
         </div>
         <div className="flex min-w-0 flex-col gap-5 masaustu:w-form masaustu:shrink-0">
           <Bolum kimlik="siparis-tutari" baslik={metin("vitrin.siparis.tutar")}>
@@ -423,7 +435,7 @@ export function SiparisAyrintisi({
             <dl className="flex flex-col gap-1">
               <dt className="text-soluk-yazi">{metin("vitrin.siparisAlindi.teslimatAdresi")}</dt>
               <dd className="mb-2 wrap-anywhere">
-                {kisiSatiri(siparis.teslimat)}
+                {kisiSatiri(siparis.teslimat, siparis.kisaltilmis)}
                 <br />
                 {adresSatiri(bicim, siparis.teslimat.adres)}
               </dd>

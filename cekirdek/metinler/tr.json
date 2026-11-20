@@ -2071,7 +2071,8 @@
       "iadeEdilen": "İade edilen",
       "eksiTutar": "−{tutar}",
       "kartlaOdenen": "Kartınızdan ödenen ({taksit} taksit)",
-      "kisiselSilindi": "Bu siparişin ad, adres ve iletişim bilgileri saklama süresi dolduğu için silindi."
+      "kisiselSilindi": "Bu siparişin ad, adres ve iletişim bilgileri saklama süresi dolduğu için silindi.",
+      "kisaTelefon": "*** *** ** {son}"
     },
     "siparisTakibi": {
       "baslik": "Sipariş takibi",

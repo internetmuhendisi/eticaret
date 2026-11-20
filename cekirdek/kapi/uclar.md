@@ -52,7 +52,7 @@ Kapıdaki her uç burada yazar (`.claude/rules/sunucu-arayuzu.md`). Yeni ya da d
 
 **Çerez.** Uç yanıta çerezi yalnız `cerezYaz` ile yazar. Oturum çerezleri `cekirdek/kapi/oturum-cerezi.ts` dosyasındadır, hatalı yanıtta da gider.
 
-**Tema demosu** (kart 0116, karar 0127). Site ayarı `temaDemosu` açıkken ziyaretçi yalnız gezer: kapalı uç, sahte isteğe, sınıra ve girdiye bakmadan `bulunamadi` döner. Müşteri girişindeki her uç kapalıdır. Herkese açık her uç tanımında demodaki durumunu beyan eder (`temaDemosunda`, tür kontrolü ister): hesap, sipariş, yorum, bildirim ya da e-posta doğuran uç `kapali`, vitrinin okuduğu ve panelin kullandığı uç `acik`. Yönetici ve sahip uçları açıktır. Bugün kapalı herkese açık uçlar: `hesap-durumu`, `musteri-kayit`, `musteri-giris`, `musteri-cikis`, `musteri-sifre-sifirlama`, `musteri-sifre-yenile`, `stok-bildirimi`, `odeme`, `havale-bildirimi`, `siparis-takibi`, `kartla-odeme/donus`, `kartla-odeme/bildirim`, `kartla-odeme/taksitler`; listeyi `cekirdek/kapi/testler/tema-demosu.test.ts` denetler.
+**Tema demosu** (kart 0116, karar 0127). Site ayarı `temaDemosu` açıkken ziyaretçi yalnız gezer: kapalı uç, sahte isteğe, sınıra ve girdiye bakmadan `bulunamadi` döner. Müşteri girişindeki her uç kapalıdır. Herkese açık her uç tanımında demodaki durumunu beyan eder (`temaDemosunda`, tür kontrolü ister): hesap, sipariş, yorum, bildirim ya da e-posta doğuran uç `kapali`, vitrinin okuduğu ve panelin kullandığı uç `acik`. Yönetici ve sahip uçları açıktır. Bugün kapalı herkese açık uçlar: `hesap-durumu`, `musteri-kayit`, `musteri-giris`, `musteri-cikis`, `musteri-sifre-sifirlama`, `musteri-sifre-yenile`, `stok-bildirimi`, `odeme`, `havale-bildirimi`, `siparis-takibi` (POST ve DELETE), `kartla-odeme/donus`, `kartla-odeme/bildirim`, `kartla-odeme/taksitler`; listeyi `cekirdek/kapi/testler/tema-demosu.test.ts` denetler.
 
 ## Herkese açık
 
@@ -258,6 +258,16 @@ Tarayıcıdaki sepetin vitrin verisini hesaplar (kart 0212, karar 0135). Sepet y
 - Servis: `cekirdek/moduller/siparis/musteri.ts` (`takipBaslat`). Robot cevabı veritabanına bakılmadan önce denetlenir.
 - Başarılı (200): `{ "basarili": true, "veri": { "numara" } }` ve takip çerezi.
 - Hatalar: `bulunamadi` (numara ile e-posta eşleşmedi ya da siparişin kişisel bilgileri silinmiş; siparişin var olup olmadığı belli olmaz), `dogrulama` (`numara-bicimi`, e-posta), `robot-dogrulamasi`, `istek-siniri`, `yetki` (sahte istek), tema demosunda `bulunamadi`.
+
+### DELETE /kapi/herkese-acik/siparis-takibi
+
+Takibi kapatır (kart 0238): ortak bilgisayarda bakan müşteri "Başka bir sipariş sorgula"ya basınca çerezdeki anahtarın satırı silinir, takip çerezi silinir. Tema demosunda kapalıdır.
+
+- İzin: `herkese-acik`. Sınır: `genel`.
+- Girdi: yok (`z.strictObject({})`); anahtar takip çerezinden okunur.
+- Servis: `cekirdek/moduller/siparis/musteri.ts` (`takipKapat`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }` ve süresi sıfır takip çerezi. Anahtar yoksa ya da bozuksa da başarılıdır.
+- Hatalar: `istek-siniri`, `yetki` (sahte istek), tema demosunda `bulunamadi`.
 
 ### POST /kapi/herkese-acik/musteri-giris
 

@@ -57,9 +57,15 @@ export const odemeYontemiYazisi = (yontem: string, kapidaSecenegi: string | null
 export const adresSatiri = (bicim: Bicim, adres: Teslimat["adres"]): string =>
   adresYazisi(adres, bicim.ulkeAdi);
 
-// Teslimatın kişi satırı: ad soyad · telefon (boş olan yazılmaz).
-export const kisiSatiri = (teslimat: Teslimat): string =>
-  [`${teslimat.ad} ${teslimat.soyad}`.trim(), teslimat.telefon]
+// Teslimatın kişi satırı: ad soyad · telefon (boş olan yazılmaz). Takipte telefon yalnız son iki rakamdır, maskesi
+// metin dosyasındadır (kart 0238).
+export const kisiSatiri = (teslimat: Teslimat, kisaltilmis = false): string =>
+  [
+    `${teslimat.ad} ${teslimat.soyad}`.trim(),
+    kisaltilmis && teslimat.telefon !== undefined && teslimat.telefon !== ""
+      ? doldur(metin("vitrin.siparis.kisaTelefon"), { son: teslimat.telefon })
+      : teslimat.telefon,
+  ]
     .filter((parca) => parca !== undefined && parca !== "")
     .join(" · ");
 
