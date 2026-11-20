@@ -10,8 +10,9 @@
 // - Günlük karşılaştırma üç uyuşmazlığı bulur; taksit tablosu ayara göre; iki site ayrı.
 import { createHmac, randomBytes, randomUUID } from "node:crypto";
 import { resolve } from "node:path";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { arkaPlanIsleri } from "../../../arka-plan-isleri/model.ts";
 import { calisanSite } from "../../../ayar-semasi/calisan-site.ts";
 import { type Site, siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
 import {
@@ -254,6 +255,20 @@ const bildirimGovdesi = (belirtec: string, oturum: string) => ({
   iyziEventTime: String(Date.now()),
   iyziPaymentId: kurulus.odemeler.get(belirtec)?.odemeKimligi ?? "",
 });
+
+// Kuyruktaki yönetici bildirimleri, anahtarıyla (kart 0241).
+const yoneticiBildirimleri = async (anahtar: string) =>
+  (
+    await vt
+      .select({ girdi: arkaPlanIsleri.girdi })
+      .from(arkaPlanIsleri)
+      .where(
+        and(
+          eq(arkaPlanIsleri.tur, "yonetici-bildirimi"),
+          eq(arkaPlanIsleri.tekillik_anahtari, `yonetici-bildirimi:${anahtar}`),
+        ),
+      )
+  ).map((satir) => satir.girdi);
 
 describe("kartla öde ödeme adımında", () => {
   it("eklenti açık ve hazırken görünür; kapalı, anahtarsız ve adressiz sitede görünmez", async () => {
@@ -877,6 +892,18 @@ describe("günlük karşılaştırma", () => {
         odemeKimligi: expect.any(String),
         oturum: tamam.oturum,
       });
+      // Yöneticiye bildirim (kart 0241): ortam ve gün başına bir kez, üç karşılaştırmada da.
+      expect(
+        await yoneticiBildirimleri(
+          `kartla-odeme-karsilastirma:${site.ayarlar.kartlaOdemeOrtami}:${gun}`,
+        ),
+      ).toEqual([
+        {
+          bildirim: "kartla-odeme-uyusmazligi",
+          anahtar: `kartla-odeme-karsilastirma:${site.ayarlar.kartlaOdemeOrtami}:${gun}`,
+          veri: { gun, sayi: expect.any(Number) },
+        },
+      ]);
     } finally {
       kurulus.ekRapor.splice(0);
     }
@@ -1236,6 +1263,35 @@ describe("kartla ödenen siparişin iptali ve iadesi", () => {
     });
   });
 
+  // Kart 0241: iadenin bir kısmı dönüp bir kısmı reddedilince tarama yöneticiye bir kez bildirir.
+  it("taramada bir kısmı dönen, bir kısmı reddedilen iade yöneticiye bir kez bildirilir", async () => {
+    const { siparis, b } = await odenmisSiparis();
+    kurulus.ariza.reddedilenKalem = b;
+    try {
+      await iade.iadeYap(vt, yonetici, iptalGirdisi(siparis.numara));
+    } finally {
+      arizayiKaldir();
+    }
+    const [kayit] = await iadeler(siparis.kimlik);
+    // Dönen parça yanıtı gelmemiş gibi yeniden belirsiz yapılır: tarama onu raporda bulur, reddedilen yanında kalır.
+    await vt
+      .update(kartIadeleri)
+      .set({ durum: "belirsiz", son_sorgu_zamani: sql`now() - interval '1 hour'` })
+      .where(
+        and(eq(kartIadeleri.iade_kimligi, kayit?.kimlik ?? ""), eq(kartIadeleri.durum, "tamam")),
+      );
+    await belirsizIadeleriSor(vt, site);
+    await belirsizIadeleriSor(vt, site);
+    expect((await iadeler(siparis.kimlik))[0]?.durum).toBe("bekliyor");
+    expect(await yoneticiBildirimleri(`kartla-iade-kismi-red:${kayit?.kimlik}`)).toEqual([
+      {
+        bildirim: "bekleyen-iade",
+        anahtar: `kartla-iade-kismi-red:${kayit?.kimlik}`,
+        veri: { numara: siparis.numara, neden: "kismi-red" },
+      },
+    ]);
+  });
+
   it("kuruluşa hiç ulaşmayan parça raporda bulunmaz: süresi geçince red sayılmaz, hatası yazılır, iade bekler; sorma süresinden eskisi sorulmaz", async () => {
     const { siparis } = await odenmisSiparis();
     kurulus.ariza.ulasilamaz = true;
@@ -1263,6 +1319,19 @@ describe("kartla ödenen siparişin iptali ve iadesi", () => {
     ).toBe(true);
     expect((await iadeler(siparis.kimlik))[0]?.durum).toBe("bekliyor");
     expect(await durumu(siparis.kimlik)).toBe("hazirlaniyor");
+    // Yöneticiye bildirim (kart 0241): iade başına bir kez, tarama yeniden çalışsa da.
+    await vt
+      .update(kartIadeleri)
+      .set({ son_sorgu_zamani: sql`now() - interval '1 hour'` })
+      .where(eq(kartIadeleri.iade_kimligi, bekleyen?.kimlik ?? ""));
+    await belirsizIadeleriSor(vt, site);
+    expect(await yoneticiBildirimleri(`kartla-iade-raporda-yok:${bekleyen?.kimlik}`)).toEqual([
+      {
+        bildirim: "bekleyen-iade",
+        anahtar: `kartla-iade-raporda-yok:${bekleyen?.kimlik}`,
+        veri: { numara: siparis.numara, neden: "raporda-yok" },
+      },
+    ]);
     // Yeniden deneme belirsiz parçayı göndermez.
     const once = iadeSayisi();
     expect((await iade.yenidenDene(vt, yonetici, siparis.numara)).iade).toBe("bekliyor");
