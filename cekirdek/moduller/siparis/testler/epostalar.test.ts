@@ -431,11 +431,11 @@ describe("olaylar", () => {
         expect(metin).toContain(bicim.para(vergi.vergi));
       }
       expect(metin).toContain("1 adet");
+      // Son iade "tamamlandı" der, tablonun yalnız bu iadenin ürünleri olduğunu söyler (bağımsız kontrolün bulgusu).
+      if (sablon === "siparis-iadesi") {
+        expect(metin).toContain("Bu iadede iade edilen ürünler aşağıdadır.");
+      }
     }
-    // Son iade "tamamlandı" der, tablonun yalnız bu iadenin ürünleri olduğunu söyler (bağımsız kontrolün bulgusu).
-    expect((await sonEposta(h.vt, numara, "siparis-iadesi")).metin).toContain(
-      "Bu iadede iade edilen ürünler aşağıdadır.",
-    );
   });
 
   it("iade talebi alındı, onaylandı (iade kargosu) ve reddedildi (açıklamasıyla)", async () => {
