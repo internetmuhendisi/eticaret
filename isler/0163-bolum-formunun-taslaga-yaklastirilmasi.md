@@ -4,6 +4,8 @@
 
 Kart 0142'nin taslakla karşılaştırmasında (Canlı Çarşı taslağı, `planlar/tasarim-yonu/sayfalar.html`, "Panel: Vitrin bölümleri" ve "Slider formu"), ekranın listesi taslağa uydu. Bölüm formu ise kart 0106'nın formudur ve taslaktaki biçimden ayrılır. Mağaza sahibi en çok slider formunu kullanacağı için fark orada belirgindir.
 
+Bölüm: Yönetim paneli.
+
 ## Olmazsa olmazlar
 
 - Liste alanının öğeleri (slaytlar, afişler, maddeler) akordeon olur: kapalıyken öğenin görseli ve başlığı görünür, biri açıkken ötekiler kapalıdır. Öğeler sıralanabilir listeyle sürüklenerek ve klavyeyle sıralanır.

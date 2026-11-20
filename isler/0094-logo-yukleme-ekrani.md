@@ -6,6 +6,8 @@ Kart 0073 logoyu değiştiren ve kaldıran servisi yazdı (`logoyuDegistir`, `lo
 
 Önce 0073 bitmiş olmalı; panel ayar ekranlarının iskeleti geldiyse onun içinde yapılır. Gerçek mağazada kullanılmadan önce dosyaların yedeği (kart 0093) bitmiş olmalı.
 
+Bölüm: Yönetim paneli.
+
 ## Olmazsa olmazlar
 
 - Yönetici girişinde yükleme ve kaldırma ucu; izin `magaza-ayarlari.degistir`. Uç belgesi ve erişim testi güncellenir.

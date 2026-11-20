@@ -6,6 +6,8 @@ Kart 0028 ile yöneticiler için iki aşamalı giriş zorunlu olur. Telefonunu v
 
 Önce 0028 bitmiş olmalı.
 
+Bölüm: Yönetim paneli.
+
 ## Olmazsa olmazlar
 
 - Altyapı sahibi bir yöneticinin iki aşamalı girişini kaldırabilir. Yönetici sonraki girişte kurulum ekranına düşer, eski yedek kodlar ve açık oturumlar geçersiz olur.

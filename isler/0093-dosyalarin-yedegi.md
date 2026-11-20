@@ -6,6 +6,8 @@ Kart 0072 her sitenin dosyalarını sunucunun diskinde, sitenin kendi klasörün
 
 Önce 0072 bitmiş olmalı. Bu kart bitmeden gerçek bir mağazaya dosya yüklenmez.
 
+Bölüm: Yönetim paneli.
+
 ## Olmazsa olmazlar
 
 - Dosyalar veritabanı yedeğiyle aynı depoya, aynı şifreleme (site başına `age` anahtarı) ve aynı silme kilidiyle gider.

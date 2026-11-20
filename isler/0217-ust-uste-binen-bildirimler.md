@@ -6,6 +6,8 @@ Aynı anda birden çok bildirim açıkken bildirimler üst üste toplanır; arka
 
 Öneri: bildirim alanı bildirimleri açık (yığılmamış) gösterir ya da aynı anda tek bildirim görünür; seçim ölçülerek yapılır.
 
+Bölüm: Yönetim paneli.
+
 ## Olmazsa olmazlar
 
 - Düzeltme yalnız ortak bildirim parçasındadır (`bilesenler/parcalar/bildirim.tsx`); sayfa kendi bildirimini yeniden yazmaz.

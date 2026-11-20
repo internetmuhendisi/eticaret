@@ -4,6 +4,8 @@
 
 Müşteri gezisinde (2026-11-13) görüldü: panelin açılış sayfası yalnız bir hoş geldiniz satırı; "Ürünler" grubunda yalnız "Stok bildirimleri" var (ürün ekranları henüz yok). Mağaza sahibi ne yapabileceğini göremiyor.
 
+Bölüm: Yönetim paneli.
+
 ## Olmazsa olmazlar
 
 - Karşılama sayfasında mağaza sahibinin bugün yapabildiği işlere kısa yollar (vitrin bölümleri, menüler, stok bildirimleri sayısı) ve vitrine git.

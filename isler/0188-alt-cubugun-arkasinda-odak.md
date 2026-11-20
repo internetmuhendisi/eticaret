@@ -4,6 +4,8 @@
 
 Kart 0169'un bağımsız kontrolü bir risk gördü, ölçülmedi. Yan pencerede uzun formda Tab ile aşağı inilince tarayıcı odaklanan alanı ancak pencerenin alt kenarına kadar kaydırır. Sabit alt çubuk (`YanPencereAltCubugu`) yaklaşık 56 px yer kaplar, odaklanan alan çubuğun arkasında kalabilir (WCAG 2.4.11, odak gizlenmemeli). Bu durum kart 0169'dan önce de vardı. Projede `scroll-padding` yok.
 
+Bölüm: Yönetim paneli.
+
 ## Olmazsa olmazlar
 
 - Tarayıcıda ölç: panelin Slider formunda ve vitrinin filtre penceresinde Tab ile inilirken odaklanan öğe çubuğun arkasında kalıyor mu, üç genişlikte.

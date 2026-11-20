@@ -4,6 +4,8 @@
 
 Müşteri gezisinde (2026-11-13) görüldü: Slider sayfasında üç slayt alt alta açık duruyor, katlanmıyor ve sıralanamıyor; "Kaldır" düğmesi hem görseli hem bütün slaytı kaldırmak için aynı adla geçiyor; slaytın nasıl görüneceği formda belli değil.
 
+Bölüm: Yönetim paneli.
+
 ## Olmazsa olmazlar
 
 - Slaytlar katlanır, başlığında küçük görseli ve başlığı; sürükleyerek ve klavyeyle sıralanır (ortak sıralanabilir liste).

@@ -4,6 +4,8 @@
 
 Müşteri gezisinde (2026-11-13) görüldü: menüler ekranı ilk olarak "Alt bilgi"yi açıyor (ana menü ikinci); hiçbir menünün vitrinde nerede kullanıldığı yazmıyor. Telefonda yan pencerede hangi menülerin çıktığını mağaza sahibi bilemiyor. Kart 0143'ün notlarındaki taslak farkıyla aynı.
 
+Bölüm: Yönetim paneli.
+
 ## Olmazsa olmazlar
 
 - Menü listesinde her menünün kullanıldığı yer ("menü satırında", "alt kısımda", "telefon menüsünde") ve öğe sayısı; kullanılmayan menü işaretli.

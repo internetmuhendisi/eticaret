@@ -6,6 +6,8 @@ Kart 0223'ün bağımsız kontrolü kod okumasıyla buldu (ölçülmedi): paneli
 
 Var olan Slider düzenlenirken anahtar değişmez; o durumda sunucunun düzelttiği değer forma hiç geçmez (düşük önem).
 
+Bölüm: Yönetim paneli.
+
 ## Olmazsa olmazlar
 
 - Önce tarayıcıda ölçülür: kart 0223'ün testindeki gibi yenileme isteği tutulur, yeni Slider kaydedilir, tutulan sırada alana yazılır, sonra yenileme bırakılır.

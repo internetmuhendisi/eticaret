@@ -9,6 +9,8 @@ Kart 0223'ün bağımsız kontrolü kod okumasıyla buldu (ölçülmedi): hemen 
 
 Kart 0224 ile ödeme yöntemlerinin sıralaması da hemen kaydedilir. O ekranın istekleri sırayla gider (kuyruk) ve formu `useSunucuFormu` ile tutar; öteki listeler için örnek olabilir.
 
+Bölüm: Yönetim paneli.
+
 ## Olmazsa olmazlar
 
 - Önce tarayıcıda ölçülür: yenileme isteği tutularak iki sıralama arka arkaya yapılır; ekranda görünen sıra ve veritabanındaki son sıra okunur. İsteklerin ters sırada ulaşması ayrıca denenir.

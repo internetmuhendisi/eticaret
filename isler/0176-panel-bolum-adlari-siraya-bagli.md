@@ -4,6 +4,8 @@
 
 Müşteri gezisinde (2026-11-13) görüldü: vitrin bölümleri listesinde aynı türden iki bölüm "Ürün vitrini, 5. sıradaki" gibi adlanıyor; bölüm taşınınca adı değişiyor, asıl başlığı ("Öne çıkanlar") küçük alt satırda kalıyor.
 
+Bölüm: Yönetim paneli.
+
 ## Olmazsa olmazlar
 
 - Bölümün adı varsa kendi başlığıdır (ya da yan afişin başlığı); türü alt satırdadır.

@@ -6,6 +6,8 @@ Kart 0142'de bölüm formunun kategori, marka, etiket, ürün ve menü seçenekl
 
 Kart 0143 (menüler ekranı) kayıt arayarak seçen parçayı yazacak. Bu iş o parçayı bölüm formuna bağlar. Önce 0143 bitmiş olmalı.
 
+Bölüm: Yönetim paneli.
+
 ## Olmazsa olmazlar
 
 - Ürün (elle seçilen ürünler) ve gerektiğinde kategori, marka, etiket alanları yazdıkça arayan seçimle çalışır. Arama sunucuda, sayfa sayfa yapılır.

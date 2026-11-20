@@ -4,6 +4,8 @@
 
 Müşteri gezisinde (2026-11-13) görüldü: vitrin bölümleri ekranı alt kısma "Alt kısım", menüler ekranı "Alt bilgi" diyor; "Slider" İngilizce; menüdeki "Kısayol" rozeti mağaza sahibine bir şey anlatmıyor; Slider formundaki "Zemin rengi: Afiş" belirsiz.
 
+Bölüm: Yönetim paneli.
+
 ## Olmazsa olmazlar
 
 - Aynı yer her ekranda aynı adla anılır; terimler terim sözlüğüne bağlanır (kart 0162 ile ilişkili).

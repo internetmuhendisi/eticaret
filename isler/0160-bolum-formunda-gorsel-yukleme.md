@@ -6,6 +6,8 @@ Kart 0142'de vitrin bölümlerinin görsel alanı yalnız sitede kayıtlı görs
 
 Önce 0094 (logo yükleme ucu ve kutuların bellek sınırı) ve 0093 (dosyaların yedeği) bitmiş olmalı: ikisi yüklemenin altyapı koşullarını kurar.
 
+Bölüm: Yönetim paneli.
+
 ## Olmazsa olmazlar
 
 - Yönetici girişinde görsel yükleme ucu; izni karar kaydında seçilir (`duzen.degistir` ya da ayrı bir dosya izni). Uç belgesi ve erişim testi.
