@@ -32,6 +32,10 @@ Mağaza sahibi e-postayla haberdar olur (kart 0241): yeni sipariş, havale bildi
 ## Sonuçları
 
 - `stok_uyarilari` tablosu eklendi (değişiklik 0049). İşlenmiş satır 30 gün sonra silinir.
+- Ertelenen stok işi bir dakikalık payla kurulur: işin zamanı uygulamanın, kalan süre veritabanının saatiyle hesaplanır. Bir dakikadan büyük saat farkında iş aynı anahtarla yeniden kurulamaz, uyarılar bir sonraki stok olayına kalır.
+- Her alıcının e-postasının anahtarı olayın anahtarı ile adresin özetidir: uzun adres anahtarın sınırını aşmaz.
+- Kuruluşun iadeyi hemen kısmen reddettiği durumda (müşterinin kendi iptali gibi yanında yönetici olmayan iade) bildirim iade gönderilirken de yazılır; tarama yalnız belirsiz parçaları görür.
+- Eklenti kapalıyken kartla ödemenin karşılaştırması ve iade taraması çalışmaya devam eder (para hareketi), ama iki bildirimi gitmez: eklentiye bağlı bildirim yalnız eklenti açıkken gider.
 - Stok gönderim işleri danışma kilidiyle sırayla çalışır: aynı uyarı iki e-postaya girmez. İki işin gerçekten aynı anda çalışması testte ayrıca kurulmadı, yalnız kilitle korunur.
 - Panelde stok ve yorum ekranı henüz yok: bu iki e-postada panel düğmesi yoktur, stok durumu renkli rozet yerine yazıyla gösterilir (taslaktan ayrılır).
 - Panelin içindeki bildirimler (zil, liste) on dördüncü bölümde; hatalı arka plan işlerinin bildirimi kart 0059'da. Gerçek gönderim kart 0060'tadır: sunucuda bugün yönetici e-postası da gitmez.
