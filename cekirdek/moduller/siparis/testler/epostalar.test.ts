@@ -14,6 +14,7 @@ import { and, asc, eq, like, sql } from "drizzle-orm";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { arkaPlanIsleri } from "../../../arka-plan-isleri/model.ts";
 import { type Site, siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
+import { hataIzlemeAraciniBagla, type IzlenenHata } from "../../../izleme/hata-katmani.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
 import { epostaDurumu, epostaSablonlari } from "../../../kayitlar/eposta.ts";
 import {
@@ -644,7 +645,15 @@ describe("içerik", () => {
       sql`update siparisler set olusturma_zamani = now() - make_interval(years => ${site.ayarlar.kisiselVeriSaklamaYili}, days => 1) where numara = ${eski}`,
     );
     expect(await kisiselVeriTemizligi(h.vt, site)).toBe(1);
-    await yonetim.notEkle(h.vt, yonetici(), { numara: eski, tur: "musteri", metin: "Not" });
+    // Silinmiş kişisel veri beklenen durumdur: hata kaydı da bırakmaz (adres denetimi ikinci katmandır).
+    const izlenenler: IzlenenHata[] = [];
+    hataIzlemeAraciniBagla((olay) => izlenenler.push(olay));
+    try {
+      await yonetim.notEkle(h.vt, yonetici(), { numara: eski, tur: "musteri", metin: "Not" });
+    } finally {
+      hataIzlemeAraciniBagla(undefined);
+    }
+    expect(izlenenler).toEqual([]);
     // Not yazılır, e-postası yazılmaz: yalnız ilk siparişin notu.
     const notlar = await h.vt
       .select()
