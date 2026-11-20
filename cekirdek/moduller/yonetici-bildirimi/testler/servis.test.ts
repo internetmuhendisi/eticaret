@@ -368,7 +368,7 @@ describe("sipariş olayları", () => {
   it("onay bekleyen yorum bildirim doğurur; veri kısa adla", async () => {
     const h = await hazirla();
     await siteninServisi(site).degistir(h.vt, yonetici(), { yorumYalnizSatinAlanlar: false });
-    const { urun } = await h.urunAc({ ad: "Porselen Kupa" });
+    const { urun } = await h.urunAc({ ad: "Deneme Fincanı" });
     const musteri = await h.musteriAc();
     const kimlik = await yorumServisi(site).yorumYaz(h.vt, musteri, {
       urun,
@@ -382,7 +382,7 @@ describe("sipariş olayları", () => {
         bildirim: "yorum",
         anahtar: `yorum:${kimlik}`,
         veri: {
-          urun: "Porselen Kupa",
+          urun: "Deneme Fincanı",
           puan: 4,
           yazan: { ad: "Ayşe", harf: "K" },
           metin: "Kahve için <b>ideal</b> boyut.",
@@ -393,7 +393,7 @@ describe("sipariş olayları", () => {
     await bildirimleriCalistir(h.vt);
     const [kayit] = await epostalar(h.vt, "yonetici-yorum");
     const ileti = await gonder(h.vt, kayit?.kimlik ?? "");
-    expect(ileti.konu).toBe("Onay bekleyen yorum: Porselen Kupa");
+    expect(ileti.konu).toBe("Onay bekleyen yorum: Deneme Fincanı");
     // Yönetici e-postası üst şeridinde etiketiyle ayrılır (taslak).
     expect(ileti.html).toContain(">Yönetici bildirimi</span>");
     expect(ileti.metin).toContain("5 üzerinden 4 puan · Ayşe K.");
@@ -652,8 +652,8 @@ describe("stok uyarısı", () => {
   it("uyarılar tek e-postada toplanır; bir saat içinde ikinci e-posta gitmez, ertelenir; kapalıyken işlenir, gitmez", async () => {
     const h = await hazirla();
     const alici = await h.sahipAc();
-    const a = await h.urunAc({ ad: "Kapüşonlu Sweatshirt", miktar: 1 });
-    const b = await h.urunAc({ ad: "Çelik Termos", miktar: 4 });
+    const a = await h.urunAc({ ad: "Deneme Ceketi", miktar: 1 });
+    const b = await h.urunAc({ ad: "Deneme Şişesi", miktar: 4 });
     await ver(h.vt, [{ birim: a.birim, adet: 1 }], kapida);
     await ver(h.vt, [{ birim: b.birim, adet: 1 }], kapida);
     ertelemeler.length = 0;
@@ -662,7 +662,7 @@ describe("stok uyarısı", () => {
     expect(ilk.map((k) => k.alici)).toEqual([alici]);
     const ileti = await gonder(h.vt, ilk[0]?.kimlik ?? "");
     expect(ileti.konu).toBe("Stok uyarısı: 2 ürün");
-    expect(ileti.metin).toContain("Kapüşonlu Sweatshirt");
+    expect(ileti.metin).toContain("Deneme Ceketi");
     expect(ileti.metin).toContain("Tükendi");
     expect(ileti.metin).toContain("3 adet kaldı");
     // Bekleyen yokken iş bir şey yapmaz.
@@ -714,7 +714,7 @@ describe("e-posta ve siteler", () => {
     const h = await hazirla();
     const alici = `sahip-${randomUUID().slice(0, 8)}@ornek.test`;
     await h.sahipAc(alici);
-    const { birim } = await h.urunAc({ ad: "Çelik Termos 750 ml" });
+    const { birim } = await h.urunAc({ ad: "Deneme Şişesi" });
     const numara = await ver(h.vt, [{ birim, adet: 1 }], havale);
     const { eposta, toplam } = await siparisi(h.vt, numara);
     await siparisServisi(site).havaleBildir(
