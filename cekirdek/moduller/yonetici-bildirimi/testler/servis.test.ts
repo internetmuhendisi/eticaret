@@ -732,7 +732,7 @@ describe("e-posta ve siteler", () => {
         gonderen: "Deniz Yılmaz",
         hesap: site.baslangic.bankaHesaplari?.[0]?.kimlik ?? "",
         tutar: bicim.paraYazisi(toplam),
-        odemeTarihi: "2026-11-19",
+        odemeTarihi: new Date().toISOString().slice(0, 10),
       },
     );
     await bildirimleriCalistir(h.vt);
