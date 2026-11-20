@@ -65,4 +65,4 @@ Notlar:
 
 ## Durum
 
-yapılacak
+bitti
