@@ -38,4 +38,4 @@ Kontrol hattı 90 dakikalık süre sınırına yaklaştı. 2026-11-20'deki çal�
 
 ## Durum
 
-yapılacak
+bitti
