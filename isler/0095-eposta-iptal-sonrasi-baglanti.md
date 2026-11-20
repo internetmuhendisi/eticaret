@@ -29,8 +29,8 @@ Bölüm: Sipariş ve müşteri hesabı. Kart 0240 ile birlikte yapılır.
 - Sebep ölçüldü: sinyal posta kitaplığı yüklenirken (`await import("nodemailer")` 50 ms'den uzun sürünce) gelirse gönderici gönderimi yine başlatıp `throwIfAborted` ile çıkıyordu; başlamış gönderim sunucu kapandıktan sonra bağlanıp `ESOCKET`/`CONN` `connect ECONNREFUSED 127.0.0.1:<port>` ile reddediliyor, onu bekleyen olmadığı için yakalanmamış hata kalıyordu (kartın hatasının aynısı, ayrı betikle üretildi). Gönderim başladıktan sonraki iptalde yarış hatayı yakalıyordu; kitaplığın kendi yeniden denemesi yok.
 - Düzeltme: sinyal gönderimden önce denetlenir; iptalde başlamış gönderimin bağlantısı kapanır, hatası yutulur (`cekirdek/moduller/eposta/gonderici.ts`).
 - Test: önceden iptal edilmiş sinyalde sunucuya hiç bağlanılmaz, sunucu kapandıktan sonra 1 saniye beklenir ve yakalanmamış hata yoktur (`eposta.test.ts`). Sinyal denetimi kaldırılınca test kartın hatasıyla kırmızı. Arka plan sürecinin kapanışı aynı yoldan geçer: kapanışta çalıştırıcı sinyali keser ("süreç kapanınca sessiz sunucuyu beklemez" testi).
-- Beş çalışma: dosya art arda beş kez (yük ortalaması 4–8), her birinde 32/32 ve yakalanmamış hata yok; günlükteki tek `ECONNREFUSED` testin bilerek kapalı porta (`:1`) gönderdiği denemedir. Tam birim takımı bir kez dört işçiyle (yük ortalaması 10) 3634/3634, yakalanmamış hata yok. Beş çalışmanın bütün takımla aynı anda yapılması ölçülmedi (makine paylaşılıyor).
+- Beş çalışma: dosya art arda beş kez (yük ortalaması 4–8), her birinde 32/32 ve yakalanmamış hata yok; günlükteki tek `ECONNREFUSED` testin bilerek kapalı porta (`:1`) gönderdiği denemedir. Tam birim takımı bir kez dört işçiyle (yük ortalaması 10) 3634/3634, yakalanmamış hata yok. Kapanışta bütün birim takımı art arda beş kez dört işçiyle çalıştırıldı (yük ortalaması 10–32, 261–449 sn): beşinde de 3649/3649, çıkış 0, yakalanmamış hata yok, tek `ECONNREFUSED` yine `:1` portu.
 
 ## Durum
 
-yapılacak
+bitti
