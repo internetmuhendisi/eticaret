@@ -164,10 +164,16 @@ paths:
 ## Müşteri hesabı (karar 0149)
 
 - Hesabım `/hesabim` altındadır (adresler `vitrinAdresleri`, açılış sayfası `hesapIlkSayfasi`). Sayfa önce `hesapSayfasiniAc(adres)` ile açılır (`cekirdek/vitrin/hesap/oturum.ts`): demoda bulunamadı, girişsiz müşteri girişe gider ve döner. Oturum sunucuda anahtar değiştirilmeden okunur (`hesapOturumu`); hesap sayfası verisini sunucuda çizer, arama motorlarına kapalıdır (`hesapSayfaBilgisi`).
-- Sayfa `HesapCercevesi` içinde çizilir (`cerceve.tsx`): masaüstünde yan menü, telefonda yatay kayan şerit (karar 0145). Yeni hesap sayfası menüye ve üst satırın Hesabım menüsüne (`hesap-menusu.tsx`) birlikte eklenir.
+- Sayfa `HesapCercevesi` içinde çizilir (`cerceve.tsx`): masaüstünde yan menü, telefonda yatay kayan şerit (karar 0145). Yeni hesap sayfası menüye ve üst satırın Hesabım menüsüne (`hesap-menusu.tsx`) birlikte eklenir. Hesap Siparişlerim ile açılır (kart 0238); ayrıntı sayfası çerçeveye `sonAdim` ile numarasını verir.
 - Adres defteri yalnız `adresServisi` ile okunur ve değişir (`cekirdek/moduller/musteri/adres.ts`); alanlar ödemenin teslimat şemasıdır, kuralları ödemeyle aynı işlevdir. Ekran `AdresDefteri`'dir, alanları ödemenin alanlarıdır (`odeme/alanlar.tsx`). Adres satırı `adresSatiri` ile, adlar tarayıcıda `ulkeVerisindenAdlar` ile bulunur: il ve ilçe listesi tarayıcı koduna ayrıca alınmaz.
 - Girişli müşteride favori bağlantısı Favorilerim'e gider (`HesapliBaglanti`); Favorilerim favoriler sayfasının listesini (`FavoriListesi`) hesabın favorileriyle çizer.
 - Giriş, kayıt ve şifre sayfaları `GirisDuzeni` ile çizilir (`giris-duzeni.tsx`). Doğrudan girişe gelen müşteri hesabına gider; girişten kayda geçen müşterinin dönüş adresi taşınır (`kayitAdresiDonuslu`). Hesabın yararları kutusunda (`HesapYararlari`) yalnız bugün olan işler yazar.
+
+## Siparişlerim ve sipariş takibi (karar 0150)
+
+- Müşterinin siparişi yalnız `musteriSiparisleri` (`cekirdek/moduller/siparis/musteri.ts`) ile okunur: `liste` ve `ayrinti` hesabın kimliğiyle, `takipBaslat` ve `takipleOku` numara ve e-postayla. İç not, iade nedeni, başarısız iade ve yazanlar orada süzülür; takipte teslimat orada kısaltılır. Ekran yeniden süzmez.
+- Ayrıntı iki yolda da `SiparisAyrintisi` (`cekirdek/vitrin/siparis/ayrinti.tsx`) ile çizilir. Sipariş alındı, ayrıntı ve liste ortak yazılışları (durum rozeti, ödeme yöntemi, adres ve fatura satırı, tutar özeti, havale kutusu) `parcalar.tsx`'ten alır. Kalemin bugünkü görseli ve sayfası `siparisUrunleri` ile gelir: sayfası açılmayan ürünün ikisi de yoktur.
+- Takip anahtarının çerezi (`siparisTakipCerezi`) yalnız takip sayfasının yoluna gider; adres `vitrinAdresleri.siparisTakibi`, çerezin yoluyla tektir. Sayfa adresteki numarayı (`?siparis=`) yalnız formu doldurmak için okur; e-posta adrese yazılmaz.
 
 ## Tema demosu (karar 0127)
 

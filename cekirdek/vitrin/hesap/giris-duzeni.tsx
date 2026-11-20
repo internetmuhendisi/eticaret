@@ -53,6 +53,7 @@ export function GirisDuzeni({
 // Hesabın yararları (taslak): yalnız bugün gerçekten olan işler yazılır. Sipariş takibi ve iade talebi kartlar 0238 ve
 // 0239 ile eklenir.
 const yararlar: readonly MetinAnahtari[] = [
+  "vitrin.hesap.yararlar.siparis",
   "vitrin.hesap.yararlar.adres",
   "vitrin.hesap.yararlar.favori",
 ];

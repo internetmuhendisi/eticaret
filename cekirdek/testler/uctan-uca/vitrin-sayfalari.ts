@@ -42,6 +42,8 @@ export const ekranSayfalari: Record<string, { adres: string; durum: number; menu
   // Kart 0214: havale bildirimi (boş form). Sipariş alındı sayfası erişim çereziyle açılır, burada ölçülmez; taraması
   // ödeme testindedir.
   "havale bildirimi": { adres: vitrinAdresleri.havaleBildirimi, durum: 200 },
+  // Kart 0238: üye olmayanın sipariş takibi (boş form). Sonucu takip çereziyle açılır, taraması takip testindedir.
+  "siparis takibi": { adres: vitrinAdresleri.siparisTakibi, durum: 200 },
   giris: { adres: vitrinAdresleri.giris, durum: 200 },
   kayit: { adres: vitrinAdresleri.kayit, durum: 200 },
   bulunamadi: { adres: "/olcum-icin-olmayan-sayfa", durum: 404 },

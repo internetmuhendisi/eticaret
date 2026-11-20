@@ -2,9 +2,10 @@
 // tarayıcının erişim çereziyle okunur (siparisServisi.erisimleOku); çerez yoksa ya da tutmazsa sayfa bulunamadıdır.
 // Üstte numara ve teşekkür; havalede son ödeme anı, tutar, açıklamaya yazılacak numara, mağazanın banka hesapları
 // (IBAN'ı kopyala) ve "Ödemeyi yaptım, bildir"; kapıda ödemede seçenek ve kargoya verme süresi; altında teslimat ve
-// fatura, yanında siparişin saklanan tutarlarıyla özet. Tutarlar sipariş anındakilerdir, yeniden hesaplanmaz.
-// Kişiye özel sayfa: arama motorlarına kapalıdır. Tema demosunda bulunamadıdır. Siparişlerim ve sipariş takibi on
-// üçüncü bölümdedir.
+// fatura, yanında siparişin saklanan tutarlarıyla özet. Tutarlar sipariş anındakilerdir, yeniden hesaplanmaz. Üstte
+// üyeye "Siparişimi görüntüle" (hesaptaki ayrıntı), üye olmayana "Siparişimi takip et" (takip sayfası, numara dolu) ve
+// takip bilgisi (kart 0238). Parçalar ayrıntıyla ortaktır (parcalar.tsx).
+// Kişiye özel sayfa: arama motorlarına kapalıdır. Tema demosunda bulunamadıdır.
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
@@ -13,22 +14,24 @@ import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
 import { Kart } from "../../../bilesenler/parcalar/kart";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
-import { adresYazisi } from "../../bolgeler/adres-yazisi";
-import { ibanYazisi } from "../../bolgeler/iban-yazisi";
-import type { KapidaOdemeSecenegi } from "../../kayitlar/odeme";
 import { siparisErisimCerezi } from "../../kayitlar/siparis";
-import type { MetinAnahtari } from "../../metinler/metin";
 import { metin, siteninBicimleyicisi } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import { sayfaBasligi } from "../../moduller/gorunurluk/sayfa-bilgisi";
 import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
-import type { Fatura, Teslimat } from "../../moduller/odeme/semalar";
 import { siparisServisi } from "../../moduller/siparis/servis";
 import { siteninVeritabani } from "../../veritabani/baglanti";
-import { vitrinAdresleri } from "../adresler";
+import { hesapSiparisiAdresi, siparisTakibiAdresi, vitrinAdresleri } from "../adresler";
 import { SepetOzeti } from "../sepet/sepet-gorunumu";
 import { musteriSayfasiBilgisi, musteriSayfasiniAc } from "../yalniz-gezinti";
-import { IbanKopyala } from "./iban-kopyala";
+import {
+  adresSatiri,
+  faturaSatiri,
+  HavaleOdemeKarti,
+  kisiSatiri,
+  odemeYontemiYazisi,
+  siparisTutarlari,
+} from "./parcalar";
 import { SepetiTemizle } from "./sepeti-temizle";
 
 export const siparisAlindiSayfaBilgisi = musteriSayfasiBilgisi(
@@ -37,31 +40,6 @@ export const siparisAlindiSayfaBilgisi = musteriSayfasiBilgisi(
     robots: { index: false, follow: false },
   }),
 );
-
-type Bicim = ReturnType<typeof siteninBicimleyicisi>;
-
-// Posta adresinin tek satırı: açık adres, posta kodu, ilçe / il, ülke (adresYazisi).
-const adresSatiri = (bicim: Bicim, adres: Teslimat["adres"]): string =>
-  adresYazisi(adres, bicim.ulkeAdi);
-
-const faturaSatiri = (bicim: Bicim, fatura: Fatura): string => {
-  const tur =
-    fatura.tur === "kurumsal"
-      ? doldur(metin("vitrin.siparisAlindi.kurumsal"), {
-          firma: fatura.firma,
-          vergiDairesi: fatura.vergiDairesi,
-          vergiNumarasi: fatura.vergiNumarasi,
-        })
-      : metin("vitrin.siparisAlindi.bireysel");
-  return fatura.adres === undefined
-    ? `${tur} · ${metin("vitrin.siparisAlindi.teslimatAdresiyle")}`
-    : `${tur} · ${adresSatiri(bicim, fatura.adres)}`;
-};
-
-const secenekAdlari: Record<KapidaOdemeSecenegi, MetinAnahtari> = {
-  nakit: "vitrin.odeme.yontem.nakit",
-  kart: "vitrin.odeme.yontem.kart",
-};
 
 export async function SiparisAlindiSayfasi() {
   musteriSayfasiniAc();
@@ -78,16 +56,9 @@ export async function SiparisAlindiSayfasi() {
   const iptal = siparis.durum === "iptal";
   // Ödemesi sipariş kurulurken alınmış sipariş (kartla ödeme, kart 0215): tahsilat siparişte durur.
   const { tahsilat } = siparis;
-  const yontemYazisi = havale
-    ? metin("ortak.odemeYontemi.havale")
-    : siparis.odeme_yontemi === "kart"
-      ? metin("ortak.odemeYontemi.kartla")
-      : doldur(metin("vitrin.odeme.yontem.kapida"), {
-          secenek: metin(
-            // Kapıda ödemede seçenek veritabanında zorunludur (siparisler_odeme_yontemi denetimi).
-            secenekAdlari[siparis.kapida_secenegi as KapidaOdemeSecenegi],
-          ),
-        });
+  const yontemYazisi = odemeYontemiYazisi(siparis.odeme_yontemi, siparis.kapida_secenegi);
+  // Üyenin siparişi hesabındadır; üye olmayan numara ve e-postayla takip eder (kart 0238).
+  const uye = siparis.musteri_kimligi !== null;
   const adet = kalemler.reduce((toplamAdet, kalem) => toplamAdet + kalem.adet, 0);
 
   return (
@@ -111,55 +82,32 @@ export async function SiparisAlindiSayfasi() {
         <p className="text-soluk-yazi">
           {doldur(metin("vitrin.siparisAlindi.tesekkur"), { ad: siparis.teslimat.ad })}
         </p>
+        <div className="flex flex-wrap justify-center gap-3 pt-2">
+          <Baglanti
+            href={uye ? hesapSiparisiAdresi(siparis.numara) : siparisTakibiAdresi(siparis.numara)}
+            gorunum="ikincil"
+          >
+            {metin(uye ? "vitrin.siparisAlindi.goruntule" : "vitrin.siparisAlindi.takipEt")}
+          </Baglanti>
+        </div>
       </div>
+      {uye ? null : (
+        <Uyari tur="bilgi" className="mx-auto w-full max-w-metin">
+          {metin("vitrin.siparisAlindi.takipBilgisi")}
+        </Uyari>
+      )}
       <div className="flex flex-col gap-6 masaustu:flex-row masaustu:items-start masaustu:gap-8">
         <div className="flex min-w-0 flex-1 flex-col gap-5">
           {iptal ? (
             <Uyari tur="tehlike">{metin("vitrin.siparisAlindi.iptal")}</Uyari>
           ) : havale ? (
-            <Kart
-              aria-labelledby="havale-basligi"
-              className="flex flex-col gap-4 border-2 border-birincil p-4 tablet:p-6"
-            >
-              <h2 id="havale-basligi" className="font-baslik text-baslik-4 font-baslik-kalinligi">
-                {doldur(metin("vitrin.siparisAlindi.havaleBasligi"), {
-                  zaman:
-                    siparis.odeme_son_zamani === null
-                      ? ""
-                      : bicim.tarihSaat(siparis.odeme_son_zamani),
-                })}
-              </h2>
-              <p>
-                {doldur(metin("vitrin.siparisAlindi.havaleAciklamasi"), {
-                  toplam,
-                  numara: siparis.numara,
-                })}
-              </p>
-              <ul className="flex flex-col gap-2">
-                {ayarlar.bankaHesaplari.map((hesap) => (
-                  <li
-                    key={hesap.kimlik}
-                    className="flex flex-col gap-1 rounded-orta bg-yuzey px-4 py-3"
-                  >
-                    <span className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-kalin">{hesap.banka}</span>
-                      <IbanKopyala iban={hesap.iban} banka={hesap.banka} />
-                    </span>
-                    <span className="text-kucuk text-soluk-yazi">
-                      {doldur(metin("vitrin.siparisAlindi.hesapSahibi"), { sahip: hesap.sahip })}
-                    </span>
-                    <span className="font-kalin break-all">{ibanYazisi(hesap.iban)}</span>
-                  </li>
-                ))}
-              </ul>
-              <Baglanti
-                href={`${vitrinAdresleri.havaleBildirimi}?siparis=${encodeURIComponent(siparis.numara)}`}
-                gorunum="ikincil"
-                className="self-start"
-              >
-                {metin("vitrin.siparisAlindi.bildir")}
-              </Baglanti>
-            </Kart>
+            <HavaleOdemeKarti
+              bicim={bicim}
+              numara={siparis.numara}
+              toplam={siparis.toplam}
+              sonZaman={siparis.odeme_son_zamani}
+              hesaplar={ayarlar.bankaHesaplari}
+            />
           ) : tahsilat !== null ? (
             <Kart aria-labelledby="kart-basligi" className="flex flex-col gap-2 p-4 tablet:p-6">
               <h2 id="kart-basligi" className="font-baslik text-baslik-4 font-baslik-kalinligi">
@@ -210,9 +158,7 @@ export async function SiparisAlindiSayfasi() {
             <dl className="grid gap-x-6 gap-y-2 tablet:grid-cols-4">
               <dt className="text-soluk-yazi">{metin("vitrin.siparisAlindi.teslimatAdresi")}</dt>
               <dd className="wrap-anywhere tablet:col-span-3">
-                {[`${siparis.teslimat.ad} ${siparis.teslimat.soyad}`, siparis.teslimat.telefon]
-                  .filter((parca) => parca !== undefined && parca !== "")
-                  .join(" · ")}
+                {kisiSatiri(siparis.teslimat)}
                 <br />
                 {adresSatiri(bicim, siparis.teslimat.adres)}
               </dd>
@@ -266,25 +212,16 @@ export async function SiparisAlindiSayfasi() {
             ))}
           </ul>
           <SepetOzeti
-            gorunum={{
+            gorunum={siparisTutarlari(bicim, {
               adet,
-              kargo: siparis.kargo_turu as "yok" | "ucretsiz" | "ucretli",
+              kargoTuru: siparis.kargo_turu as "yok" | "ucretsiz" | "ucretli",
               gosterim: siparis.gosterim as "vergi-dahil" | "vergi-haric" | "yok",
-              vergiDokumu: siparis.vergi_dokumu.map((satir) => ({
-                ...(satir.ad === undefined ? {} : { ad: satir.ad }),
-                // Oran milyonda bir birimindedir (vergi/semalar.ts).
-                oran: bicim.yuzde(satir.oran / 10_000),
-                yazili: bicim.para(satir.vergi),
-              })),
-              yazili: {
-                araToplam: bicim.para(siparis.ara_toplam),
-                ...(siparis.kargo_turu === "ucretli"
-                  ? { kargo: bicim.para(siparis.kargo_tutari) }
-                  : {}),
-                vergi: bicim.para(siparis.vergi_toplami),
-                toplam,
-              },
-            }}
+              vergiDokumu: siparis.vergi_dokumu,
+              araToplam: siparis.ara_toplam,
+              kargoTutari: siparis.kargo_tutari,
+              vergiToplami: siparis.vergi_toplami,
+              toplam: siparis.toplam,
+            })}
           />
           <Baglanti href={vitrinAdresleri.anasayfa} gorunum="cerceveli">
             {metin("vitrin.siparisAlindi.alisveriseDevam")}

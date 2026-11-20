@@ -146,6 +146,11 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
     dateStyle: "short",
     timeZone: ayarlar.saatDilimi,
   });
+  // Ayın adıyla tarih (kart 0238): müşterinin siparişleri ("20 Kasım 2026").
+  const uzunTarihBicimi = new Intl.DateTimeFormat(ayarlar.dil, {
+    dateStyle: "long",
+    timeZone: ayarlar.saatDilimi,
+  });
   // Yıl (kart 0108): telif satırı. Saat dilimine göredir, yılbaşı gecesi sunucunun saatine göre kaymaz.
   const yilBicimi = new Intl.DateTimeFormat(ayarlar.dil, {
     year: "numeric",
@@ -237,6 +242,7 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
     yonelmeEki,
     adKarsilastir: (a: string, b: string): number => adSiralayici.compare(a, b),
     tarih: (an: Date): string => tarihBicimi.format(an),
+    uzunTarih: (an: Date): string => uzunTarihBicimi.format(an),
     tarihSaat: (an: Date): string => tarihSaatBicimi.format(an),
     yil: (an: Date): string => yilBicimi.format(an),
     // ISO 3166-1 ülke kodunun sitenin dilindeki adı (kart 0070). Ad dil verisinden (CLDR) gelir, kodda

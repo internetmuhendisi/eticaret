@@ -41,7 +41,7 @@ import { birimStoklari, stokAyirmalari } from "../../moduller/stok/model";
 import { stokServisi } from "../../moduller/stok/servis";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { baglan, type Veritabani, veritabaniAdresi } from "../../veritabani/baglanti";
-import { vitrinAdresleri } from "../../vitrin/adresler";
+import { siparisTakibiAdresi, vitrinAdresleri } from "../../vitrin/adresler";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
 
@@ -325,6 +325,13 @@ test("üye olmayan müşteri formu klavyeyle doldurur, kapıda nakit seçer; sip
   ).toBeVisible();
   await expect(page.getByText(`Ödeme deneme ${ek}`)).toBeVisible();
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  // Üye olmayan siparişini takip sayfasından numarayla izler (kart 0238).
+  await expect(
+    page.getByRole("link", { name: metin("vitrin.siparisAlindi.takipEt") }),
+  ).toHaveAttribute("href", siparisTakibiAdresi(kayit.numara));
+  await expect(
+    page.getByRole("link", { name: metin("vitrin.siparisAlindi.goruntule") }),
+  ).toHaveCount(0);
   await ikiRenkUcGenislik(page, "sipariş alındı (kapıda)");
   expect(hatalar).toEqual([]);
 });
@@ -562,6 +569,13 @@ test("üye müşteri iletişimdeki bağlantıyla girer, döner; e-postası hesab
   await onaylariVer(page);
   await onayla(page);
   await basariBekle(page);
+  // Üyenin siparişi hesabındadır (kart 0238).
+  await expect(
+    page.getByRole("link", { name: metin("vitrin.siparisAlindi.goruntule") }),
+  ).toHaveAttribute("href", new RegExp(`^${vitrinAdresleri.hesapSiparisleri}/[A-Z]+-\\d+$`));
+  await expect(page.getByRole("link", { name: metin("vitrin.siparisAlindi.takipEt") })).toHaveCount(
+    0,
+  );
   expect(await defter()).toEqual([
     { baslik: metin("vitrin.odeme.adresAdiVarsayilan"), adres: "Atatürk Bulvarı No: 10 Daire 3" },
   ]);

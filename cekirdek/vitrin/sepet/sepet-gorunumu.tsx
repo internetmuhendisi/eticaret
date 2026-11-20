@@ -157,21 +157,25 @@ function SepetSatiri({
   );
 }
 
-// Satırın görseli: sepet sayfası, sepet penceresi ve ödeme adımının özeti (kart 0213).
+// Satırın görseli: sepet sayfası, sepet penceresi, ödeme adımının özeti (kart 0213) ve siparişin kalemleri (kart 0238).
+// Görsel yanında adı yazan satırda süslemedir (alt boş); adı yalnız görselde olan yerde (Siparişlerim) alt verilir.
 export function SatirGorseli({
   satir,
   buyukluk,
+  alt = "",
 }: {
-  satir: SepetGorunumuSatiri;
+  satir: Pick<SepetGorunumuSatiri, "gorsel"> & { satilabilir?: boolean };
   buyukluk: string;
+  alt?: string;
 }) {
   return (
     <span
       className={sinif(
         "flex shrink-0 items-center justify-center overflow-hidden rounded-orta bg-yuzey",
         buyukluk,
-        !satir.satilabilir && "opacity-50",
+        satir.satilabilir === false && "opacity-50",
       )}
+      {...(satir.gorsel === undefined && alt !== "" ? { role: "img", "aria-label": alt } : {})}
     >
       {satir.gorsel === undefined ? (
         <Ikon ad="gorsel" className="text-soluk-yazi" />
@@ -181,7 +185,7 @@ export function SatirGorseli({
           src={satir.gorsel.kaynaklar[0]?.adres}
           srcSet={satir.gorsel.kaynaklar.map((k) => `${k.adres} ${k.genislik}w`).join(", ")}
           sizes="5rem"
-          alt=""
+          alt={alt}
           width={satir.gorsel.genislik}
           height={satir.gorsel.yukseklik}
           loading="lazy"

@@ -214,6 +214,18 @@ export const siparisErisimCerezi = {
   saniye: 24 * 60 * 60,
 } as const;
 
+// Üye olmayanın sipariş takibi (kart 0238, karar 0150): numara ve e-posta eşleşince tarayıcıya bir takip anahtarı
+// verilir (veritabanında yalnız özeti durur); sayfa 30 dakika boyunca siparişi bu anahtarla gösterir, sonra yeniden
+// numara ve e-posta ister (taslağın kuralı). Çerez yalnız takip sayfasının yoluna gider.
+export const siparisTakipCerezi = {
+  ad: "siparis-takip",
+  yol: "/siparis-takibi",
+  saniye: 30 * 60,
+} as const;
+
+// Siparişlerim (kart 0238): bir sayfadaki sipariş sayısı (taslak: 10) ve okunan en çok sayfa.
+export const musteriSiparisSinirlari = { sayfaBoyu: 10, enCokSayfa: 100 } as const;
+
 // Sipariş numarasının görünüşü: önek, tire ve sıra numarası ("ORN-1001").
 export const siparisNumarasiKalibi = /^[A-Z]{2,5}-[1-9][0-9]{0,11}$/;
 

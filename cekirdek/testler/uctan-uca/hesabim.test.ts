@@ -29,7 +29,7 @@ import { musteriAdresleri, musteriOnaylari } from "../../moduller/musteri/model"
 import { hesapAc } from "../../moduller/oturum/servis";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { baglan, type Veritabani, veritabaniAdresi } from "../../veritabani/baglanti";
-import { vitrinAdresleri } from "../../vitrin/adresler";
+import { hesapIlkSayfasi, vitrinAdresleri } from "../../vitrin/adresler";
 import { hesapDurumuUcu } from "../../vitrin/hesap-durumu";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
@@ -174,7 +174,7 @@ test("girişsiz müşteri hesabına girmek isteyince girişe gider ve döner; do
   await expect(page).toHaveURL(vitrinAdresleri.anasayfa);
   await page.goto(vitrinAdresleri.giris);
   await girisYap(page, eposta);
-  await expect(page).toHaveURL(vitrinAdresleri.hesapAdresleri);
+  await expect(page).toHaveURL(hesapIlkSayfasi);
   expect(hatalar).toEqual([]);
 });
 
@@ -393,7 +393,7 @@ test("hesap bilgileri: şifre değiştirme ve kampanya izni; taramadan geçer", 
   await expect(page.getByText(metin("vitrin.giris.hataBilgi"))).toBeVisible();
   await alan(page, metin("vitrin.giris.sifre")).fill("yepyeni-bir-sifre-123");
   await alan(page, metin("vitrin.giris.sifre")).press("Enter");
-  await expect(page).toHaveURL(vitrinAdresleri.hesapAdresleri);
+  await expect(page).toHaveURL(hesapIlkSayfasi);
   // Bilerek yanlış şifre: şifre değiştirme 400, eski şifreyle giriş 401 alır (hesap sorusu değil).
   expect(
     hatalar.filter((hata) => !hata.includes("status of 400") && !hata.includes("status of 401")),
@@ -451,7 +451,7 @@ test("favorilerim: hesabın favorisi görünür, üstteki kalp Favorilerim'e gid
   const yan = page.getByRole("dialog");
   await expect(yan.getByText(eposta)).toBeVisible();
   await yan.getByRole("link", { name: metin("vitrin.bolum.ustSatir.hesap") }).click();
-  await expect(page).toHaveURL(vitrinAdresleri.hesapAdresleri);
+  await expect(page).toHaveURL(hesapIlkSayfasi);
 
   // Favori çıkınca boş hâl görünür.
   await favoriServisi(calisanSite()).favoriDegistir(vt, kimlik, urun, false);

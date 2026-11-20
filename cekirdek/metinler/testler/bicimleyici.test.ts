@@ -226,6 +226,7 @@ describe("tarih", () => {
     // UTC'de 28 Ekim 21:30, İstanbul'da 29 Ekim 00:30.
     const an = new Date("2026-10-28T21:30:00Z");
     expect(bicim.tarih(an)).toBe("29.10.2026");
+    expect(bicim.uzunTarih(an)).toBe("29 Ekim 2026");
     expect(bicim.tarihSaat(an)).toBe("29.10.2026 00:30");
   });
 });

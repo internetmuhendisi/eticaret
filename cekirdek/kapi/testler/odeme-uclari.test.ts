@@ -6,6 +6,9 @@
 // - Uydurma robot cevabında, onaysız formda ve tutar taşıyan girdide hiçbir şey yazılmaz (tutar tarayıcıdan gelmez).
 // - Üye olmadan alışveriş kapalıyken herkese açık uç oturum-yok döner; giriş yapmış müşteri yine geçer.
 // - Müşteri ucu oturumsuz istekte oturum-yok döner.
+// - Sipariş takibi (kart 0238): numara (küçük harf, boşluklu) ve e-posta (büyük harf) eşleşince takip çerezi yalnız
+//   takip sayfasının yoluna, 30 dakika; veritabanında özeti. Eşleşmeyen e-posta ile olmayan numara aynı cevabı alır.
+//   Uydurma robot cevabında takip açılmaz; aynı bağlantıdan altıncı istek sınıra takılır.
 import { randomBytes } from "node:crypto";
 import { resolve } from "node:path";
 import { eq } from "drizzle-orm";
@@ -19,13 +22,14 @@ import { odemeYontemiServisi } from "../../moduller/odeme/yontemler.ts";
 import { girisYap, hesapAc } from "../../moduller/oturum/servis.ts";
 import { robotSorusuUret } from "../../moduller/robot-korumasi/servis.ts";
 import { soruyuCoz } from "../../moduller/robot-korumasi/testler/soru-coz.ts";
-import { siparisler } from "../../moduller/siparis/model.ts";
+import { siparisler, siparisTakipErisimleri } from "../../moduller/siparis/model.ts";
 import { erisimOzeti } from "../../moduller/siparis/servis.ts";
 import { stokServisi } from "../../moduller/stok/servis.ts";
 import { urunServisi } from "../../moduller/urun/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
 import { odemeUcu } from "../herkese-acik/odeme.ts";
+import { siparisTakibiUcu } from "../herkese-acik/siparis-takibi.ts";
 import { uyeOdemeUcu } from "../musteri/odeme.ts";
 import { oturumCerezleri } from "../oturum-cerezi.ts";
 
@@ -232,5 +236,78 @@ describe("müşteri ödeme ucu", () => {
     const yanit = await uye(birim, "");
     expect(yanit.status).toBe(401);
     expect(await hataKodu(yanit)).toBe("oturum-yok");
+  });
+});
+
+describe("sipariş takibi ucu", () => {
+  const takip = (govde: unknown, ag = yeniAg()) =>
+    siparisTakibiUcu(istek("herkese-acik/siparis-takibi", govde, { "x-forwarded-for": ag }));
+  const siparisVer = async () => {
+    const govde = await misafirGovdesi(await birimAc());
+    const yanit = await misafir(govde);
+    const { veri } = (await yanit.json()) as { veri: { siparis: string } };
+    return { numara: veri.siparis, eposta: govde.eposta };
+  };
+  const takipSayisi = async () => (await vt.select().from(siparisTakipErisimleri)).length;
+
+  it("numara ve e-posta eşleşince takip çerezi yalnız takip sayfasına yazılır, veritabanında özeti durur", async () => {
+    const { numara, eposta } = await siparisVer();
+    const yanit = await takip({
+      numara: ` ${numara.toLowerCase().replace("-", " - ")} `,
+      eposta: eposta.toUpperCase(),
+      robotCevabi: await robotCevabi(),
+    });
+    expect(yanit.status).toBe(200);
+    expect(yanit.headers.get("cache-control")).toBe("no-store");
+    expect(((await yanit.json()) as { veri: { numara: string } }).veri.numara).toBe(numara);
+    const [cerez = ""] = yanit.headers.getSetCookie();
+    expect(cerez).toMatch(
+      /^siparis-takip=[A-Za-z0-9_-]{43}; Path=\/siparis-takibi; Max-Age=1800; HttpOnly; Secure; SameSite=Lax$/,
+    );
+    const anahtar = cerez.split(";")[0]?.split("=")[1] ?? "";
+    const satirlar = await vt.select().from(siparisTakipErisimleri);
+    expect(satirlar.some((satir) => satir.ozet === erisimOzeti(anahtar))).toBe(true);
+    expect(satirlar.some((satir) => satir.ozet === anahtar)).toBe(false);
+  });
+
+  it("eşleşmeyen e-posta ile olmayan numara aynı cevabı alır, takip açılmaz", async () => {
+    const { numara } = await siparisVer();
+    const once = await takipSayisi();
+    const yanlis = await takip({
+      numara,
+      eposta: "baskasi@ornek.test",
+      robotCevabi: await robotCevabi(),
+    });
+    const olmayan = await takip({
+      numara: "ORN-987654321",
+      eposta: "baskasi@ornek.test",
+      robotCevabi: await robotCevabi(),
+    });
+    expect(yanlis.status).toBe(404);
+    expect(olmayan.status).toBe(404);
+    expect(await yanlis.text()).toBe(await olmayan.text());
+    expect(yanlis.headers.getSetCookie()).toEqual([]);
+    expect(await takipSayisi()).toBe(once);
+  });
+
+  it("uydurma robot cevabında takip açılmaz; aynı bağlantıdan altıncı istek sınıra takılır", async () => {
+    const { numara, eposta } = await siparisVer();
+    const once = await takipSayisi();
+    const robotsuz = await takip({ numara, eposta, robotCevabi: "x" });
+    expect(await hataKodu(robotsuz)).toBe("robot-dogrulamasi");
+    expect(await takipSayisi()).toBe(once);
+    const ag = yeniAg();
+    const durumlar: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      durumlar.push(
+        (
+          await takip(
+            { numara, eposta: "baskasi@ornek.test", robotCevabi: await robotCevabi() },
+            ag,
+          )
+        ).status,
+      );
+    }
+    expect(durumlar).toEqual([404, 404, 404, 404, 404, 429]);
   });
 });

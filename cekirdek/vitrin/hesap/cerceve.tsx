@@ -1,6 +1,7 @@
 // Hesabım çerçevesi (kart 0237, karar 0145, 0149; Canlı Çarşı taslağı siparis-ve-hesap.html): sayfa yolu, hesap menüsü
 // ve sayfanın başlığı. Masaüstünde menü solda yan menüdür, telefonda yatay kayan şerittir (kullanıcı kararı). Seçili
-// sayfa aria-current ile işaretlenir. Siparişlerim kart 0238 ile menüye eklenir.
+// sayfa aria-current ile işaretlenir. Sipariş ayrıntısında menüde Siparişlerim seçilidir, sayfa yoluna numara eklenir
+// ve başlığı ayrıntı kendisi çizer (kart 0238).
 import type { ReactNode } from "react";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import type { IkonAdi } from "../../../bilesenler/ikonlar/sozluk";
@@ -13,10 +14,16 @@ import { metin } from "../../metinler/site-metni";
 import { vitrinAdresleri } from "../adresler";
 import { HesaptanCikis } from "./cikis";
 
-type HesapSayfasi = "adresler" | "favoriler" | "bilgiler";
+type HesapSayfasi = "siparisler" | "adresler" | "favoriler" | "bilgiler";
 
 // Menünün öğeleri, sırasıyla.
 const menu: readonly { sayfa: HesapSayfasi; adres: string; ikon: IkonAdi; ad: MetinAnahtari }[] = [
+  {
+    sayfa: "siparisler",
+    adres: vitrinAdresleri.hesapSiparisleri,
+    ikon: "paket",
+    ad: "vitrin.hesap.siparisler.baslik",
+  },
   {
     sayfa: "adresler",
     adres: vitrinAdresleri.hesapAdresleri,
@@ -47,6 +54,7 @@ export function HesapCercevesi({
   children,
   ek,
   basliksiz = false,
+  sonAdim,
 }: {
   secili: HesapSayfasi;
   eposta: string;
@@ -55,6 +63,8 @@ export function HesapCercevesi({
   basliksiz?: boolean;
   // Başlığın yanındaki eylem (Adreslerim: "Yeni adres ekle").
   ek?: ReactNode;
+  // Sayfa yolunun son adımı (sipariş ayrıntısı: numara ve adresi).
+  sonAdim?: { ad: string; adres: string };
 }) {
   const sayfa = menu.find((oge) => oge.sayfa === secili);
   const baslik = metin(sayfa?.ad ?? "vitrin.hesap.baslik");
@@ -67,6 +77,7 @@ export function HesapCercevesi({
           { ad: metin("vitrin.sayfa.anasayfa"), adres: vitrinAdresleri.anasayfa },
           { ad: metin("vitrin.hesap.baslik"), adres: vitrinAdresleri.hesabim },
           { ad: baslik, adres: sayfa?.adres ?? vitrinAdresleri.hesabim },
+          ...(sonAdim === undefined ? [] : [sonAdim]),
         ]}
       />
       <div className="flex flex-col gap-6 masaustu:flex-row masaustu:items-start masaustu:gap-8">
@@ -84,7 +95,12 @@ export function HesapCercevesi({
               <li key={oge.sayfa} className="shrink-0">
                 <Baglanti
                   href={oge.adres}
-                  {...(oge.sayfa === secili ? { "aria-current": "page" as const } : {})}
+                  {...(oge.sayfa === secili
+                    ? {
+                        "aria-current":
+                          sonAdim === undefined ? ("page" as const) : ("true" as const),
+                      }
+                    : {})}
                   className={sinif(
                     ogeSinifi,
                     "w-full",

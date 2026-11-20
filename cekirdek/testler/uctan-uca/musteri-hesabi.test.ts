@@ -404,9 +404,9 @@ test("Hesabım menüsü klavyeyle açılır, e-postayı gösterir, taramadan ge�
   await page.keyboard.press("Enter");
   const menu = page.getByRole("menu");
   await expect(menu.getByText(eposta, { exact: true })).toBeVisible();
-  // İlk öğe hesabın ilk sayfasıdır (kart 0237); End çıkışa gider.
+  // İlk öğe hesabın ilk sayfasıdır, Siparişlerim (kart 0237, 0238); End çıkışa gider.
   await expect(
-    menu.getByRole("menuitem", { name: metin("vitrin.hesap.adresler.baslik") }),
+    menu.getByRole("menuitem", { name: metin("vitrin.hesap.siparisler.baslik") }),
   ).toBeFocused();
   const cikis = menu.getByRole("menuitem", { name: metin("vitrin.hesap.cikis") });
   await page.keyboard.press("End");

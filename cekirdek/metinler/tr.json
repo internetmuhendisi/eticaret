@@ -1285,9 +1285,23 @@
       "yararlar": {
         "hesabinYokMu": "Hesabınız yok mu?",
         "nedenHesap": "Neden hesap?",
+        "siparis": "Siparişlerinizi ve kargonuzu takip edin",
         "adres": "Adreslerinizi kaydedin, ödemeyi hızlı geçin",
         "favori": "Favorilerinizi her cihazda görün",
         "hesapOlustur": "Hesap oluştur"
+      },
+      "siparisler": {
+        "baslik": "Siparişlerim",
+        "liste": "Siparişler",
+        "urunSayisi": "{sayi} ürün",
+        "ayrinti": "Ayrıntı",
+        "ayrintiEki": "(sipariş {numara})",
+        "iadeEdildi": "{tutar} iade edildi",
+        "bosBaslik": "Henüz siparişiniz yok",
+        "bosAciklama": "Verdiğiniz siparişler burada durumuyla görünür.",
+        "alisveriseBasla": "Alışverişe başla",
+        "uyeOlmadan": "Üye olmadan verdiğiniz siparişler burada görünmez. Onları sipariş numarası ve e-postanızla sipariş takibi sayfasında görebilirsiniz.",
+        "takipSayfasi": "Sipariş takibi"
       }
     },
     "giris": {
@@ -1978,7 +1992,10 @@
       "kartBasligi": "Ödemeniz alındı",
       "kartTekCekim": "Kartınızdan {toplam} tek çekimle alındı.",
       "kartTaksitli": "Kartınızdan {toplam}, {taksit} taksitle alındı.",
-      "kartOdendi": "{yontem} · ödendi"
+      "kartOdendi": "{yontem} · ödendi",
+      "goruntule": "Siparişimi görüntüle",
+      "takipEt": "Siparişimi takip et",
+      "takipBilgisi": "Siparişinizi istediğiniz zaman sipariş takibi sayfasından numara ve e-postanızla görebilirsiniz. Hesap açarsanız sonraki siparişleriniz hesabınızda durur."
     },
     "havaleBildirimi": {
       "baslik": "Havale bildirimi",
@@ -2010,6 +2027,71 @@
         "genel": "Bildirim şu an gönderilemedi. Biraz sonra yeniden deneyin.",
         "bildirimSiniri": "Bu sipariş için yeterince bildirim aldık. Ödemeniz hesabımıza geçince siparişiniz hazırlanır; sorunuz varsa mağazayla iletişime geçin.",
         "hesapBilinmiyor": "Sayfa şu an hazırlanamadı. Sayfayı yenileyip yeniden deneyin."
+      }
+    },
+    "siparis": {
+      "baslik": "Sipariş {numara}",
+      "tarihVeOdeme": "{tarih} · {odeme}",
+      "durumSeridi": "Sipariş durumu",
+      "adim": {
+        "alindi": "Sipariş alındı",
+        "hazirlaniyor": "Hazırlanıyor",
+        "kargoda": "Kargoda",
+        "teslim": "Teslim edildi"
+      },
+      "iptal": "Bu sipariş iptal edildi.",
+      "takipNumarasi": "Takip no: {numara}",
+      "kargoyuTakipEt": "Kargoyu takip et",
+      "yeniSekmede": "(yeni sekmede açılır)",
+      "urunler": "Ürünler",
+      "adetFiyat": "{adet} × {fiyat}",
+      "iadeAdedi": "{adet} adet iade edildi",
+      "yorumYaz": "Yorum yaz",
+      "yorumYazAdi": "Yorum yaz: {urun}",
+      "gecmis": "Sipariş geçmişi",
+      "olay": {
+        "olusturuldu": "Sipariş alındı",
+        "havale-suresi-doldu": "Ödeme süresi dolduğu için sipariş iptal edildi",
+        "havale-bildirildi": "Ödeme bildiriminiz alındı",
+        "havale-onaylandi": "Ödemeniz onaylandı",
+        "hazirlamaya-alindi": "Siparişiniz hazırlanıyor",
+        "kargoya-verildi": "Kargoya verildi",
+        "kargo-duzeltildi": "Kargo bilgisi güncellendi",
+        "teslim-edildi": "Teslim edildi",
+        "iptal": "Sipariş iptal edildi",
+        "iptalIade": "Sipariş iptal edildi, {tutar} iade edildi",
+        "iptalIadeBekliyor": "Sipariş iptal edildi, {tutar} iadesi işleniyor",
+        "iade": "{tutar} iade edildi",
+        "iadeBekliyor": "{tutar} iadesi işleniyor",
+        "magazadanNot": "Mağazadan not"
+      },
+      "iadeKalemi": "{adet} × {urun}",
+      "kargoUcreti": "Kargo ücreti",
+      "tutar": "Tutar",
+      "iadeEdilen": "İade edilen",
+      "eksiTutar": "−{tutar}",
+      "kartlaOdenen": "Kartınızdan ödenen ({taksit} taksit)",
+      "kisiselSilindi": "Bu siparişin ad, adres ve iletişim bilgileri saklama süresi dolduğu için silindi."
+    },
+    "siparisTakibi": {
+      "baslik": "Sipariş takibi",
+      "aciklama": "Sipariş numaranızı ve siparişte kullandığınız e-postayı yazın. Numara sipariş alındı sayfasında yazar.",
+      "numara": "Sipariş numarası",
+      "eposta": "Siparişteki e-posta",
+      "gonder": "Siparişi bul",
+      "gonderiliyor": "Sipariş aranıyor…",
+      "uyeMisiniz": "Üye misiniz?",
+      "girisYapin": "Giriş yapın",
+      "uyeAciklamasi": "Siparişleriniz hesabınızda.",
+      "kisaltma": "Ad, telefon ve açık adres güvenliğiniz için kısaltılmış gösterilir.",
+      "sure": "Güvenliğiniz için bu sayfa {dakika} dakika sonra yeniden numara ve e-posta ister.",
+      "baskaSiparis": "Başka bir sipariş sorgula",
+      "hata": {
+        "numara": "Sipariş numarasını kontrol edin. Numara sipariş alındı sayfasındaki gibi, harf, tire ve rakamdan oluşur.",
+        "eposta": "Siparişte kullandığınız e-postayı yazın.",
+        "bulunamadi": "Bu sipariş numarası ve e-posta ile bir sipariş bulamadık. Numarayı sipariş alındı sayfasındaki gibi yazın ve siparişte kullandığınız e-postayı girin.",
+        "sinir": "Çok fazla deneme yaptınız. Birkaç dakika bekleyip yeniden deneyin.",
+        "genel": "Sipariş şu an aranamadı. Biraz sonra yeniden deneyin."
       }
     }
   },

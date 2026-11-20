@@ -13,6 +13,7 @@ Bölüm: Sipariş ve müşteri hesabı. Önce 0234, 0235 ve 0239 bitmiş olmalı
 - E-posta siparişin değişikliğiyle aynı işlemde kuyruğa girer: değişiklik geri alınırsa e-posta da gitmez; aynı olay için iki e-posta gitmez (`isKimligi`).
 - Üye olmayan müşterinin e-postasında sipariş takibi bağlantısı vardır (numara ve e-posta istenir, bağlantı kendisi siparişi açmaz) ya da 0233'teki karara göre güvenli tek kullanımlık bağlantı.
 - Elle siparişte e-postanın gidip gitmeyeceği panelde seçimdir (kart 0236).
+- Sipariş alındı sayfasında taslaktaki "Sipariş bilgilerini <e-posta> adresine gönderdik." cümlesi bu kartla eklenir (kart 0238'den taşındı, karar 0150): e-posta gitmeden cümle yanlış olurdu. Sipariş e-postasındaki takip bağlantısı `siparisTakibiAdresi` ile kurulur.
 - Kart 0095 bu kartta yapılır: iptal edilen gönderim yakalanmamış hata bırakmaz (kartın bitti sayılır listesi bu kartın listesine eklenir). Bu bölümle gönderilen e-posta sayısı artar.
 - Testler gerçek veritabanı ve yerel posta kutusuyla: her e-postanın doğru olayda bir kez gittiği, geri alınan işlemde gitmediği, içeriğin tutarı ve vergi dökümünü sipariş kaydıyla aynı verdiği, HTML kaçışı, gönderen adresi olmayan sitede gitmediği, iki site. E-postaların taslakla karşılaştırması gerçek posta kutusundaki e-postanın görüntüsüyle, telefon ve bilgisayar genişliğinde. Her yeni denetim bilerek bozularak kırmızıya düşüyor.
 

@@ -342,3 +342,25 @@ export const siparisIadeleri = pgTable(
   ],
 );
 export type SiparisIadesi = typeof siparisIadeleri.$inferSelect;
+
+// Üye olmayanın sipariş takibi (kart 0238, karar 0150): numara ve e-posta eşleşince tarayıcıya verilen anahtarın
+// SHA-256 özeti ve geçerlilik sonu (veritabanının saatiyle, siparisTakipCerezi.saniye kadar). Anahtarın kendisi
+// saklanmaz. Süresi dolan satır yeni takip açılırken silinir.
+//
+// Aranan alanlar: ozet (takip sayfası), tekil indeks; bitis_zamani (süresi dolanların silinmesi), indeksli.
+export const siparisTakipErisimleri = pgTable(
+  "siparis_takip_erisimleri",
+  {
+    kimlik: kimlik(),
+    siparis_kimligi: uuid()
+      .notNull()
+      .references(() => siparisler.kimlik, { onDelete: "restrict" }),
+    ozet: text().notNull(),
+    bitis_zamani: zaman().notNull(),
+    olusturma_zamani: zaman().notNull().defaultNow(),
+  },
+  (tablo) => [
+    uniqueIndex("siparis_takip_erisimleri_ozet").on(tablo.ozet),
+    index("siparis_takip_erisimleri_bitis").on(tablo.bitis_zamani),
+  ],
+);

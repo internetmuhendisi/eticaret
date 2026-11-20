@@ -22,8 +22,9 @@ import type { MetinAnahtari } from "../../../metinler/metin";
 import { vitrinAdresleri } from "../../adresler";
 import { cikisYap, useHesapDurumu } from "../../hesap-durumu";
 
-// Menüdeki hesap sayfaları (Hesabım çerçevesinin menüsüyle aynı sıra; Siparişlerim kart 0238 ile gelir).
+// Menüdeki hesap sayfaları (Hesabım çerçevesinin menüsüyle aynı sıra).
 const hesapSayfalari: readonly { adres: string; ad: MetinAnahtari }[] = [
+  { adres: vitrinAdresleri.hesapSiparisleri, ad: "vitrin.hesap.siparisler.baslik" },
   { adres: vitrinAdresleri.hesapAdresleri, ad: "vitrin.hesap.adresler.baslik" },
   { adres: vitrinAdresleri.hesapFavorileri, ad: "vitrin.favori.baslik" },
   { adres: vitrinAdresleri.hesapBilgileri, ad: "vitrin.hesap.bilgiler.baslik" },

@@ -5,7 +5,7 @@
 // düğmeleri ilgili işlev yazılana kadar görünmez (cekirdek/kayitlar/islevler.ts). Kategori, marka, etiket ve
 // ürün sayfasının iskeleti kart 0135'te açıldı; içeriği kartlar 0136 ve 0138'de gelir.
 import type { AdresliKayitTuru } from "../kayitlar/adres";
-import { siparisErisimCerezi } from "../kayitlar/siparis.ts";
+import { siparisErisimCerezi, siparisTakipCerezi } from "../kayitlar/siparis.ts";
 
 export const vitrinAdresleri = {
   anasayfa: "/",
@@ -23,17 +23,26 @@ export const vitrinAdresleri = {
   siparisAlindi: siparisErisimCerezi.yol,
   // Havale bildirimi (kart 0214).
   havaleBildirimi: "/havale-bildirimi",
+  // Üye olmayanın sipariş takibi (kart 0238): takip çerezi yalnız bu yola gider, adres tek yerde.
+  siparisTakibi: siparisTakipCerezi.yol,
   favoriler: "/favoriler",
   // Hesabım (kart 0237, karar 0149): girişli müşterinin sayfaları. Hesabın açılış sayfası hesapIlkSayfasi'dır.
   hesabim: "/hesabim",
+  hesapSiparisleri: "/hesabim/siparislerim",
   hesapAdresleri: "/hesabim/adreslerim",
   hesapFavorileri: "/hesabim/favorilerim",
   hesapBilgileri: "/hesabim/hesap-bilgileri",
 } as const;
 
-// Hesabın açılış sayfası: girişten sonra ve /hesabim adresinde açılır. Karar 0145'e göre Siparişlerim'dir; Siparişlerim
-// kart 0238 ile gelene kadar Adreslerim'dir.
-export const hesapIlkSayfasi = vitrinAdresleri.hesapAdresleri;
+// Hesabın açılış sayfası: girişten sonra ve /hesabim adresinde açılır. Karar 0145'e göre Siparişlerim'dir (kart 0238).
+export const hesapIlkSayfasi = vitrinAdresleri.hesapSiparisleri;
+
+// Hesaptaki bir siparişin ayrıntısı ve takip sayfasının numaralı adresi (kart 0238). Numara kalıba uyan büyük harfli
+// yazılıştır ("ORN-1001"); takip sayfası numarayı yalnız formu doldurmak için okur.
+export const hesapSiparisiAdresi = (numara: string): string =>
+  `${vitrinAdresleri.hesapSiparisleri}/${encodeURIComponent(numara)}`;
+export const siparisTakibiAdresi = (numara: string): string =>
+  `${vitrinAdresleri.siparisTakibi}?${new URLSearchParams({ siparis: numara })}`;
 
 // Kaydın vitrindeki sayfası, adres adıyla (kart 0135: etiket). Türler cekirdek/kayitlar/adres.ts kaydındadır;
 // eksik ya da fazla tür tür kontrolünde hatadır. Adres adı değişen kaydın eski adresi yenisine kalıcı olarak

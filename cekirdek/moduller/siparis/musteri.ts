@@ -1,0 +1,403 @@
+// Siparişin müşteriye gösterilen hâli (kart 0238, karar 0145, 0150): Siparişlerim, sipariş ayrıntısı ve üye olmayanın
+// sipariş takibi bunu kullanır; iki yol aynı görünüşü çizer. Tutarlar, kalemler ve vergi dökümü siparişin saklanan
+// değerleridir, yeniden hesaplanmaz.
+//
+// Müşteriye girmeyenler: iç notlar, yazanlar (yönetici e-postası, sistem adı), iadenin nedeni ve açıklaması
+// (yöneticinin seçimi), başarısız iade (para dönmedi; mağaza yeniden dener), havale bildiriminin ayrıntısı, ödeme
+// kuruluşunun kimlikleri, erişim ve oturum kimliği.
+//
+// Siparişlerim yalnız hesabın kimliğiyle verilmiş siparişleri gösterir: üye olmadan verilmiş sipariş, aynı e-postayla
+// hesap açılsa da görünmez (kullanıcı kararı, karar 0150; kayıtta e-posta doğrulanmadığı için). Ayrıntı başka
+// müşterinin numarasıyla bulunamadıdır.
+//
+// Takip: numara ve siparişteki e-posta (harf büyüklüğü ayrımsız) eşleşirse 30 dakikalık anahtar verilir; eşleşmezse
+// sipariş yokmuş gibi bulunamadıdır (siparişin var olduğu belli olmaz). Takipte teslimatın adı, soyadı ve telefonu
+// kısaltılır, sokak adresi, posta kodu, fatura ve e-posta görünmez; il ve ilçe görünür (karar 0145).
+import { createHash, randomBytes } from "node:crypto";
+import { and, asc, count, desc, eq, gt, inArray, lte, ne, sql } from "drizzle-orm";
+import { BilinenHata } from "../../kapi/zarf.ts";
+import {
+  musteriSiparisSinirlari,
+  type SiparisDurumu,
+  siparisNumarasiKalibi,
+  siparisTakipCerezi,
+} from "../../kayitlar/siparis.ts";
+import type { Veritabani } from "../../veritabani/baglanti.ts";
+import type { Fatura, Teslimat } from "../odeme/semalar.ts";
+import {
+  type Siparis,
+  type SiparisKalemi,
+  siparisGecmisi,
+  siparisIadeleri,
+  siparisKalemleri,
+  siparisler,
+  siparisNotlari,
+  siparisTakipErisimleri,
+  type Tahsilat,
+} from "./model.ts";
+
+const ozet = (anahtar: string): string => createHash("sha256").update(anahtar).digest("hex");
+const anahtarKalibi = /^[A-Za-z0-9_-]{40,60}$/;
+
+export type MusteriSiparisKalemi = Pick<
+  SiparisKalemi,
+  | "sira"
+  | "birim_kimligi"
+  | "urun_kimligi"
+  | "urun_adi"
+  | "secim"
+  | "adet"
+  | "birim_tutari"
+  | "tutar"
+> & {
+  // Tamamlanan iadelerle geri dönen adet.
+  iadeAdedi: number;
+};
+
+export type MusteriSiparisi = {
+  numara: string;
+  olusturma: Date;
+  durum: SiparisDurumu;
+  odemeYontemi: string;
+  kapidaSecenegi: string | null;
+  gosterim: "vergi-dahil" | "vergi-haric" | "yok";
+  kargoTuru: "yok" | "ucretsiz" | "ucretli";
+  araToplam: number;
+  kargoTutari: number;
+  vergiToplami: number;
+  toplam: number;
+  vergiDokumu: Siparis["vergi_dokumu"];
+  tahsilat: Pick<Tahsilat, "odenen" | "taksit"> | null;
+  odemeSonZamani: Date | null;
+  odemeZamani: Date | null;
+  kargo: {
+    firma: string;
+    takipNumarasi: string | null;
+    takipAdresi: string | null;
+    zaman: Date;
+  } | null;
+  teslimZamani: Date | null;
+  // Takipte kısaltılmış (ad, soyad, telefon), adres yalnız ülke, il ve ilçe.
+  teslimat: Teslimat;
+  // Takipte yoktur.
+  fatura: Fatura | null;
+  eposta: string | null;
+  kalemler: MusteriSiparisKalemi[];
+  // Durum geçmişi, eskiden yeniye: zaman, yeni durum ve neden (cekirdek/kayitlar/siparis.ts).
+  gecmis: { zaman: Date; durum: SiparisDurumu; neden: string }[];
+  // Mağazanın müşteriye notları, eskiden yeniye.
+  notlar: { zaman: Date; metin: string }[];
+  // Bekleyen ve tamamlanan iptal ve iadeler, eskiden yeniye.
+  iadeler: {
+    tur: "iptal" | "iade";
+    durum: "bekliyor" | "tamamlandi";
+    tutar: number;
+    kargoTutari: number;
+    kalemler: { sira: number; adet: number }[];
+    zaman: Date;
+  }[];
+  kisiselVeriSilindi: boolean;
+};
+
+export type MusteriSiparisOzeti = {
+  numara: string;
+  olusturma: Date;
+  durum: SiparisDurumu;
+  odemeYontemi: string;
+  kapidaSecenegi: string | null;
+  toplam: number;
+  adet: number;
+  // Tamamlanan iadelerin toplamı (kuruş); yoksa 0.
+  iadeToplami: number;
+  // İlk dört kalemin birimi ve ürünü (görseller), sırasıyla.
+  kalemler: { birim: string; urun: string; urunAdi: string }[];
+};
+
+// "Deniz Yılmaz" → "D*** Y***": her sözcüğün ilk harfi (kod noktasıyla, emoji ve birleşik harf bölünmez).
+export const adiKisalt = (ad: string): string =>
+  ad
+    .normalize("NFC")
+    .trim()
+    .split(/\s+/u)
+    .filter((sozcuk) => sozcuk !== "")
+    .map((sozcuk) => `${Array.from(sozcuk)[0] ?? ""}***`)
+    .join(" ");
+
+// Telefonun yalnız son iki rakamı görünür: "+905550000012" → "*** *** ** 12".
+export const telefonuKisalt = (telefon: string): string => {
+  const rakamlar = telefon.replace(/\D/g, "");
+  return rakamlar.length < 2 ? "" : `*** *** ** ${rakamlar.slice(-2)}`;
+};
+
+const kisaltilmisTeslimat = (teslimat: Teslimat): Teslimat => ({
+  ad: adiKisalt(teslimat.ad),
+  soyad: adiKisalt(teslimat.soyad),
+  ...(teslimat.telefon === undefined || teslimat.telefon === ""
+    ? {}
+    : { telefon: telefonuKisalt(teslimat.telefon) }),
+  adres: {
+    ulke: teslimat.adres.ulke,
+    adres: "",
+    ...(teslimat.adres.il === undefined ? {} : { il: teslimat.adres.il }),
+    ...(teslimat.adres.ilce === undefined ? {} : { ilce: teslimat.adres.ilce }),
+  },
+});
+
+// Siparişin müşteri hâli (kısaltma takipte uygulanır). Dört sorgu, sipariş başına.
+const musteriHali = async (
+  vt: Veritabani,
+  siparis: Siparis,
+  kisalt: boolean,
+): Promise<MusteriSiparisi> => {
+  const [kalemler, gecmis, notlar, iadeler] = await Promise.all([
+    vt
+      .select()
+      .from(siparisKalemleri)
+      .where(eq(siparisKalemleri.siparis_kimligi, siparis.kimlik))
+      .orderBy(asc(siparisKalemleri.sira)),
+    vt
+      .select({
+        zaman: siparisGecmisi.zaman,
+        durum: siparisGecmisi.sonraki_durum,
+        neden: siparisGecmisi.neden,
+      })
+      .from(siparisGecmisi)
+      .where(eq(siparisGecmisi.siparis_kimligi, siparis.kimlik))
+      .orderBy(asc(siparisGecmisi.zaman), asc(siparisGecmisi.kimlik)),
+    vt
+      .select({ zaman: siparisNotlari.zaman, metin: siparisNotlari.metin })
+      .from(siparisNotlari)
+      .where(
+        and(eq(siparisNotlari.siparis_kimligi, siparis.kimlik), eq(siparisNotlari.tur, "musteri")),
+      )
+      .orderBy(asc(siparisNotlari.zaman), asc(siparisNotlari.kimlik)),
+    vt
+      .select({
+        tur: siparisIadeleri.tur,
+        durum: siparisIadeleri.durum,
+        tutar: siparisIadeleri.tutar,
+        kargoTutari: siparisIadeleri.kargo_tutari,
+        kalemler: siparisIadeleri.kalemler,
+        zaman: siparisIadeleri.olusturma_zamani,
+      })
+      .from(siparisIadeleri)
+      .where(
+        and(
+          eq(siparisIadeleri.siparis_kimligi, siparis.kimlik),
+          ne(siparisIadeleri.durum, "basarisiz"),
+        ),
+      )
+      .orderBy(asc(siparisIadeleri.olusturma_zamani), asc(siparisIadeleri.kimlik)),
+  ]);
+  const iadeAdetleri = new Map<number, number>();
+  for (const iade of iadeler) {
+    if (iade.durum !== "tamamlandi") continue;
+    for (const kalem of iade.kalemler) {
+      iadeAdetleri.set(kalem.sira, (iadeAdetleri.get(kalem.sira) ?? 0) + kalem.adet);
+    }
+  }
+  return {
+    numara: siparis.numara,
+    olusturma: siparis.olusturma_zamani,
+    durum: siparis.durum as SiparisDurumu,
+    odemeYontemi: siparis.odeme_yontemi,
+    kapidaSecenegi: siparis.kapida_secenegi,
+    gosterim: siparis.gosterim as MusteriSiparisi["gosterim"],
+    kargoTuru: siparis.kargo_turu as MusteriSiparisi["kargoTuru"],
+    araToplam: siparis.ara_toplam,
+    kargoTutari: siparis.kargo_tutari,
+    vergiToplami: siparis.vergi_toplami,
+    toplam: siparis.toplam,
+    vergiDokumu: siparis.vergi_dokumu,
+    tahsilat:
+      siparis.tahsilat === null
+        ? null
+        : { odenen: siparis.tahsilat.odenen, taksit: siparis.tahsilat.taksit },
+    odemeSonZamani: siparis.odeme_son_zamani,
+    odemeZamani: siparis.odeme_zamani,
+    kargo:
+      siparis.kargo_firmasi === null || siparis.kargo_zamani === null
+        ? null
+        : {
+            firma: siparis.kargo_firmasi,
+            takipNumarasi: siparis.takip_numarasi,
+            takipAdresi: siparis.takip_adresi,
+            zaman: siparis.kargo_zamani,
+          },
+    teslimZamani: siparis.teslim_zamani,
+    teslimat: kisalt ? kisaltilmisTeslimat(siparis.teslimat) : siparis.teslimat,
+    fatura: kisalt ? null : siparis.fatura,
+    eposta: kisalt || siparis.eposta === "" ? null : siparis.eposta,
+    kalemler: kalemler.map((kalem) => ({
+      sira: kalem.sira,
+      birim_kimligi: kalem.birim_kimligi,
+      urun_kimligi: kalem.urun_kimligi,
+      urun_adi: kalem.urun_adi,
+      secim: kalem.secim,
+      adet: kalem.adet,
+      birim_tutari: kalem.birim_tutari,
+      tutar: kalem.tutar,
+      iadeAdedi: iadeAdetleri.get(kalem.sira) ?? 0,
+    })),
+    gecmis: gecmis.map((satir) => ({ ...satir, durum: satir.durum as SiparisDurumu })),
+    notlar,
+    iadeler: iadeler.map((iade) => ({
+      tur: iade.tur as "iptal" | "iade",
+      durum: iade.durum as "bekliyor" | "tamamlandi",
+      tutar: iade.tutar,
+      kargoTutari: iade.kargoTutari,
+      kalemler: iade.kalemler.map(({ sira, adet }) => ({ sira, adet })),
+      zaman: iade.zaman,
+    })),
+    kisiselVeriSilindi: siparis.kisisel_veri_silinme_zamani !== null,
+  };
+};
+
+export const musteriSiparisleri = () => {
+  // Hesabın siparişleri, en yeni önce, sayfalı. Sınır dışı sayfa en yakın geçerli sayfaya çekilir.
+  const liste = async (
+    vt: Veritabani,
+    musteri: string,
+    istenenSayfa: number,
+  ): Promise<{ siparisler: MusteriSiparisOzeti[]; toplam: number; sayfa: number }> => {
+    const boy = musteriSiparisSinirlari.sayfaBoyu;
+    const [sayi] = await vt
+      .select({ toplam: count() })
+      .from(siparisler)
+      .where(eq(siparisler.musteri_kimligi, musteri));
+    const toplam = sayi?.toplam ?? 0;
+    const sonSayfa = Math.min(
+      Math.max(1, Math.ceil(toplam / boy)),
+      musteriSiparisSinirlari.enCokSayfa,
+    );
+    const sayfa = Math.min(
+      Math.max(1, Number.isSafeInteger(istenenSayfa) ? istenenSayfa : 1),
+      sonSayfa,
+    );
+    if (toplam === 0) return { siparisler: [], toplam, sayfa };
+    const satirlar = await vt
+      .select({
+        kimlik: siparisler.kimlik,
+        numara: siparisler.numara,
+        olusturma: siparisler.olusturma_zamani,
+        durum: siparisler.durum,
+        odemeYontemi: siparisler.odeme_yontemi,
+        kapidaSecenegi: siparisler.kapida_secenegi,
+        toplam: siparisler.toplam,
+      })
+      .from(siparisler)
+      .where(eq(siparisler.musteri_kimligi, musteri))
+      .orderBy(desc(siparisler.olusturma_zamani), desc(siparisler.kimlik))
+      .limit(boy)
+      .offset((sayfa - 1) * boy);
+    const kimlikler = satirlar.map((satir) => satir.kimlik);
+    const [kalemler, iadeler] = await Promise.all([
+      vt
+        .select({
+          siparis: siparisKalemleri.siparis_kimligi,
+          birim: siparisKalemleri.birim_kimligi,
+          urun: siparisKalemleri.urun_kimligi,
+          urunAdi: siparisKalemleri.urun_adi,
+          adet: siparisKalemleri.adet,
+        })
+        .from(siparisKalemleri)
+        .where(inArray(siparisKalemleri.siparis_kimligi, kimlikler))
+        .orderBy(asc(siparisKalemleri.sira)),
+      vt
+        .select({
+          siparis: siparisIadeleri.siparis_kimligi,
+          toplam: sql<number>`sum(${siparisIadeleri.tutar})::bigint`.mapWith(Number),
+        })
+        .from(siparisIadeleri)
+        .where(
+          and(
+            inArray(siparisIadeleri.siparis_kimligi, kimlikler),
+            eq(siparisIadeleri.durum, "tamamlandi"),
+          ),
+        )
+        .groupBy(siparisIadeleri.siparis_kimligi),
+    ]);
+    const iadeHaritasi = new Map(iadeler.map((satir) => [satir.siparis, satir.toplam]));
+    return {
+      toplam,
+      sayfa,
+      siparisler: satirlar.map((satir) => {
+        const kendi = kalemler.filter((kalem) => kalem.siparis === satir.kimlik);
+        return {
+          numara: satir.numara,
+          olusturma: satir.olusturma,
+          durum: satir.durum as SiparisDurumu,
+          odemeYontemi: satir.odemeYontemi,
+          kapidaSecenegi: satir.kapidaSecenegi,
+          toplam: satir.toplam,
+          adet: kendi.reduce((toplamAdet, kalem) => toplamAdet + kalem.adet, 0),
+          iadeToplami: iadeHaritasi.get(satir.kimlik) ?? 0,
+          kalemler: kendi.slice(0, 4).map(({ birim, urun, urunAdi }) => ({ birim, urun, urunAdi })),
+        };
+      }),
+    };
+  };
+
+  // Hesabın bir siparişi; başka müşterinin, üye olmadan verilmiş ya da olmayan numarada null.
+  const ayrinti = async (
+    vt: Veritabani,
+    musteri: string,
+    numara: string,
+  ): Promise<MusteriSiparisi | null> => {
+    if (!siparisNumarasiKalibi.test(numara)) return null;
+    const [siparis] = await vt
+      .select()
+      .from(siparisler)
+      .where(and(eq(siparisler.numara, numara), eq(siparisler.musteri_kimligi, musteri)));
+    return siparis === undefined ? null : musteriHali(vt, siparis, false);
+  };
+
+  // Numara ve e-posta eşleşirse takip anahtarı (çereze yazılır); eşleşmezse bulunamadı. Süresi dolmuş anahtarlar
+  // burada silinir. Kişisel bilgisi silinmiş siparişte e-posta boştur: hiçbir e-postayla eşleşmez.
+  const takipBaslat = async (
+    vt: Veritabani,
+    girdi: { numara: string; eposta: string },
+  ): Promise<{ anahtar: string }> => {
+    const eposta = girdi.eposta.trim().toLowerCase();
+    const [siparis] = await vt
+      .select({ kimlik: siparisler.kimlik, eposta: siparisler.eposta })
+      .from(siparisler)
+      .where(eq(siparisler.numara, girdi.numara));
+    if (siparis === undefined || siparis.eposta === "" || siparis.eposta.toLowerCase() !== eposta) {
+      throw new BilinenHata("bulunamadi");
+    }
+    const anahtar = randomBytes(32).toString("base64url");
+    await vt.transaction(async (islem) => {
+      await islem
+        .delete(siparisTakipErisimleri)
+        .where(lte(siparisTakipErisimleri.bitis_zamani, sql`now()`));
+      await islem.insert(siparisTakipErisimleri).values({
+        siparis_kimligi: siparis.kimlik,
+        ozet: ozet(anahtar),
+        bitis_zamani: sql`now() + make_interval(secs => ${siparisTakipCerezi.saniye})`,
+      });
+    });
+    return { anahtar };
+  };
+
+  // Takip anahtarıyla siparişin kısaltılmış hâli; anahtar yoksa, bozuksa ya da süresi dolduysa null.
+  const takipleOku = async (
+    vt: Veritabani,
+    anahtar: string | undefined,
+  ): Promise<MusteriSiparisi | null> => {
+    if (anahtar === undefined || !anahtarKalibi.test(anahtar)) return null;
+    const [satir] = await vt
+      .select({ siparis: siparisler })
+      .from(siparisTakipErisimleri)
+      .innerJoin(siparisler, eq(siparisler.kimlik, siparisTakipErisimleri.siparis_kimligi))
+      .where(
+        and(
+          eq(siparisTakipErisimleri.ozet, ozet(anahtar)),
+          gt(siparisTakipErisimleri.bitis_zamani, sql`now()`),
+        ),
+      );
+    return satir === undefined ? null : musteriHali(vt, satir.siparis, true);
+  };
+
+  return { liste, ayrinti, takipBaslat, takipleOku };
+};
