@@ -588,6 +588,20 @@ test("üye müşteri iletişimdeki bağlantıyla girer, döner; e-postası hesab
   await expect(alan(page, metin("vitrin.odeme.adres"))).toHaveValue("");
   await expect(kaydet).not.toBeChecked();
   await ikiRenkUcGenislik(page, "kayıtlı adresli ödeme");
+  // Kayıtlı adres yeniden seçilince alanlar dolar; alan elle değişince seçim "Yeni adres"e geçer, alanlar kalır,
+  // "Adreslerime kaydet" görünür (bağımsız kontrolün bulgusu).
+  const ev = kayitli.getByRole("radio", {
+    name: new RegExp(metin("vitrin.odeme.adresAdiVarsayilan")),
+  });
+  await ev.focus();
+  await page.keyboard.press("Space");
+  await expect(alan(page, metin("vitrin.odeme.ad"))).toHaveValue("Deniz");
+  await expect(kaydet).toHaveCount(0);
+  await alan(page, metin("vitrin.odeme.adres")).fill("Değişen Sokak No: 7");
+  await expect(yeni).toBeChecked();
+  await expect(alan(page, metin("vitrin.odeme.ad"))).toHaveValue("Deniz");
+  await expect(alan(page, metin("vitrin.odeme.adres"))).toHaveValue("Değişen Sokak No: 7");
+  await expect(kaydet).not.toBeChecked();
 });
 
 test("üye olmadan alışveriş kapalıyken girişsiz müşteri girişe yönlenir", async ({ page }) => {

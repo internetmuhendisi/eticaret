@@ -18,10 +18,13 @@ import { expect, type Page, test } from "@playwright/test";
 import { and, eq } from "drizzle-orm";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri";
+import { musteriAdresiSinirlari } from "../../kayitlar/musteri-adresleri";
 import { metin } from "../../metinler/site-metni";
 import { doldur } from "../../moduller/eposta/sablon";
 import { favoriServisi } from "../../moduller/favori/servis";
 import { calisanSiteninFiyatServisi } from "../../moduller/fiyat/servis";
+import { adresServisi } from "../../moduller/musteri/adres";
+import { adresFormuSemasi } from "../../moduller/musteri/adres-semalari";
 import { musteriAdresleri, musteriOnaylari } from "../../moduller/musteri/model";
 import { hesapAc } from "../../moduller/oturum/servis";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
@@ -141,8 +144,12 @@ const listedenSec = async (page: Page, etiket: string, deger: string, yazilan = 
   await expect(tetikleyici).toContainText(deger);
 };
 
+// Adres kartları (başlığı olan öğeler); listenin sonundaki "Yeni adres ekle" sayılmaz.
 const kartlar = (page: Page) =>
-  page.getByRole("list", { name: metin("vitrin.hesap.adresler.liste") }).getByRole("listitem");
+  page
+    .getByRole("list", { name: metin("vitrin.hesap.adresler.liste") })
+    .getByRole("listitem")
+    .filter({ has: page.getByRole("heading") });
 
 test("girişsiz müşteri hesabına girmek isteyince girişe gider ve döner; doğrudan girişte hesabına gider", async ({
   page,
@@ -235,6 +242,12 @@ test("adres defteri klavyeyle: ekleme, hata, varsayılan, düzenleme ve silme; t
   });
   await varsayilanYap.focus();
   await page.keyboard.press("Enter");
+  // Düğme kalktı, kart başa taşındı: odak kartın "Düzenle"sine geçer (bağımsız kontrolün bulgusu).
+  await expect(
+    page.getByRole("button", {
+      name: doldur(metin("vitrin.hesap.adresler.duzenleEtiket"), { baslik: "İş" }),
+    }),
+  ).toBeFocused();
   await expect(kartlar(page).first()).toContainText("İş");
   await expect(kartlar(page).first()).toContainText(metin("vitrin.hesap.adresler.varsayilanIkisi"));
   // Eklemenin ve varsayılanın bildirimleri üst üste duruyor (kart 0217).
@@ -276,6 +289,57 @@ test("adres defteri klavyeyle: ekleme, hata, varsayılan, düzenleme ve silme; t
     .where(eq(musteriAdresleri.musteri_kimligi, kimlik));
   expect(satirlar).toEqual([{ baslik: "Annemler" }]);
   expect(hatalar).toEqual([]);
+});
+
+test("sınıra ulaşan eklemede 'Yeni adres ekle' kalkar, odak sayaca geçer", async ({ page }) => {
+  const { eposta, kimlik } = await musteriAc();
+  const servis = adresServisi(calisanSite());
+  for (let sira = 1; sira < musteriAdresiSinirlari.enCok; sira += 1) {
+    await servis.adresEkle(
+      vt,
+      kimlik,
+      adresFormuSemasi.parse({
+        baslik: `A${sira}`,
+        teslimat: {
+          ad: "Deniz",
+          soyad: "Yılmaz",
+          telefon: "0555 000 00 00",
+          adres: {
+            ulke: "TR",
+            il: "TR-06",
+            ilce: "TR-06-007",
+            adres: `No: ${sira}`,
+            postaKodu: "06420",
+          },
+        },
+        varsayilanTeslimat: false,
+        varsayilanFatura: false,
+      }),
+    );
+  }
+  await hesapSayfasiniAc(page, vitrinAdresleri.hesapAdresleri, eposta);
+  await page.getByRole("button", { name: metin("vitrin.hesap.adresler.ekle") }).click();
+  await alan(page, metin("vitrin.hesap.adresler.baslikAlani")).fill("Son");
+  await alan(page, metin("vitrin.odeme.ad")).fill("Deniz");
+  await alan(page, metin("vitrin.odeme.soyad")).fill("Yılmaz");
+  await alan(page, metin("vitrin.odeme.telefon")).fill("0555 000 00 00");
+  await listedenSec(page, metin("vitrin.odeme.il"), "Ankara");
+  await listedenSec(page, metin("vitrin.odeme.ilce"), "Altındağ", "Alt");
+  await alan(page, metin("vitrin.odeme.adres")).fill("Son No: 20");
+  await alan(page, metin("vitrin.odeme.postaKodu")).fill("06420");
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: metin("vitrin.hesap.adresler.kaydet") })
+    .click();
+  await expect(kartlar(page)).toHaveCount(musteriAdresiSinirlari.enCok);
+  await expect(page.getByRole("button", { name: metin("vitrin.hesap.adresler.ekle") })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.getByText(
+      doldur(metin("vitrin.hesap.adresler.sinir"), { sinir: String(musteriAdresiSinirlari.enCok) }),
+    ),
+  ).toBeFocused();
 });
 
 test("hesap bilgileri: şifre değiştirme ve kampanya izni; taramadan geçer", async ({ page }) => {

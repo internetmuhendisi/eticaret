@@ -502,6 +502,12 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
     };
   }, [hesap.tur, veri.ulkeler, teslimatiDoldur]);
 
+  // Kayıtlı adres seçiliyken alanlar elle değişince seçim "Yeni adres"e geçer, alanlar kalır, "Adreslerime kaydet"
+  // görünür: müşteri düzenlediği adresi kayıtlı sanmasın (bağımsız kontrolün bulgusu).
+  const duzenlendi = () => {
+    if (secilenAdres !== undefined && secilenAdres !== yeniAdres) setSecilenAdres(yeniAdres);
+  };
+
   // Kayıtlı adreslerden seçim: adres alanları doldurur; "yeni" alanları boşaltır (kart 0237).
   const kayitliSec = (deger: string) => {
     setSecilenAdres(deger);
@@ -975,6 +981,7 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
             <div key={kisi.surum} className="grid grid-cols-1 gap-4 tablet:grid-cols-2">
               <MetinAlani
                 ad="bilgiler.teslimat.ad"
+                onDegisti={duzenlendi}
                 etiket={metin("vitrin.odeme.ad")}
                 autoComplete="given-name"
                 {...(kisi.surum === 0 ? {} : { varsayilan: kisi.ad })}
@@ -983,6 +990,7 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
               />
               <MetinAlani
                 ad="bilgiler.teslimat.soyad"
+                onDegisti={duzenlendi}
                 etiket={metin("vitrin.odeme.soyad")}
                 autoComplete="family-name"
                 {...(kisi.surum === 0 ? {} : { varsayilan: kisi.soyad })}
@@ -992,6 +1000,7 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
               <div className="tablet:col-span-2">
                 <MetinAlani
                   ad="bilgiler.teslimat.telefon"
+                  onDegisti={duzenlendi}
                   etiket={metin(
                     veri.telefonZorunlu
                       ? "vitrin.odeme.telefon"
@@ -1009,7 +1018,10 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
             <AdresAlanlari
               onEk="bilgiler.teslimat.adres"
               adres={teslimat}
-              degistir={setTeslimat}
+              degistir={(yeni) => {
+                setTeslimat(yeni);
+                duzenlendi();
+              }}
               ulkeler={veri.ulkeler}
               hatalar={hatalar}
               kimlikler={kimlikler}

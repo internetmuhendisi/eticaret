@@ -190,6 +190,37 @@ describe("şifre değiştirme", () => {
     expect(await girisYap(vt, "musteri", { eposta, sifre: gecen }, sure)).not.toBeNull();
   });
 
+  it("açık duran şifre değişikliğinin arkasındaki değişiklik kilitte bekler ve 'şifre yanlış' alır", async () => {
+    const { kimlik } = await musteriAc();
+    let ikinci: Promise<unknown> | undefined;
+    await vt.transaction(async (islem) => {
+      // Birinci değişiklik şifre doğrulandıktan sonra hesabı paylaşımlı kilitlemiş, henüz yazmamış hâlde durur.
+      await islem
+        .select({ kimlik: musteriler.kimlik })
+        .from(musteriler)
+        .where(eq(musteriler.kimlik, kimlik))
+        .for("share");
+      ikinci = hatasi(
+        musteriSifreDegistir(
+          vt,
+          kimlik,
+          { mevcutSifre: sifre, yeniSifre },
+          `test-sira-${randomUUID()}`,
+          sure,
+        ),
+      );
+      await kilitBekleyeniGor(vt);
+      await islem
+        .update(musteriler)
+        .set({ sifre_ozeti: "baska-bir-ozet" })
+        .where(eq(musteriler.kimlik, kimlik));
+    });
+    expect(await ikinci).toEqual({
+      kod: "dogrulama",
+      ayrinti: [{ alan: "mevcutSifre", kod: "sifre-yanlis" }],
+    });
+  });
+
   it("yanlış denemeler girişin deneme sınırına sayılır", async () => {
     const { kimlik } = await musteriAc();
     const baglanti = `test-sinir-${randomUUID()}`;

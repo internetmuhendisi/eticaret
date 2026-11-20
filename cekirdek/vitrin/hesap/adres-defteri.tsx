@@ -296,6 +296,10 @@ const varsayilanMetni = (adres: KayitliAdres): MetinAnahtari | undefined =>
 // Silmeden sonra odağın gideceği düğme ("Yeni adres ekle": boş hâlde ya da ızgaranın sonunda; sınırdayken yoktur).
 const ekleKimligi = "adres-ekle";
 
+// Sayaç yazısı: sınıra ulaşınca odak buraya geçer.
+const sayacKimligi = "adres-sayisi";
+const duzenleKimligi = (adres: KayitliAdres) => `adres-duzenle-${adres.kimlik}`;
+
 // Kartın düğmeleri kenarlıdır (taslak).
 const kartDugmesi = "border border-kenar px-3";
 
@@ -305,6 +309,8 @@ export function AdresDefteri({ veri }: { veri: AdresDefteriVerisi }) {
   // Açık form: yeni adres ya da düzenlenen adres.
   const [form, setForm] = useState<{ duzenlenen: KayitliAdres | undefined } | null>(null);
   const [silinecek, setSilinecek] = useState<KayitliAdres | null>(null);
+  // Pencere kapanınca odağın gideceği öğe: açan öğe kalktıysa (sınıra ulaşınca "Yeni adres ekle") bu verilir.
+  const kapanisOdagi = useRef<string | null>(null);
 
   const adlar = ulkeVerisindenAdlar(veri.ulkeler);
   const satir = (adres: KayitliAdres) => adresSatiri(adres.teslimat.adres, adlar);
@@ -321,6 +327,9 @@ export function AdresDefteri({ veri }: { veri: AdresDefteriVerisi }) {
           "basari",
           doldur(metin("vitrin.hesap.adresler.varsayilanOldu"), { baslik: adres.baslik }),
         );
+        // "Varsayılan yap" düğmesi kalktı, kart başa taşındı: odak kartın "Düzenle"sine geçer (bağımsız kontrolün
+        // bulgusu).
+        requestAnimationFrame(() => document.getElementById(duzenleKimligi(adres))?.focus());
         return;
       }
       bildirimGoster("tehlike", metin(genelHataMetinleri[genelHataSec(cevap.durum, cevap.zarf)]));
@@ -399,6 +408,7 @@ export function AdresDefteri({ veri }: { veri: AdresDefteriVerisi }) {
                     </p>
                     <div className="mt-auto flex flex-wrap gap-1">
                       <Dugme
+                        id={duzenleKimligi(adres)}
                         tur="sade"
                         className={kartDugmesi}
                         aria-label={doldur(metin("vitrin.hesap.adresler.duzenleEtiket"), {
@@ -454,7 +464,7 @@ export function AdresDefteri({ veri }: { veri: AdresDefteriVerisi }) {
             )}
           </ul>
           <div className="flex flex-wrap items-center gap-3">
-            <p className="text-kucuk text-soluk-yazi">
+            <p id={sayacKimligi} tabIndex={-1} className="text-kucuk text-soluk-yazi">
               {doldur(
                 metin(sinirda ? "vitrin.hesap.adresler.sinir" : "vitrin.hesap.adresler.sayi"),
                 { sayi: String(adresler.length), sinir: String(veri.sinir) },
@@ -464,7 +474,17 @@ export function AdresDefteri({ veri }: { veri: AdresDefteriVerisi }) {
         </>
       )}
       <Pencere open={form !== null} onOpenChange={(acik) => (acik ? undefined : setForm(null))}>
-        <PencereIcerigi kapatEtiketi={metin("ortak.parca.kapat")} genislik="orta">
+        <PencereIcerigi
+          kapatEtiketi={metin("ortak.parca.kapat")}
+          genislik="orta"
+          onCloseAutoFocus={(olay) => {
+            const hedef = kapanisOdagi.current;
+            kapanisOdagi.current = null;
+            if (hedef === null) return;
+            olay.preventDefault();
+            document.getElementById(hedef)?.focus();
+          }}
+        >
           <PencereUstu>
             <PencereBasligi>
               {metin(
@@ -482,6 +502,8 @@ export function AdresDefteri({ veri }: { veri: AdresDefteriVerisi }) {
               ilkAdres={adresler.length === 0}
               onKaydedildi={(yeniler) => {
                 setAdresler(yeniler);
+                // Sınıra ulaşan eklemede "Yeni adres ekle" kalkar: odak sayaca geçer (bağımsız kontrolün bulgusu).
+                if (yeniler.length >= veri.sinir) kapanisOdagi.current = sayacKimligi;
                 bildirimGoster(
                   "basari",
                   metin(
