@@ -4,6 +4,8 @@
 // ve geçiş tetikleyicisi (siparis_durum_gecisi) bu listelerle aynıdır, bunu
 // cekirdek/moduller/siparis/testler/servis.test.ts ve durum.test.ts denetler.
 
+import type { EpostaSablonu } from "./eposta.ts";
+
 // Sipariş durumları ve geçişleri (karar 0145). Tek durum tanımıdır: panel, e-posta ve rapor bunu kullanır.
 // - odeme-bekleniyor: havale ve kapıda ödemede sipariş bu durumla kurulur. Havalede ödeme onaylanınca, kapıda
 //   ödemede mağaza sahibi hazırlamaya alınca hazırlanıyor olur.
@@ -70,6 +72,30 @@ export const siparisGecmisiNedenleri = [
   "musteri-iptali",
 ] as const;
 export type SiparisGecmisiNedeni = (typeof siparisGecmisiNedenleri)[number];
+
+// Müşteriye giden sipariş e-postaları (kart 0240, karar 0153): geçmişin her nedeni ya bir e-posta gönderir ya da
+// göndermez (null). E-posta geçmiş satırıyla aynı işlemde yazılır, anahtarı satırın kimliğidir: bir olay bir e-posta.
+// "iade": iadeden sonra sipariş "iade edildi"yse tam iade, "kısmi iade"yse kısmi iade e-postası. Elle siparişte
+// e-posta paneldeki seçimdir (kart 0236). Müşteriye not geçmişe yazılmaz, e-postası notun kimliğiyle gider.
+// Havale bildirimi, hazırlamaya alma ve kargo düzeltmesi müşteriye e-posta göndermez (havale bildirimi yöneticiye
+// gider, kart 0241).
+export const siparisGecmisiEpostalari = {
+  olusturuldu: "siparis-alindi",
+  "panelden-olusturuldu": "siparis-alindi",
+  "havale-suresi-doldu": "siparis-iptali",
+  "havale-bildirildi": null,
+  "havale-onaylandi": "havale-onaylandi",
+  "hazirlamaya-alindi": null,
+  "kargoya-verildi": "kargoya-verildi",
+  "kargo-duzeltildi": null,
+  "teslim-edildi": "teslim-edildi",
+  "yonetici-iptali": "siparis-iptali",
+  "iade-yapildi": "iade",
+  "iade-talebi-alindi": "iade-talebi-alindi",
+  "iade-talebi-onaylandi": "iade-talebi-onaylandi",
+  "iade-talebi-reddedildi": "iade-talebi-reddedildi",
+  "musteri-iptali": "siparis-iptali",
+} as const satisfies Record<SiparisGecmisiNedeni, EpostaSablonu | "iade" | null>;
 
 // Panelin sipariş işlemleri (kart 0234). Her işlem tek geçiştir; yontem verilmişse yalnız o ödeme yöntemindeki
 // siparişte yapılır. odeme: işlem ödemenin alındığı andır (havalede onay, kapıda ödemede teslim). izin: işlemi

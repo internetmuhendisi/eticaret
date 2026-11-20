@@ -16,6 +16,19 @@ export const epostaSablonlari = [
   "sifre-degisti",
   // Stoğa gelince haber ver eklentisi (kart 0144, karar 0117).
   "stok-bildirimi",
+  // Müşteriye giden sipariş e-postaları (kart 0240, karar 0153). Hangi olayın hangisini gönderdiği
+  // cekirdek/kayitlar/siparis.ts: siparisGecmisiEpostalari.
+  "siparis-alindi",
+  "havale-onaylandi",
+  "kargoya-verildi",
+  "teslim-edildi",
+  "siparis-iptali",
+  "siparis-iadesi",
+  "siparis-kismi-iadesi",
+  "musteriye-not",
+  "iade-talebi-alindi",
+  "iade-talebi-onaylandi",
+  "iade-talebi-reddedildi",
 ] as const;
 export type EpostaSablonu = (typeof epostaSablonlari)[number];
 

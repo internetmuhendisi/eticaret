@@ -187,6 +187,7 @@ export const iadeServisi = (site: Site) => {
             ? "musteri-iptali"
             : "yonetici-iptali",
       kim,
+      eposta: { iade: iade.kimlik },
     });
     await degisikligiKaydet(islem, {
       kim,

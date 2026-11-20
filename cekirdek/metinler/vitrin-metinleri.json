@@ -836,6 +836,7 @@
         "baslik": "Siparişiniz alındı",
         "numara": "Sipariş no: {numara}",
         "tesekkur": "Teşekkür ederiz, {ad}. Sipariş numaranızı not edin.",
+        "tesekkurEposta": "Teşekkür ederiz, {ad}. Sipariş bilgilerini {eposta} adresine gönderdik.",
         "iptal": "Bu sipariş ödeme süresi içinde ödenmediği için iptal edildi.",
         "havaleBasligi": "Ödemenizi {zaman} tarihine kadar yapın",
         "havaleAciklamasi": "Aşağıdaki hesaplardan birine {toplam} gönderin. Açıklamaya sipariş numaranızı yazın: {numara}. Bu süre içinde ödenmeyen sipariş iptal olur.",

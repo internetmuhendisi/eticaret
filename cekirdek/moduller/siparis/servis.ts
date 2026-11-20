@@ -127,6 +127,12 @@ export const siparisServisi = (site: Site) => {
       tahsilat?: Tahsilat;
       // Panelden elle sipariş (kart 0236): geçmişe ve değişiklik kaydına siparişi giren yönetici yazılır.
       panel?: { yonetici: string };
+      // Sipariş e-postası (kart 0240): havalede mağazanın banka hesapları e-postaya yazılır. Elle siparişte
+      // e-posta paneldeki seçimdir (epostaGonder: false ise gitmez).
+      eposta?: {
+        bankaHesaplari?: readonly { banka: string; sahip: string; iban: string }[];
+        gonder?: boolean;
+      };
     },
   ): Promise<KurulanSiparis> => {
     const { oturum, hesap, odeme } = girdi;
@@ -245,6 +251,12 @@ export const siparisServisi = (site: Site) => {
       sonraki: durum,
       neden: girdi.panel === undefined ? "olusturuldu" : "panelden-olusturuldu",
       kim,
+      eposta:
+        girdi.eposta?.gonder === false
+          ? false
+          : havale && girdi.eposta?.bankaHesaplari !== undefined
+            ? { bankaHesaplari: girdi.eposta.bankaHesaplari }
+            : {},
     });
     if (girdi.panel !== undefined) {
       await degisikligiKaydet(islem, {

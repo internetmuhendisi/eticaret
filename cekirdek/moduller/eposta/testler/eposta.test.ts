@@ -3,13 +3,13 @@ import { createHash, randomBytes } from "node:crypto";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { type AddressInfo, createServer, type Socket } from "node:net";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { calistiriciKur } from "../../../arka-plan-isleri/calistirici.ts";
 import { isAl } from "../../../arka-plan-isleri/kuyruk.ts";
 import { arkaPlanIsleri } from "../../../arka-plan-isleri/model.ts";
-import type { Site } from "../../../ayar-semasi/site-klasoru.ts";
+import { type Site, siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
 import { hataIzlemeAraciniBagla, type IzlenenHata } from "../../../izleme/hata-katmani.ts";
 import { isDurumu } from "../../../kayitlar/arka-plan.ts";
 import { epostaAyari, epostaDurumu } from "../../../kayitlar/eposta.ts";
@@ -29,13 +29,22 @@ let deneme: DenemeSitesi;
 let vt: Veritabani;
 let izlenenler: IzlenenHata[];
 
-const site = (ayarlar: Partial<Site["ayarlar"]> = {}) =>
-  ({
-    kimlik: { gorunenAd: "Deneme <Mağaza>" },
-    ayarlar: { dil: "tr", epostaGonderenAdresi: "gonderen@ornek.test", ...ayarlar },
-    // Ad mağaza sahibinin ayarından gelir (kart 0071): kimliktekinden farklı ki kimlikten okunursa yakalansın.
-    baslangic: { magazaAdi: "Ayardaki <Mağaza>" },
-  }) as unknown as Site;
+// Örnek site klasörü (tema, biçim ayarları): e-posta sitenin temasıyla çizilir (kart 0240).
+const ornekSite = siteKlasorunuOku(
+  resolve(import.meta.dirname, "../../../ayar-semasi/testler/ornek-siteler/vergi-dolu"),
+);
+const site = (ayarlar: Partial<Site["ayarlar"]> = {}): Site => ({
+  ...ornekSite,
+  kimlik: { ...ornekSite.kimlik, gorunenAd: "Deneme <Mağaza>", adresler: {} },
+  ayarlar: {
+    ...ornekSite.ayarlar,
+    dil: "tr",
+    epostaGonderenAdresi: "gonderen@ornek.test",
+    ...ayarlar,
+  },
+  // Ad mağaza sahibinin ayarından gelir (kart 0071): kimliktekinden farklı ki kimlikten okunursa yakalansın.
+  baslangic: { ...ornekSite.baslangic, magazaAdi: "Ayardaki <Mağaza>" },
+});
 
 const { POSTA_KUTUSU_PORTU: kutuPortu, POSTA_SMTP_PORTU: smtpPortu } = process.env;
 const kutu = `http://127.0.0.1:${kutuPortu}`;
@@ -231,7 +240,6 @@ describe("logo (kart 0073)", () => {
   const logoluSite = () =>
     ({
       ...site(),
-      kimlik: { gorunenAd: "Deneme <Mağaza>", adresler: {} },
       markaLogosu: {
         yol: join(
           import.meta.dirname,
@@ -315,7 +323,7 @@ describe("gönderim", () => {
     const ham = await (await fetch(`${kutu}/api/v1/message/${iletiler[0]?.ID}/raw`)).text();
     expect(ham).toContain("Content-Type: text/plain");
     expect(ham).toContain("Content-Type: text/html");
-    expect(ileti.HTML).toContain("<h1>");
+    expect(ileti.HTML).toContain("<h1 ");
     expect(ileti.MessageID).toContain(kimlik);
 
     const satir = await kayit(kimlik);

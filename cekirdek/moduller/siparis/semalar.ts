@@ -200,6 +200,8 @@ export const elleSiparisSemasi = z.strictObject({
     })
     .superRefine(faturaVergiDenetimi),
   gorulenToplam: z.int().min(0).optional(),
+  // Müşteriye sipariş e-postası gitsin mi (kart 0240, kullanıcı kararı: panelde varsayılan işaretli).
+  musteriyeEposta: z.boolean(),
 });
 export type ElleSiparisGirdisi = z.output<typeof elleSiparisSemasi>;
 

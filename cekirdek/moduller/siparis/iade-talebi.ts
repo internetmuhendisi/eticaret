@@ -187,6 +187,7 @@ export const iadeTalebiServisi = (site: Site) => {
         sonraki: durum,
         neden: "iade-talebi-alindi",
         kim: yapan(sahip),
+        eposta: { talep: talep.kimlik },
       });
       return { numara: girdi.numara, talep: talep.kimlik };
     });
@@ -201,8 +202,10 @@ export const iadeTalebiServisi = (site: Site) => {
       | { karar: "onayla" }
       | { karar: "reddet"; retAciklamasi: string }
     ),
-  ): Promise<{ numara: string; durum: IadeTalebiDurumu }> =>
-    vt.transaction(async (islem) => {
+  ): Promise<{ numara: string; durum: IadeTalebiDurumu }> => {
+    // Onay e-postası iade kargosunu kimin ödediğini söyler (kart 0240); ayar işlemden önce okunur.
+    const { iadeKargosu } = await siteninMagazaAyarlari(vt, site);
+    return vt.transaction(async (islem) => {
       const [siparis] = await islem
         .select({ kimlik: siparisler.kimlik, durum: siparisler.durum })
         .from(siparisler)
@@ -247,6 +250,7 @@ export const iadeTalebiServisi = (site: Site) => {
         sonraki: durum,
         neden: girdi.karar === "onayla" ? "iade-talebi-onaylandi" : "iade-talebi-reddedildi",
         kim,
+        eposta: { talep: girdi.talep, iadeKargosu },
       });
       await degisikligiKaydet(islem, {
         kim,
@@ -260,6 +264,7 @@ export const iadeTalebiServisi = (site: Site) => {
       });
       return { numara: girdi.numara, durum: yeni };
     });
+  };
 
   // Müşterinin kendi iptali: ayar ve ödeme kuralı iadeYap'ta siparişin kilidi altında denetlenir. Kartla ödenmişse
   // para kuruluştan döner (iade "bekliyor" kalabilir). Bütün ürünler stoğa döner (taslak).

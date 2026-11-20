@@ -17,6 +17,7 @@ import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { siparisErisimCerezi } from "../../kayitlar/siparis";
 import { doldur } from "../../metinler/doldur";
 import { metin, siteninBicimleyicisi } from "../../metinler/site-metni";
+import { epostaGidebilirMi } from "../../moduller/eposta/gonderici";
 import { sayfaBasligi } from "../../moduller/gorunurluk/sayfa-bilgisi";
 import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
 import { siparisServisi } from "../../moduller/siparis/servis";
@@ -80,7 +81,13 @@ export async function SiparisAlindiSayfasi() {
           {doldur(metin("vitrin.siparisAlindi.numara"), { numara: siparis.numara })}
         </p>
         <p className="text-soluk-yazi">
-          {doldur(metin("vitrin.siparisAlindi.tesekkur"), { ad: siparis.teslimat.ad })}
+          {/* E-posta gerçekten gidiyorsa söylenir (kart 0240, karar 0150): gönderici ya da gönderen adresi yoksa gitmez. */}
+          {epostaGidebilirMi(site.ayarlar)
+            ? doldur(metin("vitrin.siparisAlindi.tesekkurEposta"), {
+                ad: siparis.teslimat.ad,
+                eposta: siparis.eposta,
+              })
+            : doldur(metin("vitrin.siparisAlindi.tesekkur"), { ad: siparis.teslimat.ad })}
         </p>
         <div className="flex flex-wrap justify-center gap-3 pt-2">
           <Baglanti

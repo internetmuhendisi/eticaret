@@ -121,6 +121,7 @@ const govde = (birim: string, yontem: object = { yontem: "havale" }, ek: object 
     fatura: { tur: "bireysel", adresAyni: true },
     metinlerIletildi: true,
   },
+  musteriyeEposta: true,
   ...ek,
 });
 

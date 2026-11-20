@@ -75,7 +75,8 @@ type IcGirdi = Omit<OdemeGirdisi, "bilgiler"> & {
 };
 
 // Panelden elle sipariş (kart 0236): siparişi giren yönetici.
-type Panelden = { yonetici: string };
+// Panelden elle sipariş (kart 0236): siparişi giren yönetici ve müşteriye e-posta gidip gitmeyeceği (kart 0240).
+type Panelden = { yonetici: string; eposta: boolean };
 
 export type OdemeSonucu = {
   oturum: string;
@@ -275,7 +276,11 @@ export const odemeServisi = (site: Site) => {
         hesap,
         odeme,
         havaleIptalSuresi: ayarlar.havaleIptalSuresi,
-        ...(panel === undefined ? {} : { panel }),
+        ...(panel === undefined ? {} : { panel: { yonetici: panel.yonetici } }),
+        eposta: {
+          bankaHesaplari: ayarlar.bankaHesaplari,
+          ...(panel === undefined ? {} : { gonder: panel.eposta }),
+        },
       });
       return {
         ...sonuc,
@@ -347,7 +352,7 @@ export const odemeServisi = (site: Site) => {
       0,
       true,
       false,
-      { yonetici },
+      { yonetici, eposta: girdi.musteriyeEposta },
     );
     if (siparis === undefined) throw new Error("Sipariş kurulmadı.");
     return { numara: siparis.numara };

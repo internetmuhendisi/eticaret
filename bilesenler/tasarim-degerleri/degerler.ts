@@ -567,6 +567,8 @@ export const sabitDegerler = {
     arama: "35rem",
     metin: "42rem",
     icerik: "80rem",
+    // eposta: e-postanın gövdesi (kart 0240); e-posta programları bu genişlikten dar ekranda tam genişlik çizer.
+    eposta: "37.5rem",
   },
   // Kod yüklenmeyince "yükleniyor" yazısının görünmeden önce beklediği süre (kart 0057).
   yukleniyorGecikmesi: "3s",

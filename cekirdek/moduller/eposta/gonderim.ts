@@ -2,16 +2,21 @@
 import { eq } from "drizzle-orm";
 import { hataOzeti } from "../../arka-plan-isleri/kuyruk.ts";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
+import { siteAdresi } from "../../ayar-semasi/site-adresi.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
+import { adresYazisi } from "../../bolgeler/adres-yazisi.ts";
 import { gunluk } from "../../izleme/gunluk.ts";
 import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
 import { type EpostaSablonu, epostaDurumu } from "../../kayitlar/eposta.ts";
+import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { logonunAdresi, magazaLogosu } from "../magaza-ayarlari/logo.ts";
-import { magazaninAdi } from "../magaza-ayarlari/servis.ts";
+import { magazaninAdi, siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
+import { siparisEpostaIcerikleri } from "../siparis/eposta-icerigi.ts";
 import { type EpostaGondericisi, epostaGondericisi } from "./gonderici.ts";
+import { epostaGorunusu } from "./gorunus.ts";
 import { epostaKayitlari } from "./model.ts";
-import { epostaOlustur } from "./sablon.ts";
+import { epostaOlustur, type IcerikBaglami } from "./sablon.ts";
 
 export const gonderilmemeNedeni = {
   gondericiYok: "gonderici-yok",
@@ -22,6 +27,25 @@ type Bagimliliklar = {
   site?: Site;
   gonderici?: EpostaGondericisi | undefined;
   sinyal?: AbortSignal;
+};
+
+// Sipariş e-postasının alt bilgisi (kart 0240): satıcının unvanı, mağazanın adresi ve telefonu. Okunamazsa e-posta
+// düşmez, alt bilgi bunlarsız gider ve hata kaydedilir.
+const saticiAltBilgisi = async (vt: Veritabani, site: Site): Promise<IcerikBaglami["satici"]> => {
+  try {
+    const ayarlar = await siteninMagazaAyarlari(vt, site);
+    const bicim = siteninBicimleyicisi(site.ayarlar);
+    return {
+      ...(ayarlar.saticiBilgileri === undefined ? {} : { unvan: ayarlar.saticiBilgileri.unvan }),
+      ...(ayarlar.magazaAdresi === undefined
+        ? {}
+        : { adres: adresYazisi(ayarlar.magazaAdresi, bicim.ulkeAdi) }),
+      ...(ayarlar.iletisimTelefonu === undefined ? {} : { telefon: ayarlar.iletisimTelefonu }),
+    };
+  } catch (hata) {
+    hatayiKaydet(hata, { kaynak: "eposta-alt-bilgisi" });
+    return {};
+  }
 };
 
 // Kayıt gönderim boyunca kilitlidir: aynı anda çalışan ikinci deneme bekler, sonra gönderilmiş
@@ -41,6 +65,15 @@ export const epostaKaydiniGonder = async (
   const magazaAdi = await magazaninAdi(vt, site);
   // Logo da işlemden önce okunur (kart 0073); okunamazsa e-posta logosuz, adla gider.
   const logoAdresi = logonunAdresi(site, await magazaLogosu(vt, { site }));
+  // Renkler ve yazı tipi sitenin temasından (kart 0240); okunamazsa ortak değerler.
+  const gorunus = await epostaGorunusu(vt, site);
+  // Sipariş e-postasının alt bilgisi yalnız sipariş e-postasında okunur (kilitsiz bakış; şablon kayıtta değişmez).
+  const [bakis] = await vt
+    .select({ sablon: epostaKayitlari.sablon })
+    .from(epostaKayitlari)
+    .where(eq(epostaKayitlari.kimlik, kayitKimligi));
+  const siparisEpostasi = bakis !== undefined && bakis.sablon in siparisEpostaIcerikleri;
+  const satici = siparisEpostasi ? await saticiAltBilgisi(vt, site) : {};
   const sonuc = await vt.transaction(async (islem) => {
     const [kayit] = await islem
       .select()
@@ -59,15 +92,30 @@ export const epostaKaydiniGonder = async (
           ? [gonderilmemeNedeni.gonderenAdresiYok]
           : []),
       ].join(",");
-      await guncelle({ durum: epostaDurumu.gonderilmedi, son_hata: neden, degiskenler: null });
+      await guncelle({
+        durum: epostaDurumu.gonderilmedi,
+        son_hata: neden,
+        degiskenler: null,
+        veri: null,
+      });
       return { tur: "gonderilmedi" as const, neden, sablon: kayit.sablon };
     }
+    const sablon = kayit.sablon as EpostaSablonu;
     const icerik = epostaOlustur({
       dil: ayarlar.dil,
       magazaAdi,
       logoAdresi,
-      sablon: kayit.sablon as EpostaSablonu,
+      sablon,
       degiskenler: (kayit.degiskenler ?? {}) as Record<string, string>,
+      gorunus,
+      ...(siparisEpostasi
+        ? {
+            veri: kayit.veri,
+            bicim: siteninBicimleyicisi(ayarlar),
+            kok: siteAdresi(site.kimlik),
+            satici,
+          }
+        : {}),
     });
     const alanAdi = ayarlar.epostaGonderenAdresi.split("@")[1];
     try {
@@ -94,6 +142,7 @@ export const epostaKaydiniGonder = async (
       durum: epostaDurumu.gonderildi,
       gonderilme_zamani: new Date(),
       degiskenler: null,
+      veri: null,
       son_hata: null,
     });
     return { tur: "gonderildi" as const, alici: kayit.alici, sablon: kayit.sablon };
@@ -124,6 +173,11 @@ export const epostaBasarisizYap = async (
 ): Promise<void> => {
   await vt
     .update(epostaKayitlari)
-    .set({ durum: epostaDurumu.basarisiz, degiskenler: null, son_hata: hataOzeti(hata) })
+    .set({
+      durum: epostaDurumu.basarisiz,
+      degiskenler: null,
+      veri: null,
+      son_hata: hataOzeti(hata),
+    })
     .where(eq(epostaKayitlari.kimlik, kayitKimligi));
 };

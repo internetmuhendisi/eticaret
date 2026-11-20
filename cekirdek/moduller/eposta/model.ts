@@ -4,8 +4,9 @@
 // Aranan alanlar:
 // - alici: bir kişiye giden e-postalar bulunurken, indeksli.
 // - olusturulma_zamani: süresi dolan kayıtlar silinirken, indeksli.
+// - olay_anahtari: aynı olayın ikinci e-postası yazılırken, tekil indeksli (boş olan çok olabilir).
 import { sql } from "drizzle-orm";
-import { check, index, jsonb, pgTable, text } from "drizzle-orm/pg-core";
+import { check, index, jsonb, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
 import { kimlik, zaman } from "../../veritabani/turler.ts";
 
 export const epostaKayitlari = pgTable(
@@ -17,6 +18,11 @@ export const epostaKayitlari = pgTable(
     sablon: text().notNull(),
     durum: text().notNull(),
     degiskenler: jsonb(),
+    // Sipariş e-postasının olay anındaki verisi (kart 0240): tutarlar, kalemler, teslimat. Değişkenler gibi
+    // gönderilince silinir.
+    veri: jsonb(),
+    // Aynı olay için ikinci e-posta yazılmaz (kart 0240): olayın kalıcı kaydının kimliği ("siparis-gecmisi:<kimlik>").
+    olay_anahtari: text(),
     // Hatanın maskelenmiş özeti ya da gönderilmeme nedeni.
     son_hata: text(),
     olusturulma_zamani: zaman().notNull().defaultNow(),
@@ -25,6 +31,7 @@ export const epostaKayitlari = pgTable(
   (tablo) => [
     index("eposta_kayitlari_alici").on(tablo.alici),
     index("eposta_kayitlari_olusturulma").on(tablo.olusturulma_zamani),
+    uniqueIndex("eposta_kayitlari_olay").on(tablo.olay_anahtari),
     check(
       "eposta_kayitlari_durum",
       sql`${tablo.durum} in ('bekliyor', 'gonderildi', 'gonderilmedi', 'basarisiz')`,

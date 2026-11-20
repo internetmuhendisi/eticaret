@@ -122,6 +122,8 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
   );
   const [not, setNot] = useState("");
   const [iletildi, setIletildi] = useState(false);
+  // Müşteriye sipariş e-postası (kart 0240): kullanıcı kararıyla varsayılan işaretli.
+  const [musteriyeEposta, setMusteriyeEposta] = useState(true);
   const [hatalar, setHatalar] = useState<HataHaritasi>({});
   const [genelHata, setGenelHata] = useState<string | null>(null);
   const [gorunum, setGorunum] = useState<SepetGorunumu | null>(null);
@@ -287,6 +289,7 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
         metinlerIletildi: iletildi,
       },
       ...(gorunum === null ? {} : { gorulenToplam: gorunum.toplam }),
+      musteriyeEposta,
     });
     const yeni: HataHaritasi = {};
     if (veri.telefonZorunlu && kisi.telefon.trim() === "") {
@@ -756,6 +759,11 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
               }}
             />
           </div>
+          <OnayKutusu
+            etiket={metin("yonetim.elleSiparis.musteriyeEposta")}
+            checked={musteriyeEposta}
+            onCheckedChange={(isaretli) => setMusteriyeEposta(isaretli === true)}
+          />
         </Kart>
       </div>
 

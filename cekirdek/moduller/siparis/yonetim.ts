@@ -31,6 +31,7 @@ import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { yoneticiler } from "../ekip/model.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
 import { musteriler } from "../musteri/model.ts";
+import { siparisEpostasiYaz } from "./epostalar.ts";
 import { gecmiseYaz, kimSutunlari } from "./gecmis.ts";
 import { iadeTalebiServisi } from "./iade-talebi.ts";
 import {
@@ -377,6 +378,12 @@ export const siparisYonetimi = (site: Site) => {
       };
     }
 
+    // Teslim e-postası iade talebinin son gününü söyler (kart 0240); süre işlemden önce okunur.
+    const iadeTalebiSuresi =
+      girdi.islem === "teslim-edildi"
+        ? (await siteninMagazaAyarlari(vt, site)).iadeTalebiSuresi
+        : undefined;
+
     return vt.transaction(async (islem) => {
       const [siparis] = await islem
         .select({
@@ -441,6 +448,7 @@ export const siparisYonetimi = (site: Site) => {
         sonraki: tanim.sonraki,
         neden: tanim.neden,
         kim,
+        ...(iadeTalebiSuresi === undefined ? {} : { eposta: { iadeTalebiSuresi } }),
       });
       return { numara: siparis.numara, durum: tanim.sonraki };
     });
@@ -456,12 +464,27 @@ export const siparisYonetimi = (site: Site) => {
       .from(siparisler)
       .where(eq(siparisler.numara, girdi.numara));
     if (siparis === undefined) throw new BilinenHata("bulunamadi");
-    await vt.insert(siparisNotlari).values({
-      siparis_kimligi: siparis.kimlik,
-      zaman: sql`clock_timestamp()`,
-      tur: girdi.tur,
-      metin: girdi.metin,
-      ...kimSutunlari(kim),
+    // Müşteriye not e-postayla da gider (kart 0240), notla aynı işlemde ve notun kimliğiyle.
+    await vt.transaction(async (islem) => {
+      const [not] = await islem
+        .insert(siparisNotlari)
+        .values({
+          siparis_kimligi: siparis.kimlik,
+          zaman: sql`clock_timestamp()`,
+          tur: girdi.tur,
+          metin: girdi.metin,
+          ...kimSutunlari(kim),
+        })
+        .returning({ kimlik: siparisNotlari.kimlik });
+      if (not === undefined) throw new Error("Not yazılamadı.");
+      if (girdi.tur === "musteri") {
+        await siparisEpostasiYaz(islem, {
+          siparis: siparis.kimlik,
+          sablon: "musteriye-not",
+          olayAnahtari: `siparis-notu:${not.kimlik}`,
+          ek: { not: girdi.metin },
+        });
+      }
     });
     return { numara: siparis.numara };
   };

@@ -85,3 +85,9 @@ export const epostaGondericisi = (
     }
   };
 };
+
+// Bu sitenin e-postası gerçekten gider mi (kart 0240): gönderici bağlı ve sitenin gönderen adresi var. "E-postanıza
+// gönderdik" diyen ekran bunu sorar; gönderim de aynı iki koşulda "gönderilmedi" yazar (gonderim.ts).
+export const epostaGidebilirMi = (ayarlar: {
+  epostaGonderenAdresi?: string | undefined;
+}): boolean => ayarlar.epostaGonderenAdresi !== undefined && epostaGondericisi() !== undefined;

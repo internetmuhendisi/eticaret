@@ -1235,7 +1235,8 @@
         "oturum": "Oturumunuz kapandı. Yeniden giriş yapıp siparişi yeniden girin."
       },
       "not": "Sipariş notu (isteğe bağlı)",
-      "toplamDuyurusu": "Toplam: {toplam}"
+      "toplamDuyurusu": "Toplam: {toplam}",
+      "musteriyeEposta": "Müşteriye sipariş e-postası gönder"
     },
     "iadeTalebi": {
       "baslik": "İade talebi",
@@ -2033,6 +2034,7 @@
       "baslik": "Siparişiniz alındı",
       "numara": "Sipariş no: {numara}",
       "tesekkur": "Teşekkür ederiz, {ad}. Sipariş numaranızı not edin.",
+      "tesekkurEposta": "Teşekkür ederiz, {ad}. Sipariş bilgilerini {eposta} adresine gönderdik.",
       "iptal": "Bu sipariş ödeme süresi içinde ödenmediği için iptal edildi.",
       "havaleBasligi": "Ödemenizi {zaman} tarihine kadar yapın",
       "havaleAciklamasi": "Aşağıdaki hesaplardan birine {toplam} gönderin. Açıklamaya sipariş numaranızı yazın: {numara}. Bu süre içinde ödenmeyen sipariş iptal olur.",
@@ -2261,6 +2263,104 @@
       "govde": "{urun} yeniden stoğa girdi. Aşağıdaki bağlantıdan ürünün sayfasına gidebilirsiniz.",
       "bilgi": "Bu e-postayı {magaza} sitesinde ürün stoğa gelince haber verilmesini istediğiniz için aldınız. Adresinizi yalnız bu bildirim için kullandık, bu ürün için size başka e-posta göndermeyeceğiz.",
       "baglanti": "Ürünün sayfasına git"
+    },
+    "siparis": {
+      "secim": "{secenek}: {deger}",
+      "secimAyiraci": ", ",
+      "adet": "{adet} adet",
+      "araToplam": "Ara toplam ({sayi} ürün)",
+      "kargo": "Kargo",
+      "kargoUcretsiz": "Ücretsiz",
+      "vergi": "{vergi} ({oran})",
+      "vergiDahil": "Toplama dahil {vergi} ({oran})",
+      "vergiAdsiz": "Vergi",
+      "toplam": "Toplam",
+      "iadeTutari": "İade tutarı",
+      "iadeVergisi": "İadenin içindeki {vergi} ({oran})",
+      "teslimatAdresi": "Teslimat adresi",
+      "odemeYontemi": "Ödeme yöntemi",
+      "goruntule": "Siparişi görüntüle",
+      "takipEt": "Siparişimi takip et",
+      "soru": "Sorunuz mu var? Bu e-postayı yanıtlayın.",
+      "soruTelefonla": "Sorunuz mu var? Bu e-postayı yanıtlayın ya da {telefon} numarasını arayın.",
+      "neden": "Bu e-postayı siparişiniz olduğu için aldınız."
+    },
+    "siparisAlindi": {
+      "konu": "Siparişiniz alındı: {numara}",
+      "baslik": "Siparişiniz alındı",
+      "havale": "Merhaba {ad}, {numara} numaralı siparişinizi aldık. Ödemeniz hesabımıza geçince hazırlamaya başlayacağız.",
+      "sonZaman": "Son ödeme zamanı: {zaman}",
+      "havaleTalimati": "Aşağıdaki hesaplardan birine {tutar} gönderin. Açıklamaya {numara} yazın. Bu süre içinde ödenmeyen sipariş iptal olur.",
+      "bildir": "Ödemeyi yaptım, bildir",
+      "kapida": "Merhaba {ad}, {numara} numaralı siparişinizi aldık. Ödemeyi teslimatta kuryeye yapacaksınız: {secenek}.",
+      "odendi": "Merhaba {ad}, {numara} numaralı siparişinizi aldık, ödemeniz alındı. Siparişinizi hazırlıyoruz, kargoya verince yeniden yazacağız."
+    },
+    "havaleOnaylandi": {
+      "konu": "Ödemeniz alındı: {numara}",
+      "baslik": "Ödemeniz alındı",
+      "govde": "Merhaba {ad}, {numara} numaralı siparişinizin {tutar} ödemesi hesabımıza geçti. Siparişinizi hazırlıyoruz, kargoya verince yeniden yazacağız."
+    },
+    "kargoyaVerildi": {
+      "konu": "Siparişiniz kargoda: {numara}",
+      "baslik": "Siparişiniz kargoya verildi",
+      "govde": "Merhaba {ad}, {numara} numaralı siparişiniz yola çıktı.",
+      "takipNo": "Takip no: {numara}",
+      "takipEt": "Kargoyu takip et"
+    },
+    "teslimEdildi": {
+      "konu": "Siparişiniz teslim edildi: {numara}",
+      "baslik": "Siparişiniz teslim edildi",
+      "govde": "Merhaba {ad}, {numara} numaralı siparişiniz teslim edildi. İyi günlerde kullanın.",
+      "iade": "Ürünü iade etmek isterseniz {tarih} tarihine kadar siparişin sayfasından iade talebi açabilirsiniz."
+    },
+    "siparisIptali": {
+      "konu": "Siparişiniz iptal edildi: {numara}",
+      "baslik": "Siparişiniz iptal edildi",
+      "sureDoldu": "Merhaba {ad}, {numara} numaralı siparişiniz ödeme süresi içinde ödenmediği için iptal edildi. Dilerseniz yeniden sipariş verebilirsiniz.",
+      "musteri": "Merhaba {ad}, {numara} numaralı siparişiniz isteğiniz üzerine iptal edildi.",
+      "magaza": "Merhaba {ad}, {numara} numaralı siparişiniz mağaza tarafından iptal edildi. Sorunuz varsa bu e-postayı yanıtlayın.",
+      "alisveris": "Alışverişe devam et"
+    },
+    "iade": {
+      "karta": "{tutar} kartınıza iade edildi. Tutarın hesabınıza geçmesi bankanıza göre birkaç iş günü sürebilir.",
+      "elle": "{tutar} size geri gönderilecek. Ödemeyi nasıl yaptıysanız mağaza o yolla gönderir."
+    },
+    "tamIade": {
+      "konu": "İadeniz yapıldı: {numara}",
+      "baslik": "İadeniz yapıldı",
+      "govde": "Merhaba {ad}, {numara} numaralı siparişinizin tamamı iade edildi."
+    },
+    "kismiIade": {
+      "konu": "Siparişinizin bir kısmı iade edildi: {numara}",
+      "baslik": "Kısmi iadeniz yapıldı",
+      "govde": "Merhaba {ad}, {numara} numaralı siparişinizde aşağıdaki ürünler iade edildi. Siparişin öteki ürünleri sizde kalır."
+    },
+    "musteriyeNot": {
+      "konu": "Siparişiniz hakkında bir not: {numara}",
+      "baslik": "Mağazadan bir not",
+      "govde": "Merhaba {ad}, {numara} numaralı siparişiniz için mağazanın notu:"
+    },
+    "talepAlindi": {
+      "konu": "İade talebiniz alındı: {numara}",
+      "baslik": "İade talebiniz alındı",
+      "govde": "Merhaba {ad}, {numara} numaralı siparişiniz için iade talebinizi aldık. İnceleyip size yazacağız. Ürünü onaydan önce göndermeyin.",
+      "neden": "Neden"
+    },
+    "talepOnaylandi": {
+      "konu": "İade talebiniz onaylandı: {numara}",
+      "baslik": "İade talebiniz onaylandı",
+      "govde": "Merhaba {ad}, {numara} numaralı siparişinizdeki aşağıdaki ürünler için iade talebinizi onayladık.",
+      "nasil": "Ürünü nasıl göndereceksiniz?",
+      "kargoMagazada": "Ürünü aşağıdaki adrese gönderin. İade kargosunun ücretini mağaza öder.",
+      "kargoMusteride": "Ürünü dilediğiniz kargoyla aşağıdaki adrese gönderin. Kargo ücreti size aittir.",
+      "sonra": "Ürün bize ulaşınca iadenizi yapıp e-postayla bildireceğiz."
+    },
+    "talepReddedildi": {
+      "konu": "İade talebiniz hakkında: {numara}",
+      "baslik": "İade talebinizi kabul edemedik",
+      "govde": "Merhaba {ad}, {numara} numaralı siparişinizdeki iade talebinizi inceledik ve kabul edemedik.",
+      "aciklama": "Mağazanın açıklaması",
+      "soru": "Sorunuz varsa bu e-postayı yanıtlayın."
     }
   },
   "gelistirme": {

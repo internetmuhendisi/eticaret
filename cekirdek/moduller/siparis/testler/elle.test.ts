@@ -189,6 +189,7 @@ const elle = (
       metinlerIletildi: true,
     },
     ...(ek.gorulenToplam === undefined ? {} : { gorulenToplam: ek.gorulenToplam }),
+    musteriyeEposta: true,
   });
 
 const oku = async (vt: Veritabani, numara: string) => {
@@ -408,6 +409,7 @@ describe("elle sipariş", () => {
         fatura: { tur: "bireysel", adresAyni: true },
         metinlerIletildi: true,
       },
+      musteriyeEposta: true,
     };
     expect(elleSiparisSemasi.safeParse(taban).success).toBe(true);
     expect(elleSiparisSemasi.safeParse({ ...taban, toplam: 1 }).success).toBe(false);
