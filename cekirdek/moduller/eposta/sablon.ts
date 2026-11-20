@@ -161,7 +161,8 @@ const blokHtml = (s: Stiller, b: EpostaBlogu): string => {
     case "kutu":
       return `<div style="${b.vurgu ? s.vurguKutu : s.kutu}">${b.satirlar
         .map((satir) => {
-          const ic = htmlKacir(satir.metin);
+          // Mağazanın çok satırlı yazısı (not, ret açıklaması) satır sonlarıyla çizilir.
+          const ic = htmlKacir(satir.metin).replaceAll("\n", "<br>");
           const bicimli = `${satir.kalin ? `<strong>${ic}</strong>` : ic}${
             satir.kod === undefined ? "" : `<span style="${s.kod}">${htmlKacir(satir.kod)}</span>`
           }`;

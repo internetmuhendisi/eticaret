@@ -432,6 +432,10 @@ describe("olaylar", () => {
       }
       expect(metin).toContain("1 adet");
     }
+    // Son iade "tamamlandı" der, tablonun yalnız bu iadenin ürünleri olduğunu söyler (bağımsız kontrolün bulgusu).
+    expect((await sonEposta(h.vt, numara, "siparis-iadesi")).metin).toContain(
+      "Bu iadede iade edilen ürünler aşağıdadır.",
+    );
   });
 
   it("iade talebi alındı, onaylandı (iade kargosu) ve reddedildi (açıklamasıyla)", async () => {
@@ -632,12 +636,14 @@ describe("içerik", () => {
     await yonetim.notEkle(h.vt, yonetici(), {
       numara,
       tur: "musteri",
-      metin: "<script>alert(1)</script> Teşekkürler",
+      metin: "<script>alert(1)</script> Teşekkürler\nİkinci satır",
     });
     const { html, metin } = await sonEposta(h.vt, numara, "musteriye-not");
-    expect(metin).toContain("<script>alert(1)</script> Teşekkürler");
+    expect(metin).toContain("<script>alert(1)</script> Teşekkürler\nİkinci satır");
     expect(html).not.toContain("<script>");
     expect(html).toContain("&lt;script&gt;");
+    // Çok satırlı not HTML'de de satır sonlarıyla (bağımsız kontrolün bulgusu).
+    expect(html).toContain("Teşekkürler<br>İkinci satır");
 
     const eski = await ver(h.vt, [{ birim, adet: 1 }], kapida);
     const { eposta } = await siparisi(h.vt, eski);

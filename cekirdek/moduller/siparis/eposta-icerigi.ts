@@ -82,7 +82,7 @@ export type SiparisEpostaVerisi = {
     retAciklamasi?: string;
     iadeKargosu?: IadeKargosuOdeyen;
   };
-  // Teslim edilen siparişte iade talebinin son anı (ISO); talep kapalıysa yok.
+  // Teslim edilen siparişte iade talebinin son anı (ISO); yalnız teslim e-postasında.
   iadeSonu?: string;
 };
 

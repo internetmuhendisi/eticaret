@@ -2328,7 +2328,7 @@
     "tamIade": {
       "konu": "İadeniz yapıldı: {numara}",
       "baslik": "İadeniz yapıldı",
-      "govde": "Merhaba {ad}, {numara} numaralı siparişinizin tamamı iade edildi."
+      "govde": "Merhaba {ad}, {numara} numaralı siparişinizin iadesi tamamlandı: siparişin bütün ürünleri iade edildi. Bu iadede iade edilen ürünler aşağıdadır."
     },
     "kismiIade": {
       "konu": "Siparişinizin bir kısmı iade edildi: {numara}",
