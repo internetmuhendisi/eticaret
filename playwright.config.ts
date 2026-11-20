@@ -1,7 +1,8 @@
 // Tarayıcı testleri (karar 0018, .claude/rules/test.md).
 // Yalnız uctan-uca/ klasörlerindeki *.test.ts ve *.test.tsx dosyaları çalışır.
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
+import { parseEnv } from "node:util";
 import { defineConfig, devices } from "@playwright/test";
 import { dosyaKlasoruDegiskeni } from "./cekirdek/kayitlar/dosya";
 import { temaDemosuAdresiDegiskeni } from "./cekirdek/kayitlar/site";
@@ -49,6 +50,14 @@ Object.assign(process.env, {
   KARTLA_ODEME_DENEME_ADRESI: `http://127.0.0.1:${sahteKurulusPortu}`,
   SITE_ADRESI: process.env["SITE_ADRESI"] || "http://localhost:3000",
 });
+// Uygulama e-postayı yerel posta kutusuna gönderebilir sayılır (kart 0240): sipariş alındı sayfası "e-postanıza
+// gönderdik" der. Uygulama yalnız kuyruğa yazar; testlerde arka plan süreci yoktur, e-postayı test kendisi gönderir.
+if (process.env["EPOSTA_SUNUCUSU"] === undefined) {
+  const smtpPortu =
+    process.env["POSTA_SMTP_PORTU"] ??
+    (existsSync(".env") ? parseEnv(readFileSync(".env", "utf8"))["POSTA_SMTP_PORTU"] : undefined);
+  if (smtpPortu !== undefined) process.env["EPOSTA_SUNUCUSU"] = `smtp://localhost:${smtpPortu}`;
+}
 
 const ortakDislananlar = ["**/node_modules/**", `${import.meta.dirname}/.claude/**`];
 const temaDegisikligiTesti = "**/uctan-uca/tema.test.ts";

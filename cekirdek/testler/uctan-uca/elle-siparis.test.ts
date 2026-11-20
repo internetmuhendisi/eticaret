@@ -16,6 +16,7 @@ import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri";
 import { doldur } from "../../metinler/doldur";
 import { metin } from "../../metinler/site-metni";
+import { epostaKayitlari } from "../../moduller/eposta/model";
 import { calisanSiteninFiyatServisi } from "../../moduller/fiyat/servis";
 import { siparisGecmisi } from "../../moduller/siparis/model";
 import { siparisYonetimi } from "../../moduller/siparis/yonetim";
@@ -194,6 +195,10 @@ test("panelden klavyeyle elle sipariş", async ({ page }) => {
   await page.keyboard.press("Space");
   await expect(kutu).toBeChecked();
   await expect(page.getByText(metin("yonetim.elleSiparis.hata.metinler"))).toBeHidden();
+  // Müşteriye sipariş e-postası varsayılan işaretli (kart 0240, kullanıcı kararı).
+  await expect(
+    page.getByRole("checkbox", { name: metin("yonetim.elleSiparis.musteriyeEposta") }),
+  ).toBeChecked();
   await ikiRenkUcGenislik(page, "dolu elle sipariş");
 
   await olustur.focus();
@@ -213,6 +218,15 @@ test("panelden klavyeyle elle sipariş", async ({ page }) => {
     .from(siparisGecmisi)
     .where(eq(siparisGecmisi.siparis_kimligi, ayrinti?.siparis.kimlik ?? ""));
   expect(gecmis).toMatchObject({ neden: "panelden-olusturuldu", kim_turu: "yonetici" });
+  // Sipariş e-postası kuyrukta (kart 0240).
+  expect(
+    (
+      await vt
+        .select({ sablon: epostaKayitlari.sablon })
+        .from(epostaKayitlari)
+        .where(eq(epostaKayitlari.alici, eposta))
+    ).map((satir) => satir.sablon),
+  ).toEqual(["siparis-alindi"]);
   await expect(page.getByText(metin("yonetim.siparis.neden.panelden-olusturuldu"))).toBeVisible();
   const [stok] = await vt
     .select()

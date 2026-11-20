@@ -31,6 +31,7 @@ import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri";
 import { sepetDepoAnahtari } from "../../kayitlar/sepet";
 import { doldur } from "../../metinler/doldur";
 import { metin } from "../../metinler/site-metni";
+import { epostaKayitlari } from "../../moduller/eposta/model";
 import { calisanSiteninFiyatServisi } from "../../moduller/fiyat/servis";
 import { siteninServisi } from "../../moduller/magaza-ayarlari/servis";
 import { musteriAdresleri } from "../../moduller/musteri/model";
@@ -320,6 +321,20 @@ test("üye olmayan müşteri formu klavyeyle doldurur, kapıda nakit seçer; sip
   await expect(
     page.getByText(doldur(metin("vitrin.siparisAlindi.numara"), { numara: kayit.numara })),
   ).toBeVisible();
+  // E-posta gönderilebilen sitede sipariş e-postasının gittiği söylenir (kart 0240); e-posta kuyrukta.
+  await expect(
+    page.getByText(
+      doldur(metin("vitrin.siparisAlindi.tesekkurEposta"), { ad: "Deniz", eposta: kayit.eposta }),
+    ),
+  ).toBeVisible();
+  expect(
+    (
+      await vt
+        .select({ sablon: epostaKayitlari.sablon })
+        .from(epostaKayitlari)
+        .where(eq(epostaKayitlari.alici, kayit.eposta))
+    ).map((satir) => satir.sablon),
+  ).toEqual(["siparis-alindi"]);
   await expect(
     page.getByRole("heading", { level: 2, name: metin("vitrin.siparisAlindi.kapidaBasligi") }),
   ).toBeVisible();
