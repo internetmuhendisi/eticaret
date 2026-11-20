@@ -14,7 +14,8 @@ import type { EpostaSablonu } from "./eposta.ts";
 // - yorum: onay bekleyen yeni yorum.
 // - kartla-odeme-uyusmazligi: kartla ödemenin günlük karşılaştırması uyuşmazlık buldu (eklenti).
 // - bekleyen-iade: kartla iade kuruluşta takıldı, elle bakılmalı (eklenti).
-// eklenti: bildirim yalnız eklenti sitede açıkken ekranda görünür ve gider. sablon: e-postanın şablonu.
+// eklenti: bildirimin anahtarı panelde yalnız eklenti sitede açıkken görünür; bildirimin kendisi eklenti kapalıyken de
+// gider (karar 0155: eklentinin para işleri kapalıyken de çalışır). sablon: e-postanın şablonu.
 export const yoneticiBildirimTanimlari = {
   "yeni-siparis": { eklenti: null, sablon: "yonetici-yeni-siparis" },
   "havale-bildirimi": { eklenti: null, sablon: "yonetici-havale-bildirimi" },

@@ -37,7 +37,7 @@ export const stokUyarilariniGonder = async (
   ertele: Ertele,
 ): Promise<number> => {
   const ayarlar = await siteninMagazaAyarlari(vt, site);
-  const acik = bildirimAcikMi(site, ayarlar, "stok");
+  const acik = bildirimAcikMi(ayarlar, "stok");
   const alicilar = acik ? await bildirimAlicilari(vt, ayarlar) : [];
   return vt.transaction(async (islem) => {
     await islem.execute(sql`select pg_advisory_xact_lock(hashtext('stok_uyarilari'))`);

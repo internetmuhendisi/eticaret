@@ -6,7 +6,7 @@
 // - Kuyruğa giden veri ve e-posta müşterinin e-postasını, telefonunu, açık adresini ve soyadını taşımaz.
 // - Stok: sipariş eşiği (ürünün eşiği önce) ya da sıfırı yukarıdan aşağı geçince bir kez, aynı anda iki düşürmede de;
 //   elle düzeltme uyarmaz. Uyarılar tek e-postada toplanır, bir saat içinde ikinci e-posta gitmez (ertelenir).
-// - Kartla ödemeye bağlı bildirimler eklenti kapalıyken gitmez ve ekranda görünmez.
+// - Kartla ödemeye bağlı bildirimler eklenti kapalıyken de gider (karar 0155), ekranda görünmez; kapatılmışsa gitmez.
 // - Panelin kaydı: adreslerin ayrılması, küçük harf, sınır, geçersiz ve tekrar; görünmeyen bildirimin kayıtlı hâli
 //   korunur; değişiklik kaydına adresler yazılmaz.
 // - İki site ayrı kalır; e-posta gerçek posta kutusuna düşer.
@@ -524,21 +524,17 @@ describe("tek işlem, tek bildirim, açıklık ve alıcılar", () => {
     expect((await epostalar(h.vt)).filter((k) => k.olay_anahtari?.startsWith("c:"))).toEqual([]);
   });
 
-  it("kartla ödemeye bağlı bildirimler eklenti kapalıyken gitmez, görünmez ve kaydedilemez; görünmeyenin kayıtlı hâli korunur", async () => {
+  it("kartla ödemeye bağlı bildirimler eklenti kapalıyken de gider (karar 0155); ekranda görünmez ve kaydedilemez; görünmeyenin kayıtlı hâli korunur ve kapalıysa gitmez", async () => {
     const eklentisiz: Site = { ...site, ayarlar: { ...site.ayarlar, eklentiler: [] } };
     const h = await hazirla(eklentisiz);
     await h.sahipAc();
-    const ayarlar = { kapaliYoneticiBildirimleri: [] };
-    expect(bildirimAcikMi(eklentisiz, ayarlar, "bekleyen-iade")).toBe(false);
-    expect(bildirimAcikMi(eklentisiz, ayarlar, "kartla-odeme-uyusmazligi")).toBe(false);
-    expect(bildirimAcikMi(site, ayarlar, "bekleyen-iade")).toBe(true);
-    expect(
-      await bildirimiGonder(h.vt, eklentisiz, {
-        bildirim: "bekleyen-iade",
-        anahtar: "x",
-        veri: { numara: "DEN-1", neden: "raporda-yok" },
-      }),
-    ).toBe(0);
+    const is = (anahtar: string) => ({
+      bildirim: "bekleyen-iade" as const,
+      anahtar,
+      veri: { numara: "DEN-1", neden: "raporda-yok" },
+    });
+    expect(bildirimAcikMi({ kapaliYoneticiBildirimleri: [] }, "bekleyen-iade")).toBe(true);
+    expect(await bildirimiGonder(h.vt, eklentisiz, is("acik"))).toBe(1);
     expect(siparisAyarlari(eklentisiz).gorunenBildirimler()).not.toContain("bekleyen-iade");
     expect(siparisAyarlari(site).gorunenBildirimler()).toContain("bekleyen-iade");
     // Eklenti açıkken kapatılan, eklenti kapalıyken kaydedilen ayarda korunur.
@@ -560,6 +556,8 @@ describe("tek işlem, tek bildirim, açıklık ve alıcılar", () => {
       kapalilar: [],
     });
     expect(sonuc.kapaliYoneticiBildirimleri).toEqual(["bekleyen-iade"]);
+    // Kapatılmış bildirim eklenti kapalıyken de gitmez.
+    expect(await bildirimiGonder(h.vt, eklentisiz, is("kapali"))).toBe(0);
   });
 
   it("panelin kaydı: sınır, geçersiz adres ve tekrar alanın koduyla, hiçbir şey yazılmaz; değişiklik kaydına adres yazılmaz", async () => {

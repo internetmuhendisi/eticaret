@@ -5,7 +5,6 @@
 import { createHash } from "node:crypto";
 import type { MagazaAyarlari } from "../../ayar-semasi/ayarlar.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
-import { eklentiAcikMi } from "../../eklentiler/acik.ts";
 import {
   type YoneticiBildirimi,
   yoneticiBildirimTanimlari,
@@ -15,17 +14,12 @@ import { tamYetkiliYoneticiEpostalari } from "../ekip/servis.ts";
 import { epostaGonder } from "../eposta/servis.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
 
+// Bildirim yalnız kapatılmamışsa gider. Eklentiye bağlı bildirim eklenti kapalıyken de gider (karar 0155): eklentinin
+// para işleri (karşılaştırma, iade taraması) kapalıyken de çalışır, mağaza sahibi haberdar olmalı.
 export const bildirimAcikMi = (
-  site: Site,
   ayarlar: Pick<MagazaAyarlari, "kapaliYoneticiBildirimleri">,
   bildirim: YoneticiBildirimi,
-): boolean => {
-  const { eklenti } = yoneticiBildirimTanimlari[bildirim];
-  return (
-    !ayarlar.kapaliYoneticiBildirimleri.includes(bildirim) &&
-    (eklenti === null || eklentiAcikMi(site, eklenti))
-  );
-};
+): boolean => !ayarlar.kapaliYoneticiBildirimleri.includes(bildirim);
 
 export const bildirimAlicilari = async (
   vt: Veritabani,
@@ -66,7 +60,7 @@ export const bildirimiGonder = async (
   g: { bildirim: YoneticiBildirimi; anahtar: string; veri: Record<string, unknown> },
 ): Promise<number> => {
   const ayarlar = await siteninMagazaAyarlari(vt, site);
-  if (!bildirimAcikMi(site, ayarlar, g.bildirim)) return 0;
+  if (!bildirimAcikMi(ayarlar, g.bildirim)) return 0;
   const alicilar = await bildirimAlicilari(vt, ayarlar);
   await vt.transaction((islem) => bildirimEpostalariniYaz(islem, { ...g, alicilar }));
   return alicilar.length;
