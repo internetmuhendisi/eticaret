@@ -21,9 +21,9 @@ import {
   YanPencereUstu,
 } from "../../../bilesenler/parcalar/yan-pencere";
 import { iadeTalebiSinirlari } from "../../kayitlar/siparis";
-import { useMetin } from "../../metinler/istemci-metni";
+import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
-import { doldur } from "../../moduller/eposta/sablon";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { useKapatmaSorusu } from "../kapatma-sorusu";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
@@ -49,7 +49,7 @@ export function IadeTalebiKutusu({
   kararVerilebilir: boolean;
   iadeKargosu: "magaza" | "musteri";
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const islem = usePanelIslemi(hataMetni);
   const [onay, setOnay] = useState(false);
   const [ret, setRet] = useState(false);
@@ -168,7 +168,7 @@ function RetFormu({
   vazgec: () => void;
   bitti: () => void;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const islem = usePanelIslemi(hataMetni);
   const [hata, setHata] = useState<string | null>(null);
   const alanKimligi = useRef<string | undefined>(undefined);

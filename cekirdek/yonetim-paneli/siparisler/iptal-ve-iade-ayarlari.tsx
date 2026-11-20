@@ -19,9 +19,9 @@ import {
   type MusteriIptaliSecenegi,
   musteriIptaliSecenekleri,
 } from "../../kayitlar/siparis";
-import { useMetin } from "../../metinler/istemci-metni";
+import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
-import { doldur } from "../../moduller/eposta/sablon";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
 import { useSunucuFormu } from "../sunucu-formu";
@@ -54,7 +54,7 @@ export function IptalVeIadeAyarlari({
   baslangic: IptalVeIadeFormu;
   izinli: boolean;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const islem = usePanelIslemi(genelHataMetni);
   const { form, setForm, degisti, kaydedildi, vazgec } = useSunucuFormu(baslangic);
   const [sureHatasi, setSureHatasi] = useState(false);
@@ -138,56 +138,60 @@ export function IptalVeIadeAyarlari({
           <p className="-mt-3 text-kucuk text-soluk-yazi">
             {metin("yonetim.siparisAyarlari.iptal.aciklama")}
           </p>
-          <FormAlani
-            etiket={metin("yonetim.siparisAyarlari.sure.ad")}
-            aciklama={doldur(metin("yonetim.siparisAyarlari.sure.aciklama"), {
-              enAz: String(iadeTalebiSuresiSinirlari.enAz),
-              enCok: String(iadeTalebiSuresiSinirlari.enCok),
-            })}
-            {...(sureHatasi
-              ? {
-                  hata: doldur(metin("yonetim.siparisAyarlari.sure.hata"), {
-                    enAz: String(iadeTalebiSuresiSinirlari.enAz),
-                    enCok: String(iadeTalebiSuresiSinirlari.enCok),
-                  }),
-                }
-              : {})}
-          >
-            {(baglanti) => (
-              <GirisAlani
-                {...baglanti}
-                name="iadeTalebiSuresi"
-                inputMode="numeric"
-                autoComplete="off"
-                value={form.iadeTalebiSuresi}
-                disabled={!izinli}
-                onChange={(olay) => {
-                  const deger = olay.target.value;
-                  setForm((onceki) => ({ ...onceki, iadeTalebiSuresi: deger }));
-                  setSureHatasi(false);
+          {/* Taslaktaki gibi: süre ve iade kargosu bilgisayarda yan yana. */}
+          <div className="grid gap-5 tablet:grid-cols-2">
+            <FormAlani
+              etiket={metin("yonetim.siparisAyarlari.sure.ad")}
+              aciklama={doldur(metin("yonetim.siparisAyarlari.sure.aciklama"), {
+                enAz: String(iadeTalebiSuresiSinirlari.enAz),
+                enCok: String(iadeTalebiSuresiSinirlari.enCok),
+              })}
+              {...(sureHatasi
+                ? {
+                    hata: doldur(metin("yonetim.siparisAyarlari.sure.hata"), {
+                      enAz: String(iadeTalebiSuresiSinirlari.enAz),
+                      enCok: String(iadeTalebiSuresiSinirlari.enCok),
+                    }),
+                  }
+                : {})}
+            >
+              {(baglanti) => (
+                <GirisAlani
+                  {...baglanti}
+                  name="iadeTalebiSuresi"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={form.iadeTalebiSuresi}
+                  disabled={!izinli}
+                  onChange={(olay) => {
+                    const deger = olay.target.value;
+                    setForm((onceki) => ({ ...onceki, iadeTalebiSuresi: deger }));
+                    setSureHatasi(false);
+                  }}
+                />
+              )}
+            </FormAlani>
+            <div className="flex flex-col gap-2">
+              <SecenekGrubu
+                baslik={metin("yonetim.siparisAyarlari.iadeKargosu.baslik")}
+                etiket={metin("yonetim.siparisAyarlari.iadeKargosu.baslik")}
+                ogeler={iadeKargosuOdeyenler.map((deger) => ({
+                  deger,
+                  ad: metin(kargoAdlari[deger]),
+                  ...(izinli ? {} : { secilemez: true }),
+                }))}
+                deger={form.iadeKargosu}
+                onDegerDegisti={(deger) => {
+                  if (izinli)
+                    setForm((onceki) => ({ ...onceki, iadeKargosu: deger as IadeKargosuOdeyen }));
                 }}
-                className="tablet:max-w-form"
+                secilemezEki=""
               />
-            )}
-          </FormAlani>
-          <SecenekGrubu
-            baslik={metin("yonetim.siparisAyarlari.iadeKargosu.baslik")}
-            etiket={metin("yonetim.siparisAyarlari.iadeKargosu.baslik")}
-            ogeler={iadeKargosuOdeyenler.map((deger) => ({
-              deger,
-              ad: metin(kargoAdlari[deger]),
-              ...(izinli ? {} : { secilemez: true }),
-            }))}
-            deger={form.iadeKargosu}
-            onDegerDegisti={(deger) => {
-              if (izinli)
-                setForm((onceki) => ({ ...onceki, iadeKargosu: deger as IadeKargosuOdeyen }));
-            }}
-            secilemezEki=""
-          />
-          <p className="-mt-3 text-kucuk text-soluk-yazi">
-            {metin("yonetim.siparisAyarlari.iadeKargosu.aciklama")}
-          </p>
+              <p className="text-kucuk text-soluk-yazi">
+                {metin("yonetim.siparisAyarlari.iadeKargosu.aciklama")}
+              </p>
+            </div>
+          </div>
           {izinli ? (
             <YanPencereAltCubugu className="bottom-0 mx-0 px-0">
               <Dugme

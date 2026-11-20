@@ -13,9 +13,9 @@ import { kapiyaIstek } from "../../kapi/istemci";
 import { hataKodlari } from "../../kayitlar/kapi";
 import type { SiparisDurumu } from "../../kayitlar/siparis";
 import { siparisTakipCerezi } from "../../kayitlar/siparis";
+import { doldur } from "../../metinler/doldur";
+import type { VitrinMetinAnahtari } from "../../metinler/istemci-metni";
 import { useMetin } from "../../metinler/istemci-metni";
-import type { MetinAnahtari } from "../../metinler/metin";
-import { doldur } from "../../moduller/eposta/sablon";
 import { useRobotluGonderim } from "../../moduller/robot-korumasi/istemci";
 
 const uyeUcu = "/kapi/musteri/siparis-iptali";
@@ -40,7 +40,7 @@ export function SiparisIptali({
 
   const iptalEt = async () => {
     const girdi = { numara, gorulenDurum: durum };
-    let anahtar: MetinAnahtari = "vitrin.siparis.iptalHata.genel";
+    let anahtar: VitrinMetinAnahtari = "vitrin.siparis.iptalHata.genel";
     try {
       const yanit =
         yol === "hesap"

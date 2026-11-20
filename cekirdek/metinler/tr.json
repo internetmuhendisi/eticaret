@@ -217,7 +217,7 @@
       },
       "siparisAyarlari": {
         "ad": "Sipariş ayarları",
-        "aciklama": "Siparişi kargoya verirken seçilen kargo firmaları. Değişiklik kaydedilince hemen yayınlanır."
+        "aciklama": "Müşterinin iptali, iade talebi ve kargo firmaları. Değişiklik kaydedilince hemen yayınlanır."
       },
       "elleSiparis": {
         "ad": "Elle sipariş",

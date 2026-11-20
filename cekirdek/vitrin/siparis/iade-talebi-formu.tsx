@@ -20,6 +20,7 @@ import {
   SecimOgesi,
   SecimTetikleyici,
 } from "../../../bilesenler/parcalar/secim-kutusu";
+import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
 import { kapiyaIstek } from "../../kapi/istemci";
@@ -31,9 +32,9 @@ import {
   musteriIadeNedenleri,
   siparisTakipCerezi,
 } from "../../kayitlar/siparis";
+import { doldur } from "../../metinler/doldur";
+import type { VitrinMetinAnahtari } from "../../metinler/istemci-metni";
 import { useMetin } from "../../metinler/istemci-metni";
-import type { MetinAnahtari } from "../../metinler/metin";
-import { doldur } from "../../moduller/eposta/sablon";
 import { useRobotluGonderim } from "../../moduller/robot-korumasi/istemci";
 import { iadeTalebiFormuSemasi } from "../../moduller/siparis/iade-talebi-semalari";
 import { SatirGorseli } from "../sepet/sepet-gorunumu";
@@ -60,7 +61,7 @@ export type IadeTalebiVerisi = {
   siparisAdresi: string;
 };
 
-const nedenMetinleri: Record<MusteriIadeNedeni, MetinAnahtari> = {
+const nedenMetinleri: Record<MusteriIadeNedeni, VitrinMetinAnahtari> = {
   "beklentiyi-karsilamadi": "vitrin.iadeTalebi.neden.beklentiyi-karsilamadi",
   "kusurlu-hasarli": "vitrin.iadeTalebi.neden.kusurlu-hasarli",
   "yanlis-urun": "vitrin.iadeTalebi.neden.yanlis-urun",
@@ -70,19 +71,19 @@ const nedenMetinleri: Record<MusteriIadeNedeni, MetinAnahtari> = {
 
 type Alan = "kalemler" | "neden" | "aciklama";
 const alanSirasi: Alan[] = ["kalemler", "neden", "aciklama"];
-const alanAdlari: Record<Alan, MetinAnahtari> = {
+const alanAdlari: Record<Alan, VitrinMetinAnahtari> = {
   kalemler: "vitrin.iadeTalebi.urunlerKisa",
   neden: "vitrin.iadeTalebi.neden.baslik",
   aciklama: "vitrin.iadeTalebi.aciklama",
 };
-const alanHataMetinleri: Record<Alan, MetinAnahtari> = {
+const alanHataMetinleri: Record<Alan, VitrinMetinAnahtari> = {
   kalemler: "vitrin.iadeTalebi.hata.kalemler",
   neden: "vitrin.iadeTalebi.hata.neden",
   aciklama: "vitrin.iadeTalebi.hata.aciklama",
 };
 
 type Genel = "bekleyen" | "kapali" | "bulunamadi" | "sinir" | "genel";
-const genelMetinler: Record<Genel, MetinAnahtari> = {
+const genelMetinler: Record<Genel, VitrinMetinAnahtari> = {
   bekleyen: "vitrin.iadeTalebi.hata.bekleyen",
   kapali: "vitrin.iadeTalebi.hata.kapali",
   bulunamadi: "vitrin.iadeTalebi.hata.bulunamadi",
@@ -261,14 +262,22 @@ export function IadeTalebiFormu({ veri }: { veri: IadeTalebiVerisi }) {
             aria-describedby={hatalar.kalemler === undefined ? undefined : "iade-urun-hatasi"}
           >
             <legend className="mb-2 font-kalin">{metin("vitrin.iadeTalebi.urunler")}</legend>
-            <ul className="flex flex-col divide-y divide-kenar">
+            {/* Taslaktaki gibi: her ürün çerçeveli satırdır; seçilen satırın çerçevesi kalın, istenemeyeninki kesik. */}
+            <ul className="flex flex-col gap-2">
               {veri.kalemler.map((kalem) => {
                 const adet = secili[kalem.sira];
                 const kapali = kalem.enCok === 0;
                 return (
                   <li
                     key={kalem.sira}
-                    className="flex flex-wrap items-center gap-3 py-3 first:pt-0 last:pb-0"
+                    className={sinif(
+                      "flex flex-wrap items-center gap-3 rounded-orta p-3",
+                      kapali
+                        ? "border border-dashed border-kenar"
+                        : adet === undefined
+                          ? "border border-kenar"
+                          : "border-2 border-yazi",
+                    )}
                   >
                     <SatirGorseli
                       satir={kalem.gorsel === undefined ? {} : { gorsel: kalem.gorsel }}

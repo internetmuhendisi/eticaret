@@ -63,8 +63,8 @@ export function HesapCercevesi({
   basliksiz?: boolean;
   // Başlığın yanındaki eylem (Adreslerim: "Yeni adres ekle").
   ek?: ReactNode;
-  // Sayfa yolunun son adımları (sipariş ayrıntısı: numara ve adresi; iade talebi: numara ve talep, kart 0239).
-  sonAdim?: { ad: string; adres: string } | readonly { ad: string; adres: string }[];
+  // Sayfa yolunun son adımı (sipariş ayrıntısı: numara ve adresi).
+  sonAdim?: { ad: string; adres: string };
 }) {
   const sayfa = menu.find((oge) => oge.sayfa === secili);
   const baslik = metin(sayfa?.ad ?? "vitrin.hesap.baslik");
@@ -77,7 +77,7 @@ export function HesapCercevesi({
           { ad: metin("vitrin.sayfa.anasayfa"), adres: vitrinAdresleri.anasayfa },
           { ad: metin("vitrin.hesap.baslik"), adres: vitrinAdresleri.hesabim },
           { ad: baslik, adres: sayfa?.adres ?? vitrinAdresleri.hesabim },
-          ...(sonAdim === undefined ? [] : Array.isArray(sonAdim) ? sonAdim : [sonAdim]),
+          ...(sonAdim === undefined ? [] : [sonAdim]),
         ]}
       />
       <div className="flex flex-col gap-6 masaustu:flex-row masaustu:items-start masaustu:gap-8">

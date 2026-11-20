@@ -935,7 +935,11 @@
           "iptalIadeBekliyor": "Sipariş iptal edildi, {tutar} iadesi işleniyor",
           "iade": "{tutar} iade edildi",
           "iadeBekliyor": "{tutar} iadesi işleniyor",
-          "magazadanNot": "Mağazadan not"
+          "magazadanNot": "Mağazadan not",
+          "talepAlindi": "İade talebiniz alındı",
+          "talepOnaylandi": "İade talebiniz onaylandı",
+          "talepOnaylandiAyrinti": "Ürün mağazaya ulaşınca ödemeniz iade edilir.",
+          "talepReddedildi": "İade talebiniz kabul edilmedi"
         },
         "iadeKalemi": "{adet} × {urun}",
         "kargoUcreti": "Kargo ücreti",
@@ -944,7 +948,25 @@
         "eksiTutar": "−{tutar}",
         "kartlaOdenen": "Kartınızdan ödenen ({taksit} taksit)",
         "kisiselSilindi": "Bu siparişin ad, adres ve iletişim bilgileri saklama süresi dolduğu için silindi.",
-        "kisaTelefon": "*** *** ** {son}"
+        "kisaTelefon": "*** *** ** {son}",
+        "iptalEt": "Siparişi iptal et",
+        "iptalSorusu": "Sipariş iptal edilsin mi?",
+        "iptalAciklamasi": "{numara} iptal edilir, ürünler stoğa döner. Bu işlem geri alınamaz.",
+        "iptalParaKarta": "Ödediğiniz tutar kartınıza geri döner.",
+        "iptalBasari": "Siparişiniz iptal edildi.",
+        "iptalBekliyor": "Siparişiniz iptal edildi. Ödediğiniz tutarın kartınıza iadesi işleniyor.",
+        "iptalHata": {
+          "genel": "Sipariş iptal edilemedi. Bağlantınızı kontrol edip yeniden deneyin.",
+          "degisti": "Siparişin durumu değişti, artık buradan iptal edilemiyor. Sayfa yenilendi.",
+          "bulunamadi": "Sipariş bulunamadı. Takip süresi dolduysa numara ve e-postanızla yeniden sorgulayın.",
+          "sinir": "Çok sayıda deneme yapıldı. Biraz bekleyip yeniden deneyin.",
+          "basarisiz": "Ödemenizin kartınıza iadesi şu an yapılamadı, sipariş iptal edilmedi. Mağazayla iletişime geçin."
+        },
+        "iptalMagazadan": "Ödemesi alınmış siparişi iptal etmek için mağazayla iletişime geçin; ödemeyi mağaza geri gönderir.",
+        "talepSuresiDoldu": "İade talebi süresi {tarih} tarihinde doldu.",
+        "talepInceleniyor": "İade talebiniz inceleniyor. Sonucu bu sayfada görürsünüz.",
+        "iadeTalebiOlustur": "İade talebi oluştur",
+        "talepler": "İade talepleriniz"
       },
       "siparisTakibi": {
         "baslik": "Sipariş takibi",
@@ -966,6 +988,47 @@
           "sinir": "Çok fazla deneme yaptınız. Birkaç dakika bekleyip yeniden deneyin.",
           "genel": "Sipariş şu an aranamadı. Biraz sonra yeniden deneyin."
         }
+      },
+      "iadeTalebi": {
+        "baslik": "İade talebi",
+        "ust": "{numara} · {teslim} tarihinde teslim edildi · Son gün {sonGun}",
+        "urunler": "Hangi ürünleri iade etmek istiyorsunuz?",
+        "urunlerKisa": "İade edilecek ürün",
+        "istenemez": "İade edildi ya da talebinizde",
+        "alinanAdet": "{adet} adet alındı · {fiyat}",
+        "adetGrubu": "İade adedi: {urun}",
+        "azalt": "Azalt: {urun}",
+        "artir": "Artır: {urun}",
+        "neden": {
+          "baslik": "İade nedeni",
+          "beklentiyi-karsilamadi": "Beklentimi karşılamadı",
+          "kusurlu-hasarli": "Kusurlu ya da hasarlı",
+          "yanlis-urun": "Yanlış ürün geldi",
+          "beden-uymadi": "Bedeni uymadı",
+          "diger": "Diğer"
+        },
+        "aciklama": "Açıklama (isteğe bağlı)",
+        "aciklamaIpucu": "Kusurlu ya da hasarlı üründe ne olduğunu yazın. En çok {sinir} karakter.",
+        "kargoMagaza": "İade kargosu bizden: onaydan sonra ürünü nasıl göndereceğinizi size bildiririz, kargo ücretini siz ödemezsiniz.",
+        "kargoMusteri": "İade kargosu sizden: onaydan sonra ürünü dilediğiniz kargoyla gönderirsiniz, kargo ücreti iadeye eklenmez.",
+        "gonder": "Talebi gönder",
+        "gonderiliyor": "Talebiniz gönderiliyor…",
+        "hataOzeti": "Talebi göndermek için {sayi} alanı düzeltin:",
+        "hata": {
+          "kalemler": "En az bir ürün seçin.",
+          "neden": "İade nedenini seçin.",
+          "aciklama": "Açıklama yazılamadı. Çok uzunsa kısaltın, özel karakterleri kaldırın.",
+          "bekleyen": "Bu sipariş için incelenen bir talebiniz var. Sonucu sipariş sayfanızda görebilirsiniz.",
+          "kapali": "Bu sipariş için artık iade talebi açılamıyor. Süre dolmuş ya da sipariş değişmiş olabilir; sipariş sayfanıza dönün.",
+          "bulunamadi": "Sipariş bulunamadı. Takip süresi dolduysa numara ve e-postanızla yeniden sorgulayın.",
+          "sinir": "Çok sayıda deneme yapıldı. Biraz bekleyip yeniden deneyin.",
+          "genel": "Talep gönderilemedi. Bağlantınızı kontrol edip yeniden deneyin."
+        },
+        "alindi": "İade talebiniz alındı",
+        "alindiAciklamasi": "Mağaza talebinizi inceleyince sonucu sipariş sayfanızda görürsünüz. Onaylanmadan ürünü göndermeyin.",
+        "siparisinizeDonun": "Siparişe dön",
+        "kalanYok": "Bu siparişte iade isteyebileceğiniz ürün kalmadı.",
+        "teslimEdilmedi": "İade talebi sipariş teslim edildikten sonra açılır."
       }
     },
     "eklenti": {

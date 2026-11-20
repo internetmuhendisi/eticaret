@@ -13,8 +13,8 @@ import { SayfaYolu } from "../../../bilesenler/parcalar/sayfa-yolu";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { siparisTakipCerezi } from "../../kayitlar/siparis";
+import { doldur } from "../../metinler/doldur";
 import { metin, siteninBicimleyicisi } from "../../metinler/site-metni";
-import { doldur } from "../../moduller/eposta/sablon";
 import { bulunamadiSayfaBilgisi, sayfaBasligi } from "../../moduller/gorunurluk/sayfa-bilgisi";
 import { type MusteriSiparisi, musteriSiparisleri } from "../../moduller/siparis/musteri";
 import { siteninVeritabani } from "../../veritabani/baglanti";
@@ -24,7 +24,6 @@ import {
   siparisTakibiAdresi,
   vitrinAdresleri,
 } from "../adresler";
-import { HesapCercevesi } from "../hesap/cerceve";
 import { hesapSayfasiniAc } from "../hesap/oturum";
 import { hesabinSiparisi } from "../hesap/siparisler";
 import { musteriSayfasiBilgisi, musteriSayfasiniAc } from "../yalniz-gezinti";
@@ -87,7 +86,7 @@ async function Icerik({
   );
   if (neden !== null) {
     return (
-      <div className="flex max-w-form flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-metin flex-col gap-4">
         {ust}
         <Uyari tur="bilgi">{neden}</Uyari>
         <Baglanti href={siparisAdresi} gorunum="sade" className="self-start">
@@ -119,29 +118,33 @@ async function Icerik({
     siparisAdresi,
   };
   return (
-    <div className="flex max-w-metin flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-metin flex-col gap-4">
       {ust}
       <IadeTalebiFormu veri={veri} />
     </div>
   );
 }
 
+// Taslaktaki gibi hesap menüsü olmadan, ortada dar formla çizilir; sayfa yolu hesabın yoludur.
 export async function HesapIadeTalebiSayfasi({ numara }: { numara: string }) {
-  const oturum = await hesapSayfasiniAc(hesapIadeTalebiAdresi(numara));
+  await hesapSayfasiniAc(hesapIadeTalebiAdresi(numara));
   const siparis = await hesabinSiparisi(numara);
   if (siparis === null) notFound();
   return (
-    <HesapCercevesi
-      secili="siparisler"
-      eposta={oturum.eposta}
-      basliksiz
-      sonAdim={[
-        { ad: siparis.numara, adres: hesapSiparisiAdresi(siparis.numara) },
-        { ad: metin("vitrin.iadeTalebi.baslik"), adres: hesapIadeTalebiAdresi(siparis.numara) },
-      ]}
-    >
+    <main className="mx-auto flex w-full max-w-icerik flex-col gap-4 px-4 pt-5 pb-12 tablet:px-6">
+      <SayfaYolu
+        etiket={metin("ortak.parca.sayfaYolu")}
+        ayrac={metin("ortak.parca.sayfaYoluAyraci")}
+        adimlar={[
+          { ad: metin("vitrin.sayfa.anasayfa"), adres: vitrinAdresleri.anasayfa },
+          { ad: metin("vitrin.hesap.baslik"), adres: vitrinAdresleri.hesabim },
+          { ad: metin("vitrin.hesap.siparisler.baslik"), adres: vitrinAdresleri.hesapSiparisleri },
+          { ad: siparis.numara, adres: hesapSiparisiAdresi(siparis.numara) },
+          { ad: metin("vitrin.iadeTalebi.baslik"), adres: hesapIadeTalebiAdresi(siparis.numara) },
+        ]}
+      />
       <Icerik siparis={siparis} yol="hesap" siparisAdresi={hesapSiparisiAdresi(siparis.numara)} />
-    </HesapCercevesi>
+    </main>
   );
 }
 

@@ -531,7 +531,6 @@ export function SiparisAyrintisi({
               </p>
             )}
           </Bolum>
-          <IadeVeIptal siparis={siparis} bicim={bicim} yol={yol} talepAdresi={talepAdresi} />
           <Bolum kimlik="siparis-teslimati" baslik={metin("vitrin.siparisAlindi.teslimatVeFatura")}>
             <dl className="flex flex-col gap-1">
               <dt className="text-soluk-yazi">{metin("vitrin.siparisAlindi.teslimatAdresi")}</dt>
@@ -554,6 +553,7 @@ export function SiparisAyrintisi({
               )}
             </dl>
           </Bolum>
+          <IadeVeIptal siparis={siparis} bicim={bicim} yol={yol} talepAdresi={talepAdresi} />
         </div>
       </div>
     </div>
