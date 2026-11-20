@@ -21,4 +21,4 @@ Bölüm: Sipariş ve müşteri hesabı. Kart 0237 ile birlikte yapılır.
 
 ## Durum
 
-yapılacak
+bitti
