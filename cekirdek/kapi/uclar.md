@@ -749,6 +749,15 @@ Sipariş ayarlarının "İptal ve iade" bölümü (kart 0239): müşterinin kend
 - Başarılı (200): GET `/kapi/yonetici/siparis-ayarlari` ile aynı veri.
 - Hatalar: `dogrulama` (alan `iadeTalebiSuresi`), `yetki`.
 
+### POST /kapi/yonetici/yonetici-bildirim-ayarlari
+
+Sipariş ayarlarının "Yönetici bildirimleri" bölümü (kart 0241, karar 0154): bildirimlerin gideceği adresler ve kapalı bildirimler birlikte kaydedilir. Adresler virgül, noktalı virgül ya da boşlukla ayrılır, küçük harfe çevrilir; boşsa bildirimler tam yetkili rolün yöneticilerine gider. Kapalı bildirimler sitede görünenlerden gelir (kartla ödemeye bağlı bildirimler yalnız eklenti açıkken); görünmeyenin kayıtlı hâli korunur. Değişiklik kaydına girer (`magaza-ayari.degisti`; adreslerin değeri yazılmaz).
+
+- İzin: `magaza-ayarlari.degistir`. Sınır: `genel`.
+- Girdi: `{ "alicilar": "<adresler, virgülle>", "kapalilar": ["yeni-siparis" | "havale-bildirimi" | "iade-talebi" | "iptal" | "stok" | "yorum" | "kartla-odeme-uyusmazligi" | "bekleyen-iade", …] }` (`yoneticiBildirimAyarlariSemasi`).
+- Başarılı (200): GET `/kapi/yonetici/siparis-ayarlari` ile aynı veri (`yoneticiBildirimAlicilari`, `kapaliYoneticiBildirimleri` dahil).
+- Hatalar: `dogrulama` (alan `alicilar`: `alici-siniri` en çok 5, `eposta-gecersiz`, `alici-tekrari`; alan `kapalilar`: `bildirim-yok` sitede görünmeyen bildirim), `yetki`.
+
 ### GET /kapi/yonetici/kargo-ayarlari
 
 Panelin kargo ekranının verisi (kart 0212): kargo ücreti, ücretsiz kargo sınırı, kargoya verme süresi (iş günü) ve sınırın indirimden önceki mi sonraki mi tutara baktığı. Tutarlar kuruştur.

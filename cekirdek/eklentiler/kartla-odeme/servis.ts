@@ -25,6 +25,7 @@ import { sepetiHesapla } from "../../moduller/sepet/hesap.ts";
 import { siparisler } from "../../moduller/siparis/model.ts";
 import { erisimOzeti } from "../../moduller/siparis/servis.ts";
 import { stokServisi } from "../../moduller/stok/servis.ts";
+import { yoneticiBildirimiYaz } from "../../moduller/yonetici-bildirimi/servis.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { kimlikMi } from "../../veritabani/kimlik.ts";
 import { eklentiAcikMi } from "../acik.ts";
@@ -434,6 +435,14 @@ export const kartlaOdemeServisi = (site: Site) => {
         islem: "kartla-odeme-karsilastirma",
         gun,
         ...uyusmazlik,
+      });
+    }
+    // Yöneticiye bildirim (kart 0241): ortam ve gün başına bir kez (karşılaştırma yeniden çalışsa da).
+    if (uyusmazliklar.length > 0) {
+      await yoneticiBildirimiYaz(vt, {
+        bildirim: "kartla-odeme-uyusmazligi",
+        anahtar: `kartla-odeme-karsilastirma:${ortam}:${gun}`,
+        veri: { gun, sayi: uyusmazliklar.length },
       });
     }
     return uyusmazliklar;

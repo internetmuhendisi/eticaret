@@ -37,10 +37,12 @@ import {
   type StokSebebi,
   stokSebepleri,
 } from "../../kayitlar/stok.ts";
+import type { StokUyarisiTuru } from "../../kayitlar/yonetici-bildirimi.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { urunBirimleri, urunler } from "../urun/model.ts";
+import { stokUyarisiYaz } from "../yonetici-bildirimi/servis.ts";
 import { birimStoklariniOku } from "./durum.ts";
 import { birimStoklari, stokAyirmalari, stokGecmisi } from "./model.ts";
 import {
@@ -135,6 +137,7 @@ const birimiKilitle = async (islem: VeritabaniIslemi, birim: string) => {
   const [bulunan] = await islem
     .select({
       takip: urunler.stok_takibi,
+      esik: urunler.dusuk_stok_esigi,
       urunSilinme: urunler.silinme_zamani,
       birimSilinme: urunBirimleri.silinme_zamani,
     })
@@ -145,6 +148,7 @@ const birimiKilitle = async (islem: VeritabaniIslemi, birim: string) => {
   if (bulunan === undefined) return undefined;
   return {
     takip: bulunan.takip,
+    esik: bulunan.esik,
     silinmis: bulunan.urunSilinme !== null || bulunan.birimSilinme !== null,
   };
 };
@@ -161,6 +165,18 @@ const kaynakDenetle = (kaynak: string | undefined) => {
   }
 };
 
+// Düşürmenin geçtiği eşik (kart 0241): sıfıra ya da altına inen "tükendi", eşiğe ya da altına inen "düşük" (stokDurumu
+// ile aynı kural: miktar <= eşik; eşik 0 düşük stoğu kapatır). Zaten altında olan birim yeniden uyarmaz.
+export const stokUyarisiTuru = (
+  onceki: number,
+  sonraki: number,
+  esik: number,
+): StokUyarisiTuru | undefined => {
+  if (sonraki <= 0 && onceki > 0) return "tukendi";
+  if (esik > 0 && sonraki <= esik && onceki > esik) return "dusuk";
+  return undefined;
+};
+
 export const stokServisi = () => {
   // Sipariş oluşurken: her kalemin stoğu yeterliyse düşer. Bir kalem yetmezse ya da birimi satılamazsa
   // hiçbir kalem düşmez ve çakışma hatası bütün sorunlu birimleri söyler. Çağıranın işleminde çalışır:
@@ -172,7 +188,15 @@ export const stokServisi = () => {
     islem: VeritabaniIslemi,
     kim: DegisikligiYapan,
     hamKalemler: StokKalemi[],
-    secenekler: { sebep: DusmeSebebi; kaynak?: string; oturum?: string },
+    secenekler: {
+      sebep: DusmeSebebi;
+      kaynak?: string;
+      oturum?: string;
+      // Yönetici stok uyarısı (kart 0241): sitenin düşük stok eşiği (ürünün eşiği önce gelir). Verilirse düşürme
+      // eşiği ya da sıfırı yukarıdan aşağı geçince uyarı aynı işlemde yazılır. Satır kilitli olduğu için aynı anda
+      // iki düşürmede geçişi yalnız biri görür.
+      uyari?: { dusukStokEsigi: number };
+    },
   ): Promise<void> => {
     const kalemler = kalemleriTopla(hamKalemler);
     kaynakDenetle(secenekler.kaynak);
@@ -220,6 +244,16 @@ export const stokServisi = () => {
           kaynak: secenekler.kaynak,
           kim,
         });
+        if (secenekler.uyari !== undefined) {
+          const tur = stokUyarisiTuru(
+            yeni.miktar + adet,
+            yeni.miktar,
+            durum.esik ?? secenekler.uyari.dusukStokEsigi,
+          );
+          if (tur !== undefined) {
+            await stokUyarisiYaz(ic, { birim, tur, miktar: yeni.miktar });
+          }
+        }
       }
       if (sorunlar.length > 0) throw new BilinenHata("cakisma", sorunlar);
     });

@@ -12,11 +12,10 @@ import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { logonunAdresi, magazaLogosu } from "../magaza-ayarlari/logo.ts";
 import { magazaninAdi, siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
-import { siparisEpostaIcerikleri } from "../siparis/eposta-icerigi.ts";
 import { type EpostaGondericisi, epostaGondericisi } from "./gonderici.ts";
 import { epostaGorunusu } from "./gorunus.ts";
 import { epostaKayitlari } from "./model.ts";
-import { epostaOlustur, type IcerikBaglami } from "./sablon.ts";
+import { epostaOlustur, type IcerikBaglami, veriliSablonMu } from "./sablon.ts";
 
 export const gonderilmemeNedeni = {
   gondericiYok: "gonderici-yok",
@@ -72,8 +71,8 @@ export const epostaKaydiniGonder = async (
     .select({ sablon: epostaKayitlari.sablon })
     .from(epostaKayitlari)
     .where(eq(epostaKayitlari.kimlik, kayitKimligi));
-  const siparisEpostasi = bakis !== undefined && bakis.sablon in siparisEpostaIcerikleri;
-  const satici = siparisEpostasi ? await saticiAltBilgisi(vt, site) : {};
+  const veriliSablon = bakis !== undefined && veriliSablonMu(bakis.sablon);
+  const satici = veriliSablon ? await saticiAltBilgisi(vt, site) : {};
   const sonuc = await vt.transaction(async (islem) => {
     const [kayit] = await islem
       .select()
@@ -108,7 +107,7 @@ export const epostaKaydiniGonder = async (
       sablon,
       degiskenler: (kayit.degiskenler ?? {}) as Record<string, string>,
       gorunus,
-      ...(siparisEpostasi
+      ...(veriliSablon
         ? {
             veri: kayit.veri,
             bicim: siteninBicimleyicisi(ayarlar),

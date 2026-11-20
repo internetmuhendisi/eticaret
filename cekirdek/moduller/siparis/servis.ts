@@ -133,6 +133,8 @@ export const siparisServisi = (site: Site) => {
         bankaHesaplari?: readonly { banka: string; sahip: string; iban: string }[];
         gonder?: boolean;
       };
+      // Yönetici stok uyarısı (kart 0241): sitenin düşük stok eşiği; verilirse eşiği geçen birim uyarı yazar.
+      stokUyarisi?: { dusukStokEsigi: number };
     },
   ): Promise<KurulanSiparis> => {
     const { oturum, hesap, odeme } = girdi;
@@ -229,7 +231,12 @@ export const siparisServisi = (site: Site) => {
         islem,
         kim,
         satilanlar.map(({ birim, adet }) => ({ birim, adet })),
-        { sebep: "siparis", kaynak: yazilan.kimlik, oturum: oturum.kimlik },
+        {
+          sebep: "siparis",
+          kaynak: yazilan.kimlik,
+          oturum: oturum.kimlik,
+          ...(girdi.stokUyarisi === undefined ? {} : { uyari: girdi.stokUyarisi }),
+        },
       );
     } catch (hata) {
       if (hata instanceof BilinenHata && hata.kod === "cakisma") {

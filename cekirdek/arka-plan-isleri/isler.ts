@@ -18,6 +18,7 @@ import { kartlaOdemeAyari, stokBildirimiAyari } from "../kayitlar/eklentiler.ts"
 import { epostaGonderIsi, epostaKayitTemizligiIsi } from "../moduller/eposta/isler.ts";
 import { odemeOturumuTemizligiIsi } from "../moduller/odeme/isler.ts";
 import { havaleIptalIsi, kisiselVeriTemizligiIsi } from "../moduller/siparis/isler.ts";
+import { stokUyarisiIsi, yoneticiBildirimiIsi } from "../moduller/yonetici-bildirimi/isler.ts";
 import { type ZamanliIs, zamanliIs } from "./calistirici.ts";
 import { bitenIsleriSil, type IsTanimi, isTanimla } from "./kuyruk.ts";
 
@@ -72,6 +73,9 @@ export const kayitliIsler: readonly IsTanimi[] = [
   kartlaOdemeKarsilastirmasiIsi,
   // İptal ve iade (kart 0235, karar 0147).
   kartlaIadeTaramasiIsi,
+  // Yönetici bildirimleri (kart 0241, karar 0154).
+  yoneticiBildirimiIsi,
+  stokUyarisiIsi,
 ];
 
 export const zamanliIsler: readonly ZamanliIs[] = [

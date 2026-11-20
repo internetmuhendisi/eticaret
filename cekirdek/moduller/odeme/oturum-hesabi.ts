@@ -121,6 +121,7 @@ export const eklentiliSiparisiKur = async (
         odeme: girdi.odeme,
         havaleIptalSuresi: ayarlar.havaleIptalSuresi,
         tahsilat: girdi.tahsilat,
+        stokUyarisi: { dusukStokEsigi: ayarlar.dusukStokEsigi },
       });
       await islemde.sonra(islem, siparis);
       return siparis;

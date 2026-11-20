@@ -29,6 +29,16 @@ export const epostaSablonlari = [
   "iade-talebi-alindi",
   "iade-talebi-onaylandi",
   "iade-talebi-reddedildi",
+  // Yönetici bildirimleri (kart 0241, karar 0154); hangi bildirimin hangisi olduğu
+  // cekirdek/kayitlar/yonetici-bildirimi.ts: yoneticiBildirimTanimlari.
+  "yonetici-yeni-siparis",
+  "yonetici-havale-bildirimi",
+  "yonetici-iade-talebi",
+  "yonetici-iptal",
+  "yonetici-stok",
+  "yonetici-yorum",
+  "yonetici-kartla-odeme-uyusmazligi",
+  "yonetici-bekleyen-iade",
 ] as const;
 export type EpostaSablonu = (typeof epostaSablonlari)[number];
 

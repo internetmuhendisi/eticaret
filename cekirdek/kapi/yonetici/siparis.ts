@@ -24,6 +24,7 @@ import {
   siparisIslemiSemasi,
   siparisListesiSemasi,
   siparisNotuSemasi,
+  yoneticiBildirimAyarlariSemasi,
 } from "../../moduller/siparis/semalar.ts";
 import { siparisYonetimi } from "../../moduller/siparis/yonetim.ts";
 import { siteninVeritabani } from "../../veritabani/baglanti.ts";
@@ -126,6 +127,20 @@ export const iptalVeIadeAyarlariUcu = ucTanimla({
   sinir: "genel",
   isle: (girdi, _istek, _yanit, { hesapKimligi }) =>
     siparisAyarlari(calisanSite()).iptalVeIadeAyarlariniKaydet(
+      siteninVeritabani(),
+      { tur: "yonetici", kimlik: hesapKimligi },
+      girdi,
+    ),
+});
+
+// POST /kapi/yonetici/yonetici-bildirim-ayarlari: yönetici bildirimlerinin alıcıları ve kapalı bildirimler (kart 0241).
+export const yoneticiBildirimAyarlariUcu = ucTanimla({
+  giris: "yonetici",
+  sema: yoneticiBildirimAyarlariSemasi,
+  izin: "magaza-ayarlari.degistir",
+  sinir: "genel",
+  isle: (girdi, _istek, _yanit, { hesapKimligi }) =>
+    siparisAyarlari(calisanSite()).yoneticiBildirimleriniKaydet(
       siteninVeritabani(),
       { tur: "yonetici", kimlik: hesapKimligi },
       girdi,

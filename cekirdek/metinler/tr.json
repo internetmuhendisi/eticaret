@@ -150,7 +150,9 @@
       "kartlaOdemeEnCokTaksit": "Kartla ödemede müşteriye sunulan en çok taksit sayısı. 1 yalnız tek çekim demektir.",
       "musteriIptali": "Müşteri siparişini kendisi iptal edebilir mi: hayır, yalnız ödeme beklenirken ya da kargoya verilene kadar. Ödemesi havaleyle alınmış siparişi müşteri iptal edemez.",
       "iadeTalebiSuresi": "Müşteri teslimden sonra kaç gün içinde iade talebi açabilir.",
-      "iadeKargosu": "İade kargosunu kim öder: mağaza ya da müşteri. İade talebi formunda müşteriye söylenir."
+      "iadeKargosu": "İade kargosunu kim öder: mağaza ya da müşteri. İade talebi formunda müşteriye söylenir.",
+      "yoneticiBildirimAlicilari": "Yönetici bildirimlerinin gideceği e-posta adresleri, en çok 5. Boşsa bildirimler mağaza sahibi rolündeki yöneticilere gider.",
+      "kapaliYoneticiBildirimleri": "Kapatılan yönetici bildirimleri. Listede olmayan her bildirim açıktır."
     }
   },
   "tema": {
@@ -1091,7 +1093,31 @@
         "musteri": "Müşteri",
         "aciklama": "İade talebi formunda müşteriye söylenir."
       },
-      "iptalKaydedildi": "İptal ve iade ayarları kaydedildi."
+      "iptalKaydedildi": "İptal ve iade ayarları kaydedildi.",
+      "bildirimler": "Yönetici bildirimleri",
+      "bildirimlerAciklamasi": "Mağazada bir şey olunca hangi e-postaların gideceği ve kime gideceği. Değişiklik kaydedilince hemen geçerli olur.",
+      "bildirimlerKaydedildi": "Yönetici bildirimleri kaydedildi.",
+      "acik": "Açık",
+      "kapali": "Kapalı",
+      "alicilar": {
+        "ad": "Bildirimlerin gideceği adresler",
+        "aciklama": "Virgülle en çok {sayi} adres. Boşsa mağaza sahibi rolündeki yöneticilere gider.",
+        "hata": {
+          "sinir": "En çok {sayi} adres yazabilirsiniz. Fazla adresleri silin.",
+          "eposta": "Adreslerden biri e-posta adresi değil. Adresleri virgülle ayırarak yazın, örneğin sahip@ornek.com.",
+          "tekrar": "Aynı adres iki kez yazılmış. Tekrarlananı silin."
+        }
+      },
+      "bildirim": {
+        "yeni-siparis": "Yeni sipariş",
+        "havale-bildirimi": "Havale bildirimi",
+        "iade-talebi": "İade talebi",
+        "iptal": "Müşterinin ya da süre dolunca iptal",
+        "stok": "Düşük ve tükenen stok",
+        "yorum": "Onay bekleyen yorum",
+        "kartla-odeme-uyusmazligi": "Kartla ödeme uyuşmazlığı",
+        "bekleyen-iade": "Kuruluşta bekleyen iade"
+      }
     },
     "iade": {
       "iptalBaslik": "Siparişi iptal et",
@@ -2361,6 +2387,72 @@
       "govde": "Merhaba {ad}, {numara} numaralı siparişinizdeki iade talebinizi inceledik ve kabul edemedik.",
       "aciklama": "Mağazanın açıklaması",
       "soru": "Sorunuz varsa bu e-postayı yanıtlayın."
+    },
+    "yonetici": {
+      "kisaAd": "{ad} {harf}.",
+      "altBilgi": "Yönetici bildirimi. Bu bildirimleri panelde Sipariş ayarları > Yönetici bildirimleri bölümünden kapatabilirsiniz.",
+      "musteri": "Müşteri",
+      "uye": "{ad} (üye)",
+      "uyeDegil": "{ad} (üye değil)",
+      "odeme": "Ödeme",
+      "teslimat": "Teslimat",
+      "urunler": "Ürünler",
+      "urunSayisi": "{adet} adet, {kalem} kalem",
+      "siparisiAc": "Siparişi panelde aç",
+      "siparisleriAc": "Siparişleri panelde aç",
+      "yeniSiparis": {
+        "konu": "Yeni sipariş: {numara} · {toplam}",
+        "baslik": "Yeni sipariş: {numara}"
+      },
+      "havale": {
+        "konu": "Havale bildirimi: {numara} · {tutar}",
+        "baslik": "Müşteri ödediğini bildirdi",
+        "govde": "{numara} numaralı siparişin müşterisi havaleyle ödediğini bildirdi. Hesabınızı kontrol edip panelden onaylayın; bildirimli sipariş süresi dolunca kendiliğinden iptal olmaz.",
+        "gonderen": "Gönderen",
+        "hesap": "Hesap",
+        "tarih": "Ödeme tarihi",
+        "tutar": "Bildirilen tutar",
+        "dugme": "Havaleyi panelde onayla"
+      },
+      "iadeTalebi": {
+        "konu": "İade talebi: {numara}",
+        "baslik": "Yeni iade talebi",
+        "govde": "{numara} numaralı siparişte müşteri iade istiyor.",
+        "neden": "Neden",
+        "teslim": "Teslim tarihi",
+        "dugme": "Talebi panelde incele"
+      },
+      "iptal": {
+        "konu": "Sipariş iptal edildi: {numara}",
+        "baslik": "Sipariş iptal edildi",
+        "sureDoldu": "{numara} numaralı sipariş ({toplam}) ödeme süresi dolduğu için kendiliğinden iptal edildi, ürünler stoğa döndü.",
+        "musteri": "{numara} numaralı siparişi ({toplam}) müşteri iptal etti, ürünler stoğa döndü."
+      },
+      "stok": {
+        "konu": "Stok uyarısı: {sayi} ürün",
+        "baslik": "Stok uyarısı",
+        "stokKodu": "Stok kodu {kod}",
+        "tukendi": "Tükendi",
+        "kaldi": "{adet} adet kaldı",
+        "not": "Bir ürün eşiğin altına indiğinde bir kez yazılır; bir saat içindeki uyarılar tek e-postada toplanır."
+      },
+      "yorum": {
+        "konu": "Onay bekleyen yorum: {urun}",
+        "baslik": "Onay bekleyen yorum",
+        "govde": "{urun} için yeni bir yorum var. Yorum siz onaylayınca yayınlanır.",
+        "puan": "5 üzerinden {puan} puan · {ad}"
+      },
+      "uyusmazlik": {
+        "konu": "Kartla ödeme uyuşmazlığı: {tarih}",
+        "baslik": "Kartla ödemelerde uyuşmazlık",
+        "govde": "{tarih} günündeki kartla ödemeleri ödeme kuruluşunun kaydıyla karşılaştırdık, {sayi} uyuşmazlık bulduk. Ödeme kuruluşunun panelini ve sitenin siparişlerini karşılaştırın."
+      },
+      "bekleyenIade": {
+        "konu": "Bekleyen iade: {numara}",
+        "baslik": "İade kuruluşta bekliyor",
+        "rapordaYok": "{numara} numaralı siparişin kartla iadesi ödeme kuruluşunun raporunda bulunamadı. Paranın dönüp dönmediğini kuruluşun panelinden kontrol edin.",
+        "kismiRed": "{numara} numaralı siparişin kartla iadesinin bir kısmı döndü, bir kısmı reddedildi. İadeyi siparişten yeniden deneyin."
+      }
     }
   },
   "gelistirme": {

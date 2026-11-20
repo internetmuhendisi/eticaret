@@ -16,6 +16,7 @@ import {
   siparisNotTurleri,
   siparisSinirlari,
 } from "../../kayitlar/siparis.ts";
+import { yoneticiBildirimleri } from "../../kayitlar/yonetici-bildirimi.ts";
 import { duzMetinSemasi } from "../../metinler/duz-metin.ts";
 import { kimlikSemasi } from "../../veritabani/kimlik.ts";
 import { kayitDegeriYasakMi, kayitMetniHatasi } from "../degisiklik-kaydi/deger.ts";
@@ -168,6 +169,17 @@ export const iptalVeIadeAyarlariSemasi = z.strictObject({
   iadeKargosu: z.enum(iadeKargosuOdeyenler),
 });
 export type IptalVeIadeAyarlari = z.output<typeof iptalVeIadeAyarlariSemasi>;
+
+// Sipariş ayarlarının "Yönetici bildirimleri" bölümü (kart 0241): alıcılar ekranın yazdığı hâliyle (virgülle ayrılmış),
+// sunucuda ayrılıp doğrulanır (siparisAyarlari.yoneticiBildirimleriniKaydet); kapalı bildirimler ekranda görünenlerden.
+export const yoneticiBildirimAyarlariSemasi = z.strictObject({
+  alicilar: z.string().max(2000),
+  kapalilar: z
+    .array(z.enum(yoneticiBildirimleri))
+    .max(yoneticiBildirimleri.length)
+    .refine((liste) => new Set(liste).size === liste.length, "tekrar"),
+});
+export type YoneticiBildirimAyarlariGirdisi = z.output<typeof yoneticiBildirimAyarlariSemasi>;
 
 // Bekleyen (kuruluşun yanıtını bekleyen) iadeyi yeniden dener.
 export const iadeYenidenDenemeSemasi = z.strictObject({ numara: siparisNumarasiSemasi });

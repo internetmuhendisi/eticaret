@@ -5,6 +5,7 @@
 // cekirdek/moduller/siparis/testler/servis.test.ts ve durum.test.ts denetler.
 
 import type { EpostaSablonu } from "./eposta.ts";
+import type { YoneticiBildirimi } from "./yonetici-bildirimi.ts";
 
 // Sipariş durumları ve geçişleri (karar 0145). Tek durum tanımıdır: panel, e-posta ve rapor bunu kullanır.
 // - odeme-bekleniyor: havale ve kapıda ödemede sipariş bu durumla kurulur. Havalede ödeme onaylanınca, kapıda
@@ -96,6 +97,27 @@ export const siparisGecmisiEpostalari = {
   "iade-talebi-reddedildi": "iade-talebi-reddedildi",
   "musteri-iptali": "siparis-iptali",
 } as const satisfies Record<SiparisGecmisiNedeni, EpostaSablonu | "iade" | null>;
+
+// Yönetici bildirimleri (kart 0241, karar 0154): geçmişin her nedeni ya bir bildirim doğurur ya da doğurmaz (null).
+// Bildirim geçmiş satırıyla aynı işlemde kuyruğa girer, anahtarı satırın kimliğidir. Panelden girilen sipariş ve
+// mağazanın kendi iptali bildirilmez (kendisi yaptı).
+export const siparisGecmisiYoneticiBildirimleri = {
+  olusturuldu: "yeni-siparis",
+  "panelden-olusturuldu": null,
+  "havale-suresi-doldu": "iptal",
+  "havale-bildirildi": "havale-bildirimi",
+  "havale-onaylandi": null,
+  "hazirlamaya-alindi": null,
+  "kargoya-verildi": null,
+  "kargo-duzeltildi": null,
+  "teslim-edildi": null,
+  "yonetici-iptali": null,
+  "iade-yapildi": null,
+  "iade-talebi-alindi": "iade-talebi",
+  "iade-talebi-onaylandi": null,
+  "iade-talebi-reddedildi": null,
+  "musteri-iptali": "iptal",
+} as const satisfies Record<SiparisGecmisiNedeni, YoneticiBildirimi | null>;
 
 // Panelin sipariş işlemleri (kart 0234). Her işlem tek geçiştir; yontem verilmişse yalnız o ödeme yöntemindeki
 // siparişte yapılır. odeme: işlem ödemenin alındığı andır (havalede onay, kapıda ödemede teslim). izin: işlemi

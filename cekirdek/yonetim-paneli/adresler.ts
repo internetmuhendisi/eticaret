@@ -6,6 +6,10 @@ export const kurulumAdresi = `${girisAdresi}/kurulum`;
 export const sifremiUnuttumAdresi = `${girisAdresi}/sifremi-unuttum`;
 export const sifreYenileAdresi = `${girisAdresi}/sifre-yenile`;
 export const donusParametresi = "donus";
+// Siparişler ve bir siparişin ayrıntısı (kart 0234); yönetici bildirimi e-postası da buraya bağlanır (kart 0241).
+export const siparislerAdresi = `${panelAdresi}/siparisler`;
+export const siparisAyrintisiAdresi = (numara: string): string =>
+  `${siparislerAdresi}/ayrinti?numara=${encodeURIComponent(numara)}`;
 
 // Şifreden sonraki ara adımın sayfası (kart 0028).
 export const adimAdresi = (durum: "kod" | "kurulum"): string =>

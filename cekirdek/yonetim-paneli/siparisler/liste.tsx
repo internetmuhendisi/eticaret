@@ -16,14 +16,13 @@ import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { type SiparisDurumu, siparisDurumTanimlari } from "../../kayitlar/siparis";
 import { doldur } from "../../metinler/doldur";
 import { metin } from "../../metinler/site-metni";
-import { panelAdresi } from "../adresler";
+import { siparisAyrintisiAdresi, siparislerAdresi } from "../adresler";
 import { durumMetni, odemeYazisi } from "./metinler";
 import { SiparisAramasi } from "./siparis-aramasi";
 import type { SiparisListesiVerisi, SiparisSatiri } from "./veri";
 
-export const siparislerAdresi = `${panelAdresi}/siparisler`;
-export const ayrintiAdresi = (numara: string) =>
-  `${siparislerAdresi}/ayrinti?numara=${encodeURIComponent(numara)}`;
+export { siparislerAdresi };
+export const ayrintiAdresi = siparisAyrintisiAdresi;
 
 const listeAdresi = (durum: SiparisDurumu | null, sayfa = 1, talep = false) => {
   const sorgu = new URLSearchParams();

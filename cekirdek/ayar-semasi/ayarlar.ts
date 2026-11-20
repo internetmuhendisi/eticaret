@@ -44,6 +44,7 @@ import { sosyalHesapKalibi, sosyalHesapSiniri, sosyalSiteler } from "../kayitlar
 import { tukenenUrunDavranislari } from "../kayitlar/stok.ts";
 import { secenekOnSecimleri, tukenmisSecenekGosterimleri } from "../kayitlar/urun.ts";
 import { videoSiteAdlari } from "../kayitlar/video-siteleri.ts";
+import { yoneticiBildirimleri, yoneticiBildirimSinirlari } from "../kayitlar/yonetici-bildirimi.ts";
 import { saatDilimiGecerliMi } from "../metinler/bicimleyici.ts";
 import { diller, type MetinAnahtari, varsayilanDil } from "../metinler/metin.ts";
 import { kayitDegeriYasakMi, kayitMetniHatasi } from "../moduller/degisiklik-kaydi/deger.ts";
@@ -475,6 +476,30 @@ export const magazaAyarSemasi = z.strictObject({
   iadeKargosu: ayar(
     z.enum(iadeKargosuOdeyenler).default("magaza"),
     magazaSahibinin("ayar.aciklama.iadeKargosu", { kendiIsleviyle: true }),
+  ),
+  // Yönetici bildirimleri (kart 0241, karar 0154; cekirdek/kayitlar/yonetici-bildirimi.ts). Alıcılar boşsa tam yetkili
+  // rolün yöneticileri; e-posta adresidir, değeri değişiklik kaydına yazılmaz. Kapalı bildirimler listesi boş başlar:
+  // hepsi açık. İkisi yalnız sipariş ayarları işleviyle değişir.
+  yoneticiBildirimAlicilari: ayar(
+    z
+      .array(z.email().max(254))
+      .max(yoneticiBildirimSinirlari.aliciEnCok)
+      .refine(
+        (liste) => new Set(liste.map((adres) => adres.toLowerCase())).size === liste.length,
+        "Aynı adres iki kez yazılmış.",
+      )
+      .default([]),
+    magazaSahibinin("ayar.aciklama.yoneticiBildirimAlicilari", {
+      kayittaGizli: true,
+      kendiIsleviyle: true,
+    }),
+  ),
+  kapaliYoneticiBildirimleri: ayar(
+    z
+      .array(z.enum(yoneticiBildirimleri))
+      .refine((liste) => new Set(liste).size === liste.length, "Aynı bildirim iki kez yazılmış.")
+      .default([]),
+    magazaSahibinin("ayar.aciklama.kapaliYoneticiBildirimleri", { kendiIsleviyle: true }),
   ),
   // Ürün sepete eklenince ne olur (karar 0132): seçenekler cekirdek/kayitlar/sepet.ts'tedir.
   sepeteEkleyince: ayar(

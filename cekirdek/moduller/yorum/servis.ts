@@ -22,6 +22,8 @@ import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
 import { urunler } from "../urun/model.ts";
 import { vitrinKosulu } from "../urun/vitrin.ts";
+import { yoneticiBildirimiYaz } from "../yonetici-bildirimi/servis.ts";
+import { kisaAdVerisi } from "../yonetici-bildirimi/veri.ts";
 import { yorumlar } from "./model.ts";
 import { satinAldiMi } from "./satin-alma.ts";
 import type { YorumFormu, YorumHatasi } from "./semalar.ts";
@@ -109,6 +111,21 @@ export const yorumServisi = (site: Site) => {
           kayit: { tur: "yorum", kimlik: satir.kimlik },
           eski: null,
           yeni: { urun: girdi.urun, puan: girdi.puan, durum: "onay-bekliyor" },
+        });
+        // Onay bekleyen yorumun yönetici bildirimi (kart 0241): aynı işlemde, yorumun kimliğiyle.
+        const [urun] = await islem
+          .select({ ad: urunler.ad })
+          .from(urunler)
+          .where(eq(urunler.kimlik, girdi.urun));
+        await yoneticiBildirimiYaz(islem, {
+          bildirim: "yorum",
+          anahtar: `yorum:${satir.kimlik}`,
+          veri: {
+            urun: urun?.ad ?? "",
+            puan: girdi.puan,
+            yazan: kisaAdVerisi(girdi.ad),
+            metin: girdi.metin,
+          },
         });
         return satir.kimlik;
       });

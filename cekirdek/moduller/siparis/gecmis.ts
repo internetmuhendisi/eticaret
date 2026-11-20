@@ -11,10 +11,12 @@ import {
   type SiparisDurumu,
   type SiparisGecmisiNedeni,
   siparisGecmisiEpostalari,
+  siparisGecmisiYoneticiBildirimleri,
 } from "../../kayitlar/siparis.ts";
 import type { VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { type SiparisEpostaEki, siparisEpostasiYaz } from "./epostalar.ts";
 import { siparisGecmisi } from "./model.ts";
+import { siparisYoneticiBildirimiYaz } from "./yonetici-bildirimleri.ts";
 
 // Süre dolunca iptal eden zamanlı iş.
 export const havaleIptalYapani = sistemIslemi("havale-suresi");
@@ -63,6 +65,16 @@ export const gecmiseYaz = async (
       olayAnahtari: `siparis-gecmisi:${satir.kimlik}`,
       neden: g.neden,
       ...(g.eposta === undefined ? {} : { ek: g.eposta }),
+    });
+  }
+  // Yönetici bildirimi (kart 0241): aynı işlemde, satırın kimliğiyle; elle siparişin seçimi yalnız müşteriyi ilgilendirir.
+  const bildirim = siparisGecmisiYoneticiBildirimleri[g.neden];
+  if (bildirim !== null) {
+    await siparisYoneticiBildirimiYaz(islem, {
+      siparis: g.siparis,
+      bildirim,
+      anahtar: `siparis-gecmisi:${satir.kimlik}`,
+      neden: g.neden,
     });
   }
   return satir.kimlik;

@@ -115,6 +115,19 @@ export const rolVer = async (
   });
 };
 
+// Tam yetkili rolün (mağaza sahibi) silinmemiş yöneticilerinin e-postaları (kart 0241: yönetici bildirimlerinin
+// varsayılan alıcıları). Rol adı kodda geçmez: rol tam yetkisiyle seçilir.
+export const tamYetkiliYoneticiEpostalari = async (vt: Veritabani): Promise<string[]> => {
+  const satirlar = await vt
+    .selectDistinct({ eposta: yoneticiler.eposta })
+    .from(yoneticiRolleri)
+    .innerJoin(roller, eq(roller.kimlik, yoneticiRolleri.rol_kimligi))
+    .innerJoin(yoneticiler, eq(yoneticiler.kimlik, yoneticiRolleri.yonetici_kimligi))
+    .where(and(eq(roller.tam_yetki, true), isNull(yoneticiler.silinme_zamani)))
+    .orderBy(yoneticiler.eposta);
+  return satirlar.map((satir) => satir.eposta);
+};
+
 // Hata fırlarsa işlem geri alınır, yapılan değişiklik yerine döner.
 const sonSahipKontrolu = async (islem: VeritabaniIslemi): Promise<void> => {
   const [kalan] = await islem

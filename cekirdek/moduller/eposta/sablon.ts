@@ -12,6 +12,7 @@ import type { Bicimleyici } from "../../metinler/bicimleyici.ts";
 import { doldur } from "../../metinler/doldur.ts";
 import { type Dil, type MetinAnahtari, metinOkuyucu } from "../../metinler/metin.ts";
 import { siparisEpostaIcerikleri } from "../siparis/eposta-icerigi.ts";
+import { yoneticiEpostaIcerikleri } from "../yonetici-bildirimi/eposta-icerigi.ts";
 import { type EpostaGorunusu, varsayilanEpostaGorunusu } from "./gorunus.ts";
 
 export type EpostaDugmesi = { metin: string; adres: string; birincil?: boolean };
@@ -95,7 +96,13 @@ const metinTanimlari = {
 const sablonlar: Record<EpostaSablonu, SablonTanimi> = {
   ...metinTanimlari,
   ...siparisEpostaIcerikleri,
+  ...yoneticiEpostaIcerikleri,
 };
+
+// Şablon olay anında yazılmış veriden mi çizilir (sipariş ve yönetici e-postaları, kart 0240, 0241): gönderim
+// onlara biçimleyiciyi, kök adresi ve satıcı alt bilgisini verir.
+export const veriliSablonMu = (sablon: string): boolean =>
+  typeof sablonlar[sablon as EpostaSablonu] === "function";
 
 export const htmlKacir = (metin: string): string =>
   metin

@@ -277,6 +277,7 @@ export const odemeServisi = (site: Site) => {
         odeme,
         havaleIptalSuresi: ayarlar.havaleIptalSuresi,
         ...(panel === undefined ? {} : { panel: { yonetici: panel.yonetici } }),
+        stokUyarisi: { dusukStokEsigi: ayarlar.dusukStokEsigi },
         eposta: {
           bankaHesaplari: ayarlar.bankaHesaplari,
           ...(panel === undefined ? {} : { gonder: panel.eposta }),

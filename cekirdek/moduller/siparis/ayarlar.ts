@@ -3,26 +3,106 @@
 // içinde okunur: arada eklenen ya da silinen firma varsa "cakisma" döner, hiçbir şey yazılmaz. Yeni firmaya kimlik
 // burada verilir. Takip adresi şifreli bağlantıdır ve takip numarasının yerini tam bir kez taşır.
 //
+// Yönetici bildirimleri (kart 0241): alıcılar ve kapalı bildirimler birlikte kaydedilir (yoneticiBildirimleriniKaydet).
+//
 // İptal ve iade (kart 0239): müşterinin kendi iptali, iade talebi süresi ve iade kargosunu kim öder. Üçü birlikte
 // kaydedilir (iptalVeIadeAyarlariniKaydet); aynı değer değişiklik kaydına girmez (mağaza ayarı servisi).
 import { randomUUID } from "node:crypto";
+import { z } from "zod";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
+import { eklentiAcikMi } from "../../eklentiler/acik.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import { takipAdresiGecerliMi } from "../../kayitlar/siparis.ts";
+import {
+  type YoneticiBildirimi,
+  yoneticiBildirimleri,
+  yoneticiBildirimSinirlari,
+  yoneticiBildirimTanimlari,
+} from "../../kayitlar/yonetici-bildirimi.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { siteninMagazaAyarlari, siteninServisi } from "../magaza-ayarlari/servis.ts";
-import type { IptalVeIadeAyarlari, KargoFirmalariGirdisi } from "./semalar.ts";
+import type {
+  IptalVeIadeAyarlari,
+  KargoFirmalariGirdisi,
+  YoneticiBildirimAyarlariGirdisi,
+} from "./semalar.ts";
 
 export type KargoFirmasi = { kimlik: string; ad: string; takipAdresi?: string | undefined };
 
 export const siparisAyarlari = (site: Site) => {
   const oku = async (
     vt: Veritabani,
-  ): Promise<{ kargoFirmalari: KargoFirmasi[] } & IptalVeIadeAyarlari> => {
-    const { kargoFirmalari, musteriIptali, iadeTalebiSuresi, iadeKargosu } =
-      await siteninMagazaAyarlari(vt, site);
-    return { kargoFirmalari, musteriIptali, iadeTalebiSuresi, iadeKargosu };
+  ): Promise<
+    { kargoFirmalari: KargoFirmasi[] } & IptalVeIadeAyarlari & {
+        yoneticiBildirimAlicilari: string[];
+        kapaliYoneticiBildirimleri: YoneticiBildirimi[];
+      }
+  > => {
+    const {
+      kargoFirmalari,
+      musteriIptali,
+      iadeTalebiSuresi,
+      iadeKargosu,
+      yoneticiBildirimAlicilari,
+      kapaliYoneticiBildirimleri,
+    } = await siteninMagazaAyarlari(vt, site);
+    return {
+      kargoFirmalari,
+      musteriIptali,
+      iadeTalebiSuresi,
+      iadeKargosu,
+      yoneticiBildirimAlicilari,
+      kapaliYoneticiBildirimleri,
+    };
+  };
+
+  // Sitede görünen bildirimler: eklentiye bağlı olan yalnız eklenti açıkken (kart 0241).
+  const gorunenBildirimler = (): YoneticiBildirimi[] =>
+    yoneticiBildirimleri.filter((bildirim) => {
+      const { eklenti } = yoneticiBildirimTanimlari[bildirim];
+      return eklenti === null || eklentiAcikMi(site, eklenti);
+    });
+
+  // Yönetici bildirimleri (kart 0241, karar 0154): alıcılar virgül, noktalı virgül ya da boşlukla ayrılır, küçük harfe
+  // çevrilir; en çok 5, her biri e-posta, tekrar yok. Hata alanın koduyla döner, hiçbir şey yazılmaz. Kapalı
+  // bildirimler ekranın gördükleri arasından gelir; ekranda görünmeyenin (kapalı eklenti) kayıtlı hâli korunur.
+  const yoneticiBildirimleriniKaydet = async (
+    vt: Veritabani,
+    kim: DegisikligiYapan,
+    girdi: YoneticiBildirimAyarlariGirdisi,
+  ) => {
+    const alicilar = girdi.alicilar
+      .split(/[\s,;]+/u)
+      .map((adres) => adres.trim().toLowerCase())
+      .filter((adres) => adres !== "");
+    const kod =
+      alicilar.length > yoneticiBildirimSinirlari.aliciEnCok
+        ? "alici-siniri"
+        : alicilar.some((adres) => !z.email().max(254).safeParse(adres).success)
+          ? "eposta-gecersiz"
+          : new Set(alicilar).size !== alicilar.length
+            ? "alici-tekrari"
+            : undefined;
+    if (kod !== undefined) throw new BilinenHata("dogrulama", [{ alan: "alicilar", kod }]);
+    const gorunen = new Set(gorunenBildirimler());
+    if (girdi.kapalilar.some((bildirim) => !gorunen.has(bildirim))) {
+      throw new BilinenHata("dogrulama", [{ alan: "kapalilar", kod: "bildirim-yok" }]);
+    }
+    await siteninServisi(site).degistir(
+      vt,
+      kim,
+      (bugunku) => ({
+        yoneticiBildirimAlicilari: alicilar,
+        kapaliYoneticiBildirimleri: yoneticiBildirimleri.filter((bildirim) =>
+          gorunen.has(bildirim)
+            ? girdi.kapalilar.includes(bildirim)
+            : bugunku.kapaliYoneticiBildirimleri.includes(bildirim),
+        ),
+      }),
+      { kendiIslevi: true },
+    );
+    return oku(vt);
   };
 
   const iptalVeIadeAyarlariniKaydet = async (
@@ -73,5 +153,11 @@ export const siparisAyarlari = (site: Site) => {
     return oku(vt);
   };
 
-  return { oku, kargoFirmalariniKaydet, iptalVeIadeAyarlariniKaydet };
+  return {
+    oku,
+    kargoFirmalariniKaydet,
+    iptalVeIadeAyarlariniKaydet,
+    gorunenBildirimler,
+    yoneticiBildirimleriniKaydet,
+  };
 };

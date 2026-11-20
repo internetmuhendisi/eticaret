@@ -17,7 +17,8 @@ import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
 import { kartlaOdemeAyari } from "../../kayitlar/eklentiler.ts";
 import { takvimGunu } from "../../metinler/bicimleyici.ts";
 import { iadeServisi } from "../../moduller/siparis/iade.ts";
-import { siparisIadeleri } from "../../moduller/siparis/model.ts";
+import { siparisIadeleri, siparisler } from "../../moduller/siparis/model.ts";
+import { yoneticiBildirimiYaz } from "../../moduller/yonetici-bildirimi/servis.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import type { EklentiliIadeIstegi, EklentiliIadeSonucu } from "../odeme-yontemleri.ts";
 import { kurulusAnahtarlari } from "./baslat.ts";
@@ -292,6 +293,8 @@ export const belirsizIadeleriSor = async (vt: Veritabani, site: Site): Promise<n
         islem: "kartla-iade-taramasi",
         iade: parca.iade_kimligi,
       });
+      // Yöneticiye bildirim (kart 0241): iade başına bir kez.
+      await bekleyenIadeyiBildir(vt, parca.iade_kimligi, "raporda-yok");
     }
     const [degisen] = await vt
       .update(kartIadeleri)
@@ -313,6 +316,25 @@ export const belirsizIadeleriSor = async (vt: Veritabani, site: Site): Promise<n
   return cozulen;
 };
 
+// Kuruluşta takılan iadenin yönetici bildirimi (kart 0241): iade ve neden başına bir kez (anahtar).
+const bekleyenIadeyiBildir = async (
+  vt: Veritabani,
+  iade: string,
+  neden: "raporda-yok" | "kismi-red",
+): Promise<void> => {
+  const [satir] = await vt
+    .select({ numara: siparisler.numara })
+    .from(siparisIadeleri)
+    .innerJoin(siparisler, eq(siparisler.kimlik, siparisIadeleri.siparis_kimligi))
+    .where(eq(siparisIadeleri.kimlik, iade));
+  if (satir === undefined) return;
+  await yoneticiBildirimiYaz(vt, {
+    bildirim: "bekleyen-iade",
+    anahtar: `kartla-iade-${neden}:${iade}`,
+    veri: { numara: satir.numara, neden },
+  });
+};
+
 // Parçaları çözülen iadelerin sonucunu çekirdeğe bildirir (yalnız bekleyen iade).
 const iadeSonuclariniBildir = async (vt: Veritabani, site: Site, iadeler: string[]) => {
   if (iadeler.length === 0) return;
@@ -329,6 +351,7 @@ const iadeSonuclariniBildir = async (vt: Veritabani, site: Site, iadeler: string
         islem: "kartla-iade-taramasi",
         iade,
       });
+      await bekleyenIadeyiBildir(vt, iade, "kismi-red");
     }
     if (sonuc === "belirsiz") continue;
     try {

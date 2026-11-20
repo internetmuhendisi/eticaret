@@ -449,5 +449,10 @@ export const siparisAyrintisiVerisi = async (
   };
 };
 
-export const siparisAyarlariVerisi = async () =>
-  siparisAyarlari(calisanSite()).oku(siteninVeritabani());
+export const siparisAyarlariVerisi = async () => {
+  const ayarlar = siparisAyarlari(calisanSite());
+  return {
+    ...(await ayarlar.oku(siteninVeritabani())),
+    gorunenBildirimler: ayarlar.gorunenBildirimler(),
+  };
+};
