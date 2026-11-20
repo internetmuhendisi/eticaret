@@ -32,4 +32,4 @@ Ana dalın (44820784529) ve `bolum-13` etiketinin (44821031760) hattı birim tes
 
 ## Durum
 
-çalışılıyor
+bitti
