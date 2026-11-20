@@ -339,3 +339,66 @@ test("sipariş ayarları: kargo firması eklenir ve silinir", async ({ page }) =
   ).toBe(false);
   expect(hatalar).toEqual([]);
 });
+
+// Kart 0241: yönetici bildirimlerinin alıcıları ve anahtarları klavyeyle kaydedilir; hatalı adres alanın altında yazar
+// ve odak alana döner. Paylaşılan veritabanında ayar test sonunda eski hâline döner.
+test("sipariş ayarları: yönetici bildirimleri klavyeyle kaydedilir", async ({ page }) => {
+  test.setTimeout(180_000);
+  const ayarlar = siparisAyarlari(calisanSite());
+  const once = await ayarlar.oku(vt);
+  const hatalar = konsoluDinle(page, {
+    haric: (m) => m.includes("401") || m.includes("status of 400"),
+  });
+  try {
+    await ayriBaglanti(page);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await paneleGir(page, yoneticiAc());
+    await menudenGit(
+      page,
+      metin("yonetim.sayfa.siparisAyarlari.ad"),
+      /\/yonetim\/siparis-ayarlari$/,
+    );
+    const bolum = page.getByRole("region", { name: metin("yonetim.siparisAyarlari.bildirimler") });
+    await expect(bolum).toBeVisible();
+    const adresler = bolum.getByLabel(metin("yonetim.siparisAyarlari.alicilar.ad"));
+    await adresler.focus();
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.type("sahip@ornek.test, adres-degil");
+    await page.keyboard.press("Enter");
+    const hata = bolum.getByText(metin("yonetim.siparisAyarlari.alicilar.hata.eposta"));
+    await expect(hata).toBeVisible();
+    await expect(adresler).toBeFocused();
+    await expect(adresler).toHaveAttribute("aria-invalid", "true");
+    await tara(page, "yönetici bildirimleri hatalı");
+    // Anahtar boşlukla kapanır, durumunu yazıyla da söyler.
+    const yorum = bolum.getByRole("switch", {
+      name: metin("yonetim.siparisAyarlari.bildirim.yorum"),
+    });
+    await expect(yorum).toBeChecked();
+    await yorum.focus();
+    await page.keyboard.press("Space");
+    await expect(yorum).not.toBeChecked();
+    await expect(yorum).toContainText(metin("yonetim.siparisAyarlari.kapali"));
+    await adresler.focus();
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.type("Bildirim@Ornek.test");
+    await page.keyboard.press("Enter");
+    await expect(
+      page.getByText(metin("yonetim.siparisAyarlari.bildirimlerKaydedildi")),
+    ).toBeVisible();
+    await expect(hata).toBeHidden();
+    const sonra = await ayarlar.oku(vt);
+    expect(sonra.yoneticiBildirimAlicilari).toEqual(["bildirim@ornek.test"]);
+    expect(sonra.kapaliYoneticiBildirimleri).toContain("yorum");
+    await bildirimSuresiniDurdur(page);
+    await ikiRenkUcGenislik(page, "yönetici bildirimleri");
+    expect(hatalar).toEqual([]);
+  } finally {
+    await ayarlar.yoneticiBildirimleriniKaydet(vt, yapan, {
+      alicilar: once.yoneticiBildirimAlicilari.join(", "),
+      kapalilar: once.kapaliYoneticiBildirimleri.filter((b) =>
+        ayarlar.gorunenBildirimler().includes(b),
+      ),
+    });
+  }
+});
