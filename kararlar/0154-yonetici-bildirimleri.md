@@ -1,5 +1,7 @@
 # 0154 · Yönetici bildirimleri
 
+Bu kararın "eklentiye bağlı bildirim yalnız eklenti açıkken gider" maddesinin yerine 0155 numaralı karar geçti.
+
 ## Tarih
 
 2026-11-20
