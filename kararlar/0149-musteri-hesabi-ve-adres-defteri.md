@@ -19,10 +19,12 @@ Kullanıcının kararları:
 Teknik kararlar:
 
 - Adres defteri müşteri modülündedir (`musteri_adresleri`, `cekirdek/moduller/musteri/adres.ts`). Adresin alanları ödemenin teslimatıyla aynı şemadır (`teslimat-semasi.ts`); telefonun zorunluluğu ve teslimat ülkesi ödemeyle aynı işlevle denetlenir (`teslimatKuraliHatasi`). Sınır kayıttadır (`musteriAdresiSinirlari`, 20 adres).
-- Her türde (teslimat, fatura) en çok bir varsayılan adres vardır; varsayılanı olmayan türde ilk adres varsayılan olur, silinen varsayılanın yerine kalanların en yenisi geçer. Veritabanında kısmi tekil indeks, serviste müşterinin satırı kilitlenerek denetlenir.
+- Her türde (teslimat, fatura) en çok bir varsayılan adres vardır; varsayılanı olmayan türde ilk adres varsayılan olur, silinen varsayılanın yerine kalanların en yenisi geçer. Veritabanında kısmi tekil indeks, serviste müşterinin satırı kilitlenerek (`for no key update`: müşteriye bağlı satırların eklenmesini bekletmez) denetlenir.
 - Silinen adres kalıcı silinir, işaretlenmez. Siparişteki adres kendi kopyasıdır, değişmez.
 - Adres ve kampanya izni değişiklik kaydına girmez (favorilerle aynı, karar 0110).
-- Şifre değişince hesabın bütün oturumları kapanır, bu cihaz için yeni oturum açılır, "şifreniz değişti" e-postası gider. Şu anki şifre girişle aynı deneme sınırıyla doğrulanır.
+- Şifre değişince hesabın bütün oturumları ve açık şifre sıfırlama bağlantıları kapanır, bu cihaz için yeni oturum açılır, "şifreniz değişti" e-postası gider. Şu anki şifre girişle aynı deneme sınırıyla doğrulanır. Hesap satırı baştan yazma kilidiyle alınır (`sifreDegismediyse(…, "update")`): aynı anda iki değişiklikte biri geçer, öteki "şifre yanlış" alır.
+- "Adreslerime kaydet" ödeme oturumunun işleminde yapılır: oturum açılamazsa (stok, yöntem) adres de yazılmaz. Kartla ödemede ödeme kuruluşunda sonuçlanmasa da adres defterde kalır: müşteri kaydetmeyi kendisi seçmiştir, adresin doğruluğu ödemeye bağlı değildir.
+- Kayıtlı adres seçiliyken teslimat alanı elle değişince seçim "Yeni adres"e geçer, alanlar kalır, "Adreslerime kaydet" görünür.
 - Hesap sayfaları oturumu sunucuda, anahtarı değiştirmeden okur (`hesapOturumu`, panelin `panelOturumu` ile aynı yol): verisini sunucuda çizer, girişsiz müşteriyi girişe yönlendirir. Ürün sayfalarının "sayfa oturum okumaz" kuralı (karar 0039) kişiye özel olmayan sayfalar içindir.
 - Vitrinin hesap durumu sorusu herkese açık `GET /kapi/herkese-acik/hesap-durumu`'dur (kart 0187): girişsiz ziyaretçi 401 değil "girişsiz" cevabı alır, konsola hata düşmez. Oturum çerezi tarayıcı koduna kapalı olduğu için (HttpOnly) çerezi tarayıcıda görüp soruyu atlamak yolu yoktur.
 - Girişli müşteride üst satırın kalbi ve yan penceredeki favoriler bağlantısı Favorilerim'e gider; üye olmayanda favoriler sayfası kalır.
