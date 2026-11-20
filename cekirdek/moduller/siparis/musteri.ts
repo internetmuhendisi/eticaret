@@ -14,10 +14,21 @@
 // sipariş yokmuş gibi bulunamadıdır (siparişin var olduğu belli olmaz). Takipte teslimatın adı, soyadı ve telefonu
 // kısaltılır, sokak adresi, posta kodu, fatura, e-posta ve mağazanın notları görünmez; il ve ilçe görünür (karar
 // 0145, 0150). Müşteri takibi kapatabilir (takipKapat).
+//
+// İade talebi ve müşterinin iptali (kart 0239, karar 0151): müşteriye kendi talepleri (nedeni, açıklaması, mağazanın
+// ret açıklaması) gider; yöneticinin kim olduğu gitmez. Talep açılabilir mi, son günü ve kalem başına talep edilebilir
+// adet, iptal düğmesi görünür mü sitenin ayarlarıyla (MusteriKurallari) hesaplanır; servis yine denetler.
 import { createHash, randomBytes } from "node:crypto";
 import { and, asc, count, desc, eq, gt, inArray, lte, ne, sql } from "drizzle-orm";
+import { eklentiliMi } from "../../eklentiler/odeme-yontemleri.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
+import type { OdemeYontemi } from "../../kayitlar/odeme.ts";
 import {
+  type IadeKargosuOdeyen,
+  type IadeTalebiDurumu,
+  iadeyeAcikDurumlar,
+  type MusteriIadeNedeni,
+  type MusteriIptaliSecenegi,
   musteriSiparisSinirlari,
   type SiparisDurumu,
   siparisNumarasiKalibi,
@@ -25,11 +36,13 @@ import {
 } from "../../kayitlar/siparis.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import type { Fatura, Teslimat } from "../odeme/semalar.ts";
+import { musteriIptalEdebilirMi, talepEdilebilirAdetler } from "./iade-talebi.ts";
 import {
   type Siparis,
   type SiparisKalemi,
   siparisGecmisi,
   siparisIadeleri,
+  siparisIadeTalepleri,
   siparisKalemleri,
   siparisler,
   siparisNotlari,
@@ -53,6 +66,26 @@ export type MusteriSiparisKalemi = Pick<
 > & {
   // Tamamlanan iadelerle geri dönen adet.
   iadeAdedi: number;
+  // İade talebinde istenebilecek adet (kart 0239).
+  talepEdilebilir: number;
+};
+
+// Sitenin ayarlarından gelen kurallar (kart 0239): müşterinin kendi iptali, iade talebi süresi, iade kargosu.
+export type MusteriKurallari = {
+  musteriIptali: MusteriIptaliSecenegi;
+  iadeTalebiSuresi: number;
+  iadeKargosu: IadeKargosuOdeyen;
+};
+
+export type MusteriIadeTalebi = {
+  kimlik: string;
+  durum: IadeTalebiDurumu;
+  kalemler: { sira: number; adet: number }[];
+  neden: MusteriIadeNedeni;
+  aciklama: string | null;
+  retAciklamasi: string | null;
+  zaman: Date;
+  kararZamani: Date | null;
 };
 
 export type MusteriSiparisi = {
@@ -100,6 +133,17 @@ export type MusteriSiparisi = {
   kisiselVeriSilindi: boolean;
   // Takipte teslimat kısaltılmıştır: telefon yalnız son iki rakamdır.
   kisaltilmis: boolean;
+  // İade talepleri, eskiden yeniye (kart 0239).
+  talepler: MusteriIadeTalebi[];
+  // İade talebi: açılabilir mi, açılamıyorsa neden; son an (teslim + süre). Teslim edilmemiş siparişte "yok".
+  iadeTalebi: {
+    durum: "acik" | "bekleyen-var" | "sure-doldu" | "kalan-yok" | "yok";
+    sonZaman: Date | null;
+    kargo: IadeKargosuOdeyen;
+  };
+  // Müşteri bu siparişi kendisi iptal edebilir mi (ayar, durum, ödeme kuralı). Ödendiği için iptal edemiyorsa
+  // "magazadan" (ekran mağazayla iletişimi söyler).
+  iptal: "acik" | "magazadan" | "yok";
 };
 
 export type MusteriSiparisOzeti = {
@@ -152,8 +196,9 @@ const musteriHali = async (
   vt: Veritabani,
   siparis: Siparis,
   kisalt: boolean,
+  kurallar: MusteriKurallari,
 ): Promise<MusteriSiparisi> => {
-  const [kalemler, gecmis, notlar, iadeler] = await Promise.all([
+  const [kalemler, gecmis, notlar, iadeler, talepler] = await Promise.all([
     vt
       .select()
       .from(siparisKalemleri)
@@ -183,6 +228,7 @@ const musteriHali = async (
         kargoTutari: siparisIadeleri.kargo_tutari,
         kalemler: siparisIadeleri.kalemler,
         zaman: siparisIadeleri.olusturma_zamani,
+        talep: siparisIadeleri.talep_kimligi,
       })
       .from(siparisIadeleri)
       .where(
@@ -192,7 +238,49 @@ const musteriHali = async (
         ),
       )
       .orderBy(asc(siparisIadeleri.olusturma_zamani), asc(siparisIadeleri.kimlik)),
+    vt
+      .select()
+      .from(siparisIadeTalepleri)
+      .where(eq(siparisIadeTalepleri.siparis_kimligi, siparis.kimlik))
+      .orderBy(asc(siparisIadeTalepleri.olusturma_zamani), asc(siparisIadeTalepleri.kimlik)),
   ]);
+  const talepEdilebilir = talepEdilebilirAdetler(kalemler, iadeler, talepler);
+  const durum = siparis.durum as SiparisDurumu;
+  // Son an ve sürenin dolup dolmadığı servisle aynı hesapla, veritabanının saatiyle (bağımsız kontrolün bulgusu: gün
+  // eklemek yaz saati olan dilimde 24 saat değildir).
+  const sure =
+    siparis.teslim_zamani === null
+      ? null
+      : (
+          await vt.execute<{ son: string; dolmadi: boolean }>(
+            sql`select (${siparis.teslim_zamani}::timestamptz + make_interval(days => ${kurallar.iadeTalebiSuresi})) as son, now() < ${siparis.teslim_zamani}::timestamptz + make_interval(days => ${kurallar.iadeTalebiSuresi}) as dolmadi`,
+          )
+        ).rows[0];
+  const sonZaman = sure === undefined || sure === null ? null : new Date(sure.son);
+  const iadeTalebi: MusteriSiparisi["iadeTalebi"] = {
+    durum: !(iadeyeAcikDurumlar.iade as readonly string[]).includes(durum)
+      ? "yok"
+      : sure === undefined || sure === null || !sure.dolmadi
+        ? "sure-doldu"
+        : talepler.some((talep) => talep.durum === "bekliyor")
+          ? "bekleyen-var"
+          : [...talepEdilebilir.values()].every((adet) => adet === 0)
+            ? "kalan-yok"
+            : "acik",
+    sonZaman,
+    kargo: kurallar.iadeKargosu,
+  };
+  const odendi = siparis.odeme_zamani !== null;
+  const parasiKurulustan = eklentiliMi(siparis.odeme_yontemi as OdemeYontemi);
+  const iptal: MusteriSiparisi["iptal"] = musteriIptalEdebilirMi(kurallar.musteriIptali, {
+    durum,
+    odendi,
+    parasiKurulustan,
+  })
+    ? "acik"
+    : musteriIptalEdebilirMi(kurallar.musteriIptali, { durum, odendi: false, parasiKurulustan })
+      ? "magazadan"
+      : "yok";
   const iadeAdetleri = new Map<number, number>();
   for (const iade of iadeler) {
     // İptal siparişin bütün kalemlerini taşır ama ürün dönmez: iade edilen adede yalnız tamamlanan iade sayılır
@@ -244,6 +332,7 @@ const musteriHali = async (
       birim_tutari: kalem.birim_tutari,
       tutar: kalem.tutar,
       iadeAdedi: iadeAdetleri.get(kalem.sira) ?? 0,
+      talepEdilebilir: talepEdilebilir.get(kalem.sira) ?? 0,
     })),
     gecmis: gecmis.map((satir) => ({ ...satir, durum: satir.durum as SiparisDurumu })),
     // Takipte mağazanın notları görünmez: nota kişisel bilgi yazılmış olabilir, taslağın takip sonucunda geçmiş
@@ -259,6 +348,19 @@ const musteriHali = async (
     })),
     kisiselVeriSilindi: siparis.kisisel_veri_silinme_zamani !== null,
     kisaltilmis: kisalt,
+    talepler: talepler.map((talep) => ({
+      kimlik: talep.kimlik,
+      durum: talep.durum as IadeTalebiDurumu,
+      kalemler: talep.kalemler,
+      neden: talep.neden as MusteriIadeNedeni,
+      // Takipte müşterinin açıklaması gitmez (kısaltılmış görünüş; bağımsız kontrolün bulgusu).
+      aciklama: kisalt ? null : talep.aciklama,
+      retAciklamasi: talep.ret_aciklamasi,
+      zaman: talep.olusturma_zamani,
+      kararZamani: talep.karar_zamani,
+    })),
+    iadeTalebi,
+    iptal,
   };
 };
 
@@ -352,13 +454,14 @@ export const musteriSiparisleri = () => {
     vt: Veritabani,
     musteri: string,
     numara: string,
+    kurallar: MusteriKurallari,
   ): Promise<MusteriSiparisi | null> => {
     if (!siparisNumarasiKalibi.test(numara)) return null;
     const [siparis] = await vt
       .select()
       .from(siparisler)
       .where(and(eq(siparisler.numara, numara), eq(siparisler.musteri_kimligi, musteri)));
-    return siparis === undefined ? null : musteriHali(vt, siparis, false);
+    return siparis === undefined ? null : musteriHali(vt, siparis, false, kurallar);
   };
 
   // Numara ve e-posta eşleşirse takip anahtarı (çereze yazılır); eşleşmezse bulunamadı. Süresi dolmuş anahtarlar
@@ -393,7 +496,17 @@ export const musteriSiparisleri = () => {
   const takipleOku = async (
     vt: Veritabani,
     anahtar: string | undefined,
+    kurallar: MusteriKurallari,
   ): Promise<MusteriSiparisi | null> => {
+    const satir = await takipSiparisi(vt, anahtar);
+    return satir === null ? null : musteriHali(vt, satir, true, kurallar);
+  };
+
+  // Takip anahtarının siparişi (talep ve iptal uçları da kullanır); yoksa, bozuksa ya da süresi dolduysa null.
+  const takipSiparisi = async (
+    vt: Veritabani,
+    anahtar: string | undefined,
+  ): Promise<Siparis | null> => {
     if (anahtar === undefined || !anahtarKalibi.test(anahtar)) return null;
     const [satir] = await vt
       .select({ siparis: siparisler })
@@ -405,7 +518,7 @@ export const musteriSiparisleri = () => {
           gt(siparisTakipErisimleri.bitis_zamani, sql`now()`),
         ),
       );
-    return satir === undefined ? null : musteriHali(vt, satir.siparis, true);
+    return satir?.siparis ?? null;
   };
 
   // Takibi kapatır (ortak bilgisayar): anahtarın satırı silinir. Anahtar yoksa ya da bozuksa bir şey yapmaz.
@@ -414,5 +527,5 @@ export const musteriSiparisleri = () => {
     await vt.delete(siparisTakipErisimleri).where(eq(siparisTakipErisimleri.ozet, ozet(anahtar)));
   };
 
-  return { liste, ayrinti, takipBaslat, takipleOku, takipKapat };
+  return { liste, ayrinti, takipBaslat, takipleOku, takipSiparisi, takipKapat };
 };

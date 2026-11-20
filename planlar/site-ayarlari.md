@@ -97,9 +97,9 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
 |---|---|---|---|---|
-| İade kargosunu kim öder | Mağaza sahibi | Mağaza | — | Seçenekler: mağaza, müşteri. İade koşulları metnine buradan girer. Cayma hakkında yasal kuralı hukukçuya teyit ettirilecek |
-| Müşterinin kendi iptali | Mağaza sahibi | Ödeme beklenirken | — | Seçenekler: kapalı, ödeme beklenirken, kargoya verilene kadar. Müşteri sipariş sayfasından onay penceresiyle iptal eder; ödenmişse para iade akışıyla döner (kart 0233 önerisi, karar 0145; kart 0239) |
-| İade talebi süresi | Mağaza sahibi | 14 gün | — | Teslimden sonra gün. Süre içinde müşteri hesabından ya da sipariş takibinden iade talebi açar. Cayma süresiyle ilişkisi hukukçuya teyit ettirilir (kart 0233 önerisi, karar 0145; kart 0239) |
+| İade kargosunu kim öder | Mağaza sahibi | Mağaza | — | `iadeKargosu`. Seçenekler: mağaza, müşteri. İade talebi formunda müşteriye söylenir (kart 0239); iade koşulları metnine buradan girer. Cayma hakkında yasal kuralı hukukçuya teyit ettirilecek |
+| Müşterinin kendi iptali | Mağaza sahibi | Ödeme beklenirken | — | `musteriIptali`. Seçenekler: kapalı, ödeme beklenirken, kargoya verilene kadar. Müşteri sipariş sayfasından (hesap ya da takip) onay penceresiyle iptal eder; kartla ödenmişse para kuruluştan döner. Ödemesi havaleyle ya da elden alınmış siparişi müşteri iptal edemez, mağazayla iletişime geçer (kullanıcı kararı, karar 0151) |
+| İade talebi süresi | Mağaza sahibi | 14 gün | — | `iadeTalebiSuresi`, 1–365 gün. Teslimden sonra; süre içinde müşteri hesabından ya da sipariş takibinden iade talebi açar. Cayma süresiyle ilişkisi hukukçuya teyit ettirilir (kart 0233 önerisi, karar 0145, 0151) |
 | Siparişteki kişisel bilgilerin saklama süresi | Altyapı sahibi | 10 yıl (hukukçu teyidine kadar öneri) | — | Süre sonunda ad, adres, telefon ve e-posta siparişten silinir; tutarlar, ürünler ve vergi dökümü kalır. Ödeme oturumunun kişisel verisi de bu süreye bağlanır Şemada `kisiselVeriSaklamaYili` (1–30 yıl), günlük işle silinir (kullanıcı kararı, karar 0145, 0146; süre kart 0063'te hukukçuya sorulur) |
 
 ## Vitrin listeleri ve ürün sayfası

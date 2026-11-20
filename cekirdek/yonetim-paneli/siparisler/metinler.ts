@@ -1,6 +1,11 @@
 // Sipariş ekranlarının ortak metin seçimleri (kart 0234): durum, ödeme yöntemi, geçmişin nedeni ve yazanı. Sunucuda
 // çizilen liste ile tarayıcıdaki ayrıntı aynı seçimi kullanır; metni çağıranın metin işlevi okur.
-import type { IadeNedeni, SiparisDurumu, SiparisGecmisiNedeni } from "../../kayitlar/siparis";
+import type {
+  IadeNedeni,
+  IadeTalebiDurumu,
+  SiparisDurumu,
+  SiparisGecmisiNedeni,
+} from "../../kayitlar/siparis";
 import type { MetinAnahtari } from "../../metinler/metin";
 
 // Kayıttaki her durumun ve nedenin metni (tür kontrolü eksik olanı yakalar).
@@ -49,6 +54,10 @@ const nedenler: Record<SiparisGecmisiNedeni, MetinAnahtari> = {
   "teslim-edildi": "yonetim.siparis.neden.teslim-edildi",
   "yonetici-iptali": "yonetim.siparis.neden.yonetici-iptali",
   "iade-yapildi": "yonetim.siparis.neden.iade-yapildi",
+  "iade-talebi-alindi": "yonetim.siparis.neden.iade-talebi-alindi",
+  "iade-talebi-onaylandi": "yonetim.siparis.neden.iade-talebi-onaylandi",
+  "iade-talebi-reddedildi": "yonetim.siparis.neden.iade-talebi-reddedildi",
+  "musteri-iptali": "yonetim.siparis.neden.musteri-iptali",
 };
 export const nedenMetni = (neden: string): MetinAnahtari =>
   nedenler[neden as SiparisGecmisiNedeni] ?? "yonetim.siparis.neden.olusturuldu";
@@ -79,7 +88,18 @@ const iadeNedenleri: Record<IadeNedeni, MetinAnahtari> = {
   "beklentiyi-karsilamadi": "yonetim.iade.neden.beklentiyi-karsilamadi",
   "kusurlu-hasarli": "yonetim.iade.neden.kusurlu-hasarli",
   "yanlis-urun": "yonetim.iade.neden.yanlis-urun",
+  "beden-uymadi": "yonetim.iade.neden.beden-uymadi",
   "stok-yok": "yonetim.iade.neden.stok-yok",
   diger: "yonetim.iade.neden.diger",
 };
 export const iadeNedenMetni = (neden: IadeNedeni): MetinAnahtari => iadeNedenleri[neden];
+
+// İade talebinin durumunun rozeti ve metni (kart 0239).
+export const talepDurumRozeti: Record<
+  IadeTalebiDurumu,
+  { tur: "uyari" | "basari" | "cerceveli"; metin: MetinAnahtari }
+> = {
+  bekliyor: { tur: "uyari", metin: "yonetim.iadeTalebi.durum.bekliyor" },
+  onaylandi: { tur: "basari", metin: "yonetim.iadeTalebi.durum.onaylandi" },
+  reddedildi: { tur: "cerceveli", metin: "yonetim.iadeTalebi.durum.reddedildi" },
+};

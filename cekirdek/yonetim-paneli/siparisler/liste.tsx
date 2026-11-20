@@ -1,7 +1,8 @@
 // Siparişler ekranının listesi (kart 0234, karar 0145; kart 0233'ün taslağı): durum sekmeleri sayılarıyla, en yeni
 // önce sipariş tablosu ve sayfalar. Sekme ve sayfa adreste durur (kişisel bilgi taşımaz); arama tarayıcıdaki ayrı
 // kutudadır (siparis-aramasi.tsx), aranan ad ya da e-posta adrese yazılmaz. Masaüstünde tablo, telefonda her
-// sipariş bir kart (.claude/rules/telefon-gorunumu.md). Havalesi bildirilmiş sipariş işaretlidir.
+// sipariş bir kart (.claude/rules/telefon-gorunumu.md). Havalesi bildirilmiş ve bekleyen iade talebi olan sipariş
+// işaretlidir; "İade talepleri" sekmesi yalnız bekleyen talebi olanları listeler (kart 0239).
 //
 // Liste motoru henüz yok (.claude/rules/liste-motoru.md, "elle tablo" kuralı sonra): sütunlar burada yazılıdır;
 // motor gelince bu tablo ona taşınır.
@@ -24,9 +25,10 @@ export const siparislerAdresi = `${panelAdresi}/siparisler`;
 export const ayrintiAdresi = (numara: string) =>
   `${siparislerAdresi}/ayrinti?numara=${encodeURIComponent(numara)}`;
 
-const listeAdresi = (durum: SiparisDurumu | null, sayfa = 1) => {
+const listeAdresi = (durum: SiparisDurumu | null, sayfa = 1, talep = false) => {
   const sorgu = new URLSearchParams();
   if (durum !== null) sorgu.set("durum", durum);
+  if (talep) sorgu.set("talep", "evet");
   if (sayfa > 1) sorgu.set("sayfa", String(sayfa));
   const yazi = sorgu.toString();
   return yazi === "" ? siparislerAdresi : `${siparislerAdresi}?${yazi}`;
@@ -58,14 +60,26 @@ function HavaleIsareti() {
   );
 }
 
+function TalepIsareti() {
+  return (
+    <span className="flex items-center gap-1 text-kucuk font-kalin text-uyari-yazi">
+      <Ikon ad="iade" />
+      {metin("yonetim.siparisler.iadeTalebi")}
+    </span>
+  );
+}
+
 export function SiparisListesi({ veri }: { veri: SiparisListesiVerisi }) {
-  const sekmeler: { durum: SiparisDurumu | null; adet: number }[] = [
+  const sekmeler: { durum: SiparisDurumu | null; adet: number; talep?: true }[] = [
     { durum: null, adet: veri.hepsi },
-    ...veri.sayilar.filter(({ adet, durum }) => adet > 0 || durum === veri.durum),
+    ...veri.sayilar.filter(({ adet, durum }) => adet > 0 || (durum === veri.durum && !veri.talep)),
+    ...(veri.talepSayisi > 0 || veri.talep
+      ? [{ durum: null, adet: veri.talepSayisi, talep: true as const }]
+      : []),
   ];
   const tablo =
     veri.satirlar.length === 0 ? (
-      veri.durum === null ? (
+      veri.durum === null && !veri.talep ? (
         <BosHal
           ikon="paket"
           baslik={metin("yonetim.siparisler.bos.baslik")}
@@ -117,6 +131,7 @@ export function SiparisListesi({ veri }: { veri: SiparisListesiVerisi }) {
                       {satir.numara}
                     </Baglanti>
                     {satir.havaleBildirildi ? <HavaleIsareti /> : null}
+                    {satir.iadeTalebi ? <TalepIsareti /> : null}
                   </span>
                 </td>
                 <td className="px-3 py-3 align-middle">{satir.zaman}</td>
@@ -162,6 +177,7 @@ export function SiparisListesi({ veri }: { veri: SiparisListesiVerisi }) {
                   <span className="font-kalin">{satir.tutar}</span>
                 </span>
                 {satir.havaleBildirildi ? <HavaleIsareti /> : null}
+                {satir.iadeTalebi ? <TalepIsareti /> : null}
               </Kart>
             </li>
           ))}
@@ -169,7 +185,7 @@ export function SiparisListesi({ veri }: { veri: SiparisListesiVerisi }) {
         <Sayfalama
           sayfa={veri.sayfa}
           toplamSayfa={veri.sayfaSayisi}
-          adres={(sayfa) => listeAdresi(veri.durum, sayfa)}
+          adres={(sayfa) => listeAdresi(veri.durum, sayfa, veri.talep)}
           metinler={{
             etiket: metin("ortak.parca.sayfalar"),
             onceki: metin("ortak.parca.oncekiSayfa"),
@@ -187,19 +203,23 @@ export function SiparisListesi({ veri }: { veri: SiparisListesiVerisi }) {
         className="overflow-x-auto border-b border-kenar"
       >
         <ul className="flex gap-1">
-          {sekmeler.map(({ durum, adet }) => {
-            const secili = durum === veri.durum;
+          {sekmeler.map(({ durum, adet, talep = false }) => {
+            const secili = durum === veri.durum && talep === veri.talep;
             return (
-              <li key={durum ?? "hepsi"} className="shrink-0">
+              <li key={talep ? "iade-talebi" : (durum ?? "hepsi")} className="shrink-0">
                 <a
-                  href={listeAdresi(durum)}
+                  href={listeAdresi(durum, 1, talep)}
                   aria-current={secili ? "page" : undefined}
                   className={sinif(
                     "flex min-h-11 items-center gap-2 border-b-2 px-3 text-kucuk font-kalin whitespace-nowrap no-underline",
                     secili ? "border-yazi text-yazi" : "border-transparent text-soluk-yazi",
                   )}
                 >
-                  {durum === null ? metin("yonetim.siparisler.tumu") : metin(durumMetni(durum))}
+                  {talep
+                    ? metin("yonetim.siparisler.iadeTalepleri")
+                    : durum === null
+                      ? metin("yonetim.siparisler.tumu")
+                      : metin(durumMetni(durum))}
                   <Rozet tur="ikincil">{adet}</Rozet>
                 </a>
               </li>

@@ -28,7 +28,11 @@ import { hesapAc } from "../../moduller/oturum/servis.ts";
 import { sifreDogrula } from "../../moduller/oturum/sifre.ts";
 import { robotSorusuUret } from "../../moduller/robot-korumasi/servis.ts";
 import { soruyuCoz } from "../../moduller/robot-korumasi/testler/soru-coz.ts";
-import { havaleBildirimleri, siparisler } from "../../moduller/siparis/model.ts";
+import {
+  havaleBildirimleri,
+  siparisIadeTalepleri,
+  siparisler,
+} from "../../moduller/siparis/model.ts";
 import { stokAyirmalari } from "../../moduller/stok/model.ts";
 import { stokServisi } from "../../moduller/stok/servis.ts";
 import { urunServisi } from "../../moduller/urun/servis.ts";
@@ -121,6 +125,24 @@ const musteriSenaryolari: Record<string, MusteriSenaryosu> = {
     const bninki = await siparisVer(b.kimlik);
     const aninki = await siparisVer(a.kimlik);
     return { govde: havaleBildirimi(aninki), aranan: [b.eposta, bninki] };
+  },
+  // Kart 0239: A, B'nin siparişine iade talebi açmaya ve onu iptal etmeye çalışır: sipariş A için yoktur (404); B'nin
+  // siparişine talep yazılmaz, sipariş iptal olmaz (aşağıdaki test ölçer).
+  "POST /kapi/musteri/iade-talebi": async (b) => {
+    const bninki = await siparisVer(b.kimlik);
+    return {
+      govde: { numara: bninki, kalemler: [{ sira: 0, adet: 1 }], neden: "diger" },
+      aranan: [b.eposta, bninki],
+      durum: 404,
+    };
+  },
+  "POST /kapi/musteri/siparis-iptali": async (b) => {
+    const bninki = await siparisVer(b.kimlik);
+    return {
+      govde: { numara: bninki, gorulenDurum: "odeme-bekleniyor" },
+      aranan: [b.eposta, bninki],
+      durum: 404,
+    };
   },
   // B'nin siparişi ayırt edilebilir bir adla teslim ediliyor; A'nın siparişi yok: A'ya öneri boş gelir.
   "GET /kapi/musteri/son-teslimat": async (b) => {
@@ -635,6 +657,35 @@ describe("havale bildirimi ucu", () => {
       .innerJoin(siparisler, eq(siparisler.kimlik, havaleBildirimleri.siparis_kimligi))
       .where(inArray(siparisler.musteri_kimligi, [a.kimlik, b.kimlik]));
     expect(bildirimler).toEqual([{ siparis: a.kimlik }]);
+  });
+});
+
+describe("iade talebi ve iptal uçları (kart 0239)", () => {
+  it("A'nın B'nin siparişine talebi ve iptali B'nin siparişini değiştirmez", async () => {
+    const uclar = await uclariOku(uygulamaAdresleri);
+    for (const baslik of ["POST /kapi/musteri/iade-talebi", "POST /kapi/musteri/siparis-iptali"]) {
+      const uc = uclar.find((kayit) => kayit.baslik === baslik);
+      const senaryo = musteriSenaryolari[baslik];
+      if (uc === undefined || senaryo === undefined) throw new Error(`${baslik} yok.`);
+      const { b, sorunlar } = await baskasininKaydi(uc, senaryo);
+      expect(sorunlar).toEqual([]);
+      const bninkiler = await vt
+        .select({ kimlik: siparisler.kimlik, durum: siparisler.durum })
+        .from(siparisler)
+        .where(eq(siparisler.musteri_kimligi, b.kimlik));
+      expect(bninkiler.length).toBeGreaterThan(0);
+      expect(bninkiler.every((siparis) => siparis.durum === "odeme-bekleniyor")).toBe(true);
+      const talepler = await vt
+        .select()
+        .from(siparisIadeTalepleri)
+        .where(
+          inArray(
+            siparisIadeTalepleri.siparis_kimligi,
+            bninkiler.map((siparis) => siparis.kimlik),
+          ),
+        );
+      expect(talepler).toEqual([]);
+    }
   });
 });
 

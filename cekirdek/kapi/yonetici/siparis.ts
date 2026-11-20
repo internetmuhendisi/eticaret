@@ -8,12 +8,15 @@ import { sepetSemasi } from "../../moduller/sepet/semalar.ts";
 import { siparisAyarlari } from "../../moduller/siparis/ayarlar.ts";
 import { elleSiparisMusterileri, elleSiparisUrunleri } from "../../moduller/siparis/elle.ts";
 import { iadeServisi } from "../../moduller/siparis/iade.ts";
+import { iadeTalebiServisi } from "../../moduller/siparis/iade-talebi.ts";
 import {
   elleSiparisAramaSemasi,
   elleSiparisMusteriAramasiSemasi,
   elleSiparisSemasi,
   havaleOnayiSemasi,
+  iadeTalebiKarariSemasi,
   iadeYenidenDenemeSemasi,
+  iptalVeIadeAyarlariSemasi,
   kargoFirmalariDurumuSemasi,
   kargoFirmalariSemasi,
   siparisAyrintisiSemasi,
@@ -109,6 +112,35 @@ export const siparisAyarlariUcu = ucTanimla({
   sinir: "genel",
   isle: (girdi, _istek, _yanit, { hesapKimligi }) =>
     siparisAyarlari(calisanSite()).kargoFirmalariniKaydet(
+      siteninVeritabani(),
+      { tur: "yonetici", kimlik: hesapKimligi },
+      girdi,
+    ),
+});
+
+// POST /kapi/yonetici/iptal-ve-iade-ayarlari: müşterinin kendi iptali, iade talebi süresi, iade kargosu (kart 0239).
+export const iptalVeIadeAyarlariUcu = ucTanimla({
+  giris: "yonetici",
+  sema: iptalVeIadeAyarlariSemasi,
+  izin: "magaza-ayarlari.degistir",
+  sinir: "genel",
+  isle: (girdi, _istek, _yanit, { hesapKimligi }) =>
+    siparisAyarlari(calisanSite()).iptalVeIadeAyarlariniKaydet(
+      siteninVeritabani(),
+      { tur: "yonetici", kimlik: hesapKimligi },
+      girdi,
+    ),
+});
+
+// POST /kapi/yonetici/iade-talebi-karari: müşterinin iade talebini onaylar ya da açıklamayla reddeder (kart 0239,
+// karar 0151). Onay parayı geri ödemez: iade "İade yap" ile, talebe bağlanarak yapılır.
+export const iadeTalebiKarariUcu = ucTanimla({
+  giris: "yonetici",
+  sema: iadeTalebiKarariSemasi,
+  izin: "siparis.iade",
+  sinir: "genel",
+  isle: (girdi, _istek, _yanit, { hesapKimligi }) =>
+    iadeTalebiServisi(calisanSite()).kararVer(
       siteninVeritabani(),
       { tur: "yonetici", kimlik: hesapKimligi },
       girdi,

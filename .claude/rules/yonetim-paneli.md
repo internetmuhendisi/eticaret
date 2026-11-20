@@ -69,6 +69,7 @@ paths:
 - Durumun rozeti ve metni kayıttan okunur (`siparisDurumTanimlari`, `durumMetni`); durum adını ekranda elle yazma.
 - Sipariş araması aranan metni adrese yazmaz: liste ucuna gider. Durum sekmesi ve sayfa adrestedir.
 - Elle sipariş (karar 0148) Siparişler'in alt sayfasıdır (`elle-siparis.tsx`, verisi `elle-veri.ts`): ürün ve müşteri `KayitArama`'nın kendi aramasıyla, adres alanları vitrinin ödeme adımınınkilerle (`cekirdek/vitrin/odeme/alanlar.tsx`), özet elle sipariş hesabı ucundan (`sepetGorunumu`). Hata odağı ekranın alan sırasıyla ilk hatalı alana gider.
+- Müşterinin iade talebi (karar 0151) ayrıntının en üstünde `IadeTalebiKutusu`'dur (`iade-talebi-kutusu.tsx`): onay onay penceresiyle, ret yan pencerede zorunlu açıklamayla, yalnız `siparis.iade` izni olana. Onaylı ve iadesi yapılmamış talep varken iade penceresi talebin ürünleri ve nedeniyle seçili açılır, iade talebe bağlanır. Bekleyen talebi olan sipariş listede işaretlidir; "İade talepleri" sekmesi adreste `?talep=evet`'tir. Sipariş ayarlarının "İptal ve iade" bölümü `iptal-ve-iade-ayarlari.tsx`'tir.
 - İptal ve iade (karar 0147) yan penceredir (`iade-penceresi.tsx`), yalnız `siparis.iade` izni olana ve durumu izin veren siparişte görünür; tutar ve vergi önizlemesi sunucunun `iadeyiHesapla`'sıyla ve sitenin biçim ayarlarıyla (`siteninBicimAyarlari`) çizilir, gönderilen yalnız seçimdir.
 
 ## Ödeme yöntemleri ve banka hesapları (karar 0141)

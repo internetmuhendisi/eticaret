@@ -19,6 +19,7 @@ import { siteninVeritabani } from "../../veritabani/baglanti";
 import { girisAdresiDonuslu, vitrinAdresleri } from "../adresler";
 import { musteriSayfasiBilgisi, musteriSayfasiniAc } from "../yalniz-gezinti";
 import { SiparisAyrintisi } from "./ayrinti";
+import { musteriKurallariniOku } from "./kurallar";
 import { TakibiKapat } from "./takibi-kapat";
 import { SiparisTakibiFormu } from "./takip-formu";
 import { siparisUrunleri } from "./urunler";
@@ -44,7 +45,9 @@ export async function SiparisTakibiSayfasi({
   const yazilan = adrestekiNumara?.replace(/\s+/g, "").toUpperCase() ?? "";
   const numara = siparisNumarasiKalibi.test(yazilan) ? yazilan : "";
   const anahtar = (await cookies()).get(siparisTakipCerezi.ad)?.value;
-  const okunan = yeni ? null : await musteriSiparisleri().takipleOku(vt, anahtar);
+  const okunan = yeni
+    ? null
+    : await musteriSiparisleri().takipleOku(vt, anahtar, await musteriKurallariniOku(vt, site));
   const siparis = okunan !== null && (numara === "" || okunan.numara === numara) ? okunan : null;
   const yol = [
     { ad: metin("vitrin.sayfa.anasayfa"), adres: vitrinAdresleri.anasayfa },
@@ -79,6 +82,7 @@ export async function SiparisTakibiSayfasi({
           yol="takip"
           bankaHesaplari={ayarlar.bankaHesaplari}
           yorumAcik={false}
+          talepAdresi={vitrinAdresleri.takipIadeTalebi}
         />
         <div className="flex flex-col gap-2 text-kucuk text-soluk-yazi">
           <p>{metin("vitrin.siparisTakibi.kisaltma")}</p>

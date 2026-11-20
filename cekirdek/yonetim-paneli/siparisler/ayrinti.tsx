@@ -1,6 +1,8 @@
 // Sipariş ayrıntısı (kart 0234, karar 0145; kart 0233'ün taslağı): solda ürünler ve tutar, kargo, havale bildirimleri,
 // geçmiş ve notlar; sağda müşteri, teslimat ve fatura, ödeme. Masaüstünde iki sütun, daha darda tek sütun. Tutarlar
-// siparişin saklanan değerleridir, yeniden hesaplanmaz. Not ekleme yalnız yönetim izni olana görünür.
+// siparişin saklanan değerleridir, yeniden hesaplanmaz. Not ekleme yalnız yönetim izni olana görünür. Müşterinin
+// bekleyen ya da onaylanıp iadesi yapılmamış iade talebi en üstte kutudur (kart 0239); kapanmış talepler (reddedilen
+// açıklamasıyla, iadesi yapılan) ayrı bölümde.
 import type { ReactNode } from "react";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
@@ -11,8 +13,16 @@ import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { doldur } from "../../metinler/doldur";
 import { metin } from "../../metinler/site-metni";
 import { IadeyiYenidenDene } from "./iade-penceresi";
+import { IadeTalebiKutusu } from "./iade-talebi-kutusu";
 import { DurumRozeti } from "./liste";
-import { durumMetni, iadeNedenMetni, nedenMetni, odemeYazisi, yazanYazisi } from "./metinler";
+import {
+  durumMetni,
+  iadeNedenMetni,
+  nedenMetni,
+  odemeYazisi,
+  talepDurumRozeti,
+  yazanYazisi,
+} from "./metinler";
 import { NotFormu } from "./not-formu";
 import type { SiparisAyrintisiVerisi } from "./veri";
 
@@ -76,9 +86,24 @@ export function SiparisAyrintisi({ veri }: { veri: SiparisAyrintisiVerisi }) {
         oran: vergi.oran,
       },
     );
+  // Açık talepler: bekleyen ve onaylanıp iadesi yapılmamış (ikisi birlikte olabilir: onaylı talep dururken müşteri
+  // kalan ürün için yeni talep açar; bağımsız kontrolün bulgusu).
+  const acikTalepler = veri.talepler.filter(
+    (talep) => talep.durum === "bekliyor" || (talep.durum === "onaylandi" && !talep.iadeYapildi),
+  );
+  const kapaliTalepler = veri.talepler.filter((talep) => !acikTalepler.includes(talep));
   return (
     <div className="flex flex-col gap-4 masaustu:flex-row masaustu:items-start">
       <div className="flex min-w-0 flex-col gap-4 masaustu:w-2/3">
+        {acikTalepler.map((talep) => (
+          <IadeTalebiKutusu
+            key={talep.kimlik}
+            numara={veri.numara}
+            talep={talep}
+            kararVerilebilir={veri.talepKarariVerilebilir}
+            iadeKargosu={veri.iadeKargosu}
+          />
+        ))}
         {veri.iadeler.some((iade) => iade.durum === "bekliyor") ? (
           <Uyari tur="uyari">
             <span className="flex flex-col gap-2">
@@ -125,6 +150,41 @@ export function SiparisAyrintisi({ veri }: { veri: SiparisAyrintisiVerisi }) {
                 {metin("yonetim.siparis.bildirimler.aciklama")}
               </p>
             ) : null}
+          </Bolum>
+        )}
+        {kapaliTalepler.length === 0 ? null : (
+          <Bolum baslik={metin("yonetim.iadeTalebi.oncekiler")} kimlik="siparis-iade-talepleri">
+            <ul className="flex flex-col gap-3">
+              {kapaliTalepler.map((talep) => (
+                <li key={talep.kimlik} className="flex flex-col gap-1 text-kucuk">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <Rozet tur={talepDurumRozeti[talep.durum].tur}>
+                      {metin(talepDurumRozeti[talep.durum].metin)}
+                    </Rozet>
+                    <span className="font-kalin">
+                      {talep.kalemler
+                        .map((kalem) =>
+                          doldur(metin("yonetim.iade.liste.kalem"), {
+                            adet: String(kalem.adet),
+                            ad: kalem.ad,
+                          }),
+                        )
+                        .join(" · ")}
+                    </span>
+                  </span>
+                  <span className="text-soluk-yazi">
+                    {[talep.zaman, metin(`yonetim.iade.neden.${talep.neden}`)].join(" · ")}
+                  </span>
+                  {talep.retAciklamasi === null ? null : (
+                    <span className="whitespace-pre-line wrap-anywhere">
+                      {doldur(metin("yonetim.iadeTalebi.retAciklamasi"), {
+                        aciklama: talep.retAciklamasi,
+                      })}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
           </Bolum>
         )}
         <Bolum baslik={metin("yonetim.siparis.urunler")} kimlik="siparis-urunleri">

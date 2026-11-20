@@ -211,7 +211,7 @@ export const siparisGecmisi = pgTable(
     index("siparis_gecmisi_siparis").on(tablo.siparis_kimligi, tablo.zaman),
     check(
       "siparis_gecmisi_neden",
-      sql`${tablo.neden} in ('olusturuldu', 'panelden-olusturuldu', 'havale-suresi-doldu', 'havale-bildirildi', 'havale-onaylandi', 'hazirlamaya-alindi', 'kargoya-verildi', 'kargo-duzeltildi', 'teslim-edildi', 'yonetici-iptali', 'iade-yapildi')`,
+      sql`${tablo.neden} in ('olusturuldu', 'panelden-olusturuldu', 'havale-suresi-doldu', 'havale-bildirildi', 'havale-onaylandi', 'hazirlamaya-alindi', 'kargoya-verildi', 'kargo-duzeltildi', 'teslim-edildi', 'yonetici-iptali', 'iade-yapildi', 'iade-talebi-alindi', 'iade-talebi-onaylandi', 'iade-talebi-reddedildi', 'musteri-iptali')`,
     ),
     check(
       "siparis_gecmisi_durum",
@@ -290,6 +290,60 @@ export type SiparisNotu = typeof siparisNotlari.$inferSelect;
 //
 // Aranan alanlar: siparis_kimligi (siparişin iadeleri, bekleyen iade), indeksli; bekleyen iadeler (kuruluşun
 // taraması), kısmi indeks.
+// Müşterinin iade talebi (kart 0239, karar 0151; cekirdek/kayitlar/siparis.ts: iadeTalebiDurumlari,
+// musteriIadeNedenleri). Müşteri ürün ve adet seçer, neden ve açıklama yazar; tutarı mağaza sahibi iadeyle belirler.
+// Talebi açan hesap ya da üye olmayan müşteri (sistem adı), kararı veren yönetici yazılır. Reddedilen talepte
+// müşteriye açıklama zorunludur. Onaylanan talepten yapılan iade siparis_iadeleri.talep_kimligi ile bağlanır.
+//
+// Aranan alanlar: siparis_kimligi (siparişin talepleri), indeksli; bekleyen talepler (panelin "İade talepleri"
+// süzgeci), kısmi indeksli. Bir siparişte en çok bir bekleyen talep (tekil kısmi indeks).
+export const siparisIadeTalepleri = pgTable(
+  "siparis_iade_talepleri",
+  {
+    kimlik: kimlik(),
+    siparis_kimligi: uuid()
+      .notNull()
+      .references(() => siparisler.kimlik, { onDelete: "restrict" }),
+    durum: text().notNull(),
+    kalemler: jsonb().$type<{ sira: number; adet: number }[]>().notNull(),
+    neden: text().notNull(),
+    aciklama: text(),
+    ret_aciklamasi: text(),
+    kim_turu: text().notNull(),
+    kim_kimligi: uuid(),
+    kim_adi: text(),
+    karar_veren_kimligi: uuid(),
+    olusturma_zamani: zaman().notNull().defaultNow(),
+    karar_zamani: zaman(),
+  },
+  (tablo) => [
+    index("siparis_iade_talepleri_siparis").on(tablo.siparis_kimligi, tablo.olusturma_zamani),
+    index("siparis_iade_talepleri_bekleyen")
+      .on(tablo.olusturma_zamani)
+      .where(sql`${tablo.durum} = 'bekliyor'`),
+    uniqueIndex("siparis_iade_talepleri_tek_bekleyen")
+      .on(tablo.siparis_kimligi)
+      .where(sql`${tablo.durum} = 'bekliyor'`),
+    check(
+      "siparis_iade_talepleri_durum",
+      sql`${tablo.durum} in ('bekliyor', 'onaylandi', 'reddedildi')`,
+    ),
+    check(
+      "siparis_iade_talepleri_neden",
+      sql`${tablo.neden} in ('beklentiyi-karsilamadi', 'kusurlu-hasarli', 'yanlis-urun', 'beden-uymadi', 'diger')`,
+    ),
+    check(
+      "siparis_iade_talepleri_karar",
+      sql`(${tablo.durum} = 'bekliyor') = (${tablo.karar_zamani} is null) and (${tablo.durum} = 'bekliyor') = (${tablo.karar_veren_kimligi} is null) and (${tablo.durum} = 'reddedildi') = (coalesce(length(${tablo.ret_aciklamasi}), 0) > 0)`,
+    ),
+    check(
+      "siparis_iade_talepleri_kim_dolu",
+      sql`(${tablo.kim_turu} = 'sistem' and length(${tablo.kim_adi}) > 0 and ${tablo.kim_kimligi} is null) or (${tablo.kim_turu} = 'musteri' and ${tablo.kim_kimligi} is not null and ${tablo.kim_adi} is null)`,
+    ),
+  ],
+);
+export type SiparisIadeTalebi = typeof siparisIadeTalepleri.$inferSelect;
+
 export const siparisIadeleri = pgTable(
   "siparis_iadeleri",
   {
@@ -309,6 +363,10 @@ export const siparisIadeleri = pgTable(
     stoga_konacak: boolean().notNull(),
     neden: text().notNull(),
     aciklama: text(),
+    // Kart 0239: iadeyi kim başlattı (cekirdek/kayitlar/siparis.ts: iadeKaynaklari) ve onaylanan talepten yapıldıysa
+    // talep.
+    kaynak: text().notNull().default("yonetici"),
+    talep_kimligi: uuid().references(() => siparisIadeTalepleri.kimlik, { onDelete: "restrict" }),
     kim_turu: text().notNull(),
     kim_kimligi: uuid(),
     kim_adi: text(),
@@ -316,6 +374,15 @@ export const siparisIadeleri = pgTable(
     sonuc_zamani: zaman(),
   },
   (tablo) => [
+    // Bir talepten en çok bir yürüyen ya da tamamlanmış iade (başarısız olan yeniden denenebilir).
+    uniqueIndex("siparis_iadeleri_tek_talep")
+      .on(tablo.talep_kimligi)
+      .where(sql`${tablo.talep_kimligi} is not null and ${tablo.durum} <> 'basarisiz'`),
+    check("siparis_iadeleri_kaynak", sql`${tablo.kaynak} in ('yonetici', 'musteri')`),
+    check(
+      "siparis_iadeleri_talep",
+      sql`${tablo.talep_kimligi} is null or (${tablo.tur} = 'iade' and ${tablo.kaynak} = 'yonetici')`,
+    ),
     index("siparis_iadeleri_siparis").on(tablo.siparis_kimligi, tablo.olusturma_zamani),
     index("siparis_iadeleri_bekleyen")
       .on(tablo.olusturma_zamani)
@@ -329,7 +396,7 @@ export const siparisIadeleri = pgTable(
     check("siparis_iadeleri_yontem", sql`${tablo.yontem} in ('kurulus', 'elle', 'yok')`),
     check(
       "siparis_iadeleri_neden",
-      sql`${tablo.neden} in ('musteri-vazgecti', 'beklentiyi-karsilamadi', 'kusurlu-hasarli', 'yanlis-urun', 'stok-yok', 'diger')`,
+      sql`${tablo.neden} in ('musteri-vazgecti', 'beklentiyi-karsilamadi', 'kusurlu-hasarli', 'yanlis-urun', 'beden-uymadi', 'stok-yok', 'diger')`,
     ),
     check(
       "siparis_iadeleri_tutar",

@@ -12,7 +12,7 @@
 //   anahtarın satırı ve çerez silinir; çerezsiz istek de başarılıdır.
 import { randomBytes } from "node:crypto";
 import { resolve } from "node:path";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
@@ -23,14 +23,23 @@ import { odemeYontemiServisi } from "../../moduller/odeme/yontemler.ts";
 import { girisYap, hesapAc } from "../../moduller/oturum/servis.ts";
 import { robotSorusuUret } from "../../moduller/robot-korumasi/servis.ts";
 import { soruyuCoz } from "../../moduller/robot-korumasi/testler/soru-coz.ts";
-import { siparisler, siparisTakipErisimleri } from "../../moduller/siparis/model.ts";
+import {
+  siparisGecmisi,
+  siparisler,
+  siparisTakipErisimleri,
+} from "../../moduller/siparis/model.ts";
 import { erisimOzeti } from "../../moduller/siparis/servis.ts";
 import { stokServisi } from "../../moduller/stok/servis.ts";
 import { urunServisi } from "../../moduller/urun/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
 import { odemeUcu } from "../herkese-acik/odeme.ts";
-import { siparisTakibiKapatUcu, siparisTakibiUcu } from "../herkese-acik/siparis-takibi.ts";
+import {
+  siparisTakibiKapatUcu,
+  siparisTakibiUcu,
+  takipIadeTalebiUcu,
+  takipIptaliUcu,
+} from "../herkese-acik/siparis-takibi.ts";
 import { uyeOdemeUcu } from "../musteri/odeme.ts";
 import { oturumCerezleri } from "../oturum-cerezi.ts";
 
@@ -261,9 +270,13 @@ describe("sipariş takibi ucu", () => {
     expect(yanit.status).toBe(200);
     expect(yanit.headers.get("cache-control")).toBe("no-store");
     expect(((await yanit.json()) as { veri: { numara: string } }).veri.numara).toBe(numara);
-    const [cerez = ""] = yanit.headers.getSetCookie();
+    // Çerez iki yola yazılır: takip sayfası ve takip uçları (kart 0239), aynı anahtarla.
+    const [cerez = "", kapiCerezi = ""] = yanit.headers.getSetCookie();
     expect(cerez).toMatch(
       /^siparis-takip=[A-Za-z0-9_-]{43}; Path=\/siparis-takibi; Max-Age=1800; HttpOnly; Secure; SameSite=Lax$/,
+    );
+    expect(kapiCerezi).toBe(
+      cerez.replace("Path=/siparis-takibi", "Path=/kapi/herkese-acik/siparis-takibi"),
     );
     const anahtar = cerez.split(";")[0]?.split("=")[1] ?? "";
     const satirlar = await vt.select().from(siparisTakipErisimleri);
@@ -307,10 +320,71 @@ describe("sipariş takibi ucu", () => {
     expect(kapali.status).toBe(200);
     expect(kapali.headers.getSetCookie()).toEqual([
       "siparis-takip=; Path=/siparis-takibi; Max-Age=0; HttpOnly; Secure; SameSite=Lax",
+      "siparis-takip=; Path=/kapi/herkese-acik/siparis-takibi; Max-Age=0; HttpOnly; Secure; SameSite=Lax",
     ]);
     const satirlar = await vt.select().from(siparisTakipErisimleri);
     expect(satirlar.some((satir) => satir.ozet === erisimOzeti(anahtar))).toBe(false);
     expect((await kapat({})).status).toBe(200);
+  });
+
+  // Kart 0239: üye olmayanın talep ve iptal uçları takip çerezinin anahtarıyla siparişi bulur. Robot cevabı önce
+  // denetlenir; çerezsiz istek ve anahtarın siparişinden başka numara bulunamadıdır. Talep teslim edilmemiş siparişte
+  // kapalıdır (servise ulaşıldığını gösterir); iptal varsayılan ayarla ödeme beklenen siparişte yapılır.
+  it("takip anahtarıyla iade talebi ve iptal: robot önce, çerezsiz ve başka numara bulunamadı, takipteki sipariş iptal olur", async () => {
+    const { numara, eposta } = await siparisVer();
+    const baska = await siparisVer();
+    const yanit = await takip({ numara, eposta, robotCevabi: await robotCevabi() });
+    const cerez = cerezSatiri(yanit.headers.getSetCookie().slice(0, 1));
+    const talep = async (govde: Record<string, unknown>, basliklar: Record<string, string>) =>
+      takipIadeTalebiUcu(
+        istek(
+          "herkese-acik/siparis-takibi/iade-talebi",
+          { kalemler: [{ sira: 0, adet: 1 }], neden: "diger", ...govde },
+          basliklar,
+        ),
+      );
+    const iptal = async (govde: Record<string, unknown>, basliklar: Record<string, string>) =>
+      takipIptaliUcu(
+        istek(
+          "herkese-acik/siparis-takibi/iptal",
+          { gorulenDurum: "odeme-bekleniyor", ...govde },
+          basliklar,
+        ),
+      );
+    const robotsuz = await talep({ numara, robotCevabi: "x" }, { cookie: cerez });
+    expect(await hataKodu(robotsuz)).toBe("robot-dogrulamasi");
+    const cerezsiz = await talep({ numara, robotCevabi: await robotCevabi() }, {});
+    expect(cerezsiz.status).toBe(404);
+    const baskasi = await talep(
+      { numara: baska.numara, robotCevabi: await robotCevabi() },
+      { cookie: cerez },
+    );
+    expect(baskasi.status).toBe(404);
+    const teslimsiz = await talep({ numara, robotCevabi: await robotCevabi() }, { cookie: cerez });
+    expect(teslimsiz.status).toBe(422);
+    expect(await hataKodu(teslimsiz)).toBe("is-kurali");
+    const baskasiniIptal = await iptal(
+      { numara: baska.numara, robotCevabi: await robotCevabi() },
+      { cookie: cerez },
+    );
+    expect(baskasiniIptal.status).toBe(404);
+    const iptalEdilen = await iptal(
+      { numara, robotCevabi: await robotCevabi() },
+      { cookie: cerez },
+    );
+    expect(iptalEdilen.status).toBe(200);
+    expect(iptalEdilen.headers.get("cache-control")).toBe("no-store");
+    const [satir] = await vt.select().from(siparisler).where(eq(siparisler.numara, numara));
+    expect(satir?.durum).toBe("iptal");
+    const [son] = await vt
+      .select()
+      .from(siparisGecmisi)
+      .where(eq(siparisGecmisi.siparis_kimligi, satir?.kimlik ?? ""))
+      .orderBy(desc(siparisGecmisi.zaman))
+      .limit(1);
+    expect(son).toMatchObject({ neden: "musteri-iptali", kim_adi: "uye-olmayan-musteri" });
+    const [ote] = await vt.select().from(siparisler).where(eq(siparisler.numara, baska.numara));
+    expect(ote?.durum).toBe("odeme-bekleniyor");
   });
 
   it("uydurma robot cevabında takip açılmaz; aynı bağlantıdan altıncı istek sınıra takılır", async () => {

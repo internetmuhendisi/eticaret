@@ -11,6 +11,11 @@
 //   iadeSonucunuIsle'yi çağırır).
 // - İade tamamlanınca aynı işlemde: siparişin durumu (iptal, kısmi iade, iade edildi), stok (seçildiyse; yalnız bu
 //   siparişin düşürüp henüz geri konmamış adedi), sipariş geçmişi ve değişiklik kaydı.
+// - Müşterinin kendi iptali (kart 0239, iade-talebi.ts) aynı akıştır: kaynak "musteri", geçmişe musteri-iptali yazılır.
+//   Ayarın izin verdiği durum (ayar işlemden hemen önce okunur) ve ödeme kuralı siparişin kilidi altında denetlenir: ödemesi alınmış ve parası
+//   kuruluştan dönmeyen siparişi müşteri iptal edemez (kullanıcı kararı).
+// - Onaylanan iade talebinden yapılan iade talebe bağlanır (talep_kimligi); talep onaylanmış olmalı ve ondan
+//   yürüyen ya da tamamlanmış başka iade olmamalı (tekil indeks). Tutarı yine mağaza sahibinin seçimi verir.
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { eklentiliIadeEt, eklentiliMi } from "../../eklentiler/odeme-yontemleri.ts";
@@ -19,6 +24,7 @@ import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import type { OdemeYontemi } from "../../kayitlar/odeme.ts";
 import {
+  type IadeKaynagi,
   type IadeNedeni,
   type IadeTuru,
   iadeyeAcikDurumlar,
@@ -31,7 +37,13 @@ import { stokGecmisi } from "../stok/model.ts";
 import { stokServisi } from "../stok/servis.ts";
 import { gecmiseYaz, kimSutunlari } from "./gecmis.ts";
 import { IadeHesapHatasi, type IadeSecimi, iadeyiHesapla } from "./iade-hesabi.ts";
-import { type SiparisIadesi, siparisIadeleri, siparisKalemleri, siparisler } from "./model.ts";
+import {
+  type SiparisIadesi,
+  siparisIadeleri,
+  siparisIadeTalepleri,
+  siparisKalemleri,
+  siparisler,
+} from "./model.ts";
 
 const stok = stokServisi();
 
@@ -46,6 +58,10 @@ export type IadeGirdisi = {
   stogaKoy: boolean;
   neden: IadeNedeni;
   aciklama?: string | undefined;
+  // Onaylanan iade talebinden yapılan iade (kart 0239).
+  talep?: string | undefined;
+  // Müşterinin kendi iptali (kart 0239): ayarın izin verdiği durumlar. Verilmezse iade mağazanındır.
+  musteriIptali?: { izinliDurumlar: readonly SiparisDurumu[] } | undefined;
 };
 
 export type IadeSonucu = {
@@ -164,7 +180,12 @@ export const iadeServisi = (site: Site) => {
       siparis: iade.siparis_kimligi,
       onceki,
       sonraki,
-      neden: iade.tur === "iptal" ? "yonetici-iptali" : "iade-yapildi",
+      neden:
+        iade.tur === "iade"
+          ? "iade-yapildi"
+          : (iade.kaynak as IadeKaynagi) === "musteri"
+            ? "musteri-iptali"
+            : "yonetici-iptali",
       kim,
     });
     await degisikligiKaydet(islem, {
@@ -180,6 +201,8 @@ export const iadeServisi = (site: Site) => {
         kalemler: iade.kalemler,
         stogaKondu: iade.stoga_konacak,
         neden: iade.neden,
+        ...(iade.kaynak === "musteri" ? { kaynak: iade.kaynak } : {}),
+        ...(iade.talep_kimligi === null ? {} : { talep: iade.talep_kimligi }),
       },
     });
     return sonraki;
@@ -210,6 +233,48 @@ export const iadeServisi = (site: Site) => {
       }
       if (!(iadeyeAcikDurumlar[girdi.tur] as readonly string[]).includes(siparis.durum)) {
         throw new BilinenHata("is-kurali", [{ alan: "tur", kod: "gecis-yok" }]);
+      }
+      if (girdi.musteriIptali !== undefined) {
+        if (
+          girdi.tur !== "iptal" ||
+          !(girdi.musteriIptali.izinliDurumlar as readonly string[]).includes(siparis.durum)
+        ) {
+          throw new BilinenHata("is-kurali", [{ alan: "numara", kod: "iptal-kapali" }]);
+        }
+        // Ödemesi alınmış, parası kuruluştan dönmeyen sipariş: parayı mağaza gönderir (kullanıcı kararı).
+        if (siparis.odeme_zamani !== null && !eklentiliMi(siparis.odeme_yontemi as OdemeYontemi)) {
+          throw new BilinenHata("is-kurali", [{ alan: "numara", kod: "iptal-magazadan" }]);
+        }
+      }
+      if (girdi.talep !== undefined) {
+        if (girdi.tur !== "iade") {
+          throw new BilinenHata("dogrulama", [{ alan: "talep", kod: "talep-iptalde-yok" }]);
+        }
+        const [talep] = await islem
+          .select({ durum: siparisIadeTalepleri.durum })
+          .from(siparisIadeTalepleri)
+          .where(
+            and(
+              eq(siparisIadeTalepleri.kimlik, girdi.talep),
+              eq(siparisIadeTalepleri.siparis_kimligi, siparis.kimlik),
+            ),
+          );
+        if (talep === undefined) throw new BilinenHata("bulunamadi");
+        if (talep.durum !== "onaylandi") {
+          throw new BilinenHata("cakisma", [{ alan: "talep", kod: "talep-onayli-degil" }]);
+        }
+        const [yapilan] = await islem
+          .select({ kimlik: siparisIadeleri.kimlik })
+          .from(siparisIadeleri)
+          .where(
+            and(
+              eq(siparisIadeleri.talep_kimligi, girdi.talep),
+              inArray(siparisIadeleri.durum, ["tamamlandi", "bekliyor"]),
+            ),
+          );
+        if (yapilan !== undefined) {
+          throw new BilinenHata("cakisma", [{ alan: "talep", kod: "talep-iade-edildi" }]);
+        }
       }
       const oncekiler = await islem
         .select()
@@ -272,6 +337,8 @@ export const iadeServisi = (site: Site) => {
           stoga_konacak: girdi.stogaKoy,
           neden: girdi.neden,
           aciklama: girdi.aciklama ?? null,
+          kaynak: girdi.musteriIptali === undefined ? "yonetici" : "musteri",
+          talep_kimligi: girdi.talep ?? null,
           ...kimSutunlari(kim),
         })
         .returning();

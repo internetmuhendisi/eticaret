@@ -52,7 +52,7 @@ Kapıdaki her uç burada yazar (`.claude/rules/sunucu-arayuzu.md`). Yeni ya da d
 
 **Çerez.** Uç yanıta çerezi yalnız `cerezYaz` ile yazar. Oturum çerezleri `cekirdek/kapi/oturum-cerezi.ts` dosyasındadır, hatalı yanıtta da gider.
 
-**Tema demosu** (kart 0116, karar 0127). Site ayarı `temaDemosu` açıkken ziyaretçi yalnız gezer: kapalı uç, sahte isteğe, sınıra ve girdiye bakmadan `bulunamadi` döner. Müşteri girişindeki her uç kapalıdır. Herkese açık her uç tanımında demodaki durumunu beyan eder (`temaDemosunda`, tür kontrolü ister): hesap, sipariş, yorum, bildirim ya da e-posta doğuran uç `kapali`, vitrinin okuduğu ve panelin kullandığı uç `acik`. Yönetici ve sahip uçları açıktır. Bugün kapalı herkese açık uçlar: `hesap-durumu`, `musteri-kayit`, `musteri-giris`, `musteri-cikis`, `musteri-sifre-sifirlama`, `musteri-sifre-yenile`, `stok-bildirimi`, `odeme`, `havale-bildirimi`, `siparis-takibi` (POST ve DELETE), `kartla-odeme/donus`, `kartla-odeme/bildirim`, `kartla-odeme/taksitler`; listeyi `cekirdek/kapi/testler/tema-demosu.test.ts` denetler.
+**Tema demosu** (kart 0116, karar 0127). Site ayarı `temaDemosu` açıkken ziyaretçi yalnız gezer: kapalı uç, sahte isteğe, sınıra ve girdiye bakmadan `bulunamadi` döner. Müşteri girişindeki her uç kapalıdır. Herkese açık her uç tanımında demodaki durumunu beyan eder (`temaDemosunda`, tür kontrolü ister): hesap, sipariş, yorum, bildirim ya da e-posta doğuran uç `kapali`, vitrinin okuduğu ve panelin kullandığı uç `acik`. Yönetici ve sahip uçları açıktır. Bugün kapalı herkese açık uçlar: `hesap-durumu`, `musteri-kayit`, `musteri-giris`, `musteri-cikis`, `musteri-sifre-sifirlama`, `musteri-sifre-yenile`, `stok-bildirimi`, `odeme`, `havale-bildirimi`, `siparis-takibi` (POST ve DELETE), `siparis-takibi/iade-talebi`, `siparis-takibi/iptal`, `kartla-odeme/donus`, `kartla-odeme/bildirim`, `kartla-odeme/taksitler`; listeyi `cekirdek/kapi/testler/tema-demosu.test.ts` denetler.
 
 ## Herkese açık
 
@@ -251,7 +251,7 @@ Tarayıcıdaki sepetin vitrin verisini hesaplar (kart 0212, karar 0135). Sepet y
 
 ### POST /kapi/herkese-acik/siparis-takibi
 
-Üye olmayan müşteri siparişini numara ve siparişteki e-postayla bulur (kart 0238, karar 0150). Eşleşirse takip çerezi (`siparis-takip`, yalnız `/siparis-takibi` yolunda, HttpOnly, Secure, 30 dakika) yazılır; veritabanında anahtarın özeti durur. Takip sayfası siparişi bu çerezle kısaltılmış adresle gösterir (karar 0145). Tema demosunda kapalıdır.
+Üye olmayan müşteri siparişini numara ve siparişteki e-postayla bulur (kart 0238, karar 0150). Eşleşirse takip çerezi (`siparis-takip`, HttpOnly, Secure, 30 dakika) iki yola yazılır: takip sayfasının yolu `/siparis-takibi` ve takip uçlarının yolu `/kapi/herkese-acik/siparis-takibi` (kart 0239, karar 0151: tarayıcı çerezi yalnız yolunun altına gönderir; talep, iptal ve kapatma uçları anahtarı buradan okur); veritabanında anahtarın özeti durur. Takip sayfası siparişi bu çerezle kısaltılmış adresle gösterir (karar 0145). Tema demosunda kapalıdır.
 
 - İzin: `herkese-acik`. Sınır: `siki`.
 - Girdi: `{ "numara", "eposta", "robotCevabi" }` (`siparisTakibiGirdisi`, `cekirdek/moduller/siparis/takip-semalari.ts`). Numara büyük ya da küçük harfle, boşluklu yazılabilir; e-posta harf büyüklüğü ayrımsız karşılaştırılır.
@@ -266,8 +266,28 @@ Takibi kapatır (kart 0238): ortak bilgisayarda bakan müşteri "Başka bir sipa
 - İzin: `herkese-acik`. Sınır: `genel`.
 - Girdi: yok (`z.strictObject({})`); anahtar takip çerezinden okunur.
 - Servis: `cekirdek/moduller/siparis/musteri.ts` (`takipKapat`).
-- Başarılı (200): `{ "basarili": true, "veri": {} }` ve süresi sıfır takip çerezi. Anahtar yoksa ya da bozuksa da başarılıdır.
+- Başarılı (200): `{ "basarili": true, "veri": {} }` ve iki yolda süresi sıfır takip çerezi. Anahtar yoksa ya da bozuksa da başarılıdır.
 - Hatalar: `istek-siniri`, `yetki` (sahte istek), tema demosunda `bulunamadi`.
+
+### POST /kapi/herkese-acik/siparis-takibi/iade-talebi
+
+Üye olmayan müşteri takip ettiği siparişte iade talebi açar (kart 0239, karar 0151). Sipariş yalnız takip çerezindeki anahtarla bulunur; anahtar yoksa, süresi dolduysa ya da girdideki numara anahtarın siparişi değilse bulunamadı. Kurallar üye ucuyla aynıdır. Robot cevabı veritabanına bakmadan önce denetlenir. Tema demosunda kapalıdır.
+
+- İzin: `herkese-acik`. Sınır: `siki`.
+- Girdi: `{ "numara", "kalemler": [{ "sira", "adet" }], "neden", "aciklama"?, "robotCevabi" }` (`takipIadeTalebiGirdisi`, `cekirdek/moduller/siparis/iade-talebi-semalari.ts`).
+- Servis: `cekirdek/moduller/siparis/iade-talebi.ts` (`talepAc`); geçmişe "uye-olmayan-musteri" adıyla yazılır.
+- Başarılı (200): `{ "basarili": true, "veri": { "numara", "talep" } }`.
+- Hatalar: üye ucuyla aynı, ek olarak `robot-dogrulamasi`, `yetki` (sahte istek), tema demosunda `bulunamadi`.
+
+### POST /kapi/herkese-acik/siparis-takibi/iptal
+
+Üye olmayan müşteri takip ettiği siparişi, ayar izin veriyorsa, kendisi iptal eder (kart 0239). Sipariş takip anahtarıyla bulunur; kurallar üye ucuyla aynıdır. Robot cevabı önce denetlenir. Tema demosunda kapalıdır.
+
+- İzin: `herkese-acik`. Sınır: `siki`.
+- Girdi: `{ "numara", "gorulenDurum", "robotCevabi" }` (`takipIptaliGirdisi`).
+- Servis: `iade-talebi.ts` (`musteriIptali`) → `iade.ts` (`iadeYap`).
+- Başarılı (200): `{ "basarili": true, "veri": { "numara", "durum", "iade" } }`.
+- Hatalar: üye ucuyla aynı, ek olarak `robot-dogrulamasi`, `yetki` (sahte istek), tema demosunda `bulunamadi`.
 
 ### POST /kapi/herkese-acik/musteri-giris
 
@@ -490,6 +510,26 @@ Giriş yapmış müşteri kendi havale siparişi için ödediğini bildirir (kar
 - Başarılı (200): `{ "basarili": true, "veri": { "numara" } }`.
 - Hatalar: `bulunamadi` (sipariş yok ya da başka hesabın), `is-kurali` (`havale-beklemiyor`, `bildirim-siniri`), `dogrulama`, `oturum-yok`, `istek-siniri`.
 
+### POST /kapi/musteri/iade-talebi
+
+Giriş yapmış müşteri kendi siparişinde iade talebi açar (kart 0239, karar 0151). Talep yalnız teslim edilmiş ya da kısmen iade edilmiş siparişte, teslimden sonra iade talebi süresi (site ayarı `iadeTalebiSuresi`, gün; veritabanının saatiyle, son an kapalıdır) içinde açılır. Bir siparişte aynı anda en çok bir bekleyen talep olur. İade edilmiş ya da iadesi bekleyen adet ve onaylanmış ama iadesi yapılmamış talepteki adet istenemez; reddedilen talebin adedi yeniden istenebilir. Talep tutar belirlemez; geçmişe "iade-talebi-alindi" yazılır, siparişin durumu değişmez.
+
+- İzin: `siparis.kendi.iade-talebi`. Sınır: `siki`.
+- Girdi: `{ "numara", "kalemler": [{ "sira", "adet" }], "neden", "aciklama"? }` (`iadeTalebiFormuSemasi`). Neden müşterinin nedenlerindendir (`musteriIadeNedenleri`). Müşterinin kimliği yalnız kapıdan gelir.
+- Servis: `cekirdek/moduller/siparis/iade-talebi.ts` (`talepAc`).
+- Başarılı (200): `{ "basarili": true, "veri": { "numara", "talep" } }`.
+- Hatalar: `bulunamadi` (sipariş yok ya da başka hesabın), `is-kurali` (`talebe-kapali`: teslim edilmemiş; `sure-doldu`), `cakisma` (`talep-bekliyor`), `dogrulama` (alan `kalemler`: `kalem-yok`; alan `kalemler.<sıra>`: `kalem-yok`, `adet-fazla`), `oturum-yok`, `istek-siniri`.
+
+### POST /kapi/musteri/siparis-iptali
+
+Giriş yapmış müşteri kendi siparişini, "Müşterinin kendi iptali" ayarı (`musteriIptali`) izin veriyorsa, iptal eder (kart 0239). İptal kart 0235'in akışıdır (`iadeYap`, kaynak "musteri"): bütün ürünler stoğa döner, geçmişe "musteri-iptali" yazılır, kartla ödenmişse para kuruluştan döner (iade "bekliyor" kalabilir). Ödemesi alınmış ve parası kuruluştan dönmeyen sipariş (havale, "ödeme alındı") iptal edilmez (kullanıcı kararı). Ayar ve ödeme kuralı siparişin kilidi altında denetlenir.
+
+- İzin: `siparis.kendi.iptal`. Sınır: `siki`.
+- Girdi: `{ "numara", "gorulenDurum" }` (`musteriIptaliSemasi`).
+- Servis: `iade-talebi.ts` (`musteriIptali`) → `iade.ts` (`iadeYap`).
+- Başarılı (200): `{ "basarili": true, "veri": { "numara", "durum", "iade": "tamamlandi" | "bekliyor" | "basarisiz" } }`.
+- Hatalar: `bulunamadi`, `cakisma` (`durum-degisti`, `iade-bekliyor`), `is-kurali` (`gecis-yok`; `iptal-kapali`: ayar ya da durum izin vermiyor; `iptal-magazadan`: ödeme alınmış, para elle döner), `oturum-yok`, `istek-siniri`.
+
 ### GET /kapi/musteri/son-teslimat
 
 Giriş yapmış müşterinin en son siparişinin teslimat bilgisi (kart 0214, karar 0141): ödeme adımı onu "Son siparişimdeki adresi kullan" ile önerir.
@@ -575,10 +615,10 @@ Havalenin banka hesaplarına hesap ekler; numara IBAN olarak doğrulanır (`ceki
 
 ### GET /kapi/yonetici/siparisler
 
-Panelin sipariş listesi (kart 0234, karar 0145): en yeni önce, sayfa başına `siparisSinirlari.sayfaBoyu`. Durum süzgeci, aranan metin (numara, e-posta ya da ad soyad; harf ayrımsız, `%` ve `_` joker değildir) ve sayfa. Durum sayıları aranan metinden bağımsızdır. `havaleBildirildi` yalnız ödeme bekleyen ve bildirimi olan siparişte doğrudur.
+Panelin sipariş listesi (kart 0234, karar 0145): en yeni önce, sayfa başına `siparisSinirlari.sayfaBoyu`. Durum süzgeci, aranan metin (numara, e-posta ya da ad soyad; harf ayrımsız, `%` ve `_` joker değildir) ve sayfa. Durum sayıları aranan metinden bağımsızdır. `havaleBildirildi` yalnız ödeme bekleyen ve bildirimi olan siparişte doğrudur. `iadeTalebi` bekleyen iade talebi olan siparişte doğrudur; `talepSayisi` böyle siparişlerin sayısıdır (kart 0239).
 
 - İzin: `siparis.gor`. Sınır: `genel`.
-- Girdi (sorgu): `durum` (`siparisDurumlari`), `ara`, `sayfa` (`siparisListesiSemasi`, `cekirdek/moduller/siparis/semalar.ts`). Sınır dışı sayfa son sayfaya çekilir.
+- Girdi (sorgu): `durum` (`siparisDurumlari`), `talep=evet` (yalnız bekleyen iade talebi olanlar), `ara`, `sayfa` (`siparisListesiSemasi`, `cekirdek/moduller/siparis/semalar.ts`). Sınır dışı sayfa son sayfaya çekilir.
 - Servis: `cekirdek/moduller/siparis/yonetim.ts`.
 - Başarılı (200): `{ "satirlar": [{ "kimlik", "numara", "zaman", "ad", "soyad", "uye", "durum", "odemeYontemi", "kapidaSecenegi", "toplam", "paraBirimi", "havaleBildirildi" }], "toplam", "sayfa", "sayfaSayisi", "sayilar": { "<durum>": sayı } }`.
 
@@ -627,6 +667,16 @@ Kuruluşun yanıtını bekleyen iadeyi yeniden dener: reddedilen parçalar yenid
 - Başarılı (200): siparis-iadesi ile aynı.
 - Hatalar: `cakisma` (`iade-yok`: bekleyen iade yok), `yetki`.
 
+### POST /kapi/yonetici/iade-talebi-karari
+
+Müşterinin bekleyen iade talebini onaylar ya da müşteriye açıklamayla reddeder (kart 0239, karar 0151). Onay parayı geri ödemez: iade `siparis-iadesi` ile, girdisine talebin kimliği (`talep`) verilerek yapılır; talep onaylanmış olmalı ve ondan yürüyen ya da tamamlanmış başka iade olmamalıdır. Karar geçmişe ("iade-talebi-onaylandi", "iade-talebi-reddedildi") ve değişiklik kaydına yazılır; ret açıklaması kayda girmez, müşterinin sipariş sayfasında görünür.
+
+- İzin: `siparis.iade` (yalnız mağaza sahibi). Sınır: `genel`.
+- Girdi: `{ "numara", "talep", "karar": "onayla" }` ya da `{ "numara", "talep", "karar": "reddet", "retAciklamasi" }` (`iadeTalebiKarariSemasi`).
+- Servis: `cekirdek/moduller/siparis/iade-talebi.ts` (`kararVer`).
+- Başarılı (200): `{ "numara", "durum": "onaylandi" | "reddedildi" }`.
+- Hatalar: `cakisma` (`talep-degisti`: talep artık bekliyor değil), `bulunamadi`, `dogrulama`, `yetki`.
+
 ### GET /kapi/yonetici/elle-siparis-urunleri
 
 Elle siparişe eklenebilecek ürün birimleri (kart 0236, karar 0148): vitrin aramasının kuralıyla yalnız sayfası vitrinde açılan ürünler (en çok 10, en uygun önce), her birinin silinmemiş birimleri, sepetin hesabıyla fiyat ve satılabilirlik.
@@ -674,7 +724,7 @@ Siparişe not ekler. İç not (`ic`) yalnız panelde, müşteriye not (`musteri`
 
 ### GET /kapi/yonetici/siparis-ayarlari
 
-Sipariş ayarları ekranının verisi: kargo firmaları (`kargoFirmalari`, mağaza ayarı).
+Sipariş ayarları ekranının verisi: kargo firmaları (`kargoFirmalari`, mağaza ayarı) ve iptal ve iade ayarları (`musteriIptali`, `iadeTalebiSuresi`, `iadeKargosu`; kart 0239).
 
 - İzin: `magaza-ayarlari.gor`. Sınır: `genel`.
 - Girdi: yok.
@@ -689,6 +739,15 @@ Kargo firmaları listesini ekranın gördüğü hâlinden yeni hâline değişti
 - Girdi: `{ "onceki": [kimlik], "firmalar": [{ "kimlik"?, "ad", "takipAdresi"? }] }` (`kargoFirmalariSemasi`). Takip adresi `https://` ile başlar ve `{takip}` işaretini tam bir kez taşır.
 - Başarılı (200): GET ile aynı veri.
 - Hatalar: `cakisma` (`liste-degisti`: arada firma eklendi ya da silindi), `dogrulama` (alan `firmalar.<sıra>.takipAdresi`: `takip-adresi-gecersiz`), `yetki`.
+
+### POST /kapi/yonetici/iptal-ve-iade-ayarlari
+
+Sipariş ayarlarının "İptal ve iade" bölümü (kart 0239): müşterinin kendi iptali, iade talebi süresi ve iade kargosunu kim öder birlikte kaydedilir. Değişen her ayar değişiklik kaydına girer (`magaza-ayari.degisti`); aynı değer girmez.
+
+- İzin: `magaza-ayarlari.degistir`. Sınır: `genel`.
+- Girdi: `{ "musteriIptali": "kapali" | "odeme-bekleniyor" | "kargoya-verilene-kadar", "iadeTalebiSuresi": 1–365, "iadeKargosu": "magaza" | "musteri" }` (`iptalVeIadeAyarlariSemasi`).
+- Başarılı (200): GET `/kapi/yonetici/siparis-ayarlari` ile aynı veri.
+- Hatalar: `dogrulama` (alan `iadeTalebiSuresi`), `yetki`.
 
 ### GET /kapi/yonetici/kargo-ayarlari
 

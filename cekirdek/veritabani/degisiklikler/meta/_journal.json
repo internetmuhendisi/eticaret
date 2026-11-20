@@ -330,6 +330,13 @@
       "when": 1795135728632,
       "tag": "0046_siparis-takibi",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1795170651884,
+      "tag": "0047_iade-talebi",
+      "breakpoints": true
     }
   ]
 }

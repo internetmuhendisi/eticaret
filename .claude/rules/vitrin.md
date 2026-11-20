@@ -173,7 +173,13 @@ paths:
 
 - Müşterinin siparişi yalnız `musteriSiparisleri` (`cekirdek/moduller/siparis/musteri.ts`) ile okunur: `liste` ve `ayrinti` hesabın kimliğiyle, `takipBaslat` ve `takipleOku` numara ve e-postayla. İç not, iade nedeni, başarısız iade ve yazanlar orada süzülür; takipte teslimat orada kısaltılır. Ekran yeniden süzmez.
 - Ayrıntı iki yolda da `SiparisAyrintisi` (`cekirdek/vitrin/siparis/ayrinti.tsx`) ile çizilir. Sipariş alındı, ayrıntı ve liste ortak yazılışları (durum rozeti, ödeme yöntemi, adres ve fatura satırı, tutar özeti, havale kutusu) `parcalar.tsx`'ten alır. Kalemin bugünkü görseli ve sayfası `siparisUrunleri` ile gelir: sayfası açılmayan ürünün ikisi de yoktur.
-- Takip anahtarının çerezi (`siparisTakipCerezi`) yalnız takip sayfasının yoluna gider; adres `vitrinAdresleri.siparisTakibi`, çerezin yoluyla tektir. Sayfa adresteki numarayı (`?siparis=`) yalnız formu doldurmak için okur; e-posta adrese yazılmaz.
+- Takip anahtarının çerezi (`siparisTakipCerezi`) yalnız takip sayfasının yoluna ve takip uçlarının yoluna (`kapiYolu`) gider; adres `vitrinAdresleri.siparisTakibi`, çerezin yoluyla tektir. Anahtarı okuyan yeni takip ucu `kapiYolu`'nun altına yazılır (karar 0151). Sayfa adresteki numarayı (`?siparis=`) yalnız formu doldurmak için okur; e-posta adrese yazılmaz.
+
+## İade talebi ve müşterinin iptali (karar 0151)
+
+- Siparişin ayrıntısı talebin ve iptalin durumunu `musteriSiparisleri`'nden alır (`iadeTalebi`, `iptal`, kalemin `talepEdilebilir`'i); sitenin kuralları `musteriKurallariniOku` ile okunur. Ekran kuralı yeniden hesaplamaz.
+- Talep sayfası iki yoldadır: hesapta `hesapIadeTalebiAdresi`, takipte `vitrinAdresleri.takipIadeTalebi`; ikisi de `IadeTalebiFormu`'nu çizer (`cekirdek/vitrin/siparis/iade-talebi-formu.tsx`), şeması uçla ortaktır (`iade-talebi-semalari.ts`). Üye olmayanın gönderimi ertelenmiş robotludur.
+- İptal `SiparisIptali` ile (`siparis-iptali.tsx`) onay penceresinden yapılır; sonuç bildirimle söylenir. Takipte geçmiş yoktur: talepler ve sonucu (ret açıklamasıyla) takip yolunda ayrı bölümde görünür.
 
 ## Tema demosu (karar 0127)
 

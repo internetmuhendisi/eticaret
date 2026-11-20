@@ -41,10 +41,12 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `ozellik.degistir` | yonetici | tumu | Özellik ve seçenek ekler ve değiştirir. |
 | `ozellik.sil` | yonetici | tumu | Özellik ya da seçenek siler: değerleri ürünlerden kalkar. |
 | `siparis.kendi.havale-bildir` | musteri | kendi | Giriş yapmış müşteri kendi havale siparişi için ödediğini bildirir (kart 0214). |
+| `siparis.kendi.iade-talebi` | musteri | kendi | Giriş yapmış müşteri kendi siparişi için iade talebi açar (kart 0239). |
+| `siparis.kendi.iptal` | musteri | kendi | Giriş yapmış müşteri kendi siparişini, ayarın izin verdiği durumda iptal eder (kart 0239). |
 | `siparis.gor` | yonetici | tumu | Siparişleri, ayrıntısını, geçmişini, notlarını ve havale bildirimlerini görür (kart 0234). |
 | `siparis.yonet` | yonetici | tumu | Kapıda ödeme siparişini hazırlamaya alır, siparişi kargoya verir, kargo bilgisini düzeltir, teslim edildi işaretler ve not ekler (kart 0234). Panelden elle sipariş girer (kart 0236). |
 | `siparis.havale-onayla` | yonetici | tumu | Havale siparişinin ödemesini onaylar, sipariş hazırlanıyor olur (kart 0234; görevlide yok, kullanıcı kararı). |
-| `siparis.iade` | yonetici | tumu | Siparişi iptal eder, tam ya da kısmi iade yapar (kart 0235; görevlide yok, kullanıcı kararı: para işidir). |
+| `siparis.iade` | yonetici | tumu | Siparişi iptal eder, tam ya da kısmi iade yapar (kart 0235; görevlide yok, kullanıcı kararı: para işidir). Müşterinin iade talebini onaylar ya da reddeder (kart 0239). |
 | `siparis.elden-tahsil` | yonetici | tumu | Elle siparişi "ödeme alındı" (elden) ile açar (kart 0236; görevlide yok, kullanıcı kararı: para işidir). |
 | `stok.gor` | yonetici | tumu | Satılabilir birimlerin stoğunu ve stok geçmişini görür. |
 | `stok.duzelt` | yonetici | tumu | Stoğu sebebiyle elle düzeltir. |

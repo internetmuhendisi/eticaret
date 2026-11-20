@@ -49,6 +49,9 @@ export const satinAlmaDurumlari = [
 // - yonetici-iptali, iade-yapildi: mağaza sahibinin iptali ve iadesi (kart 0235, iadeYap). Bir kısmi iadeden sonraki
 //   kısmi iade durumu değiştirmez (kismi-iade → kismi-iade).
 // - panelden-olusturuldu: mağaza sahibi ya da görevli siparişi panelden girdi (kart 0236, elleSiparisVer).
+// - iade-talebi-alindi, iade-talebi-onaylandi, iade-talebi-reddedildi: müşterinin iade talebi ve mağazanın kararı
+//   (kart 0239); durum değişmez.
+// - musteri-iptali: müşteri siparişini kendisi iptal etti (kart 0239, iadeYap'ın iptal akışıyla).
 export const siparisGecmisiNedenleri = [
   "olusturuldu",
   "panelden-olusturuldu",
@@ -61,6 +64,10 @@ export const siparisGecmisiNedenleri = [
   "teslim-edildi",
   "yonetici-iptali",
   "iade-yapildi",
+  "iade-talebi-alindi",
+  "iade-talebi-onaylandi",
+  "iade-talebi-reddedildi",
+  "musteri-iptali",
 ] as const;
 export type SiparisGecmisiNedeni = (typeof siparisGecmisiNedenleri)[number];
 
@@ -154,22 +161,66 @@ export const iadeTurleri = ["iptal", "iade"] as const;
 export type IadeTuru = (typeof iadeTurleri)[number];
 export const iadeDurumlari = ["bekliyor", "tamamlandi", "basarisiz"] as const;
 export type IadeDurumu = (typeof iadeDurumlari)[number];
-// İptal ve iadenin nedenleri (panelde seçilir, kayda yazılır).
+// İptal ve iadenin nedenleri (panelde seçilir, kayda yazılır). beden-uymadi kart 0239 ile geldi (müşterinin iade
+// talebinin nedeni, onaylanan talepten yapılan iadeye aynen geçer).
 export const iadeNedenleri = [
   "musteri-vazgecti",
   "beklentiyi-karsilamadi",
   "kusurlu-hasarli",
   "yanlis-urun",
+  "beden-uymadi",
   "stok-yok",
   "diger",
 ] as const;
 export type IadeNedeni = (typeof iadeNedenleri)[number];
+// İadeyi kim başlattı (kart 0239): mağaza (panelden) ya da müşteri (kendi iptali). Geçmişin nedenini seçer
+// (yonetici-iptali ya da musteri-iptali).
+export const iadeKaynaklari = ["yonetici", "musteri"] as const;
+export type IadeKaynagi = (typeof iadeKaynaklari)[number];
 // Hangi durumdaki siparişte hangi tür yapılır.
 export const iadeyeAcikDurumlar: Record<IadeTuru, readonly SiparisDurumu[]> = {
   iptal: ["odeme-bekleniyor", "hazirlaniyor"],
   iade: ["teslim-edildi", "kismi-iade"],
 };
 export const iadeSinirlari = { aciklamaEnCok: 500 } as const;
+
+// Müşterinin iade talebi (kart 0239, karar 0151). Müşteri teslim edilmiş ya da kısmen iade edilmiş siparişte, teslimden
+// sonra iade talebi süresi (site ayarı, gün) içinde ürün ve adet seçip talep açar; tutarı mağaza sahibi iadeyle
+// belirler. Durumlar: bekliyor (mağazanın kararını bekliyor), onaylandi (mağaza kabul etti; iade "İade yap" ile
+// yapılır), reddedildi (mağaza müşteriye açıklama yazdı). Bir siparişte aynı anda en çok bir bekleyen talep olur.
+// İstenemeyen adet: iade edilmiş ya da iadesi bekleyen adet ve onaylanmış ama iadesi henüz yapılmamış talepteki adet;
+// reddedilen talebin adedi yeniden istenebilir (kullanıcı kararı).
+export const iadeTalebiDurumlari = ["bekliyor", "onaylandi", "reddedildi"] as const;
+export type IadeTalebiDurumu = (typeof iadeTalebiDurumlari)[number];
+// Müşterinin seçebildiği nedenler (taslak): panelin nedenlerinin alt kümesidir.
+export const musteriIadeNedenleri = [
+  "beklentiyi-karsilamadi",
+  "kusurlu-hasarli",
+  "yanlis-urun",
+  "beden-uymadi",
+  "diger",
+] as const satisfies readonly IadeNedeni[];
+export type MusteriIadeNedeni = (typeof musteriIadeNedenleri)[number];
+export const iadeTalebiSinirlari = { aciklamaEnCok: 1000, retAciklamasiEnCok: 1000 } as const;
+// İade talebi süresi (site ayarı, teslimden sonra gün; karar 0145 önerisi 14).
+export const iadeTalebiSuresiSinirlari = { enAz: 1, enCok: 365, varsayilan: 14 } as const;
+// İade kargosunu kim öder (site ayarı): talep formunda müşteriye söylenir.
+export const iadeKargosuOdeyenler = ["magaza", "musteri"] as const;
+export type IadeKargosuOdeyen = (typeof iadeKargosuOdeyenler)[number];
+
+// Müşterinin kendi iptali (kart 0239, karar 0145, 0151; site ayarı). Seçenek, müşterinin iptal edebildiği durumları
+// verir. Ödemesi alınmış ve parası ödeme kuruluşundan dönmeyen sipariş (havale, panelde "ödeme alındı") müşteri
+// tarafından iptal edilmez (kullanıcı kararı): parayı mağaza elle gönderir, müşteri mağazaya yazar.
+export const musteriIptaliTanimlari = {
+  kapali: [],
+  "odeme-bekleniyor": ["odeme-bekleniyor"],
+  "kargoya-verilene-kadar": ["odeme-bekleniyor", "hazirlaniyor"],
+} as const satisfies Record<string, readonly SiparisDurumu[]>;
+export type MusteriIptaliSecenegi = keyof typeof musteriIptaliTanimlari;
+export const musteriIptaliSecenekleri = Object.keys(musteriIptaliTanimlari) as [
+  MusteriIptaliSecenegi,
+  ...MusteriIptaliSecenegi[],
+];
 
 // Siparişin notları (kart 0234): iç not yalnız panelde, müşteriye not müşterinin sipariş ayrıntısında görünür
 // (e-postası kart 0240). Not sonradan değiştirilemez.
@@ -217,9 +268,12 @@ export const siparisErisimCerezi = {
 // Üye olmayanın sipariş takibi (kart 0238, karar 0150): numara ve e-posta eşleşince tarayıcıya bir takip anahtarı
 // verilir (veritabanında yalnız özeti durur); sayfa 30 dakika boyunca siparişi bu anahtarla gösterir, sonra yeniden
 // numara ve e-posta ister (taslağın kuralı). Çerez yalnız takip sayfasının yoluna gider.
+// Çerez ikinci kez takip uçlarının yoluna da yazılır (kart 0239, karar 0151): tarayıcı çerezi yalnız yolunun altındaki
+// isteklere gönderir; talep, iptal ve takibi kapatma uçları anahtarı buradan okur. Uçlar bu yolun altındadır.
 export const siparisTakipCerezi = {
   ad: "siparis-takip",
   yol: "/siparis-takibi",
+  kapiYolu: "/kapi/herkese-acik/siparis-takibi",
   saniye: 30 * 60,
 } as const;
 

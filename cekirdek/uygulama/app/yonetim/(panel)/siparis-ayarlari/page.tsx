@@ -1,4 +1,4 @@
-// Sipariş ayarları ekranı (kart 0234): kargo firmaları. Önce sayfanın izni denetlenir, sonra ayar okunur; değişiklik
+// Sipariş ayarları ekranı (kart 0234): iptal ve iade (kart 0239) ile kargo firmaları. Önce sayfanın izni denetlenir, sonra ayar okunur; değişiklik
 // tarayıcıdan sipariş ayarları ucuna gider.
 import type { Metadata } from "next";
 import { panelOturumu } from "../../../../../yonetim-paneli/panel-oturumu";
@@ -8,6 +8,7 @@ import {
   panelSayfasiniAc,
 } from "../../../../../yonetim-paneli/panel-sayfasi";
 import { SiparisAyarlariEkrani } from "../../../../../yonetim-paneli/siparisler/ayarlar";
+import { IptalVeIadeAyarlari } from "../../../../../yonetim-paneli/siparisler/iptal-ve-iade-ayarlari";
 import { siparisAyarlariVerisi } from "../../../../../yonetim-paneli/siparisler/veri";
 
 export const generateMetadata = (): Promise<Metadata> => panelSayfaBilgisi("siparis-ayarlari");
@@ -15,13 +16,18 @@ export const generateMetadata = (): Promise<Metadata> => panelSayfaBilgisi("sipa
 export default async function SiparisAyarlariSayfasi() {
   await panelSayfasiniAc("siparis-ayarlari");
   const { yetkili } = await panelOturumu();
-  const { kargoFirmalari } = await siparisAyarlariVerisi();
+  const { kargoFirmalari, musteriIptali, iadeTalebiSuresi, iadeKargosu } =
+    await siparisAyarlariVerisi();
+  const izinli = yetkili("magaza-ayarlari.degistir");
   return (
     <PanelSayfasi kod="siparis-ayarlari">
-      <SiparisAyarlariEkrani
-        firmalar={kargoFirmalari}
-        izinli={yetkili("magaza-ayarlari.degistir")}
-      />
+      <div className="flex flex-col gap-5">
+        <IptalVeIadeAyarlari
+          baslangic={{ musteriIptali, iadeTalebiSuresi: String(iadeTalebiSuresi), iadeKargosu }}
+          izinli={izinli}
+        />
+        <SiparisAyarlariEkrani firmalar={kargoFirmalari} izinli={izinli} />
+      </div>
     </PanelSayfasi>
   );
 }

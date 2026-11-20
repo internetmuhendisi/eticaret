@@ -32,7 +32,10 @@ import {
   ucretsizKargoTutarlari,
 } from "../kayitlar/sepet.ts";
 import {
+  iadeKargosuOdeyenler,
+  iadeTalebiSuresiSinirlari,
   kisiselVeriSaklamaSinirlari,
+  musteriIptaliSecenekleri,
   siparisSinirlari,
   takipAdresiGecerliMi,
 } from "../kayitlar/siparis.ts";
@@ -453,6 +456,25 @@ export const magazaAyarSemasi = z.strictObject({
       )
       .default([]),
     magazaSahibinin("ayar.aciklama.kargoFirmalari", { kendiIsleviyle: true }),
+  ),
+  // İptal ve iade (kart 0239, karar 0145, 0151; planlar/site-ayarlari.md). Müşterinin kendi iptali hangi durumda
+  // açık (cekirdek/kayitlar/siparis.ts: musteriIptaliTanimlari), iade talebi teslimden sonra kaç gün açılır, iade
+  // kargosunu kim öder (talep formunda müşteriye söylenir). Üçü yalnız sipariş ayarları işleviyle değişir.
+  musteriIptali: ayar(
+    z.enum(musteriIptaliSecenekleri).default("odeme-bekleniyor"),
+    magazaSahibinin("ayar.aciklama.musteriIptali", { kendiIsleviyle: true }),
+  ),
+  iadeTalebiSuresi: ayar(
+    z
+      .int()
+      .min(iadeTalebiSuresiSinirlari.enAz)
+      .max(iadeTalebiSuresiSinirlari.enCok)
+      .default(iadeTalebiSuresiSinirlari.varsayilan),
+    magazaSahibinin("ayar.aciklama.iadeTalebiSuresi", { kendiIsleviyle: true }),
+  ),
+  iadeKargosu: ayar(
+    z.enum(iadeKargosuOdeyenler).default("magaza"),
+    magazaSahibinin("ayar.aciklama.iadeKargosu", { kendiIsleviyle: true }),
   ),
   // Ürün sepete eklenince ne olur (karar 0132): seçenekler cekirdek/kayitlar/sepet.ts'tedir.
   sepeteEkleyince: ayar(

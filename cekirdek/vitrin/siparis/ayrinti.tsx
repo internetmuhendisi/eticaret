@@ -7,6 +7,11 @@
 // numarası ve takip bağlantısı. Altında ürünler, sipariş geçmişi (durumlar, mağazanın müşteriye notları, iptal ve
 // iadeler), tutar ve teslimat. Tutarlar siparişin saklanan değerleridir. Teslim edilmiş siparişte, sayfası açık ürüne
 // "Yorum yaz" (yalnız hesapta; yorum yalnız giriş yapmış müşterinindir).
+//
+// İade talebi ve kendi iptal (kart 0239, karar 0151): talep açılabiliyorsa "İade talebi oluştur" talep sayfasına gider;
+// süre dolduysa son gün, bekleyen talep varsa incelendiği yazılır. Talepler ve mağazanın kararı (ret açıklamasıyla)
+// geçmişte görünür. Ayar izin veriyorsa "Siparişi iptal et" onay penceresiyle sorulur; ödemesi havaleyle alınmış
+// siparişte iptal için mağazayla iletişim söylenir. İki yol da (hesap ve takip) aynıdır.
 import type { ReactNode } from "react";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
@@ -14,6 +19,7 @@ import { Kart } from "../../../bilesenler/parcalar/kart";
 import { Rozet } from "../../../bilesenler/parcalar/rozet";
 import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
+import type { MusteriIadeNedeni } from "../../kayitlar/siparis";
 import {
   type SiparisDurumu,
   type SiparisGecmisiNedeni,
@@ -34,6 +40,7 @@ import {
   SiparisDurumRozeti,
   siparisTutarlari,
 } from "./parcalar";
+import { SiparisIptali } from "./siparis-iptali";
 import type { SiparisUrunu } from "./urunler";
 
 type Bicim = ReturnType<typeof siteninBicimleyicisi>;
@@ -52,6 +59,20 @@ const olaylar: Record<SiparisGecmisiNedeni, MetinAnahtari | null> = {
   "teslim-edildi": "vitrin.siparis.olay.teslim-edildi",
   "yonetici-iptali": null,
   "iade-yapildi": null,
+  // Talepler ve müşterinin iptali talep ve iade kayıtlarından yazılır (kalemleri ve kararıyla).
+  "iade-talebi-alindi": null,
+  "iade-talebi-onaylandi": null,
+  "iade-talebi-reddedildi": null,
+  "musteri-iptali": null,
+};
+
+// Müşterinin talep nedenlerinin metni (kayıttaki musteriIadeNedenleri).
+export const talepNedenMetinleri: Record<MusteriIadeNedeni, MetinAnahtari> = {
+  "beklentiyi-karsilamadi": "vitrin.iadeTalebi.neden.beklentiyi-karsilamadi",
+  "kusurlu-hasarli": "vitrin.iadeTalebi.neden.kusurlu-hasarli",
+  "yanlis-urun": "vitrin.iadeTalebi.neden.yanlis-urun",
+  "beden-uymadi": "vitrin.iadeTalebi.neden.beden-uymadi",
+  diger: "vitrin.iadeTalebi.neden.diger",
 };
 
 // İlerleme şeridinin adımları ve her durumun şeritteki yeri (son adımdan sonrası hepsi bitmiş).
@@ -153,6 +174,39 @@ const olaylariKur = (siparis: MusteriSiparisi, bicim: Bicim): Olay[] => {
           : undefined;
       return [{ zaman: satir.zaman, baslik: metin(anahtar), ...(kargo ? { ayrinti: kargo } : {}) }];
     }),
+    ...siparis.talepler.flatMap((talep): Olay[] => {
+      const ayrinti = [
+        ...talep.kalemler.map((kalem) =>
+          doldur(metin("vitrin.siparis.iadeKalemi"), {
+            adet: String(kalem.adet),
+            urun: kalemAdi.get(kalem.sira) ?? "",
+          }),
+        ),
+        metin(talepNedenMetinleri[talep.neden]),
+      ].join(" · ");
+      const alindi: Olay = {
+        zaman: talep.zaman,
+        baslik: metin("vitrin.siparis.olay.talepAlindi"),
+        ayrinti,
+      };
+      if (talep.kararZamani === null) return [alindi];
+      return [
+        alindi,
+        talep.durum === "reddedildi"
+          ? {
+              zaman: talep.kararZamani,
+              baslik: metin("vitrin.siparis.olay.talepReddedildi"),
+              ...(talep.retAciklamasi === null
+                ? {}
+                : { ayrinti: talep.retAciklamasi, not: true as const }),
+            }
+          : {
+              zaman: talep.kararZamani,
+              baslik: metin("vitrin.siparis.olay.talepOnaylandi"),
+              ayrinti: metin("vitrin.siparis.olay.talepOnaylandiAyrinti"),
+            },
+      ];
+    }),
     ...siparis.notlar.map((not) => ({
       zaman: not.zaman,
       baslik: metin("vitrin.siparis.olay.magazadanNot"),
@@ -212,7 +266,10 @@ export function SiparisAyrintisi({
   yol,
   bankaHesaplari,
   yorumAcik,
+  talepAdresi,
 }: {
+  // İade talebi sayfasının adresi (hesapta siparişin, takipte takip sayfasının altında).
+  talepAdresi: string;
   siparis: MusteriSiparisi;
   urunler: ReadonlyMap<string, SiparisUrunu>;
   bicim: Bicim;
@@ -354,6 +411,49 @@ export function SiparisAyrintisi({
               })}
             </ul>
           </Bolum>
+          {/* Takipte geçmiş yoktur; iade taleplerinin sonucu (ret açıklamasıyla) ayrı bölümde görünür (kart 0239). */}
+          {yol === "takip" && siparis.talepler.length > 0 ? (
+            <Bolum kimlik="siparis-iade-talepleri" baslik={metin("vitrin.siparis.talepler")}>
+              <ul className="flex flex-col gap-4">
+                {siparis.talepler.toReversed().map((talep) => (
+                  <li key={talep.kimlik} className="flex flex-col gap-1">
+                    <span className="font-kalin">
+                      {metin(
+                        talep.durum === "bekliyor"
+                          ? "vitrin.siparis.olay.talepAlindi"
+                          : talep.durum === "onaylandi"
+                            ? "vitrin.siparis.olay.talepOnaylandi"
+                            : "vitrin.siparis.olay.talepReddedildi",
+                      )}
+                    </span>
+                    <span className="text-kucuk text-soluk-yazi">
+                      {[
+                        ...talep.kalemler.map((kalem) =>
+                          doldur(metin("vitrin.siparis.iadeKalemi"), {
+                            adet: String(kalem.adet),
+                            urun:
+                              siparis.kalemler.find((k) => k.sira === kalem.sira)?.urun_adi ?? "",
+                          }),
+                        ),
+                        metin(talepNedenMetinleri[talep.neden]),
+                      ].join(" · ")}
+                    </span>
+                    {talep.retAciklamasi === null ? null : (
+                      <span className="rounded-orta bg-yuzey px-3 py-2 whitespace-pre-line wrap-anywhere">
+                        {talep.retAciklamasi}
+                      </span>
+                    )}
+                    <time
+                      dateTime={(talep.kararZamani ?? talep.zaman).toISOString()}
+                      className="text-kucuk text-soluk-yazi"
+                    >
+                      {bicim.tarihSaat(talep.kararZamani ?? talep.zaman)}
+                    </time>
+                  </li>
+                ))}
+              </ul>
+            </Bolum>
+          ) : null}
           {/* Takipte geçmiş yoktur (taslak; mağazanın notları takipte görünmez, karar 0150). */}
           {yol === "takip" ? null : (
             <Bolum kimlik="siparis-gecmisi" baslik={metin("vitrin.siparis.gecmis")}>
@@ -431,6 +531,7 @@ export function SiparisAyrintisi({
               </p>
             )}
           </Bolum>
+          <IadeVeIptal siparis={siparis} bicim={bicim} yol={yol} talepAdresi={talepAdresi} />
           <Bolum kimlik="siparis-teslimati" baslik={metin("vitrin.siparisAlindi.teslimatVeFatura")}>
             <dl className="flex flex-col gap-1">
               <dt className="text-soluk-yazi">{metin("vitrin.siparisAlindi.teslimatAdresi")}</dt>
@@ -455,6 +556,51 @@ export function SiparisAyrintisi({
           </Bolum>
         </div>
       </div>
+    </div>
+  );
+}
+
+// İade talebi ve iptal satırı (taslağın eylem satırı): yalnız yapılabilen ya da söylenmesi gereken durumda çizilir.
+function IadeVeIptal({
+  siparis,
+  bicim,
+  yol,
+  talepAdresi,
+}: {
+  siparis: MusteriSiparisi;
+  bicim: Bicim;
+  yol: "hesap" | "takip";
+  talepAdresi: string;
+}) {
+  const { iadeTalebi, iptal } = siparis;
+  const talepYazisi =
+    iadeTalebi.durum === "sure-doldu" && iadeTalebi.sonZaman !== null
+      ? doldur(metin("vitrin.siparis.talepSuresiDoldu"), {
+          tarih: bicim.uzunTarih(iadeTalebi.sonZaman),
+        })
+      : iadeTalebi.durum === "bekleyen-var"
+        ? metin("vitrin.siparis.talepInceleniyor")
+        : null;
+  if (iadeTalebi.durum !== "acik" && talepYazisi === null && iptal === "yok") return null;
+  return (
+    <div className="flex flex-col gap-3">
+      {iadeTalebi.durum === "acik" ? (
+        <Baglanti href={talepAdresi} gorunum="cerceveli" className="self-start">
+          <Ikon ad="iade" />
+          {metin("vitrin.siparis.iadeTalebiOlustur")}
+        </Baglanti>
+      ) : null}
+      {talepYazisi === null ? null : <p className="text-kucuk text-soluk-yazi">{talepYazisi}</p>}
+      {iptal === "acik" ? (
+        <SiparisIptali
+          numara={siparis.numara}
+          durum={siparis.durum}
+          odendi={siparis.odemeZamani !== null}
+          yol={yol}
+        />
+      ) : iptal === "magazadan" ? (
+        <p className="text-kucuk text-soluk-yazi">{metin("vitrin.siparis.iptalMagazadan")}</p>
+      ) : null}
     </div>
   );
 }

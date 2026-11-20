@@ -6,8 +6,17 @@ import { siparisErisimCerezi, siparisTakipCerezi } from "../kayitlar/siparis.ts"
 export const siparisErisimCereziYaz = (anahtar: string): string =>
   `${siparisErisimCerezi.ad}=${anahtar}; Path=${siparisErisimCerezi.yol}; Max-Age=${siparisErisimCerezi.saniye}; HttpOnly; Secure; SameSite=Lax`;
 
-export const siparisTakipCereziYaz = (anahtar: string): string =>
-  `${siparisTakipCerezi.ad}=${anahtar}; Path=${siparisTakipCerezi.yol}; Max-Age=${siparisTakipCerezi.saniye}; HttpOnly; Secure; SameSite=Lax`;
+// Takip çerezi iki yola yazılır: sayfanın yolu ve takip uçlarının yolu (kart 0239). Tarayıcı çerezi yalnız yolunun
+// altına gönderir: uçlar (talep, iptal, takibi kapatma) sayfanın çerezini görmez.
+const takipYollari = [siparisTakipCerezi.yol, siparisTakipCerezi.kapiYolu] as const;
 
-export const siparisTakipCereziSil = (): string =>
-  `${siparisTakipCerezi.ad}=; Path=${siparisTakipCerezi.yol}; Max-Age=0; HttpOnly; Secure; SameSite=Lax`;
+export const siparisTakipCereziYaz = (anahtar: string): string[] =>
+  takipYollari.map(
+    (yol) =>
+      `${siparisTakipCerezi.ad}=${anahtar}; Path=${yol}; Max-Age=${siparisTakipCerezi.saniye}; HttpOnly; Secure; SameSite=Lax`,
+  );
+
+export const siparisTakipCereziSil = (): string[] =>
+  takipYollari.map(
+    (yol) => `${siparisTakipCerezi.ad}=; Path=${yol}; Max-Age=0; HttpOnly; Secure; SameSite=Lax`,
+  );

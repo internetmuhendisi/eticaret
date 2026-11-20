@@ -1,5 +1,6 @@
 // Siparişler ekranı (kart 0234). Önce sayfanın izni denetlenir (izni olmayana bulunamadı), sonra liste okunur. Durum
-// sekmesi ve sayfa adresin sorgusundadır; tanınmayan durum yok sayılır, sayfa sınırlara çekilir.
+// sekmesi, "İade talepleri" süzgeci ve sayfa adresin sorgusundadır; tanınmayan durum yok sayılır, sayfa sınırlara
+// çekilir.
 import type { Metadata } from "next";
 import { type SiparisDurumu, siparisDurumlari } from "../../../../../kayitlar/siparis";
 import { panelAdresi } from "../../../../../yonetim-paneli/adresler";
@@ -18,7 +19,11 @@ export const generateMetadata = (): Promise<Metadata> => panelSayfaBilgisi("sipa
 export default async function SiparislerSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{ durum?: string | string[]; sayfa?: string | string[] }>;
+  searchParams: Promise<{
+    durum?: string | string[];
+    sayfa?: string | string[];
+    talep?: string | string[];
+  }>;
 }) {
   await panelSayfasiniAc("siparisler");
   const sorgu = await searchParams;
@@ -27,7 +32,9 @@ export default async function SiparislerSayfasi({
     typeof sorgu.sayfa === "string" && /^\d{1,5}$/.test(sorgu.sayfa)
       ? Math.max(1, Number(sorgu.sayfa))
       : 1;
-  const veri = await siparisListesiVerisi({ durum, sayfa });
+  // "İade talepleri" sekmesi (kart 0239): yalnız bekleyen iade talebi olanlar.
+  const talep = sorgu.talep === "evet";
+  const veri = await siparisListesiVerisi({ durum, talep, sayfa });
   const { yetkili } = await panelOturumu();
   return (
     <PanelSayfasi

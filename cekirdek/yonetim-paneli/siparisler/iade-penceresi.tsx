@@ -3,7 +3,9 @@
 // yalnız siparişin durumu izin veriyorsa ve yöneticinin siparis.iade izni varsa görünür (veri.ts). Pencere aynıdır:
 // iptalde bütün ürünler sabit gelir, iadede ürün ve adet seçilir, kargo ücreti iade edilir ya da edilmez, tutar elle
 // değiştirilebilir. Tutar ve vergi sunucunun hesabıyla aynı işlevden (iadeyiHesapla) ve sunucunun biçimiyle yazılır;
-// gönderilen yalnız seçimdir, tutarı sunucu yeniden hesaplar. Asıl düğme tutarı yazar.
+// gönderilen yalnız seçimdir, tutarı sunucu yeniden hesaplar. Asıl düğme tutarı yazar. Müşterinin onaylanmış ve iadesi
+// yapılmamış talebi varsa (kart 0239) iade penceresi talebin ürünleri, adetleri ve nedeniyle seçili açılır; iade
+// talebe bağlanır (talep kimliği gider). Mağaza sahibi seçimi değiştirebilir.
 import { type FormEvent, useMemo, useRef, useState } from "react";
 import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
 import { FormAlani } from "../../../bilesenler/form/form-alani";
@@ -141,12 +143,23 @@ function IadeFormu({
   const islem = usePanelIslemi(hataMetni);
   const b = useMemo(() => bicimleyiciOlustur(veri.bicim), [veri.bicim]);
   const iptal = tur === "iptal";
-  const [adetler, setAdetler] = useState<Record<number, number>>({});
+  const talep = iptal ? null : veri.talep;
+  const [adetler, setAdetler] = useState<Record<number, number>>(() =>
+    talep === null
+      ? {}
+      : Object.fromEntries(
+          talep.kalemler.map((secilen) => {
+            const kalem = veri.kalemler.find((k) => k.sira === secilen.sira);
+            const enCok = kalem === undefined ? 0 : kalem.adet - kalem.iadeEdilen;
+            return [secilen.sira, Math.min(secilen.adet, enCok)];
+          }),
+        ),
+  );
   // Kargo: seçilmediyse bütün kalan ürünler seçilince iade edilir (tam iade), değilse edilmez.
   const [kargoSecimi, setKargoSecimi] = useState<boolean | null>(null);
   const [elleTutar, setElleTutar] = useState<string | null>(null);
   const [stogaKoy, setStogaKoy] = useState(true);
-  const [neden, setNeden] = useState<IadeNedeni | "">("");
+  const [neden, setNeden] = useState<IadeNedeni | "">(talep?.neden ?? "");
   const [aciklama, setAciklama] = useState("");
   const [hatalar, setHatalar] = useState<
     Partial<Record<"kalemler" | "tutar" | "neden", string | undefined>>
@@ -236,6 +249,7 @@ function IadeFormu({
         stogaKoy,
         neden,
         ...(aciklama.trim() === "" ? {} : { aciklama }),
+        ...(talep === null ? {} : { talep: talep.kimlik }),
       },
       iptal ? "yonetim.iade.basari.iptal" : "yonetim.iade.basari.iade",
       {
@@ -309,6 +323,9 @@ function IadeFormu({
     >
       {genelHata === null ? null : <Uyari tur="tehlike">{genelHata}</Uyari>}
       {iptal ? <Uyari tur="uyari">{metin("yonetim.iade.iptalUyarisi")}</Uyari> : null}
+      {talep === null ? null : (
+        <Uyari tur="bilgi">{metin("yonetim.iadeTalebi.penceredeSecili")}</Uyari>
+      )}
       <div className="flex min-w-0 flex-col gap-2">
         <table
           className="w-full border-collapse text-left"

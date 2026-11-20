@@ -76,6 +76,12 @@ const site: Site = {
 const odeme = odemeServisi(site);
 const yonetim = siparisYonetimi(site);
 const musteri = musteriSiparisleri();
+// Sitenin iptal ve iade kuralları (kart 0239): varsayılanlar.
+const kurallar = {
+  musteriIptali: "odeme-bekleniyor",
+  iadeTalebiSuresi: 14,
+  iadeKargosu: "magaza",
+} as const;
 const urunSrv = urunServisi(() => site.ayarlar.saatDilimi);
 const fiyat = siteninFiyatServisi(site);
 const stok = stokServisi();
@@ -195,11 +201,11 @@ describe("Siparişlerim", () => {
       iadeToplami: 0,
       kalemler: [{ birim }],
     });
-    expect(await musteri.ayrinti(h.vt, a, yeni)).toMatchObject({ numara: yeni });
-    expect(await musteri.ayrinti(h.vt, a, baskasinin)).toBeNull();
-    expect(await musteri.ayrinti(h.vt, a, uyesiz)).toBeNull();
-    expect(await musteri.ayrinti(h.vt, a, "ORN-987654321")).toBeNull();
-    expect(await musteri.ayrinti(h.vt, a, "bozuk")).toBeNull();
+    expect(await musteri.ayrinti(h.vt, a, yeni, kurallar)).toMatchObject({ numara: yeni });
+    expect(await musteri.ayrinti(h.vt, a, baskasinin, kurallar)).toBeNull();
+    expect(await musteri.ayrinti(h.vt, a, uyesiz, kurallar)).toBeNull();
+    expect(await musteri.ayrinti(h.vt, a, "ORN-987654321", kurallar)).toBeNull();
+    expect(await musteri.ayrinti(h.vt, a, "bozuk", kurallar)).toBeNull();
     expect((await musteri.liste(h.vt, b, 1)).siparisler.map((s) => s.numara)).toEqual([baskasinin]);
     expect(await musteri.liste(h.vt, await h.musteriAc(), 1)).toEqual({
       siparisler: [],
@@ -313,7 +319,7 @@ describe("ayrıntı", () => {
       kim_turu: "sistem",
       kim_adi: "deneme",
     });
-    const ayrinti = await musteri.ayrinti(h.vt, a, numara);
+    const ayrinti = await musteri.ayrinti(h.vt, a, numara, kurallar);
     expect(ayrinti?.durum).toBe("kismi-iade");
     expect(ayrinti?.notlar.map((n) => n.metin)).toEqual(["Hediye paketiyle gönderdik"]);
     expect(ayrinti?.gecmis.map((g) => g.neden)).toEqual([
@@ -370,7 +376,7 @@ describe("ayrıntı", () => {
       stogaKoy: true,
       neden: "musteri-vazgecti",
     });
-    const ayrinti = await musteri.ayrinti(h.vt, a, numara);
+    const ayrinti = await musteri.ayrinti(h.vt, a, numara, kurallar);
     expect(ayrinti?.durum).toBe("iptal");
     expect(ayrinti?.iadeler).toMatchObject([{ tur: "iptal", durum: "tamamlandi", tutar: 0 }]);
     expect(ayrinti?.kalemler.map((kalem) => kalem.iadeAdedi)).toEqual([0]);
@@ -381,10 +387,10 @@ describe("ayrıntı", () => {
     const { urun, birim } = await h.urunAc();
     const a = await h.musteriAc();
     const numara = await ver(h.vt, [{ birim, adet: 2 }], { musteri: a });
-    const once = await musteri.ayrinti(h.vt, a, numara);
+    const once = await musteri.ayrinti(h.vt, a, numara, kurallar);
     await urunSrv.urunDegistir(h.vt, yonetici(), urun, { ad: "Yepyeni ad" });
     await fiyat.fiyatYaz(h.vt, yonetici(), birim, { satisFiyati: 99_900 });
-    const sonra = await musteri.ayrinti(h.vt, a, numara);
+    const sonra = await musteri.ayrinti(h.vt, a, numara, kurallar);
     expect(sonra?.kalemler[0]).toMatchObject({
       urun_adi: once?.kalemler[0]?.urun_adi,
       birim_tutari: 10_000,
@@ -404,7 +410,7 @@ describe("takip", () => {
     await yonetim.notEkle(h.vt, yonetici(), { numara, tur: "musteri", metin: "Kapı kodu 1234" });
     const { anahtar } = await musteri.takipBaslat(h.vt, { numara, eposta: "DENIZ@ornek.TEST" });
     expect(anahtar).toMatch(/^[A-Za-z0-9_-]{43}$/);
-    const okunan = await musteri.takipleOku(h.vt, anahtar);
+    const okunan = await musteri.takipleOku(h.vt, anahtar, kurallar);
     expect(okunan?.numara).toBe(numara);
     expect(okunan?.teslimat).toEqual({
       ad: "D*** C***",
@@ -437,7 +443,7 @@ describe("takip", () => {
       sql`update siparisler set olusturma_zamani = now() - interval '40 years' where numara = ${numara}`,
     );
     expect(await kisiselVeriTemizligi(h.vt, site)).toBe(1);
-    expect(await musteri.takipleOku(h.vt, anahtar)).toBeNull();
+    expect(await musteri.takipleOku(h.vt, anahtar, kurallar)).toBeNull();
     expect(await hatasi(musteri.takipBaslat(h.vt, { numara, eposta: "deniz@ornek.test" }))).toEqual(
       yanlis,
     );
@@ -463,17 +469,21 @@ describe("takip", () => {
     await h.vt.execute(
       sql`update siparis_takip_erisimleri set bitis_zamani = now() - interval '1 second' where ozet = ${erisimOzeti(eski)}`,
     );
-    expect(await musteri.takipleOku(h.vt, eski)).toBeNull();
-    expect(await musteri.takipleOku(h.vt, acik)).not.toBeNull();
-    expect(await musteri.takipleOku(h.vt, undefined)).toBeNull();
-    expect(await musteri.takipleOku(h.vt, "kisa")).toBeNull();
+    expect(await musteri.takipleOku(h.vt, eski, kurallar)).toBeNull();
+    expect(await musteri.takipleOku(h.vt, acik, kurallar)).not.toBeNull();
+    expect(await musteri.takipleOku(h.vt, undefined, kurallar)).toBeNull();
+    expect(await musteri.takipleOku(h.vt, "kisa", kurallar)).toBeNull();
     // Tek harfi değişmiş anahtar (son harf her zaman başka bir harfe çevrilir).
     expect(
-      await musteri.takipleOku(h.vt, `${acik.slice(0, -1)}${acik.endsWith("A") ? "B" : "A"}`),
+      await musteri.takipleOku(
+        h.vt,
+        `${acik.slice(0, -1)}${acik.endsWith("A") ? "B" : "A"}`,
+        kurallar,
+      ),
     ).toBeNull();
     await musteri.takipBaslat(h.vt, girdi);
     expect(await h.vt.select().from(siparisTakipErisimleri)).toHaveLength(2);
-    expect(await musteri.takipleOku(h.vt, acik)).not.toBeNull();
+    expect(await musteri.takipleOku(h.vt, acik, kurallar)).not.toBeNull();
   });
 
   it("takip kapatılınca anahtar okumaz; başka anahtar açık kalır; bozuk ve olmayan anahtar bir şey yapmaz", async () => {
@@ -486,8 +496,8 @@ describe("takip", () => {
     await musteri.takipKapat(h.vt, undefined);
     await musteri.takipKapat(h.vt, "bozuk");
     await musteri.takipKapat(h.vt, kapanan);
-    expect(await musteri.takipleOku(h.vt, kapanan)).toBeNull();
-    expect(await musteri.takipleOku(h.vt, kalan)).not.toBeNull();
+    expect(await musteri.takipleOku(h.vt, kapanan, kurallar)).toBeNull();
+    expect(await musteri.takipleOku(h.vt, kalan, kurallar)).not.toBeNull();
     expect(await h.vt.select().from(siparisTakipErisimleri)).toHaveLength(1);
   });
 
@@ -502,7 +512,7 @@ describe("takip", () => {
     expect(
       await hatasi(musteri.takipBaslat(h2.vt, { numara, eposta: "deniz@ornek.test" })),
     ).toMatchObject({ kod: "bulunamadi" });
-    expect(await musteri.takipleOku(h2.vt, anahtar)).toBeNull();
+    expect(await musteri.takipleOku(h2.vt, anahtar, kurallar)).toBeNull();
     expect((await musteri.liste(h2.vt, a, 1)).toplam).toBe(0);
   });
 });

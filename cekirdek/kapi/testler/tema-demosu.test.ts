@@ -48,6 +48,9 @@ describe("tema demosunda kapı", () => {
         // Kart 0238: sipariş takibi kişisel veri gösterir.
         "POST /kapi/herkese-acik/siparis-takibi",
         "DELETE /kapi/herkese-acik/siparis-takibi",
+        // Kart 0239: üye olmayanın iade talebi ve iptali siparişe yazar.
+        "POST /kapi/herkese-acik/siparis-takibi/iade-talebi",
+        "POST /kapi/herkese-acik/siparis-takibi/iptal",
         // Kart 0215: kartla ödemenin dönüşü ve bildirimi sipariş doğurur, taksit tablosu kuruluşa gider.
         "POST /kapi/herkese-acik/kartla-odeme/donus",
         "POST /kapi/herkese-acik/kartla-odeme/bildirim",

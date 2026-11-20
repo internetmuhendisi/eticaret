@@ -5,9 +5,13 @@ import { z } from "zod";
 import { kapidaOdemeSecenekleri } from "../../kayitlar/odeme.ts";
 import { sepetSinirlari } from "../../kayitlar/sepet.ts";
 import {
+  iadeKargosuOdeyenler,
   iadeNedenleri,
   iadeSinirlari,
+  iadeTalebiSinirlari,
+  iadeTalebiSuresiSinirlari,
   iadeTurleri,
+  musteriIptaliSecenekleri,
   siparisDurumlari,
   siparisNotTurleri,
   siparisSinirlari,
@@ -30,6 +34,11 @@ import { bosIseYok, siparisNumarasiSemasi } from "./havale-bildirimi-semalari.ts
 // kimliktir, takip numarası isteğe bağlıdır.
 export const siparisListesiSemasi = z.strictObject({
   durum: z.enum(siparisDurumlari).optional(),
+  // Yalnız bekleyen iade talebi olanlar (kart 0239).
+  talep: z
+    .literal("evet")
+    .transform(() => true as const)
+    .optional(),
   ara: z.preprocess(bosIseYok, z.string().trim().max(siparisSinirlari.aramaEnCok).optional()),
   sayfa: z.coerce.number().int().min(1).max(10_000).default(1),
 });
@@ -127,8 +136,38 @@ export const siparisIadesiSemasi = z.strictObject({
   stogaKoy: z.boolean(),
   neden: z.enum(iadeNedenleri),
   aciklama: z.preprocess(bosIseYok, duzMetinSemasi(iadeSinirlari.aciklamaEnCok).optional()),
+  // Onaylanan iade talebinden yapılan iade (kart 0239).
+  talep: kimlikSemasi.optional(),
 });
 export type SiparisIadesiGirdisi = z.output<typeof siparisIadesiSemasi>;
+
+// Müşterinin iade talebine mağazanın kararı (kart 0239): onay ya da müşteriye açıklamayla ret.
+export const iadeTalebiKarariSemasi = z.discriminatedUnion("karar", [
+  z.strictObject({
+    numara: siparisNumarasiSemasi,
+    talep: kimlikSemasi,
+    karar: z.literal("onayla"),
+  }),
+  z.strictObject({
+    numara: siparisNumarasiSemasi,
+    talep: kimlikSemasi,
+    karar: z.literal("reddet"),
+    retAciklamasi: duzMetinSemasi(iadeTalebiSinirlari.retAciklamasiEnCok),
+  }),
+]);
+export type IadeTalebiKarari = z.output<typeof iadeTalebiKarariSemasi>;
+
+// Sipariş ayarlarının "İptal ve iade" bölümü (kart 0239).
+export const iptalVeIadeAyarlariSemasi = z.strictObject({
+  musteriIptali: z.enum(musteriIptaliSecenekleri),
+  iadeTalebiSuresi: z.coerce
+    .number()
+    .int()
+    .min(iadeTalebiSuresiSinirlari.enAz)
+    .max(iadeTalebiSuresiSinirlari.enCok),
+  iadeKargosu: z.enum(iadeKargosuOdeyenler),
+});
+export type IptalVeIadeAyarlari = z.output<typeof iptalVeIadeAyarlariSemasi>;
 
 // Bekleyen (kuruluşun yanıtını bekleyen) iadeyi yeniden dener.
 export const iadeYenidenDenemeSemasi = z.strictObject({ numara: siparisNumarasiSemasi });

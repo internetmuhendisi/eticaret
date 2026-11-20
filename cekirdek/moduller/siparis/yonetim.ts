@@ -12,6 +12,7 @@
 //   yazılır (firma listesi sonradan değişse de sipariş değişmez). Takip numarası yoksa takip adresi de yoktur.
 // - Not: iç not yalnız panelde, müşteriye not müşterinin sipariş ayrıntısında görünür; not değiştirilemez.
 // - Kişisel bilgileri silinmiş siparişte (saklama süresi, temizlik.ts) ad, adres, telefon ve e-posta boştur.
+// - Bekleyen iade talebi olan sipariş listede işaretlidir ve "İade talepleri" süzgeciyle ayrıca listelenir (kart 0239).
 import { and, asc, count, desc, eq, exists, or, type SQL, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
@@ -31,6 +32,7 @@ import { yoneticiler } from "../ekip/model.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
 import { musteriler } from "../musteri/model.ts";
 import { gecmiseYaz, kimSutunlari } from "./gecmis.ts";
+import { iadeTalebiServisi } from "./iade-talebi.ts";
 import {
   havaleBildirimleri,
   type Siparis,
@@ -38,6 +40,7 @@ import {
   type SiparisKalemi,
   siparisGecmisi,
   siparisIadeleri,
+  siparisIadeTalepleri,
   siparisKalemleri,
   siparisler,
   siparisNotlari,
@@ -57,6 +60,8 @@ export type SiparisListesiSatiri = {
   toplam: number;
   paraBirimi: string;
   havaleBildirildi: boolean;
+  // Bekleyen iade talebi var (kart 0239).
+  iadeTalebi: boolean;
 };
 
 export type SiparisListesi = {
@@ -66,6 +71,8 @@ export type SiparisListesi = {
   sayfaSayisi: number;
   // Durum başına sipariş sayısı (sekmeler); aranan metinden bağımsızdır.
   sayilar: Record<SiparisDurumu, number>;
+  // Bekleyen iade talebi olan sipariş sayısı (kart 0239, "İade talepleri" sekmesi).
+  talepSayisi: number;
 };
 
 // Geçmişin ve notların yazanı panelde: yönetici ve müşteri e-postasıyla, sistem işleminin adıyla.
@@ -98,6 +105,8 @@ export type SiparisAyrintisi = {
   }[];
   // İptal ve iadeler, en yeni önce (kart 0235); başarısız olanlar da (para dönmedi).
   iadeler: (Omit<SiparisIadesi, "kim_turu" | "kim_kimligi" | "kim_adi"> & { yazan: Yazan })[];
+  // Müşterinin iade talepleri, eskiden yeniye (kart 0239); iadesi yapıldı mı.
+  talepler: Awaited<ReturnType<ReturnType<typeof iadeTalebiServisi>["talepler"]>>;
 };
 
 const yazan = (satir: {
@@ -116,7 +125,20 @@ const yazan = (satir: {
 export const siparisYonetimi = (site: Site) => {
   const liste = async (vt: Veritabani, girdi: SiparisListesiGirdisi): Promise<SiparisListesi> => {
     const kosullar: SQL[] = [];
+    const bekleyenTalep = (kimlik: typeof siparisler.kimlik) =>
+      exists(
+        vt
+          .select({ var: sql`1` })
+          .from(siparisIadeTalepleri)
+          .where(
+            and(
+              eq(siparisIadeTalepleri.siparis_kimligi, kimlik),
+              eq(siparisIadeTalepleri.durum, "bekliyor"),
+            ),
+          ),
+      );
     if (girdi.durum !== undefined) kosullar.push(eq(siparisler.durum, girdi.durum));
+    if (girdi.talep === true) kosullar.push(bekleyenTalep(siparisler.kimlik));
     if (girdi.ara !== undefined) {
       // Aramanın harf kuralıyla (cekirdek/metinler/arama-anahtari.ts): "deniz" "DENİZ"i, "ayse" "Ayşe"yi bulur.
       // strpos ile aranır: "%" ve "_" düz harftir.
@@ -151,6 +173,7 @@ export const siparisYonetimi = (site: Site) => {
             .from(havaleBildirimleri)
             .where(eq(havaleBildirimleri.siparis_kimligi, siparisler.kimlik)),
         ),
+        iadeTalebi: bekleyenTalep(siparisler.kimlik),
       })
       .from(siparisler)
       .where(nerede)
@@ -166,20 +189,28 @@ export const siparisYonetimi = (site: Site) => {
       number
     >;
     for (const { durum, adet } of durumSayilari) sayilar[durum as SiparisDurumu] = adet;
+    const [talepSayimi] = await vt
+      .select({ adet: sql<number>`count(distinct ${siparisIadeTalepleri.siparis_kimligi})::int` })
+      .from(siparisIadeTalepleri)
+      .where(eq(siparisIadeTalepleri.durum, "bekliyor"));
     return {
-      satirlar: satirlar.map(({ teslimat, musteri, durum, havaleBildirildi, ...satir }) => ({
-        ...satir,
-        ad: teslimat.ad ?? "",
-        soyad: teslimat.soyad ?? "",
-        uye: musteri !== null,
-        durum: durum as SiparisDurumu,
-        // Bildirim yalnız ödeme beklerken bakılacak iştir.
-        havaleBildirildi: Boolean(havaleBildirildi) && durum === "odeme-bekleniyor",
-      })),
+      satirlar: satirlar.map(
+        ({ teslimat, musteri, durum, havaleBildirildi, iadeTalebi, ...satir }) => ({
+          ...satir,
+          ad: teslimat.ad ?? "",
+          soyad: teslimat.soyad ?? "",
+          uye: musteri !== null,
+          durum: durum as SiparisDurumu,
+          // Bildirim yalnız ödeme beklerken bakılacak iştir.
+          havaleBildirildi: Boolean(havaleBildirildi) && durum === "odeme-bekleniyor",
+          iadeTalebi: Boolean(iadeTalebi),
+        }),
+      ),
       toplam,
       sayfa,
       sayfaSayisi,
       sayilar,
+      talepSayisi: talepSayimi?.adet ?? 0,
     };
   };
 
@@ -280,6 +311,7 @@ export const siparisYonetimi = (site: Site) => {
       )
       .where(eq(siparisIadeleri.siparis_kimligi, siparis.kimlik))
       .orderBy(desc(siparisIadeleri.olusturma_zamani), desc(siparisIadeleri.kimlik));
+    const talepler = await iadeTalebiServisi(site).talepler(vt, siparis.kimlik);
     return {
       siparis,
       kalemler,
@@ -301,6 +333,7 @@ export const siparisYonetimi = (site: Site) => {
         ...iade,
         yazan: yazan({ ...kim, kimTuru: kim_turu, kimAdi: kim_adi }),
       })),
+      talepler,
     };
   };
 

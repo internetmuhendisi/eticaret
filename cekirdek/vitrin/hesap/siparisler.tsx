@@ -20,9 +20,10 @@ import { bulunamadiSayfaBilgisi, sayfaBasligi } from "../../moduller/gorunurluk/
 import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
 import { musteriSiparisleri } from "../../moduller/siparis/musteri";
 import { siteninVeritabani } from "../../veritabani/baglanti";
-import { hesapSiparisiAdresi, vitrinAdresleri } from "../adresler";
+import { hesapIadeTalebiAdresi, hesapSiparisiAdresi, vitrinAdresleri } from "../adresler";
 import { SatirGorseli } from "../sepet/sepet-gorunumu";
 import { SiparisAyrintisi } from "../siparis/ayrinti";
+import { musteriKurallariniOku } from "../siparis/kurallar";
 import { SiparisDurumRozeti } from "../siparis/parcalar";
 import { siparisUrunleri } from "../siparis/urunler";
 import { musteriSayfasiBilgisi } from "../yalniz-gezinti";
@@ -150,8 +151,17 @@ export async function SiparislerimSayfasi({ sayfa: istenen }: { sayfa: number })
 const hesabinSiparisi = cache(async (numara: string) => {
   const oturum = await hesapOturumu();
   if (oturum === null) return null;
-  return musteriSiparisleri().ayrinti(siteninVeritabani(), oturum.kimlik, numara);
+  const vt = siteninVeritabani();
+  return musteriSiparisleri().ayrinti(
+    vt,
+    oturum.kimlik,
+    numara,
+    await musteriKurallariniOku(vt, calisanSite()),
+  );
 });
+
+// İade talebi sayfası da siparişi bu okumayla alır (kart 0239).
+export { hesabinSiparisi };
 
 export const siparisAyrintisiSayfaBilgisi = (numara: string) =>
   musteriSayfasiBilgisi(async (): Promise<Metadata> => {
@@ -194,6 +204,7 @@ export async function SiparisAyrintisiSayfasi({ numara }: { numara: string }) {
         yol="hesap"
         bankaHesaplari={ayarlar.bankaHesaplari}
         yorumAcik={yazilanIslevler.yorum}
+        talepAdresi={hesapIadeTalebiAdresi(siparis.numara)}
       />
     </HesapCercevesi>
   );

@@ -25,6 +25,8 @@ export const vitrinAdresleri = {
   havaleBildirimi: "/havale-bildirimi",
   // Üye olmayanın sipariş takibi (kart 0238): takip çerezi yalnız bu yola gider, adres tek yerde.
   siparisTakibi: siparisTakipCerezi.yol,
+  // Üye olmayanın iade talebi (kart 0239): takip çerezinin yolunun altında, takip ettiği siparişin talebi.
+  takipIadeTalebi: `${siparisTakipCerezi.yol}/iade-talebi`,
   favoriler: "/favoriler",
   // Hesabım (kart 0237, karar 0149): girişli müşterinin sayfaları. Hesabın açılış sayfası hesapIlkSayfasi'dır.
   hesabim: "/hesabim",
@@ -41,6 +43,9 @@ export const hesapIlkSayfasi = vitrinAdresleri.hesapSiparisleri;
 // yazılıştır ("ORN-1001"); takip sayfası numarayı yalnız formu doldurmak için okur.
 export const hesapSiparisiAdresi = (numara: string): string =>
   `${vitrinAdresleri.hesapSiparisleri}/${encodeURIComponent(numara)}`;
+// Hesaptaki siparişin iade talebi sayfası (kart 0239).
+export const hesapIadeTalebiAdresi = (numara: string): string =>
+  `${hesapSiparisiAdresi(numara)}/iade-talebi`;
 export const siparisTakibiAdresi = (numara: string): string =>
   `${vitrinAdresleri.siparisTakibi}?${new URLSearchParams({ siparis: numara })}`;
 

@@ -7,9 +7,11 @@ import { eklentiliMi } from "../../eklentiler/odeme-yontemleri";
 import type { OdemeYontemi } from "../../kayitlar/odeme";
 import {
   type IadeNedeni,
+  type IadeTalebiDurumu,
   type IadeTuru,
   iadeTurleri,
   iadeyeAcikDurumlar,
+  type MusteriIadeNedeni,
   type SiparisDurumu,
   type SiparisIslemi,
   siparisDurumlari,
@@ -33,11 +35,15 @@ export type SiparisSatiri = {
   odeme: { yontem: string; secenek: string | null };
   tutar: string;
   havaleBildirildi: boolean;
+  iadeTalebi: boolean;
 };
 
 export type SiparisListesiVerisi = {
   satirlar: SiparisSatiri[];
   durum: SiparisDurumu | null;
+  // "İade talepleri" sekmesi seçili (kart 0239).
+  talep: boolean;
+  talepSayisi: number;
   sayfa: number;
   sayfaSayisi: number;
   toplam: number;
@@ -47,6 +53,7 @@ export type SiparisListesiVerisi = {
 
 export const siparisListesiVerisi = async (girdi: {
   durum?: SiparisDurumu | undefined;
+  talep?: boolean | undefined;
   ara?: string | undefined;
   sayfa: number;
 }): Promise<SiparisListesiVerisi> => {
@@ -55,6 +62,7 @@ export const siparisListesiVerisi = async (girdi: {
   const liste = await siparisYonetimi(site).liste(siteninVeritabani(), {
     sayfa: girdi.sayfa,
     ...(girdi.durum === undefined ? {} : { durum: girdi.durum }),
+    ...(girdi.talep === true ? { talep: true } : {}),
     ...(girdi.ara === undefined ? {} : { ara: girdi.ara }),
   });
   return {
@@ -69,8 +77,11 @@ export const siparisListesiVerisi = async (girdi: {
       odeme: { yontem: satir.odemeYontemi, secenek: satir.kapidaSecenegi },
       tutar: b.para(satir.toplam),
       havaleBildirildi: satir.havaleBildirildi,
+      iadeTalebi: satir.iadeTalebi,
     })),
     durum: girdi.durum ?? null,
+    talep: girdi.talep === true,
+    talepSayisi: liste.talepSayisi,
     sayfa: liste.sayfa,
     sayfaSayisi: liste.sayfaSayisi,
     toplam: liste.toplam,
@@ -162,6 +173,22 @@ export type SiparisAyrintisiVerisi = {
     aciklama: string | null;
     yazan: SatirYazani;
   }[];
+  // Müşterinin iade talepleri, en yeni önce (kart 0239). Bekleyen ve onaylanıp iadesi yapılmamış talep ekranın
+  // üstünde kutudur.
+  talepler: {
+    kimlik: string;
+    durum: IadeTalebiDurumu;
+    zaman: string;
+    kararZamani: string | null;
+    kalemler: { ad: string; adet: number }[];
+    neden: MusteriIadeNedeni;
+    aciklama: string | null;
+    retAciklamasi: string | null;
+    iadeYapildi: boolean;
+  }[];
+  // Talebe karar verebilir mi (siparis.iade).
+  talepKarariVerilebilir: boolean;
+  iadeKargosu: "magaza" | "musteri";
   // Bekleyen iadeyi yeniden deneyebilir mi (izin).
   iadeYenidenDenenebilir: boolean;
   notEkleyebilir: boolean;
@@ -179,6 +206,8 @@ export type IadePenceresiVerisi = {
   // Para nereden döner: ödeme kuruluşu, mağaza sahibi (elle) ya da ödeme alınmadı.
   para: "kurulus" | "elle" | "yok";
   bicim: BicimAyarlari;
+  // Onaylanmış ve iadesi yapılmamış talep (kart 0239): iade penceresi onunla seçili açılır.
+  talep: { kimlik: string; kalemler: { sira: number; adet: number }[]; neden: IadeNedeni } | null;
 };
 
 // Adresin satırları: ad (varsa) ve tek satırlık adres yazısı (il ve ilçe adlarıyla, ülkeyle; adresYazisi).
@@ -226,7 +255,11 @@ export const siparisAyrintisiVerisi = async (
     // En yeni önce; aynı anda yazılan geçiş ve notta geçiş önce gelir.
     .sort((x, y) => y.an - x.an || (x.tur === y.tur ? 0 : x.tur === "gecis" ? -1 : 1))
     .map(({ an: _an, ...satir }) => satir);
-  const { kargoFirmalari } = await siparisAyarlari(site).oku(vt);
+  const { kargoFirmalari, iadeKargosu } = await siparisAyarlari(site).oku(vt);
+  // İade penceresi en eski onaylı ve iadesi yapılmamış talebe bağlanır (sırayla kapanır).
+  const onayliTalep = ayrinti.talepler.find(
+    (talep) => talep.durum === "onaylandi" && !talep.iadeYapildi,
+  );
   const fatura = siparis.fatura;
   const faturaAdresi =
     fatura.adresAyni || fatura.adres === undefined ? [] : adresSatirlari(fatura.adres);
@@ -360,6 +393,14 @@ export const siparisAyrintisiVerisi = async (
               ? "kurulus"
               : "elle",
         bicim: siteninBicimAyarlari(site.ayarlar),
+        talep:
+          onayliTalep === undefined
+            ? null
+            : {
+                kimlik: onayliTalep.kimlik,
+                kalemler: onayliTalep.kalemler,
+                neden: onayliTalep.neden as IadeNedeni,
+              },
       } satisfies IadePenceresiVerisi;
     })(),
     iadeler: ayrinti.iadeler.map((iade) => ({
@@ -384,6 +425,24 @@ export const siparisAyrintisiVerisi = async (
       aciklama: iade.aciklama,
       yazan: iade.yazan,
     })),
+    talepler: ayrinti.talepler
+      .map((talep) => ({
+        kimlik: talep.kimlik,
+        durum: talep.durum as IadeTalebiDurumu,
+        zaman: b.tarihSaat(talep.olusturma_zamani),
+        kararZamani: talep.karar_zamani === null ? null : b.tarihSaat(talep.karar_zamani),
+        kalemler: talep.kalemler.map((secilen) => ({
+          ad: ayrinti.kalemler.find((kalem) => kalem.sira === secilen.sira)?.urun_adi ?? "",
+          adet: secilen.adet,
+        })),
+        neden: talep.neden as MusteriIadeNedeni,
+        aciklama: talep.aciklama,
+        retAciklamasi: talep.ret_aciklamasi,
+        iadeYapildi: talep.iadeYapildi,
+      }))
+      .reverse(),
+    talepKarariVerilebilir: yetkili("siparis.iade"),
+    iadeKargosu,
     iadeYenidenDenenebilir: yetkili("siparis.iade"),
     notEkleyebilir: yetkili("siparis.yonet"),
     kargoFirmalari: kargoFirmalari.map(({ kimlik, ad }) => ({ kimlik, ad })),
