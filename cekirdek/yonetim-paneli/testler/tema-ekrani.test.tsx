@@ -5,9 +5,9 @@
 // izin yokken değiştiren düğmelerin hiç olmaması. Uç sahte fetch ile verilir.
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { doldur } from "../../metinler/doldur.ts";
 import { MetinSaglayici } from "../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../metinler/metin.ts";
-import { doldur } from "../../moduller/eposta/sablon.ts";
 import { TemaEylemleri, TemaIcerigi, TemaSaglayici } from "../tema/ekran.tsx";
 import type { TemaEkraniVerisi } from "../tema/veri.ts";
 

@@ -3,12 +3,12 @@
 // kodlar. Karekodu sunucu çizer ve hazır verir; gizli tarayıcıda üretilmez.
 import { type ReactNode, useState } from "react";
 import { Dugme } from "../../bilesenler/parcalar/dugme";
-import { useMetin } from "../metinler/istemci-metni";
+import { usePanelMetni } from "../metinler/panel-metni";
 import { KodFormu } from "./kod-formu";
 import { stil } from "./stil";
 
 export function KurulumAkisi({ donus, hazirlik }: { donus: string; hazirlik: ReactNode }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const [yedekKodlari, setYedekKodlari] = useState<string[] | null>(null);
 
   if (yedekKodlari === null) {

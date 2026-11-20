@@ -18,8 +18,8 @@ import { Kart, KartAciklamasi, KartBasligi } from "../../../bilesenler/parcalar/
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { kapiyaIstek } from "../../kapi/istemci";
 import { hataKodlari } from "../../kayitlar/kapi";
+import { doldur } from "../../metinler/doldur";
 import { useMetin } from "../../metinler/istemci-metni";
-import { doldur } from "../../moduller/eposta/sablon";
 import { useRobotluGonderim } from "../../moduller/robot-korumasi/istemci";
 import { girisAdresiDonuslu, vitrinAdresleri } from "../../vitrin/adresler";
 import { useHesapDurumu } from "../../vitrin/hesap-durumu";

@@ -9,8 +9,8 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import type { AdresliKayitTuru } from "../../kayitlar/adres";
+import { doldur } from "../../metinler/doldur";
 import { metin } from "../../metinler/site-metni";
-import { doldur } from "../../moduller/eposta/sablon";
 import { etiketServisi } from "../../moduller/etiket/servis";
 import {
   kategoriDegistir,

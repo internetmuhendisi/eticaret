@@ -8,9 +8,9 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { favoriDepoAnahtari } from "../../kayitlar/favori.ts";
+import { doldur } from "../../metinler/doldur.ts";
 import { MetinSaglayici } from "../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../metinler/metin.ts";
-import { doldur } from "../../moduller/eposta/sablon.ts";
 import { FavoriDugmesi } from "../favori-dugmesi.tsx";
 import { FavoriSaglayici, favoriDurumunuSifirla } from "../favori-durumu.ts";
 import { FavoriListesi } from "../favori-listesi.tsx";

@@ -10,8 +10,8 @@ import { useEffect, useId, useRef, useState } from "react";
 import { FormAlani } from "../../bilesenler/form/form-alani";
 import { GirisAlani } from "../../bilesenler/parcalar/giris-alani";
 import { sinif } from "../../bilesenler/parcalar/sinif";
-import { useMetin } from "../metinler/istemci-metni";
-import { doldur } from "../moduller/eposta/sablon";
+import { doldur } from "../metinler/doldur";
+import { usePanelMetni } from "../metinler/panel-metni";
 import type { AranabilirKayit, BulunanKayit, KayitAramaSonucu } from "../moduller/urun/kayit-arama";
 import { type PanelSonucu, panelIstegi } from "./panel-istegi";
 
@@ -51,7 +51,7 @@ export function KayitArama<Kayit extends AramaOnerisi = AramaOnerisi>({
   secinceBosalt?: boolean;
   hata?: string;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const kimlik = useId();
   const [yazi, setYazi] = useState(secili?.ad ?? "");
   const [acik, setAcik] = useState(false);

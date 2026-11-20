@@ -12,9 +12,9 @@ import { bildirimGoster } from "../../../bilesenler/parcalar/bildirim";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { Kart } from "../../../bilesenler/parcalar/kart";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
-import { useMetin } from "../../metinler/istemci-metni";
+import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
-import { doldur } from "../../moduller/eposta/sablon";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { kayanAfis } from "../../vitrin/bolumler/kayan-afis/tarif";
 import { panelIstegi } from "../panel-istegi";
 import { BolumDuzenleyici, yeniDegerler } from "./bolum-duzenleyici";
@@ -28,7 +28,7 @@ export function SliderEkrani({
   veri: Extract<BolumlerEkraniVerisi, { durum: "hazir" }>;
   bolumlerAdresi: string;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const router = useRouter();
   const [gorunurYapiliyor, setGorunurYapiliyor] = useState(false);
   const sliderlar = veri.alanlar["ana-sayfa"].filter((bolum) => bolum.tur === kayanAfis.tur);

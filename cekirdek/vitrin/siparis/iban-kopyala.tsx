@@ -5,8 +5,8 @@
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { bildirimGoster } from "../../../bilesenler/parcalar/bildirim";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
+import { doldur } from "../../metinler/doldur";
 import { useMetin } from "../../metinler/istemci-metni";
-import { doldur } from "../../moduller/eposta/sablon";
 
 export function IbanKopyala({ iban, banka }: { iban: string; banka: string }) {
   const metin = useMetin();

@@ -20,9 +20,9 @@ import {
   YanPencereIcerigi,
   YanPencereUstu,
 } from "../../../bilesenler/parcalar/yan-pencere";
-import { useMetin } from "../../metinler/istemci-metni";
+import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
-import { doldur } from "../../moduller/eposta/sablon";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import type { KargoFirmasi } from "../../moduller/siparis/ayarlar";
 import { EylemDugmesi } from "../eylem-dugmesi";
 import { useKapatmaSorusu } from "../kapatma-sorusu";
@@ -44,7 +44,7 @@ export function SiparisAyarlariEkrani({
   firmalar: KargoFirmasi[];
   izinli: boolean;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const islem = usePanelIslemi(hataMetni);
   const [pencere, setPencere] = useState<Pencere | null>(null);
   const [silinecek, setSilinecek] = useState<KargoFirmasi | null>(null);
@@ -216,7 +216,7 @@ function FirmaFormu({
   vazgec: () => void;
   gonder: (form: FirmaFormuDegeri) => Promise<{ tamam: true } | ({ tamam: false } & PanelHatasi)>;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const ilk = { ad: firma?.ad ?? "", takipAdresi: firma?.takipAdresi ?? "" };
   const [form, setForm] = useState(ilk);
   const [hatalar, setHatalar] = useState<Partial<Record<keyof FirmaFormuDegeri, string>>>({});

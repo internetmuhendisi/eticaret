@@ -12,8 +12,8 @@ import { type ReactNode, useState } from "react";
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
 import { Bolum } from "../../izleme/bolum";
 import type { TukenmisSecenekGosterimi } from "../../kayitlar/urun";
+import { doldur } from "../../metinler/doldur";
 import { useMetin } from "../../metinler/istemci-metni";
-import { doldur } from "../../moduller/eposta/sablon";
 import { UrunGalerisi } from "./galeri";
 import { SeciliBirimBaglami } from "./secili-birim";
 import {

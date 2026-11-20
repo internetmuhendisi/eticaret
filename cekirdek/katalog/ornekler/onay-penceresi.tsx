@@ -3,11 +3,11 @@ import { useState } from "react";
 import { bildirimGoster } from "../../../bilesenler/parcalar/bildirim";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { OnayPenceresi } from "../../../bilesenler/parcalar/onay-penceresi";
-import { useMetin } from "../../metinler/istemci-metni";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { useOrnekMetni } from "./ortak";
 
 export function OnayPenceresiOrnegi() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const m = useOrnekMetni();
   const [acik, setAcik] = useState(false);
   return (

@@ -1,8 +1,9 @@
 // Vitrin bölümleri ekranında bir bölümün adı, kısa özeti ve türlerin açıklaması (kart 0142). Ad bölüm tarifinin
 // adıdır: kayan afiş panelde "Slider"dır (karar 0101, metin tek yerde). Özet görünümün adı, bölümün ilk dolu metin
 // alanı ve liste alanlarının öğe sayısıdır: "İki yana · Kargo bedava" , "Görsel arkada · Slaytlar: 3".
+
+import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
-import { doldur } from "../../moduller/eposta/sablon";
 import { bolumKutuphanesi } from "../../vitrin/bolum-kutuphanesi/kutuphane";
 import type { BolumTarifi } from "../../vitrin/bolum-kutuphanesi/tarif";
 import type { EkranBolumu } from "./veri";

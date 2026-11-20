@@ -34,10 +34,10 @@ import {
   YanPencereUstu,
 } from "../../../bilesenler/parcalar/yan-pencere";
 import { type DuzenAlani, duzenAlanlari } from "../../kayitlar/tema";
-import { useMetin } from "../../metinler/istemci-metni";
+import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { siralamaMetinleri } from "../../metinler/siralama-metinleri";
-import { doldur } from "../../moduller/eposta/sablon";
 import { bolumKutuphanesi } from "../../vitrin/bolum-kutuphanesi/kutuphane";
 import type { BolumTarifi } from "../../vitrin/bolum-kutuphanesi/tarif";
 import { EylemDugmesi } from "../eylem-dugmesi";
@@ -100,7 +100,7 @@ export function BolumlerSaglayici({
   degistirebilir: boolean;
   children: ReactNode;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const [alan, setAlan] = useState<DuzenAlani>("ana-sayfa");
   const [pencere, setPencere] = useState<Pencere>(null);
   // Süren geri dönüş: aynı düğmeye ikinci basış dikkate alınmaz.
@@ -132,7 +132,7 @@ export function BolumlerSaglayici({
 
 // Komut çubuğunun eylemleri.
 export function BolumlerEylemleri() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { veri, setPencere, geriDon } = useBolumler();
   return (
     <>
@@ -151,7 +151,7 @@ export function BolumlerEylemleri() {
 }
 
 function SatirIcerigi({ bolum, adi, sil }: { bolum: EkranBolumu; adi: string; sil: () => void }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { degistirebilir, setPencere, islem } = useBolumler();
   const tarif = Object.hasOwn(bolumKutuphanesi, bolum.tur)
     ? bolumKutuphanesi[bolum.tur]
@@ -215,7 +215,7 @@ function SatirIcerigi({ bolum, adi, sil }: { bolum: EkranBolumu; adi: string; si
 }
 
 function AlanListesi({ alan }: { alan: DuzenAlani }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { veri, degistirebilir, islem } = useBolumler();
   const sunucudaki = veri.alanlar[alan];
   // Sıralama listede hemen görünür; sunucunun verisi gelince (ya da kayıt olmazsa) ona dönülür. Art arda iki
@@ -312,7 +312,7 @@ function AlanListesi({ alan }: { alan: DuzenAlani }) {
 }
 
 function TurSecimi({ alan }: { alan: DuzenAlani }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { setPencere } = useBolumler();
   const turler = Object.entries(bolumKutuphanesi).filter(([, tarif]) =>
     tarif.duzenAlanlari.includes(alan),
@@ -340,7 +340,7 @@ function TurSecimi({ alan }: { alan: DuzenAlani }) {
 }
 
 function BolumPenceresi() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { veri, alan, pencere, setPencere, islem } = useBolumler();
   // Formda kaydedilmemiş değişiklik varken pencere kapatılmak istenirse önce sorulur.
   const { kapat, kapatmayiIste, degisince, soru } = useKapatmaSorusu(() => setPencere(null));
@@ -444,7 +444,7 @@ function BolumPenceresi() {
 }
 
 export function BolumlerListesi() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { veri, alan, setAlan } = useBolumler();
   return (
     <>

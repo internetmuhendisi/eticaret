@@ -5,9 +5,9 @@
 // ekranda görünmez.
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { doldur } from "../../metinler/doldur.ts";
 import { MetinSaglayici } from "../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../metinler/metin.ts";
-import { doldur } from "../../moduller/eposta/sablon.ts";
 import { vitrinAdresleri } from "../adresler.ts";
 import { HataSayfasi } from "../hata-sayfasi.tsx";
 import { type VitrinBilgisi, VitrinBilgisiSaglayici } from "../vitrin-bilgisi.tsx";

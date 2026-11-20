@@ -3,12 +3,12 @@ import { useState } from "react";
 import { AramaFormu, Form, GonderDugmesi } from "../../../bilesenler/form/form";
 import { FormAlani } from "../../../bilesenler/form/form-alani";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
-import { useMetin } from "../../metinler/istemci-metni";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { useOrnekMetni } from "./ortak";
 
 // Gönder düğmesi kod yüklenene kadar kapalıdır; örnek gönderimi tarayıcıda karşılar, hiçbir yere gitmez.
 export function FormOrnegi() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const m = useOrnekMetni();
   const [gonderildi, setGonderildi] = useState(false);
   return (

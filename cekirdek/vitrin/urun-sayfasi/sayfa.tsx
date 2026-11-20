@@ -33,8 +33,8 @@ import {
 import { Bolum } from "../../izleme/bolum";
 import { yazilanIslevler } from "../../kayitlar/islevler";
 import { sepetSinirlari } from "../../kayitlar/sepet";
+import { doldur } from "../../metinler/doldur";
 import { metin, siteninBicimleyicisi } from "../../metinler/site-metni";
-import { doldur } from "../../moduller/eposta/sablon";
 import type { FiyatAraligi } from "../../moduller/fiyat/gosterim";
 import { stokGosterimMetinleri } from "../../moduller/stok/semalar";
 import { urunler } from "../../moduller/urun/model";

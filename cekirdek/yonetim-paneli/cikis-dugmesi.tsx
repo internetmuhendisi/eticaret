@@ -4,14 +4,14 @@
 import { useState } from "react";
 import { Uyari } from "../../bilesenler/parcalar/uyari";
 import { kapiyaIstek } from "../kapi/istemci";
-import { useMetin } from "../metinler/istemci-metni";
+import { usePanelMetni } from "../metinler/panel-metni";
 import { girisAdresi } from "./adresler";
 import { EylemDugmesi } from "./eylem-dugmesi";
 
 const cikisUcu = "/kapi/herkese-acik/yonetici-cikis";
 
 export function CikisDugmesi({ className }: { className?: string }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const [hata, setHata] = useState(false);
 
   const cik = async () => {

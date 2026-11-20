@@ -5,8 +5,8 @@ import type { ComponentProps } from "react";
 import { Ikon } from "../../bilesenler/ikonlar/ikon";
 import { Baglanti } from "../../bilesenler/parcalar/baglanti";
 import { Dugme } from "../../bilesenler/parcalar/dugme";
-import { useMetin } from "../metinler/istemci-metni";
-import { doldur } from "../moduller/eposta/sablon";
+import { doldur } from "../metinler/doldur";
+import { usePanelMetni } from "../metinler/panel-metni";
 import { type PanelEylemi, panelEylemleri } from "./eylemler";
 
 type EylemOzellikleri = {
@@ -18,7 +18,7 @@ type EylemOzellikleri = {
 };
 
 const useEylemAdi = ({ eylem, ne }: EylemOzellikleri): string => {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   return doldur(metin(panelEylemleri[eylem].ad), { ne: ne ?? "" }).trim();
 };
 

@@ -21,9 +21,9 @@ import { Dugme, IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
 import { IskeletGorunum } from "../../../bilesenler/parcalar/iskelet";
 import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
+import { doldur } from "../../metinler/doldur";
+import type { VitrinMetinAnahtari } from "../../metinler/istemci-metni";
 import { useMetin } from "../../metinler/istemci-metni";
-import type { MetinAnahtari } from "../../metinler/metin";
-import { doldur } from "../../moduller/eposta/sablon";
 import { vitrinAdresleri } from "../adresler";
 import { adetDegistir, geriKoy, sepettenCikar, useSepet, useSepetGorunumu } from "./durum";
 import { SepetFiyati } from "./fiyat";
@@ -38,7 +38,7 @@ const uyariMetinleri = {
   "en-az": "vitrin.sepet.uyari.enAz",
   tukendi: "vitrin.sepet.uyari.tukendi",
   kaldirildi: "vitrin.sepet.uyari.kaldirildi",
-} as const satisfies Record<SepetGorunumuSatiri["uyarilar"][number]["kod"], MetinAnahtari>;
+} as const satisfies Record<SepetGorunumuSatiri["uyarilar"][number]["kod"], VitrinMetinAnahtari>;
 
 // Satırı durduran uyarı tehlike renginde, öteki uyarılar uyarı renginde.
 // Satırın uyarısı ve durdurup durdurmadığı: panelin elle siparişi de aynı metni yazar (kart 0236).

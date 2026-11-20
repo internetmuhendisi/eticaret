@@ -6,10 +6,10 @@
 import { type ReactNode, useRef, useState } from "react";
 import { Dugme } from "../../bilesenler/parcalar/dugme";
 import { Uyari } from "../../bilesenler/parcalar/uyari";
-import { useMetin } from "../metinler/istemci-metni";
+import { usePanelMetni } from "../metinler/panel-metni";
 
 export const useKapatmaSorusu = (kapatIs: () => void) => {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const kirli = useRef(false);
   const [soruluyor, setSoruluyor] = useState(false);
   const kapat = () => {

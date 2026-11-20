@@ -1,7 +1,7 @@
 // Sıralanabilir listenin metinleri (kart 0141): parça metni kullanandan alır, bütün listeler aynı cümleleri
 // kullanır. Ekran okuyucu metinleri ortak.parca.siralama altındadır.
 import type { SiralamaMetinleri } from "../../bilesenler/parcalar/siralanabilir-liste";
-import { doldur } from "../moduller/eposta/sablon";
+import { doldur } from "./doldur";
 import type { MetinAnahtari } from "./metin";
 
 export const siralamaMetinleri = (metin: (anahtar: MetinAnahtari) => string): SiralamaMetinleri => {

@@ -8,8 +8,8 @@
 import { Rozet } from "../../../bilesenler/parcalar/rozet";
 import { DahaFazla } from "../../../bilesenler/parcalar/sayfalama";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
+import { doldur } from "../../metinler/doldur";
 import { metin, siteninBicimleyicisi } from "../../metinler/site-metni";
-import { doldur } from "../../moduller/eposta/sablon";
 import type { PuanOzeti, VitrinYorumu } from "../../moduller/yorum/servis";
 import { Yildizlar, yildizSayisi } from "../yildizlar";
 import { YorumYaz } from "./yorum-yaz";

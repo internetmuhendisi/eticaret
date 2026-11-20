@@ -24,9 +24,9 @@ import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { adresSatiri } from "../../bolgeler/adres-satiri";
 import { kapiyaIstek } from "../../kapi/istemci";
 import { hataKodlari } from "../../kayitlar/kapi";
+import { doldur } from "../../metinler/doldur";
+import type { VitrinMetinAnahtari } from "../../metinler/istemci-metni";
 import { useMetin } from "../../metinler/istemci-metni";
-import type { MetinAnahtari } from "../../metinler/metin";
-import { doldur } from "../../moduller/eposta/sablon";
 import {
   type AdresListesi,
   adresFormuSemasi,
@@ -66,7 +66,7 @@ type Zarf = {
 };
 
 type GenelHata = "sinir" | "yok" | "genel";
-const genelHataMetinleri: Record<GenelHata, MetinAnahtari> = {
+const genelHataMetinleri: Record<GenelHata, VitrinMetinAnahtari> = {
   sinir: "vitrin.hesap.adresler.sinir",
   yok: "vitrin.hesap.adresler.yok",
   genel: "vitrin.hesap.adresler.hata",
@@ -284,7 +284,7 @@ function AdresFormu({
 }
 
 // Adresin varsayılan rozetinin metni: iki tür, yalnız teslimat ya da yalnız fatura.
-const varsayilanMetni = (adres: KayitliAdres): MetinAnahtari | undefined =>
+const varsayilanMetni = (adres: KayitliAdres): VitrinMetinAnahtari | undefined =>
   adres.varsayilanTeslimat && adres.varsayilanFatura
     ? "vitrin.hesap.adresler.varsayilanIkisi"
     : adres.varsayilanTeslimat

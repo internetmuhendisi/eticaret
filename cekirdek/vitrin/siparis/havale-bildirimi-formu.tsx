@@ -22,9 +22,9 @@ import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
 import { kapiyaIstek } from "../../kapi/istemci";
 import { hataKodlari } from "../../kayitlar/kapi";
+import { doldur } from "../../metinler/doldur";
+import type { VitrinMetinAnahtari } from "../../metinler/istemci-metni";
 import { useMetin } from "../../metinler/istemci-metni";
-import type { MetinAnahtari } from "../../metinler/metin";
-import { doldur } from "../../moduller/eposta/sablon";
 import { useRobotluGonderim } from "../../moduller/robot-korumasi/istemci";
 import {
   havaleBildirimiFormuSemasi,
@@ -49,14 +49,14 @@ export type HavaleBildirimiVerisi = {
 type Alan = "numara" | "eposta" | "gonderen" | "hesap" | "tutar" | "odemeTarihi" | "not";
 const alanSirasi: Alan[] = ["numara", "eposta", "gonderen", "hesap", "tutar", "odemeTarihi", "not"];
 
-const kodMetinleri: Record<string, MetinAnahtari> = {
+const kodMetinleri: Record<string, VitrinMetinAnahtari> = {
   "numara-bicimi": "vitrin.havaleBildirimi.hata.numara",
   "tutar-okunamadi": "vitrin.havaleBildirimi.hata.tutar",
   "tarih-bicimi": "vitrin.havaleBildirimi.hata.tarih",
   "tarih-gecersiz": "vitrin.havaleBildirimi.hata.tarih",
   "hesap-yok": "vitrin.havaleBildirimi.hata.hesap",
 };
-const alanMetni = (alan: Alan, kod: string): MetinAnahtari =>
+const alanMetni = (alan: Alan, kod: string): VitrinMetinAnahtari =>
   kodMetinleri[kod] ??
   (alan === "eposta"
     ? "vitrin.havaleBildirimi.hata.eposta"
@@ -74,7 +74,7 @@ type Genel =
   | "sinir"
   | "hesapBilinmiyor"
   | "genel";
-const genelMetinler: Record<Genel, MetinAnahtari> = {
+const genelMetinler: Record<Genel, VitrinMetinAnahtari> = {
   bulunamadi: "vitrin.havaleBildirimi.hata.bulunamadi",
   bulunamadiUye: "vitrin.havaleBildirimi.hata.bulunamadiUye",
   beklemiyor: "vitrin.havaleBildirimi.hata.beklemiyor",
@@ -221,7 +221,7 @@ export function HavaleBildirimiFormu({ veri }: { veri: HavaleBildirimiVerisi }) 
 
   const metinAlani = (
     ad: Exclude<Alan, "hesap" | "not">,
-    etiket: MetinAnahtari,
+    etiket: VitrinMetinAnahtari,
     ek: {
       aciklama?: string;
       type?: "text" | "email" | "date";

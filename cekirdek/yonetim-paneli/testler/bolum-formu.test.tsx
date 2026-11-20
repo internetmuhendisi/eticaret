@@ -5,9 +5,9 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { denemeBolumu, denemeSeridi } from "../../katalog/deneme-bolumu/tarif.ts";
+import { doldur } from "../../metinler/doldur.ts";
 import { MetinSaglayici } from "../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../metinler/metin.ts";
-import { doldur } from "../../moduller/eposta/sablon.ts";
 import type { BolumDegerleri, BolumTarifi } from "../../vitrin/bolum-kutuphanesi/tarif.ts";
 import { bolumDegerSemasi } from "../../vitrin/bolum-kutuphanesi/tarif.ts";
 import { blogYazilari } from "../../vitrin/bolumler/blog-yazilari/tarif.ts";

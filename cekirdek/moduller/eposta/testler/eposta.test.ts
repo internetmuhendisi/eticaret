@@ -13,6 +13,7 @@ import type { Site } from "../../../ayar-semasi/site-klasoru.ts";
 import { hataIzlemeAraciniBagla, type IzlenenHata } from "../../../izleme/hata-katmani.ts";
 import { isDurumu } from "../../../kayitlar/arka-plan.ts";
 import { epostaAyari, epostaDurumu } from "../../../kayitlar/eposta.ts";
+import { doldur } from "../../../metinler/doldur.ts";
 import { cekirdekSurumu } from "../../../surum.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
@@ -20,7 +21,7 @@ import { epostaGondericisi } from "../gonderici.ts";
 import { epostaKaydiniGonder, gonderilmemeNedeni } from "../gonderim.ts";
 import { epostaGonderIsi, epostaKayitTemizligiIsi } from "../isler.ts";
 import { epostaKayitlari } from "../model.ts";
-import { doldur, epostaOlustur } from "../sablon.ts";
+import { epostaOlustur } from "../sablon.ts";
 import { epostaGonder } from "../servis.ts";
 
 type DenemeSitesi = Awaited<ReturnType<typeof denemeSitesiAc>>;

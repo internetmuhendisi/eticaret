@@ -17,13 +17,13 @@ import {
 } from "../../../../bilesenler/parcalar/acilir-menu";
 import { Dugme } from "../../../../bilesenler/parcalar/dugme";
 import { Uyari } from "../../../../bilesenler/parcalar/uyari";
+import type { VitrinMetinAnahtari } from "../../../metinler/istemci-metni";
 import { useMetin } from "../../../metinler/istemci-metni";
-import type { MetinAnahtari } from "../../../metinler/metin";
 import { vitrinAdresleri } from "../../adresler";
 import { cikisYap, useHesapDurumu } from "../../hesap-durumu";
 
 // Menüdeki hesap sayfaları (Hesabım çerçevesinin menüsüyle aynı sıra).
-const hesapSayfalari: readonly { adres: string; ad: MetinAnahtari }[] = [
+const hesapSayfalari: readonly { adres: string; ad: VitrinMetinAnahtari }[] = [
   { adres: vitrinAdresleri.hesapSiparisleri, ad: "vitrin.hesap.siparisler.baslik" },
   { adres: vitrinAdresleri.hesapAdresleri, ad: "vitrin.hesap.adresler.baslik" },
   { adres: vitrinAdresleri.hesapFavorileri, ad: "vitrin.favori.baslik" },

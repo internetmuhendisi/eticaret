@@ -16,8 +16,8 @@ import {
 } from "../../../bilesenler/parcalar/pencere";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { kapiyaIstek } from "../../kapi/istemci";
+import { doldur } from "../../metinler/doldur";
 import { useMetin } from "../../metinler/istemci-metni";
-import { doldur } from "../../moduller/eposta/sablon";
 import { useSeciliBirim } from "../../vitrin/urun-sayfasi/secili-birim";
 import type { TaksitTablosu } from "./servis";
 

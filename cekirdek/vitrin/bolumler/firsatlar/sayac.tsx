@@ -9,8 +9,8 @@
 // - Bitiş indirimin bittiği andır (hariç): o anda fiyat artık indirimli değildir.
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react";
 import { ikiHaneli } from "../../../metinler/bicimleyici";
+import { doldur } from "../../../metinler/doldur";
 import { useMetin } from "../../../metinler/istemci-metni";
-import { doldur } from "../../../moduller/eposta/sablon";
 import { kalanSure, sonrakiDegisim } from "./sure";
 
 // Şimdiki an; yalnız FirsatSaati'nin içinde anlamlıdır (bölüm hep onun içinde çizer).

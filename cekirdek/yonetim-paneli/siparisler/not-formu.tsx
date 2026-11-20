@@ -10,8 +10,8 @@ import { OnayPenceresi } from "../../../bilesenler/parcalar/onay-penceresi";
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
 import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
 import { type SiparisNotTuru, siparisNotTurleri, siparisSinirlari } from "../../kayitlar/siparis";
-import { useMetin } from "../../metinler/istemci-metni";
 import type { MetinAnahtari } from "../../metinler/metin";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
 
@@ -24,7 +24,7 @@ const hataMetni = (hata: PanelHatasi): MetinAnahtari =>
   hata.kod === "yetki" ? "yonetim.siparis.notlar.yetki" : "yonetim.siparis.notlar.genel";
 
 export function NotFormu({ numara }: { numara: string }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const islem = usePanelIslemi(hataMetni);
   const [tur, setTur] = useState<SiparisNotTuru>("ic");
   const [yazi, setYazi] = useState("");

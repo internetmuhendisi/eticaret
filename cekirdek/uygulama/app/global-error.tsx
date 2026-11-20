@@ -4,9 +4,11 @@
 // gider, şema zod'u ve bütün şemaları taşırdı (kart 0146).
 import { useEffect } from "react";
 import { istemciHatasiniKaydet } from "../../izleme/istemci-hata-katmani";
-import { metinOkuyucu, varsayilanDil } from "../../metinler/metin";
+import { varsayilanDil } from "../../metinler/dil";
+import { vitrinMetinOkuyucu } from "../../metinler/istemci-metni";
 
-const metin = metinOkuyucu(varsayilanDil);
+// Bütün metin dosyası değil, vitrin metinleri (kart 0253).
+const metin = vitrinMetinOkuyucu(varsayilanDil);
 
 export default function KokHatasi({ error }: { error: unknown }) {
   useEffect(() => istemciHatasiniKaydet(error), [error]);

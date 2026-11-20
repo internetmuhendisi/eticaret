@@ -7,8 +7,8 @@
 import { Baglanti } from "../../../../bilesenler/parcalar/baglanti";
 import { Rozet } from "../../../../bilesenler/parcalar/rozet";
 import { sinif } from "../../../../bilesenler/parcalar/sinif";
+import { doldur } from "../../../metinler/doldur";
 import { metin } from "../../../metinler/site-metni";
-import { doldur } from "../../../moduller/eposta/sablon";
 import { BolumGorseli } from "../../bolum-kutuphanesi/gorsel";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
 import { secimDegeri } from "../../bolum-kutuphanesi/tarif";

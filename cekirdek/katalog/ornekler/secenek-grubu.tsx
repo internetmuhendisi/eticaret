@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
-import { doldur } from "../../moduller/eposta/sablon";
+import { doldur } from "../../metinler/doldur";
 import { useOrnekMetni } from "./ortak";
 
 // Beden adları kod ve ölçüdür, metin değildir.

@@ -9,10 +9,10 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
 import { listeSiralamalari } from "../../kayitlar/liste.ts";
+import { doldur } from "../../metinler/doldur.ts";
 import { MetinSaglayici } from "../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../metinler/metin.ts";
 import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
-import { doldur } from "../../moduller/eposta/sablon.ts";
 import { adrestenDurum } from "../urun-listesi/adres.ts";
 import { UrunListesiGorunumu, type UrunListesiVerisi } from "../urun-listesi/sayfa.tsx";
 

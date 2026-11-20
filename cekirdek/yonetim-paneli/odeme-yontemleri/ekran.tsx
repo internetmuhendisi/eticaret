@@ -25,10 +25,10 @@ import {
   kapidaOdemeSecenekleri,
   type OdemeYontemi,
 } from "../../kayitlar/odeme";
-import { useMetin } from "../../metinler/istemci-metni";
+import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { siralamaMetinleri } from "../../metinler/siralama-metinleri";
-import { doldur } from "../../moduller/eposta/sablon";
 import type { YontemAyari } from "../../moduller/odeme/yontemler";
 import { panelAdresi } from "../adresler";
 import { usePanelIslemi } from "../panel-islemi";
@@ -80,7 +80,7 @@ export function OdemeYontemleriEkrani({
   veri: OdemeYontemleriEkraniVerisi;
   izinli: boolean;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const islem = usePanelIslemi(genelHataMetni);
   const { form, setForm, degisti, kaydedildi, vazgec, bilinen } =
     useSunucuFormu<OdemeYontemleriFormu>(veri.form);

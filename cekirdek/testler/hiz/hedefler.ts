@@ -8,9 +8,10 @@ export const hizHedefleri = {
   kayma: 0.1,
   // Tıklamaya tepki (Interaction to Next Paint; menü düğmesine basılınca), milisaniye.
   tepki: 200,
-  // Sayfayla tarayıcıya giden kod (JavaScript), sıkıştırılmış, kilobayt. Ölçülen en büyük sayfa 298 KB'tı
-  // (kart 0146); sınır büyümeyi durdurur, inmesi kart 0194'tür.
-  kod: 320,
+  // Sayfayla tarayıcıya giden kod (JavaScript), sıkıştırılmış, kilobayt. Ölçülen en büyük sayfa 298 KB'tı (kart
+  // 0146), sınır 320'ydi. Vitrine yalnız vitrin metinleri gidince (kart 0253, karar 0152) en büyük sayfa 299 KB'tan
+  // (havale bildirimi; önce 319) bu sınıra çekildi: büyümeyi durdurur, inmenin geri kalanı kart 0194'tür.
+  kod: 305,
 } as const;
 
 // Yavaş telefon koşulu: Lighthouse'un telefon ayarının (yavaş 4G, 150 ms, 1,6 Mbit/s) tarayıcı içi yavaşlatmadaki

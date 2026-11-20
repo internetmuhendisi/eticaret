@@ -21,8 +21,8 @@ import { IskeletGorunum } from "../../bilesenler/parcalar/iskelet";
 import { SayfaBasligi } from "../../bilesenler/parcalar/sayfa-basligi";
 import { sinif } from "../../bilesenler/parcalar/sinif";
 import { Uyari } from "../../bilesenler/parcalar/uyari";
+import { doldur } from "../metinler/doldur";
 import { useMetin } from "../metinler/istemci-metni";
-import { doldur } from "../moduller/eposta/sablon";
 import { FavoriSayfasiBaglami, favoriUrunIsareti } from "./favori-dugmesi";
 import { gorunmeyenleriAt, useFavoriler } from "./favori-durumu";
 

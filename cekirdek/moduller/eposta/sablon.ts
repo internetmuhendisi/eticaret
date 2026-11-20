@@ -3,6 +3,7 @@
 // e-posta programının varsayılan renkleri kullanılır (kart 0060).
 
 import { type EpostaSablonu, epostaAyari } from "../../kayitlar/eposta.ts";
+import { doldur } from "../../metinler/doldur.ts";
 import { type Dil, type MetinAnahtari, metinOkuyucu } from "../../metinler/metin.ts";
 
 // baglanti: e-postadaki düğme yerine geçen bağlantı. Adresi "baglanti" değişkeninden gelir, düz metinde de
@@ -51,10 +52,6 @@ const htmlKacir = (metin: string): string =>
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
-
-// {ad} biçimindeki yerleri doldurur. Değer metnin içinde yeniden aranmaz.
-export const doldur = (metin: string, degerler: Record<string, string>): string =>
-  metin.replace(/\{([a-zA-Z]+)\}/g, (yer, ad: string) => degerler[ad] ?? yer);
 
 export type EpostaIcerigi = { konu: string; metin: string; html: string };
 

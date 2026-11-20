@@ -2,8 +2,8 @@
 // numara yoksa, kalıba uymuyorsa ya da sipariş yoksa bulunamadı. İşlemler yöneticinin izinlerine göre gelir.
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { doldur } from "../../../../../../metinler/doldur";
 import { metin } from "../../../../../../metinler/site-metni";
-import { doldur } from "../../../../../../moduller/eposta/sablon";
 import { siparisNumarasiSemasi } from "../../../../../../moduller/siparis/havale-bildirimi-semalari";
 import { panelOturumu } from "../../../../../../yonetim-paneli/panel-oturumu";
 import {

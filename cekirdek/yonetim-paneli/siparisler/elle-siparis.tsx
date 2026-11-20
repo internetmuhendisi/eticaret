@@ -26,9 +26,9 @@ import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
 import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
-import { useMetin } from "../../metinler/istemci-metni";
+import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
-import { doldur } from "../../moduller/eposta/sablon";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import type { Teslimat } from "../../moduller/odeme/semalar";
 import type { ElleSiparisBirimi, ElleSiparisMusterisi } from "../../moduller/siparis/elle";
 import {
@@ -104,7 +104,7 @@ const ilkHata = (hatalar: HataHaritasi): string | undefined =>
   alanSirasi.find((alan) => hatalar[alan] !== undefined) ?? Object.keys(hatalar)[0];
 
 export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const router = useRouter();
   const ilkUlke = veri.ulkeler[0]?.kod ?? "";
   const [kalemler, setKalemler] = useState<Kalem[]>([]);

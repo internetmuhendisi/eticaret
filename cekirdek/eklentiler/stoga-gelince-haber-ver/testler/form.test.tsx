@@ -9,9 +9,9 @@
 // - 422, 429 ve 401 cevaplarının kendi metni; başarıda teşekkür odağı alır.
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { doldur } from "../../../metinler/doldur.ts";
 import { MetinSaglayici } from "../../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../../metinler/metin.ts";
-import { doldur } from "../../../moduller/eposta/sablon.ts";
 import { hesapDurumunuSifirla } from "../../../vitrin/hesap-durumu.ts";
 import type { Secim, SecimBirimi, SecimSecenegi } from "../../../vitrin/urun-sayfasi/secim.ts";
 import { UrunUstKismi } from "../../../vitrin/urun-sayfasi/urun-ust.tsx";

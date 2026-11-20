@@ -19,11 +19,11 @@ import {
   SecimOgesi,
   SecimTetikleyici,
 } from "../../../bilesenler/parcalar/secim-kutusu";
-import { useMetin } from "../../metinler/istemci-metni";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { useOrnekMetni } from "./ortak";
 
 export function PencereOrnegi() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const m = useOrnekMetni();
   return (
     <div className="flex flex-wrap gap-2">

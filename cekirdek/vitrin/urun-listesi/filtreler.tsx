@@ -39,8 +39,8 @@ import {
   YanPencereTetikleyici,
 } from "../../../bilesenler/parcalar/yan-pencere";
 import type { AramaSiralamasi } from "../../kayitlar/liste";
+import { doldur } from "../../metinler/doldur";
 import { useMetin } from "../../metinler/istemci-metni";
-import { doldur } from "../../moduller/eposta/sablon";
 import { durumdanSorgu, durumuDegistir, type ListeDegisikligi, type ListeDurumu } from "./adres";
 
 // Bir grubun bir seçeneği: etiket sunucuda yazılmıştır (ad ve sayı).

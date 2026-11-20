@@ -16,9 +16,9 @@ import {
 import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
 import type { AdresAdlari } from "../../bolgeler/adres-satiri";
 import { postaKoduGecerliMi } from "../../bolgeler/bolgeler";
+import { doldur } from "../../metinler/doldur";
+import type { VitrinMetinAnahtari } from "../../metinler/istemci-metni";
 import { useMetin } from "../../metinler/istemci-metni";
-import type { MetinAnahtari } from "../../metinler/metin";
-import { doldur } from "../../moduller/eposta/sablon";
 
 export type BolgeUlkesi = {
   kod: string;
@@ -68,7 +68,7 @@ export const vergiBolgesi = (adres: Adres) => {
 };
 
 // Şemanın ve sunucunun hata kodundan alanın altındaki metin.
-export const ozelHatalar: Record<string, MetinAnahtari> = {
+export const ozelHatalar: Record<string, VitrinMetinAnahtari> = {
   "telefon-bicimi": "vitrin.odeme.hata.telefon",
   "telefon-gerekli": "vitrin.odeme.hata.gerekli",
   "il-gerekli": "vitrin.odeme.hata.secin",
@@ -109,7 +109,7 @@ export const hataMetni = (metin: Metin, alan: string, kod: string, sifreEnKisa: 
 };
 
 // Alanın bölümündeki adı (hata özetindeki bağlantı).
-export const alanAdlari: Record<string, MetinAnahtari> = {
+export const alanAdlari: Record<string, VitrinMetinAnahtari> = {
   eposta: "vitrin.odeme.eposta",
   "hesap.sifre": "vitrin.kayit.sifre",
   "hesap.uyelikOnayi": "vitrin.kayit.uyelikOnayi",

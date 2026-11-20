@@ -21,8 +21,8 @@ import {
   PencereUstu,
 } from "../../../bilesenler/parcalar/pencere";
 import { sinif } from "../../../bilesenler/parcalar/sinif";
+import { doldur } from "../../metinler/doldur";
 import { useMetin } from "../../metinler/istemci-metni";
-import { doldur } from "../../moduller/eposta/sablon";
 import type { SayfaGaleriOgesi, SayfaGorseli } from "./veri";
 
 // Sunucu çiziminde ve sayfanın ilk bağlanmasında true, tarayıcıda baştan çizimde (bağlantıyla gelinen sayfa) false.

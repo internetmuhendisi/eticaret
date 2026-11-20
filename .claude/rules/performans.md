@@ -14,7 +14,7 @@ paths:
 Önbellek, sık istenen verinin hızlı verilmek için geçici olarak saklandığı yerdir.
 
 - Hız hedeflerine uy: gerçek ziyaretçilerin büyük çoğunluğu için sayfanın ana içeriği 2,5 saniye içinde görünsün, tıklamaya tepki 200 milisaniyeyi geçmesin, yükleme sırasında kayma çok düşük kalsın (0,1).
-- Vitrin sayfalarında indirilen kodun üst sınırını aşma (sıkıştırılmış 320 KB).
+- Vitrin sayfalarında indirilen kodun üst sınırını aşma (sıkıştırılmış 305 KB; karar 0152).
 - Hedefler tek yerdedir (`cekirdek/testler/hiz/hedefler.ts`). Hız ölçümü (`pnpm hiz-olcumu`, karar 0124) her vitrin sayfa türünü canlıdaki gibi derlenmiş çekirdekte, yavaş telefon koşuluyla ölçer; aşan sayfa kontrol hattını durdurur. Yeni bir vitrin sayfa türü `cekirdek/testler/uctan-uca/vitrin-sayfalari.ts`'e eklenir: ekran ve hız ölçümü onu da ölçer. Bugün hedefi aşan sayfalar `bilinenAsimlar` listesindedir (hedefler.ts): liste yalnız küçülür, yeni aşım eklenmez.
 - Tarayıcıda çalışan kod (`"use client"`) zod'u, şemaları ve sunucu modüllerini yalnız gerçekten gerekiyorsa içe aktarır (form doğrulaması). Kimlik biçimi `kimlik-bicimi.ts`, varsayılan dil `metin.ts`'ten alınır (kart 0146: her sayfayla sıkıştırılmış yaklaşık 30 KB'lık zod parçası gidiyordu). Vitrin formunun şeması panelin şemalarıyla aynı dosyada durmaz: panel şeması başka modüllerin şemalarını içe aktarınca hepsi forma gider (kart 0248: sipariş şemaları ödeme adımının adres ve fatura şemalarını alınca havale bildirimi sayfası 19 KB büyüdü; vitrinin şemaları `havale-bildirimi-semalari.ts`'e ayrıldı).
 - İlk ekranda görünen görsel öncelikli yüklenir (`oncelikli`: tembel değil, `fetchPriority="high"`); listede ilk `oncelikliKartSayisi` kart.

@@ -1,8 +1,8 @@
 "use client";
+import { doldur } from "../../metinler/doldur";
 // Üst kısımdaki sepetin sayısı (kart 0212): sepetteki ayrı ürünlerin (kalemlerin) sayısı, tarayıcının deposundan; istek
 // gitmez. Sıfırsa görünmez (kart 0108). Katalogun örnek kipinde bağlamın örnek sayısıdır.
 import { useMetin } from "../../metinler/istemci-metni";
-import { doldur } from "../../moduller/eposta/sablon";
 import { useSepet, useSepetAyarlari } from "./durum";
 
 export function SepetSayisi({ ornekSayi, className }: { ornekSayi?: number; className: string }) {

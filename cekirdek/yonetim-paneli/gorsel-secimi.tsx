@@ -16,9 +16,9 @@ import {
   PencereTetikleyici,
   PencereUstu,
 } from "../../bilesenler/parcalar/pencere";
-import { useMetin } from "../metinler/istemci-metni";
+import { doldur } from "../metinler/doldur";
+import { usePanelMetni } from "../metinler/panel-metni";
 import type { GorselSecenegi } from "../moduller/duzen/secenekler";
-import { doldur } from "../moduller/eposta/sablon";
 import { yoneticiUcu } from "./panel-istegi";
 
 export const panelGorseliAdresi = (kimlik: string): string =>
@@ -41,7 +41,7 @@ export function GorselSecimi({
   degistir: (deger: unknown) => void;
   zorunlu: boolean;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const [acik, setAcik] = useState(false);
   const secili = typeof deger === "string" ? deger : undefined;
   const seciliGorsel = gorseller.find((gorsel) => gorsel.kimlik === secili);

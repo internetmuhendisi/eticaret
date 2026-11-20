@@ -27,9 +27,9 @@ import {
   YanPencereUstu,
 } from "../../../bilesenler/parcalar/yan-pencere";
 import type { SiparisDurumu, SiparisIslemi } from "../../kayitlar/siparis";
-import { useMetin } from "../../metinler/istemci-metni";
+import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
-import { doldur } from "../../moduller/eposta/sablon";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { panelAdresi } from "../adresler";
 import { EylemDugmesi } from "../eylem-dugmesi";
 import { useKapatmaSorusu } from "../kapatma-sorusu";
@@ -79,7 +79,7 @@ export function SiparisIslemleri({
   // Kargodaki siparişin bugünkü bilgisi (düzeltme formu onunla açılır); firma artık listede yoksa boş seçilir.
   kargo: { firma: string; takipNumarasi: string | null } | null;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const islem = usePanelIslemi(hataMetni);
   const [onay, setOnay] = useState<OnayliIslem | null>(null);
   const [kargoPenceresi, setKargoPenceresi] = useState<"kargoya-ver" | "kargo-duzelt" | null>(null);
@@ -199,7 +199,7 @@ function KargoFormu({
   vazgec: () => void;
   gonder: (form: KargoFormuDegeri) => Promise<{ tamam: true } | ({ tamam: false } & PanelHatasi)>;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const [form, setForm] = useState(ilk);
   const [hatalar, setHatalar] = useState<Partial<Record<keyof KargoFormuDegeri, string>>>({});
   const [genelHata, setGenelHata] = useState<string | null>(null);

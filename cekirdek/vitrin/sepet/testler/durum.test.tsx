@@ -10,9 +10,9 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { sepetDepoAnahtari, sepetSinirlari } from "../../../kayitlar/sepet.ts";
+import { doldur } from "../../../metinler/doldur.ts";
 import { MetinSaglayici } from "../../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../../metinler/metin.ts";
-import { doldur } from "../../../moduller/eposta/sablon.ts";
 import { SeciliBirimBaglami } from "../../urun-sayfasi/secili-birim.tsx";
 import { kalemListesi } from "../depo.ts";
 import {

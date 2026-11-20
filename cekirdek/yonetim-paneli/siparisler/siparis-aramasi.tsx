@@ -18,8 +18,8 @@ import {
   siparisDurumTanimlari,
   siparisSinirlari,
 } from "../../kayitlar/siparis";
-import { useMetin } from "../../metinler/istemci-metni";
-import { doldur } from "../../moduller/eposta/sablon";
+import { doldur } from "../../metinler/doldur";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import type { SiparisListesi } from "../../moduller/siparis/yonetim";
 import { panelAdresi } from "../adresler";
 import { panelIstegi } from "../panel-istegi";
@@ -28,7 +28,7 @@ import { durumMetni } from "./metinler";
 type Sonuc = { tur: "bulundu"; aranan: string; liste: SiparisListesi } | { tur: "hata" };
 
 export function SiparisAramasi({ durum }: { durum: SiparisDurumu | null }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const [aranan, setAranan] = useState("");
   const [sonuc, setSonuc] = useState<Sonuc | null>(null);
   const gonderiliyor = useRef(false);

@@ -6,8 +6,8 @@ import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
 import { BosHal } from "../../../bilesenler/parcalar/bos-hal";
 import { Kart } from "../../../bilesenler/parcalar/kart";
 import { stokBildirimiAyari } from "../../kayitlar/eklentiler";
+import { doldur } from "../../metinler/doldur";
 import { bicim, metin } from "../../metinler/site-metni";
-import { doldur } from "../../moduller/eposta/sablon";
 import type { PanelSatiri } from "./servis";
 
 export function StokBildirimleriListesi({ satirlar }: { satirlar: readonly PanelSatiri[] }) {

@@ -8,11 +8,11 @@ import {
   SeritIcerigi,
   SeritOgesi,
 } from "../../../bilesenler/parcalar/serit";
-import { useMetin } from "../../metinler/istemci-metni";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { useOrnekMetni } from "./ortak";
 
 export function SeritOrnegi() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const m = useOrnekMetni();
   return (
     <Serit

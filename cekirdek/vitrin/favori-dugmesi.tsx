@@ -11,8 +11,8 @@ import { createContext, useContext, useEffect } from "react";
 import { BildirimAlani, bildirimGoster } from "../../bilesenler/parcalar/bildirim";
 import { IkonDugmesi } from "../../bilesenler/parcalar/dugme";
 import { sinif } from "../../bilesenler/parcalar/sinif";
+import { doldur } from "../metinler/doldur";
 import { useMetin } from "../metinler/istemci-metni";
-import { doldur } from "../moduller/eposta/sablon";
 import { kimligiDuzelt } from "../veritabani/kimlik-bicimi";
 import {
   type FavoriSonucu,

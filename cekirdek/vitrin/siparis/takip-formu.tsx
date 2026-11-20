@@ -10,8 +10,8 @@ import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { Kart } from "../../../bilesenler/parcalar/kart";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { hataKodlari } from "../../kayitlar/kapi";
+import type { VitrinMetinAnahtari } from "../../metinler/istemci-metni";
 import { useMetin } from "../../metinler/istemci-metni";
-import type { MetinAnahtari } from "../../metinler/metin";
 import { useRobotluGonderim } from "../../moduller/robot-korumasi/istemci";
 import { siparisTakibiFormuSemasi } from "../../moduller/siparis/takip-semalari";
 import { vitrinAdresleri } from "../adresler";
@@ -20,13 +20,13 @@ const uc = "/kapi/herkese-acik/siparis-takibi";
 
 type Alan = "numara" | "eposta";
 const alanSirasi: Alan[] = ["numara", "eposta"];
-const alanMetinleri: Record<Alan, MetinAnahtari> = {
+const alanMetinleri: Record<Alan, VitrinMetinAnahtari> = {
   numara: "vitrin.siparisTakibi.hata.numara",
   eposta: "vitrin.siparisTakibi.hata.eposta",
 };
 
 type Genel = "bulunamadi" | "sinir" | "genel";
-const genelMetinler: Record<Genel, MetinAnahtari> = {
+const genelMetinler: Record<Genel, VitrinMetinAnahtari> = {
   bulunamadi: "vitrin.siparisTakibi.hata.bulunamadi",
   sinir: "vitrin.siparisTakibi.hata.sinir",
   genel: "vitrin.siparisTakibi.hata.genel",
@@ -111,7 +111,7 @@ export function SiparisTakibiFormu({ numara }: { numara: string }) {
 
   const alan = (
     ad: Alan,
-    etiket: MetinAnahtari,
+    etiket: VitrinMetinAnahtari,
     ek: { type?: "text" | "email"; autoComplete: string; defaultValue?: string },
   ) => (
     <FormAlani etiket={metin(etiket)} {...(hatalar[ad] === undefined ? {} : { hata: hatalar[ad] })}>

@@ -45,9 +45,9 @@ import { adresSatiri } from "../../bolgeler/adres-satiri";
 import { kapiyaIstek } from "../../kapi/istemci";
 import { hataKodlari } from "../../kayitlar/kapi";
 import type { OdemeDonusSonucu } from "../../kayitlar/odeme";
+import { doldur } from "../../metinler/doldur";
+import type { VitrinMetinAnahtari } from "../../metinler/istemci-metni";
 import { useMetin } from "../../metinler/istemci-metni";
-import type { MetinAnahtari } from "../../metinler/metin";
-import { doldur } from "../../moduller/eposta/sablon";
 import type { AdresListesi, KayitliAdres } from "../../moduller/musteri/adres-semalari";
 import {
   misafirOdemeFormuSemasi,
@@ -271,7 +271,7 @@ function SozlesmePenceresi({
 }
 
 type GenelHata = "sepet-degisti" | "sepet-bos" | "stok-ayrildi" | "kayitli" | "sinir" | "genel";
-const genelHataMetinleri: Record<GenelHata, MetinAnahtari> = {
+const genelHataMetinleri: Record<GenelHata, VitrinMetinAnahtari> = {
   "sepet-degisti": "vitrin.odeme.hata.sepetDegisti",
   "sepet-bos": "vitrin.odeme.hata.sepetBos",
   "stok-ayrildi": "vitrin.odeme.hata.stokAyrildi",

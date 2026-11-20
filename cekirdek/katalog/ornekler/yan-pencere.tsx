@@ -12,11 +12,11 @@ import {
   YanPencereTetikleyici,
   YanPencereUstu,
 } from "../../../bilesenler/parcalar/yan-pencere";
-import { useMetin } from "../../metinler/istemci-metni";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { useOrnekMetni } from "./ortak";
 
 export function YanPencereOrnegi() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const m = useOrnekMetni();
   return (
     <div className="flex flex-wrap gap-2">
@@ -44,7 +44,7 @@ export function YanPencereOrnegi() {
 
 // Uzun formun sabit alt çubuğu (kart 0169): içerik kayarken düğmeler altta kalır.
 function YanPencereAltCubuguOrnegi() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const m = useOrnekMetni();
   return (
     <YanPencere>

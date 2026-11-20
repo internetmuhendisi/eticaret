@@ -5,8 +5,8 @@
 import { useRouter } from "next/navigation";
 import { type BildirimEylemi, bildirimGoster } from "../../bilesenler/parcalar/bildirim";
 import type { UyariTuru } from "../../bilesenler/parcalar/uyari";
-import { useMetin } from "../metinler/istemci-metni";
 import type { MetinAnahtari } from "../metinler/metin";
+import { usePanelMetni } from "../metinler/panel-metni";
 import { type PanelHatasi, type PanelSonucu, panelIstegi } from "./panel-istegi";
 
 export type IslemSecenekleri<Veri> = {
@@ -19,7 +19,7 @@ export type IslemSecenekleri<Veri> = {
 };
 
 export const usePanelIslemi = (hataMetni: (hata: PanelHatasi) => MetinAnahtari) => {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const router = useRouter();
   return async <Veri = Record<string, unknown>>(
     yol: string,

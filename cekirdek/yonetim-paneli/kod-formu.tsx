@@ -7,7 +7,7 @@ import { FormAlani } from "../../bilesenler/form/form-alani";
 import { GirisAlani } from "../../bilesenler/parcalar/giris-alani";
 import { Uyari } from "../../bilesenler/parcalar/uyari";
 import { kapiyaIstek } from "../kapi/istemci";
-import { useMetin } from "../metinler/istemci-metni";
+import { usePanelMetni } from "../metinler/panel-metni";
 import { kodSemasi } from "../moduller/oturum/semalar";
 import { girisAdresi } from "./adresler";
 import { stil } from "./stil";
@@ -23,7 +23,7 @@ export function KodFormu<Veri>({
   dugme: string;
   basarili: (veri: Veri) => void;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const [hata, setHata] = useState<string | null>(null);
   const gonderiliyor = useRef(false);
 

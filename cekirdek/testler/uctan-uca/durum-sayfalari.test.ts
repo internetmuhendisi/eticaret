@@ -10,9 +10,9 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import sharp from "sharp";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
+import { doldur } from "../../metinler/doldur";
 import { metin, siteDili } from "../../metinler/site-metni";
 import { dosyaSil, gorselKaydet } from "../../moduller/dosya/servis";
-import { doldur } from "../../moduller/eposta/sablon";
 import {
   type Kategori,
   kategoriEkle,

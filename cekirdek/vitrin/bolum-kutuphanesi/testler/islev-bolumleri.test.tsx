@@ -17,9 +17,9 @@ import {
   ornekIslevBolumleriOtekiGorunumler,
 } from "../../../katalog/ornek-baglam.ts";
 import { islevler } from "../../../kayitlar/islevler.ts";
+import { doldur } from "../../../metinler/doldur.ts";
 import { MetinSaglayici } from "../../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../../metinler/metin.ts";
-import { doldur } from "../../../moduller/eposta/sablon.ts";
 import { islevYokMetinleri } from "../../../yonetim-paneli/cizilmeme-nedeni.ts";
 import { bultenKaydiSemasi } from "../../bolumler/bulten-kaydi/sema.ts";
 import { musteriYorumlari } from "../../bolumler/musteri-yorumlari/tarif.ts";

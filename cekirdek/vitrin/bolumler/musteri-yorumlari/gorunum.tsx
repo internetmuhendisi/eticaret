@@ -8,8 +8,8 @@ import {
   SeritIcerigi,
   SeritOgesi,
 } from "../../../../bilesenler/parcalar/serit";
+import { doldur } from "../../../metinler/doldur";
 import { bicim, metin } from "../../../metinler/site-metni";
-import { doldur } from "../../../moduller/eposta/sablon";
 import type { VitrinBaglami } from "../../bolum-kutuphanesi/baglam";
 import type { BolumGorunumuOzellikleri } from "../../bolum-kutuphanesi/gorunumler";
 import {

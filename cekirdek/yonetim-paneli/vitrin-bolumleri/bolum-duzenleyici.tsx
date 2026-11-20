@@ -9,8 +9,8 @@ import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { YanPencereAltCubugu } from "../../../bilesenler/parcalar/yan-pencere";
-import { useMetin } from "../../metinler/istemci-metni";
 import type { MetinAnahtari } from "../../metinler/metin";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import type { BolumDegerleri, BolumTarifi } from "../../vitrin/bolum-kutuphanesi/tarif";
 import { BolumFormu, type BolumFormuSecenekleri } from "../bolum-formu";
 import type { PanelHatasi, PanelSonucu } from "../panel-istegi";
@@ -51,7 +51,7 @@ export function BolumDuzenleyici({
   // Kaydedilmemiş değişiklik olup olmadığı: pencere kapatılmadan önce sorar.
   degisince?: (degisti: boolean) => void;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const [gorunum, setGorunum] = useState(ilk.gorunum);
   const degerler = useRef<BolumDegerleri>(ilk.degerler);
   const [degisti, setDegisti] = useState(false);

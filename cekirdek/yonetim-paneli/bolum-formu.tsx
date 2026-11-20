@@ -18,10 +18,10 @@ import {
   SecimTetikleyici,
 } from "../../bilesenler/parcalar/secim-kutusu";
 import { UzunMetinAlani } from "../../bilesenler/parcalar/uzun-metin-alani";
-import { useMetin } from "../metinler/istemci-metni";
+import { doldur } from "../metinler/doldur";
 import type { MetinAnahtari } from "../metinler/metin";
+import { usePanelMetni } from "../metinler/panel-metni";
 import type { GorselSecenegi } from "../moduller/duzen/secenekler";
-import { doldur } from "../moduller/eposta/sablon";
 import type {
   AlanTarifi,
   BolumDegerleri,
@@ -71,7 +71,7 @@ function KayitSecimi({
   degistir: Degistir;
   zorunlu: boolean;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   return (
     <FormAlani
       etiket={etiket}
@@ -115,7 +115,7 @@ function UrunKaynagiAlani({
   secenekler: BolumFormuSecenekleri;
   hata: (yol: string) => string | undefined;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const kaynak = (deger ?? undefined) as
     | ({ tur: UrunKaynagiTuru; adet?: number; urunler?: string[] } & Record<string, unknown>)
     | undefined;
@@ -237,7 +237,7 @@ function TekAlan({
   // Bu alanın altındaki yolun hatası ("" alanın kendisi).
   hata: (yol: string) => string | undefined;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const etiket = metin(alan.ad);
   const aciklama = alan.aciklama === undefined ? undefined : metin(alan.aciklama);
   const zorunlu = alan.zorunlu === true;
@@ -454,7 +454,7 @@ function ListeAlani({
   secenekler: BolumFormuSecenekleri;
   hata: (yol: string) => string | undefined;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const kimlik = useId();
   const ogeler = (Array.isArray(deger) ? deger : []) as Record<string, unknown>[];
   const listeHatasi = hata("");

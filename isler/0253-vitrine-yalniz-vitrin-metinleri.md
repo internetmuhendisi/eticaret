@@ -25,6 +25,23 @@ Bölüm: Vitrin. Kart 0194'ün metin maddesidir; 0194'ün öteki maddeleri (Radi
 - Yanlış taraftaki anahtarı kullanan tarayıcı bileşeni kontrolde kırmızı (bozuk örneğiyle).
 - Birim, tarayıcı ve hız ölçümü yeşil; kod sınırı yeni değere çekildi (karar kaydı).
 
+## Ölçümler
+
+2026-11-20, temiz deneme veritabanı, `pnpm hiz-olcumu` (canlı derleme, 390 px, yavaş 4G, işlemci 5,8–6,2 kat yavaş). Sıkıştırılmış metin dosyası 34 KB, vitrin metinleri (ortak, vitrin, eklenti) 12,4 KB.
+
+| Sayfa | Önce (ana dal) | Sonra |
+|---|---|---|
+| havale bildirimi | 319 KB | 299 KB |
+| sipariş takibi | 315 KB | 294 KB |
+| ürün | — | 298 KB |
+| kategori, marka, etiket, arama | — | 297 KB |
+| ödeme | — | 293 KB |
+| favoriler, giriş, kayıt | — | 289 KB |
+| ana sayfa | — | 288 KB |
+| sepet, bulunamadı | — | 287 KB |
+
+"Önce" sütununda yalnız aynı makinede ana dalda ölçülen iki sayfa var. Kod sınırı 320'den 305 KB'a çekildi (karar 0152). 14 ölçümün 14'ü yeşil.
+
 ## Durum
 
 yapılacak

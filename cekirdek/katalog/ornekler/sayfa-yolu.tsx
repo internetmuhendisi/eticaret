@@ -1,11 +1,11 @@
 "use client";
 import { SayfaYolu } from "../../../bilesenler/parcalar/sayfa-yolu";
-import { useMetin } from "../../metinler/istemci-metni";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { useOrnekMetni } from "./ortak";
 
 export function SayfaYoluOrnegi() {
   const m = useOrnekMetni();
-  const metin = useMetin();
+  const metin = usePanelMetni();
   // İkinci yol kısa adlı komşu adımları ve telefonda iki satıra inen uzun bir adı gösterir (kart 0191): basılan
   // alanlar üst üste binmez.
   return (

@@ -16,8 +16,8 @@ import { Dugme, IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
 import { Ipucu } from "../../../bilesenler/parcalar/ipucu";
 import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { sepetSinirlari } from "../../kayitlar/sepet";
+import { doldur } from "../../metinler/doldur";
 import { useMetin } from "../../metinler/istemci-metni";
-import { doldur } from "../../moduller/eposta/sablon";
 import { vitrinAdresleri } from "../adresler";
 import { useSeciliBirim } from "../urun-sayfasi/secili-birim";
 import {

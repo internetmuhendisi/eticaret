@@ -9,8 +9,8 @@ import { SayfaBasligi } from "../../bilesenler/parcalar/sayfa-basligi";
 import { SayfaYolu } from "../../bilesenler/parcalar/sayfa-yolu";
 import { calisanSite } from "../ayar-semasi/calisan-site";
 import { eklentiAcikMi } from "../eklentiler/acik";
+import { doldur } from "../metinler/doldur";
 import { metin } from "../metinler/site-metni";
-import { doldur } from "../moduller/eposta/sablon";
 import { magazaninAdi } from "../moduller/magaza-ayarlari/servis";
 import { panelOturumu } from "./panel-oturumu";
 import {

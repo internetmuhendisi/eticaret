@@ -45,10 +45,10 @@ import { Rozet } from "../../../bilesenler/parcalar/rozet";
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { type UrunFiltresiGorunumu, urunFiltresiGorunumleri } from "../../kayitlar/tema";
-import { useMetin } from "../../metinler/istemci-metni";
+import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { type DuzenYolu, duzenYollari } from "../../moduller/duzen/gecis";
-import { doldur } from "../../moduller/eposta/sablon";
 import { EylemDugmesi } from "../eylem-dugmesi";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelSonucu } from "../panel-istegi";
@@ -131,7 +131,7 @@ export function TemaEylemleri() {
 }
 
 function TemaKarti({ tema }: { tema: EkranTemasi }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { degistirebilir, setSecilen } = useTema();
   const baslikKimligi = `tema-${tema.kod}`;
   return (
@@ -180,7 +180,7 @@ function TemaKarti({ tema }: { tema: EkranTemasi }) {
 }
 
 function TemaPenceresi() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { secilen, setSecilen, odaklanacak } = useTema();
   return (
     <Pencere open={secilen !== null} onOpenChange={(acik) => (acik ? undefined : setSecilen(null))}>
@@ -217,7 +217,7 @@ const yolAciklamalari: Record<DuzenYolu, MetinAnahtari> = {
 };
 
 function TemaFormu({ tema }: { tema: EkranTemasi }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { setSecilen, islem, odaklanacak } = useTema();
   const [yol, setYol] = useState<DuzenYolu | undefined>(undefined);
   const [secimHatasi, setSecimHatasi] = useState(false);
@@ -286,7 +286,7 @@ function TemaFormu({ tema }: { tema: EkranTemasi }) {
 }
 
 function FiltreYeri() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { veri, degistirebilir, islem } = useTema();
   // Sunucunun yeni verisi gelince (geri dönüş, başka sekme) seçim ona döner; kayıttan sonra arada yapılan seçim
   // yenilemeyle ezilmez (kart 0223).
@@ -358,7 +358,7 @@ function FiltreYeri() {
 }
 
 export function TemaIcerigi() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { veri, odaklanacak } = useTema();
   // Yayından sonra sayfanın yeni verisi gelince odak seçilen temanın başlığına konur.
   useEffect(() => {

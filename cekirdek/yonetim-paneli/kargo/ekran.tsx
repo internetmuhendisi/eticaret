@@ -14,8 +14,8 @@ import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { YanPencereAltCubugu } from "../../../bilesenler/parcalar/yan-pencere";
 import { type UcretsizKargoTutari, ucretsizKargoTutarlari } from "../../kayitlar/sepet";
-import { useMetin } from "../../metinler/istemci-metni";
 import type { MetinAnahtari } from "../../metinler/metin";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
 import { useSunucuFormu } from "../sunucu-formu";
@@ -39,7 +39,7 @@ const sinirTutariAdlari: Record<UcretsizKargoTutari, MetinAnahtari> = {
 };
 
 export function KargoEkrani({ veri, izinli }: { veri: KargoEkraniVerisi; izinli: boolean }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const islem = usePanelIslemi(genelHataMetni);
   // Kayıttan sonra sayfa yenilenir: sunucunun yazdığı hâl (örneğin "60" yerine "60,00") kaydedilmemiş değişiklik
   // yoksa formun yeni başlangıcıdır; arada yazılan değer ezilmez (kart 0223).

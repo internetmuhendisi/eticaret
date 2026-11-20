@@ -1,7 +1,7 @@
 "use client";
 import { DahaFazla, Sayfalama } from "../../../bilesenler/parcalar/sayfalama";
-import { useMetin } from "../../metinler/istemci-metni";
-import { doldur } from "../../moduller/eposta/sablon";
+import { doldur } from "../../metinler/doldur";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { useOrnekMetni } from "./ortak";
 
 const adres = (sayfa: number) => `?sayfa=${sayfa}`;
@@ -9,7 +9,7 @@ const adres = (sayfa: number) => `?sayfa=${sayfa}`;
 // Numaralı sayfalar: başta, ortada ve sonda; altında "Daha fazla göster" ve son sayfadaki hâli.
 export function SayfalamaOrnegi() {
   const m = useOrnekMetni();
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const metinler = {
     etiket: metin("ortak.parca.sayfalar"),
     onceki: metin("ortak.parca.oncekiSayfa"),

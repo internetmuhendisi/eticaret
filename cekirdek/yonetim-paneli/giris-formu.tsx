@@ -7,7 +7,7 @@ import { Baglanti } from "../../bilesenler/parcalar/baglanti";
 import { GirisAlani } from "../../bilesenler/parcalar/giris-alani";
 import { Uyari } from "../../bilesenler/parcalar/uyari";
 import { kapiyaIstek } from "../kapi/istemci";
-import { useMetin } from "../metinler/istemci-metni";
+import { usePanelMetni } from "../metinler/panel-metni";
 import { girisSemasi } from "../moduller/oturum/semalar";
 import { adimAdresi, donusParametresi, sifremiUnuttumAdresi } from "./adresler";
 import { stil } from "./stil";
@@ -15,7 +15,7 @@ import { stil } from "./stil";
 const girisUcu = "/kapi/herkese-acik/yonetici-giris";
 
 export function GirisFormu({ donus }: { donus: string }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const [hata, setHata] = useState<string | null>(null);
   const gonderiliyor = useRef(false);
 

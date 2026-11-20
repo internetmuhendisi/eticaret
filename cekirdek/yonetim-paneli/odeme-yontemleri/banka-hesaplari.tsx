@@ -31,10 +31,10 @@ import {
   YanPencereUstu,
 } from "../../../bilesenler/parcalar/yan-pencere";
 import { ibanYazisi } from "../../bolgeler/iban-yazisi";
-import { useMetin } from "../../metinler/istemci-metni";
+import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { siralamaMetinleri } from "../../metinler/siralama-metinleri";
-import { doldur } from "../../moduller/eposta/sablon";
 import type { BankaHesabi } from "../../moduller/odeme/yontemler";
 import { EylemDugmesi } from "../eylem-dugmesi";
 import { useKapatmaSorusu } from "../kapatma-sorusu";
@@ -100,7 +100,7 @@ export function BankaHesaplariSaglayici({
 }
 
 export function BankaHesaplariEylemleri() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { setPencere } = useHesaplar();
   return (
     <EylemDugmesi
@@ -113,7 +113,7 @@ export function BankaHesaplariEylemleri() {
 }
 
 export function BankaHesaplariIcerigi() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { hesaplar, degistirebilir, setPencere, setSilinecek, islem } = useHesaplar();
   // Sıralama hemen gösterilir, kayıt arkadan; kaydedilemezse sunucunun sırasına dönülür.
   const [yerel, setYerel] = useState<BankaHesabi[] | null>(null);
@@ -217,7 +217,7 @@ function HesapFormu({
   vazgec: () => void;
   degisince: (degisti: boolean) => void;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { islem } = useHesaplar();
   const ilk = { banka: hesap?.banka ?? "", sahip: hesap?.sahip ?? "", iban: hesap?.iban ?? "" };
   const [form, setForm] = useState(ilk);
@@ -309,7 +309,7 @@ function HesapFormu({
 }
 
 function Pencereler() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { pencere, setPencere, silinecek, setSilinecek, islem } = useHesaplar();
   const { kapat, kapatmayiIste, degisince, soru } = useKapatmaSorusu(() => setPencere(null));
   const duzenlenen = pencere?.tur === "duzenle" ? pencere.hesap : undefined;

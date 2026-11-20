@@ -1,9 +1,9 @@
 "use client";
 import { useState } from "react";
 import { SiralanabilirListe } from "../../../bilesenler/parcalar/siralanabilir-liste";
-import { useMetin } from "../../metinler/istemci-metni";
+import { doldur } from "../../metinler/doldur";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { siralamaMetinleri } from "../../metinler/siralama-metinleri";
-import { doldur } from "../../moduller/eposta/sablon";
 import { useOrnekMetni } from "./ortak";
 
 // Kodlar örneğin kimlikleridir, metin değildir.
@@ -16,7 +16,7 @@ const baslangic = [
 ];
 
 export function SiralanabilirListeOrnegi() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const m = useOrnekMetni();
   const [ogeler, setOgeler] = useState(baslangic);
   return (

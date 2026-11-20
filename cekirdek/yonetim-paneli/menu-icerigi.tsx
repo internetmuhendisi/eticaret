@@ -2,7 +2,7 @@
 // Yan menünün içi (kart 0141): mağazanın logosu ya da adı, ana menü ve alt kısım (giriş yapan yönetici, vitrine
 // git, çıkış, altyapı adı). Masaüstünde yan menüde, telefonda yan pencerede aynı içerik çizilir. Altyapı adı
 // panelde yalnız giriş sayfasında ve burada, alt köşede küçük görünür (karar 0004).
-import { useMetin } from "../metinler/istemci-metni";
+import { usePanelMetni } from "../metinler/panel-metni";
 import { vitrinAdresleri } from "../vitrin/adresler";
 import { CikisDugmesi } from "./cikis-dugmesi";
 import { EylemBaglantisi } from "./eylem-dugmesi";
@@ -41,7 +41,7 @@ export function MenuIcerigi({
   altyapiAdi: string;
   tiklayinca?: () => void;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   return (
     <div className="flex min-h-full flex-col gap-4">
       <div className="flex min-h-11 items-center px-3">

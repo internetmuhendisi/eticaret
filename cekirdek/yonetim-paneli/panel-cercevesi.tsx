@@ -12,7 +12,7 @@ import {
   YanPencereIcerigi,
   YanPencereTetikleyici,
 } from "../../bilesenler/parcalar/yan-pencere";
-import { useMetin } from "../metinler/istemci-metni";
+import { usePanelMetni } from "../metinler/panel-metni";
 import { type MagazaGorunumu, MagazaIsareti, MenuIcerigi } from "./menu-icerigi";
 import type { CizilenMenuGrubu } from "./panel-menusu";
 
@@ -29,7 +29,7 @@ export function PanelCercevesi({
   altyapiAdi: string;
   children: ReactNode;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const [acik, setAcik] = useState(false);
   const menu = { magaza, eposta, gruplar, altyapiAdi };
   return (

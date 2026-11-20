@@ -2,7 +2,7 @@
 // Bildirim alanı katalogun düzenindedir (app/gelistirme/bilesenler/layout.tsx); burada yalnız gösterilir.
 import { BildirimAlani, bildirimGoster } from "../../../bilesenler/parcalar/bildirim";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
-import { useMetin } from "../../metinler/istemci-metni";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { useOrnekMetni } from "./ortak";
 
 export function BildirimOrnegi() {
@@ -31,7 +31,7 @@ export function BildirimOrnegi() {
 }
 
 export function KatalogBildirimAlani() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   return (
     <BildirimAlani
       alanEtiketi={metin("ortak.parca.bildirimler")}

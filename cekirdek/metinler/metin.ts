@@ -1,6 +1,9 @@
-// Ekran metinlerini anahtarla okuyan tek yol (.claude/rules/metinler.md).
+// Ekran metinlerini anahtarla okuyan tek yol (.claude/rules/metinler.md). Sunucu ve panel bütün dosyayı okur;
+// vitrinin tarayıcı kodu yalnız vitrin metinlerini okur (istemci-metni.tsx, kart 0253).
 // Anahtarlar "modül.bölüm.anahtar" biçimindedir ve Türkçe dosyadan türetilir;
 // olmayan bir anahtar tür kontrolünde hata verir. Yeni dil, aynı anahtarlarla yeni bir dosyadır.
+import { type Dil, diller, varsayilanDil } from "./dil.ts";
+import { sozluktenOkuyucu } from "./okuyucu.ts";
 import tr from "./tr.json" with { type: "json" };
 
 type Sozluk = typeof tr;
@@ -11,32 +14,9 @@ type Anahtarlar<T, On extends string = ""> = {
 
 export type MetinAnahtari = Anahtarlar<Sozluk>;
 
-const sozlukler = { tr } satisfies Record<string, Sozluk>;
+// Dillerin sözlükleri (vitrin metinlerinin üretimi de bunu okur).
+export const sozlukler = { tr } satisfies Record<Dil, Sozluk>;
 
-export type Dil = keyof typeof sozlukler;
+export { type Dil, diller, varsayilanDil };
 
-// Metin dosyası olan diller. Sitenin dil ayarı yalnız bunlardan biri olabilir.
-export const diller = Object.keys(sozlukler) as [Dil, ...Dil[]];
-
-// Dil ayarının varsayılanı (ayar şeması onu kullanır). Burada durur: sitenin dili bilinmezken metin gösteren ekran
-// (kök hata ekranı) ayar şemasını, onunla da zod'u ve bütün şemaları tarayıcıya taşımasın (kart 0146, ölçüldü).
-export const varsayilanDil: Dil = "tr";
-
-export const metinOkuyucu = (dil: Dil) => {
-  const sozluk: unknown = sozlukler[dil];
-  return (anahtar: MetinAnahtari): string => {
-    const deger = anahtar
-      .split(".")
-      .reduce<unknown>(
-        (dal, parca) =>
-          typeof dal === "object" && dal !== null
-            ? (dal as Record<string, unknown>)[parca]
-            : undefined,
-        sozluk,
-      );
-    if (typeof deger !== "string") {
-      throw new Error(`Metin bulunamadı: ${dil}.${anahtar}`);
-    }
-    return deger;
-  };
-};
+export const metinOkuyucu = (dil: Dil) => sozluktenOkuyucu<MetinAnahtari>(sozlukler[dil], dil);

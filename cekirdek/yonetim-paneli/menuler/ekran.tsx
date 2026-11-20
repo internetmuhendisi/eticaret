@@ -65,10 +65,10 @@ import {
   menuHedefTurleri,
 } from "../../kayitlar/menu";
 import { adresAdiUret, adresAdiUzunlugu } from "../../metinler/adres-adi";
-import { useMetin } from "../../metinler/istemci-metni";
+import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import { siralamaMetinleri } from "../../metinler/siralama-metinleri";
-import { doldur } from "../../moduller/eposta/sablon";
 import { metinGerekirMi } from "../../moduller/menu/semalar";
 import type { Menu, MenuDali, PanelOgesi } from "../../moduller/menu/servis";
 import type { BulunanKayit } from "../../moduller/urun/kayit-arama";
@@ -168,7 +168,7 @@ export function MenulerSaglayici({
 
 // Komut çubuğunun eylemleri: öğe ekle (asıl, yalnız elle kurulan menüde) ve menü ekle.
 export function MenulerEylemleri() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { veri, setPencere } = useMenuler();
   const menu = seciliMenu(veri);
   return (
@@ -245,7 +245,7 @@ function OgeSatiri({
   // Öğenin bulunduğu liste: silinince odak komşusuna geçer, aynı adlı kardeşler ayrılır.
   kardesler: readonly PanelOgesi[];
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { veri, degistirebilir, setPencere, setOnay, islem, odaklanacak } = useMenuler();
   const kokler = seciliOgeler(veri);
   // Taşınabileceği yerler: en üst düzeydeki başka bir öğenin altı. Altı olan öğe başka bir öğenin altına konamaz
@@ -351,7 +351,7 @@ function OgeListesi({
   ust: string | null;
   etiket: string;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { veri, degistirebilir, islem } = useMenuler();
   // Sıralama listede hemen görünür; sunucunun verisi gelince (ya da kayıt olmazsa) ona dönülür.
   const [yerel, setYerel] = useState<PanelOgesi[] | null>(null);
@@ -413,7 +413,7 @@ function KategoriAgaci({ dallar }: { dallar: MenuDali[] }) {
 }
 
 function MenuListesi() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { veri, menuAdresi } = useMenuler();
   const secili = seciliMenu(veri);
   return (
@@ -445,7 +445,7 @@ function MenuListesi() {
 }
 
 export function MenulerIcerigi() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { veri, degistirebilir, setPencere, setOnay } = useMenuler();
   const menu = seciliMenu(veri);
   const menudenPencere = useMenudenPencere();
@@ -561,7 +561,7 @@ function GenelHata({
   anahtar: MetinAnahtari | null;
   uyariRef: RefObject<HTMLDivElement | null>;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   if (anahtar === null) return null;
   return (
     <div ref={uyariRef} tabIndex={-1}>
@@ -602,7 +602,7 @@ function OgeFormu({
   vazgec: () => void;
   degisince: (degisti: boolean) => void;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { veri, islem } = useMenuler();
   const menu = seciliMenu(veri);
   const hedef = oge?.hedef;
@@ -780,7 +780,7 @@ function OgeFormu({
 }
 
 function FormAlti({ vazgec, kaydet }: { vazgec: () => void; kaydet: string }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   return (
     <YanPencereAltCubugu>
       <Dugme tur="sade" onClick={vazgec}>
@@ -809,7 +809,7 @@ function MenuFormu({
   vazgec: () => void;
   degisince: (degisti: boolean) => void;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { islem, menuAdresi } = useMenuler();
   const router = useRouter();
   const [ad, setAd] = useState(menu?.ad ?? "");
@@ -912,7 +912,7 @@ function MenuFormu({
 }
 
 function Pencereler() {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const { veri, pencere, setPencere, onay, setOnay, islem, odaklanacak } = useMenuler();
   // Formda kaydedilmemiş değişiklik varken pencere kapatılmak istenirse önce sorulur.
   const { kapat, kapatmayiIste, degisince, soru } = useKapatmaSorusu(() => setPencere(null));

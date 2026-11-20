@@ -36,9 +36,9 @@ import {
   iadeSinirlari,
 } from "../../kayitlar/siparis";
 import { bicimleyiciOlustur } from "../../metinler/bicimleyici";
-import { useMetin } from "../../metinler/istemci-metni";
+import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
-import { doldur } from "../../moduller/eposta/sablon";
+import { usePanelMetni } from "../../metinler/panel-metni";
 import {
   type IadeHatasi,
   type IadeHesabi,
@@ -80,7 +80,7 @@ type IadeYaniti = { numara: string; durum: string; iade: "tamamlandi" | "bekliyo
 export function IadeIslemleri({ numara, veri }: { numara: string; veri: IadePenceresiVerisi }) {
   const [tur, setTur] = useState<IadeTuru | null>(null);
   const { kapat, kapatmayiIste, degisince, soru } = useKapatmaSorusu(() => setTur(null));
-  const metin = useMetin();
+  const metin = usePanelMetni();
   return (
     <>
       {veri.turler.map((secilen) => (
@@ -137,7 +137,7 @@ function IadeFormu({
   vazgec: () => void;
   bitti: () => void;
 }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const islem = usePanelIslemi(hataMetni);
   const b = useMemo(() => bicimleyiciOlustur(veri.bicim), [veri.bicim]);
   const iptal = tur === "iptal";
@@ -536,7 +536,7 @@ function IadeFormu({
 
 // Kuruluşun yanıtını bekleyen iadeyi yeniden dener (ayrıntıdaki uyarının düğmesi).
 export function IadeyiYenidenDene({ numara }: { numara: string }) {
-  const metin = useMetin();
+  const metin = usePanelMetni();
   const islem = usePanelIslemi(hataMetni);
   const [suruyor, setSuruyor] = useState(false);
   return (
