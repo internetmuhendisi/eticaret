@@ -44,4 +44,4 @@ Bölüm: Vitrin. Kart 0194'ün metin maddesidir; 0194'ün öteki maddeleri (Radi
 
 ## Durum
 
-yapılacak
+bitti
