@@ -26,7 +26,7 @@ export type EpostaGorunusu = {
     buyuk: YaziBoyu;
     baslik: YaziBoyu;
   };
-  kalinliklar: { kalin: string; enKalin: string };
+  kalinliklar: { kalin: string; enKalin: string; baslik: string };
   kose: string;
   dugmeKosesi: string;
 };
@@ -54,7 +54,11 @@ export const temadanGorunus = (d: TemaDegerleri): EpostaGorunusu => {
       buyuk: d.yaziBoylari.buyuk,
       baslik: d.yaziBoylari["baslik-2"],
     },
-    kalinliklar: { kalin: d.kalinliklar.kalin, enKalin: d.kalinliklar["en-kalin"] },
+    kalinliklar: {
+      kalin: d.kalinliklar.kalin,
+      enKalin: d.kalinliklar["en-kalin"],
+      baslik: d.kalinliklar["baslik-kalinligi"],
+    },
     kose: d.koseler.orta,
     dugmeKosesi: d.koseler.dugme,
   };

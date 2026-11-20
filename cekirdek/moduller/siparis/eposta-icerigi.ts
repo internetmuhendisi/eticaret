@@ -296,7 +296,7 @@ const siparisAlindi: IcerikUretici = (veri, b) => {
         ...(odeme.hesaplar ?? []).flatMap((hesap) => [
           { metin: hesap.banka, kalin: true },
           { metin: hesap.sahip, soluk: true },
-          { metin: ibanYazisi(hesap.iban), kod: true },
+          { metin: "", kod: ibanYazisi(hesap.iban) },
         ]),
       ],
       ...(b.kok === undefined
@@ -367,8 +367,8 @@ const kargoyaVerildi: IcerikUretici = (veri, b) => {
                 ? []
                 : [
                     {
-                      metin: b.satir("eposta.kargoyaVerildi.takipNo", { numara: k.takipNumarasi }),
-                      kod: true,
+                      metin: b.satir("eposta.kargoyaVerildi.takipNo"),
+                      kod: k.takipNumarasi,
                     },
                   ]),
             ],

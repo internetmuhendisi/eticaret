@@ -15,7 +15,8 @@ import { siparisEpostaIcerikleri } from "../siparis/eposta-icerigi.ts";
 import { type EpostaGorunusu, varsayilanEpostaGorunusu } from "./gorunus.ts";
 
 export type EpostaDugmesi = { metin: string; adres: string; birincil?: boolean };
-export type KutuSatiri = { metin: string; kalin?: boolean; soluk?: boolean; kod?: boolean };
+// kod: satırın sonundaki eş aralıklı parça (takip numarası, IBAN); metin onun önündeki yazıdır.
+export type KutuSatiri = { metin: string; kalin?: boolean; soluk?: boolean; kod?: string };
 export type OzetSatiri = { ad: string; deger: string; tur: "duz" | "toplam" | "vergi" };
 export type EpostaBlogu =
   | { tur: "paragraf"; metin: string; soluk?: boolean }
@@ -121,7 +122,7 @@ const stilKur = (g: EpostaGorunusu) => {
     kap: `max-width:${piksel(sabitDegerler.genislikler.eposta)};margin:0 auto;background:${r.zemin};border:${bosluk("px")} solid ${r.kenar};border-radius:${g.kose};`,
     ust: `padding:${bosluk("4")} ${bosluk("6")};border-bottom:${bosluk("px")} solid ${r.kenar};font-family:${g.baslikYaziTipi};font-size:${piksel(g.yaziBoylari.buyuk.boy)};font-weight:${g.kalinliklar.enKalin};`,
     ic: `padding:${bosluk("6")};`,
-    baslik: `margin:0 0 ${bosluk("4")};font-family:${g.baslikYaziTipi};font-size:${piksel(g.yaziBoylari.baslik.boy)};line-height:${g.yaziBoylari.baslik.satir};color:${r.yazi};`,
+    baslik: `margin:0 0 ${bosluk("4")};font-family:${g.baslikYaziTipi};font-weight:${g.kalinliklar.baslik};font-size:${piksel(g.yaziBoylari.baslik.boy)};line-height:${g.yaziBoylari.baslik.satir};color:${r.yazi};`,
     paragraf: `margin:0 0 ${bosluk("4")};`,
     soluk: `margin:0 0 ${bosluk("4")};color:${r["soluk-yazi"]};font-size:${piksel(g.yaziBoylari.kucuk.boy)};`,
     kutu: `margin:0 0 ${bosluk("4")};padding:${bosluk("4")};background:${r.yuzey};border-radius:${g.kose};`,
@@ -143,6 +144,9 @@ const stilKur = (g: EpostaGorunusu) => {
     dugmeKabi: `margin:0 0 ${bosluk("4")};`,
     altBilgi: `padding:${bosluk("4")} ${bosluk("6")};border-top:${bosluk("px")} solid ${r.kenar};background:${r.yuzey};color:${r["soluk-yazi"]};font-size:${piksel(g.yaziBoylari.kucuk.boy)};`,
     altSatir: `margin:0 0 ${bosluk("1")};`,
+    // Telefonda (tablet genişliğinin altında) dış boşluk ve çerçeve yok, iç boşluk dar (taslak, kart 0240). <style>'ı
+    // silen e-posta programında satır içi değerler kalır.
+    telefon: `@media (max-width:${piksel(sabitDegerler.kirilmaNoktalari.tablet)}){.e-govde{padding:0 !important}.e-kap{border:0 !important;border-radius:0 !important}.e-ic{padding-left:${bosluk("4")} !important;padding-right:${bosluk("4")} !important}}`,
   };
 };
 type Stiller = ReturnType<typeof stilKur>;
@@ -158,11 +162,9 @@ const blokHtml = (s: Stiller, b: EpostaBlogu): string => {
       return `<div style="${b.vurgu ? s.vurguKutu : s.kutu}">${b.satirlar
         .map((satir) => {
           const ic = htmlKacir(satir.metin);
-          const bicimli = satir.kod
-            ? `<span style="${s.kod}">${ic}</span>`
-            : satir.kalin
-              ? `<strong>${ic}</strong>`
-              : ic;
+          const bicimli = `${satir.kalin ? `<strong>${ic}</strong>` : ic}${
+            satir.kod === undefined ? "" : `<span style="${s.kod}">${htmlKacir(satir.kod)}</span>`
+          }`;
           return `<p style="${s.kutuSatiri}${satir.soluk ? s.alt : ""}">${bicimli}</p>`;
         })
         .join("")}${b.dugme === undefined ? "" : dugmeHtml(s, b.dugme)}</div>`;
@@ -203,7 +205,7 @@ const blokMetni = (b: EpostaBlogu): string[] => {
       return [b.metin];
     case "kutu":
       return [
-        b.satirlar.map((satir) => satir.metin).join("\n"),
+        b.satirlar.map((satir) => `${satir.metin}${satir.kod ?? ""}`).join("\n"),
         ...(b.dugme === undefined ? [] : [`${b.dugme.metin}: ${b.dugme.adres}`]),
       ];
     case "tablo":
@@ -279,15 +281,16 @@ export const epostaOlustur = (girdi: {
     : `<strong>${htmlKacir(magazaAdi)}</strong>`;
   const html = `<!doctype html>
 <html lang="${htmlKacir(dil)}">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><title>${htmlKacir(govde.konu)}</title></head>
-<body style="${s.govde}">
-<div style="${s.kap}">
-<div style="${s.ust}">${ust}</div>
-<div style="${s.ic}">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><title>${htmlKacir(govde.konu)}</title>
+<style>${s.telefon}</style></head>
+<body class="e-govde" style="${s.govde}">
+<div class="e-kap" style="${s.kap}">
+<div class="e-ic" style="${s.ust}">${ust}</div>
+<div class="e-ic" style="${s.ic}">
 <h1 style="${s.baslik}">${htmlKacir(govde.baslik)}</h1>
 ${govde.bloklar.map((blok) => blokHtml(s, blok)).join("\n")}
 </div>
-<div style="${s.altBilgi}">${altBilgi.map((satir) => `<p style="${s.altSatir}">${htmlKacir(satir)}</p>`).join("")}</div>
+<div class="e-ic" style="${s.altBilgi}">${altBilgi.map((satir) => `<p style="${s.altSatir}">${htmlKacir(satir)}</p>`).join("")}</div>
 </div>
 </body>
 </html>

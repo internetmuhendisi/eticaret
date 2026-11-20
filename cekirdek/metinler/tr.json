@@ -2304,7 +2304,7 @@
       "konu": "Siparişiniz kargoda: {numara}",
       "baslik": "Siparişiniz kargoya verildi",
       "govde": "Merhaba {ad}, {numara} numaralı siparişiniz yola çıktı.",
-      "takipNo": "Takip no: {numara}",
+      "takipNo": "Takip no: ",
       "takipEt": "Kargoyu takip et"
     },
     "teslimEdildi": {
