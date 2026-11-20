@@ -32,6 +32,8 @@ const sayfalar: {
   eposta: MetinAnahtari;
   gonder: MetinAnahtari;
   hata: MetinAnahtari;
+  // Gönder düğmesinin zemin ve yazı rengi: vitrin girişi koyu düğmedir (kart 0237, taslak), panel ana renktedir.
+  dugme: { zemin: RenkAdi; yazi: RenkAdi };
 }[] = [
   {
     ad: "vitrin",
@@ -39,6 +41,7 @@ const sayfalar: {
     eposta: "vitrin.giris.eposta",
     gonder: "vitrin.giris.gonder",
     hata: "vitrin.giris.hataBilgi",
+    dugme: { zemin: "yazi", yazi: "zemin" },
   },
   {
     ad: "panel",
@@ -46,6 +49,7 @@ const sayfalar: {
     eposta: "yonetim.giris.eposta",
     gonder: "yonetim.giris.gonder",
     hata: "yonetim.giris.hataBilgi",
+    dugme: { zemin: "birincil", yazi: "birincil-ustu" },
   },
 ];
 
@@ -94,8 +98,8 @@ for (const sayfa of sayfalar) {
         expect(await ozellik(etiket, "color")).toBe(renk("yazi"));
         expect(await ozellik(alan, "border-top-color")).toBe(renk("alan-kenari"));
         expect(await ozellik(alan, "background-color")).toBe(renk("zemin"));
-        expect(await ozellik(dugme, "background-color")).toBe(renk("birincil"));
-        expect(await ozellik(dugme, "color")).toBe(renk("birincil-ustu"));
+        expect(await ozellik(dugme, "background-color")).toBe(renk(sayfa.dugme.zemin));
+        expect(await ozellik(dugme, "color")).toBe(renk(sayfa.dugme.yazi));
 
         // Kontrast tarayıcının çizdiği renklerle ölçülür.
         const zemin = await ozellik(govde, "background-color");
