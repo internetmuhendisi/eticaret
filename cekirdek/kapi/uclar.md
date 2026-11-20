@@ -709,13 +709,13 @@ Elle sipariş ekranının özeti: vitrinin sepet ucuyla aynı hesap ve görünü
 Panelden sipariş kurar: vitrin siparişiyle aynı yoldan, oturum, stok ayırması ve sipariş tek işlemde (`odemeServisi.elleSiparisVer`). Tutar sunucunun hesabıdır; stok "yeterliyse düş" ile düşer, başka oturumların ayırmaları sayılır. Üye olmadan alışveriş ayarı bağlamaz. Havale ve kapıda ödemede sipariş "ödeme bekleniyor", "elden" ödemede "hazırlanıyor" açılır. Ön bilgilendirme formu ve mesafeli satış sözleşmesinin iletildiği yöneticinin beyanıdır, siparişin onaylarına beyan eden yöneticiyle yazılır; pazarlama izni verilmez. Geçmişe "panelden-olusturuldu" nedeniyle ve değişiklik kaydına (`siparis.panelden-olusturuldu`) siparişi giren yönetici yazılır.
 
 - İzin: `siparis.yonet`; "elden" yöntemi ayrıca `siparis.elden-tahsil` ister (görevlide yok), yoksa `yetki`. Sınır: `genel`.
-- Girdi: `{ "musteri": { "tur": "uye", "kimlik" } | { "tur": "misafir", "eposta" }, "kalemler", "bilgiler": { "odemeYontemi": { "yontem": "havale" } | { "yontem": "kapida-odeme", "secenek" } | { "yontem": "elden" }, "teslimat", "fatura", "not"?, "metinlerIletildi": true }, "gorulenToplam"? }` (`elleSiparisSemasi`).
+- Girdi: `{ "musteri": { "tur": "uye", "kimlik" } | { "tur": "misafir", "eposta" }, "kalemler", "bilgiler": { "odemeYontemi": { "yontem": "havale" } | { "yontem": "kapida-odeme", "secenek" } | { "yontem": "elden" }, "teslimat", "fatura", "not"?, "metinlerIletildi": true }, "gorulenToplam"?, "musteriyeEposta" }` (`elleSiparisSemasi`). `musteriyeEposta` müşteriye "Siparişiniz alındı" e-postasının gidip gitmeyeceğidir (kart 0240; panelde varsayılan işaretli); sonraki olayların e-postası her durumda gider.
 - Başarılı (200): `{ "numara" }`.
 - Hatalar: `is-kurali` (`sepet-degisti`, `sepet-bos`, `yontem-kapali`), `cakisma` (`stok-ayrildi`), `dogrulama` (alan `musteri.kimlik`: `musteri-yok`, seçilen üyenin hesabı silinmiş; şemanın alan hataları), `yetki`.
 
 ### POST /kapi/yonetici/siparis-notu
 
-Siparişe not ekler. İç not (`ic`) yalnız panelde, müşteriye not (`musteri`) müşterinin sipariş ayrıntısında görünür (e-postası kart 0240). Not değiştirilemez.
+Siparişe not ekler. İç not (`ic`) yalnız panelde, müşteriye not (`musteri`) müşterinin sipariş ayrıntısında görünür ve notla aynı işlemde müşteriye e-postayla gider (kart 0240; kişisel bilgisi silinmiş siparişte gitmez). Not değiştirilemez.
 
 - İzin: `siparis.yonet`. Sınır: `genel`.
 - Girdi: `{ "numara", "tur", "metin" }` (`siparisNotuSemasi`; en çok `siparisSinirlari.notEnCok` harf, düz metin).
