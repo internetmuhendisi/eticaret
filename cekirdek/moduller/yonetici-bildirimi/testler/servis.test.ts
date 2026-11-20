@@ -506,7 +506,9 @@ describe("tek işlem, tek bildirim, açıklık ve alıcılar", () => {
     ).toEqual(["depo@ornek.test", "muhasebe@ornek.test"]);
 
     // Uzun adres (ayar 254 harfe izin verir) tekrar anahtarını sınırın üstüne taşırmaz (bağımsız kontrolün bulgusu).
-    const uzun = `uzun@${"b".repeat(60)}.${"c".repeat(60)}.${"d".repeat(60)}.test`;
+    // 240 harf: olayın anahtarıyla birlikte 200 harfi aşar.
+    const uzun = `uzun@${["b", "c", "d", "e"].map((h) => h.repeat(56)).join(".")}.test`;
+    expect(uzun.length).toBeGreaterThan(200);
     await ayarlar.yoneticiBildirimleriniKaydet(h.vt, yonetici(), {
       alicilar: uzun,
       kapalilar: [],
