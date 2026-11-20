@@ -364,6 +364,8 @@ test("sipariş ayarları: yönetici bildirimleri klavyeyle kaydedilir", async ({
     await adresler.focus();
     await page.keyboard.press("ControlOrMeta+a");
     await page.keyboard.type("sahip@ornek.test, adres-degil");
+    // Düğmeden gönderilir: odak düğmededir, hatadan sonra alana dönmesi ölçülür.
+    await bolum.getByRole("button", { name: metin("yonetim.siparisAyarlari.kaydet") }).focus();
     await page.keyboard.press("Enter");
     const hata = bolum.getByText(metin("yonetim.siparisAyarlari.alicilar.hata.eposta"));
     await expect(hata).toBeVisible();
