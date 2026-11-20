@@ -27,4 +27,4 @@ Bölüm: Sipariş ve müşteri hesabı. Önce 0240 bitmiş olmalı.
 
 ## Durum
 
-yapılacak
+bitti
