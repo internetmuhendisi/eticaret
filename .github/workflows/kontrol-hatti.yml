@@ -28,7 +28,10 @@ jobs:
     # Kart 0146: ekran ve hız ölçümü eklenince 45 dakika yetmez. Ölçüldü: hattın tamamı 34 dakika (tarayıcı testleri
     # 21,6 dk), bir çalışma tarayıcı testlerinde 45 dakikaya takıldı; ekran ölçümü ve hız ölçümü (derleme dahil)
     # yaklaşık 15–20 dakika ekler.
-    timeout-minutes: 90
+    # Kart 0255, karar 0156: 90 dakika yetmedi. Ölçüldü: yeşil hatlar 52–82 dakika; 44762439752 iki denemede de
+    # testler geçerken 90'a takıldı (birim 22, tarayıcı 57,6 dk, hız ölçümü yarıda; tahmini tamamı ~95 dk).
+    # Ücret harcanan dakikadır, sınır değil; sınır yalnız takılan çalışmanın en çok ne kadar yakacağını belirler.
+    timeout-minutes: 150
     steps:
       - name: Kodu al
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

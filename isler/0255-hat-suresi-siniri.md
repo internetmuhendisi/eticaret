@@ -29,6 +29,13 @@ Kontrol hattı 90 dakikalık süre sınırına yaklaştı. 2026-11-20'deki çal�
 - `pnpm hat-sonucu` yeni düzende yeşil olmayan kaydı yine reddediyor (testi `komutlar/testler/hat-sonucu.test.ts`).
 - `.claude/rules/kurallari-koruyan-kontroller.md` tablosunun kontrol hattı satırı güncel.
 
+## Sonuç
+
+- Son 25 çalışmanın adım süreleri ölçüldü (karar 0156'daki tablo). Yeşil hatlar 52–82 dakika; süre birim (11–24) ve tarayıcı testlerinde (31–57,6) büyüyor; tarayıcı kurulumu 25 çalışmanın yalnız birinde uzun (13 dk), hız ölçümü 5–6, görüntü ve yerel ortam birer dakika. 44762439752 ikinci denemede 302 tarayıcı testi geçtikten sonra hız ölçümünde kesildi; tamamı ~95 dakika sürerdi.
+- Seçilen yol: işin sınırı 150 dakika. Pay bugünkü en uzun çalışmaya göre ~55 dakika (%58). Ücret harcanan dakikadır, olağan çalışmanın ücreti değişmez; takılan çalışma en çok 150 dakika yakar. Bölme dakika toplamını artırırdı ve ortak veritabanlı test düzenini bozabilirdi, önbellek ara sıra birkaç dakika kazandırırdı; ikisi seçilmedi (karar 0156).
+- Hat tek iş kaldığı için yayın kilidi değişmedi; `komutlar/testler/hat-sonucu.test.ts` ve hat korumasının testleri (`yayin.test.ts`) yeşil. Yayın komutunun hat koruması hat dosyasını ana daldakiyle karşılaştırır, değişiklik ana dala girince koruma onunla karşılaştırır.
+- Hattın bu değişiklikle yeşil bitmesi gönderimden sonra görülür.
+
 ## Durum
 
 yapılacak
