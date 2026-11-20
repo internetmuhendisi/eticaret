@@ -505,6 +505,15 @@ describe("tek işlem, tek bildirim, açıklık ve alıcılar", () => {
         .sort(),
     ).toEqual(["depo@ornek.test", "muhasebe@ornek.test"]);
 
+    // Uzun adres (ayar 254 harfe izin verir) tekrar anahtarını sınırın üstüne taşırmaz (bağımsız kontrolün bulgusu).
+    const uzun = `uzun@${"b".repeat(60)}.${"c".repeat(60)}.${"d".repeat(60)}.test`;
+    await ayarlar.yoneticiBildirimleriniKaydet(h.vt, yonetici(), {
+      alicilar: uzun,
+      kapalilar: [],
+    });
+    expect(await bildirimiGonder(h.vt, site, is("uzun"))).toBe(1);
+    expect((await epostalar(h.vt)).map((k) => k.alici)).toContain(uzun);
+
     await ayarlar.yoneticiBildirimleriniKaydet(h.vt, yonetici(), {
       alicilar: "depo@ornek.test",
       kapalilar: ["iptal"],
@@ -673,12 +682,10 @@ describe("stok uyarısı", () => {
     expect(await stokGonder(h.vt)).toBe(0);
     expect(await epostalar(h.vt, "yonetici-stok")).toHaveLength(1);
     expect(ertelemeler).toHaveLength(1);
-    expect(ertelemeler[0]?.gecikme).toBeGreaterThan(
-      yoneticiBildirimSinirlari.stokAraligiSaniye - 60,
-    );
-    expect(ertelemeler[0]?.gecikme).toBeLessThanOrEqual(
-      yoneticiBildirimSinirlari.stokAraligiSaniye,
-    );
+    // Kalan süre (bir saatin altında) ve saat farkı payı kadar ertelenir.
+    const { stokAraligiSaniye: aralik, stokErtelemePayiSaniye: pay } = yoneticiBildirimSinirlari;
+    expect(ertelemeler[0]?.gecikme).toBeGreaterThan(aralik - 60 + pay);
+    expect(ertelemeler[0]?.gecikme).toBeLessThanOrEqual(aralik + pay);
     // Bir saat geçince gider.
     await h.vt.execute(
       sql`update stok_uyarilari set gonderim_zamani = gonderim_zamani - make_interval(secs => ${yoneticiBildirimSinirlari.stokAraligiSaniye + 1}) where gonderim_zamani is not null`,

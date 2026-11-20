@@ -1,7 +1,8 @@
 // Yönetici bildiriminin gönderimi (kart 0241, karar 0154): iş çalışırken bildirimin açıklığı ve alıcılar ayardan
 // okunur. Kapalı bildirim yazılmaz. Alıcılar ayardaki adresler, boşsa tam yetkili rolün yöneticileri. Her alıcıya bir
-// e-posta, aynı olayın anahtarıyla (anahtar:alıcı): iş yeniden çalışsa da ikinci e-posta yazılmaz.
+// e-posta, aynı olayın anahtarıyla (anahtar:alıcının özeti): iş yeniden çalışsa da ikinci e-posta yazılmaz.
 
+import { createHash } from "node:crypto";
 import type { MagazaAyarlari } from "../../ayar-semasi/ayarlar.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { eklentiAcikMi } from "../../eklentiler/acik.ts";
@@ -34,6 +35,9 @@ export const bildirimAlicilari = async (
     ? ayarlar.yoneticiBildirimAlicilari
     : tamYetkiliYoneticiEpostalari(vt);
 
+export const aliciOzeti = (alici: string): string =>
+  createHash("sha256").update(alici.toLowerCase()).digest("hex").slice(0, 32);
+
 // Bildirimin e-postalarını çağıranın işleminde yazar: her alıcıya bir e-posta, olayın anahtarıyla (anahtar:alıcı).
 export const bildirimEpostalariniYaz = async (
   islem: VeritabaniIslemi,
@@ -49,7 +53,8 @@ export const bildirimEpostalariniYaz = async (
       kime: alici,
       sablon: yoneticiBildirimTanimlari[g.bildirim].sablon,
       veri: g.veri,
-      olayAnahtari: `${g.anahtar}:${alici.toLowerCase()}`,
+      // Adresin özeti: uzun adres anahtarı sınırın üstüne taşırmaz (bağımsız kontrolün bulgusu).
+      olayAnahtari: `${g.anahtar}:${aliciOzeti(alici)}`,
     });
   }
 };

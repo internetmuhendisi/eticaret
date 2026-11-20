@@ -1253,6 +1253,14 @@ describe("kartla ödenen siparişin iptali ve iadesi", () => {
     const [kayit] = await iadeler(siparis.kimlik);
     const ilk = await parcalar(kayit?.kimlik ?? "");
     expect(ilk.filter((parca) => parca.durum === "red").map((parca) => parca.kalem)).toEqual([b]);
+    // Kuruluş hemen kısmen reddetti: tarama beklenmeden yöneticiye bildirilir (kart 0241, bağımsız kontrolün bulgusu).
+    expect(await yoneticiBildirimleri(`kartla-iade-kismi-red:${kayit?.kimlik}`)).toEqual([
+      {
+        bildirim: "bekleyen-iade",
+        anahtar: `kartla-iade-kismi-red:${kayit?.kimlik}`,
+        veri: { numara: siparis.numara, neden: "kismi-red" },
+      },
+    ]);
     expect(await durumu(siparis.kimlik)).toBe("hazirlaniyor");
     const donen = kurulustaki.iadeler.length;
     expect((await iade.yenidenDene(vt, yonetici, siparis.numara)).iade).toBe("tamamlandi");

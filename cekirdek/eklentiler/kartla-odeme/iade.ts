@@ -214,7 +214,13 @@ export const kartlaIadeEt = async (
     .select({ durum: kartIadeleri.durum })
     .from(kartIadeleri)
     .where(eq(kartIadeleri.iade_kimligi, istek.iade));
-  return sonucuBul(parcalar);
+  const sonuc = sonucuBul(parcalar);
+  // Kuruluş bir kısmını hemen reddettiyse iade bekler; tarama onu görmez (belirsiz parçası yok): yöneticiye burada
+  // bildirilir (kart 0241, bağımsız kontrolün bulgusu). Anahtar iade başına aynı: ikinci bildirim gitmez.
+  if (sonuc === "belirsiz" && parcalar.some((parca) => parca.durum === "red")) {
+    await bekleyenIadeyiBildir(vt, istek.iade, "kismi-red");
+  }
+  return sonuc;
 };
 
 // Belirsiz parçaları kuruluşun günlük raporundan sorar (zamanlı tarama). Raporda başarılı iade satırı (conversationId =

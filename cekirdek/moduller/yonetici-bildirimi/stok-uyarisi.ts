@@ -90,7 +90,11 @@ export const stokUyarilariniGonder = async (
       .from(stokUyarilari)
       .where(isNotNull(stokUyarilari.gonderim_zamani));
     if (son?.kalan !== null && son?.kalan !== undefined && son.kalan > 0) {
-      await ertele(islem, son.kalan, `yonetici-stok-uyarisi:${son.an}`);
+      await ertele(
+        islem,
+        son.kalan + yoneticiBildirimSinirlari.stokErtelemePayiSaniye,
+        `yonetici-stok-uyarisi:${son.an}`,
+      );
       return 0;
     }
     // Birimin adı, seçimi ve stok kodu; aynı birimin uyarılarından en sonuncusu (tükendi düşükten sonra gelir).

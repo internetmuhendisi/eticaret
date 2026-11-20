@@ -39,6 +39,9 @@ export const yoneticiBildirimSinirlari = {
   aliciEnCok: 5,
   // Stok uyarılarının iki e-postası arasındaki en kısa süre (saniye, kullanıcı kararı: saatte en çok bir).
   stokAraligiSaniye: 60 * 60,
+  // Ertelenen stok işinin payı (saniye): işin zamanı uygulamanın, kalan süre veritabanının saatiyle hesaplanır; iki saat
+  // arasındaki küçük fark ertelenen işi kalan süre bitmeden çalıştırmasın (bağımsız kontrolün bulgusu).
+  stokErtelemePayiSaniye: 60,
   // İşlenmiş stok uyarısı bu kadar gün sonra silinir.
   stokUyarisiSaklamaGun: 30,
 } as const;
