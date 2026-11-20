@@ -7,9 +7,7 @@ import {
 } from "../../../bilesenler/tasarim-degerleri/degerler.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
-import { temaBirlesimi } from "../../temalar/birlesim.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
-import { temaServisi } from "../tema/servis.ts";
 
 type YaziBoyu = { boy: string; satir: string };
 
@@ -66,6 +64,12 @@ export const varsayilanEpostaGorunusu = temadanGorunus(varsayilanTemaDegerleri);
 
 export const epostaGorunusu = async (vt: Veritabani, site: Site): Promise<EpostaGorunusu> => {
   try {
+    // Tema servisi ve birleşim işlevin içinde yüklenir: dosyanın başında yüklenince arka plan sürecinde döngüsel
+    // yükleme oluyordu (sipariş → e-posta → tema → düzen → ...; açılış testi yakaladı, kart 0240).
+    const [{ temaServisi }, { temaBirlesimi }] = await Promise.all([
+      import("../tema/servis.ts"),
+      import("../../temalar/birlesim.ts"),
+    ]);
     const { tema, ayarlar } = await temaServisi(() => site).gecerliTema(vt);
     return temadanGorunus(temaBirlesimi(tema.tanim, ayarlar));
   } catch (hata) {
