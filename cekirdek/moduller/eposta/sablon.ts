@@ -39,6 +39,8 @@ export type EpostaGovdesi = {
   bloklar: EpostaBlogu[];
   // Alt bilginin satırları; verilmezse ortak alt bilgi.
   altBilgi?: string[];
+  // Üst şeridin sağındaki etiket (yönetici bildirimi, kart 0241): şerit alt kısmın renk çiftiyle koyu çizilir.
+  ustEtiketi?: string;
 };
 
 // Sipariş e-postalarının gönderimdeki bağlamı: biçim sitenin ayarlarından, adresler sitenin kök adresinden.
@@ -128,6 +130,8 @@ const stilKur = (g: EpostaGorunusu) => {
     govde: `margin:0;padding:${bosluk("6")} ${bosluk("2")};background:${r.yuzey};color:${r.yazi};font-family:${g.yaziTipi};font-size:${piksel(g.yaziBoylari.govde.boy)};line-height:${g.yaziBoylari.govde.satir};`,
     kap: `max-width:${piksel(sabitDegerler.genislikler.eposta)};margin:0 auto;background:${r.zemin};border:${bosluk("px")} solid ${r.kenar};border-radius:${g.kose};`,
     ust: `padding:${bosluk("4")} ${bosluk("6")};border-bottom:${bosluk("px")} solid ${r.kenar};font-family:${g.baslikYaziTipi};font-size:${piksel(g.yaziBoylari.buyuk.boy)};font-weight:${g.kalinliklar.enKalin};`,
+    koyuUst: `padding:${bosluk("4")} ${bosluk("6")};background:${r["alt-kisim"]};color:${r["alt-kisim-ustu"]};font-family:${g.baslikYaziTipi};font-size:${piksel(g.yaziBoylari.buyuk.boy)};font-weight:${g.kalinliklar.enKalin};`,
+    ustEtiket: `float:right;font-family:${g.yaziTipi};font-size:${piksel(g.yaziBoylari.kucuk.boy)};font-weight:${g.kalinliklar.normal};line-height:${g.yaziBoylari.buyuk.satir};`,
     ic: `padding:${bosluk("6")};`,
     baslik: `margin:0 0 ${bosluk("4")};font-family:${g.baslikYaziTipi};font-weight:${g.kalinliklar.baslik};font-size:${piksel(g.yaziBoylari.baslik.boy)};line-height:${g.yaziBoylari.baslik.satir};color:${r.yazi};`,
     paragraf: `margin:0 0 ${bosluk("4")};`,
@@ -293,7 +297,11 @@ export const epostaOlustur = (girdi: {
 <style>${s.telefon}</style></head>
 <body class="e-govde" style="${s.govde}">
 <div class="e-kap" style="${s.kap}">
-<div class="e-ic" style="${s.ust}">${ust}</div>
+<div class="e-ic" style="${govde.ustEtiketi === undefined ? s.ust : s.koyuUst}">${
+    govde.ustEtiketi === undefined
+      ? ""
+      : `<span style="${s.ustEtiket}">${htmlKacir(govde.ustEtiketi)}</span>`
+  }${ust}</div>
 <div class="e-ic" style="${s.ic}">
 <h1 style="${s.baslik}">${htmlKacir(govde.baslik)}</h1>
 ${govde.bloklar.map((blok) => blokHtml(s, blok)).join("\n")}

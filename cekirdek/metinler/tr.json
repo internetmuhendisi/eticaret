@@ -2390,7 +2390,7 @@
     },
     "yonetici": {
       "kisaAd": "{ad} {harf}.",
-      "altBilgi": "Yönetici bildirimi. Bu bildirimleri panelde Sipariş ayarları > Yönetici bildirimleri bölümünden kapatabilirsiniz.",
+      "altBilgi": "Bu bildirimleri panelde Sipariş ayarları > Yönetici bildirimleri bölümünden kapatabilirsiniz.",
       "musteri": "Müşteri",
       "uye": "{ad} (üye)",
       "uyeDegil": "{ad} (üye değil)",
@@ -2452,7 +2452,8 @@
         "baslik": "İade kuruluşta bekliyor",
         "rapordaYok": "{numara} numaralı siparişin kartla iadesi ödeme kuruluşunun raporunda bulunamadı. Paranın dönüp dönmediğini kuruluşun panelinden kontrol edin.",
         "kismiRed": "{numara} numaralı siparişin kartla iadesinin bir kısmı döndü, bir kısmı reddedildi. İadeyi siparişten yeniden deneyin."
-      }
+      },
+      "ustEtiketi": "Yönetici bildirimi"
     }
   },
   "gelistirme": {

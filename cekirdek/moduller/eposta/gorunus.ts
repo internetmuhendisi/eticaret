@@ -14,7 +14,15 @@ type YaziBoyu = { boy: string; satir: string };
 export type EpostaGorunusu = {
   renkler: Pick<
     TemaDegerleri["renkler"]["acik"],
-    "zemin" | "yuzey" | "yazi" | "soluk-yazi" | "kenar" | "birincil" | "birincil-ustu"
+    | "zemin"
+    | "yuzey"
+    | "yazi"
+    | "soluk-yazi"
+    | "kenar"
+    | "birincil"
+    | "birincil-ustu"
+    | "alt-kisim"
+    | "alt-kisim-ustu"
   >;
   yaziTipi: string;
   baslikYaziTipi: string;
@@ -26,7 +34,7 @@ export type EpostaGorunusu = {
     buyuk: YaziBoyu;
     baslik: YaziBoyu;
   };
-  kalinliklar: { kalin: string; enKalin: string; baslik: string };
+  kalinliklar: { normal: string; kalin: string; enKalin: string; baslik: string };
   kose: string;
   dugmeKosesi: string;
 };
@@ -42,6 +50,8 @@ export const temadanGorunus = (d: TemaDegerleri): EpostaGorunusu => {
       kenar: r.kenar,
       birincil: r.birincil,
       "birincil-ustu": r["birincil-ustu"],
+      "alt-kisim": r["alt-kisim"],
+      "alt-kisim-ustu": r["alt-kisim-ustu"],
     },
     yaziTipi: d.yaziTipleri.govde,
     baslikYaziTipi: d.yaziTipleri.baslik,
@@ -55,6 +65,7 @@ export const temadanGorunus = (d: TemaDegerleri): EpostaGorunusu => {
       baslik: d.yaziBoylari["baslik-2"],
     },
     kalinliklar: {
+      normal: d.kalinliklar.normal,
       kalin: d.kalinliklar.kalin,
       enKalin: d.kalinliklar["en-kalin"],
       baslik: d.kalinliklar["baslik-kalinligi"],

@@ -394,6 +394,8 @@ describe("sipariş olayları", () => {
     const [kayit] = await epostalar(h.vt, "yonetici-yorum");
     const ileti = await gonder(h.vt, kayit?.kimlik ?? "");
     expect(ileti.konu).toBe("Onay bekleyen yorum: Porselen Kupa");
+    // Yönetici e-postası üst şeridinde etiketiyle ayrılır (taslak).
+    expect(ileti.html).toContain(">Yönetici bildirimi</span>");
     expect(ileti.metin).toContain("5 üzerinden 4 puan · Ayşe K.");
     expect(ileti.html).toContain("Kahve için &lt;b&gt;ideal&lt;/b&gt; boyut.");
     expect(ileti.html).not.toContain("<b>ideal</b>");

@@ -53,6 +53,7 @@ const govde = (
   baslik,
   bloklar,
   altBilgi: [b.satir("eposta.yonetici.altBilgi")],
+  ustEtiketi: b.satir("eposta.yonetici.ustEtiketi"),
 });
 
 const satir = (ad: string, deger: string) => ({ ad, altlar: [], deger });
