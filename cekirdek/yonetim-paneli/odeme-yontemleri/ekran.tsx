@@ -28,7 +28,7 @@ import { siralamaMetinleri } from "../../metinler/siralama-metinleri";
 import type { YontemAyari } from "../../moduller/odeme/yontemler";
 import { panelAdresi } from "../adresler";
 import { AlanKabi, KaydetCubugu, PanelAlani, PanelFormu, usePanelFormu } from "../form/panel-formu";
-import { kodluAlanHatalari } from "../kodlu-form";
+import { type KodMetinleri, kodluAlanHatalari } from "../kodlu-form";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
 import { useSunucuFormu } from "../sunucu-formu";
@@ -61,15 +61,20 @@ const genelHataMetni = (hata: PanelHatasi): MetinAnahtari =>
       ? "yonetim.odemeYontemleri.hata.listeDegisti"
       : "yonetim.odemeYontemleri.hata.genel";
 
-// Alanın koduna göre metin; alanı formda olmayan kod formun başındaki özette yazılır.
-const alanHatalari: Record<
-  string,
-  { alan: "yontemler" | "secenekler" | "sure"; metin: MetinAnahtari }
-> = {
+// Servisin koduna göre metin; alanı formda olmayan kod formun başındaki özette yazılır.
+const alanHatalari: Record<string, { alan: "yontemler" | "sure"; metin: MetinAnahtari }> = {
   "en-az-bir-yontem": { alan: "yontemler", metin: "yonetim.odemeYontemleri.hata.enAzBir" },
-  "secenek-gerekli": { alan: "secenekler", metin: "yonetim.odemeYontemleri.hata.secenekGerekli" },
   "gun-gecersiz": { alan: "sure", metin: "yonetim.odemeYontemleri.hata.gunGecersiz" },
 };
+
+// Uç şemasının hataları (kart 0284): kapı yalnız zod'un kodunu döndürür, şemanın kendi iletisi ("secenek-gerekli")
+// gelmez. Boş seçenek listesi too_small'dur; şemanın alanı formun alanına çevrilir.
+const semaAlanlari: Readonly<Record<string, "sure" | "secenekler">> = {
+  havaleIptalSuresi: "sure",
+  kapidaOdemeSecenekleri: "secenekler",
+};
+const semaAlani = (alan: string): string => semaAlanlari[alan.split(".")[0] ?? ""] ?? alan;
+const secenekMetinleri: KodMetinleri = { too_small: "yonetim.odemeYontemleri.hata.secenekGerekli" };
 
 export function OdemeYontemleriEkrani({
   veri,
@@ -165,10 +170,11 @@ export function OdemeYontemleriEkrani({
       const hata = alanHatalari[kod];
       if (hata !== undefined) yeni[hata.alan] = metin(hata.metin);
     }
-    // Uç şemasının kendi kodu (boş süre, kart 0284) ortak eşlemeden; servisin kodu önce yazıldıysa o kalır.
-    const semaHatalari = kodluAlanHatalari({}, sonuc, ["sure"], (alan) =>
-      alan === "havaleIptalSuresi" ? "sure" : alan,
-    );
+    // Uç şemasının kodu ortak eşlemeden (boş süre "zorunlu", boş seçenek listesi kendi metniyle).
+    const semaHatalari = {
+      ...kodluAlanHatalari({}, sonuc, ["sure"], semaAlani),
+      ...kodluAlanHatalari(secenekMetinleri, sonuc, ["secenekler"], semaAlani),
+    };
     for (const [alan, anahtar] of Object.entries(semaHatalari)) yeni[alan] ??= metin(anahtar);
     pf.hatalariGoster(yeni, Object.keys(yeni).length > 0 ? [] : [metin(genelHataMetni(sonuc))]);
     return false;

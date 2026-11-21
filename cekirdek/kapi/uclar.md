@@ -570,7 +570,7 @@ Yöntemleri, sıralarını, kapıda ödemenin seçeneklerini ve havalenin iptal 
 - İzin: `odeme-yontemi.degistir` (yalnız mağaza sahibi, kullanıcı kararı). Sınır: `genel`.
 - Girdi: `{ "yontemler": [{ "kod", "acik" }], "kapidaOdemeSecenekleri", "havaleIptalSuresi" }` (`odemeYontemleriSemasi`, `cekirdek/moduller/odeme/yontem-semalari.ts`). Liste kayıttaki her yöntemi bir kez taşır; süre gün olarak yazılıdır.
 - Başarılı (200): GET ile aynı veri.
-- Hatalar: `dogrulama` (`yontem-listesi`, `secenek-gerekli`, `secenek-tekrari`; alanın koduyla `en-az-bir-yontem`: müşterinin kullanabileceği yöntem kalmıyor, banka hesabı olmayan havale sayılmaz; `gun-gecersiz`; hiçbir ayar değişmez), `yetki`.
+- Hatalar: `dogrulama` (şemadan zod'un koduyla: boş seçenek listesi `kapidaOdemeSecenekleri` alanında `too_small`, tekrarlı seçenek ve yöntem listesi `custom`, boş süre `too_small`; kapı şemanın kendi iletisini taşımaz, kart 0285; alanın koduyla `en-az-bir-yontem`: müşterinin kullanabileceği yöntem kalmıyor, banka hesabı olmayan havale sayılmaz; `gun-gecersiz`; hiçbir ayar değişmez), `yetki`.
 
 Ekran sıralamayı bu uçla değil, aşağıdaki sıralama ucuyla hemen kaydeder (kart 0224, karar 0144); bu uç sırayı yine kabul eder.
 

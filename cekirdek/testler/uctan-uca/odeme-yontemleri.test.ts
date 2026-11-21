@@ -178,6 +178,29 @@ test("ödeme yöntemleri: tarama, en az bir yöntem, iptal süresinin kaydı", a
   await expect(sure).toHaveAttribute("aria-invalid", "true");
   await expect(page.getByText(metin("yonetim.odemeYontemleri.hata.genel"))).toHaveCount(0);
   expect((await servis().oku(vt)).havaleIptalSuresi).toBe(ilk.havaleIptalSuresi);
+  // Kapıda ödemenin bütün seçenekleri kaldırılınca (bağımsız kontrolün bulgusu): seçeneklerin altında kendi metni,
+  // genel hata yok, hiçbir şey kaydedilmez; Vazgeç formu geri alır.
+  await sure.fill(String(ilk.havaleIptalSuresi));
+  const secenekAdlari = {
+    nakit: "ortak.odemeYontemi.nakit",
+    kart: "ortak.odemeYontemi.kart",
+  } as const;
+  for (const secenek of ilk.kapidaOdemeSecenekleri) {
+    const kutu = page.getByRole("checkbox", { name: metin(secenekAdlari[secenek]) });
+    await kutu.focus();
+    await page.keyboard.press("Space");
+    await expect(kutu).toHaveAttribute("aria-checked", "false");
+  }
+  await kaydet.focus();
+  await page.keyboard.press("Enter");
+  await expect(
+    page
+      .locator("[data-alan='secenekler']")
+      .getByText(metin("yonetim.odemeYontemleri.hata.secenekGerekli")),
+  ).toBeVisible();
+  await expect(page.getByText(metin("yonetim.odemeYontemleri.hata.genel"))).toHaveCount(0);
+  expect((await servis().oku(vt)).kapidaOdemeSecenekleri).toEqual(ilk.kapidaOdemeSecenekleri);
+  await page.getByRole("button", { name: metin("ortak.islem.vazgec") }).click();
 
   // İptal süresi: kaydedilir, sonra eski hâline döner.
   const yeni = String(ilk.havaleIptalSuresi === 30 ? 29 : ilk.havaleIptalSuresi + 1);

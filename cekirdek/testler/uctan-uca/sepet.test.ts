@@ -332,7 +332,7 @@ test("panelin Kargo ekranı: klavyeyle hata ve kayıt; sepette kargo ücreti ve 
   await sinir.fill("");
   await ucret.fill("");
   await ucret.press("Enter");
-  await expect(page.getByText(zorunlu)).toBeVisible();
+  await expect(page.locator("[data-alan='kargoUcreti']").getByText(zorunlu)).toBeVisible();
   await expect(ucret).toBeFocused();
   await expect(ucret).toHaveAttribute("aria-invalid", "true");
   await expect(page.getByText(genel)).toHaveCount(0);
