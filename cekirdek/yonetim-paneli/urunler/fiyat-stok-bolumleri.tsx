@@ -105,8 +105,15 @@ export function FiyatBolumu({
 }) {
   const metin = usePanelMetni();
   const alan = (ad: keyof FiyatFormu, deger: string) => degistir({ ...fiyat, [ad]: deger });
+  // Kayıtlı satış fiyatı boşaltılamaz (sunucu "zorunlu" der): alan zorunlu görünür.
+  const fiyatKayitli = (veri.birimler[""]?.satisFiyati ?? "") !== "";
   const tutar = (ad: "satisFiyati" | "indirimliFiyat", etiket: MetinAnahtari, aciklama: string) => (
-    <PanelAlani ad={`fiyat.${ad}`} etiket={metin(etiket)} aciklama={aciklama} zorunlu={false}>
+    <PanelAlani
+      ad={`fiyat.${ad}`}
+      etiket={metin(etiket)}
+      aciklama={aciklama}
+      zorunlu={ad === "satisFiyati" && fiyatKayitli}
+    >
       {(baglanti) => (
         <TutarGirisi
           {...baglanti}
