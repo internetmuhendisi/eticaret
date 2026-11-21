@@ -32,6 +32,8 @@ Panelde şemanın kendi kodlarını alana eşleyen ortak yol vardır (`cekirdek/
 - Tarama: kartta sayılan yedi formun hiçbirinde hata yok. Banka hesabı, kargo firması, kargoya verme penceresi, iade penceresi ve sipariş notu boş alanı göndermeden önce ekranda yakalıyor. İptal ve iade ayarları hatayı alanın yolundan alana bağlıyor, kodundan değil. Yönetici bildirimleri ayarlarının alanı isteğe bağlı. Bunlar kod okunarak bulundu, tarayıcıda ayrıca ölçülmedi.
 - Taramada bulunan: ödeme yöntemleri ekranındaki havale iptal süresi aynı hatayı taşıyordu. Uç şeması `min(1)` ister, ekran yalnız servisin kodlarını tanıyordu. Boş süre genel hatayı veriyordu: tarayıcı testinin yeni adımı eski kodda kırmızıydı. Aynı işte düzeltildi.
 - Bozma: kargo ekranının eski eşlemesi geri konunca kargo testi boş alan adımında kırmızıya düştü.
+- Bağımsız kontrolün bulgusu: kapıda ödemenin bütün seçenekleri kaldırılınca da genel metin çıkıyordu. Şemanın `min(1, "secenek-gerekli")` iletisi kapıdan gelmiyor, yalnız `too_small` geliyor. Tarayıcı testinin yeni adımı eski kodda kırmızıydı; düzeltmeyle seçeneklerin altında kendi metni görünüyor, dosyanın beş testi yeşil. Uç belgesi dönen gerçek kodlarla düzeltildi. Kargo testindeki arama alanın kabına daraltıldı.
+- Kapsam dışı bırakılanlar kart 0285'te: kapının şemanın kendi kodunu taşımaması, üç kopya eşleme işlevi, uzunluk sınırı olmayan iki pencere.
 
 ## Durum
 
