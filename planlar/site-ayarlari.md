@@ -152,6 +152,14 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Vitrinde koyu tema | Mağaza sahibi | Kapalı | Açık | Mağazanın tasarımına göre açılır. Tema ayarlarının parçasıdır, başlangıç değeri `baslangic/tema.json` (kart 0105) |
 | Düzen (üst kısım, ana sayfa, alt kısım bölümleri) | Mağaza sahibi | `baslangic/duzen.json`, yoksa başlangıç temasının düzeni | Temanın düzeni (bugün boş; kart 0114) | Sıra, görünürlük, görünüm ve alan değerleri; sürüm sürüm saklanır. Kayda başvuran alanlar başlangıçta boş kalır (kart 0106, karar 0081) |
 
+## Panel ve içerik
+
+| Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
+|---|---|---|---|---|
+| Panel listelerinde sayfa başına satır | Mağaza sahibi | 25 | — | Seçenekler: 25, 50, 100. Ürün, sipariş, müşteri ve yazı listeleri (kart 0258, karar 0157) |
+| Sipariş fişinde fiyatlar | Mağaza sahibi | Göster | — | Kapalıyken fişte yalnız ürün, stok kodu ve adet yazar (ör. hediye siparişi) (kart 0270, karar 0157) |
+| Blog | Mağaza sahibi | Kapalı | Açık | Kapalıyken yazılar vitrinde görünmez, `/blog` bulunamadı verir, ana sayfanın blog bölümü çizilmez (kart 0272, karar 0157) |
+
 ## Eklentiler
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |

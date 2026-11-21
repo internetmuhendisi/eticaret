@@ -44,6 +44,13 @@ Bölüm: Yönetim paneli. Bu bölümün ilk işi.
 - Listelenen her ekran ve hâl taslakta iki genişlikte ve iki temada var.
 - Kullanıcı taslağı onayladı, verdiği ürün kararları bir karar kaydına yazıldı, önerilen site ayarları `planlar/site-ayarlari.md` tablosuna girdi.
 
+## Sonuç
+
+- Taslak `planlar/tasarim-yonu/panel.html`: 18 ekran, her birinin hâlleri (liste, seçim ve toplu işlem, süzgeç, sonuç yok, boş, yükleniyor; form hataları, kaydedilmemiş değişiklik, çıkarken soru, yan pencere; pencereler) açık ve koyu temada, telefon (390 px) ve bilgisayar (1280 px) genişliğinde. Ortak stiller ve yardımcılar `siparis-ve-hesap.html`'den alındı, o dosya değişmedi.
+- 232 görünüm bir betikle açıldı: sayfa hatası, yana kayma, axe taraması (WCAG 2.2 AA) ve 24 px'ten küçük basılan alan yok. Düğme, ikon düğmesi ve menü bağlantısı gerçek panelle aynı 44 px (`dugme.tsx`, `panel-menusu.tsx`); tablo içi ad bağlantıları 32 px. Seçim kutularının basılan alanı ilk turda 20 px'ti, 44 px yapıldı; sekme bağlantılarındaki `aria-selected` `aria-current` oldu.
+- Taslak dosyası da kod denetiminden geçer: betikte ham renk yazılmaz (renkler CSS sınıflarında), CSS özgüllüğe göre sıralıdır.
+- Kullanıcı bütün önerileri kabul etti (karar 0157); üç site ayarı `planlar/site-ayarlari.md` "Panel ve içerik" tablosunda.
+
 ## Durum
 
 yapılacak
