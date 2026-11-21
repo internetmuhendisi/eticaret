@@ -33,3 +33,4 @@ paths:
 - Toplu işlemin ucu servisin toplu işlevini çağırır: her satır tekil işlemle aynı yoldan, kendi işleminde geçer, sonuç `TopluSonuc`'tur (`cekirdek/kayitlar/liste.ts`). En çok bir sayfa gönderilir. Ekran izni olmayan işlemi göstermez (sayfa `yetkili` ile süzer), uç yine denetler.
 - Sayfa başına satır `panelSayfaBoyu` mağaza ayarıdır.
 - Küçük tablolar `Tablo` parçalarıyla çizilir; sayfada `<table>` yazmak denetimde hatadır (`elle-tablo.grit`).
+- Süzgecin seçenekleri sitenin kayıtlarıysa (kategori, marka) `tur: "kayit"` yazılır (kart 0262, karar 0161): tanım seçenek taşımaz, sayfa seçenekleri `kayitSecenekleri` ile verir; adreste ve uçta kimlikle durur, kimlik olmayan değer yok sayılır.

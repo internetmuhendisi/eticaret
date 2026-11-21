@@ -96,3 +96,9 @@ paths:
 - Birden çok kategori ya da özellik satırını güncelleyen yazma (sıralama, silme) önce ürün kilidini alır (`urun/kilit.ts`). Görseli görme izni olmayana görsel alanı ve listesi gösterilmez. Silme onayı etkilenen ürün sayısını sunucunun sayımından söyler.
 - Satırın küçük görseli `KatalogGorseli` ile, önizlemesi `panel-gorseli` ucundandır; o uç `dosya.gor` ister (sitedeki görselleri görmek, görevlide de vardır).
 
+## Ürünler listesi (karar 0161)
+
+- Ekran `cekirdek/yonetim-paneli/urunler/` klasöründe, menüde "Ürünler" grubunun başındadır; servisi `cekirdek/moduller/urun/panel-listesi.ts`. Görmek `urun.gor`; yayınla, taslağa al, arşive al `urun.degistir`, sil `urun.sil` ister (`urunTopluIslemleri`, `cekirdek/kayitlar/urun.ts`).
+- Satırın fiyatı yalnız `fiyatAraliklari`, stok durumu yalnız `urunPanelStokDurumu` ile bulunur; stok süzgeci `urunPanelStokKosulu` ile, iki kural aynı sonucu verir (test). Ad sıralaması sitenin dilinin harf sırasıyladır, dil koda yazılmaz.
+- "Ürün ekle" ve ürün ekranına geçiş kart 0263'le gelir.
+
