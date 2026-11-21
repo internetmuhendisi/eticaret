@@ -106,7 +106,10 @@ const bildirim = (page: Page, anahtar: Parameters<typeof metin>[0]) =>
     .getByText(metin(anahtar), { exact: true });
 
 const ekleDugmesi = (page: Page, ne: Parameters<typeof metin>[0]) =>
-  page.getByRole("button", { name: doldur(metin("yonetim.eylem.ekle"), { ne: metin(ne) }) });
+  page.getByRole("button", {
+    name: doldur(metin("yonetim.eylem.ekle"), { ne: metin(ne) }),
+    exact: true,
+  });
 
 const sayfayaGit = async (page: Page, adres: string) => {
   await page.goto(adres);
@@ -159,6 +162,15 @@ test("kategori: menüden gelinir, eklenir, alt kategori eklenir, sıralanır, ta
     name: doldur(metin("yonetim.kategori.altListeEtiketi"), { ad: ust }),
   });
   await expect(altListe.getByText(ikinci, { exact: true })).toBeVisible();
+  // Satırın "Alt kategori ekle" düğmesi formu üstü seçili açar.
+  await page
+    .getByRole("button", { name: doldur(metin("yonetim.kategori.altKategoriEkle"), { ad: ust }) })
+    .click();
+  await expect(
+    form.getByRole("combobox", { name: metin("yonetim.kategori.form.ust") }),
+  ).toContainText(ust);
+  await page.keyboard.press("Escape");
+  await expect(form).toHaveCount(0);
   const altlari = async () =>
     (await kategorileriOku(vt)).filter((k) => k.ust === ustKimligi).map((k) => k.ad);
   expect(await altlari()).toEqual([birinci, ikinci]);

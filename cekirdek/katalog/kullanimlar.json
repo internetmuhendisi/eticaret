@@ -92,6 +92,7 @@
     "cekirdek/yonetim-paneli/eylem-dugmesi.tsx",
     "cekirdek/yonetim-paneli/katalog-gorseli.tsx",
     "cekirdek/yonetim-paneli/liste/liste.tsx",
+    "cekirdek/yonetim-paneli/markalar/ekran.tsx",
     "cekirdek/yonetim-paneli/ozellikler/ekran.tsx",
     "cekirdek/yonetim-paneli/panel-menusu.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayrinti.tsx",

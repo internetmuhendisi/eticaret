@@ -86,3 +86,12 @@ paths:
 - Gönderim `isle` ile yapılır: sürerken ikinci gönderim yok sayılır, `KaydetCubugu` kapalıdır. Sayfadaki ayar formunda çubuk durum yazısıyla ve değişiklik yokken kapalı düğmelerle çizilir (`durumYazisi`, `degisiklikGerekli`).
 - Kaydedilmemiş değişiklikle çıkarken çerçevedeki `CikisKorumasi` sorar (`cikis-korumasi.tsx`): form `usePanelFormu`'na `degisti` ve varsa `kaydet` verir ("Kaydet ve çık"). Ekran `beforeunload` dinleyicisini kendisi yazmaz. Pencere kapatılırken soru `useKapatmaSorusu`'ndadır.
 - Zorunlu alan `zorunlu` ile işaretlenir: etiketin yanında yıldız, alan `aria-required`; `zorunlu={false}` "(isteğe bağlı)" yazar.
+
+## Kategoriler, markalar ve etiketler, özellikler (karar 0160)
+
+- Ekranlar `cekirdek/yonetim-paneli/kategoriler/`, `markalar/` ve `ozellikler/` klasörlerinde, menüde "Ürünler" altındadır. Görmek `kategori.gor`, `marka.gor` (etiket listesi ayrıca `etiket.gor`), `ozellik.gor`; değiştirmek `*.degistir`, silmek `*.sil` ister (görevli silemez).
+- Kategoriyi başka bir kategorinin altına almak satırın "Diğer işlemler" menüsünden ya da formdaki "Üst kategori"den yapılır (menüler ekranının yolu); kendisi ve alt ağacı sunulmaz. Sıralama kardeşlerin tamamını tek uçla gönderir; eski sıra `cakisma` alır.
+- Kodlu hata döndüren modülün formu `useKodluForm` ile yazılır (`cekirdek/yonetim-paneli/kodlu-form.ts`): alan hatası alanın altında, alanı olmayan hata özette modülün metniyle. Açılır menüden pencere açmak `useMenudenPencere` iledir (`menuden-pencere.ts`).
+- Özelliğin formu tek kayıtla gider (`ozellik-kaydet`); değeri olan özelliğin türü seçilemez, değeri olan seçenek çıkarılınca kayıttan önce sorulur. Silme onayı etkilenen ürün sayısını sunucunun sayımından söyler.
+- Satırın küçük görseli `KatalogGorseli` ile, önizlemesi `panel-gorseli` ucundandır; o uç `dosya.gor` ister (sitedeki görselleri görmek, görevlide de vardır).
+

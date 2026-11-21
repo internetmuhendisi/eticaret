@@ -10,6 +10,8 @@ Kart 0219'un yerel hat denemesinde (2026-11-17, aynı koşul) aynı dosyada baş
 
 Dosya tek başına üç kez geçti. Düşüş süre aşımı değil, yanlış sonuçtur; bu yüzden kart 0133'ün (yük altında süre sınırı) kapsamında değildir. Sebep ölçülmedi. Eski fiyatın gösterilmesi fiyat geçmişinin zamanına bağlıdır (kart 0081): uygulama ile veritabanı saati ya da aynı anda yazılan satırlar ilk şüphelilerdir, ama bu bir tahmindir.
 
+Kart 0261 sırasında (2026-11-21) "oran aşağı yuvarlanır" testi dosya tek başına çalışınca da düştü (satır 472, aynı belirti), ana dalda (c6aebdb) da: düşüş artık yalnız yük altında değil. Sebep ölçülmedi.
+
 Bölüm: Testler.
 
 ## Olmazsa olmazlar

@@ -8,7 +8,8 @@
 // Her değişiklik hemen yayınlanır; sonuç bildirimle verilir, verisi sunucudan yeniden okunur (usePanelIslemi).
 import { useEffect, useRef, useState } from "react";
 import { FormAlani } from "../../../bilesenler/form/form-alani";
-import { IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
+import { Ikon } from "../../../bilesenler/ikonlar/ikon";
+import { Dugme, IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { Kart, KartBasligi, KartUstu } from "../../../bilesenler/parcalar/kart";
 import { OnayPenceresi } from "../../../bilesenler/parcalar/onay-penceresi";
@@ -28,7 +29,7 @@ import type { GorselSecenegi } from "../../moduller/duzen/secenekler";
 import { etiketHataMetinleri } from "../../moduller/etiket/semalar";
 import { markaHataMetinleri } from "../../moduller/marka/semalar";
 import { kayitAdresleri } from "../../vitrin/adresler";
-import { EylemDugmesi } from "../eylem-dugmesi";
+import { panelEylemleri } from "../eylemler";
 import { AlanKabi, KaydetCubugu, PanelAlani, PanelFormu } from "../form/panel-formu";
 import { GorselSecimi } from "../gorsel-secimi";
 import { useKapatmaSorusu } from "../kapatma-sorusu";
@@ -119,12 +120,15 @@ function GrupBolumu({
             {metin(`yonetim.${tur}.liste`)}
           </KartBasligi>
           {izin.degistir ? (
-            <EylemDugmesi
+            // Kartın kendi eylemi: komut çubuğunun eylemiyle aynı ikon ve ad, kartta çerçeveli (taslak).
+            <Dugme
+              tur="cerceveli"
               {...{ [`data-${tur}-ekle`]: "" }}
-              eylem="ekle"
-              ne={metin(`yonetim.${tur}.tek`)}
               onClick={() => setPencere({ tur: "ekle" })}
-            />
+            >
+              <Ikon ad={panelEylemleri.ekle.ikon} />
+              {doldur(metin(panelEylemleri.ekle.ad), { ne: metin(`yonetim.${tur}.tek`) })}
+            </Dugme>
           ) : null}
         </KartUstu>
         {satirlar.length > aramaSiniri ? (
@@ -355,14 +359,18 @@ function GrupFormu({
       <PanelAlani
         ad="adresAdi"
         etiket={metin("yonetim.kategori.form.adresAdi")}
-        aciklama={doldur(
-          metin(
-            grup === undefined
-              ? "yonetim.kategori.form.adresAdiAciklamasiYeni"
-              : "yonetim.kategori.form.adresAdiAciklamasi",
-          ),
-          { adres: kayitAdresleri[tur](ornekAdresAdi) },
-        )}
+        aciklama={
+          ornekAdresAdi === ""
+            ? metin("yonetim.kategori.form.adresAdiAciklamasiBos")
+            : doldur(
+                metin(
+                  grup === undefined
+                    ? "yonetim.kategori.form.adresAdiAciklamasiYeni"
+                    : "yonetim.kategori.form.adresAdiAciklamasi",
+                ),
+                { adres: kayitAdresleri[tur](ornekAdresAdi) },
+              )
+        }
         zorunlu={false}
       >
         {(alan) => (

@@ -559,8 +559,10 @@
         "aciklama": "Açıklama",
         "aciklamaAciklamasi": "Kategori sayfasının başında ve arama motorlarında görünür.",
         "gorsel": "Görsel",
-        "gorselAciklamasi": "Ana sayfadaki kategori kutularında görünür."
-      }
+        "gorselAciklamasi": "Ana sayfadaki kategori kutularında görünür.",
+        "adresAdiAciklamasiBos": "Vitrindeki adresi. Boş bırakırsanız addan üretilir."
+      },
+      "altKategoriEkle": "Alt kategori ekle: {ad}"
     },
     "menu": {
       "hata": {

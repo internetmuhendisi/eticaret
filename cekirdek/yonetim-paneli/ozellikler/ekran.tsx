@@ -23,7 +23,7 @@ import {
   YanPencereIcerigi,
   YanPencereUstu,
 } from "../../../bilesenler/parcalar/yan-pencere";
-import { type OzellikTuru, ozellikSinirlari, ozellikTurleri } from "../../kayitlar/ozellik";
+import { type OzellikTuru, ozellikSinirlari } from "../../kayitlar/ozellik";
 import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
@@ -53,6 +53,13 @@ type Baglam = {
 const ekleIsareti = "data-ozellik-ekle";
 const hataMetni = kodluHataMetni(ozellikHataMetinleri);
 const turAdi = (tur: OzellikTuru): MetinAnahtari => `yonetim.ozellik.tur.${tur}`;
+// Formdaki tür sırası (taslak): en çok kullanılan liste önce. Kayıttaki her tür bir kez geçer.
+const turSirasi = [
+  "liste",
+  "sayi",
+  "evet-hayir",
+  "metin",
+] as const satisfies readonly OzellikTuru[];
 
 const OzelliklerBaglami = createContext<Baglam | null>(null);
 const useOzellikler = (): Baglam => {
@@ -438,7 +445,7 @@ function OzellikFormu({
         <SecenekGrubu
           baslik={metin("yonetim.ozellik.form.tur")}
           etiket={metin("yonetim.ozellik.form.tur")}
-          ogeler={ozellikTurleri.map((deger) => ({
+          ogeler={turSirasi.map((deger) => ({
             deger,
             ad: metin(turAdi(deger)),
             ...(turDegisemez && deger !== ozellik?.tur ? { secilemez: true } : {}),

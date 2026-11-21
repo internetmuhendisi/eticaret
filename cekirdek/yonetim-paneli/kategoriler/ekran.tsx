@@ -57,7 +57,8 @@ import { usePanelIslemi } from "../panel-islemi";
 import { kategoriUclari } from "./uclar";
 import type { KategoriDali, KategorilerEkraniVerisi } from "./veri";
 
-type Pencere = { tur: "ekle" } | { tur: "duzenle"; kategori: KategoriDali } | null;
+// Ekleme penceresi üstü seçili açılabilir (satırın "Alt kategori ekle" düğmesi).
+type Pencere = { tur: "ekle"; ust?: string } | { tur: "duzenle"; kategori: KategoriDali } | null;
 
 type Baglam = {
   veri: KategorilerEkraniVerisi;
@@ -187,13 +188,21 @@ function KategoriSatiri({
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-2">
       <div className="flex min-w-0 items-center justify-between gap-3">
-        <KatalogGorseli gorsel={kategori.gorsel} />
+        {/* Telefonda satırda sıralama düğmeleri ve üç eylem durur: görsel tabletten başlar (yana kaymasın). */}
+        <KatalogGorseli gorsel={kategori.gorsel} className="hidden tablet:flex" />
         <div className="flex min-w-0 flex-1 flex-col gap-0.5 break-words">
           <span className="font-kalin">{kategori.ad}</span>
           <span className="text-kucuk text-soluk-yazi">{altBilgi}</span>
         </div>
         {degistirebilir || silebilir ? (
           <div className="flex shrink-0 items-center">
+            {degistirebilir ? (
+              <IkonDugmesi
+                ikon="ekle"
+                etiket={doldur(metin("yonetim.kategori.altKategoriEkle"), { ad: kategori.ad })}
+                onClick={() => setPencere({ tur: "ekle", ust: kategori.kimlik })}
+              />
+            ) : null}
             {degistirebilir ? (
               <IkonDugmesi
                 ikon="duzenle"
@@ -351,12 +360,15 @@ const formAlanlari = ["ad", "ust", "adresAdi", "aciklama", "gorsel"] as const;
 
 function KategoriFormu({
   kategori,
+  yeniUst,
   kapat,
   vazgec,
   degisince,
 }: {
   // Düzenlenen kategori; yoksa yeni kategori.
   kategori?: KategoriDali;
+  // Yeni kategorinin seçili gelen üstü.
+  yeniUst?: string;
   kapat: () => void;
   vazgec: () => void;
   degisince: (degisti: boolean) => void;
@@ -364,7 +376,9 @@ function KategoriFormu({
   const metin = usePanelMetni();
   const { veri, islem, odaklanacak } = useKategoriler();
   const [ad, setAd] = useState(kategori?.ad ?? "");
-  const [ust, setUst] = useState<string | null>(kategori?.ust ?? null);
+  const [ust, setUst] = useState<string | null>(
+    kategori === undefined ? (yeniUst ?? null) : kategori.ust,
+  );
   const [adresAdi, setAdresAdi] = useState(kategori?.adresAdi ?? "");
   const [aciklama, setAciklama] = useState(kategori?.aciklama ?? "");
   const [gorsel, setGorsel] = useState<string | undefined>(kategori?.gorsel);
@@ -461,14 +475,18 @@ function KategoriFormu({
       <PanelAlani
         ad="adresAdi"
         etiket={metin("yonetim.kategori.form.adresAdi")}
-        aciklama={doldur(
-          metin(
-            kategori === undefined
-              ? "yonetim.kategori.form.adresAdiAciklamasiYeni"
-              : "yonetim.kategori.form.adresAdiAciklamasi",
-          ),
-          { adres: kayitAdresleri.kategori(ornekAdresAdi) },
-        )}
+        aciklama={
+          ornekAdresAdi === ""
+            ? metin("yonetim.kategori.form.adresAdiAciklamasiBos")
+            : doldur(
+                metin(
+                  kategori === undefined
+                    ? "yonetim.kategori.form.adresAdiAciklamasiYeni"
+                    : "yonetim.kategori.form.adresAdiAciklamasi",
+                ),
+                { adres: kayitAdresleri.kategori(ornekAdresAdi) },
+              )
+        }
         zorunlu={false}
       >
         {(alan) => (
@@ -562,8 +580,13 @@ function Pencereler() {
             </YanPencereUstu>
             {soru}
             <KategoriFormu
-              key={duzenlenen?.kimlik ?? "yeni"}
+              key={
+                duzenlenen?.kimlik ?? `yeni-${pencere.tur === "ekle" ? (pencere.ust ?? "") : ""}`
+              }
               {...(duzenlenen === undefined ? {} : { kategori: duzenlenen })}
+              {...(pencere.tur === "ekle" && pencere.ust !== undefined
+                ? { yeniUst: pencere.ust }
+                : {})}
               kapat={kapat}
               vazgec={kapatmayiIste}
               degisince={degisince}
