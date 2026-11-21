@@ -423,4 +423,29 @@ describe("seçenekler bölümü (kart 0264)", () => {
     });
     expect(await servis.urunuOku(vt, kimlik)).toEqual(once);
   });
+
+  it("son seçenek kaldırılırken aynı kayıtta yazılan stok kodu yeni basit birime yazılır (bağımsız kontrolün bulgusu)", async () => {
+    const sahip = await cerez("magaza-sahibi");
+    const kimlik = await ekle(sahip, { ad: `Basite dönen ${benzersiz()}`, vergiSinifi: null });
+    await veri(
+      await urunDegisikligiUcu(
+        istek("urun-degistir", sahip, { kimlik, urun: {}, varyant: ikiDeger() }),
+      ),
+    );
+    const stokKodu = `BASIT-${benzersiz()}`;
+    await veri(
+      await urunDegisikligiUcu(
+        istek("urun-degistir", sahip, {
+          kimlik,
+          urun: { stokKodu, agirlik: bicim.sayi(1.5, 1) },
+          varyant: { secenekler: [], birlesimler: [] },
+        }),
+      ),
+    );
+    const okunan = await servis.urunuOku(vt, kimlik);
+    expect(okunan?.tur).toBe("basit");
+    expect((await canli(kimlik)).map((b) => [b.stokKodu, b.agirlikGram])).toEqual([
+      [stokKodu, 1500],
+    ]);
+  });
 });

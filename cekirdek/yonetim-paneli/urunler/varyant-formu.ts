@@ -98,8 +98,19 @@ export const birlesimSatirlari = (
   });
 };
 
-// Sunucuya giden girdi (ağırlık metin; sunucu panelVaryantiniCevir ile okur).
-export const varyantGirdisi = (satirlar: readonly BirlesimSatiri[], form: VaryantFormu) => ({
+// Sunucuya giden girdi (ağırlık metin; sunucu panelVaryantiniCevir ile okur). gorulen: ekranın bildiği kayıtlı seçenek
+// ve değerler; sunucuda bunlardan başkası varsa (başka ekrandan eklenmiş) hiçbir şey yazılmaz.
+export const varyantGirdisi = (
+  satirlar: readonly BirlesimSatiri[],
+  form: VaryantFormu,
+  bilinen: VaryantFormu,
+) => ({
+  gorulen: {
+    secenekler: bilinen.secenekler.flatMap((s) => (s.kimlik === undefined ? [] : [s.kimlik])),
+    degerler: bilinen.secenekler.flatMap((s) =>
+      s.degerler.flatMap((d) => (d.kimlik === undefined ? [] : [d.kimlik])),
+    ),
+  },
   secenekler: form.secenekler.map((secenek) => ({
     ...(secenek.kimlik === undefined ? {} : { kimlik: secenek.kimlik }),
     ad: secenek.ad,

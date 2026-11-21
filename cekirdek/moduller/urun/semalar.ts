@@ -418,6 +418,15 @@ export const varyantKaydi = z.strictObject({
       }),
     )
     .max(varyantSinirlari.birlesim, hata("birlesim-siniri")),
+  // Ekranın gördüğü kayıtlı seçenek ve değer kimlikleri (bağımsız kontrolün bulgusu): ürünün bunlardan başka bir
+  // seçeneği ya da değeri varsa (bu arada başka bir ekrandan eklenmiş) hiçbir şey yazılmaz, "varyant-degisti" döner.
+  // Verilmezse denetlenmez (başlangıç kataloğu gibi panel dışı çağrılar).
+  gorulen: z
+    .strictObject({
+      secenekler: z.array(kimlikSemasi).max(varyantSinirlari.secenek * 2),
+      degerler: z.array(kimlikSemasi).max(varyantSinirlari.secenek * varyantSinirlari.deger * 2),
+    })
+    .optional(),
 });
 export type VaryantKaydi = z.input<typeof varyantKaydi>;
 export type VaryantKaydiCikti = z.output<typeof varyantKaydi>;

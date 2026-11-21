@@ -604,6 +604,7 @@ function BirlesimGorseli({
               { ad, gorsel: gorsel?.ad ?? "" },
             )}
             aria-invalid={metni === undefined ? undefined : true}
+            aria-describedby={metni === undefined ? undefined : `${alan}-hata`}
           >
             {gorsel === undefined ? (
               <Ikon ad="gorsel" />
@@ -671,7 +672,9 @@ function BirlesimGorseli({
         </PencereIcerigi>
       </Pencere>
       {metni === undefined ? null : (
-        <span className="mt-1 block text-kucuk font-kalin text-tehlike-yazi">{metni}</span>
+        <span id={`${alan}-hata`} className="mt-1 block text-kucuk font-kalin text-tehlike-yazi">
+          {metni}
+        </span>
       )}
     </AlanKabi>
   );

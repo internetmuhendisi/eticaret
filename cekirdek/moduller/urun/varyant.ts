@@ -931,6 +931,19 @@ export const varyantIslemleri = (yaz: Yaz) => {
       const mevcut = (await secenekleriOku(islem, [urun], { silinmisler: false })).get(urun) ?? [];
       const degisti = (alan: string) =>
         new BilinenHata("cakisma", [{ alan, kod: "varyant-degisti" }]);
+      // Ekranın görmediği kayıtlı seçenek ya da değer: girdide olmaması "çıkarıldı" sayılmaz, ekran eskidir.
+      if (girdi.gorulen !== undefined) {
+        const gorulenler = new Set(
+          [...girdi.gorulen.secenekler, ...girdi.gorulen.degerler].map(kimligiDuzelt),
+        );
+        if (
+          mevcut.some(
+            (s) => !gorulenler.has(s.kimlik) || s.degerler.some((d) => !gorulenler.has(d.kimlik)),
+          )
+        ) {
+          throw degisti("secenekler");
+        }
+      }
       // Girdideki kimlikler ürünün silinmemiş seçeneklerinde ve değerlerinde, birer kez.
       const gorulenSecenek = new Set<string>();
       const gorulenDeger = new Set<string>();

@@ -131,9 +131,10 @@ const alanGirdisi = (form: UrunFormu, veri: UrunEkraniVerisi) => {
           : null,
     ilgiliUrunler: form.ilgiliUrunler.map((kayit) => kayit.kimlik),
     ozellikler,
-    // Seçenekli üründe birimin alanları her birleşimdedir (kart 0264); basit ürün seçenek alınca da gönderilmez
-    // (basit birimin alanları ilk birleşime geçer, tabloda görünür).
-    ...(veri.tur === "basit" && form.varyant.secenekler.length === 0
+    // Seçenekli üründe birimin alanları her birleşimdedir (kart 0264): formda seçenek varsa gönderilmez (basit birimin
+    // alanları ilk birleşime geçer, tabloda görünür). Son seçeneği kaldırılan ürünün alanları gider: uç seçenekleri önce
+    // yazar, ürün basit olur.
+    ...(form.varyant.secenekler.length === 0
       ? {
           stokKodu: istege(form.stokKodu),
           barkod: istege(form.barkod),
@@ -147,7 +148,9 @@ const alanGirdisi = (form: UrunFormu, veri: UrunEkraniVerisi) => {
   };
 };
 
-// Basit ürünün birim alanları: seçenek eklenince ilk birleşime dönen birimin tablodaki başlangıcı (karar 0163).
+// Basit ürünün birim alanları: seçenek eklenince ilk birleşime dönen birimin tablodaki başlangıcı (karar 0163). Formdaki
+// hâli: seçenek eklemeden önce satış bölümüne yazılan değer kaybolmaz (bağımsız kontrolün bulgusu); ilk satır kayıtlı
+// sayıldığı için alanlarıyla gider.
 export const basitBirimAlanlari = (form: UrunFormu, veri: UrunEkraniVerisi) =>
   veri.tur === "basit"
     ? { stokKodu: form.stokKodu, barkod: form.barkod, agirlik: form.agirlik, gorsel: null }
@@ -168,7 +171,9 @@ export const girdiyiKur = (
     veri.kimlik === undefined
       ? form.varyant.secenekler.length > 0
       : JSON.stringify(form.varyant) !== JSON.stringify(bilinen.varyant);
-  const varyant = varyantDegisti ? varyantGirdisi(satirlar, form.varyant) : undefined;
+  const varyant = varyantDegisti
+    ? varyantGirdisi(satirlar, form.varyant, bilinen.varyant)
+    : undefined;
   if (veri.kimlik === undefined) return { ...yeniHali, varyant };
   const eskiHali = alanGirdisi(bilinen, veri).girdi;
   return {
@@ -203,11 +208,7 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
   const ozellikDegistir = (kimlik: string, deger: string) =>
     setForm((onceki) => ({ ...onceki, ozellikler: { ...onceki.ozellikler, [kimlik]: deger } }));
 
-  const satirlar = birlesimSatirlari(
-    form.varyant,
-    bilinen.varyant,
-    basitBirimAlanlari(bilinen, veri),
-  );
+  const satirlar = birlesimSatirlari(form.varyant, bilinen.varyant, basitBirimAlanlari(form, veri));
 
   const kaydet = async (): Promise<boolean> => {
     if (acilan.current) return false;

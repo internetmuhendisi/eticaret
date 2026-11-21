@@ -144,7 +144,12 @@ describe("sunucunun girdisi", () => {
         [birlesimAnahtari(["l", "gri"])]: alan("L-GRI"),
       },
     };
-    const girdi = varyantGirdisi(birlesimSatirlari(form, kayitli, undefined), form);
+    const girdi = varyantGirdisi(birlesimSatirlari(form, kayitli, undefined), form, kayitli);
+    // Ekranın bildiği kayıtlı kimlikler: sunucu bunlardan başkasını görürse yazmaz.
+    expect(girdi.gorulen).toEqual({
+      secenekler: ["beden", "renk"],
+      degerler: ["s", "m", "gri", "lcv"],
+    });
     expect(girdi.secenekler[0]).toEqual({
       kimlik: "beden",
       ad: "Beden",

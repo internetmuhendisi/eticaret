@@ -19,6 +19,7 @@ import { stokDurumlari } from "../../stok/durum.ts";
 import { stokServisi } from "../../stok/servis.ts";
 import { urunBirimiDegerleri, urunBirimleri, urunSecenekDegerleri } from "../model.ts";
 import { urunServisi } from "../servis.ts";
+import { donusenBirimiSil } from "./donusen-birim.ts";
 
 const servis = urunServisi(() => "Europe/Istanbul");
 const fiyat = fiyatServisi(() => ({ saatDilimi: "Europe/Istanbul", paraBirimi: "XTS" }));
@@ -54,13 +55,6 @@ const kayitlar = (vt: Veritabani, kimlik: string) =>
     .where(eq(degisiklikKayitlari.kayit_kimligi, kimlik))
     .orderBy(degisiklikKayitlari.zaman);
 
-// Seçenek eklenince basit ürünün birimi ilk değerlerin birleşimi olur (karar 0163). Birleşimleri kendisi kuran
-// testler birleşimsiz üründen başlar: o birim silinir.
-const donusenBirimiSil = async (vt: Veritabani, urun: string) => {
-  const birimler = (await servis.urunuOku(vt, urun))?.birimler.filter((b) => !b.silindi) ?? [];
-  for (const birim of birimler) await servis.birlesimSil(vt, yonetici(), birim.kimlik);
-};
-
 // Beden (S, M) ve Renk (Beyaz, Siyah) seçenekli, birleşimsiz ürün; değerlerin kimlikleri adlarıyla.
 const varyantliUrun = async (vt: Veritabani, ad = "Tişört") => {
   const urun = await servis.urunEkle(vt, yonetici(), { ad, vergiSinifi: null });
@@ -72,7 +66,7 @@ const varyantliUrun = async (vt: Veritabani, ad = "Tişört") => {
     ad: "Renk",
     degerler: ["Beyaz", "Siyah"],
   });
-  await donusenBirimiSil(vt, urun);
+  await donusenBirimiSil(servis, vt, urun);
   const okunan = await servis.urunuOku(vt, urun);
   const deger = Object.fromEntries(
     (okunan?.secenekler ?? []).flatMap((secenek) =>
@@ -724,7 +718,7 @@ describe("sınırlar", () => {
       ad: "B",
       degerler: Array.from({ length: 10 }, (_, i) => `b${i}`),
     });
-    await donusenBirimiSil(vt, urun);
+    await donusenBirimiSil(servis, vt, urun);
     const [a, b] = (await servis.urunuOku(vt, urun))?.secenekler ?? [];
     const ciftler = (a?.degerler ?? []).flatMap((x) =>
       (b?.degerler ?? []).map((y) => [x.kimlik, y.kimlik]),

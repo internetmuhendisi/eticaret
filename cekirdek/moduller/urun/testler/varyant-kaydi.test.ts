@@ -291,6 +291,53 @@ describe("silmek", () => {
   });
 });
 
+describe("eski ekran (bağımsız kontrolün bulgusu)", () => {
+  it("ekranın görmediği seçenek ya da değer varsa hiçbir şey yazılmaz, çıkarılmış sayılmaz", async () => {
+    const vt = await siteAc();
+    const { urun } = await basitUrun(vt);
+    await servis.varyantlariKaydet(vt, kim, urun, ikiSecenek, silebilir);
+    // İki ekran aynı hâli görür: gördükleri kimlikler.
+    const gorulenHal = await durum(vt, urun);
+    const gorulen = {
+      secenekler: gorulenHal.secenekler.map((s) => s.kimlik),
+      degerler: gorulenHal.secenekler.flatMap((s) => s.degerler.map((d) => d.kimlik)),
+    };
+    // Birinci ekran L ekler.
+    const birinci = kimlikli(gorulenHal);
+    birinci[0]?.degerler.push({ ad: "L" });
+    await servis.varyantlariKaydet(
+      vt,
+      kim,
+      urun,
+      { secenekler: birinci, birlesimler: [], gorulen },
+      silebilir,
+    );
+    const sonra = await durum(vt, urun);
+    const kayitlar = await kayitSayisi(vt);
+    // İkinci ekran L'yi görmeden bir stok kodunu değiştirir: L ve birleşimleri silinmez, ekran eskidir.
+    const ikinci = await hatasi(
+      servis.varyantlariKaydet(
+        vt,
+        kim,
+        urun,
+        {
+          secenekler: kimlikli(gorulenHal),
+          birlesimler: [{ degerler: [0, 0], stokKodu: "YENI" }],
+          gorulen,
+        },
+        silebilir,
+      ),
+    );
+    expect(ikinci).toEqual({
+      kod: "cakisma",
+      ayrinti: [{ alan: "secenekler", kod: "varyant-degisti" }],
+    });
+    expect(await durum(vt, urun)).toEqual(sonra);
+    expect(await kayitSayisi(vt)).toBe(kayitlar);
+    expect(sonra.birimler.map((b) => b.ad)).toContain("L/Gri");
+  });
+});
+
 describe("ad, sıra ve hatalar", () => {
   it("seçeneklerin ve değerlerin adı ve sırası girdideki yerdir; birleşimler o sırayla gelir", async () => {
     const vt = await siteAc();

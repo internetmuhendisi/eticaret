@@ -102,9 +102,45 @@ describe("ürün ekranının girdisi", () => {
   it("varyantlı üründe birimin alanları gitmez; sayı olmayan adet olduğu gibi gider", () => {
     const yeni = { ...veri({ tur: "varyantli" }) };
     delete yeni.kimlik;
-    const { girdi } = girdiyiKur({ ...form, stokKodu: "A-1", enAzAdet: "iki" }, form, yeni);
+    // Formda seçenek var: birimin alanları birleşimlerdedir (kart 0264).
+    const secenekli = {
+      ...form,
+      varyant: {
+        secenekler: [{ anahtar: "b", ad: "Beden", degerler: [{ anahtar: "s", ad: "S" }] }],
+        birlesimler: {},
+      },
+    };
+    const { girdi } = girdiyiKur(
+      { ...secenekli, stokKodu: "A-1", enAzAdet: "iki" },
+      secenekli,
+      yeni,
+    );
     expect(girdi).not.toHaveProperty("stokKodu");
     expect(girdi).not.toHaveProperty("agirlik");
     expect(girdi["enAzAdet"]).toBe("iki");
+  });
+
+  it("son seçeneği kaldırılan ürünün birim alanları gider, seçeneği olan ürününkiler gitmez (kart 0264)", () => {
+    const varyantli = veri({ tur: "varyantli" });
+    const secenekli = {
+      ...form,
+      varyant: {
+        secenekler: [
+          {
+            anahtar: "b",
+            kimlik: "b",
+            ad: "Beden",
+            degerler: [{ anahtar: "s", kimlik: "s", ad: "S" }],
+          },
+        ],
+        birlesimler: {},
+      },
+    };
+    expect(
+      girdiyiKur({ ...secenekli, stokKodu: "A-1" }, secenekli, varyantli).girdi,
+    ).not.toHaveProperty("stokKodu");
+    const { girdi, varyant } = girdiyiKur({ ...form, stokKodu: "A-1" }, secenekli, varyantli);
+    expect(girdi).toMatchObject({ stokKodu: "A-1" });
+    expect(varyant).toMatchObject({ secenekler: [], birlesimler: [] });
   });
 });

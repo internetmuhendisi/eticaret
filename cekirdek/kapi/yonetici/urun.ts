@@ -76,9 +76,11 @@ export const urunDegisikligiUcu = ucTanimla({
   sinir: "genel",
   isle: async ({ kimlik, urun, varyant }, _istek, _yanit, { hesapKimligi }) => {
     const girdi = (await cevir(urun)) as UrunDegisikligi;
+    // Seçenekler önce: son seçenek kaldırılıp ürün basit olunca ürünün birim alanları (stok kodu, barkod, ağırlık) aynı
+    // kayıtta yeni basit birime yazılır (bağımsız kontrolün bulgusu); seçenek eklenince ekran bu alanları göndermez.
     await siteninVeritabani().transaction(async (islem) => {
-      await calisanSiteninUrunServisi().urunDegistir(islem, yonetici(hesapKimligi), kimlik, girdi);
       await varyantlariYaz(islem, hesapKimligi, kimlik, varyant);
+      await calisanSiteninUrunServisi().urunDegistir(islem, yonetici(hesapKimligi), kimlik, girdi);
     });
     return {};
   },
