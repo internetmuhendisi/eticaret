@@ -25,6 +25,8 @@ const beklenenler: Record<string, Beklenen> = {
   "satir-ici-birimli-olcu.tsx": { kategori: "plugin", mesajBasi: "Satır içi stilde" },
   "gomulu-metin.tsx": { kategori: "plugin", mesajBasi: "Ekran metni" },
   "elle-form.tsx": { kategori: "plugin", mesajBasi: "Elle <form>" },
+  "elle-tablo.tsx": { kategori: "plugin", mesajBasi: "Elle tablo" },
+  "ic-ice/cekirdek/bilesenler/parcalar/tablo.tsx": { kategori: "plugin", mesajBasi: "Elle tablo" },
   "ham-dugme.tsx": { kategori: "plugin", mesajBasi: "Ham HTML öğesi" },
   "ham-giris.tsx": { kategori: "plugin", mesajBasi: "Ham HTML öğesi" },
   "dogrudan-ikon.ts": { kategori: "plugin", mesajBasi: "İkon doğrudan" },

@@ -1,6 +1,7 @@
 ---
 paths:
-  - "bilesenler/liste/**"
+  - "bilesenler/parcalar/tablo*.tsx"
+  - "cekirdek/eklentiler/*/panel/**"
   - "cekirdek/yonetim-paneli/**"
   - "cekirdek/uygulama/app/yonetim/**"
   - "sahip-paneli/**"
@@ -22,3 +23,13 @@ paths:
 - Toplu işlemleri yalnız kayıt seçildiğinde göster ve yalnız seçilen kayıtlara uygula.
 - Kategori, etiket, sipariş durumu gibi küçük listeleri aynı satır yapısı ve aynı sıralama yöntemiyle yönet.
 - Motorun yapamadığı bir şey gerekiyorsa sayfaya kopya yazma, motoru genişlet.
+
+## Yazılanlar (kart 0258, karar 0158)
+
+- Listenin tanımı `ListeTanimi` ile yazılır (`cekirdek/yonetim-paneli/liste/tanim.ts`): süzgeçler (`sekme` ya da `secenekler`), arama (`adreste` ya da değil), sıralamalar (ilki varsayılan), başlıktan sıralanabilen sütunlar, `sayfali`, toplu işlemler (her biri izniyle). Örnekler: `siparisler/liste-tanimi.ts`, `cekirdek/eklentiler/stoga-gelince-haber-ver/panel/liste-tanimi.ts`.
+- Panel sayfası durumu `listeDurumunuOku` ile okur, liste ucu `listeUcuSemasi` ile; adres yalnız `listeAdresi` ile yazılır. Çok değerli süzgeç virgülle yazılır. Tanınmayan değer yok sayılır, sayfa sınıra çekilir.
+- Ekran `Liste` ile çizilir (`cekirdek/yonetim-paneli/liste/liste.tsx`): listenin istemci dosyası sütunların hücrelerini, telefondaki kartın içini, metinleri ve toplu işlemlerin uç ve gövdesini verir. Sunucu yalnız biçimlenmiş satırları (`ListeVerisi`) verir; okunamazsa `null` (hata hâli) ve hata kaydedilir.
+- Kişisel bilgi taşıyan arama adrese yazılmaz (`adreste: false`): ekran liste ucuna sorar; uç sayfayla aynı veri işlevini çağırır.
+- Toplu işlemin ucu servisin toplu işlevini çağırır: her satır tekil işlemle aynı yoldan, kendi işleminde geçer, sonuç `TopluSonuc`'tur (`cekirdek/kayitlar/liste.ts`). En çok bir sayfa gönderilir. Ekran izni olmayan işlemi göstermez (sayfa `yetkili` ile süzer), uç yine denetler.
+- Sayfa başına satır `panelSayfaBoyu` mağaza ayarıdır.
+- Küçük tablolar `Tablo` parçalarıyla çizilir; sayfada `<table>` yazmak denetimde hatadır (`elle-tablo.grit`).

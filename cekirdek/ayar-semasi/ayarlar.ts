@@ -18,7 +18,12 @@ import {
   stokBildirimiAyari,
 } from "../kayitlar/eklentiler.ts";
 import { favoriSiniriEnCok } from "../kayitlar/favori.ts";
-import { listeSayfasi, listeSiralamalari, sayfaGecisleri } from "../kayitlar/liste.ts";
+import {
+  listeSayfasi,
+  listeSiralamalari,
+  panelSayfaBoylari,
+  sayfaGecisleri,
+} from "../kayitlar/liste.ts";
 import {
   bankaHesabiSinirlari,
   havaleIptalSuresiSinirlari,
@@ -371,6 +376,11 @@ export const magazaAyarSemasi = z.strictObject({
   listeSayfaBoyutu: ayar(
     z.int().min(1).max(listeSayfasi.enCokBoyut).default(listeSayfasi.varsayilanBoyut),
     magazaSahibinin("ayar.aciklama.listeSayfaBoyutu"),
+  ),
+  // Panel listelerinde sayfa başına satır (kart 0258, karar 0157): siparişler, ürünler, müşteriler, yazılar.
+  panelSayfaBoyu: ayar(
+    z.literal(panelSayfaBoylari).default(panelSayfaBoylari[0]),
+    magazaSahibinin("ayar.aciklama.panelSayfaBoyu"),
   ),
   // Ürün sayfası (kart 0138, karar 0102 ve 0108): tükenmiş seçenek değerinin gösterimi ve sayfa ilk
   // açıldığında seçili birleşim. Seçenekler cekirdek/kayitlar/urun.ts'dedir.

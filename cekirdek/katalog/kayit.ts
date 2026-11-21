@@ -54,6 +54,8 @@ export const katalogParcalari = [
   parca("parcalar", "sayfa-basligi", "sayfaBasligi"),
   parca("parcalar", "bos-hal", "bosHal"),
   parca("parcalar", "sayfalama", "sayfalama"),
+  parca("parcalar", "tablo", "tablo"),
+  parca("parcalar", "tablo-secimi", "tabloSecimi"),
   parca("ikonlar", "ikon", "ikon"),
 ] as const satisfies readonly KatalogParcasi[];
 

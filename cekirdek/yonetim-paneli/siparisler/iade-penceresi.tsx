@@ -21,6 +21,15 @@ import {
   SecimOgesi,
   SecimTetikleyici,
 } from "../../../bilesenler/parcalar/secim-kutusu";
+import {
+  Tablo,
+  TabloBasHucresi,
+  TabloBasligi,
+  TabloGovdesi,
+  TabloHucresi,
+  TabloSatiri,
+  TabloUstu,
+} from "../../../bilesenler/parcalar/tablo";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
 import {
@@ -327,33 +336,33 @@ function IadeFormu({
         <Uyari tur="bilgi">{metin("yonetim.iadeTalebi.penceredeSecili")}</Uyari>
       )}
       <div className="flex min-w-0 flex-col gap-2">
-        <table
-          className="w-full border-collapse text-left"
+        <Tablo
+          className="text-left"
           // Hatada odak tabloya gelir; hata yazısı tabloya bağlıdır (iade edilebilir satır olmasa da).
           data-iade-alani="kalemler"
           tabIndex={-1}
           aria-describedby={hatalar.kalemler === undefined ? undefined : "iade-kalem-hatasi"}
         >
-          <caption className="sr-only">{metin("yonetim.iade.urunler")}</caption>
-          <thead>
-            <tr className="border-b border-kenar text-kucuk text-soluk-yazi">
-              <th scope="col" className="pb-2 font-kalin">
+          <TabloBasligi className="sr-only">{metin("yonetim.iade.urunler")}</TabloBasligi>
+          <TabloUstu>
+            <TabloSatiri className="text-kucuk text-soluk-yazi">
+              <TabloBasHucresi scope="col" className="pb-2 font-kalin">
                 {metin("yonetim.iade.sutun.urun")}
-              </th>
-              <th scope="col" className="px-2 pb-2 font-kalin">
+              </TabloBasHucresi>
+              <TabloBasHucresi scope="col" className="px-2 pb-2 font-kalin">
                 {metin(iptal ? "yonetim.iade.sutun.adet" : "yonetim.iade.sutun.iadeAdedi")}
-              </th>
-              <th scope="col" className="pb-2 text-right font-kalin">
+              </TabloBasHucresi>
+              <TabloBasHucresi scope="col" className="pb-2 text-right font-kalin">
                 {metin("yonetim.iade.sutun.tutar")}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
+              </TabloBasHucresi>
+            </TabloSatiri>
+          </TabloUstu>
+          <TabloGovdesi>
             {veri.kalemler.map((kalem) => {
               const enCok = kalan(kalem);
               return (
-                <tr key={kalem.sira} className="border-b border-kenar last:border-b-0">
-                  <td className="py-3 align-middle">
+                <TabloSatiri key={kalem.sira} className="last:border-b-0">
+                  <TabloHucresi className="py-3 align-middle">
                     <span className="flex min-w-0 flex-col">
                       <span className="font-kalin wrap-anywhere">{kalem.ad}</span>
                       {kalem.secim === "" ? null : (
@@ -370,8 +379,8 @@ function IadeFormu({
                             })}
                       </span>
                     </span>
-                  </td>
-                  <td className="px-2 py-3 align-middle">
+                  </TabloHucresi>
+                  <TabloHucresi className="px-2 py-3 align-middle">
                     {iptal ? (
                       <span className="font-kalin">{enCok}</span>
                     ) : enCok === 0 ? (
@@ -391,17 +400,17 @@ function IadeFormu({
                         }}
                       />
                     )}
-                  </td>
-                  <td className="py-3 text-right align-middle font-kalin whitespace-nowrap">
+                  </TabloHucresi>
+                  <TabloHucresi className="py-3 text-right align-middle font-kalin whitespace-nowrap">
                     {b.para(
                       sonuc?.kalemler.find((secilen) => secilen.sira === kalem.sira)?.tutar ?? 0,
                     )}
-                  </td>
-                </tr>
+                  </TabloHucresi>
+                </TabloSatiri>
               );
             })}
-          </tbody>
-        </table>
+          </TabloGovdesi>
+        </Tablo>
         {hatalar.kalemler === undefined ? null : (
           <p id="iade-kalem-hatasi" className="text-kucuk text-tehlike-yazi">
             {hatalar.kalemler}

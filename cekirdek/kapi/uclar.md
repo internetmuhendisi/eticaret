@@ -615,12 +615,23 @@ Havalenin banka hesaplarına hesap ekler; numara IBAN olarak doğrulanır (`ceki
 
 ### GET /kapi/yonetici/siparisler
 
-Panelin sipariş listesi (kart 0234, karar 0145): en yeni önce, sayfa başına `siparisSinirlari.sayfaBoyu`. Durum süzgeci, aranan metin (numara, e-posta ya da ad soyad; harf ayrımsız, `%` ve `_` joker değildir) ve sayfa. Durum sayıları aranan metinden bağımsızdır. `havaleBildirildi` yalnız ödeme bekleyen ve bildirimi olan siparişte doğrudur. `iadeTalebi` bekleyen iade talebi olan siparişte doğrudur; `talepSayisi` böyle siparişlerin sayısıdır (kart 0239).
+Panelin sipariş listesinin bir sayfası (kart 0234, karar 0145; kart 0258'de liste motoruna taşındı). Girdi ve yanıt panel sayfasınınkiyle aynıdır: liste tanımı (`siparisListesiTanimi`, `cekirdek/yonetim-paneli/siparisler/liste-tanimi.ts`) ve `siparisListesiVerisi` (`veri.ts`). Ekran aranan metni buraya gönderir, adrese yazmaz. Sayfa başına satır mağaza sahibinin `panelSayfaBoyu` ayarıdır. Aranan metin numara, e-posta ya da ad soyadda aranır (harf ayrımsız, `%` ve `_` joker değildir). Sekme sayıları ödeme yöntemi süzgecine uyar, aranan metinden ve durum süzgecinden bağımsızdır. `havaleBildirildi` yalnız ödeme bekleyen ve bildirimi olan siparişte doğrudur; `iadeTalebi` bekleyen iade talebi olan siparişte doğrudur (kart 0239).
 
 - İzin: `siparis.gor`. Sınır: `genel`.
-- Girdi (sorgu): `durum` (`siparisDurumlari`), `talep=evet` (yalnız bekleyen iade talebi olanlar), `ara`, `sayfa` (`siparisListesiSemasi`, `cekirdek/moduller/siparis/semalar.ts`). Sınır dışı sayfa son sayfaya çekilir.
-- Servis: `cekirdek/moduller/siparis/yonetim.ts`.
-- Başarılı (200): `{ "satirlar": [{ "kimlik", "numara", "zaman", "ad", "soyad", "uye", "durum", "odemeYontemi", "kapidaSecenegi", "toplam", "paraBirimi", "havaleBildirildi" }], "toplam", "sayfa", "sayfaSayisi", "sayilar": { "<durum>": sayı } }`.
+- Girdi (sorgu, `listeUcuSemasi`, `cekirdek/yonetim-paneli/liste/tanim.ts`): `durum` (`siparisDurumlari` ya da `iade-talebi`), `odeme` (virgülle `siparisOdemeYontemleri`), `ara`, `sirala` (`siparisListesiSiralamalari`, varsayılan `en-yeni`), `sayfa`. Tanınmayan alan ya da değer `dogrulama` alır. Sınır dışı sayfa son sayfaya çekilir.
+- Servis: `cekirdek/moduller/siparis/yonetim.ts` (`liste`).
+- Başarılı (200): `{ "satirlar": [{ "numara", "durum", "zaman", "musteri", "uye", "odeme": { "yontem", "secenek" }, "tutar", "havaleBildirildi", "iadeTalebi" }], "toplam", "sayfa", "sayfaSayisi", "sayfaBoyu", "sekmeSayilari": { "": hepsi, "<durum>": sayı, "iade-talebi": sayı } }`. Zaman ve tutar sitenin biçimiyle yazıdır; müşteri kısa addır ("Deniz Y."), kişisel bilgisi silinmiş siparişte boştur.
+- Hatalar: `dogrulama`, `yetki`.
+
+### POST /kapi/yonetici/siparisler-toplu
+
+Seçilen siparişlere toplu işlem (kart 0258, karar 0157): bugün `hazirlamaya-al`. Her sipariş tekil işlemle (`siparis-islemi`) aynı yoldan, kendi işleminde ve sırayla geçer: satır kilidi, ekranın gördüğü durum, geçiş ve ödeme yöntemi kuralı, geçmiş. Birinin hatası ötekileri durdurmaz.
+
+- İzin: `siparis.yonet`. Sınır: `genel`.
+- Girdi: `{ "islem": "hazirlamaya-al", "siparisler": [{ "numara", "gorulenDurum" }] }` (`siparisTopluIslemiSemasi`): en az 1, en çok bir sayfa (100), her numara bir kez.
+- Servis: `cekirdek/moduller/siparis/yonetim.ts` (`topluIslem`).
+- Başarılı (200): `{ "islenen": [numara], "islenemeyen": [{ "anahtar": numara, "kod" }] }`. Kod tekil işlemin ayrıntı kodudur (`durum-degisti`, `gecis-yok`, `yontem-uymuyor`, `iade-bekliyor`) ya da `bulunamadi`; beklenmeyen hata kaydedilir ve `beklenmeyen` döner.
+- Hatalar: `dogrulama` (boş, sınırı aşan ya da tekrarlı liste), `yetki`.
 
 ### GET /kapi/yonetici/siparis
 

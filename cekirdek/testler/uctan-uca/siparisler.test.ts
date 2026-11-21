@@ -201,13 +201,14 @@ test("siparişler: liste, havale onayı, kargoya verme ve not", async ({ page })
   await expect(satir).toContainText(metin("ortak.siparisDurumu.odeme-bekleniyor"));
   await ikiRenkUcGenislik(page, "sipariş listesi");
 
-  // Arama aranan metni adrese yazmaz.
-  const arama = page.getByLabel(metin("yonetim.siparisler.ara"));
+  // Arama aranan metni adrese yazmaz: sonuç aynı tabloda, duyurulur.
+  const arama = page.getByRole("searchbox", { name: metin("yonetim.siparisler.ara") });
   await arama.fill(eposta);
   await arama.press("Enter");
   await expect(
-    page.getByText(doldur(metin("yonetim.siparisler.aramaSonucu"), { aranan: eposta, sayi: "1" })),
-  ).toBeVisible();
+    page.getByText(doldur(metin("yonetim.liste.aramaSonucu"), { aranan: eposta, sayi: "1" })),
+  ).toHaveCount(1);
+  await expect(page.getByRole("table").getByRole("row")).toHaveCount(2);
   expect(page.url()).not.toContain("siparis-");
 
   // Ayrıntı klavyeyle açılır.
@@ -291,6 +292,139 @@ test("siparişler: liste, havale onayı, kargoya verme ve not", async ({ page })
   await expect(page.getByText(metin("yonetim.siparis.notlar.eklendi"))).toBeVisible();
   await expect(page.getByText("Uçtan uca iç not")).toBeVisible();
   await ikiRenkUcGenislik(page, "kargodaki sipariş");
+  expect(hatalar).toEqual([]);
+});
+
+test("siparişler listesi: süzgeç, sıralama, geri dönüş, seçim ve toplu işlem klavyeyle (kart 0258)", async ({
+  page,
+}) => {
+  test.setTimeout(240_000);
+  const hatalar = konsoluDinle(page, { haric: (m) => m.includes("401") });
+  const site = calisanSite();
+  const ek = randomUUID().slice(0, 8);
+  const kapidaBir = await siparisAc(
+    { yontem: "kapida-odeme", secenek: "nakit" },
+    `toplu-${ek}-1@ornek.test`,
+  );
+  const havaledeki = await siparisAc({ yontem: "havale" }, `toplu-${ek}-2@ornek.test`);
+  const kapidaIki = await siparisAc(
+    { yontem: "kapida-odeme", secenek: "nakit" },
+    `toplu-${ek}-3@ornek.test`,
+  );
+
+  await ayriBaglanti(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await paneleGir(page, yoneticiAc());
+  await menudenGit(page, metin("yonetim.sayfa.siparisler.ad"), /\/yonetim\/siparisler$/);
+  const tablo = page.getByRole("table");
+  await expect(tablo.getByRole("link", { name: new RegExp(kapidaIki) })).toBeVisible();
+
+  // Ödeme yöntemi süzgeci açılır menüden klavyeyle; seçim adrese yazılır, şeritte görünür.
+  const odemeDugmesi = page.getByRole("button", { name: metin("yonetim.siparisler.odemeSuzgeci") });
+  await odemeDugmesi.focus();
+  await page.keyboard.press("Enter");
+  const odemeMenusu = page.getByRole("menu");
+  await expect(odemeMenusu).toBeVisible();
+  await tara(page, "ödeme süzgeci açık");
+  await odemeMenusu
+    .getByRole("menuitemcheckbox", { name: metin("ortak.odemeYontemi.kapidaOdeme") })
+    .focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\?odeme=kapida-odeme$/);
+  await page.keyboard.press("Escape");
+  await expect(odemeMenusu).toBeHidden();
+  await sayfaHazir(page);
+  await expect(tablo.getByRole("link", { name: new RegExp(havaledeki) })).toHaveCount(0);
+  await expect(tablo.getByRole("link", { name: new RegExp(kapidaBir) })).toBeVisible();
+  const cip = page.getByRole("link", {
+    name: doldur(metin("yonetim.liste.suzgeciKaldir"), {
+      ad: `${metin("yonetim.siparisler.odemeSuzgeci")}: ${metin("ortak.odemeYontemi.kapidaOdeme")}`,
+    }),
+  });
+  await expect(cip).toBeVisible();
+
+  // Sıralama menüden klavyeyle; ayrıntıya gidip geri dönünce süzgeç ve sıralama yerinde.
+  await page
+    .getByRole("button", {
+      name: doldur(metin("yonetim.liste.siralama"), {
+        ad: metin("yonetim.siparisler.siralama.en-yeni"),
+      }),
+    })
+    .focus();
+  await page.keyboard.press("Enter");
+  await page
+    .getByRole("menuitemradio", { name: metin("yonetim.siparisler.siralama.en-eski") })
+    .focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\?odeme=kapida-odeme&sirala=en-eski$/);
+  await sayfaHazir(page);
+  await expect(page.getByRole("columnheader", { name: /Tarih/ })).toHaveAttribute(
+    "aria-sort",
+    "ascending",
+  );
+  await page.goto(`/yonetim/siparisler/ayrinti?numara=${kapidaBir}`);
+  await sayfaHazir(page);
+  await page.goBack();
+  await expect(page).toHaveURL(/\?odeme=kapida-odeme&sirala=en-eski$/);
+  await sayfaHazir(page);
+  await expect(cip).toBeVisible();
+
+  // Şeritten süzgeç kaldırılır, en yeni sıralamaya dönülür.
+  await cip.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\?sirala=en-eski$/);
+  await page.goto("/yonetim/siparisler");
+  await sayfaHazir(page);
+
+  // Seçim boşlukla; çubuk ve seçim sayısı. Havale siparişi hazırlamaya alınamaz, nedeni sonuçta yazar.
+  const hepsi = tablo.getByRole("checkbox", { name: metin("yonetim.liste.sayfayiSec") });
+  for (const numara of [kapidaBir, havaledeki]) {
+    await tablo
+      .getByRole("checkbox", { name: doldur(metin("yonetim.liste.satiriSec"), { ad: numara }) })
+      .focus();
+    await page.keyboard.press("Space");
+  }
+  await expect(hepsi).toHaveAttribute("aria-checked", "mixed");
+  const cubuk = page.getByRole("region", { name: metin("yonetim.liste.topluIslem") });
+  await expect(cubuk).toContainText(doldur(metin("yonetim.liste.seciliSayisi"), { sayi: "2" }));
+  await ikiRenkUcGenislik(page, "seçimli sipariş listesi");
+  await cubuk.getByRole("button", { name: metin("yonetim.eylem.hazirlamayaAl") }).focus();
+  await page.keyboard.press("Enter");
+  const pencere = page.getByRole("alertdialog");
+  await expect(pencere).toContainText(
+    doldur(metin("yonetim.siparisler.toplu.hazirlamayaAl.baslik"), { sayi: "2" }),
+  );
+  await tara(page, "toplu işlem onayı");
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Enter");
+  const sonuc = page.getByText(
+    doldur(metin("yonetim.siparisler.toplu.hazirlamayaAl.basari"), { sayi: "1" }),
+  );
+  await expect(sonuc).toBeVisible();
+  const neden = page.getByText(
+    doldur(metin("yonetim.liste.sonuc.satir"), {
+      ad: havaledeki,
+      neden: metin("yonetim.siparisler.toplu.neden.yontem-uymuyor"),
+    }),
+  );
+  await expect(neden).toBeVisible();
+  // Odak sonuçtadır.
+  expect(
+    await neden.evaluate(
+      (oge) =>
+        document.activeElement !== document.body && document.activeElement?.contains(oge) === true,
+    ),
+  ).toBe(true);
+  await expect(cubuk).toBeHidden();
+  const durumu = async (numara: string) =>
+    (await siparisYonetimi(site).ayrinti(vt, numara))?.siparis.durum;
+  expect(await durumu(kapidaBir)).toBe("hazirlaniyor");
+  expect(await durumu(havaledeki)).toBe("odeme-bekleniyor");
+  expect(await durumu(kapidaIki)).toBe("odeme-bekleniyor");
+  await expect(tablo.getByRole("row").filter({ hasText: kapidaBir })).toContainText(
+    metin("ortak.siparisDurumu.hazirlaniyor"),
+  );
+  await tara(page, "toplu işlemin sonucu");
   expect(hatalar).toEqual([]);
 });
 

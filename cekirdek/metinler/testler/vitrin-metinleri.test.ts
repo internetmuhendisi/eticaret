@@ -16,8 +16,12 @@ const yasaklar = [
   "cekirdek/metinler/tr.json",
   "cekirdek/metinler/panel-metni.tsx",
 ];
-// Bütün dosyayı okuyabilen taraflar: panel ve bileşen kataloğu (yalnız geliştirmede ve deneme ortamında açılır).
+// Bütün dosyayı okuyabilen taraflar: panel, eklentilerin panel ekranları (cekirdek/eklentiler/<kod>/panel/, kart 0258)
+// ve bileşen kataloğu (yalnız geliştirmede ve deneme ortamında açılır).
 const serbestKlasorler = ["cekirdek/yonetim-paneli/", "cekirdek/katalog/"];
+const serbestMi = (goreli: string): boolean =>
+  serbestKlasorler.some((klasor) => goreli.startsWith(klasor)) ||
+  /^cekirdek\/eklentiler\/[^/]+\/panel\//.test(goreli);
 
 const dosyalar = (klasor: string): string[] =>
   readdirSync(klasor).flatMap((ad) => {
@@ -84,7 +88,7 @@ describe("vitrin metinleri", () => {
     ].filter((yol) => {
       const goreli = relative(kok, yol);
       return (
-        !serbestKlasorler.some((klasor) => goreli.startsWith(klasor)) &&
+        !serbestMi(goreli) &&
         !yasaklar.includes(goreli) &&
         /^\s*["']use client["']/.test(readFileSync(yol, "utf8"))
       );

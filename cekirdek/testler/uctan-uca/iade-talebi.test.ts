@@ -294,7 +294,7 @@ test("üye klavyeyle iade talebi açar; mağaza onaylar ve talepten iade yapar; 
 
   // Mağaza sahibi: "İade talepleri" sekmesi, talep kutusu, onay.
   await paneleGir(page, yoneticiAc());
-  await page.goto("/yonetim/siparisler?talep=evet");
+  await page.goto("/yonetim/siparisler?durum=iade-talebi");
   await sayfaHazir(page);
   await expect(
     page.getByRole("link", { name: metin("yonetim.siparisler.iadeTalepleri") }),

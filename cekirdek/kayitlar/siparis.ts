@@ -282,9 +282,23 @@ export const siparisSinirlari = {
   kargoFirmasiAdEnCok: 60,
   kargoFirmasiEnCok: 20,
   takipAdresiEnCok: 300,
-  sayfaBoyu: 20,
   aramaEnCok: 100,
 } as const;
+
+// Panelin sipariş listesinin sıralamaları (kart 0258): oluşturma zamanı ve toplam tutar; eşitlikte siparişin
+// kimliği. İlki varsayılandır. Adreste durur (?sirala=tutar-azalan): yayınlandıktan sonra adı değişmez.
+export const siparisListesiSiralamalari = [
+  "en-yeni",
+  "en-eski",
+  "tutar-azalan",
+  "tutar-artan",
+] as const;
+export type SiparisListesiSiralamasi = (typeof siparisListesiSiralamalari)[number];
+
+// Panelin sipariş listesinde toplu yapılan işlemler (kart 0258, karar 0157): her sipariş tekil işlemle aynı
+// yoldan (siparisYonetimi.islemYap), kendi işleminde geçer. Fiş yazdırma kart 0270'tedir.
+export const siparisTopluIslemleri = ["hazirlamaya-al"] as const satisfies readonly SiparisIslemi[];
+export type SiparisTopluIslemi = (typeof siparisTopluIslemleri)[number];
 
 // Kargo firmasının takip adresinde takip numarasının yerini gösteren işaret ("https://.../{takip}").
 export const takipNumarasiYeri = "{takip}";

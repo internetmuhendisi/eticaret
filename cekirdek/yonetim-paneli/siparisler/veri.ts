@@ -19,10 +19,13 @@ import {
 } from "../../kayitlar/siparis";
 import { type BicimAyarlari, yerelZamandan } from "../../metinler/bicimleyici";
 import { siteninBicimAyarlari, siteninBicimleyicisi } from "../../metinler/site-metni";
+import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
 import { siparisAyarlari } from "../../moduller/siparis/ayarlar";
 import type { HesapSiparisi, OncekiIade } from "../../moduller/siparis/iade-hesabi";
 import { siparisYonetimi } from "../../moduller/siparis/yonetim";
 import { siteninVeritabani } from "../../veritabani/baglanti";
+import type { ListeDurumu, ListeVerisi } from "../liste/tanim";
+import { iadeTalebiSekmesi, siparisListesiGirdisi } from "./liste-tanimi";
 
 const bicim = () => siteninBicimleyicisi(calisanSite().ayarlar);
 
@@ -38,55 +41,39 @@ export type SiparisSatiri = {
   iadeTalebi: boolean;
 };
 
-export type SiparisListesiVerisi = {
-  satirlar: SiparisSatiri[];
-  durum: SiparisDurumu | null;
-  // "İade talepleri" sekmesi seçili (kart 0239).
-  talep: boolean;
-  talepSayisi: number;
-  sayfa: number;
-  sayfaSayisi: number;
-  toplam: number;
-  sayilar: { durum: SiparisDurumu; adet: number }[];
-  hepsi: number;
-};
-
-export const siparisListesiVerisi = async (girdi: {
-  durum?: SiparisDurumu | undefined;
-  talep?: boolean | undefined;
-  ara?: string | undefined;
-  sayfa: number;
-}): Promise<SiparisListesiVerisi> => {
+// Listenin bir sayfası (kart 0258): sayfa ve liste ucu (aranan metinle) aynı işlevden okur. Sayfa başına satır
+// mağaza sahibinin ayarıdır (panelSayfaBoyu). Sekme sayıları: "" bütün siparişler, her durum ve bekleyen iade talebi.
+export const siparisListesiVerisi = async (
+  durum: ListeDurumu,
+): Promise<ListeVerisi<SiparisSatiri>> => {
   const site = calisanSite();
   const b = bicim();
-  const liste = await siparisYonetimi(site).liste(siteninVeritabani(), {
-    sayfa: girdi.sayfa,
-    ...(girdi.durum === undefined ? {} : { durum: girdi.durum }),
-    ...(girdi.talep === true ? { talep: true } : {}),
-    ...(girdi.ara === undefined ? {} : { ara: girdi.ara }),
-  });
+  const vt = siteninVeritabani();
+  const { panelSayfaBoyu } = await siteninMagazaAyarlari(vt, site);
+  const liste = await siparisYonetimi(site).liste(vt, siparisListesiGirdisi(durum, panelSayfaBoyu));
   return {
     satirlar: liste.satirlar.map((satir) => ({
       numara: satir.numara,
+      durum: satir.durum,
       zaman: b.tarihSaat(satir.zaman),
       // Kısa ad (taslak): "Deniz Y."; kişisel bilgisi silinmiş siparişte boştur.
       musteri:
         `${satir.ad} ${satir.soyad}`.trim() === "" ? "" : b.kisaAd(`${satir.ad} ${satir.soyad}`),
       uye: satir.uye,
-      durum: satir.durum,
       odeme: { yontem: satir.odemeYontemi, secenek: satir.kapidaSecenegi },
       tutar: b.para(satir.toplam),
       havaleBildirildi: satir.havaleBildirildi,
       iadeTalebi: satir.iadeTalebi,
     })),
-    durum: girdi.durum ?? null,
-    talep: girdi.talep === true,
-    talepSayisi: liste.talepSayisi,
+    toplam: liste.toplam,
     sayfa: liste.sayfa,
     sayfaSayisi: liste.sayfaSayisi,
-    toplam: liste.toplam,
-    sayilar: siparisDurumlari.map((durum) => ({ durum, adet: liste.sayilar[durum] })),
-    hepsi: siparisDurumlari.reduce((toplam, durum) => toplam + liste.sayilar[durum], 0),
+    sayfaBoyu: liste.sayfaBoyu,
+    sekmeSayilari: {
+      "": siparisDurumlari.reduce((toplam, kod) => toplam + liste.sayilar[kod], 0),
+      ...liste.sayilar,
+      [iadeTalebiSekmesi]: liste.talepSayisi,
+    },
   };
 };
 

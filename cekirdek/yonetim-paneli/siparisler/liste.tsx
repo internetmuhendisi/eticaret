@@ -1,43 +1,24 @@
-// Siparişler ekranının listesi (kart 0234, karar 0145; kart 0233'ün taslağı): durum sekmeleri sayılarıyla, en yeni
-// önce sipariş tablosu ve sayfalar. Sekme ve sayfa adreste durur (kişisel bilgi taşımaz); arama tarayıcıdaki ayrı
-// kutudadır (siparis-aramasi.tsx), aranan ad ya da e-posta adrese yazılmaz. Masaüstünde tablo, telefonda her
-// sipariş bir kart (.claude/rules/telefon-gorunumu.md). Havalesi bildirilmiş ve bekleyen iade talebi olan sipariş
-// işaretlidir; "İade talepleri" sekmesi yalnız bekleyen talebi olanları listeler (kart 0239).
-//
-// Liste motoru henüz yok (.claude/rules/liste-motoru.md, "elle tablo" kuralı sonra): sütunlar burada yazılıdır;
-// motor gelince bu tablo ona taşınır.
+"use client";
+// Siparişler ekranının listesi (kart 0234, karar 0145; kart 0258'de liste motoruna taşındı). Tanımı liste-tanimi.ts:
+// durum sekmeleri sayılarıyla, ödeme yöntemi süzgeci, arama (numara, ad ya da e-posta; adrese yazılmaz), sıralama,
+// sayfa ve "Hazırlamaya al" toplu işlemi. Havalesi bildirilmiş ve bekleyen iade talebi olan sipariş işaretlidir.
+// Masaüstünde tablo, telefonda her sipariş bir kart (.claude/rules/telefon-gorunumu.md).
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
-import { BosHal } from "../../../bilesenler/parcalar/bos-hal";
-import { Kart } from "../../../bilesenler/parcalar/kart";
-import { Rozet } from "../../../bilesenler/parcalar/rozet";
-import { Sayfalama } from "../../../bilesenler/parcalar/sayfalama";
-import { sinif } from "../../../bilesenler/parcalar/sinif";
-import { type SiparisDurumu, siparisDurumTanimlari } from "../../kayitlar/siparis";
+import type { SiparisDurumu, SiparisListesiSiralamasi } from "../../kayitlar/siparis";
 import { doldur } from "../../metinler/doldur";
-import { metin } from "../../metinler/site-metni";
-import { siparisAyrintisiAdresi, siparislerAdresi } from "../adresler";
+import type { MetinAnahtari } from "../../metinler/metin";
+import { usePanelMetni } from "../../metinler/panel-metni";
+import { siparisAyrintisiAdresi } from "../adresler";
+import { Liste, type SutunTanimi, type TopluIslemTanimi } from "../liste/liste";
+import type { ListeDurumu, ListeVerisi } from "../liste/tanim";
+import { DurumRozeti } from "./durum-rozeti";
+import { iadeTalebiSekmesi, siparisListesiTanimi } from "./liste-tanimi";
 import { durumMetni, odemeYazisi } from "./metinler";
-import { SiparisAramasi } from "./siparis-aramasi";
-import type { SiparisListesiVerisi, SiparisSatiri } from "./veri";
-
-export { siparislerAdresi };
-export const ayrintiAdresi = siparisAyrintisiAdresi;
-
-const listeAdresi = (durum: SiparisDurumu | null, sayfa = 1, talep = false) => {
-  const sorgu = new URLSearchParams();
-  if (durum !== null) sorgu.set("durum", durum);
-  if (talep) sorgu.set("talep", "evet");
-  if (sayfa > 1) sorgu.set("sayfa", String(sayfa));
-  const yazi = sorgu.toString();
-  return yazi === "" ? siparislerAdresi : `${siparislerAdresi}?${yazi}`;
-};
-
-export function DurumRozeti({ durum }: { durum: SiparisDurumu }) {
-  return <Rozet tur={siparisDurumTanimlari[durum].rozet}>{metin(durumMetni(durum))}</Rozet>;
-}
+import type { SiparisSatiri } from "./veri";
 
 function Musteri({ satir }: { satir: SiparisSatiri }) {
+  const metin = usePanelMetni();
   return (
     <span className="flex flex-col">
       <span>
@@ -50,184 +31,184 @@ function Musteri({ satir }: { satir: SiparisSatiri }) {
   );
 }
 
-function HavaleIsareti() {
+function Isaretler({ satir }: { satir: SiparisSatiri }) {
+  const metin = usePanelMetni();
   return (
-    <span className="flex items-center gap-1 text-kucuk font-kalin text-uyari-yazi">
-      <Ikon ad="havale" />
-      {metin("yonetim.siparisler.havaleBildirildi")}
-    </span>
+    <>
+      {satir.havaleBildirildi ? (
+        <span className="flex items-center gap-1 text-kucuk font-kalin text-uyari-yazi">
+          <Ikon ad="havale" />
+          {metin("yonetim.siparisler.havaleBildirildi")}
+        </span>
+      ) : null}
+      {satir.iadeTalebi ? (
+        <span className="flex items-center gap-1 text-kucuk font-kalin text-uyari-yazi">
+          <Ikon ad="iade" />
+          {metin("yonetim.siparisler.iadeTalebi")}
+        </span>
+      ) : null}
+    </>
   );
 }
 
-function TalepIsareti() {
+function Numara({ satir }: { satir: SiparisSatiri }) {
+  const metin = usePanelMetni();
   return (
-    <span className="flex items-center gap-1 text-kucuk font-kalin text-uyari-yazi">
-      <Ikon ad="iade" />
-      {metin("yonetim.siparisler.iadeTalebi")}
-    </span>
+    <Baglanti
+      href={siparisAyrintisiAdresi(satir.numara)}
+      aria-label={doldur(metin("yonetim.siparisler.ayrintiAdi"), { numara: satir.numara })}
+      className="w-fit"
+    >
+      {satir.numara}
+    </Baglanti>
   );
 }
 
-export function SiparisListesi({ veri }: { veri: SiparisListesiVerisi }) {
-  const sekmeler: { durum: SiparisDurumu | null; adet: number; talep?: true }[] = [
-    { durum: null, adet: veri.hepsi },
-    ...veri.sayilar.filter(({ adet, durum }) => adet > 0 || (durum === veri.durum && !veri.talep)),
-    ...(veri.talepSayisi > 0 || veri.talep
-      ? [{ durum: null, adet: veri.talepSayisi, talep: true as const }]
-      : []),
+const siralamalar: Record<SiparisListesiSiralamasi, MetinAnahtari> = {
+  "en-yeni": "yonetim.siparisler.siralama.en-yeni",
+  "en-eski": "yonetim.siparisler.siralama.en-eski",
+  "tutar-azalan": "yonetim.siparisler.siralama.tutar-azalan",
+  "tutar-artan": "yonetim.siparisler.siralama.tutar-artan",
+};
+
+// Toplu işlemin nedeni: servisin bilinen kodları, gerisi genel metin.
+const nedenler: Record<string, MetinAnahtari> = {
+  "durum-degisti": "yonetim.siparisler.toplu.neden.durum-degisti",
+  "gecis-yok": "yonetim.siparisler.toplu.neden.gecis-yok",
+  "yontem-uymuyor": "yonetim.siparisler.toplu.neden.yontem-uymuyor",
+  "iade-bekliyor": "yonetim.siparisler.toplu.neden.iade-bekliyor",
+  bulunamadi: "yonetim.siparisler.toplu.neden.bulunamadi",
+};
+
+export function SiparisListesi({
+  durum,
+  veri,
+  topluIslemler,
+}: {
+  durum: ListeDurumu;
+  veri: ListeVerisi<SiparisSatiri> | null;
+  // Yöneticinin izni olan toplu işlemlerin kodları (sunucu süzer).
+  topluIslemler: readonly string[];
+}) {
+  const metin = usePanelMetni();
+  const sutunlar: SutunTanimi<SiparisSatiri>[] = [
+    {
+      kod: "siparis",
+      baslik: metin("yonetim.siparisler.sutun.siparis"),
+      hucre: (satir) => (
+        <span className="flex flex-col gap-1">
+          <Numara satir={satir} />
+          <Isaretler satir={satir} />
+        </span>
+      ),
+    },
+    {
+      kod: "tarih",
+      baslik: metin("yonetim.siparisler.sutun.tarih"),
+      hucre: (satir) => satir.zaman,
+    },
+    {
+      kod: "musteri",
+      baslik: metin("yonetim.siparisler.sutun.musteri"),
+      hucre: (satir) => <Musteri satir={satir} />,
+    },
+    {
+      kod: "durum",
+      baslik: metin("yonetim.siparisler.sutun.durum"),
+      hucre: (satir) => <DurumRozeti durum={satir.durum} />,
+    },
+    {
+      kod: "odeme",
+      baslik: metin("yonetim.siparisler.sutun.odeme"),
+      hucre: (satir) => odemeYazisi(metin, satir.odeme.yontem, satir.odeme.secenek),
+    },
+    {
+      kod: "tutar",
+      baslik: metin("yonetim.siparisler.sutun.tutar"),
+      sag: true,
+      hucre: (satir) => satir.tutar,
+    },
   ];
-  const tablo =
-    veri.satirlar.length === 0 ? (
-      veri.durum === null && !veri.talep ? (
-        <BosHal
-          ikon="paket"
-          baslik={metin("yonetim.siparisler.bos.baslik")}
-          aciklama={metin("yonetim.siparisler.bos.metin")}
-        >
+  const islemler: TopluIslemTanimi<SiparisSatiri>[] = topluIslemler.includes("hazirlamaya-al")
+    ? [
+        {
+          kod: "hazirlamaya-al",
+          ad: metin("yonetim.eylem.hazirlamayaAl"),
+          onay: (sayi) => ({
+            baslik: doldur(metin("yonetim.siparisler.toplu.hazirlamayaAl.baslik"), {
+              sayi: String(sayi),
+            }),
+            aciklama: metin("yonetim.siparisler.toplu.hazirlamayaAl.aciklama"),
+            onayEtiketi: metin("yonetim.eylem.hazirlamayaAl"),
+          }),
+          uc: "siparisler-toplu",
+          govde: (satirlar) => ({
+            islem: "hazirlamaya-al",
+            siparisler: satirlar.map((satir) => ({
+              numara: satir.numara,
+              gorulenDurum: satir.durum,
+            })),
+          }),
+          basari: (sayi) =>
+            doldur(metin("yonetim.siparisler.toplu.hazirlamayaAl.basari"), { sayi: String(sayi) }),
+          neden: (kod) => metin(nedenler[kod] ?? "yonetim.siparisler.toplu.neden.genel"),
+        },
+      ]
+    : [];
+  return (
+    <Liste
+      tanim={siparisListesiTanimi}
+      durum={durum}
+      veri={veri}
+      ad={metin("yonetim.siparisler.liste")}
+      sutunlar={sutunlar}
+      telefon={(satir) => (
+        <>
+          <span className="flex flex-wrap items-center justify-between gap-2">
+            <Numara satir={satir} />
+            <DurumRozeti durum={satir.durum} />
+          </span>
+          <span className="flex flex-wrap items-end justify-between gap-2 text-kucuk">
+            <span className="flex flex-col">
+              <span className="text-soluk-yazi">{satir.zaman}</span>
+              <Musteri satir={satir} />
+            </span>
+            <span className="font-kalin">{satir.tutar}</span>
+          </span>
+          <Isaretler satir={satir} />
+        </>
+      )}
+      anahtar={(satir) => satir.numara}
+      satirAdi={(satir) => satir.numara}
+      suzgecAdlari={{
+        durum: {
+          ad: metin("yonetim.siparisler.durumSuzgeci"),
+          secenek: (deger) =>
+            deger === iadeTalebiSekmesi
+              ? metin("yonetim.siparisler.iadeTalepleri")
+              : metin(durumMetni(deger as SiparisDurumu)),
+        },
+        odeme: {
+          ad: metin("yonetim.siparisler.odemeSuzgeci"),
+          secenek: (deger) => odemeYazisi(metin, deger, null),
+        },
+      }}
+      siralamaAdi={(kod) => metin(siralamalar[kod as SiparisListesiSiralamasi])}
+      arama={{
+        etiket: metin("yonetim.siparisler.ara"),
+        yerTutucu: metin("yonetim.siparisler.araYer"),
+      }}
+      bos={{
+        ikon: "paket",
+        baslik: metin("yonetim.siparisler.bos.baslik"),
+        aciklama: metin("yonetim.siparisler.bos.metin"),
+        eylem: (
           <Baglanti href="/" target="_blank" gorunum="sade">
             {metin("yonetim.siparisler.bos.dugme")}
           </Baglanti>
-        </BosHal>
-      ) : (
-        <BosHal
-          ikon="paket"
-          baslik={metin("yonetim.siparisler.bosDurum.baslik")}
-          aciklama={metin("yonetim.siparisler.bosDurum.metin")}
-        >
-          <Baglanti href={listeAdresi(null)} gorunum="sade">
-            {metin("yonetim.siparisler.bosDurum.dugme")}
-          </Baglanti>
-        </BosHal>
-      )
-    ) : (
-      <>
-        <table className="hidden w-full border-collapse overflow-hidden rounded-orta border border-kenar bg-zemin text-kucuk tablet:table">
-          <caption className="sr-only">{metin("yonetim.siparisler.liste")}</caption>
-          <thead>
-            <tr className="border-b border-kenar text-soluk-yazi">
-              {(["siparis", "tarih", "musteri", "durum", "odeme"] as const).map((sutun) => (
-                <th key={sutun} scope="col" className="px-3 py-2 text-left font-normal">
-                  {metin(`yonetim.siparisler.sutun.${sutun}`)}
-                </th>
-              ))}
-              <th scope="col" className="px-3 py-2 text-right font-normal">
-                {metin("yonetim.siparisler.sutun.tutar")}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {veri.satirlar.map((satir) => (
-              <tr key={satir.numara} className="border-b border-kenar last:border-b-0">
-                <td className="px-3 py-3 align-middle">
-                  <span className="flex flex-col gap-1">
-                    <Baglanti
-                      href={ayrintiAdresi(satir.numara)}
-                      aria-label={doldur(metin("yonetim.siparisler.ayrintiAdi"), {
-                        numara: satir.numara,
-                      })}
-                      className="w-fit"
-                    >
-                      {satir.numara}
-                    </Baglanti>
-                    {satir.havaleBildirildi ? <HavaleIsareti /> : null}
-                    {satir.iadeTalebi ? <TalepIsareti /> : null}
-                  </span>
-                </td>
-                <td className="px-3 py-3 align-middle">{satir.zaman}</td>
-                <td className="px-3 py-3 align-middle">
-                  <Musteri satir={satir} />
-                </td>
-                <td className="px-3 py-3 align-middle">
-                  <DurumRozeti durum={satir.durum} />
-                </td>
-                <td className="px-3 py-3 align-middle">
-                  {odemeYazisi(metin, satir.odeme.yontem, satir.odeme.secenek)}
-                </td>
-                <td className="px-3 py-3 text-right align-middle font-kalin whitespace-nowrap">
-                  {satir.tutar}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <ul
-          aria-label={metin("yonetim.siparisler.liste")}
-          className="flex flex-col gap-2 tablet:hidden"
-        >
-          {veri.satirlar.map((satir) => (
-            <li key={satir.numara}>
-              <Kart className="gap-2 p-4 tablet:p-4">
-                <span className="flex flex-wrap items-center justify-between gap-2">
-                  <Baglanti
-                    href={ayrintiAdresi(satir.numara)}
-                    aria-label={doldur(metin("yonetim.siparisler.ayrintiAdi"), {
-                      numara: satir.numara,
-                    })}
-                  >
-                    {satir.numara}
-                  </Baglanti>
-                  <DurumRozeti durum={satir.durum} />
-                </span>
-                <span className="flex flex-wrap items-end justify-between gap-2 text-kucuk">
-                  <span className="flex flex-col">
-                    <span className="text-soluk-yazi">{satir.zaman}</span>
-                    <Musteri satir={satir} />
-                  </span>
-                  <span className="font-kalin">{satir.tutar}</span>
-                </span>
-                {satir.havaleBildirildi ? <HavaleIsareti /> : null}
-                {satir.iadeTalebi ? <TalepIsareti /> : null}
-              </Kart>
-            </li>
-          ))}
-        </ul>
-        <Sayfalama
-          sayfa={veri.sayfa}
-          toplamSayfa={veri.sayfaSayisi}
-          adres={(sayfa) => listeAdresi(veri.durum, sayfa, veri.talep)}
-          metinler={{
-            etiket: metin("ortak.parca.sayfalar"),
-            onceki: metin("ortak.parca.oncekiSayfa"),
-            sonraki: metin("ortak.parca.sonrakiSayfa"),
-            sayfaAdi: (sira) => doldur(metin("ortak.parca.sayfaAdi"), { sira: String(sira) }),
-            bosluk: metin("ortak.parca.atlananSayfalar"),
-          }}
-        />
-      </>
-    );
-  return (
-    <div className="flex flex-col gap-4">
-      <nav
-        aria-label={metin("yonetim.siparisler.durumSuzgeci")}
-        className="overflow-x-auto border-b border-kenar"
-      >
-        <ul className="flex gap-1">
-          {sekmeler.map(({ durum, adet, talep = false }) => {
-            const secili = durum === veri.durum && talep === veri.talep;
-            return (
-              <li key={talep ? "iade-talebi" : (durum ?? "hepsi")} className="shrink-0">
-                <a
-                  href={listeAdresi(durum, 1, talep)}
-                  aria-current={secili ? "page" : undefined}
-                  className={sinif(
-                    "flex min-h-11 items-center gap-2 border-b-2 px-3 text-kucuk font-kalin whitespace-nowrap no-underline",
-                    secili ? "border-yazi text-yazi" : "border-transparent text-soluk-yazi",
-                  )}
-                >
-                  {talep
-                    ? metin("yonetim.siparisler.iadeTalepleri")
-                    : durum === null
-                      ? metin("yonetim.siparisler.tumu")
-                      : metin(durumMetni(durum))}
-                  <Rozet tur="ikincil">{adet}</Rozet>
-                </a>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-      <SiparisAramasi durum={veri.durum} />
-      {tablo}
-    </div>
+        ),
+      }}
+      topluIslemler={islemler}
+    />
   );
 }

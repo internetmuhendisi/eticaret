@@ -13,17 +13,20 @@
 // - Not: iç not yalnız panelde, müşteriye not müşterinin sipariş ayrıntısında görünür; not değiştirilemez.
 // - Kişisel bilgileri silinmiş siparişte (saklama süresi, temizlik.ts) ad, adres, telefon ve e-posta boştur.
 // - Bekleyen iade talebi olan sipariş listede işaretlidir ve "İade talepleri" süzgeciyle ayrıca listelenir (kart 0239).
-import { and, asc, count, desc, eq, exists, or, type SQL, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, inArray, or, type SQL, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
+import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
+import type { TopluSonuc } from "../../kayitlar/liste.ts";
 import {
   type SiparisDurumu,
   type SiparisIslemi,
+  type SiparisListesiSiralamasi,
+  type SiparisTopluIslemi,
   siparisDurumlari,
   siparisIslemleri,
-  siparisSinirlari,
   takipNumarasiYeri,
 } from "../../kayitlar/siparis.ts";
 import { aramaAnahtari, aramaAnahtariSql } from "../../metinler/arama-anahtari.ts";
@@ -48,6 +51,14 @@ import {
 } from "./model.ts";
 import type { KargoBilgisi, SiparisListesiGirdisi, SiparisNotuGirdisi } from "./semalar.ts";
 
+// Listenin sıralamaları (kart 0258): eşitlikte kimlik, aynı yönde.
+const listeSiralari: Record<SiparisListesiSiralamasi, SQL[]> = {
+  "en-yeni": [desc(siparisler.olusturma_zamani), desc(siparisler.kimlik)],
+  "en-eski": [asc(siparisler.olusturma_zamani), asc(siparisler.kimlik)],
+  "tutar-azalan": [desc(siparisler.toplam), desc(siparisler.kimlik)],
+  "tutar-artan": [asc(siparisler.toplam), asc(siparisler.kimlik)],
+};
+
 export type SiparisListesiSatiri = {
   kimlik: string;
   numara: string;
@@ -70,7 +81,9 @@ export type SiparisListesi = {
   toplam: number;
   sayfa: number;
   sayfaSayisi: number;
-  // Durum başına sipariş sayısı (sekmeler); aranan metinden bağımsızdır.
+  sayfaBoyu: number;
+  // Durum başına sipariş sayısı (sekmeler); ödeme yöntemi süzgecine uyar, aranan metinden ve durum süzgecinden
+  // bağımsızdır.
   sayilar: Record<SiparisDurumu, number>;
   // Bekleyen iade talebi olan sipariş sayısı (kart 0239, "İade talepleri" sekmesi).
   talepSayisi: number;
@@ -138,6 +151,10 @@ export const siparisYonetimi = (site: Site) => {
             ),
           ),
       );
+    // Ödeme yöntemi süzgeci durum sayılarına da uygulanır (sekmeler öteki süzgeçlerle sayar).
+    const odemeKosulu =
+      girdi.odeme === undefined ? undefined : inArray(siparisler.odeme_yontemi, girdi.odeme);
+    if (odemeKosulu !== undefined) kosullar.push(odemeKosulu);
     if (girdi.durum !== undefined) kosullar.push(eq(siparisler.durum, girdi.durum));
     if (girdi.talep === true) kosullar.push(bekleyenTalep(siparisler.kimlik));
     if (girdi.ara !== undefined) {
@@ -154,7 +171,7 @@ export const siparisYonetimi = (site: Site) => {
     const nerede = kosullar.length === 0 ? undefined : and(...kosullar);
     const [sayim] = await vt.select({ adet: count() }).from(siparisler).where(nerede);
     const toplam = sayim?.adet ?? 0;
-    const sayfaSayisi = Math.max(1, Math.ceil(toplam / siparisSinirlari.sayfaBoyu));
+    const sayfaSayisi = Math.max(1, Math.ceil(toplam / girdi.sayfaBoyu));
     const sayfa = Math.min(girdi.sayfa, sayfaSayisi);
     const satirlar = await vt
       .select({
@@ -178,12 +195,13 @@ export const siparisYonetimi = (site: Site) => {
       })
       .from(siparisler)
       .where(nerede)
-      .orderBy(desc(siparisler.olusturma_zamani), desc(siparisler.kimlik))
-      .limit(siparisSinirlari.sayfaBoyu)
-      .offset((sayfa - 1) * siparisSinirlari.sayfaBoyu);
+      .orderBy(...listeSiralari[girdi.siralama])
+      .limit(girdi.sayfaBoyu)
+      .offset((sayfa - 1) * girdi.sayfaBoyu);
     const durumSayilari = await vt
       .select({ durum: siparisler.durum, adet: count() })
       .from(siparisler)
+      .where(odemeKosulu)
       .groupBy(siparisler.durum);
     const sayilar = Object.fromEntries(siparisDurumlari.map((durum) => [durum, 0])) as Record<
       SiparisDurumu,
@@ -193,7 +211,8 @@ export const siparisYonetimi = (site: Site) => {
     const [talepSayimi] = await vt
       .select({ adet: sql<number>`count(distinct ${siparisIadeTalepleri.siparis_kimligi})::int` })
       .from(siparisIadeTalepleri)
-      .where(eq(siparisIadeTalepleri.durum, "bekliyor"));
+      .innerJoin(siparisler, eq(siparisler.kimlik, siparisIadeTalepleri.siparis_kimligi))
+      .where(and(eq(siparisIadeTalepleri.durum, "bekliyor"), odemeKosulu));
     return {
       satirlar: satirlar.map(
         ({ teslimat, musteri, durum, havaleBildirildi, iadeTalebi, ...satir }) => ({
@@ -210,6 +229,7 @@ export const siparisYonetimi = (site: Site) => {
       toplam,
       sayfa,
       sayfaSayisi,
+      sayfaBoyu: girdi.sayfaBoyu,
       sayilar,
       talepSayisi: talepSayimi?.adet ?? 0,
     };
@@ -489,5 +509,39 @@ export const siparisYonetimi = (site: Site) => {
     return { numara: siparis.numara };
   };
 
-  return { liste, ayrinti, islemYap, notEkle };
+  // Toplu işlem (kart 0258): her sipariş tekil işlemle aynı yoldan (islemYap: satır kilidi, görülen durum, geçiş ve
+  // yöntem kuralı, geçmiş, e-posta), kendi işleminde ve sırayla geçer. Bilinen hata o siparişin nedeni olur, ötekiler
+  // sürer; beklenmeyen hata kaydedilir ve "beklenmeyen" nedeniyle döner.
+  const topluIslem = async (
+    vt: Veritabani,
+    kim: DegisikligiYapan,
+    girdi: {
+      islem: SiparisTopluIslemi;
+      siparisler: readonly { numara: string; gorulenDurum: SiparisDurumu }[];
+    },
+  ): Promise<TopluSonuc> => {
+    const sonuc: TopluSonuc = { islenen: [], islenemeyen: [] };
+    for (const { numara, gorulenDurum } of girdi.siparisler) {
+      try {
+        await islemYap(vt, kim, { numara, islem: girdi.islem, gorulenDurum });
+        sonuc.islenen.push(numara);
+      } catch (hata) {
+        if (hata instanceof BilinenHata) {
+          const ayrinti = Array.isArray(hata.ayrinti)
+            ? (hata.ayrinti[0] as { kod?: unknown } | undefined)
+            : undefined;
+          sonuc.islenemeyen.push({
+            anahtar: numara,
+            kod: typeof ayrinti?.kod === "string" ? ayrinti.kod : hata.kod,
+          });
+        } else {
+          hatayiKaydet(hata, { islem: "siparis-toplu-islem" });
+          sonuc.islenemeyen.push({ anahtar: numara, kod: "beklenmeyen" });
+        }
+      }
+    }
+    return sonuc;
+  };
+
+  return { liste, ayrinti, islemYap, notEkle, topluIslem };
 };

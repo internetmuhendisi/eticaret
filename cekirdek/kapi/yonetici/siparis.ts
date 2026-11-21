@@ -22,23 +22,43 @@ import {
   siparisAyrintisiSemasi,
   siparisIadesiSemasi,
   siparisIslemiSemasi,
-  siparisListesiSemasi,
   siparisNotuSemasi,
+  siparisTopluIslemiSemasi,
   yoneticiBildirimAyarlariSemasi,
 } from "../../moduller/siparis/semalar.ts";
 import { siparisYonetimi } from "../../moduller/siparis/yonetim.ts";
 import { siteninVeritabani } from "../../veritabani/baglanti.ts";
 import { sepetGorunumu } from "../../vitrin/sepet/veri.ts";
+import { listeUcuSemasi } from "../../yonetim-paneli/liste/tanim.ts";
+import { siparisListesiTanimi } from "../../yonetim-paneli/siparisler/liste-tanimi.ts";
+import { siparisListesiVerisi } from "../../yonetim-paneli/siparisler/veri.ts";
 import { ucTanimla } from "../uc.ts";
 import { BilinenHata } from "../zarf.ts";
 
-// GET /kapi/yonetici/siparisler?durum=&ara=&sayfa=: siparişler, en yeni önce, durum sayılarıyla.
+// GET /kapi/yonetici/siparisler?durum=&odeme=&ara=&sirala=&sayfa=: panelin sipariş listesinin bir sayfası (kart 0258).
+// Girdi ve yanıt panel sayfasınınkiyle aynıdır (liste tanımı ve siparisListesiVerisi); ekran aranan metni buraya
+// gönderir (adrese yazmaz).
 export const siparisListesiUcu = ucTanimla({
   giris: "yonetici",
-  sema: siparisListesiSemasi,
+  sema: listeUcuSemasi(siparisListesiTanimi),
   izin: "siparis.gor",
   sinir: "genel",
-  isle: (girdi) => siparisYonetimi(calisanSite()).liste(siteninVeritabani(), girdi),
+  isle: (durum) => siparisListesiVerisi(durum),
+});
+
+// POST /kapi/yonetici/siparisler-toplu: seçilen siparişlere toplu işlem (kart 0258). Her sipariş tekil işlemle aynı
+// denetimden geçer; işlenemeyenler nedeniyle döner.
+export const siparisTopluIslemiUcu = ucTanimla({
+  giris: "yonetici",
+  sema: siparisTopluIslemiSemasi,
+  izin: "siparis.yonet",
+  sinir: "genel",
+  isle: (girdi, _istek, _yanit, { hesapKimligi }) =>
+    siparisYonetimi(calisanSite()).topluIslem(
+      siteninVeritabani(),
+      { tur: "yonetici", kimlik: hesapKimligi },
+      girdi,
+    ),
 });
 
 // GET /kapi/yonetici/siparis?numara=: siparişin ayrıntısı, geçmişi, notları ve havale bildirimleri.

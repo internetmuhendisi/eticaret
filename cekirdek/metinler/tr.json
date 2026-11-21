@@ -123,6 +123,7 @@
       "listeSiralamasi": "Kategori, marka ve etiket sayfalarında ürünlerin ilk sırası. Müşteri sayfada başka bir sıralama seçebilir.",
       "listeSayfaGecisi": "Ürün listelerinde sayfalar numaralı mı geçilir, yoksa \"Daha fazla göster\" düğmesiyle sonrakiler alta mı eklenir.",
       "listeSayfaBoyutu": "Ürün listelerinde bir sayfada gösterilen ürün sayısı.",
+      "panelSayfaBoyu": "Yönetim panelinin listelerinde (siparişler, ürünler, müşteriler) bir sayfada gösterilen satır sayısı.",
       "dusukStokEsigi": "Stok bu sayıya eşit ya da altına inince ürün düşük stokta sayılır. Ürünün kendi eşiği varsa o geçerlidir. 0 uyarıyı kapatır.",
       "sonAdetEsigi": "Stok bu sayıya eşit ya da altına inince müşteriye kalan adet yazılır (Son 3 ürün gibi). 0 yazıyı kapatır.",
       "kargoyaVermeSuresi": "Siparişin kaç iş gününde kargoya verildiği. 0 aynı gün demektir.",
@@ -846,21 +847,46 @@
         "sonYontem": "Bu son banka hesabı ve müşterinin kullanabileceği başka ödeme yöntemi yok. Önce Ödeme yöntemleri'nden başka bir yöntemi açın."
       }
     },
-    "siparisler": {
+    "liste": {
       "tumu": "Tümü",
-      "durumSuzgeci": "Durum süzgeci",
-      "ara": "Sipariş ara",
-      "araYer": "Sipariş no, müşteri adı ya da e-posta",
-      "araDugme": "Ara",
+      "ara": "Ara",
       "aramayiTemizle": "Aramayı temizle",
-      "aramaSonucu": "\"{aranan}\" için {sayi} sipariş bulundu.",
-      "aramaFazla": "İlk {sayi} sipariş gösteriliyor. Aramayı daraltın.",
-      "aramaYok": {
-        "baslik": "Sipariş bulunamadı",
-        "metin": "\"{aranan}\" ile eşleşen sipariş yok. Numarayı, adı ya da e-postayı kontrol edin."
+      "aramaSonucu": "\"{aranan}\" için {sayi} kayıt bulundu.",
+      "aramaSonucsuz": {
+        "baslik": "\"{aranan}\" ile eşleşen kayıt yok",
+        "metin": "Yazdığınızı kontrol edin ya da aramayı temizleyip bütün listeye dönün."
       },
-      "aramaHatasi": "Arama yapılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
-      "liste": "Siparişler, en yeni önce",
+      "sonucsuz": {
+        "baslik": "Seçili süzgeçlerle eşleşen kayıt yok",
+        "metin": "Süzgeçleri kaldırarak bütün listeye dönün."
+      },
+      "hata": {
+        "baslik": "Liste okunamadı",
+        "metin": "Bağlantınızı kontrol edip yeniden deneyin. Sorun sürerse sayfayı yenileyin.",
+        "yenidenDene": "Yeniden dene"
+      },
+      "yukleniyor": "{ad}, yükleniyor",
+      "siralama": "Sıralama: {ad}",
+      "seciliSuzgecler": "Seçili süzgeçler",
+      "suzgeciKaldir": "Süzgeci kaldır: {ad}",
+      "suzgecleriTemizle": "Süzgeçleri temizle",
+      "sayfayiSec": "Bu sayfadaki bütün satırları seç",
+      "satiriSec": "Seç: {ad}",
+      "seciliSayisi": "{sayi} seçili",
+      "secimiKaldir": "Seçimi kaldır",
+      "topluIslem": "Toplu işlem",
+      "aralik": "{bas}–{son} / {toplam}",
+      "sayfaBasina": "Sayfa başına {sayi}",
+      "sonuc": {
+        "islenemedi": "{sayi} kayıt işlenemedi:",
+        "satir": "{ad}: {neden}",
+        "hata": "İşlem yapılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
+        "yetki": "Bu işlemi yapma izniniz yok."
+      }
+    },
+    "siparisler": {
+      "durumSuzgeci": "Durum süzgeci",
+      "liste": "Siparişler",
       "sutun": {
         "siparis": "Sipariş",
         "tarih": "Tarih",
@@ -878,13 +904,32 @@
         "metin": "Müşteriler sipariş verdikçe burada en yeni önce görünür. Vitrininizi gezip bir deneme siparişi verebilirsiniz.",
         "dugme": "Vitrine git"
       },
-      "bosDurum": {
-        "baslik": "Bu durumda sipariş yok",
-        "metin": "Başka bir durumu seçin ya da bütün siparişlere dönün.",
-        "dugme": "Bütün siparişler"
-      },
       "iadeTalebi": "İade talebi",
-      "iadeTalepleri": "İade talepleri"
+      "iadeTalepleri": "İade talepleri",
+      "odemeSuzgeci": "Ödeme yöntemi",
+      "ara": "Sipariş ara",
+      "araYer": "Sipariş no, müşteri adı ya da e-posta",
+      "siralama": {
+        "en-yeni": "En yeni",
+        "en-eski": "En eski",
+        "tutar-azalan": "En yüksek tutar",
+        "tutar-artan": "En düşük tutar"
+      },
+      "toplu": {
+        "hazirlamayaAl": {
+          "baslik": "{sayi} sipariş hazırlamaya alınsın mı?",
+          "aciklama": "Yalnız kapıda ödemeli ve ödeme bekleyen siparişler hazırlanıyor durumuna geçer; öteki siparişler değişmez ve nedeni sonuçta yazar. Müşteriye e-posta gitmez.",
+          "basari": "{sayi} sipariş hazırlamaya alındı."
+        },
+        "neden": {
+          "durum-degisti": "sipariş bu arada değişti, güncel durumuna bakın",
+          "gecis-yok": "bu durumdaki sipariş hazırlamaya alınamaz",
+          "yontem-uymuyor": "ödeme yöntemi bu işleme uymuyor (havaleyi siparişin ayrıntısında onaylayın)",
+          "iade-bekliyor": "kuruluşun yanıtını bekleyen iadesi var",
+          "bulunamadi": "sipariş bulunamadı",
+          "genel": "işlem yapılamadı, siparişin ayrıntısından yeniden deneyin"
+        }
+      }
     },
     "siparis": {
       "baslik": "Sipariş {numara}",
@@ -2507,7 +2552,9 @@
         "anahtar": "Anahtar",
         "siralanabilirListe": "Sıralanabilir liste",
         "onayPenceresi": "Onay penceresi",
-        "adetSecici": "Adet seçici"
+        "adetSecici": "Adet seçici",
+        "tablo": "Tablo",
+        "tabloSecimi": "Tablo seçimi"
       },
       "bolumKutuphanesi": "Bölüm kütüphanesi"
     },
@@ -2666,7 +2713,23 @@
       "anahtarIkinci": "Kampanya e-postaları",
       "anahtarKapali": "Kapalı",
       "anahtarAcik": "Açık",
-      "standartTeslimat": "Standart teslimat"
+      "standartTeslimat": "Standart teslimat",
+      "tablo": {
+        "baslik": "Örnek ürünler",
+        "urun": "Ürün",
+        "stok": "Stok",
+        "hepsiniSec": "Bu sayfadaki bütün ürünleri seç",
+        "sec": "Seç: {ad}",
+        "urunBir": "Birinci ürün",
+        "urunIki": "İkinci ürün",
+        "urunUc": "Üçüncü ürün",
+        "stokBir": "12",
+        "stokIki": "Tükendi",
+        "stokUc": "3",
+        "bos": "Seçilmemiş satır",
+        "isaretli": "Seçili satır",
+        "kismen": "Bir kısmı seçili sayfa"
+      }
     },
     "bolum": {
       "ad": "Deneme bölümü",
@@ -2861,7 +2924,18 @@
         "enEski": "İlk talep: {tarih}",
         "bos": "Bekleyen talep yok.",
         "bosAciklama": "Müşteriler tükenmiş ürünün sayfasında e-postasını bırakınca burada görünür.",
-        "sinir": "En çok bekleyen {sayi} ürün gösteriliyor."
+        "sinir": "En çok bekleyen {sayi} ürün gösteriliyor.",
+        "ara": "Ürün ara",
+        "araYer": "Ürün adı",
+        "sutun": {
+          "urun": "Ürün",
+          "bekleyen": "Bekleyen",
+          "enEski": "İlk talep"
+        },
+        "siralama": {
+          "en-cok-bekleyen": "En çok bekleyen",
+          "en-eski-talep": "En eski talep"
+        }
       }
     },
     "kartlaOdeme": {

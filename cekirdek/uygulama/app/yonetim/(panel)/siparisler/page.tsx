@@ -1,10 +1,11 @@
-// Siparişler ekranı (kart 0234). Önce sayfanın izni denetlenir (izni olmayana bulunamadı), sonra liste okunur. Durum
-// sekmesi, "İade talepleri" süzgeci ve sayfa adresin sorgusundadır; tanınmayan durum yok sayılır, sayfa sınırlara
-// çekilir.
+// Siparişler ekranı (kart 0234; kart 0258'de liste motoruna taşındı). Önce sayfanın izni denetlenir (izni olmayana
+// bulunamadı), sonra listenin durumu adresten tanımla okunur (tanınmayan değer yok sayılır, sayfa sınırlara çekilir)
+// ve liste servisle okunur. Okunamazsa liste hata hâlini gösterir; hata kaydedilir.
 import type { Metadata } from "next";
-import { type SiparisDurumu, siparisDurumlari } from "../../../../../kayitlar/siparis";
+import { hatayiKaydet } from "../../../../../izleme/hata-katmani";
 import { panelAdresi } from "../../../../../yonetim-paneli/adresler";
 import { EylemBaglantisi } from "../../../../../yonetim-paneli/eylem-dugmesi";
+import { listeDurumunuOku } from "../../../../../yonetim-paneli/liste/tanim";
 import { panelOturumu } from "../../../../../yonetim-paneli/panel-oturumu";
 import {
   PanelSayfasi,
@@ -12,6 +13,7 @@ import {
   panelSayfasiniAc,
 } from "../../../../../yonetim-paneli/panel-sayfasi";
 import { SiparisListesi } from "../../../../../yonetim-paneli/siparisler/liste";
+import { siparisListesiTanimi } from "../../../../../yonetim-paneli/siparisler/liste-tanimi";
 import { siparisListesiVerisi } from "../../../../../yonetim-paneli/siparisler/veri";
 
 export const generateMetadata = (): Promise<Metadata> => panelSayfaBilgisi("siparisler");
@@ -19,22 +21,14 @@ export const generateMetadata = (): Promise<Metadata> => panelSayfaBilgisi("sipa
 export default async function SiparislerSayfasi({
   searchParams,
 }: {
-  searchParams: Promise<{
-    durum?: string | string[];
-    sayfa?: string | string[];
-    talep?: string | string[];
-  }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await panelSayfasiniAc("siparisler");
-  const sorgu = await searchParams;
-  const durum = siparisDurumlari.find((kod) => kod === sorgu.durum) as SiparisDurumu | undefined;
-  const sayfa =
-    typeof sorgu.sayfa === "string" && /^\d{1,5}$/.test(sorgu.sayfa)
-      ? Math.max(1, Number(sorgu.sayfa))
-      : 1;
-  // "İade talepleri" sekmesi (kart 0239): yalnız bekleyen iade talebi olanlar.
-  const talep = sorgu.talep === "evet";
-  const veri = await siparisListesiVerisi({ durum, talep, sayfa });
+  const durum = listeDurumunuOku(siparisListesiTanimi, await searchParams);
+  const veri = await siparisListesiVerisi(durum).catch((hata: unknown) => {
+    hatayiKaydet(hata, { ekran: "siparisler" });
+    return null;
+  });
   const { yetkili } = await panelOturumu();
   return (
     <PanelSayfasi
@@ -46,7 +40,13 @@ export default async function SiparislerSayfasi({
         ) : null
       }
     >
-      <SiparisListesi veri={veri} />
+      <SiparisListesi
+        durum={durum}
+        veri={veri}
+        topluIslemler={siparisListesiTanimi.topluIslemler
+          .filter((islem) => yetkili(islem.izin))
+          .map((islem) => islem.kod)}
+      />
     </PanelSayfasi>
   );
 }

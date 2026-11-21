@@ -2,7 +2,8 @@
 // bildirimi ve sipariş numarası şemaları havale-bildirimi-semalari.ts'tedir: bu dosya ödeme adımının adres ve fatura
 // şemalarını içe aktarır, vitrin formuna alınırsa tarayıcıya gereksiz kod taşır (kart 0248).
 import { z } from "zod";
-import { kapidaOdemeSecenekleri } from "../../kayitlar/odeme.ts";
+import { panelSayfaBoylari } from "../../kayitlar/liste.ts";
+import { kapidaOdemeSecenekleri, siparisOdemeYontemleri } from "../../kayitlar/odeme.ts";
 import { sepetSinirlari } from "../../kayitlar/sepet.ts";
 import {
   iadeKargosuOdeyenler,
@@ -13,8 +14,10 @@ import {
   iadeTurleri,
   musteriIptaliSecenekleri,
   siparisDurumlari,
+  siparisListesiSiralamalari,
   siparisNotTurleri,
   siparisSinirlari,
+  siparisTopluIslemleri,
 } from "../../kayitlar/siparis.ts";
 import { yoneticiBildirimleri } from "../../kayitlar/yonetici-bildirimi.ts";
 import { duzMetinSemasi } from "../../metinler/duz-metin.ts";
@@ -30,20 +33,34 @@ import { epostaSemasi } from "../oturum/semalar.ts";
 import { sepetKalemiSemasi } from "../sepet/semalar.ts";
 import { bosIseYok, siparisNumarasiSemasi } from "./havale-bildirimi-semalari.ts";
 
-// Panelin sipariş uçları (kart 0234). Liste: durum süzgeci, aranan metin (numara, ad ya da e-posta) ve sayfa. İşlem:
-// ekranın gördüğü durumla gelir; arada durum değiştiyse servis "cakisma" verir. Kargo işleminde firma listedeki
-// kimliktir, takip numarası isteğe bağlıdır.
+// Panelin sipariş uçları (kart 0234). Liste: servisin girdisi (kart 0258): durum ya da bekleyen iade talebi süzgeci,
+// ödeme yöntemleri, aranan metin (numara, ad ya da e-posta), sıralama, sayfa ve sayfa başına satır. Panelin adresi ve
+// liste ucu bu girdiyi liste tanımından kurar (cekirdek/yonetim-paneli/siparisler/liste-tanimi.ts). İşlem: ekranın
+// gördüğü durumla gelir; arada durum değiştiyse servis "cakisma" verir. Kargo işleminde firma listedeki kimliktir,
+// takip numarası isteğe bağlıdır.
 export const siparisListesiSemasi = z.strictObject({
   durum: z.enum(siparisDurumlari).optional(),
   // Yalnız bekleyen iade talebi olanlar (kart 0239).
-  talep: z
-    .literal("evet")
-    .transform(() => true as const)
-    .optional(),
+  talep: z.literal(true).optional(),
+  odeme: z.array(z.enum(siparisOdemeYontemleri)).min(1).optional(),
   ara: z.preprocess(bosIseYok, z.string().trim().max(siparisSinirlari.aramaEnCok).optional()),
+  siralama: z.enum(siparisListesiSiralamalari).default(siparisListesiSiralamalari[0]),
   sayfa: z.coerce.number().int().min(1).max(10_000).default(1),
+  sayfaBoyu: z.literal(panelSayfaBoylari).default(panelSayfaBoylari[0]),
 });
 export type SiparisListesiGirdisi = z.output<typeof siparisListesiSemasi>;
+
+// Toplu işlem (kart 0258): ekranın gördüğü siparişler ve durumları; en çok bir sayfa, her numara bir kez.
+export const siparisTopluIslemiSemasi = z.strictObject({
+  islem: z.enum(siparisTopluIslemleri),
+  siparisler: z
+    .array(
+      z.strictObject({ numara: siparisNumarasiSemasi, gorulenDurum: z.enum(siparisDurumlari) }),
+    )
+    .min(1)
+    .max(Math.max(...panelSayfaBoylari))
+    .refine((liste) => new Set(liste.map(({ numara }) => numara)).size === liste.length, "tekrar"),
+});
 
 export const siparisAyrintisiSemasi = z.strictObject({ numara: siparisNumarasiSemasi });
 

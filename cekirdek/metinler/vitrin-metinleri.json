@@ -1057,7 +1057,18 @@
           "enEski": "İlk talep: {tarih}",
           "bos": "Bekleyen talep yok.",
           "bosAciklama": "Müşteriler tükenmiş ürünün sayfasında e-postasını bırakınca burada görünür.",
-          "sinir": "En çok bekleyen {sayi} ürün gösteriliyor."
+          "sinir": "En çok bekleyen {sayi} ürün gösteriliyor.",
+          "ara": "Ürün ara",
+          "araYer": "Ürün adı",
+          "sutun": {
+            "urun": "Ürün",
+            "bekleyen": "Bekleyen",
+            "enEski": "İlk talep"
+          },
+          "siralama": {
+            "en-cok-bekleyen": "En çok bekleyen",
+            "en-eski-talep": "En eski talep"
+          }
         }
       },
       "kartlaOdeme": {

@@ -1,9 +1,23 @@
 // Sayfa sayfa okunan listelerin ortak sınırı (.claude/rules/veritabani.md: bir sayfadaki kayıt sayısının
-// üst sınırı olsun). Liste motoru gelince sütun ve filtre tanımları da buraya bağlanır.
+// üst sınırı olsun). Panel listelerinin sütun, süzgeç ve sıralama tanımları liste motorundadır
+// (cekirdek/yonetim-paneli/liste/, kart 0258).
 export const listeSayfasi = {
   varsayilanBoyut: 24,
   enCokBoyut: 100,
 } as const;
+
+// Panel listelerinde sayfa başına satır (kart 0258, karar 0157): mağaza sahibinin ayarı (panelSayfaBoyu), seçenekler
+// yalnız bunlardır, varsayılan ilkidir. Toplu işlem en çok bir sayfanın satırlarına uygulanır.
+export const panelSayfaBoylari = [25, 50, 100] as const;
+export type PanelSayfaBoyu = (typeof panelSayfaBoylari)[number];
+
+// Panel listesinde toplu işlemin sonucu (kart 0258): işlenen satırların anahtarı, işlenemeyenlerin anahtarı ve
+// nedeninin kodu (ekran metne çevirir). Her satır kendi işleminde, tekil işlemle aynı denetimden geçerek işlenir;
+// birinin hatası ötekileri durdurmaz.
+export type TopluSonuc = {
+  islenen: string[];
+  islenemeyen: { anahtar: string; kod: string }[];
+};
 
 // Vitrindeki ürün listelerinin sıralamaları (kart 0136, karar 0102). Sıralamanın adı adreste durur
 // (?sirala=fiyat-artan): yayınlandıktan sonra adı değişmez, paylaşılmış adresler bozulur.

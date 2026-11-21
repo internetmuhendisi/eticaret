@@ -233,14 +233,48 @@ test("panelde stok bildirimleri menüde ve sayfada bekleyen sayıyla görünür"
   await menuBaglantisi.click();
   await expect(page).toHaveURL(/\/yonetim\/stok-bildirimleri$/);
   await sayfaHazir(page);
-  const kart = page.getByRole("listitem").filter({ hasText: urunler.tukenmis.ad });
-  await expect(kart).toContainText(
+  const satir = page.getByRole("table").getByRole("row").filter({ hasText: urunler.tukenmis.ad });
+  await expect(satir).toContainText(
     doldur(metin("eklenti.stokBildirimi.panel.bekleyen"), { sayi: String(bekleyen) }),
   );
-  await expect(kart.getByRole("link", { name: urunler.tukenmis.ad })).toHaveAttribute(
+  await expect(satir.getByRole("link", { name: urunler.tukenmis.ad })).toHaveAttribute(
     "href",
     urunler.tukenmis.adres,
   );
+  // Ürün adında arama adrese yazılır (kart 0258); klavyeyle sıralama da.
+  const arama = page.getByRole("searchbox", { name: metin("eklenti.stokBildirimi.panel.ara") });
+  await arama.fill(urunler.tukenmis.ad.toLocaleUpperCase("tr"));
+  await arama.press("Enter");
+  await expect(page).toHaveURL(/\/yonetim\/stok-bildirimleri\?ara=/);
+  await sayfaHazir(page);
+  await expect(page.getByRole("table").getByRole("row")).toHaveCount(2);
+  await expect(satir).toBeVisible();
+  await page
+    .getByRole("button", {
+      name: doldur(metin("yonetim.liste.siralama"), {
+        ad: metin("eklenti.stokBildirimi.panel.siralama.en-cok-bekleyen"),
+      }),
+    })
+    .focus();
+  await page.keyboard.press("Enter");
+  await page
+    .getByRole("menuitemradio", {
+      name: metin("eklenti.stokBildirimi.panel.siralama.en-eski-talep"),
+    })
+    .focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\?ara=.*&sirala=en-eski-talep$/);
+  await sayfaHazir(page);
+  await expect(arama).toHaveValue(urunler.tukenmis.ad.toLocaleUpperCase("tr"));
+  // Eşleşmeyen arama sonuçsuz hâli gösterir.
+  await page.goto("/yonetim/stok-bildirimleri?ara=bulunmayan-urun-adi");
+  await sayfaHazir(page);
+  await expect(
+    page.getByRole("heading", { name: metin("yonetim.liste.sonucsuz.baslik") }),
+  ).toBeVisible();
+  await tara(page, "panel, sonuçsuz");
+  await page.goto("/yonetim/stok-bildirimleri");
+  await sayfaHazir(page);
   for (const renk of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: renk });
     for (const genislik of genislikler) {

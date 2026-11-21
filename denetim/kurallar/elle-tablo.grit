@@ -1,0 +1,17 @@
+// Elle tablo yasağı (kart 0258, .claude/rules/liste-motoru.md). Sayfada <table> ve parçaları yazılmaz: panel
+// listeleri liste motoruyla (cekirdek/yonetim-paneli/liste/), küçük tablolar ortak tablo parçasıyla
+// (bilesenler/parcalar/tablo.tsx) çizilir. Muafiyet yalnız projenin kökündeki o dosya içindir. E-postanın HTML
+// metni (JSX değil) ve createElement ile açılan öğe yalnız disiplindir.
+language js
+
+or {
+  JsxOpeningElement(),
+  JsxSelfClosingElement()
+} as $oge where {
+  or {
+    $filename <: not r".*/bilesenler/parcalar/tablo\.tsx",
+    $filename <: r".*/(?:cekirdek|siteler|sahip-paneli|komutlar|denetim|bilesenler)/(?:.*/)?bilesenler/parcalar/tablo\.tsx"
+  },
+  $oge <: r"(?s)<(?:table|caption|thead|tbody|tfoot|tr|th|td)[\s/>].*",
+  register_diagnostic(span=$oge, message="Elle tablo yazılamaz. Panel listesini liste motoruyla (cekirdek/yonetim-paneli/liste/), küçük tabloyu Tablo parçasıyla (bilesenler/parcalar/tablo.tsx) çizin.", severity="error")
+}

@@ -17,7 +17,8 @@ import { and, asc, count, desc, eq, inArray, isNull, lt, min, sql } from "drizzl
 import { siteAdresi } from "../../ayar-semasi/site-adresi.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
-import { stokBildirimiAyari } from "../../kayitlar/eklentiler.ts";
+import { type StokBildirimiSiralamasi, stokBildirimiAyari } from "../../kayitlar/eklentiler.ts";
+import { aramaAnahtari, aramaAnahtariSql } from "../../metinler/arama-anahtari.ts";
 import { metinOkuyucu } from "../../metinler/metin.ts";
 import { epostaGonder } from "../../moduller/eposta/servis.ts";
 import { siteninStokAyarlari, stokDurumlari } from "../../moduller/stok/durum.ts";
@@ -257,17 +258,32 @@ export const stokBildirimiServisi = (site: Site) => {
   };
 
   // Panel: bekleyen talebi olan birimler, en çok bekleyen önce (eşitte en eski talep önce).
-  const panelListesi = async (vt: Veritabani): Promise<PanelSatiri[]> => {
+  // Panelin listesi (kart 0258): sıralama ve ürün adında arama (aramanın harf kuralıyla, "%" ve "_" düz harftir).
+  const panelListesi = async (
+    vt: Veritabani,
+    secim: { siralama?: StokBildirimiSiralamasi; ara?: string } = {},
+  ): Promise<PanelSatiri[]> => {
+    const ilk = min(stokBildirimiTalepleri.olusturma_zamani);
+    const sira =
+      secim.siralama === "en-eski-talep" ? [asc(ilk), desc(count())] : [desc(count()), asc(ilk)];
+    const aranan = secim.ara === undefined || secim.ara === "" ? "" : aramaAnahtari(secim.ara);
     const satirlar = await vt
       .select({
         birim: stokBildirimiTalepleri.birim_kimligi,
         bekleyen: count(),
-        enEski: min(stokBildirimiTalepleri.olusturma_zamani),
+        enEski: ilk,
       })
       .from(stokBildirimiTalepleri)
-      .where(eq(stokBildirimiTalepleri.durum, "bekliyor"))
+      .innerJoin(urunBirimleri, eq(urunBirimleri.kimlik, stokBildirimiTalepleri.birim_kimligi))
+      .innerJoin(urunler, eq(urunler.kimlik, urunBirimleri.urun_kimligi))
+      .where(
+        and(
+          eq(stokBildirimiTalepleri.durum, "bekliyor"),
+          aranan === "" ? undefined : sql`strpos(${aramaAnahtariSql(urunler.ad)}, ${aranan}) > 0`,
+        ),
+      )
       .groupBy(stokBildirimiTalepleri.birim_kimligi)
-      .orderBy(desc(count()), asc(min(stokBildirimiTalepleri.olusturma_zamani)))
+      .orderBy(...sira, asc(stokBildirimiTalepleri.birim_kimligi))
       .limit(stokBildirimiAyari.panelSiniri);
     const birimler = satirlar.map((satir) => satir.birim);
     // Silinmiş birimin ya da sayfası açılmayan (silinmiş, taslak, arşiv) ürünün talepleri gösterilmez: bağlantı

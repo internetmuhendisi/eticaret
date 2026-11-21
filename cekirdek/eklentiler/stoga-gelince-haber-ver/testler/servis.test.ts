@@ -527,6 +527,24 @@ describe("panel ve temizlik", () => {
     expect(sayilar).toEqual(sayilar.toSorted((a, b) => b - a));
   });
 
+  it("panelde ürün adında arama (harf ayrımsız, joker yok) ve ilk talebi en eski önce sıralama (kart 0258)", async () => {
+    const eski = await tukenmisBirim();
+    const yeni = await tukenmisBirim();
+    await servis.talepYaz(vt, eski.birim, eposta());
+    for (let i = 0; i < 2; i++) await servis.talepYaz(vt, yeni.birim, eposta());
+    const ad = (await urunSrv.urunuOku(vt, yeni.urun))?.ad ?? "";
+    const bizim = (liste: { birim: string }[]) =>
+      liste.map(({ birim }) => birim).filter((birim) => [eski.birim, yeni.birim].includes(birim));
+    expect(bizim(await servis.panelListesi(vt))).toEqual([yeni.birim, eski.birim]);
+    expect(bizim(await servis.panelListesi(vt, { siralama: "en-eski-talep" }))).toEqual([
+      eski.birim,
+      yeni.birim,
+    ]);
+    const bulunan = await servis.panelListesi(vt, { ara: ad.toLocaleUpperCase("tr") });
+    expect(bulunan.map(({ birim }) => birim)).toEqual([yeni.birim]);
+    expect(await servis.panelListesi(vt, { ara: "%" })).toEqual([]);
+  });
+
   it("saklama süresi dolan talep (bekleyen de gönderilmiş de) silinir, süre ayardır; eklenti kapalıyken de", async () => {
     const { birim } = await tukenmisBirim({ veritabani: vtB });
     const bService = stokBildirimiServisi(kapali);

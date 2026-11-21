@@ -6,6 +6,8 @@ Sipariş listesinin bugünkü hâli en azdır: durum sekmeleri, numara ve müşt
 
 Bölüm: Yönetim paneli. Önce 0258 (ortak liste) bitmiş olmalı.
 
+Kart 0258'de yazılanlar (liste motorunun canlı örneği olarak): liste motoruna taşınma, ödeme yöntemi süzgeci, dört sıralama (en yeni, en eski, tutar) ve "Hazırlamaya al" toplu işlemi, testleriyle. Bu kartta kalanlar: tarih aralığı, "bakılması gereken" süzgeci, fiş yazdırma (0270 ile).
+
 ## Olmazsa olmazlar
 
 - Ortak liste parçasıyla: durum, tarih aralığı (sitenin saat dilimiyle), ödeme yöntemi ve "bakılması gereken" (havale bildirildi, iade talebi, bekleyen iade) süzgeçleri; sıralama.

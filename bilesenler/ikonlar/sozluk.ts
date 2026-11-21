@@ -3,7 +3,9 @@
 // <Ikon ad="kapat" /> ile ister, Lucide'yi doğrudan içe aktarmaz. Yeni bir kavram önce buraya eklenir.
 import {
   ArrowDownIcon,
+  ArrowDownWideNarrowIcon,
   ArrowUpIcon,
+  ArrowUpNarrowWideIcon,
   BanknoteIcon,
   CheckIcon,
   ChevronDownIcon,
@@ -129,6 +131,10 @@ export const ikonlar = {
   tutamak: GripVerticalIcon,
   "yukari-al": ArrowUpIcon,
   "asagi-al": ArrowDownIcon,
+  // Panel listeleri (kart 0258): bir kısmı seçili sayfa kutusu, sütunun artan ve azalan sırası.
+  "kismen-secili": MinusIcon,
+  "sirala-artan": ArrowUpNarrowWideIcon,
+  "sirala-azalan": ArrowDownWideNarrowIcon,
   // Vitrin bölümleri ekranı (kart 0142): menüdeki iki sayfa (slider kısayolu, bölümler); görünürlük düğmesi
   // bölümün bugünkü durumunu gösterir (görünür: goster, gizli: gizle; taslak); düzenle, satırın öteki işlemleri, sil.
   slider: GalleryHorizontalIcon,

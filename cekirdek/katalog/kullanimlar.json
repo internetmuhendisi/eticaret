@@ -46,6 +46,7 @@
     "cekirdek/yonetim-paneli/giris-formu.tsx",
     "cekirdek/yonetim-paneli/kargo/ekran.tsx",
     "cekirdek/yonetim-paneli/kod-formu.tsx",
+    "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/banka-hesaplari.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
@@ -56,7 +57,6 @@
     "cekirdek/yonetim-paneli/siparisler/iptal-ve-iade-ayarlari.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
     "cekirdek/yonetim-paneli/siparisler/not-formu.tsx",
-    "cekirdek/yonetim-paneli/siparisler/siparis-aramasi.tsx",
     "cekirdek/yonetim-paneli/siparisler/yonetici-bildirimleri-ayarlari.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/bolum-duzenleyici.tsx"
@@ -73,6 +73,7 @@
     "bilesenler/parcalar/secenek-grubu.tsx",
     "bilesenler/parcalar/secim-kutusu.tsx",
     "bilesenler/parcalar/siralanabilir-liste.tsx",
+    "bilesenler/parcalar/tablo-secimi.tsx",
     "bilesenler/parcalar/uyari.tsx",
     "bilesenler/parcalar/yukleniyor.tsx",
     "cekirdek/eklentiler/kartla-odeme/taksit-satiri.tsx",
@@ -106,6 +107,7 @@
     "cekirdek/vitrin/urun-sayfasi/sayfa.tsx",
     "cekirdek/vitrin/yildizlar.tsx",
     "cekirdek/yonetim-paneli/eylem-dugmesi.tsx",
+    "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/panel-menusu.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayrinti.tsx",
     "cekirdek/yonetim-paneli/siparisler/liste.tsx",
@@ -114,6 +116,7 @@
   "bilesenler/parcalar/acilir-menu.tsx": [
     "cekirdek/vitrin/bolumler/menu-satiri/gorunum.tsx",
     "cekirdek/vitrin/bolumler/ust-satir/hesap-menusu.tsx",
+    "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx"
   ],
@@ -136,7 +139,7 @@
   "bilesenler/parcalar/baglanti.tsx": [
     "bilesenler/parcalar/sayfalama.tsx",
     "cekirdek/eklentiler/stoga-gelince-haber-ver/form.tsx",
-    "cekirdek/eklentiler/stoga-gelince-haber-ver/panel.tsx",
+    "cekirdek/eklentiler/stoga-gelince-haber-ver/panel/liste.tsx",
     "cekirdek/moduller/oturum/sifirlama-formlari.tsx",
     "cekirdek/vitrin/bolumler/duyuru-seridi/gorunum.tsx",
     "cekirdek/vitrin/bolumler/iletisim-bilgileri/gorunum.tsx",
@@ -173,11 +176,11 @@
     "cekirdek/vitrin/urun-sayfasi/sayfa.tsx",
     "cekirdek/yonetim-paneli/eylem-dugmesi.tsx",
     "cekirdek/yonetim-paneli/giris-formu.tsx",
+    "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayrinti.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
     "cekirdek/yonetim-paneli/siparisler/liste.tsx",
-    "cekirdek/yonetim-paneli/siparisler/siparis-aramasi.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/slider.tsx"
   ],
@@ -195,7 +198,6 @@
     "cekirdek/yonetim-paneli/vitrin-bolumleri/slider.tsx"
   ],
   "bilesenler/parcalar/bos-hal.tsx": [
-    "cekirdek/eklentiler/stoga-gelince-haber-ver/panel.tsx",
     "cekirdek/vitrin/favoriler-sayfasi.tsx",
     "cekirdek/vitrin/hesap/adres-defteri.tsx",
     "cekirdek/vitrin/hesap/sayfalar.tsx",
@@ -204,11 +206,10 @@
     "cekirdek/vitrin/sepet/sepet-gorunumu.tsx",
     "cekirdek/vitrin/urun-listesi/arama-sayfasi.tsx",
     "cekirdek/vitrin/urun-listesi/sayfa.tsx",
+    "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/banka-hesaplari.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayarlar.tsx",
-    "cekirdek/yonetim-paneli/siparisler/liste.tsx",
-    "cekirdek/yonetim-paneli/siparisler/siparis-aramasi.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx"
   ],
   "bilesenler/parcalar/dugme.tsx": [
@@ -249,6 +250,7 @@
     "cekirdek/yonetim-paneli/kapatma-sorusu.tsx",
     "cekirdek/yonetim-paneli/kargo/ekran.tsx",
     "cekirdek/yonetim-paneli/kurulum-akisi.tsx",
+    "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/banka-hesaplari.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
@@ -259,7 +261,6 @@
     "cekirdek/yonetim-paneli/siparisler/iade-talebi-kutusu.tsx",
     "cekirdek/yonetim-paneli/siparisler/iptal-ve-iade-ayarlari.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
-    "cekirdek/yonetim-paneli/siparisler/siparis-aramasi.tsx",
     "cekirdek/yonetim-paneli/siparisler/yonetici-bildirimleri-ayarlari.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/bolum-duzenleyici.tsx",
@@ -268,8 +269,7 @@
   ],
   "bilesenler/parcalar/etiket.tsx": [
     "bilesenler/form/form-alani.tsx",
-    "cekirdek/vitrin/urun-listesi/filtreler.tsx",
-    "cekirdek/yonetim-paneli/siparisler/siparis-aramasi.tsx"
+    "cekirdek/vitrin/urun-listesi/filtreler.tsx"
   ],
   "bilesenler/parcalar/giris-alani.tsx": [
     "bilesenler/form/form.tsx",
@@ -289,6 +289,7 @@
     "cekirdek/yonetim-paneli/kargo/ekran.tsx",
     "cekirdek/yonetim-paneli/kayit-arama.tsx",
     "cekirdek/yonetim-paneli/kod-formu.tsx",
+    "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/banka-hesaplari.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
@@ -297,7 +298,6 @@
     "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/iptal-ve-iade-ayarlari.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
-    "cekirdek/yonetim-paneli/siparisler/siparis-aramasi.tsx",
     "cekirdek/yonetim-paneli/siparisler/yonetici-bildirimleri-ayarlari.tsx"
   ],
   "bilesenler/parcalar/ipucu.tsx": [
@@ -310,11 +310,11 @@
     "cekirdek/eklentiler/kartla-odeme/taksit-satiri.tsx",
     "cekirdek/vitrin/favori-listesi.tsx",
     "cekirdek/vitrin/odeme/odeme-formu.tsx",
-    "cekirdek/vitrin/sepet/sepet-gorunumu.tsx"
+    "cekirdek/vitrin/sepet/sepet-gorunumu.tsx",
+    "cekirdek/yonetim-paneli/liste/liste.tsx"
   ],
   "bilesenler/parcalar/kart.tsx": [
     "cekirdek/eklentiler/stoga-gelince-haber-ver/form.tsx",
-    "cekirdek/eklentiler/stoga-gelince-haber-ver/panel.tsx",
     "cekirdek/vitrin/hesap/adres-defteri.tsx",
     "cekirdek/vitrin/hesap/giris-duzeni.tsx",
     "cekirdek/vitrin/hesap/hesap-bilgileri.tsx",
@@ -326,14 +326,13 @@
     "cekirdek/vitrin/siparis/parcalar.tsx",
     "cekirdek/vitrin/siparis/takip-formu.tsx",
     "cekirdek/yonetim-paneli/kargo/ekran.tsx",
+    "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayarlar.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayrinti.tsx",
     "cekirdek/yonetim-paneli/siparisler/elle-siparis.tsx",
     "cekirdek/yonetim-paneli/siparisler/iade-talebi-kutusu.tsx",
     "cekirdek/yonetim-paneli/siparisler/iptal-ve-iade-ayarlari.tsx",
-    "cekirdek/yonetim-paneli/siparisler/liste.tsx",
-    "cekirdek/yonetim-paneli/siparisler/siparis-aramasi.tsx",
     "cekirdek/yonetim-paneli/siparisler/yonetici-bildirimleri-ayarlari.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/slider.tsx"
@@ -355,6 +354,7 @@
   "bilesenler/parcalar/onay-penceresi.tsx": [
     "cekirdek/vitrin/hesap/adres-defteri.tsx",
     "cekirdek/vitrin/siparis/siparis-iptali.tsx",
+    "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/banka-hesaplari.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayarlar.tsx",
@@ -383,13 +383,13 @@
     "cekirdek/vitrin/urun-karti/urun-karti.tsx",
     "cekirdek/vitrin/urun-sayfasi/sayfa.tsx",
     "cekirdek/vitrin/urun-sayfasi/yorumlar.tsx",
+    "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
     "cekirdek/yonetim-paneli/panel-menusu.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayrinti.tsx",
+    "cekirdek/yonetim-paneli/siparisler/durum-rozeti.tsx",
     "cekirdek/yonetim-paneli/siparisler/iade-talebi-kutusu.tsx",
-    "cekirdek/yonetim-paneli/siparisler/liste.tsx",
-    "cekirdek/yonetim-paneli/siparisler/siparis-aramasi.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx"
   ],
@@ -425,7 +425,7 @@
     "cekirdek/vitrin/hesap/siparisler.tsx",
     "cekirdek/vitrin/urun-listesi/sayfa.tsx",
     "cekirdek/vitrin/urun-sayfasi/yorumlar.tsx",
-    "cekirdek/yonetim-paneli/siparisler/liste.tsx"
+    "cekirdek/yonetim-paneli/liste/liste.tsx"
   ],
   "bilesenler/parcalar/secenek-grubu.tsx": [
     "cekirdek/vitrin/odeme/odeme-formu.tsx",
@@ -469,6 +469,14 @@
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx"
   ],
+  "bilesenler/parcalar/tablo-secimi.tsx": ["cekirdek/yonetim-paneli/liste/liste.tsx"],
+  "bilesenler/parcalar/tablo.tsx": [
+    "cekirdek/eklentiler/kartla-odeme/taksit-satiri.tsx",
+    "cekirdek/vitrin/urun-sayfasi/sayfa.tsx",
+    "cekirdek/yonetim-paneli/liste/liste.tsx",
+    "cekirdek/yonetim-paneli/siparisler/elle-siparis.tsx",
+    "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx"
+  ],
   "bilesenler/parcalar/uyari.tsx": [
     "bilesenler/parcalar/bildirim.tsx",
     "cekirdek/eklentiler/kartla-odeme/taksit-satiri.tsx",
@@ -500,6 +508,7 @@
     "cekirdek/yonetim-paneli/kapatma-sorusu.tsx",
     "cekirdek/yonetim-paneli/kargo/ekran.tsx",
     "cekirdek/yonetim-paneli/kod-formu.tsx",
+    "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/banka-hesaplari.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
@@ -510,7 +519,6 @@
     "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/iptal-ve-iade-ayarlari.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
-    "cekirdek/yonetim-paneli/siparisler/siparis-aramasi.tsx",
     "cekirdek/yonetim-paneli/siparisler/yonetici-bildirimleri-ayarlari.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/bolum-duzenleyici.tsx",

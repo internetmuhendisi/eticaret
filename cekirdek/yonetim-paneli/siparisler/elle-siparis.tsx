@@ -24,6 +24,15 @@ import { Kart } from "../../../bilesenler/parcalar/kart";
 import { OnayKutusu } from "../../../bilesenler/parcalar/onay-kutusu";
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
 import { sinif } from "../../../bilesenler/parcalar/sinif";
+import {
+  Tablo,
+  TabloBasHucresi,
+  TabloBasligi,
+  TabloGovdesi,
+  TabloHucresi,
+  TabloSatiri,
+  TabloUstu,
+} from "../../../bilesenler/parcalar/tablo";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
 import { doldur } from "../../metinler/doldur";
@@ -417,35 +426,37 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
               {metin("yonetim.elleSiparis.urunYok")}
             </p>
           ) : (
-            <table
-              className="w-full border-collapse text-left"
+            <Tablo
+              className="text-left"
               data-elle-alani="kalemler"
               tabIndex={-1}
               {...(kalemHatasi === undefined ? {} : { "aria-describedby": "elle-kalem-hatasi" })}
             >
-              <caption className="sr-only">{metin("yonetim.elleSiparis.urunler")}</caption>
-              <thead>
-                <tr className="border-b border-kenar text-kucuk text-soluk-yazi">
-                  <th scope="col" className="pb-2 font-kalin">
+              <TabloBasligi className="sr-only">
+                {metin("yonetim.elleSiparis.urunler")}
+              </TabloBasligi>
+              <TabloUstu>
+                <TabloSatiri className="text-kucuk text-soluk-yazi">
+                  <TabloBasHucresi scope="col" className="pb-2 font-kalin">
                     {metin("yonetim.elleSiparis.sutun.urun")}
-                  </th>
-                  <th scope="col" className="px-2 pb-2 font-kalin">
+                  </TabloBasHucresi>
+                  <TabloBasHucresi scope="col" className="px-2 pb-2 font-kalin">
                     {metin("yonetim.elleSiparis.sutun.adet")}
-                  </th>
-                  <th scope="col" className="pb-2 text-right font-kalin">
+                  </TabloBasHucresi>
+                  <TabloBasHucresi scope="col" className="pb-2 text-right font-kalin">
                     {metin("yonetim.elleSiparis.sutun.tutar")}
-                  </th>
-                  <th scope="col" className="pb-2">
+                  </TabloBasHucresi>
+                  <TabloBasHucresi scope="col" className="pb-2">
                     <span className="sr-only">{metin("yonetim.elleSiparis.sutun.islem")}</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
+                  </TabloBasHucresi>
+                </TabloSatiri>
+              </TabloUstu>
+              <TabloGovdesi>
                 {kalemler.map((kalem) => {
                   const satir = satirOf(kalem.birim);
                   return (
-                    <tr key={kalem.birim} className="border-b border-kenar last:border-b-0">
-                      <td className="py-3 align-middle">
+                    <TabloSatiri key={kalem.birim} className="last:border-b-0">
+                      <TabloHucresi className="py-3 align-middle">
                         <span className="flex min-w-0 flex-col">
                           <span className="font-kalin wrap-anywhere">{kalem.ad}</span>
                           {satir?.fiyat === undefined ? null : (
@@ -473,8 +484,8 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
                             </span>
                           ))}
                         </span>
-                      </td>
-                      <td className="px-2 py-3 align-middle">
+                      </TabloHucresi>
+                      <TabloHucresi className="px-2 py-3 align-middle">
                         <AdetSecici
                           deger={kalem.adet}
                           enAz={Math.min(kalem.adet, satir?.enAz ?? 1)}
@@ -490,11 +501,11 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
                             artir: doldur(metin("yonetim.iade.artir"), { ad: kalem.ad }),
                           }}
                         />
-                      </td>
-                      <td className="py-3 text-right align-middle font-kalin whitespace-nowrap">
+                      </TabloHucresi>
+                      <TabloHucresi className="py-3 text-right align-middle font-kalin whitespace-nowrap">
                         {satir?.yaziliTutar ?? ""}
-                      </td>
-                      <td className="py-3 pl-2 text-right align-middle">
+                      </TabloHucresi>
+                      <TabloHucresi className="py-3 pl-2 text-right align-middle">
                         <IkonDugmesi
                           ikon="kapat"
                           etiket={doldur(metin("yonetim.elleSiparis.cikar"), { ad: kalem.ad })}
@@ -502,12 +513,12 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
                             setKalemler((onceki) => onceki.filter((k) => k.birim !== kalem.birim))
                           }
                         />
-                      </td>
-                    </tr>
+                      </TabloHucresi>
+                    </TabloSatiri>
                   );
                 })}
-              </tbody>
-            </table>
+              </TabloGovdesi>
+            </Tablo>
           )}
           {kalemHatasi === undefined ? null : (
             <p id="elle-kalem-hatasi" className="text-kucuk text-tehlike-yazi">

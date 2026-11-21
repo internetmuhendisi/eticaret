@@ -17,7 +17,7 @@ Eklenti temel pakette olmayan özelliktir (`temel-paket.md`). Tarifi `eklentiler
 - Eklenti çekirdeğe yalnız bağlantı noktalarından bağlanır; çekirdeğin modülü eklentiyi tanımaz:
   - Stok değişikliği: `cekirdek/eklentiler/stok-kancalari.ts`. Kanca stoğu değiştiren işlemin içinde çalışır, site bilgisi almaz, yalnız işi kuyruğa koyar.
   - Ürün sayfası: `cekirdek/eklentiler/urun-sayfasi-yuvalari.tsx`. Parça seçili birimi `useSeciliBirim` ile okur.
-  - Panel: sayfa ağacındaki sayfa `eklenti` alanını taşır; eklenti kapalıyken menüde yoktur ve açılmaz.
+  - Panel: sayfa ağacındaki sayfa `eklenti` alanını taşır; eklenti kapalıyken menüde yoktur ve açılmaz. Ekranın dosyaları eklentinin `panel/` klasöründedir (karar 0158), listesi liste motoruyla yazılır.
   - Ödeme yöntemi: `cekirdek/eklentiler/odeme-yontemleri.ts` (kart 0215, karar 0142). Kayıttaki yöntem eklentiye bağlıdır (`eklentiliOdemeYontemleri`); eklenti `hazirMi`, `baslat` ve `iadeEt` (kart 0235, karar 0147) verir. Ödeme servisi oturum ve ayırmadan sonra `baslat`'ı çağırır, sipariş ödeme doğrulanınca `eklentiliSiparisiKur` ile kurulur.
   - E-posta şablonu, arka plan işi, izin, uç ve metin çekirdeğin var olan kayıtlarına eklenir; metinler `tr.json`'da `eklenti.` altındadır.
 - Eklentinin tablosu kendi `model.ts`'indedir; değişiklik üreten araç onu da okur.

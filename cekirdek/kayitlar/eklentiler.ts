@@ -29,6 +29,11 @@ export const stokBildirimiAyari = {
   taramaDakika: 60,
 } as const;
 
+// Stok bildirimleri ekranının sıralamaları (kart 0258): en çok bekleyen önce (varsayılan) ya da ilk talebi en eski
+// önce; eşitlikte öteki ölçüt. Adreste durur (?sirala=en-eski-talep).
+export const stokBildirimiSiralamalari = ["en-cok-bekleyen", "en-eski-talep"] as const;
+export type StokBildirimiSiralamasi = (typeof stokBildirimiSiralamalari)[number];
+
 // Kartla ödeme ve taksit (kart 0215, karar 0142). Kart ödemesinin durumları kart ödemeleri tablosuna yazılır;
 // veritabanındaki denetim (kart_odemeleri_durum) bu listeyle aynıdır, bunu eklentinin servis testi denetler.
 // - baslatildi: ödeme kuruluşunun formu açıldı, sonuç henüz bilinmiyor.

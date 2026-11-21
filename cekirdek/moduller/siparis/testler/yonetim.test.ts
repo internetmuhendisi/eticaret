@@ -37,7 +37,11 @@ import { yorumServisi } from "../../yorum/servis.ts";
 import { siparisAyarlari } from "../ayarlar.ts";
 import { havaleBildirimiFormuSemasi } from "../havale-bildirimi-semalari.ts";
 import { havaleBildirimleri, siparisGecmisi, siparisler, siparisNotlari } from "../model.ts";
-import { kargoFirmalariSemasi, siparisListesiSemasi } from "../semalar.ts";
+import {
+  kargoFirmalariSemasi,
+  siparisListesiSemasi,
+  siparisTopluIslemiSemasi,
+} from "../semalar.ts";
 import { siparisServisi } from "../servis.ts";
 import { kisiselVeriTemizligi } from "../temizlik.ts";
 import { siparisYonetimi } from "../yonetim.ts";
@@ -550,6 +554,107 @@ describe("liste", () => {
     );
     // Sınır dışı sayfa son sayfaya çekilir.
     expect(await liste({ sayfa: 99 })).toMatchObject({ sayfa: 1, sayfaSayisi: 1, toplam: 2 });
+  });
+  it("ödeme yöntemi süzgeci sayılara da uyar, dört sıralama, sayfa başına satır ve sayfa sınırları (kart 0258)", async () => {
+    const h = await hazirla();
+    const { birim } = await h.urunAc();
+    const kapidakiler: string[] = [];
+    for (let i = 0; i < 3; i++) kapidakiler.push(await ver(h.vt, birim, kapida));
+    const havaledeki = await ver(h.vt, birim, havale);
+    // Tutarlar farklı olsun: havaledeki en pahalı, ilk kapıdaki en ucuz.
+    await h.vt.update(siparisler).set({ toplam: 99_000 }).where(eq(siparisler.numara, havaledeki));
+    await h.vt
+      .update(siparisler)
+      .set({ toplam: 100 })
+      .where(eq(siparisler.numara, kapidakiler[0] ?? ""));
+    const liste = (girdi: Record<string, unknown>) =>
+      yonetim.liste(h.vt, siparisListesiSemasi.parse(girdi));
+    const numaralar = async (girdi: Record<string, unknown>) =>
+      (await liste(girdi)).satirlar.map((s) => s.numara);
+
+    const yalnizKapida = await liste({ odeme: ["kapida-odeme"] });
+    expect(yalnizKapida.toplam).toBe(3);
+    expect(yalnizKapida.sayilar["odeme-bekleniyor"]).toBe(3);
+    expect((await liste({ odeme: ["kapida-odeme", "havale"] })).toplam).toBe(4);
+    expect((await liste({ odeme: ["kart"] })).toplam).toBe(0);
+    expect((await liste({ odeme: ["kart"] })).sayilar["odeme-bekleniyor"]).toBe(0);
+
+    expect(await numaralar({})).toEqual([havaledeki, ...kapidakiler.toReversed()]);
+    expect(await numaralar({ siralama: "en-eski" })).toEqual([...kapidakiler, havaledeki]);
+    expect((await numaralar({ siralama: "tutar-azalan" }))[0]).toBe(havaledeki);
+    expect((await numaralar({ siralama: "tutar-artan" }))[0]).toBe(kapidakiler[0]);
+
+    // Sayfa başına satır yalnız ayarın seçenekleri; sınır dışı sayfa son sayfaya çekilir.
+    expect(() => siparisListesiSemasi.parse({ sayfaBoyu: 20 })).toThrow();
+    const ilk = await liste({ sayfaBoyu: 25 });
+    expect(ilk).toMatchObject({ sayfa: 1, sayfaSayisi: 1, sayfaBoyu: 25, toplam: 4 });
+    for (let i = 0; i < 23; i++) await ver(h.vt, birim, kapida);
+    expect(await liste({ sayfa: 2 })).toMatchObject({ sayfa: 2, sayfaSayisi: 2, toplam: 27 });
+    expect((await liste({ sayfa: 2 })).satirlar).toHaveLength(2);
+    expect(await liste({ sayfa: 9 })).toMatchObject({ sayfa: 2 });
+    expect((await liste({ sayfa: 1, sayfaBoyu: 50 })).satirlar).toHaveLength(27);
+  });
+});
+
+describe("toplu işlem (kart 0258)", () => {
+  it("girdi: en az bir, en çok bir sayfa (100), her numara bir kez, yalnız kayıttaki işlem", () => {
+    const siparis = (numara: string) => ({ numara, gorulenDurum: "odeme-bekleniyor" });
+    const gecer = (siparisler: unknown[], islem = "hazirlamaya-al") =>
+      siparisTopluIslemiSemasi.safeParse({ islem, siparisler }).success;
+    expect(gecer([siparis("ORN-1")])).toBe(true);
+    expect(gecer([])).toBe(false);
+    expect(gecer([siparis("ORN-1"), siparis("orn-1")])).toBe(false);
+    expect(gecer(Array.from({ length: 100 }, (_, i) => siparis(`ORN-${i + 1}`)))).toBe(true);
+    expect(gecer(Array.from({ length: 101 }, (_, i) => siparis(`ORN-${i + 1}`)))).toBe(false);
+    expect(gecer([siparis("ORN-1")], "kargoya-ver")).toBe(false);
+  });
+
+  it("her sipariş tekil işlemle aynı denetimden geçer, işlenemeyenler nedeniyle döner, ötekiler işlenir", async () => {
+    const h = await hazirla();
+    const { birim } = await h.urunAc();
+    const kim = await h.yonetici();
+    const kapidaBir = await ver(h.vt, birim, kapida);
+    const kapidaIki = await ver(h.vt, birim, kapida);
+    const havaledeki = await ver(h.vt, birim, havale);
+    const eskiGoren = await ver(h.vt, birim, kapida);
+    const zatenHazir = await ver(h.vt, birim, kapida);
+    await yonetim.islemYap(h.vt, kim, {
+      numara: zatenHazir,
+      islem: "hazirlamaya-al",
+      gorulenDurum: "odeme-bekleniyor",
+    });
+    const oncekiGecmis = await gecmisSayisi(h.vt);
+    const sonuc = await yonetim.topluIslem(h.vt, kim, {
+      islem: "hazirlamaya-al",
+      siparisler: [
+        { numara: kapidaBir, gorulenDurum: "odeme-bekleniyor" },
+        { numara: havaledeki, gorulenDurum: "odeme-bekleniyor" },
+        // Ekran eski durumu gördü: sipariş bu arada hazırlamaya alındı.
+        { numara: zatenHazir, gorulenDurum: "odeme-bekleniyor" },
+        // Ekran hazırlanıyor gördü: geçiş yok.
+        { numara: eskiGoren, gorulenDurum: "hazirlaniyor" },
+        { numara: "YOK-1", gorulenDurum: "odeme-bekleniyor" },
+        { numara: kapidaIki, gorulenDurum: "odeme-bekleniyor" },
+      ],
+    });
+    expect(sonuc.islenen).toEqual([kapidaBir, kapidaIki]);
+    expect(sonuc.islenemeyen).toEqual([
+      { anahtar: havaledeki, kod: "yontem-uymuyor" },
+      { anahtar: zatenHazir, kod: "durum-degisti" },
+      { anahtar: eskiGoren, kod: "durum-degisti" },
+      { anahtar: "YOK-1", kod: "bulunamadi" },
+    ]);
+    expect((await oku(h.vt, kapidaBir)).durum).toBe("hazirlaniyor");
+    expect((await oku(h.vt, kapidaIki)).durum).toBe("hazirlaniyor");
+    expect((await oku(h.vt, havaledeki)).durum).toBe("odeme-bekleniyor");
+    expect((await oku(h.vt, eskiGoren)).durum).toBe("odeme-bekleniyor");
+    // Yalnız işlenen iki sipariş geçmişe yazılır, yazanıyla.
+    expect(await gecmisSayisi(h.vt)).toBe(oncekiGecmis + 2);
+    const ayrinti = await yonetim.ayrinti(h.vt, kapidaBir);
+    expect(ayrinti?.gecmis[0]).toMatchObject({
+      neden: "hazirlamaya-alindi",
+      yazan: { tur: "yonetici", eposta: kim.eposta },
+    });
   });
 });
 

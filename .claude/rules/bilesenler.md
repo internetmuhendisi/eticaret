@@ -46,6 +46,7 @@ Bileşen, düğme, giriş alanı, pencere gibi tekrar kullanılan arayüz parça
   - `SiralanabilirListe` (kart 0141, karar 0111): elle sıralanan küçük liste; tutamakla sürükleme (@dnd-kit), klavyeyle boşluk ve ok tuşları, her genişlikte yukarı ve aşağı al düğmeleri, ekran okuyucu duyuruları. Kullanan yeni sırayı hemen verir, kaydı arkadan yapar. Metinleri `cekirdek/metinler/siralama-metinleri.ts`. Satırın içinde alt liste duran listede `hizalama="ust"` (kart 0143).
   - `OnayPenceresi` (kart 0143, karar 0116): silme ve iptal gibi geri dönüşsüz eylemlerin tek onayı; uyarı penceresi, odak "Vazgeç"te, Escape vazgeçer, onay işi bitince kapanır, odak açan öğeye döner.
   - `SayfaBasligi` panelde `gorunum="panel"` ile çizilir (kart 0141).
+  - `Tablo` ve parçaları (kart 0258, karar 0158): tablonun iskeleti ve satır çizgisi, sunucuda da çizilir; boşluk ve hizalama kullananın. `TabloSecimi` (`tablo-secimi.tsx`): satır seçiminin kutusu, ekran okuyucu adıyla, basılan alan 44 px, sayfanın kısmen seçili hâli (`kismen`). Panel listeleri bunları liste motoruyla kullanır.
   - `AdetSecici` (kart 0212, karar 0135): azalt, adet ve artır; sınırdaki düğme kapalıdır, adet ekran okuyucuya duyurulur. Ürün sayfasında ve sepette kullanılır.
 
   Sınıflar `sinif()` ile birleştirilir. Asıl shadcn hâlleri `bilesenler/shadcn-kaynagi/` altındadır, güncellemesi `pnpm shadcn-farki` ile yapılır.

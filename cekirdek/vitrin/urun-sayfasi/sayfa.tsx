@@ -25,6 +25,13 @@ import {
   SeritOgesi,
 } from "../../../bilesenler/parcalar/serit";
 import { sinif } from "../../../bilesenler/parcalar/sinif";
+import {
+  Tablo,
+  TabloBasHucresi,
+  TabloGovdesi,
+  TabloHucresi,
+  TabloSatiri,
+} from "../../../bilesenler/parcalar/tablo";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import {
   tukenmisBirimSecilebilirMi,
@@ -210,21 +217,23 @@ function AltKisim({
           <h2 id="urun-ozellikleri" className={bolumBasligiSiniflari}>
             {metin("vitrin.urunSayfasi.ozellikler")}
           </h2>
-          <table className="w-full max-w-metin border-collapse text-govde">
-            <tbody>
+          <Tablo className="max-w-metin text-govde">
+            <TabloGovdesi>
               {veri.ozellikler.map((ozellik) => (
-                <tr key={ozellik.ad} className="border-b border-kenar">
-                  <th
+                <TabloSatiri key={ozellik.ad}>
+                  <TabloBasHucresi
                     scope="row"
                     className="w-2/5 bg-yuzey px-3 py-3 text-left align-top font-kalin text-soluk-yazi wrap-anywhere tablet:px-4"
                   >
                     {ozellik.ad}
-                  </th>
-                  <td className="px-3 py-3 align-top wrap-anywhere tablet:px-4">{ozellik.deger}</td>
-                </tr>
+                  </TabloBasHucresi>
+                  <TabloHucresi className="px-3 py-3 align-top wrap-anywhere tablet:px-4">
+                    {ozellik.deger}
+                  </TabloHucresi>
+                </TabloSatiri>
               ))}
-            </tbody>
-          </table>
+            </TabloGovdesi>
+          </Tablo>
         </section>
       )}
       {/* Yorumlar özellik tablosundan sonra, ilgili ürünlerden önce (kart 0139); yorum işleviyle çizilir. */}

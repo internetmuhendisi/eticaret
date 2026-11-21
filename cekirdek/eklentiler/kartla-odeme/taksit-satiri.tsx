@@ -14,6 +14,15 @@ import {
   PencereTetikleyici,
   PencereUstu,
 } from "../../../bilesenler/parcalar/pencere";
+import {
+  Tablo,
+  TabloBasHucresi,
+  TabloBasligi,
+  TabloGovdesi,
+  TabloHucresi,
+  TabloSatiri,
+  TabloUstu,
+} from "../../../bilesenler/parcalar/tablo";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { kapiyaIstek } from "../../kapi/istemci";
 import { doldur } from "../../metinler/doldur";
@@ -74,42 +83,43 @@ export function TaksitSatiri({ enCok }: { enCok: number }) {
             ) : (
               <div className="flex flex-col gap-6">
                 {durum.bankalar.map((banka) => (
-                  <table
-                    key={`${banka.banka}-${banka.aile}`}
-                    className="w-full border-collapse text-kucuk"
-                  >
-                    <caption className="pb-2 text-left font-kalin">
+                  <Tablo key={`${banka.banka}-${banka.aile}`} className="text-kucuk">
+                    <TabloBasligi className="pb-2 text-left font-kalin">
                       {[banka.aile, banka.banka].filter((ad) => ad !== "").join(" · ")}
-                    </caption>
-                    <thead>
-                      <tr className="border-b border-kenar text-soluk-yazi">
-                        <th scope="col" className="py-2 pr-3 text-left font-normal">
+                    </TabloBasligi>
+                    <TabloUstu>
+                      <TabloSatiri className="text-soluk-yazi">
+                        <TabloBasHucresi scope="col" className="py-2 pr-3 text-left font-normal">
                           {metin("eklenti.kartlaOdeme.taksitSutun")}
-                        </th>
-                        <th scope="col" className="py-2 pr-3 text-right font-normal">
+                        </TabloBasHucresi>
+                        <TabloBasHucresi scope="col" className="py-2 pr-3 text-right font-normal">
                           {metin("eklenti.kartlaOdeme.aylikSutun")}
-                        </th>
-                        <th scope="col" className="py-2 text-right font-normal">
+                        </TabloBasHucresi>
+                        <TabloBasHucresi scope="col" className="py-2 text-right font-normal">
                           {metin("eklenti.kartlaOdeme.toplamSutun")}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                        </TabloBasHucresi>
+                      </TabloSatiri>
+                    </TabloUstu>
+                    <TabloGovdesi>
                       {banka.taksitler.map((taksit) => (
-                        <tr key={taksit.sayi} className="border-b border-kenar">
-                          <th scope="row" className="py-2 pr-3 text-left font-normal">
+                        <TabloSatiri key={taksit.sayi}>
+                          <TabloBasHucresi scope="row" className="py-2 pr-3 text-left font-normal">
                             {taksit.sayi === 1
                               ? metin("eklenti.kartlaOdeme.tekCekim")
                               : doldur(metin("eklenti.kartlaOdeme.taksitSayisi"), {
                                   sayi: String(taksit.sayi),
                                 })}
-                          </th>
-                          <td className="py-2 pr-3 text-right whitespace-nowrap">{taksit.aylik}</td>
-                          <td className="py-2 text-right whitespace-nowrap">{taksit.toplam}</td>
-                        </tr>
+                          </TabloBasHucresi>
+                          <TabloHucresi className="py-2 pr-3 text-right whitespace-nowrap">
+                            {taksit.aylik}
+                          </TabloHucresi>
+                          <TabloHucresi className="py-2 text-right whitespace-nowrap">
+                            {taksit.toplam}
+                          </TabloHucresi>
+                        </TabloSatiri>
                       ))}
-                    </tbody>
-                  </table>
+                    </TabloGovdesi>
+                  </Tablo>
                 ))}
               </div>
             )

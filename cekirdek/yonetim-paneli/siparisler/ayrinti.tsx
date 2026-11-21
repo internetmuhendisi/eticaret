@@ -12,9 +12,9 @@ import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { doldur } from "../../metinler/doldur";
 import { metin } from "../../metinler/site-metni";
+import { DurumRozeti } from "./durum-rozeti";
 import { IadeyiYenidenDene } from "./iade-penceresi";
 import { IadeTalebiKutusu } from "./iade-talebi-kutusu";
-import { DurumRozeti } from "./liste";
 import {
   durumMetni,
   iadeNedenMetni,
