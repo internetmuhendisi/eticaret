@@ -147,7 +147,8 @@ export function ElleSiparis({ veri }: { veri: ElleSiparisVerisi }) {
       });
       if (!gecerli) return;
       if (sonuc.tamam) setGorunum(sonuc.veri);
-      else pf.hatalariGoster({}, [metin("yonetim.elleSiparis.hata.genel")]);
+      // Arka planda giden istek: odak yerinde kalır, alanların hataları silinmez.
+      else pf.hatalariGoster({}, [metin("yonetim.elleSiparis.hata.genel")], { odakla: false });
     }, 250);
     return () => {
       gecerli = false;

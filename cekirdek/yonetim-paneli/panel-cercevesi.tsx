@@ -3,6 +3,7 @@
 // düğmesi ve mağazanın adı; menü yan pencerede açılır. Sayfa, çerçevenin sağındaki ana bölgeye kendi iskeletiyle
 // (PanelSayfasi) çizilir. Tarayıcıda çizilir: yan pencerenin tetikleyicisi özelliklerini ancak düğme burada
 // çizilirse alır (kart 0108'de ölçüldü). Metinler ve menü sunucudan gelir.
+import { usePathname } from "next/navigation";
 import { type ReactNode, useState } from "react";
 import { BildirimAlani } from "../../bilesenler/parcalar/bildirim";
 import { IkonDugmesi } from "../../bilesenler/parcalar/dugme";
@@ -32,6 +33,14 @@ export function PanelCercevesi({
 }) {
   const metin = usePanelMetni();
   const [acik, setAcik] = useState(false);
+  // Sayfa değişince menü kapanır: çıkış sorusu bağlantının tıklamasını durdurup gezinmeyi kendisi yaptığında
+  // menünün kapatan işlevi çağrılmaz (kart 0259, bağımsız kontrolün bulgusu).
+  const yol = usePathname();
+  const [gorulenYol, setGorulenYol] = useState(yol);
+  if (yol !== gorulenYol) {
+    setGorulenYol(yol);
+    setAcik(false);
+  }
   const menu = { magaza, eposta, gruplar, altyapiAdi };
   return (
     // Kaydedilmemiş değişiklikle panelin başka bir sayfasına geçerken sorulur (kart 0259).

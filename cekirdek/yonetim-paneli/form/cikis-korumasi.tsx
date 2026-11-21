@@ -34,6 +34,8 @@ type KorunanForm = {
   degisti: () => boolean;
   // Formu gönderir; kayıt olduysa true.
   kaydet?: () => Promise<boolean>;
+  // Kayıt olmadıysa odağı formun hatasına yeniden verir (pencere kapandıktan sonra).
+  hatayaOdaklan?: () => void;
 };
 
 type Koruma = {
@@ -50,6 +52,8 @@ export function CikisKorumasi({ children }: { children: ReactNode }) {
   const [kaydediliyor, setKaydediliyor] = useState(false);
   // Basılan bağlantı: pencere kapanınca odak ona döner (pencere kapanırken bekleyen silinmiş olur).
   const basilanBag = useRef<HTMLElement | null>(null);
+  // "Kaydet ve çık"ta kaydedemeyen ilk form: pencere kapanınca odak onun hatasına gider, bağlantıya değil.
+  const hatali = useRef<KorunanForm | null>(null);
 
   const degisenler = () => [...formlar.current.values()].filter((form) => form.degisti());
 
@@ -105,7 +109,10 @@ export function CikisKorumasi({ children }: { children: ReactNode }) {
     setKaydediliyor(true);
     let hepsi = true;
     for (const form of degisenler()) {
-      if (!(await form.kaydet?.())) hepsi = false;
+      if (!(await form.kaydet?.())) {
+        hepsi = false;
+        hatali.current ??= form;
+      }
     }
     setKaydediliyor(false);
     if (hepsi) git(bekleyen.adres);
@@ -128,6 +135,13 @@ export function CikisKorumasi({ children }: { children: ReactNode }) {
             // Odak basılan bağlantıya döner (pencere tetikleyicisiz açıldı); gidildiyse bağlantı sayfada değildir.
             const bag = basilanBag.current;
             basilanBag.current = null;
+            const form = hatali.current;
+            hatali.current = null;
+            if (form?.hatayaOdaklan !== undefined) {
+              olay.preventDefault();
+              form.hatayaOdaklan();
+              return;
+            }
             if (bag?.isConnected === true) {
               olay.preventDefault();
               bag.focus();
@@ -172,6 +186,7 @@ export const useCikisKorumasi = (form: KorunanForm) => {
   useEffect(() => {
     const kayitli: KorunanForm = {
       degisti: () => son.current.degisti(),
+      hatayaOdaklan: () => son.current.hatayaOdaklan?.(),
       ...(son.current.kaydet === undefined
         ? {}
         : { kaydet: () => son.current.kaydet?.() ?? Promise.resolve(false) }),

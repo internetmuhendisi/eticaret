@@ -9,7 +9,9 @@ import { join, relative, resolve } from "node:path";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
+import { OnayKutusu } from "../../../bilesenler/parcalar/onay-kutusu";
 import { doldur } from "../../metinler/doldur.ts";
 import { MetinSaglayici } from "../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../metinler/metin.ts";
@@ -22,17 +24,29 @@ import {
   PanelFormu,
   usePanelFormu,
 } from "../form/panel-formu.tsx";
+import { PanelCercevesi } from "../panel-cercevesi.tsx";
 
 const git = vi.fn();
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: git, refresh: () => {} }) }));
+const { yol } = vi.hoisted(() => ({ yol: { simdi: "/yonetim/siparisler" } }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: git, refresh: () => {} }),
+  usePathname: () => yol.simdi,
+}));
 
 const metin = metinOkuyucu("tr");
+// Radix'in onay kutusu boyutu ResizeObserver ile izler; jsdom'da yoktur.
+globalThis.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
 
 beforeEach(() => git.mockReset());
 afterEach(cleanup);
 
 // Deneme formu: iki alan ve bir liste kabı; gönderim verilen hataları gösterir ya da verilen işi bekler.
 type Gonderim = { alanlar?: AlanHatalari; genel?: string[]; is?: () => Promise<boolean> };
+const arkaPlan = "arka plan";
 const gonderimler: Gonderim[] = [];
 
 function Deneme({
@@ -45,7 +59,16 @@ function Deneme({
   const [ad, setAd] = useState("");
   const pf = usePanelFormu({
     degisti: degisti || ad !== "",
-    ...(kaydet === undefined ? {} : { kaydet }),
+    // Kaydedemeyen kayıt soyadın hatasını gösterir ("Kaydet ve çık"ta odak ona dönmeli).
+    ...(kaydet === undefined
+      ? {}
+      : {
+          kaydet: async () => {
+            const tamam = await kaydet();
+            if (!tamam) pf.hatalariGoster({ soyad: "boş olamaz" });
+            return tamam;
+          },
+        }),
   });
   return (
     <PanelFormu
@@ -53,23 +76,14 @@ function Deneme({
       gonder={async () => {
         const gonderim = gonderimler.shift() ?? {};
         if (gonderim.is !== undefined) {
-          await pf.isle(gonderim.is);
+          if ((await pf.isle(gonderim.is)) === true) setAd("");
           return;
         }
         pf.hatalariGoster(gonderim.alanlar ?? {}, gonderim.genel ?? []);
       }}
     >
       <PanelAlani ad="ad" etiket="Ad" zorunlu>
-        {(alan) => (
-          <GirisAlani
-            {...alan}
-            value={ad}
-            onChange={(o) => {
-              setAd(o.target.value);
-              pf.alaniTemizle("ad");
-            }}
-          />
-        )}
+        {(alan) => <GirisAlani {...alan} value={ad} onChange={(o) => setAd(o.target.value)} />}
       </PanelAlani>
       <AlanKabi ad="liste" etiket="Liste">
         <p tabIndex={-1} data-hata-odagi="">
@@ -77,8 +91,14 @@ function Deneme({
         </p>
       </AlanKabi>
       <PanelAlani ad="soyad" etiket="Soyad" zorunlu={false}>
-        {(alan) => <GirisAlani {...alan} onChange={() => pf.alaniTemizle("soyad")} />}
+        {(alan) => <GirisAlani {...alan} />}
       </PanelAlani>
+      <AlanKabi ad="onay" etiket="Onay">
+        <OnayKutusu etiket="Onay" hata={pf.hata("onay")} />
+      </AlanKabi>
+      <Dugme onClick={() => pf.hatalariGoster({}, ["ağ hatası"], { odakla: false })}>
+        {arkaPlan}
+      </Dugme>
       <KaydetCubugu kaydetEtiketi="Kaydet" vazgec={() => {}} durumYazisi degisiklikGerekli />
     </PanelFormu>
   );
@@ -142,6 +162,19 @@ describe("hatalar ve odak", () => {
     expect(ozet()).toBeNull();
   });
 
+  it("seçim değişince (onay kutusu) alanın satırı özetten düşer", async () => {
+    ciz({ degisti: true });
+    gonderimler.push({ alanlar: { ad: "çok uzun", onay: "işaretleyin" } });
+    await gonder();
+    expect(within(ozet() as HTMLElement).getAllByRole("button")).toHaveLength(2);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Onay" }));
+    expect(
+      within(ozet() as HTMLElement)
+        .getAllByRole("button")
+        .map((s) => s.textContent),
+    ).toEqual(["Ad: çok uzun"]);
+  });
+
   it("alanı olmayan hata özette düz satır; yalnız o varsa başlık 'Kaydedilemedi' ve odak özette", async () => {
     ciz({ degisti: true });
     gonderimler.push({ alanlar: { yok: "kayıt bulunamadı" }, genel: ["bağlantı koptu"] });
@@ -152,6 +185,26 @@ describe("hatalar ve odak", () => {
     expect(within(kutu).queryAllByRole("button")).toHaveLength(0);
     expect(kutu.textContent).toContain("bağlantı koptu");
     expect(kutu.textContent).toContain("kayıt bulunamadı");
+  });
+
+  it("aynı alana düşen iki hata alanda birlikte yazar", async () => {
+    ciz({ degisti: true });
+    gonderimler.push({ alanlar: { liste: "birinci", "liste.2": "ikinci" } });
+    await gonder();
+    expect(ozet()).toBeNull();
+    expect(document.activeElement?.textContent).toBe("birinci ikinci");
+  });
+
+  it("arka planda çıkan hata odağı taşımaz, alanların hatalarını silmez, özette yazar", async () => {
+    ciz({ degisti: true });
+    gonderimler.push({ alanlar: { ad: "çok uzun" } });
+    await gonder();
+    const ad = screen.getByLabelText("Ad");
+    expect(document.activeElement).toBe(ad);
+    fireEvent.click(screen.getByRole("button", { name: arkaPlan }));
+    expect(document.activeElement).toBe(ad);
+    expect(ad.getAttribute("aria-invalid")).toBe("true");
+    expect(ozet()?.textContent).toContain("ağ hatası");
   });
 
   it("hatanın yolunda alan yoksa en yakın üst alan bulunur, kabın hata odağına gidilir", async () => {
@@ -197,6 +250,17 @@ describe("gönderim ve kaydet çubuğu", () => {
     expect((screen.getByRole("button", { name: "Kaydet" }) as HTMLButtonElement).disabled).toBe(
       false,
     );
+  });
+
+  it("kayıttan sonra Kaydet kapanınca odak kaybolmaz, durum yazısına geçer", async () => {
+    ciz();
+    fireEvent.change(screen.getByLabelText("Ad"), { target: { value: "x" } });
+    const kaydet = screen.getByRole("button", { name: "Kaydet" });
+    kaydet.focus();
+    gonderimler.push({ is: () => Promise.resolve(true) });
+    await gonder();
+    expect((kaydet as HTMLButtonElement).disabled).toBe(true);
+    expect(document.activeElement).toBe(screen.getByRole("status"));
   });
 
   it("değişiklik yokken düğmeler kapalı ve çubuk 'Değişiklik yok' der; yazınca açılır", () => {
@@ -296,6 +360,22 @@ describe("çıkarken soru", () => {
     expect(git).toHaveBeenCalledWith("/yonetim/kargo");
   });
 
+  it("Kaydet ve çık kaydedemezse pencere kapanınca odak bağlantıya değil hataya gider", async () => {
+    korumali(async () => false);
+    fireEvent.change(screen.getByLabelText("Ad"), { target: { value: "x" } });
+    tikla("kargo");
+    await act(async () => {
+      fireEvent.click(
+        within(screen.getByRole("alertdialog")).getByRole("button", {
+          name: metin("yonetim.form.cikis.kaydet"),
+        }),
+      );
+    });
+    await act(async () => {});
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(document.activeElement).toBe(screen.getByLabelText("Soyad"));
+  });
+
   it("değişiklikle sayfa kapanırken tarayıcı sorar", () => {
     korumali();
     const temiz = new Event("beforeunload", { cancelable: true });
@@ -343,5 +423,26 @@ describe("panelin formları ortak yapıda (tarama)", () => {
   it("bozuk örnek: doğrudan Form kullanan dosya yakalanır", () => {
     expect(/<Form[\s>]/.test("return <Form onSubmit={gonder}>")).toBe(true);
     expect(/<Form[\s>]/.test("<FormAlani etiket={x}>")).toBe(false);
+  });
+});
+
+describe("telefonda menü", () => {
+  // Çıkış sorusu bağlantının tıklamasını durdurup gezinmeyi kendisi yapınca menünün kapatan işlevi çağrılmaz; sayfa
+  // değişince menü kapanır (bağımsız kontrolün bulgusu).
+  it("sayfa değişince menünün yan penceresi kapanır", () => {
+    yol.simdi = "/yonetim/siparisler";
+    const cerceve = () => (
+      <MetinSaglayici dil="tr">
+        <PanelCercevesi magaza={{ ad: "Mağaza" }} eposta="" gruplar={[]} altyapiAdi="">
+          <p>{buSayfa}</p>
+        </PanelCercevesi>
+      </MetinSaglayici>
+    );
+    const { rerender } = render(cerceve());
+    fireEvent.click(screen.getByRole("button", { name: metin("yonetim.cerceve.menuyuAc") }));
+    expect(screen.getByRole("dialog")).toBeDefined();
+    yol.simdi = "/yonetim/kargo";
+    rerender(cerceve());
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });

@@ -143,6 +143,9 @@ export function KargoEkrani({ veri, izinli }: { veri: KargoEkraniVerisi; izinli:
               if (izinli) degistir("ucretsizKargoTutari", deger);
             }}
             secilemezEki=""
+            {...(pf.hata("ucretsizKargoTutari") === undefined
+              ? {}
+              : { hata: pf.hata("ucretsizKargoTutari") ?? "" })}
           />
         </AlanKabi>
         <PanelAlani

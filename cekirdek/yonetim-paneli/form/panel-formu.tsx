@@ -81,6 +81,8 @@ export const usePanelFormu = ({
   const formRef = useRef<HTMLFormElement>(null);
   const ozetRef = useRef<HTMLDivElement>(null);
   const [hatalar, setHatalar] = useState<AlanHatalari>({});
+  // Hatanın yolundan bulunduğu alanın adına ("hedef" yolu "hedef.kimlik" alanında olabilir).
+  const hataninAlani = useRef<Record<string, string>>({});
   const [ozet, setOzet] = useState<Ozet | null>(null);
   const [gonderiliyor, setGonderiliyor] = useState(false);
   const suruyor = useRef(false);
@@ -89,7 +91,20 @@ export const usePanelFormu = ({
     null,
   );
 
-  useCikisKorumasi({ degisti: () => degisti, ...(kaydet === undefined ? {} : { kaydet }) });
+  // Son odak isteği: çıkış sorusunda "Kaydet ve çık" kaydedemezse pencere kapanınca odak yeniden hataya verilir
+  // (pencere açıkken odak pencerede kalır; bağımsız kontrolün bulgusu).
+  const sonOdak = useRef<"ozet" | string | null>(null);
+  useCikisKorumasi({
+    degisti: () => degisti,
+    hatayaOdaklan: () => {
+      if (sonOdak.current !== null)
+        setOdakIstegi((onceki) => ({
+          hedef: sonOdak.current ?? "",
+          sira: (onceki?.sira ?? 0) + 1,
+        }));
+    },
+    ...(kaydet === undefined ? {} : { kaydet }),
+  });
 
   const alanaGit = useCallback((ad: string) => {
     const kap = alanOgesi(formRef.current, ad);
@@ -98,21 +113,39 @@ export const usePanelFormu = ({
 
   useEffect(() => {
     if (odakIstegi === null) return;
+    sonOdak.current = odakIstegi.hedef;
     if (odakIstegi.hedef === "ozet") ozetRef.current?.focus();
     else alanaGit(odakIstegi.hedef);
   }, [odakIstegi, alanaGit]);
 
-  // Hataları gösterir ve odağı taşır. Formda olmayan alanın hatası alanı olmayan hata sayılır.
+  // Hataları gösterir ve odağı taşır. Formda olmayan alanın hatası alanı olmayan hata sayılır. Kullanıcı
+  // göndermeden çıkan hata (arka planda giden istek) odakla: false ile gösterilir: odak yerinde, alanların hataları
+  // kalır, yalnız alanı olmayan hata özete yazılır.
   const hatalariGoster = useCallback(
-    (alanlar: AlanHatalari, genel: readonly string[] = []) => {
+    (alanlar: AlanHatalari, genel: readonly string[] = [], { odakla = true } = {}) => {
+      if (!odakla) {
+        if (genel.length === 0) return;
+        setOzet((onceki) => ({
+          baslik: metin("yonetim.form.ozet.kaydedilemedi"),
+          satirlar: [
+            ...genel.map((hata) => ({ metin: hata })),
+            ...(onceki?.satirlar.filter((satir) => satir.alan !== undefined) ?? []),
+          ],
+        }));
+        return;
+      }
       const form = formRef.current;
       const bulunan: { yol: string; ad: string; oge: HTMLElement; hata: string }[] = [];
       const disarida: string[] = [...genel];
       for (const [yol, hata] of Object.entries(alanlar)) {
         const yer = enYakinAlan(form, yol);
         if (yer === null) disarida.push(hata);
-        // Aynı alana düşen ikinci hata yazılmaz (alanın altında tek hata).
-        else if (!bulunan.some((oge) => oge.ad === yer.ad)) bulunan.push({ yol, ...yer, hata });
+        else {
+          // Aynı alana düşen ikinci hata ilkinin arkasına yazılır (bölüm alanının iki alt alanı gibi).
+          const ayni = bulunan.find((oge) => oge.ad === yer.ad);
+          if (ayni === undefined) bulunan.push({ yol, ...yer, hata });
+          else ayni.hata = `${ayni.hata} ${hata}`;
+        }
       }
       // Ekrandaki sıra.
       bulunan.sort((a, b) =>
@@ -120,6 +153,7 @@ export const usePanelFormu = ({
       );
       // Hata kendi yoluyla saklanır: alan onu kendi yoluyla okur (iç içe alan alt yolunu, PanelAlani adını).
       setHatalar(Object.fromEntries(bulunan.map(({ yol, hata }) => [yol, hata])));
+      hataninAlani.current = Object.fromEntries(bulunan.map(({ yol, ad }) => [yol, ad]));
       const sayi = bulunan.length + disarida.length;
       if (sayi === 0) {
         setOzet(null);
@@ -161,9 +195,10 @@ export const usePanelFormu = ({
   // kalmayan özet kalkar.
   const alaniTemizle = useCallback((ad: string) => {
     setHatalar((onceki) => {
-      if (onceki[ad] === undefined) return onceki;
-      const { [ad]: _kalkan, ...kalan } = onceki;
-      return kalan;
+      const kalan = Object.fromEntries(
+        Object.entries(onceki).filter(([yol]) => yol !== ad && hataninAlani.current[yol] !== ad),
+      );
+      return Object.keys(kalan).length === Object.keys(onceki).length ? onceki : kalan;
     });
     setOzet((onceki) => {
       if (onceki === null) return onceki;
@@ -238,6 +273,10 @@ export function PanelFormu({
           olay.preventDefault();
           void gonder(olay);
         }}
+        // Düzeltilen alanın hatası kalkar: yazılınca ya da seçim değişince alanın hatası ve özetteki satırı düşer
+        // (Radix'in radyo, onay kutusu ve anahtarı formun içinde gizli girişle değişiklik olayı yayar). Form ayrıca
+        // alaniTemizle çağırabilir (pencereden seçilen kayıt gibi).
+        onChange={(olay) => alaniBul(olay.target, durum.alaniTemizle)}
         className={sinif("flex flex-col gap-5", className)}
       >
         {ozetIcerde ? null : <FormunHataOzeti />}
@@ -246,6 +285,14 @@ export function PanelFormu({
     </FormBaglami.Provider>
   );
 }
+
+const alaniBul = (hedef: EventTarget, temizle: (ad: string) => void) => {
+  const ad =
+    hedef instanceof Element
+      ? hedef.closest<HTMLElement>("[data-alan]")?.dataset["alan"]
+      : undefined;
+  if (ad !== undefined) temizle(ad);
+};
 
 // Formun hata özeti: PanelFormu başta çizer; ozetIcerde verilmişse form kendisi yerleştirir.
 export function FormunHataOzeti() {
@@ -344,11 +391,26 @@ export function KaydetCubugu({
   const metin = usePanelMetni();
   const { gonderiliyor, degisti } = usePanelFormuBaglami();
   const kapali = gonderiliyor || (degisiklikGerekli && !degisti);
+  const durum = useRef<HTMLSpanElement>(null);
+  // Kayıttan sonra değişiklik kalmayınca Kaydet kapanır: odağı ondaysa odak kaybolmasın, durum yazısına geçer
+  // (bağımsız kontrolün bulgusu).
+  useEffect(() => {
+    if (!kapali || gonderiliyor) return;
+    const odakta = document.activeElement;
+    const cubuk = durum.current?.parentElement;
+    if (cubuk === null || cubuk === undefined) return;
+    if (odakta === document.body || (odakta !== null && cubuk.contains(odakta))) {
+      if (odakta instanceof HTMLButtonElement && !odakta.disabled) return;
+      durum.current?.focus();
+    }
+  }, [kapali, gonderiliyor]);
   return (
     <YanPencereAltCubugu className={sinif("items-center", sayfada && "bottom-0 mx-0 px-0")}>
       {durumYazisi ? (
         // Taslak: değişiklik varken yazı kalın ve önünde ana renkte nokta; yokken soluk.
         <span
+          ref={durum}
+          tabIndex={-1}
           role="status"
           className={sinif(
             "mr-auto inline-flex basis-full items-center gap-2 text-kucuk tablet:basis-auto",

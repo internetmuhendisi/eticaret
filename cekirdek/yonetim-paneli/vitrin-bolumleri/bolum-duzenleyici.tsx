@@ -110,6 +110,7 @@ export function BolumDuzenleyici({
               degistir();
             }}
             secilemezEki=""
+            {...(pf.hata("gorunum") === undefined ? {} : { hata: pf.hata("gorunum") ?? "" })}
           />
         </AlanKabi>
       ) : null}
