@@ -27,4 +27,4 @@ Bölüm: Yönetim paneli. Önce 0257 (taslak) bitmiş olmalı. Kart 0188 (alt ç
 
 ## Durum
 
-yapılacak
+bitti
