@@ -12,6 +12,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { OnayKutusu } from "../../../bilesenler/parcalar/onay-kutusu";
+import {
+  YanPencere,
+  YanPencereBasligi,
+  YanPencereIcerigi,
+} from "../../../bilesenler/parcalar/yan-pencere";
 import { doldur } from "../../metinler/doldur.ts";
 import { MetinSaglayici } from "../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../metinler/metin.ts";
@@ -444,5 +449,42 @@ describe("telefonda menü", () => {
     yol.simdi = "/yonetim/kargo";
     rerender(cerceve());
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+});
+
+// Kart 0265: sayfanın formunun içinden açılan pencerenin formu (ürün ekranında "Stoğu düzelt") gövdeye çizilse de
+// React olayı ağaçta yukarı taşır; pencerenin gönderimi dıştaki formu göndermez.
+function IcIce({ dis, ic }: { dis: () => void; ic: () => void }) {
+  const disFormu = usePanelFormu({ degisti: false });
+  const icFormu = usePanelFormu({ degisti: false });
+  return (
+    <PanelFormu durum={disFormu} gonder={async () => dis()}>
+      <YanPencere open>
+        <YanPencereIcerigi kapatEtiketi={metin("ortak.parca.kapat")}>
+          <YanPencereBasligi>{metin("yonetim.urunEkrani.stok.duzelt")}</YanPencereBasligi>
+          <PanelFormu durum={icFormu} gonder={async () => ic()}>
+            <Dugme type="submit">{metin("yonetim.urunEkrani.stok.kaydet")}</Dugme>
+          </PanelFormu>
+        </YanPencereIcerigi>
+      </YanPencere>
+    </PanelFormu>
+  );
+}
+
+describe("iç içe form", () => {
+  it("pencerenin formu gönderilince yalnız o gönderilir", () => {
+    const dis = vi.fn();
+    const ic = vi.fn();
+    render(
+      <MetinSaglayici dil="tr">
+        <IcIce dis={dis} ic={ic} />
+      </MetinSaglayici>,
+    );
+    const pencere = screen.getByRole("dialog");
+    const form = pencere.querySelector("form");
+    if (form === null) throw new Error("Pencerenin formu yok.");
+    fireEvent.submit(form);
+    expect(ic).toHaveBeenCalledTimes(1);
+    expect(dis).not.toHaveBeenCalled();
   });
 });

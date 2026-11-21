@@ -174,34 +174,28 @@ describe("seçenekli ürün", () => {
     });
   });
 
-  it("basitten dönen ilk satır basit birimin fiyatı ve stoğuyla karşılaştırılır", () => {
-    // Basit ürün (fiyat 100,00 / 80,00, stok 9) Beden seçeneği alıyor: ilk satır basit birimdir.
+  it("basitten dönen ilk satır basit birimin sunucudaki fiyatıyla karşılaştırılır: formda değişen fiyat gider", () => {
+    // Basit ürün (sunucuda 100,00 / 80,00, stok 9); fiyat formda 110,00 yapıldı, kaydedilmeden Beden seçeneği eklendi.
+    // Dönen ilk satırın alanları formun fiyatını taşır; karşılaştırma sunucudakiyle olmalı, yoksa değişiklik kaybolur.
     const basit = { ...form };
+    const ilk = { ...bosBirlesim, satisFiyati: "110,00", indirimliFiyat: "80,00", stok: "9" };
     // Yeni seçenek ve değerleri kimliksizdir (henüz kaydedilmedi).
-    const yeniVaryant = (s: BirlesimFormu, m: BirlesimFormu): VaryantFormu => {
-      const v = varyant(s, m);
-      return {
-        ...v,
-        secenekler: v.secenekler.map(({ kimlik: _k, ...secenek }) => ({
-          ...secenek,
-          degerler: secenek.degerler.map(({ kimlik: _d, ...deger }) => deger),
-        })),
-      };
+    const v = varyant(ilk, alan({ satisFiyati: "100,00", stok: "3" }));
+    const yeniVaryant: VaryantFormu = {
+      ...v,
+      secenekler: v.secenekler.map(({ kimlik: _k, ...secenek }) => ({
+        ...secenek,
+        degerler: secenek.degerler.map(({ kimlik: _d, ...deger }) => deger),
+      })),
     };
     const yeni = {
       ...basit,
-      varyant: yeniVaryant(
-        alan({ satisFiyati: "100,00", indirimliFiyat: "80,00", stok: "9" }),
-        alan({ satisFiyati: "100,00", stok: "3" }),
-      ),
+      fiyat: { ...basit.fiyat, satisFiyati: "110,00" },
+      varyant: yeniVaryant,
     };
-    const satirlar = birlesimSatirlari(yeni.varyant, basit.varyant, {
-      ...bosBirlesim,
-      satisFiyati: "100,00",
-      indirimliFiyat: "80,00",
-      stok: "9",
-    });
+    const satirlar = birlesimSatirlari(yeni.varyant, basit.varyant, ilk);
     expect(fiyatStokGirdisi(yeni, basit, veri(), satirlar)?.birimler).toEqual([
+      { yer: "birlesimler.0", birlesim: [0], satisFiyati: "110,00", indirimliFiyat: "80,00" },
       {
         yer: "birlesimler.1",
         birlesim: [1],
