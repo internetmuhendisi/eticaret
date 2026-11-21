@@ -37,4 +37,4 @@ Bölüm: Sipariş ve müşteri hesabı. Kart 0238'in hattına bakılırken bulun
 
 ## Durum
 
-yapılacak
+bitti
