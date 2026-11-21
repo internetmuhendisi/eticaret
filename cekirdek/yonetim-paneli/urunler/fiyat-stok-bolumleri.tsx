@@ -4,7 +4,7 @@
 // basit ürünün stoğu "Stoğu düzelt" penceresiyle hemen düzeltilir (görülen miktarla, sebebiyle). Seçenekli üründe
 // birleşimlerin fiyatı ve stoğu seçenekler bölümünün tablosundadır, burada yalnız ortak indirim zamanı ve özet durur.
 // Fiyatı değiştirme izni olmayan (görevli) alanları okur; geçmişler yalnız görme izni olana.
-import { type ComponentProps, useState } from "react";
+import { type ComponentProps, useId, useState } from "react";
 import { Anahtar } from "../../../bilesenler/parcalar/anahtar";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
@@ -235,6 +235,7 @@ export function StokBolumu({
 }) {
   const metin = usePanelMetni();
   const [pencere, setPencere] = useState(false);
+  const duzeltDugmesi = useId();
   const basit = veri.birimler[""];
   const toplam = Object.values(veri.birimler).reduce((t, b) => t + b.stok, 0);
   return (
@@ -293,7 +294,7 @@ export function StokBolumu({
               )}
             </span>
             {izinler.duzelt ? (
-              <Dugme tur="cerceveli" onClick={() => setPencere(true)}>
+              <Dugme id={duzeltDugmesi} tur="cerceveli" onClick={() => setPencere(true)}>
                 {metin("yonetim.urunEkrani.stok.duzelt")}
               </Dugme>
             ) : null}
@@ -326,6 +327,7 @@ export function StokBolumu({
           kapat={() => setPencere(false)}
           birim={basit.kimlik}
           stok={basit.stok}
+          acan={duzeltDugmesi}
         />
       )}
     </AlanKabi>
@@ -406,18 +408,29 @@ function StokDuzeltPenceresi({
   kapat,
   birim,
   stok,
+  acan,
 }: {
   acik: boolean;
   kapat: () => void;
   birim: string;
   stok: number;
+  acan: string;
 }) {
   const metin = usePanelMetni();
   const { kapat: kapatVeTemizle, kapatmayiIste, degisince, soru } = useKapatmaSorusu(kapat);
   return (
     <YanPencere open={acik} onOpenChange={(durum) => (durum ? undefined : kapatmayiIste())}>
       {acik ? (
-        <YanPencereIcerigi kapatEtiketi={metin("ortak.parca.kapat")} className="tablet:max-w-form">
+        <YanPencereIcerigi
+          kapatEtiketi={metin("ortak.parca.kapat")}
+          className="tablet:max-w-form"
+          // Kayıttan sonra sayfa yenilenir; Radix'in kendi dönüşü odağı gövdede bırakıyordu (tarayıcıda ölçüldü):
+          // odak açan düğmeye açıkça verilir.
+          onCloseAutoFocus={(olay) => {
+            olay.preventDefault();
+            document.getElementById(acan)?.focus();
+          }}
+        >
           <YanPencereUstu>
             <YanPencereBasligi>{metin("yonetim.urunEkrani.stok.duzelt")}</YanPencereBasligi>
             <YanPencereAciklamasi>
@@ -598,7 +611,13 @@ export function FiyatGecmisi({
   const bas = "pb-2 pr-3 text-left font-kalin";
   return (
     <>
-      <div className="min-w-0 overflow-x-auto">
+      {/* Telefonda tablo kendi kabında kayar; içinde odaklanacak öğe yok, kap klavyeyle odak alır (WCAG 2.1.1). */}
+      <section
+        className="min-w-0 overflow-x-auto"
+        aria-label={metin("yonetim.urunEkrani.gecmis.fiyatTablosu")}
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: kaydırılan bölge odak almalıdır (WCAG 2.1.1).
+        tabIndex={0}
+      >
         <Tablo className="w-max min-w-full text-kucuk">
           <TabloBasligi className="sr-only">
             {metin("yonetim.urunEkrani.gecmis.fiyatTablosu")}
@@ -658,7 +677,7 @@ export function FiyatGecmisi({
             ))}
           </TabloGovdesi>
         </Tablo>
-      </div>
+      </section>
       <GecmisAlti
         devam={sayfa.devam !== undefined}
         yukleniyor={yukleniyor}
@@ -686,7 +705,13 @@ export function StokGecmisi({
   const bas = "pb-2 pr-3 text-left font-kalin";
   return (
     <>
-      <div className="min-w-0 overflow-x-auto">
+      {/* Telefonda tablo kendi kabında kayar; içinde odaklanacak öğe yok, kap klavyeyle odak alır (WCAG 2.1.1). */}
+      <section
+        className="min-w-0 overflow-x-auto"
+        aria-label={metin("yonetim.urunEkrani.gecmis.stokTablosu")}
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: kaydırılan bölge odak almalıdır (WCAG 2.1.1).
+        tabIndex={0}
+      >
         <Tablo className="w-max min-w-full text-kucuk">
           <TabloBasligi className="sr-only">
             {metin("yonetim.urunEkrani.gecmis.stokTablosu")}
@@ -748,7 +773,7 @@ export function StokGecmisi({
             ))}
           </TabloGovdesi>
         </Tablo>
-      </div>
+      </section>
       <GecmisAlti
         devam={sayfa.devam !== undefined}
         yukleniyor={yukleniyor}

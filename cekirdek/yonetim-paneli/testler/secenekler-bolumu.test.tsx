@@ -71,6 +71,16 @@ function Deneme({ izinli, silebilir }: { izinli: boolean; silebilir: boolean }) 
         silebilir={silebilir}
         agirlikBirimi="kg"
         galeri={[]}
+        fiyatStok={{
+          fiyatGor: false,
+          fiyatDegistir: false,
+          stokGor: false,
+          stokDuzelt: false,
+          simge: "¤",
+          sebep: "sayim",
+          not: "",
+          sebepDegistir: () => {},
+        }}
       />
     </PanelFormu>
   );

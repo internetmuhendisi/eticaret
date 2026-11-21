@@ -7,6 +7,10 @@
 // rolün her uçtaki erişimini ayrıca rol-uc-erisimi.test.ts dener. Seçenekler bölümü (kart 0264): mağaza sahibi yeni
 // ürünü seçenekleriyle ekler ve birleşimin ağırlığı sitenin biriminde okunur; okunamayan birleşim ağırlığı ve hatalı
 // seçenek ürünün değişikliğini de geri alır; görevli değer ekler, kayıtlı değeri silemez (yetki, hiçbir şey değişmez).
+// Fiyat ve stok bölümleri (kart 0265): mağaza sahibi yeni ürünü fiyatı, indirimi ve başlangıç stoğuyla ekler, fiyat
+// geçmişinde yazan kendisidir; görevli fiyatı değiştiremez (fiyat-yetkisi, ürünün değişikliği de yazılmaz), stoğu
+// pencereyle düzeltir, eski görülen miktarla çakışma alır; birleşimlerin fiyatı ve stoğu satırlarıyla yazılır;
+// rolsüz yönetici, müşteri ve girişsiz ziyaretçi stok düzeltme ve iki geçmiş ucunda geçmez.
 import { randomBytes } from "node:crypto";
 import { join, resolve } from "node:path";
 import { eq } from "drizzle-orm";
@@ -16,18 +20,32 @@ import { yerelZamandan } from "../../metinler/bicimleyici.ts";
 import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
 import { roller, yoneticiRolleri } from "../../moduller/ekip/model.ts";
 import { etiketServisi } from "../../moduller/etiket/servis.ts";
+import { siteninFiyatServisi } from "../../moduller/fiyat/servis.ts";
 import { kategoriEkle } from "../../moduller/kategori/servis.ts";
 import { markaServisi } from "../../moduller/marka/servis.ts";
 import { hesapAc } from "../../moduller/oturum/servis.ts";
 import { ozellikServisi } from "../../moduller/ozellik/servis.ts";
+import { stokServisi } from "../../moduller/stok/servis.ts";
 import { aciklamayiTemizle } from "../../moduller/urun/aciklama.ts";
 import { urunler } from "../../moduller/urun/model.ts";
 import { siteninUrunServisi } from "../../moduller/urun/servis.ts";
 import { siteninVergiServisi } from "../../moduller/vergi/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
+import type {
+  FiyatGecmisiGorunusu,
+  GecmisSayfasi,
+  StokGecmisiGorunusu,
+} from "../../yonetim-paneli/urunler/fiyat-stok-verisi.ts";
 import { urunEkraniVerisi } from "../../yonetim-paneli/urunler/urun-verisi.ts";
-import { urunDegisikligiUcu, urunEklemeUcu, urunSilmeUcu } from "../yonetici/urun.ts";
+import {
+  urunDegisikligiUcu,
+  urunEklemeUcu,
+  urunFiyatGecmisiUcu,
+  urunSilmeUcu,
+  urunStokDuzeltmeUcu,
+  urunStokGecmisiUcu,
+} from "../yonetici/urun.ts";
 import { oturumCerezi } from "./erisim-denemesi.ts";
 
 const ortak = globalThis as Record<symbol, unknown>;
@@ -37,6 +55,8 @@ const site = siteKlasorunuOku(
 );
 const bicim = siteninBicimleyicisi(site.ayarlar);
 const servis = siteninUrunServisi(site);
+const fiyat = siteninFiyatServisi(site);
+const stok = stokServisi();
 const yapan = { tur: "yonetici", kimlik: "00000000-0000-4000-8000-000000000001" } as const;
 
 let vt: Veritabani;
@@ -447,5 +467,166 @@ describe("seçenekler bölümü (kart 0264)", () => {
     expect((await canli(kimlik)).map((b) => [b.stokKodu, b.agirlikGram])).toEqual([
       [stokKodu, 1500],
     ]);
+  });
+});
+
+describe("fiyat ve stok bölümleri (kart 0265)", () => {
+  const tutar = (sayi: number) => bicim.sayi(sayi, 2);
+  const basitBirim = async (kimlik: string) =>
+    (await servis.urunuOku(vt, kimlik))?.birimler.find((b) => !b.silindi)?.kimlik ?? "";
+  const stoku = async (birim: string) =>
+    (await stok.stoklariOku(vt, [birim])).get(birim)?.miktar ?? 0;
+
+  it("mağaza sahibi yeni ürünü fiyatı, indirimi ve başlangıç stoğuyla ekler; geçmişte yazan kendisidir", async () => {
+    const sahip = await cerez("magaza-sahibi");
+    const kimlik = (
+      await veri<{ kimlik: string }>(
+        await urunEklemeUcu(
+          istek("urun-ekle", sahip, {
+            urun: { ad: `Fiyatlı ${benzersiz()}`, vergiSinifi: null },
+            fiyatStok: {
+              indirimBaslangici: null,
+              indirimBitisi: "2030-01-01T00:00",
+              sebep: "yeni-mal",
+              birimler: [
+                { yer: "fiyat", satisFiyati: tutar(1249.9), indirimliFiyat: tutar(999) },
+                { yer: "stok", stok: { gorulen: 0, yeni: "7" } },
+              ],
+            },
+          }),
+        ),
+      )
+    ).kimlik;
+    const birim = await basitBirim(kimlik);
+    expect(await fiyat.fiyatOku(vt, birim)).toMatchObject({
+      satisFiyati: 124990,
+      indirimliFiyat: 99900,
+      indirimBitisi: yerelZamandan("2030-01-01T00:00", site.ayarlar.saatDilimi),
+    });
+    expect(await stoku(birim)).toBe(7);
+    const gecmis = await veri<GecmisSayfasi<FiyatGecmisiGorunusu>>(
+      await urunFiyatGecmisiUcu(istek("urun-fiyat-gecmisi", sahip, { kimlik })),
+    );
+    expect(gecmis.satirlar).toHaveLength(1);
+    expect(gecmis.satirlar[0]?.yazan).toMatchObject({ tur: "yonetici" });
+    const stokGecmisi = await veri<GecmisSayfasi<StokGecmisiGorunusu>>(
+      await urunStokGecmisiUcu(istek("urun-stok-gecmisi", sahip, { kimlik })),
+    );
+    expect(stokGecmisi.satirlar.map((s) => [s.sebep, s.degisim, s.sonra])).toEqual([
+      ["yeni-mal", 7, 7],
+    ]);
+  });
+
+  it("görevli fiyatı değiştiremez (ürünün değişikliği de yazılmaz), stoğu düzeltir; eski görülen miktar çakışır", async () => {
+    const sahip = await cerez("magaza-sahibi");
+    const kimlik = await ekle(sahip, { ad: `Görevli fiyat ${benzersiz()}`, vergiSinifi: null });
+    const birim = await basitBirim(kimlik);
+    const gorevli = await cerez("gorevli");
+    const red = await urunDegisikligiUcu(
+      istek("urun-degistir", gorevli, {
+        kimlik,
+        urun: { kisaAciklama: "Görevli yazdı." },
+        fiyatStok: { birimler: [{ yer: "fiyat", satisFiyati: tutar(10) }] },
+      }),
+    );
+    expect(red.status).toBe(403);
+    expect(await hata(red)).toMatchObject({
+      kod: "yetki",
+      ayrinti: [{ alan: "fiyat", kod: "fiyat-yetkisi" }],
+    });
+    expect((await servis.urunuOku(vt, kimlik))?.kisaAciklama ?? null).toBeNull();
+    expect(await fiyat.fiyatOku(vt, birim)).toBeUndefined();
+
+    const duzelt = (gorulenMiktar: number, yeniMiktar: number) =>
+      urunStokDuzeltmeUcu(
+        istek("urun-stok-duzelt", gorevli, {
+          birim,
+          duzeltme: { gorulenMiktar, yeniMiktar, sebep: "sayim" },
+        }),
+      );
+    await veri(await duzelt(0, 5));
+    const cakisma = await duzelt(0, 9);
+    expect(cakisma.status).toBe(409);
+    expect(await hata(cakisma)).toMatchObject({ kod: "cakisma" });
+    expect(await stoku(birim)).toBe(5);
+    // "Diğer" notsuz alanın koduyla döner.
+    expect(
+      await hata(
+        await urunStokDuzeltmeUcu(
+          istek("urun-stok-duzelt", gorevli, {
+            birim,
+            duzeltme: { gorulenMiktar: 5, yeniMiktar: 6, sebep: "diger" },
+          }),
+        ),
+      ),
+    ).toMatchObject({ kod: "dogrulama", ayrinti: [{ alan: "not", kod: "not-gerekli" }] });
+  });
+
+  it("birleşimlerin fiyatı ve stoğu satırlarıyla yazılır, ortak sebeple", async () => {
+    const sahip = await cerez("magaza-sahibi");
+    const kimlik = await ekle(sahip, { ad: `Birleşimli ${benzersiz()}`, vergiSinifi: null });
+    await veri(
+      await urunDegisikligiUcu(
+        istek("urun-degistir", sahip, {
+          kimlik,
+          urun: {},
+          varyant: {
+            secenekler: [{ ad: "Beden", degerler: [{ ad: "S" }, { ad: "M" }] }],
+            birlesimler: [{ degerler: [0] }, { degerler: [1] }],
+          },
+          fiyatStok: {
+            sebep: "sayim",
+            birimler: [
+              {
+                yer: "birlesimler.0",
+                birlesim: [0],
+                satisFiyati: tutar(100),
+                stok: { gorulen: 0, yeni: "3" },
+              },
+              {
+                yer: "birlesimler.1",
+                birlesim: [1],
+                satisFiyati: tutar(120),
+                stok: { gorulen: 0, yeni: "4" },
+              },
+            ],
+          },
+        }),
+      ),
+    );
+    const birimler = (await servis.urunuOku(vt, kimlik))?.birimler.filter((b) => !b.silindi) ?? [];
+    const sonuc = await Promise.all(
+      birimler.map(async (b) => [
+        (await fiyat.fiyatOku(vt, b.kimlik))?.satisFiyati,
+        await stoku(b.kimlik),
+      ]),
+    );
+    expect(sonuc).toEqual([
+      [10000, 3],
+      [12000, 4],
+    ]);
+  });
+
+  it("rolsüz, müşteri ve girişsiz stok düzeltme ve iki geçmiş ucunda geçmez, stok değişmez", async () => {
+    const sahip = await cerez("magaza-sahibi");
+    const kimlik = await ekle(sahip, { ad: `Yetkisiz stok ${benzersiz()}`, vergiSinifi: null });
+    const birim = await basitBirim(kimlik);
+    for (const kisi of ["rolsuz", "musteri", "girissiz"] as const) {
+      const oturum = await cerez(kisi);
+      const beklenen = kisi === "rolsuz" ? 403 : 401;
+      for (const yanit of [
+        await urunStokDuzeltmeUcu(
+          istek("urun-stok-duzelt", oturum, {
+            birim,
+            duzeltme: { gorulenMiktar: 0, yeniMiktar: 3, sebep: "sayim" },
+          }),
+        ),
+        await urunFiyatGecmisiUcu(istek("urun-fiyat-gecmisi", oturum, { kimlik })),
+        await urunStokGecmisiUcu(istek("urun-stok-gecmisi", oturum, { kimlik })),
+      ]) {
+        expect(yanit.status, kisi).toBe(beklenen);
+      }
+    }
+    expect(await stoku(birim)).toBe(0);
   });
 });

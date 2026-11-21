@@ -271,6 +271,9 @@ export function PanelFormu({
         yukleniyorMetni={metin("ortak.form.yukleniyor")}
         onSubmit={(olay) => {
           olay.preventDefault();
+          // Pencerenin formu sayfanın formunun içinden açılabilir (ürün ekranında "Stoğu düzelt", kart 0265): pencere
+          // gövdeye çizilse de React olayı ağaçta yukarı taşır, dıştaki form da gönderilirdi.
+          olay.stopPropagation();
           void gonder(olay);
         }}
         // Düzeltilen alanın hatası kalkar: yazılınca ya da seçim değişince alanın hatası ve özetteki satırı düşer

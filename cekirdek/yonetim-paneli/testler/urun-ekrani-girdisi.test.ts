@@ -26,6 +26,12 @@ const form: UrunFormu = {
   ozellikler: { o1: "", o2: "12,5", o3: "evet" },
   ilgiliUrunler: [],
   varyant: { secenekler: [], birlesimler: {} },
+  fiyat: { satisFiyati: "", indirimliFiyat: "", indirimBaslangici: "", indirimBitisi: "" },
+  stokTakibi: true,
+  dusukStokEsigi: "",
+  baslangicStogu: "",
+  stokSebebi: "sayim",
+  stokNotu: "",
 };
 const veri = (ek: Partial<UrunEkraniVerisi> = {}): UrunEkraniVerisi => ({
   kimlik: "u1",
@@ -40,7 +46,23 @@ const veri = (ek: Partial<UrunEkraniVerisi> = {}): UrunEkraniVerisi => ({
   agirlikBirimi: "kg",
   baslikAlti: [],
   galeriGorselleri: [],
-  izinler: { degistir: true, sil: true },
+  izinler: {
+    degistir: true,
+    sil: true,
+    fiyatGor: true,
+    fiyatDegistir: true,
+    stokGor: true,
+    stokDuzelt: true,
+  },
+  fiyatStok: {
+    fiyatGirisi: "vergi-dahil",
+    simge: "¤",
+    simgeYeri: "sonda",
+    magazaEsigi: 5,
+    birimler: {},
+    indirimBaslangici: "",
+    indirimBitisi: "",
+  },
   ...ek,
 });
 
@@ -87,6 +109,7 @@ describe("ürün ekranının girdisi", () => {
       vergiSinifi: null,
       kargoGerekmez: false,
       enAzAdet: 1,
+      stokTakibi: true,
       durum: "taslak",
       ilgiliUrunler: [],
       ozellikler: [
