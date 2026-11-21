@@ -4,7 +4,9 @@
 // ağırlık ve türüne uymayan özellik değeri alanın yoluyla, adet sınırı ve kendisini ilgili seçmek alanın koduyla
 // döner, hiçbir şey yazılmaz. Açıklamadaki betik ve izinsiz bağlantı vitrinde temizlenir. Görevli ekler ve
 // değiştirir, silemez; rolsüz yönetici, müşteri ve girişsiz ziyaretçi üç uçta geçmez ve hiçbir şey değişmez. Her
-// rolün her uçtaki erişimini ayrıca rol-uc-erisimi.test.ts dener.
+// rolün her uçtaki erişimini ayrıca rol-uc-erisimi.test.ts dener. Seçenekler bölümü (kart 0264): mağaza sahibi yeni
+// ürünü seçenekleriyle ekler ve birleşimin ağırlığı sitenin biriminde okunur; okunamayan birleşim ağırlığı ve hatalı
+// seçenek ürünün değişikliğini de geri alır; görevli değer ekler, kayıtlı değeri silemez (yetki, hiçbir şey değişmez).
 import { randomBytes } from "node:crypto";
 import { join, resolve } from "node:path";
 import { eq } from "drizzle-orm";
@@ -313,6 +315,112 @@ describe("ürün uçları", () => {
       }
       expect(await vt.select().from(urunler).where(eq(urunler.ad, ad))).toEqual([]);
     }
+    expect(await servis.urunuOku(vt, kimlik)).toEqual(once);
+  });
+});
+
+describe("seçenekler bölümü (kart 0264)", () => {
+  // Her çağrı kendi stok koduyla: stok kodu bütün ürünlerde tekildir.
+  const ikiDeger = () => ({
+    secenekler: [{ ad: "Beden", degerler: [{ ad: "S" }, { ad: "M" }] }],
+    birlesimler: [
+      { degerler: [0], stokKodu: `S-${benzersiz()}`, agirlik: bicim.sayi(0.4, 1) },
+      { degerler: [1], agirlik: "" },
+    ],
+  });
+  const canli = async (kimlik: string) =>
+    (await servis.urunuOku(vt, kimlik))?.birimler.filter((b) => !b.silindi) ?? [];
+
+  it("mağaza sahibi yeni ürünü seçenekleriyle ekler; birleşimin ağırlığı sitenin biriminde okunur", async () => {
+    const sahip = await cerez("magaza-sahibi");
+    const girdi = ikiDeger();
+    const { kimlik } = await veri<{ kimlik: string }>(
+      await urunEklemeUcu(
+        istek("urun-ekle", sahip, {
+          urun: { ad: `Seçenekli ${benzersiz()}`, vergiSinifi: null },
+          varyant: girdi,
+        }),
+      ),
+    );
+    const okunan = await servis.urunuOku(vt, kimlik);
+    expect(okunan?.tur).toBe("varyantli");
+    expect((await canli(kimlik)).map((b) => [b.stokKodu, b.agirlikGram])).toEqual([
+      [girdi.birlesimler[0]?.stokKodu, 400],
+      [undefined, undefined],
+    ]);
+  });
+
+  it("okunamayan birleşim ağırlığı ve hatalı seçenek yerin yoluyla döner, ürünün değişikliği de yazılmaz", async () => {
+    const sahip = await cerez("magaza-sahibi");
+    const ad = `Geri alınan ${benzersiz()}`;
+    const kimlik = await ekle(sahip, { ad, vergiSinifi: null });
+    for (const [varyant, ayrinti] of [
+      [
+        { ...ikiDeger(), birlesimler: [{ degerler: [1], agirlik: "çok" }] },
+        [{ alan: "birlesimler.0.agirlik", kod: "agirlik-bicimi" }],
+      ],
+      [
+        {
+          secenekler: [{ ad: "Beden", degerler: [{ ad: "S" }, { ad: "s" }] }],
+          birlesimler: [],
+        },
+        [{ alan: "secenekler.0.degerler.1", kod: "deger-ad-tekrar" }],
+      ],
+    ] as const) {
+      const yanit = await urunDegisikligiUcu(
+        istek("urun-degistir", sahip, { kimlik, urun: { ad: `${ad} yeni` }, varyant }),
+      );
+      expect(yanit.status).not.toBe(200);
+      expect((await hata(yanit)).ayrinti).toEqual(ayrinti);
+      const okunan = await servis.urunuOku(vt, kimlik);
+      expect([okunan?.ad, okunan?.tur]).toEqual([ad, "basit"]);
+    }
+  });
+
+  it("görevli değer ekler, kayıtlı değeri silemez: yetki ve hiçbir şey değişmez", async () => {
+    const sahip = await cerez("magaza-sahibi");
+    const gorevli = await cerez("gorevli");
+    const kimlik = await ekle(sahip, { ad: `Görevli seçenek ${benzersiz()}`, vergiSinifi: null });
+    await veri(
+      await urunDegisikligiUcu(
+        istek("urun-degistir", sahip, { kimlik, urun: {}, varyant: ikiDeger() }),
+      ),
+    );
+    const secenek = (await servis.urunuOku(vt, kimlik))?.secenekler[0];
+    if (secenek === undefined) throw new Error("Seçenek yok.");
+    const kayitli = secenek.degerler.map((d) => ({ kimlik: d.kimlik, ad: d.ad }));
+    // Ekleme serbest.
+    await veri(
+      await urunDegisikligiUcu(
+        istek("urun-degistir", gorevli, {
+          kimlik,
+          urun: {},
+          varyant: {
+            secenekler: [
+              { kimlik: secenek.kimlik, ad: "Beden", degerler: [...kayitli, { ad: "L" }] },
+            ],
+            birlesimler: [],
+          },
+        }),
+      ),
+    );
+    expect(await canli(kimlik)).toHaveLength(3);
+    const once = await servis.urunuOku(vt, kimlik);
+    const silme = await urunDegisikligiUcu(
+      istek("urun-degistir", gorevli, {
+        kimlik,
+        urun: {},
+        varyant: {
+          secenekler: [{ kimlik: secenek.kimlik, ad: "Beden", degerler: kayitli.slice(0, 1) }],
+          birlesimler: [],
+        },
+      }),
+    );
+    expect(silme.status).toBe(403);
+    expect(await hata(silme)).toEqual({
+      kod: "yetki",
+      ayrinti: [{ alan: "secenekler", kod: "varyant-silme-yetkisi" }],
+    });
     expect(await servis.urunuOku(vt, kimlik)).toEqual(once);
   });
 });

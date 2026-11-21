@@ -2,6 +2,7 @@
 // özellik değerleri mağaza sahibinin yazdığı metindir ("1,5"). Metni sitenin sayı biçimiyle sunucu okur (kargo
 // ekranının kuralı, karar 0135): ağırlık sitenin ağırlık birimindedir (agirlikBirimi) ve grama çevrilir, özelliğin sayısı
 // özelliğin ondalık sınırıyla okunur. Okunamayan alan kendi yolu ve koduyla döner; geri kalan doğrulama servisindir.
+// Seçenekler bölümünde birleşimlerin ağırlığı da aynı kuralla okunur (panelVaryantiniCevir, kart 0264).
 
 import { ozellikSinirlari } from "../../kayitlar/ozellik.ts";
 import { type AgirlikBirimi, agirlikBirimleri, agirlikSiniriGram } from "../../kayitlar/urun.ts";
@@ -23,6 +24,49 @@ export const agirlikYazisi = (gram: number | undefined, ayarlar: PanelGirdisiAya
   return ayarlar.bicimleyici.sayi(Number(yuvarlak), ondalik);
 };
 
+// Ağırlık metnini grama çevirip girdiye agirlikGram olarak yazar; boş metin null'dur (değişiklikte boşaltır). Okunamayan
+// ya da sınırı aşan yazı verilen alanın yoluyla sorunlara eklenir.
+const agirligiCevir = (
+  agirlik: unknown,
+  alan: string,
+  girdi: Record<string, unknown>,
+  sorunlar: Sorun[],
+  ayarlar: PanelGirdisiAyarlari,
+) => {
+  if (agirlik === undefined) return;
+  if (agirlik === null || (typeof agirlik === "string" && agirlik.trim() === "")) {
+    girdi["agirlikGram"] = null;
+    return;
+  }
+  const birim = agirlikBirimleri[ayarlar.agirlikBirimi];
+  const sayi =
+    typeof agirlik === "string" ? ayarlar.bicimleyici.sayiOku(agirlik, birim.ondalik) : undefined;
+  const gram = sayi === undefined ? undefined : Math.round(sayi * birim.gram);
+  if (gram === undefined) sorunlar.push({ alan, kod: "agirlik-bicimi" });
+  else if (gram > agirlikSiniriGram) sorunlar.push({ alan, kod: "agirlik-siniri" });
+  else girdi["agirlikGram"] = gram;
+};
+
+// Seçenekler bölümünün girdisi (kart 0264): her birleşimin ağırlığı ürünün ağırlığı gibi sitenin biriminde yazılı metindir.
+// Hata birleşimin yeriyle döner ("birlesimler.2.agirlik"); geri kalan doğrulama servisindir (varyantKaydi).
+export const panelVaryantiniCevir = (
+  ham: Readonly<Record<string, unknown>>,
+  ayarlar: PanelGirdisiAyarlari,
+): Record<string, unknown> => {
+  const { birlesimler, ...kalan } = ham;
+  if (!Array.isArray(birlesimler)) return { ...ham };
+  const sorunlar: Sorun[] = [];
+  const cevrilen = birlesimler.map((birlesim: unknown, sira) => {
+    if (typeof birlesim !== "object" || birlesim === null) return birlesim;
+    const { agirlik, ...alanlar } = birlesim as Record<string, unknown>;
+    const yeni: Record<string, unknown> = { ...alanlar };
+    agirligiCevir(agirlik, `birlesimler.${sira}.agirlik`, yeni, sorunlar, ayarlar);
+    return yeni;
+  });
+  if (sorunlar.length > 0) throw dogrulamaHatasi(sorunlar);
+  return { ...kalan, birlesimler: cevrilen };
+};
+
 export const panelGirdisiniCevir = async (
   vt: Veritabani,
   ham: Readonly<Record<string, unknown>>,
@@ -31,21 +75,7 @@ export const panelGirdisiniCevir = async (
   const { agirlik, ...kalan } = ham;
   const girdi: Record<string, unknown> = { ...kalan };
   const sorunlar: Sorun[] = [];
-  if (agirlik !== undefined) {
-    if (agirlik === null || (typeof agirlik === "string" && agirlik.trim() === "")) {
-      girdi["agirlikGram"] = null;
-    } else {
-      const birim = agirlikBirimleri[ayarlar.agirlikBirimi];
-      const sayi =
-        typeof agirlik === "string"
-          ? ayarlar.bicimleyici.sayiOku(agirlik, birim.ondalik)
-          : undefined;
-      const gram = sayi === undefined ? undefined : Math.round(sayi * birim.gram);
-      if (gram === undefined) sorunlar.push({ alan: "agirlik", kod: "agirlik-bicimi" });
-      else if (gram > agirlikSiniriGram) sorunlar.push({ alan: "agirlik", kod: "agirlik-siniri" });
-      else girdi["agirlikGram"] = gram;
-    }
-  }
+  agirligiCevir(agirlik, "agirlik", girdi, sorunlar, ayarlar);
   const degerler = girdi["ozellikler"];
   if (Array.isArray(degerler) && degerler.some((d) => typeof d?.deger === "string")) {
     const sayiOzellikleri = new Set(

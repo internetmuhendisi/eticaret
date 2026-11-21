@@ -302,8 +302,14 @@ export type UrunDegisikligi = z.input<typeof urunDegisikligi>;
 // urunDegisikligi): hata alanın adıyla ve ürünün koduyla döner, uç yalnız zarfı denetler. Ağırlık ve sayı türündeki
 // özellik değerleri metin olarak gelir, panel-girdisi.ts çevirir.
 const urunNesnesi = z.record(z.string(), z.unknown());
-export const urunEklemeSemasi = z.strictObject({ urun: urunNesnesi });
-export const urunDegisikligiSemasi = z.strictObject({ kimlik: kimlikSemasi, urun: urunNesnesi });
+// Seçenekler bölümünün son hâli (kart 0264): verilirse ürünle aynı işlemde yazılır; servis varyantKaydi ile doğrular.
+const varyantNesnesi = z.record(z.string(), z.unknown()).optional();
+export const urunEklemeSemasi = z.strictObject({ urun: urunNesnesi, varyant: varyantNesnesi });
+export const urunDegisikligiSemasi = z.strictObject({
+  kimlik: kimlikSemasi,
+  urun: urunNesnesi,
+  varyant: varyantNesnesi,
+});
 export const urunSilmeSemasi = z.strictObject({ kimlik: kimlikSemasi });
 
 // Birimin kendi alanları: basit üründe ürün girdisiyle, varyantlı üründe her birleşimde ayrı gelir

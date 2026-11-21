@@ -1150,21 +1150,21 @@ Seçilen ürünlere toplu işlem (kart 0262, karar 0157): yayınla, taslağa al,
 
 ### POST /kapi/yonetici/urun-ekle
 
-Yeni ürün (kart 0263): panelin ürün ekranından. Durum verilmezse ürün taslaktır. Ağırlık (`agirlik`) sitenin ağırlık biriminde, sayı türündeki özellik değeri sitenin sayı biçiminde metin olarak gelir, sunucu okur; öteki alanlar `urunGirdisi` şemasıyla doğrulanır.
+Yeni ürün (kart 0263): panelin ürün ekranından. Durum verilmezse ürün taslaktır. Ağırlık (`agirlik`) sitenin ağırlık biriminde, sayı türündeki özellik değeri sitenin sayı biçiminde metin olarak gelir, sunucu okur; öteki alanlar `urunGirdisi` şemasıyla doğrulanır. Seçenekler bölümü (kart 0264, karar 0163) `varyant` ile verilirse ürünle aynı işlemde yazılır: seçeneklerin, değerlerin ve birleşim alanlarının son hâli (`varyantKaydi`), birleşimin ağırlığı metin olarak; biri düşerse hiçbiri kalmaz. Kayıtlı seçenek ya da değer silmek (birleşimlerini siler) ayrıca `urun.sil` ister, yoksa `yetki` (`varyant-silme-yetkisi`) ve hiçbir şey yazılmaz.
 
 - İzin: `urun.degistir`. Sınır: `genel`.
-- Girdi: `{ "urun": { "ad", ... } }` (`urunEklemeSemasi`).
-- Servis: `cekirdek/moduller/urun/servis.ts` (`urunEkle`), çeviri `cekirdek/moduller/urun/panel-girdisi.ts`.
+- Girdi: `{ "urun": { "ad", ... }, "varyant"?: { "secenekler", "birlesimler" } }` (`urunEklemeSemasi`).
+- Servis: `cekirdek/moduller/urun/servis.ts` (`urunEkle`, `varyantlariKaydet`), çeviri `cekirdek/moduller/urun/panel-girdisi.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
-- Hatalar: `dogrulama` (alanın yolu ve kodu, ör. `agirlik-bicimi`, `ozellik-deger-gecersiz`), `cakisma` (adres adı, stok kodu), `is-kurali`, `oturum-yok`, `yetki`.
+- Hatalar: `dogrulama` (alanın yolu ve kodu, ör. `agirlik-bicimi`, `ozellik-deger-gecersiz`, `birlesimler.2.agirlik`), `cakisma` (adres adı, stok kodu, `varyant-degisti`), `is-kurali` (`birlesim-siniri`), `oturum-yok`, `yetki`.
 
 ### POST /kapi/yonetici/urun-degistir
 
 Ürünün değişikliği (kart 0263): yalnız verilen alan değişir, `null` isteğe bağlı alanı boşaltır. Adres adı değişince eski adres yenisine yönlenir (kart 0135). Girdi kuralları `urun-ekle` ile aynıdır (`urunDegisikligi`).
 
 - İzin: `urun.degistir`. Sınır: `genel`.
-- Girdi: `{ "kimlik", "urun": { ... } }` (`urunDegisikligiSemasi`).
-- Servis: `urunDegistir`.
+- Girdi: `{ "kimlik", "urun": { ... }, "varyant"?: { ... } }` (`urunDegisikligiSemasi`).
+- Servis: `urunDegistir`, `varyantlariKaydet`.
 - Başarılı (200): `{ "basarili": true, "veri": {} }`.
 - Hatalar: `dogrulama`, `bulunamadi`, `cakisma`, `is-kurali`, `oturum-yok`, `yetki`.
 
