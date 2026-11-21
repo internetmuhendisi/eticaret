@@ -8,6 +8,7 @@ import { AdetSeciciOrnegi } from "./ornekler/adet-secici";
 import { AkordeonOrnegi } from "./ornekler/akordeon";
 import { AnahtarOrnegi } from "./ornekler/anahtar";
 import { BaglantiOrnegi } from "./ornekler/baglanti";
+import { BicimliMetinAlaniOrnegi } from "./ornekler/bicimli-metin-alani";
 import { BildirimOrnegi } from "./ornekler/bildirim";
 import { BosHalOrnegi } from "./ornekler/bos-hal";
 import { DugmeOrnegi } from "./ornekler/dugme";
@@ -47,6 +48,7 @@ const ornekler: Record<ParcaKodu, ComponentType> = {
   etiket: EtiketOrnegi,
   "giris-alani": GirisAlaniOrnegi,
   "uzun-metin-alani": UzunMetinAlaniOrnegi,
+  "bicimli-metin-alani": BicimliMetinAlaniOrnegi,
   "form-alani": FormAlaniOrnegi,
   "hata-ozeti": HataOzetiOrnegi,
   "secim-kutusu": SecimKutusuOrnegi,

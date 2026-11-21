@@ -727,7 +727,7 @@ function BuSayfada() {
                 href={`#${kimlik}`}
                 aria-current={gorunen === kimlik ? "location" : undefined}
                 className={sinif(
-                  "flex min-h-11 items-center rounded-kucuk px-3 text-kucuk text-soluk-yazi hover:bg-yuzey hover:text-yazi",
+                  "flex min-h-11 items-center rounded-kucuk px-3 text-kucuk text-soluk-yazi no-underline hover:bg-yuzey hover:text-yazi",
                   gorunen === kimlik && "border-l-2 border-birincil bg-yuzey font-kalin text-yazi",
                 )}
               >

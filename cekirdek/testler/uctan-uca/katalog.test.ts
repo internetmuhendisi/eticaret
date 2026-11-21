@@ -132,6 +132,73 @@ test("seçenek grubu: ok tuşları seçer, seçilemeyen değer odak alır ama se
   expect(hatalar).toEqual([]);
 });
 
+// Biçimli metin alanı (kart 0263): araç çubuğu tek sekme durağıdır, ok tuşları dolaşır (uçlarda başa ve sona döner),
+// Home ve End uçlara gider; Ctrl+I eğik yazar ve düğmenin basılı durumu değişir; bağlantı düğmesi adres satırını açar,
+// odak adres alanına geçer, izinsiz adres hatayla reddedilir, Escape satırı kapatıp odağı yazıya döndürür, geçerli
+// adres bağlantı olur. Satır açıkken sayfa taramadan geçer.
+test("biçimli metin alanı: araç çubuğu ok tuşlarıyla gezilir, bağlantı satırı klavyeyle çalışır", async ({
+  page,
+}) => {
+  const { hatalar } = await ac(page, `${katalogAdresi}/bicimli-metin-alani`);
+  const ad = metin("gelistirme.ornek.urunAciklamasi");
+  const cubuk = page
+    .getByRole("toolbar", { name: doldur(metin("yonetim.bicimliMetin.aracCubugu"), { alan: ad }) })
+    .first();
+  const dugme = (anahtar: "kalin" | "egik" | "siraliListe" | "baglanti") =>
+    cubuk.getByRole("button", { name: metin(`yonetim.bicimliMetin.${anahtar}`) });
+  const yazi = page.getByRole("textbox", { name: ad, exact: true }).first();
+  await yazi.focus();
+  await page.keyboard.press("ControlOrMeta+End");
+  await page.keyboard.press("Shift+Tab");
+  // Araç çubuğunun sekme durağı son odaklanan düğmedir (başta ilki).
+  await expect(dugme("kalin")).toBeFocused();
+  await expect(cubuk.locator("button[tabindex='0']")).toHaveCount(1);
+  await page.keyboard.press("ArrowLeft");
+  await expect(dugme("baglanti")).toBeFocused();
+  await page.keyboard.press("Home");
+  await expect(dugme("kalin")).toBeFocused();
+  await page.keyboard.press("End");
+  await page.keyboard.press("ArrowLeft");
+  await expect(dugme("siraliListe")).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+  await expect(dugme("kalin")).toBeFocused();
+
+  // Ctrl+I eğik yazar, eğik düğmesi basılı görünür.
+  await yazi.focus();
+  await page.keyboard.press("ControlOrMeta+End");
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("ControlOrMeta+i");
+  await page.keyboard.type("eğik");
+  await expect(dugme("egik")).toHaveAttribute("aria-pressed", "true");
+  await expect(yazi.locator("em", { hasText: "eğik" })).toBeVisible();
+  await page.keyboard.press("Shift+Home");
+
+  // Bağlantı: satır açılır, odak adres alanında; izinsiz adres hatayla reddedilir.
+  await dugme("baglanti").focus();
+  await page.keyboard.press("Enter");
+  const adres = page.getByRole("textbox", { name: metin("yonetim.bicimliMetin.baglantiAdresi") });
+  await expect(adres).toBeFocused();
+  await page.keyboard.type("javascript:alert(1)");
+  await page.keyboard.press("Enter");
+  await expect(adres).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByText(metin("yonetim.bicimliMetin.baglantiGecersiz"))).toBeVisible();
+  await tara(page, "biçimli metin alanı, bağlantı satırı açık");
+  await page.keyboard.press("Escape");
+  await expect(adres).toBeHidden();
+  await expect(yazi).toBeFocused();
+  await expect(yazi.locator("a")).toHaveCount(0);
+  // Geçerli adres seçili yazıyı bağlantı yapar.
+  await page.keyboard.press("Shift+Home");
+  await dugme("baglanti").focus();
+  await page.keyboard.press("Enter");
+  await expect(adres).toBeFocused();
+  await page.keyboard.type("/kategori/kupalar");
+  await page.keyboard.press("Enter");
+  await expect(yazi.locator('a[href="/kategori/kupalar"]', { hasText: "eğik" })).toBeVisible();
+  expect(hatalar).toEqual([]);
+});
+
 // Sıralanabilir liste (kart 0141): tutamağa odaklanıp boşlukla alınan satır ok tuşuyla taşınır, boşlukla bırakılır;
 // Escape taşımayı geri alır; fareyle tutamaktan sürüklenir; yukarı ve aşağı al düğmeleri telefonda da vardır ve
 // dokunarak taşır (sürüklemeye tek dokunuşluk karşılık, WCAG 2.5.7). Her taşıma ekran okuyucuya duyurulur.

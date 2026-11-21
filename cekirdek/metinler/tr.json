@@ -2898,6 +2898,7 @@
         "etiket": "Etiket",
         "girisAlani": "Giriş alanı",
         "uzunMetinAlani": "Uzun metin alanı",
+        "bicimliMetinAlani": "Biçimli metin alanı",
         "secimKutusu": "Seçim kutusu",
         "onayKutusu": "Onay kutusu",
         "acilirMenu": "Açılır menü",
@@ -3108,7 +3109,11 @@
         "alan": "Ad: boş olamaz",
         "genel": "Bağlantı koptu. Yeniden deneyin.",
         "gidildi": "Ad alanına gidildi."
-      }
+      },
+      "urunAciklamasi": "Ürün açıklaması",
+      "urunAciklamasiAciklama": "Kalın, eğik, ara başlık, liste ve bağlantı kullanılabilir.",
+      "urunAciklamasiHata": "Açıklamayı kısaltın.",
+      "urunAciklamasiDegeri": "<p>Paslanmaz çelik, <strong>çift cidarlı</strong> gövde.</p><ul><li>Sıcağı 12 saat korur</li></ul>"
     },
     "bolum": {
       "ad": "Deneme bölümü",

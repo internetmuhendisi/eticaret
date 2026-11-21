@@ -28,6 +28,7 @@ export const katalogParcalari = [
   parca("parcalar", "etiket", "etiket"),
   parca("parcalar", "giris-alani", "girisAlani"),
   parca("parcalar", "uzun-metin-alani", "uzunMetinAlani"),
+  parca("parcalar", "bicimli-metin-alani", "bicimliMetinAlani"),
   parca("form", "form-alani", "formAlani"),
   parca("form", "hata-ozeti", "hataOzeti"),
   parca("parcalar", "secim-kutusu", "secimKutusu"),

@@ -16,9 +16,11 @@ export type PanelGirdisiAyarlari = { bicimleyici: Bicimleyici; agirlikBirimi: Ag
 export const agirlikYazisi = (gram: number | undefined, ayarlar: PanelGirdisiAyarlari): string => {
   if (gram === undefined) return "";
   const birim = agirlikBirimleri[ayarlar.agirlikBirimi];
-  const deger = gram / birim.gram;
-  const ondalik = Number.isInteger(deger) ? 0 : birim.ondalik;
-  return ayarlar.bicimleyici.sayi(Number(deger.toFixed(birim.ondalik)), ondalik);
+  // Birimin ondalığına yuvarlanır, sondaki sıfırlar yazılmaz ("0,35", "2").
+  const sabit = (gram / birim.gram).toFixed(birim.ondalik);
+  const yuvarlak = sabit.includes(".") ? sabit.replace(/0+$/, "").replace(/\.$/, "") : sabit;
+  const ondalik = yuvarlak.split(".")[1]?.length ?? 0;
+  return ayarlar.bicimleyici.sayi(Number(yuvarlak), ondalik);
 };
 
 export const panelGirdisiniCevir = async (

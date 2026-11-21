@@ -1,6 +1,6 @@
 "use client";
 // Birden çok kaydı arayarak seçmek (kart 0263): ürünün kategorileri, etiketleri ve ilgili ürünleri. Arama kutusu
-// KayitArama'dır (seçince boşalır); seçilenler kutunun üstünde sırasıyla durur, her birinin "Kaldır" düğmesi vardır.
+// KayitArama'dır (seçince boşalır); seçilenler kutunun altında sırasıyla durur, her birinin "Kaldır" düğmesi vardır.
 // Kaldırınca odak sonraki seçilenin düğmesine, yoksa arama kutusuna geçer. Aynı kayıt ikinci kez eklenmez; sınır
 // doluysa arama kutusu yerine sınırın yazısı görünür. Hata ve odak ortak form yapısındadır (AlanKabi).
 import { useRef } from "react";
@@ -59,6 +59,28 @@ export function CokluKayitSecimi({
   return (
     <AlanKabi ad={ad} etiket={etiket}>
       <div ref={kap} className="flex flex-col gap-2">
+        {dolu || disabled ? (
+          dolu && sinirYazisi !== undefined ? (
+            <div className="flex flex-col gap-1">
+              <span className="font-kalin">{etiket}</span>
+              <p className="text-kucuk text-soluk-yazi">{sinirYazisi}</p>
+            </div>
+          ) : null
+        ) : (
+          <KayitArama
+            tur={tur}
+            etiket={etiket}
+            {...(aciklama === undefined ? {} : { aciklama })}
+            secili={undefined}
+            secinceBosalt
+            sec={(kayit) => {
+              if (kayit === undefined || kayit.kimlik === haric) return;
+              if (secilenler.some((secilen) => secilen.kimlik === kayit.kimlik)) return;
+              degisti([...secilenler, { kimlik: kayit.kimlik, ad: kayit.ad }]);
+            }}
+            {...(hata(ad) === undefined ? {} : { hata: hata(ad) ?? "" })}
+          />
+        )}
         {secilenler.length === 0 ? null : (
           <ul
             ref={liste}
@@ -81,28 +103,6 @@ export function CokluKayitSecimi({
               </li>
             ))}
           </ul>
-        )}
-        {dolu || disabled ? (
-          dolu && sinirYazisi !== undefined ? (
-            <div className="flex flex-col gap-1">
-              <span className="font-kalin">{etiket}</span>
-              <p className="text-kucuk text-soluk-yazi">{sinirYazisi}</p>
-            </div>
-          ) : null
-        ) : (
-          <KayitArama
-            tur={tur}
-            etiket={etiket}
-            {...(aciklama === undefined ? {} : { aciklama })}
-            secili={undefined}
-            secinceBosalt
-            sec={(kayit) => {
-              if (kayit === undefined || kayit.kimlik === haric) return;
-              if (secilenler.some((secilen) => secilen.kimlik === kayit.kimlik)) return;
-              degisti([...secilenler, { kimlik: kayit.kimlik, ad: kayit.ad }]);
-            }}
-            {...(hata(ad) === undefined ? {} : { hata: hata(ad) ?? "" })}
-          />
         )}
       </div>
     </AlanKabi>

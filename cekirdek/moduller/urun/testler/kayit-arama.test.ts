@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
+import { etiketServisi } from "../../etiket/servis.ts";
 import { kategoriEkle, kategoriSil } from "../../kategori/servis.ts";
 import { markaServisi } from "../../marka/servis.ts";
 import { kayitAra, kayitAramaSinirlari } from "../kayit-arama.ts";
@@ -62,6 +63,17 @@ describe("kayıt arama", () => {
     const ikinci = await kayitAra(vt, "marka", "marka", 1);
     expect(adlar(ikinci)).toEqual(["Marka 20", "Marka 21", "Marka 22"]);
     expect(ikinci.dahaVar).toBe(false);
+  });
+
+  it("etiketler aranır (kart 0263); silinmiş gelmez", async () => {
+    const vt = await siteAc();
+    await etiketServisi.ekle(vt, yonetici(), { ad: "Yeni Sezon" });
+    const silinen = await etiketServisi.ekle(vt, yonetici(), { ad: "Eski Sezon" });
+    await etiketServisi.sil(vt, yonetici(), silinen);
+    expect(adlar(await kayitAra(vt, "etiket", "SEZON"))).toEqual(["Yeni Sezon"]);
+    // Etiket araması marka ya da ürün getirmez.
+    await markaServisi.ekle(vt, yonetici(), { ad: "Sezon Marka" });
+    expect(adlar(await kayitAra(vt, "etiket", "sezon"))).toEqual(["Yeni Sezon"]);
   });
 
   it("kategoriler üstlerinin adıyla gelir ve yolda aranır; silinmiş gelmez", async () => {

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { type BicimAyarlari, bicimleyiciOlustur, ikiHaneli, yerelZamandan } from "../bicimleyici";
+import {
+  type BicimAyarlari,
+  bicimleyiciOlustur,
+  ikiHaneli,
+  yerelZamana,
+  yerelZamandan,
+} from "../bicimleyici";
 
 // Türkiye'nin biçimi (planlar/site-ayarlari.md): binlikte nokta, ondalıkta virgül, simge sonda,
 // Europe/Istanbul. Çekirdekte bir sitenin para simgesi yazmaz (cekirdek/testler/para-simgesi-yok.test.ts):
@@ -64,6 +70,46 @@ describe("para", () => {
 });
 
 // Kart 0136: fiyat filtresine yazılan tutar sitenin ayırıcılarıyla okunur.
+describe("sayı okuma (kart 0263)", () => {
+  it("sitenin ayırıcılarıyla, en çok verilen ondalıkla okur; eksi yalnız izinliyse", () => {
+    expect(bicim.sayiOku("0,35", 3)).toBe(0.35);
+    expect(bicim.sayiOku("1.250,5", 3)).toBe(1250.5);
+    expect(bicim.sayiOku("12", 0)).toBe(12);
+    expect(bicim.sayiOku("-2,5", 1, true)).toBe(-2.5);
+    expect(bicim.sayiOku("0,0001", 4)).toBe(0.0001);
+    for (const [yazi, ondalik, eksi] of [
+      ["-2,5", 1, false],
+      ["1,2,3", 3, false],
+      ["1,2345", 3, false],
+      ["1.5", 3, false],
+      ["", 2, false],
+      ["--1", 1, true],
+      ["abc", 2, false],
+    ] as const) {
+      expect(bicim.sayiOku(yazi, ondalik, eksi), yazi).toBeUndefined();
+    }
+  });
+});
+
+describe("yerel zamana çevirme (kart 0263)", () => {
+  it("yerelZamandan'ın tersidir, yaz saatinde de", () => {
+    for (const yerel of [
+      "2026-11-21T09:30",
+      "2026-03-29T03:15",
+      "2026-10-25T03:45",
+      "2099-01-02T00:00",
+    ]) {
+      const an = yerelZamandan(yerel, "Europe/Istanbul");
+      expect(an && yerelZamana(an, "Europe/Istanbul"), yerel).toBe(yerel);
+    }
+    const yaz = yerelZamandan("2026-07-01T12:00", "America/New_York");
+    expect(yaz && yerelZamana(yaz, "America/New_York")).toBe("2026-07-01T12:00");
+    expect(yerelZamana(new Date("2026-01-01T00:00:00Z"), "America/New_York")).toBe(
+      "2025-12-31T19:00",
+    );
+  });
+});
+
 describe("para okuma", () => {
   it("binlikli ve binliksiz yazılış aynı tutardır, ondalık ayırıcı sitenindir", () => {
     for (const yazi of ["1.000", "1000", " 1000 ", "1.000,00", "1000,0"]) {
