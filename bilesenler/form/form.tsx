@@ -14,6 +14,7 @@ import {
   createContext,
   type FormHTMLAttributes,
   type ReactNode,
+  type Ref,
   useContext,
   useEffect,
   useState,
@@ -32,6 +33,8 @@ export function Form({
   children,
   ...ozellikler
 }: Omit<FormHTMLAttributes<HTMLFormElement>, "method" | "action"> & {
+  // Formun öğesi (panelin form yapısı hatalı alanı bununla bulur, kart 0259).
+  ref?: Ref<HTMLFormElement>;
   // JavaScript kapalıysa form çalışmaz, kullanıcı nedenini görür.
   kodGerekliMetni: string;
   // Kod birkaç saniyede yüklenmezse görünür (zamanlamayı CSS yapar, kod gerekmez): düğme kapalıyken

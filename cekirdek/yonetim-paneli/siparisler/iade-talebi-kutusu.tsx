@@ -4,9 +4,7 @@
 // "Reddet" yan pencerede müşteriye açıklama ister. Onay parayı geri ödemez: ürün gelince komut çubuğundaki "İade yap"
 // talebin ürünleriyle seçili açılır. Düğmeler yalnız siparis.iade izni olana görünür; istek talebin kimliğini gönderir,
 // arada karar verildiyse sayfa yenilenir ve bildirilir.
-import { type FormEvent, useRef, useState } from "react";
-import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
-import { FormAlani } from "../../../bilesenler/form/form-alani";
+import { type FormEvent, useState } from "react";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { Kart } from "../../../bilesenler/parcalar/kart";
 import { OnayPenceresi } from "../../../bilesenler/parcalar/onay-penceresi";
@@ -15,7 +13,6 @@ import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
 import {
   YanPencere,
   YanPencereAciklamasi,
-  YanPencereAltCubugu,
   YanPencereBasligi,
   YanPencereIcerigi,
   YanPencereUstu,
@@ -24,6 +21,7 @@ import { iadeTalebiSinirlari } from "../../kayitlar/siparis";
 import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
+import { KaydetCubugu, PanelAlani, PanelFormu, usePanelFormu } from "../form/panel-formu";
 import { useKapatmaSorusu } from "../kapatma-sorusu";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
@@ -170,78 +168,61 @@ function RetFormu({
 }) {
   const metin = usePanelMetni();
   const islem = usePanelIslemi(hataMetni);
-  const [hata, setHata] = useState<string | null>(null);
-  const alanKimligi = useRef<string | undefined>(undefined);
-  const alanaOdaklan = () => {
-    if (alanKimligi.current !== undefined) document.getElementById(alanKimligi.current)?.focus();
-  };
-  const gonderiliyor = useRef(false);
+  const [yazildi, setYazildi] = useState(false);
+  // Ortak form yapısı (kart 0259): hata, özet, odak; pencere kapatılırken soru useKapatmaSorusu'ndadır.
+  const pf = usePanelFormu({ degisti: yazildi });
 
   const gonder = async (olay: FormEvent<HTMLFormElement>) => {
-    olay.preventDefault();
-    if (gonderiliyor.current) return;
     const retAciklamasi = String(new FormData(olay.currentTarget).get("retAciklamasi") ?? "");
     if (retAciklamasi.trim() === "") {
-      setHata(metin("yonetim.iadeTalebi.ret.gerekli"));
-      alanaOdaklan();
+      pf.hatalariGoster({ retAciklamasi: metin("yonetim.iadeTalebi.ret.gerekli") });
       return;
     }
-    gonderiliyor.current = true;
-    const yanit = await islem(
-      "iade-talebi-karari",
-      { numara, talep, karar: "reddet", retAciklamasi },
-      "yonetim.iadeTalebi.basari.reddedildi",
-      { formda: true },
+    const yanit = await pf.isle(() =>
+      islem(
+        "iade-talebi-karari",
+        { numara, talep, karar: "reddet", retAciklamasi },
+        "yonetim.iadeTalebi.basari.reddedildi",
+        { formda: true },
+      ),
     );
-    gonderiliyor.current = false;
+    if (yanit === undefined) return;
     if (yanit.tamam) {
       bitti();
       return;
     }
     if (yanit.kod === "dogrulama") {
-      setHata(metin("yonetim.iadeTalebi.ret.gecersiz"));
-      alanaOdaklan();
+      pf.hatalariGoster({ retAciklamasi: metin("yonetim.iadeTalebi.ret.gecersiz") });
       return;
     }
-    setHata(metin(hataMetni(yanit)));
+    pf.hatalariGoster({}, [metin(hataMetni(yanit))]);
   };
 
   return (
-    <Form
-      kodGerekliMetni={metin("ortak.form.kodGerekli")}
-      yukleniyorMetni={metin("ortak.form.yukleniyor")}
-      onSubmit={gonder}
-      className="flex flex-col gap-5"
-    >
-      <FormAlani
+    <PanelFormu durum={pf} gonder={gonder}>
+      <PanelAlani
+        ad="retAciklamasi"
         etiket={metin("yonetim.iadeTalebi.ret.alan")}
         aciklama={doldur(metin("yonetim.iadeTalebi.ret.alanAciklamasi"), {
           sinir: String(iadeTalebiSinirlari.retAciklamasiEnCok),
         })}
-        {...(hata === null ? {} : { hata })}
+        zorunlu
       >
-        {(ozellikler) => {
-          alanKimligi.current = ozellikler.id;
-          return (
-            <UzunMetinAlani
-              {...ozellikler}
-              name="retAciklamasi"
-              rows={5}
-              maxLength={iadeTalebiSinirlari.retAciklamasiEnCok}
-              onChange={() => {
-                degisince(true);
-                setHata(null);
-              }}
-            />
-          );
-        }}
-      </FormAlani>
-      <YanPencereAltCubugu>
-        <Dugme tur="sade" onClick={vazgec}>
-          {metin("ortak.islem.vazgec")}
-        </Dugme>
-        <GonderDugmesi>{metin("yonetim.iadeTalebi.reddet")}</GonderDugmesi>
-      </YanPencereAltCubugu>
-    </Form>
+        {(ozellikler) => (
+          <UzunMetinAlani
+            {...ozellikler}
+            name="retAciklamasi"
+            rows={5}
+            maxLength={iadeTalebiSinirlari.retAciklamasiEnCok}
+            onChange={() => {
+              setYazildi(true);
+              degisince(true);
+              pf.alaniTemizle("retAciklamasi");
+            }}
+          />
+        )}
+      </PanelAlani>
+      <KaydetCubugu kaydetEtiketi={metin("yonetim.iadeTalebi.reddet")} vazgec={vazgec} />
+    </PanelFormu>
   );
 }

@@ -3,19 +3,15 @@
 // düğmesiyle yan pencerede yazılır (ad ve isteğe bağlı takip adresi); silme onay penceresiyle sorulur. Her değişiklik
 // bütün listeyi ekranın gördüğü hâliyle (onceki) gönderir: arada liste değiştiyse sayfa yenilenir ve söylenir. Takip
 // adresi sunucuda doğrulanır, hatası alanın altında yazar. Değiştirme izni olmayan yönetici yalnız listeyi görür.
-import { type FormEvent, useRef, useState } from "react";
-import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
-import { FormAlani } from "../../../bilesenler/form/form-alani";
+import { useState } from "react";
 import { BosHal } from "../../../bilesenler/parcalar/bos-hal";
-import { Dugme, IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
+import { IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { Kart } from "../../../bilesenler/parcalar/kart";
 import { OnayPenceresi } from "../../../bilesenler/parcalar/onay-penceresi";
-import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import {
   YanPencere,
   YanPencereAciklamasi,
-  YanPencereAltCubugu,
   YanPencereBasligi,
   YanPencereIcerigi,
   YanPencereUstu,
@@ -25,6 +21,7 @@ import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
 import type { KargoFirmasi } from "../../moduller/siparis/ayarlar";
 import { EylemDugmesi } from "../eylem-dugmesi";
+import { KaydetCubugu, PanelAlani, PanelFormu, usePanelFormu } from "../form/panel-formu";
 import { useKapatmaSorusu } from "../kapatma-sorusu";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
@@ -219,47 +216,31 @@ function FirmaFormu({
   const metin = usePanelMetni();
   const ilk = { ad: firma?.ad ?? "", takipAdresi: firma?.takipAdresi ?? "" };
   const [form, setForm] = useState(ilk);
-  const [hatalar, setHatalar] = useState<Partial<Record<keyof FirmaFormuDegeri, string>>>({});
-  const [genelHata, setGenelHata] = useState<string | null>(null);
-  const gonderiliyor = useRef(false);
+  const degisti = form.ad !== ilk.ad || form.takipAdresi !== ilk.takipAdresi;
+  // Ortak form yapısı (kart 0259): hata, özet, odak; pencere kapatılırken soru useKapatmaSorusu'ndadır.
+  const pf = usePanelFormu({ degisti });
   const degistir = (alan: keyof FirmaFormuDegeri, deger: string) => {
     const yeni = { ...form, [alan]: deger };
     setForm(yeni);
+    pf.alaniTemizle(alan === "ad" ? "firma-ad" : "firma-takip");
     degisince(yeni.ad !== ilk.ad || yeni.takipAdresi !== ilk.takipAdresi);
   };
-  const kaydet = async (olay: FormEvent<HTMLFormElement>) => {
-    olay.preventDefault();
-    if (gonderiliyor.current) return;
+  const kaydet = async () => {
     if (form.ad.trim() === "") {
-      setHatalar({ ad: metin("yonetim.siparisAyarlari.hata.gerekli") });
-      document.querySelector<HTMLInputElement>('[name="firma-ad"]')?.focus();
+      pf.hatalariGoster({ "firma-ad": metin("yonetim.siparisAyarlari.hata.gerekli") });
       return;
     }
-    gonderiliyor.current = true;
-    const sonuc = await gonder(form);
-    gonderiliyor.current = false;
-    if (sonuc.tamam) return;
+    const sonuc = await pf.isle(() => gonder(form));
+    if (sonuc === undefined || sonuc.tamam) return;
     if (sonuc.ayrinti.some((sorun) => sorun.alan === `firmalar.${sira}.takipAdresi`)) {
-      setHatalar({ takipAdresi: metin("yonetim.siparisAyarlari.hata.takipAdresi") });
-      setGenelHata(null);
-      document.querySelector<HTMLInputElement>('[name="firma-takip"]')?.focus();
+      pf.hatalariGoster({ "firma-takip": metin("yonetim.siparisAyarlari.hata.takipAdresi") });
       return;
     }
-    setHatalar({});
-    setGenelHata(metin(hataMetni(sonuc)));
+    pf.hatalariGoster({}, [metin(hataMetni(sonuc))]);
   };
   return (
-    <Form
-      kodGerekliMetni={metin("ortak.form.kodGerekli")}
-      yukleniyorMetni={metin("ortak.form.yukleniyor")}
-      onSubmit={kaydet}
-      className="flex flex-col gap-4"
-    >
-      {genelHata === null ? null : <Uyari tur="tehlike">{genelHata}</Uyari>}
-      <FormAlani
-        etiket={metin("yonetim.siparisAyarlari.ad")}
-        {...(hatalar.ad === undefined ? {} : { hata: hatalar.ad })}
-      >
+    <PanelFormu durum={pf} gonder={kaydet} className="gap-4">
+      <PanelAlani ad="firma-ad" etiket={metin("yonetim.siparisAyarlari.ad")} zorunlu>
         {(alan) => (
           <GirisAlani
             {...alan}
@@ -269,11 +250,12 @@ function FirmaFormu({
             onChange={(olay) => degistir("ad", olay.target.value)}
           />
         )}
-      </FormAlani>
-      <FormAlani
+      </PanelAlani>
+      <PanelAlani
+        ad="firma-takip"
         etiket={metin("yonetim.siparisAyarlari.takipAdresi")}
         aciklama={metin("yonetim.siparisAyarlari.takipAciklamasi")}
-        {...(hatalar.takipAdresi === undefined ? {} : { hata: hatalar.takipAdresi })}
+        zorunlu={false}
       >
         {(alan) => (
           <GirisAlani
@@ -286,13 +268,8 @@ function FirmaFormu({
             onChange={(olay) => degistir("takipAdresi", olay.target.value)}
           />
         )}
-      </FormAlani>
-      <YanPencereAltCubugu>
-        <Dugme tur="sade" onClick={vazgec}>
-          {metin("ortak.islem.vazgec")}
-        </Dugme>
-        <GonderDugmesi>{metin("yonetim.siparisAyarlari.kaydet")}</GonderDugmesi>
-      </YanPencereAltCubugu>
-    </Form>
+      </PanelAlani>
+      <KaydetCubugu kaydetEtiketi={metin("yonetim.siparisAyarlari.kaydet")} vazgec={vazgec} />
+    </PanelFormu>
   );
 }

@@ -23,6 +23,10 @@ Bölüm: Yönetim paneli.
 - Yenileme tutularak kurulan tarayıcı testi düzeltmeyle yeşil, düzeltme geri alınınca kırmızı.
 - Kontrol hattı yeşil.
 
+## Notlar
+
+- Kart 0259 ile yapıldı. Sebep ölçüldü: Slider formunun React anahtarı slider'ın kimliğiydi (yokken "yeni"); kayıttan sonraki yenileme yeni kimliği getirince anahtar değişiyor, form sunucunun verisiyle baştan kuruluyor, arada yazılan siliniyordu. Anahtar artık yalnız başka bir slider'a geçince değişir; kayıttan sonra yazılan kaydedilmemiş değişiklik sayılır. Yenileme tutularak kurulan test eski anahtarla kırmızı ("slider-…-2" beklenirken eski başlık). Bölüm düzenleyicisinin öteki kullanımı (vitrin bölümleri penceresi) kayıttan sonra kapanır, aynı durum orada yok.
+
 ## Durum
 
 yapılacak

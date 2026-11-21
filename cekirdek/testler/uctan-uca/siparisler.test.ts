@@ -30,6 +30,7 @@ import { stokServisi } from "../../moduller/stok/servis";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
 import { bildirimSuresiniDurdur } from "./bildirim-suresi";
+import { ozetOdaktaOlmali } from "./form-hatasi";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
 import { ayriBaglanti, paneleGir, yoneticiAc } from "./yonetici";
@@ -160,8 +161,9 @@ const siparisAc = async (yontem: OdemeYontemiSecimi, eposta: string) => {
 
 test("siparişler: liste, havale onayı, kargoya verme ve not", async ({ page }) => {
   test.setTimeout(240_000);
+  // 403: not formunda yetki hatası bilerek üretilir (kart 0259).
   const hatalar = konsoluDinle(page, {
-    haric: (m) => m.includes("401") || m.includes("status of 400"),
+    haric: (m) => m.includes("401") || m.includes("status of 400") || m.includes("status of 403"),
   });
   const site = calisanSite();
   const eposta = `siparis-${randomUUID().slice(0, 8)}@ornek.test`;
@@ -258,6 +260,10 @@ test("siparişler: liste, havale onayı, kargoya verme ve not", async ({ page })
   if ((await siparisAyarlari(site).oku(vt)).kargoFirmalari.length > 1) {
     await kaydet.click();
     await expect(kargoPenceresi.getByText(metin("yonetim.siparis.hata.firma"))).toBeVisible();
+    // Tek hata (kart 0259): odak firma seçiminde.
+    await expect(
+      kargoPenceresi.getByRole("combobox", { name: metin("yonetim.siparis.pencere.firma") }),
+    ).toBeFocused();
   }
   const firmaSecimi = kargoPenceresi.getByRole("combobox", {
     name: metin("yonetim.siparis.pencere.firma"),
@@ -271,6 +277,8 @@ test("siparişler: liste, havale onayı, kargoya verme ve not", async ({ page })
   await takip.fill("!!");
   await takip.press("Enter");
   await expect(kargoPenceresi.getByText(metin("yonetim.siparis.hata.takipNumarasi"))).toBeVisible();
+  await expect(takip).toBeFocused();
+  await expect(takip).toHaveAttribute("aria-invalid", "true");
   await tara(page, "kargo penceresi hatalı");
   await takip.fill("UCU 1234");
   await takip.press("Enter");
@@ -285,8 +293,24 @@ test("siparişler: liste, havale onayı, kargoya verme ve not", async ({ page })
     takip_numarasi: "UCU 1234",
   });
 
-  // İç not eklenir ve geçmişte görünür.
+  // Boş not (kart 0259): alanın hatası, odak alanda. Sunucunun alanı olmayan hatası (yetki) özette, odak özette.
   const notAlani = page.getByLabel(metin("yonetim.siparis.notlar.etiket"));
+  const notKaydet = page.getByRole("button", { name: metin("yonetim.siparis.notlar.kaydet") });
+  await notKaydet.click();
+  await expect(notAlani).toBeFocused();
+  await expect(notAlani).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByText(metin("yonetim.siparis.notlar.gerekli"))).toBeVisible();
+  await page.route("**/kapi/yonetici/siparis-notu", (yol) =>
+    yol.fulfill({ status: 403, json: { basarili: false, hata: { kod: "yetki" } } }),
+  );
+  await notAlani.fill("Gitmeyecek not");
+  await notKaydet.click();
+  await ozetOdaktaOlmali(page, [metin("yonetim.siparis.notlar.yetki")], 1);
+  await expect(
+    page.locator('[data-slot="hata-ozeti"]').getByText(metin("yonetim.form.ozet.kaydedilemedi")),
+  ).toBeVisible();
+  await page.unroute("**/kapi/yonetici/siparis-notu");
+  // İç not eklenir ve geçmişte görünür.
   await notAlani.fill("Uçtan uca iç not");
   await page.getByRole("button", { name: metin("yonetim.siparis.notlar.kaydet") }).click();
   await expect(page.getByText(metin("yonetim.siparis.notlar.eklendi"))).toBeVisible();
@@ -461,6 +485,8 @@ test("siparişler listesi: süzgeç, sıralama, geri dönüş, seçim ve toplu i
   await expect(tablo.getByRole("row").filter({ hasText: kapidaBir })).toContainText(
     metin("ortak.siparisDurumu.hazirlaniyor"),
   );
+  // Yenilemeden sonra başlık yerine gelir (yenileme sırasında bir an boş kalabiliyor, ölçüldü).
+  await expect(page).toHaveTitle(/\S/);
   await tara(page, "toplu işlemin sonucu");
   expect(hatalar).toEqual([]);
 });
@@ -490,6 +516,8 @@ test("sipariş ayarları: kargo firması eklenir ve silinir", async ({ page }) =
   await adres.fill("http://takip.deneme.test/");
   await adres.press("Enter");
   await expect(pencere.getByText(metin("yonetim.siparisAyarlari.hata.takipAdresi"))).toBeVisible();
+  await expect(adres).toBeFocused();
+  await expect(adres).toHaveAttribute("aria-invalid", "true");
   await tara(page, "firma penceresi hatalı");
   await adres.fill("https://takip.deneme.test/{takip}");
   await adres.press("Enter");
@@ -543,6 +571,32 @@ test("sipariş ayarları: yönetici bildirimleri klavyeyle kaydedilir", async ({
     await expect(adresler).toBeFocused();
     await expect(adresler).toHaveAttribute("aria-invalid", "true");
     await tara(page, "yönetici bildirimleri hatalı");
+    // Kaydedilmemiş değişiklikle panel menüsünden başka sayfaya giderken sorulur (kart 0259): "Sayfada kal" kalır ve
+    // odağı bağlantıya verir; pencere taramadan geçer.
+    const kargoBaglantisi = page
+      .getByRole("navigation", { name: metin("yonetim.cerceve.menu") })
+      .getByRole("link", { name: metin("yonetim.sayfa.kargo.ad") });
+    await kargoBaglantisi.focus();
+    await page.keyboard.press("Enter");
+    const soru = page.getByRole("alertdialog", { name: metin("yonetim.form.cikis.baslik") });
+    await expect(soru).toBeVisible();
+    await expect(
+      soru.getByRole("button", { name: metin("yonetim.form.cikis.kaydet") }),
+    ).toBeVisible();
+    await tara(page, "çıkarken soru");
+    await page.keyboard.press("Enter");
+    await expect(soru).toBeHidden();
+    await expect(page).toHaveURL(/\/yonetim\/siparis-ayarlari$/);
+    await expect(kargoBaglantisi).toBeFocused();
+    // İptal ve iade bölümü: sınır dışı süre alanın hatası, odak alanda; Vazgeç geri alır.
+    const iptal = page.getByRole("region", { name: metin("yonetim.siparisAyarlari.iptalVeIade") });
+    const sure = iptal.getByLabel(metin("yonetim.siparisAyarlari.sure.ad"));
+    await sure.fill("0");
+    await iptal.getByRole("button", { name: metin("yonetim.siparisAyarlari.kaydet") }).click();
+    await expect(sure).toBeFocused();
+    await expect(sure).toHaveAttribute("aria-invalid", "true");
+    await iptal.getByRole("button", { name: metin("ortak.islem.vazgec") }).click();
+    await expect(sure).not.toHaveAttribute("aria-invalid", "true");
     // Anahtar boşlukla kapanır, durumunu yazıyla da söyler.
     const yorum = bolum.getByRole("switch", {
       name: metin("yonetim.siparisAyarlari.bildirim.yorum"),

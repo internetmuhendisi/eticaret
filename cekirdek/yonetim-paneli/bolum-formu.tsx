@@ -28,6 +28,7 @@ import type {
   BolumTarifi,
   TekAlanTarifi,
 } from "../vitrin/bolum-kutuphanesi/tarif";
+import { AlanKabi } from "./form/panel-formu";
 import { GorselSecimi } from "./gorsel-secimi";
 
 // Kayıt seçeneği: kimliği ve panelde görünen adı.
@@ -442,12 +443,15 @@ function TekAlan({
 }
 
 function ListeAlani({
+  yol,
   alan,
   deger,
   degistir,
   secenekler,
   hata,
 }: {
+  // Listenin formdaki yolu (alanın kodu): öğelerin alanları "<yol>.<sıra>.<kod>" adıyla bulunur (kart 0259).
+  yol: string;
   alan: Extract<AlanTarifi, { tur: "liste" }>;
   deger: unknown;
   degistir: Degistir;
@@ -472,16 +476,25 @@ function ListeAlani({
             {metin(alan.ogeAdi)} {sira + 1}
           </legend>
           {Object.entries(alan.alanlar).map(([kod, alt]) => (
-            <TekAlan
+            <AlanKabi
               key={kod}
-              alan={alt}
-              deger={oge[kod]}
-              degistir={(yeni) =>
-                degistir(ogeler.map((o, i) => (i === sira ? { ...o, [kod]: yeni } : o)))
-              }
-              secenekler={secenekler}
-              hata={(yol) => hata(yol === "" ? `${sira}.${kod}` : `${sira}.${kod}.${yol}`)}
-            />
+              ad={`${yol}.${sira}.${kod}`}
+              etiket={doldur(metin("yonetim.bolumFormu.ogeAlani"), {
+                oge: metin(alan.ogeAdi),
+                sira: String(sira + 1),
+                alan: metin(alt.ad),
+              })}
+            >
+              <TekAlan
+                alan={alt}
+                deger={oge[kod]}
+                degistir={(yeni) =>
+                  degistir(ogeler.map((o, i) => (i === sira ? { ...o, [kod]: yeni } : o)))
+                }
+                secenekler={secenekler}
+                hata={(alt) => hata(alt === "" ? `${sira}.${kod}` : `${sira}.${kod}.${alt}`)}
+              />
+            </AlanKabi>
           ))}
           <Dugme
             tur="sade"
@@ -523,6 +536,7 @@ export function BolumFormu({
   hatalar?: Readonly<Record<string, string>>;
   degisince?: (degerler: BolumDegerleri) => void;
 }) {
+  const metin = usePanelMetni();
   const [degerler, setDegerler] = useState<BolumDegerleri>(ilkDegerler);
   const alanDegistir = (kod: string) => (yeni: unknown) => {
     const sonraki = { ...degerler };
@@ -535,24 +549,28 @@ export function BolumFormu({
     <div className="flex flex-col gap-5" data-bolum-turu={tarif.tur}>
       {Object.entries(tarif.alanlar).map(([kod, alan]) => {
         const hata = (yol: string) => hatalar[yol === "" ? kod : `${kod}.${yol}`];
-        return alan.tur === "liste" ? (
-          <ListeAlani
-            key={kod}
-            alan={alan}
-            deger={degerler[kod]}
-            degistir={alanDegistir(kod)}
-            secenekler={secenekler}
-            hata={hata}
-          />
-        ) : (
-          <TekAlan
-            key={kod}
-            alan={alan}
-            deger={degerler[kod]}
-            degistir={alanDegistir(kod)}
-            secenekler={secenekler}
-            hata={hata}
-          />
+        // Alanın yeri ve adı (kart 0259): hata özeti ve odak alanı bununla bulur.
+        return (
+          <AlanKabi key={kod} ad={kod} etiket={metin(alan.ad)}>
+            {alan.tur === "liste" ? (
+              <ListeAlani
+                yol={kod}
+                alan={alan}
+                deger={degerler[kod]}
+                degistir={alanDegistir(kod)}
+                secenekler={secenekler}
+                hata={hata}
+              />
+            ) : (
+              <TekAlan
+                alan={alan}
+                deger={degerler[kod]}
+                degistir={alanDegistir(kod)}
+                secenekler={secenekler}
+                hata={hata}
+              />
+            )}
+          </AlanKabi>
         );
       })}
     </div>

@@ -20,6 +20,7 @@ import { siteninUrunServisi } from "../../moduller/urun/servis";
 import { secenekleriOku } from "../../moduller/urun/varyant";
 import { baglan, type Veritabani, veritabaniAdresi } from "../../veritabani/baglanti";
 import { kayitAdresleri } from "../../vitrin/adresler";
+import { odakCubuktaGizlenenler } from "./odak-gorunur";
 import { sayfaHazir } from "./sayfa-hazir";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
@@ -282,6 +283,9 @@ test("telefonda filtre penceresi klavyeyle açılır, adı vardır, içinde seç
     await page.keyboard.press("Enter");
     const pencere = page.getByRole("dialog", { name: metin("vitrin.liste.filtrele") });
     await expect(pencere).toBeVisible();
+    // Kart 0188: pencerenin sabit alt çubuğu Tab ile inilen hiçbir öğeyi örtmez; ölçüm pencerenin odak döngüsünde
+    // başa dönünce biter, sonra Escape'siz devam edilir.
+    expect(await odakCubuktaGizlenenler(page, pencere)).toEqual([]);
     // Odak pencerenin içindedir; Tab'la "M" bedenine gidilir, boşlukla seçilir.
     const m = pencere.getByRole("checkbox", { name: /^M / });
     for (let i = 0; i < 20; i += 1) {

@@ -20,6 +20,10 @@ Bölüm: Yönetim paneli.
 
 - Odak ölçümü yazıldı; sorun varsa düzeltildi ve test kırmızıdan yeşile döndü.
 
+## Notlar
+
+- Kart 0259 ile yapıldı (karar 0159). Ölçüldü: bölüm formu penceresinde ve Slider sayfasında telefonda Tab ile inilen öğeler çubuğun arkasında kalıyordu; yalnız kaydırma payı yetmedi, kısmen görünen uzun metin alanını tarayıcı hiç kaydırmıyordu. Kaydırma payı (`tailwind.css`) ve çubuğun odaklanan öğeyi görünür yere kaydırması (`YanPencereAltCubugu`) birlikte geri alınınca iki ölçüm de kırmızı. Telefondaki filtre penceresinde ölçüm düzeltmesiz de yeşil (pencere kısa).
+
 ## Durum
 
 yapılacak

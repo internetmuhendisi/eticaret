@@ -3,11 +3,8 @@
 // ve yöneticinin izni olan işlemler gelir (veri.ts). Havale onayı, hazırlamaya alma ve teslim onay penceresiyle
 // sorulur (geri dönüşleri yoktur); kargoya verme ve kargo düzeltme yan pencerede firma ve takip numarası ister.
 // İstek ekranın gördüğü durumu gönderir; arada durum değiştiyse sayfa yenilenir ve bildirilir. Asıl eylem en sondadır.
-import { type FormEvent, useRef, useState } from "react";
-import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
-import { FormAlani } from "../../../bilesenler/form/form-alani";
+import { useState } from "react";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
-import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { OnayPenceresi } from "../../../bilesenler/parcalar/onay-penceresi";
 import {
@@ -21,7 +18,6 @@ import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import {
   YanPencere,
   YanPencereAciklamasi,
-  YanPencereAltCubugu,
   YanPencereBasligi,
   YanPencereIcerigi,
   YanPencereUstu,
@@ -32,6 +28,7 @@ import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
 import { panelAdresi } from "../adresler";
 import { EylemDugmesi } from "../eylem-dugmesi";
+import { KaydetCubugu, PanelAlani, PanelFormu, usePanelFormu } from "../form/panel-formu";
 import { useKapatmaSorusu } from "../kapatma-sorusu";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
@@ -201,12 +198,14 @@ function KargoFormu({
 }) {
   const metin = usePanelMetni();
   const [form, setForm] = useState(ilk);
-  const [hatalar, setHatalar] = useState<Partial<Record<keyof KargoFormuDegeri, string>>>({});
-  const [genelHata, setGenelHata] = useState<string | null>(null);
-  const gonderiliyor = useRef(false);
+  // Ortak form yapısı (kart 0259): hata, özet, odak; pencere kapatılırken soru useKapatmaSorusu'ndadır.
+  const pf = usePanelFormu({
+    degisti: form.firma !== ilk.firma || form.takipNumarasi !== ilk.takipNumarasi,
+  });
   const degistir = (alan: keyof KargoFormuDegeri, deger: string) => {
     const yeni = { ...form, [alan]: deger };
     setForm(yeni);
+    pf.alaniTemizle(alan === "firma" ? "kargo-firmasi" : "takip-numarasi");
     degisince(yeni.firma !== ilk.firma || yeni.takipNumarasi !== ilk.takipNumarasi);
   };
   if (firmalar.length === 0) {
@@ -219,52 +218,30 @@ function KargoFormu({
       </div>
     );
   }
-  const kaydet = async (olay: FormEvent<HTMLFormElement>) => {
-    olay.preventDefault();
-    if (gonderiliyor.current) return;
+  const kaydet = async () => {
     if (form.firma === "") {
-      setHatalar({ firma: metin("yonetim.siparis.hata.firma") });
-      document.querySelector<HTMLElement>('[data-alan="kargo-firmasi"]')?.focus();
+      pf.hatalariGoster({ "kargo-firmasi": metin("yonetim.siparis.hata.firma") });
       return;
     }
-    gonderiliyor.current = true;
-    const sonuc = await gonder(form);
-    gonderiliyor.current = false;
-    if (sonuc.tamam) return;
+    const sonuc = await pf.isle(() => gonder(form));
+    if (sonuc === undefined || sonuc.tamam) return;
     const takip = sonuc.ayrinti.some((sorun) => sorun.alan.startsWith("kargo.takipNumarasi"));
     const firma = sonuc.ayrinti.some((sorun) => sorun.kod === "firma-yok");
     if (takip || firma) {
-      setHatalar({
-        ...(takip ? { takipNumarasi: metin("yonetim.siparis.hata.takipNumarasi") } : {}),
-        ...(firma ? { firma: metin("yonetim.siparis.hata.firmaYok") } : {}),
+      pf.hatalariGoster({
+        ...(takip ? { "takip-numarasi": metin("yonetim.siparis.hata.takipNumarasi") } : {}),
+        ...(firma ? { "kargo-firmasi": metin("yonetim.siparis.hata.firmaYok") } : {}),
       });
-      setGenelHata(null);
-      // Odak hatalı ilk alana.
-      document
-        .querySelector<HTMLElement>(
-          firma ? '[data-alan="kargo-firmasi"]' : '[name="takip-numarasi"]',
-        )
-        ?.focus();
       return;
     }
-    setHatalar({});
-    setGenelHata(metin(hataMetni(sonuc)));
+    pf.hatalariGoster({}, [metin(hataMetni(sonuc))]);
   };
   return (
-    <Form
-      kodGerekliMetni={metin("ortak.form.kodGerekli")}
-      yukleniyorMetni={metin("ortak.form.yukleniyor")}
-      onSubmit={kaydet}
-      className="flex flex-col gap-4"
-    >
-      {genelHata === null ? null : <Uyari tur="tehlike">{genelHata}</Uyari>}
-      <FormAlani
-        etiket={metin("yonetim.siparis.pencere.firma")}
-        {...(hatalar.firma === undefined ? {} : { hata: hatalar.firma })}
-      >
+    <PanelFormu durum={pf} gonder={kaydet} className="gap-4">
+      <PanelAlani ad="kargo-firmasi" etiket={metin("yonetim.siparis.pencere.firma")} zorunlu>
         {(alan) => (
           <SecimKutusu value={form.firma} onValueChange={(deger) => degistir("firma", deger)}>
-            <SecimTetikleyici {...alan} data-alan="kargo-firmasi">
+            <SecimTetikleyici {...alan}>
               <SecimDegeri placeholder={metin("yonetim.siparis.pencere.firmaSec")} />
             </SecimTetikleyici>
             <SecimListesi>
@@ -276,11 +253,12 @@ function KargoFormu({
             </SecimListesi>
           </SecimKutusu>
         )}
-      </FormAlani>
-      <FormAlani
+      </PanelAlani>
+      <PanelAlani
+        ad="takip-numarasi"
         etiket={metin("yonetim.siparis.pencere.takip")}
         aciklama={metin("yonetim.siparis.pencere.takipAciklamasi")}
-        {...(hatalar.takipNumarasi === undefined ? {} : { hata: hatalar.takipNumarasi })}
+        zorunlu={false}
       >
         {(alan) => (
           <GirisAlani
@@ -292,13 +270,8 @@ function KargoFormu({
             onChange={(olay) => degistir("takipNumarasi", olay.target.value)}
           />
         )}
-      </FormAlani>
-      <YanPencereAltCubugu>
-        <Dugme tur="sade" onClick={vazgec}>
-          {metin("ortak.islem.vazgec")}
-        </Dugme>
-        <GonderDugmesi>{metin("yonetim.siparis.pencere.kaydet")}</GonderDugmesi>
-      </YanPencereAltCubugu>
-    </Form>
+      </PanelAlani>
+      <KaydetCubugu kaydetEtiketi={metin("yonetim.siparis.pencere.kaydet")} vazgec={vazgec} />
+    </PanelFormu>
   );
 }

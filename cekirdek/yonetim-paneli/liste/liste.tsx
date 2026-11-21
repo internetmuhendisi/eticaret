@@ -503,6 +503,7 @@ export function Liste<Satir>({
   const topluCubuk =
     !secimVar || seciliAnahtarlar.length === 0 ? null : (
       <section
+        data-slot="toplu-islem-cubugu"
         aria-label={metin("yonetim.liste.topluIslem")}
         className="odak-yazi-renginde sticky top-0 z-taban flex flex-wrap items-center gap-2 rounded-orta bg-yazi px-3 py-2 text-zemin"
       >

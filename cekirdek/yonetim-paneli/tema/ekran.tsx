@@ -14,7 +14,6 @@
 // hiçbiri görünmez; ayar kapalıysa nedeni yazar.
 import {
   createContext,
-  type FormEvent,
   type ReactNode,
   type RefObject,
   useContext,
@@ -22,7 +21,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
+import { GonderDugmesi } from "../../../bilesenler/form/form";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
@@ -50,6 +49,7 @@ import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
 import { type DuzenYolu, duzenYollari } from "../../moduller/duzen/gecis";
 import { EylemDugmesi } from "../eylem-dugmesi";
+import { AlanKabi, PanelFormu, usePanelFormu } from "../form/panel-formu";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelSonucu } from "../panel-istegi";
 import { useSunucuFormu } from "../sunucu-formu";
@@ -220,45 +220,33 @@ function TemaFormu({ tema }: { tema: EkranTemasi }) {
   const metin = usePanelMetni();
   const { setSecilen, islem, odaklanacak } = useTema();
   const [yol, setYol] = useState<DuzenYolu | undefined>(undefined);
-  const [secimHatasi, setSecimHatasi] = useState(false);
-  const [genelHata, setGenelHata] = useState<MetinAnahtari | null>(null);
-  const [gonderiliyor, setGonderiliyor] = useState(false);
-  const yolGrubu = useRef<HTMLDivElement>(null);
-  const gonder = (olay: FormEvent<HTMLFormElement>) => {
-    olay.preventDefault();
-    if (gonderiliyor) return;
+  // Ortak form yapısı (kart 0259): hata, özet, odak.
+  const pf = usePanelFormu({ degisti: yol !== undefined });
+  const gonder = async () => {
     if (yol === undefined) {
-      setSecimHatasi(true);
-      yolGrubu.current?.querySelector<HTMLElement>("[role=radio]")?.focus();
+      pf.hatalariGoster({ duzen: metin("yonetim.tema.pencere.secimYok") });
       return;
     }
-    setGonderiliyor(true);
-    setGenelHata(null);
-    void islem(
-      temaUclari.yayinla,
-      { tema: tema.kod, ayarlar: tema.ayarlar, duzen: yol },
-      "yonetim.tema.yayinlandi",
-      { formda: true },
-    )
-      .then((sonuc) => {
-        if (sonuc.tamam) {
-          odaklanacak.current = tema.kod;
-          setSecilen(null);
-        } else {
-          setGenelHata(temaHatasiMetni(sonuc));
-        }
-      })
-      .finally(() => setGonderiliyor(false));
+    const sonuc = await pf.isle(() =>
+      islem(
+        temaUclari.yayinla,
+        { tema: tema.kod, ayarlar: tema.ayarlar, duzen: yol },
+        "yonetim.tema.yayinlandi",
+        { formda: true },
+      ),
+    );
+    if (sonuc === undefined) return;
+    if (sonuc.tamam) {
+      odaklanacak.current = tema.kod;
+      setSecilen(null);
+      return;
+    }
+    pf.hatalariGoster({}, [metin(temaHatasiMetni(sonuc))]);
   };
+  const duzenHatasi = pf.hata("duzen");
   return (
-    <Form
-      kodGerekliMetni={metin("ortak.form.kodGerekli")}
-      yukleniyorMetni={metin("ortak.form.yukleniyor")}
-      onSubmit={gonder}
-      className="flex flex-col gap-5"
-    >
-      {genelHata === null ? null : <Uyari tur="tehlike">{metin(genelHata)}</Uyari>}
-      <div ref={yolGrubu}>
+    <PanelFormu durum={pf} gonder={gonder}>
+      <AlanKabi ad="duzen" etiket={metin("yonetim.tema.pencere.duzen")}>
         <SecenekGrubu
           baslik={metin("yonetim.tema.pencere.duzen")}
           etiket={metin("yonetim.tema.pencere.duzen")}
@@ -266,22 +254,22 @@ function TemaFormu({ tema }: { tema: EkranTemasi }) {
           deger={yol}
           onDegerDegisti={(yeni) => {
             setYol(yeni as DuzenYolu);
-            setSecimHatasi(false);
+            pf.alaniTemizle("duzen");
           }}
           secilemezEki=""
           {...(yol === undefined ? {} : { aciklama: metin(yolAciklamalari[yol]) })}
-          {...(secimHatasi ? { hata: metin("yonetim.tema.pencere.secimYok") } : {})}
+          {...(duzenHatasi === undefined ? {} : { hata: duzenHatasi })}
         />
-      </div>
+      </AlanKabi>
       <PencereAlti>
-        <Dugme tur="sade" onClick={() => setSecilen(null)}>
+        <Dugme tur="sade" disabled={pf.gonderiliyor} onClick={() => setSecilen(null)}>
           {metin("ortak.islem.vazgec")}
         </Dugme>
-        <GonderDugmesi disabled={gonderiliyor}>
+        <GonderDugmesi disabled={pf.gonderiliyor}>
           {metin("yonetim.tema.pencere.yayinla")}
         </GonderDugmesi>
       </PencereAlti>
-    </Form>
+    </PanelFormu>
   );
 }
 
@@ -296,26 +284,35 @@ function FiltreYeri() {
     degisti,
     kaydedildi,
   } = useSunucuFormu<UrunFiltresiGorunumu>(veri.filtreYeri);
-  const [gonderiliyor, setGonderiliyor] = useState(false);
+  const secili = veri.temalar.find((tema) => tema.secili);
+  // Ortak form yapısı (kart 0259): hata, özet, odak, çıkarken soru ("Kaydet ve çık" bu seçimi kaydeder).
+  const pf = usePanelFormu({
+    degisti: degistirebilir && secili !== undefined && degisti,
+    kaydet: () => gonder(),
+  });
   const adlar: Record<UrunFiltresiGorunumu, MetinAnahtari> = {
     solda: "yonetim.tema.liste.solda",
     ustte: "yonetim.tema.liste.ustte",
   };
-  const secili = veri.temalar.find((tema) => tema.secili);
-  const gonder = (olay: FormEvent<HTMLFormElement>) => {
-    olay.preventDefault();
-    if (secili === undefined || gonderiliyor) return;
-    setGonderiliyor(true);
+  const gonder = async (): Promise<boolean> => {
+    if (secili === undefined) return false;
     const gonderilen = yer;
-    void islem(
-      temaUclari.yayinla,
-      { tema: secili.kod, ayarlar: { ...secili.ayarlar, urunFiltresi: gonderilen } },
-      "yonetim.tema.filtreKaydedildi",
-    )
-      .then((sonuc) => {
-        if (sonuc.tamam) kaydedildi(gonderilen);
-      })
-      .finally(() => setGonderiliyor(false));
+    const sonuc = await pf.isle(() =>
+      islem(
+        temaUclari.yayinla,
+        { tema: secili.kod, ayarlar: { ...secili.ayarlar, urunFiltresi: gonderilen } },
+        "yonetim.tema.filtreKaydedildi",
+        { formda: true },
+      ),
+    );
+    if (sonuc === undefined) return false;
+    if (sonuc.tamam) {
+      kaydedildi(gonderilen);
+      pf.temizle();
+      return true;
+    }
+    pf.hatalariGoster({}, [metin(temaHatasiMetni(sonuc))]);
+    return false;
   };
   return (
     <section aria-labelledby="tema-urun-listesi" className="flex flex-col gap-3">
@@ -325,27 +322,33 @@ function FiltreYeri() {
       <Kart>
         <KartAciklamasi>{metin("yonetim.tema.liste.aciklama")}</KartAciklamasi>
         {degistirebilir && secili !== undefined ? (
-          <Form
-            kodGerekliMetni={metin("ortak.form.kodGerekli")}
-            yukleniyorMetni={metin("ortak.form.yukleniyor")}
-            onSubmit={gonder}
-            className="flex flex-col gap-4"
+          <PanelFormu
+            durum={pf}
+            gonder={async () => {
+              await gonder();
+            }}
+            className="gap-4"
           >
-            <SecenekGrubu
-              baslik={metin("yonetim.tema.liste.filtreYeri")}
-              etiket={metin("yonetim.tema.liste.filtreYeri")}
-              ogeler={urunFiltresiGorunumleri.map((deger) => ({ deger, ad: metin(adlar[deger]) }))}
-              deger={yer}
-              onDegerDegisti={(yeni) => setYer(yeni as UrunFiltresiGorunumu)}
-              secilemezEki=""
-              aciklama={metin("yonetim.tema.liste.filtreAciklamasi")}
-            />
+            <AlanKabi ad="urunFiltresi" etiket={metin("yonetim.tema.liste.filtreYeri")}>
+              <SecenekGrubu
+                baslik={metin("yonetim.tema.liste.filtreYeri")}
+                etiket={metin("yonetim.tema.liste.filtreYeri")}
+                ogeler={urunFiltresiGorunumleri.map((deger) => ({
+                  deger,
+                  ad: metin(adlar[deger]),
+                }))}
+                deger={yer}
+                onDegerDegisti={(yeni) => setYer(yeni as UrunFiltresiGorunumu)}
+                secilemezEki=""
+                aciklama={metin("yonetim.tema.liste.filtreAciklamasi")}
+              />
+            </AlanKabi>
             <div>
-              <GonderDugmesi disabled={gonderiliyor || !degisti}>
+              <GonderDugmesi disabled={pf.gonderiliyor || !degisti}>
                 {metin("yonetim.tema.liste.kaydet")}
               </GonderDugmesi>
             </div>
-          </Form>
+          </PanelFormu>
         ) : (
           <dl className="m-0 flex flex-col gap-1">
             <dt className="font-kalin">{metin("yonetim.tema.liste.filtreYeri")}</dt>

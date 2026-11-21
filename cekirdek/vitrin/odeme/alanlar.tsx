@@ -166,6 +166,7 @@ export function MetinAlani({
   const { deger, onDegisti, varsayilan, ...giris } = ozellikler;
   return (
     <FormAlani
+      ad={ad}
       etiket={etiket}
       {...(aciklama === undefined ? {} : { aciklama })}
       {...(hata === undefined ? {} : { hata })}
@@ -209,7 +210,7 @@ export function SecimAlani({
   const metin = useMetin();
   const hata = hatalar[ad];
   return (
-    <FormAlani etiket={etiket} {...(hata === undefined ? {} : { hata })}>
+    <FormAlani ad={ad} etiket={etiket} {...(hata === undefined ? {} : { hata })}>
       {(alan) => {
         kimlikler[ad] = alan.id;
         return (
@@ -292,6 +293,7 @@ export function AdresAlanlari({
       ) : null}
       <div className="tablet:col-span-2">
         <FormAlani
+          ad={`${onEk}.adres`}
           etiket={metin("vitrin.odeme.adres")}
           aciklama={metin("vitrin.odeme.adresAciklama")}
           {...(hatalar[`${onEk}.adres`] === undefined ? {} : { hata: hatalar[`${onEk}.adres`] })}

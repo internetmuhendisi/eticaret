@@ -165,6 +165,9 @@ test("mağaza sahibi klavyeyle kayıt arayarak ve adresle öğe ekler; vitrinin 
     await form.getByLabel(metin("yonetim.menu.form.adres")).fill("/kampanya");
     await form.getByRole("button", { name: metin("yonetim.menu.form.kaydet") }).click();
     await expect(form.getByText(metin("yonetim.menu.hata.metin-gerekli"))).toBeVisible();
+    // Tek hata (kart 0259): odak alanda, özet yok.
+    await expect(form.getByLabel(metin("yonetim.menu.form.metin"))).toBeFocused();
+    await expect(form.locator('[data-slot="hata-ozeti"]')).toHaveCount(0);
     await form.getByLabel(metin("yonetim.menu.form.metin")).fill(adresYazisi);
     await form.getByRole("button", { name: metin("yonetim.menu.form.kaydet") }).click();
     await expect(form).toHaveCount(0);

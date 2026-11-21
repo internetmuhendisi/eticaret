@@ -26,6 +26,7 @@ import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
 import { vitrinAdresleri } from "../../vitrin/adresler";
 import { bildirimSuresiniDurdur } from "./bildirim-suresi";
+import { ozetOdaktaOlmali } from "./form-hatasi";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
 import { ayriBaglanti, paneleGir, yoneticiAc } from "./yonetici";
@@ -137,8 +138,28 @@ test("ödeme yöntemleri: tarama, en az bir yöntem, iptal süresinin kaydı", a
   const kaydet = page.getByRole("button", { name: metin("yonetim.odemeYontemleri.kaydet") });
   await kaydet.focus();
   await page.keyboard.press("Enter");
-  await expect(page.getByText(metin("yonetim.odemeYontemleri.hata.enAzBir"))).toBeVisible();
+  // Tek hata (kart 0259): özet yok, odak listenin hata yazısında.
+  const listeHatasi = page.locator("[data-alan='yontemler'] [data-hata-odagi]");
+  await expect(listeHatasi).toHaveText(metin("yonetim.odemeYontemleri.hata.enAzBir"));
+  await expect(listeHatasi).toBeFocused();
+  await expect(page.locator('[data-slot="hata-ozeti"]')).toHaveCount(0);
   await tara(page, "ödeme yöntemleri hatalı");
+  // İki hata: süre de bozuk; odak özette, satır süreye götürür.
+  const sure = page.getByLabel(metin("yonetim.odemeYontemleri.iptalSuresi"));
+  await sure.fill("0");
+  await kaydet.focus();
+  await page.keyboard.press("Enter");
+  const satirlar = await ozetOdaktaOlmali(
+    page,
+    [
+      `${metin("yonetim.sayfa.odemeYontemleri.ad")}: ${metin("yonetim.odemeYontemleri.hata.enAzBir")}`,
+      `${metin("yonetim.odemeYontemleri.iptalSuresi")}: ${metin("yonetim.odemeYontemleri.hata.gunGecersiz")}`,
+    ],
+    2,
+  );
+  await satirlar.nth(1).getByRole("button").press("Enter");
+  await expect(sure).toBeFocused();
+  await expect(sure).toHaveAttribute("aria-invalid", "true");
   expect((await servis().oku(vt)).yontemler).toEqual(ilk.yontemler);
   await page.getByRole("button", { name: metin("ortak.islem.vazgec") }).click();
   for (const yontem of ilk.yontemler) {
@@ -149,7 +170,6 @@ test("ödeme yöntemleri: tarama, en az bir yöntem, iptal süresinin kaydı", a
   }
 
   // İptal süresi: kaydedilir, sonra eski hâline döner.
-  const sure = page.getByLabel(metin("yonetim.odemeYontemleri.iptalSuresi"));
   const yeni = String(ilk.havaleIptalSuresi === 30 ? 29 : ilk.havaleIptalSuresi + 1);
   await sure.fill(yeni);
   await sure.press("Enter");
@@ -406,11 +426,21 @@ test("banka hesapları: pencereyle ekleme, IBAN hatası, onayla silme", async ({
   const pencere = page.getByRole("dialog", { name: metin("yonetim.bankaHesaplari.yeniHesap") });
   await expect(pencere).toBeVisible();
   const kaydet = pencere.getByRole("button", { name: metin("yonetim.bankaHesaplari.kaydet") });
-  // Boş gönderim: alanlar hatalı, odak ilk alanda.
+  // Boş gönderim (kart 0259): üç alan hatalı; odak özette, satırlar ekrandaki sırayla, satır alana götürür.
   await kaydet.click();
+  const satirlar = await ozetOdaktaOlmali(
+    pencere,
+    [
+      `${metin("yonetim.bankaHesaplari.banka")}: ${metin("yonetim.bankaHesaplari.hata.gerekli")}`,
+      `${metin("yonetim.bankaHesaplari.sahip")}: `,
+      `${metin("yonetim.bankaHesaplari.iban")}: `,
+    ],
+    3,
+  );
   const banka = pencere.getByLabel(metin("yonetim.bankaHesaplari.banka"));
-  await expect(banka).toBeFocused();
   await expect(banka).toHaveAttribute("aria-invalid", "true");
+  await satirlar.nth(0).getByRole("button").click();
+  await expect(banka).toBeFocused();
   await banka.fill("Deneme Uçtan Uca Bankası");
   await pencere.getByLabel(metin("yonetim.bankaHesaplari.sahip")).fill("Deneme Ticaret");
   const iban = pencere.getByLabel(metin("yonetim.bankaHesaplari.iban"));

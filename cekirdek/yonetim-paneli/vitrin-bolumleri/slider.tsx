@@ -34,6 +34,17 @@ export function SliderEkrani({
   const sliderlar = veri.alanlar["ana-sayfa"].filter((bolum) => bolum.tur === kayanAfis.tur);
   const [slider] = sliderlar;
   const bildir = (anahtar: MetinAnahtari) => bildirimGoster("basari", metin(anahtar));
+  // Formun anahtarı (kart 0227): yeni slider kaydedilince yenileme kimliğini getirir; anahtar değişseydi form baştan
+  // kurulur, kayıt ile yenileme arasında yazılan silinirdi (ölçüldü). Yeni slider'ın kaydı aynı formla sürer; başka
+  // bir slider açılınca (silindi, sırası değişti) form baştan kurulur.
+  const [formAnahtari, setFormAnahtari] = useState(slider?.kimlik ?? "yeni");
+  const [gorulenKimlik, setGorulenKimlik] = useState(slider?.kimlik);
+  if (slider?.kimlik !== gorulenKimlik) {
+    setGorulenKimlik(slider?.kimlik);
+    if (gorulenKimlik !== undefined || slider === undefined) {
+      setFormAnahtari(slider?.kimlik ?? "yeni");
+    }
+  }
 
   const gorunurYap = async () => {
     if (slider === undefined || gorunurYapiliyor) return;
@@ -78,7 +89,7 @@ export function SliderEkrani({
       ) : null}
       <Kart className="p-4 tablet:p-6">
         <BolumDuzenleyici
-          key={slider?.kimlik ?? "yeni"}
+          key={formAnahtari}
           sayfada
           tarif={kayanAfis}
           ilk={

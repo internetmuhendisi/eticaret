@@ -1,18 +1,14 @@
 "use client";
 // Bölümün düzenleme formu ve kaydı (kart 0142): görünüm seçimi ve tariften çıkan alanlar (BolumFormu), "Kaydet ve
 // yayınla". Vitrin bölümleri ekranının penceresi ve Slider kısayolunun sayfası aynı formu kullanır. Kayıt
-// kullananın verdiği işle yapılır (ekleme ya da değişiklik ucu); sunucunun alan hataları alanların altında, öteki
-// hatalar formun üstünde görünür. Kaydedilmemiş değişiklik varken sayfadan çıkmak isteyene tarayıcı uyarır.
-import { type FormEvent, useEffect, useRef, useState } from "react";
-import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
-import { Dugme } from "../../../bilesenler/parcalar/dugme";
+// kullananın verdiği işle yapılır (ekleme ya da değişiklik ucu); ortak form yapısıyla (kart 0259) sunucunun alan
+// hataları alanların altında, öteki hatalar formun başındaki özette görünür; kaydedilmemiş değişiklikle çıkarken sorulur.
+import { useEffect, useRef, useState } from "react";
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
-import { Uyari } from "../../../bilesenler/parcalar/uyari";
-import { YanPencereAltCubugu } from "../../../bilesenler/parcalar/yan-pencere";
-import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
 import type { BolumDegerleri, BolumTarifi } from "../../vitrin/bolum-kutuphanesi/tarif";
 import { BolumFormu, type BolumFormuSecenekleri } from "../bolum-formu";
+import { AlanKabi, KaydetCubugu, PanelFormu, usePanelFormu } from "../form/panel-formu";
 import type { PanelHatasi, PanelSonucu } from "../panel-istegi";
 import { alanHatalari, islemHatasiMetni } from "./hatalar";
 
@@ -55,95 +51,83 @@ export function BolumDuzenleyici({
   const [gorunum, setGorunum] = useState(ilk.gorunum);
   const degerler = useRef<BolumDegerleri>(ilk.degerler);
   const [degisti, setDegisti] = useState(false);
-  const [hatalar, setHatalar] = useState<Record<string, MetinAnahtari>>({});
-  const [genelHata, setGenelHata] = useState<MetinAnahtari | null>(null);
-  const gonderiliyor = useRef(false);
-  const uyariRef = useRef<HTMLDivElement>(null);
+  // Değişikliğin sırası: kayıt sürerken yazılan değişiklik kayıttan sonra da "kaydedilmemiş" kalır (kart 0227).
+  const surum = useRef(0);
+  const degistir = () => {
+    surum.current += 1;
+    setDegisti(true);
+    // Çizimi beklemeden: hemen basılan Escape de sorsun.
+    degisince?.(true);
+  };
+  // Ortak form yapısı (kart 0259): hata (alanın yoluyla), özet, odak, çıkarken soru ("Kaydet ve çık" bu formu
+  // kaydeder).
+  const pf = usePanelFormu({ degisti, kaydet: () => gonder() });
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: kullananın verdiği işlev her çizimde yenidir.
   useEffect(() => degisince?.(degisti), [degisti]);
 
-  useEffect(() => {
-    if (!degisti) return;
-    const uyar = (olay: BeforeUnloadEvent) => olay.preventDefault();
-    window.addEventListener("beforeunload", uyar);
-    return () => window.removeEventListener("beforeunload", uyar);
-  }, [degisti]);
-
-  useEffect(() => {
-    if (genelHata !== null) uyariRef.current?.focus();
-  }, [genelHata]);
-
-  const gonder = async (olay: FormEvent<HTMLFormElement>) => {
-    olay.preventDefault();
-    // İkinci tıklama dikkate alınmaz.
-    if (gonderiliyor.current) return;
-    gonderiliyor.current = true;
-    const sonuc = await kaydet({ gorunum, degerler: degerler.current });
-    gonderiliyor.current = false;
+  const gonder = async (): Promise<boolean> => {
+    const gonderilen = surum.current;
+    const sonuc = await pf.isle(() => kaydet({ gorunum, degerler: degerler.current }));
+    if (sonuc === undefined) return false;
     if (sonuc.tamam) {
-      setDegisti(false);
-      setHatalar({});
-      setGenelHata(null);
+      if (surum.current === gonderilen) setDegisti(false);
+      pf.temizle();
       kaydedince();
-      return;
+      return true;
     }
     const hata: PanelHatasi = sonuc;
-    setHatalar(alanHatalari(hata));
-    setGenelHata(islemHatasiMetni(hata));
+    const alanlar = Object.fromEntries(
+      Object.entries(alanHatalari(hata)).map(([yol, anahtar]) => [yol, metin(anahtar)]),
+    );
+    // Alanı olan hata alanın altında; yoksa işlemin genel hatası özette.
+    pf.hatalariGoster(
+      alanlar,
+      Object.keys(alanlar).length > 0 ? [] : [metin(islemHatasiMetni(hata))],
+    );
+    return false;
   };
 
   return (
-    <Form
-      kodGerekliMetni={metin("ortak.form.kodGerekli")}
-      yukleniyorMetni={metin("ortak.form.yukleniyor")}
-      onSubmit={gonder}
-      className="flex flex-col gap-5"
+    <PanelFormu
+      durum={pf}
+      gonder={async () => {
+        await gonder();
+      }}
     >
-      {genelHata === null ? null : (
-        <div ref={uyariRef} tabIndex={-1}>
-          <Uyari tur="tehlike">{metin(genelHata)}</Uyari>
-        </div>
-      )}
       {tarif.gorunumler.length > 1 ? (
-        <SecenekGrubu
-          baslik={metin("yonetim.bolumler.form.gorunum")}
-          etiket={metin("yonetim.bolumler.form.gorunum")}
-          ogeler={tarif.gorunumler.map((secenek) => ({
-            deger: secenek.kod,
-            ad: metin(secenek.ad),
-          }))}
-          deger={gorunum}
-          onDegerDegisti={(yeni) => {
-            setGorunum(yeni);
-            setDegisti(true);
-            degisince?.(true);
-          }}
-          secilemezEki=""
-        />
+        <AlanKabi ad="gorunum" etiket={metin("yonetim.bolumler.form.gorunum")}>
+          <SecenekGrubu
+            baslik={metin("yonetim.bolumler.form.gorunum")}
+            etiket={metin("yonetim.bolumler.form.gorunum")}
+            ogeler={tarif.gorunumler.map((secenek) => ({
+              deger: secenek.kod,
+              ad: metin(secenek.ad),
+            }))}
+            deger={gorunum}
+            onDegerDegisti={(yeni) => {
+              setGorunum(yeni);
+              degistir();
+            }}
+            secilemezEki=""
+          />
+        </AlanKabi>
       ) : null}
       <BolumFormu
         tarif={tarif}
         ilkDegerler={ilk.degerler}
         secenekler={secenekler}
-        hatalar={Object.fromEntries(
-          Object.entries(hatalar).map(([yol, anahtar]) => [yol, metin(anahtar)]),
-        )}
+        hatalar={pf.hatalar}
         degisince={(yeni) => {
           degerler.current = yeni;
-          setDegisti(true);
-          // Çizimi beklemeden: hemen basılan Escape de sorsun.
-          degisince?.(true);
+          degistir();
         }}
       />
-      <YanPencereAltCubugu {...(sayfada ? { className: "bottom-0 mx-0 px-0" } : {})}>
-        {vazgec === undefined ? null : (
-          <Dugme tur="sade" onClick={vazgec}>
-            {metin("ortak.islem.vazgec")}
-          </Dugme>
-        )}
-        <GonderDugmesi>{metin("yonetim.bolumler.form.kaydet")}</GonderDugmesi>
-      </YanPencereAltCubugu>
-    </Form>
+      <KaydetCubugu
+        sayfada={sayfada}
+        kaydetEtiketi={metin("yonetim.bolumler.form.kaydet")}
+        {...(vazgec === undefined ? {} : { vazgec })}
+      />
+    </PanelFormu>
   );
 }

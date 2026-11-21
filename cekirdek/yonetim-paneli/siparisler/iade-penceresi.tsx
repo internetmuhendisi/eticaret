@@ -6,9 +6,7 @@
 // gönderilen yalnız seçimdir, tutarı sunucu yeniden hesaplar. Asıl düğme tutarı yazar. Müşterinin onaylanmış ve iadesi
 // yapılmamış talebi varsa (kart 0239) iade penceresi talebin ürünleri, adetleri ve nedeniyle seçili açılır; iade
 // talebe bağlanır (talep kimliği gider). Mağaza sahibi seçimi değiştirebilir.
-import { type FormEvent, useMemo, useRef, useState } from "react";
-import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
-import { FormAlani } from "../../../bilesenler/form/form-alani";
+import { useMemo, useState } from "react";
 import { AdetSecici } from "../../../bilesenler/parcalar/adet-secici";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
@@ -35,7 +33,6 @@ import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
 import {
   YanPencere,
   YanPencereAciklamasi,
-  YanPencereAltCubugu,
   YanPencereBasligi,
   YanPencereIcerigi,
   YanPencereUstu,
@@ -57,6 +54,7 @@ import {
   iadeyiHesapla,
 } from "../../moduller/siparis/iade-hesabi";
 import { EylemDugmesi } from "../eylem-dugmesi";
+import { AlanKabi, KaydetCubugu, PanelAlani, PanelFormu, usePanelFormu } from "../form/panel-formu";
 import { useKapatmaSorusu } from "../kapatma-sorusu";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
@@ -170,11 +168,9 @@ function IadeFormu({
   const [stogaKoy, setStogaKoy] = useState(true);
   const [neden, setNeden] = useState<IadeNedeni | "">(talep?.neden ?? "");
   const [aciklama, setAciklama] = useState("");
-  const [hatalar, setHatalar] = useState<
-    Partial<Record<"kalemler" | "tutar" | "neden", string | undefined>>
-  >({});
-  const [genelHata, setGenelHata] = useState<string | null>(null);
-  const gonderiliyor = useRef(false);
+  const [degisti, setDegisti] = useState(false);
+  // Ortak form yapısı (kart 0259): hata, özet, odak; pencere kapatılırken soru useKapatmaSorusu'ndadır.
+  const pf = usePanelFormu({ degisti });
 
   const kalan = (kalem: IadePenceresiVerisi["kalemler"][number]) => kalem.adet - kalem.iadeEdilen;
   const butunKalanSecili = veri.kalemler.every(
@@ -216,65 +212,59 @@ function IadeFormu({
       ? 0
       : veri.hesap.odenen - veri.onceki.reduce((t, i) => t + i.tutar, 0);
 
-  const degistir = () => degisince(true);
+  const degistir = () => {
+    setDegisti(true);
+    degisince(true);
+  };
   const adetDegistir = (sira: number, adet: number) => {
     setAdetler((onceki) => ({ ...onceki, [sira]: adet }));
-    setHatalar((onceki) => ({ ...onceki, kalemler: undefined }));
+    pf.alaniTemizle("kalemler");
     degistir();
   };
 
-  const gonder = async (olay: FormEvent<HTMLFormElement>) => {
-    olay.preventDefault();
-    if (gonderiliyor.current) return;
-    const yeniHatalar: typeof hatalar = {};
-    if (neden === "") yeniHatalar.neden = metin("yonetim.iade.hata.neden");
+  const gonder = async () => {
+    const yeniHatalar: Record<string, string> = {};
+    if (neden === "") yeniHatalar["neden"] = metin("yonetim.iade.hata.neden");
     if (!iptal && elleTutar !== null && elleTutar.trim() !== "" && elleKurus === undefined) {
-      yeniHatalar.tutar = metin("yonetim.iade.hata.tutarOkunamadi");
+      yeniHatalar["tutar"] = metin("yonetim.iade.hata.tutarOkunamadi");
     } else if (hesap instanceof IadeHesapHatasi) {
-      if (hesap.alan === "tutar") yeniHatalar.tutar = metin(hataMetinleri[hesap.kod]);
-      else yeniHatalar.kalemler = metin(hataMetinleri[hesap.kod]);
+      yeniHatalar[hesap.alan === "tutar" ? "tutar" : "kalemler"] = metin(hataMetinleri[hesap.kod]);
     }
     if (Object.keys(yeniHatalar).length > 0) {
-      setHatalar(yeniHatalar);
-      const ilk =
-        yeniHatalar.kalemler !== undefined
-          ? "kalemler"
-          : yeniHatalar.tutar !== undefined
-            ? "tutar"
-            : "neden";
-      document.querySelector<HTMLElement>(`[data-iade-alani="${ilk}"]`)?.focus();
+      pf.hatalariGoster(yeniHatalar);
       return;
     }
-    gonderiliyor.current = true;
-    const yanit = await islem<IadeYaniti>(
-      "siparis-iadesi",
-      {
-        numara,
-        tur,
-        gorulenDurum: veri.durum,
-        kalemler: iptal ? [] : secilenKalemler,
-        kargo,
-        ...(iptal || elleTutar === null || elleTutar.trim() === "" ? {} : { tutar: elleTutar }),
-        stogaKoy,
-        neden,
-        ...(aciklama.trim() === "" ? {} : { aciklama }),
-        ...(talep === null ? {} : { talep: talep.kimlik }),
-      },
-      iptal ? "yonetim.iade.basari.iptal" : "yonetim.iade.basari.iade",
-      {
-        formda: true,
-        bildirim: (sonucVerisi) =>
-          sonucVerisi.iade === "bekliyor"
-            ? { tur: "uyari", metin: "yonetim.iade.basari.bekliyor" }
-            : sonucVerisi.iade === "basarisiz"
-              ? { tur: "tehlike", metin: "yonetim.iade.basari.basarisiz" }
-              : {
-                  tur: "basari",
-                  metin: iptal ? "yonetim.iade.basari.iptal" : "yonetim.iade.basari.iade",
-                },
-      },
+    const yanit = await pf.isle(() =>
+      islem<IadeYaniti>(
+        "siparis-iadesi",
+        {
+          numara,
+          tur,
+          gorulenDurum: veri.durum,
+          kalemler: iptal ? [] : secilenKalemler,
+          kargo,
+          ...(iptal || elleTutar === null || elleTutar.trim() === "" ? {} : { tutar: elleTutar }),
+          stogaKoy,
+          neden,
+          ...(aciklama.trim() === "" ? {} : { aciklama }),
+          ...(talep === null ? {} : { talep: talep.kimlik }),
+        },
+        iptal ? "yonetim.iade.basari.iptal" : "yonetim.iade.basari.iade",
+        {
+          formda: true,
+          bildirim: (sonucVerisi) =>
+            sonucVerisi.iade === "bekliyor"
+              ? { tur: "uyari", metin: "yonetim.iade.basari.bekliyor" }
+              : sonucVerisi.iade === "basarisiz"
+                ? { tur: "tehlike", metin: "yonetim.iade.basari.basarisiz" }
+                : {
+                    tur: "basari",
+                    metin: iptal ? "yonetim.iade.basari.iptal" : "yonetim.iade.basari.iade",
+                  },
+        },
+      ),
     );
-    gonderiliyor.current = false;
+    if (yanit === undefined) return;
     if (yanit.tamam) {
       bitti();
       return;
@@ -284,7 +274,7 @@ function IadeFormu({
     const tutarHatasi = alanHatasi("tutar");
     const kalemHatasi = alanHatasi("kalemler") ?? alanHatasi("kargo");
     if (tutarHatasi !== undefined || kalemHatasi !== undefined) {
-      setHatalar({
+      pf.hatalariGoster({
         ...(tutarHatasi === undefined
           ? {}
           : {
@@ -300,16 +290,9 @@ function IadeFormu({
               ),
             }),
       });
-      setGenelHata(null);
-      document
-        .querySelector<HTMLElement>(
-          `[data-iade-alani="${kalemHatasi === undefined ? "tutar" : "kalemler"}"]`,
-        )
-        ?.focus();
       return;
     }
-    setHatalar({});
-    setGenelHata(metin(hataMetni(yanit)));
+    pf.hatalariGoster({}, [metin(hataMetni(yanit))]);
   };
 
   const vergiSatiri = (satir: { ad?: string | undefined; oran: number }) =>
@@ -324,24 +307,22 @@ function IadeFormu({
     !iptal && sonuc?.tam === true && elleKurus !== undefined && tutar < kalanOdenen;
 
   return (
-    <Form
-      kodGerekliMetni={metin("ortak.form.kodGerekli")}
-      yukleniyorMetni={metin("ortak.form.yukleniyor")}
-      onSubmit={gonder}
-      className="flex flex-col gap-5"
-    >
-      {genelHata === null ? null : <Uyari tur="tehlike">{genelHata}</Uyari>}
+    <PanelFormu durum={pf} gonder={gonder}>
       {iptal ? <Uyari tur="uyari">{metin("yonetim.iade.iptalUyarisi")}</Uyari> : null}
       {talep === null ? null : (
         <Uyari tur="bilgi">{metin("yonetim.iadeTalebi.penceredeSecili")}</Uyari>
       )}
-      <div className="flex min-w-0 flex-col gap-2">
+      <AlanKabi
+        ad="kalemler"
+        etiket={metin("yonetim.iade.urunler")}
+        className="flex min-w-0 flex-col gap-2"
+      >
         <Tablo
           className="text-left"
           // Hatada odak tabloya gelir; hata yazısı tabloya bağlıdır (iade edilebilir satır olmasa da).
-          data-iade-alani="kalemler"
+          data-hata-odagi=""
           tabIndex={-1}
-          aria-describedby={hatalar.kalemler === undefined ? undefined : "iade-kalem-hatasi"}
+          aria-describedby={pf.hata("kalemler") === undefined ? undefined : "iade-kalem-hatasi"}
         >
           <TabloBasligi className="sr-only">{metin("yonetim.iade.urunler")}</TabloBasligi>
           <TabloUstu>
@@ -411,12 +392,12 @@ function IadeFormu({
             })}
           </TabloGovdesi>
         </Tablo>
-        {hatalar.kalemler === undefined ? null : (
+        {pf.hata("kalemler") === undefined ? null : (
           <p id="iade-kalem-hatasi" className="text-kucuk text-tehlike-yazi">
-            {hatalar.kalemler}
+            {pf.hata("kalemler")}
           </p>
         )}
-      </div>
+      </AlanKabi>
       {!iptal && veri.kargoIadeEdilebilir ? (
         <SecenekGrubu
           baslik={metin("yonetim.iade.kargo")}
@@ -451,42 +432,43 @@ function IadeFormu({
       />
       <div className="grid gap-4 tablet:grid-cols-2 tablet:items-start">
         {iptal ? null : (
-          <FormAlani
+          <PanelAlani
+            ad="tutar"
             etiket={metin("yonetim.iade.tutar")}
             aciklama={doldur(metin("yonetim.iade.tutarAciklamasi"), { kalan: b.para(kalanOdenen) })}
-            {...(hatalar.tutar === undefined ? {} : { hata: hatalar.tutar })}
+            zorunlu
           >
             {(alan) => (
               <GirisAlani
                 {...alan}
-                data-iade-alani="tutar"
                 name="iade-tutari"
                 inputMode="decimal"
                 autoComplete="off"
                 value={alanDegeri}
                 onChange={(olay) => {
                   setElleTutar(olay.target.value);
-                  setHatalar((onceki) => ({ ...onceki, tutar: undefined }));
+                  pf.alaniTemizle("tutar");
                   degistir();
                 }}
               />
             )}
-          </FormAlani>
+          </PanelAlani>
         )}
-        <FormAlani
+        <PanelAlani
+          ad="neden"
           etiket={metin(iptal ? "yonetim.iade.iptalNedeni" : "yonetim.iade.iadeNedeni")}
-          {...(hatalar.neden === undefined ? {} : { hata: hatalar.neden })}
+          zorunlu
         >
           {(alan) => (
             <SecimKutusu
               value={neden}
               onValueChange={(deger) => {
                 setNeden(deger as IadeNedeni);
-                setHatalar((onceki) => ({ ...onceki, neden: undefined }));
+                pf.alaniTemizle("neden");
                 degistir();
               }}
             >
-              <SecimTetikleyici {...alan} data-iade-alani="neden">
+              <SecimTetikleyici {...alan}>
                 <SecimDegeri placeholder={metin("yonetim.iade.nedenSec")} />
               </SecimTetikleyici>
               <SecimListesi>
@@ -498,11 +480,13 @@ function IadeFormu({
               </SecimListesi>
             </SecimKutusu>
           )}
-        </FormAlani>
+        </PanelAlani>
       </div>
-      <FormAlani
+      <PanelAlani
+        ad="aciklama"
         etiket={metin("yonetim.iade.aciklama")}
         aciklama={metin("yonetim.iade.aciklamaAciklamasi")}
+        zorunlu={false}
       >
         {(alan) => (
           <UzunMetinAlani
@@ -516,7 +500,7 @@ function IadeFormu({
             }}
           />
         )}
-      </FormAlani>
+      </PanelAlani>
       <dl className="flex flex-col gap-1 border-t border-kenar pt-4 text-kucuk" aria-live="polite">
         <div className="flex justify-between gap-3 font-baslik text-baslik-4 font-baslik-kalinligi">
           <dt>{metin(iptal ? "yonetim.iade.geriOdenecek" : "yonetim.iade.iadeEdilecek")}</dt>
@@ -546,17 +530,15 @@ function IadeFormu({
               : "yonetim.iade.para.yok",
         )}
       </Uyari>
-      <YanPencereAltCubugu>
-        <Dugme tur="sade" onClick={vazgec}>
-          {metin("ortak.islem.vazgec")}
-        </Dugme>
-        <GonderDugmesi>
-          {iptal
+      <KaydetCubugu
+        kaydetEtiketi={
+          iptal
             ? metin("yonetim.iade.iptalDugmesi")
-            : doldur(metin("yonetim.iade.iadeDugmesi"), { tutar: b.para(tutar) })}
-        </GonderDugmesi>
-      </YanPencereAltCubugu>
-    </Form>
+            : doldur(metin("yonetim.iade.iadeDugmesi"), { tutar: b.para(tutar) })
+        }
+        vazgec={vazgec}
+      />
+    </PanelFormu>
   );
 }
 

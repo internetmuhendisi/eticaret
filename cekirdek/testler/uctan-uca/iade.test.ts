@@ -25,6 +25,7 @@ import { stokServisi } from "../../moduller/stok/servis";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
 import { bildirimSuresiniDurdur } from "./bildirim-suresi";
+import { ozetOdaktaOlmali } from "./form-hatasi";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
 import { ayriBaglanti, paneleGir, yoneticiAc } from "./yonetici";
@@ -189,15 +190,27 @@ test("panelden klavyeyle kısmi iade ve iptal", async ({ page }) => {
   await expect(pencere).toBeVisible();
   await ikiRenkUcGenislik(page, "iade penceresi");
 
-  // Boş gönderim: ürün ve neden hatası, odak ürün seçiminde.
+  // Boş gönderim (kart 0259): ürün ve neden hatası alanlarında; iki hata olduğu için odak özette, satırlar ekrandaki
+  // sırayla, ilk satır ürün seçimine götürür.
   const gonder = pencere.getByRole("button", {
     name: doldur(metin("yonetim.iade.iadeDugmesi"), { tutar: b.para(0) }),
   });
   await gonder.focus();
   await page.keyboard.press("Enter");
-  await expect(pencere.getByText(metin("yonetim.iade.hata.bos"))).toBeVisible();
-  await expect(pencere.getByText(metin("yonetim.iade.hata.neden"))).toBeVisible();
-  await expect(page.locator('[data-iade-alani="kalemler"]')).toBeFocused();
+  const satirlar = await ozetOdaktaOlmali(
+    pencere,
+    [
+      `${metin("yonetim.iade.urunler")}: ${metin("yonetim.iade.hata.bos")}`,
+      `${metin("yonetim.iade.iadeNedeni")}: ${metin("yonetim.iade.hata.neden")}`,
+    ],
+    2,
+  );
+  await expect(pencere.locator("#iade-kalem-hatasi")).toHaveText(metin("yonetim.iade.hata.bos"));
+  await expect(
+    pencere.getByRole("combobox", { name: metin("yonetim.iade.iadeNedeni") }),
+  ).toHaveAttribute("aria-invalid", "true");
+  await satirlar.nth(0).getByRole("button").press("Enter");
+  await expect(pencere.locator("[data-alan='kalemler'] [data-hata-odagi]")).toBeFocused();
   await tara(page, "hatalı iade penceresi");
 
   // Bir adet klavyeyle.

@@ -26,6 +26,7 @@ import { stokServisi } from "../../moduller/stok/servis";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { baglan, type Veritabani, veritabaniAdresi } from "../../veritabani/baglanti";
 import { kayitAdresleri, vitrinAdresleri } from "../../vitrin/adresler";
+import { ozetOdaktaOlmali } from "./form-hatasi";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
 import { ayriBaglanti, paneleGir, yoneticiAc } from "./yonetici";
@@ -307,6 +308,21 @@ test("panelin Kargo ekranı: klavyeyle hata ve kayıt; sepette kargo ücreti ve 
   await expect(ucret).toHaveAttribute("aria-invalid", "true");
   await tara(page, "kargo ekranı hatalı");
   expect((await magazaAyarlari().oku(vt)).kargoUcreti).toBe(ilkKargo.kargoUcreti);
+  // İki okunamayan tutar (kart 0259): odak özette, satırlar ekrandaki sırayla, satır alana götürür.
+  await sinir.fill("abc");
+  await sinir.press("Enter");
+  const satirlar = await ozetOdaktaOlmali(
+    page,
+    [
+      `${metin("yonetim.kargo.ucret")}: ${metin("yonetim.kargo.hata.tutarOkunamadi")}`,
+      `${metin("yonetim.kargo.sinir")}: ${metin("yonetim.kargo.hata.tutarOkunamadi")}`,
+    ],
+    2,
+  );
+  await expect(sinir).toHaveAttribute("aria-invalid", "true");
+  await tara(page, "kargo ekranı özetli");
+  await satirlar.nth(1).getByRole("button").press("Enter");
+  await expect(sinir).toBeFocused();
   // Ücret 59,90, sınır 200,00: kaydedilir, sayfa yenilenince alanlar sunucunun yazdığı hâlle gelir.
   await ucret.fill("59,9");
   await sinir.fill("200");

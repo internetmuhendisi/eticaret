@@ -115,8 +115,10 @@ describe("ödeme yöntemleri ekranı", () => {
     expect(yenile).toHaveBeenCalled();
   });
 
-  it("en az bir yöntem hatası üstte, gün hatası alanın altında", async () => {
+  it("iki hata: başta özet ve odağı, en az bir yöntem hatası listenin, gün hatası alanın altında (kart 0259)", async () => {
     yontemleriCiz(veri());
+    // Kaydet değişiklik yokken kapalıdır (taslak): önce bir anahtar değişir.
+    fireEvent.click(anahtar(kapida));
     yanit = () =>
       Response.json(
         {
@@ -134,10 +136,19 @@ describe("ödeme yöntemleri ekranı", () => {
     await act(async () => {
       fireEvent.click(kaydet());
     });
-    expect(screen.getByText(metin("yonetim.odemeYontemleri.hata.enAzBir"))).toBeDefined();
+    const ozet = document.querySelector<HTMLElement>('[data-slot="hata-ozeti"]');
+    expect(ozet?.textContent).toContain(doldur(metin("yonetim.form.ozet.alanlar"), { sayi: "2" }));
+    expect(document.activeElement).toBe(ozet);
+    // Alanların kendi hataları: listeninki listenin üstünde, sürenin altında (alana bağlı).
+    expect(
+      screen.getAllByText(metin("yonetim.odemeYontemleri.hata.enAzBir")).length,
+    ).toBeGreaterThan(0);
     const sure = screen.getByLabelText(metin("yonetim.odemeYontemleri.iptalSuresi"));
     expect(sure.getAttribute("aria-invalid")).toBe("true");
-    expect(screen.getByText(metin("yonetim.odemeYontemleri.hata.gunGecersiz"))).toBeDefined();
+    const sureHatasi = document.getElementById(
+      (sure.getAttribute("aria-describedby") ?? "").split(" ").at(-1) ?? "",
+    );
+    expect(sureHatasi?.textContent).toBe(metin("yonetim.odemeYontemleri.hata.gunGecersiz"));
   });
 
   it("izni olmayan yönetici anahtarları kapalı görür, kaydet ve vazgeç yok, liste sıralanmaz", () => {

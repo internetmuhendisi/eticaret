@@ -2,16 +2,16 @@
 // Siparişe not ekleme formu (kart 0234): iç not yalnız panelde, müşteriye not müşterinin sipariş ayrıntısında görünür.
 // Not değiştirilemez; eklenince sayfa yenilenir ve geçmişin en üstünde görünür. Boş not sunucuya gitmeden söylenir.
 // Müşteriye not onay penceresiyle sorulur (geri alınamaz, müşteri görür); yazılmış ama eklenmemiş notla sayfadan
-// çıkarken tarayıcı sorar (bağımsız kontrolün bulguları).
-import { type FormEvent, useEffect, useRef, useState } from "react";
-import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
-import { FormAlani } from "../../../bilesenler/form/form-alani";
+// çıkarken sorulur (bağımsız kontrolün bulguları).
+import { useState } from "react";
+import { GonderDugmesi } from "../../../bilesenler/form/form";
 import { OnayPenceresi } from "../../../bilesenler/parcalar/onay-penceresi";
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
 import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
 import { type SiparisNotTuru, siparisNotTurleri, siparisSinirlari } from "../../kayitlar/siparis";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
+import { PanelAlani, PanelFormu, usePanelFormu } from "../form/panel-formu";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
 
@@ -28,22 +28,14 @@ export function NotFormu({ numara }: { numara: string }) {
   const islem = usePanelIslemi(hataMetni);
   const [tur, setTur] = useState<SiparisNotTuru>("ic");
   const [yazi, setYazi] = useState("");
-  const [hata, setHata] = useState<string | null>(null);
   const [onay, setOnay] = useState(false);
-  const gonderiliyor = useRef(false);
   const yazildi = yazi.trim() !== "";
-  useEffect(() => {
-    if (!yazildi) return;
-    const uyar = (olay: BeforeUnloadEvent) => olay.preventDefault();
-    window.addEventListener("beforeunload", uyar);
-    return () => window.removeEventListener("beforeunload", uyar);
-  }, [yazildi]);
-  const ekle = async (olay: FormEvent<HTMLFormElement>) => {
-    olay.preventDefault();
-    if (gonderiliyor.current) return;
+  // Ortak form yapısı (kart 0259): hata, özet, odak; yazılmış ama eklenmemiş notla çıkarken sorulur. Müşteriye not
+  // onay istediği için "Kaydet ve çık" yoktur.
+  const pf = usePanelFormu({ degisti: yazildi });
+  const ekle = async () => {
     if (!yazildi) {
-      setHata(metin("yonetim.siparis.notlar.gerekli"));
-      document.querySelector<HTMLTextAreaElement>('[name="siparis-notu"]')?.focus();
+      pf.hatalariGoster({ "siparis-notu": metin("yonetim.siparis.notlar.gerekli") });
       return;
     }
     if (tur === "musteri") {
@@ -53,52 +45,45 @@ export function NotFormu({ numara }: { numara: string }) {
     await gonder();
   };
   const gonder = async () => {
-    gonderiliyor.current = true;
-    const sonuc = await islem(
-      "siparis-notu",
-      { numara, tur, metin: yazi },
-      "yonetim.siparis.notlar.eklendi",
-      {
+    const sonuc = await pf.isle(() =>
+      islem("siparis-notu", { numara, tur, metin: yazi }, "yonetim.siparis.notlar.eklendi", {
         formda: true,
-      },
+      }),
     );
-    gonderiliyor.current = false;
+    if (sonuc === undefined) return;
     if (sonuc.tamam) {
       setYazi("");
-      setHata(null);
+      pf.temizle();
       return;
     }
-    setHata(
-      metin(
-        sonuc.kod !== "dogrulama"
-          ? hataMetni(sonuc)
-          : sonuc.ayrinti.some((sorun) => sorun.kod === "too_big")
+    if (sonuc.kod === "dogrulama") {
+      pf.hatalariGoster({
+        "siparis-notu": metin(
+          sonuc.ayrinti.some((sorun) => sorun.kod === "too_big")
             ? "yonetim.siparis.notlar.uzun"
             : "yonetim.siparis.notlar.gecersiz",
-      ),
-    );
+        ),
+      });
+      return;
+    }
+    pf.hatalariGoster({}, [metin(hataMetni(sonuc))]);
   };
   return (
-    <Form
-      kodGerekliMetni={metin("ortak.form.kodGerekli")}
-      yukleniyorMetni={metin("ortak.form.yukleniyor")}
-      onSubmit={ekle}
-      className="flex flex-col gap-3"
-    >
-      <FormAlani
-        etiket={metin("yonetim.siparis.notlar.etiket")}
-        {...(hata === null ? {} : { hata })}
-      >
+    <PanelFormu durum={pf} gonder={ekle} className="gap-3">
+      <PanelAlani ad="siparis-notu" etiket={metin("yonetim.siparis.notlar.etiket")}>
         {(alan) => (
           <UzunMetinAlani
             {...alan}
             name="siparis-notu"
             maxLength={siparisSinirlari.notEnCok}
             value={yazi}
-            onChange={(olay) => setYazi(olay.target.value)}
+            onChange={(olay) => {
+              setYazi(olay.target.value);
+              pf.alaniTemizle("siparis-notu");
+            }}
           />
         )}
-      </FormAlani>
+      </PanelAlani>
       <SecenekGrubu
         baslik={metin("yonetim.siparis.notlar.tur")}
         etiket={metin("yonetim.siparis.notlar.tur")}
@@ -107,7 +92,7 @@ export function NotFormu({ numara }: { numara: string }) {
         onDegerDegisti={(deger) => setTur(deger as SiparisNotTuru)}
         secilemezEki=""
       />
-      <GonderDugmesi tur="sade" className="w-fit">
+      <GonderDugmesi tur="sade" className="w-fit" disabled={pf.gonderiliyor}>
         {metin("yonetim.siparis.notlar.kaydet")}
       </GonderDugmesi>
       <OnayPenceresi
@@ -120,6 +105,6 @@ export function NotFormu({ numara }: { numara: string }) {
         vazgecEtiketi={metin("ortak.islem.vazgec")}
         onayla={gonder}
       />
-    </Form>
+    </PanelFormu>
   );
 }

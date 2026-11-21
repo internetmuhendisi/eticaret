@@ -35,6 +35,8 @@ vi.mock("next/headers", () => ({
   }),
 }));
 vi.mock("next/navigation", () => ({
+  // Çerçevenin çıkış koruması (kart 0259) gezinmek için yönlendiriciyi kullanır.
+  useRouter: () => ({ push: () => {}, refresh: () => {} }),
   redirect: (adres: string) => {
     throw new Error(`yonlendir ${adres}`);
   },

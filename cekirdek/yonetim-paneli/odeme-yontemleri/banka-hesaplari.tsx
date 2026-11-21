@@ -5,27 +5,15 @@
 // Silme onay penceresiyle sorulur. Sıralama hemen kaydedilir. Hesap yoksa boş hâl bir sonraki adımı söyler: hesap
 // eklenene kadar havale ödeme adımında görünmez. Değiştirme izni olmayan yönetici (görevli) yalnız listeyi görür.
 // Komut çubuğu sayfa iskeletinindir: eylem ile içerik aynı durumu sağlayıcıdan paylaşır.
-import {
-  createContext,
-  type FormEvent,
-  type ReactNode,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
-import { FormAlani } from "../../../bilesenler/form/form-alani";
+import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { BosHal } from "../../../bilesenler/parcalar/bos-hal";
 import { Dugme, IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { OnayPenceresi } from "../../../bilesenler/parcalar/onay-penceresi";
 import { SiralanabilirListe } from "../../../bilesenler/parcalar/siralanabilir-liste";
-import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import {
   YanPencere,
   YanPencereAciklamasi,
-  YanPencereAltCubugu,
   YanPencereBasligi,
   YanPencereIcerigi,
   YanPencereUstu,
@@ -37,6 +25,7 @@ import { usePanelMetni } from "../../metinler/panel-metni";
 import { siralamaMetinleri } from "../../metinler/siralama-metinleri";
 import type { BankaHesabi } from "../../moduller/odeme/yontemler";
 import { EylemDugmesi } from "../eylem-dugmesi";
+import { KaydetCubugu, PanelAlani, PanelFormu, usePanelFormu } from "../form/panel-formu";
 import { useKapatmaSorusu } from "../kapatma-sorusu";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
@@ -221,36 +210,36 @@ function HesapFormu({
   const { islem } = useHesaplar();
   const ilk = { banka: hesap?.banka ?? "", sahip: hesap?.sahip ?? "", iban: hesap?.iban ?? "" };
   const [form, setForm] = useState(ilk);
-  const [hatalar, setHatalar] = useState<Partial<Record<keyof typeof ilk, string>>>({});
-  const [genelHata, setGenelHata] = useState<string | null>(null);
-  const gonderiliyor = useRef(false);
+  // Ortak form yapısı (kart 0259): hata, özet, odak; pencere kapatılırken soru useKapatmaSorusu'ndadır.
+  const pf = usePanelFormu({ degisti: JSON.stringify(form) !== JSON.stringify(ilk) });
   const degistir = (alan: keyof typeof ilk, deger: string) => {
     const yeni = { ...form, [alan]: deger };
     setForm(yeni);
+    pf.alaniTemizle(`hesap-${alan}`);
     degisince(JSON.stringify(yeni) !== JSON.stringify(ilk));
   };
-  const gonder = async (olay: FormEvent<HTMLFormElement>) => {
-    olay.preventDefault();
-    if (gonderiliyor.current) return;
+  const gonder = async () => {
     // Boş alan sunucuya gitmeden söylenir.
     const bos = (Object.keys(form) as (keyof typeof ilk)[]).filter(
       (alan) => form[alan].trim() === "",
     );
     if (bos.length > 0) {
-      setHatalar(
-        Object.fromEntries(bos.map((alan) => [alan, metin("yonetim.bankaHesaplari.hata.gerekli")])),
+      pf.hatalariGoster(
+        Object.fromEntries(
+          bos.map((alan) => [`hesap-${alan}`, metin("yonetim.bankaHesaplari.hata.gerekli")]),
+        ),
       );
-      document.querySelector<HTMLInputElement>(`[name="hesap-${bos[0]}"]`)?.focus();
       return;
     }
-    gonderiliyor.current = true;
-    const sonuc = await islem(
-      hesap === undefined ? "banka-hesabi-ekle" : "banka-hesabi-degistir",
-      hesap === undefined ? form : { kimlik: hesap.kimlik, ...form },
-      hesap === undefined ? "yonetim.bankaHesaplari.eklendi" : "yonetim.bankaHesaplari.degisti",
-      { formda: true },
+    const sonuc = await pf.isle(() =>
+      islem(
+        hesap === undefined ? "banka-hesabi-ekle" : "banka-hesabi-degistir",
+        hesap === undefined ? form : { kimlik: hesap.kimlik, ...form },
+        hesap === undefined ? "yonetim.bankaHesaplari.eklendi" : "yonetim.bankaHesaplari.degisti",
+        { formda: true },
+      ),
     );
-    gonderiliyor.current = false;
+    if (sonuc === undefined) return;
     if (sonuc.tamam) {
       kapat();
       return;
@@ -259,21 +248,19 @@ function HesapFormu({
       (sorun) => sorun.alan === "iban" && sorun.kod in ibanHataMetinleri,
     );
     if (iban !== undefined) {
-      setHatalar({
-        iban: metin(ibanHataMetinleri[iban.kod] ?? "yonetim.bankaHesaplari.hata.genel"),
+      pf.hatalariGoster({
+        "hesap-iban": metin(ibanHataMetinleri[iban.kod] ?? "yonetim.bankaHesaplari.hata.genel"),
       });
-      setGenelHata(null);
-      document.querySelector<HTMLInputElement>('[name="hesap-iban"]')?.focus();
       return;
     }
-    setHatalar({});
-    setGenelHata(metin(genelHataMetni(sonuc)));
+    pf.hatalariGoster({}, [metin(genelHataMetni(sonuc))]);
   };
   const alan = (ad: keyof typeof ilk, etiket: MetinAnahtari, aciklama?: MetinAnahtari) => (
-    <FormAlani
+    <PanelAlani
+      ad={`hesap-${ad}`}
       etiket={metin(etiket)}
-      {...(aciklama === undefined ? {} : { aciklama: metin(aciklama) })}
-      {...(hatalar[ad] === undefined ? {} : { hata: hatalar[ad] })}
+      aciklama={aciklama === undefined ? undefined : metin(aciklama)}
+      zorunlu
     >
       {(baglanti) => (
         <GirisAlani
@@ -285,26 +272,15 @@ function HesapFormu({
           onChange={(olay) => degistir(ad, olay.target.value)}
         />
       )}
-    </FormAlani>
+    </PanelAlani>
   );
   return (
-    <Form
-      kodGerekliMetni={metin("ortak.form.kodGerekli")}
-      yukleniyorMetni={metin("ortak.form.yukleniyor")}
-      onSubmit={gonder}
-      className="flex flex-col gap-4"
-    >
-      {genelHata === null ? null : <Uyari tur="tehlike">{genelHata}</Uyari>}
+    <PanelFormu durum={pf} gonder={gonder} className="gap-4">
       {alan("banka", "yonetim.bankaHesaplari.banka")}
       {alan("sahip", "yonetim.bankaHesaplari.sahip", "yonetim.bankaHesaplari.sahipAciklamasi")}
       {alan("iban", "yonetim.bankaHesaplari.iban", "yonetim.bankaHesaplari.ibanAciklamasi")}
-      <YanPencereAltCubugu>
-        <Dugme tur="sade" onClick={vazgec}>
-          {metin("ortak.islem.vazgec")}
-        </Dugme>
-        <GonderDugmesi>{metin("yonetim.bankaHesaplari.kaydet")}</GonderDugmesi>
-      </YanPencereAltCubugu>
-    </Form>
+      <KaydetCubugu kaydetEtiketi={metin("yonetim.bankaHesaplari.kaydet")} vazgec={vazgec} />
+    </PanelFormu>
   );
 }
 

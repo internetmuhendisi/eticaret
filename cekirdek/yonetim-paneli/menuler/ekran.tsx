@@ -10,17 +10,7 @@
 // Komut çubuğu sayfa iskeletinindir (PanelSayfasi): eylemler ile içerik aynı durumu bu sağlayıcıdan paylaşır.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  createContext,
-  type FormEvent,
-  type ReactNode,
-  type RefObject,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
+import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { FormAlani } from "../../../bilesenler/form/form-alani";
 import {
   AcilirMenu,
@@ -32,7 +22,7 @@ import {
   AltMenuTetikleyici,
 } from "../../../bilesenler/parcalar/acilir-menu";
 import { BosHal } from "../../../bilesenler/parcalar/bos-hal";
-import { Dugme, IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
+import { IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { OnayKutusu } from "../../../bilesenler/parcalar/onay-kutusu";
 import { OnayPenceresi } from "../../../bilesenler/parcalar/onay-penceresi";
@@ -51,7 +41,6 @@ import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import {
   YanPencere,
   YanPencereAciklamasi,
-  YanPencereAltCubugu,
   YanPencereBasligi,
   YanPencereIcerigi,
   YanPencereUstu,
@@ -74,10 +63,17 @@ import type { Menu, MenuDali, PanelOgesi } from "../../moduller/menu/servis";
 import type { BulunanKayit } from "../../moduller/urun/kayit-arama";
 import { kayitAdresleri } from "../../vitrin/adresler";
 import { EylemDugmesi } from "../eylem-dugmesi";
+import {
+  AlanKabi,
+  KaydetCubugu,
+  PanelFormu,
+  usePanelFormu,
+  ZorunlulukEki,
+} from "../form/panel-formu";
 import { useKapatmaSorusu } from "../kapatma-sorusu";
 import { KayitArama, kayitAramaAcikMi } from "../kayit-arama";
 import { usePanelIslemi } from "../panel-islemi";
-import type { PanelHatasi, PanelSonucu } from "../panel-istegi";
+import type { PanelSonucu } from "../panel-istegi";
 import { menuAlanHatalari, menuHataMetni } from "./hatalar";
 import { menuUclari } from "./uclar";
 import type { MenulerEkraniVerisi } from "./veri";
@@ -524,50 +520,36 @@ export function MenulerIcerigi() {
   );
 }
 
-// Formun ortak kaydı: alan hataları alanın altında, öteki hata formun üstünde.
-function useFormKaydi(alanlar: readonly string[], esle: Readonly<Record<string, string>> = {}) {
-  const [hatalar, setHatalar] = useState<Record<string, MetinAnahtari>>({});
-  const [genelHata, setGenelHata] = useState<MetinAnahtari | null>(null);
-  const gonderiliyor = useRef(false);
-  const uyariRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (genelHata !== null) uyariRef.current?.focus();
-  }, [genelHata]);
+// Menü formlarının ortak kaydı: ortak form yapısının (kart 0259) üstünde menünün hata eşlemesi. Alan hataları alanın
+// altında, alanı olmayan hata (menü dolu, sınır) özette kendi metniyle.
+function useFormKaydi(
+  alanlar: readonly string[],
+  esle: Readonly<Record<string, string>> = {},
+  degisti = false,
+) {
+  const metin = usePanelMetni();
+  const pf = usePanelFormu({ degisti });
   const kaydet = async (is: () => Promise<PanelSonucu<unknown>>, bitince: () => void) => {
-    if (gonderiliyor.current) return;
-    gonderiliyor.current = true;
-    const sonuc = await is();
-    gonderiliyor.current = false;
+    const sonuc = await pf.isle(is);
+    if (sonuc === undefined) return;
     if (sonuc.tamam) {
+      pf.temizle();
       bitince();
       return;
     }
-    const hata: PanelHatasi = sonuc;
-    const alanHatalari = menuAlanHatalari(hata, alanlar, esle);
-    setHatalar(alanHatalari);
-    // Hata bir alana bağlıysa metni alanın altındadır; üstte yalnız genel uyarı durur (aynı cümle iki kez yazmaz).
-    // Alanı olmayan hata (menü dolu, sınır) üstte kendi metniyle görünür.
-    setGenelHata(
-      Object.keys(alanHatalari).length > 0 ? "yonetim.menu.form.hata" : menuHataMetni(hata),
+    const alanHatalari = menuAlanHatalari(sonuc, alanlar, esle);
+    pf.hatalariGoster(
+      Object.fromEntries(
+        Object.entries(alanHatalari).map(([alan, anahtar]) => [alan, metin(anahtar)]),
+      ),
+      Object.keys(alanHatalari).length > 0 ? [] : [metin(menuHataMetni(sonuc))],
     );
   };
-  return { hatalar, setHatalar, genelHata, setGenelHata, uyariRef, kaydet };
-}
-
-function GenelHata({
-  anahtar,
-  uyariRef,
-}: {
-  anahtar: MetinAnahtari | null;
-  uyariRef: RefObject<HTMLDivElement | null>;
-}) {
-  const metin = usePanelMetni();
-  if (anahtar === null) return null;
-  return (
-    <div ref={uyariRef} tabIndex={-1}>
-      <Uyari tur="tehlike">{metin(anahtar)}</Uyari>
-    </div>
-  );
+  const hata = (alan: string) => {
+    const yazi = pf.hata(alan);
+    return yazi === undefined ? {} : { hata: yazi };
+  };
+  return { pf, kaydet, hata };
 }
 
 const enUst = "__en-ust";
@@ -625,27 +607,29 @@ function OgeFormu({
   const [yeniSekme, setYeniSekme] = useState(hedef?.tur === "adres" ? hedef.yeniSekme : false);
   const [yazi, setYazi] = useState(oge?.metin ?? "");
   const [seciliUst, setSeciliUst] = useState<string | null>(ust);
-  const form = useFormKaydi(["metin", "hedef", "ust"]);
+  const [degisti, setDegisti] = useState(false);
+  // Sunucunun "hedef" hatası (kayıt yok) kayıt aramasının altında yazar.
+  const form = useFormKaydi(
+    ["metin", "hedef", "ust"],
+    kayitliMi(tur) ? { hedef: "hedef.kimlik" } : {},
+    degisti,
+  );
   const degistir =
     <T,>(ayarla: (deger: T) => void) =>
     (deger: T) => {
       ayarla(deger);
+      setDegisti(true);
       degisince(true);
     };
   // Üst öğe olabilecekler: en üst düzeydeki öteki öğeler. Altı olan öğe başka bir öğenin altına konamaz.
   const altiVar = (oge?.altlar.length ?? 0) > 0;
   const ustAdaylari = seciliOgeler(veri).filter((aday) => aday.kimlik !== oge?.kimlik);
-  const hata = (alan: string) => {
-    const anahtar = form.hatalar[alan];
-    return anahtar === undefined ? {} : { hata: metin(anahtar) };
-  };
+  const hata = form.hata;
 
-  const gonder = (olay: FormEvent<HTMLFormElement>) => {
-    olay.preventDefault();
+  const gonder = () => {
     if (menu === undefined) return;
     if (kayitliMi(tur) && kayit === undefined) {
-      form.setHatalar({ "hedef.kimlik": "yonetim.menu.form.kayitSecin" });
-      form.setGenelHata("yonetim.menu.form.hata");
+      form.pf.hatalariGoster({ "hedef.kimlik": metin("yonetim.menu.form.kayitSecin") });
       return;
     }
     const yeniHedef =
@@ -674,37 +658,37 @@ function OgeFormu({
   };
 
   return (
-    <Form
-      kodGerekliMetni={metin("ortak.form.kodGerekli")}
-      yukleniyorMetni={metin("ortak.form.yukleniyor")}
-      onSubmit={gonder}
-      className="flex flex-col gap-5"
-    >
-      <GenelHata anahtar={form.genelHata} uyariRef={form.uyariRef} />
-      <SecenekGrubu
-        baslik={metin("yonetim.menu.form.hedefTuru")}
-        etiket={metin("yonetim.menu.form.hedefTuru")}
-        ogeler={hedefSecimleri.map((deger) => ({ deger, ad: secimAdi(metin, deger) }))}
-        deger={secim}
-        onDegerDegisti={(yeni) => {
-          degistir(setSecim)(yeni as HedefSecimi);
-          setKayit(undefined);
-        }}
-        secilemezEki=""
-        {...hata("hedef.tur")}
-      />
-      {kayitliMi(tur) ? (
-        <KayitArama
-          tur={tur}
-          etiket={hedefAdi(metin, tur)}
-          secili={kayit}
-          sec={degistir(setKayit)}
-          {...(hata("hedef.kimlik").hata === undefined ? hata("hedef") : hata("hedef.kimlik"))}
+    <PanelFormu durum={form.pf} gonder={gonder}>
+      <AlanKabi ad="hedef.tur" etiket={metin("yonetim.menu.form.hedefTuru")}>
+        <SecenekGrubu
+          baslik={metin("yonetim.menu.form.hedefTuru")}
+          etiket={metin("yonetim.menu.form.hedefTuru")}
+          ogeler={hedefSecimleri.map((deger) => ({ deger, ad: secimAdi(metin, deger) }))}
+          deger={secim}
+          onDegerDegisti={(yeni) => {
+            degistir(setSecim)(yeni as HedefSecimi);
+            setKayit(undefined);
+          }}
+          secilemezEki=""
+          {...hata("hedef.tur")}
         />
+      </AlanKabi>
+      {kayitliMi(tur) ? (
+        <AlanKabi ad="hedef.kimlik" etiket={hedefAdi(metin, tur)}>
+          <KayitArama
+            tur={tur}
+            etiket={hedefAdi(metin, tur)}
+            secili={kayit}
+            sec={degistir(setKayit)}
+            {...hata("hedef.kimlik")}
+          />
+        </AlanKabi>
       ) : null}
       {tur === "adres" ? (
         <>
           <FormAlani
+            ad="hedef.adres"
+            etiketEki={<ZorunlulukEki zorunlu />}
             etiket={metin("yonetim.menu.form.adres")}
             aciklama={metin(
               secim === "site-adresi"
@@ -732,6 +716,8 @@ function OgeFormu({
         </>
       ) : null}
       <FormAlani
+        ad="metin"
+        etiketEki={<ZorunlulukEki zorunlu={metinGerekirMi(tur)} />}
         etiket={metin("yonetim.menu.form.metin")}
         {...(metinGerekirMi(tur) ? {} : { aciklama: metin("yonetim.menu.form.metinAciklamasi") })}
         {...hata("metin")}
@@ -748,6 +734,7 @@ function OgeFormu({
         )}
       </FormAlani>
       <FormAlani
+        ad="ust"
         etiket={metin("yonetim.menu.form.ust")}
         aciklama={metin(
           altiVar ? "yonetim.menu.form.ustKapali" : "yonetim.menu.form.ustAciklamasi",
@@ -774,20 +761,8 @@ function OgeFormu({
           </SecimKutusu>
         )}
       </FormAlani>
-      <FormAlti vazgec={vazgec} kaydet={metin("yonetim.menu.form.kaydet")} />
-    </Form>
-  );
-}
-
-function FormAlti({ vazgec, kaydet }: { vazgec: () => void; kaydet: string }) {
-  const metin = usePanelMetni();
-  return (
-    <YanPencereAltCubugu>
-      <Dugme tur="sade" onClick={vazgec}>
-        {metin("ortak.islem.vazgec")}
-      </Dugme>
-      <GonderDugmesi>{kaydet}</GonderDugmesi>
-    </YanPencereAltCubugu>
+      <KaydetCubugu vazgec={vazgec} kaydetEtiketi={metin("yonetim.menu.form.kaydet")} />
+    </PanelFormu>
   );
 }
 
@@ -814,13 +789,10 @@ function MenuFormu({
   const router = useRouter();
   const [ad, setAd] = useState(menu?.ad ?? "");
   const [tur, setTur] = useState<MenuTuru>("elle");
-  const form = useFormKaydi(["ad", "tur"], { kod: "ad" });
-  const hata = (alan: string) => {
-    const anahtar = form.hatalar[alan];
-    return anahtar === undefined ? {} : { hata: metin(anahtar) };
-  };
-  const gonder = (olay: FormEvent<HTMLFormElement>) => {
-    olay.preventDefault();
+  const [degisti, setDegisti] = useState(false);
+  const form = useFormKaydi(["ad", "tur"], { kod: "ad" }, degisti);
+  const hata = form.hata;
+  const gonder = () => {
     if (menu !== undefined) {
       void form.kaydet(
         () =>
@@ -865,14 +837,13 @@ function MenuFormu({
     );
   };
   return (
-    <Form
-      kodGerekliMetni={metin("ortak.form.kodGerekli")}
-      yukleniyorMetni={metin("ortak.form.yukleniyor")}
-      onSubmit={gonder}
-      className="flex flex-col gap-5"
-    >
-      <GenelHata anahtar={form.genelHata} uyariRef={form.uyariRef} />
-      <FormAlani etiket={metin("yonetim.menu.form.menuAdi")} {...hata("ad")}>
+    <PanelFormu durum={form.pf} gonder={gonder}>
+      <FormAlani
+        ad="ad"
+        etiketEki={<ZorunlulukEki zorunlu />}
+        etiket={metin("yonetim.menu.form.menuAdi")}
+        {...hata("ad")}
+      >
         {(alan) => (
           <GirisAlani
             {...alan}
@@ -880,34 +851,38 @@ function MenuFormu({
             value={ad}
             onChange={(olay) => {
               setAd(olay.target.value);
+              setDegisti(true);
               degisince(true);
             }}
           />
         )}
       </FormAlani>
       {menu === undefined ? (
-        <SecenekGrubu
-          baslik={metin("yonetim.menu.form.menuTuru")}
-          etiket={metin("yonetim.menu.form.menuTuru")}
-          ogeler={[
-            { deger: "elle", ad: metin("yonetim.menu.turElle") },
-            { deger: "kategori-agaci", ad: metin("yonetim.menu.turKategori") },
-          ]}
-          deger={tur}
-          onDegerDegisti={(yeni) => {
-            setTur(yeni as MenuTuru);
-            degisince(true);
-          }}
-          secilemezEki=""
-          aciklama={metin(
-            tur === "elle"
-              ? "yonetim.menu.form.turElleAciklamasi"
-              : "yonetim.menu.form.turKategoriAciklamasi",
-          )}
-        />
+        <AlanKabi ad="tur" etiket={metin("yonetim.menu.form.menuTuru")}>
+          <SecenekGrubu
+            baslik={metin("yonetim.menu.form.menuTuru")}
+            etiket={metin("yonetim.menu.form.menuTuru")}
+            ogeler={[
+              { deger: "elle", ad: metin("yonetim.menu.turElle") },
+              { deger: "kategori-agaci", ad: metin("yonetim.menu.turKategori") },
+            ]}
+            deger={tur}
+            onDegerDegisti={(yeni) => {
+              setTur(yeni as MenuTuru);
+              setDegisti(true);
+              degisince(true);
+            }}
+            secilemezEki=""
+            aciklama={metin(
+              tur === "elle"
+                ? "yonetim.menu.form.turElleAciklamasi"
+                : "yonetim.menu.form.turKategoriAciklamasi",
+            )}
+          />
+        </AlanKabi>
       ) : null}
-      <FormAlti vazgec={vazgec} kaydet={metin("yonetim.menu.form.kaydet")} />
-    </Form>
+      <KaydetCubugu vazgec={vazgec} kaydetEtiketi={metin("yonetim.menu.form.kaydet")} />
+    </PanelFormu>
   );
 }
 

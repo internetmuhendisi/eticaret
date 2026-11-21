@@ -7,19 +7,15 @@
 // "Kaydet" ile kaydedilir, hemen yayınlanır. Sıralama ekrandaki kaydedilmemiş değişikliği birlikte kaydetmez.
 // Hiç açık yöntem kalmazsa kaydedilmez. Değiştirme izni olmayan yönetici (görevli) yalnız görür: anahtarlar ve
 // seçenekler kapalıdır, liste sıralanmaz, düğmeler yoktur.
-import { type FormEvent, useEffect, useRef, useState } from "react";
-import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
-import { FormAlani } from "../../../bilesenler/form/form-alani";
+import { useEffect, useRef, useState } from "react";
 import { Anahtar } from "../../../bilesenler/parcalar/anahtar";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
-import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { Kart } from "../../../bilesenler/parcalar/kart";
 import { OnayKutusu } from "../../../bilesenler/parcalar/onay-kutusu";
 import { Rozet } from "../../../bilesenler/parcalar/rozet";
 import { SiralanabilirListe } from "../../../bilesenler/parcalar/siralanabilir-liste";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
-import { YanPencereAltCubugu } from "../../../bilesenler/parcalar/yan-pencere";
 import {
   type KapidaOdemeSecenegi,
   kapidaOdemeSecenekleri,
@@ -31,6 +27,7 @@ import { usePanelMetni } from "../../metinler/panel-metni";
 import { siralamaMetinleri } from "../../metinler/siralama-metinleri";
 import type { YontemAyari } from "../../moduller/odeme/yontemler";
 import { panelAdresi } from "../adresler";
+import { AlanKabi, KaydetCubugu, PanelAlani, PanelFormu, usePanelFormu } from "../form/panel-formu";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
 import { useSunucuFormu } from "../sunucu-formu";
@@ -63,7 +60,7 @@ const genelHataMetni = (hata: PanelHatasi): MetinAnahtari =>
       ? "yonetim.odemeYontemleri.hata.listeDegisti"
       : "yonetim.odemeYontemleri.hata.genel";
 
-// Alanın koduna göre metin; alanı formda olmayan kod formun üstünde yazılır.
+// Alanın koduna göre metin; alanı formda olmayan kod formun başındaki özette yazılır.
 const alanHatalari: Record<
   string,
   { alan: "yontemler" | "secenekler" | "sure"; metin: MetinAnahtari }
@@ -84,23 +81,8 @@ export function OdemeYontemleriEkrani({
   const islem = usePanelIslemi(genelHataMetni);
   const { form, setForm, degisti, kaydedildi, vazgec, bilinen } =
     useSunucuFormu<OdemeYontemleriFormu>(veri.form);
-  const [hatalar, setHatalar] = useState<
-    Partial<Record<"yontemler" | "secenekler" | "sure", MetinAnahtari>>
-  >({});
-  const [genelHata, setGenelHata] = useState<MetinAnahtari | null>(null);
-  const gonderiliyor = useRef(false);
-  const uyariRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!degisti) return;
-    const uyar = (olay: BeforeUnloadEvent) => olay.preventDefault();
-    window.addEventListener("beforeunload", uyar);
-    return () => window.removeEventListener("beforeunload", uyar);
-  }, [degisti]);
-
-  useEffect(() => {
-    if (genelHata !== null || hatalar.yontemler !== undefined) uyariRef.current?.focus();
-  }, [genelHata, hatalar.yontemler]);
+  // Ortak form yapısı (kart 0259): hata, özet, odak, çıkarken soru.
+  const pf = usePanelFormu({ degisti: izinli && degisti, kaydet: () => kaydet() });
 
   const yontemiDegistir = (kod: OdemeYontemi, acik: boolean) =>
     setForm((onceki) => ({
@@ -155,39 +137,35 @@ export function OdemeYontemleriEkrani({
     });
   };
 
-  const gonder = async (olay: FormEvent<HTMLFormElement>) => {
-    olay.preventDefault();
-    if (gonderiliyor.current) return;
-    gonderiliyor.current = true;
-    const { gonderilen, sonuc } = await sirayla(async () => {
-      const gonderilen = formRef.current;
-      const sonuc = await islem(
-        "odeme-yontemleri",
-        gonderilen,
-        "yonetim.odemeYontemleri.kaydedildi",
-        {
-          formda: true,
-        },
-      );
-      return { gonderilen, sonuc };
-    });
-    gonderiliyor.current = false;
+  const kaydet = async (): Promise<boolean> => {
+    const sonucu = await pf.isle(() =>
+      sirayla(async () => {
+        const gonderilen = formRef.current;
+        const sonuc = await islem(
+          "odeme-yontemleri",
+          gonderilen,
+          "yonetim.odemeYontemleri.kaydedildi",
+          {
+            formda: true,
+          },
+        );
+        return { gonderilen, sonuc };
+      }),
+    );
+    if (sonucu === undefined) return false;
+    const { gonderilen, sonuc } = sonucu;
     if (sonuc.tamam) {
       kaydedildi(gonderilen);
-      setHatalar({});
-      setGenelHata(null);
-      return;
+      pf.temizle();
+      return true;
     }
-    const yeni: typeof hatalar = {};
+    const yeni: Record<string, string> = {};
     for (const { kod } of sonuc.ayrinti) {
       const hata = alanHatalari[kod];
-      if (hata !== undefined) yeni[hata.alan] = hata.metin;
+      if (hata !== undefined) yeni[hata.alan] = metin(hata.metin);
     }
-    setHatalar(yeni);
-    setGenelHata(Object.keys(yeni).length > 0 ? null : genelHataMetni(sonuc));
-    if (yeni.sure !== undefined && yeni.yontemler === undefined) {
-      document.querySelector<HTMLInputElement>('[name="havaleIptalSuresi"]')?.focus();
-    }
+    pf.hatalariGoster(yeni, Object.keys(yeni).length > 0 ? [] : [metin(genelHataMetni(sonuc))]);
+    return false;
   };
 
   const adi = (yontem: YontemAyari) => metin(yontemAdlari[yontem.kod]);
@@ -206,23 +184,25 @@ export function OdemeYontemleriEkrani({
             : metin(yontemAciklamalari[yontem.kod])}
         </span>
         {yontem.kod === "kapida-odeme" ? (
-          <fieldset className="m-0 flex flex-col gap-1 border-0 p-0">
-            <legend className="sr-only">{metin("yonetim.odemeYontemleri.secenekler")}</legend>
-            <div className="flex flex-wrap gap-x-4">
-              {kapidaOdemeSecenekleri.map((secenek) => (
-                <OnayKutusu
-                  key={secenek}
-                  etiket={metin(secenekAdlari[secenek])}
-                  checked={form.kapidaOdemeSecenekleri.includes(secenek)}
-                  disabled={!izinli}
-                  onCheckedChange={(deger) => secenegiDegistir(secenek, deger === true)}
-                />
-              ))}
-            </div>
-            {hatalar.secenekler === undefined ? null : (
-              <span className="font-kalin text-tehlike-yazi">{metin(hatalar.secenekler)}</span>
-            )}
-          </fieldset>
+          <AlanKabi ad="secenekler" etiket={metin("yonetim.odemeYontemleri.secenekler")}>
+            <fieldset className="m-0 flex flex-col gap-1 border-0 p-0">
+              <legend className="sr-only">{metin("yonetim.odemeYontemleri.secenekler")}</legend>
+              <div className="flex flex-wrap gap-x-4">
+                {kapidaOdemeSecenekleri.map((secenek) => (
+                  <OnayKutusu
+                    key={secenek}
+                    etiket={metin(secenekAdlari[secenek])}
+                    checked={form.kapidaOdemeSecenekleri.includes(secenek)}
+                    disabled={!izinli}
+                    onCheckedChange={(deger) => secenegiDegistir(secenek, deger === true)}
+                  />
+                ))}
+              </div>
+              {pf.hata("secenekler") === undefined ? null : (
+                <span className="font-kalin text-tehlike-yazi">{pf.hata("secenekler")}</span>
+              )}
+            </fieldset>
+          </AlanKabi>
         ) : null}
       </div>
       <Anahtar
@@ -238,52 +218,63 @@ export function OdemeYontemleriEkrani({
 
   const havaleAcik = form.yontemler.some((yontem) => yontem.kod === "havale" && yontem.acik);
   return (
-    <Form
-      kodGerekliMetni={metin("ortak.form.kodGerekli")}
-      yukleniyorMetni={metin("ortak.form.yukleniyor")}
-      onSubmit={gonder}
-      className="flex max-w-metin flex-col gap-5"
+    <PanelFormu
+      durum={pf}
+      gonder={async () => {
+        await kaydet();
+      }}
+      className="max-w-metin"
     >
-      <div ref={uyariRef} tabIndex={-1} className="flex flex-col gap-3 empty:hidden">
-        {genelHata === null ? null : <Uyari tur="tehlike">{metin(genelHata)}</Uyari>}
-        {hatalar.yontemler === undefined ? null : (
-          <Uyari tur="tehlike">{metin(hatalar.yontemler)}</Uyari>
+      {havaleAcik && veri.bankaHesabiSayisi === 0 ? (
+        <Uyari tur="uyari">{metin("yonetim.odemeYontemleri.hesapYok")}</Uyari>
+      ) : null}
+      <AlanKabi
+        ad="yontemler"
+        etiket={metin("yonetim.sayfa.odemeYontemleri.ad")}
+        className="flex flex-col gap-2"
+      >
+        {pf.hata("yontemler") === undefined ? null : (
+          // Listenin hatası listenin üstünde, odak alabilir: tek hatada odak buraya gelir.
+          <p tabIndex={-1} data-hata-odagi="" className="font-kalin text-tehlike-yazi">
+            {pf.hata("yontemler")}
+          </p>
         )}
-        {havaleAcik && veri.bankaHesabiSayisi === 0 ? (
-          <Uyari tur="uyari">{metin("yonetim.odemeYontemleri.hesapYok")}</Uyari>
-        ) : null}
-      </div>
-      {izinli ? (
-        <SiralanabilirListe
-          ogeler={form.yontemler}
-          anahtar={(yontem) => yontem.kod}
-          ad={adi}
-          etiket={metin("yonetim.sayfa.odemeYontemleri.ad")}
-          metinler={siralamaMetinleri(metin)}
-          siralaninca={sirala}
-          hizalama="ust"
-          satir={satir}
-        />
-      ) : (
-        <ol aria-label={metin("yonetim.sayfa.odemeYontemleri.ad")} className="flex flex-col gap-2">
-          {form.yontemler.map((yontem) => (
-            <li
-              key={yontem.kod}
-              className="flex rounded-orta border border-kenar bg-zemin px-4 py-3"
-            >
-              {satir(yontem)}
-            </li>
-          ))}
-        </ol>
-      )}
+        {izinli ? (
+          <SiralanabilirListe
+            ogeler={form.yontemler}
+            anahtar={(yontem) => yontem.kod}
+            ad={adi}
+            etiket={metin("yonetim.sayfa.odemeYontemleri.ad")}
+            metinler={siralamaMetinleri(metin)}
+            siralaninca={sirala}
+            hizalama="ust"
+            satir={satir}
+          />
+        ) : (
+          <ol
+            aria-label={metin("yonetim.sayfa.odemeYontemleri.ad")}
+            className="flex flex-col gap-2"
+          >
+            {form.yontemler.map((yontem) => (
+              <li
+                key={yontem.kod}
+                className="flex rounded-orta border border-kenar bg-zemin px-4 py-3"
+              >
+                {satir(yontem)}
+              </li>
+            ))}
+          </ol>
+        )}
+      </AlanKabi>
       <Kart className="flex flex-col gap-4 p-4 tablet:p-6">
         <h2 className="font-baslik text-baslik-4 font-baslik-kalinligi">
           {metin("ortak.odemeYontemi.havale")}
         </h2>
-        <FormAlani
+        <PanelAlani
+          ad="sure"
           etiket={metin("yonetim.odemeYontemleri.iptalSuresi")}
           aciklama={metin("yonetim.odemeYontemleri.iptalSuresiAciklamasi")}
-          {...(hatalar.sure === undefined ? {} : { hata: metin(hatalar.sure) })}
+          zorunlu
         >
           {(baglanti) => (
             <GirisAlani
@@ -300,7 +291,7 @@ export function OdemeYontemleriEkrani({
               className="tablet:max-w-form"
             />
           )}
-        </FormAlani>
+        </PanelAlani>
         <Baglanti href={`${panelAdresi}/banka-hesaplari`} className="self-start">
           {doldur(metin("yonetim.odemeYontemleri.hesaplaraGit"), {
             sayi: String(veri.bankaHesabiSayisi),
@@ -308,22 +299,19 @@ export function OdemeYontemleriEkrani({
         </Baglanti>
       </Kart>
       {izinli ? (
-        <YanPencereAltCubugu className="bottom-0 mx-0 px-0">
-          <Dugme
-            tur="sade"
-            // İstek sürerken Vazgeç kapalıdır: geri alınan sıra arkadan kaydedilen sırayla ayrışırdı.
-            disabled={!degisti || bekleyen > 0}
-            onClick={() => {
-              vazgec();
-              setHatalar({});
-              setGenelHata(null);
-            }}
-          >
-            {metin("ortak.islem.vazgec")}
-          </Dugme>
-          <GonderDugmesi>{metin("yonetim.odemeYontemleri.kaydet")}</GonderDugmesi>
-        </YanPencereAltCubugu>
+        <KaydetCubugu
+          sayfada
+          durumYazisi
+          degisiklikGerekli
+          kaydetEtiketi={metin("yonetim.odemeYontemleri.kaydet")}
+          // İstek sürerken Vazgeç kapalıdır: geri alınan sıra arkadan kaydedilen sırayla ayrışırdı.
+          vazgecKapali={bekleyen > 0}
+          vazgec={() => {
+            vazgec();
+            pf.temizle();
+          }}
+        />
       ) : null}
-    </Form>
+    </PanelFormu>
   );
 }

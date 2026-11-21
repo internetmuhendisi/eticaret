@@ -257,6 +257,18 @@
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-odak outline-solid;
   }
+
+  /* Sabit çubuk odaklanan öğeyi örtmez (kart 0188, WCAG 2.4.11): tarayıcı odaklanan öğeyi kaydırırken çubuğun
+     yüksekliği kadar pay bırakır. Uzun formun alt çubuğu (YanPencereAltCubugu) yan pencerede ya da sayfada; liste
+     ekranının yapışkan toplu işlem çubuğu sayfanın üstünde. Pay çubuğun yüksekliğinden (düğme 44 px ve iç boşluk)
+     büyüktür. */
+  [data-slot="yan-pencere-icerigi"]:has([data-slot="yan-pencere-alt-cubugu"]),
+  html:has(main [data-slot="yan-pencere-alt-cubugu"]) {
+    @apply scroll-pb-20;
+  }
+  html:has([data-slot="toplu-islem-cubugu"]) {
+    @apply scroll-pt-20;
+  }
 }
 
 /* Hareketi azaltmayı seçen kullanıcıda açılış, kapanış ve dönme hareketi olmaz

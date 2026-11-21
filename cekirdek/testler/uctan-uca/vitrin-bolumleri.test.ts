@@ -23,6 +23,7 @@ import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
 import { vitrinAdresleri } from "../../vitrin/adresler";
 import type { BolumOrnegi } from "../../vitrin/bolum-kutuphanesi/duzen";
 import { konsoluDinle } from "./konsol";
+import { odakCubuktaGizlenenler } from "./odak-gorunur";
 import { sayfaHazir } from "./sayfa-hazir";
 import { ayriBaglanti, type DenemeYoneticisi, paneleGir, yoneticiAc } from "./yonetici";
 
@@ -148,13 +149,15 @@ test("mağaza sahibi klavyeyle bölüm ekler ve düzenler, kaydedilmemiş deği�
     await ekle.getByRole("button", { name: new RegExp(duyuruAdi()) }).focus();
     await page.keyboard.press("Enter");
 
-    // Form tariften çıkar; boş zorunlu alan sunucudan alanın hatasıyla döner.
+    // Form tariften çıkar; boş zorunlu alan sunucudan alanın hatasıyla döner. Tek hata: özet yok, odak alanda
+    // (kart 0259).
     const form = page.getByRole("dialog", { name: duyuruAdi() });
     const kaydet = form.getByRole("button", { name: metin("yonetim.bolumler.form.kaydet") });
     await kaydet.click();
-    await expect(form.getByText(metin("yonetim.bolumler.hata.form"))).toBeVisible();
     const duyuruAlani = form.getByLabel(metin("vitrin.bolum.duyuruSeridi.metin"));
+    await expect(duyuruAlani).toBeFocused();
     await expect(duyuruAlani).toHaveAttribute("aria-invalid", "true");
+    await expect(form.locator('[data-slot="hata-ozeti"]')).toHaveCount(0);
     await duyuruAlani.fill(ilk);
     await duyuruAlani.press("Enter");
     await expect(bildirim(page, "yonetim.bolumler.eklendi")).toBeVisible();
@@ -225,6 +228,9 @@ test("uzun formda kaydet çubuğu pencerenin alt kenarındadır, altında form g
         { message: genislik.ad },
       )
       .toBe("tamam");
+    // Kart 0188: Tab ile inilirken odaklanan alan çubuğun arkasında kalmaz (WCAG 2.4.11).
+    await form.locator("input, button").first().focus();
+    expect(await odakCubuktaGizlenenler(page, form), `pencere ${genislik.ad}`).toEqual([]);
   }
   await page.keyboard.press("Escape");
   await expect(form).toHaveCount(0);
@@ -253,6 +259,15 @@ test("uzun formda kaydet çubuğu pencerenin alt kenarındadır, altında form g
         { message: genislik.ad },
       )
       .toBe("tamam");
+    // Kart 0188: sayfadaki çubuk da odaklanan alanı örtmez (odak formun başından başlar).
+    await page.reload();
+    await sayfaHazir(page);
+    await page.locator("main form").locator("input, button").first().focus();
+    await page.keyboard.press("Shift+Tab");
+    expect(
+      await odakCubuktaGizlenenler(page, page.locator("main")),
+      `Slider sayfası ${genislik.ad}`,
+    ).toEqual([]);
   }
 });
 
@@ -432,6 +447,7 @@ test("Slider kısayolu: yoksa yeni form en üste ekler, birden çokta ilkini aç
 }) => {
   const birinci = `slider-${randomBytes(4).toString("hex")}`;
   const ikinci = `slider-${randomBytes(4).toString("hex")}`;
+  const duzeltilen = `${birinci}-2`;
   // Ana sayfadaki slider'lar test boyunca kaldırılır, sonunda aynı yerlerine konur.
   const { duzen } = await servis.duzenOku(vt);
   const eskiler = duzen["ana-sayfa"]
@@ -472,15 +488,45 @@ test("Slider kısayolu: yoksa yeni form en üste ekler, birden çokta ilkini aç
       .click();
     await expect(pencere).toHaveCount(0);
     await slaytBasligi(page).fill(birinci);
+    // Kart 0227: kayıttan sonraki yenileme tutulur; o arada yazılan başlık yenileme gelince silinmez (eski hâlde
+    // yenileme yeni slider'ın kimliğini getiriyor, formun anahtarı değişip form baştan kuruluyordu).
+    const yenilemeMi = (istek: { method: () => string; headers: () => Record<string, string> }) =>
+      istek.method() === "GET" && istek.headers()["rsc"] === "1";
+    let serbestBirak = () => {};
+    const kapi = new Promise<void>((bitti) => {
+      serbestBirak = bitti;
+    });
+    await page.route(`**${sliderAdresi}**`, async (yol) => {
+      if (yenilemeMi(yol.request())) await kapi;
+      await yol.fallback();
+    });
+    const yenileme = page.waitForResponse((yanit) => yenilemeMi(yanit.request()));
     await page.getByRole("button", { name: metin("yonetim.bolumler.form.kaydet") }).click();
     await expect(bildirim(page, "yonetim.bolumler.eklendi")).toBeVisible();
+    await slaytBasligi(page).fill(duzeltilen);
+    serbestBirak();
+    await yenileme;
+    await page.unroute(`**${sliderAdresi}**`);
+    // Yanıtın ekrana uygulanması React'ın sonraki işidir.
+    await page.waitForTimeout(500);
+    await expect(slaytBasligi(page)).toHaveValue(duzeltilen);
     const yeni = (await servis.duzenOku(vt)).duzen["ana-sayfa"];
     expect(yeni[0]?.tur).toBe(sliderTuru);
     expect(sliderBasligi(yeni[0] as BolumOrnegi)).toBe(birinci);
+    // Yazılan başlık kaydedilir: aynı slider değişir, ikinci slider eklenmez.
+    await page.getByRole("button", { name: metin("yonetim.bolumler.form.kaydet") }).click();
+    await expect(bildirim(page, "yonetim.bolumler.kaydedildi")).toBeVisible();
+    await expect
+      .poll(async () =>
+        (await servis.duzenOku(vt)).duzen["ana-sayfa"]
+          .filter((bolum) => bolum.tur === sliderTuru)
+          .map(sliderBasligi),
+      )
+      .toEqual([duzeltilen]);
     await expect(page.getByText(metin("yonetim.bolumler.slider.yok"))).toHaveCount(0);
     const vitrin = await page.context().newPage();
     await vitrin.goto(vitrinAdresleri.anasayfa);
-    await expect(vitrin.getByRole("heading", { name: birinci })).toBeVisible();
+    await expect(vitrin.getByRole("heading", { name: duzeltilen })).toBeVisible();
     await vitrin.close();
 
     // Birden çok slider: ilki açılır, sayısı yazar. İlki gizliyse bu yazar ve "Görünür yap" durur.
@@ -495,7 +541,7 @@ test("Slider kısayolu: yoksa yeni form en üste ekler, birden çokta ilkini aç
     await expect(
       page.getByText(doldur(metin("yonetim.bolumler.slider.birdenCok"), { sayi: "2" })),
     ).toBeVisible();
-    await expect(slaytBasligi(page)).toHaveValue(birinci);
+    await expect(slaytBasligi(page)).toHaveValue(duzeltilen);
     await expect(page.getByText(metin("yonetim.bolumler.slider.gizli"))).toBeVisible();
     await page.getByRole("button", { name: metin("yonetim.bolumler.slider.gorunurYap") }).click();
     await expect(bildirim(page, "yonetim.bolumler.gosterildi")).toBeVisible();
@@ -507,7 +553,10 @@ test("Slider kısayolu: yoksa yeni form en üste ekler, birden çokta ilkini aç
   } finally {
     const { duzen: son } = await servis.duzenOku(vt);
     for (const bolum of son["ana-sayfa"]) {
-      if (bolum.tur === sliderTuru && [birinci, ikinci].includes(sliderBasligi(bolum))) {
+      if (
+        bolum.tur === sliderTuru &&
+        [birinci, duzeltilen, ikinci].includes(sliderBasligi(bolum))
+      ) {
         await servis.bolumSil(vt, kim, bolum.kimlik);
       }
     }
@@ -553,7 +602,10 @@ for (const renk of ["light", "dark"] as const) {
       const form = page.getByRole("dialog", { name: duyuruAdi() });
       await expect(form).toBeVisible();
       await form.getByRole("button", { name: metin("yonetim.bolumler.form.kaydet") }).click();
-      await expect(form.getByText(metin("yonetim.bolumler.hata.form"))).toBeVisible();
+      await expect(form.getByLabel(metin("vitrin.bolum.duyuruSeridi.metin"))).toHaveAttribute(
+        "aria-invalid",
+        "true",
+      );
       await tara(page, "hatalı form");
       expect(await yanaKayma(page)).toBe(0);
       await page.keyboard.press("Escape");

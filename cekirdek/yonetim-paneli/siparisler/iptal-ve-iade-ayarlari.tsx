@@ -3,15 +3,9 @@
 // (hayır, ödeme beklenirken, kargoya verilene kadar), iade talebi süresi (teslimden sonra gün) ve iade kargosunu kim
 // öder. Üçü birlikte "Kaydet" ile kaydedilir, hemen yayınlanır; değişen her ayar değişiklik kaydına girer. Değiştirme
 // izni olmayan yönetici okur, düğmeleri görmez. Sunucu doğrular; süre geçersizse alanın altında yazar.
-import { type FormEvent, useEffect, useRef, useState } from "react";
-import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
-import { FormAlani } from "../../../bilesenler/form/form-alani";
-import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { Kart } from "../../../bilesenler/parcalar/kart";
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
-import { Uyari } from "../../../bilesenler/parcalar/uyari";
-import { YanPencereAltCubugu } from "../../../bilesenler/parcalar/yan-pencere";
 import {
   type IadeKargosuOdeyen,
   iadeKargosuOdeyenler,
@@ -22,6 +16,7 @@ import {
 import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
+import { AlanKabi, KaydetCubugu, PanelAlani, PanelFormu, usePanelFormu } from "../form/panel-formu";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
 import { useSunucuFormu } from "../sunucu-formu";
@@ -57,51 +52,46 @@ export function IptalVeIadeAyarlari({
   const metin = usePanelMetni();
   const islem = usePanelIslemi(genelHataMetni);
   const { form, setForm, degisti, kaydedildi, vazgec } = useSunucuFormu(baslangic);
-  const [sureHatasi, setSureHatasi] = useState(false);
-  const [genelHata, setGenelHata] = useState<MetinAnahtari | null>(null);
-  const gonderiliyor = useRef(false);
-  const uyariRef = useRef<HTMLDivElement>(null);
+  // Ortak form yapısı (kart 0259): hata, özet, odak, çıkarken soru.
+  const pf = usePanelFormu({ degisti: izinli && degisti, kaydet: () => kaydet() });
+  const sinirlar = {
+    enAz: String(iadeTalebiSuresiSinirlari.enAz),
+    enCok: String(iadeTalebiSuresiSinirlari.enCok),
+  };
 
-  useEffect(() => {
-    if (genelHata !== null) uyariRef.current?.focus();
-  }, [genelHata]);
-
-  const gonder = async (olay: FormEvent<HTMLFormElement>) => {
-    olay.preventDefault();
-    if (gonderiliyor.current) return;
-    gonderiliyor.current = true;
+  const kaydet = async (): Promise<boolean> => {
     const gonderilen = form;
-    const sonuc = await islem(
-      "iptal-ve-iade-ayarlari",
-      gonderilen,
-      "yonetim.siparisAyarlari.iptalKaydedildi",
-      { formda: true },
+    const sonuc = await pf.isle(() =>
+      islem("iptal-ve-iade-ayarlari", gonderilen, "yonetim.siparisAyarlari.iptalKaydedildi", {
+        formda: true,
+      }),
     );
-    gonderiliyor.current = false;
+    if (sonuc === undefined) return false;
     if (sonuc.tamam) {
       kaydedildi(gonderilen);
-      setSureHatasi(false);
-      setGenelHata(null);
-      return;
+      pf.temizle();
+      return true;
     }
     if (
       sonuc.kod === "dogrulama" &&
       sonuc.ayrinti.some(({ alan }) => alan === "iadeTalebiSuresi")
     ) {
-      setSureHatasi(true);
-      setGenelHata(null);
-      document.querySelector<HTMLInputElement>('[name="iadeTalebiSuresi"]')?.focus();
-      return;
+      pf.hatalariGoster({
+        iadeTalebiSuresi: doldur(metin("yonetim.siparisAyarlari.sure.hata"), sinirlar),
+      });
+      return false;
     }
-    setGenelHata(genelHataMetni(sonuc));
+    pf.hatalariGoster({}, [metin(genelHataMetni(sonuc))]);
+    return false;
   };
 
   return (
     <section aria-labelledby="iptal-ve-iade" className="max-w-metin">
-      <Form
-        kodGerekliMetni={metin("ortak.form.kodGerekli")}
-        yukleniyorMetni={metin("ortak.form.yukleniyor")}
-        onSubmit={gonder}
+      <PanelFormu
+        durum={pf}
+        gonder={async () => {
+          await kaydet();
+        }}
       >
         <Kart className="gap-5 p-4 tablet:p-6">
           <div className="flex flex-col gap-1">
@@ -112,48 +102,36 @@ export function IptalVeIadeAyarlari({
               {metin("yonetim.siparisAyarlari.iptalVeIadeAciklamasi")}
             </p>
           </div>
-          {genelHata === null ? null : (
-            <div ref={uyariRef} tabIndex={-1}>
-              <Uyari tur="tehlike">{metin(genelHata)}</Uyari>
-            </div>
-          )}
-          <SecenekGrubu
-            baslik={metin("yonetim.siparisAyarlari.iptal.baslik")}
-            etiket={metin("yonetim.siparisAyarlari.iptal.baslik")}
-            ogeler={musteriIptaliSecenekleri.map((deger) => ({
-              deger,
-              ad: metin(iptalAdlari[deger]),
-              ...(izinli ? {} : { secilemez: true }),
-            }))}
-            deger={form.musteriIptali}
-            onDegerDegisti={(deger) => {
-              if (izinli)
-                setForm((onceki) => ({
-                  ...onceki,
-                  musteriIptali: deger as MusteriIptaliSecenegi,
-                }));
-            }}
-            secilemezEki=""
-          />
+          <AlanKabi ad="musteriIptali" etiket={metin("yonetim.siparisAyarlari.iptal.baslik")}>
+            <SecenekGrubu
+              baslik={metin("yonetim.siparisAyarlari.iptal.baslik")}
+              etiket={metin("yonetim.siparisAyarlari.iptal.baslik")}
+              ogeler={musteriIptaliSecenekleri.map((deger) => ({
+                deger,
+                ad: metin(iptalAdlari[deger]),
+                ...(izinli ? {} : { secilemez: true }),
+              }))}
+              deger={form.musteriIptali}
+              onDegerDegisti={(deger) => {
+                if (izinli)
+                  setForm((onceki) => ({
+                    ...onceki,
+                    musteriIptali: deger as MusteriIptaliSecenegi,
+                  }));
+              }}
+              secilemezEki=""
+            />
+          </AlanKabi>
           <p className="-mt-3 text-kucuk text-soluk-yazi">
             {metin("yonetim.siparisAyarlari.iptal.aciklama")}
           </p>
           {/* Taslaktaki gibi: süre ve iade kargosu bilgisayarda yan yana. */}
           <div className="grid gap-5 tablet:grid-cols-2">
-            <FormAlani
+            <PanelAlani
+              ad="iadeTalebiSuresi"
               etiket={metin("yonetim.siparisAyarlari.sure.ad")}
-              aciklama={doldur(metin("yonetim.siparisAyarlari.sure.aciklama"), {
-                enAz: String(iadeTalebiSuresiSinirlari.enAz),
-                enCok: String(iadeTalebiSuresiSinirlari.enCok),
-              })}
-              {...(sureHatasi
-                ? {
-                    hata: doldur(metin("yonetim.siparisAyarlari.sure.hata"), {
-                      enAz: String(iadeTalebiSuresiSinirlari.enAz),
-                      enCok: String(iadeTalebiSuresiSinirlari.enCok),
-                    }),
-                  }
-                : {})}
+              aciklama={doldur(metin("yonetim.siparisAyarlari.sure.aciklama"), sinirlar)}
+              zorunlu
             >
               {(baglanti) => (
                 <GirisAlani
@@ -166,12 +144,16 @@ export function IptalVeIadeAyarlari({
                   onChange={(olay) => {
                     const deger = olay.target.value;
                     setForm((onceki) => ({ ...onceki, iadeTalebiSuresi: deger }));
-                    setSureHatasi(false);
+                    pf.alaniTemizle("iadeTalebiSuresi");
                   }}
                 />
               )}
-            </FormAlani>
-            <div className="flex flex-col gap-2">
+            </PanelAlani>
+            <AlanKabi
+              ad="iadeKargosu"
+              etiket={metin("yonetim.siparisAyarlari.iadeKargosu.baslik")}
+              className="flex flex-col gap-2"
+            >
               <SecenekGrubu
                 baslik={metin("yonetim.siparisAyarlari.iadeKargosu.baslik")}
                 etiket={metin("yonetim.siparisAyarlari.iadeKargosu.baslik")}
@@ -190,26 +172,22 @@ export function IptalVeIadeAyarlari({
               <p className="text-kucuk text-soluk-yazi">
                 {metin("yonetim.siparisAyarlari.iadeKargosu.aciklama")}
               </p>
-            </div>
+            </AlanKabi>
           </div>
           {izinli ? (
-            <YanPencereAltCubugu className="bottom-0 mx-0 px-0">
-              <Dugme
-                tur="sade"
-                disabled={!degisti}
-                onClick={() => {
-                  vazgec();
-                  setSureHatasi(false);
-                  setGenelHata(null);
-                }}
-              >
-                {metin("ortak.islem.vazgec")}
-              </Dugme>
-              <GonderDugmesi>{metin("yonetim.siparisAyarlari.kaydet")}</GonderDugmesi>
-            </YanPencereAltCubugu>
+            <KaydetCubugu
+              sayfada
+              durumYazisi
+              degisiklikGerekli
+              kaydetEtiketi={metin("yonetim.siparisAyarlari.kaydet")}
+              vazgec={() => {
+                vazgec();
+                pf.temizle();
+              }}
+            />
           ) : null}
         </Kart>
-      </Form>
+      </PanelFormu>
     </section>
   );
 }

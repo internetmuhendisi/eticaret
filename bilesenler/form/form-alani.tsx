@@ -13,11 +13,17 @@ export function FormAlani({
   etiket,
   aciklama,
   hata,
+  ad,
+  etiketEki,
   children,
 }: {
   etiket: string;
   aciklama?: string;
   hata?: string;
+  // Alanın formdaki adı (kart 0259): hata özeti ve odak alanı bununla bulur (data-alan).
+  ad?: string;
+  // Etiketin yanındaki işaret: zorunlu alanın yıldızı ya da "(isteğe bağlı)"; metni kullanan verir.
+  etiketEki?: ReactNode;
   children: (alan: AlanBaglantisi) => ReactNode;
 }) {
   const id = useId();
@@ -28,8 +34,19 @@ export function FormAlani({
     ...(hata === undefined ? [] : [hataKimligi]),
   ].join(" ");
   return (
-    <div className="flex flex-col gap-1">
-      <Etiket htmlFor={id}>{etiket}</Etiket>
+    <div
+      className="flex flex-col gap-1"
+      {...(ad === undefined ? {} : { "data-alan": ad, "data-alan-etiketi": etiket })}
+    >
+      {etiketEki === undefined ? (
+        <Etiket htmlFor={id}>{etiket}</Etiket>
+      ) : (
+        // Ek etiketin dışındadır: alanın adı yalnız etikettir (zorunluluk alanın kendisinde, aria-required).
+        <span className="flex flex-wrap items-baseline gap-x-1">
+          <Etiket htmlFor={id}>{etiket}</Etiket>
+          {etiketEki}
+        </span>
+      )}
       {children({
         id,
         ...(hata === undefined ? {} : { "aria-invalid": true as const }),

@@ -13,6 +13,7 @@ import {
   YanPencereTetikleyici,
 } from "../../bilesenler/parcalar/yan-pencere";
 import { usePanelMetni } from "../metinler/panel-metni";
+import { CikisKorumasi } from "./form/cikis-korumasi";
 import { type MagazaGorunumu, MagazaIsareti, MenuIcerigi } from "./menu-icerigi";
 import type { CizilenMenuGrubu } from "./panel-menusu";
 
@@ -33,38 +34,41 @@ export function PanelCercevesi({
   const [acik, setAcik] = useState(false);
   const menu = { magaza, eposta, gruplar, altyapiAdi };
   return (
-    <div className="flex min-h-dvh bg-yuzey text-yazi">
-      <aside className="hidden w-full max-w-yan-menu shrink-0 border-r border-kenar bg-zemin masaustu:block">
-        <div className="sticky top-0 h-dvh overflow-y-auto px-3 py-4">
-          <MenuIcerigi {...menu} />
+    // Kaydedilmemiş değişiklikle panelin başka bir sayfasına geçerken sorulur (kart 0259).
+    <CikisKorumasi>
+      <div className="flex min-h-dvh bg-yuzey text-yazi">
+        <aside className="hidden w-full max-w-yan-menu shrink-0 border-r border-kenar bg-zemin masaustu:block">
+          <div className="sticky top-0 h-dvh overflow-y-auto px-3 py-4">
+            <MenuIcerigi {...menu} />
+          </div>
+        </aside>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex items-center gap-2 border-b border-kenar bg-zemin px-2 py-1 masaustu:hidden">
+            <YanPencere open={acik} onOpenChange={setAcik}>
+              <YanPencereTetikleyici asChild>
+                <IkonDugmesi ikon="menu" etiket={metin("yonetim.cerceve.menuyuAc")} />
+              </YanPencereTetikleyici>
+              <YanPencereIcerigi
+                taraf="sol"
+                kapatEtiketi={metin("yonetim.cerceve.menuyuKapat")}
+                className="tablet:max-w-yan-menu"
+              >
+                <YanPencereBasligi className="sr-only">
+                  {metin("yonetim.cerceve.menu")}
+                </YanPencereBasligi>
+                <MenuIcerigi {...menu} tiklayinca={() => setAcik(false)} />
+              </YanPencereIcerigi>
+            </YanPencere>
+            <MagazaIsareti magaza={magaza} />
+          </div>
+          <main className="flex min-w-0 flex-1 flex-col">{children}</main>
         </div>
-      </aside>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-center gap-2 border-b border-kenar bg-zemin px-2 py-1 masaustu:hidden">
-          <YanPencere open={acik} onOpenChange={setAcik}>
-            <YanPencereTetikleyici asChild>
-              <IkonDugmesi ikon="menu" etiket={metin("yonetim.cerceve.menuyuAc")} />
-            </YanPencereTetikleyici>
-            <YanPencereIcerigi
-              taraf="sol"
-              kapatEtiketi={metin("yonetim.cerceve.menuyuKapat")}
-              className="tablet:max-w-yan-menu"
-            >
-              <YanPencereBasligi className="sr-only">
-                {metin("yonetim.cerceve.menu")}
-              </YanPencereBasligi>
-              <MenuIcerigi {...menu} tiklayinca={() => setAcik(false)} />
-            </YanPencereIcerigi>
-          </YanPencere>
-          <MagazaIsareti magaza={magaza} />
-        </div>
-        <main className="flex min-w-0 flex-1 flex-col">{children}</main>
+        {/* Panel ekranlarının bildirimleri (kart 0142): alan sayfada bir kez durur. */}
+        <BildirimAlani
+          alanEtiketi={metin("ortak.parca.bildirimler")}
+          kapatEtiketi={metin("ortak.parca.bildirimiKapat")}
+        />
       </div>
-      {/* Panel ekranlarının bildirimleri (kart 0142): alan sayfada bir kez durur. */}
-      <BildirimAlani
-        alanEtiketi={metin("ortak.parca.bildirimler")}
-        kapatEtiketi={metin("ortak.parca.bildirimiKapat")}
-      />
-    </div>
+    </CikisKorumasi>
   );
 }

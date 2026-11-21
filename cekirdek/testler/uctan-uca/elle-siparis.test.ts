@@ -25,6 +25,7 @@ import { stokServisi } from "../../moduller/stok/servis";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
 import { bildirimSuresiniDurdur } from "./bildirim-suresi";
+import { hataOzeti, ozetOdaktaOlmali } from "./form-hatasi";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
 import { ayriBaglanti, paneleGir, yoneticiAc } from "./yonetici";
@@ -137,13 +138,22 @@ test("panelden klavyeyle elle sipariş", async ({ page }) => {
     metin("yonetim.sayfa.elleSiparis.ad"),
   );
 
-  // Boş gönderim: hatalar ve odak ürünlerde.
+  // Boş gönderim (kart 0259): hatalar alanların altında; birden çok hata olduğu için odak formun başındaki özette,
+  // satırlar ekrandaki sırayla, ilk satır ürünlere götürür.
   const olustur = page.getByRole("button", { name: metin("yonetim.elleSiparis.olustur") });
   await olustur.focus();
   await page.keyboard.press("Enter");
-  await expect(page.getByText(metin("yonetim.elleSiparis.hata.sepetBos"))).toBeVisible();
-  await expect(page.getByText(metin("yonetim.elleSiparis.hata.metinler"))).toBeVisible();
-  await expect(page.locator('[data-elle-alani="kalemler"]')).toBeFocused();
+  const satirlar = await ozetOdaktaOlmali(page, [
+    `${metin("yonetim.elleSiparis.urunler")}: ${metin("yonetim.elleSiparis.hata.sepetBos")}`,
+  ]);
+  await expect(page.locator("#elle-kalem-hatasi")).toHaveText(
+    metin("yonetim.elleSiparis.hata.sepetBos"),
+  );
+  await expect(
+    hataOzeti(page).getByText(metin("yonetim.elleSiparis.hata.metinler"), { exact: false }),
+  ).toBeVisible();
+  await satirlar.nth(0).getByRole("button").press("Enter");
+  await expect(page.locator("[data-alan='kalemler'] [data-hata-odagi]")).toBeFocused();
   await tara(page, "hatalı elle sipariş");
 
   // Ürün arayarak ekleme ve adet.

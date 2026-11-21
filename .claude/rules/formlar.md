@@ -18,7 +18,7 @@ paths:
 - Bir formun kurallarını tek şemada yaz. Ekran ve sunucu aynı şemayı ya da ondan üretilen kopyasını kullanır.
 - Kaydetme biçimine uy: tek alanlı düzenleme alandan çıkınca, uzun metin kendiliğinden, ayar ve oluşturma formları Kaydet düğmesiyle kaydedilir.
 - Birden çok bölümlü sayfada her bölümün kendi Kaydet ve Vazgeç düğmesi olsun. Bu düğmeler yalnız o bölüm değişince görünsün.
-- Formu `bilesenler/form/form.tsx` içindeki `Form` ve `GonderDugmesi` ile yaz, elle `<form>` denetimde hatadır. Gönder düğmesi kod yüklenene kadar kapalıdır, yöntem POST'tur: şifre ve kod adres satırına düşmez (karar 0046).
+- Formu `bilesenler/form/form.tsx` içindeki `Form` ve `GonderDugmesi` ile yaz, elle `<form>` denetimde hatadır. Panelin veri formu bunun üstündeki ortak yapıyla (`PanelFormu`, karar 0159) yazılır: hata özeti, odak ve çıkarken soru oradadır. Gönder düğmesi kod yüklenene kadar kapalıdır, yöntem POST'tur: şifre ve kod adres satırına düşmez (karar 0046).
 - İstisna arama formudur (`AramaFormu`, kart 0137, karar 0107): aranan metin gizli değildir ve adreste durmalıdır, form GET ile ve kod yüklenmeden de gönderilir. Kişisel ya da gizli bilgi taşıyan form `AramaFormu` ile yazılmaz.
 - Form gönderilirken ikinci tıklamayı dikkate alma.
 - Kaydedilmemiş değişiklik varken sayfadan çıkmak isteyene uyarı göster.

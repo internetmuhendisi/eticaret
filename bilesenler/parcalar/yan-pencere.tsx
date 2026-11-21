@@ -2,7 +2,7 @@
 // Yan pencere (kart 0103; shadcn/ui sheet). Pencerenin kenardan kayan biçimidir: menü, sepet, süzgeç gibi.
 // Odak ve klavye davranışı pencereyle aynıdır. Telefonda ekranın tamamını kaplar.
 import { Dialog } from "radix-ui";
-import type { ComponentProps, HTMLAttributes } from "react";
+import { type ComponentProps, type HTMLAttributes, useEffect, useRef } from "react";
 import { disaridaKalanaTiklama, disariyiKapatanRef } from "./disariyi-kapat.ts";
 import { IkonDugmesi } from "./dugme.tsx";
 import { ortuSiniflari } from "./pencere.tsx";
@@ -77,8 +77,26 @@ export function YanPencereIcerigi({
 // Pencere dışında (sayfadaki kartta) kullanan, kenara uzanmayı ve aşağıya yapışmayı sınıfla kapatır:
 // "bottom-0 mx-0 px-0" (Slider sayfası; bağımsız kontrolün bulgusu: kartın iç boşluğu daha küçüktü, çubuk taşıyordu).
 export function YanPencereAltCubugu({ className, ...ozellikler }: HTMLAttributes<HTMLDivElement>) {
+  // Odaklanan öğe çubuğun arkasında kalmaz (kart 0188, WCAG 2.4.11). Kaydırma kabının payı (tailwind.css,
+  // scroll-pb) tarayıcının odakta kaydırdığı öğeyi çubuğun üstünde tutar; ama kısmen görünen öğeyi (uzun metin
+  // alanının üstü görünürken) tarayıcı hiç kaydırmıyor (ölçüldü). Odak çubukla çakışan bir öğeye gelince öğe payla
+  // birlikte görünür yere kaydırılır.
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const odaklaninca = (olay: FocusEvent) => {
+      const cubuk = ref.current;
+      const hedef = olay.target;
+      if (cubuk === null || !(hedef instanceof Element) || cubuk.contains(hedef)) return;
+      const c = cubuk.getBoundingClientRect();
+      const h = hedef.getBoundingClientRect();
+      if (h.bottom > c.top && h.top < c.bottom) hedef.scrollIntoView({ block: "nearest" });
+    };
+    document.addEventListener("focusin", odaklaninca);
+    return () => document.removeEventListener("focusin", odaklaninca);
+  }, []);
   return (
     <div
+      ref={ref}
       data-slot="yan-pencere-alt-cubugu"
       className={sinif(
         "sticky -bottom-6 -mx-6 flex flex-wrap justify-end gap-2 border-t border-kenar bg-zemin px-6 py-3",

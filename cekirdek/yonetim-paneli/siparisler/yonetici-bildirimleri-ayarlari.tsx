@@ -3,15 +3,9 @@
 // gideceği adresler (virgülle, en çok 5; boşsa mağaza sahibi rolündeki yöneticiler) ve her bildirimin anahtarı.
 // Birlikte "Kaydet" ile kaydedilir; değişiklik kaydına girer (adreslerin değeri yazılmaz). Değiştirme izni olmayan
 // yönetici okur, düğmeleri görmez. Adresler sunucuda doğrulanır; hata alanın altında yazar.
-import { type FormEvent, useEffect, useRef, useState } from "react";
-import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
-import { FormAlani } from "../../../bilesenler/form/form-alani";
 import { Anahtar } from "../../../bilesenler/parcalar/anahtar";
-import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { Kart } from "../../../bilesenler/parcalar/kart";
-import { Uyari } from "../../../bilesenler/parcalar/uyari";
-import { YanPencereAltCubugu } from "../../../bilesenler/parcalar/yan-pencere";
 import {
   type YoneticiBildirimi,
   yoneticiBildirimSinirlari,
@@ -19,6 +13,7 @@ import {
 import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
+import { KaydetCubugu, PanelAlani, PanelFormu, usePanelFormu } from "../form/panel-formu";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
 import { useSunucuFormu } from "../sunucu-formu";
@@ -58,44 +53,41 @@ export function YoneticiBildirimleriAyarlari({
   const metin = usePanelMetni();
   const islem = usePanelIslemi(genelHataMetni);
   const { form, setForm, degisti, kaydedildi, vazgec } = useSunucuFormu(baslangic);
-  const [aliciHatasi, setAliciHatasi] = useState<MetinAnahtari | null>(null);
-  const [genelHata, setGenelHata] = useState<MetinAnahtari | null>(null);
-  const gonderiliyor = useRef(false);
-  const uyariRef = useRef<HTMLDivElement>(null);
+  // Ortak form yapısı (kart 0259): hata, özet, odak, çıkarken soru.
+  const pf = usePanelFormu({ degisti: izinli && degisti, kaydet: () => kaydet() });
+  const sinir = { sayi: String(yoneticiBildirimSinirlari.aliciEnCok) };
 
-  useEffect(() => {
-    if (genelHata !== null) uyariRef.current?.focus();
-  }, [genelHata]);
-
-  const gonder = async (olay: FormEvent<HTMLFormElement>) => {
-    olay.preventDefault();
-    if (gonderiliyor.current) return;
-    gonderiliyor.current = true;
+  const kaydet = async (): Promise<boolean> => {
     const gonderilen = form;
-    const sonuc = await islem(
-      "yonetici-bildirim-ayarlari",
-      gonderilen,
-      "yonetim.siparisAyarlari.bildirimlerKaydedildi",
-      { formda: true },
+    const sonuc = await pf.isle(() =>
+      islem(
+        "yonetici-bildirim-ayarlari",
+        gonderilen,
+        "yonetim.siparisAyarlari.bildirimlerKaydedildi",
+        { formda: true },
+      ),
     );
-    gonderiliyor.current = false;
+    if (sonuc === undefined) return false;
     if (sonuc.tamam) {
       kaydedildi(gonderilen);
-      setAliciHatasi(null);
-      setGenelHata(null);
-      return;
+      pf.temizle();
+      return true;
     }
     const alan =
       sonuc.kod === "dogrulama"
         ? sonuc.ayrinti.find(({ alan: ad }) => ad === "alicilar")
         : undefined;
     if (alan !== undefined) {
-      setAliciHatasi(aliciHatalari[alan.kod] ?? "yonetim.siparisAyarlari.alicilar.hata.eposta");
-      setGenelHata(null);
-      document.querySelector<HTMLInputElement>('[name="alicilar"]')?.focus();
-      return;
+      pf.hatalariGoster({
+        alicilar: doldur(
+          metin(aliciHatalari[alan.kod] ?? "yonetim.siparisAyarlari.alicilar.hata.eposta"),
+          sinir,
+        ),
+      });
+      return false;
     }
-    setGenelHata(genelHataMetni(sonuc));
+    pf.hatalariGoster({}, [metin(genelHataMetni(sonuc))]);
+    return false;
   };
 
   const degistir = (bildirim: YoneticiBildirimi, acik: boolean) =>
@@ -108,10 +100,11 @@ export function YoneticiBildirimleriAyarlari({
 
   return (
     <section aria-labelledby="yonetici-bildirimleri" className="max-w-metin">
-      <Form
-        kodGerekliMetni={metin("ortak.form.kodGerekli")}
-        yukleniyorMetni={metin("ortak.form.yukleniyor")}
-        onSubmit={gonder}
+      <PanelFormu
+        durum={pf}
+        gonder={async () => {
+          await kaydet();
+        }}
       >
         <Kart className="gap-5 p-4 tablet:p-6">
           <div className="flex flex-col gap-1">
@@ -125,23 +118,11 @@ export function YoneticiBildirimleriAyarlari({
               {metin("yonetim.siparisAyarlari.bildirimlerAciklamasi")}
             </p>
           </div>
-          {genelHata === null ? null : (
-            <div ref={uyariRef} tabIndex={-1}>
-              <Uyari tur="tehlike">{metin(genelHata)}</Uyari>
-            </div>
-          )}
-          <FormAlani
+          <PanelAlani
+            ad="alicilar"
             etiket={metin("yonetim.siparisAyarlari.alicilar.ad")}
-            aciklama={doldur(metin("yonetim.siparisAyarlari.alicilar.aciklama"), {
-              sayi: String(yoneticiBildirimSinirlari.aliciEnCok),
-            })}
-            {...(aliciHatasi === null
-              ? {}
-              : {
-                  hata: doldur(metin(aliciHatasi), {
-                    sayi: String(yoneticiBildirimSinirlari.aliciEnCok),
-                  }),
-                })}
+            aciklama={doldur(metin("yonetim.siparisAyarlari.alicilar.aciklama"), sinir)}
+            zorunlu={false}
           >
             {(baglanti) => (
               <GirisAlani
@@ -154,11 +135,11 @@ export function YoneticiBildirimleriAyarlari({
                 onChange={(olay) => {
                   const deger = olay.target.value;
                   setForm((onceki) => ({ ...onceki, alicilar: deger }));
-                  setAliciHatasi(null);
+                  pf.alaniTemizle("alicilar");
                 }}
               />
             )}
-          </FormAlani>
+          </PanelAlani>
           <ul className="flex flex-col divide-y divide-kenar">
             {gorunenler.map((bildirim) => (
               <li
@@ -178,23 +159,19 @@ export function YoneticiBildirimleriAyarlari({
             ))}
           </ul>
           {izinli ? (
-            <YanPencereAltCubugu className="bottom-0 mx-0 px-0">
-              <Dugme
-                tur="sade"
-                disabled={!degisti}
-                onClick={() => {
-                  vazgec();
-                  setAliciHatasi(null);
-                  setGenelHata(null);
-                }}
-              >
-                {metin("ortak.islem.vazgec")}
-              </Dugme>
-              <GonderDugmesi>{metin("yonetim.siparisAyarlari.kaydet")}</GonderDugmesi>
-            </YanPencereAltCubugu>
+            <KaydetCubugu
+              sayfada
+              durumYazisi
+              degisiklikGerekli
+              kaydetEtiketi={metin("yonetim.siparisAyarlari.kaydet")}
+              vazgec={() => {
+                vazgec();
+                pf.temizle();
+              }}
+            />
           ) : null}
         </Kart>
-      </Form>
+      </PanelFormu>
     </section>
   );
 }

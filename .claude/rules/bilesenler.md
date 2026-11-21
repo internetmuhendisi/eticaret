@@ -37,7 +37,7 @@ Bileşen, düğme, giriş alanı, pencere gibi tekrar kullanılan arayüz parça
   - `Dugme`, `IkonDugmesi`, `Baglanti`
   - `GirisAlani`, `UzunMetinAlani` (kart 0106), `Etiket`, `SecimKutusu`, `OnayKutusu`
   - `AcilirMenu`, `Pencere`, `YanPencere`, `Sekmeler`
-  - `YanPencereAltCubugu` (kart 0169): yan pencerede uzun formun sabit Vazgeç ve Kaydet çubuğu; iç boşluk kadar aşağıya yapışır, altında form görünmez. Pencere dışında (sayfadaki kartta) `bottom-0 mx-0 px-0` ile kullanılır. Formun alt çubuğu elle `sticky` yazılmaz.
+  - `YanPencereAltCubugu` (kart 0169): yan pencerede uzun formun sabit Vazgeç ve Kaydet çubuğu; iç boşluk kadar aşağıya yapışır, altında form görünmez. Odaklanan öğeyi örtmez (kart 0188): kaydırma kabı çubuk kadar pay alır (`tailwind.css`), çubukla çakışan odaklanan öğe görünür yere kaydırılır. Pencere dışında (sayfadaki kartta) `bottom-0 mx-0 px-0` ile kullanılır. Formun alt çubuğu elle `sticky` yazılmaz.
   - `Kart`, `Rozet`, `Uyari`, `BildirimAlani` ile `bildirimGoster`, `Ipucu`
   - `IskeletGorunum`, `YukleniyorGostergesi`, `Serit`, `Akordeon`
   - Sayfa iskeleti (kart 0135, karar 0103): `SayfaYolu`, `SayfaBasligi`, `BosHal`, `Sayfalama` ile `DahaFazla`
@@ -51,7 +51,7 @@ Bileşen, düğme, giriş alanı, pencere gibi tekrar kullanılan arayüz parça
 
   Sınıflar `sinif()` ile birleştirilir. Asıl shadcn hâlleri `bilesenler/shadcn-kaynagi/` altındadır, güncellemesi `pnpm shadcn-farki` ile yapılır.
 - `bilesenler/parcalar/hareket-azaltma.ts`: `useHareketAzaltma` (kart 0110), kullanıcının hareketi azaltma tercihi. Kendiliğinden hareket eden parça bununla durur.
-- `bilesenler/form/`: `Form`, `GonderDugmesi` (kart 0057), `FormAlani` (kart 0027), `AramaFormu` (kart 0137: GET ile gönderilir, gizli bilgi taşıyan form onunla yazılmaz).
+- `bilesenler/form/`: `Form`, `GonderDugmesi` (kart 0057), `FormAlani` (kart 0027; `ad` alanın yerini, `etiketEki` etiketin yanındaki işareti verir, kart 0259), `AramaFormu` (kart 0137: GET ile gönderilir, gizli bilgi taşıyan form onunla yazılmaz), `HataOzeti` (kart 0259: formun başındaki hata listesi, satırı alana götürür).
 - `bilesenler/ikonlar/`: ikon sözlüğü (`sozluk.ts`) ve `Ikon`. Lucide yalnız sözlükte içe aktarılır.
 - `bilesenler/tasarim-degerleri/`: tasarım değerleri ve Tailwind'in ortak girişi (kart 0102, karar 0076).
 - Bileşen kataloğu `/gelistirme/bilesenler` adresindedir (kart 0104, karar 0078). Yalnız geliştirmede ve deneme ortamında açılır. Her parçanın kendi sayfası örneği, dosyayı ve kullanıldığı yerleri gösterir; renk ve genişlik adresten seçilir.

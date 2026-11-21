@@ -556,7 +556,8 @@
         "gorsel": "Seçilen görsel artık kullanılamıyor. Başka bir görsel seçin.",
         "gecersiz": "Bu alanın değeri geçerli değil."
       },
-      "ogeEkle": "{ad} ekle"
+      "ogeEkle": "{ad} ekle",
+      "ogeAlani": "{oge} {sira} · {alan}"
     },
     "renk": {
       "zemin": "Sayfa zemini",
@@ -767,7 +768,7 @@
         "dahil": "Vergi dahil, fiyatlarınız gibi. 0 yazarsanız kargo her zaman ücretsiz olur.",
         "haric": "Vergi hariç, fiyatlarınız gibi. 0 yazarsanız kargo her zaman ücretsiz olur."
       },
-      "sinir": "Ücretsiz kargo sınırı (isteğe bağlı)",
+      "sinir": "Ücretsiz kargo sınırı",
       "sinirAciklamasi": "Bu tutar ve üstündeki siparişlerde kargo ücretsizdir. Boş bırakırsanız sınır olmaz.",
       "sinirTutari": "Sınır hangi tutara göre hesaplansın?",
       "indirimdenSonra": "İndirimden sonraki tutar",
@@ -845,6 +846,24 @@
         "ibanKontrol": "IBAN geçerli değil; rakamları kontrol edin.",
         "ibanAyni": "Bu IBAN başka bir hesapta zaten var.",
         "sonYontem": "Bu son banka hesabı ve müşterinin kullanabileceği başka ödeme yöntemi yok. Önce Ödeme yöntemleri'nden başka bir yöntemi açın."
+      }
+    },
+    "form": {
+      "ozet": {
+        "alanlar": "Kaydetmek için {sayi} alanı düzeltin",
+        "kaydedilemedi": "Kaydedilemedi",
+        "satir": "{etiket}: {hata}"
+      },
+      "zorunluIsareti": "*",
+      "istegeBagli": "(isteğe bağlı)",
+      "degisiklikVar": "Kaydedilmemiş değişiklik var",
+      "degisiklikYok": "Değişiklik yok",
+      "cikis": {
+        "baslik": "Değişiklikler kaydedilmedi",
+        "aciklama": "Bu sayfada kaydetmediğiniz değişiklikler var. Kaydetmeden çıkarsanız kaybolur.",
+        "kal": "Sayfada kal",
+        "kaydetmeden": "Kaydetmeden çık",
+        "kaydet": "Kaydet ve çık"
       }
     },
     "liste": {
@@ -1025,7 +1044,7 @@
         "kargoAciklamasi": "Firma ve takip numarası müşterinin sipariş sayfasında görünür.",
         "firma": "Kargo firması",
         "firmaSec": "Firma seçin",
-        "takip": "Takip numarası (isteğe bağlı)",
+        "takip": "Takip numarası",
         "takipAciklamasi": "Boş bırakırsanız müşteriye takip bağlantısı gösterilmez.",
         "kaydet": "Kaydet",
         "firmaYok": "Kargo firması eklenmemiş. Önce sipariş ayarlarından bir firma ekleyin.",
@@ -1089,7 +1108,7 @@
       "kargoFirmalari": "Kargo firmaları",
       "kargoAciklamasi": "Siparişi kargoya verirken bu listeden seçersiniz. Takip adresi verilen firmada müşteri takip numarasıyla kargoyu izleyebilir.",
       "ad": "Firma adı",
-      "takipAdresi": "Takip adresi (isteğe bağlı)",
+      "takipAdresi": "Takip adresi",
       "takipAciklamasi": "https:// ile başlayan adres. Takip numarasının geleceği yere {takip} yazın, örneğin https://kargo.example/takip/{takip}.",
       "takipYok": "Takip bağlantısı yok",
       "yeniFirma": "Yeni kargo firması",
@@ -1305,7 +1324,7 @@
         "ozetYok": "Özet henüz hesaplanmadı. Özetteki toplamı görünce yeniden gönderin.",
         "oturum": "Oturumunuz kapandı. Yeniden giriş yapıp siparişi yeniden girin."
       },
-      "not": "Sipariş notu (isteğe bağlı)",
+      "not": "Sipariş notu",
       "toplamDuyurusu": "Toplam: {toplam}",
       "musteriyeEposta": "Müşteriye sipariş e-postası gönder"
     },
@@ -2554,7 +2573,8 @@
         "onayPenceresi": "Onay penceresi",
         "adetSecici": "Adet seçici",
         "tablo": "Tablo",
-        "tabloSecimi": "Tablo seçimi"
+        "tabloSecimi": "Tablo seçimi",
+        "hataOzeti": "Hata özeti"
       },
       "bolumKutuphanesi": "Bölüm kütüphanesi"
     },
@@ -2729,6 +2749,12 @@
         "bos": "Seçilmemiş satır",
         "isaretli": "Seçili satır",
         "kismen": "Bir kısmı seçili sayfa"
+      },
+      "hataOzeti": {
+        "baslik": "Kaydetmek için 2 alanı düzeltin",
+        "alan": "Ad: boş olamaz",
+        "genel": "Bağlantı koptu. Yeniden deneyin.",
+        "gidildi": "Ad alanına gidildi."
       }
     },
     "bolum": {
