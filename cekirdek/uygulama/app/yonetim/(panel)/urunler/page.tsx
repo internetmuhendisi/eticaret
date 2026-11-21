@@ -3,6 +3,8 @@
 // hata hâlini gösterir; hata kaydedilir.
 import type { Metadata } from "next";
 import { hatayiKaydet } from "../../../../../izleme/hata-katmani";
+import { yeniUrunAdresi } from "../../../../../yonetim-paneli/adresler";
+import { EylemBaglantisi } from "../../../../../yonetim-paneli/eylem-dugmesi";
 import { listeDurumunuOku } from "../../../../../yonetim-paneli/liste/tanim";
 import { panelOturumu } from "../../../../../yonetim-paneli/panel-oturumu";
 import {
@@ -40,7 +42,14 @@ export default async function UrunlerSayfasi({
     }),
   ]);
   return (
-    <PanelSayfasi kod="urunler">
+    <PanelSayfasi
+      kod="urunler"
+      eylemler={
+        yetkili("urun.degistir") ? (
+          <EylemBaglantisi eylem="urun-ekle" asil href={yeniUrunAdresi} />
+        ) : undefined
+      }
+    >
       <UrunListesi
         durum={durum}
         veri={veri}

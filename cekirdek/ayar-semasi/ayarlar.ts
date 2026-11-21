@@ -6,6 +6,7 @@
 // - magazaAyarSemasi: mağaza sahibinin ayarları. Sitenin veritabanında durur, panelden değişir. Site
 //   klasöründe yalnız başlangıç değerleri olur (baslangic/ayarlar.json); ayar veritabanında ilk kez
 //   yokken bir kez yazılır (cekirdek/moduller/magaza-ayarlari/, karar 0055).
+
 import { z } from "zod";
 import { postaAdresiSemasi, telefonSemasi } from "../bolgeler/adres.ts";
 import { ulkeGecerliMi } from "../bolgeler/bolgeler.ts";
@@ -47,7 +48,11 @@ import {
 import { type AyarSahibi, ayarSahibi } from "../kayitlar/site.ts";
 import { sosyalHesapKalibi, sosyalHesapSiniri, sosyalSiteler } from "../kayitlar/sosyal-siteler.ts";
 import { tukenenUrunDavranislari } from "../kayitlar/stok.ts";
-import { secenekOnSecimleri, tukenmisSecenekGosterimleri } from "../kayitlar/urun.ts";
+import {
+  agirlikBirimiKodlari,
+  secenekOnSecimleri,
+  tukenmisSecenekGosterimleri,
+} from "../kayitlar/urun.ts";
 import { videoSiteAdlari } from "../kayitlar/video-siteleri.ts";
 import { yoneticiBildirimleri, yoneticiBildirimSinirlari } from "../kayitlar/yonetici-bildirimi.ts";
 import { saatDilimiGecerliMi } from "../metinler/bicimleyici.ts";
@@ -139,7 +144,7 @@ export const ayarSemasi = z.strictObject({
     altyapiSahibinin("ayar.aciklama.saatDilimi"),
   ),
   agirlikBirimi: ayar(
-    z.enum(["kg", "g", "lb", "oz"]).default("kg"),
+    z.enum(agirlikBirimiKodlari).default("kg"),
     altyapiSahibinin("ayar.aciklama.agirlikBirimi"),
   ),
   boyutBirimi: ayar(

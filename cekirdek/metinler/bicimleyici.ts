@@ -69,6 +69,13 @@ export const takvimGunu = (an: Date, saatDilimi: string): string => {
   return `${String(yil).padStart(4, "0")}-${ikiHaneli(ay)}-${ikiHaneli(gun)}`;
 };
 
+// Bir anın sitenin saat dilimindeki yerel zamanı, "YYYY-AA-GGTSS:DD" (kart 0263): panelin tarih ve saat alanının
+// değeri. yerelZamandan'ın tersidir.
+export const yerelZamana = (an: Date, saatDilimi: string): string => {
+  const [yil = 0, ay = 1, gun = 1, saat = 0, dakika = 0] = duvarSaati(an, saatDilimi);
+  return `${String(yil).padStart(4, "0")}-${ikiHaneli(ay)}-${ikiHaneli(gun)}T${ikiHaneli(saat % 24)}:${ikiHaneli(dakika)}`;
+};
+
 // Sitenin saat diliminde yazılmış yerel zamanı ("2026-11-08T09:30") ana çevirir (kart 0076). Biçim
 // dışı metin, takvimde olmayan gün ve o saat diliminde hiç yaşanmayan saat (yaz saatine geçişteki
 // atlanan saat) undefined döner. Saat geri alınırken iki kez yaşanan saatte önceki an seçilir.
@@ -171,6 +178,26 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
     timeZone: ayarlar.saatDilimi,
   });
 
+  // Sitenin ayırıcılarıyla yazılmış negatif olmayan sayıyı en küçük birime (10^ondalikSayisi katı) çevirir.
+  const ondalikliOku = (yazi: string, ondalikSayisi: number): number | undefined => {
+    const { binlikAyirici, ondalikAyirici } = ayarlar.sayi;
+    const kac = (deger: string) => deger.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    // Boşluk türü binlik ayırıcı (bölünmez boşluk) müşterinin yazdığı düz boşlukla da okunur. Binlik
+    // ayırıcı boşsa ya da ondalık ayırıcıyla aynıysa binlikli yazılış yoktur: belirsiz olurdu.
+    const binlik = /^\s$/u.test(binlikAyirici) ? "[\\s\\u00a0\\u202f]" : kac(binlikAyirici);
+    const binlikli = binlikAyirici !== "" && binlikAyirici !== ondalikAyirici;
+    const kesir = ondalikSayisi > 0 ? `(?:${kac(ondalikAyirici)}(\\d{1,${ondalikSayisi}}))?` : "";
+    const temiz = yazi.trim();
+    const eslesme =
+      (binlikli ? new RegExp(`^(\\d{1,3}(?:${binlik}\\d{3})+)${kesir}$`, "u").exec(temiz) : null) ??
+      new RegExp(`^(\\d+)${kesir}$`).exec(temiz);
+    if (eslesme === null) return undefined;
+    const tam = (eslesme[1] ?? "").replace(/\D/g, "");
+    const ondalik = (eslesme[2] ?? "").padEnd(ondalikSayisi, "0");
+    const deger = Number(tam) * 10 ** ondalikSayisi + Number(ondalik === "" ? 0 : ondalik);
+    return Number.isSafeInteger(deger) ? deger : undefined;
+  };
+
   return {
     // Tutar alanı (kart 0212, panelin kargo ekranı): simgesiz tutar, paraOku'nun okuduğu biçimde; simge ve yeri
     // alanın yanında ayrıca gösterilir.
@@ -214,25 +241,16 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
     // binlikli ("1.000", "1.000,50") ya da binliksiz ("1000", "1000,5") yazılış aynı tutardır. Binlik
     // grupları üçer hanedir, ondalık en çok para biriminin ondalık sayısı kadardır; simge, eksi işareti ve
     // başka yazılış (örneğin binlik ayırıcıyla "1.5") kabul edilmez: tutar yoktur, ekran hatayı gösterir.
-    paraOku: (yazi: string): number | undefined => {
-      const { binlikAyirici, ondalikAyirici } = ayarlar.sayi;
-      const { ondalikSayisi } = ayarlar.para;
-      const kac = (deger: string) => deger.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      // Boşluk türü binlik ayırıcı (bölünmez boşluk) müşterinin yazdığı düz boşlukla da okunur. Binlik
-      // ayırıcı boşsa ya da ondalık ayırıcıyla aynıysa binlikli yazılış yoktur: belirsiz olurdu.
-      const binlik = /^\s$/u.test(binlikAyirici) ? "[\\s\\u00a0\\u202f]" : kac(binlikAyirici);
-      const binlikli = binlikAyirici !== "" && binlikAyirici !== ondalikAyirici;
-      const kesir = ondalikSayisi > 0 ? `(?:${kac(ondalikAyirici)}(\\d{1,${ondalikSayisi}}))?` : "";
+    paraOku: (yazi: string): number | undefined => ondalikliOku(yazi, ayarlar.para.ondalikSayisi),
+    // Panelde yazılan sayı (kart 0263): ağırlık, sayı türündeki özellik. paraOku'nun kuralıyla, en çok
+    // ondalikSayisi kadar ondalık; eksi verilirse başında "-" olabilir. Tutar değil, sayının kendisi döner.
+    sayiOku: (yazi: string, ondalikSayisi: number, eksi = false): number | undefined => {
       const temiz = yazi.trim();
-      const eslesme =
-        (binlikli
-          ? new RegExp(`^(\\d{1,3}(?:${binlik}\\d{3})+)${kesir}$`, "u").exec(temiz)
-          : null) ?? new RegExp(`^(\\d+)${kesir}$`).exec(temiz);
-      if (eslesme === null) return undefined;
-      const tam = (eslesme[1] ?? "").replace(/\D/g, "");
-      const ondalik = (eslesme[2] ?? "").padEnd(ondalikSayisi, "0");
-      const deger = Number(tam) * 10 ** ondalikSayisi + Number(ondalik === "" ? 0 : ondalik);
-      return Number.isSafeInteger(deger) ? deger : undefined;
+      const eksiMi = eksi && temiz.startsWith("-");
+      const deger = ondalikliOku(eksiMi ? temiz.slice(1) : temiz, ondalikSayisi);
+      if (deger === undefined) return undefined;
+      const sayi = deger / 10 ** ondalikSayisi;
+      return eksiMi ? -sayi : sayi;
     },
     kisaAd: (adSoyad: string): string => kisaAd(adSoyad, ayarlar.dil),
     sayi: (deger: number, ondalikSayisi = 0): string =>

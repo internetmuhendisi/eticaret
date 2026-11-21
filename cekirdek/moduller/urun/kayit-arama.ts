@@ -1,5 +1,5 @@
 // Panelde katalog kayıtlarını arayarak seçmek (kart 0143, karar 0116): menü öğesinin hedefi (ve kart 0161'de vitrin
-// bölümlerinin alanları) kategori, marka ya da ürünü yazdıkça bulur. Yalnız silinmemiş kayıtlar gelir; ürünün
+// bölümlerinin alanları) kategori, marka ya da ürünü yazdıkça bulur; ürün ekranı etiketi de (kart 0263). Yalnız silinmemiş kayıtlar gelir; ürünün
 // durumu (taslak, arşiv) seçimi engellemez, panel öğenin durumunu ayrıca gösterir.
 //
 // Harf kuralı aramanınkidir (aramaAnahtari): "gomlek" "Gömlek"i bulur. Aranan metin adın herhangi bir yerinde
@@ -9,14 +9,15 @@ import { and, asc, isNull, sql } from "drizzle-orm";
 import { type KayitliMenuHedefi, kayitliMenuHedefleri } from "../../kayitlar/menu.ts";
 import { aramaAnahtari, aramaAnahtariSql } from "../../metinler/arama-anahtari.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
+import { etiketler } from "../etiket/model.ts";
 import { kategorileriOku } from "../kategori/servis.ts";
 import { kategoriYollari, kategoriYoluAyraci } from "../kategori/yol.ts";
 import { markalar } from "../marka/model.ts";
 import { urunler } from "./model.ts";
 
-// Aranabilen kayıt türleri: menünün kayıtlı hedefleriyle aynı.
-export const aranabilirKayitlar = kayitliMenuHedefleri;
-export type AranabilirKayit = KayitliMenuHedefi;
+// Aranabilen kayıt türleri: menünün kayıtlı hedefleri ve ürünün etiketi (kart 0263).
+export const aranabilirKayitlar = [...kayitliMenuHedefleri, "etiket"] as const;
+export type AranabilirKayit = KayitliMenuHedefi | "etiket";
 
 // Bir sayfadaki kayıt sayısı ve aranan metnin en çok uzunluğu.
 export const kayitAramaSinirlari = { sayfa: 20, aranan: 100 } as const;
@@ -45,7 +46,7 @@ export const kayitAra = async (
       dahaVar: hepsi.length > (sayfa + 1) * boyut,
     };
   }
-  const tablo = tur === "marka" ? markalar : urunler;
+  const tablo = tur === "marka" ? markalar : tur === "etiket" ? etiketler : urunler;
   const satirlar = await vt
     .select({ kimlik: tablo.kimlik, ad: tablo.ad, adresAdi: tablo.adres_adi })
     .from(tablo)

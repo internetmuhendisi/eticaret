@@ -28,6 +28,8 @@ import { videoAdresiniCoz, videoAdresiUzunlugu } from "./video.ts";
 
 export const urunHatalari = [
   "barkod",
+  // Panelde yazılan ağırlık sitenin sayı biçimiyle okunamadı (kart 0263).
+  "agirlik-bicimi",
   "kayda-uygun-degil",
   "adres-adi-bicimi",
   "adres-adi-tekrar",
@@ -88,6 +90,7 @@ export type UrunHatasi = (typeof urunHatalari)[number];
 // Her hata kodunun ekran metni: eksik metin tür kontrolünde hata verir.
 export const urunHataMetinleri = {
   barkod: "yonetim.urun.hata.barkod",
+  "agirlik-bicimi": "yonetim.urun.hata.agirlik-bicimi",
   "kayda-uygun-degil": "yonetim.urun.hata.kayda-uygun-degil",
   "adres-adi-bicimi": "yonetim.urun.hata.adres-adi-bicimi",
   "adres-adi-tekrar": "yonetim.urun.hata.adres-adi-tekrar",
@@ -286,6 +289,14 @@ export const urunDegisikligi = z.strictObject({
   ozellikler: alanlar.ozellikler.optional(),
 });
 export type UrunDegisikligi = z.input<typeof urunDegisikligi>;
+
+// Panelin ürün ekranının uçları (kart 0263). Ürünün alanları servis şemasıyla doğrulanır (urunGirdisi,
+// urunDegisikligi): hata alanın adıyla ve ürünün koduyla döner, uç yalnız zarfı denetler. Ağırlık ve sayı türündeki
+// özellik değerleri metin olarak gelir, panel-girdisi.ts çevirir.
+const urunNesnesi = z.record(z.string(), z.unknown());
+export const urunEklemeSemasi = z.strictObject({ urun: urunNesnesi });
+export const urunDegisikligiSemasi = z.strictObject({ kimlik: kimlikSemasi, urun: urunNesnesi });
+export const urunSilmeSemasi = z.strictObject({ kimlik: kimlikSemasi });
 
 // Birimin kendi alanları: basit üründe ürün girdisiyle, varyantlı üründe her birleşimde ayrı gelir
 // (kart 0085). Varyantlı üründe ürün girdisi ve değişikliği bunları taşıyamaz.

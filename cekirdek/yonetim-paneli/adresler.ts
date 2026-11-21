@@ -13,6 +13,10 @@ export const siparisAyrintisiAdresi = (numara: string): string =>
 
 // Ürünler listesi (kart 0262); ürün ekranı kart 0263'le gelir.
 export const urunlerAdresi = `${panelAdresi}/urunler`;
+// Ürün ekranı (kart 0263): yeni ürün ve var olan ürünün ekranı (kimlik adresin sorgusunda).
+export const yeniUrunAdresi = `${urunlerAdresi}/yeni`;
+export const urunEkraniAdresi = (kimlik: string): string =>
+  `${urunlerAdresi}/urun?kimlik=${encodeURIComponent(kimlik)}`;
 
 // Şifreden sonraki ara adımın sayfası (kart 0028).
 export const adimAdresi = (durum: "kod" | "kurulum"): string =>

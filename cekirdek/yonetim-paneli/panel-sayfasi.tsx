@@ -61,6 +61,7 @@ export const panelSayfaBilgisi = async (
 export async function PanelSayfasi({
   kod,
   baslik,
+  altBaslik,
   eylemler,
   children,
   agac = panelSayfalari,
@@ -69,6 +70,8 @@ export async function PanelSayfasi({
   // Ağaçtaki addan farklı başlık: kaydın kendisini gösteren alt sayfa (sipariş ayrıntısında "Sipariş ORN-1007").
   // Sayfa yolu ve sekme başlığı ağaçtaki adla kalır.
   baslik?: string;
+  // Başlığın altında ağaçtaki açıklama yerine (ürün ekranında kategori ve stok kodu, kart 0263).
+  altBaslik?: string;
   // Komut çubuğundaki eylemler (EylemDugmesi, EylemBaglantisi); asıl eylem en sonda.
   eylemler?: ReactNode;
   children?: ReactNode;
@@ -88,7 +91,7 @@ export async function PanelSayfasi({
             />
           ) : null}
           <SayfaBasligi baslik={baslik ?? metin(sayfa.ad)} gorunum="panel" />
-          <p className="text-kucuk text-soluk-yazi">{metin(sayfa.aciklama)}</p>
+          <p className="text-kucuk text-soluk-yazi">{altBaslik ?? metin(sayfa.aciklama)}</p>
         </div>
         {eylemler === undefined ? null : (
           <div className="flex w-full flex-wrap gap-2 tablet:w-auto">{eylemler}</div>

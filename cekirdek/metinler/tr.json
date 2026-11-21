@@ -241,6 +241,14 @@
       "urunler": {
         "ad": "Ürünler",
         "aciklama": "Mağazanın bütün ürünleri: yayında olanlar, taslaklar, gizli ve arşivdekiler. Seçtiğiniz ürünleri birlikte yayınlayın, taslağa ya da arşive alın."
+      },
+      "yeniUrun": {
+        "ad": "Yeni ürün",
+        "aciklama": "Ürünün adını yazın; ürün taslak olarak kaydedilir, bilgilerini tamamlayınca yayına alırsınız."
+      },
+      "urun": {
+        "ad": "Ürün",
+        "aciklama": "Ürünün bilgilerini, sınıflandırmasını, özelliklerini ve yayın durumunu düzenleyin."
       }
     },
     "eylem": {
@@ -255,7 +263,9 @@
       "teslimEdildi": "Teslim edildi",
       "siparisIptal": "İptal et",
       "iadeYap": "İade yap",
-      "elleSiparis": "Elle sipariş"
+      "elleSiparis": "Elle sipariş",
+      "urunEkle": "Ürün ekle",
+      "vitrindeGor": "Vitrinde gör"
     },
     "rol": {
       "magaza-sahibi": "Mağaza sahibi",
@@ -352,7 +362,8 @@
         "galeri-sira-gecersiz": "Galeri değişmiş. Sayfayı yenileyip sıralamayı yeniden yapın.",
         "video-adresi-gecersiz": "Bu bağlantı tanınmadı. Videonun kendi sayfasındaki bağlantısını yapıştırın.",
         "video-sitesi-izinsiz": "Bu sitenin videoları bu mağazada eklenemiyor.",
-        "birim-gorseli-gecersiz": "Seçilen görsel bu ürünün galerisinde yok. Galeriden bir görsel seçin."
+        "birim-gorseli-gecersiz": "Seçilen görsel bu ürünün galerisinde yok. Galeriden bir görsel seçin.",
+        "agirlik-bicimi": "Ağırlığı sayı olarak yazın, örneğin 1,5."
       }
     },
     "fiyat": {
@@ -1619,6 +1630,94 @@
           "genel": "değiştirilemedi"
         }
       }
+    },
+    "cokluKayit": {
+      "secilenler": "Seçilenler: {alan}",
+      "kaldir": "Kaldır: {ad}"
+    },
+    "bicimliMetin": {
+      "aracCubugu": "Biçim: {alan}",
+      "kalin": "Kalın",
+      "egik": "Eğik",
+      "araBaslik": "Ara başlık",
+      "maddeListesi": "Madde listesi",
+      "siraliListe": "Sıralı liste",
+      "baglanti": "Bağlantı",
+      "baglantiAdresi": "Bağlantı adresi",
+      "baglantiUygula": "Bağlantıyı ekle",
+      "baglantiKaldir": "Bağlantıyı kaldır",
+      "baglantiGecersiz": "Adres https://, http://, mailto: ya da tel: ile ya da sitenin bir yoluyla (/kategori/...) başlamalı."
+    },
+    "urunEkrani": {
+      "bolum": {
+        "genel": "Genel bilgiler",
+        "siniflandirma": "Sınıflandırma",
+        "satis": "Satış bilgileri",
+        "ozellikler": "Özellikler",
+        "ilgili": "İlgili ürünler"
+      },
+      "buSayfada": "Bu sayfada",
+      "ad": "Ürün adı",
+      "adresAdi": "Adres adı",
+      "adresAdiAciklamasi": "Ürün sayfasının adresidir. Değiştirirseniz eski adres yenisine yönlenir; müşterinin kaydettiği bağlantılar kırılmaz.",
+      "kisaAciklama": "Kısa açıklama",
+      "kisaAciklamaAciklamasi": "Ürün kartlarında ve arama sonuçlarında görünür.",
+      "aciklama": "Açıklama",
+      "aciklamaAciklamasi": "Kalın, eğik, ara başlık, liste ve bağlantı kullanılabilir; vitrinde başka biçim görünmez.",
+      "kategoriler": "Kategoriler",
+      "kategorilerAciklamasi": "Bir ürün birden çok kategoride olabilir.",
+      "marka": "Marka",
+      "markaAciklamasi": "Marka adını yazıp seçin; markasız ürün için boş bırakın.",
+      "etiketler": "Etiketler",
+      "vergiSinifi": "Vergi sınıfı",
+      "vergisiz": "Vergisiz",
+      "kargo": "Kargo",
+      "kargoAciklamasi": "Dijital ürün ya da hizmet gönderilmez, kargo ücreti almaz.",
+      "kargoGerekir": "Kargo gerekir",
+      "kargoGerekmez": "Kargo gerekmez",
+      "stokKodu": "Stok kodu",
+      "barkod": "Barkod",
+      "barkodAciklamasi": "EAN, UPC, GTIN ya da ISBN.",
+      "agirlik": "Ağırlık ({birim})",
+      "agirlikAciklamasi": "Paketli ağırlık; kargo firmasına bildirilir.",
+      "varyantliBirim": "Bu ürünün seçenekleri var: stok kodu, barkod ve ağırlık her birleşimde ayrı girilir.",
+      "enAzAdet": "En az alım adedi",
+      "enAzAdetAciklamasi": "Müşteri bu üründen en az bu kadar alır.",
+      "enCokAdet": "En çok alım adedi",
+      "enCokAdetAciklamasi": "Boşsa sınır yoktur.",
+      "ozellikYok": "Sitede henüz özellik yok. Özellikleri Ürünler › Özellikler ekranında tanımlarsınız.",
+      "secilmedi": "Seçilmedi",
+      "evet": "Evet",
+      "hayir": "Hayır",
+      "ilgiliUrunler": "Ürün sayfasının altında gösterilecek ürünler",
+      "ilgiliAciklamasi": "En çok {sayi}. Seçmezseniz aynı kategoriden en yeni ürünler gösterilir.",
+      "ilgiliSinir": "En çok {sayi} ürün seçilebilir; başka ürün eklemek için birini kaldırın.",
+      "yayinBasligi": "Yayın",
+      "yayinAciklamasi": "Gizli ürün listelerde ve aramada görünmez, bağlantıyla açılır. Zamanlanan ürün seçtiğiniz anda kendiliğinden yayına girer.",
+      "yayin": {
+        "yayinda": "Yayında",
+        "zamanlanmis": "Zamanla",
+        "taslak": "Taslak",
+        "gizli": "Gizli",
+        "arsiv": "Arşivde"
+      },
+      "yayinZamani": "Yayın zamanı",
+      "yayinZamaniAciklamasi": "Mağazanın saatiyle.",
+      "kaldirBasligi": "Ürünü kaldır",
+      "kaldirAciklamasi": "Arşivdeki ürün vitrinde görünmez, siparişlerde adıyla kalır. Silinen ürün geri gelmez.",
+      "kaldirKaydedilmemis": "Önce değişiklikleri kaydedin ya da vazgeçin; sonra arşive alabilirsiniz.",
+      "arsiveAl": "Arşive al",
+      "sil": "Sil",
+      "silOnay": {
+        "baslik": "{ad} silinsin mi?",
+        "aciklama": "Ürün vitrinden ve listeden kalkar; verilmiş siparişlerde adıyla kalır. Bu işlem geri alınamaz."
+      },
+      "ekle": "Ürünü kaydet",
+      "kaydet": "Kaydet",
+      "eklendi": "Ürün taslak olarak kaydedildi.",
+      "kaydedildi": "Ürün kaydedildi.",
+      "arsivlendi": "Ürün arşive alındı.",
+      "silindi": "Ürün silindi."
     }
   },
   "vitrin": {

@@ -10,7 +10,9 @@
 // - Etiket taşımayan açıklama düz metindir (bugünkü başlangıç kataloğu ve panelden önceki ürünler): boş
 //   satırla ayrılmış kısımlar paragraf, tek satır sonu satır sonu olur. Düz metindeki < ve & yazı olarak görünür.
 // - Temizlenince boş kalan açıklama yoktur (undefined): sayfa bölümü çizmez.
+
 import sanitizeHtml from "sanitize-html";
+import { aciklamaBaglantiSemalari } from "./aciklama-baglantisi.ts";
 
 export const aciklamaEtiketleri = [
   "p",
@@ -37,7 +39,7 @@ const ayarlar: sanitizeHtml.IOptions = {
   // rel dönüşümle konur; izin listesi dönüşümden sonra uygulandığı için rel de listededir. Girdideki rel ve
   // öteki özellikler dönüşümde atılır.
   allowedAttributes: { a: ["href", "rel"] },
-  allowedSchemes: ["https", "http", "mailto", "tel"],
+  allowedSchemes: [...aciklamaBaglantiSemalari],
   allowedSchemesAppliedToAttributes: ["href"],
   allowProtocolRelative: false,
   disallowedTagsMode: "discard",

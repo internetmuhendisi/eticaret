@@ -58,6 +58,24 @@ export type SecenekOnSecimi = (typeof secenekOnSecimleri)[number];
 // - stok-artan, stok-azalan: silinmemiş birimlerin toplam stoğu; takibi kapalı ürün her iki yönde sonda.
 // - fiyat-artan, fiyat-azalan: silinmemiş birimlerin bugünkü girilen en düşük fiyatı (indirim sürüyorsa indirimli);
 //   fiyatı olmayan ürün her iki yönde sonda. Vergi çevirmesi sıraya katılmaz.
+// Ürün sayfasında en çok kaç ilgili ürün görünür (kullanıcı kararı, karar 0065); panelin ürün ekranı da en çok bu
+// kadarını seçtirir (kart 0263).
+export const ilgiliUrunSiniri = 4;
+
+// Ağırlık birimlerinin gram karşılığı ve panelde yazılan ondalık sayısı (kart 0263). Ağırlık gram olarak saklanır
+// (karar 0062); panel sitenin agirlikBirimi ayarıyla gösterir ve okur.
+export const agirlikBirimleri = {
+  kg: { gram: 1000, ondalik: 3 },
+  g: { gram: 1, ondalik: 0 },
+  lb: { gram: 453.59237, ondalik: 3 },
+  oz: { gram: 28.349523125, ondalik: 2 },
+} as const;
+export type AgirlikBirimi = keyof typeof agirlikBirimleri;
+export const agirlikBirimiKodlari = Object.keys(agirlikBirimleri) as [
+  AgirlikBirimi,
+  ...AgirlikBirimi[],
+];
+
 export const urunPanelSiralamalari = [
   "son-degisen",
   "ad-artan",

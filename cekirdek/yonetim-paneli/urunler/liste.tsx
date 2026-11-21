@@ -1,9 +1,4 @@
 "use client";
-// Ürünler ekranının listesi (kart 0262, karar 0161; taslak: "Ortak liste: Ürünler"). Tanımı liste-tanimi.ts: arama (ad
-// ya da stok kodu), yayın durumu, kategori, stok ve marka süzgeçleri, sıralama (ürün, stok ve fiyat sütunu başlıktan
-// da), sayfa ve dört toplu işlem. Satırda ana görsel, ad ve stok kodu (varyantlı üründe birleşim sayısı), yayın
-// durumu, kategoriler, stok durumu ve vitrindeki fiyat; sayfası vitrinde açılan üründe "Vitrinde gör". Masaüstünde
-// tablo, telefonda her ürün bir kart (.claude/rules/telefon-gorunumu.md). Ürün ekranına geçiş kart 0263'le gelir.
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
 import { Rozet } from "../../../bilesenler/parcalar/rozet";
@@ -18,6 +13,12 @@ import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
 import { kayitAdresleri } from "../../vitrin/adresler";
+// Ürünler ekranının listesi (kart 0262, karar 0161; taslak: "Ortak liste: Ürünler"). Tanımı liste-tanimi.ts: arama (ad
+// ya da stok kodu), yayın durumu, kategori, stok ve marka süzgeçleri, sıralama (ürün, stok ve fiyat sütunu başlıktan
+// da), sayfa ve dört toplu işlem. Satırda ana görsel, ad ve stok kodu (varyantlı üründe birleşim sayısı), yayın
+// durumu, kategoriler, stok durumu ve vitrindeki fiyat; sayfası vitrinde açılan üründe "Vitrinde gör". Masaüstünde
+// tablo, telefonda her ürün bir kart (.claude/rules/telefon-gorunumu.md). Ürün ekranına geçiş kart 0263'le gelir.
+import { urunEkraniAdresi } from "../adresler";
 import { KatalogGorseli } from "../katalog-gorseli";
 import { Liste, type SutunTanimi, type TopluIslemTanimi } from "../liste/liste";
 import type { ListeDurumu, ListeVerisi } from "../liste/tanim";
@@ -95,7 +96,10 @@ function Ad({ satir }: { satir: UrunSatiri }) {
   const metin = usePanelMetni();
   return (
     <span className="flex min-w-0 flex-col break-words">
-      <span className="font-kalin">{satir.ad}</span>
+      {/* Ürünün ekranına bağlantı (kart 0263). */}
+      <Baglanti href={urunEkraniAdresi(satir.kimlik)} className="min-h-11 self-start font-kalin">
+        {satir.ad}
+      </Baglanti>
       <span className="text-kucuk text-soluk-yazi">
         {satir.birlesim > 0
           ? doldur(metin("yonetim.urunler.birlesim"), { sayi: String(satir.birlesim) })

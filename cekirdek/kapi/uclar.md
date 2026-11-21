@@ -1148,12 +1148,42 @@ Seçilen ürünlere toplu işlem (kart 0262, karar 0157): yayınla, taslağa al,
 - Başarılı (200): `{ "basarili": true, "veri": { "islenen": [kimlik], "islenemeyen": [{ "anahtar", "kod" }] } }`.
 - Hatalar: `dogrulama`, `oturum-yok`, `yetki` (silme izni yok).
 
+### POST /kapi/yonetici/urun-ekle
+
+Yeni ürün (kart 0263): panelin ürün ekranından. Durum verilmezse ürün taslaktır. Ağırlık (`agirlik`) sitenin ağırlık biriminde, sayı türündeki özellik değeri sitenin sayı biçiminde metin olarak gelir, sunucu okur; öteki alanlar `urunGirdisi` şemasıyla doğrulanır.
+
+- İzin: `urun.degistir`. Sınır: `genel`.
+- Girdi: `{ "urun": { "ad", ... } }` (`urunEklemeSemasi`).
+- Servis: `cekirdek/moduller/urun/servis.ts` (`urunEkle`), çeviri `cekirdek/moduller/urun/panel-girdisi.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
+- Hatalar: `dogrulama` (alanın yolu ve kodu, ör. `agirlik-bicimi`, `ozellik-deger-gecersiz`), `cakisma` (adres adı, stok kodu), `is-kurali`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/urun-degistir
+
+Ürünün değişikliği (kart 0263): yalnız verilen alan değişir, `null` isteğe bağlı alanı boşaltır. Adres adı değişince eski adres yenisine yönlenir (kart 0135). Girdi kuralları `urun-ekle` ile aynıdır (`urunDegisikligi`).
+
+- İzin: `urun.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "urun": { ... } }` (`urunDegisikligiSemasi`).
+- Servis: `urunDegistir`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `cakisma`, `is-kurali`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/urun-sil
+
+Ürünü siler (kart 0263): silinmiş işaretlenir, birleşimleriyle; vitrinde görünmez, siparişlerde adıyla kalır.
+
+- İzin: `urun.sil`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }` (`urunSilmeSemasi`).
+- Servis: `urunSil`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
+
 ### GET /kapi/yonetici/kayit-ara
 
-Panelde kategori, marka ya da ürünü yazdıkça arayarak seçmek (kart 0143, karar 0116). Yalnız silinmemiş kayıtlar gelir; harf kuralı aramanınkidir (Türkçe harfsiz, büyük küçük harf ayrımsız), aranan metin adın herhangi bir yerinde geçebilir. Kategoriler üstlerinin adıyla ("Kadın › Tişört") ve ağaç sırasında gelir, bu yolda aranır (yol ayracı aranmaz). Marka ve ürün ada göre sıralı ve adres adlarıyla gelir: aynı adlı ürünler ayrılır. Sayfa başına 20 kayıt.
+Panelde kategori, marka, etiket (kart 0263) ya da ürünü yazdıkça arayarak seçmek (kart 0143, karar 0116). Yalnız silinmemiş kayıtlar gelir; harf kuralı aramanınkidir (Türkçe harfsiz, büyük küçük harf ayrımsız), aranan metin adın herhangi bir yerinde geçebilir. Kategoriler üstlerinin adıyla ("Kadın › Tişört") ve ağaç sırasında gelir, bu yolda aranır (yol ayracı aranmaz). Marka, etiket ve ürün ada göre sıralı ve adres adlarıyla gelir: aynı adlı ürünler ayrılır. Sayfa başına 20 kayıt.
 
 - İzin: `urun.gor`. Sınır: `genel`.
-- Girdi: adres parametreleri `tur` (`kategori`, `marka`, `urun`), `ara`? (en çok 100 karakter) ve `sayfa`? (`kayitAramaSemasi`, `cekirdek/kapi/yonetici/kayit-ara.ts`).
+- Girdi: adres parametreleri `tur` (`kategori`, `marka`, `urun`, `etiket`), `ara`? (en çok 100 karakter) ve `sayfa`? (`kayitAramaSemasi`, `cekirdek/kapi/yonetici/kayit-ara.ts`).
 - Servis: `cekirdek/moduller/urun/kayit-arama.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "kayitlar": [{ "kimlik", "ad", "adresAdi"? }], "dahaVar": false } }`.
 - Hatalar: `dogrulama`, `oturum-yok`, `yetki`.

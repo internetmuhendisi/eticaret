@@ -11,6 +11,7 @@
 // gelmemiş ve silinmiş ürün girmez. Ürünün kendisi hiçbir zaman girmez. Ürünün kendi sayfası vitrinde
 // açılmıyorsa (taslak, arşiv, silinmiş) liste boştur (kart 0079 kontrolü).
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { ilgiliUrunSiniri } from "../../kayitlar/urun.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { kimlikMi } from "../../veritabani/kimlik.ts";
 import { kategoriler, urunKategorileri } from "../kategori/model.ts";
@@ -18,8 +19,8 @@ import { urunIlgilileri, urunler } from "./model.ts";
 import type { UrunHatasi } from "./semalar.ts";
 import { type VitrinSecenekleri, vitrinKosulu } from "./vitrin.ts";
 
-// Ürün sayfasında en çok kaç ilgili ürün görünür (kullanıcı kararı, karar 0065).
-export const ilgiliUrunSiniri = 4;
+// Ürün sayfasında en çok kaç ilgili ürün görünür: kayıttadır (panel de okur, kart 0263).
+export { ilgiliUrunSiniri };
 
 // Ürünün elle seçtiği ilgili ürünler, seçim sırasıyla. Sonradan silinen ürün listede görünmez.
 export const secilenIlgililer = async (

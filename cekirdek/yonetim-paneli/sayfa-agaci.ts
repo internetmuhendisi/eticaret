@@ -141,6 +141,28 @@ export const panelSayfalari = [
     izin: "urun.gor",
     grup: "urunler",
   },
+  // Ürün ekranı (kart 0263, karar 0162): yeni ürün ve var olan ürün (kimlik adresin sorgusunda, ?kimlik=); sayfa
+  // yolunda listenin altında durur.
+  {
+    kod: "yeni-urun",
+    adres: `${panelAdresi}/urunler/yeni`,
+    ad: "yonetim.sayfa.yeniUrun.ad",
+    aciklama: "yonetim.sayfa.yeniUrun.aciklama",
+    ikon: "ekle",
+    izin: "urun.degistir",
+    grup: "urunler",
+    ust: "urunler",
+  },
+  {
+    kod: "urun",
+    adres: `${panelAdresi}/urunler/urun`,
+    ad: "yonetim.sayfa.urun.ad",
+    aciklama: "yonetim.sayfa.urun.aciklama",
+    ikon: "urunler",
+    izin: "urun.gor",
+    grup: "urunler",
+    ust: "urunler",
+  },
   // Kategoriler, markalar ve etiketler, özellikler (kart 0261, karar 0160): ürünün gruplandığı kayıtlar. Görevli
   // görür ve değiştirir, silemez (izinlerin kararı).
   {
