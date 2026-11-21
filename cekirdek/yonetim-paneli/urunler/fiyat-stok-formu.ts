@@ -58,7 +58,7 @@ export const fiyatStokGirdisi = (
   if (form.varyant.secenekler.length === 0) {
     // Basit ürün (ya da son seçeneği kaldırılan ürün: sunucu yeni basit birimi açar, kimliği bilinmez).
     const basitKaldi = veri.tur === "basit" && !yeni;
-    const fiyat = fiyatAlanlari(form.fiyat, basitKaldi || yeni ? bilinen.fiyat : undefined);
+    const fiyat = fiyatAlanlari(form.fiyat, basitKaldi ? bilinen.fiyat : undefined);
     if (fiyat.satisFiyati !== undefined) {
       const birim = basitKaldi ? birimKimligi("") : undefined;
       birimler.push({ yer: "fiyat", ...(birim === undefined ? {} : { birim }), ...fiyat });

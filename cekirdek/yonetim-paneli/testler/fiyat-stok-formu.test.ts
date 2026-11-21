@@ -3,7 +3,7 @@
 // basit ürünün dolu fiyatı ve başlangıç stoğu ("Yeni mal geldi") gider; birleşimin stoğu sunucudaki miktarıyla
 // (görülen) gider; basitten dönen ilk satır basit birimin fiyatı ve stoğuyla karşılaştırılır.
 import { describe, expect, it } from "vitest";
-import { fiyatStokGirdisi } from "../urunler/fiyat-stok-formu";
+import { fiyatStokGirdisi, urunFormunuUzlastir } from "../urunler/fiyat-stok-formu";
 import type { UrunEkraniVerisi, UrunFormu } from "../urunler/urun-verisi";
 import {
   type BirlesimFormu,
@@ -82,7 +82,7 @@ describe("basit ürün", () => {
     ).toEqual({
       indirimBaslangici: null,
       indirimBitisi: null,
-      birimler: [{ yer: "fiyat", satisFiyati: "120,00", indirimliFiyat: "80,00" }],
+      birimler: [{ yer: "fiyat", birim: "b0", satisFiyati: "120,00", indirimliFiyat: "80,00" }],
     });
   });
 
@@ -113,7 +113,7 @@ describe("basit ürün", () => {
       sebep: "yeni-mal",
       not: "Depo",
       birimler: [
-        { yer: "fiyat", satisFiyati: "100,00", indirimliFiyat: "80,00" },
+        { yer: "fiyat", satisFiyati: "100,00", indirimliFiyat: "80,00", ortakZaman: true },
         { yer: "stok", stok: { gorulen: 0, yeni: "12" } },
       ],
     });
@@ -141,7 +141,28 @@ describe("seçenekli ürün", () => {
     alan({ satisFiyati: "120,00", indirimliFiyat: "90,00", stok: "2" }),
   );
   const bilinen = { ...form, fiyat: bosFiyat, varyant: kayitli };
-  const vVeri = veri({ tur: "varyantli" });
+  const vVeri = veri({
+    tur: "varyantli",
+    fiyatStok: {
+      ...veri().fiyatStok,
+      birimler: {
+        [birlesimAnahtari(["s"])]: {
+          kimlik: "bs",
+          satisFiyati: "100,00",
+          indirimliFiyat: "",
+          stok: 4,
+          ayrilan: 0,
+        },
+        [birlesimAnahtari(["m"])]: {
+          kimlik: "bm",
+          satisFiyati: "120,00",
+          indirimliFiyat: "90,00",
+          stok: 2,
+          ayrilan: 0,
+        },
+      },
+    },
+  });
   const girdi = (f: UrunFormu, b: UrunFormu = bilinen) =>
     fiyatStokGirdisi(f, b, vVeri, birlesimSatirlari(f.varyant, b.varyant, undefined));
 
@@ -160,7 +181,9 @@ describe("seçenekli ürün", () => {
     ).toEqual({
       sebep: "hasar",
       not: "Kırık",
-      birimler: [{ yer: "birlesimler.1", birlesim: [1], stok: { gorulen: 2, yeni: "1" } }],
+      birimler: [
+        { yer: "birlesimler.1", birlesim: [1], birim: "bm", stok: { gorulen: 2, yeni: "1" } },
+      ],
     });
     // Ortak zaman: yalnız indirimli birleşim gider, sebep gitmez.
     expect(
@@ -169,9 +192,112 @@ describe("seçenekli ürün", () => {
       indirimBaslangici: "2030-01-01T00:00",
       indirimBitisi: null,
       birimler: [
-        { yer: "birlesimler.1", birlesim: [1], satisFiyati: "120,00", indirimliFiyat: "90,00" },
+        {
+          yer: "birlesimler.1",
+          birlesim: [1],
+          birim: "bm",
+          satisFiyati: "120,00",
+          indirimliFiyat: "90,00",
+          ortakZaman: true,
+        },
       ],
     });
+    // Yalnız satış fiyatı değişen indirimli satır ortak zamanı almaz: kendi zamanı kalır.
+    expect(
+      girdi({
+        ...bilinen,
+        varyant: varyant(
+          alan({ satisFiyati: "100,00", stok: "4" }),
+          alan({ satisFiyati: "130,00", indirimliFiyat: "90,00", stok: "2" }),
+        ),
+      })?.birimler,
+    ).toEqual([
+      {
+        yer: "birlesimler.1",
+        birlesim: [1],
+        birim: "bm",
+        satisFiyati: "130,00",
+        indirimliFiyat: "90,00",
+      },
+    ]);
+  });
+
+  it("yalnız indirimli fiyatı yazılan satır da gider (sunucu satış fiyatının gerektiğini söyler)", () => {
+    expect(
+      girdi({
+        ...bilinen,
+        varyant: varyant(
+          alan({ satisFiyati: "100,00", stok: "4" }),
+          alan({ satisFiyati: "120,00", indirimliFiyat: "90,00", stok: "2" }),
+        ),
+        fiyat: bosFiyat,
+      }),
+    ).toBeUndefined();
+    const bos = { ...bilinen, varyant: varyant(alan(), alan()) };
+    expect(
+      fiyatStokGirdisi(
+        { ...bos, varyant: varyant(alan({ indirimliFiyat: "50,00" }), alan()) },
+        bos,
+        vVeri,
+        birlesimSatirlari(
+          varyant(alan({ indirimliFiyat: "50,00" }), alan()),
+          bos.varyant,
+          undefined,
+        ),
+      )?.birimler,
+    ).toMatchObject([{ yer: "birlesimler.0", satisFiyati: "", indirimliFiyat: "50,00" }]);
+  });
+
+  it("yeni varyantlı ürünün ilk stokları 'Yeni mal geldi' ile gider, seçilen sebep değil", () => {
+    const yeniVeri = veri({ kimlik: undefined } as Partial<UrunEkraniVerisi>);
+    delete yeniVeri.kimlik;
+    const bos = { ...form, fiyat: bosFiyat, varyant: { secenekler: [], birlesimler: {} } };
+    const f = {
+      ...bos,
+      stokSebebi: "sayim" as const,
+      varyant: varyant(alan({ stok: "3" }), alan()),
+    };
+    expect(
+      fiyatStokGirdisi(f, bos, yeniVeri, birlesimSatirlari(f.varyant, bos.varyant, undefined))
+        ?.sebep,
+    ).toBe("yeni-mal");
+  });
+
+  it("sayfa yenilenince dokunulmayan stok sunucunun yeni miktarını alır, sunucuda değişen stok güncel görünür", () => {
+    // A ve B 5; kullanıcı A'yı 10 yaptı; bu arada sipariş ikisini de 4'e düşürdü ve sayfa yenilendi.
+    const eski = { ...bilinen, varyant: varyant(alan({ stok: "5" }), alan({ stok: "5" })) };
+    const sunucu = { ...bilinen, varyant: varyant(alan({ stok: "4" }), alan({ stok: "4" })) };
+    const formda = {
+      ...eski,
+      kisaAciklama: "Yeni",
+      varyant: varyant(alan({ stok: "10" }), alan({ stok: "5" })),
+    };
+    const birlesik = urunFormunuUzlastir(formda, eski, sunucu);
+    // Kullanıcının başka değişikliği kalır; iki stok sunucunun miktarıdır, hiçbir stok satırı gitmez.
+    expect(birlesik.kisaAciklama).toBe("Yeni");
+    expect(birlesik.varyant.birlesimler[birlesimAnahtari(["m"])]?.stok).toBe("4");
+    expect(birlesik.varyant.birlesimler[birlesimAnahtari(["s"])]?.stok).toBe("4");
+    expect(
+      fiyatStokGirdisi(
+        birlesik,
+        sunucu,
+        vVeri,
+        birlesimSatirlari(birlesik.varyant, sunucu.varyant, undefined),
+      ),
+    ).toBeUndefined();
+    // Sunucuda değişmeyen stoğa dokunulduysa kullanıcının sayısı kalır ve gördüğü miktarla gider.
+    // Başka bir yöneticinin değiştirdiği, kullanıcının dokunmadığı alan (ağırlık, M'nin fiyatı) yeni değeri alır.
+    const sunucu2 = {
+      ...bilinen,
+      kisaAciklama: "Başkası",
+      agirlik: "1,5",
+      varyant: varyant(alan({ stok: "5" }), alan({ stok: "5", satisFiyati: "99,00" })),
+    };
+    const birlesik2 = urunFormunuUzlastir(formda, eski, sunucu2);
+    expect(birlesik2.varyant.birlesimler[birlesimAnahtari(["s"])]?.stok).toBe("10");
+    expect(birlesik2.varyant.birlesimler[birlesimAnahtari(["m"])]?.satisFiyati).toBe("99,00");
+    expect(birlesik2.agirlik).toBe("1,5");
+    expect(birlesik2.kisaAciklama).toBe("Yeni");
   });
 
   it("basitten dönen ilk satır basit birimin sunucudaki fiyatıyla karşılaştırılır: formda değişen fiyat gider", () => {
@@ -195,7 +321,13 @@ describe("seçenekli ürün", () => {
     };
     const satirlar = birlesimSatirlari(yeni.varyant, basit.varyant, ilk);
     expect(fiyatStokGirdisi(yeni, basit, veri(), satirlar)?.birimler).toEqual([
-      { yer: "birlesimler.0", birlesim: [0], satisFiyati: "110,00", indirimliFiyat: "80,00" },
+      {
+        yer: "birlesimler.0",
+        birlesim: [0],
+        birim: "b0",
+        satisFiyati: "110,00",
+        indirimliFiyat: "80,00",
+      },
       {
         yer: "birlesimler.1",
         birlesim: [1],
