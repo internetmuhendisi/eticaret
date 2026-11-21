@@ -61,12 +61,15 @@ export const urunHatalari = [
   "secenek-siniri",
   "deger-siniri",
   "birlesim-siniri",
-  "secenek-eklenemez",
   "birlesim-tekrar",
   "birlesim-eksik",
   "birlesim-gecersiz",
   "varyantli-urun-birim-alani",
   "son-deger",
+  // Panelin seçenekler bölümü (kart 0264): ekranın gördüğü seçenek ya da değer bu arada silinmiş ya da başka ürünün;
+  // kayıtlı seçenek ya da değer silmek urun.sil ister.
+  "varyant-degisti",
+  "varyant-silme-yetkisi",
   // Ürün özelliklerinin değerleri (kart 0086, karar 0072): aynı özellik iki kez, olmayan ya da
   // silinmiş özellik, türüne uymayan değer, özelliğin olmayan ya da silinmiş seçeneği.
   "ozellik-tekrar",
@@ -118,12 +121,13 @@ export const urunHataMetinleri = {
   "secenek-siniri": "yonetim.urun.hata.secenek-siniri",
   "deger-siniri": "yonetim.urun.hata.deger-siniri",
   "birlesim-siniri": "yonetim.urun.hata.birlesim-siniri",
-  "secenek-eklenemez": "yonetim.urun.hata.secenek-eklenemez",
   "birlesim-tekrar": "yonetim.urun.hata.birlesim-tekrar",
   "birlesim-eksik": "yonetim.urun.hata.birlesim-eksik",
   "birlesim-gecersiz": "yonetim.urun.hata.birlesim-gecersiz",
   "varyantli-urun-birim-alani": "yonetim.urun.hata.varyantli-urun-birim-alani",
   "son-deger": "yonetim.urun.hata.son-deger",
+  "varyant-degisti": "yonetim.urun.hata.varyant-degisti",
+  "varyant-silme-yetkisi": "yonetim.urun.hata.varyant-silme-yetkisi",
   "ozellik-tekrar": "yonetim.urun.hata.ozellik-tekrar",
   "ozellik-gecersiz": "yonetim.urun.hata.ozellik-gecersiz",
   "ozellik-deger-gecersiz": "yonetim.urun.hata.ozellik-deger-gecersiz",
@@ -371,6 +375,46 @@ export const birlesimDegisikligi = z.strictObject({
   gorsel: kimlikSemasi.nullable().optional(),
 });
 export type BirlesimDegisikligi = z.input<typeof birlesimDegisikligi>;
+
+// Panelin seçenekler bölümü (kart 0264, karar 0163): ürünün seçeneklerinin, değerlerinin ve birleşim alanlarının son
+// hâli, sırasıyla. Var olan seçenek ve değer kimliğiyle gelir, yenisi kimliksiz. Birleşimler bütün değerlerin
+// birleşimidir ve servis kurar; girdideki birleşim yalnız alanlarını taşır, değerleri her seçenekteki değerin sırasıdır
+// ([0, 2]: ilk seçeneğin ilk değeri, ikincinin üçüncü değeri). Verilmeyen birleşimin alanı boş açılır.
+export const varyantKaydi = z.strictObject({
+  secenekler: z
+    .array(
+      z.strictObject({
+        kimlik: kimlikSemasi.optional(),
+        ad: secenekAdi,
+        degerler: z
+          .array(z.strictObject({ kimlik: kimlikSemasi.optional(), ad: secenekAdi }))
+          .min(1)
+          .max(varyantSinirlari.deger, hata("deger-siniri")),
+      }),
+    )
+    .max(varyantSinirlari.secenek, hata("secenek-siniri")),
+  birlesimler: z
+    .array(
+      z.strictObject({
+        degerler: z
+          .array(
+            z
+              .int()
+              .min(0)
+              .max(varyantSinirlari.deger - 1),
+          )
+          .min(1)
+          .max(varyantSinirlari.secenek),
+        stokKodu: alanlar.stokKodu.nullable().optional(),
+        barkod: alanlar.barkod.nullable().optional(),
+        agirlikGram: alanlar.agirlikGram.nullable().optional(),
+        gorsel: kimlikSemasi.nullable().optional(),
+      }),
+    )
+    .max(varyantSinirlari.birlesim, hata("birlesim-siniri")),
+});
+export type VaryantKaydi = z.input<typeof varyantKaydi>;
+export type VaryantKaydiCikti = z.output<typeof varyantKaydi>;
 
 // Galeri öğesinin alternatif metni (kart 0087): görselde ekran okuyucunun okuduğu metin, videoda
 // oynatıcının başlığı. Zorunludur.

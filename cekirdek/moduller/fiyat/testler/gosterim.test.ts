@@ -22,6 +22,7 @@ import { siteninServisi } from "../../magaza-ayarlari/servis.ts";
 import { stokServisi } from "../../stok/servis.ts";
 import { urunBirimleri } from "../../urun/model.ts";
 import { urunServisi } from "../../urun/servis.ts";
+import { donusenBirimiSil } from "../../urun/testler/donusen-birim.ts";
 import { siteninVergiServisi } from "../../vergi/servis.ts";
 import { fiyatGosterimServisi } from "../gosterim.ts";
 import { birimFiyatlari, fiyatGecmisi } from "../model.ts";
@@ -324,6 +325,7 @@ describe("fiyat aralığı (kart 0085)", () => {
       ad: "Beden",
       degerler: miktarlar.map((_, i) => `d${i}`),
     });
+    await donusenBirimiSil(urunler, h.vt, urun);
     const degerler = (await urunler.urunuOku(h.vt, urun))?.secenekler[0]?.degerler ?? [];
     const birimler: string[] = [];
     for (const [i, miktar] of miktarlar.entries()) {

@@ -26,6 +26,7 @@ import { stokServisi } from "../moduller/stok/servis.ts";
 import { bosFiltre } from "../moduller/urun/filtre.ts";
 import { ilgiliUrunleriGetir } from "../moduller/urun/ilgili.ts";
 import { urunServisi } from "../moduller/urun/servis.ts";
+import { donusenBirimiSil } from "../moduller/urun/testler/donusen-birim.ts";
 import { vitrinStokSecenegi } from "../moduller/urun/vitrin.ts";
 import { baglantiyiKapat, type Veritabani } from "../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../veritabani/testler/deneme-sitesi.ts";
@@ -70,6 +71,7 @@ const hazirla = async () => {
 
   const varyantli = await urunAc();
   await urunler.secenekEkle(vt, yonetici(), varyantli, { ad: "Beden", degerler: ["S", "M"] });
+  await donusenBirimiSil(urunler, vt, varyantli);
   const okunan = await urunler.urunuOku(vt, varyantli);
   const [s, m] = okunan?.secenekler[0]?.degerler.map((d) => d.kimlik) ?? [];
   if (s === undefined || m === undefined) throw new Error("Değer yok.");

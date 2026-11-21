@@ -35,6 +35,7 @@ import { anaGorseller, birimGorseli, urunGalerileri } from "../galeri.ts";
 import { urunBirimleri, urunGalerisi } from "../model.ts";
 import { urunServisi } from "../servis.ts";
 import { oynaticiAdresi, videoAdresiniCoz } from "../video.ts";
+import { donusenBirimiSil } from "./donusen-birim.ts";
 
 // Görseller ve boyutları gerçekten yeniden kodlanır: yüklü kontrol hattında bir test birkaç saniye
 // sürebilir.
@@ -351,6 +352,7 @@ describe("galeri ve ana görsel", () => {
     await servis.galeriyiSirala(vt, yonetici(), urun, { ogeler: [kalan] });
     // Bir birleşim onu seçemez.
     await servis.secenekEkle(vt, yonetici(), urun, { ad: "Renk", degerler: ["Mavi"] });
+    await donusenBirimiSil(servis, vt, urun);
     const deger = (await servis.urunuOku(vt, urun))?.secenekler[0]?.degerler[0]?.kimlik ?? "";
     const birim = await servis.birlesimEkle(vt, yonetici(), urun, { degerler: [deger] });
     expect(await hatasi(servis.birlesimDegistir(vt, yonetici(), birim, { gorsel: giden }))).toEqual(
@@ -584,6 +586,7 @@ describe("birleşimin görseli", () => {
   const varyantliUrun = async (vt: Veritabani, klasor: string) => {
     const urun = await urunEkle(vt);
     await servis.secenekEkle(vt, yonetici(), urun, { ad: "Renk", degerler: ["Mavi", "Kırmızı"] });
+    await donusenBirimiSil(servis, vt, urun);
     const degerler = (await servis.urunuOku(vt, urun))?.secenekler[0]?.degerler ?? [];
     const ana = await gorselEkle(vt, klasor, urun, "Ana");
     const mavi = await gorselEkle(vt, klasor, urun, "Mavi");

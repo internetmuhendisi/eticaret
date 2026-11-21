@@ -23,6 +23,7 @@ import { siteninServisi } from "../../magaza-ayarlari/servis.ts";
 import { ilgiliUrunleriGetir } from "../../urun/ilgili.ts";
 import { urunBirimleri, urunler as urunTablosu } from "../../urun/model.ts";
 import { urunServisi } from "../../urun/servis.ts";
+import { donusenBirimiSil } from "../../urun/testler/donusen-birim.ts";
 import {
   type StokDurumAyarlari,
   siteninStokDurumlari,
@@ -489,6 +490,7 @@ describe("ürünün genel durumu (kart 0085)", () => {
       });
       const adlar = miktarlar.map((_, i) => `d${i}`);
       await urunSrv.secenekEkle(vt, yonetici(), urun, { ad: "Beden", degerler: adlar });
+      await donusenBirimiSil(urunSrv, vt, urun);
       const degerler = (await urunSrv.urunuOku(vt, urun))?.secenekler[0]?.degerler ?? [];
       const birimler: string[] = [];
       for (const [i, miktar] of miktarlar.entries()) {

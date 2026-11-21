@@ -16,6 +16,7 @@ import { fiyatGosterimServisi } from "../../../moduller/fiyat/gosterim.ts";
 import { siteninFiyatServisi } from "../../../moduller/fiyat/servis.ts";
 import { stokServisi } from "../../../moduller/stok/servis.ts";
 import { urunServisi } from "../../../moduller/urun/servis.ts";
+import { donusenBirimiSil } from "../../../moduller/urun/testler/donusen-birim.ts";
 import { siteninVergiServisi } from "../../../moduller/vergi/servis.ts";
 import { baglantiyiKapat } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
@@ -95,7 +96,9 @@ describe("sepetin vitrin verisi", () => {
       ad: "Renk",
       degerler: ["Gri", "Lacivert"],
     });
+    await donusenBirimiSil(urunler, h.vt, urun);
     await urunler.secenekEkle(h.vt, yonetici(), urun, { ad: "Beden", degerler: ["S", "M"] });
+    await donusenBirimiSil(urunler, h.vt, urun);
     const okunan = await urunler.urunuOku(h.vt, urun);
     const d = Object.fromEntries(
       (okunan?.secenekler ?? []).flatMap((s) => s.degerler.map((x) => [x.ad, x.kimlik] as const)),

@@ -54,7 +54,14 @@ const kayitlar = (vt: Veritabani, kimlik: string) =>
     .where(eq(degisiklikKayitlari.kayit_kimligi, kimlik))
     .orderBy(degisiklikKayitlari.zaman);
 
-// Beden (S, M) ve Renk (Beyaz, Siyah) seçenekli ürün; değerlerin kimlikleri adlarıyla.
+// Seçenek eklenince basit ürünün birimi ilk değerlerin birleşimi olur (karar 0163). Birleşimleri kendisi kuran
+// testler birleşimsiz üründen başlar: o birim silinir.
+const donusenBirimiSil = async (vt: Veritabani, urun: string) => {
+  const birimler = (await servis.urunuOku(vt, urun))?.birimler.filter((b) => !b.silindi) ?? [];
+  for (const birim of birimler) await servis.birlesimSil(vt, yonetici(), birim.kimlik);
+};
+
+// Beden (S, M) ve Renk (Beyaz, Siyah) seçenekli, birleşimsiz ürün; değerlerin kimlikleri adlarıyla.
 const varyantliUrun = async (vt: Veritabani, ad = "Tişört") => {
   const urun = await servis.urunEkle(vt, yonetici(), { ad, vergiSinifi: null });
   const beden = await servis.secenekEkle(vt, yonetici(), urun, {
@@ -65,6 +72,7 @@ const varyantliUrun = async (vt: Veritabani, ad = "Tişört") => {
     ad: "Renk",
     degerler: ["Beyaz", "Siyah"],
   });
+  await donusenBirimiSil(vt, urun);
   const okunan = await servis.urunuOku(vt, urun);
   const deger = Object.fromEntries(
     (okunan?.secenekler ?? []).flatMap((secenek) =>
@@ -110,7 +118,7 @@ describe("birleşimler", () => {
       ["Beden", ["S", "M"]],
       ["Renk", ["Beyaz", "Siyah"]],
     ]);
-    // Basit ürünün birimi ilk seçenekle silinmiş işaretlendi, birleşimler sırasıyla gelir.
+    // İlk seçenekle birleşime dönüşen birim silinmiş işaretlendi, birleşimler sırasıyla gelir.
     const canli = okunan?.birimler.filter((birim) => !birim.silindi) ?? [];
     expect(canli.map((birim) => [birim.kimlik, birim.stokKodu, birim.degerler])).toEqual(
       birlesimler.map(([beden, renk], i) => [
@@ -338,7 +346,7 @@ describe("birleşimler", () => {
 });
 
 describe("basit ve varyantlı ürün", () => {
-  it("basit ürüne ilk seçenek eklenince birimi silinir, fiyatı ve stoğu satırında kalır", async () => {
+  it("basit ürüne ilk seçenek eklenince birimi ilk birleşim olur, stok kodu, fiyat, stok ve geçmişi kalır", async () => {
     const vt = await siteAc();
     const urun = await servis.urunEkle(vt, yonetici(), {
       ad: "Önce basit",
@@ -352,34 +360,72 @@ describe("basit ve varyantlı ürün", () => {
       gorulenMiktar: 0,
       sebep: "sayim",
     });
-    const beden = await servis.secenekEkle(vt, yonetici(), urun, { ad: "Beden", degerler: ["S"] });
+    const beden = await servis.secenekEkle(vt, yonetici(), urun, {
+      ad: "Beden",
+      degerler: ["S", "M"],
+    });
     const okunan = await servis.urunuOku(vt, urun);
+    const [s, m] = okunan?.secenekler[0]?.degerler.map((d) => d.kimlik) ?? [];
     expect(okunan?.tur).toBe("varyantli");
-    expect(okunan?.birimler).toEqual([expect.objectContaining({ kimlik: basit, silindi: true })]);
+    // Aynı birim, silinmemiş; yalnız ilk değeri taşır (M'nin birleşimi kendiliğinden açılmaz, karar 0163).
+    expect(okunan?.birimler).toEqual([
+      expect.objectContaining({
+        kimlik: basit,
+        silindi: false,
+        stokKodu: "BASIT-1",
+        degerler: [s],
+      }),
+    ]);
     expect((await stok.stoklariOku(vt, [basit])).get(basit)?.miktar).toBe(7);
     expect((await fiyat.fiyatOku(vt, basit))?.satisFiyati).toBe(1000);
-    expect((await stokDurumlari(vt, [basit], ayarlar)).get(basit)?.satilabilir).toBe(false);
-    // Silinen birimin kodu serbesttir.
-    const s = okunan?.secenekler[0]?.degerler[0]?.kimlik ?? "";
-    await servis.birlesimEkle(vt, yonetici(), urun, { degerler: [s], stokKodu: "BASIT-1" });
-    expect((await kayitlar(vt, basit)).map((k) => [k.islem, k.eski_deger])).toContainEqual([
-      "urun-birimi.silindi",
-      { urun, stokKodu: "BASIT-1", sira: 0 },
-    ]);
+    expect((await stokDurumlari(vt, [basit], ayarlar)).get(basit)?.satilabilir).toBe(true);
+    // Aynı birleşim yeniden açılmaz; ötekisi açılır.
+    expect(
+      await hatasi(servis.birlesimEkle(vt, yonetici(), urun, { degerler: [s ?? ""] })),
+    ).toEqual({ kod: "cakisma", ayrinti: [{ alan: "degerler", kod: "birlesim-tekrar" }] });
+    await servis.birlesimEkle(vt, yonetici(), urun, { degerler: [m ?? ""] });
+    expect(await canliBirimSayisi(vt, urun)).toBe(2);
+    // Birimin değişikliği kayda değerleriyle girer; seçenek de kendi satırıyla.
+    expect(
+      (await kayitlar(vt, basit)).map((k) => [k.islem, k.eski_deger, k.yeni_deger]),
+    ).toContainEqual(["urun-birimi.degisti", { degerler: [] }, { degerler: [s] }]);
     expect((await kayitlar(vt, beden)).map((k) => [k.islem, k.yeni_deger])).toEqual([
-      ["urun-secenegi.eklendi", { urun, ad: "Beden", sira: 0, degerler: ["S"] }],
+      ["urun-secenegi.eklendi", { urun, ad: "Beden", sira: 0, degerler: ["S", "M"] }],
     ]);
   });
 
-  it("birleşimleri olan ürüne yeni seçenek eklenmez; birleşimsiz üründe eklenir", async () => {
+  it("birleşimleri olan ürüne yeni seçenek eklenince her birleşim ilk değerini alır, birimler ve stokları kalır", async () => {
     const vt = await siteAc();
     const { urun, deger } = await varyantliUrun(vt);
-    // İki seçenek de birleşim yokken eklendi; birleşim açılınca üçüncüsü eklenmez.
-    await servis.birlesimEkle(vt, yonetici(), urun, { degerler: [deger.S, deger.Beyaz] });
+    const sb = await servis.birlesimEkle(vt, yonetici(), urun, {
+      degerler: [deger.S, deger.Beyaz],
+      stokKodu: "SB",
+    });
+    const ms = await servis.birlesimEkle(vt, yonetici(), urun, {
+      degerler: [deger.M, deger.Siyah],
+    });
+    await stok.stokDuzelt(vt, yonetici(), sb, { yeniMiktar: 3, gorulenMiktar: 0, sebep: "sayim" });
+    await servis.secenekEkle(vt, yonetici(), urun, { ad: "Kumaş", degerler: ["Pamuk", "Keten"] });
+    const okunan = await servis.urunuOku(vt, urun);
+    const pamuk = okunan?.secenekler[2]?.degerler[0]?.kimlik ?? "";
+    expect(okunan?.secenekler.map((s) => s.ad)).toEqual(["Beden", "Renk", "Kumaş"]);
+    const canli = okunan?.birimler.filter((b) => !b.silindi) ?? [];
+    expect(canli.map((b) => [b.kimlik, b.degerler])).toEqual([
+      [sb, [deger.S, deger.Beyaz, pamuk]],
+      [ms, [deger.M, deger.Siyah, pamuk]],
+    ]);
+    expect(canli[0]?.stokKodu).toBe("SB");
+    expect((await stok.stoklariOku(vt, [sb])).get(sb)?.miktar).toBe(3);
+    // Yeni anahtar veritabanında da tekildir: aynı birleşim yeniden açılmaz.
     expect(
-      await hatasi(servis.secenekEkle(vt, yonetici(), urun, { ad: "Kumaş", degerler: ["Pamuk"] })),
-    ).toEqual({ kod: "is-kurali", ayrinti: [{ alan: "secenek", kod: "secenek-eklenemez" }] });
-    expect((await servis.urunuOku(vt, urun))?.secenekler).toHaveLength(2);
+      await hatasi(
+        servis.birlesimEkle(vt, yonetici(), urun, { degerler: [deger.S, deger.Beyaz, pamuk] }),
+      ),
+    ).toEqual({ kod: "cakisma", ayrinti: [{ alan: "degerler", kod: "birlesim-tekrar" }] });
+    // Eski anahtarla (üç seçenekte iki değer) birleşim açılmaz.
+    expect(
+      await hatasi(servis.birlesimEkle(vt, yonetici(), urun, { degerler: [deger.M, deger.Beyaz] })),
+    ).toEqual({ kod: "dogrulama", ayrinti: [{ alan: "degerler", kod: "birlesim-eksik" }] });
   });
 
   it("son seçenek silinince ürün yeniden basit olur ve boş birimle satılabilir", async () => {
@@ -517,8 +563,11 @@ describe("silme", () => {
       ad: "Renk",
       degerler: ["Beyaz"],
     });
-    const beyaz = (await servis.urunuOku(vt, urun))?.secenekler[0]?.degerler[0]?.kimlik ?? "";
-    const birim = await servis.birlesimEkle(vt, yonetici(), urun, { degerler: [beyaz] });
+    const okunan = await servis.urunuOku(vt, urun);
+    const beyaz = okunan?.secenekler[0]?.degerler[0]?.kimlik ?? "";
+    // Basit birim seçenek eklenince Beyaz birleşimi oldu (karar 0163).
+    const birim = okunan?.birimler.find((b) => !b.silindi)?.kimlik ?? "";
+    expect(okunan?.birimler.find((b) => b.kimlik === birim)?.degerler).toEqual([beyaz]);
     expect(await hatasi(servis.degerSil(vt, yonetici(), beyaz))).toEqual({
       kod: "is-kurali",
       ayrinti: [{ alan: "deger", kod: "son-deger" }],
@@ -675,6 +724,7 @@ describe("sınırlar", () => {
       ad: "B",
       degerler: Array.from({ length: 10 }, (_, i) => `b${i}`),
     });
+    await donusenBirimiSil(vt, urun);
     const [a, b] = (await servis.urunuOku(vt, urun))?.secenekler ?? [];
     const ciftler = (a?.degerler ?? []).flatMap((x) =>
       (b?.degerler ?? []).map((y) => [x.kimlik, y.kimlik]),
@@ -742,7 +792,7 @@ describe("büyük harfli kimlik", () => {
     const { urun, deger } = await varyantliUrun(vt);
     const okunan = await servis.urunuOku(vt, urun.toUpperCase());
     expect(okunan?.secenekler.map((s) => s.ad)).toEqual(["Beden", "Renk"]);
-    // Ürün zaten varyantlıdır: üçüncü seçenek eklenir, basit birim yeniden açılmaz.
+    // Ürün zaten varyantlıdır ve birleşimi yoktur: üçüncü seçenek eklenir, basit birim yeniden açılmaz.
     const kolKimligi = await servis.secenekEkle(vt, yonetici(), urun.toUpperCase(), {
       ad: "Kol",
       degerler: ["Uzun"],

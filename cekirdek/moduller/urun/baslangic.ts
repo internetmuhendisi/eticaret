@@ -48,7 +48,7 @@ import { type KatalogBaslangici, katalogGorselAdlari } from "./baslangic-semasi.
 import { urunKilidiAl } from "./kilit.ts";
 import { urunler } from "./model.ts";
 import { siteninUrunServisi } from "./servis.ts";
-import { secenekleriOku } from "./varyant.ts";
+import { birlesimAnahtari, secenekleriOku } from "./varyant.ts";
 
 export const baslangicKatalogYazari = sistemIslemi("baslangic-katalog");
 
@@ -276,11 +276,19 @@ const katalogIsleminiYaz = (
         await birimiDoldur(birim, fiyat, miktar);
         continue;
       }
+      // Basit ürünün birimi seçenekler eklenince ilk değerlerin birleşimi olur (karar 0163): katalogda o birleşim varsa
+      // alanlarını alır, yoksa silinir.
+      const ilkBirim = (await urunServisi.urunuOku(islem, kimlik))?.birimler[0]?.kimlik;
+      if (ilkBirim === undefined) throw new Error(`${urun.adresAdi} ürününün birimi okunamadı.`);
       for (const secenek of secenekler) await urunServisi.secenekEkle(islem, kim, kimlik, secenek);
       // Seçeneklerin sırasıyla, değer adından kimliğine.
       const degerKimlikleri = (
         (await secenekleriOku(islem, [kimlik], { silinmisler: false })).get(kimlik) ?? []
       ).map((secenek) => new Map(secenek.degerler.map((d) => [d.ad, d.kimlik])));
+      const ilkAnahtar = birlesimAnahtari(
+        degerKimlikleri.map((degerler) => degerler.values().next().value ?? ""),
+      );
+      let ilkBirimKullanildi = false;
       for (const {
         degerler: adlar,
         gorsel,
@@ -288,17 +296,26 @@ const katalogIsleminiYaz = (
         stok: birimStogu,
         ...birimAlanlari
       } of birlesimler) {
-        const birim = await urunServisi.birlesimEkle(islem, kim, kimlik, {
-          ...birimAlanlari,
-          degerler: adlar.map((ad, sira) => {
-            const deger = degerKimlikleri[sira]?.get(ad);
-            if (deger === undefined) throw new Error(`${urun.adresAdi} ürününde ${ad} değeri yok.`);
-            return deger;
-          }),
-          ...(gorsel === undefined ? {} : { gorsel: kimligi(galeriOgeleri, gorsel) }),
+        const degerler = adlar.map((ad, sira) => {
+          const deger = degerKimlikleri[sira]?.get(ad);
+          if (deger === undefined) throw new Error(`${urun.adresAdi} ürününde ${ad} değeri yok.`);
+          return deger;
         });
+        const alanlar = {
+          ...birimAlanlari,
+          ...(gorsel === undefined ? {} : { gorsel: kimligi(galeriOgeleri, gorsel) }),
+        };
+        let birim: string;
+        if (!ilkBirimKullanildi && birlesimAnahtari(degerler) === ilkAnahtar) {
+          await urunServisi.birlesimDegistir(islem, kim, ilkBirim, alanlar);
+          birim = ilkBirim;
+          ilkBirimKullanildi = true;
+        } else {
+          birim = await urunServisi.birlesimEkle(islem, kim, kimlik, { ...alanlar, degerler });
+        }
         await birimiDoldur(birim, birimFiyati, birimStogu);
       }
+      if (!ilkBirimKullanildi) await urunServisi.birlesimSil(islem, kim, ilkBirim);
     }
     // Örnek yorumlar (kart 0139): ürünler yazıldıktan sonra, katalogdaki sırayla (sonra gelen daha yeni).
     const yorumYazari = yorumServisi(site);

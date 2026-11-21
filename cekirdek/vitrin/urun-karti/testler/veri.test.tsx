@@ -27,6 +27,7 @@ import { siteninServisi } from "../../../moduller/magaza-ayarlari/servis.ts";
 import { markaServisi } from "../../../moduller/marka/servis.ts";
 import { stokServisi } from "../../../moduller/stok/servis.ts";
 import { urunServisi } from "../../../moduller/urun/servis.ts";
+import { donusenBirimiSil } from "../../../moduller/urun/testler/donusen-birim.ts";
 import { urunGorseli, urunGorseliAdresi } from "../../../moduller/urun/urun-gorseli.ts";
 import { siteninVergiServisi } from "../../../moduller/vergi/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../../veritabani/baglanti.ts";
@@ -175,6 +176,7 @@ describe("kartın verisi", () => {
       durum: "yayinda",
     });
     await urunler.secenekEkle(h.vt, yonetici(), urun, { ad: "Beden", degerler: ["S", "M"] });
+    await donusenBirimiSil(urunler, h.vt, urun);
     const degerler = (await urunler.urunuOku(h.vt, urun))?.secenekler[0]?.degerler ?? [];
     const birimler = [];
     for (const deger of degerler) {

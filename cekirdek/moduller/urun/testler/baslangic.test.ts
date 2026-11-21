@@ -599,7 +599,7 @@ describe("özellikler ve varyantlar (kart 0100)", () => {
     expect(ketenli.urunler).toEqual([ikinci?.kimlik]);
   });
 
-  it("seçenekli ürünün her birleşimi kendi stok kodu, fiyatı ve stoğuyla; basit birimi kalmaz", async () => {
+  it("seçenekli ürünün her birleşimi kendi stok kodu, fiyatı ve stoğuyla; basit birim ilk birleşim olur", async () => {
     const vt = await siteAc();
     const site = ozellikliVaryantli();
     expect(await katalogBaslangiciniKur(vt, site)).toBe(true);
@@ -619,8 +619,8 @@ describe("özellikler ve varyantlar (kart 0100)", () => {
       ["VRY-2", ["S", "Mavi"]],
       ["VRY-3", ["M", "Mavi"]],
     ]);
-    // Ürün eklenirken açılan basit birim ilk seçenekle silinmiştir (panelde de öyle).
-    expect(urun.birimler.filter((b) => b.silindi && b.degerler.length === 0)).toHaveLength(1);
+    // Ürün eklenirken açılan basit birim seçeneklerle ilk değerlerin birleşimi oldu (karar 0163), silinmiş birim yok.
+    expect(urun.birimler.filter((b) => b.silindi)).toHaveLength(0);
     const kimlikler = canli.map((b) => b.kimlik);
     const fiyatlar = await siteninFiyatServisi(site).gecerliFiyatlar(vt, kimlikler, new Date());
     expect(kimlikler.map((k) => fiyatlar.get(k)?.tutar)).toEqual([1000, 1001, 1002, 1003]);
@@ -631,7 +631,9 @@ describe("özellikler ve varyantlar (kart 0100)", () => {
       .from(degisiklikKayitlari)
       .where(eq(degisiklikKayitlari.kim_adi, "baslangic-katalog"));
     const sayisi = (islem: string) => kayitlar.filter((k) => k.islem === islem).length;
-    expect(sayisi("urun-birimi.eklendi")).toBe(4);
+    // İlk birleşim basit birimden döner (iki seçenekte iki değişiklik ve stok kodu), üçü yeni açılır.
+    expect(sayisi("urun-birimi.eklendi")).toBe(3);
+    expect(sayisi("urun-birimi.degisti")).toBe(3);
     expect(sayisi("urun-secenegi.eklendi")).toBe(2);
     expect(sayisi("ozellik.eklendi")).toBe(4);
   });

@@ -30,6 +30,7 @@ import { urunKilidiAl } from "../../moduller/urun/kilit.ts";
 import { urunler as urunTablosu } from "../../moduller/urun/model.ts";
 import type { UrunGirdisi } from "../../moduller/urun/semalar.ts";
 import { urunServisi } from "../../moduller/urun/servis.ts";
+import { donusenBirimiSil } from "../../moduller/urun/testler/donusen-birim.ts";
 import { secenekleriOku } from "../../moduller/urun/varyant.ts";
 import { siteninVergiServisi } from "../../moduller/vergi/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
@@ -112,10 +113,12 @@ const hazirla = async () => {
       ad: "Beden",
       degerler: [...new Set(birlesimler.map(([beden]) => beden))],
     });
+    await donusenBirimiSil(urunler, vt, urun);
     await urunler.secenekEkle(vt, yonetici(), urun, {
       ad: "Renk",
       degerler: [...new Set(birlesimler.map(([, renk]) => renk))],
     });
+    await donusenBirimiSil(urunler, vt, urun);
     const [beden, renk] =
       (await secenekleriOku(vt, [urun], { silinmisler: false })).get(urun) ?? [];
     const degeri = (secenek: typeof beden, ad: string) =>

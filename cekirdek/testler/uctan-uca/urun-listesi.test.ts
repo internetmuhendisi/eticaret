@@ -17,6 +17,7 @@ import { kategoriEkle, kategoriSil } from "../../moduller/kategori/servis";
 import { ozellikServisi } from "../../moduller/ozellik/servis";
 import { stokServisi } from "../../moduller/stok/servis";
 import { siteninUrunServisi } from "../../moduller/urun/servis";
+import { donusenBirimiSil } from "../../moduller/urun/testler/donusen-birim";
 import { secenekleriOku } from "../../moduller/urun/varyant";
 import { baglan, type Veritabani, veritabaniAdresi } from "../../veritabani/baglanti";
 import { kayitAdresleri } from "../../vitrin/adresler";
@@ -129,6 +130,7 @@ const hazirla = async (): Promise<Hazirlik> => {
         ad: "Beden",
         degerler: bedenler.map(([b]) => b),
       });
+      await donusenBirimiSil(urunler, vt, urun, yapan);
       const [secenek] = (await secenekleriOku(vt, [urun], { silinmisler: false })).get(urun) ?? [];
       for (const [beden, satis, miktar] of bedenler) {
         const deger = secenek?.degerler.find((d) => d.ad === beden)?.kimlik ?? "";

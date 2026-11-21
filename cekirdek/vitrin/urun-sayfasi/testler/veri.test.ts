@@ -30,6 +30,7 @@ import { ozellikServisi } from "../../../moduller/ozellik/servis.ts";
 import { siteninStokAyarlari, stokDurumlari } from "../../../moduller/stok/durum.ts";
 import { stokServisi } from "../../../moduller/stok/servis.ts";
 import { urunServisi } from "../../../moduller/urun/servis.ts";
+import { donusenBirimiSil } from "../../../moduller/urun/testler/donusen-birim.ts";
 import { urunGorseliAdresi } from "../../../moduller/urun/urun-gorseli.ts";
 import { baglantiyiKapat } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
@@ -123,6 +124,7 @@ const varyantliUrun = async (h: Awaited<ReturnType<typeof hazirla>>) => {
   const siyahGorsel = await h.gorselEkle(urun, "Siyah tişört", 20);
   await urunler.secenekEkle(h.vt, yonetici(), urun, { ad: "Renk", degerler: ["Beyaz", "Siyah"] });
   await urunler.secenekEkle(h.vt, yonetici(), urun, { ad: "Beden", degerler: ["S", "M", "L"] });
+  await donusenBirimiSil(urunler, h.vt, urun);
   const okunan = await urunler.urunuOku(h.vt, urun);
   const d = Object.fromEntries(
     (okunan?.secenekler ?? []).flatMap((s) => s.degerler.map((x) => [x.ad, x.kimlik] as const)),

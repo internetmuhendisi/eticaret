@@ -24,6 +24,7 @@ import { stokServisi } from "../../moduller/stok/servis.ts";
 import { urunListesi } from "../../moduller/urun/liste.ts";
 import type { UrunGirdisi } from "../../moduller/urun/semalar.ts";
 import { urunServisi } from "../../moduller/urun/servis.ts";
+import { donusenBirimiSil } from "../../moduller/urun/testler/donusen-birim.ts";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
 import { bolumBosluklari } from "../bolum-kutuphanesi/gorunumler.tsx";
@@ -281,6 +282,7 @@ describe("indirimdekiler ve fırsatlar", () => {
       durum: "yayinda",
     });
     await urunler.secenekEkle(h.vt, yonetici(), urun, { ad: "Beden", degerler: ["S", "M", "L"] });
+    await donusenBirimiSil(urunler, h.vt, urun);
     const degerler = (await urunler.urunuOku(h.vt, urun))?.secenekler[0]?.degerler ?? [];
     const birimler: string[] = [];
     for (const deger of degerler) {
@@ -328,6 +330,7 @@ describe("indirimdekiler ve fırsatlar", () => {
         durum: "yayinda",
       });
       await urunler.secenekEkle(h.vt, yonetici(), urun, { ad: "Beden", degerler: ["S", "M"] });
+      await donusenBirimiSil(urunler, h.vt, urun);
       const degerler = (await urunler.urunuOku(h.vt, urun))?.secenekler[0]?.degerler ?? [];
       const birimler: string[] = [];
       for (const deger of degerler) {

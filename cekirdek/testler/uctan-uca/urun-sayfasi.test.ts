@@ -24,6 +24,7 @@ import { fiyatGosterimServisi } from "../../moduller/fiyat/gosterim";
 import { siteninFiyatServisi } from "../../moduller/fiyat/servis";
 import { stokServisi } from "../../moduller/stok/servis";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
+import { donusenBirimiSil } from "../../moduller/urun/testler/donusen-birim";
 import { baglan, type Veritabani, veritabaniAdresi } from "../../veritabani/baglanti";
 import { kayitAdresleri } from "../../vitrin/adresler";
 import { basilmayanNoktalar } from "./basilan-alan";
@@ -104,6 +105,7 @@ const hazirla = async (): Promise<Hazirlik> => {
     });
     await servis.secenekEkle(vt, yapan, urun, { ad: "Renk", degerler: ["Açık", "Koyu"] });
     await servis.secenekEkle(vt, yapan, urun, { ad: "Beden", degerler: ["S", "M"] });
+    await donusenBirimiSil(servis, vt, urun, yapan);
     const okunan = await servis.urunuOku(vt, urun);
     const d = Object.fromEntries(
       (okunan?.secenekler ?? []).flatMap((s) => s.degerler.map((x) => [x.ad, x.kimlik] as const)),

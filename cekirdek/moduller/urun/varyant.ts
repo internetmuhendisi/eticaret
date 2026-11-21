@@ -8,10 +8,13 @@
 //   ölçüleri olur; fiyat ve stok basit üründeki gibi birime bağlanır, fiyat ve stok servisi değişmez.
 //   Birleşim her silinmemiş seçenekten tam bir değerdir; anahtarı (birlesim) değer kimliklerinin
 //   sıralı hâlidir ve ürün başına silinmemişler arasında tekildir. Birleşim sonradan değişmez.
-// - Basit ürünün tek birimi boş anahtar taşır. Basit ürüne ilk seçenek eklenince o birim silinmiş
-//   işaretlenir (kullanıcı kararı), fiyat ve stok geçmişi kalır. Son seçenek silinince ürün yeniden
-//   basit olur ve boş bir birim açılır.
-// - Birleşimleri olan ürüne yeni seçenek eklenmez: var olan birleşimlerin o seçenekte değeri olmaz.
+// - Basit ürünün tek birimi boş anahtar taşır. Ürüne yeni seçenek eklenince var olan her birim yeni
+//   seçeneğin ilk değerini alır (karar 0163, kullanıcı kararı; karar 0071'in "basit birim silinir" ve
+//   "birleşimi olan ürüne seçenek eklenmez" kuralının yerine): basit ürünün birimi ilk birleşim olur,
+//   birleşimler yeni seçenekte ilk değeri taşır; stok kodu, fiyat, stok ve geçmişleri birimde kalır.
+//   Son seçenek silinince ürün yeniden basit olur ve boş bir birim açılır.
+// - Panelin seçenekler bölümü son hâli varyantlariKaydet ile tek işlemde yazar (kart 0264): birleşimler
+//   bütün değerlerin birleşimidir, eksik olan kendiliğinden açılır.
 // - Silme işaretle yapılır. Değeri (ya da seçeneği) silinen birleşimler de silinmiş işaretlenir,
 //   satırları kalır: geçmiş siparişler birimine bağlı kalır.
 // - Her yazım değişiklik kaydına aynı işlemde girer; değerle birlikte silinen her birleşim kendi
@@ -31,6 +34,7 @@ import {
   girdiyiDogrula,
   isKurali,
   kayitDegeri,
+  type Sorun,
   stokKoduKullaniliyor,
 } from "./dogrulama.ts";
 import { galeriGorseliMi } from "./galeri.ts";
@@ -54,6 +58,9 @@ import {
   type SecenekGirdisi,
   secenekDegisikligi,
   secenekGirdisi,
+  type VaryantKaydi,
+  type VaryantKaydiCikti,
+  varyantKaydi,
 } from "./semalar.ts";
 
 export type SecenekDegeri = { kimlik: string; ad: string; sira: number; silindi: boolean };
@@ -271,6 +278,28 @@ const birimleriSil = async (
   }
 };
 
+// Bilinen hatanın alanlarını girdideki yerin altına alır: işlem kendi alanını ("ad", "stokKodu") verir, panel
+// girdinin yolunu bekler ("secenekler.0.ad", "birlesimler.3.stokKodu").
+const yolla = async <T>(onEk: string, is: () => Promise<T>): Promise<T> => {
+  try {
+    return await is();
+  } catch (hata) {
+    if (hata instanceof BilinenHata && Array.isArray(hata.ayrinti)) {
+      throw new BilinenHata(
+        hata.kod,
+        hata.ayrinti.map((sorun: Sorun) => ({
+          ...sorun,
+          alan: sorun.alan === "" ? onEk : `${onEk}.${sorun.alan}`,
+        })),
+        hata.basliklar,
+      );
+    }
+    throw hata;
+  }
+};
+
+type VaryantBirlesimi = VaryantKaydiCikti["birlesimler"][number];
+
 // Ürünün silinmemiş birleşimlerini (boş olmayan anahtar) kaydıyla siler: ürün silinirken (servis.ts)
 // her birleşim, değer ve seçenek silmedeki gibi kendi satırıyla kayda girer.
 export const urununBirlesimleriniSil = async (
@@ -444,7 +473,8 @@ export const varyantIslemleri = (yaz: Yaz) => {
     return yazilan;
   };
 
-  // Yeni seçenek ve değerleri. Basit ürüne ilk seçenek eklenince basit birim silinmiş işaretlenir.
+  // Yeni seçenek ve değerleri. Var olan birimler (basit ürünün birimi ya da birleşimler) yeni seçeneğin
+  // ilk değerini alır (karar 0163).
   const secenekEkle = async (
     vt: Veritabani | VeritabaniIslemi,
     kim: DegisikligiYapan,
@@ -459,19 +489,9 @@ export const varyantIslemleri = (yaz: Yaz) => {
         (await secenekleriOku(islem, [urun], { silinmisler: false })).get(urun) ?? [];
       if (secenekler.length >= varyantSinirlari.secenek)
         throw isKurali("secenek", "secenek-siniri");
-      const birimler = await canliBirimler(islem, urun);
-      if (birimler.some((birim) => birim.birlesim !== basitBirimAnahtari)) {
-        throw isKurali("secenek", "secenek-eklenemez");
-      }
       if (await secenekAdiKullaniliyor(islem, urun, girdi.ad)) {
         throw cakisma("ad", "secenek-ad-tekrar");
       }
-      await birimleriSil(
-        islem,
-        kim,
-        urun,
-        birimler.filter((birim) => birim.birlesim === basitBirimAnahtari),
-      );
       const kimlik = randomUUID();
       const sira =
         girdi.sira ??
@@ -497,6 +517,35 @@ export const varyantIslemleri = (yaz: Yaz) => {
           ad: deger.ad,
           sira: deger.sira,
         });
+      }
+      // Var olan birimler yeni seçeneğin ilk değerini alır; anahtar değer kimliklerinden yeniden kurulur. Birimler
+      // farklı anahtarlıydı, aynı değeri ekleyince de farklı kalır: birleşim indeksi çakışmaz.
+      const ilk = degerler[0];
+      if (ilk === undefined) throw new Error("Seçeneğin değeri yazılmadı.");
+      const birimler = await canliBirimler(islem, urun);
+      const eskiDegerler = await birimlerinDegerleri(
+        islem,
+        birimler.map((birim) => birim.kimlik),
+      );
+      for (const birim of birimler) {
+        const eski = (eskiDegerler.get(birim.kimlik) ?? []).toSorted();
+        const yeni = [...eski, ilk.kimlik].toSorted();
+        await islem
+          .update(urunBirimleri)
+          .set({ birlesim: birlesimAnahtari(yeni), guncellenme_zamani: sql`now()` })
+          .where(eq(urunBirimleri.kimlik, birim.kimlik));
+        await islem
+          .insert(urunBirimiDegerleri)
+          .values({ birim_kimligi: birim.kimlik, deger_kimligi: ilk.kimlik });
+        await kaydet(
+          islem,
+          kim,
+          "urun-birimi",
+          "degisti",
+          birim.kimlik,
+          { degerler: eski },
+          { degerler: yeni },
+        );
       }
       return kimlik;
     });
@@ -840,6 +889,142 @@ export const varyantIslemleri = (yaz: Yaz) => {
     });
   };
 
+  // Panelin seçenekler bölümü (kart 0264, karar 0163): seçeneklerin, değerlerin ve birleşim alanlarının son hâli tek
+  // işlemde, yukarıdaki işlemlerle (kayıt ve kurallar onlardadır). Sıra:
+  // 1. Girdiden çıkan seçenekler silinir (birleşimleriyle); kalan seçeneklerde çıkan değerler silinir. Bir seçeneğin
+  //    bütün değerleri değişiyorsa sonuncusu yeni değerler eklendikten sonra silinir (son değer silinemez).
+  // 2. Kalan seçenek ve değerlerin adı ve sırası (girdideki yeri) yazılır, yeni değerler eklenir.
+  // 3. Yeni seçenekler eklenir: var olan birimler ilk değerini alır (secenekEkle).
+  // 4. Bütün değerlerin birleşimleri sırasıyla kurulur: var olan birleşimin alanları değişir, olmayan açılır.
+  // Kayıtlı seçenek ya da değer silmek birleşim silmektir, silebilir ister (urun.sil; uç denetler). Hata girdideki
+  // yerin yoluyla döner (secenekler.0.degerler.2, birlesimler.3.stokKodu). Ekranın gördüğü seçenek ya da değer
+  // bulunamazsa (bu arada silinmiş, başka ürünün) hiçbir şey yazılmaz.
+  const varyantlariKaydet = async (
+    vt: Veritabani | VeritabaniIslemi,
+    kim: DegisikligiYapan,
+    urunGirdisi: string,
+    ham: VaryantKaydi,
+    { silebilir }: { silebilir: boolean },
+  ): Promise<void> => {
+    const urun = kimligiDuzelt(urunGirdisi);
+    const girdi = girdiyiDogrula(varyantKaydi.safeParse(ham));
+    const degerSayilari = girdi.secenekler.map((secenek) => secenek.degerler.length);
+    const birlesimSayisi =
+      degerSayilari.length === 0 ? 0 : degerSayilari.reduce((carpim, sayi) => carpim * sayi, 1);
+    if (birlesimSayisi > varyantSinirlari.birlesim) {
+      throw isKurali("secenekler", "birlesim-siniri");
+    }
+    // Girdideki birleşim: her seçenekte bir değerin sırası, birleşimler arasında tekrarsız.
+    const birlesimAlanlari = new Map<string, { sira: number; alanlar: VaryantBirlesimi }>();
+    for (const [sira, birlesim] of girdi.birlesimler.entries()) {
+      const anahtar = birlesim.degerler.join(",");
+      const gecerli =
+        birlesim.degerler.length === degerSayilari.length &&
+        birlesim.degerler.every((deger, i) => deger < (degerSayilari[i] ?? 0));
+      if (!gecerli || birlesimAlanlari.has(anahtar)) {
+        throw dogrulamaHatasi([{ alan: `birlesimler.${sira}.degerler`, kod: "birlesim-gecersiz" }]);
+      }
+      birlesimAlanlari.set(anahtar, { sira, alanlar: birlesim });
+    }
+    await yaz(vt, async (islem) => {
+      await urunuDenetle(islem, urun);
+      const mevcut = (await secenekleriOku(islem, [urun], { silinmisler: false })).get(urun) ?? [];
+      const degisti = (alan: string) =>
+        new BilinenHata("cakisma", [{ alan, kod: "varyant-degisti" }]);
+      // Girdideki kimlikler ürünün silinmemiş seçeneklerinde ve değerlerinde, birer kez.
+      const gorulenSecenek = new Set<string>();
+      const gorulenDeger = new Set<string>();
+      const hedef = girdi.secenekler.map((secenek, i) => {
+        const kimlik = secenek.kimlik === undefined ? undefined : kimligiDuzelt(secenek.kimlik);
+        const eslesen = mevcut.find((m) => m.kimlik === kimlik);
+        if (kimlik !== undefined && (eslesen === undefined || gorulenSecenek.has(kimlik))) {
+          throw degisti(`secenekler.${i}`);
+        }
+        if (kimlik !== undefined) gorulenSecenek.add(kimlik);
+        const degerler = secenek.degerler.map((deger, j) => {
+          const degerKimligi = deger.kimlik === undefined ? undefined : kimligiDuzelt(deger.kimlik);
+          if (
+            degerKimligi !== undefined &&
+            (eslesen === undefined ||
+              !eslesen.degerler.some((m) => m.kimlik === degerKimligi) ||
+              gorulenDeger.has(degerKimligi))
+          ) {
+            throw degisti(`secenekler.${i}.degerler.${j}`);
+          }
+          if (degerKimligi !== undefined) gorulenDeger.add(degerKimligi);
+          return { kimlik: degerKimligi, ad: deger.ad };
+        });
+        return { kimlik, ad: secenek.ad, eslesen, degerler };
+      });
+      const silinecekSecenekler = mevcut.filter((m) => !gorulenSecenek.has(m.kimlik));
+      const silinecekDegerler = hedef.flatMap(({ eslesen }) =>
+        eslesen === undefined ? [] : eslesen.degerler.filter((m) => !gorulenDeger.has(m.kimlik)),
+      );
+      if ((silinecekSecenekler.length > 0 || silinecekDegerler.length > 0) && !silebilir) {
+        throw new BilinenHata("yetki", [{ alan: "secenekler", kod: "varyant-silme-yetkisi" }]);
+      }
+
+      for (const secenek of silinecekSecenekler) await secenekSil(islem, kim, secenek.kimlik);
+      for (const [i, { eslesen, ad, degerler }] of hedef.entries()) {
+        if (eslesen === undefined) continue;
+        const cikan = eslesen.degerler.filter((m) => !gorulenDeger.has(m.kimlik));
+        // Bütün değerler çıkıyorsa sonuncusu yenilerden sonra silinir.
+        const sonra = cikan.length === eslesen.degerler.length ? cikan.slice(-1) : [];
+        for (const deger of cikan.filter((d) => !sonra.includes(d))) {
+          await degerSil(islem, kim, deger.kimlik);
+        }
+        await yolla(`secenekler.${i}`, () =>
+          secenekDegistir(islem, kim, eslesen.kimlik, { ad, sira: i }),
+        );
+        for (const [j, deger] of degerler.entries()) {
+          await yolla(`secenekler.${i}.degerler.${j}`, async () => {
+            if (deger.kimlik === undefined) {
+              await degerEkle(islem, kim, eslesen.kimlik, { ad: deger.ad, sira: j });
+            } else {
+              await degerDegistir(islem, kim, deger.kimlik, { ad: deger.ad, sira: j });
+            }
+          });
+        }
+        for (const deger of sonra) await degerSil(islem, kim, deger.kimlik);
+      }
+      for (const [i, { eslesen, ad, degerler }] of hedef.entries()) {
+        if (eslesen !== undefined) continue;
+        await yolla(`secenekler.${i}`, () =>
+          secenekEkle(islem, kim, urun, { ad, sira: i, degerler: degerler.map((d) => d.ad) }),
+        );
+      }
+      if (hedef.length === 0) return;
+
+      // Seçenekler ve değerler girdideki sırasıyla (sıra girdideki yerdir).
+      const secenekler =
+        (await secenekleriOku(islem, [urun], { silinmisler: false })).get(urun) ?? [];
+      const birimler = await canliBirimler(islem, urun);
+      const anahtarla = new Map(birimler.map((birim) => [birim.birlesim, birim.kimlik]));
+      const sirali = secenekler.map((secenek) => secenek.degerler.map((deger) => deger.kimlik));
+      const birlesimler = sirali.reduce<number[][]>(
+        (onceki, degerler) => onceki.flatMap((yol) => degerler.map((_, j) => [...yol, j])),
+        [[]],
+      );
+      for (const [sira, yol] of birlesimler.entries()) {
+        const degerKimlikleri = yol.map((j, i) => sirali[i]?.[j] ?? "");
+        const verilen = birlesimAlanlari.get(yol.join(","));
+        const { degerler: _degerler, ...alanlar } = verilen?.alanlar ?? { degerler: [] };
+        const birim = anahtarla.get(birlesimAnahtari(degerKimlikleri));
+        await yolla(`birlesimler.${verilen?.sira ?? sira}`, async () => {
+          if (birim !== undefined) {
+            await birlesimDegistir(islem, kim, birim, { ...alanlar, sira });
+            return;
+          }
+          await birlesimEkle(islem, kim, urun, {
+            degerler: degerKimlikleri,
+            sira,
+            ...Object.fromEntries(Object.entries(alanlar).filter(([, deger]) => deger !== null)),
+          });
+        });
+      }
+    });
+  };
+
   return {
     secenekEkle,
     secenekDegistir,
@@ -850,6 +1035,7 @@ export const varyantIslemleri = (yaz: Yaz) => {
     birlesimEkle,
     birlesimDegistir,
     birlesimSil,
+    varyantlariKaydet,
   };
 };
 

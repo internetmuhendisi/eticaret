@@ -23,6 +23,7 @@ import { siteninFiyatServisi } from "../../../moduller/fiyat/servis.ts";
 import { siteninServisi } from "../../../moduller/magaza-ayarlari/servis.ts";
 import { stokServisi } from "../../../moduller/stok/servis.ts";
 import { urunServisi } from "../../../moduller/urun/servis.ts";
+import { donusenBirimiSil } from "../../../moduller/urun/testler/donusen-birim.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { secimdenSorgu } from "../../../vitrin/urun-sayfasi/secim.ts";
@@ -191,6 +192,7 @@ describe("talep", () => {
       durum: "yayinda",
     });
     await urunSrv.secenekEkle(vt, yonetici(), urun, { ad: "Beden", degerler: ["S", "M"] });
+    await donusenBirimiSil(urunSrv, vt, urun);
     const degerler = (await urunSrv.urunuOku(vt, urun))?.secenekler[0]?.degerler ?? [];
     const [s, m] = degerler.map(({ kimlik }) => kimlik);
     if (s === undefined || m === undefined) throw new Error("Değer yok.");
@@ -446,7 +448,9 @@ describe("gönderim", () => {
       durum: "yayinda",
     });
     await urunSrv.secenekEkle(vt, yonetici(), urun, { ad: "Renk", degerler: ["Beyaz", "Siyah"] });
+    await donusenBirimiSil(urunSrv, vt, urun);
     await urunSrv.secenekEkle(vt, yonetici(), urun, { ad: "Beden", degerler: ["S", "M"] });
+    await donusenBirimiSil(urunSrv, vt, urun);
     const okunanUrun = await urunSrv.urunuOku(vt, urun);
     const deger = Object.fromEntries(
       (okunanUrun?.secenekler ?? []).flatMap((secenek) =>

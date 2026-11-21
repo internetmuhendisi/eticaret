@@ -34,6 +34,7 @@ import {
 import type { UrunGirdisi } from "../semalar.ts";
 import { urunServisi } from "../servis.ts";
 import { secenekleriOku } from "../varyant.ts";
+import { donusenBirimiSil } from "./donusen-birim.ts";
 
 vi.setConfig({ testTimeout: 60_000 });
 
@@ -159,6 +160,7 @@ describe("süzgeçler", () => {
     // Varyantlı: bir birleşim tükendi, öteki eşikte.
     const { urun: varyantli } = await urunAc(vt, "Varyantlı", {}, { satis: null, miktar: 0 });
     await urunSrv.secenekEkle(vt, kim(), varyantli, { ad: "Beden", degerler: ["S", "M"] });
+    await donusenBirimiSil(urunSrv, vt, varyantli);
     const [beden] =
       (await secenekleriOku(vt, [varyantli], { silinmisler: false })).get(varyantli) ?? [];
     for (const [sira, deger] of (beden?.degerler ?? []).entries()) {
@@ -286,6 +288,7 @@ describe("kenar durumlar (bağımsız kontrolün bulguları)", () => {
       ad: "Beden",
       degerler: birlesimler.map(([deger]) => deger),
     });
+    await donusenBirimiSil(urunSrv, vt, urun);
     const [beden] = (await secenekleriOku(vt, [urun], { silinmisler: false })).get(urun) ?? [];
     const kimlikler: string[] = [];
     for (const [deger, satis, miktar] of birlesimler) {
