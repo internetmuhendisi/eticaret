@@ -130,6 +130,17 @@ export const panelSayfalari = [
     grup: "vitrin",
     isaret: "yonetim.cerceve.kisayol",
   },
+  // Ürünler listesi (kart 0262, karar 0161): ürün yönetiminin girişi. Görevli görür, yayınlar, taslağa ve arşive
+  // alır, silemez.
+  {
+    kod: "urunler",
+    adres: `${panelAdresi}/urunler`,
+    ad: "yonetim.sayfa.urunler.ad",
+    aciklama: "yonetim.sayfa.urunler.aciklama",
+    ikon: "urunler",
+    izin: "urun.gor",
+    grup: "urunler",
+  },
   // Kategoriler, markalar ve etiketler, özellikler (kart 0261, karar 0160): ürünün gruplandığı kayıtlar. Görevli
   // görür ve değiştirir, silemez (izinlerin kararı).
   {

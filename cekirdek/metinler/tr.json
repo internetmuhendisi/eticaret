@@ -237,6 +237,10 @@
       "ozellikler": {
         "ad": "Özellikler",
         "aciklama": "Ürün sayfasındaki \"Özellikler\" tablosunun satırları. Bir kez tanımlayın, her üründe değerini girin. Değişiklik hemen yayınlanır."
+      },
+      "urunler": {
+        "ad": "Ürünler",
+        "aciklama": "Mağazanın bütün ürünleri: yayında olanlar, taslaklar, gizli ve arşivdekiler. Seçtiğiniz ürünleri birlikte yayınlayın, taslağa ya da arşive alın."
       }
     },
     "eylem": {
@@ -1052,7 +1056,8 @@
         "satir": "{ad}: {neden}",
         "hata": "İşlem yapılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
         "yetki": "Bu işlemi yapma izniniz yok."
-      }
+      },
+      "bilinmeyenKayit": "silinmiş kayıt"
     },
     "siparisler": {
       "durumSuzgeci": "Durum süzgeci",
@@ -1525,6 +1530,95 @@
         "bulunamadi": "Bu kayıt artık yok: silinmiş olabilir. Sayfa yenilendi.",
         "form": "Kaydedilemedi: işaretli alanları düzeltin.",
         "genel": "Kaydedilemedi. Biraz sonra yeniden deneyin."
+      }
+    },
+    "urunler": {
+      "liste": "Ürünler",
+      "ara": "Ürün ara",
+      "araYer": "Ad ya da stok kodu",
+      "suzgec": {
+        "durum": "Durum",
+        "kategori": "Kategori",
+        "stok": "Stok",
+        "marka": "Marka"
+      },
+      "durum": {
+        "yayinda": "Yayında",
+        "zamanlanmis": "Zamanlanmış",
+        "taslak": "Taslak",
+        "gizli": "Gizli",
+        "arsiv": "Arşivde"
+      },
+      "stokSuzgeci": {
+        "stokta": "Stokta",
+        "dusuk": "Az kaldı",
+        "tukendi": "Tükendi"
+      },
+      "siralama": {
+        "son-degisen": "Son değişen",
+        "ad-artan": "Ad (A–Z)",
+        "ad-azalan": "Ad (Z–A)",
+        "stok-artan": "Stok (azdan çoğa)",
+        "stok-azalan": "Stok (çoktan aza)",
+        "fiyat-artan": "Fiyat (artan)",
+        "fiyat-azalan": "Fiyat (azalan)"
+      },
+      "sutun": {
+        "urun": "Ürün",
+        "durum": "Durum",
+        "kategori": "Kategori",
+        "stok": "Stok",
+        "fiyat": "Fiyat",
+        "vitrin": "Vitrin"
+      },
+      "stok": {
+        "tukendi": "Tükendi",
+        "takipsiz": "Stok takibi yok",
+        "adet": "{sayi} adet",
+        "az": "{adet} · az kaldı",
+        "tukenenBirlesim": "{sayi} birleşim tükendi"
+      },
+      "birlesim": "{sayi} birleşim",
+      "stokKoduYok": "Stok kodu yok",
+      "kategoriYok": "Kategori yok",
+      "ayrac": ", ",
+      "fiyatYok": "Fiyat yok",
+      "vitrindeGor": "Vitrinde gör",
+      "vitrindeGorAdi": "Vitrinde gör: {ad} (yeni sekmede açılır)",
+      "bos": {
+        "baslik": "Henüz ürün yok",
+        "metin": "Mağazaya eklenen ürünler burada listelenir; yayın durumlarını, stoklarını ve fiyatlarını buradan izlersiniz."
+      },
+      "toplu": {
+        "yayinla": {
+          "ad": "Yayınla",
+          "baslik": "{sayi} ürün yayınlansın mı?",
+          "aciklama": "Ürünler hemen vitrinde görünür; zamanlanmış ürünlerin yayın zamanı kalkar.",
+          "basari": "{sayi} ürün yayınlandı."
+        },
+        "taslaga-al": {
+          "ad": "Taslağa al",
+          "baslik": "{sayi} ürün taslağa alınsın mı?",
+          "aciklama": "Ürünler vitrinden kalkar; sayfaları açılmaz. Sonra yeniden yayınlayabilirsiniz.",
+          "basari": "{sayi} ürün taslağa alındı."
+        },
+        "arsive-al": {
+          "ad": "Arşive al",
+          "baslik": "{sayi} ürün arşive alınsın mı?",
+          "aciklama": "Ürünler vitrinden bütünüyle kalkar, panelde arşivde durur. Satışı biten ürünler içindir.",
+          "basari": "{sayi} ürün arşive alındı."
+        },
+        "sil": {
+          "ad": "Sil",
+          "baslik": "{sayi} ürün silinsin mi?",
+          "aciklama": "Silinen ürün panelde ve vitrinde görünmez, geri alınamaz. Geçmiş siparişlerdeki bilgisi değişmez.",
+          "basari": "{sayi} ürün silindi."
+        },
+        "neden": {
+          "bulunamadi": "ürün bulunamadı, silinmiş olabilir",
+          "yayin-zamani-gerekli": "yayın zamanı eksik",
+          "genel": "değiştirilemedi"
+        }
       }
     }
   },

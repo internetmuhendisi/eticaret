@@ -7,11 +7,14 @@
 // Hata iletileri düz cümle değil koddur (urunHatalari); metni ekran çözer.
 import { z } from "zod";
 import { galeriSinirlari } from "../../kayitlar/gorsel.ts";
+import { panelSayfaBoylari } from "../../kayitlar/liste.ts";
 import { ozellikSinirlari } from "../../kayitlar/ozellik.ts";
 import {
   type UrunDurumu,
+  type UrunTopluIslemi,
   urunDurumlari,
   urunDurumVitrini,
+  urunTopluIslemKodlari,
   varsayilanUrunDurumu,
   varyantSinirlari,
 } from "../../kayitlar/urun.ts";
@@ -390,3 +393,12 @@ export const galeriSiralamasi = z.strictObject({
   ogeler: tekrarsizListe(kimlikSemasi, galeriSinirlari.oge, "galeri-sira-gecersiz"),
 });
 export type GaleriSiralamasi = z.input<typeof galeriSiralamasi>;
+
+// Panelin ürün listesinin toplu işlem ucunun girdisi (kart 0262): işlem ve en çok bir sayfanın ürünleri.
+export const urunTopluIslemiSemasi = z.strictObject({
+  islem: z.enum(urunTopluIslemKodlari as [UrunTopluIslemi, ...UrunTopluIslemi[]]),
+  urunler: z
+    .array(kimlikSemasi)
+    .min(1)
+    .max(panelSayfaBoylari[panelSayfaBoylari.length - 1] ?? 100),
+});

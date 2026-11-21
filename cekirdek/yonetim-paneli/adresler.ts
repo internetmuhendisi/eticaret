@@ -11,6 +11,9 @@ export const siparislerAdresi = `${panelAdresi}/siparisler`;
 export const siparisAyrintisiAdresi = (numara: string): string =>
   `${siparislerAdresi}/ayrinti?numara=${encodeURIComponent(numara)}`;
 
+// Ürünler listesi (kart 0262); ürün ekranı kart 0263'le gelir.
+export const urunlerAdresi = `${panelAdresi}/urunler`;
+
 // Şifreden sonraki ara adımın sayfası (kart 0028).
 export const adimAdresi = (durum: "kod" | "kurulum"): string =>
   durum === "kod" ? kodAdresi : kurulumAdresi;

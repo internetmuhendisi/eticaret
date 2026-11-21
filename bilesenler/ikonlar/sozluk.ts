@@ -7,6 +7,7 @@ import {
   ArrowUpIcon,
   ArrowUpNarrowWideIcon,
   BanknoteIcon,
+  BoxIcon,
   CheckIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -153,6 +154,8 @@ export const ikonlar = {
   tema: PaletteIcon,
   // Sipariş alındı sayfası (kart 0214): IBAN'ı kopyala.
   kopyala: CopyIcon,
+  // Ürünler listesi (kart 0262): menüdeki sayfa ve boş hâl.
+  urunler: BoxIcon,
   // Kategoriler, markalar ve etiketler, özellikler ekranları (kart 0261): menüdeki sayfalar.
   kategoriler: FolderTreeIcon,
   markalar: TagsIcon,

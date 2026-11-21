@@ -50,3 +50,44 @@ export type TukenmisSecenekGosterimi = (typeof tukenmisSecenekGosterimleri)[numb
 // - secimsiz: müşteri seçene kadar hiçbir değer seçili değildir, ürünün fiyat aralığı görünür.
 export const secenekOnSecimleri = ["ilk-satilabilir", "secimsiz"] as const;
 export type SecenekOnSecimi = (typeof secenekOnSecimleri)[number];
+
+// Panelin ürün listesi (kart 0262, karar 0161). Sıralamanın ve süzgecin adı adreste durur (?sirala=ad-artan): adı
+// değişmez, paylaşılmış adresler bozulur. İlki varsayılandır.
+// - son-degisen: ürünün son değişikliği, en yeni önce.
+// - ad-artan, ad-azalan: ad (büyük küçük harf ayrımsız).
+// - stok-artan, stok-azalan: silinmemiş birimlerin toplam stoğu; takibi kapalı ürün her iki yönde sonda.
+// - fiyat-artan, fiyat-azalan: silinmemiş birimlerin bugünkü girilen en düşük fiyatı (indirim sürüyorsa indirimli);
+//   fiyatı olmayan ürün her iki yönde sonda. Vergi çevirmesi sıraya katılmaz.
+export const urunPanelSiralamalari = [
+  "son-degisen",
+  "ad-artan",
+  "ad-azalan",
+  "stok-artan",
+  "stok-azalan",
+  "fiyat-artan",
+  "fiyat-azalan",
+] as const;
+export type UrunPanelSiralamasi = (typeof urunPanelSiralamalari)[number];
+
+// Panelin stok süzgeci ve satırın stok durumu (stok/durum.ts ile aynı kural): tükendi (satılabilir birimi yok),
+// düşük (tükenmemiş, silinmemiş fiyatlı ve takipli bir birimi eşikte ya da altında), stokta (ötekiler; takibi kapalı
+// ürün de).
+export const urunPanelStokDurumlari = ["stokta", "dusuk", "tukendi"] as const;
+export type UrunPanelStokDurumu = (typeof urunPanelStokDurumlari)[number];
+
+// Panelin ürün listesinin toplu işlemleri (karar 0157: temel dört) ve izinleri. Yayınla, taslağa al ve arşive al
+// ürünün durumunu değiştirir; sil ürünü siler. Her ürün tekil işlemle aynı yoldan, kendi işleminde geçer.
+export const urunTopluIslemleri = {
+  yayinla: { izin: "urun.degistir", durum: "yayinda" },
+  "taslaga-al": { izin: "urun.degistir", durum: "taslak" },
+  "arsive-al": { izin: "urun.degistir", durum: "arsiv" },
+  sil: { izin: "urun.sil", durum: null },
+} as const satisfies Record<
+  string,
+  { izin: "urun.degistir" | "urun.sil"; durum: UrunDurumu | null }
+>;
+export type UrunTopluIslemi = keyof typeof urunTopluIslemleri;
+export const urunTopluIslemKodlari = Object.keys(urunTopluIslemleri) as UrunTopluIslemi[];
+
+// Panel listesinde aranan metnin en çok uzunluğu.
+export const urunPanelAramaSiniri = 100;

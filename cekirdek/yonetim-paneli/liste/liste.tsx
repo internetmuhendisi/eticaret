@@ -104,6 +104,9 @@ export type ListeOzellikleri<Satir> = {
   // Seçim kutusunun ve sonuçtaki satırın adı.
   satirAdi: (satir: Satir) => string;
   suzgecAdlari: Readonly<Record<string, { ad: string; secenek: (deger: string) => string }>>;
+  // Kayıt süzgeçlerinin seçenekleri (kart 0262): sitenin kayıtları, sunucunun verdiği sırayla. Seçili olup
+  // listede olmayan değer (silinmiş kayıt) şeritte kaldırılabilir, adı "bilinmeyen kayıt" yazar.
+  kayitSecenekleri?: Readonly<Record<string, readonly { deger: string; ad: string }[]>>;
   siralamaAdi: (kod: string) => string;
   arama?: { etiket: string; yerTutucu: string };
   bos: { ikon: IkonAdi; baslik: string; aciklama: string; eylem?: ReactNode };
@@ -129,6 +132,7 @@ export function Liste<Satir>({
   arama,
   bos,
   topluIslemler,
+  kayitSecenekleri = {},
 }: ListeOzellikleri<Satir>) {
   const metin = usePanelMetni();
   const router = useRouter();
@@ -264,7 +268,20 @@ export function Liste<Satir>({
   };
 
   const sekme = tanim.suzgecler.find((suzgec) => suzgec.tur === "sekme");
-  const secenekSuzgecleri = tanim.suzgecler.filter((suzgec) => suzgec.tur === "secenekler");
+  // Açılır menülü süzgeçler: tanımdaki seçenekler ya da sunucunun verdiği kayıtlar.
+  const secenekSuzgecleri = tanim.suzgecler.filter((suzgec) => suzgec.tur !== "sekme");
+  const suzgecSecenekleri = (suzgec: (typeof tanim.suzgecler)[number]) =>
+    suzgec.tur === "kayit"
+      ? (kayitSecenekleri[suzgec.kod] ?? [])
+      : suzgec.secenekler.map((deger) => ({
+          deger,
+          ad: suzgecAdlari[suzgec.kod]?.secenek(deger) ?? deger,
+        }));
+  const degerAdi = (suzgec: (typeof tanim.suzgecler)[number], deger: string) =>
+    suzgec.tur === "kayit"
+      ? (kayitSecenekleri[suzgec.kod]?.find((secenek) => secenek.deger === deger)?.ad ??
+        metin("yonetim.liste.bilinmeyenKayit"))
+      : (suzgecAdlari[suzgec.kod]?.secenek(deger) ?? deger);
   const seciliCipler = tanim.suzgecler.flatMap((suzgec) =>
     (durum.suzgecler[suzgec.kod] ?? []).map((deger) => ({ suzgec, deger })),
   );
@@ -368,7 +385,7 @@ export function Liste<Satir>({
               </Dugme>
             </AcilirMenuTetikleyici>
             <AcilirMenuIcerigi align="start">
-              {suzgec.secenekler.map((deger) => (
+              {suzgecSecenekleri(suzgec).map(({ deger, ad: secenekAdi }) => (
                 <AcilirMenuOnayOgesi
                   key={deger}
                   checked={secili.includes(deger)}
@@ -389,7 +406,7 @@ export function Liste<Satir>({
                     )
                   }
                 >
-                  {adi?.secenek(deger) ?? deger}
+                  {secenekAdi}
                 </AcilirMenuOnayOgesi>
               ))}
             </AcilirMenuIcerigi>
@@ -422,12 +439,12 @@ export function Liste<Satir>({
   );
 
   const ciplerSeridi =
-    seciliCipler.filter(({ suzgec }) => suzgec.tur === "secenekler").length === 0 ? null : (
+    seciliCipler.filter(({ suzgec }) => suzgec.tur !== "sekme").length === 0 ? null : (
       <ul aria-label={metin("yonetim.liste.seciliSuzgecler")} className="flex flex-wrap gap-2">
         {seciliCipler
-          .filter(({ suzgec }) => suzgec.tur === "secenekler")
+          .filter(({ suzgec }) => suzgec.tur !== "sekme")
           .map(({ suzgec, deger }) => {
-            const yazi = `${suzgecAdlari[suzgec.kod]?.ad}: ${suzgecAdlari[suzgec.kod]?.secenek(deger) ?? deger}`;
+            const yazi = `${suzgecAdlari[suzgec.kod]?.ad}: ${degerAdi(suzgec, deger)}`;
             return (
               <li key={`${suzgec.kod}-${deger}`}>
                 <Baglanti

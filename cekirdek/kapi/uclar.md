@@ -1128,6 +1128,26 @@ Panelin özellik formunun tek kaydı (kart 0261): alanlar ve seçeneklerin son h
 - Başarılı (200): `{ "basarili": true, "veri": {} }`.
 - Hatalar: `dogrulama`, `cakisma` (`siralama-gecersiz`), `oturum-yok`, `yetki`.
 
+### GET /kapi/yonetici/urunler
+
+Panelin ürün listesinin bir sayfası (kart 0262, karar 0161): taslak, zamanlanmış, gizli ve arşiv dahil bütün silinmemiş ürünler. Girdi ve yanıt panel sayfasınınkiyle aynıdır (liste tanımı `urunListesiTanimi`, `urunListesiVerisi`). Satırın fiyatı vitrindeki kartın fiyatı (`fiyatAraliklari`), stok durumu vitrinin kuralıdır (`stokDurumlari`). Ana görsel yalnız sitedeki görselleri görme izni (`dosya.gor`) olana verilir.
+
+- İzin: `urun.gor`. Sınır: `genel`.
+- Girdi: adres parametreleri `durum` (yayın durumları, virgülle), `kategori` ve `marka` (kimlikler, virgülle; kategori alt kategorileriyle), `stok` (`stokta`, `dusuk`, `tukendi`, virgülle), `ara` (ad ya da stok kodu, en çok 100 karakter), `sirala` (`son-degisen`, `ad-artan`, `ad-azalan`, `stok-artan`, `stok-azalan`, `fiyat-artan`, `fiyat-azalan`), `sayfa` (`listeUcuSemasi`).
+- Servis: `cekirdek/moduller/urun/panel-listesi.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "satirlar": [{ "kimlik", "ad", "adresAdi", "stokKodu", "birlesim", "durum", "yayinZamani", "kategoriler", "gorsel"?, "fiyat", "stok": { "durum", "toplam", "tukenenBirlesim" }, "vitrinde" }], "toplam", "sayfa", "sayfaSayisi", "sayfaBoyu", "sekmeSayilari" } }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/urunler-toplu
+
+Seçilen ürünlere toplu işlem (kart 0262, karar 0157): yayınla, taslağa al, arşive al, sil. Her ürün tekil işlemle (`urunDegistir`, `urunSil`) kendi işleminde yapılır; işlenemeyen ürün nedeninin koduyla döner, ötekiler işlenir. Uç değiştirme iznini ister; silme ayrıca `urun.sil` ister (görevli silemez).
+
+- İzin: `urun.degistir`. Sınır: `genel`.
+- Girdi: `{ "islem", "urunler": [kimlik] }` (`urunTopluIslemiSemasi`; en çok bir sayfa, 100 ürün).
+- Servis: `cekirdek/moduller/urun/panel-listesi.ts` (`urunTopluIslem`).
+- Başarılı (200): `{ "basarili": true, "veri": { "islenen": [kimlik], "islenemeyen": [{ "anahtar", "kod" }] } }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki` (silme izni yok).
+
 ### GET /kapi/yonetici/kayit-ara
 
 Panelde kategori, marka ya da ürünü yazdıkça arayarak seçmek (kart 0143, karar 0116). Yalnız silinmemiş kayıtlar gelir; harf kuralı aramanınkidir (Türkçe harfsiz, büyük küçük harf ayrımsız), aranan metin adın herhangi bir yerinde geçebilir. Kategoriler üstlerinin adıyla ("Kadın › Tişört") ve ağaç sırasında gelir, bu yolda aranır (yol ayracı aranmaz). Marka ve ürün ada göre sıralı ve adres adlarıyla gelir: aynı adlı ürünler ayrılır. Sayfa başına 20 kayıt.

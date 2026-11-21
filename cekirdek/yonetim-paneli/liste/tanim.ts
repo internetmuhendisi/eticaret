@@ -9,13 +9,17 @@
 // araması kişisel bilgi taşır, karar 0145) aramayı liste ucuna gönderir; adresteki "ara" o listede okunmaz.
 import { z } from "zod";
 import type { IzinAdi } from "../../kayitlar/izinler";
+import { kimlikSemasi } from "../../veritabani/kimlik";
+import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik-bicimi";
 
 export type SuzgecTanimi = {
   // Adresteki parametrenin adı.
   kod: string;
   // Sekme: tek değer, sekme şeridinde sayılarıyla ("Tümü" seçimsizdir). Seçenekler: birden çok değer, açılır
-  // menüde onay öğeleriyle; seçilenler şeritte kaldırılabilir.
-  tur: "sekme" | "secenekler";
+  // menüde onay öğeleriyle; seçilenler şeritte kaldırılabilir. Kayıt (kart 0262): seçenekleri sitenin kayıtlarıdır
+  // (kategori, marka), sunucu sayfayla birlikte verir; adreste kimlikle durur (küçük harfe çevrilir), tanım
+  // seçenek taşımaz. Kimlik olmayan değer yok sayılır; olmayan ya da silinmiş kaydı servis eşleştirmez.
+  tur: "sekme" | "secenekler" | "kayit";
   secenekler: readonly string[];
 };
 
@@ -55,7 +59,7 @@ export const listeDurumunuOku = (tanim: ListeTanimi, sorgu: Sorgu): ListeDurumu 
   const suzgecler: Record<string, string[]> = {};
   for (const suzgec of tanim.suzgecler) {
     const istenen = oku(suzgec.kod).split(",");
-    const secilen = suzgec.secenekler.filter((secenek) => istenen.includes(secenek));
+    const secilen = gecerliDegerler(suzgec, istenen);
     if (secilen.length > 0) {
       suzgecler[suzgec.kod] = suzgec.tur === "sekme" ? secilen.slice(0, 1) : secilen;
     }
@@ -73,13 +77,17 @@ export const listeDurumunuOku = (tanim: ListeTanimi, sorgu: Sorgu): ListeDurumu 
   };
 };
 
+// Süzgecin değerlerinden tanınanlar, tanımın sırasıyla (kayıt süzgecinde verilen sırayla, tekrarsız).
+const gecerliDegerler = (suzgec: SuzgecTanimi, istenen: readonly string[]): string[] =>
+  suzgec.tur === "kayit"
+    ? [...new Set(istenen.filter(kimlikMi).map(kimligiDuzelt))]
+    : suzgec.secenekler.filter((secenek) => istenen.includes(secenek));
+
 // Listenin sorgusu: adres ve liste ucu için. "ara" yalnız verilirse yazılır (adreste olmayan aramada uç sorgusu).
 export const listeSorgusu = (tanim: ListeTanimi, durum: ListeDurumu): URLSearchParams => {
   const sorgu = new URLSearchParams();
   for (const suzgec of tanim.suzgecler) {
-    const secilen = suzgec.secenekler.filter((secenek) =>
-      (durum.suzgecler[suzgec.kod] ?? []).includes(secenek),
-    );
+    const secilen = gecerliDegerler(suzgec, durum.suzgecler[suzgec.kod] ?? []);
     if (secilen.length > 0) sorgu.set(suzgec.kod, secilen.join(","));
   }
   if (durum.ara !== "") sorgu.set("ara", durum.ara);
@@ -120,7 +128,8 @@ export const listeUcuSemasi = (tanim: ListeTanimi) => {
     alanlar["ara"] = z.string().trim().max(tanim.arama.enCok).default("");
   }
   for (const suzgec of tanim.suzgecler) {
-    const deger = z.enum(suzgec.secenekler as [string, ...string[]]);
+    const deger =
+      suzgec.tur === "kayit" ? kimlikSemasi : z.enum(suzgec.secenekler as [string, ...string[]]);
     alanlar[suzgec.kod] = z
       .string()
       .transform((yazi) => yazi.split(","))
