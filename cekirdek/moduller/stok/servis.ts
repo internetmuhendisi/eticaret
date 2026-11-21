@@ -26,7 +26,7 @@
 //   noktası); çağıranın işlemi hatayı yakalarsa geri kalanı bozulmadan sürebilir.
 //
 // İzin kapıda denetlenir (izinler.ts); servis yalnız kimin yaptığını kayda yazar.
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { stokGeldi } from "../../eklentiler/stok-kancalari.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
@@ -39,7 +39,7 @@ import {
 } from "../../kayitlar/stok.ts";
 import type { StokUyarisiTuru } from "../../kayitlar/yonetici-bildirimi.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
-import { kimlikMi } from "../../veritabani/kimlik.ts";
+import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { urunBirimleri, urunler } from "../urun/model.ts";
 import { stokUyarisiYaz } from "../yonetici-bildirimi/servis.ts";
@@ -117,6 +117,24 @@ type GecmisGirdisi = {
   kaynak?: string | null | undefined;
   kim: DegisikligiYapan;
 };
+
+// Geçmiş satırının okunan hâli.
+const gecmisSatiri = (s: typeof stokGecmisi.$inferSelect): StokGecmisiSatiri => ({
+  kimlik: s.kimlik,
+  zaman: s.zaman,
+  oncekiMiktar: s.onceki_miktar,
+  sonrakiMiktar: s.sonraki_miktar,
+  sebep: s.sebep as StokSebebi,
+  not: s.not,
+  kaynak: s.kaynak_kimligi,
+  kim:
+    s.kim_turu === "sistem"
+      ? { tur: "sistem", ad: s.kim_adi ?? "" }
+      : {
+          tur: s.kim_turu as "yonetici" | "musteri" | "sahip",
+          kimlik: s.kim_kimligi ?? "",
+        },
+});
 
 // Geçmişin zamanı satır kilidi alındıktan sonraki saattir, işlemin başladığı an değil: aynı anda
 // başlayan iki değişiklikte geçmişin sırası yazılma sırasıyla aynı olsun (fiyat geçmişiyle aynı yol).
@@ -403,22 +421,58 @@ export const stokServisi = () => {
       )
       .orderBy(desc(stokGecmisi.zaman), desc(stokGecmisi.kimlik))
       .limit(sinir);
-    return satirlar.map((s) => ({
-      kimlik: s.kimlik,
-      zaman: s.zaman,
-      oncekiMiktar: s.onceki_miktar,
-      sonrakiMiktar: s.sonraki_miktar,
-      sebep: s.sebep as StokSebebi,
-      not: s.not,
-      kaynak: s.kaynak_kimligi,
-      kim:
-        s.kim_turu === "sistem"
-          ? { tur: "sistem", ad: s.kim_adi ?? "" }
-          : {
-              tur: s.kim_turu as "yonetici" | "musteri" | "sahip",
-              kimlik: s.kim_kimligi ?? "",
-            },
-    }));
+    return satirlar.map(gecmisSatiri);
+  };
+
+  // Panelin stok geçmişi (kart 0265): birimlerin (basit ürünün birimi ya da birleşimleri) geçmişi tek listede, en
+  // yeni önce, en çok bir sayfa, birimiyle. `sonra` stokGecmisiniOku'daki gibidir.
+  const panelStokGecmisi = async (
+    vt: Veritabani,
+    birimler: readonly string[],
+    secenekler: { sonra?: string; sinir?: number } = {},
+  ): Promise<(StokGecmisiSatiri & { birim: string })[]> => {
+    const { sonra } = secenekler;
+    const gecerli = birimler.filter(kimlikMi).map(kimligiDuzelt);
+    if (gecerli.length === 0 || (sonra !== undefined && !kimlikMi(sonra))) return [];
+    const sinir = Math.min(Math.max(secenekler.sinir ?? stokGecmisiSayfasi, 1), stokGecmisiSayfasi);
+    const satirlar = await vt
+      .select()
+      .from(stokGecmisi)
+      .where(
+        and(
+          inArray(stokGecmisi.birim_kimligi, gecerli),
+          sonra === undefined
+            ? undefined
+            : sql`(${stokGecmisi.zaman}, ${stokGecmisi.kimlik}) < (select ${stokGecmisi.zaman}, ${stokGecmisi.kimlik} from ${stokGecmisi} where ${stokGecmisi.kimlik} = ${kimligiDuzelt(sonra)})`,
+        ),
+      )
+      .orderBy(desc(stokGecmisi.zaman), desc(stokGecmisi.kimlik))
+      .limit(sinir);
+    return satirlar.map((s) => ({ ...gecmisSatiri(s), birim: s.birim_kimligi }));
+  };
+
+  // Birimlerin süresi dolmamış ayırmalarının toplamı (panelde "sepette ayrılmış", kart 0265); tek sorgu, ayırması
+  // olmayan birim haritada yoktur.
+  const ayrilanMiktarlar = async (
+    vt: Veritabani,
+    birimler: readonly string[],
+  ): Promise<Map<string, number>> => {
+    const gecerli = birimler.filter(kimlikMi).map(kimligiDuzelt);
+    if (gecerli.length === 0) return new Map();
+    const satirlar = await vt
+      .select({
+        birim: stokAyirmalari.birim_kimligi,
+        adet: sql<number>`sum(${stokAyirmalari.adet})::int`,
+      })
+      .from(stokAyirmalari)
+      .where(
+        and(
+          inArray(stokAyirmalari.birim_kimligi, gecerli),
+          sql`${stokAyirmalari.bitis_zamani} > now()`,
+        ),
+      )
+      .groupBy(stokAyirmalari.birim_kimligi);
+    return new Map(satirlar.map(({ birim, adet }) => [birim, adet]));
   };
 
   // Ödemede (kart 0213, karar 0140): her kalemin takibi açık birimi oturum için bitis'e kadar ayrılır. Ayrılabilir
@@ -485,6 +539,8 @@ export const stokServisi = () => {
     stokDuzelt,
     stoklariOku,
     stokGecmisiniOku,
+    panelStokGecmisi,
+    ayrilanMiktarlar,
     stokAyir,
     ayirmayiBirak,
   };

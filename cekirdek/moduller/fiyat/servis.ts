@@ -42,6 +42,11 @@ import {
 export type FiyatAyarlari = { saatDilimi: string; paraBirimi: string };
 
 export type FiyatGecmisiSatiri = Omit<Fiyat, "birim"> & { kimlik: string; zaman: Date };
+// Panelin fiyat geçmişi (kart 0265): birimi ve değişikliği yapanla. Yazan sütunlarından önce yazılmış satırda kim yoktur.
+export type FiyatGecmisiKaydi = FiyatGecmisiSatiri & {
+  birim: string;
+  kim: DegisikligiYapan | null;
+};
 
 // Süreçte bir kez kaydedilen para birimi uyuşmazlıkları ("<fiyatınki>><sitenin>").
 const bildirilenUyusmazliklar = new Set<string>();
@@ -167,9 +172,14 @@ export const fiyatServisi = (ayarlar: () => FiyatAyarlari) => {
         });
       // Geçmişin zamanı kilit alındıktan sonraki saattir, işlemin başladığı an değil: aynı anda
       // başlayan iki değişiklikte geçmişin sırası yazılma sırasıyla aynı olsun.
-      await islem
-        .insert(fiyatGecmisi)
-        .values({ birim_kimligi: birim, ...satir, zaman: sql`clock_timestamp()` });
+      await islem.insert(fiyatGecmisi).values({
+        birim_kimligi: birim,
+        ...satir,
+        zaman: sql`clock_timestamp()`,
+        kim_turu: kim.tur,
+        kim_kimligi: kim.tur === "sistem" ? null : kim.kimlik,
+        kim_adi: kim.tur === "sistem" ? kim.ad : null,
+      });
       await degisikligiKaydet(islem, {
         kim,
         islem: "fiyat.degisti",
@@ -276,7 +286,59 @@ export const fiyatServisi = (ayarlar: () => FiyatAyarlari) => {
     return sonuc;
   };
 
-  return { fiyatYaz, fiyatOku, fiyatlariOku, gecerliFiyatlar, fiyatGecmisiniOku, gecmisleriOku };
+  // Panelin fiyat geçmişi (kart 0265): birimlerin (basit ürünün birimi ya da birleşimleri) geçmişi tek listede, en
+  // yeni önce, en çok bir sayfa, birimi ve yazanıyla. `sonra` fiyatGecmisiniOku'daki gibidir.
+  const panelFiyatGecmisi = async (
+    vt: Veritabani,
+    birimler: readonly string[],
+    secenekler: { sonra?: string; sinir?: number } = {},
+  ): Promise<FiyatGecmisiKaydi[]> => {
+    const { sonra } = secenekler;
+    const gecerli = birimler.filter(kimlikMi).map(kimligiDuzelt);
+    if (gecerli.length === 0 || (sonra !== undefined && !kimlikMi(sonra))) return [];
+    const sinir = Math.min(
+      Math.max(secenekler.sinir ?? fiyatGecmisiSayfasi, 1),
+      fiyatGecmisiSayfasi,
+    );
+    const satirlar = await vt
+      .select({
+        ...gecmisAlanlari,
+        birim: fiyatGecmisi.birim_kimligi,
+        kimTuru: fiyatGecmisi.kim_turu,
+        kimKimligi: fiyatGecmisi.kim_kimligi,
+        kimAdi: fiyatGecmisi.kim_adi,
+      })
+      .from(fiyatGecmisi)
+      .where(
+        and(
+          inArray(fiyatGecmisi.birim_kimligi, gecerli),
+          sonra === undefined
+            ? undefined
+            : sql`(${fiyatGecmisi.zaman}, ${fiyatGecmisi.kimlik}) < (select ${fiyatGecmisi.zaman}, ${fiyatGecmisi.kimlik} from ${fiyatGecmisi} where ${fiyatGecmisi.kimlik} = ${kimligiDuzelt(sonra)})`,
+        ),
+      )
+      .orderBy(desc(fiyatGecmisi.zaman), desc(fiyatGecmisi.kimlik))
+      .limit(sinir);
+    return satirlar.map(({ kimTuru, kimKimligi, kimAdi, ...satir }) => ({
+      ...satir,
+      kim:
+        kimTuru === null
+          ? null
+          : kimTuru === "sistem"
+            ? { tur: "sistem", ad: kimAdi ?? "" }
+            : { tur: kimTuru as "yonetici" | "musteri" | "sahip", kimlik: kimKimligi ?? "" },
+    }));
+  };
+
+  return {
+    fiyatYaz,
+    fiyatOku,
+    fiyatlariOku,
+    gecerliFiyatlar,
+    fiyatGecmisiniOku,
+    gecmisleriOku,
+    panelFiyatGecmisi,
+  };
 };
 
 export const siteninFiyatServisi = (site: Site) =>

@@ -70,6 +70,11 @@ export const urunHatalari = [
   // kayıtlı seçenek ya da değer silmek urun.sil ister.
   "varyant-degisti",
   "varyant-silme-yetkisi",
+  // Ürün ekranının fiyat ve stok bölümleri (kart 0265): fiyat fiyat.degistir, stok stok.duzelt ister.
+  "fiyat-yetkisi",
+  "stok-yetkisi",
+  // Panelde yazılan tutar sitenin para biçimiyle okunamadı (kart 0265).
+  "tutar-okunamadi",
   // Ürün özelliklerinin değerleri (kart 0086, karar 0072): aynı özellik iki kez, olmayan ya da
   // silinmiş özellik, türüne uymayan değer, özelliğin olmayan ya da silinmiş seçeneği.
   "ozellik-tekrar",
@@ -128,6 +133,9 @@ export const urunHataMetinleri = {
   "son-deger": "yonetim.urun.hata.son-deger",
   "varyant-degisti": "yonetim.urun.hata.varyant-degisti",
   "varyant-silme-yetkisi": "yonetim.urun.hata.varyant-silme-yetkisi",
+  "fiyat-yetkisi": "yonetim.urun.hata.fiyat-yetkisi",
+  "stok-yetkisi": "yonetim.urun.hata.stok-yetkisi",
+  "tutar-okunamadi": "yonetim.urun.hata.tutar-okunamadi",
   "ozellik-tekrar": "yonetim.urun.hata.ozellik-tekrar",
   "ozellik-gecersiz": "yonetim.urun.hata.ozellik-gecersiz",
   "ozellik-deger-gecersiz": "yonetim.urun.hata.ozellik-deger-gecersiz",
@@ -304,11 +312,28 @@ export type UrunDegisikligi = z.input<typeof urunDegisikligi>;
 const urunNesnesi = z.record(z.string(), z.unknown());
 // Seçenekler bölümünün son hâli (kart 0264): verilirse ürünle aynı işlemde yazılır; servis varyantKaydi ile doğrular.
 const varyantNesnesi = z.record(z.string(), z.unknown()).optional();
-export const urunEklemeSemasi = z.strictObject({ urun: urunNesnesi, varyant: varyantNesnesi });
+// Fiyat ve stok bölümleri (kart 0265): verilirse ürünle aynı işlemde, en son yazılır; panel-fiyat-stok.ts doğrular.
+const fiyatStokNesnesi = z.record(z.string(), z.unknown()).optional();
+export const urunEklemeSemasi = z.strictObject({
+  urun: urunNesnesi,
+  varyant: varyantNesnesi,
+  fiyatStok: fiyatStokNesnesi,
+});
 export const urunDegisikligiSemasi = z.strictObject({
   kimlik: kimlikSemasi,
   urun: urunNesnesi,
   varyant: varyantNesnesi,
+  fiyatStok: fiyatStokNesnesi,
+});
+// Ürün ekranının fiyat ve stok geçmişinin sonraki sayfası (kart 0265): ürünün kimliği ve önceki sayfanın son satırı.
+export const urunGecmisiSemasi = z.strictObject({
+  kimlik: kimlikSemasi,
+  sonra: kimlikSemasi.optional(),
+});
+// Basit ürünün "Stoğu düzelt" penceresi (kart 0265): birimin kimliği ve elle düzeltme (stok servisinin şeması doğrular).
+export const urunStokDuzeltmeSemasi = z.strictObject({
+  birim: kimlikSemasi,
+  duzeltme: z.record(z.string(), z.unknown()),
 });
 export const urunSilmeSemasi = z.strictObject({ kimlik: kimlikSemasi });
 

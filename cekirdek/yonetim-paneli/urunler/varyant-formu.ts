@@ -15,12 +15,16 @@ export type VaryantSecenegiFormu = {
   ad: string;
   degerler: VaryantDegeriFormu[];
 };
-// Birleşimin ekrandaki alanları: ağırlık sitenin biriminde yazılı metin, görsel galeri öğesinin kimliği.
+// Birleşimin ekrandaki alanları: ağırlık sitenin biriminde yazılı metin, görsel galeri öğesinin kimliği. Fiyat ve stok
+// sütunları (kart 0265): tutarlar sitenin para biçimiyle yazılı metin, stok yeni miktarın yazısı.
 export type BirlesimFormu = {
   stokKodu: string;
   barkod: string;
   agirlik: string;
   gorsel: string | null;
+  satisFiyati: string;
+  indirimliFiyat: string;
+  stok: string;
 };
 export type VaryantFormu = {
   secenekler: VaryantSecenegiFormu[];
@@ -28,7 +32,15 @@ export type VaryantFormu = {
   birlesimler: Record<string, BirlesimFormu>;
 };
 
-export const bosBirlesim: BirlesimFormu = { stokKodu: "", barkod: "", agirlik: "", gorsel: null };
+export const bosBirlesim: BirlesimFormu = {
+  stokKodu: "",
+  barkod: "",
+  agirlik: "",
+  gorsel: null,
+  satisFiyati: "",
+  indirimliFiyat: "",
+  stok: "0",
+};
 
 export const birlesimAnahtari = (anahtarlar: readonly string[]): string =>
   anahtarlar.toSorted().join("|");
@@ -41,6 +53,9 @@ export type BirlesimSatiri = {
   alanlar: BirlesimFormu;
   // Kayıtlı bir birim bu satırın birimidir (kendisi ya da yeni seçenekle dönen).
   kayitli: boolean;
+  // Kayıtlı birimin sunucudaki alanları (kendisi ya da yeni seçenekle dönen birim); fiyat ve stok değişikliği bununla
+  // karşılaştırılır (kart 0265). Yeni satırda yok.
+  kaynak?: BirlesimFormu;
 };
 
 // Yeni seçenekler çıkarılınca kalan anahtar: satır var olan birimden dönüyorsa onun anahtarı.
@@ -94,6 +109,7 @@ export const birlesimSatirlari = (
       degerler,
       alanlar: form.birlesimler[anahtar] ?? kaynak ?? bosBirlesim,
       kayitli: kaynak !== undefined,
+      ...(kaynak === undefined ? {} : { kaynak }),
     };
   });
 };

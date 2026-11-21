@@ -10,7 +10,8 @@
 //
 // Aranan alanlar:
 // - birim_fiyatlari.birim_kimligi: birincil anahtar, birimin fiyatı buradan okunur.
-// - fiyat_gecmisi.birim_kimligi ve zaman: bir birimin dönem içindeki geçmişi, indeksli.
+// - fiyat_gecmisi.birim_kimligi ve zaman: bir birimin dönem içindeki geçmişi, indeksli. Panelin fiyat geçmişi
+//   birkaç birimi (varyantlı ürünün birleşimleri) aynı indeksle okur.
 import { sql } from "drizzle-orm";
 import { type AnyPgColumn, check, index, pgTable, text, uuid } from "drizzle-orm/pg-core";
 import { kimlik, tutar, zaman } from "../../veritabani/turler.ts";
@@ -72,9 +73,18 @@ export const fiyatGecmisi = pgTable(
     indirim_baslangici: zaman(),
     indirim_bitisi: zaman(),
     para_birimi: text().notNull(),
+    // Değişikliği yapan (kart 0265; stok geçmişiyle aynı biçim): yönetici, müşteri ya da sahip kimliğiyle,
+    // sistem işlemi adıyla. Bu sütunlardan önce yazılmış satırlarda boştur.
+    kim_turu: text(),
+    kim_kimligi: uuid(),
+    kim_adi: text(),
   },
   (tablo) => [
     index("fiyat_gecmisi_birim_zaman").on(tablo.birim_kimligi, tablo.zaman),
     ...fiyatKurallari("fiyat_gecmisi", tablo),
+    check(
+      "fiyat_gecmisi_kim",
+      sql`(${tablo.kim_turu} is null and ${tablo.kim_kimligi} is null and ${tablo.kim_adi} is null) or (${tablo.kim_turu} = 'sistem' and length(${tablo.kim_adi}) > 0 and ${tablo.kim_kimligi} is null) or (${tablo.kim_turu} in ('yonetici', 'musteri', 'sahip') and ${tablo.kim_kimligi} is not null and ${tablo.kim_adi} is null)`,
+    ),
   ],
 );

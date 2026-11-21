@@ -5,6 +5,7 @@
 import { and, inArray, isNull } from "drizzle-orm";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import type { OzellikTuru } from "../../kayitlar/ozellik";
+import type { ElleStokSebebi } from "../../kayitlar/stok";
 import { type UrunDurumu, type UrunTuru, urunDurumVitrini } from "../../kayitlar/urun";
 import { yerelZamana } from "../../metinler/bicimleyici";
 import { siteninBicimleyicisi } from "../../metinler/site-metni";
@@ -21,6 +22,7 @@ import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { calisanSiteninVergiServisi } from "../../moduller/vergi/servis";
 import { siteninVeritabani } from "../../veritabani/baglanti";
 import { kayitAdresleri } from "../../vitrin/adresler";
+import { type FiyatStokVerisi, fiyatStokVerisi } from "./fiyat-stok-verisi";
 import { type BirlesimFormu, birlesimAnahtari, type VaryantFormu } from "./varyant-formu";
 
 // Seçili kayıt: kimliği ve adı (kategoride yolu).
@@ -53,6 +55,20 @@ export type UrunFormu = {
   ilgiliUrunler: SeciliKayit[];
   // Seçenekler bölümü (kart 0264): seçenekler, değerleri ve kayıtlı birleşimlerin alanları.
   varyant: VaryantFormu;
+  // Fiyat bölümü (kart 0265): basit ürünün fiyatı sitenin para biçimiyle; indirimin zamanı bütün birimlere ortaktır.
+  fiyat: {
+    satisFiyati: string;
+    indirimliFiyat: string;
+    indirimBaslangici: string;
+    indirimBitisi: string;
+  };
+  // Stok bölümü (kart 0265): ürünün takibi ve eşiği; yeni basit ürünün başlangıç stoğu; birleşim tablosundaki stok
+  // değişikliklerinin ortak sebebi ve notu.
+  stokTakibi: boolean;
+  dusukStokEsigi: string;
+  baslangicStogu: string;
+  stokSebebi: ElleStokSebebi;
+  stokNotu: string;
 };
 
 export type UrunEkraniOzelligi = {
@@ -78,7 +94,16 @@ export type UrunEkraniVerisi = {
   baslikAlti: string[];
   // Birleşimin görseli seçilebilen galeri görselleri, sırasıyla (öğenin kimliği, önizlemenin dosyası, alternatif metni).
   galeriGorselleri: { kimlik: string; dosya: string; ad: string }[];
-  izinler: { degistir: boolean; sil: boolean };
+  // Fiyat ve stok bölümlerinin verisi (kart 0265).
+  fiyatStok: FiyatStokVerisi;
+  izinler: {
+    degistir: boolean;
+    sil: boolean;
+    fiyatGor: boolean;
+    fiyatDegistir: boolean;
+    stokGor: boolean;
+    stokDuzelt: boolean;
+  };
 };
 
 const bos: Omit<UrunFormu, "vergiSinifi"> = {
@@ -100,6 +125,12 @@ const bos: Omit<UrunFormu, "vergiSinifi"> = {
   ozellikler: {},
   ilgiliUrunler: [],
   varyant: { secenekler: [], birlesimler: {} },
+  fiyat: { satisFiyati: "", indirimliFiyat: "", indirimBaslangici: "", indirimBitisi: "" },
+  stokTakibi: true,
+  dusukStokEsigi: "",
+  baslangicStogu: "",
+  stokSebebi: "sayim",
+  stokNotu: "",
 };
 
 // Ürün yoksa ya da silinmişse undefined (sayfa bulunamadı verir).
@@ -132,8 +163,16 @@ export const urunEkraniVerisi = async (
       secenekler: ozellik.secenekler.map(({ kimlik: k, ad }) => ({ kimlik: k, ad })),
     })),
     agirlikBirimi: site.ayarlar.agirlikBirimi,
-    izinler: { degistir: yetkili("urun.degistir"), sil: yetkili("urun.sil") },
+    izinler: {
+      degistir: yetkili("urun.degistir"),
+      sil: yetkili("urun.sil"),
+      fiyatGor: yetkili("fiyat.gor"),
+      fiyatDegistir: yetkili("fiyat.degistir"),
+      stokGor: yetkili("stok.gor"),
+      stokDuzelt: yetkili("stok.duzelt"),
+    },
   };
+  const gorme = { fiyat: ortak.izinler.fiyatGor, stok: ortak.izinler.stokGor };
   if (urun === undefined) {
     return {
       ...ortak,
@@ -141,6 +180,7 @@ export const urunEkraniVerisi = async (
       tur: "basit",
       baslikAlti: [],
       galeriGorselleri: [],
+      fiyatStok: await fiyatStokVerisi([], new Map(), gorme, an),
     };
   }
 
@@ -177,6 +217,22 @@ export const urunEkraniVerisi = async (
     }),
   );
   const kategoriAdlari = adiyla(kategoriler, urun.kategoriler);
+  const canliBirimler = urun.birimler.filter((b) => !b.silindi);
+  const fiyatStok = await fiyatStokVerisi(
+    canliBirimler,
+    new Map(urun.secenekler.flatMap((s) => s.degerler.map((d) => [d.kimlik, d.ad]))),
+    gorme,
+    an,
+  );
+  // Birimin kayıtlı fiyatı ve stoğu formun alanlarıyla (birleşim tablosunun sütunları, basit ürünün fiyatı).
+  const birimFiyatStogu = (anahtar: string) => {
+    const kayitli = fiyatStok.birimler[anahtar];
+    return {
+      satisFiyati: kayitli?.satisFiyati ?? "",
+      indirimliFiyat: kayitli?.indirimliFiyat ?? "",
+      stok: String(kayitli?.stok ?? 0),
+    };
+  };
   const agirlikAyarlari = { bicimleyici, agirlikBirimi: site.ayarlar.agirlikBirimi };
   // Kayıtlı birleşimler değer kimliklerinin anahtarıyla (formun anahtarı kayıtlı değerde kimliktir).
   const varyant: VaryantFormu = {
@@ -201,6 +257,7 @@ export const urunEkraniVerisi = async (
                 barkod: b.barkod ?? "",
                 agirlik: agirlikYazisi(b.agirlikGram, agirlikAyarlari),
                 gorsel: b.gorsel ?? null,
+                ...birimFiyatStogu(birlesimAnahtari(b.degerler)),
               },
             ])
         : [],
@@ -238,6 +295,17 @@ export const urunEkraniVerisi = async (
       // Seçim sırasıyla (urunuOku silinmiş seçimi zaten vermez).
       ilgiliUrunler: adiyla(ilgililer, urun.ilgiliUrunler),
       varyant,
+      fiyat: {
+        satisFiyati: birimFiyatStogu("").satisFiyati,
+        indirimliFiyat: birimFiyatStogu("").indirimliFiyat,
+        indirimBaslangici: fiyatStok.indirimBaslangici,
+        indirimBitisi: fiyatStok.indirimBitisi,
+      },
+      stokTakibi: urun.stokTakibi,
+      dusukStokEsigi: urun.dusukStokEsigi === undefined ? "" : String(urun.dusukStokEsigi),
+      baslangicStogu: "",
+      stokSebebi: "sayim",
+      stokNotu: "",
     },
     tur: urun.tur,
     ...(vitrinde ? { vitrinAdresi: kayitAdresleri.urun(urun.adresAdi) } : {}),
@@ -250,5 +318,6 @@ export const urunEkraniVerisi = async (
         ? [{ kimlik: oge.kimlik, dosya: oge.dosya, ad: oge.alternatifMetin }]
         : [],
     ),
+    fiyatStok,
   };
 };

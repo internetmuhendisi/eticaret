@@ -153,7 +153,16 @@ const alanGirdisi = (form: UrunFormu, veri: UrunEkraniVerisi) => {
 // sayıldığı için alanlarıyla gider.
 export const basitBirimAlanlari = (form: UrunFormu, veri: UrunEkraniVerisi) =>
   veri.tur === "basit"
-    ? { stokKodu: form.stokKodu, barkod: form.barkod, agirlik: form.agirlik, gorsel: null }
+    ? {
+        stokKodu: form.stokKodu,
+        barkod: form.barkod,
+        agirlik: form.agirlik,
+        gorsel: null,
+        // Fiyat ve stok (kart 0265): fiyat formdaki hâli, stok sunucudaki miktar (stok pencereyle değişir).
+        satisFiyati: form.fiyat.satisFiyati,
+        indirimliFiyat: form.fiyat.indirimliFiyat,
+        stok: String(veri.fiyatStok.birimler[""]?.stok ?? 0),
+      }
     : undefined;
 
 // Sunucuya giden girdi: yeni üründe bütün dolu alanlar, değişiklikte yalnız sunucudan gelen hâline göre değişen alanlar
