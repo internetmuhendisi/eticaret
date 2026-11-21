@@ -25,6 +25,7 @@ const form: UrunFormu = {
   yayinZamani: "2026-11-01T01:30",
   ozellikler: { o1: "", o2: "12,5", o3: "evet" },
   ilgiliUrunler: [],
+  varyant: { secenekler: [], birlesimler: {} },
 };
 const veri = (ek: Partial<UrunEkraniVerisi> = {}): UrunEkraniVerisi => ({
   kimlik: "u1",
@@ -38,6 +39,7 @@ const veri = (ek: Partial<UrunEkraniVerisi> = {}): UrunEkraniVerisi => ({
   ],
   agirlikBirimi: "kg",
   baslikAlti: [],
+  galeriGorselleri: [],
   izinler: { degistir: true, sil: true },
   ...ek,
 });

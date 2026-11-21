@@ -21,6 +21,7 @@ import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { calisanSiteninVergiServisi } from "../../moduller/vergi/servis";
 import { siteninVeritabani } from "../../veritabani/baglanti";
 import { kayitAdresleri } from "../../vitrin/adresler";
+import { type BirlesimFormu, birlesimAnahtari, type VaryantFormu } from "./varyant-formu";
 
 // Seçili kayıt: kimliği ve adı (kategoride yolu).
 export type SeciliKayit = { kimlik: string; ad: string };
@@ -50,6 +51,8 @@ export type UrunFormu = {
   // biçimiyle, metin kendisi; değeri olmayan özellik yoktur.
   ozellikler: Record<string, string>;
   ilgiliUrunler: SeciliKayit[];
+  // Seçenekler bölümü (kart 0264): seçenekler, değerleri ve kayıtlı birleşimlerin alanları.
+  varyant: VaryantFormu;
 };
 
 export type UrunEkraniOzelligi = {
@@ -73,6 +76,8 @@ export type UrunEkraniVerisi = {
   vitrinAdresi?: string;
   // Başlığın altındaki satır: ilk kategorinin yolu ve stok kodu.
   baslikAlti: string[];
+  // Birleşimin görseli seçilebilen galeri görselleri, sırasıyla (öğenin kimliği, önizlemenin dosyası, alternatif metni).
+  galeriGorselleri: { kimlik: string; dosya: string; ad: string }[];
   izinler: { degistir: boolean; sil: boolean };
 };
 
@@ -94,6 +99,7 @@ const bos: Omit<UrunFormu, "vergiSinifi"> = {
   yayinZamani: "",
   ozellikler: {},
   ilgiliUrunler: [],
+  varyant: { secenekler: [], birlesimler: {} },
 };
 
 // Ürün yoksa ya da silinmişse undefined (sayfa bulunamadı verir).
@@ -134,6 +140,7 @@ export const urunEkraniVerisi = async (
       form: { ...bos, vergiSinifi: vergiSiniflari.find((s) => s.silindi !== true)?.kimlik ?? "" },
       tur: "basit",
       baslikAlti: [],
+      galeriGorselleri: [],
     };
   }
 
@@ -170,6 +177,35 @@ export const urunEkraniVerisi = async (
     }),
   );
   const kategoriAdlari = adiyla(kategoriler, urun.kategoriler);
+  const agirlikAyarlari = { bicimleyici, agirlikBirimi: site.ayarlar.agirlikBirimi };
+  // Kayıtlı birleşimler değer kimliklerinin anahtarıyla (formun anahtarı kayıtlı değerde kimliktir).
+  const varyant: VaryantFormu = {
+    secenekler: urun.secenekler
+      .filter((secenek) => !secenek.silindi)
+      .map((secenek) => ({
+        anahtar: secenek.kimlik,
+        kimlik: secenek.kimlik,
+        ad: secenek.ad,
+        degerler: secenek.degerler
+          .filter((deger) => !deger.silindi)
+          .map((deger) => ({ anahtar: deger.kimlik, kimlik: deger.kimlik, ad: deger.ad })),
+      })),
+    birlesimler: Object.fromEntries(
+      urun.tur === "varyantli"
+        ? urun.birimler
+            .filter((b) => !b.silindi && b.degerler.length > 0)
+            .map((b): [string, BirlesimFormu] => [
+              birlesimAnahtari(b.degerler),
+              {
+                stokKodu: b.stokKodu ?? "",
+                barkod: b.barkod ?? "",
+                agirlik: agirlikYazisi(b.agirlikGram, agirlikAyarlari),
+                gorsel: b.gorsel ?? null,
+              },
+            ])
+        : [],
+    ),
+  };
   const zamanli = urunDurumVitrini[urun.durum].zamanli;
   const vitrinde =
     urunDurumVitrini[urun.durum].sayfa &&
@@ -190,10 +226,7 @@ export const urunEkraniVerisi = async (
       kargoGerekmez: urun.kargoGerekmez,
       stokKodu: birim?.stokKodu ?? "",
       barkod: birim?.barkod ?? "",
-      agirlik: agirlikYazisi(birim?.agirlikGram, {
-        bicimleyici,
-        agirlikBirimi: site.ayarlar.agirlikBirimi,
-      }),
+      agirlik: agirlikYazisi(birim?.agirlikGram, agirlikAyarlari),
       enAzAdet: String(urun.enAzAdet),
       enCokAdet: urun.enCokAdet === undefined ? "" : String(urun.enCokAdet),
       durum: urun.durum,
@@ -204,6 +237,7 @@ export const urunEkraniVerisi = async (
       ozellikler: ozellikDegerleri,
       // Seçim sırasıyla (urunuOku silinmiş seçimi zaten vermez).
       ilgiliUrunler: adiyla(ilgililer, urun.ilgiliUrunler),
+      varyant,
     },
     tur: urun.tur,
     ...(vitrinde ? { vitrinAdresi: kayitAdresleri.urun(urun.adresAdi) } : {}),
@@ -211,5 +245,10 @@ export const urunEkraniVerisi = async (
       ...(kategoriAdlari[0] === undefined ? [] : [kategoriAdlari[0].ad]),
       ...(birim?.stokKodu === undefined ? [] : [birim.stokKodu]),
     ],
+    galeriGorselleri: urun.galeri.flatMap((oge) =>
+      oge.tur === "gorsel"
+        ? [{ kimlik: oge.kimlik, dosya: oge.dosya, ad: oge.alternatifMetin }]
+        : [],
+    ),
   };
 };

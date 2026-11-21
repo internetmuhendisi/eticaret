@@ -2,7 +2,8 @@
 // Ürün ekranı (kart 0263, karar 0162; taslak: planlar/tasarim-yonu/panel.html, urunEkrani): tek sayfa, bölümler alt
 // alta (karar 0157). Solda (masaüstünde) bölümlerin kartları, sağda "Bu sayfada" bağlantıları, yayın ve "Ürünü
 // kaldır". Bütün bölümler tek formdur, "Kaydet" birlikte kaydeder; hata ve odak ortak form yapısındadır (karar 0159).
-// Varyant, fiyat, stok ve galeri sonraki kartlarda (0264–0266) bu sayfaya eklenir.
+// Seçenekler bölümü kart 0264'ten (secenekler-bolumu.tsx, karar 0163); fiyat, stok ve galeri sonraki kartlarda
+// (0265, 0266) bu sayfaya eklenir.
 //
 // - Yeni ürün yalnız adla kaydedilebilir, taslak olarak başlar; kaydedilince ürünün kendi ekranı açılır.
 // - Ağırlık ve sayı türündeki özellik sitenin sayı biçimiyle yazılır, sunucu okur (panel-girdisi.ts).
@@ -42,7 +43,9 @@ import { kodluAlanHatalari, kodluHataMetni } from "../kodlu-form";
 import { usePanelIslemi } from "../panel-islemi";
 import { panelIstegi } from "../panel-istegi";
 import { useSunucuFormu } from "../sunucu-formu";
+import { SeceneklerBolumu } from "./secenekler-bolumu";
 import type { UrunEkraniVerisi, UrunFormu } from "./urun-verisi";
+import { type BirlesimSatiri, birlesimSatirlari, varyantGirdisi } from "./varyant-formu";
 
 const vergisiz = "vergisiz";
 const secilmedi = "secilmedi";
@@ -53,6 +56,7 @@ const yayinSecenekleri = ["yayinda", "zamanlanmis", "taslak", "gizli"] as const;
 const bolumler = [
   { kimlik: "urun-genel", ad: "yonetim.urunEkrani.bolum.genel" },
   { kimlik: "urun-siniflandirma", ad: "yonetim.urunEkrani.bolum.siniflandirma" },
+  { kimlik: "urun-secenekler", ad: "yonetim.urunEkrani.bolum.secenekler" },
   { kimlik: "urun-satis", ad: "yonetim.urunEkrani.bolum.satis" },
   { kimlik: "urun-ozellikler", ad: "yonetim.urunEkrani.bolum.ozellikler" },
   { kimlik: "urun-ilgili", ad: "yonetim.urunEkrani.bolum.ilgili" },
@@ -79,6 +83,9 @@ const sabitAlanlar = [
   "durum",
   "yayinZamani",
   "ilgiliUrunler",
+  // Seçenekler bölümü: hata girdideki yerin yoluyla gelir ("secenekler.0.degerler.2", "birlesimler.3.stokKodu").
+  "secenekler",
+  "birlesimler",
 ] as const;
 
 // Alım adedi tam sayı olarak gider; sayı olmayan yazı olduğu gibi gider, sunucu alanın hatasıyla reddeder.
@@ -124,8 +131,9 @@ const alanGirdisi = (form: UrunFormu, veri: UrunEkraniVerisi) => {
           : null,
     ilgiliUrunler: form.ilgiliUrunler.map((kayit) => kayit.kimlik),
     ozellikler,
-    // Varyantlı üründe birimin alanları her birleşimdedir (kart 0264).
-    ...(veri.tur === "basit"
+    // Seçenekli üründe birimin alanları her birleşimdedir (kart 0264); basit ürün seçenek alınca da gönderilmez
+    // (basit birimin alanları ilk birleşime geçer, tabloda görünür).
+    ...(veri.tur === "basit" && form.varyant.secenekler.length === 0
       ? {
           stokKodu: istege(form.stokKodu),
           barkod: istege(form.barkod),
@@ -139,12 +147,29 @@ const alanGirdisi = (form: UrunFormu, veri: UrunEkraniVerisi) => {
   };
 };
 
+// Basit ürünün birim alanları: seçenek eklenince ilk birleşime dönen birimin tablodaki başlangıcı (karar 0163).
+export const basitBirimAlanlari = (form: UrunFormu, veri: UrunEkraniVerisi) =>
+  veri.tur === "basit"
+    ? { stokKodu: form.stokKodu, barkod: form.barkod, agirlik: form.agirlik, gorsel: null }
+    : undefined;
+
 // Sunucuya giden girdi: yeni üründe bütün dolu alanlar, değişiklikte yalnız sunucudan gelen hâline göre değişen alanlar
 // (bağımsız kontrolün bulgusu). Dokunulmayan alan yeniden yazılmaz: yaz saatinin iki kez yaşanan saatinde yayın zamanı
-// kaymaz, düzenleyicinin yeniden yazdığı açıklama ya da yuvarlanan ağırlık değişmeden kayda girmez.
-export const girdiyiKur = (form: UrunFormu, bilinen: UrunFormu, veri: UrunEkraniVerisi) => {
+// kaymaz, düzenleyicinin yeniden yazdığı açıklama ya da yuvarlanan ağırlık değişmeden kayda girmez. Seçenekler bölümü
+// (kart 0264) yalnız değişince ve bütünüyle gider (varyant); yeni üründe seçeneği varsa.
+export const girdiyiKur = (
+  form: UrunFormu,
+  bilinen: UrunFormu,
+  veri: UrunEkraniVerisi,
+  satirlar: readonly BirlesimSatiri[] = [],
+) => {
   const yeniHali = alanGirdisi(form, veri);
-  if (veri.kimlik === undefined) return yeniHali;
+  const varyantDegisti =
+    veri.kimlik === undefined
+      ? form.varyant.secenekler.length > 0
+      : JSON.stringify(form.varyant) !== JSON.stringify(bilinen.varyant);
+  const varyant = varyantDegisti ? varyantGirdisi(satirlar, form.varyant) : undefined;
+  if (veri.kimlik === undefined) return { ...yeniHali, varyant };
   const eskiHali = alanGirdisi(bilinen, veri).girdi;
   return {
     girdi: Object.fromEntries(
@@ -153,6 +178,7 @@ export const girdiyiKur = (form: UrunFormu, bilinen: UrunFormu, veri: UrunEkrani
       ),
     ),
     ozellikSirasi: yeniHali.ozellikSirasi,
+    varyant,
   };
 };
 
@@ -177,18 +203,28 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
   const ozellikDegistir = (kimlik: string, deger: string) =>
     setForm((onceki) => ({ ...onceki, ozellikler: { ...onceki.ozellikler, [kimlik]: deger } }));
 
+  const satirlar = birlesimSatirlari(
+    form.varyant,
+    bilinen.varyant,
+    basitBirimAlanlari(bilinen, veri),
+  );
+
   const kaydet = async (): Promise<boolean> => {
     if (acilan.current) return false;
     const gonderilen = form;
-    const { girdi, ozellikSirasi } = girdiyiKur(gonderilen, bilinen, veri);
+    const { girdi, ozellikSirasi, varyant } = girdiyiKur(gonderilen, bilinen, veri, satirlar);
+    const ek = varyant === undefined ? {} : { varyant };
     const sonuc = await pf.isle(() =>
       yeni
-        ? islem<{ kimlik: string }>("urun-ekle", { urun: girdi }, "yonetim.urunEkrani.eklendi", {
-            formda: true,
-          })
+        ? islem<{ kimlik: string }>(
+            "urun-ekle",
+            { urun: girdi, ...ek },
+            "yonetim.urunEkrani.eklendi",
+            { formda: true },
+          )
         : islem(
             "urun-degistir",
-            { kimlik: veri.kimlik, urun: girdi },
+            { kimlik: veri.kimlik, urun: girdi, ...ek },
             "yonetim.urunEkrani.kaydedildi",
             { formda: true },
           ),
@@ -210,6 +246,10 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
     const alanHatalari = kodluAlanHatalari(urunHataMetinleri, sonuc, alanlar, (alan) => {
       // Ağırlığın okunması ve sınırı çeviride denetlenir ("agirlik"); servisin "agirlikGram" hatası ikinci katmandır.
       if (alan === "agirlikGram") return "agirlik";
+      // Birleşimin ağırlığı da (birlesimler.2.agirlikGram); seçenek ve değer adı alanın kendisidir.
+      if (alan.startsWith("birlesimler.")) return alan.replace(/\.agirlikGram$/, ".agirlik");
+      const deger = /^secenekler\.\d+\.degerler\.\d+/.exec(alan);
+      if (deger !== null) return deger[0];
       const ozellik = /^ozellikler\.(\d+)/.exec(alan);
       if (ozellik !== null) return `ozellik.${ozellikSirasi[Number(ozellik[1])] ?? ""}`;
       return alan.replace(/^(kategoriler|etiketler|ilgiliUrunler)\.\d+$/, "$1");
@@ -465,9 +505,24 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
     </PanelAlani>
   );
 
+  const secenekler = (
+    <Bolum kimlik="urun-secenekler" baslik={metin("yonetim.urunEkrani.bolum.secenekler")}>
+      <SeceneklerBolumu
+        varyant={form.varyant}
+        bilinen={bilinen.varyant}
+        satirlar={satirlar}
+        degistir={(varyant) => degistir("varyant", varyant)}
+        izinli={izinli}
+        silebilir={veri.izinler.sil}
+        agirlikBirimi={veri.agirlikBirimi}
+        galeri={veri.galeriGorselleri}
+      />
+    </Bolum>
+  );
+
   const satis = (
     <Bolum kimlik="urun-satis" baslik={metin("yonetim.urunEkrani.bolum.satis")}>
-      {veri.tur === "varyantli" ? (
+      {form.varyant.secenekler.length > 0 ? (
         <p className="text-kucuk text-soluk-yazi">{metin("yonetim.urunEkrani.varyantliBirim")}</p>
       ) : (
         <div className="grid gap-5 tablet:grid-cols-2">
@@ -676,6 +731,7 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
           <div className="flex flex-col gap-6 masaustu:col-span-2">
             {genel}
             {siniflandirma}
+            {secenekler}
             {satis}
             {ozellikler}
             {ilgili}

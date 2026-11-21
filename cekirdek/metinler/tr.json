@@ -1655,9 +1655,50 @@
       "bolum": {
         "genel": "Genel bilgiler",
         "siniflandirma": "Sınıflandırma",
+        "secenekler": "Seçenekler",
         "satis": "Satış bilgileri",
         "ozellikler": "Özellikler",
         "ilgili": "İlgili ürünler"
+      },
+      "secenek": {
+        "yok": "Bu ürünün seçeneği yok; tek fiyatı ve tek stoğu var.",
+        "ekle": "Seçenek ekle (beden, renk…)",
+        "ekleAciklamasi": "Seçenek eklenince ürün birleşimlere ayrılır: her birleşimin kendi stok kodu, fiyatı ve stoğu olur. Bugünkü stok kodu, fiyat ve stok ilk birleşime geçer.",
+        "ekleVaryantli": "Yeni seçenek eklerseniz var olan birleşimler onun ilk değerini alır; stok kodları, fiyatları ve stokları kalır. Öteki değerlerin birleşimleri yeni açılır.",
+        "liste": "Seçenekler",
+        "sira": "Seçenek {sira}",
+        "ad": "Seçenek {sira}",
+        "sil": "Seçeneği sil: {ad}",
+        "degerler": "{ad} değerleri",
+        "deger": "{secenek}: değer {sira}",
+        "degerSirasi": "Değer {sira}",
+        "degerEkle": "Değer ekle: {ad}",
+        "degerKaldir": "Kaldır: {secenek} {deger}",
+        "birlesimler": "Birleşimler ({sayi})",
+        "birlesimTablosu": "Birleşimler",
+        "birlesimlerAciklamasi": "Değerler girildikçe birleşimler kendiliğinden kurulur. Görsel seçmeyen birleşimde ürün sayfası ana görseli gösterir.",
+        "hucre": "{alan}: {birlesim}",
+        "sutun": {
+          "gorsel": "Görsel",
+          "birlesim": "Birleşim",
+          "agirlik": "Ağırlık ({birim})"
+        },
+        "gorselSec": "Görsel seç: {ad}",
+        "gorselSecili": "Görsel seç: {ad}, seçili görsel {gorsel}",
+        "gorselPencere": {
+          "baslik": "{ad} birleşiminin görseli",
+          "aciklama": "Müşteri bu birleşimi seçince ürün sayfasında bu görsel gösterilir.",
+          "anaGorsel": "Ana görsel",
+          "bos": "Ürünün galerisinde görsel yok; birleşim ana görseli gösterir."
+        },
+        "cikarOnay": {
+          "degerBaslik": "{ad} değeri kaldırılsın mı?",
+          "secenekBaslik": "{ad} seçeneği silinsin mi?",
+          "aciklama": "Kaydedince {sayi} birleşim silinir. Stokları ve fiyatları geçmişte kalır; aynı değeri yeniden ekleseniz de geri gelmez.",
+          "aciklamaSon": "Kaydedince {sayi} birleşim silinir ve ürün yeniden tek fiyatlı, tek stoklu olur. Birleşimlerin stokları ve fiyatları geçmişte kalır.",
+          "degerOnay": "Kaldır",
+          "secenekOnay": "Sil"
+        }
       },
       "buSayfada": "Bu sayfada",
       "ad": "Ürün adı",
