@@ -390,6 +390,27 @@ describe("ad, sıra ve hatalar", () => {
       kod: "dogrulama",
       ayrinti: [{ alan: "birlesimler.0.degerler", kod: "birlesim-gecersiz" }],
     });
+    // Aynı birleşim girdide iki kez: ikincisinin yeri.
+    expect(
+      await hatasi(
+        servis.varyantlariKaydet(
+          vt,
+          kim,
+          urun,
+          {
+            secenekler: kimlikli(once),
+            birlesimler: [
+              { degerler: [1, 1], stokKodu: "A" },
+              { degerler: [1, 1], stokKodu: "B" },
+            ],
+          },
+          silebilir,
+        ),
+      ),
+    ).toEqual({
+      kod: "dogrulama",
+      ayrinti: [{ alan: "birlesimler.1.degerler", kod: "birlesim-gecersiz" }],
+    });
     // Galeride olmayan görsel: birleşimin görsel alanı.
     expect(
       await hatasi(
