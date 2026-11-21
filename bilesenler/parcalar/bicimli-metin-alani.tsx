@@ -77,6 +77,13 @@ export function BicimliMetinAlani({
   const [adresHatasi, setAdresHatasi] = useState(false);
   const sonDeger = useRef(deger);
 
+  // Bağlantı satırı açılınca odak adres alanına geçer (araç çubuğunun ipucu odağı düğmede tutmasın).
+  useEffect(() => {
+    if (!baglantiAcik) return;
+    const kare = requestAnimationFrame(() => document.getElementById(`${kimlik}-adres`)?.focus());
+    return () => cancelAnimationFrame(kare);
+  }, [baglantiAcik, kimlik]);
+
   const editor = useEditor({
     immediatelyRender: false,
     editable: !disabled,
@@ -269,7 +276,6 @@ export function BicimliMetinAlani({
               aria-describedby={adresHatasi ? `${kimlik}-adres-hata` : undefined}
               inputMode="url"
               autoComplete="off"
-              autoFocus
               value={adres}
               onChange={(olay) => {
                 setAdres(olay.target.value);
