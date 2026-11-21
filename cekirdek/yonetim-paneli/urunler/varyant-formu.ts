@@ -56,6 +56,9 @@ export type BirlesimSatiri = {
   // Kayıtlı birimin sunucudaki alanları (kendisi ya da yeni seçenekle dönen birim); fiyat ve stok değişikliği bununla
   // karşılaştırılır (kart 0265). Yeni satırda yok.
   kaynak?: BirlesimFormu;
+  // Kayıtlı birimin sunucudaki anahtarı (kendisi, yeni seçenekle dönen birleşimin eski anahtarı ya da basit birim için
+  // ""); ekran birimin kimliğini bununla bulur (kart 0265).
+  kaynakAnahtari?: string;
 };
 
 // Yeni seçenekler çıkarılınca kalan anahtar: satır var olan birimden dönüyorsa onun anahtarı.
@@ -103,13 +106,14 @@ export const birlesimSatirlari = (
         : donen === "" && bilinen.secenekler.length === 0
           ? basit
           : bilinen.birlesimler[donen]);
+    const kaynakAnahtari = kendi !== undefined ? anahtar : donen;
     return {
       anahtar,
       yol,
       degerler,
       alanlar: form.birlesimler[anahtar] ?? kaynak ?? bosBirlesim,
       kayitli: kaynak !== undefined,
-      ...(kaynak === undefined ? {} : { kaynak }),
+      ...(kaynak === undefined ? {} : { kaynak, kaynakAnahtari: kaynakAnahtari ?? "" }),
     };
   });
 };

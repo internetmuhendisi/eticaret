@@ -71,6 +71,8 @@ export type FiyatStokSutunlari = {
   stokGor: boolean;
   stokDuzelt: boolean;
   simge: string;
+  // Yeni üründe sorulmaz: ilk stoklar "Yeni mal geldi" ile yazılır.
+  sebepSor: boolean;
   sebep: ElleStokSebebi;
   not: string;
   sebepDegistir: (yeni: { stokSebebi?: ElleStokSebebi; stokNotu?: string }) => void;
@@ -647,7 +649,7 @@ function BirlesimTablosu({
         {metin("yonetim.urunEkrani.secenek.birlesimlerAciklamasi")}
       </p>
       {/* Tabloda değişen stokların ortak sebebi (kullanıcı kararı, kart 0265). */}
-      {fiyatStok.stokGor && fiyatStok.stokDuzelt ? (
+      {fiyatStok.stokGor && fiyatStok.stokDuzelt && fiyatStok.sebepSor ? (
         <StokSebebiAlanlari
           sebep={fiyatStok.sebep}
           not={fiyatStok.not}

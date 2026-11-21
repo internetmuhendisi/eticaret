@@ -5,14 +5,17 @@
 // ekranın gördüğü birleşim yoksa "varyant-degisti". Fiyat geçmişi yazanı tutar, birden çok birimin geçmişi tek listede
 // birimiyle ve sayfa sayfa gelir; stok geçmişi de; sepette ayrılan miktar süresi dolmamış ayırmaların toplamıdır.
 import { randomUUID } from "node:crypto";
+import { eq } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 import { BilinenHata } from "../../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
 import { bicimleyiciOlustur } from "../../../metinler/bicimleyici.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
+import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import { fiyatServisi } from "../../fiyat/servis.ts";
 import { odemeOturumlari } from "../../odeme/model.ts";
+import { birimStoklari } from "../../stok/model.ts";
 import { stokServisi } from "../../stok/servis.ts";
 import { type PanelFiyatStok, panelFiyatStokYaz } from "../panel-fiyat-stok.ts";
 import { urunServisi } from "../servis.ts";
@@ -81,7 +84,9 @@ describe("fiyat", () => {
     await yaz(vt, urun, {
       indirimBaslangici: "2026-12-01T00:00",
       indirimBitisi: null,
-      birimler: [{ yer: "fiyat", satisFiyati: "1.249,90", indirimliFiyat: "999" }],
+      birimler: [
+        { yer: "fiyat", satisFiyati: "1.249,90", indirimliFiyat: "999", ortakZaman: true },
+      ],
     });
     expect(await fiyat.fiyatOku(vt, birim)).toMatchObject({
       satisFiyati: 124990,
@@ -127,7 +132,13 @@ describe("fiyat", () => {
       indirimBitisi: "2026-12-08T00:00",
       birimler: [
         { yer: "birlesimler.0", birlesim: [0], satisFiyati: "100", indirimliFiyat: "" },
-        { yer: "birlesimler.1", birlesim: [1], satisFiyati: "120", indirimliFiyat: "90" },
+        {
+          yer: "birlesimler.1",
+          birlesim: [1],
+          satisFiyati: "120",
+          indirimliFiyat: "90",
+          ortakZaman: true,
+        },
       ],
     });
     expect(await fiyat.fiyatOku(vt, s)).toMatchObject({ satisFiyati: 10000, indirimBitisi: null });
@@ -143,7 +154,13 @@ describe("fiyat", () => {
           indirimBaslangici: "2026-12-10T00:00",
           indirimBitisi: "2026-12-01T00:00",
           birimler: [
-            { yer: "birlesimler.1", birlesim: [1], satisFiyati: "120", indirimliFiyat: "90" },
+            {
+              yer: "birlesimler.1",
+              birlesim: [1],
+              satisFiyati: "120",
+              indirimliFiyat: "90",
+              ortakZaman: true,
+            },
           ],
         }),
       ),
@@ -164,6 +181,108 @@ describe("fiyat", () => {
     expect(await hatasi(yaz(vt, urun, { birimler: [{ yer: "fiyat", satisFiyati: "1" }] }))).toEqual(
       { kod: "cakisma", ayrinti: [{ alan: "fiyat", kod: "varyant-degisti" }] },
     );
+  });
+});
+
+describe("bağımsız kontrolün bulguları", () => {
+  it("ekranın gördüğü birim kimliği tutmazsa (sıra değişmiş) satır başka birime yazılmaz: varyant-degisti", async () => {
+    const vt = await siteAc();
+    const { urun, s, m } = await secenekliUrun(vt);
+    // Ekran M'yi ikinci sırada görmüş; sunucuda ikinci sıradaki S'nin kimliği değil.
+    expect(
+      await hatasi(
+        yaz(vt, urun, {
+          birimler: [{ yer: "birlesimler.1", birlesim: [1], birim: s, satisFiyati: "10" }],
+        }),
+      ),
+    ).toEqual({ kod: "cakisma", ayrinti: [{ alan: "birlesimler.1", kod: "varyant-degisti" }] });
+    expect(await fiyat.fiyatOku(vt, s)).toBeUndefined();
+    expect(await fiyat.fiyatOku(vt, m)).toBeUndefined();
+    // Doğru kimlikle yazılır; basit üründe de.
+    await yaz(vt, urun, {
+      birimler: [{ yer: "birlesimler.1", birlesim: [1], birim: m, satisFiyati: "10" }],
+    });
+    expect((await fiyat.fiyatOku(vt, m))?.satisFiyati).toBe(1000);
+    const basit = await basitUrun(vt);
+    expect(
+      await hatasi(
+        yaz(vt, basit.urun, { birimler: [{ yer: "fiyat", birim: s, satisFiyati: "10" }] }),
+      ),
+    ).toMatchObject({ kod: "cakisma" });
+  });
+
+  it("ortak zaman istenmeyen satırda birimin kendi indirim zamanı kalır, istenen satır ortak zamanı alır", async () => {
+    const vt = await siteAc();
+    const { urun, s, m } = await secenekliUrun(vt);
+    await fiyat.fiyatYaz(vt, kim, s, {
+      satisFiyati: 10000,
+      indirimliFiyat: 8000,
+      indirimBitisi: "2030-01-05T10:30",
+    });
+    await fiyat.fiyatYaz(vt, kim, m, { satisFiyati: 10000, indirimliFiyat: 8000 });
+    await yaz(vt, urun, {
+      indirimBaslangici: null,
+      indirimBitisi: "2030-02-01T00:00",
+      birimler: [
+        { yer: "birlesimler.0", birlesim: [0], satisFiyati: "110", indirimliFiyat: "80" },
+        {
+          yer: "birlesimler.1",
+          birlesim: [1],
+          satisFiyati: "100",
+          indirimliFiyat: "70",
+          ortakZaman: true,
+        },
+      ],
+    });
+    expect(await fiyat.fiyatOku(vt, s)).toMatchObject({
+      satisFiyati: 11000,
+      indirimBitisi: new Date("2030-01-05T07:30:00Z"),
+    });
+    expect((await fiyat.fiyatOku(vt, m))?.indirimBitisi).toEqual(new Date("2030-01-31T21:00:00Z"));
+  });
+
+  it("birleşimlerin stoğu birim kimliği sırasıyla kilitlenir: aynı birimleri kilitleyen siparişle kilitlenmez", async () => {
+    const vt = await siteAc();
+    const { urun, s, m } = await secenekliUrun(vt);
+    for (const birim of [s, m]) {
+      await stok.stokDuzelt(vt, kim, birim, { gorulenMiktar: 0, yeniMiktar: 5, sebep: "sayim" });
+    }
+    const [kucuk, buyuk] = [s, m].sort();
+    const sira = (birim: string | undefined) => (birim === s ? 0 : 1);
+    // Tablo büyük kimlikli birimi önce verir; sipariş (stokDus gibi) küçükten büyüğe kilitler.
+    const girdi: PanelFiyatStok = {
+      sebep: "sayim",
+      birimler: [buyuk, kucuk].map((birim) => ({
+        yer: `birlesimler.${sira(birim)}`,
+        birlesim: [sira(birim)],
+        stok: { gorulen: 5, yeni: "7" },
+      })),
+    };
+    let alindi = () => {};
+    const kilit = new Promise<void>((bitti) => {
+      alindi = bitti;
+    });
+    const siparis = vt.transaction(async (islem) => {
+      await islem
+        .select()
+        .from(birimStoklari)
+        .where(eq(birimStoklari.birim_kimligi, kucuk ?? ""))
+        .for("update");
+      alindi();
+      // Panel küçüğü bekler (eski sırada büyüğü alıp küçüğü beklerdi; sipariş büyüğü isteyince kilitlenirdi).
+      await kilitBekleyeniGor(vt);
+      await islem
+        .select()
+        .from(birimStoklari)
+        .where(eq(birimStoklari.birim_kimligi, buyuk ?? ""))
+        .for("update");
+    });
+    await Promise.race([kilit, siparis]);
+    const panel = yaz(vt, urun, girdi);
+    await siparis;
+    await panel;
+    const stoklar = await stok.stoklariOku(vt, [s, m]);
+    expect([stoklar.get(s)?.miktar, stoklar.get(m)?.miktar]).toEqual([7, 7]);
   });
 });
 

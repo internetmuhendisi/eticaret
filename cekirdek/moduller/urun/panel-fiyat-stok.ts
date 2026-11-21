@@ -19,9 +19,9 @@ import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import { elleStokSebepleri } from "../../kayitlar/stok.ts";
 import { varyantSinirlari } from "../../kayitlar/urun.ts";
-import type { Bicimleyici } from "../../metinler/bicimleyici.ts";
+import { type Bicimleyici, yerelZamana } from "../../metinler/bicimleyici.ts";
 import type { VeritabaniIslemi } from "../../veritabani/baglanti.ts";
-import { kimligiDuzelt } from "../../veritabani/kimlik.ts";
+import { kimligiDuzelt, kimlikSemasi } from "../../veritabani/kimlik.ts";
 import type { fiyatServisi } from "../fiyat/servis.ts";
 import type { stokServisi } from "../stok/servis.ts";
 import type { Sorun } from "./dogrulama.ts";
@@ -41,6 +41,12 @@ export const panelFiyatStokSemasi = z.strictObject({
       z.strictObject({
         // Ekrandaki yeri: hatanın yolunun başı.
         yer: z.string().regex(/^(?:fiyat|stok|birlesimler\.\d{1,3})$/),
+        // Ekranın gördüğü birimin kimliği (kayıtlı birimde): sıra ondan sonra değiştiyse (başka bir ekran değerleri
+        // sıraladı ya da sildi) satır başka birime yazılmaz, "varyant-degisti" (bağımsız kontrolün bulgusu).
+        birim: kimlikSemasi.optional(),
+        // İndirimli fiyatlı satıra ortak indirim zamanı yazılsın mı: yalnız zaman değişince ya da indirim yeni
+        // girilince. Yazılmazsa birimin kendi zamanı kalır (yalnız satış fiyatı değişen birleşimin zamanı ezilmez).
+        ortakZaman: z.boolean().optional(),
         // Birleşim satırında seçeneklerdeki değerlerin sırası; basit üründe yok.
         birlesim: z
           .array(
@@ -67,6 +73,7 @@ type Servisler = {
   fiyat: ReturnType<typeof fiyatServisi>;
   stok: ReturnType<typeof stokServisi>;
   bicimleyici: Bicimleyici;
+  saatDilimi: string;
 };
 
 // Bilinen hatanın alanını ekranın yoluna çevirir.
@@ -151,18 +158,34 @@ export const panelFiyatStokYaz = async (
     }
     return okunan;
   };
-  for (const satir of girdi.birimler) {
+  // Satırın birimi: değerlerin sırasıyla (ya da basit birim) bulunur; ekran kayıtlı birimin kimliğini verdiyse aynı
+  // birim olmalıdır. Ekranın gördüğü birleşim ya da basit birim artık yoksa seçenekler bu arada değişmiştir.
+  const satirinBirimi = (satir: (typeof girdi.birimler)[number]): string => {
     const birim = satir.birlesim === undefined ? basit : yollar.get(satir.birlesim.join(","));
-    // Ekranın gördüğü birleşim ya da basit birim artık yok (seçenekler bu arada değişmiş).
-    if (birim === undefined) {
+    if (birim === undefined || (satir.birim !== undefined && satir.birim !== birim)) {
       throw new BilinenHata("cakisma", [{ alan: satir.yer, kod: "varyant-degisti" }]);
     }
+    return birim;
+  };
+  for (const satir of girdi.birimler) {
+    const birim = satirinBirimi(satir);
     if (satir.satisFiyati !== undefined) {
       const indirimli =
         satir.indirimliFiyat === undefined || satir.indirimliFiyat === ""
           ? null
           : tutar(satir.yer, "indirimliFiyat", satir.indirimliFiyat);
       const satis = tutar(satir.yer, "satisFiyati", satir.satisFiyati);
+      // Ortak zaman istenmediyse birimin kayıtlı zamanı kalır (indirimi sürüyorsa).
+      const kayitli =
+        indirimli !== null && satir.ortakZaman !== true
+          ? await servisler.fiyat.fiyatOku(islem, birim)
+          : undefined;
+      const zaman = (alan: "indirimBaslangici" | "indirimBitisi") => {
+        if (indirimli === null) return null;
+        if (satir.ortakZaman === true) return girdi[alan] ?? null;
+        const an = kayitli?.indirimliFiyat === null ? null : (kayitli?.[alan] ?? null);
+        return an === null ? null : yerelZamana(an, servisler.saatDilimi);
+      };
       await yolla(
         (alan) =>
           alan === "indirimBaslangici" || alan === "indirimBitisi"
@@ -172,20 +195,22 @@ export const panelFiyatStokYaz = async (
           servisler.fiyat.fiyatYaz(islem, kim, birim, {
             satisFiyati: satis,
             indirimliFiyat: indirimli,
-            indirimBaslangici: indirimli === null ? null : (girdi.indirimBaslangici ?? null),
-            indirimBitisi: indirimli === null ? null : (girdi.indirimBitisi ?? null),
+            indirimBaslangici: zaman("indirimBaslangici"),
+            indirimBitisi: zaman("indirimBitisi"),
           }),
       );
     }
   }
-  // Stok en son: stok satırının kilidinden sonra ürünün işlem kilidi alınmaz (karar 0068).
-  for (const satir of girdi.birimler) {
-    if (satir.stok === undefined) continue;
-    const birim = satir.birlesim === undefined ? basit : yollar.get(satir.birlesim.join(","));
-    if (birim === undefined) {
-      throw new BilinenHata("cakisma", [{ alan: satir.yer, kod: "varyant-degisti" }]);
-    }
-    const yeni = /^\d{1,10}$/.test(satir.stok.yeni) ? Number(satir.stok.yeni) : Number.NaN;
+  // Stok en son: stok satırının kilidinden sonra ürünün işlem kilidi alınmaz (karar 0068). Satırlar birimin kimliğine
+  // göre sırayla kilitlenir, siparişin düşürmesi gibi (stokDus): ters sırada kilitleyen iki işlem birbirini beklerdi
+  // (bağımsız kontrolün bulgusu, kart 0125'in kalıbı).
+  const stokSatirlari = girdi.birimler
+    .filter((satir) => satir.stok !== undefined)
+    .map((satir) => ({ satir, birim: satirinBirimi(satir) }))
+    .sort((a, b) => (a.birim < b.birim ? -1 : a.birim > b.birim ? 1 : 0));
+  for (const { satir, birim } of stokSatirlari) {
+    const yazi = satir.stok?.yeni ?? "";
+    const yeni = /^\d{1,10}$/.test(yazi) ? Number(yazi) : Number.NaN;
     await yolla(
       (alan) =>
         alan === "sebep" ? "stokSebebi" : alan === "not" ? "stokNotu" : `${satir.yer}.stok`,

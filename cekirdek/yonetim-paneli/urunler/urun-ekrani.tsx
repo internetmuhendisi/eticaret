@@ -46,7 +46,7 @@ import { usePanelIslemi } from "../panel-islemi";
 import { panelIstegi } from "../panel-istegi";
 import { useSunucuFormu } from "../sunucu-formu";
 import { FiyatBolumu, FiyatGecmisi, StokBolumu, StokGecmisi } from "./fiyat-stok-bolumleri";
-import { fiyatStokGirdisi } from "./fiyat-stok-formu";
+import { fiyatStokGirdisi, urunFormunuUzlastir } from "./fiyat-stok-formu";
 import { SeceneklerBolumu } from "./secenekler-bolumu";
 import type { UrunEkraniVerisi, UrunFormu } from "./urun-verisi";
 import { type BirlesimSatiri, birlesimSatirlari, varyantGirdisi } from "./varyant-formu";
@@ -226,6 +226,7 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
   const yeni = veri.kimlik === undefined;
   const { form, setForm, bilinen, degisti, kaydedildi, vazgec } = useSunucuFormu<UrunFormu>(
     veri.form,
+    urunFormunuUzlastir,
   );
   // Yeni ürün kaydedilince ürünün ekranına geçilir; geçiş bitene kadar ikinci kayıt yapılmaz (bağımsız kontrolün
   // bulgusu: ikinci basış ikinci ürünü açabilirdi).
@@ -564,6 +565,7 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
           stokGor: veri.izinler.stokGor,
           stokDuzelt: izinli && veri.izinler.stokDuzelt,
           simge: veri.fiyatStok.simge,
+          sebepSor: !yeni,
           sebep: form.stokSebebi,
           not: form.stokNotu,
           sebepDegistir: (yeni) => setForm((onceki) => ({ ...onceki, ...yeni })),

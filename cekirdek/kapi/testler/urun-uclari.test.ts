@@ -489,7 +489,12 @@ describe("fiyat ve stok bölümleri (kart 0265)", () => {
               indirimBitisi: "2030-01-01T00:00",
               sebep: "yeni-mal",
               birimler: [
-                { yer: "fiyat", satisFiyati: tutar(1249.9), indirimliFiyat: tutar(999) },
+                {
+                  yer: "fiyat",
+                  satisFiyati: tutar(1249.9),
+                  indirimliFiyat: tutar(999),
+                  ortakZaman: true,
+                },
                 { yer: "stok", stok: { gorulen: 0, yeni: "7" } },
               ],
             },

@@ -16,7 +16,31 @@ import { useState } from "react";
 
 const ayni = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
-export const useSunucuFormu = <Form>(sunucu: Form) => {
+const duzNesneMi = (deger: unknown): deger is Record<string, unknown> =>
+  typeof deger === "object" && deger !== null && !Array.isArray(deger);
+
+// Üç yönlü birleşim (kart 0265, bağımsız kontrolün bulgusu): kullanıcının dokunmadığı değer (formda eski bilinen hâliyle
+// aynı) sunucunun yeni değerini alır, dokunduğu kalır. Nesneler alan alan, diziler ve düz değerler bütün olarak
+// karşılaştırılır. Yalnız değişen alanı gönderen formda (ürün ekranı) dokunulmamış alanın eski değeri sunucunun yeni
+// değerini ezmesin diye.
+export const ucYonluBirlestir = <T>(form: T, eski: T, yeni: T): T => {
+  if (ayni(form, eski)) return yeni;
+  if (!duzNesneMi(form) || !duzNesneMi(eski) || !duzNesneMi(yeni)) return form;
+  const sonuc: Record<string, unknown> = {};
+  for (const anahtar of new Set([...Object.keys(form), ...Object.keys(yeni)])) {
+    if (!(anahtar in form)) sonuc[anahtar] = yeni[anahtar];
+    else if (!(anahtar in yeni) && anahtar in eski) continue;
+    else sonuc[anahtar] = ucYonluBirlestir(form[anahtar], eski[anahtar], yeni[anahtar]);
+  }
+  return sonuc as T;
+};
+
+// uzlastir verilirse kaydedilmemiş değişiklik varken gelen yeni veri formla onunla birleşir (dokunulmayan alan yeni
+// değeri alır); verilmezse kullanıcının yazdığı olduğu gibi kalır.
+export const useSunucuFormu = <Form>(
+  sunucu: Form,
+  uzlastir?: (form: Form, eskiBilinen: Form, yeni: Form) => Form,
+) => {
   const [form, setForm] = useState<Form>(sunucu);
   const [bilinen, setBilinen] = useState<Form>(sunucu);
   const [gorulen, setGorulen] = useState<Form>(sunucu);
@@ -26,6 +50,7 @@ export const useSunucuFormu = <Form>(sunucu: Form) => {
     setGorulen(sunucu);
     if (!ayni(sunucu, bilinen)) {
       if (ayni(form, bilinen)) setForm(sunucu);
+      else if (uzlastir !== undefined) setForm(uzlastir(form, bilinen, sunucu));
       setBilinen(sunucu);
     }
   }

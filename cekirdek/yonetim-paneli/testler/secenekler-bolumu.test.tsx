@@ -77,6 +77,7 @@ function Deneme({ izinli, silebilir }: { izinli: boolean; silebilir: boolean }) 
           stokGor: false,
           stokDuzelt: false,
           simge: "¤",
+          sebepSor: false,
           sebep: "sayim",
           not: "",
           sebepDegistir: () => {},

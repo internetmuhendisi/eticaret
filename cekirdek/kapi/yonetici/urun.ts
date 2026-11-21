@@ -73,6 +73,7 @@ const fiyatStokYaz = async (
       fiyat: calisanSiteninFiyatServisi(),
       stok: calisanSiteninStokServisi(),
       bicimleyici: panelAyarlari().bicimleyici,
+      saatDilimi: calisanSite().ayarlar.saatDilimi,
     },
     {
       fiyat: await yoneticininIzniVarMi(vt, hesapKimligi, "fiyat.degistir"),
