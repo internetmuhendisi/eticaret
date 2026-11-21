@@ -12,6 +12,7 @@ import {
   suzgecliMi,
 } from "../liste/tanim.ts";
 import { siparisListesiGirdisi, siparisListesiTanimi } from "../siparisler/liste-tanimi.ts";
+import { urunListesiGirdisi, urunListesiTanimi } from "../urunler/liste-tanimi.ts";
 
 const tanim = siparisListesiTanimi;
 
@@ -169,5 +170,57 @@ describe("toplu işlemin izni (bağımsız kontrolün bulgusu)", () => {
     for (const { kod, izin } of siparisListesiTanimi.topluIslemler) {
       expect(izin).toBe(siparisIslemleri[kod].izin);
     }
+  });
+});
+
+describe("kayıt süzgeci (kart 0262)", () => {
+  const urun = urunListesiTanimi;
+  const a = "5f0c7c2e-6b1d-4f0a-9a43-1f2e3d4c5b6a";
+  const b = "0b5e4c3d-2a1f-4e0d-8c9b-7a6f5e4d3c2b";
+
+  it("adreste kimlikle durur: kimlik olmayan değer yok sayılır, büyük harf küçülür, tekrar bir kez", () => {
+    const durum = listeDurumunuOku(urun, {
+      kategori: `${a.toUpperCase()},yok,${b},${a}`,
+      marka: "constructor",
+    });
+    expect(durum.suzgecler).toEqual({ kategori: [a, b] });
+    expect(listeSorgusu(urun, durum).toString()).toBe(`kategori=${a}%2C${b}`);
+    // Değer süzgeçten kaldırılınca adresten de kalkar; süzgeç değişince ilk sayfaya dönülür.
+    expect(listeAdresi(urun, { ...durum, sayfa: 3 }, { suzgecler: { kategori: [b] } })).toBe(
+      `${urun.adres}?kategori=${b}`,
+    );
+  });
+
+  it("liste ucu kimliği kabul eder, kimlik olmayanı reddeder; seçenekli süzgeç tanımın değerleriyle", () => {
+    const sema = listeUcuSemasi(urun);
+    const gecen = sema.safeParse({ kategori: `${a.toUpperCase()},${a}`, stok: "dusuk,tukendi" });
+    expect(gecen.success && gecen.data.suzgecler).toEqual({
+      kategori: [a],
+      stok: ["dusuk", "tukendi"],
+    });
+    expect(sema.safeParse({ marka: "bozuk" }).success).toBe(false);
+    expect(sema.safeParse({ stok: "hepsi" }).success).toBe(false);
+  });
+
+  it("ürün listesinin girdisi durumdan kurulur", () => {
+    const durum = listeDurumunuOku(urun, {
+      durum: "taslak,yayinda",
+      marka: a,
+      stok: "dusuk",
+      ara: " şal ",
+      sirala: "fiyat-artan",
+      sayfa: "2",
+    });
+    expect(urunListesiGirdisi(durum, 50)).toEqual({
+      ara: "şal",
+      // Seçenekler tanımın sırasıyla (urunDurumlari).
+      durum: ["taslak", "yayinda"],
+      kategori: [],
+      marka: [a],
+      stok: ["dusuk"],
+      siralama: "fiyat-artan",
+      sayfa: 2,
+      sayfaBoyu: 50,
+    });
   });
 });
