@@ -37,4 +37,4 @@ Panelde şemanın kendi kodlarını alana eşleyen ortak yol vardır (`cekirdek/
 
 ## Durum
 
-yapılacak
+bitti
