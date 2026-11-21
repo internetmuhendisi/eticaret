@@ -728,7 +728,7 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
         }}
       >
         <div className="grid gap-6 masaustu:grid-cols-3">
-          <div className="flex flex-col gap-6 masaustu:col-span-2">
+          <div className="flex min-w-0 flex-col gap-6 masaustu:col-span-2">
             {genel}
             {siniflandirma}
             {secenekler}
@@ -786,7 +786,7 @@ function Bolum({
 }) {
   return (
     <Kart
-      className="flex scroll-mt-4 flex-col gap-5 p-4 tablet:p-6"
+      className="flex min-w-0 scroll-mt-4 flex-col gap-5 p-4 tablet:p-6"
       id={kimlik}
       aria-labelledby={`${kimlik}-baslik`}
     >

@@ -3,7 +3,7 @@
 // dört satırdır, ilk satır basit ürünün stok kodunu gösterir. Bir birleşimin stok kodunu yazar, birinin görselini
 // galeriden pencerede seçer (pencere kapanınca odak düğmeye döner) ve kaydeder: basit birim ilk birleşim olur (fiyatı ve
 // stoğu kalır), öteki üçü açılır. Fiyatları servisle verilen birleşimler vitrinde seçilir, seçilen birleşimin stok kodu
-// görünür. Aynı değer iki kez yazılınca hata değerin alanında ve odak orada. Kayıtlı değeri kaldırmak onay penceresiyle
+// görünür. Seçeneğin sırası kartın düğmeleriyle değişir, odak düğmede kalır. Aynı değer iki kez yazılınca hata değerin alanında ve odak orada. Kayıtlı değeri kaldırmak onay penceresiyle
 // sorulur ve kaç birleşimin silineceğini söyler; Vazgeç hiçbir şeyi değiştirmez, kaldırıp kaydedince birleşimleri
 // silinir. Ekran, görsel penceresi ve onay penceresi iki renkte ve üç genişlikte taramadan geçer, yana kaymaz, konsolda
 // hata yoktur.
@@ -188,6 +188,28 @@ test("mağaza sahibi basit ürüne klavyeyle seçenek ekler, birleşimleri doldu
     };
     await secenekEkle("Beden", ["S", "M"], 1);
     await secenekEkle("Renk", ["Gri", "Lacivert"], 2);
+
+    // Seçeneğin sırası kartın düğmeleriyle: Beden aşağı inince birleşimler "Gri / S" diye yazılır, odak Beden'in
+    // açık kalan düğmesindedir; yukarı alınca eski sıraya döner.
+    const tasi = (yon: "yukari" | "asagi") =>
+      bolum.getByRole("button", {
+        name: doldur(metin(`ortak.parca.siralama.${yon}`), { ad: "Beden" }),
+        exact: true,
+      });
+    await bas(page, tasi("asagi"));
+    await expect(tasi("yukari")).toBeFocused();
+    await expect(tasi("asagi")).toBeDisabled();
+    await expect(
+      bolum.getByRole("textbox", {
+        name: doldur(metin("yonetim.urunEkrani.secenek.hucre"), {
+          alan: metin("yonetim.urunEkrani.stokKodu"),
+          birlesim: "Gri / S",
+        }),
+        exact: true,
+      }),
+    ).toBeVisible();
+    await page.keyboard.press("Enter");
+    await expect(tasi("asagi")).toBeFocused();
 
     // Birleşimler: dört satır, ilk satır basit ürünün stok kodunu gösterir (karar 0163).
     const hucre = (alan: string, birlesim: string) =>

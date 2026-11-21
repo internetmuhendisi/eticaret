@@ -82,7 +82,7 @@ export function SeceneklerBolumu({
   useEffect(() => {
     if (odaklanacak.current === null) return;
     const oge = document.querySelector<HTMLElement>(
-      `[data-odak="${odaklanacak.current}"] input, [data-odak="${odaklanacak.current}"]:is(button)`,
+      `[data-odak="${odaklanacak.current}"] input, [data-odak="${odaklanacak.current}"]:is(button), span[data-odak="${odaklanacak.current}"] button:not(:disabled)`,
     );
     if (oge !== null) {
       oge.focus();
@@ -165,33 +165,24 @@ export function SeceneklerBolumu({
     const i = secenekler.indexOf(secenek);
     const j = secenek.degerler.indexOf(deger);
     return (
-      <div data-odak={`deger-${deger.anahtar}`} className="flex min-w-0 flex-1 items-end gap-2">
-        <div className="min-w-0 flex-1">
-          <PanelAlani
-            ad={`secenekler.${i}.degerler.${j}`}
-            etiket={doldur(metin("yonetim.urunEkrani.secenek.deger"), {
-              secenek: secenekAdi(secenek),
-              sira: String(j + 1),
-            })}
-            zorunlu
-          >
-            {(alan) => (
-              <GirisAlani
-                {...alan}
-                autoComplete="off"
-                value={deger.ad}
-                disabled={!izinli}
-                onChange={(olay) =>
-                  seceneginiDegistir(secenek, {
-                    degerler: secenek.degerler.map((d) =>
-                      d === deger ? { ...d, ad: olay.target.value } : d,
-                    ),
-                  })
-                }
-              />
-            )}
-          </PanelAlani>
-        </div>
+      <div data-odak={`deger-${deger.anahtar}`} className="flex min-w-0 flex-1 items-start gap-2">
+        {/* Değerin adı ekran okuyucu adıdır: görünen etiket her satırda tekrarlanmaz (taslağın kısa satırları). */}
+        <EtiketsizAlan
+          ad={`secenekler.${i}.degerler.${j}`}
+          etiket={doldur(metin("yonetim.urunEkrani.secenek.deger"), {
+            secenek: secenekAdi(secenek),
+            sira: String(j + 1),
+          })}
+          deger={deger.ad}
+          zorunlu
+          disabled={!izinli}
+          degistir={(ad) =>
+            seceneginiDegistir(secenek, {
+              degerler: secenek.degerler.map((d) => (d === deger ? { ...d, ad } : d)),
+            })
+          }
+          className="min-w-0 flex-1"
+        />
         {/* Seçeneğin son değeri çıkarılmaz: seçenek silinir. */}
         {secenek.degerler.length > 1 && cikarilabilir(deger.kimlik !== undefined) ? (
           <IkonDugmesi
@@ -207,11 +198,29 @@ export function SeceneklerBolumu({
     );
   };
 
+  // Seçenek bir yer yukarı ya da aşağı: odak aynı düğmede kalır, düğme kapandıysa (ilk ya da son sıra) ötekinde.
+  const secenegiTasi = (secenek: VaryantSecenegiFormu, yon: -1 | 1) => {
+    const i = secenekler.indexOf(secenek);
+    const yeni = [...secenekler];
+    yeni.splice(i, 1);
+    yeni.splice(i + yon, 0, secenek);
+    const sinirda = i + yon === 0 || i + yon === secenekler.length - 1;
+    const kalan = (yon === -1) === !sinirda ? "yukari" : "asagi";
+    odaklanacak.current = `secenek-${kalan}-${secenek.anahtar}`;
+    degistir({ ...varyant, secenekler: yeni });
+  };
+  const sirala = siralamaMetinleri(metin);
+
+  // Seçenekler ayrı kartlardır, sırası kartın başlığındaki yukarı ve aşağı al düğmeleriyle değişir: değerlerin
+  // sıralanabilir listesi iç içe girintiye düşmez, telefonda değerin alanı daralmaz (taslakla karşılaştırma).
   const secenekSatiri = (secenek: VaryantSecenegiFormu) => {
     const i = secenekler.indexOf(secenek);
     return (
-      <div className="flex min-w-0 flex-1 flex-col gap-3 py-1">
-        <div data-odak={`secenek-${secenek.anahtar}`} className="flex items-end gap-2">
+      <li
+        key={secenek.anahtar}
+        className="flex min-w-0 flex-col gap-3 rounded-orta border border-kenar p-3"
+      >
+        <div data-odak={`secenek-${secenek.anahtar}`} className="flex items-end gap-1">
           <div className="min-w-0 flex-1">
             <PanelAlani
               ad={`secenekler.${i}.ad`}
@@ -229,6 +238,26 @@ export function SeceneklerBolumu({
               )}
             </PanelAlani>
           </div>
+          {izinli && secenekler.length > 1 ? (
+            <>
+              <span data-odak={`secenek-yukari-${secenek.anahtar}`} className="flex">
+                <IkonDugmesi
+                  ikon="yukari-al"
+                  etiket={sirala.yukari(secenekAdi(secenek))}
+                  disabled={i === 0}
+                  onClick={() => secenegiTasi(secenek, -1)}
+                />
+              </span>
+              <span data-odak={`secenek-asagi-${secenek.anahtar}`} className="flex">
+                <IkonDugmesi
+                  ikon="asagi-al"
+                  etiket={sirala.asagi(secenekAdi(secenek))}
+                  disabled={i === secenekler.length - 1}
+                  onClick={() => secenegiTasi(secenek, 1)}
+                />
+              </span>
+            </>
+          ) : null}
           {cikarilabilir(secenek.kimlik !== undefined) ? (
             <IkonDugmesi
               ikon="sil"
@@ -260,7 +289,7 @@ export function SeceneklerBolumu({
             {doldur(metin("yonetim.urunEkrani.secenek.degerEkle"), { ad: secenekAdi(secenek) })}
           </Dugme>
         ) : null}
-      </div>
+      </li>
     );
   };
 
@@ -275,15 +304,12 @@ export function SeceneklerBolumu({
           {secenekler.length === 0 ? (
             <p className="text-kucuk">{metin("yonetim.urunEkrani.secenek.yok")}</p>
           ) : (
-            <SiraliListe
-              ogeler={secenekler}
-              anahtar={(s) => s.anahtar}
-              ad={secenekAdi}
-              etiket={metin("yonetim.urunEkrani.secenek.liste")}
-              siralanabilir={izinli}
-              siralaninca={(yeni) => degistir({ ...varyant, secenekler: yeni })}
-              satir={secenekSatiri}
-            />
+            <ol
+              aria-label={metin("yonetim.urunEkrani.secenek.liste")}
+              className="m-0 flex list-none flex-col gap-3 p-0"
+            >
+              {secenekler.map(secenekSatiri)}
+            </ol>
           )}
           {izinli ? (
             secenekler.length >= varyantSinirlari.secenek ? (
@@ -442,7 +468,6 @@ function BirlesimTablosu({
   birlesimAdi: (satir: BirlesimSatiri) => string;
 }) {
   const metin = usePanelMetni();
-  const { hata } = usePanelFormuBaglami();
   const alaniDegistir = (satir: BirlesimSatiri, yeni: Partial<BirlesimFormu>) =>
     degistir({
       ...varyant,
@@ -453,47 +478,34 @@ function BirlesimTablosu({
     k: number,
     alan: "stokKodu" | "barkod" | "agirlik",
     etiket: string,
-  ) => {
-    const ad = `birlesimler.${k}.${alan}`;
-    const adi = doldur(metin("yonetim.urunEkrani.secenek.hucre"), {
-      alan: etiket,
-      birlesim: birlesimAdi(satir),
-    });
-    const metni = hata(ad);
-    const hataKimligi = `${ad}-hata`;
-    return (
-      <AlanKabi ad={ad} etiket={adi}>
-        <GirisAlani
-          aria-label={adi}
-          autoComplete="off"
-          {...(alan === "agirlik" ? { inputMode: "decimal" as const } : {})}
-          value={satir.alanlar[alan]}
-          disabled={!izinli}
-          aria-invalid={metni === undefined ? undefined : true}
-          aria-describedby={metni === undefined ? undefined : hataKimligi}
-          onChange={(olay) => alaniDegistir(satir, { [alan]: olay.target.value })}
-          className="min-w-20"
-        />
-        {metni === undefined ? null : (
-          <span id={hataKimligi} className="mt-1 block text-kucuk font-kalin text-tehlike-yazi">
-            {metni}
-          </span>
-        )}
-      </AlanKabi>
-    );
-  };
+  ) => (
+    <EtiketsizAlan
+      ad={`birlesimler.${k}.${alan}`}
+      etiket={doldur(metin("yonetim.urunEkrani.secenek.hucre"), {
+        alan: etiket,
+        birlesim: birlesimAdi(satir),
+      })}
+      deger={satir.alanlar[alan]}
+      disabled={!izinli}
+      degistir={(deger) => alaniDegistir(satir, { [alan]: deger })}
+      // Tablo içeriği kadar geniştir, telefonda kendi kabında kayar (taslak); sütunun genişliği alanın harf sayısıdır.
+      boyut={alan === "stokKodu" ? 16 : alan === "barkod" ? 13 : 6}
+      {...(alan === "agirlik" ? { inputMode: "decimal" as const } : {})}
+    />
+  );
   const agirlikEtiketi = doldur(metin("yonetim.urunEkrani.secenek.sutun.agirlik"), {
     birim: agirlikBirimi,
   });
   return (
-    <div className="flex flex-col gap-2">
-      <h3 className="font-kalin">
+    // min-w-0: içerik kadar geniş tablo kartı genişletmez, kendi kabında kayar (telefonda yana kayma olmaz).
+    <div className="flex min-w-0 flex-col gap-2">
+      <h3 className="text-kucuk font-kalin">
         {doldur(metin("yonetim.urunEkrani.secenek.birlesimler"), {
           sayi: String(satirlar.length),
         })}
       </h3>
-      <div className="overflow-x-auto">
-        <Tablo>
+      <div className="min-w-0 overflow-x-auto">
+        <Tablo className="w-max min-w-full">
           <TabloBasligi className="sr-only">
             {metin("yonetim.urunEkrani.secenek.birlesimTablosu")}
           </TabloBasligi>
@@ -660,6 +672,57 @@ function BirlesimGorseli({
       </Pencere>
       {metni === undefined ? null : (
         <span className="mt-1 block text-kucuk font-kalin text-tehlike-yazi">{metni}</span>
+      )}
+    </AlanKabi>
+  );
+}
+
+// Görünen etiketi olmayan giriş alanı (birleşim tablosunun hücresi, seçeneğin değeri): adı ekran okuyucuya, hatası
+// alanın altına; hata özeti ve odak ortak form yapısından (AlanKabi, tek girişi odaklanır).
+function EtiketsizAlan({
+  ad,
+  etiket,
+  deger,
+  degistir,
+  disabled,
+  zorunlu,
+  boyut,
+  inputMode,
+  className,
+}: {
+  ad: string;
+  etiket: string;
+  deger: string;
+  degistir: (deger: string) => void;
+  disabled: boolean;
+  zorunlu?: boolean;
+  boyut?: number;
+  inputMode?: "decimal";
+  className?: string;
+}) {
+  const { hata } = usePanelFormuBaglami();
+  const metni = hata(ad);
+  const hataKimligi = `${ad}-hata`;
+  return (
+    <AlanKabi ad={ad} etiket={etiket} {...(className === undefined ? {} : { className })}>
+      <GirisAlani
+        aria-label={etiket}
+        autoComplete="off"
+        value={deger}
+        disabled={disabled}
+        {...(zorunlu === true ? { "aria-required": true } : {})}
+        {...(boyut === undefined ? {} : { size: boyut })}
+        {...(inputMode === undefined ? {} : { inputMode })}
+        aria-invalid={metni === undefined ? undefined : true}
+        aria-describedby={metni === undefined ? undefined : hataKimligi}
+        onChange={(olay) => degistir(olay.target.value)}
+        // Boyutu verilmeyen alan kabını doldurur (değer satırı); verilen harf sayısı kadardır (tablo hücresi).
+        {...(boyut === undefined ? { className: "w-full" } : {})}
+      />
+      {metni === undefined ? null : (
+        <span id={hataKimligi} className="mt-1 block text-kucuk font-kalin text-tehlike-yazi">
+          {metni}
+        </span>
       )}
     </AlanKabi>
   );
