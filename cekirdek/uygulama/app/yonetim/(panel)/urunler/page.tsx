@@ -32,7 +32,12 @@ export default async function UrunlerSayfasi({
       hatayiKaydet(hata, { ekran: "urunler" });
       return null;
     }),
-    urunSuzgecSecenekleri(),
+    // Süzgeç seçenekleri okunamazsa süzgeçler boş açılır, liste yine çizilir; hata kaydedilir (bağımsız kontrolün
+    // bulgusu: bütün sayfa hata ekranına düşüyordu).
+    urunSuzgecSecenekleri().catch((hata: unknown) => {
+      hatayiKaydet(hata, { ekran: "urunler", kaynak: "suzgec-secenekleri" });
+      return {};
+    }),
   ]);
   return (
     <PanelSayfasi kod="urunler">

@@ -10,12 +10,14 @@
 //   işlenir.
 import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
+import { eq } from "drizzle-orm";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
 import { type UrunPanelStokDurumu, urunPanelStokDurumlari } from "../../../kayitlar/urun.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
+import { birimFiyatlari } from "../../fiyat/model.ts";
 import { siteninFiyatServisi } from "../../fiyat/servis.ts";
 import { kategoriEkle, kategoriSil } from "../../kategori/servis.ts";
 import { markaServisi } from "../../marka/servis.ts";
@@ -269,6 +271,92 @@ describe("sıralama ve sayfa", () => {
     expect(suzgecli.toplam).toBe(0);
     // Sayılar durum süzgecine bakmaz, öteki süzgeçlere uyar: stokta olanlar yayında ("Çok", "Takipsiz").
     expect(suzgecli.durumSayilari).toMatchObject({ yayinda: 2, taslak: 0 });
+  });
+});
+
+describe("kenar durumlar (bağımsız kontrolün bulguları)", () => {
+  // Seçenekli ürün: her birleşim [değer, fiyat, stok]; birleşimlerin kimlikleri sırasıyla döner.
+  const varyantliAc = async (
+    vt: Veritabani,
+    ad: string,
+    birlesimler: [string, number, number][],
+  ) => {
+    const { urun } = await urunAc(vt, ad, {}, { satis: null, miktar: 0 });
+    await urunSrv.secenekEkle(vt, kim(), urun, {
+      ad: "Beden",
+      degerler: birlesimler.map(([deger]) => deger),
+    });
+    const [beden] = (await secenekleriOku(vt, [urun], { silinmisler: false })).get(urun) ?? [];
+    const kimlikler: string[] = [];
+    for (const [deger, satis, miktar] of birlesimler) {
+      const degerKimligi = beden?.degerler.find((oge) => oge.ad === deger)?.kimlik ?? "";
+      const birim = await urunSrv.birlesimEkle(vt, kim(), urun, { degerler: [degerKimligi] });
+      await fiyat.fiyatYaz(vt, kim(), birim, { satisFiyati: satis });
+      if (miktar > 0) {
+        await stok.stokDuzelt(vt, kim(), birim, {
+          yeniMiktar: miktar,
+          gorulenMiktar: 0,
+          sebep: "sayim",
+        });
+      }
+      kimlikler.push(birim);
+    }
+    return { urun, birimler: kimlikler };
+  };
+
+  it("silinmiş birleşim ve başka para birimindeki fiyat stok süzgecinde satırla aynı sayılır", async () => {
+    const vt = await siteAc();
+    // Eşikte olan birleşim silinir: kalan birleşimin stoğu bol, ürün "stokta"dır.
+    const { birimler } = await varyantliAc(vt, "Silinmiş eşikte", [
+      ["S", 5000, 2],
+      ["M", 5000, 10],
+    ]);
+    await urunSrv.birlesimSil(vt, kim(), birimler[0] ?? "");
+    // Fiyatı başka para biriminde: satılamaz, tükenmiştir.
+    const { birim } = await urunAc(vt, "Başka para birimi", {}, { miktar: 2 });
+    await vt
+      .update(birimFiyatlari)
+      .set({ para_birimi: "XXX" })
+      .where(eq(birimFiyatlari.birim_kimligi, birim));
+    const ayar = ayarlar();
+    expect(await adlari(vt, { stok: ["stokta"] }, ayar)).toEqual(["Silinmiş eşikte"]);
+    expect(await adlari(vt, { stok: ["tukendi"] }, ayar)).toEqual(["Başka para birimi"]);
+    expect(await adlari(vt, { stok: ["dusuk"] }, ayar)).toEqual([]);
+  });
+
+  it("fiyat sıralaması satırda görünen fiyatla: tükenmiş ucuz birleşim sayılmaz, başlamamış ve bitmiş indirim yok sayılır, başka para birimi sonda", async () => {
+    const vt = await siteAc();
+    // Satırda 100,00 görünür (50'lik birleşim tükendi): 80'lik üründen sonra gelir.
+    await varyantliAc(vt, "Tükenmiş ucuz", [
+      ["S", 5000, 0],
+      ["M", 10_000, 5],
+    ]);
+    await urunAc(vt, "Seksen", {}, { satis: 8000 });
+    const { birim: baslamamis } = await urunAc(vt, "Başlamamış indirim", {}, { satis: 9000 });
+    await fiyat.fiyatYaz(vt, kim(), baslamamis, {
+      satisFiyati: 9000,
+      indirimliFiyat: 1000,
+      indirimBaslangici: "2099-01-01T00:00",
+    });
+    const { birim: bitmis } = await urunAc(vt, "Bitmiş indirim", {}, { satis: 9500 });
+    await fiyat.fiyatYaz(vt, kim(), bitmis, {
+      satisFiyati: 9500,
+      indirimliFiyat: 1000,
+      indirimBaslangici: "2020-01-01T00:00",
+      indirimBitisi: "2020-02-01T00:00",
+    });
+    const { birim: yabanci } = await urunAc(vt, "Yabancı", {}, { satis: 100 });
+    await vt
+      .update(birimFiyatlari)
+      .set({ para_birimi: "XXX" })
+      .where(eq(birimFiyatlari.birim_kimligi, yabanci));
+    expect(await adlari(vt, { siralama: "fiyat-artan" })).toEqual([
+      "Seksen",
+      "Başlamamış indirim",
+      "Bitmiş indirim",
+      "Tükenmiş ucuz",
+      "Yabancı",
+    ]);
   });
 });
 

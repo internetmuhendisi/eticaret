@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { stokBildirimleriListesiTanimi } from "../../eklentiler/stoga-gelince-haber-ver/panel/liste-tanimi.ts";
 import { siparisIslemleri } from "../../kayitlar/siparis.ts";
 import {
+  kayitSuzgeciSiniri,
   type ListeTanimi,
   listeAdresi,
   listeDurumunuOku,
@@ -189,6 +190,21 @@ describe("kayıt süzgeci (kart 0262)", () => {
     expect(listeAdresi(urun, { ...durum, sayfa: 3 }, { suzgecler: { kategori: [b] } })).toBe(
       `${urun.adres}?kategori=${b}`,
     );
+  });
+
+  it("sayfa ve uç aynı kimlik kuralını kullanır; değer sayısı sınırlıdır", () => {
+    // Sürüm hanesi 0 olan değer kimlik biçimine benzer ama UUID değildir: sayfa da uç da almaz.
+    const surumsuz = "5f0c7c2e-6b1d-0f0a-9a43-1f2e3d4c5b6a";
+    expect(listeDurumunuOku(urun, { kategori: surumsuz }).suzgecler).toEqual({});
+    expect(listeUcuSemasi(urun).safeParse({ kategori: surumsuz }).success).toBe(false);
+    const cok = Array.from(
+      { length: kayitSuzgeciSiniri + 5 },
+      (_, sira) => `5f0c7c2e-6b1d-4f0a-9a43-${String(sira).padStart(12, "0")}`,
+    );
+    expect(listeDurumunuOku(urun, { marka: cok.join(",") }).suzgecler["marka"]).toHaveLength(
+      kayitSuzgeciSiniri,
+    );
+    expect(listeUcuSemasi(urun).safeParse({ marka: cok.join(",") }).success).toBe(false);
   });
 
   it("liste ucu kimliği kabul eder, kimlik olmayanı reddeder; seçenekli süzgeç tanımın değerleriyle", () => {

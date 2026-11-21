@@ -10,7 +10,6 @@
 import { z } from "zod";
 import type { IzinAdi } from "../../kayitlar/izinler";
 import { kimlikSemasi } from "../../veritabani/kimlik";
-import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik-bicimi";
 
 export type SuzgecTanimi = {
   // Adresteki parametrenin adı.
@@ -77,10 +76,21 @@ export const listeDurumunuOku = (tanim: ListeTanimi, sorgu: Sorgu): ListeDurumu 
   };
 };
 
-// Süzgecin değerlerinden tanınanlar, tanımın sırasıyla (kayıt süzgecinde verilen sırayla, tekrarsız).
+// Kayıt süzgecinde en çok bu kadar değer (her değer sorguya kendi koşulunu ekler; bağımsız kontrolün bulgusu).
+export const kayitSuzgeciSiniri = 50;
+
+// Süzgecin değerlerinden tanınanlar, tanımın sırasıyla (kayıt süzgecinde verilen sırayla, tekrarsız, sınıra kadar).
+// Kayıt değeri liste ucunun şemasıyla aynı kuralla denetlenir (kimlikSemasi): sayfa ile uç ayrışmasın.
 const gecerliDegerler = (suzgec: SuzgecTanimi, istenen: readonly string[]): string[] =>
   suzgec.tur === "kayit"
-    ? [...new Set(istenen.filter(kimlikMi).map(kimligiDuzelt))]
+    ? [
+        ...new Set(
+          istenen.flatMap((deger) => {
+            const sonuc = kimlikSemasi.safeParse(deger);
+            return sonuc.success ? [sonuc.data] : [];
+          }),
+        ),
+      ].slice(0, kayitSuzgeciSiniri)
     : suzgec.secenekler.filter((secenek) => istenen.includes(secenek));
 
 // Listenin sorgusu: adres ve liste ucu için. "ara" yalnız verilirse yazılır (adreste olmayan aramada uç sorgusu).
@@ -133,7 +143,14 @@ export const listeUcuSemasi = (tanim: ListeTanimi) => {
     alanlar[suzgec.kod] = z
       .string()
       .transform((yazi) => yazi.split(","))
-      .pipe(suzgec.tur === "sekme" ? z.array(deger).length(1) : z.array(deger).min(1))
+      .pipe(
+        suzgec.tur === "sekme"
+          ? z.array(deger).length(1)
+          : z
+              .array(deger)
+              .min(1)
+              .max(suzgec.tur === "kayit" ? kayitSuzgeciSiniri : 1000),
+      )
       .optional();
   }
   return z.strictObject(alanlar).transform(

@@ -135,7 +135,6 @@ const siralamalar: Record<UrunPanelSiralamasi, MetinAnahtari> = {
 // Toplu işlemin nedeni: servisin bilinen kodları, gerisi genel metin.
 const nedenler: Record<string, MetinAnahtari> = {
   bulunamadi: "yonetim.urunler.toplu.neden.bulunamadi",
-  "yayin-zamani-gerekli": "yonetim.urunler.toplu.neden.yayin-zamani-gerekli",
 };
 
 const islemAdlari: Record<UrunTopluIslemi, MetinAnahtari> = {

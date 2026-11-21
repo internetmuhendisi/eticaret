@@ -32,7 +32,12 @@ import { birimFiyatlari } from "../fiyat/model.ts";
 import { kategoriler, urunKategorileri } from "../kategori/model.ts";
 import { kategoriUrunKosulu } from "../kategori/servis.ts";
 import { markalar, urunMarkalari } from "../marka/model.ts";
-import { type StokDurumu, tukenmisUrunKosulu, urunStokDurumu } from "../stok/durum.ts";
+import {
+  birimSatilabilirKosulu,
+  type StokDurumu,
+  tukenmisUrunKosulu,
+  urunStokDurumu,
+} from "../stok/durum.ts";
 import { birimStoklari } from "../stok/model.ts";
 import { urunBirimleri, urunler } from "./model.ts";
 
@@ -135,11 +140,13 @@ const toplamStokSql = sql<number | null>`(case when ${urunler.stok_takibi} then 
   where ${urunBirimleri.urun_kimligi} = ${urunler.kimlik} and ${urunBirimleri.silinme_zamani} is null
 ) end)`;
 
-// Silinmemiş birimlerin bugünkü girilen en düşük fiyatı: indirim sürüyorsa indirimli fiyat (gecerli.ts'teki
-// indirimSuruyorMu ve fiyat/vitrin.ts'teki koşulla aynı kural), sitenin para biriminde; yoksa boş (sonda).
+// Bugünkü girilen en düşük fiyat: indirim sürüyorsa indirimli fiyat (gecerli.ts'teki indirimSuruyorMu ve
+// fiyat/vitrin.ts'teki koşulla aynı kural), sitenin para biriminde. Satırda görünen fiyatın (fiyatAraliklari) aday
+// kuralıyla: önce satılabilir birimler (birimSatilabilirKosulu), hiçbiri satılamıyorsa silinmemiş bütün fiyatlı
+// birimler (bağımsız kontrolün bulgusu: tükenmiş ucuz birleşim sırayı bozuyordu). Fiyatı yoksa boş (sonda).
 const enDusukFiyatSql = (ayarlar: UrunPanelAyarlari) => {
   const simdi = sql`${ayarlar.an.toISOString()}::timestamptz`;
-  return sql<number | null>`(
+  const enDusuk = (ek: SQL) => sql`(
     select min(case
       when ${birimFiyatlari.indirimli_fiyat} is not null
         and (${birimFiyatlari.indirim_baslangici} is null or ${birimFiyatlari.indirim_baslangici} <= ${simdi})
@@ -150,7 +157,11 @@ const enDusukFiyatSql = (ayarlar: UrunPanelAyarlari) => {
     where ${urunBirimleri.urun_kimligi} = ${urunler.kimlik}
       and ${urunBirimleri.silinme_zamani} is null
       and ${birimFiyatlari.para_birimi} = ${ayarlar.paraBirimi}
+      and ${ek}
   )`;
+  return sql<
+    number | null
+  >`coalesce(${enDusuk(birimSatilabilirKosulu(ayarlar.paraBirimi))}, ${enDusuk(sql`true`)})`;
 };
 
 // Aranan metin adda ya da silinmemiş bir birimin stok kodunda geçer.
