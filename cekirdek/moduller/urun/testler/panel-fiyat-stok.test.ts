@@ -299,10 +299,10 @@ describe("stok", () => {
     });
     const stoklar = await stok.stoklariOku(vt, [s, m]);
     expect([stoklar.get(s)?.miktar, stoklar.get(m)?.miktar]).toEqual([6, 4]);
-    expect((await stok.panelStokGecmisi(vt, [s, m])).map((g) => [g.birim, g.sebep])).toEqual([
-      [m, "yeni-mal"],
-      [s, "yeni-mal"],
-    ]);
+    // Yazım sırası birim kimliğinin sırasıdır (kilit sırası): geçmiş sıradan bağımsız karşılaştırılır.
+    expect(
+      (await stok.panelStokGecmisi(vt, [s, m])).map((g) => `${g.birim}:${g.sebep}`).sort(),
+    ).toEqual([`${s}:yeni-mal`, `${m}:yeni-mal`].sort());
     // Ekran 6'yı görmüş ama arada 5 olmuş: ikinci satır da yazılmaz (tek işlem).
     await stok.stokDuzelt(vt, kim, s, { gorulenMiktar: 6, yeniMiktar: 5, sebep: "sayim" });
     expect(
