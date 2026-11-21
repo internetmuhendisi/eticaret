@@ -2,9 +2,11 @@
 // (kart 0261, karar 0160): mağaza sahibi menüden klavyeyle gelir; kategori ekler (boş adda alanın hatası ve odak),
 // alt kategori ekler, sıralar (yukarı al), satır menüsünden başka kategorinin altına taşır ve en üste çıkarır, onay
 // penceresiyle siler (pencere üste çıkacak alt kategoriyi söyler, Vazgeç silmez, odak komşu satıra geçer) ve
-// kategori vitrinde kendi sayfasıyla açılır. Marka ve etiket eklenir, düzenlenir, onayla silinir. Özellik liste
-// türünde seçenekleriyle eklenir, düzenlenirken seçenek eklenir, adı değişir ve sıralanır; ürünlerde değeri olan
-// özelliğin türü seçilemez. Ekranlar, formlar ve onay pencereleri iki renkte ve üç genişlikte taramadan geçer, yana
+// kategori vitrinde kendi sayfasıyla açılır. Marka ve etiket yalnız klavyeyle eklenir, düzenlenir, onayla silinir
+// (pencerede odak adda, Tab sırası, onayda odak Vazgeç'te, Escape vazgeçer). Özellik yalnız klavyeyle silinir, liste
+// türünde seçenekleriyle eklenir (anahtar boşlukla), düzenlenirken seçenek eklenir, adı değişir ve sıralanır; ürünlerde
+// değeri olan özelliğin türü seçilemez, adı silinen seçenek alanın hatasını alır, değeri olan seçenek çıkarılınca
+// sorulur. Ekranlar, formlar ve onay pencereleri iki renkte ve üç genişlikte taramadan geçer, yana
 // kaymaz, konsolda hata yoktur.
 //
 // Kategoriler, markalar ve özellikler sitenin paylaşılan verisidir: test kendi kayıtlarını ("Deneme <6 onaltılık>")
@@ -12,7 +14,7 @@
 import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri";
 import { doldur } from "../../metinler/doldur";
 import { metin } from "../../metinler/site-metni";
@@ -110,6 +112,12 @@ const ekleDugmesi = (page: Page, ne: Parameters<typeof metin>[0]) =>
     name: doldur(metin("yonetim.eylem.ekle"), { ne: metin(ne) }),
     exact: true,
   });
+
+// Klavyeyle basmak: odak düğmeye konur, Enter basılır (fare kullanılmaz).
+const klavyeyleBas = async (page: Page, dugme: Locator) => {
+  await dugme.focus();
+  await page.keyboard.press("Enter");
+};
 
 const sayfayaGit = async (page: Page, adres: string) => {
   await page.goto(adres);
@@ -234,95 +242,165 @@ test("kategori: menüden gelinir, eklenir, alt kategori eklenir, sıralanır, ta
     .toBe(true);
 });
 
-test("marka ve etiket eklenir, düzenlenir, onayla silinir", async ({ page }) => {
+test("marka ve etiket klavyeyle eklenir, düzenlenir, onayla silinir", async ({ page }) => {
   const marka = denemeAdi();
   const etiket = denemeAdi();
   await paneleGir(page, yonetici);
   await sayfayaGit(page, adresler.markalar);
   const markalar = page.getByRole("region", { name: metin("yonetim.marka.liste") });
+  const etiketler = page.getByRole("region", { name: metin("yonetim.etiket.liste") });
+  const ad = (form: Locator) => form.getByLabel(metin("yonetim.kategori.form.ad"), { exact: true });
 
-  await ekleDugmesi(page, "yonetim.marka.tek").click();
+  // Ekle: pencere açılınca odak adda; Tab adres adına, oradan açıklamaya geçer; Shift+Tab ile ada dönülüp Enter.
+  await klavyeyleBas(page, ekleDugmesi(page, "yonetim.marka.tek"));
   let form = page.getByRole("dialog", { name: metin("yonetim.marka.form.yeni") });
-  await form.getByLabel(metin("yonetim.kategori.form.ad"), { exact: true }).fill(marka);
-  await form.getByLabel(metin("yonetim.kategori.form.aciklama"), { exact: true }).fill("Üretici");
-  await form.getByRole("button", { name: metin("ortak.islem.kaydet") }).click();
+  await expect(ad(form)).toBeFocused();
+  await page.keyboard.type(marka);
+  await page.keyboard.press("Tab");
+  await expect(
+    form.getByLabel(metin("yonetim.kategori.form.adresAdi"), { exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(
+    form.getByLabel(metin("yonetim.kategori.form.aciklama"), { exact: true }),
+  ).toBeFocused();
+  await page.keyboard.type("Üretici");
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("Shift+Tab");
+  await expect(ad(form)).toBeFocused();
+  await page.keyboard.press("Enter");
   await expect(bildirim(page, "yonetim.marka.eklendi")).toBeVisible();
+  await expect(form).toHaveCount(0);
   await expect(markalar.getByText(marka, { exact: true })).toBeVisible();
 
-  await markalar
-    .getByRole("button", { name: doldur(metin("yonetim.kategori.duzenle"), { ad: marka }) })
-    .click();
+  // Düzenle: adres adı Tab ile seçilip yeniden yazılır, Enter kaydeder; odak satırın düğmesine döner.
+  const duzenle = markalar.getByRole("button", {
+    name: doldur(metin("yonetim.kategori.duzenle"), { ad: marka }),
+  });
+  await klavyeyleBas(page, duzenle);
   form = page.getByRole("dialog", { name: metin("yonetim.marka.form.duzenle") });
   await expect(
     form.getByLabel(metin("yonetim.kategori.form.aciklama"), { exact: true }),
   ).toHaveValue("Üretici");
-  await form
-    .getByLabel(metin("yonetim.kategori.form.adresAdi"), { exact: true })
-    .fill(`yeni-${marka.slice(-6)}`);
-  await form.getByRole("button", { name: metin("ortak.islem.kaydet") }).click();
+  await expect(ad(form)).toBeFocused();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("ControlOrMeta+A");
+  await page.keyboard.type(`yeni-${marka.slice(-6)}`);
+  await page.keyboard.press("Enter");
+  await expect(form).toHaveCount(0);
   await expect(markalar.getByText(`/marka/yeni-${marka.slice(-6)}`)).toBeVisible();
+  await expect(duzenle).toBeFocused();
 
-  await ekleDugmesi(page, "yonetim.etiket.tek").click();
+  // Etiket: açıklaması ve logosu yoktur.
+  await klavyeyleBas(page, ekleDugmesi(page, "yonetim.etiket.tek"));
   form = page.getByRole("dialog", { name: metin("yonetim.etiket.form.yeni") });
-  // Etiketin açıklaması ve logosu yoktur.
   await expect(
     form.getByLabel(metin("yonetim.kategori.form.aciklama"), { exact: true }),
   ).toHaveCount(0);
-  await form.getByLabel(metin("yonetim.kategori.form.ad"), { exact: true }).fill(etiket);
-  await form.getByLabel(metin("yonetim.kategori.form.ad"), { exact: true }).press("Enter");
-  const etiketler = page.getByRole("region", { name: metin("yonetim.etiket.liste") });
+  await expect(ad(form)).toBeFocused();
+  await page.keyboard.type(etiket);
+  await page.keyboard.press("Enter");
   await expect(etiketler.getByText(etiket, { exact: true })).toBeVisible();
 
-  await markalar
-    .getByRole("button", { name: doldur(metin("yonetim.kategori.silAdli"), { ad: marka }) })
-    .click();
+  // Sil: onay penceresi Vazgeç'te açılır, Escape vazgeçer; Tab ile Sil'e geçilip Enter siler.
+  const sil = markalar.getByRole("button", {
+    name: doldur(metin("yonetim.kategori.silAdli"), { ad: marka }),
+  });
+  await klavyeyleBas(page, sil);
   const onay = page.getByRole("alertdialog", {
     name: doldur(metin("yonetim.marka.silOnay.baslik"), { ad: marka }),
   });
-  await onay.getByRole("button", { name: metin("yonetim.kategori.sil") }).click();
+  await expect(onay.getByRole("button", { name: metin("ortak.islem.vazgec") })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(onay).toHaveCount(0);
+  await expect(sil).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(onay.getByRole("button", { name: metin("ortak.islem.vazgec") })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(onay.getByRole("button", { name: metin("yonetim.kategori.sil") })).toBeFocused();
+  await page.keyboard.press("Enter");
   await expect(bildirim(page, "yonetim.marka.silindi")).toBeVisible();
   await expect(markalar.getByText(marka, { exact: true })).toHaveCount(0);
 });
 
-test("özellik seçenekleriyle eklenir, düzenlenirken seçenek eklenir ve sıralanır; değeri olanın türü seçilemez", async ({
+test("özellik klavyeyle seçenekleriyle eklenir, düzenlenirken seçenek eklenir ve sıralanır, silinir; değeri olanın türü seçilemez", async ({
   page,
 }) => {
   const ozellik = denemeAdi();
+  const silinecek = denemeAdi();
+  await ozellikServisi.ekle(vt, kim, { ad: silinecek, tur: "metin" });
   await paneleGir(page, yonetici);
   await sayfayaGit(page, adresler.ozellikler);
 
-  await ekleDugmesi(page, "yonetim.ozellik.tek").click();
+  // Sil: onay penceresinde Tab ile Sil'e geçilip Enter.
+  await klavyeyleBas(
+    page,
+    page.getByRole("button", {
+      name: doldur(metin("yonetim.kategori.silAdli"), { ad: silinecek }),
+    }),
+  );
+  const silOnayi = page.getByRole("alertdialog", {
+    name: doldur(metin("yonetim.ozellik.silOnay.baslik"), { ad: silinecek }),
+  });
+  await expect(silOnayi).toContainText(metin("yonetim.ozellik.silOnay.urunsuz"));
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Enter");
+  await expect(bildirim(page, "yonetim.ozellik.silindi")).toBeVisible();
+  await expect(page.locator("[data-anahtar]").filter({ hasText: silinecek })).toHaveCount(0);
+
+  // Ekle: odak adda; liste türü varsayılan, ilk seçenek alanı hazır, ikincisi "Seçenek ekle" ile; anahtar boşlukla
+  // açılır, Enter kaydeder.
+  await klavyeyleBas(page, ekleDugmesi(page, "yonetim.ozellik.tek"));
   const yeni = page.getByRole("dialog", { name: metin("yonetim.ozellik.form.yeni") });
-  await yeni.getByLabel(metin("yonetim.kategori.form.ad"), { exact: true }).fill(ozellik);
-  // Liste türü varsayılandır; ilk seçenek alanı hazırdır, ikincisi "Seçenek ekle" ile.
-  const secenek = (form: typeof yeni, sira: number) =>
+  const adAlani = yeni.getByLabel(metin("yonetim.kategori.form.ad"), { exact: true });
+  await expect(adAlani).toBeFocused();
+  await page.keyboard.type(ozellik);
+  const secenek = (form: Locator, sira: number) =>
     form.getByLabel(doldur(metin("yonetim.ozellik.form.secenekSirasi"), { sira: String(sira) }), {
       exact: true,
     });
-  await secenek(yeni, 1).fill("Pamuk");
-  await yeni.getByRole("button", { name: metin("yonetim.ozellik.form.secenekEkle") }).click();
+  await secenek(yeni, 1).focus();
+  await page.keyboard.type("Pamuk");
+  await klavyeyleBas(
+    page,
+    yeni.getByRole("button", { name: metin("yonetim.ozellik.form.secenekEkle") }),
+  );
   await expect(secenek(yeni, 2)).toBeFocused();
   await page.keyboard.type("Keten");
-  await yeni.getByRole("switch", { name: metin("yonetim.ozellik.form.filtrede") }).click();
-  await yeni.getByRole("button", { name: metin("ortak.islem.kaydet") }).click();
+  const anahtar = yeni.getByRole("switch", { name: metin("yonetim.ozellik.form.filtrede") });
+  await anahtar.focus();
+  await page.keyboard.press("Space");
+  await expect(anahtar).toHaveAttribute("aria-checked", "true");
+  await secenek(yeni, 2).focus();
+  await page.keyboard.press("Enter");
   await expect(bildirim(page, "yonetim.ozellik.eklendi")).toBeVisible();
   const satir = page.locator("[data-anahtar]").filter({ hasText: ozellik });
   await expect(satir).toContainText("Pamuk, Keten");
   await expect(satir).toContainText(metin("yonetim.ozellik.filtrede"));
 
-  // Klavyeyle: başarı bildirimi son satırın düğmesinin üstünde durabilir.
-  await satir
-    .getByRole("button", { name: doldur(metin("yonetim.kategori.duzenle"), { ad: ozellik }) })
-    .focus();
-  await page.keyboard.press("Enter");
+  // Düzenle: yeni seçenek eklenir, ilk seçeneğin adı değişir, yeni seçenek klavyeyle yukarı alınır, Enter kaydeder.
+  await klavyeyleBas(
+    page,
+    satir.getByRole("button", { name: doldur(metin("yonetim.kategori.duzenle"), { ad: ozellik }) }),
+  );
   const duzen = page.getByRole("dialog", { name: metin("yonetim.ozellik.form.duzenle") });
-  await duzen.getByRole("button", { name: metin("yonetim.ozellik.form.secenekEkle") }).click();
+  await klavyeyleBas(
+    page,
+    duzen.getByRole("button", { name: metin("yonetim.ozellik.form.secenekEkle") }),
+  );
+  await expect(secenek(duzen, 3)).toBeFocused();
   await page.keyboard.type("İpek");
-  await secenek(duzen, 1).fill("Pamuklu");
-  await duzen
-    .getByRole("button", { name: doldur(metin("ortak.parca.siralama.yukari"), { ad: "İpek" }) })
-    .click();
-  await duzen.getByRole("button", { name: metin("ortak.islem.kaydet") }).click();
+  await secenek(duzen, 1).focus();
+  await page.keyboard.press("ControlOrMeta+A");
+  await page.keyboard.type("Pamuklu");
+  await klavyeyleBas(
+    page,
+    duzen.getByRole("button", {
+      name: doldur(metin("ortak.parca.siralama.yukari"), { ad: "İpek" }),
+    }),
+  );
+  await secenek(duzen, 1).focus();
+  await page.keyboard.press("Enter");
   await expect(bildirim(page, "yonetim.ozellik.kaydedildi")).toBeVisible();
   await expect(satir).toContainText("Pamuklu, İpek, Keten");
 
@@ -338,9 +416,12 @@ test("özellik seçenekleriyle eklenir, düzenlenirken seçenek eklenir ve sıra
     await page.reload();
     await sayfaHazir(page);
     await expect(satir).toContainText(doldur(metin("yonetim.ozellik.urunSayisi"), { sayi: "1" }));
-    await satir
-      .getByRole("button", { name: doldur(metin("yonetim.kategori.duzenle"), { ad: ozellik }) })
-      .click();
+    await klavyeyleBas(
+      page,
+      satir.getByRole("button", {
+        name: doldur(metin("yonetim.kategori.duzenle"), { ad: ozellik }),
+      }),
+    );
     await expect(duzen.getByText(metin("yonetim.ozellik.form.turDegisemez"))).toBeVisible();
     await expect(
       duzen.getByRole("radio", { name: new RegExp(metin("yonetim.ozellik.tur.sayi")) }),
@@ -351,25 +432,29 @@ test("özellik seçenekleriyle eklenir, düzenlenirken seçenek eklenir ve sıra
 
     // Var olan seçeneğin adı silinip kaydedilirse seçenek silinmez, alanın hatası görünür (bağımsız kontrolün
     // bulgusu: sessizce siliniyordu).
-    await secenek(duzen, 1).fill("");
-    await duzen.getByRole("button", { name: metin("ortak.islem.kaydet") }).click();
+    await secenek(duzen, 1).focus();
+    await page.keyboard.press("ControlOrMeta+A");
+    await page.keyboard.press("Backspace");
+    await page.keyboard.press("Enter");
     await expect(secenek(duzen, 1)).toHaveAttribute("aria-invalid", "true");
     await expect(secenek(duzen, 1)).toBeFocused();
-    await secenek(duzen, 1).fill("Pamuklu");
+    await page.keyboard.type("Pamuklu");
     // Değeri olan seçenek çıkarılınca kayıttan önce kaç üründen kalkacağı sorulur; Vazgeç hiçbir şey yazmaz.
-    await duzen
-      .getByRole("button", {
+    await klavyeyleBas(
+      page,
+      duzen.getByRole("button", {
         name: doldur(metin("yonetim.ozellik.form.secenegiCikar"), { ad: "Pamuklu" }),
-      })
-      .click();
-    await duzen.getByRole("button", { name: metin("ortak.islem.kaydet") }).click();
+      }),
+    );
+    await klavyeyleBas(page, duzen.getByRole("button", { name: metin("ortak.islem.kaydet") }));
     const onay = page.getByRole("alertdialog", {
       name: metin("yonetim.ozellik.secenekSilOnay.baslik"),
     });
     await expect(onay).toContainText(
       doldur(metin("yonetim.ozellik.secenekSilOnay.metin"), { sayi: "1" }),
     );
-    await onay.getByRole("button", { name: metin("ortak.islem.vazgec") }).click();
+    await expect(onay.getByRole("button", { name: metin("ortak.islem.vazgec") })).toBeFocused();
+    await page.keyboard.press("Enter");
     await expect(onay).toHaveCount(0);
     expect(
       (await ozellikServisi.hepsiniOku(vt))
