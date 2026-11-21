@@ -472,7 +472,7 @@ function BirlesimTablosu({
           aria-invalid={metni === undefined ? undefined : true}
           aria-describedby={metni === undefined ? undefined : hataKimligi}
           onChange={(olay) => alaniDegistir(satir, { [alan]: olay.target.value })}
-          className="min-w-32"
+          className="min-w-20"
         />
         {metni === undefined ? null : (
           <span id={hataKimligi} className="mt-1 block text-kucuk font-kalin text-tehlike-yazi">
