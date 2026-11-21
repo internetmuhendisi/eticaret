@@ -426,6 +426,9 @@ export const kategorileriSirala = (
     // Veritabanı kimlikleri küçük harfle verir; karşılaştırma metinle yapılır (karar 0112).
     const ust = ustGirdisi === null ? null : kimligiDuzelt(ustGirdisi);
     const yeniSira = kimlikler.map(kimligiDuzelt);
+    // Birden çok kategori satırı güncellenir: ürün yazması onları başka sırayla paylaşımlı kilitleyebilir, önce
+    // ürün kilidi alınır (silmeyle aynı, urun/kilit.ts; bağımsız kontrolün bulgusu: kilidi yokken kilitleniyordu).
+    await urunKilidiAl(islem);
     const kardesler = await islem
       .select({ kimlik: kategoriler.kimlik, sira: kategoriler.sira })
       .from(kategoriler)

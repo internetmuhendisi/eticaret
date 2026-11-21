@@ -25,6 +25,7 @@ import {
 } from "../../veritabani/baglanti.ts";
 import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
+import { urunKilidiAl } from "../urun/kilit.ts";
 import {
   bosUrunListesi,
   type UrunListesi,
@@ -493,7 +494,7 @@ const kaydet = async (
     }
     const kalan = new Set(verilen.flatMap((secenek) => secenek.kimlik ?? []));
     if (kalan.size !== verilen.filter((secenek) => secenek.kimlik !== undefined).length) {
-      throw dogrulamaHatasi([{ alan: "secenekler", kod: "siralama-gecersiz" }]);
+      throw new BilinenHata("cakisma", [{ alan: "secenekler", kod: "siralama-gecersiz" }]);
     }
     const yerinde = async <T>(i: number, is: () => Promise<T>): Promise<T> => {
       try {
@@ -590,6 +591,9 @@ const sirala = (
   kimlikler: readonly string[],
 ) =>
   yaz(vt, async (islem) => {
+    // Birden çok özellik satırı güncellenir: ürün yazması onları başka sırayla paylaşımlı kilitleyebilir, önce
+    // ürün kilidi alınır (kategori silmeyle aynı, urun/kilit.ts; bağımsız kontrolün bulgusu).
+    await urunKilidiAl(islem);
     const mevcut = await islem
       .select({ kimlik: ozellikler.kimlik, sira: ozellikler.sira })
       .from(ozellikler)

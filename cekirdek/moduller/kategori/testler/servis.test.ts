@@ -13,8 +13,10 @@ import { BilinenHata } from "../../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
+import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { dosyaSil, gorselKaydet } from "../../dosya/servis.ts";
+import { urunKilidiAl } from "../../urun/kilit.ts";
 import type { UrunGirdisi } from "../../urun/semalar.ts";
 import { urunServisi } from "../../urun/servis.ts";
 import type { VitrinSecenekleri } from "../../urun/vitrin.ts";
@@ -765,5 +767,34 @@ describe("panelin sıralaması ve ürün sayıları (kart 0261)", () => {
     expect(sayilar.get(ust)).toBe(2);
     expect(sayilar.get(alt)).toBe(1);
     expect(sayilar.has(bos)).toBe(false);
+  });
+  it("ürün yazmasıyla aynı anda sıralama kilitlenmez (bağımsız kontrolün bulgusu)", async () => {
+    const vt = await siteAc();
+    const a = await ekle(vt, "A");
+    const b = await ekle(vt, "B");
+    // Ürün yazması gibi: ürün kilidi, sonra satırları sırayla paylaşımlı kilitler (önce A, sonra B). Sıralama B'yi
+    // A'dan önce yazar; ürün kilidini almasaydı B'yi yazıp A'yı beklerken ürün yazması B'yi isteyince kilitlenirdi.
+    let alindi: () => void = () => undefined;
+    const kilitAlindi = new Promise<void>((coz) => {
+      alindi = coz;
+    });
+    let devam: () => void = () => undefined;
+    const bekle = new Promise<void>((coz) => {
+      devam = coz;
+    });
+    const urunYazmasi = vt.transaction(async (islem) => {
+      await urunKilidiAl(islem);
+      await islem.execute(sql`select 1 from ${kategoriler} where kimlik = ${a} for share`);
+      alindi();
+      await bekle;
+      await islem.execute(sql`select 1 from ${kategoriler} where kimlik = ${b} for share`);
+    });
+    await Promise.race([kilitAlindi, urunYazmasi]);
+    const siralama = kategorileriSirala(vt, yonetici(), null, [b, a]);
+    await kilitBekleyeniGor(vt);
+    devam();
+    await urunYazmasi;
+    await siralama;
+    expect((await kategorileriOku(vt)).map((k) => k.kimlik)).toEqual([b, a]);
   });
 });

@@ -17,6 +17,7 @@ import type { Veritabani, VeritabaniIslemi } from "../../../veritabani/baglanti.
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
+import { urunKilidiAl } from "../../urun/kilit.ts";
 import type { UrunGirdisi } from "../../urun/semalar.ts";
 import { urunServisi } from "../../urun/servis.ts";
 import type { VitrinSecenekleri } from "../../urun/vitrin.ts";
@@ -1086,5 +1087,34 @@ describe("panelin sıralaması, kullanımı ve tek kaydı (kart 0261)", () => {
       ),
     ).toMatchObject({ kod: "is-kurali", ayrinti: [{ alan: "tur", kod: "tur-degisemez" }] });
     expect(await kayit(vt, o.malzeme)).toEqual(once);
+  });
+  it("ürün yazmasıyla aynı anda sıralama kilitlenmez (bağımsız kontrolün bulgusu)", async () => {
+    const vt = await siteAc();
+    const a = await ekle(vt, { ad: "A", tur: "metin" });
+    const b = await ekle(vt, { ad: "B", tur: "metin" });
+    // Ürün yazması gibi: ürün kilidi, sonra satırları sırayla paylaşımlı kilitler (önce A, sonra B). Sıralama B'yi
+    // A'dan önce yazar; ürün kilidini almasaydı B'yi yazıp A'yı beklerken ürün yazması B'yi isteyince kilitlenirdi.
+    let alindi: () => void = () => undefined;
+    const kilitAlindi = new Promise<void>((coz) => {
+      alindi = coz;
+    });
+    let devam: () => void = () => undefined;
+    const bekle = new Promise<void>((coz) => {
+      devam = coz;
+    });
+    const urunYazmasi = vt.transaction(async (islem) => {
+      await urunKilidiAl(islem);
+      await islem.execute(sql`select 1 from ${ozellikler} where kimlik = ${a} for share`);
+      alindi();
+      await bekle;
+      await islem.execute(sql`select 1 from ${ozellikler} where kimlik = ${b} for share`);
+    });
+    await Promise.race([kilitAlindi, urunYazmasi]);
+    const siralama = servis.sirala(vt, yonetici(), [b, a]);
+    await kilitBekleyeniGor(vt);
+    devam();
+    await urunYazmasi;
+    await siralama;
+    expect((await servis.hepsiniOku(vt)).map((o) => o.kimlik)).toEqual([b, a]);
   });
 });
