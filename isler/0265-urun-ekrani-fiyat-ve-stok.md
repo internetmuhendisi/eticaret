@@ -33,4 +33,4 @@ Bölüm: Yönetim paneli. Önce 0263 bitmiş olmalı; varyantlı ürün için 02
 
 ## Durum
 
-yapılacak
+bitti
