@@ -14,6 +14,9 @@ Panelde üç ekran açılır (kart 0261), menüde "Ürünler" altında: Kategori
 - **Silme onayı** kaç ürünün etkileneceğini söyler; kategoride ayrıca kaç alt kategorinin üste çıkacağını. Sayılar sunucuda tek sorguyla bulunur (`kategorilerinUrunSayilari`, grup servisinin `urunSayilari`, `ozellikServisi.kullanimlar`): doğrudan bağlı, silinmemiş ürünler.
 - **Görsel ve logo** vitrin bölümleri ekranındaki "Görsel seç" penceresiyle sitedeki görsellerden seçilir; bilgisayardan yükleme kart 0094 ve 0160'tadır.
 - **Görsel önizlemesinin izni** `duzen.gor` değil yeni `dosya.gor`'dur (sitedeki görselleri görmek). Görevli kategori görselini ve marka logosunu değiştirebildiği halde `duzen.gor` iznine sahip değildi, önizleme ona kapalı kalırdı. Görevliye değişiklik dosyasıyla (`0050_dosya-gor-izni`) verilir.
+- **Seçenek çıkarmak silmedir** (bağımsız kontrolün bulgusu): tek kayıtta var olan seçeneği çıkarmak ayrıca `ozellik.sil` ister; görevli seçenek ekler ve adını değiştirir, çıkaramaz (görevli özelliği silemez kararının, karar 0072, uygulanması). Ekran bu izni olmayana çıkarma düğmesini göstermez; var olan seçeneğin adı boşaltılırsa seçenek silinmez, alanın hatası görünür.
+- **Sıralamalar ürün kilidini alır** (kategori silmeyle aynı, `urun/kilit.ts`): birden çok kategori ya da özellik satırını güncellerken ürün yazmasıyla kilitlenmesin (bağımsız kontrol ölçerek buldu).
+- **Görseli görme izni (`dosya.gor`) olmayana** görsel listesi gönderilmez; kategori görseli ve marka logosu ne satırda ne formda görünür, değişiklikte o alan gönderilmez.
 - Marka ve etiket kısa listelerdir, ortak liste ekranına geçmez (taslağın notu): 50 kaydı aşınca listenin üstünde ada göre süzen arama kutusu çıkar (aramanın harf kuralıyla).
 
 ## Neden

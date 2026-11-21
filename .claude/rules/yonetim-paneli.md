@@ -92,6 +92,7 @@ paths:
 - Ekranlar `cekirdek/yonetim-paneli/kategoriler/`, `markalar/` ve `ozellikler/` klasörlerinde, menüde "Ürünler" altındadır. Görmek `kategori.gor`, `marka.gor` (etiket listesi ayrıca `etiket.gor`), `ozellik.gor`; değiştirmek `*.degistir`, silmek `*.sil` ister (görevli silemez).
 - Kategoriyi başka bir kategorinin altına almak satırın "Diğer işlemler" menüsünden ya da formdaki "Üst kategori"den yapılır (menüler ekranının yolu); kendisi ve alt ağacı sunulmaz. Sıralama kardeşlerin tamamını tek uçla gönderir; eski sıra `cakisma` alır.
 - Kodlu hata döndüren modülün formu `useKodluForm` ile yazılır (`cekirdek/yonetim-paneli/kodlu-form.ts`): alan hatası alanın altında, alanı olmayan hata özette modülün metniyle. Açılır menüden pencere açmak `useMenudenPencere` iledir (`menuden-pencere.ts`).
-- Özelliğin formu tek kayıtla gider (`ozellik-kaydet`); değeri olan özelliğin türü seçilemez, değeri olan seçenek çıkarılınca kayıttan önce sorulur. Silme onayı etkilenen ürün sayısını sunucunun sayımından söyler.
+- Özelliğin formu tek kayıtla gider (`ozellik-kaydet`); değeri olan özelliğin türü seçilemez, değeri olan seçenek çıkarılınca kayıttan önce sorulur. Var olan seçeneği çıkarmak `ozellik.sil` ister (uç denetler, ekran düğmeyi göstermez).
+- Birden çok kategori ya da özellik satırını güncelleyen yazma (sıralama, silme) önce ürün kilidini alır (`urun/kilit.ts`). Görseli görme izni olmayana görsel alanı ve listesi gösterilmez. Silme onayı etkilenen ürün sayısını sunucunun sayımından söyler.
 - Satırın küçük görseli `KatalogGorseli` ile, önizlemesi `panel-gorseli` ucundandır; o uç `dosya.gor` ister (sitedeki görselleri görmek, görevlide de vardır).
 

@@ -1100,13 +1100,13 @@ Yeni ürün özelliği (kart 0261). Liste türünde seçenekler birlikte, listed
 
 ### POST /kapi/yonetici/ozellik-kaydet
 
-Panelin özellik formunun tek kaydı (kart 0261): alanlar ve seçeneklerin son hâli tek işlemde yazılır. Kimliği olan seçenek var olandır (adı değişebilir), kimliği olmayan yenidir, listede olmayan var olan seçenek silinir ve değeri ürünlerden kalkar; seçenekler listedeki sıraya konur. Biri yazılamazsa hiçbiri yazılmaz.
+Panelin özellik formunun tek kaydı (kart 0261): alanlar ve seçeneklerin son hâli tek işlemde yazılır. Kimliği olan seçenek var olandır (adı değişebilir), kimliği olmayan yenidir, listede olmayan var olan seçenek silinir ve değeri ürünlerden kalkar; seçenekler listedeki sıraya konur. Biri yazılamazsa hiçbiri yazılmaz. Seçenek çıkarmak silmedir: yöneticinin ayrıca `ozellik.sil` izni olmalı (görevli çıkaramaz), yoksa `yetki` (`secenek-silme-yetkisi`) ve hiçbir şey değişmez.
 
 - İzin: `ozellik.degistir`. Sınır: `genel`.
 - Girdi: `{ "kimlik", "ozellik": { "ad", "tur", "birim", "filtrede", "secenekler": [{ "kimlik"?, "ad" }] } }` (`ozellikKaydiSemasi`; özellik `ozellikKaydi` ile serviste doğrulanır).
 - Servis: `cekirdek/moduller/ozellik/servis.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": {} }`.
-- Hatalar: `dogrulama` (`birim-yalniz-sayi`, `secenek-yalniz-liste`, ...), `cakisma` (`ad-tekrar`; `secenek-ad-tekrar` seçeneğin yeriyle: `secenekler.<sıra>.ad`; `siralama-gecersiz`: ekranın gördüğü seçenek artık yok), `is-kurali` (`tur-degisemez`, `secenek-siniri`), `bulunamadi`, `oturum-yok`, `yetki`.
+- Hatalar: `dogrulama` (`birim-yalniz-sayi`, `secenek-yalniz-liste`, ...), `cakisma` (`ad-tekrar`; `secenek-ad-tekrar` seçeneğin yeriyle: `secenekler.<sıra>.ad`; `siralama-gecersiz`: ekranın gördüğü seçenek artık yok), `is-kurali` (`tur-degisemez`, `secenek-siniri`), `bulunamadi`, `oturum-yok`, `yetki` (`secenek-silme-yetkisi` dahil).
 
 ### POST /kapi/yonetici/ozellik-sil
 
