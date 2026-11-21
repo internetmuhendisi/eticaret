@@ -29,4 +29,4 @@ Not (kart 0262, kullanıcı kararı): ürün listesinde "Ürün ekle" düğmesi 
 
 ## Durum
 
-yapılacak
+bitti
