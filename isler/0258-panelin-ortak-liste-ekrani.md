@@ -31,4 +31,4 @@ Bölüm: Yönetim paneli. Önce 0257 (taslak) bitmiş olmalı.
 
 ## Durum
 
-yapılacak
+bitti
