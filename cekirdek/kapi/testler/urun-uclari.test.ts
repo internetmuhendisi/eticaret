@@ -21,8 +21,10 @@ import { ozellikServisi } from "../../moduller/ozellik/servis.ts";
 import { aciklamayiTemizle } from "../../moduller/urun/aciklama.ts";
 import { urunler } from "../../moduller/urun/model.ts";
 import { siteninUrunServisi } from "../../moduller/urun/servis.ts";
+import { siteninVergiServisi } from "../../moduller/vergi/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
+import { urunEkraniVerisi } from "../../yonetim-paneli/urunler/urun-verisi.ts";
 import { urunDegisikligiUcu, urunEklemeUcu, urunSilmeUcu } from "../yonetici/urun.ts";
 import { oturumCerezi } from "./erisim-denemesi.ts";
 
@@ -228,6 +230,10 @@ describe("ürün uçları", () => {
     await reddet({ enAzAdet: 5, enCokAdet: 2 }, [{ alan: "enCokAdet", kod: "adet-siniri" }]);
     await reddet({ ilgiliUrunler: [kimlik] }, [expect.objectContaining({ kod: "ilgili-kendisi" })]);
     await reddet({ durum: "zamanlanmis" }, [{ alan: "yayinZamani", kod: "yayin-zamani-gerekli" }]);
+    // Ekran zamanlanmış durumda boş zamanı null gönderir: aynı kod.
+    await reddet({ durum: "zamanlanmis", yayinZamani: null }, [
+      { alan: "yayinZamani", kod: "yayin-zamani-gerekli" },
+    ]);
     await reddet({ ad: "" }, [expect.objectContaining({ alan: "ad" })]);
     // Ağırlık okunamazken öteki alanlar da yazılmaz.
     await reddet({ ad: "Değişmemeli", agirlik: "x" }, [{ alan: "agirlik", kod: "agirlik-bicimi" }]);
@@ -258,6 +264,29 @@ describe("ürün uçları", () => {
     expect(vitrinde).not.toContain("script");
     expect(vitrinde).not.toContain("javascript:");
     expect(vitrinde).toContain('href="/kategori/x"');
+  });
+
+  it("ekranın verisi: silinmiş vergi sınıfı işaretli görünür, düz metin açıklama paragraflara çevrilir", async () => {
+    const vergi = siteninVergiServisi(site);
+    const sinif = await vergi.sinifEkle(vt, yapan, { ad: `Eski sınıf ${benzersiz()}` });
+    const kimlik = await servis.urunEkle(vt, yapan, {
+      ad: `Eski ${benzersiz()}`,
+      vergiSinifi: sinif,
+      uzunAciklama: "Birinci paragraf.\n\nİkinci paragraf.",
+    });
+    await vergi.sinifSil(vt, yapan, sinif);
+    const sahip = (izin: string) => izin !== "";
+    const ekran = await urunEkraniVerisi(kimlik, sahip);
+    expect(ekran?.form.vergiSinifi).toBe(sinif);
+    expect(ekran?.vergiSiniflari.find((s) => s.kimlik === sinif)).toMatchObject({ silindi: true });
+    expect(ekran?.form.uzunAciklama).toBe("<p>Birinci paragraf.</p><p>İkinci paragraf.</p>");
+    // Yeni ürünün sınıfı silinmiş sınıf olamaz; silinmiş sınıf yeni üründe listelenmez.
+    const yeni = await urunEkraniVerisi(undefined, sahip);
+    expect(yeni?.vergiSiniflari.some((s) => s.kimlik === sinif)).toBe(false);
+    expect(yeni?.form.vergiSinifi).not.toBe(sinif);
+    // Silinmiş ürünün ekranı yoktur.
+    await servis.urunSil(vt, yapan, kimlik);
+    expect(await urunEkraniVerisi(kimlik, sahip)).toBeUndefined();
   });
 
   it("görevli ekler ve değiştirir, silemez; rolsüz, müşteri ve girişsiz geçmez, hiçbir şey değişmez", async () => {

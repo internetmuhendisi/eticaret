@@ -14,6 +14,7 @@ import { kategorileriOku } from "../../moduller/kategori/servis";
 import { kategoriYollari } from "../../moduller/kategori/yol";
 import { markaServisi } from "../../moduller/marka/servis";
 import { ozellikServisi } from "../../moduller/ozellik/servis";
+import { aciklamayiTemizle } from "../../moduller/urun/aciklama";
 import { urunler } from "../../moduller/urun/model";
 import { agirlikYazisi } from "../../moduller/urun/panel-girdisi";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
@@ -64,7 +65,7 @@ export type UrunEkraniVerisi = {
   kimlik?: string;
   form: UrunFormu;
   tur: UrunTuru;
-  vergiSiniflari: SeciliKayit[];
+  vergiSiniflari: (SeciliKayit & { silindi?: true })[];
   ozellikler: UrunEkraniOzelligi[];
   // Sitenin ağırlık biriminin kısaltması (kg).
   agirlikBirimi: string;
@@ -106,11 +107,15 @@ export const urunEkraniVerisi = async (
   const bicimleyici = siteninBicimleyicisi(site.ayarlar);
   const [urun, vergiTablosu, ozellikler] = await Promise.all([
     kimlik === undefined ? undefined : calisanSiteninUrunServisi().urunuOku(vt, kimlik),
-    calisanSiteninVergiServisi().tabloyuOku(vt),
+    calisanSiteninVergiServisi().tabloyuOku(vt, { silinmisSiniflar: true }),
     ozellikServisi.hepsiniOku(vt),
   ]);
   if (kimlik !== undefined && (urun === undefined || urun.silindi)) return undefined;
-  const vergiSiniflari = vergiTablosu.map(({ kimlik: k, ad }) => ({ kimlik: k, ad }));
+  // Silinmemiş sınıflar; ürün silinmiş bir sınıfa bağlıysa o da (bağlıyken silinen sınıf üründe kalır, kart 0076),
+  // işaretli: seçim kutusu boş görünmesin (bağımsız kontrolün bulgusu).
+  const vergiSiniflari = vergiTablosu
+    .filter((sinifi) => !sinifi.silindi || sinifi.kimlik === urun?.vergiSinifi)
+    .map(({ kimlik: k, ad, silindi }) => ({ kimlik: k, ad, ...(silindi ? { silindi } : {}) }));
   const ortak = {
     vergiSiniflari,
     ozellikler: ozellikler.map((ozellik) => ({
@@ -126,7 +131,7 @@ export const urunEkraniVerisi = async (
   if (urun === undefined) {
     return {
       ...ortak,
-      form: { ...bos, vergiSinifi: vergiSiniflari[0]?.kimlik ?? "" },
+      form: { ...bos, vergiSinifi: vergiSiniflari.find((s) => s.silindi !== true)?.kimlik ?? "" },
       tur: "basit",
       baslikAlti: [],
     };
@@ -176,7 +181,8 @@ export const urunEkraniVerisi = async (
       ad: urun.ad,
       adresAdi: urun.adresAdi,
       kisaAciklama: urun.kisaAciklama ?? "",
-      uzunAciklama: urun.uzunAciklama ?? "",
+      // Vitrinin gördüğü hâli: düz metin açıklama paragraflara çevrilir, düzenleyici satır sonlarını yitirmez.
+      uzunAciklama: aciklamayiTemizle(urun.uzunAciklama) ?? "",
       kategoriler: kategoriAdlari,
       marka: urun.marka === null ? null : (adiyla(markalar, [urun.marka])[0] ?? null),
       etiketler: adiyla(etiketler, urun.etiketler),

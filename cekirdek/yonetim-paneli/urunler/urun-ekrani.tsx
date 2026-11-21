@@ -10,9 +10,10 @@
 //   vitrindeki temizlikle aynıdır.
 // - Değiştirme izni olmayan yönetici alanları okur, düğmeleri görmez; silme ayrıca urun.sil ister.
 import { useRouter } from "next/navigation";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { BicimliMetinAlani } from "../../../bilesenler/parcalar/bicimli-metin-alani";
+import { bildirimGoster } from "../../../bilesenler/parcalar/bildirim";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { Kart } from "../../../bilesenler/parcalar/kart";
@@ -39,6 +40,7 @@ import { AlanKabi, KaydetCubugu, PanelAlani, PanelFormu, usePanelFormu } from ".
 import { KayitArama } from "../kayit-arama";
 import { kodluAlanHatalari, kodluHataMetni } from "../kodlu-form";
 import { usePanelIslemi } from "../panel-islemi";
+import { panelIstegi } from "../panel-istegi";
 import { useSunucuFormu } from "../sunucu-formu";
 import type { UrunEkraniVerisi, UrunFormu } from "./urun-verisi";
 
@@ -83,9 +85,9 @@ const sabitAlanlar = [
 const adet = (yazi: string): number | string =>
   /^\d{1,9}$/.test(yazi.trim()) ? Number(yazi) : yazi;
 
-// Sunucuya giden girdi. Yeni üründe boş isteğe bağlı alan gönderilmez, değişiklikte boşaltılır (null). Özelliklerin
-// gönderilme sırası hatanın yolunu alana eşlemek için döner.
-const girdiyiKur = (form: UrunFormu, veri: UrunEkraniVerisi) => {
+// Formun alanlarının girdisi. Yeni üründe boş isteğe bağlı alan gönderilmez, değişiklikte boşaltılır (null).
+// Özelliklerin gönderilme sırası hatanın yolunu alana eşlemek için döner.
+const alanGirdisi = (form: UrunFormu, veri: UrunEkraniVerisi) => {
   const yeni = veri.kimlik === undefined;
   const istege = (deger: string) => (deger.trim() === "" ? (yeni ? undefined : null) : deger);
   const ozellikSirasi: string[] = [];
@@ -113,7 +115,13 @@ const girdiyiKur = (form: UrunFormu, veri: UrunEkraniVerisi) => {
     enAzAdet: adet(form.enAzAdet),
     enCokAdet: form.enCokAdet.trim() === "" ? (yeni ? undefined : null) : adet(form.enCokAdet),
     durum: form.durum,
-    yayinZamani: form.durum === "zamanlanmis" ? form.yayinZamani : yeni ? undefined : null,
+    // Zamanlanmış durumda boş zaman gönderilmez (değişiklikte null): sunucu "yayın zamanı gerekli" der.
+    yayinZamani:
+      form.durum === "zamanlanmis" && form.yayinZamani !== ""
+        ? form.yayinZamani
+        : yeni
+          ? undefined
+          : null,
     ilgiliUrunler: form.ilgiliUrunler.map((kayit) => kayit.kimlik),
     ozellikler,
     // Varyantlı üründe birimin alanları her birleşimdedir (kart 0264).
@@ -131,13 +139,35 @@ const girdiyiKur = (form: UrunFormu, veri: UrunEkraniVerisi) => {
   };
 };
 
+// Sunucuya giden girdi: yeni üründe bütün dolu alanlar, değişiklikte yalnız sunucudan gelen hâline göre değişen alanlar
+// (bağımsız kontrolün bulgusu). Dokunulmayan alan yeniden yazılmaz: yaz saatinin iki kez yaşanan saatinde yayın zamanı
+// kaymaz, düzenleyicinin yeniden yazdığı açıklama ya da yuvarlanan ağırlık değişmeden kayda girmez.
+export const girdiyiKur = (form: UrunFormu, bilinen: UrunFormu, veri: UrunEkraniVerisi) => {
+  const yeniHali = alanGirdisi(form, veri);
+  if (veri.kimlik === undefined) return yeniHali;
+  const eskiHali = alanGirdisi(bilinen, veri).girdi;
+  return {
+    girdi: Object.fromEntries(
+      Object.entries(yeniHali.girdi).filter(
+        ([alan, deger]) => JSON.stringify(deger) !== JSON.stringify(eskiHali[alan]),
+      ),
+    ),
+    ozellikSirasi: yeniHali.ozellikSirasi,
+  };
+};
+
 export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
   const metin = usePanelMetni();
   const router = useRouter();
   const islem = usePanelIslemi(hataMetni);
   const izinli = veri.izinler.degistir;
   const yeni = veri.kimlik === undefined;
-  const { form, setForm, degisti, kaydedildi, vazgec } = useSunucuFormu<UrunFormu>(veri.form);
+  const { form, setForm, bilinen, degisti, kaydedildi, vazgec } = useSunucuFormu<UrunFormu>(
+    veri.form,
+  );
+  // Yeni ürün kaydedilince ürünün ekranına geçilir; geçiş bitene kadar ikinci kayıt yapılmaz (bağımsız kontrolün
+  // bulgusu: ikinci basış ikinci ürünü açabilirdi).
+  const acilan = useRef(false);
   const pf = usePanelFormu({ degisti: izinli && degisti, kaydet: () => kaydet() });
   const [silOnayi, setSilOnayi] = useState(false);
   const [arsivleniyor, setArsivleniyor] = useState(false);
@@ -148,8 +178,9 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
     setForm((onceki) => ({ ...onceki, ozellikler: { ...onceki.ozellikler, [kimlik]: deger } }));
 
   const kaydet = async (): Promise<boolean> => {
+    if (acilan.current) return false;
     const gonderilen = form;
-    const { girdi, ozellikSirasi } = girdiyiKur(gonderilen, veri);
+    const { girdi, ozellikSirasi } = girdiyiKur(gonderilen, bilinen, veri);
     const sonuc = await pf.isle(() =>
       yeni
         ? islem<{ kimlik: string }>("urun-ekle", { urun: girdi }, "yonetim.urunEkrani.eklendi", {
@@ -166,7 +197,10 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
     if (sonuc.tamam) {
       kaydedildi(gonderilen);
       pf.temizle();
-      if (yeni) router.replace(urunEkraniAdresi((sonuc.veri as { kimlik: string }).kimlik));
+      if (yeni) {
+        acilan.current = true;
+        router.replace(urunEkraniAdresi((sonuc.veri as { kimlik: string }).kimlik));
+      }
       return true;
     }
     const alanlar = [
@@ -207,8 +241,14 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
 
   const sil = async () => {
     if (veri.kimlik === undefined) return;
-    const sonuc = await islem("urun-sil", { kimlik: veri.kimlik }, "yonetim.urunEkrani.silindi");
-    if (sonuc.tamam) router.push(urunlerAdresi);
+    // Sayfa yenilenmez (silinen ürünün ekranı bulunamadı verirdi), listeye gidilir.
+    const sonuc = await panelIstegi("urun-sil", { kimlik: veri.kimlik });
+    if (sonuc.tamam) {
+      bildirimGoster("basari", metin("yonetim.urunEkrani.silindi"));
+      router.push(urunlerAdresi);
+    } else {
+      bildirimGoster("tehlike", metin(hataMetni(sonuc)));
+    }
   };
 
   const metinAlani = (
@@ -268,31 +308,29 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
         zorunlu={false}
       >
         {(baglanti) => (
-          <span data-hata-odagi className="contents">
-            <BicimliMetinAlani
-              {...baglanti}
-              etiket={metin("yonetim.urunEkrani.aciklama")}
-              deger={form.uzunAciklama}
-              onDegerDegisti={(html) => degistir("uzunAciklama", html)}
-              baglantiGecerliMi={aciklamaBaglantisiGecerliMi}
-              disabled={!izinli}
-              metinler={{
-                aracCubugu: doldur(metin("yonetim.bicimliMetin.aracCubugu"), {
-                  alan: metin("yonetim.urunEkrani.aciklama"),
-                }),
-                kalin: metin("yonetim.bicimliMetin.kalin"),
-                egik: metin("yonetim.bicimliMetin.egik"),
-                araBaslik: metin("yonetim.bicimliMetin.araBaslik"),
-                maddeListesi: metin("yonetim.bicimliMetin.maddeListesi"),
-                siraliListe: metin("yonetim.bicimliMetin.siraliListe"),
-                baglanti: metin("yonetim.bicimliMetin.baglanti"),
-                baglantiAdresi: metin("yonetim.bicimliMetin.baglantiAdresi"),
-                baglantiUygula: metin("yonetim.bicimliMetin.baglantiUygula"),
-                baglantiKaldir: metin("yonetim.bicimliMetin.baglantiKaldir"),
-                baglantiGecersiz: metin("yonetim.bicimliMetin.baglantiGecersiz"),
-              }}
-            />
-          </span>
+          <BicimliMetinAlani
+            {...baglanti}
+            etiket={metin("yonetim.urunEkrani.aciklama")}
+            deger={form.uzunAciklama}
+            onDegerDegisti={(html) => degistir("uzunAciklama", html)}
+            baglantiGecerliMi={aciklamaBaglantisiGecerliMi}
+            disabled={!izinli}
+            metinler={{
+              aracCubugu: doldur(metin("yonetim.bicimliMetin.aracCubugu"), {
+                alan: metin("yonetim.urunEkrani.aciklama"),
+              }),
+              kalin: metin("yonetim.bicimliMetin.kalin"),
+              egik: metin("yonetim.bicimliMetin.egik"),
+              araBaslik: metin("yonetim.bicimliMetin.araBaslik"),
+              maddeListesi: metin("yonetim.bicimliMetin.maddeListesi"),
+              siraliListe: metin("yonetim.bicimliMetin.siraliListe"),
+              baglanti: metin("yonetim.bicimliMetin.baglanti"),
+              baglantiAdresi: metin("yonetim.bicimliMetin.baglantiAdresi"),
+              baglantiUygula: metin("yonetim.bicimliMetin.baglantiUygula"),
+              baglantiKaldir: metin("yonetim.bicimliMetin.baglantiKaldir"),
+              baglantiGecersiz: metin("yonetim.bicimliMetin.baglantiGecersiz"),
+            }}
+          />
         )}
       </PanelAlani>
     </Bolum>
@@ -347,6 +385,7 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
             etiket={metin("yonetim.urunEkrani.marka")}
             aciklama={metin("yonetim.urunEkrani.markaAciklamasi")}
             secili={form.marka ?? undefined}
+            disabled={!izinli}
             sec={(kayit) =>
               degistir("marka", kayit === undefined ? null : { kimlik: kayit.kimlik, ad: kayit.ad })
             }
@@ -367,7 +406,13 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
           undefined,
           form.vergiSinifi === "" ? vergisiz : form.vergiSinifi,
           [
-            ...veri.vergiSiniflari.map((sinifi) => ({ deger: sinifi.kimlik, ad: sinifi.ad })),
+            ...veri.vergiSiniflari.map((sinifi) => ({
+              deger: sinifi.kimlik,
+              ad:
+                sinifi.silindi === true
+                  ? doldur(metin("yonetim.urunEkrani.vergiSinifiSilinmis"), { ad: sinifi.ad })
+                  : sinifi.ad,
+            })),
             { deger: vergisiz, ad: metin("yonetim.urunEkrani.vergisiz") },
           ],
           (deger) => degistir("vergiSinifi", deger === vergisiz ? "" : deger),

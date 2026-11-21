@@ -60,12 +60,15 @@ export function CokluKayitSecimi({
     <AlanKabi ad={ad} etiket={etiket}>
       <div ref={kap} className="flex flex-col gap-2">
         {dolu || disabled ? (
-          dolu && sinirYazisi !== undefined ? (
-            <div className="flex flex-col gap-1">
-              <span className="font-kalin">{etiket}</span>
+          // Sınır doluysa ya da değiştirme izni yoksa arama kutusu yoktur; alanın adı ve durumu yine görünür.
+          <div className="flex flex-col gap-1">
+            <span className="font-kalin">{etiket}</span>
+            {dolu && sinirYazisi !== undefined && !disabled ? (
               <p className="text-kucuk text-soluk-yazi">{sinirYazisi}</p>
-            </div>
-          ) : null
+            ) : secilenler.length === 0 ? (
+              <p className="text-kucuk text-soluk-yazi">{metin("yonetim.cokluKayit.secilmedi")}</p>
+            ) : null}
+          </div>
         ) : (
           <KayitArama
             tur={tur}

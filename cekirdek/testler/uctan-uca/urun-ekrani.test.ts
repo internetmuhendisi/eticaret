@@ -15,6 +15,7 @@ import { like } from "drizzle-orm";
 import { doldur } from "../../metinler/doldur";
 import { metin } from "../../metinler/site-metni";
 import { kategoriEkle, kategoriSil } from "../../moduller/kategori/servis";
+import { markaServisi } from "../../moduller/marka/servis";
 import { urunler } from "../../moduller/urun/model";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
@@ -260,12 +261,20 @@ test("mağaza sahibi klavyeyle yeni ürün açar, yayına alır, vitrinde görü
   }
 });
 
-test("ürün ekranında özellik değeri türüne uymayınca alanın hatası; seçimler kaldırılabilir", async ({
+test("ürün ekranında hatalar alana bağlanır, Vazgeç markayı da geri alır, açıklamanın biçimleri korunur", async ({
   page,
 }) => {
   const ek = randomBytes(3).toString("hex");
   const servis = calisanSiteninUrunServisi();
-  const kimlik = await servis.urunEkle(vt, yapan, { ad: `Deneme ${ek} Termos`, vergiSinifi: null });
+  const markaA = await markaServisi.ekle(vt, yapan, { ad: `Deneme ${ek} Marka A` });
+  const markaB = await markaServisi.ekle(vt, yapan, { ad: `Deneme ${ek} Marka B` });
+  const kimlik = await servis.urunEkle(vt, yapan, {
+    ad: `Deneme ${ek} Termos`,
+    vergiSinifi: null,
+    marka: markaA,
+    // Araç çubuğunda olmayan ama vitrinin izin verdiği biçimler (h4, u, s) düzenleyicide kaybolmaz.
+    uzunAciklama: "<h4>Bakım</h4><p><u>Elde</u> yıkayın, <s>makinede</s> değil.</p>",
+  });
   try {
     await page.setViewportSize({ width: 1280, height: 900 });
     await paneleGir(page, yonetici);
@@ -277,11 +286,46 @@ test("ürün ekranında özellik değeri türüne uymayınca alanın hatası; se
     const bozuk = await page.request.get("/yonetim/urunler/urun?kimlik=x");
     expect(bozuk.status()).toBe(404);
 
-    // Kayıtlı ürün listesinde Vazgeç yazılanı geri alır.
+    // Vazgeç yazılanı ve seçilen markayı geri alır; marka kutusu formun markasını gösterir.
     const ad = page.getByRole("textbox", { name: metin("yonetim.urunEkrani.ad") });
     await ad.fill(`Deneme ${ek} Değişmiş`);
+    const marka = page.getByRole("combobox", { name: metin("yonetim.urunEkrani.marka") });
+    await expect(marka).toHaveValue(`Deneme ${ek} Marka A`);
+    await marka.fill(`Deneme ${ek} Marka B`);
+    await page.getByRole("option", { name: `Deneme ${ek} Marka B` }).click();
+    await expect(marka).toHaveValue(`Deneme ${ek} Marka B`);
     await page.getByRole("button", { name: metin("ortak.islem.vazgec") }).click();
     await expect(ad).toHaveValue(`Deneme ${ek} Termos`);
+    await expect(marka).toHaveValue(`Deneme ${ek} Marka A`);
+
+    // Açıklamada tek hata (sınırı aşan metin): odak açıklamanın yazı alanına gider.
+    const aciklama = page.getByRole("textbox", {
+      name: metin("yonetim.urunEkrani.aciklama"),
+      exact: true,
+    });
+    await aciklama.focus();
+    await page.keyboard.press("ControlOrMeta+End");
+    await page.keyboard.insertText("x".repeat(100_001));
+    const kaydetDugme = kaydetDugmesi(page, metin("yonetim.urunEkrani.kaydet"));
+    await kaydetDugme.focus();
+    await page.keyboard.press("Enter");
+    await expect(aciklama).toBeFocused();
+    await expect(aciklama).toHaveAttribute("aria-invalid", "true");
+    await page.getByRole("button", { name: metin("ortak.islem.vazgec") }).click();
+
+    // Açıklamaya bir harf eklenip kaydedilince h4, u ve s kalır.
+    await aciklama.focus();
+    await page.keyboard.press("ControlOrMeta+End");
+    await page.keyboard.type("!");
+    await kaydetDugme.click();
+    await expect(page.getByText(metin("yonetim.urunEkrani.kaydedildi")).first()).toBeVisible();
+    const kayitli = (await servis.urunuOku(vt, kimlik))?.uzunAciklama ?? "";
+    expect(kayitli).toContain("<h4>Bakım</h4>");
+    expect(kayitli).toContain("<u>Elde</u>");
+    expect(kayitli).toContain("<s>makinede</s>");
+    expect(kayitli).toContain("değil.!");
+    // Marka Vazgeç'ten sonra kaydedilmedi: A kaldı.
+    expect((await servis.urunuOku(vt, kimlik))?.marka).toBe(markaA);
 
     // En çok alım adedi en azdan küçük: alanın hatası.
     await page.getByRole("textbox", { name: metin("yonetim.urunEkrani.enAzAdet") }).fill("5");
@@ -294,10 +338,11 @@ test("ürün ekranında özellik değeri türüne uymayınca alanın hatası; se
     await expect(page.getByText(metin("yonetim.urun.hata.adet-siniri"))).toBeVisible();
     await enCok.fill("");
     await kaydet.click();
-    await expect(page.getByText(metin("yonetim.urunEkrani.kaydedildi")).first()).toBeVisible();
-    expect((await servis.urunuOku(vt, kimlik))?.enAzAdet).toBe(5);
+    // Önceki kaydın bildirimi ekranda olabilir: kayıt veritabanında beklenir.
+    await expect.poll(async () => (await servis.urunuOku(vt, kimlik))?.enAzAdet).toBe(5);
   } finally {
     await servis.urunSil(vt, yapan, kimlik).catch(() => undefined);
+    for (const m of [markaA, markaB]) await markaServisi.sil(vt, yapan, m).catch(() => undefined);
   }
 });
 

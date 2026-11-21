@@ -1634,7 +1634,8 @@
     },
     "cokluKayit": {
       "secilenler": "Seçilenler: {alan}",
-      "kaldir": "Kaldır: {ad}"
+      "kaldir": "Kaldır: {ad}",
+      "secilmedi": "Seçilmedi"
     },
     "bicimliMetin": {
       "aracCubugu": "Biçim: {alan}",
@@ -1718,7 +1719,8 @@
       "eklendi": "Ürün taslak olarak kaydedildi.",
       "kaydedildi": "Ürün kaydedildi.",
       "arsivlendi": "Ürün arşive alındı.",
-      "silindi": "Ürün silindi."
+      "silindi": "Ürün silindi.",
+      "vergiSinifiSilinmis": "{ad} (silinmiş sınıf)"
     }
   },
   "vitrin": {

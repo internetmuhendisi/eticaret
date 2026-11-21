@@ -89,12 +89,12 @@ export function BicimliMetinAlani({
     editable: !disabled,
     extensions: [
       StarterKit.configure({
-        heading: { levels: [3] },
+        // Vitrinin izinli etiketlerinin hepsi korunur (h4, u, s): araç çubuğunda olmasalar da açılan açıklamada
+        // kaybolmasınlar (bağımsız kontrolün bulgusu).
+        heading: { levels: [3, 4] },
         code: false,
         codeBlock: false,
         horizontalRule: false,
-        strike: false,
-        underline: false,
         link: {
           openOnClick: false,
           autolink: false,

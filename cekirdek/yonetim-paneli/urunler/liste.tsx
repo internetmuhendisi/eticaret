@@ -1,4 +1,9 @@
 "use client";
+// Ürünler ekranının listesi (kart 0262, karar 0161; taslak: "Ortak liste: Ürünler"). Tanımı liste-tanimi.ts: arama (ad
+// ya da stok kodu), yayın durumu, kategori, stok ve marka süzgeçleri, sıralama (ürün, stok ve fiyat sütunu başlıktan
+// da), sayfa ve dört toplu işlem. Satırda ana görsel, ad ve stok kodu (varyantlı üründe birleşim sayısı), yayın
+// durumu, kategoriler, stok durumu ve vitrindeki fiyat; sayfası vitrinde açılan üründe "Vitrinde gör". Masaüstünde
+// tablo, telefonda her ürün bir kart (.claude/rules/telefon-gorunumu.md). Ürünün adı ürün ekranına gider (kart 0263).
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
 import { Rozet } from "../../../bilesenler/parcalar/rozet";
@@ -13,11 +18,6 @@ import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
 import { kayitAdresleri } from "../../vitrin/adresler";
-// Ürünler ekranının listesi (kart 0262, karar 0161; taslak: "Ortak liste: Ürünler"). Tanımı liste-tanimi.ts: arama (ad
-// ya da stok kodu), yayın durumu, kategori, stok ve marka süzgeçleri, sıralama (ürün, stok ve fiyat sütunu başlıktan
-// da), sayfa ve dört toplu işlem. Satırda ana görsel, ad ve stok kodu (varyantlı üründe birleşim sayısı), yayın
-// durumu, kategoriler, stok durumu ve vitrindeki fiyat; sayfası vitrinde açılan üründe "Vitrinde gör". Masaüstünde
-// tablo, telefonda her ürün bir kart (.claude/rules/telefon-gorunumu.md). Ürün ekranına geçiş kart 0263'le gelir.
 import { urunEkraniAdresi } from "../adresler";
 import { KatalogGorseli } from "../katalog-gorseli";
 import { Liste, type SutunTanimi, type TopluIslemTanimi } from "../liste/liste";

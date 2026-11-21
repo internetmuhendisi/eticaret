@@ -33,6 +33,7 @@ export function KayitArama<Kayit extends AramaOnerisi = AramaOnerisi>({
   sec,
   secinceBosalt = false,
   hata,
+  disabled = false,
 }: {
   // Kayıt arama ucunun türü; kendi araması verilirse kullanılmaz.
   tur?: AranabilirKayit;
@@ -50,6 +51,7 @@ export function KayitArama<Kayit extends AramaOnerisi = AramaOnerisi>({
   // Seçince kutu boşalır (listeye ekleme): seçim alanda kalmaz.
   secinceBosalt?: boolean;
   hata?: string;
+  disabled?: boolean;
 }) {
   const metin = usePanelMetni();
   const kimlik = useId();
@@ -61,6 +63,15 @@ export function KayitArama<Kayit extends AramaOnerisi = AramaOnerisi>({
   const [durum, setDurum] = useState<"bos" | "yukleniyor" | "hazir" | "hata" | "yetki">("bos");
   const [etkin, setEtkin] = useState(-1);
   const istekSirasi = useRef(0);
+
+  // Seçim dışarıdan değişince (Vazgeç, sunucunun yenilemesi; kart 0263) yazı seçili kaydın adı olur. Yazarken
+  // bırakılan seçimde yazı kalır: o zaman yazı önceki kaydın adından farklıdır.
+  const [gorulenSecim, setGorulenSecim] = useState(secili);
+  if (!secinceBosalt && secili?.kimlik !== gorulenSecim?.kimlik) {
+    setGorulenSecim(secili);
+    if (secili !== undefined) setYazi(secili.ad);
+    else if (yazi === gorulenSecim?.ad) setYazi("");
+  }
 
   // Tür değişince (başka hedef türü seçildi) arama baştan başlar.
   // biome-ignore lint/correctness/useExhaustiveDependencies: yalnız tür değişince sıfırlanır.
@@ -163,6 +174,7 @@ export function KayitArama<Kayit extends AramaOnerisi = AramaOnerisi>({
             aria-controls={listeKimligi}
             {...(listeAcik && etkin >= 0 ? { "aria-activedescendant": secenekKimligi(etkin) } : {})}
             autoComplete="off"
+            disabled={disabled}
             value={yazi}
             onChange={(olay) => {
               setYazi(olay.target.value);
