@@ -11,6 +11,7 @@ import { type UcretsizKargoTutari, ucretsizKargoTutarlari } from "../../kayitlar
 import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
 import { AlanKabi, KaydetCubugu, PanelAlani, PanelFormu, usePanelFormu } from "../form/panel-formu";
+import { type KodMetinleri, kodluAlanHatalari } from "../kodlu-form";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
 import { useSunucuFormu } from "../sunucu-formu";
@@ -18,7 +19,8 @@ import type { KargoEkraniVerisi, KargoFormu } from "./veri";
 
 type Alan = keyof KargoFormu;
 
-const alanHatasiMetni: Record<string, MetinAnahtari> = {
+// Servisin kodları; şemanın kendi kodları (boş zorunlu alan, çok uzun yazı) ortak eşlemeden gelir (kart 0284).
+const alanHatasiMetni: KodMetinleri = {
   "tutar-okunamadi": "yonetim.kargo.hata.tutarOkunamadi",
   "tutar-sinir-disi": "yonetim.kargo.hata.tutarSinirDisi",
   "gun-gecersiz": "yonetim.kargo.hata.gunGecersiz",
@@ -57,10 +59,9 @@ export function KargoEkrani({ veri, izinli }: { veri: KargoEkraniVerisi; izinli:
       return true;
     }
     const alanlar = Object.fromEntries(
-      sonuc.ayrinti.flatMap(({ alan, kod }) => {
-        const anahtar = alanHatasiMetni[kod];
-        return anahtar !== undefined && alan in veri.form ? [[alan, metin(anahtar)]] : [];
-      }),
+      Object.entries(kodluAlanHatalari(alanHatasiMetni, sonuc, Object.keys(veri.form))).map(
+        ([alan, anahtar]) => [alan, metin(anahtar)],
+      ),
     );
     pf.hatalariGoster(
       alanlar,

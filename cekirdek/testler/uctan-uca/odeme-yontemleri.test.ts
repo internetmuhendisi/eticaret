@@ -1,7 +1,7 @@
 // Panelin ödeme yöntemleri ve banka hesapları ekranları gerçek tarayıcıda (kart 0214, karar 0141):
 // - Mağaza sahibi menüden klavyeyle "Ödeme yöntemleri"ne gelir; ekran iki renkte ve üç genişlikte taramadan geçer, yana
 //   kaymaz. Bütün yöntemler anahtarla kapatılıp kaydedilince "en az bir yöntem" uyarısı görünür, hiçbir şey kaydedilmez;
-//   Vazgeç formu geri alır. İptal süresi klavyeyle değişip kaydedilir, sonra eski hâline döner.
+//   Vazgeç formu geri alır. Boş iptal süresi alanın "zorunlu" hatasını alır (kart 0284). İptal süresi klavyeyle değişip kaydedilir, sonra eski hâline döner.
 // - Kayıttan sonraki yenileme geç gelirse arada yazılan değer ezilmez (kart 0223).
 // - Yöntemlerin sırası taşınır taşınmaz kaydedilir, vitrinde yeni sırayla görünür; kaydedilmemiş anahtar birlikte
 //   gitmez (kart 0224, karar 0144).
@@ -168,6 +168,16 @@ test("ödeme yöntemleri: tarama, en az bir yöntem, iptal süresinin kaydı", a
       String(yontem.acik),
     );
   }
+  // Boş iptal süresi (kart 0284): uç şemasının kodu alanın "zorunlu" hatasıyla döner, odak alanda, genel hata yok.
+  await sure.fill("");
+  await sure.press("Enter");
+  await expect(
+    page.locator("[data-alan='sure']").getByText(metin("yonetim.bolumFormu.hata.zorunlu")),
+  ).toBeVisible();
+  await expect(sure).toBeFocused();
+  await expect(sure).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByText(metin("yonetim.odemeYontemleri.hata.genel"))).toHaveCount(0);
+  expect((await servis().oku(vt)).havaleIptalSuresi).toBe(ilk.havaleIptalSuresi);
 
   // İptal süresi: kaydedilir, sonra eski hâline döner.
   const yeni = String(ilk.havaleIptalSuresi === 30 ? 29 : ilk.havaleIptalSuresi + 1);

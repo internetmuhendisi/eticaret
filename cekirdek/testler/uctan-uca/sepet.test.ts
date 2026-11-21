@@ -9,7 +9,7 @@
 //   yana kaymaz, konsolda hata yok; sayfa arama motorlarına kapalıdır.
 // - Panelin Kargo ekranı (aynı dosyada, öteki testlerden sonra sırayla: paylaşılan kargo ayarını değiştirir, sonunda
 //   eski hâline döner): mağaza sahibi menüden klavyeyle gelir, okunamayan tutar alanın hatasıyla döner ve odak alana
-//   gider, ücret ve sınır Enter ile kaydedilir; sepette sınırın altında kargo ücreti eklenir, üstünde kargo ücretsizdir.
+//   gider, boş zorunlu alan alanın "zorunlu" hatasıyla döner (kart 0284), ücret ve sınır Enter ile kaydedilir; sepette sınırın altında kargo ücreti eklenir, üstünde kargo ücretsizdir.
 //   Ekran (hatalı hâli de) iki renkte ve üç genişlikte taramadan geçer, yana kaymaz.
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
@@ -323,6 +323,30 @@ test("panelin Kargo ekranı: klavyeyle hata ve kayıt; sepette kargo ücreti ve 
   await tara(page, "kargo ekranı özetli");
   await satirlar.nth(1).getByRole("button").press("Enter");
   await expect(sinir).toBeFocused();
+  // Boş zorunlu alan (kart 0284): uç şemasının kodu alanın "zorunlu" hatasıyla döner, genel hata yazılmaz. Tek boş
+  // alanda odak alanda; iki boş alanda odak özette.
+  const zorunlu = metin("yonetim.bolumFormu.hata.zorunlu");
+  const genel = metin("yonetim.kargo.hata.genel");
+  const sure = page.getByLabel(metin("yonetim.kargo.sure"));
+  const ilkSure = await sure.inputValue();
+  await sinir.fill("");
+  await ucret.fill("");
+  await ucret.press("Enter");
+  await expect(page.getByText(zorunlu)).toBeVisible();
+  await expect(ucret).toBeFocused();
+  await expect(ucret).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByText(genel)).toHaveCount(0);
+  await sure.fill("");
+  await sure.press("Enter");
+  await ozetOdaktaOlmali(
+    page,
+    [`${metin("yonetim.kargo.ucret")}: ${zorunlu}`, `${metin("yonetim.kargo.sure")}: ${zorunlu}`],
+    2,
+  );
+  await expect(sure).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByText(genel)).toHaveCount(0);
+  expect((await magazaAyarlari().oku(vt)).kargoUcreti).toBe(ilkKargo.kargoUcreti);
+  await sure.fill(ilkSure);
   // Ücret 59,90, sınır 200,00: kaydedilir, sayfa yenilenince alanlar sunucunun yazdığı hâlle gelir.
   await ucret.fill("59,9");
   await sinir.fill("200");
