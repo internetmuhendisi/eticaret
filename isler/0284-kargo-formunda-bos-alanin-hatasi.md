@@ -26,6 +26,13 @@ Panelde şemanın kendi kodlarını alana eşleyen ortak yol vardır (`cekirdek/
 - Öteki formların taraması yapıldı, sonucu karta yazıldı.
 - Bağımsız kontrol yapıldı.
 
+## Notlar
+
+- Kargo ekranı ve ödeme yöntemleri ekranı şemanın kodunu ortak eşlemeden alır (`kodluAlanHatalari`); servisin kendi kodu önce gelir.
+- Tarama: kartta sayılan yedi formun hiçbirinde hata yok. Banka hesabı, kargo firması, kargoya verme penceresi, iade penceresi ve sipariş notu boş alanı göndermeden önce ekranda yakalıyor. İptal ve iade ayarları hatayı alanın yolundan alana bağlıyor, kodundan değil. Yönetici bildirimleri ayarlarının alanı isteğe bağlı. Bunlar kod okunarak bulundu, tarayıcıda ayrıca ölçülmedi.
+- Taramada bulunan: ödeme yöntemleri ekranındaki havale iptal süresi aynı hatayı taşıyordu. Uç şeması `min(1)` ister, ekran yalnız servisin kodlarını tanıyordu. Boş süre genel hatayı veriyordu: tarayıcı testinin yeni adımı eski kodda kırmızıydı. Aynı işte düzeltildi.
+- Bozma: kargo ekranının eski eşlemesi geri konunca kargo testi boş alan adımında kırmızıya düştü.
+
 ## Durum
 
 yapılacak

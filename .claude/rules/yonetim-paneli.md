@@ -60,7 +60,7 @@ paths:
 ## Kargo ekranı (karar 0135)
 
 - Ekran `cekirdek/yonetim-paneli/kargo/` klasöründe, menüde "Satış" altındadır. Ayarlar mağaza ayarlarıdır: görmek `magaza-ayarlari.gor`, değiştirmek `magaza-ayarlari.degistir` ister.
-- Tutar sitenin para biçimiyle yazılı gider, sunucuda `kargoAyarlariniDegistir` (`cekirdek/moduller/kargo/servis.ts`) biçimleyicinin `paraOku`'suyla okur. Ekran tutarı kendisi çevirmez; alanın hatası koduyla döner.
+- Tutar sitenin para biçimiyle yazılı gider, sunucuda `kargoAyarlariniDegistir` (`cekirdek/moduller/kargo/servis.ts`) biçimleyicinin `paraOku`'suyla okur. Ekran tutarı kendisi çevirmez; alanın hatası koduyla döner. Uç şemasının kendi kodu (boş zorunlu alan) ortak eşlemeden (`kodluAlanHatalari`) alana bağlanır (kart 0284); kendi kod eşlemesini yazan ekran şemanın kodunu da karşılar.
 
 ## Siparişler (karar 0146)
 
