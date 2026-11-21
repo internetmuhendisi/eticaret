@@ -1150,7 +1150,7 @@ Seçilen ürünlere toplu işlem (kart 0262, karar 0157): yayınla, taslağa al,
 
 ### POST /kapi/yonetici/urun-ekle
 
-Yeni ürün (kart 0263): panelin ürün ekranından. Durum verilmezse ürün taslaktır. Ağırlık (`agirlik`) sitenin ağırlık biriminde, sayı türündeki özellik değeri sitenin sayı biçiminde metin olarak gelir, sunucu okur; öteki alanlar `urunGirdisi` şemasıyla doğrulanır. Seçenekler bölümü (kart 0264, karar 0163) `varyant` ile verilirse ürünle aynı işlemde yazılır: seçeneklerin, değerlerin ve birleşim alanlarının son hâli (`varyantKaydi`), birleşimin ağırlığı metin olarak; biri düşerse hiçbiri kalmaz. Değişiklikte seçenekler ürünün alanlarından önce yazılır (son seçeneği kalkan ürünün birim alanları yeni basit birime gider). `gorulen` ekranın gördüğü kayıtlı seçenek ve değer kimlikleridir: üründe başkası varsa `cakisma` (`varyant-degisti`) ve hiçbir şey yazılmaz. Kayıtlı seçenek ya da değer silmek (birleşimlerini siler) ayrıca `urun.sil` ister, yoksa `yetki` (`varyant-silme-yetkisi`) ve hiçbir şey yazılmaz.
+Yeni ürün (kart 0263): panelin ürün ekranından. Durum verilmezse ürün taslaktır. Ağırlık (`agirlik`) sitenin ağırlık biriminde, sayı türündeki özellik değeri sitenin sayı biçiminde metin olarak gelir, sunucu okur; öteki alanlar `urunGirdisi` şemasıyla doğrulanır. Seçenekler bölümü (kart 0264, karar 0163) `varyant` ile verilirse ürünle aynı işlemde yazılır: seçeneklerin, değerlerin ve birleşim alanlarının son hâli (`varyantKaydi`), birleşimin ağırlığı metin olarak; biri düşerse hiçbiri kalmaz. Değişiklikte seçenekler ürünün alanlarından önce yazılır (son seçeneği kalkan ürünün birim alanları yeni basit birime gider). `gorulen` ekranın gördüğü kayıtlı seçenek ve değer kimlikleridir: üründe başkası varsa `cakisma` (`varyant-degisti`) ve hiçbir şey yazılmaz. Kayıtlı seçenek ya da değer silmek (birleşimlerini siler) ayrıca `urun.sil` ister, yoksa `yetki` (`varyant-silme-yetkisi`) ve hiçbir şey yazılmaz. Fiyat ve stok bölümleri (kart 0265) `fiyatStok` ile en son, aynı işlemde yazılır (`panelFiyatStokYaz`): her satır bir birimdir (basit ürünün birimi ya da birleşimin değer sıraları), tutar sitenin para biçimiyle metin, stok yeni miktar ve görülen miktarla; indirimin zamanı, stok sebebi ve not ortaktır. Fiyat ayrıca `fiyat.degistir` (`fiyat-yetkisi`), stok `stok.duzelt` (`stok-yetkisi`) ister.
 
 - İzin: `urun.degistir`. Sınır: `genel`.
 - Girdi: `{ "urun": { "ad", ... }, "varyant"?: { "secenekler", "birlesimler" } }` (`urunEklemeSemasi`).
@@ -1176,6 +1176,36 @@ Yeni ürün (kart 0263): panelin ürün ekranından. Durum verilmezse ürün tas
 - Girdi: `{ "kimlik" }` (`urunSilmeSemasi`).
 - Servis: `urunSil`.
 - Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/urun-stok-duzelt
+
+Basit ürünün "Stoğu düzelt" penceresi (kart 0265): birimin stoğunu sebebiyle elle düzeltir, hemen kaydeder. Ekranın gördüğü miktar artık doğru değilse `cakisma` (`stok-degisti`), hiçbir şey yazılmaz.
+
+- İzin: `stok.duzelt`. Sınır: `genel`.
+- Girdi: `{ "birim", "duzeltme": { "yeniMiktar", "gorulenMiktar", "sebep", "not"? } }` (`urunStokDuzeltmeSemasi`; düzeltme stok servisinin `elleDuzeltme` şemasıyla doğrulanır).
+- Servis: `cekirdek/moduller/stok/servis.ts` (`stokDuzelt`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama` (`miktar-bicimi`, `not-gerekli`), `cakisma` (`stok-degisti`), `bulunamadi`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/urun-fiyat-gecmisi
+
+Ürün ekranının fiyat geçmişinin sonraki sayfası (kart 0265, "Daha fazla"): ürünün birimlerinin geçmişi tek listede, en yeni önce, biçimlenmiş (zaman, birleşim, satış ve indirimli fiyat, indirimin aralığı, yazan).
+
+- İzin: `fiyat.gor`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "sonra"? }` (`urunGecmisiSemasi`; `sonra` önceki sayfanın son satırı).
+- Servis: `cekirdek/yonetim-paneli/urunler/fiyat-stok-verisi.ts` (`urununGecmisSayfasi`; fiyat servisinin `panelFiyatGecmisi`'ni çağırır).
+- Başarılı (200): `{ "basarili": true, "veri": { "satirlar", "devam"? } }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/urun-stok-gecmisi
+
+Ürün ekranının stok geçmişinin sonraki sayfası (kart 0265): `urun-fiyat-gecmisi` gibi; satırlar sebep, siparişin numarası, not, değişim ve sonraki miktarla.
+
+- İzin: `stok.gor`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "sonra"? }` (`urunGecmisiSemasi`).
+- Servis: `urununGecmisSayfasi` (stok servisinin `panelStokGecmisi`).
+- Başarılı (200): `{ "basarili": true, "veri": { "satirlar", "devam"? } }`.
 - Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
 
 ### GET /kapi/yonetici/kayit-ara

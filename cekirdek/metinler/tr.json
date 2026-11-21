@@ -1659,6 +1659,10 @@
         "genel": "Genel bilgiler",
         "siniflandirma": "Sınıflandırma",
         "secenekler": "Seçenekler",
+        "fiyat": "Fiyat",
+        "fiyatGecmisi": "Fiyat geçmişi",
+        "stok": "Stok",
+        "stokGecmisi": "Stok geçmişi",
         "satis": "Satış bilgileri",
         "ozellikler": "Özellikler",
         "ilgili": "İlgili ürünler"
@@ -1684,7 +1688,10 @@
         "sutun": {
           "gorsel": "Görsel",
           "birlesim": "Birleşim",
-          "agirlik": "Ağırlık ({birim})"
+          "agirlik": "Ağırlık ({birim})",
+          "satis": "Satış fiyatı ({simge})",
+          "indirimli": "İndirimli ({simge})",
+          "stok": "Stok"
         },
         "gorselSec": "Görsel seç: {ad}",
         "gorselSecili": "Görsel seç: {ad}, seçili görsel {gorsel}",
@@ -1765,7 +1772,66 @@
       "kaydedildi": "Ürün kaydedildi.",
       "arsivlendi": "Ürün arşive alındı.",
       "silindi": "Ürün silindi.",
-      "vergiSinifiSilinmis": "{ad} (silinmiş sınıf)"
+      "vergiSinifiSilinmis": "{ad} (silinmiş sınıf)",
+      "fiyat": {
+        "satis": "Satış fiyatı",
+        "satisAciklamasi": {
+          "dahil": "Vergi dahil. Müşteri bu fiyatı görür. Boşsa ürün satılamaz.",
+          "haric": "Vergi hariç; müşteri vergisiyle görür. Boşsa ürün satılamaz."
+        },
+        "indirimli": "İndirimli fiyat",
+        "indirimliAciklamasi": "Satış fiyatından düşük olmalı. Boşsa indirim yok.",
+        "baslangic": "İndirim başlangıcı",
+        "baslangicAciklamasi": "Boşsa hemen başlar.",
+        "bitis": "İndirim bitişi",
+        "bitisAciklamasi": "Boşsa siz kaldırana kadar sürer.",
+        "secenekli": "Birleşimlerin fiyatı Seçenekler bölümündeki tabloda. İndirimin zamanı bütün indirimli birleşimler için ortaktır:",
+        "vitrinde": "Vitrinde şu an",
+        "bitisYazisi": "İndirimin bitişi: {zaman}",
+        "eskiFiyat": "Üstü çizili fiyat son 30 günün en düşük fiyatıdır",
+        "eskiFiyatYok": "Üstü çizili fiyat gösterilmez: son 30 günün en düşük fiyatı indirimli fiyattan yüksek değil"
+      },
+      "stok": {
+        "takip": "Stoğu takip et",
+        "takipAciklamasi": "Kapalıysa ürün her zaman satılabilir (ör. hizmet, dijital ürün).",
+        "acik": "Açık",
+        "kapali": "Kapalı",
+        "durum": "{stok} stokta",
+        "durumAyrilan": "{stok} stokta · {ayrilan} sepette ayrılmış",
+        "duzelt": "Stoğu düzelt",
+        "duzeltAciklamasi": "Şu an {stok} stokta. Yazdığınız sayı yeni stok olur; değişiklik sebebiyle stok geçmişine girer.",
+        "duzeltildi": "Stok düzeltildi.",
+        "kaydet": "Stoğu kaydet",
+        "yeniMiktar": "Yeni stok",
+        "sebep": "Stok değişikliğinin sebebi",
+        "sebepAciklamasi": "Stok geçmişine bu sebeple yazılır.",
+        "not": "Not",
+        "baslangic": "Başlangıç stoğu",
+        "baslangicAciklamasi": "Elinizdeki adet. Stok geçmişine \"Yeni mal geldi\" olarak girer.",
+        "esik": "Düşük stok eşiği",
+        "esikAciklamasi": "Stok bu sayıya inince düşük sayılır. Boşsa mağazanın eşiği ({esik}) kullanılır.",
+        "secenekli": "Stok birleşim birleşim tutulur: toplam {toplam}. Birleşimlerin stoğu Seçenekler bölümündeki tabloda."
+      },
+      "gecmis": {
+        "fiyatTablosu": "Fiyat geçmişi, en yeni önce",
+        "stokTablosu": "Stok geçmişi, en yeni önce",
+        "zaman": "Zaman",
+        "yazan": "Yazan",
+        "neden": "Neden",
+        "degisim": "Değişim",
+        "sonra": "Sonra",
+        "indirimYok": "—",
+        "aralik": "{baslangic} – {bitis}",
+        "hemen": "Hemen",
+        "suresiz": "Süresiz",
+        "artis": "+{sayi}",
+        "azalis": "−{sayi}",
+        "yazanYok": "Bilinmiyor",
+        "baslangicKatalogu": "Başlangıç kataloğu",
+        "bos": "Henüz kayıt yok.",
+        "dahaFazla": "Daha fazla",
+        "hata": "Geçmiş yüklenemedi. Yeniden deneyin."
+      }
     }
   },
   "vitrin": {

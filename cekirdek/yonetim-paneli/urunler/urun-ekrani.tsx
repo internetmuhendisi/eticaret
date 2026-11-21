@@ -33,6 +33,8 @@ import { ilgiliUrunSiniri } from "../../kayitlar/urun";
 import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
+import { fiyatHataMetinleri } from "../../moduller/fiyat/semalar";
+import { stokHataMetinleri } from "../../moduller/stok/semalar";
 import { aciklamaBaglantisiGecerliMi } from "../../moduller/urun/aciklama-baglantisi";
 import { urunHataMetinleri } from "../../moduller/urun/semalar";
 import { urunEkraniAdresi, urunlerAdresi } from "../adresler";
@@ -43,6 +45,8 @@ import { kodluAlanHatalari, kodluHataMetni } from "../kodlu-form";
 import { usePanelIslemi } from "../panel-islemi";
 import { panelIstegi } from "../panel-istegi";
 import { useSunucuFormu } from "../sunucu-formu";
+import { FiyatBolumu, FiyatGecmisi, StokBolumu, StokGecmisi } from "./fiyat-stok-bolumleri";
+import { fiyatStokGirdisi } from "./fiyat-stok-formu";
 import { SeceneklerBolumu } from "./secenekler-bolumu";
 import type { UrunEkraniVerisi, UrunFormu } from "./urun-verisi";
 import { type BirlesimSatiri, birlesimSatirlari, varyantGirdisi } from "./varyant-formu";
@@ -57,12 +61,16 @@ const bolumler = [
   { kimlik: "urun-genel", ad: "yonetim.urunEkrani.bolum.genel" },
   { kimlik: "urun-siniflandirma", ad: "yonetim.urunEkrani.bolum.siniflandirma" },
   { kimlik: "urun-secenekler", ad: "yonetim.urunEkrani.bolum.secenekler" },
+  { kimlik: "urun-fiyat", ad: "yonetim.urunEkrani.bolum.fiyat" },
+  { kimlik: "urun-stok", ad: "yonetim.urunEkrani.bolum.stok" },
   { kimlik: "urun-satis", ad: "yonetim.urunEkrani.bolum.satis" },
   { kimlik: "urun-ozellikler", ad: "yonetim.urunEkrani.bolum.ozellikler" },
   { kimlik: "urun-ilgili", ad: "yonetim.urunEkrani.bolum.ilgili" },
 ] as const satisfies readonly { kimlik: string; ad: MetinAnahtari }[];
 
-const hataMetni = kodluHataMetni(urunHataMetinleri);
+// Ürünün, fiyatın ve stoğun kodları (kart 0265): fiyat ve stok bölümlerinin hatası kendi modülünün koduyla gelir.
+const hataMetinleri = { ...stokHataMetinleri, ...fiyatHataMetinleri, ...urunHataMetinleri };
+const hataMetni = kodluHataMetni(hataMetinleri);
 
 // Formun alanları (hata ve odak); özelliklerin alanı "ozellik.<kimlik>".
 const sabitAlanlar = [
@@ -86,6 +94,14 @@ const sabitAlanlar = [
   // Seçenekler bölümü: hata girdideki yerin yoluyla gelir ("secenekler.0.degerler.2", "birlesimler.3.stokKodu").
   "secenekler",
   "birlesimler",
+  // Fiyat ve stok bölümleri (kart 0265): "fiyat.satisFiyati", ortak sebep ve not; "fiyat" ve "stok" yetki hatası.
+  "fiyat",
+  "stok",
+  "stokTakibi",
+  "dusukStokEsigi",
+  "baslangicStogu",
+  "stokSebebi",
+  "stokNotu",
 ] as const;
 
 // Alım adedi tam sayı olarak gider; sayı olmayan yazı olduğu gibi gider, sunucu alanın hatasıyla reddeder.
@@ -121,6 +137,10 @@ const alanGirdisi = (form: UrunFormu, veri: UrunEkraniVerisi) => {
     kargoGerekmez: form.kargoGerekmez,
     enAzAdet: adet(form.enAzAdet),
     enCokAdet: form.enCokAdet.trim() === "" ? (yeni ? undefined : null) : adet(form.enCokAdet),
+    // Stok bölümünün ürün alanları (kart 0265): takip ve ürünün düşük stok eşiği (boşsa mağazanınki).
+    stokTakibi: form.stokTakibi,
+    dusukStokEsigi:
+      form.dusukStokEsigi.trim() === "" ? (yeni ? undefined : null) : adet(form.dusukStokEsigi),
     durum: form.durum,
     // Zamanlanmış durumda boş zaman gönderilmez (değişiklikte null): sunucu "yayın zamanı gerekli" der.
     yayinZamani:
@@ -183,7 +203,8 @@ export const girdiyiKur = (
   const varyant = varyantDegisti
     ? varyantGirdisi(satirlar, form.varyant, bilinen.varyant)
     : undefined;
-  if (veri.kimlik === undefined) return { ...yeniHali, varyant };
+  const fiyatStok = fiyatStokGirdisi(form, bilinen, veri, satirlar);
+  if (veri.kimlik === undefined) return { ...yeniHali, varyant, fiyatStok };
   const eskiHali = alanGirdisi(bilinen, veri).girdi;
   return {
     girdi: Object.fromEntries(
@@ -193,6 +214,7 @@ export const girdiyiKur = (
     ),
     ozellikSirasi: yeniHali.ozellikSirasi,
     varyant,
+    fiyatStok,
   };
 };
 
@@ -222,8 +244,16 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
   const kaydet = async (): Promise<boolean> => {
     if (acilan.current) return false;
     const gonderilen = form;
-    const { girdi, ozellikSirasi, varyant } = girdiyiKur(gonderilen, bilinen, veri, satirlar);
-    const ek = varyant === undefined ? {} : { varyant };
+    const { girdi, ozellikSirasi, varyant, fiyatStok } = girdiyiKur(
+      gonderilen,
+      bilinen,
+      veri,
+      satirlar,
+    );
+    const ek = {
+      ...(varyant === undefined ? {} : { varyant }),
+      ...(fiyatStok === undefined ? {} : { fiyatStok }),
+    };
     const sonuc = await pf.isle(() =>
       yeni
         ? islem<{ kimlik: string }>(
@@ -253,7 +283,9 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
       ...sabitAlanlar,
       ...veri.ozellikler.map((ozellik) => `ozellik.${ozellik.kimlik}`),
     ];
-    const alanHatalari = kodluAlanHatalari(urunHataMetinleri, sonuc, alanlar, (alan) => {
+    const alanHatalari = kodluAlanHatalari(hataMetinleri, sonuc, alanlar, (alan) => {
+      // Yeni basit ürünün başlangıç stoğu ("stok" yeri).
+      if (alan === "stok.stok") return "baslangicStogu";
       // Ağırlığın okunması ve sınırı çeviride denetlenir ("agirlik"); servisin "agirlikGram" hatası ikinci katmandır.
       if (alan === "agirlikGram") return "agirlik";
       // Birleşimin ağırlığı da (birlesimler.2.agirlikGram); seçenek ve değer adı alanın kendisidir.
@@ -526,9 +558,66 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
         silebilir={veri.izinler.sil}
         agirlikBirimi={veri.agirlikBirimi}
         galeri={veri.galeriGorselleri}
+        fiyatStok={{
+          fiyatGor: veri.izinler.fiyatGor,
+          fiyatDegistir: izinli && veri.izinler.fiyatDegistir,
+          stokGor: veri.izinler.stokGor,
+          stokDuzelt: izinli && veri.izinler.stokDuzelt,
+          simge: veri.fiyatStok.simge,
+          sebep: form.stokSebebi,
+          not: form.stokNotu,
+          sebepDegistir: (yeni) => setForm((onceki) => ({ ...onceki, ...yeni })),
+        }}
       />
     </Bolum>
   );
+
+  const secenekli = form.varyant.secenekler.length > 0;
+  const fiyatBolumleri = veri.izinler.fiyatGor ? (
+    <>
+      <Bolum kimlik="urun-fiyat" baslik={metin("yonetim.urunEkrani.bolum.fiyat")}>
+        <FiyatBolumu
+          fiyat={form.fiyat}
+          degistir={(fiyat) => degistir("fiyat", fiyat)}
+          veri={veri.fiyatStok}
+          izinli={izinli && veri.izinler.fiyatDegistir}
+          secenekli={secenekli}
+        />
+      </Bolum>
+      {veri.kimlik === undefined || veri.fiyatStok.fiyatGecmisi === undefined ? null : (
+        <Bolum kimlik="urun-fiyat-gecmisi" baslik={metin("yonetim.urunEkrani.bolum.fiyatGecmisi")}>
+          <FiyatGecmisi
+            ilk={veri.fiyatStok.fiyatGecmisi}
+            urun={veri.kimlik}
+            secenekli={veri.tur === "varyantli"}
+          />
+        </Bolum>
+      )}
+    </>
+  ) : null;
+  const stokBolumleri = veri.izinler.stokGor ? (
+    <>
+      <Bolum kimlik="urun-stok" baslik={metin("yonetim.urunEkrani.bolum.stok")}>
+        <StokBolumu
+          form={form}
+          degistir={(yeni) => setForm((onceki) => ({ ...onceki, ...yeni }))}
+          veri={veri.fiyatStok}
+          izinler={{ degistir: izinli, duzelt: izinli && veri.izinler.stokDuzelt }}
+          secenekli={secenekli}
+          yeni={yeni}
+        />
+      </Bolum>
+      {veri.kimlik === undefined || veri.fiyatStok.stokGecmisi === undefined ? null : (
+        <Bolum kimlik="urun-stok-gecmisi" baslik={metin("yonetim.urunEkrani.bolum.stokGecmisi")}>
+          <StokGecmisi
+            ilk={veri.fiyatStok.stokGecmisi}
+            urun={veri.kimlik}
+            secenekli={veri.tur === "varyantli"}
+          />
+        </Bolum>
+      )}
+    </>
+  ) : null;
 
   const satis = (
     <Bolum kimlik="urun-satis" baslik={metin("yonetim.urunEkrani.bolum.satis")}>
@@ -742,6 +831,8 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
             {genel}
             {siniflandirma}
             {secenekler}
+            {fiyatBolumleri}
+            {stokBolumleri}
             {satis}
             {ozellikler}
             {ilgili}

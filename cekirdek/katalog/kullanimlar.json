@@ -125,7 +125,8 @@
   "bilesenler/parcalar/anahtar.tsx": [
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
     "cekirdek/yonetim-paneli/ozellikler/ekran.tsx",
-    "cekirdek/yonetim-paneli/siparisler/yonetici-bildirimleri-ayarlari.tsx"
+    "cekirdek/yonetim-paneli/siparisler/yonetici-bildirimleri-ayarlari.tsx",
+    "cekirdek/yonetim-paneli/urunler/fiyat-stok-bolumleri.tsx"
   ],
   "bilesenler/parcalar/baglanti.tsx": [
     "bilesenler/parcalar/sayfalama.tsx",
@@ -264,6 +265,7 @@
     "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/iade-talebi-kutusu.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
+    "cekirdek/yonetim-paneli/urunler/fiyat-stok-bolumleri.tsx",
     "cekirdek/yonetim-paneli/urunler/secenekler-bolumu.tsx",
     "cekirdek/yonetim-paneli/urunler/urun-ekrani.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx",
@@ -305,6 +307,7 @@
     "cekirdek/yonetim-paneli/siparisler/iptal-ve-iade-ayarlari.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
     "cekirdek/yonetim-paneli/siparisler/yonetici-bildirimleri-ayarlari.tsx",
+    "cekirdek/yonetim-paneli/urunler/fiyat-stok-bolumleri.tsx",
     "cekirdek/yonetim-paneli/urunler/secenekler-bolumu.tsx",
     "cekirdek/yonetim-paneli/urunler/urun-ekrani.tsx"
   ],
@@ -472,6 +475,7 @@
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
+    "cekirdek/yonetim-paneli/urunler/fiyat-stok-bolumleri.tsx",
     "cekirdek/yonetim-paneli/urunler/urun-ekrani.tsx"
   ],
   "bilesenler/parcalar/sekmeler.tsx": [
@@ -503,6 +507,7 @@
     "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/siparisler/elle-siparis.tsx",
     "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
+    "cekirdek/yonetim-paneli/urunler/fiyat-stok-bolumleri.tsx",
     "cekirdek/yonetim-paneli/urunler/secenekler-bolumu.tsx"
   ],
   "bilesenler/parcalar/uyari.tsx": [
@@ -565,6 +570,7 @@
     "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/iade-talebi-kutusu.tsx",
     "cekirdek/yonetim-paneli/siparisler/not-formu.tsx",
+    "cekirdek/yonetim-paneli/urunler/fiyat-stok-bolumleri.tsx",
     "cekirdek/yonetim-paneli/urunler/urun-ekrani.tsx"
   ],
   "bilesenler/parcalar/yan-pencere.tsx": [
@@ -582,6 +588,7 @@
     "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/iade-talebi-kutusu.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
+    "cekirdek/yonetim-paneli/urunler/fiyat-stok-bolumleri.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx"
   ],
   "bilesenler/parcalar/yukleniyor.tsx": []

@@ -32,12 +32,14 @@ import {
   TabloUstu,
 } from "../../../bilesenler/parcalar/tablo";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
+import type { ElleStokSebebi } from "../../kayitlar/stok";
 import { varyantSinirlari } from "../../kayitlar/urun";
 import { doldur } from "../../metinler/doldur";
 import { usePanelMetni } from "../../metinler/panel-metni";
 import { siralamaMetinleri } from "../../metinler/siralama-metinleri";
 import { AlanKabi, PanelAlani, usePanelFormuBaglami } from "../form/panel-formu";
 import { panelGorseliAdresi } from "../gorsel-secimi";
+import { StokSebebiAlanlari } from "./fiyat-stok-bolumleri";
 import type { UrunEkraniVerisi } from "./urun-verisi";
 import {
   type BirlesimFormu,
@@ -50,6 +52,29 @@ import {
 } from "./varyant-formu";
 
 const yeniAnahtar = () => `yeni-${crypto.randomUUID()}`;
+
+// Hücrenin harf sayısı: tablo içeriği kadar geniştir.
+const hucreBoyutu = {
+  stokKodu: 16,
+  barkod: 13,
+  agirlik: 6,
+  satisFiyati: 9,
+  indirimliFiyat: 9,
+  stok: 6,
+} as const;
+
+// Birleşim tablosunun fiyat ve stok sütunları (kart 0265): görme ve değiştirme izinleri, para simgesi, stok
+// değişikliğinin ortak sebebi ve notu.
+export type FiyatStokSutunlari = {
+  fiyatGor: boolean;
+  fiyatDegistir: boolean;
+  stokGor: boolean;
+  stokDuzelt: boolean;
+  simge: string;
+  sebep: ElleStokSebebi;
+  not: string;
+  sebepDegistir: (yeni: { stokSebebi?: ElleStokSebebi; stokNotu?: string }) => void;
+};
 
 type Cikarma =
   | { tur: "deger"; secenek: VaryantSecenegiFormu; deger: VaryantDegeriFormu; sayi: number }
@@ -64,6 +89,7 @@ export function SeceneklerBolumu({
   silebilir,
   agirlikBirimi,
   galeri,
+  fiyatStok,
 }: {
   varyant: VaryantFormu;
   bilinen: VaryantFormu;
@@ -73,6 +99,7 @@ export function SeceneklerBolumu({
   silebilir: boolean;
   agirlikBirimi: string;
   galeri: UrunEkraniVerisi["galeriGorselleri"];
+  fiyatStok: FiyatStokSutunlari;
 }) {
   const metin = usePanelMetni();
   const { hata } = usePanelFormuBaglami();
@@ -347,6 +374,7 @@ export function SeceneklerBolumu({
           izinli={izinli}
           agirlikBirimi={agirlikBirimi}
           galeri={galeri}
+          fiyatStok={fiyatStok}
           birlesimAdi={(satir) =>
             satir.degerler
               .map((deger) => {
@@ -458,6 +486,7 @@ function BirlesimTablosu({
   agirlikBirimi,
   galeri,
   birlesimAdi,
+  fiyatStok,
 }: {
   varyant: VaryantFormu;
   satirlar: readonly BirlesimSatiri[];
@@ -466,6 +495,7 @@ function BirlesimTablosu({
   agirlikBirimi: string;
   galeri: UrunEkraniVerisi["galeriGorselleri"];
   birlesimAdi: (satir: BirlesimSatiri) => string;
+  fiyatStok: FiyatStokSutunlari;
 }) {
   const metin = usePanelMetni();
   const alaniDegistir = (satir: BirlesimSatiri, yeni: Partial<BirlesimFormu>) =>
@@ -476,8 +506,9 @@ function BirlesimTablosu({
   const hucre = (
     satir: BirlesimSatiri,
     k: number,
-    alan: "stokKodu" | "barkod" | "agirlik",
+    alan: "stokKodu" | "barkod" | "agirlik" | "satisFiyati" | "indirimliFiyat" | "stok",
     etiket: string,
+    acik = izinli,
   ) => (
     <EtiketsizAlan
       ad={`birlesimler.${k}.${alan}`}
@@ -486,13 +517,19 @@ function BirlesimTablosu({
         birlesim: birlesimAdi(satir),
       })}
       deger={satir.alanlar[alan]}
-      disabled={!izinli}
+      disabled={!acik}
       degistir={(deger) => alaniDegistir(satir, { [alan]: deger })}
       // Tablo içeriği kadar geniştir, telefonda kendi kabında kayar (taslak); sütunun genişliği alanın harf sayısıdır.
-      boyut={alan === "stokKodu" ? 16 : alan === "barkod" ? 13 : 6}
-      {...(alan === "agirlik" ? { inputMode: "decimal" as const } : {})}
+      boyut={hucreBoyutu[alan]}
+      {...(alan === "agirlik" || alan === "satisFiyati" || alan === "indirimliFiyat"
+        ? { inputMode: "decimal" as const }
+        : alan === "stok"
+          ? { inputMode: "numeric" as const }
+          : {})}
     />
   );
+  const tutarEtiketi = (anahtar: "satis" | "indirimli") =>
+    doldur(metin(`yonetim.urunEkrani.secenek.sutun.${anahtar}`), { simge: fiyatStok.simge });
   const agirlikEtiketi = doldur(metin("yonetim.urunEkrani.secenek.sutun.agirlik"), {
     birim: agirlikBirimi,
   });
@@ -520,6 +557,21 @@ function BirlesimTablosu({
               <TabloBasHucresi scope="col" className="px-2 pb-2 text-left font-kalin">
                 {metin("yonetim.urunEkrani.stokKodu")}
               </TabloBasHucresi>
+              {fiyatStok.fiyatGor ? (
+                <>
+                  <TabloBasHucresi scope="col" className="px-2 pb-2 text-left font-kalin">
+                    {tutarEtiketi("satis")}
+                  </TabloBasHucresi>
+                  <TabloBasHucresi scope="col" className="px-2 pb-2 text-left font-kalin">
+                    {tutarEtiketi("indirimli")}
+                  </TabloBasHucresi>
+                </>
+              ) : null}
+              {fiyatStok.stokGor ? (
+                <TabloBasHucresi scope="col" className="px-2 pb-2 text-left font-kalin">
+                  {metin("yonetim.urunEkrani.secenek.sutun.stok")}
+                </TabloBasHucresi>
+              ) : null}
               <TabloBasHucresi scope="col" className="px-2 pb-2 text-left font-kalin">
                 {metin("yonetim.urunEkrani.barkod")}
               </TabloBasHucresi>
@@ -547,6 +599,39 @@ function BirlesimTablosu({
                 <TabloHucresi className="px-2 py-2 align-top">
                   {hucre(satir, k, "stokKodu", metin("yonetim.urunEkrani.stokKodu"))}
                 </TabloHucresi>
+                {fiyatStok.fiyatGor ? (
+                  <>
+                    <TabloHucresi className="px-2 py-2 align-top">
+                      {hucre(
+                        satir,
+                        k,
+                        "satisFiyati",
+                        tutarEtiketi("satis"),
+                        fiyatStok.fiyatDegistir,
+                      )}
+                    </TabloHucresi>
+                    <TabloHucresi className="px-2 py-2 align-top">
+                      {hucre(
+                        satir,
+                        k,
+                        "indirimliFiyat",
+                        tutarEtiketi("indirimli"),
+                        fiyatStok.fiyatDegistir,
+                      )}
+                    </TabloHucresi>
+                  </>
+                ) : null}
+                {fiyatStok.stokGor ? (
+                  <TabloHucresi className="px-2 py-2 align-top">
+                    {hucre(
+                      satir,
+                      k,
+                      "stok",
+                      metin("yonetim.urunEkrani.secenek.sutun.stok"),
+                      fiyatStok.stokDuzelt,
+                    )}
+                  </TabloHucresi>
+                ) : null}
                 <TabloHucresi className="px-2 py-2 align-top">
                   {hucre(satir, k, "barkod", metin("yonetim.urunEkrani.barkod"))}
                 </TabloHucresi>
@@ -561,6 +646,14 @@ function BirlesimTablosu({
       <p className="text-kucuk text-soluk-yazi">
         {metin("yonetim.urunEkrani.secenek.birlesimlerAciklamasi")}
       </p>
+      {/* Tabloda değişen stokların ortak sebebi (kullanıcı kararı, kart 0265). */}
+      {fiyatStok.stokGor && fiyatStok.stokDuzelt ? (
+        <StokSebebiAlanlari
+          sebep={fiyatStok.sebep}
+          not={fiyatStok.not}
+          degistir={fiyatStok.sebepDegistir}
+        />
+      ) : null}
     </div>
   );
 }
@@ -700,7 +793,7 @@ function EtiketsizAlan({
   disabled: boolean;
   zorunlu?: boolean;
   boyut?: number;
-  inputMode?: "decimal";
+  inputMode?: "decimal" | "numeric";
   className?: string;
 }) {
   const { hata } = usePanelFormuBaglami();
