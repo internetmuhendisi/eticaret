@@ -363,7 +363,8 @@
         "video-adresi-gecersiz": "Bu bağlantı tanınmadı. Videonun kendi sayfasındaki bağlantısını yapıştırın.",
         "video-sitesi-izinsiz": "Bu sitenin videoları bu mağazada eklenemiyor.",
         "birim-gorseli-gecersiz": "Seçilen görsel bu ürünün galerisinde yok. Galeriden bir görsel seçin.",
-        "agirlik-bicimi": "Ağırlığı sayı olarak yazın, örneğin 1,5."
+        "agirlik-bicimi": "Ağırlığı sayı olarak yazın, örneğin 1,5.",
+        "agirlik-siniri": "Ağırlık çok büyük. Birimi doğru yazdığınızı kontrol edin."
       }
     },
     "fiyat": {

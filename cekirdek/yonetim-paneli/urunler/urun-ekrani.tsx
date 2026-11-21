@@ -174,6 +174,7 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
       ...veri.ozellikler.map((ozellik) => `ozellik.${ozellik.kimlik}`),
     ];
     const alanHatalari = kodluAlanHatalari(urunHataMetinleri, sonuc, alanlar, (alan) => {
+      // Ağırlığın okunması ve sınırı çeviride denetlenir ("agirlik"); servisin "agirlikGram" hatası ikinci katmandır.
       if (alan === "agirlikGram") return "agirlik";
       const ozellik = /^ozellikler\.(\d+)/.exec(alan);
       if (ozellik !== null) return `ozellik.${ozellikSirasi[Number(ozellik[1])] ?? ""}`;

@@ -187,6 +187,12 @@ test("mağaza sahibi klavyeyle yeni ürün açar, yayına alır, vitrinde görü
     await page.keyboard.press("Enter");
     await expect(agirlik).toBeFocused();
     await expect(page.getByText(metin("yonetim.urun.hata.agirlik-bicimi"))).toBeVisible();
+    // Sınırı aşan ağırlık kendi metniyle.
+    await agirlik.fill("20.000");
+    await kaydetVar.focus();
+    await page.keyboard.press("Enter");
+    await expect(agirlik).toBeFocused();
+    await expect(page.getByText(metin("yonetim.urun.hata.agirlik-siniri"))).toBeVisible();
     await agirlik.fill("0,35");
 
     // Yayın durumu klavyeyle: radyo grubunda ok tuşları.

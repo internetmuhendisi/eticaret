@@ -49,6 +49,13 @@ describe("panel girdisi", () => {
     expect(await panelGirdisiniCevir(vt, { ad: "Ağırlıksız" }, ayar())).toEqual({
       ad: "Ağırlıksız",
     });
+    // Sınır (10.000 kg) dahil geçer, bir gram fazlası sınırın koduyla döner.
+    expect(await panelGirdisiniCevir(vt, { agirlik: "10.000" }, ayar())).toEqual({
+      agirlikGram: 10_000_000,
+    });
+    await expect(panelGirdisiniCevir(vt, { agirlik: "10.000,001" }, ayar())).rejects.toMatchObject({
+      ayrinti: [{ alan: "agirlik", kod: "agirlik-siniri" }],
+    });
     for (const agirlik of ["1,2,3", "-1", "0,0001", 5, "bir"]) {
       await expect(
         panelGirdisiniCevir(vt, { agirlik }, ayar()),

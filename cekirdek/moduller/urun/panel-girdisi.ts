@@ -4,7 +4,7 @@
 // özelliğin ondalık sınırıyla okunur. Okunamayan alan kendi yolu ve koduyla döner; geri kalan doğrulama servisindir.
 
 import { ozellikSinirlari } from "../../kayitlar/ozellik.ts";
-import { type AgirlikBirimi, agirlikBirimleri } from "../../kayitlar/urun.ts";
+import { type AgirlikBirimi, agirlikBirimleri, agirlikSiniriGram } from "../../kayitlar/urun.ts";
 import type { Bicimleyici } from "../../metinler/bicimleyici.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { ozellikServisi } from "../ozellik/servis.ts";
@@ -40,8 +40,10 @@ export const panelGirdisiniCevir = async (
         typeof agirlik === "string"
           ? ayarlar.bicimleyici.sayiOku(agirlik, birim.ondalik)
           : undefined;
-      if (sayi === undefined) sorunlar.push({ alan: "agirlik", kod: "agirlik-bicimi" });
-      else girdi["agirlikGram"] = Math.round(sayi * birim.gram);
+      const gram = sayi === undefined ? undefined : Math.round(sayi * birim.gram);
+      if (gram === undefined) sorunlar.push({ alan: "agirlik", kod: "agirlik-bicimi" });
+      else if (gram > agirlikSiniriGram) sorunlar.push({ alan: "agirlik", kod: "agirlik-siniri" });
+      else girdi["agirlikGram"] = gram;
     }
   }
   const degerler = girdi["ozellikler"];

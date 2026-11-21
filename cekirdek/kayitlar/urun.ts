@@ -71,6 +71,8 @@ export const agirlikBirimleri = {
   oz: { gram: 28.349523125, ondalik: 2 },
 } as const;
 export type AgirlikBirimi = keyof typeof agirlikBirimleri;
+// Ağırlığın en çok gram değeri (ürün şeması ve panelin okuması, kart 0263).
+export const agirlikSiniriGram = 10_000_000;
 export const agirlikBirimiKodlari = Object.keys(agirlikBirimleri) as [
   AgirlikBirimi,
   ...AgirlikBirimi[],

@@ -10,6 +10,7 @@ import { galeriSinirlari } from "../../kayitlar/gorsel.ts";
 import { panelSayfaBoylari } from "../../kayitlar/liste.ts";
 import { ozellikSinirlari } from "../../kayitlar/ozellik.ts";
 import {
+  agirlikSiniriGram,
   type UrunDurumu,
   type UrunTopluIslemi,
   urunDurumlari,
@@ -30,6 +31,8 @@ export const urunHatalari = [
   "barkod",
   // Panelde yazılan ağırlık sitenin sayı biçimiyle okunamadı (kart 0263).
   "agirlik-bicimi",
+  // Panelde yazılan ağırlık sınırı aşıyor (kart 0263).
+  "agirlik-siniri",
   "kayda-uygun-degil",
   "adres-adi-bicimi",
   "adres-adi-tekrar",
@@ -91,6 +94,7 @@ export type UrunHatasi = (typeof urunHatalari)[number];
 export const urunHataMetinleri = {
   barkod: "yonetim.urun.hata.barkod",
   "agirlik-bicimi": "yonetim.urun.hata.agirlik-bicimi",
+  "agirlik-siniri": "yonetim.urun.hata.agirlik-siniri",
   "kayda-uygun-degil": "yonetim.urun.hata.kayda-uygun-degil",
   "adres-adi-bicimi": "yonetim.urun.hata.adres-adi-bicimi",
   "adres-adi-tekrar": "yonetim.urun.hata.adres-adi-tekrar",
@@ -205,7 +209,7 @@ const alanlar = {
     }
     return temiz;
   }),
-  agirlikGram: olcu(10_000_000),
+  agirlikGram: olcu(agirlikSiniriGram),
   enMm: olcu(100_000),
   boyMm: olcu(100_000),
   yukseklikMm: olcu(100_000),
