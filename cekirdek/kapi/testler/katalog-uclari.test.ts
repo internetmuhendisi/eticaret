@@ -249,6 +249,59 @@ describe("erişim", () => {
       expect(await hata(yanit)).toMatchObject({ kod: "yetki" });
     }
     expect(await kategoriyiOku(kategori, vt)).toMatchObject({ silindi: false });
+
+    // Marka ve etiketi değiştirir, etiketi silemez (bağımsız kontrolün bulgusu: testte yoktu).
+    const { kimlik: etiket } = await veri<{ kimlik: string }>(
+      await etiketUclari.ekle(istek("etiket-ekle", gorevli, { grup: { ad: `G ${benzersiz()}` } })),
+    );
+    await veri(
+      await markaUclari.degistir(
+        istek("marka-degistir", gorevli, { kimlik: marka, grup: { aciklama: "Üretici" } }),
+      ),
+    );
+    await veri(
+      await etiketUclari.degistir(
+        istek("etiket-degistir", gorevli, {
+          kimlik: etiket,
+          grup: { adresAdi: `g-${benzersiz()}` },
+        }),
+      ),
+    );
+    const etiketSilme = await etiketUclari.sil(istek("etiket-sil", gorevli, { kimlik: etiket }));
+    expect(etiketSilme.status).toBe(403);
+    expect(await etiketServisi.oku(etiket, vt)).toMatchObject({ silindi: false });
+
+    // Seçenek çıkarmak silmedir: görevli seçenek ekler ve adını değiştirir, çıkaramaz; hiçbir şey değişmez.
+    const { kimlik: liste } = await veri<{ kimlik: string }>(
+      await ozellikEklemeUcu(
+        istek("ozellik-ekle", gorevli, {
+          ozellik: { ad: `L ${benzersiz()}`, tur: "liste", secenekler: ["A", "B"] },
+        }),
+      ),
+    );
+    const [a, b] = (await ozellikServisi.oku(liste, vt))?.secenekler ?? [];
+    const kaydet = (secenekler: unknown[]) =>
+      ozellikKaydiUcu(
+        istek("ozellik-kaydet", gorevli, {
+          kimlik: liste,
+          ozellik: { ad: "Liste", tur: "liste", birim: null, filtrede: false, secenekler },
+        }),
+      );
+    const cikarma = await kaydet([{ kimlik: a?.kimlik, ad: "A" }]);
+    expect(cikarma.status).toBe(403);
+    expect(await hata(cikarma)).toMatchObject({
+      kod: "yetki",
+      ayrinti: [{ alan: "secenekler", kod: "secenek-silme-yetkisi" }],
+    });
+    expect((await ozellikServisi.oku(liste, vt))?.secenekler).toHaveLength(2);
+    await veri(
+      await kaydet([{ kimlik: a?.kimlik, ad: "A2" }, { kimlik: b?.kimlik, ad: "B" }, { ad: "C" }]),
+    );
+    expect((await ozellikServisi.oku(liste, vt))?.secenekler.map((s) => s.ad)).toEqual([
+      "A2",
+      "B",
+      "C",
+    ]);
   });
 
   it.each([

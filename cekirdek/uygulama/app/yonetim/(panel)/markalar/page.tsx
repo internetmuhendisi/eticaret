@@ -18,6 +18,7 @@ export default async function MarkalarSayfasi() {
   const veri = await markalarEkraniVerisi({
     marka: yetkili("marka.gor"),
     etiket: yetkili("etiket.gor"),
+    gorsel: yetkili("dosya.gor"),
   });
   return (
     <PanelSayfasi kod="markalar">

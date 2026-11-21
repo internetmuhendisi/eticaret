@@ -1,6 +1,8 @@
 // Ürün özelliği uçları (kart 0261, uç belgesi: cekirdek/kapi/uclar.md). Uç yalnız yönlendirir: kuralların hepsi
 // (tür, birim, seçenekler, sınırlar, silmede değerlerin kalkması) özellik servisindedir
 // (cekirdek/moduller/ozellik/servis.ts). Panelin formu özelliği seçenekleriyle tek kayıtta yazar (kaydet).
+
+import { yoneticininIzniVarMi } from "../../moduller/ekip/servis.ts";
 import {
   type OzellikGirdisi,
   type OzellikKaydiGirdisi,
@@ -31,18 +33,23 @@ export const ozellikEklemeUcu = ucTanimla({
 });
 
 // POST /kapi/yonetici/ozellik-kaydet: alanlar ve seçeneklerin son hâli tek işlemde. Listeden çıkan seçenek
-// silinir, değeri ürünlerden kalkar: seçenek silmek de özelliği değiştirmektir (ozellik.degistir).
+// silinir, değeri ürünlerden kalkar: bu silmedir, ayrıca ozellik.sil ister (görevli silemez, karar 0072; bağımsız
+// kontrolün bulgusu).
 export const ozellikKaydiUcu = ucTanimla({
   giris: "yonetici",
   sema: ozellikKaydiSemasi,
   izin: "ozellik.degistir",
   sinir: "genel",
   isle: async ({ kimlik, ozellik }, _istek, _yanit, { hesapKimligi }) => {
+    const vt = siteninVeritabani();
     await ozellikServisi.kaydet(
-      siteninVeritabani(),
+      vt,
       yonetici(hesapKimligi),
       kimlik,
       ozellik as OzellikKaydiGirdisi,
+      {
+        secenekSilinebilir: await yoneticininIzniVarMi(vt, hesapKimligi, "ozellik.sil"),
+      },
     );
     return {};
   },

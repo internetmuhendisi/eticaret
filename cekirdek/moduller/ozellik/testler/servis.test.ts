@@ -1024,6 +1024,59 @@ describe("panelin sıralaması, kullanımı ve tek kaydı (kart 0261)", () => {
     expect(await kayit(vt, o.malzeme)).toMatchObject({ tur: "sayi", birim: "g", secenekler: [] });
   });
 
+  it("tek kayıt: silme izni yoksa seçenek çıkarılamaz, hiçbir şey yazılmaz; ekleme ve ad değişikliği serbesttir", async () => {
+    const vt = await siteAc();
+    const o = await ornekOzellikler(vt);
+    const urun = await urunEkle(vt, { ozellikler: [{ ozellik: o.malzeme, deger: o.keten }] });
+    const once = await kayit(vt, o.malzeme);
+    expect(
+      await hatasi(
+        servis.kaydet(
+          vt,
+          yonetici(),
+          o.malzeme,
+          {
+            ad: "Malzeme",
+            tur: "liste",
+            birim: null,
+            filtrede: true,
+            secenekler: [
+              { kimlik: o.pamuk, ad: "Pamuk" },
+              { kimlik: o.yun, ad: "Yün" },
+            ],
+          },
+          { secenekSilinebilir: false },
+        ),
+      ),
+    ).toEqual({ kod: "yetki", ayrinti: [{ alan: "secenekler", kod: "secenek-silme-yetkisi" }] });
+    expect(await kayit(vt, o.malzeme)).toEqual(once);
+    expect(await degerleri(vt, urun)).toHaveLength(1);
+    await servis.kaydet(
+      vt,
+      yonetici(),
+      o.malzeme,
+      {
+        ad: "Malzeme",
+        tur: "liste",
+        birim: null,
+        filtrede: true,
+        secenekler: [
+          { kimlik: o.pamuk, ad: "Pamuklu" },
+          { kimlik: o.yun, ad: "Yün" },
+          { kimlik: o.keten, ad: "Keten" },
+          { ad: "İpek" },
+        ],
+      },
+      { secenekSilinebilir: false },
+    );
+    expect((await kayit(vt, o.malzeme)).secenekler.map((s) => s.ad)).toEqual([
+      "Pamuklu",
+      "Yün",
+      "Keten",
+      "İpek",
+    ]);
+  });
+
   it("tek kayıt: bir adım yazılamazsa hiçbiri yazılmaz; hata seçeneğin yeriyle döner", async () => {
     const vt = await siteAc();
     const o = await ornekOzellikler(vt);

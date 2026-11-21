@@ -20,15 +20,19 @@ export type KategoriDali = {
 
 export type KategorilerEkraniVerisi = {
   agac: KategoriDali[];
-  gorseller: GorselSecenegi[];
+  // Seçilebilir görseller; sitedeki görselleri görme izni (dosya.gor) yoksa yok: görsel ne satırda ne formda
+  // görünür (önizleme ucu o izni ister; bağımsız kontrolün bulgusu).
+  gorseller: GorselSecenegi[] | undefined;
 };
 
-export const kategorilerEkraniVerisi = async (): Promise<KategorilerEkraniVerisi> => {
+export const kategorilerEkraniVerisi = async (
+  gorselGorur: boolean,
+): Promise<KategorilerEkraniVerisi> => {
   const vt = siteninVeritabani();
   const [kategoriler, sayilar, gorseller] = await Promise.all([
     kategorileriOku(vt),
     kategorilerinUrunSayilari(vt),
-    gorselSecenekleri(vt),
+    gorselGorur ? gorselSecenekleri(vt) : undefined,
   ]);
   // Liste kardeş sırasıyla gelir; ağaç bu sırayı korur. Üstü listede olmayan kategori en üstte sayılır
   // (kategoriYollari ile aynı).

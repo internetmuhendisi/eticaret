@@ -336,7 +336,7 @@ function OzellikFormu({
   degisince: (degisti: boolean) => void;
 }) {
   const metin = usePanelMetni();
-  const { islem, odaklanacak } = useOzellikler();
+  const { islem, odaklanacak, silebilir } = useOzellikler();
   const [ad, setAd] = useState(ozellik?.ad ?? "");
   const [tur, setTur] = useState<OzellikTuru>(ozellik?.tur ?? "liste");
   const [birim, setBirim] = useState(ozellik?.birim ?? "");
@@ -368,14 +368,21 @@ function OzellikFormu({
     odaklanacakSecenek.current = null;
     document.querySelector<HTMLInputElement>(`[data-secenek="${hedef}"] input`)?.focus();
   }, [secenekler]);
-  const turDegisemez = ozellik?.degeriVar === true;
+  // Ürünlerde değeri olan özelliğin türü değişmez (servisin kuralı). Silme izni olmayan yönetici var olan
+  // seçenekleri çıkaramaz: liste türünden de çıkamaz (bağımsız kontrolün bulgusu).
+  const seceneksizKalamaz = !silebilir && ozellik?.tur === "liste" && ozellik.secenekler.length > 0;
+  const turDegisemez = ozellik?.degeriVar === true || seceneksizKalamaz;
   const liste = tur === "liste";
   // Kayıtta değeri kalkacak ürünler: listeden çıkan (ya da tür listeden çıkınca bütün) seçeneklerin ürünleri.
   const kalanlar = new Set(liste ? secenekler.flatMap((secenek) => secenek.kimlik ?? []) : []);
   const kalkacakUrun = (ozellik?.secenekler ?? [])
     .filter((secenek) => !kalanlar.has(secenek.kimlik))
     .reduce((toplam, secenek) => toplam + secenek.urun, 0);
-  const doluSecenekler = liste ? secenekler.filter((secenek) => secenek.ad.trim() !== "") : [];
+  // Boş bırakılan yeni satır gönderilmez; adı silinen var olan seçenek gönderilir ve alanın hatasını alır (adı
+  // boşaltmak silmek değildir, sessizce silinmesin; bağımsız kontrolün bulgusu).
+  const doluSecenekler = liste
+    ? secenekler.filter((secenek) => secenek.kimlik !== undefined || secenek.ad.trim() !== "")
+    : [];
 
   const yaz = () => {
     const birimDegeri = tur === "sayi" && birim.trim() !== "" ? birim : null;
@@ -454,9 +461,11 @@ function OzellikFormu({
           onDegerDegisti={(yeni) => degistir(setTur)(yeni as OzellikTuru)}
           secilemezEki={metin("yonetim.ozellik.form.secilemez")}
           aciklama={metin(
-            turDegisemez
+            ozellik?.degeriVar === true
               ? "yonetim.ozellik.form.turDegisemez"
-              : "yonetim.ozellik.form.turAciklamasi",
+              : seceneksizKalamaz
+                ? "yonetim.ozellik.form.secenekSilinemez"
+                : "yonetim.ozellik.form.turAciklamasi",
           )}
           {...(turHatasi === undefined ? {} : { hata: turHatasi })}
         />
@@ -535,20 +544,23 @@ function OzellikFormu({
                         )}
                       </PanelAlani>
                     </div>
-                    <IkonDugmesi
-                      ikon="sil"
-                      etiket={doldur(metin("yonetim.ozellik.form.secenegiCikar"), {
-                        ad: secenek.ad.trim() === "" ? adi : secenek.ad,
-                      })}
-                      onClick={() => {
-                        // Çıkan seçeneğin yerine odak sonrakine, yoksa öncekine, yoksa "Seçenek ekle"ye geçer.
-                        const komsu = secenekler[sira + 1] ?? secenekler[sira - 1];
-                        odaklanacakSecenek.current = komsu?.anahtar ?? null;
-                        if (komsu === undefined)
-                          document.querySelector<HTMLElement>("[data-secenek-ekle]")?.focus();
-                        degistir(setSecenekler)(secenekler.filter((oteki) => oteki !== secenek));
-                      }}
-                    />
+                    {/* Var olan seçeneği çıkarmak silmedir: yalnız silme izni olana (yeni satır her zaman çıkar). */}
+                    {silebilir || secenek.kimlik === undefined ? (
+                      <IkonDugmesi
+                        ikon="sil"
+                        etiket={doldur(metin("yonetim.ozellik.form.secenegiCikar"), {
+                          ad: secenek.ad.trim() === "" ? adi : secenek.ad,
+                        })}
+                        onClick={() => {
+                          // Çıkan seçeneğin yerine odak sonrakine, yoksa öncekine, yoksa "Seçenek ekle"ye geçer.
+                          const komsu = secenekler[sira + 1] ?? secenekler[sira - 1];
+                          odaklanacakSecenek.current = komsu?.anahtar ?? null;
+                          if (komsu === undefined)
+                            document.querySelector<HTMLElement>("[data-secenek-ekle]")?.focus();
+                          degistir(setSecenekler)(secenekler.filter((oteki) => oteki !== secenek));
+                        }}
+                      />
+                    ) : null}
                   </div>
                 );
               }}

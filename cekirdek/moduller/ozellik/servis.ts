@@ -472,6 +472,9 @@ const kaydet = async (
   kim: DegisikligiYapan,
   kimlikGirdisi: string,
   ham: OzellikKaydiGirdisi,
+  // Listeden çıkan seçenek silinir ve değeri ürünlerden kalkar: bu silmedir, ozellik.sil izni ister (görevli
+  // silemez, karar 0072). Uç yöneticinin iznini verir; servisi doğrudan çağıran (testler) izinli sayılır.
+  { secenekSilinebilir = true }: { secenekSilinebilir?: boolean } = {},
 ): Promise<void> => {
   const girdi = girdiyiDogrula(ozellikKaydi.safeParse(ham));
   const kimlik = kimligiDuzelt(kimlikGirdisi);
@@ -519,9 +522,11 @@ const kaydet = async (
         .limit(1);
       if (deger !== undefined) throw isKurali("tur", "tur-degisemez");
     }
-    for (const secenek of ozellik.secenekler) {
-      if (!kalan.has(secenek.kimlik)) await secenekSil(islem, kim, secenek.kimlik);
+    const silinecekler = ozellik.secenekler.filter((secenek) => !kalan.has(secenek.kimlik));
+    if (silinecekler.length > 0 && !secenekSilinebilir) {
+      throw new BilinenHata("yetki", [{ alan: "secenekler", kod: "secenek-silme-yetkisi" }]);
     }
+    for (const secenek of silinecekler) await secenekSil(islem, kim, secenek.kimlik);
     if (girdi.tur !== "liste" && verilen.length > 0) {
       throw dogrulamaHatasi([{ alan: "secenekler", kod: "secenek-yalniz-liste" }]);
     }

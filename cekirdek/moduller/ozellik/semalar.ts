@@ -24,6 +24,8 @@ export const ozellikHatalari = [
   // Sıralama listesi silinmemiş özelliklerin (ya da seçeneklerin) tamamı değil: eksik, fazla ya da tekrarlı
   // (kart 0261).
   "siralama-gecersiz",
+  // Seçenek çıkarmak silmedir: ozellik.sil izni olmayan yönetici çıkaramaz (kart 0261).
+  "secenek-silme-yetkisi",
 ] as const;
 export type OzellikHatasi = (typeof ozellikHatalari)[number];
 
@@ -38,6 +40,7 @@ export const ozellikHataMetinleri = {
   "ozellik-siniri": "yonetim.ozellik.hata.ozellik-siniri",
   "secenek-siniri": "yonetim.ozellik.hata.secenek-siniri",
   "siralama-gecersiz": "yonetim.ozellik.hata.siralama-gecersiz",
+  "secenek-silme-yetkisi": "yonetim.ozellik.hata.secenek-silme-yetkisi",
 } as const satisfies Record<OzellikHatasi, MetinAnahtari>;
 
 const hata = (kod: OzellikHatasi) => kod;

@@ -20,7 +20,7 @@ export default async function KategorilerSayfasi() {
   await panelSayfasiniAc("kategoriler");
   const { yetkili } = await panelOturumu();
   const degistirebilir = yetkili("kategori.degistir");
-  const veri = await kategorilerEkraniVerisi();
+  const veri = await kategorilerEkraniVerisi(yetkili("dosya.gor"));
   return (
     <KategorilerSaglayici
       veri={veri}

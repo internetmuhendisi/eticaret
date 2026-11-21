@@ -189,7 +189,9 @@ function KategoriSatiri({
     <div className="flex min-w-0 flex-1 flex-col gap-2">
       <div className="flex min-w-0 items-center justify-between gap-3">
         {/* Telefonda satırda sıralama düğmeleri ve üç eylem durur: görsel tabletten başlar (yana kaymasın). */}
-        <KatalogGorseli gorsel={kategori.gorsel} className="hidden tablet:flex" />
+        {veri.gorseller === undefined ? null : (
+          <KatalogGorseli gorsel={kategori.gorsel} className="hidden tablet:flex" />
+        )}
         <div className="flex min-w-0 flex-1 flex-col gap-0.5 break-words">
           <span className="font-kalin">{kategori.ad}</span>
           <span className="text-kucuk text-soluk-yazi">{altBilgi}</span>
@@ -397,13 +399,16 @@ function KategoriFormu({
     (aday) => !disarida.has(aday.kimlik),
   );
   // Boş adres adı addan üretilir (yeni kategoride); örnek olarak gösterilir.
-  const ornekAdresAdi = adresAdi.trim() === "" ? adresAdiUret(ad) : adresAdi.trim();
+  // Boş alan: yeni kategoride adres addan üretilir, düzenlemede şimdiki adres kalır (bağımsız kontrolün bulgusu).
+  const ornekAdresAdi =
+    adresAdi.trim() === "" ? (kategori?.adresAdi ?? adresAdiUret(ad)) : adresAdi.trim();
   const gonder = () => {
     const ortak = {
       ad,
       ust,
       aciklama: aciklama.trim() === "" ? null : aciklama,
-      gorsel: gorsel ?? null,
+      // Görseli görmeyen yönetici görseli değiştirmez: alan gönderilmez.
+      ...(veri.gorseller === undefined ? {} : { gorsel: gorsel ?? null }),
     };
     void kaydet(
       () =>
@@ -493,9 +498,7 @@ function KategoriFormu({
           <GirisAlani
             {...alan}
             value={adresAdi}
-            {...(kategori === undefined && ad.trim() !== ""
-              ? { placeholder: adresAdiUret(ad) }
-              : {})}
+            {...(ornekAdresAdi === "" ? {} : { placeholder: ornekAdresAdi })}
             onChange={(olay) => degistir(setAdresAdi)(olay.target.value)}
           />
         )}
@@ -514,17 +517,19 @@ function KategoriFormu({
           />
         )}
       </PanelAlani>
-      <AlanKabi ad="gorsel" etiket={metin("yonetim.kategori.form.gorsel")}>
-        <GorselSecimi
-          etiket={metin("yonetim.kategori.form.gorsel")}
-          aciklama={metin("yonetim.kategori.form.gorselAciklamasi")}
-          hata={pf.hata("gorsel")}
-          gorseller={veri.gorseller}
-          deger={gorsel}
-          degistir={(yeni) => degistir(setGorsel)(typeof yeni === "string" ? yeni : undefined)}
-          zorunlu={false}
-        />
-      </AlanKabi>
+      {veri.gorseller === undefined ? null : (
+        <AlanKabi ad="gorsel" etiket={metin("yonetim.kategori.form.gorsel")}>
+          <GorselSecimi
+            etiket={metin("yonetim.kategori.form.gorsel")}
+            aciklama={metin("yonetim.kategori.form.gorselAciklamasi")}
+            hata={pf.hata("gorsel")}
+            gorseller={veri.gorseller}
+            deger={gorsel}
+            degistir={(yeni) => degistir(setGorsel)(typeof yeni === "string" ? yeni : undefined)}
+            zorunlu={false}
+          />
+        </AlanKabi>
+      )}
       <KaydetCubugu vazgec={vazgec} kaydetEtiketi={metin("ortak.islem.kaydet")} />
     </PanelFormu>
   );

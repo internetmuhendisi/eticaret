@@ -13,7 +13,9 @@ export type MarkalarEkraniVerisi = {
   // Görme izni yoksa liste yoktur (undefined).
   markalar: GrupSatiri[] | undefined;
   etiketler: GrupSatiri[] | undefined;
-  gorseller: GorselSecenegi[];
+  // Logo için seçilebilir görseller; sitedeki görselleri görme izni (dosya.gor) yoksa yok: logo ne satırda ne
+  // formda görünür (bağımsız kontrolün bulgusu).
+  gorseller: GorselSecenegi[] | undefined;
 };
 
 const satirlar = async (servis: typeof markaServisi): Promise<GrupSatiri[]> => {
@@ -28,11 +30,12 @@ const satirlar = async (servis: typeof markaServisi): Promise<GrupSatiri[]> => {
 export const markalarEkraniVerisi = async (izin: {
   marka: boolean;
   etiket: boolean;
+  gorsel: boolean;
 }): Promise<MarkalarEkraniVerisi> => {
   const [markalar, etiketler, gorseller] = await Promise.all([
     izin.marka ? satirlar(markaServisi) : undefined,
     izin.etiket ? satirlar(etiketServisi) : undefined,
-    izin.marka ? gorselSecenekleri(siteninVeritabani()) : [],
+    izin.marka && izin.gorsel ? gorselSecenekleri(siteninVeritabani()) : undefined,
   ]);
   return { markalar, etiketler, gorseller };
 };

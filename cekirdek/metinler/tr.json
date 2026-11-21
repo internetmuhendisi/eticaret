@@ -452,7 +452,8 @@
         "tur-degisemez": "Bu özelliğin türü değiştirilemez: ürünlerde değeri ya da seçenekleri var. Yeni türle ayrı bir özellik açın.",
         "ozellik-siniri": "Bir mağazada en çok {sinir} özellik olabilir.",
         "secenek-siniri": "Bir özellikte en çok {sinir} seçenek olabilir.",
-        "siralama-gecersiz": "Liste eski kaldı: bu sırada başka bir değişiklik yapılmış. Sayfa yenilendi, yeniden deneyin."
+        "siralama-gecersiz": "Liste eski kaldı: bu sırada başka bir değişiklik yapılmış. Sayfa yenilendi, yeniden deneyin.",
+        "secenek-silme-yetkisi": "Seçenek çıkarmak ürünlerdeki değeri de siler; bunun için silme yetkiniz yok. Çıkardığınız seçenekleri geri ekleyin."
       },
       "tek": "Özellik",
       "listeEtiketi": "Özellikler, ürün sayfasındaki sırayla",
@@ -502,7 +503,8 @@
         "filtrede": "Filtrede kullanılsın",
         "filtredeAciklamasi": "Kategori sayfasında süzgeç olur.",
         "acik": "Açık",
-        "kapali": "Kapalı"
+        "kapali": "Kapalı",
+        "secenekSilinemez": "Seçenek çıkarma yetkiniz yok: çıkarılan seçeneğin değeri ürünlerden de kalkar."
       }
     },
     "kategori": {

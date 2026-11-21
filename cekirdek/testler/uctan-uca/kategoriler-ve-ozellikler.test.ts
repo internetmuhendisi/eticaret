@@ -348,6 +348,34 @@ test("özellik seçenekleriyle eklenir, düzenlenirken seçenek eklenir ve sıra
     await expect(
       duzen.getByRole("radio", { name: new RegExp(metin("yonetim.ozellik.tur.liste")) }),
     ).toBeChecked();
+
+    // Var olan seçeneğin adı silinip kaydedilirse seçenek silinmez, alanın hatası görünür (bağımsız kontrolün
+    // bulgusu: sessizce siliniyordu).
+    await secenek(duzen, 1).fill("");
+    await duzen.getByRole("button", { name: metin("ortak.islem.kaydet") }).click();
+    await expect(secenek(duzen, 1)).toHaveAttribute("aria-invalid", "true");
+    await expect(secenek(duzen, 1)).toBeFocused();
+    await secenek(duzen, 1).fill("Pamuklu");
+    // Değeri olan seçenek çıkarılınca kayıttan önce kaç üründen kalkacağı sorulur; Vazgeç hiçbir şey yazmaz.
+    await duzen
+      .getByRole("button", {
+        name: doldur(metin("yonetim.ozellik.form.secenegiCikar"), { ad: "Pamuklu" }),
+      })
+      .click();
+    await duzen.getByRole("button", { name: metin("ortak.islem.kaydet") }).click();
+    const onay = page.getByRole("alertdialog", {
+      name: metin("yonetim.ozellik.secenekSilOnay.baslik"),
+    });
+    await expect(onay).toContainText(
+      doldur(metin("yonetim.ozellik.secenekSilOnay.metin"), { sayi: "1" }),
+    );
+    await onay.getByRole("button", { name: metin("ortak.islem.vazgec") }).click();
+    await expect(onay).toHaveCount(0);
+    expect(
+      (await ozellikServisi.hepsiniOku(vt))
+        .find((o) => o.ad === ozellik)
+        ?.secenekler.map((s) => s.ad),
+    ).toEqual(["Pamuklu", "İpek", "Keten"]);
   } finally {
     await urunSrv.urunSil(vt, kim, urun);
   }

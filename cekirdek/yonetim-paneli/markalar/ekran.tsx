@@ -65,7 +65,12 @@ export function MarkalarIcerigi({
         />
       )}
       {veri.etiketler === undefined ? null : (
-        <GrupBolumu tur="etiket" satirlar={veri.etiketler} gorseller={[]} izin={izinler.etiket} />
+        <GrupBolumu
+          tur="etiket"
+          satirlar={veri.etiketler}
+          gorseller={undefined}
+          izin={izinler.etiket}
+        />
       )}
     </div>
   );
@@ -81,7 +86,8 @@ function GrupBolumu({
 }: {
   tur: GrupTuru;
   satirlar: GrupSatiri[];
-  gorseller: GorselSecenegi[];
+  // Yoksa logo ne satırda ne formda görünür (etiket ya da görselleri görme izni yok).
+  gorseller: GorselSecenegi[] | undefined;
   izin: GrupIzinleri;
 }) {
   const metin = usePanelMetni();
@@ -162,7 +168,7 @@ function GrupBolumu({
                 {...{ [`data-${tur}`]: satir.kimlik }}
                 className="flex min-w-0 items-center gap-3 border-b border-kenar p-3 last:border-b-0"
               >
-                {tur === "marka" ? <KatalogGorseli gorsel={satir.logo} /> : null}
+                {gorseller === undefined ? null : <KatalogGorseli gorsel={satir.logo} />}
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5 break-words">
                   <span className="font-kalin">{satir.ad}</span>
                   <span className="text-kucuk text-soluk-yazi">
@@ -279,7 +285,7 @@ function GrupFormu({
   tur: GrupTuru;
   // Düzenlenen grup; yoksa yeni grup.
   grup?: GrupSatiri;
-  gorseller: GorselSecenegi[];
+  gorseller: GorselSecenegi[] | undefined;
   islem: ReturnType<typeof usePanelIslemi>;
   kapat: () => void;
   vazgec: () => void;
@@ -304,7 +310,9 @@ function GrupFormu({
       setDegisti(true);
       degisince(true);
     };
-  const ornekAdresAdi = adresAdi.trim() === "" ? adresAdiUret(ad) : adresAdi.trim();
+  // Boş alan: yeni kayıtta adres addan üretilir, düzenlemede şimdiki adres kalır (bağımsız kontrolün bulgusu).
+  const ornekAdresAdi =
+    adresAdi.trim() === "" ? (grup?.adresAdi ?? adresAdiUret(ad)) : adresAdi.trim();
   const gonder = () => {
     const adres = adresAdi.trim() === "" ? {} : { adresAdi };
     const aciklamaDegeri = aciklama.trim() === "" ? null : aciklama;
@@ -320,7 +328,7 @@ function GrupFormu({
                   ...(markaMi
                     ? {
                         ...(aciklamaDegeri === null ? {} : { aciklama: aciklamaDegeri }),
-                        ...(logo === undefined ? {} : { logo }),
+                        ...(logo === undefined || gorseller === undefined ? {} : { logo }),
                       }
                     : {}),
                 },
@@ -335,7 +343,9 @@ function GrupFormu({
                 grup: {
                   ad,
                   ...adres,
-                  ...(markaMi ? { aciklama: aciklamaDegeri, logo: logo ?? null } : {}),
+                  ...(markaMi ? { aciklama: aciklamaDegeri } : {}),
+                  // Görseli görmeyen yönetici logoyu değiştirmez: alan gönderilmez.
+                  ...(markaMi && gorseller !== undefined ? { logo: logo ?? null } : {}),
                 },
               },
               `yonetim.${tur}.kaydedildi`,
@@ -377,7 +387,7 @@ function GrupFormu({
           <GirisAlani
             {...alan}
             value={adresAdi}
-            {...(grup === undefined && ad.trim() !== "" ? { placeholder: adresAdiUret(ad) } : {})}
+            {...(ornekAdresAdi === "" ? {} : { placeholder: ornekAdresAdi })}
             onChange={(olay) => degistir(setAdresAdi)(olay.target.value)}
           />
         )}
@@ -398,17 +408,19 @@ function GrupFormu({
               />
             )}
           </PanelAlani>
-          <AlanKabi ad="logo" etiket={metin("yonetim.marka.form.logo")}>
-            <GorselSecimi
-              etiket={metin("yonetim.marka.form.logo")}
-              aciklama={metin("yonetim.marka.form.logoAciklamasi")}
-              hata={pf.hata("logo")}
-              gorseller={gorseller}
-              deger={logo}
-              degistir={(yeni) => degistir(setLogo)(typeof yeni === "string" ? yeni : undefined)}
-              zorunlu={false}
-            />
-          </AlanKabi>
+          {gorseller === undefined ? null : (
+            <AlanKabi ad="logo" etiket={metin("yonetim.marka.form.logo")}>
+              <GorselSecimi
+                etiket={metin("yonetim.marka.form.logo")}
+                aciklama={metin("yonetim.marka.form.logoAciklamasi")}
+                hata={pf.hata("logo")}
+                gorseller={gorseller}
+                deger={logo}
+                degistir={(yeni) => degistir(setLogo)(typeof yeni === "string" ? yeni : undefined)}
+                zorunlu={false}
+              />
+            </AlanKabi>
+          )}
         </>
       ) : null}
       <KaydetCubugu vazgec={vazgec} kaydetEtiketi={metin("ortak.islem.kaydet")} />
