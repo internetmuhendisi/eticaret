@@ -149,6 +149,9 @@ describe("süzgeçler", () => {
     await urunAc(vt, "Tükenmiş", {}, { miktar: 0 });
     await urunAc(vt, "Fiyatsız", {}, { satis: null, miktar: 10 });
     await urunAc(vt, "Takipsiz", { stokTakibi: false }, { miktar: 0 });
+    // Takibi sonradan kapatılan ürünün stoğu eşiğin altında kalır: yine düşük sayılmaz.
+    const { urun: takipsizAz } = await urunAc(vt, "Takipsiz az", {}, { miktar: 2 });
+    await urunSrv.urunDegistir(vt, kim(), takipsizAz, { stokTakibi: false });
     await urunAc(vt, "Kendi eşiği", { dusukStokEsigi: 20 }, { miktar: 10 });
     await urunAc(vt, "Eşik sıfır", { dusukStokEsigi: 0 }, { miktar: 1 });
     // Varyantlı: bir birleşim tükendi, öteki eşikte.
@@ -195,6 +198,7 @@ describe("süzgeçler", () => {
       Tükenmiş: "tukendi",
       Fiyatsız: "tukendi",
       Takipsiz: "stokta",
+      "Takipsiz az": "stokta",
       "Kendi eşiği": "dusuk",
       "Eşik sıfır": "stokta",
       Varyantlı: "dusuk",
