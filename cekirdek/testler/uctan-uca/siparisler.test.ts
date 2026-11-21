@@ -388,7 +388,44 @@ test("siparişler listesi: süzgeç, sıralama, geri dönüş, seçim ve toplu i
   const cubuk = page.getByRole("region", { name: metin("yonetim.liste.topluIslem") });
   await expect(cubuk).toContainText(doldur(metin("yonetim.liste.seciliSayisi"), { sayi: "2" }));
   await ikiRenkUcGenislik(page, "seçimli sipariş listesi");
-  await cubuk.getByRole("button", { name: metin("yonetim.eylem.hazirlamayaAl") }).focus();
+  // Telefonda (tablo yok) sayfanın hepsi ve satırlar listenin kutularıyla klavyeden seçilir (bağımsız kontrolün bulgusu).
+  await page.setViewportSize({ width: 390, height: 900 });
+  const telefon = page.getByRole("list", { name: metin("yonetim.siparisler.liste") });
+  const telefondaHepsi = page
+    .getByRole("checkbox", { name: metin("yonetim.liste.sayfayiSec") })
+    .filter({ visible: true });
+  await telefondaHepsi.focus();
+  await page.keyboard.press("Space");
+  await expect(cubuk).toBeHidden();
+  await page.keyboard.press("Space");
+  const satirSayisi = await telefon.getByRole("listitem").count();
+  await expect(cubuk).toContainText(
+    doldur(metin("yonetim.liste.seciliSayisi"), { sayi: String(satirSayisi) }),
+  );
+  await tara(page, "telefonda seçimli liste");
+  await page.keyboard.press("Space");
+  for (const numara of [kapidaBir, havaledeki]) {
+    await telefon
+      .getByRole("checkbox", { name: doldur(metin("yonetim.liste.satiriSec"), { ad: numara }) })
+      .focus();
+    await page.keyboard.press("Space");
+  }
+  await expect(cubuk).toContainText(doldur(metin("yonetim.liste.seciliSayisi"), { sayi: "2" }));
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const cubukDugmesi = cubuk.getByRole("button", { name: metin("yonetim.eylem.hazirlamayaAl") });
+  await cubukDugmesi.focus();
+  // Koyu çubukta odak çerçevesi çubuğun yazı rengindedir (iki temada okunur; bağımsız kontrolün bulgusu).
+  for (const renk of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: renk });
+    const { cerceve, yazi, gorunur } = await cubukDugmesi.evaluate((oge) => ({
+      cerceve: getComputedStyle(oge).outlineColor,
+      yazi: getComputedStyle(oge).color,
+      gorunur: oge.matches(":focus-visible"),
+    }));
+    expect(gorunur, `odak görünür (${renk})`).toBe(true);
+    expect(cerceve, `odak çerçevesi (${renk})`).toBe(yazi);
+  }
+  await page.emulateMedia({ colorScheme: "light" });
   await page.keyboard.press("Enter");
   const pencere = page.getByRole("alertdialog");
   await expect(pencere).toContainText(

@@ -304,7 +304,8 @@
     "bilesenler/form/form.tsx",
     "bilesenler/parcalar/dugme.tsx",
     "bilesenler/parcalar/siralanabilir-liste.tsx",
-    "cekirdek/vitrin/sepet/sepete-ekle.tsx"
+    "cekirdek/vitrin/sepet/sepete-ekle.tsx",
+    "cekirdek/yonetim-paneli/liste/liste.tsx"
   ],
   "bilesenler/parcalar/iskelet.tsx": [
     "cekirdek/eklentiler/kartla-odeme/taksit-satiri.tsx",

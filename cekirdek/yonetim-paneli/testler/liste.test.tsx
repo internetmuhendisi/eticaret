@@ -5,6 +5,8 @@
 // verilir, yönlendirici taklittir.
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { StokBildirimleriListesi } from "../../eklentiler/stoga-gelince-haber-ver/panel/liste.tsx";
+import { stokBildirimleriListesiTanimi } from "../../eklentiler/stoga-gelince-haber-ver/panel/liste-tanimi.ts";
 import { MetinSaglayici } from "../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../metinler/metin.ts";
 import { type ListeDurumu, type ListeVerisi, listeDurumunuOku } from "../liste/tanim.ts";
@@ -251,5 +253,96 @@ describe("arama, sıralama ve sekmeler", () => {
     expect(sekmeler.getByRole("link", { name: /Tümü/ }).getAttribute("aria-current")).toBe("page");
     expect(sekmeler.getByRole("link", { name: /Ödeme bekleniyor/ })).toBeDefined();
     expect(sekmeler.queryByRole("link", { name: /Kargoda/ })).toBeNull();
+  });
+});
+
+describe("bağımsız kontrolün bulguları", () => {
+  it("aynı aranan metin yeniden gönderilince yeniden sorulur, liste yükleniyorda kalmaz", async () => {
+    yanit = () => Response.json({ basarili: true, veri: veri([satir("S-9")]) });
+    ciz(veri([satir("S-1")]));
+    const kutu = screen.getByRole("searchbox", { name: metin("yonetim.siparisler.ara") });
+    fireEvent.change(kutu, { target: { value: "ali" } });
+    await act(async () => {
+      fireEvent.submit(screen.getByRole("search"));
+    });
+    await act(async () => {
+      fireEvent.submit(screen.getByRole("search"));
+    });
+    expect(istekler).toHaveLength(2);
+    expect(tablo().getByText("S-9")).toBeDefined();
+    expect(screen.getByRole("table").querySelector("[aria-busy]")).toBeNull();
+  });
+
+  it("sayfa, süzgeç ya da sıralama değişince seçim bırakılır", () => {
+    const { rerender } = ciz(veri([satir("S-1"), satir("S-2")]));
+    fireEvent.click(kutu("Seç: S-1"));
+    expect(screen.getByRole("region", { name: metin("yonetim.liste.topluIslem") })).toBeDefined();
+    rerender(
+      <MetinSaglayici dil="tr">
+        <SiparisListesi
+          durum={listeDurumunuOku(siparisListesiTanimi, { sirala: "en-eski" })}
+          veri={veri([satir("S-1"), satir("S-2")])}
+          topluIslemler={["hazirlamaya-al"]}
+        />
+      </MetinSaglayici>,
+    );
+    expect(kutu("Seç: S-1").getAttribute("aria-checked")).toBe("false");
+    expect(screen.queryByRole("region", { name: metin("yonetim.liste.topluIslem") })).toBeNull();
+  });
+
+  it("telefonda da sayfanın hepsini seçen kutu var", () => {
+    ciz(veri([satir("S-1"), satir("S-2")]));
+    const hepsi = screen
+      .getAllByRole("checkbox", { name: metin("yonetim.liste.sayfayiSec") })
+      .find((oge) => screen.getByRole("table").contains(oge) === false);
+    if (hepsi === undefined) throw new Error("Telefondaki kutu yok.");
+    fireEvent.click(hepsi);
+    const telefon = within(screen.getByRole("list", { name: metin("yonetim.siparisler.liste") }));
+    expect(telefon.getByRole("checkbox", { name: "Seç: S-2" }).getAttribute("aria-checked")).toBe(
+      "true",
+    );
+  });
+
+  it("adresteki aramada kutu ve temizleme düğmesi adresi izler (geri, ileri, temizle)", () => {
+    const stokCiz = (ara: string) => (
+      <MetinSaglayici dil="tr">
+        <StokBildirimleriListesi
+          durum={listeDurumunuOku(stokBildirimleriListesiTanimi, ara === "" ? {} : { ara })}
+          veri={{
+            satirlar: [
+              {
+                birim: "b1",
+                urunAdi: "Kupa",
+                adres: "/urun/kupa",
+                secim: [],
+                bekleyen: "2",
+                enEski: "1 Kasım",
+              },
+            ],
+            toplam: 1,
+            sayfa: 1,
+            sayfaSayisi: 1,
+            sayfaBoyu: 200,
+            sekmeSayilari: {},
+          }}
+          sinirda={false}
+          sinir="200"
+        />
+      </MetinSaglayici>
+    );
+    const { rerender } = render(stokCiz("kupa"));
+    const kutu = () =>
+      screen.getByRole("searchbox", { name: metin("eklenti.stokBildirimi.panel.ara") });
+    expect((kutu() as HTMLInputElement).value).toBe("kupa");
+    expect(
+      screen.getByRole("button", { name: metin("yonetim.liste.aramayiTemizle") }),
+    ).toBeDefined();
+    rerender(stokCiz(""));
+    expect((kutu() as HTMLInputElement).value).toBe("");
+    expect(
+      screen.queryByRole("button", { name: metin("yonetim.liste.aramayiTemizle") }),
+    ).toBeNull();
+    rerender(stokCiz("termos"));
+    expect((kutu() as HTMLInputElement).value).toBe("termos");
   });
 });

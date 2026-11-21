@@ -10,6 +10,7 @@ import {
   type SiparisDurumu,
   type SiparisListesiSiralamasi,
   siparisDurumlari,
+  siparisIslemleri,
   siparisListesiSiralamalari,
   siparisSinirlari,
   siparisTopluIslemleri,
@@ -33,7 +34,8 @@ export const siparisListesiTanimi = {
     tarih: { azalan: "en-yeni", artan: "en-eski" },
     tutar: { azalan: "tutar-azalan", artan: "tutar-artan" },
   },
-  topluIslemler: siparisTopluIslemleri.map((kod) => ({ kod, izin: "siparis.yonet" as const })),
+  // Her toplu işlemin izni kayıttaki işleminkidir (siparisIslemleri); uç da aynısını denetler.
+  topluIslemler: siparisTopluIslemleri.map((kod) => ({ kod, izin: siparisIslemleri[kod].izin })),
 } as const satisfies ListeTanimi;
 
 // Listenin durumundan servisin girdisi (siparisListesiSemasi, cekirdek/moduller/siparis/semalar.ts).

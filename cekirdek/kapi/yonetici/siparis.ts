@@ -2,6 +2,7 @@
 // sipariş yönetimi (cekirdek/moduller/siparis/yonetim.ts) ve sipariş ayarları (ayarlar.ts) servisindedir. Havale onayı
 // kendi izniyle ayrı uçtur (yalnız mağaza sahibi, kullanıcı kararı); öteki durum işlemleri yönetim iznini ister.
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
+import { siparisIslemleri } from "../../kayitlar/siparis.ts";
 import { yoneticininIzniVarMi } from "../../moduller/ekip/servis.ts";
 import { odemeServisi } from "../../moduller/odeme/servis.ts";
 import { sepetSemasi } from "../../moduller/sepet/semalar.ts";
@@ -53,12 +54,19 @@ export const siparisTopluIslemiUcu = ucTanimla({
   sema: siparisTopluIslemiSemasi,
   izin: "siparis.yonet",
   sinir: "genel",
-  isle: (girdi, _istek, _yanit, { hesapKimligi }) =>
-    siparisYonetimi(calisanSite()).topluIslem(
-      siteninVeritabani(),
+  // Uç toplu işlemlerin ortak iznini ister; işlemin kendi izni (siparisIslemleri) ayrıca denetlenir: kayda başka izinli
+  // bir işlem toplu olarak eklenirse (havale onayı) o izni olmayan yönetici yapamaz (bağımsız kontrolün bulgusu).
+  isle: async (girdi, _istek, _yanit, { hesapKimligi }) => {
+    const vt = siteninVeritabani();
+    if (!(await yoneticininIzniVarMi(vt, hesapKimligi, siparisIslemleri[girdi.islem].izin))) {
+      throw new BilinenHata("yetki");
+    }
+    return siparisYonetimi(calisanSite()).topluIslem(
+      vt,
       { tur: "yonetici", kimlik: hesapKimligi },
       girdi,
-    ),
+    );
+  },
 });
 
 // GET /kapi/yonetici/siparis?numara=: siparişin ayrıntısı, geçmişi, notları ve havale bildirimleri.

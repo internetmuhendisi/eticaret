@@ -137,8 +137,15 @@ export function Liste<Satir>({
 
   // Adreste olmayan arama: aranan metin ve ucun sonucu. Aynı anda iki istekte yalnız sonuncunun cevabı yazılır.
   const aramaAdreste = tanim.arama?.adreste === true;
-  const [aranan, setAranan] = useState(aramaAdreste ? durum.ara : "");
+  // Adreste olan aramada aranan metin adresinkidir; kutu adres değişince (geri, ileri, temizle) onunla eşitlenir.
+  const [gizliAranan, setGizliAranan] = useState("");
+  const aranan = aramaAdreste ? durum.ara : gizliAranan;
   const [yazilan, setYazilan] = useState(aramaAdreste ? durum.ara : "");
+  const [adresinAramasi, setAdresinAramasi] = useState(durum.ara);
+  if (aramaAdreste && adresinAramasi !== durum.ara) {
+    setAdresinAramasi(durum.ara);
+    setYazilan(durum.ara);
+  }
   const [aramaVerisi, setAramaVerisi] = useState<ListeVerisi<Satir> | null | undefined>(undefined);
   const [aramaSuruyor, setAramaSuruyor] = useState(false);
   const [yenile, setYenile] = useState(0);
@@ -163,8 +170,14 @@ export function Liste<Satir>({
   const gosterilen = aramada ? aramaVerisi : veri;
   const yukleniyor = gecisSuruyor || (aramada && (aramaSuruyor || aramaVerisi === undefined));
 
-  // Seçim: yalnız gösterilen sayfanın satırları. Sayfa değişince eski seçim düşer.
+  // Seçim: yalnız gösterilen sayfanın satırları. Sayfa, süzgeç, sıralama ya da arama değişince seçim bırakılır.
   const [secilen, setSecilen] = useState<ReadonlySet<string>>(new Set());
+  const secimAnahtari = `${durumSorgusu}|${aranan}`;
+  const [oncekiSecimAnahtari, setOncekiSecimAnahtari] = useState(secimAnahtari);
+  if (oncekiSecimAnahtari !== secimAnahtari) {
+    setOncekiSecimAnahtari(secimAnahtari);
+    setSecilen(new Set());
+  }
   const satirlar = gosterilen?.satirlar ?? [];
   const anahtarlar = satirlar.map(anahtar);
   const seciliAnahtarlar = anahtarlar.filter((a) => secilen.has(a));
@@ -218,8 +231,9 @@ export function Liste<Satir>({
       git(listeAdresi(tanim, durum, { ara: metni }));
       return;
     }
-    setAramaVerisi(undefined);
-    setAranan(metni);
+    // Aynı metin yeniden gönderilince de sorulur (sayaç).
+    setGizliAranan(metni);
+    setYenile((sayi) => sayi + 1);
     if (durum.sayfa > 1) git(listeAdresi(tanim, durum, {}));
   };
   const aramayiTemizle = () => {
@@ -229,7 +243,7 @@ export function Liste<Satir>({
       git(listeAdresi(tanim, durum, { ara: "" }));
       return;
     }
-    setAranan("");
+    setGizliAranan("");
     setAramaVerisi(undefined);
   };
 
@@ -490,7 +504,7 @@ export function Liste<Satir>({
     !secimVar || seciliAnahtarlar.length === 0 ? null : (
       <section
         aria-label={metin("yonetim.liste.topluIslem")}
-        className="sticky top-0 z-taban flex flex-wrap items-center gap-2 rounded-orta bg-yazi px-3 py-2 text-zemin"
+        className="odak-yazi-renginde sticky top-0 z-taban flex flex-wrap items-center gap-2 rounded-orta bg-yazi px-3 py-2 text-zemin"
       >
         <span className="mr-1 font-kalin">
           {doldur(metin("yonetim.liste.seciliSayisi"), {
@@ -636,44 +650,59 @@ export function Liste<Satir>({
   );
 
   const telefonListesi = (
-    <ul
-      aria-label={yukleniyor ? doldur(metin("yonetim.liste.yukleniyor"), { ad }) : ad}
-      aria-busy={yukleniyor ? true : undefined}
-      className="flex flex-col gap-2 tablet:hidden"
-    >
-      {yukleniyor
-        ? iskeletSatirlari.map((_, sira) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: iskelet satırları
-            <li key={sira}>
-              <Kart className="gap-2 p-4 tablet:p-4">
-                <IskeletGorunum className="h-4 w-1/2" />
-                <IskeletGorunum className="h-4 w-3/4" />
-              </Kart>
-            </li>
-          ))
-        : satirlar.map((satir) => {
-            const a = anahtar(satir);
-            return (
-              <li key={a}>
-                <Kart
-                  className={sinif(
-                    "flex-row items-start gap-1 p-2 tablet:p-2",
-                    secilen.has(a) && "bg-yuzey",
-                  )}
-                >
-                  {secimVar ? (
-                    <TabloSecimi
-                      etiket={doldur(metin("yonetim.liste.satiriSec"), { ad: satirAdi(satir) })}
-                      isaretli={secilen.has(a)}
-                      degisince={(isaretli) => sec(a, isaretli)}
-                    />
-                  ) : null}
-                  <div className="flex min-w-0 flex-1 flex-col gap-2 p-2">{telefon(satir)}</div>
+    <>
+      {secimVar && !yukleniyor && satirlar.length > 0 ? (
+        // Telefonda sayfanın hepsini seçen kutu listenin üstündedir (tablo başlığı telefonda yok).
+        <div className="flex items-center gap-1 tablet:hidden">
+          <TabloSecimi
+            etiket={metin("yonetim.liste.sayfayiSec")}
+            isaretli={sayfaninHepsi}
+            degisince={(isaretli) => setSecilen(new Set(isaretli ? anahtarlar : []))}
+          />
+          <span aria-hidden="true" className="text-kucuk">
+            {metin("yonetim.liste.sayfayiSec")}
+          </span>
+        </div>
+      ) : null}
+      <ul
+        aria-label={yukleniyor ? doldur(metin("yonetim.liste.yukleniyor"), { ad }) : ad}
+        aria-busy={yukleniyor ? true : undefined}
+        className="flex flex-col gap-2 tablet:hidden"
+      >
+        {yukleniyor
+          ? iskeletSatirlari.map((_, sira) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: iskelet satırları
+              <li key={sira}>
+                <Kart className="gap-2 p-4 tablet:p-4">
+                  <IskeletGorunum className="h-4 w-1/2" />
+                  <IskeletGorunum className="h-4 w-3/4" />
                 </Kart>
               </li>
-            );
-          })}
-    </ul>
+            ))
+          : satirlar.map((satir) => {
+              const a = anahtar(satir);
+              return (
+                <li key={a}>
+                  <Kart
+                    className={sinif(
+                      "flex-row items-start gap-1 p-2 tablet:p-2",
+                      secilen.has(a) && "bg-yuzey",
+                    )}
+                  >
+                    {secimVar ? (
+                      <TabloSecimi
+                        etiket={doldur(metin("yonetim.liste.satiriSec"), { ad: satirAdi(satir) })}
+                        isaretli={secilen.has(a)}
+                        degisince={(isaretli) => sec(a, isaretli)}
+                      />
+                    ) : null}
+                    <div className="flex min-w-0 flex-1 flex-col gap-2 p-2">{telefon(satir)}</div>
+                  </Kart>
+                </li>
+              );
+            })}
+      </ul>
+    </>
   );
 
   let govde: ReactNode;

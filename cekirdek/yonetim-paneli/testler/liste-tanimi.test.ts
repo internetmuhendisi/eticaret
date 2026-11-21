@@ -2,6 +2,7 @@
 // (siparişler, stok bildirimleri) ve bir deneme tanımıyla.
 import { describe, expect, it } from "vitest";
 import { stokBildirimleriListesiTanimi } from "../../eklentiler/stoga-gelince-haber-ver/panel/liste-tanimi.ts";
+import { siparisIslemleri } from "../../kayitlar/siparis.ts";
 import {
   type ListeTanimi,
   listeAdresi,
@@ -160,5 +161,13 @@ describe("sipariş listesinin servis girdisi", () => {
     });
     expect(oku({ durum: "iade-talebi" })).toMatchObject({ talep: true });
     expect(oku({ durum: "iade-talebi" })).not.toHaveProperty("durum");
+  });
+});
+
+describe("toplu işlemin izni (bağımsız kontrolün bulgusu)", () => {
+  it("her toplu işlemin izni kayıttaki işleminkidir", () => {
+    for (const { kod, izin } of siparisListesiTanimi.topluIslemler) {
+      expect(izin).toBe(siparisIslemleri[kod].izin);
+    }
   });
 });
