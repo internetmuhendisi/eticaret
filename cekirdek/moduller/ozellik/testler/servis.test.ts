@@ -916,13 +916,18 @@ describe("panelin sıralaması, kullanımı ve tek kaydı (kart 0261)", () => {
   it("özellikler yeni sıraya konur; eksik, fazla ve tekrarlı liste hiçbir şey değiştirmez", async () => {
     const vt = await siteAc();
     const o = await ornekOzellikler(vt);
+    // Eklenme sırası: malzeme, yazar, uzunluk, yıkanabilir. Yalnız ilk ikisi yer değiştirir.
     await servis.sirala(vt, yonetici(), [
       o.yazar,
       o.malzeme.toUpperCase(),
-      o.yikanabilir,
       o.uzunluk,
+      o.yikanabilir,
     ]);
-    expect(await sirasi(vt)).toEqual([o.yazar, o.malzeme, o.yikanabilir, o.uzunluk]);
+    expect(await sirasi(vt)).toEqual([o.yazar, o.malzeme, o.uzunluk, o.yikanabilir]);
+    // Sırası değişmeyen özellik kayda girmez.
+    for (const kimlik of [o.uzunluk, o.yikanabilir]) {
+      expect((await kayitlar(vt, kimlik)).map((k) => k.islem)).not.toContain("ozellik.degisti");
+    }
     expect((await kayitlar(vt, o.yazar)).at(-1)).toMatchObject({
       islem: "ozellik.degisti",
       eski_deger: { sira: 1 },
@@ -936,7 +941,7 @@ describe("panelin sıralaması, kullanımı ve tek kaydı (kart 0261)", () => {
     ]) {
       expect(await hatasi(servis.sirala(vt, yonetici(), liste))).toEqual(beklenen);
     }
-    expect(await sirasi(vt)).toEqual([o.yazar, o.malzeme, o.yikanabilir, o.uzunluk]);
+    expect(await sirasi(vt)).toEqual([o.yazar, o.malzeme, o.uzunluk, o.yikanabilir]);
   });
 
   it("seçenekler yeni sıraya konur, başka özelliğin seçeneği reddedilir", async () => {
