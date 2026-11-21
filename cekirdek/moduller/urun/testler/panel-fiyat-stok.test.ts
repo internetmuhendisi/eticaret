@@ -97,7 +97,7 @@ describe("fiyat", () => {
     const vt = await siteAc();
     const { urun, birim } = await basitUrun(vt);
     expect(
-      await hatasi(yaz(vt, urun, { birimler: [{ yer: "fiyat", satisFiyati: "on lira" }] })),
+      await hatasi(yaz(vt, urun, { birimler: [{ yer: "fiyat", satisFiyati: "on beş" }] })),
     ).toEqual({
       kod: "dogrulama",
       ayrinti: [{ alan: "fiyat.satisFiyati", kod: "tutar-okunamadi" }],

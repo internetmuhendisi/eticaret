@@ -132,7 +132,7 @@ test("basit ürün: fiyat klavyeyle kaydedilir ve vitrinde görünür, stok penc
     });
 
     // Okunamayan tutar: alanın hatası, odak alanda, hiçbir şey yazılmaz.
-    await yaz(page, satis, "on lira");
+    await yaz(page, satis, "on beş");
     await bas(page, kaydet);
     await expect(satis).toBeFocused();
     await expect(fiyatBolumu.getByText(metin("yonetim.urun.hata.tutar-okunamadi"))).toBeVisible();
