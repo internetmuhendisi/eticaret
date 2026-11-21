@@ -100,5 +100,12 @@ paths:
 
 - Ekran `cekirdek/yonetim-paneli/urunler/` klasöründe, menüde "Ürünler" grubunun başındadır; servisi `cekirdek/moduller/urun/panel-listesi.ts`. Görmek `urun.gor`; yayınla, taslağa al, arşive al `urun.degistir`, sil `urun.sil` ister (`urunTopluIslemleri`, `cekirdek/kayitlar/urun.ts`).
 - Satırın fiyatı yalnız `fiyatAraliklari`, stok durumu yalnız `urunPanelStokDurumu` ile bulunur; stok süzgeci `urunPanelStokKosulu` ile, iki kural aynı sonucu verir (test). Ad sıralaması sitenin dilinin harf sırasıyladır, dil koda yazılmaz.
-- "Ürün ekle" ve ürün ekranına geçiş kart 0263'le gelir.
+- Listenin asıl eylemi "Ürün ekle"dir (`urun-ekle`), satırdaki ad ürün ekranına gider (kart 0263).
+
+## Ürün ekranı (karar 0162)
+
+- Ekran `cekirdek/yonetim-paneli/urunler/urun-ekrani.tsx`, verisi `urun-verisi.ts`. Yeni ürün (`yeniUrunAdresi`) ve ürün (`urunEkraniAdresi`, `?kimlik=`) Ürünler'in alt sayfalarıdır. Tek sayfa, tek form: bölüm eklenecekse (varyant, fiyat, stok, galeri) aynı forma ve "Bu sayfada" listesine (`bolumler`) eklenir.
+- Uçlar `urun-ekle`, `urun-degistir`, `urun-sil` (`cekirdek/kapi/yonetici/urun.ts`). Ağırlık ve sayı türündeki özellik değeri metin gider, sunucuda `panelGirdisiniCevir` okur (`cekirdek/moduller/urun/panel-girdisi.ts`); ekran sayı çevirmez.
+- Birden çok kayıt seçimi `CokluKayitSecimi` iledir (`cekirdek/yonetim-paneli/coklu-kayit-secimi.tsx`): kategori, etiket, ilgili ürünler. Tek kayıt (marka) `KayitArama`'dır.
+- Biçimli metin `BicimliMetinAlani` ile yazılır; bağlantı kuralı `aciklamaBaglantisiGecerliMi`'dir (`cekirdek/moduller/urun/aciklama-baglantisi.ts`), temizlik de onu kullanır.
 

@@ -36,6 +36,7 @@ Bileşen, düğme, giriş alanı, pencere gibi tekrar kullanılan arayüz parça
 - `bilesenler/parcalar/` (kart 0103, karar 0077, shadcn/ui'dan uyarlanmış):
   - `Dugme`, `IkonDugmesi`, `Baglanti`
   - `GirisAlani`, `UzunMetinAlani` (kart 0106), `Etiket`, `SecimKutusu`, `OnayKutusu`
+  - `BicimliMetinAlani` (kart 0263, karar 0162): biçimli metin (Tiptap); araç çubuğu kalın, eğik, ara başlık, madde ve sıralı liste, bağlantı. Araç çubuğu tek sekme durağıdır, ok tuşları, Home ve End ile gezilir; bağlantı satırı Enter ile uygular, Escape ile kapanıp odağı yazıya verir. Bağlantının kuralını kullanan verir (`baglantiGecerliMi`).
   - `AcilirMenu`, `Pencere`, `YanPencere`, `Sekmeler`
   - `YanPencereAltCubugu` (kart 0169): yan pencerede uzun formun sabit Vazgeç ve Kaydet çubuğu; iç boşluk kadar aşağıya yapışır, altında form görünmez. Odaklanan öğeyi örtmez (kart 0188): kaydırma kabı çubuk kadar pay alır (`tailwind.css`), çubukla çakışan odaklanan öğe görünür yere kaydırılır. Pencere dışında (sayfadaki kartta) `bottom-0 mx-0 px-0` ile kullanılır. Formun alt çubuğu elle `sticky` yazılmaz.
   - `Kart`, `Rozet`, `Uyari`, `BildirimAlani` ile `bildirimGoster`, `Ipucu`
