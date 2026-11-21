@@ -25,4 +25,4 @@ Bölüm: Yönetim paneli. Önce 0258 (liste) ve 0259 (form) bitmiş olmalı. Kul
 
 ## Durum
 
-yapılacak
+bitti
