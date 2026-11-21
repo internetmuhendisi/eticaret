@@ -493,3 +493,22 @@ describe("marka logosu", () => {
     ).toMatchObject({ kod: "dogrulama" });
   });
 });
+
+describe.each(gruplar)("$ad: panelin ürün sayıları (kart 0261)", ({ servis, bagla }) => {
+  it("bağlı silinmemiş ürünler sayılır, ürünü olmayan ve silinen grup listede yoktur", async () => {
+    const vt = await siteAc();
+    const dolu = await servis.ekle(vt, yonetici(), { ad: "Dolu" });
+    const bos = await servis.ekle(vt, yonetici(), { ad: "Boş" });
+    const silinen = await servis.ekle(vt, yonetici(), { ad: "Silinen" });
+    await urunEkle(vt, bagla([dolu]));
+    await urunEkle(vt, bagla([dolu]));
+    const silinecek = await urunEkle(vt, bagla([dolu]));
+    await urunSrv.urunSil(vt, yonetici(), silinecek);
+    await urunEkle(vt, bagla([silinen]));
+    await servis.sil(vt, yonetici(), silinen);
+    const sayilar = await servis.urunSayilari(vt);
+    expect(sayilar.get(dolu)).toBe(2);
+    expect(sayilar.has(bos)).toBe(false);
+    expect(sayilar.has(silinen)).toBe(false);
+  });
+});

@@ -21,6 +21,9 @@ export const ozellikHatalari = [
   "tur-degisemez",
   "ozellik-siniri",
   "secenek-siniri",
+  // Sıralama listesi silinmemiş özelliklerin (ya da seçeneklerin) tamamı değil: eksik, fazla ya da tekrarlı
+  // (kart 0261).
+  "siralama-gecersiz",
 ] as const;
 export type OzellikHatasi = (typeof ozellikHatalari)[number];
 
@@ -34,6 +37,7 @@ export const ozellikHataMetinleri = {
   "tur-degisemez": "yonetim.ozellik.hata.tur-degisemez",
   "ozellik-siniri": "yonetim.ozellik.hata.ozellik-siniri",
   "secenek-siniri": "yonetim.ozellik.hata.secenek-siniri",
+  "siralama-gecersiz": "yonetim.ozellik.hata.siralama-gecersiz",
 } as const satisfies Record<OzellikHatasi, MetinAnahtari>;
 
 const hata = (kod: OzellikHatasi) => kod;
@@ -79,6 +83,20 @@ export const ozellikDegisikligi = z.strictObject({
 });
 export type OzellikDegisikligi = z.input<typeof ozellikDegisikligi>;
 
+// Panelin özellik formunun tek kaydı (kart 0261): özelliğin alanları ve seçeneklerinin son hâli, sırasıyla. Kimliği
+// olan seçenek var olandır (adı değişebilir), kimliği olmayan yenidir; listede olmayan var olan seçenek silinir.
+// Liste türünde olmayan özellikte liste boştur.
+export const ozellikKaydi = z.strictObject({
+  ad: alanlar.ad,
+  tur: alanlar.tur,
+  birim: alanlar.birim.nullable(),
+  filtrede: alanlar.filtrede,
+  secenekler: z
+    .array(z.strictObject({ kimlik: kimlikSemasi.optional(), ad }))
+    .max(ozellikSinirlari.secenek),
+});
+export type OzellikKaydiGirdisi = z.input<typeof ozellikKaydi>;
+
 export const ozellikSecenegiGirdisi = z.strictObject({ ad, sira: sira.optional() });
 export type OzellikSecenegiGirdisi = z.input<typeof ozellikSecenegiGirdisi>;
 
@@ -112,3 +130,13 @@ export const urunOzellikDegeri = z.strictObject({
   deger: z.union([z.string(), z.number(), z.boolean()], { error: "ozellik-deger-gecersiz" }),
 });
 export type UrunOzellikDegeri = { ozellik: string; deger: OzellikDegeri };
+
+// Uçların girdileri (kart 0261). Özelliğin alanları servis şemasıyla doğrulanır (ozellikGirdisi, ozellikKaydi):
+// hata alanın adıyla ve özelliğin koduyla döner, uç yalnız zarfı denetler.
+const ozellikNesnesi = z.record(z.string(), z.unknown());
+export const ozellikEklemeSemasi = z.strictObject({ ozellik: ozellikNesnesi });
+export const ozellikKaydiSemasi = z.strictObject({ kimlik: kimlikSemasi, ozellik: ozellikNesnesi });
+export const ozellikSilmeSemasi = z.strictObject({ kimlik: kimlikSemasi });
+export const ozellikSiralamaSemasi = z.strictObject({
+  kimlikler: z.array(kimlikSemasi).max(ozellikSinirlari.ozellik),
+});

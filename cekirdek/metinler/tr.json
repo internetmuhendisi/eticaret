@@ -225,6 +225,18 @@
       "elleSiparis": {
         "ad": "Elle sipariş",
         "aciklama": "Telefonla ya da yüz yüze aldığınız siparişi girin. Tutar, vergi ve stok vitrin siparişiyle aynı kuralla hesaplanır."
+      },
+      "kategoriler": {
+        "ad": "Kategoriler",
+        "aciklama": "Ürünlerinizin gruplandığı ağaç. Aynı düzeydekileri tutamaktan sürükleyerek sıralayın; başka bir kategorinin altına almak için satırın \"Diğer işlemler\" menüsünü kullanın. Değişiklik hemen yayınlanır."
+      },
+      "markalar": {
+        "ad": "Markalar ve etiketler",
+        "aciklama": "Marka ürünün üreticisidir, ürünün bir markası olur. Etiket serbest gruplamadır (\"yeni\", \"kablosuz\" gibi), bir ürünün birden çok etiketi olabilir. Değişiklik hemen yayınlanır."
+      },
+      "ozellikler": {
+        "ad": "Özellikler",
+        "aciklama": "Ürün sayfasındaki \"Özellikler\" tablosunun satırları. Bir kez tanımlayın, her üründe değerini girin. Değişiklik hemen yayınlanır."
       }
     },
     "eylem": {
@@ -380,6 +392,27 @@
         "adres-adi-tekrar": "Bu adres adı başka bir markada kullanılıyor. Başka bir ad yazın.",
         "ad-tekrar": "Bu adla bir marka zaten var. Başka bir ad yazın.",
         "gorsel-gecersiz": "Logo için yüklenmiş ve hazır bir görsel seçin."
+      },
+      "tek": "Marka",
+      "liste": "Markalar",
+      "ara": "Markalar içinde ara",
+      "bos": "Henüz marka yok. Marka ekle düğmesiyle ilk markayı açın.",
+      "bosIzinsiz": "Henüz marka yok.",
+      "sonucsuz": "Aranan adla kayıt yok. Başka bir ad yazın.",
+      "eklendi": "Marka eklendi.",
+      "kaydedildi": "Marka kaydedildi.",
+      "silindi": "Marka silindi.",
+      "silOnay": {
+        "baslik": "\"{ad}\" silinsin mi?",
+        "urunler": "{sayi} ürünün bu markayla bağlantısı kalkar; ürünler silinmez."
+      },
+      "form": {
+        "yeni": "Marka ekle",
+        "duzenle": "Markayı düzenle",
+        "aciklama": "Marka vitrinde kendi sayfasında ürünleriyle görünür.",
+        "aciklamaAciklamasi": "Marka sayfasının başında ve arama motorlarında görünür.",
+        "logo": "Logo",
+        "logoAciklamasi": "Ana sayfanın marka logoları bölümünde görünür."
       }
     },
     "etiket": {
@@ -389,6 +422,24 @@
         "adres-adi-tekrar": "Bu adres adı başka bir etikette kullanılıyor. Başka bir ad yazın.",
         "ad-tekrar": "Bu adla bir etiket zaten var. Başka bir ad yazın.",
         "gorsel-gecersiz": "Görsel hazır değil. Başka bir görsel seçin."
+      },
+      "tek": "Etiket",
+      "liste": "Etiketler",
+      "ara": "Etiketler içinde ara",
+      "bos": "Henüz etiket yok. Etiket ekle düğmesiyle ilk etiketi açın.",
+      "bosIzinsiz": "Henüz etiket yok.",
+      "sonucsuz": "Aranan adla kayıt yok. Başka bir ad yazın.",
+      "eklendi": "Etiket eklendi.",
+      "kaydedildi": "Etiket kaydedildi.",
+      "silindi": "Etiket silindi.",
+      "silOnay": {
+        "baslik": "\"{ad}\" silinsin mi?",
+        "urunler": "{sayi} üründen bu etiket kalkar; ürünler silinmez."
+      },
+      "form": {
+        "yeni": "Etiket ekle",
+        "duzenle": "Etiketi düzenle",
+        "aciklama": "Etiket vitrinde kendi sayfasında ürünleriyle görünür."
       }
     },
     "ozellik": {
@@ -400,7 +451,58 @@
         "secenek-yalniz-liste": "Seçenekler yalnız liste türündeki özelliğe eklenir. Türü liste yapın.",
         "tur-degisemez": "Bu özelliğin türü değiştirilemez: ürünlerde değeri ya da seçenekleri var. Yeni türle ayrı bir özellik açın.",
         "ozellik-siniri": "Bir mağazada en çok {sinir} özellik olabilir.",
-        "secenek-siniri": "Bir özellikte en çok {sinir} seçenek olabilir."
+        "secenek-siniri": "Bir özellikte en çok {sinir} seçenek olabilir.",
+        "siralama-gecersiz": "Liste eski kaldı: bu sırada başka bir değişiklik yapılmış. Sayfa yenilendi, yeniden deneyin."
+      },
+      "tek": "Özellik",
+      "listeEtiketi": "Özellikler, ürün sayfasındaki sırayla",
+      "tur": {
+        "metin": "Metin",
+        "sayi": "Sayı",
+        "evet-hayir": "Evet / hayır",
+        "liste": "Liste"
+      },
+      "filtrede": "Filtrede",
+      "secenekAyraci": ", ",
+      "urunSayisi": "{sayi} üründe değeri var",
+      "siralamaBilgisi": "Özellikleri tutamaktan sürükleyerek ya da tutamağa odaklanıp boşluk ve ok tuşlarıyla sıralayın: ürün sayfasındaki tablo bu sırayla görünür.",
+      "bos": {
+        "baslik": "Henüz özellik yok",
+        "metin": "Özellik ekle düğmesiyle ilk özelliği tanımlayın; değerini her ürünün kendi ekranında girersiniz.",
+        "metinIzinsiz": "Özellik tanımlama yetkiniz yok."
+      },
+      "eklendi": "Özellik eklendi.",
+      "kaydedildi": "Özellik kaydedildi.",
+      "siralandi": "Sıra kaydedildi.",
+      "silindi": "Özellik silindi.",
+      "silOnay": {
+        "baslik": "\"{ad}\" silinsin mi?",
+        "urunler": "Özelliğin değeri {sayi} üründen kalkar; ürünler silinmez.",
+        "urunsuz": "Bu özelliğin hiçbir üründe değeri yok."
+      },
+      "secenekSilOnay": {
+        "baslik": "Çıkarılan seçenekler kaydedilsin mi?",
+        "metin": "Çıkardığınız seçenekler {sayi} üründe seçili. Kaydedince bu ürünlerden kalkar; ürünler silinmez."
+      },
+      "form": {
+        "yeni": "Özellik ekle",
+        "duzenle": "Özelliği düzenle",
+        "aciklama": "Özellik ürün sayfasındaki \"Özellikler\" tablosunda bir satırdır.",
+        "tur": "Tür",
+        "turAciklamasi": "Liste: tanımladığınız seçeneklerden biri. Sayı: birimiyle bir sayı. Evet / hayır: iki değer. Metin: serbest yazı.",
+        "turDegisemez": "Bu özelliğin ürünlerde değeri olduğu için türü değiştirilemez. Başka türde bir değer gerekiyorsa ayrı bir özellik ekleyin.",
+        "secilemez": "seçilemez",
+        "birim": "Birim",
+        "birimAciklamasi": "Sayının yanında yazar, örneğin cm ya da g/m².",
+        "secenekler": "Seçenekler",
+        "seceneklerAciklamasi": "Üründe bunlardan biri seçilir. Sırası vitrindeki filtrede de kullanılır.",
+        "secenekSirasi": "Seçenek {sira}",
+        "secenegiCikar": "Çıkar: {ad}",
+        "secenekEkle": "Seçenek ekle",
+        "filtrede": "Filtrede kullanılsın",
+        "filtredeAciklamasi": "Kategori sayfasında süzgeç olur.",
+        "acik": "Açık",
+        "kapali": "Kapalı"
       }
     },
     "kategori": {
@@ -412,7 +514,52 @@
         "ust-gecersiz": "Seçilen üst kategori bulunamadı ya da silinmiş. Başka bir üst kategori seçin.",
         "dongu": "Bir kategori kendi altına ya da alt kategorilerinden birinin altına taşınamaz. Başka bir üst kategori seçin.",
         "silmede-ad-tekrar": "Bu kategori silinince alt kategorileri bir üste çıkar, ama oradaki bir kategoriyle aynı adı taşıyan bir alt kategori var. Önce birinin adını değiştirin.",
-        "gorsel-gecersiz": "Seçilen görsel bulunamadı, silinmiş ya da hazırlanması bitmemiş. Başka bir görsel seçin."
+        "gorsel-gecersiz": "Seçilen görsel bulunamadı, silinmiş ya da hazırlanması bitmemiş. Başka bir görsel seçin.",
+        "siralama-gecersiz": "Sıralama eski kaldı: bu sırada başka bir değişiklik yapılmış. Sayfa yenilendi, yeniden sıralayın."
+      },
+      "kategori": "Kategori",
+      "listeEtiketi": "Kategoriler",
+      "altListeEtiketi": "{ad}: alt kategoriler",
+      "urunSayisi": "{sayi} ürün",
+      "ayrac": " · ",
+      "duzenle": "Düzenle: {ad}",
+      "diger": "Diğer işlemler: {ad}",
+      "altinaTasi": "Şunun altına taşı",
+      "enUsteCikar": "En üst düzeye çıkar",
+      "sil": "Sil",
+      "silAdli": "Sil: {ad}",
+      "siralamaBilgisi": "Aynı düzeydeki kategorileri tutamaktan sürükleyerek ya da tutamağa odaklanıp boşluk ve ok tuşlarıyla sıralayın. Bir kategoriyi başka bir kategorinin altına almak için satırın \"Diğer işlemler\" menüsünü kullanın.",
+      "bos": {
+        "baslik": "Henüz kategori yok",
+        "metin": "Kategori ekle düğmesiyle ilk kategoriyi açın.",
+        "metinIzinsiz": "Kategori açma yetkiniz yok."
+      },
+      "eklendi": "Kategori eklendi.",
+      "kaydedildi": "Kategori kaydedildi.",
+      "tasindi": "Kategori taşındı.",
+      "siralandi": "Sıra kaydedildi.",
+      "silindi": "Kategori silindi.",
+      "silOnay": {
+        "baslik": "\"{ad}\" silinsin mi?",
+        "urunler": "{sayi} ürünün bu kategoriyle bağlantısı kalkar; ürünler silinmez.",
+        "urunsuz": "Bu kayda bağlı ürün yok.",
+        "altlar": "{sayi} alt kategori bir üst düzeye çıkar."
+      },
+      "form": {
+        "yeni": "Kategori ekle",
+        "duzenle": "Kategoriyi düzenle",
+        "yeniAciklamasi": "Kategori vitrinde kendi sayfasında ürünleriyle görünür.",
+        "ad": "Ad",
+        "ust": "Üst kategori",
+        "ustAciklamasi": "Boş bırakırsanız en üst düzeyde durur.",
+        "enUstDuzey": "En üst düzey",
+        "adresAdi": "Adres adı",
+        "adresAdiAciklamasiYeni": "Vitrinde {adres}. Boş bırakırsanız addan üretilir.",
+        "adresAdiAciklamasi": "Vitrinde {adres}. Değiştirirseniz eski adres yenisine yönlenir.",
+        "aciklama": "Açıklama",
+        "aciklamaAciklamasi": "Kategori sayfasının başında ve arama motorlarında görünür.",
+        "gorsel": "Görsel",
+        "gorselAciklamasi": "Ana sayfadaki kategori kutularında görünür."
       }
     },
     "menu": {
@@ -1365,6 +1512,16 @@
       },
       "oncekiler": "Önceki iade talepleri",
       "retAciklamasi": "Müşteriye açıklama: {aciklama}"
+    },
+    "katalogEkrani": {
+      "hata": {
+        "ag": "Sunucuya ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
+        "oturum": "Oturumunuz kapanmış. Yeniden giriş yapın.",
+        "yetki": "Bu işlem için yetkiniz yok.",
+        "bulunamadi": "Bu kayıt artık yok: silinmiş olabilir. Sayfa yenilendi.",
+        "form": "Kaydedilemedi: işaretli alanları düzeltin.",
+        "genel": "Kaydedilemedi. Biraz sonra yeniden deneyin."
+      }
     }
   },
   "vitrin": {

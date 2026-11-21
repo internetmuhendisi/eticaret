@@ -20,6 +20,8 @@ export const kategoriHatalari = [
   "silmede-ad-tekrar",
   // Görsel yok, silinmiş, kendisi bir boyut ya da boyutları eksik (kart 0110).
   "gorsel-gecersiz",
+  // Sıralama listesi üstün silinmemiş alt kategorilerinin tamamı değil: eksik, fazla ya da tekrarlı (kart 0261).
+  "siralama-gecersiz",
 ] as const;
 export type KategoriHatasi = (typeof kategoriHatalari)[number];
 
@@ -33,6 +35,7 @@ export const kategoriHataMetinleri = {
   dongu: "yonetim.kategori.hata.dongu",
   "silmede-ad-tekrar": "yonetim.kategori.hata.silmede-ad-tekrar",
   "gorsel-gecersiz": "yonetim.kategori.hata.gorsel-gecersiz",
+  "siralama-gecersiz": "yonetim.kategori.hata.siralama-gecersiz",
 } as const satisfies Record<KategoriHatasi, MetinAnahtari>;
 
 const hata = (kod: KategoriHatasi) => kod;
@@ -70,3 +73,18 @@ export const kategoriDegisikligi = z.strictObject({
   gorsel: alanlar.gorsel.optional(),
 });
 export type KategoriDegisikligi = z.input<typeof kategoriDegisikligi>;
+
+// Uçların girdileri (kart 0261). Kategorinin alanları servis şemasıyla doğrulanır (kategoriGirdisi,
+// kategoriDegisikligi): hata alanın adıyla ve kategorinin koduyla döner, uç yalnız zarfı denetler.
+const kategoriNesnesi = z.record(z.string(), z.unknown());
+export const kategoriEklemeSemasi = z.strictObject({ kategori: kategoriNesnesi });
+export const kategoriDegisikligiSemasi = z.strictObject({
+  kimlik: kimlikSemasi,
+  kategori: kategoriNesnesi,
+});
+export const kategoriSilmeSemasi = z.strictObject({ kimlik: kimlikSemasi });
+// Bir üstün altındaki kategorilerin yeni sırası; en üsttekiler için üst boştur.
+export const kategoriSiralamaSemasi = z.strictObject({
+  ust: kimlikSemasi.nullable(),
+  kimlikler: z.array(kimlikSemasi).max(10_000),
+});

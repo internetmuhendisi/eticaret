@@ -72,6 +72,7 @@ import {
 } from "../form/panel-formu";
 import { useKapatmaSorusu } from "../kapatma-sorusu";
 import { KayitArama, kayitAramaAcikMi } from "../kayit-arama";
+import { useMenudenPencere } from "../menuden-pencere";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelSonucu } from "../panel-istegi";
 import { menuAlanHatalari, menuHataMetni } from "./hatalar";
@@ -186,23 +187,6 @@ export function MenulerEylemleri() {
     </>
   );
 }
-
-// Açılır menüden pencere açmak: pencere, menü kapanıp odağı kendi düğmesine verdikten sonra açılır. Menü kapanırken
-// odağı geri vermesi pencereyle çakışmasın, pencere kapanınca da odak menünün düğmesine dönsün (ölçüldü: aynı anda
-// açılınca ikinci açılışta menü takılıyordu).
-const useMenudenPencere = () => {
-  const bekleyen = useRef<(() => void) | null>(null);
-  return {
-    sec: (ac: () => void) => () => {
-      bekleyen.current = ac;
-    },
-    kapaninca: () => {
-      const ac = bekleyen.current;
-      bekleyen.current = null;
-      ac?.();
-    },
-  };
-};
 
 const hedefAdi = (metin: (anahtar: MetinAnahtari) => string, tur: MenuHedefTuru) =>
   metin(`yonetim.menu.hedef.${tur}`);

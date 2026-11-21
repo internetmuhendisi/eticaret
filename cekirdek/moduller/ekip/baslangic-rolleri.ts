@@ -39,6 +39,8 @@ export const baslangicRolleri = {
       // (kart 0234, kullanıcı kararı).
       "siparis.gor",
       "siparis.yonet",
+      // Sitedeki görselleri görür: kategori görselini ve marka logosunu seçer (kart 0261).
+      "dosya.gor",
     ],
   },
 } as const satisfies Record<

@@ -22,7 +22,9 @@ import { kategoriler, urunKategorileri } from "../model.ts";
 import {
   kategoriDegistir,
   kategoriEkle,
+  kategorilerinUrunSayilari,
   kategorileriOku,
+  kategorileriSirala,
   kategorininUrunleri,
   kategoriSil,
   kategoriyiOku,
@@ -686,5 +688,82 @@ describe("kategori görseli", () => {
       gorsel: gorsel.dosya.kimlik,
     });
     expect((await kategoriyiOku(kategori, vt))?.ad).toBe("Mutfak Gereçleri");
+  });
+});
+
+describe("panelin sıralaması ve ürün sayıları (kart 0261)", () => {
+  const sirasi = async (vt: Veritabani, ust: string | null) =>
+    (await kategorileriOku(vt)).filter((k) => k.ust === ust).map((k) => k.kimlik);
+  const siralamaKayitlari = (vt: Veritabani) =>
+    vt
+      .select({ kimlik: degisiklikKayitlari.kayit_kimligi, eski: degisiklikKayitlari.eski_deger })
+      .from(degisiklikKayitlari)
+      .where(
+        sql`${degisiklikKayitlari.islem} = 'kategori.degisti' and ${degisiklikKayitlari.yeni_deger} ? 'sira'`,
+      );
+
+  it("kardeşler yeni sıraya konur, yalnız sırası değişen kategori kayda girer", async () => {
+    const vt = await siteAc();
+    const a = await ekle(vt, "A");
+    const b = await ekle(vt, "B");
+    const c = await ekle(vt, "C");
+    const ust = await ekle(vt, "Üst");
+    const x = await ekle(vt, "X", ust);
+    const y = await ekle(vt, "Y", ust);
+    await kategorileriSirala(vt, yonetici(), null, [b, a, c, ust]);
+    expect(await sirasi(vt, null)).toEqual([b, a, c, ust]);
+    expect((await siralamaKayitlari(vt)).map((k) => k.kimlik).toSorted()).toEqual(
+      [a, b].toSorted(),
+    );
+    // Alt düzey kendi listesiyle; büyük harfli kimlik aynı kayıttır.
+    await kategorileriSirala(vt, yonetici(), ust.toUpperCase(), [y.toUpperCase(), x]);
+    expect(await sirasi(vt, ust)).toEqual([y, x]);
+    // Aynı sıra hiçbir şey yazmaz.
+    const once = (await siralamaKayitlari(vt)).length;
+    await kategorileriSirala(vt, yonetici(), ust, [y, x]);
+    expect((await siralamaKayitlari(vt)).length).toBe(once);
+  });
+
+  it("eksik, fazla, tekrarlı ya da başka düzeyden liste eski sıra sayılır, hiçbir şey değişmez", async () => {
+    const vt = await siteAc();
+    const a = await ekle(vt, "A");
+    const b = await ekle(vt, "B");
+    const alt = await ekle(vt, "Alt", a);
+    const silinen = await ekle(vt, "Silinen");
+    await kategoriSil(vt, yonetici(), silinen);
+    const beklenen = {
+      kod: "cakisma",
+      ayrinti: [{ alan: "kimlikler", kod: "siralama-gecersiz" }],
+    };
+    for (const liste of [
+      [b],
+      [b, a, alt],
+      [b, a, a],
+      [b, alt],
+      [b, a, silinen],
+      [b, randomUUID()],
+    ]) {
+      expect(await hatasi(kategorileriSirala(vt, yonetici(), null, liste))).toEqual(beklenen);
+    }
+    expect(await sirasi(vt, null)).toEqual([a, b]);
+    expect(await hatasi(kategorileriSirala(vt, yonetici(), "bozuk", []))).toEqual({
+      kod: "dogrulama",
+      ayrinti: [{ alan: "ust", kod: "ust-gecersiz" }],
+    });
+  });
+
+  it("ürün sayısı doğrudan bağlı silinmemiş ürünlerdir; alt kategorinin ürünü sayılmaz", async () => {
+    const vt = await siteAc();
+    const ust = await ekle(vt, "Üst");
+    const alt = await ekle(vt, "Alt", ust);
+    const bos = await ekle(vt, "Boş");
+    await urunEkle(vt, { kategoriler: [ust] });
+    await urunEkle(vt, { kategoriler: [ust, alt] });
+    const silinecek = await urunEkle(vt, { kategoriler: [alt] });
+    await urunSrv.urunSil(vt, yonetici(), silinecek);
+    const sayilar = await kategorilerinUrunSayilari(vt);
+    expect(sayilar.get(ust)).toBe(2);
+    expect(sayilar.get(alt)).toBe(1);
+    expect(sayilar.has(bos)).toBe(false);
   });
 });

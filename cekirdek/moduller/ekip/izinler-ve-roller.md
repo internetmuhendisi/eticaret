@@ -8,6 +8,7 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 
 | İzin | Giriş | Kapsam | Ne verir |
 |---|---|---|---|
+| `dosya.gor` | yonetici | tumu | Sitedeki görselleri görür: panelin görsel önizlemesi ve görsel seçimi (kategori görseli, marka logosu, vitrin bölümleri). |
 | `duzen.gor` | yonetici | tumu | Vitrinin düzenini (üst kısım, ana sayfa, alt kısım bölümleri) görür. |
 | `duzen.degistir` | yonetici | tumu | Bölüm ekler, değiştirir, gizler, sıralar ve siler. |
 | `ekip.kendi-hesabi.gor` | yonetici | kendi | Yönetici kendi hesabını görür. |
@@ -71,6 +72,6 @@ Her sitede hazır gelir. Ekranda görünen adları metin dosyasındadır (`yonet
 | Kod | Görünen ad | İzinler |
 |---|---|---|
 | `magaza-sahibi` | Mağaza sahibi | bütün yönetici izinleri |
-| `gorevli` | Görevli | ekip.kendi-hesabi.gor, urun.gor, urun.degistir, kategori.gor, kategori.degistir, marka.gor, marka.degistir, etiket.gor, etiket.degistir, fiyat.gor, stok.gor, stok.duzelt, ozellik.gor, ozellik.degistir, yorum.gor, yorum.onayla, odeme-yontemi.gor, siparis.gor, siparis.yonet |
+| `gorevli` | Görevli | ekip.kendi-hesabi.gor, urun.gor, urun.degistir, kategori.gor, kategori.degistir, marka.gor, marka.degistir, etiket.gor, etiket.degistir, fiyat.gor, stok.gor, stok.duzelt, ozellik.gor, ozellik.degistir, yorum.gor, yorum.onayla, odeme-yontemi.gor, siparis.gor, siparis.yonet, dosya.gor |
 
 Tam yetkili son yöneticinin rolü alınamaz. Görevlinin izinleri ürün ve sipariş gibi modüller geldikçe artar.

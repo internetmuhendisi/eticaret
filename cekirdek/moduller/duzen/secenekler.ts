@@ -37,6 +37,26 @@ export type DuzenSecenekleri = {
 
 const adSirasi = (ad: AnyPgColumn) => [sql`lower(${ad})`];
 
+// Seçilebilir görseller, en yeni önce (kart 0142): silinmemiş ve kayıttaki bütün boyutları silinmemiş görseller
+// (gorselHazirMi ile aynı kural, tek sorguda). Boyut dosyasının kendi boyutu olmadığı için o da böylece dışarıda
+// kalır (ayrı süzgeç etkisiz çıktı, ölçüldü). Vitrin bölümleri, kategoriler ve markalar ekranı kullanır (kart 0261).
+export const gorselSecenekleri = (vt: Veritabani): Promise<GorselSecenegi[]> =>
+  vt
+    .select({
+      kimlik: dosyalar.kimlik,
+      genislik: dosyalar.genislik,
+      yukseklik: dosyalar.yukseklik,
+    })
+    .from(dosyalar)
+    .where(
+      and(
+        isNull(dosyalar.silinme_zamani),
+        sql`(select count(distinct b.boyut) from ${dosyaBoyutlari} as b join ${dosyalar} as bd on bd.kimlik = b.dosya_kimligi where b.kaynak_kimligi = ${dosyalar.kimlik} and bd.silinme_zamani is null and b.boyut in ${gorselBoyutAdlari}) = ${gorselBoyutAdlari.length}`,
+      ),
+    )
+    .orderBy(desc(dosyalar.olusturma_zamani), asc(dosyalar.kimlik))
+    .limit(panelSecenekSinirlari.gorsel);
+
 export const duzenSecenekleri = async (vt: Veritabani): Promise<DuzenSecenekleri> => {
   const [kategoriListesi, markaListesi, etiketListesi, urunListesi, menuListesi, gorselListesi] =
     await Promise.all([
@@ -65,23 +85,7 @@ export const duzenSecenekleri = async (vt: Veritabani): Promise<DuzenSecenekleri
         .where(isNull(menuler.silinme_zamani))
         .orderBy(...adSirasi(menuler.ad), asc(menuler.kod))
         .limit(panelSecenekSinirlari.kayit),
-      // Silinmemiş ve kayıttaki bütün boyutları silinmemiş görseller (gorselHazirMi ile aynı kural, tek sorguda).
-      // Boyut dosyasının kendi boyutu olmadığı için o da böylece dışarıda kalır (ayrı süzgeç etkisiz çıktı, ölçüldü).
-      vt
-        .select({
-          kimlik: dosyalar.kimlik,
-          genislik: dosyalar.genislik,
-          yukseklik: dosyalar.yukseklik,
-        })
-        .from(dosyalar)
-        .where(
-          and(
-            isNull(dosyalar.silinme_zamani),
-            sql`(select count(distinct b.boyut) from ${dosyaBoyutlari} as b join ${dosyalar} as bd on bd.kimlik = b.dosya_kimligi where b.kaynak_kimligi = ${dosyalar.kimlik} and bd.silinme_zamani is null and b.boyut in ${gorselBoyutAdlari}) = ${gorselBoyutAdlari.length}`,
-          ),
-        )
-        .orderBy(desc(dosyalar.olusturma_zamani), asc(dosyalar.kimlik))
-        .limit(panelSecenekSinirlari.gorsel),
+      gorselSecenekleri(vt),
     ]);
   return {
     kategoriler: kategoriYollari(kategoriListesi).slice(0, panelSecenekSinirlari.kayit),

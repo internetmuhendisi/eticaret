@@ -12,7 +12,19 @@
 //
 // İzin kapıda denetlenir (izinler.ts); servis yalnız kimin yaptığını kayda yazar.
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, inArray, isNull, max, ne, notInArray, type SQL, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  eq,
+  inArray,
+  isNull,
+  max,
+  ne,
+  notInArray,
+  type SQL,
+  sql,
+} from "drizzle-orm";
 import type { z } from "zod";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
@@ -397,6 +409,64 @@ export const kategoriSil = (vt: Veritabani, kim: DegisikligiYapan, kimlikGirdisi
       yeni: null,
     });
   });
+
+// Bir üstün altındaki kategorilerin yeni sırası (kart 0261): liste, üstün silinmemiş alt kategorilerinin tamamıdır
+// (en üsttekiler için üst boştur). Eksik, fazla ya da tekrarlı liste ekranın eski gördüğü sıradır: hiçbir şey
+// değişmez. Sırası değişen her kategori kendi satırıyla kayda girer (taşımadaki gibi kategori.degisti).
+export const kategorileriSirala = (
+  vt: Veritabani,
+  kim: DegisikligiYapan,
+  ustGirdisi: string | null,
+  kimlikler: readonly string[],
+) =>
+  yaz(vt, async (islem) => {
+    if (ustGirdisi !== null && !kimlikMi(ustGirdisi)) {
+      throw dogrulamaHatasi([{ alan: "ust", kod: "ust-gecersiz" }]);
+    }
+    // Veritabanı kimlikleri küçük harfle verir; karşılaştırma metinle yapılır (karar 0112).
+    const ust = ustGirdisi === null ? null : kimligiDuzelt(ustGirdisi);
+    const yeniSira = kimlikler.map(kimligiDuzelt);
+    const kardesler = await islem
+      .select({ kimlik: kategoriler.kimlik, sira: kategoriler.sira })
+      .from(kategoriler)
+      .where(and(ayniUst(ust), isNull(kategoriler.silinme_zamani)));
+    const siralar = new Map(kardesler.map((kardes) => [kardes.kimlik, kardes.sira]));
+    const ayniKume =
+      yeniSira.length === kardesler.length &&
+      new Set(yeniSira).size === yeniSira.length &&
+      yeniSira.every((kimlik) => siralar.has(kimlik));
+    if (!ayniKume) throw cakisma([{ alan: "kimlikler", kod: "siralama-gecersiz" }]);
+    for (const [sira, kimlik] of yeniSira.entries()) {
+      const eski = siralar.get(kimlik);
+      if (eski === sira) continue;
+      await islem
+        .update(kategoriler)
+        .set({ sira, guncellenme_zamani: sql`now()` })
+        .where(eq(kategoriler.kimlik, kimlik));
+      await degisikligiKaydet(islem, {
+        kim,
+        islem: "kategori.degisti",
+        kayit: { tur: "kategori", kimlik },
+        eski: { sira: eski },
+        yeni: { sira },
+      });
+    }
+  });
+
+// Her kategoriye doğrudan bağlı, silinmemiş ürünlerin sayısı (kart 0261): panel satırda gösterir, silme onayı
+// kaç ürünün bağlantısının kalkacağını söyler. Alt kategorilerin ürünleri sayılmaz (silmede yalnız kendi
+// bağlantıları kalkar). Ürünü olmayan kategori listede yoktur. Tek sorgu.
+export const kategorilerinUrunSayilari = async (
+  vt: Veritabani = siteninVeritabani(),
+): Promise<Map<string, number>> => {
+  const satirlar = await vt
+    .select({ kategori: urunKategorileri.kategori_kimligi, sayi: count() })
+    .from(urunKategorileri)
+    .innerJoin(urunler, eq(urunler.kimlik, urunKategorileri.urun_kimligi))
+    .where(isNull(urunler.silinme_zamani))
+    .groupBy(urunKategorileri.kategori_kimligi);
+  return new Map(satirlar.map((satir) => [satir.kategori, satir.sayi]));
+};
 
 // Kategori, silinmiş olsa da okunur.
 export const kategoriyiOku = async (

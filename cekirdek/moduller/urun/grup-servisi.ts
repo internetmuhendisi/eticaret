@@ -9,7 +9,7 @@
 // - Bir ürünün gruba bağlanması ürün servisindedir (urun/servis.ts): aynı anda silinen gruba
 //   bağlanmamak için grup satırını paylaşımlı kilitle okur.
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, inArray, isNull, ne, type SQL, sql } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNull, ne, type SQL, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type {
@@ -339,5 +339,19 @@ export const grupServisi = (tanim: GrupTanimi) => {
     return urunListesi(vt, urunKosulu(kimlik), secenekler);
   };
 
-  return { ekle, degistir, sil, oku, hepsiniOku, urunleri, urunKosulu, kilidiAl };
+  // Her gruba bağlı, silinmemiş ürünlerin sayısı (kart 0261): panel satırda gösterir, silme onayı kaç ürünün
+  // bağlantısının kalkacağını söyler. Ürünü olmayan grup listede yoktur. Tek sorgu.
+  const urunSayilari = async (
+    vt: Veritabani = siteninVeritabani(),
+  ): Promise<Map<string, number>> => {
+    const satirlar = await vt
+      .select({ grup: baglanti.grup_kimligi, sayi: count() })
+      .from(baglanti)
+      .innerJoin(urunler, eq(urunler.kimlik, baglanti.urun_kimligi))
+      .where(isNull(urunler.silinme_zamani))
+      .groupBy(baglanti.grup_kimligi);
+    return new Map(satirlar.map((satir) => [satir.grup, satir.sayi]));
+  };
+
+  return { ekle, degistir, sil, oku, hepsiniOku, urunleri, urunSayilari, urunKosulu, kilidiAl };
 };

@@ -904,3 +904,182 @@ describe("iki site", () => {
     await ekle(b, { ad: "Yazar", tur: "metin" });
   });
 });
+
+describe("panelin sıralaması, kullanımı ve tek kaydı (kart 0261)", () => {
+  const kayit = (vt: Veritabani, kimlik: string) =>
+    servis.oku(kimlik, vt).then((ozellik) => {
+      if (ozellik === undefined) throw new Error("Özellik yok.");
+      return ozellik;
+    });
+  const sirasi = async (vt: Veritabani) => (await servis.hepsiniOku(vt)).map((o) => o.kimlik);
+
+  it("özellikler yeni sıraya konur; eksik, fazla ve tekrarlı liste hiçbir şey değiştirmez", async () => {
+    const vt = await siteAc();
+    const o = await ornekOzellikler(vt);
+    await servis.sirala(vt, yonetici(), [
+      o.yazar,
+      o.malzeme.toUpperCase(),
+      o.yikanabilir,
+      o.uzunluk,
+    ]);
+    expect(await sirasi(vt)).toEqual([o.yazar, o.malzeme, o.yikanabilir, o.uzunluk]);
+    expect((await kayitlar(vt, o.yazar)).at(-1)).toMatchObject({
+      islem: "ozellik.degisti",
+      eski_deger: { sira: 1 },
+      yeni_deger: { sira: 0 },
+    });
+    const beklenen = { kod: "cakisma", ayrinti: [{ alan: "kimlikler", kod: "siralama-gecersiz" }] };
+    for (const liste of [
+      [o.yazar],
+      [o.yazar, o.malzeme, o.yikanabilir, o.uzunluk, o.pamuk],
+      [o.yazar, o.yazar, o.yikanabilir, o.uzunluk],
+    ]) {
+      expect(await hatasi(servis.sirala(vt, yonetici(), liste))).toEqual(beklenen);
+    }
+    expect(await sirasi(vt)).toEqual([o.yazar, o.malzeme, o.yikanabilir, o.uzunluk]);
+  });
+
+  it("seçenekler yeni sıraya konur, başka özelliğin seçeneği reddedilir", async () => {
+    const vt = await siteAc();
+    const o = await ornekOzellikler(vt);
+    await servis.secenekleriSirala(vt, yonetici(), o.malzeme, [o.keten, o.pamuk, o.yun]);
+    expect((await kayit(vt, o.malzeme)).secenekler.map((s) => s.ad)).toEqual([
+      "Keten",
+      "Pamuk",
+      "Yün",
+    ]);
+    expect(
+      await hatasi(servis.secenekleriSirala(vt, yonetici(), o.yazar, [o.keten])),
+    ).toMatchObject({ kod: "cakisma" });
+    expect(await hatasi(servis.secenekleriSirala(vt, yonetici(), randomUUID(), []))).toMatchObject({
+      kod: "bulunamadi",
+    });
+  });
+
+  it("kullanım: silinmemiş ürün sayısı, silinmiş ürünün değeri türü yine kilitler, seçenek başına sayı", async () => {
+    const vt = await siteAc();
+    const o = await ornekOzellikler(vt);
+    await urunEkle(vt, { ozellikler: [{ ozellik: o.malzeme, deger: o.pamuk }] });
+    await urunEkle(vt, { ozellikler: [{ ozellik: o.malzeme, deger: o.pamuk }] });
+    await urunEkle(vt, { ozellikler: [{ ozellik: o.malzeme, deger: o.yun }] });
+    const silinen = await urunEkle(vt, { ozellikler: [{ ozellik: o.yazar, deger: "Ayşe" }] });
+    await urunSrv.urunSil(vt, yonetici(), silinen);
+    const kullanimlar = await servis.kullanimlar(vt);
+    expect(kullanimlar.get(o.malzeme)).toEqual({
+      urun: 3,
+      degeriVar: true,
+      secenekler: new Map([
+        [o.pamuk, 2],
+        [o.yun, 1],
+      ]),
+    });
+    // Silinmiş ürünün değeri sayılmaz ama tür değişmez (servisin kuralı).
+    expect(kullanimlar.get(o.yazar)).toMatchObject({ urun: 0, degeriVar: true });
+    expect(await hatasi(servis.degistir(vt, yonetici(), o.yazar, { tur: "sayi" }))).toMatchObject({
+      kod: "is-kurali",
+    });
+    expect(kullanimlar.has(o.uzunluk)).toBe(false);
+  });
+
+  it("tek kayıt: ad değişir, seçenek eklenir, adı değişir, çıkan silinir ve değeri kalkar, sıra yazılır", async () => {
+    const vt = await siteAc();
+    const o = await ornekOzellikler(vt);
+    const urun = await urunEkle(vt, { ozellikler: [{ ozellik: o.malzeme, deger: o.keten }] });
+    await servis.kaydet(vt, yonetici(), o.malzeme.toUpperCase(), {
+      ad: "Kumaş",
+      tur: "liste",
+      birim: null,
+      filtrede: false,
+      secenekler: [
+        { ad: "İpek" },
+        { kimlik: o.yun.toUpperCase(), ad: "Yün karışım" },
+        { kimlik: o.pamuk, ad: "Pamuk" },
+      ],
+    });
+    const yeni = await kayit(vt, o.malzeme);
+    expect(yeni).toMatchObject({ ad: "Kumaş", filtrede: false });
+    expect(yeni.secenekler.map((s) => s.ad)).toEqual(["İpek", "Yün karışım", "Pamuk"]);
+    expect(yeni.secenekler[1]?.kimlik).toBe(o.yun);
+    expect(await degerleri(vt, urun)).toEqual([]);
+    const islemler = (await kayitlar(vt, o.keten)).map((k) => k.islem);
+    expect(islemler).toContain("ozellik-secenegi.silindi");
+  });
+
+  it("tek kayıt: değeri olmayan liste seçenekleri çıkarılarak başka türe geçer", async () => {
+    const vt = await siteAc();
+    const o = await ornekOzellikler(vt);
+    await servis.kaydet(vt, yonetici(), o.malzeme, {
+      ad: "Malzeme",
+      tur: "sayi",
+      birim: "g",
+      filtrede: true,
+      secenekler: [],
+    });
+    expect(await kayit(vt, o.malzeme)).toMatchObject({ tur: "sayi", birim: "g", secenekler: [] });
+  });
+
+  it("tek kayıt: bir adım yazılamazsa hiçbiri yazılmaz; hata seçeneğin yeriyle döner", async () => {
+    const vt = await siteAc();
+    const o = await ornekOzellikler(vt);
+    const once = await kayit(vt, o.malzeme);
+    // Yeni seçenek var olanla aynı adı taşıyor: silme ve ad değişikliği de geri alınır.
+    expect(
+      await hatasi(
+        servis.kaydet(vt, yonetici(), o.malzeme, {
+          ad: "Kumaş",
+          tur: "liste",
+          birim: null,
+          filtrede: true,
+          secenekler: [{ kimlik: o.pamuk, ad: "Pamuk" }, { ad: "pamuk" }],
+        }),
+      ),
+    ).toEqual({
+      kod: "cakisma",
+      ayrinti: [{ alan: "secenekler.1.ad", kod: "secenek-ad-tekrar" }],
+    });
+    expect(await kayit(vt, o.malzeme)).toEqual(once);
+    // Ekranın gördüğü seçenek artık yok: eski liste.
+    expect(
+      await hatasi(
+        servis.kaydet(vt, yonetici(), o.malzeme, {
+          ad: "Malzeme",
+          tur: "liste",
+          birim: null,
+          filtrede: true,
+          secenekler: [{ kimlik: randomUUID(), ad: "Yeni" }],
+        }),
+      ),
+    ).toMatchObject({
+      kod: "cakisma",
+      ayrinti: [{ alan: "secenekler", kod: "siralama-gecersiz" }],
+    });
+    // Liste olmayan türde seçenek verilemez; değeri olan özelliğin türü değişmez.
+    expect(
+      await hatasi(
+        servis.kaydet(vt, yonetici(), o.yazar, {
+          ad: "Yazar",
+          tur: "metin",
+          birim: null,
+          filtrede: false,
+          secenekler: [{ ad: "A" }],
+        }),
+      ),
+    ).toMatchObject({
+      kod: "dogrulama",
+      ayrinti: [{ alan: "secenekler", kod: "secenek-yalniz-liste" }],
+    });
+    await urunEkle(vt, { ozellikler: [{ ozellik: o.malzeme, deger: o.pamuk }] });
+    expect(
+      await hatasi(
+        servis.kaydet(vt, yonetici(), o.malzeme, {
+          ad: "Malzeme",
+          tur: "metin",
+          birim: null,
+          filtrede: true,
+          secenekler: [],
+        }),
+      ),
+    ).toMatchObject({ kod: "is-kurali", ayrinti: [{ alan: "tur", kod: "tur-degisemez" }] });
+    expect(await kayit(vt, o.malzeme)).toEqual(once);
+  });
+});

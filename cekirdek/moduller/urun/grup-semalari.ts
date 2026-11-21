@@ -59,3 +59,10 @@ export type GrupDegisikligi = {
   aciklama?: string | null | undefined;
   logo?: string | null | undefined;
 };
+
+// Marka ve etiket uçlarının girdileri (kart 0261). Grubun alanları servis şemasıyla doğrulanır (grupGirdisi,
+// grupDegisikligi): hata alanın adıyla ve grubun koduyla döner, uç yalnız zarfı denetler.
+const grupNesnesi = z.record(z.string(), z.unknown());
+export const grupEklemeSemasi = z.strictObject({ grup: grupNesnesi });
+export const grupDegisikligiSemasi = z.strictObject({ kimlik: kimlikSemasi, grup: grupNesnesi });
+export const grupSilmeSemasi = z.strictObject({ kimlik: kimlikSemasi });

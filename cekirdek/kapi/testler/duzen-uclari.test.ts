@@ -240,9 +240,12 @@ describe("düzen uçları", () => {
     const kimlik = bolum?.bolum.kimlik;
     const oturum = await cerez(kisi);
     const gorsel = await gorselAc();
+    // Panel görseli düzenin değil sitedeki görsellerin iznidir (dosya.gor, kart 0261): görevli görür.
+    const gorselYaniti = await panelGorseliUcu(istek(`panel-gorseli?d=${gorsel}&b=kucuk`, oturum));
+    expect(gorselYaniti.status).toBe(kisi === "gorevli" ? 200 : durum);
+    await gorselYaniti.arrayBuffer();
     for (const yanit of [
       await duzenDurumuUcu(istek("duzen", oturum)),
-      await panelGorseliUcu(istek(`panel-gorseli?d=${gorsel}&b=kucuk`, oturum)),
       await bolumEklemeUcu(
         istek("duzen-bolum-ekle", oturum, {
           alan: "ana-sayfa",

@@ -21,6 +21,7 @@ import {
   ExternalLinkIcon,
   EyeIcon,
   EyeOffIcon,
+  FolderTreeIcon,
   GalleryHorizontalIcon,
   GiftIcon,
   GripVerticalIcon,
@@ -31,6 +32,7 @@ import {
   InfoIcon,
   LandmarkIcon,
   LinkIcon,
+  ListChecksIcon,
   ListTreeIcon,
   LoaderCircleIcon,
   LogOutIcon,
@@ -54,6 +56,7 @@ import {
   ShoppingBagIcon,
   SlidersHorizontalIcon,
   StarIcon,
+  TagsIcon,
   Trash2Icon,
   TriangleAlertIcon,
   TruckIcon,
@@ -150,6 +153,10 @@ export const ikonlar = {
   tema: PaletteIcon,
   // Sipariş alındı sayfası (kart 0214): IBAN'ı kopyala.
   kopyala: CopyIcon,
+  // Kategoriler, markalar ve etiketler, özellikler ekranları (kart 0261): menüdeki sayfalar.
+  kategoriler: FolderTreeIcon,
+  markalar: TagsIcon,
+  ozellikler: ListChecksIcon,
 } satisfies Record<string, LucideIcon>;
 
 export type IkonAdi = keyof typeof ikonlar;

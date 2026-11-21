@@ -351,6 +351,13 @@
       "when": 1795183027865,
       "tag": "0049_stok-uyarilari",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1795266995402,
+      "tag": "0050_dosya-gor-izni",
+      "breakpoints": true
     }
   ]
 }

@@ -117,11 +117,12 @@ export const duzenGeriDonusUcu = ucTanimla({
 
 // GET /kapi/yonetici/panel-gorseli: paneldeki görsel önizlemesi. Vitrin görseli ucu yalnız vitrinde
 // kullanılan görseli verir; panel henüz seçilmemiş görseli de gösterir. Yalnız kayıttaki boyutlar verilir,
-// özgün görsel ve boyut dosyasının kendisi verilmez.
+// özgün görsel ve boyut dosyasının kendisi verilmez. Kategori ve marka ekranları da kullanır (kart 0261): izin
+// düzenin değil, sitedeki görsellerin iznidir.
 export const panelGorseliUcu = ucTanimla({
   giris: "yonetici",
   sema: panelGorseliSemasi,
-  izin: "duzen.gor",
+  izin: "dosya.gor",
   sinir: "gorsel",
   isle: async ({ d, b }) => {
     const gorsel = await gorselBoyutunuOku(siteninVeritabani(), d, b, dosyaKlasoru());

@@ -890,9 +890,9 @@ Düzenin önceki hâline döner (kart 0142, karar 0080 ve 0115): bir önceki sü
 
 ### GET /kapi/yonetici/panel-gorseli
 
-Paneldeki görsel önizlemesi (kart 0142): sitede kayıtlı bir görselin kayıttaki boyutu. Vitrin görseli ucu yalnız vitrinde kullanılan görseli verir; panel henüz seçilmemiş görseli de gösterir. Yanıt zarf değil, dosyanın kendisidir (`nosniff`, etiket, 304); yetkili uç olduğu için `Cache-Control: private` (ortak önbelleğe girmez). Hata zarfla döner.
+Paneldeki görsel önizlemesi (kart 0142): sitede kayıtlı bir görselin kayıttaki boyutu. Vitrin görseli ucu yalnız vitrinde kullanılan görseli verir; panel henüz seçilmemiş görseli de gösterir. Vitrin bölümleri, kategoriler ve markalar ekranı kullanır (kart 0261). Yanıt zarf değil, dosyanın kendisidir (`nosniff`, etiket, 304); yetkili uç olduğu için `Cache-Control: private` (ortak önbelleğe girmez). Hata zarfla döner.
 
-- İzin: `duzen.gor`. Sınır: `gorsel`.
+- İzin: `dosya.gor`. Sınır: `gorsel`.
 - Girdi: adres parametreleri `d` (görselin dosya kimliği) ve `b` (boyutun adı: `kucuk`, `orta`, `buyuk`, `tam`; `panelGorseliSemasi`).
 - Servis: `cekirdek/moduller/dosya/gorsel-boyutu.ts`.
 - Başarılı (200): görselin o boyuttaki dosyası. Özgün görsel ve boyut dosyasının kendi kimliği verilmez.
@@ -987,6 +987,146 @@ Aynı üstün altındaki öğelerin yeni sırası (kart 0143): kardeşlerin heps
 - Servis: `cekirdek/moduller/menu/servis.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": {} }`.
 - Hatalar: `dogrulama` (`siralama-gecersiz`, `ust-gecersiz`), `bulunamadi`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/kategori-ekle
+
+Yeni kategori (kart 0261). Verilmeyen adres adı addan üretilir, verilmeyen üst en üsttür, verilmeyen sıra kardeşlerin sonudur.
+
+- İzin: `kategori.degistir`. Sınır: `genel`.
+- Girdi: `{ "kategori": { "ad", "adresAdi"?, "aciklama"?, "ust"?, "sira"?, "gorsel"? } }` (`kategoriEklemeSemasi`; kategori `kategoriGirdisi` ile serviste doğrulanır).
+- Servis: `cekirdek/moduller/kategori/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
+- Hatalar: `dogrulama` (`adres-adi-bicimi`, `kayda-uygun-degil`, `ust-gecersiz`, `gorsel-gecersiz`, ...), `cakisma` (`ad-tekrar`, `adres-adi-tekrar`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/kategori-degistir
+
+Kategoriyi değiştirir ya da taşır (kart 0261): yalnız verilen alan değişir; üstün değişmesi taşımadır ve kategori yeni kardeşlerin sonuna gelir. Açıklamayı ve görseli kaldırmak için `null`.
+
+- İzin: `kategori.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "kategori": { "ad"?, "adresAdi"?, "aciklama"?, "ust"?, "sira"?, "gorsel"? } }` (`kategoriDegisikligiSemasi`; kategori `kategoriDegisikligi` ile serviste doğrulanır).
+- Servis: `cekirdek/moduller/kategori/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: ekleme ile aynı kodlar, `is-kurali` (`dongu`), `bulunamadi`.
+
+### POST /kapi/yonetici/kategori-sil
+
+Kategoriyi siler (kart 0261): alt kategorileri bir üste çıkar, ürün bağlantıları kalkar; ürünler silinmez. Üste çıkan alt kategori orada aynı adlı bir kardeşle karşılaşacaksa hiçbir şey değişmez.
+
+- İzin: `kategori.sil`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }` (`kategoriSilmeSemasi`).
+- Servis: `cekirdek/moduller/kategori/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `cakisma` (`silmede-ad-tekrar`, her biri alt kategorinin kimliğiyle), `bulunamadi`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/kategori-sirala
+
+Aynı üstün altındaki kategorilerin yeni sırası (kart 0261): silinmemiş kardeşlerin hepsi, her biri bir kez. Eksik, fazla ya da tekrarlı liste ekranın eski gördüğü sıradır, hiçbir şey değişmez.
+
+- İzin: `kategori.degistir`. Sınır: `genel`.
+- Girdi: `{ "ust", "kimlikler" }` (`kategoriSiralamaSemasi`); en üst düzey için `ust` `null`.
+- Servis: `cekirdek/moduller/kategori/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama` (`ust-gecersiz`), `cakisma` (`siralama-gecersiz`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/marka-ekle
+
+Yeni marka (kart 0261). Açıklaması ve logosu (sitedeki bir görselin kimliği) girilir. Verilmeyen adres adı addan üretilir.
+
+- İzin: `marka.degistir`. Sınır: `genel`.
+- Girdi: `{ "grup": { "ad", "adresAdi"?, "aciklama"?, "logo"? } }` (`grupEklemeSemasi`; grup `markaGirdisi` ile serviste doğrulanır).
+- Servis: `cekirdek/moduller/urun/grup-servisi.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
+- Hatalar: `dogrulama` (`adres-adi-bicimi`, `kayda-uygun-degil`, `gorsel-gecersiz`, ...), `cakisma` (`ad-tekrar`, `adres-adi-tekrar`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/marka-degistir
+
+Markayı değiştirir (kart 0261): yalnız verilen alan değişir; açıklamayı ve logoyu kaldırmak için `null`.
+
+- İzin: `marka.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "grup": { "ad"?, "adresAdi"?, "aciklama"?, "logo"? } }` (`grupDegisikligiSemasi`; grup `markaDegisikligi` ile serviste doğrulanır).
+- Servis: `cekirdek/moduller/urun/grup-servisi.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: ekleme ile aynı kodlar, `bulunamadi`.
+
+### POST /kapi/yonetici/marka-sil
+
+Markayı siler (kart 0261): silinmiş işaretlenir, ürün bağlantıları kalkar; ürünler silinmez.
+
+- İzin: `marka.sil`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }` (`grupSilmeSemasi`).
+- Servis: `cekirdek/moduller/urun/grup-servisi.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/etiket-ekle
+
+Yeni etiket (kart 0261). Yalnız ad ve adres adı girilir. Verilmeyen adres adı addan üretilir.
+
+- İzin: `etiket.degistir`. Sınır: `genel`.
+- Girdi: `{ "grup": { "ad", "adresAdi"? } }` (`grupEklemeSemasi`; grup `etiketGirdisi` ile serviste doğrulanır).
+- Servis: `cekirdek/moduller/urun/grup-servisi.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
+- Hatalar: `dogrulama` (`adres-adi-bicimi`, `kayda-uygun-degil`, ...), `cakisma` (`ad-tekrar`, `adres-adi-tekrar`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/etiket-degistir
+
+Etiketi değiştirir (kart 0261): yalnız verilen alan değişir.
+
+- İzin: `etiket.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "grup": { "ad"?, "adresAdi"? } }` (`grupDegisikligiSemasi`; grup `etiketDegisikligi` ile serviste doğrulanır).
+- Servis: `cekirdek/moduller/urun/grup-servisi.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: ekleme ile aynı kodlar, `bulunamadi`.
+
+### POST /kapi/yonetici/etiket-sil
+
+Etiketi siler (kart 0261): silinmiş işaretlenir, ürün bağlantıları kalkar; ürünler silinmez.
+
+- İzin: `etiket.sil`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }` (`grupSilmeSemasi`).
+- Servis: `cekirdek/moduller/urun/grup-servisi.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/ozellik-ekle
+
+Yeni ürün özelliği (kart 0261). Liste türünde seçenekler birlikte, listedeki sırayla verilir; verilmeyen sıra özelliklerin sonudur.
+
+- İzin: `ozellik.degistir`. Sınır: `genel`.
+- Girdi: `{ "ozellik": { "ad", "tur", "birim"?, "filtrede"?, "sira"?, "secenekler"? } }` (`ozellikEklemeSemasi`; özellik `ozellikGirdisi` ile serviste doğrulanır).
+- Servis: `cekirdek/moduller/ozellik/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
+- Hatalar: `dogrulama` (`birim-yalniz-sayi`, `secenek-yalniz-liste`, `kayda-uygun-degil`, ...), `cakisma` (`ad-tekrar`, `secenek-ad-tekrar` seçeneğin yeriyle: `secenekler.<sıra>`), `is-kurali` (`ozellik-siniri`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/ozellik-kaydet
+
+Panelin özellik formunun tek kaydı (kart 0261): alanlar ve seçeneklerin son hâli tek işlemde yazılır. Kimliği olan seçenek var olandır (adı değişebilir), kimliği olmayan yenidir, listede olmayan var olan seçenek silinir ve değeri ürünlerden kalkar; seçenekler listedeki sıraya konur. Biri yazılamazsa hiçbiri yazılmaz.
+
+- İzin: `ozellik.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "ozellik": { "ad", "tur", "birim", "filtrede", "secenekler": [{ "kimlik"?, "ad" }] } }` (`ozellikKaydiSemasi`; özellik `ozellikKaydi` ile serviste doğrulanır).
+- Servis: `cekirdek/moduller/ozellik/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama` (`birim-yalniz-sayi`, `secenek-yalniz-liste`, ...), `cakisma` (`ad-tekrar`; `secenek-ad-tekrar` seçeneğin yeriyle: `secenekler.<sıra>.ad`; `siralama-gecersiz`: ekranın gördüğü seçenek artık yok), `is-kurali` (`tur-degisemez`, `secenek-siniri`), `bulunamadi`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/ozellik-sil
+
+Özelliği siler (kart 0261): silinmiş işaretlenir, değerleri ürünlerden kalkar; ürünler silinmez.
+
+- İzin: `ozellik.sil`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }` (`ozellikSilmeSemasi`).
+- Servis: `cekirdek/moduller/ozellik/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/ozellik-sirala
+
+Özelliklerin yeni sırası (kart 0261): ürün sayfasındaki tablonun sırası. Silinmemiş özelliklerin hepsi, her biri bir kez.
+
+- İzin: `ozellik.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlikler" }` (`ozellikSiralamaSemasi`).
+- Servis: `cekirdek/moduller/ozellik/servis.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `cakisma` (`siralama-gecersiz`), `oturum-yok`, `yetki`.
 
 ### GET /kapi/yonetici/kayit-ara
 

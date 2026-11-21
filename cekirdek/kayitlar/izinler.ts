@@ -2,6 +2,7 @@
 // dosyasında yazar, burada toplanır. Roller bu izinlerden oluşur. Liste belgede de yazar:
 // cekirdek/moduller/ekip/izinler-ve-roller.md.
 import { stokBildirimiIzinleri } from "../eklentiler/stoga-gelince-haber-ver/izinler.ts";
+import { dosyaIzinleri } from "../moduller/dosya/izinler.ts";
 import { duzenIzinleri } from "../moduller/duzen/izinler.ts";
 import { ekipIzinleri } from "../moduller/ekip/izinler.ts";
 import { etiketIzinleri } from "../moduller/etiket/izinler.ts";
@@ -32,6 +33,8 @@ export type IzinTanimi =
   | { giris: "yonetici"; kapsam: IzinKapsami };
 
 export const modulIzinleri = {
+  // Sitedeki görselleri görmek (kart 0261).
+  dosya: dosyaIzinleri,
   duzen: duzenIzinleri,
   ekip: ekipIzinleri,
   etiket: etiketIzinleri,
@@ -57,6 +60,7 @@ export const modulIzinleri = {
 } as const;
 
 export const izinler = {
+  ...dosyaIzinleri,
   ...duzenIzinleri,
   ...ekipIzinleri,
   ...etiketIzinleri,

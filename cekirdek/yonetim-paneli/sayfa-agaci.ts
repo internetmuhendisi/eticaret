@@ -130,6 +130,35 @@ export const panelSayfalari = [
     grup: "vitrin",
     isaret: "yonetim.cerceve.kisayol",
   },
+  // Kategoriler, markalar ve etiketler, özellikler (kart 0261, karar 0160): ürünün gruplandığı kayıtlar. Görevli
+  // görür ve değiştirir, silemez (izinlerin kararı).
+  {
+    kod: "kategoriler",
+    adres: `${panelAdresi}/kategoriler`,
+    ad: "yonetim.sayfa.kategoriler.ad",
+    aciklama: "yonetim.sayfa.kategoriler.aciklama",
+    ikon: "kategoriler",
+    izin: "kategori.gor",
+    grup: "urunler",
+  },
+  {
+    kod: "markalar",
+    adres: `${panelAdresi}/markalar`,
+    ad: "yonetim.sayfa.markalar.ad",
+    aciklama: "yonetim.sayfa.markalar.aciklama",
+    ikon: "markalar",
+    izin: "marka.gor",
+    grup: "urunler",
+  },
+  {
+    kod: "ozellikler",
+    adres: `${panelAdresi}/ozellikler`,
+    ad: "yonetim.sayfa.ozellikler.ad",
+    aciklama: "yonetim.sayfa.ozellikler.aciklama",
+    ikon: "ozellikler",
+    izin: "ozellik.gor",
+    grup: "urunler",
+  },
   // Stoğa gelince haber ver eklentisi (kart 0144, karar 0117): bekleyen talepler stok bilgisidir, stok.gor ister.
   {
     kod: "stok-bildirimleri",

@@ -39,12 +39,14 @@ import {
   type OzellikDegisikligi,
   type OzellikGirdisi,
   type OzellikHatasi,
+  type OzellikKaydiGirdisi,
   type OzellikSecenegiDegisikligi,
   type OzellikSecenegiGirdisi,
   ozellikAlanKurallari,
   ozellikDegisikligi,
   ozellikGirdisi,
   ozellikHatalari,
+  ozellikKaydi,
   ozellikSecenegiDegisikligi,
   ozellikSecenegiGirdisi,
 } from "./semalar.ts";
@@ -459,6 +461,206 @@ const secenekSil = (vt: Veritabani | VeritabaniIslemi, kim: DegisikligiYapan, ki
     });
   });
 
+// Panelin özellik formunun tek kaydı (kart 0261): alanlar ve seçeneklerin son hâli tek işlemde yazılır, biri
+// yazılamazsa hiçbiri yazılmaz. Sıra: listeden çıkan seçenekler silinir (türün değişebilmesi için önce), özelliğin
+// alanları değişir (liste türüne geçiş seçenek eklemeden önce), adı değişen seçenekler değişir, yeni seçenekler
+// eklenir, son olarak seçenekler listedeki sıraya konur. Her adım kendi işleviyle ve kendi kaydıyla yazılır.
+// Seçeneğin hatası formdaki yerini (secenekler.<sıra>.ad) taşır.
+const kaydet = async (
+  vt: Veritabani | VeritabaniIslemi,
+  kim: DegisikligiYapan,
+  kimlikGirdisi: string,
+  ham: OzellikKaydiGirdisi,
+): Promise<void> => {
+  const girdi = girdiyiDogrula(ozellikKaydi.safeParse(ham));
+  const kimlik = kimligiDuzelt(kimlikGirdisi);
+  await yaz(vt, async (islem) => {
+    // Satır en başta kilitlenir: değer yazan ürün işlemi (paylaşımlı kilit) tür denetiminden önce biter.
+    await degisebilen(islem, kimlik);
+    const ozellik = await oku(kimlik, islem);
+    if (ozellik === undefined || ozellik.silindi) throw new BilinenHata("bulunamadi");
+    const verilen = girdi.secenekler.map((secenek) =>
+      secenek.kimlik === undefined
+        ? secenek
+        : { ...secenek, kimlik: kimligiDuzelt(secenek.kimlik) },
+    );
+    const varolanlar = new Map(ozellik.secenekler.map((secenek) => [secenek.kimlik, secenek]));
+    // Var olmayan kimlik ekranın eski gördüğü listedir.
+    if (
+      verilen.some((secenek) => secenek.kimlik !== undefined && !varolanlar.has(secenek.kimlik))
+    ) {
+      throw new BilinenHata("cakisma", [{ alan: "secenekler", kod: "siralama-gecersiz" }]);
+    }
+    const kalan = new Set(verilen.flatMap((secenek) => secenek.kimlik ?? []));
+    if (kalan.size !== verilen.filter((secenek) => secenek.kimlik !== undefined).length) {
+      throw dogrulamaHatasi([{ alan: "secenekler", kod: "siralama-gecersiz" }]);
+    }
+    const yerinde = async <T>(i: number, is: () => Promise<T>): Promise<T> => {
+      try {
+        return await is();
+      } catch (hata) {
+        if (hata instanceof BilinenHata && Array.isArray(hata.ayrinti)) {
+          throw new BilinenHata(
+            hata.kod,
+            hata.ayrinti.map((sorun: Sorun) => ({ ...sorun, alan: `secenekler.${i}.ad` })),
+          );
+        }
+        throw hata;
+      }
+    };
+    // Değeri olan özelliğin türü değişmez (degistir'in kuralı): seçenekler silinip değerler kalkmadan önce
+    // bakılır, yoksa tür değişikliği seçenek silmeyle dolaylı yoldan yapılabilirdi (testin bulgusu).
+    if (girdi.tur !== ozellik.tur) {
+      const [deger] = await islem
+        .select({ urun: urunOzellikDegerleri.urun_kimligi })
+        .from(urunOzellikDegerleri)
+        .where(eq(urunOzellikDegerleri.ozellik_kimligi, kimlik))
+        .limit(1);
+      if (deger !== undefined) throw isKurali("tur", "tur-degisemez");
+    }
+    for (const secenek of ozellik.secenekler) {
+      if (!kalan.has(secenek.kimlik)) await secenekSil(islem, kim, secenek.kimlik);
+    }
+    if (girdi.tur !== "liste" && verilen.length > 0) {
+      throw dogrulamaHatasi([{ alan: "secenekler", kod: "secenek-yalniz-liste" }]);
+    }
+    await degistir(islem, kim, kimlik, {
+      ad: girdi.ad,
+      tur: girdi.tur,
+      birim: girdi.birim,
+      filtrede: girdi.filtrede,
+    });
+    const sira: string[] = [];
+    for (const [i, secenek] of verilen.entries()) {
+      if (secenek.kimlik !== undefined) {
+        const { kimlik: secenekKimligi } = secenek;
+        if (varolanlar.get(secenekKimligi)?.ad !== secenek.ad) {
+          await yerinde(i, () => secenekDegistir(islem, kim, secenekKimligi, { ad: secenek.ad }));
+        }
+        sira.push(secenekKimligi);
+      } else {
+        sira.push(await yerinde(i, () => secenekEkle(islem, kim, kimlik, { ad: secenek.ad })));
+      }
+    }
+    await secenekleriSirala(islem, kim, kimlik, sira);
+  });
+};
+
+// Yeni sıra (kart 0261): liste silinmemiş kayıtların tamamıdır; eksik, fazla ya da tekrarlı liste ekranın eski
+// gördüğü sıradır, hiçbir şey değişmez. Sırası değişen her kayıt kendi satırıyla kayda girer (degisti).
+const siralamayiYaz = async (
+  islem: VeritabaniIslemi,
+  kim: DegisikligiYapan,
+  mevcut: { kimlik: string; sira: number }[],
+  kimlikler: readonly string[],
+  yazilacak: {
+    tablo: typeof ozellikler | typeof ozellikSecenekleri;
+    tur: "ozellik" | "ozellik-secenegi";
+  },
+) => {
+  // Veritabanı kimlikleri küçük harfle verir; karşılaştırma metinle yapılır (karar 0112).
+  const yeniSira = kimlikler.map(kimligiDuzelt);
+  const siralar = new Map(mevcut.map((satir) => [satir.kimlik, satir.sira]));
+  const ayniKume =
+    yeniSira.length === mevcut.length &&
+    new Set(yeniSira).size === yeniSira.length &&
+    yeniSira.every((kimlik) => siralar.has(kimlik));
+  if (!ayniKume) throw cakisma("kimlikler", "siralama-gecersiz");
+  for (const [sira, kimlik] of yeniSira.entries()) {
+    const eski = siralar.get(kimlik);
+    if (eski === sira) continue;
+    await islem
+      .update(yazilacak.tablo)
+      .set({ sira, guncellenme_zamani: sql`now()` })
+      .where(eq(yazilacak.tablo.kimlik, kimlik));
+    await degisikligiKaydet(islem, {
+      kim,
+      islem: yazilacak.tur === "ozellik" ? "ozellik.degisti" : "ozellik-secenegi.degisti",
+      kayit: { tur: yazilacak.tur, kimlik },
+      eski: { sira: eski },
+      yeni: { sira },
+    });
+  }
+};
+
+// Silinmemiş bütün özelliklerin yeni sırası.
+const sirala = (
+  vt: Veritabani | VeritabaniIslemi,
+  kim: DegisikligiYapan,
+  kimlikler: readonly string[],
+) =>
+  yaz(vt, async (islem) => {
+    const mevcut = await islem
+      .select({ kimlik: ozellikler.kimlik, sira: ozellikler.sira })
+      .from(ozellikler)
+      .where(isNull(ozellikler.silinme_zamani));
+    await siralamayiYaz(islem, kim, mevcut, kimlikler, { tablo: ozellikler, tur: "ozellik" });
+  });
+
+// Liste türündeki bir özelliğin silinmemiş seçeneklerinin yeni sırası. Özellik satırı kilitlenir (degisebilen):
+// silinmiş ya da olmayan özellik bulunamadı verir.
+const secenekleriSirala = (
+  vt: Veritabani | VeritabaniIslemi,
+  kim: DegisikligiYapan,
+  ozellikGirdisi: string,
+  kimlikler: readonly string[],
+) =>
+  yaz(vt, async (islem) => {
+    const ozellik = kimligiDuzelt(ozellikGirdisi);
+    await degisebilen(islem, ozellik);
+    const mevcut = await islem
+      .select({ kimlik: ozellikSecenekleri.kimlik, sira: ozellikSecenekleri.sira })
+      .from(ozellikSecenekleri)
+      .where(
+        and(
+          eq(ozellikSecenekleri.ozellik_kimligi, ozellik),
+          isNull(ozellikSecenekleri.silinme_zamani),
+        ),
+      );
+    await siralamayiYaz(islem, kim, mevcut, kimlikler, {
+      tablo: ozellikSecenekleri,
+      tur: "ozellik-secenegi",
+    });
+  });
+
+export type OzellikKullanimi = {
+  // Özelliğin değeri olan silinmemiş ürünlerin sayısı: silmede değeri bunlardan kalkar.
+  urun: number;
+  // Herhangi bir ürünün (silinmiş de) değeri var mı: varsa tür değişmez (degistir'in kuralı).
+  degeriVar: boolean;
+  // Seçenek başına değeri olan silinmemiş ürünlerin sayısı.
+  secenekler: Map<string, number>;
+};
+
+// Her özelliğin ve seçeneğin kullanımı (kart 0261): panel satırda ürün sayısını gösterir, değeri olan özelliğin
+// tür seçimini kapatır, silme onayı kaç üründen kalkacağını söyler. Değeri olmayan özellik haritada yoktur.
+// Tek sorgu.
+const kullanimlar = async (
+  vt: Veritabani | VeritabaniIslemi = siteninVeritabani(),
+): Promise<Map<string, OzellikKullanimi>> => {
+  const satirlar = await vt
+    .select({
+      ozellik: urunOzellikDegerleri.ozellik_kimligi,
+      secenek: urunOzellikDegerleri.secenek_kimligi,
+      urun: sql<number>`count(*) filter (where ${urunler.silinme_zamani} is null)`.mapWith(Number),
+    })
+    .from(urunOzellikDegerleri)
+    .innerJoin(urunler, eq(urunler.kimlik, urunOzellikDegerleri.urun_kimligi))
+    .groupBy(urunOzellikDegerleri.ozellik_kimligi, urunOzellikDegerleri.secenek_kimligi);
+  const sonuc = new Map<string, OzellikKullanimi>();
+  for (const satir of satirlar) {
+    const kullanim = sonuc.get(satir.ozellik) ?? {
+      urun: 0,
+      degeriVar: true,
+      secenekler: new Map(),
+    };
+    kullanim.urun += satir.urun;
+    if (satir.secenek !== null) kullanim.secenekler.set(satir.secenek, satir.urun);
+    sonuc.set(satir.ozellik, kullanim);
+  }
+  return sonuc;
+};
+
 // Özelliklerin silinmemiş seçenekleri, sırasıyla. Tek sorgu.
 const secenekleriOku = async (vt: Veritabani | VeritabaniIslemi, kimlikler: string[]) => {
   const sonuc = new Map<string, OzellikSecenegi[]>();
@@ -562,6 +764,10 @@ export const ozellikServisi = {
   ekle,
   degistir,
   sil,
+  kaydet,
+  sirala,
+  secenekleriSirala,
+  kullanimlar,
   secenekEkle,
   secenekDegistir,
   secenekSil,
