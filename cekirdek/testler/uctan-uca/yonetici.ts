@@ -68,7 +68,9 @@ export const sifreyleGir = async (page: Page, { eposta, sifre }: DenemeYoneticis
   await page.getByRole("button", { name: metin("yonetim.giris.gonder") }).click();
 };
 
-// Giriş sayfasından kurulumu bitirip panelin açılış sayfasına girer.
+// Giriş sayfasından kurulumu bitirip panelin açılış sayfasına girer ve sayfanın bağlanmasını bekler (karar 0099).
+// Kart 0252: beklemeden menüden geçen test, sayfa henüz bağlanırken geçişi başlatıyordu; hattaki izde önceki sayfanın
+// gövdeye akan <title> öğesi React'a hiç bağlanmadan kaldı ve sonraki "sayfa hazır" beklemesi bitmedi.
 export const paneleGir = async (page: Page, yonetici: DenemeYoneticisi, bekleme: Bekleme = {}) => {
   await page.goto("/yonetim/giris");
   await sifreyleGir(page, yonetici);
@@ -77,5 +79,6 @@ export const paneleGir = async (page: Page, yonetici: DenemeYoneticisi, bekleme:
     /\/yonetim$/,
     bekleme.beklemeSuresi === undefined ? {} : { timeout: bekleme.beklemeSuresi },
   );
+  await sayfaHazir(page);
   return sonuc;
 };

@@ -9,18 +9,49 @@
 // açılan öğeler sayılmaz: Next.js'in betikleri, geliştirme göstergesi ve sayfa duyurucusu; pencere açıkken Radix'in
 // sayfanın iki ucuna koyduğu odak koruyucuları; hazır HTML olarak yazılan biçimli metnin içi (ürünün uzun açıklaması,
 // `data-slot="bicimli-metin"`, kart 0138): React o öğeleri bağlamaz, kabın kendisi bağlanır.
+//
+// Süre dolunca bekleme bağlanmamış öğeleri adıyla söyler (kart 0252): hattaki bir düşüşte test süresi bitene kadar
+// beklemiş, hangi öğenin bağlanmadığı ancak izin sayfa görüntüsü çözülerek bulunabilmişti (önceki sayfanın gövdede
+// kalan <title> öğesi). Süre, testin kendi süresinden kısadır ki ileti testin süre aşımından önce gelsin.
 import type { Page } from "@playwright/test";
 
-export const sayfaHazir = async (page: Page): Promise<void> => {
+const sayilmayanlar =
+  "script, nextjs-portal, next-route-announcer, [data-radix-focus-guard], [data-slot=bicimli-metin] *";
+
+// Sayfada çalışır: React'a bağlanmamış öğelerin kısa tarifi (etiket, kimlik, sınıfın başı, üst öğe, metnin başı).
+const baglanmamislar = (sayilmayan: string): string[] =>
+  [...document.body.querySelectorAll("*")]
+    .filter((oge) => !oge.matches(sayilmayan))
+    .filter((oge) => !Object.keys(oge).some((alan) => alan.startsWith("__reactFiber")))
+    .map((oge) => {
+      const kimlik = oge.id ? `#${oge.id}` : "";
+      const sinif = oge.getAttribute("class")?.split(" ").slice(0, 3).join(".") ?? "";
+      const ust = oge.parentElement?.tagName.toLowerCase() ?? "-";
+      const yazi = (oge.textContent ?? "").trim().slice(0, 40);
+      return `${oge.tagName.toLowerCase()}${kimlik}${sinif ? `.${sinif}` : ""} (üst: ${ust}${yazi ? `, "${yazi}"` : ""})`;
+    });
+
+export const sayfaHazir = async (
+  page: Page,
+  { sure = 30_000 }: { sure?: number } = {},
+): Promise<void> => {
   await page.waitForLoadState("networkidle");
-  await page.waitForFunction(() =>
-    [...document.body.querySelectorAll("*")]
-      .filter(
-        (oge) =>
-          !oge.matches(
-            "script, nextjs-portal, next-route-announcer, [data-radix-focus-guard], [data-slot=bicimli-metin] *",
-          ),
-      )
-      .every((oge) => Object.keys(oge).some((alan) => alan.startsWith("__reactFiber"))),
-  );
+  const son = Date.now() + sure;
+  for (;;) {
+    // Sorgu sırasında sayfa değişirse (yönlendirme) bağlam kaybolur: o tur sayılmaz, yeni sayfa sorulur.
+    const liste = await page.evaluate(baglanmamislar, sayilmayanlar).catch((hata: unknown) => {
+      if (hata instanceof Error && /Execution context was destroyed|navigation/i.test(hata.message))
+        return null;
+      throw hata;
+    });
+    if (liste !== null && liste.length === 0) return;
+    if (Date.now() >= son) {
+      throw new Error(
+        liste === null
+          ? `Sayfa ${sure} ms içinde React'a bağlanmadı; son sorguda sayfa değişiyordu`
+          : `Sayfa ${sure} ms içinde React'a bağlanmadı; bağlanmamış ${liste.length} öğe: ${liste.slice(0, 10).join("; ")}`,
+      );
+    }
+    await page.waitForTimeout(100);
+  }
 };
