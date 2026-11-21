@@ -189,6 +189,7 @@
     "cekirdek/yonetim-paneli/panel-cercevesi.tsx",
     "cekirdek/yonetim-paneli/panel-islemi.ts",
     "cekirdek/yonetim-paneli/siparisler/elle-siparis.tsx",
+    "cekirdek/yonetim-paneli/urunler/urun-ekrani.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/slider.tsx"
   ],
   "bilesenler/parcalar/bos-hal.tsx": [
