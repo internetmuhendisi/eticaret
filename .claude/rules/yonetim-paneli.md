@@ -108,4 +108,5 @@ paths:
 - Uçlar `urun-ekle`, `urun-degistir`, `urun-sil` (`cekirdek/kapi/yonetici/urun.ts`). Ağırlık ve sayı türündeki özellik değeri metin gider, sunucuda `panelGirdisiniCevir` okur (`cekirdek/moduller/urun/panel-girdisi.ts`); ekran sayı çevirmez.
 - Birden çok kayıt seçimi `CokluKayitSecimi` iledir (`cekirdek/yonetim-paneli/coklu-kayit-secimi.tsx`): kategori, etiket, ilgili ürünler. Tek kayıt (marka) `KayitArama`'dır.
 - Biçimli metin `BicimliMetinAlani` ile yazılır; bağlantı kuralı `aciklamaBaglantisiGecerliMi`'dir (`cekirdek/moduller/urun/aciklama-baglantisi.ts`), temizlik de onu kullanır.
+- Seçenekler bölümü (kart 0264, karar 0163) `urunler/secenekler-bolumu.tsx`, kuralları `urunler/varyant-formu.ts`: formun `varyant` alanı seçenekleri ve birleşim alanlarını taşır, birleşim satırları `birlesimSatirlari` ile kurulur (yeni seçenekle dönen birimin alanları dahil), girdi `varyantGirdisi` ile yalnız bölüm değişince gider. Birleşimin ağırlığı metin gider, sunucuda `panelVaryantiniCevir` okur. Görünen etiketi olmayan alan (tablo hücresi, değer) adını `aria-label`'dan, hatasını altından alır.
 

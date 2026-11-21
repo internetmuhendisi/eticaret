@@ -1,5 +1,7 @@
 # 0071 · Varyantlı ürün: seçenekler, birleşimler, fiyat aralığı ve genel stok durumu
 
+Bu kararın basit ürüne ilk seçenek eklenince basit birimin silindiği ve birleşimi olan ürüne seçenek eklenmediği maddelerinin yerine 0163 numaralı karar geçti.
+
 ## Tarih
 
 2026-11-08
