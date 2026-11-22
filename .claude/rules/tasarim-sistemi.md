@@ -46,6 +46,7 @@ Tasarım değeri, renk, yazı boyutu, boşluk gibi tasarımı oluşturan ve tek 
 
 - Tema tanımının şeması `cekirdek/temalar/sema.ts`, hazır temalar `cekirdek/temalar/hazir/` ve kaydı `cekirdek/temalar/temalar.ts`. Siteye özel tema `siteler/<kod>/tema/<tema kodu>.json` dosyasıdır, adını da taşır.
 - Temanın başvurduğu bölüm türleri ve parça görünümleri `cekirdek/kayitlar/tema.ts` kaydındadır. Yeni bölüm ya da görünüm önce kayda eklenir; kayıtta olmayana başvuran tema açılmaz.
+- Mağaza sahibine açılabilen renkler ve köşe ile düğme biçimi seçeneklerinin kodları da o kayıttadır (`magazaRenkleri`, `koseSecenekleri`, `dugmeBicimiSecenekleri`; kart 0260, karar 0168), panelde görünen adları metin dosyasında. Adı olmayan renk ya da seçenek açan tema açılmaz (`renk-acilamaz`, `secenek-adsiz`).
 - Tema yalnız sitede barındırılan yazı tiplerini (`yuklenenYaziTipleri`) ve cihazın genel yazı tiplerini kullanır.
 - Hazır temalar Canlı Çarşı, Yumuşak Mevsim ve Keskin Çizgi'dir (karar 0092). Değerleri `degerler.ts`'tedir (ham renk yalnız orada yazılır), mağaza sahibinin seçenekleri ve başlangıç düzeni üç temada ortaktır (`cekirdek/temalar/hazir/magaza-secenekleri.ts`, `baslangic-duzeni.ts`).
 - Temadan temaya değişen görünüş tema değeriyle yazılır, bileşende temaya göre koşul yazılmaz (karar 0126). Başka bir renkle aynı olan ya da onu izlemesi gereken renk bağlı renktir (`renkBaglari`); okunurluk bağlar çözülerek ölçülür. Başlık biçimi `font-baslik`'e bağlıdır, tema boşlukları ve ürün sütunu kendi sınıflarıyla okunur.
