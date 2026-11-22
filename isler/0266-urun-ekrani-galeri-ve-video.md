@@ -25,4 +25,4 @@ Bölüm: Yönetim paneli. Önce 0263 ve 0094 (yükleme ucu ve kutuların bellek 
 
 ## Durum
 
-yapılacak
+bitti
