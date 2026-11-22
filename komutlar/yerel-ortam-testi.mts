@@ -308,7 +308,7 @@ const cerezler = (basliklar: Record<string, string | string[] | undefined>): str
 
 // Logo yükleme (kart 0094, karar 0165): görüntüdeki sharp kutunun içinde 40 milyon piksellik görseli yeniden
 // kodlar, kutunun bellek zirvesi sınırın altında kalır; logo ucu yeni logoyu verir, kaldırınca ilk logoya döner;
-// sınırı aşan uzunluk bildiren gövde okunmadan reddedilir. Site ve arka plan kutusunun gerçek bellek sınırı tanımla
+// dosya sınırını aşan gövde reddedilir. Site ve arka plan kutusunun gerçek bellek sınırı tanımla
 // aynıdır. Yönetici iki aşamalı girişi kurulum sayfasındaki anahtarla, kapıdan bitirir.
 const logoOlc = async (kodAdi: string): Promise<void> => {
   const kutu = kutuAdi(kodAdi);
@@ -392,15 +392,12 @@ const logoOlc = async (kodAdi: string): Promise<void> => {
   );
   const fazla = await isteHam(kodAdi, "/kapi/yonetici/logo-yukle", {
     yontem: "POST",
-    govde: Buffer.alloc(16),
-    basliklar: {
-      "content-type": "application/octet-stream",
-      "content-length": String(dosyaSinirlari.enCokBayt + 1),
-      cookie: oturum,
-    },
+    govde: Buffer.alloc(dosyaSinirlari.enCokBayt + 1),
+    basliklar: { "content-type": "application/octet-stream", cookie: oturum },
+    sure: 60_000,
   }).catch((hata: unknown) => ({ durum: 0, govde: Buffer.from(String(hata)) }));
   olc(
-    `${kodAdi}: sınırı aşan uzunluk bildiren gövde okunmadan reddediliyor`,
+    `${kodAdi}: dosya sınırını aşan gövde reddediliyor`,
     fazla.durum === 400 && fazla.govde.toString("utf8").includes("cok-buyuk"),
     `${fazla.durum} ${fazla.govde.toString("utf8").slice(0, 120)}`,
   );
