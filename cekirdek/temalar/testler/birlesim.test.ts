@@ -13,6 +13,7 @@ import { ornekRenk } from "../../../bilesenler/tasarim-degerleri/testler/ornek-r
 import { hataIzlemeAraciniBagla, type IzlenenHata } from "../../izleme/hata-katmani.ts";
 import { temaAyarlariSemasi } from "../ayarlar.ts";
 import {
+  katalogTasarimCss,
   panelDegerleri,
   panelTasarimCss,
   sitenTasarimCss,
@@ -162,6 +163,20 @@ describe("sayfaya yazılan CSS", () => {
     }));
     expect(css).toContain(`--renk-birincil:${ornekRenk.turuncu};`);
     expect(css).toContain("prefers-color-scheme:dark");
+    expect(izlenenler).toEqual([]);
+  });
+
+  it("katalog sitenin değerleriyle ve koyu tema ayarından bağımsız koyu temayla yazılır (kart 0290)", async () => {
+    const okuyucu = async () => ({
+      tema: { tanim: tema },
+      ayarlar: ayar({ renkler: { birincil: ornekRenk.turuncu }, koyuTema: false }),
+    });
+    const vitrin = await sitenTasarimCss(okuyucu);
+    expect(vitrin).not.toContain("prefers-color-scheme");
+    const katalog = await katalogTasarimCss(okuyucu);
+    expect(katalog).toContain(`--renk-birincil:${ornekRenk.turuncu};`);
+    expect(katalog).toContain("@media (prefers-color-scheme:dark)");
+    expect(katalog).toContain(":root{color-scheme:light dark;");
     expect(izlenenler).toEqual([]);
   });
 

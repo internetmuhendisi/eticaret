@@ -123,13 +123,26 @@ const temaOku = async (okuyucu: Okuyucu) => {
   }
 };
 
+// Sitenin değerleri; koyuTema verilmezse sitenin ayarı.
+const siteCssi = async (okuyucu: Okuyucu, koyuTema?: boolean): Promise<string> => {
+  const secili = await temaOku(okuyucu);
+  if (secili === undefined) {
+    return tasarimCss(varsayilanTemaDegerleri, { koyuTema: koyuTema ?? false });
+  }
+  return tasarimCss(temaBirlesimi(secili.tema.tanim, secili.ayarlar), {
+    koyuTema: koyuTema ?? secili.ayarlar.koyuTema,
+  });
+};
+
 // Kök düzenin sayfaya yazdığı vitrin CSS'i.
 export async function sitenTasarimCss(okuyucu: Okuyucu = istekBasinaTema): Promise<string> {
-  const secili = await temaOku(okuyucu);
-  if (secili === undefined) return tasarimCss(varsayilanTemaDegerleri, { koyuTema: false });
-  return tasarimCss(temaBirlesimi(secili.tema.tanim, secili.ayarlar), {
-    koyuTema: secili.ayarlar.koyuTema,
-  });
+  return siteCssi(okuyucu);
+}
+
+// Bileşen kataloğunun CSS'i (kart 0290): sitenin değerleri, koyu tema sitenin ayarından bağımsız açık. Katalog parçaları
+// sitenin renkleriyle iki temada gösterir; kök düzenin vitrin değerlerinin üstüne yazılır.
+export async function katalogTasarimCss(okuyucu: Okuyucu = istekBasinaTema): Promise<string> {
+  return siteCssi(okuyucu, true);
 }
 
 // Panel düzeninin sayfaya yazdığı CSS: vitrinin değerlerinin üstüne yazılır. Panel cihazın koyu tema
