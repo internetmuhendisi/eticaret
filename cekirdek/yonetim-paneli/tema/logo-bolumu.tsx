@@ -117,58 +117,57 @@ export function LogoBolumu({
         : metin("yonetim.tema.logo.yok");
 
   return (
-    <section aria-labelledby="tema-logo" className="flex flex-col gap-3">
+    // Başlık kartın içindedir: tema ayarlarının öteki bölümleriyle aynı (taslak, kart 0260).
+    <Kart role="group" aria-labelledby="tema-logo" className="flex flex-col gap-3 p-4 tablet:p-6">
       <h2 id="tema-logo" className="font-baslik text-baslik-4 font-baslik-kalinligi">
         {metin("yonetim.tema.logo.baslik")}
       </h2>
-      <Kart className="gap-3">
-        {degistirebilir ? (
-          <PanelFormu durum={pf} gonder={() => undefined} className="gap-0">
-            <AlanKabi ad="dosya" etiket={metin("yonetim.tema.logo.alan")}>
-              <LogoKutusu logo={logo} kaynakMetni={kaynakMetni}>
-                <DosyaYukleme
-                  id={yukleKimligi}
-                  secEtiketi={metin("yonetim.tema.logo.yukle")}
-                  ikon="yukle"
-                  tur="sade"
-                  kabul={yuklenebilenTurler}
-                  onSecildi={([dosya]) => {
-                    if (dosya !== undefined) void dosyaSecildi(dosya);
-                  }}
-                  yukleme={yukleme}
-                  ilerlemeEtiketi={doldur(metin("yonetim.dosya.ilerleme"), {
-                    ad: metin("yonetim.tema.logo.ad"),
-                  })}
-                  iptalEtiketi={metin("yonetim.dosya.iptal")}
-                  onIptal={iptalEt}
-                  {...(hata === undefined
-                    ? {}
-                    : { "aria-invalid": true, "aria-describedby": hataKimligi })}
-                >
-                  {logo.kaynak === "yuklenen" && yukleme === null ? (
-                    <Dugme tur="sade" onClick={() => setKaldirSorusu(true)}>
-                      {metin("yonetim.tema.logo.kaldir")}
-                    </Dugme>
-                  ) : null}
-                </DosyaYukleme>
-              </LogoKutusu>
-              {hata === undefined ? null : (
-                <p id={hataKimligi} className="m-0 mt-2 font-kalin text-tehlike-yazi">
-                  {hata}
-                </p>
-              )}
-            </AlanKabi>
-          </PanelFormu>
-        ) : (
-          <LogoKutusu logo={logo} kaynakMetni={kaynakMetni} />
-        )}
-        <p className="m-0 text-kucuk text-soluk-yazi">
-          {doldur(metin("yonetim.tema.logo.aciklama"), {
-            boyut: enCokDosyaBoyutu,
-            turler: dosyaTurleri,
-          })}
-        </p>
-      </Kart>
+      {degistirebilir ? (
+        <PanelFormu durum={pf} gonder={() => undefined} className="gap-0">
+          <AlanKabi ad="dosya" etiket={metin("yonetim.tema.logo.alan")}>
+            <LogoKutusu logo={logo} kaynakMetni={kaynakMetni}>
+              <DosyaYukleme
+                id={yukleKimligi}
+                secEtiketi={metin("yonetim.tema.logo.yukle")}
+                ikon="yukle"
+                tur="sade"
+                kabul={yuklenebilenTurler}
+                onSecildi={([dosya]) => {
+                  if (dosya !== undefined) void dosyaSecildi(dosya);
+                }}
+                yukleme={yukleme}
+                ilerlemeEtiketi={doldur(metin("yonetim.dosya.ilerleme"), {
+                  ad: metin("yonetim.tema.logo.ad"),
+                })}
+                iptalEtiketi={metin("yonetim.dosya.iptal")}
+                onIptal={iptalEt}
+                {...(hata === undefined
+                  ? {}
+                  : { "aria-invalid": true, "aria-describedby": hataKimligi })}
+              >
+                {logo.kaynak === "yuklenen" && yukleme === null ? (
+                  <Dugme tur="sade" onClick={() => setKaldirSorusu(true)}>
+                    {metin("yonetim.tema.logo.kaldir")}
+                  </Dugme>
+                ) : null}
+              </DosyaYukleme>
+            </LogoKutusu>
+            {hata === undefined ? null : (
+              <p id={hataKimligi} className="m-0 mt-2 font-kalin text-tehlike-yazi">
+                {hata}
+              </p>
+            )}
+          </AlanKabi>
+        </PanelFormu>
+      ) : (
+        <LogoKutusu logo={logo} kaynakMetni={kaynakMetni} />
+      )}
+      <p className="m-0 text-kucuk text-soluk-yazi">
+        {doldur(metin("yonetim.tema.logo.aciklama"), {
+          boyut: enCokDosyaBoyutu,
+          turler: dosyaTurleri,
+        })}
+      </p>
       <OnayPenceresi
         acik={kaldirSorusu}
         acikDegisince={setKaldirSorusu}
@@ -178,6 +177,6 @@ export function LogoBolumu({
         vazgecEtiketi={metin("ortak.islem.vazgec")}
         onayla={kaldir}
       />
-    </section>
+    </Kart>
   );
 }

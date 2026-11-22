@@ -11,7 +11,7 @@
 // - Kart görünümü (kart 0214, ödeme yöntemi): her değer tam genişlikte bir satırdır; seçim noktası, kalın ad, altında
 //   soluk açıklama ve sağda ikon. Seçili satırın kenarı kalınlaşır. Değerin ekran okuyucudaki adı yalnız
 //   adıdır (ve ekidir); açıklama ayrı, açıklama olarak okunur.
-// - Örnekli görünüm (kart 0260, tema ayarları): değerler yan yana kartlardır; kartın üstünde değerin küçük örneği
+// - Örnekli görünüm (kart 0260, tema ayarları): değerler telefonda alt alta, tablette ve üstünde üç sütunlu kartlardır; kartın üstünde değerin küçük örneği
 //   (yazı tipiyle "Ağ", köşe, düğme), altında adı. Örnek yalnız gösterimdir, ekran okuyucudan gizlidir; adı adıdır.
 import { RadioGroup } from "radix-ui";
 import { type ReactNode, useId } from "react";
@@ -84,7 +84,13 @@ export function SecenekGrubu({
         onValueChange={(yeni) => {
           if (ogeler.find((oge) => oge.deger === yeni)?.secilemez !== true) onDegerDegisti(yeni);
         }}
-        className={gorunum === "kart" ? "flex flex-col gap-2" : "flex flex-wrap gap-2"}
+        className={
+          gorunum === "kart"
+            ? "flex flex-col gap-2"
+            : gorunum === "ornekli"
+              ? "grid grid-cols-1 gap-2 tablet:grid-cols-3"
+              : "flex flex-wrap gap-2"
+        }
       >
         {ogeler.map((oge) =>
           gorunum === "ornekli" ? (
@@ -92,10 +98,10 @@ export function SecenekGrubu({
               key={oge.deger}
               value={oge.deger}
               {...(oge.secilemez === true ? { "aria-disabled": true } : {})}
-              className="flex min-h-11 min-w-20 cursor-pointer flex-col items-center gap-2 rounded-orta border border-alan-kenari bg-zemin px-4 py-3 text-govde text-yazi transition-colors duration-kisa hover:bg-yuzey isaretli:border-2 isaretli:border-yazi isaretli:font-kalin aria-disabled:cursor-not-allowed aria-disabled:border-dashed aria-disabled:text-soluk-yazi"
+              className="flex min-h-11 cursor-pointer flex-col items-start gap-2 rounded-orta border border-alan-kenari bg-zemin px-4 py-3 text-govde text-yazi transition-colors duration-kisa hover:bg-yuzey isaretli:border-2 isaretli:border-yazi isaretli:font-kalin aria-disabled:cursor-not-allowed aria-disabled:border-dashed aria-disabled:text-soluk-yazi"
             >
               {oge.ornek === undefined ? null : (
-                <span aria-hidden="true" className="flex h-10 items-center justify-center">
+                <span aria-hidden="true" className="flex h-10 items-center">
                   {oge.ornek}
                 </span>
               )}

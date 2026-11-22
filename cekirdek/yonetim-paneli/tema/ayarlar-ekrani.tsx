@@ -258,7 +258,7 @@ export function TemaAyarlariEkrani({
     </span>
   );
   const koseOrnegi = ({ orta }: { orta: string }) => (
-    <span className="size-8 border-2 border-yazi bg-yuzey" style={{ borderRadius: orta }} />
+    <span className="h-6 w-11 border-2 border-yazi bg-yuzey" style={{ borderRadius: orta }} />
   );
   const dugmeOrnegi = ({ deger }: { deger: string }) => (
     <span
