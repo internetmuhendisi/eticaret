@@ -24,4 +24,4 @@ Kart 0290 katalog düzenini (`cekirdek/uygulama/app/gelistirme/bilesenler/layout
 
 ## Durum
 
-yapılacak
+bitti
