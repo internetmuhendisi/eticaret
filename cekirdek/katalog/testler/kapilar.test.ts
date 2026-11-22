@@ -34,6 +34,14 @@ vi.mock("next/navigation", () => ({
   },
 }));
 
+// Katalog kapalıyken düzen temayı hiç okumaz: kapı temadan önce çağrılır (kart 0291). Tema okuması hatayı
+// kendisi yutar, bu yüzden sıra yalnız reddedilen sözle ölçülemez; çağrı sayılır.
+const temaCssi = vi.hoisted(() => vi.fn(async () => ""));
+vi.mock("../../temalar/birlesim", async (asil) => ({
+  ...(await asil<typeof import("../../temalar/birlesim")>()),
+  katalogTasarimCss: temaCssi,
+}));
+
 // Testlerin ortak geçerli site klasörü; gerçek bir sitenin adı çekirdekte geçmez.
 const ornekSite = resolve(import.meta.dirname, "../../ayar-semasi/testler/ornek-siteler/gecerli");
 
@@ -109,7 +117,9 @@ describe("sayfa içindeki ikinci kapı", () => {
 
   it("katalog kapalıyken düzen, sayfalar ve sayfa bilgileri bulunamadı verir", async () => {
     kapali();
-    expect(() => KatalogDuzeni({ children: null })).toThrow("bulunamadi");
+    // Düzen async'tir (kart 0290, tema CSS'ini bekler): kapı hatası reddedilen söz olarak gelir (kart 0291).
+    await expect(KatalogDuzeni({ children: null })).rejects.toThrow("bulunamadi");
+    expect(temaCssi).not.toHaveBeenCalled();
     expect(() => anaSayfaBilgisi()).toThrow("bulunamadi");
     await expect(AnaSayfa({ searchParams: Promise.resolve({}) })).rejects.toThrow("bulunamadi");
     await expect(parcaBilgisi(parametreler)).rejects.toThrow("bulunamadi");
