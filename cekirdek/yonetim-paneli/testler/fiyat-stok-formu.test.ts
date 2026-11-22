@@ -353,3 +353,33 @@ describe("seçenekli ürün", () => {
     ]);
   });
 });
+
+describe("galerinin uzlaştırılması (kart 0266)", () => {
+  it("kayıt sürerken yüklenen görsel formda kalır, kaydedilmiş yeni görsel sunucudaki kimliği alır", () => {
+    const d1 = "11111111-1111-4111-8111-111111111111";
+    const d2 = "22222222-2222-4222-8222-222222222222";
+    const k1 = "33333333-3333-4333-8333-333333333333";
+    const gonderilen = {
+      ...form,
+      galeri: [{ anahtar: "yeni:1", tur: "gorsel" as const, alternatifMetin: "Ön", dosya: d1 }],
+    };
+    const formda = {
+      ...gonderilen,
+      galeri: [
+        ...gonderilen.galeri,
+        { anahtar: "yeni:2", tur: "gorsel" as const, alternatifMetin: "", dosya: d2 },
+      ],
+    };
+    const sunucu = {
+      ...form,
+      galeri: [
+        { anahtar: k1, kimlik: k1, tur: "gorsel" as const, alternatifMetin: "Ön", dosya: d1 },
+      ],
+    };
+    const birlesik = urunFormunuUzlastir(formda, gonderilen, sunucu);
+    expect(birlesik.galeri.map((oge) => [oge.kimlik, oge.dosya])).toEqual([
+      [k1, d1],
+      [undefined, d2],
+    ]);
+  });
+});

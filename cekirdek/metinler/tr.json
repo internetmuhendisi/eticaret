@@ -1891,7 +1891,10 @@
           "vimeo": "Vimeo"
         },
         "altMetinGerekli": "Alternatif metni yazın: görseli göremeyen müşteri bu metni duyar.",
-        "videoBaslikGerekli": "Videonun başlığını yazın."
+        "videoBaslikGerekli": "Videonun başlığını yazın.",
+        "durdur": "Yüklemeyi durdur",
+        "yuklendi": "{ad} yüklendi.",
+        "ipucuSadeOkuma": "İlk görsel ana görseldir."
       }
     },
     "dosya": {

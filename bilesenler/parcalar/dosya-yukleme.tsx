@@ -27,6 +27,7 @@ export function DosyaYukleme({
   ikon,
   disabled = false,
   coklu = false,
+  mesgul = false,
   birakma,
   className,
   children,
@@ -38,6 +39,8 @@ export function DosyaYukleme({
   // Seçilen ya da bırakılan dosyalar (tek seçimde bir dosya).
   onSecildi: (dosyalar: File[]) => void;
   coklu?: boolean;
+  // Yükleme sürüyor ama ilerlemeyi kullanan kendisi gösteriyor (ör. dosyanın kartında): seçme düğmesi aria-disabled.
+  mesgul?: boolean;
   // Bırakma alanının yazıları: başlık ("Görselleri buraya bırakın ya da seçin") ve açıklama.
   birakma?: { baslik: string; aciklama?: string };
   // null: yükleme yok; oran 0–1.
@@ -57,10 +60,11 @@ export function DosyaYukleme({
   const girdi = useRef<HTMLInputElement>(null);
   const kap = useRef<HTMLDivElement>(null);
   const suruyor = yukleme !== null;
+  const kapali = suruyor || mesgul;
   const [uzerinde, setUzerinde] = useState(false);
   const birak = (dosyalar: FileList | null | undefined) => {
     const liste = Array.from(dosyalar ?? []);
-    if (liste.length === 0 || suruyor || disabled) return;
+    if (liste.length === 0 || kapali || disabled) return;
     onSecildi(coklu ? liste : liste.slice(0, 1));
   };
   // İptal yalnız yükleme sürerken vardır: odak ondayken yükleme biterse (iptal edildi ya da tamamlandı) odak seçme
@@ -132,11 +136,11 @@ export function DosyaYukleme({
             data-dosya-sec=""
             tur={tur}
             disabled={disabled}
-            aria-disabled={suruyor ? true : undefined}
+            aria-disabled={kapali ? true : undefined}
             // Sürerken kapalı görünür (yalnız aria-disabled: odak alır, basılınca bir şey olmaz).
             className="aria-disabled:cursor-not-allowed aria-disabled:bg-yuzey aria-disabled:text-soluk-yazi"
             onClick={() => {
-              if (!suruyor) girdi.current?.click();
+              if (!kapali) girdi.current?.click();
             }}
             {...dugmeOzellikleri}
           >

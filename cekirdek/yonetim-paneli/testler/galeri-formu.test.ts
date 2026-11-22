@@ -7,6 +7,7 @@ import {
   anaGorselAnahtari,
   type GaleriFormOgesi,
   galeriGirdisi,
+  galeriyiEsle,
   kucukGorselMi,
 } from "../urunler/galeri-formu.ts";
 
@@ -86,5 +87,53 @@ describe("ana görsel ve küçük görsel", () => {
     const { genislik: _g, yukseklik: _y, ...olcusuz } = gorsel;
     expect(kucukGorselMi(olcusuz)).toBe(false);
     expect(kucukGorselMi(video)).toBe(false);
+  });
+});
+
+describe("sayfa yenilenince eşleme", () => {
+  it("kaydedilmiş yeni görsel ve video sunucudaki kimliği alır, sırası ve metni formdaki kalır", () => {
+    const d4 = "44444444-4444-4444-8444-444444444444";
+    const k5 = "55555555-5555-4555-8555-555555555555";
+    const k6 = "66666666-6666-4666-8666-666666666666";
+    const form: GaleriFormOgesi[] = [
+      { anahtar: "yeni:1", tur: "gorsel", alternatifMetin: "Yeni metin", dosya: d4 },
+      gorsel,
+      {
+        anahtar: "yeni:2",
+        tur: "video",
+        alternatifMetin: "Tanıtım",
+        video: "https://youtu.be/dQw4w9WgXcQ",
+        site: "youtube",
+        videoKimligi: "dQw4w9WgXcQ",
+      },
+      // Kayıttan sonra yüklenen: sunucuda yok, kimliksiz kalır.
+      { anahtar: "yeni:3", tur: "gorsel", alternatifMetin: "", dosya: d3.replace("3333", "7777") },
+    ];
+    const sunucu: GaleriFormOgesi[] = [
+      gorsel,
+      { anahtar: k5, kimlik: k5, tur: "gorsel", alternatifMetin: "Eski metin", dosya: d4 },
+      { ...video, anahtar: k6, kimlik: k6 },
+    ];
+    const eslenen = galeriyiEsle(form, sunucu);
+    expect(eslenen.map((oge) => oge.kimlik)).toEqual([k5, k1, k6, undefined]);
+    expect(eslenen[0]?.alternatifMetin).toBe("Yeni metin");
+    expect(eslenen[0]?.anahtar).toBe("yeni:1");
+    expect(eslenen[2]?.video).toBeUndefined();
+    // Eşlenen öğe girdide kimliğiyle gider.
+    expect(galeriGirdisi(eslenen, sunucu)?.ogeler.slice(0, 3)).toEqual([
+      { kimlik: k5, alternatifMetin: "Yeni metin" },
+      { kimlik: k1, alternatifMetin: "Ön" },
+      { kimlik: k6, alternatifMetin: "Tanıtım" },
+    ]);
+  });
+
+  it("formda zaten kullanılan kimlik ikinci kez verilmez", () => {
+    const ayniDosya: GaleriFormOgesi = {
+      anahtar: "yeni:1",
+      tur: "gorsel",
+      alternatifMetin: "",
+      dosya: d3,
+    };
+    expect(galeriyiEsle([gorsel, ayniDosya], [gorsel])[1]?.kimlik).toBeUndefined();
   });
 });

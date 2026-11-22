@@ -79,6 +79,7 @@ export function GaleriBolumu({
   videoSiteleri,
   dosyaSinirlari,
   bicim,
+  yuklemeSuruyor,
 }: {
   galeri: GaleriFormOgesi[];
   degistir: (galeri: GaleriFormOgesi[]) => void;
@@ -88,10 +89,12 @@ export function GaleriBolumu({
   videoSiteleri: readonly VideoSitesi[];
   dosyaSinirlari: { boyut: string; turler: string };
   bicim: BicimAyarlari;
+  // Yükleme sırası doluyken true: ekran çıkışta sorar (form henüz değişmemiş olabilir).
+  yuklemeSuruyor?: (suruyor: boolean) => void;
 }) {
   const metin = usePanelMetni();
   const b = useMemo(() => bicimleyiciOlustur(bicim), [bicim]);
-  const { hata } = usePanelFormuBaglami();
+  const { hata, alaniTemizle } = usePanelFormuBaglami();
   const { yukleme, yukle, iptalEt } = useDosyaYuklemesi();
   const [sira, setSira] = useState<Yuklenen[]>([]);
   const [reddedilenler, setReddedilenler] = useState<Reddedilen[]>([]);
@@ -102,6 +105,22 @@ export function GaleriBolumu({
   son.current = galeri;
   const durdur = useRef(false);
   const anaGorsel = anaGorselAnahtari(galeri);
+  // Başarıyla yüklenen dosyanın duyurusu (ekran okuyucu; ilerleme çubuğu canlı bölge değildir).
+  const [duyuru, setDuyuru] = useState("");
+  const suruyor = sira.length > 0;
+  useEffect(() => {
+    yuklemeSuruyor?.(suruyor);
+  }, [suruyor, yuklemeSuruyor]);
+  // Bileşen kalkınca (sayfadan çıkış) süren yükleme ve sıra durur: arka planda dosya birikmez.
+  const iptalRef = useRef(iptalEt);
+  iptalRef.current = iptalEt;
+  useEffect(
+    () => () => {
+      durdur.current = true;
+      iptalRef.current();
+    },
+    [],
+  );
   // Çizimden sonra odaklanacak düğme.
   const [odak, setOdak] = useState<string | null>(null);
   useEffect(() => {
@@ -117,8 +136,15 @@ export function GaleriBolumu({
         ? doldur(metin("yonetim.urunEkrani.galeri.video"), { site: metin(siteAdlari[oge.site]) })
         : metin("yonetim.urunEkrani.galeri.adsizGorsel");
 
+  // Sıra ya da liste değişince öğelerin hataları kalkar: hata sıranın yoluyla bağlıdır, başka karta kaymasın.
+  const listeyiDegistir = (yeni: GaleriFormOgesi[]) => {
+    for (const [i] of galeri.entries()) alaniTemizle(`galeri.ogeler.${i}`);
+    degistir(yeni);
+  };
+
   const dosyalarSecildi = async (dosyalar: File[]) => {
     setReddedilenler([]);
+    setDuyuru("");
     durdur.current = false;
     const bos = galeriSinirlari.oge - son.current.length;
     const sigan = dosyalar.slice(0, Math.max(bos, 0));
@@ -158,6 +184,7 @@ export function GaleriBolumu({
             yukseklik: sonuc.veri.yukseklik,
           },
         ]);
+        setDuyuru(doldur(metin("yonetim.urunEkrani.galeri.yuklendi"), { ad }));
       } else if (sonuc.kod === "iptal") {
         durdur.current = true;
       } else {
@@ -171,14 +198,71 @@ export function GaleriBolumu({
       }
     }
     setSira([]);
+    // İptal düğmesi kartıyla kalkar: odak gövdeye düştüyse yükleme düğmesine döner.
+    const odakta = document.activeElement;
+    if (odakta === null || odakta === document.body || !odakta.isConnected) setOdak(secKimligi);
   };
 
   const kaldir = (oge: GaleriFormOgesi) => {
     const sirasi = galeri.indexOf(oge);
     const komsu = galeri[sirasi + 1] ?? galeri[sirasi - 1];
-    degistir(galeri.filter((aday) => aday.anahtar !== oge.anahtar));
+    listeyiDegistir(galeri.filter((aday) => aday.anahtar !== oge.anahtar));
     setOdak(komsu === undefined ? secKimligi : duzenleKimligi(komsu.anahtar));
     if (oge.kimlik !== undefined) kaldirildi(oge.kimlik);
+  };
+
+  // Kartın içeriği: görsel ya da video kapağı, ana görsel rozeti, alternatif metin, küçük görsel uyarısı, hata.
+  const kart = (oge: GaleriFormOgesi) => {
+    const sirasi = galeri.indexOf(oge);
+    const ogeHatasi = hata(`galeri.ogeler.${sirasi}`);
+    return (
+      <>
+        <div className="relative">
+          {oge.tur === "gorsel" && oge.dosya !== undefined ? (
+            // biome-ignore lint/performance/noImgElement: panel görseli ucundan, boyutu kayıtlıdır.
+            <img
+              src={panelGorseliAdresi(oge.dosya)}
+              alt={oge.alternatifMetin}
+              className="aspect-square w-full rounded-kucuk bg-yuzey object-cover"
+            />
+          ) : (
+            <div className="flex aspect-square w-full items-center justify-center rounded-kucuk bg-yuzey text-soluk-yazi">
+              <Ikon ad="oynat" />
+            </div>
+          )}
+          {oge.anahtar === anaGorsel ? (
+            <Rozet tur="koyu" className="absolute top-2 left-2">
+              {metin("yonetim.urunEkrani.galeri.ana")}
+            </Rozet>
+          ) : null}
+        </div>
+        {oge.alternatifMetin.trim() === "" ? (
+          <span className="mt-2 block text-kucuk font-kalin text-tehlike-yazi">
+            {metin("yonetim.urunEkrani.galeri.altMetinEksik")}
+          </span>
+        ) : (
+          <span className="mt-2 block truncate text-kucuk text-soluk-yazi">
+            {oge.tur === "video" && oge.site !== undefined
+              ? `${doldur(metin("yonetim.urunEkrani.galeri.video"), { site: metin(siteAdlari[oge.site]) })}: `
+              : ""}
+            {oge.alternatifMetin}
+          </span>
+        )}
+        {kucukGorselMi(oge) ? (
+          <span className="mt-1 block text-kucuk text-uyari-yazi">
+            {metin("yonetim.urunEkrani.galeri.kucuk")}
+          </span>
+        ) : null}
+        {ogeHatasi === undefined ? null : (
+          <span
+            id={`galeri-hata-${oge.anahtar}`}
+            className="mt-1 block text-kucuk font-kalin text-tehlike-yazi"
+          >
+            {ogeHatasi}
+          </span>
+        )}
+      </>
+    );
   };
 
   const galeriHatasi = hata("galeri");
@@ -190,13 +274,29 @@ export function GaleriBolumu({
         {galeri.length === 0 && sira.length === 0 ? (
           <p className="m-0 text-soluk-yazi">{metin("yonetim.urunEkrani.galeri.bos")}</p>
         ) : null}
-        {galeri.length > 0 ? (
+        {galeri.length > 0 && !izinli ? (
+          // İzni olmayana sıralama düğmeleri ve tutamak gösterilmez (yetki kuralı).
+          <ul
+            aria-label={metin("yonetim.urunEkrani.galeri.liste")}
+            className="m-0 grid list-none grid-cols-2 gap-3 p-0 tablet:grid-cols-4"
+          >
+            {galeri.map((oge) => (
+              <li
+                key={oge.anahtar}
+                className="flex min-w-0 flex-col gap-2 rounded-orta border border-kenar bg-zemin p-2"
+              >
+                {kart(oge)}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {galeri.length > 0 && izinli ? (
           <SiralanabilirListe
             duzen="izgara"
             ogeler={galeri}
             anahtar={(oge) => oge.anahtar}
             ad={adi}
-            siralaninca={degistir}
+            siralaninca={listeyiDegistir}
             etiket={metin("yonetim.urunEkrani.galeri.liste")}
             metinler={metinler}
             // Öğenin hatası satırın alanıdır: odak satırın "Düzenle" düğmesine gider.
@@ -204,58 +304,7 @@ export function GaleriBolumu({
               "data-alan": `galeri.ogeler.${galeri.indexOf(oge)}`,
               "data-alan-etiketi": adi(oge),
             })}
-            satir={(oge) => {
-              const sirasi = galeri.indexOf(oge);
-              const ogeHatasi = hata(`galeri.ogeler.${sirasi}`);
-              return (
-                <>
-                  <div className="relative">
-                    {oge.tur === "gorsel" && oge.dosya !== undefined ? (
-                      // biome-ignore lint/performance/noImgElement: panel görseli ucundan, boyutu kayıtlıdır.
-                      <img
-                        src={panelGorseliAdresi(oge.dosya)}
-                        alt={oge.alternatifMetin}
-                        className="aspect-square w-full rounded-kucuk bg-yuzey object-cover"
-                      />
-                    ) : (
-                      <div className="flex aspect-square w-full items-center justify-center rounded-kucuk bg-yuzey text-soluk-yazi">
-                        <Ikon ad="oynat" />
-                      </div>
-                    )}
-                    {oge.anahtar === anaGorsel ? (
-                      <Rozet tur="koyu" className="absolute top-2 left-2">
-                        {metin("yonetim.urunEkrani.galeri.ana")}
-                      </Rozet>
-                    ) : null}
-                  </div>
-                  {oge.alternatifMetin.trim() === "" ? (
-                    <span className="mt-2 block text-kucuk font-kalin text-tehlike-yazi">
-                      {metin("yonetim.urunEkrani.galeri.altMetinEksik")}
-                    </span>
-                  ) : (
-                    <span className="mt-2 block truncate text-kucuk text-soluk-yazi">
-                      {oge.tur === "video" && oge.site !== undefined
-                        ? `${doldur(metin("yonetim.urunEkrani.galeri.video"), { site: metin(siteAdlari[oge.site]) })}: `
-                        : ""}
-                      {oge.alternatifMetin}
-                    </span>
-                  )}
-                  {kucukGorselMi(oge) ? (
-                    <span className="mt-1 block text-kucuk text-uyari-yazi">
-                      {metin("yonetim.urunEkrani.galeri.kucuk")}
-                    </span>
-                  ) : null}
-                  {ogeHatasi === undefined ? null : (
-                    <span
-                      id={`galeri-hata-${oge.anahtar}`}
-                      className="mt-1 block text-kucuk font-kalin text-tehlike-yazi"
-                    >
-                      {ogeHatasi}
-                    </span>
-                  )}
-                </>
-              );
-            }}
+            satir={kart}
             eylemler={(oge) => {
               const sirasi = galeri.indexOf(oge);
               const hatali = hata(`galeri.ogeler.${sirasi}`) !== undefined;
@@ -305,7 +354,7 @@ export function GaleriBolumu({
                         iptalEt();
                       }}
                     >
-                      {metin("yonetim.dosya.iptal")}
+                      {metin("yonetim.urunEkrani.galeri.durdur")}
                     </Dugme>
                   </>
                 ) : (
@@ -336,7 +385,7 @@ export function GaleriBolumu({
               onSecildi={(dosyalar) => void dosyalarSecildi(dosyalar)}
               // İlerleme ve İptal yüklenen dosyanın kartındadır.
               yukleme={null}
-              disabled={sira.length > 0}
+              mesgul={suruyor}
               ilerlemeEtiketi={metin("yonetim.urunEkrani.galeri.sec")}
               iptalEtiketi={metin("yonetim.dosya.iptal")}
               onIptal={iptalEt}
@@ -345,12 +394,7 @@ export function GaleriBolumu({
                 : { "aria-invalid": true, "aria-describedby": "galeri-hatasi" })}
             >
               {videoSiteleri.length > 0 ? (
-                <Dugme
-                  id={videoKimligi}
-                  tur="cerceveli"
-                  onClick={() => setVideoAcik(true)}
-                  disabled={sira.length > 0}
-                >
+                <Dugme id={videoKimligi} tur="cerceveli" onClick={() => setVideoAcik(true)}>
                   <Ikon ad="oynat" />
                   {metin("yonetim.urunEkrani.galeri.videoBagla")}
                 </Dugme>
@@ -372,7 +416,14 @@ export function GaleriBolumu({
             </ul>
           </Uyari>
         ) : null}
-        <p className="m-0 text-kucuk text-soluk-yazi">{metin("yonetim.urunEkrani.galeri.ipucu")}</p>
+        <p className="sr-only" role="status">
+          {duyuru}
+        </p>
+        <p className="m-0 text-kucuk text-soluk-yazi">
+          {metin(
+            izinli ? "yonetim.urunEkrani.galeri.ipucu" : "yonetim.urunEkrani.galeri.ipucuSadeOkuma",
+          )}
+        </p>
       </div>
       <DuzenlePenceresi
         oge={duzenlenen}
@@ -380,7 +431,7 @@ export function GaleriBolumu({
         kapat={() => setDuzenlenen(null)}
         uygula={(alternatifMetin) => {
           if (duzenlenen === null) return;
-          degistir(
+          listeyiDegistir(
             galeri.map((oge) =>
               oge.anahtar === duzenlenen.anahtar ? { ...oge, alternatifMetin } : oge,
             ),

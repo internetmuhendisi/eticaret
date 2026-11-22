@@ -109,7 +109,8 @@ function Satir({
         aria-label={metinler.tasi(ad)}
         className={sinif(
           dugmeSiniflari({ tur: "sade" }),
-          "h-11 w-8 cursor-grab touch-none px-0 text-soluk-yazi active:cursor-grabbing",
+          duzen === "izgara" ? "size-11" : "h-11 w-8",
+          "cursor-grab touch-none px-0 text-soluk-yazi active:cursor-grabbing",
         )}
       >
         <Ikon ad="tutamak" />
@@ -124,7 +125,7 @@ function Satir({
         data-yon="yukari"
         disabled={sira === 1}
         onClick={() => tasi(anahtar, "yukari")}
-        className="size-8 min-h-8"
+        className={duzen === "izgara" ? "size-11" : "size-8 min-h-8"}
       />
       <IkonDugmesi
         ikon={duzen === "izgara" ? "sonraki" : "asagi-al"}
@@ -132,7 +133,7 @@ function Satir({
         data-yon="asagi"
         disabled={sira === toplam}
         onClick={() => tasi(anahtar, "asagi")}
-        className="size-8 min-h-8"
+        className={duzen === "izgara" ? "size-11" : "size-8 min-h-8"}
       />
     </>
   );

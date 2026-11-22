@@ -44,7 +44,9 @@ class SahteIstek {
   send(govde: unknown) {
     this.govde = govde;
   }
+  iptalEdildi = false;
   abort() {
+    this.iptalEdildi = true;
     this.onabort?.();
   }
   getAllResponseHeaders() {
@@ -94,6 +96,7 @@ const video: GaleriFormOgesi = {
 let sonGaleri: GaleriFormOgesi[] = [];
 const kaldirilanlar: string[] = [];
 let formDurumu: PanelFormuDurumu | undefined;
+const yuklemeDurumlari: boolean[] = [];
 
 function Deneme({
   ilk,
@@ -118,6 +121,7 @@ function Deneme({
         kaldirildi={(k) => kaldirilanlar.push(k)}
         izinli={izinli}
         videoSiteleri={videoSiteleri}
+        yuklemeSuruyor={(suruyor) => yuklemeDurumlari.push(suruyor)}
         dosyaSinirlari={{ boyut: "10 MB", turler: "JPEG, PNG veya WebP" }}
         bicim={{
           dil: "tr",
@@ -199,11 +203,18 @@ describe("galeri bölümü", () => {
       son().upload.onprogress?.({ lengthComputable: true, loaded: 3, total: 10 } as ProgressEvent),
     );
     expect(screen.getByText("%30")).toBeDefined();
-    // Sürerken yeni seçim ve video bağlama kapalıdır.
-    expect((screen.getByRole("button", { name: g("sec") }) as HTMLButtonElement).disabled).toBe(
-      true,
-    );
+    // Sürerken yeni seçim aria-disabled'dır (odak alır, kaybolmaz); ekran çıkışta sorsun diye haber alır.
+    const secDugmesi = screen.getByRole("button", { name: g("sec") }) as HTMLButtonElement;
+    expect(secDugmesi.disabled).toBe(false);
+    expect(secDugmesi.getAttribute("aria-disabled")).toBe("true");
+    expect(yuklemeDurumlari.at(-1)).toBe(true);
     await yuklendi(1);
+    // Yüklenen dosya ekran okuyucuya duyurulur.
+    expect(
+      screen
+        .getAllByRole("status")
+        .some((oge) => oge.textContent === doldur(g("yuklendi"), { ad: "a.jpg" })),
+    ).toBe(true);
     expect(SahteIstek.hepsi).toHaveLength(2);
     await act(async () =>
       son().yanitla(400, {
@@ -230,15 +241,21 @@ describe("galeri bölümü", () => {
     expect(within(kartlar[2] as HTMLElement).getByText(g("altMetinEksik"))).toBeDefined();
     expect(within(kartlar[2] as HTMLElement).getByText(g("kucuk"))).toBeDefined();
     expect(screen.queryByRole("progressbar")).toBeNull();
+    expect(yuklemeDurumlari.at(-1)).toBe(false);
+    expect(secDugmesi.getAttribute("aria-disabled")).toBeNull();
   });
 
   it("İptal yüklemeyi ve sıradakileri durdurur", async () => {
     ciz([]);
     await sec([dosya("a.jpg"), dosya("b.jpg")]);
+    const durdur = screen.getByRole("button", { name: g("durdur") });
+    durdur.focus();
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: metin("yonetim.dosya.iptal") }));
+      fireEvent.click(durdur);
     });
     expect(SahteIstek.hepsi).toHaveLength(1);
+    // Kartıyla kalkan düğmenin odağı yükleme düğmesine döner.
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: g("sec") }));
     expect(sonGaleri).toEqual([]);
     expect(screen.queryByRole("progressbar")).toBeNull();
     expect(screen.queryByText(doldur(g("sirada"), { ad: "b.jpg" }))).toBeNull();
@@ -349,6 +366,10 @@ describe("galeri bölümü", () => {
     unmount();
     ciz([gorsel(1)], { izinli: false });
     expect(screen.queryByRole("button", { name: g("sec") })).toBeNull();
+    // Sıralama da değiştirmektir: tutamak, öne ve arkaya al yoktur; liste ve ana görsel görünür.
+    expect(within(liste()).queryAllByRole("button")).toEqual([]);
+    expect(within(liste()).getByText(g("ana"))).toBeDefined();
+    expect(screen.queryByText(g("ipucu"))).toBeNull();
     expect(screen.queryByRole("button", { name: doldur(g("sil"), { ad: "Görsel 1" }) })).toBeNull();
     expect(
       screen.queryByRole("button", { name: doldur(g("duzenle"), { ad: "Görsel 1" }) }),
@@ -374,5 +395,31 @@ describe("galeri bölümü", () => {
     const yukle = screen.getByRole("button", { name: g("sec") });
     expect(document.activeElement).toBe(yukle);
     expect(yukle.getAttribute("aria-invalid")).toBe("true");
+  });
+
+  it("bölüm kalkınca (sayfadan çıkış) süren yükleme iptal edilir, sıradaki gönderilmez", async () => {
+    const { unmount } = ciz([]);
+    await sec([dosya("a.jpg"), dosya("b.jpg")]);
+    const istek = son();
+    unmount();
+    await act(async () => {});
+    expect(istek.iptalEdildi).toBe(true);
+    expect(SahteIstek.hepsi).toHaveLength(1);
+  });
+
+  it("liste değişince öğelerin hataları kalkar (sıraya bağlı hata başka karta kaymaz)", async () => {
+    ciz([gorsel(1), gorsel(2)]);
+    await act(async () => {
+      formDurumu?.hatalariGoster({ "galeri.ogeler.1": "Metin uygun değil." }, []);
+    });
+    expect(screen.getByText("Metin uygun değil.")).toBeDefined();
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: doldur(metin("ortak.parca.siralama.one"), { ad: "Görsel 2" }),
+        }),
+      );
+    });
+    expect(screen.queryByText("Metin uygun değil.")).toBeNull();
   });
 });

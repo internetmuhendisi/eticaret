@@ -11,6 +11,7 @@
 //   gitsin).
 import type { PanelFiyatStok } from "../../moduller/urun/panel-fiyat-stok";
 import { ucYonluBirlestir } from "../sunucu-formu";
+import { galeriyiEsle } from "./galeri-formu";
 import type { UrunEkraniVerisi, UrunFormu } from "./urun-verisi";
 import type { BirlesimSatiri } from "./varyant-formu";
 
@@ -126,5 +127,9 @@ export const urunFormunuUzlastir = (
       birlesimler[anahtar] = { ...alanlar, stok: sunucuda.stok };
     }
   }
-  return { ...birlesik, varyant: { ...birlesik.varyant, birlesimler } };
+  return {
+    ...birlesik,
+    varyant: { ...birlesik.varyant, birlesimler },
+    galeri: galeriyiEsle(birlesik.galeri, yeni.galeri),
+  };
 };

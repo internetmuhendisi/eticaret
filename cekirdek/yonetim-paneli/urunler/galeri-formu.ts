@@ -50,3 +50,30 @@ export const kucukGorselMi = (oge: GaleriFormOgesi) =>
   oge.genislik !== undefined &&
   oge.yukseklik !== undefined &&
   Math.max(oge.genislik, oge.yukseklik) < galeriOnerilenEnAz;
+
+// Sayfa yenilenince formda kalan galeri (kaydedilmemiş değişiklik varken) sunucudaki hâliyle eşlenir: kayıt sürerken
+// yüklenen ya da kayıtla bağlanan yeni öğe sunucuda artık kayıtlıdır; aynı dosyayı (videoda aynı videoyu) taşıyan
+// kimliksiz öğe sunucudaki kimliği alır. Almasaydı sonraki kayıt öğeyi silip aynı dosyayla yeniden eklerdi
+// (bağımsız kontrolün bulgusu).
+export const galeriyiEsle = (
+  form: readonly GaleriFormOgesi[],
+  sunucu: readonly GaleriFormOgesi[],
+): GaleriFormOgesi[] => {
+  const kullanilan = new Set(form.flatMap((oge) => (oge.kimlik === undefined ? [] : [oge.kimlik])));
+  return form.map((oge) => {
+    if (oge.kimlik !== undefined) return oge;
+    const karsilik = sunucu.find(
+      (aday) =>
+        aday.kimlik !== undefined &&
+        !kullanilan.has(aday.kimlik) &&
+        aday.tur === oge.tur &&
+        (oge.tur === "gorsel"
+          ? aday.dosya !== undefined && aday.dosya === oge.dosya
+          : aday.site === oge.site && aday.videoKimligi === oge.videoKimligi),
+    );
+    if (karsilik?.kimlik === undefined) return oge;
+    kullanilan.add(karsilik.kimlik);
+    const { video: _video, ...kalan } = oge;
+    return { ...kalan, kimlik: karsilik.kimlik };
+  });
+};

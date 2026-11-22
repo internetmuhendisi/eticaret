@@ -238,7 +238,12 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
   // Yeni ürün kaydedilince ürünün ekranına geçilir; geçiş bitene kadar ikinci kayıt yapılmaz (bağımsız kontrolün
   // bulgusu: ikinci basış ikinci ürünü açabilirdi).
   const acilan = useRef(false);
-  const pf = usePanelFormu({ degisti: izinli && degisti, kaydet: () => kaydet() });
+  // Galeriye yükleme sürerken form değişmemiş olsa da çıkışta sorulur (kart 0266).
+  const [galeriYukleniyor, setGaleriYukleniyor] = useState(false);
+  const pf = usePanelFormu({
+    degisti: izinli && (degisti || galeriYukleniyor),
+    kaydet: () => kaydet(),
+  });
   const [silOnayi, setSilOnayi] = useState(false);
   const [arsivleniyor, setArsivleniyor] = useState(false);
 
@@ -583,6 +588,7 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
         videoSiteleri={veri.videoSiteleri}
         dosyaSinirlari={veri.dosyaSinirlari}
         bicim={veri.bicim}
+        yuklemeSuruyor={setGaleriYukleniyor}
       />
     </Bolum>
   );
