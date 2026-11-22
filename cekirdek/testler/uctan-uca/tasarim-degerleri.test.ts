@@ -2,7 +2,7 @@
 // panelin giriş sayfası açık ve koyu temada, üç genişlikte açılır: her rengin tasarım değerinden geldiği,
 // yazı-zemin kontrastının tarayıcının gerçekten çizdiği renklerle ölçüldüğü, yazı tiplerinin sitenin
 // kendi sunucusundan yüklendiği, dış sunucuya hiç istek gitmediği ve sayfanın yana kaymadığı ölçülür.
-// Vitrin koyu temayı yalnız sitenin tema ayarı açıksa çizer (koyuTema; Örnek Mağaza'da kapalı, kullanıcı kararı):
+// Vitrin koyu temayı yalnız sitenin tema ayarı açıksa çizer (koyuTema; deneme sitesinde kapalı olabilir):
 // kapalıyken koyu cihazda da açık renkler beklenir. Panel her zaman cihazın tercihine uyar.
 import { existsSync } from "node:fs";
 import { expect, type Locator, type Page, test } from "@playwright/test";

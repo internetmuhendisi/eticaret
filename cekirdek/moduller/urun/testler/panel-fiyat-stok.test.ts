@@ -53,7 +53,14 @@ const hatasi = async (is: Promise<unknown>) => {
 
 const yaz = (vt: Veritabani, urun: string, girdi: PanelFiyatStok, izinler = tamYetki) =>
   vt.transaction((islem) =>
-    panelFiyatStokYaz(islem, kim, urun, girdi, { fiyat, stok, bicimleyici }, izinler),
+    panelFiyatStokYaz(
+      islem,
+      kim,
+      urun,
+      girdi,
+      { fiyat, stok, bicimleyici, saatDilimi: "Europe/Istanbul" },
+      izinler,
+    ),
   );
 
 const basitUrun = async (vt: Veritabani) => {
@@ -399,7 +406,9 @@ describe("geçmiş ve ayrılan", () => {
       [s, 1002],
       [m, 1001],
     ]);
-    const ikinci = await fiyat.panelFiyatGecmisi(vt, [s, m], { sinir: 2, sonra: ilk[1]?.kimlik });
+    const sonraki = ilk[1]?.kimlik;
+    if (sonraki === undefined) throw new Error("ikinci satır yok");
+    const ikinci = await fiyat.panelFiyatGecmisi(vt, [s, m], { sinir: 2, sonra: sonraki });
     expect(ikinci.map((g) => g.satisFiyati)).toEqual([1000]);
     // Başka ürünün birimi listeye karışmaz.
     const baska = await basitUrun(vt);
