@@ -132,7 +132,9 @@ export function LogoBolumu({
                   ikon="yukle"
                   tur="sade"
                   kabul={yuklenebilenTurler}
-                  onSecildi={(dosya) => void dosyaSecildi(dosya)}
+                  onSecildi={([dosya]) => {
+                    if (dosya !== undefined) void dosyaSecildi(dosya);
+                  }}
                   yukleme={yukleme}
                   ilerlemeEtiketi={doldur(metin("yonetim.dosya.ilerleme"), {
                     ad: metin("yonetim.tema.logo.ad"),

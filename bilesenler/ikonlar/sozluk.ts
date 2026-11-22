@@ -91,6 +91,8 @@ export const ikonlar = {
   yukleniyor: LoaderCircleIcon,
   // Dosya yükleme düğmesi (kart 0094, panel taslağı).
   yukle: UploadIcon,
+  // Galerideki videonun kapağı ve "Video bağla" (kart 0266, panel taslağı).
+  oynat: PlayIcon,
   // Bildirim ve uyarı türleri.
   basari: CircleCheckIcon,
   // Siparişin iptali (kart 0235).

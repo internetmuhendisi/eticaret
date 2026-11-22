@@ -7,6 +7,10 @@
 // duyurulur. Liste kontrollüdür: yeni sıra `siralaninca` ile kullanana verilir, kullanan listeyi hemen yeni sırayla
 // verir (kaydı arkadan yapar, olmazsa eski sıraya döner); düğmeyle taşınan satırın odağı yeni sıra gelince yerine
 // konur. Metinleri kullanan sayfa verir. Liste motoru gelince ona bağlanır.
+//
+// Izgara düzeni (`duzen="izgara"`, kart 0266: ürün galerisi): öğeler telefonda iki, tablet ve üstünde dört sütunlu
+// kartlardır; tutamak, önceki ve sonraki düğmeleri kartın altındaki satırdadır, `eylemler` aynı satırın sonuna gelir.
+// Klavyede ok tuşları dört yöne taşır; "yukarı al" ve "aşağı al" sıradaki önceki ve sonraki yerdir.
 import {
   type Announcements,
   closestCenter,
@@ -19,6 +23,7 @@ import {
 } from "@dnd-kit/core";
 import {
   arrayMove,
+  rectSortingStrategy,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
@@ -56,6 +61,8 @@ type Yon = "yukari" | "asagi";
 // Satırın içi ile tutamağın dikey hizası. Satırın içinde alt liste duran listede (menü öğeleri) üst: tutamak
 // satırın başlığıyla aynı hizada kalır, bütün bloğun ortasına düşmez (kart 0143).
 type Hizalama = "orta" | "ust";
+type Duzen = "liste" | "izgara";
+type SatirVerisi = Record<`data-${string}`, string>;
 
 function Satir({
   anahtar,
@@ -65,6 +72,9 @@ function Satir({
   metinler,
   tasi,
   hizalama,
+  duzen,
+  eylemler,
+  veri,
   children,
 }: {
   anahtar: string;
@@ -74,6 +84,9 @@ function Satir({
   metinler: SiralamaMetinleri;
   tasi: (anahtar: string, yon: Yon) => void;
   hizalama: Hizalama;
+  duzen: Duzen;
+  eylemler: ReactNode;
+  veri: SatirVerisi | undefined;
   children: ReactNode;
 }) {
   const {
@@ -85,53 +98,83 @@ function Satir({
     transition,
     isDragging,
   } = useSortable({ id: anahtar });
+  const tutamak = (
+    <Ipucu metin={metinler.tasi(ad)}>
+      <button
+        ref={setActivatorNodeRef}
+        type="button"
+        data-slot="siralama-tutamagi"
+        {...attributes}
+        {...listeners}
+        aria-label={metinler.tasi(ad)}
+        className={sinif(
+          dugmeSiniflari({ tur: "sade" }),
+          "h-11 w-8 cursor-grab touch-none px-0 text-soluk-yazi active:cursor-grabbing",
+        )}
+      >
+        <Ikon ad="tutamak" />
+      </button>
+    </Ipucu>
+  );
+  const sirala = (
+    <>
+      <IkonDugmesi
+        ikon={duzen === "izgara" ? "onceki" : "yukari-al"}
+        etiket={metinler.yukari(ad)}
+        data-yon="yukari"
+        disabled={sira === 1}
+        onClick={() => tasi(anahtar, "yukari")}
+        className="size-8 min-h-8"
+      />
+      <IkonDugmesi
+        ikon={duzen === "izgara" ? "sonraki" : "asagi-al"}
+        etiket={metinler.asagi(ad)}
+        data-yon="asagi"
+        disabled={sira === toplam}
+        onClick={() => tasi(anahtar, "asagi")}
+        className="size-8 min-h-8"
+      />
+    </>
+  );
+  // Sürüklenirken öğenin yeri tarayıcıda hesaplanır; ölçü değil, hareket değeridir.
+  const tasima = { transform: CSS.Translate.toString(transform), transition };
+  if (duzen === "izgara") {
+    return (
+      <li
+        ref={setNodeRef}
+        data-slot="siralanabilir-satir"
+        data-anahtar={anahtar}
+        {...veri}
+        style={tasima}
+        className={sinif(
+          "relative flex min-w-0 flex-col gap-2 rounded-orta border border-kenar bg-zemin p-2",
+          isDragging && "z-acilir shadow-acilir",
+        )}
+      >
+        <div className="flex min-w-0 flex-1 flex-col gap-2">{children}</div>
+        <div className="flex flex-wrap items-center gap-1">
+          {tutamak}
+          {sirala}
+          <div className="ml-auto flex items-center gap-1">{eylemler}</div>
+        </div>
+      </li>
+    );
+  }
   return (
     <li
       ref={setNodeRef}
       data-slot="siralanabilir-satir"
       data-anahtar={anahtar}
-      // Sürüklenirken satırın yeri tarayıcıda hesaplanır; ölçü değil, hareket değeridir.
-      style={{ transform: CSS.Translate.toString(transform), transition }}
+      {...veri}
+      style={tasima}
       className={sinif(
         "relative flex min-h-16 gap-2 border-b border-kenar bg-zemin py-2 pr-3 pl-1 last:border-b-0",
         hizalama === "ust" ? "items-start" : "items-center",
         isDragging && "z-acilir shadow-acilir",
       )}
     >
-      <Ipucu metin={metinler.tasi(ad)}>
-        <button
-          ref={setActivatorNodeRef}
-          type="button"
-          data-slot="siralama-tutamagi"
-          {...attributes}
-          {...listeners}
-          aria-label={metinler.tasi(ad)}
-          className={sinif(
-            dugmeSiniflari({ tur: "sade" }),
-            "h-11 w-8 cursor-grab touch-none px-0 text-soluk-yazi active:cursor-grabbing",
-          )}
-        >
-          <Ikon ad="tutamak" />
-        </button>
-      </Ipucu>
-      <div className="flex shrink-0 flex-col">
-        <IkonDugmesi
-          ikon="yukari-al"
-          etiket={metinler.yukari(ad)}
-          data-yon="yukari"
-          disabled={sira === 1}
-          onClick={() => tasi(anahtar, "yukari")}
-          className="size-8 min-h-8"
-        />
-        <IkonDugmesi
-          ikon="asagi-al"
-          etiket={metinler.asagi(ad)}
-          data-yon="asagi"
-          disabled={sira === toplam}
-          onClick={() => tasi(anahtar, "asagi")}
-          className="size-8 min-h-8"
-        />
-      </div>
+      {tutamak}
+      <div className="flex shrink-0 flex-col">{sirala}</div>
       <div
         className={sinif(
           "flex min-w-0 flex-1 gap-2",
@@ -139,6 +182,7 @@ function Satir({
         )}
       >
         {children}
+        {eylemler}
       </div>
     </li>
   );
@@ -152,7 +196,10 @@ export function SiralanabilirListe<T>({
   etiket,
   metinler,
   satir,
+  eylemler,
+  satirVerisi,
   hizalama = "orta",
+  duzen = "liste",
   className,
 }: {
   ogeler: readonly T[];
@@ -166,7 +213,12 @@ export function SiralanabilirListe<T>({
   metinler: SiralamaMetinleri;
   // Satırın içi: tutamak ve sıra düğmelerinden sonra gelir.
   satir: (oge: T, islemler: SatirIslemleri) => ReactNode;
+  // Satırın sonundaki eylemler (ızgarada kartın alt satırının sonu): düzenle, sil.
+  eylemler?: (oge: T, islemler: SatirIslemleri) => ReactNode;
+  // Satırın kendisine yazılan veri öznitelikleri (ör. formun alanı: hatada odak satırın düğmesini bulur).
+  satirVerisi?: (oge: T) => SatirVerisi;
   hizalama?: Hizalama;
+  duzen?: Duzen;
   className?: string;
 }) {
   const kimlik = useId();
@@ -246,18 +298,29 @@ export function SiralanabilirListe<T>({
         screenReaderInstructions: { draggable: metinler.talimat },
       }}
     >
-      <SortableContext items={anahtarlar} strategy={verticalListSortingStrategy}>
+      <SortableContext
+        items={anahtarlar}
+        strategy={duzen === "izgara" ? rectSortingStrategy : verticalListSortingStrategy}
+      >
         <ol
           ref={listeRef}
           aria-label={etiket}
           data-slot="siralanabilir-liste"
           className={sinif(
-            "m-0 flex list-none flex-col rounded-orta border border-kenar bg-zemin p-0",
+            duzen === "izgara"
+              ? "m-0 grid list-none grid-cols-2 gap-3 p-0 tablet:grid-cols-4"
+              : "m-0 flex list-none flex-col rounded-orta border border-kenar bg-zemin p-0",
             className,
           )}
         >
           {ogeler.map((oge, sira) => {
             const anahtari = anahtar(oge);
+            const islemler = {
+              yukariAl: () => tasi(anahtari, "yukari"),
+              asagiAl: () => tasi(anahtari, "asagi"),
+              ilk: sira === 0,
+              son: sira === toplam - 1,
+            };
             return (
               <Satir
                 key={anahtari}
@@ -268,13 +331,11 @@ export function SiralanabilirListe<T>({
                 metinler={metinler}
                 tasi={tasi}
                 hizalama={hizalama}
+                duzen={duzen}
+                eylemler={eylemler?.(oge, islemler)}
+                veri={satirVerisi?.(oge)}
               >
-                {satir(oge, {
-                  yukariAl: () => tasi(anahtari, "yukari"),
-                  asagiAl: () => tasi(anahtari, "asagi"),
-                  ilk: sira === 0,
-                  son: sira === toplam - 1,
-                })}
+                {satir(oge, islemler)}
               </Satir>
             );
           })}

@@ -58,7 +58,9 @@
           "alindi": "{ad} alındı. Sırası {sira} / {toplam}.",
           "tasindi": "{ad} {sira}. sıraya taşındı, toplam {toplam}.",
           "birakildi": "{ad} bırakıldı. Sırası {sira} / {toplam}.",
-          "vazgecildi": "Taşıma bırakıldı. {ad} yerinde kaldı: {sira} / {toplam}."
+          "vazgecildi": "Taşıma bırakıldı. {ad} yerinde kaldı: {sira} / {toplam}.",
+          "one": "Öne al: {ad}",
+          "arkaya": "Arkaya al: {ad}"
         }
       },
       "odemeYontemi": {

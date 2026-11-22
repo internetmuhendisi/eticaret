@@ -34,6 +34,7 @@ const form: UrunFormu = {
   ozellikler: {},
   ilgiliUrunler: [],
   varyant: { secenekler: [], birlesimler: {} },
+  galeri: [],
   fiyat: { ...bosFiyat, satisFiyati: "100,00", indirimliFiyat: "80,00" },
   stokTakibi: true,
   dusukStokEsigi: "",
@@ -50,6 +51,8 @@ const veri = (ek: Partial<UrunEkraniVerisi> = {}): UrunEkraniVerisi => ({
   agirlikBirimi: "kg",
   baslikAlti: [],
   galeriGorselleri: [],
+  videoSiteleri: [],
+  dosyaSinirlari: { boyut: "10 MB", turler: "JPEG" },
   izinler: {
     degistir: true,
     sil: true,

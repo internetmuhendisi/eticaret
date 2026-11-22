@@ -4,11 +4,14 @@
 // yoluyla). Ekran yeni ürün için boş formla da açılır (kimlik yok); yeni ürünün vergi sınıfı sitenin ilk sınıfıdır.
 import { and, inArray, isNull } from "drizzle-orm";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
+import { dosyaSinirlari, yuklenebilenTurAdlari } from "../../kayitlar/dosya";
 import type { OzellikTuru } from "../../kayitlar/ozellik";
 import type { ElleStokSebebi } from "../../kayitlar/stok";
 import { type UrunDurumu, type UrunTuru, urunDurumVitrini } from "../../kayitlar/urun";
+import type { VideoSitesi } from "../../kayitlar/video-siteleri";
 import { yerelZamana } from "../../metinler/bicimleyici";
 import { siteninBicimleyicisi } from "../../metinler/site-metni";
+import { dosyalar } from "../../moduller/dosya/model";
 import type { YoneticiYetkileri } from "../../moduller/ekip/servis";
 import { etiketServisi } from "../../moduller/etiket/servis";
 import { kategorileriOku } from "../../moduller/kategori/servis";
@@ -23,6 +26,7 @@ import { calisanSiteninVergiServisi } from "../../moduller/vergi/servis";
 import { siteninVeritabani } from "../../veritabani/baglanti";
 import { kayitAdresleri } from "../../vitrin/adresler";
 import { type FiyatStokVerisi, fiyatStokVerisi } from "./fiyat-stok-verisi";
+import type { GaleriFormOgesi } from "./galeri-formu";
 import { type BirlesimFormu, birlesimAnahtari, type VaryantFormu } from "./varyant-formu";
 
 // Seçili kayıt: kimliği ve adı (kategoride yolu).
@@ -55,6 +59,8 @@ export type UrunFormu = {
   ilgiliUrunler: SeciliKayit[];
   // Seçenekler bölümü (kart 0264): seçenekler, değerleri ve kayıtlı birleşimlerin alanları.
   varyant: VaryantFormu;
+  // Galeri (kart 0266): öğeler sırasıyla; ilk görsel ana görseldir.
+  galeri: GaleriFormOgesi[];
   // Fiyat bölümü (kart 0265): basit ürünün fiyatı sitenin para biçimiyle; indirimin zamanı bütün birimlere ortaktır.
   fiyat: {
     satisFiyati: string;
@@ -94,6 +100,10 @@ export type UrunEkraniVerisi = {
   baslikAlti: string[];
   // Birleşimin görseli seçilebilen galeri görselleri, sırasıyla (öğenin kimliği, önizlemenin dosyası, alternatif metni).
   galeriGorselleri: { kimlik: string; dosya: string; ad: string }[];
+  // Galeriye bağlanabilen video siteleri (altyapı sahibinin ayarı, karar 0073); boşsa video eklenmez.
+  videoSiteleri: readonly VideoSitesi[];
+  // Yüklenebilecek en büyük dosyanın ve türlerin sitenin biçimiyle yazılışı ("10 MB", "JPEG, PNG veya WebP").
+  dosyaSinirlari: { boyut: string; turler: string };
   // Fiyat ve stok bölümlerinin verisi (kart 0265).
   fiyatStok: FiyatStokVerisi;
   izinler: {
@@ -125,6 +135,7 @@ const bos: Omit<UrunFormu, "vergiSinifi"> = {
   ozellikler: {},
   ilgiliUrunler: [],
   varyant: { secenekler: [], birlesimler: {} },
+  galeri: [],
   fiyat: { satisFiyati: "", indirimliFiyat: "", indirimBaslangici: "", indirimBitisi: "" },
   stokTakibi: true,
   dusukStokEsigi: "",
@@ -163,6 +174,11 @@ export const urunEkraniVerisi = async (
       secenekler: ozellik.secenekler.map(({ kimlik: k, ad }) => ({ kimlik: k, ad })),
     })),
     agirlikBirimi: site.ayarlar.agirlikBirimi,
+    videoSiteleri: site.ayarlar.videoSiteleri,
+    dosyaSinirlari: {
+      boyut: bicimleyici.dosyaBoyutu(dosyaSinirlari.enCokBayt),
+      turler: bicimleyici.veyaListesi(yuklenebilenTurAdlari),
+    },
     izinler: {
       degistir: yetkili("urun.degistir"),
       sil: yetkili("urun.sil"),
@@ -263,6 +279,42 @@ export const urunEkraniVerisi = async (
         : [],
     ),
   };
+  // Galerinin görsellerinin özgün ölçüsü (küçük görsel uyarısı): tek sorgu.
+  const gorselDosyalari = urun.galeri.flatMap((oge) => (oge.tur === "gorsel" ? [oge.dosya] : []));
+  const olculer = new Map(
+    (gorselDosyalari.length === 0
+      ? []
+      : await vt
+          .select({
+            kimlik: dosyalar.kimlik,
+            genislik: dosyalar.genislik,
+            yukseklik: dosyalar.yukseklik,
+          })
+          .from(dosyalar)
+          .where(inArray(dosyalar.kimlik, gorselDosyalari))
+    ).map((satir) => [satir.kimlik, satir]),
+  );
+  const galeri: GaleriFormOgesi[] = urun.galeri.map((oge) => {
+    if (oge.tur === "video") {
+      return {
+        anahtar: oge.kimlik,
+        kimlik: oge.kimlik,
+        tur: "video",
+        alternatifMetin: oge.alternatifMetin,
+        site: oge.site,
+        videoKimligi: oge.videoKimligi,
+      };
+    }
+    const olcu = olculer.get(oge.dosya);
+    return {
+      anahtar: oge.kimlik,
+      kimlik: oge.kimlik,
+      tur: "gorsel",
+      alternatifMetin: oge.alternatifMetin,
+      dosya: oge.dosya,
+      ...(olcu === undefined ? {} : { genislik: olcu.genislik, yukseklik: olcu.yukseklik }),
+    };
+  });
   const zamanli = urunDurumVitrini[urun.durum].zamanli;
   const vitrinde =
     urunDurumVitrini[urun.durum].sayfa &&
@@ -295,6 +347,7 @@ export const urunEkraniVerisi = async (
       // Seçim sırasıyla (urunuOku silinmiş seçimi zaten vermez).
       ilgiliUrunler: adiyla(ilgililer, urun.ilgiliUrunler),
       varyant,
+      galeri,
       fiyat: {
         satisFiyati: birimFiyatStogu("").satisFiyati,
         indirimliFiyat: birimFiyatStogu("").indirimliFiyat,

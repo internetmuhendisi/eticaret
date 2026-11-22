@@ -1,7 +1,8 @@
 // Ürün ekranının sunucuya gönderdiği girdi (kart 0263, bağımsız kontrolün bulguları): yeni üründe boş isteğe bağlı alan
 // gönderilmez; değişiklikte yalnız sunucudan gelen hâline göre değişen alan gider (dokunulmayan yayın zamanı, açıklama
 // ve ağırlık yeniden yazılmaz), boşaltılan alan null olur; zamanlanmış durumda boş zaman gönderilmez; varyantlı üründe
-// birimin alanları gitmez; özelliklerin gönderilme sırası hatanın alanını bulur.
+// birimin alanları gitmez; özelliklerin gönderilme sırası hatanın alanını bulur. Galeri (kart 0266) yalnız değişince,
+// yeni üründe yalnız öğesi varsa gider.
 import { describe, expect, it } from "vitest";
 import { girdiyiKur } from "../urunler/urun-ekrani";
 import type { UrunEkraniVerisi, UrunFormu } from "../urunler/urun-verisi";
@@ -26,6 +27,7 @@ const form: UrunFormu = {
   ozellikler: { o1: "", o2: "12,5", o3: "evet" },
   ilgiliUrunler: [],
   varyant: { secenekler: [], birlesimler: {} },
+  galeri: [],
   fiyat: { satisFiyati: "", indirimliFiyat: "", indirimBaslangici: "", indirimBitisi: "" },
   stokTakibi: true,
   dusukStokEsigi: "",
@@ -46,6 +48,8 @@ const veri = (ek: Partial<UrunEkraniVerisi> = {}): UrunEkraniVerisi => ({
   agirlikBirimi: "kg",
   baslikAlti: [],
   galeriGorselleri: [],
+  videoSiteleri: ["youtube"],
+  dosyaSinirlari: { boyut: "10 MB", turler: "JPEG, PNG veya WebP" },
   izinler: {
     degistir: true,
     sil: true,
@@ -165,5 +169,36 @@ describe("ürün ekranının girdisi", () => {
     const { girdi, varyant } = girdiyiKur({ ...form, stokKodu: "A-1" }, secenekli, varyantli);
     expect(girdi).toMatchObject({ stokKodu: "A-1" });
     expect(varyant).toMatchObject({ secenekler: [], birlesimler: [] });
+  });
+
+  it("galeri yalnız değişince gider; yeni üründe yalnız öğesi varsa (kart 0266)", () => {
+    const kayitli = {
+      anahtar: "g1",
+      kimlik: "g1",
+      tur: "gorsel" as const,
+      alternatifMetin: "Ön",
+      dosya: "d1",
+    };
+    const galerili = { ...form, galeri: [kayitli] };
+    expect(girdiyiKur(galerili, galerili, veri()).galeri).toBeUndefined();
+    expect(
+      girdiyiKur(
+        { ...galerili, galeri: [{ ...kayitli, alternatifMetin: "Arka" }] },
+        galerili,
+        veri(),
+      ).galeri,
+    ).toEqual({ gorulen: ["g1"], ogeler: [{ kimlik: "g1", alternatifMetin: "Arka" }] });
+    const { kimlik: _k, ...yeniVeri } = veri();
+    expect(girdiyiKur(form, form, yeniVeri).galeri).toBeUndefined();
+    const yeniGorsel = {
+      anahtar: "yeni:1",
+      tur: "gorsel" as const,
+      alternatifMetin: "Ön",
+      dosya: "d2",
+    };
+    expect(girdiyiKur({ ...form, galeri: [yeniGorsel] }, form, yeniVeri).galeri).toEqual({
+      gorulen: [],
+      ogeler: [{ dosya: "d2", alternatifMetin: "Ön" }],
+    });
   });
 });

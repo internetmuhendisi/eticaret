@@ -37,6 +37,10 @@ export const gorselBoyutBicimi = { tur: "webp", kalite: 80 } as const;
 // başlığıdır.
 export const galeriSinirlari = { oge: 30, alternatifMetin: 250 } as const;
 
+// Panelin "küçük görsel" uyarısı (kart 0266, kullanıcı kararı): en uzun kenarı bundan kısa görsel reddedilmez, galeride
+// vitrinde bulanık görünebileceği söylenir (ürün sayfasının büyük boyutu 960 piksel).
+export const galeriOnerilenEnAz = 800;
+
 // Sitenin başlangıç dosyalarındaki görsel adı (kart 0115): baslangic/gorseller/ klasöründeki dosya; küçük
 // harfli, tireli ad ve bilinen uzantı. Yol kaçışı olmasın diye alt klasör yazılamaz.
 export const baslangicGorselAdiKalibi = /^[a-z0-9][a-z0-9-]{0,99}\.(png|jpg|webp)$/;

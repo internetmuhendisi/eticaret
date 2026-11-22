@@ -698,6 +698,29 @@ describe("galeri (kart 0266)", () => {
     const ilk = await galerisi(kimlik);
     expect(ilk.map((oge) => oge.alternatifMetin)).toEqual(["Ön", "Tanıtım", "Arka"]);
     const [on, tanitim, arka] = ilk;
+    // Ekranın verisi: öğeler sırasıyla, görsel dosyası ve özgün ölçüsüyle (küçük görsel uyarısı), video sitesiyle.
+    const ekran = await urunEkraniVerisi(kimlik, (izin: string) => izin !== "");
+    expect(ekran?.form.galeri).toEqual([
+      {
+        anahtar: on?.kimlik,
+        kimlik: on?.kimlik,
+        tur: "gorsel",
+        alternatifMetin: "Ön",
+        dosya: yuklenen.dosya,
+        genislik: 640,
+        yukseklik: 200,
+      },
+      {
+        anahtar: tanitim?.kimlik,
+        kimlik: tanitim?.kimlik,
+        tur: "video",
+        alternatifMetin: "Tanıtım",
+        site: "youtube",
+        videoKimligi: "dQw4w9WgXcQ",
+      },
+      expect.objectContaining({ kimlik: arka?.kimlik, dosya: ikinci.dosya }),
+    ]);
+    expect(ekran?.galeriGorselleri.map((g) => g.kimlik)).toEqual([on?.kimlik, arka?.kimlik]);
     await veri(
       await urunDegisikligiUcu(
         istek("urun-degistir", sahip, {

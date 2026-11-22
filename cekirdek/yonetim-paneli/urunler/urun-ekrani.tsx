@@ -47,6 +47,8 @@ import { panelIstegi } from "../panel-istegi";
 import { useSunucuFormu } from "../sunucu-formu";
 import { FiyatBolumu, FiyatGecmisi, StokBolumu, StokGecmisi } from "./fiyat-stok-bolumleri";
 import { fiyatStokGirdisi, urunFormunuUzlastir } from "./fiyat-stok-formu";
+import { GaleriBolumu } from "./galeri-bolumu";
+import { galeriGirdisi } from "./galeri-formu";
 import { SeceneklerBolumu } from "./secenekler-bolumu";
 import type { UrunEkraniVerisi, UrunFormu } from "./urun-verisi";
 import { type BirlesimSatiri, birlesimSatirlari, varyantGirdisi } from "./varyant-formu";
@@ -61,6 +63,7 @@ const bolumler = [
   { kimlik: "urun-genel", ad: "yonetim.urunEkrani.bolum.genel" },
   { kimlik: "urun-siniflandirma", ad: "yonetim.urunEkrani.bolum.siniflandirma" },
   { kimlik: "urun-secenekler", ad: "yonetim.urunEkrani.bolum.secenekler" },
+  { kimlik: "urun-galeri", ad: "yonetim.urunEkrani.bolum.galeri" },
   { kimlik: "urun-fiyat", ad: "yonetim.urunEkrani.bolum.fiyat" },
   { kimlik: "urun-stok", ad: "yonetim.urunEkrani.bolum.stok" },
   { kimlik: "urun-satis", ad: "yonetim.urunEkrani.bolum.satis" },
@@ -94,6 +97,8 @@ const sabitAlanlar = [
   // Seçenekler bölümü: hata girdideki yerin yoluyla gelir ("secenekler.0.degerler.2", "birlesimler.3.stokKodu").
   "secenekler",
   "birlesimler",
+  // Galeri (kart 0266): öğenin hatası "galeri.ogeler.2", sınır ve çakışma "galeri".
+  "galeri",
   // Fiyat ve stok bölümleri (kart 0265): "fiyat.satisFiyati", ortak sebep ve not; "fiyat" ve "stok" yetki hatası.
   "fiyat",
   "stok",
@@ -204,7 +209,8 @@ export const girdiyiKur = (
     ? varyantGirdisi(satirlar, form.varyant, bilinen.varyant)
     : undefined;
   const fiyatStok = fiyatStokGirdisi(form, bilinen, veri, satirlar);
-  if (veri.kimlik === undefined) return { ...yeniHali, varyant, fiyatStok };
+  const galeri = galeriGirdisi(form.galeri, bilinen.galeri);
+  if (veri.kimlik === undefined) return { ...yeniHali, varyant, fiyatStok, galeri };
   const eskiHali = alanGirdisi(bilinen, veri).girdi;
   return {
     girdi: Object.fromEntries(
@@ -215,6 +221,7 @@ export const girdiyiKur = (
     ozellikSirasi: yeniHali.ozellikSirasi,
     varyant,
     fiyatStok,
+    galeri,
   };
 };
 
@@ -245,7 +252,7 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
   const kaydet = async (): Promise<boolean> => {
     if (acilan.current) return false;
     const gonderilen = form;
-    const { girdi, ozellikSirasi, varyant, fiyatStok } = girdiyiKur(
+    const { girdi, ozellikSirasi, varyant, fiyatStok, galeri } = girdiyiKur(
       gonderilen,
       bilinen,
       veri,
@@ -254,6 +261,7 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
     const ek = {
       ...(varyant === undefined ? {} : { varyant }),
       ...(fiyatStok === undefined ? {} : { fiyatStok }),
+      ...(galeri === undefined ? {} : { galeri }),
     };
     const sonuc = await pf.isle(() =>
       yeni
@@ -291,6 +299,9 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
       if (alan === "agirlikGram") return "agirlik";
       // Birleşimin ağırlığı da (birlesimler.2.agirlikGram); seçenek ve değer adı alanın kendisidir.
       if (alan.startsWith("birlesimler.")) return alan.replace(/\.agirlikGram$/, ".agirlik");
+      // Galerinin öğesi kartıyla ("galeri.ogeler.2.alternatifMetin" → "galeri.ogeler.2").
+      const galeriOgesi = /^galeri\.ogeler\.\d+/.exec(alan);
+      if (galeriOgesi !== null) return galeriOgesi[0];
       const deger = /^secenekler\.\d+\.degerler\.\d+/.exec(alan);
       if (deger !== null) return deger[0];
       const ozellik = /^ozellikler\.(\d+)/.exec(alan);
@@ -548,6 +559,33 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
     </PanelAlani>
   );
 
+  const galeriBolumu = (
+    <Bolum kimlik="urun-galeri" baslik={metin("yonetim.urunEkrani.bolum.galeri")}>
+      <GaleriBolumu
+        galeri={form.galeri}
+        degistir={(galeri) => degistir("galeri", galeri)}
+        // Kaldırılan öğeyi seçmiş birleşimin görseli formda da boşalır (sunucu da boşaltır).
+        kaldirildi={(kimlik) =>
+          setForm((onceki) => ({
+            ...onceki,
+            varyant: {
+              ...onceki.varyant,
+              birlesimler: Object.fromEntries(
+                Object.entries(onceki.varyant.birlesimler).map(([anahtar, alanlar]) => [
+                  anahtar,
+                  alanlar.gorsel === kimlik ? { ...alanlar, gorsel: null } : alanlar,
+                ]),
+              ),
+            },
+          }))
+        }
+        izinli={izinli}
+        videoSiteleri={veri.videoSiteleri}
+        dosyaSinirlari={veri.dosyaSinirlari}
+      />
+    </Bolum>
+  );
+
   const secenekler = (
     <Bolum kimlik="urun-secenekler" baslik={metin("yonetim.urunEkrani.bolum.secenekler")}>
       <SeceneklerBolumu
@@ -558,7 +596,10 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
         izinli={izinli}
         silebilir={veri.izinler.sil}
         agirlikBirimi={veri.agirlikBirimi}
-        galeri={veri.galeriGorselleri}
+        // Birleşime yalnız kayıtlı ve formda kalan görsel seçilir (yeni görsel kayıttan sonra seçilir).
+        galeri={veri.galeriGorselleri.filter((gorsel) =>
+          form.galeri.some((oge) => oge.kimlik === gorsel.kimlik),
+        )}
         fiyatStok={{
           fiyatGor: veri.izinler.fiyatGor,
           fiyatDegistir: izinli && veri.izinler.fiyatDegistir,
@@ -833,6 +874,7 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
             {genel}
             {siniflandirma}
             {secenekler}
+            {galeriBolumu}
             {fiyatBolumleri}
             {stokBolumleri}
             {satis}

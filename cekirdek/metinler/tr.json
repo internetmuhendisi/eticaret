@@ -57,7 +57,9 @@
         "alindi": "{ad} alındı. Sırası {sira} / {toplam}.",
         "tasindi": "{ad} {sira}. sıraya taşındı, toplam {toplam}.",
         "birakildi": "{ad} bırakıldı. Sırası {sira} / {toplam}.",
-        "vazgecildi": "Taşıma bırakıldı. {ad} yerinde kaldı: {sira} / {toplam}."
+        "vazgecildi": "Taşıma bırakıldı. {ad} yerinde kaldı: {sira} / {toplam}.",
+        "one": "Öne al: {ad}",
+        "arkaya": "Arkaya al: {ad}"
       }
     },
     "odemeYontemi": {
@@ -1682,7 +1684,8 @@
         "stokGecmisi": "Stok geçmişi",
         "satis": "Satış bilgileri",
         "ozellikler": "Özellikler",
-        "ilgili": "İlgili ürünler"
+        "ilgili": "İlgili ürünler",
+        "galeri": "Görseller ve video"
       },
       "secenek": {
         "yok": "Bu ürünün seçeneği yok; tek fiyatı ve tek stoğu var.",
@@ -1848,6 +1851,47 @@
         "bos": "Henüz kayıt yok.",
         "dahaFazla": "Daha fazla",
         "hata": "Geçmiş yüklenemedi. Yeniden deneyin."
+      },
+      "galeri": {
+        "liste": "Galeri, ilk görsel ana görseldir",
+        "ana": "Ana görsel",
+        "altMetinEksik": "Alternatif metin eksik",
+        "kucuk": "Küçük görsel: vitrinde bulanık görünebilir.",
+        "video": "Video · {site}",
+        "adsizGorsel": "Adsız görsel",
+        "birak": "Görselleri buraya bırakın ya da seçin",
+        "birakAciklamasi": "{turler}, en çok {boyut}. En uzun kenarı en az {enAz} piksel olan görsel önerilir.",
+        "sec": "Bilgisayardan seç",
+        "videoBagla": "Video bağla",
+        "yukleniyor": "Yükleniyor: {ad}",
+        "sirada": "Sırada: {ad}",
+        "reddedildi": "{ad} yüklenmedi: {neden}",
+        "sinir": "Galeride en çok {sinir} öğe olabilir. Yeni görsel eklemek için önce birini silin.",
+        "ipucu": "Sıralamak için tutamaktan sürükleyin ya da tutamağa odaklanıp ok tuşlarını kullanın. İlk görsel ana görseldir. Alternatif metin zorunludur: görseli göremeyen müşteriye ne olduğunu anlatır. Değişiklikler ürün kaydedilince yayınlanır.",
+        "bos": "Henüz görsel yok.",
+        "duzenle": "Düzenle: {ad}",
+        "sil": "Sil: {ad}",
+        "duzenleBaslik": "Görseli düzenle",
+        "duzenleVideoBaslik": "Videoyu düzenle",
+        "altMetin": "Alternatif metin",
+        "altMetinAciklamasi": "Görseli göremeyen müşteriye ne olduğunu kısaca anlatın, örneğin “Lacivert sweatshirt, önden”.",
+        "videoBaslik": "Videonun başlığı",
+        "videoBaslikAciklamasi": "Oynatıcının başlığı ve ekran okuyucunun okuduğu metin.",
+        "uygula": "Uygula",
+        "videoPencere": "Video bağla",
+        "videoPencereAciklamasi": "Video dosyası yüklenmez: videonun bağlantısını yapıştırın. Müşteri videoyu oynatınca o siteye bağlanır.",
+        "baglanti": "Video bağlantısı",
+        "baglantiAciklamasi": "{siteler} bağlantısı.",
+        "onizle": "Önizle",
+        "onizleme": "Önizleme: {ad}",
+        "ekle": "Ekle",
+        "videoKapali": "Bu mağazada galeriye video eklenemiyor.",
+        "site": {
+          "youtube": "YouTube",
+          "vimeo": "Vimeo"
+        },
+        "altMetinGerekli": "Alternatif metni yazın: görseli göremeyen müşteri bu metni duyar.",
+        "videoBaslikGerekli": "Videonun başlığını yazın."
       }
     },
     "dosya": {
@@ -3077,7 +3121,8 @@
         "tablo": "Tablo",
         "tabloSecimi": "Tablo seçimi",
         "hataOzeti": "Hata özeti",
-        "dosyaYukleme": "Dosya yükleme"
+        "dosyaYukleme": "Dosya yükleme",
+        "ilerlemeCubugu": "İlerleme çubuğu"
       },
       "bolumKutuphanesi": "Bölüm kütüphanesi"
     },
@@ -3106,7 +3151,7 @@
       "aksam": "Akşam",
       "onay": "Kampanyalardan haberdar olmak istiyorum.",
       "eylemler": "Eylemler",
-      "duzenle": "Düzenle",
+      "duzenle": "Düzenle: {ad}",
       "kopyala": "Kopyala",
       "sil": "Sil",
       "gorunum": "Görünüm",
@@ -3267,7 +3312,16 @@
       "dosyaIlerleme": "Görsel yükleniyor",
       "dosyaIptal": "İptal",
       "dosyaSecildi": "Seçilen dosya: {ad}",
-      "dosyaYukleniyorBasligi": "Yükleme sürerken"
+      "dosyaYukleniyorBasligi": "Yükleme sürerken",
+      "dosyaBirakma": "Birden çok dosya, bırakma alanıyla",
+      "dosyaBirakmaBaslik": "Görselleri buraya bırakın ya da seçin",
+      "dosyaBirakmaAciklamasi": "JPEG, PNG ya da WebP, en çok 10 MB.",
+      "dosyalarSecildi": "Seçilen dosyalar: {adlar}",
+      "ilerlemeBos": "Yükleme başladı",
+      "ilerlemeYarim": "Yükleniyor: kazak.jpg",
+      "ilerlemeTam": "Yüklendi",
+      "siralanabilirIzgara": "Izgara düzeni",
+      "izgaraListe": "Görseller, ilk görsel ana görseldir"
     },
     "bolum": {
       "ad": "Deneme bölümü",
