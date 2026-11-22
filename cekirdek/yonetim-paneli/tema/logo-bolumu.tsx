@@ -34,7 +34,7 @@ function LogoKutusu({
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-kucuk border border-alan-kenari p-2">
       {logo.adres === null ? null : (
-        <div className="flex h-12 w-full max-w-panel items-center justify-start tablet:w-auto">
+        <div className="flex h-12 max-w-panel basis-full items-center justify-start tablet:basis-auto">
           {/* Logo sitenin kendi ucundan, özetli adresle gelir; Next'in görsel iyileştiricisinden geçmez. */}
           {/* biome-ignore lint/performance/noImgElement: logo ucunun kendi önbelleği ve etiketi var. */}
           <img
@@ -44,7 +44,7 @@ function LogoKutusu({
           />
         </div>
       )}
-      <p className="m-0 min-w-0 flex-1 text-kucuk">{kaynakMetni}</p>
+      <p className="m-0 min-w-0 flex-1 basis-full text-kucuk tablet:basis-0">{kaynakMetni}</p>
       {children}
     </div>
   );

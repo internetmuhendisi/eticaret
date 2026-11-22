@@ -33,6 +33,8 @@ Bölüm: Yönetim paneli.
 - Ölçümler: kutunun içinde 40 milyon piksellik logo yüklenince bellek zirvesi 330–332 MB; gerçek Caddy 2.10.2 ile yükleme yolunun 413'ü bir kez elle ölçüldü.
 - Yerel ortam denemesinde Örnek Mağaza'nın kuyruğa bağlı beş ölçümü, ortak veritabanındaki birikmiş e-posta işleri yüzünden kırmızıydı. Bu işle ilgisiz, ana dalda ölçülmedi.
 - Site adreslerinde genel gövde sınırı kart 0289'da.
+- Bağımsız kontrolün bulgularıyla düzeltildi: bellek sınırının sunucu denetimindeki beklenen değeri yayın kaydından okunur (yoksa eski yayınlar denetimi kırmızı yapar, başka sitenin yayınını durdururdu), takas sınırı ölçülür, yerel ortamdaki zirve ölçümü kırmızıya düşebilir hâle geldi, iptalden ve kaldırmadan sonra odak, kaldırma hatasının metni, dosya türlerinin adları kayıttan, logo durumu tek işlevde, yükleme sürerken düğmenin kapalı görünmesi.
+- Logo bölümü taslaktaki görsel alanına göre düzenlendi (önizleme, kaynak ve düğmeler tek kutuda, açıklama altında); taslakla karşılaştırma üç genişlikte görüntüyle bir kez yapıldı, testte yok. Taslaktaki "Logo kaldırılınca yerinde mağaza adı yazar" bugünkü davranışla uyuşmuyor: kaldırınca sitenin ilk logosu döner, ilk logo yoksa ad yazar; metin buna göre yazıldı.
 
 ## Durum
 
