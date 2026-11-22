@@ -14,7 +14,7 @@ import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import { galeriSinirlari } from "../../kayitlar/gorsel.ts";
 import type { VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { kimligiDuzelt, kimlikSemasi } from "../../veritabani/kimlik.ts";
-import { cakisma, yolla } from "./dogrulama.ts";
+import { cakisma, dogrulamaHatasi, isKurali, yolla } from "./dogrulama.ts";
 import { type galeriIslemleri, urunGalerileri } from "./galeri.ts";
 import { urunKilidiAl } from "./kilit.ts";
 
@@ -45,7 +45,14 @@ export const panelGaleriYaz = async (
   servis: GaleriServisi,
 ): Promise<void> => {
   const sonuc = panelGaleriSemasi.safeParse(ham);
-  if (!sonuc.success) throw cakisma("galeri", "galeri-degisti");
+  if (!sonuc.success) {
+    // Sınırdan uzun liste galerinin sınırıdır; öteki biçim bozukluğu ekranın yanlış girdisidir.
+    const ogeler = (ham as { ogeler?: unknown }).ogeler;
+    if (Array.isArray(ogeler) && ogeler.length > galeriSinirlari.oge) {
+      throw isKurali("galeri", "galeri-siniri");
+    }
+    throw dogrulamaHatasi([{ alan: "galeri", kod: "galeri-sira-gecersiz" }]);
+  }
   const { gorulen, ogeler } = sonuc.data;
   await urunKilidiAl(islem);
   const simdiki = ((await urunGalerileri(islem, [urun])).get(kimligiDuzelt(urun)) ?? []).map(

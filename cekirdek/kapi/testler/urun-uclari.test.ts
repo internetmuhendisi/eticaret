@@ -11,9 +11,12 @@
 // geçmişinde yazan kendisidir; görevli fiyatı değiştiremez (fiyat-yetkisi, ürünün değişikliği de yazılmaz), stoğu
 // pencereyle düzeltir, eski görülen miktarla çakışma alır; birleşimlerin fiyatı ve stoğu satırlarıyla yazılır;
 // rolsüz yönetici, müşteri ve girişsiz ziyaretçi stok düzeltme ve iki geçmiş ucunda geçmez.
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { eq } from "drizzle-orm";
+import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
 import { yerelZamandan } from "../../metinler/bicimleyici.ts";
@@ -27,6 +30,7 @@ import { hesapAc } from "../../moduller/oturum/servis.ts";
 import { ozellikServisi } from "../../moduller/ozellik/servis.ts";
 import { stokServisi } from "../../moduller/stok/servis.ts";
 import { aciklamayiTemizle } from "../../moduller/urun/aciklama.ts";
+import { urunGalerileri } from "../../moduller/urun/galeri.ts";
 import { urunler } from "../../moduller/urun/model.ts";
 import { siteninUrunServisi } from "../../moduller/urun/servis.ts";
 import { siteninVergiServisi } from "../../moduller/vergi/servis.ts";
@@ -46,6 +50,7 @@ import {
   urunStokDuzeltmeUcu,
   urunStokGecmisiUcu,
 } from "../yonetici/urun.ts";
+import { urunGorseliYuklemeUcu } from "../yonetici/urun-gorseli.ts";
 import { oturumCerezi } from "./erisim-denemesi.ts";
 
 const ortak = globalThis as Record<symbol, unknown>;
@@ -62,6 +67,7 @@ const yapan = { tur: "yonetici", kimlik: "00000000-0000-4000-8000-000000000001" 
 let vt: Veritabani;
 let sil: () => Promise<void>;
 let sayac = 0;
+let dosyaKlasoru = "";
 
 beforeAll(async () => {
   const acilan = await denemeSitesiAc("urun-uclari");
@@ -69,6 +75,9 @@ beforeAll(async () => {
   sil = acilan.sil;
   vi.stubEnv("VERITABANI_ADRESI", acilan.baglantiAdresi);
   vi.stubEnv("IKI_ASAMA_ANAHTARI", randomBytes(32).toString("hex"));
+  // Galeri (kart 0266): yüklenen görseller bu klasöre yazılır.
+  dosyaKlasoru = mkdtempSync(join(tmpdir(), "urun-uclari-"));
+  vi.stubEnv("DOSYA_KLASORU", dosyaKlasoru);
   ortak[siteAnahtari] = site;
   await baglantiyiKapat();
 }, 60_000);
@@ -76,6 +85,7 @@ afterAll(async () => {
   delete ortak[siteAnahtari];
   await baglantiyiKapat();
   vi.unstubAllEnvs();
+  rmSync(dosyaKlasoru, { recursive: true, force: true });
   await sil();
 });
 
@@ -633,5 +643,154 @@ describe("fiyat ve stok bölümleri (kart 0265)", () => {
       }
     }
     expect(await stoku(birim)).toBe(0);
+  });
+});
+
+describe("galeri (kart 0266)", () => {
+  const yukle = (oturum: string | undefined, govde: Uint8Array) =>
+    urunGorseliYuklemeUcu(
+      new Request("http://magaza.ornek.test/kapi/yonetici/urun-gorseli-yukle", {
+        method: "POST",
+        headers: {
+          "x-forwarded-for": `2001:db8:${randomBytes(2).toString("hex")}::1`,
+          ...(oturum === undefined ? {} : { cookie: oturum }),
+        },
+        body: Buffer.from(govde),
+      }),
+    );
+  const png = (genislik = 300) =>
+    sharp({
+      create: { width: genislik, height: 200, channels: 3, background: { r: 30, g: 60, b: 90 } },
+    })
+      .png()
+      .toBuffer();
+  const galerisi = async (urun: string) =>
+    ((await urunGalerileri(vt, [urun])).get(urun) ?? []).map((oge) => ({
+      kimlik: oge.kimlik,
+      tur: oge.tur,
+      alternatifMetin: oge.alternatifMetin,
+    }));
+
+  it("mağaza sahibi görsel yükler, ürünü galerisiyle ekler, sıralar, metni değiştirir, siler; eski ekran çakışır", async () => {
+    const sahip = await cerez("magaza-sahibi");
+    const yuklenen = await veri<{ dosya: string; genislik: number; yukseklik: number }>(
+      await yukle(sahip, await png(640)),
+    );
+    expect(yuklenen).toMatchObject({ genislik: 640, yukseklik: 200 });
+    const ikinci = await veri<{ dosya: string }>(await yukle(sahip, await png()));
+    const kimlik = (
+      await veri<{ kimlik: string }>(
+        await urunEklemeUcu(
+          istek("urun-ekle", sahip, {
+            urun: { ad: `Galerili ${benzersiz()}`, vergiSinifi: null },
+            galeri: {
+              gorulen: [],
+              ogeler: [
+                { dosya: yuklenen.dosya, alternatifMetin: "Ön" },
+                { video: "https://youtu.be/dQw4w9WgXcQ", alternatifMetin: "Tanıtım" },
+                { dosya: ikinci.dosya, alternatifMetin: "Arka" },
+              ],
+            },
+          }),
+        ),
+      )
+    ).kimlik;
+    const ilk = await galerisi(kimlik);
+    expect(ilk.map((oge) => oge.alternatifMetin)).toEqual(["Ön", "Tanıtım", "Arka"]);
+    const [on, tanitim, arka] = ilk;
+    await veri(
+      await urunDegisikligiUcu(
+        istek("urun-degistir", sahip, {
+          kimlik,
+          urun: {},
+          galeri: {
+            gorulen: ilk.map((oge) => oge.kimlik),
+            ogeler: [
+              { kimlik: arka?.kimlik, alternatifMetin: "Arka, yakın" },
+              { kimlik: on?.kimlik, alternatifMetin: "Ön" },
+            ],
+          },
+        }),
+      ),
+    );
+    expect(await galerisi(kimlik)).toEqual([
+      { kimlik: arka?.kimlik, tur: "gorsel", alternatifMetin: "Arka, yakın" },
+      { kimlik: on?.kimlik, tur: "gorsel", alternatifMetin: "Ön" },
+    ]);
+    // Eski ekran (videoyu hâlâ görüyor) çakışır; ürünün adı da yazılmaz.
+    const eski = await urunDegisikligiUcu(
+      istek("urun-degistir", sahip, {
+        kimlik,
+        urun: { ad: "Yazılmamalı" },
+        galeri: {
+          gorulen: ilk.map((oge) => oge.kimlik),
+          ogeler: [{ kimlik: tanitim?.kimlik, alternatifMetin: "Tanıtım" }],
+        },
+      }),
+    );
+    expect(eski.status).toBe(409);
+    expect(await hata(eski)).toMatchObject({
+      kod: "cakisma",
+      ayrinti: [{ alan: "galeri", kod: "galeri-degisti" }],
+    });
+    const [satir] = await vt
+      .select({ ad: urunler.ad })
+      .from(urunler)
+      .where(eq(urunler.kimlik, kimlik));
+    expect(satir?.ad).not.toBe("Yazılmamalı");
+  });
+
+  it("boş alternatif metin öğenin yoluyla döner, ürünün değişikliği de yazılmaz", async () => {
+    const sahip = await cerez("magaza-sahibi");
+    const kimlik = await ekle(sahip, { ad: `Metinsiz ${benzersiz()}`, vergiSinifi: null });
+    const { dosya } = await veri<{ dosya: string }>(await yukle(sahip, await png()));
+    const yanit = await urunDegisikligiUcu(
+      istek("urun-degistir", sahip, {
+        kimlik,
+        urun: { ad: "Yazılmamalı" },
+        galeri: { gorulen: [], ogeler: [{ dosya, alternatifMetin: "" }] },
+      }),
+    );
+    expect(yanit.status).toBe(400);
+    expect(await hata(yanit)).toMatchObject({
+      kod: "dogrulama",
+      ayrinti: [{ alan: "galeri.ogeler.0.alternatifMetin" }],
+    });
+    expect(await galerisi(kimlik)).toEqual([]);
+    const [satir] = await vt
+      .select({ ad: urunler.ad })
+      .from(urunler)
+      .where(eq(urunler.kimlik, kimlik));
+    expect(satir?.ad).not.toBe("Yazılmamalı");
+  });
+
+  it("yükleme: görsel olmayan dosya alanın koduyla döner; görevli yükler; rolsüz, müşteri ve girişsiz geçmez", async () => {
+    const sahip = await cerez("magaza-sahibi");
+    const svg = await yukle(
+      sahip,
+      new TextEncoder().encode("<svg xmlns='http://www.w3.org/2000/svg'/>"),
+    );
+    expect(svg.status).toBe(400);
+    expect(await hata(svg)).toMatchObject({ ayrinti: [{ alan: "dosya", kod: "tur-izinsiz" }] });
+    expect((await yukle(await cerez("gorevli"), await png())).status).toBe(200);
+    for (const [kisi, durum] of [
+      ["rolsuz", 403],
+      ["musteri", 401],
+      ["girissiz", 401],
+    ] as const) {
+      expect((await yukle(await cerez(kisi), await png())).status, kisi).toBe(durum);
+    }
+    // Galeride olmayan dosya kimliği bağlanamaz.
+    const kimlik = await ekle(sahip, { ad: `Olmayan ${benzersiz()}`, vergiSinifi: null });
+    const olmayan = await urunDegisikligiUcu(
+      istek("urun-degistir", sahip, {
+        kimlik,
+        urun: {},
+        galeri: { gorulen: [], ogeler: [{ dosya: randomUUID(), alternatifMetin: "X" }] },
+      }),
+    );
+    expect(await hata(olmayan)).toMatchObject({
+      ayrinti: [{ alan: "galeri.ogeler.0.dosya", kod: "galeri-gorsel-gecersiz" }],
+    });
   });
 });
