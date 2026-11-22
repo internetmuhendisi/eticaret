@@ -38,4 +38,4 @@ Bölüm: Yönetim paneli.
 
 ## Durum
 
-yapılacak
+bitti
