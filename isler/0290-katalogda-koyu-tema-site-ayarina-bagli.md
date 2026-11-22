@@ -29,4 +29,4 @@ Katalog geliştiricinin aracıdır: parçaları sitenin renkleriyle iki temada g
 
 ## Durum
 
-yapılacak
+bitti
