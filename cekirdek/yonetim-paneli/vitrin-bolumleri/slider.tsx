@@ -106,7 +106,17 @@ export function SliderEkrani({
           secenekler={veri.secenekler}
           kaydet={async ({ gorunum, degerler }) => {
             if (kimlik !== undefined) {
-              return panelIstegi("duzen-bolum-degistir", { kimlik, gorunum, degerler });
+              const sonuc = await panelIstegi("duzen-bolum-degistir", {
+                kimlik,
+                gorunum,
+                degerler,
+              });
+              // Eklenen slider yenileme gelmeden başka yerde silindiyse saklanan kimlik bırakılır: sonraki Kaydet
+              // yeniden ekler (bağımsız kontrolün bulgusu; yoksa form sayfa yenilenene kadar kaydedemezdi).
+              if (!sonuc.tamam && sonuc.kod === "bulunamadi" && slider === undefined) {
+                setEklenen(undefined);
+              }
+              return sonuc;
             }
             const sonuc = await panelIstegi<{ kimlik: string }>("duzen-bolum-ekle", {
               alan: "ana-sayfa",

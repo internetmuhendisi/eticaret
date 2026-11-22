@@ -581,6 +581,92 @@ test("Slider kısayolu: yoksa yeni form en üste ekler, birden çokta ilkini aç
   }
 });
 
+test("Slider: eklenen slider yenileme gelmeden başka yerde silinirse sonraki Kaydet yeniden ekler", async ({
+  page,
+}) => {
+  const birinci = `slider-${randomBytes(4).toString("hex")}`;
+  const ikinci = `${birinci}-2`;
+  const { duzen } = await servis.duzenOku(vt);
+  const eskiler = duzen["ana-sayfa"]
+    .map((bolum, sira) => ({ bolum, sira }))
+    .filter(({ bolum }) => bolum.tur === sliderTuru);
+  let gorsel = "";
+  try {
+    for (const { bolum } of eskiler) await servis.bolumSil(vt, kim, bolum.kimlik);
+    gorsel = await gorselAc();
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await paneleGir(page, yonetici);
+    await page.goto(sliderAdresi);
+    await sayfaHazir(page);
+    await page
+      .getByRole("group", { name: `${metin("vitrin.bolum.kayanAfis.slayt")} 1` })
+      .getByLabel(metin("vitrin.bolum.kayanAfis.gorsel"))
+      .click();
+    await page
+      .getByRole("dialog", { name: metin("yonetim.gorselSecimi.baslik") })
+      .getByRole("button", {
+        name: doldur(metin("yonetim.gorselSecimi.gorselAdi"), {
+          sira: "1",
+          genislik: "1200",
+          yukseklik: "500",
+        }),
+      })
+      .click();
+    await slaytBasligi(page).fill(birinci);
+    // Yenileme test bitene kadar tutulur: ekran eklenen slider'ı yalnız kendi sakladığı kimlikle bilir.
+    await page.route(`**${sliderAdresi}**`, async (yol) => {
+      if (yol.request().method() === "GET" && yol.request().headers()["rsc"] === "1") return;
+      await yol.fallback();
+    });
+    const kaydet = page.getByRole("button", { name: metin("yonetim.bolumler.form.kaydet") });
+    await kaydet.click();
+    await expect(bildirim(page, "yonetim.bolumler.eklendi")).toBeVisible();
+    // Başka bir sekme eklenen slider'ı siler.
+    for (const bolum of (await servis.duzenOku(vt)).duzen["ana-sayfa"]) {
+      if (bolum.tur === sliderTuru) await servis.bolumSil(vt, kim, bolum.kimlik);
+    }
+    await slaytBasligi(page).fill(ikinci);
+    const istek = () =>
+      page.waitForRequest(
+        (i) => i.method() === "POST" && i.url().includes("/kapi/yonetici/duzen-bolum"),
+      );
+    const degistir = istek();
+    await kaydet.click();
+    const ilkYanit = await (await degistir).response();
+    expect(ilkYanit?.url()).toContain("/kapi/yonetici/duzen-bolum-degistir");
+    expect(ilkYanit?.status()).toBe(404);
+    const ekle = istek();
+    await kaydet.click();
+    expect((await ekle).url()).toContain("/kapi/yonetici/duzen-bolum-ekle");
+    await expect(bildirim(page, "yonetim.bolumler.eklendi")).toBeVisible();
+    await expect
+      .poll(async () =>
+        (await servis.duzenOku(vt)).duzen["ana-sayfa"]
+          .filter((bolum) => bolum.tur === sliderTuru)
+          .map(sliderBasligi),
+      )
+      .toEqual([ikinci]);
+  } finally {
+    await page.unrouteAll({ behavior: "ignoreErrors" });
+    const { duzen: son } = await servis.duzenOku(vt);
+    for (const bolum of son["ana-sayfa"]) {
+      if (bolum.tur === sliderTuru && [birinci, ikinci].includes(sliderBasligi(bolum))) {
+        await servis.bolumSil(vt, kim, bolum.kimlik);
+      }
+    }
+    for (const { bolum, sira } of eskiler) {
+      await servis.bolumEkle(
+        vt,
+        kim,
+        "ana-sayfa",
+        { tur: bolum.tur, gorunum: bolum.gorunum, gizli: bolum.gizli, degerler: bolum.degerler },
+        sira,
+      );
+    }
+    if (gorsel !== "") await dosyaSil(vt, gorsel);
+  }
+});
+
 // Her renk ve genişlik ayrı testtir: altısı tek testte yüksüz bilgisayarda 48 saniye sürdü, hattın yükünde süre
 // sınırını (60 saniye) aşardı.
 for (const renk of ["light", "dark"] as const) {
