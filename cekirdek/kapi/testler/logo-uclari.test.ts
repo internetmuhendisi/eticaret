@@ -216,6 +216,17 @@ describe("logo uçları", () => {
     expect(await logoEtiketi()).toBe(once);
   });
 
+  it("yetkisiz ve girişsiz isteğin gövdesi okunmaz: yetki gövdeden önce denetlenir", async () => {
+    for (const kisi of ["gorevli", "girissiz"] as const) {
+      const oturum = (await cerez(kisi)).cerez;
+      const { akis, okunan } = sayanGovde(64 * 1024, dosyaSinirlari.enCokBayt);
+      const yanit = await logoYuklemeUcu(istek("logo-yukle", oturum, akis));
+      expect(yanit.status, kisi).toBe(kisi === "gorevli" ? 403 : 401);
+      // Request akışın başını önceden okuyabilir: en çok bir parça.
+      expect(okunan.bayt, kisi).toBeLessThanOrEqual(64 * 1024);
+    }
+  });
+
   it("yükleme sınırı dolunca 429 ve Retry-After", async () => {
     const sahip = await cerez("magaza-sahibi");
     const adres = yeniAdres();

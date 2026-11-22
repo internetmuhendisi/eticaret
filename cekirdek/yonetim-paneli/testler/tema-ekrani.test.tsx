@@ -49,6 +49,7 @@ afterEach(() => {
 const veri = (degisiklik: Partial<TemaEkraniVerisi> = {}): TemaEkraniVerisi => ({
   logo: { kaynak: "ilk", adres: "/kapi/herkese-acik/logo?s=0123456789abcdef" },
   enCokDosyaBoyutu: "10 MB",
+  dosyaTurleri: "JPEG, PNG veya WebP",
   sira: 4,
   temalar: [
     {

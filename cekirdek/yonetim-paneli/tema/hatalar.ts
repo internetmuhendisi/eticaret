@@ -7,6 +7,8 @@ import type { PanelHatasi } from "../panel-istegi";
 export const temaUclari = {
   yayinla: "tema",
   geriDon: "tema-geri-don",
+  logoYukle: "logo-yukle",
+  logoKaldir: "logo-kaldir",
 } as const;
 
 export const temaHatasiMetni = (hata: PanelHatasi): MetinAnahtari => {

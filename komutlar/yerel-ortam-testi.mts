@@ -385,9 +385,11 @@ const logoOlc = async (kodAdi: string): Promise<void> => {
       (await sharp(yeni.govde).metadata()).width === 8000,
     `yükleme ${yukleme.durum} ${yukleme.govde.toString("utf8").slice(0, 200)}; logo ${yeni.durum}`,
   );
+  // Sınır aşılsa süreç dururdu (yükleme 200 almazdı); bu ölçüm payı ölçer: iki büyük yükleme aynı anda sığar
+  // (karar 0165). Zirve kutunun açılışından beri en yüksek değerdir.
   olc(
-    `${kodAdi}: kutunun bellek zirvesi sınırın altında`,
-    Number(zirve) > 0 && Number(zirve) < bellekBaytlari(siteKutusuBellegi),
+    `${kodAdi}: kutunun bellek zirvesi sınırın yarısının altında`,
+    Number(zirve) > 0 && Number(zirve) < bellekBaytlari(siteKutusuBellegi) / 2,
     `zirve ${Math.round(Number(zirve) / 1024 / 1024)} MB`,
   );
   const fazla = await isteHam(kodAdi, "/kapi/yonetici/logo-yukle", {

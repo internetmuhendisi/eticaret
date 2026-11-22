@@ -5,11 +5,11 @@
 // Dosyanın reddi alanın altında yazar, odak yükleme düğmesine gider (ortak form yapısı, karar 0159). Logo mağaza
 // ayarıdır: değiştirmek magaza-ayarlari.degistir ister, izni olmayan yalnız önizlemeyi görür.
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { bildirimGoster } from "../../../bilesenler/parcalar/bildirim";
 import { DosyaYukleme } from "../../../bilesenler/parcalar/dosya-yukleme";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
-import { Kart, KartAciklamasi } from "../../../bilesenler/parcalar/kart";
+import { Kart } from "../../../bilesenler/parcalar/kart";
 import { OnayPenceresi } from "../../../bilesenler/parcalar/onay-penceresi";
 import { yuklenebilenTurler } from "../../kayitlar/dosya";
 import { doldur } from "../../metinler/doldur";
@@ -17,17 +17,49 @@ import { usePanelMetni } from "../../metinler/panel-metni";
 import { dosyaHatasiMetni, useDosyaYuklemesi } from "../dosya-yuklemesi";
 import { AlanKabi, PanelFormu, usePanelFormu } from "../form/panel-formu";
 import { panelIstegi } from "../panel-istegi";
+import { temaHatasiMetni, temaUclari } from "./hatalar";
 import type { EkranLogosu } from "./veri";
 
-export const logoUclari = { yukle: "logo-yukle", kaldir: "logo-kaldir" } as const;
+// Taslağın görsel alanı: önizleme, kaynağın yazısı ve düğmeler tek kenarlı kutuda.
+function LogoKutusu({
+  logo,
+  kaynakMetni,
+  children,
+}: {
+  logo: EkranLogosu;
+  kaynakMetni: string;
+  children?: ReactNode;
+}) {
+  const metin = usePanelMetni();
+  return (
+    <div className="flex flex-wrap items-center gap-3 rounded-kucuk border border-alan-kenari p-2">
+      {logo.adres === null ? null : (
+        <div className="flex h-12 w-full max-w-panel items-center justify-start tablet:w-auto">
+          {/* Logo sitenin kendi ucundan, özetli adresle gelir; Next'in görsel iyileştiricisinden geçmez. */}
+          {/* biome-ignore lint/performance/noImgElement: logo ucunun kendi önbelleği ve etiketi var. */}
+          <img
+            src={logo.adres}
+            alt={metin("yonetim.tema.logo.onizleme")}
+            className="max-h-full max-w-full object-contain object-left"
+          />
+        </div>
+      )}
+      <p className="m-0 min-w-0 flex-1 text-kucuk">{kaynakMetni}</p>
+      {children}
+    </div>
+  );
+}
 
 export function LogoBolumu({
   logo,
   enCokDosyaBoyutu,
+  dosyaTurleri,
   degistirebilir,
 }: {
   logo: EkranLogosu;
   enCokDosyaBoyutu: string;
+  // Yüklenebilen türlerin adları ("JPEG, PNG veya WebP"), sunucudan.
+  dosyaTurleri: string;
   // Yöneticinin magaza-ayarlari.degistir izni (sunucudan).
   degistirebilir: boolean;
 }) {
@@ -38,12 +70,21 @@ export function LogoBolumu({
   const [kaldirSorusu, setKaldirSorusu] = useState(false);
   const hata = pf.hata("dosya");
   const hataKimligi = "tema-logo-hata";
+  const yukleKimligi = "tema-logo-yukle";
   const dosyaHatasi = (sonuc: Parameters<typeof dosyaHatasiMetni>[0]) =>
-    doldur(metin(dosyaHatasiMetni(sonuc)), { boyut: enCokDosyaBoyutu });
+    doldur(metin(dosyaHatasiMetni(sonuc)), { boyut: enCokDosyaBoyutu, turler: dosyaTurleri });
+  // Kaldırmadan sonra "Logoyu kaldır" düğmesi kalkar: odak sayfanın yeni verisi gelince yükleme düğmesine gider
+  // (onay penceresi odağı kalkan düğmeye vermiş olur).
+  const kaldirildi = useRef(false);
+  useEffect(() => {
+    if (!kaldirildi.current || logo.kaynak === "yuklenen") return;
+    kaldirildi.current = false;
+    document.getElementById(yukleKimligi)?.focus();
+  }, [logo.kaynak]);
 
   const dosyaSecildi = async (dosya: File) => {
     pf.temizle();
-    const sonuc = await yukle(logoUclari.yukle, dosya);
+    const sonuc = await yukle(temaUclari.logoYukle, dosya);
     if (sonuc === undefined) return;
     if (sonuc.tamam) {
       router.refresh();
@@ -58,13 +99,14 @@ export function LogoBolumu({
   };
 
   const kaldir = async () => {
-    const sonuc = await panelIstegi(logoUclari.kaldir, {});
+    const sonuc = await panelIstegi(temaUclari.logoKaldir, {});
     if (sonuc.tamam) {
+      kaldirildi.current = true;
       router.refresh();
       bildirimGoster("basari", metin("yonetim.tema.logo.kaldirildi"));
       return;
     }
-    bildirimGoster("tehlike", dosyaHatasi(sonuc));
+    bildirimGoster("tehlike", metin(temaHatasiMetni(sonuc)));
   };
 
   const kaynakMetni =
@@ -79,30 +121,16 @@ export function LogoBolumu({
       <h2 id="tema-logo" className="font-baslik text-baslik-4 font-baslik-kalinligi">
         {metin("yonetim.tema.logo.baslik")}
       </h2>
-      <Kart className="gap-4">
-        <KartAciklamasi>
-          {doldur(metin("yonetim.tema.logo.aciklama"), { boyut: enCokDosyaBoyutu })}
-        </KartAciklamasi>
-        <div className="flex flex-col gap-3 tablet:flex-row tablet:items-center">
-          {logo.adres === null ? null : (
-            <div className="flex h-20 w-full max-w-panel items-center justify-center rounded-orta border border-kenar bg-zemin p-3">
-              {/* Logo sitenin kendi ucundan, özetli adresle gelir; Next'in görsel iyileştiricisinden geçmez. */}
-              {/* biome-ignore lint/performance/noImgElement: logo ucunun kendi önbelleği ve etiketi var. */}
-              <img
-                src={logo.adres}
-                alt={metin("yonetim.tema.logo.onizleme")}
-                className="max-h-full max-w-full object-contain"
-              />
-            </div>
-          )}
-          <p className="m-0">{kaynakMetni}</p>
-        </div>
+      <Kart className="gap-3">
         {degistirebilir ? (
-          <PanelFormu durum={pf} gonder={() => undefined} className="gap-3">
+          <PanelFormu durum={pf} gonder={() => undefined} className="gap-0">
             <AlanKabi ad="dosya" etiket={metin("yonetim.tema.logo.alan")}>
-              <div className="flex flex-wrap items-start gap-3">
+              <LogoKutusu logo={logo} kaynakMetni={kaynakMetni}>
                 <DosyaYukleme
+                  id={yukleKimligi}
                   secEtiketi={metin("yonetim.tema.logo.yukle")}
+                  ikon="yukle"
+                  tur="sade"
                   kabul={yuklenebilenTurler}
                   onSecildi={(dosya) => void dosyaSecildi(dosya)}
                   yukleme={yukleme}
@@ -114,13 +142,14 @@ export function LogoBolumu({
                   {...(hata === undefined
                     ? {}
                     : { "aria-invalid": true, "aria-describedby": hataKimligi })}
-                />
-                {logo.kaynak === "yuklenen" && yukleme === null ? (
-                  <Dugme tur="sade" onClick={() => setKaldirSorusu(true)}>
-                    {metin("yonetim.tema.logo.kaldir")}
-                  </Dugme>
-                ) : null}
-              </div>
+                >
+                  {logo.kaynak === "yuklenen" && yukleme === null ? (
+                    <Dugme tur="sade" onClick={() => setKaldirSorusu(true)}>
+                      {metin("yonetim.tema.logo.kaldir")}
+                    </Dugme>
+                  ) : null}
+                </DosyaYukleme>
+              </LogoKutusu>
               {hata === undefined ? null : (
                 <p id={hataKimligi} className="m-0 mt-2 font-kalin text-tehlike-yazi">
                   {hata}
@@ -128,7 +157,15 @@ export function LogoBolumu({
               )}
             </AlanKabi>
           </PanelFormu>
-        ) : null}
+        ) : (
+          <LogoKutusu logo={logo} kaynakMetni={kaynakMetni} />
+        )}
+        <p className="m-0 text-kucuk text-soluk-yazi">
+          {doldur(metin("yonetim.tema.logo.aciklama"), {
+            boyut: enCokDosyaBoyutu,
+            turler: dosyaTurleri,
+          })}
+        </p>
       </Kart>
       <OnayPenceresi
         acik={kaldirSorusu}

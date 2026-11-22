@@ -636,7 +636,7 @@ export const ayniAdres = (a: string | undefined, b: string | undefined): boolean
 // Sunucudaki kutunun gerçek ayarı (docker inspect, kutuOlcumBicimi) kutu tanımıyla aynı olmalı.
 // Docker yetki adlarını "CAP_" önekiyle de yazabilir; karşılaştırma öneksiz yapılır.
 export const kutuOlcumBicimi =
-  "{{.State.Running}}|{{.HostConfig.Privileged}}|{{.Config.User}}|{{.HostConfig.ReadonlyRootfs}}|{{json .HostConfig.CapAdd}}|{{json .HostConfig.CapDrop}}|{{json .HostConfig.SecurityOpt}}|{{.HostConfig.RestartPolicy.Name}}|{{.HostConfig.Memory}}";
+  "{{.State.Running}}|{{.HostConfig.Privileged}}|{{.Config.User}}|{{.HostConfig.ReadonlyRootfs}}|{{json .HostConfig.CapAdd}}|{{json .HostConfig.CapDrop}}|{{json .HostConfig.SecurityOpt}}|{{.HostConfig.RestartPolicy.Name}}|{{.HostConfig.Memory}}|{{.HostConfig.MemorySwap}}";
 
 type KutuTanimi = {
   user: string;
@@ -645,8 +645,9 @@ type KutuTanimi = {
   cap_drop: string[];
   security_opt: string[];
   restart: string;
-  // Bellek sınırı (kart 0094): tanımda yoksa kutu sınırsızdır, gerçek değer 0 beklenir.
+  // Bellek ve takasla birlikte bellek sınırı (kart 0094): tanımda yoksa kutu sınırsızdır, gerçek değer 0 beklenir.
   mem_limit?: string;
+  memswap_limit?: string;
 };
 
 export const kutuKisitHatalari = (satir: string, tanim: KutuTanimi): string[] => {
@@ -660,9 +661,10 @@ export const kutuKisitHatalari = (satir: string, tanim: KutuTanimi): string[] =>
     guvenlik,
     kural,
     bellek,
+    takas,
     ...fazla
   ] = satir.split("|");
-  if (fazla.length > 0 || bellek === undefined) return [`okunamadı: ${satir}`];
+  if (fazla.length > 0 || takas === undefined) return [`okunamadı: ${satir}`];
   const liste = (json: string | undefined): string[] | undefined => {
     try {
       const deger = JSON.parse(json ?? "") as unknown;
@@ -697,6 +699,10 @@ export const kutuKisitHatalari = (satir: string, tanim: KutuTanimi): string[] =>
   const beklenenBellek = bellekBaytlari(tanim.mem_limit);
   if (bellek !== String(beklenenBellek)) {
     hatalar.push(`bellek sınırı ${bellek || "yok"} bayt, beklenen ${beklenenBellek}`);
+  }
+  const beklenenTakas = bellekBaytlari(tanim.memswap_limit);
+  if (takas !== String(beklenenTakas)) {
+    hatalar.push(`takasla bellek sınırı ${takas || "yok"} bayt, beklenen ${beklenenTakas}`);
   }
   return hatalar;
 };

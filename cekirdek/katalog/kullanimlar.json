@@ -50,6 +50,7 @@
     "bilesenler/parcalar/akordeon.tsx",
     "bilesenler/parcalar/bildirim.tsx",
     "bilesenler/parcalar/bos-hal.tsx",
+    "bilesenler/parcalar/dosya-yukleme.tsx",
     "bilesenler/parcalar/dugme.tsx",
     "bilesenler/parcalar/onay-kutusu.tsx",
     "bilesenler/parcalar/sayfalama.tsx",

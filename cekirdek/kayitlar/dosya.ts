@@ -7,19 +7,25 @@
 type Imza = readonly (number | null)[];
 
 export const dosyaTurleri = {
-  jpeg: { mime: "image/jpeg", uzanti: "jpg", imzalar: [[0xff, 0xd8, 0xff]] },
+  jpeg: { mime: "image/jpeg", uzanti: "jpg", ad: "JPEG", imzalar: [[0xff, 0xd8, 0xff]] },
   png: {
     mime: "image/png",
     uzanti: "png",
+    ad: "PNG",
     imzalar: [[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]],
   },
   // "RIFF", dört bayt uzunluk, "WEBP".
   webp: {
     mime: "image/webp",
     uzanti: "webp",
+    ad: "WebP",
     imzalar: [[0x52, 0x49, 0x46, 0x46, null, null, null, null, 0x57, 0x45, 0x42, 0x50]],
   },
-} as const satisfies Record<string, { mime: string; uzanti: string; imzalar: readonly Imza[] }>;
+} as const satisfies Record<
+  string,
+  // ad: ekranda türün okunan adı (kart 0094: "JPEG, PNG veya WebP").
+  { mime: string; uzanti: string; ad: string; imzalar: readonly Imza[] }
+>;
 export type DosyaTuru = keyof typeof dosyaTurleri;
 
 // Tarayıcının dosya seçicisinde önerilen türler (kart 0094): yükleme parçasının `kabul` değeri. Sunucu yine içerikten
@@ -27,6 +33,8 @@ export type DosyaTuru = keyof typeof dosyaTurleri;
 export const yuklenebilenTurler: string = Object.values(dosyaTurleri)
   .map((tur) => tur.mime)
   .join(",");
+// Yüklenebilen türlerin okunan adları (kart 0094): ekran metnine biçimleyicinin listesiyle girer.
+export const yuklenebilenTurAdlari: string[] = Object.values(dosyaTurleri).map((tur) => tur.ad);
 
 export const dosyaSinirlari = {
   // Yüklenen dosyanın en büyük boyutu.

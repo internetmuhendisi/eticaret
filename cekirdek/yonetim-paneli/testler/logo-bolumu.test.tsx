@@ -15,6 +15,11 @@ import type { EkranLogosu } from "../tema/veri.ts";
 
 const yenile = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: yenile }) }));
+// Bildirimler çerçevenin alanında çizilir; testte verilen tür ve metin tutulur.
+const bildirimler: [string, string][] = [];
+vi.mock("../../../bilesenler/parcalar/bildirim", () => ({
+  bildirimGoster: (tur: string, yazi: string) => bildirimler.push([tur, yazi]),
+}));
 
 const metin = metinOkuyucu("tr");
 
@@ -77,6 +82,7 @@ beforeEach(() => {
   SahteIstek.son = undefined;
   SahteIstek.sayi = 0;
   kaldirmaIstekleri.length = 0;
+  bildirimler.length = 0;
   yenile.mockClear();
   vi.stubGlobal("XMLHttpRequest", SahteIstek);
   vi.stubGlobal(
@@ -98,12 +104,18 @@ const yuklenenLogo: EkranLogosu = {
   adres: "/kapi/herkese-acik/logo?s=fedcba9876543210",
 };
 
-const ciz = (logo: EkranLogosu, degistirebilir = true) =>
-  render(
-    <MetinSaglayici dil="tr">
-      <LogoBolumu logo={logo} enCokDosyaBoyutu="10 MB" degistirebilir={degistirebilir} />
-    </MetinSaglayici>,
-  );
+const turler = "JPEG, PNG veya WebP";
+const bolum = (logo: EkranLogosu, degistirebilir = true) => (
+  <MetinSaglayici dil="tr">
+    <LogoBolumu
+      logo={logo}
+      enCokDosyaBoyutu="10 MB"
+      dosyaTurleri={turler}
+      degistirebilir={degistirebilir}
+    />
+  </MetinSaglayici>
+);
+const ciz = (logo: EkranLogosu, degistirebilir = true) => render(bolum(logo, degistirebilir));
 
 const yukleDugmesi = () => screen.getByRole("button", { name: metin("yonetim.tema.logo.yukle") });
 const dosyaGirdisi = () => {
@@ -172,12 +184,15 @@ describe("logo bölümü", () => {
     expect(yukleDugmesi().getAttribute("aria-disabled")).toBeNull();
   });
 
-  it("İptal yüklemeyi durdurur, hata yazılmaz", async () => {
+  it("İptal yüklemeyi durdurur, hata yazılmaz, odak yükleme düğmesine döner", async () => {
     ciz(ilkLogo);
     await sec(png());
+    const iptal = screen.getByRole("button", { name: metin("yonetim.dosya.iptal") });
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: metin("yonetim.dosya.iptal") }));
+      iptal.focus();
+      fireEvent.click(iptal);
     });
+    expect(document.activeElement).toBe(yukleDugmesi());
     expect(SahteIstek.son?.iptalEdildi).toBe(true);
     expect(screen.queryByRole("progressbar")).toBeNull();
     expect(yukleDugmesi().getAttribute("aria-invalid")).toBeNull();
@@ -194,12 +209,14 @@ describe("logo bölümü", () => {
       }),
     );
     const dugme = yukleDugmesi();
-    const hata = screen.getByText(metin("yonetim.dosya.hata.tur-izinsiz"));
+    const hata = screen.getByText(doldur(metin("yonetim.dosya.hata.tur-izinsiz"), { turler }));
     expect(dugme.getAttribute("aria-invalid")).toBe("true");
     expect(dugme.getAttribute("aria-describedby")).toBe(hata.id);
     expect(document.activeElement).toBe(dugme);
     await sec(png());
-    expect(screen.queryByText(metin("yonetim.dosya.hata.tur-izinsiz"))).toBeNull();
+    expect(
+      screen.queryByText(doldur(metin("yonetim.dosya.hata.tur-izinsiz"), { turler })),
+    ).toBeNull();
   });
 
   it("sınırı aşan dosya için istek gitmez; metin sınırı söyler", async () => {
@@ -242,5 +259,40 @@ describe("logo bölümü", () => {
     });
     expect(kaldirmaIstekleri).toEqual(["/kapi/yonetici/logo-kaldir"]);
     expect(yenile).toHaveBeenCalledTimes(1);
+  });
+
+  it("kaldırmadan sonra sayfanın yeni verisi gelince odak yükleme düğmesine gider", async () => {
+    const { rerender } = ciz(yuklenenLogo);
+    fireEvent.click(screen.getByRole("button", { name: metin("yonetim.tema.logo.kaldir") }));
+    const pencere = screen.getByRole("alertdialog");
+    await act(async () => {
+      fireEvent.click(
+        within(pencere).getByRole("button", { name: metin("yonetim.tema.logo.kaldir") }),
+      );
+    });
+    // Yenileme ilk logoyu getirir: "Logoyu kaldır" kalkar.
+    await act(async () => {
+      rerender(bolum(ilkLogo));
+    });
+    expect(screen.queryByRole("button", { name: metin("yonetim.tema.logo.kaldir") })).toBeNull();
+    expect(document.activeElement).toBe(yukleDugmesi());
+  });
+
+  it("kaldırma hatası kendi metniyle söylenir, yükleme metniyle değil", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json({ basarili: false, hata: { kod: "yetki" } }, { status: 403 }),
+      ),
+    );
+    ciz(yuklenenLogo);
+    fireEvent.click(screen.getByRole("button", { name: metin("yonetim.tema.logo.kaldir") }));
+    const pencere = screen.getByRole("alertdialog");
+    await act(async () => {
+      fireEvent.click(
+        within(pencere).getByRole("button", { name: metin("yonetim.tema.logo.kaldir") }),
+      );
+    });
+    expect(bildirimler).toEqual([["tehlike", metin("yonetim.tema.hata.yetki")]]);
   });
 });

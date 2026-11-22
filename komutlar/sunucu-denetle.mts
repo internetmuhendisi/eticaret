@@ -89,7 +89,9 @@ import {
   diskDolulugu,
   diskDolulukSiniri,
   dosyaKlasoruHatalari,
+  etkinYayinBellegi,
   etkinYayinSurumu,
+  kayittakiBellekle,
   sunucuDosyaKlasoru,
   kayitlariOku as yayinKayitlariniOku,
   yayinKutusuTanimi,
@@ -401,9 +403,11 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
           ...(portuKapali(portlar) ? [] : [`açık port ${portlar}`]),
         ];
       };
-      const hatalar = kutuHatalari(
-        ad,
-        (n) => yayinKutusuTanimi(yayinOrtami, kodAdi, n, no).services.uygulama,
+      // Kutunun bellek sınırı onu kuran yayının tanımındakidir (kart 0094): eski yayının kutusu sınırsızdır.
+      const yayinKayitlari = yayinKayitlariniOku(kayit.ipv4, yayinOrtami, kodAdi);
+      const bellek = etkinYayinBellegi(yayinKayitlari, no);
+      const hatalar = kutuHatalari(ad, (n) =>
+        kayittakiBellekle(yayinKutusuTanimi(yayinOrtami, kodAdi, n, no).services.uygulama, bellek),
       );
       olcum(
         hatalar.length === 0,
@@ -411,11 +415,13 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
         hatalar.join("; "),
       );
       // Etkin yayının sürümü kayıttan okunur: bilgisayardaki kimlik daha yeni olabilir (kart 0031).
-      const surum = etkinYayinSurumu(yayinKayitlariniOku(kayit.ipv4, yayinOrtami, kodAdi), no);
+      const surum = etkinYayinSurumu(yayinKayitlari, no);
       if (surum === undefined || arkaPlanKutusuVarMi(surum)) {
-        const arkaPlanHatalari = kutuHatalari(
-          arkaPlanKutuAdi(ad),
-          (n) => yayinKutusuTanimi(yayinOrtami, kodAdi, n, no).services["arka-plan"],
+        const arkaPlanHatalari = kutuHatalari(arkaPlanKutuAdi(ad), (n) =>
+          kayittakiBellekle(
+            yayinKutusuTanimi(yayinOrtami, kodAdi, n, no).services["arka-plan"],
+            bellek,
+          ),
         );
         olcum(
           arkaPlanHatalari.length === 0,

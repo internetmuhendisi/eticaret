@@ -28,6 +28,7 @@ import {
   arkaPlanKutuAdi,
   arkaPlanServisi,
   kaliciKutu,
+  siteKutusuBellegi,
   siteKutusuBellekSiniri,
   siteSaglikYoklamasi,
 } from "./kutu-kurali.mts";
@@ -192,6 +193,9 @@ export type YayinKaydi = {
   // geri dönüş notları. Veritabanına dokunulmadıysa null.
   degisiklikToplami: number | null;
   degisiklikNotlari: GeriDonusNotu[];
+  // Yayının kutu tanımındaki bellek sınırı (kart 0094, karar 0165). Bu alandan önceki yayınların kutusu sınırsızdır;
+  // geri dönüş yayının kendi tanımını açtığı için sunucu denetimi beklenen değeri buradan okur.
+  bellekSiniri?: string;
 };
 
 export const kayitlariCoz = (metin: string): YayinKaydi[] =>
@@ -224,6 +228,23 @@ export const etkinYigini = (kayitlar: YayinKaydi[]): number[] => {
 // geçmiş olabilir, çalışan kutu ise kayıttaki sürümdedir.
 export const etkinYayinSurumu = (kayitlar: YayinKaydi[], etkin: number): string | undefined =>
   kayitlar.findLast((kayit) => kayit.sonuc === "basarili" && kayit.etkin === etkin)?.surum;
+
+// Etkin kutunun bellek sınırı: kutuyu kuran başarılı yayının kaydından (geri dönüş o yayının tanımını açar). Kayıt
+// alanı taşımıyorsa kutu sınırsızdır.
+export const etkinYayinBellegi = (kayitlar: YayinKaydi[], etkin: number): string | undefined =>
+  kayitlar.find(
+    (kayit) => kayit.tur === "yayin" && kayit.no === etkin && kayit.sonuc === "basarili",
+  )?.bellekSiniri;
+
+// Bugünkü kutu tanımının bellek sınırını yayının kaydındakiyle değiştirir (sunucu denetimi): kayıtta sınır yoksa
+// tanımdan çıkar (kutu sınırsızdır), varsa bellek ve takasla birlikte bellek o değerdir.
+export const kayittakiBellekle = <T extends { mem_limit?: string; memswap_limit?: string }>(
+  tanim: T,
+  bellek: string | undefined,
+): Omit<T, "mem_limit" | "memswap_limit"> & { mem_limit?: string; memswap_limit?: string } => {
+  const { mem_limit: _, memswap_limit: __, ...kalan } = tanim;
+  return bellek === undefined ? kalan : { ...kalan, mem_limit: bellek, memswap_limit: bellek };
+};
 
 export const sonrakiNumara = (kayitlar: YayinKaydi[]): number =>
   Math.max(0, ...kayitlar.map((kayit) => kayit.no)) + 1;
@@ -543,6 +564,7 @@ const yayinlaKilitli = async (girdi: YayinGirdisi): Promise<YayinKaydi> => {
     sonuc: "basarisiz",
     degisiklikToplami: null,
     degisiklikNotlari: notlar,
+    bellekSiniri: siteKutusuBellegi,
   };
   let kutuAcildi = false;
   let onKapiDegisti = false;

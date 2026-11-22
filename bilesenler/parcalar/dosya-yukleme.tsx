@@ -4,7 +4,9 @@
 // kullanan gönderir. Yükleme sürerken ilerleme çubuğu (oranı ekran okuyucuda okunur) ve "İptal" görünür; seçme
 // düğmesi aria-disabled olur, odak kaybolmaz. Aynı dosya yeniden seçilebilir. Metinleri kullanan sayfa verir.
 // Alanın hatası ve açıklaması düğmeye bağlanır (aria-describedby, aria-invalid): form alanın odağını bulur.
-import { type ButtonHTMLAttributes, useRef } from "react";
+import { type ButtonHTMLAttributes, type ReactNode, useEffect, useRef } from "react";
+import { Ikon } from "../ikonlar/ikon.tsx";
+import type { IkonAdi } from "../ikonlar/sozluk.ts";
 import { Dugme, type DugmeTuru } from "./dugme.tsx";
 import { sinif } from "./sinif.ts";
 
@@ -19,8 +21,10 @@ export function DosyaYukleme({
   iptalEtiketi,
   onIptal,
   tur = "cerceveli",
+  ikon,
   disabled = false,
   className,
+  children,
   ...dugmeOzellikleri
 }: Pick<ButtonHTMLAttributes<HTMLButtonElement>, "id" | "aria-describedby" | "aria-invalid"> & {
   secEtiketi: string;
@@ -33,14 +37,28 @@ export function DosyaYukleme({
   iptalEtiketi: string;
   onIptal: () => void;
   tur?: DugmeTuru;
+  // Düğmenin yazısının önündeki ikon (sözlükten).
+  ikon?: IkonAdi;
   disabled?: boolean;
   className?: string;
+  // Seçme düğmesinin yanında duran öteki düğmeler (ör. "Logoyu kaldır"); yükleme sürerken gizlenmez, kullanan karar
+  // verir.
+  children?: ReactNode;
 }) {
   const girdi = useRef<HTMLInputElement>(null);
+  const kap = useRef<HTMLDivElement>(null);
   const suruyor = yukleme !== null;
+  // İptal yalnız yükleme sürerken vardır: odak ondayken yükleme biterse (iptal edildi ya da tamamlandı) odak seçme
+  // düğmesine döner, gövdeye düşmez.
+  const iptalOdakta = useRef(false);
+  useEffect(() => {
+    if (suruyor || !iptalOdakta.current) return;
+    iptalOdakta.current = false;
+    kap.current?.querySelector<HTMLButtonElement>("[data-dosya-sec]")?.focus();
+  }, [suruyor]);
   const yuzde = suruyor ? Math.round(Math.min(Math.max(yukleme.oran, 0), 1) * 100) : 0;
   return (
-    <div data-slot="dosya-yukleme" className={sinif("flex flex-col gap-3", className)}>
+    <div ref={kap} data-slot="dosya-yukleme" className={sinif("flex flex-col gap-3", className)}>
       <input
         ref={girdi}
         type="file"
@@ -56,21 +74,35 @@ export function DosyaYukleme({
       />
       <div className="flex flex-wrap items-center gap-3">
         <Dugme
+          data-dosya-sec=""
           tur={tur}
           disabled={disabled}
           aria-disabled={suruyor ? true : undefined}
+          // Sürerken kapalı görünür (yalnız aria-disabled: odak alır, basılınca bir şey olmaz).
+          className="aria-disabled:cursor-not-allowed aria-disabled:bg-yuzey aria-disabled:text-soluk-yazi"
           onClick={() => {
             if (!suruyor) girdi.current?.click();
           }}
           {...dugmeOzellikleri}
         >
+          {ikon === undefined ? null : <Ikon ad={ikon} />}
           {secEtiketi}
         </Dugme>
         {suruyor ? (
-          <Dugme tur="sade" onClick={onIptal}>
+          <Dugme
+            tur="sade"
+            onClick={onIptal}
+            onFocus={() => {
+              iptalOdakta.current = true;
+            }}
+            onBlur={() => {
+              iptalOdakta.current = false;
+            }}
+          >
             {iptalEtiketi}
           </Dugme>
         ) : null}
+        {children}
       </div>
       {suruyor ? (
         <div className="flex items-center">

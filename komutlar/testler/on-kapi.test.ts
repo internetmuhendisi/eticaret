@@ -411,6 +411,7 @@ describe("kutuların sunucudaki gerçek ayarı", () => {
       '["no-new-privileges:true"]',
       "unless-stopped",
       "0",
+      "0",
     ];
     for (const [sira, deger] of Object.entries(degisiklik)) alanlar[Number(sira)] = deger ?? "";
     return alanlar.join("|");
@@ -437,6 +438,7 @@ describe("kutuların sunucudaki gerçek ayarı", () => {
     ["yeniden başlama kuralı boş", { 7: "" }],
     ["tanımda olmayan bellek sınırı", { 8: "536870912" }],
     ["bellek sınırı okunamadı", { 8: "" }],
+    ["tanımda olmayan takas sınırı", { 9: "536870912" }],
   ])("%s kırmızıdır", (_ad, degisiklik) => {
     expect(kutuKisitHatalari(satir(degisiklik), caddy)).not.toEqual([]);
   });

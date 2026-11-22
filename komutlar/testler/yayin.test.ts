@@ -18,10 +18,12 @@ import {
 import {
   diskDolulugu,
   dosyaKlasoruHatalari,
+  etkinYayinBellegi,
   etkinYayinSurumu,
   etkinYigini,
   geriDonusHedefi,
   kayitlariCoz,
+  kayittakiBellekle,
   kutuyuAcmaBetigi,
   kutuyuDurdurmaBetigi,
   saglikCoz,
@@ -76,6 +78,26 @@ describe("trafiğin geçtiği yayınlar", () => {
     expect(etkinYayinSurumu(kayitlar, 3)).toBe("0.2.0");
     expect(etkinYayinSurumu(kayitlar, 2)).toBeUndefined();
     expect(etkinYayinSurumu([], 1)).toBeUndefined();
+  });
+
+  // Sunucu denetimi kutunun bellek sınırını onu kuran yayının kaydından okur (kart 0094): geri dönüş o yayının kendi
+  // tanımını açar, sınırdan önceki yayınların kutusu sınırsızdır.
+  it("etkin kutunun bellek sınırı onu kuran başarılı yayının kaydından okunur", () => {
+    const kayitlar = [
+      kayit({ no: 1, etkin: 1 }),
+      kayit({ no: 2, etkin: 2, bellekSiniri: "1g" }),
+      kayit({ no: 3, etkin: 3, bellekSiniri: "2g", sonuc: "basarisiz" }),
+      kayit({ no: 4, tur: "geri-donus", etkin: 1, bellekSiniri: "1g" }),
+    ];
+    expect(etkinYayinBellegi(kayitlar, 1)).toBeUndefined();
+    expect(etkinYayinBellegi(kayitlar, 2)).toBe("1g");
+    expect(etkinYayinBellegi(kayitlar, 3)).toBeUndefined();
+    expect(etkinYayinBellegi([], 1)).toBeUndefined();
+    // Denetimin beklediği tanım: kayıtsız eski yayında sınır yok, kayıtlıda kayıttaki değer.
+    const tanim = yayinKutusuTanimi("deneme", "ornek-magaza", 1, 2).services.uygulama;
+    expect(kayittakiBellekle(tanim, undefined)).not.toHaveProperty("mem_limit");
+    expect(kayittakiBellekle(tanim, undefined)).not.toHaveProperty("memswap_limit");
+    expect(kayittakiBellekle(tanim, "2g")).toMatchObject({ mem_limit: "2g", memswap_limit: "2g" });
   });
 
   it("son üç yayın saklanır", () => {

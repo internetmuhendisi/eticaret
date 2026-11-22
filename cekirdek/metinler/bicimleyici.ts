@@ -177,6 +177,8 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
       maximumFractionDigits: 1,
     });
   const megabaytBicimi = boyutBicimi("megabyte");
+  // "a, b veya c" (kart 0094): seçeneklerin listesi, bağlacı dilden.
+  const veyaBicimi = new Intl.ListFormat(ayarlar.dil, { type: "disjunction" });
   const kilobaytBicimi = boyutBicimi("kilobyte");
   const yonelmeEki = yonelmeEkleri[ayarlar.dil.split("-")[0] ?? ""] ?? (() => "");
   const ulkeAdlari = new Intl.DisplayNames(ayarlar.dil, { type: "region", fallback: "none" });
@@ -267,6 +269,7 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
       ayiricilariUygula(sayiBicimi(ondalikSayisi), deger),
     // Oran yüz üzerinden verilir (23 → "%23").
     yuzde: (oran: number): string => yuzdeBicimi.format(oran / 100),
+    veyaListesi: (ogeler: readonly string[]): string => veyaBicimi.format(ogeler),
     dosyaBoyutu: (bayt: number): string =>
       bayt >= 1024 * 1024
         ? ayiricilariUygula(megabaytBicimi, bayt / (1024 * 1024))

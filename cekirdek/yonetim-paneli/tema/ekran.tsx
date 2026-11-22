@@ -397,6 +397,7 @@ export function TemaIcerigi() {
       <LogoBolumu
         logo={veri.logo}
         enCokDosyaBoyutu={veri.enCokDosyaBoyutu}
+        dosyaTurleri={veri.dosyaTurleri}
         degistirebilir={logoIzni}
       />
       <FiltreYeri />

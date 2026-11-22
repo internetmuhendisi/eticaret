@@ -18,8 +18,9 @@ import sharp from "sharp";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { temaDemosuAdresi, temaDemosuBaglantisi } from "../../ayar-semasi/tema-demosu-adresi";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri";
+import { yuklenebilenTurAdlari } from "../../kayitlar/dosya";
 import { doldur } from "../../metinler/doldur";
-import { metin } from "../../metinler/site-metni";
+import { metin, siteninBicimleyicisi } from "../../metinler/site-metni";
 import { logoyuKaldir } from "../../moduller/magaza-ayarlari/logo";
 import { siteninTemaServisi } from "../../moduller/tema/servis";
 import { yeniTemaninAyarlari } from "../../temalar/ayarlar";
@@ -285,7 +286,8 @@ test("mağaza sahibi logoyu klavyeyle yükler ve vitrinde görür; hatalı dosya
     mimeType: "text/plain",
     buffer: Buffer.from("logo değil"),
   });
-  const hata = page.getByText(metin("yonetim.dosya.hata.tur-izinsiz"));
+  const turler = siteninBicimleyicisi(calisanSite().ayarlar).veyaListesi(yuklenebilenTurAdlari);
+  const hata = page.getByText(doldur(metin("yonetim.dosya.hata.tur-izinsiz"), { turler }));
   await expect(hata).toBeVisible();
   await expect(yukle).toHaveAttribute("aria-invalid", "true");
   await expect(yukle).toHaveAttribute("aria-describedby", (await hata.getAttribute("id")) ?? "");

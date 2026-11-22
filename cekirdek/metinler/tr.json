@@ -934,7 +934,7 @@
       },
       "logo": {
         "baslik": "Logo",
-        "aciklama": "Logo vitrinin üst kısmında, panelde ve e-postalarda görünür. PNG, JPEG ya da WebP bir görsel yükleyin, en çok {boyut}.",
+        "aciklama": "Logo vitrinin üst kısmında, panelde ve e-postalarda görünür. {turler} bir görsel yükleyin, en çok {boyut}.",
         "onizleme": "Mağazanın şimdiki logosu",
         "yuklenen": "Yüklediğiniz logo kullanılıyor.",
         "ilk": "Mağazanın ilk logosu kullanılıyor.",
@@ -1856,7 +1856,7 @@
       "hata": {
         "bos": "Seçtiğiniz dosya boş. Başka bir dosya seçin.",
         "cok-buyuk": "Dosya çok büyük. En çok {boyut} bir görsel seçin.",
-        "tur-izinsiz": "Bu dosya türü yüklenemez. PNG, JPEG ya da WebP bir görsel seçin.",
+        "tur-izinsiz": "Bu dosya türü yüklenemez. {turler} bir görsel seçin.",
         "bozuk": "Görsel açılamadı, dosya bozuk olabilir. Başka bir dosya seçin.",
         "cok-fazla-piksel": "Görselin çözünürlüğü çok yüksek. Daha küçük bir görsel seçin.",
         "istekSiniri": "Kısa sürede çok fazla dosya yüklediniz. Bir dakika sonra yeniden deneyin.",

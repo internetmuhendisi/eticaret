@@ -67,6 +67,7 @@ import {
   TriangleAlertIcon,
   TruckIcon,
   Undo2Icon,
+  UploadIcon,
   UserIcon,
   XIcon,
 } from "lucide-react";
@@ -88,6 +89,8 @@ export const ikonlar = {
   sonraki: ChevronRightIcon,
   // Yükleniyor göstergesi (döner).
   yukleniyor: LoaderCircleIcon,
+  // Dosya yükleme düğmesi (kart 0094, panel taslağı).
+  yukle: UploadIcon,
   // Bildirim ve uyarı türleri.
   basari: CircleCheckIcon,
   // Siparişin iptali (kart 0235).

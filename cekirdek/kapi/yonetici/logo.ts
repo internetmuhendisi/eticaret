@@ -2,7 +2,7 @@
 // kaydetme kuralları dosya servisinde, logonun ayarı logo modülündedir. Dosyanın reddi alanın koduyla döner
 // (dosyaHatalari); metni ekran çözer.
 import {
-  logonunYolu,
+  ekrandakiLogo,
   logoyuDegistir,
   logoyuKaldir,
   magazaLogosu,
@@ -12,13 +12,8 @@ import { siteninVeritabani } from "../../veritabani/baglanti.ts";
 import { ucTanimla } from "../uc.ts";
 import { BilinenHata } from "../zarf.ts";
 
-// Ekranın önizlemesi: logonun kaynağı ve sitenin kendi sayfalarındaki adresi (özetiyle).
-const logoDurumu = async () => {
-  const logo = await magazaLogosu(siteninVeritabani());
-  return logo === undefined
-    ? { kaynak: null, adres: null }
-    : { kaynak: logo.kaynak, adres: logonunYolu(logo) };
-};
+// Ekranın önizlemesi: logonun kaynağı ve özetli adresi (Tema ekranının verisiyle aynı biçim).
+const logoDurumu = async () => ekrandakiLogo(await magazaLogosu(siteninVeritabani()));
 
 // POST /kapi/yonetici/logo-yukle: gövdedeki görseli yeni logo yapar.
 export const logoYuklemeUcu = ucTanimla({

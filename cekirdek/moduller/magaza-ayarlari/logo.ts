@@ -108,6 +108,14 @@ export const magazaLogosu = async (
 export const logoUcuYolu = "/kapi/herkese-acik/logo";
 // Sitenin kendi sayfalarındaki (vitrin, panel) göreli adresi; özet aynı işi görür.
 export const logonunYolu = (logo: Logo): string => `${logoUcuYolu}?s=${logo.etiket.slice(0, 16)}`;
+// Panelin önizlemesi (kart 0094): logonun kaynağı ve sitenin kendi sayfalarındaki adresi; logo yoksa ikisi de null.
+// Tema ekranının verisi ve logo uçlarının yanıtı aynı biçimi buradan alır.
+export type EkranLogosu = { kaynak: Logo["kaynak"] | null; adres: string | null };
+export const ekrandakiLogo = (logo: Logo | undefined): EkranLogosu =>
+  logo === undefined
+    ? { kaynak: null, adres: null }
+    : { kaynak: logo.kaynak, adres: logonunYolu(logo) };
+
 export const logonunAdresi = (site: Site, logo: Logo | undefined): string | undefined => {
   if (logo === undefined) return undefined;
   const adres = siteAdresi(site.kimlik);
