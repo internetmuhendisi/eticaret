@@ -53,6 +53,9 @@ const tara = async (page: Page, ne: string) => {
         .map((a) => a.finished.catch(() => undefined)),
     ),
   );
+  // Panel çakışmadan sonra sayfayı yeniler; yenileme sürerken sayfanın başlığı bir an boş kalabiliyor (hattaki 0264
+  // çalışması: yenileme yanıtından 1,3 saniye sonra geri geldi, tarama arada "document-title" buldu).
+  await expect(page).toHaveTitle(/\S/);
   const sonuc = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
     .exclude("nextjs-portal")
@@ -298,6 +301,10 @@ test("mağaza sahibi basit ürüne klavyeyle seçenek ekler, birleşimleri doldu
       }),
     );
     await page.keyboard.type("m");
+    // Tekrarlı değer çakışmadır: panel ardından sayfayı yeniler, tarama yenilemeden sonra yapılır.
+    const yenileme = page.waitForResponse(
+      (yanit) => yanit.request().method() === "GET" && yanit.request().headers()["rsc"] === "1",
+    );
     await bas(page, kaydet);
     const tekrar = bolum.getByRole("textbox", {
       name: doldur(metin("yonetim.urunEkrani.secenek.deger"), { secenek: "Beden", sira: "3" }),
@@ -306,6 +313,8 @@ test("mağaza sahibi basit ürüne klavyeyle seçenek ekler, birleşimleri doldu
     await expect(tekrar).toBeFocused();
     await expect(tekrar).toHaveAttribute("aria-invalid", "true");
     await expect(bolum.getByText(metin("yonetim.urun.hata.deger-ad-tekrar"))).toBeVisible();
+    await yenileme;
+    await sayfaHazir(page);
     await tara(page, "hatalı değer");
     await bas(page, page.getByRole("button", { name: metin("ortak.islem.vazgec"), exact: true }));
 

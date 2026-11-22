@@ -190,18 +190,33 @@ test("kategori: menüden gelinir, eklenir, alt kategori eklenir, sıralanır, ta
   await expect.poll(altlari).toEqual([ikinci, birinci]);
 
   // Satır menüsünden: birinci ikincinin altına taşınır, sonra en üste çıkar.
+  // Menü klavyeyle açılır: fareyle tıklanınca bir önceki işlemin bildirimi düğmenin üstüne gelebiliyor, fare
+  // üstündeyken bildirim kapanmayı beklettiği için tıklama süre sınırına kadar bekledi (hattaki 0264 çalışması).
   const menuyuAc = async (adi: string) => {
     await page
       .getByRole("button", { name: doldur(metin("yonetim.kategori.diger"), { ad: adi }) })
-      .click();
+      .focus();
+    await page.keyboard.press("Enter");
+  };
+  const sec = async (oge: Locator) => {
+    await oge.focus();
+    await page.keyboard.press("Enter");
   };
   await menuyuAc(birinci);
-  await page.getByRole("menuitem", { name: metin("yonetim.kategori.altinaTasi") }).click();
-  await page.getByRole("menuitem", { name: `${ust} › ${ikinci}` }).click();
+  await sec(page.getByRole("menuitem", { name: metin("yonetim.kategori.altinaTasi") }));
+  await sec(page.getByRole("menuitem", { name: `${ust} › ${ikinci}` }));
   await expect(bildirim(page, "yonetim.kategori.tasindi")).toBeVisible();
   await expect.poll(altlari).toEqual([ikinci]);
+  // Menü, yenileme satırı yeni yerine taşıdıktan sonra açılır: önce açılırsa satır yeniden kurulunca kapanır (ölçüldü).
+  await expect(
+    page
+      .getByRole("list", {
+        name: doldur(metin("yonetim.kategori.altListeEtiketi"), { ad: ikinci }),
+      })
+      .getByText(birinci, { exact: true }),
+  ).toBeVisible();
   await menuyuAc(birinci);
-  await page.getByRole("menuitem", { name: metin("yonetim.kategori.enUsteCikar") }).click();
+  await sec(page.getByRole("menuitem", { name: metin("yonetim.kategori.enUsteCikar") }));
   await expect
     .poll(async () => (await kategorileriOku(vt)).find((k) => k.ad === birinci)?.ust)
     .toBeNull();
