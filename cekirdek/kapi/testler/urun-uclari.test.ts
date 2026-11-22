@@ -11,6 +11,7 @@
 // geçmişinde yazan kendisidir; görevli fiyatı değiştiremez (fiyat-yetkisi, ürünün değişikliği de yazılmaz), stoğu
 // pencereyle düzeltir, eski görülen miktarla çakışma alır; birleşimlerin fiyatı ve stoğu satırlarıyla yazılır;
 // rolsüz yönetici, müşteri ve girişsiz ziyaretçi stok düzeltme ve iki geçmiş ucunda geçmez.
+
 import { randomBytes, randomUUID } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -19,6 +20,8 @@ import { eq } from "drizzle-orm";
 import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
+import { dosyaSinirlari } from "../../kayitlar/dosya.ts";
+import { galeriSinirlari } from "../../kayitlar/gorsel.ts";
 import { yerelZamandan } from "../../metinler/bicimleyici.ts";
 import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
 import { roller, yoneticiRolleri } from "../../moduller/ekip/model.ts";
@@ -761,6 +764,36 @@ describe("galeri (kart 0266)", () => {
       .from(urunler)
       .where(eq(urunler.kimlik, kimlik));
     expect(satir?.ad).not.toBe("Yazılmamalı");
+  });
+
+  it("sınırı aşan dosya cok-buyuk alır; galerinin öğe sınırını aşan liste galerinin hatasıdır, ürün açılmaz", async () => {
+    const sahip = await cerez("magaza-sahibi");
+    const buyuk = await yukle(sahip, new Uint8Array(dosyaSinirlari.enCokBayt + 1));
+    expect(buyuk.status).toBe(400);
+    expect(await hata(buyuk)).toMatchObject({
+      kod: "dogrulama",
+      ayrinti: [{ alan: "dosya", kod: "cok-buyuk" }],
+    });
+    const ad = `Sınırlı ${benzersiz()}`;
+    const fazla = await urunEklemeUcu(
+      istek("urun-ekle", sahip, {
+        urun: { ad, vergiSinifi: null },
+        galeri: {
+          gorulen: [],
+          ogeler: Array.from({ length: galeriSinirlari.oge + 1 }, () => ({
+            video: "https://youtu.be/dQw4w9WgXcQ",
+            alternatifMetin: "Tanıtım",
+          })),
+        },
+      }),
+    );
+    expect(fazla.status).toBe(422);
+    expect(await hata(fazla)).toMatchObject({
+      kod: "is-kurali",
+      ayrinti: [{ alan: "galeri", kod: "galeri-siniri" }],
+    });
+    const satirlar = await vt.select({ ad: urunler.ad }).from(urunler).where(eq(urunler.ad, ad));
+    expect(satirlar).toEqual([]);
   });
 
   it("boş alternatif metin öğenin yoluyla döner, ürünün değişikliği de yazılmaz", async () => {

@@ -26,4 +26,6 @@ En uzun kenarı 800 pikselden kısa görsel reddedilmez; galeride "Küçük gör
 
 - Yüklenip kaydedilmeyen görsel (Vazgeç ya da sayfadan çıkış) galeriye bağlanmamış dosya olarak kalır; temizliği kayıtsız görsellerin temizliğiyle aynıdır (kart 0093).
 - Yeni yüklenen görsel birleşimin görseli olarak ancak kayıttan sonra seçilir (birleşim kayıtlı galeri öğesine bağlanır).
-- Hata ekranın öğesinin yoluyla döner (`galeri.ogeler.<sıra>`); odak o kartın "Düzenle" düğmesine gider.
+- Hata ekranın öğesinin yoluyla döner (`galeri.ogeler.<sıra>`); odak o kartın "Düzenle" düğmesine gider. Liste değişince öğe hataları kalkar.
+- Çakışma yalnız öğe kümesine bakar (eklenen ya da silinen öğe). Başka bir yöneticinin aynı anda değiştirdiği sıra ya da alternatif metin, ürünün öteki alanları gibi son kaydedenle ezilir.
+- Kayıt sürerken yüklenen görsel formda kalır; sayfa yenilenince sunucuda kaydedilmiş yeni öğeler aynı dosyayla eşlenip kimliğini alır (`galeriyiEsle`). Sayfadan çıkılınca süren yükleme iptal edilir, yükleme sürerken çıkışta sorulur.
