@@ -5,7 +5,8 @@ import { kapiyaIstek, kapiyaYukle } from "../kapi/istemci";
 
 export type PanelHatasi = {
   kod: string;
-  ayrinti: { alan: string; kod: string }[];
+  // oneri: bazı alan hatalarının önerdiği değer (tema ayarlarında okunmayan rengin en yakın okunur tonu).
+  ayrinti: { alan: string; kod: string; oneri?: string }[];
 };
 export type PanelSonucu<Veri> = { tamam: true; veri: Veri } | ({ tamam: false } & PanelHatasi);
 
@@ -15,7 +16,7 @@ export const yoneticiUcu = (yol: string): string => `/kapi/yonetici/${yol}`;
 const zarfiAc = async <Veri>(yanit: Response): Promise<PanelSonucu<Veri>> => {
   const zarf = (await yanit.json().catch(() => undefined)) as
     | { basarili: true; veri: Veri }
-    | { basarili: false; hata: { kod: string; ayrinti?: { alan: string; kod: string }[] } }
+    | { basarili: false; hata: { kod: string; ayrinti?: PanelHatasi["ayrinti"] } }
     | undefined;
   if (zarf?.basarili === true) return { tamam: true, veri: zarf.veri };
   return {

@@ -121,7 +121,23 @@ describe("bozuk tema açılmaz", () => {
     const tema = kutuphaneliDenemeTemasi();
     // Başarının doygun tonu yalnız işarettir, hiçbir yazı ya da işaret çiftinde yoktur.
     tema.magazaSecenekleri.renkler = ["birincil", "basari"];
-    expect(sorunlar(tema)).toEqual([["magazaSecenekleri.renkler.1", "renk-olculmuyor"]]);
+    expect(sorunlar(tema)).toEqual([
+      ["magazaSecenekleri.renkler.1", "renk-olculmuyor"],
+      ["magazaSecenekleri.renkler.1", "renk-acilamaz"],
+    ]);
+  });
+
+  // Panelin tema ayarları ekranı açılan rengi ve seçeneği kayıttaki adıyla gösterir (kart 0260).
+  it("panelde adı olmayan renk ve köşe ya da düğme seçeneği açılmaz", () => {
+    const renk = kutuphaneliDenemeTemasi();
+    renk.magazaSecenekleri.renkler = ["birincil", "zemin"];
+    expect(sorunlar(renk)).toContainEqual(["magazaSecenekleri.renkler.1", "renk-acilamaz"]);
+    const kose = kutuphaneliDenemeTemasi();
+    kose.magazaSecenekleri.koseler = { egri: { kucuk: "2px", orta: "4px" } };
+    expect(sorunlar(kose)).toEqual([["magazaSecenekleri.koseler.egri", "secenek-adsiz"]]);
+    const dugme = kutuphaneliDenemeTemasi();
+    dugme.magazaSecenekleri.dugmeBicimleri = { kare: "0" };
+    expect(sorunlar(dugme)).toEqual([["magazaSecenekleri.dugmeBicimleri.kare", "secenek-adsiz"]]);
   });
 
   it("aynı renk iki kez açılmaz", () => {

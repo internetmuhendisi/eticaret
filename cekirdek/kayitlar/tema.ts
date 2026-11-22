@@ -30,6 +30,17 @@ export const parcaGorunumleri: Readonly<Record<string, readonly string[]>> = {
   "urun-filtresi": urunFiltresiGorunumleri,
 };
 
+// Mağaza sahibine açılabilen renkler ve köşe ile düğme biçimi seçeneklerinin kodları (kart 0260, karar 0168).
+// Panelin tema ayarları ekranı her birini metin dosyasındaki adıyla gösterir: tema yalnız buradakileri açabilir,
+// adı olmayan renk ya da seçenek açan tema açılmaz (cekirdek/temalar/sema.ts). Yazı tipi seçeneğinin adı kendi
+// yazı tiplerinin adıdır, kayıtta değildir.
+export const magazaRenkleri = ["birincil", "indirim", "afis", "alt-kisim"] as const;
+export type MagazaRengi = (typeof magazaRenkleri)[number];
+export const koseSecenekleri = ["keskin", "orta", "yumusak", "yuvarlak"] as const;
+export type KoseSecenegi = (typeof koseSecenekleri)[number];
+export const dugmeBicimiSecenekleri = ["hap", "yumusak", "koseli"] as const;
+export type DugmeBicimiSecenegi = (typeof dugmeBicimiSecenekleri)[number];
+
 // Tema demosu (kart 0116, karar 0127): ziyaretçinin seçtiği tema adreste bu parametreyle gelir, ara katman onu
 // çereze yazar; sonraki sayfalar çerezden okur. Yalnız temaDemosu ayarı açık sitede okunur. Demo sitesinin sayfası
 // kökünde oznitelik'i taşır: tarayıcıdaki kod (hesap durumu) ziyaretçinin yalnız gezdiğini buradan bilir.

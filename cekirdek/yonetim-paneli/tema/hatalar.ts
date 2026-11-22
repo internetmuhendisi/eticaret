@@ -24,3 +24,17 @@ export const temaHatasiMetni = (hata: PanelHatasi): MetinAnahtari => {
   if (ayrinti.includes("surum-kullanilamaz")) return "yonetim.tema.hata.surumKullanilamaz";
   return "yonetim.tema.hata.genel";
 };
+
+// Tema ayarları ekranında alana bağlanan hatanın metni (kart 0260): kontrastı yetersiz renk (önerili ya da önerisiz),
+// biçimi bozuk renk (şemanın kodu), temanın açmadığı renk ve temada olmayan seçenek. Başka kod alana bağlanmaz.
+export const temaAyariAlanHatasi = (kod: string, oneriVar: boolean): MetinAnahtari | undefined => {
+  if (kod === "kontrast-yetersiz") {
+    return oneriVar
+      ? "yonetim.temaAyarlari.hata.kontrast"
+      : "yonetim.temaAyarlari.hata.kontrastOnerisiz";
+  }
+  if (kod === "invalid_format" || kod === "invalid_type") return "yonetim.temaAyarlari.hata.bicim";
+  if (kod === "renk-degistirilemez") return "yonetim.temaAyarlari.hata.renkDegistirilemez";
+  if (kod === "secenek-tanimsiz") return "yonetim.temaAyarlari.hata.secenekTanimsiz";
+  return undefined;
+};

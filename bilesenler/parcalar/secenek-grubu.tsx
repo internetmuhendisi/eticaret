@@ -11,6 +11,8 @@
 // - Kart görünümü (kart 0214, ödeme yöntemi): her değer tam genişlikte bir satırdır; seçim noktası, kalın ad, altında
 //   soluk açıklama ve sağda ikon. Seçili satırın kenarı kalınlaşır. Değerin ekran okuyucudaki adı yalnız
 //   adıdır (ve ekidir); açıklama ayrı, açıklama olarak okunur.
+// - Örnekli görünüm (kart 0260, tema ayarları): değerler yan yana kartlardır; kartın üstünde değerin küçük örneği
+//   (yazı tipiyle "Ağ", köşe, düğme), altında adı. Örnek yalnız gösterimdir, ekran okuyucudan gizlidir; adı adıdır.
 import { RadioGroup } from "radix-ui";
 import { type ReactNode, useId } from "react";
 import { Ikon } from "../ikonlar/ikon.tsx";
@@ -26,6 +28,8 @@ export type SecenekGrubuOgesi = {
   // Yalnız kart görünümünde: adın altındaki açıklama ve sağdaki ikon.
   aciklama?: string;
   ikon?: IkonAdi;
+  // Yalnız örnekli görünümde: adın üstündeki örnek.
+  ornek?: ReactNode;
 };
 
 export function SecenekGrubu({
@@ -54,8 +58,9 @@ export function SecenekGrubu({
   aciklama?: string;
   // Grubun hatası (kart 0139: seçim yapılmadan gönderilen form). Grup geçersiz işaretlenir, yazı ona bağlanır.
   hata?: string;
-  // dugme: yan yana küçük düğmeler (beden, renk); kart: alt alta tam genişlikte satırlar (ödeme yöntemi).
-  gorunum?: "dugme" | "kart";
+  // dugme: yan yana küçük düğmeler (beden, renk); kart: alt alta tam genişlikte satırlar (ödeme yöntemi);
+  // ornekli: yan yana, üstünde örneği olan kartlar (tema ayarları).
+  gorunum?: "dugme" | "kart" | "ornekli";
   className?: string;
 }) {
   const id = useId();
@@ -82,7 +87,24 @@ export function SecenekGrubu({
         className={gorunum === "kart" ? "flex flex-col gap-2" : "flex flex-wrap gap-2"}
       >
         {ogeler.map((oge) =>
-          gorunum === "kart" ? (
+          gorunum === "ornekli" ? (
+            <RadioGroup.Item
+              key={oge.deger}
+              value={oge.deger}
+              {...(oge.secilemez === true ? { "aria-disabled": true } : {})}
+              className="flex min-h-11 min-w-20 cursor-pointer flex-col items-center gap-2 rounded-orta border border-alan-kenari bg-zemin px-4 py-3 text-govde text-yazi transition-colors duration-kisa hover:bg-yuzey isaretli:border-2 isaretli:border-yazi isaretli:font-kalin aria-disabled:cursor-not-allowed aria-disabled:border-dashed aria-disabled:text-soluk-yazi"
+            >
+              {oge.ornek === undefined ? null : (
+                <span aria-hidden="true" className="flex h-10 items-center justify-center">
+                  {oge.ornek}
+                </span>
+              )}
+              <span>{oge.ad}</span>
+              {oge.secilemez === true || oge.tukenmis === true ? (
+                <span className="sr-only">{secilemezEki}</span>
+              ) : null}
+            </RadioGroup.Item>
+          ) : gorunum === "kart" ? (
             <RadioGroup.Item
               key={oge.deger}
               value={oge.deger}

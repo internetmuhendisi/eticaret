@@ -26,6 +26,7 @@ import { KartOrnegi } from "./ornekler/kart";
 import { OnayKutusuOrnegi } from "./ornekler/onay-kutusu";
 import { OnayPenceresiOrnegi } from "./ornekler/onay-penceresi";
 import { PencereOrnegi } from "./ornekler/pencere";
+import { RenkAlaniOrnegi } from "./ornekler/renk-alani";
 import { RozetOrnegi } from "./ornekler/rozet";
 import { SayfaBasligiOrnegi } from "./ornekler/sayfa-basligi";
 import { SayfaYoluOrnegi } from "./ornekler/sayfa-yolu";
@@ -57,6 +58,7 @@ const ornekler: Record<ParcaKodu, ComponentType> = {
   "onay-kutusu": OnayKutusuOrnegi,
   "secenek-grubu": SecenekGrubuOrnegi,
   anahtar: AnahtarOrnegi,
+  "renk-alani": RenkAlaniOrnegi,
   "dosya-yukleme": DosyaYuklemeOrnegi,
   "ilerleme-cubugu": IlerlemeCubuguOrnegi,
   "siralanabilir-liste": SiralanabilirListeOrnegi,

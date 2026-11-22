@@ -20,10 +20,9 @@ export default async function TemaSayfasi() {
   await panelSayfasiniAc("tema");
   const { yetkili } = await panelOturumu();
   const izinli = yetkili("tema.degistir");
-  const logoIzni = yetkili("magaza-ayarlari.degistir");
   const veri = await temaEkraniVerisi();
   return (
-    <TemaSaglayici veri={veri} izinli={izinli} logoIzni={logoIzni}>
+    <TemaSaglayici veri={veri} izinli={izinli}>
       <PanelSayfasi kod="tema" eylemler={<TemaEylemleri />}>
         <TemaIcerigi />
       </PanelSayfasi>

@@ -88,7 +88,7 @@ describe("temanın değerleri ile mağaza sahibinin ayarları", () => {
   it("yazı tipi, köşe ve düğme biçimi seçeneklerden gelir", () => {
     const degerler = temaBirlesimi(
       tema,
-      ayar({ yaziTipi: "yalniz-inter", kose: "keskin", dugmeBicimi: "kare" }),
+      ayar({ yaziTipi: "yalniz-inter", kose: "keskin", dugmeBicimi: "koseli" }),
     );
     expect(degerler.yaziTipleri.govde).toBe("Inter Variable, system-ui, sans-serif");
     expect(degerler.yaziTipleri.baslik).toBe("Inter Variable, system-ui, sans-serif");

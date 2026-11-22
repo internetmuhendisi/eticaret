@@ -6,7 +6,7 @@ import type { IkonAdi } from "../../bilesenler/ikonlar/sozluk";
 import type { EklentiKodu } from "../kayitlar/eklentiler";
 import type { GirisIzni } from "../kayitlar/izinler";
 import type { MetinAnahtari } from "../metinler/metin";
-import { panelAdresi } from "./adresler";
+import { panelAdresi, temaAdresi, temaAyarlariAdresi } from "./adresler";
 
 // Menüdeki gruplar, menüdeki sırasıyla. Grubun adı yalnız menüde görünür; grubun kendi sayfası yoktur.
 export const panelGruplari = {
@@ -221,15 +221,26 @@ export const panelSayfalari = [
     izin: "menu.gor",
     grup: "vitrin",
   },
-  // Tema ekranı (kart 0148, karar 0101): temalar, demoları, seçim, filtrenin yeri ve geri dönüş.
+  // Tema ekranı (kart 0148, karar 0101): temalar, demoları, seçim ve geri dönüş.
   {
     kod: "tema",
-    adres: `${panelAdresi}/tema`,
+    adres: temaAdresi,
     ad: "yonetim.sayfa.tema.ad",
     aciklama: "yonetim.sayfa.tema.aciklama",
     ikon: "tema",
     izin: "tema.gor",
     grup: "vitrin",
+  },
+  // Tema ayarları (kart 0260, karar 0168): logo, renkler, yazı tipi, köşe ve düğme, koyu tema, filtrenin yeri.
+  {
+    kod: "tema-ayarlari",
+    adres: temaAyarlariAdresi,
+    ad: "yonetim.sayfa.temaAyarlari.ad",
+    aciklama: "yonetim.sayfa.temaAyarlari.aciklama",
+    ikon: "tema",
+    izin: "tema.gor",
+    grup: "vitrin",
+    ust: "tema",
   },
 ] as const satisfies readonly PanelSayfaTanimi[];
 

@@ -251,6 +251,10 @@
       "urun": {
         "ad": "Ürün",
         "aciklama": "Ürünün bilgilerini, sınıflandırmasını, özelliklerini ve yayın durumunu düzenleyin."
+      },
+      "temaAyarlari": {
+        "ad": "Tema ayarları",
+        "aciklama": "Temanızın renkleri, yazı tipi, köşeleri ve logonuz. Kaydedince vitrinde hemen yayınlanır; önceki hâline tek adımda dönebilirsiniz."
       }
     },
     "eylem": {
@@ -267,7 +271,9 @@
       "iadeYap": "İade yap",
       "elleSiparis": "Elle sipariş",
       "urunEkle": "Ürün ekle",
-      "vitrindeGor": "Vitrinde gör"
+      "vitrindeGor": "Vitrinde gör",
+      "temaAyarlari": "Tema ayarları",
+      "temaDegistir": "Tema değiştir"
     },
     "rol": {
       "magaza-sahibi": "Mağaza sahibi",
@@ -912,16 +918,12 @@
         "yayinla": "Temayı yayınla"
       },
       "liste": {
-        "baslik": "Ürün listesi",
-        "aciklama": "Kategori, marka, etiket ve arama sayfalarındaki ürün listesi.",
         "filtreYeri": "Masaüstünde filtrenin yeri",
         "solda": "Solda sütun",
         "ustte": "Üstte",
-        "filtreAciklamasi": "Telefonda ve tablette filtre her zaman yan pencerede açılır.",
-        "kaydet": "Kaydet ve yayınla"
+        "filtreAciklamasi": "Telefonda ve tablette filtre her zaman yan pencerede açılır."
       },
       "yayinlandi": "Tema yayınlandı.",
-      "filtreKaydedildi": "Filtrenin yeri yayınlandı.",
       "geriDonuldu": "Tema önceki hâline döndü.",
       "hata": {
         "genel": "Değişiklik kaydedilemedi. Sayfayı yenileyip yeniden deneyin.",
@@ -950,6 +952,62 @@
         "kaldirAciklama": "Mağazanın ilk logosu görünür, ilk logo yoksa mağaza adı yazı olarak görünür. Logoyu istediğinizde yeniden yükleyebilirsiniz.",
         "yuklendi": "Logo yüklendi ve yayınlandı.",
         "kaldirildi": "Logo kaldırıldı."
+      }
+    },
+    "temaAyarlari": {
+      "giris": "Bu ayarlar {tema} temasının mağazanıza açtığı değerlerdir; temanın bütün sayfalarını demosunda gezebilirsiniz.",
+      "sonYayin": "Son yayın: {zaman}.",
+      "kaydet": "Kaydet ve yayınla",
+      "kaydedildi": "Tema ayarları yayınlandı.",
+      "renkler": "Renkler",
+      "renklerAciklamasi": "Okunmayan renk kaydedilmez, yerine en yakın okunur ton önerilir. Koyu temada vitrin rengin okunur tonunu kendisi kullanır.",
+      "renk": {
+        "birincil": "Ana renk",
+        "indirim": "İndirim rengi",
+        "afis": "Afiş rengi",
+        "altKisim": "Alt kısım zemini"
+      },
+      "renkAciklamasi": {
+        "birincil": "Düğmeler, rozetler ve vurgular.",
+        "indirim": "İndirim rozeti ve indirimli fiyat.",
+        "afis": "Duyuru şeridi ve renkli afişlerin zemini.",
+        "altKisim": "Sayfanın alt kısmının zemini."
+      },
+      "renkSecici": "{ad}: renk seçici",
+      "oneri": "En yakın okunur ton: {renk}",
+      "oneriKullan": "Bu tonu kullan",
+      "oneriKullanEtiketi": "{ad} için bu tonu kullan: {renk}",
+      "yaziTipi": "Yazı tipi",
+      "yaziTipiAciklamasi": "Başlıkların ve metinlerin yazı tipi.",
+      "yaziTipiCifti": "{baslik} ve {govde}",
+      "ornekYazi": "Ağ",
+      "koseVeDugme": "Köşeler ve düğmeler",
+      "koseler": "Köşeler",
+      "dugmeBicimi": "Düğme biçimi",
+      "ornekDugme": "Sepete ekle",
+      "temaninKendi": "Temanın kendi",
+      "kose": {
+        "keskin": "Keskin",
+        "orta": "Orta",
+        "yumusak": "Yumuşak",
+        "yuvarlak": "Yuvarlak"
+      },
+      "dugme": {
+        "hap": "Hap",
+        "yumusak": "Yumuşak",
+        "koseli": "Köşeli"
+      },
+      "gorunum": "Görünüm",
+      "koyuTema": "Vitrinde koyu tema",
+      "koyuTemaAciklamasi": "Açıkken vitrin, ziyaretçinin cihazı koyu temadaysa koyu renklerle görünür. Kapalıyken her zaman açık renklerle görünür. Panel her zaman cihazınızın ayarına uyar.",
+      "acik": "Açık",
+      "kapali": "Kapalı",
+      "hata": {
+        "kontrast": "Bu renk üstündeki yazıyla okunmuyor. Önerilen tonu kullanın ya da daha koyu bir renk seçin.",
+        "kontrastOnerisiz": "Bu renk üstündeki yazıyla okunmuyor ve okunur bir tonu bulunamadı. Başka bir renk seçin.",
+        "bicim": "Rengi #RRGGBB biçiminde yazın, örneğin #C2410C.",
+        "renkDegistirilemez": "Bu renk bu temada değiştirilemiyor. Sayfayı yenileyip yeniden deneyin.",
+        "secenekTanimsiz": "Bu seçenek bu temada yok. Sayfayı yenileyip yeniden deneyin."
       }
     },
     "kargo": {
@@ -3125,7 +3183,8 @@
         "tabloSecimi": "Tablo seçimi",
         "hataOzeti": "Hata özeti",
         "dosyaYukleme": "Dosya yükleme",
-        "ilerlemeCubugu": "İlerleme çubuğu"
+        "ilerlemeCubugu": "İlerleme çubuğu",
+        "renkAlani": "Renk alanı"
       },
       "bolumKutuphanesi": "Bölüm kütüphanesi"
     },
@@ -3324,7 +3383,17 @@
       "ilerlemeYarim": "Yükleniyor: kazak.jpg",
       "ilerlemeTam": "Yüklendi",
       "siralanabilirIzgara": "Izgara düzeni",
-      "izgaraListe": "Görseller, ilk görsel ana görseldir"
+      "izgaraListe": "Görseller, ilk görsel ana görseldir",
+      "renkEtiketi": "Ana renk",
+      "renkAciklama": "Rengi #RRGGBB biçiminde yazın ya da seçiciden seçin.",
+      "renkSecici": "Ana renk: renk seçici",
+      "renkIkinci": "Afiş rengi",
+      "renkIkinciSecici": "Afiş rengi: renk seçici",
+      "renkHata": "Rengi #RRGGBB biçiminde yazın.",
+      "koseBasligi": "Köşeler",
+      "koseKeskin": "Keskin",
+      "koseOrta": "Orta",
+      "koseYuvarlak": "Yuvarlak"
     },
     "bolum": {
       "ad": "Deneme bölümü",

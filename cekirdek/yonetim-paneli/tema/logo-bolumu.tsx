@@ -1,5 +1,5 @@
 "use client";
-// Tema ekranının logo bölümü (kart 0094, karar 0165; tema ayarlarının geri kalanı kart 0260): şimdiki logonun
+// Tema ayarları ekranının logo bölümü (kart 0094, karar 0165; kart 0260 tema ayarlarına taşıdı): şimdiki logonun
 // önizlemesi ve kaynağı, "Logo yükle" (ortak yükleme parçası: ilerleme ve iptal), yüklenen logo varsa "Logoyu kaldır"
 // (onay penceresiyle). Yükleme hemen yayınlanır; sonuç bildirimle verilir, sayfanın verisi sunucudan yeniden okunur.
 // Dosyanın reddi alanın altında yazar, odak yükleme düğmesine gider (ortak form yapısı, karar 0159). Logo mağaza
@@ -14,11 +14,11 @@ import { OnayPenceresi } from "../../../bilesenler/parcalar/onay-penceresi";
 import { yuklenebilenTurler } from "../../kayitlar/dosya";
 import { doldur } from "../../metinler/doldur";
 import { usePanelMetni } from "../../metinler/panel-metni";
+import type { EkranLogosu } from "../../moduller/magaza-ayarlari/logo";
 import { dosyaHatasiMetni, useDosyaYuklemesi } from "../dosya-yuklemesi";
 import { AlanKabi, PanelFormu, usePanelFormu } from "../form/panel-formu";
 import { panelIstegi } from "../panel-istegi";
 import { temaHatasiMetni, temaUclari } from "./hatalar";
-import type { EkranLogosu } from "./veri";
 
 // Taslağın görsel alanı: önizleme, kaynağın yazısı ve düğmeler tek kenarlı kutuda.
 function LogoKutusu({

@@ -24,7 +24,7 @@ export const denemeTemasi = (): TemaTanimiGirdisi & {
       },
     },
     koseler: { keskin: { kucuk: "0", orta: "0" }, yumusak: { kucuk: "6px", orta: "12px" } },
-    dugmeBicimleri: { kare: "0", hap: "9999px" },
+    dugmeBicimleri: { koseli: "0", hap: "9999px" },
   },
   // Çekirdeğin parça kaydıyla geçer (kart 0109).
   gorunumler: { "urun-karti": "dikey", "urun-filtresi": "solda" },

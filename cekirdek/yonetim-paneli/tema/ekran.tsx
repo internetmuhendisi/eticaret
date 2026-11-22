@@ -2,8 +2,7 @@
 // Tema ekranı (kart 0148, karar 0080, 0101 ve 0127): sitenin kullanabileceği temalar kart kart; her kartta temanın
 // adı, seçiliyse işareti, "Demoyu gez" bağlantısı (yeni sekmede, demonun adresinde ?tema=<kod>) ve "Bu temayı
 // kullan". Panelde canlı önizleme yoktur, karşılaştırma demoda yapılır (karar 0080). Siteye özel temanın demosu
-// yoktur. Altında masaüstünde ürün listesinin filtresinin yeri (mağaza sahibinin tema ayarı). Komut çubuğunda
-// "Önceki hâline dön".
+// yoktur. Komut çubuğunda "Tema ayarları" (logo, renkler, seçenekler; kart 0260) ve "Önceki hâline dön".
 //
 // "Bu temayı kullan" bir pencere açar ve vitrin bölümlerinin yolunu sorar (kart 0113): yeni temanın düzenini
 // uygulamak ya da bugünkü düzeni korumak. Seçim yapılmadan yayınlanmaz. Her değişiklik temanın yeni sürümüdür, hemen
@@ -43,25 +42,20 @@ import {
 import { Rozet } from "../../../bilesenler/parcalar/rozet";
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
-import { type UrunFiltresiGorunumu, urunFiltresiGorunumleri } from "../../kayitlar/tema";
 import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
 import { type DuzenYolu, duzenYollari } from "../../moduller/duzen/gecis";
-import { EylemDugmesi } from "../eylem-dugmesi";
+import { temaAyarlariAdresi } from "../adresler";
+import { EylemBaglantisi, EylemDugmesi } from "../eylem-dugmesi";
 import { AlanKabi, PanelFormu, usePanelFormu } from "../form/panel-formu";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelSonucu } from "../panel-istegi";
-import { useSunucuFormu } from "../sunucu-formu";
 import { temaHatasiMetni, temaUclari } from "./hatalar";
-import { LogoBolumu } from "./logo-bolumu";
 import type { EkranTemasi, TemaEkraniVerisi } from "./veri";
 
 type Baglam = {
   veri: TemaEkraniVerisi;
-  // Yöneticinin magaza-ayarlari.degistir izni: logoyu değiştirebilir (kart 0094). Logo mağaza ayarıdır, "Mağaza sahibi
-  // temayı değiştirebilir" ayarına bağlı değildir.
-  logoIzni: boolean;
   // Bu yönetici bu sitede temayı değiştirebilir mi: izni var ve site ayarı açık.
   degistirebilir: boolean;
   secilen: EkranTemasi | null;
@@ -86,14 +80,11 @@ const useTema = (): Baglam => {
 export function TemaSaglayici({
   veri,
   izinli,
-  logoIzni,
   children,
 }: {
   veri: TemaEkraniVerisi;
   // Yöneticinin tema.degistir izni (sunucudan).
   izinli: boolean;
-  // Yöneticinin magaza-ayarlari.degistir izni (sunucudan).
-  logoIzni: boolean;
   children: ReactNode;
 }) {
   const [secilen, setSecilen] = useState<EkranTemasi | null>(null);
@@ -103,7 +94,6 @@ export function TemaSaglayici({
     <TemaBaglami.Provider
       value={{
         veri,
-        logoIzni,
         degistirebilir: izinli && veri.degistirilebilir,
         secilen,
         setSecilen,
@@ -116,25 +106,29 @@ export function TemaSaglayici({
   );
 }
 
-// Komut çubuğunun eylemi: "Önceki hâline dön". Tek sürümde dönülecek hâl yoktur.
+// Komut çubuğunun eylemleri: "Tema ayarları" ve "Önceki hâline dön". Tek sürümde dönülecek hâl yoktur.
 export function TemaEylemleri() {
   const { veri, degistirebilir, islem } = useTema();
   // Süren geri dönüş: aynı düğmeye ikinci basış dikkate alınmaz.
   const donuluyor = useRef(false);
-  if (!degistirebilir || veri.sira < 2) return null;
+  const ayarlar = <EylemBaglantisi eylem="tema-ayarlari" href={temaAyarlariAdresi} />;
+  if (!degistirebilir || veri.sira < 2) return ayarlar;
   return (
-    <EylemDugmesi
-      eylem="onceki-hale-don"
-      onClick={() => {
-        if (donuluyor.current) return;
-        donuluyor.current = true;
-        void islem(temaUclari.geriDon, { son: veri.sira }, "yonetim.tema.geriDonuldu").finally(
-          () => {
-            donuluyor.current = false;
-          },
-        );
-      }}
-    />
+    <>
+      {ayarlar}
+      <EylemDugmesi
+        eylem="onceki-hale-don"
+        onClick={() => {
+          if (donuluyor.current) return;
+          donuluyor.current = true;
+          void islem(temaUclari.geriDon, { son: veri.sira }, "yonetim.tema.geriDonuldu").finally(
+            () => {
+              donuluyor.current = false;
+            },
+          );
+        }}
+      />
+    </>
   );
 }
 
@@ -281,96 +275,9 @@ function TemaFormu({ tema }: { tema: EkranTemasi }) {
   );
 }
 
-function FiltreYeri() {
-  const metin = usePanelMetni();
-  const { veri, degistirebilir, islem } = useTema();
-  // Sunucunun yeni verisi gelince (geri dönüş, başka sekme) seçim ona döner; kayıttan sonra arada yapılan seçim
-  // yenilemeyle ezilmez (kart 0223).
-  const {
-    form: yer,
-    setForm: setYer,
-    degisti,
-    kaydedildi,
-  } = useSunucuFormu<UrunFiltresiGorunumu>(veri.filtreYeri);
-  const secili = veri.temalar.find((tema) => tema.secili);
-  // Ortak form yapısı (kart 0259): hata, özet, odak, çıkarken soru ("Kaydet ve çık" bu seçimi kaydeder).
-  const pf = usePanelFormu({
-    degisti: degistirebilir && secili !== undefined && degisti,
-    kaydet: () => gonder(),
-  });
-  const adlar: Record<UrunFiltresiGorunumu, MetinAnahtari> = {
-    solda: "yonetim.tema.liste.solda",
-    ustte: "yonetim.tema.liste.ustte",
-  };
-  const gonder = async (): Promise<boolean> => {
-    if (secili === undefined) return false;
-    const gonderilen = yer;
-    const sonuc = await pf.isle(() =>
-      islem(
-        temaUclari.yayinla,
-        { tema: secili.kod, ayarlar: { ...secili.ayarlar, urunFiltresi: gonderilen } },
-        "yonetim.tema.filtreKaydedildi",
-        { formda: true },
-      ),
-    );
-    if (sonuc === undefined) return false;
-    if (sonuc.tamam) {
-      kaydedildi(gonderilen);
-      pf.temizle();
-      return true;
-    }
-    pf.hatalariGoster({}, [metin(temaHatasiMetni(sonuc))]);
-    return false;
-  };
-  return (
-    <section aria-labelledby="tema-urun-listesi" className="flex flex-col gap-3">
-      <h2 id="tema-urun-listesi" className="font-baslik text-baslik-4 font-baslik-kalinligi">
-        {metin("yonetim.tema.liste.baslik")}
-      </h2>
-      <Kart>
-        <KartAciklamasi>{metin("yonetim.tema.liste.aciklama")}</KartAciklamasi>
-        {degistirebilir && secili !== undefined ? (
-          <PanelFormu
-            durum={pf}
-            gonder={async () => {
-              await gonder();
-            }}
-            className="gap-4"
-          >
-            <AlanKabi ad="urunFiltresi" etiket={metin("yonetim.tema.liste.filtreYeri")}>
-              <SecenekGrubu
-                baslik={metin("yonetim.tema.liste.filtreYeri")}
-                etiket={metin("yonetim.tema.liste.filtreYeri")}
-                ogeler={urunFiltresiGorunumleri.map((deger) => ({
-                  deger,
-                  ad: metin(adlar[deger]),
-                }))}
-                deger={yer}
-                onDegerDegisti={(yeni) => setYer(yeni as UrunFiltresiGorunumu)}
-                secilemezEki=""
-                aciklama={metin("yonetim.tema.liste.filtreAciklamasi")}
-              />
-            </AlanKabi>
-            <div>
-              <GonderDugmesi disabled={pf.gonderiliyor || !degisti}>
-                {metin("yonetim.tema.liste.kaydet")}
-              </GonderDugmesi>
-            </div>
-          </PanelFormu>
-        ) : (
-          <dl className="m-0 flex flex-col gap-1">
-            <dt className="font-kalin">{metin("yonetim.tema.liste.filtreYeri")}</dt>
-            <dd className="m-0">{metin(adlar[veri.filtreYeri])}</dd>
-          </dl>
-        )}
-      </Kart>
-    </section>
-  );
-}
-
 export function TemaIcerigi() {
   const metin = usePanelMetni();
-  const { veri, odaklanacak, logoIzni } = useTema();
+  const { veri, odaklanacak } = useTema();
   // Yayından sonra sayfanın yeni verisi gelince odak seçilen temanın başlığına konur.
   useEffect(() => {
     const kod = odaklanacak.current;
@@ -394,13 +301,6 @@ export function TemaIcerigi() {
           ))}
         </ul>
       </section>
-      <LogoBolumu
-        logo={veri.logo}
-        enCokDosyaBoyutu={veri.enCokDosyaBoyutu}
-        dosyaTurleri={veri.dosyaTurleri}
-        degistirebilir={logoIzni}
-      />
-      <FiltreYeri />
       <TemaPenceresi />
     </div>
   );

@@ -27,7 +27,12 @@ import {
   type TemaDegerleri,
   yuklenenYaziTipleri,
 } from "../../bilesenler/tasarim-degerleri/degerler.ts";
-import { parcaGorunumleri } from "../kayitlar/tema.ts";
+import {
+  dugmeBicimiSecenekleri,
+  koseSecenekleri,
+  magazaRenkleri,
+  parcaGorunumleri,
+} from "../kayitlar/tema.ts";
 import {
   type BolumKutuphanesi,
   baslangicDuzeniSemasi,
@@ -60,6 +65,8 @@ export const temaTanimiHatalari = [
   "gorunum-tanimsiz",
   "ayni-renk-iki-kez",
   "renk-olculmuyor",
+  "renk-acilamaz",
+  "secenek-adsiz",
 ] as const;
 export type TemaTanimiHatasi = (typeof temaTanimiHatalari)[number];
 
@@ -127,6 +134,23 @@ export const temaKurallari = (tema: TemaTanimi, kutuphane: TemaKutuphanesi): Sor
       sorunlar.push({ yer: ["magazaSecenekleri", "renkler", sira], kod: "renk-olculmuyor" });
     }
   });
+  // Açılan renk ve seçenek panelde adıyla görünür (kart 0260): adı kayıtta olmayanı açan tema açılmaz.
+  tema.magazaSecenekleri.renkler.forEach((ad, sira) => {
+    if (!(magazaRenkleri as readonly string[]).includes(ad)) {
+      sorunlar.push({ yer: ["magazaSecenekleri", "renkler", sira], kod: "renk-acilamaz" });
+    }
+  });
+  const adliKodlar = [
+    ["koseler", koseSecenekleri],
+    ["dugmeBicimleri", dugmeBicimiSecenekleri],
+  ] as const;
+  for (const [grup, kodlar] of adliKodlar) {
+    for (const kod of Object.keys(tema.magazaSecenekleri[grup])) {
+      if (!(kodlar as readonly string[]).includes(kod)) {
+        sorunlar.push({ yer: ["magazaSecenekleri", grup, kod], kod: "secenek-adsiz" });
+      }
+    }
+  }
   for (const [parca, gorunumler] of Object.entries(kutuphane.parcaGorunumleri)) {
     const secilen = Object.hasOwn(tema.gorunumler, parca) ? tema.gorunumler[parca] : undefined;
     if (secilen === undefined) sorunlar.push({ yer: ["gorunumler", parca], kod: "gorunum-eksik" });

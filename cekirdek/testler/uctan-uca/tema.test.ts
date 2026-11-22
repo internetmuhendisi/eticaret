@@ -1,20 +1,27 @@
 // Panelin tema ekranı gerçek tarayıcıda ve gerçek veritabanıyla (kart 0148, karar 0080 ve 0127): mağaza sahibi
 // menüden ekrana gelir, "Demoyu gez" ile demoya yeni sekmede gider, temayı klavyeyle değiştirir ve vitrinde görür,
-// önceki hâline döner; masaüstünde filtrenin yerini seçer ve kategori sayfasında görür. Ekran ve tema penceresi iki
-// renkte ve üç genişlikte taramadan geçer, yana kaymaz, konsolda hata yoktur.
+// önceki hâline döner. Ekran ve tema penceresi iki renkte ve üç genişlikte taramadan geçer, yana kaymaz, konsolda hata
+// yoktur.
+//
+// Tema ayarları (kart 0260, karar 0168): mağaza sahibi tema ekranından ayarlara klavyeyle gelir, okunmayan ana renkte
+// alanın hatasını ve en yakın okunur tonu görür, tonu tek basışla kullanır, köşe biçimini ve vitrinde koyu temayı
+// seçer, kaydeder; vitrin yeni değerlerle çizilir, önceki hâline dönülür. Masaüstünde filtrenin yeri seçilir ve
+// kategori sayfasında görünür. Ayarlar ekranı ve hatalı hâli iki renkte ve üç genişlikte taramadan geçer.
 //
 // Tema bütün vitrinin görünüşünü değiştirir: bu dosya öteki tarayıcı testleri bittikten sonra kendi aşamasında
 // çalışır (playwright.config.ts, "tema-degisikligi"). Sonunda tema, testten önceki sürüme döndürülür. Demo sitesi
 // testte açılmaz: demonun adresine giden istek sahte bir sayfayla karşılanır, açılan sekmenin adresi ölçülür
 // (demonun kendisi kart 0116'nın ölçümündedir).
 //
-// Logo (kart 0094): mağaza sahibi logoyu klavyeyle yükler (tarayıcının dosya seçicisi), vitrinin üst kısmında görür;
+// Logo (kart 0094, kart 0260'tan beri tema ayarlarında): mağaza sahibi logoyu klavyeyle yükler (tarayıcının dosya seçicisi), vitrinin üst kısmında görür;
 // görsel olmayan dosyada hata alanın altında yazar, odak yükleme düğmesindedir, ekran taramadan geçer; logoyu onayla
 // kaldırır. Logo da bütün vitrinde görünür: sonunda yüklenen logo kaldırılır.
+
 import { existsSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import sharp from "sharp";
+import { ornekRenk } from "../../../bilesenler/tasarim-degerleri/testler/ornek-renkler";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { temaDemosuAdresi, temaDemosuBaglantisi } from "../../ayar-semasi/tema-demosu-adresi";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri";
@@ -38,6 +45,7 @@ const vt = baglan(veritabaniAdresi());
 const servis = siteninTemaServisi();
 const kim = sistemIslemi("uctan-uca-tema");
 const temaAdresi = "/yonetim/tema";
+const ayarlarAdresi = "/yonetim/tema/ayarlar";
 
 const genislikler = [
   { ad: "telefon", width: 375, height: 800 },
@@ -220,6 +228,105 @@ test("mağaza sahibi demoya gider, temayı klavyeyle değiştirip vitrinde gör�
   expect(konsol).toEqual([]);
 });
 
+test("mağaza sahibi tema ayarlarında okunmayan rengi önerisiyle düzeltir, köşe ve koyu temayı seçer, vitrinde görür ve geri döner", async ({
+  page,
+}) => {
+  // Vitrinde girişsiz müşterinin oturum sorusu 401 alır (karar 0098); reddedilen renk 400 alır.
+  const konsol = konsoluDinle(page, {
+    haric: (ileti) => ileti.includes("status of 401") || ileti.includes("status of 400"),
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await paneleGir(page, yonetici);
+  await page.goto(temaAdresi);
+  await sayfaHazir(page);
+  // Tema ekranından ayarlara klavyeyle.
+  await page.getByRole("link", { name: metin("yonetim.eylem.temaAyarlari") }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(new RegExp(`${ayarlarAdresi}$`));
+  await sayfaHazir(page);
+  await expect(page).toHaveTitle(new RegExp(`^${metin("yonetim.sayfa.temaAyarlari.ad")} \\|`));
+  const eski = await servis.temaDurumu(vt);
+  const eskiCss = await vitrinCssi(eski.tema);
+
+  // Okunmayan ana renk (Canlı Çarşı'da ana rengin üstündeki yazı koyudur): kaydedilmez, hata alanın altında, odak
+  // alanda, en yakın okunur ton önerilir.
+  const anaRenk = page.getByRole("textbox", {
+    name: metin("yonetim.temaAyarlari.renk.birincil"),
+    exact: true,
+  });
+  await anaRenk.focus();
+  await page.keyboard.press("ControlOrMeta+A");
+  await page.keyboard.type(ornekRenk.siyah);
+  const kaydet = page.getByRole("button", { name: metin("yonetim.temaAyarlari.kaydet") });
+  await kaydet.focus();
+  await page.keyboard.press("Enter");
+  const hata = page.getByText(metin("yonetim.temaAyarlari.hata.kontrast"));
+  await expect(hata).toBeVisible();
+  await expect(anaRenk).toBeFocused();
+  await expect(anaRenk).toHaveAttribute("aria-invalid", "true");
+  expect((await servis.temaDurumu(vt)).sira).toBe(eski.sira);
+  await tara(page, "okunmayan renk");
+  const oneriKutusu = page.getByText(metin("yonetim.temaAyarlari.oneri").replace("{renk}", ""));
+  const oneri = (await oneriKutusu.textContent())?.match(/#[0-9A-F]{6}/)?.[0] ?? "";
+  expect(oneri).toMatch(/^#[0-9A-F]{6}$/);
+  await page
+    .getByRole("button", {
+      name: doldur(metin("yonetim.temaAyarlari.oneriKullanEtiketi"), {
+        ad: metin("yonetim.temaAyarlari.renk.birincil"),
+        renk: oneri,
+      }),
+    })
+    .focus();
+  await page.keyboard.press("Enter");
+  await expect(anaRenk).toHaveValue(oneri);
+  await expect(anaRenk).toBeFocused();
+  await expect(hata).toBeHidden();
+
+  // Köşe biçimi: keskin; vitrinde koyu tema açık.
+  const keskin = page
+    .getByRole("radiogroup", { name: metin("yonetim.temaAyarlari.koseler") })
+    .getByRole("radio", { name: metin("yonetim.temaAyarlari.kose.keskin") });
+  await keskin.focus();
+  await page.keyboard.press("Space");
+  await expect(keskin).toHaveAttribute("aria-checked", "true");
+  const koyu = page.getByRole("switch", { name: metin("yonetim.temaAyarlari.koyuTema") });
+  const koyuOnce = (await koyu.getAttribute("aria-checked")) === "true";
+  await koyu.focus();
+  await page.keyboard.press("Space");
+  await expect(koyu).toHaveAttribute("aria-checked", String(!koyuOnce));
+  await kaydet.focus();
+  await page.keyboard.press("Enter");
+  await expect(bildirim(page, "yonetim.temaAyarlari.kaydedildi")).toBeVisible();
+  const sonra = await servis.temaDurumu(vt);
+  expect(sonra.sira).toBe(eski.sira + 1);
+  expect(sonra.ayarlar).toMatchObject({
+    renkler: { birincil: oneri },
+    kose: "keskin",
+    koyuTema: !koyuOnce,
+  });
+
+  // Vitrin yeni değerlerle çizilir: yeni ana renk ve keskin köşe sayfanın tema değerlerinde.
+  const yeniCss = await vitrinCssi(sonra.tema);
+  expect(yeniCss).toContain(oneri);
+  expect(await sayfaninCssleri(page)).toContain(yeniCss);
+
+  // Önceki hâline dön: ayarlar ve vitrin eski hâline döner.
+  await page.goto(ayarlarAdresi);
+  await sayfaHazir(page);
+  await page.getByRole("button", { name: metin("yonetim.eylem.oncekiHaleDon") }).click();
+  await expect(bildirim(page, "yonetim.tema.geriDonuldu")).toBeVisible();
+  await expect(anaRenk).not.toHaveValue(oneri);
+  const donus = await servis.temaDurumu(vt);
+  expect({ tema: donus.tema, ayarlar: donus.ayarlar }).toEqual({
+    tema: eski.tema,
+    ayarlar: eski.ayarlar,
+  });
+  const sayfa = await sayfaninCssleri(page);
+  expect(sayfa).toContain(eskiCss);
+  expect(sayfa).not.toContain(yeniCss);
+  expect(konsol).toEqual([]);
+});
+
 test("masaüstünde filtrenin yeri seçilir ve kategori sayfasında görünür", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   const kategori = kayitAdresleri.kategori("giyim");
@@ -244,18 +351,18 @@ test("masaüstünde filtrenin yeri seçilir ve kategori sayfasında görünür",
   expect(await yerler()).toEqual({ solda: bugunku === "solda", ustte: bugunku === "ustte" });
 
   await paneleGir(page, yonetici);
-  await page.goto(temaAdresi);
+  await page.goto(ayarlarAdresi);
   await sayfaHazir(page);
   const grup = page.getByRole("radiogroup", { name: metin("yonetim.tema.liste.filtreYeri") });
   await expect(
     grup.getByRole("radio", { name: metin(`yonetim.tema.liste.${bugunku}`) }),
   ).toHaveAttribute("aria-checked", "true");
-  const kaydet = page.getByRole("button", { name: metin("yonetim.tema.liste.kaydet") });
+  const kaydet = page.getByRole("button", { name: metin("yonetim.temaAyarlari.kaydet") });
   await expect(kaydet).toBeDisabled();
   await grup.getByRole("radio", { name: metin(`yonetim.tema.liste.${oteki}`) }).click();
   await kaydet.focus();
   await page.keyboard.press("Enter");
-  await expect(bildirim(page, "yonetim.tema.filtreKaydedildi")).toBeVisible();
+  await expect(bildirim(page, "yonetim.temaAyarlari.kaydedildi")).toBeVisible();
   expect((await servis.temaDurumu(vt)).ayarlar.urunFiltresi).toBe(oteki);
   expect(await yerler()).toEqual({ solda: oteki === "solda", ustte: oteki === "ustte" });
 });
@@ -270,7 +377,7 @@ test("mağaza sahibi logoyu klavyeyle yükler ve vitrinde görür; hatalı dosya
   });
   await page.setViewportSize({ width: 1280, height: 900 });
   await paneleGir(page, yonetici);
-  await page.goto(temaAdresi);
+  await page.goto(ayarlarAdresi);
   await sayfaHazir(page);
   const yukle = page.getByRole("button", { name: metin("yonetim.tema.logo.yukle") });
   const onizleme = page.getByRole("img", { name: metin("yonetim.tema.logo.onizleme") });
@@ -335,7 +442,7 @@ test("mağaza sahibi logoyu klavyeyle yükler ve vitrinde görür; hatalı dosya
   expect(konsol).toEqual([]);
 });
 
-test("ekran ve tema penceresi iki renkte ve üç genişlikte taramadan geçer, yana kaymaz", async ({
+test("ekran, tema penceresi ve tema ayarları iki renkte ve üç genişlikte taramadan geçer, yana kaymaz", async ({
   page,
 }) => {
   const konsol = konsoluDinle(page);
@@ -356,6 +463,10 @@ test("ekran ve tema penceresi iki renkte ve üç genişlikte taramadan geçer, y
       await tara(page, `${renk}, ${ad}, pencere`);
       await page.keyboard.press("Escape");
       await expect(page.getByRole("dialog")).toBeHidden();
+      await page.goto(ayarlarAdresi);
+      await sayfaHazir(page);
+      await tara(page, `${renk}, ${ad}, tema ayarları`);
+      expect(await yanaKayma(page), `${renk}, ${ad}, tema ayarları`).toBe(0);
     }
   }
   expect(konsol).toEqual([]);

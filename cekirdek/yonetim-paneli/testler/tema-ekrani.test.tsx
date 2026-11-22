@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 // Tema ekranı (kart 0148): temaların kartları, seçili temanın işareti, "Demoyu gez" bağlantısı (yeni sekmede,
 // siteye özel temada yok), "Bu temayı kullan" penceresinin düzen sorusu (seçimsiz istek gitmez), gönderilen
-// tema ve ayarlar, filtrenin yeri, "Önceki hâline dön"ün ekranın gördüğü sürümü göndermesi; ayar kapalıyken ya da
-// izin yokken değiştiren düğmelerin hiç olmaması. Uç sahte fetch ile verilir.
+// tema ve ayarlar, "Önceki hâline dön"ün ekranın gördüğü sürümü göndermesi, komut çubuğunda "Tema ayarları"
+// bağlantısı (kart 0260); ayar kapalıyken ya da izin yokken değiştiren düğmelerin hiç olmaması. Uç sahte fetch ile
+// verilir.
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { doldur } from "../../metinler/doldur.ts";
@@ -47,9 +48,6 @@ afterEach(() => {
 });
 
 const veri = (degisiklik: Partial<TemaEkraniVerisi> = {}): TemaEkraniVerisi => ({
-  logo: { kaynak: "ilk", adres: "/kapi/herkese-acik/logo?s=0123456789abcdef" },
-  enCokDosyaBoyutu: "10 MB",
-  dosyaTurleri: "JPEG, PNG veya WebP",
   sira: 4,
   temalar: [
     {
@@ -76,15 +74,14 @@ const veri = (degisiklik: Partial<TemaEkraniVerisi> = {}): TemaEkraniVerisi => (
       ayarlar: { renkler: {}, koyuTema: false },
     },
   ],
-  filtreYeri: "solda",
   degistirilebilir: true,
   ...degisiklik,
 });
 
-const ciz = (v: TemaEkraniVerisi, izinli = true, logoIzni = izinli) =>
+const ciz = (v: TemaEkraniVerisi, izinli = true) =>
   render(
     <MetinSaglayici dil="tr">
-      <TemaSaglayici veri={v} izinli={izinli} logoIzni={logoIzni}>
+      <TemaSaglayici veri={v} izinli={izinli}>
         <TemaEylemleri />
         <TemaIcerigi />
       </TemaSaglayici>
@@ -186,22 +183,11 @@ describe("temayı kullanmak", () => {
   });
 });
 
-describe("filtrenin yeri", () => {
-  it("bugünkü yer seçili; değişmeden kaydedilmez, değişince seçili temanın ayarlarıyla gider", async () => {
-    ciz(veri());
-    const grup = screen.getByRole("radiogroup", { name: metin("yonetim.tema.liste.filtreYeri") });
-    const solda = within(grup).getByRole("radio", { name: metin("yonetim.tema.liste.solda") });
-    expect(solda.getAttribute("aria-checked")).toBe("true");
-    const kaydet = screen.getByRole("button", { name: metin("yonetim.tema.liste.kaydet") });
-    expect((kaydet as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.click(within(grup).getByRole("radio", { name: metin("yonetim.tema.liste.ustte") }));
-    await act(async () => fireEvent.click(kaydet));
-    expect(istekler).toEqual([
-      {
-        adres: "/kapi/yonetici/tema",
-        govde: { tema: "birinci", ayarlar: { renkler: {}, koyuTema: true, urunFiltresi: "ustte" } },
-      },
-    ]);
+describe("tema ayarları", () => {
+  it("komut çubuğunda tema ayarlarına bağlantı var; değiştiremeyen yönetici de görür", () => {
+    ciz(veri({ degistirilebilir: false }), false);
+    const baglanti = screen.getByRole("link", { name: metin("yonetim.eylem.temaAyarlari") });
+    expect(baglanti.getAttribute("href")).toBe("/yonetim/tema/ayarlar");
   });
 });
 
@@ -227,14 +213,13 @@ describe("değiştiremeyen yönetici", () => {
     ["ayar kapalı", veri({ degistirilebilir: false }), true],
     ["izin yok", veri(), false],
   ])(
-    "%s: değiştiren düğme yok, demo bağlantıları ve filtrenin yeri yazıyla var",
+    "%s: değiştiren düğme yok, demo bağlantıları ve tema ayarlarına bağlantı var",
     (_ad, v, izinli) => {
-      // Logonun izni ayrıdır (magaza-ayarlari.degistir, kart 0094); logo bölümü logo-bolumu.test.tsx'te.
-      ciz(v, izinli, false);
+      ciz(v, izinli);
       expect(screen.queryAllByRole("button")).toEqual([]);
       expect(screen.queryByRole("radiogroup")).toBeNull();
-      expect(screen.getAllByRole("link")).toHaveLength(2);
-      expect(screen.getByText(metin("yonetim.tema.liste.solda"))).toBeDefined();
+      // İki demo ve "Tema ayarları".
+      expect(screen.getAllByRole("link")).toHaveLength(3);
       const neden = screen.queryByText(metin("yonetim.tema.kapali"));
       expect(neden === null).toBe(v.degistirilebilir);
     },

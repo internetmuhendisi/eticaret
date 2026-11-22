@@ -1,7 +1,7 @@
 // Tema ekranının verisi gerçek veritabanıyla (kart 0148): sitenin kullanabileceği temalar sırasıyla, seçili tema,
 // hazır temanın demo bağlantısı (demo adresi yoksa yok), siteye özel temada bağlantı olmaması, her temaya geçerken
-// gönderilecek ayarlar (yeni temanın kabul etmediği seçenek atılır, filtrenin yeri ve koyu tema kalır), masaüstünde
-// filtrenin bugünkü yeri ve "Mağaza sahibi temayı değiştirebilir".
+// gönderilecek ayarlar (yeni temanın kabul etmediği seçenek atılır, filtrenin yeri ve koyu tema kalır) ve "Mağaza sahibi
+// temayı değiştirebilir". Logo ve filtrenin yeri tema ayarlarının verisindedir (tema-ayarlari-verisi.test.ts).
 import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
@@ -50,7 +50,6 @@ describe("tema ekranının verisi", () => {
     const veri = await temaEkraniVerisi();
     expect(veri.sira).toBe(1);
     expect(veri.degistirilebilir).toBe(true);
-    expect(veri.filtreYeri).toBe("solda");
     expect(
       veri.temalar.map(({ kod, kaynak, secili, demo: baglanti }) => [
         kod,
@@ -78,7 +77,6 @@ describe("tema ekranının verisi", () => {
     );
     const veri = await temaEkraniVerisi();
     expect(veri.sira).toBe(2);
-    expect(veri.filtreYeri).toBe("ustte");
     const [canli, ozel] = veri.temalar;
     expect(canli?.ayarlar).toEqual({
       renkler: {},

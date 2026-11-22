@@ -35,6 +35,7 @@ export const katalogParcalari = [
   parca("parcalar", "onay-kutusu", "onayKutusu"),
   parca("parcalar", "secenek-grubu", "secenekGrubu"),
   parca("parcalar", "anahtar", "anahtar"),
+  parca("parcalar", "renk-alani", "renkAlani"),
   parca("parcalar", "dosya-yukleme", "dosyaYukleme"),
   parca("parcalar", "ilerleme-cubugu", "ilerlemeCubugu"),
   parca("parcalar", "siralanabilir-liste", "siralanabilirListe"),
