@@ -18,20 +18,30 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import sharp from "sharp";
 import { siteKlasorunuOku } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { katalogAdresi } from "../cekirdek/katalog/kayit.ts";
 import { arkaPlanDosyalari } from "../cekirdek/kayitlar/arka-plan.ts";
 import {
   dosyaKlasoruDegiskeni,
+  dosyaSinirlari,
   dosyaTurleri,
   kutudakiDosyaKlasoru,
 } from "../cekirdek/kayitlar/dosya.ts";
 import { istekSinirlari } from "../cekirdek/kayitlar/kapi.ts";
 import { siteOrtamiDegiskeni } from "../cekirdek/kayitlar/site.ts";
 import { metinOkuyucu } from "../cekirdek/metinler/metin.ts";
+import { kodAdimi, zamanliKod } from "../cekirdek/moduller/oturum/iki-asama.ts";
 import { soruyuCoz } from "../cekirdek/moduller/robot-korumasi/testler/soru-coz.ts";
 import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
-import { arkaPlanKutuAdi, kutuKuraliDogru, surumEnAz, yenidenBaslama } from "./kutu-kurali.mts";
+import {
+  arkaPlanKutuAdi,
+  bellekBaytlari,
+  kutuKuraliDogru,
+  siteKutusuBellegi,
+  surumEnAz,
+  yenidenBaslama,
+} from "./kutu-kurali.mts";
 import {
   denemeSitesiAc,
   dosyaBirimi,
@@ -292,6 +302,121 @@ const yoneticiOlc = async (kodAdi: string, otekiKodAdi: string): Promise<void> =
   );
 };
 
+// Çerez başlıklarından "ad=değer" çiftleri.
+const cerezler = (basliklar: Record<string, string | string[] | undefined>): string[] =>
+  [basliklar["set-cookie"] ?? []].flat().map((satir) => satir.split(";")[0] ?? "");
+
+// Logo yükleme (kart 0094, karar 0165): görüntüdeki sharp kutunun içinde 40 milyon piksellik görseli yeniden
+// kodlar, kutunun bellek zirvesi sınırın altında kalır; logo ucu yeni logoyu verir, kaldırınca ilk logoya döner;
+// sınırı aşan uzunluk bildiren gövde okunmadan reddedilir. Site ve arka plan kutusunun gerçek bellek sınırı tanımla
+// aynıdır. Yönetici iki aşamalı girişi kurulum sayfasındaki anahtarla, kapıdan bitirir.
+const logoOlc = async (kodAdi: string): Promise<void> => {
+  const kutu = kutuAdi(kodAdi);
+  for (const ad of [kutu, arkaPlanKutuAdi(kutu)]) {
+    const sinir = spawnSync("docker", ["inspect", "--format", "{{.HostConfig.Memory}}", ad], {
+      encoding: "utf8",
+    }).stdout.trim();
+    olc(
+      `${ad}: bellek sınırı ${siteKutusuBellegi}`,
+      sinir === String(bellekBaytlari(siteKutusuBellegi)),
+      sinir,
+    );
+  }
+
+  const eposta = `logo-${Date.now()}@ornek.test`;
+  const acilis = spawnSync(
+    "docker",
+    ["exec", kutu, "node", "yonetici/yonetici.mjs", kodAdi, "ac", eposta],
+    { encoding: "utf8" },
+  );
+  const sifre = /^sifre (\S+)$/m.exec(acilis.stdout)?.[1] ?? "";
+  const json = (govde: unknown) => ({
+    govde: Buffer.from(JSON.stringify(govde)),
+    basliklar: { "content-type": "application/json" },
+  });
+  const giris = await isteHam(kodAdi, "/kapi/herkese-acik/yonetici-giris", {
+    yontem: "POST",
+    ...json({ eposta, sifre }),
+  });
+  const araAdim = cerezler(giris.basliklar).join("; ");
+  const kurulum = await isteHam(kodAdi, "/yonetim/giris/kurulum", {
+    basliklar: { cookie: araAdim },
+  });
+  const anahtarMetni = metinOkuyucu("tr")("yonetim.kurulum.metinAnahtar");
+  const gizli =
+    new RegExp(`${anahtarMetni}[\\s\\S]*?<p[^>]*>([A-Z2-7 ]{16,})</p>`)
+      .exec(kurulum.govde.toString("utf8"))?.[1]
+      ?.trim() ?? "";
+  const onay = await isteHam(kodAdi, "/kapi/herkese-acik/yonetici-kurulum-onay", {
+    yontem: "POST",
+    govde: Buffer.from(JSON.stringify({ kod: zamanliKod(gizli, kodAdimi()) })),
+    basliklar: { "content-type": "application/json", cookie: araAdim },
+  });
+  const oturum = cerezler(onay.basliklar).join("; ");
+  olc(
+    `${kodAdi}: yönetici iki aşamalı girişi kapıdan bitiriyor`,
+    giris.durum === 200 && gizli !== "" && onay.durum === 200,
+    `giriş ${giris.durum}, anahtar ${gizli === "" ? "yok" : "var"}, onay ${onay.durum}`,
+  );
+
+  const logoYolu = "/kapi/herkese-acik/logo";
+  const ilk = await isteHam(kodAdi, logoYolu);
+  // 8000 x 5000: dosya sınırının piksel sınırına eşit görsel; çözülmesi tam bellek ister.
+  const buyuk = await sharp({
+    create: { width: 8000, height: 5000, channels: 3, background: { r: 200, g: 30, b: 60 } },
+  })
+    .png()
+    .toBuffer();
+  const yukleme = await isteHam(kodAdi, "/kapi/yonetici/logo-yukle", {
+    yontem: "POST",
+    govde: buyuk,
+    basliklar: { "content-type": "application/octet-stream", cookie: oturum },
+    sure: 60_000,
+  });
+  const zirve = spawnSync("docker", ["exec", kutu, "cat", "/sys/fs/cgroup/memory.peak"], {
+    encoding: "utf8",
+  }).stdout.trim();
+  const yeni = await isteHam(kodAdi, logoYolu);
+  olc(
+    `${kodAdi}: kutudaki sharp 40 milyon piksellik logoyu yeniden kodluyor, logo ucu yenisini veriyor`,
+    yukleme.durum === 200 &&
+      yeni.durum === 200 &&
+      yeni.basliklar["etag"] !== ilk.basliklar["etag"] &&
+      (await sharp(yeni.govde).metadata()).width === 8000,
+    `yükleme ${yukleme.durum} ${yukleme.govde.toString("utf8").slice(0, 200)}; logo ${yeni.durum}`,
+  );
+  olc(
+    `${kodAdi}: kutunun bellek zirvesi sınırın altında`,
+    Number(zirve) > 0 && Number(zirve) < bellekBaytlari(siteKutusuBellegi),
+    `zirve ${Math.round(Number(zirve) / 1024 / 1024)} MB`,
+  );
+  const fazla = await isteHam(kodAdi, "/kapi/yonetici/logo-yukle", {
+    yontem: "POST",
+    govde: Buffer.alloc(16),
+    basliklar: {
+      "content-type": "application/octet-stream",
+      "content-length": String(dosyaSinirlari.enCokBayt + 1),
+      cookie: oturum,
+    },
+  }).catch((hata: unknown) => ({ durum: 0, govde: Buffer.from(String(hata)) }));
+  olc(
+    `${kodAdi}: sınırı aşan uzunluk bildiren gövde okunmadan reddediliyor`,
+    fazla.durum === 400 && fazla.govde.toString("utf8").includes("cok-buyuk"),
+    `${fazla.durum} ${fazla.govde.toString("utf8").slice(0, 120)}`,
+  );
+  const kaldir = await isteHam(kodAdi, "/kapi/yonetici/logo-kaldir", {
+    yontem: "POST",
+    govde: Buffer.from("{}"),
+    basliklar: { "content-type": "application/json", cookie: oturum },
+  });
+  const sonra = await isteHam(kodAdi, logoYolu);
+  olc(
+    `${kodAdi}: logo kaldırılınca ilk logo dönüyor`,
+    kaldir.durum === 200 && sonra.basliklar["etag"] === ilk.basliklar["etag"],
+    `${kaldir.durum}`,
+  );
+};
+
 // Kapıdan gerçek kayıt: robot sorusu, hesap, kuyruk, arka plan kutusu, posta kutusu (kart 0033, karar 0051).
 const kayitOlc = async (kodAdi: string): Promise<void> => {
   const soru = JSON.parse((await iste(kodAdi, "/kapi/herkese-acik/robot-sorusu")).govde).veri;
@@ -531,6 +656,7 @@ const calistir = async (): Promise<void> => {
     await katalogKapaliOlc(denemeSitesi.kimlik.kodAdi);
     // Giriş ucunun sınırı aşağıda doldurulur, bu ölçüm ondan önce gelir.
     await yoneticiOlc(denemeSitesi.kimlik.kodAdi, ornek.kimlik.kodAdi);
+    await logoOlc(denemeSitesi.kimlik.kodAdi);
 
     const tanimsiz = await iste("tanimsiz-site", "/");
     olc("tanınmayan adres hiçbir siteye gitmiyor", tanimsiz.durum === 404, `${tanimsiz.durum}`);

@@ -307,11 +307,17 @@ export const iste = (
     istek.end();
   });
 
-// Gövdesi bayt olarak okunan GET isteği (görsel gibi, kart 0073). Başlıkları da döner.
+// Gövdesi bayt olarak okunan istek (görsel gibi, kart 0073). Başlıkları da döner. Gövde de gönderebilir (dosya
+// yükleme, kart 0094); süresi verilebilir.
 export const isteHam = (
   kodAdi: string,
   yol: string,
-  { yontem = "GET", basliklar = {} }: { yontem?: string; basliklar?: Record<string, string> } = {},
+  {
+    yontem = "GET",
+    basliklar = {},
+    govde,
+    sure = 10_000,
+  }: { yontem?: string; basliklar?: Record<string, string>; govde?: Buffer; sure?: number } = {},
 ): Promise<{
   durum: number;
   basliklar: Record<string, string | string[] | undefined>;
@@ -339,8 +345,8 @@ export const isteHam = (
       },
     );
     istek.on("error", reddet);
-    istek.setTimeout(10_000, () => istek.destroy(new Error("zaman aşımı")));
-    istek.end();
+    istek.setTimeout(sure, () => istek.destroy(new Error("zaman aşımı")));
+    istek.end(govde);
   });
 
 // JSON gövdeli POST isteği. Ön kapının üzerinden gider, yolu olduğu gibi gönderir.
