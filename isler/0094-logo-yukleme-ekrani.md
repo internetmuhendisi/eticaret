@@ -26,6 +26,14 @@ Bölüm: Yönetim paneli.
 - Sınırı aşan ve izinsiz türdeki dosya ekranda anlaşılır hatayla reddediliyor.
 - Kutuların bellek sınırı yerelde ve sunucu denetiminde ölçülüyor; `sharp` görüntüde çalışıyor.
 
+## Notlar
+
+- Kullanıcı kararı (2026-11-22): logo ayrı bir ekranda değil, Tema ekranının "Logo" bölümünde. Kalan tema ayarları kart 0260'ta aynı ekrana eklenir.
+- Yükleme gövdesi ham bayttır, sınır iki katmandadır (kapı ve ön kapı), yükleme sınırı `yukleme` (60 saniyede 30), robot koruması yok, kutuların belleği 1 GB: karar 0165.
+- Ölçümler: kutunun içinde 40 milyon piksellik logo yüklenince bellek zirvesi 330–332 MB; gerçek Caddy 2.10.2 ile yükleme yolunun 413'ü bir kez elle ölçüldü.
+- Yerel ortam denemesinde Örnek Mağaza'nın kuyruğa bağlı beş ölçümü, ortak veritabanındaki birikmiş e-posta işleri yüzünden kırmızıydı. Bu işle ilgisiz, ana dalda ölçülmedi.
+- Site adreslerinde genel gövde sınırı kart 0289'da.
+
 ## Durum
 
 yapılacak

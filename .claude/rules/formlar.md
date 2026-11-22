@@ -23,6 +23,6 @@ paths:
 - Form gönderilirken ikinci tıklamayı dikkate alma.
 - Kaydedilmemiş değişiklik varken sayfadan çıkmak isteyene uyarı göster.
 - Bir alanın içinden yeni kayıt eklenirken o kaydın tam oluşturma penceresini aç. Satır içi mini form kullanma.
-- Görsel ve dosya yüklemesini tek ortak yükleme bileşeniyle yap. İlerleme ve iptal her yerde olsun.
+- Görsel ve dosya yüklemesini tek ortak yükleme bileşeniyle yap. İlerleme ve iptal her yerde olsun. Parça `DosyaYukleme` (`bilesenler/parcalar/dosya-yukleme.tsx`), panelde istek `useDosyaYuklemesi` ile, hatanın metni `dosyaHatasiMetni` ile (`cekirdek/yonetim-paneli/dosya-yuklemesi.ts`, karar 0165).
 - Düğmeye "Kaydet", "Siparişi onayla" gibi eylem yaz. Sonucu bildirimle ver.
 - Ürün ve müşteri içe aktarmayı önizleme, satır satır hata raporu ve geri almayla tek altyapıdan yürüt.

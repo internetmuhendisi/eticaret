@@ -56,6 +56,7 @@ paths:
 - Ekran `cekirdek/yonetim-paneli/tema/` klasöründedir; verisi `temaEkraniVerisi` ile sunucuda kurulur. Her temaya geçerken gönderilecek ayarlar orada `yeniTemaninAyarlari` ile hazırlanır; tarayıcı tema tanımını taşımaz.
 - "Demoyu gez" bağlantısı yalnız `temaDemosuBaglantisi` ile kurulur (`cekirdek/ayar-semasi/tema-demosu-adresi.ts`). Adres kutuya `TEMA_DEMOSU_ADRESI` ile gelir; değeri komutlar demo sitesinin kimliğinden üretir (`komutlar/tema-demosu-adresi.mts`). Siteye özel temanın bağlantısı yoktur.
 - Tema değişikliği düzenin yolunu pencerede sorar; varsayılan seçim yoktur. Geri dönüş ekranın gördüğü sürümü gönderir (`son`).
+- Logo Tema ekranının "Logo" bölümündedir (`tema/logo-bolumu.tsx`, kart 0094, karar 0165): önizleme logo ucunun özetli adresinden, yükleme `DosyaYukleme` ile `logo-yukle` ucuna, kaldırma onayla `logo-kaldir` ucuna. Logo mağaza ayarıdır: `magaza-ayarlari.degistir` ister, "Mağaza sahibi temayı değiştirebilir" ayarına bağlı değildir. Dosyanın reddi alanın altında yazar, odak yükleme düğmesine gider.
 
 ## Kargo ekranı (karar 0135)
 

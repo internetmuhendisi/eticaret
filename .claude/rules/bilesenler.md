@@ -49,6 +49,7 @@ Bileşen, düğme, giriş alanı, pencere gibi tekrar kullanılan arayüz parça
   - `SayfaBasligi` panelde `gorunum="panel"` ile çizilir (kart 0141).
   - `Tablo` ve parçaları (kart 0258, karar 0158): tablonun iskeleti ve satır çizgisi, sunucuda da çizilir; boşluk ve hizalama kullananın. `TabloSecimi` (`tablo-secimi.tsx`): satır seçiminin kutusu, ekran okuyucu adıyla, basılan alan 44 px, sayfanın kısmen seçili hâli (`kismen`). Panel listeleri bunları liste motoruyla kullanır.
   - `AdetSecici` (kart 0212, karar 0135): azalt, adet ve artır; sınırdaki düğme kapalıdır, adet ekran okuyucuya duyurulur. Ürün sayfasında ve sepette kullanılır.
+  - `DosyaYukleme` (kart 0094, karar 0165): dosya seçme düğmesi, yükleme sürerken ilerleme çubuğu ve İptal. İsteği kullanan gönderir; sürerken seçme düğmesi `aria-disabled`'dır, odak kaybolmaz. Alanın hatası düğmeye bağlanır.
 
   Sınıflar `sinif()` ile birleştirilir. Asıl shadcn hâlleri `bilesenler/shadcn-kaynagi/` altındadır, güncellemesi `pnpm shadcn-farki` ile yapılır.
 - `bilesenler/parcalar/hareket-azaltma.ts`: `useHareketAzaltma` (kart 0110), kullanıcının hareketi azaltma tercihi. Kendiliğinden hareket eden parça bununla durur.
