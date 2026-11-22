@@ -1,9 +1,9 @@
 // Mağaza ayarları uçlarının ekranla ortak girdi şemaları (kart 0094, .claude/rules/sunucu-arayuzu.md).
 import { z } from "zod";
+import { dosyaGovdesiSemasi } from "../dosya/semalar.ts";
 
-// Logo yükleme: gövde dosyanın kendisidir (kapının dosya gövdesi, karar 0165). Tür ve sınırlar dosya servisinin
-// kaydındadır (cekirdek/kayitlar/dosya.ts); boş dosya da servise gider, kendi koduyla döner.
-export const logoYuklemeSemasi = z.strictObject({ dosya: z.instanceof(Uint8Array) });
+// Logo yükleme: gövde dosyanın kendisidir (dosya yükleyen uçların ortak şeması, karar 0165).
+export const logoYuklemeSemasi = dosyaGovdesiSemasi;
 
 // Logoyu kaldırma: girdi yok.
 export const logoKaldirmaSemasi = z.strictObject({});

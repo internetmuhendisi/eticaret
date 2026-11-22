@@ -92,6 +92,8 @@ export const urunHatalari = [
   "galeri-gorsel-tekrar",
   "galeri-siniri",
   "galeri-sira-gecersiz",
+  // Ürün ekranının galerisi (kart 0266): ekranın gördüğü galeri bu arada değişti.
+  "galeri-degisti",
   "video-adresi-gecersiz",
   "video-sitesi-izinsiz",
   "birim-gorseli-gecersiz",
@@ -145,6 +147,7 @@ export const urunHataMetinleri = {
   "galeri-gorsel-tekrar": "yonetim.urun.hata.galeri-gorsel-tekrar",
   "galeri-siniri": "yonetim.urun.hata.galeri-siniri",
   "galeri-sira-gecersiz": "yonetim.urun.hata.galeri-sira-gecersiz",
+  "galeri-degisti": "yonetim.urun.hata.galeri-degisti",
   "video-adresi-gecersiz": "yonetim.urun.hata.video-adresi-gecersiz",
   "video-sitesi-izinsiz": "yonetim.urun.hata.video-sitesi-izinsiz",
   "birim-gorseli-gecersiz": "yonetim.urun.hata.birim-gorseli-gecersiz",
@@ -314,16 +317,20 @@ const urunNesnesi = z.record(z.string(), z.unknown());
 const varyantNesnesi = z.record(z.string(), z.unknown()).optional();
 // Fiyat ve stok bölümleri (kart 0265): verilirse ürünle aynı işlemde, en son yazılır; panel-fiyat-stok.ts doğrular.
 const fiyatStokNesnesi = z.record(z.string(), z.unknown()).optional();
+// Galeri (kart 0266): verilirse ürünle aynı işlemde yazılır; panel-galeri.ts doğrular.
+const galeriNesnesi = z.record(z.string(), z.unknown()).optional();
 export const urunEklemeSemasi = z.strictObject({
   urun: urunNesnesi,
   varyant: varyantNesnesi,
   fiyatStok: fiyatStokNesnesi,
+  galeri: galeriNesnesi,
 });
 export const urunDegisikligiSemasi = z.strictObject({
   kimlik: kimlikSemasi,
   urun: urunNesnesi,
   varyant: varyantNesnesi,
   fiyatStok: fiyatStokNesnesi,
+  galeri: galeriNesnesi,
 });
 // Ürün ekranının fiyat ve stok geçmişinin sonraki sayfası (kart 0265): ürünün kimliği ve önceki sayfanın son satırı.
 export const urunGecmisiSemasi = z.strictObject({

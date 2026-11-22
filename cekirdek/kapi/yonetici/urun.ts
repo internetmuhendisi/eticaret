@@ -4,7 +4,9 @@
 // metindir; servisten önce panel-girdisi.ts çevirir. Değişikliği yapan yönetici kapıdan gelir. Seçenekler bölümü
 // (kart 0264, karar 0163) verilirse ürünle aynı işlemde yazılır: biri düşerse hiçbiri kalmaz. Kayıtlı seçenek ya da
 // değer silmek birleşim silmektir, urun.sil ister. Fiyat ve stok bölümleri (kart 0265) `fiyatStok` ile en son,
-// aynı işlemde yazılır (panel-fiyat-stok.ts): fiyat fiyat.degistir, stok stok.duzelt ister.
+// aynı işlemde yazılır (panel-fiyat-stok.ts): fiyat fiyat.degistir, stok stok.duzelt ister. Galeri (kart 0266) `galeri`
+// ile seçeneklerden sonra, ürünle aynı işlemde yazılır (panel-galeri.ts); görselin dosyası önce kendi ucuyla yüklenir
+// (urun-gorseli-yukle, karar 0073: dosya kaydı işlemin içinde çağrılamaz).
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
 import { yoneticininIzniVarMi } from "../../moduller/ekip/servis.ts";
@@ -12,6 +14,7 @@ import { calisanSiteninFiyatServisi } from "../../moduller/fiyat/servis.ts";
 import type { ElleDuzeltme } from "../../moduller/stok/semalar.ts";
 import { calisanSiteninStokServisi } from "../../moduller/stok/servis.ts";
 import { type PanelFiyatStok, panelFiyatStokYaz } from "../../moduller/urun/panel-fiyat-stok.ts";
+import { type PanelGaleri, panelGaleriYaz } from "../../moduller/urun/panel-galeri.ts";
 import { panelGirdisiniCevir, panelVaryantiniCevir } from "../../moduller/urun/panel-girdisi.ts";
 import {
   type UrunDegisikligi,
@@ -55,6 +58,23 @@ const varyantlariYaz = async (
   );
 };
 
+// Galeriyi ürünle aynı işlemde yazar (verilmediyse hiçbir şey yapmaz).
+const galeriYaz = async (
+  islem: VeritabaniIslemi,
+  hesapKimligi: string,
+  urun: string,
+  galeri: Readonly<Record<string, unknown>> | undefined,
+) => {
+  if (galeri === undefined) return;
+  await panelGaleriYaz(
+    islem,
+    yonetici(hesapKimligi),
+    urun,
+    galeri as PanelGaleri,
+    calisanSiteninUrunServisi(),
+  );
+};
+
 // Fiyat ve stok bölümlerini en son, aynı işlemde yazar (verilmediyse hiçbir şey yapmaz). İzin yalnız gerekince okunur.
 const fiyatStokYaz = async (
   islem: VeritabaniIslemi,
@@ -88,7 +108,7 @@ export const urunEklemeUcu = ucTanimla({
   sema: urunEklemeSemasi,
   izin: "urun.degistir",
   sinir: "genel",
-  isle: async ({ urun, varyant, fiyatStok }, _istek, _yanit, { hesapKimligi }) => {
+  isle: async ({ urun, varyant, fiyatStok, galeri }, _istek, _yanit, { hesapKimligi }) => {
     const girdi = (await cevir(urun)) as UrunGirdisi;
     return {
       kimlik: await siteninVeritabani().transaction(async (islem) => {
@@ -98,6 +118,7 @@ export const urunEklemeUcu = ucTanimla({
           girdi,
         );
         await varyantlariYaz(islem, hesapKimligi, kimlik, varyant);
+        await galeriYaz(islem, hesapKimligi, kimlik, galeri);
         await fiyatStokYaz(islem, hesapKimligi, kimlik, fiyatStok);
         return kimlik;
       }),
@@ -111,12 +132,13 @@ export const urunDegisikligiUcu = ucTanimla({
   sema: urunDegisikligiSemasi,
   izin: "urun.degistir",
   sinir: "genel",
-  isle: async ({ kimlik, urun, varyant, fiyatStok }, _istek, _yanit, { hesapKimligi }) => {
+  isle: async ({ kimlik, urun, varyant, fiyatStok, galeri }, _istek, _yanit, { hesapKimligi }) => {
     const girdi = (await cevir(urun)) as UrunDegisikligi;
     // Seçenekler önce: son seçenek kaldırılıp ürün basit olunca ürünün birim alanları (stok kodu, barkod, ağırlık) aynı
     // kayıtta yeni basit birime yazılır (bağımsız kontrolün bulgusu); seçenek eklenince ekran bu alanları göndermez.
     await siteninVeritabani().transaction(async (islem) => {
       await varyantlariYaz(islem, hesapKimligi, kimlik, varyant);
+      await galeriYaz(islem, hesapKimligi, kimlik, galeri);
       await calisanSiteninUrunServisi().urunDegistir(islem, yonetici(hesapKimligi), kimlik, girdi);
       await fiyatStokYaz(islem, hesapKimligi, kimlik, fiyatStok);
     });

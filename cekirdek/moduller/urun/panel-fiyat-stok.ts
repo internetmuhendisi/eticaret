@@ -24,7 +24,7 @@ import type { VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { kimligiDuzelt, kimlikSemasi } from "../../veritabani/kimlik.ts";
 import type { fiyatServisi } from "../fiyat/servis.ts";
 import type { stokServisi } from "../stok/servis.ts";
-import type { Sorun } from "./dogrulama.ts";
+import { yolla } from "./dogrulama.ts";
 import { urunBirimleri } from "./model.ts";
 import { birlesimAnahtari, secenekleriOku } from "./varyant.ts";
 
@@ -74,22 +74,6 @@ type Servisler = {
   stok: ReturnType<typeof stokServisi>;
   bicimleyici: Bicimleyici;
   saatDilimi: string;
-};
-
-// Bilinen hatanın alanını ekranın yoluna çevirir.
-const yolla = async (yol: (alan: string) => string, is: () => Promise<unknown>) => {
-  try {
-    await is();
-  } catch (hata) {
-    if (hata instanceof BilinenHata && Array.isArray(hata.ayrinti)) {
-      throw new BilinenHata(
-        hata.kod,
-        hata.ayrinti.map((sorun: Sorun) => ({ ...sorun, alan: yol(sorun.alan) })),
-        hata.basliklar,
-      );
-    }
-    throw hata;
-  }
 };
 
 // Ürünün silinmemiş birimleri: basit birim (değersiz) ve birleşimler, değerlerinin seçeneklerdeki sırasıyla.

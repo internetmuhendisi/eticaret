@@ -63,3 +63,19 @@ export const kayitDegeri = (
       )
       .map(([alan, deger]) => [alan, deger instanceof Date ? deger.toISOString() : deger]),
   );
+
+// Panelin bölümleri (fiyat ve stok, galeri): servisin bilinen hatasının alanını ekranın alanının yoluna çevirir.
+export const yolla = async <T>(yol: (alan: string) => string, is: () => Promise<T>): Promise<T> => {
+  try {
+    return await is();
+  } catch (hata) {
+    if (hata instanceof BilinenHata && Array.isArray(hata.ayrinti)) {
+      throw new BilinenHata(
+        hata.kod,
+        hata.ayrinti.map((sorun: Sorun) => ({ ...sorun, alan: yol(sorun.alan) })),
+        hata.basliklar,
+      );
+    }
+    throw hata;
+  }
+};

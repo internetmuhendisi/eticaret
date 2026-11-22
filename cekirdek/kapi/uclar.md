@@ -1173,10 +1173,10 @@ Seçilen ürünlere toplu işlem (kart 0262, karar 0157): yayınla, taslağa al,
 
 ### POST /kapi/yonetici/urun-ekle
 
-Yeni ürün (kart 0263): panelin ürün ekranından. Durum verilmezse ürün taslaktır. Ağırlık (`agirlik`) sitenin ağırlık biriminde, sayı türündeki özellik değeri sitenin sayı biçiminde metin olarak gelir, sunucu okur; öteki alanlar `urunGirdisi` şemasıyla doğrulanır. Seçenekler bölümü (kart 0264, karar 0163) `varyant` ile verilirse ürünle aynı işlemde yazılır: seçeneklerin, değerlerin ve birleşim alanlarının son hâli (`varyantKaydi`), birleşimin ağırlığı metin olarak; biri düşerse hiçbiri kalmaz. Değişiklikte seçenekler ürünün alanlarından önce yazılır (son seçeneği kalkan ürünün birim alanları yeni basit birime gider). `gorulen` ekranın gördüğü kayıtlı seçenek ve değer kimlikleridir: üründe başkası varsa `cakisma` (`varyant-degisti`) ve hiçbir şey yazılmaz. Kayıtlı seçenek ya da değer silmek (birleşimlerini siler) ayrıca `urun.sil` ister, yoksa `yetki` (`varyant-silme-yetkisi`) ve hiçbir şey yazılmaz. Fiyat ve stok bölümleri (kart 0265) `fiyatStok` ile en son, aynı işlemde yazılır (`panelFiyatStokYaz`): her satır bir birimdir (basit ürünün birimi ya da birleşimin değer sıraları; kayıtlı birimde `birim` kimliği, tutmazsa `cakisma` `varyant-degisti`), tutar sitenin para biçimiyle metin, stok yeni miktar ve görülen miktarla; indirimin zamanı, stok sebebi ve not ortaktır, zaman yalnız `ortakZaman` işaretli satıra yazılır (öteki indirimli satırın kendi zamanı kalır). Stoklar birim kimliği sırasıyla yazılır. Fiyat ayrıca `fiyat.degistir` (`fiyat-yetkisi`), stok `stok.duzelt` (`stok-yetkisi`) ister.
+Yeni ürün (kart 0263): panelin ürün ekranından. Durum verilmezse ürün taslaktır. Ağırlık (`agirlik`) sitenin ağırlık biriminde, sayı türündeki özellik değeri sitenin sayı biçiminde metin olarak gelir, sunucu okur; öteki alanlar `urunGirdisi` şemasıyla doğrulanır. Seçenekler bölümü (kart 0264, karar 0163) `varyant` ile verilirse ürünle aynı işlemde yazılır: seçeneklerin, değerlerin ve birleşim alanlarının son hâli (`varyantKaydi`), birleşimin ağırlığı metin olarak; biri düşerse hiçbiri kalmaz. Değişiklikte seçenekler ürünün alanlarından önce yazılır (son seçeneği kalkan ürünün birim alanları yeni basit birime gider). `gorulen` ekranın gördüğü kayıtlı seçenek ve değer kimlikleridir: üründe başkası varsa `cakisma` (`varyant-degisti`) ve hiçbir şey yazılmaz. Kayıtlı seçenek ya da değer silmek (birleşimlerini siler) ayrıca `urun.sil` ister, yoksa `yetki` (`varyant-silme-yetkisi`) ve hiçbir şey yazılmaz. Fiyat ve stok bölümleri (kart 0265) `fiyatStok` ile en son, aynı işlemde yazılır (`panelFiyatStokYaz`): her satır bir birimdir (basit ürünün birimi ya da birleşimin değer sıraları; kayıtlı birimde `birim` kimliği, tutmazsa `cakisma` `varyant-degisti`), tutar sitenin para biçimiyle metin, stok yeni miktar ve görülen miktarla; indirimin zamanı, stok sebebi ve not ortaktır, zaman yalnız `ortakZaman` işaretli satıra yazılır (öteki indirimli satırın kendi zamanı kalır). Stoklar birim kimliği sırasıyla yazılır. Fiyat ayrıca `fiyat.degistir` (`fiyat-yetkisi`), stok `stok.duzelt` (`stok-yetkisi`) ister. Galeri (kart 0266) `galeri` ile seçeneklerden sonra, aynı işlemde yazılır (`panelGaleriYaz`, `cekirdek/moduller/urun/panel-galeri.ts`): `ogeler` galerinin son hâlidir, sırasıyla (ilk görsel ana görsel); her öğe kayıtlı öğe (`kimlik`), yüklenmiş görsel (`dosya`, `urun-gorseli-yukle`'nin döndürdüğü) ya da video bağlantısıdır (`video`), hepsi `alternatifMetin` ile. `gorulen` ekranın gördüğü kayıtlı öğelerdir: galeride başkası varsa `cakisma` (`galeri-degisti`) ve hiçbir şey yazılmaz. Görülüp listede olmayan öğe silinir. Hata öğenin yoluyla döner (`galeri.ogeler.2.alternatifMetin`, `galeri.ogeler.0.dosya`, `galeri.ogeler.1.adres`), sınır `galeri` (`galeri-siniri`).
 
 - İzin: `urun.degistir`. Sınır: `genel`.
-- Girdi: `{ "urun": { "ad", ... }, "varyant"?: { "secenekler", "birlesimler" } }` (`urunEklemeSemasi`).
+- Girdi: `{ "urun": { "ad", ... }, "varyant"?: { "secenekler", "birlesimler" }, "fiyatStok"?: { ... }, "galeri"?: { "gorulen", "ogeler" } }` (`urunEklemeSemasi`).
 - Servis: `cekirdek/moduller/urun/servis.ts` (`urunEkle`, `varyantlariKaydet`), çeviri `cekirdek/moduller/urun/panel-girdisi.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
 - Hatalar: `dogrulama` (alanın yolu ve kodu, ör. `agirlik-bicimi`, `ozellik-deger-gecersiz`, `birlesimler.2.agirlik`), `cakisma` (adres adı, stok kodu, `varyant-degisti`), `is-kurali` (`birlesim-siniri`), `oturum-yok`, `yetki`.
@@ -1186,10 +1186,20 @@ Yeni ürün (kart 0263): panelin ürün ekranından. Durum verilmezse ürün tas
 Ürünün değişikliği (kart 0263): yalnız verilen alan değişir, `null` isteğe bağlı alanı boşaltır. Adres adı değişince eski adres yenisine yönlenir (kart 0135). Girdi kuralları `urun-ekle` ile aynıdır (`urunDegisikligi`).
 
 - İzin: `urun.degistir`. Sınır: `genel`.
-- Girdi: `{ "kimlik", "urun": { ... }, "varyant"?: { ... } }` (`urunDegisikligiSemasi`).
-- Servis: `urunDegistir`, `varyantlariKaydet`.
+- Girdi: `{ "kimlik", "urun": { ... }, "varyant"?: { ... }, "fiyatStok"?: { ... }, "galeri"?: { ... } }` (`urunDegisikligiSemasi`).
+- Servis: `urunDegistir`, `varyantlariKaydet`, `panelGaleriYaz`, `panelFiyatStokYaz`.
 - Başarılı (200): `{ "basarili": true, "veri": {} }`.
 - Hatalar: `dogrulama`, `bulunamadi`, `cakisma`, `is-kurali`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/urun-gorseli-yukle
+
+Ürün görselini yükler (kart 0266, karar 0073 ve 0165): görsel dört boyutuyla kaydedilir, galeriye bağlanmaz; bağlama ürünün kaydıyla (`urun-ekle`, `urun-degistir`'in `galeri`'si) yapılır. Tür içerikten anlaşılır (JPEG, PNG, WebP), görsel yeniden kodlanır, gömülü bilgiler silinir. Bağlanmayan görselin temizliği kart 0093'tedir.
+
+- İzin: `urun.degistir`. Sınır: `yukleme`.
+- Girdi: dosya gövdesi (`govde: "dosya"`, `dosyaGovdesiSemasi`, `cekirdek/moduller/dosya/semalar.ts`).
+- Servis: `cekirdek/moduller/dosya/servis.ts` (`gorselKaydet`).
+- Başarılı (200): `{ "basarili": true, "veri": { "dosya", "genislik", "yukseklik" } }`. Önizleme `panel-gorseli` ucundandır.
+- Hatalar: `dogrulama` (`dosya` alanında `dosyaHatalari`'ndan biri: `bos`, `cok-buyuk`, `tur-izinsiz`, `bozuk`, `cok-fazla-piksel`), `oturum-yok`, `yetki`, `istek-siniri`.
 
 ### POST /kapi/yonetici/urun-sil
 
