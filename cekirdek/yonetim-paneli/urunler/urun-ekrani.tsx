@@ -582,6 +582,7 @@ export function UrunEkrani({ veri }: { veri: UrunEkraniVerisi }) {
         izinli={izinli}
         videoSiteleri={veri.videoSiteleri}
         dosyaSinirlari={veri.dosyaSinirlari}
+        bicim={veri.bicim}
       />
     </Bolum>
   );

@@ -9,7 +9,7 @@
 // konur. Metinleri kullanan sayfa verir. Liste motoru gelince ona bağlanır.
 //
 // Izgara düzeni (`duzen="izgara"`, kart 0266: ürün galerisi): öğeler telefonda iki, tablet ve üstünde dört sütunlu
-// kartlardır; tutamak, önceki ve sonraki düğmeleri kartın altındaki satırdadır, `eylemler` aynı satırın sonuna gelir.
+// kartlardır; önceki ve sonraki düğmeleri kartın altında iki uçta, altlarındaki satırda tutamak ve `eylemler` durur.
 // Klavyede ok tuşları dört yöne taşır; "yukarı al" ve "aşağı al" sıradaki önceki ve sonraki yerdir.
 import {
   type Announcements,
@@ -152,10 +152,11 @@ function Satir({
         )}
       >
         <div className="flex min-w-0 flex-1 flex-col gap-2">{children}</div>
-        <div className="flex flex-wrap items-center gap-1">
+        {/* Önceki ve sonraki iki uçta, altında tutamak ve eylemler (dört sütunda tek satıra sığmaz). */}
+        <div className="flex items-center justify-between">{sirala}</div>
+        <div className="flex items-center justify-between gap-1">
           {tutamak}
-          {sirala}
-          <div className="ml-auto flex items-center gap-1">{eylemler}</div>
+          <div className="flex items-center gap-1">{eylemler}</div>
         </div>
       </li>
     );

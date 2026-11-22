@@ -50,6 +50,18 @@ const veri = (ek: Partial<UrunEkraniVerisi> = {}): UrunEkraniVerisi => ({
   galeriGorselleri: [],
   videoSiteleri: ["youtube"],
   dosyaSinirlari: { boyut: "10 MB", turler: "JPEG, PNG veya WebP" },
+  bicim: {
+    dil: "tr",
+    saatDilimi: "Europe/Istanbul",
+    sayi: { binlikAyirici: ".", ondalikAyirici: "," },
+    para: {
+      paraBirimi: "XTS",
+      simge: "¤",
+      simgeYeri: "sonda",
+      simgeBoslugu: true,
+      ondalikSayisi: 2,
+    },
+  },
   izinler: {
     degistir: true,
     sil: true,

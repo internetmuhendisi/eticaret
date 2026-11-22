@@ -119,6 +119,18 @@ function Deneme({
         izinli={izinli}
         videoSiteleri={videoSiteleri}
         dosyaSinirlari={{ boyut: "10 MB", turler: "JPEG, PNG veya WebP" }}
+        bicim={{
+          dil: "tr",
+          saatDilimi: "Europe/Istanbul",
+          sayi: { binlikAyirici: ".", ondalikAyirici: "," },
+          para: {
+            paraBirimi: "XTS",
+            simge: "¤",
+            simgeYeri: "sonda",
+            simgeBoslugu: true,
+            ondalikSayisi: 2,
+          },
+        }}
       />
     </PanelFormu>
   );
@@ -182,6 +194,11 @@ describe("galeri bölümü", () => {
       screen.getByRole("progressbar", { name: doldur(g("yukleniyor"), { ad: "a.jpg" }) }),
     ).toBeDefined();
     expect(screen.getByText(doldur(g("sirada"), { ad: "b.jpg" }))).toBeDefined();
+    // Yüzde sitenin biçimiyle yazılır.
+    await act(async () =>
+      son().upload.onprogress?.({ lengthComputable: true, loaded: 3, total: 10 } as ProgressEvent),
+    );
+    expect(screen.getByText("%30")).toBeDefined();
     // Sürerken yeni seçim ve video bağlama kapalıdır.
     expect((screen.getByRole("button", { name: g("sec") }) as HTMLButtonElement).disabled).toBe(
       true,

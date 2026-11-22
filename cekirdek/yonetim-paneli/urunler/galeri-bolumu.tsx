@@ -10,7 +10,7 @@
 // - "Video bağla" penceresi bağlantıyı ve başlığı alır; sitenin kabul ettiği video siteleri denetlenir, önizleme
 //   çerezsiz oynatıcıyla yalnız "Önizle"ye basınca yüklenir.
 // - Hata öğenin kartının altında yazar (galeri.ogeler.<sıra>), sınır galerinin kendisinde (galeri).
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { DosyaYukleme } from "../../../bilesenler/parcalar/dosya-yukleme";
 import { Dugme, IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
@@ -29,6 +29,7 @@ import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { yuklenebilenTurler } from "../../kayitlar/dosya";
 import { galeriOnerilenEnAz, galeriSinirlari } from "../../kayitlar/gorsel";
 import type { VideoSitesi } from "../../kayitlar/video-siteleri";
+import { type BicimAyarlari, bicimleyiciOlustur } from "../../metinler/bicimleyici";
 import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
@@ -77,6 +78,7 @@ export function GaleriBolumu({
   izinli,
   videoSiteleri,
   dosyaSinirlari,
+  bicim,
 }: {
   galeri: GaleriFormOgesi[];
   degistir: (galeri: GaleriFormOgesi[]) => void;
@@ -85,8 +87,10 @@ export function GaleriBolumu({
   izinli: boolean;
   videoSiteleri: readonly VideoSitesi[];
   dosyaSinirlari: { boyut: string; turler: string };
+  bicim: BicimAyarlari;
 }) {
   const metin = usePanelMetni();
+  const b = useMemo(() => bicimleyiciOlustur(bicim), [bicim]);
   const { hata } = usePanelFormuBaglami();
   const { yukleme, yukle, iptalEt } = useDosyaYuklemesi();
   const [sira, setSira] = useState<Yuklenen[]>([]);
@@ -225,7 +229,7 @@ export function GaleriBolumu({
                     ) : null}
                   </div>
                   {oge.alternatifMetin.trim() === "" ? (
-                    <span className="mt-2 block truncate text-kucuk font-kalin text-tehlike-yazi">
+                    <span className="mt-2 block text-kucuk font-kalin text-tehlike-yazi">
                       {metin("yonetim.urunEkrani.galeri.altMetinEksik")}
                     </span>
                   ) : (
@@ -291,6 +295,9 @@ export function GaleriBolumu({
                       oran={yukleme.oran}
                       etiket={doldur(metin("yonetim.urunEkrani.galeri.yukleniyor"), { ad: oge.ad })}
                     />
+                    <span aria-hidden="true" className="text-kucuk text-soluk-yazi">
+                      {b.yuzde(Math.round(yukleme.oran * 100))}
+                    </span>
                     <Dugme
                       tur="sade"
                       onClick={() => {
@@ -324,7 +331,7 @@ export function GaleriBolumu({
               }}
               id={secKimligi}
               secEtiketi={metin("yonetim.urunEkrani.galeri.sec")}
-              tur="sade"
+              tur="cerceveli"
               kabul={yuklenebilenTurler}
               onSecildi={(dosyalar) => void dosyalarSecildi(dosyalar)}
               // İlerleme ve İptal yüklenen dosyanın kartındadır.
@@ -340,7 +347,7 @@ export function GaleriBolumu({
               {videoSiteleri.length > 0 ? (
                 <Dugme
                   id={videoKimligi}
-                  tur="sade"
+                  tur="cerceveli"
                   onClick={() => setVideoAcik(true)}
                   disabled={sira.length > 0}
                 >

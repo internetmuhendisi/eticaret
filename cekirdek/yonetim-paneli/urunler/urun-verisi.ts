@@ -9,8 +9,9 @@ import type { OzellikTuru } from "../../kayitlar/ozellik";
 import type { ElleStokSebebi } from "../../kayitlar/stok";
 import { type UrunDurumu, type UrunTuru, urunDurumVitrini } from "../../kayitlar/urun";
 import type { VideoSitesi } from "../../kayitlar/video-siteleri";
+import type { BicimAyarlari } from "../../metinler/bicimleyici";
 import { yerelZamana } from "../../metinler/bicimleyici";
-import { siteninBicimleyicisi } from "../../metinler/site-metni";
+import { siteninBicimAyarlari, siteninBicimleyicisi } from "../../metinler/site-metni";
 import { dosyalar } from "../../moduller/dosya/model";
 import type { YoneticiYetkileri } from "../../moduller/ekip/servis";
 import { etiketServisi } from "../../moduller/etiket/servis";
@@ -104,6 +105,8 @@ export type UrunEkraniVerisi = {
   videoSiteleri: readonly VideoSitesi[];
   // Yüklenebilecek en büyük dosyanın ve türlerin sitenin biçimiyle yazılışı ("10 MB", "JPEG, PNG veya WebP").
   dosyaSinirlari: { boyut: string; turler: string };
+  // Sitenin biçim ayarları (yükleme yüzdesi tarayıcıda sitenin biçimleyicisiyle yazılır).
+  bicim: BicimAyarlari;
   // Fiyat ve stok bölümlerinin verisi (kart 0265).
   fiyatStok: FiyatStokVerisi;
   izinler: {
@@ -175,6 +178,7 @@ export const urunEkraniVerisi = async (
     })),
     agirlikBirimi: site.ayarlar.agirlikBirimi,
     videoSiteleri: site.ayarlar.videoSiteleri,
+    bicim: siteninBicimAyarlari(site.ayarlar),
     dosyaSinirlari: {
       boyut: bicimleyici.dosyaBoyutu(dosyaSinirlari.enCokBayt),
       turler: bicimleyici.veyaListesi(yuklenebilenTurAdlari),
