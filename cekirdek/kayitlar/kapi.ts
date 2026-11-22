@@ -31,5 +31,8 @@ export const istekSinirlari = {
   // Ödeme kuruluşunun bildirimi ve tarayıcıyla dönüşü (kart 0215, .claude/rules/sunucu-arayuzu.md): sıradan istek
   // sınırından muaftır, doğruluğu imzadan ve kuruluşa yapılan sorgudan gelir. Bol sınır yalnız taşkını durdurur.
   bildirim: { istek: 600, saniye: 60 },
+  // Dosya yükleme (kart 0094, karar 0165): her yükleme görseli yeniden kodlar (büyük görselde yüzlerce MB bellek ve
+  // saniyeler). Galeriye birkaç görsel art arda yüklenebilsin, sunucuyu dolduran seri yükleme dursun.
+  yukleme: { istek: 30, saniye: 60 },
 } as const satisfies Record<string, { istek: number; saniye: number }>;
 export type IstekSiniri = keyof typeof istekSinirlari;

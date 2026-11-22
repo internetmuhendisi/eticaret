@@ -35,6 +35,8 @@ Kapıdaki her uç burada yazar (`.claude/rules/sunucu-arayuzu.md`). Yeni ya da d
 
 **Girdi.** `GET`, `HEAD` ve `DELETE` isteklerinde girdi adres parametreleridir, ötekilerde JSON gövdedir. Şemada olmayan alan doğrulama hatasıdır.
 
+**Dosya gövdesi** (kart 0094, karar 0165). Dosya yükleyen uç `govde: "dosya"` ile yazılır: gövde dosyanın kendisidir (ham bayt, türü içerikten anlaşılır), uç girdiyi `{ "dosya" }` olarak alır. Gövde dosya sınırını (`dosyaSinirlari.enCokBayt`, 10 MB) aşarsa okunmadan (bildirilen uzunlukla) ya da okunurken kesilerek `dogrulama` (`dosya`, `cok-buyuk`) döner. Sunucudaki ön kapı yükleme adreslerinde aynı sınırı (küçük bir payla) ayrıca uygular; aşan istek kutuya ulaşmadan zarfsız 413 alır.
+
 **Dış kuruluşun dönüşü** (kart 0215, karar 0142). Ödeme kuruluşunun sunucudan bildirimi ve müşterinin tarayıcısıyla geri gönderdiği form `disKurulus` beyanıyla yazılır: yalnız herkese açık girişte ve `bildirim` sınırıyla. Başka siteden geldiği için sahte istek denetimi uygulanmaz, gövde JSON ya da form (`application/x-www-form-urlencoded`) olabilir, şemada olmayan alan yok sayılır. Uç çerez okumaz; doğruluğu imzadan ya da kuruluşa yapılan sorgudan kurar. Uç `Yonlendirme` döndürerek `303` ile sitenin kendi bir sayfasına yönlendirebilir (yanıt önbelleksizdir).
 
 **İstek sınırı.** Her uç bir sınır seçer. Sayaç yöntem, adres ve istemci başınadır, süre dolunca sıfırlanır: aynı uca `HEAD` ve `GET` ayrı sayılır. IPv4 istemci tam adresiyle, IPv6 istemci adresinin ilk 64 bitiyle sayılır (karar 0041).
@@ -45,6 +47,7 @@ Kapıdaki her uç burada yazar (`.claude/rules/sunucu-arayuzu.md`). Yeni ya da d
 | `siki` | 60 saniyede 5 istek (giriş, şifre sıfırlama gibi hassas uçlar) |
 | `gorsel` | 60 saniyede 600 istek (ürün görseli: bir sayfa aynı uca onlarca kez gider) |
 | `bildirim` | 60 saniyede 600 istek (ödeme kuruluşunun bildirimi ve dönüşü: sıradan sınırdan muaf, bol sınır yalnız taşkını durdurur) |
+| `yukleme` | 60 saniyede 30 istek (dosya yükleme: her yükleme görseli yeniden kodlar) |
 
 **İzin.** Herkese açık girişteki uçların izni `herkese-acik`tır. Öteki girişlerdeki uçlar yalnız o girişin iznini ister (`cekirdek/kayitlar/izinler.ts`, liste `cekirdek/moduller/ekip/izinler-ve-roller.md`). Kapı her istekte sırayla sahte isteğe, istek sınırına, oturuma, izne ve girdiye bakar: yetkisiz istek girdi hatası görmez. Uç, hesabın kimliğini ve iznin kapsamını kapıdan alır, girdiden almaz (karar 0040). Sahip girişinin henüz izni yoktur, oraya uç yazılamaz.
 
@@ -806,6 +809,26 @@ Temayı ve ayarlarını yeni sürüm olarak yayınlar (karar 0080). Tema kodu de
 - Servis: `cekirdek/moduller/tema/servis.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "sira", "tema", "ayarlar", "geriDonulenSira": null } }`.
 - Hatalar: `dogrulama` (şemaya uymayan girdi; `tema-kullanilamaz`; temanın açmadığı renk ya da tanımsız seçenek; `kontrast-yetersiz` öneriyle (`oneri`); tema değişiyor ama `duzen` yok: `duzen-yolu-gerekli`), `is-kurali` (`tema-degistirilemez`: "Mağaza sahibi temayı değiştirebilir" kapalı), `yetki` (sahte istek ya da izin yok), `hizmet-kullanilamiyor` (`katalog-bekleniyor`: sitenin başlangıç düzeni kataloğa başvuruyor ve katalog henüz kurulmadı; kart 0114).
+
+### POST /kapi/yonetici/logo-yukle
+
+Gövdedeki görseli mağazanın yeni logosu yapar (kart 0094, karar 0059). Dosya kart 0072'nin yoluyla kaydedilir: tür içerikten anlaşılır (PNG, JPEG, WebP), görsel yeniden kodlanır, gömülü bilgiler silinir. Ayar değişikliği değişiklik kaydına girer, önceki yüklenen logo silinmiş işaretlenir.
+
+- İzin: `magaza-ayarlari.degistir`. Sınır: `yukleme`.
+- Girdi: dosya gövdesi (`govde: "dosya"`, `logoYuklemeSemasi`, `cekirdek/moduller/magaza-ayarlari/semalar.ts`).
+- Servis: `cekirdek/moduller/magaza-ayarlari/logo.ts` (`logoyuDegistir`).
+- Başarılı (200): `{ "basarili": true, "veri": { "kaynak": "yuklenen", "adres" } }`. `adres` logo ucunun özetli yoludur.
+- Hatalar: `dogrulama` (`dosya` alanında `dosyaHatalari`'ndan biri: `bos`, `cok-buyuk`, `tur-izinsiz`, `bozuk`, `cok-fazla-piksel`), `oturum-yok`, `yetki`, `istek-siniri`.
+
+### POST /kapi/yonetici/logo-kaldir
+
+Yüklenen logoyu kaldırır (kart 0094): sitenin ilk logosu, o da yoksa mağaza adı görünür. Yüklenen logo yoksa hiçbir şey yazılmaz.
+
+- İzin: `magaza-ayarlari.degistir`. Sınır: `genel`.
+- Girdi: `{}` (`logoKaldirmaSemasi`).
+- Servis: `cekirdek/moduller/magaza-ayarlari/logo.ts` (`logoyuKaldir`).
+- Başarılı (200): `{ "basarili": true, "veri": { "kaynak", "adres" } }`. Logo kalmadıysa ikisi de `null`.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`.
 
 ### POST /kapi/yonetici/tema-geri-don
 

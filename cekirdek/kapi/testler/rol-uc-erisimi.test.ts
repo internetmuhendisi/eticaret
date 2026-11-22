@@ -397,12 +397,17 @@ const baskasininKaydi = async ({ yontem, yol, uc }: KayitliUc, senaryo: MusteriS
   return { durum: yanit.status, metin, a, b, sorunlar };
 };
 
+let dosyaKlasoru = "";
+
 beforeAll(async () => {
   const site = await denemeSitesiAc("erisim");
   vt = site.vt;
   sil = site.sil;
   vi.stubEnv("VERITABANI_ADRESI", site.baglantiAdresi);
   vi.stubEnv("IKI_ASAMA_ANAHTARI", randomBytes(32).toString("hex"));
+  // Dosya yükleyen uç (kart 0094) klasörü okur; gönderilen gövde görsel olmadığı için hiçbir dosya yazılmaz.
+  dosyaKlasoru = mkdtempSync(join(tmpdir(), "erisim-dosya-"));
+  vi.stubEnv("DOSYA_KLASORU", dosyaKlasoru);
   vi.stubEnv(
     "SITE_KLASORU",
     resolve(import.meta.dirname, "../../ayar-semasi/testler/ornek-siteler/gecerli"),
@@ -429,6 +434,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await baglantiyiKapat();
   vi.unstubAllEnvs();
+  rmSync(dosyaKlasoru, { recursive: true, force: true });
   await sil();
 });
 

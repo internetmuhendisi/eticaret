@@ -5,6 +5,7 @@
 import type { z } from "zod";
 import { calisanSite } from "../ayar-semasi/calisan-site.ts";
 import { hatayiKaydet } from "../izleme/hata-katmani.ts";
+import { dosyaSinirlari } from "../kayitlar/dosya.ts";
 import type { GirisIzni, HerkeseAcik, IzinAdi } from "../kayitlar/izinler.ts";
 import type { IstekSiniri, Kapi } from "../kayitlar/kapi.ts";
 import { istegiSay, istemciAdresi, sayacAdresi } from "./istek-siniri.ts";
@@ -44,6 +45,10 @@ type DisKurulusBeyani<Giris extends Kapi> = Giris extends "herkese-acik"
 
 export type UcTanimi<Giris extends Kapi, Sema extends z.ZodType, Veri> = DemoBeyani<Giris> &
   DisKurulusBeyani<Giris> & {
+    // Dosya yükleyen uç (kart 0094, karar 0165): gövde JSON değil dosyanın kendisidir (ham bayt). Girdi
+    // `{ dosya: Uint8Array }` olur. Dosya sınırını (dosyaSinirlari.enCokBayt) aşan gövde okunmadan ya da okunurken
+    // kesilerek reddedilir.
+    govde?: "dosya";
     giris: Giris;
     sema: Sema;
     izin: UcIzni<Giris>;
@@ -94,6 +99,28 @@ const girdiyiOku = async (istek: Request, formOlabilir: boolean): Promise<unknow
   }
 };
 
+// Dosya gövdesi: bildirilen uzunluk sınırı aşıyorsa hiç okunmaz; bildirilmemişse okunurken sınır aşılınca okuma
+// kesilir. Böylece sınırdan büyük gövde belleğe alınmaz.
+const dosyayiOku = async (istek: Request): Promise<Uint8Array | "cok-buyuk"> => {
+  const uzunluk = Number(istek.headers.get("content-length") ?? Number.NaN);
+  if (Number.isFinite(uzunluk) && uzunluk > dosyaSinirlari.enCokBayt) return "cok-buyuk";
+  if (istek.body === null) return new Uint8Array();
+  const parcalar: Uint8Array[] = [];
+  let toplam = 0;
+  const okuyucu = istek.body.getReader();
+  for (;;) {
+    const { done, value } = await okuyucu.read();
+    if (done) break;
+    toplam += value.length;
+    if (toplam > dosyaSinirlari.enCokBayt) {
+      await okuyucu.cancel();
+      return "cok-buyuk";
+    }
+    parcalar.push(value);
+  }
+  return Buffer.concat(parcalar);
+};
+
 export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
   tanim: UcTanimi<Giris, Sema, Veri>,
 ): Uc => {
@@ -127,7 +154,17 @@ export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
       // Doğrulamadan önce: yetkisiz kişi ucun girdi yapısını öğrenemesin.
       const erisim = await erisimiDenetle(tanim.giris, tanim.izin, istek, yanit.cerezYaz);
 
-      const sonuc = tanim.sema.safeParse(await girdiyiOku(istek, tanim.disKurulus === true));
+      let girdi: unknown;
+      if (tanim.govde === "dosya") {
+        const dosya = await dosyayiOku(istek);
+        if (dosya === "cok-buyuk") {
+          return hataliYanit("dogrulama", [{ alan: "dosya", kod: "cok-buyuk" }]);
+        }
+        girdi = { dosya };
+      } else {
+        girdi = await girdiyiOku(istek, tanim.disKurulus === true);
+      }
+      const sonuc = tanim.sema.safeParse(girdi);
       if (!sonuc.success) {
         return hataliYanit(
           "dogrulama",
