@@ -124,6 +124,7 @@ describe("uç tanımı", () => {
       temaDemosunda: "acik",
       izin: "herkese-acik",
       sinir: "genel",
+      dosyaGovdesi: false,
     });
   });
 });
