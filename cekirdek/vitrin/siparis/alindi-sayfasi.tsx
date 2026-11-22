@@ -116,7 +116,11 @@ export async function SiparisAlindiSayfasi() {
               hesaplar={ayarlar.bankaHesaplari}
             />
           ) : tahsilat !== null ? (
-            <Kart aria-labelledby="kart-basligi" className="flex flex-col gap-2 p-4 tablet:p-6">
+            <Kart
+              role="region"
+              aria-labelledby="kart-basligi"
+              className="flex flex-col gap-2 p-4 tablet:p-6"
+            >
               <h2 id="kart-basligi" className="font-baslik text-baslik-4 font-baslik-kalinligi">
                 {metin("vitrin.siparisAlindi.kartBasligi")}
               </h2>
@@ -137,7 +141,11 @@ export async function SiparisAlindiSayfasi() {
               </p>
             </Kart>
           ) : (
-            <Kart aria-labelledby="kapida-basligi" className="flex flex-col gap-2 p-4 tablet:p-6">
+            <Kart
+              role="region"
+              aria-labelledby="kapida-basligi"
+              className="flex flex-col gap-2 p-4 tablet:p-6"
+            >
               <h2 id="kapida-basligi" className="font-baslik text-baslik-4 font-baslik-kalinligi">
                 {metin("vitrin.siparisAlindi.kapidaBasligi")}
               </h2>
@@ -158,7 +166,11 @@ export async function SiparisAlindiSayfasi() {
               </p>
             </Kart>
           )}
-          <Kart aria-labelledby="teslimat-basligi" className="flex flex-col gap-3 p-4 tablet:p-6">
+          <Kart
+            role="region"
+            aria-labelledby="teslimat-basligi"
+            className="flex flex-col gap-3 p-4 tablet:p-6"
+          >
             <h2 id="teslimat-basligi" className="font-baslik text-baslik-4 font-baslik-kalinligi">
               {metin("vitrin.siparisAlindi.teslimatVeFatura")}
             </h2>

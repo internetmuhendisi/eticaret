@@ -938,6 +938,7 @@ function Bolum({
 }) {
   return (
     <Kart
+      role="region"
       className="flex min-w-0 scroll-mt-4 flex-col gap-5 p-4 tablet:p-6"
       id={kimlik}
       aria-labelledby={`${kimlik}-baslik`}

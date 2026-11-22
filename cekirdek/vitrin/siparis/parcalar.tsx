@@ -131,6 +131,7 @@ export function HavaleOdemeKarti({
 }) {
   return (
     <Kart
+      role="region"
       aria-labelledby="havale-basligi"
       className="flex flex-col gap-4 border-2 border-birincil p-4 tablet:p-6"
     >

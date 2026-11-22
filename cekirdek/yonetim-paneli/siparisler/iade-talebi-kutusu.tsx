@@ -56,6 +56,7 @@ export function IadeTalebiKutusu({
   const rozet = talepDurumRozeti[talep.durum];
   return (
     <Kart
+      role="region"
       aria-labelledby={`iade-talebi-${talep.kimlik}`}
       className="gap-3 border-2 border-birincil p-4 tablet:p-5"
     >

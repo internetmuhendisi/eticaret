@@ -104,6 +104,7 @@ function Bolum({
 }) {
   return (
     <Kart
+      role="region"
       aria-labelledby={kimlik}
       className={sinif("flex flex-col gap-4 p-4 tablet:p-5", className)}
     >
