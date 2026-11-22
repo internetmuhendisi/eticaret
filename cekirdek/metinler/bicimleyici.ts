@@ -168,6 +168,16 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
     style: "percent",
     maximumFractionDigits: 0,
   });
+  // Dosya boyutu (kart 0094): megabayt ya da kilobayt, en çok bir ondalık, birimin adı dilden ("10 MB").
+  const boyutBicimi = (birim: "megabyte" | "kilobyte") =>
+    new Intl.NumberFormat(ayarlar.dil, {
+      style: "unit",
+      unit: birim,
+      unitDisplay: "short",
+      maximumFractionDigits: 1,
+    });
+  const megabaytBicimi = boyutBicimi("megabyte");
+  const kilobaytBicimi = boyutBicimi("kilobyte");
   const yonelmeEki = yonelmeEkleri[ayarlar.dil.split("-")[0] ?? ""] ?? (() => "");
   const ulkeAdlari = new Intl.DisplayNames(ayarlar.dil, { type: "region", fallback: "none" });
   // Adların sitenin dilindeki alfabe sırası (kart 0136): filtrede markalar ve değerler.
@@ -257,6 +267,10 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
       ayiricilariUygula(sayiBicimi(ondalikSayisi), deger),
     // Oran yüz üzerinden verilir (23 → "%23").
     yuzde: (oran: number): string => yuzdeBicimi.format(oran / 100),
+    dosyaBoyutu: (bayt: number): string =>
+      bayt >= 1024 * 1024
+        ? ayiricilariUygula(megabaytBicimi, bayt / (1024 * 1024))
+        : ayiricilariUygula(kilobaytBicimi, Math.max(bayt / 1024, 0.1)),
     yonelmeEki,
     adKarsilastir: (a: string, b: string): number => adSiralayici.compare(a, b),
     tarih: (an: Date): string => tarihBicimi.format(an),

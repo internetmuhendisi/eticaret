@@ -226,6 +226,18 @@ describe("sayı", () => {
 });
 
 // Kart 0109: indirim rozetinin oranı ve "%30'a varan" eki.
+describe("dosya boyutu", () => {
+  it("megabayt ve kilobayt, en çok bir ondalık, sitenin ondalık ayırıcısıyla, birimin adı dilden", () => {
+    expect(bicim.dosyaBoyutu(10 * 1024 * 1024)).toBe("10 MB");
+    expect(bicim.dosyaBoyutu(1.5 * 1024 * 1024)).toBe("1,5 MB");
+    expect(bicim.dosyaBoyutu(300 * 1024)).toBe("300 kB");
+    expect(bicim.dosyaBoyutu(1)).toBe("0,1 kB");
+    expect(bicimleyiciOlustur({ ...turkiye, dil: "en" }).dosyaBoyutu(1.5 * 1024 * 1024)).toBe(
+      "1,5 MB",
+    );
+  });
+});
+
 describe("yüzde ve yönelme eki", () => {
   it("yüzde işareti dilin yerinde, tam sayı", () => {
     expect(bicim.yuzde(23)).toBe("%23");

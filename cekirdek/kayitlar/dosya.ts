@@ -22,6 +22,12 @@ export const dosyaTurleri = {
 } as const satisfies Record<string, { mime: string; uzanti: string; imzalar: readonly Imza[] }>;
 export type DosyaTuru = keyof typeof dosyaTurleri;
 
+// Tarayıcının dosya seçicisinde önerilen türler (kart 0094): yükleme parçasının `kabul` değeri. Sunucu yine içerikten
+// denetler.
+export const yuklenebilenTurler: string = Object.values(dosyaTurleri)
+  .map((tur) => tur.mime)
+  .join(",");
+
 export const dosyaSinirlari = {
   // Yüklenen dosyanın en büyük boyutu.
   enCokBayt: 10 * 1024 * 1024,

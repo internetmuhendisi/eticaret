@@ -54,7 +54,7 @@ afterAll(async () => {
 });
 
 const cerez = async (kisi: "magaza-sahibi" | "gorevli" | "rolsuz" | "musteri" | "girissiz") => {
-  if (kisi === "girissiz") return undefined;
+  if (kisi === "girissiz") return { cerez: undefined, hesapKimligi: "" };
   sayac += 1;
   const tur = kisi === "musteri" ? "musteri" : "yonetici";
   const { hesapKimligi } = await hesapAc(vt, tur, {
@@ -207,7 +207,7 @@ describe("logo uçları", () => {
       ["musteri", "oturum-yok"],
       ["girissiz", "oturum-yok"],
     ] as const) {
-      const oturum = (await cerez(kisi))?.cerez;
+      const oturum = (await cerez(kisi)).cerez;
       const yukle = await logoYuklemeUcu(istek("logo-yukle", oturum, icerik));
       expect(((await yukle.json()) as { hata: { kod: string } }).hata.kod).toBe(kod);
       const kaldir = await logoKaldirmaUcu(istek("logo-kaldir", oturum, "{}"));

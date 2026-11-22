@@ -191,6 +191,7 @@
     "cekirdek/yonetim-paneli/panel-cercevesi.tsx",
     "cekirdek/yonetim-paneli/panel-islemi.ts",
     "cekirdek/yonetim-paneli/siparisler/elle-siparis.tsx",
+    "cekirdek/yonetim-paneli/tema/logo-bolumu.tsx",
     "cekirdek/yonetim-paneli/urunler/urun-ekrani.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/slider.tsx"
   ],
@@ -211,12 +212,17 @@
     "cekirdek/yonetim-paneli/siparisler/ayarlar.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx"
   ],
+  "bilesenler/parcalar/dosya-yukleme.tsx": [
+    "cekirdek/yonetim-paneli/dosya-yuklemesi.ts",
+    "cekirdek/yonetim-paneli/tema/logo-bolumu.tsx"
+  ],
   "bilesenler/parcalar/dugme.tsx": [
     "bilesenler/form/form.tsx",
     "bilesenler/form/hata-ozeti.tsx",
     "bilesenler/parcalar/adet-secici.tsx",
     "bilesenler/parcalar/baglanti.tsx",
     "bilesenler/parcalar/bicimli-metin-alani.tsx",
+    "bilesenler/parcalar/dosya-yukleme.tsx",
     "bilesenler/parcalar/onay-penceresi.tsx",
     "bilesenler/parcalar/pencere.tsx",
     "bilesenler/parcalar/serit.tsx",
@@ -265,6 +271,7 @@
     "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/iade-talebi-kutusu.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
+    "cekirdek/yonetim-paneli/tema/logo-bolumu.tsx",
     "cekirdek/yonetim-paneli/urunler/fiyat-stok-bolumleri.tsx",
     "cekirdek/yonetim-paneli/urunler/secenekler-bolumu.tsx",
     "cekirdek/yonetim-paneli/urunler/urun-ekrani.tsx",
@@ -348,6 +355,7 @@
     "cekirdek/yonetim-paneli/siparisler/iptal-ve-iade-ayarlari.tsx",
     "cekirdek/yonetim-paneli/siparisler/yonetici-bildirimleri-ayarlari.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
+    "cekirdek/yonetim-paneli/tema/logo-bolumu.tsx",
     "cekirdek/yonetim-paneli/urunler/urun-ekrani.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/slider.tsx"
   ],
@@ -378,6 +386,7 @@
     "cekirdek/yonetim-paneli/siparisler/iade-talebi-kutusu.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
     "cekirdek/yonetim-paneli/siparisler/not-formu.tsx",
+    "cekirdek/yonetim-paneli/tema/logo-bolumu.tsx",
     "cekirdek/yonetim-paneli/urunler/secenekler-bolumu.tsx",
     "cekirdek/yonetim-paneli/urunler/urun-ekrani.tsx"
   ],

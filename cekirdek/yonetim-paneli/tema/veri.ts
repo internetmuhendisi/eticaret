@@ -8,8 +8,11 @@
 
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { temaDemosuBaglantisi } from "../../ayar-semasi/tema-demosu-adresi";
+import { dosyaSinirlari } from "../../kayitlar/dosya";
 import type { UrunFiltresiGorunumu } from "../../kayitlar/tema";
 import { urunFiltresiGorunumleri } from "../../kayitlar/tema";
+import { siteninBicimleyicisi } from "../../metinler/site-metni";
+import { logonunYolu, magazaLogosu } from "../../moduller/magaza-ayarlari/logo";
 import {
   siteninGecerliTemasi,
   siteninTemaServisi,
@@ -36,7 +39,13 @@ export type EkranTemasi = {
   ayarlar: TemaAyarlari;
 };
 
+// Logonun önizlemesi (kart 0094): kaynağı ve sitenin kendi sayfalarındaki adresi (özetiyle); logo yoksa ikisi de null.
+export type EkranLogosu = { kaynak: "yuklenen" | "ilk" | null; adres: string | null };
+
 export type TemaEkraniVerisi = {
+  logo: EkranLogosu;
+  // Yüklenebilecek en büyük dosyanın sitenin biçimiyle yazılışı ("10 MB").
+  enCokDosyaBoyutu: string;
   // Geçerli sürümün sırası: "Önceki hâline dön" bunu ekranın gördüğü son sürüm olarak gönderir.
   sira: number;
   temalar: EkranTemasi[];
@@ -54,7 +63,15 @@ export const temaEkraniVerisi = async (): Promise<TemaEkraniVerisi> => {
   const gorunen = parcaGorunumleriniKur(gecerli.tema.tanim, gecerli.ayarlar)["urun-filtresi"];
   const filtreYeri =
     urunFiltresiGorunumleri.find((yer) => yer === gorunen) ?? urunFiltresiGorunumleri[0];
+  const logo = await magazaLogosu(vt);
   return {
+    logo:
+      logo === undefined
+        ? { kaynak: null, adres: null }
+        : { kaynak: logo.kaynak, adres: logonunYolu(logo) },
+    enCokDosyaBoyutu: siteninBicimleyicisi(calisanSite().ayarlar).dosyaBoyutu(
+      dosyaSinirlari.enCokBayt,
+    ),
     sira: durum.sira,
     temalar: calisanSite().temalar.map((tema) => {
       const demo = tema.kaynak === "cekirdek" ? temaDemosuBaglantisi(tema.kod) : undefined;

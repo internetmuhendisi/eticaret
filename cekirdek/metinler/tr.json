@@ -931,6 +931,22 @@
         "temaDegisti": "Tema bu arada değişti; ekran yenilendi. Gerekirse yeniden deneyin.",
         "oncekiYok": "Dönülecek önceki bir hâl yok.",
         "surumKullanilamaz": "Önceki hâlin teması ya da renkleri artık kullanılamıyor; bu yüzden dönülemiyor."
+      },
+      "logo": {
+        "baslik": "Logo",
+        "aciklama": "Logo vitrinin üst kısmında, panelde ve e-postalarda görünür. PNG, JPEG ya da WebP bir görsel yükleyin, en çok {boyut}.",
+        "onizleme": "Mağazanın şimdiki logosu",
+        "yuklenen": "Yüklediğiniz logo kullanılıyor.",
+        "ilk": "Mağazanın ilk logosu kullanılıyor.",
+        "yok": "Logo yok: vitrinde mağaza adı yazı olarak görünür.",
+        "alan": "Logo dosyası",
+        "yukle": "Logo yükle",
+        "ad": "Logo",
+        "kaldir": "Logoyu kaldır",
+        "kaldirBaslik": "Yüklediğiniz logo kaldırılsın mı?",
+        "kaldirAciklama": "Mağazanın ilk logosu görünür, ilk logo yoksa mağaza adı yazı olarak görünür. Logoyu istediğinizde yeniden yükleyebilirsiniz.",
+        "yuklendi": "Logo yüklendi ve yayınlandı.",
+        "kaldirildi": "Logo kaldırıldı."
       }
     },
     "kargo": {
@@ -1831,6 +1847,23 @@
         "bos": "Henüz kayıt yok.",
         "dahaFazla": "Daha fazla",
         "hata": "Geçmiş yüklenemedi. Yeniden deneyin."
+      }
+    },
+    "dosya": {
+      "ilerleme": "{ad} yükleniyor",
+      "iptal": "İptal",
+      "iptalEdildi": "Yükleme iptal edildi.",
+      "hata": {
+        "bos": "Seçtiğiniz dosya boş. Başka bir dosya seçin.",
+        "cok-buyuk": "Dosya çok büyük. En çok {boyut} bir görsel seçin.",
+        "tur-izinsiz": "Bu dosya türü yüklenemez. PNG, JPEG ya da WebP bir görsel seçin.",
+        "bozuk": "Görsel açılamadı, dosya bozuk olabilir. Başka bir dosya seçin.",
+        "cok-fazla-piksel": "Görselin çözünürlüğü çok yüksek. Daha küçük bir görsel seçin.",
+        "istekSiniri": "Kısa sürede çok fazla dosya yüklediniz. Bir dakika sonra yeniden deneyin.",
+        "ag": "Sunucuya ulaşılamadı. Bağlantınızı denetleyip yeniden deneyin.",
+        "oturum": "Oturumunuz kapandı. Yeniden giriş yapın.",
+        "yetki": "Dosya yükleme izniniz yok.",
+        "genel": "Dosya yüklenemedi. Sayfayı yenileyip yeniden deneyin."
       }
     }
   },
@@ -3042,7 +3075,8 @@
         "adetSecici": "Adet seçici",
         "tablo": "Tablo",
         "tabloSecimi": "Tablo seçimi",
-        "hataOzeti": "Hata özeti"
+        "hataOzeti": "Hata özeti",
+        "dosyaYukleme": "Dosya yükleme"
       },
       "bolumKutuphanesi": "Bölüm kütüphanesi"
     },
@@ -3227,7 +3261,12 @@
       "urunAciklamasi": "Ürün açıklaması",
       "urunAciklamasiAciklama": "Kalın, eğik, ara başlık, liste ve bağlantı kullanılabilir.",
       "urunAciklamasiHata": "Açıklamayı kısaltın.",
-      "urunAciklamasiDegeri": "<p>Paslanmaz çelik, <strong>çift cidarlı</strong> gövde.</p><ul><li>Sıcağı 12 saat korur</li></ul>"
+      "urunAciklamasiDegeri": "<p>Paslanmaz çelik, <strong>çift cidarlı</strong> gövde.</p><ul><li>Sıcağı 12 saat korur</li></ul>",
+      "dosyaSec": "Görsel yükle",
+      "dosyaIlerleme": "Görsel yükleniyor",
+      "dosyaIptal": "İptal",
+      "dosyaSecildi": "Seçilen dosya: {ad}",
+      "dosyaYukleniyorBasligi": "Yükleme sürerken"
     },
     "bolum": {
       "ad": "Deneme bölümü",

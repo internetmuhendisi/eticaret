@@ -11,6 +11,7 @@ import { BaglantiOrnegi } from "./ornekler/baglanti";
 import { BicimliMetinAlaniOrnegi } from "./ornekler/bicimli-metin-alani";
 import { BildirimOrnegi } from "./ornekler/bildirim";
 import { BosHalOrnegi } from "./ornekler/bos-hal";
+import { DosyaYuklemeOrnegi } from "./ornekler/dosya-yukleme";
 import { DugmeOrnegi } from "./ornekler/dugme";
 import { EtiketOrnegi } from "./ornekler/etiket";
 import { FormOrnegi } from "./ornekler/form";
@@ -55,6 +56,7 @@ const ornekler: Record<ParcaKodu, ComponentType> = {
   "onay-kutusu": OnayKutusuOrnegi,
   "secenek-grubu": SecenekGrubuOrnegi,
   anahtar: AnahtarOrnegi,
+  "dosya-yukleme": DosyaYuklemeOrnegi,
   "siralanabilir-liste": SiralanabilirListeOrnegi,
   form: FormOrnegi,
   "acilir-menu": AcilirMenuOrnegi,

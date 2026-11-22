@@ -47,6 +47,8 @@ afterEach(() => {
 });
 
 const veri = (degisiklik: Partial<TemaEkraniVerisi> = {}): TemaEkraniVerisi => ({
+  logo: { kaynak: "ilk", adres: "/kapi/herkese-acik/logo?s=0123456789abcdef" },
+  enCokDosyaBoyutu: "10 MB",
   sira: 4,
   temalar: [
     {
@@ -78,10 +80,10 @@ const veri = (degisiklik: Partial<TemaEkraniVerisi> = {}): TemaEkraniVerisi => (
   ...degisiklik,
 });
 
-const ciz = (v: TemaEkraniVerisi, izinli = true) =>
+const ciz = (v: TemaEkraniVerisi, izinli = true, logoIzni = izinli) =>
   render(
     <MetinSaglayici dil="tr">
-      <TemaSaglayici veri={v} izinli={izinli}>
+      <TemaSaglayici veri={v} izinli={izinli} logoIzni={logoIzni}>
         <TemaEylemleri />
         <TemaIcerigi />
       </TemaSaglayici>
@@ -226,7 +228,8 @@ describe("değiştiremeyen yönetici", () => {
   ])(
     "%s: değiştiren düğme yok, demo bağlantıları ve filtrenin yeri yazıyla var",
     (_ad, v, izinli) => {
-      ciz(v, izinli);
+      // Logonun izni ayrıdır (magaza-ayarlari.degistir, kart 0094); logo bölümü logo-bolumu.test.tsx'te.
+      ciz(v, izinli, false);
       expect(screen.queryAllByRole("button")).toEqual([]);
       expect(screen.queryByRole("radiogroup")).toBeNull();
       expect(screen.getAllByRole("link")).toHaveLength(2);

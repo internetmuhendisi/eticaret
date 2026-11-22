@@ -54,10 +54,14 @@ import { usePanelIslemi } from "../panel-islemi";
 import type { PanelSonucu } from "../panel-istegi";
 import { useSunucuFormu } from "../sunucu-formu";
 import { temaHatasiMetni, temaUclari } from "./hatalar";
+import { LogoBolumu } from "./logo-bolumu";
 import type { EkranTemasi, TemaEkraniVerisi } from "./veri";
 
 type Baglam = {
   veri: TemaEkraniVerisi;
+  // Yöneticinin magaza-ayarlari.degistir izni: logoyu değiştirebilir (kart 0094). Logo mağaza ayarıdır, "Mağaza sahibi
+  // temayı değiştirebilir" ayarına bağlı değildir.
+  logoIzni: boolean;
   // Bu yönetici bu sitede temayı değiştirebilir mi: izni var ve site ayarı açık.
   degistirebilir: boolean;
   secilen: EkranTemasi | null;
@@ -82,11 +86,14 @@ const useTema = (): Baglam => {
 export function TemaSaglayici({
   veri,
   izinli,
+  logoIzni,
   children,
 }: {
   veri: TemaEkraniVerisi;
   // Yöneticinin tema.degistir izni (sunucudan).
   izinli: boolean;
+  // Yöneticinin magaza-ayarlari.degistir izni (sunucudan).
+  logoIzni: boolean;
   children: ReactNode;
 }) {
   const [secilen, setSecilen] = useState<EkranTemasi | null>(null);
@@ -96,6 +103,7 @@ export function TemaSaglayici({
     <TemaBaglami.Provider
       value={{
         veri,
+        logoIzni,
         degistirebilir: izinli && veri.degistirilebilir,
         secilen,
         setSecilen,
@@ -362,7 +370,7 @@ function FiltreYeri() {
 
 export function TemaIcerigi() {
   const metin = usePanelMetni();
-  const { veri, odaklanacak } = useTema();
+  const { veri, odaklanacak, logoIzni } = useTema();
   // Yayından sonra sayfanın yeni verisi gelince odak seçilen temanın başlığına konur.
   useEffect(() => {
     const kod = odaklanacak.current;
@@ -386,6 +394,11 @@ export function TemaIcerigi() {
           ))}
         </ul>
       </section>
+      <LogoBolumu
+        logo={veri.logo}
+        enCokDosyaBoyutu={veri.enCokDosyaBoyutu}
+        degistirebilir={logoIzni}
+      />
       <FiltreYeri />
       <TemaPenceresi />
     </div>
