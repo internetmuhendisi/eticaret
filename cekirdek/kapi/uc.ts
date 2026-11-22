@@ -71,6 +71,8 @@ export type Uc = ((istek: Request) => Promise<Response>) & {
     izin: HerkeseAcik | IzinAdi;
     sinir: IstekSiniri;
     temaDemosunda: TemaDemosunda;
+    // Dosya gövdesi alan uç (kart 0094): ön kapının yükleme sınırı adresine uygulanır (testte denetlenir).
+    dosyaGovdesi?: boolean;
   };
 };
 
@@ -192,6 +194,12 @@ export const ucTanimla = <Giris extends Kapi, Sema extends z.ZodType, Veri>(
     return yanit;
   };
   return Object.assign(isleyici, {
-    tanim: { giris: tanim.giris, izin: tanim.izin, sinir: tanim.sinir, temaDemosunda },
+    tanim: {
+      giris: tanim.giris,
+      izin: tanim.izin,
+      sinir: tanim.sinir,
+      temaDemosunda,
+      dosyaGovdesi: tanim.govde === "dosya",
+    },
   });
 };

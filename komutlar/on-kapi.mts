@@ -14,9 +14,10 @@ import { readFileSync } from "node:fs";
 import { hostname } from "node:os";
 import { join } from "node:path";
 import { kimlikSemasi } from "../cekirdek/ayar-semasi/kimlik.ts";
+import { dosyaSinirlari } from "../cekirdek/kayitlar/dosya.ts";
 import type { HataKodu } from "../cekirdek/kayitlar/kapi.ts";
 import { type Dil, diller, metinOkuyucu } from "../cekirdek/metinler/metin.ts";
-import { kaliciKutu, kutuKuraliDogru, yenidenBaslama } from "./kutu-kurali.mts";
+import { bellekBaytlari, kaliciKutu, kutuKuraliDogru, yenidenBaslama } from "./kutu-kurali.mts";
 import { kok, sshKomutu } from "./sunucu.mts";
 
 // --- Adresler ---
@@ -66,6 +67,12 @@ export const hataIzlemeKutusu = `hata-izleme-${hataIzlemeOrtami}`;
 export const hataIzlemePortu = 8000;
 // Bir olayın en büyük boyutu (Bugsink'in de sınırı 1 MiB'dir).
 const hataGonderimSiniri = "1MB";
+
+// Dosya yükleme adreslerinin gövde sınırı (kart 0094, karar 0165): dosya sınırı ve küçük bir pay. Sınırı aşan istek
+// kutuya ulaşmadan 413 alır; kapı aynı sınırı ikinci katman olarak uygular (cekirdek/kapi/uc.ts). Yükleme uçlarının
+// adı "-yukle" ile biter (uç belgesi).
+export const yuklemeGovdeSiniri = dosyaSinirlari.enCokBayt + 64 * 1024;
+export const yuklemeYoluKalibi = "^/kapi/yonetici/[a-z-]+-yukle$";
 
 // Alan adında deneme adreslerini sunucuya bağlayan kayıtlar: tek joker kayıt her deneme
 // adresini karşılar, yeni site için alan adına dokunulmaz. Vekil kapalıdır: ziyaretçi doğrudan
@@ -150,7 +157,11 @@ export const siteSatiri = (
   );
   const ziyaretci = elleBakim
     ? "\t\terror 503\n"
-    : `\t\treverse_proxy ${hedef} {
+    : `\t\t@yukleme path_regexp ${yuklemeYoluKalibi}
+\t\trequest_body @yukleme {
+\t\t\tmax_size ${yuklemeGovdeSiniri}
+\t\t}
+\t\treverse_proxy ${hedef} {
 \t\t\thealth_uri ${saglikYolu}
 \t\t\thealth_interval 5s
 \t\t\thealth_timeout 4s
@@ -625,7 +636,7 @@ export const ayniAdres = (a: string | undefined, b: string | undefined): boolean
 // Sunucudaki kutunun gerçek ayarı (docker inspect, kutuOlcumBicimi) kutu tanımıyla aynı olmalı.
 // Docker yetki adlarını "CAP_" önekiyle de yazabilir; karşılaştırma öneksiz yapılır.
 export const kutuOlcumBicimi =
-  "{{.State.Running}}|{{.HostConfig.Privileged}}|{{.Config.User}}|{{.HostConfig.ReadonlyRootfs}}|{{json .HostConfig.CapAdd}}|{{json .HostConfig.CapDrop}}|{{json .HostConfig.SecurityOpt}}|{{.HostConfig.RestartPolicy.Name}}";
+  "{{.State.Running}}|{{.HostConfig.Privileged}}|{{.Config.User}}|{{.HostConfig.ReadonlyRootfs}}|{{json .HostConfig.CapAdd}}|{{json .HostConfig.CapDrop}}|{{json .HostConfig.SecurityOpt}}|{{.HostConfig.RestartPolicy.Name}}|{{.HostConfig.Memory}}";
 
 type KutuTanimi = {
   user: string;
@@ -634,12 +645,24 @@ type KutuTanimi = {
   cap_drop: string[];
   security_opt: string[];
   restart: string;
+  // Bellek sınırı (kart 0094): tanımda yoksa kutu sınırsızdır, gerçek değer 0 beklenir.
+  mem_limit?: string;
 };
 
 export const kutuKisitHatalari = (satir: string, tanim: KutuTanimi): string[] => {
-  const [calisiyor, yetkili, kullanici, saltOkunur, ekle, kaldir, guvenlik, kural, ...fazla] =
-    satir.split("|");
-  if (fazla.length > 0 || kural === undefined) return [`okunamadı: ${satir}`];
+  const [
+    calisiyor,
+    yetkili,
+    kullanici,
+    saltOkunur,
+    ekle,
+    kaldir,
+    guvenlik,
+    kural,
+    bellek,
+    ...fazla
+  ] = satir.split("|");
+  if (fazla.length > 0 || bellek === undefined) return [`okunamadı: ${satir}`];
   const liste = (json: string | undefined): string[] | undefined => {
     try {
       const deger = JSON.parse(json ?? "") as unknown;
@@ -668,8 +691,12 @@ export const kutuKisitHatalari = (satir: string, tanim: KutuTanimi): string[] =>
   if (tanim.restart !== yenidenBaslama) {
     hatalar.push(`tanımdaki yeniden başlama kuralı ${tanim.restart}, beklenen ${yenidenBaslama}`);
   }
-  if (!kutuKuraliDogru(kural)) {
+  if (!kutuKuraliDogru(kural ?? "")) {
     hatalar.push(`yeniden başlama kuralı ${kural || "yok"}, beklenen ${yenidenBaslama}`);
+  }
+  const beklenenBellek = bellekBaytlari(tanim.mem_limit);
+  if (bellek !== String(beklenenBellek)) {
+    hatalar.push(`bellek sınırı ${bellek || "yok"} bayt, beklenen ${beklenenBellek}`);
   }
   return hatalar;
 };

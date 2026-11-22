@@ -5,7 +5,14 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { hataIzlemeTanimi } from "../hata-izleme.mts";
-import { kutuKuraliDogru, yenidenBaslama, yenidenBaslamaHatalari } from "../kutu-kurali.mts";
+import {
+  arkaPlanServisi,
+  bellekBaytlari,
+  kutuKuraliDogru,
+  siteKutusuBellegi,
+  yenidenBaslama,
+  yenidenBaslamaHatalari,
+} from "../kutu-kurali.mts";
 import { onKapiTanimi } from "../on-kapi.mts";
 import { veritabaniTanimi } from "../sunucu-veritabani.mts";
 import { yayinKutusuTanimi } from "../yayin.mts";
@@ -158,6 +165,33 @@ describe("kalıcı kutuların tanımı", () => {
       }
     });
     expect(kutuAcanlar.sort()).toEqual([...kaliciDosyalar, ...geciciDosyalar].sort());
+  });
+});
+
+describe("site ve arka plan kutusunun bellek sınırı (kart 0094)", () => {
+  const sinirli = (servis: { mem_limit?: string; memswap_limit?: string }) => {
+    expect(servis.mem_limit).toBe(siteKutusuBellegi);
+    // Takas yok: takasla birlikte sınır da aynıdır.
+    expect(servis.memswap_limit).toBe(siteKutusuBellegi);
+  };
+
+  it("sunucuda site kutusu ve arka plan kutusu", () => {
+    const { services } = yayinKutusuTanimi("deneme", "ornek-magaza", 1, 1);
+    sinirli(services.uygulama);
+    sinirli(services["arka-plan"]);
+  });
+
+  it("yerel ortamda ve kontrol hattında site kutusu ve arka plan kutusu", () => {
+    const site = siteKutusu("ornek-magaza", "/siteler/ornek-magaza", "etiket", 40001);
+    sinirli(site);
+    sinirli(arkaPlanServisi(site));
+  });
+
+  it("yazılışın bayt karşılığı; tanımsız sınırsızdır, tanınmayan yazılış hatadır", () => {
+    expect(bellekBaytlari("512m")).toBe(536870912);
+    expect(bellekBaytlari("1g")).toBe(1073741824);
+    expect(bellekBaytlari(undefined)).toBe(0);
+    expect(() => bellekBaytlari("1 GB")).toThrow();
   });
 });
 

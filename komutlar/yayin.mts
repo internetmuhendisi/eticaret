@@ -28,6 +28,7 @@ import {
   arkaPlanKutuAdi,
   arkaPlanServisi,
   kaliciKutu,
+  siteKutusuBellekSiniri,
   siteSaglikYoklamasi,
 } from "./kutu-kurali.mts";
 import {
@@ -135,6 +136,7 @@ export const yayinKutusuTanimi = (
     image: yayinGoruntusu(ortam, kodAdi, no),
     container_name: siteKutusuAdi(ortam, kodAdi, no),
     ...kaliciKutu,
+    ...siteKutusuBellekSiniri,
     user: gizli.servis.user,
     secrets: gizli.servis.secrets,
     // Kod adı klasör adıyla aynı olmalıdır (kimlik şeması), klasör aynı adla bağlanır.

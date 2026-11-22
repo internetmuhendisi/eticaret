@@ -34,6 +34,8 @@ import {
   yoklamaAdi,
   yoklamaAdresi,
   yonlendirmeDogru,
+  yuklemeGovdeSiniri,
+  yuklemeYoluKalibi,
 } from "../on-kapi.mts";
 
 const kok = join(import.meta.dirname, "..", "..");
@@ -169,6 +171,15 @@ describe("bakım sayfası", () => {
     expect(siteSatiri(adres, hedef, bilgi)).toContain(
       'respond `\\{"basarili":false,"hata":\\{"kod":"hizmet-kullanilamiyor"\\}\\}` 503',
     );
+  });
+
+  it("site satırı yükleme yolunda gövdeyi dosya sınırı ve payıyla sınırlar; elle bakımda yoktur (kart 0094)", () => {
+    const satir = siteSatiri(adres, hedef, bilgi);
+    expect(satir).toContain(`@yukleme path_regexp ${yuklemeYoluKalibi}`);
+    expect(satir).toMatch(
+      new RegExp(`request_body @yukleme \\{\\s*max_size ${yuklemeGovdeSiniri}\\s*\\}`),
+    );
+    expect(siteSatiri(adres, hedef, bilgi, { elleBakim: true })).not.toContain("request_body");
   });
 
   it("deneme alanı dışını ve ayar sızdıran hedefi reddeder", () => {
@@ -399,6 +410,7 @@ describe("kutuların sunucudaki gerçek ayarı", () => {
       '["ALL"]',
       '["no-new-privileges:true"]',
       "unless-stopped",
+      "0",
     ];
     for (const [sira, deger] of Object.entries(degisiklik)) alanlar[Number(sira)] = deger ?? "";
     return alanlar.join("|");
@@ -423,6 +435,8 @@ describe("kutuların sunucudaki gerçek ayarı", () => {
     ["yeniden başlama kuralı yok", { 7: "no" }],
     ["yeniden başlama kuralı farklı", { 7: "always" }],
     ["yeniden başlama kuralı boş", { 7: "" }],
+    ["tanımda olmayan bellek sınırı", { 8: "536870912" }],
+    ["bellek sınırı okunamadı", { 8: "" }],
   ])("%s kırmızıdır", (_ad, degisiklik) => {
     expect(kutuKisitHatalari(satir(degisiklik), caddy)).not.toEqual([]);
   });

@@ -15,6 +15,25 @@ export const yenidenBaslama = "unless-stopped";
 // Kutu tanımına eklenen parça.
 export const kaliciKutu = { restart: yenidenBaslama } as const;
 
+// Site ve arka plan kutusunun bellek sınırı (kart 0094, karar 0165): kutular sunucuyu paylaşır, büyük bir görselin
+// yeniden kodlanması tek başına yüzlerce MB ister; sınırı aşan süreç yalnız kendi kutusunda durur ve kutu yeniden
+// başlar, öteki siteler etkilenmez. Takas alanı verilmez (sınır gerçek bellektir). Değer ölçümle seçildi: karar 0165.
+export const siteKutusuBellegi = "1g";
+export const siteKutusuBellekSiniri = {
+  mem_limit: siteKutusuBellegi,
+  memswap_limit: siteKutusuBellegi,
+} as const;
+
+// Compose'un bellek yazılışının (512m, 1g) bayt karşılığı; Docker gerçek sınırı bayt olarak verir
+// (HostConfig.Memory, sınırsızda 0).
+export const bellekBaytlari = (yazilis: string | undefined): number => {
+  if (yazilis === undefined) return 0;
+  const eslesme = /^(\d+)([kmg])$/.exec(yazilis);
+  if (eslesme === null) throw new Error(`Bellek yazılışı tanınmadı: ${yazilis}`);
+  const katlar = { k: 1024, m: 1024 ** 2, g: 1024 ** 3 } as const;
+  return Number(eslesme[1]) * katlar[eslesme[2] as keyof typeof katlar];
+};
+
 // Bir compose tanımında kuralı eksik ya da farklı olan kutular.
 export const yenidenBaslamaHatalari = (tanim: {
   services?: Record<string, { restart?: unknown }>;

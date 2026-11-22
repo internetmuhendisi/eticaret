@@ -37,7 +37,12 @@ import { siteVeritabaniniGuncelle } from "../cekirdek/veritabani/guncelle.ts";
 import { goruntuAdi } from "./cekirdek-goruntusu-denetle.mts";
 import { denemeSitesiAyarDosyasi } from "./deneme-sitesi-ayarlari.mts";
 import { siteNumaralariniOku } from "./gizli-bilgi.mts";
-import { arkaPlanServisi, kaliciKutu, siteSaglikYoklamasi } from "./kutu-kurali.mts";
+import {
+  arkaPlanServisi,
+  kaliciKutu,
+  siteKutusuBellekSiniri,
+  siteSaglikYoklamasi,
+} from "./kutu-kurali.mts";
 import { veritabaniVeKullaniciAc } from "./site-veritabani.mts";
 import { demoSitesi, temaDemosuOrtami, yereldekiDemoAdresi } from "./tema-demosu-adresi.mts";
 
@@ -210,6 +215,7 @@ export const siteKutusu = (
   image: etiket,
   container_name: kutuAdi(kodAdi),
   ...kaliciKutu,
+  ...siteKutusuBellekSiniri,
   user: `${kullanici}:${kullanici}`,
   environment: {
     [dosyaKlasoruDegiskeni]: kutudakiDosyaKlasoru,
