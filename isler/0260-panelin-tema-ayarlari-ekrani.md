@@ -31,4 +31,4 @@ Bölüm: Yönetim paneli. Önce 0257 (taslak), 0259 (form yapısı) ve logo içi
 
 ## Durum
 
-yapılacak
+bitti
