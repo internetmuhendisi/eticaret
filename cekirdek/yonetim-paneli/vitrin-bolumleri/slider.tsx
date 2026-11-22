@@ -33,6 +33,10 @@ export function SliderEkrani({
   const [gorunurYapiliyor, setGorunurYapiliyor] = useState(false);
   const sliderlar = veri.alanlar["ana-sayfa"].filter((bolum) => bolum.tur === kayanAfis.tur);
   const [slider] = sliderlar;
+  // Yeni slider'ın kimliği eklenince hemen saklanır: yenileme gelmeden basılan ikinci Kaydet aynı slider'ı değiştirir,
+  // ikinci bir slider eklemez (hattaki 0264 çalışması, iz: iki ekleme isteği). Sayfanın verisi gelince o geçerlidir.
+  const [eklenen, setEklenen] = useState<string>();
+  const kimlik = slider?.kimlik ?? eklenen;
   const bildir = (anahtar: MetinAnahtari) => bildirimGoster("basari", metin(anahtar));
   // Formun anahtarı (kart 0227): yeni slider kaydedilince yenileme kimliğini getirir; anahtar değişseydi form baştan
   // kurulur, kayıt ile yenileme arasında yazılan silinirdi (ölçüldü). Yeni slider'ın kaydı aynı formla sürer; başka
@@ -43,6 +47,8 @@ export function SliderEkrani({
     setGorulenKimlik(slider?.kimlik);
     if (gorulenKimlik !== undefined || slider === undefined) {
       setFormAnahtari(slider?.kimlik ?? "yeni");
+      // Slider başka yerde silindi: form yeni slider formudur.
+      if (slider === undefined) setEklenen(undefined);
     }
   }
 
@@ -98,21 +104,24 @@ export function SliderEkrani({
               : { gorunum: slider.gorunum, degerler: slider.degerler }
           }
           secenekler={veri.secenekler}
-          kaydet={({ gorunum, degerler }) =>
-            slider === undefined
-              ? panelIstegi("duzen-bolum-ekle", {
-                  alan: "ana-sayfa",
-                  tur: kayanAfis.tur,
-                  gorunum,
-                  degerler,
-                  sira: 0,
-                })
-              : panelIstegi("duzen-bolum-degistir", { kimlik: slider.kimlik, gorunum, degerler })
-          }
+          kaydet={async ({ gorunum, degerler }) => {
+            if (kimlik !== undefined) {
+              return panelIstegi("duzen-bolum-degistir", { kimlik, gorunum, degerler });
+            }
+            const sonuc = await panelIstegi<{ kimlik: string }>("duzen-bolum-ekle", {
+              alan: "ana-sayfa",
+              tur: kayanAfis.tur,
+              gorunum,
+              degerler,
+              sira: 0,
+            });
+            if (sonuc.tamam) setEklenen(sonuc.veri.kimlik);
+            return sonuc;
+          }}
           kaydedince={() => {
             router.refresh();
             bildir(
-              slider === undefined ? "yonetim.bolumler.eklendi" : "yonetim.bolumler.kaydedildi",
+              kimlik === undefined ? "yonetim.bolumler.eklendi" : "yonetim.bolumler.kaydedildi",
             );
           }}
         />

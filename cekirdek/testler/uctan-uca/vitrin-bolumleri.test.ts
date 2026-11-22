@@ -503,19 +503,24 @@ test("Slider kısayolu: yoksa yeni form en üste ekler, birden çokta ilkini aç
     const yenileme = page.waitForResponse((yanit) => yenilemeMi(yanit.request()));
     await page.getByRole("button", { name: metin("yonetim.bolumler.form.kaydet") }).click();
     await expect(bildirim(page, "yonetim.bolumler.eklendi")).toBeVisible();
+    const yeni = (await servis.duzenOku(vt)).duzen["ana-sayfa"];
+    expect(yeni[0]?.tur).toBe(sliderTuru);
+    expect(sliderBasligi(yeni[0] as BolumOrnegi)).toBe(birinci);
     await slaytBasligi(page).fill(duzeltilen);
+    // Yenileme gelmeden yazılan başlık kaydedilir: aynı slider değişir, ikinci slider eklenmez (hattaki 0264
+    // çalışmasında yenileme geç geldi, ikinci Kaydet yeni slider ekledi; iz: iki ekleme isteği).
+    const degisiklik = page.waitForRequest(
+      (istek) => istek.method() === "POST" && istek.url().includes("/kapi/yonetici/duzen-bolum"),
+    );
+    await page.getByRole("button", { name: metin("yonetim.bolumler.form.kaydet") }).click();
+    expect((await degisiklik).url()).toContain("/kapi/yonetici/duzen-bolum-degistir");
+    await expect(bildirim(page, "yonetim.bolumler.kaydedildi")).toBeVisible();
     serbestBirak();
     await yenileme;
     await page.unroute(`**${sliderAdresi}**`);
     // Yanıtın ekrana uygulanması React'ın sonraki işidir.
     await page.waitForTimeout(500);
     await expect(slaytBasligi(page)).toHaveValue(duzeltilen);
-    const yeni = (await servis.duzenOku(vt)).duzen["ana-sayfa"];
-    expect(yeni[0]?.tur).toBe(sliderTuru);
-    expect(sliderBasligi(yeni[0] as BolumOrnegi)).toBe(birinci);
-    // Yazılan başlık kaydedilir: aynı slider değişir, ikinci slider eklenmez.
-    await page.getByRole("button", { name: metin("yonetim.bolumler.form.kaydet") }).click();
-    await expect(bildirim(page, "yonetim.bolumler.kaydedildi")).toBeVisible();
     await expect
       .poll(async () =>
         (await servis.duzenOku(vt)).duzen["ana-sayfa"]
