@@ -7,14 +7,20 @@
 // çalışır (playwright.config.ts, "tema-degisikligi"). Sonunda tema, testten önceki sürüme döndürülür. Demo sitesi
 // testte açılmaz: demonun adresine giden istek sahte bir sayfayla karşılanır, açılan sekmenin adresi ölçülür
 // (demonun kendisi kart 0116'nın ölçümündedir).
+//
+// Logo (kart 0094): mağaza sahibi logoyu klavyeyle yükler (tarayıcının dosya seçicisi), vitrinin üst kısmında görür;
+// görsel olmayan dosyada hata alanın altında yazar, odak yükleme düğmesindedir, ekran taramadan geçer; logoyu onayla
+// kaldırır. Logo da bütün vitrinde görünür: sonunda yüklenen logo kaldırılır.
 import { existsSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
+import sharp from "sharp";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { temaDemosuAdresi, temaDemosuBaglantisi } from "../../ayar-semasi/tema-demosu-adresi";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri";
 import { doldur } from "../../metinler/doldur";
 import { metin } from "../../metinler/site-metni";
+import { logoyuKaldir } from "../../moduller/magaza-ayarlari/logo";
 import { siteninTemaServisi } from "../../moduller/tema/servis";
 import { yeniTemaninAyarlari } from "../../temalar/ayarlar";
 import { sitenTasarimCss } from "../../temalar/birlesim";
@@ -55,6 +61,8 @@ test.afterAll(async () => {
   if ((await servis.temaDurumu(vt)).sira !== ilkSira) {
     await servis.oncekiSurumeDon(vt, kim, ilkSira);
   }
+  // Yarıda kalan logo testinin yüklediği logo (yoksa bir şey yazılmaz).
+  await logoyuKaldir(vt, kim);
   await vt.$client.end();
 });
 
@@ -249,6 +257,80 @@ test("masaüstünde filtrenin yeri seçilir ve kategori sayfasında görünür",
   await expect(bildirim(page, "yonetim.tema.filtreKaydedildi")).toBeVisible();
   expect((await servis.temaDurumu(vt)).ayarlar.urunFiltresi).toBe(oteki);
   expect(await yerler()).toEqual({ solda: oteki === "solda", ustte: oteki === "ustte" });
+});
+
+test("mağaza sahibi logoyu klavyeyle yükler ve vitrinde görür; hatalı dosyada alan hatası; onayla kaldırır", async ({
+  page,
+  context,
+}) => {
+  const konsol = konsoluDinle(page, {
+    // Reddedilen dosyanın yanıtı (400) beklenir: tarayıcı onu konsola yazar.
+    haric: (ileti) => ileti.includes("status of 400"),
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await paneleGir(page, yonetici);
+  await page.goto(temaAdresi);
+  await sayfaHazir(page);
+  const yukle = page.getByRole("button", { name: metin("yonetim.tema.logo.yukle") });
+  const onizleme = page.getByRole("img", { name: metin("yonetim.tema.logo.onizleme") });
+  const ilkAdres = await onizleme.getAttribute("src");
+  await expect(page.getByText(metin("yonetim.tema.logo.ilk"))).toBeVisible();
+
+  // Görsel olmayan dosya: hata alanın altında, düğmeye bağlı, odak düğmede.
+  let secici = page.waitForEvent("filechooser");
+  await yukle.focus();
+  await page.keyboard.press("Enter");
+  await (await secici).setFiles({
+    name: "not.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("logo değil"),
+  });
+  const hata = page.getByText(metin("yonetim.dosya.hata.tur-izinsiz"));
+  await expect(hata).toBeVisible();
+  await expect(yukle).toHaveAttribute("aria-invalid", "true");
+  await expect(yukle).toHaveAttribute("aria-describedby", (await hata.getAttribute("id")) ?? "");
+  await expect(yukle).toBeFocused();
+  await tara(page, "logo hatası");
+
+  // Gerçek görsel: yüklenir, hata kalkar, önizleme ve vitrin yeni logoyu gösterir.
+  const gorsel = await sharp({
+    create: { width: 240, height: 60, channels: 3, background: { r: 20, g: 90, b: 160 } },
+  })
+    .png()
+    .toBuffer();
+  secici = page.waitForEvent("filechooser");
+  await page.keyboard.press("Enter");
+  await (await secici).setFiles({ name: "logo.png", mimeType: "image/png", buffer: gorsel });
+  await expect(bildirim(page, "yonetim.tema.logo.yuklendi")).toBeVisible();
+  await expect(page.getByText(metin("yonetim.tema.logo.yuklenen"))).toBeVisible();
+  await expect(hata).toBeHidden();
+  const yeniAdres = await onizleme.getAttribute("src");
+  expect(yeniAdres).not.toBe(ilkAdres);
+  const vitrin = await context.newPage();
+  await vitrin.goto("/");
+  await sayfaHazir(vitrin);
+  const ustLogo = vitrin.locator(`header img[src="${yeniAdres}"]`).first();
+  await expect(ustLogo).toBeVisible();
+  expect(await ustLogo.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(240);
+  await vitrin.close();
+
+  // Onayla kaldırma: Vazgeç değiştirmez, onay ilk logoya döndürür.
+  const kaldir = page.getByRole("button", { name: metin("yonetim.tema.logo.kaldir") });
+  await kaldir.focus();
+  await page.keyboard.press("Enter");
+  const pencere = page.getByRole("alertdialog", { name: metin("yonetim.tema.logo.kaldirBaslik") });
+  await expect(pencere).toBeVisible();
+  await tara(page, "logo kaldırma onayı");
+  await page.keyboard.press("Escape");
+  await expect(pencere).toBeHidden();
+  await expect(page.getByText(metin("yonetim.tema.logo.yuklenen"))).toBeVisible();
+  await kaldir.focus();
+  await page.keyboard.press("Enter");
+  await pencere.getByRole("button", { name: metin("yonetim.tema.logo.kaldir") }).click();
+  await expect(bildirim(page, "yonetim.tema.logo.kaldirildi")).toBeVisible();
+  await expect(page.getByText(metin("yonetim.tema.logo.ilk"))).toBeVisible();
+  await expect(onizleme).toHaveAttribute("src", ilkAdres ?? "");
+  expect(konsol).toEqual([]);
 });
 
 test("ekran ve tema penceresi iki renkte ve üç genişlikte taramadan geçer, yana kaymaz", async ({

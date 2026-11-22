@@ -202,6 +202,37 @@ test("biçimli metin alanı: araç çubuğu ok tuşlarıyla gezilir, bağlantı 
 // Sıralanabilir liste (kart 0141): tutamağa odaklanıp boşlukla alınan satır ok tuşuyla taşınır, boşlukla bırakılır;
 // Escape taşımayı geri alır; fareyle tutamaktan sürüklenir; yukarı ve aşağı al düğmeleri telefonda da vardır ve
 // dokunarak taşır (sürüklemeye tek dokunuşluk karşılık, WCAG 2.5.7). Her taşıma ekran okuyucuya duyurulur.
+test("dosya yükleme: Enter dosya seçicisini açar, seçilen dosya kullanana gider; sürerken ilerleme ve İptal", async ({
+  page,
+}) => {
+  const { hatalar } = await ac(page, `${katalogAdresi}/dosya-yukleme`);
+  const sec = page.getByRole("button", { name: metin("gelistirme.ornek.dosyaSec") }).first();
+  const secici = page.waitForEvent("filechooser");
+  await sec.focus();
+  await page.keyboard.press("Enter");
+  const dosyaSecici = await secici;
+  expect(dosyaSecici.isMultiple()).toBe(false);
+  await dosyaSecici.setFiles({
+    name: "ornek.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("x"),
+  });
+  await expect(
+    page.getByText(doldur(metin("gelistirme.ornek.dosyaSecildi"), { ad: "ornek.png" })),
+  ).toBeVisible();
+  // Yükleme sürerken: seçme düğmesi odak alır ama aria-disabled, çubuk oranı söyler, sonra İptal gelir.
+  const cubuk = page.getByRole("progressbar", { name: metin("gelistirme.ornek.dosyaIlerleme") });
+  await expect(cubuk).toHaveAttribute("aria-valuenow", "40");
+  const ikinci = page.getByRole("button", { name: metin("gelistirme.ornek.dosyaSec") }).nth(1);
+  await expect(ikinci).toHaveAttribute("aria-disabled", "true");
+  await ikinci.focus();
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("button", { name: metin("gelistirme.ornek.dosyaIptal") }),
+  ).toBeFocused();
+  expect(hatalar).toEqual([]);
+});
+
 test("sıralanabilir liste: klavyeyle, düğmeyle ve fareyle taşınır, Escape geri alır", async ({
   page,
 }) => {
