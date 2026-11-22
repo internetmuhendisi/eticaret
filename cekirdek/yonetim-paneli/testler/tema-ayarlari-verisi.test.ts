@@ -158,6 +158,14 @@ describe("tema ayarları ekranının verisi", () => {
       sonra.dugmeBicimleri.kayitli,
     ]).toEqual(["manrope", "keskin", "koseli"]);
     expect(sonra.koyuTema).toBe(true);
+    // Formun başlangıcı kayıtlı seçimdir (temanın kendi değerine eşit seçenek değil).
+    expect(temaAyarlariFormu(sonra)).toMatchObject({
+      yaziTipi: "manrope",
+      kose: "keskin",
+      dugmeBicimi: "koseli",
+      koyuTema: true,
+      urunFiltresi: oteki,
+    });
     // Kayıtlı seçim temanın kendi değerine eşit seçeneğe geri dönünce yine yazılır (mağaza sahibinin seçimi).
     const geri = temaAyarlariGirdisi({ ...temaAyarlariFormu(sonra), kose: "orta" }, sonra);
     expect(geri.ayarlar).toMatchObject({ kose: "orta" });

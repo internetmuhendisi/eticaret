@@ -194,14 +194,15 @@ describe("kayıt", () => {
     expect(
       screen.getByText(doldur(metin("yonetim.temaAyarlari.oneri"), { renk: ornekRenk.ortaGri })),
     ).toBeDefined();
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: doldur(metin("yonetim.temaAyarlari.oneriKullanEtiketi"), {
-          ad: metin("yonetim.temaAyarlari.renk.birincil"),
-          renk: ornekRenk.ortaGri,
-        }),
+    // Klavyede düğmeye basılır: düğme kalkınca odak gövdeye düşmesin, alana dönsün.
+    const kullan = screen.getByRole("button", {
+      name: doldur(metin("yonetim.temaAyarlari.oneriKullanEtiketi"), {
+        ad: metin("yonetim.temaAyarlari.renk.birincil"),
+        renk: ornekRenk.ortaGri,
       }),
-    );
+    });
+    kullan.focus();
+    fireEvent.click(kullan);
     expect(anaRenk()).toHaveProperty("value", ornekRenk.ortaGri);
     expect(document.activeElement).toBe(anaRenk());
     expect(screen.queryByText(metin("yonetim.temaAyarlari.hata.kontrast"))).toBeNull();
