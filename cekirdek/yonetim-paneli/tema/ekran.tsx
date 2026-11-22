@@ -220,7 +220,7 @@ const yolAciklamalari: Record<DuzenYolu, MetinAnahtari> = {
 
 function TemaFormu({ tema }: { tema: EkranTemasi }) {
   const metin = usePanelMetni();
-  const { setSecilen, islem, odaklanacak } = useTema();
+  const { veri, setSecilen, islem, odaklanacak } = useTema();
   const [yol, setYol] = useState<DuzenYolu | undefined>(undefined);
   // Ortak form yapısı (kart 0259): hata, özet, odak.
   const pf = usePanelFormu({ degisti: yol !== undefined });
@@ -232,7 +232,7 @@ function TemaFormu({ tema }: { tema: EkranTemasi }) {
     const sonuc = await pf.isle(() =>
       islem(
         temaUclari.yayinla,
-        { tema: tema.kod, ayarlar: tema.ayarlar, duzen: yol },
+        { tema: tema.kod, ayarlar: tema.ayarlar, duzen: yol, son: veri.sira },
         "yonetim.tema.yayinlandi",
         { formda: true },
       ),

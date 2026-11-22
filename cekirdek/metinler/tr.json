@@ -1008,7 +1008,9 @@
         "bicim": "Rengi #RRGGBB biçiminde yazın, örneğin #C2410C.",
         "renkDegistirilemez": "Bu renk bu temada değiştirilemiyor. Sayfayı yenileyip yeniden deneyin.",
         "secenekTanimsiz": "Bu seçenek bu temada yok. Sayfayı yenileyip yeniden deneyin."
-      }
+      },
+      "temaKullanilamaz": "Kayıtlı temanız artık mağazanızda kullanılamıyor; vitrin şimdilik başlangıç temasıyla görünüyor. Ayarları değiştirmeden önce Tema sayfasından bir tema seçin.",
+      "izinYok": "Tema ayarlarını görebilirsiniz ama değiştirme izniniz yok."
     },
     "kargo": {
       "ucret": "Kargo ücreti",

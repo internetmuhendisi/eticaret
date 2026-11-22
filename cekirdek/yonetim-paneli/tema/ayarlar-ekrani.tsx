@@ -33,7 +33,7 @@ import { temaAdresi } from "../adresler";
 import { EylemBaglantisi, EylemDugmesi } from "../eylem-dugmesi";
 import { AlanKabi, KaydetCubugu, PanelAlani, PanelFormu, usePanelFormu } from "../form/panel-formu";
 import { usePanelIslemi } from "../panel-islemi";
-import { useSunucuFormu } from "../sunucu-formu";
+import { ucYonluBirlestir, useSunucuFormu } from "../sunucu-formu";
 import {
   type SecimGrubu,
   type TemaAyarlariFormu,
@@ -141,13 +141,16 @@ export function TemaAyarlariEkrani({
   logoIzni: boolean;
 }) {
   const metin = usePanelMetni();
-  const degistirebilir = izinli && veri.degistirilebilir;
+  const degistirebilir = izinli && veri.degistirilebilir && !veri.temaKullanilamaz;
   const islem = usePanelIslemi(temaHatasiMetni);
   // Kayıttan sonra sayfa yenilenir; arada yazılan değer ezilmez (kart 0223). Form sunucunun verisini nesnesiyle
-  // tanır: yalnız veri değişince yeniden kurulur.
+  // tanır: yalnız veri değişince yeniden kurulur. Kaydedilmemiş değişiklik varken gelen yeni veri (geri dönüş, başka
+  // sekmenin kaydı) üç yönlü birleşir: dokunulmayan ayar sunucunun yeni değerini alır (bağımsız kontrolün bulgusu).
   const baslangic = useMemo(() => temaAyarlariFormu(veri), [veri]);
-  const { form, setForm, degisti, kaydedildi, vazgec } =
-    useSunucuFormu<TemaAyarlariFormu>(baslangic);
+  const { form, setForm, degisti, kaydedildi, vazgec } = useSunucuFormu<TemaAyarlariFormu>(
+    baslangic,
+    ucYonluBirlestir,
+  );
   const pf = usePanelFormu({ degisti: degistirebilir && degisti, kaydet: () => kaydet() });
   // Okunmayan rengin sunucunun önerdiği tonu: alanın yoluna göre.
   const [oneriler, setOneriler] = useState<Partial<Record<string, string>>>({});
@@ -197,9 +200,10 @@ export function TemaAyarlariEkrani({
     return false;
   };
 
+  // Hatası alanın altında yazan alanlar; ötekinin hatası (koyu tema, filtrenin yeri) formun özetinde.
   const alanVarMi = (alan: string): boolean =>
     veri.renkler.some(({ ad }) => alan === `renkler.${ad}`) ||
-    ["yaziTipi", "kose", "dugmeBicimi", "koyuTema", "urunFiltresi"].includes(alan);
+    ["yaziTipi", "kose", "dugmeBicimi"].includes(alan);
 
   // Seçenek grubunun öğeleri: temanın kendi değeri hiçbir seçeneğe eşit değilse başta "Temanın kendi".
   const ogeler = <Kod extends string, Ek>(
@@ -271,7 +275,14 @@ export function TemaAyarlariEkrani({
 
   return (
     <div className="flex max-w-metin flex-col gap-6">
-      {veri.degistirilebilir ? null : <Uyari tur="bilgi">{metin("yonetim.tema.kapali")}</Uyari>}
+      {/* Yalnız gösteren ekranın nedeni: ayar kapalı, kayıtlı tema kullanılamıyor ya da izin yok. */}
+      {!veri.degistirilebilir ? (
+        <Uyari tur="bilgi">{metin("yonetim.tema.kapali")}</Uyari>
+      ) : veri.temaKullanilamaz ? (
+        <Uyari tur="uyari">{metin("yonetim.temaAyarlari.temaKullanilamaz")}</Uyari>
+      ) : !izinli ? (
+        <Uyari tur="bilgi">{metin("yonetim.temaAyarlari.izinYok")}</Uyari>
+      ) : null}
       <p className="flex flex-wrap items-center gap-x-4 gap-y-2 text-soluk-yazi">
         <span>
           {doldur(metin("yonetim.temaAyarlari.giris"), { tema: veri.tema.ad })}{" "}

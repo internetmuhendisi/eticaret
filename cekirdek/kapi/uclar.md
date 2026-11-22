@@ -805,10 +805,10 @@ Panelin tema ekranının verisi (kart 0113): geçerli tema sürümü, sitenin ku
 Temayı ve ayarlarını yeni sürüm olarak yayınlar (karar 0080). Tema kodu değişiyorsa düzenin yolu seçilir: yeni temanın düzenini uygulamak ya da düzeni korumak (kart 0113, karar 0091). Tema ve düzen aynı işlemde yazılır, ikisi de değişiklik kaydına girer. Son sürümle aynıysa hiçbir şey yazılmaz.
 
 - İzin: `tema.degistir`. Sınır: `genel`.
-- Girdi: `{ "tema", "ayarlar", "duzen"? }` (`temaYayiniSemasi`, `cekirdek/moduller/tema/semalar.ts`). `duzen`: `uygula` ya da `koru`; tema aynıysa yok sayılır.
+- Girdi: `{ "tema", "ayarlar", "duzen"?, "son"? }` (`temaYayiniSemasi`, `cekirdek/moduller/tema/semalar.ts`). `duzen`: `uygula` ya da `koru`; tema aynıysa yok sayılır. `son`: ekranın gördüğü son sürümün sırası (kart 0260); verilirse ve son sürüm o değilse hiçbir şey yazılmaz.
 - Servis: `cekirdek/moduller/tema/servis.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "sira", "tema", "ayarlar", "geriDonulenSira": null } }`.
-- Hatalar: `dogrulama` (şemaya uymayan girdi; `tema-kullanilamaz`; temanın açmadığı renk ya da tanımsız seçenek; `kontrast-yetersiz` öneriyle (`oneri`); tema değişiyor ama `duzen` yok: `duzen-yolu-gerekli`), `is-kurali` (`tema-degistirilemez`: "Mağaza sahibi temayı değiştirebilir" kapalı), `yetki` (sahte istek ya da izin yok), `hizmet-kullanilamiyor` (`katalog-bekleniyor`: sitenin başlangıç düzeni kataloğa başvuruyor ve katalog henüz kurulmadı; kart 0114).
+- Hatalar: `dogrulama` (şemaya uymayan girdi; `tema-kullanilamaz`; temanın açmadığı renk ya da tanımsız seçenek; `kontrast-yetersiz` öneriyle (`oneri`); tema değişiyor ama `duzen` yok: `duzen-yolu-gerekli`), `is-kurali` (`tema-degistirilemez`: "Mağaza sahibi temayı değiştirebilir" kapalı), `cakisma` (`tema-degisti`: `son` verildi ve arada başka bir sürüm yazıldı), `yetki` (sahte istek ya da izin yok), `hizmet-kullanilamiyor` (`katalog-bekleniyor`: sitenin başlangıç düzeni kataloğa başvuruyor ve katalog henüz kurulmadı; kart 0114).
 
 ### POST /kapi/yonetici/logo-yukle
 

@@ -60,6 +60,7 @@ const veri = (degisiklik: Partial<TemaAyarlariVerisi> = {}): TemaAyarlariVerisi 
   sira: 4,
   sonYayin: "20 Kasım 2026 16:40",
   degistirilebilir: true,
+  temaKullanilamaz: false,
   renkler: [{ ad: "birincil", temaninRengi: ornekRenk.turuncu }],
   yaziTipleri: {
     secenekler: [
@@ -159,6 +160,7 @@ describe("kayıt", () => {
         adres: "/kapi/yonetici/tema",
         govde: {
           tema: "canli-carsi",
+          son: 4,
           ayarlar: { renkler: { birincil: ornekRenk.koyuMavi }, kose: "keskin", koyuTema: true },
         },
       },
@@ -211,6 +213,7 @@ describe("kayıt", () => {
     await act(async () => fireEvent.click(kaydetDugmesi()));
     expect(istekler.at(-1)?.govde).toEqual({
       tema: "canli-carsi",
+      son: 4,
       ayarlar: { renkler: { birincil: ornekRenk.ortaGri }, koyuTema: false },
     });
   });
@@ -251,7 +254,47 @@ describe("kayıt", () => {
   });
 });
 
+describe("arada gelen yeni veri", () => {
+  it("kaydedilmemiş değişiklik varken dokunulmayan ayar sunucunun yeni değerini alır; kayıt yeni sürümü gönderir", async () => {
+    const ilk = veri();
+    const { rerender } = ciz(ilk);
+    fireEvent.click(
+      within(grup(metin("yonetim.temaAyarlari.koseler"))).getByRole("radio", {
+        name: metin("yonetim.temaAyarlari.kose.keskin"),
+      }),
+    );
+    // Geri dönüş ya da başka sekmenin kaydı: ana renk değişti, yeni sürüm.
+    const yeni = veri({
+      sira: 5,
+      renkler: [{ ad: "birincil", temaninRengi: ornekRenk.turuncu, kayitli: ornekRenk.koyuMavi }],
+    });
+    rerender(
+      <MetinSaglayici dil="tr">
+        <TemaAyarlariEylemleri sira={yeni.sira} degistirebilir />
+        <TemaAyarlariEkrani veri={yeni} izinli logoIzni />
+      </MetinSaglayici>,
+    );
+    expect(anaRenk()).toHaveProperty("value", ornekRenk.koyuMavi);
+    expect(secili(metin("yonetim.temaAyarlari.koseler"))).toEqual([
+      metin("yonetim.temaAyarlari.kose.keskin"),
+    ]);
+    await act(async () => fireEvent.click(kaydetDugmesi()));
+    expect(istekler.at(-1)?.govde).toEqual({
+      tema: "canli-carsi",
+      son: 5,
+      ayarlar: { renkler: { birincil: ornekRenk.koyuMavi }, kose: "keskin", koyuTema: false },
+    });
+  });
+});
+
 describe("yalnız gösteren ekran", () => {
+  it("kayıtlı tema kullanılamıyorsa nedeni yazar, kayıt yok", () => {
+    ciz(veri({ temaKullanilamaz: true }));
+    expect(screen.getByText(metin("yonetim.temaAyarlari.temaKullanilamaz"))).toBeDefined();
+    expect(screen.queryByRole("button", { name: metin("yonetim.temaAyarlari.kaydet") })).toBeNull();
+    expect(anaRenk()).toHaveProperty("disabled", true);
+  });
+
   it.each([
     ["ayar kapalı", veri({ degistirilebilir: false }), true],
     ["izin yok", veri(), false],
@@ -269,8 +312,11 @@ describe("yalnız gösteren ekran", () => {
     expect(
       screen.getByRole("switch", { name: metin("yonetim.temaAyarlari.koyuTema") }),
     ).toHaveProperty("disabled", true);
-    const neden = screen.queryByText(metin("yonetim.tema.kapali"));
-    expect(neden === null).toBe(v.degistirilebilir);
+    // Ayar kapalıysa ayarın nedeni, yalnız izin yoksa iznin nedeni yazar.
+    expect(screen.queryByText(metin("yonetim.tema.kapali")) === null).toBe(v.degistirilebilir);
+    expect(screen.queryByText(metin("yonetim.temaAyarlari.izinYok")) === null).toBe(
+      !v.degistirilebilir,
+    );
   });
 });
 

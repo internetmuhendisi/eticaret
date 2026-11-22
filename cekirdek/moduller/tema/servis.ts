@@ -304,6 +304,10 @@ export const temaServisi = (
     const yol = sonuc.data.duzen;
     // Tema kodu kilit alındıktan sonra karşılaştırılır: aynı anda yazılan bir yayına göre kaymaz.
     return surumYaz(vt, kim, async (son, _islem, sonDuzen) => {
+      // Ekranın gördüğü sürüm kilitten sonra karşılaştırılır (kart 0260).
+      if (sonuc.data.son !== undefined && son.sira !== sonuc.data.son) {
+        throw new BilinenHata("cakisma", [{ alan: "son", kod: "tema-degisti" }]);
+      }
       const yeni = { tema: tema.kod, ayarlar: sonuc.data.ayarlar, geriDonulenSira: null };
       if (son.tema === tema.kod) return yeni;
       if (yol === undefined) throw dogrulama([{ alan: "duzen", kod: "duzen-yolu-gerekli" }]);

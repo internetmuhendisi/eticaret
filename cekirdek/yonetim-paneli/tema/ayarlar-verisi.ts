@@ -67,6 +67,7 @@ export const temaAyarlariVerisi = async (): Promise<TemaAyarlariVerisi> => {
     sira: durum.sira,
     sonYayin: bicim.tarihSaat(durum.zaman),
     degistirilebilir: temaDegistirilebilirMi(),
+    temaKullanilamaz: durum.tema !== tema.kod,
     renkler: magazaSecenekleri.renkler.flatMap((ad) => {
       if (!kayittaMi<MagazaRengi>(magazaRenkleri, ad)) return [];
       const kayitli = ayarlar.renkler[ad];

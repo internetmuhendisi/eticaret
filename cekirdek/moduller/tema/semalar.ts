@@ -6,10 +6,13 @@ import { duzenYollari } from "../duzen/gecis.ts";
 
 // Temayı ve ayarlarını yayınlar. Tema kodu değişiyorsa düzenin yolu zorunludur: yeni temanın düzenini
 // uygulamak ya da düzeni korumak (kart 0113). Tema aynıysa düzen yolu yok sayılır, düzen değişmez.
+// son: ekranın gördüğü son sürümün sırası (kart 0260, geri dönüşle aynı kural); verilirse ve son sürüm o değilse
+// (arada başka bir yayın ya da geri dönüş) hiçbir şey yazılmaz: ekranın eski ayarları yenisini ezmesin.
 export const temaYayiniSemasi = z.strictObject({
   tema: kodSemasi,
   ayarlar: temaAyarlariSemasi,
   duzen: z.enum(duzenYollari).optional(),
+  son: z.number().int().positive().optional(),
 });
 export type TemaYayiniGirdisi = z.input<typeof temaYayiniSemasi>;
 

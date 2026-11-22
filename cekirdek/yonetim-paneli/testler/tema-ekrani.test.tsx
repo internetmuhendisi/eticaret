@@ -142,6 +142,7 @@ describe("temayı kullanmak", () => {
           tema: "ikinci",
           ayarlar: { renkler: {}, koyuTema: true, urunFiltresi: "ustte" },
           duzen: "koru",
+          son: 4,
         },
       },
     ]);

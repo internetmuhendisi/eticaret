@@ -35,6 +35,9 @@ export type TemaAyarlariVerisi = {
   sonYayin: string;
   // "Mağaza sahibi temayı değiştirebilir" (altyapı sahibinin ayarı).
   degistirilebilir: boolean;
+  // Kayıtlı tema bu sitede artık kullanılamıyor: vitrin başlangıç temasıyla çizilir, ayarlar kaydedilemez; önce Tema
+  // sayfasından bir tema seçilir.
+  temaKullanilamaz: boolean;
   // Temanın açtığı renkler: kayıtlı renk ya da temanın kendi rengi (açık tema).
   renkler: { ad: MagazaRengi; temaninRengi: string; kayitli?: string }[];
   yaziTipleri: SecimGrubu<string, YaziTipiOrnegi>;
@@ -77,7 +80,8 @@ const yazilacak = <Kod extends string>(
   return deger;
 };
 
-// Tema ucunun girdisi (POST /kapi/yonetici/tema): tema aynıdır, düzenin yolu gerekmez.
+// Tema ucunun girdisi (POST /kapi/yonetici/tema): tema aynıdır, düzenin yolu gerekmez. Ekranın gördüğü sürüm gider:
+// arada başka bir yayın ya da geri dönüş yazıldıysa sunucu hiçbir şey yazmaz (çakışma), eski ayarlar yenisini ezmez.
 export const temaAyarlariGirdisi = (form: TemaAyarlariFormu, veri: TemaAyarlariVerisi) => {
   const renkler: Partial<Record<MagazaRengi, string>> = {};
   for (const { ad, temaninRengi } of veri.renkler) {
@@ -93,6 +97,7 @@ export const temaAyarlariGirdisi = (form: TemaAyarlariFormu, veri: TemaAyarlariV
   );
   return {
     tema: veri.tema.kod,
+    son: veri.sira,
     ayarlar: {
       renkler,
       ...(yaziTipi === undefined ? {} : { yaziTipi }),

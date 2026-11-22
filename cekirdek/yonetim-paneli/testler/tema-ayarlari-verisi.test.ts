@@ -190,6 +190,44 @@ describe("tema ayarları ekranının verisi", () => {
     });
   });
 
+  it("ekranın gördüğü sürüm eskiyse kayıt çakışır ve hiçbir şey yazılmaz; güncel sürümle yazılır", async () => {
+    const eskiEkran = await temaAyarlariVerisi();
+    // Arada başka bir sekme (ya da geri dönüş) yeni bir sürüm yazar.
+    await yayinla({ tema: "canli-carsi", ayarlar: { koyuTema: false, kose: "keskin" } });
+    const once = await servis().temaDurumu(siteninVeritabani());
+    const hata = await yayinla(
+      temaAyarlariGirdisi({ ...temaAyarlariFormu(eskiEkran), koyuTema: true }, eskiEkran),
+    ).catch((sebep: unknown) => sebep);
+    expect(hata).toMatchObject({ kod: "cakisma", ayrinti: [{ alan: "son", kod: "tema-degisti" }] });
+    const sonra = await servis().temaDurumu(siteninVeritabani());
+    expect({ sira: sonra.sira, ayarlar: sonra.ayarlar }).toEqual({
+      sira: once.sira,
+      ayarlar: once.ayarlar,
+    });
+    const guncel = await temaAyarlariVerisi();
+    const surum = await yayinla(
+      temaAyarlariGirdisi({ ...temaAyarlariFormu(guncel), koyuTema: true }, guncel),
+    );
+    expect(surum.ayarlar).toMatchObject({ kose: "keskin", koyuTema: true });
+  });
+
+  it("kayıtlı tema kullanılamıyorsa vitrinin teması gösterilir ve ekran bunu bilir", async () => {
+    await yayinla({ tema: "ozel-tema", ayarlar: { koyuTema: false }, duzen: "koru" });
+    // Altyapı sahibi özel temayı sitenin listesinden çıkarır.
+    ortak[siteAnahtari] = {
+      ...site,
+      temalar: site.temalar.filter((tema) => tema.kod !== "ozel-tema"),
+    };
+    try {
+      const veri = await temaAyarlariVerisi();
+      expect(veri.tema.kod).toBe("canli-carsi");
+      expect(veri.temaKullanilamaz).toBe(true);
+    } finally {
+      ortak[siteAnahtari] = site;
+    }
+    expect((await temaAyarlariVerisi()).temaKullanilamaz).toBe(false);
+  });
+
   it("ayar kapalıysa değiştirilemez", async () => {
     ortak[siteAnahtari] = { ...site, ayarlar: { ...site.ayarlar, temaDegistirilebilir: false } };
     try {
