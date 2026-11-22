@@ -115,6 +115,8 @@ Menüler `baslangic/menuler.json` dosyasındadır. Arka plan süreci açılırke
 
 Örnek Mağaza üç hazır temayı kullanabilir (`ayarlar.json`): Canlı Çarşı, Yumuşak Mevsim, Keskin Çizgi. Başlangıç teması Canlı Çarşı'dır (`baslangic/tema.json`, karar 0075).
 
+Vitrinde koyu tema kapalıdır (`koyuTema: false`, kullanıcı kararı, 2026-11-22): vitrin cihaz koyu temada olsa da açık görünür. Panel cihazın ayarına uymaya devam eder. Bilgisayardaki sitede ayar tema servisiyle kapatıldı (yeni tema sürümü); deneme sunucusundaki site panelin tema ayarları ekranıyla kapatılacak (kart 0260).
+
 Ana sayfanın ilk düzeni `baslangic/duzen.json` dosyasındadır, sırası karar 0075'tedir. Kategori, marka ve ürünlere adres adıyla bağlanır. Arka plan süreci açılırken, katalogdan ve menülerden sonra, sitede hiç düzen yoksa bir kez yüklenir. Her durumu `testler/duzen.test.ts` gerçek veritabanıyla dener.
 
 | Durum | Bölüm | Nasıl |

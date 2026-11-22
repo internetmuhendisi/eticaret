@@ -25,6 +25,10 @@ Bölüm: Yönetim paneli. Önce 0257 (taslak), 0259 (form yapısı) ve logo içi
 - Ekran görüntüsü taslakla yan yana kondu, farklar düzeltildi.
 - Bağımsız kontrol yapıldı.
 
+## Notlar
+
+- Kullanıcı kararı (2026-11-22): Örnek Mağaza'nın vitrininde koyu tema kapalı. Bilgisayardaki sitede ve başlangıç dosyasında kapatıldı; bu ekran bitince deneme sunucusundaki Örnek Mağaza'da da bu ekrandan kapatılır.
+
 ## Durum
 
 yapılacak

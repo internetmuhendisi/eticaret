@@ -2,15 +2,34 @@
 // panelin giriş sayfası açık ve koyu temada, üç genişlikte açılır: her rengin tasarım değerinden geldiği,
 // yazı-zemin kontrastının tarayıcının gerçekten çizdiği renklerle ölçüldüğü, yazı tiplerinin sitenin
 // kendi sunucusundan yüklendiği, dış sunucuya hiç istek gitmediği ve sayfanın yana kaymadığı ölçülür.
+// Vitrin koyu temayı yalnız sitenin tema ayarı açıksa çizer (koyuTema; Örnek Mağaza'da kapalı, kullanıcı kararı):
+// kapalıyken koyu cihazda da açık renkler beklenir. Panel her zaman cihazın tercihine uyar.
+import { existsSync } from "node:fs";
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import {
   type RenkAdi,
   varsayilanTemaDegerleri,
 } from "../../../bilesenler/tasarim-degerleri/degerler";
 import { kontrastOrani } from "../../../bilesenler/tasarim-degerleri/kontrast";
+import { calisanSite } from "../../ayar-semasi/calisan-site";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { metin } from "../../metinler/site-metni";
+import { temaServisi } from "../../moduller/tema/servis";
+import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
 import { sayfaHazir } from "./sayfa-hazir";
+
+if (existsSync(".env")) process.loadEnvFile(".env");
+
+// Vitrinin koyu teması sitenin kayıtlı tema ayarıdır (veritabanındaki son sürüm).
+let vitrinKoyu: boolean;
+test.beforeAll(async () => {
+  const vt = baglan(veritabaniAdresi());
+  try {
+    vitrinKoyu = (await temaServisi(calisanSite).gecerliTema(vt)).ayarlar.koyuTema;
+  } finally {
+    await vt.$client.end();
+  }
+});
 
 // Tarayıcının verdiği "rgb(r, g, b)" renk, #RRGGBB biçimine çevrilir.
 const onaltilik = (rgb: string) => {
@@ -72,7 +91,9 @@ const disIstekleriTopla = (page: Page) => {
 
 for (const sayfa of sayfalar) {
   for (const tema of ["acik", "koyu"] as const) {
-    const renk = (ad: RenkAdi) => varsayilanTemaDegerleri.renkler[tema][ad];
+    // Sayfanın çizdiği tema: vitrinde koyu tema kapalıysa cihaz koyu da olsa açık.
+    const cizilen = () => (sayfa.ad === "vitrin" && !vitrinKoyu ? "acik" : tema);
+    const renk = (ad: RenkAdi) => varsayilanTemaDegerleri.renkler[cizilen()][ad];
 
     for (const genislik of genislikler) {
       test(`${sayfa.ad} giriş sayfası ${tema} temada, ${genislik.ad} genişliğinde tasarım değerleriyle görünür`, async ({
@@ -86,6 +107,9 @@ for (const sayfa of sayfalar) {
 
         // Zemin ve yazı tipi kök öğeye verilir (tailwind.css).
         const govde = page.locator("html");
+        expect(await govde.evaluate((e) => getComputedStyle(e).colorScheme)).toBe(
+          sayfa.ad === "vitrin" && !vitrinKoyu ? "light" : "light dark",
+        );
         // Form sayfanın ana içeriğindedir; vitrinin üst ve alt kısmı (kart 0108) aynı adlı yazı taşıyabilir.
         const icerik = page.getByRole("main");
         const etiket = icerik.getByText(metin(sayfa.eposta), { exact: true });
