@@ -7,12 +7,16 @@
 //   ikincisi yeni sayfadan başlar.
 // - Sipariş ayarlarında "Fişte fiyatları göster" klavyeyle kapatılınca fişte tutar sütunu yok, ürün ve kalem sayısı
 //   var; bölüm taranır; test sonunda ayar eski hâline döner.
-// - Kişisel bilgisi silinmiş siparişte ayrıntıda "Fiş yazdır" yok, fiş adresi bulunamadı.
+// - Kişisel bilgisi silinmiş siparişte ayrıntıda "Fiş yazdır" yok, fiş adresi bulunamadı; toplu fişte hepsi
+//   atlanmışsa sayfa açılır, atlananları söyler, yazdırmaz.
+// - Bağımsız kontrolün bulgularıyla: yazdırma penceresi logo yüklendikten sonra açılır (logo geciktirilir), koyu temada
+//   yazdırırken fişin dışında zemin yoktur, PDF'in her sayfası A4'tür, yazdırırken telefondaki üst çubuk ve masaüstündeki
+//   yan menü yoktur.
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
-import { eq } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri";
 import { doldur } from "../../metinler/doldur";
@@ -149,6 +153,10 @@ const yazdirmayiSay = (baglam: BrowserContext) =>
     window.print = () => {
       sayi += 1;
       document.documentElement.dataset["yazdirma"] = String(sayi);
+      // Yazdırma anında sayfadaki her görsel yüklenmiş mi (logo).
+      document.documentElement.dataset["yazdirmadaGorseller"] = String(
+        Array.from(document.images).every((gorsel) => gorsel.complete && gorsel.naturalWidth > 0),
+      );
     };
   });
 
@@ -156,6 +164,12 @@ const pdfSayfaSayisi = async (page: Page) => {
   await page.emulateMedia({ media: "print", colorScheme: "light" });
   const pdf = (await page.pdf({ preferCSSPageSize: true })).toString("latin1");
   await page.emulateMedia({ media: "screen" });
+  // Her sayfa A4 (595 × 842 pt): @page fis'in boyu.
+  const boyutlar = [...pdf.matchAll(/\/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]/g)].map(
+    ([, genislik, yukseklik]) => [Math.round(Number(genislik)), Math.round(Number(yukseklik))],
+  );
+  expect(boyutlar.length, "PDF'te sayfa boyu").toBeGreaterThan(0);
+  for (const boyut of boyutlar) expect(boyut, "A4 sayfa").toEqual([595, 842]);
   return pdf.match(/\/Type\s*\/Page(?!s)/g)?.length ?? 0;
 };
 
@@ -171,6 +185,11 @@ test("ayrıntıdan fiş: yeni sekmede açılır, bir kez yazdırır; içerik, ya
   await yazdirmayiSay(page.context());
   await page.setViewportSize({ width: 1280, height: 900 });
   await paneleGir(page, yoneticiAc());
+  // Logo geç gelir: yazdırma penceresi onu bekler.
+  await page.context().route(/\/kapi\/herkese-acik\/logo/, async (istek) => {
+    await new Promise((bitti) => setTimeout(bitti, 2000));
+    await istek.continue();
+  });
   await page.goto(siparisAyrintisiAdresi(numara));
   await sayfaHazir(page);
   const dugme = page.getByRole("link", { name: metin("yonetim.eylem.fisYazdirYeniSekme") });
@@ -186,6 +205,9 @@ test("ayrıntıdan fiş: yeni sekmede açılır, bir kez yazdırır; içerik, ya
   await expect(fis.locator("html")).toHaveAttribute("data-yazdirma", "1");
   const kagit = fisler(fis);
   await expect(kagit).toHaveCount(1);
+  await expect(kagit.locator("img")).toHaveCount(1);
+  await expect(fis.locator("html")).toHaveAttribute("data-yazdirmada-gorseller", "true");
+  await page.context().unrouteAll({ behavior: "ignoreErrors" });
   await expect(kagit).toHaveAccessibleName(doldur(metin("yonetim.siparisFisi.etiket"), { numara }));
   await expect(kagit).toContainText(numara);
   await expect(kagit).toContainText(/Fiş deneme/);
@@ -204,7 +226,24 @@ test("ayrıntıdan fiş: yeni sekmede açılır, bir kez yazdırır; içerik, ya
   const koyu = await zeminler();
   expect(koyu.fis).toBe(acik.fis);
   expect(koyu.sayfa).not.toBe(acik.sayfa);
-  await fis.emulateMedia({ colorScheme: "light" });
+  // Koyu temada yazdırırken fişin dışında (kök, gövde, çerçeve) zemin yok; fiş açık zeminde.
+  await fis.emulateMedia({ media: "print", colorScheme: "dark" });
+  const yazdirmaZeminleri = await kagit.evaluate((oge) => {
+    const ustler: string[] = [];
+    for (let ust = oge.parentElement; ust !== null; ust = ust.parentElement) {
+      const stil = getComputedStyle(ust);
+      ustler.push(`${stil.backgroundColor} ${stil.backgroundImage}`);
+    }
+    // Karşılaştırma için stilsiz yeni bir öğenin zemini: saydam, görselsiz.
+    const bos = document.createElement("span");
+    document.body.append(bos);
+    const saydam = `${getComputedStyle(bos).backgroundColor} ${getComputedStyle(bos).backgroundImage}`;
+    bos.remove();
+    return { fis: getComputedStyle(oge).backgroundColor, ustler, saydam };
+  });
+  expect(yazdirmaZeminleri.fis).toBe(acik.fis);
+  expect(new Set(yazdirmaZeminleri.ustler)).toEqual(new Set([yazdirmaZeminleri.saydam]));
+  await fis.emulateMedia({ media: "screen", colorScheme: "light" });
   // "Yazdır" düğmesi yeniden yazdırır.
   await fis.getByRole("button", { name: metin("yonetim.eylem.yazdir") }).click();
   await expect(fis.locator("html")).toHaveAttribute("data-yazdirma", "2");
@@ -212,14 +251,18 @@ test("ayrıntıdan fiş: yeni sekmede açılır, bir kez yazdırır; içerik, ya
   await fis.emulateMedia({ media: "print" });
   await fis.setViewportSize({ width: 688, height: 1000 });
   await expect(fis.getByRole("navigation", { name: metin("yonetim.cerceve.menu") })).toBeHidden();
+  await expect(fis.getByRole("button", { name: metin("yonetim.cerceve.menuyuAc") })).toBeHidden();
   await expect(fis.getByRole("button", { name: metin("yonetim.eylem.yazdir") })).toBeHidden();
   await expect(fis.getByRole("heading", { level: 1 })).toBeHidden();
   expect(
     await kagit.evaluate((oge) => oge.scrollWidth <= oge.clientWidth),
     "fiş yazdırma genişliğinde taşmaz",
   ).toBe(true);
-  await fis.emulateMedia({ media: "screen" });
+  // Geniş pencereden yazdırırken de masaüstünün yan menüsü yok.
   await fis.setViewportSize({ width: 1280, height: 900 });
+  await expect(fis.getByRole("navigation", { name: metin("yonetim.cerceve.menu") })).toBeHidden();
+  await fis.emulateMedia({ media: "screen" });
+  await expect(fis.getByRole("navigation", { name: metin("yonetim.cerceve.menu") })).toBeVisible();
   expect(await pdfSayfaSayisi(fis)).toBe(1);
   await ikiRenkUcGenislik(fis, "sipariş fişi");
   expect(hatalar).toEqual([]);
@@ -330,14 +373,18 @@ test("fişte fiyatlar ayarı klavyeyle kapatılınca fişte tutar yok, ürün ve
   await ikiRenkUcGenislik(page, "fiyatsız fiş");
 });
 
-test("kişisel bilgisi silinmiş siparişte fiş yok", async ({ page }) => {
+test("kişisel bilgisi silinmiş siparişte fiş yok; toplu fişte hepsi atlanınca söylenir", async ({
+  page,
+}) => {
   test.setTimeout(180_000);
   const numara = await siparisAc(1);
+  const ikinci = await siparisAc(1);
   await vt
     .update(siparisler)
     .set({ kisisel_veri_silinme_zamani: new Date() })
-    .where(eq(siparisler.numara, numara));
+    .where(inArray(siparisler.numara, [numara, ikinci]));
   await ayriBaglanti(page);
+  await yazdirmayiSay(page.context());
   await paneleGir(page, yoneticiAc());
   await page.goto(siparisAyrintisiAdresi(numara));
   await sayfaHazir(page);
@@ -346,4 +393,19 @@ test("kişisel bilgisi silinmiş siparişte fiş yok", async ({ page }) => {
   ).toHaveCount(0);
   const yanit = await page.goto(siparisFisiAdresi([numara], false));
   expect(yanit?.status()).toBe(404);
+  // Toplu fişte ikisi de atlanır: sayfa açılır, atlananları ve dönüş bağlantısını söyler, yazdırmaz.
+  const toplu = await page.goto(siparisFisiAdresi([numara, ikinci]));
+  expect(toplu?.status()).toBe(200);
+  await sayfaHazir(page);
+  await expect(fisler(page)).toHaveCount(0);
+  await expect(
+    page.getByText(
+      doldur(metin("yonetim.siparisFisi.atlanan"), { numaralar: `${numara}, ${ikinci}` }),
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: metin("yonetim.siparisFisi.siparislereDon") }),
+  ).toHaveAttribute("href", "/yonetim/siparisler");
+  await expect(page.getByRole("button", { name: metin("yonetim.eylem.yazdir") })).toHaveCount(0);
+  await expect(page.locator("html")).not.toHaveAttribute("data-yazdirma");
 });

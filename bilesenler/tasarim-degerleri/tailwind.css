@@ -41,6 +41,16 @@
     page: fis;
   }
 }
+/* Yazdırırken fişin dışında zemin yok: panel koyu temadayken "arka plan grafikleri" açık yazdırmada kâğıdın boş
+   kısmı panelin koyu zeminini alıyordu (bağımsız kontrolün bulgusu). Katmansızdır: çerçevenin zemin sınıflarından
+   (utilities katmanı) önce gelir. Fişin kendi zemini açık temanındır (data-renk="acik"). */
+@media print {
+  html:has(.fis-sayfasi),
+  html:has(.fis-sayfasi) body,
+  html:has(.fis-sayfasi) body *:not(.fis-sayfasi, .fis-sayfasi *) {
+    background: none;
+  }
+}
 
 /* Radix'in açılır parçalara verdiği ölçüler: seçim listesi tetikleyicisi kadar geniştir, ekrana
    sığdığı kadar uzar. */

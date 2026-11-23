@@ -1461,8 +1461,8 @@
       "mersis": "MERSİS {numara}",
       "faturaDegil": "Bu belge fatura yerine geçmez.",
       "atlanan": "Şu siparişlerin kişisel bilgileri silindiği için fişi yok: {numaralar}.",
-      "yok": "Yazdırılacak fiş yok. Siparişlere dönüp siparişleri yeniden seçin.",
-      "yazdirAciklama": "Fişi yazdırmak için \"Yazdır\"a basın. Yazdırırken panelin menüsü ve düğmeleri çıkmaz."
+      "yok": "Yazdırılacak fiş yok. Siparişlere dönüp başka siparişler seçin.",
+      "siparislereDon": "Siparişlere dön"
     },
     "siparisAyarlari": {
       "kargoFirmalari": "Kargo firmaları",

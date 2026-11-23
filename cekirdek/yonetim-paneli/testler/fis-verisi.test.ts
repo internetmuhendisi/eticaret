@@ -9,6 +9,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { type Site, siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
+import { siparisSinirlari } from "../../kayitlar/siparis.ts";
 import { degisiklikKayitlari } from "../../moduller/degisiklik-kaydi/model.ts";
 import { siteninFiyatServisi } from "../../moduller/fiyat/servis.ts";
 import { odemeBilgileriSemasi } from "../../moduller/odeme/semalar.ts";
@@ -20,7 +21,7 @@ import { urunServisi } from "../../moduller/urun/servis.ts";
 import { siteninVergiServisi } from "../../moduller/vergi/servis.ts";
 import { baglantiyiKapat, siteninVeritabani, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
-import { siparisFisleriVerisi } from "../siparisler/fis-verisi.ts";
+import { fisNumaralariniOku, siparisFisleriVerisi } from "../siparisler/fis-verisi.ts";
 import { siparisAyrintisiVerisi } from "../siparisler/veri.ts";
 
 vi.setConfig({ testTimeout: 90_000 });
@@ -186,6 +187,10 @@ describe("sipariş fişinin verisi", () => {
       const [fis] = (await siparisFisleriVerisi([numara])).fisler;
       expect(fis?.tutarlar).toBeNull();
       expect(fis).toMatchObject({ kalemSayisi: 1, urunSayisi: 4, not: null });
+      // Kalemin birim fiyatı ve tutarı da yok (bağımsız kontrolün bulgusu).
+      expect(fis?.kalemler[0]).not.toHaveProperty("birim");
+      expect(fis?.kalemler[0]).not.toHaveProperty("tutar");
+      expect(fis?.kalemler[0]).toMatchObject({ adet: 4, stokKodu: "FIS-001" });
     } finally {
       await fisAyari(true);
     }
@@ -228,5 +233,29 @@ describe("fiş ayarı", () => {
     expect(await kayitlar()).toBe(once + 1);
     expect(await fisAyari(true)).toMatchObject({ fisteFiyatlar: true });
     expect(await kayitlar()).toBe(once + 2);
+  });
+});
+
+describe("adresteki fiş numaraları", () => {
+  it("virgülle ayrılır, boşluk ve küçük harf düzelir, tekrar tek sayılır", () => {
+    expect(fisNumaralariniOku("DEN-1001")).toEqual(["DEN-1001"]);
+    expect(fisNumaralariniOku("DEN-1001,den-1002, DEN-1001")).toEqual(["DEN-1001", "DEN-1002"]);
+  });
+
+  it("biri geçersizse, boşsa, sonda virgül varsa ya da değer tek metin değilse hiçbiri okunmaz", () => {
+    expect(fisNumaralariniOku("DEN-1001,<b>")).toBeUndefined();
+    expect(fisNumaralariniOku("")).toBeUndefined();
+    expect(fisNumaralariniOku("DEN-1001,")).toBeUndefined();
+    expect(fisNumaralariniOku(["DEN-1001", "DEN-1002"])).toBeUndefined();
+    expect(fisNumaralariniOku(undefined)).toBeUndefined();
+  });
+
+  it("en çok fisEnCok numara; bir fazlası okunmaz", () => {
+    const numaralar = (sayi: number) =>
+      Array.from({ length: sayi }, (_, sira) => `DEN-${1000 + sira}`).join(",");
+    expect(fisNumaralariniOku(numaralar(siparisSinirlari.fisEnCok))).toHaveLength(
+      siparisSinirlari.fisEnCok,
+    );
+    expect(fisNumaralariniOku(numaralar(siparisSinirlari.fisEnCok + 1))).toBeUndefined();
   });
 });

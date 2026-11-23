@@ -1,15 +1,18 @@
 // Sipariş fişinin verisi (kart 0270, karar 0171): bir ya da birden çok siparişin paketleme fişi. Siparişler ve
 // kalemleri tek sorguyla, verilen sırayla gelir; kalemler, tutarlar ve fatura bilgisi ayrıntıdakiyle aynı yazılır
 // (veri.ts). Fiyatlar mağaza sahibinin "fisteFiyatlar" ayarıyla; kapalıyken tutar hiç gönderilmez. Kişisel bilgisi
-// silinmiş sipariş fişe girmez (adresi yoktur), numarası "atlanan"da döner. Olmayan numara yok sayılır.
+// silinmiş sipariş fişe girmez (adresi yoktur), numarası "atlanan"da döner. Olmayan numara yok sayılır. Kalemlerin
+// birim fiyatı ve tutarı da yalnız ayar açıkken vardır.
 // Mağazanın üst bilgisi ve alt satırı ayarlardan: ad, logo, satıcının unvanı ve vergi bilgileri, adres, telefon,
 // e-posta. Mağazanın iç notları fişe girmez (fiş pakete konabilir); müşterinin notu girer.
 import { asc, inArray } from "drizzle-orm";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { adresYazisi } from "../../bolgeler/adres-yazisi";
+import { siparisSinirlari } from "../../kayitlar/siparis";
 import { siteninBicimleyicisi } from "../../metinler/site-metni";
 import { logonunYolu, magazaLogosu } from "../../moduller/magaza-ayarlari/logo";
 import { magazaninAdi, siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
+import { siparisNumarasiSemasi } from "../../moduller/siparis/havale-bildirimi-semalari";
 import { siparisKalemleri, siparisler } from "../../moduller/siparis/model";
 import { siteninVeritabani } from "../../veritabani/baglanti";
 import {
@@ -20,6 +23,23 @@ import {
   siparisTutarlariVerisi,
 } from "./veri";
 
+type Kalem = SiparisAyrintisiVerisi["kalemler"][number];
+
+// Adresteki numaralar (?numara=A,B): virgülle ayrılır, tekrar tek sayılır, en çok siparisSinirlari.fisEnCok. Biri bile
+// geçersizse ya da değer tek metin değilse undefined (sayfa bulunamadı verir).
+export const fisNumaralariniOku = (deger: string | string[] | undefined): string[] | undefined => {
+  if (typeof deger !== "string") return undefined;
+  const parcalar = deger.split(",");
+  if (parcalar.length > siparisSinirlari.fisEnCok) return undefined;
+  const numaralar: string[] = [];
+  for (const parca of parcalar) {
+    const sonuc = siparisNumarasiSemasi.safeParse(parca);
+    if (!sonuc.success) return undefined;
+    if (!numaralar.includes(sonuc.data)) numaralar.push(sonuc.data);
+  }
+  return numaralar;
+};
+
 export type SiparisFisi = {
   numara: string;
   zaman: string;
@@ -27,7 +47,8 @@ export type SiparisFisi = {
   teslimat: { ad: string; telefon: string | null; satirlar: string[] };
   kargo: { firma: string; takipNumarasi: string | null } | null;
   fatura: SiparisAyrintisiVerisi["fatura"];
-  kalemler: SiparisAyrintisiVerisi["kalemler"];
+  // Ayar kapalıyken kalemin birim fiyatı ve tutarı da yoktur.
+  kalemler: (Omit<Kalem, "birim" | "tutar"> & Partial<Pick<Kalem, "birim" | "tutar">>)[];
   kalemSayisi: number;
   urunSayisi: number;
   // Ayar kapalıyken null: fişte tutar yazmaz.
@@ -119,7 +140,9 @@ export const siparisFisleriVerisi = async (
               ? null
               : { firma: siparis.kargo_firmasi, takipNumarasi: siparis.takip_numarasi },
           fatura: siparisFaturaBilgisiVerisi(siparis.fatura),
-          kalemler: siparisKalemleriVerisi(kendi, b),
+          kalemler: ayarlar.fisteFiyatlar
+            ? siparisKalemleriVerisi(kendi, b)
+            : siparisKalemleriVerisi(kendi, b).map(({ birim: _b, tutar: _t, ...kalem }) => kalem),
           kalemSayisi: kendi.length,
           urunSayisi: kendi.reduce((toplam, kalem) => toplam + kalem.adet, 0),
           tutarlar: ayarlar.fisteFiyatlar ? siparisTutarlariVerisi(siparis, b) : null,

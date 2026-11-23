@@ -3,6 +3,7 @@
 // tablosu, fiyatlar (ayar açıksa) ya da ürün ve kalem sayısı, müşterinin notu, satıcının vergi bilgileri ve "fatura
 // yerine geçmez". Sunucuda çizilir. Kâğıttır: her zaman açık renkte (zorlanan renk), ekranda A4 genişliğinde kart,
 // yazdırırken kenarsız; her fiş yeni sayfadan başlar, ürün satırı sayfalar arasında bölünmez (tailwind.css, @page fis).
+import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
 import { sinif } from "../../../bilesenler/parcalar/sinif";
 import {
   Tablo,
@@ -17,6 +18,7 @@ import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { zorlananRenkOzniteligi } from "../../../bilesenler/tasarim-degerleri/renk-ozniteligi";
 import { doldur } from "../../metinler/doldur";
 import { metin } from "../../metinler/site-metni";
+import { siparislerAdresi } from "../adresler";
 import type { FisMagazasi, SiparisFisi, SiparisFisleriVerisi } from "./fis-verisi";
 import { odemeYazisi } from "./metinler";
 
@@ -33,8 +35,9 @@ function MagazaBilgisi({ magaza }: { magaza: FisMagazasi }) {
         <strong className="text-govde">{magaza.ad}</strong>
         {[magaza.unvan, magaza.adres, [magaza.telefon, magaza.eposta].filter(Boolean).join(" · ")]
           .filter((satir): satir is string => satir !== null && satir !== "")
-          .map((satir) => (
-            <span key={satir} className="wrap-anywhere">
+          .map((satir, sira) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: satırlar sabittir, aynı yazı iki satırda olabilir.
+            <span key={sira} className="wrap-anywhere">
               {satir}
             </span>
           ))}
@@ -90,8 +93,9 @@ function Fis({ magaza, fis, sira }: { magaza: FisMagazasi; fis: SiparisFisi; sir
           <h3 className={kucukBaslik}>{metin("yonetim.siparisFisi.teslimat")}</h3>
           <strong>{fis.teslimat.ad}</strong>
           {fis.teslimat.telefon === null ? null : <span>{fis.teslimat.telefon}</span>}
-          {fis.teslimat.satirlar.map((satir) => (
-            <span key={satir} className="wrap-anywhere">
+          {fis.teslimat.satirlar.map((satir, sira) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: adres satırları sabittir, aynı yazı iki satırda olabilir.
+            <span key={sira} className="wrap-anywhere">
               {satir}
             </span>
           ))}
@@ -123,8 +127,9 @@ function Fis({ magaza, fis, sira }: { magaza: FisMagazasi; fis: SiparisFisi; sir
             </span>
             {fatura.adresAyni
               ? null
-              : fatura.adres.map((satir) => (
-                  <span key={satir} className="wrap-anywhere">
+              : fatura.adres.map((satir, sira) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: adres satırları sabittir, aynı yazı iki satırda olabilir.
+                  <span key={sira} className="wrap-anywhere">
                     {satir}
                   </span>
                 ))}
@@ -283,7 +288,8 @@ export function SiparisFisleri({ veri }: { veri: SiparisFisleriVerisi }) {
       )}
       {veri.fisler.length === 0 ? (
         <Uyari tur="bilgi" className="w-full max-w-fis">
-          {metin("yonetim.siparisFisi.yok")}
+          {metin("yonetim.siparisFisi.yok")}{" "}
+          <Baglanti href={siparislerAdresi}>{metin("yonetim.siparisFisi.siparislereDon")}</Baglanti>
         </Uyari>
       ) : (
         veri.fisler.map((fis, sira) => (
