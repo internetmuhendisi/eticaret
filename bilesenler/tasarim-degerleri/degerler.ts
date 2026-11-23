@@ -563,6 +563,8 @@ export const sabitDegerler = {
     panel: "16rem",
     "yan-menu": "15.5rem",
     form: "28rem",
+    // acilir: açılır panel (kart 0267, liste süzgecinin tarih paneli); 320 px telefonda kenar paylarıyla sığar.
+    acilir: "18rem",
     // arama: üst satırdaki arama kutusu, masaüstünde logonun yanında (kart 0137, Canlı Çarşı taslağı).
     arama: "35rem",
     metin: "42rem",

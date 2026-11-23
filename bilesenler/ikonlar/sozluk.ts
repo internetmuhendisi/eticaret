@@ -9,6 +9,7 @@ import {
   BanknoteIcon,
   BoldIcon,
   BoxIcon,
+  CalendarIcon,
   CheckIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -149,6 +150,8 @@ export const ikonlar = {
   "kismen-secili": MinusIcon,
   "sirala-artan": ArrowUpNarrowWideIcon,
   "sirala-azalan": ArrowDownWideNarrowIcon,
+  // Panel listelerinin tarih süzgeci (kart 0267).
+  takvim: CalendarIcon,
   // Vitrin bölümleri ekranı (kart 0142): menüdeki iki sayfa (slider kısayolu, bölümler); görünürlük düğmesi
   // bölümün bugünkü durumunu gösterir (görünür: goster, gizli: gizle; taslak); düzenle, satırın öteki işlemleri, sil.
   slider: GalleryHorizontalIcon,

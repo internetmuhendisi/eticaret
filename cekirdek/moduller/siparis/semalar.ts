@@ -2,7 +2,7 @@
 // bildirimi ve sipariş numarası şemaları havale-bildirimi-semalari.ts'tedir: bu dosya ödeme adımının adres ve fatura
 // şemalarını içe aktarır, vitrin formuna alınırsa tarayıcıya gereksiz kod taşır (kart 0248).
 import { z } from "zod";
-import { panelSayfaBoylari } from "../../kayitlar/liste.ts";
+import { panelSayfaBoylari, suzgecDegerSiniri } from "../../kayitlar/liste.ts";
 import { kapidaOdemeSecenekleri, siparisOdemeYontemleri } from "../../kayitlar/odeme.ts";
 import { sepetSinirlari } from "../../kayitlar/sepet.ts";
 import {
@@ -20,6 +20,7 @@ import {
   siparisTopluIslemleri,
 } from "../../kayitlar/siparis.ts";
 import { yoneticiBildirimleri } from "../../kayitlar/yonetici-bildirimi.ts";
+import { takvimGunuMu } from "../../metinler/bicimleyici.ts";
 import { duzMetinSemasi } from "../../metinler/duz-metin.ts";
 import { kimlikSemasi } from "../../veritabani/kimlik.ts";
 import { kayitDegeriYasakMi, kayitMetniHatasi } from "../degisiklik-kaydi/deger.ts";
@@ -40,9 +41,28 @@ import { bosIseYok, siparisNumarasiSemasi } from "./havale-bildirimi-semalari.ts
 // takip numarası isteğe bağlıdır.
 export const siparisListesiSemasi = z.strictObject({
   durum: z.enum(siparisDurumlari).optional(),
-  // Yalnız bekleyen iade talebi olanlar (kart 0239).
-  talep: z.literal(true).optional(),
+  // Yalnız bakılması gerekenler (kart 0267): bildirilmiş havalesi ödeme bekleyen, bekleyen iade talebi olan ya da
+  // sonucu beklenen iadesi olan siparişler.
+  bakilacak: z.literal(true).optional(),
   odeme: z.array(z.enum(siparisOdemeYontemleri)).min(1).optional(),
+  // Oluşturulduğu gün, sitenin saat dilimiyle (kart 0267): iki uç da dahil, boş uç sınırsız.
+  tarih: z
+    .strictObject({
+      baslangic: z.string().refine(takvimGunuMu).nullable(),
+      bitis: z.string().refine(takvimGunuMu).nullable(),
+    })
+    .refine(
+      ({ baslangic, bitis }) =>
+        (baslangic !== null || bitis !== null) &&
+        (baslangic === null || bitis === null || baslangic <= bitis),
+    )
+    .optional(),
+  // Kargoya verildiği andaki firma adı (kart 0267): firma listesi sonradan değişse de siparişin adıyla süzülür.
+  kargo: z
+    .array(z.string().trim().min(1).max(siparisSinirlari.kargoFirmasiAdEnCok))
+    .min(1)
+    .max(suzgecDegerSiniri)
+    .optional(),
   ara: z.preprocess(bosIseYok, z.string().trim().max(siparisSinirlari.aramaEnCok).optional()),
   siralama: z.enum(siparisListesiSiralamalari).default(siparisListesiSiralamalari[0]),
   sayfa: z.coerce.number().int().min(1).max(10_000).default(1),

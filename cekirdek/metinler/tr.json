@@ -1152,7 +1152,29 @@
         "hata": "İşlem yapılamadı. Bağlantınızı kontrol edip yeniden deneyin.",
         "yetki": "Bu işlemi yapma izniniz yok."
       },
-      "bilinmeyenKayit": "silinmiş kayıt"
+      "bilinmeyenKayit": "silinmiş kayıt",
+      "tarih": {
+        "aralik": "Tarih aralığı",
+        "hazir": {
+          "bugun": "Bugün",
+          "son-7-gun": "Son 7 gün",
+          "son-30-gun": "Son 30 gün"
+        },
+        "ozel": "Tarih seç",
+        "baslangic": "Başlangıç",
+        "bitis": "Bitiş",
+        "aciklama": "Mağazanın saatiyle, iki gün de dahil.",
+        "uygula": "Uygula",
+        "temizle": "Temizle",
+        "araligi": "{bas} – {son}",
+        "baslangictan": "{bas} ve sonrası",
+        "bitiseKadar": "{son} ve öncesi",
+        "hata": {
+          "bos": "Başlangıç ya da bitiş gününü seçin.",
+          "sira": "Bitiş günü başlangıç gününden önce olamaz. Günleri düzeltip yeniden uygulayın.",
+          "gecersiz": "Gün tam değil. Günü, ayı ve yılı seçin."
+        }
+      }
     },
     "siparisler": {
       "durumSuzgeci": "Durum süzgeci",
@@ -1175,8 +1197,11 @@
         "dugme": "Vitrine git"
       },
       "iadeTalebi": "İade talebi",
-      "iadeTalepleri": "İade talepleri",
+      "iadeBekliyor": "İade sonucu bekleniyor",
+      "bakilacak": "Bakılması gereken",
       "odemeSuzgeci": "Ödeme yöntemi",
+      "tarihSuzgeci": "Tarih",
+      "kargoSuzgeci": "Kargo firması",
       "ara": "Sipariş ara",
       "araYer": "Sipariş no, müşteri adı ya da e-posta",
       "siralama": {

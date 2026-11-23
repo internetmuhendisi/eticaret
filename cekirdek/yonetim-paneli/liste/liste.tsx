@@ -68,7 +68,9 @@ import {
   listeAdresi,
   listeSorgusu,
   suzgecliMi,
+  tarihDegeriniCoz,
 } from "./tanim";
+import { TarihSuzgeci } from "./tarih-suzgeci";
 
 export type SutunTanimi<Satir> = {
   kod: string;
@@ -104,9 +106,11 @@ export type ListeOzellikleri<Satir> = {
   // Seçim kutusunun ve sonuçtaki satırın adı.
   satirAdi: (satir: Satir) => string;
   suzgecAdlari: Readonly<Record<string, { ad: string; secenek: (deger: string) => string }>>;
-  // Kayıt süzgeçlerinin seçenekleri (kart 0262): sitenin kayıtları, sunucunun verdiği sırayla. Seçili olup
-  // listede olmayan değer (silinmiş kayıt) şeritte kaldırılabilir, adı "bilinmeyen kayıt" yazar.
+  // Kayıt ve değer süzgeçlerinin seçenekleri (kart 0262, 0267): sunucunun verdiği sırayla. Seçili olup listede
+  // olmayan kayıt (silinmiş) şeritte kaldırılabilir, adı "bilinmeyen kayıt" yazar; değer süzgecinde değerin kendisi.
   kayitSecenekleri?: Readonly<Record<string, readonly { deger: string; ad: string }[]>>;
+  // Tarih süzgecindeki günlerin sitenin biçimiyle yazılışı (kart 0267): sunucu verir, tarayıcı biçimlemez.
+  gunYazilari?: Readonly<Record<string, string>>;
   siralamaAdi: (kod: string) => string;
   arama?: { etiket: string; yerTutucu: string };
   bos: { ikon: IkonAdi; baslik: string; aciklama: string; eylem?: ReactNode };
@@ -133,6 +137,7 @@ export function Liste<Satir>({
   bos,
   topluIslemler,
   kayitSecenekleri = {},
+  gunYazilari = {},
 }: ListeOzellikleri<Satir>) {
   const metin = usePanelMetni();
   const router = useRouter();
@@ -268,20 +273,42 @@ export function Liste<Satir>({
   };
 
   const sekme = tanim.suzgecler.find((suzgec) => suzgec.tur === "sekme");
-  // Açılır menülü süzgeçler: tanımdaki seçenekler ya da sunucunun verdiği kayıtlar.
+  // Şeritteki süzgeçler, tanımın sırasıyla: açılır menüde tanımdaki seçenekler ya da sunucunun verdiği kayıtlar ve
+  // değerler; tarih süzgeci kendi panelinde (TarihSuzgeci).
   const secenekSuzgecleri = tanim.suzgecler.filter((suzgec) => suzgec.tur !== "sekme");
+  const sunucununMu = (suzgec: (typeof tanim.suzgecler)[number]) =>
+    suzgec.tur === "kayit" || suzgec.tur === "deger";
   const suzgecSecenekleri = (suzgec: (typeof tanim.suzgecler)[number]) =>
-    suzgec.tur === "kayit"
+    sunucununMu(suzgec)
       ? (kayitSecenekleri[suzgec.kod] ?? [])
       : suzgec.secenekler.map((deger) => ({
           deger,
           ad: suzgecAdlari[suzgec.kod]?.secenek(deger) ?? deger,
         }));
+  // Tarih süzgecinin şeritteki yazısı: hazır aralığın adı ya da sitenin biçimiyle günler.
+  const tarihYazisi = (deger: string) => {
+    const cozulen = tarihDegeriniCoz(deger);
+    if (cozulen === undefined) return deger;
+    if (cozulen.tur === "hazir") return metin(`yonetim.liste.tarih.hazir.${cozulen.kod}`);
+    const gun = (gunu: string | null) => (gunu === null ? "" : (gunYazilari[gunu] ?? gunu));
+    if (cozulen.baslangic === null) {
+      return doldur(metin("yonetim.liste.tarih.bitiseKadar"), { son: gun(cozulen.bitis) });
+    }
+    if (cozulen.bitis === null) {
+      return doldur(metin("yonetim.liste.tarih.baslangictan"), { bas: gun(cozulen.baslangic) });
+    }
+    return doldur(metin("yonetim.liste.tarih.araligi"), {
+      bas: gun(cozulen.baslangic),
+      son: gun(cozulen.bitis),
+    });
+  };
   const degerAdi = (suzgec: (typeof tanim.suzgecler)[number], deger: string) =>
-    suzgec.tur === "kayit"
-      ? (kayitSecenekleri[suzgec.kod]?.find((secenek) => secenek.deger === deger)?.ad ??
-        metin("yonetim.liste.bilinmeyenKayit"))
-      : (suzgecAdlari[suzgec.kod]?.secenek(deger) ?? deger);
+    suzgec.tur === "tarih"
+      ? tarihYazisi(deger)
+      : sunucununMu(suzgec)
+        ? (kayitSecenekleri[suzgec.kod]?.find((secenek) => secenek.deger === deger)?.ad ??
+          (suzgec.tur === "deger" ? deger : metin("yonetim.liste.bilinmeyenKayit")))
+        : (suzgecAdlari[suzgec.kod]?.secenek(deger) ?? deger);
   const seciliCipler = tanim.suzgecler.flatMap((suzgec) =>
     (durum.suzgecler[suzgec.kod] ?? []).map((deger) => ({ suzgec, deger })),
   );
@@ -375,6 +402,25 @@ export function Liste<Satir>({
       {secenekSuzgecleri.map((suzgec) => {
         const secili = durum.suzgecler[suzgec.kod] ?? [];
         const adi = suzgecAdlari[suzgec.kod];
+        if (suzgec.tur === "tarih") {
+          return (
+            <TarihSuzgeci
+              key={suzgec.kod}
+              ad={adi?.ad ?? suzgec.kod}
+              hazirlar={suzgec.secenekler}
+              secili={secili[0]}
+              degistir={(deger) =>
+                git(
+                  listeAdresi(
+                    tanim,
+                    durum,
+                    suzgecDegeri(suzgec.kod, deger === null ? [] : [deger]),
+                  ),
+                )
+              }
+            />
+          );
+        }
         return (
           <AcilirMenu key={suzgec.kod}>
             <AcilirMenuTetikleyici asChild>

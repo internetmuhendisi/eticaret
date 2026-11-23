@@ -14,7 +14,10 @@ import {
 } from "../../../../../yonetim-paneli/panel-sayfasi";
 import { SiparisListesi } from "../../../../../yonetim-paneli/siparisler/liste";
 import { siparisListesiTanimi } from "../../../../../yonetim-paneli/siparisler/liste-tanimi";
-import { siparisListesiVerisi } from "../../../../../yonetim-paneli/siparisler/veri";
+import {
+  siparisListesiSecenekleri,
+  siparisListesiVerisi,
+} from "../../../../../yonetim-paneli/siparisler/veri";
 
 export const generateMetadata = (): Promise<Metadata> => panelSayfaBilgisi("siparisler");
 
@@ -28,6 +31,11 @@ export default async function SiparislerSayfasi({
   const veri = await siparisListesiVerisi(durum).catch((hata: unknown) => {
     hatayiKaydet(hata, { ekran: "siparisler" });
     return null;
+  });
+  // Süzgeçlerin sunucudan gelen seçenekleri (kart 0267); okunamazsa liste yine açılır, süzgeç seçeneksiz kalır.
+  const secenekler = await siparisListesiSecenekleri(durum).catch((hata: unknown) => {
+    hatayiKaydet(hata, { ekran: "siparisler" });
+    return { kayitSecenekleri: {}, gunYazilari: {} };
   });
   const { yetkili } = await panelOturumu();
   return (
@@ -43,6 +51,8 @@ export default async function SiparislerSayfasi({
       <SiparisListesi
         durum={durum}
         veri={veri}
+        kayitSecenekleri={secenekler.kayitSecenekleri}
+        gunYazilari={secenekler.gunYazilari}
         topluIslemler={siparisListesiTanimi.topluIslemler
           .filter((islem) => yetkili(islem.izin))
           .map((islem) => islem.kod)}

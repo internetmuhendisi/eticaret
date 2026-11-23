@@ -11,6 +11,10 @@ export const listeSayfasi = {
 export const panelSayfaBoylari = [25, 50, 100] as const;
 export type PanelSayfaBoyu = (typeof panelSayfaBoylari)[number];
 
+// Panel listelerinin kayıt ve değer süzgeçlerinde en çok bu kadar değer (her değer sorguya kendi koşulunu ekler;
+// kart 0262'nin bağımsız kontrolünün bulgusu). Liste motoru ve servislerin girdileri bunu kullanır (kart 0267).
+export const suzgecDegerSiniri = 50;
+
 // Panel listesinde toplu işlemin sonucu (kart 0258): işlenen satırların anahtarı, işlenemeyenlerin anahtarı ve
 // nedeninin kodu (ekran metne çevirir). Her satır kendi işleminde, tekil işlemle aynı denetimden geçerek işlenir;
 // birinin hatası ötekileri durdurmaz.

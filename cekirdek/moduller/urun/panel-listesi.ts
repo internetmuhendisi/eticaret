@@ -27,6 +27,7 @@ import {
 } from "../../kayitlar/urun.ts";
 import { aramaAnahtari, aramaAnahtariSql } from "../../metinler/arama-anahtari.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
+import { harfSirasi } from "../../veritabani/harf-sirasi.ts";
 import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { birimFiyatlari } from "../fiyat/model.ts";
 import { kategoriler, urunKategorileri } from "../kategori/model.ts";
@@ -61,16 +62,6 @@ export type UrunPanelAyarlari = {
   an: Date;
   // Sitenin dili (BCP 47, "tr-TR"): ada göre sıralamanın harf sırası (Ç, C'den sonra; ı, i'den önce).
   dil: string;
-};
-
-// Dilin veritabanındaki harf sırası (ICU): "tr-TR" için "tr-x-icu". Veritabanında yoksa dilden bağımsız Unicode
-// sırası ("und-x-icu"). Dil koda sabit yazılmaz (site ayarı); ad sorguya tırnaklı tanımlayıcı olarak girer.
-const harfSirasi = async (vt: Veritabani, dil: string): Promise<string> => {
-  const birincil = dil.split("-")[0]?.toLowerCase() ?? "";
-  if (!/^[a-z]{2,3}$/.test(birincil)) return "und-x-icu";
-  const ad = `${birincil}-x-icu`;
-  const bulunan = await vt.execute(sql`select 1 from pg_collation where collname = ${ad}`);
-  return bulunan.rows.length > 0 ? ad : "und-x-icu";
 };
 
 export type UrunPanelSatiri = {

@@ -12,8 +12,25 @@
 //   yazılır (firma listesi sonradan değişse de sipariş değişmez). Takip numarası yoksa takip adresi de yoktur.
 // - Not: iç not yalnız panelde, müşteriye not müşterinin sipariş ayrıntısında görünür; not değiştirilemez.
 // - Kişisel bilgileri silinmiş siparişte (saklama süresi, temizlik.ts) ad, adres, telefon ve e-posta boştur.
-// - Bekleyen iade talebi olan sipariş listede işaretlidir ve "İade talepleri" süzgeciyle ayrıca listelenir (kart 0239).
-import { and, asc, count, desc, eq, exists, inArray, or, type SQL, sql } from "drizzle-orm";
+// - Bekleyen iade talebi olan sipariş listede işaretlidir (kart 0239). Bildirilmiş havalesi ödeme bekleyen, bekleyen
+//   iade talebi olan ve sonucu beklenen iadesi olan siparişler "Bakılması gereken" süzgeciyle listelenir (kart 0267).
+// - Tarih süzgeci siparişin oluşturulduğu günü sitenin saat dilimiyle sayar (iki uç dahil); kargo firması süzgeci
+//   siparişe kargoya verildiği an yazılan adla eşleşir.
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  exists,
+  gte,
+  inArray,
+  isNotNull,
+  lt,
+  or,
+  type SQL,
+  sql,
+} from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
@@ -30,7 +47,9 @@ import {
   takipNumarasiYeri,
 } from "../../kayitlar/siparis.ts";
 import { aramaAnahtari, aramaAnahtariSql } from "../../metinler/arama-anahtari.ts";
+import { gunEkle, gununBasi } from "../../metinler/bicimleyici.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
+import { harfSirasi } from "../../veritabani/harf-sirasi.ts";
 import { yoneticiler } from "../ekip/model.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
 import { musteriler } from "../musteri/model.ts";
@@ -74,6 +93,8 @@ export type SiparisListesiSatiri = {
   havaleBildirildi: boolean;
   // Bekleyen iade talebi var (kart 0239).
   iadeTalebi: boolean;
+  // Sonucu beklenen iadesi var (kart 0267): kartla iade ödeme kuruluşunun cevabını bekliyor.
+  iadeBekliyor: boolean;
 };
 
 export type SiparisListesi = {
@@ -82,11 +103,11 @@ export type SiparisListesi = {
   sayfa: number;
   sayfaSayisi: number;
   sayfaBoyu: number;
-  // Durum başına sipariş sayısı (sekmeler); ödeme yöntemi süzgecine uyar, aranan metinden ve durum süzgecinden
-  // bağımsızdır.
+  // Durum başına sipariş sayısı (sekmeler); ödeme yöntemi, tarih ve kargo firması süzgeçlerine uyar, aranan
+  // metinden ve sekmeden bağımsızdır.
   sayilar: Record<SiparisDurumu, number>;
-  // Bekleyen iade talebi olan sipariş sayısı (kart 0239, "İade talepleri" sekmesi).
-  talepSayisi: number;
+  // Bakılması gereken sipariş sayısı (kart 0267, "Bakılması gereken" sekmesi), sayılarla aynı kuralla.
+  bakilacakSayisi: number;
 };
 
 // Geçmişin ve notların yazanı panelde: yönetici ve müşteri e-postasıyla, sistem işleminin adıyla.
@@ -138,37 +159,58 @@ const yazan = (satir: {
 
 export const siparisYonetimi = (site: Site) => {
   const liste = async (vt: Veritabani, girdi: SiparisListesiGirdisi): Promise<SiparisListesi> => {
-    const kosullar: SQL[] = [];
-    const bekleyenTalep = (kimlik: typeof siparisler.kimlik) =>
+    const varMi = (tablo: typeof siparisIadeTalepleri | typeof siparisIadeleri) =>
       exists(
         vt
           .select({ var: sql`1` })
-          .from(siparisIadeTalepleri)
-          .where(
-            and(
-              eq(siparisIadeTalepleri.siparis_kimligi, kimlik),
-              eq(siparisIadeTalepleri.durum, "bekliyor"),
-            ),
-          ),
+          .from(tablo)
+          .where(and(eq(tablo.siparis_kimligi, siparisler.kimlik), eq(tablo.durum, "bekliyor"))),
       );
-    // Ödeme yöntemi süzgeci durum sayılarına da uygulanır (sekmeler öteki süzgeçlerle sayar).
-    const odemeKosulu =
-      girdi.odeme === undefined ? undefined : inArray(siparisler.odeme_yontemi, girdi.odeme);
-    if (odemeKosulu !== undefined) kosullar.push(odemeKosulu);
+    // Bakılması gereken işler (kart 0267): bildirilmiş havale (yalnız ödeme beklerken), bekleyen iade talebi, sonucu
+    // beklenen iade (kartla iade kuruluşun cevabını bekliyor). Satırın işaretleri ve sekme aynı koşullardır.
+    const havaleBekliyor = and(
+      eq(siparisler.durum, "odeme-bekleniyor"),
+      exists(
+        vt
+          .select({ var: sql`1` })
+          .from(havaleBildirimleri)
+          .where(eq(havaleBildirimleri.siparis_kimligi, siparisler.kimlik)),
+      ),
+    );
+    const talepBekliyor = varMi(siparisIadeTalepleri);
+    const iadeBekliyor = varMi(siparisIadeleri);
+    const bakilacak = or(havaleBekliyor, talepBekliyor, iadeBekliyor);
+    // Sekmenin dışındaki süzgeçler (ödeme yöntemi, tarih, kargo firması) sekme sayılarına da uygulanır.
+    const suzgecler: SQL[] = [];
+    if (girdi.odeme !== undefined) suzgecler.push(inArray(siparisler.odeme_yontemi, girdi.odeme));
+    if (girdi.tarih !== undefined) {
+      const { baslangic, bitis } = girdi.tarih;
+      const saatDilimi = site.ayarlar.saatDilimi;
+      if (baslangic !== null) {
+        suzgecler.push(gte(siparisler.olusturma_zamani, gununBasi(baslangic, saatDilimi)));
+      }
+      if (bitis !== null) {
+        suzgecler.push(lt(siparisler.olusturma_zamani, gununBasi(gunEkle(bitis, 1), saatDilimi)));
+      }
+    }
+    if (girdi.kargo !== undefined) suzgecler.push(inArray(siparisler.kargo_firmasi, girdi.kargo));
+    const kosullar: (SQL | undefined)[] = [...suzgecler];
     if (girdi.durum !== undefined) kosullar.push(eq(siparisler.durum, girdi.durum));
-    if (girdi.talep === true) kosullar.push(bekleyenTalep(siparisler.kimlik));
+    if (girdi.bakilacak === true) kosullar.push(bakilacak);
     if (girdi.ara !== undefined) {
       // Aramanın harf kuralıyla (cekirdek/metinler/arama-anahtari.ts): "deniz" "DENİZ"i, "ayse" "Ayşe"yi bulur.
       // strpos ile aranır: "%" ve "_" düz harftir.
       const aranan = aramaAnahtari(girdi.ara);
-      const kosul = or(
-        sql`strpos(${aramaAnahtariSql(siparisler.numara)}, ${aranan}) > 0`,
-        sql`strpos(${aramaAnahtariSql(siparisler.eposta)}, ${aranan}) > 0`,
-        sql`strpos(${aramaAnahtariSql(sql`(${siparisler.teslimat}->>'ad') || ' ' || (${siparisler.teslimat}->>'soyad')`)}, ${aranan}) > 0`,
+      kosullar.push(
+        or(
+          sql`strpos(${aramaAnahtariSql(siparisler.numara)}, ${aranan}) > 0`,
+          sql`strpos(${aramaAnahtariSql(siparisler.eposta)}, ${aranan}) > 0`,
+          sql`strpos(${aramaAnahtariSql(sql`(${siparisler.teslimat}->>'ad') || ' ' || (${siparisler.teslimat}->>'soyad')`)}, ${aranan}) > 0`,
+        ),
       );
-      if (kosul !== undefined) kosullar.push(kosul);
     }
-    const nerede = kosullar.length === 0 ? undefined : and(...kosullar);
+    const nerede = and(...kosullar);
+    const suzgecKosulu = and(...suzgecler);
     const [sayim] = await vt.select({ adet: count() }).from(siparisler).where(nerede);
     const toplam = sayim?.adet ?? 0;
     const sayfaSayisi = Math.max(1, Math.ceil(toplam / girdi.sayfaBoyu));
@@ -185,13 +227,9 @@ export const siparisYonetimi = (site: Site) => {
         kapidaSecenegi: siparisler.kapida_secenegi,
         toplam: siparisler.toplam,
         paraBirimi: siparisler.para_birimi,
-        havaleBildirildi: exists(
-          vt
-            .select({ var: sql`1` })
-            .from(havaleBildirimleri)
-            .where(eq(havaleBildirimleri.siparis_kimligi, siparisler.kimlik)),
-        ),
-        iadeTalebi: bekleyenTalep(siparisler.kimlik),
+        havaleBildirildi: sql<boolean>`coalesce(${havaleBekliyor}, false)`,
+        iadeTalebi: talepBekliyor,
+        iadeBekliyor,
       })
       .from(siparisler)
       .where(nerede)
@@ -201,29 +239,28 @@ export const siparisYonetimi = (site: Site) => {
     const durumSayilari = await vt
       .select({ durum: siparisler.durum, adet: count() })
       .from(siparisler)
-      .where(odemeKosulu)
+      .where(suzgecKosulu)
       .groupBy(siparisler.durum);
     const sayilar = Object.fromEntries(siparisDurumlari.map((durum) => [durum, 0])) as Record<
       SiparisDurumu,
       number
     >;
     for (const { durum, adet } of durumSayilari) sayilar[durum as SiparisDurumu] = adet;
-    const [talepSayimi] = await vt
-      .select({ adet: sql<number>`count(distinct ${siparisIadeTalepleri.siparis_kimligi})::int` })
-      .from(siparisIadeTalepleri)
-      .innerJoin(siparisler, eq(siparisler.kimlik, siparisIadeTalepleri.siparis_kimligi))
-      .where(and(eq(siparisIadeTalepleri.durum, "bekliyor"), odemeKosulu));
+    const [bakilacakSayimi] = await vt
+      .select({ adet: count() })
+      .from(siparisler)
+      .where(and(suzgecKosulu, bakilacak));
     return {
       satirlar: satirlar.map(
-        ({ teslimat, musteri, durum, havaleBildirildi, iadeTalebi, ...satir }) => ({
+        ({ teslimat, musteri, durum, havaleBildirildi, iadeTalebi, iadeBekliyor, ...satir }) => ({
           ...satir,
           ad: teslimat.ad ?? "",
           soyad: teslimat.soyad ?? "",
           uye: musteri !== null,
           durum: durum as SiparisDurumu,
-          // Bildirim yalnız ödeme beklerken bakılacak iştir.
-          havaleBildirildi: Boolean(havaleBildirildi) && durum === "odeme-bekleniyor",
+          havaleBildirildi: Boolean(havaleBildirildi),
           iadeTalebi: Boolean(iadeTalebi),
+          iadeBekliyor: Boolean(iadeBekliyor),
         }),
       ),
       toplam,
@@ -231,8 +268,20 @@ export const siparisYonetimi = (site: Site) => {
       sayfaSayisi,
       sayfaBoyu: girdi.sayfaBoyu,
       sayilar,
-      talepSayisi: talepSayimi?.adet ?? 0,
+      bakilacakSayisi: bakilacakSayimi?.adet ?? 0,
     };
+  };
+
+  // Siparişlerdeki kargo firması adları (kart 0267, sipariş listesinin süzgeci): kargoya verildiği andaki adlar,
+  // tekrarsız, sitenin dilinin harf sırasıyla. Firma listesinden silinmiş ya da adı değişmiş firma da gelir.
+  const kargoFirmalari = async (vt: Veritabani): Promise<string[]> => {
+    const ad = sql`${siparisler.kargo_firmasi} collate ${sql.identifier(await harfSirasi(vt, site.ayarlar.dil))}`;
+    const satirlar = await vt
+      .selectDistinct({ ad: siparisler.kargo_firmasi, sira: ad })
+      .from(siparisler)
+      .where(isNotNull(siparisler.kargo_firmasi))
+      .orderBy(ad);
+    return satirlar.flatMap((satir) => (satir.ad === null ? [] : [satir.ad]));
   };
 
   const ayrinti = async (vt: Veritabani, numara: string): Promise<SiparisAyrintisi | null> => {
@@ -543,5 +592,5 @@ export const siparisYonetimi = (site: Site) => {
     return sonuc;
   };
 
-  return { liste, ayrinti, islemYap, notEkle, topluIslem };
+  return { liste, kargoFirmalari, ayrinti, islemYap, notEkle, topluIslem };
 };

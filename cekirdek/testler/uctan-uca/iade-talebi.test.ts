@@ -2,7 +2,8 @@
 // - Üye teslim edilmiş siparişinin ayrıntısından "İade talebi oluştur"u klavyeyle açar. Form iki renkte ve üç
 //   genişlikte taramadan geçer. Boş gönderimde alanlara bağlantılı özet çıkar ve odağı alır; hatalı form taramadan
 //   geçer. Ürün onay kutusuyla, adet ve neden klavyeyle seçilir; teşekkür görünür ve odağı alır.
-// - Mağaza sahibi Siparişler'in "İade talepleri" sekmesinde siparişi görür, ayrıntıda talebi klavyeyle onaylar;
+// - Mağaza sahibi Siparişler'in "Bakılması gereken" sekmesinde (kart 0239'un eski "İade talepleri" adresiyle açılır,
+//   kart 0267) siparişi görür, ayrıntıda talebi klavyeyle onaylar;
 //   "İade yap" talebin ürünleriyle seçili açılır, iade talebe bağlanır. Müşteri sipariş sayfasında onayı ve iadeyi görür.
 // - Üye olmayan müşteri takip sayfasından talep açar (robot korumalı uç); mağaza sahibi açıklamayla reddeder; müşteri
 //   açıklamayı görür. Ödeme bekleyen siparişini "Siparişi iptal et" ile onay penceresinden iptal eder. "Başka bir
@@ -296,12 +297,12 @@ test("üye klavyeyle iade talebi açar; mağaza onaylar ve talepten iade yapar; 
     page.getByRole("link", { name: metin("vitrin.siparis.iadeTalebiOlustur") }),
   ).toHaveCount(0);
 
-  // Mağaza sahibi: "İade talepleri" sekmesi, talep kutusu, onay.
+  // Mağaza sahibi: eski "İade talepleri" adresi "Bakılması gereken" sekmesini açar (kart 0267), talep kutusu, onay.
   await paneleGir(page, yoneticiAc());
   await page.goto("/yonetim/siparisler?durum=iade-talebi");
   await sayfaHazir(page);
   await expect(
-    page.getByRole("link", { name: metin("yonetim.siparisler.iadeTalepleri") }),
+    page.getByRole("link", { name: metin("yonetim.siparisler.bakilacak") }),
   ).toHaveAttribute("aria-current", "page");
   await expect(
     page

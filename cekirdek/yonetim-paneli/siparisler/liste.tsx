@@ -1,7 +1,8 @@
 "use client";
 // Siparişler ekranının listesi (kart 0234, karar 0145; kart 0258'de liste motoruna taşındı). Tanımı liste-tanimi.ts:
-// durum sekmeleri sayılarıyla, ödeme yöntemi süzgeci, arama (numara, ad ya da e-posta; adrese yazılmaz), sıralama,
-// sayfa ve "Hazırlamaya al" toplu işlemi. Havalesi bildirilmiş ve bekleyen iade talebi olan sipariş işaretlidir.
+// durum sekmeleri sayılarıyla ("Bakılması gereken" dahil, kart 0267), tarih, ödeme yöntemi ve kargo firması
+// süzgeçleri, arama (numara, ad ya da e-posta; adrese yazılmaz), sıralama, sayfa ve "Hazırlamaya al" toplu işlemi.
+// Bakılması gereken işi olan sipariş nedeniyle işaretlidir: havale bildirildi, iade talebi, iade sonucu bekleniyor.
 // Masaüstünde tablo, telefonda her sipariş bir kart (.claude/rules/telefon-gorunumu.md).
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
@@ -13,7 +14,7 @@ import { siparisAyrintisiAdresi } from "../adresler";
 import { Liste, type SutunTanimi, type TopluIslemTanimi } from "../liste/liste";
 import type { ListeDurumu, ListeVerisi } from "../liste/tanim";
 import { DurumRozeti } from "./durum-rozeti";
-import { iadeTalebiSekmesi, siparisListesiTanimi } from "./liste-tanimi";
+import { bakilacakSekmesi, siparisListesiTanimi } from "./liste-tanimi";
 import { durumMetni, odemeYazisi } from "./metinler";
 import type { SiparisSatiri } from "./veri";
 
@@ -45,6 +46,12 @@ function Isaretler({ satir }: { satir: SiparisSatiri }) {
         <span className="flex items-center gap-1 text-kucuk font-kalin text-uyari-yazi">
           <Ikon ad="iade" />
           {metin("yonetim.siparisler.iadeTalebi")}
+        </span>
+      ) : null}
+      {satir.iadeBekliyor ? (
+        <span className="flex items-center gap-1 text-kucuk font-kalin text-uyari-yazi">
+          <Ikon ad="iade" />
+          {metin("yonetim.siparisler.iadeBekliyor")}
         </span>
       ) : null}
     </>
@@ -84,9 +91,14 @@ export function SiparisListesi({
   durum,
   veri,
   topluIslemler,
+  kayitSecenekleri,
+  gunYazilari,
 }: {
   durum: ListeDurumu;
   veri: ListeVerisi<SiparisSatiri> | null;
+  // Kargo firması süzgecinin seçenekleri ve tarih süzgecindeki günlerin yazılışı (sunucu verir, kart 0267).
+  kayitSecenekleri: Record<string, { deger: string; ad: string }[]>;
+  gunYazilari: Record<string, string>;
   // Yöneticinin izni olan toplu işlemlerin kodları (sunucu süzer).
   topluIslemler: readonly string[];
 }) {
@@ -184,15 +196,19 @@ export function SiparisListesi({
         durum: {
           ad: metin("yonetim.siparisler.durumSuzgeci"),
           secenek: (deger) =>
-            deger === iadeTalebiSekmesi
-              ? metin("yonetim.siparisler.iadeTalepleri")
+            deger === bakilacakSekmesi
+              ? metin("yonetim.siparisler.bakilacak")
               : metin(durumMetni(deger as SiparisDurumu)),
         },
+        tarih: { ad: metin("yonetim.siparisler.tarihSuzgeci"), secenek: (deger) => deger },
         odeme: {
           ad: metin("yonetim.siparisler.odemeSuzgeci"),
           secenek: (deger) => odemeYazisi(metin, deger, null),
         },
+        kargo: { ad: metin("yonetim.siparisler.kargoSuzgeci"), secenek: (deger) => deger },
       }}
+      kayitSecenekleri={kayitSecenekleri}
+      gunYazilari={gunYazilari}
       siralamaAdi={(kod) => metin(siralamalar[kod as SiparisListesiSiralamasi])}
       arama={{
         etiket: metin("yonetim.siparisler.ara"),

@@ -17,15 +17,20 @@ import {
   siparisDurumlari,
   yapilabilirIslemler,
 } from "../../kayitlar/siparis";
-import { type BicimAyarlari, yerelZamandan } from "../../metinler/bicimleyici";
+import {
+  type BicimAyarlari,
+  gununBasi,
+  takvimGunu,
+  yerelZamandan,
+} from "../../metinler/bicimleyici";
 import { siteninBicimAyarlari, siteninBicimleyicisi } from "../../metinler/site-metni";
 import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
 import { siparisAyarlari } from "../../moduller/siparis/ayarlar";
 import type { HesapSiparisi, OncekiIade } from "../../moduller/siparis/iade-hesabi";
 import { siparisYonetimi } from "../../moduller/siparis/yonetim";
 import { siteninVeritabani } from "../../veritabani/baglanti";
-import type { ListeDurumu, ListeVerisi } from "../liste/tanim";
-import { iadeTalebiSekmesi, siparisListesiGirdisi } from "./liste-tanimi";
+import { type ListeDurumu, type ListeVerisi, tarihDegeriniCoz } from "../liste/tanim";
+import { bakilacakSekmesi, siparisListesiGirdisi } from "./liste-tanimi";
 
 const bicim = () => siteninBicimleyicisi(calisanSite().ayarlar);
 
@@ -39,10 +44,12 @@ export type SiparisSatiri = {
   tutar: string;
   havaleBildirildi: boolean;
   iadeTalebi: boolean;
+  iadeBekliyor: boolean;
 };
 
 // Listenin bir sayfası (kart 0258): sayfa ve liste ucu (aranan metinle) aynı işlevden okur. Sayfa başına satır
-// mağaza sahibinin ayarıdır (panelSayfaBoyu). Sekme sayıları: "" bütün siparişler, her durum ve bekleyen iade talebi.
+// mağaza sahibinin ayarıdır (panelSayfaBoyu). Sekme sayıları: "" bütün siparişler, her durum ve bakılması gereken.
+// Tarih süzgecinin hazır aralıkları bugüne göre, bugün sitenin saat dilimiyle (kart 0267).
 export const siparisListesiVerisi = async (
   durum: ListeDurumu,
 ): Promise<ListeVerisi<SiparisSatiri>> => {
@@ -50,7 +57,11 @@ export const siparisListesiVerisi = async (
   const b = bicim();
   const vt = siteninVeritabani();
   const { panelSayfaBoyu } = await siteninMagazaAyarlari(vt, site);
-  const liste = await siparisYonetimi(site).liste(vt, siparisListesiGirdisi(durum, panelSayfaBoyu));
+  const bugun = takvimGunu(new Date(), site.ayarlar.saatDilimi);
+  const liste = await siparisYonetimi(site).liste(
+    vt,
+    siparisListesiGirdisi(durum, panelSayfaBoyu, bugun),
+  );
   return {
     satirlar: liste.satirlar.map((satir) => ({
       numara: satir.numara,
@@ -64,6 +75,7 @@ export const siparisListesiVerisi = async (
       tutar: b.para(satir.toplam),
       havaleBildirildi: satir.havaleBildirildi,
       iadeTalebi: satir.iadeTalebi,
+      iadeBekliyor: satir.iadeBekliyor,
     })),
     toplam: liste.toplam,
     sayfa: liste.sayfa,
@@ -72,8 +84,33 @@ export const siparisListesiVerisi = async (
     sekmeSayilari: {
       "": siparisDurumlari.reduce((toplam, kod) => toplam + liste.sayilar[kod], 0),
       ...liste.sayilar,
-      [iadeTalebiSekmesi]: liste.talepSayisi,
+      [bakilacakSekmesi]: liste.bakilacakSayisi,
     },
+  };
+};
+
+// Listenin süzgeçleri için sunucunun verdikleri (kart 0267): kargo firması seçenekleri (siparişlerdeki adlar) ve
+// tarih süzgecindeki günlerin sitenin biçimiyle yazılışı (şerit ve seçili aralık; tarayıcı biçimlemez).
+export const siparisListesiSecenekleri = async (
+  durum: ListeDurumu,
+): Promise<{
+  kayitSecenekleri: Record<string, { deger: string; ad: string }[]>;
+  gunYazilari: Record<string, string>;
+}> => {
+  const site = calisanSite();
+  const b = bicim();
+  const kargo = await siparisYonetimi(site).kargoFirmalari(siteninVeritabani());
+  const tarih = durum.suzgecler["tarih"]?.[0];
+  const cozulen = tarih === undefined ? undefined : tarihDegeriniCoz(tarih);
+  const gunler =
+    cozulen?.tur === "aralik"
+      ? [cozulen.baslangic, cozulen.bitis].filter((gun) => gun !== null)
+      : [];
+  return {
+    kayitSecenekleri: { kargo: kargo.map((ad) => ({ deger: ad, ad })) },
+    gunYazilari: Object.fromEntries(
+      gunler.map((gun) => [gun, b.tarih(gununBasi(gun, site.ayarlar.saatDilimi))]),
+    ),
   };
 };
 

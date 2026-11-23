@@ -69,6 +69,21 @@ export const takvimGunu = (an: Date, saatDilimi: string): string => {
   return `${String(yil).padStart(4, "0")}-${ikiHaneli(ay)}-${ikiHaneli(gun)}`;
 };
 
+// Takvim günü "YYYY-AA-GG" (kart 0267): biçimi ve takvimde olup olmadığı.
+export const takvimGunuMu = (gun: string): boolean => {
+  const eslesme = /^(\d{4})-(\d{2})-(\d{2})$/.exec(gun);
+  if (eslesme === null) return false;
+  const [yil = 0, ay = 0, gunu = 0] = eslesme.slice(1).map(Number);
+  const an = new Date(Date.UTC(yil, ay - 1, gunu));
+  return an.getUTCFullYear() === yil && an.getUTCMonth() === ay - 1 && an.getUTCDate() === gunu;
+};
+
+// Takvim gününe gün eklemek, eksi de olur (kart 0267); saat diliminden bağımsızdır.
+export const gunEkle = (gun: string, adet: number): string => {
+  const [yil = 0, ay = 1, gunu = 1] = gun.split("-").map(Number);
+  return new Date(Date.UTC(yil, ay - 1, gunu + adet)).toISOString().slice(0, 10);
+};
+
 // Bir anın sitenin saat dilimindeki yerel zamanı, "YYYY-AA-GGTSS:DD" (kart 0263): panelin tarih ve saat alanının
 // değeri. yerelZamandan'ın tersidir.
 export const yerelZamana = (an: Date, saatDilimi: string): string => {
@@ -96,6 +111,19 @@ export const yerelZamandan = (yerel: string, saatDilimi: string): Date | undefin
     .toSorted((a, b) => a - b);
   const [an] = adaylar;
   return an === undefined ? undefined : new Date(an);
+};
+
+// Bir takvim gününün bir saat diliminde başladığı an (kart 0267): gece yarısı. Gece yarısının yaşanmadığı günde
+// (saatin gece yarısında ileri alındığı dilimler) günün yaşanan ilk dakikası.
+export const gununBasi = (gun: string, saatDilimi: string): Date => {
+  for (let dakika = 0; dakika < 24 * 60; dakika++) {
+    const an = yerelZamandan(
+      `${gun}T${ikiHaneli(Math.floor(dakika / 60))}:${ikiHaneli(dakika % 60)}`,
+      saatDilimi,
+    );
+    if (an !== undefined) return an;
+  }
+  throw new Error(`Gün bu saat diliminde yok: ${gun} ${saatDilimi}`);
 };
 
 // Para biriminin bir dildeki simgesi, dil verisinden (CLDR): kodda bir para simgesi yazmaz (kart 0081).

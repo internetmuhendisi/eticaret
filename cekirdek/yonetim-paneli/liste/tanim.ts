@@ -9,6 +9,8 @@
 // araması kişisel bilgi taşır, karar 0145) aramayı liste ucuna gönderir; adresteki "ara" o listede okunmaz.
 import { z } from "zod";
 import type { IzinAdi } from "../../kayitlar/izinler";
+import { suzgecDegerSiniri } from "../../kayitlar/liste";
+import { gunEkle, takvimGunuMu } from "../../metinler/bicimleyici";
 import { kimlikSemasi } from "../../veritabani/kimlik";
 
 export type SuzgecTanimi = {
@@ -18,8 +20,62 @@ export type SuzgecTanimi = {
   // menüde onay öğeleriyle; seçilenler şeritte kaldırılabilir. Kayıt (kart 0262): seçenekleri sitenin kayıtlarıdır
   // (kategori, marka), sunucu sayfayla birlikte verir; adreste kimlikle durur (küçük harfe çevrilir), tanım
   // seçenek taşımaz. Kimlik olmayan değer yok sayılır; olmayan ya da silinmiş kaydı servis eşleştirmez.
-  tur: "sekme" | "secenekler" | "kayit";
+  // Değer (kart 0267): seçenekleri sunucunun verdiği serbest metinlerdir (siparişlerdeki kargo firması adları);
+  // adreste her değer ayrıca kodlanır (adında virgül olabilir), en çok degerEnCok harf, en çok kayitSuzgeciSiniri
+  // değer. Tarih (kart 0267): tek değer, hazır aralık (seceneklerde, tarihHazirlari'ndan) ya da iki takvim günü
+  // ("2026-11-01_2026-11-21", bir ucu boş olabilir); günler sunucuda sitenin saat dilimiyle anlara çevrilir.
+  tur: "sekme" | "secenekler" | "kayit" | "deger" | "tarih";
   secenekler: readonly string[];
+  // Değer süzgecinde bir değerin en çok harf sayısı.
+  degerEnCok?: number;
+  // Eski adreslerin değeri (kart 0267): yayınlanmış bir değer kalkınca adresteki eski değer yenisine çevrilir.
+  eskiDegerler?: Readonly<Record<string, string>>;
+};
+
+// Tarih süzgecinin hazır aralıkları ve kaç günü kapsadıkları (bugün dahil). Adreste kodla durur.
+export const tarihHazirlari = { bugun: 1, "son-7-gun": 7, "son-30-gun": 30 } as const;
+export type TarihHaziri = keyof typeof tarihHazirlari;
+
+const aralikAyraci = "_";
+
+export type TarihDegeri =
+  | { tur: "hazir"; kod: TarihHaziri }
+  | { tur: "aralik"; baslangic: string | null; bitis: string | null };
+
+// Tarih süzgecinin adresteki değeri: hazır kod ya da iki gün. Tanınmayan, takvimde olmayan, iki ucu boş ya da
+// başlangıcı bitişten sonra olan aralık undefined döner (yok sayılır).
+export const tarihDegeriniCoz = (deger: string): TarihDegeri | undefined => {
+  if (Object.hasOwn(tarihHazirlari, deger)) return { tur: "hazir", kod: deger as TarihHaziri };
+  const parcalar = deger.split(aralikAyraci);
+  if (parcalar.length !== 2) return undefined;
+  const [baslangic = "", bitis = ""] = parcalar;
+  if (baslangic === "" && bitis === "") return undefined;
+  if (baslangic !== "" && !takvimGunuMu(baslangic)) return undefined;
+  if (bitis !== "" && !takvimGunuMu(bitis)) return undefined;
+  if (baslangic !== "" && bitis !== "" && baslangic > bitis) return undefined;
+  return { tur: "aralik", baslangic: baslangic || null, bitis: bitis || null };
+};
+
+// İki günden adresin değeri (biri boş olabilir).
+export const tarihAraligiDegeri = (baslangic: string | null, bitis: string | null): string =>
+  `${baslangic ?? ""}${aralikAyraci}${bitis ?? ""}`;
+
+// Süzgecin kapsadığı günler, bugüne göre (sitenin saat dilimindeki takvim günü): iki uç da dahil, boş uç sınırsız.
+export const tarihSuzgecininGunleri = (
+  deger: TarihDegeri,
+  bugun: string,
+): { baslangic: string | null; bitis: string | null } =>
+  deger.tur === "hazir"
+    ? { baslangic: gunEkle(bugun, 1 - tarihHazirlari[deger.kod]), bitis: bugun }
+    : { baslangic: deger.baslangic, bitis: deger.bitis };
+
+// Değer süzgecinin adresteki bir değeri: kodlanmış metin. Çözülemeyen yazılış yok sayılır.
+const degeriCoz = (yazi: string): string | undefined => {
+  try {
+    return decodeURIComponent(yazi).trim();
+  } catch {
+    return undefined;
+  }
 };
 
 export type ListeTanimi = {
@@ -57,10 +113,19 @@ export const listeDurumunuOku = (tanim: ListeTanimi, sorgu: Sorgu): ListeDurumu 
   const oku = (ad: string) => (Object.hasOwn(sorgu, ad) ? (ilkDeger(sorgu[ad]) ?? "").trim() : "");
   const suzgecler: Record<string, string[]> = {};
   for (const suzgec of tanim.suzgecler) {
-    const istenen = oku(suzgec.kod).split(",");
+    const istenen = oku(suzgec.kod)
+      .split(",")
+      .flatMap((deger) => {
+        if (suzgec.tur === "deger") {
+          const cozulen = degeriCoz(deger);
+          return cozulen === undefined ? [] : [cozulen];
+        }
+        return [suzgec.eskiDegerler?.[deger] ?? deger];
+      });
     const secilen = gecerliDegerler(suzgec, istenen);
     if (secilen.length > 0) {
-      suzgecler[suzgec.kod] = suzgec.tur === "sekme" ? secilen.slice(0, 1) : secilen;
+      suzgecler[suzgec.kod] =
+        suzgec.tur === "sekme" || suzgec.tur === "tarih" ? secilen.slice(0, 1) : secilen;
     }
   }
   const sayfa = oku("sayfa");
@@ -76,29 +141,53 @@ export const listeDurumunuOku = (tanim: ListeTanimi, sorgu: Sorgu): ListeDurumu 
   };
 };
 
-// Kayıt süzgecinde en çok bu kadar değer (her değer sorguya kendi koşulunu ekler; bağımsız kontrolün bulgusu).
-export const kayitSuzgeciSiniri = 50;
+// Kayıt ve değer süzgecinde en çok bu kadar değer (cekirdek/kayitlar/liste.ts).
+export const kayitSuzgeciSiniri = suzgecDegerSiniri;
 
 // Süzgecin değerlerinden tanınanlar, tanımın sırasıyla (kayıt süzgecinde verilen sırayla, tekrarsız, sınıra kadar).
 // Kayıt değeri liste ucunun şemasıyla aynı kuralla denetlenir (kimlikSemasi): sayfa ile uç ayrışmasın.
-const gecerliDegerler = (suzgec: SuzgecTanimi, istenen: readonly string[]): string[] =>
-  suzgec.tur === "kayit"
-    ? [
-        ...new Set(
-          istenen.flatMap((deger) => {
-            const sonuc = kimlikSemasi.safeParse(deger);
-            return sonuc.success ? [sonuc.data] : [];
-          }),
-        ),
-      ].slice(0, kayitSuzgeciSiniri)
-    : suzgec.secenekler.filter((secenek) => istenen.includes(secenek));
+const gecerliDegerler = (suzgec: SuzgecTanimi, istenen: readonly string[]): string[] => {
+  if (suzgec.tur === "kayit") {
+    return [
+      ...new Set(
+        istenen.flatMap((deger) => {
+          const sonuc = kimlikSemasi.safeParse(deger);
+          return sonuc.success ? [sonuc.data] : [];
+        }),
+      ),
+    ].slice(0, kayitSuzgeciSiniri);
+  }
+  if (suzgec.tur === "deger") {
+    const enCok = suzgec.degerEnCok ?? 0;
+    return [
+      ...new Set(istenen.filter((deger) => deger !== "" && Array.from(deger).length <= enCok)),
+    ].slice(0, kayitSuzgeciSiniri);
+  }
+  if (suzgec.tur === "tarih") {
+    return istenen.filter((deger) => tarihSuzgeciDegeriMi(suzgec, deger)).slice(0, 1);
+  }
+  return suzgec.secenekler.filter((secenek) => istenen.includes(secenek));
+};
+
+// Tarih süzgecinin değeri geçerli mi: tanımın hazırlarından biri ya da geçerli bir aralık.
+const tarihSuzgeciDegeriMi = (suzgec: SuzgecTanimi, deger: string): boolean => {
+  const cozulen = tarihDegeriniCoz(deger);
+  return (
+    cozulen !== undefined && (cozulen.tur === "aralik" || suzgec.secenekler.includes(cozulen.kod))
+  );
+};
 
 // Listenin sorgusu: adres ve liste ucu için. "ara" yalnız verilirse yazılır (adreste olmayan aramada uç sorgusu).
 export const listeSorgusu = (tanim: ListeTanimi, durum: ListeDurumu): URLSearchParams => {
   const sorgu = new URLSearchParams();
   for (const suzgec of tanim.suzgecler) {
     const secilen = gecerliDegerler(suzgec, durum.suzgecler[suzgec.kod] ?? []);
-    if (secilen.length > 0) sorgu.set(suzgec.kod, secilen.join(","));
+    if (secilen.length > 0) {
+      sorgu.set(
+        suzgec.kod,
+        (suzgec.tur === "deger" ? secilen.map(encodeURIComponent) : secilen).join(","),
+      );
+    }
   }
   if (durum.ara !== "") sorgu.set("ara", durum.ara);
   if (durum.siralama !== tanim.siralamalar[0]) sorgu.set("sirala", durum.siralama);
@@ -138,6 +227,34 @@ export const listeUcuSemasi = (tanim: ListeTanimi) => {
     alanlar["ara"] = z.string().trim().max(tanim.arama.enCok).default("");
   }
   for (const suzgec of tanim.suzgecler) {
+    if (suzgec.tur === "tarih") {
+      // Tek değer: hazır kod ya da geçerli aralık (tarihDegeriniCoz).
+      alanlar[suzgec.kod] = z
+        .string()
+        .refine((yazi) => tarihSuzgeciDegeriMi(suzgec, yazi))
+        .transform((yazi) => [yazi])
+        .optional();
+      continue;
+    }
+    if (suzgec.tur === "deger") {
+      // Her değer kodlanmış gelir (listeSorgusu); çözülemeyen, boş ya da uzun değer reddedilir.
+      alanlar[suzgec.kod] = z
+        .string()
+        .transform((yazi) => yazi.split(",").map((parca) => degeriCoz(parca) ?? ""))
+        .pipe(
+          z
+            .array(
+              z
+                .string()
+                .min(1)
+                .refine((deger) => Array.from(deger).length <= (suzgec.degerEnCok ?? 0)),
+            )
+            .min(1)
+            .max(kayitSuzgeciSiniri),
+        )
+        .optional();
+      continue;
+    }
     const deger =
       suzgec.tur === "kayit" ? kimlikSemasi : z.enum(suzgec.secenekler as [string, ...string[]]);
     alanlar[suzgec.kod] = z
