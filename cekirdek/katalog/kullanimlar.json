@@ -17,6 +17,7 @@
     "cekirdek/yonetim-paneli/gorsel-secimi.tsx",
     "cekirdek/yonetim-paneli/kayit-arama.tsx",
     "cekirdek/yonetim-paneli/kod-formu.tsx",
+    "cekirdek/yonetim-paneli/liste/tarih-suzgeci.tsx",
     "cekirdek/yonetim-paneli/markalar/ekran.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/siparisler/elle-siparis.tsx"
@@ -39,6 +40,7 @@
     "cekirdek/yonetim-paneli/giris-formu.tsx",
     "cekirdek/yonetim-paneli/kod-formu.tsx",
     "cekirdek/yonetim-paneli/liste/liste.tsx",
+    "cekirdek/yonetim-paneli/liste/tarih-suzgeci.tsx",
     "cekirdek/yonetim-paneli/siparisler/elle-siparis.tsx",
     "cekirdek/yonetim-paneli/siparisler/not-formu.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx"
@@ -93,6 +95,7 @@
     "cekirdek/yonetim-paneli/eylem-dugmesi.tsx",
     "cekirdek/yonetim-paneli/katalog-gorseli.tsx",
     "cekirdek/yonetim-paneli/liste/liste.tsx",
+    "cekirdek/yonetim-paneli/liste/tarih-suzgeci.tsx",
     "cekirdek/yonetim-paneli/markalar/ekran.tsx",
     "cekirdek/yonetim-paneli/ozellikler/ekran.tsx",
     "cekirdek/yonetim-paneli/panel-menusu.tsx",
@@ -113,6 +116,7 @@
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx"
   ],
+  "bilesenler/parcalar/acilir-panel.tsx": ["cekirdek/yonetim-paneli/liste/tarih-suzgeci.tsx"],
   "bilesenler/parcalar/adet-secici.tsx": [
     "cekirdek/vitrin/sepet/sepet-gorunumu.tsx",
     "cekirdek/vitrin/sepet/sepete-ekle.tsx",
@@ -267,6 +271,7 @@
     "cekirdek/yonetim-paneli/kategoriler/ekran.tsx",
     "cekirdek/yonetim-paneli/kurulum-akisi.tsx",
     "cekirdek/yonetim-paneli/liste/liste.tsx",
+    "cekirdek/yonetim-paneli/liste/tarih-suzgeci.tsx",
     "cekirdek/yonetim-paneli/markalar/ekran.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/banka-hesaplari.tsx",
@@ -312,6 +317,7 @@
     "cekirdek/yonetim-paneli/kayit-arama.tsx",
     "cekirdek/yonetim-paneli/kod-formu.tsx",
     "cekirdek/yonetim-paneli/liste/liste.tsx",
+    "cekirdek/yonetim-paneli/liste/tarih-suzgeci.tsx",
     "cekirdek/yonetim-paneli/markalar/ekran.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/banka-hesaplari.tsx",
@@ -431,6 +437,7 @@
     "cekirdek/vitrin/urun-sayfasi/sayfa.tsx",
     "cekirdek/vitrin/urun-sayfasi/yorumlar.tsx",
     "cekirdek/yonetim-paneli/liste/liste.tsx",
+    "cekirdek/yonetim-paneli/liste/tarih-suzgeci.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
     "cekirdek/yonetim-paneli/ozellikler/ekran.tsx",
@@ -482,6 +489,7 @@
     "cekirdek/vitrin/urun-sayfasi/urun-ust.tsx",
     "cekirdek/vitrin/urun-sayfasi/yorum-yaz.tsx",
     "cekirdek/yonetim-paneli/kargo/ekran.tsx",
+    "cekirdek/yonetim-paneli/liste/tarih-suzgeci.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/ozellikler/ekran.tsx",
     "cekirdek/yonetim-paneli/siparisler/elle-siparis.tsx",

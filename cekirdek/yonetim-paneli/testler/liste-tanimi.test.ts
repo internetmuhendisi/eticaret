@@ -34,9 +34,19 @@ describe("adresin okunması", () => {
     });
     expect(durum.suzgecler).toEqual({ durum: ["kargoda"], odeme: ["havale", "kart"] });
     expect(listeDurumunuOku(tanim, { durum: "yok", odeme: "" }).suzgecler).toEqual({});
-    expect(listeDurumunuOku(tanim, { durum: ["iade-talebi", "kargoda"] }).suzgecler).toEqual({
-      durum: ["iade-talebi"],
+    expect(listeDurumunuOku(tanim, { durum: ["bakilacak", "kargoda"] }).suzgecler).toEqual({
+      durum: ["bakilacak"],
     });
+  });
+
+  it("eski değer yenisine çevrilir: kart 0239'un iade talepleri sekmesi bakılması gerekendir (kart 0267)", () => {
+    expect(listeDurumunuOku(tanim, { durum: "iade-talebi" }).suzgecler).toEqual({
+      durum: ["bakilacak"],
+    });
+    // Adrese yalnız yeni değer yazılır.
+    expect(listeAdresi(tanim, listeDurumunuOku(tanim, { durum: "iade-talebi" }))).toBe(
+      `${tanim.adres}?durum=bakilacak`,
+    );
   });
 
   it("sayfa yalnız rakamla ve en az 1; tanınmayan sıralama varsayılan", () => {
@@ -111,9 +121,9 @@ describe("liste ucunun girdisi", () => {
 
   it("adresle aynı durumu verir; aranan metin de okunur", () => {
     expect(
-      sema.parse({ durum: "iade-talebi", odeme: "havale,kart,havale", ara: " ayşe ", sayfa: "2" }),
+      sema.parse({ durum: "bakilacak", odeme: "havale,kart,havale", ara: " ayşe ", sayfa: "2" }),
     ).toEqual({
-      suzgecler: { durum: ["iade-talebi"], odeme: ["havale", "kart"] },
+      suzgecler: { durum: ["bakilacak"], odeme: ["havale", "kart"] },
       ara: "ayşe",
       siralama: "en-yeni",
       sayfa: 2,
@@ -151,9 +161,9 @@ describe("liste ucunun girdisi", () => {
 });
 
 describe("sipariş listesinin servis girdisi", () => {
-  it("sekme durum ya da bekleyen iade talebi olur, sayfa başına satır ayardan", () => {
-    const oku = (sorgu: Record<string, string>) =>
-      siparisListesiGirdisi(listeDurumunuOku(tanim, sorgu), 50);
+  const oku = (sorgu: Record<string, string>, bugun = "2026-11-23") =>
+    siparisListesiGirdisi(listeDurumunuOku(tanim, sorgu), 50, bugun);
+  it("sekme durum ya da bakılması gereken olur, sayfa başına satır ayardan", () => {
     expect(oku({ durum: "kargoda", odeme: "kart" })).toEqual({
       durum: "kargoda",
       odeme: ["kart"],
@@ -161,8 +171,111 @@ describe("sipariş listesinin servis girdisi", () => {
       sayfa: 1,
       sayfaBoyu: 50,
     });
-    expect(oku({ durum: "iade-talebi" })).toMatchObject({ talep: true });
-    expect(oku({ durum: "iade-talebi" })).not.toHaveProperty("durum");
+    expect(oku({ durum: "bakilacak" })).toMatchObject({ bakilacak: true });
+    expect(oku({ durum: "bakilacak" })).not.toHaveProperty("durum");
+    expect(oku({ durum: "iade-talebi" })).toMatchObject({ bakilacak: true });
+  });
+
+  it("tarihin hazır aralığı bugüne göre günlere çevrilir (bugün dahil); aralık aynen gider (kart 0267)", () => {
+    expect(oku({ tarih: "bugun" }).tarih).toEqual({ baslangic: "2026-11-23", bitis: "2026-11-23" });
+    expect(oku({ tarih: "son-7-gun" }).tarih).toEqual({
+      baslangic: "2026-11-17",
+      bitis: "2026-11-23",
+    });
+    // Ay ve yıl sınırı.
+    expect(oku({ tarih: "son-30-gun" }, "2026-03-01").tarih).toEqual({
+      baslangic: "2026-01-31",
+      bitis: "2026-03-01",
+    });
+    expect(oku({ tarih: "son-7-gun" }, "2027-01-02").tarih).toEqual({
+      baslangic: "2026-12-27",
+      bitis: "2027-01-02",
+    });
+    expect(oku({ tarih: "2026-11-01_2026-11-21" }).tarih).toEqual({
+      baslangic: "2026-11-01",
+      bitis: "2026-11-21",
+    });
+    expect(oku({ tarih: "_2026-11-21" }).tarih).toEqual({ baslangic: null, bitis: "2026-11-21" });
+    expect(oku({ tarih: "2026-11-01_" }).tarih).toEqual({ baslangic: "2026-11-01", bitis: null });
+    expect(oku({ kargo: "Hızlı%2C%20Kargo,Yurtiçi" }).kargo).toEqual(["Hızlı, Kargo", "Yurtiçi"]);
+  });
+});
+
+describe("tarih süzgeci (kart 0267)", () => {
+  it("adreste hazır kod ya da iki gün; takvimde olmayan, iki ucu boş, ters ve tanımda olmayan değer yok sayılır", () => {
+    const tarih = (deger: string) => listeDurumunuOku(tanim, { tarih: deger }).suzgecler["tarih"];
+    expect(tarih("bugun")).toEqual(["bugun"]);
+    expect(tarih("son-30-gun")).toEqual(["son-30-gun"]);
+    expect(tarih("2026-11-01_2026-11-21")).toEqual(["2026-11-01_2026-11-21"]);
+    expect(tarih("2026-11-21_2026-11-21")).toEqual(["2026-11-21_2026-11-21"]);
+    expect(tarih("_2026-11-21")).toEqual(["_2026-11-21"]);
+    for (const bozuk of [
+      "",
+      "_",
+      "dun",
+      "son-90-gun",
+      "2026-02-30_",
+      "2026-13-01_",
+      "2026-11-21_2026-11-01",
+      "2026-11-1_",
+      "2026-11-01",
+      "2026-11-01_2026-11-02_2026-11-03",
+      "constructor",
+    ]) {
+      expect(tarih(bozuk), bozuk).toBeUndefined();
+    }
+    // Tanımda olmayan hazır kod yok sayılır.
+    const yalnizBugun: ListeTanimi = {
+      ...tanim,
+      suzgecler: [{ kod: "tarih", tur: "tarih", secenekler: ["bugun"] }],
+    };
+    expect(listeDurumunuOku(yalnizBugun, { tarih: "son-7-gun" }).suzgecler).toEqual({});
+    expect(listeUcuSemasi(yalnizBugun).safeParse({ tarih: "son-7-gun" }).success).toBe(false);
+  });
+
+  it("adres aynen yazılır; liste ucu aynı kuralla okur, bozuğu reddeder", () => {
+    const durum = listeDurumunuOku(tanim, { tarih: "2026-11-01_2026-11-21", sayfa: "3" });
+    expect(listeAdresi(tanim, durum, { sayfa: 3 })).toBe(
+      `${tanim.adres}?tarih=2026-11-01_2026-11-21&sayfa=3`,
+    );
+    const sema = listeUcuSemasi(tanim);
+    expect(sema.parse({ tarih: "son-7-gun" }).suzgecler).toEqual({ tarih: ["son-7-gun"] });
+    expect(sema.parse({ tarih: "_2026-11-21" }).suzgecler).toEqual({ tarih: ["_2026-11-21"] });
+    for (const bozuk of ["", "2026-02-30_", "2026-11-21_2026-11-01", "bugun,son-7-gun"]) {
+      expect(sema.safeParse({ tarih: bozuk }).success, bozuk).toBe(false);
+    }
+  });
+});
+
+describe("değer süzgeci (kart 0267)", () => {
+  it("her değer ayrıca kodlanır: virgüllü ad bölünmez; sayfa ve uç aynı değerleri okur", () => {
+    const durum = listeDurumunuOku(tanim, {});
+    const adres = listeAdresi(tanim, durum, {
+      suzgecler: { kargo: ["Hızlı, Kargo", "Yurtiçi %50"] },
+    });
+    const sorgu = Object.fromEntries(new URL(adres, "https://ornek.test").searchParams);
+    const okunan = listeDurumunuOku(tanim, sorgu);
+    expect(okunan.suzgecler).toEqual({ kargo: ["Hızlı, Kargo", "Yurtiçi %50"] });
+    expect(listeAdresi(tanim, okunan)).toBe(adres);
+    expect(listeUcuSemasi(tanim).parse(sorgu).suzgecler).toEqual({
+      kargo: ["Hızlı, Kargo", "Yurtiçi %50"],
+    });
+  });
+
+  it("boş, uzun, çözülemeyen ve sınırı aşan değer: sayfa yok sayar, uç reddeder", () => {
+    const uzun = "a".repeat(61);
+    expect(listeDurumunuOku(tanim, { kargo: `${uzun},Aras,,%E0%A4%A` }).suzgecler).toEqual({
+      kargo: ["Aras"],
+    });
+    const sema = listeUcuSemasi(tanim);
+    expect(sema.safeParse({ kargo: uzun }).success).toBe(false);
+    expect(sema.safeParse({ kargo: "Aras," }).success).toBe(false);
+    expect(sema.safeParse({ kargo: "%E0%A4%A" }).success).toBe(false);
+    const cok = Array.from({ length: kayitSuzgeciSiniri + 1 }, (_, sira) => `F${sira}`);
+    expect(listeDurumunuOku(tanim, { kargo: cok.join(",") }).suzgecler["kargo"]).toHaveLength(
+      kayitSuzgeciSiniri,
+    );
+    expect(sema.safeParse({ kargo: cok.join(",") }).success).toBe(false);
   });
 });
 

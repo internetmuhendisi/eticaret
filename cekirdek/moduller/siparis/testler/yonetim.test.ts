@@ -7,7 +7,8 @@
 //   satırın kilidinde bekler (sıra kurularak). Kayıtta olmayan geçişi serviste ve veritabanında tetikleyici reddeder;
 //   tetikleyicinin geçişleri kayıtla aynıdır.
 // - Her işlem geçmişe kim, neden ile yazılır; notlar değiştirilemez, ayrıntıda yazanın e-postasıyla gelir.
-// - Liste durum süzgeci, sayıları, arama (joker yok), sayfası ve havale işaretiyle.
+// - Liste durum süzgeci, sayıları, arama (joker yok), sayfası ve havale işaretiyle; tarih (saat dilimi, gece yarısı,
+//   yaz saati), bakılması gereken işler ve kargo firması süzgeçleri (kart 0267).
 // - Yorum için satın alma yalnız teslim edilmiş siparişte sayılır.
 // - Kargo firmaları listesi gördüğü hâliyle değişir; takip adresi denetlenir.
 // - Saklama süresi dolan siparişin kişisel bilgileri silinir, yenisi kalır.
@@ -36,7 +37,14 @@ import { satinAldiMi } from "../../yorum/satin-alma.ts";
 import { yorumServisi } from "../../yorum/servis.ts";
 import { siparisAyarlari } from "../ayarlar.ts";
 import { havaleBildirimiFormuSemasi } from "../havale-bildirimi-semalari.ts";
-import { havaleBildirimleri, siparisGecmisi, siparisler, siparisNotlari } from "../model.ts";
+import {
+  havaleBildirimleri,
+  siparisGecmisi,
+  siparisIadeleri,
+  siparisIadeTalepleri,
+  siparisler,
+  siparisNotlari,
+} from "../model.ts";
 import {
   kargoFirmalariSemasi,
   siparisListesiSemasi,
@@ -593,6 +601,212 @@ describe("liste", () => {
     expect((await liste({ sayfa: 2 })).satirlar).toHaveLength(2);
     expect(await liste({ sayfa: 9 })).toMatchObject({ sayfa: 2 });
     expect((await liste({ sayfa: 1, sayfaBoyu: 50 })).satirlar).toHaveLength(27);
+  });
+});
+
+describe("liste süzgeçleri (kart 0267)", () => {
+  const liste = (vt: Veritabani, girdi: Record<string, unknown>, ile = yonetim) =>
+    ile.liste(vt, siparisListesiSemasi.parse(girdi));
+  const numaralar = async (vt: Veritabani, girdi: Record<string, unknown>, ile = yonetim) =>
+    (await liste(vt, girdi, ile)).satirlar.map((s) => s.numara).toSorted();
+  const zamanla = (vt: Veritabani, numara: string, an: string) =>
+    vt
+      .update(siparisler)
+      .set({ olusturma_zamani: new Date(an) })
+      .where(eq(siparisler.numara, numara));
+
+  it("tarih günü sitenin saat dilimiyle sayar: gece yarısı sınırı, iki uç dahil, boş uç sınırsız, sayılara da uyar", async () => {
+    const h = await hazirla();
+    const { birim } = await h.urunAc();
+    const [a, b, c, d] = [
+      await ver(h.vt, birim, havale),
+      await ver(h.vt, birim, havale),
+      await ver(h.vt, birim, kapida),
+      await ver(h.vt, birim, kapida),
+    ] as [string, string, string, string];
+    // İstanbul (UTC+3): a 20 Kasım'ın son milisaniyesi, b 21 Kasım'ın ilk anı, c 21'in sonu, d 22'nin başı.
+    await zamanla(h.vt, a, "2026-11-20T20:59:59.999Z");
+    await zamanla(h.vt, b, "2026-11-20T21:00:00.000Z");
+    await zamanla(h.vt, c, "2026-11-21T20:59:59.999Z");
+    await zamanla(h.vt, d, "2026-11-21T21:00:00.000Z");
+    const istanbul = siparisYonetimi({
+      ...site,
+      ayarlar: { ...site.ayarlar, saatDilimi: "Europe/Istanbul" },
+    });
+    const gun = (baslangic: string | null, bitis: string | null) => ({
+      tarih: { baslangic, bitis },
+    });
+    expect(await numaralar(h.vt, gun("2026-11-21", "2026-11-21"), istanbul)).toEqual(
+      [b, c].toSorted(),
+    );
+    expect(await numaralar(h.vt, gun("2026-11-20", "2026-11-21"), istanbul)).toEqual(
+      [a, b, c].toSorted(),
+    );
+    expect(await numaralar(h.vt, gun("2026-11-21", null), istanbul)).toEqual([b, c, d].toSorted());
+    expect(await numaralar(h.vt, gun(null, "2026-11-20"), istanbul)).toEqual([a]);
+    // Sekme sayıları tarih süzgecine uyar (a ve b havale, ödeme bekliyor).
+    expect(
+      (await liste(h.vt, gun("2026-11-21", "2026-11-21"), istanbul)).sayilar["odeme-bekleniyor"],
+    ).toBe(2);
+    // Aynı anlar New York'ta (UTC-5) başka günlerdir: 21 Kasım 05.00Z ile 22 Kasım 05.00Z arası.
+    const newYork = siparisYonetimi({
+      ...site,
+      ayarlar: { ...site.ayarlar, saatDilimi: "America/New_York" },
+    });
+    expect(await numaralar(h.vt, gun("2026-11-21", "2026-11-21"), newYork)).toEqual(
+      [c, d].toSorted(),
+    );
+    expect(await numaralar(h.vt, gun("2026-11-20", "2026-11-20"), newYork)).toEqual(
+      [a, b].toSorted(),
+    );
+    // Yaz saatine geçilen gün 23 saattir: 8 Mart'ın sonu 9 Mart 04.00Z (05.00Z değil).
+    await zamanla(h.vt, a, "2026-03-09T03:59:59.999Z");
+    await zamanla(h.vt, b, "2026-03-09T04:00:00.000Z");
+    expect(await numaralar(h.vt, gun("2026-03-08", "2026-03-08"), newYork)).toEqual([a]);
+    expect(await numaralar(h.vt, gun("2026-03-09", "2026-03-09"), newYork)).toEqual([b]);
+  });
+
+  it("tarih girdisi: takvimde olmayan gün, iki ucu boş ve ters aralık reddedilir", () => {
+    const gecer = (tarih: unknown) => siparisListesiSemasi.safeParse({ tarih }).success;
+    expect(gecer({ baslangic: "2026-11-01", bitis: "2026-11-01" })).toBe(true);
+    expect(gecer({ baslangic: null, bitis: "2026-11-01" })).toBe(true);
+    expect(gecer({ baslangic: null, bitis: null })).toBe(false);
+    expect(gecer({ baslangic: "2026-11-02", bitis: "2026-11-01" })).toBe(false);
+    expect(gecer({ baslangic: "2026-02-30", bitis: null })).toBe(false);
+    expect(gecer({ baslangic: "2026-11-01T00:00", bitis: null })).toBe(false);
+  });
+
+  it("bakılması gereken: bildirilmiş havale yalnız ödeme beklerken, bekleyen iade talebi ve sonucu beklenen iade; işaretler ve sayı", async () => {
+    const h = await hazirla();
+    const { birim } = await h.urunAc();
+    const kim = await h.yonetici();
+    const bildirilen = await ver(h.vt, birim, havale, { eposta: "ayse@ornek.test" });
+    const onaylanan = await ver(h.vt, birim, havale, { eposta: "mert@ornek.test" });
+    const talepli = await ver(h.vt, birim, kapida);
+    const iadeli = await ver(h.vt, birim, kapida);
+    const sade = await ver(h.vt, birim, kapida);
+    for (const [numara, eposta] of [
+      [bildirilen, "ayse@ornek.test"],
+      [onaylanan, "mert@ornek.test"],
+    ] as const) {
+      await siparisServisi(site).havaleBildir(
+        h.vt,
+        { tur: "eposta", eposta },
+        havaleBildirimiFormuSemasi.parse({
+          numara,
+          gonderen: "Deniz Yılmaz",
+          hesap: hesapKimligi,
+          tutar: "100,00",
+          odemeTarihi: new Date().toISOString().slice(0, 10),
+        }),
+      );
+    }
+    // Onaylanan havalenin bildirimi artık bakılacak iş değildir.
+    await yonetim.islemYap(h.vt, kim, {
+      numara: onaylanan,
+      islem: "havale-onayla",
+      gorulenDurum: "odeme-bekleniyor",
+    });
+    const kimligi = async (numara: string) =>
+      (
+        await h.vt
+          .select({ kimlik: siparisler.kimlik })
+          .from(siparisler)
+          .where(eq(siparisler.numara, numara))
+      )[0]?.kimlik ?? "";
+    await h.vt.insert(siparisIadeTalepleri).values({
+      siparis_kimligi: await kimligi(talepli),
+      durum: "bekliyor",
+      kalemler: [{ sira: 1, adet: 1 }],
+      neden: "diger",
+      kim_turu: "sistem",
+      kim_adi: "deneme",
+    });
+    // Sonucu beklenen iade: kartla iade kuruluşun cevabını bekliyor (sahte satır).
+    const iade = {
+      siparis_kimligi: await kimligi(iadeli),
+      tur: "iptal",
+      durum: "bekliyor",
+      yontem: "kurulus",
+      tutar: 100,
+      vergi_dokumu: [],
+      kalemler: [],
+      kargo_tutari: 0,
+      stoga_konacak: false,
+      neden: "diger",
+      kim_turu: "sistem",
+      kim_adi: "deneme",
+    };
+    await h.vt.insert(siparisIadeleri).values(iade);
+
+    const bakilacak = await liste(h.vt, { bakilacak: true });
+    expect(bakilacak.satirlar.map((s) => s.numara).toSorted()).toEqual(
+      [bildirilen, talepli, iadeli].toSorted(),
+    );
+    expect(bakilacak.bakilacakSayisi).toBe(3);
+    const satir = (numara: string) => bakilacak.satirlar.find((s) => s.numara === numara);
+    expect(satir(bildirilen)).toMatchObject({
+      havaleBildirildi: true,
+      iadeTalebi: false,
+      iadeBekliyor: false,
+    });
+    expect(satir(talepli)).toMatchObject({ havaleBildirildi: false, iadeTalebi: true });
+    expect(satir(iadeli)).toMatchObject({ iadeTalebi: false, iadeBekliyor: true });
+    const hepsi = await liste(h.vt, {});
+    expect(hepsi.satirlar.find((s) => s.numara === sade)).toMatchObject({
+      havaleBildirildi: false,
+      iadeTalebi: false,
+      iadeBekliyor: false,
+    });
+    // Sayı sekmenin dışındaki süzgeçlere uyar, sekmeden ve aramadan bağımsızdır.
+    expect((await liste(h.vt, { odeme: ["havale"] })).bakilacakSayisi).toBe(1);
+    expect((await liste(h.vt, { durum: "hazirlaniyor", ara: "yok" })).bakilacakSayisi).toBe(3);
+    // İade sonuçlanınca ve talep karara bağlanınca bakılacak iş kalmaz.
+    await h.vt
+      .update(siparisIadeleri)
+      .set({ durum: "basarisiz", sonuc_zamani: new Date() })
+      .where(eq(siparisIadeleri.siparis_kimligi, iade.siparis_kimligi));
+    expect(await numaralar(h.vt, { bakilacak: true })).toEqual([bildirilen, talepli].toSorted());
+  });
+
+  it("kargo firması siparişin adıyla süzülür; firmalar tekrarsız ve sitenin dilinin harf sırasıyla, sayılar uyar", async () => {
+    const h = await hazirla();
+    const { birim } = await h.urunAc();
+    const siparisler3 = [
+      await ver(h.vt, birim, kapida),
+      await ver(h.vt, birim, kapida),
+      await ver(h.vt, birim, kapida),
+      await ver(h.vt, birim, kapida),
+      await ver(h.vt, birim, kapida),
+    ];
+    const adlar = ["Çok Hızlı", "Cep Kargo", "Hızlı, Kargo", "Cep Kargo", null];
+    for (const [sira, numara] of siparisler3.entries()) {
+      const ad = adlar[sira];
+      if (ad === null || ad === undefined) continue;
+      await h.vt
+        .update(siparisler)
+        .set({ kargo_firmasi: ad, kargo_zamani: new Date() })
+        .where(eq(siparisler.numara, numara));
+    }
+    // Ç, C'den sonra gelir (Unicode sırasında Z'den sonra olurdu); kargosuz sipariş firma vermez.
+    expect(await yonetim.kargoFirmalari(h.vt)).toEqual(["Cep Kargo", "Çok Hızlı", "Hızlı, Kargo"]);
+    expect(await numaralar(h.vt, { kargo: ["Cep Kargo"] })).toEqual(
+      [siparisler3[1], siparisler3[3]].toSorted(),
+    );
+    expect(await numaralar(h.vt, { kargo: ["Hızlı, Kargo", "Çok Hızlı"] })).toEqual(
+      [siparisler3[0], siparisler3[2]].toSorted(),
+    );
+    // Firma adı tam eşleşir: büyük küçük harf ve parça eşleşmez.
+    expect((await liste(h.vt, { kargo: ["cep kargo"] })).toplam).toBe(0);
+    expect((await liste(h.vt, { kargo: ["Cep"] })).toplam).toBe(0);
+    expect((await liste(h.vt, { kargo: ["Cep Kargo"] })).sayilar["odeme-bekleniyor"]).toBe(2);
+    // Girdinin sınırı: boş ad ve liste sınırı.
+    expect(siparisListesiSemasi.safeParse({ kargo: [] }).success).toBe(false);
+    expect(siparisListesiSemasi.safeParse({ kargo: [" "] }).success).toBe(false);
+    expect(
+      siparisListesiSemasi.safeParse({ kargo: Array.from({ length: 51 }, (_, i) => `F${i}`) })
+        .success,
+    ).toBe(false);
   });
 });
 

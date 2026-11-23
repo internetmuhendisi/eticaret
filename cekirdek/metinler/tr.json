@@ -3182,6 +3182,7 @@
         "secimKutusu": "Seçim kutusu",
         "onayKutusu": "Onay kutusu",
         "acilirMenu": "Açılır menü",
+        "acilirPanel": "Açılır panel",
         "pencere": "Pencere",
         "yanPencere": "Yan pencere",
         "sekmeler": "Sekmeler",
@@ -3420,7 +3421,11 @@
       "koseBasligi": "Köşeler",
       "koseKeskin": "Keskin",
       "koseOrta": "Orta",
-      "koseYuvarlak": "Yuvarlak"
+      "koseYuvarlak": "Yuvarlak",
+      "panelAc": "Not ekle",
+      "panelAdi": "Not",
+      "panelAlani": "Kısa not",
+      "panelKapat": "Tamam"
     },
     "bolum": {
       "ad": "Deneme bölümü",

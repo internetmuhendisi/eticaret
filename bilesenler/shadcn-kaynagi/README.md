@@ -13,6 +13,7 @@ Bu dosyalar kod değildir: hiçbir yerden içe aktarılmaz, denetime girmez. Yal
 | select | `secim-kutusu.tsx` |
 | checkbox | `onay-kutusu.tsx` |
 | dropdown-menu | `acilir-menu.tsx` |
+| popover | `acilir-panel.tsx` (kart 0267, indirme 2026-11-23) |
 | dialog | `pencere.tsx` |
 | sheet | `yan-pencere.tsx` |
 | tabs | `sekmeler.tsx` |

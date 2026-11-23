@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 // Panelin ortak liste parçası (kart 0258), siparişler listesiyle: satır seçimi (tek tek, sayfanın hepsi, kısmen),
+// tarih süzgecinin paneli, değer süzgecinin şeridi ve bakılması gereken sekmesi (kart 0267),
 // toplu işlem çubuğu, onay, sonuç (işlenen sayısı, işlenemeyenlerin nedeni, odak), izni olmayana seçim yok; boş,
 // sonuçsuz ve hata hâlleri; adreste olmayan arama uca gider; sıralanabilir sütun ve sekmeler. Uç sahte fetch ile
 // verilir, yönlendirici taklittir.
@@ -13,6 +14,13 @@ import { type ListeDurumu, type ListeVerisi, listeDurumunuOku } from "../liste/t
 import { SiparisListesi } from "../siparisler/liste.tsx";
 import { siparisListesiTanimi } from "../siparisler/liste-tanimi.ts";
 import type { SiparisSatiri } from "../siparisler/veri.ts";
+
+// Radix'in açılır paneli ve radyo grubu boyutu ResizeObserver ile izler; jsdom'da yoktur.
+globalThis.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
 
 const yenile = vi.fn();
 const git = vi.fn();
@@ -32,6 +40,7 @@ const satir = (numara: string, ek: Partial<SiparisSatiri> = {}): SiparisSatiri =
   tutar: "100,00",
   havaleBildirildi: false,
   iadeTalebi: false,
+  iadeBekliyor: false,
   ...ek,
 });
 
@@ -72,11 +81,24 @@ const ciz = (
   {
     durum = listeDurumunuOku(siparisListesiTanimi, {}),
     topluIslemler = ["hazirlamaya-al"],
-  }: { durum?: ListeDurumu; topluIslemler?: string[] } = {},
+    kargo = ["Aras", "Hızlı, Kargo"],
+    gunYazilari = {},
+  }: {
+    durum?: ListeDurumu;
+    topluIslemler?: string[];
+    kargo?: string[];
+    gunYazilari?: Record<string, string>;
+  } = {},
 ) =>
   render(
     <MetinSaglayici dil="tr">
-      <SiparisListesi durum={durum} veri={v} topluIslemler={topluIslemler} />
+      <SiparisListesi
+        durum={durum}
+        veri={v}
+        topluIslemler={topluIslemler}
+        kayitSecenekleri={{ kargo: kargo.map((ad) => ({ deger: ad, ad })) }}
+        gunYazilari={gunYazilari}
+      />
     </MetinSaglayici>,
   );
 
@@ -283,6 +305,8 @@ describe("bağımsız kontrolün bulguları", () => {
           durum={listeDurumunuOku(siparisListesiTanimi, { sirala: "en-eski" })}
           veri={veri([satir("S-1"), satir("S-2")])}
           topluIslemler={["hazirlamaya-al"]}
+          kayitSecenekleri={{}}
+          gunYazilari={{}}
         />
       </MetinSaglayici>,
     );
@@ -344,5 +368,148 @@ describe("bağımsız kontrolün bulguları", () => {
     ).toBeNull();
     rerender(stokCiz("termos"));
     expect((kutu() as HTMLInputElement).value).toBe("termos");
+  });
+});
+
+describe("tarih ve kargo süzgeçleri, bakılması gereken (kart 0267)", () => {
+  const tarihDugmesi = () =>
+    screen.getByRole("button", {
+      name: new RegExp(`^${metin("yonetim.siparisler.tarihSuzgeci")}`),
+    });
+  const panel = () =>
+    within(screen.getByRole("dialog", { name: metin("yonetim.siparisler.tarihSuzgeci") }));
+  const ac = async () => {
+    await act(async () => {
+      fireEvent.click(tarihDugmesi());
+    });
+  };
+  const uygula = async () => {
+    await act(async () => {
+      fireEvent.click(panel().getByRole("button", { name: metin("yonetim.liste.tarih.uygula") }));
+    });
+  };
+
+  it("hazır aralık seçilip uygulanınca adrese yazılır, panel kapanır; Temizle süzgeci kaldırır", async () => {
+    ciz(veri([satir("S-1")]), {
+      durum: listeDurumunuOku(siparisListesiTanimi, { odeme: "havale", sayfa: "2" }),
+    });
+    await ac();
+    fireEvent.click(
+      panel().getByRole("radio", { name: metin("yonetim.liste.tarih.hazir.son-7-gun") }),
+    );
+    await uygula();
+    expect(git).toHaveBeenLastCalledWith("/yonetim/siparisler?tarih=son-7-gun&odeme=havale", {
+      scroll: false,
+    });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    await ac();
+    await act(async () => {
+      fireEvent.click(panel().getByRole("button", { name: metin("yonetim.liste.tarih.temizle") }));
+    });
+    expect(git).toHaveBeenLastCalledWith("/yonetim/siparisler?odeme=havale", { scroll: false });
+  });
+
+  it("iki gün: boşta ve ters sırada alanın hatası ve odak, istek gitmez; düzelince adrese yazılır", async () => {
+    ciz(veri([satir("S-1")]));
+    await ac();
+    fireEvent.click(panel().getByRole("radio", { name: metin("yonetim.liste.tarih.ozel") }));
+    const baslangic = panel().getByLabelText(metin("yonetim.liste.tarih.baslangic"));
+    const bitis = panel().getByLabelText(metin("yonetim.liste.tarih.bitis"));
+    await uygula();
+    expect(git).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(baslangic);
+    expect(baslangic.getAttribute("aria-invalid")).toBe("true");
+    expect(panel().getByText(metin("yonetim.liste.tarih.hata.bos"))).toBeDefined();
+    fireEvent.change(baslangic, { target: { value: "2026-11-21" } });
+    fireEvent.change(bitis, { target: { value: "2026-11-01" } });
+    // Yazınca hata kalkar.
+    expect(panel().queryByText(metin("yonetim.liste.tarih.hata.bos"))).toBeNull();
+    await uygula();
+    expect(git).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(bitis);
+    expect(bitis.getAttribute("aria-invalid")).toBe("true");
+    expect(panel().getByText(metin("yonetim.liste.tarih.hata.sira"))).toBeDefined();
+    fireEvent.change(baslangic, { target: { value: "2026-11-01" } });
+    fireEvent.change(bitis, { target: { value: "2026-11-21" } });
+    await uygula();
+    expect(git).toHaveBeenLastCalledWith("/yonetim/siparisler?tarih=2026-11-01_2026-11-21", {
+      scroll: false,
+    });
+    // Tek uç da olur (adres değişmediği için panel yine seçimsiz açılır).
+    await ac();
+    fireEvent.click(panel().getByRole("radio", { name: metin("yonetim.liste.tarih.ozel") }));
+    fireEvent.change(panel().getByLabelText(metin("yonetim.liste.tarih.bitis")), {
+      target: { value: "2026-11-21" },
+    });
+    await uygula();
+    expect(git).toHaveBeenLastCalledWith("/yonetim/siparisler?tarih=_2026-11-21", {
+      scroll: false,
+    });
+  });
+
+  it("panel adresteki değerle açılır; şeritte günler sunucunun yazılışıyla, hazır aralık adıyla", async () => {
+    ciz(veri([satir("S-1")]), {
+      durum: listeDurumunuOku(siparisListesiTanimi, { tarih: "2026-11-01_2026-11-21" }),
+      gunYazilari: { "2026-11-01": "01.11.2026", "2026-11-21": "21.11.2026" },
+    });
+    const serit = within(
+      screen.getByRole("list", { name: metin("yonetim.liste.seciliSuzgecler") }),
+    );
+    const cip = serit.getByRole("link", { name: /01\.11\.2026 – 21\.11\.2026/ });
+    expect(cip.textContent).toBe("Tarih: 01.11.2026 – 21.11.2026");
+    expect(cip.getAttribute("href")).toBe("/yonetim/siparisler");
+    // Düğme seçili süzgeci sayısıyla gösterir.
+    expect(tarihDugmesi().textContent).toContain("1");
+    await ac();
+    expect(
+      panel()
+        .getByRole("radio", { name: metin("yonetim.liste.tarih.ozel") })
+        .getAttribute("aria-checked"),
+    ).toBe("true");
+    expect(
+      (panel().getByLabelText(metin("yonetim.liste.tarih.baslangic")) as HTMLInputElement).value,
+    ).toBe("2026-11-01");
+    cleanup();
+    ciz(veri([satir("S-1")]), {
+      durum: listeDurumunuOku(siparisListesiTanimi, { tarih: "son-30-gun" }),
+    });
+    expect(screen.getByRole("link", { name: /Tarih: Son 30 gün/ })).toBeDefined();
+    cleanup();
+    ciz(veri([satir("S-1")]), {
+      durum: listeDurumunuOku(siparisListesiTanimi, { tarih: "2026-11-01_" }),
+      gunYazilari: { "2026-11-01": "01.11.2026" },
+    });
+    expect(screen.getByRole("link", { name: /Tarih: 01\.11\.2026 ve sonrası/ })).toBeDefined();
+  });
+
+  it("kargo firması şeritte adıyla (listede olmayan ad da), kaldırma bağlantısı kodlanmış adresle", () => {
+    ciz(veri([satir("S-1")]), {
+      durum: listeDurumunuOku(siparisListesiTanimi, {
+        kargo: `${encodeURIComponent("Hızlı, Kargo")},Eski%20Firma`,
+      }),
+    });
+    const serit = within(
+      screen.getByRole("list", { name: metin("yonetim.liste.seciliSuzgecler") }),
+    );
+    expect(
+      serit.getByRole("link", { name: /Kargo firması: Hızlı, Kargo/ }).getAttribute("href"),
+    ).toBe("/yonetim/siparisler?kargo=Eski%2520Firma");
+    expect(serit.getByRole("link", { name: /Kargo firması: Eski Firma/ })).toBeDefined();
+  });
+
+  it("bakılması gereken sekmesi sayısıyla; satırda sonucu beklenen iade işareti", () => {
+    ciz(
+      veri([satir("S-1", { iadeBekliyor: true })], {
+        sekmeSayilari: { "": 1, "odeme-bekleniyor": 1, bakilacak: 1 },
+      }),
+      { durum: listeDurumunuOku(siparisListesiTanimi, { durum: "iade-talebi" }) },
+    );
+    const sekmeler = within(
+      screen.getByRole("navigation", { name: metin("yonetim.siparisler.durumSuzgeci") }),
+    );
+    const sekme = sekmeler.getByRole("link", { name: /Bakılması gereken/ });
+    expect(sekme.getAttribute("aria-current")).toBe("page");
+    expect(sekme.getAttribute("href")).toBe("/yonetim/siparisler?durum=bakilacak");
+    expect(tablo().getByText(metin("yonetim.siparisler.iadeBekliyor"))).toBeDefined();
   });
 });
