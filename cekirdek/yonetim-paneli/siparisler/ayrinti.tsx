@@ -13,6 +13,7 @@ import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { doldur } from "../../metinler/doldur";
 import { metin } from "../../metinler/site-metni";
 import { DurumRozeti } from "./durum-rozeti";
+import { FaturaIslemleri } from "./fatura";
 import { IadeyiYenidenDene } from "./iade-penceresi";
 import { IadeTalebiKutusu } from "./iade-talebi-kutusu";
 import {
@@ -323,6 +324,55 @@ export function SiparisAyrintisi({ veri }: { veri: SiparisAyrintisiVerisi }) {
             </ul>
           </Bolum>
         )}
+        <Bolum baslik={metin("yonetim.siparis.fatura.baslik")} kimlik="siparis-faturasi">
+          {veri.faturaBelgesi === null ? (
+            <p className="text-kucuk text-soluk-yazi">{metin("yonetim.siparis.fatura.yok")}</p>
+          ) : (
+            <dl className="flex flex-col gap-3">
+              <Bilgi ad={metin("yonetim.siparis.fatura.numara")}>{veri.faturaBelgesi.numara}</Bilgi>
+              <Bilgi ad={metin("yonetim.siparis.fatura.tarih")}>
+                {veri.faturaBelgesi.tarihYazisi}
+              </Bilgi>
+              <Bilgi ad={metin("yonetim.siparis.fatura.dosya")}>
+                {veri.faturaBelgesi.dosya === null ? (
+                  <span className="font-normal">{metin("yonetim.siparis.fatura.dosyaYok")}</span>
+                ) : (
+                  <Baglanti
+                    href={`/kapi/yonetici/siparis-faturasi?numara=${encodeURIComponent(veri.numara)}`}
+                    download
+                    prefetch={false}
+                    aria-label={doldur(metin("yonetim.siparis.fatura.indirAdi"), {
+                      numara: veri.faturaBelgesi.numara,
+                      boyut: veri.faturaBelgesi.dosya.boyut,
+                    })}
+                    className="font-normal"
+                  >
+                    {doldur(metin("yonetim.siparis.fatura.pencere.dosyaAdi"), {
+                      ad: doldur(metin("yonetim.siparis.fatura.indir"), { numara: veri.numara }),
+                      boyut: veri.faturaBelgesi.dosya.boyut,
+                    })}
+                  </Baglanti>
+                )}
+              </Bilgi>
+              {veri.kisiselSilindi ? null : (
+                <Bilgi ad={metin("yonetim.siparis.fatura.musteri")}>
+                  <span className="font-normal">
+                    {metin("yonetim.siparis.fatura.musteriGorur")}
+                  </span>
+                </Bilgi>
+              )}
+            </dl>
+          )}
+          {veri.faturaDuzenlenebilir ? (
+            <FaturaIslemleri
+              numara={veri.numara}
+              fatura={veri.faturaBelgesi}
+              dosyaEklenebilir={veri.faturaDosyasiEklenebilir}
+              belge={veri.belge}
+              bugun={veri.bugun}
+            />
+          ) : null}
+        </Bolum>
         {veri.kargo === null ? null : (
           <Bolum baslik={metin("yonetim.siparis.kargoBilgisi.baslik")} kimlik="siparis-kargosu">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-orta bg-yuzey px-4 py-3">

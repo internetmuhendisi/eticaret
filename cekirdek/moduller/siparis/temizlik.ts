@@ -2,8 +2,9 @@
 // sahibinin ayarı) dolan siparişte ad, soyad, telefon, e-posta, sokak adresi, posta kodu, not ve kurumsal faturanın
 // firma ve vergi bilgisi silinir; ülke, il ve ilçe, tutarlar, ürünler ve vergi dökümü kalır. Siparişin ödeme
 // oturumunda ve havale bildirimlerinde aynı bilgiler silinir; açık takip anahtarları kapanır. Müşterinin iade
-// talebindeki açıklama (serbest metin) silinir; mağazanın ret açıklaması not gibi kalır (kart 0239). Süre veritabanının
-// saatiyle karşılaştırılır.
+// talebindeki açıklama (serbest metin) silinir; mağazanın ret açıklaması not gibi kalır (kart 0239). Faturanın PDF'i
+// (ad ve adres taşır) siparişten ayrılır ve silinmiş işaretlenir; faturanın numarası ve tarihi kalır (kart 0268). Süre
+// veritabanının saatiyle karşılaştırılır.
 //
 // Siparişin notları silinmez: not mağaza sahibinin yazısıdır, değiştirilemez (yalnız disiplin: nota kişisel bilgi
 // yazılmaması mağaza sahibine bırakılır). Arka plan süreci yükler: içe aktarmalar uzantılıdır.
@@ -37,10 +38,15 @@ export const kisiselVeriTemizligi = async (vt: Veritabani, site: Site): Promise<
     const teslimat = sql`jsonb_build_object('ad', '', 'soyad', '', 'adres', ${teslimatAdresi})`;
     // Fatura: türü ve "adres aynı" kalır; kurumsalın firma ve vergi bilgisi boş, ayrı adresi silinmiş.
     const fatura = sql`jsonb_build_object('tur', fatura->'tur', 'adresAyni', fatura->'adresAyni') || case when fatura->>'tur' = 'kurumsal' then jsonb_build_object('firma', '', 'vergiDairesi', '', 'vergiNumarasi', '') else '{}'::jsonb end || case when jsonb_typeof(fatura->'adres') = 'object' then jsonb_build_object('adres', ${faturaAdresi}) else '{}'::jsonb end`;
+    // Faturanın dosyası (kart 0268): önce silinmiş işaretlenir, sonra siparişten ayrılır.
+    await islem.execute(sql`
+      update dosyalar set silinme_zamani = now()
+      where silinme_zamani is null
+        and kimlik in (select fatura_dosyasi from siparisler where kimlik in (${liste}))`);
     await islem.execute(sql`
       update siparisler
       set eposta = '', teslimat = ${teslimat}, fatura = ${fatura}, "not" = null,
-          kisisel_veri_silinme_zamani = now()
+          fatura_dosyasi = null, kisisel_veri_silinme_zamani = now()
       where kimlik in (${liste})`);
     await islem.execute(sql`
       update odeme_oturumlari

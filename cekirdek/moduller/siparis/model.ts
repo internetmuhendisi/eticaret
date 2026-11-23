@@ -19,6 +19,9 @@
 //   firmanın kalıbından kurulmuş takip adresi (kart 0234). Firma listesi sonradan değişse de sipariş değişmez.
 // - teslim_zamani: mağaza sahibinin teslim edildi dediği an (karar 0145).
 // - kisisel_veri_silinme_zamani: saklama süresi dolunca ad, adres, telefon, e-posta ve not silindi (karar 0145).
+// - fatura_numarasi, fatura_tarihi, fatura_dosyasi, fatura_zamani: mağazanın kestiği faturanın numarası, tarihi
+//   (takvim günü), isteğe bağlı PDF'i ve bilginin son yazıldığı an (kart 0268, karar 0170). Numara ve tarih birlikte
+//   yazılır; dosya numarasız olmaz. Saklama süresi dolunca dosya silinir, numara ve tarih kalır.
 //
 // Aranan alanlar:
 // - numara: havale bildirimi ve müşterinin sorusu, tekil indeks.
@@ -33,6 +36,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  date,
   index,
   integer,
   jsonb,
@@ -43,6 +47,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { kimlik, tutar, zaman } from "../../veritabani/turler.ts";
+import { dosyalar } from "../dosya/model.ts";
 import { musteriler } from "../musteri/model.ts";
 import { type OturumOnayi, odemeOturumlari } from "../odeme/model.ts";
 import type { Fatura, Teslimat } from "../odeme/semalar.ts";
@@ -97,6 +102,10 @@ export const siparisler = pgTable(
     kargo_zamani: zaman(),
     teslim_zamani: zaman(),
     kisisel_veri_silinme_zamani: zaman(),
+    fatura_numarasi: text(),
+    fatura_tarihi: date({ mode: "string" }),
+    fatura_dosyasi: uuid().references(() => dosyalar.kimlik, { onDelete: "restrict" }),
+    fatura_zamani: zaman(),
     erisim_ozeti: text().notNull(),
     olusturma_zamani: zaman().notNull().defaultNow(),
   },
@@ -113,6 +122,11 @@ export const siparisler = pgTable(
       .on(tablo.odeme_son_zamani)
       .where(sql`${tablo.durum} = 'odeme-bekleniyor' and ${tablo.odeme_son_zamani} is not null`),
     // Kayıt dosyalarıyla aynıdır (cekirdek/kayitlar/siparis.ts, odeme.ts); bunu servis testi denetler.
+    // Fatura bilgisi birlikte yazılır (kart 0268): numara, tarih ve an ya üçü de var ya hiçbiri; dosya numarasız olmaz.
+    check(
+      "siparisler_fatura",
+      sql`(${tablo.fatura_numarasi} is null) = (${tablo.fatura_tarihi} is null) and (${tablo.fatura_numarasi} is null) = (${tablo.fatura_zamani} is null) and (${tablo.fatura_dosyasi} is null or ${tablo.fatura_numarasi} is not null) and (${tablo.fatura_numarasi} is null or length(${tablo.fatura_numarasi}) between 1 and 60)`,
+    ),
     check(
       "siparisler_durum",
       sql`${tablo.durum} in ('odeme-bekleniyor', 'hazirlaniyor', 'kargoda', 'teslim-edildi', 'kismi-iade', 'iade-edildi', 'iptal')`,

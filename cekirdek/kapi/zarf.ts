@@ -35,35 +35,55 @@ export class DosyaYaniti {
   // aradaki ortak bir önbellek onu oturumu olmayan birine veremez.
   readonly onbellek: "ortak" | "ozel";
 
+  // İndirilecek belge (kart 0268, karar 0170: faturanın PDF'i): verilen adla indirilir, sayfada açılmaz (içinde kod
+  // taşıyabilir: tarayıcı onu sitenin adresinde çalıştırmaz), hiçbir önbelleğe yazılmaz (kişisel belge, ortak
+  // bilgisayar). Adın yalnız harf, rakam, nokta ve tiresi kalır.
+  readonly indirme: string | undefined;
+
   constructor(
     icerik: Uint8Array,
     mime: string,
     etiket: string,
     onbellek: "ortak" | "ozel" = "ortak",
+    indirme?: string,
   ) {
     this.icerik = icerik;
     this.mime = mime;
     this.etiket = etiket;
     this.onbellek = onbellek;
+    this.indirme = indirme;
   }
 }
+
+const indirmeAdi = (ad: string): string => ad.replace(/[^A-Za-z0-9.-]/g, "-");
 
 // Dosya yanıtının önbellek süresi (saniye). Logo değişince en geç bu kadar sonra yenisi görünür.
 export const dosyaOnbellekSuresi = 300;
 
 export const dosyaYanitla = (dosya: DosyaYaniti, istek: Request): Response => {
   const etiket = `"${dosya.etiket}"`;
-  const basliklar = {
-    "Content-Type": dosya.mime,
-    "X-Content-Type-Options": "nosniff",
-    "Cache-Control": `${dosya.onbellek === "ozel" ? "private" : "public"}, max-age=${dosyaOnbellekSuresi}`,
-    ETag: etiket,
-  };
+  const basliklar: Record<string, string> =
+    dosya.indirme === undefined
+      ? {
+          "Content-Type": dosya.mime,
+          "X-Content-Type-Options": "nosniff",
+          "Cache-Control": `${dosya.onbellek === "ozel" ? "private" : "public"}, max-age=${dosyaOnbellekSuresi}`,
+          ETag: etiket,
+        }
+      : {
+          "Content-Type": dosya.mime,
+          "X-Content-Type-Options": "nosniff",
+          "Content-Disposition": `attachment; filename="${indirmeAdi(dosya.indirme)}"`,
+          "Content-Security-Policy": "sandbox; default-src 'none'",
+          "Cache-Control": "private, no-store",
+        };
   const eslesen = istek.headers
     .get("if-none-match")
     ?.split(",")
     .map((parca) => parca.trim());
-  if (eslesen?.includes(etiket)) return new Response(null, { status: 304, headers: basliklar });
+  if (dosya.indirme === undefined && eslesen?.includes(etiket)) {
+    return new Response(null, { status: 304, headers: basliklar });
+  }
   const govde = istek.method === "HEAD" ? null : new Uint8Array(dosya.icerik);
   return new Response(govde, {
     status: 200,

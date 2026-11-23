@@ -9,23 +9,29 @@
 // POST /kapi/herkese-acik/siparis-takibi/iade-talebi ve /iptal (kart 0239, karar 0151): üye olmayan müşteri takip
 // ettiği siparişte iade talebi açar ya da siparişini kendisi iptal eder. Sipariş yalnız takip anahtarıyla bulunur
 // (çerez bu yolun altına da yazılır); başka numara bulunamadıdır. Robot korumalı ve sıkı sınırlıdır.
+//
+// GET /kapi/herkese-acik/siparis-takibi/fatura?numara= (kart 0268, karar 0170): takip edilen siparişin faturası,
+// indirilecek dosya olarak. Sipariş yalnız takip anahtarıyla bulunur; başka numara, dosyasız ve süresi dolmuş takip
+// bulunamadıdır. Robot sorusu yoktur: anahtar numara ve e-postayla robot korumalı uçtan alınmıştır.
 import { z } from "zod";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import { herkeseAcik } from "../../kayitlar/izinler.ts";
 import { siparisTakipCerezi } from "../../kayitlar/siparis.ts";
 import { robotCevabiniDogrula } from "../../moduller/robot-korumasi/servis.ts";
+import { siparisFaturaServisi } from "../../moduller/siparis/fatura.ts";
 import { iadeTalebiServisi } from "../../moduller/siparis/iade-talebi.ts";
 import {
   takipIadeTalebiGirdisi,
   takipIptaliGirdisi,
 } from "../../moduller/siparis/iade-talebi-semalari.ts";
 import { musteriSiparisleri } from "../../moduller/siparis/musteri.ts";
+import { siparisAyrintisiSemasi } from "../../moduller/siparis/semalar.ts";
 import { siparisTakibiGirdisi } from "../../moduller/siparis/takip-semalari.ts";
 import { siteninVeritabani } from "../../veritabani/baglanti.ts";
 import { cerezOku } from "../oturum-cerezi.ts";
 import { siparisTakipCereziSil, siparisTakipCereziYaz } from "../siparis-cerezi.ts";
 import { ucTanimla } from "../uc.ts";
-import { BilinenHata } from "../zarf.ts";
+import { BilinenHata, DosyaYaniti } from "../zarf.ts";
 
 export const siparisTakibiUcu = ucTanimla({
   giris: "herkese-acik",
@@ -100,6 +106,29 @@ export const takipIptaliUcu = ucTanimla({
       siteninVeritabani(),
       await takipSahibi(istek),
       girdi,
+    );
+  },
+});
+
+export const takipFaturaDosyasiUcu = ucTanimla({
+  giris: "herkese-acik",
+  temaDemosunda: "kapali",
+  sema: siparisAyrintisiSemasi,
+  izin: herkeseAcik,
+  sinir: "genel",
+  isle: async ({ numara }, istek) => {
+    const { siparis } = await takipSahibi(istek);
+    const belge = await siparisFaturaServisi(calisanSite()).dosyaOku(siteninVeritabani(), {
+      numara,
+      kimlik: siparis,
+    });
+    if (belge === undefined) throw new BilinenHata("bulunamadi");
+    return new DosyaYaniti(
+      belge.icerik,
+      belge.mime,
+      belge.ozet,
+      "ozel",
+      `fatura-${belge.siparis}.pdf`,
     );
   },
 });

@@ -47,18 +47,24 @@ export const degisikligiKaydet = async (
     eski: Record<string, unknown> | null;
     yeni: Record<string, unknown> | null;
   },
-): Promise<void> => {
+): Promise<{ kimlik: string }> => {
   const { kim, kayit, eski, yeni } = girdi;
   degeriDenetle(eski, "eski");
   degeriDenetle(yeni, "yeni");
-  await islem.insert(degisiklikKayitlari).values({
-    kim_turu: kim.tur,
-    kim_kimligi: kim.tur === "sistem" ? null : kim.kimlik,
-    kim_adi: kim.tur === "sistem" ? kim.ad : null,
-    islem: girdi.islem,
-    kayit_turu: kayit.tur,
-    kayit_kimligi: kayit.kimlik,
-    eski_deger: eski,
-    yeni_deger: yeni,
-  });
+  // Kaydın kimliği olayın kalıcı kaydıdır (kart 0268): e-posta onu olay anahtarı yapar.
+  const [satir] = await islem
+    .insert(degisiklikKayitlari)
+    .values({
+      kim_turu: kim.tur,
+      kim_kimligi: kim.tur === "sistem" ? null : kim.kimlik,
+      kim_adi: kim.tur === "sistem" ? kim.ad : null,
+      islem: girdi.islem,
+      kayit_turu: kayit.tur,
+      kayit_kimligi: kayit.kimlik,
+      eski_deger: eski,
+      yeni_deger: yeni,
+    })
+    .returning({ kimlik: degisiklikKayitlari.kimlik });
+  if (satir === undefined) throw new Error("Değişiklik kaydı yazılamadı.");
+  return satir;
 };

@@ -11,6 +11,8 @@ export const siparisIzinleri = {
   "siparis.kendi.havale-bildir": { giris: "musteri", kapsam: "kendi" },
   "siparis.kendi.iade-talebi": { giris: "musteri", kapsam: "kendi" },
   "siparis.kendi.iptal": { giris: "musteri", kapsam: "kendi" },
+  // Kart 0268: müşteri kendi siparişinin faturasını indirir.
+  "siparis.kendi.fatura": { giris: "musteri", kapsam: "kendi" },
   "siparis.gor": { giris: "yonetici", kapsam: "tumu" },
   "siparis.yonet": { giris: "yonetici", kapsam: "tumu" },
   "siparis.havale-onayla": { giris: "yonetici", kapsam: "tumu" },

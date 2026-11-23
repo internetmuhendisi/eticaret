@@ -12,8 +12,9 @@
 //
 // Takip: numara ve siparişteki e-posta (harf büyüklüğü ayrımsız) eşleşirse 30 dakikalık anahtar verilir; eşleşmezse
 // sipariş yokmuş gibi bulunamadıdır (siparişin var olduğu belli olmaz). Takipte teslimatın adı, soyadı ve telefonu
-// kısaltılır, sokak adresi, posta kodu, fatura, e-posta ve mağazanın notları görünmez; il ve ilçe görünür (karar
-// 0145, 0150). Müşteri takibi kapatabilir (takipKapat).
+// kısaltılır, sokak adresi, posta kodu, fatura bilgisi (fatura adresi ve vergi bilgisi), e-posta ve mağazanın notları
+// görünmez; il ve ilçe görünür (karar 0145, 0150). Mağazanın kestiği faturanın numarası, tarihi ve PDF'i iki yolda da
+// görünür (kart 0268, karar 0157): numara ve e-postayı bilen müşteridir. Müşteri takibi kapatabilir (takipKapat).
 //
 // İade talebi ve müşterinin iptali (kart 0239, karar 0151): müşteriye kendi talepleri (nedeni, açıklaması, mağazanın
 // ret açıklaması) gider; yöneticinin kim olduğu gitmez. Talep açılabilir mi, son günü ve kalem başına talep edilebilir
@@ -115,6 +116,9 @@ export type MusteriSiparisi = {
   teslimat: Teslimat;
   // Takipte yoktur.
   fatura: Fatura | null;
+  // Mağazanın kestiği fatura (kart 0268, karar 0170): numara, takvim günü ve PDF'i var mı; hem hesapta hem takipte
+  // görünür (karar 0157). Yoksa null.
+  faturaBelgesi: { numara: string; tarih: string; dosya: boolean } | null;
   eposta: string | null;
   kalemler: MusteriSiparisKalemi[];
   // Durum geçmişi, eskiden yeniye: zaman, yeni durum ve neden (cekirdek/kayitlar/siparis.ts).
@@ -321,6 +325,14 @@ const musteriHali = async (
     teslimZamani: siparis.teslim_zamani,
     teslimat: kisalt ? kisaltilmisTeslimat(siparis.teslimat) : siparis.teslimat,
     fatura: kisalt ? null : siparis.fatura,
+    faturaBelgesi:
+      siparis.fatura_numarasi === null || siparis.fatura_tarihi === null
+        ? null
+        : {
+            numara: siparis.fatura_numarasi,
+            tarih: siparis.fatura_tarihi,
+            dosya: siparis.fatura_dosyasi !== null,
+          },
     eposta: kisalt || siparis.eposta === "" ? null : siparis.eposta,
     kalemler: kalemler.map((kalem) => ({
       sira: kalem.sira,

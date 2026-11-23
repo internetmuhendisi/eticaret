@@ -205,6 +205,7 @@ export async function SiparisAyrintisiSayfasi({ numara }: { numara: string }) {
         bankaHesaplari={ayarlar.bankaHesaplari}
         yorumAcik={yazilanIslevler.yorum}
         talepAdresi={hesapIadeTalebiAdresi(siparis.numara)}
+        saatDilimi={site.ayarlar.saatDilimi}
       />
     </HesapCercevesi>
   );

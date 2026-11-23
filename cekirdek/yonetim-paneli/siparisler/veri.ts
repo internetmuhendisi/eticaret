@@ -4,6 +4,7 @@
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { adresYazisi, type YazilacakAdres } from "../../bolgeler/adres-yazisi";
 import { eklentiliMi } from "../../eklentiler/odeme-yontemleri";
+import { belgeSinirlari, yuklenebilenBelgeTurAdlari } from "../../kayitlar/dosya";
 import type { OdemeYontemi } from "../../kayitlar/odeme";
 import {
   type IadeNedeni,
@@ -26,6 +27,7 @@ import {
 import { siteninBicimAyarlari, siteninBicimleyicisi } from "../../metinler/site-metni";
 import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
 import { siparisAyarlari } from "../../moduller/siparis/ayarlar";
+import { type SiparisFaturasi, siparisFaturaServisi } from "../../moduller/siparis/fatura";
 import type { HesapSiparisi, OncekiIade } from "../../moduller/siparis/iade-hesabi";
 import { siparisYonetimi } from "../../moduller/siparis/yonetim";
 import { siteninVeritabani } from "../../veritabani/baglanti";
@@ -221,6 +223,21 @@ export type SiparisAyrintisiVerisi = {
   iadeYenidenDenenebilir: boolean;
   notEkleyebilir: boolean;
   kargoFirmalari: { kimlik: string; ad: string }[];
+  // Siparişin faturası (kart 0268, karar 0170): numara, takvim günü ve sitenin biçimiyle tarihi, dosyası (boyutu
+  // sitenin biçimiyle); yoksa null.
+  faturaBelgesi: {
+    numara: string;
+    tarih: string;
+    tarihYazisi: string;
+    dosya: { kimlik: string; boyut: string } | null;
+  } | null;
+  // Faturayı ekleyip değiştirebilir mi (siparis.yonet); dosya eklenebilir mi (kişisel bilgisi silinmemiş sipariş).
+  faturaDuzenlenebilir: boolean;
+  faturaDosyasiEklenebilir: boolean;
+  // Belgenin sınırı ve türlerinin adları, sitenin biçimiyle (yükleme alanının açıklaması ve hatası).
+  belge: { enCokBoyut: string; turler: string };
+  // Sitenin saat dilimindeki bugün, "YYYY-AA-GG": yeni faturanın tarih alanının başlangıcı.
+  bugun: string;
 };
 
 export type IadePenceresiVerisi = {
@@ -243,6 +260,23 @@ const adresSatirlari = (adres: YazilacakAdres): string[] => {
   const yazi = adresYazisi(adres, bicim().ulkeAdi);
   return yazi === "" ? [] : [yazi];
 };
+
+// Faturanın panelde gösterilecek hâli (kart 0268).
+const faturaBelgesiVerisi = (
+  fatura: SiparisFaturasi | null,
+  b: ReturnType<typeof bicim>,
+): SiparisAyrintisiVerisi["faturaBelgesi"] =>
+  fatura === null
+    ? null
+    : {
+        numara: fatura.numara,
+        tarih: fatura.tarih,
+        tarihYazisi: b.uzunTarih(gununBasi(fatura.tarih, calisanSite().ayarlar.saatDilimi)),
+        dosya:
+          fatura.dosya === null
+            ? null
+            : { kimlik: fatura.dosya.kimlik, boyut: b.dosyaBoyutu(fatura.dosya.boyut) },
+      };
 
 export const siparisAyrintisiVerisi = async (
   numara: string,
@@ -283,7 +317,10 @@ export const siparisAyrintisiVerisi = async (
     // En yeni önce; aynı anda yazılan geçiş ve notta geçiş önce gelir.
     .sort((x, y) => y.an - x.an || (x.tur === y.tur ? 0 : x.tur === "gecis" ? -1 : 1))
     .map(({ an: _an, ...satir }) => satir);
-  const { kargoFirmalari, iadeKargosu } = await siparisAyarlari(site).oku(vt);
+  const [{ kargoFirmalari, iadeKargosu }, faturaBelgesi] = await Promise.all([
+    siparisAyarlari(site).oku(vt),
+    siparisFaturaServisi(site).oku(vt, siparis.kimlik),
+  ]);
   // İade penceresi en eski onaylı ve iadesi yapılmamış talebe bağlanır (sırayla kapanır).
   const onayliTalep = ayrinti.talepler.find(
     (talep) => talep.durum === "onaylandi" && !talep.iadeYapildi,
@@ -469,6 +506,14 @@ export const siparisAyrintisiVerisi = async (
         iadeYapildi: talep.iadeYapildi,
       }))
       .reverse(),
+    faturaBelgesi: faturaBelgesiVerisi(faturaBelgesi, b),
+    bugun: takvimGunu(new Date(), site.ayarlar.saatDilimi),
+    faturaDuzenlenebilir: yetkili("siparis.yonet"),
+    faturaDosyasiEklenebilir: !kisiselSilindi,
+    belge: {
+      enCokBoyut: b.dosyaBoyutu(belgeSinirlari.enCokBayt),
+      turler: b.veyaListesi(yuklenebilenBelgeTurAdlari),
+    },
     talepKarariVerilebilir: yetkili("siparis.iade"),
     iadeKargosu,
     iadeYenidenDenenebilir: yetkili("siparis.iade"),

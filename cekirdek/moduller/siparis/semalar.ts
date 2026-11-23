@@ -124,6 +124,41 @@ export const siparisNotuSemasi = z.strictObject({
 });
 export type SiparisNotuGirdisi = z.output<typeof siparisNotuSemasi>;
 
+// Siparişin faturası (kart 0268, karar 0170). Ekran gördüğü faturayı (gorulen; yoksa null) gönderir: arada başkası
+// değiştirdiyse servis "cakisma" verir. Numara ve tarih zorunlu, dosya isteğe bağlıdır (önce fatura-yukle ucuyla
+// kaydedilir, kimliğiyle gelir). Numara değişiklik kaydına girer: harf, rakam, boşluk, nokta, tire ve eğik çizgi.
+// eposta: müşteriye "Faturanız hazır" e-postası (kullanıcı kararı, varsayılan işaretli).
+const faturaNumarasiSemasi = z
+  .string()
+  .trim()
+  .min(1)
+  .max(siparisSinirlari.faturaNumarasiEnCok)
+  .regex(/^[\p{L}\p{N}][\p{L}\p{N} ./-]*$/u)
+  .transform((deger) => deger.normalize("NFC"));
+const gorulenFaturaSemasi = z
+  .strictObject({
+    numara: z.string(),
+    tarih: z.string(),
+    dosya: kimlikSemasi.nullable(),
+  })
+  .nullable();
+export const siparisFaturasiSemasi = z.strictObject({
+  numara: siparisNumarasiSemasi,
+  gorulen: gorulenFaturaSemasi,
+  fatura: z.strictObject({
+    numara: faturaNumarasiSemasi,
+    tarih: z.string().refine(takvimGunuMu),
+    dosya: kimlikSemasi.nullable(),
+  }),
+  eposta: z.boolean(),
+});
+export type SiparisFaturasiGirdisi = z.output<typeof siparisFaturasiSemasi>;
+export const siparisFaturasiKaldirSemasi = z.strictObject({
+  numara: siparisNumarasiSemasi,
+  gorulen: gorulenFaturaSemasi.unwrap(),
+});
+export type SiparisFaturasiKaldirGirdisi = z.output<typeof siparisFaturasiKaldirSemasi>;
+
 // Sipariş ayarlarının kargo firmaları bölümü: ekran bütün listeyi gördüğü hâliyle (onceki) ve yeni hâliyle verir;
 // yeni firmanın kimliği yoktur, servis verir. Arada liste değiştiyse "cakisma".
 // Firma adı değişiklik kaydına girer: kayda yazılamayan değer (e-posta gibi) ve denetim karakteri alanın hatasıdır.

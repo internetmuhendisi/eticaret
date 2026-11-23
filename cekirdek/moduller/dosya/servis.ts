@@ -22,11 +22,16 @@ import { join } from "node:path";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { OutputInfo, Sharp } from "sharp";
 import {
+  type BelgeTuru,
+  belgeSinirlari,
+  belgeTurleri,
   type DosyaHatasi,
   type DosyaTuru,
   dosyaKlasoruDegiskeni,
   dosyaSinirlari,
   dosyaTurleri,
+  type KayitliDosyaTuru,
+  kayitliDosyaTurleri,
 } from "../../kayitlar/dosya.ts";
 import {
   type GorselBoyutu,
@@ -36,7 +41,7 @@ import {
 } from "../../kayitlar/gorsel.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { dosyaBoyutlari, dosyalar } from "./model.ts";
-import { icerikTuru } from "./tur.ts";
+import { belgeTuru, icerikTuru } from "./tur.ts";
 
 // Sitenin dosya klasörü. Okunduğu anda sorulur (karar 0026): dosya yüklenirken değil.
 export const dosyaKlasoru = (): string => {
@@ -64,7 +69,7 @@ const yenidenKodla = (girdi: Sharp, tur: DosyaTuru): Sharp => {
 
 export type KaydedilenDosya = {
   kimlik: string;
-  tur: DosyaTuru;
+  tur: KayitliDosyaTuru;
   boyut: number;
   genislik: number;
   yukseklik: number;
@@ -76,8 +81,11 @@ export type KaydetmeSonucu =
 
 const reddet = (hata: DosyaHatasi): KaydetmeSonucu => ({ tamam: false, hata });
 
-const dosyaAdi = (kimlik: string, tur: DosyaTuru): string =>
-  `${kimlik}.${dosyaTurleri[tur].uzanti}`;
+const dosyaAdi = (kimlik: string, tur: KayitliDosyaTuru): string =>
+  `${kimlik}.${kayitliDosyaTurleri[tur].uzanti}`;
+
+// Görsel türlerinin adları: görsel okuma yolları yalnız bunları okur, belge kaydını görmez (kart 0268).
+const gorselTurAdlari = Object.keys(dosyaTurleri) as DosyaTuru[];
 
 // Kimlik veritabanının ürettiği tahmin edilemez koddur; yine de yol olarak kullanılmadan önce
 // biçimi denetlenir.
@@ -121,7 +129,7 @@ const kodla = async (
 };
 
 // Yazılacak bir dosya: yeniden kodlanmış içerik ve ölçüleri.
-type Parca = { data: Buffer; tur: DosyaTuru; genislik: number; yukseklik: number };
+type Parca = { data: Buffer; tur: KayitliDosyaTuru; genislik: number; yukseklik: number };
 
 // Parçaları tek işlemde kaydeder: her biri bir kayıt ve bir dosya. Dosyalar önce geçici adla yazılır,
 // kayıtla aynı işlemde yerine konur. sonra, kayıtlarla aynı işlemde çalışır (boyut satırları). İşlem
@@ -321,7 +329,13 @@ export const gorselHazirMi = async (
   const [kaynak] = await islem
     .select({ kimlik: dosyalar.kimlik })
     .from(dosyalar)
-    .where(and(eq(dosyalar.kimlik, kimlik), isNull(dosyalar.silinme_zamani)))
+    .where(
+      and(
+        eq(dosyalar.kimlik, kimlik),
+        isNull(dosyalar.silinme_zamani),
+        inArray(dosyalar.tur, gorselTurAdlari),
+      ),
+    )
     .for("share");
   if (kaynak === undefined) return "yok";
   const [boyutu] = await islem
@@ -343,7 +357,13 @@ export const dosyaKaydi = async (
   const [satir] = await vt
     .select({ tur: dosyalar.tur, icerikOzeti: dosyalar.icerik_ozeti })
     .from(dosyalar)
-    .where(and(eq(dosyalar.kimlik, kimlik), isNull(dosyalar.silinme_zamani)));
+    .where(
+      and(
+        eq(dosyalar.kimlik, kimlik),
+        isNull(dosyalar.silinme_zamani),
+        inArray(dosyalar.tur, gorselTurAdlari),
+      ),
+    );
   return satir === undefined
     ? undefined
     : { tur: satir.tur as DosyaTuru, icerikOzeti: satir.icerikOzeti };
@@ -360,7 +380,13 @@ export const dosyaOku = async (
   const [satir] = await vt
     .select()
     .from(dosyalar)
-    .where(and(eq(dosyalar.kimlik, kimlik), isNull(dosyalar.silinme_zamani)));
+    .where(
+      and(
+        eq(dosyalar.kimlik, kimlik),
+        isNull(dosyalar.silinme_zamani),
+        inArray(dosyalar.tur, gorselTurAdlari),
+      ),
+    );
   if (satir === undefined) return undefined;
   const tur = satir.tur as DosyaTuru;
   const icerik = await readFile(join(klasor, dosyaAdi(satir.kimlik, tur)));
@@ -372,7 +398,10 @@ export const dosyaOku = async (
 
 // Dosyayı silinmiş olarak işaretler; dosyanın kendisi yerinde kalır (kalıcı silme yedekle gelir,
 // kart 0093). Zaten silinmişse ya da yoksa false.
-export const dosyaSil = async (vt: Veritabani, kimlik: string): Promise<boolean> => {
+export const dosyaSil = async (
+  vt: Veritabani | VeritabaniIslemi,
+  kimlik: string,
+): Promise<boolean> => {
   if (!kimlikBicimi.test(kimlik)) return false;
   const silinen = await vt
     .update(dosyalar)
@@ -380,4 +409,70 @@ export const dosyaSil = async (vt: Veritabani, kimlik: string): Promise<boolean>
     .where(and(eq(dosyalar.kimlik, kimlik), isNull(dosyalar.silinme_zamani)))
     .returning({ kimlik: dosyalar.kimlik });
   return silinen.length > 0;
+};
+
+// Belgeyi (PDF, kart 0268, karar 0170) olduğu gibi kaydeder: yeniden kodlanmaz, içeriği değiştirilmez. Boş, sınırı
+// (belgeSinirlari) aşan ve belge imzası taşımayan dosya reddedilir. Görselle aynı yazım yolu (geçici ad, kayıtla
+// aynı işlemde yerine koyma); bir veritabanı işleminin içinde çağrılmaz.
+export const belgeKaydet = async (
+  vt: Veritabani,
+  icerik: Uint8Array,
+  klasor: string = dosyaKlasoru(),
+): Promise<KaydetmeSonucu> => {
+  if (icerik.length === 0) return reddet("bos");
+  if (icerik.length > belgeSinirlari.enCokBayt) return reddet("cok-buyuk");
+  const tur = belgeTuru(icerik);
+  if (tur === undefined) return reddet("tur-izinsiz");
+  const [dosya] = await parcalariYaz(
+    vt,
+    [{ data: Buffer.from(icerik), tur, genislik: 0, yukseklik: 0 }],
+    klasor,
+  );
+  if (dosya === undefined) throw new Error("Belge kaydedilemedi.");
+  return { tamam: true, dosya };
+};
+
+// Silinmemiş belgenin içeriği, türü ve boyutu; yoksa ya da belge değilse undefined. İçerik özeti tutmuyorsa hata verir.
+export const belgeOku = async (
+  vt: Veritabani,
+  kimlik: string,
+  klasor: string = dosyaKlasoru(),
+): Promise<{ icerik: Buffer; tur: BelgeTuru; mime: string; ozet: string } | undefined> => {
+  if (!kimlikBicimi.test(kimlik)) return undefined;
+  const [satir] = await vt
+    .select()
+    .from(dosyalar)
+    .where(
+      and(
+        eq(dosyalar.kimlik, kimlik),
+        isNull(dosyalar.silinme_zamani),
+        inArray(dosyalar.tur, Object.keys(belgeTurleri)),
+      ),
+    );
+  if (satir === undefined) return undefined;
+  const tur = satir.tur as BelgeTuru;
+  const icerik = await readFile(join(klasor, dosyaAdi(satir.kimlik, tur)));
+  if (createHash("sha256").update(icerik).digest("hex") !== satir.icerik_ozeti) {
+    throw new Error(`Dosyanın içeriği kayıttakiyle aynı değil: ${satir.kimlik}.`);
+  }
+  return { icerik, tur, mime: belgeTurleri[tur].mime, ozet: satir.icerik_ozeti };
+};
+
+// Belgenin boyutu (bayt); yoksa, silinmişse ya da belge değilse undefined. İçeriği okumaz.
+export const belgeBoyutu = async (
+  vt: Veritabani | VeritabaniIslemi,
+  kimlik: string,
+): Promise<number | undefined> => {
+  if (!kimlikBicimi.test(kimlik)) return undefined;
+  const [satir] = await vt
+    .select({ boyut: dosyalar.boyut })
+    .from(dosyalar)
+    .where(
+      and(
+        eq(dosyalar.kimlik, kimlik),
+        isNull(dosyalar.silinme_zamani),
+        inArray(dosyalar.tur, Object.keys(belgeTurleri)),
+      ),
+    );
+  return satir?.boyut;
 };

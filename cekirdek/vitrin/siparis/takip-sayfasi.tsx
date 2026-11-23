@@ -83,6 +83,7 @@ export async function SiparisTakibiSayfasi({
           bankaHesaplari={ayarlar.bankaHesaplari}
           yorumAcik={false}
           talepAdresi={vitrinAdresleri.takipIadeTalebi}
+          saatDilimi={site.ayarlar.saatDilimi}
         />
         <div className="flex flex-col gap-2 text-kucuk text-soluk-yazi">
           <p>{metin("vitrin.siparisTakibi.kisaltma")}</p>

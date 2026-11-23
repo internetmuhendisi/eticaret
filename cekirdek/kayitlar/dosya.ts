@@ -28,6 +28,35 @@ export const dosyaTurleri = {
 >;
 export type DosyaTuru = keyof typeof dosyaTurleri;
 
+// Belge türleri (kart 0268, karar 0170): görsel değildir, yeniden kodlanmaz, olduğu gibi saklanır. Yalnız kendi
+// yoluyla kaydedilir (belgeKaydet) ve okunur (belgeOku); görselin hiçbir yolu (logo, galeri, vitrin ve panel görseli)
+// belge kaydını görmez. Tarayıcıya yalnız indirilecek dosya olarak verilir: PDF içinde kod taşıyabilir.
+// "%PDF-".
+export const belgeTurleri = {
+  pdf: {
+    mime: "application/pdf",
+    uzanti: "pdf",
+    ad: "PDF",
+    imzalar: [[0x25, 0x50, 0x44, 0x46, 0x2d]],
+  },
+} as const satisfies Record<
+  string,
+  { mime: string; uzanti: string; ad: string; imzalar: readonly Imza[] }
+>;
+export type BelgeTuru = keyof typeof belgeTurleri;
+// Dosya kaydındaki bütün türler (dosyanın adı ve uzantısı için).
+export const kayitliDosyaTurleri = { ...dosyaTurleri, ...belgeTurleri };
+export type KayitliDosyaTuru = keyof typeof kayitliDosyaTurleri;
+// Yüklenebilen belge türleri: dosya seçicisinin `kabul` değeri ve okunan adları.
+export const yuklenebilenBelgeTurleri: string = Object.values(belgeTurleri)
+  .map((tur) => tur.mime)
+  .join(",");
+export const yuklenebilenBelgeTurAdlari: string[] = Object.values(belgeTurleri).map(
+  (tur) => tur.ad,
+);
+// Belgenin en büyük boyutu (kart 0268): e-fatura portalının PDF'i birkaç yüz KB'dır.
+export const belgeSinirlari = { enCokBayt: 5 * 1024 * 1024 } as const;
+
 // Tarayıcının dosya seçicisinde önerilen türler (kart 0094): yükleme parçasının `kabul` değeri. Sunucu yine içerikten
 // denetler.
 export const yuklenebilenTurler: string = Object.values(dosyaTurleri)

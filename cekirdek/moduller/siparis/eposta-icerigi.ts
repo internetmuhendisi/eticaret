@@ -84,6 +84,8 @@ export type SiparisEpostaVerisi = {
   };
   // Teslim edilen siparişte iade talebinin son anı (ISO); yalnız teslim e-postasında.
   iadeSonu?: string;
+  // Faturanın numarası, tarihi (günün öğlesi, ISO: sitenin saat diliminde aynı gün) ve dosyası var mı (kart 0268).
+  fatura?: { numara: string; tarih: string; dosya: boolean };
 };
 
 const yontemAdlari: Record<string, MetinAnahtari> = {
@@ -466,6 +468,29 @@ const musteriyeNot: IcerikUretici = (veri, b) => {
   ]);
 };
 
+// Faturanız hazır (kart 0268): numara ve tarih; dosya varsa siparişin sayfasından indirileceği.
+const faturaHazir: IcerikUretici = (veri, b) => {
+  const v = verisi(veri);
+  if (v.fatura === undefined) throw new Error("Fatura e-postasının faturası yok.");
+  return govde(b, "eposta.faturaHazir.konu", "eposta.faturaHazir.baslik", v, [
+    { tur: "paragraf", metin: merhaba(b, v, "eposta.faturaHazir.govde") },
+    {
+      tur: "bilgi",
+      baslik: b.satir("eposta.faturaHazir.bilgi"),
+      satirlar: [
+        b.satir("eposta.faturaHazir.numara", { numara: v.fatura.numara }),
+        b.satir("eposta.faturaHazir.tarih", {
+          tarih: b.bicim.uzunTarih(new Date(v.fatura.tarih)),
+        }),
+      ],
+    },
+    ...(v.fatura.dosya
+      ? [{ tur: "paragraf" as const, metin: b.satir("eposta.faturaHazir.indir") }]
+      : []),
+    ...siparisDugmesi(b, v),
+  ]);
+};
+
 const talepKalemleri = (b: IcerikBaglami, v: SiparisEpostaVerisi): EpostaBlogu =>
   kalemTablosu(b, v.kalemler, []);
 
@@ -549,4 +574,5 @@ export const siparisEpostaIcerikleri = {
   "iade-talebi-alindi": talepAlindi,
   "iade-talebi-onaylandi": talepOnaylandi,
   "iade-talebi-reddedildi": talepReddedildi,
+  "fatura-hazir": faturaHazir,
 } as const satisfies Partial<Record<EpostaSablonu, IcerikUretici>>;

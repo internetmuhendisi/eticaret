@@ -24,7 +24,9 @@ import {
   type SiparisDurumu,
   type SiparisGecmisiNedeni,
   satinAlmaDurumlari,
+  siparisTakipCerezi,
 } from "../../kayitlar/siparis";
+import { gununBasi } from "../../metinler/bicimleyici";
 import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { metin, type siteninBicimleyicisi } from "../../metinler/site-metni";
@@ -44,6 +46,13 @@ import { SiparisIptali } from "./siparis-iptali";
 import type { SiparisUrunu } from "./urunler";
 
 type Bicim = ReturnType<typeof siteninBicimleyicisi>;
+
+// Faturanın PDF'inin uçları (kart 0268): hesapta müşteri ucu, takipte takip anahtarıyla açılan uç (takip çerezinin
+// yolunun altında).
+const faturaAdresleri = {
+  hesap: "/kapi/musteri/siparis-faturasi",
+  takip: `${siparisTakipCerezi.kapiYolu}/fatura`,
+} as const;
 
 // Geçmişin müşteriye yazılan olayı. İptal ve iade geçmişten değil iade kayıtlarından yazılır (tutarıyla); panelden
 // oluşturma müşteriye "Sipariş alındı"dır.
@@ -268,6 +277,7 @@ export function SiparisAyrintisi({
   bankaHesaplari,
   yorumAcik,
   talepAdresi,
+  saatDilimi,
 }: {
   // İade talebi sayfasının adresi (hesapta siparişin, takipte takip sayfasının altında).
   talepAdresi: string;
@@ -278,6 +288,8 @@ export function SiparisAyrintisi({
   bankaHesaplari: readonly { kimlik: string; banka: string; sahip: string; iban: string }[];
   // Yorum işlevi açık mı (cekirdek/kayitlar/islevler.ts).
   yorumAcik: boolean;
+  // Sitenin saat dilimi: faturanın takvim günü o dilimde biçimlenir.
+  saatDilimi: string;
 }) {
   const havaleBekliyor = siparis.odemeYontemi === "havale" && siparis.durum === "odeme-bekleniyor";
   const yorumYazilir =
@@ -554,6 +566,30 @@ export function SiparisAyrintisi({
               )}
             </dl>
           </Bolum>
+          {siparis.faturaBelgesi === null ? null : (
+            <Bolum kimlik="siparis-faturasi" baslik={metin("vitrin.siparis.fatura.baslik")}>
+              <dl className="flex flex-col gap-1">
+                <dt className="text-soluk-yazi">{metin("vitrin.siparis.fatura.numara")}</dt>
+                <dd className="mb-2 wrap-anywhere">{siparis.faturaBelgesi.numara}</dd>
+                <dt className="text-soluk-yazi">{metin("vitrin.siparis.fatura.tarih")}</dt>
+                <dd className={siparis.faturaBelgesi.dosya ? "mb-2" : ""}>
+                  {bicim.uzunTarih(gununBasi(siparis.faturaBelgesi.tarih, saatDilimi))}
+                </dd>
+              </dl>
+              {siparis.faturaBelgesi.dosya ? (
+                <Baglanti
+                  href={`${yol === "hesap" ? faturaAdresleri.hesap : faturaAdresleri.takip}?numara=${encodeURIComponent(siparis.numara)}`}
+                  download
+                  prefetch={false}
+                  gorunum="cerceveli"
+                  className="w-fit"
+                >
+                  <Ikon ad="indir" />
+                  {metin("vitrin.siparis.fatura.indir")}
+                </Baglanti>
+              ) : null}
+            </Bolum>
+          )}
           <IadeVeIptal siparis={siparis} bicim={bicim} yol={yol} talepAdresi={talepAdresi} />
         </div>
       </div>

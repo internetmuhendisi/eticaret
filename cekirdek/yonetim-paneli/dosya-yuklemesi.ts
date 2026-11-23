@@ -8,13 +8,14 @@ import { dosyaHatalari, dosyaSinirlari } from "../kayitlar/dosya";
 import type { MetinAnahtari } from "../metinler/metin";
 import { type PanelHatasi, type PanelSonucu, panelYuklemesi } from "./panel-istegi";
 
-export const useDosyaYuklemesi = () => {
+// enCokBayt: yüklenen dosyanın sınırı (görsel varsayılan; belge kendi sınırını verir, kart 0268).
+export const useDosyaYuklemesi = (enCokBayt: number = dosyaSinirlari.enCokBayt) => {
   const [yukleme, setYukleme] = useState<YuklemeDurumu>(null);
   const iptal = useRef<AbortController | null>(null);
   const yukle = async <Veri>(yol: string, dosya: Blob): Promise<PanelSonucu<Veri> | undefined> => {
     // Sürerken ikinci yükleme yok sayılır.
     if (iptal.current !== null) return undefined;
-    if (dosya.size > dosyaSinirlari.enCokBayt) {
+    if (dosya.size > enCokBayt) {
       return { tamam: false, kod: "dogrulama", ayrinti: [{ alan: "dosya", kod: "cok-buyuk" }] };
     }
     const denetim = new AbortController();
@@ -37,9 +38,16 @@ const dosyaHatasiMi = (kod: string): kod is (typeof dosyaHatalari)[number] =>
   (dosyaHatalari as readonly string[]).includes(kod);
 
 // Yükleme hatasının metni: dosyanın reddi (alanın kodu) ya da istek hatası. Metindeki {boyut} sınırın biçimli
-// yazılışıyla doldurulur (sunucudan gelir).
-export const dosyaHatasiMetni = (hata: PanelHatasi): MetinAnahtari => {
+// yazılışıyla doldurulur (sunucudan gelir). Belgenin (PDF, kart 0268) reddi kendi metinleriyle.
+const belgeHatalari = ["bos", "cok-buyuk", "tur-izinsiz"] as const;
+export const dosyaHatasiMetni = (
+  hata: PanelHatasi,
+  tur: "gorsel" | "belge" = "gorsel",
+): MetinAnahtari => {
   const alanKodu = hata.ayrinti.find((ayrinti) => ayrinti.alan === "dosya")?.kod;
+  if (tur === "belge" && (belgeHatalari as readonly string[]).includes(alanKodu ?? "")) {
+    return `yonetim.dosya.belgeHatasi.${alanKodu as (typeof belgeHatalari)[number]}`;
+  }
   if (alanKodu !== undefined && dosyaHatasiMi(alanKodu)) {
     return `yonetim.dosya.hata.${alanKodu}`;
   }

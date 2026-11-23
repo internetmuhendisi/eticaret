@@ -32,6 +32,8 @@ export type SiparisEpostaEki = {
   iadeTalebiSuresi?: number;
   // Müşteriye notun metni.
   not?: string;
+  // Faturanın numarası, tarihi (günün öğlesi, ISO) ve dosyası var mı (kart 0268).
+  fatura?: { numara: string; tarih: string; dosya: boolean };
 };
 
 const iptalNedenleri = ["havale-suresi-doldu", "musteri-iptali", "yonetici-iptali"] as const;
@@ -130,6 +132,7 @@ export const siparisEpostasiYaz = async (
       : {}),
     ...(siparis.iadeSonu === null ? {} : { iadeSonu: siparis.iadeSonu }),
     ...(ek.not === undefined ? {} : { not: ek.not }),
+    ...(ek.fatura === undefined ? {} : { fatura: ek.fatura }),
   };
   if (ek.iade !== undefined) {
     const [iade] = await islem

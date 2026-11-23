@@ -969,7 +969,13 @@
         "talepSuresiDoldu": "İade talebi süresi {tarih} tarihinde doldu.",
         "talepInceleniyor": "İade talebiniz inceleniyor. Sonucu bu sayfada görürsünüz.",
         "iadeTalebiOlustur": "İade talebi oluştur",
-        "talepler": "İade talepleriniz"
+        "talepler": "İade talepleriniz",
+        "fatura": {
+          "baslik": "Fatura",
+          "numara": "Fatura numarası",
+          "tarih": "Fatura tarihi",
+          "indir": "Faturayı indir (PDF)"
+        }
       },
       "siparisTakibi": {
         "baslik": "Sipariş takibi",

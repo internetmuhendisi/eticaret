@@ -1248,6 +1248,56 @@
         "takipEt": "Kargoyu takip et",
         "verildi": "{zaman} kargoya verildi"
       },
+      "fatura": {
+        "baslik": "Fatura",
+        "yok": "Fatura bilgisi yok.",
+        "ekle": "Fatura ekle",
+        "duzenle": "Düzenle",
+        "kaldir": "Faturayı kaldır",
+        "numara": "Numara",
+        "tarih": "Tarih",
+        "dosya": "Dosya",
+        "dosyaYok": "Dosya eklenmedi",
+        "indir": "fatura-{numara}.pdf",
+        "indirAdi": "Faturayı indir: {numara}, {boyut}",
+        "musteri": "Müşteri",
+        "musteriGorur": "Hesabında ve takip sayfasında görür",
+        "pencere": {
+          "ekleBaslik": "Fatura ekle",
+          "duzenleBaslik": "Faturayı düzenle",
+          "aciklama": "Faturayı kendi e-fatura ya da e-arşiv sisteminizde kestikten sonra numarasını ve tarihini yazın. PDF'ini eklerseniz müşteri siparişinin sayfasından indirir.",
+          "numara": "Fatura numarası",
+          "tarih": "Fatura tarihi",
+          "dosya": "Fatura dosyası",
+          "dosyaAciklama": "Yalnız {turler}, en çok {boyut}. E-fatura ya da e-arşiv portalından indirdiğiniz dosya.",
+          "dosyaSec": "PDF seç",
+          "dosyaDegistir": "Dosyayı değiştir",
+          "dosyaKaldir": "Dosyayı kaldır",
+          "dosyaAdi": "{ad} · {boyut}",
+          "yuklendi": "{ad} yüklendi",
+          "dosyaEklenemez": "Siparişin kişisel bilgileri silindiği için dosya eklenemez; numara ve tarih yazılabilir.",
+          "eposta": "Müşteriye \"Faturanız hazır\" e-postası gönder",
+          "kaydet": "Kaydet"
+        },
+        "kaldirOnay": {
+          "baslik": "Fatura kaldırılsın mı?",
+          "metin": "{numara} numaralı faturanın bilgisi ve dosyası siparişten kaldırılır. Müşteri artık göremez. Fatura kendi sisteminizde kalır.",
+          "dugme": "Faturayı kaldır"
+        },
+        "basari": {
+          "kaydedildi": "Fatura kaydedildi.",
+          "kaldirildi": "Fatura kaldırıldı."
+        },
+        "hata": {
+          "numara": "Fatura numarasını yazın.",
+          "numaraBicimi": "Fatura numarasında yalnız harf, rakam, boşluk, nokta, tire ve eğik çizgi olabilir; en çok 60 harf.",
+          "tarih": "Fatura tarihini seçin.",
+          "dosyaYok": "Dosya bulunamadı. Dosyayı yeniden yükleyin.",
+          "dosyaKullanimda": "Bu dosya başka bir siparişin faturası. Bu siparişin faturasını yükleyin.",
+          "kisiselSilindi": "Siparişin kişisel bilgileri silindiği için dosya eklenemez.",
+          "cakisma": "Fatura bu arada değişti. Sayfa yenilendi; güncel faturaya bakıp yeniden deneyin."
+        }
+      },
       "bildirimler": {
         "baslik": "Havale bildirimleri",
         "satir": "{gonderen} · {banka} · {tutar}",
@@ -1999,6 +2049,11 @@
         "oturum": "Oturumunuz kapandı. Yeniden giriş yapın.",
         "yetki": "Dosya yükleme izniniz yok.",
         "genel": "Dosya yüklenemedi. Sayfayı yenileyip yeniden deneyin."
+      },
+      "belgeHatasi": {
+        "bos": "Seçtiğiniz dosya boş. Başka bir dosya seçin.",
+        "cok-buyuk": "Dosya çok büyük. En çok {boyut} bir {turler} dosyası seçin.",
+        "tur-izinsiz": "Bu dosya türü yüklenemez. Faturanın {turler} dosyasını seçin."
       }
     }
   },
@@ -2890,7 +2945,13 @@
       "talepSuresiDoldu": "İade talebi süresi {tarih} tarihinde doldu.",
       "talepInceleniyor": "İade talebiniz inceleniyor. Sonucu bu sayfada görürsünüz.",
       "iadeTalebiOlustur": "İade talebi oluştur",
-      "talepler": "İade talepleriniz"
+      "talepler": "İade talepleriniz",
+      "fatura": {
+        "baslik": "Fatura",
+        "numara": "Fatura numarası",
+        "tarih": "Fatura tarihi",
+        "indir": "Faturayı indir (PDF)"
+      }
     },
     "siparisTakibi": {
       "baslik": "Sipariş takibi",
@@ -3086,6 +3147,15 @@
       "govde": "Merhaba {ad}, {numara} numaralı siparişinizdeki iade talebinizi inceledik ve kabul edemedik.",
       "aciklama": "Mağazanın açıklaması",
       "soru": "Sorunuz varsa bu e-postayı yanıtlayın."
+    },
+    "faturaHazir": {
+      "konu": "Faturanız hazır: {numara}",
+      "baslik": "Faturanız hazır",
+      "govde": "Merhaba {ad}, {numara} numaralı siparişinizin faturası kesildi.",
+      "bilgi": "Fatura",
+      "numara": "Fatura numarası: {numara}",
+      "tarih": "Fatura tarihi: {tarih}",
+      "indir": "Faturanın PDF'ini siparişinizin sayfasından indirebilirsiniz."
     },
     "yonetici": {
       "kisaAd": "{ad} {harf}.",

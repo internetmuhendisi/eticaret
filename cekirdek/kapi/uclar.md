@@ -351,6 +351,16 @@ Müşterinin ucuyla aynı. Ayrıca yarım kalmış giriş adımlarını siler, d
 - Başarılı (200): `{ "basarili": true, "veri": {} }`.
 - Hatalar: `is-kurali` (geçersiz, kullanılmış ya da süresi dolmuş bağlantı), `istek-siniri` (`Retry-After` ile), `dogrulama`, `yetki` (sahte istek).
 
+### GET /kapi/herkese-acik/siparis-takibi/fatura
+
+Takip edilen siparişin faturasının PDF'i (kart 0268, karar 0170). Sipariş yalnız takip çerezindeki anahtarla bulunur (çerez takip uçlarının yoluna da yazılır); robot sorusu yoktur, anahtar numara ve e-postayla robot korumalı uçtan alınmıştır. Tema demosunda kapalıdır.
+
+- İzin: herkese açık. Sınır: `genel`.
+- Girdi (sorgu): `numara` (`siparisAyrintisiSemasi`).
+- Servis: `cekirdek/moduller/siparis/fatura.ts` (`dosyaOku`).
+- Başarılı (200): PDF dosyası, indirilecek dosya olarak: `Content-Disposition: attachment; filename="fatura-<numara>.pdf"`, `Content-Security-Policy: sandbox; default-src 'none'`, `Cache-Control: private, no-store`, `nosniff`.
+- Hatalar: `bulunamadi` (takip anahtarı yok ya da süresi dolmuş, başka numara, dosyasız fatura), `dogrulama`, `istek-siniri`.
+
 ## Müşteri
 
 ### GET /kapi/musteri/hesabim
@@ -553,6 +563,16 @@ Giriş yapmış müşteri tükenmiş birim için "stoğa gelince haber ver" tale
 - Başarılı (200): `{ "basarili": true, "veri": {} }`.
 - Hatalar: `bulunamadi` (eklenti kapalı; birim yok, silinmiş ya da ürünün sayfası açılmıyor), `is-kurali` (`talep-alinamaz`), `oturum-yok`, `dogrulama`, `istek-siniri`.
 
+### GET /kapi/musteri/siparis-faturasi
+
+Giriş yapmış müşterinin kendi siparişinin faturasının PDF'i (kart 0268, karar 0170). Sipariş yalnız kendi hesabıyla verilmişse bulunur; kimlik yalnız kapıdan gelir.
+
+- İzin: `siparis.kendi.fatura`. Sınır: `genel`.
+- Girdi (sorgu): `numara` (`siparisAyrintisiSemasi`).
+- Servis: `cekirdek/moduller/siparis/fatura.ts` (`dosyaOku`).
+- Başarılı (200): PDF dosyası, indirilecek dosya olarak (`GET /kapi/herkese-acik/siparis-takibi/fatura` ile aynı başlıklar).
+- Hatalar: `bulunamadi` (başka müşterinin, üye olmadan verilmiş, dosyasız ya da olmayan sipariş), `dogrulama`, `oturum-yok`, `istek-siniri`.
+
 ## Yönetici
 
 Yönetici uçları iki aşamalı girişten geçmiş oturum ister. Girişsiz istek `oturum-yok`, izni olmayan rol `yetki` alır.
@@ -635,6 +655,46 @@ Seçilen siparişlere toplu işlem (kart 0258, karar 0157): bugün `hazirlamaya-
 - Servis: `cekirdek/moduller/siparis/yonetim.ts` (`topluIslem`).
 - Başarılı (200): `{ "islenen": [numara], "islenemeyen": [{ "anahtar": numara, "kod" }] }`. Kod tekil işlemin ayrıntı kodudur (`durum-degisti`, `gecis-yok`, `yontem-uymuyor`, `iade-bekliyor`) ya da `bulunamadi`; beklenmeyen hata kaydedilir ve `beklenmeyen` döner.
 - Hatalar: `dogrulama` (boş, sınırı aşan ya da tekrarlı liste), `yetki`.
+
+### POST /kapi/yonetici/fatura-yukle
+
+Gövdedeki PDF'i faturanın belgesi olarak kaydeder (kart 0268, karar 0170). Belge yeniden kodlanmaz, olduğu gibi saklanır; tür içerikten anlaşılır (`%PDF-` imzası), en çok 5 MB (`belgeSinirlari`). Siparişe bağlanmaz: bağlama `siparis-fatura` ucuyla yapılır.
+
+- İzin: `siparis.yonet`. Sınır: `yukleme`.
+- Girdi: dosya gövdesi (`govde: "dosya"`, `dosyaGovdesiSemasi`).
+- Servis: `cekirdek/moduller/dosya/servis.ts` (`belgeKaydet`).
+- Başarılı (200): `{ "basarili": true, "veri": { "dosya": kimlik, "boyut": bayt } }`.
+- Hatalar: `dogrulama` (`dosya` alanında `bos`, `cok-buyuk`, `tur-izinsiz`), `oturum-yok`, `yetki`, `istek-siniri`.
+
+### POST /kapi/yonetici/siparis-fatura
+
+Siparişin faturasını yazar: ekler ya da değiştirir (kart 0268, karar 0170). Ekran gördüğü faturayı (`gorulen`, yoksa `null`) gönderir; arada değiştiyse hiçbir şey yazılmaz. Yazma değişiklik kaydına girer (`siparis.fatura-yazildi`); değiştirilen dosya silinmiş işaretlenir. `eposta` doğruysa müşteriye "Faturanız hazır" e-postası faturayla aynı işlemde yazılır. Aynı fatura yeniden yazılmaz, kayda ve e-postaya girmez.
+
+- İzin: `siparis.yonet`. Sınır: `genel`.
+- Girdi: `{ "numara", "gorulen": { "numara", "tarih", "dosya" } | null, "fatura": { "numara", "tarih", "dosya": kimlik | null }, "eposta": boolean }` (`siparisFaturasiSemasi`). Fatura numarası en çok 60 harf: harf, rakam, boşluk, nokta, tire, eğik çizgi; tarih takvim günü (`YYYY-AA-GG`).
+- Servis: `cekirdek/moduller/siparis/fatura.ts` (`yaz`).
+- Başarılı (200): `{ "numara", "fatura": { "numara", "tarih", "dosya": { "kimlik", "boyut" } | null } }`.
+- Hatalar: `dogrulama` (alanın yolu ve kodu; `fatura.dosya` alanında `dosya-yok`: olmayan, silinmiş ya da belge olmayan dosya, `dosya-kullanimda`: başka siparişin faturası), `is-kurali` (`fatura.dosya` alanında `kisisel-veri-silindi`), `cakisma` (`fatura-degisti`), `bulunamadi`, `oturum-yok`, `yetki`, `istek-siniri`.
+
+### POST /kapi/yonetici/siparis-fatura-kaldir
+
+Siparişin faturasını kaldırır (kart 0268): yanlış siparişe eklenen fatura. Ekranın gördüğü fatura gönderilir; dosya silinmiş işaretlenir, kaldırma değişiklik kaydına girer (`siparis.fatura-kaldirildi`).
+
+- İzin: `siparis.yonet`. Sınır: `genel`.
+- Girdi: `{ "numara", "gorulen": { "numara", "tarih", "dosya" } }` (`siparisFaturasiKaldirSemasi`).
+- Servis: `cekirdek/moduller/siparis/fatura.ts` (`kaldir`).
+- Başarılı (200): `{ "numara" }`.
+- Hatalar: `cakisma` (`fatura-degisti`), `bulunamadi`, `dogrulama`, `oturum-yok`, `yetki`, `istek-siniri`.
+
+### GET /kapi/yonetici/siparis-faturasi
+
+Siparişin faturasının PDF'i (kart 0268), indirilecek dosya olarak (`GET /kapi/herkese-acik/siparis-takibi/fatura` ile aynı başlıklar).
+
+- İzin: `siparis.gor`. Sınır: `genel`.
+- Girdi (sorgu): `numara` (`siparisAyrintisiSemasi`).
+- Servis: `cekirdek/moduller/siparis/fatura.ts` (`dosyaOku`).
+- Başarılı (200): PDF dosyası.
+- Hatalar: `bulunamadi` (olmayan ya da dosyasız sipariş), `dogrulama`, `oturum-yok`, `yetki`, `istek-siniri`.
 
 ### GET /kapi/yonetici/siparis
 

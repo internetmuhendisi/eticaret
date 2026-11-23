@@ -283,6 +283,8 @@ export const siparisSinirlari = {
   kargoFirmasiEnCok: 20,
   takipAdresiEnCok: 300,
   aramaEnCok: 100,
+  // Fatura numarasının en çok harf sayısı (kart 0268); veritabanının siparisler_fatura denetimiyle aynıdır (test).
+  faturaNumarasiEnCok: 60,
 } as const;
 
 // Panelin sipariş listesinin sıralamaları (kart 0258): oluşturma zamanı ve toplam tutar; eşitlikte siparişin

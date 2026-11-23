@@ -223,6 +223,7 @@
   ],
   "bilesenler/parcalar/dosya-yukleme.tsx": [
     "cekirdek/yonetim-paneli/dosya-yuklemesi.ts",
+    "cekirdek/yonetim-paneli/siparisler/fatura.tsx",
     "cekirdek/yonetim-paneli/tema/logo-bolumu.tsx",
     "cekirdek/yonetim-paneli/urunler/galeri-bolumu.tsx"
   ],
@@ -279,6 +280,7 @@
     "cekirdek/yonetim-paneli/panel-cercevesi.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayarlar.tsx",
     "cekirdek/yonetim-paneli/siparisler/elle-siparis.tsx",
+    "cekirdek/yonetim-paneli/siparisler/fatura.tsx",
     "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/iade-talebi-kutusu.tsx",
     "cekirdek/yonetim-paneli/tema/ayarlar-ekrani.tsx",
@@ -325,6 +327,7 @@
     "cekirdek/yonetim-paneli/ozellikler/ekran.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayarlar.tsx",
     "cekirdek/yonetim-paneli/siparisler/elle-siparis.tsx",
+    "cekirdek/yonetim-paneli/siparisler/fatura.tsx",
     "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/iptal-ve-iade-ayarlari.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
@@ -392,6 +395,7 @@
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
     "cekirdek/yonetim-paneli/siparisler/elle-siparis.tsx",
+    "cekirdek/yonetim-paneli/siparisler/fatura.tsx",
     "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx"
   ],
   "bilesenler/parcalar/onay-penceresi.tsx": [
@@ -404,6 +408,7 @@
     "cekirdek/yonetim-paneli/odeme-yontemleri/banka-hesaplari.tsx",
     "cekirdek/yonetim-paneli/ozellikler/ekran.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayarlar.tsx",
+    "cekirdek/yonetim-paneli/siparisler/fatura.tsx",
     "cekirdek/yonetim-paneli/siparisler/iade-talebi-kutusu.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
     "cekirdek/yonetim-paneli/siparisler/not-formu.tsx",
@@ -586,6 +591,7 @@
     "cekirdek/yonetim-paneli/panel-islemi.ts",
     "cekirdek/yonetim-paneli/siparisler/ayrinti.tsx",
     "cekirdek/yonetim-paneli/siparisler/elle-siparis.tsx",
+    "cekirdek/yonetim-paneli/siparisler/fatura.tsx",
     "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
     "cekirdek/yonetim-paneli/tema/ayarlar-ekrani.tsx",
@@ -624,6 +630,7 @@
     "cekirdek/yonetim-paneli/ozellikler/ekran.tsx",
     "cekirdek/yonetim-paneli/panel-cercevesi.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayarlar.tsx",
+    "cekirdek/yonetim-paneli/siparisler/fatura.tsx",
     "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/iade-talebi-kutusu.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",

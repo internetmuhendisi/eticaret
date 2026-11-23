@@ -20,6 +20,7 @@ import {
   CircleXIcon,
   CopyIcon,
   CreditCardIcon,
+  DownloadIcon,
   EllipsisIcon,
   ExternalLinkIcon,
   EyeIcon,
@@ -167,6 +168,8 @@ export const ikonlar = {
   tema: PaletteIcon,
   // Sipariş alındı sayfası (kart 0214): IBAN'ı kopyala.
   kopyala: CopyIcon,
+  // Siparişin faturasını indir (kart 0268).
+  indir: DownloadIcon,
   // Ürünler listesi (kart 0262): menüdeki sayfa ve boş hâl.
   urunler: BoxIcon,
   // Kategoriler, markalar ve etiketler, özellikler ekranları (kart 0261): menüdeki sayfalar.

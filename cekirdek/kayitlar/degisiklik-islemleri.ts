@@ -113,6 +113,9 @@ export const degisiklikIslemleri = [
   // girmez: müşteriye yazılan serbest metindir).
   "siparis.iade-talebi-onaylandi",
   "siparis.iade-talebi-reddedildi",
+  // Kart 0268: siparişin faturası yazıldı (numara, tarih, dosyanın kimliği) ya da kaldırıldı.
+  "siparis.fatura-yazildi",
+  "siparis.fatura-kaldirildi",
 ] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 
