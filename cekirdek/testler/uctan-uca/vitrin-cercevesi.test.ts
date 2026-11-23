@@ -12,6 +12,7 @@ import { duzenServisi } from "../../moduller/duzen/servis";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
 import { vitrinAdresleri } from "../../vitrin/adresler";
 import { girisAdresi } from "../../yonetim-paneli/adresler";
+import { duzenKilidiniAl } from "./duzen-kilidi";
 import { satirlarinYazisi } from "./satir-hizasi";
 import { sayfaHazir } from "./sayfa-hazir";
 
@@ -21,6 +22,15 @@ const vt = baglan(veritabaniAdresi());
 const servis = duzenServisi(calisanSite);
 const kim = sistemIslemi("uctan-uca-vitrin-cercevesi");
 
+// Düzeni değiştiren tarayıcı testleri sırayla çalışır (kart 0293, duzen-kilidi.ts).
+let kilidiBirak: (() => Promise<void>) | undefined;
+test.beforeEach(async () => {
+  kilidiBirak = await duzenKilidiniAl(vt);
+});
+test.afterEach(async () => {
+  await kilidiBirak?.();
+  kilidiBirak = undefined;
+});
 test.afterAll(async () => {
   await vt.$client.end();
 });

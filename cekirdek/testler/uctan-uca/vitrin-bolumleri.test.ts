@@ -22,6 +22,7 @@ import { menuEkle, menuSil, ogeEkle } from "../../moduller/menu/servis";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
 import { vitrinAdresleri } from "../../vitrin/adresler";
 import type { BolumOrnegi } from "../../vitrin/bolum-kutuphanesi/duzen";
+import { duzenKilidiniAl } from "./duzen-kilidi";
 import { konsoluDinle } from "./konsol";
 import { odakCubuktaGizlenenler } from "./odak-gorunur";
 import { sayfaHazir } from "./sayfa-hazir";
@@ -53,6 +54,15 @@ test.use({ actionTimeout: 15_000 });
 test.beforeEach(({ page }) => {
   yonetici = yoneticiAc();
   return ayriBaglanti(page);
+});
+// Düzeni değiştiren tarayıcı testleri sırayla çalışır (kart 0293, duzen-kilidi.ts).
+let kilidiBirak: (() => Promise<void>) | undefined;
+test.beforeEach(async () => {
+  kilidiBirak = await duzenKilidiniAl(vt);
+});
+test.afterEach(async () => {
+  await kilidiBirak?.();
+  kilidiBirak = undefined;
 });
 test.afterAll(async () => {
   await vt.$client.end();
