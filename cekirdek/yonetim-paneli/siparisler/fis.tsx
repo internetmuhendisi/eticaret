@@ -108,24 +108,26 @@ function Fis({ magaza, fis, sira }: { magaza: FisMagazasi; fis: SiparisFisi; sir
           )}
           <div className="flex flex-col">
             <h3 className={kucukBaslik}>{metin("yonetim.siparisFisi.fatura")}</h3>
+            {/* Taslaktaki gibi tek satır: "Bireysel · teslimat adresiyle aynı". */}
             <span>
-              {fatura.tur === "kurumsal"
-                ? doldur(metin("yonetim.siparis.teslimat.kurumsal"), {
-                    firma: fatura.firma,
-                    vergiDairesi: fatura.vergiDairesi,
-                    vergiNumarasi: fatura.vergiNumarasi,
-                  })
-                : metin("yonetim.siparis.teslimat.bireysel")}
+              {[
+                fatura.tur === "kurumsal"
+                  ? doldur(metin("yonetim.siparis.teslimat.kurumsal"), {
+                      firma: fatura.firma,
+                      vergiDairesi: fatura.vergiDairesi,
+                      vergiNumarasi: fatura.vergiNumarasi,
+                    })
+                  : metin("yonetim.siparis.teslimat.bireysel"),
+                ...(fatura.adresAyni ? [metin("yonetim.siparis.teslimat.adresAyni")] : []),
+              ].join(" · ")}
             </span>
-            {fatura.adresAyni ? (
-              <span>{metin("yonetim.siparis.teslimat.adresAyni")}</span>
-            ) : (
-              fatura.adres.map((satir) => (
-                <span key={satir} className="wrap-anywhere">
-                  {satir}
-                </span>
-              ))
-            )}
+            {fatura.adresAyni
+              ? null
+              : fatura.adres.map((satir) => (
+                  <span key={satir} className="wrap-anywhere">
+                    {satir}
+                  </span>
+                ))}
           </div>
         </div>
       </div>
@@ -140,7 +142,11 @@ function Fis({ magaza, fis, sira }: { magaza: FisMagazasi; fis: SiparisFisi; sir
               <TabloBasHucresi scope="col" className="py-2 pr-2 font-kalin uppercase">
                 {metin("yonetim.siparisFisi.urun")}
               </TabloBasHucresi>
-              <TabloBasHucresi scope="col" className="py-2 pr-2 font-kalin uppercase">
+              {/* Telefonda stok kodu ürünün altındadır (dar sütunda harf harf kırılıyordu); yazdırmada sütundur. */}
+              <TabloBasHucresi
+                scope="col"
+                className="hidden py-2 pr-2 font-kalin uppercase tablet:table-cell print:table-cell"
+              >
                 {metin("yonetim.siparisFisi.stokKodu")}
               </TabloBasHucresi>
               <TabloBasHucresi scope="col" className="py-2 text-right font-kalin uppercase">
@@ -181,8 +187,13 @@ function Fis({ magaza, fis, sira }: { magaza: FisMagazasi; fis: SiparisFisi; sir
                 <TabloHucresi className="py-2 pr-2">
                   <strong className="block">{kalem.ad}</strong>
                   {kalem.secim === "" ? null : <span className="block">{kalem.secim}</span>}
+                  {kalem.stokKodu === null ? null : (
+                    <span className="block wrap-anywhere tablet:hidden print:hidden">
+                      {kalem.stokKodu}
+                    </span>
+                  )}
                 </TabloHucresi>
-                <TabloHucresi className="py-2 pr-2 wrap-anywhere">
+                <TabloHucresi className="hidden py-2 pr-2 wrap-anywhere tablet:table-cell print:table-cell">
                   {kalem.stokKodu ?? ""}
                 </TabloHucresi>
                 <TabloHucresi className="py-2 text-right">{kalem.adet}</TabloHucresi>
