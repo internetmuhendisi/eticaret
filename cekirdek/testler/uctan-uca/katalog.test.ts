@@ -147,6 +147,26 @@ test("biçimli metin alanı: araç çubuğu ok tuşlarıyla gezilir, bağlantı 
   const dugme = (anahtar: "kalin" | "egik" | "siraliListe" | "baglanti") =>
     cubuk.getByRole("button", { name: metin(`yonetim.bicimliMetin.${anahtar}`) });
   const yazi = page.getByRole("textbox", { name: ad, exact: true }).first();
+  // Editörün (ProseMirror) bildiği seçili yazı. Klavyeyle yapılan seçimi editör tarayıcıdan birkaç milisaniye sonra
+  // okur; test odağı hemen düğmeye taşırsa bağlantı boş seçime uygulanır ve yazı bağlantı olmaz (kart 0293, hat
+  // 45050882397; ölçüldü: Shift+Home'dan sonra tarayıcıda "eğik" seçiliyken editörün seçimi boştu). Kullanıcı bu
+  // kadar hızlı olamaz: test seçimin editöre geçmesini bekler. Tiptap editörü kendi kutusunda `editor` olarak taşır.
+  const seciliYazi = () =>
+    yazi.evaluate((kutu) => {
+      const editor = (
+        kutu as HTMLElement & {
+          editor?: {
+            state: {
+              selection: { from: number; to: number };
+              doc: { textBetween: (a: number, b: number) => string };
+            };
+          };
+        }
+      ).editor;
+      if (editor === undefined) return null;
+      const { from, to } = editor.state.selection;
+      return editor.state.doc.textBetween(from, to);
+    });
   await yazi.focus();
   await page.keyboard.press("ControlOrMeta+End");
   await page.keyboard.press("Shift+Tab");
@@ -173,6 +193,7 @@ test("biçimli metin alanı: araç çubuğu ok tuşlarıyla gezilir, bağlantı 
   await expect(dugme("egik")).toHaveAttribute("aria-pressed", "true");
   await expect(yazi.locator("em", { hasText: "eğik" })).toBeVisible();
   await page.keyboard.press("Shift+Home");
+  await expect.poll(seciliYazi).toBe("eğik");
 
   // Bağlantı: satır açılır, odak adres alanında; izinsiz adres hatayla reddedilir.
   await dugme("baglanti").focus();
@@ -190,6 +211,7 @@ test("biçimli metin alanı: araç çubuğu ok tuşlarıyla gezilir, bağlantı 
   await expect(yazi.locator("a")).toHaveCount(0);
   // Geçerli adres seçili yazıyı bağlantı yapar.
   await page.keyboard.press("Shift+Home");
+  await expect.poll(seciliYazi).toBe("eğik");
   await dugme("baglanti").focus();
   await page.keyboard.press("Enter");
   await expect(adres).toBeFocused();
