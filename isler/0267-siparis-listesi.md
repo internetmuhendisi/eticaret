@@ -26,4 +26,4 @@ Kart 0258'de yazılanlar (liste motorunun canlı örneği olarak): liste motorun
 
 ## Durum
 
-yapılacak
+bitti
