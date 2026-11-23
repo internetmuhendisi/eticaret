@@ -6,6 +6,7 @@
 // gider. Ekran gördüğü faturayı gönderir: arada değiştiyse sunucu çakışma verir, sayfa yenilenir. Hatalar ortak form
 // yapısıyla (karar 0159): alanın altında, tek hatada odak alanda.
 import { useState } from "react";
+import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { DosyaYukleme } from "../../../bilesenler/parcalar/dosya-yukleme";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
@@ -68,6 +69,7 @@ export function FaturaIslemleri({
   return (
     <div className="flex flex-wrap gap-2">
       <Dugme tur="sade" onClick={() => setAcik(true)}>
+        <Ikon ad={fatura === null ? "ekle" : "duzenle"} />
         {metin(fatura === null ? "yonetim.siparis.fatura.ekle" : "yonetim.siparis.fatura.duzenle")}
       </Dugme>
       {fatura === null ? null : (

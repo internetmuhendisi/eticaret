@@ -173,6 +173,7 @@ paths:
 
 - Müşterinin siparişi yalnız `musteriSiparisleri` (`cekirdek/moduller/siparis/musteri.ts`) ile okunur: `liste` ve `ayrinti` hesabın kimliğiyle, `takipBaslat` ve `takipleOku` numara ve e-postayla. İç not, iade nedeni, başarısız iade ve yazanlar orada süzülür; takipte teslimat orada kısaltılır. Ekran yeniden süzmez.
 - Ayrıntı iki yolda da `SiparisAyrintisi` (`cekirdek/vitrin/siparis/ayrinti.tsx`) ile çizilir. Sipariş alındı, ayrıntı ve liste ortak yazılışları (durum rozeti, ödeme yöntemi, adres ve fatura satırı, tutar özeti, havale kutusu) `parcalar.tsx`'ten alır. Kalemin bugünkü görseli ve sayfası `siparisUrunleri` ile gelir: sayfası açılmayan ürünün ikisi de yoktur.
+- Mağazanın kestiği fatura (karar 0170) iki yolda da `SiparisAyrintisi`'nin "Fatura" bölümündedir (`faturaBelgesi`): numara, tarih ve dosya varsa "Faturayı indir" bağlantısı (hesapta `/kapi/musteri/siparis-faturasi`, takipte takip uçlarının yolundaki `/fatura`). Sunucuda çizilir, tarayıcı koduna bir şey eklemez.
 - Takip anahtarının çerezi (`siparisTakipCerezi`) yalnız takip sayfasının yoluna ve takip uçlarının yoluna (`kapiYolu`) gider; adres `vitrinAdresleri.siparisTakibi`, çerezin yoluyla tektir. Anahtarı okuyan yeni takip ucu `kapiYolu`'nun altına yazılır (karar 0151). Sayfa adresteki numarayı (`?siparis=`) yalnız formu doldurmak için okur; e-posta adrese yazılmaz.
 
 ## İade talebi ve müşterinin iptali (karar 0151)

@@ -1250,6 +1250,7 @@
       },
       "fatura": {
         "baslik": "Fatura",
+        "eklendi": "Eklendi",
         "yok": "Fatura bilgisi yok.",
         "ekle": "Fatura ekle",
         "duzenle": "Düzenle",

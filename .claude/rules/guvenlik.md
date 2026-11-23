@@ -22,7 +22,7 @@ paths:
 - Tarayıcıda çalışan kod yalnız açık olması güvenli değişkenleri okusun.
 - Kart bilgisi ödeme kuruluşunun formunda girilsin ve sitenin sunucusundan geçmesin. Kartla ödeme eklentisinde form kuruluşun sayfasındadır, sonuç kuruluşa imzalı sorguyla sorulur (kart 0215, karar 0142).
 - Bir hizmetin verdiği anahtar (ödeme kuruluşu) dışarıdan gelen gizli bilgidir: kaydı `cekirdek/kayitlar/disaridan-gizli-bilgiler.ts`, okuması yalnız `disaridanGizliBilgi`. Yoksa hizmet o sitede kullanılamaz; kayda ve günlüğe yazılmaz.
-- Yüklenen dosyanın türünü, boyutunu ve içeriğini yükleme anında sunucuda kontrol et.
+- Yüklenen dosyanın türünü, boyutunu ve içeriğini yükleme anında sunucuda kontrol et. Belge (PDF, karar 0170) görselden ayrı türdür: yalnız `belgeKaydet` ve `belgeOku` ile yazılır ve okunur, görsel yolları onu görmez; tarayıcıya yalnız indirilecek dosya olarak (`DosyaYaniti`'nin `indirme`'si: ekli dosya, sandbox, önbelleksiz) verilir.
 - Siteyi yalnız şifreli bağlantıyla aç. Güvenlik başlıklarını aç. Başka sitelerden gelen sahte istekleri kabul etme.
 - Yönetici girişinde iki aşamalı doğrulama ve giriş deneme sınırı olsun. Deneme sınırı `cekirdek/moduller/oturum/giris.ts`, değerleri `cekirdek/kayitlar/oturum.ts` (karar 0042). Yeni bir giriş ucu `sinirliSifreDogrula` kullanır. İki aşamalı giriş `cekirdek/moduller/oturum/iki-asamali-giris.ts`, karar 0044: yönetici oturumu yalnız oradan açılır, başka yerden `oturumAc` çağırmak testte kırmızıdır, iki aşamadan geçmemiş oturum reddedilir. Şifreleme anahtarı `IKI_ASAMA_ANAHTARI` değişirse kurulu girişler açılamaz.
 - Sunucuda yönetici yalnız `pnpm sunucu-yonetici-ac` ile açılır (karar 0054): şifre sunucuda üretilir, kutunun günlüğü kapalıdır. Bu çıktıyı kayda, günlüğe ya da sohbete kopyalama.

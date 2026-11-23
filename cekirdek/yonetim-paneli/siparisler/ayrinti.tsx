@@ -30,17 +30,30 @@ import type { SiparisAyrintisiVerisi } from "./veri";
 function Bolum({
   baslik,
   kimlik,
+  ek,
   children,
 }: {
   baslik: string;
   kimlik: string;
+  // Başlığın yanındaki işaret (rozet).
+  ek?: ReactNode;
   children: ReactNode;
 }) {
+  const basligi = (
+    <h2 id={kimlik} className="font-baslik text-baslik-4 font-baslik-kalinligi">
+      {baslik}
+    </h2>
+  );
   return (
     <Kart className="gap-4 p-4 tablet:p-5">
-      <h2 id={kimlik} className="font-baslik text-baslik-4 font-baslik-kalinligi">
-        {baslik}
-      </h2>
+      {ek === undefined ? (
+        basligi
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {basligi}
+          {ek}
+        </div>
+      )}
       {children}
     </Kart>
   );
@@ -324,7 +337,15 @@ export function SiparisAyrintisi({ veri }: { veri: SiparisAyrintisiVerisi }) {
             </ul>
           </Bolum>
         )}
-        <Bolum baslik={metin("yonetim.siparis.fatura.baslik")} kimlik="siparis-faturasi">
+        <Bolum
+          baslik={metin("yonetim.siparis.fatura.baslik")}
+          kimlik="siparis-faturasi"
+          ek={
+            veri.faturaBelgesi === null ? undefined : (
+              <Rozet tur="basari">{metin("yonetim.siparis.fatura.eklendi")}</Rozet>
+            )
+          }
+        >
           {veri.faturaBelgesi === null ? (
             <p className="text-kucuk text-soluk-yazi">{metin("yonetim.siparis.fatura.yok")}</p>
           ) : (

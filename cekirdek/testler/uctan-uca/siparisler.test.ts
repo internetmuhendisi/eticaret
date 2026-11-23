@@ -760,7 +760,8 @@ test("sipariş ayrıntısı: fatura klavyeyle eklenir, PDF yüklenir, indirilir,
   await ikiRenkUcGenislik(page, "faturalı sipariş ayrıntısı");
 
   // Müşteri takip sayfasında faturayı görür ve indirir.
-  const musteriBaglami = await browser.newContext({ baseURL: test.info().project.use.baseURL });
+  const adres = test.info().project.use.baseURL;
+  const musteriBaglami = await browser.newContext(adres === undefined ? {} : { baseURL: adres });
   const musteri = await musteriBaglami.newPage();
   await musteri.setViewportSize({ width: 390, height: 844 });
   await musteri.goto(siparisTakibiAdresi(numara));
