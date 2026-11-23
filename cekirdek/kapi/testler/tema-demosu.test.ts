@@ -21,7 +21,7 @@ afterEach(() => {
 });
 
 describe("tema demosunda kapı", () => {
-  it("kapalı uçlar: müşteri girişinin hepsi, müşterinin hesabı, şifresi ve stok bildirimi", async () => {
+  it("kapalı uçlar: müşteri girişinin hepsi, müşterinin hesabı, şifresi, stok bildirimi ve siparişin takibi", async () => {
     const uclar = await uclariOku(uygulamaAdresleri);
     const kapali = uclar
       .filter((kayit) => kayit.uc.tanim?.temaDemosunda === "kapali")
@@ -51,6 +51,8 @@ describe("tema demosunda kapı", () => {
         // Kart 0239: üye olmayanın iade talebi ve iptali siparişe yazar.
         "POST /kapi/herkese-acik/siparis-takibi/iade-talebi",
         "POST /kapi/herkese-acik/siparis-takibi/iptal",
+        // Kart 0268: takipteki fatura dosyası kişisel veri taşır.
+        "GET /kapi/herkese-acik/siparis-takibi/fatura",
         // Kart 0215: kartla ödemenin dönüşü ve bildirimi sipariş doğurur, taksit tablosu kuruluşa gider.
         "POST /kapi/herkese-acik/kartla-odeme/donus",
         "POST /kapi/herkese-acik/kartla-odeme/bildirim",

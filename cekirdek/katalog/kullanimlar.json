@@ -100,6 +100,7 @@
     "cekirdek/yonetim-paneli/ozellikler/ekran.tsx",
     "cekirdek/yonetim-paneli/panel-menusu.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayrinti.tsx",
+    "cekirdek/yonetim-paneli/siparisler/fatura.tsx",
     "cekirdek/yonetim-paneli/siparisler/liste.tsx",
     "cekirdek/yonetim-paneli/tema/ayarlar-ekrani.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
