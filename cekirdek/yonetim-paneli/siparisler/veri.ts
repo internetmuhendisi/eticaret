@@ -27,6 +27,7 @@ import {
 import { siteninBicimAyarlari, siteninBicimleyicisi } from "../../metinler/site-metni";
 import { epostaGidebilirMi } from "../../moduller/eposta/gonderici";
 import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
+import { musteriYonetimi } from "../../moduller/musteri/yonetim";
 import { siparisAyarlari } from "../../moduller/siparis/ayarlar";
 import { type SiparisFaturasi, siparisFaturaServisi } from "../../moduller/siparis/fatura";
 import type { HesapSiparisi, OncekiIade } from "../../moduller/siparis/iade-hesabi";
@@ -353,6 +354,11 @@ export const siparisAyrintisiVerisi = async (
   const { siparis } = ayrinti;
   const durum = siparis.durum as SiparisDurumu;
   const kisiselSilindi = siparis.kisisel_veri_silinme_zamani !== null;
+  // Müşteri ayrıntısına bağlantı: yalnız izni olana ve hesap silinmemişse (silinmiş hesabın ayrıntısı bulunamadıdır).
+  const musteriAcik =
+    siparis.musteri_kimligi !== null &&
+    yetkili("musteri.gor") &&
+    (await musteriYonetimi(site).acikMi(vt, siparis.musteri_kimligi));
   // Kuruluşun yanıtını bekleyen iade varken durum işlemi yapılmaz (sunucu da reddeder): düğmeler görünmez.
   const islemler = ayrinti.iadeler.some((iade) => iade.durum === "bekliyor")
     ? []
@@ -413,7 +419,7 @@ export const siparisAyrintisiVerisi = async (
       telefon: siparis.teslimat.telefon ?? null,
       uye: siparis.musteri_kimligi !== null,
       ayrintiAdresi:
-        siparis.musteri_kimligi !== null && yetkili("musteri.gor")
+        siparis.musteri_kimligi !== null && musteriAcik
           ? musteriAyrintisiAdresi(siparis.musteri_kimligi)
           : null,
     },

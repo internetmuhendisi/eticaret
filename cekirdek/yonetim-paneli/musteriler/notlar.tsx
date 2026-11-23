@@ -127,7 +127,7 @@ export function MusteriNotlari({
         <p className="text-soluk-yazi">{metin("yonetim.musteri.notlar.bos")}</p>
       ) : (
         <ol className="flex flex-col gap-4">
-          {notlar.map((not) => (
+          {notlar.map((not, sira) => (
             <li
               key={not.kimlik}
               className="flex flex-col gap-1 border-l-2 border-kenar pl-3 text-kucuk"
@@ -147,6 +147,7 @@ export function MusteriNotlari({
                     tur="sade"
                     data-not-sil={not.kimlik}
                     aria-label={doldur(metin("yonetim.musteri.notlar.silAdi"), {
+                      sira: String(sira + 1),
                       zaman: not.zaman,
                     })}
                     onClick={() => setSilinecek(not.kimlik)}

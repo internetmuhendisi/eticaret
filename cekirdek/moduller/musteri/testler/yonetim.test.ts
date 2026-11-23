@@ -508,7 +508,15 @@ describe("müşteri ayrıntısı ve notlar", () => {
     expect(JSON.stringify(kayit)).not.toContain(eposta);
     await yonetim.sifreSifirlamaGonder(h.vt, kim, a);
     await yonetim.sifreSifirlamaGonder(h.vt, kim, a);
-    expect(await hatasi(yonetim.sifreSifirlamaGonder(h.vt, kim, a))).toBe("istek-siniri");
+    // Müşterinin sınırı panelin istek sınırından ayrılır: ayrıntıda müşteri alanı.
+    const sinirHatasi = await yonetim
+      .sifreSifirlamaGonder(h.vt, kim, a)
+      .catch((hata: unknown) => hata);
+    expect(sinirHatasi).toBeInstanceOf(BilinenHata);
+    expect(sinirHatasi).toMatchObject({
+      kod: "istek-siniri",
+      ayrinti: [{ alan: "musteri", kod: "sifre-sifirlama-siniri" }],
+    });
     denemeleriSil(`musteri sifirlama ${eposta}`);
     denemeleriSil(`musteri sifirlama gunluk ${eposta}`);
     await h.vt

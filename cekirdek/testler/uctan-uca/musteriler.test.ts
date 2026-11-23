@@ -4,7 +4,7 @@
 // - Ayrıntıda sayılar, sipariş bağlantısı, hesap ve adres; boş notta alanın hatası ve odak; not klavyeyle eklenir;
 //   silmede onay penceresi, Escape vazgeçer, Sil notu kaldırır ve odak not alanına döner.
 // - "Şifre sıfırlama bağlantısı gönder" onayla gider; e-posta müşterinin adresine kuyruğa girer.
-// - Sipariş ayrıntısında üye müşterinin adı müşteri ayrıntısına bağlantıdır.
+// - Sipariş ayrıntısında üye müşterinin adı müşteri ayrıntısına bağlantıdır; hesap silinince değildir.
 // - Silinmiş hesabın ayrıntısı bulunamadı (404).
 // - Liste, ayrıntı ve onay penceresi iki renkte ve üç genişlikte taramadan geçer, yana kaymaz; konsolda hata yok.
 import { randomBytes, randomUUID } from "node:crypto";
@@ -276,5 +276,10 @@ test("müşteriler: menüden klavyeyle, Türkçe harfsiz arama, ayrıntı, not e
     .where(eq(musteriler.kimlik, m.musteri));
   const yanit = await page.goto(musteriAyrintisiAdresi(m.musteri));
   expect(yanit?.status()).toBe(404);
+  // Silinmiş hesabın adı sipariş ayrıntısında bağlantı değildir.
+  await page.goto(siparisAyrintisiAdresi(m.numara));
+  await sayfaHazir(page);
+  await expect(page.getByText(m.ad).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: m.ad })).toHaveCount(0);
   expect(hatalar.filter((h) => !h.includes("404"))).toEqual([]);
 });

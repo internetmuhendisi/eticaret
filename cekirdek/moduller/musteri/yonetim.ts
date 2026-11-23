@@ -340,6 +340,15 @@ export const musteriYonetimi = (site: Site) => {
     };
   };
 
+  // Hesap var ve silinmemiş mi (sipariş ayrıntısındaki bağlantı için).
+  const acikMi = async (vt: Veritabani, kimlik: string): Promise<boolean> =>
+    (
+      await vt
+        .select({ kimlik: musteriler.kimlik })
+        .from(musteriler)
+        .where(and(eq(musteriler.kimlik, kimlik), isNull(musteriler.silinme_zamani)))
+    ).length > 0;
+
   // Not ekler: müşterinin satırı paylaşımlı kilitlenir (aynı anda silinen hesaba not yazılmaz).
   const notEkle = async (
     vt: Veritabani,
@@ -402,7 +411,8 @@ export const musteriYonetimi = (site: Site) => {
     });
 
   // Şifre sıfırlama bağlantısı müşterinin kendi e-postasına gider (şifremi unuttum akışı ve sınırları); mağaza şifreyi
-  // görmez. Değişiklik kaydı bağlantıyla aynı işlemde yazılır. Sınır doluysa "istek-siniri", hesap yoksa "bulunamadi".
+  // görmez. Değişiklik kaydı bağlantıyla aynı işlemde yazılır. Müşterinin sınırı doluysa "istek-siniri"
+  // (ayrıntıda müşteri alanıyla), hesap yoksa "bulunamadi".
   const sifreSifirlamaGonder = async (
     vt: Veritabani,
     kim: DegisikligiYapan,
@@ -427,11 +437,14 @@ export const musteriYonetimi = (site: Site) => {
           yeni: null,
         }),
     );
-    if (sonuc === "sinir") throw new BilinenHata("istek-siniri");
+    // Müşterinin bağlantı sınırı panelin kendi istek sınırından ayrılır: ayrıntıda müşteri alanı.
+    if (sonuc === "sinir") {
+      throw new BilinenHata("istek-siniri", [{ alan: "musteri", kod: "sifre-sifirlama-siniri" }]);
+    }
     if (sonuc === "hesap-yok") throw new BilinenHata("bulunamadi");
     if (sonuc === "adres-yok") throw new BilinenHata("hizmet-kullanilamiyor");
     return { sonuc };
   };
 
-  return { liste, ayrinti, notEkle, notSil, sifreSifirlamaGonder };
+  return { liste, ayrinti, acikMi, notEkle, notSil, sifreSifirlamaGonder };
 };

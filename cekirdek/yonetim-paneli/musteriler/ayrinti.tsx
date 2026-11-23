@@ -41,20 +41,15 @@ export function MusteriAyrintisi({
 }) {
   return (
     <div className="flex flex-col gap-4">
-      <dl className="grid grid-cols-1 gap-3 tablet:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 tablet:grid-cols-3">
         {[
           [metin("yonetim.musteri.sayi.siparis"), String(veri.siparisSayisi)],
           [metin("yonetim.musteri.sayi.toplam"), veri.toplam],
           [metin("yonetim.musteri.sayi.ortalama"), veri.ortalama],
         ].map(([ad, deger]) => (
-          <div key={ad}>
-            <dt className="sr-only">{ad}</dt>
-            <dd>
-              <Sayi ad={ad ?? ""} deger={deger ?? ""} />
-            </dd>
-          </div>
+          <Sayi key={ad} ad={ad ?? ""} deger={deger ?? ""} />
         ))}
-      </dl>
+      </div>
       <div className="flex flex-col gap-4 masaustu:flex-row masaustu:items-start">
         <div className="flex min-w-0 flex-col gap-4 masaustu:w-2/3">
           <Bolum baslik={metin("yonetim.musteri.siparisler.baslik")} kimlik="musteri-siparisleri">
@@ -124,6 +119,13 @@ export function MusteriAyrintisi({
               notlar={veri.notlar}
               degistirebilir={notDegistirebilir}
             />
+            {veri.notKesildi ? (
+              <p className="text-kucuk text-soluk-yazi">
+                {doldur(metin("yonetim.musteri.notlar.kesildi"), {
+                  sayi: String(musteriPanelSinirlari.ayrintiNot),
+                })}
+              </p>
+            ) : null}
           </Bolum>
         </div>
         <div className="flex min-w-0 flex-col gap-4 masaustu:w-1/3">

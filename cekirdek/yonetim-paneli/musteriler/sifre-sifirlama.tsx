@@ -11,9 +11,11 @@ import { EylemDugmesi } from "../eylem-dugmesi";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
 
-const hataMetni = (hata: PanelHatasi): MetinAnahtari =>
+export const sifreSifirlamaHataMetni = (hata: PanelHatasi): MetinAnahtari =>
   hata.kod === "istek-siniri"
-    ? "yonetim.musteri.sifre.sinir"
+    ? hata.ayrinti.some((a) => a.alan === "musteri")
+      ? "yonetim.musteri.sifre.sinir"
+      : "yonetim.musteri.sifre.panelSiniri"
     : hata.kod === "yetki"
       ? "yonetim.musteri.sifre.yetki"
       : hata.kod === "bulunamadi"
@@ -22,7 +24,7 @@ const hataMetni = (hata: PanelHatasi): MetinAnahtari =>
 
 export function SifreSifirlamaGonder({ musteri, eposta }: { musteri: string; eposta: string }) {
   const metin = usePanelMetni();
-  const islem = usePanelIslemi(hataMetni);
+  const islem = usePanelIslemi(sifreSifirlamaHataMetni);
   const [acik, setAcik] = useState(false);
   return (
     <>

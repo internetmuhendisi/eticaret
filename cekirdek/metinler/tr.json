@@ -2165,7 +2165,7 @@
         "eklendi": "Not kaydedildi.",
         "silindi": "Not silindi.",
         "sil": "Sil",
-        "silAdi": "Sil: {zaman} tarihli not",
+        "silAdi": "Sil: {sira}. not, {zaman}",
         "bos": "Henüz not yok.",
         "yazanZaman": "{yazan} · {zaman}",
         "gerekli": "Notu yazın.",
@@ -2177,7 +2177,8 @@
         "silOnay": {
           "baslik": "Not silinsin mi?",
           "metin": "Not kalıcı olarak silinir, geri alınamaz."
-        }
+        },
+        "kesildi": "Son {sayi} not görünüyor."
       },
       "hesap": {
         "baslik": "Hesap",
@@ -2205,7 +2206,8 @@
         "sinir": "Bu müşteriye kısa süre içinde çok bağlantı gönderildi. Biraz sonra yeniden deneyin.",
         "yetki": "Şifre sıfırlama bağlantısı göndermeye yetkiniz yok.",
         "bulunamadi": "Müşteri bulunamadı. Sayfa yenilendi.",
-        "genel": "Bağlantı gönderilemedi. Biraz sonra yeniden deneyin."
+        "genel": "Bağlantı gönderilemedi. Biraz sonra yeniden deneyin.",
+        "panelSiniri": "Kısa sürede çok fazla istek gönderdiniz. Bir dakika sonra yeniden deneyin."
       }
     }
   },

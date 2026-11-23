@@ -82,6 +82,8 @@ export type MusteriAyrintisiVerisi = {
   siparisler: { numara: string; zaman: string; durum: SiparisDurumu; toplam: string }[];
   // Gösterilen siparişler sınırda kesildiyse true (daha eskileri siparişler listesinde aranır).
   siparisKesildi: boolean;
+  // Gösterilen notlar sınırda kesildiyse true (daha eskileri görünmez).
+  notKesildi: boolean;
   adresler: {
     kimlik: string;
     baslik: string;
@@ -124,6 +126,7 @@ export const musteriAyrintisiVerisi = async (
       toplam: b.para(siparis.toplam),
     })),
     siparisKesildi: ayrinti.siparisler.length >= musteriPanelSinirlari.ayrintiSiparis,
+    notKesildi: ayrinti.notlar.length >= musteriPanelSinirlari.ayrintiNot,
     adresler: ayrinti.adresler.map((adres) => ({
       kimlik: adres.kimlik,
       baslik: adres.baslik,
