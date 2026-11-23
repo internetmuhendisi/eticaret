@@ -101,4 +101,4 @@ Ana dal (düzeltmeden önce) yerelde hız ölçümüyle ölçülmedi; hat 451123
 
 ## Durum
 
-yapılacak
+bitti
