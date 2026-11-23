@@ -77,7 +77,7 @@ describe("vitrinin tarayıcı kodu", () => {
     expect(sorunlar).toEqual([]);
   });
 
-  it("bozuk örnekler: doğrudan, dolaylı ve toplu içe aktarma yakalanır; yalnız tür alan yakalanmaz", () => {
+  it("bozuk örnekler: doğrudan, dolaylı, toplu ve sonradan içe aktarma yakalanır; yalnız tür alan yakalanmaz", () => {
     const sahte = (dosyalar: Record<string, string>) => (yol: string) =>
       dosyalar[relative(kok, yol)] ?? readFileSync(yol, "utf8");
     const bas = join(kok, "cekirdek/vitrin/ornek-istemci.tsx");

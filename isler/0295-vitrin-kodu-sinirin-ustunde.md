@@ -58,13 +58,14 @@ Bu yöntemle havale bildirimi sayfası (sıkıştırılmış):
 
 Hız ölçümü aynı sayfada bu yöntemden yaklaşık 6 KB fazla sayar (aktarılan boyut).
 
-Büyümenin kaynakları (sıkıştırılmamış, 21 Kasım'a göre):
+Büyümenin kaynakları (21 Kasım'a göre; dosya başına sıkıştırılmamış bayt, ikonlarda ayrıca sıkıştırılmış pay):
 - **İkonlar:** Vitrine 55 yerine 70 ikon gidiyordu (sıkıştırılmış 4,6'dan 6,1 KB'a). İkon sözlüğü tek dosyaydı; panelin menü sayfaları, eylemleri, liste sıralaması, tarih süzgeci, biçimli metin alanı ve dosya yükleme ikonları da vitrine gidiyordu. Sızıntı.
 - **Tema tabloları (+3,1 KB):** Hazır temaların değer tabloları (`degerler.ts`) katalogdaki renk alanı örneği (kart 0260) yüzünden vitrine giriyordu. Ölçüldü: 21 Kasım'da vitrinde hiçbir temanın rengi yoktu, ana dalda Canlı Çarşı'nın 40 rengi de vardı. Sızıntı.
 - **floating-ui (+2,8 KB):** Kart 0259'dan beri `autoPlacement` ve `inline` da paketleniyor. Uygulamada onları içe aktaran dosya yok (Tiptap'ın menü eklentileri istemci çizgesinde değil; 0263'ten önce de vardı, ölçüldü). Derleyicinin modül birleştirme kararından geliyor, kodda düzeltme noktası bulunmadı.
 - **`istemci.ts` (+0,8 KB):** Panelin dosya yükleme işlevi (`kapiyaYukle`, kart 0094) vitrinin bütün formlarının kullandığı dosyadaydı. Sızıntı.
 - **Biçimleyici (+0,8 KB) ve sipariş kaydı (+0,75 KB):** Panel için eklenen işlevler ve adlar. Ortak modül, bölünmedi.
 - **Vitrinin kendi kodu:** Yan pencere (alt çubuk) ve form alanı (+0,6 KB, kart 0259), vitrin metinleri (+0,3 KB).
+- Sıkıştırılmış toplam büyümenin (6,6 KB) yaklaşık 2 KB'ı hiçbir dosyaya bağlanamadı: parçaların bölünmesi ve sıkıştırmanın dağılımı (ana dalda parça sayısı 20'den 21'e çıktı).
 
 Mekanizma: Derleyici bir modülü, bütün tarayıcı dosyalarının ondan kullandığı her şeyle paketliyor. Panelin ya da kataloğun bir ortak modülden kullandığı şey vitrine de gidiyor.
 
@@ -96,7 +97,7 @@ Koşul: temiz deneme veritabanı ayrı kutuda, `taskset -c 0,1`, boş dosya klas
 | Sepet | 293 |
 | Bulunamadı | 293 |
 
-Düzeltmeden önce aynı koşulda havale bildirimi 305 KB'tı (kırmızı), ürün 305, sipariş takibi 304. Sınıra pay yaklaşık 1 KB. Kalan büyüme (floating-ui, biçimleyici, sipariş kaydı) kodda bu kartla düzeltilemedi; genel küçültme kart 0194'tedir.
+Ana dal (düzeltmeden önce) yerelde hız ölçümüyle ölçülmedi; hat 45112363642'de havale bildirimi 307, ürün 306, sipariş takibi 305 KB'tı. İlk iki düzeltmeden (ikon sözlüğü, tema tabloları) sonra aynı koşulda havale bildirimi 305 (kırmızı), ürün 305, sipariş takibi 304 KB; yükleme istemcisi ve iki parçanın ikonlarıyla yukarıdaki değerler. Bu yöntemle havale bildirimi 301,6'dan 297,8 KB'a indi. Sınıra pay yaklaşık 1 KB. Kalan büyüme (floating-ui, biçimleyici, sipariş kaydı) kodda bu kartla düzeltilemedi; genel küçültme kart 0194'tedir.
 
 ## Durum
 

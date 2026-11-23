@@ -29,7 +29,8 @@ Kart 0295 vitrinin kodunun 21 Kasım'dan bu yana neden büyüdüğünü ölçtü
   - tema tabloları yaklaşık +1,1 KB (katalogdaki renk alanı örneği yüzünden);
   - floating-ui yaklaşık +1 KB;
   - `istemci.ts`, biçimleyici, sipariş kaydı, yan pencere ve form alanı birlikte yaklaşık +1 KB;
-  - geri kalanı vitrinin kendi metinleri.
+  - vitrinin kendi metinleri yaklaşık +0,1 KB;
+  - geri kalan yaklaşık 2 KB hiçbir dosyaya bağlanamadı (parçaların bölünmesi ve sıkıştırmanın dağılımı; ana dalda parça sayısı 20'den 21'e çıktı).
 - Panel ekranları yeni ikon ekledikçe vitrin her seferinde büyüyordu. On dördüncü bölüm yeni panel ekranlarıyla sürüyor.
 - Ayrı modül tek güvenilir yoldur. Aynı dosyada iki ayrı dışa aktarma da yetmez: derleyici modülde uygulamanın herhangi bir yerinde kullanılan her şeyi tutar.
 - Tür kuralı panelin ikonunun vitrinde sessizce kaybolmasını önler. Ad tür kontrolünde reddedilir, çalışırken boş ikon çıkmaz.
@@ -45,7 +46,8 @@ Kart 0295 vitrinin kodunun 21 Kasım'dan bu yana neden büyüdüğünü ölçtü
 
 ## Sonuçları
 
-- Hattın koşulunda (temiz veritabanı, iki işlemci) hız ölçümü yeşil. En büyük sayfalar ürün ve havale bildirimi (304 KB), sipariş takibi 303 KB; 21 Kasım'da 301, 301 ve 300 KB'tı.
+- Hattın koşulunda (temiz veritabanı, iki işlemci) hız ölçümü yeşil. En büyük sayfalar ürün ve havale bildirimi (304 KB), sipariş takibi 303 KB. Aynı sayfalar hat 45112363642'de 306, 307 ve 305, 21 Kasım'da 301, 301 ve 300 KB'tı.
+- Tür kuralı `as` ile atlatılabilir (`"takvim" as IkonAdi`): vitrinde ikon boş gelir. Bugün böyle yazım yok, yalnız disiplindir. Panel ikonu sözlükten alınmış bileşen olduğu için sunucu bileşeninden tarayıcı bileşenine geçirilemez; bugün `panelIkonu` yalnız tarayıcı dosyalarında çağrılır.
 - Pay yaklaşık 1 KB'tır. Kalan büyüme şu kaynaklarda; kodda bunların düzeltme noktası yok, genel küçültme kart 0194'tedir:
   - floating-ui: 0259'dan beri derleyici `autoPlacement` ve `inline`'ı da paketliyor; uygulamada onları içe aktaran dosya yok.
   - biçimleyicinin ve sipariş kaydının panele eklenen parçaları;
