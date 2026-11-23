@@ -29,4 +29,4 @@ Hat 45045593092'de (kart 0291'in gönderimi, 2026-11-22) `cekirdek/testler/uctan
 
 ## Durum
 
-yapılacak
+bitti
