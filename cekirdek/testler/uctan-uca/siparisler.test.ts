@@ -648,6 +648,19 @@ test("siparişler listesi: tarih, kargo firması ve bakılması gereken klavyeyl
   await expect(satir(kargodaki)).toHaveCount(0);
   await expect(satir(eski)).toHaveCount(0);
   await ikiRenkUcGenislik(page, "bakılması gereken");
+  // Telefonda seçili sekme şeridin görünen kısmındadır (sekme şeridin sonlarındadır; taslakla karşılaştırmada
+  // ekranın dışında kalıyordu).
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  await sayfaHazir(page);
+  const serit = page.getByRole("navigation", { name: metin("yonetim.siparisler.durumSuzgeci") });
+  await expect
+    .poll(async () => {
+      const s = await serit.boundingBox();
+      const k = await sekme.boundingBox();
+      return s !== null && k !== null && k.x >= s.x && k.x + k.width <= s.x + s.width;
+    })
+    .toBe(true);
   expect(hatalar).toEqual([]);
 });
 

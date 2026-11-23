@@ -39,6 +39,17 @@ describe("adresin okunması", () => {
     });
   });
 
+  it("bakılması gereken sekmesi yürüyen durumlardan hemen sonra (taslak, kart 0267)", () => {
+    const sekmeler = tanim.suzgecler.find((suzgec) => suzgec.kod === "durum")?.secenekler ?? [];
+    expect(sekmeler.indexOf("bakilacak")).toBe(sekmeler.indexOf("kargoda") + 1);
+    expect(sekmeler.slice(0, 4)).toEqual([
+      "odeme-bekleniyor",
+      "hazirlaniyor",
+      "kargoda",
+      "bakilacak",
+    ]);
+  });
+
   it("eski değer yenisine çevrilir: kart 0239'un iade talepleri sekmesi bakılması gerekendir (kart 0267)", () => {
     expect(listeDurumunuOku(tanim, { durum: "iade-talebi" }).suzgecler).toEqual({
       durum: ["bakilacak"],

@@ -2,7 +2,8 @@
 // Liste motorunun tarih süzgeci (kart 0267; taslak: planlar/tasarim-yonu/panel.html, "Tam sipariş listesi"). Araç
 // şeridinde "Tarih" düğmesi açılır paneli açar: hazır aralıklar (Bugün, Son 7 gün, Son 30 gün) ve "Tarih seç" ile
 // iki gün. "Uygula" adresi değiştirir, "Temizle" süzgeci kaldırır. Günler sitenin saat dilimiyle sayılır, iki gün de
-// dahildir (sunucu çevirir). Hata alanın altında yazar, odak hatalı alana gider; panel kapanınca odak düğmeye döner.
+// dahildir (sunucu çevirir). Gün alanları alt alta durur: yan yana sığmıyor, gün kesiliyordu (taslakla
+// karşılaştırma). Hata alanın altında yazar, odak hatalı alana gider; panel kapanınca odak düğmeye döner.
 import { type FormEvent, useRef, useState } from "react";
 import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
 import { FormAlani } from "../../../bilesenler/form/form-alani";
@@ -133,7 +134,7 @@ export function TarihSuzgeci({
           />
           {secim === ozel ? (
             <div className="flex flex-col gap-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-3">
                 <FormAlani
                   etiket={metin("yonetim.liste.tarih.baslangic")}
                   {...(hata?.alan === "baslangic" ? { hata: hata.metin } : {})}

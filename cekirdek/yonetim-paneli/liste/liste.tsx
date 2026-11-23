@@ -273,6 +273,21 @@ export function Liste<Satir>({
   };
 
   const sekme = tanim.suzgecler.find((suzgec) => suzgec.tur === "sekme");
+  // Seçili sekme şerit kayınca da görünür (kart 0267: telefonda sondaki sekme ekranın dışında kalıyordu). Yalnız şerit
+  // kayar, sayfa kaymaz.
+  const sekmeSeridiOgesi = useRef<HTMLElement>(null);
+  const seciliSekme = sekme === undefined ? undefined : (durum.suzgecler[sekme.kod]?.[0] ?? "");
+  useEffect(() => {
+    void seciliSekme;
+    const serit = sekmeSeridiOgesi.current;
+    const secili = serit?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (serit === null || serit === undefined || secili === null || secili === undefined) return;
+    const sol =
+      secili.getBoundingClientRect().left - serit.getBoundingClientRect().left + serit.scrollLeft;
+    const sag = sol + secili.getBoundingClientRect().width;
+    if (sol < serit.scrollLeft) serit.scrollLeft = sol;
+    else if (sag > serit.scrollLeft + serit.clientWidth) serit.scrollLeft = sag - serit.clientWidth;
+  }, [seciliSekme]);
   // Şeritteki süzgeçler, tanımın sırasıyla: açılır menüde tanımdaki seçenekler ya da sunucunun verdiği kayıtlar ve
   // değerler; tarih süzgeci kendi panelinde (TarihSuzgeci).
   const secenekSuzgecleri = tanim.suzgecler.filter((suzgec) => suzgec.tur !== "sekme");
@@ -319,6 +334,7 @@ export function Liste<Satir>({
   const sekmeSeridi =
     sekme === undefined ? null : (
       <nav
+        ref={sekmeSeridiOgesi}
         aria-label={suzgecAdlari[sekme.kod]?.ad}
         className="overflow-x-auto border-b border-kenar"
       >

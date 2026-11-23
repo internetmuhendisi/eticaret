@@ -35,7 +35,13 @@ export const siparisListesiTanimi = {
     {
       kod: "durum",
       tur: "sekme",
-      secenekler: [...siparisDurumlari, bakilacakSekmesi],
+      // Bakılması gereken, taslaktaki gibi yürüyen durumlardan (ödeme, hazırlık, kargo) hemen sonra: şerit kayınca da
+      // görünür kalır.
+      secenekler: [
+        ...siparisDurumlari.slice(0, siparisDurumlari.indexOf("kargoda") + 1),
+        bakilacakSekmesi,
+        ...siparisDurumlari.slice(siparisDurumlari.indexOf("kargoda") + 1),
+      ],
       eskiDegerler: { "iade-talebi": bakilacakSekmesi },
     },
     { kod: "tarih", tur: "tarih", secenekler: ["bugun", "son-7-gun", "son-30-gun"] },
