@@ -40,25 +40,33 @@ export const coz = (kaynak: string, adres: string): string | undefined => {
 };
 
 // Kod taşıyan içe aktarmalar ve yeniden aktarmalar: adres ve (varsa) süslü parantezdeki adlar. `import type` ve
-// `export type` sayılmaz; süslü parantezde tek tek `type` ile yazılan adlar da sayılmaz.
+// `export type` sayılmaz; süslü parantezde tek tek `type` ile yazılan adlar da sayılmaz. Sonradan yükleme
+// (`import("./x")`, `next/dynamic` içindeki de) modülün hepsini alır (kart 0295, bağımsız kontrolün bulgusu).
 export const iceAktarmalar = (icerik: string): { adres: string; adlar: string[] | "hepsi" }[] =>
   [
     ...icerik.matchAll(
       /(?:^|\n)\s*(?:import|export)\s+(?!type\s)([^"';]*?\sfrom\s+)?["'](\.{1,2}\/[^"']+)["']/g,
     ),
-  ].map((eslesme) => {
-    const bas = eslesme[1] ?? "";
-    const suslu = bas.match(/\{([^}]*)\}/);
-    const adlar =
-      suslu === null || /\*/.test(bas)
-        ? ("hepsi" as const)
-        : (suslu[1] ?? "")
-            .split(",")
-            .map((ad) => ad.trim())
-            .filter((ad) => ad !== "" && !ad.startsWith("type "))
-            .map((ad) => (ad.split(/\s+as\s+/)[0] ?? "").trim());
-    return { adres: eslesme[2] ?? "", adlar };
-  });
+  ]
+    .map((eslesme) => {
+      const bas = eslesme[1] ?? "";
+      const suslu = bas.match(/\{([^}]*)\}/);
+      const adlar =
+        suslu === null || /\*/.test(bas)
+          ? ("hepsi" as const)
+          : (suslu[1] ?? "")
+              .split(",")
+              .map((ad) => ad.trim())
+              .filter((ad) => ad !== "" && !ad.startsWith("type "))
+              .map((ad) => (ad.split(/\s+as\s+/)[0] ?? "").trim());
+      return { adres: eslesme[2] ?? "", adlar };
+    })
+    .concat(
+      [...icerik.matchAll(/\bimport\(\s*["'](\.{1,2}\/[^"']+)["']\s*\)/g)].map((eslesme) => ({
+        adres: eslesme[1] ?? "",
+        adlar: "hepsi" as const,
+      })),
+    );
 
 // Başlangıçtan izlenen zincir: her ulaşılan dosya ve ona hangi dosyadan gelindiği.
 export const zincirler = (

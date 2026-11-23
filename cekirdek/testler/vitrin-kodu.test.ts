@@ -8,8 +8,8 @@
 //   panel sözlüğünü kullanabilir; vitrin o parçayı kullanırsa zincir onun üzerinden varır.
 // - Hazır temaların değer tabloları (degerler.ts) yalnız sunucuda okunur: hiçbir tarayıcı dosyasından (panel ve katalog
 //   dahil) varılan dosya onları içe aktarmaz.
-// Bozuk örnekler iki denetimin doğrudan, dolaylı ve toplu (`* as`) içe aktarmayı yakaladığını, yalnız türü alanı
-// yakalamadığını gösterir.
+// Bozuk örnekler iki denetimin doğrudan, dolaylı, toplu (`* as`) ve sonradan (`import()`) içe aktarmayı ve yalnız panelde
+// kullanılan parça üzerinden varmayı yakaladığını, yalnız türü alanı yakalamadığını gösterir.
 import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -110,6 +110,32 @@ describe("vitrinin tarayıcı kodu", () => {
         dosya(`import type { PanelIkonAdi } from "../../bilesenler/ikonlar/panel-sozlugu";`),
       ),
     ).toEqual([]);
+
+    // Sonradan yükleme ve yalnız panelde kullanılan kütüphane parçası üzerinden (bağımsız kontrolün bulgusu).
+    expect(
+      yasakZincir(
+        bas,
+        [panelSozlugu],
+        dosya(`const yukle = () => import("../yonetim-paneli/panel-ikon");`),
+      ).at(-1),
+    ).toBe(panelSozlugu);
+    expect(
+      yasakZincir(
+        bas,
+        [panelSozlugu],
+        dosya(`import { DosyaYukleme } from "../../bilesenler/parcalar/dosya-yukleme";`),
+      ),
+    ).toEqual([
+      "cekirdek/vitrin/ornek-istemci.tsx",
+      "bilesenler/parcalar/dosya-yukleme.tsx",
+      panelSozlugu,
+    ]);
+    expect(
+      temaTablosuZinciri(
+        bas,
+        dosya(`const d = await import("../../bilesenler/tasarim-degerleri/degerler");`),
+      ).at(-1),
+    ).toBe(`${degerlerDosyasi} (*)`);
 
     // Tema tabloları: doğrudan, takma adla, toplu ve dolaylı (temaların birleşimi tabloları içe aktarır).
     expect(
