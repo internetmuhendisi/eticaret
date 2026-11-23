@@ -53,6 +53,7 @@ Tasarım değeri, renk, yazı boyutu, boşluk gibi tasarımı oluşturan ve tek 
 - Mağaza sahibinin tema ayarlarının şeması `cekirdek/temalar/ayarlar.ts`, sürümleri `cekirdek/moduller/tema/` modülündedir. Başlangıç değeri `siteler/<kod>/baslangic/tema.json`.
 - Renk okunurluğu tek yerde ölçülür (`cekirdek/temalar/okunurluk.ts`): temanın kendi değerleri, mağaza sahibinin rengi ve panelin ana rengi aynı ölçüden geçer.
 - Yeni CSS dosyası açılmaz. Stil sınıfla yazılır, temel stil `tailwind.css` içindedir.
+- Kâğıda basılan sayfa (sipariş fişi, kart 0270) her zaman açık renktedir: zorlanan renk özniteliği (`data-renk`) tek bir öğeye de verilebilir. Yazdırma sayfasının boyu adlı `@page` ile `tailwind.css`'te yazılır, ad gövdeye verilir (karar 0171).
 - Yazı tipleri sitenin kendi sunucusundan yüklenir (`@fontsource-variable` paketleri), dış sunucudan yüklenmez.
 
 ## Tema değişikliği (karar 0091)

@@ -157,7 +157,7 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
 |---|---|---|---|---|
 | Panel listelerinde sayfa başına satır | Mağaza sahibi | 25 | — | `panelSayfaBoyu`. Seçenekler: 25, 50, 100. Ürün, sipariş, müşteri ve yazı listeleri; toplu işlem en çok bir sayfaya uygulanır (kart 0258, karar 0157) |
-| Sipariş fişinde fiyatlar | Mağaza sahibi | Göster | — | Kapalıyken fişte yalnız ürün, stok kodu ve adet yazar (ör. hediye siparişi) (kart 0270, karar 0157) |
+| Sipariş fişinde fiyatlar | Mağaza sahibi | Göster | — | Kapalıyken fişte yalnız ürün, stok kodu ve adet yazar (ör. hediye siparişi). Ayar `fisteFiyatlar`, panelde Sipariş ayarlarının "Sipariş fişi" bölümünde (kart 0270, karar 0157, 0171) |
 | Blog | Mağaza sahibi | Kapalı | Açık | Kapalıyken yazılar vitrinde görünmez, `/blog` bulunamadı verir, ana sayfanın blog bölümü çizilmez (kart 0272, karar 0157) |
 
 ## Eklentiler
