@@ -12,6 +12,7 @@ import { siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
 import { stokBildirimiTalepleri } from "../../eklentiler/stoga-gelince-haber-ver/model.ts";
 import { stokBildirimiServisi } from "../../eklentiler/stoga-gelince-haber-ver/servis.ts";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
+import { belgeKaydet } from "../../moduller/dosya/servis.ts";
 import { baslangicRolleri } from "../../moduller/ekip/baslangic-rolleri.ts";
 import { favoriler } from "../../moduller/favori/model.ts";
 import { favoriServisi } from "../../moduller/favori/servis.ts";
@@ -28,6 +29,7 @@ import { hesapAc } from "../../moduller/oturum/servis.ts";
 import { sifreDogrula } from "../../moduller/oturum/sifre.ts";
 import { robotSorusuUret } from "../../moduller/robot-korumasi/servis.ts";
 import { soruyuCoz } from "../../moduller/robot-korumasi/testler/soru-coz.ts";
+import { siparisFaturaServisi } from "../../moduller/siparis/fatura.ts";
 import {
   havaleBildirimleri,
   siparisIadeTalepleri,
@@ -143,6 +145,19 @@ const musteriSenaryolari: Record<string, MusteriSenaryosu> = {
       aranan: [b.eposta, bninki],
       durum: 404,
     };
+  },
+  // B'nin siparişinin faturası dosyalı (kart 0268); A, B'nin numarasıyla ister: bulunamadı, dosya gelmez.
+  "GET /kapi/musteri/siparis-faturasi": async (b) => {
+    const bninki = await siparisVer(b.kimlik);
+    const dosya = await belgeKaydet(vt, Buffer.from(`%PDF-1.7\n${b.eposta}\n%%EOF\n`, "latin1"));
+    if (!dosya.tamam) throw new Error(dosya.hata);
+    await siparisFaturaServisi(denemeSitesi()).yaz(vt, sistemIslemi("test"), {
+      numara: bninki,
+      gorulen: null,
+      fatura: { numara: `F-${bninki}`, tarih: "2026-11-17", dosya: dosya.dosya.kimlik },
+      eposta: false,
+    });
+    return { sorgu: `?numara=${bninki}`, aranan: [b.eposta, `F-${bninki}`], durum: 404 };
   },
   // B'nin siparişi ayırt edilebilir bir adla teslim ediliyor; A'nın siparişi yok: A'ya öneri boş gelir.
   "GET /kapi/musteri/son-teslimat": async (b) => {

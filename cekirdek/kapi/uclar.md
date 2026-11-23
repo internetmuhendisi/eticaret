@@ -355,7 +355,7 @@ Müşterinin ucuyla aynı. Ayrıca yarım kalmış giriş adımlarını siler, d
 
 Takip edilen siparişin faturasının PDF'i (kart 0268, karar 0170). Sipariş yalnız takip çerezindeki anahtarla bulunur (çerez takip uçlarının yoluna da yazılır); robot sorusu yoktur, anahtar numara ve e-postayla robot korumalı uçtan alınmıştır. Tema demosunda kapalıdır.
 
-- İzin: herkese açık. Sınır: `genel`.
+- İzin: `herkese-acik`. Sınır: `genel`.
 - Girdi (sorgu): `numara` (`siparisAyrintisiSemasi`).
 - Servis: `cekirdek/moduller/siparis/fatura.ts` (`dosyaOku`).
 - Başarılı (200): PDF dosyası, indirilecek dosya olarak: `Content-Disposition: attachment; filename="fatura-<numara>.pdf"`, `Content-Security-Policy: sandbox; default-src 'none'`, `Cache-Control: private, no-store`, `nosniff`.

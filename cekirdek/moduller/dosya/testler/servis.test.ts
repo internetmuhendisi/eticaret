@@ -8,11 +8,21 @@ import { join } from "node:path";
 import { eq } from "drizzle-orm";
 import sharp from "sharp";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { dosyaSinirlari, dosyaTurleri } from "../../../kayitlar/dosya.ts";
+import { belgeSinirlari, dosyaSinirlari, dosyaTurleri } from "../../../kayitlar/dosya.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { dosyalar } from "../model.ts";
-import { dosyaKaydet, dosyaOku, dosyaSil, icerikTuru } from "../servis.ts";
+import {
+  belgeBoyutu,
+  belgeKaydet,
+  belgeOku,
+  dosyaKaydet,
+  dosyaKaydi,
+  dosyaOku,
+  dosyaSil,
+  gorselHazirMi,
+  icerikTuru,
+} from "../servis.ts";
 
 let vt: Veritabani;
 let sil: () => Promise<void>;
@@ -227,5 +237,70 @@ describe("imza", () => {
     expect(icerikTuru(Buffer.from("RIFF\0\0\0\0WEBP"))).toBe("webp");
     expect(icerikTuru(Buffer.from("RIFF\0\0\0\0WAVE"))).toBeUndefined();
     expect(icerikTuru(Buffer.from([0xff, 0xd8]))).toBeUndefined();
+  });
+});
+
+// Belge (kart 0268, karar 0170): PDF olduğu gibi saklanır; görsel yolları belgeyi, belge yolu görseli görmez.
+describe("belge", () => {
+  const pdf = (ek = "") =>
+    Buffer.from(`%PDF-1.7\n1 0 obj << /Type /Catalog >> endobj\n${ek}\n%%EOF\n`, "latin1");
+
+  it("PDF içeriği değişmeden kaydedilir, adı kimlik ve .pdf, okunur, boyutu kayıttadır", async () => {
+    const icerik = pdf("fatura-0268");
+    const sonuc = await belgeKaydet(vt, icerik, klasor);
+    if (!sonuc.tamam) throw new Error(sonuc.hata);
+    expect(sonuc.dosya).toMatchObject({
+      tur: "pdf",
+      boyut: icerik.length,
+      genislik: 0,
+      yukseklik: 0,
+    });
+    expect(klasordekiler()).toEqual([`${sonuc.dosya.kimlik}.pdf`]);
+    expect(readFileSync(join(klasor, `${sonuc.dosya.kimlik}.pdf`)).equals(icerik)).toBe(true);
+    const okunan = await belgeOku(vt, sonuc.dosya.kimlik, klasor);
+    expect(okunan?.mime).toBe("application/pdf");
+    expect(okunan?.icerik.equals(icerik)).toBe(true);
+    expect(await belgeBoyutu(vt, sonuc.dosya.kimlik)).toBe(icerik.length);
+  });
+
+  it("boş, sınırı bir bayt aşan, imzasız ve görsel dosya reddedilir; hiçbir şey yazılmaz", async () => {
+    const once = await kayitSayisi();
+    const sinirda = Buffer.concat([pdf(), Buffer.alloc(belgeSinirlari.enCokBayt - pdf().length)]);
+    expect((await belgeKaydet(vt, sinirda, klasor)).tamam).toBe(true);
+    const asan = Buffer.concat([sinirda, Buffer.from(" ")]);
+    for (const [icerik, hata] of [
+      [Buffer.alloc(0), "bos"],
+      [asan, "cok-buyuk"],
+      [Buffer.from("<html><script>alert(1)</script></html>"), "tur-izinsiz"],
+      [Buffer.from("PDF-1.7 bozuk imza"), "tur-izinsiz"],
+      [await gorsel("png"), "tur-izinsiz"],
+    ] as const) {
+      expect(await belgeKaydet(vt, icerik, klasor)).toEqual({ tamam: false, hata });
+    }
+    expect(await kayitSayisi()).toBe(once + 1);
+    expect(klasordekiler()).toHaveLength(1);
+  });
+
+  it("görsel yolları belgeyi görmez; belge yolu görseli görmez; silinen belge okunmaz", async () => {
+    const belge = await belgeKaydet(vt, pdf(), klasor);
+    const resim = await dosyaKaydet(vt, await gorsel("png"), klasor);
+    if (!belge.tamam || !resim.tamam) throw new Error("kaydedilemedi");
+    expect(await dosyaOku(vt, belge.dosya.kimlik, klasor)).toBeUndefined();
+    expect(await dosyaKaydi(vt, belge.dosya.kimlik)).toBeUndefined();
+    expect(await vt.transaction((islem) => gorselHazirMi(islem, belge.dosya.kimlik))).toBe("yok");
+    expect(await belgeOku(vt, resim.dosya.kimlik, klasor)).toBeUndefined();
+    expect(await belgeBoyutu(vt, resim.dosya.kimlik)).toBeUndefined();
+    // PDF imzası görsel türü sayılmaz: görsel kaydetme reddeder.
+    expect(await dosyaKaydet(vt, pdf(), klasor)).toEqual({ tamam: false, hata: "tur-izinsiz" });
+    await dosyaSil(vt, belge.dosya.kimlik);
+    expect(await belgeOku(vt, belge.dosya.kimlik, klasor)).toBeUndefined();
+    expect(await belgeBoyutu(vt, belge.dosya.kimlik)).toBeUndefined();
+  });
+
+  it("diskte sonradan değişen belge okunmaz", async () => {
+    const belge = await belgeKaydet(vt, pdf(), klasor);
+    if (!belge.tamam) throw new Error(belge.hata);
+    writeFileSync(join(klasor, `${belge.dosya.kimlik}.pdf`), pdf("degisti"));
+    await expect(belgeOku(vt, belge.dosya.kimlik, klasor)).rejects.toThrow();
   });
 });
