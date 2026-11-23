@@ -1259,7 +1259,6 @@
         "dosya": "Dosya",
         "dosyaYok": "Dosya eklenmedi",
         "indir": "fatura-{numara}.pdf",
-        "indirAdi": "Faturayı indir: {numara}, {boyut}",
         "musteri": "Müşteri",
         "musteriGorur": "Hesabında ve takip sayfasında görür",
         "pencere": {

@@ -9,12 +9,16 @@
 // - Tarih süzgeci panelde klavyeyle (boş gönderimde alanın hatası ve odak, iki gün, hazır aralık, Escape), kargo
 //   firması süzgeci (virgüllü ad) ve "Bakılması gereken" sekmesi; açık ve hatalı panel ile sekme iki renkte ve üç
 //   genişlikte taramadan geçer (kart 0267).
+// - Ayrıntıda fatura klavyeyle eklenir: boş numarada alanın hatası ve odak, PDF olmayan dosyanın reddi, PDF'in yüklenip
+//   kaydedilmesi, indirilen dosyanın aynı içerik ve "fatura-<numara>.pdf" adı; müşteri takip sayfasında faturayı
+//   görür ve indirir; düzenlenir ve onay penceresiyle kaldırılır (Vazgeç önce). Pencere ve sayfalar iki renkte ve üç
+//   genişlikte taramadan geçer (kart 0268).
 // - "Sipariş ayarları"nda kargo firması yan pencereden eklenir (bozuk takip adresi alanın hatası), onay penceresiyle
 //   silinir; ekran iki renkte ve üç genişlikte taramadan geçer.
 // Siparişler ve kargo firmaları sitenin paylaşılan verisidir: test kendi ürününü ve siparişlerini açar, sonunda
 // firma listesini eski hâline döndürür (siparişler silinmez, kendi ürünü kullanılır).
 import { randomUUID } from "node:crypto";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import { eq } from "drizzle-orm";
@@ -34,6 +38,7 @@ import { siparisYonetimi } from "../../moduller/siparis/yonetim";
 import { stokServisi } from "../../moduller/stok/servis";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
+import { siparisTakibiAdresi } from "../../vitrin/adresler";
 import { bildirimSuresiniDurdur } from "./bildirim-suresi";
 import { ozetOdaktaOlmali } from "./form-hatasi";
 import { konsoluDinle } from "./konsol";
@@ -671,6 +676,132 @@ test("siparişler listesi: tarih, kargo firması ve bakılması gereken klavyeyl
       return s !== null && k !== null && k.x >= s.x && k.x + k.width <= s.x + s.width;
     })
     .toBe(true);
+  expect(hatalar).toEqual([]);
+});
+
+test("sipariş ayrıntısı: fatura klavyeyle eklenir, PDF yüklenir, indirilir, düzenlenir ve kaldırılır; müşteri takipte indirir (kart 0268)", async ({
+  page,
+  browser,
+}) => {
+  test.setTimeout(240_000);
+  const hatalar = konsoluDinle(page, {
+    haric: (m) => m.includes("401") || m.includes("status of 400"),
+  });
+  const eposta = `fatura-${randomUUID().slice(0, 8)}@ornek.test`;
+  const numara = await siparisAc({ yontem: "kapida-odeme", secenek: "nakit" }, eposta);
+  const faturaNo = `ORN-F-${randomUUID().slice(0, 6)}`;
+  await ayriBaglanti(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await paneleGir(page, yoneticiAc());
+  await page.goto(`/yonetim/siparisler/ayrinti?numara=${numara}`);
+  await sayfaHazir(page);
+  const kart = page
+    .getByRole("heading", { level: 2, name: metin("yonetim.siparis.fatura.baslik"), exact: true })
+    .locator("..");
+  await expect(kart).toContainText(metin("yonetim.siparis.fatura.yok"));
+  await kart.getByRole("button", { name: metin("yonetim.siparis.fatura.ekle") }).focus();
+  await page.keyboard.press("Enter");
+  const pencere = page.getByRole("dialog", {
+    name: metin("yonetim.siparis.fatura.pencere.ekleBaslik"),
+  });
+  await expect(pencere).toBeVisible();
+  const numaraAlani = pencere.getByLabel(metin("yonetim.siparis.fatura.pencere.numara"));
+  // Boş numarada alanın hatası ve odak; tarih bugünle gelir, e-posta kutusu işaretli.
+  await pencere
+    .getByRole("button", { name: metin("yonetim.siparis.fatura.pencere.kaydet") })
+    .focus();
+  await page.keyboard.press("Enter");
+  await expect(numaraAlani).toBeFocused();
+  await expect(numaraAlani).toHaveAccessibleDescription(
+    metin("yonetim.siparis.fatura.hata.numara"),
+  );
+  await expect(pencere.getByLabel(metin("yonetim.siparis.fatura.pencere.tarih"))).not.toHaveValue(
+    "",
+  );
+  await expect(
+    pencere.getByRole("checkbox", { name: metin("yonetim.siparis.fatura.pencere.eposta") }),
+  ).toBeChecked();
+  await ikiRenkUcGenislik(page, "fatura penceresi hatalı");
+  await numaraAlani.focus();
+  await page.keyboard.type(faturaNo);
+  // PDF olmayan dosya alanın hatasıyla reddedilir; PDF yüklenir.
+  const sec = pencere.getByRole("button", {
+    name: metin("yonetim.siparis.fatura.pencere.dosyaSec"),
+  });
+  const dosyaSec = async (ad: string, mimeType: string, buffer: Buffer) => {
+    const secici = page.waitForEvent("filechooser");
+    await sec.focus();
+    await page.keyboard.press("Enter");
+    await (await secici).setFiles({ name: ad, mimeType, buffer });
+  };
+  await dosyaSec("fatura.txt", "text/plain", Buffer.from("düz metin"));
+  await expect(pencere.getByText(/Bu dosya türü yüklenemez/)).toBeVisible();
+  const icerik = Buffer.from("%PDF-1.7\n% uçtan uca fatura\n%%EOF\n", "latin1");
+  await dosyaSec("fatura.pdf", "application/pdf", icerik);
+  await expect(
+    pencere.getByText(
+      doldur(metin("yonetim.siparis.fatura.pencere.yuklendi"), { ad: "fatura.pdf" }),
+    ),
+  ).toBeVisible();
+  await expect(pencere.getByText(/Bu dosya türü yüklenemez/)).toHaveCount(0);
+  await pencere
+    .getByRole("button", { name: metin("yonetim.siparis.fatura.pencere.kaydet") })
+    .focus();
+  await page.keyboard.press("Enter");
+  await expect(pencere).toBeHidden();
+  await expect(kart).toContainText(faturaNo);
+  const indir = kart.getByRole("link", { name: new RegExp(`fatura-${numara}\\.pdf`) });
+  const indirilen = page.waitForEvent("download");
+  await indir.focus();
+  await page.keyboard.press("Enter");
+  const dosya = await indirilen;
+  expect(dosya.suggestedFilename()).toBe(`fatura-${numara}.pdf`);
+  expect(readFileSync(await dosya.path()).equals(icerik)).toBe(true);
+  await ikiRenkUcGenislik(page, "faturalı sipariş ayrıntısı");
+
+  // Müşteri takip sayfasında faturayı görür ve indirir.
+  const musteriBaglami = await browser.newContext({ baseURL: test.info().project.use.baseURL });
+  const musteri = await musteriBaglami.newPage();
+  await musteri.setViewportSize({ width: 390, height: 844 });
+  await musteri.goto(siparisTakibiAdresi(numara));
+  await sayfaHazir(musteri);
+  const epostaAlani = musteri.getByRole("textbox", { name: metin("vitrin.siparisTakibi.eposta") });
+  await epostaAlani.fill(eposta);
+  await epostaAlani.press("Enter");
+  const faturaBolumu = musteri.getByRole("region", {
+    name: metin("vitrin.siparis.fatura.baslik"),
+    exact: true,
+  });
+  await expect(faturaBolumu).toContainText(faturaNo);
+  const musteriIndirmesi = musteri.waitForEvent("download");
+  await faturaBolumu.getByRole("link", { name: metin("vitrin.siparis.fatura.indir") }).click();
+  expect(readFileSync(await (await musteriIndirmesi).path()).equals(icerik)).toBe(true);
+  await ikiRenkUcGenislik(musteri, "takipte fatura");
+  await musteriBaglami.close();
+
+  // Düzenle: numara değişir; kaldır: onay penceresi, Vazgeç önce.
+  await kart.getByRole("button", { name: metin("yonetim.siparis.fatura.duzenle") }).click();
+  const duzenle = page.getByRole("dialog", {
+    name: metin("yonetim.siparis.fatura.pencere.duzenleBaslik"),
+  });
+  await duzenle.getByLabel(metin("yonetim.siparis.fatura.pencere.numara")).fill(`${faturaNo}-2`);
+  await duzenle
+    .getByRole("button", { name: metin("yonetim.siparis.fatura.pencere.kaydet") })
+    .click();
+  await expect(duzenle).toBeHidden();
+  await expect(kart).toContainText(`${faturaNo}-2`);
+  await kart.getByRole("button", { name: metin("yonetim.siparis.fatura.kaldir") }).focus();
+  await page.keyboard.press("Enter");
+  const onay = page.getByRole("alertdialog");
+  await expect(onay).toContainText(`${faturaNo}-2`);
+  await page.keyboard.press("Enter");
+  await expect(onay).toBeHidden();
+  await expect(kart).toContainText(`${faturaNo}-2`);
+  await kart.getByRole("button", { name: metin("yonetim.siparis.fatura.kaldir") }).click();
+  await onay
+    .getByRole("button", { name: metin("yonetim.siparis.fatura.kaldirOnay.dugme") })
+    .click();
+  await expect(kart).toContainText(metin("yonetim.siparis.fatura.yok"));
   expect(hatalar).toEqual([]);
 });
 

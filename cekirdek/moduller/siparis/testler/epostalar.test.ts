@@ -9,7 +9,9 @@
 // - Elle siparişte e-posta seçimdir; kişisel bilgisi silinmiş siparişe e-posta yazılmaz; gönderen adresi olmayan
 //   sitede gitmez; iki site ayrı kalır; e-posta gerçek posta kutusuna düşer.
 import { randomUUID } from "node:crypto";
-import { resolve } from "node:path";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { and, asc, eq, like, sql } from "drizzle-orm";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { arkaPlanIsleri } from "../../../arka-plan-isleri/model.ts";
@@ -25,6 +27,7 @@ import {
 import { siteninBicimleyicisi } from "../../../metinler/site-metni.ts";
 import { baglantiyiKapat, type Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
+import { belgeKaydet } from "../../dosya/servis.ts";
 import { type EpostaIletisi, epostaGondericisi } from "../../eposta/gonderici.ts";
 import { epostaKaydiniGonder } from "../../eposta/gonderim.ts";
 import { epostaKayitlari } from "../../eposta/model.ts";
@@ -37,6 +40,7 @@ import { urunServisi } from "../../urun/servis.ts";
 import { siteninVergiServisi } from "../../vergi/servis.ts";
 import { siparisEpostaIcerikleri } from "../eposta-icerigi.ts";
 import { siparisEpostasiYaz } from "../epostalar.ts";
+import { siparisFaturaServisi } from "../fatura.ts";
 import { gecmiseYaz } from "../gecmis.ts";
 import { iadeServisi } from "../iade.ts";
 import { iadeTalebiServisi } from "../iade-talebi.ts";
@@ -627,6 +631,41 @@ describe("içerik", () => {
     expect(metin).toContain("https://takip.deneme-kargo.test/sorgu/TK123");
     expect(metin).toContain(`${kok}/hesabim/siparislerim/${numara}`);
     expect(metin).not.toContain("siparis-takibi");
+  });
+
+  it("faturanız hazır: numara, sitenin biçimiyle tarih, dosya varsa indirme satırı ve siparişin bağlantısı (kart 0268)", async () => {
+    const h = await hazirla();
+    const birim = await h.urunAc();
+    const numara = await ver(h.vt, [{ birim, adet: 1 }], kapida);
+    const klasor = mkdtempSync(join(tmpdir(), "fatura-eposta-"));
+    temizlenecekler.push(async () => rmSync(klasor, { recursive: true, force: true }));
+    const belge = await belgeKaydet(h.vt, Buffer.from("%PDF-1.7\n%%EOF\n", "latin1"), klasor);
+    if (!belge.tamam) throw new Error(belge.hata);
+    const faturaSrv = siparisFaturaServisi(site);
+    await faturaSrv.yaz(h.vt, yonetici(), {
+      numara,
+      gorulen: null,
+      fatura: { numara: "ORN2026<b>142", tarih: "2026-11-17", dosya: null },
+      eposta: true,
+    });
+    const ilk = await sonEposta(h.vt, numara, "fatura-hazir");
+    expect(ilk.konu).toContain(numara);
+    expect(ilk.metin).toContain("ORN2026<b>142");
+    expect(ilk.html).not.toContain("<b>142");
+    expect(ilk.metin).toContain("17 Kasım 2026");
+    expect(ilk.metin).not.toContain("PDF'ini siparişinizin sayfasından");
+    await faturaSrv.yaz(h.vt, yonetici(), {
+      numara,
+      gorulen: { numara: "ORN2026<b>142", tarih: "2026-11-17", dosya: null },
+      fatura: { numara: "ORN2026000000142", tarih: "2026-11-18", dosya: belge.dosya.kimlik },
+      eposta: true,
+    });
+    const ikinci = await sonEposta(h.vt, numara, "fatura-hazir");
+    expect(ikinci.metin).toContain("18 Kasım 2026");
+    expect(ikinci.metin).toContain("PDF'ini siparişinizin sayfasından");
+    expect(await sablonlari(h.vt, numara)).toEqual(
+      expect.arrayContaining(["siparis-alindi", "fatura-hazir", "fatura-hazir"]),
+    );
   });
 
   it("müşteriye notun metni kaçırılır; kişisel bilgisi silinmiş siparişe e-posta yazılmaz", async () => {

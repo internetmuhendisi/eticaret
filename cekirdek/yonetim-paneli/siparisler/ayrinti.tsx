@@ -341,10 +341,6 @@ export function SiparisAyrintisi({ veri }: { veri: SiparisAyrintisiVerisi }) {
                     href={`/kapi/yonetici/siparis-faturasi?numara=${encodeURIComponent(veri.numara)}`}
                     download
                     prefetch={false}
-                    aria-label={doldur(metin("yonetim.siparis.fatura.indirAdi"), {
-                      numara: veri.faturaBelgesi.numara,
-                      boyut: veri.faturaBelgesi.dosya.boyut,
-                    })}
                     className="font-normal"
                   >
                     {doldur(metin("yonetim.siparis.fatura.pencere.dosyaAdi"), {
