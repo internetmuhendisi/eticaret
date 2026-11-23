@@ -73,6 +73,7 @@ import {
 import { useKapatmaSorusu } from "../kapatma-sorusu";
 import { KayitArama, kayitAramaAcikMi } from "../kayit-arama";
 import { useMenudenPencere } from "../menuden-pencere";
+import { panelIkonu } from "../panel-ikon";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelSonucu } from "../panel-istegi";
 import { menuAlanHatalari, menuHataMetni } from "./hatalar";
@@ -274,7 +275,10 @@ function OgeSatiri({
             />
             <AcilirMenu>
               <AcilirMenuTetikleyici asChild>
-                <IkonDugmesi ikon="diger" etiket={doldur(metin("yonetim.menu.diger"), { ad })} />
+                <IkonDugmesi
+                  ikon={panelIkonu("diger")}
+                  etiket={doldur(metin("yonetim.menu.diger"), { ad })}
+                />
               </AcilirMenuTetikleyici>
               <AcilirMenuIcerigi align="end" onCloseAutoFocus={menudenPencere.kapaninca}>
                 {hedefler.length > 0 ? (
@@ -433,7 +437,7 @@ export function MenulerIcerigi() {
     return (
       <>
         <BosHal
-          ikon="menuler"
+          ikon={panelIkonu("menuler")}
           baslik={metin("yonetim.menu.menuYok.baslik")}
           aciklama={metin("yonetim.menu.menuYok.metin")}
         />
@@ -454,7 +458,7 @@ export function MenulerIcerigi() {
             <AcilirMenu>
               <AcilirMenuTetikleyici asChild>
                 <IkonDugmesi
-                  ikon="diger"
+                  ikon={panelIkonu("diger")}
                   etiket={doldur(metin("yonetim.menu.menuIslemleri"), { ad: menu.ad })}
                 />
               </AcilirMenuTetikleyici>
@@ -481,7 +485,7 @@ export function MenulerIcerigi() {
           </>
         ) : ogeler.length === 0 ? (
           <BosHal
-            ikon="menuler"
+            ikon={panelIkonu("menuler")}
             baslik={metin("yonetim.menu.bos.baslik")}
             aciklama={metin("yonetim.menu.bos.metin")}
             duzey={3}

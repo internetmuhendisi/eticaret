@@ -2,7 +2,7 @@
 // sayfa başlığı ve sekme başlığı buradan üretilir; menüye ve sayfaya izin de buradan bakılır. Yeni panel ekranı
 // önce buraya eklenir, sonra `app/yonetim/(panel)/` altına yazılır ve PanelSayfasi'na kendi kodunu verir.
 // Ekranı yazılmamış sayfa ağaca girmez: menüdeki bağlantı bulunamadı sayfasına gitmesin.
-import type { IkonAdi } from "../../bilesenler/ikonlar/sozluk";
+import type { PanelIkonAdi } from "../../bilesenler/ikonlar/panel-sozlugu";
 import type { EklentiKodu } from "../kayitlar/eklentiler";
 import type { GirisIzni } from "../kayitlar/izinler";
 import type { MetinAnahtari } from "../metinler/metin";
@@ -23,7 +23,7 @@ export type PanelSayfaTanimi = {
   ad: MetinAnahtari;
   // Komut çubuğunda başlığın altındaki bir iki cümle.
   aciklama: MetinAnahtari;
-  ikon: IkonAdi;
+  ikon: PanelIkonAdi;
   // Sayfayı görmek için gereken izin; null ise her yönetici görür.
   izin: GirisIzni<"yonetici"> | null;
   // Menüde hangi grubun altında durduğu; null ise grupsuz, en üstte.
@@ -262,7 +262,7 @@ export type MenuSayfasi = {
   kod: string;
   adres: string;
   ad: MetinAnahtari;
-  ikon: IkonAdi;
+  ikon: PanelIkonAdi;
   isaret?: MetinAnahtari;
 };
 export type MenuGrubu = { grup: PanelGrubu | null; sayfalar: MenuSayfasi[] };

@@ -1,7 +1,7 @@
 // İkon sözlüğü yasağı (kart 0103, .claude/rules/tasarim-sistemi.md). İkonlar yalnız ikon sözlüğünden
-// gelir: bir kavramın ikonu her yerde aynıdır. Lucide yalnız bilesenler/ikonlar/sozluk.ts içinde içe
-// aktarılır; sayfa ve parça <Ikon ad="..." /> kullanır. Yeniden dışa aktarma (export ... from) ve sonradan
-// yükleme (import(...)) da yakalanır.
+// gelir: bir kavramın ikonu her yerde aynıdır. Lucide yalnız bilesenler/ikonlar/sozluk.ts ve panelin sözlüğü
+// panel-sozlugu.ts içinde içe aktarılır (kart 0295); sayfa ve parça <Ikon ad="..." /> kullanır. Yeniden dışa
+// aktarma (export ... from) ve sonradan yükleme (import(...)) da yakalanır.
 language js
 
 or {
@@ -12,9 +12,9 @@ or {
   // Muafiyet yalnız projenin kökündeki bilesenler/ikonlar/ içindir: başka bir klasörün içindeki aynı adlı
   // klasör (cekirdek/.../bilesenler/ikonlar/) muaf değildir (kart 0103).
   or {
-    $filename <: not r".*/bilesenler/ikonlar/sozluk\.ts",
+    $filename <: not r".*/bilesenler/ikonlar/(?:sozluk|panel-sozlugu)\.ts",
     $filename <: r".*/(?:cekirdek|siteler|sahip-paneli|komutlar|denetim|bilesenler)/(?:.*/)?bilesenler/ikonlar/.*"
   },
   $ice <: r"(?s).*[\"']lucide-react(?:/[^\"']*)?[\"'].*",
-  register_diagnostic(span=$ice, message="İkon doğrudan içe aktarılamaz. İkonu ikon sözlüğüne ekleyip <Ikon ad=\"...\" /> ile kullanın (bilesenler/ikonlar/sozluk.ts).", severity="error")
+  register_diagnostic(span=$ice, message="İkon doğrudan içe aktarılamaz. İkonu ikon sözlüğüne ekleyip <Ikon ad=\"...\" /> ile kullanın (bilesenler/ikonlar/sozluk.ts, yalnız panelin ikonu panel-sozlugu.ts).", severity="error")
 }

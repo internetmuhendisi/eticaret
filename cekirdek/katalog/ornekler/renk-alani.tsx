@@ -1,13 +1,22 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FormAlani } from "../../../bilesenler/form/form-alani";
 import { RenkAlani } from "../../../bilesenler/parcalar/renk-alani";
-import { varsayilanTemaDegerleri } from "../../../bilesenler/tasarim-degerleri/degerler";
+import { degiskenAdi } from "../../../bilesenler/tasarim-degerleri/degisken-adlari";
 import { useOrnekMetni } from "./ortak";
 
 export function RenkAlaniOrnegi() {
   const m = useOrnekMetni();
-  const [renk, setRenk] = useState(varsayilanTemaDegerleri.renkler.acik.birincil);
+  // Başlangıç rengi sayfadaki ana renktir. Tema değerleri tablosu tarayıcı kodunda içe aktarılmaz: derleyici ortak
+  // modülün tarayıcıda kullanılan her parçasını vitrine de koyuyordu (kart 0295, cekirdek/testler/vitrin-kodu.test.ts).
+  const [renk, setRenk] = useState("");
+  useEffect(() => {
+    setRenk(
+      getComputedStyle(document.documentElement)
+        .getPropertyValue(degiskenAdi.renk("birincil"))
+        .trim(),
+    );
+  }, []);
   const [hatali, setHatali] = useState("");
   return (
     <>

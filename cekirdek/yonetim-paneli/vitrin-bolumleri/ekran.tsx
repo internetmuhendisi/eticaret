@@ -42,6 +42,7 @@ import { bolumKutuphanesi } from "../../vitrin/bolum-kutuphanesi/kutuphane";
 import type { BolumTarifi } from "../../vitrin/bolum-kutuphanesi/tarif";
 import { EylemDugmesi } from "../eylem-dugmesi";
 import { useKapatmaSorusu } from "../kapatma-sorusu";
+import { panelIkonu } from "../panel-ikon";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelSonucu } from "../panel-istegi";
 import { BolumDuzenleyici, yeniDegerler } from "./bolum-duzenleyici";
@@ -175,7 +176,7 @@ function SatirIcerigi({ bolum, adi, sil }: { bolum: EkranBolumu; adi: string; si
         <div className="flex shrink-0 items-center">
           {/* İkon bölümün bugünkü durumunu gösterir (taslak); düğmenin adı yapacağı işi söyler. */}
           <IkonDugmesi
-            ikon={bolum.gizli ? "gizle" : "goster"}
+            ikon={panelIkonu(bolum.gizli ? "gizle" : "goster")}
             etiket={doldur(
               metin(bolum.gizli ? "yonetim.bolumler.goster" : "yonetim.bolumler.gizle"),
               { ad: adi },
@@ -198,7 +199,7 @@ function SatirIcerigi({ bolum, adi, sil }: { bolum: EkranBolumu; adi: string; si
           <AcilirMenu>
             <AcilirMenuTetikleyici asChild>
               <IkonDugmesi
-                ikon="diger"
+                ikon={panelIkonu("diger")}
                 etiket={doldur(metin("yonetim.bolumler.diger"), { ad: adi })}
               />
             </AcilirMenuTetikleyici>
@@ -264,7 +265,7 @@ function AlanListesi({ alan }: { alan: DuzenAlani }) {
   if (bolumler.length === 0) {
     return (
       <BosHal
-        ikon="bolumler"
+        ikon={panelIkonu("bolumler")}
         baslik={metin("yonetim.bolumler.bos.baslik")}
         aciklama={metin("yonetim.bolumler.bos.metin")}
       />

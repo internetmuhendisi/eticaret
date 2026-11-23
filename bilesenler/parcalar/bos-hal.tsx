@@ -3,7 +3,7 @@
 // bağlantısı children ile verilir. Metinleri kullanan sayfa verir.
 import type { ReactNode } from "react";
 import { Ikon } from "../ikonlar/ikon.tsx";
-import type { IkonAdi } from "../ikonlar/sozluk.ts";
+import type { IkonAdi, IkonBileseni } from "../ikonlar/sozluk.ts";
 import { sinif } from "./sinif.ts";
 
 const basliklar = { 2: "h2", 3: "h3" } as const;
@@ -16,7 +16,8 @@ export function BosHal({
   children,
   className,
 }: {
-  ikon: IkonAdi;
+  // Sözlükteki ad ya da panelin ikonu (panelIkonu, kart 0295).
+  ikon: IkonAdi | IkonBileseni;
   baslik: string;
   aciklama?: string;
   // Başlığın düzeyi: sayfanın h1'inin altındaysa 2, bir bölümün içindeyse 3.

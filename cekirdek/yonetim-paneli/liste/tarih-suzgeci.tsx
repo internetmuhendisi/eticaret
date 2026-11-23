@@ -19,6 +19,7 @@ import { Rozet } from "../../../bilesenler/parcalar/rozet";
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
 import { takvimGunuMu } from "../../metinler/bicimleyici";
 import { usePanelMetni } from "../../metinler/panel-metni";
+import { PanelIkon } from "../panel-ikon";
 import { type TarihHaziri, tarihAraligiDegeri, tarihDegeriniCoz } from "./tanim";
 
 const ozel = "ozel";
@@ -115,7 +116,7 @@ export function TarihSuzgeci({
     <AcilirPanel open={acik} onOpenChange={acikDegisince}>
       <AcilirPanelTetikleyici asChild>
         <Dugme tur="cerceveli" className="px-3">
-          <Ikon ad="takvim" />
+          <PanelIkon ad="takvim" />
           {ad}
           {secili === undefined ? null : <Rozet tur="ikincil">{String(1)}</Rozet>}
           <Ikon ad="asagi" />

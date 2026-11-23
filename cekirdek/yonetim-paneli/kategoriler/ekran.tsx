@@ -53,6 +53,7 @@ import { useKapatmaSorusu } from "../kapatma-sorusu";
 import { KatalogGorseli } from "../katalog-gorseli";
 import { kodluHataMetni, useKodluForm } from "../kodlu-form";
 import { useMenudenPencere } from "../menuden-pencere";
+import { panelIkonu } from "../panel-ikon";
 import { usePanelIslemi } from "../panel-islemi";
 import { kategoriUclari } from "./uclar";
 import type { KategoriDali, KategorilerEkraniVerisi } from "./veri";
@@ -215,7 +216,7 @@ function KategoriSatiri({
             <AcilirMenu>
               <AcilirMenuTetikleyici asChild>
                 <IkonDugmesi
-                  ikon="diger"
+                  ikon={panelIkonu("diger")}
                   etiket={doldur(metin("yonetim.kategori.diger"), { ad: kategori.ad })}
                 />
               </AcilirMenuTetikleyici>
@@ -334,7 +335,7 @@ export function KategorilerIcerigi() {
     <div className="flex flex-col gap-3">
       {veri.agac.length === 0 ? (
         <BosHal
-          ikon="kategoriler"
+          ikon={panelIkonu("kategoriler")}
           baslik={metin("yonetim.kategori.bos.baslik")}
           aciklama={metin(
             degistirebilir ? "yonetim.kategori.bos.metin" : "yonetim.kategori.bos.metinIzinsiz",

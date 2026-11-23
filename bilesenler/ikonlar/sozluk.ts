@@ -1,15 +1,14 @@
 // İkon sözlüğü (kart 0103, .claude/rules/tasarim-sistemi.md). Bütün ikonlar tek setten (Lucide) gelir ve
 // burada kavramın adıyla tanımlanır. Bir kavramın ikonu her yerde aynıdır: sayfa ve parça ikonu
 // <Ikon ad="kapat" /> ile ister, Lucide'yi doğrudan içe aktarmaz. Yeni bir kavram önce buraya eklenir.
+// Bu sözlük vitrinin ve kütüphane parçalarınındır, vitrinin tarayıcı koduna bütünüyle gider. Yalnız panelin
+// kullandığı ikon (menüdeki sayfa, panel eylemi) panel sözlüğüne yazılır (panel-sozlugu.ts, kart 0295, karar 0172):
+// buraya yazılan her ikon vitrinin kodunu büyütür.
 import {
   ArrowDownIcon,
-  ArrowDownWideNarrowIcon,
   ArrowUpIcon,
-  ArrowUpNarrowWideIcon,
   BanknoteIcon,
   BoldIcon,
-  BoxIcon,
-  CalendarIcon,
   CheckIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -17,31 +16,22 @@ import {
   ChevronUpIcon,
   CircleCheckIcon,
   CircleIcon,
-  CircleXIcon,
   CopyIcon,
   CreditCardIcon,
   DownloadIcon,
-  EllipsisIcon,
   ExternalLinkIcon,
-  EyeIcon,
-  EyeOffIcon,
-  FolderTreeIcon,
-  GalleryHorizontalIcon,
   GiftIcon,
   GripVerticalIcon,
   Heading3Icon,
   HeadsetIcon,
   HeartIcon,
-  HouseIcon,
   ImageIcon,
   InfoIcon,
   ItalicIcon,
   LandmarkIcon,
   LinkIcon,
-  ListChecksIcon,
   ListIcon,
   ListOrderedIcon,
-  ListTreeIcon,
   LoaderCircleIcon,
   LogOutIcon,
   type LucideIcon,
@@ -51,21 +41,17 @@ import {
   MinusIcon,
   OctagonXIcon,
   PackageIcon,
-  PaletteIcon,
-  PanelsTopLeftIcon,
   PauseIcon,
   PencilIcon,
   PhoneIcon,
   PlayIcon,
   PlusIcon,
-  PrinterIcon,
   RefreshCwIcon,
   SearchIcon,
   ShieldCheckIcon,
   ShoppingBagIcon,
   SlidersHorizontalIcon,
   StarIcon,
-  TagsIcon,
   Trash2Icon,
   TriangleAlertIcon,
   TruckIcon,
@@ -98,8 +84,6 @@ export const ikonlar = {
   oynat: PlayIcon,
   // Bildirim ve uyarı türleri.
   basari: CircleCheckIcon,
-  // Siparişin iptali (kart 0235).
-  iptal: CircleXIcon,
   bilgi: InfoIcon,
   uyari: TriangleAlertIcon,
   hata: OctagonXIcon,
@@ -129,8 +113,6 @@ export const ikonlar = {
   // havale ve kapıda ödeme ikonları yukarıdadır.
   kargo: TruckIcon,
   paket: PackageIcon,
-  // Sipariş fişini yazdırma (kart 0270).
-  yazici: PrinterIcon,
   iade: Undo2Icon,
   guvenlik: ShieldCheckIcon,
   destek: HeadsetIcon,
@@ -139,8 +121,7 @@ export const ikonlar = {
   yenile: RefreshCwIcon,
   // Ürün listesi (kart 0136): telefonda filtreleri açar.
   filtre: SlidersHorizontalIcon,
-  // Yönetim paneli (kart 0141): karşılama sayfası, yeni kayıt ekleme, vitrini yeni sekmede açma, çıkış.
-  ev: HouseIcon,
+  // Yeni kayıt ekleme, vitrini yeni sekmede açma, çıkış (kart 0141).
   ekle: PlusIcon,
   // Adedi azaltır (kart 0212: sepette ve ürün sayfasında adet seçici; artırmak "ekle"dir).
   azalt: MinusIcon,
@@ -150,35 +131,15 @@ export const ikonlar = {
   tutamak: GripVerticalIcon,
   "yukari-al": ArrowUpIcon,
   "asagi-al": ArrowDownIcon,
-  // Panel listeleri (kart 0258): bir kısmı seçili sayfa kutusu, sütunun artan ve azalan sırası.
+  // Tablo seçimi (kart 0258): bir kısmı seçili sayfa kutusu.
   "kismen-secili": MinusIcon,
-  "sirala-artan": ArrowUpNarrowWideIcon,
-  "sirala-azalan": ArrowDownWideNarrowIcon,
-  // Panel listelerinin tarih süzgeci (kart 0267).
-  takvim: CalendarIcon,
-  // Vitrin bölümleri ekranı (kart 0142): menüdeki iki sayfa (slider kısayolu, bölümler); görünürlük düğmesi
-  // bölümün bugünkü durumunu gösterir (görünür: goster, gizli: gizle; taslak); düzenle, satırın öteki işlemleri, sil.
-  slider: GalleryHorizontalIcon,
-  bolumler: PanelsTopLeftIcon,
-  goster: EyeIcon,
-  gizle: EyeOffIcon,
+  // Düzenle ve sil (kart 0142).
   duzenle: PencilIcon,
-  diger: EllipsisIcon,
   sil: Trash2Icon,
-  // Menüler ekranı (kart 0143): menüdeki sayfa.
-  menuler: ListTreeIcon,
-  // Tema ekranı (kart 0148): menüdeki sayfa.
-  tema: PaletteIcon,
   // Sipariş alındı sayfası (kart 0214): IBAN'ı kopyala.
   kopyala: CopyIcon,
   // Siparişin faturasını indir (kart 0268).
   indir: DownloadIcon,
-  // Ürünler listesi (kart 0262): menüdeki sayfa ve boş hâl.
-  urunler: BoxIcon,
-  // Kategoriler, markalar ve etiketler, özellikler ekranları (kart 0261): menüdeki sayfalar.
-  kategoriler: FolderTreeIcon,
-  markalar: TagsIcon,
-  ozellikler: ListChecksIcon,
   // Biçimli metin alanının araç çubuğu (kart 0263).
   kalin: BoldIcon,
   egik: ItalicIcon,
@@ -188,3 +149,5 @@ export const ikonlar = {
 } satisfies Record<string, LucideIcon>;
 
 export type IkonAdi = keyof typeof ikonlar;
+// Sözlükten alınmış bir ikon: panel kendi sözlüğündeki ikonu kütüphane parçalarına bununla verir (kart 0295).
+export type IkonBileseni = (typeof ikonlar)[IkonAdi];

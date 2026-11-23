@@ -4,77 +4,27 @@
 // - Panel ve katalog dışındaki her tarayıcı dosyasından ("use client") içe aktarma zinciri izlenir: zincir bütün metin
 //   dosyasına (metinler/metin.ts ya da metinler/tr.json) ya da panelin okuyucusuna (panel-metni.tsx) varırsa kırmızı.
 //   Yalnız türü alan içe aktarma (`import type`) kod taşımaz, izlenmez. Bozuk örnekler zincirin yakaladığını gösterir.
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { readFileSync } from "node:fs";
+import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
+import {
+  istemciDosyalari,
+  kok,
+  panelVeKatalogMu,
+  yasakZincir as zincir,
+} from "../../testler/ice-aktarma-zinciri.ts";
 import vitrinMetinleri from "../vitrin-metinleri.json" with { type: "json" };
 import { vitrinMetinleriniUret } from "../vitrin-metinleri-uret.ts";
 
-const kok = resolve(import.meta.dirname, "../../..");
 const yasaklar = [
   "cekirdek/metinler/metin.ts",
   "cekirdek/metinler/tr.json",
   "cekirdek/metinler/panel-metni.tsx",
 ];
 // Bütün dosyayı okuyabilen taraflar: panel, eklentilerin panel ekranları (cekirdek/eklentiler/<kod>/panel/, kart 0258)
-// ve bileşen kataloğu (yalnız geliştirmede ve deneme ortamında açılır).
-const serbestKlasorler = ["cekirdek/yonetim-paneli/", "cekirdek/katalog/"];
-const serbestMi = (goreli: string): boolean =>
-  serbestKlasorler.some((klasor) => goreli.startsWith(klasor)) ||
-  /^cekirdek\/eklentiler\/[^/]+\/panel\//.test(goreli);
-
-const dosyalar = (klasor: string): string[] =>
-  readdirSync(klasor).flatMap((ad) => {
-    const yol = join(klasor, ad);
-    if (ad === "node_modules" || ad === ".next" || ad === "testler") return [];
-    if (statSync(yol).isDirectory()) return dosyalar(yol);
-    return /\.(ts|tsx)$/.test(ad) ? [yol] : [];
-  });
-
-// Göreli içe aktarmanın dosyası (uzantısız yazılmışsa .ts, .tsx ya da klasörün index'i).
-const coz = (kaynak: string, adres: string): string | undefined => {
-  const temel = resolve(dirname(kaynak), adres);
-  for (const aday of [temel, `${temel}.ts`, `${temel}.tsx`, join(temel, "index.ts")]) {
-    if (existsSync(aday) && statSync(aday).isFile()) return aday;
-  }
-  return undefined;
-};
-
-// Kod taşıyan içe aktarmalar ve yeniden aktarmalar: `import type` ve `export type` sayılmaz.
-const iceAktarmalar = (icerik: string): string[] =>
-  [
-    ...icerik.matchAll(
-      /(?:^|\n)\s*(?:import|export)\s+(?!type\s)(?:[^"';]*?\sfrom\s+)?["'](\.{1,2}\/[^"']+)["']/g,
-    ),
-  ].map((eslesme) => eslesme[1] ?? "");
-
-// Kaynak koddan başlayıp yasak dosyaya varan ilk zincir (yoksa boş).
-const yasakZincir = (
-  baslangic: string,
-  oku: (yol: string) => string = (yol) => readFileSync(yol, "utf8"),
-): string[] => {
-  const onceki = new Map<string, string | null>([[baslangic, null]]);
-  const sira = [baslangic];
-  while (sira.length > 0) {
-    const yol = sira.shift() as string;
-    const goreli = relative(kok, yol);
-    if (yasaklar.includes(goreli)) {
-      const zincir: string[] = [];
-      for (let adim: string | null = yol; adim !== null; adim = onceki.get(adim) ?? null) {
-        zincir.unshift(relative(kok, adim));
-      }
-      return zincir;
-    }
-    if (!/\.(ts|tsx)$/.test(yol)) continue;
-    for (const adres of iceAktarmalar(oku(yol))) {
-      const hedef = coz(yol, adres);
-      if (hedef === undefined || onceki.has(hedef)) continue;
-      onceki.set(hedef, yol);
-      sira.push(hedef);
-    }
-  }
-  return [];
-};
+// ve bileşen kataloğu (yalnız geliştirmede ve deneme ortamında açılır). Zincir izleme ortak yardımcıdadır (kart 0295).
+const yasakZincir = (baslangic: string, oku?: (yol: string) => string): string[] =>
+  zincir(baslangic, yasaklar, oku);
 
 describe("vitrin metinleri", () => {
   it("vitrin-metinleri.json tr.json'dan üretilenle aynı", () => {
@@ -82,19 +32,12 @@ describe("vitrin metinleri", () => {
   });
 
   it("panel ve katalog dışındaki tarayıcı dosyaları bütün metin dosyasına ve panelin okuyucusuna varmaz", () => {
-    const istemciDosyalari = [
-      ...dosyalar(join(kok, "cekirdek")),
-      ...dosyalar(join(kok, "bilesenler")),
-    ].filter((yol) => {
+    const vitrinIstemcileri = istemciDosyalari().filter((yol) => {
       const goreli = relative(kok, yol);
-      return (
-        !serbestMi(goreli) &&
-        !yasaklar.includes(goreli) &&
-        /^\s*["']use client["']/.test(readFileSync(yol, "utf8"))
-      );
+      return !panelVeKatalogMu(goreli) && !yasaklar.includes(goreli);
     });
-    expect(istemciDosyalari.length).toBeGreaterThan(50);
-    const sorunlar = istemciDosyalari
+    expect(vitrinIstemcileri.length).toBeGreaterThan(50);
+    const sorunlar = vitrinIstemcileri
       .map((yol) => yasakZincir(yol))
       .filter((zincir) => zincir.length > 0)
       .map((zincir) => zincir.join(" → "));

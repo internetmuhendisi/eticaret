@@ -26,7 +26,7 @@ import {
 } from "react";
 import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
-import type { IkonAdi } from "../../../bilesenler/ikonlar/sozluk";
+import type { PanelIkonAdi } from "../../../bilesenler/ikonlar/panel-sozlugu";
 import {
   AcilirMenu,
   AcilirMenuIcerigi,
@@ -60,6 +60,7 @@ import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import type { TopluSonuc } from "../../kayitlar/liste";
 import { doldur } from "../../metinler/doldur";
 import { usePanelMetni } from "../../metinler/panel-metni";
+import { PanelIkon, panelIkonu } from "../panel-ikon";
 import { panelIstegi } from "../panel-istegi";
 import {
   type ListeDurumu,
@@ -88,7 +89,7 @@ export type TopluBaglantiTanimi<Satir> = {
   tur: "baglanti";
   kod: string;
   ad: string;
-  ikon: IkonAdi;
+  ikon: PanelIkonAdi;
   // Seçilen satırlardan açılacak adres.
   adres: (satirlar: Satir[]) => string;
   // Ekran okuyucu adı: görünen adla başlar, yeni sekmede açıldığını söyler.
@@ -129,7 +130,7 @@ export type ListeOzellikleri<Satir> = {
   gunYazilari?: Readonly<Record<string, string>>;
   siralamaAdi: (kod: string) => string;
   arama?: { etiket: string; yerTutucu: string };
-  bos: { ikon: IkonAdi; baslik: string; aciklama: string; eylem?: ReactNode };
+  bos: { ikon: PanelIkonAdi; baslik: string; aciklama: string; eylem?: ReactNode };
   // Yöneticinin izni olan toplu işlemler (sunucu süzer).
   topluIslemler: readonly TopluIslemTanimi<Satir>[];
 };
@@ -627,7 +628,7 @@ export function Liste<Satir>({
               prefetch={false}
               aria-label={islem.etiket}
             >
-              <Ikon ad={islem.ikon} />
+              <PanelIkon ad={islem.ikon} />
               {islem.ad}
             </Baglanti>
           ) : (
@@ -704,7 +705,7 @@ export function Liste<Satir>({
                       )}
                     >
                       {sutun.baslik}
-                      <Ikon
+                      <PanelIkon
                         ad={
                           yon === "ascending"
                             ? "sirala-artan"
@@ -867,7 +868,7 @@ export function Liste<Satir>({
         </Baglanti>
       </BosHal>
     ) : (
-      <BosHal ikon={bos.ikon} baslik={bos.baslik} aciklama={bos.aciklama}>
+      <BosHal ikon={panelIkonu(bos.ikon)} baslik={bos.baslik} aciklama={bos.aciklama}>
         {bos.eylem}
       </BosHal>
     );

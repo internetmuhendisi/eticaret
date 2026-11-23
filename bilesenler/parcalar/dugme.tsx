@@ -4,7 +4,7 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import type { ButtonHTMLAttributes } from "react";
 import { Ikon } from "../ikonlar/ikon.tsx";
-import type { IkonAdi } from "../ikonlar/sozluk.ts";
+import type { IkonAdi, IkonBileseni } from "../ikonlar/sozluk.ts";
 import { Ipucu } from "./ipucu.tsx";
 import { sinif } from "./sinif.ts";
 
@@ -61,7 +61,8 @@ export function IkonDugmesi({
   className,
   ...ozellikler
 }: Omit<DugmeOzellikleri, "children" | "aria-label"> & {
-  ikon: IkonAdi;
+  // Sözlükteki ad ya da panelin ikonu (panelIkonu, kart 0295).
+  ikon: IkonAdi | IkonBileseni;
   // Ekran okuyucunun okuduğu ve ipucunda görünen ad. Zorunludur.
   etiket: string;
 }) {

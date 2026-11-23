@@ -32,6 +32,10 @@ const beklenenler: Record<string, Beklenen> = {
   "dogrudan-ikon.ts": { kategori: "plugin", mesajBasi: "İkon doğrudan" },
   "ikon-yeniden-disa-aktarma.ts": { kategori: "plugin", mesajBasi: "İkon doğrudan" },
   "ikon-sonradan-yukleme.ts": { kategori: "plugin", mesajBasi: "İkon doğrudan" },
+  "ic-ice/cekirdek/bilesenler/ikonlar/panel-sozlugu.ts": {
+    kategori: "plugin",
+    mesajBasi: "İkon doğrudan",
+  },
   "ic-ice/cekirdek/bilesenler/ham-dugme.tsx": { kategori: "plugin", mesajBasi: "Ham HTML öğesi" },
   "ic-ice/cekirdek/bilesenler/tasarim-degerleri/ham-renk.ts": {
     kategori: "plugin",

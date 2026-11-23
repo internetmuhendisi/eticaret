@@ -1,7 +1,7 @@
 // Panel eylemlerinin tek kaydı (kart 0141, .claude/rules/yonetim-paneli.md): aynı eylem her sayfada aynı ikonla
 // ve aynı adla durur. Komut çubuğu ve çerçeve eylemi yalnız koduyla ister (EylemDugmesi, EylemBaglantisi).
 // "{ne}" taşıyan ad, eylemin nesnesini kullanan sayfadan alır: "Bölüm ekle", "Öğe ekle".
-import type { IkonAdi } from "../../bilesenler/ikonlar/sozluk";
+import type { PanelIkonAdi } from "../../bilesenler/ikonlar/panel-sozlugu";
 import type { MetinAnahtari } from "../metinler/metin";
 
 export const panelEylemleri = {
@@ -29,6 +29,6 @@ export const panelEylemleri = {
   // Tema (kart 0260): tema sayfası ile tema ayarları arasındaki bağlantılar.
   "tema-ayarlari": { ikon: "duzenle", ad: "yonetim.eylem.temaAyarlari" },
   "tema-degistir": { ikon: "tema", ad: "yonetim.eylem.temaDegistir" },
-} as const satisfies Record<string, { ikon: IkonAdi; ad: MetinAnahtari }>;
+} as const satisfies Record<string, { ikon: PanelIkonAdi; ad: MetinAnahtari }>;
 
 export type PanelEylemi = keyof typeof panelEylemleri;

@@ -6,17 +6,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useId } from "react";
-import { Ikon } from "../../bilesenler/ikonlar/ikon";
-import type { IkonAdi } from "../../bilesenler/ikonlar/sozluk";
+import type { PanelIkonAdi } from "../../bilesenler/ikonlar/panel-sozlugu";
 import { Rozet } from "../../bilesenler/parcalar/rozet";
 import { sinif } from "../../bilesenler/parcalar/sinif";
 import { panelAdresi } from "./adresler";
+import { PanelIkon } from "./panel-ikon";
 
 export type CizilenMenuGrubu = {
   kod: string;
   // Grupsuz sayfaların başlığı yoktur.
   ad: string | null;
-  sayfalar: { kod: string; adres: string; ad: string; ikon: IkonAdi; isaret?: string }[];
+  sayfalar: { kod: string; adres: string; ad: string; ikon: PanelIkonAdi; isaret?: string }[];
 };
 
 // Kök yalnız kendi adresinde seçilidir; öteki sayfa alt sayfalarında da seçili kalır.
@@ -62,7 +62,7 @@ export function PanelMenusu({
                       secili ? "border-birincil bg-yuzey font-en-kalin" : "font-orta",
                     )}
                   >
-                    <Ikon
+                    <PanelIkon
                       ad={sayfa.ikon}
                       className={sinif("size-5", secili ? "text-yazi" : "text-soluk-yazi")}
                     />

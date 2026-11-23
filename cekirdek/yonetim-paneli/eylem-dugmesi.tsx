@@ -2,12 +2,12 @@
 // Panel eyleminin düğmesi ve bağlantısı (kart 0141): ikon ve ad eylem kaydından gelir (eylemler.ts). Komut
 // çubuğunda dolu renkli tek düğme sayfanın asıl eylemidir ("asil"); ötekiler sadedir.
 import type { ComponentProps } from "react";
-import { Ikon } from "../../bilesenler/ikonlar/ikon";
 import { Baglanti } from "../../bilesenler/parcalar/baglanti";
 import { Dugme } from "../../bilesenler/parcalar/dugme";
 import { doldur } from "../metinler/doldur";
 import { usePanelMetni } from "../metinler/panel-metni";
 import { type PanelEylemi, panelEylemleri } from "./eylemler";
+import { PanelIkon } from "./panel-ikon";
 
 type EylemOzellikleri = {
   eylem: PanelEylemi;
@@ -31,7 +31,7 @@ export function EylemDugmesi({
   const ad = useEylemAdi({ eylem, ...(ne === undefined ? {} : { ne }) });
   return (
     <Dugme tur={asil ? "birincil" : "sade"} {...ozellikler}>
-      <Ikon ad={panelEylemleri[eylem].ikon} />
+      <PanelIkon ad={panelEylemleri[eylem].ikon} />
       {ad}
     </Dugme>
   );
@@ -46,7 +46,7 @@ export function EylemBaglantisi({
   const ad = useEylemAdi({ eylem, ...(ne === undefined ? {} : { ne }) });
   return (
     <Baglanti gorunum={asil ? "birincil" : "sade"} {...ozellikler}>
-      <Ikon ad={panelEylemleri[eylem].ikon} />
+      <PanelIkon ad={panelEylemleri[eylem].ikon} />
       {ad}
     </Baglanti>
   );

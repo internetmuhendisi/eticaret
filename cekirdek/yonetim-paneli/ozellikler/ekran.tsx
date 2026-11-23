@@ -33,6 +33,7 @@ import { EylemDugmesi } from "../eylem-dugmesi";
 import { AlanKabi, KaydetCubugu, PanelAlani, PanelFormu } from "../form/panel-formu";
 import { useKapatmaSorusu } from "../kapatma-sorusu";
 import { kodluHataMetni, useKodluForm } from "../kodlu-form";
+import { panelIkonu } from "../panel-ikon";
 import { usePanelIslemi } from "../panel-islemi";
 import { ozellikUclari } from "./uclar";
 import type { OzellikSatiri } from "./veri";
@@ -193,7 +194,7 @@ export function OzelliklerIcerigi() {
     <div className="flex flex-col gap-3">
       {ozellikler.length === 0 ? (
         <BosHal
-          ikon="ozellikler"
+          ikon={panelIkonu("ozellikler")}
           baslik={metin("yonetim.ozellik.bos.baslik")}
           aciklama={metin(
             degistirebilir ? "yonetim.ozellik.bos.metin" : "yonetim.ozellik.bos.metinIzinsiz",
