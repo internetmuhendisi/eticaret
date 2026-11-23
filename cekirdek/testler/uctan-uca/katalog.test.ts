@@ -132,6 +132,53 @@ test("seçenek grubu: ok tuşları seçer, seçilemeyen değer odak alır ama se
   expect(hatalar).toEqual([]);
 });
 
+// Açılır panel (kart 0267): Enter açar, içerik adlı "dialog"dur ve odak içine girer; açıkken iki renkte ve üç
+// genişlikte taramadan geçer, ekrandan taşmaz; Tab içerikte ilerler, Escape kapatır ve odak düğmeye döner; içerikteki
+// kapat düğmesi de kapatır.
+test("açılır panel: Enter açar, odak içeride, açıkken taramadan geçer, Escape ve kapat düğmesi kapatır", async ({
+  page,
+}) => {
+  const hatalar: string[] = [];
+  for (const renk of ["acik", "koyu"] as const) {
+    for (const { ad, width, height } of genislikler) {
+      await page.setViewportSize({ width, height });
+      const sayfa = await ac(page, `${katalogAdresi}/acilir-panel?renk=${renk}`);
+      hatalar.push(...sayfa.hatalar);
+      const dugme = page.getByRole("button", { name: metin("gelistirme.ornek.panelAc") });
+      await dugme.focus();
+      await page.keyboard.press("Enter");
+      const panel = page.getByRole("dialog", { name: metin("gelistirme.ornek.panelAdi") });
+      await expect(panel).toBeVisible();
+      await expect
+        .poll(() => panel.evaluate((oge) => oge.contains(document.activeElement)))
+        .toBe(true);
+      await tara(page, `açık panel, ${renk}, ${ad}`);
+      const kutu = await panel.boundingBox();
+      expect(kutu, `${renk}, ${ad}`).not.toBeNull();
+      expect((kutu?.x ?? -1) >= 0 && (kutu?.x ?? 0) + (kutu?.width ?? 0) <= width, `${ad}`).toBe(
+        true,
+      );
+      expect(await yanaKayma(page), `${renk}, ${ad}`).toBe(0);
+      await page.keyboard.press("Escape");
+      await expect(panel).toBeHidden();
+      await expect(dugme).toBeFocused();
+    }
+  }
+  await page.keyboard.press("Enter");
+  const panel = page.getByRole("dialog", { name: metin("gelistirme.ornek.panelAdi") });
+  const alan = panel.getByLabel(metin("gelistirme.ornek.panelAlani"));
+  await alan.focus();
+  await page.keyboard.type("Kapıda");
+  await page.keyboard.press("Tab");
+  await expect(
+    panel.getByRole("button", { name: metin("gelistirme.ornek.panelKapat") }),
+  ).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(panel).toBeHidden();
+  await expect(page.getByText("Kapıda")).toBeVisible();
+  expect(hatalar).toEqual([]);
+});
+
 // Biçimli metin alanı (kart 0263): araç çubuğu tek sekme durağıdır, ok tuşları dolaşır (uçlarda başa ve sona döner),
 // Home ve End uçlara gider; Ctrl+I eğik yazar ve düğmenin basılı durumu değişir; bağlantı düğmesi adres satırını açar,
 // odak adres alanına geçer, izinsiz adres hatayla reddedilir, Escape satırı kapatıp odağı yazıya döndürür, geçerli

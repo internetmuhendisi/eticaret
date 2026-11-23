@@ -6,6 +6,9 @@
 //   gönderimde firma hatası, bozuk takip numarasında alanın hatası. Kargoya verilince kargo kartı takip bağlantısıyla
 //   görünür. İç not eklenir, geçmişte görünür. Ayrıntı, onay penceresi ve kargo penceresi iki renkte ve üç genişlikte
 //   taramadan geçer.
+// - Tarih süzgeci panelde klavyeyle (boş gönderimde alanın hatası ve odak, iki gün, hazır aralık, Escape), kargo
+//   firması süzgeci (virgüllü ad) ve "Bakılması gereken" sekmesi; açık ve hatalı panel ile sekme iki renkte ve üç
+//   genişlikte taramadan geçer (kart 0267).
 // - "Sipariş ayarları"nda kargo firması yan pencereden eklenir (bozuk takip adresi alanın hatası), onay penceresiyle
 //   silinir; ekran iki renkte ve üç genişlikte taramadan geçer.
 // Siparişler ve kargo firmaları sitenin paylaşılan verisidir: test kendi ürününü ve siparişlerini açar, sonunda
@@ -14,6 +17,7 @@ import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
+import { eq } from "drizzle-orm";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri";
 import { doldur } from "../../metinler/doldur";
@@ -24,6 +28,7 @@ import { odemeServisi } from "../../moduller/odeme/servis";
 import { odemeYontemiServisi } from "../../moduller/odeme/yontemler";
 import { siparisAyarlari } from "../../moduller/siparis/ayarlar";
 import { havaleBildirimiFormuSemasi } from "../../moduller/siparis/havale-bildirimi-semalari";
+import { siparisler } from "../../moduller/siparis/model";
 import { siparisServisi } from "../../moduller/siparis/servis";
 import { siparisYonetimi } from "../../moduller/siparis/yonetim";
 import { stokServisi } from "../../moduller/stok/servis";
@@ -488,6 +493,161 @@ test("siparişler listesi: süzgeç, sıralama, geri dönüş, seçim ve toplu i
   // Yenilemeden sonra başlık yerine gelir (yenileme sırasında bir an boş kalabiliyor, ölçüldü).
   await expect(page).toHaveTitle(/\S/);
   await tara(page, "toplu işlemin sonucu");
+  expect(hatalar).toEqual([]);
+});
+
+test("siparişler listesi: tarih, kargo firması ve bakılması gereken klavyeyle (kart 0267)", async ({
+  page,
+}) => {
+  test.setTimeout(240_000);
+  const hatalar = konsoluDinle(page, { haric: (m) => m.includes("401") });
+  const site = calisanSite();
+  const ek = randomUUID().slice(0, 8);
+  // Üç sipariş: eski tarihli (başka testin siparişi o güne düşmez), kargodaki (testin kendi firma adı), havalesi
+  // bildirilmiş (bakılması gereken).
+  const eski = await siparisAc(
+    { yontem: "kapida-odeme", secenek: "nakit" },
+    `tarih-${ek}-1@ornek.test`,
+  );
+  const kargodaki = await siparisAc(
+    { yontem: "kapida-odeme", secenek: "nakit" },
+    `tarih-${ek}-2@ornek.test`,
+  );
+  const havaleEpostasi = `tarih-${ek}-3@ornek.test`;
+  const bildirilen = await siparisAc({ yontem: "havale" }, havaleEpostasi);
+  // İstanbul'da 15 Ocak 2020 öğle; sitenin saat dilimiyle aynı gün.
+  await vt
+    .update(siparisler)
+    .set({ olusturma_zamani: new Date("2020-01-15T09:00:00Z") })
+    .where(eq(siparisler.numara, eski));
+  const firma = `Deneme, Kargo ${ek}`;
+  await vt
+    .update(siparisler)
+    .set({ kargo_firmasi: firma, kargo_zamani: new Date() })
+    .where(eq(siparisler.numara, kargodaki));
+  const hesap = (await odemeYontemiServisi(site).oku(vt)).bankaHesaplari[0];
+  if (hesap === undefined) throw new Error("Sitenin banka hesabı yok.");
+  await siparisServisi(site).havaleBildir(
+    vt,
+    { tur: "eposta", eposta: havaleEpostasi },
+    havaleBildirimiFormuSemasi.parse({
+      numara: bildirilen,
+      gonderen: "Deneme Müşteri",
+      hesap: hesap.kimlik,
+      tutar: "150,00",
+      odemeTarihi: new Date().toISOString().slice(0, 10),
+    }),
+  );
+
+  await ayriBaglanti(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await paneleGir(page, yoneticiAc());
+  await menudenGit(page, metin("yonetim.sayfa.siparisler.ad"), /\/yonetim\/siparisler$/);
+  const tablo = page.getByRole("table");
+  const satir = (numara: string) => tablo.getByRole("link", { name: new RegExp(numara) });
+  await expect(satir(bildirilen)).toBeVisible();
+
+  // Tarih paneli klavyeyle açılır, Escape kapatır ve odak düğmeye döner.
+  const tarihDugmesi = page.getByRole("button", {
+    name: new RegExp(`^${metin("yonetim.siparisler.tarihSuzgeci")}`),
+  });
+  const panel = page.getByRole("dialog", { name: metin("yonetim.siparisler.tarihSuzgeci") });
+  await tarihDugmesi.focus();
+  await page.keyboard.press("Enter");
+  await expect(panel).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(panel).toBeHidden();
+  await expect(tarihDugmesi).toBeFocused();
+
+  // "Tarih seç": boş gönderimde başlangıcın hatası ve odak; iki gün de dahil.
+  await page.keyboard.press("Enter");
+  await expect(panel).toBeVisible();
+  await ikiRenkUcGenislik(page, "tarih paneli açık");
+  const ozelSecim = panel.getByRole("radio", { name: metin("yonetim.liste.tarih.ozel") });
+  await ozelSecim.focus();
+  await page.keyboard.press("Space");
+  await expect(ozelSecim).toHaveAttribute("aria-checked", "true");
+  const baslangic = panel.getByLabel(metin("yonetim.liste.tarih.baslangic"));
+  const bitis = panel.getByLabel(metin("yonetim.liste.tarih.bitis"));
+  const uygula = panel.getByRole("button", { name: metin("yonetim.liste.tarih.uygula") });
+  await uygula.focus();
+  await page.keyboard.press("Enter");
+  await expect(panel.getByText(metin("yonetim.liste.tarih.hata.bos"))).toBeVisible();
+  await expect(baslangic).toBeFocused();
+  await expect(baslangic).toHaveAttribute("aria-invalid", "true");
+  await ikiRenkUcGenislik(page, "tarih paneli hatalı");
+  await baslangic.fill("2020-01-15");
+  await bitis.fill("2020-01-15");
+  await uygula.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\?tarih=2020-01-15_2020-01-15$/);
+  await expect(panel).toBeHidden();
+  await sayfaHazir(page);
+  await expect(satir(eski)).toBeVisible();
+  await expect(satir(bildirilen)).toHaveCount(0);
+  const tarihCipi = page.getByRole("link", {
+    name: new RegExp(`^${metin("yonetim.liste.suzgeciKaldir").replace("{ad}", "")}Tarih: .*2020`),
+  });
+  await expect(tarihCipi).toBeVisible();
+  await expect(tarihCipi).not.toContainText("2020-01-15");
+
+  // Hazır aralık: bugün; eski sipariş çıkar.
+  await tarihDugmesi.focus();
+  await page.keyboard.press("Enter");
+  await expect(ozelSecim).toHaveAttribute("aria-checked", "true");
+  const bugun = panel.getByRole("radio", { name: metin("yonetim.liste.tarih.hazir.bugun") });
+  await bugun.focus();
+  await page.keyboard.press("Space");
+  await uygula.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\?tarih=bugun$/);
+  await sayfaHazir(page);
+  await expect(satir(bildirilen)).toBeVisible();
+  await expect(satir(eski)).toHaveCount(0);
+  await page.goto("/yonetim/siparisler");
+  await sayfaHazir(page);
+
+  // Kargo firması: seçenekler siparişlerdeki adlar; virgüllü ad adreste kodlanır.
+  const kargoDugmesi = page.getByRole("button", { name: metin("yonetim.siparisler.kargoSuzgeci") });
+  await kargoDugmesi.focus();
+  await page.keyboard.press("Enter");
+  const kargoMenusu = page.getByRole("menu");
+  await expect(kargoMenusu).toBeVisible();
+  await tara(page, "kargo süzgeci açık");
+  await kargoMenusu.getByRole("menuitemcheckbox", { name: firma }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(
+    new RegExp(`\\?kargo=${encodeURIComponent(encodeURIComponent(firma))}$`),
+  );
+  await page.keyboard.press("Escape");
+  await sayfaHazir(page);
+  await expect(satir(kargodaki)).toBeVisible();
+  await expect(satir(bildirilen)).toHaveCount(0);
+  await expect(
+    page.getByRole("link", {
+      name: doldur(metin("yonetim.liste.suzgeciKaldir"), {
+        ad: `${metin("yonetim.siparisler.kargoSuzgeci")}: ${firma}`,
+      }),
+    }),
+  ).toBeVisible();
+  await page.goto("/yonetim/siparisler");
+  await sayfaHazir(page);
+
+  // Bakılması gereken sekmesi: bildirilmiş havale işaretiyle, öteki siparişler yok.
+  const sekme = page
+    .getByRole("navigation", { name: metin("yonetim.siparisler.durumSuzgeci") })
+    .getByRole("link", { name: new RegExp(metin("yonetim.siparisler.bakilacak")) });
+  await sekme.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\?durum=bakilacak$/);
+  await sayfaHazir(page);
+  await expect(sekme).toHaveAttribute("aria-current", "page");
+  await expect(tablo.getByRole("row").filter({ hasText: bildirilen })).toContainText(
+    metin("yonetim.siparisler.havaleBildirildi"),
+  );
+  await expect(satir(kargodaki)).toHaveCount(0);
+  await expect(satir(eski)).toHaveCount(0);
+  await ikiRenkUcGenislik(page, "bakılması gereken");
   expect(hatalar).toEqual([]);
 });
 
