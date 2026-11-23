@@ -19,6 +19,14 @@ Hat 45045593092'de (kart 0291'in gönderimi, 2026-11-22) `cekirdek/testler/uctan
 - `urun-secenekleri.test.ts` ve `urun-galeri.test.ts` yerelde yeşil; düzeltme geri alınınca tarama kırmızı.
 - Bağımsız kontrol yapıldı.
 
+## Sonuç
+
+- Sebep (yerelde ölçüldü, hattaki hatayla aynı): ürün ekranının bölüm kutuları rolsüz `Kart`'tı (div) ve `aria-labelledby` ile başlığından ad alıyordu; ARIA'da yasak. axe bunu her taramada on bir bölümde yalnız "gözden geçir" sayıyordu. Onay penceresi açılınca Radix sayfanın geri kalanını `aria-hidden` ile gizler, `aria-live` öğelerini ve üstlerini açık bırakır: galerideki `SiralanabilirListe`'nin duyuru alanı yüzünden `#urun-galeri` açık kalıyor, başlığı gizleniyor; ad görünmeyen başlığa bağlı, içi okunmuyor, axe ihlal sayıyor.
+- Düzeltme: başlığıyla adlanan yedi kart `role="region"` aldı: ürün ekranının bölümleri, panelde iade talebi kutusu, vitrinde sipariş alındı sayfasının üç kartı, sipariş ayrıntısı ve havale kartı (aynı kalıbın taranan bütün yerleri; liste, bölge ve gezinme öğelerine ad zaten geçerli).
+- Koruma: `Kart`'ın türü ad verilince `region` ya da `group` rolü ister; bozuk örnekleri `bilesenler/parcalar/testler/kart.test.tsx`.
+- Ölçümler: `urun-secenekleri.test.ts` ve `urun-galeri.test.ts` yerelde 2/2 yeşil; ürün ekranının rolü kaldırılınca seçenekler testi `aria-prohibited-attr` `#urun-galeri` ile kırmızı. Ödeme, sipariş takibi ve iade talebi tarayıcı testleri 13/13 yeşil. Tür kuralı kaldırılınca dört bozuk örnek, vitrin kartından rol silinince tür kontrolü kırmızı.
+- Bağımsız kontrol: kök sebebi ve çözümü doğruladı, kaçırılmış yer bulmadı (144 adlı açılış etiketi tarandı), var olan testleri etkileyen bir şey görmedi; kalıcı koruma önerisi uygulandı.
+
 ## Durum
 
 yapılacak
