@@ -2,7 +2,8 @@
 // bağlantısı. Yalnız üyeler (karar 0157); silinmiş hesap listede ve ayrıntıda yoktur.
 // - Ad: hesapta ad yoktur (kullanıcı kararı): son siparişin teslimat adı (kişisel bilgisi silinmemiş), yoksa varsayılan
 //   teslimat adresinin adı, ikisi de yoksa boş (ekran e-postayı yazar).
-// - Sipariş sayısı ve toplam: iptal edilmemiş siparişler, sitenin para biriminde; toplamdan tamamlanan iadeler düşülür.
+// - Sipariş sayısı ve toplam: iptal edilmemiş siparişler, sitenin para biriminde; toplamdan tamamlanan iadeler düşülür
+//   (siparişin iadesi siparişin tutarını aşmaz).
 // - Kampanya izni: müşterinin en yeni pazarlama onayı satırı (satırlar değişmez, karar 0051).
 // - Liste, sayılar ve süzgeçler tek sorguda: her müşteri için ayrı sorgu atılmaz.
 // - Not metni ve e-posta değişiklik kaydına yazılmaz; kayda yalnız müşterinin ve notun kimliği girer.
@@ -104,7 +105,7 @@ export const musteriYonetimi = (site: Site) => {
     const siparisOzeti = vt
       .select({
         musteri: siparisler.musteri_kimligi,
-        adet: sql<number>`count(*) filter (where ${siparisler.durum} <> ${iptal})`
+        adet: sql<number>`count(*) filter (where ${siparisler.durum} <> ${iptal} and ${siparisler.para_birimi} = ${paraBirimi})`
           .mapWith(Number)
           .as("adet"),
         brut: sql<number>`coalesce(sum(${siparisler.toplam}) filter (where ${siparisler.durum} <> ${iptal} and ${siparisler.para_birimi} = ${paraBirimi}), 0)`
@@ -115,17 +116,29 @@ export const musteriYonetimi = (site: Site) => {
       .where(isNotNull(siparisler.musteri_kimligi))
       .groupBy(siparisler.musteri_kimligi)
       .as("siparis_ozeti");
+    // Siparişin iadesi siparişin tutarını aşamaz: taksitli ödemenin tam iadesi taksit farkını da döndürür
+    // (iade-hesabi.ts), müşterinin toplamı yine eksiye düşmez.
+    const siparisIadesi = vt
+      .select({
+        siparis: siparisIadeleri.siparis_kimligi,
+        iade: sql<number>`sum(${siparisIadeleri.tutar})`.mapWith(Number).as("siparis_iadesi"),
+      })
+      .from(siparisIadeleri)
+      .where(eq(siparisIadeleri.durum, "tamamlandi"))
+      .groupBy(siparisIadeleri.siparis_kimligi)
+      .as("siparis_iadesi");
     const iadeOzeti = vt
       .select({
         musteri: siparisler.musteri_kimligi,
-        iade: sql<number>`coalesce(sum(${siparisIadeleri.tutar}), 0)`.mapWith(Number).as("iade"),
+        iade: sql<number>`coalesce(sum(least(${siparisIadesi.iade}, ${siparisler.toplam})), 0)`
+          .mapWith(Number)
+          .as("iade"),
       })
-      .from(siparisIadeleri)
-      .innerJoin(siparisler, eq(siparisler.kimlik, siparisIadeleri.siparis_kimligi))
+      .from(siparisler)
+      .innerJoin(siparisIadesi, eq(siparisIadesi.siparis, siparisler.kimlik))
       .where(
         and(
           isNotNull(siparisler.musteri_kimligi),
-          eq(siparisIadeleri.durum, "tamamlandi"),
           ne(siparisler.durum, iptal),
           eq(siparisler.para_birimi, paraBirimi),
         ),

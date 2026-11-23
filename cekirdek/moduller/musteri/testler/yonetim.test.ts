@@ -270,6 +270,23 @@ describe("müşteri listesi", () => {
         varsayilanFatura: true,
       }),
     );
+    // Taksitli ödemenin tam iadesi siparişin tutarını aşar (taksit farkı): toplam eksiye düşmez.
+    // Başka para birimindeki sipariş ne sayılır ne toplanır (ortalama aynı tabana bölünür).
+    const d = await h.musteriAc(`d-${randomUUID().slice(0, 6)}@ornek.test`);
+    const taksitli = await h.ver(1, { musteri: d, ad: "Deniz", soyad: "Taksit" });
+    const [taksitliSiparis] = await h.vt
+      .select({ kimlik: siparisler.kimlik, toplam: siparisler.toplam })
+      .from(siparisler)
+      .where(eq(siparisler.numara, taksitli));
+    if (taksitliSiparis === undefined) throw new Error("Sipariş yok.");
+    await h.vt.insert(siparisIadeleri).values({
+      ...kopya,
+      siparis_kimligi: taksitliSiparis.kimlik,
+      durum: "tamamlandi",
+      tutar: taksitliSiparis.toplam + 60,
+    });
+    const yabanci = await h.ver(1, { musteri: d, ad: "Deniz", soyad: "Taksit" });
+    await h.vt.update(siparisler).set({ para_birimi: "EUR" }).where(eq(siparisler.numara, yabanci));
     const c = await h.musteriAc(`c-${randomUUID().slice(0, 6)}@ornek.test`);
     const silinen = await h.musteriAc(`silinen-${randomUUID().slice(0, 6)}@ornek.test`);
     await h.vt
@@ -278,7 +295,7 @@ describe("müşteri listesi", () => {
       .where(eq(musteriler.kimlik, silinen));
 
     const liste = await listele(h.vt);
-    expect(liste.toplam).toBe(3);
+    expect(liste.toplam).toBe(4);
     const satir = (kimlik: string) => liste.satirlar.find((x) => x.kimlik === kimlik);
     expect(satir(silinen)).toBeUndefined();
     const beklenen =
@@ -291,12 +308,15 @@ describe("müşteri listesi", () => {
     });
     expect(satir(b)).toMatchObject({ siparisSayisi: 0, toplam: 0, ad: "Selin Bulut" });
     expect(satir(c)).toMatchObject({ siparisSayisi: 0, toplam: 0, ad: null });
+    expect(satir(d)).toMatchObject({ siparisSayisi: 1, toplam: 0 });
 
     // Sıralama ve süzgeçler.
     expect((await listele(h.vt, { siralama: "toplam-azalan" })).satirlar[0]?.kimlik).toBe(a);
-    expect((await listele(h.vt, { siparis: ["var"] })).satirlar.map((x) => x.kimlik)).toEqual([a]);
+    expect(
+      (await listele(h.vt, { siparis: ["var"] })).satirlar.map((x) => x.kimlik).sort(),
+    ).toEqual([a, d].sort());
     expect((await listele(h.vt, { siparis: ["yok"] })).toplam).toBe(2);
-    expect((await listele(h.vt, { siparis: ["var", "yok"] })).toplam).toBe(3);
+    expect((await listele(h.vt, { siparis: ["var", "yok"] })).toplam).toBe(4);
   });
 
   it("arama e-postada ve adda Türkçe harfsiz ve büyük harfle; % ve _ düz harftir; sayfa", async () => {
