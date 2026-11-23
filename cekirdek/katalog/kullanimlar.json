@@ -181,6 +181,7 @@
     "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayrinti.tsx",
+    "cekirdek/yonetim-paneli/siparisler/fis.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
     "cekirdek/yonetim-paneli/siparisler/liste.tsx",
     "cekirdek/yonetim-paneli/tema/ayarlar-ekrani.tsx",
