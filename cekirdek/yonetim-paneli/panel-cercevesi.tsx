@@ -45,14 +45,15 @@ export function PanelCercevesi({
   return (
     // Kaydedilmemiş değişiklikle panelin başka bir sayfasına geçerken sorulur (kart 0259).
     <CikisKorumasi>
-      <div className="flex min-h-dvh bg-yuzey text-yazi">
-        <aside className="hidden w-full max-w-yan-menu shrink-0 border-r border-kenar bg-zemin masaustu:block">
+      <div className="flex min-h-dvh bg-yuzey text-yazi print:block print:min-h-0 print:bg-zemin">
+        {/* Yazdırırken menü, üst çubuk ve bildirimler çıkmaz; yalnız sayfanın içeriği basılır (kart 0270). */}
+        <aside className="hidden w-full max-w-yan-menu shrink-0 border-r border-kenar bg-zemin masaustu:block print:hidden">
           <div className="sticky top-0 h-dvh overflow-y-auto px-3 py-4">
             <MenuIcerigi {...menu} />
           </div>
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex items-center gap-2 border-b border-kenar bg-zemin px-2 py-1 masaustu:hidden">
+          <div className="flex items-center gap-2 border-b border-kenar bg-zemin px-2 py-1 masaustu:hidden print:hidden">
             <YanPencere open={acik} onOpenChange={setAcik}>
               <YanPencereTetikleyici asChild>
                 <IkonDugmesi ikon="menu" etiket={metin("yonetim.cerceve.menuyuAc")} />

@@ -18,6 +18,9 @@ export const panelEylemleri = {
   // İptal ve iade (kart 0235).
   "siparis-iptal": { ikon: "iptal", ad: "yonetim.eylem.siparisIptal" },
   "iade-yap": { ikon: "iade", ad: "yonetim.eylem.iadeYap" },
+  // Sipariş fişi (kart 0270): ayrıntının ve listenin toplu çubuğunun "Fiş yazdır"ı, fiş sayfasının "Yazdır"ı.
+  "fis-yazdir": { ikon: "yazici", ad: "yonetim.eylem.fisYazdir" },
+  yazdir: { ikon: "yazici", ad: "yonetim.eylem.yazdir" },
   // Elle sipariş (kart 0236): sipariş listesinin komut çubuğundaki bağlantı.
   "elle-siparis": { ikon: "ekle", ad: "yonetim.eylem.elleSiparis" },
   // Ürünler (kart 0263): listenin "Ürün ekle"si ve ürün ekranının "Vitrinde gör"ü.

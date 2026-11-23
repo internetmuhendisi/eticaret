@@ -60,8 +60,12 @@ export const siparisListesiTanimi = {
     tarih: { azalan: "en-yeni", artan: "en-eski" },
     tutar: { azalan: "tutar-azalan", artan: "tutar-artan" },
   },
-  // Her toplu işlemin izni kayıttaki işleminkidir (siparisIslemleri); uç da aynısını denetler.
-  topluIslemler: siparisTopluIslemleri.map((kod) => ({ kod, izin: siparisIslemleri[kod].izin })),
+  // "Fiş yazdır" (kart 0270) seçilenlerin fişini yeni sekmede açar, izni fiş sayfasınınkidir. Öteki her toplu işlemin
+  // izni kayıttaki işleminkidir (siparisIslemleri); uç da aynısını denetler.
+  topluIslemler: [
+    { kod: "fis", izin: "siparis.gor" },
+    ...siparisTopluIslemleri.map((kod) => ({ kod, izin: siparisIslemleri[kod].izin })),
+  ],
 } as const satisfies ListeTanimi;
 
 // Listenin durumundan servisin girdisi (siparisListesiSemasi, cekirdek/moduller/siparis/semalar.ts). Tarih süzgecinin

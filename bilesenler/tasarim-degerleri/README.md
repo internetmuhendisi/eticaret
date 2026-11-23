@@ -85,7 +85,7 @@ Bütün temalarda aynıdır.
 | Tür | Sınıf | Adlar |
 |---|---|---|
 | Boşluk ölçeği | `p-`, `m-`, `gap-`, `w-`, `h-`, `size-`, `min-h-`... | `0`, `px`, `0.5`, `1`, `1.5`, `2`, `3`, `4`, `5`, `6`, `8`, `10`, `11`, `12`, `16`, `20`; `11` parmakla rahat basılan en küçük yüksekliktir |
-| Genişlik sınırı | `max-w-` | `karekod`, `panel`, `yan-menu`, `form`, `arama`, `metin`, `icerik` |
+| Genişlik sınırı | `max-w-` | `karekod`, `panel`, `yan-menu`, `form`, `arama`, `metin`, `icerik`, `eposta`, `acilir`, `fis` (sipariş fişi, A4 genişliği) |
 | Kırılma noktası | önek | `tablet:`, `masaustu:`, `genis:`; önek yoksa telefon |
 | Kapsayıcı genişliği (kart 0193) | `@container` ve önek | Parçanın kendi genişliğine göre: `@kart:` (22rem ve üstü), `@max-kart:` (altı). Kapsayıcı olan öğeye `@container` yazılır |
 | Katman sırası | `z-` | alttan üste `taban`, `ust-kisim`, `yan-pencere`, `pencere`, `acilir`, `bildirim`; açılır parçalar (menü, seçim listesi, ipucu) pencerelerin üstündedir |

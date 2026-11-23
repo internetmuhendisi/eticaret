@@ -133,6 +133,7 @@
   "bilesenler/parcalar/anahtar.tsx": [
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
     "cekirdek/yonetim-paneli/ozellikler/ekran.tsx",
+    "cekirdek/yonetim-paneli/siparisler/fis-ayarlari.tsx",
     "cekirdek/yonetim-paneli/siparisler/yonetici-bildirimleri-ayarlari.tsx",
     "cekirdek/yonetim-paneli/tema/ayarlar-ekrani.tsx",
     "cekirdek/yonetim-paneli/urunler/fiyat-stok-bolumleri.tsx"
@@ -375,6 +376,7 @@
     "cekirdek/yonetim-paneli/siparisler/ayarlar.tsx",
     "cekirdek/yonetim-paneli/siparisler/ayrinti.tsx",
     "cekirdek/yonetim-paneli/siparisler/elle-siparis.tsx",
+    "cekirdek/yonetim-paneli/siparisler/fis-ayarlari.tsx",
     "cekirdek/yonetim-paneli/siparisler/iade-talebi-kutusu.tsx",
     "cekirdek/yonetim-paneli/siparisler/iptal-ve-iade-ayarlari.tsx",
     "cekirdek/yonetim-paneli/siparisler/yonetici-bildirimleri-ayarlari.tsx",
@@ -549,6 +551,7 @@
     "cekirdek/vitrin/urun-sayfasi/sayfa.tsx",
     "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/siparisler/elle-siparis.tsx",
+    "cekirdek/yonetim-paneli/siparisler/fis.tsx",
     "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/urunler/fiyat-stok-bolumleri.tsx",
     "cekirdek/yonetim-paneli/urunler/secenekler-bolumu.tsx"
@@ -593,6 +596,7 @@
     "cekirdek/yonetim-paneli/siparisler/ayrinti.tsx",
     "cekirdek/yonetim-paneli/siparisler/elle-siparis.tsx",
     "cekirdek/yonetim-paneli/siparisler/fatura.tsx",
+    "cekirdek/yonetim-paneli/siparisler/fis.tsx",
     "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
     "cekirdek/yonetim-paneli/tema/ayarlar-ekrani.tsx",

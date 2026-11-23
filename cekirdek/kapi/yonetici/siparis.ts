@@ -14,6 +14,7 @@ import {
   elleSiparisAramaSemasi,
   elleSiparisMusteriAramasiSemasi,
   elleSiparisSemasi,
+  fisAyarlariSemasi,
   havaleOnayiSemasi,
   iadeTalebiKarariSemasi,
   iadeYenidenDenemeSemasi,
@@ -155,6 +156,20 @@ export const iptalVeIadeAyarlariUcu = ucTanimla({
   sinir: "genel",
   isle: (girdi, _istek, _yanit, { hesapKimligi }) =>
     siparisAyarlari(calisanSite()).iptalVeIadeAyarlariniKaydet(
+      siteninVeritabani(),
+      { tur: "yonetici", kimlik: hesapKimligi },
+      girdi,
+    ),
+});
+
+// POST /kapi/yonetici/fis-ayarlari: sipariş fişinde fiyatlar (kart 0270).
+export const fisAyarlariUcu = ucTanimla({
+  giris: "yonetici",
+  sema: fisAyarlariSemasi,
+  izin: "magaza-ayarlari.degistir",
+  sinir: "genel",
+  isle: (girdi, _istek, _yanit, { hesapKimligi }) =>
+    siparisAyarlari(calisanSite()).fisAyarlariniKaydet(
       siteninVeritabani(),
       { tur: "yonetici", kimlik: hesapKimligi },
       girdi,

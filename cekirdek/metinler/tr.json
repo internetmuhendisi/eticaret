@@ -154,6 +154,7 @@
       "musteriIptali": "Müşteri siparişini kendisi iptal edebilir mi: hayır, yalnız ödeme beklenirken ya da kargoya verilene kadar. Ödemesi havaleyle alınmış siparişi müşteri iptal edemez.",
       "iadeTalebiSuresi": "Müşteri teslimden sonra kaç gün içinde iade talebi açabilir.",
       "iadeKargosu": "İade kargosunu kim öder: mağaza ya da müşteri. İade talebi formunda müşteriye söylenir.",
+      "fisteFiyatlar": "Sipariş fişinde fiyatlar ve toplam görünsün mü. Kapalıyken fişte yalnız ürün, stok kodu ve adet yazar (ör. hediye siparişi).",
       "yoneticiBildirimAlicilari": "Yönetici bildirimlerinin gideceği e-posta adresleri, en çok 5. Boşsa bildirimler mağaza sahibi rolündeki yöneticilere gider.",
       "kapaliYoneticiBildirimleri": "Kapatılan yönetici bildirimleri. Listede olmayan her bildirim açıktır."
     }
@@ -220,6 +221,10 @@
         "ad": "Sipariş ayrıntısı",
         "aciklama": "Siparişin ürünleri, tutarı, müşterisi ve geçmişi. Durum değişikliği hemen kaydedilir ve geçmişe yazılır."
       },
+      "siparisFisi": {
+        "ad": "Sipariş fişi",
+        "aciklama": "Paketlerken yazdırılacak fiş. Yazdırırken panelin menüsü ve düğmeleri çıkmaz; her sipariş kendi sayfasından başlar."
+      },
       "siparisAyarlari": {
         "ad": "Sipariş ayarları",
         "aciklama": "Müşterinin iptali, iade talebi ve kargo firmaları. Değişiklik kaydedilince hemen yayınlanır."
@@ -273,7 +278,10 @@
       "urunEkle": "Ürün ekle",
       "vitrindeGor": "Vitrinde gör",
       "temaAyarlari": "Tema ayarları",
-      "temaDegistir": "Tema değiştir"
+      "temaDegistir": "Tema değiştir",
+      "fisYazdir": "Fiş yazdır",
+      "yazdir": "Yazdır",
+      "fisYazdirYeniSekme": "Fiş yazdır (yeni sekmede açılır)"
     },
     "rol": {
       "magaza-sahibi": "Mağaza sahibi",
@@ -1433,6 +1441,29 @@
         }
       }
     },
+    "siparisFisi": {
+      "baslik": "Sipariş fişi",
+      "etiket": "Sipariş fişi {numara}",
+      "teslimat": "Teslimat",
+      "kargo": "Kargo",
+      "fatura": "Fatura",
+      "urunler": "Ürünler",
+      "paketlendi": "Paketlendi",
+      "urun": "Ürün",
+      "stokKodu": "Stok kodu",
+      "adet": "Adet",
+      "birim": "Birim",
+      "tutar": "Tutar",
+      "ozet": "{urun} ürün · {kalem} kalem",
+      "musteriNotu": "Müşterinin notu:",
+      "vergiDairesi": "Vergi dairesi {ad}",
+      "vergiNumarasi": "Vergi no {numara}",
+      "mersis": "MERSİS {numara}",
+      "faturaDegil": "Bu belge fatura yerine geçmez.",
+      "atlanan": "Şu siparişlerin kişisel bilgileri silindiği için fişi yok: {numaralar}.",
+      "yok": "Yazdırılacak fiş yok. Siparişlere dönüp siparişleri yeniden seçin.",
+      "yazdirAciklama": "Fişi yazdırmak için \"Yazdır\"a basın. Yazdırırken panelin menüsü ve düğmeleri çıkmaz."
+    },
     "siparisAyarlari": {
       "kargoFirmalari": "Kargo firmaları",
       "kargoAciklamasi": "Siparişi kargoya verirken bu listeden seçersiniz. Takip adresi verilen firmada müşteri takip numarasıyla kargoyu izleyebilir.",
@@ -1510,6 +1541,12 @@
         "yorum": "Onay bekleyen yorum",
         "kartla-odeme-uyusmazligi": "Kartla ödeme uyuşmazlığı",
         "bekleyen-iade": "Kuruluşta bekleyen iade"
+      },
+      "fis": {
+        "baslik": "Sipariş fişi",
+        "aciklama": "Paketlerken yazdırdığınız fişin içeriği. Fiyatlar kapalıyken fişte yalnız ürün, stok kodu ve adet yazar; hediye siparişlerinde işe yarar.",
+        "fiyatlar": "Fişte fiyatları göster",
+        "kaydedildi": "Sipariş fişi ayarı kaydedildi."
       }
     },
     "iade": {

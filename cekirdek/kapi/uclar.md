@@ -823,6 +823,15 @@ Sipariş ayarlarının "İptal ve iade" bölümü (kart 0239): müşterinin kend
 - Başarılı (200): GET `/kapi/yonetici/siparis-ayarlari` ile aynı veri.
 - Hatalar: `dogrulama` (alan `iadeTalebiSuresi`), `yetki`.
 
+### POST /kapi/yonetici/fis-ayarlari
+
+Sipariş ayarlarının "Sipariş fişi" bölümü (kart 0270): fişte fiyatların görünüp görünmediği. Değişirse değişiklik kaydına girer (`magaza-ayari.degisti`); aynı değer girmez.
+
+- İzin: `magaza-ayarlari.degistir`. Sınır: `genel`.
+- Girdi: `{ "fisteFiyatlar": boolean }` (`fisAyarlariSemasi`).
+- Başarılı (200): GET `/kapi/yonetici/siparis-ayarlari` ile aynı veri.
+- Hatalar: `dogrulama`, `yetki`.
+
 ### POST /kapi/yonetici/yonetici-bildirim-ayarlari
 
 Sipariş ayarlarının "Yönetici bildirimleri" bölümü (kart 0241, karar 0154): bildirimlerin gideceği adresler ve kapalı bildirimler birlikte kaydedilir. Adresler virgül, noktalı virgül ya da boşlukla ayrılır, küçük harfe çevrilir; boşsa bildirimler tam yetkili rolün yöneticilerine gider. Kapalı bildirimler sitede görünenlerden gelir (kartla ödemeye bağlı bildirimler yalnız eklenti açıkken); görünmeyenin kayıtlı hâli korunur. Değişiklik kaydına girer (`magaza-ayari.degisti`; adreslerin değeri yazılmaz).

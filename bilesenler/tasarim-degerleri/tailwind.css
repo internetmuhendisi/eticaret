@@ -25,6 +25,16 @@
 @custom-variant vurgulu (&[data-highlighted]);
 @custom-variant yer-tutucu (&[data-placeholder]);
 
+/* Sipariş fişi (kart 0270, karar 0171): fiş A4 kâğıda kendi adlı sayfasında yazdırılır; öteki sayfaların
+   yazdırılması değişmez. Satır sayfalar arasında bölünmez (break-inside-avoid), her fiş yeni sayfadan başlar. */
+@page fis {
+  size: A4;
+  margin: 12mm 14mm;
+}
+@utility fis-sayfasi {
+  page: fis;
+}
+
 /* Radix'in açılır parçalara verdiği ölçüler: seçim listesi tetikleyicisi kadar geniştir, ekrana
    sığdığı kadar uzar. */
 @utility secim-genisligi {

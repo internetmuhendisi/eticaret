@@ -30,10 +30,11 @@ describe("tema değerlerinin CSS'i", () => {
 
   // Bileşen kataloğu (kart 0104) temayı cihazdan bağımsız seçer: öznitelikli kök iki temanın değerlerini
   // de taşır, cihazın tercihinden sonra ve daha özgül seçiciyle yazılır.
-  it("kökteki tema özniteliği açık ya da koyu temayı cihazın tercihinden bağımsız seçer", () => {
+  it("kökteki ya da bir öğedeki tema özniteliği açık ya da koyu temayı cihazın tercihinden bağımsız seçer", () => {
     const tercih = css.indexOf("@media (prefers-color-scheme:dark)");
-    const zorlananAcik = css.match(/:root\[data-renk=acik\]\{([^}]*)\}/);
-    const zorlananKoyu = css.match(/:root\[data-renk=koyu\]\{([^}]*)\}/);
+    // Kök ve tek bir öğe (sipariş fişi, kart 0270) aynı kuralla zorlanır.
+    const zorlananAcik = css.match(/:root\[data-renk=acik\],\[data-renk=acik\]\{([^}]*)\}/);
+    const zorlananKoyu = css.match(/:root\[data-renk=koyu\],\[data-renk=koyu\]\{([^}]*)\}/);
     expect(zorlananAcik?.index ?? -1).toBeGreaterThan(tercih);
     expect(zorlananKoyu?.index ?? -1).toBeGreaterThan(tercih);
     expect(zorlananAcik?.[1]).toContain("color-scheme:light;");

@@ -80,7 +80,23 @@ export type SutunTanimi<Satir> = {
   hucre: (satir: Satir) => ReactNode;
 };
 
-export type TopluIslemTanimi<Satir> = {
+// İki türlü toplu işlem: kapıya istek gönderen (onaylı, sonucu listede söylenir) ve seçilenlerle yeni sekmede bir
+// sayfa açan bağlantı (sipariş fişi, kart 0270): sunucuya istek gitmez, seçim kalır.
+export type TopluIslemTanimi<Satir> = TopluIstekTanimi<Satir> | TopluBaglantiTanimi<Satir>;
+
+export type TopluBaglantiTanimi<Satir> = {
+  tur: "baglanti";
+  kod: string;
+  ad: string;
+  ikon: IkonAdi;
+  // Seçilen satırlardan açılacak adres.
+  adres: (satirlar: Satir[]) => string;
+  // Ekran okuyucu adı: görünen adla başlar, yeni sekmede açıldığını söyler.
+  etiket: string;
+};
+
+export type TopluIstekTanimi<Satir> = {
+  tur?: "istek";
   kod: string;
   // Çubuktaki düğmenin yazısı: "Hazırlamaya al".
   ad: string;
@@ -206,7 +222,7 @@ export function Liste<Satir>({
     });
 
   // Toplu işlem: onay penceresi, istek, sonuç. Sonuç gelince odak sonuca gider.
-  const [bekleyen, setBekleyen] = useState<TopluIslemTanimi<Satir> | null>(null);
+  const [bekleyen, setBekleyen] = useState<TopluIstekTanimi<Satir> | null>(null);
   const [sonuc, setSonuc] = useState<Sonuc | null>(null);
   const sonucKutusu = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -256,7 +272,7 @@ export function Liste<Satir>({
     setAramaVerisi(undefined);
   };
 
-  const topluIslemYap = async (islem: TopluIslemTanimi<Satir>) => {
+  const topluIslemYap = async (islem: TopluIstekTanimi<Satir>) => {
     const seciliSatirlar = satirlar.filter((satir) => secilen.has(anahtar(satir)));
     const adlar = Object.fromEntries(
       seciliSatirlar.map((satir) => [anahtar(satir), satirAdi(satir)]),
@@ -553,7 +569,10 @@ export function Liste<Satir>({
       </Uyari>
     ) : (
       (() => {
-        const islem = topluIslemler.find((oge) => oge.kod === sonuc.islem);
+        const islem = topluIslemler.find(
+          (oge): oge is TopluIstekTanimi<Satir> =>
+            oge.tur !== "baglanti" && oge.kod === sonuc.islem,
+        );
         const { islenen, islenemeyen } = sonuc.sonuc;
         return (
           <Uyari tur={islenemeyen.length === 0 ? "basari" : "uyari"}>
@@ -596,16 +615,32 @@ export function Liste<Satir>({
             sayi: String(seciliAnahtarlar.length),
           })}
         </span>
-        {topluIslemler.map((islem) => (
-          <Dugme
-            key={islem.kod}
-            tur="cerceveli"
-            className="border-zemin px-3 text-zemin hover:bg-yazi"
-            onClick={() => setBekleyen(islem)}
-          >
-            {islem.ad}
-          </Dugme>
-        ))}
+        {topluIslemler.map((islem) =>
+          islem.tur === "baglanti" ? (
+            <Baglanti
+              key={islem.kod}
+              gorunum="cerceveli"
+              className="border-zemin px-3 text-zemin no-underline hover:bg-yazi"
+              href={islem.adres(satirlar.filter((satir) => secilen.has(anahtar(satir))))}
+              target="_blank"
+              rel="noopener"
+              prefetch={false}
+              aria-label={islem.etiket}
+            >
+              <Ikon ad={islem.ikon} />
+              {islem.ad}
+            </Baglanti>
+          ) : (
+            <Dugme
+              key={islem.kod}
+              tur="cerceveli"
+              className="border-zemin px-3 text-zemin hover:bg-yazi"
+              onClick={() => setBekleyen(islem)}
+            >
+              {islem.ad}
+            </Dugme>
+          ),
+        )}
         <Dugme
           tur="baglanti"
           className="text-zemin tablet:ml-auto"

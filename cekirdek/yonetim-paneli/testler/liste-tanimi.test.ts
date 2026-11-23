@@ -2,7 +2,7 @@
 // (siparişler, stok bildirimleri) ve bir deneme tanımıyla.
 import { describe, expect, it } from "vitest";
 import { stokBildirimleriListesiTanimi } from "../../eklentiler/stoga-gelince-haber-ver/panel/liste-tanimi.ts";
-import { siparisIslemleri } from "../../kayitlar/siparis.ts";
+import { siparisIslemleri, siparisTopluIslemleri } from "../../kayitlar/siparis.ts";
 import {
   kayitSuzgeciSiniri,
   type ListeTanimi,
@@ -12,6 +12,7 @@ import {
   listeUcuSemasi,
   suzgecliMi,
 } from "../liste/tanim.ts";
+import { panelSayfalari, sayfaTanimi } from "../sayfa-agaci.ts";
 import { siparisListesiGirdisi, siparisListesiTanimi } from "../siparisler/liste-tanimi.ts";
 import { urunListesiGirdisi, urunListesiTanimi } from "../urunler/liste-tanimi.ts";
 
@@ -300,10 +301,18 @@ describe("değer süzgeci (kart 0267)", () => {
 });
 
 describe("toplu işlemin izni (bağımsız kontrolün bulgusu)", () => {
-  it("her toplu işlemin izni kayıttaki işleminkidir", () => {
+  it("her toplu işlemin izni kayıttaki işleminkidir; fiş yazdırmanınki fiş sayfasınınkidir (kart 0270)", () => {
     for (const { kod, izin } of siparisListesiTanimi.topluIslemler) {
-      expect(izin).toBe(siparisIslemleri[kod].izin);
+      expect(izin).toBe(
+        kod === "fis"
+          ? sayfaTanimi(panelSayfalari, "siparis-fisi")?.izin
+          : siparisIslemleri[kod].izin,
+      );
     }
+    expect(siparisListesiTanimi.topluIslemler.map(({ kod }) => kod)).toEqual([
+      "fis",
+      ...siparisTopluIslemleri,
+    ]);
   });
 });
 

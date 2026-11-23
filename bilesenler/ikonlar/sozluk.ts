@@ -58,6 +58,7 @@ import {
   PhoneIcon,
   PlayIcon,
   PlusIcon,
+  PrinterIcon,
   RefreshCwIcon,
   SearchIcon,
   ShieldCheckIcon,
@@ -128,6 +129,8 @@ export const ikonlar = {
   // havale ve kapıda ödeme ikonları yukarıdadır.
   kargo: TruckIcon,
   paket: PackageIcon,
+  // Sipariş fişini yazdırma (kart 0270).
+  yazici: PrinterIcon,
   iade: Undo2Icon,
   guvenlik: ShieldCheckIcon,
   destek: HeadsetIcon,

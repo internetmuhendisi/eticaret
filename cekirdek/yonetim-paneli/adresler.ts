@@ -13,6 +13,9 @@ export const temaAyarlariAdresi = `${temaAdresi}/ayarlar`;
 export const siparislerAdresi = `${panelAdresi}/siparisler`;
 export const siparisAyrintisiAdresi = (numara: string): string =>
   `${siparislerAdresi}/ayrinti?numara=${encodeURIComponent(numara)}`;
+// Sipariş fişi (kart 0270): numaralar virgülle; yazdır, sayfa açılınca yazdırma penceresini getirir.
+export const siparisFisiAdresi = (numaralar: readonly string[], yazdir = true): string =>
+  `${siparislerAdresi}/fis?numara=${numaralar.map(encodeURIComponent).join(",")}${yazdir ? "&yazdir=1" : ""}`;
 
 // Ürünler listesi (kart 0262); ürün ekranı kart 0263'le gelir.
 export const urunlerAdresi = `${panelAdresi}/urunler`;

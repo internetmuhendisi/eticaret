@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import { doldur } from "../../../../../../metinler/doldur";
 import { metin } from "../../../../../../metinler/site-metni";
 import { siparisNumarasiSemasi } from "../../../../../../moduller/siparis/havale-bildirimi-semalari";
+import { siparisFisiAdresi } from "../../../../../../yonetim-paneli/adresler";
+import { EylemBaglantisi } from "../../../../../../yonetim-paneli/eylem-dugmesi";
 import { panelOturumu } from "../../../../../../yonetim-paneli/panel-oturumu";
 import {
   PanelSayfasi,
@@ -38,6 +40,17 @@ export default async function SiparisAyrintisiSayfasi({
       baslik={doldur(metin("yonetim.siparis.baslik"), { numara: veri.numara })}
       eylemler={
         <>
+          {/* Fiş yeni sekmede açılır ve yazdırma penceresini getirir (kart 0270); kişisel bilgisi silinmişse yok. */}
+          {veri.kisiselSilindi ? null : (
+            <EylemBaglantisi
+              eylem="fis-yazdir"
+              href={siparisFisiAdresi([veri.numara])}
+              target="_blank"
+              rel="noopener"
+              prefetch={false}
+              aria-label={metin("yonetim.eylem.fisYazdirYeniSekme")}
+            />
+          )}
           {veri.iade === null ? null : <IadeIslemleri numara={veri.numara} veri={veri.iade} />}
           <SiparisIslemleri
             numara={veri.numara}

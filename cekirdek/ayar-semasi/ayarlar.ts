@@ -492,6 +492,12 @@ export const magazaAyarSemasi = z.strictObject({
     z.enum(iadeKargosuOdeyenler).default("magaza"),
     magazaSahibinin("ayar.aciklama.iadeKargosu", { kendiIsleviyle: true }),
   ),
+  // Sipariş fişinde fiyatlar (kart 0270, karar 0157): kapalıyken fişte yalnız ürün, stok kodu ve adet yazar (hediye
+  // siparişi). Yalnız sipariş ayarları işleviyle değişir.
+  fisteFiyatlar: ayar(
+    z.boolean().default(true),
+    magazaSahibinin("ayar.aciklama.fisteFiyatlar", { kendiIsleviyle: true }),
+  ),
   // Yönetici bildirimleri (kart 0241, karar 0154; cekirdek/kayitlar/yonetici-bildirimi.ts). Alıcılar boşsa tam yetkili
   // rolün yöneticileri; e-posta adresidir, değeri değişiklik kaydına yazılmaz. Kapalı bildirimler listesi boş başlar:
   // hepsi açık. İkisi yalnız sipariş ayarları işleviyle değişir.

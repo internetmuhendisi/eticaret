@@ -23,6 +23,7 @@ import {
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { siteninMagazaAyarlari, siteninServisi } from "../magaza-ayarlari/servis.ts";
 import type {
+  FisAyarlari,
   IptalVeIadeAyarlari,
   KargoFirmalariGirdisi,
   YoneticiBildirimAyarlariGirdisi,
@@ -34,7 +35,8 @@ export const siparisAyarlari = (site: Site) => {
   const oku = async (
     vt: Veritabani,
   ): Promise<
-    { kargoFirmalari: KargoFirmasi[] } & IptalVeIadeAyarlari & {
+    { kargoFirmalari: KargoFirmasi[] } & IptalVeIadeAyarlari &
+      FisAyarlari & {
         yoneticiBildirimAlicilari: string[];
         kapaliYoneticiBildirimleri: YoneticiBildirimi[];
       }
@@ -46,8 +48,10 @@ export const siparisAyarlari = (site: Site) => {
       iadeKargosu,
       yoneticiBildirimAlicilari,
       kapaliYoneticiBildirimleri,
+      fisteFiyatlar,
     } = await siteninMagazaAyarlari(vt, site);
     return {
+      fisteFiyatlar,
       kargoFirmalari,
       musteriIptali,
       iadeTalebiSuresi,
@@ -114,6 +118,12 @@ export const siparisAyarlari = (site: Site) => {
     return oku(vt);
   };
 
+  // Sipariş fişi (kart 0270): fişte fiyatlar. Değişirse değişiklik kaydına girer, aynı değer girmez.
+  const fisAyarlariniKaydet = async (vt: Veritabani, kim: DegisikligiYapan, girdi: FisAyarlari) => {
+    await siteninServisi(site).degistir(vt, kim, girdi, { kendiIslevi: true });
+    return oku(vt);
+  };
+
   const kargoFirmalariniKaydet = async (
     vt: Veritabani,
     kim: DegisikligiYapan,
@@ -157,6 +167,7 @@ export const siparisAyarlari = (site: Site) => {
     oku,
     kargoFirmalariniKaydet,
     iptalVeIadeAyarlariniKaydet,
+    fisAyarlariniKaydet,
     gorunenBildirimler,
     yoneticiBildirimleriniKaydet,
   };

@@ -1,4 +1,5 @@
-// Sipariş ayarları ekranı (kart 0234): iptal ve iade (kart 0239), kargo firmaları ve yönetici bildirimleri (kart 0241). Önce sayfanın izni denetlenir, sonra ayar okunur; değişiklik
+// Sipariş ayarları ekranı (kart 0234): iptal ve iade (kart 0239), kargo firmaları, sipariş fişi (kart 0270) ve yönetici
+// bildirimleri (kart 0241). Önce sayfanın izni denetlenir, sonra ayar okunur; değişiklik
 // tarayıcıdan sipariş ayarları ucuna gider.
 import type { Metadata } from "next";
 import { panelOturumu } from "../../../../../yonetim-paneli/panel-oturumu";
@@ -8,6 +9,7 @@ import {
   panelSayfasiniAc,
 } from "../../../../../yonetim-paneli/panel-sayfasi";
 import { SiparisAyarlariEkrani } from "../../../../../yonetim-paneli/siparisler/ayarlar";
+import { FisAyarlari } from "../../../../../yonetim-paneli/siparisler/fis-ayarlari";
 import { IptalVeIadeAyarlari } from "../../../../../yonetim-paneli/siparisler/iptal-ve-iade-ayarlari";
 import { siparisAyarlariVerisi } from "../../../../../yonetim-paneli/siparisler/veri";
 import { YoneticiBildirimleriAyarlari } from "../../../../../yonetim-paneli/siparisler/yonetici-bildirimleri-ayarlari";
@@ -25,6 +27,7 @@ export default async function SiparisAyarlariSayfasi() {
     yoneticiBildirimAlicilari,
     kapaliYoneticiBildirimleri,
     gorunenBildirimler,
+    fisteFiyatlar,
   } = await siparisAyarlariVerisi();
   const izinli = yetkili("magaza-ayarlari.degistir");
   return (
@@ -35,6 +38,7 @@ export default async function SiparisAyarlariSayfasi() {
           izinli={izinli}
         />
         <SiparisAyarlariEkrani firmalar={kargoFirmalari} izinli={izinli} />
+        <FisAyarlari baslangic={{ fisteFiyatlar }} izinli={izinli} />
         <YoneticiBildirimleriAyarlari
           baslangic={{
             alicilar: yoneticiBildirimAlicilari.join(", "),

@@ -11,7 +11,8 @@ import type { SiparisDurumu, SiparisListesiSiralamasi } from "../../kayitlar/sip
 import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
-import { siparisAyrintisiAdresi } from "../adresler";
+import { siparisAyrintisiAdresi, siparisFisiAdresi } from "../adresler";
+import { panelEylemleri } from "../eylemler";
 import { Liste, type SutunTanimi, type TopluIslemTanimi } from "../liste/liste";
 import type { ListeDurumu, ListeVerisi } from "../liste/tanim";
 import { DurumRozeti } from "./durum-rozeti";
@@ -154,6 +155,18 @@ export function SiparisListesi({
       hucre: (satir) => satir.tutar,
     },
   ];
+  const fis: TopluIslemTanimi<SiparisSatiri>[] = topluIslemler.includes("fis")
+    ? [
+        {
+          tur: "baglanti",
+          kod: "fis",
+          ad: metin("yonetim.eylem.fisYazdir"),
+          ikon: panelEylemleri["fis-yazdir"].ikon,
+          adres: (satirlar) => siparisFisiAdresi(satirlar.map((satir) => satir.numara)),
+          etiket: metin("yonetim.eylem.fisYazdirYeniSekme"),
+        },
+      ]
+    : [];
   const islemler: TopluIslemTanimi<SiparisSatiri>[] = topluIslemler.includes("hazirlamaya-al")
     ? [
         {
@@ -237,7 +250,7 @@ export function SiparisListesi({
           </Baglanti>
         ),
       }}
-      topluIslemler={islemler}
+      topluIslemler={[...fis, ...islemler]}
     />
   );
 }

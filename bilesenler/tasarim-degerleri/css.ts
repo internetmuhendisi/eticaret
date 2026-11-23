@@ -116,8 +116,9 @@ export function temaDegerleriCss(
     (koyuTema
       ? `@media (prefers-color-scheme:dark){:root{${renkVeGolge(degerler, "koyu")}}}`
       : "") +
-    // Öznitelikli seçici :root'tan özgüldür, cihazın tercihinin önüne geçer.
-    `:root[${zorlananRenkOzniteligi}=acik]{color-scheme:light;${renkVeGolge(degerler, "acik")}}` +
-    `:root[${zorlananRenkOzniteligi}=koyu]{color-scheme:dark;${renkVeGolge(degerler, "koyu")}}`
+    // Öznitelikli seçici :root'tan özgüldür, cihazın tercihinin önüne geçer. Kökün dışında tek bir öğeye de
+    // verilebilir (sipariş fişi her zaman açık renktedir, kart 0270): değişkenler o öğenin altında geçerlidir.
+    `:root[${zorlananRenkOzniteligi}=acik],[${zorlananRenkOzniteligi}=acik]{color-scheme:light;${renkVeGolge(degerler, "acik")}}` +
+    `:root[${zorlananRenkOzniteligi}=koyu],[${zorlananRenkOzniteligi}=koyu]{color-scheme:dark;${renkVeGolge(degerler, "koyu")}}`
   );
 }

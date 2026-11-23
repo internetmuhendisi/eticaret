@@ -571,6 +571,8 @@ export const sabitDegerler = {
     icerik: "80rem",
     // eposta: e-postanın gövdesi (kart 0240); e-posta programları bu genişlikten dar ekranda tam genişlik çizer.
     eposta: "37.5rem",
+    // fis: sipariş fişi (kart 0270); A4 kâğıdın genişliği (210 mm), ekranda kâğıt gibi görünür.
+    fis: "49.625rem",
   },
   // Kod yüklenmeyince "yükleniyor" yazısının görünmeden önce beklediği süre (kart 0057).
   yukleniyorGecikmesi: "3s",

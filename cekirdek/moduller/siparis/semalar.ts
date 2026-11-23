@@ -242,6 +242,10 @@ export const iptalVeIadeAyarlariSemasi = z.strictObject({
 });
 export type IptalVeIadeAyarlari = z.output<typeof iptalVeIadeAyarlariSemasi>;
 
+// Sipariş ayarlarının "Sipariş fişi" bölümü (kart 0270): fişte fiyatlar.
+export const fisAyarlariSemasi = z.strictObject({ fisteFiyatlar: z.boolean() });
+export type FisAyarlari = z.output<typeof fisAyarlariSemasi>;
+
 // Sipariş ayarlarının "Yönetici bildirimleri" bölümü (kart 0241): alıcılar ekranın yazdığı hâliyle (virgülle ayrılmış),
 // sunucuda ayrılıp doğrulanır (siparisAyarlari.yoneticiBildirimleriniKaydet); kapalı bildirimler ekranda görünenlerden.
 export const yoneticiBildirimAyarlariSemasi = z.strictObject({

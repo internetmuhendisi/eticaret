@@ -30,6 +30,7 @@ import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
 import { siparisAyarlari } from "../../moduller/siparis/ayarlar";
 import { type SiparisFaturasi, siparisFaturaServisi } from "../../moduller/siparis/fatura";
 import type { HesapSiparisi, OncekiIade } from "../../moduller/siparis/iade-hesabi";
+import type { Siparis, SiparisKalemi } from "../../moduller/siparis/model";
 import { siparisYonetimi } from "../../moduller/siparis/yonetim";
 import { siteninVeritabani } from "../../veritabani/baglanti";
 import { type ListeDurumu, type ListeVerisi, tarihDegeriniCoz } from "../liste/tanim";
@@ -258,8 +259,62 @@ export type IadePenceresiVerisi = {
   talep: { kimlik: string; kalemler: { sira: number; adet: number }[]; neden: IadeNedeni } | null;
 };
 
+type Bicim = ReturnType<typeof bicim>;
+type TutarSutunlari = Pick<
+  Siparis,
+  "ara_toplam" | "kargo_turu" | "kargo_tutari" | "toplam" | "gosterim" | "vergi_dokumu"
+>;
+
+// Ayrıntı ile sipariş fişinin (kart 0270) ortak parçaları: kalemler, tutarlar ve fatura bilgisi aynı yazılır.
+export const siparisKalemleriVerisi = (
+  kalemler: readonly SiparisKalemi[],
+  b: Bicim,
+): SiparisAyrintisiVerisi["kalemler"] =>
+  kalemler.map((kalem) => ({
+    ad: kalem.urun_adi,
+    secim: kalem.secim.map(({ secenek, deger }) => `${secenek}: ${deger}`).join(" · "),
+    stokKodu: kalem.stok_kodu,
+    adet: kalem.adet,
+    birim: b.para(kalem.birim_tutari),
+    tutar: b.para(kalem.tutar),
+  }));
+
+export const siparisTutarlariVerisi = (
+  siparis: TutarSutunlari,
+  b: Bicim,
+): SiparisAyrintisiVerisi["tutarlar"] => ({
+  araToplam: b.para(siparis.ara_toplam),
+  kargo: {
+    tur: siparis.kargo_turu as "yok" | "ucretsiz" | "ucretli",
+    tutar: b.para(siparis.kargo_tutari),
+  },
+  toplam: b.para(siparis.toplam),
+  vergiDahil: siparis.gosterim !== "vergi-haric",
+  vergiler: siparis.vergi_dokumu.map((satir) => ({
+    ad: satir.ad ?? null,
+    oran: b.yuzde(satir.oran / 10_000),
+    tutar: b.para(satir.vergi),
+  })),
+});
+
+export const siparisFaturaBilgisiVerisi = (
+  fatura: Siparis["fatura"],
+): SiparisAyrintisiVerisi["fatura"] => {
+  const adres = fatura.adresAyni || fatura.adres === undefined ? [] : adresSatirlari(fatura.adres);
+  return fatura.tur === "kurumsal"
+    ? {
+        tur: "kurumsal",
+        firma: fatura.firma,
+        vergiDairesi: fatura.vergiDairesi,
+        vergiNumarasi: fatura.vergiNumarasi,
+        adresAyni: fatura.adresAyni,
+        adres,
+      }
+    : { tur: "bireysel", adresAyni: fatura.adresAyni, adres };
+};
+
 // Adresin satırları: ad (varsa) ve tek satırlık adres yazısı (il ve ilçe adlarıyla, ülkeyle; adresYazisi).
-const adresSatirlari = (adres: YazilacakAdres): string[] => {
+export const adresSatirlari = (adres: YazilacakAdres): string[] => {
   const yazi = adresYazisi(adres, bicim().ulkeAdi);
   return yazi === "" ? [] : [yazi];
 };
@@ -328,9 +383,6 @@ export const siparisAyrintisiVerisi = async (
   const onayliTalep = ayrinti.talepler.find(
     (talep) => talep.durum === "onaylandi" && !talep.iadeYapildi,
   );
-  const fatura = siparis.fatura;
-  const faturaAdresi =
-    fatura.adresAyni || fatura.adres === undefined ? [] : adresSatirlari(fatura.adres);
   return {
     numara: siparis.numara,
     durum,
@@ -339,28 +391,8 @@ export const siparisAyrintisiVerisi = async (
       yontem: siparis.odeme_yontemi,
       secenek: siparis.kapida_secenegi,
     },
-    kalemler: ayrinti.kalemler.map((kalem) => ({
-      ad: kalem.urun_adi,
-      secim: kalem.secim.map(({ secenek, deger }) => `${secenek}: ${deger}`).join(" · "),
-      stokKodu: kalem.stok_kodu,
-      adet: kalem.adet,
-      birim: b.para(kalem.birim_tutari),
-      tutar: b.para(kalem.tutar),
-    })),
-    tutarlar: {
-      araToplam: b.para(siparis.ara_toplam),
-      kargo: {
-        tur: siparis.kargo_turu as "yok" | "ucretsiz" | "ucretli",
-        tutar: b.para(siparis.kargo_tutari),
-      },
-      toplam: b.para(siparis.toplam),
-      vergiDahil: siparis.gosterim !== "vergi-haric",
-      vergiler: siparis.vergi_dokumu.map((satir) => ({
-        ad: satir.ad ?? null,
-        oran: b.yuzde(satir.oran / 10_000),
-        tutar: b.para(satir.vergi),
-      })),
-    },
+    kalemler: siparisKalemleriVerisi(ayrinti.kalemler, b),
+    tutarlar: siparisTutarlariVerisi(siparis, b),
     kargo:
       siparis.kargo_firmasi === null || siparis.kargo_zamani === null
         ? null
@@ -377,17 +409,7 @@ export const siparisAyrintisiVerisi = async (
       uye: siparis.musteri_kimligi !== null,
     },
     teslimat: { satirlar: adresSatirlari(siparis.teslimat.adres) },
-    fatura:
-      fatura.tur === "kurumsal"
-        ? {
-            tur: "kurumsal",
-            firma: fatura.firma,
-            vergiDairesi: fatura.vergiDairesi,
-            vergiNumarasi: fatura.vergiNumarasi,
-            adresAyni: fatura.adresAyni,
-            adres: faturaAdresi,
-          }
-        : { tur: "bireysel", adresAyni: fatura.adresAyni, adres: faturaAdresi },
+    fatura: siparisFaturaBilgisiVerisi(siparis.fatura),
     not: siparis.not,
     odeme:
       siparis.odeme_zamani !== null

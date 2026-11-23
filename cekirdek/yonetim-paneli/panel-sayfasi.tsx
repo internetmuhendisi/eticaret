@@ -80,7 +80,8 @@ export async function PanelSayfasi({
   const { sayfa, yol } = await panelSayfasiniAc(kod, agac);
   return (
     <>
-      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 border-b border-kenar bg-zemin px-4 py-4 masaustu:px-8 masaustu:py-5">
+      {/* Yazdırırken komut çubuğu çıkmaz (sipariş fişi, kart 0270). */}
+      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 border-b border-kenar bg-zemin px-4 py-4 masaustu:px-8 masaustu:py-5 print:hidden">
         <div className="flex min-w-0 max-w-metin flex-col gap-1">
           {yol.length > 1 ? (
             <SayfaYolu
@@ -97,7 +98,7 @@ export async function PanelSayfasi({
           <div className="flex w-full flex-wrap gap-2 tablet:w-auto">{eylemler}</div>
         )}
       </div>
-      <div className="flex flex-col gap-4 px-3 py-4 tablet:px-4 masaustu:px-8 masaustu:py-5">
+      <div className="flex flex-col gap-4 px-3 py-4 tablet:px-4 masaustu:px-8 masaustu:py-5 print:p-0">
         {children}
       </div>
     </>

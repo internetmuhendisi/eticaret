@@ -68,6 +68,18 @@ export const panelSayfalari = [
     grup: "satis",
     ust: "siparisler",
   },
+  // Sipariş fişi (kart 0270, karar 0171): bir ya da birden çok siparişin yazdırılacak fişi (?numara=A,B); görevli de
+  // yazdırır. Yazdırırken panelin çerçevesi ve komut çubuğu gizlenir.
+  {
+    kod: "siparis-fisi",
+    adres: `${panelAdresi}/siparisler/fis`,
+    ad: "yonetim.sayfa.siparisFisi.ad",
+    aciklama: "yonetim.sayfa.siparisFisi.aciklama",
+    ikon: "yazici",
+    izin: "siparis.gor",
+    grup: "satis",
+    ust: "siparisler",
+  },
   // Elle sipariş (kart 0236, karar 0148): telefonla ya da yüz yüze alınan sipariş; görevli de girer.
   {
     kod: "elle-siparis",
