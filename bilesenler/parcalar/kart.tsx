@@ -3,7 +3,15 @@
 import type { HTMLAttributes } from "react";
 import { sinif } from "./sinif.ts";
 
-type Ozellikler = HTMLAttributes<HTMLDivElement>;
+// Kartın kendisi rolsüz bir kutudur; rolsüz kutuya ad (aria-label, aria-labelledby) verilemez (WCAG, axe
+// aria-prohibited-attr). Ad verilen kart adını alabilen bir rol de alır, ör. bölümler "region" (kart 0292).
+type AdAlabilenRol = "region" | "group";
+type Ozellikler = HTMLAttributes<HTMLDivElement> &
+  (
+    | { "aria-label"?: undefined; "aria-labelledby"?: undefined }
+    | { role: AdAlabilenRol; "aria-label": string; "aria-labelledby"?: undefined }
+    | { role: AdAlabilenRol; "aria-label"?: undefined; "aria-labelledby": string }
+  );
 
 export function Kart({ className, ...ozellikler }: Ozellikler) {
   return (
