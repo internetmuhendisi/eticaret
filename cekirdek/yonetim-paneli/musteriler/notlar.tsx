@@ -118,7 +118,7 @@ export function MusteriNotlari({
               />
             )}
           </PanelAlani>
-          <GonderDugmesi tur="sade" className="w-fit" disabled={pf.gonderiliyor}>
+          <GonderDugmesi tur="cerceveli" className="w-fit" disabled={pf.gonderiliyor}>
             {metin("yonetim.musteri.notlar.kaydet")}
           </GonderDugmesi>
         </PanelFormu>

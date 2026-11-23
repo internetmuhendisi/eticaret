@@ -1,4 +1,5 @@
-// Müşteriler ekranlarının verisi (kart 0271, karar 0173): servisin sonucu sitenin biçimiyle (tarih, para) yazılır;
+// Müşteriler ekranlarının verisi (kart 0271, karar 0173): servisin sonucu sitenin biçimiyle (uzun tarih, taslaktaki gibi;
+// para) yazılır;
 // tarayıcı biçimlemez. Liste ucu ve sayfa aynı işlevi çağırır.
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { musteriPanelSinirlari } from "../../kayitlar/musteri-paneli";
@@ -43,7 +44,7 @@ export const musteriListesiVerisi = async (
       kimlik: satir.kimlik,
       ad: satir.ad ?? "",
       eposta: satir.eposta,
-      kayit: b.tarih(satir.kayit),
+      kayit: b.uzunTarih(satir.kayit),
       siparisSayisi: satir.siparisSayisi,
       toplam: b.para(satir.toplam),
       kampanyaIzni: satir.kampanyaIzni,
@@ -105,7 +106,7 @@ export const musteriAyrintisiVerisi = async (
     kimlik: ayrinti.kimlik,
     ad: ayrinti.ad ?? "",
     eposta: ayrinti.eposta,
-    kayit: b.tarih(ayrinti.kayit),
+    kayit: b.uzunTarih(ayrinti.kayit),
     siparisSayisi: ayrinti.siparisSayisi,
     toplam: b.para(ayrinti.toplam),
     ortalama: b.para(
@@ -113,12 +114,12 @@ export const musteriAyrintisiVerisi = async (
     ),
     kampanya: {
       var: ayrinti.kampanyaIzni,
-      zaman: ayrinti.kampanyaZamani === null ? null : b.tarih(ayrinti.kampanyaZamani),
+      zaman: ayrinti.kampanyaZamani === null ? null : b.uzunTarih(ayrinti.kampanyaZamani),
     },
     uyelikSurumu: ayrinti.uyelikSurumu,
     siparisler: ayrinti.siparisler.map((siparis) => ({
       numara: siparis.numara,
-      zaman: b.tarih(siparis.zaman),
+      zaman: b.uzunTarih(siparis.zaman),
       durum: siparis.durum,
       toplam: b.para(siparis.toplam),
     })),

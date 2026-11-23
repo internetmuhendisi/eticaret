@@ -2121,7 +2121,6 @@
         "var": "Sipariş vermiş",
         "yok": "Hiç sipariş vermemiş"
       },
-      "telefonOzeti": "{kayit} · {sayi} sipariş",
       "kayitSuzgeci": "Kayıt tarihi",
       "kampanyaSuzgeci": "Kampanya izni",
       "siparisSuzgeci": "Sipariş",
@@ -2138,7 +2137,8 @@
       "bos": {
         "baslik": "Henüz müşteri yok",
         "metin": "Vitrinde hesap açan müşteriler burada görünür. Üye olmadan sipariş verenler Siparişler'dedir."
-      }
+      },
+      "siparisSayisi": "{sayi} sipariş"
     },
     "musteri": {
       "ozet": "Üye · {tarih} tarihinden beri",
@@ -2186,7 +2186,7 @@
         "kampanya": "Kampanya izni",
         "kampanyaVar": "Var · {tarih}",
         "kampanyaYok": "Yok",
-        "uyelik": "Üyelik sözleşmesi",
+        "uyelik": "Üyelik onayı",
         "uyelikSurumu": "Onaylanan sürüm: {surum}"
       },
       "adresler": {

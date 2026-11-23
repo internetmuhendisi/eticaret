@@ -114,20 +114,19 @@ export function MusteriListesi({
       veri={veri}
       ad={metin("yonetim.musteriler.liste")}
       sutunlar={sutunlar}
+      // Telefonda taslaktaki gibi kısa kart: solda ad ve e-posta, sağda sipariş sayısı ve toplam.
       telefon={(satir) => (
-        <>
+        <span className="flex items-start justify-between gap-3">
           <Ad satir={satir} />
-          <span className="flex flex-wrap items-center justify-between gap-2 text-kucuk">
-            <span className="text-soluk-yazi">
-              {doldur(metin("yonetim.musteriler.telefonOzeti"), {
-                kayit: satir.kayit,
+          <span className="flex shrink-0 flex-col items-end text-kucuk">
+            <span>
+              {doldur(metin("yonetim.musteriler.siparisSayisi"), {
                 sayi: String(satir.siparisSayisi),
               })}
             </span>
             <span className="font-kalin">{satir.toplam}</span>
           </span>
-          <KampanyaIzni satir={satir} />
-        </>
+        </span>
       )}
       anahtar={(satir) => satir.kimlik}
       satirAdi={(satir) => (satir.ad === "" ? satir.eposta : satir.ad)}

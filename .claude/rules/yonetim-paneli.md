@@ -79,6 +79,13 @@ paths:
 - Yazdırılacak panel sayfası çerçeveyi kendisi gizlemez: yazdırırken yan menü, üst çubuk ve komut çubuğu `print:hidden`'dır (panel-cercevesi, panel-sayfasi).
 - İptal ve iade (karar 0147) yan penceredir (`iade-penceresi.tsx`), yalnız `siparis.iade` izni olana ve durumu izin veren siparişte görünür; tutar ve vergi önizlemesi sunucunun `iadeyiHesapla`'sıyla ve sitenin biçim ayarlarıyla (`siteninBicimAyarlari`) çizilir, gönderilen yalnız seçimdir.
 
+## Müşteriler (karar 0173)
+
+- Ekranlar `cekirdek/yonetim-paneli/musteriler/` klasöründe, menüde "Satış" altındadır: Müşteriler (liste motoruyla, `liste-tanimi.ts`) ve Müşteri ayrıntısı (alt sayfa, `?kimlik=`). Görmek `musteri.gor`, not `musteri.not`, şifre sıfırlama bağlantısı `musteri.sifre-sifirlama` ister; görevlide yok.
+- Servis `musteriYonetimi` (`cekirdek/moduller/musteri/yonetim.ts`): yalnız üyeler; ad, sipariş sayısı, toplam (iptal ve tamamlanan iade düşülerek) ve kampanya izni tek sorguda. Panelin şemaları `panel-semalari.ts`'tedir, vitrinin müşteri şemalarına yazılmaz.
+- Notlar `MusteriNotlari` ile (`notlar.tsx`): ekleme ortak form yapısıyla, silme onay penceresiyle; not düzenlenmez, müşteriye gitmez, değişiklik kaydına metni girmez. Şifre sıfırlama `sifreSifirlamaIste` ile gider, sonucu söylenir (sınır doluysa).
+- Ayrıntı ekranlarının bölüm, satır ve bilgi parçaları `ayrinti-parcalari.tsx`'tedir (sipariş ve müşteri ayrıntısı). Sipariş ayrıntısında üye müşterinin adı, izni olana müşteri ayrıntısına bağlantıdır (`musteri.ayrintiAdresi`).
+
 ## Ödeme yöntemleri ve banka hesapları (karar 0141)
 
 - Ekranlar `cekirdek/yonetim-paneli/odeme-yontemleri/` klasöründe, menüde "Satış" altındadır. Görmek `odeme-yontemi.gor` (görevli de), değiştirmek `odeme-yontemi.degistir` (yalnız mağaza sahibi) ister; izni olmayan yönetici yalnız okur, anahtar ve düğmeler kapalıdır ya da yoktur.
