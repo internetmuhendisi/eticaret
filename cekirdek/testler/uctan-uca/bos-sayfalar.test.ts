@@ -8,6 +8,7 @@ import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { metin } from "../../metinler/site-metni";
 import { duzenServisi } from "../../moduller/duzen/servis";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
+import { duzenKilidiniAl } from "./duzen-kilidi";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
 
@@ -27,16 +28,22 @@ for (const { adres, baslik } of sayfalar) {
 
 test("ana sayfadaki yakında yazısı sitenin ayarına ve düzenine uyar", async ({ page }) => {
   const vt = baglan(veritabaniAdresi());
-  const bolumler = await duzenServisi(calisanSite)
-    .cizilecekBolumler(vt, "ana-sayfa")
-    .finally(() => vt.$client.end());
-  await page.goto("/");
-  const yazi = page.getByText(metin("vitrin.anasayfa.yakindaAciliyoruz"), { exact: true });
-  if (calisanSite().ayarlar.yakindaYazisi && bolumler.length === 0) {
-    // Başlığın hemen ardından gelir.
-    await expect(page.locator("h1 + p")).toHaveText(metin("vitrin.anasayfa.yakindaAciliyoruz"));
-    await expect(yazi).toBeVisible();
-  } else {
-    await expect(yazi).toHaveCount(0);
+  // Düzeni okuyup sayfayı ona göre bekler: o arada öteki işçideki düzen testi ana sayfanın bölümlerini
+  // değiştirmesin (kart 0293, duzen-kilidi.ts).
+  const birak = await duzenKilidiniAl(vt);
+  try {
+    const bolumler = await duzenServisi(calisanSite).cizilecekBolumler(vt, "ana-sayfa");
+    await page.goto("/");
+    const yazi = page.getByText(metin("vitrin.anasayfa.yakindaAciliyoruz"), { exact: true });
+    if (calisanSite().ayarlar.yakindaYazisi && bolumler.length === 0) {
+      // Başlığın hemen ardından gelir.
+      await expect(page.locator("h1 + p")).toHaveText(metin("vitrin.anasayfa.yakindaAciliyoruz"));
+      await expect(yazi).toBeVisible();
+    } else {
+      await expect(yazi).toHaveCount(0);
+    }
+  } finally {
+    await birak();
+    await vt.$client.end();
   }
 });
