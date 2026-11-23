@@ -45,6 +45,8 @@ export type SiparisSatiri = {
   havaleBildirildi: boolean;
   iadeTalebi: boolean;
   iadeBekliyor: boolean;
+  talepOnaylandi: boolean;
+  iadeBasarisiz: boolean;
 };
 
 // Listenin bir sayfası (kart 0258): sayfa ve liste ucu (aranan metinle) aynı işlevden okur. Sayfa başına satır
@@ -76,6 +78,8 @@ export const siparisListesiVerisi = async (
       havaleBildirildi: satir.havaleBildirildi,
       iadeTalebi: satir.iadeTalebi,
       iadeBekliyor: satir.iadeBekliyor,
+      talepOnaylandi: satir.talepOnaylandi,
+      iadeBasarisiz: satir.iadeBasarisiz,
     })),
     toplam: liste.toplam,
     sayfa: liste.sayfa,

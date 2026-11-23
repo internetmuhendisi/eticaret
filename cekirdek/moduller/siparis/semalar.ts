@@ -41,8 +41,8 @@ import { bosIseYok, siparisNumarasiSemasi } from "./havale-bildirimi-semalari.ts
 // takip numarası isteğe bağlıdır.
 export const siparisListesiSemasi = z.strictObject({
   durum: z.enum(siparisDurumlari).optional(),
-  // Yalnız bakılması gerekenler (kart 0267): bildirilmiş havalesi ödeme bekleyen, bekleyen iade talebi olan ya da
-  // sonucu beklenen iadesi olan siparişler.
+  // Yalnız bakılması gerekenler (kart 0267): bildirilmiş havalesi ödeme bekleyen, bekleyen iade talebi olan, sonucu
+  // beklenen iadesi olan, onaylanmış ve iadesi yapılmamış talebi olan ya da son iadesi başarısız olan siparişler.
   bakilacak: z.literal(true).optional(),
   odeme: z.array(z.enum(siparisOdemeYontemleri)).min(1).optional(),
   // Oluşturulduğu gün, sitenin saat dilimiyle (kart 0267): iki uç da dahil, boş uç sınırsız.

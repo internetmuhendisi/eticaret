@@ -1198,6 +1198,8 @@
       },
       "iadeTalebi": "İade talebi",
       "iadeBekliyor": "İade sonucu bekleniyor",
+      "talepOnaylandi": "Onaylı talep, iade yapılmadı",
+      "iadeBasarisiz": "İade başarısız",
       "bakilacak": "Bakılması gereken",
       "odemeSuzgeci": "Ödeme yöntemi",
       "tarihSuzgeci": "Tarih",

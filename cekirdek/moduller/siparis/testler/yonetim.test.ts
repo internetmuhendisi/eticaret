@@ -761,12 +761,108 @@ describe("liste süzgeçleri (kart 0267)", () => {
     // Sayı sekmenin dışındaki süzgeçlere uyar, sekmeden ve aramadan bağımsızdır.
     expect((await liste(h.vt, { odeme: ["havale"] })).bakilacakSayisi).toBe(1);
     expect((await liste(h.vt, { durum: "hazirlaniyor", ara: "yok" })).bakilacakSayisi).toBe(3);
-    // İade sonuçlanınca ve talep karara bağlanınca bakılacak iş kalmaz.
+    // İade tamamlanınca bakılacak iş kalmaz (başarısız iade ise kalır, aşağıdaki test).
     await h.vt
       .update(siparisIadeleri)
-      .set({ durum: "basarisiz", sonuc_zamani: new Date() })
+      .set({ durum: "tamamlandi", sonuc_zamani: new Date() })
       .where(eq(siparisIadeleri.siparis_kimligi, iade.siparis_kimligi));
     expect(await numaralar(h.vt, { bakilacak: true })).toEqual([bildirilen, talepli].toSorted());
+  });
+
+  it("bakılması gereken: onaylanmış ve iadesi yapılmamış talep, son iadesi başarısız sipariş (kullanıcı kararı)", async () => {
+    const h = await hazirla();
+    const { birim } = await h.urunAc();
+    const kim = await h.yonetici();
+    const [onayli, iadeliOnayli, iptalOnayli, basarisiz, sonraBasarili] = [
+      await ver(h.vt, birim, kapida),
+      await ver(h.vt, birim, kapida),
+      await ver(h.vt, birim, kapida),
+      await ver(h.vt, birim, kapida),
+      await ver(h.vt, birim, kapida),
+    ] as [string, string, string, string, string];
+    const kimligi = async (numara: string) =>
+      (
+        await h.vt
+          .select({ kimlik: siparisler.kimlik })
+          .from(siparisler)
+          .where(eq(siparisler.numara, numara))
+      )[0]?.kimlik ?? "";
+    const onayliTalep = async (numara: string) =>
+      (
+        await h.vt
+          .insert(siparisIadeTalepleri)
+          .values({
+            siparis_kimligi: await kimligi(numara),
+            durum: "onaylandi",
+            kalemler: [{ sira: 1, adet: 1 }],
+            neden: "diger",
+            kim_turu: "sistem",
+            kim_adi: "deneme",
+            karar_zamani: new Date(),
+            karar_veren_kimligi: kim.kimlik,
+          })
+          .returning({ kimlik: siparisIadeTalepleri.kimlik })
+      )[0]?.kimlik ?? "";
+    const iade = async (
+      numara: string,
+      durum: "tamamlandi" | "basarisiz",
+      ek: { talep?: string; zaman?: Date } = {},
+    ) =>
+      h.vt.insert(siparisIadeleri).values({
+        siparis_kimligi: await kimligi(numara),
+        tur: "iade",
+        durum,
+        yontem: "kurulus",
+        tutar: 100,
+        vergi_dokumu: [],
+        kalemler: [],
+        kargo_tutari: 0,
+        stoga_konacak: false,
+        neden: "diger",
+        kim_turu: "sistem",
+        kim_adi: "deneme",
+        sonuc_zamani: new Date(),
+        ...(ek.talep === undefined ? {} : { talep_kimligi: ek.talep }),
+        ...(ek.zaman === undefined ? {} : { olusturma_zamani: ek.zaman }),
+      });
+    await onayliTalep(onayli);
+    // Talebe bağlı tamamlanmış iade: talebin iadesi yapılmıştır.
+    await iade(iadeliOnayli, "tamamlandi", { talep: await onayliTalep(iadeliOnayli) });
+    // İptal edilmiş siparişte yapılacak iade kalmaz.
+    await onayliTalep(iptalOnayli);
+    await h.vt.update(siparisler).set({ durum: "iptal" }).where(eq(siparisler.numara, iptalOnayli));
+    await iade(basarisiz, "basarisiz");
+    // Başarısız iadeden sonra tamamlanan iade: iş bitmiştir.
+    await iade(sonraBasarili, "basarisiz", { zaman: new Date(Date.now() - 60_000) });
+    await iade(sonraBasarili, "tamamlandi");
+    const bakilacak = await liste(h.vt, { bakilacak: true });
+    expect(bakilacak.satirlar.map((s) => s.numara).toSorted()).toEqual(
+      [onayli, basarisiz].toSorted(),
+    );
+    expect(bakilacak.bakilacakSayisi).toBe(2);
+    expect(bakilacak.satirlar.find((s) => s.numara === onayli)).toMatchObject({
+      talepOnaylandi: true,
+      iadeBasarisiz: false,
+      iadeTalebi: false,
+    });
+    expect(bakilacak.satirlar.find((s) => s.numara === basarisiz)).toMatchObject({
+      talepOnaylandi: false,
+      iadeBasarisiz: true,
+      iadeBekliyor: false,
+    });
+    const hepsi = await liste(h.vt, {});
+    for (const numara of [iadeliOnayli, iptalOnayli, sonraBasarili]) {
+      expect(
+        hepsi.satirlar.find((s) => s.numara === numara),
+        numara,
+      ).toMatchObject({
+        talepOnaylandi: false,
+        iadeBasarisiz: false,
+      });
+    }
+    // Başarısız iade yeniden yapılınca sekmeden çıkar.
+    await iade(basarisiz, "tamamlandi");
+    expect(await numaralar(h.vt, { bakilacak: true })).toEqual([onayli]);
   });
 
   it("kargo firması siparişin adıyla süzülür; firmalar tekrarsız ve sitenin dilinin harf sırasıyla, sayılar uyar", async () => {

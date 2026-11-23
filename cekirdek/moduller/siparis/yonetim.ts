@@ -13,7 +13,8 @@
 // - Not: iç not yalnız panelde, müşteriye not müşterinin sipariş ayrıntısında görünür; not değiştirilemez.
 // - Kişisel bilgileri silinmiş siparişte (saklama süresi, temizlik.ts) ad, adres, telefon ve e-posta boştur.
 // - Bekleyen iade talebi olan sipariş listede işaretlidir (kart 0239). Bildirilmiş havalesi ödeme bekleyen, bekleyen
-//   iade talebi olan ve sonucu beklenen iadesi olan siparişler "Bakılması gereken" süzgeciyle listelenir (kart 0267).
+//   iade talebi olan, sonucu beklenen iadesi olan, onaylanmış ve iadesi yapılmamış talebi olan ve son iadesi başarısız
+//   olan siparişler "Bakılması gereken" süzgeciyle listelenir (kart 0267).
 // - Tarih süzgeci siparişin oluşturulduğu günü sitenin saat dilimiyle sayar (iki uç dahil); kargo firması süzgeci
 //   siparişe kargoya verildiği an yazılan adla eşleşir.
 import {
@@ -23,10 +24,13 @@ import {
   desc,
   eq,
   exists,
+  gt,
   gte,
   inArray,
   isNotNull,
   lt,
+  notExists,
+  notInArray,
   or,
   type SQL,
   sql,
@@ -95,6 +99,9 @@ export type SiparisListesiSatiri = {
   iadeTalebi: boolean;
   // Sonucu beklenen iadesi var (kart 0267): kartla iade ödeme kuruluşunun cevabını bekliyor.
   iadeBekliyor: boolean;
+  // Onaylanmış ve iadesi yapılmamış talebi var; son iadesi başarısız (kart 0267, kullanıcı kararı).
+  talepOnaylandi: boolean;
+  iadeBasarisiz: boolean;
 };
 
 export type SiparisListesi = {
@@ -167,7 +174,8 @@ export const siparisYonetimi = (site: Site) => {
           .where(and(eq(tablo.siparis_kimligi, siparisler.kimlik), eq(tablo.durum, "bekliyor"))),
       );
     // Bakılması gereken işler (kart 0267): bildirilmiş havale (yalnız ödeme beklerken), bekleyen iade talebi, sonucu
-    // beklenen iade (kartla iade kuruluşun cevabını bekliyor). Satırın işaretleri ve sekme aynı koşullardır.
+    // beklenen iade (kartla iade kuruluşun cevabını bekliyor), onaylanmış ve iadesi yapılmamış talep, başarısız iade.
+    // Satırın işaretleri ve sekme aynı koşullardır.
     const havaleBekliyor = and(
       eq(siparisler.durum, "odeme-bekleniyor"),
       exists(
@@ -179,7 +187,68 @@ export const siparisYonetimi = (site: Site) => {
     );
     const talepBekliyor = varMi(siparisIadeTalepleri);
     const iadeBekliyor = varMi(siparisIadeleri);
-    const bakilacak = or(havaleBekliyor, talepBekliyor, iadeBekliyor);
+    // Onaylanmış ve iadesi yapılmamış talep (kart 0267, kullanıcı kararı): talebe bağlı tamamlanmış ya da süren iade
+    // yoksa (iade talebi servisinin iadeYapildi kuralı). İadesi bitmiş ya da iptal edilmiş siparişte artık
+    // yapılacak iade yoktur, sayılmaz.
+    const talepIadesi = alias(siparisIadeleri, "talep_iadesi");
+    const talepOnaylandi = and(
+      notInArray(siparisler.durum, ["iade-edildi", "iptal"]),
+      exists(
+        vt
+          .select({ var: sql`1` })
+          .from(siparisIadeTalepleri)
+          .where(
+            and(
+              eq(siparisIadeTalepleri.siparis_kimligi, siparisler.kimlik),
+              eq(siparisIadeTalepleri.durum, "onaylandi"),
+              notExists(
+                vt
+                  .select({ var: sql`1` })
+                  .from(talepIadesi)
+                  .where(
+                    and(
+                      eq(talepIadesi.talep_kimligi, siparisIadeTalepleri.kimlik),
+                      inArray(talepIadesi.durum, ["tamamlandi", "bekliyor"]),
+                    ),
+                  ),
+              ),
+            ),
+          ),
+      ),
+    );
+    // Başarısız iade (kart 0267, kullanıcı kararı): ödeme kuruluşunun reddettiği iade, siparişte ondan sonra
+    // tamamlanmış ya da süren bir iade yoksa. Yeniden iade yapılınca sayılmaz.
+    const sonrakiIade = alias(siparisIadeleri, "sonraki_iade");
+    const iadeBasarisiz = exists(
+      vt
+        .select({ var: sql`1` })
+        .from(siparisIadeleri)
+        .where(
+          and(
+            eq(siparisIadeleri.siparis_kimligi, siparisler.kimlik),
+            eq(siparisIadeleri.durum, "basarisiz"),
+            notExists(
+              vt
+                .select({ var: sql`1` })
+                .from(sonrakiIade)
+                .where(
+                  and(
+                    eq(sonrakiIade.siparis_kimligi, siparisIadeleri.siparis_kimligi),
+                    inArray(sonrakiIade.durum, ["tamamlandi", "bekliyor"]),
+                    gt(sonrakiIade.olusturma_zamani, siparisIadeleri.olusturma_zamani),
+                  ),
+                ),
+            ),
+          ),
+        ),
+    );
+    const bakilacak = or(
+      havaleBekliyor,
+      talepBekliyor,
+      iadeBekliyor,
+      talepOnaylandi,
+      iadeBasarisiz,
+    );
     // Sekmenin dışındaki süzgeçler (ödeme yöntemi, tarih, kargo firması) sekme sayılarına da uygulanır.
     const suzgecler: SQL[] = [];
     if (girdi.odeme !== undefined) suzgecler.push(inArray(siparisler.odeme_yontemi, girdi.odeme));
@@ -230,6 +299,8 @@ export const siparisYonetimi = (site: Site) => {
         havaleBildirildi: sql<boolean>`coalesce(${havaleBekliyor}, false)`,
         iadeTalebi: talepBekliyor,
         iadeBekliyor,
+        talepOnaylandi: sql<boolean>`coalesce(${talepOnaylandi}, false)`,
+        iadeBasarisiz,
       })
       .from(siparisler)
       .where(nerede)
@@ -252,7 +323,17 @@ export const siparisYonetimi = (site: Site) => {
       .where(and(suzgecKosulu, bakilacak));
     return {
       satirlar: satirlar.map(
-        ({ teslimat, musteri, durum, havaleBildirildi, iadeTalebi, iadeBekliyor, ...satir }) => ({
+        ({
+          teslimat,
+          musteri,
+          durum,
+          havaleBildirildi,
+          iadeTalebi,
+          iadeBekliyor,
+          talepOnaylandi,
+          iadeBasarisiz,
+          ...satir
+        }) => ({
           ...satir,
           ad: teslimat.ad ?? "",
           soyad: teslimat.soyad ?? "",
@@ -261,6 +342,8 @@ export const siparisYonetimi = (site: Site) => {
           havaleBildirildi: Boolean(havaleBildirildi),
           iadeTalebi: Boolean(iadeTalebi),
           iadeBekliyor: Boolean(iadeBekliyor),
+          talepOnaylandi: Boolean(talepOnaylandi),
+          iadeBasarisiz: Boolean(iadeBasarisiz),
         }),
       ),
       toplam,

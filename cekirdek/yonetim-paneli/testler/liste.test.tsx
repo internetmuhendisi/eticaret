@@ -41,6 +41,8 @@ const satir = (numara: string, ek: Partial<SiparisSatiri> = {}): SiparisSatiri =
   havaleBildirildi: false,
   iadeTalebi: false,
   iadeBekliyor: false,
+  talepOnaylandi: false,
+  iadeBasarisiz: false,
   ...ek,
 });
 
@@ -517,9 +519,15 @@ describe("tarih ve kargo süzgeçleri, bakılması gereken (kart 0267)", () => {
 
   it("bakılması gereken sekmesi sayısıyla; satırda sonucu beklenen iade işareti", () => {
     ciz(
-      veri([satir("S-1", { iadeBekliyor: true })], {
-        sekmeSayilari: { "": 1, "odeme-bekleniyor": 1, bakilacak: 1 },
-      }),
+      veri(
+        [
+          satir("S-1", { iadeBekliyor: true }),
+          satir("S-2", { talepOnaylandi: true, iadeBasarisiz: true }),
+        ],
+        {
+          sekmeSayilari: { "": 1, "odeme-bekleniyor": 1, bakilacak: 1 },
+        },
+      ),
       { durum: listeDurumunuOku(siparisListesiTanimi, { durum: "iade-talebi" }) },
     );
     const sekmeler = within(
@@ -529,5 +537,7 @@ describe("tarih ve kargo süzgeçleri, bakılması gereken (kart 0267)", () => {
     expect(sekme.getAttribute("aria-current")).toBe("page");
     expect(sekme.getAttribute("href")).toBe("/yonetim/siparisler?durum=bakilacak");
     expect(tablo().getByText(metin("yonetim.siparisler.iadeBekliyor"))).toBeDefined();
+    expect(tablo().getByText(metin("yonetim.siparisler.talepOnaylandi"))).toBeDefined();
+    expect(tablo().getByText(metin("yonetim.siparisler.iadeBasarisiz"))).toBeDefined();
   });
 });

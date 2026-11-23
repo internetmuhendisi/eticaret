@@ -2,7 +2,8 @@
 // Siparişler ekranının listesi (kart 0234, karar 0145; kart 0258'de liste motoruna taşındı). Tanımı liste-tanimi.ts:
 // durum sekmeleri sayılarıyla ("Bakılması gereken" dahil, kart 0267), tarih, ödeme yöntemi ve kargo firması
 // süzgeçleri, arama (numara, ad ya da e-posta; adrese yazılmaz), sıralama, sayfa ve "Hazırlamaya al" toplu işlemi.
-// Bakılması gereken işi olan sipariş nedeniyle işaretlidir: havale bildirildi, iade talebi, iade sonucu bekleniyor.
+// Bakılması gereken işi olan sipariş nedeniyle işaretlidir: havale bildirildi, iade talebi, iade sonucu bekleniyor,
+// onaylı talebin iadesi yapılmadı, iade başarısız.
 // Masaüstünde tablo, telefonda her sipariş bir kart (.claude/rules/telefon-gorunumu.md).
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
@@ -52,6 +53,18 @@ function Isaretler({ satir }: { satir: SiparisSatiri }) {
         <span className="flex items-center gap-1 text-kucuk font-kalin text-uyari-yazi">
           <Ikon ad="iade" />
           {metin("yonetim.siparisler.iadeBekliyor")}
+        </span>
+      ) : null}
+      {satir.talepOnaylandi ? (
+        <span className="flex items-center gap-1 text-kucuk font-kalin text-uyari-yazi">
+          <Ikon ad="iade" />
+          {metin("yonetim.siparisler.talepOnaylandi")}
+        </span>
+      ) : null}
+      {satir.iadeBasarisiz ? (
+        <span className="flex items-center gap-1 text-kucuk font-kalin text-tehlike-yazi">
+          <Ikon ad="iade" />
+          {metin("yonetim.siparisler.iadeBasarisiz")}
         </span>
       ) : null}
     </>

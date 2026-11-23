@@ -9,7 +9,7 @@
 Panelin sipariş listesine üç süzgeç eklendi (kart 0267, taslak: karar 0157):
 
 - **Tarih:** siparişin oluşturulduğu gün. Hazır aralıklar (Bugün, Son 7 gün, Son 30 gün) ya da "Tarih seç" ile başlangıç ve bitiş günü; bir uç boş bırakılabilir. Günler sitenin saat dilimiyle sayılır, iki gün de dahildir.
-- **Bakılması gereken:** durum sekmelerinin sonunda bir sekme. Havalesi bildirilmiş ve ödemesi beklenen, bekleyen iade talebi olan ve sonucu beklenen (kartla iade, kuruluşun cevabı bekleniyor) siparişleri toplar; satırda her birinin işareti durur. Kart 0239'un "İade talepleri" sekmesi bu sekmeye katıldı.
+- **Bakılması gereken:** bir durum sekmesi. Havalesi bildirilmiş ve ödemesi beklenen, bekleyen iade talebi olan ve sonucu beklenen (kartla iade, kuruluşun cevabı bekleniyor) siparişleri toplar; satırda her birinin işareti durur. Kullanıcı kararıyla (2026-11-23, bağımsız kontrolün bulgusu) iki iş daha girer: onaylanmış ve iadesi yapılmamış talep (talebe bağlı tamamlanmış ya da süren iade yoksa, iade talebi servisinin `iadeYapildi` kuralı; iadesi bitmiş ya da iptal edilmiş sipariş hariç) ve son iadesi başarısız sipariş (ondan sonra tamamlanmış ya da süren iade yoksa). Kart 0239'un "İade talepleri" sekmesi bu sekmeye katıldı.
 - **Kargo firması:** kullanıcı kararıyla (2026-11-23) bu karta eklendi. Seçenekler siparişlere kargoya verildiği anda yazılan firma adlarıdır; firma listesinden sonradan silinen ya da adı değişen firmanın siparişleri de eski adıyla bulunur.
 
 Teknik kararlar:
@@ -42,6 +42,7 @@ Teknik kararlar:
 ## Sonuçları
 
 - Liste motorunun iki yeni türü ve bir yeni parça (`AcilirPanel`) bakım ister; testleri `liste-tanimi.test.ts`, `liste.test.tsx` ve katalogdadır.
+- Başarısız iadesini başka yoldan (örneğin elle havaleyle) çözen mağazanın siparişi sekmede kalır; takılan iadenin çıkış yolu kart 0245'tedir.
 - "İade talepleri" sekmesi kalktı; o sekmeye alışmış mağaza sahibi talepli siparişi "Bakılması gereken"de, işaretiyle bulur.
 - Kargo firmaları süzgecinin seçenekleri her sayfa açılışında siparişlerden okunur (tekrarsız ad sorgusu); sipariş sayısı çok büyürse bu sorgu yavaşlayabilir, ölçülmedi.
 - Sitenin bugünü, sayfanın ve liste ucunun çağrıldığı anda sitenin saat dilimiyle hesaplanır; gece yarısını geçen açık sayfada "Bugün" yenilenince yeni günü gösterir.
