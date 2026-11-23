@@ -379,6 +379,13 @@
       "when": 1795425127094,
       "tag": "0053_siparis-faturasi-tekil",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1795468033205,
+      "tag": "0054_musteri-notlari",
+      "breakpoints": true
     }
   ]
 }

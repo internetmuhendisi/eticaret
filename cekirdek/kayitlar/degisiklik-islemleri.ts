@@ -116,6 +116,11 @@ export const degisiklikIslemleri = [
   // Kart 0268: siparişin faturası yazıldı (numara, tarih, dosyanın kimliği) ya da kaldırıldı.
   "siparis.fatura-yazildi",
   "siparis.fatura-kaldirildi",
+  // Mağazanın müşteri hakkındaki notu (kart 0271, karar 0173): metni kayda yazılmaz.
+  "musteri-notu.eklendi",
+  "musteri-notu.silindi",
+  // Panelden müşteriye şifre sıfırlama bağlantısı gönderildi (kart 0271); e-posta kayda yazılmaz.
+  "musteri.sifre-sifirlama-gonderildi",
 ] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 
@@ -153,6 +158,9 @@ export const degisiklikKayitTurleri = [
   "yorum",
   // Kart 0235: sipariş (iptal ve iade).
   "siparis",
+  // Kart 0271: müşteri hesabı ve mağazanın müşteri hakkındaki notu.
+  "musteri",
+  "musteri-notu",
 ] as const;
 export type DegisiklikKayitTuru = (typeof degisiklikKayitTurleri)[number];
 

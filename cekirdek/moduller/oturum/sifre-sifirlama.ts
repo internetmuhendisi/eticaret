@@ -9,7 +9,7 @@ import { gunluk } from "../../izleme/gunluk.ts";
 import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import { type HesapTuru, sifreSifirlamaAyari } from "../../kayitlar/oturum.ts";
-import type { Veritabani } from "../../veritabani/baglanti.ts";
+import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import {
   yoneticiGirisAdimlari,
@@ -36,14 +36,18 @@ const tablolar = {
 
 // Anahtar adresin # sonrasındadır: tarayıcı onu sunucuya göndermez, kayıtlara ve Referer'a düşmez, e-posta
 // programının bağlantıyı önceden açması anahtarı harcamaz.
-// Hesap yoksa, kapalıysa ya da hesabın e-posta sınırı dolmuşsa sessizce hiçbir şey yapmaz: çağıran her
-// durumda aynı cevabı verir. Bir hesabın eski bağlantıları yenisiyle geçersiz olur.
+// Hesap yoksa, kapalıysa ya da hesabın e-posta sınırı dolmuşsa hiçbir şey yazmaz; herkese açık uç sonucu kullanmaz,
+// her durumda aynı cevabı verir. Panel (kart 0271) sonucu mağaza sahibine söyler ve değişiklik kaydını `kayit` ile
+// bağlantıyla aynı işlemde yazar. Bir hesabın eski bağlantıları yenisiyle geçersiz olur.
+export type SifreSifirlamaSonucu = "gonderildi" | "sinir" | "hesap-yok" | "adres-yok";
+
 export const sifreSifirlamaIste = async (
   vt: Veritabani,
   tur: HesapTuru,
   girdi: { eposta: string },
   yenilemeYolu: string,
-): Promise<void> => {
+  kayit?: (islem: VeritabaniIslemi, hesap: string) => Promise<unknown>,
+): Promise<SifreSifirlamaSonucu> => {
   const eposta = epostaSemasi.parse(girdi.eposta);
   const { gecerlilikSaniye, hesap: sinir, hesapGunluk } = sifreSifirlamaAyari;
   const dolu = denemeyiAyir([
@@ -52,21 +56,21 @@ export const sifreSifirlamaIste = async (
   ]);
   if (dolu !== null) {
     gunluk.uyari("Şifre sıfırlama sınırı doldu.", { hesapTuru: tur, eposta });
-    return;
+    return "sinir";
   }
   const { hesap, sifirlama } = tablolar[tur];
   const [bulunan] = await vt
     .select({ kimlik: hesap.kimlik })
     .from(hesap)
     .where(and(eq(hesap.eposta, eposta), isNull(hesap.silinme_zamani)));
-  if (bulunan === undefined) return;
+  if (bulunan === undefined) return "hesap-yok";
 
   const adres = siteAdresi(calisanSite().kimlik);
   if (adres === undefined) {
     hatayiKaydet(new Error("Sitenin adresi yok, şifre sıfırlama bağlantısı üretilemedi."), {
       kaynak: "sifre-sifirlama",
     });
-    return;
+    return "adres-yok";
   }
   const anahtar = randomBytes(32).toString("base64url");
   await vt.transaction(async (islem) => {
@@ -90,8 +94,10 @@ export const sifreSifirlamaIste = async (
         dakika: String(gecerlilikSaniye / 60),
       },
     });
+    await kayit?.(islem, bulunan.kimlik);
   });
   gunluk.bilgi("Şifre sıfırlama bağlantısı istendi.", { hesapTuru: tur, eposta });
+  return "gonderildi";
 };
 
 // Bağlantı aynı işlemde harcanır: aynı anda giden iki istekten biri geçer. Geçersiz, kullanılmış ya da süresi
