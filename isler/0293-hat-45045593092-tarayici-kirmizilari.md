@@ -39,4 +39,4 @@ Kullanıcı kararıyla (2026-11-23) ödeme testi bu kartın dışında kaldı: s
 
 ## Durum
 
-yapılacak
+bitti
