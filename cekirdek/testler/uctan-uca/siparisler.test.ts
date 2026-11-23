@@ -697,7 +697,7 @@ test("sipariş ayrıntısı: fatura klavyeyle eklenir, PDF yüklenir, indirilir,
   await sayfaHazir(page);
   const kart = page
     .getByRole("heading", { level: 2, name: metin("yonetim.siparis.fatura.baslik"), exact: true })
-    .locator("..");
+    .locator("../..");
   await expect(kart).toContainText(metin("yonetim.siparis.fatura.yok"));
   await kart.getByRole("button", { name: metin("yonetim.siparis.fatura.ekle") }).focus();
   await page.keyboard.press("Enter");
@@ -750,6 +750,7 @@ test("sipariş ayrıntısı: fatura klavyeyle eklenir, PDF yüklenir, indirilir,
   await page.keyboard.press("Enter");
   await expect(pencere).toBeHidden();
   await expect(kart).toContainText(faturaNo);
+  await expect(kart).toContainText(metin("yonetim.siparis.fatura.eklendi"));
   const indir = kart.getByRole("link", { name: new RegExp(`fatura-${numara}\\.pdf`) });
   const indirilen = page.waitForEvent("download");
   await indir.focus();

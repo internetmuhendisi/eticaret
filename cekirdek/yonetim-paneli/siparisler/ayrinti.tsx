@@ -35,7 +35,7 @@ function Bolum({
 }: {
   baslik: string;
   kimlik: string;
-  // Başlığın yanındaki işaret (rozet).
+  // Başlığın yanındaki işaret (rozet); verilince (null da) başlık satırı her zaman çizilir.
   ek?: ReactNode;
   children: ReactNode;
 }) {
@@ -341,7 +341,7 @@ export function SiparisAyrintisi({ veri }: { veri: SiparisAyrintisiVerisi }) {
           baslik={metin("yonetim.siparis.fatura.baslik")}
           kimlik="siparis-faturasi"
           ek={
-            veri.faturaBelgesi === null ? undefined : (
+            veri.faturaBelgesi === null ? null : (
               <Rozet tur="basari">{metin("yonetim.siparis.fatura.eklendi")}</Rozet>
             )
           }
