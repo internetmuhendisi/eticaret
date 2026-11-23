@@ -25,8 +25,8 @@ Teknik kararlar:
 
 - **Listede yalnız üyeler var** (karar 0157); silinmiş hesap listede ve ayrıntıda yoktur. Üye olmadan verilen sipariş hiçbir müşteriye sayılmaz (karar 0150).
 - **Sipariş sayısı ve toplam:**
-  - İptal edilmemiş siparişler sayılır, yalnız sitenin para birimindekiler toplanır.
-  - Toplamdan tamamlanan iadeler düşülür; başarısız ve bekleyen iade düşülmez.
+  - İptal edilmemiş ve sitenin para birimindeki siparişler sayılır ve toplanır; ortalama böylece aynı tabana bölünür.
+  - Toplamdan tamamlanan iadeler düşülür; başarısız ve bekleyen iade düşülmez. Bir siparişin iadesi siparişin tutarını aşmaz: taksitli ödemenin tam iadesi taksit farkını da döndürür (karar 0147), müşterinin toplamı yine eksiye düşmez.
   - Ortalama, toplamın sipariş sayısına bölümüdür.
 - **Kampanya izni:** müşterinin en yeni pazarlama onayı satırıdır (karar 0051).
 - **Listenin sorgusu:** Sayılar, ad ve kampanya izni müşteri başına alt sorgularla tek sorguda gelir (`musteriYonetimi`, `cekirdek/moduller/musteri/yonetim.ts`). Listede satır başına sorgu yoktur. Sayım aynı sorguyu alt sorgu olarak sayar: süzgeçler tek yerde kalır.
@@ -43,8 +43,9 @@ Teknik kararlar:
   - İşlev artık sonucunu döndürür: gönderildi, sınır doldu, hesap yok ya da sitenin adresi yok. Panel sonucu söyler, herkese açık uç yine aynı cevabı verir.
   - Değişiklik kaydı bağlantıyla aynı işlemde, e-postasız yazılır (`musteri.sifre-sifirlama-gonderildi`).
   - Müşteriye e-posta gittiği için panel önce sorar.
+  - Müşterinin bağlantı sınırı da panelin kendi istek sınırı da `istek-siniri` kodudur; müşterininki ayrıntıda müşteri alanını taşır, ekran ikisini ayrı söyler.
 - **Şemaların yeri:** Panelin müşteri şemaları ayrı dosyadadır (`panel-semalari.ts`). Vitrinin kayıt formunun şemaları (`semalar.ts`) tarayıcıya gider; panelinkiler vitrine gitmesin (karar 0172).
-- **Sipariş ayrıntısında bağlantı:** Üye müşterinin adı müşteri ayrıntısına bağlantıdır, yalnız `musteri.gor` izni olana.
+- **Sipariş ayrıntısında bağlantı:** Üye müşterinin adı müşteri ayrıntısına bağlantıdır, yalnız `musteri.gor` izni olana ve hesap silinmemişse.
 - **İkonlar:**
   - Menünün ve boş hâlin ikonu ortak sözlükteki "hesap"tır; vitrin de müşteri hesabı için onu kullanır.
   - Şifre sıfırlama düğmesinin anahtar ikonu ("sifre") panel sözlüğündedir (karar 0172).
@@ -70,6 +71,6 @@ Teknik kararlar:
 ## Sonuçları
 
 - Toplam kişisel bilgisi silinmiş siparişleri de sayar: tutar siparişte kalır, yalnız ad ve adres silinir.
-- Ayrıntı en yeni 20 siparişi gösterir; daha eskileri Siparişler'de e-postayla aranır.
-- Silinen hesabın notları bugün silinmez, çünkü hesap yalnız işaretlenir. Kalıcı silme gelince notlar veritabanı bağıyla birlikte gider (karar 0051'deki onaylar konusu ayrıca çözülür).
+- Ayrıntı en yeni 20 siparişi ve en yeni 100 notu gösterir, sınırda bunu söyler; daha eski siparişler Siparişler'de e-postayla aranır.
+- Bugün müşteri hesabını kapatan bir yol yoktur. Satır kalıcı silinince notlar veritabanı bağıyla birlikte gider; hesap yalnız işaretlenirse kalır. Hesap kapatma ve notların silinmesi kart 0300'dedir (karar 0051'deki onaylar konusu orada çözülür).
 - Panelden gönderilen bağlantı, müşterinin kendi isteğiyle aynı sınırı paylaşır: biri sınırı doldurursa öteki bekler.
