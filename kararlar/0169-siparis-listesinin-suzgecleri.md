@@ -22,6 +22,7 @@ Teknik kararlar:
 - Panelde günler sunucunun biçimiyle yazılır (`gunYazilari`); tarayıcı tarih biçimlemez.
 - Kayıt ve değer süzgeçlerinin değer sınırı tek yerdedir (`suzgecDegerSiniri`, `cekirdek/kayitlar/liste.ts`). Dilin harf sırası ürün listesinden ortak yere taşındı (`cekirdek/veritabani/harf-sirasi.ts`); kargo firmaları da onunla sıralanır.
 - Taslaktaki toplu "Fiş yazdır" kart 0270'e kaldı: fiş sayfası orada yazılır.
+- "Bakılması gereken" sekmesi yürüyen durumların (ödeme bekleniyor, hazırlanıyor, kargoda) hemen arkasındadır (taslak): şerit dar ekranda kayar, sona konan sekme kaydırmadan görünmüyordu. Liste motoru seçili sekmeyi şeridin görünen kısmına kaydırır (bütün listeler).
 
 ## Neden
 
