@@ -21,6 +21,7 @@ import {
   YanPencereUstu,
 } from "../../../bilesenler/parcalar/yan-pencere";
 import { belgeSinirlari, yuklenebilenBelgeTurleri } from "../../kayitlar/dosya";
+import { siparisSinirlari } from "../../kayitlar/siparis";
 import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
@@ -51,12 +52,15 @@ export function FaturaIslemleri({
   numara,
   fatura,
   dosyaEklenebilir,
+  epostaGidebilir,
   belge,
   bugun,
 }: {
   numara: string;
   fatura: Fatura | null;
   dosyaEklenebilir: boolean;
+  // "Faturanız hazır" e-postası gidebilir mi; gidemezse kutu yoktur.
+  epostaGidebilir: boolean;
   belge: SiparisAyrintisiVerisi["belge"];
   // Sitenin saat dilimindeki bugün: yeni faturanın tarih alanının başlangıcı.
   bugun: string;
@@ -64,11 +68,20 @@ export function FaturaIslemleri({
   const metin = usePanelMetni();
   const islem = usePanelIslemi(hataMetni);
   const [acik, setAcik] = useState(false);
+  // Pencerenin açıldığında gördüğü fatura: kayıt onu gönderir. Çakışmadan sonra sayfa yenilense de değişmez, öteki
+  // yöneticinin yazdığı fatura pencere kapatılıp yeniden açılmadan ezilmez (bağımsız kontrolün bulgusu).
+  const [acilistaGorulen, setAcilistaGorulen] = useState(() => gorulen(fatura));
   const [kaldirSorusu, setKaldirSorusu] = useState(false);
   const { kapat, kapatmayiIste, degisince, soru } = useKapatmaSorusu(() => setAcik(false));
   return (
     <div className="flex flex-wrap gap-2">
-      <Dugme tur="sade" onClick={() => setAcik(true)}>
+      <Dugme
+        tur="sade"
+        onClick={() => {
+          setAcilistaGorulen(gorulen(fatura));
+          setAcik(true);
+        }}
+      >
         <Ikon ad={fatura === null ? "ekle" : "duzenle"} />
         {metin(fatura === null ? "yonetim.siparis.fatura.ekle" : "yonetim.siparis.fatura.duzenle")}
       </Dugme>
@@ -110,8 +123,10 @@ export function FaturaIslemleri({
                           boyut: fatura.dosya.boyut,
                         }),
                       },
-                eposta: true,
+                // Düzenlemede kutu işaretsizdir: yazım düzeltmesi müşteriye ikinci e-posta göndermez.
+                eposta: epostaGidebilir && fatura === null,
               }}
+              epostaGidebilir={epostaGidebilir}
               dosyaEklenebilir={dosyaEklenebilir}
               belge={belge}
               degisince={degisince}
@@ -121,13 +136,13 @@ export function FaturaIslemleri({
                   "siparis-fatura",
                   {
                     numara,
-                    gorulen: gorulen(fatura),
+                    gorulen: acilistaGorulen,
                     fatura: {
                       numara: form.numara,
                       tarih: form.tarih,
                       dosya: form.dosya?.kimlik ?? null,
                     },
-                    eposta: form.eposta,
+                    eposta: epostaGidebilir && form.eposta,
                   },
                   "yonetim.siparis.fatura.basari.kaydedildi",
                   { formda: true },
@@ -165,6 +180,7 @@ export function FaturaIslemleri({
 function FaturaFormu({
   ilk,
   dosyaEklenebilir,
+  epostaGidebilir,
   belge,
   degisince,
   vazgec,
@@ -172,6 +188,7 @@ function FaturaFormu({
 }: {
   ilk: FormDegeri;
   dosyaEklenebilir: boolean;
+  epostaGidebilir: boolean;
   belge: SiparisAyrintisiVerisi["belge"];
   degisince: (degisti: boolean) => void;
   vazgec: () => void;
@@ -228,7 +245,9 @@ function FaturaFormu({
     const alanlar: Record<string, string> = {};
     for (const sorun of sonuc.ayrinti) {
       if (sorun.alan.startsWith("fatura.numara")) {
-        alanlar["fatura-numarasi"] = metin("yonetim.siparis.fatura.hata.numaraBicimi");
+        alanlar["fatura-numarasi"] = doldur(metin("yonetim.siparis.fatura.hata.numaraBicimi"), {
+          enCok: String(siparisSinirlari.faturaNumarasiEnCok),
+        });
       } else if (sorun.alan.startsWith("fatura.tarih")) {
         alanlar["fatura-tarihi"] = metin("yonetim.siparis.fatura.hata.tarih");
       } else if (sorun.alan.startsWith("fatura.dosya")) {
@@ -337,11 +356,13 @@ function FaturaFormu({
           )}
         </fieldset>
       </AlanKabi>
-      <OnayKutusu
-        etiket={metin("yonetim.siparis.fatura.pencere.eposta")}
-        checked={form.eposta}
-        onCheckedChange={(isaretli) => setForm({ ...form, eposta: isaretli === true })}
-      />
+      {epostaGidebilir ? (
+        <OnayKutusu
+          etiket={metin("yonetim.siparis.fatura.pencere.eposta")}
+          checked={form.eposta}
+          onCheckedChange={(isaretli) => setForm({ ...form, eposta: isaretli === true })}
+        />
+      ) : null}
       <KaydetCubugu
         kaydetEtiketi={metin("yonetim.siparis.fatura.pencere.kaydet")}
         vazgec={vazgec}

@@ -41,5 +41,7 @@ Teknik kararlar:
 
 - Bir siparişin tek faturası vardır; iade faturası ya da bölünmüş fatura bu yapıya sığmaz.
 - PDF'in içeriği denetlenmez (yalnız imza). Zararlı içerik indirme ve sandbox başlığıyla sitenin adresinde çalışmaz, ama müşterinin bilgisayarında açılır. Dosyayı mağaza sahibi yükler.
-- Silinmiş işaretli eski dosyalar diskte kalır; kalıcı silme kart 0093'ün işidir.
+- Silinmiş işaretli eski dosyalar diskte kalır; kalıcı silme kart 0093'ün işidir. Seçilip siparişe bağlanmayan PDF (Vazgeç, dosya değiştirme) sahipsiz kalır; temizliği de kart 0093'tedir.
+- Bir dosya yalnız bir siparişin faturasıdır; aynı anda gelen iki yazımı tekil indeks durdurur (değişiklik 0053).
+- "Faturanız hazır" kutusu eklemede işaretli, düzenlemede işaretsizdir: yazım düzeltmesi müşteriye ikinci e-posta göndermez. E-posta gidemezken (kişisel bilgisi silinmiş sipariş, gönderen adresi olmayan site) kutu yoktur.
 - Ortak veritabanına değişiklik 0052 uygulanmadan yeni kod sipariş yazamaz (sütunlar ekte yazılır); yayında önce veritabanı değişikliği uygulanır.

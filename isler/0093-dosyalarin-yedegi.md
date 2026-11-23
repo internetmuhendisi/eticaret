@@ -17,6 +17,7 @@ Bölüm: Yönetim paneli.
 - Sunucu denetimi dosya yedeğinin de son 26 saatte başarılı olduğunu ölçer.
 - Prova dosyaları da karşılaştırır: kayıt sayısı ve içerik özetleri.
 - Kaydı olmayan dosyaları (süreç kaydetme sırasında ölürse kalabilir, karar 0058) kalıcı silinme zamanı gelmiş işaretli dosyaları ve hiçbir kaydın kullanmadığı silinmemiş dosyaları (örneğin aynı anda iki logo değiştirmesinden kalan, karar 0059) bulan bir temizlik; kayıtsız dosya önce bildirilir, kendiliğinden silinmez.
+- Hiçbir siparişe bağlanmamış fatura belgeleri de bu temizliğe girer (kart 0268, karar 0170): PDF seçilince hemen kaydedilir, pencere Vazgeç'le kapanır ya da dosya değiştirilirse ilk belge sahipsiz ve silinmemiş kalır. Ad ve adres taşıdığı için belli bir süreden (ör. bir gün) eski sahipsiz belge silinmiş işaretlenir, kalıcı silme öteki dosyalarla aynı yoldan; kişisel veri saklama süresine (karar 0145) aykırı kalmaz.
 
 ## Sınırlar
 

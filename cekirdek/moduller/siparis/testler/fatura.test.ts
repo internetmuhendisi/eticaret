@@ -21,6 +21,7 @@ import { dosyaKlasoruDegiskeni } from "../../../kayitlar/dosya.ts";
 import { musteriIptaliSecenekleri, siparisSinirlari } from "../../../kayitlar/siparis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
+import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { dosyalar } from "../../dosya/model.ts";
 import { belgeKaydet, dosyaKaydet } from "../../dosya/servis.ts";
@@ -437,6 +438,55 @@ describe("faturanın yazılması", () => {
       kod: "is-kurali",
       ayrinti: [{ alan: "fatura.dosya", kod: "kisisel-veri-silindi" }],
     });
+  });
+
+  it("aynı dosya aynı anda iki siparişe yazılınca ikincisi kaydedilmeyi bekleyip dosya-kullanimda alır (sıra kurularak)", async () => {
+    const h = await hazirla();
+    const { birim } = await h.urunAc();
+    const bir = await ver(h.vt, birim, kapida);
+    const iki = await ver(h.vt, birim, kapida);
+    const ortak = await belge(h.vt);
+    // Birinci yazım dosyayı bağlamış ama kaydedilmemiş: ikincinin "başka siparişte mi" denetimi onu görmez.
+    let birak = () => {};
+    const bekle = new Promise<void>((tamam) => {
+      birak = tamam;
+    });
+    let kilitlendi = () => {};
+    const kilitli = new Promise<void>((tamam) => {
+      kilitlendi = tamam;
+    });
+    const tutan = h.vt.transaction(async (islem) => {
+      await islem
+        .update(siparisler)
+        .set({
+          fatura_numarasi: "F-1",
+          fatura_tarihi: "2026-11-17",
+          fatura_dosyasi: ortak,
+          fatura_zamani: sql`clock_timestamp()`,
+        })
+        .where(eq(siparisler.numara, bir));
+      kilitlendi();
+      await bekle;
+    });
+    await Promise.race([kilitli, tutan]);
+    const ikinci = hatasi(
+      yaz(h.vt, {
+        numara: iki,
+        gorulen: null,
+        fatura: { numara: "F-2", tarih: "2026-11-17", dosya: ortak },
+        eposta: true,
+      }),
+    );
+    await kilitBekleyeniGor(h.vt);
+    birak();
+    await tutan;
+    expect(await ikinci).toEqual({
+      kod: "dogrulama",
+      ayrinti: [{ alan: "fatura.dosya", kod: "dosya-kullanimda" }],
+    });
+    expect((await satiri(h.vt, iki)).fatura_numarasi).toBeNull();
+    expect((await satiri(h.vt, bir)).fatura_dosyasi).toBe(ortak);
+    expect(await faturaEpostalari(h.vt)).toHaveLength(0);
   });
 
   it("girdi: boş, uzun ve izinsiz harfli numara, takvimde olmayan tarih reddedilir", () => {

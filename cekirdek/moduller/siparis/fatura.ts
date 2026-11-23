@@ -5,7 +5,7 @@
 // - Yazma ve kaldırma siparişin satırını kilitler; ekranın gördüğü fatura (gorulen) bugünkünden farklıysa "cakisma",
 //   hiçbir şey yazılmaz. Her yazma ve kaldırma değişiklik kaydına girer (numara, tarih, dosyanın kimliği).
 // - Dosya önce fatura-yukle ucuyla belge olarak kaydedilir (belgeKaydet), kimliğiyle gelir. Yalnız silinmemiş bir
-//   belge bağlanır; başka bir siparişin faturası olan dosya bağlanmaz. Değiştirilen ya da kaldırılan dosya silinmiş
+//   belge bağlanır; başka bir siparişin faturası olan dosya bağlanmaz (aynı anda gelen iki yazımda tekil indeks). Değiştirilen ya da kaldırılan dosya silinmiş
 //   işaretlenir (dosyanın kendisi yerinde kalır, kalıcı silme kart 0093).
 // - Kişisel bilgisi silinmiş siparişe dosya bağlanmaz (PDF kişisel bilgi taşır); numara ve tarih yazılabilir.
 // - "Faturanız hazır" e-postası (kutu işaretliyse) faturanın yazımıyla aynı işlemde, değişiklik kaydının kimliğiyle
@@ -63,6 +63,14 @@ const kayitDegeri = (satir: {
   dosya: string | null;
 }): Record<string, unknown> | null =>
   satir.numara === null ? null : { numara: satir.numara, tarih: satir.tarih, dosya: satir.dosya };
+
+// Aynı dosya aynı anda iki siparişe yazılınca tekil indeks ikinciyi durdurur (siparisler_fatura_dosyasi): öteki
+// işlem kaydedilene kadar bekler, sonra ihlal alır. Düz denetim yalnız sırayla gelen istekleri yakalar.
+const dosyaKullanimdaMi = (yakalanan: unknown): boolean => {
+  const kaynak = (yakalanan as { cause?: unknown })?.cause ?? yakalanan;
+  const hata = kaynak as { code?: string; constraint?: string } | undefined;
+  return hata?.code === "23505" && hata.constraint === "siparisler_fatura_dosyasi";
+};
 
 const kilitle = async (islem: VeritabaniIslemi, numara: string): Promise<Satir> => {
   const [satir] = await islem
@@ -129,15 +137,22 @@ export const siparisFaturaServisi = (site: Site) => {
       if (eski.numara === yeni.numara && eski.tarih === yeni.tarih && eski.dosya === yeni.dosya) {
         return { numara: satir.numara, fatura: sonuc };
       }
-      await islem
-        .update(siparisler)
-        .set({
-          fatura_numarasi: yeni.numara,
-          fatura_tarihi: yeni.tarih,
-          fatura_dosyasi: yeni.dosya,
-          fatura_zamani: sql`clock_timestamp()`,
-        })
-        .where(eq(siparisler.kimlik, satir.kimlik));
+      try {
+        await islem
+          .update(siparisler)
+          .set({
+            fatura_numarasi: yeni.numara,
+            fatura_tarihi: yeni.tarih,
+            fatura_dosyasi: yeni.dosya,
+            fatura_zamani: sql`clock_timestamp()`,
+          })
+          .where(eq(siparisler.kimlik, satir.kimlik));
+      } catch (yakalanan) {
+        if (dosyaKullanimdaMi(yakalanan)) {
+          throw new BilinenHata("dogrulama", [{ alan: "fatura.dosya", kod: "dosya-kullanimda" }]);
+        }
+        throw yakalanan;
+      }
       if (eski.dosya !== null && eski.dosya !== yeni.dosya) {
         await dosyaSil(islem, eski.dosya);
       }

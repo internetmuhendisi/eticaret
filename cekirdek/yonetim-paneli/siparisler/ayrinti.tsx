@@ -374,7 +374,11 @@ export function SiparisAyrintisi({ veri }: { veri: SiparisAyrintisiVerisi }) {
               {veri.kisiselSilindi ? null : (
                 <Bilgi ad={metin("yonetim.siparis.fatura.musteri")}>
                   <span className="font-normal">
-                    {metin("yonetim.siparis.fatura.musteriGorur")}
+                    {metin(
+                      veri.musteri.uye
+                        ? "yonetim.siparis.fatura.musteriGorur"
+                        : "yonetim.siparis.fatura.musteriTakipteGorur",
+                    )}
                   </span>
                 </Bilgi>
               )}
@@ -385,6 +389,7 @@ export function SiparisAyrintisi({ veri }: { veri: SiparisAyrintisiVerisi }) {
               numara={veri.numara}
               fatura={veri.faturaBelgesi}
               dosyaEklenebilir={veri.faturaDosyasiEklenebilir}
+              epostaGidebilir={veri.faturaEpostasiGidebilir}
               belge={veri.belge}
               bugun={veri.bugun}
             />

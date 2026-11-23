@@ -751,6 +751,8 @@ test("sipariş ayrıntısı: fatura klavyeyle eklenir, PDF yüklenir, indirilir,
   await expect(pencere).toBeHidden();
   await expect(kart).toContainText(faturaNo);
   await expect(kart).toContainText(metin("yonetim.siparis.fatura.eklendi"));
+  // Üye olmadan verilmiş sipariş: müşteri faturayı yalnız takip sayfasında görür.
+  await expect(kart).toContainText(metin("yonetim.siparis.fatura.musteriTakipteGorur"));
   const indir = kart.getByRole("link", { name: new RegExp(`fatura-${numara}\\.pdf`) });
   const indirilen = page.waitForEvent("download");
   await indir.focus();

@@ -115,6 +115,10 @@ export const siparisler = pgTable(
     index("siparisler_musteri").on(tablo.musteri_kimligi, tablo.olusturma_zamani),
     index("siparisler_erisim").on(tablo.erisim_ozeti),
     index("siparisler_durum_zaman").on(tablo.durum, tablo.olusturma_zamani),
+    // Bir PDF yalnız bir siparişin faturasıdır (kart 0268): aynı anda iki siparişe bağlanan dosyayı veritabanı da durdurur.
+    uniqueIndex("siparisler_fatura_dosyasi")
+      .on(tablo.fatura_dosyasi)
+      .where(sql`${tablo.fatura_dosyasi} is not null`),
     index("siparisler_kisisel_veri")
       .on(tablo.olusturma_zamani)
       .where(sql`${tablo.kisisel_veri_silinme_zamani} is null`),

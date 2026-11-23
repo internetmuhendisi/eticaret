@@ -25,6 +25,7 @@ import {
   yerelZamandan,
 } from "../../metinler/bicimleyici";
 import { siteninBicimAyarlari, siteninBicimleyicisi } from "../../metinler/site-metni";
+import { epostaGidebilirMi } from "../../moduller/eposta/gonderici";
 import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
 import { siparisAyarlari } from "../../moduller/siparis/ayarlar";
 import { type SiparisFaturasi, siparisFaturaServisi } from "../../moduller/siparis/fatura";
@@ -234,6 +235,8 @@ export type SiparisAyrintisiVerisi = {
   // Faturayı ekleyip değiştirebilir mi (siparis.yonet); dosya eklenebilir mi (kişisel bilgisi silinmemiş sipariş).
   faturaDuzenlenebilir: boolean;
   faturaDosyasiEklenebilir: boolean;
+  // "Faturanız hazır" e-postası bu siparişe gidebilir mi: kişisel bilgisi silinmemiş ve sitenin e-postası gidiyor.
+  faturaEpostasiGidebilir: boolean;
   // Belgenin sınırı ve türlerinin adları, sitenin biçimiyle (yükleme alanının açıklaması ve hatası).
   belge: { enCokBoyut: string; turler: string };
   // Sitenin saat dilimindeki bugün, "YYYY-AA-GG": yeni faturanın tarih alanının başlangıcı.
@@ -510,6 +513,7 @@ export const siparisAyrintisiVerisi = async (
     bugun: takvimGunu(new Date(), site.ayarlar.saatDilimi),
     faturaDuzenlenebilir: yetkili("siparis.yonet"),
     faturaDosyasiEklenebilir: !kisiselSilindi,
+    faturaEpostasiGidebilir: !kisiselSilindi && epostaGidebilirMi(site.ayarlar),
     belge: {
       enCokBoyut: b.dosyaBoyutu(belgeSinirlari.enCokBayt),
       turler: b.veyaListesi(yuklenebilenBelgeTurAdlari),
