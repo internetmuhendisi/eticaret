@@ -105,6 +105,10 @@ const tara = async (page: Page, ne: string) => {
         .map((a) => a.finished.catch(() => undefined)),
     ),
   );
+  // Sayfa yenilendikten sonra başlık bir an yok kalabiliyor (kart 0293, hat 45045593092: takipte iptalden sonraki
+  // yenileme bittikten sonra tarama "document-title" buldu; yerelde üretilemedi, sebebi kart 0287'de). Tarama başlık
+  // dolunca yapılır.
+  await expect(page).toHaveTitle(/\S/);
   const sonuc = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
     .exclude("nextjs-portal")
