@@ -8,7 +8,8 @@
 // dosyalar alanın üstüne sürüklenip bırakılabilir (yalnız fareyle; düğme klavyeyle ve dokunarak aynı işi yapar).
 import { type ButtonHTMLAttributes, type ReactNode, useEffect, useRef, useState } from "react";
 import { Ikon } from "../ikonlar/ikon.tsx";
-import type { IkonAdi } from "../ikonlar/sozluk.ts";
+import { panelIkonlari } from "../ikonlar/panel-sozlugu.ts";
+import type { IkonAdi, IkonBileseni } from "../ikonlar/sozluk.ts";
 import { Dugme, type DugmeTuru } from "./dugme.tsx";
 import { IlerlemeCubugu } from "./ilerleme-cubugu.tsx";
 import { sinif } from "./sinif.ts";
@@ -50,7 +51,7 @@ export function DosyaYukleme({
   onIptal: () => void;
   tur?: DugmeTuru;
   // Düğmenin yazısının önündeki ikon (sözlükten).
-  ikon?: IkonAdi;
+  ikon?: IkonAdi | IkonBileseni;
   disabled?: boolean;
   className?: string;
   // Seçme düğmesinin yanında duran öteki düğmeler (ör. "Logoyu kaldır"); yükleme sürerken gizlenmez, kullanan karar
@@ -119,7 +120,7 @@ export function DosyaYukleme({
       >
         {birakma === undefined ? null : (
           <>
-            <Ikon ad="yukle" />
+            <Ikon ad={panelIkonlari.yukle} />
             <span className="font-kalin">{birakma.baslik}</span>
             {birakma.aciklama === undefined ? null : (
               <span className="text-kucuk text-soluk-yazi">{birakma.aciklama}</span>

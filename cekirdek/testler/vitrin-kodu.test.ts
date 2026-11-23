@@ -3,7 +3,9 @@
 // ortak modülden bir şey kullanınca vitrin de onu indirir (ölçüldü: katalog örneğinin kullandığı hazır tema tabloları
 // ve panele eklenen ikonlar vitrinin her sayfasına gidiyordu).
 // - Panelin ikon sözlüğü (bilesenler/ikonlar/panel-sozlugu.ts) ayrı modüldür: panel ve katalog dışındaki hiçbir
-//   tarayıcı dosyasından ona içe aktarma zinciri varmaz.
+//   çekirdek dosyasından (sunucu dosyaları da: vitrinin sunucu bileşeni kütüphanenin tarayıcı parçasını çizebilir)
+//   ona içe aktarma zinciri varmaz. Yalnız panelde kullanılan kütüphane parçası (biçimli metin alanı, dosya yükleme)
+//   panel sözlüğünü kullanabilir; vitrin o parçayı kullanırsa zincir onun üzerinden varır.
 // - Hazır temaların değer tabloları (degerler.ts) yalnız sunucuda okunur: hiçbir tarayıcı dosyasından (panel ve katalog
 //   dahil) varılan dosya onları içe aktarmaz.
 // Bozuk örnekler iki denetimin doğrudan, dolaylı ve toplu (`* as`) içe aktarmayı yakaladığını, yalnız türü alanı
@@ -16,6 +18,7 @@ import {
   diskten,
   iceAktarmalar,
   istemciDosyalari,
+  kaynakDosyalari,
   kok,
   type Okuyucu,
   panelVeKatalogMu,
@@ -48,9 +51,16 @@ const temaTablosuZinciri = (baslangic: string, oku: Okuyucu = diskten): string[]
 describe("vitrinin tarayıcı kodu", () => {
   const istemciler = istemciDosyalari();
 
-  it("panel ve katalog dışındaki tarayıcı dosyaları panelin ikon sözlüğüne varmaz", () => {
-    const vitrin = istemciler.filter((yol) => !panelVeKatalogMu(relative(kok, yol)));
-    expect(vitrin.length).toBeGreaterThan(50);
+  it("panel ve katalog dışındaki çekirdek dosyaları panelin ikon sözlüğüne varmaz", () => {
+    const vitrin = kaynakDosyalari(join(kok, "cekirdek")).filter((yol) => {
+      const goreli = relative(kok, yol);
+      return (
+        !panelVeKatalogMu(goreli) &&
+        !goreli.startsWith("cekirdek/uygulama/app/yonetim/") &&
+        !goreli.startsWith("cekirdek/uygulama/app/gelistirme/")
+      );
+    });
+    expect(vitrin.length).toBeGreaterThan(300);
     const sorunlar = vitrin
       .map((yol) => yasakZincir(yol, [panelSozlugu]))
       .filter((zincir) => zincir.length > 0)

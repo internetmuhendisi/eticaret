@@ -28,6 +28,7 @@ import { usePanelMetni } from "../../metinler/panel-metni";
 import { dosyaHatasiMetni, useDosyaYuklemesi } from "../dosya-yuklemesi";
 import { AlanKabi, KaydetCubugu, PanelAlani, PanelFormu, usePanelFormu } from "../form/panel-formu";
 import { useKapatmaSorusu } from "../kapatma-sorusu";
+import { panelIkonu } from "../panel-ikon";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
 import type { SiparisAyrintisiVerisi } from "./veri";
@@ -314,7 +315,7 @@ function FaturaFormu({
                     ? "yonetim.siparis.fatura.pencere.dosyaSec"
                     : "yonetim.siparis.fatura.pencere.dosyaDegistir",
                 )}
-                ikon="yukle"
+                ikon={panelIkonu("yukle")}
                 tur="cerceveli"
                 kabul={yuklenebilenBelgeTurleri}
                 onSecildi={([dosya]) => {

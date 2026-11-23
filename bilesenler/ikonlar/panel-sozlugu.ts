@@ -1,11 +1,14 @@
-// Panelin ikon sözlüğü (kart 0295, karar 0172): yalnız yönetim panelinin (ve bileşen kataloğunun) kullandığı ikonlar.
+// Panelin ikon sözlüğü (kart 0295, karar 0172): yalnız yönetim panelinin, bileşen kataloğunun ve yalnız panelde
+// kullanılan kütüphane parçalarının (biçimli metin alanı, dosya yükleme) ikonları.
 // Ortak sözlükteki (sozluk.ts) her ikon vitrinin tarayıcı koduna gider; panelin menü sayfaları ve eylemleri vitrini
 // büyütmesin diye burada durur. Panel ikonu yalnız panelin PanelIkon'u ile çizilir (cekirdek/yonetim-paneli/
-// panel-ikon.tsx). Vitrinin ve kütüphanenin tarayıcı dosyaları bu dosyaya varmaz (cekirdek/testler/vitrin-kodu.test.ts);
-// vitrin ve kütüphane panel adını tür kontrolünde kullanamaz (IkonAdi yalnız ortak adlardır).
+// panel-ikon.tsx), kütüphane parçası ikonu doğrudan bu sözlükten alır. Vitrinin hiçbir dosyasından bu dosyaya içe
+// aktarma zinciri varmaz (cekirdek/testler/vitrin-kodu.test.ts); vitrin panel adını tür kontrolünde kullanamaz
+// (IkonAdi yalnız ortak adlardır).
 import {
   ArrowDownWideNarrowIcon,
   ArrowUpNarrowWideIcon,
+  BoldIcon,
   BoxIcon,
   CalendarIcon,
   CircleXIcon,
@@ -14,14 +17,19 @@ import {
   EyeOffIcon,
   FolderTreeIcon,
   GalleryHorizontalIcon,
+  Heading3Icon,
   HouseIcon,
+  ItalicIcon,
   ListChecksIcon,
+  ListIcon,
+  ListOrderedIcon,
   ListTreeIcon,
   type LucideIcon,
   PaletteIcon,
   PanelsTopLeftIcon,
   PrinterIcon,
   TagsIcon,
+  UploadIcon,
 } from "lucide-react";
 import type { IkonAdi } from "./sozluk.ts";
 
@@ -50,6 +58,14 @@ export const panelIkonlari = {
   kategoriler: FolderTreeIcon,
   markalar: TagsIcon,
   ozellikler: ListChecksIcon,
+  // Dosya yükleme düğmesi (kart 0094) ve biçimli metin alanının araç çubuğu (kart 0263): yalnız panelde kullanılan
+  // kütüphane parçaları.
+  yukle: UploadIcon,
+  kalin: BoldIcon,
+  egik: ItalicIcon,
+  "ara-baslik": Heading3Icon,
+  "madde-listesi": ListIcon,
+  "sirali-liste": ListOrderedIcon,
 } satisfies Record<string, LucideIcon>;
 
 // Panelde kullanılabilen bütün ikon adları: ortak sözlük ve panelin sözlüğü.

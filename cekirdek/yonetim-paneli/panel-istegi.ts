@@ -1,7 +1,8 @@
 // Panel ekranlarının kapıya isteği (kart 0142): yönetici uçlarına JSON gövdeyle POST ya da adres parametreli GET.
 // Zarfı açar: başarıda veri, hatada hata kodu ve ayrıntısı (cekirdek/kapi/zarf.ts). Ağ hatası "ag" koduyla döner.
 // Metni ekran seçer (.claude/rules/metinler.md).
-import { kapiyaIstek, kapiyaYukle } from "../kapi/istemci";
+import { kapiyaIstek } from "../kapi/istemci";
+import { kapiyaYukle } from "../kapi/yukleme-istemcisi";
 
 export type PanelHatasi = {
   kod: string;

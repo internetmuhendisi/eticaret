@@ -17,6 +17,7 @@ import { usePanelMetni } from "../../metinler/panel-metni";
 import type { EkranLogosu } from "../../moduller/magaza-ayarlari/logo";
 import { dosyaHatasiMetni, useDosyaYuklemesi } from "../dosya-yuklemesi";
 import { AlanKabi, PanelFormu, usePanelFormu } from "../form/panel-formu";
+import { panelIkonu } from "../panel-ikon";
 import { panelIstegi } from "../panel-istegi";
 import { temaHatasiMetni, temaUclari } from "./hatalar";
 
@@ -129,7 +130,7 @@ export function LogoBolumu({
               <DosyaYukleme
                 id={yukleKimligi}
                 secEtiketi={metin("yonetim.tema.logo.yukle")}
-                ikon="yukle"
+                ikon={panelIkonu("yukle")}
                 tur="sade"
                 kabul={yuklenebilenTurler}
                 onSecildi={([dosya]) => {

@@ -8,7 +8,6 @@ import {
   ArrowDownIcon,
   ArrowUpIcon,
   BanknoteIcon,
-  BoldIcon,
   CheckIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -22,16 +21,12 @@ import {
   ExternalLinkIcon,
   GiftIcon,
   GripVerticalIcon,
-  Heading3Icon,
   HeadsetIcon,
   HeartIcon,
   ImageIcon,
   InfoIcon,
-  ItalicIcon,
   LandmarkIcon,
   LinkIcon,
-  ListIcon,
-  ListOrderedIcon,
   LoaderCircleIcon,
   LogOutIcon,
   type LucideIcon,
@@ -56,7 +51,6 @@ import {
   TriangleAlertIcon,
   TruckIcon,
   Undo2Icon,
-  UploadIcon,
   UserIcon,
   XIcon,
 } from "lucide-react";
@@ -78,8 +72,6 @@ export const ikonlar = {
   sonraki: ChevronRightIcon,
   // Yükleniyor göstergesi (döner).
   yukleniyor: LoaderCircleIcon,
-  // Dosya yükleme düğmesi (kart 0094, panel taslağı).
-  yukle: UploadIcon,
   // Galerideki videonun kapağı ve "Video bağla" (kart 0266, panel taslağı).
   oynat: PlayIcon,
   // Bildirim ve uyarı türleri.
@@ -140,12 +132,6 @@ export const ikonlar = {
   kopyala: CopyIcon,
   // Siparişin faturasını indir (kart 0268).
   indir: DownloadIcon,
-  // Biçimli metin alanının araç çubuğu (kart 0263).
-  kalin: BoldIcon,
-  egik: ItalicIcon,
-  "ara-baslik": Heading3Icon,
-  "madde-listesi": ListIcon,
-  "sirali-liste": ListOrderedIcon,
 } satisfies Record<string, LucideIcon>;
 
 export type IkonAdi = keyof typeof ikonlar;

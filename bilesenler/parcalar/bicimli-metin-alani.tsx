@@ -11,7 +11,8 @@
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { type KeyboardEvent, useEffect, useId, useRef, useState } from "react";
-import type { IkonAdi } from "../ikonlar/sozluk.ts";
+import { panelIkonlari } from "../ikonlar/panel-sozlugu.ts";
+import { type IkonBileseni, ikonlar } from "../ikonlar/sozluk.ts";
 import { Dugme, IkonDugmesi } from "./dugme.tsx";
 import { GirisAlani } from "./giris-alani.tsx";
 import { sinif } from "./sinif.ts";
@@ -32,13 +33,14 @@ export type BicimliMetinMetinleri = {
 };
 
 type Arac = "kalin" | "egik" | "araBaslik" | "maddeListesi" | "siraliListe" | "baglanti";
-const araclar: readonly { kod: Arac; ikon: IkonAdi }[] = [
-  { kod: "kalin", ikon: "kalin" },
-  { kod: "egik", ikon: "egik" },
-  { kod: "araBaslik", ikon: "ara-baslik" },
-  { kod: "maddeListesi", ikon: "madde-listesi" },
-  { kod: "siraliListe", ikon: "sirali-liste" },
-  { kod: "baglanti", ikon: "dis-baglanti" },
+// İkonlar panelin sözlüğündendir: parça yalnız panelde kullanılır (kart 0295).
+const araclar: readonly { kod: Arac; ikon: IkonBileseni }[] = [
+  { kod: "kalin", ikon: panelIkonlari.kalin },
+  { kod: "egik", ikon: panelIkonlari.egik },
+  { kod: "araBaslik", ikon: panelIkonlari["ara-baslik"] },
+  { kod: "maddeListesi", ikon: panelIkonlari["madde-listesi"] },
+  { kod: "siraliListe", ikon: panelIkonlari["sirali-liste"] },
+  { kod: "baglanti", ikon: ikonlar["dis-baglanti"] },
 ];
 
 // Boş belge Tiptap'ta "<p></p>"dir: alanın değeri boş metindir.
