@@ -38,7 +38,7 @@ Tasarım değeri, renk, yazı boyutu, boşluk gibi tasarımı oluşturan ve tek 
 - Tailwind'in kendi teması yüklenmez: hazır palet, hazır ölçü ve hazır kırılma noktası yoktur. Serbest değer (`w-[37px]`, `bg-(--x)`, `bg-zemin/[0.37]`, `[&>svg]:p-4`), sayıyla katman (`z-37`), 0 ve 2 dışında kenar kalınlığı (`border-7`), `dark:`, hazır palet rengi ve satır içi stilde ölçü denetimde hatadır.
 - Gereken değer yoksa önce `degerler.ts`'e eklenir. Yeni yazı-zemin eşleşmesi kontrast listesine de eklenir.
 - Radix parçalarının durumları adlı durumla yazılır (`acik:`, `etkin:`, `isaretli:`...), sınıflar `sinif()` ile birleştirilir (kart 0103, belgesi aynı README).
-- İkonlar yalnız ikon sözlüğünden gelir (`bilesenler/ikonlar/sozluk.ts`); Lucide'yi başka yerde içe aktarmak denetimde hatadır.
+- İkonlar yalnız ikon sözlüğünden gelir (`bilesenler/ikonlar/sozluk.ts`); Lucide'yi başka yerde içe aktarmak denetimde hatadır. Yalnız panelin (ve yalnız panelde kullanılan kütüphane parçalarının) ikonları panelin sözlüğündedir (`panel-sozlugu.ts`, karar 0172): ortak sözlükteki her ikon vitrinin koduna gider. Panel ikonu `PanelIkon` ile, kütüphane parçasına `panelIkonu(ad)` ile verilir; vitrin panel adını kullanınca tür kontrolü hata verir.
 - Sitenin değerlerini yalnız `cekirdek/temalar/birlesim.ts` verir. Kök düzen onları sayfaya CSS değişkeni olarak yazar, panel düzeni panelin değerlerini onların üstüne yazar.
 - Vitrin hangi temayla çizileceğini yalnız `vitrinTemasi`'ndan öğrenir (karar 0127): tema demosunda ziyaretçinin seçtiği tema, öteki sitelerde kayıtlı tema.
 
