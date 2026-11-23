@@ -22,6 +22,12 @@ Test, yenilemenin bitmesini ve başlığın dolu olmasını bekleyecek biçimde 
 - Düzeltme gerektiyse düzeltme geri alınınca kırmızıya düşen bir test var.
 - Bağımsız kontrol yapıldı.
 
+## Notlar
+
+- Kart 0293 (2026-11-23): aynı belirti vitrinde de görüldü. Hat 45045593092'de `iade-talebi.test.ts` takip sayfasında siparişi iptal ettikten sonraki taramada `document-title` buldu. İzin ağ zamanlarına göre iptal isteği 441,88. saniyede gitti, yenileme (`router.refresh`, `cekirdek/vitrin/siparis/siparis-iptali.tsx`) 442,02'de başlayıp 132 ms'de bitti; tarama 442,43'te, yani yenileme bittikten sonra başladı ve başlık yine yoktu. Panelde ölçülenle aynı: başlık yenileme yanıtından sonra yok kalıyor.
+- Yerelde geliştirme sunucusunda, normal ve 4 kat yavaş işlemciyle, `<title>`'ı izleyen bir `MutationObserver` ile iki kez ölçüldü: başlık hiç kaybolmadı. Hatta görülüp yerelde üretilemiyor.
+- Kart 0293'te iade talebi testinin taraması başlığın dolmasını bekler (ürün seçenekleri testindeki gibi). Başlığın neden kaybolduğu ve canlı derlemede de olup olmadığı bu kartın ölçümüdür; tarama beklemeleri kart 0288 ile tek yere toplanır.
+
 ## Durum
 
 yapılacak

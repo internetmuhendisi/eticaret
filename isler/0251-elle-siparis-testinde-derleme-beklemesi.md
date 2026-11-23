@@ -21,6 +21,11 @@ Bölüm: Sipariş ve müşteri hesabı. Kart 0238 sırasında hattın sonucuna b
 - Sebep ölçülerek yazıldı.
 - Düzeltmeden sonra hattın koşulunda (temiz veritabanı, iki işlemci) elle sipariş testi art arda beş kez geçiyor ve izde testin sürdüğü sırada yeniden derleme yok.
 
+## Notlar
+
+- Kart 0293 (2026-11-23, kullanıcı kararıyla buraya bırakıldı): aynı kalıp ödeme testinde de görüldü. Hat 45045593092'de `odeme.test.ts` havale bildiriminde "Bildirimi gönder"den sonra `POST /kapi/herkese-acik/havale-bildirimi` testin 5 saniyelik beklemesi bitene kadar yanıt almadı (izde durum -1: iz yanıttan önce kapandı). Tarayıcı konsolunda iki kez "[Fast Refresh] rebuilding", sayfanın sol altında 5 saniye boyunca "Compiling…" var; uç ısınmada GET ile istenmişti (yalnız POST tanımlı, 405 alır).
+- Ölçülmemiş bir ihtimal: Next.js geliştirme sunucusu kullanılmayan girişleri `maxInactiveAge` (varsayılan 60 saniye) dolunca bırakıyor, en çok `pagesBufferLength` (5) tanesini tutuyor (`next/dist/server/config-shared.js`). Turbopack'te de geçerliyse ısınmanın etkisi uzun takımda kaybolur, derleme takımın ortasında yeniden olur. Hattın 2 işçisinde öteki işçinin istediği bir yolun derlemesi de bu isteği bekletebilir. Hattın günlüğü derleme satırı yazmıyor; ayırt etmek için ölçüm gerekir. Kart 0281 ve 0282 aynı aileden olabilir.
+
 ## Durum
 
 yapılacak
