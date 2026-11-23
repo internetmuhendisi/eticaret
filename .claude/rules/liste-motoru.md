@@ -26,7 +26,7 @@ paths:
 
 ## Yazılanlar (kart 0258, karar 0158)
 
-- Listenin tanımı `ListeTanimi` ile yazılır (`cekirdek/yonetim-paneli/liste/tanim.ts`): süzgeçler (`sekme` ya da `secenekler`), arama (`adreste` ya da değil), sıralamalar (ilki varsayılan), başlıktan sıralanabilen sütunlar, `sayfali`, toplu işlemler (her biri izniyle). Örnekler: `siparisler/liste-tanimi.ts`, `cekirdek/eklentiler/stoga-gelince-haber-ver/panel/liste-tanimi.ts`.
+- Listenin tanımı `ListeTanimi` ile yazılır (`cekirdek/yonetim-paneli/liste/tanim.ts`): süzgeçler (`sekme`, `secenekler`, `kayit`, `deger`, `tarih`), arama (`adreste` ya da değil), sıralamalar (ilki varsayılan), başlıktan sıralanabilen sütunlar, `sayfali`, toplu işlemler (her biri izniyle). Örnekler: `siparisler/liste-tanimi.ts`, `cekirdek/eklentiler/stoga-gelince-haber-ver/panel/liste-tanimi.ts`.
 - Panel sayfası durumu `listeDurumunuOku` ile okur, liste ucu `listeUcuSemasi` ile; adres yalnız `listeAdresi` ile yazılır. Çok değerli süzgeç virgülle yazılır. Tanınmayan değer yok sayılır, sayfa sınıra çekilir.
 - Ekran `Liste` ile çizilir (`cekirdek/yonetim-paneli/liste/liste.tsx`): listenin istemci dosyası sütunların hücrelerini, telefondaki kartın içini, metinleri ve toplu işlemlerin uç ve gövdesini verir. Sunucu yalnız biçimlenmiş satırları (`ListeVerisi`) verir; okunamazsa `null` (hata hâli) ve hata kaydedilir.
 - Kişisel bilgi taşıyan arama adrese yazılmaz (`adreste: false`): ekran liste ucuna sorar; uç sayfayla aynı veri işlevini çağırır.
@@ -34,3 +34,6 @@ paths:
 - Sayfa başına satır `panelSayfaBoyu` mağaza ayarıdır.
 - Küçük tablolar `Tablo` parçalarıyla çizilir; sayfada `<table>` yazmak denetimde hatadır (`elle-tablo.grit`).
 - Süzgecin seçenekleri sitenin kayıtlarıysa (kategori, marka) `tur: "kayit"` yazılır (kart 0262, karar 0161): tanım seçenek taşımaz, sayfa seçenekleri `kayitSecenekleri` ile verir; adreste ve uçta kimlikle durur, kimlik olmayan değer yok sayılır.
+- Tarih süzgeci `tur: "tarih"` (kart 0267, karar 0169): tek değer, hazır aralık (`tarihHazirlari`'ndan, tanımın `secenekler`'inde) ya da iki gün (`2026-11-01_2026-11-21`, bir ucu boş olabilir). Hazır aralık sunucuda bugüne göre (`tarihSuzgecininGunleri`), gün sitenin saat dilimiyle (`gununBasi`) çözülür. Ekranda kendi panelidir (`TarihSuzgeci`, `liste/tarih-suzgeci.tsx`); şeritteki günlerin yazılışını sayfa verir (`gunYazilari`).
+- Seçenekleri sunucunun verdiği serbest metinler (siparişlerdeki kargo firması adları) `tur: "deger"` ile yazılır: adreste her değer ayrıca kodlanır, en çok `degerEnCok` harf; sayfa seçenekleri `kayitSecenekleri` ile verir. Kayıt ve değer süzgecinin değer sınırı `suzgecDegerSiniri`'dir (`cekirdek/kayitlar/liste.ts`).
+- Yayınlanmış bir süzgeç değeri kalkınca tanımın `eskiDegerler`'i eski adresi yeni değere çevirir; adrese yalnız yeni değer yazılır.

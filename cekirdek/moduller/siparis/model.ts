@@ -295,8 +295,8 @@ export type SiparisNotu = typeof siparisNotlari.$inferSelect;
 // Talebi açan hesap ya da üye olmayan müşteri (sistem adı), kararı veren yönetici yazılır. Reddedilen talepte
 // müşteriye açıklama zorunludur. Onaylanan talepten yapılan iade siparis_iadeleri.talep_kimligi ile bağlanır.
 //
-// Aranan alanlar: siparis_kimligi (siparişin talepleri), indeksli; bekleyen talepler (panelin "İade talepleri"
-// süzgeci), kısmi indeksli. Bir siparişte en çok bir bekleyen talep (tekil kısmi indeks).
+// Aranan alanlar: siparis_kimligi (siparişin talepleri), indeksli; bekleyen talepler (panelin "Bakılması gereken"
+// süzgeci, kart 0267), kısmi indeksli. Bir siparişte en çok bir bekleyen talep (tekil kısmi indeks).
 export const siparisIadeTalepleri = pgTable(
   "siparis_iade_talepleri",
   {
