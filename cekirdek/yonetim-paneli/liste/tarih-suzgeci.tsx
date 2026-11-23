@@ -78,6 +78,17 @@ export function TarihSuzgeci({
       degistir(secim);
       return;
     }
+    // Tarayıcının gün alanı yarım girişte değer vermez (boş görünür): yarım giriş boş uç sayılmaz, hata verir
+    // (bağımsız kontrolün bulgusu).
+    const yarim = (["baslangic", "bitis"] as const).find(
+      (alan) =>
+        form.current?.querySelector<HTMLInputElement>(`input[name="${alan}"]`)?.validity
+          .badInput === true,
+    );
+    if (yarim !== undefined) {
+      hataGoster(yarim, metin("yonetim.liste.tarih.hata.gecersiz"));
+      return;
+    }
     if (baslangic !== "" && !takvimGunuMu(baslangic)) {
       hataGoster("baslangic", metin("yonetim.liste.tarih.hata.gecersiz"));
       return;

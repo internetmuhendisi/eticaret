@@ -232,6 +232,9 @@ describe("tarih süzgeci (kart 0267)", () => {
       "2026-11-01",
       "2026-11-01_2026-11-02_2026-11-03",
       "constructor",
+      // Yıl sınırı (bağımsız kontrolün bulgusu: 9999-12-31'in ertesi günü listeyi düşürüyordu).
+      "_9999-12-31",
+      "1899-12-31_",
     ]) {
       expect(tarih(bozuk), bozuk).toBeUndefined();
     }
@@ -252,7 +255,13 @@ describe("tarih süzgeci (kart 0267)", () => {
     const sema = listeUcuSemasi(tanim);
     expect(sema.parse({ tarih: "son-7-gun" }).suzgecler).toEqual({ tarih: ["son-7-gun"] });
     expect(sema.parse({ tarih: "_2026-11-21" }).suzgecler).toEqual({ tarih: ["_2026-11-21"] });
-    for (const bozuk of ["", "2026-02-30_", "2026-11-21_2026-11-01", "bugun,son-7-gun"]) {
+    for (const bozuk of [
+      "",
+      "2026-02-30_",
+      "2026-11-21_2026-11-01",
+      "bugun,son-7-gun",
+      "_9999-12-31",
+    ]) {
       expect(sema.safeParse({ tarih: bozuk }).success, bozuk).toBe(false);
     }
   });

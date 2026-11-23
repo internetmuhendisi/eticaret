@@ -437,6 +437,11 @@ export function Liste<Satir>({
             />
           );
         }
+        // Seçeneği olmayan sunucu süzgeci (henüz kargoya verilmiş sipariş yok) boş menü açmaz: seçili değer yoksa
+        // düğmesi de yoktur (bağımsız kontrolün bulgusu).
+        if (sunucununMu(suzgec) && suzgecSecenekleri(suzgec).length === 0 && secili.length === 0) {
+          return null;
+        }
         return (
           <AcilirMenu key={suzgec.kod}>
             <AcilirMenuTetikleyici asChild>

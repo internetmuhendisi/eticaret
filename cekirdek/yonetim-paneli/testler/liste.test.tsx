@@ -497,6 +497,24 @@ describe("tarih ve kargo süzgeçleri, bakılması gereken (kart 0267)", () => {
     expect(serit.getByRole("link", { name: /Kargo firması: Eski Firma/ })).toBeDefined();
   });
 
+  it("seçeneği olmayan kargo süzgecinin düğmesi yok; seçili değer varsa düğme durur", () => {
+    const kargoDugmesi = () =>
+      screen.queryByRole("button", {
+        name: new RegExp(`^${metin("yonetim.siparisler.kargoSuzgeci")}`),
+      });
+    ciz(veri([satir("S-1")]), { kargo: [] });
+    expect(kargoDugmesi()).toBeNull();
+    cleanup();
+    ciz(veri([satir("S-1")]), {
+      kargo: [],
+      durum: listeDurumunuOku(siparisListesiTanimi, { kargo: "Aras" }),
+    });
+    expect(kargoDugmesi()).not.toBeNull();
+    cleanup();
+    ciz(veri([satir("S-1")]));
+    expect(kargoDugmesi()).not.toBeNull();
+  });
+
   it("bakılması gereken sekmesi sayısıyla; satırda sonucu beklenen iade işareti", () => {
     ciz(
       veri([satir("S-1", { iadeBekliyor: true })], {

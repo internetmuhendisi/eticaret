@@ -69,11 +69,15 @@ export const takvimGunu = (an: Date, saatDilimi: string): string => {
   return `${String(yil).padStart(4, "0")}-${ikiHaneli(ay)}-${ikiHaneli(gun)}`;
 };
 
-// Takvim günü "YYYY-AA-GG" (kart 0267): biçimi ve takvimde olup olmadığı.
+// Takvim günü "YYYY-AA-GG" (kart 0267): biçimi, takvimde olup olmadığı ve yılın sınırı (1900–9998). Sınır gunEkle'nin
+// ertesi günü de dört haneli yılla yazmasını sağlar: 9999-12-31'in ertesi günü altı haneli yıl olurdu (bağımsız
+// kontrolün bulgusu); 1900'den önceki yıllar Date.UTC'de 1900'e kayardı.
+export const takvimGunuSiniri = { enAz: 1900, enCok: 9998 } as const;
 export const takvimGunuMu = (gun: string): boolean => {
   const eslesme = /^(\d{4})-(\d{2})-(\d{2})$/.exec(gun);
   if (eslesme === null) return false;
   const [yil = 0, ay = 0, gunu = 0] = eslesme.slice(1).map(Number);
+  if (yil < takvimGunuSiniri.enAz || yil > takvimGunuSiniri.enCok) return false;
   const an = new Date(Date.UTC(yil, ay - 1, gunu));
   return an.getUTCFullYear() === yil && an.getUTCMonth() === ay - 1 && an.getUTCDate() === gunu;
 };
@@ -114,7 +118,8 @@ export const yerelZamandan = (yerel: string, saatDilimi: string): Date | undefin
 };
 
 // Bir takvim gününün bir saat diliminde başladığı an (kart 0267): gece yarısı. Gece yarısının yaşanmadığı günde
-// (saatin gece yarısında ileri alındığı dilimler) günün yaşanan ilk dakikası.
+// (saatin gece yarısında ileri alındığı dilimler) günün yaşanan ilk dakikası. Hiç yaşanmayan gün (bir dilimin günü
+// atladığı tarih: Pacific/Apia 2011-12-30) ertesi günün başında başlar; o gün sıfır uzunluktadır.
 export const gununBasi = (gun: string, saatDilimi: string): Date => {
   for (let dakika = 0; dakika < 24 * 60; dakika++) {
     const an = yerelZamandan(
@@ -123,7 +128,7 @@ export const gununBasi = (gun: string, saatDilimi: string): Date => {
     );
     if (an !== undefined) return an;
   }
-  throw new Error(`Gün bu saat diliminde yok: ${gun} ${saatDilimi}`);
+  return gununBasi(gunEkle(gun, 1), saatDilimi);
 };
 
 // Para biriminin bir dildeki simgesi, dil verisinden (CLDR): kodda bir para simgesi yazmaz (kart 0081).

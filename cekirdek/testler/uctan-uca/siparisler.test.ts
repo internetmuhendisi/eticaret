@@ -576,7 +576,17 @@ test("siparişler listesi: tarih, kargo firması ve bakılması gereken klavyeyl
   await expect(baslangic).toBeFocused();
   await expect(baslangic).toHaveAttribute("aria-invalid", "true");
   await ikiRenkUcGenislik(page, "tarih paneli hatalı");
+  // Yarım girilen gün boş uç sayılmaz: alanın hatası (bağımsız kontrolün bulgusu). Gün alanına yalnız ay yazılır.
   await baslangic.fill("2020-01-15");
+  await bitis.focus();
+  await page.keyboard.press("Home");
+  await page.keyboard.type("01");
+  expect(await bitis.evaluate((alan) => (alan as HTMLInputElement).validity.badInput)).toBe(true);
+  await uygula.focus();
+  await page.keyboard.press("Enter");
+  await expect(panel.getByText(metin("yonetim.liste.tarih.hata.gecersiz"))).toBeVisible();
+  await expect(bitis).toBeFocused();
+  await expect(page).not.toHaveURL(/tarih=/);
   await bitis.fill("2020-01-15");
   await uygula.focus();
   await page.keyboard.press("Enter");

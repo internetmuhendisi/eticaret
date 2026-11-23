@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   type BicimAyarlari,
   bicimleyiciOlustur,
+  gunEkle,
+  gununBasi,
   ikiHaneli,
+  takvimGunuMu,
   yerelZamana,
   yerelZamandan,
 } from "../bicimleyici";
@@ -371,5 +374,60 @@ describe("kısa ad (kart 0139, yorumun görünen adı)", () => {
     expect(bicim.kisaAd("Ali 😀mutlu")).toBe("Ali M.");
     expect(bicim.kisaAd("Ayşe 1")).toBe("Ayşe");
     expect(bicim.kisaAd("Ayşe . Kaya")).toBe("Ayşe K.");
+  });
+});
+
+describe("takvim günü (kart 0267)", () => {
+  it("biçim, takvimde olma ve yıl sınırı (1900–9998)", () => {
+    for (const gun of ["2026-11-23", "2024-02-29", "1900-01-01", "9998-12-31"]) {
+      expect(takvimGunuMu(gun), gun).toBe(true);
+    }
+    for (const gun of [
+      "2026-02-29",
+      "2026-13-01",
+      "2026-11-31",
+      "2026-11-1",
+      "26-11-01",
+      "2026-11-01T00:00",
+      "1899-12-31",
+      "9999-12-31",
+      "0099-01-01",
+      "",
+    ]) {
+      expect(takvimGunuMu(gun), gun).toBe(false);
+    }
+  });
+
+  it("gün ekleme ay, yıl ve artık yıl sınırında; sınırdaki yılın ertesi günü dört hanelidir", () => {
+    expect(gunEkle("2026-11-30", 1)).toBe("2026-12-01");
+    expect(gunEkle("2026-12-31", 1)).toBe("2027-01-01");
+    expect(gunEkle("2024-03-01", -1)).toBe("2024-02-29");
+    expect(gunEkle("2026-11-23", -29)).toBe("2026-10-25");
+    expect(gunEkle("9998-12-31", 1)).toBe("9999-01-01");
+  });
+
+  it("günün başı sitenin saat dilimiyle: gece yarısı, yaz saati ve gece yarısının ya da günün hiç yaşanmadığı dilimler", () => {
+    expect(gununBasi("2026-11-21", "Europe/Istanbul").toISOString()).toBe(
+      "2026-11-20T21:00:00.000Z",
+    );
+    expect(gununBasi("2026-03-08", "America/New_York").toISOString()).toBe(
+      "2026-03-08T05:00:00.000Z",
+    );
+    expect(gununBasi("2026-03-09", "America/New_York").toISOString()).toBe(
+      "2026-03-09T04:00:00.000Z",
+    );
+    // Santiago'da saat 6 Eylül 2026 gece yarısında ileri alınır: gün 01.00'de (04.00Z) başlar.
+    expect(gununBasi("2026-09-06", "America/Santiago").toISOString()).toBe(
+      "2026-09-06T04:00:00.000Z",
+    );
+    // Kahire'de 25 Nisan 2025 gece yarısı yaşanmaz: gün 01.00'de (22.00Z, önceki takvim günü) başlar.
+    expect(gununBasi("2025-04-25", "Africa/Cairo").toISOString()).toBe("2025-04-24T22:00:00.000Z");
+    // Apia 30 Aralık 2011'i hiç yaşamadı: gün ertesi günün başında başlar, uzunluğu sıfırdır.
+    expect(gununBasi("2011-12-30", "Pacific/Apia").toISOString()).toBe(
+      gununBasi("2011-12-31", "Pacific/Apia").toISOString(),
+    );
+    expect(gununBasi("9998-12-31", "Europe/Istanbul").toISOString()).toBe(
+      "9998-12-30T21:00:00.000Z",
+    );
   });
 });
