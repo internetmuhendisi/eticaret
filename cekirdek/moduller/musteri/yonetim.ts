@@ -21,7 +21,7 @@ import {
   type SQL,
   sql,
 } from "drizzle-orm";
-import { alias, type SelectedFields } from "drizzle-orm/pg-core";
+import { alias } from "drizzle-orm/pg-core";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
@@ -197,13 +197,9 @@ export const musteriYonetimi = (site: Site) => {
   };
 
   // Listenin ve ayrıntının ortak sorgusu: müşteriler, özetleri, adı ve kampanya izni.
-  const birlesik = <S extends SelectedFields>(
-    vt: Veritabani,
-    o: ReturnType<typeof ozetler>,
-    secim: S,
-  ) =>
+  const birlesik = (vt: Veritabani, o: ReturnType<typeof ozetler>) =>
     vt
-      .select(secim)
+      .select(o.sutunlar)
       .from(musteriler)
       .leftJoin(o.siparisOzeti, eq(o.siparisOzeti.musteri, musteriler.kimlik))
       .leftJoin(o.iadeOzeti, eq(o.iadeOzeti.musteri, musteriler.kimlik))
@@ -247,12 +243,13 @@ export const musteriYonetimi = (site: Site) => {
       );
     }
     const nerede = and(...kosullar);
-    const [sayim] = await birlesik(vt, o, { adet: count() }).where(nerede);
+    const [sayim] = await vt
+      .select({ adet: count() })
+      .from(birlesik(vt, o).where(nerede).as("sayilan"));
     const toplam = Number(sayim?.adet ?? 0);
     const sayfaSayisi = Math.max(1, Math.ceil(toplam / girdi.sayfaBoyu));
     const sayfa = Math.min(girdi.sayfa, sayfaSayisi);
-    const { kampanyaZamani: _z, ...satirSutunlari } = o.sutunlar;
-    const satirlar = await birlesik(vt, o, satirSutunlari)
+    const satirlar = await birlesik(vt, o)
       .where(nerede)
       .orderBy(
         ...listeSiralari(
@@ -263,7 +260,7 @@ export const musteriYonetimi = (site: Site) => {
       .limit(girdi.sayfaBoyu)
       .offset((sayfa - 1) * girdi.sayfaBoyu);
     return {
-      satirlar: satirlar as MusteriSatiri[],
+      satirlar: satirlar.map(({ kampanyaZamani: _zaman, ...satir }) => satir),
       toplam,
       sayfa,
       sayfaSayisi,
@@ -274,7 +271,7 @@ export const musteriYonetimi = (site: Site) => {
   // Müşterinin ayrıntısı: silinmiş ya da olmayan hesapta null.
   const ayrinti = async (vt: Veritabani, kimlik: string): Promise<MusteriAyrintisi | null> => {
     const o = ozetler(vt);
-    const [satir] = await birlesik(vt, o, o.sutunlar).where(
+    const [satir] = await birlesik(vt, o).where(
       and(eq(musteriler.kimlik, kimlik), isNull(musteriler.silinme_zamani)),
     );
     if (satir === undefined) return null;
@@ -311,7 +308,7 @@ export const musteriYonetimi = (site: Site) => {
       .orderBy(desc(musteriNotlari.zaman), desc(musteriNotlari.kimlik))
       .limit(musteriPanelSinirlari.ayrintiNot);
     return {
-      ...(satir as MusteriSatiri & { kampanyaZamani: Date | null }),
+      ...satir,
       uyelikSurumu: uyelikOnayi?.surum ?? null,
       siparisler: siparisSatirlari.map((s) => ({ ...s, durum: s.durum as SiparisDurumu })),
       adresler: await adresServisi(site).adresListesi(vt, kimlik),

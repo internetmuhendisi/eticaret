@@ -260,6 +260,14 @@
       "temaAyarlari": {
         "ad": "Tema ayarları",
         "aciklama": "Temanızın renkleri, yazı tipi, köşeleri ve logonuz. Kaydedince vitrinde hemen yayınlanır; önceki hâline tek adımda dönebilirsiniz."
+      },
+      "musteriler": {
+        "ad": "Müşteriler",
+        "aciklama": "Mağazanızda hesap açan müşteriler. Üye olmadan sipariş verenler siparişlerde görünür."
+      },
+      "musteriAyrintisi": {
+        "ad": "Müşteri ayrıntısı",
+        "aciklama": "Müşterinin siparişleri, adresleri, hesap bilgileri ve mağazanın notları."
       }
     },
     "eylem": {
@@ -281,7 +289,8 @@
       "temaDegistir": "Tema değiştir",
       "fisYazdir": "Fiş yazdır",
       "yazdir": "Yazdır",
-      "fisYazdirYeniSekme": "Fiş yazdır (yeni sekmede açılır)"
+      "fisYazdirYeniSekme": "Fiş yazdır (yeni sekmede açılır)",
+      "sifreSifirlamaGonder": "Şifre sıfırlama bağlantısı gönder"
     },
     "rol": {
       "magaza-sahibi": "Mağaza sahibi",
@@ -2092,6 +2101,111 @@
         "bos": "Seçtiğiniz dosya boş. Başka bir dosya seçin.",
         "cok-buyuk": "Dosya çok büyük. En çok {boyut} bir {turler} dosyası seçin.",
         "tur-izinsiz": "Bu dosya türü yüklenemez. Faturanın {turler} dosyasını seçin."
+      }
+    },
+    "musteriler": {
+      "liste": "Müşteriler",
+      "ayrintiAdi": "{ad} müşterisinin ayrıntısı",
+      "sutun": {
+        "musteri": "Müşteri",
+        "kayit": "Kayıt",
+        "siparis": "Sipariş",
+        "toplam": "Toplam",
+        "kampanya": "Kampanya izni"
+      },
+      "kampanya": {
+        "var": "Var",
+        "yok": "Yok"
+      },
+      "siparisSecenegi": {
+        "var": "Sipariş vermiş",
+        "yok": "Hiç sipariş vermemiş"
+      },
+      "telefonOzeti": "{kayit} · {sayi} sipariş",
+      "kayitSuzgeci": "Kayıt tarihi",
+      "kampanyaSuzgeci": "Kampanya izni",
+      "siparisSuzgeci": "Sipariş",
+      "ara": "Müşteri ara",
+      "araYer": "Ad ya da e-posta",
+      "siralama": {
+        "en-yeni": "En yeni kayıt",
+        "en-eski": "En eski kayıt",
+        "siparis-azalan": "Sipariş: çoktan aza",
+        "siparis-artan": "Sipariş: azdan çoğa",
+        "toplam-azalan": "Toplam: yüksekten düşüğe",
+        "toplam-artan": "Toplam: düşükten yükseğe"
+      },
+      "bos": {
+        "baslik": "Henüz müşteri yok",
+        "metin": "Vitrinde hesap açan müşteriler burada görünür. Üye olmadan sipariş verenler Siparişler'dedir."
+      }
+    },
+    "musteri": {
+      "ozet": "Üye · {tarih} tarihinden beri",
+      "sayi": {
+        "siparis": "Sipariş",
+        "toplam": "Toplam",
+        "ortalama": "Ortalama"
+      },
+      "siparisler": {
+        "baslik": "Siparişleri",
+        "tablo": "Müşterinin siparişleri, en yeni önce",
+        "siparis": "Sipariş",
+        "tarih": "Tarih",
+        "durum": "Durum",
+        "tutar": "Tutar",
+        "bos": "Henüz sipariş vermedi.",
+        "kesildi": "Son {sayi} sipariş görünüyor. Daha eskileri Siparişler'de müşterinin e-postasıyla arayın."
+      },
+      "notlar": {
+        "baslik": "Notlar",
+        "etiket": "Not",
+        "aciklama": "Notu yalnız panel kullanıcıları görür; müşteriye gitmez. Kimlik numarası, kart gibi kişisel bilgi yazmayın.",
+        "kaydet": "Notu kaydet",
+        "eklendi": "Not kaydedildi.",
+        "silindi": "Not silindi.",
+        "sil": "Sil",
+        "silAdi": "Sil: {zaman} tarihli not",
+        "bos": "Henüz not yok.",
+        "yazanZaman": "{yazan} · {zaman}",
+        "gerekli": "Notu yazın.",
+        "uzun": "Not çok uzun. Kısaltın.",
+        "gecersiz": "Not kaydedilemedi. Metni kontrol edin.",
+        "yetki": "Not eklemeye ya da silmeye yetkiniz yok.",
+        "bulunamadi": "Müşteri ya da not bulunamadı. Sayfa yenilendi.",
+        "genel": "Not kaydedilemedi. Biraz sonra yeniden deneyin.",
+        "silOnay": {
+          "baslik": "Not silinsin mi?",
+          "metin": "Not kalıcı olarak silinir, geri alınamaz."
+        }
+      },
+      "hesap": {
+        "baslik": "Hesap",
+        "eposta": "E-posta",
+        "kayit": "Kayıt tarihi",
+        "kampanya": "Kampanya izni",
+        "kampanyaVar": "Var · {tarih}",
+        "kampanyaYok": "Yok",
+        "uyelik": "Üyelik sözleşmesi",
+        "uyelikSurumu": "Onaylanan sürüm: {surum}"
+      },
+      "adresler": {
+        "baslik": "Adresleri",
+        "bos": "Kayıtlı adres yok.",
+        "teslimat": "Varsayılan teslimat",
+        "fatura": "Varsayılan fatura"
+      },
+      "sifre": {
+        "onay": {
+          "baslik": "Şifre sıfırlama bağlantısı gönderilsin mi?",
+          "metin": "Bağlantı {eposta} adresine gider. Müşteri yeni şifresini kendisi belirler; siz şifreyi görmezsiniz.",
+          "dugme": "Bağlantıyı gönder"
+        },
+        "gonderildi": "Şifre sıfırlama bağlantısı gönderildi.",
+        "sinir": "Bu müşteriye kısa süre içinde çok bağlantı gönderildi. Biraz sonra yeniden deneyin.",
+        "yetki": "Şifre sıfırlama bağlantısı göndermeye yetkiniz yok.",
+        "bulunamadi": "Müşteri bulunamadı. Sayfa yenilendi.",
+        "genel": "Bağlantı gönderilemedi. Biraz sonra yeniden deneyin."
       }
     }
   },

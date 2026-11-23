@@ -20,6 +20,7 @@ import {
   Heading3Icon,
   HouseIcon,
   ItalicIcon,
+  KeyRoundIcon,
   ListChecksIcon,
   ListIcon,
   ListOrderedIcon,
@@ -40,6 +41,8 @@ export const panelIkonlari = {
   "sirala-artan": ArrowUpNarrowWideIcon,
   "sirala-azalan": ArrowDownWideNarrowIcon,
   takvim: CalendarIcon,
+  // Müşteriye şifre sıfırlama bağlantısı (kart 0271).
+  sifre: KeyRoundIcon,
   // Sipariş fişini yazdırma (kart 0270), siparişin iptali (kart 0235).
   yazici: PrinterIcon,
   iptal: CircleXIcon,

@@ -3,15 +3,14 @@
 // siparişin saklanan değerleridir, yeniden hesaplanmaz. Not ekleme yalnız yönetim izni olana görünür. Müşterinin
 // bekleyen ya da onaylanıp iadesi yapılmamış iade talebi en üstte kutudur (kart 0239); kapanmış talepler (reddedilen
 // açıklamasıyla, iadesi yapılan) ayrı bölümde.
-import type { ReactNode } from "react";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
-import { Kart } from "../../../bilesenler/parcalar/kart";
 import { Rozet } from "../../../bilesenler/parcalar/rozet";
 import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { doldur } from "../../metinler/doldur";
 import { metin } from "../../metinler/site-metni";
+import { Bilgi, Bolum, Satir } from "../ayrinti-parcalari";
 import { DurumRozeti } from "./durum-rozeti";
 import { FaturaIslemleri } from "./fatura";
 import { IadeyiYenidenDene } from "./iade-penceresi";
@@ -26,69 +25,6 @@ import {
 } from "./metinler";
 import { NotFormu } from "./not-formu";
 import type { SiparisAyrintisiVerisi } from "./veri";
-
-function Bolum({
-  baslik,
-  kimlik,
-  ek,
-  children,
-}: {
-  baslik: string;
-  kimlik: string;
-  // Başlığın yanındaki işaret (rozet); verilince (null da) başlık satırı her zaman çizilir.
-  ek?: ReactNode;
-  children: ReactNode;
-}) {
-  const basligi = (
-    <h2 id={kimlik} className="font-baslik text-baslik-4 font-baslik-kalinligi">
-      {baslik}
-    </h2>
-  );
-  return (
-    <Kart className="gap-4 p-4 tablet:p-5">
-      {ek === undefined ? (
-        basligi
-      ) : (
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          {basligi}
-          {ek}
-        </div>
-      )}
-      {children}
-    </Kart>
-  );
-}
-
-function Satir({
-  ad,
-  children,
-  vurgu = false,
-}: {
-  ad: string;
-  children: ReactNode;
-  vurgu?: boolean;
-}) {
-  return (
-    <div
-      className={sinif(
-        "flex justify-between gap-3",
-        vurgu && "border-t border-kenar pt-2 font-kalin",
-      )}
-    >
-      <dt className={vurgu ? "" : "text-soluk-yazi"}>{ad}</dt>
-      <dd className="text-right whitespace-nowrap">{children}</dd>
-    </div>
-  );
-}
-
-function Bilgi({ ad, children }: { ad: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col">
-      <dt className="text-kucuk text-soluk-yazi">{ad}</dt>
-      <dd className="font-kalin wrap-anywhere">{children}</dd>
-    </div>
-  );
-}
 
 export function SiparisAyrintisi({ veri }: { veri: SiparisAyrintisiVerisi }) {
   const { tutarlar } = veri;
@@ -482,9 +418,14 @@ export function SiparisAyrintisi({ veri }: { veri: SiparisAyrintisiVerisi }) {
         <Bolum baslik={metin("yonetim.siparis.musteri.baslik")} kimlik="siparis-musterisi">
           <dl className="flex flex-col gap-2">
             <Bilgi ad={metin("yonetim.siparis.musteri.ad")}>
-              {veri.musteri.ad === ""
-                ? metin("yonetim.siparisler.kisiselSilindi")
-                : veri.musteri.ad}
+              {veri.musteri.ad === "" ? (
+                metin("yonetim.siparisler.kisiselSilindi")
+              ) : veri.musteri.ayrintiAdresi === null ? (
+                veri.musteri.ad
+              ) : (
+                // Üye müşterinin panel ayrıntısı (kart 0271), yalnız musteri.gor izni olana.
+                <Baglanti href={veri.musteri.ayrintiAdresi}>{veri.musteri.ad}</Baglanti>
+              )}
             </Bilgi>
             <Bilgi ad={metin("yonetim.siparis.musteri.eposta")}>
               {veri.musteri.eposta === ""

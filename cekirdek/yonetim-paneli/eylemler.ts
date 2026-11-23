@@ -26,6 +26,8 @@ export const panelEylemleri = {
   // Ürünler (kart 0263): listenin "Ürün ekle"si ve ürün ekranının "Vitrinde gör"ü.
   "urun-ekle": { ikon: "ekle", ad: "yonetim.eylem.urunEkle" },
   "vitrinde-gor": { ikon: "yeni-sekme", ad: "yonetim.eylem.vitrindeGor" },
+  // Müşteri ayrıntısı (kart 0271): müşterinin kendi e-postasına şifre sıfırlama bağlantısı.
+  "sifre-sifirlama-gonder": { ikon: "sifre", ad: "yonetim.eylem.sifreSifirlamaGonder" },
   // Tema (kart 0260): tema sayfası ile tema ayarları arasındaki bağlantılar.
   "tema-ayarlari": { ikon: "duzenle", ad: "yonetim.eylem.temaAyarlari" },
   "tema-degistir": { ikon: "tema", ad: "yonetim.eylem.temaDegistir" },

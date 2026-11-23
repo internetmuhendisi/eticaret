@@ -78,6 +78,16 @@ const degeriCoz = (yazi: string): string | undefined => {
   }
 };
 
+// Tarih süzgecinde adreste yazılı günler (iki günlü aralığın dolu uçları): sayfa onları sitenin biçimiyle yazıp
+// şeride verir (gunYazilari, kart 0267). Hazır aralıkta gün yoktur.
+export const tarihSuzgecininAyrikGunleri = (durum: ListeDurumu, kod: string): string[] => {
+  const deger = durum.suzgecler[kod]?.[0];
+  const cozulen = deger === undefined ? undefined : tarihDegeriniCoz(deger);
+  return cozulen?.tur === "aralik"
+    ? [cozulen.baslangic, cozulen.bitis].filter((gun) => gun !== null)
+    : [];
+};
+
 export type ListeTanimi = {
   // Toplu işlemin ve testlerin adı.
   kod: string;

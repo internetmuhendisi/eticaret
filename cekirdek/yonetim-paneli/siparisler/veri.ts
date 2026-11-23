@@ -33,7 +33,8 @@ import type { HesapSiparisi, OncekiIade } from "../../moduller/siparis/iade-hesa
 import type { Siparis, SiparisKalemi } from "../../moduller/siparis/model";
 import { siparisYonetimi } from "../../moduller/siparis/yonetim";
 import { siteninVeritabani } from "../../veritabani/baglanti";
-import { type ListeDurumu, type ListeVerisi, tarihDegeriniCoz } from "../liste/tanim";
+import { musteriAyrintisiAdresi } from "../adresler";
+import { type ListeDurumu, type ListeVerisi, tarihSuzgecininAyrikGunleri } from "../liste/tanim";
 import { bakilacakSekmesi, siparisListesiGirdisi } from "./liste-tanimi";
 
 const bicim = () => siteninBicimleyicisi(calisanSite().ayarlar);
@@ -108,12 +109,7 @@ export const siparisListesiSecenekleri = async (
   const site = calisanSite();
   const b = bicim();
   const kargo = await siparisYonetimi(site).kargoFirmalari(siteninVeritabani());
-  const tarih = durum.suzgecler["tarih"]?.[0];
-  const cozulen = tarih === undefined ? undefined : tarihDegeriniCoz(tarih);
-  const gunler =
-    cozulen?.tur === "aralik"
-      ? [cozulen.baslangic, cozulen.bitis].filter((gun) => gun !== null)
-      : [];
+  const gunler = tarihSuzgecininAyrikGunleri(durum, "tarih");
   return {
     kayitSecenekleri: { kargo: kargo.map((ad) => ({ deger: ad, ad })) },
     gunYazilari: Object.fromEntries(
@@ -151,7 +147,14 @@ export type SiparisAyrintisiVerisi = {
     takipAdresi: string | null;
     zaman: string;
   } | null;
-  musteri: { ad: string; eposta: string; telefon: string | null; uye: boolean };
+  // ayrintiAdresi: üye müşterinin panel ayrıntısı (kart 0271), yalnız musteri.gor izni olana; yoksa null.
+  musteri: {
+    ad: string;
+    eposta: string;
+    telefon: string | null;
+    uye: boolean;
+    ayrintiAdresi: string | null;
+  };
   teslimat: { satirlar: string[] };
   fatura:
     | { tur: "bireysel"; adresAyni: boolean; adres: string[] }
@@ -338,7 +341,9 @@ const faturaBelgesiVerisi = (
 
 export const siparisAyrintisiVerisi = async (
   numara: string,
-  yetkili: (izin: "siparis.yonet" | "siparis.havale-onayla" | "siparis.iade") => boolean,
+  yetkili: (
+    izin: "siparis.yonet" | "siparis.havale-onayla" | "siparis.iade" | "musteri.gor",
+  ) => boolean,
 ): Promise<SiparisAyrintisiVerisi | null> => {
   const site = calisanSite();
   const b = bicim();
@@ -407,6 +412,10 @@ export const siparisAyrintisiVerisi = async (
       eposta: siparis.eposta,
       telefon: siparis.teslimat.telefon ?? null,
       uye: siparis.musteri_kimligi !== null,
+      ayrintiAdresi:
+        siparis.musteri_kimligi !== null && yetkili("musteri.gor")
+          ? musteriAyrintisiAdresi(siparis.musteri_kimligi)
+          : null,
     },
     teslimat: { satirlar: adresSatirlari(siparis.teslimat.adres) },
     fatura: siparisFaturaBilgisiVerisi(siparis.fatura),

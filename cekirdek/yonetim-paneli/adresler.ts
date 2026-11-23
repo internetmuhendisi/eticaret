@@ -17,6 +17,11 @@ export const siparisAyrintisiAdresi = (numara: string): string =>
 export const siparisFisiAdresi = (numaralar: readonly string[], yazdir = true): string =>
   `${siparislerAdresi}/fis?numara=${numaralar.map(encodeURIComponent).join(",")}${yazdir ? "&yazdir=1" : ""}`;
 
+// Müşteriler (kart 0271): liste ve ayrıntı (?kimlik=).
+export const musterilerAdresi = `${panelAdresi}/musteriler`;
+export const musteriAyrintisiAdresi = (kimlik: string): string =>
+  `${musterilerAdresi}/ayrinti?kimlik=${encodeURIComponent(kimlik)}`;
+
 // Ürünler listesi (kart 0262); ürün ekranı kart 0263'le gelir.
 export const urunlerAdresi = `${panelAdresi}/urunler`;
 // Ürün ekranı (kart 0263): yeni ürün ve var olan ürünün ekranı (kimlik adresin sorgusunda).

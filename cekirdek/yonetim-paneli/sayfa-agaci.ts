@@ -91,6 +91,26 @@ export const panelSayfalari = [
     grup: "satis",
     ust: "siparisler",
   },
+  // Müşteriler (kart 0271, karar 0173): yalnız üyeler; liste ve ayrıntı kişisel veridir (musteri.gor, görevlide yok).
+  {
+    kod: "musteriler",
+    adres: `${panelAdresi}/musteriler`,
+    ad: "yonetim.sayfa.musteriler.ad",
+    aciklama: "yonetim.sayfa.musteriler.aciklama",
+    ikon: "hesap",
+    izin: "musteri.gor",
+    grup: "satis",
+  },
+  {
+    kod: "musteri-ayrintisi",
+    adres: `${panelAdresi}/musteriler/ayrinti`,
+    ad: "yonetim.sayfa.musteriAyrintisi.ad",
+    aciklama: "yonetim.sayfa.musteriAyrintisi.aciklama",
+    ikon: "hesap",
+    izin: "musteri.gor",
+    grup: "satis",
+    ust: "musteriler",
+  },
   // Sipariş ayarları (kart 0234): kargo firmaları; mağaza ayarıdır, yalnız mağaza sahibinin izinleriyle.
   {
     kod: "siparis-ayarlari",

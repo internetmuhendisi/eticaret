@@ -646,6 +646,43 @@ Panelin sipariş listesinin bir sayfası (kart 0234, karar 0145; kart 0258'de li
 - Başarılı (200): `{ "satirlar": [{ "numara", "durum", "zaman", "musteri", "uye", "odeme": { "yontem", "secenek" }, "tutar", "havaleBildirildi", "iadeTalebi", "iadeBekliyor", "talepOnaylandi", "iadeBasarisiz" }], "toplam", "sayfa", "sayfaSayisi", "sayfaBoyu", "sekmeSayilari": { "": hepsi, "<durum>": sayı, "bakilacak": sayı } }`. Zaman ve tutar sitenin biçimiyle yazıdır; müşteri kısa addır ("Deniz Y."), kişisel bilgisi silinmiş siparişte boştur.
 - Hatalar: `dogrulama`, `yetki`.
 
+### GET /kapi/yonetici/musteriler
+
+Panelin müşteri listesinin bir sayfası (kart 0271, karar 0173). Yalnız üyeler (silinmiş hesap yok); üye olmadan verilen sipariş hiçbir müşteriye sayılmaz. Girdi ve yanıt panel sayfasınınkiyle aynıdır: liste tanımı (`musteriListesiTanimi`, `cekirdek/yonetim-paneli/musteriler/liste-tanimi.ts`) ve `musteriListesiVerisi` (`veri.ts`). Ekran aranan metni buraya gönderir, adrese yazmaz. Aranan metin e-postada ve adda aranır (harf ayrımsız, `%` ve `_` joker değildir). Ad son siparişin teslimat adıdır (kişisel bilgisi silinmemiş), yoksa varsayılan teslimat adresinin adı, yoksa boş. Sipariş sayısı ve toplam iptal edilmemiş siparişlerdendir, toplamdan tamamlanan iadeler düşülür. Kampanya izni en yeni pazarlama onayıdır. Kayıt tarihi sitenin saat dilimiyle sayılır, iki uç dahil.
+
+- İzin: `musteri.gor`. Sınır: `genel`.
+- Girdi (sorgu, `listeUcuSemasi`): `kayit` (`bugun`, `son-7-gun`, `son-30-gun` ya da `YYYY-AA-GG_YYYY-AA-GG`), `kampanya` (virgülle `var`, `yok`), `siparis` (virgülle `var`, `yok`), `ara`, `sirala` (`musteriListesiSiralamalari`, varsayılan `en-yeni`), `sayfa`. Tanınmayan alan ya da değer `dogrulama` alır. Sınır dışı sayfa son sayfaya çekilir.
+- Servis: `cekirdek/moduller/musteri/yonetim.ts` (`liste`).
+- Başarılı (200): `{ "satirlar": [{ "kimlik", "ad", "eposta", "kayit", "siparisSayisi", "toplam", "kampanyaIzni" }], "toplam", "sayfa", "sayfaSayisi", "sayfaBoyu", "sekmeSayilari": {} }`. Kayıt ve toplam sitenin biçimiyle yazıdır; ad yoksa boştur.
+- Hatalar: `dogrulama`, `yetki`.
+
+### POST /kapi/yonetici/musteri-notu
+
+Mağazanın müşteri hakkındaki notu (kart 0271, karar 0173). Not yalnız panelde görünür, müşteriye hiçbir uçta gitmez; düzenlenmez. Değişiklik kaydına notun ve müşterinin kimliğiyle girer, metni girmez. Silinmiş ya da olmayan müşteriye not yazılmaz.
+
+- İzin: `musteri.not`. Sınır: `genel`.
+- Girdi: `{ "musteri", "metin" }` (`musteriNotuSemasi`, `cekirdek/moduller/musteri/panel-semalari.ts`; en çok `musteriPanelSinirlari.notEnCok` harf, düz metin).
+- Başarılı (200): `{ "kimlik" }`.
+- Hatalar: `bulunamadi`, `dogrulama`, `yetki`.
+
+### POST /kapi/yonetici/musteri-notu-sil
+
+Notu kalıcı siler. Başka müşterinin notu ya da olmayan not `bulunamadi` alır. Değişiklik kaydına metinsiz girer.
+
+- İzin: `musteri.not`. Sınır: `genel`.
+- Girdi: `{ "musteri", "not" }` (`musteriNotuSilSemasi`).
+- Başarılı (200): `{ "silindi": true }`.
+- Hatalar: `bulunamadi`, `dogrulama`, `yetki`.
+
+### POST /kapi/yonetici/musteri-sifre-sifirlama
+
+Müşterinin kendi e-postasına şifre sıfırlama bağlantısı gönderir (kart 0271): şifremi unuttum akışıyla aynı bağlantı ve aynı sınır (`sifreSifirlamaAyari`); mağaza şifreyi görmez. Değişiklik kaydına bağlantıyla aynı işlemde, e-postasız girer (`musteri.sifre-sifirlama-gonderildi`).
+
+- İzin: `musteri.sifre-sifirlama`. Sınır: `genel`.
+- Girdi: `{ "musteri" }` (`musteriKimligiSemasi`).
+- Başarılı (200): `{ "sonuc": "gonderildi" }`.
+- Hatalar: `bulunamadi` (olmayan ya da silinmiş hesap), `istek-siniri` (hesabın sıfırlama sınırı doldu), `hizmet-kullanilamiyor` (sitenin adresi yok), `dogrulama`, `yetki`.
+
 ### POST /kapi/yonetici/siparisler-toplu
 
 Seçilen siparişlere toplu işlem (kart 0258, karar 0157): bugün `hazirlamaya-al`. Her sipariş tekil işlemle (`siparis-islemi`) aynı yoldan, kendi işleminde ve sırayla geçer: satır kilidi, ekranın gördüğü durum, geçiş ve ödeme yöntemi kuralı, geçmiş. Birinin hatası ötekileri durdurmaz.
