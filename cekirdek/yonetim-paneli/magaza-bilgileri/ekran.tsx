@@ -6,9 +6,11 @@
 // özette (ortak form yapısı, karar 0159). Kaydedilince vitrinde, sipariş fişinde ve yeni e-postalarda hemen görünür.
 // Değiştirme izni olmayan yönetici alanları okur, kaydet çubuğunu görmez.
 import { useRef } from "react";
+import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { Kart } from "../../../bilesenler/parcalar/kart";
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
+import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { type IsletmeTuru, isletmeTurleri } from "../../kayitlar/satici";
 import {
   type SosyalSite,
@@ -48,6 +50,10 @@ const kodMetinleri: Record<string, MetinAnahtari> = {
   "vergi-numarasi-kontrol": "yonetim.magazaBilgileri.hata.vergiNumarasiKontrol",
   "mersis-numarasi-bicimi": "yonetim.magazaBilgileri.hata.mersis",
   "kep-adresi-bicimi": "yonetim.magazaBilgileri.hata.kep",
+  "magaza-adi-eposta": "yonetim.magazaBilgileri.hata.adEposta",
+  "kayda-uygun-degil": "yonetim.magazaBilgileri.hata.kaydaUygunDegil",
+  "metin-gecersiz": "yonetim.magazaBilgileri.hata.metin",
+  "ulke-satis-disi": "yonetim.magazaBilgileri.hata.secin",
   too_small: "yonetim.magazaBilgileri.hata.zorunlu",
   invalid_type: "yonetim.magazaBilgileri.hata.zorunlu",
   too_big: "yonetim.magazaBilgileri.hata.uzun",
@@ -145,8 +151,14 @@ export function MagazaBilgileriEkrani({
       // Sosyal hesabın yolu gönderilen sıradır ("sosyalHesaplar.3.hesap"): formun alanına çevrilir.
       const sosyal = /^sosyalHesaplar\.(\d+)/.exec(gelen);
       const alan = sosyal === null ? gelen : (hesapAlanlari[Number(sosyal[1])] ?? "");
-      if (kod === "sosyal-hesap-tekrar" || alan === "" || alan === "sosyalHesaplar") {
-        genel.push(metin("yonetim.magazaBilgileri.hata.sosyalTekrar"));
+      if (alan === "" || alan === "sosyalHesaplar") {
+        genel.push(
+          metin(
+            kod === "too_big"
+              ? "yonetim.magazaBilgileri.hata.sosyalSinir"
+              : "yonetim.magazaBilgileri.hata.sosyalTekrar",
+          ),
+        );
         continue;
       }
       alanlar[alan] ??= metin(alanMetni(alan, kod));
@@ -274,7 +286,31 @@ export function MagazaBilgileriEkrani({
             hatalar={hatalar}
             kimlikler={kimlikler}
           />
-          <p className="text-kucuk text-soluk-yazi">{metin("yonetim.magazaBilgileri.adresBos")}</p>
+          {/* İl ve ilçe listesinde boş seçenek yoktur: kayıtlı adres bu düğmeyle boşaltılır (bağımsız kontrolün
+              bulgusu). */}
+          <div className="flex flex-wrap items-center gap-3">
+            <Dugme
+              tur="cerceveli"
+              className="px-4"
+              onClick={() =>
+                setForm((onceki) => ({
+                  ...onceki,
+                  magazaAdresi: {
+                    ...onceki.magazaAdresi,
+                    il: "",
+                    ilce: "",
+                    adres: "",
+                    postaKodu: "",
+                  },
+                }))
+              }
+            >
+              {metin("yonetim.magazaBilgileri.adresiTemizle")}
+            </Dugme>
+            <p className="text-kucuk text-soluk-yazi">
+              {metin("yonetim.magazaBilgileri.adresBos")}
+            </p>
+          </div>
         </Kart>
 
         <Kart
@@ -292,6 +328,8 @@ export function MagazaBilgileriEkrani({
               form.sosyal[site].map((hesap, sira) => {
                 const ad = `sosyal.${site}.${sira}`;
                 const siteAdi = metin(`vitrin.bolum.sosyalHesaplar.site.${site}`);
+                const aciklamaKimligi = `${ad}-onek`;
+                const hatali = pf.hata(ad) !== undefined;
                 return (
                   <PanelAlani
                     key={ad}
@@ -307,8 +345,20 @@ export function MagazaBilgileriEkrani({
                     zorunlu={false}
                   >
                     {(baglanti) => (
-                      // Sitenin adresi alanın içinde, yazının önünde (taslak); ekran okuyucu açıklamayı okur.
-                      <span className="flex min-w-0 items-center overflow-hidden rounded-dugme border border-alan-kenari bg-zemin">
+                      // Sitenin adresi alanın içinde, yazının önünde (taslak). Görünen önek ekran okuyucudan gizlidir;
+                      // ekran okuyucu alanın açıklamasında "yalnız kullanıcı adı" bilgisini okur. Hatalı alanın
+                      // kenarı dış kutudadır.
+                      <span
+                        className={sinif(
+                          "flex min-w-0 items-center overflow-hidden rounded-dugme border border-alan-kenari bg-zemin",
+                          hatali && "border-2 border-tehlike",
+                        )}
+                      >
+                        <span id={aciklamaKimligi} className="sr-only">
+                          {doldur(metin("yonetim.magazaBilgileri.sosyal.alanAciklamasi"), {
+                            adres: hesapOnEki(site),
+                          })}
+                        </span>
                         {/* Önek ayrı kutuda (taslak): alanın değeri sanılmasın. */}
                         <span
                           aria-hidden="true"
@@ -318,6 +368,9 @@ export function MagazaBilgileriEkrani({
                         </span>
                         <GirisAlani
                           {...baglanti}
+                          aria-describedby={[baglanti["aria-describedby"], aciklamaKimligi]
+                            .filter((parca) => parca !== undefined)
+                            .join(" ")}
                           name={ad}
                           autoComplete="off"
                           value={hesap}

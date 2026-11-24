@@ -7,7 +7,7 @@
 //   hesabın bağlantısı. Test sonunda eski değerler geri yazılır.
 // - Ekran, hatalı form iki renkte ve üç genişlikte taramadan geçer, yana kaymaz; konsolda hata yok.
 //
-// Tarayıcı testleri Örnek Mağaza'nın veritabanını paylaşır: mağaza adı ve telefon başka testlerde okunduğu için
+// Tarayıcı testleri sitenin veritabanını paylaşır: mağaza adı ve telefon başka testlerde okunduğu için
 // kaydedilmez (yalnız hatalı hâlde denenir). Alt kısmın görünüşü değiştiği için kayıttan geri yazmaya kadar düzen
 // kilidi alınır (kart 0293).
 import { randomBytes } from "node:crypto";

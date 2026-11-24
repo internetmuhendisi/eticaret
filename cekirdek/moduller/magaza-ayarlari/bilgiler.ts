@@ -8,6 +8,13 @@
 // - Telefon ülke içi yazılışla da girilir (0312 ...): ödeme adımındaki gibi ülkenin koduyla uluslararası biçime çevrilir
 //   (telefonuDuzelt), çevirmede mağaza adresinin ülkesi, yoksa sitenin ilk satış ülkesi kullanılır.
 // - Boş sosyal hesap alanı atılır; hesabın başındaki "@" kullanıcı adının parçası sayılmaz.
+// - Yazı alanında satır sonu ve sekme dışındaki denetim karakteri reddedilir ("metin-gecersiz"; adreste satır sonu
+//   serbest). Değişiklik kaydına değeriyle giren alanlar (mağaza adı, sosyal hesap) kaydın yasakladığı değeri
+//   (anahtar, şifre biçimi) taşıyamaz ("kayda-uygun-degil"; bağımsız kontrolün bulgusu: "Bearer …" adı beklenmeyen
+//   hataya düşüyordu).
+// - Adresin ve satıcının ülkesi sitenin satış ülkelerinden biridir ("ulke-satis-disi").
+// - Sosyal hesaplar bugünkülerle aynıysa (sırası farklı da) yazılmaz: ekran onları sitelerin sırasıyla gönderir, sıra
+//   değişikliği kayda boşuna girmezdi.
 // - Yazım mağaza ayarları servisiyle tek işlemdedir: telefon, e-posta, adres ve satıcı bilgileri değişiklik kaydına
 //   değeri yazılmadan girer (kayıtta gizli, kart 0071).
 
@@ -17,10 +24,15 @@ import { telefonuDuzelt } from "../../bolgeler/adres.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
+import { kayitDegeriYasakMi, kayitMetniHatasi } from "../degisiklik-kaydi/deger.ts";
 import type { MagazaBilgileriGirdisi } from "./semalar.ts";
 import { siteninServisi } from "./servis.ts";
 
 type Sorun = { alan: string; kod: string };
+
+// Satır sonu ve sekme dışındaki denetim karakteri (düz metnin kuralı, cekirdek/metinler/duz-metin.ts); adres satır
+// sonu taşıyabilir.
+const denetimKarakteri = /[^\P{Cc}\n\r\t]/u;
 
 const dolu = (deger: string): string | undefined => {
   const temiz = deger.trim();
@@ -43,6 +55,23 @@ export const magazaBilgileriniCevir = (
 ): { degerler: Record<string, unknown>; sorunlar: Sorun[] } => {
   const sema = magazaAyarSemasi.shape;
   const hatalar: Sorun[] = [];
+  // Yazı alanlarının ortak denetimi: denetim karakteri, kayda değeriyle giren alanda kaydın yasakladığı değer.
+  const yaziSorunu = (alan: string, deger: string, kayda = false): boolean => {
+    if (denetimKarakteri.test(deger)) {
+      hatalar.push({ alan, kod: "metin-gecersiz" });
+      return true;
+    }
+    if (kayda && kayitDegeriYasakMi(deger)) {
+      hatalar.push({ alan, kod: kayitMetniHatasi });
+      return true;
+    }
+    return false;
+  };
+  const satisUlkesiMi = (alan: string, ulke: string): boolean => {
+    if (site.ayarlar.satisUlkeleri.includes(ulke)) return true;
+    hatalar.push({ alan, kod: "ulke-satis-disi" });
+    return false;
+  };
   const degerler: Record<string, unknown> = {};
   const al = (anahtar: keyof typeof sema, ham: unknown) => {
     const sonuc = sema[anahtar].safeParse(ham);
@@ -53,7 +82,15 @@ export const magazaBilgileriniCevir = (
   // Mağaza adı zorunludur: boş ad başlangıç değerine dönmez, hatadır.
   const ad = dolu(girdi.magazaAdi);
   if (ad === undefined) hatalar.push({ alan: "magazaAdi", kod: "too_small" });
-  else al("magazaAdi", ad);
+  else if (!yaziSorunu("magazaAdi", ad)) {
+    // Önce şemanın kuralı ("@" kendi koduyla), geçerse kaydın kuralı.
+    const onceki = hatalar.length;
+    al("magazaAdi", ad);
+    if (hatalar.length === onceki && kayitDegeriYasakMi(ad)) {
+      delete degerler["magazaAdi"];
+      hatalar.push({ alan: "magazaAdi", kod: kayitMetniHatasi });
+    }
+  }
 
   const eposta = dolu(girdi.iletisimEpostasi);
   al("iletisimEpostasi", eposta);
@@ -62,21 +99,31 @@ export const magazaBilgileriniCevir = (
   const adresDolu = [adres.il, adres.ilce, adres.adres, adres.postaKodu].some(
     (deger) => dolu(deger) !== undefined,
   );
-  al(
-    "magazaAdresi",
-    adresDolu
-      ? {
-          ulke: adres.ulke,
-          ...(dolu(adres.il) === undefined ? {} : { il: dolu(adres.il) }),
-          ...(dolu(adres.ilce) === undefined ? {} : { ilce: dolu(adres.ilce) }),
-          adres: adres.adres.trim(),
-          ...(dolu(adres.postaKodu) === undefined ? {} : { postaKodu: dolu(adres.postaKodu) }),
-        }
-      : undefined,
-  );
+  const adresSorunlu =
+    adresDolu &&
+    (!satisUlkesiMi("magazaAdresi.ulke", adres.ulke) ||
+      yaziSorunu("magazaAdresi.postaKodu", adres.postaKodu) ||
+      yaziSorunu("magazaAdresi.adres", adres.adres));
+  if (!adresSorunlu)
+    al(
+      "magazaAdresi",
+      adresDolu
+        ? {
+            ulke: adres.ulke,
+            ...(dolu(adres.il) === undefined ? {} : { il: dolu(adres.il) }),
+            ...(dolu(adres.ilce) === undefined ? {} : { ilce: dolu(adres.ilce) }),
+            adres: adres.adres.trim(),
+            ...(dolu(adres.postaKodu) === undefined ? {} : { postaKodu: dolu(adres.postaKodu) }),
+          }
+        : undefined,
+    );
 
   const telefon = dolu(girdi.iletisimTelefonu);
-  const telefonUlkesi = adresDolu ? adres.ulke : (site.ayarlar.satisUlkeleri[0] ?? "");
+  // Adresin ülkesi satış ülkesi değilse (hatası adreste yazılır) telefon satış ülkesinin koduyla çevrilir.
+  const telefonUlkesi =
+    adresDolu && site.ayarlar.satisUlkeleri.includes(adres.ulke)
+      ? adres.ulke
+      : (site.ayarlar.satisUlkeleri[0] ?? "");
   al(
     "iletisimTelefonu",
     telefon === undefined ? undefined : telefonuDuzelt(telefonUlkesi, telefon),
@@ -88,6 +135,7 @@ export const magazaBilgileriniCevir = (
   girdi.sosyalHesaplar.forEach(({ site: hesapSitesi, hesap }, sira) => {
     const temiz = dolu(hesap)?.replace(/^@/, "");
     if (temiz === undefined || temiz === "") return;
+    if (yaziSorunu(`sosyalHesaplar.${sira}.hesap`, temiz, true)) return;
     hesaplar.push({ site: hesapSitesi, hesap: temiz });
     hesapSiralari.push(sira);
   });
@@ -119,21 +167,28 @@ export const magazaBilgileriniCevir = (
     kepAdresi: satici.kepAdresi,
   };
   const saticiDolu = Object.values(saticiAlanlari).some((deger) => dolu(deger) !== undefined);
-  al(
-    "saticiBilgileri",
-    saticiDolu
-      ? {
-          ulke: satici.ulke,
-          isletmeTuru: satici.isletmeTuru,
-          unvan: satici.unvan.trim(),
-          ...Object.fromEntries(
-            Object.entries(saticiAlanlari)
-              .filter(([alan, deger]) => alan !== "unvan" && dolu(deger) !== undefined)
-              .map(([alan, deger]) => [alan, dolu(deger)]),
-          ),
-        }
-      : undefined,
-  );
+  const saticiSorunlu =
+    saticiDolu &&
+    (!satisUlkesiMi("saticiBilgileri.ulke", satici.ulke) ||
+      Object.entries(saticiAlanlari)
+        .map(([alan, deger]) => yaziSorunu(`saticiBilgileri.${alan}`, deger))
+        .includes(true));
+  if (!saticiSorunlu)
+    al(
+      "saticiBilgileri",
+      saticiDolu
+        ? {
+            ulke: satici.ulke,
+            isletmeTuru: satici.isletmeTuru,
+            unvan: satici.unvan.trim(),
+            ...Object.fromEntries(
+              Object.entries(saticiAlanlari)
+                .filter(([alan, deger]) => alan !== "unvan" && dolu(deger) !== undefined)
+                .map(([alan, deger]) => [alan, dolu(deger)]),
+            ),
+          }
+        : undefined,
+    );
   return { degerler, sorunlar: hatalar };
 };
 
@@ -145,5 +200,18 @@ export const magazaBilgileriniDegistir = async (
 ): Promise<void> => {
   const { degerler, sorunlar: hatalar } = magazaBilgileriniCevir(site, girdi);
   if (hatalar.length > 0) throw new BilinenHata("dogrulama", hatalar);
-  await siteninServisi(site).degistir(vt, kim, degerler);
+  // Sosyal hesaplar kilidin içinde bugünküyle karşılaştırılır: aynı hesaplar başka sırayla yazılmaz.
+  await siteninServisi(site).degistir(vt, kim, (bugunku) => {
+    const yeni = degerler["sosyalHesaplar"] as { site: string; hesap: string }[] | undefined;
+    const anahtar = (liste: readonly { site: string; hesap: string }[]) =>
+      liste
+        .map((h) => `${h.site}:${h.hesap}`)
+        .sort()
+        .join("\n");
+    if (yeni !== undefined && anahtar(yeni) === anahtar(bugunku.sosyalHesaplar)) {
+      const { sosyalHesaplar: _ayni, ...kalan } = degerler;
+      return kalan;
+    }
+    return degerler;
+  });
 };

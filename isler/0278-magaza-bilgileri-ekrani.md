@@ -24,6 +24,10 @@ Bölüm: Yönetim paneli. Kullanıcının kararıyla bu bölüme alındı. Önce
 - Ekran görüntüsü taslakla yan yana kondu, farklar düzeltildi.
 - Bağımsız kontrol yapıldı.
 
+## Notlar
+
+- Kullanıcı kararı (2026-11-24, bağımsız kontrolün bulgusu üzerine soruldu): kuyrukta bekleyen sipariş e-postası mağaza adını ve alt bilgiyi (unvan, adres, telefon) gönderim anındaki değerle taşır (karar 0153'ün bugünkü davranışı, karar 0175). "Kuyrukta bekleyen e-posta değişmez" maddesi siparişin verisi (ürünler, tutarlar, teslimat) için geçerlidir.
+
 ## Durum
 
 yapılacak

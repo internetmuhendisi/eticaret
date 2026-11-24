@@ -7,7 +7,10 @@
 //   vergi ve kimlik numarasının biçimi ve kontrol hanesi, MERSİS, KEP alan adı.
 // - Telefon, e-posta, adres ve satıcı bilgileri değişiklik kaydına değeri yazılmadan girer; mağaza adı ve sosyal
 //   hesaplar değeriyle girer.
-// - Vitrin bağlamı yeni bilgiyi aynı istekte okur.
+// - Bağımsız kontrolün bulgularıyla: gizli anahtara benzeyen ad ve sosyal hesap (kayda değeriyle giren alanlar)
+//   "kayda-uygun-degil", "@"lı ad kendi koduyla, denetim karakteri "metin-gecersiz" (adreste satır sonu serbest), satış
+//   ülkesi dışı ülke "ulke-satis-disi", sınırı aşan sosyal hesaplar "too_big"; aynı sosyal hesaplar başka sırayla
+//   gönderilince kayda girmez.
 import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { eq } from "drizzle-orm";
@@ -241,6 +244,54 @@ describe("kuralların reddi", () => {
       [{ alan: "saticiBilgileri.mersisNumarasi", kod: "mersis-numarasi-bicimi" }],
     ],
     [
+      "gizli anahtara benzeyen mağaza adı",
+      (g) => ({ ...g, magazaAdi: "Bearer Outdoor" }),
+      [{ alan: "magazaAdi", kod: "kayda-uygun-degil" }],
+    ],
+    [
+      "@'li mağaza adı",
+      (g) => ({ ...g, magazaAdi: "Ali@Moda" }),
+      [{ alan: "magazaAdi", kod: "magaza-adi-eposta" }],
+    ],
+    [
+      "gizli anahtara benzeyen sosyal hesap",
+      (g) => ({ ...g, sosyalHesaplar: [{ site: "x", hesap: "eyJabc.def.ghi" }] }),
+      [{ alan: "sosyalHesaplar.0.hesap", kod: "kayda-uygun-degil" }],
+    ],
+    [
+      "unvanda denetim karakteri",
+      (g) => ({ ...g, saticiBilgileri: { ...g.saticiBilgileri, unvan: "Deneme\u0000A.Ş." } }),
+      [{ alan: "saticiBilgileri.unvan", kod: "metin-gecersiz" }],
+    ],
+    [
+      "adreste denetim karakteri",
+      (g) => ({ ...g, magazaAdresi: { ...g.magazaAdresi, adres: "Deneme\u0007Sokak" } }),
+      [{ alan: "magazaAdresi.adres", kod: "metin-gecersiz" }],
+    ],
+    [
+      "satış ülkesi dışı adres ve satıcı",
+      (g) => ({
+        ...g,
+        magazaAdresi: { ...g.magazaAdresi, ulke: "DE" },
+        saticiBilgileri: { ...g.saticiBilgileri, ulke: "DE" },
+      }),
+      [
+        { alan: "magazaAdresi.ulke", kod: "ulke-satis-disi" },
+        { alan: "saticiBilgileri.ulke", kod: "ulke-satis-disi" },
+      ],
+    ],
+    [
+      "sınırı aşan sosyal hesaplar",
+      (g) => ({
+        ...g,
+        sosyalHesaplar: Array.from({ length: 11 }, (_, i) => ({
+          site: "x" as const,
+          hesap: `hesap${i}`,
+        })),
+      }),
+      [{ alan: "sosyalHesaplar", kod: "too_big" }],
+    ],
+    [
       "KEP alan adı",
       (g) => ({ ...g, saticiBilgileri: { ...g.saticiBilgileri, kepAdresi: "deneme@ornek.test" } }),
       [{ alan: "saticiBilgileri.kepAdresi", kod: "kep-adresi-bicimi" }],
@@ -252,7 +303,10 @@ describe("kuralların reddi", () => {
       const girdi = boz(dolu());
       // Geçerli bir değişiklik de gönderilir: reddedilen kayıtla birlikte o da yazılmamalı.
       expect(
-        await reddi({ ...girdi, magazaAdi: girdi.magazaAdi === "  " ? "  " : "Yeni Ad" }),
+        await reddi({
+          ...girdi,
+          magazaAdi: girdi.magazaAdi === dolu().magazaAdi ? "Yeni Ad" : girdi.magazaAdi,
+        }),
       ).toEqual({
         kod: "dogrulama",
         ayrinti: beklenen,
@@ -263,6 +317,30 @@ describe("kuralların reddi", () => {
 });
 
 describe("değişiklik kaydı", () => {
+  it("adreste satır sonu serbesttir; aynı sosyal hesaplar başka sırayla gönderilince kayda girmez", async () => {
+    const girdi = dolu();
+    await magazaBilgileriniDegistir(vt, site, yonetici(), {
+      ...girdi,
+      magazaAdresi: { ...girdi.magazaAdresi, adres: "Deneme Sokak\nNo: 1" },
+    });
+    expect((await servis.oku(vt)).magazaAdresi?.adres).toBe("Deneme Sokak\nNo: 1");
+    const kim = yonetici();
+    await magazaBilgileriniDegistir(vt, site, kim, {
+      ...girdi,
+      sosyalHesaplar: [...girdi.sosyalHesaplar].reverse(),
+      magazaAdresi: { ...girdi.magazaAdresi, adres: "Deneme Sokak\nNo: 1" },
+    });
+    const kayitlar = await vt
+      .select()
+      .from(degisiklikKayitlari)
+      .where(eq(degisiklikKayitlari.kim_kimligi, kim.kimlik));
+    expect(kayitlar).toEqual([]);
+    expect((await servis.oku(vt)).sosyalHesaplar).toEqual([
+      { site: "instagram", hesap: "deneme.dukkan" },
+      { site: "youtube", hesap: "denemetv" },
+    ]);
+  });
+
   it("telefon, e-posta, adres ve satıcı değeri yazılmadan girer; ad ve sosyal hesap değeriyle", async () => {
     const kim = yonetici();
     const girdi = dolu();

@@ -3,7 +3,10 @@
 // görünür; her sosyal site için önünde sitenin adresi olan bir alan, aynı sitenin ikinci hesabı kendi alanında;
 // şahıs işletmesinde numaranın adı kimlik numarasıdır; kayıt bütün alanları yazı olarak, sosyal hesapları sitelerin
 // sırasıyla gönderir; sunucunun sosyal hesap hatası gönderilen sıradan doğru alana bağlanır, tekrar hatası özette;
-// değiştirme izni olmayan yönetici alanları kapalı görür, kaydet çubuğu yoktur. Uç sahte fetch ile verilir.
+// değiştirme izni olmayan yönetici alanları kapalı görür, kaydet çubuğu yoktur. Bağımsız kontrolün bulgularıyla:
+// "Adresi temizle" adresin dört alanını boşaltır; sosyal alanın açıklaması ekran okuyucuya "yalnız kullanıcı adı"
+// der, hatalı sosyal alanın kenarı kırmızıdır; sınırı aşan sosyal hesapların hatası özette kendi metniyle. Uç sahte
+// fetch ile verilir.
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { sosyalSiteler } from "../../kayitlar/sosyal-siteler.ts";
@@ -229,5 +232,60 @@ describe("mağaza bilgileri ekranı", () => {
     expect(
       screen.queryByRole("button", { name: metin("yonetim.magazaBilgileri.kaydet") }),
     ).toBeNull();
+  });
+
+  it("Adresi temizle adresin dört alanını boşaltır, ülke kalır", async () => {
+    ciz();
+    fireEvent.click(
+      screen.getByRole("button", { name: metin("yonetim.magazaBilgileri.adresiTemizle") }),
+    );
+    await act(async () => {
+      fireEvent.click(kaydet());
+    });
+    expect((istekler[0]?.govde as { magazaAdresi?: unknown } | undefined)?.magazaAdresi).toEqual({
+      ulke: "TR",
+      il: "",
+      ilce: "",
+      adres: "",
+      postaKodu: "",
+    });
+  });
+
+  it("sosyal alanın açıklaması kullanıcı adını söyler; hatalı alanın kenarı kırmızı; sınır hatası özette", async () => {
+    ciz();
+    const youtube = screen.getByRole("textbox", { name: /^YouTube/ });
+    const aciklama = document.getElementById(
+      (youtube.getAttribute("aria-describedby") ?? "").split(" ").at(-1) ?? "",
+    );
+    expect(aciklama?.textContent).toBe(
+      metin("yonetim.magazaBilgileri.sosyal.alanAciklamasi").replace("{adres}", "youtube.com/@"),
+    );
+    yanit = () =>
+      Response.json(
+        {
+          basarili: false,
+          hata: {
+            kod: "dogrulama",
+            ayrinti: [
+              { alan: "sosyalHesaplar", kod: "too_big" },
+              { alan: "sosyalHesaplar.0.hesap", kod: "kayda-uygun-degil" },
+            ],
+          },
+        },
+        { status: 400 },
+      );
+    fireEvent.change(alan(metin("yonetim.magazaBilgileri.eposta")), {
+      target: { value: "a@b.test" },
+    });
+    await act(async () => {
+      fireEvent.click(kaydet());
+    });
+    expect(
+      screen.getAllByText(metin("yonetim.magazaBilgileri.hata.sosyalSinir")).length,
+    ).toBeGreaterThan(0);
+    const instagram = screen.getByRole("textbox", { name: /^Instagram(?! \(2)/ });
+    expect(instagram.getAttribute("aria-invalid")).toBe("true");
+    expect(instagram.parentElement?.className).toContain("border-tehlike");
+    expect(screen.getByText(metin("yonetim.magazaBilgileri.hata.kaydaUygunDegil"))).toBeDefined();
   });
 });

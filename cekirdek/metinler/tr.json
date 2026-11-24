@@ -2286,16 +2286,17 @@
     "magazaBilgileri": {
       "magaza": {
         "baslik": "Mağaza",
-        "aciklama": "Vitrinin başlığında, sekmede ve e-postalarda görünür."
+        "aciklama": "Sekmede, e-postalarda ve logonuz yoksa vitrinin başlığında görünür."
       },
       "iletisim": {
         "baslik": "İletişim",
-        "aciklama": "Vitrinin alt kısmında, hata sayfasında, sipariş fişinde ve sipariş e-postalarında görünür."
+        "aciklama": "Vitrinin alt kısmında ve sipariş fişinde görünür. Telefon hata sayfasında da, telefon ve adres sipariş e-postalarının alt bilgisinde de yazar."
       },
       "sosyal": {
         "baslik": "Sosyal hesaplar",
         "aciklama": "Yalnız kullanıcı adını yazın; bağlantı kendiliğinden kurulur. Boş bıraktığınız hesap vitrinde görünmez.",
-        "ikinci": "{site} ({sira}. hesap)"
+        "ikinci": "{site} ({sira}. hesap)",
+        "alanAciklamasi": "Yalnız {adres} adresinden sonra gelen kullanıcı adını yazın."
       },
       "satici": {
         "baslik": "Satıcı bilgileri",
@@ -2305,7 +2306,7 @@
       "telefon": "Telefon",
       "telefonAciklama": "Ülke koduyla ya da 0 ile yazabilirsiniz.",
       "eposta": "E-posta",
-      "adresBos": "Adresi boş bırakırsanız vitrinde ve e-postalarda adres görünmez.",
+      "adresBos": "Adresi kaldırmak için temizleyip kaydedin; adres yoksa vitrinde ve e-postalarda görünmez.",
       "ulke": "Ülke",
       "isletmeTuru": "İşletme türü",
       "isletme": {
@@ -2339,8 +2340,13 @@
         "kep": "KEP adresi bu ülkenin KEP alan adıyla bitmeli.",
         "yetki": "Mağaza bilgilerini değiştirme izniniz yok.",
         "oturum": "Oturumunuz kapanmış. Yeniden giriş yapın.",
-        "genel": "Mağaza bilgileri kaydedilemedi. Biraz sonra yeniden deneyin."
-      }
+        "genel": "Mağaza bilgileri kaydedilemedi. Biraz sonra yeniden deneyin.",
+        "adEposta": "Mağaza adında @ işareti olamaz.",
+        "kaydaUygunDegil": "Bu yazı gizli bir anahtara benziyor, kaydedilemez. Farklı bir yazı deneyin.",
+        "metin": "Bu alanda görünmeyen bir karakter var. Yazıyı silip yeniden yazın.",
+        "sosyalSinir": "Sosyal hesap sayısı sınırı aşıyor. Bazı hesapları boşaltıp kaydedin."
+      },
+      "adresiTemizle": "Adresi temizle"
     }
   },
   "vitrin": {

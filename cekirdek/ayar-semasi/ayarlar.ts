@@ -267,14 +267,15 @@ export const ayarSemasi = z.strictObject({
 export const magazaAyarSemasi = z.strictObject({
   // Vitrinde, panelde ve e-postalarda görünen ad (kart 0071). Başlangıç değeri verilmezse kimlikteki
   // görünen addır (site-klasoru.ts); kimlikteki ad altyapının iç adı olarak kalır.
-  // "@" içermez: e-posta biçimindeki değeri değişiklik kaydı reddeder (karar 0045).
+  // "@" içermez: e-posta biçimindeki değeri değişiklik kaydı reddeder (karar 0045). İletisi koddur (kart 0278): panel
+  // alanın altında kendi metnini yazar.
   magazaAdi: ayar(
     z
       .string()
       .trim()
       .min(1)
       .max(100)
-      .refine((ad) => !ad.includes("@"), "Mağaza adında @ olamaz.")
+      .refine((ad) => !ad.includes("@"), "magaza-adi-eposta")
       .optional(),
     magazaSahibinin("ayar.aciklama.magazaAdi"),
   ),
