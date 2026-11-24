@@ -18,7 +18,7 @@ export default async function EkipRolleriSayfasi() {
   const [tablo, satirlar] = await Promise.all([izinTablosuVerisi(), ekipListesiVerisi(kimlik)]);
   return (
     <PanelSayfasi kod="ekip-rolleri">
-      <div className="flex flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-4">
         <EkipSekmeleri
           secili="roller"
           kullaniciSayisi={satirlar.length}

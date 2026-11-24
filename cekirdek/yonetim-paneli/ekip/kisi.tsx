@@ -7,7 +7,7 @@
 // - Mağazanın son sahibinde tam yetkili rolün kutusu kapalıdır ve hesap kapatılamaz; nedeni yazar.
 // - Değiştirme izni olmayan yönetici yalnız görür.
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { bildirimGoster } from "../../../bilesenler/parcalar/bildirim";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
@@ -51,9 +51,13 @@ export function EkipKisisiEkrani({
   const router = useRouter();
   const islem = usePanelIslemi(hataMetni);
   const rolDegisir = izinler.rolAta && !kisi.kendi;
-  const { form, setForm, degisti, kaydedildi, vazgec } = useSunucuFormu<RolFormu>({
-    roller: kisi.roller,
-  });
+  // Sunucunun verisi nesneyle tanınır (useSunucuFormu): her çizimde yeni nesne sonsuz yeniden çizim verir.
+  const rollerAnahtari = kisi.roller.join(",");
+  const sunucudaki = useMemo<RolFormu>(
+    () => ({ roller: rollerAnahtari === "" ? [] : rollerAnahtari.split(",") }),
+    [rollerAnahtari],
+  );
+  const { form, setForm, degisti, kaydedildi, vazgec } = useSunucuFormu<RolFormu>(sunucudaki);
   const pf = usePanelFormu({ degisti: rolDegisir && degisti, kaydet: () => kaydet() });
   const [pencere, setPencere] = useState<"sifirla" | "kapat" | null>(null);
 

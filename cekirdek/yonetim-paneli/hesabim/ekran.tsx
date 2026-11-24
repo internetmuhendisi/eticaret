@@ -12,13 +12,19 @@ import { usePanelMetni } from "../../metinler/panel-metni";
 import { PanelAlani, PanelFormu, usePanelFormu } from "../form/panel-formu";
 import { kodluHataMetni } from "../kodlu-form";
 import { usePanelIslemi } from "../panel-islemi";
+import type { PanelHatasi } from "../panel-istegi";
 
 const hesapHataMetinleri = {
   "giris-hatasi": "yonetim.hesabim.hata.giris-hatasi",
   "istek-siniri": "yonetim.hesabim.hata.istek-siniri",
   "is-kurali": "yonetim.hesabim.hata.is-kurali",
 } as const satisfies Record<string, MetinAnahtari>;
-const hataMetni = kodluHataMetni(hesapHataMetinleri);
+// Bu uçta kod hatanın kendisindedir (ayrıntısız): önce o çözülür, sonra ortak eşleme.
+const ortakHataMetni = kodluHataMetni({});
+const hataMetni = (hata: PanelHatasi): MetinAnahtari =>
+  hata.kod in hesapHataMetinleri
+    ? hesapHataMetinleri[hata.kod as keyof typeof hesapHataMetinleri]
+    : ortakHataMetni(hata);
 
 export function HesabimEkrani({
   eposta,

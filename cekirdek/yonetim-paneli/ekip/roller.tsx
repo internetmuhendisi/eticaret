@@ -1,6 +1,7 @@
 // Rollerin izin tablosu (kart 0274; taslak: "Roller", yalnız okunur). Her yönetici izni okunur adıyla bir satırdır,
 // modülüne göre gruplu; sütunlar hazır rollerdir. "Var" ve "Yok" yalnız işaretle değil yazıyla da okunur. Tablo kendi
-// kabında yana kayar (telefonda), kap klavyeyle kaydırılabilsin diye odak alır.
+// kabında yana kayar (telefonda), kap klavyeyle kaydırılabilsin diye odak alır. Kap konumlu (relative): hücrelerdeki
+// ekran okuyucu yazıları (sr-only, mutlak konumlu) kabın içinde kırpılır, sayfayı yana kaydırmaz.
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import {
   Tablo,
@@ -22,7 +23,7 @@ export function RollerTablosu({ tablo }: { tablo: IzinTablosu }) {
       aria-label={metin("yonetim.ekip.rolTablosu")}
       // biome-ignore lint/a11y/noNoninteractiveTabindex: kayan tablonun kabı klavyeyle kaydırılır (WCAG 2.1.1).
       tabIndex={0}
-      className="overflow-x-auto rounded-orta border border-kenar bg-zemin"
+      className="relative min-w-0 overflow-x-auto rounded-orta border border-kenar bg-zemin"
     >
       <Tablo className="min-w-full">
         <TabloBasligi className="sr-only">{metin("yonetim.ekip.rolTablosu")}</TabloBasligi>

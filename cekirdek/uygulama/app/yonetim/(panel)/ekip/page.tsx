@@ -19,7 +19,7 @@ export default async function EkipSayfasi() {
   const satirlar = await ekipListesiVerisi(kimlik);
   return (
     <PanelSayfasi kod="ekip">
-      <div className="flex flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-4">
         <EkipSekmeleri
           secili="kullanicilar"
           kullaniciSayisi={satirlar.length}
