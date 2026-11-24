@@ -11,6 +11,8 @@ const katalog = calisanSite().katalogBaslangici;
 const blogYazisi = calisanSite().baslangic.blogAcik
   ? calisanSite().blogBaslangici.yazilar.find((yazi) => yazi.durum === "yayinda")
   : undefined;
+// Kart 0273: sitenin başlangıç sayfalarından yayındaki ilki.
+const sabitSayfa = calisanSite().sayfaBaslangici.find((sayfa) => sayfa.durum === "yayinda");
 const yayindakiUrunler = katalog.urunler.filter((urun) => urun.durum === "yayinda");
 const urun = yayindakiUrunler.find((u) => (u.secenekler?.length ?? 0) > 0) ?? yayindakiUrunler[0];
 const ilk = <T>(liste: readonly T[] | undefined, ne: string): T => {
@@ -57,4 +59,7 @@ export const ekranSayfalari: Record<string, { adres: string; durum: number; menu
         blog: { adres: vitrinAdresleri.blog, durum: 200 },
         "blog yazisi": { adres: kayitAdresleri["blog-yazisi"](blogYazisi.adresAdi), durum: 200 },
       }),
+  ...(sabitSayfa === undefined
+    ? {}
+    : { "sabit sayfa": { adres: kayitAdresleri.sayfa(sabitSayfa.adresAdi), durum: 200 } }),
 };
