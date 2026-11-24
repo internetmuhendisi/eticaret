@@ -150,3 +150,9 @@ paths:
 - Sayfanın menülerdeki yeri `kayitlarinMenuYerleri` (menü servisi) ile okunur, yazısı `menuYeriYazisi` ile (`sayfalar/menu-yeri.ts`). "Menüye ekle" menüler ekranını `menuyeSayfaEkleAdresi` ile açar: öğe penceresi o sayfa seçili açılır (`MenulerSaglayici`'nın `hazirHedef`'i); sayfa ekranında ayrı bir menü formu yazılmaz.
 - Menü formunda sabit sayfa ve blog yazısı da `KayitArama` ile aranır: kutu türün ucunu kendisi seçer, içeriğin kayıtları `icerik-ara`'dan (`icerik.gor`), katalogunkiler `kayit-ara`'dan.
 
+
+## Ekip (karar 0178)
+
+- Ekranlar `cekirdek/yonetim-paneli/ekip/` klasöründe, menüde "Ayarlar" altındadır: Ekip (kullanıcılar, kısa liste, liste motoruna girmez), Roller (izin tablosu, yalnız okunur) ve Kullanıcı (`ekip/kisi?kimlik=`); yöneticinin kendi hesabı `hesabim/` (yedek kodları yenileme). Görmek `ekip.gor`, rol vermek `ekip.rol-ata`, hesap kapatmak `ekip.hesap-kapat`, iki aşamalı girişi sıfırlamak `ekip.iki-asama-sifirla`, kendi yedek kodlarını yenilemek `ekip.kendi-hesabi.degistir`.
+- Kullanıcı ekranı bütün rolleri birlikte gönderir (`ekip-rolleri`, servis `rolleriAyarla`). Kendi hesabında ve son mağaza sahibinin tam yetkili rolünde kutular kapalıdır, nedeni yazar; ekranın işaretleri (`kendi`, `sonSahip`) `ekipKisiVerisi`'nden gelir, servis yine denetler.
+- İzin tablosunun satırları kayıttaki yönetici izinleridir, adları `yonetim.izin.<izin>`, grupları `yonetim.izinGrubu.<modül>`; yeni izin ya da modül eklenince ikisine de metin yazılır (eksik anahtar tür kontrolünde hatadır). Kayan tablonun kabı konumludur (`relative`): hücrelerdeki ekran okuyucu yazıları kabın içinde kırpılır.

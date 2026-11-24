@@ -21,6 +21,10 @@ Bölüm: Yönetim paneli.
 
 - E-posta ya da SMS ile kendi kendine kurtarma yapılmaz: şifresi ele geçmiş hesapta ikinci aşamayı atlatan bir yol açardı.
 
+## Not
+
+Kart 0274 ile birlikte yapıldı (karar 0178): panelde mağaza sahibi sıfırlar, son mağaza sahibininkini altyapı sahibi `pnpm sunucu-yonetici-iki-asama-sifirla` ile; kimlik kayıtlı numarayı geri arayarak doğrulanır (kullanıcı kararı). Yedek kodlar "Hesabım"da yenilenir.
+
 ## Bitti sayılır
 
 - Kaldırma sonrası eski kod ve yedek kodlar geçmiyor, yönetici yalnız yeniden kurulumla girebiliyor. Testler bunu gösteriyor.
