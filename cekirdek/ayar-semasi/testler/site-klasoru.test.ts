@@ -23,6 +23,7 @@ import {
   duzenBaslangicDosyasi,
   katalogBaslangicDosyasi,
   menuBaslangicDosyasi,
+  sayfaBaslangicDosyasi,
   siteKlasorunuDogrula,
   temaBaslangicDosyasi,
   vergiBaslangicDosyasi,
@@ -378,6 +379,10 @@ describe("örnek klasörler", () => {
     ["blog-yaz-saati", `${blogBaslangicDosyasi}: yazilar.0.yayinZamani: bu yerel saat`],
     ["blog-kapak-yok", "baslangic/gorseller/yok.jpg: dosya yok"],
     ["duzen-blog-kategorisi-yok", `${duzenBaslangicDosyasi}: ana-sayfa.0.degerler.kategori:`],
+    // Başlangıç sayfaları (kart 0273): adres adı tekildir, durum kayıttadır; başlangıç menüsünün sayfası dosyada olmalı.
+    ["sayfa-adres-tekrar", `${sayfaBaslangicDosyasi}: 1.adresAdi: aynı adres adıyla iki sayfa`],
+    ["sayfa-durum-gecersiz", `${sayfaBaslangicDosyasi}: 0.durum`],
+    ["menu-sayfa-tanimsiz", `${menuBaslangicDosyasi}: 0.ogeler.1.hedef.adresAdi: hedef-yok`],
   );
 
   for (const [ornek, beklenenHata] of bozuklar) {

@@ -1,0 +1,11 @@
+[
+  {
+    "kod": "alt-bilgi",
+    "ad": "Alt bilgi",
+    "tur": "elle",
+    "ogeler": [
+      { "hedef": { "tur": "sayfa", "adresAdi": "hakkimizda" } },
+      { "hedef": { "tur": "sayfa", "adresAdi": "olmayan-sayfa" } }
+    ]
+  }
+]

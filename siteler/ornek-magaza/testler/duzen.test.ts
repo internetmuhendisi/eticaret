@@ -10,6 +10,7 @@ import { hataIzlemeAraciniBagla, type IzlenenHata } from "../../../cekirdek/izle
 import { gorselHazirMi } from "../../../cekirdek/moduller/dosya/servis.ts";
 import { duzenSurumleri } from "../../../cekirdek/moduller/duzen/model.ts";
 import { duzenServisi } from "../../../cekirdek/moduller/duzen/servis.ts";
+import { sayfaBaslangiciniKur } from "../../../cekirdek/moduller/icerik/sayfa-kurulumu.ts";
 import { kategoriler } from "../../../cekirdek/moduller/kategori/model.ts";
 import { markalar } from "../../../cekirdek/moduller/marka/model.ts";
 import { menuBaslangiciniKur } from "../../../cekirdek/moduller/menu/baslangic.ts";
@@ -40,6 +41,8 @@ const kimlikler = {
 beforeAll(async () => {
   ({ vt, sil } = await denemeSitesiAc("ornek-duzen"));
   expect(await katalogBaslangiciniKur(vt, site, () => klasor)).toBe(true);
+  // Başlangıç sayfaları menülerden önce kurulur (kart 0273): alt bilginin "Kurumsal" sütunu onlara bağlanır.
+  expect(await sayfaBaslangiciniKur(vt, site)).toBe(true);
   expect(await menuBaslangiciniKur(vt, site)).toBe(true);
   expect(await servis.baslangiciKur(vt, () => klasor)).toBe(true);
   for (const [tur, tablo] of [

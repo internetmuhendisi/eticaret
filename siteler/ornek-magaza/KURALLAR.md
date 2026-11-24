@@ -108,8 +108,20 @@ Menüler `baslangic/menuler.json` dosyasındadır. Arka plan süreci açılırke
 | Bağlantısız başlık ve marka | Ana menü | "Markalar" başlığının altında Örnek Ses |
 | Açılmayan ürün görünmez | Ana menü | "Yılbaşı" Yılbaşı Kupa Seti'ne bağlı: 1 Aralık 2026 00:00'a (İstanbul) kadar görünmez, panelde işaretlidir |
 | Kategori ağacından kendiliğinden | Kategori menüsü | Kategoriler kendi sırasıyla, ad değişince menü de değişir |
-| Alt bilgi sütunları | Alt bilgi | "Alışveriş" (beş kategori ve Hediye Paketleme), "Sözleşmeler" (üyelik sözleşmesi ve KVKK aydınlatma metni, sitenin kendi adresleri) |
+| Alt bilgi sütunları | Alt bilgi | "Alışveriş" (beş kategori ve Hediye Paketleme), "Kurumsal" (Hakkımızda ve İletişim sayfaları, kart 0273), "Sözleşmeler" (üyelik sözleşmesi ve KVKK aydınlatma metni, sitenin kendi adresleri) |
 | Gizli ürün görünür | Alt bilgi | Hediye Paketleme listede yok ama sayfası açılır: menüdeki bağlantısı görünür |
+
+## Sabit sayfalar (kart 0273)
+
+Başlangıç sayfaları `baslangic/sayfalar.json` dosyasındadır (kullanıcı kararı: site örnek sayfalarla açılır). Arka plan süreci açılırken, katalogdan sonra ve menülerden önce, sitede hiç sayfa satırı yoksa bir kez yüklenir. Durumları `testler/sayfalar.test.ts` dener; alt bilgideki bağlantıları `testler/menuler.test.ts`.
+
+| Sayfa | Adres | Durum | Nasıl |
+|---|---|---|---|
+| Hakkımızda | `/sayfa/hakkimizda` | Yayında | Kendi arama motoru açıklaması var, içerikte ara başlık |
+| İletişim | `/sayfa/iletisim` | Yayında | Açıklaması yok: arama motoru açıklaması içeriğin başından üretilir. İletişim bilgileri sayfaya yazılmadı, alt kısımdaki iletişim bölümünü gösterir (bilgiler mağaza ayarından değişir) |
+| Sıkça sorulan sorular | `/sayfa/sss` | Taslak | Vitrinde açılmaz, menüde yok |
+
+Bilgisayardaki ortak veritabanında menüler daha önce kurulduğu için "Kurumsal" sütunu yalnız yeni kurulan sitede kendiliğinden gelir; sayfalar açılışta kurulur.
 
 ## Tema ve başlangıç düzeni (kart 0114)
 

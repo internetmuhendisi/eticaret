@@ -1049,7 +1049,7 @@ Panelin menüler ekranının menü listesi (kart 0143): silinmemiş menüler, ko
 
 ### GET /kapi/yonetici/menu
 
-Bir menü öğeleriyle (kart 0143, karar 0082): her öğenin metni, görünen metni, hedefi, bağlı kaydın adı ve adres adı (`kayit`), durumu (`gecerli`, `hedef-silindi`, `hedef-gorunmuyor`, `bos-baslik`) ve altları. Kategori menüsünde öğe yerine kategori ağacı gelir (`kategoriAgaci`).
+Bir menü öğeleriyle (kart 0143, karar 0082): her öğenin metni, görünen metni, hedefi, bağlı kaydın adı ve adres adı (`kayit`), durumu (`gecerli`, `hedef-silindi`, `hedef-gorunmuyor`, `bos-baslik`) ve altları. Kategori menüsünde öğe yerine kategori ağacı gelir (`kategoriAgaci`). Taslak sabit sayfanın ve (blog kapalıyken ya da yazı vitrinde değilken) blog yazısının öğesi `hedef-gorunmuyor`'dur (kart 0273).
 
 - İzin: `menu.gor`. Sınır: `genel`.
 - Girdi: adres parametresi `kimlik` (`menuOkumaSemasi`).
@@ -1089,7 +1089,7 @@ Menüyü ve öğelerini siler (kart 0143). Menüye başvuran vitrin bölümü de
 
 ### POST /kapi/yonetici/menu-ogesi-ekle
 
-Menüye öğe ekler (kart 0143). Verilmeyen üst en üst düzeydir, verilmeyen sıra kardeşlerin sonudur.
+Menüye öğe ekler (kart 0143). Verilmeyen üst en üst düzeydir, verilmeyen sıra kardeşlerin sonudur. Hedef türleri menü kaydındadır: kategori, marka, ürün, sabit sayfa (`sayfa`) ve blog yazısı (`blog-yazisi`, kart 0273) kimlikle, adres ve başlık.
 
 - İzin: `menu.degistir`. Sınır: `genel`.
 - Girdi: `{ "menu", "oge": { "metin"?, "hedef", "ust"?, "sira"? } }` (`ogeEklemeSemasi`; öğe ortak `ogeGirdisi` ile serviste doğrulanır).
@@ -1505,4 +1505,44 @@ Blogun vitrinde açık olması (kart 0272, karar 0176; mağaza ayarı `blogAcik`
 - Girdi: `{ "blogAcik": true | false }` (`blogAyariSemasi`).
 - Servis: `cekirdek/moduller/magaza-ayarlari/servis.ts` (`degistir`, kendi işleviyle).
 - Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/sayfa-ekle
+
+Yeni sabit sayfa (kart 0273). Verilmeyen adres adı başlıktan üretilir, verilmeyen durum taslaktır. Yayındaki sayfa vitrinde `/sayfa/<adres adı>` adresinde açılır.
+
+- İzin: `icerik.degistir`. Sınır: `genel`.
+- Girdi: `{ "sayfa": { "baslik", "adresAdi"?, "icerik"?, "aciklama"?, "durum"? } }` (`sabitSayfaEklemeSemasi`; sayfa `sabitSayfaGirdisi` ile serviste doğrulanır).
+- Servis: `cekirdek/moduller/icerik/sayfa.ts` (`sayfaEkle`).
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
+- Hatalar: `dogrulama` (`adres-adi-bicimi`, `kayda-uygun-degil`, ...), `cakisma` (`adres-adi-tekrar`), `is-kurali` (`sayfa-siniri`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/sayfa-degistir
+
+Sayfanın değişikliği (kart 0273): yalnız verilen alan değişir, `null` açıklamayı boşaltır. `gorulen` ekranın gördüğü değişme anıdır: sayfa arada değiştiyse `cakisma` (`sayfa-degisti`) ve hiçbir şey yazılmaz. Adres adı değişince eski adres yenisine yönlenir.
+
+- İzin: `icerik.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "gorulen": "<ISO an>", "sayfa": { ... } }` (`sabitSayfaDegisikligiSemasi`; sayfa `sabitSayfaDegisikligi` ile serviste doğrulanır).
+- Servis: `cekirdek/moduller/icerik/sayfa.ts` (`sayfaDegistir`).
+- Başarılı (200): `{ "basarili": true, "veri": { "gorulen": "<yeni değişme anı>" } }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `cakisma` (`sayfa-degisti`, `adres-adi-tekrar`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/sayfa-sil
+
+Sayfayı siler (silinmiş olarak işaretler, kart 0273). Eski adresi vitrinde bulunamadı verir; menüdeki öğesi yerinde kalır, vitrinde görünmez.
+
+- İzin: `icerik.sil`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }` (`sabitSayfaKimlikSemasi`).
+- Servis: `cekirdek/moduller/icerik/sayfa.ts` (`sayfaSil`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
+
+### GET /kapi/yonetici/icerik-ara
+
+Panelde menü öğesinin hedefi olarak sabit sayfayı ya da blog yazısını yazdıkça arayarak seçmek (kart 0273). Kuralı `kayit-ara`'nınkiyle aynıdır (Türkçe harfsiz, büyük küçük harf ayrımsız, başlığın herhangi bir yerinde; silinmiş yok, taslak var); başlığa göre sıralı, adres adlarıyla, sayfa başına 20. İzni içeriğindir: ürünleri görmeyen bir yönetici de sayfayı menüye bağlayabilir.
+
+- İzin: `icerik.gor`. Sınır: `genel`.
+- Girdi: adres parametreleri `tur` (`sayfa`, `blog-yazisi`), `ara`? (en çok 100 karakter) ve `sayfa`? (`icerikAramaSemasi`, `cekirdek/kapi/yonetici/sayfa.ts`).
+- Servis: `cekirdek/moduller/icerik/arama.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "kayitlar": [{ "kimlik", "ad", "adresAdi" }], "dahaVar": false } }`.
 - Hatalar: `dogrulama`, `oturum-yok`, `yetki`.

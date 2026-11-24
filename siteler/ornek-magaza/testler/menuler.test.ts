@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { siteKlasorunuOku } from "../../../cekirdek/ayar-semasi/site-klasoru.ts";
+import { sayfaBaslangiciniKur } from "../../../cekirdek/moduller/icerik/sayfa-kurulumu.ts";
 import { kategoriler } from "../../../cekirdek/moduller/kategori/model.ts";
 import { kategoriDegistir } from "../../../cekirdek/moduller/kategori/servis.ts";
 import { menuBaslangiciniKur } from "../../../cekirdek/moduller/menu/baslangic.ts";
@@ -33,6 +34,8 @@ beforeAll(async () => {
   ({ vt, sil } = await denemeSitesiAc("ornek-menuler"));
   // Galeri görselleri geçici bir dosya klasörüne kaydedilir (kart 0087).
   expect(await katalogBaslangiciniKur(vt, site, () => klasor)).toBe(true);
+  // Başlangıç sayfaları menülerden önce kurulur (kart 0273): alt bilginin "Kurumsal" sütunu onlara bağlanır.
+  expect(await sayfaBaslangiciniKur(vt, site)).toBe(true);
   expect(await menuBaslangiciniKur(vt, site)).toBe(true);
 }, 120_000);
 afterAll(async () => {
@@ -95,7 +98,7 @@ describe("Örnek Mağaza'nın menüleri", () => {
     await kategoriDegistir(vt, { tur: "sistem", ad: "deneme" }, giyim.kimlik, { ad: "Giyim" });
   });
 
-  it("alt bilgi: iki sütun; gizli ürün ve sitenin kendi adresleri görünür", async () => {
+  it("alt bilgi: üç sütun; gizli ürün, sabit sayfalar ve sitenin kendi adresleri görünür", async () => {
     const altBilgi = await vitrinMenusu(vt, "alt-bilgi");
     expect(metinler(altBilgi)).toEqual([
       [
@@ -109,9 +112,15 @@ describe("Örnek Mağaza'nın menüleri", () => {
           "Hediye Paketleme",
         ],
       ],
+      ["Kurumsal", ["Hakkımızda", "İletişim"]],
       ["Sözleşmeler", ["Üyelik sözleşmesi", "KVKK aydınlatma metni"]],
     ]);
+    // Kart 0273: başlangıç sayfalarına bağlı öğeler, sayfanın başlığıyla ve adres adıyla.
     expect(altBilgi?.[1]?.altlar.map((dal) => dal.hedef)).toEqual([
+      { tur: "sayfa", adresAdi: "hakkimizda" },
+      { tur: "sayfa", adresAdi: "iletisim" },
+    ]);
+    expect(altBilgi?.[2]?.altlar.map((dal) => dal.hedef)).toEqual([
       { tur: "adres", adres: "/yasal/uyelik-sozlesmesi", yeniSekme: false },
       { tur: "adres", adres: "/yasal/kvkk-aydinlatma", yeniSekme: false },
     ]);
