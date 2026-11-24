@@ -41,6 +41,41 @@ export const baslangicRolleri = {
       "siparis.yonet",
       // Sitedeki görselleri görür: kategori görselini ve marka logosunu seçer (kart 0261).
       "dosya.gor",
+      // Kendi yedek kodlarını yeniler (kart 0274).
+      "ekip.kendi-hesabi.degistir",
+    ],
+  },
+  // Kart 0274 (karar 0157, 0178): siparişleri görür ve yönetir, havaleyi onaylar, müşterileri görür; iade yapamaz,
+  // kataloğa ve içeriğe dokunmaz.
+  "siparis-gorevlisi": {
+    tamYetki: false,
+    izinler: [
+      "ekip.kendi-hesabi.gor",
+      "ekip.kendi-hesabi.degistir",
+      "siparis.gor",
+      "siparis.yonet",
+      "siparis.havale-onayla",
+      "musteri.gor",
+      "odeme-yontemi.gor",
+      "dosya.gor",
+    ],
+  },
+  // Kart 0274 (karar 0157, 0178): blog, sabit sayfalar, vitrin bölümleri ve menüler. Ürünleri yalnız görür: menüye ve
+  // bölümlere kategori, marka ya da ürün arayarak bağlar (kayit-ara, urun.gor); değiştiremez.
+  "icerik-editoru": {
+    tamYetki: false,
+    izinler: [
+      "ekip.kendi-hesabi.gor",
+      "ekip.kendi-hesabi.degistir",
+      "icerik.gor",
+      "icerik.degistir",
+      "icerik.sil",
+      "duzen.gor",
+      "duzen.degistir",
+      "menu.gor",
+      "menu.degistir",
+      "dosya.gor",
+      "urun.gor",
     ],
   },
 } as const satisfies Record<

@@ -400,6 +400,13 @@
       "when": 1795531286838,
       "tag": "0056_sabit-sayfalar",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1795536755712,
+      "tag": "0057_ekip-rolleri",
+      "breakpoints": true
     }
   ]
 }
