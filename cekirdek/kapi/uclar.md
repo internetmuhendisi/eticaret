@@ -887,6 +887,16 @@ Panelin kargo ekranının verisi (kart 0212): kargo ücreti, ücretsiz kargo sı
 - Servis: `cekirdek/moduller/kargo/servis.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "kargoUcreti", "ucretsizKargoSiniri"?, "ucretsizKargoTutari", "kargoyaVermeSuresi" } }`. Sınır yoksa `ucretsizKargoSiniri` yoktur.
 
+### POST /kapi/yonetici/magaza-bilgileri
+
+Mağaza bilgileri ekranının kaydı (kart 0278, karar 0175): mağaza adı, iletişim e-postası ve telefonu, mağaza adresi, sosyal hesaplar ve satıcı bilgileri birlikte. Alanlar yazı olarak gelir, kuralları ayar şemasındadır (`magazaAyarSemasi`); boş yazı ayarı boşaltır, adresin ya da satıcı bilgilerinin bütün alanları boşsa ayar silinir. Telefon ülke içi yazılışla da girilir, uluslararası biçime çevrilir. Telefon, e-posta, adres ve satıcı bilgileri değişiklik kaydına değeri yazılmadan girer.
+
+- İzin: `magaza-ayarlari.degistir`. Sınır: `genel`.
+- Girdi: `{ "magazaAdi", "iletisimEpostasi", "iletisimTelefonu", "magazaAdresi": { "ulke", "il", "ilce", "adres", "postaKodu" }, "sosyalHesaplar": [{ "site", "hesap" }], "saticiBilgileri": { "ulke", "isletmeTuru": "sirket" | "sahis", "unvan", "vergiDairesi", "vergiNumarasi", "mersisNumarasi", "ticaretSicilNumarasi", "kepAdresi" } }` (`magazaBilgileriSemasi`, `cekirdek/moduller/magaza-ayarlari/semalar.ts`).
+- Servis: `cekirdek/moduller/magaza-ayarlari/bilgiler.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama` (alanın yolu ve kodu: `magazaAdi` `too_small`; `iletisimEpostasi` ve `saticiBilgileri.kepAdresi` `invalid_format`; `iletisimTelefonu` `telefon-bicimi`; `magazaAdresi.il`, `.ilce`, `.postaKodu` adres ve bölge kodları; `sosyalHesaplar.<sıra>.hesap` `invalid_format`, `sosyalHesaplar` `sosyal-hesap-tekrar`; `saticiBilgileri.unvan` `too_small`, `.vergiNumarasi` `vergi-numarasi-bicimi` ya da `vergi-numarasi-kontrol`, `.mersisNumarasi` `mersis-numarasi-bicimi`, `.kepAdresi` `kep-adresi-bicimi`), `oturum-yok`, `yetki`.
+
 ### POST /kapi/yonetici/kargo-ayarlari
 
 Kargo ayarlarını birlikte değiştirir (kart 0212, karar 0135). Tutarlar sitenin para biçimiyle yazılı gelir, sunucuda kuruşa çevrilir. Değişen her ayar değişiklik kaydına girer (`magaza-ayari.degisti`); aynı kalan girmez.

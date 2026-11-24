@@ -32,10 +32,12 @@ import { type EpostaIletisi, epostaGondericisi } from "../../eposta/gonderici.ts
 import { epostaKaydiniGonder } from "../../eposta/gonderim.ts";
 import { epostaKayitlari } from "../../eposta/model.ts";
 import { siteninFiyatServisi } from "../../fiyat/servis.ts";
+import { magazaBilgileriniDegistir } from "../../magaza-ayarlari/bilgiler.ts";
 import { type OdemeYontemiSecimi, odemeBilgileriSemasi } from "../../odeme/semalar.ts";
 import { type OdemeGirdisi, odemeServisi } from "../../odeme/servis.ts";
 import { hesapAc } from "../../oturum/servis.ts";
 import { stokServisi } from "../../stok/servis.ts";
+import { urunBirimleri } from "../../urun/model.ts";
 import { urunServisi } from "../../urun/servis.ts";
 import { siteninVergiServisi } from "../../vergi/servis.ts";
 import { siparisEpostaIcerikleri } from "../eposta-icerigi.ts";
@@ -617,6 +619,51 @@ describe("içerik", () => {
     expect(metin).toContain("+90 312 000 00 00");
     // Teslimat adresi.
     expect(metin).toContain("Atatürk Bulvarı No: 10");
+  });
+
+  it("kuyrukta bekleyen e-posta: siparişin verisi olay anındaki gibi, mağaza adı ve alt bilgi gönderim anındaki değerle (kart 0278, karar 0153)", async () => {
+    const h = await hazirla();
+    const birim = await h.urunAc("Eski Ad Kupa");
+    const numara = await ver(h.vt, [{ birim, adet: 1 }], kapida);
+    // Sipariş kuyrukta beklerken ürünün adı ve mağaza bilgileri değişir.
+    const urun =
+      (
+        await h.vt
+          .select({ urun: urunBirimleri.urun_kimligi })
+          .from(urunBirimleri)
+          .where(eq(urunBirimleri.kimlik, birim))
+      )[0]?.urun ?? "";
+    await urunSrv.urunDegistir(h.vt, yonetici(), urun, { ad: "Yeni Ad Kupa" });
+    await magazaBilgileriniDegistir(h.vt, site, yonetici(), {
+      magazaAdi: "Yeni Dükkân",
+      iletisimEpostasi: "",
+      iletisimTelefonu: "0312 999 99 99",
+      magazaAdresi: {
+        ulke: "TR",
+        il: "TR-06",
+        ilce: "TR-06-007",
+        adres: "Yeni Sokak No: 9",
+        postaKodu: "06000",
+      },
+      sosyalHesaplar: [],
+      saticiBilgileri: {
+        ulke: "TR",
+        isletmeTuru: "sirket",
+        unvan: "Yeni Ticaret A.Ş.",
+        vergiDairesi: "",
+        vergiNumarasi: "",
+        mersisNumarasi: "",
+        ticaretSicilNumarasi: "",
+        kepAdresi: "",
+      },
+    });
+    const { metin, html } = await sonEposta(h.vt, numara, "siparis-alindi");
+    expect(metin).toContain("Eski Ad Kupa");
+    expect(metin).not.toContain("Yeni Ad Kupa");
+    expect(metin).toContain("Yeni Ticaret A.Ş. · Yeni Sokak No: 9");
+    expect(metin).toContain("+90 312 999 99 99");
+    expect(metin).not.toContain("Deneme Ticaret");
+    expect(html).toContain("Yeni Dükkân");
   });
 
   it("üyenin bağlantısı hesaptaki ayrıntı; kargo e-postası firma, takip numarası ve takip adresiyle", async () => {
