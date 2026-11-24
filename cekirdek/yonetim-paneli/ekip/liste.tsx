@@ -19,7 +19,7 @@ export function EkipListesi({ satirlar }: { satirlar: EkipSatiri[] }) {
       {satirlar.map((satir) => (
         <li
           key={satir.kimlik}
-          className="flex min-w-0 flex-col gap-1 border-b border-kenar p-3 last:border-b-0 tablet:px-4"
+          className="flex min-w-0 flex-col border-b border-kenar px-3 py-1 last:border-b-0 tablet:px-4"
         >
           <span className="flex flex-wrap items-center gap-2">
             <Baglanti href={ekipKisiAdresi(satir.kimlik)} className="font-kalin wrap-anywhere">
@@ -32,7 +32,7 @@ export function EkipListesi({ satirlar }: { satirlar: EkipSatiri[] }) {
               </Rozet>
             ))}
           </span>
-          <span className="text-kucuk text-soluk-yazi">
+          <span className="-mt-2 pb-1 text-kucuk text-soluk-yazi">
             {satir.sonGiris === null
               ? metin("yonetim.ekip.hicGirmedi")
               : doldur(metin("yonetim.ekip.sonGiris"), { zaman: satir.sonGiris })}

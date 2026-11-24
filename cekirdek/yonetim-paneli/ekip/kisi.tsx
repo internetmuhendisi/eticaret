@@ -134,7 +134,7 @@ export function EkipKisisiEkrani({
                 key={rol.kod}
                 etiket={metin(`yonetim.rol.${rol.kod}` as MetinAnahtari)}
                 ek={
-                  <span className="-mt-2 pl-8 text-kucuk text-soluk-yazi">
+                  <span className="-mt-3 pl-8 text-kucuk text-soluk-yazi">
                     {metin(`yonetim.rolAciklamasi.${rol.kod}` as MetinAnahtari)}
                   </span>
                 }
@@ -204,7 +204,11 @@ export function EkipKisisiEkrani({
             <p className="m-0 text-kucuk text-soluk-yazi">
               {metin("yonetim.ekip.kapatAciklamasi")}
             </p>
-            <Dugme tur="cerceveli" className="self-start" onClick={() => setPencere("kapat")}>
+            <Dugme
+              tur="cerceveli"
+              className="self-start text-tehlike-yazi"
+              onClick={() => setPencere("kapat")}
+            >
               <Ikon ad="sil" />
               {metin("yonetim.ekip.kapat")}
             </Dugme>

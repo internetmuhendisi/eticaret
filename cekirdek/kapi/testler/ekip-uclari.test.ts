@@ -11,6 +11,7 @@ import { join, resolve } from "node:path";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
+import { modulIzinleri } from "../../kayitlar/izinler.ts";
 import {
   roller,
   yoneticiIkiAsama,
@@ -28,6 +29,11 @@ import {
 import { hesapAc } from "../../moduller/oturum/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
+import {
+  ekipKisiVerisi,
+  ekipListesiVerisi,
+  izinTablosuVerisi,
+} from "../../yonetim-paneli/ekip/veri.ts";
 import {
   ekipHesapKapatUcu,
   ekipIkiAsamaSifirlaUcu,
@@ -251,5 +257,58 @@ describe("yetkisiz kişiler", () => {
     ).toBe(403);
     const [uye] = await ekibiOku(vt, { kimlik: hedef.kimlik });
     expect(uye).toMatchObject({ roller: ["gorevli"], ikiAsamaKurulu: true });
+  });
+});
+
+describe("ekranın verisi", () => {
+  it("izin tablosu her yönetici iznini bir kez taşır; tam yetkili rolde hepsi var, ötekilerde yalnız kendi izinleri", async () => {
+    const tablo = await izinTablosuVerisi();
+    const yoneticiIzinleri = Object.values(modulIzinleri).flatMap((izinler) =>
+      Object.entries(izinler)
+        .filter(([, tanim]) => tanim.giris === "yonetici")
+        .map(([izin]) => izin),
+    );
+    const satirlar = tablo.gruplar.flatMap((grup) => grup.izinler);
+    expect(satirlar.map((satir) => satir.izin).toSorted()).toEqual(yoneticiIzinleri.toSorted());
+    const sira = (kod: string) => tablo.roller.findIndex((rol) => rol.kod === kod);
+    const var_ = (izin: string, kod: string) =>
+      satirlar.find((satir) => satir.izin === izin)?.roller[sira(kod)];
+    expect(satirlar.every((satir) => satir.roller[sira("magaza-sahibi")] === true)).toBe(true);
+    expect(var_("siparis.iade", "siparis-gorevlisi")).toBe(false);
+    expect(var_("siparis.havale-onayla", "siparis-gorevlisi")).toBe(true);
+    expect(var_("icerik.degistir", "icerik-editoru")).toBe(true);
+    expect(var_("icerik.degistir", "gorevli")).toBe(false);
+    expect(tablo.gruplar[0]?.modul).toBe("siparis");
+  });
+
+  it("kullanıcının ekranı kendi hesabını ve son mağaza sahibini işaretler; kapatılan hesap yok", async () => {
+    const sahip = await hesap("magaza-sahibi");
+    const ece = await hesap("gorevli");
+    // Öteki sahiplerin rolü alınır: sahip tek kalır.
+    for (const uye of await ekibiOku(vt)) {
+      if (uye.kimlik !== sahip.kimlik && uye.roller.includes("magaza-sahibi")) {
+        await rolleriAyarla(sahip.oturum, uye.kimlik, ["gorevli"]);
+      }
+    }
+    expect((await ekipKisiVerisi(sahip.kimlik, sahip.kimlik))?.kisi).toMatchObject({
+      kendi: true,
+      sonSahip: true,
+    });
+    expect((await ekipKisiVerisi(sahip.kimlik, ece.kimlik))?.kisi).toMatchObject({
+      kendi: false,
+      sonSahip: true,
+    });
+    expect((await ekipKisiVerisi(ece.kimlik, sahip.kimlik))?.kisi).toMatchObject({
+      kendi: false,
+      sonSahip: false,
+    });
+    // İkinci sahip gelince ikisi de son sahip değildir.
+    await rolleriAyarla(sahip.oturum, ece.kimlik, ["magaza-sahibi"]);
+    expect((await ekipKisiVerisi(sahip.kimlik, sahip.kimlik))?.kisi.sonSahip).toBe(false);
+    await ekipHesapKapatUcu(istek("ekip-hesap-kapat", sahip.oturum, { kimlik: ece.kimlik }));
+    expect(await ekipKisiVerisi(ece.kimlik, sahip.kimlik)).toBeUndefined();
+    expect((await ekipListesiVerisi(sahip.kimlik)).map((satir) => satir.kimlik)).not.toContain(
+      ece.kimlik,
+    );
   });
 });
