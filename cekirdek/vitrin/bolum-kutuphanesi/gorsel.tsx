@@ -26,6 +26,52 @@ export type GorselGenisligi = keyof typeof gorselGenislikleri;
 const srcSet = (gorsel: BaglamGorseli) =>
   gorsel.kaynaklar.map((kaynak) => `${kaynak.adres} ${kaynak.genislik}w`).join(", ");
 
+// Boyutları bilinen tek bir görsel (kart 0272: blog sayfaları vitrin bağlamını okumaz, görselin adreslerini kendisi
+// kurar). Bölüm görseli de bununla çizilir.
+export function VitrinGorseli({
+  gorsel,
+  telefon,
+  alt,
+  genislik,
+  oncelikli = false,
+  className,
+}: {
+  gorsel: BaglamGorseli;
+  telefon?: BaglamGorseli | undefined;
+  alt: string;
+  genislik: GorselGenisligi;
+  oncelikli?: boolean;
+  className?: string | undefined;
+}) {
+  const img = (
+    // biome-ignore lint/performance/noImgElement: boyutlar çekirdekte üretilir (karar 0073), srcset ile seçilir.
+    <img
+      src={gorsel.kaynaklar[0]?.adres}
+      srcSet={srcSet(gorsel)}
+      sizes={gorselGenislikleri[genislik]}
+      alt={alt}
+      width={gorsel.genislik}
+      height={gorsel.yukseklik}
+      loading={oncelikli ? "eager" : "lazy"}
+      fetchPriority={oncelikli ? "high" : "auto"}
+      decoding="async"
+      className={className}
+    />
+  );
+  if (telefon === undefined) return img;
+  return (
+    <picture className="contents">
+      <source
+        media={`(min-width: ${tablet})`}
+        srcSet={srcSet(gorsel)}
+        sizes={gorselGenislikleri[genislik]}
+      />
+      <source srcSet={srcSet(telefon)} sizes={gorselGenislikleri[genislik]} />
+      {img}
+    </picture>
+  );
+}
+
 export function BolumGorseli({
   baglam,
   gorsel,
@@ -49,32 +95,14 @@ export function BolumGorseli({
   const telefon = typeof telefonGorseli === "string" ? baglam.gorseller[telefonGorseli] : undefined;
   const varsayilan = asil ?? telefon;
   if (varsayilan === undefined) return null;
-  const alt = typeof alternatifMetin === "string" ? alternatifMetin : "";
-  const img = (
-    // biome-ignore lint/performance/noImgElement: boyutlar çekirdekte üretilir (karar 0073), srcset ile seçilir.
-    <img
-      src={varsayilan.kaynaklar[0]?.adres}
-      srcSet={srcSet(varsayilan)}
-      sizes={gorselGenislikleri[genislik]}
-      alt={alt}
-      width={varsayilan.genislik}
-      height={varsayilan.yukseklik}
-      loading={oncelikli ? "eager" : "lazy"}
-      fetchPriority={oncelikli ? "high" : "auto"}
-      decoding="async"
+  return (
+    <VitrinGorseli
+      gorsel={varsayilan}
+      telefon={asil === undefined ? undefined : telefon}
+      alt={typeof alternatifMetin === "string" ? alternatifMetin : ""}
+      genislik={genislik}
+      oncelikli={oncelikli}
       className={className}
     />
-  );
-  if (asil === undefined || telefon === undefined) return img;
-  return (
-    <picture className="contents">
-      <source
-        media={`(min-width: ${tablet})`}
-        srcSet={srcSet(asil)}
-        sizes={gorselGenislikleri[genislik]}
-      />
-      <source srcSet={srcSet(telefon)} sizes={gorselGenislikleri[genislik]} />
-      {img}
-    </picture>
   );
 }

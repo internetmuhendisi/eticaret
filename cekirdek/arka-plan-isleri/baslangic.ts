@@ -1,14 +1,19 @@
-// Sitenin açılıştaki başlangıç kurulumu (kartlar 0084, 0107, 0114, 0129): katalog, menüler, düzen, bu sırayla.
+// Sitenin açılıştaki başlangıç kurulumu (kartlar 0084, 0107, 0114, 0129, 0272): katalog, menüler, düzen, blog, bu sırayla.
 // Arka plan süreci açılırken çağırır; tarayıcı testleri de testlerden önce aynı işlevle kurar (kart 0129),
 // kurulumun ikinci bir yolu yoktur. Her adım kuruluysa hiçbir şey yazmaz.
 import { calisanSite } from "../ayar-semasi/calisan-site.ts";
 import { gunluk } from "../izleme/gunluk.ts";
 import { duzenServisi } from "../moduller/duzen/servis.ts";
+import { blogBaslangiciniKur } from "../moduller/icerik/baslangic.ts";
 import { menuBaslangiciniKur } from "../moduller/menu/baslangic.ts";
 import { katalogBaslangiciniKur } from "../moduller/urun/baslangic.ts";
 import type { Veritabani } from "../veritabani/baglanti.ts";
 
-export type BaslangicAdimi = "katalog-baslangici" | "menu-baslangici" | "duzen-baslangici";
+export type BaslangicAdimi =
+  | "katalog-baslangici"
+  | "menu-baslangici"
+  | "duzen-baslangici"
+  | "blog-baslangici";
 
 // hata: adım yazılamayınca çağrılır. Arka plan süreci hatayı kaydedip sürer, testlerin hazırlığı durur.
 // Katalog yazılamadıysa menüler ve düzen denenmez (kart 0107): bağlanacakları kaydı bulamadan bir kez
@@ -46,5 +51,15 @@ export const baslangiclariKur = async (
     }
   } catch (yakalanan) {
     hata(yakalanan, "duzen-baslangici");
+  }
+  // Başlangıç blogu (kart 0272) katalogdan bağımsızdır; düzenden sonra kurulur.
+  try {
+    if (await blogBaslangiciniKur(vt, calisanSite())) {
+      gunluk.bilgi("başlangıç blogu yazıldı");
+    } else {
+      gunluk.bilgi("başlangıç blogu yazılmadı: dosya boş ya da blog kurulu");
+    }
+  } catch (yakalanan) {
+    hata(yakalanan, "blog-baslangici");
   }
 };

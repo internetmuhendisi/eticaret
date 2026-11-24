@@ -1,0 +1,44 @@
+{
+  "kategoriler": [{ "ad": "Rehber", "adresAdi": "rehber" }, { "ad": "Bakım", "adresAdi": "bakim" }],
+  "yazilar": [
+    {
+      "baslik": "Yılbaşı hediye rehberi",
+      "adresAdi": "yilbasi-hediye-rehberi",
+      "ozet": "Her bütçeye, paketlemesi bizden hediye önerileri.",
+      "icerik": "<p>Yılbaşı yaklaşırken doğru hediyeyi bulmak zorlaşır. Birkaç basit soru işi kolaylaştırır.</p><h2>Kime alıyorsunuz?</h2><p>Kahveyi seven birine kupa seti, yürüyüşe çıkan birine termos, evini yenileyen birine keten masa örtüsü uygun düşer.</p><h2>Paketleme</h2><p>Siparişinize hediye paketi ekleyebilirsiniz; faturayı paketin içine koymayız.</p>",
+      "kapak": {
+        "gorsel": "yilbasi-kupa-seti-kutuda.jpg",
+        "metin": "Kutusunda iki porselen kupa, yanında çam dalı"
+      },
+      "kategori": "rehber",
+      "durum": "yayinda",
+      "yayinZamani": "2026-11-20T09:00"
+    },
+    {
+      "baslik": "Kışa hazırlık: sweatshirt mi, atkı mı?",
+      "adresAdi": "kisa-hazirlik",
+      "ozet": "Serin günlerde katmanlı giyinmenin kısa rehberi: kumaş, gramaj ve bakım.",
+      "icerik": "<p>Sabahları serin, öğlenleri ılık geçen günlerde tek kalın parça yerine iki ince katman daha rahattır.</p><h2>Kumaş</h2><p>Pamuk nefes alır, polyester karışımı daha sıcak tutar. Kapüşonlu sweatshirt ikisinin karışımıdır.</p><h2>Bakım</h2><p>Kurutma makinesi yerine askıda kurutun; boy kısalmaz.</p>",
+      "kapak": {
+        "gorsel": "sweatshirt-kapusonu-yakin.jpg",
+        "metin": "Gri kapüşonlu sweatshirt, koltuğun üstünde"
+      },
+      "kategori": "rehber",
+      "durum": "yayinda",
+      "yayinZamani": "2026-11-18T10:00"
+    },
+    {
+      "baslik": "Termosunuzu uzun yıllar kullanmanın 5 yolu",
+      "adresAdi": "termos-bakimi",
+      "ozet": "Kokusuz, lekesiz ve sızdırmaz bir termos için basit alışkanlıklar.",
+      "icerik": "<p>Çelik termos doğru bakımla yıllarca ilk günkü gibi ısı tutar.</p><ol><li>Her kullanımdan sonra ılık suyla çalkalayın.</li><li>Kapağı açık kurutun.</li><li>Haftada bir karbonatlı suyla bekletin.</li><li>Contayı çıkarıp ayrıca yıkayın.</li><li>Bulaşık makinesine koymayın.</li></ol>",
+      "kapak": {
+        "gorsel": "celik-termos-disarida.jpg",
+        "metin": "Çelik termos, açık havada taşın üstünde"
+      },
+      "kategori": "bakim",
+      "durum": "yayinda",
+      "yayinZamani": "2026-11-10T10:00"
+    }
+  ]
+}

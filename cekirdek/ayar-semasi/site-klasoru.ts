@@ -9,6 +9,12 @@ import { type DosyaTuru, dosyaSinirlari } from "../kayitlar/dosya.ts";
 import type { VideoSitesi } from "../kayitlar/video-siteleri.ts";
 import { icerikTuru, uzantininTuru } from "../moduller/dosya/tur.ts";
 import {
+  type BlogBaslangici,
+  blogBaslangicKurallari,
+  blogBaslangicSemasi,
+  blogGorselAdlari,
+} from "../moduller/icerik/baslangic-semasi.ts";
+import {
   type MenuBaslangici,
   menuBaslangicKurallari,
   menuBaslangicSemasi,
@@ -59,6 +65,8 @@ import { type Kimlik, kimlikSemasi } from "./kimlik.ts";
 // 0106). Yalnız sitenin düzen sürümü hiç yazılmamışken kullanılır (cekirdek/moduller/duzen/).
 // menuBaslangici: başlangıç menüleri (baslangic/menuler.json, kart 0107). Yalnız sitede hiç menü
 // yazılmamışken kullanılır (cekirdek/moduller/menu/baslangic.ts); dosyası yoksa boştur.
+// blogBaslangici: başlangıç blogu (baslangic/blog.json, kart 0272). Yalnız sitede hiç blog satırı yokken kullanılır
+// (cekirdek/moduller/icerik/baslangic.ts); dosyası yoksa boştur.
 export type Site = {
   kimlik: Kimlik;
   ayarlar: SiteAyarlari;
@@ -71,6 +79,7 @@ export type Site = {
   temaBaslangici: { tema: string; ayarlar: TemaAyarlari };
   duzenBaslangici: BaslangicDuzeni;
   menuBaslangici: MenuBaslangici;
+  blogBaslangici: BlogBaslangici;
 };
 
 export type DogrulamaSonucu = { gecerli: true; site: Site } | { gecerli: false; hatalar: string[] };
@@ -185,11 +194,13 @@ export const katalogGorselleriniDogrula = (
   klasor: string,
   katalog: KatalogBaslangici,
   duzen?: BaslangicDuzeni,
+  blog?: BlogBaslangici,
 ): { gecerli: true; gorseller: Record<string, string> } | { gecerli: false; hatalar: string[] } => {
   const adlar = [
     ...new Set([
       ...katalogGorselAdlari(katalog),
       ...(duzen === undefined ? [] : duzenBaslangicBaglari(duzen, bolumKutuphanesi).gorsel),
+      ...(blog === undefined ? [] : blogGorselAdlari(blog)),
     ]),
   ];
 
@@ -453,6 +464,29 @@ export const menuBaslangiciniDogrula = (
   return { gecerli: true, deger: sonuc.data };
 };
 
+export const blogBaslangicDosyasi = "baslangic/blog.json";
+
+// Başlangıç blogu (kart 0272): dosya şemadan ve alanlar arası kurallardan geçer. Dosyası olmayan sitede başlangıç blogu
+// yoktur. Kapak görsellerini katalogGorselleriniDogrula denetler.
+export const blogBaslangiciniDogrula = (
+  klasor: string,
+): { gecerli: true; deger: BlogBaslangici } | { gecerli: false; hatalar: string[] } => {
+  const ham = jsonOku(klasor, blogBaslangicDosyasi, {});
+  if ("hata" in ham) return { gecerli: false, hatalar: [ham.hata] };
+  const sonuc = blogBaslangicSemasi.safeParse(ham.deger);
+  if (!sonuc.success) {
+    return { gecerli: false, hatalar: sorunlariYaz(blogBaslangicDosyasi, sonuc.error.issues) };
+  }
+  const sorunlar = blogBaslangicKurallari(sonuc.data);
+  if (sorunlar.length > 0) {
+    return {
+      gecerli: false,
+      hatalar: sorunlar.map((sorun) => `${blogBaslangicDosyasi}: ${sorun}`),
+    };
+  }
+  return { gecerli: true, deger: sonuc.data };
+};
+
 export const markaKlasoru = "marka";
 
 // Sitenin ilk logosu: marka/ klasöründe en çok bir logo.<uzantı> dosyası. Tür içerikten okunur ve
@@ -571,11 +605,14 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
   if (duzenBaslangici !== undefined && !duzenBaslangici.gecerli) {
     hatalar.push(...duzenBaslangici.hatalar);
   }
+  const blogBaslangici = blogBaslangiciniDogrula(klasor);
+  if (!blogBaslangici.gecerli) hatalar.push(...blogBaslangici.hatalar);
   const katalogGorselleri = katalogBaslangici.gecerli
     ? katalogGorselleriniDogrula(
         klasor,
         katalogBaslangici.deger,
         duzenBaslangici?.gecerli === true ? duzenBaslangici.deger : undefined,
+        blogBaslangici.gecerli ? blogBaslangici.deger : undefined,
       )
     : undefined;
   if (katalogGorselleri !== undefined && !katalogGorselleri.gecerli) {
@@ -605,7 +642,8 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
     temaBaslangici === undefined ||
     !temaBaslangici.gecerli ||
     duzenBaslangici === undefined ||
-    !duzenBaslangici.gecerli
+    !duzenBaslangici.gecerli ||
+    !blogBaslangici.gecerli
   ) {
     return { gecerli: false, hatalar };
   }
@@ -645,6 +683,7 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
       temaBaslangici: temaBaslangici.deger,
       duzenBaslangici: duzenBaslangici.deger,
       menuBaslangici: menuBaslangici.deger,
+      blogBaslangici: blogBaslangici.deger,
     },
   };
 };

@@ -12,7 +12,8 @@ export type Islev = (typeof islevler)[number];
 export const yazilanIslevler: Readonly<Record<Islev, boolean>> = {
   // Kart 0139: ürün yorumları ve puan.
   yorum: true,
-  blog: false,
+  // Kart 0272: blog yazıları; vitrinde mağaza sahibinin blogAcik ayarıyla açılır (bağlam).
+  blog: true,
   bulten: false,
   arama: true,
   // Kart 0140: favoriler.

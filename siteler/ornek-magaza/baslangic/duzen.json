@@ -313,7 +313,10 @@
     {
       "tur": "blog-yazilari",
       "degerler": {
-        "baslik": "Blogdan"
+        "baslik": "Blogdan",
+        "tumuBaglantisi": {
+          "adres": "/blog"
+        }
       }
     },
     {

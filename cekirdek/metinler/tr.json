@@ -804,7 +804,7 @@
           "firsatlar": "Şu an vitrinde görünmüyor: bitiş tarihi olan, süren bir indirim yok. Bitiş tarihli indirim girilince görünür.",
           "marka-logolari": "Şu an vitrinde görünmüyor: seçilen markalar silinmiş. Bölümü açıp marka seçin.",
           "musteri-yorumlari": "Şu an vitrinde görünmüyor: gösterilecek yayınlanmış yorum yok. Yorumlar yayınlanınca görünür.",
-          "blog-yazilari": "Şu an vitrinde görünmüyor: gösterilecek yayınlanmış yazı yok. Yazı yayınlanınca görünür.",
+          "blog-yazilari": "Şu an vitrinde görünmüyor: blog kapalı ya da gösterilecek yayınlanmış yazı yok. Blog ekranından blogu açın ve yazı yayınlayın.",
           "bulten-kaydi": "Şu an vitrinde görünmüyor: bültenin gönderim adresi tanımlı değil. Tanımlanınca görünür."
         }
       }
@@ -2853,7 +2853,9 @@
         "kategori": "{ad} kategorisindeki ürünleri {magaza} mağazasında inceleyin.",
         "marka": "{ad} markasının ürünlerini {magaza} mağazasında inceleyin.",
         "etiket": "“{ad}” etiketli ürünleri {magaza} mağazasında inceleyin.",
-        "urun": "{ad} ürününü {magaza} mağazasında inceleyin."
+        "urun": "{ad} ürününü {magaza} mağazasında inceleyin.",
+        "blog-yazisi": "{ad}: {magaza} blogundan bir yazı.",
+        "blog": "{magaza} blogu: rehberler, bakım önerileri ve mağazadan haberler."
       }
     },
     "urunSayfasi": {
@@ -3307,6 +3309,18 @@
       "siparisinizeDonun": "Siparişe dön",
       "kalanYok": "Bu siparişte iade isteyebileceğiniz ürün kalmadı.",
       "teslimEdilmedi": "İade talebi sipariş teslim edildikten sonra açılır."
+    },
+    "blog": {
+      "baslik": "Blog",
+      "kategoriBasligi": "Blog: {kategori}",
+      "kategoriler": "Blog kategorileri",
+      "hepsi": "Hepsi",
+      "bos": {
+        "baslik": "Henüz yazı yok",
+        "aciklama": "Yeni yazılar yayınlanınca burada görünür.",
+        "anasayfa": "Ana sayfaya dön"
+      },
+      "butunYazilar": "Bütün yazılar"
     }
   },
   "eposta": {

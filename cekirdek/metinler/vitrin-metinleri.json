@@ -584,7 +584,9 @@
           "kategori": "{ad} kategorisindeki ürünleri {magaza} mağazasında inceleyin.",
           "marka": "{ad} markasının ürünlerini {magaza} mağazasında inceleyin.",
           "etiket": "“{ad}” etiketli ürünleri {magaza} mağazasında inceleyin.",
-          "urun": "{ad} ürününü {magaza} mağazasında inceleyin."
+          "urun": "{ad} ürününü {magaza} mağazasında inceleyin.",
+          "blog-yazisi": "{ad}: {magaza} blogundan bir yazı.",
+          "blog": "{magaza} blogu: rehberler, bakım önerileri ve mağazadan haberler."
         }
       },
       "urunSayfasi": {
@@ -1038,6 +1040,18 @@
         "siparisinizeDonun": "Siparişe dön",
         "kalanYok": "Bu siparişte iade isteyebileceğiniz ürün kalmadı.",
         "teslimEdilmedi": "İade talebi sipariş teslim edildikten sonra açılır."
+      },
+      "blog": {
+        "baslik": "Blog",
+        "kategoriBasligi": "Blog: {kategori}",
+        "kategoriler": "Blog kategorileri",
+        "hepsi": "Hepsi",
+        "bos": {
+          "baslik": "Henüz yazı yok",
+          "aciklama": "Yeni yazılar yayınlanınca burada görünür.",
+          "anasayfa": "Ana sayfaya dön"
+        },
+        "butunYazilar": "Bütün yazılar"
       }
     },
     "eklenti": {

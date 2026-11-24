@@ -34,7 +34,24 @@ export const vitrinAdresleri = {
   hesapAdresleri: "/hesabim/adreslerim",
   hesapFavorileri: "/hesabim/favorilerim",
   hesapBilgileri: "/hesabim/hesap-bilgileri",
+  // Blog (kart 0272): yazıların listesi; yazının sayfası kayitAdresleri["blog-yazisi"].
+  blog: "/blog",
 } as const;
+
+// Blog listesinin adresi (kart 0272): kategori adres adıyla ve sayfa adreste durur; ilk sayfa yazılmaz.
+export const blogListesiAdresi = ({
+  kategori,
+  sayfa = 1,
+}: {
+  kategori?: string | undefined;
+  sayfa?: number;
+}): string => {
+  const parametreler = new URLSearchParams();
+  if (kategori !== undefined) parametreler.set("kategori", kategori);
+  if (sayfa > 1) parametreler.set("sayfa", String(sayfa));
+  const sorgu = parametreler.toString();
+  return sorgu === "" ? vitrinAdresleri.blog : `${vitrinAdresleri.blog}?${sorgu}`;
+};
 
 // Hesabın açılış sayfası: girişten sonra ve /hesabim adresinde açılır. Karar 0145'e göre Siparişlerim'dir (kart 0238).
 export const hesapIlkSayfasi = vitrinAdresleri.hesapSiparisleri;

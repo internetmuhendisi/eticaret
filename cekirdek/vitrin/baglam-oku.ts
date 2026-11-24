@@ -20,9 +20,11 @@ import { type GorselBoyutu, gorselBoyutAdlari } from "../kayitlar/gorsel";
 import { yazilanIslevler } from "../kayitlar/islevler";
 import { sosyalHesapAdresleri } from "../kayitlar/sosyal-siteler";
 import type { YerTutucu } from "../kayitlar/yer-tutucular";
+import { takvimGunu } from "../metinler/bicimleyici";
 import { siteninBicimleyicisi } from "../metinler/site-metni";
 import { type GorselBoyutDosyasi, gorselBoyutlariniOku } from "../moduller/dosya/servis";
 import { vitrinGorseliAdresi } from "../moduller/duzen/gorsel";
+import { type VitrinBlogKarti, vitrinBlogYazilari } from "../moduller/icerik/vitrin";
 import { kategoriler } from "../moduller/kategori/model";
 import { logonunYolu, magazaLogosu } from "../moduller/magaza-ayarlari/logo";
 import { siteninMagazaAyarlari } from "../moduller/magaza-ayarlari/servis";
@@ -47,12 +49,15 @@ import type {
 } from "./bolum-kutuphanesi/baglam";
 import type { BolumKutuphanesi, BolumOrnegi } from "./bolum-kutuphanesi/duzen";
 import {
+  type BaglamBlogYazisi,
   type BaglamYorumu,
+  blogKaynagiAnahtari,
   yorumKaynagiAnahtari,
   yorumKaynakTurleri,
 } from "./bolum-kutuphanesi/islev-verisi";
 import { bolumBaglari, bolumunUrunKaynaklari } from "./bolum-kutuphanesi/tarif";
 import type { UrunKaynagi } from "./bolum-kutuphanesi/urun-kaynagi";
+import { blogAdetleri } from "./bolumler/blog-yazilari/tarif";
 import { yorumAdetleri } from "./bolumler/musteri-yorumlari/tarif";
 import { vitrinTemasi } from "./tema-secimi";
 import { kaynaklarinUrunleri } from "./urun-kaynagi";
@@ -206,6 +211,37 @@ const yorumKaynaklari = async (
   return sonuc;
 };
 
+// Blog bölümlerinin yazıları (kart 0272): blog açıkken bölümlerin her kaynağının (son yazılar ya da bir kategori) en
+// çok adedi bir kez okunur, her adet anahtarı o listenin başıdır. Bölüm yoksa ya da blog kapalıysa okunmaz.
+const blogKaynaklari = async (
+  vt: Veritabani,
+  bolumler: readonly BolumOrnegi[],
+  kutuphane: BolumKutuphanesi,
+  blogAcik: boolean,
+  an: Date,
+): Promise<Record<string, readonly VitrinBlogKarti[]>> => {
+  if (!blogAcik || !yazilanIslevler.blog) return {};
+  const kategoriler = new Set<string | undefined>();
+  for (const bolum of bolumler) {
+    if (!Object.hasOwn(kutuphane, bolum.tur) || kutuphane[bolum.tur]?.islev !== "blog") continue;
+    const kategori = (bolum.degerler as { kategori?: unknown }).kategori;
+    kategoriler.add(typeof kategori === "string" && kategori !== "" ? kategori : undefined);
+  }
+  const enCok = Math.max(...Object.values(blogAdetleri));
+  const sonuc: Record<string, readonly VitrinBlogKarti[]> = {};
+  for (const kategori of kategoriler) {
+    const { yazilar } = await vitrinBlogYazilari(vt, { kategori, sayfa: 1, boyut: enCok, an });
+    for (const adet of Object.values(blogAdetleri)) {
+      sonuc[
+        blogKaynagiAnahtari(
+          kategori === undefined ? { tur: "son", adet } : { tur: "kategori", kategori, adet },
+        )
+      ] = yazilar.slice(0, adet);
+    }
+  }
+  return sonuc;
+};
+
 // Telefonun bağlantısı: yalnız rakam ve baştaki +.
 const telefonAdresi = (telefon: string) => `tel:${telefon.replace(/[^\d+]/g, "")}`;
 
@@ -238,6 +274,7 @@ export const vitrinBaglaminiOku = async (
     kaynaklarinUrunleri(vt, site, bolumlerinUrunKaynaklari(bolumler, kutuphane), an),
     yorumKaynaklari(vt, bolumler, kutuphane, an),
   ]);
+  const blogKartlari = await blogKaynaklari(vt, bolumler, kutuphane, ayarlar.blogAcik, an);
   // Bölümlerin ve seçtikleri kategorilerin görselleri tek okumayla (silinmiş görsel yok).
   const gorselKimlikleri = [
     ...new Set([
@@ -247,6 +284,9 @@ export const vitrinBaglaminiOku = async (
       ),
       ...Object.values(markaListesi).flatMap((marka) =>
         marka.logo === undefined ? [] : [marka.logo],
+      ),
+      ...Object.values(blogKartlari).flatMap((liste) =>
+        liste.flatMap((yazi) => (yazi.kapak === null ? [] : [yazi.kapak.dosya])),
       ),
     ]),
   ].filter(kimlikMi);
@@ -322,12 +362,32 @@ export const vitrinBaglaminiOku = async (
     markalar: markaListesi,
     urunler,
     an,
-    // Blog ve bülten işlevleri yazılınca doldurulur (kart 0112, islev-verisi.ts); yorumlar kart 0139.
+    // Bülten işlevi yazılınca doldurulur (kart 0112, islev-verisi.ts); yorumlar kart 0139, blog kart 0272.
     yorumlar,
-    blogYazilari: {},
+    blogYazilari: Object.fromEntries(
+      Object.entries(blogKartlari).map(([anahtar, liste]) => [
+        anahtar,
+        liste.map(
+          (yazi): BaglamBlogYazisi => ({
+            kimlik: yazi.kimlik,
+            baslik: yazi.baslik,
+            ...(yazi.ozet === null ? {} : { ozet: yazi.ozet }),
+            adres: kayitAdresleri["blog-yazisi"](yazi.adresAdi),
+            tarih: {
+              yazili: bicim.tarih(yazi.yayinZamani),
+              makine: takvimGunu(yazi.yayinZamani, site.ayarlar.saatDilimi),
+            },
+            ...(yazi.kapak === null || gorseller[yazi.kapak.dosya] === undefined
+              ? {}
+              : { gorsel: yazi.kapak.dosya }),
+          }),
+        ),
+      ]),
+    ),
     yerTutucular: yerTutucuDegerleri,
     parcaGorunumleri: parcaGorunumleriniKur(tema.tema.tanim, tema.ayarlar),
-    islevler: yazilanIslevler,
+    // Blog yazılmış işlevdir, ama vitrinde mağaza sahibinin ayarıyla açılır (kart 0272).
+    islevler: { ...yazilanIslevler, blog: yazilanIslevler.blog && ayarlar.blogAcik },
     sayilar: {},
     yil: bicim.yil(an),
     ...(site.ayarlar.vitrindeAltyapiAdi ? { altyapiAdi } : {}),

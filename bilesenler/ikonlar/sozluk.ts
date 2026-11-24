@@ -34,6 +34,7 @@ import {
   MapPinIcon,
   MenuIcon,
   MinusIcon,
+  NewspaperIcon,
   OctagonXIcon,
   PackageIcon,
   PauseIcon,
@@ -132,6 +133,8 @@ export const ikonlar = {
   kopyala: CopyIcon,
   // Siparişin faturasını indir (kart 0268).
   indir: DownloadIcon,
+  // Blog (kart 0272): yazısız listenin boş hâli; panelin blog menüsü de kullanır.
+  yazi: NewspaperIcon,
 } satisfies Record<string, LucideIcon>;
 
 export type IkonAdi = keyof typeof ikonlar;
