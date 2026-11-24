@@ -113,7 +113,7 @@ paths:
 ## Yorumlar (karar 0174)
 
 - Ekran `cekirdek/yonetim-paneli/yorumlar/` klasöründe, menüde "Ürünler" altındadır; servisi `cekirdek/moduller/yorum/panel-listesi.ts`. Görmek `yorum.gor`, karar ve ana sayfa işareti `yorum.onayla` (görevlide de); ürün adı yalnız `urun.gor` izni olana ürün ekranına bağlantıdır.
-- Liste Onay bekleyen sekmesiyle açılır (varsayılan sekme), her genişlikte karttır. Kart eylemleri `yorum-karari` ve `yorum-ana-sayfa` uçlarına, toplu işlem `yorumlar-toplu`'ya gider. Eylemden sonra odak kartta, sonraki ya da önceki kartta, liste boşalınca seçili sekmede kalır; odak yenilenen liste gelince yerleşir.
+- Liste Onay bekleyen sekmesiyle açılır (varsayılan sekme), her genişlikte karttır. Kart eylemleri `yorum-karari` ve `yorum-ana-sayfa` uçlarına, toplu işlem `yorumlar-toplu`'ya gider. Karar ekranın gördüğü durumu (`gorulen`) gönderir; arada değişen yorum çakışır (`yorum-degisti`). Toplu işlemler sekmeye göredir (`yorumTopluIslemleri`'nin `sekmeler`'i). Eylemden sonra odak kartta, sonraki ya da önceki kartta, liste boşalınca seçili sekmede kalır; odak yenilenen liste gelince yerleşir.
 - Silinmiş ürünün yorumu listede, sayılarda ve menüdeki sayıda yoktur. Yönetici e-postasının "Yorumlara git" düğmesi `yorumlarAdresi`'ne gider.
 
 ## Ürünler listesi (karar 0161)

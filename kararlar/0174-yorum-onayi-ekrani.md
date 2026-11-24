@@ -19,14 +19,19 @@ Panelde Ürünler altında "Yorumlar" ekranı açıldı (kart 0277; taslak ve ü
 Teknik kararlar:
 
 - **Servis** `cekirdek/moduller/yorum/panel-listesi.ts`: arama (ürünün adı ya da kısaltılmış ad, aramanın harf kuralıyla), puan süzgeci (birden çok), dört sıralama (en yeni, en eski, puan artan ve azalan; eşitlikte en yeni), sayfa ve durum sayıları tek yerde. Sayılar puana ve aramaya uyar, duruma uymaz. Toplu karar her yorumu tekil kararla (`yorumServisi.karar`) aynı yoldan, kendi işleminde geçirir.
-- **Silinmiş ürünün yorumu** listede, sayılarda ve menüdeki sayıda yoktur: hiçbir yerde görünmez, karar beklemez.
+- **Silinmiş ürünün yorumu** listede, sayılarda ve menüdeki sayıda yoktur: hiçbir yerde görünmez, karar beklemez. Karar ve ana sayfa işareti de onu bulunamadı sayar.
+- **Kararın kuralları** (bağımsız kontrolün bulguları):
+  - Panel kararla birlikte ekranın gördüğü durumu gönderir (`gorulen`, tekil ve toplu). Yorum arada başka bir karar almışsa çakışmadır (`yorum-degisti`), hiçbir şey yazılmaz. Böylece başka yöneticinin reddettiği yorum toplu "Yayınla" ile yayınlanmaz.
+  - Reddedilen yorumun ana sayfa işareti kalkar: işaret yalnız yayındaki yorumda anlamlıdır, yeniden yayınlanan yorum ana sayfaya kendiliğinden dönmez.
+  - Toplu işlemler sekmeye göredir: Onay bekleyende ikisi, Yayında'da yalnız reddet, Reddedilen'de yalnız yayınla (`yorumTopluIslemleri`'nin `sekmeler`'i). Yorumun zaten o durumda olduğu sekmede o işlem görünmez.
 - **İzinler değişmez:** görmek `yorum.gor`, karar ve ana sayfa işareti `yorum.onayla`; görevlide ikisi de var (kart 0139). Ürün adı yalnız `urun.gor` izni olana ürün ekranına bağlantıdır.
 - **Liste motoru genişledi:**
   - Sekme süzgecine varsayılan değer (`varsayilan`). Verilirse şeritte "Tümü" yoktur, değer adrese yazılmaz, süzgeç sayılmaz. Varsayılan sekme boşken öteki sekmelerde kayıt varsa arama ve süzgeçler durur; liste bunu sekme sayılarının toplamından (`""`) bilir.
   - Her genişlikte kart görünümü (`gorunum="kartlar"`): uzun metin taşıyan liste tabloya sığmaz. Sütun başlığı olmadığı için sıralama yalnız menüdedir.
 - **Menüdeki sayı** sayfa ağacının `sayac` alanıdır. Sayıyı sunucu `menu-sayaclari.ts` ile, yalnız menüde görünen sayfalar için, istek başına okur. Sıfırsa görünmez. Okunamazsa menü sayısız çizilir, hata kaydedilir. Rozet ekran okuyucudan gizlidir; bağlantının adı yazıyla okunur ("Yorumlar (3 yorum onay bekliyor)"). Panelin işlemleri sayfayı yenilediği için sayı işlemden sonra güncellenir.
-- **Odak:** eylemden sonra kart listede kalıyorsa odak onun ilk düğmesine gider. Sekmeden çıktıysa sonraki, yoksa önceki kartın düğmesine; liste boşaldıysa seçili sekmeye. Odak yenilenen liste gelince yerleşir.
-- **Liste ucu** (`GET /kapi/yonetici/yorumlar`) liste tanımının girdisini alır, sayfayla aynı veriyi döner. Eski `durum` ve `sayfa` parametreleri geçerli kalır, `yoneticiSayfasi` sınırı yerine mağazanın `panelSayfaBoyu` ayarı kullanılır.
+- **Odak:** eylemden sonra kart listede kalıyorsa odak onun ilk düğmesine gider. Sekmeden çıktıysa sonraki kartın düğmesine; sonraki yoksa yenilenen listede aynı sıradaki karta (sonraki sayfadan kayan kart), o da yoksa öncekine; liste boşaldıysa seçili sekmeye. Odak yenilenen liste gelince yerleşir; liste gelmeden sekme, süzgeç ya da sayfa değiştiyse taşınmaz.
+- **İstek sürerken** o kartın düğmeleri `aria-disabled`'dır ve basış yok sayılır; öteki kartlar çalışır.
+- **Liste ucu** (`GET /kapi/yonetici/yorumlar`) liste tanımının girdisini alır, sayfayla aynı veriyi döner. Davranışı değişti: `durum` verilmezse eskiden bütün yorumlar gelirdi, artık yalnız onay bekleyenler gelir (varsayılan sekme). Yanıtın biçimi liste motorununkidir (`satirlar`, `sekmeSayilari`). `yoneticiSayfasi` sınırı yerine mağazanın `panelSayfaBoyu` ayarı kullanılır. Ucu bugün yalnız panel kullanır.
 
 Taslaktan bilerek ayrılanlar:
 
