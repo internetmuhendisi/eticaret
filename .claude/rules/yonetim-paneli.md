@@ -148,5 +148,5 @@ paths:
 
 - Ekranlar `cekirdek/yonetim-paneli/sayfalar/` klasöründe, menüde "İçerik" altındadır: Sayfalar (kısa liste, liste motoruna girmez), Yeni sayfa ve Sayfa (`?kimlik=`). İzinler blogunkilerdir (`icerik.gor`, `icerik.degistir`, `icerik.sil`). Sayfa ekranı blog yazısı ekranının yolundan gider: yalnız değişen alanları ve gördüğü değişme anını gönderir (`sayfaGirdisi`, `gorulen`), arada değişen sayfa `sayfa-degisti` alır.
 - Sayfanın menülerdeki yeri `kayitlarinMenuYerleri` (menü servisi) ile okunur, yazısı `menuYeriYazisi` ile (`sayfalar/menu-yeri.ts`). "Menüye ekle" menüler ekranını `menuyeSayfaEkleAdresi` ile açar: öğe penceresi o sayfa seçili açılır (`MenulerSaglayici`'nın `hazirHedef`'i); sayfa ekranında ayrı bir menü formu yazılmaz.
-- Menü formunda sabit sayfa ve blog yazısı `KayitArama`'nın kendi aramasıyla `icerik-ara` ucundan aranır (`icerik.gor`); katalogun kayıtları `kayit-ara`'dadır.
+- Menü formunda sabit sayfa ve blog yazısı da `KayitArama` ile aranır: kutu türün ucunu kendisi seçer, içeriğin kayıtları `icerik-ara`'dan (`icerik.gor`), katalogunkiler `kayit-ara`'dan.
 
