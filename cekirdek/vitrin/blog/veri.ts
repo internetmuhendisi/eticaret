@@ -51,7 +51,7 @@ const kartlariKur = async (
       adres: kayitAdresleri["blog-yazisi"](yazi.adresAdi),
       ozet: yazi.ozet,
       tarih: {
-        yazili: bicim.tarih(yazi.yayinZamani),
+        yazili: bicim.uzunTarih(yazi.yayinZamani),
         makine: takvimGunu(yazi.yayinZamani, site.ayarlar.saatDilimi),
       },
       kapak:

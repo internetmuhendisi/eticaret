@@ -21,7 +21,7 @@
       "baslik": "Kışa hazırlık: katmanlı giyinmenin kısa rehberi",
       "adresAdi": "kisa-hazirlik",
       "ozet": "Gömlek, sweatshirt ve atkı: serin günlerde katman katman giyinmenin yolu.",
-      "icerik": "<p>Sabahları serin, öğlenleri ılık geçen günlerde tek kalın parça yerine ince katmanlar daha rahattır.</p><h2>Katmanlar</h2><p>Altta nefes alan bir keten gömlek, üstte kapüşonlu sweatshirt, boyunda yün atkı. Hava ısınınca katman çıkarılır.</p><h2>Bakım</h2><p>Sweatshirt'ü kurutma makinesi yerine askıda kurutun; boyu kısalmaz.</p>",
+      "icerik": "<p>Sabahları serin, öğlenleri ılık geçen günlerde tek kalın parça yerine ince katmanlar daha rahattır.</p><h3>Katmanlar</h3><p>Altta nefes alan bir keten gömlek, üstte kapüşonlu sweatshirt, boyunda yün atkı. Hava ısınınca katman çıkarılır.</p><h3>Bakım</h3><p>Sweatshirt'ü kurutma makinesi yerine askıda kurutun; boyu kısalmaz.</p>",
       "kapak": {
         "gorsel": "blog-2-gardirop.jpg",
         "metin": "Ahşap askılıkta mavi keten gömlek, gri kapüşonlu sweatshirt, hardal rengi atkı ve bez çanta"
@@ -34,7 +34,7 @@
       "baslik": "Yılbaşı sofrası için küçük dokunuşlar",
       "adresAdi": "yilbasi-sofrasi",
       "ozet": "Keten örtü, mum ışığı ve paketlenmiş bir hediye: sofrayı birkaç parçayla hazırlayın.",
-      "icerik": "<p>Yılbaşı sofrası için çok şey gerekmez. Birkaç parça masayı değiştirir.</p><h2>Örtü</h2><p>Keten masa örtüsü kırışık görünse de doğaldır; ütü istemez.</p><h2>Işık</h2><p>Kokulu mum masanın ortasında yeter; yemekten önce yakın.</p><h2>Hediye</h2><p>Siparişinize hediye paketi ekleyebilirsiniz.</p>",
+      "icerik": "<p>Yılbaşı sofrası için çok şey gerekmez. Birkaç parça masayı değiştirir.</p><h3>Örtü</h3><p>Keten masa örtüsü kırışık görünse de doğaldır; ütü istemez.</p><h3>Işık</h3><p>Kokulu mum masanın ortasında yeter; yemekten önce yakın.</p><h3>Hediye</h3><p>Siparişinize hediye paketi ekleyebilirsiniz.</p>",
       "kapak": {
         "gorsel": "blog-3-sofra.jpg",
         "metin": "Yeşil keten örtülü masada iki kupa, yanan mum, ceviz ve kurdeleli hediye paketi"

@@ -374,7 +374,7 @@ export const vitrinBaglaminiOku = async (
             ...(yazi.ozet === null ? {} : { ozet: yazi.ozet }),
             adres: kayitAdresleri["blog-yazisi"](yazi.adresAdi),
             tarih: {
-              yazili: bicim.tarih(yazi.yayinZamani),
+              yazili: bicim.uzunTarih(yazi.yayinZamani),
               makine: takvimGunu(yazi.yayinZamani, site.ayarlar.saatDilimi),
             },
             ...(yazi.kapak === null || gorseller[yazi.kapak.dosya] === undefined

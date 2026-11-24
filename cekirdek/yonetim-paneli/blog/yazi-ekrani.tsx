@@ -289,7 +289,7 @@ export function BlogYazisiEkrani({ veri }: { veri: BlogYazisiEkraniVerisi }) {
               alt=""
               width={kapakOlcusu?.genislik}
               height={kapakOlcusu?.yukseklik}
-              className="aspect-16/10 w-panel max-w-full rounded-kucuk bg-yuzey object-cover"
+              className="aspect-16/10 h-16 w-auto rounded-kucuk bg-yuzey object-cover"
             />
           )}
           <p className="m-0 min-w-0 flex-1 text-kucuk">

@@ -12,6 +12,7 @@ import { BosHal } from "../../../bilesenler/parcalar/bos-hal";
 import { SayfaBasligi } from "../../../bilesenler/parcalar/sayfa-basligi";
 import { SayfaYolu } from "../../../bilesenler/parcalar/sayfa-yolu";
 import { Sayfalama } from "../../../bilesenler/parcalar/sayfalama";
+import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { doldur } from "../../metinler/doldur";
 import { metin } from "../../metinler/site-metni";
@@ -131,13 +132,19 @@ export async function BlogListesiSayfasi({ sorgu }: { sorgu: SorguParametreleri 
             {[{ ad: metin("vitrin.blog.hepsi"), adresAdi: undefined }, ...veri.kategoriler].map(
               (k) => (
                 <li key={k.adresAdi ?? ""}>
-                  <Baglanti
+                  <Link
                     href={blogListesiAdresi({ kategori: k.adresAdi })}
-                    gorunum={k.adresAdi === secili ? "ikincil" : "cerceveli"}
                     {...(k.adresAdi === secili ? { "aria-current": "page" as const } : {})}
+                    // Arama ve ürün listesinin çipleriyle aynı biçim; seçili çip ikincil düğmenin renk çiftiyle.
+                    className={sinif(
+                      "inline-flex min-h-11 items-center rounded-dugme border px-4 no-underline",
+                      k.adresAdi === secili
+                        ? "border-yazi bg-yazi font-kalin text-zemin"
+                        : "border-kenar bg-yuzey text-yazi hover:border-yazi",
+                    )}
                   >
                     {k.ad}
-                  </Baglanti>
+                  </Link>
                 </li>
               ),
             )}
@@ -264,7 +271,7 @@ export async function BlogYazisiSayfasi({
             dangerouslySetInnerHTML={{ __html: yazi.icerik }}
           />
         )}
-        <Baglanti href={vitrinAdresleri.blog} gorunum="sade" className="self-start">
+        <Baglanti href={vitrinAdresleri.blog} gorunum="cerceveli" className="mt-2 self-start">
           <Ikon ad="onceki" />
           {metin("vitrin.blog.butunYazilar")}
         </Baglanti>

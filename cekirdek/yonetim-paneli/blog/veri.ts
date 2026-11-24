@@ -51,10 +51,13 @@ export const blogListesiVerisi = async (
       baslik: satir.baslik,
       adresAdi: satir.adresAdi,
       durum: satir.durum,
+      // Yayındaki yazının günü (taslağın biçimi), zamanlanmış yazının günü ve saati.
       yayinZamani:
         satir.durum === "taslak" || satir.yayinZamani === null
           ? null
-          : b.tarihSaat(satir.yayinZamani),
+          : satir.durum === "zamanlanmis"
+            ? b.tarihSaat(satir.yayinZamani)
+            : b.uzunTarih(satir.yayinZamani),
       ...(gorselGorur && satir.kapak !== null ? { kapak: satir.kapak } : {}),
       kategori: satir.kategori?.ad ?? null,
     })),
