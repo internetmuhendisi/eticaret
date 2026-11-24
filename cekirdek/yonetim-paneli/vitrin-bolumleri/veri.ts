@@ -87,8 +87,7 @@ export const bolumlerEkraniVerisi = async (): Promise<BolumlerEkraniVerisi> => {
       durum: "hazir",
       sira: durum.sira,
       alanlar,
-      // Blog işlevi yazılana kadar blog kategorisi yoktur (kart 0112).
-      secenekler: { ...secenekler, blogKategorileri: [] },
+      secenekler,
     };
   } catch (hata) {
     if (hata instanceof KatalogBekleniyor) return { durum: "katalog-bekleniyor" };

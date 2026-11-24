@@ -1,0 +1,17 @@
+{
+  "kategoriler": [
+    {
+      "ad": "Rehber",
+      "adresAdi": "rehber"
+    }
+  ],
+  "yazilar": [
+    {
+      "baslik": "Yazı",
+      "adresAdi": "yazi",
+      "durum": "yayinda",
+      "yayinZamani": "2026-11-10T10:00",
+      "kategori": "olmayan"
+    }
+  ]
+}

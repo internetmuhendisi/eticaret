@@ -10,7 +10,7 @@
 // - İçerik biçimli metindir; bağlantı kuralı vitrindeki temizlikle aynıdır (ürün açıklaması).
 // - Değiştirme izni olmayan yönetici alanları okur, düğmeleri görmez; silme ayrıca icerik.sil ister.
 import { useRouter } from "next/navigation";
-import { type ReactNode, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { BicimliMetinAlani } from "../../../bilesenler/parcalar/bicimli-metin-alani";
 import { bildirimGoster } from "../../../bilesenler/parcalar/bildirim";
@@ -162,6 +162,12 @@ export function BlogYazisiEkrani({ veri }: { veri: BlogYazisiEkraniVerisi }) {
     kaydet: () => kaydet(),
   });
   const [silOnayi, setSilOnayi] = useState(false);
+  // Ekranın gördüğü değişme anı: kayıttan dönen yeni an hemen kullanılır, sayfanın yenilenmesi beklenmez (bağımsız
+  // kontrolün bulgusu: yenilenme bitmeden ikinci kayıt kendi değişikliğiyle çakışıyordu).
+  const gorulen = useRef(veri.gorulen);
+  useEffect(() => {
+    gorulen.current = veri.gorulen;
+  }, [veri.gorulen]);
   // Yüklenen kapağın ölçüsü (önizlemenin yer tutucusu); kayıtlı kapakta sunucudan gelir.
   const [yeniOlcu, setYeniOlcu] = useState<{ genislik: number; yukseklik: number } | null>(null);
 
@@ -174,12 +180,17 @@ export function BlogYazisiEkrani({ veri }: { veri: BlogYazisiEkraniVerisi }) {
     const yazi = blogYazisiGirdisi(gonderilen, bilinen, yeni);
     const sonuc = await pf.isle(() =>
       yeni
-        ? islem<{ kimlik: string }>("blog-yazisi-ekle", { yazi }, "yonetim.blog.eklendi", {
-            formda: true,
-          })
-        : islem(
+        ? islem<{ kimlik?: string; gorulen?: string }>(
+            "blog-yazisi-ekle",
+            { yazi },
+            "yonetim.blog.eklendi",
+            {
+              formda: true,
+            },
+          )
+        : islem<{ kimlik?: string; gorulen?: string }>(
             "blog-yazisi-degistir",
-            { kimlik: veri.kimlik, gorulen: veri.gorulen, yazi },
+            { kimlik: veri.kimlik, gorulen: gorulen.current, yazi },
             "yonetim.blog.kaydedildi",
             { formda: true },
           ),
@@ -188,9 +199,10 @@ export function BlogYazisiEkrani({ veri }: { veri: BlogYazisiEkraniVerisi }) {
     if (sonuc.tamam) {
       kaydedildi(gonderilen);
       pf.temizle();
+      if (!yeni) gorulen.current = sonuc.veri.gorulen;
       if (yeni) {
         acilan.current = true;
-        router.replace(blogYazisiEkraniAdresi((sonuc.veri as { kimlik: string }).kimlik));
+        router.replace(blogYazisiEkraniAdresi(sonuc.veri.kimlik ?? ""));
       }
       return true;
     }

@@ -213,6 +213,29 @@ describe("blog yazısı", () => {
     ).toEqual(["dogrulama", "yayinZamani:yayin-zamani-gecersiz"]);
   });
 
+  it("aynı anda aynı adresle iki yazı ve aynı adla iki kategori: biri yazılır, öteki bilinen çakışmayı alır", async () => {
+    const h = await hazirla();
+    const yazilar = await Promise.allSettled(
+      [1, 2, 3].map(() =>
+        servis.yaziEkle(h.vt, yonetici(), { baslik: "Aynı", adresAdi: "ayni-adres" }),
+      ),
+    );
+    expect(yazilar.filter((s) => s.status === "fulfilled")).toHaveLength(1);
+    for (const sonuc of yazilar.filter((s) => s.status === "rejected")) {
+      expect(sonuc.reason).toBeInstanceOf(BilinenHata);
+      expect((sonuc.reason as BilinenHata).ayrinti).toEqual([
+        { alan: "adresAdi", kod: "adres-adi-tekrar" },
+      ]);
+    }
+    const kategoriler = await Promise.allSettled(
+      [1, 2, 3].map(() => servis.kategoriEkle(h.vt, yonetici(), { ad: "Aynı ad" })),
+    );
+    expect(kategoriler.filter((s) => s.status === "fulfilled")).toHaveLength(1);
+    for (const sonuc of kategoriler.filter((s) => s.status === "rejected")) {
+      expect((sonuc.reason as BilinenHata).ayrinti).toEqual([{ alan: "ad", kod: "ad-tekrar" }]);
+    }
+  });
+
   it("ekranın gördüğü değişme anı eskiyse hiçbir şey yazılmaz", async () => {
     const h = await hazirla();
     const { kimlik } = await servis.yaziEkle(h.vt, yonetici(), { baslik: "Eski" });
@@ -245,15 +268,21 @@ describe("blog yazısı", () => {
       kapak: { dosya: dosya.toUpperCase(), metin: "Mavi görsel" },
     });
     expect((await blogYazisiOku(h.vt, kimlik))?.kapak).toEqual({ dosya, metin: "Mavi görsel" });
-    // Taslağın kapağı vitrinde açılmaz; yayına alınınca açılır; blog kapalıyken açılmaz.
-    expect(await vitrindeKullaniliyorMu(h.vt, site, dosya)).toBe(false);
-    await servis.yaziDegistir(h.vt, yonetici(), kimlik, { durum: "yayinda" });
+    // Blog açıkken: taslağın ve zamanı gelmemiş yazının kapağı açılmaz; yayına alınınca açılır; yazı silinince ve blog
+    // kapalıyken açılmaz.
     await siteninServisi(site).degistir(
       h.vt,
       yonetici(),
       { blogAcik: true },
       { kendiIslevi: true },
     );
+    expect(await vitrindeKullaniliyorMu(h.vt, site, dosya)).toBe(false);
+    await servis.yaziDegistir(h.vt, yonetici(), kimlik, {
+      durum: "zamanlanmis",
+      yayinZamani: "2099-01-01T00:00",
+    });
+    expect(await vitrindeKullaniliyorMu(h.vt, site, dosya)).toBe(false);
+    await servis.yaziDegistir(h.vt, yonetici(), kimlik, { durum: "yayinda" });
     expect(await vitrindeKullaniliyorMu(h.vt, site, dosya)).toBe(true);
     await siteninServisi(site).degistir(
       h.vt,
@@ -261,6 +290,14 @@ describe("blog yazısı", () => {
       { blogAcik: false },
       { kendiIslevi: true },
     );
+    expect(await vitrindeKullaniliyorMu(h.vt, site, dosya)).toBe(false);
+    await siteninServisi(site).degistir(
+      h.vt,
+      yonetici(),
+      { blogAcik: true },
+      { kendiIslevi: true },
+    );
+    await servis.yaziSil(h.vt, yonetici(), kimlik);
     expect(await vitrindeKullaniliyorMu(h.vt, site, dosya)).toBe(false);
     // Silinmiş görsel yeni yazıya bağlanmaz.
     const silinen = await h.gorsel();
@@ -317,8 +354,12 @@ describe("blog kategorisi", () => {
       baslik: "Yazı",
       kategori: rehber.kimlik,
     });
+    const once = (await blogYazisiOku(h.vt, kimlik))?.guncellenmeZamani.getTime() ?? 0;
     await servis.kategoriSil(h.vt, yonetici(), rehber.kimlik);
-    expect((await blogYazisiOku(h.vt, kimlik))?.kategori).toBeNull();
+    const sonra = await blogYazisiOku(h.vt, kimlik);
+    expect(sonra?.kategori).toBeNull();
+    // Yazının değişme anı da değişir: açık yazı formu bunu çakışmayla görür.
+    expect(sonra?.guncellenmeZamani.getTime()).toBeGreaterThan(once);
     const [kayit] = (await h.kayitlar(rehber.kimlik)).filter(
       (k) => k.islem === "blog-kategorisi.silindi",
     );

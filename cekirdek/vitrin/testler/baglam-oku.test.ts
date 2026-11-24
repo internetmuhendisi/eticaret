@@ -81,8 +81,9 @@ describe("vitrin bağlamı", () => {
     expect(bos.magazaAdi).toBe(site.kimlik.gorunenAd);
     expect(bos.logoAdresi).toBeUndefined();
     expect(bos.odemeIsaretleri).toEqual([]);
-    // İşlevler çekirdekte yazılmış olanlardır (kart 0137'den beri arama açık).
-    expect(bos.islevler).toEqual(yazilanIslevler);
+    // İşlevler çekirdekte yazılmış olanlardır (kart 0137'den beri arama açık). Blog yazılmıştır, ama vitrinde mağaza
+    // sahibinin ayarıyla açılır (kart 0272): başlangıçta kapalıdır.
+    expect(bos.islevler).toEqual({ ...yazilanIslevler, blog: false });
 
     await siteninServisi(site).degistir(vt, yonetici(), {
       magazaAdi: "Yeni Ad",

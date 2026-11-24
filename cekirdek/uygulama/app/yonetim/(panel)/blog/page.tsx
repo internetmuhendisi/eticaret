@@ -57,7 +57,12 @@ export default async function BlogSayfasi({
     >
       <div className="flex flex-col gap-6">
         <BlogAyari blogAcik={blogAcik} izinli={yetkili("magaza-ayarlari.degistir")} />
-        <BlogListesi durum={durum} veri={veri} kayitSecenekleri={secenekler} />
+        <BlogListesi
+          durum={durum}
+          veri={veri}
+          kayitSecenekleri={secenekler}
+          ekleyebilir={yetkili("icerik.degistir")}
+        />
       </div>
     </PanelSayfasi>
   );

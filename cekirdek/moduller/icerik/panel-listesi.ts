@@ -1,7 +1,7 @@
 // Panelin blog listesi (kart 0272, karar 0176): silinmemiş yazılar; arama, süzgeç, sıralama, sayfa ve durum sayıları
 // sunucuda.
 //
-// - Durum yazının vitrindeki durumudur: zamanı gelmiş zamanlanmış yazı "yayında" sayılır (vitrin koşuluyla aynı).
+// - Durum yazının vitrindeki durumudur: zamanı gelmiş zamanlanmış yazı "yayında" sayılır (vitrin koşulunun kendisi).
 // - Arama: başlık; harf kuralı aramanınkidir (aramaAnahtari), aranan metin başlığın herhangi bir yerinde geçebilir
 //   (strpos: % ve _ joker değildir).
 // - Süzgeçler: durum (sekme, tek değer) ve blog kategorisi (birden çok, kimlikle). Durum sayıları kategoriye ve
@@ -19,6 +19,7 @@ import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { harfSirasi } from "../../veritabani/harf-sirasi.ts";
 import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { blogKategorileri, blogYazilari } from "./model.ts";
+import { blogYazisiVitrinde } from "./vitrin.ts";
 
 export type BlogPanelListesiGirdisi = {
   ara?: string | undefined;
@@ -49,14 +50,15 @@ export type BlogPanelListesi = {
   durumSayilari: Record<BlogYaziDurumu, number>;
 };
 
-// Vitrindeki durum: zamanlanmış yazının zamanı geldiyse yayında.
-const gorunenDurum = (an: Date): SQL<string> =>
-  sql<string>`case when ${blogYazilari.durum} = 'zamanlanmis' and ${blogYazilari.yayin_zamani} <= ${an.toISOString()}::timestamptz then 'yayinda' else ${blogYazilari.durum} end`;
+// Vitrindeki durum: vitrinde görünen yazı yayındadır (zamanı gelmiş zamanlanmış yazı da). Kural vitrinin tek
+// koşulundan okunur (blogYazisiVitrinde), saat veritabanınındır.
+const gorunenDurum = (an: Date | undefined): SQL<string> =>
+  sql<string>`case when ${blogYazisiVitrinde(an)} then 'yayinda' else ${blogYazilari.durum} end`;
 
 export const blogPanelListesi = async (
   vt: Veritabani,
   girdi: BlogPanelListesiGirdisi,
-  { an = new Date(), dil }: { an?: Date; dil: string },
+  { an, dil }: { an?: Date; dil: string },
 ): Promise<BlogPanelListesi> => {
   const aranan = aramaAnahtari(girdi.ara ?? "");
   const kategoriler = [...new Set((girdi.kategori ?? []).filter(kimlikMi).map(kimligiDuzelt))];

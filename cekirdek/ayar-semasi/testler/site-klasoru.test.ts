@@ -19,6 +19,7 @@ import { kimlikSemasi } from "../kimlik";
 import {
   baslangicDosyasi,
   baslangicDosyasiniDogrula,
+  blogBaslangicDosyasi,
   duzenBaslangicDosyasi,
   katalogBaslangicDosyasi,
   menuBaslangicDosyasi,
@@ -368,6 +369,15 @@ describe("örnek klasörler", () => {
     ["menu-kategori-ogeli", `${menuBaslangicDosyasi}: 0.ogeler: kategori-menusu`],
     ["menu-kod-tekrar", `${menuBaslangicDosyasi}: 1.kod: kod-tekrar`],
     ["menu-metinsiz-baslik", `${menuBaslangicDosyasi}: 0.ogeler.0.metin: metin-gerekli`],
+    // Başlangıç blogu (kart 0272): yazının kategorisi dosyada olmalı, yayındaki ve zamanlanmış yazının zamanı olur,
+    // adres adı tekildir, kapak görseli baslangic/gorseller/ klasöründe olmalı; düzenin blog bölümünün kategorisi
+    // başlangıç blogunda olmalı.
+    ["blog-kategori-tanimsiz", `${blogBaslangicDosyasi}: yazilar.0.kategori:`],
+    ["blog-yayin-zamani-yok", `${blogBaslangicDosyasi}: yazilar.0.yayinZamani:`],
+    ["blog-adres-tekrar", `${blogBaslangicDosyasi}: yazilar.1.adresAdi:`],
+    ["blog-yaz-saati", `${blogBaslangicDosyasi}: yazilar.0.yayinZamani: bu yerel saat`],
+    ["blog-kapak-yok", "baslangic/gorseller/yok.jpg: dosya yok"],
+    ["duzen-blog-kategorisi-yok", `${duzenBaslangicDosyasi}: ana-sayfa.0.degerler.kategori:`],
   );
 
   for (const [ornek, beklenenHata] of bozuklar) {
@@ -668,6 +678,18 @@ describe("başlangıç düzeni (kart 0106)", () => {
     if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
     const tema = sonuc.site.temalar.find((aday) => aday.kod === sonuc.site.temaBaslangici.tema);
     expect(sonuc.site.duzenBaslangici).toEqual(tema?.tanim.baslangicDuzeni);
+  });
+
+  it("dosyadaki başlangıç blogu okunur; dosyası olmayan sitenin başlangıç blogu boştur (kart 0272)", () => {
+    const sonuc = dogrula("blog-dolu");
+    if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+    expect(sonuc.site.blogBaslangici.kategoriler).toEqual([{ ad: "Rehber", adresAdi: "rehber" }]);
+    expect(
+      sonuc.site.blogBaslangici.yazilar.map((y) => [y.adresAdi, y.kategori, y.icerik]),
+    ).toEqual([["yazi", "rehber", ""]]);
+    const bos = dogrula("gecerli");
+    if (!bos.gecerli) throw new Error(bos.hatalar.join("\n"));
+    expect(bos.site.blogBaslangici).toEqual({ kategoriler: [], yazilar: [] });
   });
 
   it("dosyadaki menüler okunur; dosyası olmayan sitenin başlangıç menüsü yoktur (kart 0107)", () => {

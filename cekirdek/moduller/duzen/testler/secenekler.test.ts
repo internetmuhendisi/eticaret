@@ -15,6 +15,7 @@ import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { dosyaBoyutlari, dosyalar } from "../../dosya/model.ts";
 import { dosyaSil, gorselKaydet } from "../../dosya/servis.ts";
 import { etiketServisi } from "../../etiket/servis.ts";
+import { icerikServisi } from "../../icerik/servis.ts";
 import { kategoriEkle, kategoriSil } from "../../kategori/servis.ts";
 import { markaServisi } from "../../marka/servis.ts";
 import { menuEkle, menuSil } from "../../menu/servis.ts";
@@ -102,6 +103,20 @@ describe("bölüm formunun seçenekleri", () => {
     expect(secenekler.menuler).toEqual([
       { kimlik: "alt", ad: "Alt bilgi" },
       { kimlik: "ust", ad: "Üst menü" },
+    ]);
+  });
+
+  it("blog kategorileri adres adlarıyla, kendi sıralarıyla; silinmiş gelmez (kart 0272)", async () => {
+    const vt = await siteAc();
+    const blog = icerikServisi(() => "Europe/Istanbul");
+    const rehber = await blog.kategoriEkle(vt, yonetici(), { ad: "Rehber" });
+    const bakim = await blog.kategoriEkle(vt, yonetici(), { ad: "Bakım" });
+    const silinen = await blog.kategoriEkle(vt, yonetici(), { ad: "Eski" });
+    await blog.kategoriSil(vt, yonetici(), silinen.kimlik);
+    await blog.kategorileriSirala(vt, yonetici(), [bakim.kimlik, rehber.kimlik]);
+    expect((await duzenSecenekleri(vt)).blogKategorileri).toEqual([
+      { kimlik: "bakim", ad: "Bakım" },
+      { kimlik: "rehber", ad: "Rehber" },
     ]);
   });
 

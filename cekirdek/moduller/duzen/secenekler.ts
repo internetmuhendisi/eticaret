@@ -13,6 +13,7 @@ import { gorselBoyutAdlari } from "../../kayitlar/gorsel.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { dosyaBoyutlari, dosyalar } from "../dosya/model.ts";
 import { etiketler } from "../etiket/model.ts";
+import { blogKategorileriniOku } from "../icerik/servis.ts";
 import { kategorileriOku } from "../kategori/servis.ts";
 import { kategoriYollari } from "../kategori/yol.ts";
 import { markalar } from "../marka/model.ts";
@@ -33,6 +34,9 @@ export type DuzenSecenekleri = {
   // Menüler koduyla seçilir: seçeneğin kimliği menünün kodudur.
   menuler: KayitSecenegi[];
   gorseller: GorselSecenegi[];
+  // Blog kategorileri (kart 0272): seçeneğin kimliği kategorinin adres adıdır (bölümün alanı adres adı saklar),
+  // kendi sıralarıyla.
+  blogKategorileri: KayitSecenegi[];
 };
 
 const adSirasi = (ad: AnyPgColumn) => [sql`lower(${ad})`];
@@ -58,35 +62,43 @@ export const gorselSecenekleri = (vt: Veritabani): Promise<GorselSecenegi[]> =>
     .limit(panelSecenekSinirlari.gorsel);
 
 export const duzenSecenekleri = async (vt: Veritabani): Promise<DuzenSecenekleri> => {
-  const [kategoriListesi, markaListesi, etiketListesi, urunListesi, menuListesi, gorselListesi] =
-    await Promise.all([
-      kategorileriOku(vt),
-      vt
-        .select({ kimlik: markalar.kimlik, ad: markalar.ad })
-        .from(markalar)
-        .where(isNull(markalar.silinme_zamani))
-        .orderBy(...adSirasi(markalar.ad), asc(markalar.kimlik))
-        .limit(panelSecenekSinirlari.kayit),
-      vt
-        .select({ kimlik: etiketler.kimlik, ad: etiketler.ad })
-        .from(etiketler)
-        .where(isNull(etiketler.silinme_zamani))
-        .orderBy(...adSirasi(etiketler.ad), asc(etiketler.kimlik))
-        .limit(panelSecenekSinirlari.kayit),
-      vt
-        .select({ kimlik: urunler.kimlik, ad: urunler.ad })
-        .from(urunler)
-        .where(isNull(urunler.silinme_zamani))
-        .orderBy(...adSirasi(urunler.ad), asc(urunler.kimlik))
-        .limit(panelSecenekSinirlari.kayit),
-      vt
-        .select({ kimlik: menuler.kod, ad: menuler.ad })
-        .from(menuler)
-        .where(isNull(menuler.silinme_zamani))
-        .orderBy(...adSirasi(menuler.ad), asc(menuler.kod))
-        .limit(panelSecenekSinirlari.kayit),
-      gorselSecenekleri(vt),
-    ]);
+  const [
+    kategoriListesi,
+    markaListesi,
+    etiketListesi,
+    urunListesi,
+    menuListesi,
+    gorselListesi,
+    blogKategoriListesi,
+  ] = await Promise.all([
+    kategorileriOku(vt),
+    vt
+      .select({ kimlik: markalar.kimlik, ad: markalar.ad })
+      .from(markalar)
+      .where(isNull(markalar.silinme_zamani))
+      .orderBy(...adSirasi(markalar.ad), asc(markalar.kimlik))
+      .limit(panelSecenekSinirlari.kayit),
+    vt
+      .select({ kimlik: etiketler.kimlik, ad: etiketler.ad })
+      .from(etiketler)
+      .where(isNull(etiketler.silinme_zamani))
+      .orderBy(...adSirasi(etiketler.ad), asc(etiketler.kimlik))
+      .limit(panelSecenekSinirlari.kayit),
+    vt
+      .select({ kimlik: urunler.kimlik, ad: urunler.ad })
+      .from(urunler)
+      .where(isNull(urunler.silinme_zamani))
+      .orderBy(...adSirasi(urunler.ad), asc(urunler.kimlik))
+      .limit(panelSecenekSinirlari.kayit),
+    vt
+      .select({ kimlik: menuler.kod, ad: menuler.ad })
+      .from(menuler)
+      .where(isNull(menuler.silinme_zamani))
+      .orderBy(...adSirasi(menuler.ad), asc(menuler.kod))
+      .limit(panelSecenekSinirlari.kayit),
+    gorselSecenekleri(vt),
+    blogKategorileriniOku(vt),
+  ]);
   return {
     kategoriler: kategoriYollari(kategoriListesi).slice(0, panelSecenekSinirlari.kayit),
     markalar: markaListesi,
@@ -94,5 +106,6 @@ export const duzenSecenekleri = async (vt: Veritabani): Promise<DuzenSecenekleri
     urunler: urunListesi,
     menuler: menuListesi,
     gorseller: gorselListesi,
+    blogKategorileri: blogKategoriListesi.map((k) => ({ kimlik: k.adresAdi, ad: k.ad })),
   };
 };

@@ -2,6 +2,9 @@
 // kalıba uymuyorsa ya da yazı yoksa (silinmişse) bulunamadı. Vitrinde görünen yazıda "Vitrinde gör".
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { calisanSite } from "../../../../../../ayar-semasi/calisan-site";
+import { siteninServisi } from "../../../../../../moduller/magaza-ayarlari/servis";
+import { siteninVeritabani } from "../../../../../../veritabani/baglanti";
 import { kimlikMi } from "../../../../../../veritabani/kimlik";
 import { kayitAdresleri } from "../../../../../../vitrin/adresler";
 import {
@@ -28,9 +31,10 @@ export default async function BlogYazisiSayfasi({
   const { kimlik } = await searchParams;
   if (typeof kimlik !== "string" || !kimlikMi(kimlik)) notFound();
   const { yetkili } = await panelOturumu();
-  const [veri, durum] = await Promise.all([
+  const [veri, durum, blogAcik] = await Promise.all([
     blogYazisiEkraniVerisi(kimlik, yetkili),
     blogYazisiFormVerisi(kimlik),
+    siteninServisi(calisanSite()).tekOku(siteninVeritabani(), "blogAcik"),
   ]);
   if (veri === undefined || durum === null) notFound();
   return (
@@ -38,7 +42,8 @@ export default async function BlogYazisiSayfasi({
       kod="blog-yazisi"
       baslik={veri.form.baslik}
       eylemler={
-        durum.vitrinde ? (
+        // Blog kapalıyken yazının sayfası bulunamadı verir: bağlantı yoktur.
+        durum.vitrinde && blogAcik ? (
           <EylemBaglantisi
             eylem="vitrinde-gor"
             href={kayitAdresleri["blog-yazisi"](veri.form.adresAdi)}

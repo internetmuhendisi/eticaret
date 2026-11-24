@@ -470,6 +470,7 @@ export const blogBaslangicDosyasi = "baslangic/blog.json";
 // yoktur. Kapak görsellerini katalogGorselleriniDogrula denetler.
 export const blogBaslangiciniDogrula = (
   klasor: string,
+  saatDilimi: string,
 ): { gecerli: true; deger: BlogBaslangici } | { gecerli: false; hatalar: string[] } => {
   const ham = jsonOku(klasor, blogBaslangicDosyasi, {});
   if ("hata" in ham) return { gecerli: false, hatalar: [ham.hata] };
@@ -477,7 +478,7 @@ export const blogBaslangiciniDogrula = (
   if (!sonuc.success) {
     return { gecerli: false, hatalar: sorunlariYaz(blogBaslangicDosyasi, sonuc.error.issues) };
   }
-  const sorunlar = blogBaslangicKurallari(sonuc.data);
+  const sorunlar = blogBaslangicKurallari(sonuc.data, saatDilimi);
   if (sorunlar.length > 0) {
     return {
       gecerli: false,
@@ -605,8 +606,24 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
   if (duzenBaslangici !== undefined && !duzenBaslangici.gecerli) {
     hatalar.push(...duzenBaslangici.hatalar);
   }
-  const blogBaslangici = blogBaslangiciniDogrula(klasor);
+  const blogBaslangici = blogBaslangiciniDogrula(klasor, ayarlar?.saatDilimi ?? "UTC");
   if (!blogBaslangici.gecerli) hatalar.push(...blogBaslangici.hatalar);
+  // Başlangıç düzeninin blog bölümü kategoriyi adres adıyla seçer: başlangıç blogunda olmalı (kart 0272).
+  if (blogBaslangici.gecerli && duzenBaslangici?.gecerli === true) {
+    const blogKategorileri = new Set(blogBaslangici.deger.kategoriler.map((k) => k.adresAdi));
+    for (const [alan, bolumler] of Object.entries(duzenBaslangici.deger)) {
+      for (const [sira, bolum] of bolumler.entries()) {
+        const kategori = (bolum.degerler as { kategori?: unknown }).kategori;
+        if (bolum.tur === "blog-yazilari" && typeof kategori === "string" && kategori !== "") {
+          if (!blogKategorileri.has(kategori)) {
+            hatalar.push(
+              `${duzenBaslangicDosyasi}: ${alan}.${sira}.degerler.kategori: ${blogBaslangicDosyasi} dosyasında bu adres adıyla blog kategorisi yok.`,
+            );
+          }
+        }
+      }
+    }
+  }
   const katalogGorselleri = katalogBaslangici.gecerli
     ? katalogGorselleriniDogrula(
         klasor,

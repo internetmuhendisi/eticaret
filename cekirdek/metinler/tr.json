@@ -823,7 +823,7 @@
           "firsatlar": "Şu an vitrinde görünmüyor: bitiş tarihi olan, süren bir indirim yok. Bitiş tarihli indirim girilince görünür.",
           "marka-logolari": "Şu an vitrinde görünmüyor: seçilen markalar silinmiş. Bölümü açıp marka seçin.",
           "musteri-yorumlari": "Şu an vitrinde görünmüyor: gösterilecek yayınlanmış yorum yok. Yorumlar yayınlanınca görünür.",
-          "blog-yazilari": "Şu an vitrinde görünmüyor: blog kapalı ya da gösterilecek yayınlanmış yazı yok. Blog ekranından blogu açın ve yazı yayınlayın.",
+          "blog-yazilari": "Şu an vitrinde görünmüyor: blog kapalı, seçilen blog kategorisi silinmiş ya da adresi değişmiş, ya da gösterilecek yayınlanmış yazı yok. Blog ekranından blogu açın, bölümü açıp kategoriyi yeniden seçin ya da yazı yayınlayın.",
           "bulten-kaydi": "Şu an vitrinde görünmüyor: bültenin gönderim adresi tanımlı değil. Tanımlanınca görünür."
         }
       }

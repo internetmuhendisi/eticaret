@@ -538,7 +538,8 @@ export const icerikServisi = (saatDilimi: () => string) => {
       if (kategori === undefined) throw new BilinenHata("bulunamadi");
       const yazilar = await islem
         .update(blogYazilari)
-        .set({ kategori_kimligi: null })
+        // Yazının değişme anı da değişir: açık yazı formu kategorinin kalktığını çakışmayla görür.
+        .set({ kategori_kimligi: null, guncellenme_zamani: sql`clock_timestamp()` })
         .where(eq(blogYazilari.kategori_kimligi, kimlik))
         .returning({ kimlik: blogYazilari.kimlik });
       await islem

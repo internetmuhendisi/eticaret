@@ -8,7 +8,7 @@ import type { BlogPanelSiralamasi, BlogYaziDurumu } from "../../kayitlar/blog";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
 import { kayitAdresleri } from "../../vitrin/adresler";
-import { blogYazisiEkraniAdresi } from "../adresler";
+import { blogYazisiEkraniAdresi, yeniBlogYazisiAdresi } from "../adresler";
 import { KatalogGorseli } from "../katalog-gorseli";
 import { Liste, type SutunTanimi } from "../liste/liste";
 import type { ListeDurumu, ListeVerisi } from "../liste/tanim";
@@ -56,10 +56,13 @@ export function BlogListesi({
   durum,
   veri,
   kayitSecenekleri,
+  ekleyebilir,
 }: {
   durum: ListeDurumu;
   veri: ListeVerisi<BlogSatiri> | null;
   kayitSecenekleri: Record<string, KayitSecenegi[]>;
+  // Yöneticinin icerik.degistir izni (sunucudan): boş listede "Yazı ekle".
+  ekleyebilir: boolean;
 }) {
   const metin = usePanelMetni();
   const yayin = (satir: BlogSatiri) =>
@@ -125,6 +128,15 @@ export function BlogListesi({
         ikon: "yazi",
         baslik: metin("yonetim.blog.bos.baslik"),
         aciklama: metin("yonetim.blog.bos.metin"),
+        ...(ekleyebilir
+          ? {
+              eylem: (
+                <Baglanti href={yeniBlogYazisiAdresi} gorunum="birincil">
+                  {metin("yonetim.eylem.yaziEkle")}
+                </Baglanti>
+              ),
+            }
+          : {}),
       }}
       topluIslemler={[]}
     />

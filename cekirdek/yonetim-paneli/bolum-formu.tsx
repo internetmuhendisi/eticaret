@@ -42,7 +42,7 @@ export type BolumFormuSecenekleri = {
   gorseller: readonly GorselSecenegi[];
   // Menüler (kart 0108): kimlik yerine menünün kodu.
   menuler: readonly KayitSecenegi[];
-  // Blog kategorileri (kart 0112): kimlik yerine adres adı. Blog işlevi yazılana kadar boştur.
+  // Blog kategorileri (kart 0112, 0272): kimlik yerine adres adı.
   blogKategorileri: readonly KayitSecenegi[];
 };
 

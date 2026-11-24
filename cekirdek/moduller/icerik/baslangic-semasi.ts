@@ -8,6 +8,7 @@
 import { z } from "zod";
 import { blogSinirlari, blogYaziDurumlari } from "../../kayitlar/blog.ts";
 import { adresAdiKalibi, adresAdiUzunlugu } from "../../metinler/adres-adi.ts";
+import { yerelZamandan } from "../../metinler/bicimleyici.ts";
 import { katalogGorselAdi } from "../urun/baslangic-semasi.ts";
 
 const adresAdi = z.string().max(adresAdiUzunlugu).regex(adresAdiKalibi);
@@ -46,8 +47,9 @@ export type BlogBaslangici = z.output<typeof blogBaslangicSemasi>;
 
 export const bosBlogBaslangici: BlogBaslangici = { kategoriler: [], yazilar: [] };
 
-// Alanlar arası kurallar: adres adlarının tekilliği, kategorinin dosyada olması, taslak dışında yayın zamanı.
-export const blogBaslangicKurallari = (blog: BlogBaslangici): string[] => {
+// Alanlar arası kurallar: adres adlarının tekilliği, kategorinin dosyada olması, taslak dışında yayın zamanı ve zamanın
+// sitenin saat diliminde yaşanması (yaz saati boşluğu kurulumu düşürürdü, bağımsız kontrolün bulgusu).
+export const blogBaslangicKurallari = (blog: BlogBaslangici, saatDilimi: string): string[] => {
   const sorunlar: string[] = [];
   const kategoriAdresleri = new Set<string>();
   for (const [sira, kategori] of blog.kategoriler.entries()) {
@@ -67,6 +69,12 @@ export const blogBaslangicKurallari = (blog: BlogBaslangici): string[] => {
     }
     if (yazi.durum !== "taslak" && yazi.yayinZamani === undefined) {
       sorunlar.push(`yazilar.${sira}.yayinZamani: yayında ve zamanlanmış yazının zamanı olur`);
+    }
+    if (
+      yazi.yayinZamani !== undefined &&
+      yerelZamandan(yazi.yayinZamani, saatDilimi) === undefined
+    ) {
+      sorunlar.push(`yazilar.${sira}.yayinZamani: bu yerel saat sitenin saat diliminde yaşanmıyor`);
     }
   }
   return sorunlar;
