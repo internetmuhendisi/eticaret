@@ -66,7 +66,7 @@ Görseller `baslangic/gorseller/` klasöründedir, katalogdaki ürünün `galeri
 **Kaynaklar:**
 
 - Görseller kullanıcının verdiği paketten gelir (kart 0115): eğitimdeki Örnek Mağaza'nın örnek ürünleri için yapay zekâyla üretilmiş JPEG dosyaları. Paketin notuna göre yalnız bu deneme mağazasında kullanılır, gerçek bir mağazada kullanılmaz.
-- Kullanılmayan dosyalar: `baslangic/bekleyen-gorseller/` klasöründeki üç blog görseli blog özelliği gelene kadar bekler, hiçbir başlangıç dosyası onlara başvurmaz.
+- Blog görselleri (`blog-1-calisma-masasi.jpg`, `blog-2-gardirop.jpg`, `blog-3-sofra.jpg`) aynı paketten gelir; kart 0272'ye kadar `baslangic/bekleyen-gorseller/` klasöründe bekledi, başlangıç blogunun kapaklarıdır.
 - Video: "Big Buck Bunny", Blender Foundation, Creative Commons Attribution 3.0 lisanslı (https://peach.blender.org). YouTube'da Blender'ın resmî kanalındaki yükleme: https://www.youtube.com/watch?v=aqz-KE-bpKQ (2026-11-08'de YouTube'un oEmbed yanıtıyla var olduğu doğrulandı). Ürünle ilgisi yoktur, yalnız galeride videonun nasıl göründüğünü göstermek içindir. Lisansın istediği atıf alternatif metindedir.
 
 ## Yeni ürünler (kart 0115)
@@ -127,8 +127,21 @@ Ana sayfanın ilk düzeni `baslangic/duzen.json` dosyasındadır, sırası karar
 | Yan afişli ürün vitrini | Yeni gelenler | En yeni 4 ürün, solda yan afiş (masaüstünde tek sıra). Katalog tek işlemde yazılır, en yeni kataloğun son ürünüdür: Keten Gömlek, Kablosuz Şarj Standı, Bluetooth Hoparlör, Kokulu Mum (kart 0127) |
 | Kategoriye göre sekmeler | Sekmeli vitrin | Beş kategori; kartlar yatay |
 | Geri sayımlı fırsat | Fırsatlar | Eski fiyatı gösterilen, bitişli indirimdeki ürünler, en çok dört: 16 Kasım 18:00–8 Aralık 2026 arası Kapüşonlu Sweatshirt (lacivert), Çelik Termos, Zeytinyağlı Sabun Seti, Bluetooth Hoparlör. Katalog 16 Kasım 18:00'den önce kurulmuş olmalı (karar 0094). Kablosuz Kulaklık'ın eski fiyatı gösterilmediği için girmez (karar 0088). Fırsat yokken bölüm vitrinde çizilmez |
-| İşlevi yazılmamış bölüm | Müşteri yorumları, blog yazıları, bülten kaydı | Düzende durur, vitrinde çizilmez (karar 0090) |
+| İşlevi yazılmamış bölüm | Bülten kaydı | Düzende durur, vitrinde çizilmez (karar 0090). Müşteri yorumları kart 0139'dan, blog yazıları kart 0272'den beri çizilir |
+| Blog yazıları | Blogdan | Son üç yazı, "Tümünü gör" `/blog`'a gider. Blog kapalıyken çizilmez |
 | Görselli bölümler | Kayan afiş (görsel arkada), kampanya afişleri (üçlü yatay ve ikili "görsel solda", karar 0093), kategori kutuları, geniş afiş (tam genişlik), yeni gelenlerin yan afişi | Görseller `baslangic/gorseller/` klasöründen dosya adıyla (karar 0094) |
 | Logosu gelmemiş bölüm gizli | Marka logoları | Pakette logo yok, gizli kaldı |
 
 Güven şeridine ücretsiz kargo ve ödeme yöntemi yazılmadı: kargo hesabı ve ödeme yazılmadan ekrana iddia olarak konmaz.
+
+## Blog (kart 0272)
+
+Blog açık başlar (`baslangic/ayarlar.json`, `blogAcik`). Başlangıç blogu `baslangic/blog.json` dosyasındadır: arka plan süreci açılırken, düzenden sonra, sitede hiç blog satırı yoksa bir kez yüklenir (karar 0176). Durumları `cekirdek/moduller/icerik/testler/servis.test.ts` başlangıç kurulumuyla ve `testler/blog.test.ts` bu dosyayla dener.
+
+| Yazı | Kategori | Yayın | Kapak |
+|---|---|---|---|
+| Çalışma masanızı sadeleştirmenin 5 yolu | Ev ve yaşam | 10 Kasım 2026 10:00 | `blog-1-calisma-masasi.jpg` |
+| Kışa hazırlık: katmanlı giyinmenin kısa rehberi | Rehber | 18 Kasım 2026 10:00 | `blog-2-gardirop.jpg` |
+| Yılbaşı sofrası için küçük dokunuşlar | Rehber | 20 Kasım 2026 09:00 | `blog-3-sofra.jpg` |
+
+Üç yazı da yayındadır; ana sayfanın "Blogdan" bölümü en yeniden eskiye üçünü gösterir.

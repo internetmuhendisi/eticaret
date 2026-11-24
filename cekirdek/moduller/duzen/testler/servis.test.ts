@@ -51,7 +51,12 @@ const site: Site = { ...ornekSite, duzenBaslangici: baslangicDuzeni };
 // İşlevler testte açılıp kapanır.
 // Deneme kütüphanesinin yorum bölümü işlevi yazılmamış bölümü örnekler: yorum işlevi kart 0139'da yazıldı, testler
 // onu kapalı sayar (gerçek işlev listesi aşağıda ayrıca ölçülür).
-const testinIslevleri = (): Record<Islev, boolean> => ({ ...yazilanIslevler, yorum: false });
+// Yazılmış işlevler (yorum kart 0139, blog kart 0272) testte kapalı başlar: işleve bağlı bölümün kuralı denenir.
+const testinIslevleri = (): Record<Islev, boolean> => ({
+  ...yazilanIslevler,
+  yorum: false,
+  blog: false,
+});
 let islevler: Record<Islev, boolean> = testinIslevleri();
 const servis = duzenServisi(
   () => site,
@@ -589,9 +594,10 @@ describe("işleve bağlı bölüm (kart 0106)", () => {
       (await gercek.cizilecekBolumler(vt, "ana-sayfa"))
         .map((bolum) => bolum.tur)
         .filter((tur) => bolumler.some((bolum) => bolum.tur === tur));
+    // Yorum (kart 0139) ve blog (kart 0272) yazıldı; test işlevleri kendisi verir.
     expect([yazilanIslevler.yorum, yazilanIslevler.blog, yazilanIslevler.bulten]).toEqual([
       true,
-      false,
+      true,
       false,
     ]);
     expect(await cizilenler()).toEqual([]);

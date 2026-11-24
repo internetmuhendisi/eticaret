@@ -250,7 +250,7 @@ export const icerikServisi = (saatDilimi: () => string) => {
   };
 
   // yayinAni: yalnız iç çağrılar (başlangıç blogu) verir; yayındaki yazının ilk yayın anı olur. Uç vermez.
-  const yaziEkle = (
+  const yaziEkle = async (
     vt: Veritabani | VeritabaniIslemi,
     kim: DegisikligiYapan,
     ham: unknown,
@@ -296,7 +296,7 @@ export const icerikServisi = (saatDilimi: () => string) => {
   };
 
   // gorulen: ekranın gördüğü son değişme anı. Verilmezse (servisin kendi çağrıları, testler) denetlenmez.
-  const yaziDegistir = (
+  const yaziDegistir = async (
     vt: Veritabani | VeritabaniIslemi,
     kim: DegisikligiYapan,
     kimlikHam: string,
@@ -438,7 +438,7 @@ export const icerikServisi = (saatDilimi: () => string) => {
         .limit(1)
     ).length > 0;
 
-  const kategoriEkle = (
+  const kategoriEkle = async (
     vt: Veritabani | VeritabaniIslemi,
     kim: DegisikligiYapan,
     ham: unknown,
@@ -483,7 +483,7 @@ export const icerikServisi = (saatDilimi: () => string) => {
     });
   };
 
-  const kategoriDegistir = (
+  const kategoriDegistir = async (
     vt: Veritabani | VeritabaniIslemi,
     kim: DegisikligiYapan,
     kimlikHam: string,

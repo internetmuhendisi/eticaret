@@ -253,7 +253,7 @@ export async function BlogYazisiSayfasi({
             alt={yazi.kapak.metin}
             genislik="tam"
             oncelikli
-            className="aspect-video w-full rounded-orta object-cover"
+            className="aspect-16/10 w-full rounded-orta object-cover"
           />
         )}
         {yazi.icerik === undefined ? null : (

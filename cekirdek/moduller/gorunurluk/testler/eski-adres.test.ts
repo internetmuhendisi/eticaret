@@ -12,6 +12,7 @@ import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { etiketServisi } from "../../etiket/servis.ts";
+import { icerikServisi } from "../../icerik/servis.ts";
 import { kategoriDegistir, kategoriEkle, kategoriSil } from "../../kategori/servis.ts";
 import { markaServisi } from "../../marka/servis.ts";
 import { urunServisi } from "../../urun/servis.ts";
@@ -19,6 +20,7 @@ import { kayitAdresiniCoz } from "../adres.ts";
 import { eskiAdresler } from "../model.ts";
 
 const urunSrv = urunServisi(() => "Europe/Istanbul");
+const icerikSrv = icerikServisi(() => "Europe/Istanbul");
 const yonetici = (): DegisikligiYapan => ({ tur: "yonetici", kimlik: randomUUID() });
 
 const silinecekler: (() => Promise<void>)[] = [];
@@ -61,6 +63,15 @@ const turler: Record<AdresliKayitTuru, Islemler> = {
     adiDegistir: (vt, kimlik, adresAdi) =>
       urunSrv.urunDegistir(vt, yonetici(), kimlik, { adresAdi }),
     sil: (vt, kimlik) => urunSrv.urunSil(vt, yonetici(), kimlik),
+  },
+  // Kart 0272: blog yazısı; vitrinde açılsın diye yayında eklenir.
+  "blog-yazisi": {
+    ekle: async (vt, baslik, adresAdi) =>
+      (await icerikSrv.yaziEkle(vt, yonetici(), { baslik, adresAdi, durum: "yayinda" })).kimlik,
+    adiDegistir: async (vt, kimlik, adresAdi) => {
+      await icerikSrv.yaziDegistir(vt, yonetici(), kimlik, { adresAdi });
+    },
+    sil: (vt, kimlik) => icerikSrv.yaziSil(vt, yonetici(), kimlik),
   },
 };
 

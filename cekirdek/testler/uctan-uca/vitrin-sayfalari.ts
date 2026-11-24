@@ -7,6 +7,10 @@ import { kayitAdresleri, vitrinAdresleri } from "../../vitrin/adresler";
 export const ekranGenislikleri = [320, 390, 768, 1280] as const;
 
 const katalog = calisanSite().katalogBaslangici;
+// Kart 0272: blog açık başlayan sitede blog listesi ve yayındaki ilk yazı ölçülür.
+const blogYazisi = calisanSite().baslangic.blogAcik
+  ? calisanSite().blogBaslangici.yazilar.find((yazi) => yazi.durum === "yayinda")
+  : undefined;
 const yayindakiUrunler = katalog.urunler.filter((urun) => urun.durum === "yayinda");
 const urun = yayindakiUrunler.find((u) => (u.secenekler?.length ?? 0) > 0) ?? yayindakiUrunler[0];
 const ilk = <T>(liste: readonly T[] | undefined, ne: string): T => {
@@ -47,4 +51,10 @@ export const ekranSayfalari: Record<string, { adres: string; durum: number; menu
   giris: { adres: vitrinAdresleri.giris, durum: 200 },
   kayit: { adres: vitrinAdresleri.kayit, durum: 200 },
   bulunamadi: { adres: "/olcum-icin-olmayan-sayfa", durum: 404 },
+  ...(blogYazisi === undefined
+    ? {}
+    : {
+        blog: { adres: vitrinAdresleri.blog, durum: 200 },
+        "blog yazisi": { adres: kayitAdresleri["blog-yazisi"](blogYazisi.adresAdi), durum: 200 },
+      }),
 };

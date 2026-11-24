@@ -72,7 +72,8 @@ export const blogPanelListesi = async (
     .select({ durum, sayi: count() })
     .from(blogYazilari)
     .where(ortak)
-    .groupBy(durum);
+    // Durum ifadesi anı parametre olarak taşır: seçimdeki ile gruplamadaki ayrı parametre olurdu, sırayla gruplanır.
+    .groupBy(sql`1`);
   const durumSayilari = Object.fromEntries(blogYaziDurumlari.map((d) => [d, 0])) as Record<
     BlogYaziDurumu,
     number

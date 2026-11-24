@@ -64,6 +64,7 @@
     "bilesenler/parcalar/uyari.tsx",
     "bilesenler/parcalar/yukleniyor.tsx",
     "cekirdek/eklentiler/kartla-odeme/taksit-satiri.tsx",
+    "cekirdek/vitrin/blog/sayfa.tsx",
     "cekirdek/vitrin/bolumler/duyuru-seridi/gorunum.tsx",
     "cekirdek/vitrin/bolumler/guven-seridi/gorunum.tsx",
     "cekirdek/vitrin/bolumler/iletisim-bilgileri/gorunum.tsx",
@@ -93,6 +94,8 @@
     "cekirdek/vitrin/urun-sayfasi/galeri.tsx",
     "cekirdek/vitrin/urun-sayfasi/sayfa.tsx",
     "cekirdek/vitrin/yildizlar.tsx",
+    "cekirdek/yonetim-paneli/blog/kategoriler.tsx",
+    "cekirdek/yonetim-paneli/blog/yazi-ekrani.tsx",
     "cekirdek/yonetim-paneli/katalog-gorseli.tsx",
     "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/liste/tarih-suzgeci.tsx",
@@ -132,6 +135,7 @@
     "cekirdek/vitrin/urun-listesi/filtreler.tsx"
   ],
   "bilesenler/parcalar/anahtar.tsx": [
+    "cekirdek/yonetim-paneli/blog/blog-ayari.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/ekran.tsx",
     "cekirdek/yonetim-paneli/ozellikler/ekran.tsx",
     "cekirdek/yonetim-paneli/siparisler/fis-ayarlari.tsx",
@@ -144,6 +148,7 @@
     "cekirdek/eklentiler/stoga-gelince-haber-ver/form.tsx",
     "cekirdek/eklentiler/stoga-gelince-haber-ver/panel/liste.tsx",
     "cekirdek/moduller/oturum/sifirlama-formlari.tsx",
+    "cekirdek/vitrin/blog/sayfa.tsx",
     "cekirdek/vitrin/bolumler/duyuru-seridi/gorunum.tsx",
     "cekirdek/vitrin/bolumler/iletisim-bilgileri/gorunum.tsx",
     "cekirdek/vitrin/bolumler/kayan-afis/gorunum.tsx",
@@ -177,6 +182,7 @@
     "cekirdek/vitrin/siparis/takip-sayfasi.tsx",
     "cekirdek/vitrin/urun-listesi/sayfa.tsx",
     "cekirdek/vitrin/urun-sayfasi/sayfa.tsx",
+    "cekirdek/yonetim-paneli/blog/liste.tsx",
     "cekirdek/yonetim-paneli/eylem-dugmesi.tsx",
     "cekirdek/yonetim-paneli/giris-formu.tsx",
     "cekirdek/yonetim-paneli/liste/liste.tsx",
@@ -194,6 +200,7 @@
     "cekirdek/yonetim-paneli/yorumlar/liste.tsx"
   ],
   "bilesenler/parcalar/bicimli-metin-alani.tsx": [
+    "cekirdek/yonetim-paneli/blog/yazi-ekrani.tsx",
     "cekirdek/yonetim-paneli/urunler/urun-ekrani.tsx"
   ],
   "bilesenler/parcalar/bildirim.tsx": [
@@ -204,6 +211,7 @@
     "cekirdek/vitrin/sepet/sepete-ekle.tsx",
     "cekirdek/vitrin/siparis/iban-kopyala.tsx",
     "cekirdek/vitrin/siparis/siparis-iptali.tsx",
+    "cekirdek/yonetim-paneli/blog/yazi-ekrani.tsx",
     "cekirdek/yonetim-paneli/panel-cercevesi.tsx",
     "cekirdek/yonetim-paneli/panel-islemi.ts",
     "cekirdek/yonetim-paneli/siparisler/elle-siparis.tsx",
@@ -212,6 +220,7 @@
     "cekirdek/yonetim-paneli/vitrin-bolumleri/slider.tsx"
   ],
   "bilesenler/parcalar/bos-hal.tsx": [
+    "cekirdek/vitrin/blog/sayfa.tsx",
     "cekirdek/vitrin/favoriler-sayfasi.tsx",
     "cekirdek/vitrin/hesap/adres-defteri.tsx",
     "cekirdek/vitrin/hesap/sayfalar.tsx",
@@ -220,6 +229,7 @@
     "cekirdek/vitrin/sepet/sepet-gorunumu.tsx",
     "cekirdek/vitrin/urun-listesi/arama-sayfasi.tsx",
     "cekirdek/vitrin/urun-listesi/sayfa.tsx",
+    "cekirdek/yonetim-paneli/blog/kategoriler.tsx",
     "cekirdek/yonetim-paneli/kategoriler/ekran.tsx",
     "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
@@ -229,6 +239,7 @@
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx"
   ],
   "bilesenler/parcalar/dosya-yukleme.tsx": [
+    "cekirdek/yonetim-paneli/blog/yazi-ekrani.tsx",
     "cekirdek/yonetim-paneli/dosya-yuklemesi.ts",
     "cekirdek/yonetim-paneli/siparisler/fatura.tsx",
     "cekirdek/yonetim-paneli/tema/logo-bolumu.tsx",
@@ -269,6 +280,8 @@
     "cekirdek/vitrin/urun-listesi/filtreler.tsx",
     "cekirdek/vitrin/urun-sayfasi/galeri.tsx",
     "cekirdek/vitrin/urun-sayfasi/yorum-yaz.tsx",
+    "cekirdek/yonetim-paneli/blog/kategoriler.tsx",
+    "cekirdek/yonetim-paneli/blog/yazi-ekrani.tsx",
     "cekirdek/yonetim-paneli/bolum-formu.tsx",
     "cekirdek/yonetim-paneli/coklu-kayit-secimi.tsx",
     "cekirdek/yonetim-paneli/eylem-dugmesi.tsx",
@@ -322,6 +335,8 @@
     "cekirdek/vitrin/siparis/takip-formu.tsx",
     "cekirdek/vitrin/urun-listesi/filtreler.tsx",
     "cekirdek/vitrin/urun-sayfasi/yorum-yaz.tsx",
+    "cekirdek/yonetim-paneli/blog/kategoriler.tsx",
+    "cekirdek/yonetim-paneli/blog/yazi-ekrani.tsx",
     "cekirdek/yonetim-paneli/bolum-formu.tsx",
     "cekirdek/yonetim-paneli/giris-formu.tsx",
     "cekirdek/yonetim-paneli/kargo/ekran.tsx",
@@ -379,6 +394,9 @@
     "cekirdek/vitrin/siparis/parcalar.tsx",
     "cekirdek/vitrin/siparis/takip-formu.tsx",
     "cekirdek/yonetim-paneli/ayrinti-parcalari.tsx",
+    "cekirdek/yonetim-paneli/blog/blog-ayari.tsx",
+    "cekirdek/yonetim-paneli/blog/kategoriler.tsx",
+    "cekirdek/yonetim-paneli/blog/yazi-ekrani.tsx",
     "cekirdek/yonetim-paneli/kargo/ekran.tsx",
     "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/magaza-bilgileri/ekran.tsx",
@@ -415,6 +433,8 @@
   "bilesenler/parcalar/onay-penceresi.tsx": [
     "cekirdek/vitrin/hesap/adres-defteri.tsx",
     "cekirdek/vitrin/siparis/siparis-iptali.tsx",
+    "cekirdek/yonetim-paneli/blog/kategoriler.tsx",
+    "cekirdek/yonetim-paneli/blog/yazi-ekrani.tsx",
     "cekirdek/yonetim-paneli/kategoriler/ekran.tsx",
     "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/markalar/ekran.tsx",
@@ -457,6 +477,7 @@
     "cekirdek/vitrin/urun-karti/urun-karti.tsx",
     "cekirdek/vitrin/urun-sayfasi/sayfa.tsx",
     "cekirdek/vitrin/urun-sayfasi/yorumlar.tsx",
+    "cekirdek/yonetim-paneli/blog/liste.tsx",
     "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/liste/tarih-suzgeci.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
@@ -475,6 +496,7 @@
     "cekirdek/yonetim-paneli/yorumlar/liste.tsx"
   ],
   "bilesenler/parcalar/sayfa-basligi.tsx": [
+    "cekirdek/vitrin/blog/sayfa.tsx",
     "cekirdek/vitrin/durum-sayfasi.tsx",
     "cekirdek/vitrin/favori-listesi.tsx",
     "cekirdek/vitrin/hesap/cerceve.tsx",
@@ -490,6 +512,7 @@
     "cekirdek/yonetim-paneli/panel-sayfasi.tsx"
   ],
   "bilesenler/parcalar/sayfa-yolu.tsx": [
+    "cekirdek/vitrin/blog/sayfa.tsx",
     "cekirdek/vitrin/favoriler-sayfasi.tsx",
     "cekirdek/vitrin/hesap/cerceve.tsx",
     "cekirdek/vitrin/hesap/giris-duzeni.tsx",
@@ -503,6 +526,7 @@
     "cekirdek/yonetim-paneli/panel-sayfasi.tsx"
   ],
   "bilesenler/parcalar/sayfalama.tsx": [
+    "cekirdek/vitrin/blog/sayfa.tsx",
     "cekirdek/vitrin/hesap/siparisler.tsx",
     "cekirdek/vitrin/urun-listesi/sayfa.tsx",
     "cekirdek/vitrin/urun-sayfasi/yorumlar.tsx",
@@ -512,6 +536,7 @@
     "cekirdek/vitrin/odeme/odeme-formu.tsx",
     "cekirdek/vitrin/urun-sayfasi/urun-ust.tsx",
     "cekirdek/vitrin/urun-sayfasi/yorum-yaz.tsx",
+    "cekirdek/yonetim-paneli/blog/yazi-ekrani.tsx",
     "cekirdek/yonetim-paneli/kargo/ekran.tsx",
     "cekirdek/yonetim-paneli/liste/tarih-suzgeci.tsx",
     "cekirdek/yonetim-paneli/magaza-bilgileri/ekran.tsx",
@@ -531,6 +556,7 @@
     "cekirdek/vitrin/siparis/havale-bildirimi-formu.tsx",
     "cekirdek/vitrin/siparis/iade-talebi-formu.tsx",
     "cekirdek/vitrin/urun-listesi/filtreler.tsx",
+    "cekirdek/yonetim-paneli/blog/yazi-ekrani.tsx",
     "cekirdek/yonetim-paneli/bolum-formu.tsx",
     "cekirdek/yonetim-paneli/kategoriler/ekran.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
@@ -553,6 +579,7 @@
   ],
   "bilesenler/parcalar/siralanabilir-liste.tsx": [
     "cekirdek/metinler/siralama-metinleri.ts",
+    "cekirdek/yonetim-paneli/blog/kategoriler.tsx",
     "cekirdek/yonetim-paneli/kategoriler/ekran.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/odeme-yontemleri/banka-hesaplari.tsx",
@@ -631,6 +658,7 @@
     "cekirdek/vitrin/siparis/havale-bildirimi-formu.tsx",
     "cekirdek/vitrin/siparis/iade-talebi-formu.tsx",
     "cekirdek/vitrin/urun-sayfasi/yorum-yaz.tsx",
+    "cekirdek/yonetim-paneli/blog/yazi-ekrani.tsx",
     "cekirdek/yonetim-paneli/bolum-formu.tsx",
     "cekirdek/yonetim-paneli/kategoriler/ekran.tsx",
     "cekirdek/yonetim-paneli/markalar/ekran.tsx",
@@ -646,6 +674,7 @@
     "cekirdek/vitrin/bolumler/ust-satir/menu-dugmesi.tsx",
     "cekirdek/vitrin/sepet/sepet-penceresi.tsx",
     "cekirdek/vitrin/urun-listesi/filtreler.tsx",
+    "cekirdek/yonetim-paneli/blog/kategoriler.tsx",
     "cekirdek/yonetim-paneli/form/panel-formu.tsx",
     "cekirdek/yonetim-paneli/kategoriler/ekran.tsx",
     "cekirdek/yonetim-paneli/markalar/ekran.tsx",
