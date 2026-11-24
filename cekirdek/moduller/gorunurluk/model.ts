@@ -33,6 +33,9 @@ export const eskiAdresler = pgTable(
   (tablo) => [
     uniqueIndex("eski_adresler_adres").on(tablo.kayit_turu, tablo.adres_adi),
     // Liste cekirdek/kayitlar/adres.ts ile aynıdır (testler/eski-adres.test.ts ölçer).
-    check("eski_adresler_tur", sql`${tablo.kayit_turu} in ('kategori', 'marka', 'etiket', 'urun')`),
+    check(
+      "eski_adresler_tur",
+      sql`${tablo.kayit_turu} in ('kategori', 'marka', 'etiket', 'urun', 'blog-yazisi')`,
+    ),
   ],
 );

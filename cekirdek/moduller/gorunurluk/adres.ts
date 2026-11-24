@@ -14,6 +14,8 @@ import type { AdresliKayitTuru } from "../../kayitlar/adres.ts";
 import { adresAdiKalibi, adresAdiUzunlugu } from "../../metinler/adres-adi.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { etiketler } from "../etiket/model.ts";
+import { blogYazilari } from "../icerik/model.ts";
+import { blogYazisiVitrinde } from "../icerik/vitrin.ts";
 import { kategoriler } from "../kategori/model.ts";
 import { markalar } from "../marka/model.ts";
 import { urunler } from "../urun/model.ts";
@@ -38,19 +40,34 @@ const kaynaklar = (an: Date | undefined) =>
   ({
     kategori: {
       tablo: kategoriler,
+      ad: kategoriler.ad,
       aciklama: kategoriler.aciklama,
       acik: isNull(kategoriler.silinme_zamani),
     },
-    marka: { tablo: markalar, aciklama: markalar.aciklama, acik: isNull(markalar.silinme_zamani) },
+    marka: {
+      tablo: markalar,
+      ad: markalar.ad,
+      aciklama: markalar.aciklama,
+      acik: isNull(markalar.silinme_zamani),
+    },
     etiket: {
       tablo: etiketler,
+      ad: etiketler.ad,
       aciklama: etiketler.aciklama,
       acik: isNull(etiketler.silinme_zamani),
     },
     urun: {
       tablo: urunler,
+      ad: urunler.ad,
       aciklama: urunler.kisa_aciklama,
       acik: vitrinKosulu("sayfa", { ...(an === undefined ? {} : { an }), tukenenUrun: "goster" }),
+    },
+    // Kart 0272: blog yazısı; adı başlığıdır, açıklaması özetidir. Blogun açıklığı sayfada ayrıca okunur.
+    "blog-yazisi": {
+      tablo: blogYazilari,
+      ad: blogYazilari.baslik,
+      aciklama: blogYazilari.ozet,
+      acik: blogYazisiVitrinde(an),
     },
   }) as const satisfies Record<AdresliKayitTuru, unknown>;
 
@@ -64,14 +81,14 @@ export const kayitAdresiniCoz = async (
   { an }: { an?: Date } = {},
 ): Promise<AdresSonucu> => {
   if (!adresAdiGecerliMi(adresAdi)) return { sonuc: "yok" };
-  const { tablo, aciklama, acik } = kaynaklar(an)[tur];
+  const { tablo, ad, aciklama, acik } = kaynaklar(an)[tur];
   // Adı şu an silinmemiş bir kayıt taşıyorsa o adın en yeni sahibidir (ad silinmemişler arasında tekildir;
   // eski sahibi adı ondan önce bırakmıştır). Sayfası açılıyorsa odur, açılmıyorsa (taslak ürün) adres bulunamaz:
   // adın eski sahibine yönlendirilmez.
   const [sahip] = await vt
     .select({
       kimlik: tablo.kimlik,
-      ad: tablo.ad,
+      ad,
       adresAdi: tablo.adres_adi,
       aciklama,
       acik: sql<boolean>`${acik}`,

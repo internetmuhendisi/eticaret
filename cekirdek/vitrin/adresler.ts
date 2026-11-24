@@ -57,6 +57,8 @@ export const kayitAdresleri = {
   marka: (adresAdi: string) => `/marka/${adresAdi}`,
   etiket: (adresAdi: string) => `/etiket/${adresAdi}`,
   urun: (adresAdi: string) => `/urun/${adresAdi}`,
+  // Kart 0272: blog yazısı.
+  "blog-yazisi": (adresAdi: string) => `/blog/${adresAdi}`,
 } as const satisfies Record<AdresliKayitTuru, (adresAdi: string) => string>;
 
 // Müşteri girişinden sonra dönülecek adres (kart 0139: yorum yazmak için girişe giden müşteri ürüne döner).

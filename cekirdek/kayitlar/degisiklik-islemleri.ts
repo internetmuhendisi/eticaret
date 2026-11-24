@@ -121,6 +121,15 @@ export const degisiklikIslemleri = [
   "musteri-notu.silindi",
   // Panelden müşteriye şifre sıfırlama bağlantısı gönderildi (kart 0271); e-posta kayda yazılmaz.
   "musteri.sifre-sifirlama-gonderildi",
+  // Blog (kart 0272, karar 0176): yazı ve blog kategorisi. İçerik ve özet kayda girmez (uzun metin); başlık, adres
+  // adı, durum, yayın zamanı, kategori ve kapak girer.
+  "blog-yazisi.eklendi",
+  "blog-yazisi.degisti",
+  "blog-yazisi.silindi",
+  "blog-kategorisi.eklendi",
+  "blog-kategorisi.degisti",
+  "blog-kategorisi.silindi",
+  "blog-kategorisi.siralandi",
 ] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 
@@ -161,6 +170,9 @@ export const degisiklikKayitTurleri = [
   // Kart 0271: müşteri hesabı ve mağazanın müşteri hakkındaki notu.
   "musteri",
   "musteri-notu",
+  // Kart 0272: blog yazısı ve blog kategorisi.
+  "blog-yazisi",
+  "blog-kategorisi",
 ] as const;
 export type DegisiklikKayitTuru = (typeof degisiklikKayitTurleri)[number];
 

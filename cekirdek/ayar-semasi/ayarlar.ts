@@ -493,6 +493,12 @@ export const magazaAyarSemasi = z.strictObject({
     z.enum(iadeKargosuOdeyenler).default("magaza"),
     magazaSahibinin("ayar.aciklama.iadeKargosu", { kendiIsleviyle: true }),
   ),
+  // Blog (kart 0272, karar 0176): kapalıyken yazılar vitrinde görünmez, /blog bulunamadı verir, ana sayfanın blog
+  // bölümü çizilmez. Yazılar panelde yazılır, silinmez. Yalnız blog ekranının anahtarıyla değişir.
+  blogAcik: ayar(
+    z.boolean().default(false),
+    magazaSahibinin("ayar.aciklama.blogAcik", { kendiIsleviyle: true }),
+  ),
   // Sipariş fişinde fiyatlar (kart 0270, karar 0157): kapalıyken fişte yalnız ürün, stok kodu ve adet yazar (hediye
   // siparişi). Yalnız sipariş ayarları işleviyle değişir.
   fisteFiyatlar: ayar(

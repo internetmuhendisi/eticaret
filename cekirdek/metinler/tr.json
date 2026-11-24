@@ -156,7 +156,8 @@
       "iadeKargosu": "İade kargosunu kim öder: mağaza ya da müşteri. İade talebi formunda müşteriye söylenir.",
       "fisteFiyatlar": "Sipariş fişinde fiyatlar ve toplam görünsün mü. Kapalıyken fişte yalnız ürün, stok kodu ve adet yazar (ör. hediye siparişi).",
       "yoneticiBildirimAlicilari": "Yönetici bildirimlerinin gideceği e-posta adresleri, en çok 5. Boşsa bildirimler mağaza sahibi rolündeki yöneticilere gider.",
-      "kapaliYoneticiBildirimleri": "Kapatılan yönetici bildirimleri. Listede olmayan her bildirim açıktır."
+      "kapaliYoneticiBildirimleri": "Kapatılan yönetici bildirimleri. Listede olmayan her bildirim açıktır.",
+      "blogAcik": "Açıksa blog yazıları vitrinde /blog adresinde ve ana sayfanın blog bölümünde görünür."
     }
   },
   "tema": {

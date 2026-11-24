@@ -8,6 +8,7 @@ import { ekipIzinleri } from "../moduller/ekip/izinler.ts";
 import { etiketIzinleri } from "../moduller/etiket/izinler.ts";
 import { favoriIzinleri } from "../moduller/favori/izinler.ts";
 import { fiyatIzinleri } from "../moduller/fiyat/izinler.ts";
+import { icerikIzinleri } from "../moduller/icerik/izinler.ts";
 import { kategoriIzinleri } from "../moduller/kategori/izinler.ts";
 import { magazaAyarlariIzinleri } from "../moduller/magaza-ayarlari/izinler.ts";
 import { markaIzinleri } from "../moduller/marka/izinler.ts";
@@ -40,6 +41,8 @@ export const modulIzinleri = {
   etiket: etiketIzinleri,
   favori: favoriIzinleri,
   fiyat: fiyatIzinleri,
+  // Blog yazıları (kart 0272).
+  icerik: icerikIzinleri,
   kategori: kategoriIzinleri,
   "magaza-ayarlari": magazaAyarlariIzinleri,
   marka: markaIzinleri,
@@ -66,6 +69,7 @@ export const izinler = {
   ...etiketIzinleri,
   ...favoriIzinleri,
   ...fiyatIzinleri,
+  ...icerikIzinleri,
   ...kategoriIzinleri,
   ...magazaAyarlariIzinleri,
   ...markaIzinleri,

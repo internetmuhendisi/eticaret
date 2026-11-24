@@ -386,6 +386,13 @@
       "when": 1795468033205,
       "tag": "0054_musteri-notlari",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1795522995426,
+      "tag": "0055_blog-yazilari",
+      "breakpoints": true
     }
   ]
 }

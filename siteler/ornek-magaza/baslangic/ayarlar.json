@@ -57,5 +57,6 @@
       "ad": "Deneme Kargo",
       "takipAdresi": "https://takip.deneme-kargo.test/{takip}"
     }
-  ]
+  ],
+  "blogAcik": true
 }
