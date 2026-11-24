@@ -12,8 +12,16 @@ Panelde "Mağaza bilgileri" ekranı açıldı (kart 0278; taslak ve ürün karar
 - **Servis** (`cekirdek/moduller/magaza-ayarlari/bilgiler.ts`, `magazaBilgileriniDegistir`): uç alanları yazı olarak alır, her alanı ayarın şemasıyla denetler. Hatayı alanın yolu ("magazaAdresi.il", "saticiBilgileri.vergiNumarasi", "sosyalHesaplar.<sıra>.hesap") ve şemanın koduyla döndürür; hata varken hiçbir ayar yazılmaz. Kapı şemanın kendi kodunu taşımadığı için (kart 0285) denetim uçta değil serviste yapılır.
 - **Boş yazı ayarı boşaltır.** Adresin ya da satıcı bilgilerinin bütün alanları boşsa ayar silinir; bir alanı doluysa zorunlu alanlar istenir (adres; unvan). Mağaza adı boş bırakılamaz.
 - **Telefon** ülke içi yazılışla da girilir ve ödeme adımındaki gibi uluslararası biçime çevrilir (`telefonuDuzelt`). Çevirmede mağaza adresinin ülkesi, yoksa sitenin ilk satış ülkesi kullanılır.
-- **Sosyal hesaplar:** her site için önünde sitenin adresi olan bir alan vardır; yalnız kullanıcı adı yazılır. Boş alan atılır, baştaki "@" kullanıcı adına girmez. Kayıtlı veride aynı siteden birden çok hesap varsa her biri kendi alanında görünür, sessizce kaybolmaz.
+- **Sosyal hesaplar:** her site için önünde sitenin adresi (ayrı kutuda) olan bir alan vardır; yalnız kullanıcı adı yazılır. Boş alan atılır, baştaki "@" kullanıcı adına girmez. Kayıtlı veride aynı siteden birden çok hesap varsa her biri kendi alanında görünür, sessizce kaybolmaz.
 - **Satıcı bilgileri:** işletme türü (şirket ya da şahıs) numaranın adını ve kuralını seçer (vergi kimlik numarası ya da kimlik numarası). Ülke, sitenin tek satış ülkesiyse yazı olarak görünür, birden çoksa seçilir. Vergi dairesi ve numaraları isteğe bağlı kalır (karar 0138).
+- **Bağımsız kontrolün bulgularıyla eklenen kurallar:**
+  - Değişiklik kaydına değeriyle giren alanlar (mağaza adı, sosyal hesap) kaydın yasakladığı yazıyı (anahtar, şifre biçimi; "Bearer …") taşıyamaz: alanın hatasıdır (`kayda-uygun-degil`). Önceden kayıt beklenmeyen hatayla düşüyordu.
+  - "@"lı mağaza adı kendi koduyla döner (`magaza-adi-eposta`).
+  - Yazı alanlarında satır sonu ve sekme dışındaki denetim karakteri reddedilir (`metin-gecersiz`).
+  - Adresin ve satıcının ülkesi sitenin satış ülkelerinden biridir (`ulke-satis-disi`). Telefon geçersiz ülkenin koduyla çevrilmez.
+  - Aynı sosyal hesaplar başka sırayla gönderilince yazılmaz, kayda girmez.
+  - İl ve ilçe listesinde boş seçenek olmadığı için kayıtlı adres "Adresi temizle" ile boşaltılır.
+  - Sosyal hesap alanının açıklaması ekran okuyucuya yalnız kullanıcı adının yazılacağını söyler; hatalı alanın kenarı kırmızıdır.
 - **İzinler:** görmek `magaza-ayarlari.gor`, değiştirmek `magaza-ayarlari.degistir` (yalnız mağaza sahibi). İzni olmayan yönetici alanları okur, kaydet çubuğunu görmez.
 - **Değişiklik kaydı:** telefon, e-posta, adres ve satıcı bilgileri değeri yazılmadan girer (kayıtta gizli, kart 0071); mağaza adı ve sosyal hesaplar değeriyle.
 - **Etkisi:** vitrin bağlamı, hata sayfası, sipariş fişi ve e-posta ayarları her istekte okuduğu için değişiklik hemen görünür. Kuyruktaki e-postada karar 0153 geçerlidir: siparişin verisi olay anında yazılmıştır ve değişmez; mağaza adı ve alt bilgideki unvan, adres ve telefon gönderim anında okunur, kuyrukta bekleyen e-postada da yeni değerle gider. Kullanıcı kararı (kart 0278'in bağımsız kontrolünden sonra soruldu): e-posta müşteriye ulaştığı andaki doğru iletişim bilgisini taşısın; kartın "kuyrukta bekleyen e-posta değişmez" maddesi siparişin verisi için geçerlidir.
