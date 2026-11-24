@@ -736,6 +736,16 @@ describe("kişi listesi", () => {
   // Kart 0076, 0077, 0078 ve 0086 (kullanıcı kararları): her rol ürünü, kategoriyi, markayı, etiketi ve
   // özelliği görür ve değiştirir, yalnız tam yetkili siler. Uçlar panel ekranlarıyla gelir; o zaman bu
   // beklenti her uçta gerçek veritabanıyla denenir.
+
+  // Katalog rolleri (kart 0274, karar 0178): ürünü değiştirebilen roller (mağaza sahibi ve görevli). Kartlar 0076-0086
+  // ve 0080, 0082'nin kullanıcı kararları bu roller içindir; sipariş görevlisi ve içerik editörü kataloğa dokunmaz.
+  const katalogRolleri = () => {
+    const [, , , ...roller] = kisiler;
+    const secilen = roller.filter((rol) => erisebilirMi(rol, "urun.degistir"));
+    expect(secilen.length).toBeGreaterThanOrEqual(2);
+    return secilen;
+  };
+
   it.each([
     ["ürün", "urun.gor", "urun.degistir", "urun.sil"],
     ["kategori", "kategori.gor", "kategori.degistir", "kategori.sil"],
@@ -744,17 +754,16 @@ describe("kişi listesi", () => {
     // Kart 0086 (kullanıcı kararı): görevli özelliği görür ve değiştirir, silemez.
     ["özellik", "ozellik.gor", "ozellik.degistir", "ozellik.sil"],
   ] as const)(
-    "%s izinleri: her rol görür ve değiştirir, yalnız tam yetkili siler",
+    "%s izinleri: her katalog rolü görür ve değiştirir, yalnız tam yetkili siler",
     (_ad, gor, degistir, sil) => {
-      const [girissiz, musteri, rolsuz, ...roller] = kisiler;
+      const [girissiz, musteri, rolsuz] = kisiler;
       for (const kisi of [girissiz, musteri, rolsuz]) {
         if (kisi === undefined) throw new Error("Kişi eksik.");
         for (const izin of [gor, degistir, sil]) {
           expect(erisebilirMi(kisi, izin)).toBe(false);
         }
       }
-      expect(roller.length).toBeGreaterThanOrEqual(2);
-      for (const rol of roller) {
+      for (const rol of katalogRolleri()) {
         if (rol.tur !== "yonetici" || rol.rolKodu === null) throw new Error("Rol eksik.");
         expect(erisebilirMi(rol, gor)).toBe(true);
         expect(erisebilirMi(rol, degistir)).toBe(true);
@@ -764,15 +773,14 @@ describe("kişi listesi", () => {
   );
 
   // Kart 0080 (kullanıcı kararı): her rol fiyatı görür, yalnız tam yetkili değiştirir.
-  it("fiyat izinleri: her rol görür, yalnız tam yetkili değiştirir", () => {
-    const [girissiz, musteri, rolsuz, ...roller] = kisiler;
+  it("fiyat izinleri: her katalog rolü görür, yalnız tam yetkili değiştirir", () => {
+    const [girissiz, musteri, rolsuz] = kisiler;
     for (const kisi of [girissiz, musteri, rolsuz]) {
       if (kisi === undefined) throw new Error("Kişi eksik.");
       expect(erisebilirMi(kisi, "fiyat.gor")).toBe(false);
       expect(erisebilirMi(kisi, "fiyat.degistir")).toBe(false);
     }
-    expect(roller.length).toBeGreaterThanOrEqual(2);
-    for (const rol of roller) {
+    for (const rol of katalogRolleri()) {
       if (rol.tur !== "yonetici" || rol.rolKodu === null) throw new Error("Rol eksik.");
       expect(erisebilirMi(rol, "fiyat.gor")).toBe(true);
       expect(erisebilirMi(rol, "fiyat.degistir")).toBe(baslangicRolleri[rol.rolKodu].tamYetki);
@@ -780,19 +788,62 @@ describe("kişi listesi", () => {
   });
 
   // Kart 0082 (kullanıcı kararı): her rol stoğu görür ve elle düzeltir.
-  it("stok izinleri: her rol görür ve düzeltir", () => {
-    const [girissiz, musteri, rolsuz, ...roller] = kisiler;
+  it("stok izinleri: her katalog rolü görür ve düzeltir", () => {
+    const [girissiz, musteri, rolsuz] = kisiler;
     for (const kisi of [girissiz, musteri, rolsuz]) {
       if (kisi === undefined) throw new Error("Kişi eksik.");
       expect(erisebilirMi(kisi, "stok.gor")).toBe(false);
       expect(erisebilirMi(kisi, "stok.duzelt")).toBe(false);
     }
-    expect(roller.length).toBeGreaterThanOrEqual(2);
-    for (const rol of roller) {
+    for (const rol of katalogRolleri()) {
       if (rol.tur !== "yonetici" || rol.rolKodu === null) throw new Error("Rol eksik.");
       expect(erisebilirMi(rol, "stok.gor")).toBe(true);
       expect(erisebilirMi(rol, "stok.duzelt")).toBe(true);
     }
+  });
+
+  // Kart 0274 (karar 0178): sipariş görevlisi ve içerik editörü kataloğu, fiyatı ve stoğu değiştiremez, ekibi göremez;
+  // sipariş görevlisi siparişleri yönetir ama iade yapamaz, içerik editörü içerikle vitrini yönetir ve menüye bağlamak
+  // için ürünleri yalnız görür.
+  it("sipariş görevlisi ve içerik editörü yalnız kendi işlerini yapar", () => {
+    const [, , , ...roller] = kisiler;
+    const rol = (kod: string) => {
+      const bulunan = roller.find((kisi) => kisi.tur === "yonetici" && kisi.rolKodu === kod);
+      if (bulunan === undefined) throw new Error(`${kod} denenmedi.`);
+      return bulunan;
+    };
+    const siparisci = rol("siparis-gorevlisi");
+    const editor = rol("icerik-editoru");
+    const yasak = [
+      "urun.degistir",
+      "urun.sil",
+      "kategori.degistir",
+      "fiyat.degistir",
+      "stok.duzelt",
+      "ekip.gor",
+      "ekip.rol-ata",
+      "magaza-ayarlari.degistir",
+      "tema.degistir",
+    ];
+    for (const izin of yasak) {
+      expect(erisebilirMi(siparisci, izin)).toBe(false);
+      expect(erisebilirMi(editor, izin)).toBe(false);
+    }
+    for (const izin of ["siparis.yonet", "siparis.havale-onayla", "musteri.gor"]) {
+      expect(erisebilirMi(siparisci, izin)).toBe(true);
+      expect(erisebilirMi(editor, izin)).toBe(false);
+    }
+    expect(erisebilirMi(siparisci, "siparis.iade")).toBe(false);
+    for (const izin of [
+      "icerik.degistir",
+      "icerik.sil",
+      "duzen.degistir",
+      "menu.degistir",
+      "urun.gor",
+    ]) {
+      expect(erisebilirMi(editor, izin)).toBe(true);
+    }
+    expect(erisebilirMi(siparisci, "icerik.gor")).toBe(false);
   });
 });
 
