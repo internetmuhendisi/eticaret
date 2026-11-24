@@ -33,4 +33,4 @@ Kart 0274 ile birlikte yapıldı (karar 0178): sıfırlamada şifre de sıfırla
 
 ## Durum
 
-yapılacak
+bitti
