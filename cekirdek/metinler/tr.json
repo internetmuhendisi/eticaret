@@ -179,7 +179,8 @@
       "satis": "Satış",
       "urunler": "Ürünler",
       "vitrin": "Vitrin",
-      "icerik": "İçerik"
+      "icerik": "İçerik",
+      "ayarlar": "Ayarlar"
     },
     "sayfa": {
       "karsilama": {
@@ -306,6 +307,22 @@
       "sabitSayfa": {
         "ad": "Sayfa",
         "aciklama": "Kaydedince vitrinde hemen güncellenir."
+      },
+      "ekip": {
+        "ad": "Ekip",
+        "aciklama": "Panele girebilen kişiler ve rolleri."
+      },
+      "ekipRolleri": {
+        "ad": "Roller",
+        "aciklama": "Rol, panel kullanıcısının neleri görüp yapabileceğidir. Roller hazırdır; kullanıcıya bir ya da birden çok rol verirsiniz."
+      },
+      "ekipKisi": {
+        "ad": "Kullanıcı",
+        "aciklama": "Kullanıcının rolleri, girişi ve hesabı."
+      },
+      "hesabim": {
+        "ad": "Hesabım",
+        "aciklama": "Panel hesabınız ve iki aşamalı girişinizin yedek kodları."
       }
     },
     "eylem": {
@@ -335,7 +352,9 @@
     },
     "rol": {
       "magaza-sahibi": "Mağaza sahibi",
-      "gorevli": "Görevli"
+      "gorevli": "Görevli",
+      "siparis-gorevlisi": "Sipariş görevlisi",
+      "icerik-editoru": "İçerik editörü"
     },
     "giris": {
       "baslik": "Yönetim paneline giriş",
@@ -2544,6 +2563,195 @@
         "adres-adi-tekrar": "Bu adres başka bir sayfada kullanılıyor; başka bir ad yazın.",
         "sayfa-degisti": "Sayfa siz düzenlerken değişti. Sayfa yenilendi; değişikliklerinizi yeniden yapın.",
         "sayfa-siniri": "Sayfa sınırına ulaşıldı; kullanmadığınız bir sayfayı silin."
+      }
+    },
+    "rolAciklamasi": {
+      "magaza-sahibi": "Her şey",
+      "gorevli": "Ürün, stok, sipariş, yorum",
+      "siparis-gorevlisi": "Yalnız siparişler ve müşteriler",
+      "icerik-editoru": "Blog, sayfalar, vitrin bölümleri, menüler"
+    },
+    "izin": {
+      "siparis": {
+        "gor": "Siparişleri görür",
+        "yonet": "Siparişi yönetir (hazırlık, kargo, teslim, not, fatura, elle sipariş)",
+        "havale-onayla": "Havaleyi onaylar",
+        "iade": "İptal ve iade yapar",
+        "elden-tahsil": "Elle siparişi elden ödenmiş olarak açar"
+      },
+      "musteri": {
+        "gor": "Müşterileri görür",
+        "not": "Müşteri hakkında not yazar",
+        "sifre-sifirlama": "Müşteriye şifre sıfırlama bağlantısı gönderir"
+      },
+      "odeme-yontemi": {
+        "gor": "Ödeme yöntemlerini ve banka hesaplarını görür",
+        "degistir": "Ödeme yöntemlerini ve banka hesaplarını değiştirir"
+      },
+      "urun": {
+        "gor": "Ürünleri görür",
+        "degistir": "Ürün ekler ve değiştirir",
+        "sil": "Ürün siler"
+      },
+      "kategori": {
+        "gor": "Kategorileri görür",
+        "degistir": "Kategori ekler, değiştirir ve taşır",
+        "sil": "Kategori siler"
+      },
+      "marka": {
+        "gor": "Markaları görür",
+        "degistir": "Marka ekler ve değiştirir",
+        "sil": "Marka siler"
+      },
+      "etiket": {
+        "gor": "Etiketleri görür",
+        "degistir": "Etiket ekler ve değiştirir",
+        "sil": "Etiket siler"
+      },
+      "ozellik": {
+        "gor": "Özellikleri görür",
+        "degistir": "Özellik ekler ve değiştirir",
+        "sil": "Özellik ve seçenek siler"
+      },
+      "fiyat": {
+        "gor": "Fiyatları görür",
+        "degistir": "Fiyatı ve indirimi değiştirir"
+      },
+      "stok": {
+        "gor": "Stoğu görür",
+        "duzelt": "Stoğu düzeltir"
+      },
+      "yorum": {
+        "gor": "Yorumları görür",
+        "onayla": "Yorumları yayınlar ya da reddeder"
+      },
+      "dosya": {
+        "gor": "Görselleri görür ve seçer"
+      },
+      "icerik": {
+        "gor": "Blogu ve sayfaları görür",
+        "degistir": "Blog yazısı ve sayfa yazar",
+        "sil": "Blog yazısı ve sayfa siler"
+      },
+      "duzen": {
+        "gor": "Vitrin bölümlerini görür",
+        "degistir": "Vitrin bölümlerini değiştirir"
+      },
+      "menu": {
+        "gor": "Menüleri görür",
+        "degistir": "Menüleri değiştirir"
+      },
+      "tema": {
+        "gor": "Temayı görür",
+        "degistir": "Temayı ve tema ayarlarını değiştirir"
+      },
+      "magaza-ayarlari": {
+        "gor": "Mağaza ayarlarını görür",
+        "degistir": "Mağaza bilgilerini, kargo ve sipariş ayarlarını değiştirir"
+      },
+      "vergi": {
+        "gor": "Vergi sınıflarını görür",
+        "degistir": "Vergi sınıflarını değiştirir"
+      },
+      "ekip": {
+        "kendi-hesabi": {
+          "gor": "Kendi hesabını görür",
+          "degistir": "Kendi yedek kodlarını yeniler"
+        },
+        "gor": "Ekibi görür",
+        "rol-ata": "Rol verir ve alır",
+        "hesap-kapat": "Hesap kapatır",
+        "iki-asama-sifirla": "İki aşamalı girişi sıfırlar"
+      }
+    },
+    "izinGrubu": {
+      "siparis": "Siparişler",
+      "musteri": "Müşteriler",
+      "odeme-yontemi": "Ödeme",
+      "urun": "Ürünler",
+      "kategori": "Kategoriler",
+      "marka": "Markalar",
+      "etiket": "Etiketler",
+      "ozellik": "Özellikler",
+      "fiyat": "Fiyat",
+      "stok": "Stok",
+      "yorum": "Yorumlar",
+      "dosya": "Görseller",
+      "icerik": "Blog ve sayfalar",
+      "duzen": "Vitrin bölümleri",
+      "menu": "Menüler",
+      "tema": "Tema",
+      "magaza-ayarlari": "Mağaza ayarları",
+      "vergi": "Vergi",
+      "ekip": "Ekip"
+    },
+    "ekip": {
+      "kullanicilar": "Kullanıcılar",
+      "roller": "Roller",
+      "sekmeler": "Ekip",
+      "liste": "Panel kullanıcıları",
+      "sonGiris": "son giriş {zaman}",
+      "hicGirmedi": "henüz giriş yapmadı",
+      "sen": "Siz",
+      "duzenle": "Düzenle: {eposta}",
+      "rolTablosu": "Rollerin izinleri",
+      "izin": "İzin",
+      "var": "Var",
+      "yok": "Yok",
+      "yokIsareti": "–",
+      "rollerAciklamasi": "Rol, panel kullanıcısının neleri görüp yapabileceğidir. Bir kullanıcıya bir ya da birden çok rol verirsiniz. Roller hazırdır, mağazada değiştirilmez.",
+      "bolum": {
+        "roller": "Roller",
+        "giris": "Giriş",
+        "kapat": "Hesabı kapat"
+      },
+      "katilma": "{zaman} tarihinden beri",
+      "rolIpucu": "Rol değişince kullanıcının açık oturumunda hemen geçerli olur.",
+      "rollerKaydet": "Rolleri kaydet",
+      "kaydedildi": "Roller kaydedildi.",
+      "ikiAsama": "İki aşamalı giriş",
+      "kurulu": "Kurulu",
+      "kuruluDegil": "Kurulu değil",
+      "sonGirisBaslik": "Son giriş",
+      "sifirla": "İki aşamalı girişi sıfırla",
+      "sifirlaAciklamasi": "Telefonunu ve yedek kodlarını kaybeden kullanıcı için. Kullanıcı bir sonraki girişte yeniden kurar; açık oturumları kapanır. Önce kişinin gerçekten o olduğundan emin olun.",
+      "sifirlaOnay": {
+        "baslik": "{eposta} için iki aşamalı giriş sıfırlansın mı?",
+        "aciklama": "Eski kodlar ve yedek kodlar geçmez, açık oturumları kapanır. Kişi bir sonraki girişte telefonuna kodu yeniden kurar.",
+        "onay": "Sıfırla"
+      },
+      "sifirlandi": "İki aşamalı giriş sıfırlandı.",
+      "kapatAciklamasi": "Kullanıcı panele giremez, açık oturumu hemen kapanır; yaptığı işler kayıtlarda kalır.",
+      "kapat": "Hesabı kapat",
+      "kapatOnay": {
+        "baslik": "{eposta} hesabı kapatılsın mı?",
+        "aciklama": "Kullanıcı panele giremez ve bu hesap yeniden açılmaz."
+      },
+      "kapatildi": "Hesap kapatıldı.",
+      "kendiHesabi": "Kendi hesabınızın rollerini değiştiremez, hesabınızı kapatamaz ve iki aşamalı girişinizi buradan sıfırlayamazsınız.",
+      "sonSahip": "Mağazanın son sahibi: mağaza sahibi rolü alınamaz ve hesabı kapatılamaz. Önce başka bir kullanıcıya mağaza sahibi rolü verin.",
+      "hata": {
+        "son-sahip": "Mağazanın son sahibinin mağaza sahibi rolü alınamaz ve hesabı kapatılamaz.",
+        "kendi-hesabi": "Kendi hesabınızda bu işlemi yapamazsınız.",
+        "rol-gerekli": "En az bir rol seçin. Kullanıcı artık çalışmayacaksa hesabını kapatın.",
+        "rol-yok": "Seçilen rol bulunamadı; sayfayı yenileyin.",
+        "kurulu-degil": "Bu kullanıcının iki aşamalı girişi kurulu değil; bir sonraki girişinde kendisi kurar."
+      }
+    },
+    "hesabim": {
+      "eposta": "E-posta",
+      "roller": "Rolleriniz",
+      "yedekBaslik": "Yedek kodlar",
+      "yedekAciklamasi": "Telefonunuz yanınızda yokken girmek için tek kullanımlık kodlar. Kaybettiyseniz yenilerini üretin: eski kodların hepsi geçersiz olur.",
+      "kod": "Telefonunuzdaki 6 haneli kod",
+      "kodAciklamasi": "Doğrulama uygulamasındaki güncel kod.",
+      "yenile": "Yeni yedek kodlar üret",
+      "yenilendi": "Yeni yedek kodlarınız hazır. Bunları güvenli bir yere yazın: bu sayfadan çıkınca bir daha gösterilmez.",
+      "kodlar": "Yeni yedek kodlar",
+      "hata": {
+        "giris-hatasi": "Kod doğru değil. Telefonunuzdaki güncel kodu yazın.",
+        "istek-siniri": "Çok fazla deneme yaptınız. Biraz bekleyip yeniden deneyin.",
+        "is-kurali": "İki aşamalı girişiniz kurulu değil."
       }
     }
   },

@@ -9,6 +9,9 @@ import type { MetinAnahtari } from "../metinler/metin";
 import {
   blogAdresi,
   blogKategorileriAdresi,
+  ekipAdresi,
+  ekipRolleriAdresi,
+  hesabimAdresi,
   magazaBilgileriAdresi,
   menulerAdresi,
   panelAdresi,
@@ -25,6 +28,8 @@ export const panelGruplari = {
   vitrin: "yonetim.grup.vitrin",
   // Kart 0272: blog; kart 0273: sabit sayfalar.
   icerik: "yonetim.grup.icerik",
+  // Kart 0274: ekip ve kendi hesabı. Ayarların öteki ekranları bu gruba kart 0301'de taşınır.
+  ayarlar: "yonetim.grup.ayarlar",
 } as const satisfies Record<string, MetinAnahtari>;
 export type PanelGrubu = keyof typeof panelGruplari;
 
@@ -386,6 +391,46 @@ export const panelSayfalari = [
     izin: "icerik.gor",
     grup: "icerik",
     ust: "sayfalar",
+  },
+  // Ekip (kart 0274, karar 0178): kullanıcılar, roller (yalnız okunur) ve kullanıcının ayrıntısı (?kimlik=); yöneticinin
+  // kendi hesabı (yedek kodlar, kart 0053).
+  {
+    kod: "ekip",
+    adres: ekipAdresi,
+    ad: "yonetim.sayfa.ekip.ad",
+    aciklama: "yonetim.sayfa.ekip.aciklama",
+    ikon: "ekip",
+    izin: "ekip.gor",
+    grup: "ayarlar",
+  },
+  {
+    kod: "ekip-rolleri",
+    adres: ekipRolleriAdresi,
+    ad: "yonetim.sayfa.ekipRolleri.ad",
+    aciklama: "yonetim.sayfa.ekipRolleri.aciklama",
+    ikon: "guvenlik",
+    izin: "ekip.gor",
+    grup: "ayarlar",
+    ust: "ekip",
+  },
+  {
+    kod: "ekip-kisi",
+    adres: `${ekipAdresi}/kisi`,
+    ad: "yonetim.sayfa.ekipKisi.ad",
+    aciklama: "yonetim.sayfa.ekipKisi.aciklama",
+    ikon: "hesap",
+    izin: "ekip.gor",
+    grup: "ayarlar",
+    ust: "ekip",
+  },
+  {
+    kod: "hesabim",
+    adres: hesabimAdresi,
+    ad: "yonetim.sayfa.hesabim.ad",
+    aciklama: "yonetim.sayfa.hesabim.aciklama",
+    ikon: "hesap",
+    izin: "ekip.kendi-hesabi.gor",
+    grup: "ayarlar",
   },
 ] as const satisfies readonly PanelSayfaTanimi[];
 
