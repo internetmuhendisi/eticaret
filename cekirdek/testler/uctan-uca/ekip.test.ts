@@ -172,6 +172,10 @@ test("ekip: roller, iki aşamalı girişi sıfırlama, yedek kodlar, hesap kapat
   await expect(page.getByText(metin("yonetim.ekip.sifirlandi"))).toBeVisible();
   await expect(page.getByText(metin("yonetim.ekip.kuruluDegil"))).toBeVisible();
   await expect(sifirla).toHaveCount(0);
+  // Düğme kalktı: odak gövdeye düşmez, Giriş bölümünün başlığına geçer.
+  await expect(
+    page.getByRole("heading", { level: 2, name: metin("yonetim.ekip.bolum.giris") }),
+  ).toBeFocused();
   // İkinci yöneticinin oturumu düştü; girişte yeniden kurulum ister.
   await ikinciSayfa.goto("/yonetim/siparisler");
   await expect(ikinciSayfa).toHaveURL(/\/yonetim\/giris/);
@@ -209,6 +213,11 @@ test("ekip: roller, iki aşamalı girişi sıfırlama, yedek kodlar, hesap kapat
   await ikiRenkUcGenislik(page, "hesabım");
   const kodAlani = page.getByRole("textbox", { name: metin("yonetim.hesabim.kod") });
   const yenile = page.getByRole("button", { name: metin("yonetim.hesabim.yenile") });
+  // Boş kod: kendi metni ve odak, istek gitmez.
+  await yenile.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByText(metin("yonetim.hesabim.hata.kod-gerekli"))).toBeVisible();
+  await expect(kodAlani).toBeFocused();
   await kodAlani.fill("000000");
   await yenile.focus();
   await page.keyboard.press("Enter");

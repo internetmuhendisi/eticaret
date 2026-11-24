@@ -134,6 +134,7 @@ describe(
       // Kurulumu yoksa sıfırlanacak bir şey yok.
       const kurulmamis = calistir(kodAdi, "iki-asama-sifirla", eposta);
       expect(kurulmamis.status).toBe(1);
+      expect(kurulmamis.stderr).toContain("kurulu değil");
       await vt.insert(yoneticiIkiAsama).values({
         yonetici_kimligi: hesap.kimlik,
         sifreli_gizli: "deneme",
@@ -143,6 +144,14 @@ describe(
       await vt
         .insert(yoneticiYedekKodlari)
         .values({ yonetici_kimligi: hesap.kimlik, kod_ozeti: "ozet" });
+      // Başka sitenin kod adıyla kurulumlu hesaba dokunulmaz (kurulum yerinde kalır).
+      expect(calistir("baska-site", "iki-asama-sifirla", eposta).status).toBe(1);
+      expect(
+        await vt
+          .select()
+          .from(yoneticiIkiAsama)
+          .where(eq(yoneticiIkiAsama.yonetici_kimligi, hesap.kimlik)),
+      ).toHaveLength(1);
       const sonuc = calistir(kodAdi, "iki-asama-sifirla", eposta);
       expect(sonuc.status).toBe(0);
       expect(sonuc.stdout).toContain("sifirlandi");
@@ -168,7 +177,6 @@ describe(
         kayit_kimligi: hesap.kimlik,
       });
       expect(calistir(kodAdi, "iki-asama-sifirla", "yok@ornek.test").status).toBe(1);
-      expect(calistir("baska-site", "iki-asama-sifirla", eposta).status).toBe(1);
     });
   },
   surecliTestSiniri,

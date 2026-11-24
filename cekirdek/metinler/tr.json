@@ -2746,12 +2746,14 @@
       "kod": "Telefonunuzdaki 6 haneli kod",
       "kodAciklamasi": "Doğrulama uygulamasındaki güncel kod.",
       "yenile": "Yeni yedek kodlar üret",
+      "uretildi": "Yeni yedek kodlar üretildi.",
       "yenilendi": "Yeni yedek kodlarınız hazır. Bunları güvenli bir yere yazın: bu sayfadan çıkınca bir daha gösterilmez.",
       "kodlar": "Yeni yedek kodlar",
       "hata": {
         "giris-hatasi": "Kod doğru değil. Telefonunuzdaki güncel kodu yazın.",
         "istek-siniri": "Çok fazla deneme yaptınız. Biraz bekleyip yeniden deneyin.",
-        "is-kurali": "İki aşamalı girişiniz kurulu değil."
+        "is-kurali": "İki aşamalı girişiniz kurulu değil.",
+        "kod-gerekli": "Telefonunuzdaki 6 haneli kodu yazın."
       }
     }
   },

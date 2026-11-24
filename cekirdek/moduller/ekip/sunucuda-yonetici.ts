@@ -30,7 +30,16 @@ const hataMesajlari: Record<string, string> = {
   dogrulama: "E-posta geçersiz.",
   cakisma: "Bu e-postayla bir yönetici zaten var.",
   bulunamadi: "Tam yetkili rol yok, önce veritabanı güncellenmeli.",
-  "is-kurali": "Son tam yetkili yönetici kapatılamaz ya da iki aşamalı girişi kurulu değil.",
+  "son-sahip": "Son tam yetkili yönetici kapatılamaz.",
+  "kurulu-degil": "Bu yöneticinin iki aşamalı girişi kurulu değil, sıfırlanacak bir şey yok.",
+};
+
+// İş kuralı hatasının hangisi olduğu ayrıntının ilk kodundadır (son-sahip, kurulu-degil).
+const ayrintiKodu = (ayrinti: unknown): string | undefined => {
+  const ilk: unknown = Array.isArray(ayrinti) ? ayrinti[0] : undefined;
+  return typeof ilk === "object" && ilk !== null && "kod" in ilk && typeof ilk.kod === "string"
+    ? ilk.kod
+    : undefined;
 };
 
 const [kodAdi, islem, epostaGirdisi] = process.argv.slice(2);
@@ -85,7 +94,9 @@ if (
     // Beklenmeyen hatanın iletisi yazılmaz: veritabanı hatası sorgu değerini, yani şifre özetini taşıyabilir.
     hata(
       yakalanan instanceof BilinenHata
-        ? (hataMesajlari[yakalanan.kod] ?? yakalanan.kod)
+        ? (hataMesajlari[ayrintiKodu(yakalanan.ayrinti) ?? ""] ??
+            hataMesajlari[yakalanan.kod] ??
+            yakalanan.kod)
         : "Beklenmeyen hata, işlem geri alındı.",
     );
   } finally {

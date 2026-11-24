@@ -7,7 +7,7 @@
 // - Mağazanın son sahibinde tam yetkili rolün kutusu kapalıdır ve hesap kapatılamaz; nedeni yazar.
 // - Değiştirme izni olmayan yönetici yalnız görür.
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { bildirimGoster } from "../../../bilesenler/parcalar/bildirim";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
@@ -60,6 +60,15 @@ export function EkipKisisiEkrani({
   const { form, setForm, degisti, kaydedildi, vazgec } = useSunucuFormu<RolFormu>(sunucudaki);
   const pf = usePanelFormu({ degisti: rolDegisir && degisti, kaydet: () => kaydet() });
   const [pencere, setPencere] = useState<"sifirla" | "kapat" | null>(null);
+  // Sıfırlamadan sonra düğme kalkar (kurulum yok): odak gövdeye düşmesin, bölümün başlığına geçer.
+  const girisBasligi = useRef<HTMLHeadingElement>(null);
+  const sifirlandi = useRef(false);
+  useEffect(() => {
+    if (!kisi.ikiAsamaKurulu && sifirlandi.current) {
+      sifirlandi.current = false;
+      girisBasligi.current?.focus();
+    }
+  }, [kisi.ikiAsamaKurulu]);
 
   const kaydet = async (): Promise<boolean> => {
     const gonderilen = form;
@@ -116,9 +125,7 @@ export function EkipKisisiEkrani({
         {metin("yonetim.ekip.bolum.roller")}
       </h2>
       {kisi.kendi ? <Uyari tur="bilgi">{metin("yonetim.ekip.kendiHesabi")}</Uyari> : null}
-      {kisi.sonSahip && !kisi.kendi ? (
-        <Uyari tur="bilgi">{metin("yonetim.ekip.sonSahip")}</Uyari>
-      ) : null}
+      {kisi.sonSahip ? <Uyari tur="bilgi">{metin("yonetim.ekip.sonSahip")}</Uyari> : null}
       <AlanKabi ad="roller" etiket={metin("yonetim.ekip.bolum.roller")}>
         <fieldset
           disabled={!rolDegisir}
@@ -162,7 +169,12 @@ export function EkipKisisiEkrani({
       aria-labelledby="ekip-giris-baslik"
       className="flex flex-col gap-3 p-4 tablet:p-6"
     >
-      <h2 id="ekip-giris-baslik" className="font-baslik text-baslik-4 font-baslik-kalinligi">
+      <h2
+        id="ekip-giris-baslik"
+        ref={girisBasligi}
+        tabIndex={-1}
+        className="font-baslik text-baslik-4 font-baslik-kalinligi"
+      >
         {metin("yonetim.ekip.bolum.giris")}
       </h2>
       <dl className="m-0 grid grid-cols-2 gap-x-3 gap-y-1 text-kucuk">
@@ -255,7 +267,12 @@ export function EkipKisisiEkrani({
         onayEtiketi={metin("yonetim.ekip.sifirlaOnay.onay")}
         vazgecEtiketi={metin("ortak.islem.vazgec")}
         onayla={async () => {
-          await islem("ekip-iki-asama-sifirla", { kimlik: kisi.kimlik }, "yonetim.ekip.sifirlandi");
+          const sonuc = await islem(
+            "ekip-iki-asama-sifirla",
+            { kimlik: kisi.kimlik },
+            "yonetim.ekip.sifirlandi",
+          );
+          if (sonuc.tamam) sifirlandi.current = true;
         }}
         tur="tehlike"
       />

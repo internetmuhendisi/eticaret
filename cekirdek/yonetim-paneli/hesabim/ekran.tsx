@@ -46,14 +46,14 @@ export function HesabimEkrani({
 
   const yenile = async () => {
     if (!/^\d{6}$/.test(kod.trim())) {
-      pf.hatalariGoster({ "yedek-kod": metin("yonetim.hesabim.hata.giris-hatasi") });
+      pf.hatalariGoster({ "yedek-kod": metin("yonetim.hesabim.hata.kod-gerekli") });
       return;
     }
     const sonuc = await pf.isle(() =>
       islem<{ yedekKodlari: string[] }>(
         "yedek-kodlari-yenile",
         { kod: kod.trim() },
-        "yonetim.hesabim.yenilendi",
+        "yonetim.hesabim.uretildi",
         { formda: true },
       ),
     );
