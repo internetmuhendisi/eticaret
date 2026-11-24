@@ -40,18 +40,20 @@ export const yorumTopluKarariUcu = ucTanimla({
     ),
 });
 
-// POST /kapi/yonetici/yorum-karari: yorumu yayınlar ya da reddeder.
+// POST /kapi/yonetici/yorum-karari: yorumu yayınlar ya da reddeder. Ekranın gördüğü durum (gorulen) verilmişse ve
+// yorum arada değiştiyse çakışma (kart 0277).
 export const yorumKarariUcu = ucTanimla({
   giris: "yonetici",
   sema: yorumKarariSemasi,
   izin: "yorum.onayla",
   sinir: "genel",
-  isle: async ({ yorum, durum }, _istek, _yanit, { hesapKimligi }) => {
+  isle: async ({ yorum, durum, gorulen }, _istek, _yanit, { hesapKimligi }) => {
     await yorumServisi(calisanSite()).karar(
       siteninVeritabani(),
       { tur: "yonetici", kimlik: hesapKimligi },
       yorum,
       durum,
+      gorulen,
     );
     return {};
   },

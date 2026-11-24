@@ -1372,24 +1372,24 @@ Panelin Yorumlar ekranının listesi (kart 0139; kart 0277'de liste motoruna ta�
 Seçilen yorumları yayınlar ya da reddeder (kart 0277, karar 0157). Her yorum `yorum-karari` ile aynı yoldan, kendi işleminde geçer; birinin hatası ötekileri durdurmaz.
 
 - İzin: `yorum.onayla`. Sınır: `genel`.
-- Girdi: `{ "islem": "yayinla" | "reddet", "yorumlar": ["<kimlik>", …] }` (`yorumTopluIslemiSemasi`; en az 1, en çok bir sayfa: 100).
+- Girdi: `{ "islem": "yayinla" | "reddet", "yorumlar": [{ "yorum": "<kimlik>", "gorulen": "onay-bekliyor" | "yayinda" | "reddedildi" }, …] }` (`yorumTopluIslemiSemasi`; en az 1, en çok bir sayfa: 100). `gorulen` ekranın gördüğü durumdur: yorum arada başka karar almışsa işlenmez (`yorum-degisti`).
 - Servis: `cekirdek/moduller/yorum/panel-listesi.ts` (`yorumTopluKarar`).
-- Başarılı (200): `{ "basarili": true, "veri": { "islenen": ["<kimlik>"], "islenemeyen": [{ "anahtar", "kod": "yorum-yok" | … }] } }`.
+- Başarılı (200): `{ "basarili": true, "veri": { "islenen": ["<kimlik>"], "islenemeyen": [{ "anahtar", "kod": "yorum-yok" | "yorum-degisti" | … }] } }`. Ürünü silinmiş yorum `yorum-yok` alır.
 - Hatalar: `dogrulama`, `oturum-yok`, `yetki`.
 
 ### POST /kapi/yonetici/yorum-karari
 
-Yorumu yayınlar ya da reddeder (kart 0139). Yayındaki yorum reddedilebilir, reddedilen yayınlanabilir; onay bekliyor durumuna dönülmez. Aynı durum yazılmaz, değişiklik kaydına girmez.
+Yorumu yayınlar ya da reddeder (kart 0139). Yayındaki yorum reddedilebilir, reddedilen yayınlanabilir; onay bekliyor durumuna dönülmez. Aynı durum yazılmaz, değişiklik kaydına girmez. Reddedilen yorumun ana sayfa işareti kalkar; ürünü silinmiş yorum bulunamadı alır (kart 0277).
 
 - İzin: `yorum.onayla`. Sınır: `genel`.
-- Girdi: `{ "yorum", "durum": "yayinda" | "reddedildi" }` (`yorumKarariSemasi`).
+- Girdi: `{ "yorum", "durum": "yayinda" | "reddedildi", "gorulen"? }` (`yorumKarariSemasi`). `gorulen` ekranın gördüğü durumdur (kart 0277); verilirse ve yorum arada başka karar almışsa çakışma.
 - Servis: `cekirdek/moduller/yorum/servis.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": {} }`.
-- Hatalar: `dogrulama`, `oturum-yok`, `yetki`, `bulunamadi` (`yorum-yok`).
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`, `bulunamadi` (`yorum-yok`), `cakisma` (`yorum-degisti`).
 
 ### POST /kapi/yonetici/yorum-ana-sayfa
 
-Yorumun ana sayfanın müşteri yorumları bölümünde ("işaretlenenler" kaynağı, karar 0090) gösterilmesini işaretler ya da kaldırır. Yalnız yayındaki yorum ana sayfada görünür.
+Yorumun ana sayfanın müşteri yorumları bölümünde ("işaretlenenler" kaynağı, karar 0090) gösterilmesini işaretler ya da kaldırır. Yalnız yayındaki yorum ana sayfada görünür; ürünü silinmiş yorum bulunamadı alır (kart 0277).
 
 - İzin: `yorum.onayla`. Sınır: `genel`.
 - Girdi: `{ "yorum", "anaSayfada" }` (`yorumAnaSayfaSemasi`).

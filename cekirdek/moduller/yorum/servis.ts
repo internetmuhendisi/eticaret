@@ -10,7 +10,7 @@
 // - Değişiklik kaydına puan, durum ve işaret girer; metin, başlık ve ad girmez (serbest metin kişisel bilgi
 //   taşıyabilir).
 // - Ana sayfanın yorumları yalnız listede görünen ürünlerin yorumlarıdır.
-import { and, asc, count, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
@@ -168,32 +168,46 @@ export const yorumServisi = (site: Site) => {
   };
 
   // Mağazanın kararı ve ana sayfa işareti: satır kilitlenir, değişmeyen değer yazılmaz ve kayda girmez.
+  // - Ürünü silinmiş yorum bulunamadı sayılır: listede yoktur, karar beklemez (kart 0277).
+  // - Karar ekranın gördüğü durumu (gorulen) taşıyorsa ve yorum arada başka bir karar almışsa çakışmadır, hiçbir şey
+  //   yazılmaz (kart 0277, bağımsız kontrolün bulgusu: başkasının reddettiği yorum toplu yayınla ile yayınlanıyordu).
+  // - Reddedilen yorumun ana sayfa işareti kalkar: işaret yalnız yayındaki yorumda anlamlıdır, yeniden yayınlanan
+  //   yorum ana sayfaya kendiliğinden dönmez.
   const degistir = async (
     vt: Veritabani,
     kim: DegisikligiYapan,
     yorum: string,
-    alan: { durum: YorumDurumu } | { anaSayfada: boolean },
+    alan: { durum: YorumDurumu; gorulen?: YorumDurumu | undefined } | { anaSayfada: boolean },
   ): Promise<void> => {
     if (!kimlikMi(yorum)) throw hata("bulunamadi", "yorum", "yorum-yok");
     await vt.transaction(async (islem) => {
       const [satir] = await islem
         .select({ durum: yorumlar.durum, anaSayfada: yorumlar.ana_sayfada })
         .from(yorumlar)
-        .where(eq(yorumlar.kimlik, yorum))
-        .for("update");
+        .innerJoin(urunler, eq(urunler.kimlik, yorumlar.urun_kimligi))
+        .where(and(eq(yorumlar.kimlik, yorum), isNull(urunler.silinme_zamani)))
+        .for("update", { of: yorumlar });
       if (satir === undefined) throw hata("bulunamadi", "yorum", "yorum-yok");
       if ("durum" in alan) {
+        if (alan.gorulen !== undefined && satir.durum !== alan.gorulen) {
+          throw hata("cakisma", "yorum", "yorum-degisti");
+        }
         if (satir.durum === alan.durum) return;
+        const isaretKalkar = alan.durum === "reddedildi" && satir.anaSayfada;
         await islem
           .update(yorumlar)
-          .set({ durum: alan.durum, guncellenme_zamani: sql`now()` })
+          .set({
+            durum: alan.durum,
+            ...(isaretKalkar ? { ana_sayfada: false } : {}),
+            guncellenme_zamani: sql`now()`,
+          })
           .where(eq(yorumlar.kimlik, yorum));
         await degisikligiKaydet(islem, {
           kim,
           islem: "yorum.durum-degisti",
           kayit: { tur: "yorum", kimlik: yorum },
-          eski: { durum: satir.durum },
-          yeni: { durum: alan.durum },
+          eski: { durum: satir.durum, ...(isaretKalkar ? { anaSayfada: true } : {}) },
+          yeni: { durum: alan.durum, ...(isaretKalkar ? { anaSayfada: false } : {}) },
         });
         return;
       }
@@ -216,8 +230,14 @@ export const yorumServisi = (site: Site) => {
     yorumIzni,
     yorumYaz,
     baslangicYorumuEkle,
-    karar: (vt: Veritabani, kim: DegisikligiYapan, yorum: string, durum: YorumDurumu) =>
-      degistir(vt, kim, yorum, { durum }),
+    // gorulen: ekranın gördüğü durum (panel gönderir); verilmezse karşılaştırılmaz.
+    karar: (
+      vt: Veritabani,
+      kim: DegisikligiYapan,
+      yorum: string,
+      durum: YorumDurumu,
+      gorulen?: YorumDurumu,
+    ) => degistir(vt, kim, yorum, { durum, gorulen }),
     anaSayfaIsareti: (vt: Veritabani, kim: DegisikligiYapan, yorum: string, anaSayfada: boolean) =>
       degistir(vt, kim, yorum, { anaSayfada }),
   };

@@ -7,8 +7,8 @@
 // - Süzgeçler: durum (sekme, tek değer) ve puan (birden çok). Durum sayıları puana ve aramaya uyar, duruma uymaz.
 // - Sıralama: en yeni, en eski, puan artan ve azalan (eşitlikte en yeni önce).
 // - Satırın "vitrinde" bilgisi ürünün sayfasının şu an açılıp açılmadığıdır (vitrinKosulu, sayfa yeri).
-// - Toplu karar: her yorum tekil kararla (yorumServisi.karar) aynı yoldan, kendi işleminde; birinin hatası ötekileri
-//   durdurmaz (TopluSonuc).
+// - Toplu karar: her yorum tekil kararla (yorumServisi.karar) aynı yoldan, kendi işleminde, ekranın gördüğü durumla;
+//   arada başka karar almış yorum işlenmez (yorum-degisti). Birinin hatası ötekileri durdurmaz (TopluSonuc).
 import { and, asc, count, desc, eq, inArray, isNull, type SQL, sql } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
@@ -162,14 +162,23 @@ export const yorumTopluKarar = async (
   vt: Veritabani,
   site: Site,
   kim: DegisikligiYapan,
-  girdi: { islem: YorumTopluIslemi; yorumlar: readonly string[] },
+  girdi: {
+    islem: YorumTopluIslemi;
+    yorumlar: readonly { yorum: string; gorulen: YorumDurumu }[];
+  },
 ): Promise<TopluSonuc> => {
   const sonuc: TopluSonuc = { islenen: [], islenemeyen: [] };
   const { durum } = yorumTopluIslemleri[girdi.islem];
   const servis = yorumServisi(site);
-  for (const kimlik of new Set(girdi.yorumlar.map(kimligiDuzelt))) {
+  // Aynı yorum iki kez verilirse (harf farkıyla da) ilk verilişi işlenir.
+  const yorumlar = new Map<string, YorumDurumu>();
+  for (const { yorum, gorulen } of girdi.yorumlar) {
+    const kimlik = kimligiDuzelt(yorum);
+    if (!yorumlar.has(kimlik)) yorumlar.set(kimlik, gorulen);
+  }
+  for (const [kimlik, gorulen] of yorumlar) {
     try {
-      await servis.karar(vt, kim, kimlik, durum);
+      await servis.karar(vt, kim, kimlik, durum, gorulen);
       sonuc.islenen.push(kimlik);
     } catch (hata) {
       if (hata instanceof BilinenHata) {

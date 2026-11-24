@@ -3,8 +3,10 @@
 //   sekmesiyle açılır, Türkçe harfsiz arama adrese yazılır, puan süzgeci klavyeyle seçilip şeritten kaldırılır.
 // - Klavyeyle Yayınla ve Reddet: kart sekmeden çıkar, odak sonraki (yoksa önceki) kartın düğmesine geçer.
 // - Toplu yayınla: boşlukla seçim, onay, sonuç odakta; aranan sekme boşalınca sonuçsuz hâl, arama yine durur.
-// - Yayında sekmesinde "Ana sayfada göster": rozet, odak aynı kartta. Reddedilen sekmesinde HTML yazı olarak görünür.
-// - Vitrinde ürün sayfası yayınlanan yorumu gösterir, reddedileni göstermez.
+// - Yayında sekmesinde "Ana sayfada göster": rozet, odak aynı kartta; toplu işlem yalnız reddet. Reddedilen sekmesinde
+//   HTML yazı olarak görünür; toplu işlem yalnız yayınla.
+// - Vitrinde ürün sayfası yayınlanan yorumu gösterir, reddedileni göstermez; reddedilen klavyeyle yeniden
+//   yayınlanınca görünür.
 // - Liste, seçimli liste ve onay penceresi iki renkte ve üç genişlikte taramadan geçer, yana kaymaz; konsolda hata yok.
 import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
@@ -240,6 +242,11 @@ test("yorumlar: menüdeki sayı, arama, puan, klavyeyle yayınla ve reddet, topl
     metin("yonetim.yorumlar.anaSayfada"),
   );
   await ikiRenkUcGenislik(page, "yayındaki yorumlar");
+  // Yayında sekmesinde toplu işlem yalnız reddet.
+  await page.getByRole("checkbox", { name: `Seç: ${h.b.ad}, ${h.ad}` }).check();
+  await expect(cubuk.getByRole("button", { name: reddet })).toBeVisible();
+  await expect(cubuk.getByRole("button", { name: yayinla })).toHaveCount(0);
+  await page.getByRole("button", { name: metin("yonetim.liste.secimiKaldir") }).click();
 
   // Reddedilen: HTML yazı olarak, yeniden yayınlanabilir.
   await sekmeler
@@ -252,10 +259,23 @@ test("yorumlar: menüdeki sayı, arama, puan, klavyeyle yayınla ve reddet, topl
   await expect(dugme(yayinla, h.a)).toBeVisible();
 
   // Vitrin: yayınlanan yorum ürün sayfasında, reddedilen yok.
-  await page.goto(kayitAdresleri.urun(h.adresAdi));
+  const vitrin = kayitAdresleri.urun(h.adresAdi);
+  await page.goto(vitrin);
   await sayfaHazir(page);
   await expect(page.getByText(h.b.metin)).toBeVisible();
   await expect(page.getByText(h.c.metin)).toBeVisible();
   await expect(page.getByText(h.a.metin)).toHaveCount(0);
+
+  // Reddedilen klavyeyle yeniden yayınlanır: sekme boşalır, odak seçili sekmeye; vitrinde görünür.
+  await page.goBack();
+  await sayfaHazir(page);
+  await dugme(yayinla, h.a).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByText(metin("yonetim.yorumlar.basari.yayinlandi"))).toBeVisible();
+  await expect(kartlar).toHaveCount(0);
+  await expect(page.locator(":focus")).toHaveAttribute("aria-current", "page");
+  await page.goto(vitrin);
+  await sayfaHazir(page);
+  await expect(page.getByText(h.a.metin)).toBeVisible();
   expect(hatalar).toEqual([]);
 });

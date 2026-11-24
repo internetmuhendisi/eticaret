@@ -3,7 +3,9 @@
 // bekleyen seçili; varsayılan sekme boşken öteki sekmede yorum varsa arama ve süzgeç durur; eylemler yorumun durumuna
 // göre ve yalnız karar izni olana; ürün bağlantısı yalnız ürünleri görene, vitrin bağlantısı yalnız sayfası açık
 // üründe; metin düz yazı; eylemin isteği, sayfanın yenilenmesi ve odağın kartta, sonraki kartta ya da sekmede
-// kalması; toplu işlemin gövdesi. Uç sahte fetch ile verilir, yönlendirici taklittir.
+// kalması (sonraki yoksa yenilenen listede aynı sıradaki karta; liste değiştiyse taşınmaz); eylem ve toplu işlem
+// ekranın gördüğü durumu gönderir; toplu işlemler sekmeye göre; istek sürerken kartın düğmeleri aria-disabled, öteki
+// kart çalışır. Uç sahte fetch ile verilir, yönlendirici taklittir.
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MetinSaglayici } from "../../metinler/istemci-metni.tsx";
@@ -239,7 +241,7 @@ describe("eylemler", () => {
     });
     expect(istekler[0]).toEqual({
       adres: "/kapi/yonetici/yorum-karari",
-      govde: { yorum: "b", durum: "yayinda" },
+      govde: { yorum: "b", durum: "yayinda", gorulen: "onay-bekliyor" },
     });
     rerender(ekran(veri([satir("a"), satir("c")])));
     expect(document.activeElement?.getAttribute("aria-label")).toBe(dugmeAdi("Yayınla", "c"));
@@ -247,7 +249,11 @@ describe("eylemler", () => {
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: dugmeAdi("Reddet", "c") }));
     });
-    expect(istekler[1]?.govde).toEqual({ yorum: "c", durum: "reddedildi" });
+    expect(istekler[1]?.govde).toEqual({
+      yorum: "c",
+      durum: "reddedildi",
+      gorulen: "onay-bekliyor",
+    });
     rerender(ekran(veri([satir("a")])));
     expect(document.activeElement?.getAttribute("aria-label")).toBe(dugmeAdi("Yayınla", "a"));
 
@@ -259,14 +265,85 @@ describe("eylemler", () => {
     expect(document.activeElement?.textContent).toContain("Onay bekleyen");
   });
 
-  it("istek sürerken aynı karttaki ikinci basış istek göndermez", async () => {
-    render(ekran(veri([satir("a")])));
+  it("istek sürerken kartın düğmeleri aria-disabled, ikinci basış istek göndermez; öteki kart çalışır", async () => {
+    let bitir: () => void = () => {};
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (adres: string, secenek?: RequestInit) => {
+        istekler.push({ adres, govde: JSON.parse(String(secenek?.body)) });
+        await new Promise<void>((tamam) => {
+          bitir = tamam;
+        });
+        return new Response(JSON.stringify({ basarili: true, veri: {} }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }),
+    );
+    render(ekran(veri([satir("a"), satir("b")])));
     const dugme = screen.getByRole("button", { name: dugmeAdi("Yayınla", "a") });
     await act(async () => {
       fireEvent.click(dugme);
+    });
+    expect(dugme.getAttribute("aria-disabled")).toBe("true");
+    expect(
+      screen.getByRole("button", { name: dugmeAdi("Reddet", "a") }).getAttribute("aria-disabled"),
+    ).toBe("true");
+    await act(async () => {
       fireEvent.click(dugme);
     });
     expect(istekler).toHaveLength(1);
+    const oteki = screen.getByRole("button", { name: dugmeAdi("Reddet", "b") });
+    expect(oteki.getAttribute("aria-disabled")).toBeNull();
+    await act(async () => {
+      fireEvent.click(oteki);
+    });
+    expect(istekler).toHaveLength(2);
+    await act(async () => {
+      bitir();
+    });
+  });
+
+  it("sonraki kart yoksa odak yenilenen listede aynı sıradaki karta (sonraki sayfadan kayan), önceki karta değil", async () => {
+    const { rerender } = render(ekran(veri([satir("a"), satir("b")])));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: dugmeAdi("Yayınla", "b") }));
+    });
+    rerender(ekran(veri([satir("a"), satir("z")])));
+    expect(document.activeElement?.getAttribute("aria-label")).toBe(dugmeAdi("Yayınla", "z"));
+  });
+
+  it("liste gelmeden sekme ya da süzgeç değiştiyse odak taşınmaz", async () => {
+    const { rerender } = render(ekran(veri([satir("a"), satir("b")])));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: dugmeAdi("Yayınla", "a") }));
+    });
+    const once = document.activeElement;
+    rerender(
+      ekran(veri([satir("y", { durum: "yayinda" })]), {
+        durum: listeDurumunuOku(yorumListesiTanimi, { durum: "yayinda" }),
+      }),
+    );
+    expect(document.activeElement).toBe(once);
+  });
+
+  it("toplu işlemler sekmeye göre: onay bekleyende ikisi, yayındakinde yalnız reddet, reddedilende yalnız yayınla", () => {
+    const cubukIslemleri = (sekme: string, durumu: YorumSatiri["durum"]) => {
+      cleanup();
+      render(
+        ekran(veri([satir("a", { durum: durumu })]), {
+          durum: listeDurumunuOku(yorumListesiTanimi, { durum: sekme }),
+        }),
+      );
+      fireEvent.click(screen.getByRole("checkbox", { name: "Seç: Ad a, Ürün a" }));
+      return within(screen.getByRole("region", { name: metin("yonetim.liste.topluIslem") }))
+        .getAllByRole("button")
+        .map((dugme) => dugme.textContent)
+        .filter((yazi) => yazi !== metin("yonetim.liste.secimiKaldir"));
+    };
+    expect(cubukIslemleri("onay-bekliyor", "onay-bekliyor")).toEqual(["Yayınla", "Reddet"]);
+    expect(cubukIslemleri("yayinda", "yayinda")).toEqual(["Reddet"]);
+    expect(cubukIslemleri("reddedildi", "reddedildi")).toEqual(["Yayınla"]);
   });
 
   it("toplu işlem seçilenleri gönderir, izni olmayan işlem görünmez", async () => {
@@ -280,7 +357,10 @@ describe("eylemler", () => {
       fireEvent.click(onay.getByRole("button", { name: "Reddet" }));
     });
     expect(istekler).toEqual([
-      { adres: "/kapi/yonetici/yorumlar-toplu", govde: { islem: "reddet", yorumlar: ["a"] } },
+      {
+        adres: "/kapi/yonetici/yorumlar-toplu",
+        govde: { islem: "reddet", yorumlar: [{ yorum: "a", gorulen: "onay-bekliyor" }] },
+      },
     ]);
     cleanup();
     render(ekran(veri([satir("a")]), { topluIslemler: ["yayinla"] }));

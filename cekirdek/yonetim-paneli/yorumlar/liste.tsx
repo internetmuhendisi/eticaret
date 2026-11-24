@@ -8,8 +8,14 @@
 // olana görünür: onay bekleyende Yayınla ve Reddet, yayındakinde Ana sayfada göster (kaldır) ve Yayından kaldır,
 // reddedilende Yayınla. Yorum metni değiştirilmez, reddedilen yorum müşteriye bildirilmez.
 //
+// Karar ekranın gördüğü durumu gönderir: yorum arada başka bir karar almışsa çakışır, liste yenilenir. Toplu işlemler
+// sekmeye göredir (yorumun zaten o durumda olduğu sekmede o işlem yoktur). İstek sürerken o kartın düğmeleri
+// aria-disabled'dır ve basış yok sayılır; öteki kartlar çalışır.
+//
 // Odak: eylemden sonra kart listede kalıyorsa odak onun ilk düğmesine, sekmeden çıktıysa sonraki (yoksa önceki)
-// kartın ilk düğmesine, liste boşaldıysa seçili sekmeye gider (kaybolmaz).
+// kartın ilk düğmesine, sonraki yoksa yenilenen listede aynı sıradaki karta (sonraki sayfadan kayan kart), o da yoksa
+// önceki karta, liste boşaldıysa seçili sekmeye gider (kaybolmaz). Liste gelmeden kullanıcı sekmeyi, süzgeci ya da sayfayı değiştirirse
+// odak taşınmaz.
 import { useEffect, useRef, useState } from "react";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
@@ -21,6 +27,7 @@ import {
   type YorumTopluIslemi,
   yorumSinirlari,
   yorumTopluIslemKodlari,
+  yorumTopluIslemleri,
 } from "../../kayitlar/yorum";
 import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
@@ -29,7 +36,7 @@ import { kayitAdresleri } from "../../vitrin/adresler";
 import { Yildizlar } from "../../vitrin/yildizlar";
 import { urunEkraniAdresi } from "../adresler";
 import { Liste, type TopluIslemTanimi } from "../liste/liste";
-import type { ListeDurumu, ListeVerisi } from "../liste/tanim";
+import { type ListeDurumu, type ListeVerisi, listeSorgusu } from "../liste/tanim";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
 import { yorumListesiTanimi } from "./liste-tanimi";
@@ -52,7 +59,7 @@ const islemAdlari: Record<YorumTopluIslemi, MetinAnahtari> = {
 // Toplu işlemin ve tekil eylemin nedenleri: servisin bilinen kodları, gerisi genel metin.
 const nedenler: Record<string, MetinAnahtari> = {
   "yorum-yok": "yonetim.yorumlar.hata.yorum-yok",
-  bulunamadi: "yonetim.yorumlar.hata.yorum-yok",
+  "yorum-degisti": "yonetim.yorumlar.hata.yorum-degisti",
 };
 
 const hataMetni = (hata: PanelHatasi): MetinAnahtari =>
@@ -60,7 +67,9 @@ const hataMetni = (hata: PanelHatasi): MetinAnahtari =>
     ? "yonetim.yorumlar.hata.yetki"
     : hata.kod === "bulunamadi"
       ? "yonetim.yorumlar.hata.yorum-yok"
-      : "yonetim.yorumlar.hata.genel";
+      : hata.kod === "cakisma"
+        ? "yonetim.yorumlar.hata.yorum-degisti"
+        : "yonetim.yorumlar.hata.genel";
 
 // Kartın üst satırı: ürün, puan, ad, rozetler ve tarih.
 function UstSatir({ satir, urunGorur }: { satir: YorumSatiri; urunGorur: boolean }) {
@@ -98,12 +107,14 @@ function UstSatir({ satir, urunGorur }: { satir: YorumSatiri; urunGorur: boolean
   );
 }
 
-// Kartın eylemleri. Aynı kartta istek sürerken ikinci basış yok sayılır.
+// Kartın eylemleri. Bu kartta istek sürerken düğmeler aria-disabled'dır, basış yok sayılır.
 function Eylemler({
   satir,
+  suruyor,
   islemYap,
 }: {
   satir: YorumSatiri;
+  suruyor: boolean;
   islemYap: (satir: YorumSatiri, yol: string, govde: unknown, basari: MetinAnahtari) => void;
 }) {
   const metin = usePanelMetni();
@@ -121,13 +132,20 @@ function Eylemler({
       className="px-3"
       // Aynı yazılı düğmeler kartlarda tekrar eder: ad görünen yazıyla başlar, kimin yorumu olduğunu söyler.
       aria-label={doldur(metin("yonetim.yorumlar.eylemAdi"), { eylem: metin(yazi), ...kimin })}
-      onClick={() => islemYap(satir, yol, govde, basari)}
+      aria-disabled={suruyor ? true : undefined}
+      onClick={() => {
+        if (!suruyor) islemYap(satir, yol, govde, basari);
+      }}
     >
       {tur === "birincil" ? <Ikon ad="onay" /> : null}
       {metin(yazi)}
     </Dugme>
   );
-  const karar = (durum: "yayinda" | "reddedildi") => ({ yorum: satir.kimlik, durum });
+  const karar = (durum: "yayinda" | "reddedildi") => ({
+    yorum: satir.kimlik,
+    durum,
+    gorulen: satir.durum,
+  });
   const isaret = (anaSayfada: boolean) => ({ yorum: satir.kimlik, anaSayfada });
   const dugmeler =
     satir.durum === "onay-bekliyor"
@@ -195,11 +213,13 @@ function YorumKarti({
   satir,
   urunGorur,
   kararVerir,
+  suruyor,
   islemYap,
 }: {
   satir: YorumSatiri;
   urunGorur: boolean;
   kararVerir: boolean;
+  suruyor: boolean;
   islemYap: (satir: YorumSatiri, yol: string, govde: unknown, basari: MetinAnahtari) => void;
 }) {
   const metin = usePanelMetni();
@@ -226,7 +246,7 @@ function YorumKarti({
           </Baglanti>
         ) : null}
       </span>
-      {kararVerir ? <Eylemler satir={satir} islemYap={islemYap} /> : null}
+      {kararVerir ? <Eylemler satir={satir} suruyor={suruyor} islemYap={islemYap} /> : null}
     </span>
   );
 }
@@ -249,52 +269,78 @@ export function YorumListesi({
 }) {
   const metin = usePanelMetni();
   const islem = usePanelIslemi(hataMetni);
-  const suren = useRef(false);
+  // İsteği süren kartlar: ref basışı hemen keser, durum düğmeyi aria-disabled çizer.
+  const surenler = useRef(new Set<string>());
+  const [surenKartlar, setSurenKartlar] = useState<ReadonlySet<string>>(new Set());
   const kok = useRef<HTMLDivElement>(null);
+  const durumSorgusu = listeSorgusu(yorumListesiTanimi, durum).toString();
   // Eylemden sonra odaklanacak kartlar, öncelik sırasıyla (kendisi, sonraki, önceki), ve eylem anındaki veri: odak
   // yalnız yenilenen veri gelince yerleşir (eski listede yerleşip kart kalkınca kayboluyordu).
   const [odak, setOdak] = useState<{
-    adaylar: string[];
+    // Kartın kendisi, eylem anındaki sonraki ve önceki kart.
+    kendisi: string;
+    sonraki: string | undefined;
+    onceki: string | undefined;
+    sira: number;
     eskiVeri: ListeVerisi<YorumSatiri> | null;
+    sorgu: string;
   } | null>(null);
 
   useEffect(() => {
     if (odak === null || odak.eskiVeri === veri || kok.current === null) return;
     const kap = kok.current;
     setOdak(null);
-    for (const aday of odak.adaylar) {
-      const dugme = kap.querySelector<HTMLElement>(
-        `[data-yorum="${aday}"] [data-yorum-eylemleri] button`,
-      );
-      if (dugme !== null) {
-        dugme.focus();
-        return;
-      }
-    }
-    kap.querySelector<HTMLElement>('nav [aria-current="page"]')?.focus();
-  }, [veri, odak]);
+    // Kullanıcı arada başka bir listeye geçtiyse odak taşınmaz.
+    if (odak.sorgu !== durumSorgusu) return;
+    const ilkDugme = (kimlik: string | undefined) =>
+      kimlik === undefined
+        ? null
+        : kap.querySelector<HTMLElement>(`[data-yorum="${kimlik}"] [data-yorum-eylemleri] button`);
+    const satirlar = veri?.satirlar ?? [];
+    const hedef =
+      ilkDugme(odak.kendisi) ??
+      ilkDugme(odak.sonraki) ??
+      ilkDugme(satirlar[odak.sira]?.kimlik) ??
+      ilkDugme(odak.onceki);
+    if (hedef !== null && hedef !== undefined) hedef.focus();
+    else kap.querySelector<HTMLElement>('nav [aria-current="page"]')?.focus();
+  }, [veri, odak, durumSorgusu]);
 
   const islemYap = (satir: YorumSatiri, yol: string, govde: unknown, basari: MetinAnahtari) => {
-    if (suren.current) return;
-    suren.current = true;
+    if (surenler.current.has(satir.kimlik)) return;
+    surenler.current.add(satir.kimlik);
+    setSurenKartlar(new Set(surenler.current));
     const eskiVeri = veri;
+    const sorgu = durumSorgusu;
     const satirlar = veri?.satirlar ?? [];
     const sira = satirlar.findIndex((oge) => oge.kimlik === satir.kimlik);
-    const adaylar = [satir.kimlik, satirlar[sira + 1]?.kimlik, satirlar[sira - 1]?.kimlik].filter(
-      (kimlik): kimlik is string => kimlik !== undefined,
-    );
+    const sonraki = satirlar[sira + 1]?.kimlik;
+    const onceki = satirlar[sira - 1]?.kimlik;
     void islem(yol, govde, basari).then((sonuc) => {
-      suren.current = false;
+      surenler.current.delete(satir.kimlik);
+      setSurenKartlar(new Set(surenler.current));
       // Yenilenen liste gelince odak yerleşir (useEffect). Yorum bulunamadıysa liste de yenilenir (usePanelIslemi);
       // öteki hatada sayfa yenilenmez, odak düğmede kalır.
       if (sonuc.tamam || sonuc.kod === "bulunamadi" || sonuc.kod === "cakisma") {
-        setOdak({ adaylar, eskiVeri });
+        setOdak({
+          kendisi: satir.kimlik,
+          sonraki,
+          onceki,
+          sira: Math.max(sira, 0),
+          eskiVeri,
+          sorgu,
+        });
       }
     });
   };
 
+  const sekme = (durum.suzgecler["durum"]?.[0] ?? "onay-bekliyor") as YorumDurumu;
   const islemler: TopluIslemTanimi<YorumSatiri>[] = yorumTopluIslemKodlari
-    .filter((kod) => topluIslemler.includes(kod))
+    .filter(
+      (kod) =>
+        topluIslemler.includes(kod) &&
+        (yorumTopluIslemleri[kod].sekmeler as readonly YorumDurumu[]).includes(sekme),
+    )
     .map((kod) => ({
       kod,
       ad: metin(islemAdlari[kod]),
@@ -304,7 +350,10 @@ export function YorumListesi({
         onayEtiketi: metin(islemAdlari[kod]),
       }),
       uc: "yorumlar-toplu",
-      govde: (satirlar) => ({ islem: kod, yorumlar: satirlar.map((satir) => satir.kimlik) }),
+      govde: (satirlar) => ({
+        islem: kod,
+        yorumlar: satirlar.map((satir) => ({ yorum: satir.kimlik, gorulen: satir.durum })),
+      }),
       basari: (sayi) =>
         doldur(metin(`yonetim.yorumlar.toplu.${kod}.basari`), { sayi: String(sayi) }),
       neden: (neden) => metin(nedenler[neden] ?? "yonetim.yorumlar.hata.genel"),
@@ -324,6 +373,7 @@ export function YorumListesi({
             satir={satir}
             urunGorur={urunGorur}
             kararVerir={kararVerir}
+            suruyor={surenKartlar.has(satir.kimlik)}
             islemYap={islemYap}
           />
         )}

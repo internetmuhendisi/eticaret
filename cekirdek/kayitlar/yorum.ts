@@ -36,14 +36,19 @@ export type YorumPanelSiralamasi = (typeof yorumPanelSiralamalari)[number];
 // Puan süzgecinin değerleri (adreste "1".."5").
 export const yorumPuanlari = ["5", "4", "3", "2", "1"] as const;
 
-// Panelin yorum listesinin toplu işlemleri (karar 0157: yayınla ve reddet) ve verdikleri karar. Her yorum tekil
-// kararla (yorumServisi.karar) aynı yoldan, kendi işleminde geçer.
+// Panelin yorum listesinin toplu işlemleri (karar 0157: yayınla ve reddet), verdikleri karar ve görüldüğü sekmeler
+// (yorumun zaten o durumda olduğu sekmede işlem yoktur; bağımsız kontrolün bulgusu). Her yorum tekil kararla
+// (yorumServisi.karar) aynı yoldan, kendi işleminde geçer.
 export const yorumTopluIslemleri = {
-  yayinla: { izin: "yorum.onayla", durum: "yayinda" },
-  reddet: { izin: "yorum.onayla", durum: "reddedildi" },
+  yayinla: { izin: "yorum.onayla", durum: "yayinda", sekmeler: ["onay-bekliyor", "reddedildi"] },
+  reddet: { izin: "yorum.onayla", durum: "reddedildi", sekmeler: ["onay-bekliyor", "yayinda"] },
 } as const satisfies Record<
   string,
-  { izin: "yorum.onayla"; durum: (typeof yorumKararlari)[number] }
+  {
+    izin: "yorum.onayla";
+    durum: (typeof yorumKararlari)[number];
+    sekmeler: readonly YorumDurumu[];
+  }
 >;
 export type YorumTopluIslemi = keyof typeof yorumTopluIslemleri;
 export const yorumTopluIslemKodlari = Object.keys(yorumTopluIslemleri) as YorumTopluIslemi[];

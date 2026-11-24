@@ -4,8 +4,10 @@
 // - Arama ürünün adında ve kısaltılmış adda; Türkçe harfsiz, büyük harfle ve ortadan; % ve _ joker değildir.
 // - Puan süzgeci birden çok değer alır. Dört sıralama, eşitlikte en yeni önce. Sınır dışı sayfa son sayfaya çekilir.
 // - Satırın "vitrinde" bilgisi ürünün sayfasının açılıp açılmadığıdır.
-// - Toplu karar: her yorum tekil kararla, kendi işleminde; olmayan ve bozuk kimlik nedeniyle döner, ötekiler işlenir;
-//   aynı yorum iki kez verilse de bir kez işlenir; değişiklik kaydı yazanla.
+// - Toplu karar: her yorum tekil kararla, kendi işleminde; olmayan kimlik nedeniyle döner, ötekiler işlenir; aynı yorum
+//   iki kez verilse de bir kez işlenir; değişiklik kaydı yazanla. Ekranın gördüğü durum eskiyse yorum işlenmez
+//   (yorum-degisti). Kararın kuralları (bağımsız kontrolün bulguları): reddedilen yorumun ana sayfa işareti kalkar,
+//   ürünü silinmiş yorum bulunamadı alır.
 import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { and, eq } from "drizzle-orm";
@@ -178,9 +180,15 @@ describe("toplu karar", () => {
     const b = await yaz(urun, 4);
     const kim = yonetici();
     const olmayan = randomUUID();
+    const bekliyor = "onay-bekliyor" as const;
     const sonuc = await yorumTopluKarar(vt, site, kim, {
       islem: "yayinla",
-      yorumlar: [a, olmayan, b.toUpperCase(), b],
+      yorumlar: [
+        { yorum: a, gorulen: bekliyor },
+        { yorum: olmayan, gorulen: bekliyor },
+        { yorum: b.toUpperCase(), gorulen: bekliyor },
+        { yorum: b, gorulen: bekliyor },
+      ],
     });
     expect(sonuc.islenen.sort()).toEqual([a, b].sort());
     expect(sonuc.islenemeyen).toEqual([{ anahtar: olmayan, kod: "yorum-yok" }]);
@@ -197,9 +205,15 @@ describe("toplu karar", () => {
     expect(kayitlar).toHaveLength(2);
 
     // Reddet: yayındaki yorum reddedilir; zaten reddedilmiş olan yeniden kayda girmez.
-    const ret = await yorumTopluKarar(vt, site, kim, { islem: "reddet", yorumlar: [a] });
+    const ret = await yorumTopluKarar(vt, site, kim, {
+      islem: "reddet",
+      yorumlar: [{ yorum: a, gorulen: "yayinda" }],
+    });
     expect(ret).toEqual({ islenen: [a], islenemeyen: [] });
-    await yorumTopluKarar(vt, site, kim, { islem: "reddet", yorumlar: [a] });
+    await yorumTopluKarar(vt, site, kim, {
+      islem: "reddet",
+      yorumlar: [{ yorum: a, gorulen: "reddedildi" }],
+    });
     const [satir] = await vt.select().from(yorumlar).where(eq(yorumlar.kimlik, a));
     expect(satir?.durum).toBe("reddedildi");
     const retKayitlari = await vt
@@ -212,5 +226,79 @@ describe("toplu karar", () => {
         ),
       );
     expect(retKayitlari).toHaveLength(2);
+  });
+
+  it("ekranın gördüğü durum eskiyse yorum işlenmez, ötekiler işlenir; tekil kararda da çakışma", async () => {
+    const e = etiket();
+    const urun = await urunAc(`${e} Vazo`);
+    const a = await yaz(urun, 5);
+    const b = await yaz(urun, 4);
+    // Başka bir yönetici a'yı arada reddetti; bu ekran onu hâlâ onay bekliyor görüyor.
+    await kararVer(a, "reddedildi");
+    const sonuc = await yorumTopluKarar(vt, site, yonetici(), {
+      islem: "yayinla",
+      yorumlar: [
+        { yorum: a, gorulen: "onay-bekliyor" },
+        { yorum: b, gorulen: "onay-bekliyor" },
+      ],
+    });
+    expect(sonuc).toEqual({ islenen: [b], islenemeyen: [{ anahtar: a, kod: "yorum-degisti" }] });
+    expect(await kimlikler({ ara: e, durum: "reddedildi" })).toEqual([a]);
+    const hata = await servis.karar(vt, yonetici(), a, "yayinda", "onay-bekliyor").then(
+      () => undefined,
+      (h: { kod?: string; ayrinti?: unknown }) => ({ kod: h.kod, ayrinti: h.ayrinti }),
+    );
+    expect(hata).toEqual({ kod: "cakisma", ayrinti: [{ alan: "yorum", kod: "yorum-degisti" }] });
+    expect(await kimlikler({ ara: e, durum: "reddedildi" })).toEqual([a]);
+  });
+
+  it("reddedilen yorumun ana sayfa işareti kalkar ve kayda girer; yeniden yayınlanınca işaretsizdir", async () => {
+    const e = etiket();
+    const urun = await urunAc(`${e} Fincan`);
+    const a = await yaz(urun, 5);
+    await kararVer(a, "yayinda");
+    await servis.anaSayfaIsareti(vt, yonetici(), a, true);
+    await kararVer(a, "reddedildi");
+    const [satir] = await vt.select().from(yorumlar).where(eq(yorumlar.kimlik, a));
+    expect(satir).toMatchObject({ durum: "reddedildi", ana_sayfada: false });
+    const [kayit] = await vt
+      .select()
+      .from(degisiklikKayitlari)
+      .where(
+        and(
+          eq(degisiklikKayitlari.kayit_kimligi, a),
+          eq(degisiklikKayitlari.islem, "yorum.durum-degisti"),
+          eq(degisiklikKayitlari.yeni_deger, { durum: "reddedildi", anaSayfada: false }),
+        ),
+      );
+    expect(kayit?.eski_deger).toEqual({ durum: "yayinda", anaSayfada: true });
+    await kararVer(a, "yayinda");
+    expect((await liste({ ara: e, durum: "yayinda" })).satirlar[0]?.anaSayfada).toBe(false);
+  });
+
+  it("ürünü silinmiş yorum karar ve işaret alamaz (bulunamadı), toplu kararda nedeniyle döner", async () => {
+    const e = etiket();
+    const urun = await urunAc(`${e} Tabak`);
+    const a = await yaz(urun, 3);
+    await urunSrv.urunSil(vt, yonetici(), urun);
+    for (const vaat of [
+      servis.karar(vt, yonetici(), a, "yayinda"),
+      servis.anaSayfaIsareti(vt, yonetici(), a, true),
+    ]) {
+      expect(
+        await vaat.then(
+          () => "yazildi",
+          (h: { kod?: string }) => h.kod,
+        ),
+      ).toBe("bulunamadi");
+    }
+    expect(
+      await yorumTopluKarar(vt, site, yonetici(), {
+        islem: "yayinla",
+        yorumlar: [{ yorum: a, gorulen: "onay-bekliyor" }],
+      }),
+    ).toEqual({ islenen: [], islenemeyen: [{ anahtar: a, kod: "yorum-yok" }] });
+    const [satir] = await vt.select().from(yorumlar).where(eq(yorumlar.kimlik, a));
+    expect(satir?.durum).toBe("onay-bekliyor");
   });
 });

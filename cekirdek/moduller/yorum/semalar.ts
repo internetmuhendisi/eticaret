@@ -7,6 +7,7 @@ import { z } from "zod";
 import { panelSayfaBoylari } from "../../kayitlar/liste.ts";
 import {
   type YorumTopluIslemi,
+  yorumDurumlari,
   yorumKararlari,
   yorumSinirlari,
   yorumTopluIslemKodlari,
@@ -25,6 +26,8 @@ export const yorumHatalari = [
   "yorum-yazildi",
   "yorum-yok",
   "metin-gecersiz",
+  // Panelin kararı: yorum ekranın gördüğü durumda değil, arada başka bir karar almış (kart 0277).
+  "yorum-degisti",
 ] as const;
 export type YorumHatasi = (typeof yorumHatalari)[number];
 
@@ -57,8 +60,9 @@ export const yorumIzniSemasi = z.strictObject({ urun: kimlikSemasi });
 // Panel listesinin toplu kararı (kart 0277): en çok bir sayfanın yorumları.
 export const yorumTopluIslemiSemasi = z.strictObject({
   islem: z.enum(yorumTopluIslemKodlari as [YorumTopluIslemi, ...YorumTopluIslemi[]]),
+  // Her yorum ekranın gördüğü durumuyla: arada başka karar almış yorum işlenmez (yorum-degisti).
   yorumlar: z
-    .array(kimlikSemasi)
+    .array(z.strictObject({ yorum: kimlikSemasi, gorulen: z.enum(yorumDurumlari) }))
     .min(1)
     .max(panelSayfaBoylari[panelSayfaBoylari.length - 1] ?? 100),
 });
@@ -66,6 +70,8 @@ export const yorumTopluIslemiSemasi = z.strictObject({
 export const yorumKarariSemasi = z.strictObject({
   yorum: kimlikSemasi,
   durum: z.enum(yorumKararlari),
+  // Ekranın gördüğü durum (kart 0277): verilirse ve yorum arada değiştiyse çakışma.
+  gorulen: z.enum(yorumDurumlari).optional(),
 });
 
 export const yorumAnaSayfaSemasi = z.strictObject({

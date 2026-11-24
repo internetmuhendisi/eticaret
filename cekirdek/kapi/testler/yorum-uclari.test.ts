@@ -1,6 +1,8 @@
 // Panelin yorum uçları gerçek istek ve veritabanıyla (kart 0277, karar 0174): mağaza sahibi listeyi ürünün adıyla ve
 // puanla arar, yorumları toplu yayınlar, tek tek reddeder ve ana sayfada gösterir; sekme verilmezse onay bekleyenler
-// gelir. Görevli görür ve karar verir (kart 0139). Rolsüz yönetici, müşteri ve girişsiz ziyaretçi dört uçta
+// gelir. Her kararın vitrindeki sonucu (ürünün yorumları ve ana sayfanın işaretli yorumları): yayınlanan görünür,
+// yayından kaldırılan kalkar ve işareti düşer, yeniden yayınlanan görünür ve ana sayfaya kendiliğinden dönmez.
+// Ekranın gördüğü durum eskiyse karar 409 alır, toplu kararda nedeniyle döner. Görevli görür ve karar verir (kart 0139). Rolsüz yönetici, müşteri ve girişsiz ziyaretçi dört uçta
 // reddedilir, hiçbir yorum değişmez. Her rolün her uçtaki erişimini ayrıca rol-uc-erisimi.test.ts dener.
 import { randomBytes, randomUUID } from "node:crypto";
 import { join, resolve } from "node:path";
@@ -12,7 +14,7 @@ import { siteninServisi } from "../../moduller/magaza-ayarlari/servis.ts";
 import { hesapAc } from "../../moduller/oturum/servis.ts";
 import { urunServisi } from "../../moduller/urun/servis.ts";
 import { yorumlar } from "../../moduller/yorum/model.ts";
-import { yorumServisi } from "../../moduller/yorum/servis.ts";
+import { anaSayfaYorumlari, urunYorumlari, yorumServisi } from "../../moduller/yorum/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
 import {
@@ -103,8 +105,16 @@ const hazirla = async () => {
       }),
     );
   }
-  return { etiket, kimlikler: kimlikler as [string, string, string] };
+  return { etiket, urun, kimlikler: kimlikler as [string, string, string] };
 };
+
+// Vitrindeki sonuç: ürünün yayındaki yorumları ve ana sayfanın işaretli yorumları.
+const vitrin = async (urun: string) => ({
+  urunde: (await urunYorumlari(vt, urun, { sayfa: 1, boyut: 50 })).yorumlar.map((y) => y.kimlik),
+  anaSayfada: (
+    await anaSayfaYorumlari(vt, { isaretlenenler: true, adet: 500, an: new Date() })
+  ).map((y) => y.kimlik),
+});
 
 const durumlar = async (kimlikler: readonly string[]) =>
   Object.fromEntries(
@@ -129,8 +139,9 @@ const listele = async (sorgu: string, oturum: string) => {
 describe("panelin yorum uçları", () => {
   it("mağaza sahibi arar, puanla süzer, toplu yayınlar, tek tek reddeder ve ana sayfada gösterir", async () => {
     const sahip = await hesap("magaza-sahibi");
-    const { etiket, kimlikler } = await hazirla();
+    const { etiket, urun, kimlikler } = await hazirla();
     const [bes, dort, iki] = kimlikler;
+    expect((await vitrin(urun)).urunde).toEqual([]);
 
     const ilk = await listele(`ara=${encodeURIComponent(etiket.toLowerCase())}`, sahip.oturum);
     expect(ilk.satirlar.map((s) => s.kimlik)).toEqual([iki, dort, bes]);
@@ -139,12 +150,22 @@ describe("panelin yorum uçları", () => {
     expect(puanli.satirlar.map((s) => s.kimlik)).toEqual([bes, iki]);
 
     const toplu = await yorumTopluKarariUcu(
-      istek("yorumlar-toplu", sahip.oturum, { islem: "yayinla", yorumlar: [bes, dort] }),
+      istek("yorumlar-toplu", sahip.oturum, {
+        islem: "yayinla",
+        yorumlar: [
+          { yorum: bes, gorulen: "onay-bekliyor" },
+          { yorum: dort, gorulen: "onay-bekliyor" },
+        ],
+      }),
     );
     expect(toplu.status).toBe(200);
     expect(await toplu.json()).toMatchObject({ veri: { islenemeyen: [] } });
     const red = await yorumKarariUcu(
-      istek("yorum-karari", sahip.oturum, { yorum: iki, durum: "reddedildi" }),
+      istek("yorum-karari", sahip.oturum, {
+        yorum: iki,
+        durum: "reddedildi",
+        gorulen: "onay-bekliyor",
+      }),
     );
     expect(red.status).toBe(200);
     const ana = await yorumAnaSayfaUcu(
@@ -160,6 +181,64 @@ describe("panelin yorum uçları", () => {
     expect(yayinda.satirlar.map((s) => s.kimlik)).toEqual([dort, bes]);
     // Sekme verilmezse onay bekleyenler: hiç kalmadı.
     expect((await listele(`ara=${etiket}`, sahip.oturum)).satirlar).toEqual([]);
+    const yayindan = await vitrin(urun);
+    expect(yayindan.urunde).toEqual([dort, bes]);
+    expect(yayindan.anaSayfada).toContain(bes);
+
+    // Yayından kaldır: vitrinden ve ana sayfadan kalkar, işareti düşer.
+    const kaldir = await yorumKarariUcu(
+      istek("yorum-karari", sahip.oturum, { yorum: bes, durum: "reddedildi", gorulen: "yayinda" }),
+    );
+    expect(kaldir.status).toBe(200);
+    const kaldirildi = await vitrin(urun);
+    expect(kaldirildi.urunde).toEqual([dort]);
+    expect(kaldirildi.anaSayfada).not.toContain(bes);
+    // Reddedileni yeniden yayınla: vitrinde görünür, ana sayfaya kendiliğinden dönmez.
+    const yeniden = await yorumKarariUcu(
+      istek("yorum-karari", sahip.oturum, { yorum: bes, durum: "yayinda", gorulen: "reddedildi" }),
+    );
+    expect(yeniden.status).toBe(200);
+    const sonra = await vitrin(urun);
+    expect(sonra.urunde).toEqual([dort, bes]);
+    expect(sonra.anaSayfada).not.toContain(bes);
+    expect(await durumlar(kimlikler)).toEqual({
+      [bes]: "yayinda",
+      [dort]: "yayinda",
+      [iki]: "reddedildi",
+    });
+  });
+
+  it("ekranın gördüğü durum eskiyse karar 409 alır, toplu kararda nedeniyle döner; hiçbir şey değişmez", async () => {
+    const sahip = await hesap("magaza-sahibi");
+    const { kimlikler } = await hazirla();
+    const [a, b] = kimlikler;
+    // a'yı başka biri yayınladı; ekran onu hâlâ onay bekliyor görüyor.
+    await yorumServisi(site).karar(vt, { tur: "yonetici", kimlik: randomUUID() }, a, "yayinda");
+    const tekil = await yorumKarariUcu(
+      istek("yorum-karari", sahip.oturum, {
+        yorum: a,
+        durum: "reddedildi",
+        gorulen: "onay-bekliyor",
+      }),
+    );
+    expect(tekil.status).toBe(409);
+    expect(await tekil.json()).toMatchObject({
+      basarili: false,
+      hata: { kod: "cakisma", ayrinti: [{ alan: "yorum", kod: "yorum-degisti" }] },
+    });
+    const toplu = await yorumTopluKarariUcu(
+      istek("yorumlar-toplu", sahip.oturum, {
+        islem: "reddet",
+        yorumlar: [
+          { yorum: a, gorulen: "onay-bekliyor" },
+          { yorum: b, gorulen: "onay-bekliyor" },
+        ],
+      }),
+    );
+    expect(await toplu.json()).toMatchObject({
+      veri: { islenen: [b], islenemeyen: [{ anahtar: a, kod: "yorum-degisti" }] },
+    });
+    expect((await durumlar([a]))[a]).toBe("yayinda");
   });
 
   it("görevli görür ve karar verir; tanımda olmayan değer reddedilir", async () => {
@@ -167,7 +246,10 @@ describe("panelin yorum uçları", () => {
     const { etiket, kimlikler } = await hazirla();
     expect((await listele(`ara=${etiket}`, gorevli.oturum)).satirlar).toHaveLength(3);
     const toplu = await yorumTopluKarariUcu(
-      istek("yorumlar-toplu", gorevli.oturum, { islem: "reddet", yorumlar: [kimlikler[0]] }),
+      istek("yorumlar-toplu", gorevli.oturum, {
+        islem: "reddet",
+        yorumlar: [{ yorum: kimlikler[0], gorulen: "onay-bekliyor" }],
+      }),
     );
     expect(toplu.status).toBe(200);
     expect((await durumlar([kimlikler[0]]))[kimlikler[0]]).toBe("reddedildi");
@@ -192,7 +274,10 @@ describe("panelin yorum uçları", () => {
       expect(
         (
           await yorumTopluKarariUcu(
-            istek("yorumlar-toplu", oturum, { islem: "yayinla", yorumlar: kimlikler }),
+            istek("yorumlar-toplu", oturum, {
+              islem: "yayinla",
+              yorumlar: kimlikler.map((yorum) => ({ yorum, gorulen: "onay-bekliyor" })),
+            }),
           )
         ).status,
       ).toBe(kod);

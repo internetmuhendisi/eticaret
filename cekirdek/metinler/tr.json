@@ -2259,7 +2259,8 @@
       "hata": {
         "yorum-yok": "Yorum bulunamadı. Liste yenilendi.",
         "yetki": "Bu işlem için izniniz yok.",
-        "genel": "İşlem yapılamadı. Biraz sonra yeniden deneyin."
+        "genel": "İşlem yapılamadı. Biraz sonra yeniden deneyin.",
+        "yorum-degisti": "Bu yoruma bu arada başka bir karar verildi. Liste yenilendi; yorumun güncel durumuna bakın."
       },
       "bos": {
         "baslik": "Onay bekleyen yorum yok",
