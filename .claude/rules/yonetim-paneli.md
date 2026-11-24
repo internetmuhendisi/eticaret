@@ -80,6 +80,12 @@ paths:
 - Yazdırılacak panel sayfası çerçeveyi kendisi gizlemez: yazdırırken yan menü, üst çubuk ve komut çubuğu `print:hidden`'dır (panel-cercevesi, panel-sayfasi).
 - İptal ve iade (karar 0147) yan penceredir (`iade-penceresi.tsx`), yalnız `siparis.iade` izni olana ve durumu izin veren siparişte görünür; tutar ve vergi önizlemesi sunucunun `iadeyiHesapla`'sıyla ve sitenin biçim ayarlarıyla (`siteninBicimAyarlari`) çizilir, gönderilen yalnız seçimdir.
 
+## Mağaza bilgileri (karar 0175)
+
+- Ekran `cekirdek/yonetim-paneli/magaza-bilgileri/` klasöründe, menüde "Satış" altındadır (ayrı "Ayarlar" grubu kart 0301). Mağaza ayarıdır: görmek `magaza-ayarlari.gor`, değiştirmek `magaza-ayarlari.degistir`.
+- Alanlar yazı olarak `magaza-bilgileri` ucuna gider; kurallar ayar şemasındadır, servis `magazaBilgileriniDegistir` (`cekirdek/moduller/magaza-ayarlari/bilgiler.ts`) uygular ve hatayı alanın yolu ve şemanın koduyla döndürür. Ekran kural yazmaz; kodların metni ekrandadır (`kodMetinleri`). Sosyal hesabın hata yolu gönderilen sıradır, ekran onu alanına çevirir.
+- Adres alanları ödeme adımının parçalarıdır (`AdresAlanlari`, ülkeler `bolgeUlkeleri` ile sitenin satış ülkelerinden). İzni olmayan yönetici için alanlar kapalı bir fieldset içindedir.
+
 ## Müşteriler (karar 0173)
 
 - Ekranlar `cekirdek/yonetim-paneli/musteriler/` klasöründe, menüde "Satış" altındadır: Müşteriler (liste motoruyla, `liste-tanimi.ts`) ve Müşteri ayrıntısı (alt sayfa, `?kimlik=`). Görmek `musteri.gor`, not `musteri.not`, şifre sıfırlama bağlantısı `musteri.sifre-sifirlama` ister; görevlide yok.

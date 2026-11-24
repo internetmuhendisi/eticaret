@@ -218,11 +218,11 @@ export function MagazaBilgileriEkrani({
       <fieldset disabled={!izinli} className="m-0 flex min-w-0 flex-col gap-6 border-0 p-0">
         <Kart
           role="region"
-          aria-labelledby="mb-magaza"
+          aria-labelledby="bolum-magaza"
           className="flex flex-col gap-5 p-4 tablet:p-6"
         >
           {bolum(
-            "mb-magaza",
+            "bolum-magaza",
             "yonetim.magazaBilgileri.magaza.baslik",
             "yonetim.magazaBilgileri.magaza.aciklama",
           )}
@@ -237,11 +237,11 @@ export function MagazaBilgileriEkrani({
 
         <Kart
           role="region"
-          aria-labelledby="mb-iletisim"
+          aria-labelledby="bolum-iletisim"
           className="flex flex-col gap-5 p-4 tablet:p-6"
         >
           {bolum(
-            "mb-iletisim",
+            "bolum-iletisim",
             "yonetim.magazaBilgileri.iletisim.baslik",
             "yonetim.magazaBilgileri.iletisim.aciklama",
           )}
@@ -279,11 +279,11 @@ export function MagazaBilgileriEkrani({
 
         <Kart
           role="region"
-          aria-labelledby="mb-sosyal"
+          aria-labelledby="bolum-sosyal"
           className="flex flex-col gap-5 p-4 tablet:p-6"
         >
           {bolum(
-            "mb-sosyal",
+            "bolum-sosyal",
             "yonetim.magazaBilgileri.sosyal.baslik",
             "yonetim.magazaBilgileri.sosyal.aciklama",
           )}
@@ -309,7 +309,11 @@ export function MagazaBilgileriEkrani({
                     {(baglanti) => (
                       // Sitenin adresi alanın içinde, yazının önünde (taslak); ekran okuyucu açıklamayı okur.
                       <span className="flex min-w-0 items-center overflow-hidden rounded-dugme border border-alan-kenari bg-zemin">
-                        <span aria-hidden="true" className="shrink-0 pl-4 text-soluk-yazi">
+                        {/* Önek ayrı kutuda (taslak): alanın değeri sanılmasın. */}
+                        <span
+                          aria-hidden="true"
+                          className="flex shrink-0 items-center self-stretch border-r border-alan-kenari bg-yuzey px-3 text-kucuk text-soluk-yazi"
+                        >
                           {hesapOnEki(site)}
                         </span>
                         <GirisAlani
@@ -329,7 +333,7 @@ export function MagazaBilgileriEkrani({
                               },
                             }));
                           }}
-                          className="min-w-0 flex-1 rounded-none border-0 bg-transparent pl-1"
+                          className="min-w-0 flex-1 rounded-none border-0 bg-transparent"
                         />
                       </span>
                     )}
@@ -342,11 +346,11 @@ export function MagazaBilgileriEkrani({
 
         <Kart
           role="region"
-          aria-labelledby="mb-satici"
+          aria-labelledby="bolum-satici"
           className="flex flex-col gap-5 p-4 tablet:p-6"
         >
           {bolum(
-            "mb-satici",
+            "bolum-satici",
             "yonetim.magazaBilgileri.satici.baslik",
             "yonetim.magazaBilgileri.satici.aciklama",
           )}
