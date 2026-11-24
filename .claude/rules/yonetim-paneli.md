@@ -143,3 +143,10 @@ paths:
 
 - Ekranlar `cekirdek/yonetim-paneli/blog/` klasöründe, menüde "İçerik" altındadır: Blog (anahtar ve liste motoruyla liste, `liste-tanimi.ts`), Yeni yazı, Yazı (`?kimlik=`) ve Blog kategorileri. Görmek `icerik.gor`, yazmak `icerik.degistir`, silmek `icerik.sil`; blogun açıklığı mağaza ayarıdır (`blog-ayari`, `magaza-ayarlari.degistir`).
 - Servis `icerikServisi` (`cekirdek/moduller/icerik/servis.ts`), panel listesi `blogPanelListesi`: durum yazının vitrindeki durumudur. Yazı ekranı yalnız değişen alanları ve gördüğü değişme anını gönderir (`blogYazisiGirdisi`, `gorulen`); arada değişen yazı `yazi-degisti` alır. Kapak `blog-kapagi-yukle` ile hemen yüklenir, yazıya kayıtla bağlanır; alternatif metni zorunludur.
+
+## Sabit sayfalar (karar 0177)
+
+- Ekranlar `cekirdek/yonetim-paneli/sayfalar/` klasöründe, menüde "İçerik" altındadır: Sayfalar (kısa liste, liste motoruna girmez), Yeni sayfa ve Sayfa (`?kimlik=`). İzinler blogunkilerdir (`icerik.gor`, `icerik.degistir`, `icerik.sil`). Sayfa ekranı blog yazısı ekranının yolundan gider: yalnız değişen alanları ve gördüğü değişme anını gönderir (`sayfaGirdisi`, `gorulen`), arada değişen sayfa `sayfa-degisti` alır.
+- Sayfanın menülerdeki yeri `kayitlarinMenuYerleri` (menü servisi) ile okunur, yazısı `menuYeriYazisi` ile (`sayfalar/menu-yeri.ts`). "Menüye ekle" menüler ekranını `menuyeSayfaEkleAdresi` ile açar: öğe penceresi o sayfa seçili açılır (`MenulerSaglayici`'nın `hazirHedef`'i); sayfa ekranında ayrı bir menü formu yazılmaz.
+- Menü formunda sabit sayfa ve blog yazısı `KayitArama`'nın kendi aramasıyla `icerik-ara` ucundan aranır (`icerik.gor`); katalogun kayıtları `kayit-ara`'dadır.
+

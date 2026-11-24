@@ -150,7 +150,8 @@ paths:
 - Menüler ve alt bilgi bağlantıları mağaza sahibinin verisidir. Yalnız `cekirdek/moduller/menu/servis.ts` ile okunur ve değişir. Türler, hedefler, derinlik ve sınırlar `cekirdek/kayitlar/menu.ts` kaydındadır: derinliği ya da hedef türünü kodda elle yazma.
 - Telefonun yan penceresi kategori ağacından gelen menüyü tek bir "Kategoriler" dalı olarak çizer (`YanMenuGrubu`, bağlamın `kategoriMenuleri`; karar 0120).
 - Vitrin menüyü koduyla `vitrinMenusu` ile alır. Görünmeyen öğeyi (silinmiş ya da açılmayan hedef, boş başlık) süzmek servisin işidir, bölüm yeniden süzmez. Kategori menüsü ağaçtan gelir, kategori listesini bölümde ayrıca okuma.
-- Başlangıç menüleri sitenin `baslangic/menuler.json` dosyasındadır. Kayıtlı hedef adres adıyla yazılır, başlangıç kataloğunda olmalıdır.
+- Başlangıç menüleri sitenin `baslangic/menuler.json` dosyasındadır. Kayıtlı hedef adres adıyla yazılır, başlangıç kataloğunda (sabit sayfa başlangıç sayfalarında) olmalıdır.
+- Sabit sayfa ve blog yazısı da kayıtlı hedeftir (karar 0177). Blog yazısının öğesi blog kapalıyken görünmez: menüyü okuyan her yer blogun açıklığını verir (`vitrinMenusu(vt, kod, { blogAcik })`, `panelMenusu` de); verilmezse kapalı sayılır.
 - Panel menüleri menü uçlarıyla değiştirir (`cekirdek/kapi/yonetici/menu.ts`, kart 0143, karar 0116). Öğe uçta nesne olarak alınır, ortak şemayla serviste doğrulanır.
 
 ## Üst ve alt kısım (karar 0083)
@@ -188,6 +189,12 @@ paths:
 - Yazı yalnız `cekirdek/moduller/icerik/` ile yazılır ve okunur. Vitrinde görünme koşulu tektir (`blogYazisiVitrinde`): liste, yazı sayfası, adres çözümü (`kayitAdresiniCoz`, tür `blog-yazisi`), ana sayfanın blog bölümü ve vitrin görseli ucu onu kullanır. Blogun açıklığı mağaza ayarıdır (`blogAcik`): sayfa ve bağlam ayrıca okur, kapalıyken sayfa bulunamadı, bölüm boştur.
 - Sayfalar `app/(vitrin)/blog/`, çizimi `cekirdek/vitrin/blog/sayfa.tsx`, verisi `veri.ts`. Yazının içeriği yalnız `aciklamayiTemizle` ile temizlenmiş olarak ve `bicimli-metin` stiliyle çizilir. Kapak `VitrinGorseli` ile vitrin görseli ucundan gelir. Listenin adresi `blogListesiAdresi` ile kurulur (`?kategori=`, `?sayfa=`).
 - Sitenin başlangıç blogu `baslangic/blog.json`'dadır, açılış kurulumunun dördüncü adımıdır (`blogBaslangiciniKur`).
+
+## Sabit sayfalar (karar 0177)
+
+- Sayfa yalnız `cekirdek/moduller/icerik/sayfa.ts` ile yazılır ve okunur. Vitrinde görünme koşulu tektir (`sabitSayfaVitrinde`: silinmemiş ve yayında): sayfa, adres çözümü (`kayitAdresiniCoz`, tür `sayfa`) ve menü onu kullanır.
+- Sayfa `app/(vitrin)/sayfa/[adresAdi]/`, çizimi `cekirdek/vitrin/sayfa/sayfa.tsx`. İçerik yalnız `aciklamayiTemizle` ile temizlenmiş olarak ve `bicimli-metin` stiliyle çizilir. Arama motoru açıklaması boşsa içeriğin düz yazısıdır (`bicimliMetninDuzYazisi`).
+- Sitenin başlangıç sayfaları `baslangic/sayfalar.json`'dadır, açılış kurulumunda katalogdan sonra, menülerden önce kurulur (`sayfaBaslangiciniKur`). Başlangıç menüsü sayfaya adres adıyla bağlanır.
 
 ## Tema demosu (karar 0127)
 
