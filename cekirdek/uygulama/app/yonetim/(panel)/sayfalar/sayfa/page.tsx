@@ -42,7 +42,7 @@ export default async function SabitSayfaEkraniSayfasi({
           : veri.menuler
               .map((yer) => menuYeriYazisi(yer, metin("yonetim.sabitSayfa.ayrac")))
               .join(", "),
-      ].join(metin("yonetim.kategori.ayrac"))}
+      ].join(metin("yonetim.sabitSayfa.bilgiAyraci"))}
       eylemler={
         // Taslak sayfanın vitrindeki adresi bulunamadı verir: bağlantı yalnız yayındaki sayfada.
         veri.form.durum === "yayinda" ? (

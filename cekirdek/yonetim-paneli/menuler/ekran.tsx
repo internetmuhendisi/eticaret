@@ -21,6 +21,7 @@ import {
   AltMenuIcerigi,
   AltMenuTetikleyici,
 } from "../../../bilesenler/parcalar/acilir-menu";
+import { bildirimGoster } from "../../../bilesenler/parcalar/bildirim";
 import { BosHal } from "../../../bilesenler/parcalar/bos-hal";
 import { IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
@@ -46,8 +47,6 @@ import {
   YanPencereUstu,
 } from "../../../bilesenler/parcalar/yan-pencere";
 import {
-  type IcerikMenuHedefi,
-  icerikMenuHedefleri,
   type KayitliMenuHedefi,
   kayitliMenuHedefleri,
   kullanilabilirMenuHedefleri,
@@ -62,7 +61,7 @@ import { usePanelMetni } from "../../metinler/panel-metni";
 import { siralamaMetinleri } from "../../metinler/siralama-metinleri";
 import { metinGerekirMi } from "../../moduller/menu/semalar";
 import type { Menu, MenuDali, PanelOgesi } from "../../moduller/menu/servis";
-import type { BulunanKayit, KayitAramaSonucu } from "../../moduller/urun/kayit-arama";
+import type { BulunanKayit } from "../../moduller/urun/kayit-arama";
 import { kayitAdresleri } from "../../vitrin/adresler";
 import { EylemDugmesi } from "../eylem-dugmesi";
 import {
@@ -77,7 +76,7 @@ import { KayitArama, kayitAramaAcikMi } from "../kayit-arama";
 import { useMenudenPencere } from "../menuden-pencere";
 import { panelIkonu } from "../panel-ikon";
 import { usePanelIslemi } from "../panel-islemi";
-import { type PanelSonucu, panelIstegi } from "../panel-istegi";
+import type { PanelSonucu } from "../panel-istegi";
 import { menuAlanHatalari, menuHataMetni } from "./hatalar";
 import { menuUclari } from "./uclar";
 import type { MenulerEkraniVerisi } from "./veri";
@@ -135,11 +134,21 @@ export function MenulerSaglayici({
   hazirHedef?: HazirHedef;
   children: ReactNode;
 }) {
+  const hazirAcilir =
+    hazirHedef !== undefined && degistirebilir && seciliMenu(veri)?.tur === "elle";
   const [pencere, setPencere] = useState<Pencere>(() =>
-    hazirHedef !== undefined && degistirebilir && seciliMenu(veri)?.tur === "elle"
-      ? { tur: "oge-ekle", hedef: hazirHedef }
-      : null,
+    hazirAcilir && hazirHedef !== undefined ? { tur: "oge-ekle", hedef: hazirHedef } : null,
   );
+  const metin = usePanelMetni();
+  // Hazır hedefle gelindiyse (kart 0273) adres temizlenir: sayfa yenilenince pencere yeniden açılmaz. Seçili menü öğe
+  // alamıyorsa (kategori menüsü, elle menü yok) neden söylenir.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: yalnız sayfa açılırken bir kez.
+  useEffect(() => {
+    if (hazirHedef === undefined) return;
+    const menu = seciliMenu(veri);
+    window.history.replaceState(null, "", menu === undefined ? adres : menuAdresi(menu.kimlik));
+    if (!hazirAcilir) bildirimGoster("bilgi", metin("yonetim.menu.hazirHedefAcilamadi"));
+  }, []);
   const [onay, setOnay] = useState<Onay>(null);
   const islem = usePanelIslemi(menuHataMetni);
   const menuAdresi = (kimlik: string) => `${adres}?${new URLSearchParams({ menu: kimlik })}`;
@@ -566,13 +575,6 @@ const secimAdi = (metin: (anahtar: MetinAnahtari) => string, secim: HedefSecimi)
     : hedefAdi(metin, secim);
 const kayitliMi = (tur: MenuHedefTuru): tur is KayitliMenuHedefi =>
   (kayitliMenuHedefleri as readonly string[]).includes(tur);
-// Sabit sayfa ve blog yazısı içeriğin arama ucuyla aranır (kart 0273, izin icerik.gor).
-const icerikMi = (tur: MenuHedefTuru): tur is IcerikMenuHedefi =>
-  (icerikMenuHedefleri as readonly string[]).includes(tur);
-const icerikAramasi = (tur: IcerikMenuHedefi) => (aranan: string, sayfa: number) =>
-  panelIstegi<KayitAramaSonucu>(
-    `icerik-ara?${new URLSearchParams({ tur, ara: aranan, sayfa: String(sayfa) })}`,
-  );
 
 function OgeFormu({
   oge,
@@ -685,7 +687,7 @@ function OgeFormu({
       {kayitliMi(tur) ? (
         <AlanKabi ad="hedef.kimlik" etiket={hedefAdi(metin, tur)}>
           <KayitArama
-            {...(icerikMi(tur) ? { ara: icerikAramasi(tur) } : { tur })}
+            tur={tur}
             etiket={hedefAdi(metin, tur)}
             secili={kayit}
             sec={degistir(setKayit)}

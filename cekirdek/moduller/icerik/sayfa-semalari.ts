@@ -29,7 +29,8 @@ const adresAdi = z
   .max(adresAdiUzunlugu)
   .regex(adresAdiKalibi, hata("adres-adi-bicimi"));
 
-const alanlar = {
+// Alanların kuralları tek yerdedir: uçlar, servis ve sitenin başlangıç dosyası (sayfa-baslangici.ts) bunları kullanır.
+export const sabitSayfaAlanlari = {
   baslik: kayitMetni(sabitSayfaSinirlari.baslik),
   adresAdi,
   // Biçimli metin (HTML). Kayda girmez; vitrin yazarken temizler (aciklamayiTemizle). Boş olabilir.
@@ -41,21 +42,21 @@ const alanlar = {
 
 // Yeni sayfa. Verilmeyen adres adı başlıktan üretilir; durum verilmezse taslaktır.
 export const sabitSayfaGirdisi = z.strictObject({
-  baslik: alanlar.baslik,
-  adresAdi: alanlar.adresAdi.optional(),
-  icerik: alanlar.icerik.optional(),
-  aciklama: alanlar.aciklama.optional(),
-  durum: alanlar.durum.default("taslak"),
+  baslik: sabitSayfaAlanlari.baslik,
+  adresAdi: sabitSayfaAlanlari.adresAdi.optional(),
+  icerik: sabitSayfaAlanlari.icerik.optional(),
+  aciklama: sabitSayfaAlanlari.aciklama.optional(),
+  durum: sabitSayfaAlanlari.durum.default("taslak"),
 });
 export type SabitSayfaGirdisi = z.input<typeof sabitSayfaGirdisi>;
 
 // Değişiklik: yalnız verilen alan değişir, null açıklamayı boşaltır.
 export const sabitSayfaDegisikligi = z.strictObject({
-  baslik: alanlar.baslik.optional(),
-  adresAdi: alanlar.adresAdi.optional(),
-  icerik: alanlar.icerik.optional(),
-  aciklama: alanlar.aciklama.nullable().optional(),
-  durum: alanlar.durum.optional(),
+  baslik: sabitSayfaAlanlari.baslik.optional(),
+  adresAdi: sabitSayfaAlanlari.adresAdi.optional(),
+  icerik: sabitSayfaAlanlari.icerik.optional(),
+  aciklama: sabitSayfaAlanlari.aciklama.nullable().optional(),
+  durum: sabitSayfaAlanlari.durum.optional(),
 });
 export type SabitSayfaDegisikligi = z.input<typeof sabitSayfaDegisikligi>;
 

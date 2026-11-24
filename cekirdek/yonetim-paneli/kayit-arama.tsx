@@ -10,10 +10,15 @@ import { useEffect, useId, useRef, useState } from "react";
 import { FormAlani } from "../../bilesenler/form/form-alani";
 import { GirisAlani } from "../../bilesenler/parcalar/giris-alani";
 import { sinif } from "../../bilesenler/parcalar/sinif";
+import { type IcerikMenuHedefi, icerikMenuHedefleri } from "../kayitlar/menu";
 import { doldur } from "../metinler/doldur";
 import { usePanelMetni } from "../metinler/panel-metni";
 import type { AranabilirKayit, BulunanKayit, KayitAramaSonucu } from "../moduller/urun/kayit-arama";
 import { type PanelSonucu, panelIstegi } from "./panel-istegi";
+
+// Türün arama ucu: içeriğin kayıtları ayrı uçtadır (izni içeriğin, kart 0273).
+const aramaUcu = (tur: AranabilirKayit | IcerikMenuHedefi) =>
+  (icerikMenuHedefleri as readonly string[]).includes(tur) ? "icerik-ara" : "kayit-ara";
 
 // Yazma durduktan sonra isteğin gitmesi için beklenen süre.
 const beklemeSuresi = 250;
@@ -35,8 +40,9 @@ export function KayitArama<Kayit extends AramaOnerisi = AramaOnerisi>({
   hata,
   disabled = false,
 }: {
-  // Kayıt arama ucunun türü; kendi araması verilirse kullanılmaz.
-  tur?: AranabilirKayit;
+  // Kayıt arama ucunun türü; kendi araması verilirse kullanılmaz. Sabit sayfa ve blog yazısı içeriğin arama ucuyla
+  // (icerik-ara, icerik.gor) aranır, katalogun kayıtları kayit-ara ile (kart 0273).
+  tur?: AranabilirKayit | IcerikMenuHedefi;
   ara?: (
     aranan: string,
     sayfa: number,
@@ -94,7 +100,7 @@ export function KayitArama<Kayit extends AramaOnerisi = AramaOnerisi>({
     const sonuc =
       kendiAramasi === undefined
         ? await panelIstegi<KayitAramaSonucu & { kayitlar: Kayit[] }>(
-            `kayit-ara?${new URLSearchParams({ tur: tur ?? "urun", ara: aranan, sayfa: String(istenenSayfa) })}`,
+            `${aramaUcu(tur ?? "urun")}?${new URLSearchParams({ tur: tur ?? "urun", ara: aranan, sayfa: String(istenenSayfa) })}`,
           )
         : await kendiAramasi(aranan, istenenSayfa);
     if (bu !== istekSirasi.current) return;

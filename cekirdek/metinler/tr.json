@@ -764,7 +764,8 @@
       "yetkiHatasi": "Bu değişikliği yapma izniniz yok.",
       "oturumHatasi": "Oturumunuz kapandı. Yeniden giriş yapın.",
       "bulunamadi": "Bu kayıt artık yok; liste yenilendi.",
-      "ayniAdli": "{ad}, {sira}. sıradaki"
+      "ayniAdli": "{ad}, {sira}. sıradaki",
+      "hazirHedefAcilamadi": "Sayfayı eklemek için soldan öğe alabilen bir menü seçin ya da yeni bir menü ekleyin, sonra \"Öğe ekle\"ye basın."
     },
     "bolumFormu": {
       "secilmedi": "Seçilmedi",
@@ -2523,6 +2524,7 @@
       "menudeDegil": "Menüde değil",
       "menudeDegilUzun": "Bu sayfa hiçbir menüde değil. Ziyaretçilerin bulması için bir menüye ekleyin.",
       "ayrac": " › ",
+      "bilgiAyraci": " · ",
       "bos": {
         "baslik": "Henüz sayfa yok",
         "aciklama": "Hakkımızda, iletişim gibi sayfalar yazın, sonra menüye ekleyin."

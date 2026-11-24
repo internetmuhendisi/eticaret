@@ -382,6 +382,8 @@ describe("örnek klasörler", () => {
     // Başlangıç sayfaları (kart 0273): adres adı tekildir, durum kayıttadır; başlangıç menüsünün sayfası dosyada olmalı.
     ["sayfa-adres-tekrar", `${sayfaBaslangicDosyasi}: 1.adresAdi: aynı adres adıyla iki sayfa`],
     ["sayfa-durum-gecersiz", `${sayfaBaslangicDosyasi}: 0.durum`],
+    // Bağımsız kontrolün bulgusu: alanların kuralı servisinkidir (e-postaya benzeyen başlık kayda yazılamaz).
+    ["sayfa-kayda-uygun-degil", `${sayfaBaslangicDosyasi}: 0.baslik`],
     ["menu-sayfa-tanimsiz", `${menuBaslangicDosyasi}: 0.ogeler.1.hedef.adresAdi: hedef-yok`],
   );
 

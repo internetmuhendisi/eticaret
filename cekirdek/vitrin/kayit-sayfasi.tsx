@@ -51,14 +51,18 @@ export const sayfaninKaydi = async (
 
 // Sayfa bilgisi (generateMetadata) da aynı çözümü kullanır. Kayıt yoksa "bulunamadı" sayfasının bilgisini verir
 // (kart 0120): çizimi sayfanın notFound()'u durdurur, sekme başlığı bu bilgiden gelir. Eski adresse yönlendirir.
+// yedekAciklama: kaydın kendi açıklaması yoksa kullanılan açıklama (sabit sayfada içeriğin başı, kart 0273).
 export const kayitSayfasininBilgisi = async (
   tur: AdresliKayitTuru,
   parametreler: AdresParametreleri,
   sorgu: SorguParametreleri,
+  yedekAciklama?: (kayit: AdresliKayit) => Promise<string | null>,
 ) => {
   const sonuc = await coz(tur, (await parametreler).adresAdi);
   if (sonuc.sonuc === "yok") return bulunamadiSayfaBilgisi();
-  return kayitSayfaBilgisi(tur, await sayfaninKaydi(tur, parametreler, sorgu));
+  const kayit = await sayfaninKaydi(tur, parametreler, sorgu);
+  const aciklama = kayit.aciklama ?? (await yedekAciklama?.(kayit)) ?? null;
+  return kayitSayfaBilgisi(tur, { ad: kayit.ad, aciklama });
 };
 
 export function KayitSayfasi({

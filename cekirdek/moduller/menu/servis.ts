@@ -835,7 +835,9 @@ export const vitrinMenusu = async (
 };
 
 // Kayıtlı hedeflerin bağlı olduğu menü yerleri (kart 0273): sayfanın panelde "hangi menüde" bilgisi. Her kayıt için
-// silinmemiş menülerdeki silinmemiş öğelerin yeri, menünün adı ve (alt öğede) üst öğenin görünen metniyle. Tek sorgu.
+// silinmemiş menülerdeki silinmemiş öğelerin yeri: menünün adı ve (alt öğede) üst öğenin vitrinde görünen metni
+// (metinsiz kayıt öğesinde kaydın adı, bağımsız kontrolün bulgusu). Aynı yer bir kez yazılır. Menüler ada göre, öğeler
+// menüdeki sırasıyla; kaydı içeren her menü için bir sorgu (menü sayısı sınırlıdır).
 export type MenuYeri = { menu: string; menuAdi: string; ust: string | null };
 
 export const kayitlarinMenuYerleri = async (
@@ -849,30 +851,34 @@ export const kayitlarinMenuYerleri = async (
     sayfa: menuOgeleri.sayfa_kimligi,
     "blog-yazisi": menuOgeleri.blog_yazisi_kimligi,
   }[tur];
-  const sonuc = await vt.execute<{
-    kayit: string;
-    menu: string;
-    menu_adi: string;
-    ust_metni: string | null;
-    ust_var: boolean;
-  }>(sql`
-    select ${alan} as kayit, ${menuler.kimlik} as menu, ${menuler.ad} as menu_adi,
-      ust.metin as ust_metni, ${menuOgeleri.ust_kimligi} is not null as ust_var
-    from ${menuOgeleri}
-    join ${menuler} on ${menuler.kimlik} = ${menuOgeleri.menu_kimligi}
-    left join ${menuOgeleri} as ust on ust.kimlik = ${menuOgeleri.ust_kimligi}
-    where ${alan} is not null and ${menuOgeleri.silinme_zamani} is null
-      and ${menuler.silinme_zamani} is null
-    order by ${menuler.ad}, ${menuOgeleri.sira}`);
+  const icerenler = await vt
+    .selectDistinct({ kimlik: menuler.kimlik, ad: menuler.ad })
+    .from(menuOgeleri)
+    .innerJoin(menuler, eq(menuler.kimlik, menuOgeleri.menu_kimligi))
+    .where(
+      and(
+        sql`${alan} is not null`,
+        isNull(menuOgeleri.silinme_zamani),
+        isNull(menuler.silinme_zamani),
+      ),
+    )
+    .orderBy(asc(menuler.ad), asc(menuler.kimlik));
   const yerler = new Map<string, MenuYeri[]>();
-  for (const satir of sonuc.rows) {
-    const liste = yerler.get(satir.kayit) ?? [];
-    liste.push({
-      menu: satir.menu,
-      menuAdi: satir.menu_adi,
-      ust: satir.ust_var ? satir.ust_metni : null,
-    });
-    yerler.set(satir.kayit, liste);
+  for (const menu of icerenler) {
+    const gez = (dallar: PanelOgesi[], ust: string | null) => {
+      for (const dal of dallar) {
+        const { hedef } = dal;
+        if (hedef.tur === tur && "kimlik" in hedef) {
+          const liste = yerler.get(hedef.kimlik) ?? [];
+          if (!liste.some((yer) => yer.menu === menu.kimlik && yer.ust === ust)) {
+            liste.push({ menu: menu.kimlik, menuAdi: menu.ad, ust });
+          }
+          yerler.set(hedef.kimlik, liste);
+        }
+        gez(dal.altlar, dal.gorunenMetin);
+      }
+    };
+    gez(panelAgaci(await ogeleriOku(vt, menu.kimlik, {})), null);
   }
   return yerler;
 };

@@ -10,20 +10,19 @@
 //
 // Site doğrulaması bu dosyayı Node ile doğrudan okur: yalnız .ts uzantısıyla, Node'un çalıştırdığı dosyaları alır.
 import { z } from "zod";
-import { sabitSayfaDurumlari, sabitSayfaSinirlari } from "../../kayitlar/sayfa.ts";
-import { adresAdiKalibi, adresAdiUzunlugu } from "../../metinler/adres-adi.ts";
+import { sabitSayfaSinirlari } from "../../kayitlar/sayfa.ts";
+import { sabitSayfaAlanlari } from "./sayfa-semalari.ts";
 
-const adresAdi = z.string().max(adresAdiUzunlugu).regex(adresAdiKalibi);
-const metin = (enCok: number) => z.string().trim().min(1).max(enCok);
-
+// Alanların kuralları servisinkilerdir (sabitSayfaAlanlari): doğrulamadan geçen dosya kurulumda da geçer (bağımsız
+// kontrolün bulgusu: e-postaya benzeyen başlık doğrulamadan geçip kurulumda reddediliyordu).
 export const sayfaBaslangicSemasi = z
   .array(
     z.strictObject({
-      baslik: metin(sabitSayfaSinirlari.baslik),
-      adresAdi,
-      icerik: z.string().max(sabitSayfaSinirlari.icerik).default(""),
-      aciklama: metin(sabitSayfaSinirlari.aciklama).optional(),
-      durum: z.enum(sabitSayfaDurumlari),
+      baslik: sabitSayfaAlanlari.baslik,
+      adresAdi: sabitSayfaAlanlari.adresAdi,
+      icerik: sabitSayfaAlanlari.icerik.default(""),
+      aciklama: sabitSayfaAlanlari.aciklama.optional(),
+      durum: sabitSayfaAlanlari.durum,
     }),
   )
   .max(sabitSayfaSinirlari.sayfaSayisi);

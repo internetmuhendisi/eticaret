@@ -399,6 +399,17 @@ describe("sabit sayfa ve blog yazısı (kart 0273)", () => {
       hedef: { tur: "baslik" },
     });
     await ogeEkle(vt, yonetici(), alt, { hedef: { tur: "sayfa", kimlik: sayfa }, ust: baslik });
+    // Metinsiz kayıt öğesinin altı: üstün görünen metni kaydın adıdır; aynı yer bir kez yazılır.
+    const kategori = await kategoriEkle(vt, yonetici(), { ad: "Giyim" });
+    const kategoriOgesi = await ogeEkle(vt, yonetici(), alt, {
+      hedef: { tur: "kategori", kimlik: kategori },
+    });
+    for (const _ of [1, 2]) {
+      await ogeEkle(vt, yonetici(), alt, {
+        hedef: { tur: "sayfa", kimlik: sayfa },
+        ust: kategoriOgesi,
+      });
+    }
     const silinecek = await ogeEkle(vt, yonetici(), alt, {
       hedef: { tur: "sayfa", kimlik: oteki },
     });
@@ -406,6 +417,7 @@ describe("sabit sayfa ve blog yazısı (kart 0273)", () => {
     const yerler = await kayitlarinMenuYerleri(vt, "sayfa");
     expect(yerler.get(sayfa)).toEqual([
       { menu: alt, menuAdi: "Alt bilgi", ust: "Kurumsal" },
+      { menu: alt, menuAdi: "Alt bilgi", ust: "Giyim" },
       { menu, menuAdi: "Ana menü", ust: null },
     ]);
     expect(yerler.has(oteki)).toBe(false);

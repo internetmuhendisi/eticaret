@@ -5,6 +5,7 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Dugme } from "../../../bilesenler/parcalar/dugme.tsx";
 import { MetinSaglayici } from "../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../metinler/metin.ts";
 import type { BulunanKayit } from "../../moduller/urun/kayit-arama.ts";
@@ -82,6 +83,18 @@ function KendiAramasi() {
   );
 }
 
+// İçeriğin türleri (kart 0273): tür düğmeyle değişir.
+const turDugmesi = "tür";
+function Icerik() {
+  const [tur, setTur] = useState<"sayfa" | "blog-yazisi">("sayfa");
+  return (
+    <>
+      <Dugme onClick={() => setTur("blog-yazisi")}>{turDugmesi}</Dugme>
+      <KayitArama tur={tur} etiket={etiket} secili={undefined} sec={() => {}} />
+    </>
+  );
+}
+
 const ciz = () =>
   render(
     <MetinSaglayici dil="tr">
@@ -98,6 +111,28 @@ const yaz = async (kutu: HTMLElement, deger: string) => {
 };
 
 describe("kayıt arama", () => {
+  it("sabit sayfa ve blog yazısı içeriğin ucundan aranır; boş kutu da listeler; tür değişince kutu sıfırlanır (kart 0273)", async () => {
+    render(
+      <MetinSaglayici dil="tr">
+        <Icerik />
+      </MetinSaglayici>,
+    );
+    const kutu = screen.getByRole("combobox", { name: etiket });
+    fireEvent.focus(kutu);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(istekler.at(-1)).toBe("/kapi/yonetici/icerik-ara?tur=sayfa&ara=&sayfa=0");
+    await yaz(kutu, "hak");
+    expect(istekler.at(-1)).toBe("/kapi/yonetici/icerik-ara?tur=sayfa&ara=hak&sayfa=0");
+    fireEvent.click(screen.getByRole("button", { name: turDugmesi }));
+    expect((kutu as HTMLInputElement).value).toBe("");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(istekler.at(-1)).toBe("/kapi/yonetici/icerik-ara?tur=blog-yazisi&ara=&sayfa=0");
+  });
+
   it("öneriler görünene kadar kapalıdır; ok ve Enter seçer; yazı değişince seçim bırakılır", async () => {
     secilenler.length = 0;
     ciz();

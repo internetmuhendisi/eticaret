@@ -10,11 +10,13 @@ import { siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
 import { roller, yoneticiRolleri } from "../../moduller/ekip/model.ts";
 import { sabitSayfalariOku, sabitSayfaOku } from "../../moduller/icerik/sayfa.ts";
 import { icerikServisi } from "../../moduller/icerik/servis.ts";
+import { siteninServisi } from "../../moduller/magaza-ayarlari/servis.ts";
 import { menuEkle } from "../../moduller/menu/servis.ts";
 import { hesapAc } from "../../moduller/oturum/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
-import { ogeEklemeUcu } from "../yonetici/menu.ts";
+import { menulerEkraniVerisi } from "../../yonetim-paneli/menuler/veri.ts";
+import { menuOkumaUcu, ogeEklemeUcu } from "../yonetici/menu.ts";
 import {
   icerikAramaUcu,
   sayfaDegisikligiUcu,
@@ -164,6 +166,41 @@ describe("sabit sayfa uçları", () => {
       istek("menu-ogesi-ekle", sahip, { menu, oge: { hedef: { tur: "sayfa", kimlik } } }),
     );
     expect(oge.status).toBe(200);
+    // Panelin iki menü okuması (uç ve ekranın verisi) blogun açıklığını mağaza ayarından alır: blog kapalıyken blog
+    // yazısının öğesi "görünmüyor", açıkken geçerlidir.
+    const { kimlik: yazi } = await icerikServisi(() => "Europe/Istanbul").yaziEkle(
+      vt,
+      { tur: "yonetici", kimlik: crypto.randomUUID() },
+      { baslik: "Menü yazısı", durum: "yayinda" },
+    );
+    expect(
+      (
+        await ogeEklemeUcu(
+          istek("menu-ogesi-ekle", sahip, {
+            menu,
+            oge: { hedef: { tur: "blog-yazisi", kimlik: yazi } },
+          }),
+        )
+      ).status,
+    ).toBe(200);
+    const durumlar = async () => {
+      const okunan = await veri<{ ogeler: { hedef: { tur: string }; durum: string }[] }>(
+        await menuOkumaUcu(istek(`menu?kimlik=${menu}`, sahip)),
+      );
+      const ekran = await menulerEkraniVerisi(menu);
+      const ekranOgeleri =
+        ekran.secili !== undefined && "ogeler" in ekran.secili ? ekran.secili.ogeler : [];
+      return [
+        okunan.ogeler.find((o) => o.hedef.tur === "blog-yazisi")?.durum,
+        ekranOgeleri.find((o) => o.hedef.tur === "blog-yazisi")?.durum,
+      ];
+    };
+    const ayar = siteninServisi(site);
+    const sistem = { tur: "sistem" as const, ad: "deneme" };
+    await ayar.degistir(vt, sistem, { blogAcik: false }, { kendiIslevi: true });
+    expect(await durumlar()).toEqual(["hedef-gorunmuyor", "hedef-gorunmuyor"]);
+    await ayar.degistir(vt, sistem, { blogAcik: true }, { kendiIslevi: true });
+    expect(await durumlar()).toEqual(["gecerli", "gecerli"]);
   });
 
   it("görevli, rolsüz, müşteri ve girişsiz reddedilir; hiçbir şey değişmez", async () => {

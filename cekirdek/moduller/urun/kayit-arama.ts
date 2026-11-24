@@ -8,6 +8,7 @@
 import { and, asc, isNull, sql } from "drizzle-orm";
 import {
   type IcerikMenuHedefi,
+  icerikMenuHedefleri,
   type KayitliMenuHedefi,
   kayitliMenuHedefleri,
 } from "../../kayitlar/menu.ts";
@@ -25,7 +26,7 @@ export type AranabilirKayit = Exclude<KayitliMenuHedefi, IcerikMenuHedefi> | "et
 export const aranabilirKayitlar = [
   ...kayitliMenuHedefleri.filter(
     (tur): tur is Exclude<KayitliMenuHedefi, IcerikMenuHedefi> =>
-      tur !== "sayfa" && tur !== "blog-yazisi",
+      !(icerikMenuHedefleri as readonly string[]).includes(tur),
   ),
   "etiket",
 ] as readonly AranabilirKayit[];

@@ -19,6 +19,8 @@ import { yazilanIslevler } from "../../kayitlar/islevler.ts";
 import { dosyaSil, gorselKaydet } from "../../moduller/dosya/servis.ts";
 import { vitrinGorseliAdresi } from "../../moduller/duzen/gorsel.ts";
 import { duzenServisi } from "../../moduller/duzen/servis.ts";
+import { sabitSayfaServisi } from "../../moduller/icerik/sayfa.ts";
+import { icerikServisi } from "../../moduller/icerik/servis.ts";
 import { kategoriEkle, kategoriSil } from "../../moduller/kategori/servis.ts";
 import { siteninServisi } from "../../moduller/magaza-ayarlari/servis.ts";
 import { markaServisi } from "../../moduller/marka/servis.ts";
@@ -195,6 +197,37 @@ describe("vitrin bağlamı", () => {
           },
         ],
       },
+    ]);
+  });
+
+  it("sabit sayfa ve blog yazısı öğesi adresleriyle; blog yazısı yalnız mağaza ayarında blog açıkken (kart 0273)", async () => {
+    const vt = await siteAc();
+    const ana = await menuEkle(vt, yonetici(), { kod: "ana-menu", ad: "Ana", tur: "elle" });
+    const { kimlik: sayfa } = await sabitSayfaServisi.sayfaEkle(vt, yonetici(), {
+      baslik: "Hakkımızda",
+      durum: "yayinda",
+    });
+    const { kimlik: yazi } = await icerikServisi(() => "Europe/Istanbul").yaziEkle(vt, yonetici(), {
+      baslik: "Kış rehberi",
+      durum: "yayinda",
+    });
+    await ogeEkle(vt, yonetici(), ana, { hedef: { tur: "sayfa", kimlik: sayfa } });
+    await ogeEkle(vt, yonetici(), ana, { hedef: { tur: "blog-yazisi", kimlik: yazi } });
+    const menusu = async () =>
+      (
+        await vitrinBaglaminiOku(
+          vt,
+          site,
+          [bolum("menu-satiri", { anaMenu: "ana-menu" })],
+          bolumKutuphanesi,
+        )
+      ).menuler["ana-menu"]?.map((dal) => [dal.metin, dal.adres]);
+    await siteninServisi(site).degistir(vt, yonetici(), { blogAcik: false }, { kendiIslevi: true });
+    expect(await menusu()).toEqual([["Hakkımızda", "/sayfa/hakkimizda"]]);
+    await siteninServisi(site).degistir(vt, yonetici(), { blogAcik: true }, { kendiIslevi: true });
+    expect(await menusu()).toEqual([
+      ["Hakkımızda", "/sayfa/hakkimizda"],
+      ["Kış rehberi", "/blog/kis-rehberi"],
     ]);
   });
 

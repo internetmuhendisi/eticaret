@@ -102,7 +102,7 @@ export function SayfalarListesi({
                   sayfa.menuler.length === 0
                     ? metin("yonetim.sabitSayfa.menudeDegil")
                     : sayfa.menuler.map((yer) => menuYeriYazisi(yer, ayrac)).join(", "),
-                ].join(metin("yonetim.kategori.ayrac"))}
+                ].join(metin("yonetim.sabitSayfa.bilgiAyraci"))}
               </span>
             </div>
             {izinler.sil ? (
