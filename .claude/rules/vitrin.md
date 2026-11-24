@@ -183,6 +183,12 @@ paths:
 - Talep sayfası iki yoldadır: hesapta `hesapIadeTalebiAdresi`, takipte `vitrinAdresleri.takipIadeTalebi`; ikisi de `IadeTalebiFormu`'nu çizer (`cekirdek/vitrin/siparis/iade-talebi-formu.tsx`), şeması uçla ortaktır (`iade-talebi-semalari.ts`). Üye olmayanın gönderimi ertelenmiş robotludur.
 - İptal `SiparisIptali` ile (`siparis-iptali.tsx`) onay penceresinden yapılır; sonuç bildirimle söylenir. Takipte geçmiş yoktur: talepler ve sonucu (ret açıklamasıyla) takip yolunda ayrı bölümde görünür.
 
+## Blog (karar 0176)
+
+- Yazı yalnız `cekirdek/moduller/icerik/` ile yazılır ve okunur. Vitrinde görünme koşulu tektir (`blogYazisiVitrinde`): liste, yazı sayfası, adres çözümü (`kayitAdresiniCoz`, tür `blog-yazisi`), ana sayfanın blog bölümü ve vitrin görseli ucu onu kullanır. Blogun açıklığı mağaza ayarıdır (`blogAcik`): sayfa ve bağlam ayrıca okur, kapalıyken sayfa bulunamadı, bölüm boştur.
+- Sayfalar `app/(vitrin)/blog/`, çizimi `cekirdek/vitrin/blog/sayfa.tsx`, verisi `veri.ts`. Yazının içeriği yalnız `aciklamayiTemizle` ile temizlenmiş olarak ve `bicimli-metin` stiliyle çizilir. Kapak `VitrinGorseli` ile vitrin görseli ucundan gelir. Listenin adresi `blogListesiAdresi` ile kurulur (`?kategori=`, `?sayfa=`).
+- Sitenin başlangıç blogu `baslangic/blog.json`'dadır, açılış kurulumunun dördüncü adımıdır (`blogBaslangiciniKur`).
+
 ## Tema demosu (karar 0127)
 
 - Vitrin temayı yalnız `vitrinTemasi` ile okur (`cekirdek/vitrin/tema-secimi.ts`): tema demosunda (site ayarı `temaDemosu`) ziyaretçinin seçtiği tema, öteki sitelerde kayıtlı tema. Panel kayıtlı temayı okur (`siteninGecerliTemasi`).

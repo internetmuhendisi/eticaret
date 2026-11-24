@@ -11,7 +11,8 @@
 //   girer; sıralama yalnız tam kümeyle, sırası değişen kayda girer; sınır.
 // - Silme ve adres: yazı silinince vitrinde yok, adı değişince eski adres yenisine yönlenir, silinen yazının adresi
 //   yönlenmez; taslak yazının adresi bulunamaz.
-// - Vitrin: liste yalnız görünenler, en yeni önce, kategori süzgeci ve sayfa; kategoriler yalnız yazısı görünenler.
+// - Vitrin: yazı sayfasının içeriği temizlenir (betik, olay özniteliği, görsel, javascript: bağlantı düşer); blog
+//   kapalıyken liste ve yazı verisi yoktur; liste yalnız görünenler, en yeni önce, kategori süzgeci ve sayfa; kategoriler yalnız yazısı görünenler.
 // - Panel listesi: görünen durum (zamanı gelmiş zamanlanmış yayındadır), sayılar, Türkçe harfsiz ve jokersiz arama,
 //   kategori süzgeci, sıralama; silinmiş yazı yok.
 // - Veritabanının durum denetimi kayıtla aynı; iki site birbirinin yazısını görmez.
@@ -30,6 +31,7 @@ import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts
 import { baglantiyiKapat, type Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { vitrinBaglaminiOku } from "../../../vitrin/baglam-oku.ts";
+import { blogListesiVerisi, blogYazisiVerisi } from "../../../vitrin/blog/veri.ts";
 import { bolumKutuphanesi } from "../../../vitrin/bolum-kutuphanesi/kutuphane.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { dosyalar } from "../../dosya/model.ts";
@@ -381,6 +383,38 @@ describe("vitrin ve panel listesi", () => {
     expect(ikinciSayfa.yazilar.map((y) => y.baslik)).toEqual(["Eski"]);
     expect(await vitrinBlogKategorileri(h.vt)).toEqual([{ ad: "Rehber", adresAdi: "rehber" }]);
     expect(bos.kimlik).toBeDefined();
+  });
+
+  it("yazı sayfasının içeriği temizlenir; blog kapalıyken liste ve yazı sayfası verisi yoktur", async () => {
+    const h = await hazirla();
+    const { kimlik } = await servis.yaziEkle(h.vt, yonetici(), {
+      baslik: "Temizlik",
+      durum: "yayinda",
+      icerik:
+        '<p onclick="alert(1)">Metin <strong>kalın</strong></p><script>alert(2)</script><a href="javascript:alert(3)">bağ</a><img src="x" onerror="alert(4)">',
+    });
+    await siteninServisi(site).degistir(
+      h.vt,
+      yonetici(),
+      { blogAcik: false },
+      { kendiIslevi: true },
+    );
+    expect(await blogYazisiVerisi(h.vt, site, kimlik)).toBeNull();
+    expect(await blogListesiVerisi(h.vt, site, { sayfa: 1 })).toBeNull();
+    await siteninServisi(site).degistir(
+      h.vt,
+      yonetici(),
+      { blogAcik: true },
+      { kendiIslevi: true },
+    );
+    const yazi = await blogYazisiVerisi(h.vt, site, kimlik);
+    expect(yazi?.icerik).toContain("<strong>kalın</strong>");
+    for (const yasak of ["onclick", "<script", "alert", "javascript:", "<img", "onerror"]) {
+      expect(yazi?.icerik).not.toContain(yasak);
+    }
+    expect(
+      (await blogListesiVerisi(h.vt, site, { sayfa: 1 }))?.yazilar.map((y) => y.adres),
+    ).toEqual(["/blog/temizlik"]);
   });
 
   it("panel: görünen durum, sayılar, Türkçe harfsiz ve jokersiz arama, kategori süzgeci, silinmiş yok", async () => {
