@@ -40,4 +40,4 @@ Satıcı bilgileri ve iletişim bilgileri yasal metinlerde, e-postalarda ve sipa
 
 - Kuyrukta bekleyen sipariş e-postası, gönderilene kadar yapılan mağaza bilgisi değişikliğini gösterir (karar 0153'ün bugünkü davranışı).
 - Aynı anda iki yönetici kaydederse son kayıt kazanır (kargo ekranı gibi); arada yazılanla çakışma denetimi yoktur. Ekranı bugün yalnız mağaza sahibi görür.
-- Satış ülkesi birden çok olan sitede adres ve satıcı ülkesi seçilir; bu yol bugün testte yalnız birim düzeyinde vardır (Örnek Mağaza tek ülkelidir).
+- Satış ülkesi birden çok olan sitede adres ve satıcı ülkesi seçilir; bu yol bugün testte yoktur (bütün siteler tek ülkelidir).
