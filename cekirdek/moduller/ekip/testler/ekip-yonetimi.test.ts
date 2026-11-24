@@ -26,8 +26,15 @@ import {
   yedekKodlariniYenile,
   yoneticiSifreAsamasi,
 } from "../../oturum/iki-asamali-giris.ts";
-import { hesapAc } from "../../oturum/servis.ts";
-import { yoneticiGirisAdimlari, yoneticiOturumlari, yoneticiYedekKodlari } from "../model.ts";
+import { hesapAc, hesapSifresiniDogrula } from "../../oturum/servis.ts";
+import { sifreOzetle } from "../../oturum/sifre.ts";
+import {
+  yoneticiGirisAdimlari,
+  yoneticiler,
+  yoneticiOturumlari,
+  yoneticiSifreSifirlamalari,
+  yoneticiYedekKodlari,
+} from "../model.ts";
 import {
   ekibiOku,
   ikiAsamaliGirisiSifirla,
@@ -224,7 +231,7 @@ describe("rolleri ayarlama", () => {
 });
 
 describe("iki aşamalı girişi sıfırlama (kart 0053)", () => {
-  it("eski kod ve yedek kodlar geçmez, oturum düşer; yönetici yalnız yeniden kurulumla girer; kayda girer", async () => {
+  it("eski şifre, kod ve yedek kodlar geçmez, oturum ve açık şifre bağlantısı düşer; yönetici yeni şifre ve yeniden kurulumla girer; kayda girer", async () => {
     const vt = await siteAc();
     const sahip = await yonetici(vt, ["magaza-sahibi"]);
     const ece = await yonetici(vt, ["gorevli"]);
@@ -241,7 +248,26 @@ describe("iki aşamalı girişi sıfırlama (kart 0053)", () => {
       { eposta: ece.eposta, sifre },
       baglanti(),
     );
+    // Açık bir şifre bağlantısı (ör. telefonu alan kişinin istediği) da düşer.
+    await vt.insert(yoneticiSifreSifirlamalari).values({
+      hesap_kimligi: ece.kimlik,
+      anahtar_ozeti: `acik-${randomUUID()}`,
+      bitis: new Date(Date.now() + 3_600_000),
+    });
     await ikiAsamaliGirisiSifirla(vt, { yoneticiKimligi: ece.kimlik }, sahip.kim);
+    // Eski şifre geçmez (telefonla birlikte çalınmış olabilir), açık şifre bağlantısı silindi.
+    expect(await hesapSifresiniDogrula(vt, "yonetici", { eposta: ece.eposta, sifre })).toBeNull();
+    expect(
+      await vt
+        .select()
+        .from(yoneticiSifreSifirlamalari)
+        .where(eq(yoneticiSifreSifirlamalari.hesap_kimligi, ece.kimlik)),
+    ).toEqual([]);
+    // Yönetici bağlantıyla yeni şifre koyar (bağlantının kendisi şifre sıfırlama testlerinde).
+    await vt
+      .update(yoneticiler)
+      .set({ sifre_ozeti: await sifreOzetle(sifre) })
+      .where(eq(yoneticiler.kimlik, ece.kimlik));
     const acikOturumlar = await vt
       .select()
       .from(yoneticiOturumlari)
@@ -271,7 +297,11 @@ describe("iki aşamalı girişi sıfırlama (kart 0053)", () => {
         ([islem]) => islem === "yonetici.iki-asama-sifirlandi",
       ),
     ).toEqual([
-      ["yonetici.iki-asama-sifirlandi", { ikiAsama: "kurulu" }, { ikiAsama: "kurulu-degil" }],
+      [
+        "yonetici.iki-asama-sifirlandi",
+        { ikiAsama: "kurulu", giris: "acik" },
+        { ikiAsama: "kurulu-degil", giris: "yeni-baglanti-gerekli" },
+      ],
     ]);
     // Kurulumu olmayan yöneticide bir şey yapılmaz.
     const kurulmamis = await yonetici(vt, ["gorevli"]);

@@ -2713,14 +2713,15 @@
       "kurulu": "Kurulu",
       "kuruluDegil": "Kurulu değil",
       "sonGirisBaslik": "Son giriş",
-      "sifirla": "İki aşamalı girişi sıfırla",
-      "sifirlaAciklamasi": "Telefonunu ve yedek kodlarını kaybeden kullanıcı için. Kullanıcı bir sonraki girişte yeniden kurar; açık oturumları kapanır. Önce kişinin gerçekten o olduğundan emin olun.",
+      "sifirla": "İki aşamalı girişi ve şifreyi sıfırla",
+      "sifirlaAciklamasi": "Telefonunu ve yedek kodlarını kaybeden kullanıcı için. Eski şifresi de geçmez olur; e-postasına gelen bağlantıyla yeni şifre koyar, sonra telefonunu yeniden kurar. Açık oturumları kapanır. Önce kişinin gerçekten o olduğundan emin olun.",
       "sifirlaOnay": {
-        "baslik": "{eposta} için iki aşamalı giriş sıfırlansın mı?",
-        "aciklama": "Eski kodlar ve yedek kodlar geçmez, açık oturumları kapanır. Kişi bir sonraki girişte telefonuna kodu yeniden kurar.",
+        "baslik": "{eposta} için iki aşamalı giriş ve şifre sıfırlansın mı?",
+        "aciklama": "Eski şifre, kodlar ve yedek kodlar geçmez, açık oturumları kapanır. Kişiye yeni şifre bağlantısı e-postayla gider; yeni şifreden sonra telefonuna kodu yeniden kurar.",
         "onay": "Sıfırla"
       },
-      "sifirlandi": "İki aşamalı giriş sıfırlandı.",
+      "sifirlandi": "Sıfırlandı. Kullanıcıya yeni şifre bağlantısı e-postayla gönderildi.",
+      "sifirlandiBaglantisiz": "Sıfırlandı, ama bağlantı şu an gönderilemedi. Kullanıcı panelin giriş sayfasındaki “Şifremi unuttum” ile yeni şifre koyar.",
       "kapatAciklamasi": "Kullanıcı panele giremez, açık oturumu hemen kapanır; yaptığı işler kayıtlarda kalır.",
       "kapat": "Hesabı kapat",
       "kapatOnay": {

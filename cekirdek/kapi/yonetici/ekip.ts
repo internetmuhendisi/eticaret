@@ -9,8 +9,10 @@ import {
   yoneticiHesabiKapat,
 } from "../../moduller/ekip/servis.ts";
 import { yedekKodlariniYenile } from "../../moduller/oturum/iki-asamali-giris.ts";
+import { sifreSifirlamaIste } from "../../moduller/oturum/sifre-sifirlama.ts";
 import { siteninVeritabani } from "../../veritabani/baglanti.ts";
 import { kimlikSemasi } from "../../veritabani/kimlik.ts";
+import { sifreYenileAdresi } from "../../yonetim-paneli/adresler.ts";
 import { istemciAdresi, sayacAdresi } from "../istek-siniri.ts";
 import { ucTanimla } from "../uc.ts";
 import { BilinenHata } from "../zarf.ts";
@@ -57,19 +59,26 @@ export const ekipHesapKapatUcu = ucTanimla({
   },
 });
 
-// POST /kapi/yonetici/ekip-iki-asama-sifirla: yöneticinin iki aşamalı girişini sıfırlar (kart 0053).
+// POST /kapi/yonetici/ekip-iki-asama-sifirla: yöneticinin iki aşamalı girişini ve şifresini sıfırlar (kart 0053, karar
+// 0178); ardından yöneticinin e-postasına yeni şifre bağlantısı gider. Bağlantı gidemezse (sınır, sitenin adresi yok)
+// sıfırlama yine geçerlidir, `baglanti: false` döner: yönetici giriş sayfasındaki "Şifremi unuttum"u kullanır.
 export const ekipIkiAsamaSifirlaUcu = ucTanimla({
   giris: "yonetici",
   sema: ekipKimlikSemasi,
   izin: "ekip.iki-asama-sifirla",
   sinir: "genel",
   isle: async ({ kimlik }, _istek, _yanit, { hesapKimligi }) => {
-    await ikiAsamaliGirisiSifirla(
-      siteninVeritabani(),
-      { yoneticiKimligi: kimlik },
-      yonetici(hesapKimligi),
-    );
-    return {};
+    const vt = siteninVeritabani();
+    await ikiAsamaliGirisiSifirla(vt, { yoneticiKimligi: kimlik }, yonetici(hesapKimligi));
+    const [hedef] = await vt
+      .select({ eposta: yoneticiler.eposta })
+      .from(yoneticiler)
+      .where(eq(yoneticiler.kimlik, kimlik));
+    const sonuc =
+      hedef === undefined
+        ? "hesap-yok"
+        : await sifreSifirlamaIste(vt, "yonetici", { eposta: hedef.eposta }, sifreYenileAdresi);
+    return { baglanti: sonuc === "gonderildi" };
   },
 });
 

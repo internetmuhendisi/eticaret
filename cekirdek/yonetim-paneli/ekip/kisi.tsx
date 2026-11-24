@@ -267,10 +267,17 @@ export function EkipKisisiEkrani({
         onayEtiketi={metin("yonetim.ekip.sifirlaOnay.onay")}
         vazgecEtiketi={metin("ortak.islem.vazgec")}
         onayla={async () => {
-          const sonuc = await islem(
+          const sonuc = await islem<{ baglanti: boolean }>(
             "ekip-iki-asama-sifirla",
             { kimlik: kisi.kimlik },
             "yonetim.ekip.sifirlandi",
+            {
+              // Bağlantı gidemediyse kullanıcının ne yapacağı söylenir (uyarı olarak).
+              bildirim: (veri) =>
+                veri.baglanti
+                  ? { tur: "basari", metin: "yonetim.ekip.sifirlandi" }
+                  : { tur: "uyari", metin: "yonetim.ekip.sifirlandiBaglantisiz" },
+            },
           );
           if (sonuc.tamam) sifirlandi.current = true;
         }}

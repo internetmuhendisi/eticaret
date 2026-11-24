@@ -1,7 +1,8 @@
-// Yayındaki sitenin yöneticisinin iki aşamalı girişini sıfırlar (kart 0053, karar 0178). Telefonunu ve yedek kodlarını
-// kaybeden son mağaza sahibi için: öteki yöneticilerinkini mağaza sahibi panelden sıfırlar. Önce kişinin kimliği elle
-// doğrulanır (karar 0178). Yönetici bir sonraki girişte kurulum ekranına düşer;
-// eski kodlar, yedek kodlar ve açık oturumları geçersiz olur. İşlem değişiklik kaydına "sunucu-yonetici" adıyla girer.
+// Yayındaki sitenin yöneticisinin iki aşamalı girişini ve şifresini sıfırlar (kart 0053, karar 0178). Telefonunu ve
+// yedek kodlarını kaybeden son mağaza sahibi için: öteki yöneticilerinkini mağaza sahibi panelden sıfırlar. Önce
+// kişinin kimliği, mağazanın kayıtlı numarası geri aranarak doğrulanır (karar 0178). Eski şifre, kodlar, yedek kodlar
+// ve açık oturumlar geçersiz olur; yönetici "Şifremi unuttum" ile yeni şifre koyar, sonra kurulum ekranına düşer.
+// İşlem değişiklik kaydına "sunucu-yonetici" adıyla girer.
 //
 //   pnpm sunucu-yonetici-iki-asama-sifirla <site klasörü> <ortam> <e-posta>
 
@@ -39,6 +40,10 @@ try {
   );
   if (kutu.status !== 0) throw new Error(kutu.stderr.trim() || "İki aşamalı giriş sıfırlanamadı.");
   console.log(`sıfırlandı  ${kodAdi}: ${eposta}`);
+  // Sunucu aracı e-posta göndermez: yönetici yeni şifreyi giriş sayfasındaki "Şifremi unuttum" ile koyar.
+  console.log(
+    'Yöneticiye söyleyin: panelin giriş sayfasındaki "Şifremi unuttum" ile yeni şifre koyacak, sonra telefonuna kodu yeniden kuracak.',
+  );
 } catch (hata) {
   console.error((hata as Error).message);
   process.exitCode = 1;

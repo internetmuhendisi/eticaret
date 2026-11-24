@@ -125,7 +125,10 @@ describe(
 
     it("iki aşamalı girişi sıfırlar: kurulum ve yedek kodlar silinir, kayda sunucu adıyla girer (kart 0053)", async () => {
       const eposta = "telefonsuz@ornek.test";
-      calistir(kodAdi, "ac", eposta);
+      const ilkSifre = /^sifre (\S+)$/m.exec(calistir(kodAdi, "ac", eposta).stdout)?.[1] ?? "";
+      expect(
+        await hesapSifresiniDogrula(vt, "yonetici", { eposta, sifre: ilkSifre }),
+      ).not.toBeNull();
       const [hesap] = await vt
         .select({ kimlik: yoneticiler.kimlik })
         .from(yoneticiler)
@@ -155,6 +158,8 @@ describe(
       const sonuc = calistir(kodAdi, "iki-asama-sifirla", eposta);
       expect(sonuc.status).toBe(0);
       expect(sonuc.stdout).toContain("sifirlandi");
+      // Şifre de sıfırlandı: "ac"ın verdiği şifre artık geçmez.
+      expect(await hesapSifresiniDogrula(vt, "yonetici", { eposta, sifre: ilkSifre })).toBeNull();
       expect(
         await vt
           .select()

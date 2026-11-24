@@ -19,6 +19,7 @@ import {
   yoneticiYedekKodlari,
 } from "../../moduller/ekip/model.ts";
 import { ekibiOku } from "../../moduller/ekip/servis.ts";
+import { epostaKayitlari } from "../../moduller/eposta/model.ts";
 import { kodAdimi, zamanliKod } from "../../moduller/oturum/iki-asama.ts";
 import {
   girisAdiminiOku,
@@ -26,7 +27,7 @@ import {
   kurulumuOnayla,
   yoneticiSifreAsamasi,
 } from "../../moduller/oturum/iki-asamali-giris.ts";
-import { hesapAc } from "../../moduller/oturum/servis.ts";
+import { hesapAc, hesapSifresiniDogrula } from "../../moduller/oturum/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
 import {
@@ -183,6 +184,17 @@ describe("hesap kapatma ve iki aşamalı girişi sıfırlama", () => {
       istek("ekip-iki-asama-sifirla", sahip.oturum, { kimlik: ece.kimlik }),
     );
     expect(yanit.status).toBe(200);
+    // Yeni şifre bağlantısı yöneticinin e-postasına kuyruğa girdi.
+    expect(await yanit.json()).toMatchObject({ veri: { baglanti: true } });
+    expect(
+      (
+        await vt
+          .select({ sablon: epostaKayitlari.sablon })
+          .from(epostaKayitlari)
+          .where(eq(epostaKayitlari.alici, ece.eposta))
+      ).map((satir) => satir.sablon),
+    ).toEqual(["sifre-sifirlama"]);
+    expect(await hesapSifresiniDogrula(vt, "yonetici", { eposta: ece.eposta, sifre })).toBeNull();
     for (const tablo of [yoneticiIkiAsama, yoneticiYedekKodlari]) {
       expect(await vt.select().from(tablo).where(eq(tablo.yonetici_kimligi, ece.kimlik))).toEqual(
         [],

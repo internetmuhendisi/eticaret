@@ -1,5 +1,6 @@
 // Yöneticilerin rolleri ve izin sorusu (kart 0026, karar 0040). Kod rol adına bakmaz: tek soru
 // "bu yöneticide bu izin var mı" sorusudur. Bu servisi çağıran uç, izni kapıda beyan eder.
+import { randomBytes } from "node:crypto";
 import { and, asc, count, eq, inArray, isNotNull, isNull, max, or } from "drizzle-orm";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
@@ -7,6 +8,7 @@ import type { GirisIzni } from "../../kayitlar/izinler.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { hesapAc } from "../oturum/servis.ts";
+import { sifreOzetle } from "../oturum/sifre.ts";
 import { baslangicRolleri } from "./baslangic-rolleri.ts";
 import {
   rolIzinleri,
@@ -16,6 +18,7 @@ import {
   yoneticiler,
   yoneticiOturumlari,
   yoneticiRolleri,
+  yoneticiSifreSifirlamalari,
   yoneticiYedekKodlari,
 } from "./model.ts";
 
@@ -343,9 +346,9 @@ export const rolleriAyarla = async (
   });
 };
 
-// Telefonunu ve yedek kodlarını kaybeden yöneticinin iki aşamalı girişini sıfırlar (kartlar 0053, 0274): kurulum,
-// yedek kodlar, ara adımlar ve açık oturumlar silinir; yönetici bir sonraki girişte kurulum ekranına düşer, eski
-// kodlar geçmez. Yönetici kendisininkini sıfırlayamaz. Kurulumu olmayan yöneticide (kurulu-degil) bir şey yapılmaz.
+// Telefonunu ve yedek kodlarını kaybeden yöneticinin iki aşamalı girişini ve şifresini sıfırlar (kartlar 0053, 0274):
+// kurulum, yedek kodlar, ara adımlar, açık şifre bağlantıları ve açık oturumlar silinir, eski şifre geçmez; yönetici
+// yeni şifreyi bağlantıyla koyar, sonra girişte kurulum ekranına düşer; eski kodlar geçmez. Yönetici kendisininkini sıfırlayamaz. Kurulumu olmayan yöneticide (kurulu-degil) bir şey yapılmaz.
 // Sıra: önce ara adımlar silinir. Aynı anda onaylanmakta olan bir kurulum ya da kod girişi adımın satırını kilitlidir:
 // silme onun bitmesini bekler, sonra onun yazdığını (kurulum, oturum, yedek kodlar) da siler. Yönetici satırı
 // FOR NO KEY UPDATE ile kilitlenir: bekleyen giriş oturum ya da yedek kod eklerken bu satırın bağ kilidini (KEY SHARE)
@@ -355,6 +358,10 @@ export const ikiAsamaliGirisiSifirla = async (
   girdi: { yoneticiKimligi: string },
   kim: DegisikligiYapan,
 ): Promise<void> => {
+  // Şifre de sıfırlanır (kullanıcı kararı, karar 0178): telefonla birlikte çalınan şifre işe yaramasın. Yerine kimsenin
+  // bilmediği rastgele bir şifrenin özeti yazılır; yönetici yeni şifreyi sıfırlama bağlantısıyla koyar. Özet
+  // işlemden önce hesaplanır (yavaştır, kilit tutulurken beklenmesin).
+  const bilinmeyenSifre = await sifreOzetle(randomBytes(32).toString("base64url"));
   kendiHesabiDegil(kim, girdi.yoneticiKimligi);
   await vt.transaction(async (islem) => {
     await tamYetkiliRolleriKilitle(islem);
@@ -379,6 +386,13 @@ export const ikiAsamaliGirisiSifirla = async (
       .delete(yoneticiYedekKodlari)
       .where(eq(yoneticiYedekKodlari.yonetici_kimligi, yonetici.kimlik));
     await islem
+      .update(yoneticiler)
+      .set({ sifre_ozeti: bilinmeyenSifre, guncellenme_zamani: new Date() })
+      .where(eq(yoneticiler.kimlik, yonetici.kimlik));
+    await islem
+      .delete(yoneticiSifreSifirlamalari)
+      .where(eq(yoneticiSifreSifirlamalari.hesap_kimligi, yonetici.kimlik));
+    await islem
       .update(yoneticiOturumlari)
       .set({ kapanma_zamani: new Date() })
       .where(
@@ -391,8 +405,8 @@ export const ikiAsamaliGirisiSifirla = async (
       kim,
       islem: "yonetici.iki-asama-sifirlandi",
       kayit: { tur: "yonetici", kimlik: yonetici.kimlik },
-      eski: { ikiAsama: "kurulu" },
-      yeni: { ikiAsama: "kurulu-degil" },
+      eski: { ikiAsama: "kurulu", giris: "acik" },
+      yeni: { ikiAsama: "kurulu-degil", giris: "yeni-baglanti-gerekli" },
     });
   });
 };

@@ -1569,12 +1569,12 @@ Yöneticinin hesabını kapatır (kart 0274): giremez, açık oturumu ve yarım 
 
 ### POST /kapi/yonetici/ekip-iki-asama-sifirla
 
-Telefonunu ve yedek kodlarını kaybeden yöneticinin iki aşamalı girişini sıfırlar (kartlar 0274, 0053): kurulum, yedek kodlar, ara adımlar ve açık oturumlar silinir; yönetici bir sonraki girişte kurulum ekranına düşer. Kendi girişini sıfırlayamaz.
+Telefonunu ve yedek kodlarını kaybeden yöneticinin iki aşamalı girişini ve şifresini sıfırlar (kartlar 0274, 0053, karar 0178): kurulum, yedek kodlar, ara adımlar, açık şifre bağlantıları ve açık oturumlar silinir, eski şifre geçmez; ardından yöneticinin e-postasına yeni şifre bağlantısı gider (`sifreSifirlamaIste`). Yönetici yeni şifreyi koyunca girişte kurulum ekranına düşer. Kendi girişini sıfırlayamaz.
 
 - İzin: `ekip.iki-asama-sifirla`. Sınır: `genel`.
 - Girdi: `{ "kimlik" }` (`ekipKimlikSemasi`).
 - Servis: `cekirdek/moduller/ekip/servis.ts` (`ikiAsamaliGirisiSifirla`).
-- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Başarılı (200): `{ "basarili": true, "veri": { "baglanti": true } }`; bağlantı gidemediyse (sınır, sitenin adresi yok) `false`, sıfırlama yine geçerlidir.
 - Hatalar: `dogrulama`, `bulunamadi`, `is-kurali` (`kurulu-degil`, `kendi-hesabi`), `oturum-yok`, `yetki`.
 
 ### POST /kapi/yonetici/yedek-kodlari-yenile

@@ -3,8 +3,8 @@
 //   izin tablosu. Kullanıcının ekranında roller boşaltılıp kaydedilince alanın hatası ve odak; Sipariş görevlisi
 //   boşlukla seçilip Enter'la kaydedilir. İkinci yöneticinin açık oturumu Ekip'i artık açamaz (bulunamadı), siparişleri
 //   açar.
-// - İki aşamalı girişi sıfırla onay penceresiyle (önce Vazgeç); ikinci yöneticinin oturumu düşer, girişte yeniden
-//   kurulum ister.
+// - İki aşamalı girişi ve şifreyi sıfırla onay penceresiyle (önce Vazgeç); ikinci yöneticinin oturumu düşer, eski
+//   şifresiyle giremez; odak Giriş başlığına geçer.
 // - Hesabım'da yanlış kodda alanın hatası ve odak; telefondaki kodla yeni yedek kodlar görünür ve odak başlıklarına
 //   geçer. Kendi ekranında roller değiştirilemez, iki düğme yoktur.
 // - Hesabı kapat onayla; liste ekranına dönülür, kullanıcı listede yoktur.
@@ -169,18 +169,25 @@ test("ekip: roller, iki aşamalı girişi sıfırlama, yedek kodlar, hesap kapat
   await expect(sifirla).toBeFocused();
   await sifirla.press("Enter");
   await sifirlaOnayi.getByRole("button", { name: metin("yonetim.ekip.sifirlaOnay.onay") }).click();
-  await expect(page.getByText(metin("yonetim.ekip.sifirlandi"))).toBeVisible();
+  // Sitenin adresi varsa bağlantı gider; yoksa ne yapılacağı söylenir.
+  await expect(
+    page
+      .getByText(metin("yonetim.ekip.sifirlandi"))
+      .or(page.getByText(metin("yonetim.ekip.sifirlandiBaglantisiz"))),
+  ).toBeVisible();
   await expect(page.getByText(metin("yonetim.ekip.kuruluDegil"))).toBeVisible();
   await expect(sifirla).toHaveCount(0);
   // Düğme kalktı: odak gövdeye düşmez, Giriş bölümünün başlığına geçer.
   await expect(
     page.getByRole("heading", { level: 2, name: metin("yonetim.ekip.bolum.giris") }),
   ).toBeFocused();
-  // İkinci yöneticinin oturumu düştü; girişte yeniden kurulum ister.
+  // İkinci yöneticinin oturumu düştü; eski şifresi de geçmez.
   await ikinciSayfa.goto("/yonetim/siparisler");
   await expect(ikinciSayfa).toHaveURL(/\/yonetim\/giris/);
   await sifreyleGir(ikinciSayfa, ikinci);
-  await expect(ikinciSayfa).toHaveURL(/\/yonetim\/giris\/kurulum/);
+  // Şifre de sıfırlandı: eski şifreyle girilemez.
+  await expect(ikinciSayfa.getByText(metin("yonetim.giris.hataBilgi"))).toBeVisible();
+  await expect(ikinciSayfa).not.toHaveURL(/\/yonetim\/giris\/kurulum/);
   await ikinciBaglam.close();
 
   // Hesabı kapat: onayla listeye dönülür, kullanıcı listede yoktur.
