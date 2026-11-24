@@ -7,7 +7,7 @@ import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { hesapSifresiniDogrula } from "../../oturum/servis.ts";
-import { yoneticiler } from "../model.ts";
+import { yoneticiIkiAsama, yoneticiler, yoneticiYedekKodlari } from "../model.ts";
 import { yoneticininIzniVarMi } from "../servis.ts";
 
 let vt: Veritabani;
@@ -121,6 +121,54 @@ describe(
       expect(kapat.stdout).toContain("kapatildi");
       expect(await hesapSifresiniDogrula(vt, "yonetici", { eposta: ikinci, sifre })).toBeNull();
       expect(calistir(kodAdi, "kapat", "yok@ornek.test").status).toBe(1);
+    });
+
+    it("iki aşamalı girişi sıfırlar: kurulum ve yedek kodlar silinir, kayda sunucu adıyla girer (kart 0053)", async () => {
+      const eposta = "telefonsuz@ornek.test";
+      calistir(kodAdi, "ac", eposta);
+      const [hesap] = await vt
+        .select({ kimlik: yoneticiler.kimlik })
+        .from(yoneticiler)
+        .where(eq(yoneticiler.eposta, eposta));
+      if (hesap === undefined) throw new Error("Hesap açılmadı.");
+      // Kurulumu yoksa sıfırlanacak bir şey yok.
+      const kurulmamis = calistir(kodAdi, "iki-asama-sifirla", eposta);
+      expect(kurulmamis.status).toBe(1);
+      await vt.insert(yoneticiIkiAsama).values({
+        yonetici_kimligi: hesap.kimlik,
+        sifreli_gizli: "deneme",
+        son_kod_adimi: 0,
+        onay_zamani: new Date(),
+      });
+      await vt
+        .insert(yoneticiYedekKodlari)
+        .values({ yonetici_kimligi: hesap.kimlik, kod_ozeti: "ozet" });
+      const sonuc = calistir(kodAdi, "iki-asama-sifirla", eposta);
+      expect(sonuc.status).toBe(0);
+      expect(sonuc.stdout).toContain("sifirlandi");
+      expect(
+        await vt
+          .select()
+          .from(yoneticiIkiAsama)
+          .where(eq(yoneticiIkiAsama.yonetici_kimligi, hesap.kimlik)),
+      ).toEqual([]);
+      expect(
+        await vt
+          .select()
+          .from(yoneticiYedekKodlari)
+          .where(eq(yoneticiYedekKodlari.yonetici_kimligi, hesap.kimlik)),
+      ).toEqual([]);
+      const [kayit] = await vt
+        .select()
+        .from(degisiklikKayitlari)
+        .where(eq(degisiklikKayitlari.islem, "yonetici.iki-asama-sifirlandi"));
+      expect(kayit).toMatchObject({
+        kim_turu: "sistem",
+        kim_adi: "sunucu-yonetici",
+        kayit_kimligi: hesap.kimlik,
+      });
+      expect(calistir(kodAdi, "iki-asama-sifirla", "yok@ornek.test").status).toBe(1);
+      expect(calistir("baska-site", "iki-asama-sifirla", eposta).status).toBe(1);
     });
   },
   surecliTestSiniri,

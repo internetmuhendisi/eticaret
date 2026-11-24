@@ -16,7 +16,7 @@ const kabukEpostasi = (eposta: string): string => {
 
 // Girdi kabuğa gitmeden denetlenir. eposta verilmezse işlem e-posta istemez (sahip-sayisi).
 export const yoneticiBetigi = (
-  islem: "ac" | "kapat" | "sahip-sayisi",
+  islem: "ac" | "kapat" | "sahip-sayisi" | "iki-asama-sifirla",
   ortam: Ortam,
   kodAdi: string,
   siteNumarasi: number,

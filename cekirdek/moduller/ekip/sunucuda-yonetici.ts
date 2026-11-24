@@ -4,6 +4,10 @@
 //   node yonetici/yonetici.mjs <kod adı> ac <e-posta>
 //   node yonetici/yonetici.mjs <kod adı> kapat <e-posta>
 //   node yonetici/yonetici.mjs <kod adı> sahip-sayisi
+//   node yonetici/yonetici.mjs <kod adı> iki-asama-sifirla <e-posta>
+// iki-asama-sifirla (kart 0053, karar 0178): telefonunu ve yedek kodlarını kaybeden yöneticinin iki aşamalı girişini
+// altyapı sahibi sıfırlar; kimliği önce elle doğrulanır (karar 0178). Panelde bunu mağaza sahibi yapar; komut son
+// mağaza sahibi kendi telefonunu kaybedince gerekir.
 // Şifreyi burada üretir, yalnız standart çıktıya bir kez yazar. Adres verilen siteye ait değilse hiçbir şey yapmaz.
 import { randomBytes } from "node:crypto";
 import { and, countDistinct, eq, isNull } from "drizzle-orm";
@@ -12,7 +16,7 @@ import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
 import { baglan, siteninAdresi } from "../../veritabani/baglanti.ts";
 import { epostaSemasi } from "../oturum/semalar.ts";
 import { roller, yoneticiler, yoneticiRolleri } from "./model.ts";
-import { tamYetkiliYoneticiAc, yoneticiHesabiKapat } from "./servis.ts";
+import { ikiAsamaliGirisiSifirla, tamYetkiliYoneticiAc, yoneticiHesabiKapat } from "./servis.ts";
 
 const yaz = (satir: string): void => {
   process.stdout.write(`${satir}\n`);
@@ -26,15 +30,18 @@ const hataMesajlari: Record<string, string> = {
   dogrulama: "E-posta geçersiz.",
   cakisma: "Bu e-postayla bir yönetici zaten var.",
   bulunamadi: "Tam yetkili rol yok, önce veritabanı güncellenmeli.",
-  "is-kurali": "Son tam yetkili yönetici kapatılamaz.",
+  "is-kurali": "Son tam yetkili yönetici kapatılamaz ya da iki aşamalı girişi kurulu değil.",
 };
 
 const [kodAdi, islem, epostaGirdisi] = process.argv.slice(2);
 const eposta = epostaSemasi.safeParse(epostaGirdisi);
 const adres = kodAdi ? siteninAdresi(kodAdi) : null;
 
-if (!kodAdi || (islem !== "ac" && islem !== "kapat" && islem !== "sahip-sayisi")) {
-  hata("Kullanım: yonetici.mjs <kod adı> ac|kapat <e-posta> ya da sahip-sayisi");
+if (
+  !kodAdi ||
+  (islem !== "ac" && islem !== "kapat" && islem !== "sahip-sayisi" && islem !== "iki-asama-sifirla")
+) {
+  hata("Kullanım: yonetici.mjs <kod adı> ac|kapat|iki-asama-sifirla <e-posta> ya da sahip-sayisi");
 } else if (islem !== "sahip-sayisi" && !eposta.success) {
   hata("E-posta geçersiz.");
 } else if (adres === null) {
@@ -65,8 +72,13 @@ if (!kodAdi || (islem !== "ac" && islem !== "kapat" && islem !== "sahip-sayisi")
       if (bulunan === undefined) {
         hata("Bu e-postayla açık bir yönetici yok.");
       } else {
-        await yoneticiHesabiKapat(veritabani, { yoneticiKimligi: bulunan.kimlik }, kim);
-        yaz("kapatildi");
+        if (islem === "kapat") {
+          await yoneticiHesabiKapat(veritabani, { yoneticiKimligi: bulunan.kimlik }, kim);
+          yaz("kapatildi");
+        } else {
+          await ikiAsamaliGirisiSifirla(veritabani, { yoneticiKimligi: bulunan.kimlik }, kim);
+          yaz("sifirlandi");
+        }
       }
     }
   } catch (yakalanan) {
