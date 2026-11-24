@@ -28,4 +28,4 @@ Bölüm: Yönetim paneli. Kullanıcının kararıyla bu bölüme alındı. Önce
 
 ## Durum
 
-yapılacak
+bitti
