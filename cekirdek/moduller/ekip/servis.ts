@@ -21,7 +21,7 @@ import {
 
 // Her istekte çalışır: rol alınınca erişim bir sonraki istekte kesilir.
 export const yoneticininIzniVarMi = async (
-  vt: Veritabani,
+  vt: Veritabani | VeritabaniIslemi,
   yoneticiKimligi: string,
   izin: GirisIzni<"yonetici">,
 ): Promise<boolean> => {
@@ -188,6 +188,17 @@ const kendiHesabiDegil = (kim: DegisikligiYapan, yoneticiKimligi: string) => {
   }
 };
 
+// İşi yapan yöneticinin izni, tam yetkili rollerin kilidinden sonra işlemin içinde yeniden sorulur (bağımsız
+// kontrolün bulgusu, kart 0274): kapıdan geçip kilidi bekleyen istek, o arada izni alınmışsa iş yapmaz.
+const izniniDenetle = async (
+  islem: VeritabaniIslemi,
+  kim: DegisikligiYapan,
+  izin: GirisIzni<"yonetici">,
+) => {
+  if (kim.tur !== "yonetici") return;
+  if (!(await yoneticininIzniVarMi(islem, kim.kimlik, izin))) throw new BilinenHata("yetki");
+};
+
 // Yöneticinin giriş hesabını kapatır: giremez, açık oturumu ve yarım girişi hemen geçersiz olur. Tam
 // yetkili son yöneticinin hesabı kapatılamaz; rolAl ile aynı kilidi alır, ikisi aynı anda geçemez.
 export const yoneticiHesabiKapat = async (
@@ -198,6 +209,7 @@ export const yoneticiHesabiKapat = async (
   kendiHesabiDegil(kim, girdi.yoneticiKimligi);
   await vt.transaction(async (islem) => {
     await tamYetkiliRolleriKilitle(islem);
+    await izniniDenetle(islem, kim, "ekip.hesap-kapat");
     const simdi = new Date();
     const [kapanan] = await islem
       .update(yoneticiler)
@@ -271,6 +283,7 @@ export const rolleriAyarla = async (
   }
   await vt.transaction(async (islem) => {
     await tamYetkiliRolleriKilitle(islem);
+    await izniniDenetle(islem, kim, "ekip.rol-ata");
     const [yonetici] = await islem
       .select({ kimlik: yoneticiler.kimlik })
       .from(yoneticiler)
@@ -333,8 +346,10 @@ export const rolleriAyarla = async (
 // Telefonunu ve yedek kodlarını kaybeden yöneticinin iki aşamalı girişini sıfırlar (kartlar 0053, 0274): kurulum,
 // yedek kodlar, ara adımlar ve açık oturumlar silinir; yönetici bir sonraki girişte kurulum ekranına düşer, eski
 // kodlar geçmez. Yönetici kendisininkini sıfırlayamaz. Kurulumu olmayan yöneticide (kurulu-degil) bir şey yapılmaz.
-// Sıra: önce ara adımlar silinir. Aynı anda onaylanmakta olan bir kurulum adımın satırını kilitlidir: silme onun
-// bitmesini bekler, sonra onun yazdığı kurulumu da siler (açık kalan bir adımla kurulum yeniden onaylanamaz).
+// Sıra: önce ara adımlar silinir. Aynı anda onaylanmakta olan bir kurulum ya da kod girişi adımın satırını kilitlidir:
+// silme onun bitmesini bekler, sonra onun yazdığını (kurulum, oturum, yedek kodlar) da siler. Yönetici satırı
+// FOR NO KEY UPDATE ile kilitlenir: bekleyen giriş oturum ya da yedek kod eklerken bu satırın bağ kilidini (KEY SHARE)
+// ister; FOR UPDATE onunla çakışıp iki işlemi kilitlenmeye sokardı (bağımsız kontrolün bulgusu).
 export const ikiAsamaliGirisiSifirla = async (
   vt: Pick<Veritabani, "transaction">,
   girdi: { yoneticiKimligi: string },
@@ -342,11 +357,13 @@ export const ikiAsamaliGirisiSifirla = async (
 ): Promise<void> => {
   kendiHesabiDegil(kim, girdi.yoneticiKimligi);
   await vt.transaction(async (islem) => {
+    await tamYetkiliRolleriKilitle(islem);
+    await izniniDenetle(islem, kim, "ekip.iki-asama-sifirla");
     const [yonetici] = await islem
       .select({ kimlik: yoneticiler.kimlik })
       .from(yoneticiler)
       .where(and(eq(yoneticiler.kimlik, girdi.yoneticiKimligi), isNull(yoneticiler.silinme_zamani)))
-      .for("update");
+      .for("no key update");
     if (yonetici === undefined) throw new BilinenHata("bulunamadi");
     await islem
       .delete(yoneticiGirisAdimlari)

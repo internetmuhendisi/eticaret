@@ -824,12 +824,12 @@ describe("kişi listesi", () => {
       "ekip.rol-ata",
       "magaza-ayarlari.degistir",
       "tema.degistir",
-    ];
+    ] as const;
     for (const izin of yasak) {
       expect(erisebilirMi(siparisci, izin)).toBe(false);
       expect(erisebilirMi(editor, izin)).toBe(false);
     }
-    for (const izin of ["siparis.yonet", "siparis.havale-onayla", "musteri.gor"]) {
+    for (const izin of ["siparis.yonet", "siparis.havale-onayla", "musteri.gor"] as const) {
       expect(erisebilirMi(siparisci, izin)).toBe(true);
       expect(erisebilirMi(editor, izin)).toBe(false);
     }
@@ -840,7 +840,7 @@ describe("kişi listesi", () => {
       "duzen.degistir",
       "menu.degistir",
       "urun.gor",
-    ]) {
+    ] as const) {
       expect(erisebilirMi(editor, izin)).toBe(true);
     }
     expect(erisebilirMi(siparisci, "icerik.gor")).toBe(false);

@@ -15,6 +15,7 @@ import { BilinenHata } from "../../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
+import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { kodAdimi, zamanliKod } from "../../oturum/iki-asama.ts";
 import {
@@ -26,7 +27,7 @@ import {
   yoneticiSifreAsamasi,
 } from "../../oturum/iki-asamali-giris.ts";
 import { hesapAc } from "../../oturum/servis.ts";
-import { yoneticiOturumlari, yoneticiYedekKodlari } from "../model.ts";
+import { yoneticiGirisAdimlari, yoneticiOturumlari, yoneticiYedekKodlari } from "../model.ts";
 import {
   ekibiOku,
   ikiAsamaliGirisiSifirla,
@@ -277,6 +278,93 @@ describe("iki aşamalı girişi sıfırlama (kart 0053)", () => {
     expect(
       await hatasi(ikiAsamaliGirisiSifirla(vt, { yoneticiKimligi: kurulmamis.kimlik }, sahip.kim)),
     ).toEqual({ kod: "is-kurali", ayrinti: [{ alan: "yonetici", kod: "kurulu-degil" }] });
+  });
+});
+
+describe("yarışlar ve işlemin içindeki izin (bağımsız kontrolün bulguları)", () => {
+  it("sıfırlama, açık duran giriş adımının yönetici satırına bağlanan yazmasıyla kilitlenmez (sıra kurularak)", async () => {
+    const vt = await siteAc();
+    const sahip = await yonetici(vt, ["magaza-sahibi"]);
+    const ece = await yonetici(vt, ["gorevli"]);
+    await kur(vt, ece.eposta);
+    await yoneticiSifreAsamasi(vt, { eposta: ece.eposta, sifre }, baglanti());
+    // Kod girişi gibi: ara adımı kilitler, sıfırlama onu bekleyince yönetici satırına bağlı bir satır yazar.
+    let kilitAlindi: () => void = () => undefined;
+    const kilitAlindiSozu = new Promise<void>((coz) => {
+      kilitAlindi = coz;
+    });
+    let devam: () => void = () => undefined;
+    const devamSozu = new Promise<void>((coz) => {
+      devam = coz;
+    });
+    const giris = vt.transaction(async (islem) => {
+      await islem
+        .select()
+        .from(yoneticiGirisAdimlari)
+        .where(eq(yoneticiGirisAdimlari.yonetici_kimligi, ece.kimlik))
+        .for("update");
+      kilitAlindi();
+      await devamSozu;
+      await islem
+        .insert(yoneticiYedekKodlari)
+        .values({ yonetici_kimligi: ece.kimlik, kod_ozeti: `yaris-${randomUUID()}` });
+    });
+    await Promise.race([kilitAlindiSozu, giris]);
+    const sifirlama = ikiAsamaliGirisiSifirla(vt, { yoneticiKimligi: ece.kimlik }, sahip.kim);
+    await kilitBekleyeniGor(vt);
+    devam();
+    await giris;
+    await sifirlama;
+    // Sıfırlama, bekleyen girişin yazdığını da sildi.
+    expect(
+      await vt
+        .select()
+        .from(yoneticiYedekKodlari)
+        .where(eq(yoneticiYedekKodlari.yonetici_kimligi, ece.kimlik)),
+    ).toEqual([]);
+  });
+
+  it("izni alınmış yöneticinin işi yetki alır, hiçbir şey değişmez", async () => {
+    const vt = await siteAc();
+    const sahip = await yonetici(vt, ["magaza-sahibi"]);
+    const eski = await yonetici(vt, ["magaza-sahibi"]);
+    const ece = await yonetici(vt, ["gorevli"]);
+    await kur(vt, ece.eposta);
+    await rolleriAyarla(vt, { yoneticiKimligi: eski.kimlik, roller: ["gorevli"] }, sahip.kim);
+    expect(
+      (
+        await hatasi(
+          rolleriAyarla(vt, { yoneticiKimligi: ece.kimlik, roller: ["magaza-sahibi"] }, eski.kim),
+        )
+      ).kod,
+    ).toBe("yetki");
+    expect(
+      (await hatasi(yoneticiHesabiKapat(vt, { yoneticiKimligi: ece.kimlik }, eski.kim))).kod,
+    ).toBe("yetki");
+    expect(
+      (await hatasi(ikiAsamaliGirisiSifirla(vt, { yoneticiKimligi: ece.kimlik }, eski.kim))).kod,
+    ).toBe("yetki");
+    expect((await ekibiOku(vt, { kimlik: ece.kimlik }))[0]).toMatchObject({
+      roller: ["gorevli"],
+      ikiAsamaKurulu: true,
+    });
+  });
+
+  it("iki sahip aynı anda birbirinin sahipliğini alırsa biri geçer, öteki yetki alır; sahip tek kalır", async () => {
+    const vt = await siteAc();
+    const a = await yonetici(vt, ["magaza-sahibi"]);
+    const b = await yonetici(vt, ["magaza-sahibi"]);
+    const sonuclar = await Promise.allSettled([
+      rolleriAyarla(vt, { yoneticiKimligi: b.kimlik, roller: ["gorevli"] }, a.kim),
+      rolleriAyarla(vt, { yoneticiKimligi: a.kimlik, roller: ["gorevli"] }, b.kim),
+    ]);
+    expect(sonuclar.filter((sonuc) => sonuc.status === "fulfilled")).toHaveLength(1);
+    const reddedilen = sonuclar.find((sonuc) => sonuc.status === "rejected");
+    const neden = reddedilen?.status === "rejected" ? reddedilen.reason : undefined;
+    // Önce geçen, ötekinin sahipliğini aldı: ikinci işin yapanı artık sahip değildir.
+    expect(neden instanceof BilinenHata ? neden.kod : neden).toBe("yetki");
+    const sahipler = (await ekibiOku(vt)).filter((uye) => uye.roller.includes("magaza-sahibi"));
+    expect(sahipler).toHaveLength(1);
   });
 });
 
