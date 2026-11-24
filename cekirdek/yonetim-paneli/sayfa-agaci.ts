@@ -7,6 +7,8 @@ import type { EklentiKodu } from "../kayitlar/eklentiler";
 import type { GirisIzni } from "../kayitlar/izinler";
 import type { MetinAnahtari } from "../metinler/metin";
 import {
+  blogAdresi,
+  blogKategorileriAdresi,
   magazaBilgileriAdresi,
   panelAdresi,
   temaAdresi,
@@ -19,6 +21,8 @@ export const panelGruplari = {
   satis: "yonetim.grup.satis",
   urunler: "yonetim.grup.urunler",
   vitrin: "yonetim.grup.vitrin",
+  // Kart 0272: blog (sabit sayfalar kart 0273).
+  icerik: "yonetim.grup.icerik",
 } as const satisfies Record<string, MetinAnahtari>;
 export type PanelGrubu = keyof typeof panelGruplari;
 
@@ -309,6 +313,47 @@ export const panelSayfalari = [
     izin: "tema.gor",
     grup: "vitrin",
     ust: "tema",
+  },
+  // Blog (kart 0272, karar 0176): yazılar, yeni yazı, yazının ekranı (?kimlik=) ve blog kategorileri. Görmek icerik.gor,
+  // yazmak icerik.degistir; blogun açık olması mağaza ayarıdır (anahtar listenin üstünde).
+  {
+    kod: "blog",
+    adres: blogAdresi,
+    ad: "yonetim.sayfa.blog.ad",
+    aciklama: "yonetim.sayfa.blog.aciklama",
+    ikon: "yazi",
+    izin: "icerik.gor",
+    grup: "icerik",
+  },
+  {
+    kod: "yeni-blog-yazisi",
+    adres: `${blogAdresi}/yeni`,
+    ad: "yonetim.sayfa.yeniBlogYazisi.ad",
+    aciklama: "yonetim.sayfa.yeniBlogYazisi.aciklama",
+    ikon: "ekle",
+    izin: "icerik.degistir",
+    grup: "icerik",
+    ust: "blog",
+  },
+  {
+    kod: "blog-yazisi",
+    adres: `${blogAdresi}/yazi`,
+    ad: "yonetim.sayfa.blogYazisi.ad",
+    aciklama: "yonetim.sayfa.blogYazisi.aciklama",
+    ikon: "yazi",
+    izin: "icerik.gor",
+    grup: "icerik",
+    ust: "blog",
+  },
+  {
+    kod: "blog-kategorileri",
+    adres: blogKategorileriAdresi,
+    ad: "yonetim.sayfa.blogKategorileri.ad",
+    aciklama: "yonetim.sayfa.blogKategorileri.aciklama",
+    ikon: "kategoriler",
+    izin: "icerik.gor",
+    grup: "icerik",
+    ust: "blog",
   },
 ] as const satisfies readonly PanelSayfaTanimi[];
 

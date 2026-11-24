@@ -31,6 +31,9 @@ export const panelEylemleri = {
   // Tema (kart 0260): tema sayfası ile tema ayarları arasındaki bağlantılar.
   "tema-ayarlari": { ikon: "duzenle", ad: "yonetim.eylem.temaAyarlari" },
   "tema-degistir": { ikon: "tema", ad: "yonetim.eylem.temaDegistir" },
+  // Blog (kart 0272): listenin "Yazı ekle"si ve blog kategorilerine bağlantı.
+  "yazi-ekle": { ikon: "ekle", ad: "yonetim.eylem.yaziEkle" },
+  "blog-kategorileri": { ikon: "kategoriler", ad: "yonetim.eylem.blogKategorileri" },
 } as const satisfies Record<string, { ikon: PanelIkonAdi; ad: MetinAnahtari }>;
 
 export type PanelEylemi = keyof typeof panelEylemleri;

@@ -26,6 +26,11 @@ export const icerikHatalari = [
   "kategori-siniri",
 ] as const;
 export type IcerikHatasi = (typeof icerikHatalari)[number];
+
+// Kodların panel metinleri (ekran çözer).
+export const icerikHataMetinleri = Object.fromEntries(
+  icerikHatalari.map((kod) => [kod, `yonetim.blog.hata.${kod}`]),
+) as Record<IcerikHatasi, `yonetim.blog.hata.${IcerikHatasi}`>;
 const hata = (kod: IcerikHatasi) => kod;
 
 const adresAdi = z

@@ -1406,3 +1406,103 @@ Yorumun ana sayfanın müşteri yorumları bölümünde ("işaretlenenler" kayna
 - Servis: `cekirdek/moduller/yorum/servis.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": {} }`.
 - Hatalar: `dogrulama`, `oturum-yok`, `yetki`, `bulunamadi` (`yorum-yok`).
+
+### GET /kapi/yonetici/blog-yazilari
+
+Panelin blog listesinin bir sayfası (kart 0272, karar 0176): silinmemiş yazılar, vitrindeki durumlarıyla (zamanı gelmiş zamanlanmış yazı yayındadır), arama (başlık), durum sekmesi, kategori süzgeci, sıralama ve sayfa. Girdi ve yanıt panel sayfasınınkiyle aynıdır (liste tanımı `cekirdek/yonetim-paneli/blog/liste-tanimi.ts`, `blogListesiVerisi`). Kapak yalnız `dosya.gor` izni olana gelir.
+
+- İzin: `icerik.gor`. Sınır: `genel`.
+- Girdi: `?durum=&kategori=&ara=&sirala=&sayfa=` (`listeUcuSemasi(blogListesiTanimi)`).
+- Servis: `cekirdek/moduller/icerik/panel-listesi.ts` (`blogPanelListesi`).
+- Başarılı (200): `{ "basarili": true, "veri": { "satirlar", "toplam", "sayfa", "sayfaSayisi", "sayfaBoyu", "sekmeSayilari" } }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/blog-yazisi-ekle
+
+Yeni blog yazısı (kart 0272). Verilmeyen adres adı başlıktan üretilir, verilmeyen durum taslaktır. Yayına alınan yazı ilk yayın anını alır; zamanlanmış yazının zamanı sitenin saat diliminde yerel zamandır (`"2026-12-01T09:00"`). Kapak `blog-kapagi-yukle`'nin döndürdüğü dosya ve alternatif metniyle birlikte verilir.
+
+- İzin: `icerik.degistir`. Sınır: `genel`.
+- Girdi: `{ "yazi": { "baslik", "adresAdi"?, "ozet"?, "icerik"?, "kapak"?: { "dosya", "metin" }, "kategori"?, "yazar"?, "durum"?, "yayinZamani"? } }` (`blogYazisiEklemeSemasi`; yazı `blogYazisiGirdisi` ile serviste doğrulanır).
+- Servis: `cekirdek/moduller/icerik/servis.ts` (`yaziEkle`).
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
+- Hatalar: `dogrulama` (`adres-adi-bicimi`, `kayda-uygun-degil`, `kategori-gecersiz`, `kapak.dosya` `gorsel-gecersiz`, `yayin-zamani-gerekli`, `yayin-zamani-gecersiz`, ...), `cakisma` (`adres-adi-tekrar`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/blog-yazisi-degistir
+
+Yazının değişikliği (kart 0272): yalnız verilen alan değişir, `null` isteğe bağlı alanı boşaltır. `gorulen` ekranın gördüğü değişme anıdır: yazı arada değiştiyse `cakisma` (`yazi-degisti`) ve hiçbir şey yazılmaz. Adres adı değişince eski adres yenisine yönlenir. Taslağa alınan yazının yayın anı kalır.
+
+- İzin: `icerik.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "gorulen": "<ISO an>", "yazi": { ... } }` (`blogYazisiDegisikligiSemasi`; yazı `blogYazisiDegisikligi` ile serviste doğrulanır).
+- Servis: `cekirdek/moduller/icerik/servis.ts` (`yaziDegistir`).
+- Başarılı (200): `{ "basarili": true, "veri": { "gorulen": "<yeni değişme anı>" } }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `cakisma` (`yazi-degisti`, `adres-adi-tekrar`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/blog-yazisi-sil
+
+Yazıyı siler (silinmiş olarak işaretler, kart 0272). Eski adresi vitrinde bulunamadı verir.
+
+- İzin: `icerik.sil`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }` (`blogKimlikSemasi`).
+- Servis: `cekirdek/moduller/icerik/servis.ts` (`yaziSil`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/blog-kapagi-yukle
+
+Yazının kapak görselini yükler (kart 0272, karar 0165): görsel dört boyutuyla kaydedilir, yazıya bağlanmaz; bağlama yazının kaydıyla yapılır. Tür içerikten anlaşılır (JPEG, PNG, WebP), görsel yeniden kodlanır, gömülü bilgiler silinir. Bağlanmayan görselin temizliği kart 0093'tedir.
+
+- İzin: `icerik.degistir`. Sınır: `yukleme`.
+- Girdi: dosya gövdesi (`govde: "dosya"`, `dosyaGovdesiSemasi`).
+- Servis: `cekirdek/moduller/dosya/servis.ts` (`gorselKaydet`).
+- Başarılı (200): `{ "basarili": true, "veri": { "dosya", "genislik", "yukseklik" } }`.
+- Hatalar: `dogrulama` (`dosya`: `bos`, `cok-buyuk`, `tur-izinsiz`, ...), `oturum-yok`, `yetki`, `istek-siniri`.
+
+### POST /kapi/yonetici/blog-kategorisi-ekle
+
+Yeni blog kategorisi (kart 0272): sona eklenir. Verilmeyen adres adı addan üretilir.
+
+- İzin: `icerik.degistir`. Sınır: `genel`.
+- Girdi: `{ "kategori": { "ad", "adresAdi"? } }` (`blogKategorisiEklemeSemasi`).
+- Servis: `cekirdek/moduller/icerik/servis.ts` (`kategoriEkle`).
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
+- Hatalar: `dogrulama`, `cakisma` (`ad-tekrar`, `adres-adi-tekrar`), `is-kurali` (`kategori-siniri`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/blog-kategorisi-degistir
+
+Blog kategorisinin adı ve adres adı (kart 0272).
+
+- İzin: `icerik.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "kategori": { "ad"?, "adresAdi"? } }` (`blogKategorisiDegisikligiSemasi`).
+- Servis: `cekirdek/moduller/icerik/servis.ts` (`kategoriDegistir`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `cakisma` (`ad-tekrar`, `adres-adi-tekrar`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/blog-kategorisi-sil
+
+Blog kategorisini siler (kart 0272); yazıları kategorisiz kalır, silme kaydında listelenir.
+
+- İzin: `icerik.sil`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }` (`blogKimlikSemasi`).
+- Servis: `cekirdek/moduller/icerik/servis.ts` (`kategoriSil`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/blog-kategorileri-sirala
+
+Blog kategorilerinin yeni sırası (kart 0272): bütün silinmemiş kategoriler tekrarsız verilir; eksik, fazla ya da tekrarlı liste `cakisma` (`siralama-gecersiz`) alır. Yalnız sırası değişen kayda girer.
+
+- İzin: `icerik.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlikler": ["<kimlik>", …] }` (`blogKategoriSiralamaSemasi`).
+- Servis: `cekirdek/moduller/icerik/servis.ts` (`kategorileriSirala`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `cakisma` (`siralama-gecersiz`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/blog-ayari
+
+Blogun vitrinde açık olması (kart 0272, karar 0176; mağaza ayarı `blogAcik`, yalnız bu uçla değişir). Kapalıyken yazılar vitrinde görünmez, `/blog` bulunamadı verir, ana sayfanın blog bölümü çizilmez.
+
+- İzin: `magaza-ayarlari.degistir`. Sınır: `genel`.
+- Girdi: `{ "blogAcik": true | false }` (`blogAyariSemasi`).
+- Servis: `cekirdek/moduller/magaza-ayarlari/servis.ts` (`degistir`, kendi işleviyle).
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`.

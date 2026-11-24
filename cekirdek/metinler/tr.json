@@ -178,7 +178,8 @@
     "grup": {
       "satis": "Satış",
       "urunler": "Ürünler",
-      "vitrin": "Vitrin"
+      "vitrin": "Vitrin",
+      "icerik": "İçerik"
     },
     "sayfa": {
       "karsilama": {
@@ -277,6 +278,22 @@
       "magazaBilgileri": {
         "ad": "Mağaza bilgileri",
         "aciklama": "Mağazanızın adı, iletişim bilgileri ve satıcı bilgileri. Kaydedince vitrinde ve yeni e-postalarda hemen görünür."
+      },
+      "blog": {
+        "ad": "Blog",
+        "aciklama": "Mağazanızın yazıları. Vitrinde /blog adresinde ve ana sayfanın blog bölümünde görünür."
+      },
+      "yeniBlogYazisi": {
+        "ad": "Yeni yazı",
+        "aciklama": "Yazı taslak olarak kaydedilir; yayın durumunu seçince vitrinde görünür."
+      },
+      "blogYazisi": {
+        "ad": "Yazı",
+        "aciklama": "Kaydedince vitrinde hemen güncellenir."
+      },
+      "blogKategorileri": {
+        "ad": "Blog kategorileri",
+        "aciklama": "Yazıları gruplar. Vitrinde blog listesinin üstünde ve ana sayfanın blog bölümünde seçilebilir."
       }
     },
     "eylem": {
@@ -299,7 +316,9 @@
       "fisYazdir": "Fiş yazdır",
       "yazdir": "Yazdır",
       "fisYazdirYeniSekme": "Fiş yazdır (yeni sekmede açılır)",
-      "sifreSifirlamaGonder": "Şifre sıfırlama bağlantısı gönder"
+      "sifreSifirlamaGonder": "Şifre sıfırlama bağlantısı gönder",
+      "yaziEkle": "Yazı ekle",
+      "blogKategorileri": "Kategoriler"
     },
     "rol": {
       "magaza-sahibi": "Mağaza sahibi",
@@ -2348,6 +2367,120 @@
         "sosyalSinir": "Sosyal hesap sayısı sınırı aşıyor. Bazı hesapları boşaltıp kaydedin."
       },
       "adresiTemizle": "Adresi temizle"
+    },
+    "blog": {
+      "liste": "Yazılar",
+      "ara": "Yazı ara",
+      "araYer": "Başlık",
+      "sutun": {
+        "yazi": "Yazı",
+        "durum": "Durum",
+        "kategori": "Kategori",
+        "yayin": "Yayın"
+      },
+      "suzgec": {
+        "durum": "Durum",
+        "kategori": "Kategori"
+      },
+      "durum": {
+        "yayinda": "Yayında",
+        "zamanlanmis": "Zamanlandı",
+        "taslak": "Taslak"
+      },
+      "siralama": {
+        "yayin-azalan": "Yayın tarihi: en yeni",
+        "yayin-artan": "Yayın tarihi: en eski",
+        "baslik-artan": "Başlık: A–Z"
+      },
+      "yayinYok": "Yayınlanmadı",
+      "kategorisiz": "Kategorisiz",
+      "bos": {
+        "baslik": "Henüz yazı yok",
+        "metin": "İlk yazınızı ekleyin; taslak olarak kaydedilir, yayınlayınca vitrinde görünür."
+      },
+      "ayar": {
+        "baslik": "Blog vitrinde",
+        "aciklama": "Kapalıyken yazılar vitrinde görünmez, /blog adresi bulunamadı verir ve ana sayfanın blog bölümü çizilmez. Yazılarınız silinmez.",
+        "anahtar": "Blogu vitrinde göster"
+      },
+      "ayarKaydedildi": "Blog ayarı kaydedildi.",
+      "bolum": {
+        "yazi": "Yazı",
+        "kapak": "Kapak görseli",
+        "yayin": "Yayın",
+        "siniflandirma": "Sınıflandırma"
+      },
+      "baslik": "Başlık",
+      "adresAdi": "Adres adı",
+      "adresAdiAciklamasi": "Yazının vitrindeki adresi. Değiştirirseniz eski adres yenisine yönlenir.",
+      "ozet": "Özet",
+      "ozetAciklamasi": "Blog listesinde, ana sayfanın blog bölümünde ve arama motorlarında görünür. En çok {sayi} harf.",
+      "icerik": "İçerik",
+      "kapak": "Kapak görseli",
+      "kapakYok": "Kapak görseli yok.",
+      "kapakVar": "Yazının kapağı; listede ve yazının başında görünür.",
+      "kapakYukle": "Görsel yükle",
+      "kapakDegistir": "Değiştir",
+      "kapakKaldir": "Kaldır",
+      "kapakAciklamasi": "{turler}, en çok {boyut}. Yatay görsel önerilir; listede 16:10 kırpılır.",
+      "kapakMetni": "Alternatif metin",
+      "kapakMetniAciklamasi": "Görseli göremeyen okur için kısaca anlatın.",
+      "yayinDurumu": "Yayın durumu",
+      "yayinZamani": "Yayın zamanı",
+      "yayinZamaniAciklamasi": "Mağazanın saatiyle. Bu zamanda vitrinde görünür.",
+      "yayinTarihi": "Yayın tarihi: {zaman}",
+      "kategori": "Blog kategorisi",
+      "kategoriAciklamasi": "Ana sayfanın blog bölümü bir kategoriyi gösterebilir.",
+      "yazar": "Yazar adı",
+      "yazarAciklamasi": "Yazının başında görünür. Boşsa mağaza adı.",
+      "kaldirBasligi": "Yazıyı kaldır",
+      "kaldirAciklamasi": "Silinen yazı vitrinden kalkar, adresi bulunamadı verir.",
+      "sil": "Sil",
+      "silOnay": {
+        "baslik": "\"{baslik}\" silinsin mi?",
+        "aciklama": "Yazı vitrinden kalkar ve geri getirilemez."
+      },
+      "ekle": "Yazıyı kaydet",
+      "kaydet": "Kaydet",
+      "eklendi": "Yazı kaydedildi.",
+      "kaydedildi": "Yazı kaydedildi.",
+      "silindi": "Yazı silindi.",
+      "kategoriTek": "kategori",
+      "yaziSayisi": "{sayi} yazı",
+      "kategoriBos": {
+        "baslik": "Henüz blog kategorisi yok",
+        "aciklama": "Kategoriler yazıları gruplar; vitrinde blog listesinin üstünde seçilir."
+      },
+      "kategoriForm": {
+        "yeni": "Yeni blog kategorisi",
+        "duzenle": "Blog kategorisini düzenle",
+        "aciklama": "Ad ve vitrindeki adresi."
+      },
+      "kategoriEklendi": "Kategori eklendi.",
+      "kategoriKaydedildi": "Kategori kaydedildi.",
+      "kategoriSilindi": "Kategori silindi.",
+      "kategoriSiralandi": "Sıra kaydedildi.",
+      "kategoriSilOnay": {
+        "baslik": "\"{ad}\" silinsin mi?",
+        "yazisiz": "Bu kategoride yazı yok.",
+        "yazilar": "{sayi} yazı kategorisiz kalır; yazılar silinmez."
+      },
+      "hata": {
+        "genel": "Kaydedilemedi. Biraz sonra yeniden deneyin.",
+        "yetki": "Bu işlem için yetkiniz yok.",
+        "kayda-uygun-degil": "Bu metin kaydedilemez; gizli bilgiye benzeyen kısmı çıkarın.",
+        "adres-adi-bicimi": "Yalnız küçük harf, rakam ve tire kullanın.",
+        "adres-adi-tekrar": "Bu adres başka bir kayıtta kullanılıyor; başka bir ad yazın.",
+        "ad-tekrar": "Bu adla bir kategori var; başka bir ad yazın.",
+        "gorsel-gecersiz": "Görsel kullanılamıyor; yeniden yükleyin.",
+        "kategori-gecersiz": "Kategori silinmiş; başka bir kategori seçin.",
+        "yayin-zamani-gerekli": "Zamanlanmış yazının yayın zamanını yazın.",
+        "yayin-zamani-bicimi": "Yayın zamanını tarih ve saatle yazın.",
+        "yayin-zamani-gecersiz": "Bu saat mağazanın saat diliminde yaşanmıyor (yaz saati); başka bir saat seçin.",
+        "yazi-degisti": "Yazı siz düzenlerken değişti. Sayfa yenilendi; değişikliklerinizi yeniden yapın.",
+        "siralama-gecersiz": "Liste siz sıralarken değişti; sayfa yenilendi, yeniden sıralayın.",
+        "kategori-siniri": "Blog kategorisi sınırına ulaşıldı; kullanmadığınız bir kategoriyi silin."
+      }
     }
   },
   "vitrin": {

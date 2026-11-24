@@ -21,6 +21,9 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `favori.kendi.degistir` | musteri | kendi | Müşteri ürünü kendi favorilerine ekler, çıkarır ve tarayıcısındaki listeyi hesabına birleştirir. |
 | `fiyat.gor` | yonetici | tumu | Satılabilir birimlerin fiyatlarını ve fiyat geçmişini görür. |
 | `fiyat.degistir` | yonetici | tumu | Satış fiyatını ve indirimi değiştirir. |
+| `icerik.gor` | yonetici | tumu | Blog yazılarını (taslaklar dahil) ve blog kategorilerini görür (kart 0272). |
+| `icerik.degistir` | yonetici | tumu | Blog yazısı ve blog kategorisi ekler ve değiştirir, yazının kapağını yükler. |
+| `icerik.sil` | yonetici | tumu | Blog yazısını ve blog kategorisini siler. |
 | `kategori.gor` | yonetici | tumu | Kategorileri ve ürünlerini görür. |
 | `kategori.degistir` | yonetici | tumu | Kategori ekler, değiştirir ve taşır. |
 | `kategori.sil` | yonetici | tumu | Kategori siler: altındakiler bir üste çıkar, ürün bağlantıları kalkar. |

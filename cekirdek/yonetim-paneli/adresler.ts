@@ -35,6 +35,13 @@ export const yeniUrunAdresi = `${urunlerAdresi}/yeni`;
 export const urunEkraniAdresi = (kimlik: string): string =>
   `${urunlerAdresi}/urun?kimlik=${encodeURIComponent(kimlik)}`;
 
+// Blog (kart 0272): yazıların listesi, yeni yazı, yazının ekranı (kimlik adresin sorgusunda) ve blog kategorileri.
+export const blogAdresi = `${panelAdresi}/blog`;
+export const yeniBlogYazisiAdresi = `${blogAdresi}/yeni`;
+export const blogYazisiEkraniAdresi = (kimlik: string): string =>
+  `${blogAdresi}/yazi?kimlik=${encodeURIComponent(kimlik)}`;
+export const blogKategorileriAdresi = `${blogAdresi}/kategoriler`;
+
 // Şifreden sonraki ara adımın sayfası (kart 0028).
 export const adimAdresi = (durum: "kod" | "kurulum"): string =>
   durum === "kod" ? kodAdresi : kurulumAdresi;
