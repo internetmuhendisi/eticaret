@@ -26,4 +26,4 @@ Bölüm: Yönetim paneli. Önce 0258 ve 0259 bitmiş olmalı.
 
 ## Durum
 
-yapılacak
+bitti
