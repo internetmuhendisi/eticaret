@@ -98,7 +98,11 @@ test("mağaza bilgileri: menüden klavyeyle, tek ve çok hata, Vazgeç, kayıt v
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(new RegExp(`${magazaBilgileriAdresi}$`));
   await sayfaHazir(page);
-  await expect(page.getByText("pinterest.com/")).toBeVisible();
+  await expect(page.getByText("pinterest.com/", { exact: true })).toBeVisible();
+  // Ekran okuyucu yalnız kullanıcı adının yazılacağını alanın açıklamasından duyar.
+  await expect(page.getByRole("textbox", { name: /^Pinterest/ })).toHaveAccessibleDescription(
+    metin("yonetim.magazaBilgileri.sosyal.alanAciklamasi").replace("{adres}", "pinterest.com/"),
+  );
   await ikiRenkUcGenislik(page, "mağaza bilgileri");
 
   const ad = page.getByRole("textbox", {
