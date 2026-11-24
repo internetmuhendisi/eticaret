@@ -101,8 +101,26 @@ describe("ekleme ve değişiklik", () => {
       [1, 2, 3].map(() => sayfaEkle(vt, yonetici(), { baslik: "SSS", adresAdi: "sss" })),
     );
     expect(sonuclar.filter((sonuc) => sonuc.status === "fulfilled")).toHaveLength(1);
+    // Kaybedenler işlem kilidinde bekleyip adresi kullanılıyor görür: bilinen çakışma. Kilit olmasa tekil indeksin
+    // ham hatasıyla düşerlerdi (beklenmeyen hata, ekranda genel metin).
+    for (const sonuc of sonuclar) {
+      if (sonuc.status === "rejected") {
+        expect(sonuc.reason).toBeInstanceOf(BilinenHata);
+        expect((sonuc.reason as BilinenHata).ayrinti).toEqual([
+          { alan: "adresAdi", kod: "adres-adi-tekrar" },
+        ]);
+      }
+    }
     expect(await vt.select().from(sabitSayfalar)).toHaveLength(1);
-    for (let sira = 1; sira < sabitSayfaSinirlari.sayfaSayisi; sira += 1) {
+    // Adressiz eklemede de üretilen adres tekrarlanmaz: üçü de yazılır, adresler ayrıdır.
+    const uretilen = await Promise.all(
+      [1, 2, 3].map(() => sayfaEkle(vt, yonetici(), { baslik: "Kargo" })),
+    );
+    const adresler = await Promise.all(
+      uretilen.map(async ({ kimlik }) => (await sabitSayfaOku(vt, kimlik))?.adresAdi),
+    );
+    expect(new Set(adresler).size).toBe(3);
+    for (let sira = 4; sira < sabitSayfaSinirlari.sayfaSayisi; sira += 1) {
       await sayfaEkle(vt, yonetici(), { baslik: `Sayfa ${sira}` });
     }
     expect(await hatasi(sayfaEkle(vt, yonetici(), { baslik: "Fazla" }))).toEqual({
