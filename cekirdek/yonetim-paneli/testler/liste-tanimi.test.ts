@@ -15,6 +15,7 @@ import {
 import { panelSayfalari, sayfaTanimi } from "../sayfa-agaci.ts";
 import { siparisListesiGirdisi, siparisListesiTanimi } from "../siparisler/liste-tanimi.ts";
 import { urunListesiGirdisi, urunListesiTanimi } from "../urunler/liste-tanimi.ts";
+import { yorumListesiGirdisi, yorumListesiTanimi } from "../yorumlar/liste-tanimi.ts";
 
 const tanim = siparisListesiTanimi;
 
@@ -377,6 +378,65 @@ describe("kayıt süzgeci (kart 0262)", () => {
       marka: [a],
       stok: ["dusuk"],
       siralama: "fiyat-artan",
+      sayfa: 2,
+      sayfaBoyu: 50,
+    });
+  });
+});
+
+describe("sekmenin varsayılan değeri (kart 0277)", () => {
+  const yorum = yorumListesiTanimi;
+
+  it("sekme verilmezse varsayılan sekme okunur; tanınmayan değerde de", () => {
+    expect(listeDurumunuOku(yorum, {}).suzgecler).toEqual({ durum: ["onay-bekliyor"] });
+    expect(listeDurumunuOku(yorum, { durum: "yok" }).suzgecler).toEqual({
+      durum: ["onay-bekliyor"],
+    });
+    expect(listeDurumunuOku(yorum, { durum: "yayinda" }).suzgecler).toEqual({
+      durum: ["yayinda"],
+    });
+  });
+
+  it("varsayılan sekme adrese yazılmaz, öteki sekme yazılır; değişen süzgeç ilk sayfaya döner", () => {
+    const durum = listeDurumunuOku(yorum, { puan: "5,1", sayfa: "3" });
+    expect(listeAdresi(yorum, durum, { sayfa: 3 })).toBe(`${yorum.adres}?puan=5%2C1&sayfa=3`);
+    expect(
+      listeAdresi(yorum, durum, { suzgecler: { ...durum.suzgecler, durum: ["yayinda"] } }),
+    ).toBe(`${yorum.adres}?durum=yayinda&puan=5%2C1`);
+    expect(listeAdresi(yorum, { ...durum, suzgecler: {} })).toBe(yorum.adres);
+  });
+
+  it("varsayılan sekme süzgeç sayılmaz: boş sekme 'boş' hâldedir; öteki sekme ve puan süzgeçtir", () => {
+    expect(suzgecliMi(listeDurumunuOku(yorum, {}), yorum)).toBe(false);
+    expect(suzgecliMi(listeDurumunuOku(yorum, { durum: "yayinda" }), yorum)).toBe(true);
+    expect(suzgecliMi(listeDurumunuOku(yorum, { puan: "3" }), yorum)).toBe(true);
+    // Tanım verilmezse her değer süzgeçtir (eski davranış).
+    expect(suzgecliMi(listeDurumunuOku(yorum, {}))).toBe(true);
+  });
+
+  it("liste ucu sekme verilmezse varsayılanı kullanır; puan ve sıralama tanımın değerleriyle", () => {
+    const sema = listeUcuSemasi(yorum);
+    expect(sema.parse({}).suzgecler).toEqual({ durum: ["onay-bekliyor"] });
+    expect(sema.parse({ durum: "reddedildi", puan: "4,4,2" }).suzgecler).toEqual({
+      durum: ["reddedildi"],
+      puan: ["4", "2"],
+    });
+    expect(sema.safeParse({ puan: "6" }).success).toBe(false);
+    expect(sema.safeParse({ durum: "tumu" }).success).toBe(false);
+    expect(sema.safeParse({ sirala: "ad-artan" }).success).toBe(false);
+  });
+
+  it("yorum listesinin girdisi durumdan kurulur", () => {
+    expect(
+      yorumListesiGirdisi(
+        listeDurumunuOku(yorum, { puan: "1,5", ara: " kulak ", sirala: "puan-artan", sayfa: "2" }),
+        50,
+      ),
+    ).toEqual({
+      ara: "kulak",
+      durum: "onay-bekliyor",
+      puan: [5, 1],
+      siralama: "puan-artan",
       sayfa: 2,
       sayfaBoyu: 50,
     });

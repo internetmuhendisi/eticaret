@@ -1359,12 +1359,22 @@ Panelde kategori, marka, etiket (kart 0263) ya da ürünü yazdıkça arayarak s
 
 ### GET /kapi/yonetici/yorumlar
 
-Ürün yorumları, onay bekleyen ve reddedilenler dahil, en yeni önce (kart 0139). Panelin yorum ekranı on dördüncü bölümde gelir.
+Panelin Yorumlar ekranının listesi (kart 0139; kart 0277'de liste motoruna taşındı, karar 0174). Girdi ve yanıt panel sayfasınınkiyle aynıdır (`yorumListesiTanimi`, `yorumListesiVerisi`). Silinmiş ürünün yorumu yoktur.
 
 - İzin: `yorum.gor`. Sınır: `genel`.
-- Girdi: adres parametreleri `durum`? (`onay-bekliyor`, `yayinda`, `reddedildi`) ve `sayfa`? (`yorumListesiSemasi`). Bir sayfa en çok 50 yorumdur.
-- Servis: `cekirdek/moduller/yorum/servis.ts`.
-- Başarılı (200): `{ "basarili": true, "veri": { "toplam", "yorumlar": [{ "kimlik", "puan", "baslik"?, "metin", "ad", "dogrulanmisAlici", "zaman", "durum", "anaSayfada", "urun", "urunAdi" }] } }`.
+- Girdi: adres parametreleri `durum`? (`onay-bekliyor`, `yayinda`, `reddedildi`; verilmezse `onay-bekliyor`), `puan`? (`1`–`5`, virgülle birden çok), `ara`? (ürünün adı ya da yorumun kısaltılmış adı, en çok 100 karakter), `sirala`? (`en-yeni`, `en-eski`, `puan-artan`, `puan-azalan`) ve `sayfa`? (`listeUcuSemasi`). Sayfa başına satır mağaza ayarıdır (`panelSayfaBoyu`); sınır dışı sayfa son sayfaya çekilir.
+- Servis: `cekirdek/moduller/yorum/panel-listesi.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "satirlar": [{ "kimlik", "puan", "puanYazisi", "baslik", "metin", "ad", "dogrulanmisAlici", "durum", "anaSayfada", "zaman", "urun": { "kimlik", "ad", "adresAdi", "vitrinde" } }], "toplam", "sayfa", "sayfaSayisi", "sayfaBoyu", "sekmeSayilari": { "onay-bekliyor", "yayinda", "reddedildi", "": <hepsi> } } }`. Sayılar puana ve aramaya uyar, duruma uymaz.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/yorumlar-toplu
+
+Seçilen yorumları yayınlar ya da reddeder (kart 0277, karar 0157). Her yorum `yorum-karari` ile aynı yoldan, kendi işleminde geçer; birinin hatası ötekileri durdurmaz.
+
+- İzin: `yorum.onayla`. Sınır: `genel`.
+- Girdi: `{ "islem": "yayinla" | "reddet", "yorumlar": ["<kimlik>", …] }` (`yorumTopluIslemiSemasi`; en az 1, en çok bir sayfa: 100).
+- Servis: `cekirdek/moduller/yorum/panel-listesi.ts` (`yorumTopluKarar`).
+- Başarılı (200): `{ "basarili": true, "veri": { "islenen": ["<kimlik>"], "islenemeyen": [{ "anahtar", "kod": "yorum-yok" | … }] } }`.
 - Hatalar: `dogrulama`, `oturum-yok`, `yetki`.
 
 ### POST /kapi/yonetici/yorum-karari

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 // Panelin ana menüsü (kart 0141): gruplar ve adları, bulunulan sayfanın işareti (alt sayfada da), kökün yalnız
-// kendi adresinde seçili olması, yan penceredeki bağlantıya basınca pencerenin kapanması.
+// kendi adresinde seçili olması, yan penceredeki bağlantıya basınca pencerenin kapanması; adın yanındaki sayı
+// (kart 0277: rozette sayı, ekran okuyucuda yazısı).
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { type CizilenMenuGrubu, PanelMenusu, seciliMi } from "../panel-menusu.tsx";
@@ -72,5 +73,41 @@ describe("panel menüsü", () => {
     render(<PanelMenusu gruplar={gruplar} tiklayinca={tiklayinca} />);
     fireEvent.click(screen.getByRole("link", { name: "Tema" }));
     expect(tiklayinca).toHaveBeenCalledOnce();
+  });
+
+  it("sayı rozette görünür, ekran okuyucu bağlantının adında yazısını okur; sayısız sayfada rozet yok", () => {
+    yol.simdi = "/yonetim";
+    render(
+      <PanelMenusu
+        gruplar={[
+          {
+            kod: "urunler",
+            ad: "Ürünler",
+            sayfalar: [
+              {
+                kod: "yorumlar",
+                adres: "/yonetim/yorumlar",
+                ad: "Yorumlar",
+                ikon: "yorumlar",
+                sayi: { deger: "3", yazi: "(3 yorum onay bekliyor)" },
+              },
+              {
+                kod: "ozellikler",
+                adres: "/yonetim/ozellikler",
+                ad: "Özellikler",
+                ikon: "ozellikler",
+              },
+            ],
+          },
+        ]}
+      />,
+    );
+    const bag = screen.getByRole("link", { name: /^Yorumlar\s?\(3 yorum onay bekliyor\)$/ });
+    const rozet = bag.querySelector('[data-slot="rozet"]');
+    expect(rozet?.textContent).toBe("3");
+    expect(rozet?.getAttribute("aria-hidden")).toBe("true");
+    expect(
+      screen.getByRole("link", { name: "Özellikler" }).querySelector('[data-slot="rozet"]'),
+    ).toBeNull();
   });
 });

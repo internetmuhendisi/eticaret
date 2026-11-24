@@ -2216,7 +2216,7 @@
     },
     "yorumlar": {
       "liste": "Yorumlar",
-      "menuSayisi": ", {sayi} yorum onay bekliyor",
+      "menuSayisi": "({sayi} yorum onay bekliyor)",
       "satirAdi": "{ad}, {urun}",
       "durum": {
         "onay-bekliyor": "Onay bekleyen",

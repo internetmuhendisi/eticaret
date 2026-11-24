@@ -16,6 +16,8 @@ import { metinOkuyucu } from "../../metinler/metin.ts";
 import { yoneticiler } from "../../moduller/ekip/model.ts";
 import { rolVer, yoneticininYetkileri } from "../../moduller/ekip/servis.ts";
 import { girisYap, hesapAc } from "../../moduller/oturum/servis.ts";
+import { urunServisi } from "../../moduller/urun/servis.ts";
+import { yorumlar } from "../../moduller/yorum/model.ts";
 import PanelDuzeni from "../../uygulama/app/yonetim/(panel)/layout.tsx";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
@@ -216,5 +218,47 @@ describe("panelin çerçevesi", () => {
     expect(html).toContain(altyapiAdi);
     expect(html).toContain(`aria-label="${metin("yonetim.cerceve.menuyuAc")}"`);
     expect(html).toMatch(/<main[^>]*><p>icerik<\/p><\/main>/);
+  });
+});
+
+describe("menüdeki sayı (kart 0277)", () => {
+  const icerik = "icerik";
+  const ciz = async () =>
+    renderToString(
+      <MetinSaglayici dil="tr">
+        {(await PanelDuzeni({ children: <p>{icerik}</p> })) as ReactElement}
+      </MetinSaglayici>,
+    );
+
+  it("Yorumlar menüde onay bekleyen yorum sayısıyla; görevli de görür, rolsüz yöneticide sayfa da sayı da yok", async () => {
+    const urun = await urunServisi(() => "Europe/Istanbul").urunEkle(vt, testIslemi, {
+      ad: "Sayaç ürünü",
+      vergiSinifi: null,
+      durum: "yayinda",
+    });
+    await vt.insert(yorumlar).values(
+      (["onay-bekliyor", "onay-bekliyor", "yayinda"] as const).map((durum) => ({
+        urun_kimligi: urun,
+        puan: 4,
+        metin: "Deneme",
+        ad: "Deneme M.",
+        durum,
+      })),
+    );
+    const yazi = metin("yonetim.yorumlar.menuSayisi").replace("{sayi}", "2");
+    for (const rol of ["magaza-sahibi", "gorevli"] as const) {
+      await yoneticiyleGir(rol);
+      const html = await ciz();
+      expect(html).toMatch(
+        new RegExp(
+          `${metin("yonetim.sayfa.yorumlar.ad")}<span[^>]*aria-hidden="true"[^>]*>2</span>`,
+        ),
+      );
+      expect(html).toContain(`<span class="sr-only">${yazi}</span>`);
+    }
+    await yoneticiyleGir();
+    const html = await ciz();
+    expect(html).not.toContain(metin("yonetim.sayfa.yorumlar.ad"));
+    expect(html).not.toContain(yazi);
   });
 });

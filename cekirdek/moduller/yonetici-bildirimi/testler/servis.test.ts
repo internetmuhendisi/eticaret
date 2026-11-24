@@ -399,6 +399,9 @@ describe("sipariş olayları", () => {
     expect(ileti.metin).toContain("5 üzerinden 4 puan · Ayşe K.");
     expect(ileti.html).toContain("Kahve için &lt;b&gt;ideal&lt;/b&gt; boyut.");
     expect(ileti.html).not.toContain("<b>ideal</b>");
+    // Panelin Yorumlar ekranına düğme (kart 0277): Onay bekleyen sekmesiyle açılır.
+    expect(ileti.html).toContain("Yorumlara git");
+    expect(ileti.metin).toMatch(/Yorumlara git.*\/yonetim\/yorumlar(\s|$)/s);
   });
 
   it("kuyruğa giden veri ve e-posta müşterinin e-postasını, telefonunu, açık adresini ve soyadını taşımaz", async () => {

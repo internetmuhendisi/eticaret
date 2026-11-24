@@ -29,13 +29,7 @@ import { hesapAc } from "../../oturum/servis.ts";
 import { urunServisi } from "../../urun/servis.ts";
 import { yorumlar } from "../model.ts";
 import { yorumFormuSemasi } from "../semalar.ts";
-import {
-  anaSayfaYorumlari,
-  puanOzetleri,
-  urunYorumlari,
-  yoneticiYorumlari,
-  yorumServisi,
-} from "../servis.ts";
+import { anaSayfaYorumlari, puanOzetleri, urunYorumlari, yorumServisi } from "../servis.ts";
 
 vi.setConfig({ testTimeout: 60_000 });
 
@@ -355,16 +349,6 @@ describe("görünürlük ve ortalama", () => {
         (y) => y.kimlik,
       ),
     ).not.toContain(isaretli);
-  });
-
-  it("yöneticinin listesi her durumu verir, duruma göre süzülür", async () => {
-    await satinAlmaKapali();
-    const urun = await urunAc();
-    const bekleyen = await yaz(await musteriAc(), urun, 3);
-    const tumu = await yoneticiYorumlari(vt, { sayfa: 1 });
-    expect(tumu.yorumlar.map((y) => y.kimlik)).toContain(bekleyen);
-    const yayinda = await yoneticiYorumlari(vt, { durum: "yayinda", sayfa: 1 });
-    expect(yayinda.yorumlar.map((y) => y.kimlik)).not.toContain(bekleyen);
   });
 });
 

@@ -251,30 +251,33 @@ export function YorumListesi({
   const islem = usePanelIslemi(hataMetni);
   const suren = useRef(false);
   const kok = useRef<HTMLDivElement>(null);
-  // Eylemden sonra odaklanacak kartlar, öncelik sırasıyla (kendisi, sonraki, önceki).
-  const [odakAdaylari, setOdakAdaylari] = useState<string[] | null>(null);
+  // Eylemden sonra odaklanacak kartlar, öncelik sırasıyla (kendisi, sonraki, önceki), ve eylem anındaki veri: odak
+  // yalnız yenilenen veri gelince yerleşir (eski listede yerleşip kart kalkınca kayboluyordu).
+  const [odak, setOdak] = useState<{
+    adaylar: string[];
+    eskiVeri: ListeVerisi<YorumSatiri> | null;
+  } | null>(null);
 
   useEffect(() => {
-    void veri;
-    if (odakAdaylari === null || kok.current === null) return;
+    if (odak === null || odak.eskiVeri === veri || kok.current === null) return;
     const kap = kok.current;
-    for (const aday of odakAdaylari) {
+    setOdak(null);
+    for (const aday of odak.adaylar) {
       const dugme = kap.querySelector<HTMLElement>(
         `[data-yorum="${aday}"] [data-yorum-eylemleri] button`,
       );
       if (dugme !== null) {
         dugme.focus();
-        setOdakAdaylari(null);
         return;
       }
     }
     kap.querySelector<HTMLElement>('nav [aria-current="page"]')?.focus();
-    setOdakAdaylari(null);
-  }, [veri, odakAdaylari]);
+  }, [veri, odak]);
 
   const islemYap = (satir: YorumSatiri, yol: string, govde: unknown, basari: MetinAnahtari) => {
     if (suren.current) return;
     suren.current = true;
+    const eskiVeri = veri;
     const satirlar = veri?.satirlar ?? [];
     const sira = satirlar.findIndex((oge) => oge.kimlik === satir.kimlik);
     const adaylar = [satir.kimlik, satirlar[sira + 1]?.kimlik, satirlar[sira - 1]?.kimlik].filter(
@@ -282,8 +285,11 @@ export function YorumListesi({
     );
     void islem(yol, govde, basari).then((sonuc) => {
       suren.current = false;
-      // Yenilenen liste gelince odak yerleşir (useEffect); hata sürerse odak düğmede kalır.
-      if (sonuc.tamam) setOdakAdaylari(adaylar);
+      // Yenilenen liste gelince odak yerleşir (useEffect). Yorum bulunamadıysa liste de yenilenir (usePanelIslemi);
+      // öteki hatada sayfa yenilenmez, odak düğmede kalır.
+      if (sonuc.tamam || sonuc.kod === "bulunamadi" || sonuc.kod === "cakisma") {
+        setOdak({ adaylar, eskiVeri });
+      }
     });
   };
 
