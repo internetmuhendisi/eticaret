@@ -502,7 +502,15 @@ describe("başlangıç blogu ve vitrin bağlamı", () => {
         ],
       },
     };
-    expect(await blogBaslangiciniKur(h.vt, baslangicli, () => h.klasor)).toBe(true);
+    // Aynı anda iki kurulum: içeriğin kilidinden sonraki denetimle yalnız biri yazar.
+    expect(
+      (
+        await Promise.all([
+          blogBaslangiciniKur(h.vt, baslangicli, () => h.klasor),
+          blogBaslangiciniKur(h.vt, baslangicli, () => h.klasor),
+        ])
+      ).sort(),
+    ).toEqual([false, true]);
     expect(await blogBaslangiciniKur(h.vt, baslangicli, () => h.klasor)).toBe(false);
     const liste = await vitrinBlogYazilari(h.vt, { sayfa: 1, boyut: 12 });
     expect(liste.yazilar.map((y) => [y.baslik, y.yayinZamani.toISOString()])).toEqual([
