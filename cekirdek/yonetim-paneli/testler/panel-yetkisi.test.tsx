@@ -139,6 +139,17 @@ describe("sayfa izni", () => {
     expect(yol.map(({ kod }) => kod)).toEqual(["karsilama", "tema"]);
   });
 
+  // Kart 0278: mağaza bilgileri mağaza ayarıdır, yalnız mağaza sahibine açılır.
+  it("mağaza bilgileri: görevli ve rolsüz yönetici bulunamadı alır, mağaza sahibi açar", async () => {
+    for (const rol of ["gorevli", undefined] as const) {
+      await yoneticiyleGir(rol);
+      await expect(panelSayfasiniAc("magaza-bilgileri")).rejects.toThrow("bulunamadi");
+    }
+    await yoneticiyleGir("magaza-sahibi");
+    const { yol } = await panelSayfasiniAc("magaza-bilgileri");
+    expect(yol.map(({ kod }) => kod)).toEqual(["karsilama", "magaza-bilgileri"]);
+  });
+
   it("eklentinin getirdiği sayfa eklenti sitede kapalıyken bulunamadı verir, açıkken açılır (kart 0144)", async () => {
     await yoneticiyleGir("magaza-sahibi");
     const agac: PanelSayfaTanimi[] = [
