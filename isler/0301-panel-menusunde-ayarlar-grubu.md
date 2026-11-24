@@ -15,7 +15,7 @@ Bölüm: Yönetim paneli. Kart 0278 sırasında bulundu, o karta karıştırılm
 ## Sınırlar
 
 - Sayfaların adresleri ve izinleri değişmez.
-- Ekip ekranı kart 0274'tedir.
+- Ekip ekranı kart 0274'tedir. Kart 0274 "Ayarlar" grubunu açtı (Ekip ve Hesabım orada); bu kart öteki ayar ekranlarını gruba, taslağın sırasıyla Ekip'ten önce taşır.
 
 ## Bitti sayılır
 

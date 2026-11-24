@@ -1546,3 +1546,43 @@ Panelde menü öğesinin hedefi olarak sabit sayfayı ya da blog yazısını yaz
 - Servis: `cekirdek/moduller/icerik/arama.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "kayitlar": [{ "kimlik", "ad", "adresAdi" }], "dahaVar": false } }`.
 - Hatalar: `dogrulama`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/ekip-rolleri
+
+Yöneticinin rollerini verilen listeye getirir (kart 0274, karar 0178): eksik rol verilir, fazlası alınır, tek işlemde. Rol değişince yöneticinin açık oturumunda bir sonraki istekten geçerlidir. Tam yetkili son yöneticinin tam yetkili rolü alınamaz; yönetici kendi rollerini değiştiremez; en az bir rol kalır.
+
+- İzin: `ekip.rol-ata`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "roller": ["<rol kodu>", ...] }` (`ekipRolleriSemasi`).
+- Servis: `cekirdek/moduller/ekip/servis.ts` (`rolleriAyarla`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama` (`rol-gerekli`, `rol-yok`), `bulunamadi`, `is-kurali` (`son-sahip`, `kendi-hesabi`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/ekip-hesap-kapat
+
+Yöneticinin hesabını kapatır (kart 0274): giremez, açık oturumu ve yarım girişi hemen düşer. Kendi hesabı ve tam yetkili son yöneticinin hesabı kapatılamaz.
+
+- İzin: `ekip.hesap-kapat`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }` (`ekipKimlikSemasi`).
+- Servis: `cekirdek/moduller/ekip/servis.ts` (`yoneticiHesabiKapat`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `is-kurali` (`son-sahip`, `kendi-hesabi`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/ekip-iki-asama-sifirla
+
+Telefonunu ve yedek kodlarını kaybeden yöneticinin iki aşamalı girişini ve şifresini sıfırlar (kartlar 0274, 0053, karar 0178): kurulum, yedek kodlar, ara adımlar, açık şifre bağlantıları ve açık oturumlar silinir, eski şifre geçmez; ardından yöneticinin e-postasına yeni şifre bağlantısı gider (`sifreSifirlamaIste`). Yönetici yeni şifreyi koyunca girişte kurulum ekranına düşer. Kendi girişini sıfırlayamaz.
+
+- İzin: `ekip.iki-asama-sifirla`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }` (`ekipKimlikSemasi`).
+- Servis: `cekirdek/moduller/ekip/servis.ts` (`ikiAsamaliGirisiSifirla`).
+- Başarılı (200): `{ "basarili": true, "veri": { "baglanti": true } }`; bağlantı gidemediyse (sınır, sitenin adresi yok) `false`, sıfırlama yine geçerlidir.
+- Hatalar: `dogrulama`, `bulunamadi`, `is-kurali` (`kurulu-degil`, `kendi-hesabi`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/yedek-kodlari-yenile
+
+Yönetici kendi yedek kodlarını telefonundaki koduyla yeniler (kart 0053): eski yedek kodlar geçmez, yeni kodlar yanıtta bir kez döner. Yanlış kod giriş koduyla aynı deneme sınırına sayılır.
+
+- İzin: `ekip.kendi-hesabi.degistir`. Sınır: `siki`.
+- Girdi: `{ "kod": "<6 haneli kod>" }` (`yedekKodSemasi`).
+- Servis: `cekirdek/moduller/oturum/iki-asamali-giris.ts` (`yedekKodlariniYenile`).
+- Başarılı (200): `{ "basarili": true, "veri": { "yedekKodlari": ["…"] } }`.
+- Hatalar: `dogrulama`, `giris-hatasi` (yanlış kod), `istek-siniri`, `is-kurali` (kurulum yok), `oturum-yok`, `yetki`.

@@ -8,6 +8,8 @@ import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { baslangicRolleri } from "../../ekip/baslangic-rolleri.ts";
 import {
+  rolIzinleri,
+  roller,
   yoneticiGirisAdimlari,
   yoneticiler,
   yoneticiOturumlari,
@@ -46,10 +48,14 @@ const yeniYonetici = async () => {
   return { kimlik: hesapKimligi, eposta };
 };
 
-const yapan = async (): Promise<DegisikligiYapan> => ({
-  tur: "yonetici",
-  kimlik: (await yeniYonetici()).kimlik,
-});
+// İşi yapan yönetici hesap kapatma iznini taşır (servis izni işlemin içinde yeniden sorar, karar 0178). Rolü bu
+// dosyanın deneme rolüdür: tam yetkili değildir, son sahip sayımını etkilemez.
+let kapaticiRolu = "";
+const yapan = async (): Promise<DegisikligiYapan> => {
+  const { kimlik } = await yeniYonetici();
+  await vt.insert(yoneticiRolleri).values({ yonetici_kimligi: kimlik, rol_kimligi: kapaticiRolu });
+  return { tur: "yonetici", kimlik };
+};
 
 const kayitlari = (kimlik: string) =>
   vt.select().from(degisiklikKayitlari).where(eq(degisiklikKayitlari.kayit_kimligi, kimlik));
@@ -60,6 +66,13 @@ const sahipleriTemizle = () => vt.delete(yoneticiRolleri);
 
 beforeAll(async () => {
   ({ vt, sil } = await denemeSitesiAc("kayit"));
+  const [rol] = await vt
+    .insert(roller)
+    .values({ kod: "deneme-hesap-kapatici", tam_yetki: false })
+    .returning({ kimlik: roller.kimlik });
+  if (rol === undefined) throw new Error("Deneme rolü açılamadı.");
+  kapaticiRolu = rol.kimlik;
+  await vt.insert(rolIzinleri).values({ rol_kimligi: rol.kimlik, izin: "ekip.hesap-kapat" });
 });
 afterAll(() => sil());
 
@@ -304,7 +317,8 @@ describe("hesap kapatma", () => {
       const kalan = await vt.execute(sql`
         select count(*)::int as sayi from yonetici_rolleri r
         join yoneticiler y on y.kimlik = r.yonetici_kimligi
-        where y.silinme_zamani is null`);
+        join roller rol on rol.kimlik = r.rol_kimligi
+        where y.silinme_zamani is null and rol.tam_yetki`);
       expect(kalan.rows[0]).toEqual({ sayi: 1 });
     }
   });

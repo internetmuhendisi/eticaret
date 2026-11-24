@@ -14,6 +14,9 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `ekip.kendi-hesabi.gor` | yonetici | kendi | Yönetici kendi hesabını görür. |
 | `ekip.gor` | yonetici | tumu | Ekipteki bütün yöneticileri görür. |
 | `ekip.rol-ata` | yonetici | tumu | Yöneticilere rol verir ve alır. |
+| `ekip.hesap-kapat` | yonetici | tumu | Yöneticinin hesabını kapatır: giremez, açık oturumu kapanır (kart 0274). Kendi hesabını ve son mağaza sahibininkini kapatamaz. |
+| `ekip.iki-asama-sifirla` | yonetici | tumu | Telefonunu ve yedek kodlarını kaybeden yöneticinin iki aşamalı girişini sıfırlar; yönetici bir sonraki girişte yeniden kurar (kartlar 0274, 0053). Kendisininkini sıfırlayamaz. |
+| `ekip.kendi-hesabi.degistir` | yonetici | kendi | Yönetici kendi yedek kodlarını, telefonundaki kodu girerek yeniler (kart 0053). |
 | `etiket.gor` | yonetici | tumu | Etiketleri ve ürünlerini görür. |
 | `etiket.degistir` | yonetici | tumu | Etiket ekler ve değiştirir. |
 | `etiket.sil` | yonetici | tumu | Etiket siler: ürünlerden kalkar. |
@@ -79,6 +82,8 @@ Her sitede hazır gelir. Ekranda görünen adları metin dosyasındadır (`yonet
 | Kod | Görünen ad | İzinler |
 |---|---|---|
 | `magaza-sahibi` | Mağaza sahibi | bütün yönetici izinleri |
-| `gorevli` | Görevli | ekip.kendi-hesabi.gor, urun.gor, urun.degistir, kategori.gor, kategori.degistir, marka.gor, marka.degistir, etiket.gor, etiket.degistir, fiyat.gor, stok.gor, stok.duzelt, ozellik.gor, ozellik.degistir, yorum.gor, yorum.onayla, odeme-yontemi.gor, siparis.gor, siparis.yonet, dosya.gor |
+| `gorevli` | Görevli | ekip.kendi-hesabi.gor, urun.gor, urun.degistir, kategori.gor, kategori.degistir, marka.gor, marka.degistir, etiket.gor, etiket.degistir, fiyat.gor, stok.gor, stok.duzelt, ozellik.gor, ozellik.degistir, yorum.gor, yorum.onayla, odeme-yontemi.gor, siparis.gor, siparis.yonet, dosya.gor, ekip.kendi-hesabi.degistir |
+| `siparis-gorevlisi` | Sipariş görevlisi | ekip.kendi-hesabi.gor, ekip.kendi-hesabi.degistir, siparis.gor, siparis.yonet, siparis.havale-onayla, musteri.gor, odeme-yontemi.gor, dosya.gor |
+| `icerik-editoru` | İçerik editörü | ekip.kendi-hesabi.gor, ekip.kendi-hesabi.degistir, icerik.gor, icerik.degistir, icerik.sil, duzen.gor, duzen.degistir, menu.gor, menu.degistir, dosya.gor, urun.gor |
 
 Tam yetkili son yöneticinin rolü alınamaz. Görevlinin izinleri ürün ve sipariş gibi modüller geldikçe artar.

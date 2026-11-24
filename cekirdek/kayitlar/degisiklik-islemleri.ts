@@ -134,6 +134,10 @@ export const degisiklikIslemleri = [
   "sabit-sayfa.eklendi",
   "sabit-sayfa.degisti",
   "sabit-sayfa.silindi",
+  // Ekip (kartlar 0274, 0053): yöneticinin iki aşamalı girişi sıfırlandı; yönetici kendi yedek kodlarını yeniledi
+  // (kodlar kayda girmez).
+  "yonetici.iki-asama-sifirlandi",
+  "yonetici.yedek-kodlari-yenilendi",
 ] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 

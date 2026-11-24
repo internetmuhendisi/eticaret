@@ -7,6 +7,7 @@ import { gunluk } from "../../izleme/gunluk.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import { girisAdimiSuresiSaniye, ikiAsamaDenemeSiniri } from "../../kayitlar/oturum.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
+import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import {
   yoneticiGirisAdimlari,
   yoneticiIkiAsama,
@@ -336,3 +337,45 @@ export const kurulumuOnayla = async (
   gunluk.bilgi("İki aşamalı giriş kuruldu.", { hesapTuru: "yonetici", eposta });
   return sonuc;
 };
+
+// Kart 0053 (karar 0178): oturumu açık yönetici kendi yedek kodlarını yeniler. Telefonundaki zamanlı kodu ister: açık
+// kalmış bir oturumu ele geçiren, kodları yenileyip hesaba kalıcı giriş kazanamasın. Yanlış kod giriş koduyla aynı
+// sınıra sayılır; kod ikinci kez geçmez (son adım). Eski yedek kodların hepsi silinir, yenileri bir kez döner. Hepsi tek
+// işlemde: yeni kodlar yazılamazsa eskiler de kalır.
+export const yedekKodlariniYenile = (
+  vt: Veritabani,
+  girdi: { hesapKimligi: string; eposta: string; kod: string; baglanti: string },
+): Promise<string[]> =>
+  sinirliKodDenemesi(girdi.hesapKimligi, girdi.eposta, girdi.baglanti, () =>
+    vt.transaction(async (islem) => {
+      const kayit = await ikiAsamayiKilitle(islem, girdi.hesapKimligi);
+      if (kayit === undefined) throw new BilinenHata("is-kurali");
+      if (!altiHaneliMi(girdi.kod)) return null;
+      const gizli = gizliyiCoz(kayit.sifreli, girdi.hesapKimligi);
+      const kodAdimi = kodunAdimi(gizli, girdi.kod, kayit.sonAdim);
+      if (kodAdimi === null) return null;
+      await islem
+        .update(yoneticiIkiAsama)
+        .set({ son_kod_adimi: kodAdimi, guncellenme_zamani: new Date() })
+        .where(eq(yoneticiIkiAsama.yonetici_kimligi, girdi.hesapKimligi));
+      await islem
+        .delete(yoneticiYedekKodlari)
+        .where(eq(yoneticiYedekKodlari.yonetici_kimligi, girdi.hesapKimligi));
+      const yedekKodlari = yedekKodlariUret();
+      await islem.insert(yoneticiYedekKodlari).values(
+        yedekKodlari.map((yedek) => ({
+          yonetici_kimligi: girdi.hesapKimligi,
+          kod_ozeti: yedekKodOzeti(yedek),
+        })),
+      );
+      // Kodlar kayda girmez: kim, ne zaman yeniledi.
+      await degisikligiKaydet(islem, {
+        kim: { tur: "yonetici", kimlik: girdi.hesapKimligi },
+        islem: "yonetici.yedek-kodlari-yenilendi",
+        kayit: { tur: "yonetici", kimlik: girdi.hesapKimligi },
+        eski: null,
+        yeni: { adet: yedekKodlari.length },
+      });
+      return yedekKodlari;
+    }),
+  );

@@ -38,6 +38,7 @@
     "yonetici-ac": "node --env-file=.env komutlar/yonetici-ac.mts",
     "sunucu-yonetici-ac": "node komutlar/sunucu-yonetici-ac.mts",
     "sunucu-yonetici-kapat": "node komutlar/sunucu-yonetici-kapat.mts",
+    "sunucu-yonetici-iki-asama-sifirla": "node komutlar/sunucu-yonetici-iki-asama-sifirla.mts",
     "panel-denemesi": "node komutlar/panel-denemesi.mts",
     "veritabani-degisikligi-uret": "drizzle-kit generate",
     "veritabani-guncelle": "node --env-file=.env komutlar/veritabani-guncelle.mts",

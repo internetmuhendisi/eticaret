@@ -77,3 +77,10 @@ export const guvenliDonus = (deger: string | null | undefined): string => {
   if (origin !== cozumKoku || !panelde || girisOncesi) return panelAdresi;
   return `${pathname}${search}`;
 };
+
+// Ekip (kart 0274): kullanıcılar, roller ve kullanıcının ayrıntısı (kimlik adresin sorgusunda); yöneticinin kendi hesabı.
+export const ekipAdresi = `${panelAdresi}/ekip`;
+export const ekipRolleriAdresi = `${ekipAdresi}/roller`;
+export const ekipKisiAdresi = (kimlik: string): string =>
+  `${ekipAdresi}/kisi?kimlik=${encodeURIComponent(kimlik)}`;
+export const hesabimAdresi = `${panelAdresi}/hesabim`;
