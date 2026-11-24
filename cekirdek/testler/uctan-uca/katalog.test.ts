@@ -1176,7 +1176,7 @@ for (const genislik of [320, 390, 768]) {
 }
 
 // Kart 0191: sayfa yolunun her bağlantısı 44 × 44 px basılır, kısa adlı komşu adımların ve iki satıra inen yolun
-// alanları üst üste binmez. Katalogdaki ikinci yol kısa adları ve uzun bir adı taşır.
+// alanları üst üste binmez. Katalogdaki ikinci yol kısa adları ve uzun bir adı taşır; üçüncüsü tek satırlıdır (kart 0272).
 for (const genislik of [320, 390, 768]) {
   test(`sayfa yolu: her bağlantı 44 × 44 px basılır, komşular çakışmaz (${genislik} px)`, async ({
     page,
@@ -1184,19 +1184,35 @@ for (const genislik of [320, 390, 768]) {
     await page.setViewportSize({ width: genislik, height: 900 });
     await ac(page, `${katalogAdresi}/sayfa-yolu`);
     const yollar = page.getByRole("navigation", { name: metin("ortak.parca.sayfaYolu") });
-    expect(await yollar.count()).toBe(2);
-    if (genislik === 320) {
-      // Ölçüm boşa gitmesin: uzun yol bu genişlikte iki satıra iner.
-      const satirlar = await yollar
-        .nth(1)
+    expect(await yollar.count()).toBe(3);
+    const satirSayisi = (sira: number) =>
+      yollar
+        .nth(sira)
         .getByRole("listitem")
         .evaluateAll(
-          (liste) => new Set(liste.map((li) => Math.round(li.getBoundingClientRect().top))).size,
+          // Satır adımın orta noktasıyla sayılır: bağlantı ve son adımın yüksekliği farklıdır, ortalıdır.
+          (liste) =>
+            new Set(
+              liste.map((li) => {
+                const kutu = li.getBoundingClientRect();
+                return Math.round(kutu.top + kutu.height / 2);
+              }),
+            ).size,
         );
-      expect(satirlar).toBeGreaterThanOrEqual(2);
+    if (genislik === 320) {
+      // Ölçüm boşa gitmesin: uzun yol bu genişlikte iki satıra iner.
+      expect(await satirSayisi(1)).toBeGreaterThanOrEqual(2);
+      // Tek satırlı yol (kart 0272) alt satıra inmez, son adım üç noktayla kısalır.
+      expect(await satirSayisi(2)).toBe(1);
+      expect(
+        await yollar
+          .nth(2)
+          .locator('[aria-current="page"]')
+          .evaluate((son) => son.scrollWidth > son.clientWidth),
+      ).toBe(true);
     }
     const baglantilar = await yollar.getByRole("link").all();
-    expect(baglantilar.length).toBe(6);
+    expect(baglantilar.length).toBe(8);
     for (const baglanti of baglantilar) {
       expect(await basilmayanNoktalar(baglanti), (await baglanti.textContent()) ?? "").toEqual([]);
     }
