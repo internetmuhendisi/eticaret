@@ -294,6 +294,18 @@
       "blogKategorileri": {
         "ad": "Blog kategorileri",
         "aciklama": "Yazıları gruplar. Vitrinde blog listesinin üstünde ve ana sayfanın blog bölümünde seçilebilir."
+      },
+      "sayfalar": {
+        "ad": "Sayfalar",
+        "aciklama": "Hakkımızda, iletişim gibi sabit sayfalar. Bir sayfayı menüye bağlayınca vitrinde görünür."
+      },
+      "yeniSayfa": {
+        "ad": "Yeni sayfa",
+        "aciklama": "Sayfa taslak olarak kaydedilir; yayına alınca /sayfa/ adresinde açılır."
+      },
+      "sabitSayfa": {
+        "ad": "Sayfa",
+        "aciklama": "Kaydedince vitrinde hemen güncellenir."
       }
     },
     "eylem": {
@@ -318,7 +330,8 @@
       "fisYazdirYeniSekme": "Fiş yazdır (yeni sekmede açılır)",
       "sifreSifirlamaGonder": "Şifre sıfırlama bağlantısı gönder",
       "yaziEkle": "Yazı ekle",
-      "blogKategorileri": "Blog kategorileri"
+      "blogKategorileri": "Blog kategorileri",
+      "sayfaEkle": "Sayfa ekle"
     },
     "rol": {
       "magaza-sahibi": "Mağaza sahibi",
@@ -679,6 +692,7 @@
         "marka": "Marka",
         "urun": "Ürün",
         "sayfa": "Sayfa",
+        "blog-yazisi": "Blog yazısı",
         "adres": "Adres",
         "baslik": "Başlık"
       },
@@ -2481,6 +2495,54 @@
         "siralama-gecersiz": "Liste siz sıralarken değişti; sayfa yenilendi, yeniden sıralayın.",
         "kategori-siniri": "Blog kategorisi sınırına ulaşıldı; kullanmadığınız bir kategoriyi silin."
       }
+    },
+    "sabitSayfa": {
+      "liste": "Sayfalar",
+      "baslik": "Başlık",
+      "adresAdi": "Adres adı",
+      "adresAdiAciklamasi": "Sayfanın vitrindeki adresi. Değiştirirseniz eski adres yenisine yönlenir.",
+      "icerik": "İçerik",
+      "aciklama": "Arama motoru açıklaması",
+      "aciklamaAciklamasi": "Arama sonuçlarında sayfanın altında görünen kısa metin. Boşsa içeriğin başı kullanılır.",
+      "yayinDurumu": "Yayın durumu",
+      "kaydet": "Kaydet",
+      "ekle": "Sayfayı kaydet",
+      "eklendi": "Sayfa kaydedildi.",
+      "kaydedildi": "Sayfa kaydedildi.",
+      "silindi": "Sayfa silindi.",
+      "sil": "Sil",
+      "silAdli": "Sil: {baslik}",
+      "kaldirBasligi": "Sayfayı kaldır",
+      "kaldirAciklamasi": "Silinen sayfa vitrinden kalkar, adresi bulunamadı verir. Menüdeki öğesi vitrinde görünmez, Menüler ekranında işaretli kalır.",
+      "silOnay": {
+        "baslik": "\"{baslik}\" silinsin mi?",
+        "aciklama": "Sayfa vitrinden kalkar ve geri getirilemez. Menüdeki öğesi vitrinde görünmez."
+      },
+      "menuyeEkle": "Menüye ekle",
+      "menuAciklamasi": "Sayfa silinir ya da taslağa alınırsa menüdeki öğesi vitrinde görünmez, Menüler ekranında işaretlenir.",
+      "menudeDegil": "Menüde değil",
+      "menudeDegilUzun": "Bu sayfa hiçbir menüde değil. Ziyaretçilerin bulması için bir menüye ekleyin.",
+      "ayrac": " › ",
+      "bos": {
+        "baslik": "Henüz sayfa yok",
+        "aciklama": "Hakkımızda, iletişim gibi sayfalar yazın, sonra menüye ekleyin."
+      },
+      "durum": {
+        "yayinda": "Yayında",
+        "taslak": "Taslak"
+      },
+      "bolum": {
+        "sayfa": "Sayfa",
+        "yayin": "Yayın",
+        "menuler": "Menüler"
+      },
+      "hata": {
+        "kayda-uygun-degil": "Bu metin kaydedilemez; gizli bilgiye benzeyen kısmı çıkarın.",
+        "adres-adi-bicimi": "Yalnız küçük harf, rakam ve tire kullanın.",
+        "adres-adi-tekrar": "Bu adres başka bir sayfada kullanılıyor; başka bir ad yazın.",
+        "sayfa-degisti": "Sayfa siz düzenlerken değişti. Sayfa yenilendi; değişikliklerinizi yeniden yapın.",
+        "sayfa-siniri": "Sayfa sınırına ulaşıldı; kullanmadığınız bir sayfayı silin."
+      }
     }
   },
   "vitrin": {
@@ -2988,6 +3050,7 @@
         "etiket": "“{ad}” etiketli ürünleri {magaza} mağazasında inceleyin.",
         "urun": "{ad} ürününü {magaza} mağazasında inceleyin.",
         "blog-yazisi": "{ad}: {magaza} blogundan bir yazı.",
+        "sayfa": "{ad}: {magaza}.",
         "blog": "{magaza} blogu: rehberler, bakım önerileri ve mağazadan haberler."
       }
     },

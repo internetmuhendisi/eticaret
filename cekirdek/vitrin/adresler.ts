@@ -76,6 +76,8 @@ export const kayitAdresleri = {
   urun: (adresAdi: string) => `/urun/${adresAdi}`,
   // Kart 0272: blog yazısı.
   "blog-yazisi": (adresAdi: string) => `/blog/${adresAdi}`,
+  // Kart 0273: sabit sayfa. Önek sayfa adlarını ürün, kategori ve sistem adresleriyle çakıştırmaz (karar 0157).
+  sayfa: (adresAdi: string) => `/sayfa/${adresAdi}`,
 } as const satisfies Record<AdresliKayitTuru, (adresAdi: string) => string>;
 
 // Müşteri girişinden sonra dönülecek adres (kart 0139: yorum yazmak için girişe giden müşteri ürüne döner).

@@ -120,6 +120,26 @@
         ]
       },
       {
+        "metin": "Kurumsal",
+        "hedef": {
+          "tur": "baslik"
+        },
+        "altlar": [
+          {
+            "hedef": {
+              "tur": "sayfa",
+              "adresAdi": "hakkimizda"
+            }
+          },
+          {
+            "hedef": {
+              "tur": "sayfa",
+              "adresAdi": "iletisim"
+            }
+          }
+        ]
+      },
+      {
         "metin": "Sözleşmeler",
         "hedef": {
           "tur": "baslik"

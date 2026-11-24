@@ -25,11 +25,11 @@ export const menuHatalari = [
   // Silinmemiş başka bir menü bu kodu kullanıyor.
   "kod-tekrar",
   "baglanti-gecersiz",
-  // Hedef türü bugün seçilemez (sayfa: düz sayfalar gelince açılır).
+  // Hedef türü seçilemez (kayıtta kapalı; bugün hepsi açık).
   "hedef-kullanilamaz",
   // Adres ve başlığın metni zorunludur.
   "metin-gerekli",
-  // Bağlanılan kategori, marka ya da ürün yok ya da silinmiş.
+  // Bağlanılan kategori, marka, ürün, sayfa ya da blog yazısı yok ya da silinmiş.
   "hedef-yok",
   // Üst öğe yok, silinmiş ya da başka menüde.
   "ust-gecersiz",
@@ -92,6 +92,7 @@ export const menuHedefi = z
     z.strictObject({ tur: z.literal("marka"), kimlik: kimlikSemasi }),
     z.strictObject({ tur: z.literal("urun"), kimlik: kimlikSemasi }),
     z.strictObject({ tur: z.literal("sayfa"), kimlik: kimlikSemasi }),
+    z.strictObject({ tur: z.literal("blog-yazisi"), kimlik: kimlikSemasi }),
     adresHedefi,
     baslikHedefi,
   ])
@@ -150,9 +151,13 @@ const baslangicHedefi = z.discriminatedUnion("tur", [
   z.strictObject({ tur: z.literal("kategori"), adresAdi }),
   z.strictObject({ tur: z.literal("marka"), adresAdi }),
   z.strictObject({ tur: z.literal("urun"), adresAdi }),
+  // Kart 0273: sitenin başlangıç sayfası (baslangic/sayfalar.json).
+  z.strictObject({ tur: z.literal("sayfa"), adresAdi }),
   adresHedefi,
   baslikHedefi,
 ]);
+
+export type BaslangicKayitHedefi = Exclude<KayitliMenuHedefi, "blog-yazisi">;
 
 export type BaslangicOgesi = {
   metin?: string;
@@ -209,10 +214,11 @@ export const menuBaslangicSemasi = z
   });
 export type MenuBaslangici = z.output<typeof menuBaslangicSemasi>;
 
-// Başlangıç menülerinin bağlandığı kayıtlar başlangıç kataloğunda olmalı: katalog kurulmadan menü bağlanamaz.
+// Başlangıç menülerinin bağlandığı kayıtlar başlangıç kataloğunda (sayfa: başlangıç sayfalarında) olmalı: katalog ve
+// sayfalar kurulmadan menü bağlanamaz. Başlangıç menüsü blog yazısına bağlanmaz (şema kabul etmez).
 export const menuBaslangicKurallari = (
   menuler: MenuBaslangici,
-  katalog: Record<KayitliMenuHedefi, ReadonlySet<string>>,
+  katalog: Record<BaslangicKayitHedefi, ReadonlySet<string>>,
 ): { yer: (string | number)[]; kod: MenuHatasi }[] => {
   const sorunlar: { yer: (string | number)[]; kod: MenuHatasi }[] = [];
   const tara = (ogeler: BaslangicOgesi[], yer: (string | number)[]) => {

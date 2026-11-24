@@ -17,6 +17,8 @@ import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
+import { sabitSayfaServisi } from "../../icerik/sayfa.ts";
+import { icerikServisi } from "../../icerik/servis.ts";
 import { kategoriler } from "../../kategori/model.ts";
 import { kategoriDegistir, kategoriEkle, kategoriSil } from "../../kategori/servis.ts";
 import { markaServisi } from "../../marka/servis.ts";
@@ -24,6 +26,7 @@ import { urunServisi, urunuOku } from "../../urun/servis.ts";
 import { menuler, menuOgeleri } from "../model.ts";
 import { ogeGirdisi } from "../semalar.ts";
 import {
+  kayitlarinMenuYerleri,
   type MenuDali,
   menuDegistir,
   menuEkle,
@@ -37,6 +40,7 @@ import {
 } from "../servis.ts";
 
 const urunler = urunServisi(() => "Europe/Istanbul");
+const icerik = icerikServisi(() => "Europe/Istanbul");
 const yonetici = (): DegisikligiYapan => ({ tur: "yonetici", kimlik: randomUUID() });
 
 const temizlenecekler: (() => Promise<void>)[] = [];
@@ -143,29 +147,33 @@ describe("hedefler", () => {
     expect(await vitrinMenusu(vt, "olmayan")).toBeUndefined();
   });
 
-  it("sayfa hedefi bugün seçilemez; olmayan, silinmiş ve bozuk kimlikli hedef reddedilir", async () => {
+  it("olmayan, silinmiş ve bozuk kimlikli hedef reddedilir (sayfa ve blog yazısı da)", async () => {
     const vt = await siteAc();
     const menu = await elleMenu(vt);
-    expect(kullanilabilirMenuHedefleri.sayfa).toBe(false);
-    // Panel aynı şemayı kullanır: hata ekranda da aynı koddur.
-    const sema = ogeGirdisi.safeParse({ hedef: { tur: "sayfa", kimlik: randomUUID() } });
-    expect(sema.error?.issues.map((sorun) => [sorun.path.join("."), sorun.message])).toEqual([
-      ["hedef.tur", "hedef-kullanilamaz"],
-    ]);
-    expect(
-      await hatasi(
-        ogeEkle(vt, yonetici(), menu, { hedef: { tur: "sayfa", kimlik: randomUUID() } }),
-      ),
-    ).toEqual({ kod: "dogrulama", ayrinti: [{ alan: "hedef.tur", kod: "hedef-kullanilamaz" }] });
+    // Kart 0273: bütün hedef türleri seçilebilir; şema kullanılamayan türü reddetmez.
+    expect(Object.values(kullanilabilirMenuHedefleri).every(Boolean)).toBe(true);
+    expect(ogeGirdisi.safeParse({ hedef: { tur: "sayfa", kimlik: randomUUID() } }).success).toBe(
+      true,
+    );
     const silinen = await kategoriEkle(vt, yonetici(), { ad: "Eski" });
     await kategoriSil(vt, yonetici(), silinen);
     const silinenUrun = await urun(vt);
     await urunler.urunSil(vt, yonetici(), silinenUrun);
+    const { kimlik: silinenSayfa } = await sabitSayfaServisi.sayfaEkle(vt, yonetici(), {
+      baslik: "Eski sayfa",
+    });
+    await sabitSayfaServisi.sayfaSil(vt, yonetici(), silinenSayfa);
+    const { kimlik: silinenYazi } = await icerik.yaziEkle(vt, yonetici(), { baslik: "Eski yazı" });
+    await icerik.yaziSil(vt, yonetici(), silinenYazi);
     for (const hedef of [
       { tur: "kategori", kimlik: silinen },
       { tur: "kategori", kimlik: randomUUID() },
       { tur: "marka", kimlik: randomUUID() },
       { tur: "urun", kimlik: silinenUrun },
+      { tur: "sayfa", kimlik: silinenSayfa },
+      { tur: "sayfa", kimlik: randomUUID() },
+      { tur: "blog-yazisi", kimlik: silinenYazi },
+      { tur: "blog-yazisi", kimlik: randomUUID() },
     ] as const) {
       expect(await hatasi(ogeEkle(vt, yonetici(), menu, { hedef }))).toEqual({
         kod: "dogrulama",
@@ -314,6 +322,100 @@ describe("silinen ve açılmayan hedef", () => {
   });
 });
 
+describe("sabit sayfa ve blog yazısı (kart 0273)", () => {
+  it("öğe sayfaya ve blog yazısına bağlanır; boş metin başlığı alır; taslak sayfa, silinen kayıt ve kapalı blog görünmez", async () => {
+    const vt = await siteAc();
+    const menu = await elleMenu(vt);
+    const { kimlik: sayfa } = await sabitSayfaServisi.sayfaEkle(vt, yonetici(), {
+      baslik: "Hakkımızda",
+      durum: "yayinda",
+    });
+    const { kimlik: yazi } = await icerik.yaziEkle(vt, yonetici(), {
+      baslik: "Kış rehberi",
+      durum: "yayinda",
+    });
+    const sayfaOgesi = await ogeEkle(vt, yonetici(), menu, {
+      hedef: { tur: "sayfa", kimlik: sayfa },
+    });
+    const yaziOgesi = await ogeEkle(vt, yonetici(), menu, {
+      hedef: { tur: "blog-yazisi", kimlik: yazi.toUpperCase() },
+    });
+    // Satır kendi alanını doldurur, kimlik küçük harfle (karar 0112).
+    const [satir] = await vt.select().from(menuOgeleri).where(eq(menuOgeleri.kimlik, yaziOgesi));
+    expect(satir?.blog_yazisi_kimligi).toBe(yazi);
+    expect(satir?.sayfa_kimligi).toBeNull();
+    // Blog açıkken ikisi de görünür; blog ayarı verilmezse kapalı sayılır.
+    expect(ozet(await vitrinMenusu(vt, "ana-menu", { blogAcik: true }))).toEqual([
+      ["Hakkımızda", "sayfa hakkimizda", []],
+      ["Kış rehberi", "blog-yazisi kis-rehberi", []],
+    ]);
+    expect(ozet(await vitrinMenusu(vt, "ana-menu"))).toEqual([
+      ["Hakkımızda", "sayfa hakkimizda", []],
+    ]);
+    const panelde = async (blogAcik: boolean) => {
+      const okunan = await panelMenusu(vt, menu, { blogAcik });
+      return "ogeler" in okunan
+        ? okunan.ogeler.map((oge) => [oge.gorunenMetin, oge.durum, oge.kayit?.adresAdi])
+        : [];
+    };
+    expect(await panelde(false)).toEqual([
+      ["Hakkımızda", "gecerli", "hakkimizda"],
+      ["Kış rehberi", "hedef-gorunmuyor", "kis-rehberi"],
+    ]);
+    // Ad değişince menü de değişir; taslağa alınan sayfa vitrinde görünmez, panelde işaretlenir.
+    await sabitSayfaServisi.sayfaDegistir(vt, yonetici(), sayfa, {
+      baslik: "Biz kimiz",
+      durum: "taslak",
+    });
+    await icerik.yaziDegistir(vt, yonetici(), yazi, { durum: "taslak" });
+    expect(ozet(await vitrinMenusu(vt, "ana-menu", { blogAcik: true }))).toEqual([]);
+    expect(await panelde(true)).toEqual([
+      ["Biz kimiz", "hedef-gorunmuyor", "hakkimizda"],
+      ["Kış rehberi", "hedef-gorunmuyor", "kis-rehberi"],
+    ]);
+    // Silinen sayfanın ve yazının öğesi yerinde kalır: vitrinde görünmez, panelde "hedef silindi".
+    await sabitSayfaServisi.sayfaDegistir(vt, yonetici(), sayfa, { durum: "yayinda" });
+    await sabitSayfaServisi.sayfaSil(vt, yonetici(), sayfa);
+    await icerik.yaziSil(vt, yonetici(), yazi);
+    expect(ozet(await vitrinMenusu(vt, "ana-menu", { blogAcik: true }))).toEqual([]);
+    expect(await panelde(true)).toEqual([
+      ["Biz kimiz", "hedef-silindi", "hakkimizda"],
+      ["Kış rehberi", "hedef-silindi", "kis-rehberi"],
+    ]);
+    expect((await vt.select().from(menuOgeleri)).map((oge) => oge.kimlik).sort()).toEqual(
+      [sayfaOgesi, yaziOgesi].sort(),
+    );
+  });
+
+  it("kayıtların menü yerleri: menünün adı ve alt öğede üstün metni; silinmiş öğe ve menü sayılmaz", async () => {
+    const vt = await siteAc();
+    const menu = await elleMenu(vt);
+    const alt = await menuEkle(vt, yonetici(), { kod: "alt-bilgi", ad: "Alt bilgi", tur: "elle" });
+    const { kimlik: sayfa } = await sabitSayfaServisi.sayfaEkle(vt, yonetici(), { baslik: "S" });
+    const { kimlik: oteki } = await sabitSayfaServisi.sayfaEkle(vt, yonetici(), { baslik: "T" });
+    await ogeEkle(vt, yonetici(), menu, { hedef: { tur: "sayfa", kimlik: sayfa } });
+    const baslik = await ogeEkle(vt, yonetici(), alt, {
+      metin: "Kurumsal",
+      hedef: { tur: "baslik" },
+    });
+    await ogeEkle(vt, yonetici(), alt, { hedef: { tur: "sayfa", kimlik: sayfa }, ust: baslik });
+    const silinecek = await ogeEkle(vt, yonetici(), alt, {
+      hedef: { tur: "sayfa", kimlik: oteki },
+    });
+    await ogeSil(vt, yonetici(), silinecek);
+    const yerler = await kayitlarinMenuYerleri(vt, "sayfa");
+    expect(yerler.get(sayfa)).toEqual([
+      { menu: alt, menuAdi: "Alt bilgi", ust: "Kurumsal" },
+      { menu, menuAdi: "Ana menü", ust: null },
+    ]);
+    expect(yerler.has(oteki)).toBe(false);
+    await menuSil(vt, yonetici(), alt);
+    expect((await kayitlarinMenuYerleri(vt, "sayfa")).get(sayfa)).toEqual([
+      { menu, menuAdi: "Ana menü", ust: null },
+    ]);
+  });
+});
+
 describe("sıralama ve derinlik", () => {
   it("yeni öğe kardeşlerin sonuna gelir; sıralama kardeşlerin hepsini ister ve kayda girer", async () => {
     const vt = await siteAc();
@@ -448,15 +550,18 @@ describe("sıralama ve derinlik", () => {
     expect(
       await veritabaniReddi(vt.insert(menuOgeleri).values(satir({ menu_kimligi: agac }))),
     ).toMatch(/elle kurulan menude/);
-    // Hedef türü listesi kayıtla aynı: kullanılabilen her tür yazılır, sayfa ve tanımsız tür yazılmaz.
+    // Hedef türü listesi kayıtla aynı: kullanılabilen her tür yazılır, tanımsız tür yazılmaz.
     const kategori = await kategoriEkle(vt, yonetici(), { ad: "K" });
     const marka = await markaServisi.ekle(vt, yonetici(), { ad: "M" });
     const urunKimligi = await urun(vt);
+    const { kimlik: sayfa } = await sabitSayfaServisi.sayfaEkle(vt, yonetici(), { baslik: "S" });
+    const { kimlik: yazi } = await icerik.yaziEkle(vt, yonetici(), { baslik: "Y" });
     const alanlar = {
       kategori: { kategori_kimligi: kategori },
       marka: { marka_kimligi: marka },
       urun: { urun_kimligi: urunKimligi },
-      sayfa: {},
+      sayfa: { sayfa_kimligi: sayfa },
+      "blog-yazisi": { blog_yazisi_kimligi: yazi },
       adres: { adres: "/a" },
       baslik: {},
     } as const;
@@ -469,6 +574,10 @@ describe("sıralama ve derinlik", () => {
       satir({ hedef_turu: "baska" }),
       satir({ hedef_turu: "kategori" }),
       satir({ hedef_turu: "baslik", kategori_kimligi: kategori }),
+      // Kart 0273: sayfa ve blog yazısı kendi alanıyla, başka türün alanını doldurmaz.
+      satir({ hedef_turu: "sayfa" }),
+      satir({ hedef_turu: "blog-yazisi", sayfa_kimligi: sayfa }),
+      satir({ hedef_turu: "urun", urun_kimligi: urunKimligi, blog_yazisi_kimligi: yazi }),
       satir({ hedef_turu: "adres", adres: "/a", metin: null }),
       satir({ hedef_turu: "baslik", yeni_sekme: true }),
     ]) {

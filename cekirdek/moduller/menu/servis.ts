@@ -2,14 +2,15 @@
 //
 // - Menü: kod, ad ve tür. Kod ve tür açılırken verilir, değişmez. Kategori menüsü (kategori-agaci) öğe
 //   saklamaz, kategori ağacından derinlik sınırına kadar kurulur.
-// - Öğe: bir hedefe (kategori, marka, ürün, adres, başlık; sayfa düz sayfalarla açılır) bağlanır, sıralanır,
+// - Öğe: bir hedefe (kategori, marka, ürün, sabit sayfa, blog yazısı, adres, başlık; kart 0273) bağlanır, sıralanır,
 //   bir alt düzey açılır. Derinlik kayıttadır (cekirdek/kayitlar/menu.ts).
 // - Yarış: bütün yazmalar aynı işlem kilidini alır. Veritabanındaki ağaç tetikleyicisi (değişiklik 0026) aynı
 //   kilidi alır: servisi atlayan yazılar da sırayla denetlenir. Bağlanılan kayıt paylaşımlı kilitlenir: aynı
 //   anda silinen kayda bağlanılmaz, silme bitene kadar beklenir. Kilit sırası: menü, sonra kayıtların
 //   satırları; kategori, marka ve ürün silmesi menü kilidini almaz.
 // - Bağlı kayıt sonradan silinirse öğe yerinde kalır: vitrinde görünmez (altlarıyla), panelde "hedef-silindi"
-//   olarak görünür. Vitrinde açılmayan ürün de ("hedef-gorunmuyor") görünmez. Görünür altı kalmayan başlık
+//   olarak görünür. Vitrinde açılmayan ürün, taslak sayfa ve vitrinde olmayan blog yazısı (blog kapalıyken hepsi) da
+//   ("hedef-gorunmuyor") görünmez. Görünür altı kalmayan başlık
 //   da görünmez ("bos-baslik").
 // - Silme işaretle yapılır: silinen öğenin altları da silinir, silinen menünün öğeleri de.
 // - Her yazım değişiklik kaydına aynı veritabanı işleminde girer (karar 0045).
@@ -23,6 +24,7 @@ import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import {
   type KayitliMenuHedefi,
+  kullanilabilirMenuHedefleri,
   type MenuHedefTuru,
   type MenuTuru,
   menuSinirlari,
@@ -30,6 +32,9 @@ import {
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
+import { blogYazilari, sabitSayfalar } from "../icerik/model.ts";
+import { sabitSayfaVitrinde } from "../icerik/sayfa.ts";
+import { blogYazisiVitrinde } from "../icerik/vitrin.ts";
 import { kategoriler } from "../kategori/model.ts";
 import { kategorileriOku } from "../kategori/servis.ts";
 import { markalar } from "../marka/model.ts";
@@ -108,13 +113,21 @@ const yaz = <T>(vt: Veritabani | VeritabaniIslemi, is: (islem: VeritabaniIslemi)
     return is(islem);
   });
 
-const kayitliTablolar = { kategori: kategoriler, marka: markalar, urun: urunler } as const;
+const kayitliTablolar = {
+  kategori: kategoriler,
+  marka: markalar,
+  urun: urunler,
+  sayfa: sabitSayfalar,
+  "blog-yazisi": blogYazilari,
+} as const satisfies Record<KayitliMenuHedefi, unknown>;
 
 const hedefSatiri = (hedef: SaklananHedef) => ({
   hedef_turu: hedef.tur,
   kategori_kimligi: hedef.tur === "kategori" ? hedef.kimlik : null,
   marka_kimligi: hedef.tur === "marka" ? hedef.kimlik : null,
   urun_kimligi: hedef.tur === "urun" ? hedef.kimlik : null,
+  sayfa_kimligi: hedef.tur === "sayfa" ? hedef.kimlik : null,
+  blog_yazisi_kimligi: hedef.tur === "blog-yazisi" ? hedef.kimlik : null,
   adres: hedef.tur === "adres" ? hedef.adres : null,
   yeni_sekme: hedef.tur === "adres" ? hedef.yeniSekme : false,
 });
@@ -128,6 +141,8 @@ type OgeSatiri = {
   kategori: string | null;
   marka: string | null;
   urun: string | null;
+  sayfa: string | null;
+  "blog-yazisi": string | null;
   adres: string | null;
   yeniSekme: boolean;
 };
@@ -141,6 +156,8 @@ const ogeAlanlari = {
   kategori: menuOgeleri.kategori_kimligi,
   marka: menuOgeleri.marka_kimligi,
   urun: menuOgeleri.urun_kimligi,
+  sayfa: menuOgeleri.sayfa_kimligi,
+  "blog-yazisi": menuOgeleri.blog_yazisi_kimligi,
   adres: menuOgeleri.adres,
   yeniSekme: menuOgeleri.yeni_sekme,
 };
@@ -151,7 +168,9 @@ const satirinHedefi = (satir: OgeSatiri): SaklananHedef => {
   switch (tur) {
     case "kategori":
     case "marka":
-    case "urun": {
+    case "urun":
+    case "sayfa":
+    case "blog-yazisi": {
       const kimlik = satir[tur];
       if (kimlik === null) throw new Error(`Menü öğesinin hedefi eksik: ${satir.kimlik}.`);
       return { tur, kimlik };
@@ -161,14 +180,14 @@ const satirinHedefi = (satir: OgeSatiri): SaklananHedef => {
       return { tur, adres: satir.adres, yeniSekme: satir.yeniSekme };
     case "baslik":
       return { tur };
-    case "sayfa":
-      throw new Error(`Menü öğesi sayfaya bağlanamaz: ${satir.kimlik}.`);
   }
 };
 
-// Panelin verdiği hedef saklanacak hedefe döner. Sayfa şemada reddedilir.
+// Panelin verdiği hedef saklanacak hedefe döner. Kullanılamayan hedef türü şemada da reddedilir.
 const saklanacakHedef = (hedef: MenuHedefi): SaklananHedef => {
-  if (hedef.tur === "sayfa") throw dogrulama([{ alan: "hedef.tur", kod: "hedef-kullanilamaz" }]);
+  if (!kullanilabilirMenuHedefleri[hedef.tur]) {
+    throw dogrulama([{ alan: "hedef.tur", kod: "hedef-kullanilamaz" }]);
+  }
   return hedef;
 };
 
@@ -612,14 +631,21 @@ export const menuleriOku = async (vt: Veritabani): Promise<Menu[]> =>
     .orderBy(asc(menuler.kod))) as Menu[];
 
 export type MenuOkumaSecenekleri = {
-  // Verilmezse veritabanının şimdiki zamanı (ürünün yayın zamanı bununla karşılaştırılır).
+  // Verilmezse veritabanının şimdiki zamanı (ürünün ve blog yazısının yayın zamanı bununla karşılaştırılır).
   an?: Date;
+  // Blog vitrinde açık mı (mağaza ayarı blogAcik, kart 0273). Verilmezse kapalı sayılır: blog yazısına bağlı öğe
+  // görünmez. Vitrin ve panel ayarı okuyup verir.
+  blogAcik?: boolean;
 };
 
 // Bir menünün silinmemiş öğeleri, bağlı kayıtlarıyla, tek sorguyla. Ürünün açılıp açılmadığı ürün sayfasının
 // vitrin koşuluyla bulunur: menü bir bağlantıdır, listede değil sayfada açılır (gizli ürünün sayfası açılır).
 // Tükenen ürün ayarı yalnız listeleri etkiler, sayfada kullanılmaz.
-const ogeleriOku = async (vt: Veritabani, menu: string, { an }: MenuOkumaSecenekleri) => {
+const ogeleriOku = async (
+  vt: Veritabani,
+  menu: string,
+  { an, blogAcik = false }: MenuOkumaSecenekleri,
+) => {
   const sayfasiAcik = vitrinKosulu("sayfa", {
     ...(an === undefined ? {} : { an }),
     tukenenUrun: "goster",
@@ -637,11 +663,24 @@ const ogeleriOku = async (vt: Veritabani, menu: string, { an }: MenuOkumaSecenek
       urunAdresi: urunler.adres_adi,
       urunSilindi: sql<boolean>`${urunler.silinme_zamani} is not null`,
       urunAcik: sql<boolean>`coalesce(${sayfasiAcik}, false)`,
+      // Kart 0273: sabit sayfa (yalnız yayındaki açılır) ve blog yazısı (blog açıkken, vitrin koşuluyla).
+      sayfaAdi: sabitSayfalar.baslik,
+      sayfaAdresi: sabitSayfalar.adres_adi,
+      sayfaSilindi: sql<boolean>`${sabitSayfalar.silinme_zamani} is not null`,
+      sayfaAcik: sql<boolean>`coalesce(${sabitSayfaVitrinde()}, false)`,
+      yaziAdi: blogYazilari.baslik,
+      yaziAdresi: blogYazilari.adres_adi,
+      yaziSilindi: sql<boolean>`${blogYazilari.silinme_zamani} is not null`,
+      yaziAcik: blogAcik
+        ? sql<boolean>`coalesce(${blogYazisiVitrinde(an)}, false)`
+        : sql<boolean>`false`,
     })
     .from(menuOgeleri)
     .leftJoin(kategoriler, eq(kategoriler.kimlik, menuOgeleri.kategori_kimligi))
     .leftJoin(markalar, eq(markalar.kimlik, menuOgeleri.marka_kimligi))
     .leftJoin(urunler, eq(urunler.kimlik, menuOgeleri.urun_kimligi))
+    .leftJoin(sabitSayfalar, eq(sabitSayfalar.kimlik, menuOgeleri.sayfa_kimligi))
+    .leftJoin(blogYazilari, eq(blogYazilari.kimlik, menuOgeleri.blog_yazisi_kimligi))
     .where(and(eq(menuOgeleri.menu_kimligi, menu), isNull(menuOgeleri.silinme_zamani)))
     .orderBy(asc(menuOgeleri.sira), asc(menuOgeleri.olusturma_zamani), asc(menuOgeleri.kimlik));
 };
@@ -664,6 +703,20 @@ const bagliKayit = (satir: OkunanOge) => {
         adresAdi: satir.urunAdresi,
         silindi: satir.urunSilindi,
         gorunmuyor: !satir.urunAcik,
+      };
+    case "sayfa":
+      return {
+        ad: satir.sayfaAdi,
+        adresAdi: satir.sayfaAdresi,
+        silindi: satir.sayfaSilindi,
+        gorunmuyor: !satir.sayfaAcik,
+      };
+    case "blog-yazisi":
+      return {
+        ad: satir.yaziAdi,
+        adresAdi: satir.yaziAdresi,
+        silindi: satir.yaziSilindi,
+        gorunmuyor: !satir.yaziAcik,
       };
     default:
       return undefined;
@@ -779,4 +832,47 @@ export const vitrinMenusu = async (
         altlar: dallar(oge.altlar),
       }));
   return dallar(panelAgaci(satirlar));
+};
+
+// Kayıtlı hedeflerin bağlı olduğu menü yerleri (kart 0273): sayfanın panelde "hangi menüde" bilgisi. Her kayıt için
+// silinmemiş menülerdeki silinmemiş öğelerin yeri, menünün adı ve (alt öğede) üst öğenin görünen metniyle. Tek sorgu.
+export type MenuYeri = { menu: string; menuAdi: string; ust: string | null };
+
+export const kayitlarinMenuYerleri = async (
+  vt: Veritabani,
+  tur: KayitliMenuHedefi,
+): Promise<Map<string, MenuYeri[]>> => {
+  const alan = {
+    kategori: menuOgeleri.kategori_kimligi,
+    marka: menuOgeleri.marka_kimligi,
+    urun: menuOgeleri.urun_kimligi,
+    sayfa: menuOgeleri.sayfa_kimligi,
+    "blog-yazisi": menuOgeleri.blog_yazisi_kimligi,
+  }[tur];
+  const sonuc = await vt.execute<{
+    kayit: string;
+    menu: string;
+    menu_adi: string;
+    ust_metni: string | null;
+    ust_var: boolean;
+  }>(sql`
+    select ${alan} as kayit, ${menuler.kimlik} as menu, ${menuler.ad} as menu_adi,
+      ust.metin as ust_metni, ${menuOgeleri.ust_kimligi} is not null as ust_var
+    from ${menuOgeleri}
+    join ${menuler} on ${menuler.kimlik} = ${menuOgeleri.menu_kimligi}
+    left join ${menuOgeleri} as ust on ust.kimlik = ${menuOgeleri.ust_kimligi}
+    where ${alan} is not null and ${menuOgeleri.silinme_zamani} is null
+      and ${menuler.silinme_zamani} is null
+    order by ${menuler.ad}, ${menuOgeleri.sira}`);
+  const yerler = new Map<string, MenuYeri[]>();
+  for (const satir of sonuc.rows) {
+    const liste = yerler.get(satir.kayit) ?? [];
+    liste.push({
+      menu: satir.menu,
+      menuAdi: satir.menu_adi,
+      ust: satir.ust_var ? satir.ust_metni : null,
+    });
+    yerler.set(satir.kayit, liste);
+  }
+  return yerler;
 };

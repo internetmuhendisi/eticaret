@@ -12,20 +12,24 @@ export const menuHedefTurleri = [
   "kategori",
   "marka",
   "urun",
+  // Sabit sayfa (kart 0273).
   "sayfa",
+  // Tek bir blog yazısı (kart 0273, karar 0176'nın sonucu). Blogun listesi "adres" hedefiyle (/blog) bağlanır.
+  "blog-yazisi",
   // Sitenin kendi adresi (/ ile) ya da https adresi; bölümlerdeki bağlantı kuralıyla aynı.
   "adres",
   "baslik",
 ] as const;
 export type MenuHedefTuru = (typeof menuHedefTurleri)[number];
 
-// Seçilebilen hedefler. Düz sayfalar (hakkımızda, iletişim) yazılınca sayfa açılır; o zamana kadar
-// bu türde öğe eklenemez, veritabanı da kabul etmez.
+// Seçilebilen hedefler. Bugün hepsi açıktır (sayfa kart 0273'te açıldı); yazılmamış bir hedef türü eklenirse burada
+// kapalı başlar, şema ve servis reddeder.
 export const kullanilabilirMenuHedefleri = {
   kategori: true,
   marka: true,
   urun: true,
-  sayfa: false,
+  sayfa: true,
+  "blog-yazisi": true,
   adres: true,
   baslik: true,
 } as const satisfies Record<MenuHedefTuru, boolean>;
@@ -35,8 +39,17 @@ export const kayitliMenuHedefleri = [
   "kategori",
   "marka",
   "urun",
+  "sayfa",
+  "blog-yazisi",
 ] as const satisfies readonly MenuHedefTuru[];
 export type KayitliMenuHedefi = (typeof kayitliMenuHedefleri)[number];
+// Kayıtlı hedeflerden katalogun kayıtları (panelde kayit-ara ucuyla, urun.gor) ve içeriğin kayıtları (icerik-ara ucuyla,
+// icerik.gor) ayrı aranır: içerik editörü ürünleri görmeden sayfayı menüye bağlayabilsin.
+export const icerikMenuHedefleri = [
+  "sayfa",
+  "blog-yazisi",
+] as const satisfies readonly KayitliMenuHedefi[];
+export type IcerikMenuHedefi = (typeof icerikMenuHedefleri)[number];
 
 export const menuSinirlari = {
   // En üst düzey ve onun bir alt düzeyi (açılır menü). Kategori menüsü de bu derinliğe kadar kurulur.

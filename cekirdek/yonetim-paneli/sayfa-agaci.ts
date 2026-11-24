@@ -10,7 +10,9 @@ import {
   blogAdresi,
   blogKategorileriAdresi,
   magazaBilgileriAdresi,
+  menulerAdresi,
   panelAdresi,
+  sayfalarAdresi,
   temaAdresi,
   temaAyarlariAdresi,
   yorumlarAdresi,
@@ -21,7 +23,7 @@ export const panelGruplari = {
   satis: "yonetim.grup.satis",
   urunler: "yonetim.grup.urunler",
   vitrin: "yonetim.grup.vitrin",
-  // Kart 0272: blog (sabit sayfalar kart 0273).
+  // Kart 0272: blog; kart 0273: sabit sayfalar.
   icerik: "yonetim.grup.icerik",
 } as const satisfies Record<string, MetinAnahtari>;
 export type PanelGrubu = keyof typeof panelGruplari;
@@ -286,7 +288,7 @@ export const panelSayfalari = [
   },
   {
     kod: "menuler",
-    adres: `${panelAdresi}/menuler`,
+    adres: menulerAdresi,
     ad: "yonetim.sayfa.menuler.ad",
     aciklama: "yonetim.sayfa.menuler.aciklama",
     ikon: "menuler",
@@ -354,6 +356,36 @@ export const panelSayfalari = [
     izin: "icerik.gor",
     grup: "icerik",
     ust: "blog",
+  },
+  // Sabit sayfalar (kart 0273): liste, yeni sayfa ve sayfanın ekranı (?kimlik=). İzinler blogunkilerdir (icerik.*).
+  {
+    kod: "sayfalar",
+    adres: sayfalarAdresi,
+    ad: "yonetim.sayfa.sayfalar.ad",
+    aciklama: "yonetim.sayfa.sayfalar.aciklama",
+    ikon: "sayfa",
+    izin: "icerik.gor",
+    grup: "icerik",
+  },
+  {
+    kod: "yeni-sayfa",
+    adres: `${sayfalarAdresi}/yeni`,
+    ad: "yonetim.sayfa.yeniSayfa.ad",
+    aciklama: "yonetim.sayfa.yeniSayfa.aciklama",
+    ikon: "ekle",
+    izin: "icerik.degistir",
+    grup: "icerik",
+    ust: "sayfalar",
+  },
+  {
+    kod: "sabit-sayfa",
+    adres: `${sayfalarAdresi}/sayfa`,
+    ad: "yonetim.sayfa.sabitSayfa.ad",
+    aciklama: "yonetim.sayfa.sabitSayfa.aciklama",
+    ikon: "sayfa",
+    izin: "icerik.gor",
+    grup: "icerik",
+    ust: "sayfalar",
   },
 ] as const satisfies readonly PanelSayfaTanimi[];
 

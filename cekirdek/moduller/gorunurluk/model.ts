@@ -35,7 +35,7 @@ export const eskiAdresler = pgTable(
     // Liste cekirdek/kayitlar/adres.ts ile aynıdır (testler/eski-adres.test.ts ölçer).
     check(
       "eski_adresler_tur",
-      sql`${tablo.kayit_turu} in ('kategori', 'marka', 'etiket', 'urun', 'blog-yazisi')`,
+      sql`${tablo.kayit_turu} in ('kategori', 'marka', 'etiket', 'urun', 'blog-yazisi', 'sayfa')`,
     ),
   ],
 );

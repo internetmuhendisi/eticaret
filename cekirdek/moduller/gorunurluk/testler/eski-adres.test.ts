@@ -12,6 +12,7 @@ import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { etiketServisi } from "../../etiket/servis.ts";
+import { sabitSayfaServisi } from "../../icerik/sayfa.ts";
 import { icerikServisi } from "../../icerik/servis.ts";
 import { kategoriDegistir, kategoriEkle, kategoriSil } from "../../kategori/servis.ts";
 import { markaServisi } from "../../marka/servis.ts";
@@ -72,6 +73,16 @@ const turler: Record<AdresliKayitTuru, Islemler> = {
       await icerikSrv.yaziDegistir(vt, yonetici(), kimlik, { adresAdi });
     },
     sil: (vt, kimlik) => icerikSrv.yaziSil(vt, yonetici(), kimlik),
+  },
+  // Kart 0273: sabit sayfa; vitrinde açılsın diye yayında eklenir.
+  sayfa: {
+    ekle: async (vt, baslik, adresAdi) =>
+      (await sabitSayfaServisi.sayfaEkle(vt, yonetici(), { baslik, adresAdi, durum: "yayinda" }))
+        .kimlik,
+    adiDegistir: async (vt, kimlik, adresAdi) => {
+      await sabitSayfaServisi.sayfaDegistir(vt, yonetici(), kimlik, { adresAdi });
+    },
+    sil: (vt, kimlik) => sabitSayfaServisi.sayfaSil(vt, yonetici(), kimlik),
   },
 };
 
@@ -288,7 +299,7 @@ describe("adresin çözülmesi", () => {
     await expect(
       vt
         .insert(eskiAdresler)
-        .values({ kayit_turu: "sayfa", kayit_kimligi: randomUUID(), adres_adi: "x" }),
+        .values({ kayit_turu: "kampanya", kayit_kimligi: randomUUID(), adres_adi: "x" }),
     ).rejects.toThrow();
   });
 

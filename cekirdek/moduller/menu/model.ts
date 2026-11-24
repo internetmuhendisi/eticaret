@@ -31,6 +31,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { kimlik, zaman } from "../../veritabani/turler.ts";
+import { blogYazilari, sabitSayfalar } from "../icerik/model.ts";
 import { kategoriler } from "../kategori/model.ts";
 import { markalar } from "../marka/model.ts";
 import { urunler } from "../urun/model.ts";
@@ -73,6 +74,9 @@ export const menuOgeleri = pgTable(
     kategori_kimligi: uuid().references(() => kategoriler.kimlik, { onDelete: "restrict" }),
     marka_kimligi: uuid().references(() => markalar.kimlik, { onDelete: "restrict" }),
     urun_kimligi: uuid().references(() => urunler.kimlik, { onDelete: "restrict" }),
+    // Kart 0273: sabit sayfa ve blog yazısı.
+    sayfa_kimligi: uuid().references(() => sabitSayfalar.kimlik, { onDelete: "restrict" }),
+    blog_yazisi_kimligi: uuid().references(() => blogYazilari.kimlik, { onDelete: "restrict" }),
     adres: text(),
     yeni_sekme: boolean().notNull().default(false),
     olusturma_zamani: zaman().notNull().defaultNow(),
@@ -83,14 +87,16 @@ export const menuOgeleri = pgTable(
     index("menu_ogeleri_menu").on(tablo.menu_kimligi),
     check("menu_ogeleri_kendi_ustu", sql`${tablo.ust_kimligi} <> ${tablo.kimlik}`),
     check("menu_ogeleri_sira", sql`${tablo.sira} >= 0`),
-    // Her hedef türü yalnız kendi alanını doldurur. Sayfa hedefi düz sayfalarla açılır: bugün hiçbir satır
-    // sayfaya bağlanamaz. Adres ve başlığın metni zorunludur. Yeni sekme yalnız adreste.
+    // Her hedef türü yalnız kendi alanını doldurur (sayfa ve blog yazısı kart 0273, değişiklik 0056). Adres ve başlığın
+    // metni zorunludur. Yeni sekme yalnız adreste.
     check(
       "menu_ogeleri_hedef",
-      sql`${tablo.hedef_turu} in ('kategori', 'marka', 'urun', 'adres', 'baslik')
+      sql`${tablo.hedef_turu} in ('kategori', 'marka', 'urun', 'sayfa', 'blog-yazisi', 'adres', 'baslik')
         and (${tablo.hedef_turu} = 'kategori') = (${tablo.kategori_kimligi} is not null)
         and (${tablo.hedef_turu} = 'marka') = (${tablo.marka_kimligi} is not null)
         and (${tablo.hedef_turu} = 'urun') = (${tablo.urun_kimligi} is not null)
+        and (${tablo.hedef_turu} = 'sayfa') = (${tablo.sayfa_kimligi} is not null)
+        and (${tablo.hedef_turu} = 'blog-yazisi') = (${tablo.blog_yazisi_kimligi} is not null)
         and (${tablo.hedef_turu} = 'adres') = (${tablo.adres} is not null)
         and (${tablo.hedef_turu} not in ('adres', 'baslik') or ${tablo.metin} is not null)
         and (${tablo.hedef_turu} = 'adres' or not ${tablo.yeni_sekme})`,

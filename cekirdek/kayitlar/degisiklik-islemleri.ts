@@ -130,6 +130,10 @@ export const degisiklikIslemleri = [
   "blog-kategorisi.degisti",
   "blog-kategorisi.silindi",
   "blog-kategorisi.siralandi",
+  // Sabit sayfa (kart 0273): içerik ve açıklama kayda girmez (uzun metin); başlık, adres adı ve durum girer.
+  "sabit-sayfa.eklendi",
+  "sabit-sayfa.degisti",
+  "sabit-sayfa.silindi",
 ] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 
@@ -173,6 +177,8 @@ export const degisiklikKayitTurleri = [
   // Kart 0272: blog yazısı ve blog kategorisi.
   "blog-yazisi",
   "blog-kategorisi",
+  // Kart 0273: sabit sayfa.
+  "sabit-sayfa",
 ] as const;
 export type DegisiklikKayitTuru = (typeof degisiklikKayitTurleri)[number];
 

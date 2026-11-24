@@ -1,16 +1,19 @@
-// Sitenin açılıştaki başlangıç kurulumu (kartlar 0084, 0107, 0114, 0129, 0272): katalog, menüler, düzen, blog, bu sırayla.
+// Sitenin açılıştaki başlangıç kurulumu (kartlar 0084, 0107, 0114, 0129, 0272, 0273): katalog, sayfalar, menüler, düzen,
+// blog, bu sırayla.
 // Arka plan süreci açılırken çağırır; tarayıcı testleri de testlerden önce aynı işlevle kurar (kart 0129),
 // kurulumun ikinci bir yolu yoktur. Her adım kuruluysa hiçbir şey yazmaz.
 import { calisanSite } from "../ayar-semasi/calisan-site.ts";
 import { gunluk } from "../izleme/gunluk.ts";
 import { duzenServisi } from "../moduller/duzen/servis.ts";
 import { blogBaslangiciniKur } from "../moduller/icerik/baslangic.ts";
+import { sayfaBaslangiciniKur } from "../moduller/icerik/sayfa-kurulumu.ts";
 import { menuBaslangiciniKur } from "../moduller/menu/baslangic.ts";
 import { katalogBaslangiciniKur } from "../moduller/urun/baslangic.ts";
 import type { Veritabani } from "../veritabani/baglanti.ts";
 
 export type BaslangicAdimi =
   | "katalog-baslangici"
+  | "sayfa-baslangici"
   | "menu-baslangici"
   | "duzen-baslangici"
   | "blog-baslangici";
@@ -31,6 +34,16 @@ export const baslangiclariKur = async (
   } catch (yakalanan) {
     hata(yakalanan, "katalog-baslangici");
     return;
+  }
+  // Başlangıç sayfaları (kart 0273) menülerden önce kurulur: başlangıç menüsü sayfaya bağlanabilir.
+  try {
+    if (await sayfaBaslangiciniKur(vt, calisanSite())) {
+      gunluk.bilgi("başlangıç sayfaları yazıldı");
+    } else {
+      gunluk.bilgi("başlangıç sayfaları yazılmadı: dosya boş ya da sayfalar kurulu");
+    }
+  } catch (yakalanan) {
+    hata(yakalanan, "sayfa-baslangici");
   }
   try {
     if (await menuBaslangiciniKur(vt, calisanSite())) {

@@ -15,6 +15,11 @@ import {
   blogGorselAdlari,
 } from "../moduller/icerik/baslangic-semasi.ts";
 import {
+  type SayfaBaslangici,
+  sayfaBaslangicKurallari,
+  sayfaBaslangicSemasi,
+} from "../moduller/icerik/sayfa-baslangici.ts";
+import {
   type MenuBaslangici,
   menuBaslangicKurallari,
   menuBaslangicSemasi,
@@ -67,6 +72,8 @@ import { type Kimlik, kimlikSemasi } from "./kimlik.ts";
 // yazılmamışken kullanılır (cekirdek/moduller/menu/baslangic.ts); dosyası yoksa boştur.
 // blogBaslangici: başlangıç blogu (baslangic/blog.json, kart 0272). Yalnız sitede hiç blog satırı yokken kullanılır
 // (cekirdek/moduller/icerik/baslangic.ts); dosyası yoksa boştur.
+// sayfaBaslangici: başlangıç sabit sayfaları (baslangic/sayfalar.json, kart 0273). Yalnız sitede hiç sayfa satırı
+// yokken kullanılır (cekirdek/moduller/icerik/sayfa-kurulumu.ts); dosyası yoksa boştur.
 export type Site = {
   kimlik: Kimlik;
   ayarlar: SiteAyarlari;
@@ -80,6 +87,7 @@ export type Site = {
   duzenBaslangici: BaslangicDuzeni;
   menuBaslangici: MenuBaslangici;
   blogBaslangici: BlogBaslangici;
+  sayfaBaslangici: SayfaBaslangici;
 };
 
 export type DogrulamaSonucu = { gecerli: true; site: Site } | { gecerli: false; hatalar: string[] };
@@ -436,10 +444,11 @@ export const duzenBaslangiciniDogrula = (
 export const menuBaslangicDosyasi = "baslangic/menuler.json";
 
 // Başlangıç menüleri (kart 0107): dosya menü şemasından geçer, bağlanılan kategori, marka ve ürün başlangıç
-// kataloğunda olmalı. Dosyası olmayan sitede başlangıç menüsü yoktur.
+// kataloğunda, sayfa (kart 0273) başlangıç sayfalarında olmalı. Dosyası olmayan sitede başlangıç menüsü yoktur.
 export const menuBaslangiciniDogrula = (
   klasor: string,
   katalog: KatalogBaslangici,
+  sayfalar: SayfaBaslangici = [],
 ): { gecerli: true; deger: MenuBaslangici } | { gecerli: false; hatalar: string[] } => {
   const ham = jsonOku(klasor, menuBaslangicDosyasi, []);
   if ("hata" in ham) return { gecerli: false, hatalar: [ham.hata] };
@@ -451,13 +460,14 @@ export const menuBaslangiciniDogrula = (
     kategori: new Set(katalog.kategoriler.map((kayit) => kayit.adresAdi)),
     marka: new Set(katalog.markalar.map((kayit) => kayit.adresAdi)),
     urun: new Set(katalog.urunler.map((kayit) => kayit.adresAdi)),
+    sayfa: new Set(sayfalar.map((sayfa) => sayfa.adresAdi)),
   });
   if (sorunlar.length > 0) {
     return {
       gecerli: false,
       hatalar: sorunlar.map(
         ({ yer, kod }) =>
-          `${menuBaslangicDosyasi}: ${yer.join(".")}: ${kod} (${katalogBaslangicDosyasi} dosyasında bu adres adı yok)`,
+          `${menuBaslangicDosyasi}: ${yer.join(".")}: ${kod} (${katalogBaslangicDosyasi} ya da ${sayfaBaslangicDosyasi} dosyasında bu adres adı yok)`,
       ),
     };
   }
@@ -483,6 +493,29 @@ export const blogBaslangiciniDogrula = (
     return {
       gecerli: false,
       hatalar: sorunlar.map((sorun) => `${blogBaslangicDosyasi}: ${sorun}`),
+    };
+  }
+  return { gecerli: true, deger: sonuc.data };
+};
+
+export const sayfaBaslangicDosyasi = "baslangic/sayfalar.json";
+
+// Başlangıç sayfaları (kart 0273): dosya şemadan ve adres adının tekilliğinden geçer. Dosyası olmayan sitede başlangıç
+// sayfası yoktur.
+export const sayfaBaslangiciniDogrula = (
+  klasor: string,
+): { gecerli: true; deger: SayfaBaslangici } | { gecerli: false; hatalar: string[] } => {
+  const ham = jsonOku(klasor, sayfaBaslangicDosyasi, []);
+  if ("hata" in ham) return { gecerli: false, hatalar: [ham.hata] };
+  const sonuc = sayfaBaslangicSemasi.safeParse(ham.deger);
+  if (!sonuc.success) {
+    return { gecerli: false, hatalar: sorunlariYaz(sayfaBaslangicDosyasi, sonuc.error.issues) };
+  }
+  const sorunlar = sayfaBaslangicKurallari(sonuc.data);
+  if (sorunlar.length > 0) {
+    return {
+      gecerli: false,
+      hatalar: sorunlar.map((sorun) => `${sayfaBaslangicDosyasi}: ${sorun}`),
     };
   }
   return { gecerli: true, deger: sonuc.data };
@@ -580,9 +613,12 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
       : undefined,
   );
   if (!katalogBaslangici.gecerli) hatalar.push(...katalogBaslangici.hatalar);
-  const menuBaslangici = katalogBaslangici.gecerli
-    ? menuBaslangiciniDogrula(klasor, katalogBaslangici.deger)
-    : undefined;
+  const sayfaBaslangici = sayfaBaslangiciniDogrula(klasor);
+  if (!sayfaBaslangici.gecerli) hatalar.push(...sayfaBaslangici.hatalar);
+  const menuBaslangici =
+    katalogBaslangici.gecerli && sayfaBaslangici.gecerli
+      ? menuBaslangiciniDogrula(klasor, katalogBaslangici.deger, sayfaBaslangici.deger)
+      : undefined;
   if (menuBaslangici !== undefined && !menuBaslangici.gecerli) {
     hatalar.push(...menuBaslangici.hatalar);
   }
@@ -653,6 +689,7 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
     !katalogGorselleri.gecerli ||
     menuBaslangici === undefined ||
     !menuBaslangici.gecerli ||
+    !sayfaBaslangici.gecerli ||
     !markaLogosu.gecerli ||
     temalar === undefined ||
     !temalar.gecerli ||
@@ -701,6 +738,7 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
       duzenBaslangici: duzenBaslangici.deger,
       menuBaslangici: menuBaslangici.deger,
       blogBaslangici: blogBaslangici.deger,
+      sayfaBaslangici: sayfaBaslangici.deger,
     },
   };
 };

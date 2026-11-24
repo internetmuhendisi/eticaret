@@ -1,4 +1,4 @@
-// Blog yazıları ve blog kategorileri (kart 0272, karar 0176).
+// Blog yazıları ve blog kategorileri (kart 0272, karar 0176); sabit sayfalar (kart 0273).
 //
 // - Yazının içeriği biçimli metindir (HTML); vitrinde ürün açıklamasıyla aynı temizlikten geçer (aciklamayiTemizle).
 // - Silme silinme işaretiyle yapılır, satır kalır. Adres adı ve kategori adı yalnız silinmemişler arasında tekildir.
@@ -14,6 +14,9 @@
 // - blog_yazilari.kategori_kimligi: bir kategorinin yazıları (vitrinde ?kategori=, ana sayfa bölümünün kategorisi).
 // - blog_yazilari.kapak_kimligi: vitrin görseli ucu bir dosyanın yayındaki bir yazının kapağı olup olmadığını sorar.
 // - blog_kategorileri.adres_adi: vitrinde ?kategori= adres adıyla gelir. Silinmemişler arasında tekil.
+// - sabit_sayfalar.adres_adi: vitrinde sayfa /sayfa/<adres adı> ile açılır. Silinmemişler arasında tekil (kısmi tekil
+//   indeks). Sayfa adı değişince ya da sayfa silinince eski adres saklanır (tetikleyici sabit_sayfalar_eski_adres,
+//   değişiklik 0056). Sayfalar kısa bir listedir (en çok sabitSayfaSinirlari.sayfaSayisi): liste indekssiz okunur.
 import { sql } from "drizzle-orm";
 import { check, index, integer, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { adAnahtariSql } from "../../metinler/ad-anahtari.ts";
@@ -81,5 +84,30 @@ export const blogYazilari = pgTable(
       "blog_yazilari_kapak",
       sql`(${tablo.kapak_kimligi} is null) = (${tablo.kapak_metni} is null)`,
     ),
+  ],
+);
+
+// Sabit sayfa (kart 0273): hakkımızda, iletişim gibi. Durum kayıttadır (sabitSayfaDurumlari).
+export const sabitSayfalar = pgTable(
+  "sabit_sayfalar",
+  {
+    kimlik: kimlik(),
+    baslik: text().notNull(),
+    adres_adi: text().notNull(),
+    // Biçimli metin (HTML); vitrinde aciklamayiTemizle ile temizlenir. Boş olabilir (taslak).
+    icerik: text().notNull().default(""),
+    // Arama motoru açıklaması; boşsa vitrin içeriğin başından üretir.
+    aciklama: text(),
+    durum: text().notNull(),
+    olusturma_zamani: zaman().notNull().defaultNow(),
+    guncellenme_zamani: zaman().notNull().defaultNow(),
+    silinme_zamani: zaman(),
+  },
+  (tablo) => [
+    uniqueIndex("sabit_sayfalar_adres_adi")
+      .on(tablo.adres_adi)
+      .where(sql`${tablo.silinme_zamani} is null`),
+    // Kayıtla aynı olduğunu sayfa testi denetler (sabitSayfaDurumlari).
+    check("sabit_sayfalar_durum", sql`${tablo.durum} in ('yayinda', 'taslak')`),
   ],
 );

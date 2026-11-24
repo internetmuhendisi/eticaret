@@ -393,6 +393,13 @@
       "when": 1795522995426,
       "tag": "0055_blog-yazilari",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1795531286838,
+      "tag": "0056_sabit-sayfalar",
+      "breakpoints": true
     }
   ]
 }

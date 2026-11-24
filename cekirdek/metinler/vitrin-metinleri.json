@@ -586,6 +586,7 @@
           "etiket": "“{ad}” etiketli ürünleri {magaza} mağazasında inceleyin.",
           "urun": "{ad} ürününü {magaza} mağazasında inceleyin.",
           "blog-yazisi": "{ad}: {magaza} blogundan bir yazı.",
+          "sayfa": "{ad}: {magaza}.",
           "blog": "{magaza} blogu: rehberler, bakım önerileri ve mağazadan haberler."
         }
       },

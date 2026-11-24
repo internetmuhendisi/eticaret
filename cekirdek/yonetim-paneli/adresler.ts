@@ -42,6 +42,19 @@ export const blogYazisiEkraniAdresi = (kimlik: string): string =>
   `${blogAdresi}/yazi?kimlik=${encodeURIComponent(kimlik)}`;
 export const blogKategorileriAdresi = `${blogAdresi}/kategoriler`;
 
+// Sabit sayfalar (kart 0273): liste, yeni sayfa, sayfanın ekranı (kimlik adresin sorgusunda).
+export const sayfalarAdresi = `${panelAdresi}/sayfalar`;
+export const yeniSayfaAdresi = `${sayfalarAdresi}/yeni`;
+export const sayfaEkraniAdresi = (kimlik: string): string =>
+  `${sayfalarAdresi}/sayfa?kimlik=${encodeURIComponent(kimlik)}`;
+
+// Menüler ekranı (kart 0143). Kart 0273: sayfa ekranının "Menüye ekle"si menüler ekranını öğe penceresi sayfa seçili
+// açılmış olarak açar (?ekle-sayfa=<kimlik>).
+export const menulerAdresi = `${panelAdresi}/menuler`;
+export const menuyeSayfaEkleParametresi = "ekle-sayfa";
+export const menuyeSayfaEkleAdresi = (kimlik: string): string =>
+  `${menulerAdresi}?${new URLSearchParams({ [menuyeSayfaEkleParametresi]: kimlik })}`;
+
 // Şifreden sonraki ara adımın sayfası (kart 0028).
 export const adimAdresi = (durum: "kod" | "kurulum"): string =>
   durum === "kod" ? kodAdresi : kurulumAdresi;

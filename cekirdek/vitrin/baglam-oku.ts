@@ -67,6 +67,8 @@ const hedefAdresi = (hedef: VitrinHedefi): { adres?: string; yeniSekme: boolean 
     case "kategori":
     case "marka":
     case "urun":
+    case "sayfa":
+    case "blog-yazisi":
       return { adres: kayitAdresleri[hedef.tur](hedef.adresAdi), yeniSekme: false };
     case "adres":
       return { adres: hedef.adres, yeniSekme: hedef.yeniSekme };
@@ -253,6 +255,7 @@ export const vitrinBaglaminiOku = async (
   an: Date = new Date(),
 ): Promise<VitrinBaglami> => {
   const kodlar = bolumlerinMenuKodlari(bolumler, kutuphane);
+  const ayarlarSozu = siteninMagazaAyarlari(vt, site);
   const [
     ayarlar,
     logo,
@@ -264,9 +267,17 @@ export const vitrinBaglaminiOku = async (
     urunler,
     yorumlar,
   ] = await Promise.all([
-    siteninMagazaAyarlari(vt, site),
+    ayarlarSozu,
     magazaLogosu(vt, { site }),
-    Promise.all(kodlar.map(async (kod) => [kod, await vitrinMenusu(vt, kod)] as const)),
+    // Blog yazısına bağlı menü öğesi blog açıkken görünür (kart 0273): menüler ayarlarla birlikte okunur.
+    ayarlarSozu.then((menuAyarlari) =>
+      Promise.all(
+        kodlar.map(
+          async (kod) =>
+            [kod, await vitrinMenusu(vt, kod, { blogAcik: menuAyarlari.blogAcik })] as const,
+        ),
+      ),
+    ),
     kategoriMenuleriniSec(vt, kodlar),
     vitrinTemasi(vt, site),
     kategorileriOku(vt, bolumlerinBaglari(bolumler, kutuphane, "kategori")),

@@ -1,4 +1,4 @@
-// Vitrin adresinin çözülmesi (kart 0135, karar 0103). Kategori, marka, etiket ve ürün sayfası adresteki
+// Vitrin adresinin çözülmesi (kart 0135, karar 0103). Kategori, marka, etiket, ürün, blog yazısı ve sabit sayfa adresteki
 // adres adını yalnız bununla kayda çevirir.
 //
 // Sıra:
@@ -14,7 +14,8 @@ import type { AdresliKayitTuru } from "../../kayitlar/adres.ts";
 import { adresAdiKalibi, adresAdiUzunlugu } from "../../metinler/adres-adi.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { etiketler } from "../etiket/model.ts";
-import { blogYazilari } from "../icerik/model.ts";
+import { blogYazilari, sabitSayfalar } from "../icerik/model.ts";
+import { sabitSayfaVitrinde } from "../icerik/sayfa.ts";
 import { blogYazisiVitrinde } from "../icerik/vitrin.ts";
 import { kategoriler } from "../kategori/model.ts";
 import { markalar } from "../marka/model.ts";
@@ -68,6 +69,13 @@ const kaynaklar = (an: Date | undefined) =>
       ad: blogYazilari.baslik,
       aciklama: blogYazilari.ozet,
       acik: blogYazisiVitrinde(an),
+    },
+    // Kart 0273: sabit sayfa; adı başlığıdır, açıklaması arama motoru açıklamasıdır (boşsa sayfa içerikten üretir).
+    sayfa: {
+      tablo: sabitSayfalar,
+      ad: sabitSayfalar.baslik,
+      aciklama: sabitSayfalar.aciklama,
+      acik: sabitSayfaVitrinde(),
     },
   }) as const satisfies Record<AdresliKayitTuru, unknown>;
 

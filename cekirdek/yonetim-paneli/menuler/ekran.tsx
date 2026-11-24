@@ -46,6 +46,8 @@ import {
   YanPencereUstu,
 } from "../../../bilesenler/parcalar/yan-pencere";
 import {
+  type IcerikMenuHedefi,
+  icerikMenuHedefleri,
   type KayitliMenuHedefi,
   kayitliMenuHedefleri,
   kullanilabilirMenuHedefleri,
@@ -60,7 +62,7 @@ import { usePanelMetni } from "../../metinler/panel-metni";
 import { siralamaMetinleri } from "../../metinler/siralama-metinleri";
 import { metinGerekirMi } from "../../moduller/menu/semalar";
 import type { Menu, MenuDali, PanelOgesi } from "../../moduller/menu/servis";
-import type { BulunanKayit } from "../../moduller/urun/kayit-arama";
+import type { BulunanKayit, KayitAramaSonucu } from "../../moduller/urun/kayit-arama";
 import { kayitAdresleri } from "../../vitrin/adresler";
 import { EylemDugmesi } from "../eylem-dugmesi";
 import {
@@ -75,13 +77,15 @@ import { KayitArama, kayitAramaAcikMi } from "../kayit-arama";
 import { useMenudenPencere } from "../menuden-pencere";
 import { panelIkonu } from "../panel-ikon";
 import { usePanelIslemi } from "../panel-islemi";
-import type { PanelSonucu } from "../panel-istegi";
+import { type PanelSonucu, panelIstegi } from "../panel-istegi";
 import { menuAlanHatalari, menuHataMetni } from "./hatalar";
 import { menuUclari } from "./uclar";
 import type { MenulerEkraniVerisi } from "./veri";
 
+// Hazır hedef (kart 0273): sayfa ekranının "Menüye ekle"si öğe penceresini bu hedef seçili açar.
+export type HazirHedef = { tur: KayitliMenuHedefi; kayit: BulunanKayit };
 type Pencere =
-  | { tur: "oge-ekle" }
+  | { tur: "oge-ekle"; hedef?: HazirHedef }
   | { tur: "oge-duzenle"; oge: PanelOgesi; ust: string | null }
   | { tur: "yeni-menu" }
   | { tur: "ad-degistir"; menu: Menu }
@@ -120,15 +124,22 @@ export function MenulerSaglayici({
   veri,
   degistirebilir,
   adres,
+  hazirHedef,
   children,
 }: {
   veri: MenulerEkraniVerisi;
   degistirebilir: boolean;
   // Sayfanın adresi: seçili menü adreste durur (?menu=...).
   adres: string;
+  // Sayfa açılınca öğe penceresi bu hedef seçili açılır (kart 0273); seçili menü elle kurulmuş olmalı.
+  hazirHedef?: HazirHedef;
   children: ReactNode;
 }) {
-  const [pencere, setPencere] = useState<Pencere>(null);
+  const [pencere, setPencere] = useState<Pencere>(() =>
+    hazirHedef !== undefined && degistirebilir && seciliMenu(veri)?.tur === "elle"
+      ? { tur: "oge-ekle", hedef: hazirHedef }
+      : null,
+  );
   const [onay, setOnay] = useState<Onay>(null);
   const islem = usePanelIslemi(menuHataMetni);
   const menuAdresi = (kimlik: string) => `${adres}?${new URLSearchParams({ menu: kimlik })}`;
@@ -555,9 +566,17 @@ const secimAdi = (metin: (anahtar: MetinAnahtari) => string, secim: HedefSecimi)
     : hedefAdi(metin, secim);
 const kayitliMi = (tur: MenuHedefTuru): tur is KayitliMenuHedefi =>
   (kayitliMenuHedefleri as readonly string[]).includes(tur);
+// Sabit sayfa ve blog yazısı içeriğin arama ucuyla aranır (kart 0273, izin icerik.gor).
+const icerikMi = (tur: MenuHedefTuru): tur is IcerikMenuHedefi =>
+  (icerikMenuHedefleri as readonly string[]).includes(tur);
+const icerikAramasi = (tur: IcerikMenuHedefi) => (aranan: string, sayfa: number) =>
+  panelIstegi<KayitAramaSonucu>(
+    `icerik-ara?${new URLSearchParams({ tur, ara: aranan, sayfa: String(sayfa) })}`,
+  );
 
 function OgeFormu({
   oge,
+  hazirHedef,
   ust,
   kapat,
   vazgec,
@@ -565,6 +584,8 @@ function OgeFormu({
 }: {
   // Düzenlenen öğe; yoksa yeni öğe.
   oge?: PanelOgesi;
+  // Yeni öğenin seçili gelen hedefi (kart 0273).
+  hazirHedef?: HazirHedef;
   ust: string | null;
   // Kayıttan sonra kapatır.
   kapat: () => void;
@@ -578,7 +599,7 @@ function OgeFormu({
   const hedef = oge?.hedef;
   const [secim, setSecim] = useState<HedefSecimi>(
     hedef === undefined
-      ? "kategori"
+      ? (hazirHedef?.tur ?? "kategori")
       : hedef.tur === "adres"
         ? hedef.adres.startsWith("/")
           ? "site-adresi"
@@ -589,7 +610,7 @@ function OgeFormu({
   const [kayit, setKayit] = useState<BulunanKayit | undefined>(
     hedef !== undefined && "kimlik" in hedef && oge?.kayit !== undefined
       ? { kimlik: hedef.kimlik, ad: oge.kayit.ad }
-      : undefined,
+      : hazirHedef?.kayit,
   );
   const [adres, setAdres] = useState(hedef?.tur === "adres" ? hedef.adres : "");
   const [yeniSekme, setYeniSekme] = useState(hedef?.tur === "adres" ? hedef.yeniSekme : false);
@@ -664,7 +685,7 @@ function OgeFormu({
       {kayitliMi(tur) ? (
         <AlanKabi ad="hedef.kimlik" etiket={hedefAdi(metin, tur)}>
           <KayitArama
-            tur={tur}
+            {...(icerikMi(tur) ? { ara: icerikAramasi(tur) } : { tur })}
             etiket={hedefAdi(metin, tur)}
             secili={kayit}
             sec={degistir(setKayit)}
@@ -894,6 +915,9 @@ function Pencereler() {
         <OgeFormu
           key={duzenlenen?.oge.kimlik ?? "yeni"}
           {...(duzenlenen === undefined ? {} : { oge: duzenlenen.oge })}
+          {...(pencere.tur === "oge-ekle" && pencere.hedef !== undefined
+            ? { hazirHedef: pencere.hedef }
+            : {})}
           ust={duzenlenen?.ust ?? null}
           kapat={kapat}
           vazgec={kapatmayiIste}

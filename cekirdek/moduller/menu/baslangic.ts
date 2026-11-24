@@ -10,32 +10,43 @@
 //   sırayla bekleyip kilitlenebilirdi (kart 0107 kontrolü). Kategori kilidini alan işler menü kilidini almaz.
 //   Bağlanılan satırlar adres adından okunurken kilitlenir: okumayla bağlama arasında silinemez.
 // - Kayıtlı hedef dosyada adres adıyla yazılır, silinmemiş kayda çevrilir. Site doğrulaması adres adının
-//   başlangıç kataloğunda olduğunu denetler; kurulumdan önce mağaza sahibi kaydı silmişse ya da adres adını
+//   başlangıç kataloğunda (sayfada başlangıç sayfalarında, kart 0273) olduğunu denetler; kurulumdan önce mağaza sahibi kaydı silmişse ya da adres adını
 //   değiştirmişse öğe altlarıyla yazılmaz, hata bir kez kaydedilir, öteki öğeler yazılır.
 import { and, inArray, isNull } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
-import type { KayitliMenuHedefi } from "../../kayitlar/menu.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
+import { sabitSayfalar } from "../icerik/model.ts";
 import { kategoriler } from "../kategori/model.ts";
 import { kategoriKilidiAl } from "../kategori/servis.ts";
 import { markalar } from "../marka/model.ts";
 import { urunler } from "../urun/model.ts";
 import { menuler } from "./model.ts";
-import type { BaslangicOgesi, MenuBaslangici, MenuHedefiGirdisi } from "./semalar.ts";
+import type {
+  BaslangicKayitHedefi,
+  BaslangicOgesi,
+  MenuBaslangici,
+  MenuHedefiGirdisi,
+} from "./semalar.ts";
 import { menuEkle, menuKilidiAl, ogeEkle } from "./servis.ts";
 
 export const baslangicMenuYazari = sistemIslemi("baslangic-menu");
 
-const tablolar = { kategori: kategoriler, marka: markalar, urun: urunler } as const;
+const tablolar = {
+  kategori: kategoriler,
+  marka: markalar,
+  urun: urunler,
+  sayfa: sabitSayfalar,
+} as const satisfies Record<BaslangicKayitHedefi, unknown>;
 
 // Dosyadaki adres adlarının silinmemiş kayıtları: türe göre adres adından kimliğe.
 const kimlikleriBul = async (islem: VeritabaniIslemi, menuler: MenuBaslangici) => {
-  const adlar: Record<KayitliMenuHedefi, Set<string>> = {
+  const adlar: Record<BaslangicKayitHedefi, Set<string>> = {
     kategori: new Set(),
     marka: new Set(),
     urun: new Set(),
+    sayfa: new Set(),
   };
   const topla = (ogeler: BaslangicOgesi[]) => {
     for (const oge of ogeler) {
@@ -44,8 +55,8 @@ const kimlikleriBul = async (islem: VeritabaniIslemi, menuler: MenuBaslangici) =
     }
   };
   for (const menu of menuler) topla(menu.ogeler);
-  const sonuc = {} as Record<KayitliMenuHedefi, Map<string, string>>;
-  for (const tur of Object.keys(tablolar) as KayitliMenuHedefi[]) {
+  const sonuc = {} as Record<BaslangicKayitHedefi, Map<string, string>>;
+  for (const tur of Object.keys(tablolar) as BaslangicKayitHedefi[]) {
     const tablo = tablolar[tur];
     const aranan = [...adlar[tur]];
     const satirlar =

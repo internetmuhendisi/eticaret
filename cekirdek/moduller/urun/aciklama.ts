@@ -105,3 +105,22 @@ export const aciklamayiTemizle = (aciklama: string | undefined): string | undefi
     ? undefined
     : temiz;
 };
+
+// Temizlenmiş biçimli metnin düz yazısı (kart 0273): sabit sayfanın açıklaması boşken arama motoru açıklaması içeriğin
+// başından üretilir. Satır ve paragraf sonları boşluk olur, etiketler düşer, kaçırılmış harfler geri çevrilir.
+const harfKarsiliklari: Record<string, string> = {
+  "&amp;": "&",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+  "&#39;": "'",
+  "&nbsp;": " ",
+};
+export const bicimliMetninDuzYazisi = (html: string): string =>
+  sanitizeHtml(html.replace(/<\/(p|h[1-6]|li)>|<br\s*\/?>/gi, " $&"), {
+    allowedTags: [],
+    allowedAttributes: {},
+  })
+    .replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (harf) => harfKarsiliklari[harf] ?? harf)
+    .replace(/\s+/g, " ")
+    .trim();

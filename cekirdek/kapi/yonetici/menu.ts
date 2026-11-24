@@ -1,6 +1,9 @@
 // Menü uçları (kart 0143, uç belgesi: cekirdek/kapi/uclar.md, karar 0082 ve 0116). Uç yalnız yönlendirir: kuralların
 // hepsi (derinlik, hedef türleri, sınırlar, kilitler) menü servisindedir (cekirdek/moduller/menu/servis.ts).
 // Değişikliği yapan yönetici kapıdan gelir.
+
+import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
+import { siteninServisi } from "../../moduller/magaza-ayarlari/servis.ts";
 import {
   menuDegisikligiSemasi,
   menuEklemeSemasi,
@@ -45,7 +48,12 @@ export const menuOkumaUcu = ucTanimla({
   sema: menuOkumaSemasi,
   izin: "menu.gor",
   sinir: "genel",
-  isle: async ({ kimlik }) => panelMenusu(siteninVeritabani(), kimlik),
+  // Blog yazısına bağlı öğe blog kapalıyken "görünmüyor" işaretlidir (kart 0273).
+  isle: async ({ kimlik }) => {
+    const vt = siteninVeritabani();
+    const blogAcik = await siteninServisi(calisanSite()).tekOku(vt, "blogAcik");
+    return panelMenusu(vt, kimlik, { blogAcik });
+  },
 });
 
 // POST /kapi/yonetici/menu-ekle

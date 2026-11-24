@@ -6,7 +6,11 @@
 // geçebilir (strpos; LIKE kullanılmaz, % ve _ joker olmaz). Kategoriler üst kategorilerinin adıyla ("Kadın › Tişört")
 // gelir, ağaç sırasındadır ve bu yolda aranır. Marka ve ürün ada göre sıralıdır, adres adlarıyla gelir. Sonuç sayfalıdır.
 import { and, asc, isNull, sql } from "drizzle-orm";
-import { type KayitliMenuHedefi, kayitliMenuHedefleri } from "../../kayitlar/menu.ts";
+import {
+  type IcerikMenuHedefi,
+  type KayitliMenuHedefi,
+  kayitliMenuHedefleri,
+} from "../../kayitlar/menu.ts";
 import { aramaAnahtari, aramaAnahtariSql } from "../../metinler/arama-anahtari.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { etiketler } from "../etiket/model.ts";
@@ -15,9 +19,16 @@ import { kategoriYollari, kategoriYoluAyraci } from "../kategori/yol.ts";
 import { markalar } from "../marka/model.ts";
 import { urunler } from "./model.ts";
 
-// Aranabilen kayıt türleri: menünün kayıtlı hedefleri ve ürünün etiketi (kart 0263).
-export const aranabilirKayitlar = [...kayitliMenuHedefleri, "etiket"] as const;
-export type AranabilirKayit = KayitliMenuHedefi | "etiket";
+// Aranabilen kayıt türleri: menünün katalogdaki kayıtlı hedefleri ve ürünün etiketi (kart 0263). İçeriğin kayıtları
+// (sabit sayfa, blog yazısı) ayrı uçla aranır (cekirdek/moduller/icerik/arama.ts, kart 0273).
+export type AranabilirKayit = Exclude<KayitliMenuHedefi, IcerikMenuHedefi> | "etiket";
+export const aranabilirKayitlar = [
+  ...kayitliMenuHedefleri.filter(
+    (tur): tur is Exclude<KayitliMenuHedefi, IcerikMenuHedefi> =>
+      tur !== "sayfa" && tur !== "blog-yazisi",
+  ),
+  "etiket",
+] as readonly AranabilirKayit[];
 
 // Bir sayfadaki kayıt sayısı ve aranan metnin en çok uzunluğu.
 export const kayitAramaSinirlari = { sayfa: 20, aranan: 100 } as const;

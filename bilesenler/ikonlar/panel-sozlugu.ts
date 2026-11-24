@@ -15,6 +15,7 @@ import {
   EllipsisIcon,
   EyeIcon,
   EyeOffIcon,
+  FileIcon,
   FolderTreeIcon,
   GalleryHorizontalIcon,
   Heading3Icon,
@@ -67,6 +68,8 @@ export const panelIkonlari = {
   yorumlar: MessageSquareTextIcon,
   // Mağaza bilgileri (kart 0278).
   magaza: StoreIcon,
+  // Sabit sayfalar (kart 0273): menüdeki sayfa ve boş hâli.
+  sayfa: FileIcon,
   // Dosya yükleme düğmesi (kart 0094) ve biçimli metin alanının araç çubuğu (kart 0263): yalnız panelde kullanılan
   // kütüphane parçaları.
   yukle: UploadIcon,
