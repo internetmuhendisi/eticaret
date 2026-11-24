@@ -8,7 +8,7 @@ import { sabitDegerler } from "../../../bilesenler/tasarim-degerleri/degerler";
 import type { BaglamGorseli, VitrinBaglami } from "./baglam.ts";
 
 const { tablet, masaustu } = sabitDegerler.kirilmaNoktalari;
-const { icerik, panel } = sabitDegerler.genislikler;
+const { icerik, panel, metin } = sabitDegerler.genislikler;
 
 // Görselin sayfadaki yaklaşık genişliği: bütün içerik, yarısı, üçte biri, beşte biri ya da yan afişinki (masaüstünde
 // panel genişliği, daha darda afişin yanında dörtte ya da üçte biri; kart 0171).
@@ -20,6 +20,12 @@ export const gorselGenislikleri = {
   // Masaüstünde görsel kırpılarak afişi doldurur: yatay görselin yüksekliği doldurması için panelin iki katı
   // genişlikte kaynak gerekir (bağımsız kontrolün bulgusu: panel genişliği bulanık kaynak seçtiriyordu).
   panel: `(min-width: ${masaustu}) calc(2 * ${panel}), (min-width: ${tablet}) 25vw, 33vw`,
+  // Blog yazısının kapağı (kart 0272): tablet ve üstünde metnin genişliği; telefonda orta boyut seçilir. Kapak
+  // telefonda sayfanın ana içeriğidir, yavaş bağlantıda iki kat yoğun ekranın büyük boyutu ana içeriği hedefin
+  // üstüne çıkarıyordu (hız ölçümü, ölçüldü).
+  kapak: `(min-width: ${tablet}) ${metin}, 60vw`,
+  // Blog listesinin kartı: masaüstünde üç, tablette iki sütun; telefonda orta boyut (kapakla aynı sebep).
+  blogKarti: `(min-width: ${masaustu}) 33vw, (min-width: ${tablet}) 50vw, 60vw`,
 } as const;
 export type GorselGenisligi = keyof typeof gorselGenislikleri;
 

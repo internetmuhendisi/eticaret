@@ -4,6 +4,9 @@
 // üstüne gelince çizilir. Satır sıkı durur (32 px), basılan alan 44 × 44 px'tir (kart 0191): bağlantı en az 44 px
 // geniştir (kısa ad ortada durur, komşu kısa adların alanları üst üste binmez), yüksekliği dokunma-alani ile 44
 // px'e çıkar; yol iki satıra inerse satırların arası alanın taşması kadardır.
+// tekSatir (kart 0272): yol hiç alt satıra inmez, son adım sığmazsa üç noktayla biter. Uzun son adımlı sayfada (blog
+// yazısı) yolun yüksekliği yazı tipine bağlı olmasın diye: yedek yazı tipinde bir, asıl yazı tipinde iki satır olan yol
+// yazı tipi yüklenince sayfayı kaydırıyordu (hız ölçümü). Son adımın tamamı sayfanın başlığındadır.
 import Link from "next/link";
 import { sinif } from "./sinif.ts";
 
@@ -13,6 +16,7 @@ export function SayfaYolu({
   adimlar,
   etiket,
   ayrac,
+  tekSatir = false,
   className,
 }: {
   // Bulunulan sayfa dahil, ana sayfadan başlayarak. Sonuncunun adresi bağlantı olarak kullanılmaz.
@@ -21,22 +25,37 @@ export function SayfaYolu({
   etiket: string;
   // Adımların arasındaki işaret, örneğin "/". Ekran okuyucuya okunmaz.
   ayrac: string;
+  tekSatir?: boolean;
   className?: string;
 }) {
   return (
     <nav aria-label={etiket} data-slot="sayfa-yolu" className={sinif("min-w-0", className)}>
-      <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-3 text-kucuk text-soluk-yazi">
+      <ol
+        className={sinif(
+          "flex items-center gap-x-1.5 gap-y-3 text-kucuk text-soluk-yazi",
+          tekSatir ? "flex-nowrap" : "flex-wrap",
+        )}
+      >
         {adimlar.map((adim, sira) => {
           const son = sira === adimlar.length - 1;
           return (
-            <li key={adim.adres} className="flex items-center gap-1.5">
+            <li
+              key={adim.adres}
+              className={sinif(
+                "flex items-center gap-1.5",
+                tekSatir && (son ? "min-w-0" : "shrink-0"),
+              )}
+            >
               {sira === 0 ? null : (
                 <span aria-hidden="true" className="text-soluk-yazi">
                   {ayrac}
                 </span>
               )}
               {son ? (
-                <span aria-current="page" className="font-kalin text-yazi">
+                <span
+                  aria-current="page"
+                  className={sinif("font-kalin text-yazi", tekSatir && "truncate")}
+                >
                   {adim.ad}
                 </span>
               ) : (

@@ -88,7 +88,7 @@ function BlogKarti({ yazi, oncelikli }: { yazi: BlogKartiVerisi; oncelikli: bool
           <VitrinGorseli
             gorsel={yazi.kapak.gorsel}
             alt=""
-            genislik="ucteBir"
+            genislik="blogKarti"
             oncelikli={oncelikli}
             className="size-full object-cover"
           />
@@ -108,8 +108,9 @@ function BlogKarti({ yazi, oncelikli }: { yazi: BlogKartiVerisi; oncelikli: bool
   );
 }
 
-// Listede ilk satırdaki kartların kapağı öncelikli yüklenir (ilk ekranda görünür).
-const oncelikliKapakSayisi = 3;
+// Listede yalnız ilk kartın kapağı öncelikli yüklenir: telefonda ilk ekranda yalnız o görünür, üç kapak birlikte
+// yavaş bağlantıyı paylaşıp ana içeriği geciktiriyordu (hız ölçümü).
+const oncelikliKapakSayisi = 1;
 
 export async function BlogListesiSayfasi({ sorgu }: { sorgu: SorguParametreleri }) {
   const { kategori, sayfa } = await listeGirdisi(sorgu);
@@ -234,6 +235,7 @@ export async function BlogYazisiSayfasi({
     <main className="mx-auto flex w-full max-w-icerik flex-col px-4 pt-5 pb-12 tablet:px-6">
       <article className="mx-auto flex w-full max-w-metin min-w-0 flex-col gap-4">
         <SayfaYolu
+          tekSatir
           {...sayfaYoluMetinleri()}
           adimlar={[
             { ad: metin("vitrin.sayfa.anasayfa"), adres: vitrinAdresleri.anasayfa },
@@ -255,13 +257,17 @@ export async function BlogYazisiSayfasi({
         </p>
         <SayfaBasligi baslik={yazi.baslik} />
         {yazi.kapak === null ? null : (
-          <VitrinGorseli
-            gorsel={yazi.kapak.gorsel}
-            alt={yazi.kapak.metin}
-            genislik="tam"
-            oncelikli
-            className="aspect-16/10 w-full rounded-orta object-cover"
-          />
+          // Oran kutudadır (listedeki kart gibi): stil gelmeden çizilen görsel kendi genişliğiyle yer kaplayıp sonra
+          // küçülünce sayfa kayıyordu (hız ölçümü, 0,103).
+          <div className="aspect-16/10 w-full overflow-hidden rounded-orta bg-yuzey">
+            <VitrinGorseli
+              gorsel={yazi.kapak.gorsel}
+              alt={yazi.kapak.metin}
+              genislik="kapak"
+              oncelikli
+              className="size-full object-cover"
+            />
+          </div>
         )}
         {yazi.icerik === undefined ? null : (
           <div

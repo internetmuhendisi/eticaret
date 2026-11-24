@@ -157,6 +157,32 @@ describe("sayfa yolu, başlık ve boş hâl", () => {
     expect(within(yol).getAllByRole("listitem")).toHaveLength(3);
   });
 
+  it("tek satırlı sayfa yolu alt satıra inmez, son adım üç noktayla biter (kart 0272)", () => {
+    render(
+      <SayfaYolu
+        etiket="Sayfa yolu"
+        ayrac="/"
+        tekSatir
+        adimlar={[
+          { ad: "Ana sayfa", adres: "/" },
+          { ad: "Blog", adres: "/blog" },
+          { ad: "Çok uzun bir yazı başlığı", adres: "/blog/uzun" },
+        ]}
+      />,
+    );
+    const yol = screen.getByRole("navigation", { name: "Sayfa yolu" });
+    expect(within(yol).getByRole("list").className).toContain("flex-nowrap");
+    expect(within(yol).getByRole("list").className).not.toContain("flex-wrap");
+    const adimlar = within(yol).getAllByRole("listitem");
+    expect(adimlar.map((adim) => adim.className.includes("shrink-0"))).toEqual([true, true, false]);
+    expect(adimlar[2]?.className).toContain("min-w-0");
+    expect(within(yol).getByText("Çok uzun bir yazı başlığı").className).toContain("truncate");
+    cleanup();
+    render(<SayfaYolu etiket="Sayfa yolu" ayrac="/" adimlar={[{ ad: "Ana sayfa", adres: "/" }]} />);
+    expect(screen.getByRole("list").className).toContain("flex-wrap");
+    expect(screen.getByText("Ana sayfa").className).not.toContain("truncate");
+  });
+
   it("sayfa başlığı sayfanın h1'idir, ek yazı başlığın dışındadır", () => {
     render(<SayfaBasligi baslik="Giyim" ek="4 ürün" />);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Giyim");
