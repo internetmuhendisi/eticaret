@@ -280,6 +280,7 @@
     "cekirdek/yonetim-paneli/kurulum-akisi.tsx",
     "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/liste/tarih-suzgeci.tsx",
+    "cekirdek/yonetim-paneli/magaza-bilgileri/ekran.tsx",
     "cekirdek/yonetim-paneli/markalar/ekran.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/musteriler/notlar.tsx",
