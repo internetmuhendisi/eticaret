@@ -23,7 +23,7 @@ Bölüm: Yönetim paneli.
 
 ## Not
 
-Kart 0274 ile birlikte yapıldı (karar 0178): panelde mağaza sahibi sıfırlar, son mağaza sahibininkini altyapı sahibi `pnpm sunucu-yonetici-iki-asama-sifirla` ile; kimlik kayıtlı numarayı geri arayarak doğrulanır (kullanıcı kararı). Yedek kodlar "Hesabım"da yenilenir.
+Kart 0274 ile birlikte yapıldı (karar 0178): sıfırlamada şifre de sıfırlanır (kullanıcı kararı), yönetici yeni şifreyi e-posta bağlantısıyla koyar; panelde mağaza sahibi sıfırlar, son mağaza sahibininkini altyapı sahibi `pnpm sunucu-yonetici-iki-asama-sifirla` ile; kimlik kayıtlı numarayı geri arayarak doğrulanır (kullanıcı kararı). Yedek kodlar "Hesabım"da yenilenir.
 
 ## Bitti sayılır
 
