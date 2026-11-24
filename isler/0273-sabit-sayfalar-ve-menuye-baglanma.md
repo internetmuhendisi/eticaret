@@ -25,4 +25,4 @@ Bölüm: Yönetim paneli. Önce 0272 (içerik modülü) bitmiş olmalı.
 
 ## Durum
 
-yapılacak
+bitti
