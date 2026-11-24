@@ -5,9 +5,16 @@ import { postaKoduZorunluMu, ulkeninIlleri } from "../../bolgeler/bolgeler";
 import { siteninBicimleyicisi } from "../../metinler/site-metni";
 import type { BolgeUlkesi } from "./alanlar";
 
-export const teslimatUlkeleri = (site: Pick<Site, "ayarlar">): BolgeUlkesi[] => {
+export const teslimatUlkeleri = (site: Pick<Site, "ayarlar">): BolgeUlkesi[] =>
+  bolgeUlkeleri(site, site.ayarlar.teslimatUlkeleri);
+
+// Verilen ülkelerin listesi: panelin mağaza bilgileri sitenin satış ülkeleriyle kullanır (kart 0278).
+export const bolgeUlkeleri = (
+  site: Pick<Site, "ayarlar">,
+  kodlar: readonly string[],
+): BolgeUlkesi[] => {
   const bicim = siteninBicimleyicisi(site.ayarlar);
-  return site.ayarlar.teslimatUlkeleri.map((kod) => ({
+  return kodlar.map((kod) => ({
     kod,
     ad: bicim.ulkeAdi(kod),
     iller: ulkeninIlleri(kod).map((il) => ({

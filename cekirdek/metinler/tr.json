@@ -272,6 +272,10 @@
       "yorumlar": {
         "ad": "Yorumlar",
         "aciklama": "Müşterilerin ürün yorumları onayınızdan sonra vitrinde görünür. Yorumun metni değiştirilemez."
+      },
+      "magazaBilgileri": {
+        "ad": "Mağaza bilgileri",
+        "aciklama": "Mağazanızın adı, iletişim bilgileri ve satıcı bilgileri. Kaydedince vitrinde ve yeni e-postalarda hemen görünür."
       }
     },
     "eylem": {
@@ -2277,6 +2281,65 @@
           "aciklama": "Yorumlar vitrinde görünmez. Reddedilen yorumu sonra yayınlayabilirsiniz; müşteriye bildirim gitmez.",
           "basari": "{sayi} yorum reddedildi."
         }
+      }
+    },
+    "magazaBilgileri": {
+      "magaza": {
+        "baslik": "Mağaza",
+        "aciklama": "Vitrinin başlığında, sekmede ve e-postalarda görünür."
+      },
+      "iletisim": {
+        "baslik": "İletişim",
+        "aciklama": "Vitrinin alt kısmında, hata sayfasında, sipariş fişinde ve sipariş e-postalarında görünür."
+      },
+      "sosyal": {
+        "baslik": "Sosyal hesaplar",
+        "aciklama": "Yalnız kullanıcı adını yazın; bağlantı kendiliğinden kurulur. Boş bıraktığınız hesap vitrinde görünmez.",
+        "ikinci": "{site} ({sira}. hesap)"
+      },
+      "satici": {
+        "baslik": "Satıcı bilgileri",
+        "aciklama": "Ön bilgilendirme formunda, mesafeli satış sözleşmesinde, sipariş e-postasının alt bilgisinde ve sipariş fişinde yazar. Yasal zorunluluktur; bilgilerin doğru olduğundan emin olun."
+      },
+      "magazaAdi": "Mağaza adı",
+      "telefon": "Telefon",
+      "telefonAciklama": "Ülke koduyla ya da 0 ile yazabilirsiniz.",
+      "eposta": "E-posta",
+      "adresBos": "Adresi boş bırakırsanız vitrinde ve e-postalarda adres görünmez.",
+      "ulke": "Ülke",
+      "isletmeTuru": "İşletme türü",
+      "isletme": {
+        "sirket": "Şirket",
+        "sahis": "Şahıs işletmesi"
+      },
+      "unvan": "Unvan",
+      "unvanSahis": "Unvan (işletmenin ya da sahibinin adı)",
+      "unvanAciklama": "Vergi levhanızdaki gibi yazın. Satıcı bilgilerinin hepsini boşaltırsanız satıcı bilgileri silinir.",
+      "vergiDairesi": "Vergi dairesi",
+      "vergiNumarasi": "Vergi kimlik numarası",
+      "kimlikNumarasi": "T.C. kimlik numarası",
+      "mersis": "MERSİS numarası",
+      "ticaretSicil": "Ticaret sicil numarası",
+      "kep": "KEP adresi",
+      "kaydet": "Kaydet",
+      "kaydedildi": "Mağaza bilgileri kaydedildi. Vitrinde ve yeni e-postalarda görünüyor.",
+      "hata": {
+        "zorunlu": "Bu alan zorunlu.",
+        "uzun": "Bu alan çok uzun.",
+        "gecersiz": "Bu değer geçerli değil.",
+        "secin": "Listeden seçin.",
+        "telefon": "Telefon numarası geçerli değil. Ülke koduyla (+90 312 000 00 00) ya da 0 ile (0312 000 00 00) yazın.",
+        "postaKodu": "Posta kodu geçerli değil.",
+        "eposta": "E-posta adresi geçerli değil.",
+        "sosyalHesap": "Yalnız kullanıcı adını yazın: harf, rakam, nokta, alt çizgi ya da tire.",
+        "sosyalTekrar": "Aynı sosyal hesap iki kez yazılmış.",
+        "vergiNumarasiBicimi": "Numaranın biçimi tutmuyor. Rakamlarını ve hane sayısını kontrol edin.",
+        "vergiNumarasiKontrol": "Numaranın kontrol hanesi tutmuyor. Numarayı vergi levhanızdan kontrol edin.",
+        "mersis": "MERSİS numarasının biçimi tutmuyor. Rakamlarını ve hane sayısını kontrol edin.",
+        "kep": "KEP adresi bu ülkenin KEP alan adıyla bitmeli.",
+        "yetki": "Mağaza bilgilerini değiştirme izniniz yok.",
+        "oturum": "Oturumunuz kapanmış. Yeniden giriş yapın.",
+        "genel": "Mağaza bilgileri kaydedilemedi. Biraz sonra yeniden deneyin."
       }
     }
   },

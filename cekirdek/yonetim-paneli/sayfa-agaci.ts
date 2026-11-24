@@ -6,7 +6,13 @@ import type { PanelIkonAdi } from "../../bilesenler/ikonlar/panel-sozlugu";
 import type { EklentiKodu } from "../kayitlar/eklentiler";
 import type { GirisIzni } from "../kayitlar/izinler";
 import type { MetinAnahtari } from "../metinler/metin";
-import { panelAdresi, temaAdresi, temaAyarlariAdresi, yorumlarAdresi } from "./adresler";
+import {
+  magazaBilgileriAdresi,
+  panelAdresi,
+  temaAdresi,
+  temaAyarlariAdresi,
+  yorumlarAdresi,
+} from "./adresler";
 
 // Menüdeki gruplar, menüdeki sırasıyla. Grubun adı yalnız menüde görünür; grubun kendi sayfası yoktur.
 export const panelGruplari = {
@@ -154,6 +160,17 @@ export const panelSayfalari = [
     ad: "yonetim.sayfa.kargo.ad",
     aciklama: "yonetim.sayfa.kargo.aciklama",
     ikon: "kargo",
+    izin: "magaza-ayarlari.gor",
+    grup: "satis",
+  },
+  // Mağaza bilgileri (kart 0278, karar 0175): mağaza adı, iletişim, adres, sosyal hesaplar ve satıcı bilgileri. Mağaza
+  // ayarlarıdır, yalnız mağaza sahibinin izinleriyle. Taslağın "Ayarlar" grubu kart 0301'de.
+  {
+    kod: "magaza-bilgileri",
+    adres: magazaBilgileriAdresi,
+    ad: "yonetim.sayfa.magazaBilgileri.ad",
+    aciklama: "yonetim.sayfa.magazaBilgileri.aciklama",
+    ikon: "magaza",
     izin: "magaza-ayarlari.gor",
     grup: "satis",
   },

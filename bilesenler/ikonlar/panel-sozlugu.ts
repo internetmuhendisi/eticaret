@@ -30,6 +30,7 @@ import {
   PaletteIcon,
   PanelsTopLeftIcon,
   PrinterIcon,
+  StoreIcon,
   TagsIcon,
   UploadIcon,
 } from "lucide-react";
@@ -64,6 +65,8 @@ export const panelIkonlari = {
   ozellikler: ListChecksIcon,
   // Yorumlar (kart 0277): menüdeki sayfa ve boş hâli.
   yorumlar: MessageSquareTextIcon,
+  // Mağaza bilgileri (kart 0278).
+  magaza: StoreIcon,
   // Dosya yükleme düğmesi (kart 0094) ve biçimli metin alanının araç çubuğu (kart 0263): yalnız panelde kullanılan
   // kütüphane parçaları.
   yukle: UploadIcon,
