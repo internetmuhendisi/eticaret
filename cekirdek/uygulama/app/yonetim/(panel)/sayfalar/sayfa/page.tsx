@@ -2,6 +2,7 @@
 // yoksa, kalıba uymuyorsa ya da sayfa yoksa (silinmişse) bulunamadı. Yayındaki sayfada "Vitrinde gör".
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { metin } from "../../../../../../metinler/site-metni";
 import { kimlikMi } from "../../../../../../veritabani/kimlik";
 import { kayitAdresleri } from "../../../../../../vitrin/adresler";
 import { EylemBaglantisi } from "../../../../../../yonetim-paneli/eylem-dugmesi";
@@ -12,6 +13,7 @@ import {
   panelSayfasiniAc,
 } from "../../../../../../yonetim-paneli/panel-sayfasi";
 import { SayfaEkrani } from "../../../../../../yonetim-paneli/sayfalar/ekran";
+import { menuYeriYazisi } from "../../../../../../yonetim-paneli/sayfalar/menu-yeri";
 import { sayfaEkraniVerisi } from "../../../../../../yonetim-paneli/sayfalar/veri";
 
 export const generateMetadata = (): Promise<Metadata> => panelSayfaBilgisi("sabit-sayfa");
@@ -31,6 +33,16 @@ export default async function SabitSayfaEkraniSayfasi({
     <PanelSayfasi
       kod="sabit-sayfa"
       baslik={veri.form.baslik}
+      // Taslaktaki gibi: durum, vitrindeki adres ve bağlı olduğu menüler.
+      altBaslik={[
+        metin(`yonetim.sabitSayfa.durum.${veri.form.durum}`),
+        kayitAdresleri.sayfa(veri.form.adresAdi),
+        veri.menuler.length === 0
+          ? metin("yonetim.sabitSayfa.menudeDegil")
+          : veri.menuler
+              .map((yer) => menuYeriYazisi(yer, metin("yonetim.sabitSayfa.ayrac")))
+              .join(", "),
+      ].join(metin("yonetim.kategori.ayrac"))}
       eylemler={
         // Taslak sayfanın vitrindeki adresi bulunamadı verir: bağlantı yalnız yayındaki sayfada.
         veri.form.durum === "yayinda" ? (

@@ -36,7 +36,7 @@ import { kodluAlanHatalari, kodluHataMetni } from "../kodlu-form";
 import { usePanelIslemi } from "../panel-islemi";
 import { panelIstegi } from "../panel-istegi";
 import { useSunucuFormu } from "../sunucu-formu";
-import { menuYeriYazisi } from "./liste";
+import { menuYeriYazisi } from "./menu-yeri";
 import type { SayfaEkraniVerisi, SayfaFormu } from "./veri";
 
 const hataMetni = kodluHataMetni(sabitSayfaHataMetinleri);

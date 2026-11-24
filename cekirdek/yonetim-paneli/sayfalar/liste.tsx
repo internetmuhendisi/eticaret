@@ -8,20 +8,19 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
 import { BosHal } from "../../../bilesenler/parcalar/bos-hal";
 import { IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
-import { Kart } from "../../../bilesenler/parcalar/kart";
 import { OnayPenceresi } from "../../../bilesenler/parcalar/onay-penceresi";
 import { Rozet } from "../../../bilesenler/parcalar/rozet";
 import type { SabitSayfaDurumu } from "../../kayitlar/sayfa";
 import { doldur } from "../../metinler/doldur";
 import { usePanelMetni } from "../../metinler/panel-metni";
 import { sabitSayfaHataMetinleri } from "../../moduller/icerik/sayfa-semalari";
-import type { MenuYeri } from "../../moduller/menu/servis";
 import { kayitAdresleri } from "../../vitrin/adresler";
 import { sayfaEkraniAdresi, yeniSayfaAdresi } from "../adresler";
 import { EylemBaglantisi } from "../eylem-dugmesi";
 import { kodluHataMetni } from "../kodlu-form";
 import { panelIkonu } from "../panel-ikon";
 import { usePanelIslemi } from "../panel-islemi";
+import { menuYeriYazisi } from "./menu-yeri";
 import type { SayfaSatiri } from "./veri";
 
 const hataMetni = kodluHataMetni(sabitSayfaHataMetinleri);
@@ -30,10 +29,6 @@ export const sayfaDurumRozetleri = {
   yayinda: "basari",
   taslak: "ikincil",
 } as const satisfies Record<SabitSayfaDurumu, "basari" | "ikincil">;
-
-// Menüdeki yeri: "Alt bilgi › Kurumsal" ya da yalnız menünün adı.
-export const menuYeriYazisi = (yer: MenuYeri, ayrac: string): string =>
-  yer.ust === null ? yer.menuAdi : `${yer.menuAdi}${ayrac}${yer.ust}`;
 
 export function SayfalarListesi({
   sayfalar,
@@ -82,46 +77,47 @@ export function SayfalarListesi({
       <h2 id={baslikKimligi} className="sr-only">
         {metin("yonetim.sabitSayfa.liste")}
       </h2>
-      <Kart className="p-0">
-        <ul aria-labelledby={baslikKimligi} className="m-0 flex list-none flex-col p-0">
-          {sayfalar.map((sayfa, sira) => (
-            <li
-              key={sayfa.kimlik}
-              data-sayfa={sayfa.kimlik}
-              className="flex min-w-0 items-center gap-3 border-b border-kenar p-3 last:border-b-0 tablet:px-4"
-            >
-              <div className="flex min-w-0 flex-1 flex-col gap-1 break-words">
-                <span className="flex flex-wrap items-center gap-2">
-                  <Baglanti href={sayfaEkraniAdresi(sayfa.kimlik)} className="font-kalin">
-                    {sayfa.baslik}
-                  </Baglanti>
-                  <Rozet tur={sayfaDurumRozetleri[sayfa.durum]}>
-                    {metin(`yonetim.sabitSayfa.durum.${sayfa.durum}`)}
-                  </Rozet>
-                </span>
-                <span className="text-kucuk text-soluk-yazi">
-                  {[
-                    kayitAdresleri.sayfa(sayfa.adresAdi),
-                    sayfa.menuler.length === 0
-                      ? metin("yonetim.sabitSayfa.menudeDegil")
-                      : sayfa.menuler.map((yer) => menuYeriYazisi(yer, ayrac)).join(", "),
-                  ].join(metin("yonetim.kategori.ayrac"))}
-                </span>
-              </div>
-              {izinler.sil ? (
-                <IkonDugmesi
-                  ikon="sil"
-                  etiket={doldur(metin("yonetim.sabitSayfa.silAdli"), { baslik: sayfa.baslik })}
-                  onClick={() => {
-                    odaklanacak.current = (sayfalar[sira + 1] ?? sayfalar[sira - 1])?.kimlik ?? "";
-                    setOnay(sayfa);
-                  }}
-                />
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      </Kart>
+      <ul
+        aria-labelledby={baslikKimligi}
+        className="m-0 flex list-none flex-col rounded-orta border border-kenar bg-zemin p-0"
+      >
+        {sayfalar.map((sayfa, sira) => (
+          <li
+            key={sayfa.kimlik}
+            data-sayfa={sayfa.kimlik}
+            className="flex min-w-0 items-center gap-3 border-b border-kenar p-3 last:border-b-0 tablet:px-4"
+          >
+            <div className="flex min-w-0 flex-1 flex-col gap-1 break-words">
+              <span className="flex flex-wrap items-center gap-2">
+                <Baglanti href={sayfaEkraniAdresi(sayfa.kimlik)} className="font-kalin">
+                  {sayfa.baslik}
+                </Baglanti>
+                <Rozet tur={sayfaDurumRozetleri[sayfa.durum]}>
+                  {metin(`yonetim.sabitSayfa.durum.${sayfa.durum}`)}
+                </Rozet>
+              </span>
+              <span className="text-kucuk text-soluk-yazi">
+                {[
+                  kayitAdresleri.sayfa(sayfa.adresAdi),
+                  sayfa.menuler.length === 0
+                    ? metin("yonetim.sabitSayfa.menudeDegil")
+                    : sayfa.menuler.map((yer) => menuYeriYazisi(yer, ayrac)).join(", "),
+                ].join(metin("yonetim.kategori.ayrac"))}
+              </span>
+            </div>
+            {izinler.sil ? (
+              <IkonDugmesi
+                ikon="sil"
+                etiket={doldur(metin("yonetim.sabitSayfa.silAdli"), { baslik: sayfa.baslik })}
+                onClick={() => {
+                  odaklanacak.current = (sayfalar[sira + 1] ?? sayfalar[sira - 1])?.kimlik ?? "";
+                  setOnay(sayfa);
+                }}
+              />
+            ) : null}
+          </li>
+        ))}
+      </ul>
       <OnayPenceresi
         acik={onay !== null}
         acikDegisince={(acik) => {
