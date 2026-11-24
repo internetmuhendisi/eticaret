@@ -71,6 +71,7 @@ paths:
 - Yorum yalnız `cekirdek/moduller/yorum/servis.ts` ile yazılır ve okunur. Yalnız yayındaki yorum görünür ve ortalamaya girer: ürün sayfası, ürün kartının puanı ve ana sayfa bölümü `puanOzetleri`, `urunYorumlari` ve `anaSayfaYorumlari`'nı kullanır; yorum ya da puan başka yerde sayılmaz.
 - Satın alma denetimi yalnız `satinAldiMi`'dır (`cekirdek/moduller/yorum/satin-alma.ts`): müşterinin o ürünü içeren, `satinAlmaDurumlari`'ndaki (teslim edildi, kısmi iade) siparişi (karar 0145, 0146).
 - Yorum metni düz metindir, yazı olarak çizilir (HTML olarak çizilmez). Görünen ad kısaltılmış saklanır (`kisaAd`).
+- Panelin yorum listesi, sayıları ve toplu kararı yalnız `cekirdek/moduller/yorum/panel-listesi.ts`'tedir (kart 0277, karar 0174); toplu karar tekil kararla aynı yoldan geçer.
 - Sayfa çizilirken müşterinin oturumu okunmaz: yazma izni "Yorum yaz" basılınca müşteri ucundan sorulur. Girişe giden müşteri `girisAdresiDonuslu` ile, yalnız vitrinin kendi sayfasına döner (`vitrinDonusu`).
 
 ## Favoriler (karar 0110)

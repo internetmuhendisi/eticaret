@@ -42,6 +42,7 @@ paths:
 - Bölümün formu `BolumDuzenleyici` ile (`vitrin-bolumleri/bolum-duzenleyici.tsx`): görünüm, tariften çıkan alanlar (`BolumFormu`), "Kaydet ve yayınla"; formun hatası formun içindedir, bildirim verilmez. Görsel alanı `GorselSecimi` ile, önizlemesi `panel-gorseli` ucundandır.
 - Geri dönüş ekranın gördüğü sürümün sırasını gönderir (`son`); "Geri al" kendi işleminin yazdığı sürümün sırasını. Son sürüme göre koşulsuz geri dönüş yazma.
 - Menüdeki sayfanın adının yanındaki işaret ağaçtaki `isaret` alanıdır ("Kısayol").
+- Menüdeki sayı (bakılması gereken kayıt, kart 0277, karar 0174) ağaçtaki `sayac` alanıdır; değeri ve ekran okuyucu yazısı `cekirdek/yonetim-paneli/menu-sayaclari.ts`'tedir. Düzen yalnız menüde görünen sayfaların sayısını okur, okunamayan sayı menüyü düşürmez. Yeni sayı aynı kayda eklenir; ekran menüyü kendisi yazmaz.
 
 ## Menüler ekranı ve ortak parçalar (karar 0116)
 
@@ -108,6 +109,12 @@ paths:
 - Özelliğin formu tek kayıtla gider (`ozellik-kaydet`); değeri olan özelliğin türü seçilemez, değeri olan seçenek çıkarılınca kayıttan önce sorulur. Var olan seçeneği çıkarmak `ozellik.sil` ister (uç denetler, ekran düğmeyi göstermez).
 - Birden çok kategori ya da özellik satırını güncelleyen yazma (sıralama, silme) önce ürün kilidini alır (`urun/kilit.ts`). Görseli görme izni olmayana görsel alanı ve listesi gösterilmez. Silme onayı etkilenen ürün sayısını sunucunun sayımından söyler.
 - Satırın küçük görseli `KatalogGorseli` ile, önizlemesi `panel-gorseli` ucundandır; o uç `dosya.gor` ister (sitedeki görselleri görmek, görevlide de vardır).
+
+## Yorumlar (karar 0174)
+
+- Ekran `cekirdek/yonetim-paneli/yorumlar/` klasöründe, menüde "Ürünler" altındadır; servisi `cekirdek/moduller/yorum/panel-listesi.ts`. Görmek `yorum.gor`, karar ve ana sayfa işareti `yorum.onayla` (görevlide de); ürün adı yalnız `urun.gor` izni olana ürün ekranına bağlantıdır.
+- Liste Onay bekleyen sekmesiyle açılır (varsayılan sekme), her genişlikte karttır. Kart eylemleri `yorum-karari` ve `yorum-ana-sayfa` uçlarına, toplu işlem `yorumlar-toplu`'ya gider. Eylemden sonra odak kartta, sonraki ya da önceki kartta, liste boşalınca seçili sekmede kalır; odak yenilenen liste gelince yerleşir.
+- Silinmiş ürünün yorumu listede, sayılarda ve menüdeki sayıda yoktur. Yönetici e-postasının "Yorumlara git" düğmesi `yorumlarAdresi`'ne gider.
 
 ## Ürünler listesi (karar 0161)
 
