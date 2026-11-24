@@ -220,6 +220,8 @@ test("sabit sayfa: mağaza sahibi klavyeyle yazar, yayınlar, menüye ekler, vit
     await expect(
       pencere.getByRole("combobox", { name: metin("yonetim.menu.hedef.sayfa"), exact: true }),
     ).toHaveValue(baslikYazisi);
+    // Adres temizlenir: sayfa yenilenince pencere yeniden açılmaz.
+    await expect(page).not.toHaveURL(/ekle-sayfa/);
     await tara(page, "menüye ekleme penceresi");
     // Ana menüye eklenir: menü adreste verilir, pencere yine sayfa seçili açılır.
     await page.keyboard.press("Escape");

@@ -216,6 +216,7 @@
     "cekirdek/vitrin/siparis/iban-kopyala.tsx",
     "cekirdek/vitrin/siparis/siparis-iptali.tsx",
     "cekirdek/yonetim-paneli/blog/yazi-ekrani.tsx",
+    "cekirdek/yonetim-paneli/menuler/ekran.tsx",
     "cekirdek/yonetim-paneli/panel-cercevesi.tsx",
     "cekirdek/yonetim-paneli/panel-islemi.ts",
     "cekirdek/yonetim-paneli/sayfalar/ekran.tsx",
