@@ -26,6 +26,7 @@ import {
   ListOrderedIcon,
   ListTreeIcon,
   type LucideIcon,
+  MessageSquareTextIcon,
   PaletteIcon,
   PanelsTopLeftIcon,
   PrinterIcon,
@@ -61,6 +62,8 @@ export const panelIkonlari = {
   kategoriler: FolderTreeIcon,
   markalar: TagsIcon,
   ozellikler: ListChecksIcon,
+  // Yorumlar (kart 0277): menüdeki sayfa ve boş hâli.
+  yorumlar: MessageSquareTextIcon,
   // Dosya yükleme düğmesi (kart 0094) ve biçimli metin alanının araç çubuğu (kart 0263): yalnız panelde kullanılan
   // kütüphane parçaları.
   yukle: UploadIcon,

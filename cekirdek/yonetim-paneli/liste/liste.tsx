@@ -11,7 +11,8 @@
 // - Satır seçimi tek tek ve sayfanın hepsi; seçim yalnız toplu işlemi olan ve izni olan yöneticide görünür. Seçim
 //   varken toplu işlem çubuğu çıkar; işlem önce onay penceresiyle sorulur, sonuçta kaç satırın işlendiği ve
 //   işlenemeyenlerin nedeni yazar, odak sonuca gider. Seçim sayısı ve sonuç ekran okuyucuya duyurulur.
-// - Masaüstünde (tablet ve üstü) tablo, telefonda her satır bir kart.
+// - Masaüstünde (tablet ve üstü) tablo, telefonda her satır bir kart. Uzun metin taşıyan liste (yorumlar, kart 0277)
+//   her genişlikte kart çizer (gorunum="kartlar"); sütun başlığı olmadığı için sıralama yalnız menüdedir.
 // - Hâller: boş (hiç kayıt yok), sonuçsuz (süzgeç ya da aramayla eşleşen yok), yükleniyor, hata (okunamadı).
 import { useRouter } from "next/navigation";
 import {
@@ -119,6 +120,9 @@ export type ListeOzellikleri<Satir> = {
   ad: string;
   sutunlar: readonly SutunTanimi<Satir>[];
   telefon: (satir: Satir) => ReactNode;
+  // "tablo": tablette ve üstünde tablo, telefonda kart. "kartlar": her genişlikte telefonun kartı (sütunlar
+  // kullanılmaz).
+  gorunum?: "tablo" | "kartlar";
   anahtar: (satir: Satir) => string;
   // Seçim kutusunun ve sonuçtaki satırın adı.
   satirAdi: (satir: Satir) => string;
@@ -146,6 +150,7 @@ export function Liste<Satir>({
   ad,
   sutunlar,
   telefon,
+  gorunum = "tablo",
   anahtar,
   satirAdi,
   suzgecAdlari,
@@ -293,7 +298,8 @@ export function Liste<Satir>({
   // Seçili sekme şerit kayınca da görünür (kart 0267: telefonda sondaki sekme ekranın dışında kalıyordu). Yalnız şerit
   // kayar, sayfa kaymaz.
   const sekmeSeridiOgesi = useRef<HTMLElement>(null);
-  const seciliSekme = sekme === undefined ? undefined : (durum.suzgecler[sekme.kod]?.[0] ?? "");
+  const seciliSekme =
+    sekme === undefined ? undefined : (durum.suzgecler[sekme.kod]?.[0] ?? sekme.varsayilan ?? "");
   useEffect(() => {
     void seciliSekme;
     const serit = sekmeSeridiOgesi.current;
@@ -356,7 +362,7 @@ export function Liste<Satir>({
         className="overflow-x-auto border-b border-kenar"
       >
         <ul className="flex gap-1">
-          {[null, ...sekme.secenekler]
+          {[...(sekme.varsayilan === undefined ? [null] : []), ...sekme.secenekler]
             .filter(
               (deger) =>
                 deger === null ||
@@ -364,7 +370,8 @@ export function Liste<Satir>({
                 durum.suzgecler[sekme.kod]?.[0] === deger,
             )
             .map((deger) => {
-              const secili = (durum.suzgecler[sekme.kod]?.[0] ?? null) === deger;
+              const secili =
+                (durum.suzgecler[sekme.kod]?.[0] ?? sekme.varsayilan ?? null) === deger;
               return (
                 <li key={deger ?? ""} className="shrink-0">
                   <Baglanti
@@ -659,7 +666,8 @@ export function Liste<Satir>({
     </TabloBasligi>
   );
 
-  const tablo = (
+  const kartlar = gorunum === "kartlar";
+  const tablo = kartlar ? null : (
     <Kart className="hidden overflow-hidden p-0 tablet:flex tablet:p-0">
       <Tablo className="text-kucuk">
         {baslik}
@@ -774,7 +782,7 @@ export function Liste<Satir>({
     <>
       {secimVar && !yukleniyor && satirlar.length > 0 ? (
         // Telefonda sayfanın hepsini seçen kutu listenin üstündedir (tablo başlığı telefonda yok).
-        <div className="flex items-center gap-1 tablet:hidden">
+        <div className={sinif("flex items-center gap-1", kartlar || "tablet:hidden")}>
           <TabloSecimi
             etiket={metin("yonetim.liste.sayfayiSec")}
             isaretli={sayfaninHepsi}
@@ -788,7 +796,7 @@ export function Liste<Satir>({
       <ul
         aria-label={yukleniyor ? doldur(metin("yonetim.liste.yukleniyor"), { ad }) : ad}
         aria-busy={yukleniyor ? true : undefined}
-        className="flex flex-col gap-2 tablet:hidden"
+        className={sinif("flex flex-col gap-2", kartlar || "tablet:hidden")}
       >
         {yukleniyor
           ? iskeletSatirlari.map((_, sira) => (
@@ -857,7 +865,7 @@ export function Liste<Satir>({
           {metin("yonetim.liste.aramayiTemizle")}
         </Dugme>
       </BosHal>
-    ) : suzgecliMi(durum) ? (
+    ) : suzgecliMi(durum, tanim) ? (
       <BosHal
         ikon="arama"
         baslik={metin("yonetim.liste.sonucsuz.baslik")}
@@ -909,9 +917,14 @@ export function Liste<Satir>({
     );
   }
 
-  // Bu listenin hiç kaydı yoksa (boş hâl) arama ve süzgeç gösterilmez.
+  // Bu listenin hiç kaydı yoksa (boş hâl) arama ve süzgeç gösterilmez. Varsayılan sekmesi olan listede boş sekme
+  // listenin boş olduğu demek değildir: bütün sekmelerin toplamına ("") bakılır.
   const hicKayitYok =
-    !aramada && gosterilen !== null && gosterilen?.toplam === 0 && !suzgecliMi(durum);
+    !aramada &&
+    gosterilen !== null &&
+    gosterilen?.toplam === 0 &&
+    !suzgecliMi(durum, tanim) &&
+    (sekme?.varsayilan === undefined || (gosterilen.sekmeSayilari[""] ?? 0) === 0);
 
   return (
     // Tıklama yakalayıcı yalnız listenin kendi bağlantılarını geçişle açar; klavyeyle Enter da tıklama olayıdır.

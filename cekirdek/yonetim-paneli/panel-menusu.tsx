@@ -16,7 +16,15 @@ export type CizilenMenuGrubu = {
   kod: string;
   // Grupsuz sayfaların başlığı yoktur.
   ad: string | null;
-  sayfalar: { kod: string; adres: string; ad: string; ikon: PanelIkonAdi; isaret?: string }[];
+  sayfalar: {
+    kod: string;
+    adres: string;
+    ad: string;
+    ikon: PanelIkonAdi;
+    isaret?: string;
+    // Bakılması gereken kayıt sayısı (kart 0277): rozette sayı, ekran okuyucuda yazısı ("3 yorum onay bekliyor").
+    sayi?: { deger: string; yazi: string };
+  }[];
 };
 
 // Kök yalnız kendi adresinde seçilidir; öteki sayfa alt sayfalarında da seçili kalır.
@@ -71,6 +79,14 @@ export function PanelMenusu({
                       <Rozet tur="cerceveli" className="ml-auto font-orta">
                         {sayfa.isaret}
                       </Rozet>
+                    )}
+                    {sayfa.sayi === undefined ? null : (
+                      <>
+                        <Rozet tur="birincil" aria-hidden="true" className="ml-auto font-orta">
+                          {sayfa.sayi.deger}
+                        </Rozet>
+                        <span className="sr-only">{sayfa.sayi.yazi}</span>
+                      </>
                     )}
                   </Link>
                 </li>

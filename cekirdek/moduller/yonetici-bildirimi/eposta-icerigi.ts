@@ -6,7 +6,11 @@
 import { adresYazisi } from "../../bolgeler/adres-yazisi.ts";
 import type { EpostaSablonu } from "../../kayitlar/eposta.ts";
 import type { MetinAnahtari } from "../../metinler/metin.ts";
-import { siparisAyrintisiAdresi, siparislerAdresi } from "../../yonetim-paneli/adresler.ts";
+import {
+  siparisAyrintisiAdresi,
+  siparislerAdresi,
+  yorumlarAdresi,
+} from "../../yonetim-paneli/adresler.ts";
 import type { EpostaBlogu, EpostaGovdesi, IcerikBaglami, IcerikUretici } from "../eposta/sablon.ts";
 import type { KisaAd, YoneticiBildirimVerisi } from "./veri.ts";
 
@@ -239,6 +243,8 @@ const yorum: IcerikUretici = (veri, b) => {
           { metin: v.metin },
         ],
       },
+      // Panelin Yorumlar ekranı Onay bekleyen sekmesiyle açılır (kart 0277).
+      ...panelDugmesi(b, "eposta.yonetici.yorum.dugme", yorumlarAdresi),
     ],
   );
 };

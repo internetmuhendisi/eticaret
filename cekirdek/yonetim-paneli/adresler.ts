@@ -22,6 +22,9 @@ export const musterilerAdresi = `${panelAdresi}/musteriler`;
 export const musteriAyrintisiAdresi = (kimlik: string): string =>
   `${musterilerAdresi}/ayrinti?kimlik=${encodeURIComponent(kimlik)}`;
 
+// Yorumlar (kart 0277): liste Onay bekleyen sekmesiyle açılır; yönetici bildirimi e-postası da buraya bağlanır.
+export const yorumlarAdresi = `${panelAdresi}/yorumlar`;
+
 // Ürünler listesi (kart 0262); ürün ekranı kart 0263'le gelir.
 export const urunlerAdresi = `${panelAdresi}/urunler`;
 // Ürün ekranı (kart 0263): yeni ürün ve var olan ürünün ekranı (kimlik adresin sorgusunda).

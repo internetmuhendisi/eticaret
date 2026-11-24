@@ -24,6 +24,26 @@ export const yorumSinirlari = {
   // istek en çok sayfa × sayfa yorumu okur (en yeni 100 yorum; bağımsız kontrolün bulgusu).
   sayfa: 5,
   enCokSayfa: 20,
-  // Yönetici listesinin bir sayfası.
-  yoneticiSayfasi: 50,
+  // Panelin yorum listesinde aranan metnin en çok uzunluğu (kart 0277).
+  panelArama: 100,
 } as const;
+
+// Panelin yorum listesinin sıralamaları (kart 0277, karar 0174); ilki varsayılandır. Ad adreste durur
+// (?sirala=puan-artan): yayınlandıktan sonra değişmez. Eşitlikte en yeni önce.
+export const yorumPanelSiralamalari = ["en-yeni", "en-eski", "puan-artan", "puan-azalan"] as const;
+export type YorumPanelSiralamasi = (typeof yorumPanelSiralamalari)[number];
+
+// Puan süzgecinin değerleri (adreste "1".."5").
+export const yorumPuanlari = ["5", "4", "3", "2", "1"] as const;
+
+// Panelin yorum listesinin toplu işlemleri (karar 0157: yayınla ve reddet) ve verdikleri karar. Her yorum tekil
+// kararla (yorumServisi.karar) aynı yoldan, kendi işleminde geçer.
+export const yorumTopluIslemleri = {
+  yayinla: { izin: "yorum.onayla", durum: "yayinda" },
+  reddet: { izin: "yorum.onayla", durum: "reddedildi" },
+} as const satisfies Record<
+  string,
+  { izin: "yorum.onayla"; durum: (typeof yorumKararlari)[number] }
+>;
+export type YorumTopluIslemi = keyof typeof yorumTopluIslemleri;
+export const yorumTopluIslemKodlari = Object.keys(yorumTopluIslemleri) as YorumTopluIslemi[];

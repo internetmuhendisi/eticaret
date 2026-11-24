@@ -6,7 +6,7 @@ import type { PanelIkonAdi } from "../../bilesenler/ikonlar/panel-sozlugu";
 import type { EklentiKodu } from "../kayitlar/eklentiler";
 import type { GirisIzni } from "../kayitlar/izinler";
 import type { MetinAnahtari } from "../metinler/metin";
-import { panelAdresi, temaAdresi, temaAyarlariAdresi } from "./adresler";
+import { panelAdresi, temaAdresi, temaAyarlariAdresi, yorumlarAdresi } from "./adresler";
 
 // Menüdeki gruplar, menüdeki sırasıyla. Grubun adı yalnız menüde görünür; grubun kendi sayfası yoktur.
 export const panelGruplari = {
@@ -32,9 +32,16 @@ export type PanelSayfaTanimi = {
   ust?: string;
   // Menüde adın yanındaki küçük işaret, örneğin "Kısayol" (kart 0142, taslak).
   isaret?: MetinAnahtari;
+  // Menüde adın yanındaki sayı (kart 0277): bakılması gereken kayıtların sayısı (onay bekleyen yorum). Sayıyı
+  // sunucu menu-sayaclari.ts ile okur; sıfırsa görünmez.
+  sayac?: MenuSayaci;
   // Sayfayı getiren eklenti (kart 0144, karar 0117): eklenti sitede kapalıysa sayfa menüde yoktur ve açılmaz.
   eklenti?: EklentiKodu;
 };
+
+// Menüdeki sayıların kodları; okuyan işlevler ve metinleri menu-sayaclari.ts'tedir.
+export const menuSayaclari = ["onay-bekleyen-yorum"] as const;
+export type MenuSayaci = (typeof menuSayaclari)[number];
 
 // Sıra menüdeki sıradır. İlk sayfa panelin kökü ve girişten sonraki açılış sayfasıdır; sayfa yolu onunla başlar.
 export const panelSayfalari = [
@@ -224,6 +231,18 @@ export const panelSayfalari = [
     izin: "ozellik.gor",
     grup: "urunler",
   },
+  // Yorumlar (kart 0277, karar 0174): onay bekleyen, yayındaki ve reddedilen yorumlar; görevli de görür ve karar
+  // verir. Menüde onay bekleyen yorum sayısı görünür.
+  {
+    kod: "yorumlar",
+    adres: yorumlarAdresi,
+    ad: "yonetim.sayfa.yorumlar.ad",
+    aciklama: "yonetim.sayfa.yorumlar.aciklama",
+    ikon: "yorumlar",
+    izin: "yorum.gor",
+    grup: "urunler",
+    sayac: "onay-bekleyen-yorum",
+  },
   // Stoğa gelince haber ver eklentisi (kart 0144, karar 0117): bekleyen talepler stok bilgisidir, stok.gor ister.
   {
     kod: "stok-bildirimleri",
@@ -284,6 +303,7 @@ export type MenuSayfasi = {
   ad: MetinAnahtari;
   ikon: PanelIkonAdi;
   isaret?: MetinAnahtari;
+  sayac?: MenuSayaci;
 };
 export type MenuGrubu = { grup: PanelGrubu | null; sayfalar: MenuSayfasi[] };
 
@@ -312,12 +332,13 @@ export const menuyuKur = (
       grup,
       sayfalar: gorunenler
         .filter((sayfa) => sayfa.grup === grup)
-        .map(({ kod, adres, ad, ikon, isaret }) => ({
+        .map(({ kod, adres, ad, ikon, isaret, sayac }) => ({
           kod,
           adres,
           ad,
           ikon,
           ...(isaret === undefined ? {} : { isaret }),
+          ...(sayac === undefined ? {} : { sayac }),
         })),
     }))
     .filter((grup) => grup.sayfalar.length > 0);

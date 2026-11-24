@@ -30,6 +30,9 @@ export type SuzgecTanimi = {
   degerEnCok?: number;
   // Eski adreslerin değeri (kart 0267): yayınlanmış bir değer kalkınca adresteki eski değer yenisine çevrilir.
   eskiDegerler?: Readonly<Record<string, string>>;
+  // Sekmenin varsayılan değeri (kart 0277): verilirse şeritte "Tümü" yoktur, liste bu sekmeyle açılır; değer adrese
+  // yazılmaz, süzgeç sayılmaz (boş liste "sonuçsuz" değil "boş" hâldedir).
+  varsayilan?: string;
 };
 
 // Tarih süzgecinin hazır aralıkları ve kaç günü kapsadıkları (bugün dahil). Adreste kodla durur.
@@ -136,6 +139,8 @@ export const listeDurumunuOku = (tanim: ListeTanimi, sorgu: Sorgu): ListeDurumu 
     if (secilen.length > 0) {
       suzgecler[suzgec.kod] =
         suzgec.tur === "sekme" || suzgec.tur === "tarih" ? secilen.slice(0, 1) : secilen;
+    } else if (suzgec.varsayilan !== undefined) {
+      suzgecler[suzgec.kod] = [suzgec.varsayilan];
     }
   }
   const sayfa = oku("sayfa");
@@ -192,6 +197,7 @@ export const listeSorgusu = (tanim: ListeTanimi, durum: ListeDurumu): URLSearchP
   const sorgu = new URLSearchParams();
   for (const suzgec of tanim.suzgecler) {
     const secilen = gecerliDegerler(suzgec, durum.suzgecler[suzgec.kod] ?? []);
+    if (secilen.length === 1 && secilen[0] === suzgec.varsayilan) continue;
     if (secilen.length > 0) {
       sorgu.set(
         suzgec.kod,
@@ -222,9 +228,14 @@ export const listeAdresi = (
   return yazi === "" ? tanim.adres : `${tanim.adres}?${yazi}`;
 };
 
-// Durumun varsayılandan farkı var mı: süzgeç ya da arama seçiliyse liste "sonuçsuz", değilse "boş" hâldedir.
-export const suzgecliMi = (durum: ListeDurumu): boolean =>
-  durum.ara !== "" || Object.values(durum.suzgecler).some((degerler) => degerler.length > 0);
+// Durumun varsayılandan farkı var mı: süzgeç ya da arama seçiliyse liste "sonuçsuz", değilse "boş" hâldedir. Sekmenin
+// varsayılan değeri süzgeç sayılmaz.
+export const suzgecliMi = (durum: ListeDurumu, tanim?: ListeTanimi): boolean =>
+  durum.ara !== "" ||
+  Object.entries(durum.suzgecler).some(([kod, degerler]) => {
+    const varsayilan = tanim?.suzgecler.find((suzgec) => suzgec.kod === kod)?.varsayilan;
+    return degerler.length > 0 && !(degerler.length === 1 && degerler[0] === varsayilan);
+  });
 
 // Liste ucunun girdisi (GET): süzgeçler virgülle, aranan metin, sıralama ve sayfa. Uç tanınmayan süzgeç değerini
 // reddeder (ekran yalnız tanımdakileri gönderir); sayfanın üst sınırı yoktur, servis son sayfaya çeker.
@@ -284,7 +295,9 @@ export const listeUcuSemasi = (tanim: ListeTanimi) => {
     (girdi): ListeDurumu => ({
       suzgecler: Object.fromEntries(
         tanim.suzgecler.flatMap((suzgec) => {
-          const degerler = girdi[suzgec.kod] as string[] | undefined;
+          const degerler =
+            (girdi[suzgec.kod] as string[] | undefined) ??
+            (suzgec.varsayilan === undefined ? undefined : [suzgec.varsayilan]);
           return degerler === undefined ? [] : [[suzgec.kod, [...new Set(degerler)]]];
         }),
       ),

@@ -4,7 +4,13 @@
 // Metinler düz metindir: kırpılır, NFC'ye çevrilir; satır sonu ve sekme dışındaki denetim karakterleri reddedilir.
 // HTML ya da bağlantı ayıklanmaz, çünkü hiçbir yerde HTML olarak çizilmez (vitrin yazı olarak çizer).
 import { z } from "zod";
-import { yorumDurumlari, yorumKararlari, yorumSinirlari } from "../../kayitlar/yorum.ts";
+import { panelSayfaBoylari } from "../../kayitlar/liste.ts";
+import {
+  type YorumTopluIslemi,
+  yorumKararlari,
+  yorumSinirlari,
+  yorumTopluIslemKodlari,
+} from "../../kayitlar/yorum.ts";
 import { duzMetinSemasi } from "../../metinler/duz-metin.ts";
 import { kimlikSemasi } from "../../veritabani/kimlik.ts";
 import { robotCevabiSemasi } from "../robot-korumasi/semalar.ts";
@@ -48,10 +54,13 @@ export const yorumGirdisi = yorumFormuSemasi.extend({ robotCevabi: robotCevabiSe
 // Müşteri bu ürüne yorum yazabilir mi (GET, sorgu kısmından).
 export const yorumIzniSemasi = z.strictObject({ urun: kimlikSemasi });
 
-// Yöneticinin listesi: duruma göre, en yeni önce, sayfa sayfa.
-export const yorumListesiSemasi = z.strictObject({
-  durum: z.enum(yorumDurumlari).optional(),
-  sayfa: z.coerce.number().int().min(1).max(10_000).default(1),
+// Panel listesinin toplu kararı (kart 0277): en çok bir sayfanın yorumları.
+export const yorumTopluIslemiSemasi = z.strictObject({
+  islem: z.enum(yorumTopluIslemKodlari as [YorumTopluIslemi, ...YorumTopluIslemi[]]),
+  yorumlar: z
+    .array(kimlikSemasi)
+    .min(1)
+    .max(panelSayfaBoylari[panelSayfaBoylari.length - 1] ?? 100),
 });
 
 export const yorumKarariSemasi = z.strictObject({

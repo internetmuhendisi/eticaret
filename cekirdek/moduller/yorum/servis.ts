@@ -336,35 +336,3 @@ export const anaSayfaYorumlari = async (
       .orderBy(...yorumSirasi)
       .limit(adet)
   ).map(vitrinYorumu);
-
-// Yöneticinin listesi: her durumda, en yeni önce, ürünün adıyla.
-export const yoneticiYorumlari = async (
-  vt: Veritabani | VeritabaniIslemi,
-  { durum, sayfa }: { durum?: YorumDurumu | undefined; sayfa: number },
-) => {
-  const boyut = yorumSinirlari.yoneticiSayfasi;
-  const kosul = durum === undefined ? undefined : eq(yorumlar.durum, durum);
-  const [sayim] = await vt.select({ toplam: count() }).from(yorumlar).where(kosul);
-  const satirlar = await vt
-    .select({
-      ...vitrinAlanlari,
-      durum: yorumlar.durum,
-      anaSayfada: yorumlar.ana_sayfada,
-      urun: yorumlar.urun_kimligi,
-      urunAdi: urunler.ad,
-    })
-    .from(yorumlar)
-    .innerJoin(urunler, eq(urunler.kimlik, yorumlar.urun_kimligi))
-    .where(kosul)
-    .orderBy(...yorumSirasi)
-    .limit(boyut)
-    .offset((sayfa - 1) * boyut);
-  return {
-    toplam: sayim?.toplam ?? 0,
-    yorumlar: satirlar.map(({ baslik, zaman, ...satir }) => ({
-      ...satir,
-      ...(baslik === null ? {} : { baslik }),
-      zaman: zaman.toISOString(),
-    })),
-  };
-};

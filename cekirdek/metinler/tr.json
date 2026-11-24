@@ -268,6 +268,10 @@
       "musteriAyrintisi": {
         "ad": "Müşteri ayrıntısı",
         "aciklama": "Müşterinin siparişleri, adresleri, hesap bilgileri ve mağazanın notları."
+      },
+      "yorumlar": {
+        "ad": "Yorumlar",
+        "aciklama": "Müşterilerin ürün yorumları onayınızdan sonra vitrinde görünür. Yorumun metni değiştirilemez."
       }
     },
     "eylem": {
@@ -2209,6 +2213,70 @@
         "genel": "Bağlantı gönderilemedi. Biraz sonra yeniden deneyin.",
         "panelSiniri": "Kısa sürede çok fazla istek gönderdiniz. Bir dakika sonra yeniden deneyin."
       }
+    },
+    "yorumlar": {
+      "liste": "Yorumlar",
+      "menuSayisi": ", {sayi} yorum onay bekliyor",
+      "satirAdi": "{ad}, {urun}",
+      "durum": {
+        "onay-bekliyor": "Onay bekleyen",
+        "yayinda": "Yayında",
+        "reddedildi": "Reddedilen"
+      },
+      "suzgec": {
+        "durum": "Yorum durumu",
+        "puan": "Puan"
+      },
+      "puanSecenegi": "{puan} yıldız",
+      "puan": "{enCok} üzerinden {puan}",
+      "ara": "Yorum ara",
+      "araYer": "Ürün adı ya da müşteri",
+      "siralama": {
+        "en-yeni": "En yeni",
+        "en-eski": "En eski",
+        "puan-artan": "Puan: düşükten yükseğe",
+        "puan-azalan": "Puan: yüksekten düşüğe"
+      },
+      "dogrulanmisAlici": "Doğrulanmış alıcı",
+      "anaSayfada": "Ana sayfada",
+      "vitrindeGor": "Vitrinde gör",
+      "vitrindeGorAdi": "Vitrinde gör: {urun} (yeni sekmede açılır)",
+      "eylemAdi": "{eylem}: {ad}, {urun}",
+      "eylem": {
+        "yayinla": "Yayınla",
+        "reddet": "Reddet",
+        "anaSayfadaGoster": "Ana sayfada göster",
+        "anaSayfadanKaldir": "Ana sayfadan kaldır",
+        "yayindanKaldir": "Yayından kaldır"
+      },
+      "basari": {
+        "yayinlandi": "Yorum yayınlandı.",
+        "reddedildi": "Yorum reddedildi.",
+        "yayindanKaldirildi": "Yorum yayından kaldırıldı, Reddedilen sekmesinde.",
+        "anaSayfada": "Yorum ana sayfada gösterilecek.",
+        "anaSayfadanKaldirildi": "Yorum ana sayfadan kaldırıldı."
+      },
+      "hata": {
+        "yorum-yok": "Yorum bulunamadı. Liste yenilendi.",
+        "yetki": "Bu işlem için izniniz yok.",
+        "genel": "İşlem yapılamadı. Biraz sonra yeniden deneyin."
+      },
+      "bos": {
+        "baslik": "Onay bekleyen yorum yok",
+        "metin": "Müşteriler ürünlere yorum yazınca burada onayınızı bekler. Yayındaki ve reddedilen yorumlar kendi sekmelerindedir."
+      },
+      "toplu": {
+        "yayinla": {
+          "baslik": "{sayi} yorum yayınlansın mı?",
+          "aciklama": "Yorumlar ürün sayfasında görünür ve ortalamaya girer.",
+          "basari": "{sayi} yorum yayınlandı."
+        },
+        "reddet": {
+          "baslik": "{sayi} yorum reddedilsin mi?",
+          "aciklama": "Yorumlar vitrinde görünmez. Reddedilen yorumu sonra yayınlayabilirsiniz; müşteriye bildirim gitmez.",
+          "basari": "{sayi} yorum reddedildi."
+        }
+      }
     }
   },
   "vitrin": {
@@ -3363,7 +3431,8 @@
         "konu": "Onay bekleyen yorum: {urun}",
         "baslik": "Onay bekleyen yorum",
         "govde": "{urun} için yeni bir yorum var. Yorum siz onaylayınca yayınlanır.",
-        "puan": "5 üzerinden {puan} puan · {ad}"
+        "puan": "5 üzerinden {puan} puan · {ad}",
+        "dugme": "Yorumlara git"
       },
       "uyusmazlik": {
         "konu": "Kartla ödeme uyuşmazlığı: {tarih}",
