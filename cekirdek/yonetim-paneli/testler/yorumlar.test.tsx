@@ -370,5 +370,29 @@ describe("eylemler", () => {
     );
     expect(yeniCubuk.queryByRole("button", { name: "Reddet" })).toBeNull();
     expect(yeniCubuk.getByRole("button", { name: "Yayınla" })).toBeDefined();
+    // Yayında sekmesinde toplu reddet: gövde yorumun gördüğü durumunu taşır.
+    cleanup();
+    istekler.length = 0;
+    render(
+      ekran(veri([satir("y", { durum: "yayinda" })]), {
+        durum: listeDurumunuOku(yorumListesiTanimi, { durum: "yayinda" }),
+      }),
+    );
+    fireEvent.click(screen.getByRole("checkbox", { name: "Seç: Ad y, Ürün y" }));
+    fireEvent.click(
+      within(screen.getByRole("region", { name: metin("yonetim.liste.topluIslem") })).getByRole(
+        "button",
+        { name: "Reddet" },
+      ),
+    );
+    await act(async () => {
+      fireEvent.click(
+        within(screen.getByRole("alertdialog")).getByRole("button", { name: "Reddet" }),
+      );
+    });
+    expect(istekler[0]?.govde).toEqual({
+      islem: "reddet",
+      yorumlar: [{ yorum: "y", gorulen: "yayinda" }],
+    });
   });
 });
