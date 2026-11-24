@@ -2,6 +2,7 @@
 // Blog ekranının "Blog vitrinde" bölümü (kart 0272, karar 0176): blogun vitrinde açık olması (mağaza ayarı blogAcik).
 // Kapalıyken yazılar vitrinde görünmez, /blog bulunamadı verir, ana sayfanın blog bölümü çizilmez; panelde yazılar
 // yazılmaya devam eder. "Kaydet" ile kaydedilir. Değiştirme izni (magaza-ayarlari.degistir) olmayan yönetici okur.
+import { useMemo } from "react";
 import { Anahtar } from "../../../bilesenler/parcalar/anahtar";
 import { Kart } from "../../../bilesenler/parcalar/kart";
 import type { MetinAnahtari } from "../../metinler/metin";
@@ -17,7 +18,10 @@ const genelHataMetni = (hata: PanelHatasi): MetinAnahtari =>
 export function BlogAyari({ blogAcik, izinli }: { blogAcik: boolean; izinli: boolean }) {
   const metin = usePanelMetni();
   const islem = usePanelIslemi(genelHataMetni);
-  const { form, setForm, degisti, kaydedildi, vazgec } = useSunucuFormu({ blogAcik });
+  // Formun başlangıcı yalnız sunucunun değeri değişince yeni nesnedir: her çizimde yeni nesne sonsuz yeniden çizim
+  // yapardı (sunucu formu yeni veriyi forma geçirir).
+  const baslangic = useMemo(() => ({ blogAcik }), [blogAcik]);
+  const { form, setForm, degisti, kaydedildi, vazgec } = useSunucuFormu(baslangic);
   const pf = usePanelFormu({ degisti: izinli && degisti, kaydet: () => kaydet() });
 
   const kaydet = async (): Promise<boolean> => {

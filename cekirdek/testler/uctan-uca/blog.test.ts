@@ -269,7 +269,7 @@ test("blog kategorileri: pencerede klavyeyle eklenir, onayla silinir; tarama", a
     const pencere = page.getByRole("dialog");
     await expect(pencere).toBeVisible();
     await expect(
-      pencere.getByRole("textbox", { name: metin("yonetim.kategori.form.ad") }),
+      pencere.getByRole("textbox", { name: metin("yonetim.kategori.form.ad"), exact: true }),
     ).toBeFocused();
     await page.keyboard.type(`Deneme ${ek} Bakım`);
     await tara(page, "kategori penceresi");
