@@ -8,8 +8,6 @@
 export const gelistirmedeDe = "@gelistirmede-de";
 export const yalnizGelistirmedeEtiketi = "@yalniz-gelistirmede";
 
-// Playwright'ın etiket süzgeçleri (grep, grepInvert) testin adıyla etiketlerini birlikte arar.
-export const yalnizGelistirmede = new RegExp(yalnizGelistirmedeEtiketi);
-export const gelistirmeAsamasindakiler = new RegExp(
-  `${gelistirmedeDe}|${yalnizGelistirmedeEtiketi}`,
-);
+// Playwright'ın etiket süzgeçleri (grep, grepInvert) bu adları ayar dosyalarında düz yazar: yayın komutu ayar
+// dosyalarını korur (komutlar/yayin-hazirligi.mts, hatAyarKalibi), bu dosyayı korumaz. İkisinin aynı kaldığını
+// cekirdek/testler/isinma.test.ts denetler.

@@ -6,7 +6,6 @@ import { parseEnv } from "node:util";
 import { defineConfig, devices } from "@playwright/test";
 import { dosyaKlasoruDegiskeni } from "./cekirdek/kayitlar/dosya";
 import { temaDemosuAdresiDegiskeni } from "./cekirdek/kayitlar/site";
-import { yalnizGelistirmede } from "./cekirdek/testler/uctan-uca/gelistirme-etiketleri";
 import {
   demoSitesi,
   projedekiSiteler,
@@ -71,8 +70,9 @@ export default defineConfig({
   // derlenmiştir (kart 0251): yolların ısınması (kart 0222, 0164) yalnız geliştirme aşamasındadır.
   globalSetup: "./cekirdek/testler/uctan-uca/hazirlik.ts",
   // Yalnız geliştirme sunucusunda anlamı olan testler (bilerek hata veren deneme sayfası gibi) bu aşamada
-  // çalışmaz, geliştirme aşamasında çalışır (playwright.gelistirme.config.ts, karar 0184).
-  grepInvert: yalnizGelistirmede,
+  // çalışmaz, geliştirme aşamasında çalışır (playwright.gelistirme.config.ts, karar 0184). Etiket burada düz yazılır:
+  // yayın komutu ayar dosyasını korur (cekirdek/testler/uctan-uca/gelistirme-etiketleri.ts ile aynılığı birim testte).
+  grepInvert: /@yalniz-gelistirmede/,
   // Bir testin süre sınırı (kart 0129). Playwright'ın 30 saniyesi kontrol hattında yetmiyor: hattın makinesi
   // bilgisayarın yüksüz hâlinin yaklaşık iki katı sürer (bütün takım 14,4 ve 3,8 dakika). Ölçüldü: iki renkte ve üç
   // genişlikte tarayan bölüm kütüphanesi testi bilgisayarda yüksüz 15, yük ortalaması 23'te 31 saniye sürdü, hatta

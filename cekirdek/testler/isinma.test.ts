@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { gelistirmedeDe, yalnizGelistirmedeEtiketi } from "./uctan-uca/gelistirme-etiketleri";
 import {
   dosyaAdresi,
   girisliGirisSayfalari,
@@ -27,6 +28,17 @@ describe("ısınmanın yeri", () => {
     expect(ayar("playwright.config.ts")).not.toContain("isinma");
     expect(ayar("playwright.hiz.config.ts")).not.toContain("isinma");
     expect(ayar("cekirdek/testler/uctan-uca/hazirlik.ts")).not.toContain("yollariIsit");
+  });
+});
+
+// Kart 0251: iki aşamanın etiket süzgeçleri ayar dosyalarında düz yazılıdır (yayın komutu ayarları korur); testlerin
+// kullandığı etiket adlarıyla aynı olmalıdır, yoksa test yanlış aşamada çalışır ya da hiç çalışmaz.
+describe("aşamaların etiket süzgeçleri", () => {
+  it("asıl aşama yalnız geliştirmede çalışan testleri dışarıda bırakır, geliştirme aşaması iki etiketi alır", () => {
+    expect(ayar("playwright.config.ts")).toContain(`grepInvert: /${yalnizGelistirmedeEtiketi}/,`);
+    const gelistirme = ayar("playwright.gelistirme.config.ts");
+    expect(gelistirme).toContain(`grep: /${yalnizGelistirmedeEtiketi}/,`);
+    expect(gelistirme).toContain(`grep: /${gelistirmedeDe}|${yalnizGelistirmedeEtiketi}/,`);
   });
 });
 

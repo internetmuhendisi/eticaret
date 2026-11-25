@@ -8,10 +8,6 @@
 // Ortam, sunucu günlüğü ve kartla ödemenin sahte kuruluşu asıl ayardan gelir; asıl ayar içe aktarılınca kurulur.
 // Çalıştırma: pnpm tarayici-testleri-gelistirme (asıl aşama bittikten sonra: ikisi de 3000 portunu kullanır).
 import { defineConfig, devices } from "@playwright/test";
-import {
-  gelistirmeAsamasindakiler,
-  yalnizGelistirmede,
-} from "./cekirdek/testler/uctan-uca/gelistirme-etiketleri";
 import asil from "./playwright.config";
 
 // Asıl aşamanın etiket süzgeci, hazırlığı, sunucusu ve projeleri buraya geçmez.
@@ -41,13 +37,14 @@ export default defineConfig({
       name: "gelistirme-taramasi",
       use: { ...devices["Desktop Chrome"] },
       testMatch: tarama,
-      grep: yalnizGelistirmede,
+      grep: /@yalniz-gelistirmede/,
     },
     {
       name: "gelistirme",
       use: { ...devices["Desktop Chrome"] },
       testIgnore: [...dislananlar, tarama],
-      grep: gelistirmeAsamasindakiler,
+      // Etiketler düz yazılır (playwright.config.ts ile aynı neden).
+      grep: /@gelistirmede-de|@yalniz-gelistirmede/,
       dependencies: ["gelistirme-taramasi"],
     },
   ],

@@ -53,13 +53,22 @@ Bölüm: Sipariş ve müşteri hesabı. Kart 0238 sırasında hattın sonucuna b
 
 **Ölçüm (yerelde hattın koşulu: temiz veritabanı ayrı kutuda, iki işlemci, iki işçi, `CI=1`).**
 - Çekirdeğin bütün sayfaları istekte çizilir (`ƒ`); önceden sabitlenen tek sayfa Next.js'in genel hata sayfası. Hatta derleme yarım dakika (hız ölçümünün günlüğü).
-- Asıl aşama 369/369, 20,7 dakika (geliştirme sunucusuyla hatta 31–43 dakika). Geliştirme aşaması 6/6, 2,9 dakika.
+- Asıl aşama 369/369, 20,7 dakika (geliştirme sunucusuyla hatta 31–43 dakika). Geliştirme aşaması 6/6, ilk taramayla 2,9 dakika.
 - Elle sipariş ve arama testleri `--repeat-each=5` ile 25/25. Canlı sunucuda derleme olmadığı için izde yeniden derleme yoktur.
 - Arama taraması testi canlı sunucuda 19,9 saniye.
 
 **Bilerek bozma.** Ana sayfaya anahtarsız liste konunca geliştirme taraması "Each child in a list should have a unique key" ile kırmızı; hata denemesi testinin etiketi kaldırılınca asıl aşamada kırmızı (sayfa canlıda 404); ısınma asıl aşamaya geri konunca `isinma.test.ts` kırmızı. Taramanın ilk hâli bulunamadı sayfalarının kendi 404 iletisini ayıklayamıyordu (ileti belgenin durumu bilinmeden geliyor), ayıklama sayfa açıldıktan sonraya alındı.
 
-**Bilinen sınır.** Asıl aşamadaki etkileşimlerde (pencere, form) çıkan React geliştirme uyarısı yakalanmaz; yalnız disiplindir. Canlı derleme hidrasyon hatasının kendisini numarasıyla yazar, `konsoluDinle` onu sayar. Asıl aşamanın sunucu günlüğünde istek satırı yoktur (canlı sunucu yazmaz).
+**Bağımsız kontrolün bulgularıyla.**
+- Tarama değişken parçalı sayfaları örnek değerle (404) ve panelin ayrıntı ekranlarını kayıtsız açıyordu. Artık vitrinin on sayfa türü katalogdaki kayıtla, bileşen kataloğunun her parçası kendi sayfasıyla, panelin yedi ayrıntı ekranı veritabanındaki ilk kayıtla açılıyor. Ürün sayfasına ve panelin ürün ekranına konan anahtarsız liste ikisinde de yakalandı (eski taramada ikisi de 404 ya da boştu).
+- Asıl aşamanın süzgeci korunmayan bir dosyadan geliyordu. Süzgeç artık iki ayarda düz yazılı, etiket adlarıyla aynılığını `isinma.test.ts` denetliyor. Süzgeç değiştirilince bu test kırmızıya düştü.
+- Tarama 3000 portunda kalan bir canlı sunucuda boş yere yeşil kalabilirdi. Artık geliştirme göstergesini (`nextjs-portal`) arıyor: canlı sunucu açıkken çalıştırılınca kırmızıya düştü.
+- 404 ayıklaması yalnız belgenin kendi iletisini ayıklıyor.
+- Konsol bütün tarama boyunca dinleniyor (dinleyiciler sayfa bağlanınca kaldırılıyordu).
+- Belgelerdeki bayat satırlar düzeldi; StrictMode kaybı karar kaydına yazıldı.
+- Yeni taramayla geliştirme aşaması 6/6, 3,7 dakika (hattın koşulunda).
+
+**Bilinen sınır.** Asıl aşamadaki etkileşimlerde (pencere, form) çıkan React geliştirme uyarısı ve StrictMode'un çift çizimi yakalanmaz; yalnız disiplindir. Canlı derleme hidrasyon hatasının kendisini numarasıyla yazar, `konsoluDinle` onu sayar. Asıl aşamanın sunucu günlüğünde istek satırı yoktur (canlı sunucu yazmaz). Isınmanın ikinci turu ve ağ değişikliğinde yeniden deneme kalktı.
 
 ## Durum
 
