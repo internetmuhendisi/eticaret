@@ -1,7 +1,7 @@
 // Tarayıcı testlerinin sunucu günlüğü (kart 0226): sorgu kısmının değerleri gitmez, adları kalır; renk kodları
 // silinir; her satır yazıldığı anla başlar; gerçek süreçte dosya her çalışmada baştan yazılır ve son satır da
 // dosyada olur. Hattın ayarı dosyayı düşen testlerin iziyle saklar.
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -43,6 +43,12 @@ describe("sunucu günlüğünün satırı", () => {
       " POST /kapi/yonetici/elle-siparis 200 in 4.4s (next.js: 3.4s, application-code: 1.0s)";
     expect(satiriTemizle(satir)).toBe(satir);
     expect(satiriTemizle("Sayfa bulunamadı? Yeniden dene")).toBe("Sayfa bulunamadı? Yeniden dene");
+  });
+
+  it("tek tırnaklı sorgu değeri de silinir", () => {
+    expect(satiriTemizle(" GET /arama?ara=it's-gizli 200 in 5ms")).toBe(
+      " GET /arama?ara=… 200 in 5ms",
+    );
   });
 
   it("renk kodları silinir", () => {
@@ -97,20 +103,30 @@ describe("sunucu günlüğünün süreci", () => {
   });
 });
 
-// Dosya açılamazsa süreç sessizce sürmez: hata koduyla biter, sunucunun çıkışı kırılır ve Playwright sunucunun
-// açılmadığını söyler.
+// Dosya açılamazsa günlük olmadan sürülür (bağımsız kontrolün bulgusu): uyarı hata akışına bir kez yazılır, girdi
+// sonuna kadar okunur (sunucunun çıkışı kırılmaz), süreç girdi bitince hata koduyla biter.
 describe("sunucu günlüğünün hatası", () => {
-  it("dosya açılamazsa süreç hata koduyla biter", () => {
+  it("dosya açılamazsa uyarır, girdiyi sonuna kadar okur, sonra hata koduyla biter", async () => {
     const klasor = mkdtempSync(join(tmpdir(), "sunucu-gunlugu-"));
     klasorler.push(klasor);
     // Klasörün yerinde düz dosya var: altına yazılamaz.
     const klasorYerineDosya = join(klasor, "dosya");
     writeFileSync(klasorYerineDosya, "");
-    expect(() =>
-      execFileSync(process.execPath, [betik, join(klasorYerineDosya, "alt.log")], {
-        input: "x",
-        stdio: ["pipe", "ignore", "ignore"],
-      }),
-    ).toThrow();
+    const surec = spawn(process.execPath, [betik, join(klasorYerineDosya, "alt.log")], {
+      stdio: ["pipe", "ignore", "pipe"],
+    });
+    let hataAkisi = "";
+    surec.stderr.on("data", (parca: Buffer) => {
+      hataAkisi += parca.toString();
+    });
+    const bitti = new Promise<number | null>((coz) => surec.on("close", coz));
+    for (let i = 0; i < 5; i++) {
+      surec.stdin.write(`satir ${i}\n`);
+      await new Promise((coz) => setTimeout(coz, 100));
+      expect(surec.exitCode, "girdi bitmeden süreç çıkmamalı").toBeNull();
+    }
+    surec.stdin.end();
+    expect(await bitti).toBe(1);
+    expect(hataAkisi.match(/Sunucu günlüğü yazılamıyor/g)).toHaveLength(1);
   });
 });

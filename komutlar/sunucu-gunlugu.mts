@@ -26,8 +26,9 @@ export const sunucuGunluguYolu = join(
 // Renk kodları dosyada okunmaz.
 const renkKodu = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
 
-// Yolla başlayan ya da adresin içindeki sorgu kısmı: "?" ile boşluğa, tırnağa ya da satır sonuna kadar.
-const sorguKismi = /\?([^\s"'`]*)/g;
+// Yolla başlayan ya da adresin içindeki sorgu kısmı: "?" ile boşluğa, çift tırnağa (JSON satırındaki adresin sonu)
+// ya da satır sonuna kadar. Tek tırnak sorgunun parçası sayılır (?ara=it's).
+const sorguKismi = /\?([^\s"]*)/g;
 
 const sorguyuKisalt = (_tamami: string, sorgu: string): string =>
   `?${sorgu
@@ -46,13 +47,34 @@ export const gunlukSatiri = (anMs: number, satir: string): string =>
 
 const dogrudanCalisiyor = process.argv[1] === fileURLToPath(import.meta.url);
 
+// Dosya açılamazsa günlük olmadan sürülür: uyarı hata akışına (hattın günlüğüne) bir kez yazılır, girdi sonuna
+// kadar okunur, süreç girdi bitince hata koduyla biter. Çıkıp boruyu kırmak sunucuyu düşürmez: dash'te boru
+// hattı sunucu bitene kadar sürer, sunucu sessizce çalışır ve testler günlüksüz koşardı (bağımsız kontrolün
+// bulgusu, kart 0226).
+export const dosyaAcilamadiUyarisi = (dosya: string, hata: unknown): string =>
+  `Sunucu günlüğü yazılamıyor, satırlar kaydedilmeyecek (${dosya}): ${hata instanceof Error ? hata.message : String(hata)}\n`;
+
+const dosyayiAc = (dosya: string): number | undefined => {
+  try {
+    mkdirSync(dirname(dosya), { recursive: true });
+    return openSync(dosya, "w");
+  } catch (hata) {
+    process.stderr.write(dosyaAcilamadiUyarisi(dosya, hata));
+    return undefined;
+  }
+};
+
 if (dogrudanCalisiyor) {
   const dosya = process.argv[2] ?? sunucuGunluguYolu;
-  mkdirSync(dirname(dosya), { recursive: true });
   // Her satır hemen yazılır: Playwright testlerden sonra sunucuyla birlikte bu süreci de sonlandırır,
   // tamponda bekleyen son satırlar (düşüşe en yakın olanlar) kaybolmasın.
-  const dosyaNo = openSync(dosya, "w");
+  const dosyaNo = dosyayiAc(dosya);
   const okuyucu = createInterface({ input: process.stdin, crlfDelay: Number.POSITIVE_INFINITY });
-  okuyucu.on("line", (satir) => writeSync(dosyaNo, gunlukSatiri(Date.now(), satir)));
-  okuyucu.on("close", () => closeSync(dosyaNo));
+  okuyucu.on("line", (satir) => {
+    if (dosyaNo !== undefined) writeSync(dosyaNo, gunlukSatiri(Date.now(), satir));
+  });
+  okuyucu.on("close", () => {
+    if (dosyaNo === undefined) process.exitCode = 1;
+    else closeSync(dosyaNo);
+  });
 }

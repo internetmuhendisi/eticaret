@@ -18,12 +18,15 @@ Satırın anı izdeki saatle eşlenir: izin `context-options` olayının duvar s
 
 - **Satırları hattın günlüğüne yazmak (`stdout: "pipe"`).** Bütün takım yaklaşık 5 bin satır, 1 MB yazar (kart 0251'de ölçüldü). Kırmızı testin hata iletisi bunların arasında kaybolur; geçen hatta da günlük şişer.
 - **Dosyayı her hatta saklamak.** Yeşil hatta okunmaz, sonuç yer kaplar (karar 0131'deki iz gibi).
-- **Dosyayı `test-results/` içine yazmak.** Playwright o klasörü çalışmanın başında temizler; sunucu temizlikten önce açılırsa satırlar silinir.
+- **Dosyayı `test-results/` içine yazmak.** Klasör Playwright'ındır: her çalışmanın başında temizlenir ve testlerin çıktısıyla dolar. Açık sunucu yeniden kullanılırken (`reuseExistingServer`) temizlik sunucunun yazdığı dosyayı ortasında silerdi. Sunucunun ürettiği öteki dosyalar gibi `sunucu/olusan/` altında durur.
 - **Sorgu kısmını olduğu gibi bırakmak.** Hatta gerçek gizli bilgi yoktur (karar 0029), ama aranan metin, kimlik ve dönüş adresi düşüşü anlamak için gerekmez; adlar hangi isteğin olduğunu söylemeye yeter.
 
 ## Sonuçları
 
-- Sunucu `pnpm cekirdek | node komutlar/sunucu-gunlugu.mts` ile açılır. Betik dosyayı açamazsa hata koduyla biter, sunucunun çıkışı kırılır ve Playwright sunucunun açılmadığını söyler.
-- Yerelde de dosya her tarayıcı testi çalışmasında baştan yazılır. Açık bir sunucu yeniden kullanılırsa (`reuseExistingServer`) dosya yazılmaz.
+- Sunucu `pnpm cekirdek | node komutlar/sunucu-gunlugu.mts` ile açılır. Betik dosyayı açamazsa uyarıyı hattın günlüğüne bir kez yazar, girdiyi sonuna kadar okur, testler günlüksüz sürer; uyarıya bakmak yalnız disiplindir. Betiğin çıkıp boruyu kırması bunun yerine konmadı: dash'te boru hattı sunucu bitene kadar sürer, çıkışı kırılan sunucu sessizce çalışır (bağımsız kontrolün ölçümü).
+- Boru hattının çıkış kodu betiğinkidir: sunucu kendiliğinden çökerse Playwright "exited early" der, sunucunun çıkış kodunu söylemez. Sunucunun hata akışı yine hattın günlüğündedir.
+- Yerelde de dosya her tarayıcı testi çalışmasında baştan yazılır. Açık bir sunucu yeniden kullanılırsa (`reuseExistingServer`) dosya yazılmaz, önceki çalışmanın dosyası kalır.
+- Hattın sonucunda iki yolun ortak üst klasörü projenin köküdür: izler `test-results/…`, sunucu günlüğü `sunucu/olusan/…` altındadır (karar 0131'de izler sonucun kökündeydi).
+- Dosya yalnız tarayıcı testleri kırmızıyken saklanır: yeşil hattın satırları okunamaz.
 - Uygulamanın kendi günlüğü (JSON satırları) da dosyaya gider; e-posta orada zaten kısaltılmıştır, şifre ve anahtar yazılmaz (kart 0014). Kart 0226'da bir tam takımın ve elle sipariş testinin satırlarında açık e-posta ve sorgu değeri olmadığı bir kez ölçüldü; sürekli denetimi yalnız betiğin birim testidir.
 - Hız ölçümü bu betiği kullanmaz: kendi sunucusu canlıdaki gibi derlenmiştir.
