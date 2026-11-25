@@ -89,13 +89,16 @@ jobs:
 
       # Kart 0207, karar 0131: düşen tarayıcı testinin izi (playwright.config.ts) hattın sonucunda saklanır. Hat
       # yeniden çalıştırılmadan düşüşün hangi adımda beklediği okunur. İzde yalnız hattın deneme verisi ve her
-      # çalışmada üretilen rastgele şifreler vardır.
+      # çalışmada üretilen rastgele şifreler vardır. Kart 0226: geliştirme sunucusunun istek satırları da
+      # (komutlar/sunucu-gunlugu.mts; sorgu değerleri silinmiş, her satır yazıldığı anla) aynı sonuçtadır.
       - name: Düşen tarayıcı testlerinin izi
         if: failure() && steps.tarayici-testleri.outcome == 'failure'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: tarayici-testleri-izi
-          path: test-results/
+          path: |
+            test-results/
+            sunucu/olusan/tarayici-sunucu-gunlugu.log
           retention-days: 14
           if-no-files-found: ignore
 

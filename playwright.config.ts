@@ -88,7 +88,9 @@ export default defineConfig({
   // Çekirdek uygulamasını testten önce açar; açıksa olanı kullanır.
   webServer: [
     {
-      command: "pnpm cekirdek",
+      // Sunucunun istek satırları hattın günlüğüne değil kayıt dışı bir dosyaya yazılır, hat dosyayı düşen
+      // testlerin iziyle saklar (kart 0226, komutlar/sunucu-gunlugu.mts). Hata akışı yine burada görünür.
+      command: "pnpm cekirdek | node komutlar/sunucu-gunlugu.mts",
       url: "http://localhost:3000",
       reuseExistingServer: true,
     },
