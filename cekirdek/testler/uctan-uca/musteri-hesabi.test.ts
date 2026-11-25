@@ -9,6 +9,7 @@ import { metin } from "../../metinler/site-metni";
 import { hesapIlkSayfasi, vitrinAdresleri } from "../../vitrin/adresler";
 import { hesapDurumuUcu } from "../../vitrin/hesap-durumu";
 import { basilmayanNoktalar } from "./basilan-alan";
+import { gelistirmedeDe } from "./gelistirme-etiketleri";
 import {
   hesapBaglantisi,
   hesapDugmesi,
@@ -127,9 +128,9 @@ test("pazarlama kutusu işaretsiz gelir, zorunlu kutular işaretlenmeden kayıt 
 
 // Kart 0123: onay kutuları (Radix) sayfa canlanırken sunucunun HTML'iyle uyuşur; konsolda hata ve hidrasyon uyarısı
 // yok. Girişsiz ziyaretçinin oturum sorusu 401 alır (karar 0098), o bir hata değildir.
-test("kayıt sayfasında konsolda hata ve hidrasyon uyarısı yok, onay kutuları klavyeyle işaretlenir", async ({
-  page,
-}) => {
+test("kayıt sayfasında konsolda hata ve hidrasyon uyarısı yok, onay kutuları klavyeyle işaretlenir", {
+  tag: gelistirmedeDe,
+}, async ({ page }) => {
   const hatalar = konsoluDinle(page, { haric: (metin) => metin.includes("401") });
   await page.goto(vitrinAdresleri.kayit);
   await yuklenmesiniBekle(page);

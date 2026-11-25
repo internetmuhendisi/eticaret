@@ -26,6 +26,7 @@ Kart 0251 aynı testin başka bir adımıdır ("Siparişi oluştur"daki POST'un 
 
 - İzden (hat 44893316647, 2026-11-25): ürün adı yazıldıktan 250 ms sonra `GET /kapi/yonetici/elle-siparis-urunleri?ara=…` gitti, testin 5 saniyesi boyunca cevap almadı (izde durum -1); istekten 0,2 sn sonra tarayıcıda "[Fast Refresh] rebuilding" başladı, 1,3 ve 1,9 sn süren iki tur ve bir üçüncüsü geldi. Öneri listesi açılmadı çünkü istek bir derleme turunu bekledi; kayıt arama kutusu doğru çalıştı. Aynı uç ısınmada isteniyor; kart 0226'nın yerel denemesinde ilk gerçek istekte `next.js: 1.1ms` ile döndü. Hangi yolun derlendiği izde yok.
 - Sebep kart 0251 ile aynı aile: o kartın notlarına yazıldı. Kullanıcı kararıyla (2026-11-25) üç kart (0251, 0282, 0281) bir sonraki kırmızı hattın sunucu satırlarıyla (kart 0226) birlikte sürer.
+- Kart 0251 ile çözüldü (2026-11-25, karar 0184): tarayıcı testleri canlıdaki gibi derlenmiş çekirdekte çalışır, sebep ve ölçüm 0251'in Sonuç bölümünde. Hattın koşulunda elle sipariş ve arama testleri art arda beşer kez 25/25.
 
 ## Durum
 

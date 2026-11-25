@@ -1,13 +1,14 @@
-// Tarayıcı testlerinin geliştirme sunucusunun günlüğü (kart 0226). Next.js her istek için bir satır yazar
+// Tarayıcı testlerinin sunucusunun günlüğü (kart 0226). Geliştirme sunucusu her istek için bir satır yazar
 // ("POST /kapi/... 200 in 4905ms (next.js: …, application-code: …)"); satır isteğin derlemeyi mi işini mi
-// beklediğini söyler. Satırlar hattın günlüğüne değil bu dosyaya yazılır (bütün takımda ~5 bin satır, ~1 MB),
+// beklediğini söyler. Asıl aşamanın canlı sunucusu istek satırı yazmaz (kart 0251, karar 0184): onun günlüğünde
+// uygulamanın kendi satırları vardır. Satırlar hattın günlüğüne değil bu dosyaya yazılır (bütün takımda ~5 bin satır, ~1 MB),
 // kontrol hattı dosyayı yalnız tarayıcı testleri kırmızıyken düşen testlerin iziyle saklar (karar 0131).
 //
 // Her satırın başına yazıldığı an (Unix saniyesi) konur: tarayıcı izinin saatiyle eşlenir. Adreslerin sorgu
 // kısmının değerleri silinir, adları kalır (aranan metin, kimlik, dönüş adresi gitmez). Uygulamanın kendi
 // günlüğü e-postayı zaten kısaltır, şifre ve anahtarı yazmaz (cekirdek/izleme/gunluk.ts).
 //
-// Kullanım (playwright.config.ts): pnpm cekirdek | node komutlar/sunucu-gunlugu.mts <dosya>
+// Kullanım (playwright.config.ts, playwright.gelistirme.config.ts): <sunucu> | node komutlar/sunucu-gunlugu.mts <dosya>
 // Dosya her çalışmada baştan yazılır.
 
 import { closeSync, mkdirSync, openSync, writeSync } from "node:fs";

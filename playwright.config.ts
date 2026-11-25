@@ -6,6 +6,7 @@ import { parseEnv } from "node:util";
 import { defineConfig, devices } from "@playwright/test";
 import { dosyaKlasoruDegiskeni } from "./cekirdek/kayitlar/dosya";
 import { temaDemosuAdresiDegiskeni } from "./cekirdek/kayitlar/site";
+import { yalnizGelistirmede } from "./cekirdek/testler/uctan-uca/gelistirme-etiketleri";
 import {
   demoSitesi,
   projedekiSiteler,
@@ -66,13 +67,12 @@ export default defineConfig({
   testDir: ".",
   testMatch: ["**/uctan-uca/**/*.test.ts", "**/uctan-uca/**/*.test.tsx"],
   testIgnore: ortakDislananlar,
-  // Sitenin başlangıç kataloğu, menüleri ve düzeni testlerden önce kurulur (kart 0129), sonra uygulamanın yolları
-  // geliştirme sunucusunda bir kez derlenir (kart 0222). Sıra önemlidir: hazırlıklar yazıldıkları sırayla çalışır.
-  // Hız ölçümü ısınmayı kullanmaz: canlıdaki gibi derlenmiş sunucuda ölçer.
-  globalSetup: [
-    "./cekirdek/testler/uctan-uca/hazirlik.ts",
-    "./cekirdek/testler/uctan-uca/isinma.ts",
-  ],
+  // Sitenin başlangıç kataloğu, menüleri ve düzeni testlerden önce kurulur (kart 0129). Sunucu canlıdaki gibi
+  // derlenmiştir (kart 0251): yolların ısınması (kart 0222, 0164) yalnız geliştirme aşamasındadır.
+  globalSetup: "./cekirdek/testler/uctan-uca/hazirlik.ts",
+  // Yalnız geliştirme sunucusunda anlamı olan testler (bilerek hata veren deneme sayfası gibi) bu aşamada
+  // çalışmaz, geliştirme aşamasında çalışır (playwright.gelistirme.config.ts, karar 0184).
+  grepInvert: yalnizGelistirmede,
   // Bir testin süre sınırı (kart 0129). Playwright'ın 30 saniyesi kontrol hattında yetmiyor: hattın makinesi
   // bilgisayarın yüksüz hâlinin yaklaşık iki katı sürer (bütün takım 14,4 ve 3,8 dakika). Ölçüldü: iki renkte ve üç
   // genişlikte tarayan bölüm kütüphanesi testi bilgisayarda yüksüz 15, yük ortalaması 23'te 31 saniye sürdü, hatta
@@ -85,14 +85,17 @@ export default defineConfig({
   // altında kalır; geçen testinki silinir. Kontrol hattı düşüşte bu klasörü saklar: yerelde üretilemeyen düşüşün
   // hangi adımda beklediği izden okunur.
   use: { baseURL: "http://localhost:3000", trace: "retain-on-failure" },
-  // Çekirdek uygulamasını testten önce açar; açıksa olanı kullanır.
+  // Çekirdeği testten önce canlıdaki gibi derleyip açar (kart 0251, komutlar/tarayici-sunucusu.mts); açık bir
+  // sunucu varsa onu kullanır (yerelde elle açılmış geliştirme sunucusu da olabilir).
   webServer: [
     {
-      // Sunucunun istek satırları hattın günlüğüne değil kayıt dışı bir dosyaya yazılır, hat dosyayı düşen
-      // testlerin iziyle saklar (kart 0226, komutlar/sunucu-gunlugu.mts). Hata akışı yine burada görünür.
-      command: "pnpm cekirdek | node komutlar/sunucu-gunlugu.mts",
+      // Sunucunun çıktısı hattın günlüğüne değil kayıt dışı bir dosyaya yazılır, hat dosyayı düşen testlerin iziyle
+      // saklar (kart 0226, komutlar/sunucu-gunlugu.mts). Derlemenin çıktısı ve hata akışı burada görünür.
+      command: "node komutlar/tarayici-sunucusu.mts | node komutlar/sunucu-gunlugu.mts",
       url: "http://localhost:3000",
       reuseExistingServer: true,
+      // Derleme hattın makinesinde yarım dakika sürer (hız ölçümünün günlüğü); sınır açılışla birlikte geniştir.
+      timeout: 300_000,
     },
     {
       command: "node cekirdek/eklentiler/kartla-odeme/testler/sahte-kurulus-sunucusu.ts",

@@ -1,23 +1,19 @@
-// Tarayıcı testlerinden önce uygulamanın her yolunu bir kez ister (kart 0222). Geliştirme sunucusu bir yolu ilk
+// Geliştirme sunucusunda uygulamanın her yolunu bir kez ister (kart 0222). Geliştirme sunucusu bir yolu ilk
 // istendiğinde derler; derleme sürerken o yola giden istek bekler. Kontrol hattında takımın ortasında ilk kez
 // istenen ödeme ve stok bildirimi uçlarının derlemesi 4,5 saniyeyi geçti, tarayıcıda "[Fast Refresh] rebuilding"
-// yazdı ve testin 5 saniyelik beklemesi düştü (hat izleri 44079499012 ve 43893063883). Isınmadan sonra testlerin
-// isteği yalnız kendi işini bekler.
+// yazdı ve testin 5 saniyelik beklemesi düştü (hat izleri 44079499012 ve 43893063883).
 //
-// Yollar uygulamanın klasöründen okunur: yeni sayfa ve uç kendiliğinden ısınmaya girer. Girişsiz istekte ara
-// katmanın girişe yönlendirdiği sayfalar (panel sayfaları, giriş kodu ve kurulum) ikinci bölümde, gerçek tarayıcıyla
-// bir deneme yöneticisi girerek açılır (kart 0164): hatta girişten sonra kurulum sayfasının ilk derlemesi 4,5 saniye
-// sürdü ve testin 5 saniyelik beklemesi düştü (hat 44244153259). Yalnız page.tsx ve route.ts okunur; başka türden yol dosyası (ör. sitemap.ts)
-// eklenirse buraya da eklenmelidir.
+// Yollar uygulamanın klasöründen okunur: yeni sayfa ve uç kendiliğinden ısınmaya girer. Yalnız page.tsx ve route.ts
+// okunur; başka türden yol dosyası (ör. sitemap.ts) eklenirse buraya da eklenmelidir. Sayfaların tarayıcıda
+// açılması (kart 0164) geliştirme taramasıdır (gelistirme-taramasi.test.ts): girişsiz istekte ara katmanın girişe
+// yönlendirdiği sayfalar (panel, giriş kodu ve kurulum) orada deneme yöneticisiyle açılır.
 //
-// Tarayıcı testlerinin ikinci hazırlığıdır (playwright.config.ts), kurulumdan sonra çalışır. Hız ölçümünde yoktur:
-// orada sunucu canlıdaki gibi önceden derlenmiştir ve kendinden imzalı sertifikalı vekilin arkasındadır; ısınma ilk
-// gönderimde hız ölçümünün hazırlığına konmuştu, Node'un isteği sertifikayı reddedip hazırlığı düşürdü (hat
-// 44220561276).
+// Kart 0251'den beri (karar 0184) yalnız tarayıcı testlerinin geliştirme aşamasının hazırlığıdır
+// (playwright.gelistirme.config.ts). Asıl aşama ve hız ölçümü canlıdaki gibi derlenmiş sunucuda çalışır, orada
+// derlenecek yol yoktur.
 import { readdirSync } from "node:fs";
 import { join, sep } from "node:path";
-import { chromium, type FullConfig, type Page } from "@playwright/test";
-import { paneleGir, sifreyleGir, yoneticiAc } from "./yonetici";
+import type { FullConfig } from "@playwright/test";
 
 const uygulamaKlasoru = join(import.meta.dirname, "..", "..", "uygulama", "app");
 
@@ -90,68 +86,9 @@ export const girissizSayfalar = (): string[] =>
       !(girisliGirisSayfalari as readonly string[]).includes(adres),
   );
 
-// Tarayıcı turu (kart 0164): sayfalar gerçek tarayıcıda açılır, sunucunun ve tarayıcının kodu birlikte derlenir.
-// Önce girişsiz sayfalar; sonra deneme yöneticisi testlerin yoluyla açılır, şifre ve iki aşamalı kurulumdan geçer
-// (kurulum sayfası), panelin her sayfasını açar; sonra kurulumu bitmiş hesapla yeniden girer (giriş kodu sayfası).
-// Testlerin giriş yardımcıları kullanılır, beklemeleri ilk derlemeyi bekleyecek kadar uzundur. Her adımın bağlamı işi
-// bitince kapanır: açık sayfa sonraki derlemelerin canlı güncellemesini almaz.
-//
-// Her tur kendi istemci adresinden gelir: giriş ucu dakikada beş istekle sınırlıdır, bir tur iki kez girer.
-const tarayiciylaIsit = async (kokAdres: string, istemci: string): Promise<void> => {
-  const tarayici = await chromium.launch();
-  try {
-    const adim = async (is: (sayfa: Page) => Promise<void>) => {
-      const baglam = await tarayici.newContext({
-        baseURL: kokAdres,
-        extraHTTPHeaders: { "x-forwarded-for": istemci },
-      });
-      try {
-        const sayfa = await baglam.newPage();
-        sayfa.setDefaultTimeout(istekSuresi);
-        sayfa.setDefaultNavigationTimeout(istekSuresi);
-        await is(sayfa);
-      } finally {
-        await baglam.close();
-      }
-    };
-    await adim(async (sayfa) => {
-      for (const adres of girissizSayfalar()) await sayfa.goto(adres);
-    });
-    const yonetici = yoneticiAc();
-    await adim(async (sayfa) => {
-      await paneleGir(sayfa, yonetici, { beklemeSuresi: istekSuresi });
-      for (const adres of panelAdresleri()) await sayfa.goto(adres);
-    });
-    await adim(async (sayfa) => {
-      await sayfa.goto("/yonetim/giris");
-      await sifreyleGir(sayfa, yonetici);
-      await sayfa.waitForURL(/\/yonetim\/giris\/kod/);
-    });
-  } finally {
-    await tarayici.close();
-  }
-};
-
-// Tarayıcı turu iki kez yapılır (kart 0164). Boş önbellekle tek turdan sonra ilk test kurulum sayfasında 967 ms,
-// menüler sayfasında 837 ms derleme bekledi; iki turdan sonra 6 ve 10 ms (birer deneme). Sebebin, sonradan derlenen
-// sayfaların öncekileri yeniden derletmesi olduğu tahmindir, ölçülmedi. Üç tam takımda testler sırasında kurulum
-// sayfasının en uzun derleme payı 44, 229 ve 115 ms (yalnız fetch ısınmasıyla 859 ms).
-const tarayiciTurlari = ["192.0.2.8", "192.0.2.9"];
-
-// Bir tur düşerse (yerelde ağ değişikliği, net::ERR_NETWORK_CHANGED) bir kez yeniden denenir; ikinci kez düşerse
-// hazırlık düşer: sunucu ya da giriş gerçekten çalışmıyordur.
-const turuYap = async (kokAdres: string, istemci: string): Promise<void> => {
-  try {
-    await tarayiciylaIsit(kokAdres, istemci);
-  } catch {
-    await tarayiciylaIsit(kokAdres, istemci);
-  }
-};
-
 // Playwright'ın hazırlık olarak çağırdığı işlev: kök adres tarayıcı testlerinin ayarından.
 export default async function isinma(ayar: FullConfig): Promise<void> {
   const kokAdres = ayar.projects[0]?.use.baseURL;
   if (kokAdres === undefined) throw new Error("Yolların ısınması: kök adres yok.");
   await yollariIsit(kokAdres);
-  for (const istemci of tarayiciTurlari) await turuYap(kokAdres, istemci);
 }

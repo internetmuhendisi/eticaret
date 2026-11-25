@@ -97,9 +97,14 @@ describe("sunucu günlüğünün süreci", () => {
     expect(yol).toContain("sunucu/olusan/tarayici-sunucu-gunlugu.log");
   });
 
-  it("tarayıcı testlerinin sunucusu satırlarını bu betiğe verir", () => {
+  // Kart 0251 (karar 0184): asıl aşamanın sunucusu canlı derlemedir, geliştirme aşamasınınki geliştirme sunucusudur.
+  it("tarayıcı testlerinin iki aşamasının sunucusu satırlarını bu betiğe verir", () => {
     const ayar = readFileSync(join(kok, "playwright.config.ts"), "utf8");
-    expect(ayar).toContain('command: "pnpm cekirdek | node komutlar/sunucu-gunlugu.mts"');
+    expect(ayar).toContain(
+      'command: "node komutlar/tarayici-sunucusu.mts | node komutlar/sunucu-gunlugu.mts"',
+    );
+    const gelistirme = readFileSync(join(kok, "playwright.gelistirme.config.ts"), "utf8");
+    expect(gelistirme).toContain('command: "pnpm cekirdek | node komutlar/sunucu-gunlugu.mts"');
   });
 });
 

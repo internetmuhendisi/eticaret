@@ -27,6 +27,7 @@ import { donusenBirimiSil } from "../../moduller/urun/testler/donusen-birim";
 import { baglan, type Veritabani, veritabaniAdresi } from "../../veritabani/baglanti";
 import { kayitAdresleri } from "../../vitrin/adresler";
 import { basilmayanNoktalar } from "./basilan-alan";
+import { gelistirmedeDe } from "./gelistirme-etiketleri";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
 import { tara } from "./tarama";
@@ -292,10 +293,9 @@ test("elle seçilen beden başka renkte tükenmişse korunur: Tükendi ve haber 
 // Kart 0173: telefonun kaydırmalı galerisi adresle seçili gelen birleşimin görseliyle açılır, sayfanın kodu
 // bağlanmadan da. Eski hâlde şerit HTML'de ilk öğede başlıyordu; kod bağlanana kadar (ölçüldü: 0,5–1 saniye) başka
 // renkteki ürünün görseli görünüyordu. Kod yüklüyken aynı adreste hidrasyon uyarısı yoktur.
-test("telefonda seçili birleşimin görseli sayfanın kodu bağlanmadan görünür, hidrasyon uyarısı yok", async ({
-  page,
-  context,
-}) => {
+test("telefonda seçili birleşimin görseli sayfanın kodu bağlanmadan görünür, hidrasyon uyarısı yok", {
+  tag: gelistirmedeDe,
+}, async ({ page, context }) => {
   const adres = `${h.adres}?secenek-renk=koyu&secenek-beden=m`;
   const gorunenGorsel = (sayfa: Page) =>
     sayfa.evaluate(() => {

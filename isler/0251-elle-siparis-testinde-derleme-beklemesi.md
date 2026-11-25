@@ -45,6 +45,22 @@ Bölüm: Sipariş ve müşteri hesabı. Kart 0238 sırasında hattın sonucuna b
 - İlk sunucu günlüklü hat (45567962785, kayıt 549ebb2, 2026-11-25): bu aileden düşüş olmadı (düşen tek test kart 0307). Testler sırasında 4089 isteğin 67'sinde `next.js` payı 300 ms'yi, 5'inde 1 sn'yi aştı; büyükleri geliştirme sayfaları (`/gelistirme/bilesenler` 7,1 sn, `…/tablo` 3,2 sn, `/gelistirme/hata-denemesi` 2,7 sn), ötekiler ısınmış vitrin ve panel sayfaları (400–700 ms). Uçlar (`/kapi/…`) derlenmedi (kart 0226'nın notu). Isınmanın sonunda "Finished writing to filesystem cache in 36.7s": Turbopack kalıcı önbelleği testlerin ilk yarım dakikasında diske yazılıyor. Bir sonraki düşüşte istekle aynı anda derlenen yol günlükten okunacak.
 - Elenen bir tahmin: ısınmanın girişsiz isteği 401 ile erken döner, ucun içinde sonradan yüklenen modül (`import()`) ilk gerçek istekte derlenir. Sonradan yükleme yalnız e-posta görünüşünde (tema servisi), e-posta göndericisinde, dosya servisinde (sharp) ve açılışta var; ürün araması ve arama sayfası bunlara uğramaz. Kart 0226'nın yerel denemesinde aynı ürün araması ilk gerçek istekte `next.js: 1.1ms` ile döndü.
 
+## Sonuç (2026-11-25, karar 0184)
+
+**Sebep (hat 45665957128, sunucu günlüklü ilk kırmızı hat).** Düşen test `arama.test.ts:119` (kart 0281'in dosyası). Isınmış `/arama` takımın başında beş kez 0,5–2,2 saniyede açıldı, 17:56:04'teki istek 11,7 saniye sürdü: `next.js` payı 11,2 saniye, `application-code` 0,5 saniye; tarayıcıda o anda "[Fast Refresh] rebuilding". Bütün takımda `next.js` payı 1,5 saniyeyi aşan istekler (ısınmadan sonra `/` 9,1 sn, `/gelistirme/bilesenler` 9,7 sn, `/arama` 11,2 sn; sonradan ilk kez istenen hata denemesi dışında) aynı dakikaya toplandı (17:55:18–17:56:16): Turbopack'in ısınmadan sonra önbelleği diske yazdığı dakika ("Finished writing to filesystem cache in 44s", 17:56:02). Test aynı sayfayı altı hâlde açtığı için takılmasız da yaklaşık 46 saniye sürüyordu; 13 saniyelik bekleme 60 saniyelik sınırı aştırdı. Geliştirme sunucusu ısınmış yolu da yeniden derleyebiliyor; kart 0251 ve 0282'nin takımın ortasındaki düşüşleri aynı kalıpta, o anların satırları yok.
+
+**Düzeltme.** Tarayıcı testleri canlıdaki gibi derlenmiş çekirdekte çalışır (`komutlar/tarayici-sunucusu.mts`: `next build`, deneme ortamında `next start`); canlı sunucu çalışırken derlemez. Isınma asıl aşamadan kalktı. Yalnız geliştirme sunucusunda görünenler ikinci aşamada (`pnpm tarayici-testleri-gelistirme`, `playwright.gelistirme.config.ts`): yolların ısınması, her sayfayı açıp React'ın geliştirme uyarılarını arayan geliştirme taraması (`gelistirme-taramasi.test.ts`, eski tarayıcı turunun yerine) ve etiketli testler (`gelistirme-etiketleri.ts`: hidrasyon uyarısını ölçen üç test iki aşamada, hata denemesinin iki testi yalnız bu aşamada). Kartın "beklemeyi uzatma" kuralına uyuldu: hiçbir bekleme değişmedi.
+
+**Ölçüm (yerelde hattın koşulu: temiz veritabanı ayrı kutuda, iki işlemci, iki işçi, `CI=1`).**
+- Çekirdeğin bütün sayfaları istekte çizilir (`ƒ`); önceden sabitlenen tek sayfa Next.js'in genel hata sayfası. Hatta derleme yarım dakika (hız ölçümünün günlüğü).
+- Asıl aşama 369/369, 20,7 dakika (geliştirme sunucusuyla hatta 31–43 dakika). Geliştirme aşaması 6/6, 2,9 dakika.
+- Elle sipariş ve arama testleri `--repeat-each=5` ile 25/25. Canlı sunucuda derleme olmadığı için izde yeniden derleme yoktur.
+- Arama taraması testi canlı sunucuda 19,9 saniye.
+
+**Bilerek bozma.** Ana sayfaya anahtarsız liste konunca geliştirme taraması "Each child in a list should have a unique key" ile kırmızı; hata denemesi testinin etiketi kaldırılınca asıl aşamada kırmızı (sayfa canlıda 404); ısınma asıl aşamaya geri konunca `isinma.test.ts` kırmızı. Taramanın ilk hâli bulunamadı sayfalarının kendi 404 iletisini ayıklayamıyordu (ileti belgenin durumu bilinmeden geliyor), ayıklama sayfa açıldıktan sonraya alındı.
+
+**Bilinen sınır.** Asıl aşamadaki etkileşimlerde (pencere, form) çıkan React geliştirme uyarısı yakalanmaz; yalnız disiplindir. Canlı derleme hidrasyon hatasının kendisini numarasıyla yazar, `konsoluDinle` onu sayar. Asıl aşamanın sunucu günlüğünde istek satırı yoktur (canlı sunucu yazmaz).
+
 ## Durum
 
 yapılacak

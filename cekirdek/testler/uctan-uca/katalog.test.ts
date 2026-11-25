@@ -11,6 +11,7 @@ import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { metin } from "../../metinler/site-metni";
 import { basilmayanNoktalar } from "./basilan-alan";
+import { gelistirmedeDe } from "./gelistirme-etiketleri";
 import { konsoluDinle } from "./konsol";
 import { satirlarinSolu, satirlarinYazisi } from "./satir-hizasi";
 import { sayfaHazir } from "./sayfa-hazir";
@@ -636,9 +637,9 @@ for (const renk of ["acik", "koyu"] as const) {
 // Hidrasyon yarışı (kart 0121): kontrol hattının yavaş makinesinde sayfa bağlanmadan açılan yan pencere bölümlere
 // aria-hidden yazıyor, React uyuşmazlığı konsola yazıyordu. İşlemci 4 kat yavaşlatılınca bilgisayarda da her seferinde
 // oluyordu (ölçüldü); sayfaHazir beklendiğinde konsol temiz kalır.
-test("yavaş işlemcide yan pencere sayfa hazır olunca açılır, konsolda uyuşmazlık uyarısı yok", async ({
-  page,
-}) => {
+test("yavaş işlemcide yan pencere sayfa hazır olunca açılır, konsolda uyuşmazlık uyarısı yok", {
+  tag: gelistirmedeDe,
+}, async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 800 });
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });

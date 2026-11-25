@@ -22,6 +22,7 @@ import { magazaninAdi, siteninMagazaAyarlari } from "../../moduller/magaza-ayarl
 import { baglan, type Veritabani, veritabaniAdresi } from "../../veritabani/baglanti";
 import { kayitAdresleri, vitrinAdresleri } from "../../vitrin/adresler";
 import { girisAdresi } from "../../yonetim-paneli/adresler";
+import { yalnizGelistirmedeEtiketi } from "./gelistirme-etiketleri";
 import { sayfaHazir } from "./sayfa-hazir";
 import { tara } from "./tarama";
 
@@ -168,9 +169,9 @@ const bulunamadiSayfalari = async (
   }
 };
 
-test("hata veren vitrin sayfası üst ve alt kısmı koruyarak hata ekranını gösterir; iki renkte ve üç genişlikte taramadan geçer", async ({
-  page,
-}) => {
+test("hata veren vitrin sayfası üst ve alt kısmı koruyarak hata ekranını gösterir; iki renkte ve üç genişlikte taramadan geçer", {
+  tag: yalnizGelistirmedeEtiketi,
+}, async ({ page }) => {
   const vt = veritabani();
   const [ayarlar, magaza] = await Promise.all([
     siteninMagazaAyarlari(vt, calisanSite()),
@@ -206,9 +207,9 @@ test("hata veren vitrin sayfası üst ve alt kısmı koruyarak hata ekranını g
   }
 });
 
-test("hata sayfasında Yeniden dene sayfayı sunucudan yeniden ister, çerçeve yerinde kalır", async ({
-  page,
-}) => {
+test("hata sayfasında Yeniden dene sayfayı sunucudan yeniden ister, çerçeve yerinde kalır", {
+  tag: yalnizGelistirmedeEtiketi,
+}, async ({ page }) => {
   await page.goto(hataDenemesi);
   await sayfaHazir(page);
   // Sayfayı yeniden isteyen RSC isteği gider; deneme sayfası yine hata verir, hata ekranı yerinde kalır.

@@ -83,16 +83,24 @@ jobs:
       - name: Tarayıcıyı kur
         run: pnpm exec playwright install --with-deps chromium
 
+      # Kart 0251, karar 0184: tarayıcı testleri canlıdaki gibi derlenmiş çekirdekte çalışır (komutlar/
+      # tarayici-sunucusu.mts); geliştirme sunucusu çalışırken derleyip istekleri bekletiyordu. Yalnız geliştirme
+      # sunucusunda görünenler (React'ın geliştirme uyarıları, hata denemesi) ikinci aşamada ölçülür.
       - name: Tarayıcı testleri
         id: tarayici-testleri
         run: pnpm tarayici-testleri
 
+      - name: Tarayıcı testleri (geliştirme sunucusu)
+        id: tarayici-testleri-gelistirme
+        run: pnpm tarayici-testleri-gelistirme
+
       # Kart 0207, karar 0131: düşen tarayıcı testinin izi (playwright.config.ts) hattın sonucunda saklanır. Hat
       # yeniden çalıştırılmadan düşüşün hangi adımda beklediği okunur. İzde yalnız hattın deneme verisi ve her
-      # çalışmada üretilen rastgele şifreler vardır. Kart 0226: geliştirme sunucusunun istek satırları da
-      # (komutlar/sunucu-gunlugu.mts; sorgu değerleri silinmiş, her satır yazıldığı anla) aynı sonuçtadır.
+      # çalışmada üretilen rastgele şifreler vardır. Kart 0226: sunucunun günlüğü (komutlar/sunucu-gunlugu.mts; sorgu
+      # değerleri silinmiş, her satır yazıldığı anla) aynı sonuçtadır. İstek satırlarını yalnız geliştirme sunucusu
+      # yazar (kart 0251); asıl aşamanın günlüğünde uygulamanın kendi satırları vardır.
       - name: Düşen tarayıcı testlerinin izi
-        if: failure() && steps.tarayici-testleri.outcome == 'failure'
+        if: failure() && (steps.tarayici-testleri.outcome == 'failure' || steps.tarayici-testleri-gelistirme.outcome == 'failure')
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: tarayici-testleri-izi

@@ -15,12 +15,16 @@ import {
 const ayar = (dosya: string) => readFileSync(join(import.meta.dirname, "..", "..", dosya), "utf8");
 
 describe("ısınmanın yeri", () => {
-  // Hız ölçümü kendinden imzalı sertifikalı vekilin arkasındaki canlı derlemede ölçer: ısınma orada hazırlığı
-  // düşürdü (hat 44220561276).
-  it("tarayıcı testleri ısınmayı kurulumdan sonra çağırır, hız ölçümü çağırmaz", () => {
-    expect(ayar("playwright.config.ts")).toMatch(
+  // Kart 0251 (karar 0184): asıl aşama ve hız ölçümü canlıdaki gibi derlenmiş sunucuda çalışır, derlenecek yol
+  // yoktur. Hız ölçümünde ısınma kendinden imzalı sertifikalı vekilde hazırlığı düşürmüştü (hat 44220561276).
+  it("geliştirme aşaması ısınmayı kurulumdan sonra çağırır, asıl aşama ve hız ölçümü çağırmaz", () => {
+    expect(ayar("playwright.gelistirme.config.ts")).toMatch(
       /globalSetup: \[\s*"\.\/cekirdek\/testler\/uctan-uca\/hazirlik\.ts",\s*"\.\/cekirdek\/testler\/uctan-uca\/isinma\.ts",?\s*\]/,
     );
+    expect(ayar("playwright.config.ts")).toMatch(
+      /globalSetup: "\.\/cekirdek\/testler\/uctan-uca\/hazirlik\.ts",/,
+    );
+    expect(ayar("playwright.config.ts")).not.toContain("isinma");
     expect(ayar("playwright.hiz.config.ts")).not.toContain("isinma");
     expect(ayar("cekirdek/testler/uctan-uca/hazirlik.ts")).not.toContain("yollariIsit");
   });
@@ -57,7 +61,7 @@ describe("ısınma adresleri", () => {
     expect(adresler.every((adres) => !/[[\]()]/.test(adres))).toBe(true);
   });
 
-  // Kart 0164: tarayıcı turu her sayfayı tam bir yoldan açar.
+  // Kart 0164: geliştirme taraması (gelistirme-taramasi.test.ts) her sayfayı tam bir yoldan açar.
   it("her sayfa dosyası tam bir gruba düşer: girişsiz, panel, girişli giriş sayfası ya da ısıtılmayan", () => {
     const sayfalar = sayfaAdresleri();
     const girissiz = girissizSayfalar();
