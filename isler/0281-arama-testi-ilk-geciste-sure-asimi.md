@@ -28,4 +28,4 @@ Kart 0258'in hattı (44886141462, kayıt eb8db1f) yalnız bir testle kırmızıy
 
 ## Durum
 
-yapılacak
+bitti
