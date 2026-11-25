@@ -29,4 +29,4 @@ Bölüm: Yönetim paneli (kart 0271 sırasında bulundu).
 
 ## Durum
 
-yapılacak
+bitti
