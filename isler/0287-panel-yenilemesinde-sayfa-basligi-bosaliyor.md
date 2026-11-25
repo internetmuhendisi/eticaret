@@ -38,4 +38,4 @@ Test, yenilemenin bitmesini ve başlığın dolu olmasını bekleyecek biçimde 
 
 ## Durum
 
-yapılacak
+bitti
