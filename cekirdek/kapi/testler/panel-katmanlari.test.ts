@@ -165,7 +165,7 @@ describe("panel dosyalarının yeri", () => {
     });
   const sayfalar = dosyalar(appKlasoru).map((yol) => relative(appKlasoru, yol));
 
-  it("girişli düzenin dışında yalnız giriş, kod, kurulum ve şifre sıfırlama sayfaları var", () => {
+  it("girişli düzenin dışında yalnız giriş, kod, kurulum, şifre sıfırlama ve davet kabul sayfaları var", () => {
     const disarida = sayfalar.filter(
       (yol) =>
         yol.startsWith(`yonetim${"/"}`) &&
@@ -173,6 +173,7 @@ describe("panel dosyalarının yeri", () => {
         !yol.startsWith("yonetim/(panel)/"),
     );
     expect(disarida.sort()).toEqual([
+      "yonetim/giris/davet/page.tsx",
       "yonetim/giris/kod/page.tsx",
       "yonetim/giris/kurulum/page.tsx",
       "yonetim/giris/page.tsx",

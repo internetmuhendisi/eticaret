@@ -12,12 +12,12 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `duzen.gor` | yonetici | tumu | Vitrinin düzenini (üst kısım, ana sayfa, alt kısım bölümleri) görür. |
 | `duzen.degistir` | yonetici | tumu | Bölüm ekler, değiştirir, gizler, sıralar ve siler. |
 | `ekip.kendi-hesabi.gor` | yonetici | kendi | Yönetici kendi hesabını görür. |
-| `ekip.davet-et` | yonetici | tumu | Ekibe davet gönderir (e-posta ve mağaza sahibi dışındaki roller) ve bekleyen daveti geri alır (kart 0275). |
 | `ekip.gor` | yonetici | tumu | Ekipteki bütün yöneticileri görür. |
 | `ekip.rol-ata` | yonetici | tumu | Yöneticilere rol verir ve alır. |
 | `ekip.hesap-kapat` | yonetici | tumu | Yöneticinin hesabını kapatır: giremez, açık oturumu kapanır (kart 0274). Kendi hesabını ve son mağaza sahibininkini kapatamaz. |
 | `ekip.iki-asama-sifirla` | yonetici | tumu | Telefonunu ve yedek kodlarını kaybeden yöneticinin iki aşamalı girişini sıfırlar; yönetici bir sonraki girişte yeniden kurar (kartlar 0274, 0053). Kendisininkini sıfırlayamaz. |
 | `ekip.kendi-hesabi.degistir` | yonetici | kendi | Yönetici kendi yedek kodlarını, telefonundaki kodu girerek yeniler (kart 0053). |
+| `ekip.davet-et` | yonetici | tumu | Ekibe davet gönderir (e-posta ve mağaza sahibi dışındaki roller) ve bekleyen daveti geri alır (kart 0275). |
 | `etiket.gor` | yonetici | tumu | Etiketleri ve ürünlerini görür. |
 | `etiket.degistir` | yonetici | tumu | Etiket ekler ve değiştirir. |
 | `etiket.sil` | yonetici | tumu | Etiket siler: ürünlerden kalkar. |

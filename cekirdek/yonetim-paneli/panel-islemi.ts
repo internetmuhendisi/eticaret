@@ -15,7 +15,8 @@ export type IslemSecenekleri<Veri> = {
   // Başarı bildiriminin eylemi ("Geri al"); yanıtın verisinden kurulur.
   eylem?: (veri: Veri) => BildirimEylemi | undefined;
   // Başarılı yanıtın bildirimi yanıtın verisine göre değişiyorsa (kart 0235: iade tamamlandı, bekliyor, başarısız).
-  bildirim?: (veri: Veri) => { tur: UyariTuru; metin: MetinAnahtari };
+  // null: başarı bildirilmez, sonucu ekran kendisi gösterir (kart 0275: "Davet hazır" penceresi).
+  bildirim?: (veri: Veri) => { tur: UyariTuru; metin: MetinAnahtari } | null;
 };
 
 export const usePanelIslemi = (hataMetni: (hata: PanelHatasi) => MetinAnahtari) => {
@@ -30,11 +31,13 @@ export const usePanelIslemi = (hataMetni: (hata: PanelHatasi) => MetinAnahtari) 
     const sonuc = await panelIstegi<Veri>(yol, govde);
     if (sonuc.tamam) {
       router.refresh();
-      const bildirim = secenekler.bildirim?.(sonuc.veri) ?? {
-        tur: "basari" as const,
-        metin: basari,
-      };
-      bildirimGoster(bildirim.tur, metin(bildirim.metin), secenekler.eylem?.(sonuc.veri));
+      const bildirim =
+        secenekler.bildirim === undefined
+          ? { tur: "basari" as const, metin: basari }
+          : secenekler.bildirim(sonuc.veri);
+      if (bildirim !== null) {
+        bildirimGoster(bildirim.tur, metin(bildirim.metin), secenekler.eylem?.(sonuc.veri));
+      }
       return sonuc;
     }
     if (sonuc.kod === "bulunamadi" || sonuc.kod === "cakisma") router.refresh();

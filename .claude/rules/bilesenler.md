@@ -52,6 +52,7 @@ Bileşen, düğme, giriş alanı, pencere gibi tekrar kullanılan arayüz parça
   - `AdetSecici` (kart 0212, karar 0135): azalt, adet ve artır; sınırdaki düğme kapalıdır, adet ekran okuyucuya duyurulur. Ürün sayfasında ve sepette kullanılır.
   - `DosyaYukleme` (kart 0094, karar 0165): dosya seçme düğmesi, yükleme sürerken ilerleme çubuğu ve İptal. İsteği kullanan gönderir; sürerken seçme düğmesi `aria-disabled`'dır, odak kaybolmaz. Alanın hatası düğmeye bağlanır. Seçilen dosyalar dizi olarak verilir; `coklu` birden çok dosya seçtirir, `birakma` düğmeleri kesik çizgili bırakma alanına alır (kart 0266).
   - `IlerlemeCubugu` (kart 0266): sürmekte olan işin oranı; ekran okuyucu adı ve yüzdeyi okur.
+  - `KopyalaDugmesi` (kart 0275): bir değeri panoya kopyalar, sonucu bildirimle söyler; metinler kullanandan (IBAN, davet bağlantısı).
   - `RenkAlani` (kart 0260, karar 0168): rengin onaltılık kodu yazılan alan ve solunda tarayıcının renk seçicisi; ikisi aynı değeri gösterir, geçersiz yazılışta seçici son geçerli rengi tutar. Etiket ve hata `FormAlani` ile yazılan alana bağlanır, seçicinin adı kullanandan (`seciciEtiketi`).
 
   Sınıflar `sinif()` ile birleştirilir. Asıl shadcn hâlleri `bilesenler/shadcn-kaynagi/` altındadır, güncellemesi `pnpm shadcn-farki` ile yapılır.

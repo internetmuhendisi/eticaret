@@ -16,6 +16,7 @@ import { girisYap, hesapAc, oturumAcikMi, oturumuYenile } from "../../moduller/o
 import { baglan, baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
 import {
+  davetKabulAdresi,
   girisAdresi,
   guvenliDonus,
   panelAdresi,
@@ -113,15 +114,16 @@ afterAll(async () => {
   await sil();
 });
 
-describe("şifre sıfırlama sayfaları (kart 0034)", () => {
+describe("şifre sıfırlama ve davet kabul sayfaları (kartlar 0034, 0275)", () => {
   it("girişsiz açılır, yönlendirilmez; alt adresleri açılmaz, panele geçilmez", async () => {
-    for (const yol of [sifremiUnuttumAdresi, sifreYenileAdresi]) {
+    for (const yol of [sifremiUnuttumAdresi, sifreYenileAdresi, davetKabulAdresi]) {
       expect((await panel(yol)).yonlendir).toBeNull();
       expect((await panel(`${yol}/baska`)).yonlendir).toBe(
         `${girisAdresi}?donus=${encodeURIComponent(panelAdresi)}`.replace(/\?donus=.*/, ""),
       );
     }
     expect(guvenliDonus(sifreYenileAdresi)).toBe(panelAdresi);
+    expect(guvenliDonus(davetKabulAdresi)).toBe(panelAdresi);
   });
 });
 

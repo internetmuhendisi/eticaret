@@ -351,6 +351,26 @@ Müşterinin ucuyla aynı. Ayrıca yarım kalmış giriş adımlarını siler, d
 - Başarılı (200): `{ "basarili": true, "veri": {} }`.
 - Hatalar: `is-kurali` (geçersiz, kullanılmış ya da süresi dolmuş bağlantı), `istek-siniri` (`Retry-After` ile), `dogrulama`, `yetki` (sahte istek).
 
+### POST /kapi/herkese-acik/yonetici-davet-oku
+
+Ekibe davetin kabul sayfası bağlantının davetini okur (kart 0275, karar 0179): davet edilen e-posta ve roller. Davet bekliyor (kullanılmamış, geri alınmamış, süresi dolmamış) ve daveti gönderenin hesabı açık olmalıdır. Robot sorusu yoktur: anahtar 32 bayt rastgeledir. Tema demosunda kapalıdır.
+
+- İzin: `herkese-acik`. Sınır: `siki`.
+- Girdi: `{ "anahtar" }` (`davetOkuSemasi`).
+- Servis: `cekirdek/moduller/ekip/davet.ts` (`davetiOku`).
+- Başarılı (200): `{ "basarili": true, "veri": { "eposta", "roller": ["gorevli"] } }`.
+- Hatalar: `is-kurali` (geçersiz, kullanılmış, süresi dolmuş ya da geri alınmış bağlantı, hepsi aynı), `istek-siniri` (`Retry-After` ile), `dogrulama`, `yetki` (sahte istek), `bulunamadi` (tema demosunda).
+
+### POST /kapi/herkese-acik/yonetici-davet-kabul
+
+Daveti kabul eder (kart 0275, karar 0179): yönetici hesabı davetin e-postası, verilen ad ve şifre ve davetin rolleriyle açılır, bağlantı harcanır; iki aşamalı girişin kurulumu için ara adım açılır ve çerezine yazılır (`__Host-yonetici-giris-adimi`). Oturum açılmaz: ekran kurulum sayfasına geçer (karar 0044). Aynı anda iki kabulden biri geçer. Tema demosunda kapalıdır.
+
+- İzin: `herkese-acik`. Sınır: `siki`.
+- Girdi: `{ "anahtar", "ad", "sifre" }` (`davetKabulSemasi`).
+- Servis: `cekirdek/moduller/ekip/davet.ts` (`davetiKabulEt`).
+- Başarılı (200): `{ "basarili": true, "veri": { "sonraki": "kurulum" } }`.
+- Hatalar: `is-kurali` (geçersiz bağlantı, `davetiOku` ile aynı; `hesap-var`: e-postayla açık bir hesap var, davet harcanmaz), `istek-siniri` (`Retry-After` ile), `dogrulama`, `yetki` (sahte istek), `bulunamadi` (tema demosunda).
+
 ### GET /kapi/herkese-acik/siparis-takibi/fatura
 
 Takip edilen siparişin faturasının PDF'i (kart 0268, karar 0170). Sipariş yalnız takip çerezindeki anahtarla bulunur (çerez takip uçlarının yoluna da yazılır); robot sorusu yoktur, anahtar numara ve e-postayla robot korumalı uçtan alınmıştır. Tema demosunda kapalıdır.
@@ -1556,6 +1576,26 @@ Yöneticinin rollerini verilen listeye getirir (kart 0274, karar 0178): eksik ro
 - Servis: `cekirdek/moduller/ekip/servis.ts` (`rolleriAyarla`).
 - Başarılı (200): `{ "basarili": true, "veri": {} }`.
 - Hatalar: `dogrulama` (`rol-gerekli`, `rol-yok`), `bulunamadi`, `is-kurali` (`son-sahip`, `kendi-hesabi`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/ekip-davet
+
+Ekibe davet gönderir (kart 0275, karar 0179): e-posta ve roller (mağaza sahibi rolü davetle verilmez). Bağlantı 3 gün geçerli ve tek kullanımlıktır, veritabanında yalnız özeti durur; e-postası kuyruğa girer. Bağlantı yanıtta bir kez döner: panel onu kişiye iletmek için gösterir.
+
+- İzin: `ekip.davet-et`. Sınır: `genel`.
+- Girdi: `{ "eposta", "roller": ["gorevli"] }` (`davetGonderSemasi`).
+- Servis: `cekirdek/moduller/ekip/davet.ts` (`davetGonder`).
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik", "baglanti" } }`.
+- Hatalar: `dogrulama` (`eposta-gecersiz`, `rol-gerekli`, `rol-yok`), `is-kurali` (`ekipte`, `davet-var`, `davet-siniri`, `tam-yetki`, `adres-yok`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/ekip-davet-geri-al
+
+Bekleyen daveti geri alır (kart 0275): bağlantı hemen geçersiz olur.
+
+- İzin: `ekip.davet-et`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }` (`davetKimlikSemasi`).
+- Servis: `cekirdek/moduller/ekip/davet.ts` (`davetiGeriAl`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi` (bekleyen değil: kabul edilmiş, geri alınmış, süresi dolmuş ya da olmayan), `oturum-yok`, `yetki`.
 
 ### POST /kapi/yonetici/ekip-hesap-kapat
 

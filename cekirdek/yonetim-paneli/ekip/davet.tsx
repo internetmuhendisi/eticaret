@@ -55,9 +55,12 @@ export function DavetEt({ roller }: { roller: string[] }) {
   const metin = usePanelMetni();
   const [acik, setAcik] = useState(false);
   const [hazir, setHazir] = useState<Hazir | null>(null);
+  // Pencere kapanınca odak "Davet et"e döner: gönderimden sonra sayfa yenilendiği için Radix'in dönüşü gövdede
+  // kalıyordu (tarayıcı testinde ölçüldü).
   const { kapat, kapatmayiIste, degisince, soru } = useKapatmaSorusu(() => {
     setAcik(false);
     setHazir(null);
+    window.setTimeout(() => document.querySelector<HTMLElement>(davetEtSecicisi)?.focus(), 0);
   });
   return (
     <>
@@ -125,6 +128,8 @@ function DavetFormu({
     const sonuc = await pf.isle(() =>
       islem<{ baglanti: string }>("ekip-davet", girdi.data, "yonetim.ekip.davet.gonderildi", {
         formda: true,
+        // Sonucu "Davet hazır" penceresi söyler; ayrıca bildirim aynı şeyi ikinci kez duyurur.
+        bildirim: () => null,
       }),
     );
     if (sonuc === undefined) return;

@@ -57,6 +57,9 @@ describe("tema demosunda kapı", () => {
         "POST /kapi/herkese-acik/kartla-odeme/donus",
         "POST /kapi/herkese-acik/kartla-odeme/bildirim",
         "GET /kapi/herkese-acik/kartla-odeme/taksitler",
+        // Kart 0275: davetin kabulü yönetici hesabı doğurur, okuması davetin e-postasını gösterir.
+        "POST /kapi/herkese-acik/yonetici-davet-oku",
+        "POST /kapi/herkese-acik/yonetici-davet-kabul",
       ].toSorted(),
     );
     // Panel ve sahip girişleri açıktır: demonun paneli altyapı sahibinindir.

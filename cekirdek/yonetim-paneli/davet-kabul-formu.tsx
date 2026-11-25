@@ -60,7 +60,14 @@ type Durum =
   | { tur: "hata"; metin: MetinAnahtari }
   | { tur: "form"; anahtar: string; davet: Davet };
 
-export function DavetKabulFormu({ magaza }: { magaza: string }) {
+// gec: kurulum ekranına geçiş (testte sahte; jsdom gezinmeyi yapamaz).
+export function DavetKabulFormu({
+  magaza,
+  gec = (adres) => window.location.assign(adres),
+}: {
+  magaza: string;
+  gec?: (adres: string) => void;
+}) {
   const metin = usePanelMetni();
   const [durum, setDurum] = useState<Durum>({ tur: "okunuyor" });
   const [alanHatalari, setAlanHatalari] = useState<{ ad?: string; sifre?: string }>({});
@@ -166,7 +173,7 @@ export function DavetKabulFormu({ magaza }: { magaza: string }) {
       if (yanit.ok) {
         depodan((depo) => depo.removeItem(anahtarYeri));
         // Oturum açılmadı: ara adım çerezde, kurulum ekranı telefonu bağlatır (karar 0044).
-        window.location.assign(kurulumAdresi);
+        gec(kurulumAdresi);
         return;
       }
       if (yanit.status === hataKodlari["is-kurali"]) {
