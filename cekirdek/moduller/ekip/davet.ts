@@ -30,7 +30,12 @@ import {
   yoneticiler,
   yoneticiRolleri,
 } from "./model.ts";
-import { bekleyenDavetKosulu, izniniDenetle, tamYetkiliRolleriKilitle } from "./servis.ts";
+import {
+  bekleyenDavetKosulu,
+  izniniDenetle,
+  tamYetkiliRolleriKilitle,
+  yoneticininIzniVarMi,
+} from "./servis.ts";
 
 type Yonetici = { tur: "yonetici"; kimlik: string };
 
@@ -191,8 +196,15 @@ const davetinRolleri = (vt: Veritabani | VeritabaniIslemi, kimlikler: string[]) 
     .where(inArray(yoneticiDavetRolleri.davet_kimligi, kimlikler))
     .orderBy(asc(roller.kod));
 
-// Bağlantının davetini bulur: bekliyorsa ve daveti gönderenin hesabı açıksa.
+// Bağlantının davetini bulur: bekliyorsa, daveti gönderenin hesabı açıksa ve gönderen hâlâ davet edebiliyorsa (rolü
+// alınan kişinin bekleyen davetleri zaten düşer; bu ikinci katmandır).
 const gecerliDavet = async (vt: Veritabani | VeritabaniIslemi, anahtar: string) => {
+  const bulunan = await bekleyenDavet(vt, anahtar);
+  if (bulunan === undefined) return undefined;
+  return (await yoneticininIzniVarMi(vt, bulunan.davetEden, "ekip.davet-et")) ? bulunan : undefined;
+};
+
+const bekleyenDavet = async (vt: Veritabani | VeritabaniIslemi, anahtar: string) => {
   const [bulunan] = await vt
     .select({
       kimlik: yoneticiDavetleri.kimlik,

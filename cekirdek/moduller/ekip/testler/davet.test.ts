@@ -33,8 +33,14 @@ import {
   davetiOku,
   davetTemizligi,
 } from "../davet.ts";
-import { roller, yoneticiDavetleri, yoneticiler, yoneticiOturumlari } from "../model.ts";
-import { ekibiOku, rolVer, yoneticiHesabiKapat } from "../servis.ts";
+import {
+  roller,
+  yoneticiDavetleri,
+  yoneticiler,
+  yoneticiOturumlari,
+  yoneticiRolleri,
+} from "../model.ts";
+import { ekibiOku, rolleriAyarla, rolVer, yoneticiHesabiKapat } from "../servis.ts";
 
 const ornekler = resolve(import.meta.dirname, "../../../ayar-semasi/testler/ornek-siteler");
 const site = siteKlasorunuOku(join(ornekler, "gecerli"));
@@ -355,10 +361,28 @@ describe("davetin kabulü", () => {
       .where(eq(yoneticiler.kimlik, ucuncuSahip.kimlik));
     await ayniCevap(disaridanKapanan.anahtar);
 
+    // Rolü alınıp davet izni kalmayanın bekleyen davetleri düşer ve kayda girer (bağımsız kontrolün bulgusu).
+    const rolGiden = await yonetici(vt, ["magaza-sahibi"]);
+    const rolGidenin = await gonder(rolGiden.kim);
+    await rolleriAyarla(vt, { yoneticiKimligi: rolGiden.kimlik, roller: ["gorevli"] }, sahip.kim);
+    await ayniCevap(rolGidenin.anahtar);
+    expect((await kayitlar(vt, rolGidenin.kimlik)).at(-1)).toEqual([
+      "yonetici-daveti.geri-alindi",
+      sahip.kimlik,
+      { davet: "bekliyor" },
+      { davet: "geri-alindi" },
+    ]);
+    // İzni servis dışından alınmışsa da (davetleri düşmemiş) bağlantı geçmez: kabul gönderenin iznini sorar.
+    const izinsiz = await yonetici(vt, ["magaza-sahibi"]);
+    const izinsizin = await gonder(izinsiz.kim);
+    await vt.delete(yoneticiRolleri).where(eq(yoneticiRolleri.yonetici_kimligi, izinsiz.kimlik));
+    await ayniCevap(izinsizin.anahtar);
+
     await ayniCevap("uydurma-anahtar");
+    // Açık hesaplar: sahip, rolü alınan ve izni servis dışından alınan; davetlerle hesap açılmadı.
     expect(
       await vt.select().from(yoneticiler).where(isNull(yoneticiler.silinme_zamani)),
-    ).toHaveLength(1);
+    ).toHaveLength(3);
   });
 
   it("aynı anda iki kabulden biri geçer, tek hesap açılır", async () => {

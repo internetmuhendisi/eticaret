@@ -6,6 +6,7 @@
 // - Davet edilen kişi kendi tarayıcısında bağlantıyı açar: e-posta yazılı ve değiştirilemez; boş adla gönderimde adın
 //   hatası ve odak; adını ve şifresini koyar, kurulum ekranında telefonunu bağlar, panele girer. Sipariş görevlisi
 //   olarak Ekip'i göremez.
+// - Girişli tarayıcıda bağlantı form yerine çıkış yapmayı söyleyen uyarıyı gösterir.
 // - Mağaza sahibinin listesinde yeni kullanıcı adıyla, davet satırı yok. Kullanılmış bağlantı "Bu davet geçerli değil".
 // - Davet penceresi, "Davet hazır", davetli liste, kabul formu ve geçersiz sayfa iki renkte ve üç genişlikte taramadan
 //   geçer, yana kaymaz; konsolda beklenmeyen hata yok.
@@ -161,12 +162,22 @@ test("ekibe davet: gönderme, kopyalama, geri alma, kabul ve kurulum; klavye ve 
   await expect(liste.getByRole("listitem").filter({ hasText: geriAlinacak })).toHaveCount(0);
   await expect(davetEt).toBeFocused();
 
+  // Mağaza sahibi bağlantıyı kendi (girişli) tarayıcısında açarsa form yerine çıkış yapmasını söyleyen uyarı görür:
+  // kabulden sonra kurulum ekranı açık oturumu panele gönderirdi (bağımsız kontrolün bulgusu).
+  const adres = new URL(baglanti);
+  await page.goto(`${adres.pathname}${adres.hash}`);
+  await sayfaHazir(page);
+  await expect(page.getByText(metin("yonetim.davet.oturumAcik"))).toBeVisible();
+  await expect(page.getByRole("button", { name: metin("yonetim.davet.gonder") })).toHaveCount(0);
+  await tara(page, "girişli tarayıcıda davet sayfası");
+  await page.goto(ekipAdresi);
+  await sayfaHazir(page);
+
   // Davet edilen kişi kendi tarayıcısında.
   const kisiBaglami = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const kisi = await kisiBaglami.newPage();
   const kisiHatalari = konsoluDinle(kisi);
   await ayriBaglanti(kisi);
-  const adres = new URL(baglanti);
   await kisi.goto(`${adres.pathname}${adres.hash}`);
   await sayfaHazir(kisi);
   await expect(kisi.getByRole("heading", { level: 1 })).toHaveText(metin("yonetim.davet.baslik"));

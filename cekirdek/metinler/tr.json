@@ -2814,7 +2814,9 @@
       "hataSifre": "Şifreniz en az {enKisa}, en çok {enUzun} karakter olmalı.",
       "hataHesapVar": "Bu e-postayla açık bir panel hesabı zaten var. Giriş sayfasından girin.",
       "hataSinir": "Çok fazla deneme yapıldı. Biraz bekleyip yeniden deneyin.",
-      "hataGenel": "Şu an devam edilemiyor. Biraz sonra yeniden deneyin."
+      "hataGenel": "Şu an devam edilemiyor. Biraz sonra yeniden deneyin.",
+      "oturumAcik": "Bu tarayıcıda panele bir hesapla girilmiş. Daveti kabul etmek için önce panelden çıkış yapın, sonra davet bağlantısını yeniden açın.",
+      "panelDon": "Panele dön"
     }
   },
   "vitrin": {

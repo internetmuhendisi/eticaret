@@ -122,6 +122,21 @@ describe("davet penceresi", () => {
     expect((epostaAlani() as HTMLInputElement).value).toBe("");
   });
 
+  it("yalnız rolü değiştirip Vazgeç'e basınca sorar; seçim geri dönünce sormadan kapanır", async () => {
+    davetPenceresiniAc();
+    const vazgec = () =>
+      fireEvent.click(screen.getByRole("button", { name: metin("ortak.islem.vazgec") }));
+    fireEvent.click(rolKutusu("icerik-editoru"));
+    vazgec();
+    expect(screen.getByText(metin("yonetim.bolumler.form.kaydedilmedi"))).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: metin("yonetim.bolumler.form.don") }));
+    fireEvent.click(rolKutusu("icerik-editoru"));
+    vazgec();
+    expect(
+      screen.queryByRole("textbox", { name: new RegExp(metin("yonetim.ekip.davet.eposta")) }),
+    ).toBeNull();
+  });
+
   it("sunucunun alan kodu alanın altında, alanı olmayan kodu özette", async () => {
     davetPenceresiniAc();
     fireEvent.change(epostaAlani(), { target: { value: "ece@ornek.test" } });
@@ -159,7 +174,7 @@ describe("daveti geri al", () => {
 describe("davet kabul formu", () => {
   const ciz = async (gec = vi.fn()) => {
     await act(async () => {
-      render(sarmala(<DavetKabulFormu magaza="Örnek Mağaza" gec={gec} />));
+      render(sarmala(<DavetKabulFormu magaza="Deneme Dükkânı" gec={gec} />));
     });
     return gec;
   };
@@ -193,7 +208,7 @@ describe("davet kabul formu", () => {
       { adres: "/kapi/herkese-acik/yonetici-davet-oku", govde: { anahtar: "abc" } },
     ]);
     const aciklama = doldur(metin("yonetim.davet.aciklama"), {
-      magaza: "Örnek Mağaza",
+      magaza: "Deneme Dükkânı",
       roller: "Görevli, Sipariş görevlisi",
     });
     expect(

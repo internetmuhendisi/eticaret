@@ -181,6 +181,7 @@ export const rolAl = async (
       eski: { rol: girdi.rolKodu },
       yeni: null,
     });
+    await davetIzniGidenDavetleriDusur(islem, girdi.yoneticiKimligi, kim);
   });
 };
 
@@ -232,6 +233,17 @@ const gonderdigiDavetleriDusur = async (
       yeni: { davet: "geri-alindi" },
     });
   }
+};
+
+// Rolü alınıp davet izni kalmayan yöneticinin bekleyen davetleri de düşer (kart 0275, bağımsız kontrolün bulgusu):
+// izni olmayan kişinin bağlantısı hesap açmasın. Kabul ayrıca gönderenin iznini sorar (ikinci katman).
+const davetIzniGidenDavetleriDusur = async (
+  islem: VeritabaniIslemi,
+  yoneticiKimligi: string,
+  kim: DegisikligiYapan,
+) => {
+  if (await yoneticininIzniVarMi(islem, yoneticiKimligi, "ekip.davet-et")) return;
+  await gonderdigiDavetleriDusur(islem, yoneticiKimligi, kim);
 };
 
 // Yöneticinin giriş hesabını kapatır: giremez, açık oturumu ve yarım girişi hemen geçersiz olur. Tam
@@ -376,6 +388,7 @@ export const rolleriAyarla = async (
           yeni: null,
         });
       }
+      await davetIzniGidenDavetleriDusur(islem, yonetici.kimlik, kim);
     }
   });
 };

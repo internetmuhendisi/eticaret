@@ -118,8 +118,13 @@ function DavetFormu({
   const [eposta, setEposta] = useState("");
   // Taslaktaki gibi ilk rol (görevli) seçili gelir.
   const [secili, setSecili] = useState<string[]>(roller.slice(0, 1));
-  const degisti = eposta !== "";
+  // Rolleri değiştirmek de değişikliktir (bağımsız kontrolün bulgusu): Vazgeç sorar. Kapatma sorusuna değişiklik
+  // anında, çizimi beklemeden bildirilir (useKapatmaSorusu).
+  const degistiMi = (yeniEposta: string, yeniRoller: string[]) =>
+    yeniEposta !== "" || yeniRoller.length !== 1 || yeniRoller[0] !== roller[0];
+  const degisti = degistiMi(eposta, secili);
   const pf = usePanelFormu({ degisti });
+
   const alanlar = ["eposta", "roller"] as const;
 
   const gonder = async (_olay: FormEvent<HTMLFormElement>) => {
@@ -167,7 +172,7 @@ function DavetFormu({
             value={eposta}
             onChange={(olay) => {
               setEposta(olay.target.value);
-              degisince(olay.target.value !== "");
+              degisince(degistiMi(olay.target.value, secili));
               pf.alaniTemizle("eposta");
             }}
           />
@@ -190,11 +195,12 @@ function DavetFormu({
               }
               checked={secili.includes(kod)}
               onCheckedChange={(isaretli) => {
-                setSecili((onceki) =>
+                const yeni =
                   isaretli === true
-                    ? roller.filter((rol) => rol === kod || onceki.includes(rol))
-                    : onceki.filter((rol) => rol !== kod),
-                );
+                    ? roller.filter((rol) => rol === kod || secili.includes(rol))
+                    : secili.filter((rol) => rol !== kod);
+                setSecili(yeni);
+                degisince(degistiMi(eposta, yeni));
                 pf.alaniTemizle("roller");
               }}
               {...(sira === 0 ? { "data-hata-odagi": "" } : {})}
