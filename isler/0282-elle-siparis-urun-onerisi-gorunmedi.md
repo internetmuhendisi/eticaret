@@ -30,4 +30,4 @@ Kart 0251 aynı testin başka bir adımıdır ("Siparişi oluştur"daki POST'un 
 
 ## Durum
 
-yapılacak
+bitti
