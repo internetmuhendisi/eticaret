@@ -15,6 +15,7 @@ import {
 import { gunluk } from "../izleme/gunluk.ts";
 import { denemeIsaretiBicimi } from "../kayitlar/arka-plan.ts";
 import { kartlaOdemeAyari, stokBildirimiAyari } from "../kayitlar/eklentiler.ts";
+import { davetTemizligiIsi } from "../moduller/ekip/isler.ts";
 import { epostaGonderIsi, epostaKayitTemizligiIsi } from "../moduller/eposta/isler.ts";
 import { odemeOturumuTemizligiIsi } from "../moduller/odeme/isler.ts";
 import { havaleIptalIsi, kisiselVeriTemizligiIsi } from "../moduller/siparis/isler.ts";
@@ -76,6 +77,8 @@ export const kayitliIsler: readonly IsTanimi[] = [
   // Yönetici bildirimleri (kart 0241, karar 0154).
   yoneticiBildirimiIsi,
   stokUyarisiIsi,
+  // Ekibe davet (kart 0275, karar 0179).
+  davetTemizligiIsi,
 ];
 
 export const zamanliIsler: readonly ZamanliIs[] = [
@@ -88,5 +91,6 @@ export const zamanliIsler: readonly ZamanliIs[] = [
   zamanliIs(stokBildirimiTaramasiIsi, {}, { herDakika: stokBildirimiAyari.taramaDakika }),
   zamanliIs(kartlaOdemeTaramasiIsi, {}, { herDakika: kartlaOdemeAyari.taramaDakika }),
   zamanliIs(kartlaOdemeKarsilastirmasiIsi, {}, { herDakika: 24 * 60 }),
+  zamanliIs(davetTemizligiIsi, {}, { herDakika: 24 * 60 }),
   zamanliIs(kartlaIadeTaramasiIsi, {}, { herDakika: kartlaOdemeAyari.taramaDakika }),
 ];

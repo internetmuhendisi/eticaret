@@ -36,6 +36,8 @@ export const panelEylemleri = {
   "blog-kategorileri": { ikon: "kategoriler", ad: "yonetim.eylem.blogKategorileri" },
   // Sabit sayfalar (kart 0273): listenin "Sayfa ekle"si.
   "sayfa-ekle": { ikon: "ekle", ad: "yonetim.eylem.sayfaEkle" },
+  // Ekip (kart 0275): ekibe davet.
+  "davet-et": { ikon: "davet", ad: "yonetim.eylem.davetEt" },
 } as const satisfies Record<string, { ikon: PanelIkonAdi; ad: MetinAnahtari }>;
 
 export type PanelEylemi = keyof typeof panelEylemleri;

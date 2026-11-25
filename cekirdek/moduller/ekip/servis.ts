@@ -1,7 +1,7 @@
 // Yöneticilerin rolleri ve izin sorusu (kart 0026, karar 0040). Kod rol adına bakmaz: tek soru
 // "bu yöneticide bu izin var mı" sorusudur. Bu servisi çağıran uç, izni kapıda beyan eder.
 import { randomBytes } from "node:crypto";
-import { and, asc, count, eq, inArray, isNotNull, isNull, max, or } from "drizzle-orm";
+import { and, asc, count, eq, gt, inArray, isNotNull, isNull, max, or } from "drizzle-orm";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import type { GirisIzni } from "../../kayitlar/izinler.ts";
@@ -13,6 +13,7 @@ import { baslangicRolleri } from "./baslangic-rolleri.ts";
 import {
   rolIzinleri,
   roller,
+  yoneticiDavetleri,
   yoneticiGirisAdimlari,
   yoneticiIkiAsama,
   yoneticiler,
@@ -77,7 +78,7 @@ export const yoneticininYetkileri = async (
 // Yetki işlemlerinin ortak kilidi: tam yetkili rollerin satırları. Bir sahibin rolünü almak ya da hesabını
 // kapatmak aynı anda iki kez geçemez, sahipsiz mağaza kalmaz (karar 0040). Rol verme de alır: kapatılmakta
 // olan hesaba rol verilmez. Her yetki işlemi önce bunu alır, kilitlenme (deadlock) olmaz.
-const tamYetkiliRolleriKilitle = (islem: VeritabaniIslemi) =>
+export const tamYetkiliRolleriKilitle = (islem: VeritabaniIslemi) =>
   islem
     .select({ kimlik: roller.kimlik })
     .from(roller)
@@ -193,13 +194,44 @@ const kendiHesabiDegil = (kim: DegisikligiYapan, yoneticiKimligi: string) => {
 
 // İşi yapan yöneticinin izni, tam yetkili rollerin kilidinden sonra işlemin içinde yeniden sorulur (bağımsız
 // kontrolün bulgusu, kart 0274): kapıdan geçip kilidi bekleyen istek, o arada izni alınmışsa iş yapmaz.
-const izniniDenetle = async (
+export const izniniDenetle = async (
   islem: VeritabaniIslemi,
   kim: DegisikligiYapan,
   izin: GirisIzni<"yonetici">,
 ) => {
   if (kim.tur !== "yonetici") return;
   if (!(await yoneticininIzniVarMi(islem, kim.kimlik, izin))) throw new BilinenHata("yetki");
+};
+
+// Bekleyen davetin koşulu (kart 0275): kullanılmamış, geri alınmamış, süresi dolmamış.
+export const bekleyenDavetKosulu = (simdi: Date) =>
+  and(
+    isNull(yoneticiDavetleri.kullanilma_zamani),
+    isNull(yoneticiDavetleri.geri_alinma_zamani),
+    gt(yoneticiDavetleri.bitis, simdi),
+  );
+
+// Hesabı kapanan yöneticinin gönderdiği bekleyen davetler geri alınmış sayılır; her biri kayda girer.
+const gonderdigiDavetleriDusur = async (
+  islem: VeritabaniIslemi,
+  yoneticiKimligi: string,
+  kim: DegisikligiYapan,
+) => {
+  const simdi = new Date();
+  const dusenler = await islem
+    .update(yoneticiDavetleri)
+    .set({ geri_alinma_zamani: simdi })
+    .where(and(eq(yoneticiDavetleri.davet_eden, yoneticiKimligi), bekleyenDavetKosulu(simdi)))
+    .returning({ kimlik: yoneticiDavetleri.kimlik });
+  for (const davet of dusenler.toSorted((a, b) => a.kimlik.localeCompare(b.kimlik))) {
+    await degisikligiKaydet(islem, {
+      kim,
+      islem: "yonetici-daveti.geri-alindi",
+      kayit: { tur: "yonetici-daveti", kimlik: davet.kimlik },
+      eski: { davet: "bekliyor" },
+      yeni: { davet: "geri-alindi" },
+    });
+  }
 };
 
 // Yöneticinin giriş hesabını kapatır: giremez, açık oturumu ve yarım girişi hemen geçersiz olur. Tam
@@ -239,6 +271,8 @@ export const yoneticiHesabiKapat = async (
     await islem
       .delete(yoneticiGirisAdimlari)
       .where(eq(yoneticiGirisAdimlari.yonetici_kimligi, kapanan.kimlik));
+    // Kapanan hesabın gönderdiği bekleyen davetler düşer (kart 0275): ekipte olmayan kişinin bağlantısı açık kalmaz.
+    await gonderdigiDavetleriDusur(islem, kapanan.kimlik, kim);
     await degisikligiKaydet(islem, {
       kim,
       islem: "yonetici.kapatildi",
@@ -417,6 +451,8 @@ export const ikiAsamaliGirisiSifirla = async (
 export type EkipUyesi = {
   kimlik: string;
   eposta: string;
+  // Davetle gelen yöneticinin adı (kart 0275); sunucudan açılan hesapta null.
+  ad: string | null;
   roller: string[];
   ikiAsamaKurulu: boolean;
   sonGiris: Date | null;
@@ -431,6 +467,7 @@ export const ekibiOku = async (
     .select({
       kimlik: yoneticiler.kimlik,
       eposta: yoneticiler.eposta,
+      ad: yoneticiler.ad,
       olusturulma: yoneticiler.olusturulma_zamani,
       ikiAsama: yoneticiIkiAsama.yonetici_kimligi,
     })
@@ -470,6 +507,7 @@ export const ekibiOku = async (
   return uyeler.map((uye) => ({
     kimlik: uye.kimlik,
     eposta: uye.eposta,
+    ad: uye.ad,
     roller: rolSatirlari.filter((satir) => satir.yonetici === uye.kimlik).map((satir) => satir.kod),
     ikiAsamaKurulu: uye.ikiAsama !== null,
     sonGiris: sonGirisi.get(uye.kimlik) ?? null,

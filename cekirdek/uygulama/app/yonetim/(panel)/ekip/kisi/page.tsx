@@ -30,7 +30,7 @@ export default async function EkipKisisiSayfasi({
   return (
     <PanelSayfasi
       kod="ekip-kisi"
-      baslik={veri.kisi.eposta}
+      baslik={veri.kisi.ad ?? veri.kisi.eposta}
       altBaslik={doldur(metin("yonetim.ekip.katilma"), { zaman: veri.kisi.olusturulma })}
     >
       <EkipKisisiEkrani

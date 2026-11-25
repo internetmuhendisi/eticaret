@@ -61,6 +61,29 @@ export const girisAdiminiOku = async (
   return { hesapKimligi, eposta, durum: kurulu === null ? "kurulum" : "kod" };
 };
 
+// Ara adımı yazar; hesabın süresi dolmuş adımları silinir. Şifresi az önce doğrulanmış ya da konmuş hesap için
+// çağrılır: giriş (şifre aşaması) ve davetin kabulü (kart 0275, kişi şifresini aynı işlemde koyar).
+export const girisAdimiYaz = async (
+  islem: VeritabaniIslemi,
+  hesapKimligi: string,
+  anahtar: string,
+): Promise<void> => {
+  const simdi = new Date();
+  await islem
+    .delete(yoneticiGirisAdimlari)
+    .where(
+      and(
+        eq(yoneticiGirisAdimlari.yonetici_kimligi, hesapKimligi),
+        lt(yoneticiGirisAdimlari.bitis, simdi),
+      ),
+    );
+  await islem.insert(yoneticiGirisAdimlari).values({
+    yonetici_kimligi: hesapKimligi,
+    anahtar_ozeti: anahtarOzeti(anahtar),
+    bitis: new Date(simdi.getTime() + girisAdimiSuresiSaniye * 1000),
+  });
+};
+
 // Giriş ucunun işi: şifreyi deneme sınırıyla doğrular, ara adım açar. Hesabın süresi dolmuş adımları silinir.
 export const yoneticiSifreAsamasi = async (
   vt: Veritabani,
@@ -69,23 +92,10 @@ export const yoneticiSifreAsamasi = async (
 ): Promise<{ anahtar: string; durum: AdimDurumu }> => {
   const dogrulanan = await sinirliSifreDogrula(vt, "yonetici", girdi, baglanti);
   const { hesapKimligi } = dogrulanan;
-  const simdi = new Date();
   const anahtar = randomBytes(32).toString("base64url");
-  await sifreDegismediyse(vt, "yonetici", dogrulanan, async (islem) => {
-    await islem
-      .delete(yoneticiGirisAdimlari)
-      .where(
-        and(
-          eq(yoneticiGirisAdimlari.yonetici_kimligi, hesapKimligi),
-          lt(yoneticiGirisAdimlari.bitis, simdi),
-        ),
-      );
-    await islem.insert(yoneticiGirisAdimlari).values({
-      yonetici_kimligi: hesapKimligi,
-      anahtar_ozeti: anahtarOzeti(anahtar),
-      bitis: new Date(simdi.getTime() + girisAdimiSuresiSaniye * 1000),
-    });
-  });
+  await sifreDegismediyse(vt, "yonetici", dogrulanan, (islem) =>
+    girisAdimiYaz(islem, hesapKimligi, anahtar),
+  );
   const adim = await girisAdiminiOku(vt, anahtar);
   if (adim === null) throw new BilinenHata("oturum-yok");
   return { anahtar, durum: adim.durum };

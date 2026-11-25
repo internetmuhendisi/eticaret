@@ -348,7 +348,8 @@
       "sifreSifirlamaGonder": "Şifre sıfırlama bağlantısı gönder",
       "yaziEkle": "Yazı ekle",
       "blogKategorileri": "Blog kategorileri",
-      "sayfaEkle": "Sayfa ekle"
+      "sayfaEkle": "Sayfa ekle",
+      "davetEt": "Davet et"
     },
     "rol": {
       "magaza-sahibi": "Mağaza sahibi",
@@ -2726,7 +2727,7 @@
       "kapat": "Hesabı kapat",
       "kapatOnay": {
         "baslik": "{eposta} hesabı kapatılsın mı?",
-        "aciklama": "Kullanıcı panele giremez ve bu hesap yeniden açılmaz."
+        "aciklama": "Kullanıcı panele giremez ve bu hesap yeniden açılmaz. Gerekirse aynı e-postaya yeniden davet gönderebilirsiniz; yeni bir hesap açılır."
       },
       "kapatildi": "Hesap kapatıldı.",
       "kendiHesabi": "Kendi hesabınızın rollerini değiştiremez, hesabınızı kapatamaz ve iki aşamalı girişinizi buradan sıfırlayamazsınız.",
@@ -2736,7 +2737,43 @@
         "kendi-hesabi": "Kendi hesabınızda bu işlemi yapamazsınız.",
         "rol-gerekli": "En az bir rol seçin. Kullanıcı artık çalışmayacaksa hesabını kapatın.",
         "rol-yok": "Seçilen rol bulunamadı; sayfayı yenileyin.",
-        "kurulu-degil": "Bu kullanıcının iki aşamalı girişi kurulu değil; bir sonraki girişinde kendisi kurar."
+        "kurulu-degil": "Bu kullanıcının iki aşamalı girişi kurulu değil; bir sonraki girişinde kendisi kurar.",
+        "eposta-gecersiz": "Geçerli bir e-posta adresi yazın.",
+        "davet-var": "Bu e-postaya gönderilmiş, bekleyen bir davet var. Yeniden göndermek için önce onu geri alın.",
+        "ekipte": "Bu e-posta zaten ekipte. Rollerini kullanıcının ekranından değiştirin.",
+        "davet-siniri": "Bekleyen davet sayısı sınırda. Bazılarını geri alın ya da kabul edilmelerini bekleyin.",
+        "tam-yetki": "Mağaza sahibi rolü davetle verilmez. Kişi katıldıktan sonra ekranından verin.",
+        "adres-yok": "Sitenin adresi tanımlı olmadığı için davet bağlantısı üretilemedi. Altyapı sahibine bildirin.",
+        "davet-yok": "Davet bulunamadı: kabul edilmiş ya da geri alınmış olabilir. Sayfayı yenileyin."
+      },
+      "epostaSonGiris": "{eposta} · son giriş {zaman}",
+      "epostaHicGirmedi": "{eposta} · henüz giriş yapmadı",
+      "davet": {
+        "baslik": "Ekibe davet et",
+        "aciklama": "Davet edilen kişi e-postasına gelen bağlantıyla şifresini koyar ve iki aşamalı girişi kurar.",
+        "eposta": "E-posta",
+        "roller": "Rol",
+        "ipucu": "Davet bağlantısı {gun} gün geçerlidir ve bir kez kullanılır. Mağaza sahibi rolü davetle verilmez; gerekirse kişi katıldıktan sonra ekranından verilir.",
+        "gonder": "Davet gönder",
+        "hazirBaslik": "Davet hazır",
+        "hazir": "{eposta} için davet oluşturuldu ve e-postası sıraya alındı.",
+        "baglanti": "Davet bağlantısı",
+        "baglantiIpucu": "E-posta ulaşmazsa bağlantıyı kişiye kendiniz iletin. Bu pencere kapanınca bağlantı bir daha gösterilmez.",
+        "kopyala": "Kopyala",
+        "kopyalandi": "Bağlantı kopyalandı.",
+        "kopyalanamadi": "Kopyalanamadı. Bağlantıyı seçip kendiniz kopyalayın.",
+        "tamam": "Tamam",
+        "bekliyor": "Davet bekliyor",
+        "gecerlilik": "{tarih} tarihine kadar geçerli",
+        "geriAl": "Daveti geri al",
+        "geriAlOnay": {
+          "baslik": "{eposta} için gönderilen davet geri alınsın mı?",
+          "aciklama": "Bağlantı geçersiz olur. Kişiyi yine eklemek isterseniz yeni davet gönderirsiniz.",
+          "onay": "Geri al"
+        },
+        "geriAlindi": "Davet geri alındı.",
+        "gonderildi": "Davet gönderildi.",
+        "geriAlAdi": "Daveti geri al: {eposta}"
       }
     },
     "hesabim": {
@@ -2756,6 +2793,27 @@
         "is-kurali": "İki aşamalı girişiniz kurulu değil.",
         "kod-gerekli": "Telefonunuzdaki 6 haneli kodu yazın."
       }
+    },
+    "davet": {
+      "baslik": "Ekibe katılın",
+      "aciklama": "{magaza} yönetim paneline {roller} olarak davet edildiniz.",
+      "eposta": "E-posta",
+      "epostaIpucu": "Davet bu adrese geldi, değiştirilemez.",
+      "ad": "Adınız",
+      "adIpucu": "Ekipteki diğer kişiler sizi bu adla görür.",
+      "sifre": "Şifre",
+      "sifreIpucu": "En az {enKisa} karakter.",
+      "gonder": "Devam et",
+      "sonrakiAdim": "Sonraki adımda telefonunuzdaki doğrulama uygulamasıyla iki aşamalı girişi kurarsınız; panel için zorunludur.",
+      "okunuyor": "Davet okunuyor…",
+      "gecersizBaslik": "Bu davet geçerli değil",
+      "gecersizAciklama": "Bağlantı kullanılmış, süresi dolmuş ya da geri alınmış olabilir. Sizi davet eden kişiden yeni bir davet isteyin.",
+      "girisGit": "Panel girişine git",
+      "hataAd": "Adınızı yazın (en çok {enUzun} karakter).",
+      "hataSifre": "Şifreniz en az {enKisa}, en çok {enUzun} karakter olmalı.",
+      "hataHesapVar": "Bu e-postayla açık bir panel hesabı zaten var. Giriş sayfasından girin.",
+      "hataSinir": "Çok fazla deneme yapıldı. Biraz bekleyip yeniden deneyin.",
+      "hataGenel": "Şu an devam edilemiyor. Biraz sonra yeniden deneyin."
     }
   },
   "vitrin": {
@@ -3940,6 +3998,13 @@
         "kismiRed": "{numara} numaralı siparişin kartla iadesinin bir kısmı döndü, bir kısmı reddedildi. İadeyi siparişten yeniden deneyin."
       },
       "ustEtiketi": "Yönetici bildirimi"
+    },
+    "yoneticiDaveti": {
+      "konu": "{magaza} yönetim paneline davet",
+      "baslik": "Ekibe davet edildiniz",
+      "govde": "{magaza} yönetim paneline {roller} olarak davet edildiniz. Katılmak için aşağıdaki bağlantıyı açın, şifrenizi belirleyin ve telefonunuzla iki aşamalı girişi kurun. Bağlantı {gun} gün geçerlidir ve bir kez kullanılabilir.",
+      "uyari": "Bu daveti beklemiyorsanız e-postayı yok sayın; bağlantıyı açmazsanız hesap açılmaz.",
+      "baglanti": "Davete katıl"
     }
   },
   "gelistirme": {
@@ -4001,7 +4066,8 @@
         "hataOzeti": "Hata özeti",
         "dosyaYukleme": "Dosya yükleme",
         "ilerlemeCubugu": "İlerleme çubuğu",
-        "renkAlani": "Renk alanı"
+        "renkAlani": "Renk alanı",
+        "kopyalaDugmesi": "Kopyala düğmesi"
       },
       "bolumKutuphanesi": "Bölüm kütüphanesi"
     },
@@ -4031,7 +4097,7 @@
       "onay": "Kampanyalardan haberdar olmak istiyorum.",
       "eylemler": "Eylemler",
       "duzenle": "Düzenle: {ad}",
-      "kopyala": "Kopyala",
+      "kopyala": "Bağlantıyı kopyala",
       "sil": "Sil",
       "gorunum": "Görünüm",
       "ayrintilar": "Ayrıntıları göster",
@@ -4214,7 +4280,10 @@
       "panelAc": "Not ekle",
       "panelAdi": "Not",
       "panelAlani": "Kısa not",
-      "panelKapat": "Tamam"
+      "panelKapat": "Tamam",
+      "kopyalaDeger": "https://ornek.test/davet",
+      "kopyalandi": "Kopyalandı.",
+      "kopyalanamadi": "Kopyalanamadı. Değeri seçip kendiniz kopyalayın."
     },
     "bolum": {
       "ad": "Deneme bölümü",

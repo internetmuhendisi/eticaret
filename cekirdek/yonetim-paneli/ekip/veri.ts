@@ -4,12 +4,15 @@
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { modulIzinleri } from "../../kayitlar/izinler";
 import { siteninBicimleyicisi } from "../../metinler/site-metni";
+import { bekleyenDavetler } from "../../moduller/ekip/davet";
 import { ekibiOku, rolleriOku } from "../../moduller/ekip/servis";
 import { siteninVeritabani } from "../../veritabani/baglanti";
 
 export type EkipSatiri = {
   kimlik: string;
   eposta: string;
+  // Davetle gelen yöneticinin adı (kart 0275); yoksa null.
+  ad: string | null;
   roller: string[];
   ikiAsamaKurulu: boolean;
   // Biçimlenmiş; hiç girmediyse null.
@@ -36,6 +39,7 @@ const okuVeKur = async (oturumKimligi: string) => {
   const satirlar = uyeler.map((uye) => ({
     kimlik: uye.kimlik,
     eposta: uye.eposta,
+    ad: uye.ad,
     roller: uye.roller,
     ikiAsamaKurulu: uye.ikiAsamaKurulu,
     sonGiris: uye.sonGiris === null ? null : b.tarihSaat(uye.sonGiris),
@@ -63,6 +67,23 @@ export const ekipKisiVerisi = async (
     ? undefined
     : { kisi, roller: roller.map(({ kod, tamYetki }) => ({ kod, tamYetki })) };
 };
+
+// Bekleyen davetler (kart 0275): e-posta, roller ve son geçerli gün (sitenin biçimiyle).
+export type DavetSatiri = { kimlik: string; eposta: string; roller: string[]; gecerlilik: string };
+
+export const bekleyenDavetVerisi = async (): Promise<DavetSatiri[]> => {
+  const b = bicim();
+  return (await bekleyenDavetler(siteninVeritabani())).map((davet) => ({
+    kimlik: davet.kimlik,
+    eposta: davet.eposta,
+    roller: davet.roller,
+    gecerlilik: b.tarihSaat(davet.bitis),
+  }));
+};
+
+// Davetle verilebilen roller: tam yetkili rol (mağaza sahibi) davetle verilmez (karar 0179), tanım sırasıyla.
+export const davetRolleriVerisi = async (): Promise<string[]> =>
+  (await rolleriOku(siteninVeritabani())).filter((rol) => !rol.tamYetki).map((rol) => rol.kod);
 
 // İzin tablosunun grupları: modüllerin ekrandaki sırası (siparişten ayarlara). Kayıtta olup burada olmayan modül
 // sona gelir: yeni modülün izni tablodan düşmez.

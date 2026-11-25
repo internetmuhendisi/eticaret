@@ -7,6 +7,7 @@ import { girisAdiminiOku } from "../moduller/oturum/iki-asamali-giris.ts";
 import { siteninVeritabani } from "../veritabani/baglanti.ts";
 import {
   adimAdresi,
+  davetKabulAdresi,
   donusParametresi,
   girisAdresi,
   guvenliDonus,
@@ -37,9 +38,13 @@ export const panelYoklamasi = async (
     istek,
     oturumSuresiSaniye("yonetici", calisanSite().ayarlar),
   );
-  // Şifre sıfırlama sayfaları hesap ve adım gözetmeden açılır (kart 0034): yönlendirme bağlantıdaki anahtarı
-  // kaybederdi, sayfaların kendisi panele girmez.
-  if (pathname === sifremiUnuttumAdresi || pathname === sifreYenileAdresi) {
+  // Şifre sıfırlama ve davet kabul sayfaları hesap ve adım gözetmeden açılır (kartlar 0034, 0275): yönlendirme
+  // bağlantıdaki anahtarı kaybederdi, sayfaların kendisi panele girmez.
+  if (
+    pathname === sifremiUnuttumAdresi ||
+    pathname === sifreYenileAdresi ||
+    pathname === davetKabulAdresi
+  ) {
     return { yonlendir: null, cerezler };
   }
   const girisSayfasi = pathname === girisAdresi;

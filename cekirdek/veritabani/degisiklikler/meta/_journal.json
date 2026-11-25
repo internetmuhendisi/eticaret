@@ -407,6 +407,13 @@
       "when": 1795536755712,
       "tag": "0057_ekip-rolleri",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1795564352408,
+      "tag": "0058_yonetici-davetleri",
+      "breakpoints": true
     }
   ]
 }

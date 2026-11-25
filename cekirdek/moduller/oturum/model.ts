@@ -13,14 +13,27 @@
 // Şifre sıfırlama tablosunda aranan alanlar (kart 0034, karar 0052):
 // - anahtar_ozeti: bağlantı kullanılırken, benzersiz indeksli.
 // - hesap_kimligi: bir hesabın eski bağlantıları silinirken, indeksli.
-import { type AnyPgColumn, index, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+  type AnyPgColumn,
+  index,
+  type PgColumnBuilderBase,
+  pgTable,
+  text,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm/sql";
 import { kimlik, zaman } from "../../veritabani/turler.ts";
 
-export const hesapTablosu = (ad: string) =>
+// ek: yalnız o hesap türünün alanları (yöneticinin adı, kart 0275).
+export const hesapTablosu = <Ek extends Record<string, PgColumnBuilderBase>>(
+  ad: string,
+  ek: Ek = {} as Ek,
+) =>
   pgTable(
     ad,
     {
+      ...ek,
       kimlik: kimlik(),
       // Küçük harfe çevrilmiş e-posta (semalar.ts).
       eposta: text().notNull(),

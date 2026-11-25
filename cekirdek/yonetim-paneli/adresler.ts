@@ -5,6 +5,8 @@ export const kodAdresi = `${girisAdresi}/kod`;
 export const kurulumAdresi = `${girisAdresi}/kurulum`;
 export const sifremiUnuttumAdresi = `${girisAdresi}/sifremi-unuttum`;
 export const sifreYenileAdresi = `${girisAdresi}/sifre-yenile`;
+// Ekibe davetin kabul sayfası (kart 0275): bağlantının anahtarı adresin # sonrasındadır.
+export const davetKabulAdresi = `${girisAdresi}/davet`;
 export const donusParametresi = "donus";
 // Siparişler ve bir siparişin ayrıntısı (kart 0234); yönetici bildirimi e-postası da buraya bağlanır (kart 0241).
 // Tema ve tema ayarları (kart 0260): iki sayfa birbirine bağlanır.

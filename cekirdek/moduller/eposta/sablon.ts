@@ -86,6 +86,12 @@ const metinTanimlari = {
     baslik: "eposta.sifreDegisti.baslik",
     govde: ["eposta.sifreDegisti.govde", "eposta.sifreDegisti.uyari"],
   },
+  "yonetici-daveti": {
+    konu: "eposta.yoneticiDaveti.konu",
+    baslik: "eposta.yoneticiDaveti.baslik",
+    govde: ["eposta.yoneticiDaveti.govde", "eposta.yoneticiDaveti.uyari"],
+    baglanti: "eposta.yoneticiDaveti.baglanti",
+  },
   "stok-bildirimi": {
     konu: "eposta.stokBildirimi.konu",
     baslik: "eposta.stokBildirimi.baslik",

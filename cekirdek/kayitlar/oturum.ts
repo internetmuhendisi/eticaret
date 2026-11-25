@@ -49,6 +49,16 @@ export const sifreSifirlamaAyari = {
   enAzCevapMs: 500,
 } as const;
 
+// Ekibe davet (kart 0275, karar 0179): bağlantı 3 gün geçerli ve tek kullanımlıktır (karar 0157). Davetin satırı
+// (e-posta kişisel veridir) süresi dolduktan saklamaGun sonra silinir. Bir sitede aynı anda en çok bekleyenSiniri
+// davet bekler: ele geçmiş bir mağaza sahibi hesabı sınırsız bağlantı ve e-posta üretemesin.
+export const davetAyari = {
+  gecerlilikGun: 3,
+  saklamaGun: 30,
+  bekleyenSiniri: 20,
+  adEnUzun: 100,
+} as const;
+
 export const sifreSiniri = { enKisa: 10, enUzun: 128 } as const;
 
 // Argon2id ayarı. Değişirse eski özetler sonraki başarılı girişte yeni ayarla yeniden özetlenir.

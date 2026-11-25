@@ -138,6 +138,11 @@ export const degisiklikIslemleri = [
   // (kodlar kayda girmez).
   "yonetici.iki-asama-sifirlandi",
   "yonetici.yedek-kodlari-yenilendi",
+  // Ekibe davet (kart 0275): davet gönderildi, geri alındı, kabul edildi (yeni yönetici yapar). E-posta kayda girmez;
+  // roller girer.
+  "yonetici-daveti.gonderildi",
+  "yonetici-daveti.geri-alindi",
+  "yonetici-daveti.kabul-edildi",
 ] as const;
 export type DegisiklikIslemi = (typeof degisiklikIslemleri)[number];
 
@@ -183,6 +188,8 @@ export const degisiklikKayitTurleri = [
   "blog-kategorisi",
   // Kart 0273: sabit sayfa.
   "sabit-sayfa",
+  // Kart 0275: ekibe davet.
+  "yonetici-daveti",
 ] as const;
 export type DegisiklikKayitTuru = (typeof degisiklikKayitTurleri)[number];
 

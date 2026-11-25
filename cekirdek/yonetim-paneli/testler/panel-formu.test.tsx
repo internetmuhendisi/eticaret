@@ -394,13 +394,14 @@ describe("çıkarken soru", () => {
 });
 
 describe("panelin formları ortak yapıda (tarama)", () => {
-  // Elle <Form> yalnız ortak yapının kendisinde ve bilerek dışarıda kalanlarda: panelin girişi ve kod formu (panelin
-  // çerçevesinin dışındadır), liste ekranının araması ve tarih süzgecinin paneli (kart 0267; veri formu değildir,
+  // Elle <Form> yalnız ortak yapının kendisinde ve bilerek dışarıda kalanlarda: panelin girişi, kod formu ve davet kabul
+  // formu (panelin çerçevesinin dışındadır), liste ekranının araması ve tarih süzgecinin paneli (kart 0267; veri formu değildir,
   // adresi değiştirir).
   const kok = resolve(import.meta.dirname, "../../..");
   const disaridaKalanlar = [
     "cekirdek/yonetim-paneli/form/panel-formu.tsx",
     "cekirdek/yonetim-paneli/giris-formu.tsx",
+    "cekirdek/yonetim-paneli/davet-kabul-formu.tsx",
     "cekirdek/yonetim-paneli/kod-formu.tsx",
     "cekirdek/yonetim-paneli/liste/liste.tsx",
     "cekirdek/yonetim-paneli/liste/tarih-suzgeci.tsx",

@@ -10,4 +10,6 @@ export const ekipIzinleri = {
   "ekip.hesap-kapat": { giris: "yonetici", kapsam: "tumu" },
   "ekip.iki-asama-sifirla": { giris: "yonetici", kapsam: "tumu" },
   "ekip.kendi-hesabi.degistir": { giris: "yonetici", kapsam: "kendi" },
+  // Kart 0275: ekibe davet gönderir ve bekleyen daveti geri alır.
+  "ekip.davet-et": { giris: "yonetici", kapsam: "tumu" },
 } as const satisfies Record<string, IzinTanimi>;

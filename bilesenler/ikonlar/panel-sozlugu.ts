@@ -34,6 +34,7 @@ import {
   StoreIcon,
   TagsIcon,
   UploadIcon,
+  UserPlusIcon,
   UsersIcon,
 } from "lucide-react";
 import type { IkonAdi } from "./sozluk.ts";
@@ -71,6 +72,8 @@ export const panelIkonlari = {
   magaza: StoreIcon,
   // Ekip (kart 0274).
   ekip: UsersIcon,
+  // Ekibe davet (kart 0275).
+  davet: UserPlusIcon,
   // Sabit sayfalar (kart 0273): menüdeki sayfa ve boş hâli.
   sayfa: FileIcon,
   // Dosya yükleme düğmesi (kart 0094) ve biçimli metin alanının araç çubuğu (kart 0263): yalnız panelde kullanılan

@@ -14,6 +14,8 @@ export const epostaSablonlari = [
   "hos-geldin",
   "sifre-sifirlama",
   "sifre-degisti",
+  // Ekibe davet (kart 0275).
+  "yonetici-daveti",
   // Stoğa gelince haber ver eklentisi (kart 0144, karar 0117).
   "stok-bildirimi",
   // Müşteriye giden sipariş e-postaları (kart 0240, karar 0153). Hangi olayın hangisini gönderdiği

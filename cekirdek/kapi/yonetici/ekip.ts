@@ -2,7 +2,9 @@
 // kurallar (son mağaza sahibi, kendi hesabı, en az bir rol) ekip servisindedir (cekirdek/moduller/ekip/servis.ts).
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { davetGonder, davetiGeriAl } from "../../moduller/ekip/davet.ts";
 import { yoneticiler } from "../../moduller/ekip/model.ts";
+import { davetGonderSemasi, davetKimlikSemasi } from "../../moduller/ekip/semalar.ts";
 import {
   ikiAsamaliGirisiSifirla,
   rolleriAyarla,
@@ -12,7 +14,7 @@ import { yedekKodlariniYenile } from "../../moduller/oturum/iki-asamali-giris.ts
 import { sifreSifirlamaIste } from "../../moduller/oturum/sifre-sifirlama.ts";
 import { siteninVeritabani } from "../../veritabani/baglanti.ts";
 import { kimlikSemasi } from "../../veritabani/kimlik.ts";
-import { sifreYenileAdresi } from "../../yonetim-paneli/adresler.ts";
+import { davetKabulAdresi, sifreYenileAdresi } from "../../yonetim-paneli/adresler.ts";
 import { istemciAdresi, sayacAdresi } from "../istek-siniri.ts";
 import { ucTanimla } from "../uc.ts";
 import { BilinenHata } from "../zarf.ts";
@@ -103,5 +105,34 @@ export const yedekKodlariYenileUcu = ucTanimla({
       baglanti: sayacAdresi(istemciAdresi(istek)),
     });
     return { yedekKodlari };
+  },
+});
+
+// POST /kapi/yonetici/ekip-davet: ekibe davet gönderir (kart 0275, karar 0179). Bağlantı yanıtta bir kez döner: sunucuda
+// gerçek e-posta gönderimi yokken (kart 0060) panel onu kişiye iletmek için gösterir. E-postası kuyruğa girer.
+export const ekipDavetUcu = ucTanimla({
+  giris: "yonetici",
+  sema: davetGonderSemasi,
+  izin: "ekip.davet-et",
+  sinir: "genel",
+  isle: async ({ eposta, roller }, _istek, _yanit, { hesapKimligi }) => {
+    const { kimlik, baglanti } = await davetGonder(
+      siteninVeritabani(),
+      { eposta, roller, yenilemeYolu: davetKabulAdresi },
+      yonetici(hesapKimligi),
+    );
+    return { kimlik, baglanti };
+  },
+});
+
+// POST /kapi/yonetici/ekip-davet-geri-al: bekleyen daveti geri alır; bağlantı hemen geçersiz olur.
+export const ekipDavetGeriAlUcu = ucTanimla({
+  giris: "yonetici",
+  sema: davetKimlikSemasi,
+  izin: "ekip.davet-et",
+  sinir: "genel",
+  isle: async ({ kimlik }, _istek, _yanit, { hesapKimligi }) => {
+    await davetiGeriAl(siteninVeritabani(), { kimlik }, yonetici(hesapKimligi));
+    return {};
   },
 });
