@@ -1531,7 +1531,8 @@
           "duzeltilemez": "Sipariş kargoya verildiği için bilgileri artık düzeltilemez.",
           "kisiselVeri": "Bu siparişin kişisel bilgileri silindiği için bilgileri düzeltilemez.",
           "vergiBolgesi": "Bu adres siparişin vergisini değiştirir. Siparişi iptal edip yenisini girin."
-        }
+        },
+        "oncekiAdres": "Önceki: {adres}"
       }
     },
     "siparisFisi": {

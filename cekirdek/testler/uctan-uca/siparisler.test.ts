@@ -849,6 +849,8 @@ test("sipariş ayrıntısı: teslimat ve fatura bilgileri klavyeyle düzeltilir;
   await alan(metin("vitrin.odeme.ad")).focus();
   await page.keyboard.type("Düzeltilmiş");
   await alan(metin("vitrin.odeme.adres")).fill("Yeni Sokak No: 7");
+  // Açık adres değişince önceki yazılışı alanın altında (taslak).
+  await expect(pencere).toContainText("Deneme Sokak No: 2");
   await pencere.getByRole("radio", { name: metin("vitrin.odeme.bireysel") }).focus();
   await page.keyboard.press("ArrowRight", { delay: 50 });
   await expect(pencere.getByRole("radio", { name: metin("vitrin.odeme.kurumsal") })).toBeChecked();

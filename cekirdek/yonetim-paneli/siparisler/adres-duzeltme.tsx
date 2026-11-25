@@ -19,6 +19,7 @@ import {
   YanPencereIcerigi,
   YanPencereUstu,
 } from "../../../bilesenler/parcalar/yan-pencere";
+import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
 import { siparisAdresiSemasi } from "../../moduller/siparis/semalar";
@@ -273,6 +274,12 @@ function AdresFormu({
         hatalar={hatalar}
         kimlikler={kimlikler}
       />
+      {/* Taslaktaki ipucu: açık adres değişince önceki yazılışı görünür. */}
+      {teslimat.adres === t.adres.adres ? null : (
+        <p className="m-0 -mt-2 text-kucuk text-soluk-yazi wrap-anywhere">
+          {doldur(metin("yonetim.siparis.adres.oncekiAdres"), { adres: t.adres.adres })}
+        </p>
+      )}
 
       <h3 className="font-baslik text-baslik-4 font-baslik-kalinligi">
         {metin("yonetim.siparis.adres.fatura")}
