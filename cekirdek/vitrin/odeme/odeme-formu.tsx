@@ -11,13 +11,22 @@
 // - Özetin tutarları sunucunun sepet hesabıdır; vergi teslimat ve fatura adresinin bölgesiyle yeniden hesaplanır.
 //   Tarayıcı tutar göndermez, yalnız sepetin kalemlerini gönderir.
 // - Sunucu sepetin değiştiğini söylerse özet yeniden istenir; stok başka bir ödemede ayrılmışsa söylenir.
+// - Özet ve hesap durumu gelene kadar "Siparişi onayla" kapalı görünür ve nedenini yazar (karar 0183).
 // - Müşterinin bir önceki onayının oturumu sekmede saklanır ve yeniden basınca gönderilir: kendi ayırması kendisine
 //   engel olmaz.
 // - Sipariş oluşunca (kart 0214) siparişe giren kalemler sepetten çıkar, müşteri sipariş alındı sayfasına gider; o
 //   sayfayı yalnız bu tarayıcı açar (erişim çerezi).
 // - Giriş yapmış müşterinin son siparişinin teslimat bilgisi teslimat bölümünde önerilir; "Bu adresi kullan" alanları
 //   doldurur.
-import { type FormEvent, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import {
+  type FormEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
 import { FormAlani } from "../../../bilesenler/form/form-alani";
 import {
@@ -382,6 +391,7 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
   // Kartla ödemeden dönüşte form taslaktan doldu: kayıtlı adres onun üstüne yazılmaz.
   const taslaktanDoldu = useRef(false);
   const [bekliyor, setBekliyor] = useState(false);
+  const onayNedeniKimligi = useId();
   const [yenileme, setYenileme] = useState(0);
   // Sepetteki adet sunucunun hesabına göre indirildi: özet yenilenince de söylenir.
   const [adetIndi, setAdetIndi] = useState(false);
@@ -549,9 +559,14 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
   const bilinmiyor =
     hesap.tur === "bilinmiyor" || (hesap.tur === "girissiz" && !veri.uyeOlmadanAlisveris);
 
+  // Özet ve hesap durumu gelmeden sipariş onaylanamaz (kart 0308, karar 0183): düğme kapalı görünür, odak alır, nedenini
+  // söyler; özet alınamadıysa neden sepetin hatasıdır.
+  // Basılırsa gönderim yapılmaz.
+  const onaylanamaz = durum.tur !== "hazir" || bilinmiyor;
+
   const gonder = async (olay: FormEvent<HTMLFormElement>) => {
     olay.preventDefault();
-    if (gonderiliyor.current || durum.tur !== "hazir" || bilinmiyor) return;
+    if (gonderiliyor.current || onaylanamaz) return;
     const form = new FormData(olay.currentTarget);
     const deger = (ad: string) => String(form.get(ad) ?? "");
     const teslimatAdres = teslimat;
@@ -1236,9 +1251,29 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
               </Baglanti>
             </p>
             {bekliyor ? <p role="status">{metin("vitrin.odeme.gonderiliyor")}</p> : null}
-            <GonderDugmesi className="w-full" disabled={bekliyor}>
+            <GonderDugmesi
+              className="w-full aria-disabled:cursor-not-allowed aria-disabled:bg-yuzey aria-disabled:text-soluk-yazi"
+              disabled={bekliyor}
+              {...(onaylanamaz
+                ? { "aria-disabled": true, "aria-describedby": onayNedeniKimligi }
+                : {})}
+            >
               {metin("vitrin.odeme.onayla")}
             </GonderDugmesi>
+            {onaylanamaz ? (
+              <p
+                id={onayNedeniKimligi}
+                className={
+                  durum.tur === "hata"
+                    ? "text-kucuk font-kalin text-tehlike-yazi"
+                    : "text-kucuk text-soluk-yazi"
+                }
+              >
+                {metin(
+                  durum.tur === "hata" ? "vitrin.odeme.sepetHata" : "vitrin.odeme.onayBekliyor",
+                )}
+              </p>
+            ) : null}
             <p className="text-kucuk text-soluk-yazi">{metin("vitrin.odeme.yukumluluk")}</p>
           </div>
         </div>

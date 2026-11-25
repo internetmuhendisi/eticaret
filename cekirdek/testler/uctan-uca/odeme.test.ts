@@ -150,7 +150,11 @@ const odemeyiAc = async (page: Page) => {
   const yanit = await page.goto(vitrinAdresleri.odeme);
   expect(yanit?.status()).toBe(200);
   await sayfaHazir(page);
-  await expect(page.getByRole("button", { name: metin("vitrin.odeme.onayla") })).toBeEnabled();
+  const onayDugmesi = page.getByRole("button", { name: metin("vitrin.odeme.onayla") });
+  await expect(onayDugmesi).toBeEnabled();
+  // Özet ve hesap durumu gelene kadar düğme kapalı görünür, basış boşa gider (kart 0308; hat 45644376937'de özetten
+  // önce basılan Enter hata özetini hiç göstermedi).
+  await expect(onayDugmesi).not.toHaveAttribute("aria-disabled", "true");
 };
 
 const alan = (page: Page, etiket: string) => page.getByLabel(etiket, { exact: true });
@@ -466,6 +470,59 @@ test("boş gönderimde hatalar özetlenir, odak özete gider, bağlantı alana g
     .click();
   await expect(eposta).toBeFocused();
   await ikiRenkUcGenislik(page, "hatalı form");
+});
+
+// Kart 0308: özet gelene kadar "Siparişi onayla" kapalı görünür, odak alır ve nedenini söyler; basılırsa hiçbir şey
+// gönderilmez, form denetlenmez. Özet gelince açılır. Özet alınamazsa neden sepetin hatasıdır.
+test("özet gelene kadar Siparişi onayla basılamaz ve nedenini söyler; özet alınamazsa hatayı söyler", async ({
+  page,
+}) => {
+  await sepetiKur(page);
+  // Sepet özetinin isteği test bırakana kadar tutulur.
+  let birak: (() => void) | undefined;
+  const tutulan = new Promise<void>((cozul) => {
+    birak = cozul;
+  });
+  await page.route("**/kapi/herkese-acik/sepet", async (yol) => {
+    await tutulan;
+    await yol.continue();
+  });
+  const odemeIstekleri: string[] = [];
+  page.on("request", (istek) => {
+    if (istek.url().endsWith("/kapi/herkese-acik/odeme")) odemeIstekleri.push(istek.url());
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(vitrinAdresleri.odeme);
+  // Tutulan istek ağı boşaltmadığı için sayfaHazir beklenmez: form bağlanınca aria-busy kalkar (bilesenler/form/form.tsx).
+  await expect(page.locator("#odeme-formu")).toHaveAttribute("aria-busy", "false");
+  const dugme = page.getByRole("button", { name: metin("vitrin.odeme.onayla") });
+  // Playwright aria-disabled düğmeyi de etkin saymaz.
+  await expect(dugme).toBeDisabled();
+  await expect(dugme).toHaveAttribute("aria-disabled", "true");
+  await expect(dugme).toHaveAccessibleDescription(metin("vitrin.odeme.onayBekliyor"));
+  await expect(page.getByText(metin("vitrin.odeme.onayBekliyor"))).toBeVisible();
+  // Klavyeyle odak alır; Enter hiçbir şey göndermez, form denetlenmez.
+  await dugme.focus();
+  await expect(dugme).toBeFocused();
+  await page.keyboard.press("Enter");
+  const ozetBasi = metin("vitrin.odeme.hata.ozet").split("{sayi}")[0] ?? "";
+  await expect(page.getByRole("alert").filter({ hasText: ozetBasi })).toHaveCount(0);
+  expect(odemeIstekleri).toEqual([]);
+  await ikiRenkUcGenislik(page, "özet beklenirken");
+  // Özet gelince düğme açılır, neden kalkar; basış formu denetler.
+  birak?.();
+  await expect(dugme).not.toHaveAttribute("aria-disabled", "true");
+  await expect(page.getByText(metin("vitrin.odeme.onayBekliyor"))).toHaveCount(0);
+  await onayla(page);
+  await expect(page.getByRole("alert").filter({ hasText: ozetBasi }).first()).toBeVisible();
+
+  // Özet alınamazsa düğme kapalı kalır, neden sepetin hatasıdır.
+  await page.unroute("**/kapi/herkese-acik/sepet");
+  await page.route("**/kapi/herkese-acik/sepet", (yol) => yol.abort());
+  await page.reload();
+  await sayfaHazir(page);
+  await expect(dugme).toHaveAttribute("aria-disabled", "true");
+  await expect(dugme).toHaveAccessibleDescription(metin("vitrin.odeme.sepetHata"));
 });
 
 test("ön bilgilendirme formu pencerede siparişin bilgileriyle açılır, Escape kapatır", async ({

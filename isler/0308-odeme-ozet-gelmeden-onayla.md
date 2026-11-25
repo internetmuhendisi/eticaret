@@ -24,6 +24,15 @@ Kart 0288'in hattına bakılırken bulundu, o karta karıştırılmadı.
 - `odeme.test.ts` hattın koşulunda art arda beş kez geçiyor.
 - Bağımsız kontrol yapıldı.
 
+## Notlar
+
+- 2026-11-25, kullanıcı kararı (b): özet gelene kadar düğme basılamaz ve nedenini yazar (karar 0183). Düğme `aria-disabled` (odak alır, ekran okuyucu nedeni düğmeyle okur; sepetteki "Ödemeye geç" ile aynı kalıp), neden `vitrin.odeme.onayBekliyor`; özet alınamazsa `vitrin.odeme.sepetHata`. Gönderim işlevi aynı koşulla gönderimi yapmaz.
+- Test `odeme.test.ts` "özet gelene kadar…": sepet özeti isteği test bırakana kadar tutulur; düğmenin kapalılığı, bağlı ve görünür neden, odak, Enter'da hata özeti ve ödeme isteği olmaması, özet beklenirken iki renkte ve üç genişlikte tarama, bırakınca açılma ve neden metninin kalkması, özet isteği düşürülünce sepetin hata metni. Tutulan istek ağı boşaltmadığı için bu test `sayfaHazir` yerine formun `aria-busy="false"` olmasını bekler. Playwright `aria-disabled` düğmeyi etkin saymaz (`toBeEnabled` bunu da bekler).
+- Eski form, nedenin düğmeye bağlanmaması ve hata durumunda bekleme metni ayrı ayrı bilerek bozuldu; üçünde de yeni test kırmızıya düştü.
+- `odemeyiAc` ve kartla ödeme testinin onay adımı basmadan önce düğmenin açılmasını bekler.
+- Hattın koşulunda (ayrı kutuda temiz veritabanı, iki işlemci, iki işçi): `odeme.test.ts` art arda beş ayrı turda 10/10; `odeme.test.ts` ile `kartla-odeme.test.ts` birlikte bir kez 13/13 (yeni testin ilk yazılışı hariç). İlk ölçüm `--repeat-each=5` ile yapılmıştı ve 50'de 3 düştü: tekrarlar iki işçiye dağıldı, aynı dosya kendisiyle aynı anda çalıştı (site ayarı ve aynı birimin stoğu); hatta bu olmaz.
+- Sunucunun bir sayfayı çizerken öteki istekleri bekletmesi (hat 45644376937'de `/gelistirme/bilesenler/bolum-kutuphanesi` 1,7–1,9 sn uygulama kodu, öteki istekler ~1,2 sn sonra alındı) kart 0251'in ailesine not olarak bırakıldı; 0251 kullanıcı kararıyla bekletiliyor, karta yazılmadı.
+
 ## Durum
 
 yapılacak

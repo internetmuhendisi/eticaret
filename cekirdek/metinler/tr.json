@@ -3529,6 +3529,7 @@
       "onayla": "Siparişi onayla",
       "yukumluluk": "Siparişi onaylayınca ödeme yükümlülüğü doğar.",
       "gonderiliyor": "Siparişiniz onaylanıyor, lütfen bekleyin.",
+      "onayBekliyor": "Sipariş özeti yükleniyor. Özet görününce siparişi onaylayabilirsiniz.",
       "yukleniyor": "Ödeme sayfası yükleniyor",
       "sepetHata": "Sepet şu an gösterilemiyor. Sayfayı yenileyip yeniden deneyin.",
       "hata": {

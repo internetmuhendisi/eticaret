@@ -190,7 +190,10 @@ const karttaOde = async (page: Page, eposta: string, tarama: boolean) => {
   await kutuyuIsaretle(page, metin("vitrin.odeme.onBilgilendirmeOnayi"));
   await kutuyuIsaretle(page, metin("vitrin.odeme.mesafeliSatisOnayi"));
   if (tarama) await ikiRenkUcGenislik(page, "kart seçili ödeme adımı");
-  await page.getByRole("button", { name: metin("vitrin.odeme.onayla") }).focus();
+  const onayDugmesi = page.getByRole("button", { name: metin("vitrin.odeme.onayla") });
+  // Özet gelene kadar düğme kapalı görünür, basış boşa gider (kart 0308).
+  await expect(onayDugmesi).not.toHaveAttribute("aria-disabled", "true");
+  await onayDugmesi.focus();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/^http:\/\/127\.0\.0\.1:\d+\/odeme-sayfasi\//);
 };
