@@ -12,7 +12,6 @@
 // geri alır (öteki tarayıcı testleri ödeme adımında yöntemleri ve hesapları kullanır).
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri";
@@ -25,10 +24,10 @@ import { stokServisi } from "../../moduller/stok/servis";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
 import { vitrinAdresleri } from "../../vitrin/adresler";
-import { bildirimSuresiniDurdur } from "./bildirim-suresi";
 import { ozetOdaktaOlmali } from "./form-hatasi";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
+import { tara } from "./tarama";
 import { ayriBaglanti, paneleGir, yoneticiAc } from "./yonetici";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
@@ -52,30 +51,6 @@ test.afterAll(async () => {
   }
   await vt.$client.end();
 });
-
-const tara = async (page: Page, ne: string) => {
-  // Bildirimin süresi tarama sürerken dolmasın (kart 0220).
-  await bildirimSuresiniDurdur(page);
-  await page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter((a) => a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY)
-        .map((a) => a.finished.catch(() => undefined)),
-    ),
-  );
-  const sonuc = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-    .exclude("nextjs-portal")
-    .analyze();
-  expect(
-    sonuc.violations.map((ihlal) => ({
-      kural: ihlal.id,
-      ogeler: ihlal.nodes.map((oge) => oge.target.join(" ")),
-    })),
-    ne,
-  ).toEqual([]);
-};
 
 const ikiRenkUcGenislik = async (page: Page, ne: string) => {
   for (const renk of ["light", "dark"] as const) {

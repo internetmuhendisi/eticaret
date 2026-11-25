@@ -2,13 +2,12 @@
 // arada gösterir; açık ve koyu temada, üç genişlikte erişilebilirlik taramasından (axe, WCAG 2.2 AA) geçer; açılır parçalar açıkken
 // de taranır. Her parça yalnız klavyeyle kullanılır: odak açılan parçaya girer, Escape kapatır, odak açan
 // öğeye döner. Sayfa yana kaymaz, konsolda hata yoktur, hareketi azaltan kullanıcıda hareket olmaz.
-import AxeBuilder from "@axe-core/playwright";
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { metin } from "../../metinler/site-metni";
-import { bildirimSuresiniDurdur } from "./bildirim-suresi";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
+import { tara } from "./tarama";
 
 const adres = "/gelistirme/bilesenler";
 const m = (anahtar: string) => metin(`gelistirme.ornek.${anahtar}` as MetinAnahtari);
@@ -19,33 +18,6 @@ const ac = async (page: Page) => {
   await page.goto(adres);
   await sayfaHazir(page);
   return hatalar;
-};
-
-// Açılış animasyonu sürerken öğeler yarı saydamdır, kontrast yanlış ölçülür: tarama sonlu animasyonların
-// bitmesini bekler. Next.js'in geliştirme göstergesi sayfanın parçası değildir, taranmaz.
-const tara = async (page: Page, ne: string) => {
-  // Bildirimin süresi tarama sürerken dolmasın (kart 0220).
-  await bildirimSuresiniDurdur(page);
-  await page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter((a) => a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY)
-        // Kapanırken iptal edilen animasyonun sözü hatayla biter; o da bitmiş sayılır.
-        .map((a) => a.finished.catch(() => undefined)),
-    ),
-  );
-  const sonuc = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-    .exclude("nextjs-portal")
-    .analyze();
-  expect(
-    sonuc.violations.map((ihlal) => ({
-      kural: ihlal.id,
-      ogeler: ihlal.nodes.map((oge) => oge.target.join(" ")),
-    })),
-    ne,
-  ).toEqual([]);
 };
 
 const odakta = (oge: Locator) => expect(oge).toBeFocused();

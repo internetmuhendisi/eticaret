@@ -9,31 +9,12 @@
 // Konsol: Chromium "yüklenemedi" iletisine adres yazmaz. Bu yüzden ileti ayıklanırken yanıtlar ayrıca denetlenir:
 // 400 ve üstü yanıt alan her istek bulgudur, yalnız bulunamadı sayfasının kendi belgesinin 404'ü beklenir. Girişsiz
 // ziyaretçinin hesap sorusu kart 0187'den beri 401 almaz.
-import AxeBuilder from "@axe-core/playwright";
-import { expect, type Page, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { basilmayanOgeler } from "./basilan-alan";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
+import { ihlalleriBul } from "./tarama";
 import { ekranGenislikleri, ekranSayfalari } from "./vitrin-sayfalari";
-
-const tara = async (page: Page) => {
-  // Sonlu animasyon ve geçişler bitmeden renkler ara değerdedir (kart 0136).
-  await page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter((a) => a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY)
-        .map((a) => a.finished.catch(() => undefined)),
-    ),
-  );
-  const sonuc = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-    .exclude("nextjs-portal")
-    .analyze();
-  return sonuc.violations.map(
-    (ihlal) => `${ihlal.id}: ${ihlal.nodes.map((oge) => oge.target.join(" ")).join(", ")}`,
-  );
-};
 
 for (const [tur, { adres, durum }] of Object.entries(ekranSayfalari)) {
   test(`ekran ölçümü: ${tur} dört genişlikte ve iki temada`, async ({ page }) => {
@@ -61,7 +42,9 @@ for (const [tur, { adres, durum }] of Object.entries(ekranSayfalari)) {
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
         );
         if (kayma > 0) bulgular.push(`${yer}: sayfa ${kayma} px yana kayıyor`);
-        for (const ihlal of await tara(page)) bulgular.push(`${yer}: tarama ${ihlal}`);
+        for (const ihlal of await ihlalleriBul(page)) {
+          bulgular.push(`${yer}: tarama ${ihlal.kural}: ${ihlal.ogeler.join(", ")}`);
+        }
         // Basılan alan renkten bağımsızdır: yalnız açık temada ölçülür.
         if (renk === "light") {
           for (const oge of await basilmayanOgeler(page))

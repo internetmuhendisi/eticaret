@@ -12,7 +12,6 @@
 // kaldırır.
 import { randomBytes, randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import { eq } from "drizzle-orm";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
@@ -35,9 +34,9 @@ import { stokServisi } from "../../moduller/stok/servis";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
 import { hesapSiparisiAdresi, siparisTakibiAdresi, vitrinAdresleri } from "../../vitrin/adresler";
-import { bildirimSuresiniDurdur } from "./bildirim-suresi";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
+import { tara } from "./tarama";
 import { paneleGir, yoneticiAc } from "./yonetici";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
@@ -95,33 +94,6 @@ test.afterAll(async () => {
   });
   await vt.$client.end();
 });
-
-const tara = async (page: Page, ne: string) => {
-  await bildirimSuresiniDurdur(page);
-  await page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter((a) => a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY)
-        .map((a) => a.finished.catch(() => undefined)),
-    ),
-  );
-  // Sayfa yenilendikten sonra başlık bir an yok kalabiliyor (kart 0293, hat 45045593092: takipte iptalden sonraki
-  // yenileme bittikten sonra tarama "document-title" buldu; yerelde üretilemedi, sebebi kart 0287'de). Tarama başlık
-  // dolunca yapılır.
-  await expect(page).toHaveTitle(/\S/);
-  const sonuc = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-    .exclude("nextjs-portal")
-    .analyze();
-  expect(
-    sonuc.violations.map((ihlal) => ({
-      kural: ihlal.id,
-      ogeler: ihlal.nodes.map((oge) => oge.target.join(" ")),
-    })),
-    ne,
-  ).toEqual([]);
-};
 
 const ikiRenkUcGenislik = async (page: Page, ne: string) => {
   for (const renk of ["light", "dark"] as const) {

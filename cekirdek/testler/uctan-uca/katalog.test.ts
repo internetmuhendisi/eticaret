@@ -3,7 +3,6 @@
 // kullanıldığı yerleri listeler. Renk seçimi cihazın tercihini geçersiz kılar, açılır parçalara da geçer;
 // genişlik seçimi sayfayı o genişlikte bir çerçevede aynı renkle açar. Ana sayfa her parçayı gösterir.
 // Klavye denemeleri ana sayfada bilesenler.test.ts'tedir.
-import AxeBuilder from "@axe-core/playwright";
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { kontrastOrani } from "../../../bilesenler/tasarim-degerleri/kontrast";
 import { katalogAdresi, katalogParcalari } from "../../katalog/kayit";
@@ -15,6 +14,7 @@ import { basilmayanNoktalar } from "./basilan-alan";
 import { konsoluDinle } from "./konsol";
 import { satirlarinSolu, satirlarinYazisi } from "./satir-hizasi";
 import { sayfaHazir } from "./sayfa-hazir";
+import { hareketlerBitsin, tara } from "./tarama";
 
 const genislikler = [
   { ad: "telefon", width: 375, height: 800 },
@@ -27,32 +27,6 @@ const ac = async (page: Page, adres: string) => {
   const yanit = await page.goto(adres);
   await sayfaHazir(page);
   return { hatalar, durum: yanit?.status() };
-};
-
-// Sonlu her hareketin (animasyon ve geçiş) bitmesini bekler; sonsuz hareketler (ör. yükleniyor göstergesi) beklenmez.
-const hareketlerBitsin = (page: Page) =>
-  page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter((a) => a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY)
-        .map((a) => a.finished.catch(() => undefined)),
-    ),
-  );
-
-const tara = async (page: Page, ne: string) => {
-  await hareketlerBitsin(page);
-  const sonuc = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-    .exclude("nextjs-portal")
-    .analyze();
-  expect(
-    sonuc.violations.map((ihlal) => ({
-      kural: ihlal.id,
-      ogeler: ihlal.nodes.map((oge) => oge.target.join(" ")),
-    })),
-    ne,
-  ).toEqual([]);
 };
 
 const yanaKayma = (page: Page) =>

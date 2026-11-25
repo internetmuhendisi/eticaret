@@ -1,0 +1,20 @@
+// Elle tarama yasağı (kart 0288, .claude/rules/test.md). Tarayıcı testlerinin erişilebilirlik taraması tek
+// yardımcıdadır (cekirdek/testler/uctan-uca/tarama.ts): kurallar, sayılmayanlar ve taramadan önceki beklemeler
+// (bildirim süresi, animasyonlar, sayfa başlığı) orada. Kopyalar zamanla ayrıştı; `@axe-core/playwright` başka
+// dosyada içe aktarılmaz. Yeniden dışa aktarma (export ... from) ve sonradan yükleme (import(...)) da yakalanır.
+language js
+
+or {
+  JsImport(),
+  JsExport(),
+  JsImportCallExpression()
+} as $ice where {
+  // Muafiyet yalnız projenin kökündeki yardımcı içindir: başka bir klasörün içindeki aynı yol muaf değildir
+  // (kart 0103).
+  or {
+    $filename <: not r".*/cekirdek/testler/uctan-uca/tarama\.ts",
+    $filename <: r".*/(?:cekirdek|siteler|sahip-paneli|komutlar|denetim|bilesenler)/(?:.*/)?cekirdek/testler/uctan-uca/tarama\.ts"
+  },
+  $ice <: r"(?s).*[\"']@axe-core/playwright(?:/[^\"']*)?[\"'].*",
+  register_diagnostic(span=$ice, message="Erişilebilirlik taraması elle yazılamaz. tara ya da ihlalleriBul kullanın (cekirdek/testler/uctan-uca/tarama.ts).", severity="error")
+}

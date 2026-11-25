@@ -2,12 +2,12 @@
 // yan menü klavyeyle gezilir, vitrine git yeni sekmede açılır; telefonda menü yan pencerede açılır ve kapanınca
 // odağı düğmeye verir; panel iki renkte ve üç genişlikte erişilebilirlik taramasından geçer, yana kaymaz,
 // konsolda hata yoktur. Rol başına menü gerçek veritabanıyla birim testindedir (panel-yetkisi.test.tsx).
-import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import { altyapiAdi } from "../../kayitlar/altyapi";
 import { metin } from "../../metinler/site-metni";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
+import { tara } from "./tarama";
 import { ayriBaglanti, type DenemeYoneticisi, paneleGir, yoneticiAc } from "./yonetici";
 
 const genislikler = [
@@ -22,28 +22,6 @@ test.beforeEach(({ page }) => {
   yonetici = yoneticiAc();
   return ayriBaglanti(page);
 });
-
-const tara = async (page: Page, ne: string) => {
-  await page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter((a) => a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY)
-        .map((a) => a.finished.catch(() => undefined)),
-    ),
-  );
-  const sonuc = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-    .exclude("nextjs-portal")
-    .analyze();
-  expect(
-    sonuc.violations.map((ihlal) => ({
-      kural: ihlal.id,
-      ogeler: ihlal.nodes.map((oge) => oge.target.join(" ")),
-    })),
-    ne,
-  ).toEqual([]);
-};
 
 const yanaKayma = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

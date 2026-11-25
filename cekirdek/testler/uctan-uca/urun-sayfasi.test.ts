@@ -13,7 +13,6 @@
 // - Taslak ürünün adresi 404, gizli ürününki 200.
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import sharp from "sharp";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
@@ -30,6 +29,7 @@ import { kayitAdresleri } from "../../vitrin/adresler";
 import { basilmayanNoktalar } from "./basilan-alan";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
+import { tara } from "./tarama";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
 
@@ -178,28 +178,6 @@ const stokKoduYazisi = (kod: string) => doldur(metin("vitrin.urunSayfasi.stokKod
 
 const galeriAdi = (sira: number, toplam: number) =>
   doldur(metin("vitrin.urunSayfasi.galeri"), { sira: String(sira), toplam: String(toplam) });
-
-const tara = async (page: Page, ne: string) => {
-  await page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter((a) => a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY)
-        .map((a) => a.finished.catch(() => undefined)),
-    ),
-  );
-  const sonuc = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-    .exclude("nextjs-portal")
-    .analyze();
-  expect(
-    sonuc.violations.map((ihlal) => ({
-      kural: ihlal.id,
-      ogeler: ihlal.nodes.map((oge) => oge.target.join(" ")),
-    })),
-    ne,
-  ).toEqual([]);
-};
 
 let h: Hazirlik;
 test.beforeAll(async () => {

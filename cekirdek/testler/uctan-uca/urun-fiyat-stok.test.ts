@@ -9,7 +9,6 @@
 // Ürünler sitenin paylaşılan verisidir: test kendi ürününü ("Deneme <6 onaltılık> …") açar ve sonunda siler.
 import { randomBytes, randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import AxeBuilder from "@axe-core/playwright";
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { doldur } from "../../metinler/doldur";
@@ -22,6 +21,7 @@ import { kayitAdresleri } from "../../vitrin/adresler";
 import { urunEkraniAdresi } from "../../yonetim-paneli/adresler";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
+import { tara } from "./tarama";
 import { ayriBaglanti, paneleGir, yoneticiAc } from "./yonetici";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
@@ -39,28 +39,6 @@ test.beforeEach(({ page }) => ayriBaglanti(page));
 test.afterAll(async () => {
   await vt.$client.end();
 });
-
-const tara = async (page: Page, ne: string) => {
-  await page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter((a) => a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY)
-        .map((a) => a.finished.catch(() => undefined)),
-    ),
-  );
-  const sonuc = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-    .exclude("nextjs-portal")
-    .analyze();
-  expect(
-    sonuc.violations.map((ihlal) => ({
-      kural: ihlal.id,
-      ogeler: ihlal.nodes.map((oge) => oge.target.join(" ")),
-    })),
-    ne,
-  ).toEqual([]);
-};
 
 const yanaKayma = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

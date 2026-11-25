@@ -47,6 +47,12 @@ const beklenenler: Record<string, Beklenen> = {
   "guvensiz-execute.ts": { kategori: "plugin", mesajBasi: "Güvensiz sorgu: execute()" },
   "elle-bicimlendirme.ts": { kategori: "plugin", mesajBasi: "Elle biçimlendirme" },
   "dogrudan-istek.ts": { kategori: "plugin", mesajBasi: "Doğrudan istek" },
+  "elle-tarama.ts": { kategori: "plugin", mesajBasi: "Erişilebilirlik taraması" },
+  "elle-tarama-sonradan-yukleme.ts": { kategori: "plugin", mesajBasi: "Erişilebilirlik taraması" },
+  "ic-ice/cekirdek/cekirdek/testler/uctan-uca/tarama.ts": {
+    kategori: "plugin",
+    mesajBasi: "Erişilebilirlik taraması",
+  },
   "dogrudan-pencere-istegi.ts": { kategori: "plugin", mesajBasi: "Doğrudan istek" },
   "ic-ice/cekirdek/komutlar/dogrudan-istek.ts": { kategori: "plugin", mesajBasi: "Doğrudan istek" },
   "any-turu.ts": { kategori: "lint/suspicious/noExplicitAny" },

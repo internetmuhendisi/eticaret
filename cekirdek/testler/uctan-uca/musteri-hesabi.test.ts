@@ -1,7 +1,6 @@
 // Müşteri kaydı, çıkışı ve yeniden girişi tarayıcıda baştan sona; robot sorusu gerçek tarayıcıda çözülür
 // (kart 0033, karar 0051). Her test kendi e-postasını ve bağlantısını kullanır: sıkı sınır dakikada birkaç denemedir.
 import { randomBytes } from "node:crypto";
-import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import { oturumCerezAdlari, sifreSiniri } from "../../kayitlar/oturum";
 import { doldur } from "../../metinler/doldur";
@@ -20,6 +19,7 @@ import {
 import { konsoluDinle } from "./konsol";
 import { satirlarinSolu } from "./satir-hizasi";
 import { sayfaHazir } from "./sayfa-hazir";
+import { tara } from "./tarama";
 
 const sifre = "uzun-bir-musteri-sifresi";
 const yeniEposta = () => `musteri-${randomBytes(6).toString("hex")}@ornek.test`;
@@ -316,7 +316,7 @@ for (const genislik of [320, 360]) {
       satirlar.every((sol) => sol === 0),
       `satırların solu: ${satirlar}`,
     ).toBe(true);
-    await taraHesap(page, `kayıt formu ${genislik} px`);
+    await tara(page, `kayıt formu ${genislik} px`);
   });
 }
 
@@ -375,24 +375,6 @@ for (const [ad, width, height] of [
 }
 
 // Hesabım menüsü (kart 0131): bölümlü ana sayfada girişli müşteri e-postasını ve çıkışı üst kısımda görür.
-const taraHesap = async (page: Page, ne: string) => {
-  // Menünün açılış animasyonu bitmeden renkler ara değerdedir.
-  await page.evaluate(() =>
-    Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))),
-  );
-  const sonuc = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-    .include("header")
-    .include('[role="menu"]')
-    .analyze();
-  expect(
-    sonuc.violations.map((ihlal) => ({
-      kural: ihlal.id,
-      ogeler: ihlal.nodes.map((oge) => oge.target.join(" ")),
-    })),
-    ne,
-  ).toEqual([]);
-};
 
 test("Hesabım menüsü klavyeyle açılır, e-postayı gösterir, taramadan geçer, çıkış Enter ile yapılır", async ({
   page,
@@ -411,7 +393,8 @@ test("Hesabım menüsü klavyeyle açılır, e-postayı gösterir, taramadan ge�
   const cikis = menu.getByRole("menuitem", { name: metin("vitrin.hesap.cikis") });
   await page.keyboard.press("End");
   await expect(cikis).toBeFocused();
-  await taraHesap(page, "menü açık");
+  // Menünün testi yalnız üst kısmı ve açık menüyü tarar.
+  await tara(page, "menü açık", { yalniz: ["header", '[role="menu"]'] });
   await page.keyboard.press("Escape");
   await expect(menu).toHaveCount(0);
   await expect(dugme).toBeFocused();

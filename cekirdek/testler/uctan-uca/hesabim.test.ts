@@ -13,7 +13,6 @@
 // - Hesap sayfalarında konsolda hata yok.
 import { randomBytes, randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import { and, eq } from "drizzle-orm";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
@@ -33,6 +32,7 @@ import { hesapIlkSayfasi, vitrinAdresleri } from "../../vitrin/adresler";
 import { hesapDurumuUcu } from "../../vitrin/hesap-durumu";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
+import { tara } from "./tarama";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
 
@@ -72,35 +72,16 @@ const musteriAc = async () => {
 const alan = (page: Page, etiket: string) => page.getByLabel(etiket, { exact: true });
 
 // haric: taramanın dışında kalan öğe (kart 0217: üst üste binen bildirimlerin kapat düğmesi basılamıyor).
-const tara = async (page: Page, ne: string, haric = "nextjs-portal") => {
-  await page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter((a) => a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY)
-        .map((a) => a.finished.catch(() => undefined)),
-    ),
-  );
-  const sonuc = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-    .exclude("nextjs-portal")
-    .exclude(haric)
-    .analyze();
-  expect(
-    sonuc.violations.map((ihlal) => ({
-      kural: ihlal.id,
-      ogeler: ihlal.nodes.map((oge) => oge.target.join(" ")),
-    })),
-    ne,
-  ).toEqual([]);
-};
-
 const ikiRenkUcGenislik = async (page: Page, ne: string, haric?: string) => {
   for (const renk of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: renk });
     for (const boyut of genislikler) {
       await page.setViewportSize(boyut);
-      await tara(page, `${ne} ${renk} ${boyut.width}`, haric);
+      await tara(
+        page,
+        `${ne} ${renk} ${boyut.width}`,
+        haric === undefined ? {} : { haric: [haric] },
+      );
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
         `${ne} ${renk} ${boyut.width}: yana kayma`,

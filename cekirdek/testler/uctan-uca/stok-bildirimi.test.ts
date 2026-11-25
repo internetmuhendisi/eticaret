@@ -11,7 +11,6 @@
 // sitesinde eklenti açıktır.
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import { eq } from "drizzle-orm";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
@@ -27,6 +26,7 @@ import { baglan, type Veritabani, veritabaniAdresi } from "../../veritabani/bagl
 import { kayitAdresleri } from "../../vitrin/adresler";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
+import { tara } from "./tarama";
 import { ayriBaglanti, paneleGir, yoneticiAc } from "./yonetici";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
@@ -85,28 +85,6 @@ const talepler = async () =>
     .select({ eposta: stokBildirimiTalepleri.eposta, durum: stokBildirimiTalepleri.durum })
     .from(stokBildirimiTalepleri)
     .where(eq(stokBildirimiTalepleri.birim_kimligi, urunler.tukenmis.birim));
-
-const tara = async (page: Page, ne: string) => {
-  await page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter((a) => a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY)
-        .map((a) => a.finished.catch(() => undefined)),
-    ),
-  );
-  const sonuc = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-    .exclude("nextjs-portal")
-    .analyze();
-  expect(
-    sonuc.violations.map((ihlal) => ({
-      kural: ihlal.id,
-      ogeler: ihlal.nodes.map((oge) => oge.target.join(" ")),
-    })),
-    ne,
-  ).toEqual([]);
-};
 
 const yanaKaymaz = async (page: Page) =>
   expect(

@@ -5,8 +5,7 @@
 // kalıcı yönlendirme (308) alır, sorgu kısmı korunur.
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import AxeBuilder from "@axe-core/playwright";
-import { expect, type Page, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import type { AdresliKayitTuru } from "../../kayitlar/adres";
 import { doldur } from "../../metinler/doldur";
@@ -26,6 +25,7 @@ import { vitrinKosulu } from "../../moduller/urun/vitrin";
 import { baglan, type Veritabani, veritabaniAdresi } from "../../veritabani/baglanti";
 import { kayitAdresleri } from "../../vitrin/adresler";
 import { sayfaHazir } from "./sayfa-hazir";
+import { tara } from "./tarama";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
 
@@ -64,20 +64,6 @@ const genislikler = [
   { width: 768, height: 1000 },
   { width: 1280, height: 900 },
 ] as const;
-
-const tara = async (page: Page, ne: string) => {
-  const sonuc = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-    .exclude("nextjs-portal")
-    .analyze();
-  expect(
-    sonuc.violations.map((ihlal) => ({
-      kural: ihlal.id,
-      ogeler: ihlal.nodes.map((oge) => oge.target.join(" ")),
-    })),
-    ne,
-  ).toEqual([]);
-};
 
 const veritabani = () => baglan(veritabaniAdresi());
 
