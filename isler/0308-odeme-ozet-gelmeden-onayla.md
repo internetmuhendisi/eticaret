@@ -36,4 +36,4 @@ Kart 0288'in hattına bakılırken bulundu, o karta karıştırılmadı.
 
 ## Durum
 
-yapılacak
+bitti
