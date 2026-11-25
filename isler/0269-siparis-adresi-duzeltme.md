@@ -32,4 +32,4 @@ Bölüm: Yönetim paneli. Önce 0268 bitmiş olmalı.
 
 ## Durum
 
-yapılacak
+bitti
