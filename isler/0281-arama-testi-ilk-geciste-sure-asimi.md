@@ -19,6 +19,12 @@ Kart 0258'in hattı (44886141462, kayıt eb8db1f) yalnız bir testle kırmızıy
 - Sebep ölçümle yazıldı.
 - Düzeltme hattın koşulunda art arda yeşil; düzeltme geri alınınca düşüş üretilebiliyorsa kırmızı.
 
+## Notlar
+
+- İzden (hat 44886141462, 2026-11-25): Enter'dan 30 ms sonra `GET /arama?ara=…` gitti, testin 5 saniyesi boyunca cevap almadı (izde durum -1); istekten 0,25 sn sonra tarayıcıda "[Fast Refresh] rebuilding" başladı (biri 116 ms, ikincisi bitmeden test düştü). Aynı testin başında ana sayfa (`GET /`) ısınmadan hemen sonra 5,1 sn sürdü; ısınma bu sayfayı açmıştı. Geçiş bir derleme turunu bekledi; hangi yolun derlendiği izde yok.
+- Isınma `/arama`'yı sorgusuz ister ve tarayıcıda açar; formun GET gönderimi aynı yolu ister, sorgu yolun derlemesini değiştirmez (Next.js yolu derler, sorguyu değil). Aranan metinli adresi ayrıca ısıtmak bu yüzden eklenmedi.
+- Sebep kart 0251 ile aynı aile: o kartın notlarına yazıldı. Kullanıcı kararıyla (2026-11-25) üç kart (0251, 0282, 0281) bir sonraki kırmızı hattın sunucu satırlarıyla (kart 0226) birlikte sürer.
+
 ## Durum
 
 yapılacak

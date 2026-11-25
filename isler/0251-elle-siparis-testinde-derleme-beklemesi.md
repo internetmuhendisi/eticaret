@@ -40,6 +40,9 @@ Bölüm: Sipariş ve müşteri hesabı. Kart 0238 sırasında hattın sonucuna b
   - Menüden geçiş ile adresle açılış aynı tarayıcı kodu dosyalarını ister (geçici ölçüm testiyle dört panel sayfasında); ısınmanın atladığı dosya yok.
   - Hattın koşulunda (ayrı kutuda temiz veritabanı, iki işlemci, iki işçi, `CI=1`) iki tam takım: dolu derleme önbelleğiyle 360 geçti, 1 düştü (yorum onayının `document-title` taraması, kart 0287); boş derleme önbelleğiyle 366/366 geçti. Sunucunun istek satırlarında yavaş istekler (2,8–5,9 sn) yalnız ısınma sırasında; testler sürerken en yavaş istek 1,9 sn, 1,5 sn'yi aşan POST yok.
   - Sonuç: düşüş yerelde hattın koşuluyla üretilemiyor; sebebi yerelde ölçülemez. Ayırt etmek için hattaki sunucunun istek ve derleme satırları gerekir (kart 0226).
+- Kart 0226 (2026-11-25, karar 0181) kuruldu: kırmızı hattın sonucunda `sunucu/olusan/tarayici-sunucu-gunlugu.log` var, her istek satırı `next.js` (derleme) ve `application-code` paylarıyla. Kullanıcı kararı: kart bir sonraki kırmızı hattın satırlarıyla sürer.
+- Kartlar 0282 ve 0281 aynı aileden (hat izleriyle, 2026-11-25): 0282'de `GET /kapi/yonetici/elle-siparis-urunleri?ara=…`, 0281'de `GET /arama?ara=…` 5 sn cevapsız kaldı, ikisinde de istekten 0,2–0,3 sn sonra tarayıcıda "[Fast Refresh] rebuilding" başladı. 0281'de takımın ilk testinde ana sayfa da ısınmadan hemen sonra 5,1 sn sürdü. Sebep bulununca üçü birlikte kapanır.
+- Elenen bir tahmin: ısınmanın girişsiz isteği 401 ile erken döner, ucun içinde sonradan yüklenen modül (`import()`) ilk gerçek istekte derlenir. Sonradan yükleme yalnız e-posta görünüşünde (tema servisi), e-posta göndericisinde, dosya servisinde (sharp) ve açılışta var; ürün araması ve arama sayfası bunlara uğramaz. Kart 0226'nın yerel denemesinde aynı ürün araması ilk gerçek istekte `next.js: 1.1ms` ile döndü.
 
 ## Durum
 
