@@ -32,4 +32,4 @@
 
 ## Durum
 
-yapılacak
+bitti
