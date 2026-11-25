@@ -72,4 +72,4 @@ Bölüm: Sipariş ve müşteri hesabı. Kart 0238 sırasında hattın sonucuna b
 
 ## Durum
 
-yapılacak
+bitti
