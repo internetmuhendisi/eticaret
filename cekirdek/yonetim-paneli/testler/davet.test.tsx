@@ -192,14 +192,14 @@ describe("davet kabul formu", () => {
     expect(istekler).toEqual([
       { adres: "/kapi/herkese-acik/yonetici-davet-oku", govde: { anahtar: "abc" } },
     ]);
+    const aciklama = doldur(metin("yonetim.davet.aciklama"), {
+      magaza: "Örnek Mağaza",
+      roller: "Görevli, Sipariş görevlisi",
+    });
     expect(
-      screen.getByText(
-        doldur(metin("yonetim.davet.aciklama"), {
-          magaza: "Örnek Mağaza",
-          roller: "Görevli, Sipariş görevlisi",
-        }),
-      ),
+      screen.getByText((_, oge) => oge?.tagName === "P" && oge.textContent === aciklama),
     ).toBeTruthy();
+    expect(screen.getByText("Görevli, Sipariş görevlisi").tagName).toBe("STRONG");
     const eposta = alan(metin("yonetim.davet.eposta")) as HTMLInputElement;
     expect(eposta.value).toBe("ece@ornek.test");
     expect(eposta.readOnly).toBe(true);

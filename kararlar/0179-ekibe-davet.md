@@ -17,6 +17,7 @@
 - **Kayıt:** `yonetici-daveti.gonderildi` (roller), `.geri-alindi`, `.kabul-edildi` (yeni yöneticinin yaptığı). Kabulde verilen roller `rol.verildi` olarak daveti gönderenin adıyla girer. E-posta kayda girmez.
 - **Temizlik:** Davetin satırı (e-posta kişisel veridir) süresi dolduktan 30 gün sonra günlük işle silinir (`davet-temizligi`).
 - **Kabul uçları** herkese açık girişte, sıkı sınırlıdır; robot sorusu yoktur (anahtar tahmin edilemez). Tema demosunda kapalıdır: hesap doğurur.
+- **Ekran:** davet ve "Davet hazır" yan penceredir (taslak); gönderim bildirim vermez, sonucu pencere söyler (`usePanelIslemi`'nin `bildirim: () => null`'ı). Pencere kapanınca ve geri alınan satır kalkınca odak "Davet et"e geçer.
 - **Kopyala düğmesi** kütüphaneye taşındı (`KopyalaDugmesi`): ikinci kullanım geldi, ilki (IBAN) ona çevrildi.
 
 ## Neden

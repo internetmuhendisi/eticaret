@@ -20,6 +20,7 @@ import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts
 import { davetAyari } from "../../../kayitlar/oturum.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
+import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { epostaKayitlari } from "../../eposta/model.ts";
 import { girisAdiminiOku } from "../../oturum/iki-asamali-giris.ts";
@@ -32,7 +33,7 @@ import {
   davetiOku,
   davetTemizligi,
 } from "../davet.ts";
-import { yoneticiDavetleri, yoneticiler, yoneticiOturumlari } from "../model.ts";
+import { roller, yoneticiDavetleri, yoneticiler, yoneticiOturumlari } from "../model.ts";
 import { ekibiOku, rolVer, yoneticiHesabiKapat } from "../servis.ts";
 
 const ornekler = resolve(import.meta.dirname, "../../../ayar-semasi/testler/ornek-siteler");
@@ -345,6 +346,15 @@ describe("davetin kabulü", () => {
     expect((await kayitlar(vt, kapananin.kimlik)).at(-1)?.[0]).toBe("yonetici-daveti.geri-alindi");
     expect((await bekleyenDavetler(vt)).map((davet) => davet.kimlik)).toEqual([kalan.kimlik]);
 
+    // Gönderenin hesabı servis dışından kapatılmışsa da (davetleri düşmemiş) bağlantı geçmez.
+    const ucuncuSahip = await yonetici(vt, ["magaza-sahibi"]);
+    const disaridanKapanan = await gonder(ucuncuSahip.kim);
+    await vt
+      .update(yoneticiler)
+      .set({ silinme_zamani: new Date() })
+      .where(eq(yoneticiler.kimlik, ucuncuSahip.kimlik));
+    await ayniCevap(disaridanKapanan.anahtar);
+
     await ayniCevap("uydurma-anahtar");
     expect(
       await vt.select().from(yoneticiler).where(isNull(yoneticiler.silinme_zamani)),
@@ -370,9 +380,49 @@ describe("davetin kabulü", () => {
     expect(reddedilen?.status === "rejected" && reddedilen.reason).toMatchObject({
       kod: "is-kurali",
     });
+    // Kaybeden geçersiz bağlantı cevabını alır; ikinci hesabı açmaya kalkıp hesap-var almaz.
+    expect(
+      reddedilen?.status === "rejected" && (reddedilen.reason as BilinenHata).ayrinti,
+    ).toBeFalsy();
     expect(await vt.select().from(yoneticiler).where(eq(yoneticiler.eposta, adres))).toHaveLength(
       1,
     );
+  });
+
+  it("kabul açık duran yetki işleminin kilidinde bekler; o arada harcanan davette geçersiz cevap alır (sıra kurularak)", async () => {
+    const vt = await siteAc();
+    const sahip = await yonetici(vt, ["magaza-sahibi"]);
+    const adres = eposta();
+    const { kimlik, baglanti } = await davetGonder(
+      vt,
+      { eposta: adres, roller: ["gorevli"], yenilemeYolu: yol },
+      sahip.kim,
+    );
+    // Başka bir kabul gibi: ortak kilidi tutar, davet o arada harcanır.
+    let kilitAlindi: () => void = () => undefined;
+    const kilitAlindiSozu = new Promise<void>((coz) => {
+      kilitAlindi = coz;
+    });
+    let devam: () => void = () => undefined;
+    const devamSozu = new Promise<void>((coz) => {
+      devam = coz;
+    });
+    const oteki = vt.transaction(async (islem) => {
+      await islem.select().from(roller).where(eq(roller.tam_yetki, true)).for("update");
+      kilitAlindi();
+      await devamSozu;
+      await islem
+        .update(yoneticiDavetleri)
+        .set({ kullanilma_zamani: new Date() })
+        .where(eq(yoneticiDavetleri.kimlik, kimlik));
+    });
+    await Promise.race([kilitAlindiSozu, oteki]);
+    const kabul = hatasi(davetiKabulEt(vt, { anahtar: anahtari(baglanti), ad: "Ece", sifre }));
+    await kilitBekleyeniGor(vt);
+    devam();
+    await oteki;
+    expect(await kabul).toEqual({ kod: "is-kurali", ayrinti: [] });
+    expect(await vt.select().from(yoneticiler).where(eq(yoneticiler.eposta, adres))).toEqual([]);
   });
 
   it("davetten sonra aynı e-postayla hesap açılmışsa hesap-var; davet harcanmaz", async () => {

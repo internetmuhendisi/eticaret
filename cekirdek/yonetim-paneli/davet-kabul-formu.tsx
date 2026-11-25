@@ -204,7 +204,15 @@ export function DavetKabulFormu({
   return (
     <>
       <h1>{metin("yonetim.davet.baslik")}</h1>
-      <p>{doldur(metin("yonetim.davet.aciklama"), { magaza, roller: rolAdlari })}</p>
+      {/* Taslaktaki gibi roller kalın: metnin {roller} yeri ayrı çizilir. */}
+      <p>
+        {metin("yonetim.davet.aciklama")
+          .split("{roller}")
+          .flatMap((parca, sira) => [
+            ...(sira === 0 ? [] : [<strong key="roller">{rolAdlari}</strong>]),
+            doldur(parca, { magaza }),
+          ])}
+      </p>
       <Form
         ref={formRef}
         className={stil.form}
@@ -259,7 +267,7 @@ export function DavetKabulFormu({
           )}
         </FormAlani>
         <GonderDugmesi>{metin("yonetim.davet.gonder")}</GonderDugmesi>
-        <p>{metin("yonetim.davet.sonrakiAdim")}</p>
+        <p className="m-0 text-kucuk text-soluk-yazi">{metin("yonetim.davet.sonrakiAdim")}</p>
       </Form>
     </>
   );

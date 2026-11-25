@@ -23,6 +23,13 @@ Bölüm: Yönetim paneli. Önce 0274 bitmiş olmalı.
 - Ekran görüntüsü taslakla yan yana kondu, farklar düzeltildi.
 - Bağımsız kontrol yapıldı.
 
+## Notlar
+
+- Kullanıcı kararı (2026-11-25): kapatılmış hesabın e-postası yeniden davet edilebilir; yeni hesap açılır, eski kapalı kalır.
+- Karar 0179. Davet edilen kişi adını ve şifresini koyar, aynı adımda kurulum ekranına geçer; mağaza sahibi rolü davetle verilmez (taslak).
+- Taslak karşılaştırması: davet ve "Davet hazır" yan pencereye alındı, başarı kutusu eklendi, roller kalın. Taslaktaki kartlı giriş görünüşü bütün giriş sayfalarına birlikte gelmeli: kart 0306.
+- Gönderimin bildirimi kopyalamanınkiyle üst üste binince arkadaki bildirim taramada kontrast hatası verdi (kart 0217'nin sorunu); gönderim artık bildirim vermez, sonucu pencere söyler.
+
 ## Durum
 
 yapılacak

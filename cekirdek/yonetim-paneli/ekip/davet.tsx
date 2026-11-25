@@ -12,13 +12,15 @@ import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { KopyalaDugmesi } from "../../../bilesenler/parcalar/kopyala-dugmesi";
 import { OnayKutusu } from "../../../bilesenler/parcalar/onay-kutusu";
 import { OnayPenceresi } from "../../../bilesenler/parcalar/onay-penceresi";
+import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import {
-  Pencere,
-  PencereAciklamasi,
-  PencereBasligi,
-  PencereIcerigi,
-  PencereUstu,
-} from "../../../bilesenler/parcalar/pencere";
+  YanPencere,
+  YanPencereAciklamasi,
+  YanPencereAltCubugu,
+  YanPencereBasligi,
+  YanPencereIcerigi,
+  YanPencereUstu,
+} from "../../../bilesenler/parcalar/yan-pencere";
 import { davetAyari } from "../../kayitlar/oturum";
 import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
@@ -65,15 +67,20 @@ export function DavetEt({ roller }: { roller: string[] }) {
   return (
     <>
       <EylemDugmesi eylem="davet-et" asil data-davet-et="" onClick={() => setAcik(true)} />
-      <Pencere open={acik} onOpenChange={(yeni) => (yeni ? setAcik(true) : kapatmayiIste())}>
+      <YanPencere open={acik} onOpenChange={(yeni) => (yeni ? setAcik(true) : kapatmayiIste())}>
         {acik ? (
-          <PencereIcerigi kapatEtiketi={metin("ortak.parca.kapat")}>
+          <YanPencereIcerigi
+            kapatEtiketi={metin("ortak.parca.kapat")}
+            className="tablet:max-w-form"
+          >
             {hazir === null ? (
               <>
-                <PencereUstu>
-                  <PencereBasligi>{metin("yonetim.ekip.davet.baslik")}</PencereBasligi>
-                  <PencereAciklamasi>{metin("yonetim.ekip.davet.aciklama")}</PencereAciklamasi>
-                </PencereUstu>
+                <YanPencereUstu>
+                  <YanPencereBasligi>{metin("yonetim.ekip.davet.baslik")}</YanPencereBasligi>
+                  <YanPencereAciklamasi>
+                    {metin("yonetim.ekip.davet.aciklama")}
+                  </YanPencereAciklamasi>
+                </YanPencereUstu>
                 {soru}
                 <DavetFormu
                   roller={roller}
@@ -88,9 +95,9 @@ export function DavetEt({ roller }: { roller: string[] }) {
             ) : (
               <DavetHazir hazir={hazir} kapat={kapat} />
             )}
-          </PencereIcerigi>
+          </YanPencereIcerigi>
         ) : null}
-      </Pencere>
+      </YanPencere>
     </>
   );
 }
@@ -213,12 +220,17 @@ function DavetHazir({ hazir, kapat }: { hazir: Hazir; kapat: () => void }) {
   const metin = usePanelMetni();
   return (
     <>
-      <PencereUstu>
-        <PencereBasligi>{metin("yonetim.ekip.davet.hazirBaslik")}</PencereBasligi>
-        <PencereAciklamasi>
-          {doldur(metin("yonetim.ekip.davet.hazir"), { eposta: hazir.eposta })}
-        </PencereAciklamasi>
-      </PencereUstu>
+      <YanPencereUstu>
+        <YanPencereBasligi>{metin("yonetim.ekip.davet.hazirBaslik")}</YanPencereBasligi>
+      </YanPencereUstu>
+      {/* Taslaktaki gibi başarı kutusu; pencerenin açıklaması da odur. */}
+      <YanPencereAciklamasi asChild>
+        <div>
+          <Uyari tur="basari">
+            {doldur(metin("yonetim.ekip.davet.hazir"), { eposta: hazir.eposta })}
+          </Uyari>
+        </div>
+      </YanPencereAciklamasi>
       <div className="flex flex-col gap-2">
         <Etiket htmlFor="davet-baglantisi">{metin("yonetim.ekip.davet.baglanti")}</Etiket>
         <div className="flex flex-col gap-2 tablet:flex-row">
@@ -244,9 +256,11 @@ function DavetHazir({ hazir, kapat }: { hazir: Hazir; kapat: () => void }) {
           {metin("yonetim.ekip.davet.baglantiIpucu")}
         </p>
       </div>
-      <Dugme tur="birincil" className="self-end" onClick={kapat}>
-        {metin("yonetim.ekip.davet.tamam")}
-      </Dugme>
+      <YanPencereAltCubugu className="justify-end">
+        <Dugme tur="birincil" onClick={kapat}>
+          {metin("yonetim.ekip.davet.tamam")}
+        </Dugme>
+      </YanPencereAltCubugu>
     </>
   );
 }

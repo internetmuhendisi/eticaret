@@ -13,6 +13,9 @@ import { siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
 import { girisAdimiCerezi } from "../../kayitlar/oturum.ts";
 import { roller, yoneticiDavetleri, yoneticiRolleri } from "../../moduller/ekip/model.ts";
 import { ekibiOku } from "../../moduller/ekip/servis.ts";
+import { epostaGondericisi } from "../../moduller/eposta/gonderici.ts";
+import { epostaKaydiniGonder } from "../../moduller/eposta/gonderim.ts";
+import { epostaKayitlari } from "../../moduller/eposta/model.ts";
 import { girisAdiminiOku } from "../../moduller/oturum/iki-asamali-giris.ts";
 import { hesapAc } from "../../moduller/oturum/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
@@ -125,6 +128,42 @@ describe("davet gönderme ve geri alma", () => {
       expect(geriAl.status, String(kisi)).toBe(beklenen);
     }
     expect(await vt.select().from(yoneticiDavetleri)).toEqual(once);
+  });
+});
+
+describe("davet e-postası", () => {
+  it("kuyruktan yerel posta kutusuna düşer; konu mağazanın adıyla, gövdede bağlantı ve roller", async () => {
+    const { POSTA_KUTUSU_PORTU: kutuPortu, POSTA_SMTP_PORTU: smtpPortu } = process.env;
+    const sahip = await hesap("magaza-sahibi");
+    const eposta = yeniEposta();
+    const yanit = await ekipDavetUcu(
+      istek("yonetici/ekip-davet", sahip.oturum, {
+        eposta,
+        roller: ["gorevli", "siparis-gorevlisi"],
+      }),
+    );
+    const { veri } = (await yanit.json()) as { veri: { baglanti: string } };
+    const [kayit] = await vt
+      .select()
+      .from(epostaKayitlari)
+      .where(eq(epostaKayitlari.alici, eposta));
+    expect(kayit?.sablon).toBe("yonetici-daveti");
+    await epostaKaydiniGonder(vt, kayit?.kimlik ?? "", {
+      site,
+      gonderici: epostaGondericisi(`smtp://localhost:${smtpPortu}`),
+    });
+    const arama = await fetch(
+      `http://127.0.0.1:${kutuPortu}/api/v1/search?query=${encodeURIComponent(`to:"${eposta}"`)}`,
+    );
+    const { messages } = (await arama.json()) as { messages: { ID: string; Subject: string }[] };
+    expect(messages).toHaveLength(1);
+    expect(messages[0]?.Subject).toContain(site.baslangic.magazaAdi ?? site.kimlik.gorunenAd);
+    const ileti = (await (
+      await fetch(`http://127.0.0.1:${kutuPortu}/api/v1/message/${messages[0]?.ID}`)
+    ).json()) as { Text: string; HTML: string };
+    expect(ileti.Text).toContain(veri.baglanti);
+    expect(ileti.Text).toContain("Görevli, Sipariş görevlisi");
+    expect(ileti.HTML).toContain(veri.baglanti.replaceAll("&", "&amp;"));
   });
 });
 
