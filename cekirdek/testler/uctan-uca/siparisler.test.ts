@@ -26,6 +26,7 @@ import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri";
 import { doldur } from "../../metinler/doldur";
 import { metin } from "../../metinler/site-metni";
+import { epostaKayitlari } from "../../moduller/eposta/model";
 import { calisanSiteninFiyatServisi } from "../../moduller/fiyat/servis";
 import { type OdemeYontemiSecimi, odemeBilgileriSemasi } from "../../moduller/odeme/semalar";
 import { odemeServisi } from "../../moduller/odeme/servis";
@@ -806,6 +807,91 @@ test("sipariş ayrıntısı: fatura klavyeyle eklenir, PDF yüklenir, indirilir,
     .getByRole("button", { name: metin("yonetim.siparis.fatura.kaldirOnay.dugme") })
     .click();
   await expect(kart).toContainText(metin("yonetim.siparis.fatura.yok"));
+  expect(hatalar).toEqual([]);
+});
+
+test("sipariş ayrıntısı: teslimat ve fatura bilgileri klavyeyle düzeltilir; geçmişte önceki bilgi, kargoda düğme yok (kart 0269)", async ({
+  page,
+}) => {
+  test.setTimeout(240_000);
+  const hatalar = konsoluDinle(page, { haric: (m) => m.includes("401") });
+  const eposta = `adres-${randomUUID().slice(0, 8)}@ornek.test`;
+  const numara = await siparisAc({ yontem: "kapida-odeme", secenek: "nakit" }, eposta);
+  await ayriBaglanti(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await paneleGir(page, yoneticiAc());
+  await page.goto(`/yonetim/siparisler/ayrinti?numara=${numara}`);
+  await sayfaHazir(page);
+  // Bölümler başlıklı karttır: başlıktan karta çıkılır.
+  const bolum = (baslik: string) =>
+    page.getByRole("heading", { level: 2, name: baslik, exact: true }).locator("..");
+  const teslimat = bolum(metin("yonetim.siparis.teslimat.baslik"));
+  const duzelt = teslimat.getByRole("button", { name: metin("yonetim.siparis.adres.duzelt") });
+  await duzelt.focus();
+  await page.keyboard.press("Enter");
+  const pencere = page.getByRole("dialog", { name: metin("yonetim.siparis.adres.baslik") });
+  await expect(pencere).toBeVisible();
+  const alan = (ad: string) => pencere.getByLabel(ad, { exact: true });
+  await expect(alan(metin("vitrin.odeme.ad"))).toHaveValue("Deneme");
+  await expect(
+    pencere.getByRole("checkbox", { name: metin("yonetim.siparis.adres.eposta") }),
+  ).toBeChecked();
+  // Boş adda alanın hatası ve odak.
+  await alan(metin("vitrin.odeme.ad")).fill("");
+  const kaydet = pencere.getByRole("button", { name: metin("yonetim.siparis.adres.kaydet") });
+  await kaydet.focus();
+  await page.keyboard.press("Enter");
+  await expect(alan(metin("vitrin.odeme.ad"))).toBeFocused();
+  await expect(alan(metin("vitrin.odeme.ad"))).toHaveAttribute("aria-invalid", "true");
+  await ikiRenkUcGenislik(page, "adres penceresi hatalı");
+
+  // Klavyeyle: ad, açık adres, kurumsal fatura.
+  await alan(metin("vitrin.odeme.ad")).focus();
+  await page.keyboard.type("Düzeltilmiş");
+  await alan(metin("vitrin.odeme.adres")).fill("Yeni Sokak No: 7");
+  await pencere.getByRole("radio", { name: metin("vitrin.odeme.bireysel") }).focus();
+  await page.keyboard.press("ArrowRight", { delay: 50 });
+  await expect(pencere.getByRole("radio", { name: metin("vitrin.odeme.kurumsal") })).toBeChecked();
+  await alan(metin("vitrin.odeme.firma")).fill("Deneme Ticaret");
+  await alan(metin("vitrin.odeme.vergiDairesi")).fill("Çankaya");
+  await alan(metin("vitrin.odeme.vergiNumarasi")).fill("4540536920");
+  await ikiRenkUcGenislik(page, "adres penceresi kurumsal");
+  await kaydet.focus();
+  await page.keyboard.press("Enter");
+  await expect(pencere).toBeHidden();
+  await expect(teslimat).toContainText("Yeni Sokak No: 7");
+  await expect(teslimat).toContainText("Deneme Ticaret");
+  const gecmis = bolum(metin("yonetim.siparis.gecmis.baslik"));
+  await expect(gecmis).toContainText(metin("yonetim.siparis.neden.adres-duzeltildi"));
+  await expect(gecmis).toContainText("Deneme Sokak No: 2");
+  await expect(gecmis).toContainText(metin("yonetim.siparis.teslimat.bireysel"));
+  const [kayit] = await vt.select().from(epostaKayitlari).where(eq(epostaKayitlari.alici, eposta));
+  expect(
+    (await vt.select().from(epostaKayitlari).where(eq(epostaKayitlari.alici, eposta))).map(
+      (e) => e.sablon,
+    ),
+  ).toContain("adres-guncellendi");
+  expect(kayit).toBeDefined();
+  await ikiRenkUcGenislik(page, "düzeltilmiş ayrıntı");
+
+  // Kargoya verilen siparişte düğme yoktur.
+  const yonetim = siparisYonetimi(calisanSite());
+  await yonetim.islemYap(vt, yapan, {
+    numara,
+    islem: "hazirlamaya-al",
+    gorulenDurum: "odeme-bekleniyor",
+  });
+  const [firma] = (await siparisAyarlari(calisanSite()).oku(vt)).kargoFirmalari;
+  if (firma === undefined) throw new Error("Kargo firması yok.");
+  await yonetim.islemYap(vt, yapan, {
+    numara,
+    islem: "kargoya-ver",
+    gorulenDurum: "hazirlaniyor",
+    kargo: { firma: firma.kimlik },
+  });
+  await page.reload();
+  await sayfaHazir(page);
+  await expect(duzelt).toHaveCount(0);
   expect(hatalar).toEqual([]);
 });
 
