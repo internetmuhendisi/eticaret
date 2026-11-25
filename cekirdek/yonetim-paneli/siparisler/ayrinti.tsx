@@ -11,6 +11,7 @@ import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { doldur } from "../../metinler/doldur";
 import { metin } from "../../metinler/site-metni";
 import { Bilgi, Bolum, Satir } from "../ayrinti-parcalari";
+import { AdresDuzeltme } from "./adres-duzeltme";
 import { DurumRozeti } from "./durum-rozeti";
 import { FaturaIslemleri } from "./fatura";
 import { IadeyiYenidenDene } from "./iade-penceresi";
@@ -383,6 +384,31 @@ export function SiparisAyrintisi({ veri }: { veri: SiparisAyrintisiVerisi }) {
                         })}
                       </span>
                     )}
+                    {/* Adres düzeltmesinin (kart 0269) değişen önceki bilgileri. */}
+                    {satir.oncekiBilgiler?.teslimat ? (
+                      <span className="text-soluk-yazi">
+                        {doldur(metin("yonetim.siparis.adres.oncekiTeslimat"), {
+                          bilgi: satir.oncekiBilgiler.teslimat.join(" · "),
+                        })}
+                      </span>
+                    ) : null}
+                    {satir.oncekiBilgiler?.fatura ? (
+                      <span className="text-soluk-yazi">
+                        {doldur(metin("yonetim.siparis.adres.oncekiFatura"), {
+                          bilgi: [
+                            ...(satir.oncekiBilgiler.fatura.tur === "kurumsal"
+                              ? [
+                                  satir.oncekiBilgiler.fatura.firma,
+                                  `${satir.oncekiBilgiler.fatura.vergiDairesi} ${satir.oncekiBilgiler.fatura.vergiNumarasi}`,
+                                ]
+                              : [metin("yonetim.siparis.teslimat.bireysel")]),
+                            ...(satir.oncekiBilgiler.fatura.adresAyni
+                              ? [metin("yonetim.siparis.teslimat.adresAyni")]
+                              : satir.oncekiBilgiler.fatura.adres),
+                          ].join(" · "),
+                        })}
+                      </span>
+                    ) : null}
                   </>
                 ) : (
                   <>
@@ -483,6 +509,9 @@ export function SiparisAyrintisi({ veri }: { veri: SiparisAyrintisiVerisi }) {
               </Bilgi>
             )}
           </dl>
+          {veri.adresDuzeltme === null ? null : (
+            <AdresDuzeltme numara={veri.numara} veri={veri.adresDuzeltme} />
+          )}
         </Bolum>
         <Bolum baslik={metin("yonetim.siparis.odeme.baslik")} kimlik="siparis-odemesi">
           <dl className="flex flex-col gap-2">

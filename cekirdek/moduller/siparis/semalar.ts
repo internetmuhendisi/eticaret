@@ -300,3 +300,18 @@ export const elleSiparisMusteriAramaSiniri = 3;
 export const elleSiparisMusteriAramasiSemasi = z.strictObject({
   ara: z.string().trim().min(elleSiparisMusteriAramaSiniri).max(100),
 });
+
+// Siparişin teslimat ve fatura bilgilerinin düzeltmesi (kart 0269, karar 0180): ödeme adımının şemalarıyla (il ve ilçe
+// tutarlı, telefon biçimi, kurumsal faturanın vergi numarası faturanın ülkesinin kuralıyla). surum: ekranın gördüğü
+// durum ve bilgilerin özeti (adresSurumu); arada değiştiyse "cakisma". eposta: müşteriye "Teslimat bilgileriniz
+// güncellendi" e-postası.
+export const siparisAdresiSemasi = z
+  .strictObject({
+    numara: siparisNumarasiSemasi,
+    surum: z.string().min(1).max(100),
+    teslimat: teslimatSemasi,
+    fatura: faturaSemasi,
+    eposta: z.boolean(),
+  })
+  .superRefine(faturaVergiDenetimi);
+export type SiparisAdresiGirdisi = z.output<typeof siparisAdresiSemasi>;

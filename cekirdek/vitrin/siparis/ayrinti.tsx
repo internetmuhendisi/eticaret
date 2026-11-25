@@ -73,6 +73,8 @@ const olaylar: Record<SiparisGecmisiNedeni, MetinAnahtari | null> = {
   "iade-talebi-onaylandi": null,
   "iade-talebi-reddedildi": null,
   "musteri-iptali": null,
+  // Kart 0269: mağaza teslimat ya da fatura bilgilerini düzeltti.
+  "adres-duzeltildi": "vitrin.siparis.olay.adres-duzeltildi",
 };
 
 // Müşterinin talep nedenlerinin metni (kayıttaki musteriIadeNedenleri).

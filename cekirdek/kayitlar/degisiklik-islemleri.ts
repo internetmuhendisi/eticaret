@@ -115,6 +115,8 @@ export const degisiklikIslemleri = [
   "siparis.iade-talebi-reddedildi",
   // Kart 0268: siparişin faturası yazıldı (numara, tarih, dosyanın kimliği) ya da kaldırıldı.
   "siparis.fatura-yazildi",
+  // Kart 0269: teslimat ve fatura bilgileri düzeltildi; kayda yalnız değişen alanların adları ve il, ilçe kodları girer.
+  "siparis.adres-duzeltildi",
   "siparis.fatura-kaldirildi",
   // Mağazanın müşteri hakkındaki notu (kart 0271, karar 0173): metni kayda yazılmaz.
   "musteri-notu.eklendi",

@@ -723,6 +723,16 @@ Gövdedeki PDF'i faturanın belgesi olarak kaydeder (kart 0268, karar 0170). Bel
 - Başarılı (200): `{ "basarili": true, "veri": { "dosya": kimlik, "boyut": bayt } }`.
 - Hatalar: `dogrulama` (`dosya` alanında `bos`, `cok-buyuk`, `tur-izinsiz`), `oturum-yok`, `yetki`, `istek-siniri`.
 
+### POST /kapi/yonetici/siparis-adresi
+
+Siparişin teslimat ve fatura bilgilerini düzeltir (kart 0269, karar 0180): yalnız kargoya verilene kadar (ödeme bekleniyor, hazırlanıyor). Ekranın gördüğü durum ve bilgilerin özeti (`surum`) bugünkünden farklıysa çakışma. Ödeme adımının kurallarıyla doğrulanır (il ve ilçe, telefon biçimi ve zorunluluğu, teslimat ülkesi, kurumsal faturanın vergi numarası). Düzeltme verginin bölgesini değiştiriyor ve sitenin oranları iki bölgede aynı değilse reddedilir. Geçmişe "adres-duzeltildi", önceki ve yeni bilgiler `siparis_adres_duzeltmeleri`'ne, değişiklik kaydına değişen alanların adları; `eposta` işaretliyse müşteriye "Teslimat bilgileriniz güncellendi". Aynı bilgiler bir şey yazmaz.
+
+- İzin: `siparis.yonet`. Sınır: `genel`.
+- Girdi: `{ "numara", "surum", "teslimat", "fatura", "eposta" }` (`siparisAdresiSemasi`).
+- Servis: `cekirdek/moduller/siparis/adres-duzeltme.ts` (`siparisAdresServisi.duzelt`).
+- Başarılı (200): `{ "basarili": true, "veri": { "numara", "degisti" } }`.
+- Hatalar: `dogrulama` (alanın yoluyla; `telefon-gerekli`, `ulke-teslimat-disi`, vergi numarası), `bulunamadi`, `cakisma` (`adres-degisti`), `is-kurali` (`adres-duzeltilemez`, `kisisel-veri-silindi`, `vergi-bolgesi-degisir`), `oturum-yok`, `yetki`.
+
 ### POST /kapi/yonetici/siparis-fatura
 
 Siparişin faturasını yazar: ekler ya da değiştirir (kart 0268, karar 0170). Ekran gördüğü faturayı (`gorulen`, yoksa `null`) gönderir; arada değiştiyse hiçbir şey yazılmaz. Yazma değişiklik kaydına girer (`siparis.fatura-yazildi`); değiştirilen dosya silinmiş işaretlenir. `eposta` doğruysa müşteriye "Faturanız hazır" e-postası faturayla aynı işlemde yazılır. Aynı fatura yeniden yazılmaz, kayda ve e-postaya girmez.

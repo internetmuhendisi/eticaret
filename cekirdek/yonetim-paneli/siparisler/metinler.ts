@@ -58,6 +58,7 @@ const nedenler: Record<SiparisGecmisiNedeni, MetinAnahtari> = {
   "iade-talebi-onaylandi": "yonetim.siparis.neden.iade-talebi-onaylandi",
   "iade-talebi-reddedildi": "yonetim.siparis.neden.iade-talebi-reddedildi",
   "musteri-iptali": "yonetim.siparis.neden.musteri-iptali",
+  "adres-duzeltildi": "yonetim.siparis.neden.adres-duzeltildi",
 };
 export const nedenMetni = (neden: string): MetinAnahtari =>
   nedenler[neden as SiparisGecmisiNedeni] ?? "yonetim.siparis.neden.olusturuldu";

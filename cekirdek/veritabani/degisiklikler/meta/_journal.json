@@ -414,6 +414,13 @@
       "when": 1795564352408,
       "tag": "0058_yonetici-davetleri",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1795570096766,
+      "tag": "0059_siparis-adres-duzeltme",
+      "breakpoints": true
     }
   ]
 }

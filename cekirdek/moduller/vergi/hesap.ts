@@ -96,6 +96,42 @@ const siniftakiOranlar = (sinif: VergiSinifi, bolge: VergiBolgesi): VergiOrani[]
 
 const adiyla = (ad: string | undefined) => (ad === undefined ? {} : { ad });
 
+const tablodaMi = (
+  tablo: readonly VergiSinifi[],
+  bolge: VergiBolgesi | undefined,
+): bolge is VergiBolgesi =>
+  bolge !== undefined &&
+  tablo.some((sinif) => !sinif.silindi && sinif.oranlar.some((oran) => uyar(oran, bolge)));
+
+// Verginin hangi adresin bölgesiyle hesaplanacağı: ayardaki adres, tabloda yoksa mağaza adresi, o da yoksa "yok".
+// Hesabın kendisi ve siparişin adres düzeltmesi (kart 0269) aynı seçimi kullanır.
+export const vergiBolgesiniSec = (
+  ayarlar: Pick<HesapAyarlari, "vergiAdresi">,
+  tablo: readonly VergiSinifi[],
+  adresler: HesapGirdisi["adresler"],
+): [VergiAdresi | "yok", VergiBolgesi | undefined] => {
+  const secilen = adresler[ayarlar.vergiAdresi];
+  if (tablodaMi(tablo, secilen)) return [ayarlar.vergiAdresi, secilen];
+  if (tablodaMi(tablo, adresler.magaza)) return ["magaza", adresler.magaza];
+  return ["yok", undefined];
+};
+
+// İki bölgede her sınıfın (silinmişler ve kargo sınıfı dahil) uygulanacak oranları aynı mı (ad, yüzde ve sırası).
+// Aynıysa bölgeden bölgeye geçmek hiçbir kalemin vergisini değiştirmez (kart 0269: siparişin adres düzeltmesi).
+export const bolgelerinOranlariAyniMi = (
+  tablo: readonly VergiSinifi[],
+  a: VergiBolgesi | undefined,
+  b: VergiBolgesi | undefined,
+): boolean => {
+  const ozet = (sinif: VergiSinifi, bolge: VergiBolgesi | undefined) =>
+    JSON.stringify(
+      bolge === undefined
+        ? []
+        : siniftakiOranlar(sinif, bolge).map((oran) => [oran.ad ?? null, oran.oran]),
+    );
+  return tablo.every((sinif) => ozet(sinif, a) === ozet(sinif, b));
+};
+
 const tamSayiMi = (deger: number, enAz: number) => Number.isSafeInteger(deger) && deger >= enAz;
 
 // Kalemin oranı ve döküm anahtarı: ad, yüzde ve aynı ad ve yüzdenin kalemdeki kaçıncı tekrarı olduğu.
@@ -131,17 +167,9 @@ export const hesapla = (girdi: HesapGirdisi): VergiSonucu => {
 
   // Bölge: ayardaki adres, tabloda yoksa mağaza adresi.
   const vergilenecekVar = ayarlar.vergiAcik && kalemSiniflari.some((sinif) => sinif !== undefined);
-  const tablodaMi = (bolge: VergiBolgesi | undefined): bolge is VergiBolgesi =>
-    bolge !== undefined &&
-    tablo.some((sinif) => !sinif.silindi && sinif.oranlar.some((oran) => uyar(oran, bolge)));
-  const secilen = girdi.adresler[ayarlar.vergiAdresi];
   const [kaynak, bolge]: [VergiAdresi | "yok", VergiBolgesi | undefined] = !vergilenecekVar
     ? ["yok", undefined]
-    : tablodaMi(secilen)
-      ? [ayarlar.vergiAdresi, secilen]
-      : tablodaMi(girdi.adresler.magaza)
-        ? ["magaza", girdi.adresler.magaza]
-        : ["yok", undefined];
+    : vergiBolgesiniSec(ayarlar, tablo, girdi.adresler);
   if (vergilenecekVar && bolge === undefined) {
     throw new BilinenHata("is-kurali", { kod: "vergi-bolgesi-yok" });
   }

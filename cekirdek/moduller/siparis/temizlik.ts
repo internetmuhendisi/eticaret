@@ -2,7 +2,7 @@
 // sahibinin ayarı) dolan siparişte ad, soyad, telefon, e-posta, sokak adresi, posta kodu, not ve kurumsal faturanın
 // firma ve vergi bilgisi silinir; ülke, il ve ilçe, tutarlar, ürünler ve vergi dökümü kalır. Siparişin ödeme
 // oturumunda ve havale bildirimlerinde aynı bilgiler silinir; açık takip anahtarları kapanır. Müşterinin iade
-// talebindeki açıklama (serbest metin) silinir; mağazanın ret açıklaması not gibi kalır (kart 0239). Faturanın PDF'i
+// talebindeki açıklama (serbest metin) silinir; teslimat ve fatura düzeltmelerinin bilgileri silinir (kart 0269); mağazanın ret açıklaması not gibi kalır (kart 0239). Faturanın PDF'i
 // (ad ve adres taşır) siparişten ayrılır ve silinmiş işaretlenir; faturanın numarası ve tarihi kalır (kart 0268). Süre
 // veritabanının saatiyle karşılaştırılır.
 //
@@ -59,6 +59,9 @@ export const kisiselVeriTemizligi = async (vt: Veritabani, site: Site): Promise<
     await islem.execute(sql`
       update siparis_iade_talepleri set aciklama = null
       where siparis_kimligi in (${liste})`);
+    // Teslimat ve fatura düzeltmelerinin önceki ve yeni bilgileri (kart 0269); geçmişin satırı kalır.
+    await islem.execute(sql`
+      delete from siparis_adres_duzeltmeleri where siparis_kimligi in (${liste})`);
     // Açık takip anahtarları da kapanır (kart 0238, bağımsız kontrolün bulgusu).
     await islem.execute(sql`
       delete from siparis_takip_erisimleri where siparis_kimligi in (${liste})`);

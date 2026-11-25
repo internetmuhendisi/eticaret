@@ -491,6 +491,18 @@ const faturaHazir: IcerikUretici = (veri, b) => {
   ]);
 };
 
+// Kart 0269: teslimat ya da fatura bilgileri düzeltildi. Teslimat bloğu e-postanın yazıldığı andaki (düzeltilmiş)
+// adresi gösterir; fatura bilgisi kişisel ve kurumsal bilgi taşıdığı için e-postaya yazılmaz, siparişin sayfasındadır.
+const adresGuncellendi: IcerikUretici = (veri, b) => {
+  const v = verisi(veri);
+  return govde(b, "eposta.adresGuncellendi.konu", "eposta.adresGuncellendi.baslik", v, [
+    { tur: "paragraf", metin: merhaba(b, v, "eposta.adresGuncellendi.govde") },
+    ...teslimatBilgisi(b, v.teslimat),
+    { tur: "paragraf", metin: b.satir("eposta.adresGuncellendi.uyari"), soluk: true },
+    ...siparisDugmesi(b, v),
+  ]);
+};
+
 const talepKalemleri = (b: IcerikBaglami, v: SiparisEpostaVerisi): EpostaBlogu =>
   kalemTablosu(b, v.kalemler, []);
 
@@ -575,4 +587,5 @@ export const siparisEpostaIcerikleri = {
   "iade-talebi-onaylandi": talepOnaylandi,
   "iade-talebi-reddedildi": talepReddedildi,
   "fatura-hazir": faturaHazir,
+  "adres-guncellendi": adresGuncellendi,
 } as const satisfies Partial<Record<EpostaSablonu, IcerikUretici>>;

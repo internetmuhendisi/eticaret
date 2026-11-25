@@ -65,6 +65,7 @@ import {
   type Siparis,
   type SiparisIadesi,
   type SiparisKalemi,
+  siparisAdresDuzeltmeleri,
   siparisGecmisi,
   siparisIadeleri,
   siparisIadeTalepleri,
@@ -134,6 +135,11 @@ export type SiparisAyrintisi = {
     onceki: SiparisDurumu | null;
     sonraki: SiparisDurumu;
     neden: string;
+    // Adres düzeltmesinin (kart 0269) önceki ve yeni bilgileri; başka nedende ve temizlikten sonra null.
+    oncekiTeslimat: Siparis["teslimat"] | null;
+    oncekiFatura: Siparis["fatura"] | null;
+    yeniTeslimat: Siparis["teslimat"] | null;
+    yeniFatura: Siparis["fatura"] | null;
     yazan: Yazan;
   }[];
   notlar: { zaman: Date; tur: string; metin: string; yazan: Yazan }[];
@@ -396,9 +402,18 @@ export const siparisYonetimi = (site: Site) => {
         onceki: siparisGecmisi.onceki_durum,
         sonraki: siparisGecmisi.sonraki_durum,
         neden: siparisGecmisi.neden,
+        // Adres düzeltmesinin önceki bilgileri (kart 0269); kişisel veri temizliğinden sonra yoktur.
+        oncekiTeslimat: siparisAdresDuzeltmeleri.onceki_teslimat,
+        oncekiFatura: siparisAdresDuzeltmeleri.onceki_fatura,
+        yeniTeslimat: siparisAdresDuzeltmeleri.yeni_teslimat,
+        yeniFatura: siparisAdresDuzeltmeleri.yeni_fatura,
         ...yazanSutunlari(siparisGecmisi),
       })
       .from(siparisGecmisi)
+      .leftJoin(
+        siparisAdresDuzeltmeleri,
+        eq(siparisAdresDuzeltmeleri.gecmis_kimligi, siparisGecmisi.kimlik),
+      )
       .leftJoin(
         yonetici,
         and(
@@ -468,13 +483,29 @@ export const siparisYonetimi = (site: Site) => {
     return {
       siparis,
       kalemler,
-      gecmis: gecmis.map(({ zaman, onceki, sonraki, neden, ...kim }) => ({
-        zaman,
-        onceki: onceki as SiparisDurumu | null,
-        sonraki: sonraki as SiparisDurumu,
-        neden,
-        yazan: yazan(kim),
-      })),
+      gecmis: gecmis.map(
+        ({
+          zaman,
+          onceki,
+          sonraki,
+          neden,
+          oncekiTeslimat,
+          oncekiFatura,
+          yeniTeslimat,
+          yeniFatura,
+          ...kim
+        }) => ({
+          zaman,
+          onceki: onceki as SiparisDurumu | null,
+          sonraki: sonraki as SiparisDurumu,
+          neden,
+          oncekiTeslimat,
+          oncekiFatura,
+          yeniTeslimat,
+          yeniFatura,
+          yazan: yazan(kim),
+        }),
+      ),
       notlar: notlar.map(({ zaman, tur, metin, ...kim }) => ({
         zaman,
         tur,

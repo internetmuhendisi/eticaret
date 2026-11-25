@@ -33,6 +33,8 @@ export const epostaSablonlari = [
   "iade-talebi-reddedildi",
   // Kart 0268: mağaza siparişin faturasını ekledi ya da değiştirdi (panelde kutu işaretliyse).
   "fatura-hazir",
+  // Kart 0269: mağaza teslimat ya da fatura bilgilerini düzeltti (panelde kutu işaretliyse).
+  "adres-guncellendi",
   // Yönetici bildirimleri (kart 0241, karar 0154); hangi bildirimin hangisi olduğu
   // cekirdek/kayitlar/yonetici-bildirimi.ts: yoneticiBildirimTanimlari.
   "yonetici-yeni-siparis",

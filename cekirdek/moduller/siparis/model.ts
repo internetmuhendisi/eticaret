@@ -229,7 +229,7 @@ export const siparisGecmisi = pgTable(
     index("siparis_gecmisi_siparis").on(tablo.siparis_kimligi, tablo.zaman),
     check(
       "siparis_gecmisi_neden",
-      sql`${tablo.neden} in ('olusturuldu', 'panelden-olusturuldu', 'havale-suresi-doldu', 'havale-bildirildi', 'havale-onaylandi', 'hazirlamaya-alindi', 'kargoya-verildi', 'kargo-duzeltildi', 'teslim-edildi', 'yonetici-iptali', 'iade-yapildi', 'iade-talebi-alindi', 'iade-talebi-onaylandi', 'iade-talebi-reddedildi', 'musteri-iptali')`,
+      sql`${tablo.neden} in ('olusturuldu', 'panelden-olusturuldu', 'havale-suresi-doldu', 'havale-bildirildi', 'havale-onaylandi', 'hazirlamaya-alindi', 'kargoya-verildi', 'kargo-duzeltildi', 'teslim-edildi', 'yonetici-iptali', 'iade-yapildi', 'iade-talebi-alindi', 'iade-talebi-onaylandi', 'iade-talebi-reddedildi', 'musteri-iptali', 'adres-duzeltildi')`,
     ),
     check(
       "siparis_gecmisi_durum",
@@ -266,6 +266,34 @@ export const havaleBildirimleri = pgTable(
   (tablo) => [
     index("havale_bildirimleri_siparis").on(tablo.siparis_kimligi),
     check("havale_bildirimleri_tutar", sql`${tablo.tutar} > 0`),
+  ],
+);
+
+// Teslimat ve fatura bilgilerinin düzeltmesi (kart 0269, karar 0180): geçmişin "adres-duzeltildi" satırına bağlı önceki
+// ve yeni bilgiler. Geçmiş değiştirilemez olduğu ve kişisel bilgi taşımadığı için bilgiler burada durur; kişisel veri
+// temizliği bu satırları siler, geçmişin satırı kalır.
+//
+// Aranan alanlar: gecmis_kimligi (geçmişin satırının düzeltmesi, tekil indeks), siparis_kimligi (siparişin
+// düzeltmeleri ve temizlik, indeksli).
+export const siparisAdresDuzeltmeleri = pgTable(
+  "siparis_adres_duzeltmeleri",
+  {
+    kimlik: kimlik(),
+    siparis_kimligi: uuid()
+      .notNull()
+      .references(() => siparisler.kimlik),
+    gecmis_kimligi: uuid()
+      .notNull()
+      .references(() => siparisGecmisi.kimlik),
+    onceki_teslimat: jsonb().$type<Teslimat>().notNull(),
+    onceki_fatura: jsonb().$type<Fatura>().notNull(),
+    yeni_teslimat: jsonb().$type<Teslimat>().notNull(),
+    yeni_fatura: jsonb().$type<Fatura>().notNull(),
+    olusturma_zamani: zaman().notNull().defaultNow(),
+  },
+  (tablo) => [
+    uniqueIndex("siparis_adres_duzeltmeleri_gecmis").on(tablo.gecmis_kimligi),
+    index("siparis_adres_duzeltmeleri_siparis").on(tablo.siparis_kimligi),
   ],
 );
 

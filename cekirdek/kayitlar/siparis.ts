@@ -55,6 +55,8 @@ export const satinAlmaDurumlari = [
 // - iade-talebi-alindi, iade-talebi-onaylandi, iade-talebi-reddedildi: müşterinin iade talebi ve mağazanın kararı
 //   (kart 0239); durum değişmez.
 // - musteri-iptali: müşteri siparişini kendisi iptal etti (kart 0239, iadeYap'ın iptal akışıyla).
+// - adres-duzeltildi: mağaza teslimat ya da fatura bilgilerini düzeltti (kart 0269, karar 0180); durum değişmez, önceki
+//   ve yeni bilgiler siparis_adres_duzeltmeleri tablosundadır.
 export const siparisGecmisiNedenleri = [
   "olusturuldu",
   "panelden-olusturuldu",
@@ -71,6 +73,7 @@ export const siparisGecmisiNedenleri = [
   "iade-talebi-onaylandi",
   "iade-talebi-reddedildi",
   "musteri-iptali",
+  "adres-duzeltildi",
 ] as const;
 export type SiparisGecmisiNedeni = (typeof siparisGecmisiNedenleri)[number];
 
@@ -96,6 +99,8 @@ export const siparisGecmisiEpostalari = {
   "iade-talebi-onaylandi": "iade-talebi-onaylandi",
   "iade-talebi-reddedildi": "iade-talebi-reddedildi",
   "musteri-iptali": "siparis-iptali",
+  // Kart 0269: panelde kutu işaretliyse (varsayılan); işaretsizse gecmiseYaz e-postasız çağrılır.
+  "adres-duzeltildi": "adres-guncellendi",
 } as const satisfies Record<SiparisGecmisiNedeni, EpostaSablonu | "iade" | null>;
 
 // Yönetici bildirimleri (kart 0241, karar 0154): geçmişin her nedeni ya bir bildirim doğurur ya da doğurmaz (null).
@@ -117,7 +122,15 @@ export const siparisGecmisiYoneticiBildirimleri = {
   "iade-talebi-onaylandi": null,
   "iade-talebi-reddedildi": null,
   "musteri-iptali": "iptal",
+  "adres-duzeltildi": null,
 } as const satisfies Record<SiparisGecmisiNedeni, YoneticiBildirimi | null>;
+
+// Teslimat ve fatura bilgilerinin panelden düzeltilebildiği durumlar (kart 0269, karar 0157 ve 0180): kargoya verilene
+// kadar.
+export const adresDuzeltilebilirDurumlar = [
+  "odeme-bekleniyor",
+  "hazirlaniyor",
+] as const satisfies readonly SiparisDurumu[];
 
 // Panelin sipariş işlemleri (kart 0234). Her işlem tek geçiştir; yontem verilmişse yalnız o ödeme yöntemindeki
 // siparişte yapılır. odeme: işlem ödemenin alındığı andır (havalede onay, kapıda ödemede teslim). izin: işlemi

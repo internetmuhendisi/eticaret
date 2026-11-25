@@ -945,7 +945,8 @@
           "talepAlindi": "İade talebiniz alındı",
           "talepOnaylandi": "İade talebiniz onaylandı",
           "talepOnaylandiAyrinti": "Ürün mağazaya ulaşınca ödemeniz iade edilir.",
-          "talepReddedildi": "İade talebiniz kabul edilmedi"
+          "talepReddedildi": "İade talebiniz kabul edilmedi",
+          "adres-duzeltildi": "Teslimat bilgileri güncellendi"
         },
         "iadeKalemi": "{adet} × {urun}",
         "kargoUcreti": "Kargo ücreti",

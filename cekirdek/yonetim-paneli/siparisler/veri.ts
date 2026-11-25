@@ -7,6 +7,7 @@ import { eklentiliMi } from "../../eklentiler/odeme-yontemleri";
 import { belgeSinirlari, yuklenebilenBelgeTurAdlari } from "../../kayitlar/dosya";
 import type { OdemeYontemi } from "../../kayitlar/odeme";
 import {
+  adresDuzeltilebilirDurumlar,
   type IadeNedeni,
   type IadeTalebiDurumu,
   type IadeTuru,
@@ -28,12 +29,16 @@ import { siteninBicimAyarlari, siteninBicimleyicisi } from "../../metinler/site-
 import { epostaGidebilirMi } from "../../moduller/eposta/gonderici";
 import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
 import { musteriYonetimi } from "../../moduller/musteri/yonetim";
+import type { Fatura, Teslimat } from "../../moduller/odeme/semalar";
+import { adresSurumu } from "../../moduller/siparis/adres-duzeltme";
 import { siparisAyarlari } from "../../moduller/siparis/ayarlar";
 import { type SiparisFaturasi, siparisFaturaServisi } from "../../moduller/siparis/fatura";
 import type { HesapSiparisi, OncekiIade } from "../../moduller/siparis/iade-hesabi";
 import type { Siparis, SiparisKalemi } from "../../moduller/siparis/model";
 import { siparisYonetimi } from "../../moduller/siparis/yonetim";
 import { siteninVeritabani } from "../../veritabani/baglanti";
+import type { BolgeUlkesi } from "../../vitrin/odeme/alanlar";
+import { teslimatUlkeleri } from "../../vitrin/odeme/ulkeler";
 import { musteriAyrintisiAdresi } from "../adresler";
 import { type ListeDurumu, type ListeVerisi, tarihSuzgecininAyrikGunleri } from "../liste/tanim";
 import { bakilacakSekmesi, siparisListesiGirdisi } from "./liste-tanimi";
@@ -186,11 +191,27 @@ export type SiparisAyrintisiVerisi = {
         sonraki: SiparisDurumu;
         neden: string;
         yazan: SatirYazani;
+        // Adres düzeltmesinin (kart 0269) değişen önceki bilgileri; değişmeyen kısım null. Kişisel veri temizliğinden
+        // sonra yoktur.
+        oncekiBilgiler?: {
+          teslimat: string[] | null;
+          fatura: SiparisAyrintisiVerisi["fatura"] | null;
+        };
       }
     | { tur: "not"; zaman: string; notTuru: string; metin: string; yazan: SatirYazani }
   )[];
   // Yöneticinin bu durumda yapabileceği işlemler (izinli olanlar).
   islemler: SiparisIslemi[];
+  // Teslimat ve fatura bilgilerinin düzeltmesi (kart 0269, karar 0180): yalnız siparis.yonet izni olana, kargoya
+  // verilene kadar ve kişisel bilgisi silinmemiş siparişte; yoksa null. surum ekranın gördüğü hâlin özetidir.
+  adresDuzeltme: {
+    surum: string;
+    teslimat: Teslimat;
+    fatura: Fatura;
+    ulkeler: BolgeUlkesi[];
+    telefonZorunlu: boolean;
+    epostaGidebilir: boolean;
+  } | null;
   // İptal ve iade (kart 0235): penceresinin verisi (izni varsa, siparişin durumu izin veriyorsa ve bekleyen iade yoksa).
   iade: IadePenceresiVerisi | null;
   // Siparişin iptal ve iadeleri, en yeni önce.
@@ -317,6 +338,16 @@ export const siparisFaturaBilgisiVerisi = (
     : { tur: "bireysel", adresAyni: fatura.adresAyni, adres };
 };
 
+// Teslimatın satırları: ad, soyad ve telefon; adres (kart 0269: düzeltmenin önceki bilgisi).
+const teslimatSatirlari = (teslimat: Teslimat): string[] => [
+  [`${teslimat.ad} ${teslimat.soyad}`.trim(), teslimat.telefon]
+    .filter((parca) => parca !== undefined && parca !== "")
+    .join(" · "),
+  ...adresSatirlari(teslimat.adres),
+];
+
+const ayniMi = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
 // Adresin satırları: ad (varsa) ve tek satırlık adres yazısı (il ve ilçe adlarıyla, ülkeyle; adresYazisi).
 export const adresSatirlari = (adres: YazilacakAdres): string[] => {
   const yazi = adresYazisi(adres, bicim().ulkeAdi);
@@ -373,6 +404,18 @@ export const siparisAyrintisiVerisi = async (
       sonraki: satir.sonraki,
       neden: satir.neden,
       yazan: yazan(satir.yazan),
+      ...(satir.oncekiTeslimat === null || satir.oncekiFatura === null
+        ? {}
+        : {
+            oncekiBilgiler: {
+              teslimat: ayniMi(satir.oncekiTeslimat, satir.yeniTeslimat)
+                ? null
+                : teslimatSatirlari(satir.oncekiTeslimat),
+              fatura: ayniMi(satir.oncekiFatura, satir.yeniFatura)
+                ? null
+                : siparisFaturaBilgisiVerisi(satir.oncekiFatura),
+            },
+          }),
     })),
     ...ayrinti.notlar.map((satir) => ({
       tur: "not" as const,
@@ -449,6 +492,22 @@ export const siparisAyrintisiVerisi = async (
     })),
     gecmis,
     islemler,
+    adresDuzeltme:
+      yetkili("siparis.yonet") &&
+      !kisiselSilindi &&
+      (adresDuzeltilebilirDurumlar as readonly string[]).includes(durum)
+        ? await (async () => {
+            const ayarlar = await siteninMagazaAyarlari(vt, site);
+            return {
+              surum: adresSurumu(siparis),
+              teslimat: siparis.teslimat,
+              fatura: siparis.fatura,
+              ulkeler: teslimatUlkeleri(site),
+              telefonZorunlu: ayarlar.telefonZorunlu,
+              epostaGidebilir: epostaGidebilirMi(site.ayarlar),
+            };
+          })()
+        : null,
     iade: (() => {
       const bekleyen = ayrinti.iadeler.some((iade) => iade.durum === "bekliyor");
       const turler = iadeTurleri.filter((tur) =>

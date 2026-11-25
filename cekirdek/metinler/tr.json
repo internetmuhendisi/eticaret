@@ -1407,7 +1407,8 @@
         "iade-talebi-alindi": "İade talebi alındı",
         "iade-talebi-onaylandi": "İade talebi onaylandı",
         "iade-talebi-reddedildi": "İade talebi reddedildi",
-        "musteri-iptali": "Müşteri siparişi iptal etti"
+        "musteri-iptali": "Müşteri siparişi iptal etti",
+        "adres-duzeltildi": "Teslimat ve fatura bilgileri düzeltildi"
       },
       "yazan": {
         "musteri": "Müşteri",
@@ -1510,6 +1511,26 @@
           "baslik": "Not müşteriye gösterilsin mi?",
           "metin": "Müşteriye not siparişin müşteri sayfasında görünür ve sonradan değiştirilemez ya da silinemez.",
           "dugme": "Notu gönder"
+        }
+      },
+      "adres": {
+        "duzelt": "Düzelt",
+        "baslik": "Teslimat ve fatura bilgilerini düzelt",
+        "aciklama": "Müşteri yanlış bilgi yazdıysa sipariş kargoya verilmeden düzeltin.",
+        "bilgi": "Sipariş kargoya verilene kadar teslimat ve fatura bilgileri düzeltilebilir.",
+        "teslimat": "Teslimat",
+        "fatura": "Fatura",
+        "eposta": "Müşteriye \"Teslimat bilgileriniz güncellendi\" e-postası gönder",
+        "ipucu": "Önceki ve yeni bilgiler siparişin geçmişine yazılır. Vergi adresin bölgesine bağlıysa ve düzeltme vergiyi değiştirecekse düzeltme yapılmaz; siparişi iptal edip yenisini girin.",
+        "kaydet": "Bilgileri kaydet",
+        "basari": "Teslimat ve fatura bilgileri düzeltildi.",
+        "oncekiTeslimat": "Önceki teslimat: {bilgi}",
+        "oncekiFatura": "Önceki fatura: {bilgi}",
+        "hata": {
+          "cakisma": "Sipariş siz düzenlerken değişti. Pencereyi kapatıp yeniden açın ve bilgileri yeniden düzeltin.",
+          "duzeltilemez": "Sipariş kargoya verildiği için bilgileri artık düzeltilemez.",
+          "kisiselVeri": "Bu siparişin kişisel bilgileri silindiği için bilgileri düzeltilemez.",
+          "vergiBolgesi": "Bu adres siparişin vergisini değiştirir. Siparişi iptal edip yenisini girin."
         }
       }
     },
@@ -3683,7 +3704,8 @@
         "talepAlindi": "İade talebiniz alındı",
         "talepOnaylandi": "İade talebiniz onaylandı",
         "talepOnaylandiAyrinti": "Ürün mağazaya ulaşınca ödemeniz iade edilir.",
-        "talepReddedildi": "İade talebiniz kabul edilmedi"
+        "talepReddedildi": "İade talebiniz kabul edilmedi",
+        "adres-duzeltildi": "Teslimat bilgileri güncellendi"
       },
       "iadeKalemi": "{adet} × {urun}",
       "kargoUcreti": "Kargo ücreti",
@@ -4008,6 +4030,12 @@
       "govde": "{magaza} yönetim paneline {roller} olarak davet edildiniz. Katılmak için aşağıdaki bağlantıyı açın, şifrenizi belirleyin ve telefonunuzla iki aşamalı girişi kurun. Bağlantı {gun} gün geçerlidir ve bir kez kullanılabilir.",
       "uyari": "Bu daveti beklemiyorsanız e-postayı yok sayın; bağlantıyı açmazsanız hesap açılmaz.",
       "baglanti": "Davete katıl"
+    },
+    "adresGuncellendi": {
+      "konu": "Teslimat bilgileriniz güncellendi: {numara}",
+      "baslik": "Teslimat bilgileriniz güncellendi",
+      "govde": "Merhaba {ad}, {numara} numaralı siparişinizin teslimat ve fatura bilgileri mağaza tarafından düzeltildi. Güncel teslimat adresi aşağıdadır.",
+      "uyari": "Bu değişikliği siz istemediyseniz mağazayla iletişime geçin."
     }
   },
   "gelistirme": {
