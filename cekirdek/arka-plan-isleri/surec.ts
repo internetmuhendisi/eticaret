@@ -6,7 +6,7 @@ import { gunluk } from "../izleme/gunluk.ts";
 import { hataIzlemeyiBagla } from "../izleme/hata-izleme-baglantisi.ts";
 import { hatayiKaydet, surecHatalariniBagla } from "../izleme/hata-katmani.ts";
 import { konsoluGunlugeBagla } from "../izleme/konsol.ts";
-import { kuyrukAyari, nabizDosyasi } from "../kayitlar/arka-plan.ts";
+import { kuyrukAyari, kuyrukBasladiMesaji, nabizDosyasi } from "../kayitlar/arka-plan.ts";
 import { baglantiyiKapat, siteninVeritabani } from "../veritabani/baglanti.ts";
 import { baslangiclariKur } from "./baslangic.ts";
 import { calistiriciKur } from "./calistirici.ts";
@@ -45,6 +45,7 @@ gunluk.bilgi("arka plan süreci başladı");
 // Sitenin başlangıç kataloğu, menüleri ve düzeni hiç kurulmamışsa bir kez yazılır (kartlar 0084, 0107, 0114).
 // Yazılamayan adımın hatası kaydedilir, kuyruk yine çalışır, sonraki açılışta yeniden denenir.
 await baslangiclariKur(siteninVeritabani(), (hata, kaynak) => hatayiKaydet(hata, { kaynak }));
+gunluk.bilgi(kuyrukBasladiMesaji);
 await calistiriciKur({ vt: siteninVeritabani(), isler: kayitliIsler, zamanliIsler }).dongu(
   durdur.signal,
 );

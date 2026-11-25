@@ -21,7 +21,11 @@ import { join } from "node:path";
 import sharp from "sharp";
 import { siteKlasorunuOku } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { katalogAdresi } from "../cekirdek/katalog/kayit.ts";
-import { arkaPlanDosyalari } from "../cekirdek/kayitlar/arka-plan.ts";
+import {
+  arkaPlanDosyalari,
+  kuyrukBasladiIlkSurum,
+  kuyrukBasladiMesaji,
+} from "../cekirdek/kayitlar/arka-plan.ts";
 import {
   dosyaKlasoruDegiskeni,
   dosyaSinirlari,
@@ -60,6 +64,9 @@ import {
 } from "./yerel-ortam.mts";
 
 const acikBirak = process.argv.includes("--acik-birak");
+// Açılış kurulumu için bekleme sınırı (kart 0309): temiz veritabanında Örnek Mağaza'nın kurulumu
+// geliştirme bilgisayarında 30 saniye sürdü; hattın makinesi daha yavaştır.
+const kuyrukBaslamaSiniriMs = 300_000;
 const sonuclar: { ad: string; gecti: boolean; ayrinti: string }[] = [];
 const olc = (ad: string, gecti: boolean, ayrinti = "") => {
   sonuclar.push({ ad, gecti, ayrinti });
@@ -237,6 +244,29 @@ const sitesiniOlc = async (site: OrtamSitesi, oteki: OrtamSitesi) => {
       /Permission denied/.test(otekininKlasoru),
     otekininKlasoru.replaceAll("\n", " | "),
   );
+
+  // Kuyruk, süreç açılış kurulumunu bitirmeden iş almaz (kart 0309). Örnek Mağaza'nın kurulumu (katalog,
+  // görseller, blog, sayfalar) hattın makinesinde aşağıdaki denemenin 60 saniyelik penceresini dolduruyordu:
+  // önce sürecin kuyruğu başlattığını söyleyen günlük satırı beklenir. Satırı taşımayan eski görüntüde beklenmez.
+  if (surumEnAz(cekirdekSurumu, kuyrukBasladiIlkSurum)) {
+    const baslangic = Date.now();
+    let basladi = false;
+    while (Date.now() - baslangic < kuyrukBaslamaSiniriMs) {
+      const gunlukler = spawnSync("docker", ["logs", arkaPlanKutuAdi(kutuAdi(kodAdi))], {
+        encoding: "utf8",
+      });
+      if (`${gunlukler.stdout}${gunlukler.stderr}`.includes(`"mesaj":"${kuyrukBasladiMesaji}"`)) {
+        basladi = true;
+        break;
+      }
+      await new Promise((coz) => setTimeout(coz, 1000));
+    }
+    olc(
+      `${kodAdi}: arka plan süreci açılış kurulumunu bitirip kuyruğu başlattı`,
+      basladi,
+      `${Math.round((Date.now() - baslangic) / 1000)} sn`,
+    );
+  }
 
   // Arka plan kutusu kendi sitesinin kuyruğunu işliyor (kart 0031, karar 0049). E-posta yerel posta
   // kutusuna düşüyor (kart 0032, karar 0050); gönderen adresi olmayan site göndermiyor.

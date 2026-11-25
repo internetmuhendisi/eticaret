@@ -34,6 +34,12 @@ export const kuyrukAyari = {
 
 export type KuyrukAyari = { [Alan in keyof typeof kuyrukAyari]: number };
 
+// Süreç açılış kurulumunu (katalog, sayfalar, menüler, düzen, blog) bitirip kuyruğu çalıştırmaya
+// başlarken günlüğe bu satırı yazar (kart 0309). Kuyruk kurulum bitmeden iş almaz; yerel ortam denemesi
+// kuyruğu ölçmeden önce bu satırı bekler. Satır bu sürümle gelir, eski görüntüde beklenmez.
+export const kuyrukBasladiMesaji = "arka plan kuyruğu başladı";
+export const kuyrukBasladiIlkSurum = [0, 80, 0] as const;
+
 // Sürecin canlı olduğunu kutunun sağlık yoklamasına söyleyen dosya. Kutunun tek yazılabilir yeri /tmp'dir.
 export const nabizDosyasi = "/tmp/arka-plan-nabiz";
 export const nabizSiniriMs = 60_000;

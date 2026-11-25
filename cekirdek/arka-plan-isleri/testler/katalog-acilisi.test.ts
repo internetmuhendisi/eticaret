@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { count, eq } from "drizzle-orm";
 import { afterEach, expect, it } from "vitest";
 import { siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
-import { isDurumu } from "../../kayitlar/arka-plan.ts";
+import { isDurumu, kuyrukBasladiMesaji } from "../../kayitlar/arka-plan.ts";
 import { duzenSurumleri } from "../../moduller/duzen/model.ts";
 import { menuler } from "../../moduller/menu/model.ts";
 import { urunler } from "../../moduller/urun/model.ts";
@@ -96,6 +96,16 @@ it("açılışta katalog bir kez yazılır, ikinci açılış bir şey değişti
   expect(await duzenSayisi()).toBe(1);
   // Katalogdan sonra kuyruk çalışır: süreç açık kalır.
   expect(birinci.surec.exitCode).toBeNull();
+  // Kuyruğun başladığını söyleyen satır (kart 0309) açılış kurulumunun bütün adımlarından sonra gelir:
+  // yerel ortam denemesi kuyruğu ölçmeden önce onu bekler.
+  expect(
+    await bekle(async () => birinci.cikti().includes(kuyrukBasladiMesaji), 30_000),
+    birinci.cikti(),
+  ).toBe(true);
+  expect(birinci.cikti().indexOf(kuyrukBasladiMesaji)).toBeGreaterThan(
+    birinci.cikti().lastIndexOf('"mesaj":"başlangıç '),
+  );
+  expect(birinci.cikti().lastIndexOf('"mesaj":"başlangıç ')).toBeGreaterThan(-1);
 
   const ikinci = surecAc(site.baglantiAdresi);
   // İkinci süreç kataloğa bakıp geçtiğini günlüğe yazar; ürün sayısı aynıdır.
