@@ -28,4 +28,4 @@ Tarayıcı testlerinin kullandığı geliştirme sunucusu (`playwright.config.ts
 
 ## Durum
 
-yapılacak
+bitti
