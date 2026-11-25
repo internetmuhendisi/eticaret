@@ -39,7 +39,6 @@ import { stokServisi } from "../../moduller/stok/servis";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
 import { siparisTakibiAdresi } from "../../vitrin/adresler";
-import { bildirimSuresiniDurdur } from "./bildirim-suresi";
 import { ozetOdaktaOlmali } from "./form-hatasi";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
@@ -1000,7 +999,6 @@ test("sipariş ayarları: yönetici bildirimleri klavyeyle kaydedilir", async ({
     const sonra = await ayarlar.oku(vt);
     expect(sonra.yoneticiBildirimAlicilari).toEqual(["bildirim@ornek.test"]);
     expect(sonra.kapaliYoneticiBildirimleri).toContain("yorum");
-    await bildirimSuresiniDurdur(page);
     await ikiRenkUcGenislik(page, "yönetici bildirimleri");
     expect(hatalar).toEqual([]);
   } finally {

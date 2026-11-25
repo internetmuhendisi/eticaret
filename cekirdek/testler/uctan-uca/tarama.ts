@@ -3,7 +3,9 @@
 //
 // Taramadan önce sırayla:
 // - Bildirimlerin süresi durdurulur (kart 0220, bildirim-suresi.ts): süre tarama sürerken dolarsa kapanma geçişindeki
-//   yarı saydam yazı kontrastı düşürür.
+//   yarı saydam yazı kontrastı düşürür. Yan etkisi: ekranda bildirim varsa fare onun üstüne gider ve orada kalır;
+//   bildirim taramadan sonra da kendiliğinden kapanmaz, üst üste duranlar açılmış görünür, fareyle açılmış ipucu ya da
+//   menü kapanabilir. Taramadan sonra bildirimin kapanmasını bekleyen test fareyi bildirimden uzaklaştırır.
 // - Sonlu animasyon ve geçişlerin bitmesi beklenir (kart 0136): geçişin ortasındaki ara renkler kontrastı düşürür.
 //   Sonsuz animasyonlar (yükleniyor göstergesi) beklenmez.
 // - Sayfanın başlığının dolması beklenir (kart 0287): geliştirme sunucusunda bir yenilemeden sonra Next.js sayfa
