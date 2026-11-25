@@ -44,4 +44,4 @@ Ekran (`cekirdek/yonetim-paneli/hesabim/ekran.tsx`) başarıda önce `router.ref
 
 ## Durum
 
-yapılacak
+bitti
