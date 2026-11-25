@@ -34,6 +34,12 @@ Bölüm: Sipariş ve müşteri hesabı. Kart 0238 sırasında hattın sonucuna b
   - Takımın ortasında ısınmış sayfaların Next.js payı 0,5–1,8 sn'ye çıktı (bir takımda 33 istek, ör. `/yonetim/giris` 1,3 sn, `/yonetim/blog/yeni` 1,8 sn).
   - Olay döngüsü ve çöp toplama ölçeriyle (`NODE_OPTIONS=--require`): sunucunun ana sürecinde testler sırasında uzun takılma yok (en uzunu 617 ms; major GC 140–555 ms). Ama geliştirme sunucusu parametreli yola (`[ad]` vb.) her istekte statik yollar için yeni bir Node süreci açıyor (`next-dev-server.js` `getStaticPaths`: "we don't re-use workers"; önbellekte sonuç olsa da yenileme arka planda yapılır): bir takımda 491 süreç, testler sırasında 3–4 sn'de bir; her açılış 1–2 sn işlemci yer. Yavaş isteklerle örtüşmesi ölçülen turda kesin değil (6 yavaş isteğin 3'ü, rastgele anların %45'i).
   - Sıradaki ölçüm: düşen testlerin anlarıyla işçi açılışlarının karşılaştırılması; işçiyi kapatan bir yolla (parametreli sayfalarda statik yol hesabını önlemek) tam takımın yeniden ölçülmesi. Turbopack'in kalıcı önbelleği (`.next/dev/cache/turbopack`, 3,2 GB) ikinci aday, ölçülmedi.
+- İkinci ara ölçüm (kart 0251, 2026-11-25; aynı koşul):
+  - Statik yol işçisi elendi: geliştirme sunucusunun dosyası geçici olarak değiştirilip önbellekte sonucu olan yolda işçi açılmadı (takımda 491 yerine 13 işçi); Ekip, davet ve Müşteriler testleri yine düştü.
+  - Yerel ortak veritabanındaki düşüşler hattaki düşüşle aynı aile değil: veritabanında testlerden birikmiş 6035 silinmemiş yönetici ve 2105 müşteri var. Ekip sayfası hepsini listeler, sayfanın sunucu cevabı her menü geçişinde 3,2–3,6 sn sürer (ikinci geçişte de; derleme beklemesi değil). İlk ara ölçümdeki "aile yerelde üretiliyor" sonucu bu yüzden yanlıştı.
+  - Menüden geçiş ile adresle açılış aynı tarayıcı kodu dosyalarını ister (geçici ölçüm testiyle dört panel sayfasında); ısınmanın atladığı dosya yok.
+  - Hattın koşulunda (ayrı kutuda temiz veritabanı, iki işlemci, iki işçi, `CI=1`) iki tam takım: dolu derleme önbelleğiyle 360 geçti, 1 düştü (yorum onayının `document-title` taraması, kart 0287); boş derleme önbelleğiyle 366/366 geçti. Sunucunun istek satırlarında yavaş istekler (2,8–5,9 sn) yalnız ısınma sırasında; testler sürerken en yavaş istek 1,9 sn, 1,5 sn'yi aşan POST yok.
+  - Sonuç: düşüş yerelde hattın koşuluyla üretilemiyor; sebebi yerelde ölçülemez. Ayırt etmek için hattaki sunucunun istek ve derleme satırları gerekir (kart 0226).
 
 ## Durum
 
