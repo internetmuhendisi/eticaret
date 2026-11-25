@@ -20,6 +20,13 @@ Bölüm: Yönetim paneli (kart 0271 sırasında bulundu).
 - Test yük altında süre sınırının çok altında; düzeltmeden önceki ve sonraki süre karta yazıldı.
 - Bozuk örnekler yine yakalanıyor (düzeltme geri alınınca kırmızı değil, ölçüm yeşil; kural bozulunca kırmızı).
 
+## Notlar
+
+- Sebep: her başlangıç dosyası (vitrin tarafında 1000 kadar) için zincir taraması aynı dosyaları diskten yeniden okuyup içe aktarmalarını yeniden çözüyordu. Düzeltme: dosyanın çözülmüş içe aktarmaları okuyucu başına bir kez okunur (`hedefler`, `ice-aktarma-zinciri.ts`); tarama sırası ve kural aynı.
+- Ölçüm (32 işlemcili makine, işlemci başına iki meşgul süreçle yapay yük): düzeltmeden önce makinenin kendi yükünde (ortalama 15) 3,4 ve 3,9 sn, yük ortalaması 70'te 10,6 ve 12,2 sn (ikisi de 5 sn sınırında kırmızı); düzeltmeden sonra yük 54'te 0,27 ve 0,30 sn, yük 74'te 0,93 ve 0,94 sn.
+- Eski ve yeni tarama 1046 başlangıç dosyasında üç hedefe (ortak ikon sözlüğü, metin.ts, degerler.ts; 291, 611 ve 711 zincir) birebir aynı zinciri buldu (geçici karşılaştırma testiyle).
+- Gerçek vitrin dosyasına panelin ikonu konunca test zinciriyle kırmızı; önbellek okuyucudan bağımsız tek önbelleğe çevrilince iki dosyanın bozuk örnekleri kırmızı.
+
 ## Durum
 
 yapılacak

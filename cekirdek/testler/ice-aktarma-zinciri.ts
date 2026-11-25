@@ -68,6 +68,24 @@ export const iceAktarmalar = (icerik: string): { adres: string; adlar: string[] 
       })),
     );
 
+// Dosyanın çözülmüş içe aktarmaları, okuyucu başına bir kez (kart 0299): bin kadar başlangıçtan yapılan taramalar
+// aynı dosyaları yeniden okuyup çözüyordu, yük altında testin süre sınırını aştı. Sıra dosyadaki sıradır; bozuk
+// örneklerin sahte okuyucusu her çağrıda yeni olduğu için kendi önbelleğini alır. Taramalar sürerken dosyalar değişmez.
+const onbellekler = new WeakMap<Okuyucu, Map<string, readonly string[]>>();
+const hedefler = (yol: string, oku: Okuyucu): readonly string[] => {
+  let onbellek = onbellekler.get(oku);
+  if (onbellek === undefined) {
+    onbellek = new Map();
+    onbellekler.set(oku, onbellek);
+  }
+  let sonuc = onbellek.get(yol);
+  if (sonuc === undefined) {
+    sonuc = iceAktarmalar(oku(yol)).flatMap(({ adres }) => coz(yol, adres) ?? []);
+    onbellek.set(yol, sonuc);
+  }
+  return sonuc;
+};
+
 // Başlangıçtan izlenen zincir: her ulaşılan dosya ve ona hangi dosyadan gelindiği.
 export const zincirler = (
   baslangic: string,
@@ -75,12 +93,11 @@ export const zincirler = (
 ): Map<string, string | null> => {
   const onceki = new Map<string, string | null>([[baslangic, null]]);
   const sira = [baslangic];
-  while (sira.length > 0) {
-    const yol = sira.shift() as string;
+  for (let i = 0; i < sira.length; i++) {
+    const yol = sira[i] as string;
     if (!/\.(ts|tsx)$/.test(yol)) continue;
-    for (const { adres } of iceAktarmalar(oku(yol))) {
-      const hedef = coz(yol, adres);
-      if (hedef === undefined || onceki.has(hedef)) continue;
+    for (const hedef of hedefler(yol, oku)) {
+      if (onceki.has(hedef)) continue;
       onceki.set(hedef, yol);
       sira.push(hedef);
     }
