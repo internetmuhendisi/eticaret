@@ -563,6 +563,14 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
   // söyler; özet alınamadıysa neden sepetin hatasıdır.
   // Basılırsa gönderim yapılmaz.
   const onaylanamaz = durum.tur !== "hazir" || bilinmiyor;
+  // Özet ekrandayken düğmeyi hesap durumu kapatıyorsa neden onu söyler: hesap sorusu sunucu ya da ağ hatası alırsa
+  // durum bilinmiyor kalır (karar 0051), yeniden sorulmaz; müşteri sayfayı yeniler.
+  const onayNedeni =
+    durum.tur === "hata"
+      ? "vitrin.odeme.sepetHata"
+      : durum.tur !== "hazir"
+        ? "vitrin.odeme.onayBekliyor"
+        : "vitrin.odeme.hesapBekliyor";
 
   const gonder = async (olay: FormEvent<HTMLFormElement>) => {
     olay.preventDefault();
@@ -1269,9 +1277,7 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
                     : "text-kucuk text-soluk-yazi"
                 }
               >
-                {metin(
-                  durum.tur === "hata" ? "vitrin.odeme.sepetHata" : "vitrin.odeme.onayBekliyor",
-                )}
+                {metin(onayNedeni)}
               </p>
             ) : null}
             <p className="text-kucuk text-soluk-yazi">{metin("vitrin.odeme.yukumluluk")}</p>

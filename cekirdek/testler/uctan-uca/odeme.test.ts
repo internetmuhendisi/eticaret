@@ -472,8 +472,9 @@ test("boş gönderimde hatalar özetlenir, odak özete gider, bağlantı alana g
   await ikiRenkUcGenislik(page, "hatalı form");
 });
 
-// Kart 0308: özet gelene kadar "Siparişi onayla" kapalı görünür, odak alır ve nedenini söyler; basılırsa hiçbir şey
-// gönderilmez, form denetlenmez. Özet gelince açılır. Özet alınamazsa neden sepetin hatasıdır.
+// Kart 0308: özet gelene kadar "Siparişi onayla" kapalı görünür, odak alır ve nedenini söyler; basılırsa form
+// denetlenmez. Özet gelince açılır. Özet alınamazsa neden sepetin hatasıdır; hesap durumu sorulamazsa neden hesap
+// bilgisidir.
 test("özet gelene kadar Siparişi onayla basılamaz ve nedenini söyler; özet alınamazsa hatayı söyler", async ({
   page,
 }) => {
@@ -486,10 +487,6 @@ test("özet gelene kadar Siparişi onayla basılamaz ve nedenini söyler; özet 
   await page.route("**/kapi/herkese-acik/sepet", async (yol) => {
     await tutulan;
     await yol.continue();
-  });
-  const odemeIstekleri: string[] = [];
-  page.on("request", (istek) => {
-    if (istek.url().endsWith("/kapi/herkese-acik/odeme")) odemeIstekleri.push(istek.url());
   });
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto(vitrinAdresleri.odeme);
@@ -506,9 +503,9 @@ test("özet gelene kadar Siparişi onayla basılamaz ve nedenini söyler; özet 
   await expect(dugme).toBeFocused();
   await page.keyboard.press("Enter");
   const ozetBasi = metin("vitrin.odeme.hata.ozet").split("{sayi}")[0] ?? "";
-  await expect(page.getByRole("alert").filter({ hasText: ozetBasi })).toHaveCount(0);
-  expect(odemeIstekleri).toEqual([]);
   await ikiRenkUcGenislik(page, "özet beklenirken");
+  // Basış formu denetlemedi: tarama boyunca da hata özeti çıkmadı (eski form da istek göndermezdi, ayırt eden budur).
+  await expect(page.getByRole("alert").filter({ hasText: ozetBasi })).toHaveCount(0);
   // Özet gelince düğme açılır, neden kalkar; basış formu denetler.
   birak?.();
   await expect(dugme).not.toHaveAttribute("aria-disabled", "true");
@@ -523,6 +520,16 @@ test("özet gelene kadar Siparişi onayla basılamaz ve nedenini söyler; özet 
   await sayfaHazir(page);
   await expect(dugme).toHaveAttribute("aria-disabled", "true");
   await expect(dugme).toHaveAccessibleDescription(metin("vitrin.odeme.sepetHata"));
+  await ikiRenkUcGenislik(page, "özet alınamadı");
+
+  // Hesap durumu sorulamazsa (ağ hatası) özet görünür ama düğme kapalı kalır; neden hesap bilgisidir.
+  await page.unroute("**/kapi/herkese-acik/sepet");
+  await page.route("**/kapi/herkese-acik/hesap-durumu", (yol) => yol.abort());
+  await page.reload();
+  await expect(page.locator("#odeme-formu")).toHaveAttribute("aria-busy", "false");
+  await expect(page.getByText(metin("vitrin.odeme.onayBekliyor"))).toHaveCount(0);
+  await expect(dugme).toHaveAccessibleDescription(metin("vitrin.odeme.hesapBekliyor"));
+  await expect(dugme).toHaveAttribute("aria-disabled", "true");
 });
 
 test("ön bilgilendirme formu pencerede siparişin bilgileriyle açılır, Escape kapatır", async ({
