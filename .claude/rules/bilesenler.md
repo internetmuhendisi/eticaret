@@ -57,6 +57,7 @@ Bileşen, düğme, giriş alanı, pencere gibi tekrar kullanılan arayüz parça
 
   Sınıflar `sinif()` ile birleştirilir. Asıl shadcn hâlleri `bilesenler/shadcn-kaynagi/` altındadır, güncellemesi `pnpm shadcn-farki` ile yapılır.
 - `bilesenler/parcalar/hareket-azaltma.ts`: `useHareketAzaltma` (kart 0110), kullanıcının hareketi azaltma tercihi. Kendiliğinden hareket eden parça bununla durur.
+- `bilesenler/parcalar/cizimden-sonra-odak.ts`: `useCizimdenSonraOdak` (kart 0307, karar 0182). Durum değişikliğiyle çizilecek, kalkacak ya da yeri değişecek öğeye odak çizim bittikten sonra verilir; ekran sunucunun cevabıyla değişiyorsa `hazir` koşulu sağlanana kadar bekler. Olay işleyicisinde `requestAnimationFrame` ile odak verilmez (taramayla yakalanır, `testler/cizimden-sonra-odak.test.tsx`).
 - `bilesenler/form/`: `Form`, `GonderDugmesi` (kart 0057), `FormAlani` (kart 0027; `ad` alanın yerini, `etiketEki` etiketin yanındaki işareti verir, kart 0259), `AramaFormu` (kart 0137: GET ile gönderilir, gizli bilgi taşıyan form onunla yazılmaz), `HataOzeti` (kart 0259: formun başındaki hata listesi, satırı alana götürür).
 - `bilesenler/ikonlar/`: ikon sözlüğü (`sozluk.ts`), panelin ikon sözlüğü (`panel-sozlugu.ts`, karar 0172) ve `Ikon` (ad ya da sözlükten alınmış ikon). Lucide yalnız bu iki sözlükte içe aktarılır. İkon alan parça (`BosHal`, `IkonDugmesi`, `DosyaYukleme`) ad ya da ikon kabul eder.
 - `bilesenler/tasarim-degerleri/`: tasarım değerleri ve Tailwind'in ortak girişi (kart 0102, karar 0076).

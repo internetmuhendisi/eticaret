@@ -11,6 +11,7 @@ import { FormAlani } from "../../../bilesenler/form/form-alani";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { AdetSecici } from "../../../bilesenler/parcalar/adet-secici";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
+import { useCizimdenSonraOdak } from "../../../bilesenler/parcalar/cizimden-sonra-odak";
 import { Kart } from "../../../bilesenler/parcalar/kart";
 import { OnayKutusu } from "../../../bilesenler/parcalar/onay-kutusu";
 import {
@@ -102,6 +103,7 @@ export function IadeTalebiFormu({ veri }: { veri: IadeTalebiVerisi }) {
   const [bekliyor, setBekliyor] = useState(false);
   const gonderiliyor = useRef(false);
   const ozet = useRef<HTMLDivElement>(null);
+  const odakla = useCizimdenSonraOdak();
   const tesekkur = useRef<HTMLDivElement>(null);
   const kimlikler = useRef<Partial<Record<Alan, string>>>({}).current;
   // Ürünlerin hatasında odak ilk seçilebilir kutuya gider.
@@ -123,8 +125,8 @@ export function IadeTalebiFormu({ veri }: { veri: IadeTalebiVerisi }) {
   const hatalariGoster = (yeni: Partial<Record<Alan, string>>, genelHata: Genel | null) => {
     setHatalar(yeni);
     setGenel(genelHata);
-    // Özet bir sonraki çizimde görünür; odak ona gider.
-    requestAnimationFrame(() => ozet.current?.focus());
+    // Özet hatalar çizildikten sonra görünür (boşken gizlidir); odak ona o zaman gider (kart 0307).
+    odakla(() => ozet.current);
   };
 
   const gonder = async (olay: FormEvent<HTMLFormElement>) => {

@@ -4,6 +4,7 @@
 // Kaldırınca odak sonraki seçilenin düğmesine, yoksa arama kutusuna geçer. Aynı kayıt ikinci kez eklenmez; sınır
 // doluysa arama kutusu yerine sınırın yazısı görünür. Hata ve odak ortak form yapısındadır (AlanKabi).
 import { useRef } from "react";
+import { useCizimdenSonraOdak } from "../../bilesenler/parcalar/cizimden-sonra-odak";
 import { IkonDugmesi } from "../../bilesenler/parcalar/dugme";
 import { doldur } from "../metinler/doldur";
 import { usePanelMetni } from "../metinler/panel-metni";
@@ -42,17 +43,19 @@ export function CokluKayitSecimi({
   const { hata } = usePanelFormuBaglami();
   const liste = useRef<HTMLUListElement>(null);
   const kap = useRef<HTMLDivElement>(null);
+  const odakla = useCizimdenSonraOdak();
   const dolu = sinir !== undefined && secilenler.length >= sinir;
 
   const kaldir = (sira: number) => {
     degisti(secilenler.filter((_, i) => i !== sira));
-    // Sonraki seçilenin düğmesi (kaldırılandan sonra aynı sırada), yoksa öncekininki, yoksa arama kutusu.
-    requestAnimationFrame(() => {
+    // Sonraki seçilenin düğmesi (kaldırılandan sonra aynı sırada), yoksa öncekininki, yoksa arama kutusu. Düğmeler
+    // kaldırılan çizildikten sonra sayılır (kart 0307): önce sayılırsa kaldırılanın kendi düğmesi seçilebiliyordu.
+    odakla(() => {
       const dugmeler = liste.current?.querySelectorAll("button");
-      const hedef =
+      return (
         dugmeler?.[Math.min(sira, (dugmeler?.length ?? 0) - 1)] ??
-        kap.current?.querySelector<HTMLElement>("input[role=combobox]");
-      hedef?.focus();
+        kap.current?.querySelector<HTMLElement>("input[role=combobox]")
+      );
     });
   };
 

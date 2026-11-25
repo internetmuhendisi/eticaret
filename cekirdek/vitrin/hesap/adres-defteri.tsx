@@ -8,6 +8,7 @@ import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { bildirimGoster } from "../../../bilesenler/parcalar/bildirim";
 import { BosHal } from "../../../bilesenler/parcalar/bos-hal";
+import { useCizimdenSonraOdak } from "../../../bilesenler/parcalar/cizimden-sonra-odak";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { Kart } from "../../../bilesenler/parcalar/kart";
 import { OnayKutusu } from "../../../bilesenler/parcalar/onay-kutusu";
@@ -311,6 +312,8 @@ export function AdresDefteri({ veri }: { veri: AdresDefteriVerisi }) {
   const [silinecek, setSilinecek] = useState<KayitliAdres | null>(null);
   // Pencere kapanınca odağın gideceği öğe: açan öğe kalktıysa (sınıra ulaşınca "Yeni adres ekle") bu verilir.
   const kapanisOdagi = useRef<string | null>(null);
+  // Odak, adresler yeniden çizildikten sonra verilir (kart 0307).
+  const odakla = useCizimdenSonraOdak();
 
   const adlar = ulkeVerisindenAdlar(veri.ulkeler);
   const satir = (adres: KayitliAdres) => adresSatiri(adres.teslimat.adres, adlar);
@@ -329,7 +332,7 @@ export function AdresDefteri({ veri }: { veri: AdresDefteriVerisi }) {
         );
         // "Varsayılan yap" düğmesi kalktı, kart başa taşındı: odak kartın "Düzenle"sine geçer (bağımsız kontrolün
         // bulgusu).
-        requestAnimationFrame(() => document.getElementById(duzenleKimligi(adres))?.focus());
+        odakla(() => document.getElementById(duzenleKimligi(adres)));
         return;
       }
       bildirimGoster("tehlike", metin(genelHataMetinleri[genelHataSec(cevap.durum, cevap.zarf)]));
@@ -346,7 +349,7 @@ export function AdresDefteri({ veri }: { veri: AdresDefteriVerisi }) {
         setAdresler(cevap.adresler);
         bildirimGoster("basari", metin("vitrin.hesap.adresler.silindi"));
         // Silinen kartın düğmesi kalktı: odak "Yeni adres ekle"ye geçer (boş hâlde onun düğmesine).
-        requestAnimationFrame(() => document.getElementById(ekleKimligi)?.focus());
+        odakla(() => document.getElementById(ekleKimligi));
         return;
       }
       bildirimGoster("tehlike", metin(genelHataMetinleri[genelHataSec(cevap.durum, cevap.zarf)]));

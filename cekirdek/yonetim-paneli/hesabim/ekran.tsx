@@ -4,6 +4,7 @@
 // yalnız bu ekranda bir kez gösterilir (sunucuda yalnız özetleri durur).
 import { useRef, useState } from "react";
 import { GonderDugmesi } from "../../../bilesenler/form/form";
+import { useCizimdenSonraOdak } from "../../../bilesenler/parcalar/cizimden-sonra-odak";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { Kart } from "../../../bilesenler/parcalar/kart";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
@@ -43,6 +44,7 @@ export function HesabimEkrani({
   const [yeniKodlar, setYeniKodlar] = useState<string[] | null>(null);
   const pf = usePanelFormu({ degisti: false });
   const kodlarBasligi = useRef<HTMLHeadingElement>(null);
+  const odakla = useCizimdenSonraOdak();
 
   const yenile = async () => {
     if (!/^\d{6}$/.test(kod.trim())) {
@@ -62,8 +64,8 @@ export function HesabimEkrani({
     if (sonuc.tamam) {
       pf.temizle();
       setYeniKodlar(sonuc.veri.yedekKodlari);
-      // Kodlar çizildikten sonra odak başlıklarına geçer: ekran okuyucu yeni kodları hemen okur.
-      requestAnimationFrame(() => kodlarBasligi.current?.focus());
+      // Kodlar çizildikten sonra odak başlıklarına geçer: ekran okuyucu yeni kodları hemen okur (kart 0307).
+      odakla(() => kodlarBasligi.current);
       return;
     }
     pf.hatalariGoster(

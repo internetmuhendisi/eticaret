@@ -29,6 +29,18 @@ Ekran (`cekirdek/yonetim-paneli/hesabim/ekran.tsx`) başarıda önce `router.ref
 - Sırayı kuran test düzeltmeyle yeşil, düzeltme geri alınınca kırmızı.
 - Aynı kalıbın öteki yerleri incelendi, sonucu kartta.
 
+## Sonuç
+
+- Sebep (2026-11-25, ölçüldü): odak bir sonraki karede veriliyordu; kare çizimden önce gelince başlık henüz yoktu. jsdom'da kare hemen çalıştırılarak sıra kuruldu, eski Hesabım kodu odağı gövdede bıraktı (hattaki düşüşle aynı sonuç). Hattaki anda kare neden önce geldiği (sayfanın yenilenmesinin 536 ms derlenmesi, yük) ayrıca ölçülmedi.
+- Düzeltme: `useCizimdenSonraOdak` (`bilesenler/parcalar/cizimden-sonra-odak.ts`, karar 0182): odak isteyen güncellemenin çizimi bitince, gerekirse bir koşul (`hazir`) sağlanınca verilir.
+- Aynı kalıbın öteki yerleri (kullanıcı kararıyla hepsi bu kartta düzeldi):
+  - Adres defteri: son adres silinince odak boş hâlin düğmesine gitmiyordu (eski kodda kırmızı); "Varsayılan yap"ta React başa çıkan kartı taşımadığı için eski kod da yeşildi, aynı kancaya alındı.
+  - İade talebi formu: özet boşken gizlidir (`empty:hidden`), kare erken gelirse tarayıcı gizli öğeye odak vermezdi; jsdom CSS uygulamadığı için eski kodun kırmızısı gösterilemedi, düzeltmeyle tarayıcı testi yeşil.
+  - Biçimli metin alanı: odak efektin içinden, çizimden sonra veriliyor; sorun yok, değişmedi (taramada muaf).
+  - Kartta yazılı olmayan iki yer daha bulundu: çoklu kayıt seçimi (kaldırılanın kendi düğmesine odak, eski kodda kırmızı) ve sepet (satır sunucunun cevabıyla kalktığı için odak her çıkarmada kayboluyordu, yüksüz makinede tarayıcıda kırmızı; yükten bağımsız). İkisi de kancaya alındı.
+- Koruma: olay işleyicisinde `requestAnimationFrame` ile odak taramayla yakalanır (`cizimden-sonra-odak.test.tsx`). Kancanın üç bozması ve Hesabım'a eski kalıbın geri konması kırmızıya düştü.
+- Tarayıcı: Ekip, Hesabım, iade talebi, sepet ve ürün ekranı testleri hattın koşulunda (temiz veritabanı, iki işlemci, iki işçi) 21/21.
+
 ## Durum
 
 yapılacak

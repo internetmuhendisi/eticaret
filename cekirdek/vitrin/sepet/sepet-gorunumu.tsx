@@ -17,6 +17,7 @@ import { AdetSecici } from "../../../bilesenler/parcalar/adet-secici";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
 import { bildirimGoster } from "../../../bilesenler/parcalar/bildirim";
 import { BosHal } from "../../../bilesenler/parcalar/bos-hal";
+import { useCizimdenSonraOdak } from "../../../bilesenler/parcalar/cizimden-sonra-odak";
 import { Dugme, IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
 import { IskeletGorunum } from "../../../bilesenler/parcalar/iskelet";
 import { sinif } from "../../../bilesenler/parcalar/sinif";
@@ -250,16 +251,24 @@ function PencereSatiri({ satir }: { satir: SepetGorunumuSatiri }) {
 function SepetSatirlari({ gorunum }: { gorunum: SepetGorunumu }) {
   const metin = useMetin();
   const liste = useRef<HTMLUListElement>(null);
-  // Çıkarılan satırdan sonra odak bir sonraki satırın çıkar düğmesine, son satırsa bir öncekine geçer.
+  const odakIste = useCizimdenSonraOdak();
+  // Çıkarılan satırdan sonra odak bir sonraki satırın çıkar düğmesine, son satırsa bir öncekine geçer. Satır sunucunun
+  // yeni sepet cevabıyla kalkar: odak satır listeden kalkınca verilir (kart 0307; eskiden bir sonraki karede, satır
+  // henüz dururken kendi düğmesine veriliyor ve satırla birlikte kayboluyordu).
   const odakla = (birim: string) => () => {
-    const dugmeler = [
-      ...(liste.current?.querySelectorAll<HTMLElement>("[data-sepet-cikar]") ?? []),
-    ];
     const sira = gorunum.satirlar.findIndex((satir) => satir.birim === birim);
-    requestAnimationFrame(() => {
-      const kalan = [...(liste.current?.querySelectorAll<HTMLElement>("[data-sepet-cikar]") ?? [])];
-      (kalan[sira] ?? kalan[sira - 1] ?? dugmeler[0])?.focus();
-    });
+    const satirlar = () => [
+      ...(liste.current?.querySelectorAll<HTMLElement>("[data-slot=sepet-satiri]") ?? []),
+    ];
+    odakIste(
+      () => {
+        const kalan = [
+          ...(liste.current?.querySelectorAll<HTMLElement>("[data-sepet-cikar]") ?? []),
+        ];
+        return kalan[sira] ?? kalan[sira - 1];
+      },
+      () => satirlar().every((satir) => satir.dataset["birim"] !== birim),
+    );
   };
   return (
     <ul ref={liste} aria-label={metin("vitrin.sepet.satirlar")} className="border-t border-kenar">

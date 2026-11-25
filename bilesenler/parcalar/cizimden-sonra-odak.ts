@@ -1,0 +1,31 @@
+"use client";
+// Durum değişikliğiyle çizilecek, kalkacak ya da yeri değişecek öğeye odak (kart 0307). Odak isteği, onu doğuran
+// durum güncellemesiyle aynı çizime girer ve çizim bittikten sonra (React efektinde) verilir: öğe o anda vardır ve
+// son yerindedir. Ekran sunucunun cevabıyla değişiyorsa (sepetten çıkan satır) `hazir` verilir: istek, koşul
+// sağlanana kadar her çizimden sonra bekler; yeni istek eskisinin yerini alır.
+//
+// Eskiden odak `requestAnimationFrame` ile bir sonraki karede veriliyordu. Kare çizimden önce gelirse (yüklü
+// makinede, sayfa yenilenirken) öğe henüz yoktu, gizliydi ya da kalkmak üzereydi; odak hiç verilmiyor ya da
+// kaybolan öğede kalıyordu (hat 45567962785, Hesabım'ın yeni yedek kodları).
+//
+// Kullanım: durumu yazan işlevin içinde, durumu yazdıktan hemen sonra `odakla(() => ref.current)`.
+import { useCallback, useEffect, useRef, useState } from "react";
+
+type Hedef = () => HTMLElement | null | undefined;
+type Istek = { hedef: Hedef; hazir: (() => boolean) | undefined };
+
+export const useCizimdenSonraOdak = (): ((hedef: Hedef, hazir?: () => boolean) => void) => {
+  const bekleyen = useRef<Istek | null>(null);
+  const [, setIstek] = useState(0);
+  // Bağımlılıksız: her çizimden sonra bekleyen istek denenir.
+  useEffect(() => {
+    const istek = bekleyen.current;
+    if (istek === null || (istek.hazir !== undefined && !istek.hazir())) return;
+    bekleyen.current = null;
+    istek.hedef()?.focus();
+  });
+  return useCallback((hedef: Hedef, hazir?: () => boolean) => {
+    bekleyen.current = { hedef, hazir };
+    setIstek((sayi) => sayi + 1);
+  }, []);
+};

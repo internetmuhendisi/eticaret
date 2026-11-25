@@ -250,8 +250,18 @@ test("sepet sayfası: stok düzeltmesi, klavyeyle adet, çıkarma ve geri alma, 
   await page.getByRole("button", { name: metin("vitrin.sepet.geriAl") }).click();
   await expect(satirlar).toHaveCount(2);
   await expect(satirlar.nth(1)).toContainText(urun(1).ad);
+  // Klavyeyle çıkarınca odak kalan satırın "Çıkar"ına geçer (kart 0307): satır sunucunun cevabıyla kalkar, odak ondan
+  // sonra verilir.
+  const cikarDugmesi = (sira: number) =>
+    page.getByRole("button", {
+      name: doldur(metin("vitrin.sepet.cikar"), { urun: urun(sira).ad }),
+    });
+  await cikarDugmesi(0).focus();
+  await page.keyboard.press("Enter");
+  await expect(satirlar).toHaveCount(1);
+  await expect(cikarDugmesi(1)).toBeFocused();
   // Hepsi çıkınca boş hâl.
-  for (const ad of [urun(0).ad, urun(1).ad]) {
+  for (const ad of [urun(1).ad]) {
     await page
       .getByRole("button", { name: doldur(metin("vitrin.sepet.cikar"), { urun: ad }) })
       .click();
