@@ -70,7 +70,7 @@ afterEach(async () => {
 
 const kim = (): DegisikligiYapan => ({ tur: "yonetici", kimlik: randomUUID() });
 
-const hazirla = async (s: Site = site) => {
+const hazirla = async (s: Site = site, secenek: { vergisiz?: boolean } = {}) => {
   const deneme = await denemeSitesiAc("adres-duzeltme");
   temizlenecekler.push(deneme.sil);
   const vt = deneme.vt;
@@ -81,7 +81,7 @@ const hazirla = async (s: Site = site) => {
   const urunSrv = urunServisi(() => s.ayarlar.saatDilimi);
   const urun = await urunSrv.urunEkle(vt, kim(), {
     ad: `Ürün ${randomUUID().slice(0, 8)}`,
-    vergiSinifi: genel,
+    vergiSinifi: secenek.vergisiz ? null : genel,
     durum: "yayinda",
     stokTakibi: true,
   });
@@ -455,6 +455,64 @@ describe("düzeltme", () => {
     ).toBe(false);
     expect((await satiri(vt, numara)).teslimat).toEqual(satir.teslimat);
   });
+
+  it("teslimata dokunulmazsa sonradan açılan telefon zorunluluğu yalnız faturanın düzeltmesini engellemez", async () => {
+    const telefonsuz = siteKur({ telefonZorunlu: false });
+    const { vt, birim } = await hazirla(telefonsuz);
+    const telefonsuzServis = siparisAdresServisi(telefonsuz);
+    const sonuc = await odemeServisi(telefonsuz).siparisVer(
+      vt,
+      {
+        kim: { tur: "misafir", eposta: "musteri@ornek.test", hesap: { ac: false } },
+        bilgiler: odemeBilgileriSemasi.parse({
+          odemeYontemi: kapida,
+          teslimat: teslimatGirdisi(ankara, { telefon: "" }),
+          fatura: { tur: "bireysel", adresAyni: true },
+          onBilgilendirmeOnayi: true,
+          mesafeliSatisOnayi: true,
+          pazarlamaIzni: false,
+        }),
+        kalemler: [{ birim, adet: 1 }],
+      },
+      3600,
+    );
+    const numara = sonuc.siparis.numara;
+    const teslimat = (await satiri(vt, numara)).teslimat;
+    expect(teslimat.telefon).toBeUndefined();
+    await siteninServisi(telefonsuz).degistir(
+      vt,
+      { tur: "sistem", ad: "deneme" },
+      { telefonZorunlu: true },
+    );
+    const kurumsal = {
+      tur: "kurumsal",
+      firma: "Deneme Ticaret",
+      vergiDairesi: "Çankaya",
+      vergiNumarasi: "4540536920",
+      adresAyni: true,
+    };
+    await telefonsuzServis.duzelt(
+      vt,
+      kim(),
+      await girdi(vt, numara, { teslimat, fatura: kurumsal }),
+    );
+    expect((await satiri(vt, numara)).fatura.tur).toBe("kurumsal");
+    // Teslimat değişince bugünkü kural uygulanır.
+    expect(
+      (
+        await hatasi(
+          telefonsuzServis.duzelt(
+            vt,
+            kim(),
+            await girdi(vt, numara, {
+              teslimat: { ...teslimat, ad: "Ayşe" },
+              fatura: kurumsal,
+            }),
+          ),
+        )
+      ).ayrinti,
+    ).toEqual([{ alan: "teslimat.telefon", kod: "telefon-gerekli" }]);
+  });
 });
 
 describe("vergi bölgesi", () => {
@@ -481,7 +539,7 @@ describe("vergi bölgesi", () => {
       ),
     ).toEqual({
       kod: "is-kurali",
-      ayrinti: [{ alan: "teslimat.adres", kod: "vergi-bolgesi-degisir" }],
+      ayrinti: [{ alan: "teslimat.adres.il", kod: "vergi-bolgesi-degisir" }],
     });
     expect((await satiri(vt, numara)).teslimat).toEqual(once.teslimat);
     // İstanbul'un başka posta kodu: ek oran yok, oranlar aynı.
@@ -491,6 +549,30 @@ describe("vergi bölgesi", () => {
       await girdi(vt, numara, { teslimat: teslimatGirdisi(istanbul) }),
     );
     expect((await satiri(vt, numara)).teslimat.adres.il).toBe("TR-34");
+    // Yalnız posta kodu bölgeyi değiştirirse hata posta koduna bağlanır.
+    expect(
+      (
+        await hatasi(
+          servis.duzelt(
+            vt,
+            kim(),
+            await girdi(vt, numara, { teslimat: teslimatGirdisi(istanbul34000) }),
+          ),
+        )
+      ).ayrinti,
+    ).toEqual([{ alan: "teslimat.adres.postaKodu", kod: "vergi-bolgesi-degisir" }]);
+  });
+
+  it("vergilenmiş kalemi olmayan siparişte bölge önemsizdir", async () => {
+    const { vt, birim } = await hazirla(site, { vergisiz: true });
+    const numara = await ver(vt, birim);
+    expect((await satiri(vt, numara)).vergi_dokumu).toEqual([]);
+    await servis.duzelt(
+      vt,
+      kim(),
+      await girdi(vt, numara, { teslimat: teslimatGirdisi(istanbul34000) }),
+    );
+    expect((await satiri(vt, numara)).teslimat.adres.postaKodu).toBe("34000");
   });
 
   it("vergi adresi faturaysa faturanın adresi belirler; teslimat serbest", async () => {
@@ -524,7 +606,7 @@ describe("vergi bölgesi", () => {
       ),
     ).toEqual({
       kod: "is-kurali",
-      ayrinti: [{ alan: "fatura.adres", kod: "vergi-bolgesi-degisir" }],
+      ayrinti: [{ alan: "fatura.adres.il", kod: "vergi-bolgesi-degisir" }],
     });
     // "Teslimat adresiyle aynı"ya çevrilince de fatura bölgesi teslimatınki (34000) olur: reddedilir.
     expect(
@@ -540,7 +622,7 @@ describe("vergi bölgesi", () => {
           ),
         )
       ).ayrinti,
-    ).toEqual([{ alan: "teslimat.adres", kod: "vergi-bolgesi-degisir" }]);
+    ).toEqual([{ alan: "teslimat.adres.il", kod: "vergi-bolgesi-degisir" }]);
   });
 
   it("vergi kapalı verilmiş siparişte bölge önemsizdir", async () => {
@@ -569,6 +651,10 @@ describe("kişisel veri", () => {
       await girdi(vt, numara, { teslimat: teslimatGirdisi(ankara, { soyad: "Kaya" }) }),
     );
     const satir = await satiri(vt, numara);
+    // Pencere temizlikten önce açıldı: gördüğü hâl eskidir, yine de nedeni kişisel verinin silinmesidir.
+    const eskiGirdi = await girdi(vt, numara, {
+      teslimat: teslimatGirdisi(ankara, { soyad: "Ak" }),
+    });
     await vt
       .update(siparisler)
       .set({ olusturma_zamani: new Date(Date.now() - 20 * 365 * 24 * 3600 * 1000) })
@@ -590,5 +676,9 @@ describe("kişisel veri", () => {
         ),
       ),
     ).toEqual({ kod: "is-kurali", ayrinti: [{ alan: "siparis", kod: "kisisel-veri-silindi" }] });
+    expect(await hatasi(servis.duzelt(vt, kim(), eskiGirdi))).toEqual({
+      kod: "is-kurali",
+      ayrinti: [{ alan: "siparis", kod: "kisisel-veri-silindi" }],
+    });
   });
 });

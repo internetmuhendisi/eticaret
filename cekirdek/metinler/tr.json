@@ -1520,15 +1520,15 @@
         "bilgi": "Sipariş kargoya verilene kadar teslimat ve fatura bilgileri düzeltilebilir.",
         "teslimat": "Teslimat",
         "fatura": "Fatura",
-        "eposta": "Müşteriye \"Teslimat bilgileriniz güncellendi\" e-postası gönder",
-        "ipucu": "Önceki ve yeni bilgiler siparişin geçmişine yazılır. Vergi adresin bölgesine bağlıysa ve düzeltme vergiyi değiştirecekse düzeltme yapılmaz; siparişi iptal edip yenisini girin.",
+        "eposta": "Müşteriye \"Sipariş bilgileriniz güncellendi\" e-postası gönder",
+        "ipucu": "Değişen önceki bilgiler siparişin geçmişinde görünür. Vergi adresin bölgesine bağlıysa ve düzeltme vergiyi değiştirecekse düzeltme yapılmaz; siparişi iptal edip yenisini girin.",
         "kaydet": "Bilgileri kaydet",
         "basari": "Teslimat ve fatura bilgileri düzeltildi.",
         "oncekiTeslimat": "Önceki teslimat: {bilgi}",
         "oncekiFatura": "Önceki fatura: {bilgi}",
         "hata": {
           "cakisma": "Sipariş siz düzenlerken değişti. Pencereyi kapatıp yeniden açın ve bilgileri yeniden düzeltin.",
-          "duzeltilemez": "Sipariş kargoya verildiği için bilgileri artık düzeltilemez.",
+          "duzeltilemez": "Sipariş kargoya verildiği ya da kapandığı için bilgileri artık düzeltilemez.",
           "kisiselVeri": "Bu siparişin kişisel bilgileri silindiği için bilgileri düzeltilemez.",
           "vergiBolgesi": "Bu adres siparişin vergisini değiştirir. Siparişi iptal edip yenisini girin."
         },
@@ -4033,9 +4033,9 @@
       "baglanti": "Davete katıl"
     },
     "adresGuncellendi": {
-      "konu": "Teslimat bilgileriniz güncellendi: {numara}",
-      "baslik": "Teslimat bilgileriniz güncellendi",
-      "govde": "Merhaba {ad}, {numara} numaralı siparişinizin teslimat ve fatura bilgileri mağaza tarafından düzeltildi. Güncel teslimat adresi aşağıdadır.",
+      "konu": "Sipariş bilgileriniz güncellendi: {numara}",
+      "baslik": "Sipariş bilgileriniz güncellendi",
+      "govde": "Merhaba {ad}, {numara} numaralı siparişinizin teslimat ya da fatura bilgileri mağaza tarafından düzeltildi. Güncel teslimat adresi aşağıdadır.",
       "uyari": "Bu değişikliği siz istemediyseniz mağazayla iletişime geçin."
     }
   },

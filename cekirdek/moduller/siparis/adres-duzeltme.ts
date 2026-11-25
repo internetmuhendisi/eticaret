@@ -6,15 +6,15 @@
 //   ve bilgiler (surum, adresSurumu) bugünkünden farklıysa "cakisma", hiçbir şey yazılmaz.
 // - Kişisel bilgisi silinmiş siparişte düzeltme yoktur (is-kurali, kisisel-veri-silindi).
 // - Teslimat ödeme adımının kurallarıyla: şema (il ve ilçe tutarlı, telefon biçimi, vergi numarası) uçta, telefonun
-//   zorunluluğu ve teslimat ülkesi burada (teslimatKuraliHatasi).
+//   zorunluluğu ve teslimat ülkesi burada (teslimatKuraliHatasi), yalnız teslimat değişince.
 // - Vergi: düzeltme verginin bölgesini (vergiAdresi ayarının adresi; tabloda yoksa mağaza adresi) değiştiriyor ve
 //   sitenin oranları iki bölgede aynı değilse reddedilir (vergi-bolgesi-degisir): siparişin tutarı ve vergisi
-//   değişmez, yanlış siparişi iptal edip yenisini girmek gerekir. Vergi kapalı verilmiş siparişte (gosterim "yok")
-//   bölge önemsizdir. Oranlar sitenin bugünkü tablosundan okunur.
+//   değişmez, yanlış siparişi iptal edip yenisini girmek gerekir. Vergi kapalı verilmiş (gosterim "yok") ya da vergi
+//   dökümü boş siparişte bölge önemsizdir. Oranlar sitenin bugünkü tablosundan okunur.
 // - Aynı bilgiler yeniden yazılmaz; geçmişe, kayda ve e-postaya girmez.
 // - Geçmişe "adres-duzeltildi" (durum değişmez) yazılır; önceki ve yeni bilgiler siparis_adres_duzeltmeleri'ne (kişisel
 //   veri temizliği siler). Değişiklik kaydına yalnız değişen alanların adları ve il, ilçe kodları girer.
-// - Müşteriye "Teslimat bilgileriniz güncellendi" e-postası panelin kutusuyla (gecmiseYaz, satırın kimliğiyle).
+// - Müşteriye "Sipariş bilgileriniz güncellendi" e-postası panelin kutusuyla (gecmiseYaz, satırın kimliğiyle).
 import { createHash } from "node:crypto";
 import { eq } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
@@ -115,32 +115,40 @@ export const siparisAdresServisi = (site: Site) => {
           teslimat: siparisler.teslimat,
           fatura: siparisler.fatura,
           gosterim: siparisler.gosterim,
+          vergiDokumu: siparisler.vergi_dokumu,
           kisiselVeriSilinme: siparisler.kisisel_veri_silinme_zamani,
         })
         .from(siparisler)
         .where(eq(siparisler.numara, girdi.numara))
         .for("update");
       if (satir === undefined) throw new BilinenHata("bulunamadi");
-      if (adresSurumu(satir) !== girdi.surum) {
-        throw new BilinenHata("cakisma", [{ alan: "siparis", kod: "adres-degisti" }]);
-      }
+      // Kişisel bilgisi silinmiş sipariş önce söylenir: özet de değişmiştir, ama nedeni çakışma değildir.
       if (satir.kisiselVeriSilinme !== null) {
         throw new BilinenHata("is-kurali", [{ alan: "siparis", kod: "kisisel-veri-silindi" }]);
+      }
+      if (adresSurumu(satir) !== girdi.surum) {
+        throw new BilinenHata("cakisma", [{ alan: "siparis", kod: "adres-degisti" }]);
       }
       const durum = satir.durum as SiparisDurumu;
       if (!(adresDuzeltilebilirDurumlar as readonly string[]).includes(durum)) {
         throw new BilinenHata("is-kurali", [{ alan: "siparis", kod: "adres-duzeltilemez" }]);
       }
-      const kural = teslimatKuraliHatasi(site, ayarlar, girdi.teslimat);
-      if (kural !== undefined) {
-        throw new BilinenHata("dogrulama", [{ alan: `teslimat.${kural.alan}`, kod: kural.kod }]);
-      }
       const eski = { teslimat: satir.teslimat, fatura: satir.fatura };
       const yeni = { teslimat: girdi.teslimat, fatura: girdi.fatura };
       const alanlar = degisenAlanlar(eski, yeni);
       if (alanlar.length === 0) return { numara: satir.numara, degisti: false };
+      // Teslimatın sitenin bugünkü ayarına bağlı kuralları (telefon zorunluluğu, teslimat ülkesi) yalnız teslimat
+      // değişince: yalnız faturayı düzeltmek, sonradan açılan bir ayar yüzünden engellenmesin (bağımsız kontrolün
+      // bulgusu).
+      if (alanlar.some((alan) => alan.startsWith("teslimat."))) {
+        const kural = teslimatKuraliHatasi(site, ayarlar, girdi.teslimat);
+        if (kural !== undefined) {
+          throw new BilinenHata("dogrulama", [{ alan: `teslimat.${kural.alan}`, kod: kural.kod }]);
+        }
+      }
 
-      if (satir.gosterim !== "yok") {
+      // Vergi kapalı verilmiş ya da hiç vergilenmiş kalemi olmayan (döküm boş) siparişte bölge önemsizdir.
+      if (satir.gosterim !== "yok" && satir.vergiDokumu.length > 0) {
         const magaza = ayarlar.magazaAdresi;
         const adresler = (b: { teslimat: Teslimat; fatura: Fatura }) => ({
           teslimat: bolgesi(b.teslimat.adres),
@@ -158,11 +166,20 @@ export const siparisAdresServisi = (site: Site) => {
           adresler(yeni),
         );
         if (!bolgelerinOranlariAyniMi(tablo, eskiBolge, yeniBolge)) {
-          const alan =
+          const adres =
             ayarlar.vergiAdresi === "fatura" && !girdi.fatura.adresAyni
               ? "fatura.adres"
               : "teslimat.adres";
-          throw new BilinenHata("is-kurali", [{ alan, kod: "vergi-bolgesi-degisir" }]);
+          // Hata bölgeyi değiştiren alana bağlanır: ülke, il ya da posta kodu.
+          const alan =
+            eskiBolge?.ulke !== yeniBolge?.ulke
+              ? "ulke"
+              : eskiBolge?.il !== yeniBolge?.il
+                ? "il"
+                : "postaKodu";
+          throw new BilinenHata("is-kurali", [
+            { alan: `${adres}.${alan}`, kod: "vergi-bolgesi-degisir" },
+          ]);
         }
       }
 

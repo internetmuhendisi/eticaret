@@ -208,14 +208,14 @@ function AdresFormu({
       bitti();
       return;
     }
-    // Alanın hatası alanda (vergi bölgesi adresin il alanında), alanı olmayan hata özette.
+    // Alanın hatası alanda (vergi bölgesi değişen ülke, il ya da posta kodunda), alanı olmayan hata özette.
     const alanHatalari: HataHaritasi = {};
     for (const sorun of sonuc.ayrinti) {
       if (genelHatalar[sorun.kod] !== undefined || sorun.alan === "" || sorun.alan === "siparis") {
         continue;
       }
       if (sorun.kod === "vergi-bolgesi-degisir") {
-        alanHatalari[`${sorun.alan}.il`] = metin("yonetim.siparis.adres.hata.vergiBolgesi");
+        alanHatalari[sorun.alan] = metin("yonetim.siparis.adres.hata.vergiBolgesi");
         continue;
       }
       alanHatalari[sorun.alan] = hataMetni(metin, sorun.alan, sorun.kod, 0);

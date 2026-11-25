@@ -24,6 +24,12 @@ Bölüm: Yönetim paneli. Önce 0268 bitmiş olmalı.
 - Ekran görüntüsü taslakla yan yana kondu, farklar düzeltildi.
 - Bağımsız kontrol yapıldı.
 
+## Notlar
+
+- Kullanıcı kararıyla teslimat ve fatura bilgileri birlikte düzeltilir (kurumsal fatura dahil); kurallar karar 0180'de.
+- Değişiklik kaydı kişisel veri taşıyamadığı için (karar 0045) eski ve yeni adres kayda değil ayrı tabloya (`siparis_adres_duzeltmeleri`, temizlik siler) yazılır; kayda değişen alanların adları ve bölge kodları girer.
+- Taslaktaki "Önceki: …" ipucu açık adres değişince alanın altında görünür; önceki bilgiler ayrıca siparişin geçmişindedir.
+
 ## Durum
 
 yapılacak

@@ -3,7 +3,14 @@
 // Deneme oranları bilerek sitelerinkinden farklıdır (cekirdek/testler/vergi-degeri-yok.test.ts).
 import { describe, expect, it } from "vitest";
 import { BilinenHata } from "../../../kapi/zarf.ts";
-import { type HesapAyarlari, type HesapGirdisi, hesapla, type VergiBolgesi } from "../hesap.ts";
+import {
+  bolgelerinOranlariAyniMi,
+  type HesapAyarlari,
+  type HesapGirdisi,
+  hesapla,
+  type VergiBolgesi,
+  vergiBolgesiniSec,
+} from "../hesap.ts";
 import { yuzdedenOrana } from "../semalar.ts";
 import type { VergiOrani, VergiSinifi } from "../servis.ts";
 
@@ -470,5 +477,51 @@ describe("girdi ve sınırlar", () => {
       expect(sonuc.dokum.reduce((t, d) => t + d.vergi, 0)).toBe(toplamVergi);
       expect(sonuc.toplam.vergisiz + sonuc.toplam.vergi).toBe(sonuc.toplam.vergili);
     }
+  });
+});
+
+// Bölge seçimi ve iki bölgenin oranları (kart 0269): siparişin adres düzeltmesi hesabın seçimini kullanır.
+describe("vergi bölgesi seçimi ve oranların karşılaştırması", () => {
+  const illi = { ulke: "TR", il: "TR-34" };
+  const tablo = [
+    sinif("a", [oranSatiri("a", "18", tr), oranSatiri("a", "2", illi, { ad: "Ek" })]),
+    sinif("silinmis", [oranSatiri("silinmis", "5", { ulke: "XX" })], { silindi: true }),
+    sinif("kargo", [oranSatiri("kargo", "18", tr)], { kargo: true }),
+  ];
+  const ankara = { ulke: "TR", il: "TR-06" };
+  const magaza = { ulke: "TR", il: "TR-35" };
+
+  it("ayardaki adres tablodaysa o, değilse mağaza adresi, o da yoksa yok", () => {
+    expect(
+      vergiBolgesiniSec({ vergiAdresi: "teslimat" }, tablo, { teslimat: ankara, magaza }),
+    ).toEqual(["teslimat", ankara]);
+    expect(
+      vergiBolgesiniSec({ vergiAdresi: "fatura" }, tablo, { teslimat: ankara, fatura: illi }),
+    ).toEqual(["fatura", illi]);
+    // Tabloda olmayan ülke mağaza adresine düşer; yalnız silinmiş sınıfta geçen ülke tabloda sayılmaz.
+    expect(
+      vergiBolgesiniSec({ vergiAdresi: "teslimat" }, tablo, { teslimat: { ulke: "DE" }, magaza }),
+    ).toEqual(["magaza", magaza]);
+    expect(
+      vergiBolgesiniSec({ vergiAdresi: "teslimat" }, tablo, { teslimat: { ulke: "XX" }, magaza }),
+    ).toEqual(["magaza", magaza]);
+    expect(
+      vergiBolgesiniSec({ vergiAdresi: "teslimat" }, tablo, { teslimat: { ulke: "DE" } }),
+    ).toEqual(["yok", undefined]);
+  });
+
+  it("oranları aynı bölgeler eşit, ek oranlı ya da tabloda olmayan bölge farklı", () => {
+    expect(bolgelerinOranlariAyniMi(tablo, ankara, magaza)).toBe(true);
+    expect(bolgelerinOranlariAyniMi(tablo, ankara, illi)).toBe(false);
+    expect(bolgelerinOranlariAyniMi(tablo, ankara, undefined)).toBe(false);
+    expect(bolgelerinOranlariAyniMi(tablo, undefined, undefined)).toBe(true);
+    // Yalnız kargo sınıfının oranı farklıysa da farklıdır.
+    const kargoFarkli = [
+      ...tablo.slice(0, 2),
+      sinif("kargo", [oranSatiri("kargo", "18", tr), oranSatiri("kargo", "1", ankara)], {
+        kargo: true,
+      }),
+    ];
+    expect(bolgelerinOranlariAyniMi(kargoFarkli, ankara, magaza)).toBe(false);
   });
 });
