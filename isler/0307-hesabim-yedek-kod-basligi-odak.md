@@ -40,6 +40,7 @@ Ekran (`cekirdek/yonetim-paneli/hesabim/ekran.tsx`) başarıda önce `router.ref
   - Kartta yazılı olmayan iki yer daha bulundu: çoklu kayıt seçimi (kaldırılanın kendi düğmesine odak, eski kodda kırmızı) ve sepet (satır sunucunun cevabıyla kalktığı için odak her çıkarmada kayboluyordu, yüksüz makinede tarayıcıda kırmızı; yükten bağımsız). İkisi de kancaya alındı.
 - Koruma: olay işleyicisinde `requestAnimationFrame` ile odak taramayla yakalanır (`cizimden-sonra-odak.test.tsx`). Kancanın üç bozması ve Hesabım'a eski kalıbın geri konması kırmızıya düştü.
 - Tarayıcı: Ekip, Hesabım, iade talebi, sepet ve ürün ekranı testleri hattın koşulunda (temiz veritabanı, iki işlemci, iki işçi) 21/21.
+- Bağımsız kontrolün bulgularıyla: sepette cevap gelmeden müşteri odağı başka yere taşıdıysa geciken odak onu geri çekiyordu, beklenen istek artık odak başka öğedeyse bırakılır; taramaya `setTimeout` ve `queueMicrotask` eklendi; kancanın sayacını ölçen test eklendi (üçü bozularak kırmızıya düştü). Ekibe davetteki `setTimeout(…, 0)` aynı sebep değildir (Radix'in odak dönüşünden sonra gelmesi gerekir, pencereyi kapatan yollar tıklamanın içindedir), gerekçesiyle muaf. "Varsayılan yap" ve iade formu için eski kodu kırmızıya düşüren test yoktur (yukarıda). Geçişle yazılan durum, "Geri al" sonrası bekleyen istek ve hızlı art arda çıkarma karar 0182'de bilinen sınır.
 
 ## Durum
 
