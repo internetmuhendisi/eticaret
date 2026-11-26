@@ -23,7 +23,7 @@ import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
 import { girisAdresi } from "../adresler.ts";
 import { panelOturumu } from "../panel-oturumu.ts";
-import { panelSayfaBilgisi, panelSayfasiniAc } from "../panel-sayfasi.tsx";
+import { PanelSayfasi, panelSayfaBilgisi, panelSayfasiniAc } from "../panel-sayfasi.tsx";
 import { menuyuKur, type PanelSayfaKodu, type PanelSayfaTanimi } from "../sayfa-agaci.ts";
 import { denemeAgaci } from "./deneme-agaci.ts";
 
@@ -271,5 +271,60 @@ describe("menüdeki sayı (kart 0277)", () => {
     const html = await ciz();
     expect(html).not.toContain(metin("yonetim.sayfa.yorumlar.ad"));
     expect(html).not.toContain(yazi);
+  });
+});
+
+// Kart 0301: taslağın "Ayarlar" grubu gerçek düzende, rol başına; sayfa yolunda grubun adı bağlantısız.
+describe("Ayarlar grubu (kart 0301)", () => {
+  const icerik = "icerik";
+  const ciz = async (dugum: Promise<unknown>) =>
+    renderToString(<MetinSaglayici dil="tr">{(await dugum) as ReactElement}</MetinSaglayici>);
+  const sirali = (html: string, adlar: string[]) => {
+    const yerler = adlar.map((ad) => html.indexOf(`>${ad}<`));
+    expect(yerler.every((yer) => yer >= 0)).toBe(true);
+    expect([...yerler].sort((a, b) => a - b)).toEqual(yerler);
+  };
+  const sayfa = (kod: string) => metin(`yonetim.sayfa.${kod}.ad` as Parameters<typeof metin>[0]);
+
+  it("mağaza sahibinde ayar ekranları Ayarlar başlığının altında, siparişlerden sonra; görevlide yalnız izinlileri", async () => {
+    await yoneticiyleGir("magaza-sahibi");
+    const sahip = await ciz(PanelDuzeni({ children: <p>{icerik}</p> }));
+    sirali(sahip, [
+      metin("yonetim.grup.satis"),
+      sayfa("siparisler"),
+      sayfa("musteriler"),
+      metin("yonetim.grup.ayarlar"),
+      sayfa("magazaBilgileri"),
+      sayfa("siparisAyarlari"),
+      sayfa("odemeYontemleri"),
+      sayfa("bankaHesaplari"),
+      sayfa("kargo"),
+      sayfa("ekip"),
+    ]);
+    // Görevli ödeme yöntemlerini görür (odeme-yontemi.gor), mağaza ayarlarını görmez.
+    await yoneticiyleGir("gorevli");
+    const gorevli = await ciz(PanelDuzeni({ children: <p>{icerik}</p> }));
+    sirali(gorevli, [
+      metin("yonetim.grup.ayarlar"),
+      sayfa("odemeYontemleri"),
+      sayfa("bankaHesaplari"),
+    ]);
+    expect(gorevli).not.toContain(`>${sayfa("magazaBilgileri")}<`);
+    expect(gorevli).not.toContain(`>${sayfa("kargo")}<`);
+  });
+
+  it("sayfa yolu: Karşılama bağlantı, grubun adı bağlantısız, sayfanın adı geçerli sayfa", async () => {
+    await yoneticiyleGir("magaza-sahibi");
+    const html = await ciz(PanelSayfasi({ kod: "magaza-bilgileri" }));
+    const yol = html.slice(html.indexOf("<nav"), html.indexOf("</nav>"));
+    expect(yol).toMatch(new RegExp(`<a [^>]*href="/yonetim"[^>]*>${sayfa("karsilama")}</a>`));
+    expect(yol).toContain(
+      `<span class="inline-flex min-h-8 items-center">${metin("yonetim.grup.ayarlar")}</span>`,
+    );
+    expect(yol).not.toMatch(new RegExp(`<a [^>]*>${metin("yonetim.grup.ayarlar")}</a>`));
+    expect(yol).toContain(`aria-current="page"`);
+    expect(yol.indexOf(metin("yonetim.grup.ayarlar"))).toBeLessThan(
+      yol.indexOf(sayfa("magazaBilgileri")),
+    );
   });
 });

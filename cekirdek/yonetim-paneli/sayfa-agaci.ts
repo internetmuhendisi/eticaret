@@ -28,7 +28,7 @@ export const panelGruplari = {
   vitrin: "yonetim.grup.vitrin",
   // Kart 0272: blog; kart 0273: sabit sayfalar.
   icerik: "yonetim.grup.icerik",
-  // Kart 0274: ekip ve kendi hesabı. Ayarların öteki ekranları bu gruba kart 0301'de taşınır.
+  // Kart 0274: ekip ve kendi hesabı; kart 0301: mağaza bilgileri, sipariş ayarları, ödeme, kargo.
   ayarlar: "yonetim.grup.ayarlar",
 } as const satisfies Record<string, MetinAnahtari>;
 export type PanelGrubu = keyof typeof panelGruplari;
@@ -134,56 +134,6 @@ export const panelSayfalari = [
     izin: "musteri.gor",
     grup: "satis",
     ust: "musteriler",
-  },
-  // Sipariş ayarları (kart 0234): kargo firmaları; mağaza ayarıdır, yalnız mağaza sahibinin izinleriyle.
-  {
-    kod: "siparis-ayarlari",
-    adres: `${panelAdresi}/siparis-ayarlari`,
-    ad: "yonetim.sayfa.siparisAyarlari.ad",
-    aciklama: "yonetim.sayfa.siparisAyarlari.aciklama",
-    ikon: "duzenle",
-    izin: "magaza-ayarlari.gor",
-    grup: "satis",
-  },
-  // Ödeme yöntemleri ve banka hesapları (kart 0214, karar 0141): görevli görür, yalnız mağaza sahibi değiştirir.
-  {
-    kod: "odeme-yontemleri",
-    adres: `${panelAdresi}/odeme-yontemleri`,
-    ad: "yonetim.sayfa.odemeYontemleri.ad",
-    aciklama: "yonetim.sayfa.odemeYontemleri.aciklama",
-    ikon: "kart",
-    izin: "odeme-yontemi.gor",
-    grup: "satis",
-  },
-  {
-    kod: "banka-hesaplari",
-    adres: `${panelAdresi}/banka-hesaplari`,
-    ad: "yonetim.sayfa.bankaHesaplari.ad",
-    aciklama: "yonetim.sayfa.bankaHesaplari.aciklama",
-    ikon: "havale",
-    izin: "odeme-yontemi.gor",
-    grup: "satis",
-  },
-  // Kargo ayarları (kart 0212, karar 0135): mağaza ayarlarıdır, yalnız mağaza sahibinin izinleriyle.
-  {
-    kod: "kargo",
-    adres: `${panelAdresi}/kargo`,
-    ad: "yonetim.sayfa.kargo.ad",
-    aciklama: "yonetim.sayfa.kargo.aciklama",
-    ikon: "kargo",
-    izin: "magaza-ayarlari.gor",
-    grup: "satis",
-  },
-  // Mağaza bilgileri (kart 0278, karar 0175): mağaza adı, iletişim, adres, sosyal hesaplar ve satıcı bilgileri. Mağaza
-  // ayarlarıdır, yalnız mağaza sahibinin izinleriyle. Taslağın "Ayarlar" grubu kart 0301'de.
-  {
-    kod: "magaza-bilgileri",
-    adres: magazaBilgileriAdresi,
-    ad: "yonetim.sayfa.magazaBilgileri.ad",
-    aciklama: "yonetim.sayfa.magazaBilgileri.aciklama",
-    ikon: "magaza",
-    izin: "magaza-ayarlari.gor",
-    grup: "satis",
   },
   // Slider kısayolu (kart 0142, karar 0101): ana sayfadaki ilk kayan afişin formu. Kayıtta düzeni değiştirir.
   {
@@ -392,6 +342,58 @@ export const panelSayfalari = [
     grup: "icerik",
     ust: "sayfalar",
   },
+  // Ayarlar (kart 0301, taslak karar 0157): mağaza bilgileri, sipariş ayarları, ödeme yöntemleri ve banka hesapları,
+  // kargo, ekip ve yöneticinin kendi hesabı; sıra taslağınkidir, banka hesapları ödeme yöntemlerinin yanında.
+  // Mağaza bilgileri (kart 0278, karar 0175): mağaza adı, iletişim, adres, sosyal hesaplar ve satıcı bilgileri. Mağaza
+  // ayarlarıdır, yalnız mağaza sahibinin izinleriyle.
+  {
+    kod: "magaza-bilgileri",
+    adres: magazaBilgileriAdresi,
+    ad: "yonetim.sayfa.magazaBilgileri.ad",
+    aciklama: "yonetim.sayfa.magazaBilgileri.aciklama",
+    ikon: "magaza",
+    izin: "magaza-ayarlari.gor",
+    grup: "ayarlar",
+  },
+  // Sipariş ayarları (kart 0234): kargo firmaları; mağaza ayarıdır, yalnız mağaza sahibinin izinleriyle.
+  {
+    kod: "siparis-ayarlari",
+    adres: `${panelAdresi}/siparis-ayarlari`,
+    ad: "yonetim.sayfa.siparisAyarlari.ad",
+    aciklama: "yonetim.sayfa.siparisAyarlari.aciklama",
+    ikon: "duzenle",
+    izin: "magaza-ayarlari.gor",
+    grup: "ayarlar",
+  },
+  // Ödeme yöntemleri ve banka hesapları (kart 0214, karar 0141): görevli görür, yalnız mağaza sahibi değiştirir.
+  {
+    kod: "odeme-yontemleri",
+    adres: `${panelAdresi}/odeme-yontemleri`,
+    ad: "yonetim.sayfa.odemeYontemleri.ad",
+    aciklama: "yonetim.sayfa.odemeYontemleri.aciklama",
+    ikon: "kart",
+    izin: "odeme-yontemi.gor",
+    grup: "ayarlar",
+  },
+  {
+    kod: "banka-hesaplari",
+    adres: `${panelAdresi}/banka-hesaplari`,
+    ad: "yonetim.sayfa.bankaHesaplari.ad",
+    aciklama: "yonetim.sayfa.bankaHesaplari.aciklama",
+    ikon: "havale",
+    izin: "odeme-yontemi.gor",
+    grup: "ayarlar",
+  },
+  // Kargo ayarları (kart 0212, karar 0135): mağaza ayarlarıdır, yalnız mağaza sahibinin izinleriyle.
+  {
+    kod: "kargo",
+    adres: `${panelAdresi}/kargo`,
+    ad: "yonetim.sayfa.kargo.ad",
+    aciklama: "yonetim.sayfa.kargo.aciklama",
+    ikon: "kargo",
+    izin: "magaza-ayarlari.gor",
+    grup: "ayarlar",
+  },
   // Ekip (kart 0274, karar 0178): kullanıcılar, roller (yalnız okunur) ve kullanıcının ayrıntısı (?kimlik=); yöneticinin
   // kendi hesabı (yedek kodlar, kart 0053).
   {
@@ -503,4 +505,18 @@ export const sayfaYolunuKur = (
   }
   if (kok !== undefined && yol[0] !== kok) yol.unshift(kok);
   return yol;
+};
+
+// Sayfa yolunun adımları (kart 0301, taslak karar 0157): kök, sayfanın menüdeki grubu, üst sayfalar, sayfanın kendisi.
+// Grubun kendi sayfası yoktur, adımı bağlantı değildir (adresi yok). Kökün ve grupsuz sayfanın yolunda grup yoktur.
+export type SayfaYoluAdimTanimi = { ad: MetinAnahtari; adres?: string };
+export const sayfaYoluAdimlari = (
+  agac: readonly PanelSayfaTanimi[],
+  kod: string,
+): SayfaYoluAdimTanimi[] => {
+  const [kok, ...geri] = sayfaYolunuKur(agac, kod).map(({ ad, adres }) => ({ ad, adres }));
+  const grup = sayfaTanimi(agac, kod)?.grup;
+  if (kok === undefined) return [];
+  if (geri.length === 0 || grup === null || grup === undefined) return [kok, ...geri];
+  return [kok, { ad: panelGruplari[grup] }, ...geri];
 };

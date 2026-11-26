@@ -19,6 +19,7 @@ import {
   panelSayfalari,
   sayfaAcikMi,
   sayfaTanimi,
+  sayfaYoluAdimlari,
   sayfaYolunuKur,
 } from "./sayfa-agaci";
 
@@ -77,7 +78,9 @@ export async function PanelSayfasi({
   children?: ReactNode;
   agac?: readonly PanelSayfaTanimi[];
 }) {
-  const { sayfa, yol } = await panelSayfasiniAc(kod, agac);
+  const { sayfa } = await panelSayfasiniAc(kod, agac);
+  // Kök, grup (bağlantısız), üst sayfalar ve sayfanın kendisi (kart 0301).
+  const yol = sayfaYoluAdimlari(agac, kod);
   return (
     <>
       {/* Yazdırırken komut çubuğu çıkmaz (sipariş fişi, kart 0270). */}
@@ -87,7 +90,10 @@ export async function PanelSayfasi({
             <SayfaYolu
               etiket={metin("ortak.parca.sayfaYolu")}
               ayrac={metin("ortak.parca.sayfaYoluAyraci")}
-              adimlar={yol.map((adim) => ({ ad: metin(adim.ad), adres: adim.adres }))}
+              adimlar={yol.map(({ ad, adres }) => ({
+                ad: metin(ad),
+                ...(adres === undefined ? {} : { adres }),
+              }))}
               className="hidden tablet:block"
             />
           ) : null}

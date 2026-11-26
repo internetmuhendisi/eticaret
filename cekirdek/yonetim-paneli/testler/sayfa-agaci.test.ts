@@ -5,12 +5,13 @@ import { join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { type GirisIzni, izinler } from "../../kayitlar/izinler.ts";
 import { metinOkuyucu } from "../../metinler/metin.ts";
-import { panelAdresi } from "../adresler.ts";
+import { magazaBilgileriAdresi, panelAdresi } from "../adresler.ts";
 import {
   menuyuKur,
   type PanelSayfaTanimi,
   panelGruplari,
   panelSayfalari,
+  sayfaYoluAdimlari,
   sayfaYolunuKur,
 } from "../sayfa-agaci.ts";
 import { denemeAgaci } from "./deneme-agaci.ts";
@@ -162,5 +163,61 @@ describe("sayfa yolu", () => {
       { ...denemeAgaci[1], kod: "b", adres: `${panelAdresi}/a/b`, ust: "a" } as PanelSayfaTanimi,
     ];
     expect(sayfaYolunuKur(dongulu, "b").map(({ kod }) => kod)).toEqual(["karsilama", "a", "b"]);
+  });
+});
+
+// Kart 0301: taslağın (karar 0157) "Ayarlar" grubu. Mağaza ayarlarının ekranları siparişlerden ayrı, taslağın sırasıyla;
+// banka hesapları ödeme yöntemlerinin yanında.
+describe("gruplar (kart 0301)", () => {
+  const kodlar = (grup: string | null) =>
+    menuyuKur(
+      agac,
+      () => true,
+      () => true,
+    )
+      .find((g) => g.grup === grup)
+      ?.sayfalar.map(({ kod }) => kod);
+
+  it("gerçek menünün grupları ve Satış ile Ayarlar'ın sayfaları sırasıyla", () => {
+    expect(
+      menuyuKur(
+        agac,
+        () => true,
+        () => true,
+      ).map(({ grup }) => grup),
+    ).toEqual([null, "satis", "urunler", "vitrin", "icerik", "ayarlar"]);
+    expect(kodlar("satis")).toEqual(["siparisler", "musteriler"]);
+    expect(kodlar("ayarlar")).toEqual([
+      "magaza-bilgileri",
+      "siparis-ayarlari",
+      "odeme-yontemleri",
+      "banka-hesaplari",
+      "kargo",
+      "ekip",
+      "hesabim",
+    ]);
+  });
+
+  it("sayfa yolunda grubun adı kökten sonra, bağlantısız; kökte ve grupsuz sayfada grup yok", () => {
+    const kok = { ad: "yonetim.sayfa.karsilama.ad", adres: panelAdresi };
+    expect(sayfaYoluAdimlari(agac, "karsilama")).toEqual([kok]);
+    expect(sayfaYoluAdimlari(agac, "magaza-bilgileri")).toEqual([
+      kok,
+      { ad: "yonetim.grup.ayarlar" },
+      { ad: "yonetim.sayfa.magazaBilgileri.ad", adres: magazaBilgileriAdresi },
+    ]);
+    expect(sayfaYoluAdimlari(agac, "siparis-ayrintisi").map(({ ad }) => ad)).toEqual([
+      "yonetim.sayfa.karsilama.ad",
+      "yonetim.grup.satis",
+      "yonetim.sayfa.siparisler.ad",
+      "yonetim.sayfa.siparisAyrintisi.ad",
+    ]);
+    // Deneme ağacında ürünler grupsuzdur: yol yalnız kök ve sayfanın kendisi.
+    expect(sayfaYoluAdimlari(denemeAgaci, "urunler").map(({ adres }) => adres)).toEqual([
+      panelAdresi,
+      `${panelAdresi}/urunler`,
+    ]);
+    // Olmayan sayfada sayfaYolunuKur gibi yalnız kök.
+    expect(sayfaYoluAdimlari(agac, "olmayan")).toEqual([kok]);
   });
 });

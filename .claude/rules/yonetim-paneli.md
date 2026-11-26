@@ -13,7 +13,7 @@ paths:
 - Komut çubuğuna "Yeni ürün", "Dışa aktar", "Ayarlar" gibi eylemleri koy. Arama ve filtre altındaki şeritte durur.
 - Komut çubuğunda dolu renkli tek düğme olsun, o da sayfanın asıl eylemi.
 - Aynı eylem her sayfada aynı ikon, aynı ad ve aynı yerde dursun. Eylem tanımlarını tek dosyadan oku.
-- Yan menüyü, sayfa yolunu ve sayfa başlıklarını tek sayfa ağacından üret.
+- Yan menüyü, sayfa yolunu ve sayfa başlıklarını tek sayfa ağacından üret. Sayfa yolu kök, sayfanın menüdeki grubu (bağlantısız, grubun sayfası yoktur), üst sayfalar ve sayfanın kendisidir (`sayfaYoluAdimlari`, kart 0301). Menünün grupları: Satış, Ürünler, Vitrin, İçerik, Ayarlar; mağaza ayarlarının ekranları (mağaza bilgileri, sipariş ayarları, ödeme yöntemleri ve banka hesapları, kargo) Ayarlar'da, Ekip'ten önce.
 - Ayar ve rapor alt sayfalarında ana sayfanın komut çubuğunu kullan, yalnız seçili öğe değişsin.
 - Kullanıcının yetkisi olmayan düğme, menü ya da bağlantıyı hiç gösterme. Yetki bilgisini sunucudan oku, ikinci bir liste yazma.
 - Panelin ana ekranında günün satışını, bekleyen siparişleri ve uyarıları tek bakışta göster.
@@ -63,12 +63,12 @@ paths:
 
 ## Kargo ekranı (karar 0135)
 
-- Ekran `cekirdek/yonetim-paneli/kargo/` klasöründe, menüde "Satış" altındadır. Ayarlar mağaza ayarlarıdır: görmek `magaza-ayarlari.gor`, değiştirmek `magaza-ayarlari.degistir` ister.
+- Ekran `cekirdek/yonetim-paneli/kargo/` klasöründe, menüde "Ayarlar" altındadır (kart 0301). Ayarlar mağaza ayarlarıdır: görmek `magaza-ayarlari.gor`, değiştirmek `magaza-ayarlari.degistir` ister.
 - Tutar sitenin para biçimiyle yazılı gider, sunucuda `kargoAyarlariniDegistir` (`cekirdek/moduller/kargo/servis.ts`) biçimleyicinin `paraOku`'suyla okur. Ekran tutarı kendisi çevirmez; alanın hatası koduyla döner. Uç şemasının kendi kodu (boş zorunlu alan) ortak eşlemeden (`kodluAlanHatalari`) alana bağlanır (kart 0284); kendi kod eşlemesini yazan ekran şemanın kodunu da karşılar.
 
 ## Siparişler (karar 0146)
 
-- Ekranlar `cekirdek/yonetim-paneli/siparisler/` klasöründe, menüde "Satış" altındadır: Siparişler, Sipariş ayrıntısı (alt sayfa, `?numara=`), Sipariş ayarları. Görmek `siparis.gor`, işlemler `siparis.yonet`, havale onayı `siparis.havale-onayla` (görevlide yok); sipariş ayarları mağaza ayarıdır.
+- Ekranlar `cekirdek/yonetim-paneli/siparisler/` klasöründe, menüde "Satış" altındadır: Siparişler, Sipariş ayrıntısı (alt sayfa, `?numara=`); Sipariş ayarları "Ayarlar" altındadır (kart 0301). Görmek `siparis.gor`, işlemler `siparis.yonet`, havale onayı `siparis.havale-onayla` (görevlide yok); sipariş ayarları mağaza ayarıdır.
 - Hangi işlemin görüneceği sunucuda siparişin durumu, ödeme yöntemi ve yöneticinin izniyle bulunur (`siparisAyrintisiVerisi`); ekran işlemi yeniden süzmez. İşlem ekranın gördüğü durumu gönderir.
 - Durumun rozeti ve metni kayıttan okunur (`siparisDurumTanimlari`, `durumMetni`); durum adını ekranda elle yazma.
 - Siparişler listesi liste motorundadır (karar 0158, `liste-tanimi.ts`): durum sekmesi, tarih, ödeme yöntemi ve kargo firması süzgeçleri (karar 0169), sıralama ve sayfa adrestedir; arama aranan metni adrese yazmaz, liste ucuna gider. Toplu işlem "Hazırlamaya al" (`siparisler-toplu`), her sipariş `islemYap` ile. "Bakılması gereken" sekmesi (`bakilacak`) bildirilmiş havaleyi, bekleyen iade talebini, sonucu beklenen iadeyi, onaylanmış ve iadesi yapılmamış talebi ve başarısız iadeyi toplar; satırın işaretleri aynı koşullardır (servis `liste`). Kargo firması seçenekleri siparişlerdeki adlardır (`kargoFirmalari`), sayfa `siparisListesiSecenekleri` ile verir.
@@ -83,7 +83,7 @@ paths:
 
 ## Mağaza bilgileri (karar 0175)
 
-- Ekran `cekirdek/yonetim-paneli/magaza-bilgileri/` klasöründe, menüde "Satış" altındadır (ayrı "Ayarlar" grubu kart 0301). Mağaza ayarıdır: görmek `magaza-ayarlari.gor`, değiştirmek `magaza-ayarlari.degistir`.
+- Ekran `cekirdek/yonetim-paneli/magaza-bilgileri/` klasöründe, menüde "Ayarlar" grubunun başındadır (kart 0301). Mağaza ayarıdır: görmek `magaza-ayarlari.gor`, değiştirmek `magaza-ayarlari.degistir`.
 - Alanlar yazı olarak `magaza-bilgileri` ucuna gider; kurallar ayar şemasındadır, servis `magazaBilgileriniDegistir` (`cekirdek/moduller/magaza-ayarlari/bilgiler.ts`) uygular ve hatayı alanın yolu ve şemanın koduyla döndürür. Ekran kural yazmaz; kodların metni ekrandadır (`kodMetinleri`). Sosyal hesabın hata yolu gönderilen sıradır, ekran onu alanına çevirir.
 - Adres alanları ödeme adımının parçalarıdır (`AdresAlanlari`, ülkeler `bolgeUlkeleri` ile sitenin satış ülkelerinden). İzni olmayan yönetici için alanlar kapalı bir fieldset içindedir.
 
@@ -96,7 +96,7 @@ paths:
 
 ## Ödeme yöntemleri ve banka hesapları (karar 0141)
 
-- Ekranlar `cekirdek/yonetim-paneli/odeme-yontemleri/` klasöründe, menüde "Satış" altındadır. Görmek `odeme-yontemi.gor` (görevli de), değiştirmek `odeme-yontemi.degistir` (yalnız mağaza sahibi) ister; izni olmayan yönetici yalnız okur, anahtar ve düğmeler kapalıdır ya da yoktur.
+- Ekranlar `cekirdek/yonetim-paneli/odeme-yontemleri/` klasöründe, menüde "Ayarlar" altındadır (kart 0301). Görmek `odeme-yontemi.gor` (görevli de), değiştirmek `odeme-yontemi.degistir` (yalnız mağaza sahibi) ister; izni olmayan yönetici yalnız okur, anahtar ve düğmeler kapalıdır ya da yoktur.
 - Ödeme yöntemlerinin anahtarları, kapıda seçenekleri ve iptal süresi tek formdur, birlikte "Kaydet" ile kaydedilir. Yöntemlerin sırası taşınır taşınmaz kendi ucuyla (`odeme-yontemleri-sirala`) kaydedilir ve formun kaydedilmemiş değişikliğini götürmez (karar 0144). Banka hesabı yan pencerede eklenir ve düzenlenir, onay penceresiyle silinir, sıralama hemen kaydedilir. IBAN'ın hatası alanın koduyla döner, ekran doğrulamaz.
 - Açma-kapama yalnız `Anahtar` parçasıyladır (`bilesenler/parcalar/anahtar.tsx`); durumun yazısı yanında görünür.
 

@@ -23,6 +23,14 @@ Bölüm: Yönetim paneli 2 (açık kartlardan alındı). Kart 0278 sırasında b
 - Panel çerçevesinin tarayıcı testi ve taraması geçiyor.
 - Ekran görüntüsü taslakla yan yana kondu.
 
+## Sonuç
+
+- Sayfa ağacında (`sayfa-agaci.ts`) Mağaza bilgileri, Sipariş ayarları, Ödeme yöntemleri, Banka hesapları ve Kargo "Ayarlar" grubunda, taslağın sırasıyla Ekip ve Hesabım'dan önce; Satış'ta yalnız Siparişler ve Müşteriler kaldı. Adresler ve izinler değişmedi; telefondaki yan pencere aynı menüden çizilir.
+- Sayfa yolu kök, sayfanın grubu, üst sayfalar ve sayfanın kendisidir (`sayfaYoluAdimlari`): grubun adı bağlantısız ara adımdır, bütün gruplarda. `SayfaYolu` parçası adressiz adımı düz yazı çizer; katalog örneği ve katalogdaki tarayıcı testi (yol sayısı, bağlantı sayısı, adressiz adımın bağlantı olmaması) güncellendi.
+- Testler: gerçek menünün grupları ve Satış ile Ayarlar'ın sırası, yolun adımları (`sayfa-agaci.test.ts`); gerçek düzende mağaza sahibi ve görevlide Ayarlar grubu, sayfadaki yolda bağlantısız grup (`panel-yetkisi.test.tsx`). Grubun Satış'a dönmesi, sıranın bozulması, yoldan grubun çıkması ve grubun bağlantı çizilmesi ayrı ayrı bozularak kırmızıya düştü.
+- Panel ve katalog birim testleri (47 dosya, 420 test), tür kontrolü, denetim; tarayıcıda panel çerçevesi (masaüstü menü, telefon yan penceresi, geniş logo, iki renkte ve üç genişlikte tarama) ve katalogdaki sayfa yolu (tarama, üç genişlikte basılan alan) 10/10 geçti.
+- Ekran görüntüsü (masaüstünde sayfa yolu ve yan menü, telefonda menü penceresi) taslakla yan yana kondu: Ayarlar grubu ve sırası taslakla aynı. Taslaktan ayrı kalan grup adı ("Katalog"), grup sırası (İçerik ve Vitrin) ve yolun ilk adımı ("Panel") kart 0324'te.
+
 ## Durum
 
 yapılacak

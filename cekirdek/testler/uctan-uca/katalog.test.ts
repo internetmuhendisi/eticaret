@@ -1151,7 +1151,8 @@ for (const genislik of [320, 390, 768]) {
 }
 
 // Kart 0191: sayfa yolunun her bağlantısı 44 × 44 px basılır, kısa adlı komşu adımların ve iki satıra inen yolun
-// alanları üst üste binmez. Katalogdaki ikinci yol kısa adları ve uzun bir adı taşır; üçüncüsü tek satırlıdır (kart 0272).
+// alanları üst üste binmez. Katalogdaki ikinci yol kısa adları ve uzun bir adı taşır; üçüncüsünün ara adımı adressizdir
+// (kart 0301), bağlantı değildir; dördüncüsü tek satırlıdır (kart 0272).
 for (const genislik of [320, 390, 768]) {
   test(`sayfa yolu: her bağlantı 44 × 44 px basılır, komşular çakışmaz (${genislik} px)`, async ({
     page,
@@ -1159,7 +1160,7 @@ for (const genislik of [320, 390, 768]) {
     await page.setViewportSize({ width: genislik, height: 900 });
     await ac(page, `${katalogAdresi}/sayfa-yolu`);
     const yollar = page.getByRole("navigation", { name: metin("ortak.parca.sayfaYolu") });
-    expect(await yollar.count()).toBe(3);
+    expect(await yollar.count()).toBe(4);
     const satirSayisi = (sira: number) =>
       yollar
         .nth(sira)
@@ -1178,16 +1179,19 @@ for (const genislik of [320, 390, 768]) {
       // Ölçüm boşa gitmesin: uzun yol bu genişlikte iki satıra iner.
       expect(await satirSayisi(1)).toBeGreaterThanOrEqual(2);
       // Tek satırlı yol (kart 0272) alt satıra inmez, son adım üç noktayla kısalır.
-      expect(await satirSayisi(2)).toBe(1);
+      expect(await satirSayisi(3)).toBe(1);
       expect(
         await yollar
-          .nth(2)
+          .nth(3)
           .locator('[aria-current="page"]')
           .evaluate((son) => son.scrollWidth > son.clientWidth),
       ).toBe(true);
     }
+    // Adressiz ara adım (kart 0301) bağlantı değildir: üçüncü yolda yalnız ilk adım bağlantıdır.
+    expect(await yollar.nth(2).getByRole("link").count()).toBe(1);
+    expect(await yollar.nth(2).getByRole("listitem").count()).toBe(3);
     const baglantilar = await yollar.getByRole("link").all();
-    expect(baglantilar.length).toBe(8);
+    expect(baglantilar.length).toBe(9);
     for (const baglanti of baglantilar) {
       expect(await basilmayanNoktalar(baglanti), (await baglanti.textContent()) ?? "").toEqual([]);
     }

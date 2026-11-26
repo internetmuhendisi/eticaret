@@ -30,6 +30,16 @@ export function SayfaYoluOrnegi() {
           { ad: m("yolTisort"), adres: "/urun/cizgili-pantolon" },
         ]}
       />
+      {/* Adressiz ara adım (kart 0301): panelde menünün grubu, bağlantı değildir. */}
+      <SayfaYolu
+        etiket={metin("ortak.parca.sayfaYolu")}
+        ayrac={metin("ortak.parca.sayfaYoluAyraci")}
+        adimlar={[
+          { ad: m("yolPanel"), adres: "/yonetim" },
+          { ad: m("yolGrup") },
+          { ad: m("yolAyar"), adres: "/yonetim/magaza-bilgileri" },
+        ]}
+      />
       {/* Tek satır (kart 0272): uzun son adım üç noktayla biter, yol alt satıra inmez. */}
       <SayfaYolu
         etiket={metin("ortak.parca.sayfaYolu")}

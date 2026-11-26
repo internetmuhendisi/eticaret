@@ -10,7 +10,8 @@
 import Link from "next/link";
 import { sinif } from "./sinif.ts";
 
-export type SayfaYoluAdimi = { ad: string; adres: string };
+// Adresi olmayan adım bağlantı değildir (kart 0301): panelde menünün grubu, kendi sayfası yoktur.
+export type SayfaYoluAdimi = { ad: string; adres?: string };
 
 export function SayfaYolu({
   adimlar,
@@ -19,7 +20,8 @@ export function SayfaYolu({
   tekSatir = false,
   className,
 }: {
-  // Bulunulan sayfa dahil, ana sayfadan başlayarak. Sonuncunun adresi bağlantı olarak kullanılmaz.
+  // Bulunulan sayfa dahil, ana sayfadan başlayarak. Sonuncunun adresi bağlantı olarak kullanılmaz; adresi olmayan
+  // ara adım düz yazıdır.
   adimlar: readonly SayfaYoluAdimi[];
   // Gezinme bölgesinin adı, örneğin "Sayfa yolu".
   etiket: string;
@@ -40,7 +42,7 @@ export function SayfaYolu({
           const son = sira === adimlar.length - 1;
           return (
             <li
-              key={adim.adres}
+              key={`${sira}-${adim.ad}`}
               className={sinif(
                 "flex items-center gap-1.5",
                 tekSatir && (son ? "min-w-0" : "shrink-0"),
@@ -58,6 +60,8 @@ export function SayfaYolu({
                 >
                   {adim.ad}
                 </span>
+              ) : adim.adres === undefined ? (
+                <span className="inline-flex min-h-8 items-center">{adim.ad}</span>
               ) : (
                 <Link
                   href={adim.adres}
