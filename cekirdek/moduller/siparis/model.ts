@@ -93,6 +93,13 @@ export const siparisler = pgTable(
     vergi_toplami: tutar().notNull(),
     toplam: tutar().notNull(),
     vergi_dokumu: jsonb().$type<VergiDokumu>().notNull(),
+    // Kupon (kart 0312, karar 0187): sipariş anındaki kodu ve türü; indirim gösterim biçiminde. Ürün indirimi kalemlere
+    // dağıtılmıştır (kalemin indirimi); ara toplam indirimden öncedir. Ücretsiz kargo kuponunda verilmeyen kargo ücreti
+    // kupon_kargo_indirimi'dir, kargo ücretsizdir. Kuponsuz siparişte kod boş, indirimler 0.
+    kupon_kodu: text(),
+    kupon_turu: text(),
+    kupon_indirimi: tutar().notNull().default(0),
+    kupon_kargo_indirimi: tutar().notNull().default(0),
     odeme_son_zamani: zaman(),
     tahsilat: jsonb().$type<Tahsilat>(),
     odeme_zamani: zaman(),
@@ -160,6 +167,18 @@ export const siparisler = pgTable(
       "siparisler_tutarlar",
       sql`${tablo.ara_toplam} >= 0 and ${tablo.kargo_tutari} >= 0 and ${tablo.vergi_toplami} >= 0 and ${tablo.toplam} >= 0`,
     ),
+    // Kupon (kart 0312): kodu olmayan siparişte indirim yok; ürün indirimi ara toplamı aşmaz; kargo indirimi yalnız
+    // ücretsiz kargo kuponunda ve kargo ücretsizken. Tür listesi kayıtla aynıdır (kuponTurleri, servis testi).
+    check(
+      "siparisler_kupon",
+      sql`(${tablo.kupon_kodu} is null) = (${tablo.kupon_turu} is null)
+        and (${tablo.kupon_turu} is null or ${tablo.kupon_turu} in ('yuzde', 'tutar', 'ucretsiz-kargo'))
+        and ${tablo.kupon_indirimi} >= 0 and ${tablo.kupon_indirimi} <= ${tablo.ara_toplam}
+        and (${tablo.kupon_kodu} is not null or ${tablo.kupon_indirimi} = 0)
+        and ${tablo.kupon_kargo_indirimi} >= 0
+        and (${tablo.kupon_kargo_indirimi} = 0
+          or (${tablo.kupon_turu} = 'ucretsiz-kargo' and ${tablo.kargo_turu} = 'ucretsiz'))`,
+    ),
   ],
 );
 export type Siparis = typeof siparisler.$inferSelect;
@@ -188,6 +207,9 @@ export const siparisKalemleri = pgTable(
     // Gösterim biçiminde birim fiyat ve satırın tutarı; vergisiz, vergi ve uygulanan oranlar vergi hesabından.
     birim_tutari: tutar().notNull(),
     tutar: tutar().notNull(),
+    // Kuponun bu kaleme düşen payı (gösterim biçiminde, kart 0312); tutar kupondan öncedir. Vergisiz ve vergi kupondan
+    // sonradır: müşterinin kalem için ödediği vergisiz artı vergidir.
+    indirim: tutar().notNull().default(0),
     vergisiz: tutar().notNull(),
     vergi: tutar().notNull(),
     // Uygulanan oranlar (milyonda bir), adlarıyla.
@@ -198,7 +220,8 @@ export const siparisKalemleri = pgTable(
     check("siparis_kalemleri_adet", sql`${tablo.adet} > 0`),
     check(
       "siparis_kalemleri_tutarlar",
-      sql`${tablo.birim_tutari} >= 0 and ${tablo.tutar} >= 0 and ${tablo.vergisiz} >= 0 and ${tablo.vergi} >= 0`,
+      sql`${tablo.birim_tutari} >= 0 and ${tablo.tutar} >= 0 and ${tablo.vergisiz} >= 0 and ${tablo.vergi} >= 0
+        and ${tablo.indirim} >= 0 and ${tablo.indirim} <= ${tablo.tutar}`,
     ),
   ],
 );

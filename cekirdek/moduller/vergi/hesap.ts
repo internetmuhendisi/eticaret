@@ -23,6 +23,8 @@
 // - Döküm: aynı ad ve yüzde bir satırdır. Bir kaleme aynı ad ve yüzdede iki oran uygulanırsa ikincisi
 //   ayrı satırdır: matrah iki kez sayılmaz.
 // - Silinmiş sınıf kendi oranlarıyla hesaplanır (karar 0060). Vergi kapalıysa vergi sıfırdır, döküm boştur.
+// - Kupon indirimi (kart 0312, karar 0187) satırın tutarından düşülür: vergi indirimden sonraki tutardan, aynı
+//   kurallarla (dahil formülü, yuvarlama türü) hesaplanır. İndirimin satırlara dağıtımı kampanya modülündedir.
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { FiyatGirisi, VergiAdresi, VergiYuvarlama } from "./semalar.ts";
 import { tamOran } from "./semalar.ts";
@@ -41,6 +43,9 @@ export type HesapSatiri = {
   adet: number;
   // Ürünün vergi sınıfı; null vergisiz üründür.
   sinif: string | null;
+  // Kuponun bu satıra düşen payı (kart 0312), kuruş, fiyat girişi biçiminde: satırın tutarı birim fiyat × adet eksi
+  // indirimdir, vergi indirimden sonraki tutardan hesaplanır. Satırın tutarını aşamaz.
+  indirim?: number;
 };
 
 export type HesapAyarlari = {
@@ -144,6 +149,15 @@ export const hesapla = (girdi: HesapGirdisi): VergiSonucu => {
     if (!tamSayiMi(satir.birimFiyat, 0) || !tamSayiMi(satir.adet, 1)) {
       throw new Error("Vergi hesabında birim fiyat sıfır ya da artı, adet artı tam sayı olmalı.");
     }
+    if (
+      satir.indirim !== undefined &&
+      (!tamSayiMi(satir.indirim, 0) ||
+        BigInt(satir.indirim) > BigInt(satir.birimFiyat) * BigInt(satir.adet))
+    ) {
+      throw new Error(
+        "Vergi hesabında satırın indirimi sıfır ya da artı ve satırın tutarından küçük olmalı.",
+      );
+    }
   }
   if (girdi.kargo !== undefined && !tamSayiMi(girdi.kargo.tutar, 0)) {
     throw new Error("Vergi hesabında kargo ücreti sıfır ya da artı tam sayı olmalı.");
@@ -161,7 +175,9 @@ export const hesapla = (girdi: HesapGirdisi): VergiSonucu => {
     ...(girdi.kargo === undefined ? [] : [kargoSinifi]),
   ];
   const tutarlar = [
-    ...girdi.satirlar.map((satir) => BigInt(satir.birimFiyat) * BigInt(satir.adet)),
+    ...girdi.satirlar.map(
+      (satir) => BigInt(satir.birimFiyat) * BigInt(satir.adet) - BigInt(satir.indirim ?? 0),
+    ),
     ...(girdi.kargo === undefined ? [] : [BigInt(girdi.kargo.tutar)]),
   ];
 

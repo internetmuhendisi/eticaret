@@ -15,8 +15,15 @@
 // - Gösterilen tutarlar fiyat gösterimi ayarına göredir (vergi dahil ya da hariç): satır tutarı vergi hesabının
 //   satırından, ara toplam satırların toplamı, toplam vergi hesabının vergili toplamıdır. Böylece ara toplam, kargo
 //   ve vergi her zaman toplamı verir; birim fiyatla adetin çarpımı bir kuruş farklı olabilir.
+// - Kupon (kart 0312, karar 0187) kampanya modülünün hesabıyla (kuponuUygula) uygulanır. Hesap iki kez yapılır:
+//   kupondan önceki hesap satırların tutarını ve ara toplamı, kupondan sonraki hesap satırların vergisini, kargoyu,
+//   vergi dökümünü ve toplamı verir. Satırın kupon payı (indirim) iki hesabın gösterim farkıdır; ara toplam eksi
+//   kupon indirimi artı kargo (vergi hariç gösterimde artı vergi) toplamdır. Ücretsiz kargo sınırı ayarı kupondan
+//   sonraki tutarı da kapsar ("indirimden sonra"). Ücretsiz kargo kuponu ücretli kargoyu ücretsiz yapar; verilmeyen
+//   ücret kargo indirimidir. Kişi başı sınır yalnız kişi verilince (ödeme adımı) denetlenir.
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
+import type { KuponRedNedeni, KuponTuru } from "../../kayitlar/kampanya.ts";
 import {
   odemeyiDurduranUyarilar,
   type SepetUyarisi,
@@ -26,13 +33,15 @@ import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { fiyatGosterimServisi } from "../fiyat/gosterim.ts";
 import { siteninFiyatServisi } from "../fiyat/servis.ts";
+import { type KuponSonucu, kuponuUygula } from "../kampanya/hesap.ts";
+import { type KuponKisisi, kuponServisi } from "../kampanya/servis.ts";
 import { type KargoSonucu, kargoHesapla } from "../kargo/hesap.ts";
 import { siteninStokAyarlari, stokDurumlari } from "../stok/durum.ts";
 import { urunBirimleri, urunler } from "../urun/model.ts";
 import { vitrinKosulu } from "../urun/vitrin.ts";
 import type { DokumSatiri, VergiBolgesi } from "../vergi/hesap.ts";
 import type { FiyatGirisi } from "../vergi/semalar.ts";
-import { vergiHesapla } from "../vergi/servis.ts";
+import { vergiHesaplari } from "../vergi/servis.ts";
 import type { SepetKalemi } from "./semalar.ts";
 
 export type SepetSatirUyarisi =
@@ -57,9 +66,25 @@ export type SepetHesapSatiri = {
   birimTutari?: number;
   tutar?: number;
   // Satılabilir satırda vergi hesabının sonucu: vergisiz tutar, vergi ve uygulanan oranlar (sipariş kalemine yazılır,
-  // kart 0214). Vergi kapalıysa vergi 0, oran yoktur.
+  // kart 0214). Vergi kapalıysa vergi 0, oran yoktur. Kupon uygulandıysa kupondan sonradır.
   vergi?: { vergisiz: number; vergi: number; oranlar: { ad?: string; oran: number }[] };
+  // Kuponun bu satıra düşen payı, gösterim biçiminde (kart 0312); tutar kupondan öncedir.
+  indirim?: number;
+  // Kupon bu satıra geçmedi çünkü ürün indirimde ("indirimde geçmez" kuponu).
+  kuponDisi?: "indirimli";
 };
+
+// Sepetteki kupon: uygulandı (indirim ve kargo indirimi gösterim biçiminde) ya da geçmedi (nedeniyle).
+export type SepetKuponu =
+  | {
+      durum: "uygulandi";
+      kimlik: string;
+      kod: string;
+      tur: KuponTuru;
+      indirim: number;
+      kargoIndirimi: number;
+    }
+  | { durum: "gecmedi"; kod: string; neden: KuponRedNedeni; kalan?: number };
 
 export type SepetHesabi = {
   satirlar: SepetHesapSatiri[];
@@ -71,6 +96,7 @@ export type SepetHesabi = {
   araToplam: number;
   kargo: { tur: "yok" | "ucretsiz" } | { tur: "ucretli"; tutar: number; siniraKalan?: number };
   vergi: { dokum: DokumSatiri[]; toplam: number };
+  kupon?: SepetKuponu;
   toplam: number;
   // Satılamayan ya da alınamayacak adetteki satır yoksa ve sepette satılabilir ürün varsa.
   odemeyeGecilebilir: boolean;
@@ -100,9 +126,20 @@ export const sepetiHesapla = async (
   {
     an = new Date(),
     adresler = {},
+    kupon,
   }: {
     an?: Date;
     adresler?: { teslimat?: VergiBolgesi | undefined; fatura?: VergiBolgesi | undefined };
+    // Müşterinin yazdığı kod. Kişi verilirse kişi başı sınır sayılır; oturumun kendi ayırması sayılmaz; süre
+    // "an"a göre denetlenir (kartla ödemede sipariş kurulurken oturumun açıldığı an, karar 0187).
+    kupon?:
+      | {
+          kod: string;
+          kisi?: KuponKisisi | undefined;
+          oturum?: string | undefined;
+          an?: Date | undefined;
+        }
+      | undefined;
   } = {},
 ): Promise<SepetHesabi> => {
   const temiz = birlestir(kalemler);
@@ -188,46 +225,138 @@ export const sepetiHesapla = async (
     if (gecerli === undefined || bilgi === undefined) throw new Error("Satırın fiyatı yok.");
     return { satir, gecerli, sinif: bilgi.sinif };
   });
-  const kargo: KargoSonucu = kargoHesapla(
-    ayarlar,
-    kalemTutarlari.map(({ satir, gecerli }) => ({
-      tutar: gecerli.tutar * satir.adet,
-      indirimsizTutar: gecerli.satisFiyati * satir.adet,
-      kargoGerekmez: satir.kargoGerekmez,
+  const kargoyuHesapla = (indirimler: readonly number[]): KargoSonucu =>
+    kargoHesapla(
+      ayarlar,
+      kalemTutarlari.map(({ satir, gecerli }, sira) => ({
+        tutar: gecerli.tutar * satir.adet - (indirimler[sira] ?? 0),
+        indirimsizTutar: gecerli.satisFiyati * satir.adet,
+        kargoGerekmez: satir.kargoGerekmez,
+      })),
+    );
+  const vergiGirdisi = (indirimler: readonly number[], kargo: KargoSonucu) => ({
+    satirlar: kalemTutarlari.map(({ satir, gecerli, sinif }, sira) => ({
+      birimFiyat: gecerli.tutar,
+      adet: satir.adet,
+      sinif,
+      ...((indirimler[sira] ?? 0) > 0 ? { indirim: indirimler[sira] } : {}),
     })),
-  );
-  const vergi =
-    kalemTutarlari.length === 0
-      ? undefined
-      : await vergiHesapla(
-          vt,
-          {
-            satirlar: kalemTutarlari.map(({ satir, gecerli, sinif }) => ({
-              birimFiyat: gecerli.tutar,
-              adet: satir.adet,
-              sinif,
-            })),
-            ...(kargo.tur === "ucretli" ? { kargo: { tutar: kargo.tutar } } : {}),
-            ...(adresler.teslimat === undefined ? {} : { teslimatAdresi: adresler.teslimat }),
-            ...(adresler.fatura === undefined ? {} : { faturaAdresi: adresler.fatura }),
-          },
-          site,
-        );
+    ...(kargo.tur === "ucretli" ? { kargo: { tutar: kargo.tutar } } : {}),
+    ...(adresler.teslimat === undefined ? {} : { teslimatAdresi: adresler.teslimat }),
+    ...(adresler.fatura === undefined ? {} : { faturaAdresi: adresler.fatura }),
+  });
 
   const gosterim: SepetHesabi["gosterim"] = ayarlar.vergiAcik ? ayarlar.fiyatGosterimi : "yok";
   const goster = (sonuc: { vergili: number; vergisiz: number }) =>
     gosterim === "vergi-haric" ? sonuc.vergisiz : sonuc.vergili;
-  kalemTutarlari.forEach(({ satir }, sira) => {
-    const sonuc = vergi?.satirlar[sira];
-    if (sonuc === undefined) return;
-    satir.tutar = goster(sonuc);
-    satir.vergi = {
-      vergisiz: sonuc.vergisiz,
-      vergi: sonuc.vergi,
-      oranlar: sonuc.oranlar.map(({ ad, oran }) => (ad === undefined ? { oran } : { ad, oran })),
+
+  // Kupondan önceki hesap: satırların tutarı ve ara toplam.
+  const sifir = kalemTutarlari.map(() => 0);
+  const ilkKargo = kargoyuHesapla(sifir);
+  const [ilkVergi] =
+    kalemTutarlari.length === 0
+      ? [undefined]
+      : await vergiHesaplari(vt, [vergiGirdisi(sifir, ilkKargo)], site);
+  const araToplam = kalemTutarlari.reduce(
+    (toplam, _, sira) => toplam + goster(ilkVergi?.satirlar[sira] ?? { vergili: 0, vergisiz: 0 }),
+    0,
+  );
+
+  // Kupon: kapsam ve kullanımlar servisten, hesap kampanya modülünden.
+  let kuponSonucu:
+    | (KuponSonucu & { kupon?: { kimlik: string; kod: string; tur: KuponTuru } })
+    | undefined;
+  if (kupon !== undefined && kalemTutarlari.length > 0) {
+    const servis = kuponServisi(site);
+    const bulunan = await servis.bul(vt, kupon.kod);
+    const [kapsamdakiler, sayilar] =
+      bulunan === undefined
+        ? [new Set<string>(), { toplam: 0 }]
+        : await Promise.all([
+            servis.kapsamdakiUrunler(
+              vt,
+              bulunan,
+              kalemTutarlari.map(({ satir }) => satir.urun ?? ""),
+            ),
+            servis.kullanimlar(vt, bulunan.kimlik, { kisi: kupon.kisi, oturum: kupon.oturum }),
+          ]);
+    kuponSonucu = {
+      ...kuponuUygula(
+        bulunan,
+        kalemTutarlari.map(({ satir, gecerli }) => ({
+          tutar: gecerli.tutar * satir.adet,
+          kapsamda: kapsamdakiler.has(satir.urun ?? ""),
+          indirimde: gecerli.indirimde,
+        })),
+        {
+          an: kupon.an ?? an,
+          araToplam,
+          toplamKullanim: sayilar.toplam,
+          ...("kisi" in sayilar && sayilar.kisi !== undefined
+            ? { kisiKullanimi: sayilar.kisi }
+            : {}),
+        },
+      ),
+      ...(bulunan === undefined
+        ? {}
+        : { kupon: { kimlik: bulunan.kimlik, kod: bulunan.kod, tur: bulunan.tur } }),
     };
+  }
+  const indirimler = kuponSonucu?.gecti === true ? kuponSonucu.indirimler : sifir;
+  const ucretsizKargo = kuponSonucu?.gecti === true && kuponSonucu.ucretsizKargo;
+  const indirimVar = indirimler.some((indirim) => indirim > 0);
+
+  // Kupondan sonraki hesap: kargo (sınır kupondan sonraki tutarla), vergi ve toplam.
+  const sonKargoOnce = indirimVar ? kargoyuHesapla(indirimler) : ilkKargo;
+  const kargo: KargoSonucu =
+    ucretsizKargo && sonKargoOnce.tur === "ucretli" ? { tur: "ucretsiz" } : sonKargoOnce;
+  const vergi =
+    kalemTutarlari.length === 0
+      ? undefined
+      : !indirimVar && kargo === ilkKargo
+        ? ilkVergi
+        : (await vergiHesaplari(vt, [vergiGirdisi(indirimler, kargo)], site))[0];
+  // Ücretsiz kargo kuponunun verilmeyen ücreti: kupon olmasaydı ödenecek kargo (kupondan sonraki sınırla).
+  let kargoIndirimi = 0;
+  if (ucretsizKargo && sonKargoOnce.tur === "ucretli") {
+    const [kargoluVergi] = await vergiHesaplari(vt, [vergiGirdisi(indirimler, sonKargoOnce)], site);
+    kargoIndirimi =
+      kargoluVergi?.kargo === undefined ? sonKargoOnce.tutar : goster(kargoluVergi.kargo);
+  }
+
+  kalemTutarlari.forEach(({ satir }, sira) => {
+    const once = ilkVergi?.satirlar[sira];
+    const sonra = vergi?.satirlar[sira];
+    if (once === undefined || sonra === undefined) return;
+    satir.tutar = goster(once);
+    satir.vergi = {
+      vergisiz: sonra.vergisiz,
+      vergi: sonra.vergi,
+      oranlar: sonra.oranlar.map(({ ad, oran }) => (ad === undefined ? { oran } : { ad, oran })),
+    };
+    const pay = goster(once) - goster(sonra);
+    if (pay > 0) satir.indirim = pay;
+    if (kuponSonucu?.disarida[sira] === "indirimli") satir.kuponDisi = "indirimli";
   });
-  const araToplam = satilanlar.reduce((toplam, satir) => toplam + (satir.tutar ?? 0), 0);
+  const kuponIndirimi = satilanlar.reduce((toplam, satir) => toplam + (satir.indirim ?? 0), 0);
+  const sepetKuponu: SepetKuponu | undefined =
+    kupon === undefined || kalemTutarlari.length === 0
+      ? undefined
+      : kuponSonucu?.gecti === true && kuponSonucu.kupon !== undefined
+        ? {
+            durum: "uygulandi",
+            ...kuponSonucu.kupon,
+            indirim: kuponIndirimi,
+            kargoIndirimi,
+          }
+        : {
+            durum: "gecmedi",
+            kod: kupon.kod.trim(),
+            neden: kuponSonucu?.gecti === false ? kuponSonucu.neden : "bulunamadi",
+            ...(kuponSonucu?.gecti === false && kuponSonucu.neden === "en-az"
+              ? { kalan: kuponSonucu.kalan }
+              : {}),
+          };
   const odemeyiDurduran = hesapSatirlari.some(
     (satir) =>
       !satir.satilabilir ||
@@ -248,6 +377,7 @@ export const sepetiHesapla = async (
           }
         : { tur: kargo.tur },
     vergi: { dokum: vergi?.dokum ?? [], toplam: vergi?.toplam.vergi ?? 0 },
+    ...(sepetKuponu === undefined ? {} : { kupon: sepetKuponu }),
     toplam: vergi?.toplam.vergili ?? 0,
     odemeyeGecilebilir: satilanlar.length > 0 && !odemeyiDurduran,
   };

@@ -37,6 +37,8 @@ export const odemeOturumlari = pgTable(
     kalemler: jsonb().$type<Pick<SepetKalemi, "birim" | "adet">[]>().notNull(),
     toplam: tutar().notNull(),
     para_birimi: text().notNull(),
+    // Sepette uygulanan kuponun kodu (kart 0312): eklentili ödemede sipariş kurulurken hesap bununla yeniden yapılır.
+    kupon_kodu: text(),
     onaylar: jsonb().$type<OturumOnayi[]>().notNull(),
     olusturma_zamani: zaman().notNull().defaultNow(),
     // Stok ayırmasının bittiği an; oturum bu ana kadar siparişe dönebilir.

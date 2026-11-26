@@ -100,6 +100,7 @@
       "siparisBaslangici": "İlk siparişin numarası.",
       "kisiselVeriSaklamaYili": "Siparişteki ad, adres, telefon ve e-postanın kaç yıl saklandığı. Süre dolunca bu bilgiler silinir; tutarlar ve ürünler kalır.",
       "temaDegistirilebilir": "Mağaza sahibi yönetim panelinden temayı değiştirebilir.",
+      "kuponKoduHarfDuyarli": "Kupon kodunda büyük küçük harf ayrılır. Kapalıyken \"kasim50\" ile \"KASIM50\" aynı koddur.",
       "temaDemosu": "Bu site bir tema demosudur: ziyaretçi temaları adresten seçip gezer, hesap açamaz, sipariş veremez; site arama motorlarına kapalıdır.",
       "temalar": "Mağaza sahibinin seçebileceği temalar. İlki sitenin başlangıç temasıdır. Verilmezse bütün hazır temalar.",
       "vitrindeAltyapiAdi": "Vitrinde altyapının adı görünür.",

@@ -188,6 +188,12 @@ export const ayarSemasi = z.strictObject({
     z.boolean().default(true),
     altyapiSahibinin("ayar.aciklama.temaDegistirilebilir"),
   ),
+  // Kupon kodunda büyük küçük harfin fark edip etmediği (kart 0312, karar 0185): kapalıyken "kasim50" ile "KASIM50"
+  // aynı koddur. Kodların tekilliği her zaman harf ayrımsız aranır (cekirdek/moduller/kampanya/model.ts).
+  kuponKoduHarfDuyarli: ayar(
+    z.boolean().default(false),
+    altyapiSahibinin("ayar.aciklama.kuponKoduHarfDuyarli"),
+  ),
   // Mağaza sahibinin seçebileceği temalar (kart 0105): hazır temaların ve sitenin kendi temalarının
   // (tema/ klasörü) kodları. İlki sitenin başlangıç temasıdır. Verilmezse bütün hazır temalardır; listede
   // olmayan tema seçilemez. Kodların var olduğu site klasörü doğrulamasında denetlenir.
