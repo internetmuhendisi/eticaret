@@ -28,4 +28,4 @@ Hat 45719023764 (kayıt cc4a242) yalnız birim testlerindeki tek testle kırmız
 
 ## Durum
 
-yapılacak
+bitti
