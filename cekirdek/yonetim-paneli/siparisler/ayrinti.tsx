@@ -163,6 +163,11 @@ export function SiparisAyrintisi({ veri }: { veri: SiparisAyrintisiVerisi }) {
                       .filter((parca) => parca !== null && parca !== "")
                       .join(" · ")}
                   </span>
+                  {kalem.kuponPayi === undefined ? null : (
+                    <span className="text-kucuk font-kalin text-basari-yazi">
+                      {doldur(metin("yonetim.siparis.kuponPayi"), { tutar: kalem.kuponPayi })}
+                    </span>
+                  )}
                 </span>
                 <span className="font-kalin whitespace-nowrap">{kalem.tutar}</span>
               </li>
@@ -170,6 +175,18 @@ export function SiparisAyrintisi({ veri }: { veri: SiparisAyrintisiVerisi }) {
           </ul>
           <dl className="flex flex-col gap-1 text-kucuk">
             <Satir ad={metin("yonetim.siparis.araToplam")}>{tutarlar.araToplam}</Satir>
+            {tutarlar.kupon === null ? null : (
+              <Satir ad={doldur(metin("yonetim.siparis.kupon"), { kod: tutarlar.kupon.kod })}>
+                {doldur(
+                  metin(
+                    tutarlar.kupon.ucretsizKargo
+                      ? "yonetim.siparis.kuponKargo"
+                      : "yonetim.siparis.kuponIndirimi",
+                  ),
+                  { tutar: tutarlar.kupon.indirim },
+                )}
+              </Satir>
+            )}
             <Satir ad={metin("yonetim.siparis.kargo")}>
               {tutarlar.kargo.tur === "ucretli"
                 ? tutarlar.kargo.tutar

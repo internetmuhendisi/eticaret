@@ -359,6 +359,11 @@ function IadeFormu({
                               adet: String(kalem.adet),
                             })}
                       </span>
+                      {kalem.kuponPayi === undefined ? null : (
+                        <span className="text-kucuk text-soluk-yazi">
+                          {doldur(metin("yonetim.siparis.kuponPayi"), { tutar: kalem.kuponPayi })}
+                        </span>
+                      )}
                     </span>
                   </TabloHucresi>
                   <TabloHucresi className="px-2 py-3 align-middle">

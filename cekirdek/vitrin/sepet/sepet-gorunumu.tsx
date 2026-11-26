@@ -11,7 +11,12 @@
 // - Özet: ara toplam, kargo, toplam ve vergi dökümü (vergi dahil gösterimde "toplama dahil") ve "Ödemeye geç" (kart
 //   0213). Satılamayan satır varken düğme kapalıdır ama odak alır, nedeni altında yazar (karar 0132).
 // - Telefonda sepet sayfasının toplamı altta sabit durur.
-import { type Ref, useEffect, useId, useRef } from "react";
+// - Kupon (kart 0312, karar 0185): kutu yalnız sepet sayfasının özetindedir. Uygulanan kupon kodu ve "Kaldır" ile,
+//   özette tek satır "Kupon (KOD) −tutar" olarak görünür; geçmeyen kuponun nedeni alanın altında yazar ve alana
+//   bağlıdır. İndirimdeki ürüne geçmeyen kupon satırda söylenir. Ödeme adımının özeti aynı satırı gösterir.
+import { type FormEvent, type Ref, useEffect, useId, useRef, useState } from "react";
+import { Form, GonderDugmesi } from "../../../bilesenler/form/form";
+import { FormAlani } from "../../../bilesenler/form/form-alani";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
 import { AdetSecici } from "../../../bilesenler/parcalar/adet-secici";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
@@ -19,16 +24,25 @@ import { bildirimGoster } from "../../../bilesenler/parcalar/bildirim";
 import { BosHal } from "../../../bilesenler/parcalar/bos-hal";
 import { useCizimdenSonraOdak } from "../../../bilesenler/parcalar/cizimden-sonra-odak";
 import { Dugme, IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
+import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
 import { IskeletGorunum } from "../../../bilesenler/parcalar/iskelet";
 import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
+import { kuponSinirlari } from "../../kayitlar/kampanya";
 import { doldur } from "../../metinler/doldur";
 import type { VitrinMetinAnahtari } from "../../metinler/istemci-metni";
 import { useMetin } from "../../metinler/istemci-metni";
 import { vitrinAdresleri } from "../adresler";
-import { adetDegistir, geriKoy, sepettenCikar, useSepet, useSepetGorunumu } from "./durum";
+import {
+  adetDegistir,
+  geriKoy,
+  kuponuAyarla,
+  sepettenCikar,
+  useSepet,
+  useSepetGorunumu,
+} from "./durum";
 import { SepetFiyati } from "./fiyat";
-import type { SepetGorunumu, SepetGorunumuSatiri } from "./veri";
+import type { SepetGorunumu, SepetGorunumuKuponu, SepetGorunumuSatiri } from "./veri";
 
 type Metin = ReturnType<typeof useMetin>;
 
@@ -125,6 +139,12 @@ function SepetSatiri({
               {uyariYazisi(metin, satir, uyari)}
             </span>
           ))}
+          {satir.kuponDisi === "indirimli" ? (
+            <span className="flex items-start gap-1.5 text-kucuk text-soluk-yazi">
+              <Ikon ad="bilgi" className="mt-0.5 size-4 shrink-0" />
+              {metin("vitrin.sepet.kupon.indirimliUrun")}
+            </span>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 masaustu:flex-nowrap masaustu:gap-6">
           {satir.satilabilir ? (
@@ -297,7 +317,15 @@ function OzetSatiri({ ad, deger, vurgu = false }: { ad: string; deger: string; v
 export type OzetTutarlari = Pick<
   SepetGorunumu,
   "adet" | "kargo" | "gosterim" | "vergiDokumu" | "yazili"
->;
+> & { kupon?: SepetGorunumuKuponu | undefined };
+
+// Kupon geçmeme nedeninin yazısı (sepetin kutusu ve ödeme adımı).
+export const kuponNedeni = (
+  metin: Metin,
+  kupon: { kod: string; neden: Extract<SepetGorunumuKuponu, { durum: "gecmedi" }>["neden"] },
+  kalan?: string,
+) =>
+  doldur(metin(`vitrin.sepet.kupon.neden.${kupon.neden}`), { kod: kupon.kod, kalan: kalan ?? "" });
 
 export function SepetOzeti({ gorunum }: { gorunum: OzetTutarlari }) {
   const metin = useMetin();
@@ -308,6 +336,18 @@ export function SepetOzeti({ gorunum }: { gorunum: OzetTutarlari }) {
         ad={doldur(metin("vitrin.sepet.araToplam"), { sayi: String(gorunum.adet) })}
         deger={gorunum.yazili.araToplam}
       />
+      {gorunum.kupon?.durum === "uygulandi" ? (
+        <div className="flex justify-between gap-3 text-govde font-kalin text-basari-yazi">
+          <dt>{doldur(metin("vitrin.sepet.kupon.ozet"), { kod: gorunum.kupon.kod })}</dt>
+          <dd className="whitespace-nowrap">
+            {gorunum.kupon.tur === "ucretsiz-kargo"
+              ? metin("vitrin.sepet.kupon.ucretsizKargo")
+              : doldur(metin("vitrin.sepet.kupon.indirim"), {
+                  tutar: gorunum.kupon.yaziliIndirim,
+                })}
+          </dd>
+        </div>
+      ) : null}
       {gorunum.kargo === "yok" ? null : (
         <OzetSatiri
           ad={metin("vitrin.sepet.kargo")}
@@ -344,6 +384,87 @@ export function SepetOzeti({ gorunum }: { gorunum: OzetTutarlari }) {
           ))
         : null}
     </dl>
+  );
+}
+
+// Sepet sayfasının kupon kutusu (kart 0312). Uygulanan kupon kod ve "Kaldır" ile durur; geçmeyen kuponun kodu alanda
+// kalır, nedeni alanın altında yazar (sepet değişince geçebilir). Kaldırınca odak alana geçer.
+function KuponAlani({ kupon }: { kupon: SepetGorunumuKuponu | undefined }) {
+  const metin = useMetin();
+  const form = useRef<HTMLFormElement>(null);
+  const [bosHata, setBosHata] = useState(false);
+  const odakla = useCizimdenSonraOdak();
+  const kuponAlani = (): HTMLInputElement | null => {
+    const alan = form.current?.elements.namedItem("kupon");
+    return alan instanceof HTMLInputElement ? alan : null;
+  };
+  const uygula = (olay: FormEvent<HTMLFormElement>) => {
+    olay.preventDefault();
+    const kod = kuponAlani()?.value.trim() ?? "";
+    setBosHata(kod.length === 0);
+    if (kod.length === 0) {
+      kuponAlani()?.focus();
+      return;
+    }
+    kuponuAyarla(kod);
+  };
+  if (kupon?.durum === "uygulandi") {
+    return (
+      <div className="flex items-center justify-between gap-2 rounded-kucuk border border-dashed border-basari-yazi py-1 pr-1 pl-3 text-govde text-basari-yazi">
+        <span className="flex items-center gap-1.5 font-kalin">
+          <Ikon ad="basari" className="size-4 shrink-0" />
+          {doldur(metin("vitrin.sepet.kupon.uygulandi"), { kod: kupon.kod })}
+        </span>
+        <IkonDugmesi
+          ikon="kapat"
+          etiket={doldur(metin("vitrin.sepet.kupon.kaldir"), { kod: kupon.kod })}
+          onClick={() => {
+            kuponuAyarla(undefined);
+            // Kutu sunucunun yeni cevabıyla alana döner: odak alan çizilince verilir.
+            odakla(kuponAlani, () => kuponAlani() !== null);
+          }}
+        />
+      </div>
+    );
+  }
+  const hata = bosHata
+    ? metin("vitrin.sepet.kupon.bos")
+    : kupon?.durum === "gecmedi"
+      ? kuponNedeni(metin, kupon, kupon.yaziliKalan)
+      : undefined;
+  return (
+    <Form
+      ref={form}
+      onSubmit={uygula}
+      kodGerekliMetni={metin("ortak.form.kodGerekli")}
+      yukleniyorMetni={metin("ortak.form.yukleniyor")}
+      className="flex flex-col gap-1"
+    >
+      <FormAlani
+        etiket={metin("vitrin.sepet.kupon.alan")}
+        {...(hata === undefined ? {} : { hata })}
+      >
+        {(baglanti) => (
+          <div className="flex gap-2">
+            <GirisAlani
+              {...baglanti}
+              name="kupon"
+              defaultValue={kupon?.kod ?? ""}
+              key={kupon?.kod ?? ""}
+              autoComplete="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              maxLength={kuponSinirlari.kodEnCok}
+              className="min-w-0 flex-1 uppercase"
+              onInput={() => setBosHata(false)}
+            />
+            <GonderDugmesi tur="cerceveli" className="shrink-0">
+              {metin("vitrin.sepet.kupon.uygula")}
+            </GonderDugmesi>
+          </div>
+        )}
+      </FormAlani>
+    </Form>
   );
 }
 
@@ -453,6 +574,7 @@ export function SepetSayfasiIcerigi({
           <h2 id="sepet-ozet-basligi" className="font-baslik text-baslik-4 font-baslik-kalinligi">
             {metin("vitrin.sepet.ozet")}
           </h2>
+          <KuponAlani kupon={gorunum.kupon} />
           <SepetOzeti gorunum={gorunum} />
           <OdemeyeGec gorunum={gorunum} className="hidden tablet:flex" />
         </section>

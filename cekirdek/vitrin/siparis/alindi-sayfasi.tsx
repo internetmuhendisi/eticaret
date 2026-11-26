@@ -20,6 +20,7 @@ import { metin, siteninBicimleyicisi } from "../../metinler/site-metni";
 import { epostaGidebilirMi } from "../../moduller/eposta/gonderici";
 import { sayfaBasligi } from "../../moduller/gorunurluk/sayfa-bilgisi";
 import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
+import { siparisinKuponu } from "../../moduller/siparis/musteri";
 import { siparisServisi } from "../../moduller/siparis/servis";
 import { siteninVeritabani } from "../../veritabani/baglanti";
 import { hesapSiparisiAdresi, siparisTakibiAdresi, vitrinAdresleri } from "../adresler";
@@ -240,6 +241,7 @@ export async function SiparisAlindiSayfasi() {
               kargoTutari: siparis.kargo_tutari,
               vergiToplami: siparis.vergi_toplami,
               toplam: siparis.toplam,
+              kupon: siparisinKuponu(siparis),
             })}
           />
           <Baglanti href={vitrinAdresleri.anasayfa} gorunum="cerceveli">

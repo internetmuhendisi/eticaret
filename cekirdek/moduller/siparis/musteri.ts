@@ -23,6 +23,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { and, asc, count, desc, eq, gt, inArray, lte, ne, sql } from "drizzle-orm";
 import { eklentiliMi } from "../../eklentiler/odeme-yontemleri.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
+import type { KuponTuru } from "../../kayitlar/kampanya.ts";
 import type { OdemeYontemi } from "../../kayitlar/odeme.ts";
 import {
   type IadeKargosuOdeyen,
@@ -89,6 +90,20 @@ export type MusteriIadeTalebi = {
   kararZamani: Date | null;
 };
 
+// Siparişin kuponu, saklandığı hâliyle (kart 0312): müşterinin, panelin, e-postanın ve fişin ortak okuması.
+export type SiparisKuponu = { kod: string; tur: KuponTuru; indirim: number; kargoIndirimi: number };
+export const siparisinKuponu = (
+  siparis: Pick<Siparis, "kupon_kodu" | "kupon_turu" | "kupon_indirimi" | "kupon_kargo_indirimi">,
+): SiparisKuponu | null =>
+  siparis.kupon_kodu === null || siparis.kupon_turu === null
+    ? null
+    : {
+        kod: siparis.kupon_kodu,
+        tur: siparis.kupon_turu as KuponTuru,
+        indirim: siparis.kupon_indirimi,
+        kargoIndirimi: siparis.kupon_kargo_indirimi,
+      };
+
 export type MusteriSiparisi = {
   numara: string;
   olusturma: Date;
@@ -102,6 +117,8 @@ export type MusteriSiparisi = {
   vergiToplami: number;
   toplam: number;
   vergiDokumu: Siparis["vergi_dokumu"];
+  // Kupon (kart 0312): kodu, türü ve indirimi (gösterim biçiminde); kuponsuz siparişte yok.
+  kupon: SiparisKuponu | null;
   tahsilat: Pick<Tahsilat, "odenen" | "taksit"> | null;
   odemeSonZamani: Date | null;
   odemeZamani: Date | null;
@@ -308,6 +325,7 @@ const musteriHali = async (
     vergiToplami: siparis.vergi_toplami,
     toplam: siparis.toplam,
     vergiDokumu: siparis.vergi_dokumu,
+    kupon: siparisinKuponu(siparis),
     tahsilat:
       siparis.tahsilat === null
         ? null

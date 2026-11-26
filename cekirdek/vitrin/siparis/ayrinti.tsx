@@ -525,6 +525,7 @@ export function SiparisAyrintisi({
                 kargoTutari: siparis.kargoTutari,
                 vergiToplami: siparis.vergiToplami,
                 toplam: siparis.toplam,
+                kupon: siparis.kupon,
               })}
             />
             {siparis.tahsilat === null || siparis.tahsilat.odenen === siparis.toplam ? null : (

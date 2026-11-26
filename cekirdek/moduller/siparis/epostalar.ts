@@ -106,6 +106,9 @@ export const siparisEpostasiYaz = async (
       vergiToplami: s.vergi_toplami,
       toplam: s.toplam,
       vergiDokumu: s.vergi_dokumu,
+      ...(s.kupon_kodu === null || s.kupon_turu === null
+        ? {}
+        : { kupon: { kod: s.kupon_kodu, tur: s.kupon_turu, indirim: s.kupon_indirimi } }),
     },
     teslimat: s.teslimat,
     odeme: {

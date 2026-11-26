@@ -228,6 +228,22 @@ function Fis({ magaza, fis, sira }: { magaza: FisMagazasi; fis: SiparisFisi; sir
         <dl className="ml-auto flex w-full max-w-karekod flex-col gap-1 break-inside-avoid">
           {[
             { ad: metin("yonetim.siparis.araToplam"), deger: tutarlar.araToplam, vurgu: false },
+            ...(tutarlar.kupon === null
+              ? []
+              : [
+                  {
+                    ad: doldur(metin("yonetim.siparis.kupon"), { kod: tutarlar.kupon.kod }),
+                    deger: doldur(
+                      metin(
+                        tutarlar.kupon.ucretsizKargo
+                          ? "yonetim.siparis.kuponKargo"
+                          : "yonetim.siparis.kuponIndirimi",
+                      ),
+                      { tutar: tutarlar.kupon.indirim },
+                    ),
+                    vurgu: false,
+                  },
+                ]),
             {
               ad: metin("yonetim.siparis.kargo"),
               deger:

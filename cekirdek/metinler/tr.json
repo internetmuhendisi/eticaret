@@ -1426,6 +1426,10 @@
       "urunler": "Ürünler",
       "adet": "{adet} × {fiyat}",
       "araToplam": "Ara toplam",
+      "kupon": "Kupon ({kod})",
+      "kuponIndirimi": "−{tutar}",
+      "kuponKargo": "Ücretsiz kargo ({tutar})",
+      "kuponPayi": "Kupon payı −{tutar}",
       "kargo": "Kargo",
       "kargoUcretsiz": "Ücretsiz",
       "kargoYok": "Kargo gerekmiyor",
@@ -3590,7 +3594,27 @@
       },
       "adetSayisi": "{sayi} adet",
       "odemeyeGec": "Ödemeye geç",
-      "odemeEngeli": "Ödemeye geçmek için işaretli satırları düzeltin."
+      "odemeEngeli": "Ödemeye geçmek için işaretli satırları düzeltin.",
+      "kupon": {
+        "alan": "Kupon kodu",
+        "uygula": "Uygula",
+        "uygulandi": "{kod} uygulandı",
+        "kaldir": "Kaldır: {kod}",
+        "ozet": "Kupon ({kod})",
+        "indirim": "−{tutar}",
+        "ucretsizKargo": "Ücretsiz kargo",
+        "indirimliUrun": "İndirimli ürün, kupon geçmez.",
+        "bos": "Kupon kodunu yazın.",
+        "neden": {
+          "bulunamadi": "{kod} kodlu bir kupon bulunamadı. Kodu kontrol edin.",
+          "baslamadi": "{kod} kuponu henüz başlamadı.",
+          "suresi-doldu": "{kod} kuponunun süresi doldu.",
+          "sinir-doldu": "{kod} kuponunun kullanım sınırı doldu.",
+          "kullanildi": "{kod} kuponunu daha önce kullandınız.",
+          "urun-yok": "{kod} kuponu sepetinizdeki ürünlerde geçerli değil.",
+          "en-az": "{kod} kuponu için sepetinize {kalan} daha ekleyin."
+        }
+      }
     },
     "odeme": {
       "baslik": "Ödeme",
@@ -3667,7 +3691,8 @@
         "genel": "Sipariş şu an onaylanamadı. Biraz sonra yeniden deneyin.",
         "yontem": "Bir ödeme yöntemi seçin.",
         "yontemKapali": "Bu ödeme yöntemi artık kullanılamıyor. Sayfayı yenileyip başka bir yöntem seçin.",
-        "yontemUlasilamadi": "Kartla ödeme şu an başlatılamadı. Biraz sonra yeniden deneyin ya da başka bir ödeme yöntemi seçin."
+        "yontemUlasilamadi": "Kartla ödeme şu an başlatılamadı. Biraz sonra yeniden deneyin ya da başka bir ödeme yöntemi seçin.",
+        "kupon": "Sipariş onaylanmadı. Kuponu kaldırmak ya da sepeti değiştirmek için sepete dönün."
       },
       "sozlesme": {
         "onBilgilendirme": "Ön bilgilendirme formu",
@@ -3970,6 +3995,9 @@
       "secimAyiraci": ", ",
       "adet": "{adet} adet",
       "araToplam": "Ara toplam ({sayi} ürün)",
+      "kupon": "Kupon ({kod})",
+      "kuponIndirimi": "−{tutar}",
+      "kuponKargo": "Ücretsiz kargo",
       "kargo": "Kargo",
       "kargoUcretsiz": "Ücretsiz",
       "vergi": "{vergi} ({oran})",
