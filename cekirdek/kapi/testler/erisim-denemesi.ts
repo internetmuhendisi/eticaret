@@ -214,7 +214,8 @@ export const erisimleriDene = async (
   const hesaplar = new Map<Kisi, string | null>();
   for (const kisi of kisiler) hesaplar.set(kisi, await hesapAcVeRolVer(vt, kisi));
 
-  for (const { baslik, yontem, yol, uc } of uclar) {
+  for (const kayitliUc of uclar) {
+    const { baslik, uc } = kayitliUc;
     const belgede = beklenenler.get(baslik);
     if (belgede === undefined) {
       hatalar.push(`${baslik}: belgede izni yok`);
@@ -232,9 +233,7 @@ export const erisimleriDene = async (
     // ötekinin denemesini etkilemez. Süre çoğunlukla veritabanı beklemesidir; sırayla denemek hattın yükünde
     // adımı 5 saniyelik sınıra taşıyordu. Hatalar kişilerin sırasıyla yazılır.
     const kisiHatalari = await Promise.all(
-      kisiler.map((kisi) =>
-        kisiyiDene(vt, { baslik, yontem, yol, uc }, izin, kisi, hesaplar.get(kisi) ?? null),
-      ),
+      kisiler.map((kisi) => kisiyiDene(vt, kayitliUc, izin, kisi, hesaplar.get(kisi) ?? null)),
     );
     hatalar.push(...kisiHatalari.flat());
   }
