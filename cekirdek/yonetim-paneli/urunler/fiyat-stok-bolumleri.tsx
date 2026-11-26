@@ -371,7 +371,7 @@ export function StokSebebiAlanlari({
   );
 }
 
-function SebepSecimi({
+export function SebepSecimi({
   ad,
   deger,
   sec,

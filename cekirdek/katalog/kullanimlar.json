@@ -403,6 +403,7 @@
     "cekirdek/yonetim-paneli/urunler/fiyat-stok-bolumleri.tsx",
     "cekirdek/yonetim-paneli/urunler/galeri-bolumu.tsx",
     "cekirdek/yonetim-paneli/urunler/secenekler-bolumu.tsx",
+    "cekirdek/yonetim-paneli/urunler/toplu-duzenleme.tsx",
     "cekirdek/yonetim-paneli/urunler/urun-ekrani.tsx",
     "cekirdek/yonetim-paneli/vergi/ekran.tsx",
     "cekirdek/yonetim-paneli/vergi/siniflar.tsx"
@@ -623,6 +624,7 @@
     "cekirdek/yonetim-paneli/siparisler/not-formu.tsx",
     "cekirdek/yonetim-paneli/tema/ayarlar-ekrani.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
+    "cekirdek/yonetim-paneli/urunler/toplu-duzenleme.tsx",
     "cekirdek/yonetim-paneli/urunler/urun-ekrani.tsx",
     "cekirdek/yonetim-paneli/vergi/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/bolum-duzenleyici.tsx"
@@ -681,6 +683,7 @@
     "cekirdek/yonetim-paneli/siparisler/iade-penceresi.tsx",
     "cekirdek/yonetim-paneli/urunler/fiyat-stok-bolumleri.tsx",
     "cekirdek/yonetim-paneli/urunler/secenekler-bolumu.tsx",
+    "cekirdek/yonetim-paneli/urunler/toplu-duzenleme.tsx",
     "cekirdek/yonetim-paneli/vergi/siniflar.tsx"
   ],
   "bilesenler/parcalar/uyari.tsx": [
@@ -738,6 +741,7 @@
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
     "cekirdek/yonetim-paneli/urunler/galeri-bolumu.tsx",
     "cekirdek/yonetim-paneli/urunler/secenekler-bolumu.tsx",
+    "cekirdek/yonetim-paneli/urunler/toplu-duzenleme.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/slider.tsx"
   ],
@@ -759,6 +763,7 @@
     "cekirdek/yonetim-paneli/siparisler/iade-talebi-kutusu.tsx",
     "cekirdek/yonetim-paneli/siparisler/not-formu.tsx",
     "cekirdek/yonetim-paneli/urunler/fiyat-stok-bolumleri.tsx",
+    "cekirdek/yonetim-paneli/urunler/toplu-duzenleme.tsx",
     "cekirdek/yonetim-paneli/urunler/urun-ekrani.tsx"
   ],
   "bilesenler/parcalar/yan-pencere.tsx": [
@@ -781,6 +786,7 @@
     "cekirdek/yonetim-paneli/siparisler/iade-talebi-kutusu.tsx",
     "cekirdek/yonetim-paneli/siparisler/islemler.tsx",
     "cekirdek/yonetim-paneli/urunler/fiyat-stok-bolumleri.tsx",
+    "cekirdek/yonetim-paneli/urunler/toplu-duzenleme.tsx",
     "cekirdek/yonetim-paneli/vergi/siniflar.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx"
   ],

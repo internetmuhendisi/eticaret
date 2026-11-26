@@ -12,6 +12,7 @@ import {
   type UrunPanelSiralamasi,
   type UrunPanelStokDurumu,
   type UrunTopluIslemi,
+  urunTopluDuzenlemeKodlari,
   urunTopluIslemKodlari,
 } from "../../kayitlar/urun";
 import { doldur } from "../../metinler/doldur";
@@ -23,6 +24,7 @@ import { KatalogGorseli } from "../katalog-gorseli";
 import { Liste, type SutunTanimi, type TopluIslemTanimi } from "../liste/liste";
 import type { ListeDurumu, ListeVerisi } from "../liste/tanim";
 import { urunListesiTanimi } from "./liste-tanimi";
+import { type ParaSimgesi, TopluDuzenlemePenceresi, topluDuzenlemeNedeni } from "./toplu-duzenleme";
 import type { KayitSecenegi, UrunSatiri } from "./veri";
 
 // Yayın durumunun rozeti: renk ve yazı birlikte (yalnız renkle verilmez).
@@ -153,12 +155,15 @@ export function UrunListesi({
   veri,
   kayitSecenekleri,
   topluIslemler,
+  para,
 }: {
   durum: ListeDurumu;
   veri: ListeVerisi<UrunSatiri> | null;
   kayitSecenekleri: Record<string, KayitSecenegi[]>;
   // Yöneticinin izni olan toplu işlemlerin kodları (sunucu süzer).
   topluIslemler: readonly string[];
+  // Toplu fiyat değişikliğinin tutar alanının simgesi, sitenin biçimiyle (sunucu verir).
+  para: ParaSimgesi;
 }) {
   const metin = usePanelMetni();
   const sutunlar: SutunTanimi<UrunSatiri>[] = [
@@ -204,7 +209,27 @@ export function UrunListesi({
       hucre: (satir) => <VitrindeGor satir={satir} />,
     },
   ];
-  const islemler: TopluIslemTanimi<UrunSatiri>[] = urunTopluIslemKodlari
+  // Toplu düzenlemeler (kart 0314): her biri kendi penceresini açar, önizler ve uygular.
+  const duzenlemeler: TopluIslemTanimi<UrunSatiri>[] = urunTopluDuzenlemeKodlari
+    .filter((kod) => topluIslemler.includes(kod))
+    .map((kod) => ({
+      tur: "pencere",
+      kod,
+      ad: metin(`yonetim.urunler.topluDuzenleme.${kod}.ad`),
+      pencere: ({ satirlar, kapat, bitti }) => (
+        <TopluDuzenlemePenceresi
+          tur={kod}
+          urunler={satirlar.map((satir) => ({ kimlik: satir.kimlik, ad: satir.ad }))}
+          para={para}
+          kapat={kapat}
+          bitti={bitti}
+        />
+      ),
+      basari: (sayi) =>
+        doldur(metin(`yonetim.urunler.topluDuzenleme.${kod}.basari`), { sayi: String(sayi) }),
+      neden: (neden) => metin(topluDuzenlemeNedeni(neden)),
+    }));
+  const durumIslemleri: TopluIslemTanimi<UrunSatiri>[] = urunTopluIslemKodlari
     .filter((kod) => topluIslemler.includes(kod))
     .map((kod) => ({
       kod,
@@ -267,7 +292,7 @@ export function UrunListesi({
         baslik: metin("yonetim.urunler.bos.baslik"),
         aciklama: metin("yonetim.urunler.bos.metin"),
       }}
-      topluIslemler={islemler}
+      topluIslemler={[...duzenlemeler, ...durumIslemleri]}
     />
   );
 }
