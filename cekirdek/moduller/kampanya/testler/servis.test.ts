@@ -176,6 +176,29 @@ describe("kullanım sınırları", () => {
     expect(await h.kullanimlar()).toHaveLength(1);
   });
 
+  it("siparişe bağlarken ayırmanın süresi dolmuşsa sınır yeniden sayılır, doluysa hiçbir şey yazılmaz", async () => {
+    const h = await hazirla();
+    const kupon = await h.kuponAc({ toplamSinir: 1 });
+    const kendi = await h.ayir(kupon, kisi("a@ornek.test"));
+    await h.vt.execute(
+      sql`update kupon_kullanimlari set bitis_zamani = now() - interval '1 millisecond'`,
+    );
+    await h.ayir(kupon, kisi("b@ornek.test"));
+    expect(
+      await hatasi(
+        h.vt.transaction((islem) =>
+          servis.siparisiBagla(islem, {
+            kupon,
+            oturum: kendi,
+            siparis: randomUUID(),
+            kisi: kisi("a@ornek.test"),
+          }),
+        ),
+      ),
+    ).toEqual({ kod: "cakisma", ayrinti: [{ alan: "kupon", kod: "kupon-sinir-doldu" }] });
+    expect((await h.kullanimlar()).every((satir) => satir.siparis_kimligi === null)).toBe(true);
+  });
+
   it("aynı anda altı ödemede toplam sınır (2) aşılmaz", async () => {
     const h = await hazirla();
     const kupon = await h.kuponAc({ toplamSinir: 2 });

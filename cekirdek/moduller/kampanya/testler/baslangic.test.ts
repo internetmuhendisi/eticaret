@@ -1,12 +1,14 @@
 // Başlangıç kuponlarının kurulumu gerçek veritabanıyla (kart 0312). Deneme sitesinin (kupon-dolu) dosyasında iki kupon
 // var: biri bütün ürünlerde, öteki bir üründe. Katalog kurulmadan kurulunca ürün bulunamaz: o kupon yazılmaz ve döner.
-// Sitede kupon satırı varsa (silinmiş bile olsa) hiçbir şey yazılmaz; aynı anda üç kurulumdan biri yazar.
+// Sitede kupon satırı varsa (silinmiş bile olsa) hiçbir şey yazılmaz; açık duran kurulumun arkasındaki kurulum kilitte
+// bekler (sıra kurularak).
 import { resolve } from "node:path";
 import { sql } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 import { siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
 import { baglantiyiKapat } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
+import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { kuponBaslangiciniKur } from "../baslangic.ts";
 import { kuponlar } from "../model.ts";
@@ -54,10 +56,18 @@ describe("başlangıç kuponları", () => {
     });
   });
 
-  it("aynı anda üç kurulumdan yalnız biri yazar", async () => {
+  it("açık duran kurulumun arkasındaki kurulum kilitte bekler, öncekinin kuponunu görüp yazmaz", async () => {
     const vt = await ac();
-    const sonuclar = await Promise.all([1, 2, 3].map(() => kuponBaslangiciniKur(vt, site)));
-    expect(sonuclar.filter((sonuc) => sonuc.sonuc === "yazildi")).toHaveLength(1);
-    expect(await vt.select().from(kuponlar)).toHaveLength(1);
+    let ikinci: Promise<unknown> | undefined;
+    await vt.transaction(async (islem) => {
+      await islem.execute(sql`select pg_advisory_xact_lock(hashtext('kupon-baslangici'))`);
+      await islem.execute(
+        sql`insert into kuponlar (kod, tur, deger, kapsam) values ('ONCEKI1', 'yuzde', 5, 'hepsi')`,
+      );
+      ikinci = kuponBaslangiciniKur(vt, site);
+      await kilitBekleyeniGor(vt);
+    });
+    expect(await ikinci).toEqual({ sonuc: "kurulu" });
+    expect((await vt.select().from(kuponlar)).map((k) => k.kod)).toEqual(["ONCEKI1"]);
   });
 });

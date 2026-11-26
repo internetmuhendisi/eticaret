@@ -400,6 +400,14 @@ describe("kartla ödemenin dönüşünde kupon", () => {
     const a = await h.urunAc();
     const kupon = await h.kuponAc({ toplamSinir: 1 });
     const oturum = await oturumAc(h, a, "kart@ornek.test");
+    // Kullanım oturumla aynı işlemde, siparişe bağlanmadan ayrılır.
+    expect(await h.kullanimlar()).toEqual([
+      expect.objectContaining({
+        oturum_kimligi: oturum,
+        siparis_kimligi: null,
+        kupon_kimligi: kupon,
+      }),
+    ]);
     await h.vt.update(kuponlar).set({ bitis_zamani: new Date() }).where(eq(kuponlar.kimlik, kupon));
     // 118,00 − 11,80 + 59,00.
     const siparis = await karttan(h, oturum, 16_520);
