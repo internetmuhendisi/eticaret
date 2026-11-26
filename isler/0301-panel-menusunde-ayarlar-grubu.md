@@ -30,6 +30,7 @@ Bölüm: Yönetim paneli 2 (açık kartlardan alındı). Kart 0278 sırasında b
 - Testler: gerçek menünün grupları ve Satış ile Ayarlar'ın sırası, yolun adımları (`sayfa-agaci.test.ts`); gerçek düzende mağaza sahibi ve görevlide Ayarlar grubu, sayfadaki yolda bağlantısız grup (`panel-yetkisi.test.tsx`). Grubun Satış'a dönmesi, sıranın bozulması, yoldan grubun çıkması ve grubun bağlantı çizilmesi ayrı ayrı bozularak kırmızıya düştü.
 - Panel ve katalog birim testleri (47 dosya, 420 test), tür kontrolü, denetim; tarayıcıda panel çerçevesi (masaüstü menü, telefon yan penceresi, geniş logo, iki renkte ve üç genişlikte tarama) ve katalogdaki sayfa yolu (tarama, üç genişlikte basılan alan) 10/10 geçti.
 - Ekran görüntüsü (masaüstünde sayfa yolu ve yan menü, telefonda menü penceresi) taslakla yan yana kondu: Ayarlar grubu ve sırası taslakla aynı. Taslaktan ayrı kalan grup adı ("Katalog"), grup sırası (İçerik ve Vitrin) ve yolun ilk adımı ("Panel") kart 0324'te.
+- **Hat 45784138336 (010674b).** Tür kontrolü, birim takımı ve iki aşamalı tarayıcı testleri yeşil (menü ve sayfa yolu testleri dahil). Hattın yerel ortam denemesi kart 0328 yüzünden kırmızı, bu kartla ilgisiz.
 
 ## Durum
 

@@ -30,6 +30,7 @@ Bölüm: Test altyapısı (kart 0322 sırasında hattın sonucuna bakılırken b
 - Adımın sınırı 20 sn (`rol-uc-erisimi.test.ts`, gerekçesi yanında): hattın yükü adımı 4 kata kadar uzattı, yeni hâlin hattaki en kötü tahmini yaklaşık 3,2 sn; pay 5 kattan fazla. Her yeni uç yerelde yaklaşık 5 ms ekler.
 - Test zayıflamadı: her kişi her uçta yine denenir; görevlinin izni beklentiden çıkarılınca kırmızı (eksik izinler uç uç listelendi). Dosyanın 38 testi, tür kontrolü ve denetim yeşil.
 - "Birim takımı hattın koşulunda yeşil" bir sonraki gönderimin hattında görülür.
+- **Hat 45784138336 (010674b).** Birim takımı yeşil (280/280 dosya); "her kişi her uçta" adımı 2,19 sn, sınır 20 sn (pay yaklaşık 9 kat; önceki hatta 5,0 sn ile 5 sn sınırını aşıyordu). Hattın yerel ortam denemesi kart 0328 yüzünden kırmızı, bu kartla ilgisiz.
 
 ## Durum
 

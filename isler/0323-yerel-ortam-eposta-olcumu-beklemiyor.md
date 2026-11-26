@@ -31,6 +31,7 @@ Bölüm: Test altyapısı. Kart 0311 sırasında hattın sonucuna bakılırken b
 - **Testler.** `komutlar/testler/posta-kutusu.test.ts` sahte kutuyla 16 test; yedi denetim ayrı ayrı bozulunca kırmızı (beklemesiz tek arama dahil: gecikmeli kutuda dört test kırmızı). Gerçek yerel Mailpit'te bir kez elle: bulunan e-posta, olmayan alıcıda boş liste, kapalı port ve yanlış yolda neden, 300 ms sonra gelen kopyanın sayılması. Tür kontrolü ve denetim yeşil.
 - **Bağımsız kontrol.** Engelleyici bulgu yok. Üç bulgu düzeltildi: kopya iletinin sayılmaması, sıfırlama ölçümünde ileti okuma hatasının denemeyi düşürmesi, istek süresinin olmaması. Çekirdek testlerindeki posta kutusu aramaları da tek arama yapıyor; hata cevabında kırmızıdırlar, yanlış geçmezler; gecikmeye karşı ölçülmedi, kart açılmadı (kural tablosunda not).
 - **Açık kalan.** Yerel ortam denemesi yerelde çalıştırılmadı (ortak yerel kutuları kapatır); "hattın koşulunda yeşil" maddesi bir sonraki gönderimin hattında görülür.
+- **Hat 45784138336 (010674b).** Yerel ortam denemesinde iki e-posta ölçümü geçti: Örnek Mağaza'nın e-postası yerel posta kutusuna düştü (1 e-posta), gönderen adresi olmayan deneme sitesi göndermedi (0 e-posta). Adım bütün olarak kırmızı: tek düşen ölçüm kuyruğunki (Örnek Mağaza'da hatalı örnek işin ikinci denemesi 60 sn içinde alınmadı), bu kartla ilgisiz, kart 0328. Kullanıcı kararıyla kart bu sonuçla kapandı.
 
 ## Durum
 
