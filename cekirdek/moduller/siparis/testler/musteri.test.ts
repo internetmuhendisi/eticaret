@@ -17,6 +17,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { type Site, siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
 import { BilinenHata } from "../../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
+import { gizliGeciyor } from "../../../testler/gizli-deger.ts";
 import { baglantiyiKapat, type Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { siteninFiyatServisi } from "../../fiyat/servis.ts";
@@ -422,7 +423,8 @@ describe("takip", () => {
     expect(okunan?.fatura).toBeNull();
     expect(okunan?.eposta).toBeNull();
     expect(JSON.stringify(okunan)).not.toContain("Atatürk");
-    expect(JSON.stringify(okunan)).not.toContain("06420");
+    // Posta kodu yalnız tek başına sayılır: kimliklerde "06420" geçebilir (kart 0310).
+    expect(gizliGeciyor(JSON.stringify(okunan), "06420")).toBe(false);
     expect(okunan?.notlar).toEqual([]);
     expect(JSON.stringify(okunan)).not.toContain("Kapı kodu");
   });

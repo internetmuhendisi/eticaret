@@ -24,6 +24,7 @@ import {
   yoneticiBildirimSinirlari,
 } from "../../../kayitlar/yonetici-bildirimi.ts";
 import { siteninBicimleyicisi } from "../../../metinler/site-metni.ts";
+import { gizliGeciyor } from "../../../testler/gizli-deger.ts";
 import { baglantiyiKapat, type Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
@@ -175,6 +176,16 @@ const bilgiler = (odemeYontemi: OdemeYontemiSecimi) =>
     mesafeliSatisOnayi: true,
     pazarlamaIzni: false,
   });
+// Müşterinin kuyruğa ve e-postaya gitmeyen bilgileri: telefonun girilen ve çevrilmiş yazılışı,
+// açık adres, posta kodu ve soyadı.
+const gizliler = (eposta: string) => [
+  eposta,
+  "0555 123 45 67",
+  "5551234567",
+  "Gizli Sokak",
+  "06420",
+  "Yılmaz",
+];
 const havale: OdemeYontemiSecimi = { yontem: "havale" };
 const kapida: OdemeYontemiSecimi = { yontem: "kapida-odeme", secenek: "nakit" };
 
@@ -411,8 +422,9 @@ describe("sipariş olayları", () => {
     const numara = await ver(h.vt, [{ birim, adet: 3 }], kapida, { eposta });
     const [is] = await bildirimIsleri(h.vt);
     const metin = JSON.stringify(is);
-    for (const gizli of [eposta, "555", "Gizli Sokak", "06420", "Yılmaz"]) {
-      expect(metin).not.toContain(gizli);
+    // Telefon tam yazılışıyla aranır: işin anahtarındaki rastgele kimlikte "555" geçebilir (kart 0310).
+    for (const gizli of gizliler(eposta)) {
+      expect(gizliGeciyor(metin, gizli), gizli).toBe(false);
     }
     expect(is?.veri).toMatchObject({
       numara,
@@ -433,9 +445,9 @@ describe("sipariş olayları", () => {
     expect(ileti.metin).toContain("Çankaya / Ankara");
     expect(ileti.metin).toContain("3 adet, 1 kalem");
     expect(ileti.metin).toContain(`/yonetim/siparisler/ayrinti?numara=${numara}`);
-    for (const gizli of [eposta, "555", "Gizli Sokak", "06420", "Yılmaz"]) {
-      expect(ileti.metin).not.toContain(gizli);
-      expect(ileti.html).not.toContain(gizli);
+    for (const gizli of gizliler(eposta)) {
+      expect(gizliGeciyor(ileti.metin, gizli), gizli).toBe(false);
+      expect(gizliGeciyor(ileti.html, gizli), gizli).toBe(false);
     }
   });
 });

@@ -26,6 +26,7 @@ import { stokServisi } from "../../moduller/stok/servis";
 import { calisanSiteninUrunServisi } from "../../moduller/urun/servis";
 import { baglan, type Veritabani, veritabaniAdresi } from "../../veritabani/baglanti";
 import { hesapSiparisiAdresi, siparisTakibiAdresi, vitrinAdresleri } from "../../vitrin/adresler";
+import { gizliGeciyor } from "../gizli-deger";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
 import { tara } from "./tarama";
@@ -266,8 +267,18 @@ test("üye olmayan numara ve e-postayla siparişini bulur; eşleşmeyen e-posta 
   await expect(page.getByText("D*** M*** · *** *** ** 42")).toBeVisible();
   // Sayfanın HTML'inde ve RSC verisinde tam ad, telefon, açık adres, posta kodu ve e-posta yoktur.
   const html = await page.content();
-  for (const gizli of ["Müşteri", "0555", "555 000", "Takip Sokak", "06420", eposta]) {
-    expect(html, gizli).not.toContain(gizli);
+  // Kısa rakam dizileri yalnız tek başına sayılır: HTML'deki kimliklerde ve kod dosyalarının
+  // özetlerinde kendiliğinden geçebilir (kart 0310).
+  for (const gizli of [
+    "Müşteri",
+    "0555",
+    "555 000",
+    "5550000042",
+    "Takip Sokak",
+    "06420",
+    eposta,
+  ]) {
+    expect(gizliGeciyor(html, gizli), gizli).toBe(false);
   }
   await expect(
     page.getByRole("heading", { level: 2, name: metin("vitrin.siparis.gecmis") }),
