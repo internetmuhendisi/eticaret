@@ -2,7 +2,7 @@
 // gerçek veritabanı ve gerçek döngüyle testler/deneme-olcumu.test.ts'tedir.
 //
 // Kuyruk işleri çalışma zamanına göre tek tek alır. Denemenin işlerinden önce sırası gelmiş işler varsa
-// (hattın Örnek Mağaza'sında tarayıcı testlerinin bıraktığı e-posta ve bildirim işleri; o testlerde arka
+// (hatta tarayıcı testlerinin ortak sitesinde bıraktığı e-posta ve bildirim işleri; o testlerde arka
 // plan süreci yoktur) süreç önce onları işler ve hatalı işin ikinci denemesi pencereye sığmaz (kart 0328).
 // Bu yüzden önce o işlerin bitmesi beklenir, pencere ondan sonra başlar. Pencere dolunca kuyruğun o anki
 // hâli de yazılır: bir sonraki düşüşün sebebi çıktıdan okunur.
