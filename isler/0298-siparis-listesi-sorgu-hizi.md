@@ -10,7 +10,7 @@ Kart 0267'nin bağımsız kontrolünde bulundu, ölçülmedi. Panelin sipariş l
 
 İlk yıl 5–30 mağaza için önemsiz görünüyor (karar 0169 kargo sorgusunun yavaşlayabileceğini yazıyor), ama ölçülmedi.
 
-Bölüm: Yönetim paneli.
+Bölüm: Yönetim paneli 2 (açık kartlardan alındı). Raporlar ve siparişlerin dışa aktarması aynı tarih süzgecini kullandığı için 0316 ve 0317'den önce yapılır.
 
 ## Olmazsa olmazlar
 

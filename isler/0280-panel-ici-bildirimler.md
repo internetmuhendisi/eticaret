@@ -4,7 +4,7 @@
 
 Yönetici bildirimleri bugün yalnız e-postayla gidiyor (kart 0241, karar 0154); sunucuda gerçek gönderim olmadığı için (kart 0060) mağaza sahibi şimdilik hiçbirini görmüyor. Panelde bir zil ve bildirim listesi olmalı.
 
-Bölüm: On beşinci bölüm. Kullanıcının kararıyla on dördüncü bölümden bu bölüme bırakıldı.
+Bölüm: Yönetim paneli 2. Kullanıcının kararıyla on dördüncü bölümden bu bölüme bırakıldı. Önce 0311 (taslak) bitmiş olmalı.
 
 ## Olmazsa olmazlar
 

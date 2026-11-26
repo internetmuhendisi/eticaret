@@ -4,7 +4,7 @@
 
 Onaylanan panel taslağında (karar 0157, `planlar/tasarim-yonu/panel.html`) menünün son grubu "Ayarlar"dır: Mağaza bilgileri, Sipariş ayarları, Ödeme yöntemleri, Kargo ve Ekip. Bugün bu ekranlar menüde "Satış" altında, siparişler ve müşterilerle karışık duruyor. Kart 0278'de Mağaza bilgileri de taslağa uymadan Satış altına konuldu.
 
-Bölüm: Yönetim paneli. Kart 0278 sırasında bulundu, o karta karıştırılmadı.
+Bölüm: Yönetim paneli 2 (açık kartlardan alındı). Kart 0278 sırasında bulundu. E-posta metinleri ekranı (0279) Ayarlar grubuna gireceği için ondan önce yapılır.
 
 ## Olmazsa olmazlar
 

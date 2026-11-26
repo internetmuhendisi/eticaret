@@ -4,7 +4,7 @@
 
 Sipariş e-postalarının metinleri, gönderen adı ve alt bilgisi bugün çekirdeğin metinlerinden geliyor (kart 0240, karar 0153). Mağaza sahibi kendi sesine göre değiştiremiyor.
 
-Bölüm: On beşinci bölüm. Kullanıcının kararıyla on dördüncü bölümden bu bölüme bırakıldı.
+Bölüm: Yönetim paneli 2. Kullanıcının kararıyla on dördüncü bölümden bu bölüme bırakıldı. Önce 0311 (taslak) ve 0301 (Ayarlar grubu) bitmiş olmalı.
 
 ## Olmazsa olmazlar
 

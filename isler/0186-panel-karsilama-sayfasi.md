@@ -4,7 +4,7 @@
 
 Müşteri gezisinde (2026-11-13) görüldü: panelin açılış sayfası yalnız bir hoş geldiniz satırı; "Ürünler" grubunda yalnız "Stok bildirimleri" var (ürün ekranları henüz yok). Mağaza sahibi ne yapabileceğini göremiyor.
 
-Bölüm: Yönetim paneli.
+Bölüm: Yönetim paneli 2 (on dördüncü bölümde yapılmadı, bu bölüme alındı). Satış özeti için önce 0317, bildirimler için 0280 bitmiş olmalı.
 
 ## Olmazsa olmazlar
 
