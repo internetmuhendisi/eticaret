@@ -46,4 +46,4 @@ Bölüm: Yönetim paneli. Bölümün son işi. Önce bu bölümün öteki kartla
 
 ## Durum
 
-yapılacak
+bitti
