@@ -428,6 +428,27 @@
       "when": 1795684921294,
       "tag": "0060_iade-sistem-kaynagi",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1795706464711,
+      "tag": "0061_kuponlar",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1795709995847,
+      "tag": "0062_oturum-kupon-kimligi",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1795709996604,
+      "tag": "0063_oturum-kupon-kodu-kalkar",
+      "breakpoints": true
     }
   ]
 }

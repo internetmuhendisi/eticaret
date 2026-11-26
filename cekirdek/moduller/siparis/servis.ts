@@ -9,6 +9,9 @@
 //   sipariş kurulmaz (tekil indeks; ikinci çağrı "cakisma").
 // - Siparişe o anki her şey yazılır: ürün adı, seçim, stok kodu, birim fiyat, vergi oranları ve tutarı, kargo,
 //   toplam, vergi dökümü (vergi adıyla), teslimat ve fatura, not, onaylar ve ödeme yöntemi.
+// - Kupon (kart 0312, karar 0187): kodu, türü, indirimi ve kargo indirimi siparişe, her kalemin payı kaleme yazılır;
+//   kalemin vergisiz tutarı ve vergisi kupondan sonradır. Oturumun kupon ayırması siparişe bağlanır (kuponun
+//   kilidiyle; ayırma süresi dolduysa sınır yeniden sayılır, doluysa sipariş kurulmaz).
 // - Numara sitenin öneki ve sıradan gelir (siparisNumarasi); geri alınan işlemin numarası boşta kalır.
 // - Ödemesi sipariş kurulurken alınmış siparişte (kartla ödeme, kart 0215; tahsilat verilir) durum "hazırlanıyor"dur,
 //   tahsilat (ödenen tutar, taksit, ödeme kimliği) siparişe yazılır.
@@ -34,6 +37,7 @@ import { yerelZamandan } from "../../metinler/bicimleyici.ts";
 import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
+import { kuponServisi } from "../kampanya/servis.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
 import type { OturumOnayi } from "../odeme/model.ts";
 import type { Fatura, OdemeYontemiSecimi, Teslimat } from "../odeme/semalar.ts";
@@ -174,6 +178,14 @@ export const siparisServisi = (site: Site) => {
         kargo_tutari: hesap.kargo.tur === "ucretli" ? hesap.kargo.tutar : 0,
         vergi_toplami: hesap.vergi.toplam,
         toplam: hesap.toplam,
+        ...(hesap.kupon?.durum === "uygulandi"
+          ? {
+              kupon_kodu: hesap.kupon.kod,
+              kupon_turu: hesap.kupon.tur,
+              kupon_indirimi: hesap.kupon.indirim,
+              kupon_kargo_indirimi: hesap.kupon.kargoIndirimi,
+            }
+          : {}),
         // Oranın adı vergi hesabından gelir: oranın kendi adı, yoksa sitenin vergi adı (vergiHesapla).
         vergi_dokumu: hesap.vergi.dokum.map((satir) => ({
           ...(satir.ad === undefined ? {} : { ad: satir.ad }),
@@ -218,6 +230,7 @@ export const siparisServisi = (site: Site) => {
           adet: satir.adet,
           birim_tutari: satir.birimTutari,
           tutar: satir.tutar,
+          indirim: satir.indirim ?? 0,
           vergisiz: satir.vergi?.vergisiz ?? satir.tutar,
           vergi: satir.vergi?.vergi ?? 0,
           vergi_oranlari: satir.vergi?.oranlar ?? [],
@@ -251,6 +264,14 @@ export const siparisServisi = (site: Site) => {
     }
     // Oturumun ayırması siparişe geçti.
     await stok.ayirmayiBirak(islem, oturum.kimlik);
+    if (hesap.kupon?.durum === "uygulandi") {
+      await kuponServisi(site).siparisiBagla(islem, {
+        kupon: hesap.kupon.kimlik,
+        oturum: oturum.kimlik,
+        siparis: yazilan.kimlik,
+        kisi: { musteri: oturum.musteri, eposta: oturum.eposta },
+      });
+    }
     await gecmiseYaz(islem, {
       siparis: yazilan.kimlik,
       onceki: null,

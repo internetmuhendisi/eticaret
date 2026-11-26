@@ -44,6 +44,8 @@ export type SiparisEpostaTutarlari = {
   vergiToplami: number;
   toplam: number;
   vergiDokumu: VergiDokumu;
+  // Kupon (kart 0312): kod, tür ve indirim; kuponsuz siparişte yok. Eski kayıtlarda alan yoktur.
+  kupon?: { kod: string; tur: string; indirim: number };
 };
 
 export type SiparisEpostaIadesi = {
@@ -130,8 +132,8 @@ const vergiAdi = (b: IcerikBaglami, ad: string | undefined) =>
 // Oran milyonda bir birimindedir (vergi/semalar.ts).
 const oranYazisi = (b: IcerikBaglami, oran: number) => b.bicim.yuzde(oran / 10_000);
 
-// Sepet özetiyle aynı sıra (cekirdek/vitrin/sepet/sepet-gorunumu.tsx, SepetOzeti): ara toplam, kargo, hariçse
-// vergiler, toplam, dahilse toplama dahil vergiler.
+// Sepet özetiyle aynı sıra (cekirdek/vitrin/sepet/sepet-gorunumu.tsx, SepetOzeti): ara toplam, kupon (kart 0312),
+// kargo, hariçse vergiler, toplam, dahilse toplama dahil vergiler.
 const siparisOzeti = (b: IcerikBaglami, t: SiparisEpostaTutarlari): OzetSatiri[] => {
   const vergiler = (anahtar: MetinAnahtari, tur: OzetSatiri["tur"]): OzetSatiri[] =>
     t.vergiDokumu.map((satir) => ({
@@ -145,6 +147,18 @@ const siparisOzeti = (b: IcerikBaglami, t: SiparisEpostaTutarlari): OzetSatiri[]
       deger: b.bicim.para(t.araToplam),
       tur: "duz",
     },
+    ...(t.kupon === undefined
+      ? []
+      : [
+          {
+            ad: b.satir("eposta.siparis.kupon", { kod: t.kupon.kod }),
+            deger:
+              t.kupon.tur === "ucretsiz-kargo"
+                ? b.satir("eposta.siparis.kuponKargo")
+                : b.satir("eposta.siparis.kuponIndirimi", { tutar: b.bicim.para(t.kupon.indirim) }),
+            tur: "duz" as const,
+          },
+        ]),
     ...(t.kargoTuru === "yok"
       ? []
       : [

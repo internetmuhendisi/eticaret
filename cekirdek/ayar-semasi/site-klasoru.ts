@@ -20,6 +20,11 @@ import {
   sayfaBaslangicSemasi,
 } from "../moduller/icerik/sayfa-baslangici.ts";
 import {
+  type KuponBaslangici,
+  kuponBaslangicKurallari,
+  kuponBaslangicSemasi,
+} from "../moduller/kampanya/baslangic-semasi.ts";
+import {
   type MenuBaslangici,
   menuBaslangicKurallari,
   menuBaslangicSemasi,
@@ -74,6 +79,8 @@ import { type Kimlik, kimlikSemasi } from "./kimlik.ts";
 // (cekirdek/moduller/icerik/baslangic.ts); dosyası yoksa boştur.
 // sayfaBaslangici: başlangıç sabit sayfaları (baslangic/sayfalar.json, kart 0273). Yalnız sitede hiç sayfa satırı
 // yokken kullanılır (cekirdek/moduller/icerik/sayfa-kurulumu.ts); dosyası yoksa boştur.
+// kuponBaslangici: başlangıç kuponları (baslangic/kuponlar.json, kart 0312). Yalnız sitede hiç kupon satırı yokken
+// kullanılır (cekirdek/moduller/kampanya/baslangic.ts); dosyası yoksa boştur.
 export type Site = {
   kimlik: Kimlik;
   ayarlar: SiteAyarlari;
@@ -88,6 +95,7 @@ export type Site = {
   menuBaslangici: MenuBaslangici;
   blogBaslangici: BlogBaslangici;
   sayfaBaslangici: SayfaBaslangici;
+  kuponBaslangici: KuponBaslangici;
 };
 
 export type DogrulamaSonucu = { gecerli: true; site: Site } | { gecerli: false; hatalar: string[] };
@@ -521,6 +529,38 @@ export const sayfaBaslangiciniDogrula = (
   return { gecerli: true, deger: sonuc.data };
 };
 
+export const kuponBaslangicDosyasi = "baslangic/kuponlar.json";
+
+// Başlangıç kuponları (kart 0312): dosya şemadan ve alanlar arası kurallardan (tekil kod, türe uyan değer, kapsamın
+// kayıtları başlangıç kataloğunda, geçerli zamanlar) geçer. Dosyası olmayan sitede başlangıç kuponu yoktur.
+export const kuponBaslangiciniDogrula = (
+  klasor: string,
+  katalog: KatalogBaslangici,
+  saatDilimi: string,
+): { gecerli: true; deger: KuponBaslangici } | { gecerli: false; hatalar: string[] } => {
+  const ham = jsonOku(klasor, kuponBaslangicDosyasi, []);
+  if ("hata" in ham) return { gecerli: false, hatalar: [ham.hata] };
+  const sonuc = kuponBaslangicSemasi.safeParse(ham.deger);
+  if (!sonuc.success) {
+    return { gecerli: false, hatalar: sorunlariYaz(kuponBaslangicDosyasi, sonuc.error.issues) };
+  }
+  const sorunlar = kuponBaslangicKurallari(
+    sonuc.data,
+    {
+      urun: new Set(katalog.urunler.map((kayit) => kayit.adresAdi)),
+      kategori: new Set(katalog.kategoriler.map((kayit) => kayit.adresAdi)),
+    },
+    saatDilimi,
+  );
+  if (sorunlar.length > 0) {
+    return {
+      gecerli: false,
+      hatalar: sorunlar.map((sorun) => `${kuponBaslangicDosyasi}: ${sorun}`),
+    };
+  }
+  return { gecerli: true, deger: sonuc.data };
+};
+
 export const markaKlasoru = "marka";
 
 // Sitenin ilk logosu: marka/ klasöründe en çok bir logo.<uzantı> dosyası. Tür içerikten okunur ve
@@ -622,6 +662,12 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
   if (menuBaslangici !== undefined && !menuBaslangici.gecerli) {
     hatalar.push(...menuBaslangici.hatalar);
   }
+  const kuponBaslangici = katalogBaslangici.gecerli
+    ? kuponBaslangiciniDogrula(klasor, katalogBaslangici.deger, ayarlar?.saatDilimi ?? "UTC")
+    : undefined;
+  if (kuponBaslangici !== undefined && !kuponBaslangici.gecerli) {
+    hatalar.push(...kuponBaslangici.hatalar);
+  }
   const markaLogosu = markaLogosunuDogrula(klasor);
   if (!markaLogosu.gecerli) hatalar.push(...markaLogosu.hatalar);
   const temalar = ayarlar === undefined ? undefined : temalariDogrula(klasor, ayarlar.temalar);
@@ -690,6 +736,8 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
     menuBaslangici === undefined ||
     !menuBaslangici.gecerli ||
     !sayfaBaslangici.gecerli ||
+    kuponBaslangici === undefined ||
+    !kuponBaslangici.gecerli ||
     !markaLogosu.gecerli ||
     temalar === undefined ||
     !temalar.gecerli ||
@@ -739,6 +787,7 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
       menuBaslangici: menuBaslangici.deger,
       blogBaslangici: blogBaslangici.deger,
       sayfaBaslangici: sayfaBaslangici.deger,
+      kuponBaslangici: kuponBaslangici.deger,
     },
   };
 };

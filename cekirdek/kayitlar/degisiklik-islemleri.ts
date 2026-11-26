@@ -109,6 +109,8 @@ export const degisiklikIslemleri = [
   "siparis.iade-edildi",
   // Kart 0236: panelden girilen sipariş (numara, toplam, ödeme yöntemi, metinlerin iletildi beyanı).
   "siparis.panelden-olusturuldu",
+  // Kuponlar (kart 0312). Başlangıç kuponları aynı işlemle, "baslangic-kupon" adlı sistem işlemi olarak yazılır.
+  "kupon.eklendi",
   // Kart 0239: mağaza müşterinin iade talebini onayladı ya da reddetti (talep, kalemler, ret açıklaması kayda
   // girmez: müşteriye yazılan serbest metindir).
   "siparis.iade-talebi-onaylandi",
@@ -192,6 +194,8 @@ export const degisiklikKayitTurleri = [
   "sabit-sayfa",
   // Kart 0275: ekibe davet.
   "yonetici-daveti",
+  // Kart 0312: kupon.
+  "kupon",
 ] as const;
 export type DegisiklikKayitTuru = (typeof degisiklikKayitTurleri)[number];
 

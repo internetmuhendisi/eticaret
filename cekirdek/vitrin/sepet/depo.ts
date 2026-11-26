@@ -4,7 +4,13 @@
 //
 // Depo okunamazsa (gizli pencere, kapalı depo) sepet boş sayılır, hata vermez. Bozuk değer atılır. Bu dosya her vitrin
 // sayfasının üst kısmıyla tarayıcıya gider: zod'u taşımaz, biçim kimlik-bicimi.ts'in kuralıyla denetlenir (kart 0146).
-import { sepetCerezi, sepetDepoAnahtari, sepetSinirlari } from "../../kayitlar/sepet";
+import { kuponSinirlari } from "../../kayitlar/kampanya";
+import {
+  sepetCerezi,
+  sepetDepoAnahtari,
+  sepetKuponAnahtari,
+  sepetSinirlari,
+} from "../../kayitlar/sepet";
 import { kimligiDuzelt, semayaUyanKimlikMi } from "../../veritabani/kimlik-bicimi";
 
 export type YerelKalem = { birim: string; adet: number; gorulenTutar?: number };
@@ -76,5 +82,26 @@ export const yereleYaz = (kalemler: readonly YerelKalem[]): boolean => {
     return true;
   } catch {
     return false;
+  }
+};
+
+// Sepetin kupon kodu (kart 0312). Biçimi yalnız uzunlukla denetlenir: geçip geçmediğini sunucu söyler.
+export const kuponuOku = (): string | undefined => {
+  try {
+    const kod = window.localStorage.getItem(sepetKuponAnahtari)?.trim();
+    return kod === undefined || kod.length === 0 || kod.length > kuponSinirlari.kodEnCok
+      ? undefined
+      : kod;
+  } catch {
+    return undefined;
+  }
+};
+
+export const kuponuYaz = (kod: string | undefined): void => {
+  try {
+    if (kod === undefined) window.localStorage.removeItem(sepetKuponAnahtari);
+    else window.localStorage.setItem(sepetKuponAnahtari, kod);
+  } catch {
+    // Yazılamazsa kupon yalnız bu sayfada kalır.
   }
 };

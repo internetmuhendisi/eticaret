@@ -140,9 +140,13 @@ export type SiparisAyrintisiVerisi = {
     adet: number;
     birim: string;
     tutar: string;
+    // Kuponun bu kaleme düşen payı (kart 0312); payı olmayan kalemde yok.
+    kuponPayi?: string;
   }[];
   tutarlar: {
     araToplam: string;
+    // Kupon (kart 0312): kod ve yazılı indirim (ücretsiz kargoda verilmeyen kargo ücreti).
+    kupon: { kod: string; ucretsizKargo: boolean; indirim: string } | null;
     kargo: { tur: "yok" | "ucretsiz" | "ucretli"; tutar: string };
     toplam: string;
     vergiDahil: boolean;
@@ -275,7 +279,15 @@ export type IadePenceresiVerisi = {
   durum: SiparisDurumu;
   hesap: HesapSiparisi;
   onceki: OncekiIade[];
-  kalemler: { sira: number; ad: string; secim: string; adet: number; iadeEdilen: number }[];
+  // kuponPayi: kuponun kaleme düşen payı (kart 0312); iade kalemin ödenen tutarını, payı düşülmüş hâliyle döndürür.
+  kalemler: {
+    sira: number;
+    ad: string;
+    secim: string;
+    adet: number;
+    iadeEdilen: number;
+    kuponPayi?: string;
+  }[];
   // Kargo ücreti iade edilebilir mi (ücretli ve henüz iade edilmedi).
   kargoIadeEdilebilir: boolean;
   // Para nereden döner: ödeme kuruluşu, mağaza sahibi (elle) ya da ödeme alınmadı.
@@ -288,7 +300,16 @@ export type IadePenceresiVerisi = {
 type Bicim = ReturnType<typeof bicim>;
 type TutarSutunlari = Pick<
   Siparis,
-  "ara_toplam" | "kargo_turu" | "kargo_tutari" | "toplam" | "gosterim" | "vergi_dokumu"
+  | "ara_toplam"
+  | "kargo_turu"
+  | "kargo_tutari"
+  | "toplam"
+  | "gosterim"
+  | "vergi_dokumu"
+  | "kupon_kodu"
+  | "kupon_turu"
+  | "kupon_indirimi"
+  | "kupon_kargo_indirimi"
 >;
 
 // Ayrıntı ile sipariş fişinin (kart 0270) ortak parçaları: kalemler, tutarlar ve fatura bilgisi aynı yazılır.
@@ -303,6 +324,7 @@ export const siparisKalemleriVerisi = (
     adet: kalem.adet,
     birim: b.para(kalem.birim_tutari),
     tutar: b.para(kalem.tutar),
+    ...(kalem.indirim > 0 ? { kuponPayi: b.para(kalem.indirim) } : {}),
   }));
 
 export const siparisTutarlariVerisi = (
@@ -310,6 +332,18 @@ export const siparisTutarlariVerisi = (
   b: Bicim,
 ): SiparisAyrintisiVerisi["tutarlar"] => ({
   araToplam: b.para(siparis.ara_toplam),
+  kupon:
+    siparis.kupon_kodu === null
+      ? null
+      : {
+          kod: siparis.kupon_kodu,
+          ucretsizKargo: siparis.kupon_turu === "ucretsiz-kargo",
+          indirim: b.para(
+            siparis.kupon_turu === "ucretsiz-kargo"
+              ? siparis.kupon_kargo_indirimi
+              : siparis.kupon_indirimi,
+          ),
+        },
   kargo: {
     tur: siparis.kargo_turu as "yok" | "ucretsiz" | "ucretli",
     tutar: b.para(siparis.kargo_tutari),
@@ -544,6 +578,7 @@ export const siparisAyrintisiVerisi = async (
           ad: kalem.urun_adi,
           secim: kalem.secim.map(({ secenek, deger }) => `${secenek}: ${deger}`).join(" · "),
           adet: kalem.adet,
+          ...(kalem.indirim > 0 ? { kuponPayi: b.para(kalem.indirim) } : {}),
           iadeEdilen: tamamlanan
             .flatMap((iade) => iade.kalemler)
             .filter((secilen) => secilen.sira === kalem.sira)

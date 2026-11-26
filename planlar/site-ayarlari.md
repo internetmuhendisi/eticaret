@@ -156,7 +156,7 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
 |---|---|---|---|---|
-| Kupon kodunda büyük-küçük harf | Altyapı sahibi | Fark etmez | — | "kasim50" ile "KASIM50" aynı koddur; kod tekilliği de buna göre denetlenir (kart 0312, karar 0185) |
+| Kupon kodunda büyük-küçük harf | Altyapı sahibi | Fark etmez | — | "kasim50" ile "KASIM50" aynı koddur. Şemada `kuponKoduHarfDuyarli` (kart 0312); kod tekilliği her zaman harf ayrımsız denetlenir (karar 0187) |
 
 ## Panel ve içerik
 

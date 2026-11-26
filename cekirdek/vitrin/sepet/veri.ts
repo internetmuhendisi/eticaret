@@ -6,6 +6,7 @@
 // Veri tarayıcıya JSON olarak gider (herkese açık sepet ucu): tarih taşımaz, fiyat yalnız gösterimin alanlarıyla gelir.
 import { and, asc, eq, inArray } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
+import type { KuponRedNedeni, KuponTuru } from "../../kayitlar/kampanya.ts";
 import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
 import { fiyatGosterimServisi } from "../../moduller/fiyat/gosterim.ts";
 import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis.ts";
@@ -45,7 +46,21 @@ export type SepetGorunumuSatiri = Pick<
   fiyat?: GosterimFiyati;
   birimTutari?: number;
   yaziliTutar?: string;
+  // Kupon bu satıra geçmedi çünkü ürün indirimde (kart 0312).
+  kuponDisi?: "indirimli";
 };
+
+// Sepetteki kupon (kart 0312): uygulandı (indirim ve, ücretsiz kargoda, verilmeyen kargo ücreti yazılı) ya da geçmedi
+// (nedeni; en az tutarda kalan yazılı). Kodu kuponun kayıtlı yazılışıdır; geçmeyende müşterinin yazdığıdır.
+export type SepetGorunumuKuponu =
+  | {
+      durum: "uygulandi";
+      kod: string;
+      tur: KuponTuru;
+      yaziliIndirim: string;
+      yaziliKargoIndirimi?: string;
+    }
+  | { durum: "gecmedi"; kod: string; neden: KuponRedNedeni; yaziliKalan?: string };
 
 export type SepetGorunumu = {
   satirlar: SepetGorunumuSatiri[];
@@ -53,6 +68,7 @@ export type SepetGorunumu = {
   gosterim: SepetHesabi["gosterim"];
   kargo: SepetHesabi["kargo"]["tur"];
   vergiDokumu: { ad?: string; oran: string; yazili: string }[];
+  kupon?: SepetGorunumuKuponu;
   yazili: { araToplam: string; kargo?: string; vergi: string; toplam: string };
   // Toplam, kuruş: ödeme adımı müşterinin gördüğü toplamı onayla birlikte gönderir (kart 0213), sunucu kendi hesabıyla
   // karşılaştırır; tutar olarak kullanılmaz.
@@ -78,9 +94,17 @@ export const sepetGorunumu = async (
   vt: Veritabani,
   site: Site,
   kalemler: readonly SepetKalemi[],
-  { an = new Date(), adresler = {} }: { an?: Date; adresler?: VergiBolgeleri } = {},
+  {
+    an = new Date(),
+    adresler = {},
+    kupon,
+  }: { an?: Date; adresler?: VergiBolgeleri; kupon?: string | undefined } = {},
 ): Promise<SepetGorunumu> => {
-  const hesap = await sepetiHesapla(vt, site, kalemler, { an, adresler });
+  const hesap = await sepetiHesapla(vt, site, kalemler, {
+    an,
+    adresler,
+    ...(kupon === undefined ? {} : { kupon: { kod: kupon } }),
+  });
   const bicim = siteninBicimleyicisi(site.ayarlar);
   const gosterim = fiyatGosterimServisi(site);
   const satilanlar = hesap.satirlar
@@ -174,8 +198,10 @@ export const sepetGorunumu = async (
       ...(aralik === undefined || !satir.satilabilir ? {} : { fiyat: gosterimFiyati(aralik) }),
       ...(satir.birimTutari === undefined ? {} : { birimTutari: satir.birimTutari }),
       ...(satir.tutar === undefined ? {} : { yaziliTutar: bicim.para(satir.tutar) }),
+      ...(satir.kuponDisi === undefined ? {} : { kuponDisi: satir.kuponDisi }),
     };
   });
+  const kuponu = hesap.kupon;
 
   return {
     satirlar,
@@ -191,6 +217,27 @@ export const sepetGorunumu = async (
         yazili: bicim.para(satir.vergi),
       };
     }),
+    ...(kuponu === undefined
+      ? {}
+      : {
+          kupon:
+            kuponu.durum === "uygulandi"
+              ? {
+                  durum: "uygulandi" as const,
+                  kod: kuponu.kod,
+                  tur: kuponu.tur,
+                  yaziliIndirim: bicim.para(kuponu.indirim),
+                  ...(kuponu.kargoIndirimi > 0
+                    ? { yaziliKargoIndirimi: bicim.para(kuponu.kargoIndirimi) }
+                    : {}),
+                }
+              : {
+                  durum: "gecmedi" as const,
+                  kod: kuponu.kod,
+                  neden: kuponu.neden,
+                  ...(kuponu.kalan === undefined ? {} : { yaziliKalan: bicim.para(kuponu.kalan) }),
+                },
+        }),
     yazili: {
       araToplam: bicim.para(hesap.araToplam),
       ...(hesap.kargo.tur === "ucretli" ? { kargo: bicim.para(hesap.kargo.tutar) } : {}),

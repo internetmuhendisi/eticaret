@@ -20,7 +20,7 @@ import { duzMetinSemasi } from "../../metinler/duz-metin.ts";
 import { kimlikSemasi } from "../../veritabani/kimlik.ts";
 import { epostaSemasi, sifreSemasi } from "../oturum/semalar.ts";
 import { robotCevabiSemasi } from "../robot-korumasi/semalar.ts";
-import { sepetKalemiSemasi } from "../sepet/semalar.ts";
+import { kuponKoduSemasi, sepetKalemiSemasi } from "../sepet/semalar.ts";
 import { adSemasi, bosIseYok, type Teslimat, teslimatSemasi } from "./teslimat-semasi.ts";
 
 // Teslimatın şeması adres defteriyle ortaktır; buradan da alınır (ödemenin öteki şemalarıyla birlikte).
@@ -136,6 +136,8 @@ const ucEkleri = {
   // Müşterinin özette gördüğü toplam (kuruş): sunucunun toplamından farklıysa onay durur ("sepet-degisti"). Tutar
   // olarak kullanılmaz.
   gorulenToplam: z.int().min(0).optional(),
+  // Sepette uygulanan kupon (kart 0312): sunucu yeniden doğrular, geçmiyorsa onay durur.
+  kupon: kuponKoduSemasi.optional(),
 };
 
 export const misafirOdemeGirdisi = misafirOdemeFormuSemasi.extend(ucEkleri);

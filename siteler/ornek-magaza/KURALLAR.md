@@ -123,6 +123,17 @@ Başlangıç sayfaları `baslangic/sayfalar.json` dosyasındadır (kullanıcı k
 
 Bilgisayardaki ortak veritabanında menüler daha önce kurulduğu için "Kurumsal" sütunu yalnız yeni kurulan sitede kendiliğinden gelir; sayfalar açılışta kurulur.
 
+## Kuponlar (kart 0312)
+
+Başlangıç kuponları `baslangic/kuponlar.json` dosyasındadır. Arka plan süreci açılırken, katalogdan sonra, sitede hiç kupon satırı yoksa bir kez yüklenir; mağaza sahibinin sildiği kupon geri gelmez. Kupon kodunda büyük küçük harf fark etmez (altyapı sahibinin ayarı, varsayılan). Durumları `testler/kuponlar.test.ts` dener.
+
+| Kod | Ne yapar | Koşullar |
+|---|---|---|
+| HOSGELDIN10 | Sepetin %10'u | En az 500,00; her müşteri bir kez |
+| GIYIM50 | Giyim kategorisindeki ürünlerden 50,00 | En az 400,00; indirimdeki üründe geçmez; toplam 500 kullanım |
+| KARGOBEDAVA | Kargo ücretsiz | En az 250,00. Örnek Mağaza'nın kargosu zaten ücretsiz: etkisi mağaza kargo ücreti girince görünür |
+| YILBASI20 | Sepetin %20'si | 25 Aralık 2026 00.00'dan 1 Ocak 2027 00.00'a kadar (İstanbul) |
+
 ## Tema ve başlangıç düzeni (kart 0114)
 
 Örnek Mağaza üç hazır temayı kullanabilir (`ayarlar.json`): Canlı Çarşı, Yumuşak Mevsim, Keskin Çizgi. Başlangıç teması Canlı Çarşı'dır (`baslangic/tema.json`, karar 0075).

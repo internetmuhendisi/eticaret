@@ -89,6 +89,7 @@ paths:
 - Ürün kartının sepet düğmesi `KartSepetDugmesi`, ürün sayfasınınki `SepeteEkleAlani`'dır (`sepete-ekle.tsx`); eklemeden sonrası "Sepete ekleyince" ayarıdır (karar 0132). Üst kısmın sayısı `SepetSayisi`'dır.
 - Sepet sayfasının çerezi (`sepetCerezi`) yalnız kalem sayısını taşır, yalnız `depo.ts` ile okunur ve yazılır: depoya her yazımda ve durum kurulunca eşitlenir. Sepet ve ödeme sayfasının yoluna gider. Çerezde kalem yoksa iki sayfa da boş hâli sunucuda çizer (karar 0136, 0140).
 - Sepet sayfası `app/(vitrin)/sepet/`, sepet penceresi çerçevede bir kezdir (`SepetPenceresi`). Kargo yalnız `kargoHesapla` ile hesaplanır (`cekirdek/moduller/kargo/hesap.ts`).
+- Kupon kutusu yalnız sepet sayfasının özetindedir (`KuponAlani`, `sepet-gorunumu.tsx`, kart 0312, karar 0185). Kod depoda ayrı anahtarda durur (`sepetKuponAnahtari`), durum `kuponuAyarla` ile değişir ve her sepet hesabına gider; sepet boşalınca ve sipariş verilince silinir. Özetin kupon satırı `SepetOzeti`'ndedir; sipariş alındı, sipariş ayrıntısı ve ödeme özeti aynı satırı gösterir. Ödeme yalnız sepette uygulanmış kuponu gönderir; sunucunun "kupon-gecmedi"sini nedeniyle ve sepete dönüş bağlantısıyla söyler. Geçmeme nedeninin yazısı `kuponNedeni` ile seçilir.
 
 ## Ödeme adımı (karar 0140)
 

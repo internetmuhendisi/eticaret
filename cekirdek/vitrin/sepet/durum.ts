@@ -12,6 +12,9 @@
 // - Başka sekmedeki değişiklik görülür (storage olayı).
 // - Depoya her yazımda ve durum kurulunca sepet sayfasının çerezi kalem sayısıyla eşitlenir (depo.ts, karar 0136).
 // - Katalogun örnek kipinde depo kullanılmaz, istek gitmez; sepet yalnız bellekte durur.
+// - Kupon (kart 0312, karar 0185): müşterinin sepette yazdığı kod depoda ayrı anahtarda durur ve sepetin her hesabına
+//   gider; geçip geçmediğini sunucu söyler. Kod müşteri kaldırana, sepet boşalana ya da sipariş verilene kadar kalır
+//   (geçmeyen kod da: sepet değişince geçebilir, örneğin en az tutar).
 import {
   createContext,
   createElement,
@@ -23,10 +26,23 @@ import {
   useSyncExternalStore,
 } from "react";
 import { kapiyaIstek } from "../../kapi/istemci";
-import { type SepeteEkleyince, sepetDepoAnahtari, sepetSinirlari } from "../../kayitlar/sepet";
+import {
+  type SepeteEkleyince,
+  sepetDepoAnahtari,
+  sepetKuponAnahtari,
+  sepetSinirlari,
+} from "../../kayitlar/sepet";
 import type { VergiBolgeleri } from "../../moduller/sepet/semalar";
 import { kimligiDuzelt } from "../../veritabani/kimlik-bicimi";
-import { cereziYaz, kalemListesi, type YerelKalem, yereldenOku, yereleYaz } from "./depo";
+import {
+  cereziYaz,
+  kalemListesi,
+  kuponuOku,
+  kuponuYaz,
+  type YerelKalem,
+  yereldenOku,
+  yereleYaz,
+} from "./depo";
 import type { SepetGorunumu } from "./veri";
 
 const sepetUcu = "/kapi/herkese-acik/sepet";
@@ -51,6 +67,8 @@ export const useSepetAyarlari = () => useContext(AyarBaglami);
 type Durum = {
   hazir: boolean;
   kalemler: readonly YerelKalem[];
+  // Müşterinin yazdığı kupon kodu (kart 0312).
+  kupon?: string | undefined;
   pencereAcik: boolean;
   eklenen?: string | undefined;
 };
@@ -65,8 +83,9 @@ const yay = (yeni: Partial<Durum>) => {
 };
 
 const depoDegisti = (olay: StorageEvent) => {
-  if (olay.key !== sepetDepoAnahtari && olay.key !== null) return;
-  yay({ kalemler: yereldenOku() });
+  if (olay.key !== sepetDepoAnahtari && olay.key !== sepetKuponAnahtari && olay.key !== null)
+    return;
+  yay({ kalemler: yereldenOku(), kupon: kuponuOku() });
 };
 
 const kur = (yeniKip: SepetAyarlari["kip"]) => {
@@ -78,14 +97,26 @@ const kur = (yeniKip: SepetAyarlari["kip"]) => {
     // Sepet sayfasının çerezi depoyla eşitlenir (karar 0136): çerez silinmiş ya da çerezden önce dolmuş sepet,
     // vitrinin herhangi bir sayfası açılınca yeniden doğru sayıyı taşır.
     cereziYaz(kalemler.length);
-    yay({ hazir: true, kalemler });
+    yay({ hazir: true, kalemler, kupon: kalemler.length === 0 ? undefined : kuponuOku() });
   } else yay({ hazir: true, kalemler: [] });
 };
 
 const kaydet = (kalemler: readonly YerelKalem[]) => {
   const temiz = kalemListesi(kalemler);
-  if (kip === "sorulur") yereleYaz(temiz);
-  yay({ kalemler: temiz });
+  if (kip === "sorulur") {
+    yereleYaz(temiz);
+    // Boşalan sepetin kuponu da gider.
+    if (temiz.length === 0) kuponuYaz(undefined);
+  }
+  yay({ kalemler: temiz, ...(temiz.length === 0 ? { kupon: undefined } : {}) });
+};
+
+// Kupon kodunu yazar ya da (undefined) kaldırır; sepet yeniden hesaplanır.
+export const kuponuAyarla = (kod: string | undefined): void => {
+  const temiz = kod?.trim();
+  const yeni = temiz === undefined || temiz.length === 0 ? undefined : temiz;
+  if (kip === "sorulur") kuponuYaz(yeni);
+  yay({ kupon: yeni });
 };
 
 // Sunucuda ve hidrasyonda sepet bilinmiyordur (boş): sunucunun çizdiğiyle tarayıcının ilk çizimi aynı kalır.
@@ -163,9 +194,11 @@ export const geriKoy = (kalem: YerelKalem, sira: number): void => {
 
 // Sipariş verilince siparişe giren kalemler sepetten çıkar (kart 0214); sepet boşalınca çerez de silinir (depo.ts).
 // Başka sekmede arada eklenen kalem sepette kalır.
+// Siparişte kullanılan kupon da gider (kart 0312).
 export const siparisKalemleriniCikar = (birimler: readonly string[]): void => {
   const cikanlar = new Set(birimler.map(kimligiDuzelt));
   kaydet(durum.kalemler.filter((kalem) => !cikanlar.has(kalem.birim)));
+  kuponuAyarla(undefined);
 };
 
 // Pencere bir tetikleyiciyle değil durumla açılır: Radix odağı geri vereceği öğeyi bilmez. Açılırken odaktaki öğe
@@ -223,9 +256,12 @@ export const useSepetGorunumu = (
   const { kip: ayarKipi } = useSepetAyarlari();
   const sepet = useSepet();
   const [sonuc, setSonuc] = useState<GorunumDurumu>({ tur: "yukleniyor" });
-  const anahtar = JSON.stringify(sepet.kalemler.map(({ birim, adet }) => [birim, adet]));
+  const anahtar = JSON.stringify([
+    sepet.kalemler.map(({ birim, adet }) => [birim, adet]),
+    sepet.kupon ?? null,
+  ]);
   const bolgeAnahtari = JSON.stringify(vergiBolgeleri ?? null);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: istek yalnız birim, adet, vergi bölgesi ve yenileme değişince gider; son görülen fiyat yazılınca gitmez.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: istek yalnız birim, adet, kupon, vergi bölgesi ve yenileme değişince gider; son görülen fiyat yazılınca gitmez.
   useEffect(() => {
     if (!etkin || !sepet.hazir) return;
     if (ayarKipi === "ornek") {
@@ -247,6 +283,7 @@ export const useSepetGorunumu = (
           body: JSON.stringify({
             kalemler: durum.kalemler,
             ...(vergiBolgeleri === undefined ? {} : { vergiBolgeleri }),
+            ...(durum.kupon === undefined ? {} : { kupon: durum.kupon }),
           }),
         });
         const zarf = (await yanit.json()) as { basarili: boolean; veri?: SepetGorunumu };

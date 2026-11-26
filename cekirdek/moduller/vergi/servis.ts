@@ -560,30 +560,46 @@ export const siteninVergiServisi = (site: Site) => vergiServisi(() => site.vergi
 
 // Sitenin ayarları ve vergi tablosuyla verginin hesabı (kart 0075). Hesabın kendisi hesap.ts'dedir;
 // bu işlev yalnız ayarları, silinmiş sınıflarıyla tabloyu ve mağaza adresini okur.
-export const vergiHesapla = async (
+type VergiHesabiGirdisi = Omit<HesapGirdisi, "ayarlar" | "tablo" | "adresler"> & {
+  teslimatAdresi?: VergiBolgesi;
+  faturaAdresi?: VergiBolgesi;
+};
+
+// Aynı ayar ve tabloyla birden çok hesap (kart 0312): sepet, kuponlu sepette kupondan önceki ve sonraki hesabı aynı
+// okumayla yapar.
+export const vergiHesaplari = async (
   vt: Veritabani,
-  girdi: Omit<HesapGirdisi, "ayarlar" | "tablo" | "adresler"> & {
-    teslimatAdresi?: VergiBolgesi;
-    faturaAdresi?: VergiBolgesi;
-  },
+  girdiler: readonly VergiHesabiGirdisi[],
   site: Site = calisanSite(),
-): Promise<VergiSonucu> => {
+): Promise<VergiSonucu[]> => {
   const ayarlar = await siteninMagazaAyarlari(vt, site);
   const tablo = await siteninVergiServisi(site).tabloyuOku(vt, { silinmisSiniflar: true });
   const magaza = ayarlar.magazaAdresi;
-  return hesapla({
-    ayarlar,
-    tablo,
-    adresler: {
-      ...(girdi.teslimatAdresi === undefined ? {} : { teslimat: girdi.teslimatAdresi }),
-      ...(girdi.faturaAdresi === undefined ? {} : { fatura: girdi.faturaAdresi }),
-      ...(magaza === undefined
-        ? {}
-        : { magaza: { ulke: magaza.ulke, il: magaza.il, postaKodu: magaza.postaKodu } }),
-    },
-    satirlar: girdi.satirlar,
-    ...(girdi.kargo === undefined ? {} : { kargo: girdi.kargo }),
-  });
+  return girdiler.map((girdi) =>
+    hesapla({
+      ayarlar,
+      tablo,
+      adresler: {
+        ...(girdi.teslimatAdresi === undefined ? {} : { teslimat: girdi.teslimatAdresi }),
+        ...(girdi.faturaAdresi === undefined ? {} : { fatura: girdi.faturaAdresi }),
+        ...(magaza === undefined
+          ? {}
+          : { magaza: { ulke: magaza.ulke, il: magaza.il, postaKodu: magaza.postaKodu } }),
+      },
+      satirlar: girdi.satirlar,
+      ...(girdi.kargo === undefined ? {} : { kargo: girdi.kargo }),
+    }),
+  );
+};
+
+export const vergiHesapla = async (
+  vt: Veritabani,
+  girdi: VergiHesabiGirdisi,
+  site: Site = calisanSite(),
+): Promise<VergiSonucu> => {
+  const [sonuc] = await vergiHesaplari(vt, [girdi], site);
+  if (sonuc === undefined) throw new Error("Vergi hesabı yapılmadı.");
+  return sonuc;
 };
 
 // Çalışan sitenin servisi. Başlangıç verisi site klasöründen gelir, yalnız tablo kurulmamışsa okunur.

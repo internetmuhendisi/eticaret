@@ -25,6 +25,10 @@
 // - Müşterinin bir önceki oturumu (yeniden basınca) aynı işlemde silinir, ayırmaları serbest kalır. Üye olmayan yalnız
 //   üye olmayanın oturumunu, üye kendi oturumunu ve aynı sekmede üye olmadan açtığı oturumu (giriş yapıp yeniden
 //   onaylayınca) siler; başka üyenin oturumu silinmez. Oturumun kimliği yalnız onu açan sekmeye döner.
+// - Kupon (kart 0312, karar 0187): sepette uygulanan kod sunucuda yeniden doğrulanır, bu kez kişi başı sınırla (üyenin
+//   hesabı, üye olmayanın e-postası). Geçmiyorsa onay durur: "kupon-gecmedi" ve neden, müşteri sepete dönüp kuponu
+//   kaldırır. Kuponun kullanımı oturumla aynı işlemde, stok ayırmasıyla aynı süreyle ayrılır (kuponun kilidiyle;
+//   sınır arada dolduysa "cakisma"). Ayırma siparişe bağlanır; ödeme başarısız olunca ya da oturum silinince gider.
 import { and, eq, isNull, or, sql } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { eklentiliMi, eklentiliOdemeyiBaslat } from "../../eklentiler/odeme-yontemleri.ts";
@@ -33,6 +37,7 @@ import { BilinenHata } from "../../kapi/zarf.ts";
 import { musteriOnayTurleri, siparisOnayTurleri } from "../../kayitlar/musteri-onaylari.ts";
 import { odemeBaslatilamadi } from "../../kayitlar/odeme.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
+import { type KuponKisisi, kuponServisi } from "../kampanya/servis.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
 import { adresServisi } from "../musteri/adres.ts";
 import { musteriOnaylari } from "../musteri/model.ts";
@@ -44,6 +49,7 @@ import { siparisler } from "../siparis/model.ts";
 import type { ElleSiparisGirdisi } from "../siparis/semalar.ts";
 import { siparisServisi } from "../siparis/servis.ts";
 import { stokServisi } from "../stok/servis.ts";
+import { oturumunAyirmalariniBirak } from "./ayirma.ts";
 import { type OturumOnayi, odemeOturumlari } from "./model.ts";
 import { bolge, faturaAdresi } from "./oturum-hesabi.ts";
 import type { MisafirOdemeFormu, OdemeBilgileri, OdemeYontemiSecimi } from "./semalar.ts";
@@ -62,6 +68,8 @@ export type OdemeGirdisi = {
   onceki?: string | undefined;
   // Müşterinin özette gördüğü toplam (kuruş): yalnız karşılaştırılır, tutar olarak kullanılmaz.
   gorulenToplam?: number | undefined;
+  // Sepette uygulanan kuponun kodu (kart 0312).
+  kupon?: string | undefined;
   // Müşterinin adresi: eklentili yöntemde ödeme kuruluşuna gider (sahtecilik denetimi).
   ip?: string | undefined;
 };
@@ -101,6 +109,7 @@ const dogrulama = (alan: string, kod: string) => new BilinenHata("dogrulama", [{
 export { faturaAdresi };
 
 export const odemeServisi = (site: Site) => {
+  const kupon = kuponServisi(site);
   // Oturum ve ayırma; siparisKur verilirse aynı işlemde sipariş de kurulur (havale ve kapıda ödeme, kart 0214).
   const oturumuAc = async (
     vt: Veritabani,
@@ -134,9 +143,35 @@ export const odemeServisi = (site: Site) => {
       throw new BilinenHata("is-kurali", [{ alan: "bilgiler.odemeYontemi", kod: "yontem-kapali" }]);
     }
 
+    // Kişi başı sınırın kişisi: üyede hesabı ve hesabının e-postası, üye olmayanda e-postası (ayırmayla aynı). Müşterinin
+    // bir önceki oturumunun ayırması sayılmaz: yeniden onaylayınca bırakılacaktır (bağımsız kontrolün bulgusu; kesin
+    // sayım ayırmada, kilitle). Başkasının oturumu verilse de ayırma onu sayar.
+    const kuponKisisi: KuponKisisi =
+      girdi.kim.tur === "uye"
+        ? {
+            musteri: girdi.kim.musteri,
+            eposta:
+              girdi.kupon === undefined
+                ? null
+                : ((await musteriHesabi(vt, girdi.kim.musteri))?.eposta ?? null),
+          }
+        : { musteri: null, eposta: girdi.kim.eposta };
     const hesap = await sepetiHesapla(vt, site, girdi.kalemler, {
       adresler: { teslimat: bolge(teslimat.adres), fatura: bolge(faturaAdresi(girdi.bilgiler)) },
+      ...(girdi.kupon === undefined
+        ? {}
+        : { kupon: { kod: girdi.kupon, kisi: kuponKisisi, oturum: girdi.onceki } }),
     });
+    if (hesap.kupon?.durum === "gecmedi") {
+      throw new BilinenHata("is-kurali", [
+        {
+          alan: "kupon",
+          kod: "kupon-gecmedi",
+          neden: hesap.kupon.neden,
+          ...(hesap.kupon.kalan === undefined ? {} : { kalan: hesap.kupon.kalan }),
+        },
+      ]);
+    }
     const satilanlar = hesap.satirlar.filter((satir) => satir.satilabilir);
     if (satilanlar.length === 0) {
       throw new BilinenHata("is-kurali", [{ alan: "kalemler", kod: "sepet-bos" }]);
@@ -233,6 +268,7 @@ export const odemeServisi = (site: Site) => {
           kalemler,
           toplam: hesap.toplam,
           para_birimi: hesap.paraBirimi,
+          kupon_kimligi: hesap.kupon?.durum === "uygulandi" ? hesap.kupon.kimlik : null,
           onaylar,
           bitis_zamani: bitis,
           odeme_disarida: disarida,
@@ -253,6 +289,14 @@ export const odemeServisi = (site: Site) => {
           );
         }
         throw hata;
+      }
+      if (hesap.kupon?.durum === "uygulandi") {
+        await kupon.ayir(islem, {
+          kupon: hesap.kupon.kimlik,
+          oturum: yazilan.kimlik,
+          kisi: { musteri: musteri ?? null, eposta },
+          bitis,
+        });
       }
       const sonuc = {
         oturum: yazilan.kimlik,
@@ -421,7 +465,7 @@ export const odemeServisi = (site: Site) => {
       .from(odemeOturumlari)
       .where(and(sahibi, eq(odemeOturumlari.odeme_disarida, true)));
     if (disarida !== undefined) {
-      await stok.ayirmayiBirak(islem, disarida.kimlik);
+      await oturumunAyirmalariniBirak(islem, disarida.kimlik);
       return;
     }
     await islem.delete(odemeOturumlari).where(sahibi);
@@ -429,7 +473,7 @@ export const odemeServisi = (site: Site) => {
 
   // Ödeme başarısız olunca (kartla ödeme, kart 0215) oturumun ayırmaları serbest kalır.
   const ayirmayiBirak = (vt: Veritabani, oturum: string) =>
-    vt.transaction((islem) => stok.ayirmayiBirak(islem, oturum));
+    vt.transaction((islem) => oturumunAyirmalariniBirak(islem, oturum));
 
   return { odemeOturumuAc, siparisVer, elleSiparisVer, onayla, ayirmayiBirak };
 };

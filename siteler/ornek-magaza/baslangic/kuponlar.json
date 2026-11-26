@@ -1,0 +1,36 @@
+[
+  {
+    "kod": "HOSGELDIN10",
+    "ad": "Hoş geldin",
+    "tur": "yuzde",
+    "deger": 10,
+    "enAzTutar": 50000,
+    "kisiBasiSinir": 1
+  },
+  {
+    "kod": "GIYIM50",
+    "ad": "Giyim indirimi",
+    "tur": "tutar",
+    "deger": 5000,
+    "kapsam": "kategoriler",
+    "kapsamAdresAdlari": ["giyim"],
+    "enAzTutar": 40000,
+    "toplamSinir": 500,
+    "indirimdeGecmez": true
+  },
+  {
+    "kod": "KARGOBEDAVA",
+    "ad": "Ücretsiz kargo",
+    "tur": "ucretsiz-kargo",
+    "deger": 0,
+    "enAzTutar": 25000
+  },
+  {
+    "kod": "YILBASI20",
+    "ad": "Yılbaşı",
+    "tur": "yuzde",
+    "deger": 20,
+    "baslangic": "2026-12-25T00:00",
+    "bitis": "2027-01-01T00:00"
+  }
+]

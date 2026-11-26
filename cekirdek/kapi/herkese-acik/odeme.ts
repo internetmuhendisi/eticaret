@@ -20,7 +20,7 @@ export const odemeUcu = ucTanimla({
   izin: herkeseAcik,
   sinir: "siki",
   isle: async (
-    { robotCevabi, eposta, hesap, bilgiler, kalemler, onceki, gorulenToplam },
+    { robotCevabi, eposta, hesap, bilgiler, kalemler, onceki, gorulenToplam, kupon },
     istek,
     yanit,
   ) => {
@@ -36,6 +36,7 @@ export const odemeUcu = ucTanimla({
         kalemler,
         onceki,
         gorulenToplam,
+        kupon,
         ip: istemciAdresi(istek),
       },
       sure,

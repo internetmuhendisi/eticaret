@@ -1,0 +1,9 @@
+[
+  {
+    "kod": "URUN50",
+    "tur": "tutar",
+    "deger": 5000,
+    "kapsam": "urunler",
+    "kapsamAdresAdlari": ["olmayan-urun"]
+  }
+]

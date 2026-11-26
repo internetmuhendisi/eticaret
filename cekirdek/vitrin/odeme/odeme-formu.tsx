@@ -52,6 +52,7 @@ import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
 import { adresSatiri } from "../../bolgeler/adres-satiri";
 import { kapiyaIstek } from "../../kapi/istemci";
+import { type KuponRedNedeni, kuponRedNedenleri } from "../../kayitlar/kampanya";
 import { hataKodlari } from "../../kayitlar/kapi";
 import type { OdemeDonusSonucu } from "../../kayitlar/odeme";
 import { doldur } from "../../metinler/doldur";
@@ -68,7 +69,7 @@ import { useRobotluGonderim } from "../../moduller/robot-korumasi/istemci";
 import { girisAdresiDonuslu, vitrinAdresleri } from "../adresler";
 import { cikisYap, useHesapDurumu } from "../hesap-durumu";
 import { adetDegistir, siparisKalemleriniCikar, useSepet, useSepetGorunumu } from "../sepet/durum";
-import { SatirGorseli, SepetOzeti, satirAdi } from "../sepet/sepet-gorunumu";
+import { kuponNedeni, SatirGorseli, SepetOzeti, satirAdi } from "../sepet/sepet-gorunumu";
 import type { SepetGorunumu } from "../sepet/veri";
 import {
   type Adres,
@@ -279,7 +280,14 @@ function SozlesmePenceresi({
   );
 }
 
-type GenelHata = "sepet-degisti" | "sepet-bos" | "stok-ayrildi" | "kayitli" | "sinir" | "genel";
+type GenelHata =
+  | "sepet-degisti"
+  | "sepet-bos"
+  | "stok-ayrildi"
+  | "kayitli"
+  | "sinir"
+  | "genel"
+  | "kupon";
 const genelHataMetinleri: Record<GenelHata, VitrinMetinAnahtari> = {
   "sepet-degisti": "vitrin.odeme.hata.sepetDegisti",
   "sepet-bos": "vitrin.odeme.hata.sepetBos",
@@ -287,6 +295,24 @@ const genelHataMetinleri: Record<GenelHata, VitrinMetinAnahtari> = {
   kayitli: "vitrin.odeme.hata.kayitli",
   sinir: "vitrin.odeme.hata.sinir",
   genel: "vitrin.odeme.hata.genel",
+  kupon: "vitrin.odeme.hata.kupon",
+};
+
+// Sunucunun kupon hatası (kart 0312): ödemede yeniden doğrulanan kupon geçmedi ("kupon-gecmedi" ve nedeni) ya da
+// kullanım sınırı arada doldu (çakışma).
+const kuponHatasiNedeni = (
+  ayrinti: readonly { alan: string; kod: string; neden?: string }[],
+): KuponRedNedeni | undefined => {
+  const sorun = ayrinti.find(({ alan }) => alan === "kupon");
+  if (sorun === undefined) return undefined;
+  if (sorun.kod === "kupon-gecmedi" && kuponRedNedenleri.includes(sorun.neden as KuponRedNedeni)) {
+    return sorun.neden as KuponRedNedeni;
+  }
+  return sorun.kod === "kupon-kullanildi"
+    ? "kullanildi"
+    : sorun.kod === "kupon-sinir-doldu"
+      ? "sinir-doldu"
+      : "bulunamadi";
 };
 
 // Yöntem satırının adı, açıklaması ve ikonu (taslak, kart 0211). Havalenin açıklaması iptal süresini söyler.
@@ -372,6 +398,7 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
   const [alici, setAlici] = useState<string[]>([]);
   const [hatalar, setHatalar] = useState<HataHaritasi>({});
   const [genelHata, setGenelHata] = useState<GenelHata | null>(null);
+  const [kuponHatasi, setKuponHatasi] = useState<KuponRedNedeni | null>(null);
   // Seçili ödeme yöntemi satırının anahtarı: ilk yöntem seçili başlar.
   const [yontem, setYontem] = useState<string | undefined>(veri.yontemler[0]?.anahtar);
   // Giriş yapmış müşterinin son siparişinin teslimatı (öneri) ve uygulanınca teslimat alanlarının ilk değerleri.
@@ -655,12 +682,14 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
         kalemler: sepet.kalemler,
         // Özette görülen toplam: sunucu kendi hesabından farklıysa onaylamaz (tutar olarak kullanılmaz).
         gorulenToplam: durum.gorunum.toplam,
+        // Kupon yalnız sepette uygulandıysa gider (kart 0312); sunucu yeniden doğrular.
+        ...(durum.gorunum.kupon?.durum === "uygulandi" ? { kupon: durum.gorunum.kupon.kod } : {}),
         ...(onceki === undefined ? {} : { onceki }),
       });
       const zarf = (await yanit.json().catch(() => undefined)) as
         | {
             veri?: { oturum: string; siparis?: string; yonlendir?: string };
-            hata?: { kod: string; ayrinti?: { alan: string; kod: string }[] };
+            hata?: { kod: string; ayrinti?: { alan: string; kod: string; neden?: string }[] };
           }
         | undefined;
       if (yanit.ok && zarf?.veri?.yonlendir !== undefined) {
@@ -705,6 +734,13 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
       const ayrinti = zarf?.hata?.ayrinti ?? [];
       if (yanit.status === hataKodlari["oturum-yok"]) {
         window.location.assign(girisAdresiDonuslu(vitrinAdresleri.odeme));
+        return;
+      }
+      const kuponNedeniSunucu = kuponHatasiNedeni(ayrinti);
+      if (kuponNedeniSunucu !== undefined) {
+        setKuponHatasi(kuponNedeniSunucu);
+        setGenelHata("kupon");
+        setYenileme((sayi) => sayi + 1);
         return;
       }
       if (
@@ -846,9 +882,30 @@ export function OdemeFormu({ veri }: { veri: OdemeSayfasiVerisi }) {
         {degisiklik && genelHata === null ? (
           <Uyari tur="uyari">{metin("vitrin.sepet.degisiklikVar")}</Uyari>
         ) : null}
+        {genelHata === null && gorunum?.kupon?.durum === "gecmedi" ? (
+          <Uyari tur="uyari">
+            <p>{kuponNedeni(metin, gorunum.kupon, gorunum.kupon.yaziliKalan)}</p>
+            <Baglanti href={vitrinAdresleri.sepet}>{metin("vitrin.sepet.sepeteGit")}</Baglanti>
+          </Uyari>
+        ) : null}
         {genelHata === null ? null : (
           <Uyari tur="tehlike">
+            {genelHata === "kupon" && kuponHatasi !== null ? (
+              <p>
+                {kuponNedeni(
+                  metin,
+                  {
+                    kod: gorunum?.kupon?.kod ?? sepet.kupon ?? "",
+                    neden: kuponHatasi,
+                  },
+                  gorunum?.kupon?.durum === "gecmedi" ? gorunum.kupon.yaziliKalan : undefined,
+                )}
+              </p>
+            ) : null}
             <p>{metin(genelHataMetinleri[genelHata])}</p>
+            {genelHata === "kupon" ? (
+              <Baglanti href={vitrinAdresleri.sepet}>{metin("vitrin.sepet.sepeteGit")}</Baglanti>
+            ) : null}
             {genelHata === "kayitli" ? (
               <Baglanti href={girisAdresiDonuslu(vitrinAdresleri.odeme)}>
                 {metin("vitrin.odeme.girisBaglanti")}

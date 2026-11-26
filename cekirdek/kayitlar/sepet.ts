@@ -7,6 +7,8 @@
 
 // Tarayıcı deposundaki anahtar. Yalnız birim kimlikleri, adetler ve müşterinin son gördüğü birim fiyatı saklanır.
 export const sepetDepoAnahtari = "sepet";
+// Sepette yazılan kupon kodu (kart 0312): ayrı anahtardadır; sepet boşalınca ve sipariş verilince silinir.
+export const sepetKuponAnahtari = "sepet-kuponu";
 
 // Sepet ve ödeme sayfasına giden çerez (kart 0218, karar 0136; kart 0213): yalnız sepetteki kalem sayısını taşır, birim
 // ya da fiyat taşımaz. Sunucu sepeti bilmez; çerezde kalem yoksa sepet ve ödeme sayfası boş hâli hemen çizer. Çerez

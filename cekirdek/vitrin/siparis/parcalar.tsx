@@ -13,8 +13,9 @@ import type { MetinAnahtari } from "../../metinler/metin";
 import { metin, type siteninBicimleyicisi } from "../../metinler/site-metni";
 import type { Fatura, Teslimat } from "../../moduller/odeme/semalar";
 import type { VergiDokumu } from "../../moduller/siparis/model";
+import type { SiparisKuponu } from "../../moduller/siparis/musteri";
 import { vitrinAdresleri } from "../adresler";
-import type { SepetGorunumu } from "../sepet/veri";
+import type { OzetTutarlari } from "../sepet/sepet-gorunumu";
 import { IbanKopyala } from "./iban-kopyala";
 
 type Bicim = ReturnType<typeof siteninBicimleyicisi>;
@@ -95,9 +96,20 @@ export const siparisTutarlari = (
     kargoTutari: number;
     vergiToplami: number;
     toplam: number;
+    kupon?: SiparisKuponu | null;
   },
-): Pick<SepetGorunumu, "adet" | "kargo" | "gosterim" | "vergiDokumu" | "yazili"> => ({
+): OzetTutarlari => ({
   adet: siparis.adet,
+  ...(siparis.kupon === undefined || siparis.kupon === null
+    ? {}
+    : {
+        kupon: {
+          durum: "uygulandi" as const,
+          kod: siparis.kupon.kod,
+          tur: siparis.kupon.tur,
+          yaziliIndirim: bicim.para(siparis.kupon.indirim),
+        },
+      }),
   kargo: siparis.kargoTuru,
   gosterim: siparis.gosterim,
   vergiDokumu: siparis.vergiDokumu.map((satir) => ({

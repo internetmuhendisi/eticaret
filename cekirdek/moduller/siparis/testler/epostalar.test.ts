@@ -33,6 +33,7 @@ import { type EpostaIletisi, epostaGondericisi } from "../../eposta/gonderici.ts
 import { epostaKaydiniGonder } from "../../eposta/gonderim.ts";
 import { epostaKayitlari } from "../../eposta/model.ts";
 import { siteninFiyatServisi } from "../../fiyat/servis.ts";
+import { kuponServisi } from "../../kampanya/servis.ts";
 import { magazaBilgileriniDegistir } from "../../magaza-ayarlari/bilgiler.ts";
 import { type OdemeYontemiSecimi, odemeBilgileriSemasi } from "../../odeme/semalar.ts";
 import { type OdemeGirdisi, odemeServisi } from "../../odeme/servis.ts";
@@ -621,6 +622,40 @@ describe("içerik", () => {
     expect(metin).toContain("+90 312 000 00 00");
     // Teslimat adresi.
     expect(metin).toContain("Atatürk Bulvarı No: 10");
+  });
+
+  it("kuponlu sipariş alındı: kupon satırı ara toplamın altında; ara toplam, kupon ve toplam siparişin kaydıyla aynı (kart 0312)", async () => {
+    const h = await hazirla();
+    const birim = await h.urunAc("Kuponlu kupa");
+    await h.vt.transaction((islem) =>
+      kuponServisi(site).ekle(islem, yonetici(), {
+        kod: "EPOSTA10",
+        tur: "yuzde",
+        deger: 10,
+        kapsam: "hepsi",
+      }),
+    );
+    const sonuc = await odeme.siparisVer(
+      h.vt,
+      {
+        kim: { tur: "misafir", eposta: yeniAdres(), hesap: { ac: false } },
+        bilgiler: bilgiler(havale),
+        kalemler: [{ birim, adet: 2 }],
+        kupon: "EPOSTA10",
+      },
+      3600,
+    );
+    const s = await siparisi(h.vt, sonuc.siparis.numara);
+    expect(s.kupon_indirimi).toBeGreaterThan(0);
+    const { metin, html } = await sonEposta(h.vt, s.numara, "siparis-alindi");
+    const araToplam = `Ara toplam (2 ürün): ${bicim.para(s.ara_toplam)}`;
+    const kupon = `Kupon (EPOSTA10): \u2212${bicim.para(s.kupon_indirimi)}`;
+    expect(metin).toContain(araToplam);
+    expect(metin).toContain(kupon);
+    expect(metin.indexOf(kupon)).toBeGreaterThan(metin.indexOf(araToplam));
+    expect(metin).toContain(`Toplam: ${bicim.para(s.toplam)}`);
+    expect(s.ara_toplam - s.kupon_indirimi + s.kargo_tutari).toBe(s.toplam);
+    expect(html).toContain("Kupon (EPOSTA10)");
   });
 
   it("kuyrukta bekleyen e-posta: siparişin verisi olay anındaki gibi, mağaza adı ve alt bilgi gönderim anındaki değerle (kart 0278, karar 0153)", async () => {
