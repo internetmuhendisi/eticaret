@@ -24,7 +24,7 @@ import { siparisinKuponu } from "../../moduller/siparis/musteri";
 import { siparisServisi } from "../../moduller/siparis/servis";
 import { siteninVeritabani } from "../../veritabani/baglanti";
 import { hesapSiparisiAdresi, siparisTakibiAdresi, vitrinAdresleri } from "../adresler";
-import { SepetOzeti } from "../sepet/sepet-gorunumu";
+import { SepetOzeti } from "../sepet/sepet-ozeti";
 import { musteriSayfasiBilgisi, musteriSayfasiniAc } from "../yalniz-gezinti";
 import {
   adresSatiri,

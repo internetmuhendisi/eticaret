@@ -31,7 +31,8 @@ import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { metin, type siteninBicimleyicisi } from "../../metinler/site-metni";
 import type { MusteriSiparisi } from "../../moduller/siparis/musteri";
-import { SatirGorseli, SepetOzeti } from "../sepet/sepet-gorunumu";
+import { SatirGorseli } from "../sepet/satir-parcalari";
+import { SepetOzeti } from "../sepet/sepet-ozeti";
 import { yorumBolumuKimligi } from "../urun-sayfasi/yorumlar";
 import {
   adresSatiri,

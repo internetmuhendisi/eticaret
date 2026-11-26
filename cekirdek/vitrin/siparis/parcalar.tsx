@@ -15,7 +15,7 @@ import type { Fatura, Teslimat } from "../../moduller/odeme/semalar";
 import type { VergiDokumu } from "../../moduller/siparis/model";
 import type { SiparisKuponu } from "../../moduller/siparis/musteri";
 import { vitrinAdresleri } from "../adresler";
-import type { OzetTutarlari } from "../sepet/sepet-gorunumu";
+import type { OzetTutarlari } from "../sepet/sepet-ozeti";
 import { IbanKopyala } from "./iban-kopyala";
 
 type Bicim = ReturnType<typeof siteninBicimleyicisi>;

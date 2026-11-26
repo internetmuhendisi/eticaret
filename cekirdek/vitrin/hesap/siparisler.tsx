@@ -21,7 +21,7 @@ import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
 import { musteriSiparisleri } from "../../moduller/siparis/musteri";
 import { siteninVeritabani } from "../../veritabani/baglanti";
 import { hesapIadeTalebiAdresi, hesapSiparisiAdresi, vitrinAdresleri } from "../adresler";
-import { SatirGorseli } from "../sepet/sepet-gorunumu";
+import { SatirGorseli } from "../sepet/satir-parcalari";
 import { SiparisAyrintisi } from "../siparis/ayrinti";
 import { musteriKurallariniOku } from "../siparis/kurallar";
 import { SiparisDurumRozeti } from "../siparis/parcalar";

@@ -4,7 +4,7 @@
 //
 // Depo okunamazsa (gizli pencere, kapalı depo) sepet boş sayılır, hata vermez. Bozuk değer atılır. Bu dosya her vitrin
 // sayfasının üst kısmıyla tarayıcıya gider: zod'u taşımaz, biçim kimlik-bicimi.ts'in kuralıyla denetlenir (kart 0146).
-import { kuponSinirlari } from "../../kayitlar/kampanya";
+import { kuponKoduSinirlari } from "../../kayitlar/kupon-kodu";
 import {
   sepetCerezi,
   sepetDepoAnahtari,
@@ -89,7 +89,7 @@ export const yereleYaz = (kalemler: readonly YerelKalem[]): boolean => {
 export const kuponuOku = (): string | undefined => {
   try {
     const kod = window.localStorage.getItem(sepetKuponAnahtari)?.trim();
-    return kod === undefined || kod.length === 0 || kod.length > kuponSinirlari.kodEnCok
+    return kod === undefined || kod.length === 0 || kod.length > kuponKoduSinirlari.kodEnCok
       ? undefined
       : kod;
   } catch {
