@@ -23,6 +23,7 @@ import { type OdemeYontemiSecimi, odemeBilgileriSemasi } from "../../odeme/semal
 import { odemeServisi } from "../../odeme/servis.ts";
 import { iadeServisi } from "../../siparis/iade.ts";
 import { siparisIadeleri, siparisKalemleri, siparisler } from "../../siparis/model.ts";
+import { kisiselVeriTemizligi } from "../../siparis/temizlik.ts";
 import { siparisYonetimi } from "../../siparis/yonetim.ts";
 import { stokServisi } from "../../stok/servis.ts";
 import { urunServisi } from "../../urun/servis.ts";
@@ -330,6 +331,21 @@ describe("kuponlu sipariş", () => {
       neden: "beklentiyi-karsilamadi",
     });
     expect((await h.vt.select().from(siparisIadeleri))[0]).toMatchObject({ tutar: 11_800 });
+  });
+
+  it("kişisel veri temizliği kullanımın e-postasını siler; kullanım siparişe bağlı ve sayılı kalır", async () => {
+    const h = await hazirla();
+    const a = await h.urunAc();
+    await h.kuponAc({ toplamSinir: 5 });
+    const numara = await h.ver([{ birim: a, adet: 1 }], "YUZDE10", "temizlik@ornek.test");
+    const yil = site.ayarlar.kisiselVeriSaklamaYili;
+    await h.vt.execute(
+      sql`update siparisler set olusturma_zamani = now() - make_interval(years => ${yil}, days => 1) where numara = ${numara}`,
+    );
+    expect(await kisiselVeriTemizligi(h.vt, site)).toBe(1);
+    expect(await h.kullanimlar()).toEqual([
+      expect.objectContaining({ eposta: null, siparis_kimligi: (await h.oku(numara)).kimlik }),
+    ]);
   });
 
   it("aynı anda dört siparişte toplam sınır (1) aşılmaz", async () => {

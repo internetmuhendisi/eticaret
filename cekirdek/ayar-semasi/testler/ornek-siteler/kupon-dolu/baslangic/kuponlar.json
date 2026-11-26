@@ -1,0 +1,12 @@
+[
+  { "kod": "YAZ10", "tur": "yuzde", "deger": 10 },
+  {
+    "kod": "URUN50",
+    "tur": "tutar",
+    "deger": 5000,
+    "kapsam": "urunler",
+    "kapsamAdresAdlari": ["deneme-urunu"],
+    "baslangic": "2026-06-01T00:00",
+    "bitis": "2026-09-01T00:00"
+  }
+]

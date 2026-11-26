@@ -22,6 +22,7 @@ import {
   blogBaslangicDosyasi,
   duzenBaslangicDosyasi,
   katalogBaslangicDosyasi,
+  kuponBaslangicDosyasi,
   menuBaslangicDosyasi,
   sayfaBaslangicDosyasi,
   siteKlasorunuDogrula,
@@ -98,6 +99,7 @@ describe("ayar şeması", () => {
       siparisBaslangici: 1001,
       kisiselVeriSaklamaYili: 10,
       temaDegistirilebilir: true,
+      kuponKoduHarfDuyarli: false,
       vitrindeAltyapiAdi: false,
       yakindaYazisi: false,
       yoneticiOturumuSaat: 24,
@@ -385,6 +387,12 @@ describe("örnek klasörler", () => {
     // Bağımsız kontrolün bulgusu: alanların kuralı servisinkidir (e-postaya benzeyen başlık kayda yazılamaz).
     ["sayfa-kayda-uygun-degil", `${sayfaBaslangicDosyasi}: 0.baslik`],
     ["menu-sayfa-tanimsiz", `${menuBaslangicDosyasi}: 0.ogeler.1.hedef.adresAdi: hedef-yok`],
+    // Başlangıç kuponları (kart 0312): kod harf ayrımsız tekildir, değer türüne uyar, kapsamın kayıtları başlangıç
+    // kataloğundadır, bitiş başlangıçtan sonradır.
+    ["kupon-kod-tekrar", `${kuponBaslangicDosyasi}: 1.kod: aynı kod iki kez`],
+    ["kupon-deger-gecersiz", `${kuponBaslangicDosyasi}: 0.deger`],
+    ["kupon-kapsam-yok", `${kuponBaslangicDosyasi}: 0.kapsamAdresAdlari: olmayan-urun`],
+    ["kupon-sure-ters", `${kuponBaslangicDosyasi}: 0.bitis`],
   );
 
   for (const [ornek, beklenenHata] of bozuklar) {
@@ -697,6 +705,26 @@ describe("başlangıç düzeni (kart 0106)", () => {
     const bos = dogrula("gecerli");
     if (!bos.gecerli) throw new Error(bos.hatalar.join("\n"));
     expect(bos.site.blogBaslangici).toEqual({ kategoriler: [], yazilar: [] });
+  });
+
+  it("dosyadaki kuponlar okunur; verilmeyen kapsam, açıklık ve indirimde geçmezlik varsayılanıdır (kart 0312)", () => {
+    const sonuc = dogrula("kupon-dolu");
+    if (!sonuc.gecerli) throw new Error(sonuc.hatalar.join("\n"));
+    expect(
+      sonuc.site.kuponBaslangici.map((k) => [
+        k.kod,
+        k.kapsam,
+        k.kapsamAdresAdlari,
+        k.acik,
+        k.indirimdeGecmez,
+      ]),
+    ).toEqual([
+      ["YAZ10", "hepsi", [], true, false],
+      ["URUN50", "urunler", ["deneme-urunu"], true, false],
+    ]);
+    const bos = dogrula("katalog-dolu");
+    if (!bos.gecerli) throw new Error(bos.hatalar.join("\n"));
+    expect(bos.site.kuponBaslangici).toEqual([]);
   });
 
   it("dosyadaki menüler okunur; dosyası olmayan sitenin başlangıç menüsü yoktur (kart 0107)", () => {
