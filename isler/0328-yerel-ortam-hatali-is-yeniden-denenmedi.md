@@ -21,4 +21,4 @@ Hat 45784138336'da (010674b) yerel ortam denemesinin tek kırmızı ölçümü �
 
 ## Durum
 
-yapılacak
+bitti
