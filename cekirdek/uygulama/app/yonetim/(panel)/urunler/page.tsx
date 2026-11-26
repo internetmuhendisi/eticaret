@@ -2,7 +2,9 @@
 // tanımla okunur (tanınmayan değer yok sayılır, sayfa sınırlara çekilir) ve liste servisle okunur. Okunamazsa liste
 // hata hâlini gösterir; hata kaydedilir.
 import type { Metadata } from "next";
+import { calisanSite } from "../../../../../ayar-semasi/calisan-site";
 import { hatayiKaydet } from "../../../../../izleme/hata-katmani";
+import { siteninBicimleyicisi } from "../../../../../metinler/site-metni";
 import { yeniUrunAdresi } from "../../../../../yonetim-paneli/adresler";
 import { EylemBaglantisi } from "../../../../../yonetim-paneli/eylem-dugmesi";
 import { listeDurumunuOku } from "../../../../../yonetim-paneli/liste/tanim";
@@ -41,6 +43,7 @@ export default async function UrunlerSayfasi({
       return {};
     }),
   ]);
+  const { simge, yer } = siteninBicimleyicisi(calisanSite().ayarlar).paraSimgesi();
   return (
     <PanelSayfasi
       kod="urunler"
@@ -57,6 +60,7 @@ export default async function UrunlerSayfasi({
         topluIslemler={urunListesiTanimi.topluIslemler
           .filter((islem) => yetkili(islem.izin))
           .map((islem) => islem.kod)}
+        para={{ simge, simgeYeri: yer }}
       />
     </PanelSayfasi>
   );

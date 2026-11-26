@@ -255,7 +255,7 @@
       },
       "urunler": {
         "ad": "Ürünler",
-        "aciklama": "Mağazanın bütün ürünleri: yayında olanlar, taslaklar, gizli ve arşivdekiler. Seçtiğiniz ürünleri birlikte yayınlayın, taslağa ya da arşive alın."
+        "aciklama": "Mağazanın bütün ürünleri: yayında olanlar, taslaklar, gizli ve arşivdekiler. Seçtiğiniz ürünlerin fiyatını, stoğunu ve kategorisini birlikte değiştirin; birlikte yayınlayın, taslağa ya da arşive alın."
       },
       "yeniUrun": {
         "ad": "Yeni ürün",
@@ -2058,6 +2058,114 @@
         "neden": {
           "bulunamadi": "ürün bulunamadı, silinmiş olabilir",
           "genel": "değiştirilemedi"
+        }
+      },
+      "topluDuzenleme": {
+        "birlesimAyraci": ": ",
+        "degerAyraci": " / ",
+        "kategoriler": "Kategoriler",
+        "kategoriSiniri": "Bir işte en çok {sayi} kategori seçilir.",
+        "onizle": "Önizle",
+        "uygula": "{sayi} ürüne uygula",
+        "fiyat": {
+          "ad": "Fiyatı değiştir",
+          "aciklama": "{sayi} ürün seçili. Seçenekli üründe her birleşim ayrı hesaplanır. Önce önizleyin, sonra uygulayın.",
+          "basari": "{sayi} ürünün fiyatı değişti.",
+          "hedef": "Hangi fiyat",
+          "hedefler": {
+            "satis": "Satış fiyatı",
+            "indirimli": "İndirimli fiyat"
+          },
+          "yontem": "Nasıl",
+          "yontemler": {
+            "artir": "Artır",
+            "azalt": "Azalt",
+            "satistan-indir": "Satış fiyatından indir"
+          },
+          "birim": "Birim",
+          "birimler": {
+            "oran": "Yüzde",
+            "tutar": "Tutar ({simge})"
+          },
+          "oran": "Oran",
+          "tutar": "Tutar",
+          "yuzdeIsareti": "%",
+          "yuvarlama": "Sonuç kuruşa yuvarlanır. İndirimli fiyat satış fiyatından küçük kalmalı; kalmayan ürün işlenmez.",
+          "baslangic": "İndirim başlangıcı",
+          "bitis": "İndirim bitişi",
+          "zamanAciklamasi": "Boş bırakırsanız indirimdeki ürünün kendi zamanı kalır, yeni indirim süresiz olur."
+        },
+        "stok": {
+          "ad": "Stoğu değiştir",
+          "aciklama": "{sayi} ürün seçili. Seçenekli üründe her birleşime uygulanır; stok takibi kapalı ürün işlenmez. Önce önizleyin, sonra uygulayın.",
+          "basari": "{sayi} ürünün stoğu değişti.",
+          "yontem": "Nasıl",
+          "yontemler": {
+            "ekle": "Ekle",
+            "cikar": "Çıkar",
+            "cek": "Şu miktara çek"
+          },
+          "miktar": "Miktar"
+        },
+        "kategori-ekle": {
+          "ad": "Kategoriye ekle",
+          "aciklama": "{sayi} ürün seçili. Ürünlerin bugünkü kategorileri kalır, seçilenler eklenir.",
+          "basari": "{sayi} ürün kategoriye eklendi.",
+          "kategorilerAciklamasi": "Kategoriyi adıyla arayıp seçin."
+        },
+        "kategori-cikar": {
+          "ad": "Kategoriden çıkar",
+          "aciklama": "{sayi} ürün seçili. Ürünler seçilen kategorilerden çıkar, öteki kategorileri kalır.",
+          "basari": "{sayi} ürün kategoriden çıkarıldı.",
+          "kategorilerAciklamasi": "Kategoriyi adıyla arayıp seçin."
+        },
+        "onizleme": {
+          "baslik": "Önizleme",
+          "tablo": "Önizleme: değişecek ürünler",
+          "ozet": "{urun} ürün değişecek, seçenekli ürünlerin birleşimleriyle {birim} satır.",
+          "ozetUrun": "{urun} ürün değişecek.",
+          "degisenYok": "Bu değişiklikle hiçbir ürün değişmiyor. Değeri değiştirip yeniden önizleyin.",
+          "urun": "Ürün",
+          "satis": "Satış fiyatı",
+          "simdi": "Şimdi",
+          "yeni": "Yeni",
+          "yok": "Yok",
+          "dahaFazla": "{sayi} satır daha var; uygulanınca onlar da değişir.",
+          "degismeyen": "{sayi} ürün zaten bu durumda, değişmeyecek.",
+          "islenmeyecek": "{sayi} ürün işlenmeyecek:"
+        },
+        "hata": {
+          "genel": "Değişiklik yapılamadı. Sayfayı yenileyip yeniden deneyin.",
+          "kategoriSec": "En az bir kategori seçin.",
+          "too_small": "Bu alanı doldurun.",
+          "oran-okunamadi": "Oranı sayı olarak, en çok {ondalik} ondalıkla yazın (örneğin 12,5).",
+          "tutar-okunamadi": "Tutarı sitenin biçimiyle yazın (örneğin 1.249,90).",
+          "deger-sifir": "Sıfırdan büyük bir değer yazın.",
+          "oran-siniri": "Oran artırmada en çok %{artirma}, azaltmada ve indirimde en çok %{azaltma} olabilir.",
+          "miktar-okunamadi": "Miktarı tam sayı olarak yazın.",
+          "stok-siniri": "Miktar stok sınırını aşıyor.",
+          "not-gerekli": "\"Diğer\" sebebinde not yazın.",
+          "yontem-gecersiz": "Bu yöntem yalnız indirimli fiyatta seçilir.",
+          "indirim-zamani-gecersiz": "Takvimde olan bir gün ve saat seçin.",
+          "indirim-zamani-indirimsiz": "Zaman yalnız indirimli fiyatta verilir.",
+          "indirim-sirasi": "Bitiş başlangıçtan sonra olmalı.",
+          "kategori-gecersiz": "Seçilen kategori silinmiş. Listeden kaldırıp yeniden seçin.",
+          "not-uzun": "Not en çok {notUzunlugu} karakter olabilir.",
+          "kayda-uygun-degil": "Not yalnız bir e-posta adresinden ya da giriş anahtarından oluşamaz. Metni değiştirin."
+        },
+        "neden": {
+          "kategori-gecersiz": "seçilen kategori silinmiş",
+          "fiyat-yok": "fiyatı yok",
+          "indirim-yok": "indirimi yok",
+          "sifira-iniyor": "fiyat sıfıra ya da altına iniyor",
+          "indirim-buyuk": "indirimli fiyat satış fiyatından küçük kalmıyor",
+          "takip-kapali": "stok takibi kapalı",
+          "stok-eksi": "stok sıfırın altına iniyor",
+          "stok-siniri": "stok sınırı aşılıyor",
+          "degisti": "siz önizlemeyi görürken değişti, yeniden önizleyin",
+          "bulunamadi": "ürün bulunamadı, silinmiş olabilir",
+          "indirim-sirasi": "indirimin bitişi başlangıcından önce kalıyor",
+          "kategori-siniri": "eklenince ürünün kategori sınırı aşılıyor"
         }
       }
     },

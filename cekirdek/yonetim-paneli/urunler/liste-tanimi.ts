@@ -3,7 +3,8 @@
 // - Süzgeçler: yayın durumu, kategori (alt kategorileriyle), stok durumu, marka (taslağın sırası). Kategori ve marka
 //   sitenin kayıtlarıdır (kayıt süzgeci): seçenekleri sayfa verir.
 // - Arama: ad ya da stok kodu; ürün bilgisi kişisel değildir, adreste durur.
-// - Toplu işlemler: yayınla, taslağa al, arşive al, sil (karar 0157), her biri kendi izniyle.
+// - Toplu işlemler: fiyat, stok, kategoriye ekle ve çıkar (kart 0314, pencerede önizlenir), yayınla, taslağa al,
+//   arşive al, sil (karar 0157), her biri kendi izniyle.
 import type { PanelSayfaBoyu } from "../../kayitlar/liste";
 import {
   type UrunDurumu,
@@ -13,6 +14,8 @@ import {
   urunPanelAramaSiniri,
   urunPanelSiralamalari,
   urunPanelStokDurumlari,
+  urunTopluDuzenlemeKodlari,
+  urunTopluDuzenlemeleri,
   urunTopluIslemKodlari,
   urunTopluIslemleri,
 } from "../../kayitlar/urun";
@@ -36,8 +39,12 @@ export const urunListesiTanimi = {
     stok: { azalan: "stok-azalan", artan: "stok-artan" },
     fiyat: { azalan: "fiyat-azalan", artan: "fiyat-artan" },
   },
-  // Her toplu işlemin izni kayıttaki işleminkidir (urunTopluIslemleri); uç da aynısını denetler.
-  topluIslemler: urunTopluIslemKodlari.map((kod) => ({ kod, izin: urunTopluIslemleri[kod].izin })),
+  // Her toplu işlemin izni kayıttaki işleminkidir (urunTopluDuzenlemeleri, urunTopluIslemleri); uç da aynısını
+  // denetler. Toplu düzenlemeler (kart 0314) durum işlemlerinden öncedir (taslak).
+  topluIslemler: [
+    ...urunTopluDuzenlemeKodlari.map((kod) => ({ kod, izin: urunTopluDuzenlemeleri[kod].izin })),
+    ...urunTopluIslemKodlari.map((kod) => ({ kod, izin: urunTopluIslemleri[kod].izin })),
+  ],
 } as const satisfies ListeTanimi;
 
 // Listenin durumundan servisin girdisi (urunPanelListesi, cekirdek/moduller/urun/panel-listesi.ts).

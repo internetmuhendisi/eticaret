@@ -109,5 +109,73 @@ export const urunTopluIslemleri = {
 export type UrunTopluIslemi = keyof typeof urunTopluIslemleri;
 export const urunTopluIslemKodlari = Object.keys(urunTopluIslemleri) as UrunTopluIslemi[];
 
+// Ürünlerin toplu düzenlemesi (kart 0314, karar 0189): fiyat, stok, kategoriye ekleme ve çıkarma. Her biri pencerede
+// önizlenip onaylanır; izni işin kendi iznidir (fiyat ve stok ürünü değiştirmekten ayrı izinlerdir, karar 0066 ve
+// 0068). Çubuktaki sıra bu sıradır, durum işlemlerinden öncedir (taslak).
+export const urunTopluDuzenlemeleri = {
+  fiyat: { izin: "fiyat.degistir" },
+  stok: { izin: "stok.duzelt" },
+  "kategori-ekle": { izin: "urun.degistir" },
+  "kategori-cikar": { izin: "urun.degistir" },
+} as const satisfies Record<string, { izin: "fiyat.degistir" | "stok.duzelt" | "urun.degistir" }>;
+export type UrunTopluDuzenlemesi = keyof typeof urunTopluDuzenlemeleri;
+export const urunTopluDuzenlemeKodlari = Object.keys(
+  urunTopluDuzenlemeleri,
+) as UrunTopluDuzenlemesi[];
+
+// Toplu fiyat değişikliği: hangi fiyat, nasıl ve neyle (karar 0189). "satistan-indir" yalnız indirimli fiyatta: yeni
+// indirimli fiyat satış fiyatından oran ya da tutar kadar düşüktür. Artırma ve azaltma kayıtlı fiyatın kendisine
+// uygulanır.
+export const topluFiyatHedefleri = ["satis", "indirimli"] as const;
+export type TopluFiyatHedefi = (typeof topluFiyatHedefleri)[number];
+export const topluFiyatYontemleri = ["artir", "azalt", "satistan-indir"] as const;
+export type TopluFiyatYontemi = (typeof topluFiyatYontemleri)[number];
+export const topluDegisimBirimleri = ["oran", "tutar"] as const;
+export type TopluDegisimBirimi = (typeof topluDegisimBirimleri)[number];
+// Toplu stok değişikliği: ekle, çıkar ya da verilen miktara çek.
+export const topluStokYontemleri = ["ekle", "cikar", "cek"] as const;
+export type TopluStokYontemi = (typeof topluStokYontemleri)[number];
+
+// Toplu düzenlemenin sınırları: oran yüzde olarak en çok iki ondalıkla; artırmada en çok %1000, azaltmada ve
+// satıştan indirmede en çok %100 (sonuç sıfıra iner, işlenmez). Bir işte en çok 20 kategori.
+export const topluDuzenlemeSinirlari = {
+  oranOndalik: 2,
+  artirmaOraniEnCok: 1000,
+  azaltmaOraniEnCok: 100,
+  kategoriEnCok: 20,
+} as const;
+
+// Bir ürünün ya da birimin toplu düzenlemede işlenmeme nedenleri (karar 0189). Birim nedenleri (fiyat-yok,
+// indirim-yok, takip-kapali) yalnız o birimi atlar; ürünün hiçbir birimi işlenemiyorsa ürün o nedenle işlenmez.
+// Öteki nedenler bütün ürünü durdurur: ürün kendi işleminde ya hep ya hiç yazılır.
+// - fiyat-yok: birimin fiyatı yok (artırılacak fiyat yok).
+// - indirim-yok: indirimli fiyat artırılıp azaltılıyor, birimin indirimi yok.
+// - sifira-iniyor: yeni fiyat sıfır ya da altı (kullanıcı kararı: ücretsiz ürün toplu yapılmaz).
+// - indirim-buyuk: yeni indirimli fiyat satış fiyatından küçük değil (fiyat servisinin kuralı). Bitişi geçmiş
+//   indirim yok sayılır: indirimi olmayan birim gibidir.
+// - takip-kapali: ürünün stok takibi kapalı.
+// - stok-eksi: çıkarılınca stok sıfırın altına iner.
+// - stok-siniri: yeni stok üst sınırı aşıyor.
+// - degisti: önizlemeden sonra ürünün fiyatı, stoğu ya da birimleri değişti.
+// - bulunamadi: ürün yok ya da silinmiş.
+// - kategori-gecersiz: seçilen kategori önizlemeden sonra silindi.
+// - kategori-siniri: eklenince ürünün kategori sayısı sınırı aşıyor.
+// - indirim-sirasi: indirimin bitişi (verilen ya da birimin kayıtlı zamanı) başlangıcından sonra değil.
+export const urunTopluDuzenlemeNedenleri = [
+  "kategori-gecersiz",
+  "kategori-siniri",
+  "indirim-sirasi",
+  "fiyat-yok",
+  "indirim-yok",
+  "sifira-iniyor",
+  "indirim-buyuk",
+  "takip-kapali",
+  "stok-eksi",
+  "stok-siniri",
+  "degisti",
+  "bulunamadi",
+] as const;
+export type UrunTopluDuzenlemeNedeni = (typeof urunTopluDuzenlemeNedenleri)[number];
+
 // Panel listesinde aranan metnin en çok uzunluğu.
 export const urunPanelAramaSiniri = 100;

@@ -84,7 +84,26 @@ export type SutunTanimi<Satir> = {
 
 // İki türlü toplu işlem: kapıya istek gönderen (onaylı, sonucu listede söylenir) ve seçilenlerle yeni sekmede bir
 // sayfa açan bağlantı (sipariş fişi, kart 0270): sunucuya istek gitmez, seçim kalır.
-export type TopluIslemTanimi<Satir> = TopluIstekTanimi<Satir> | TopluBaglantiTanimi<Satir>;
+// Üçüncüsü kendi penceresini açan işlem (kart 0314, ürünlerde toplu düzenleme): pencere önizler ve uygular, sonucu
+// listeye verir; sonuç ötekilerinki gibi listede söylenir, seçim yalnız işlenemeyen satırlarda kalır (taslak).
+export type TopluIslemTanimi<Satir> =
+  | TopluIstekTanimi<Satir>
+  | TopluBaglantiTanimi<Satir>
+  | TopluPencereTanimi<Satir>;
+
+export type TopluPencereTanimi<Satir> = {
+  tur: "pencere";
+  kod: string;
+  ad: string;
+  // Seçilen satırlarla açılan pencere. kapat: sonuçsuz kapanır (odak çubuğun düğmesine döner); bitti: işlem yapıldı.
+  pencere: (ozellikler: {
+    satirlar: Satir[];
+    kapat: () => void;
+    bitti: (sonuc: TopluSonuc) => void;
+  }) => ReactNode;
+  basari: (sayi: number) => string;
+  neden: (kod: string) => string;
+};
 
 export type TopluBaglantiTanimi<Satir> = {
   tur: "baglanti";
@@ -229,6 +248,7 @@ export function Liste<Satir>({
 
   // Toplu işlem: onay penceresi, istek, sonuç. Sonuç gelince odak sonuca gider.
   const [bekleyen, setBekleyen] = useState<TopluIstekTanimi<Satir> | null>(null);
+  const [acikPencere, setAcikPencere] = useState<TopluPencereTanimi<Satir> | null>(null);
   const [sonuc, setSonuc] = useState<Sonuc | null>(null);
   const sonucKutusu = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -578,7 +598,7 @@ export function Liste<Satir>({
     ) : (
       (() => {
         const islem = topluIslemler.find(
-          (oge): oge is TopluIstekTanimi<Satir> =>
+          (oge): oge is TopluIstekTanimi<Satir> | TopluPencereTanimi<Satir> =>
             oge.tur !== "baglanti" && oge.kod === sonuc.islem,
         );
         const { islenen, islenemeyen } = sonuc.sonuc;
@@ -643,7 +663,7 @@ export function Liste<Satir>({
               key={islem.kod}
               tur="cerceveli"
               className="border-zemin px-3 text-zemin hover:bg-yazi"
-              onClick={() => setBekleyen(islem)}
+              onClick={() => (islem.tur === "pencere" ? setAcikPencere(islem) : setBekleyen(islem))}
             >
               {islem.ad}
             </Dugme>
@@ -950,6 +970,24 @@ export function Liste<Satir>({
       )}
       {topluCubuk}
       {govde}
+      {acikPencere === null
+        ? null
+        : acikPencere.pencere({
+            satirlar: satirlar.filter((satir) => secilen.has(anahtar(satir))),
+            kapat: () => setAcikPencere(null),
+            bitti: (topluSonuc) => {
+              const adlar = Object.fromEntries(
+                satirlar
+                  .filter((satir) => secilen.has(anahtar(satir)))
+                  .map((satir) => [anahtar(satir), satirAdi(satir)]),
+              );
+              setAcikPencere(null);
+              setSecilen(new Set(topluSonuc.islenemeyen.map((oge) => oge.anahtar)));
+              setSonuc({ tur: "bitti", islem: acikPencere.kod, sonuc: topluSonuc, adlar });
+              router.refresh();
+              if (aramada) setYenile((sayi) => sayi + 1);
+            },
+          })}
       {bekleyen === null ? null : (
         <OnayPenceresi
           acik

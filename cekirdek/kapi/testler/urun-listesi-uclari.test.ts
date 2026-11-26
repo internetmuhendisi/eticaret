@@ -8,6 +8,7 @@ import { join, resolve } from "node:path";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
+import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
 import { roller, yoneticiRolleri } from "../../moduller/ekip/model.ts";
 import { fiyatGosterimServisi } from "../../moduller/fiyat/gosterim.ts";
 import { siteninFiyatServisi } from "../../moduller/fiyat/servis.ts";
@@ -19,7 +20,12 @@ import { urunServisi } from "../../moduller/urun/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
 import type { UrunListesiVerisi } from "../../yonetim-paneli/urunler/veri.ts";
-import { urunListesiUcu, urunTopluIslemiUcu } from "../yonetici/urun-listesi.ts";
+import {
+  urunListesiUcu,
+  urunTopluDuzenlemeUcu,
+  urunTopluIslemiUcu,
+  urunTopluOnizlemeUcu,
+} from "../yonetici/urun-listesi.ts";
 import { oturumCerezi } from "./erisim-denemesi.ts";
 
 const ortak = globalThis as Record<symbol, unknown>;
@@ -224,5 +230,156 @@ describe("ürün listesi uçları", () => {
       expect(await hata(yanit)).toMatchObject({ kod });
     }
     expect(await urunSrv.urunuOku(vt, urun)).toMatchObject({ durum: "taslak", silindi: false });
+  });
+});
+
+// Toplu düzenleme uçları (kart 0314, karar 0189).
+describe("toplu düzenleme uçları", () => {
+  type Onizleme = {
+    urunler: { kimlik: string; degisir: boolean; satirlar: { eski: string; yeni: string }[] }[];
+    urunSayisi: number;
+    birimSayisi: number;
+    gorulen: Record<string, unknown>;
+  };
+  const fiyatArtisi = {
+    islem: "fiyat",
+    hedef: "satis",
+    yontem: "artir",
+    birim: "oran",
+    deger: "10",
+    indirimBaslangici: null,
+    indirimBitisi: null,
+  } as const;
+  const stokEkle = { islem: "stok", yontem: "ekle", miktar: "5", sebep: "yeni-mal" } as const;
+  const birimi = async (urun: string) =>
+    (await urunSrv.urunuOku(vt, urun))?.birimler[0]?.kimlik ?? "";
+
+  it("mağaza sahibi önizler (sitenin biçimiyle) ve uygular; geçmişe yazanıyla girer", async () => {
+    const sahip = await cerez("magaza-sahibi");
+    const urun = await urunAc(
+      `Toplu ${randomBytes(3).toString("hex")}`,
+      {},
+      {
+        satis: 24_990,
+        miktar: 1,
+      },
+    );
+    const onizleme = await veri<Onizleme>(
+      await urunTopluOnizlemeUcu(
+        istek("urunler-toplu-onizle", sahip, { urunler: [urun], duzenleme: fiyatArtisi }),
+      ),
+    );
+    const b = siteninBicimleyicisi(site.ayarlar);
+    expect(onizleme).toMatchObject({
+      urunSayisi: 1,
+      birimSayisi: 1,
+      urunler: [
+        { kimlik: urun, degisir: true, satirlar: [{ eski: b.para(24_990), yeni: b.para(27_489) }] },
+      ],
+    });
+    expect((await fiyat.fiyatOku(vt, await birimi(urun)))?.satisFiyati).toBe(24_990);
+    const sonuc = await veri<{ islenen: string[] }>(
+      await urunTopluDuzenlemeUcu(
+        istek("urunler-toplu-duzenle", sahip, {
+          urunler: [urun],
+          duzenleme: fiyatArtisi,
+          gorulen: onizleme.gorulen,
+        }),
+      ),
+    );
+    expect(sonuc.islenen).toEqual([urun]);
+    const [gecmis] = await fiyat.panelFiyatGecmisi(vt, [await birimi(urun)]);
+    expect(gecmis).toMatchObject({ satisFiyati: 27_489, kim: { tur: "yonetici" } });
+    // Okunamayan değer alanın yoluyla.
+    const bozuk = await urunTopluOnizlemeUcu(
+      istek("urunler-toplu-onizle", sahip, {
+        urunler: [urun],
+        duzenleme: { ...fiyatArtisi, deger: "on" },
+      }),
+    );
+    expect(bozuk.status).toBe(400);
+    expect(await hata(bozuk)).toMatchObject({
+      kod: "dogrulama",
+      ayrinti: [{ alan: "duzenleme.deger", kod: "oran-okunamadi" }],
+    });
+  });
+
+  it("görevli stoğu toplu değiştirir, fiyatı değiştiremez (iki uçta da yetki, hiçbir şey değişmez)", async () => {
+    const gorevli = await cerez("gorevli");
+    const urun = await urunAc(
+      `Görevli toplu ${randomBytes(3).toString("hex")}`,
+      {},
+      {
+        satis: 1000,
+        miktar: 1,
+      },
+    );
+    const onizleme = await veri<Onizleme>(
+      await urunTopluOnizlemeUcu(
+        istek("urunler-toplu-onizle", gorevli, { urunler: [urun], duzenleme: stokEkle }),
+      ),
+    );
+    await veri(
+      await urunTopluDuzenlemeUcu(
+        istek("urunler-toplu-duzenle", gorevli, {
+          urunler: [urun],
+          duzenleme: stokEkle,
+          gorulen: onizleme.gorulen,
+        }),
+      ),
+    );
+    expect((await stok.stoklariOku(vt, [await birimi(urun)])).get(await birimi(urun))?.miktar).toBe(
+      6,
+    );
+    const birim = await birimi(urun);
+    for (const yanit of [
+      await urunTopluOnizlemeUcu(
+        istek("urunler-toplu-onizle", gorevli, { urunler: [urun], duzenleme: fiyatArtisi }),
+      ),
+      await urunTopluDuzenlemeUcu(
+        istek("urunler-toplu-duzenle", gorevli, {
+          urunler: [urun],
+          duzenleme: fiyatArtisi,
+          gorulen: { [urun]: { [birim]: { satis: 1000, indirimli: null } } },
+        }),
+      ),
+    ]) {
+      expect(yanit.status).toBe(403);
+      expect(await hata(yanit)).toMatchObject({ kod: "yetki" });
+    }
+    expect((await fiyat.fiyatOku(vt, birim))?.satisFiyati).toBe(1000);
+  });
+
+  it.each([
+    ["rolsüz yönetici", "rolsuz", 403, "yetki"],
+    ["müşteri", "musteri", 401, "oturum-yok"],
+    ["girişsiz ziyaretçi", "girissiz", 401, "oturum-yok"],
+  ] as const)("%s toplu düzenlemede geçmez, hiçbir şey değişmez", async (_ad, kisi, durum, kod) => {
+    const urun = await urunAc(
+      `Toplu ret ${randomBytes(3).toString("hex")}`,
+      {},
+      {
+        satis: 1000,
+        miktar: 1,
+      },
+    );
+    const birim = await birimi(urun);
+    const oturum = await cerez(kisi);
+    for (const yanit of [
+      await urunTopluOnizlemeUcu(
+        istek("urunler-toplu-onizle", oturum, { urunler: [urun], duzenleme: stokEkle }),
+      ),
+      await urunTopluDuzenlemeUcu(
+        istek("urunler-toplu-duzenle", oturum, {
+          urunler: [urun],
+          duzenleme: stokEkle,
+          gorulen: { [urun]: { [birim]: { miktar: 1 } } },
+        }),
+      ),
+    ]) {
+      expect(yanit.status).toBe(durum);
+      expect(await hata(yanit)).toMatchObject({ kod });
+    }
+    expect((await stok.stoklariOku(vt, [birim])).get(birim)?.miktar).toBe(1);
   });
 });
