@@ -17,6 +17,7 @@ import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import {
+  type KuponHatasi,
   type KuponKapsami,
   type KuponTuru,
   kuponKoduKalibi,
@@ -24,8 +25,10 @@ import {
 } from "../../kayitlar/kampanya.ts";
 import { adAnahtariSql } from "../../metinler/ad-anahtari.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
+import { kimligiDuzelt } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { kategoriler, urunKategorileri } from "../kategori/model.ts";
+import { urunler } from "../urun/model.ts";
 import type { HesapKuponu } from "./hesap.ts";
 import { type Kupon, kuponKapsami, kuponKullanimlari, kuponlar } from "./model.ts";
 
@@ -99,6 +102,183 @@ export const kuponKullaniminiSerbestBirak = async (
     .where(
       and(eq(kuponKullanimlari.siparis_kimligi, siparis), isNull(kuponKullanimlari.serbest_zamani)),
     );
+};
+
+// Kuponun bütün alanları (servisin ekleme ve değiştirme girdisi; zamanlar an olarak, tutarlar kuruş).
+export type KuponGirdisi = {
+  kod: string;
+  ad: string | null;
+  tur: KuponTuru;
+  deger: number;
+  kapsam: KuponKapsami;
+  kapsamKayitlari: string[];
+  enAzTutar: number | null;
+  baslangic: Date | null;
+  bitis: Date | null;
+  toplamSinir: number | null;
+  kisiBasiSinir: number | null;
+  indirimdeGecmez: boolean;
+  acik: boolean;
+};
+export type KuponEklemeGirdisi = Pick<KuponGirdisi, "kod" | "tur" | "deger" | "kapsam"> &
+  Partial<Omit<KuponGirdisi, "kod" | "tur" | "deger" | "kapsam">>;
+
+const kuponAlanlari = [
+  "kod",
+  "ad",
+  "tur",
+  "deger",
+  "kapsam",
+  "kapsamKayitlari",
+  "enAzTutar",
+  "baslangic",
+  "bitis",
+  "toplamSinir",
+  "kisiBasiSinir",
+  "indirimdeGecmez",
+  "acik",
+] as const satisfies readonly (keyof KuponGirdisi)[];
+// Kullanılmış kuponda değişmeyen alanlar (karar 0185; veritabanında kupon_degismezlik ve kupon_kapsami_degismezlik).
+export const kullanilincaKilitli: readonly (keyof KuponGirdisi)[] = [
+  "kod",
+  "tur",
+  "deger",
+  "kapsam",
+  "kapsamKayitlari",
+  "indirimdeGecmez",
+];
+
+const eklemeGirdisi = (girdi: KuponEklemeGirdisi): KuponGirdisi =>
+  ({
+    ad: null,
+    enAzTutar: null,
+    baslangic: null,
+    bitis: null,
+    toplamSinir: null,
+    kisiBasiSinir: null,
+    indirimdeGecmez: false,
+    acik: true,
+    ...Object.fromEntries(Object.entries(girdi).filter(([, deger]) => deger !== undefined)),
+    kapsamKayitlari: [...new Set((girdi.kapsamKayitlari ?? []).map(kimligiDuzelt))].sort(),
+  }) as KuponGirdisi;
+
+const kuponSatiri = (girdi: KuponGirdisi) => ({
+  ad: girdi.ad,
+  tur: girdi.tur,
+  deger: girdi.deger,
+  kapsam: girdi.kapsam,
+  en_az_tutar: girdi.enAzTutar,
+  baslangic_zamani: girdi.baslangic,
+  bitis_zamani: girdi.bitis,
+  toplam_sinir: girdi.toplamSinir,
+  kisi_basi_sinir: girdi.kisiBasiSinir,
+  indirimde_gecmez: girdi.indirimdeGecmez,
+  acik: girdi.acik,
+});
+
+const kapsamiYaz = async (islem: VeritabaniIslemi, kupon: string, girdi: KuponGirdisi) => {
+  if (girdi.kapsamKayitlari.length === 0) return;
+  await islem.insert(kuponKapsami).values(
+    girdi.kapsamKayitlari.map((kayit) => ({
+      kupon_kimligi: kupon,
+      kayit_kimligi: kayit,
+      ...(girdi.kapsam === "urunler" ? { urun_kimligi: kayit } : { kategori_kimligi: kayit }),
+    })),
+  );
+};
+
+// Kuponun kayıtlı alanları (kapsam kayıtları sıralı).
+export const kuponGirdisiniOku = async (
+  vt: Veritabani | VeritabaniIslemi,
+  satir: Kupon,
+): Promise<KuponGirdisi> => {
+  const kapsam = await vt
+    .select({ kayit: kuponKapsami.kayit_kimligi })
+    .from(kuponKapsami)
+    .where(eq(kuponKapsami.kupon_kimligi, satir.kimlik));
+  return {
+    kod: satir.kod,
+    ad: satir.ad,
+    tur: satir.tur as KuponTuru,
+    deger: satir.deger,
+    kapsam: satir.kapsam as KuponKapsami,
+    kapsamKayitlari: kapsam.map(({ kayit }) => kayit).sort(),
+    enAzTutar: satir.en_az_tutar,
+    baslangic: satir.baslangic_zamani,
+    bitis: satir.bitis_zamani,
+    toplamSinir: satir.toplam_sinir,
+    kisiBasiSinir: satir.kisi_basi_sinir,
+    indirimdeGecmez: satir.indirimde_gecmez,
+    acik: satir.acik,
+  };
+};
+
+const tamSayiMi = (deger: number | null, enAz: number, enCok: number) =>
+  deger === null || (Number.isSafeInteger(deger) && deger >= enAz && deger <= enCok);
+
+// Kuponun kuralları (ekleme ve değişiklik): bütün alan hataları birlikte döner (dogrulama); kod başka bir kuponda
+// varsa cakisma (kod-var). Kapsama yeni eklenen ürün ve kategori silinmemiş olmalıdır (kapsamda kalan, sonradan
+// silinmiş kayıt kuponu değiştirmeyi engellemez; kupon onda zaten geçmez). Biçimlenmiş kodu döner.
+const kuponuDenetle = async (
+  vt: VeritabaniIslemi,
+  girdi: KuponGirdisi,
+  onceki?: { kimlik: string; kapsamKayitlari: readonly string[] },
+): Promise<string> => {
+  const hatalar: { alan: string; kod: KuponHatasi }[] = [];
+  const kod = kodBiciminde(girdi.kod);
+  if (kod === undefined) hatalar.push({ alan: "kod", kod: "kod-gecersiz" });
+  const degerGecerli =
+    girdi.tur === "yuzde"
+      ? tamSayiMi(girdi.deger, kuponSinirlari.yuzdeEnAz, kuponSinirlari.yuzdeEnCok)
+      : girdi.tur === "tutar"
+        ? tamSayiMi(girdi.deger, 1, kuponSinirlari.tutarEnCok)
+        : girdi.deger === 0;
+  if (!degerGecerli) hatalar.push({ alan: "deger", kod: "deger-gecersiz" });
+  if (!tamSayiMi(girdi.enAzTutar, 0, kuponSinirlari.tutarEnCok)) {
+    hatalar.push({ alan: "enAzTutar", kod: "tutar-sinir-disi" });
+  }
+  for (const alan of ["toplamSinir", "kisiBasiSinir"] as const) {
+    if (!tamSayiMi(girdi[alan], 1, kuponSinirlari.kullanimEnCok)) {
+      hatalar.push({ alan, kod: "sayi-gecersiz" });
+    }
+  }
+  if (girdi.baslangic !== null && girdi.bitis !== null && girdi.bitis <= girdi.baslangic) {
+    hatalar.push({ alan: "bitis", kod: "sure-ters" });
+  }
+  const kayitlar = girdi.kapsamKayitlari;
+  if ((girdi.kapsam === "hepsi") !== (kayitlar.length === 0)) {
+    hatalar.push({ alan: "kapsamKayitlari", kod: "kapsam-bos" });
+  } else if (kayitlar.length > kuponSinirlari.kapsamEnCok) {
+    hatalar.push({ alan: "kapsamKayitlari", kod: "kapsam-sinir" });
+  } else if (kayitlar.length > 0) {
+    const yeniler = kayitlar.filter((kayit) => !onceki?.kapsamKayitlari.includes(kayit));
+    const tablo = girdi.kapsam === "urunler" ? urunler : kategoriler;
+    const bulunan =
+      yeniler.length === 0
+        ? []
+        : await vt
+            .select({ kimlik: tablo.kimlik })
+            .from(tablo)
+            .where(and(inArray(tablo.kimlik, yeniler), isNull(tablo.silinme_zamani)))
+            // Kapsama bağlanırken silinmesin (ürün ve kategori servisleri satırı kilitleyerek siler).
+            .for("share");
+    if (bulunan.length !== yeniler.length) {
+      hatalar.push({ alan: "kapsamKayitlari", kod: "kayit-yok" });
+    }
+  }
+  if (hatalar.length > 0 || kod === undefined) throw new BilinenHata("dogrulama", hatalar);
+  const [var_] = await vt
+    .select({ kimlik: kuponlar.kimlik })
+    .from(kuponlar)
+    .where(
+      and(
+        sql`${adAnahtariSql(kuponlar.kod)} = ${adAnahtariSql(kod)}`,
+        isNull(kuponlar.silinme_zamani),
+        onceki === undefined ? undefined : ne(kuponlar.kimlik, onceki.kimlik),
+      ),
+    );
+  if (var_ !== undefined) throw new BilinenHata("cakisma", [{ alan: "kod", kod: "kod-var" }]);
+  return kod;
 };
 
 export const kuponServisi = (site: Site) => {
@@ -305,69 +485,20 @@ export const kuponServisi = (site: Site) => {
       .where(eq(kuponKullanimlari.kimlik, ayirma.kimlik));
   };
 
-  // Kupon açar (başlangıç verisi ve testler; panelin formu kart 0313). Kod tekilliği harf ayrımsızdır.
+  // Kupon açar (başlangıç verisi, panelin formu ve testler). Kurallar kuponuDenetle'dedir.
   const ekle = async (
     islem: VeritabaniIslemi,
     kim: DegisikligiYapan,
-    girdi: {
-      kod: string;
-      ad?: string | null;
-      tur: KuponTuru;
-      deger: number;
-      kapsam: KuponKapsami;
-      kapsamKayitlari?: readonly string[];
-      enAzTutar?: number | null;
-      baslangic?: Date | null;
-      bitis?: Date | null;
-      toplamSinir?: number | null;
-      kisiBasiSinir?: number | null;
-      indirimdeGecmez?: boolean;
-      acik?: boolean;
-    },
+    girdi: KuponEklemeGirdisi,
   ): Promise<string> => {
-    const kod = kodBiciminde(girdi.kod);
-    if (kod === undefined) throw new BilinenHata("dogrulama", [{ alan: "kod", kod: "gecersiz" }]);
-    const kapsamKayitlari = [...new Set(girdi.kapsamKayitlari ?? [])];
-    if ((girdi.kapsam === "hepsi") !== (kapsamKayitlari.length === 0)) {
-      throw new BilinenHata("dogrulama", [{ alan: "kapsamKayitlari", kod: "gecersiz" }]);
-    }
-    const [var_] = await islem
-      .select({ kimlik: kuponlar.kimlik })
-      .from(kuponlar)
-      .where(
-        and(
-          sql`${adAnahtariSql(kuponlar.kod)} = ${adAnahtariSql(kod)}`,
-          isNull(kuponlar.silinme_zamani),
-        ),
-      );
-    if (var_ !== undefined) throw new BilinenHata("cakisma", [{ alan: "kod", kod: "kod-var" }]);
+    const tam = eklemeGirdisi(girdi);
+    const kod = await kuponuDenetle(islem, tam);
     const [yazilan] = await islem
       .insert(kuponlar)
-      .values({
-        kod,
-        ad: girdi.ad ?? null,
-        tur: girdi.tur,
-        deger: girdi.deger,
-        kapsam: girdi.kapsam,
-        en_az_tutar: girdi.enAzTutar ?? null,
-        baslangic_zamani: girdi.baslangic ?? null,
-        bitis_zamani: girdi.bitis ?? null,
-        toplam_sinir: girdi.toplamSinir ?? null,
-        kisi_basi_sinir: girdi.kisiBasiSinir ?? null,
-        indirimde_gecmez: girdi.indirimdeGecmez ?? false,
-        acik: girdi.acik ?? true,
-      })
+      .values({ ...kuponSatiri(tam), kod })
       .returning({ kimlik: kuponlar.kimlik });
     if (yazilan === undefined) throw new Error("Kupon yazılamadı.");
-    if (kapsamKayitlari.length > 0) {
-      await islem.insert(kuponKapsami).values(
-        kapsamKayitlari.map((kayit) => ({
-          kupon_kimligi: yazilan.kimlik,
-          kayit_kimligi: kayit,
-          ...(girdi.kapsam === "urunler" ? { urun_kimligi: kayit } : { kategori_kimligi: kayit }),
-        })),
-      );
-    }
+    await kapsamiYaz(islem, yazilan.kimlik, tam);
     await degisikligiKaydet(islem, {
       kim,
       islem: "kupon.eklendi",
@@ -375,13 +506,92 @@ export const kuponServisi = (site: Site) => {
       eski: null,
       yeni: {
         kod,
-        tur: girdi.tur,
-        deger: girdi.deger,
-        kapsam: girdi.kapsam,
-        ...(kapsamKayitlari.length > 0 ? { kapsamKayitlari } : {}),
+        tur: tam.tur,
+        deger: tam.deger,
+        kapsam: tam.kapsam,
+        ...(tam.kapsamKayitlari.length > 0 ? { kapsamKayitlari: tam.kapsamKayitlari } : {}),
       },
     });
     return yazilan.kimlik;
+  };
+
+  // Panelin değişikliği (kart 0313, karar 0188): yalnız verilen alanlar değişir. Ekranın gördüğü değişme anı arada
+  // değiştiyse hiçbir şey yazılmaz (cakisma, kupon-degisti). Kullanılmış kuponun kodu, türü, indirimi, kapsamı ve
+  // "indirimli ürünlerde geçmez"i değişmez (alanın hatası "kullanildi"; veritabanının tetikleyicisi de reddeder);
+  // süresi, sınırları, en az tutarı, adı ve açıklığı değişir. Aynı değer kayda girmez, değişme anı değişmez.
+  const degistir = async (
+    islem: VeritabaniIslemi,
+    kim: DegisikligiYapan,
+    kimlik: string,
+    degisiklik: Partial<KuponGirdisi>,
+    gorulen: Date,
+  ): Promise<{ degismeZamani: Date }> => {
+    const [satir] = await islem
+      .select()
+      .from(kuponlar)
+      .where(and(eq(kuponlar.kimlik, kimligiDuzelt(kimlik)), isNull(kuponlar.silinme_zamani)))
+      .for("update");
+    if (satir === undefined) throw new BilinenHata("bulunamadi");
+    if (satir.degisme_zamani.getTime() !== gorulen.getTime()) {
+      throw new BilinenHata("cakisma", [{ alan: "kupon", kod: "kupon-degisti" }]);
+    }
+    const eski = await kuponGirdisiniOku(islem, satir);
+    const yeni: KuponGirdisi = {
+      ...eski,
+      ...Object.fromEntries(Object.entries(degisiklik).filter(([, deger]) => deger !== undefined)),
+    };
+    if (yeni.kapsam === "hepsi") yeni.kapsamKayitlari = [];
+    yeni.kapsamKayitlari = [...new Set(yeni.kapsamKayitlari.map(kimligiDuzelt))].sort();
+    const degisenler = kuponAlanlari.filter(
+      (alan) => JSON.stringify(eski[alan]) !== JSON.stringify(yeni[alan]),
+    );
+    if (degisenler.length === 0) return { degismeZamani: satir.degisme_zamani };
+    const kilitliDegisenler = degisenler.filter((alan) => kullanilincaKilitli.includes(alan));
+    if (kilitliDegisenler.length > 0) {
+      const {
+        rows: [kullanim],
+      } = await islem.execute<{ kullanildi: boolean }>(
+        sql`select kupon_kullanildi_mi(${satir.kimlik}) as kullanildi`,
+      );
+      if (kullanim?.kullanildi === true) {
+        throw new BilinenHata(
+          "dogrulama",
+          kilitliDegisenler.map((alan) => ({ alan, kod: "kullanildi" satisfies KuponHatasi })),
+        );
+      }
+    }
+    // Kapsamın türü değişmediyse kalan kayıtlar yeniden denetlenmez.
+    const kod = await kuponuDenetle(islem, yeni, {
+      kimlik: satir.kimlik,
+      kapsamKayitlari: yeni.kapsam === eski.kapsam ? eski.kapsamKayitlari : [],
+    });
+    const [yazilan] = await islem
+      .update(kuponlar)
+      .set({ ...kuponSatiri(yeni), kod, degisme_zamani: sql`now()` })
+      .where(eq(kuponlar.kimlik, satir.kimlik))
+      .returning({ degismeZamani: kuponlar.degisme_zamani });
+    if (yazilan === undefined) throw new Error("Kupon yazılamadı.");
+    if (degisenler.includes("kapsamKayitlari")) {
+      await islem.delete(kuponKapsami).where(eq(kuponKapsami.kupon_kimligi, satir.kimlik));
+      await kapsamiYaz(islem, satir.kimlik, yeni);
+    }
+    // Kuponun adı mağaza sahibinin serbest metnidir, kayda girmez (yalnız değiştiği bilinir).
+    const kayitDegeri = (girdi: KuponGirdisi) =>
+      Object.fromEntries(
+        degisenler.map((alan) => {
+          if (alan === "ad") return [alan, girdi.ad === null ? null : "[ad]"];
+          const deger = girdi[alan];
+          return [alan, deger instanceof Date ? deger.toISOString() : deger];
+        }),
+      );
+    await degisikligiKaydet(islem, {
+      kim,
+      islem: "kupon.degisti",
+      kayit: { tur: "kupon", kimlik: satir.kimlik },
+      eski: kayitDegeri(eski),
+      yeni: kayitDegeri(yeni),
+    });
+    return yazilan;
   };
 
   return {
@@ -393,5 +603,6 @@ export const kuponServisi = (site: Site) => {
     siparisiBagla,
     kullanimiSerbestBirak: kuponKullaniminiSerbestBirak,
     ekle,
+    degistir,
   };
 };

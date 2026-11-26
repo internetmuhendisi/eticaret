@@ -31,6 +31,8 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `kategori.gor` | yonetici | tumu | Kategorileri ve ürünlerini görür. |
 | `kategori.degistir` | yonetici | tumu | Kategori ekler, değiştirir ve taşır. |
 | `kategori.sil` | yonetici | tumu | Kategori siler: altındakiler bir üste çıkar, ürün bağlantıları kalkar. |
+| `kupon.gor` | yonetici | tumu | Kuponları, kullanımlarını ve getirdiğini görür (kart 0313). |
+| `kupon.degistir` | yonetici | tumu | Kupon açar, değiştirir, kapatır ve yeniden açar; kullanılmış kuponun kodu, türü, indirimi ve kapsamı değişmez (kart 0313). |
 | `magaza-ayarlari.gor` | yonetici | tumu | Mağaza sahibinin ayarlarını görür. |
 | `magaza-ayarlari.degistir` | yonetici | tumu | Mağaza sahibinin ayarlarını değiştirir. |
 | `marka.gor` | yonetici | tumu | Markaları ve ürünlerini görür. |
@@ -83,8 +85,8 @@ Her sitede hazır gelir. Ekranda görünen adları metin dosyasındadır (`yonet
 | Kod | Görünen ad | İzinler |
 |---|---|---|
 | `magaza-sahibi` | Mağaza sahibi | bütün yönetici izinleri |
-| `gorevli` | Görevli | ekip.kendi-hesabi.gor, urun.gor, urun.degistir, kategori.gor, kategori.degistir, marka.gor, marka.degistir, etiket.gor, etiket.degistir, fiyat.gor, stok.gor, stok.duzelt, ozellik.gor, ozellik.degistir, yorum.gor, yorum.onayla, odeme-yontemi.gor, siparis.gor, siparis.yonet, dosya.gor, ekip.kendi-hesabi.degistir |
-| `siparis-gorevlisi` | Sipariş görevlisi | ekip.kendi-hesabi.gor, ekip.kendi-hesabi.degistir, siparis.gor, siparis.yonet, siparis.havale-onayla, musteri.gor, odeme-yontemi.gor, dosya.gor |
+| `gorevli` | Görevli | ekip.kendi-hesabi.gor, urun.gor, urun.degistir, kategori.gor, kategori.degistir, marka.gor, marka.degistir, etiket.gor, etiket.degistir, fiyat.gor, stok.gor, stok.duzelt, ozellik.gor, ozellik.degistir, yorum.gor, yorum.onayla, odeme-yontemi.gor, siparis.gor, siparis.yonet, dosya.gor, ekip.kendi-hesabi.degistir, kupon.gor |
+| `siparis-gorevlisi` | Sipariş görevlisi | ekip.kendi-hesabi.gor, ekip.kendi-hesabi.degistir, siparis.gor, siparis.yonet, siparis.havale-onayla, musteri.gor, odeme-yontemi.gor, dosya.gor, kupon.gor |
 | `icerik-editoru` | İçerik editörü | ekip.kendi-hesabi.gor, ekip.kendi-hesabi.degistir, icerik.gor, icerik.degistir, icerik.sil, duzen.gor, duzen.degistir, menu.gor, menu.degistir, dosya.gor, urun.gor |
 
 Tam yetkili son yöneticinin rolü alınamaz. Görevlinin izinleri ürün ve sipariş gibi modüller geldikçe artar.

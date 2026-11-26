@@ -43,6 +43,8 @@ export const baslangicRolleri = {
       "dosya.gor",
       // Kendi yedek kodlarını yeniler (kart 0274).
       "ekip.kendi-hesabi.degistir",
+      // Kuponları görür, açamaz ve değiştiremez (kart 0313, kullanıcı kararı).
+      "kupon.gor",
     ],
   },
   // Kart 0274 (karar 0157, 0178): siparişleri görür ve yönetir, havaleyi onaylar, müşterileri görür; iade yapamaz,
@@ -58,6 +60,8 @@ export const baslangicRolleri = {
       "musteri.gor",
       "odeme-yontemi.gor",
       "dosya.gor",
+      // Kuponları görür (kart 0313, kullanıcı kararı).
+      "kupon.gor",
     ],
   },
   // Kart 0274 (karar 0157, 0178): blog, sabit sayfalar, vitrin bölümleri ve menüler. Ürünleri yalnız görür: menüye ve

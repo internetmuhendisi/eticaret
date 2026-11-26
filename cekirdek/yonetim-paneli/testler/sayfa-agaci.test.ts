@@ -186,7 +186,8 @@ describe("gruplar (kart 0301)", () => {
         () => true,
       ).map(({ grup }) => grup),
     ).toEqual([null, "satis", "urunler", "vitrin", "icerik", "ayarlar"]);
-    expect(kodlar("satis")).toEqual(["siparisler", "musteriler"]);
+    // Kuponlar Satış grubundadır, müşterilerden sonra (kart 0313, taslak).
+    expect(kodlar("satis")).toEqual(["siparisler", "musteriler", "kuponlar"]);
     expect(kodlar("ayarlar")).toEqual([
       "magaza-bilgileri",
       "siparis-ayarlari",

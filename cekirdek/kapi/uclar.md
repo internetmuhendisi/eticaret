@@ -703,6 +703,36 @@ Müşterinin kendi e-postasına şifre sıfırlama bağlantısı gönderir (kart
 - Başarılı (200): `{ "sonuc": "gonderildi" }`.
 - Hatalar: `bulunamadi` (olmayan ya da silinmiş hesap), `istek-siniri` (hesabın sıfırlama sınırı doldu), `hizmet-kullanilamiyor` (sitenin adresi yok), `dogrulama`, `yetki`.
 
+### GET /kapi/yonetici/kuponlar
+
+Panelin kupon listesinin bir sayfası (kart 0313, karar 0188): silinmemiş kuponlar, bugünkü durumlarıyla (etkin, zamanlanmış, süresi dolmuş, kapalı; veritabanının saatiyle `kuponDurumuSql`), arama (kod ve ad), durum sekmesi, sıralama ve sayfa. Kullanım, siparişe bağlı ve geri verilmemiş kullanımdır. Girdi ve yanıt panel sayfasınınkiyle aynıdır (liste tanımı `cekirdek/yonetim-paneli/kuponlar/liste-tanimi.ts`, `kuponListesiVerisi`).
+
+- İzin: `kupon.gor`. Sınır: `genel`.
+- Girdi: `?durum=&ara=&sirala=&sayfa=` (`listeUcuSemasi(kuponListesiTanimi)`).
+- Servis: `cekirdek/moduller/kampanya/panel.ts` (`kuponPanelListesi`).
+- Başarılı (200): `{ "basarili": true, "veri": { "satirlar", "toplam", "sayfa", "sayfaSayisi", "sayfaBoyu", "sekmeSayilari" } }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/kupon-ekle
+
+Yeni kupon (kart 0313). Alanlar formun yazılışıyla metin gelir: indirim yüzdede tam sayı (1–99), tutarda sitenin para biçimiyle; en az sepet tutarı para biçimiyle; başlangıç ve bitiş sitenin saat diliminde yerel zaman (`"2026-12-01T09:00"`); sınırlar tam sayı. Boş metin "yok"tur. Kapsam `hepsi` değilse en az bir ürün ya da kategori (kimlikle, en çok 500, silinmemiş).
+
+- İzin: `kupon.degistir`. Sınır: `genel`.
+- Girdi: `{ "kupon": { "kod", "ad", "tur", "deger", "enAzTutar", "kapsam", "kapsamKayitlari", "baslangic", "bitis", "toplamSinir", "kisiBasiSinir", "indirimdeGecmez", "acik" } }` (`kuponEklemeSemasi`; metinleri `panelKuponGirdisi` çevirir, kuralları `kuponuDenetle`).
+- Servis: `cekirdek/moduller/kampanya/servis.ts` (`ekle`).
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
+- Hatalar: `dogrulama` (alanın yoluyla: `kod-gecersiz`, `deger-gecersiz`, `tutar-okunamadi`, `tutar-sinir-disi`, `sayi-gecersiz`, `zaman-gecersiz`, `sure-ters`, `kapsam-bos`, `kapsam-sinir`, `kayit-yok`), `cakisma` (`kod-var`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/kupon-degistir
+
+Kuponun değişikliği (kart 0313): yalnız verilen alanlar değişir; kapatma ve açma `acik` ile. İndirim (`deger`) türüyle (`tur`) birlikte verilir. `gorulen` ekranın gördüğü değişme anıdır: kupon arada değiştiyse `cakisma` (`kupon-degisti`) ve hiçbir şey yazılmaz. Kullanılmış kuponun kodu, türü, indirimi, kapsamı ve "indirimli ürünlerde geçmez"i değişmez (`kullanildi`, alanın yoluyla); süresi, sınırları, en az tutarı, adı ve açıklığı değişir. Aynı değerler hiçbir şey yazmaz. Verilen siparişler değişmez. Değişiklik kaydına değişen alanlar girer (`kupon.degisti`, ad girmez).
+
+- İzin: `kupon.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "gorulen": "<ISO an>", "kupon": { ... } }` (`kuponDegisikligiSemasi`).
+- Servis: `cekirdek/moduller/kampanya/servis.ts` (`degistir`).
+- Başarılı (200): `{ "basarili": true, "veri": { "gorulen": "<yeni değişme anı>" } }`.
+- Hatalar: `dogrulama` (eklemedekiler ve `kullanildi`), `bulunamadi`, `cakisma` (`kupon-degisti`, `kod-var`), `oturum-yok`, `yetki`.
+
 ### POST /kapi/yonetici/siparisler-toplu
 
 Seçilen siparişlere toplu işlem (kart 0258, karar 0157): bugün `hazirlamaya-al`. Her sipariş tekil işlemle (`siparis-islemi`) aynı yoldan, kendi işleminde ve sırayla geçer: satır kilidi, ekranın gördüğü durum, geçiş ve ödeme yöntemi kuralı, geçmiş. Birinin hatası ötekileri durdurmaz.

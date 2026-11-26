@@ -53,6 +53,8 @@ export const kuponlar = pgTable(
     indirimde_gecmez: boolean().notNull().default(false),
     acik: boolean().notNull().default(true),
     olusturma_zamani: zaman().notNull().defaultNow(),
+    // Panelin çakışma denetimi (kart 0313): ekran gördüğü anı gönderir, arada değişen kupon "kupon-degisti" alır.
+    degisme_zamani: zaman().notNull().defaultNow(),
     silinme_zamani: zaman(),
   },
   (tablo) => [
