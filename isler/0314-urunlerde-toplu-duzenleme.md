@@ -28,4 +28,4 @@ Bölüm: Yönetim paneli 2. Önce 0311 bitmiş olmalı.
 
 ## Durum
 
-yapılacak
+bitti
