@@ -68,6 +68,9 @@ const acikBirak = process.argv.includes("--acik-birak");
 // Açılış kurulumu için bekleme sınırı (kart 0309): temiz veritabanında Örnek Mağaza'nın kurulumu
 // geliştirme bilgisayarında 30 saniye sürdü; hattın makinesi daha yavaştır.
 const kuyrukBaslamaSiniriMs = 300_000;
+// Kuyruk ölçümü kalınca arka plan kutusunun günlüğünden yazılan satır sayısı ve satırın en çok uzunluğu.
+const kuyrukGunluguSatiri = 40;
+const kuyrukGunluguGenisligi = 400;
 const sonuclar: { ad: string; gecti: boolean; ayrinti: string }[] = [];
 const olc = (ad: string, gecti: boolean, ayrinti = "") => {
   sonuclar.push({ ad, gecti, ayrinti });
@@ -284,11 +287,25 @@ const sitesiniOlc = async (site: OrtamSitesi, oteki: OrtamSitesi) => {
     ],
     { encoding: "utf8" },
   ).stdout;
+  // Ayrıntıda denemenin önündeki iş sayısı ve, işler sonuçlanmadıysa, kuyruğun o anki hâli de vardır;
+  // ölçüm kalırsa kutunun günlüğünün sonu da yazılır: düşüşün sebebi hattın sonucundan okunur (kart 0328).
+  const kuyrukGecti = deneme.includes("basarili=bitti 1") && deneme.includes("hatali=hata 2");
   olc(
     `${kodAdi}: arka plan kutusu örnek işi çalıştırıyor, hatalı işi yeniden deneyip bırakıyor`,
-    deneme.includes("basarili=bitti 1") && deneme.includes("hatali=hata 2"),
+    kuyrukGecti,
     deneme.trim().replaceAll("\n", ", "),
   );
+  if (!kuyrukGecti) {
+    const gunlukler = spawnSync(
+      "docker",
+      ["logs", "--tail", String(kuyrukGunluguSatiri), arkaPlanKutuAdi(kutuAdi(kodAdi))],
+      { encoding: "utf8" },
+    );
+    console.log(`        ${arkaPlanKutuAdi(kutuAdi(kodAdi))} günlüğünün sonu:`);
+    for (const satir of `${gunlukler.stdout}${gunlukler.stderr}`.trim().split("\n")) {
+      console.log(`        ${satir.slice(0, kuyrukGunluguGenisligi)}`);
+    }
+  }
   // Bulunması beklenen e-posta beklenir; yokluğu ölçen yol tek arama yapar. Kutunun hata cevabı ikisinde de
   // "e-posta yok" sayılmaz, ayrıntıya yazılır (kart 0323).
   const gonderenAdresi = siteKlasorunuOku(site.klasor).ayarlar.epostaGonderenAdresi;

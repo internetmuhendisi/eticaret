@@ -40,6 +40,15 @@ export type KuyrukAyari = { [Alan in keyof typeof kuyrukAyari]: number };
 export const kuyrukBasladiMesaji = "arka plan kuyruğu başladı";
 export const kuyrukBasladiIlkSurum = [0, 80, 0] as const;
 
+// Kuyruk denemesi (deneme-olcumu.ts, kart 0328): önce sırası gelmiş işlerin bitmesi en çok ondekiSinirMs
+// beklenir, dolarsa deneme yine yapılır ve kalan sayı yazılır; sonra denemenin işleri için pencereMs
+// beklenir (hatalı işin iki denemesi, aradaki gecikme 1 sn, sığar).
+export const denemeOlcumuAyari = {
+  ondekiSinirMs: 300_000,
+  pencereMs: 60_000,
+  aralikMs: 1_000,
+};
+
 // Sürecin canlı olduğunu kutunun sağlık yoklamasına söyleyen dosya. Kutunun tek yazılabilir yeri /tmp'dir.
 export const nabizDosyasi = "/tmp/arka-plan-nabiz";
 export const nabizSiniriMs = 60_000;

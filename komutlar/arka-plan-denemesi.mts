@@ -7,7 +7,7 @@
 // görünüyor. Maske burada değil kuyruk.test.ts'te ölçülür. Deneme kendi satırlarını siler; araçtaki kayıt kalır, işaretinden tanınır.
 import { randomInt } from "node:crypto";
 import { siteKlasorunuDogrula } from "../cekirdek/ayar-semasi/site-klasoru.ts";
-import { arkaPlanDosyalari } from "../cekirdek/kayitlar/arka-plan.ts";
+import { arkaPlanDosyalari, denemeOlcumuAyari } from "../cekirdek/kayitlar/arka-plan.ts";
 import { olaylariOku, olaySorunlari } from "./hata-izleme.mts";
 import { arkaPlanKutuAdi } from "./kutu-kurali.mts";
 import { hataIzlemeOrtami, siteKutusuAdi, yayindakiSiteleriOku, yayinOrtami } from "./on-kapi.mts";
@@ -45,8 +45,9 @@ try {
     olc(durum.stdout.trim() === "healthy", `${ad} sağlıklı`, durum.stdout.trim());
   }
 
+  // Deneme önce sırası gelmiş işlerin bitmesini, sonra kendi işlerini bekler (kart 0328).
   const cikti = sshKomutu(ipv4, `docker exec ${kutu} node ${arkaPlanDosyalari.deneme} ${isaret}`, {
-    sure: 120_000,
+    sure: denemeOlcumuAyari.ondekiSinirMs + denemeOlcumuAyari.pencereMs + 60_000,
   });
   const satir = (ad: string) => cikti.stdout.match(new RegExp(`^${ad}=(.*)$`, "m"))?.[1];
   olc(
