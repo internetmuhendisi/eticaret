@@ -234,7 +234,7 @@ export type KuponSayfasiVerisi = {
   satir: KuponSatiri;
   // Komut çubuğunun altındaki açıklama: indirim, koşullar ve geçerlilik.
   aciklama: string;
-  kapsamAdlari: { ad: string; silinmis: boolean }[];
+  kapsamAdlari: { kimlik: string; ad: string; silinmis: boolean }[];
   acik: boolean;
   ozet: {
     kullanim: string;
@@ -275,16 +275,25 @@ export const kuponSayfasiVerisi = async (
     aciklama: [satir.indirim, satir.kosullar, satir.gecerlilik]
       .filter((parca): parca is string => parca !== null)
       .join(metin("yonetim.kupon.kosul.ayirici")),
-    kapsamAdlari: kupon.kapsamKayitlari.map(({ ad, silinmis }) => ({ ad, silinmis })),
+    kapsamAdlari: kupon.kapsamKayitlari,
     acik: kupon.durum !== "kapali",
     ozet: {
       kullanim: satir.kullanim,
+      // Kalan hak süren ödemelerin ayırdığından da düşer (vitrin sınıra onları da sayar); ayrılan varsa söylenir.
       kalan:
         kupon.toplamSinir === null
-          ? null
-          : doldur(metin("yonetim.kupon.ozet.kalan"), {
-              sayi: b.sayi(Math.max(kupon.toplamSinir - kupon.kullanim, 0)),
-            }),
+          ? kupon.ayrilan === 0
+            ? null
+            : doldur(metin("yonetim.kupon.ozet.suren"), { sayi: b.sayi(kupon.ayrilan) })
+          : doldur(
+              metin(
+                kupon.ayrilan === 0 ? "yonetim.kupon.ozet.kalan" : "yonetim.kupon.ozet.kalanSuren",
+              ),
+              {
+                sayi: b.sayi(Math.max(kupon.toplamSinir - kupon.kullanim - kupon.ayrilan, 0)),
+                suren: b.sayi(kupon.ayrilan),
+              },
+            ),
       verilenIndirim: b.para(kupon.ozet.verilenIndirim),
       siparisSayisi: doldur(metin("yonetim.kupon.ozet.verilenIndirimAlt"), {
         sayi: b.sayi(kupon.kullanim),

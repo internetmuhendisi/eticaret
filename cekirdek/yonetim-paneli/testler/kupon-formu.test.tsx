@@ -5,6 +5,8 @@
 // simgesi ve yüzde işareti. Uç sahte fetch ile verilir.
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { kuponSinirlari } from "../../kayitlar/kampanya.ts";
+import { doldur } from "../../metinler/doldur.ts";
 import { MetinSaglayici } from "../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../metinler/metin.ts";
 import { kuponAdresi } from "../adresler.ts";
@@ -158,6 +160,30 @@ describe("kupon formu", () => {
     expect(screen.getByText(metin("yonetim.kupon.hata.kod-var"))).toBeTruthy();
     expect(document.activeElement).toBe(kod);
     expect(git).not.toHaveBeenCalled();
+  });
+
+  it("hata metnindeki sınırlar kayıttan doldurulur", async () => {
+    yanit = () =>
+      Response.json(
+        {
+          basarili: false,
+          hata: { kod: "dogrulama", ayrinti: [{ alan: "kod", kod: "kod-gecersiz" }] },
+        },
+        { status: 400 },
+      );
+    ciz(veri());
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: metin("yonetim.kupon.ekle") }));
+    });
+    expect(
+      screen.getByText(
+        doldur(metin("yonetim.kupon.hata.kod-gecersiz"), {
+          kodEnAz: String(kuponSinirlari.kodEnAz),
+          kodEnCok: String(kuponSinirlari.kodEnCok),
+        }),
+      ),
+    ).toBeTruthy();
+    expect(document.body.textContent).not.toContain("{kodEnAz}");
   });
 
   it("kullanılmış kuponda kod, tür, indirim, kapsam ve indirimde geçmez kapalı; nedeni yazar; süre açık", () => {

@@ -12,6 +12,7 @@
 import { eq, sql } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
 import { yerelZamandan } from "../../../metinler/bicimleyici.ts";
+import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { siparisler } from "../../siparis/model.ts";
 import { urunler } from "../../urun/model.ts";
@@ -23,7 +24,16 @@ import {
   panelKuponGirdisi,
 } from "../panel.ts";
 import { kuponServisi } from "../servis.ts";
-import { hatasi, hazirla, iade, site, urunSrv, yapan } from "./siparis-hazirligi.ts";
+import {
+  bilgiler,
+  hatasi,
+  hazirla,
+  iade,
+  odeme,
+  site,
+  urunSrv,
+  yapan,
+} from "./siparis-hazirligi.ts";
 
 vi.setConfig({ testTimeout: 90_000 });
 
@@ -161,6 +171,18 @@ describe("kuponun sayfası", () => {
         iadeSonrasi: 16_520 + 27_140 - 10_620,
       },
     });
+    // Süren ödemenin ayırması kullanıma girmez, ayrılan olarak sayılır (vitrin sınıra sayar).
+    await odeme.odemeOturumuAc(
+      h.vt,
+      {
+        kim: { tur: "misafir", eposta: "suren@ornek.test", hesap: { ac: false } },
+        bilgiler: bilgiler(),
+        kalemler: [{ birim: a, adet: 1 }],
+        kupon: "YUZDE10",
+      },
+      3600,
+    );
+    expect(await kuponPanelAyrintisi(h.vt, kupon, dil)).toMatchObject({ kullanim: 2, ayrilan: 1 });
     const kullanimlar = await kuponKullanimListesi(h.vt, kupon, { sayfa: 1, sayfaBoyu: 25 });
     expect(
       kullanimlar.satirlar.map((s) => [s.numara, s.durum, s.geriVerildi, s.indirim, s.uye]),
@@ -304,9 +326,14 @@ describe("kuponun değişikliği", () => {
     });
     // Kendi kodunun harf büyüklüğü değişebilir (kullanılmamış kupon).
     await degistir(h, kupon, { kod: "yuzde10" }, an);
+    // Listede kapsamın yalnız silinmemiş kayıtları sayılır; sayfa silinmişi işaretli gösterir.
     expect(await kuponPanelAyrintisi(h.vt, kupon, dil)).toMatchObject({
       kod: "yuzde10",
-      kapsamSayisi: 2,
+      kapsamSayisi: 1,
+      kapsamKayitlari: expect.arrayContaining([
+        expect.objectContaining({ kimlik: silinecek, silinmis: true }),
+        expect.objectContaining({ kimlik: kalan, silinmis: false }),
+      ]),
     });
   });
 
@@ -329,7 +356,7 @@ describe("kuponun değişikliği", () => {
       kod: "dogrulama",
       ayrinti: [
         { alan: "kod", kod: "kod-gecersiz" },
-        { alan: "deger", kod: "deger-gecersiz" },
+        { alan: "deger", kod: "yuzde-gecersiz" },
         { alan: "enAzTutar", kod: "tutar-sinir-disi" },
         { alan: "toplamSinir", kod: "sayi-gecersiz" },
         { alan: "kisiBasiSinir", kod: "sayi-gecersiz" },
@@ -338,13 +365,48 @@ describe("kuponun değişikliği", () => {
       ],
     });
     expect(await h.vt.select().from(kuponlar)).toEqual([]);
-    expect(
-      (await hatasi(h.kuponAc({ deger: 99 }).then(() => h.kuponAc({ kod: "YUZDE0", deger: 0 }))))
-        .ayrinti,
-    ).toEqual([{ alan: "deger", kod: "deger-gecersiz" }]);
+    await h.kuponAc({ deger: 99 });
+    expect((await hatasi(h.kuponAc({ kod: "YUZDE0", deger: 0 }))).ayrinti).toEqual([
+      { alan: "deger", kod: "yuzde-gecersiz" },
+    ]);
+    // Tutar kuponunun kendi hatası: sıfır ve sınırın üstü.
+    for (const deger of [0, 100_000_000_01]) {
+      expect((await hatasi(h.kuponAc({ kod: "TUTAR0", tur: "tutar", deger }))).ayrinti).toEqual([
+        { alan: "deger", kod: "tutar-gecersiz" },
+      ]);
+    }
     expect(
       (await hatasi(h.kuponAc({ kod: "KARGO", tur: "ucretsiz-kargo", deger: 5 }))).ayrinti,
     ).toEqual([{ alan: "deger", kod: "deger-gecersiz" }]);
+  });
+});
+
+describe("aynı anda aynı kod", () => {
+  it("açık duran eklemenin arkasındaki aynı kod tekil indekste bekler, kod-var alır; değişiklikte de", async () => {
+    const h = await hazirla("kuponpanel9");
+    const ekle = (islem: Parameters<Parameters<typeof h.vt.transaction>[0]>[0], kod: string) =>
+      kuponServisi(site).ekle(islem, yapan(), { kod, tur: "yuzde", deger: 10, kapsam: "hepsi" });
+    let ikinci: Promise<unknown> | undefined;
+    await h.vt.transaction(async (islem) => {
+      await ekle(islem, "YARIS");
+      ikinci = hatasi(h.vt.transaction((islem2) => ekle(islem2, "yaris")));
+      await kilitBekleyeniGor(h.vt);
+    });
+    expect(await ikinci).toEqual({ kod: "cakisma", ayrinti: [{ alan: "kod", kod: "kod-var" }] });
+    // Değişiklik: başka kuponun kodu, açık duran eklemenin arkasında.
+    const baska = await h.kuponAc({ kod: "BASKA" });
+    const an = (await kuponPanelAyrintisi(h.vt, baska, dil))?.degismeZamani ?? new Date();
+    await h.vt.transaction(async (islem) => {
+      await ekle(islem, "YARIS2");
+      ikinci = hatasi(
+        h.vt.transaction((islem2) =>
+          kuponServisi(site).degistir(islem2, yapan(), baska, { kod: "yaris2" }, an),
+        ),
+      );
+      await kilitBekleyeniGor(h.vt);
+    });
+    expect(await ikinci).toEqual({ kod: "cakisma", ayrinti: [{ alan: "kod", kod: "kod-var" }] });
+    expect((await liste(h.vt)).toplam).toBe(3);
   });
 });
 
@@ -400,7 +462,7 @@ describe("formun çevirisi", () => {
       kod: "dogrulama",
       ayrinti: [
         { alan: "kod", kod: "kod-gecersiz" },
-        { alan: "deger", kod: "deger-gecersiz" },
+        { alan: "deger", kod: "yuzde-gecersiz" },
         { alan: "enAzTutar", kod: "tutar-okunamadi" },
         { alan: "baslangic", kod: "zaman-gecersiz" },
         { alan: "bitis", kod: "zaman-gecersiz" },

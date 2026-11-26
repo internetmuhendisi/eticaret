@@ -17,7 +17,7 @@ export const kuponListesiTanimi = {
   kod: "kuponlar",
   adres: kuponlarAdresi,
   suzgecler: [{ kod: "durum", tur: "sekme", secenekler: kuponDurumlari }],
-  arama: { enCok: kuponSinirlari.kodEnCok, adreste: true },
+  arama: { enCok: kuponSinirlari.aramaEnCok, adreste: true },
   siralamalar: kuponPanelSiralamalari,
   sayfali: true,
   siralanabilirSutunlar: {},

@@ -178,6 +178,22 @@ describe("kupon uçları", () => {
       }),
     );
     expect(tursuz.status).toBe(400);
+    // Tür de indirimsiz gelmez (eski indirim yeni türde başka anlama gelirdi); ücretsiz kargo indirimsizdir.
+    const gorulenSon = (await satiri(kimlik)).degisme_zamani.toISOString();
+    const indirimsiz = await kuponDegisikligiUcu(
+      istek("kupon-degistir", sahip, { kimlik, gorulen: gorulenSon, kupon: { tur: "tutar" } }),
+    );
+    expect(indirimsiz.status).toBe(400);
+    expect((await satiri(kimlik)).tur).toBe("yuzde");
+    const kargo = await kuponDegisikligiUcu(
+      istek("kupon-degistir", sahip, {
+        kimlik,
+        gorulen: gorulenSon,
+        kupon: { tur: "ucretsiz-kargo" },
+      }),
+    );
+    expect(kargo.status).toBe(200);
+    expect(await satiri(kimlik)).toMatchObject({ tur: "ucretsiz-kargo", deger: 0 });
   });
 
   it("hatalı alanlar birlikte alanın yolu ve koduyla 400; kod başka kuponda varsa 409; hiçbir şey yazılmaz", async () => {

@@ -36,6 +36,14 @@ import { useSunucuFormu } from "../sunucu-formu";
 import type { KuponEkraniVerisi, KuponFormu } from "./veri";
 
 const hataMetni = kodluHataMetni(kuponHataMetinleri);
+// Metinlerdeki sınırlar kayıttan (metne sayı yazılmaz).
+const sinirYazilari = {
+  kodEnAz: String(kuponSinirlari.kodEnAz),
+  kodEnCok: String(kuponSinirlari.kodEnCok),
+  yuzdeEnAz: String(kuponSinirlari.yuzdeEnAz),
+  yuzdeEnCok: String(kuponSinirlari.yuzdeEnCok),
+  kapsamEnCok: String(kuponSinirlari.kapsamEnCok),
+};
 // Kapsamın ekrandaki sırası (taslak): bütün ürünler, kategoriler, ürünler.
 const kapsamSirasi = ["hepsi", "kategoriler", "urunler"] as const satisfies readonly KuponKapsami[];
 
@@ -170,9 +178,12 @@ export function KuponFormuEkrani({ veri }: { veri: KuponEkraniVerisi }) {
     const alanHatalari = kodluAlanHatalari(kuponHataMetinleri, sonuc, alanlar);
     pf.hatalariGoster(
       Object.fromEntries(
-        Object.entries(alanHatalari).map(([alan, anahtar]) => [alan, metin(anahtar)]),
+        Object.entries(alanHatalari).map(([alan, anahtar]) => [
+          alan,
+          doldur(metin(anahtar), sinirYazilari),
+        ]),
       ),
-      Object.keys(alanHatalari).length > 0 ? [] : [metin(hataMetni(sonuc))],
+      Object.keys(alanHatalari).length > 0 ? [] : [doldur(metin(hataMetni(sonuc)), sinirYazilari)],
     );
     return false;
   };
@@ -251,13 +262,18 @@ export function KuponFormuEkrani({ veri }: { veri: KuponEkraniVerisi }) {
   const turAdi = (tur: KuponTuru) => metin(`yonetim.kupon.tur.${tur}`);
   const kapsamAdi = (kapsam: KuponKapsami) => metin(`yonetim.kupon.kapsam.${kapsam}`);
 
+  // Yazılan tutar simgesiyle, simge sitenin ayarındaki yerde (tutar biçimlenmez: yazıldığı gibidir).
+  const simgeli = (yazi: string) =>
+    veri.paraSimgesi.yer === "basta"
+      ? `${veri.paraSimgesi.simge}${yazi}`
+      : `${yazi} ${veri.paraSimgesi.simge}`;
   // Özet: formun bugünkü hâliyle tek cümle grubu (taslaktaki "Özet").
   const ozet = [
     form.deger.trim() === "" && form.tur !== "ucretsiz-kargo"
       ? null
       : doldur(metin(`yonetim.kupon.ozetCumlesi.${form.tur}`), {
           deger: form.deger.trim(),
-          simge: veri.paraSimgesi.simge,
+          tutar: simgeli(form.deger.trim()),
           kapsam:
             form.kapsam === "hepsi"
               ? metin("yonetim.kupon.ozetCumlesi.hepsi")
@@ -266,10 +282,7 @@ export function KuponFormuEkrani({ veri }: { veri: KuponEkraniVerisi }) {
     form.enAzTutar.trim() === ""
       ? null
       : doldur(metin("yonetim.kupon.kosul.enAz"), {
-          tutar:
-            veri.paraSimgesi.yer === "basta"
-              ? `${veri.paraSimgesi.simge}${form.enAzTutar.trim()}`
-              : `${form.enAzTutar.trim()} ${veri.paraSimgesi.simge}`,
+          tutar: simgeli(form.enAzTutar.trim()),
         }),
     form.toplamSinir.trim() === ""
       ? null
@@ -337,10 +350,13 @@ export function KuponFormuEkrani({ veri }: { veri: KuponEkraniVerisi }) {
               {form.tur === "ucretsiz-kargo"
                 ? null
                 : ekliAlan("deger", metin("yonetim.kupon.deger"), {
-                    aciklama: metin(
-                      form.tur === "yuzde"
-                        ? "yonetim.kupon.degerAciklamasiYuzde"
-                        : "yonetim.kupon.degerAciklamasiTutar",
+                    aciklama: doldur(
+                      metin(
+                        form.tur === "yuzde"
+                          ? "yonetim.kupon.degerAciklamasiYuzde"
+                          : "yonetim.kupon.degerAciklamasiTutar",
+                      ),
+                      sinirYazilari,
                     ),
                     zorunlu: true,
                     isaret:

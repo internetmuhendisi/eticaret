@@ -20,20 +20,21 @@ export function KuponDurumDugmesi({
   acik: boolean;
 }) {
   const islem = usePanelIslemi(hataMetni);
-  // Çift basışta ikinci istek gitmez (ikincisi zaten çakışırdı).
-  const suruyor = useRef(false);
+  // Çift basışta ikinci istek gitmez: aynı değişme anıyla bir kez gönderilir (başarıdan sonra sayfanın yeni anı
+  // gelene kadar ikinci basış eski anla çakışırdı); hatada yeniden denenebilir.
+  const gonderilen = useRef<string | null>(null);
   return (
     <EylemDugmesi
       eylem={acik ? "kupon-kapat" : "kupon-ac"}
       onClick={async () => {
-        if (suruyor.current) return;
-        suruyor.current = true;
-        await islem(
+        if (gonderilen.current === gorulen) return;
+        gonderilen.current = gorulen;
+        const sonuc = await islem(
           "kupon-degistir",
           { kimlik, gorulen, kupon: { acik: !acik } },
           acik ? "yonetim.kupon.kapatildi" : "yonetim.kupon.acildi",
         );
-        suruyor.current = false;
+        if (!sonuc.tamam) gonderilen.current = null;
       }}
     />
   );

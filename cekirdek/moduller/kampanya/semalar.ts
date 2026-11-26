@@ -40,15 +40,18 @@ export const kuponEklemeSemasi = z.strictObject({
   kupon: z.strictObject(kuponPanelAlanlari),
 });
 
-// Değişiklik: yalnız değişen alanlar ve ekranın gördüğü değişme anı. İndirim türüyle birlikte gelir (indirimin
-// yazılışı türe bağlıdır).
+// Değişiklik: yalnız değişen alanlar ve ekranın gördüğü değişme anı.
 export const kuponDegisikligiSemasi = z.strictObject({
   kimlik: kimlikSemasi,
   gorulen: z.iso.datetime(),
   kupon: z
     .strictObject(kuponPanelAlanlari)
     .partial()
-    .refine((kupon) => kupon.deger === undefined || kupon.tur !== undefined, {
-      path: ["tur"],
-    }),
+    // İndirim türüyle, tür (ücretsiz kargo dışında) indirimle birlikte gelir: indirimin yazılışı türe bağlıdır.
+    .refine((kupon) => kupon.deger === undefined || kupon.tur !== undefined, { path: ["tur"] })
+    .refine(
+      (kupon) =>
+        kupon.tur === undefined || kupon.tur === "ucretsiz-kargo" || kupon.deger !== undefined,
+      { path: ["deger"] },
+    ),
 });

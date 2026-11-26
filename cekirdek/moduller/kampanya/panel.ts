@@ -41,9 +41,10 @@ export const kuponDurumuSql = (): SQL<KuponDurumu> =>
     when ${kuponlar.bitis_zamani} is not null and ${kuponlar.bitis_zamani} <= now() then 'suresi-doldu'
     else 'etkin' end`;
 
-// Dıştaki sorgunun kuponu, tablo adıyla: tek tablolu sorguda Drizzle sütunu tablo adı olmadan yazar, alt sorguda
-// kullanımın kendi kimliğine bağlanırdı (testte bulundu).
-const disKupon = sql`${sql.identifier("kuponlar")}.${sql.identifier("kimlik")}`;
+// Alt sorgunun sütunları tablo adıyla: tek tablolu sorguda Drizzle sütunu tablo adı olmadan yazar, alt sorguda dıştaki
+// kuponun kimliği kullanımın kendi kimliğine bağlanırdı (testte bulundu).
+const sutun = (tablo: string, ad: string) => sql`${sql.identifier(tablo)}.${sql.identifier(ad)}`;
+const disKupon = sutun("kuponlar", "kimlik");
 
 // Kuponun sayılan kullanımı (siparişe bağlı, geri verilmemiş).
 const kullanimSayisi = (): SQL<number> =>
@@ -52,9 +53,23 @@ const kullanimSayisi = (): SQL<number> =>
       and ${kuponKullanimlari.siparis_kimligi} is not null
       and ${kuponKullanimlari.serbest_zamani} is null)`.mapWith(Number);
 
+// Kapsamın silinmemiş kayıtları (kupon silinmiş kayıtta geçmez; bağımsız kontrolün bulgusu).
 const kapsamSayisi = (): SQL<number> =>
   sql<number>`(select count(*) from ${kuponKapsami}
-    where ${kuponKapsami.kupon_kimligi} = ${disKupon})`.mapWith(Number);
+    left join ${urunler} on ${sutun("urunler", "kimlik")} = ${sutun("kupon_kapsami", "urun_kimligi")}
+    left join ${kategoriler}
+      on ${sutun("kategoriler", "kimlik")} = ${sutun("kupon_kapsami", "kategori_kimligi")}
+    where ${sutun("kupon_kapsami", "kupon_kimligi")} = ${disKupon}
+      and coalesce(${sutun("urunler", "silinme_zamani")}, ${sutun("kategoriler", "silinme_zamani")})
+        is null)`.mapWith(Number);
+
+// Süren ödemelerin ayırdığı kullanım (siparişe bağlanmamış, süresi dolmamış): vitrin sınıra sayar.
+const ayrilanSayisi = (): SQL<number> =>
+  sql<number>`(select count(*) from ${kuponKullanimlari}
+    where ${kuponKullanimlari.kupon_kimligi} = ${disKupon}
+      and ${kuponKullanimlari.siparis_kimligi} is null
+      and ${kuponKullanimlari.serbest_zamani} is null
+      and ${kuponKullanimlari.bitis_zamani} > now())`.mapWith(Number);
 
 export type KuponPanelSatiri = {
   kimlik: string;
@@ -163,6 +178,8 @@ export type KuponPanelAyrintisi = KuponPanelSatiri & {
   degismeZamani: Date;
   // Kupon bir siparişte ya da süren bir ödemede kullanıldı: kodu, türü, indirimi ve kapsamı değişmez.
   kullanildi: boolean;
+  // Süren ödemelerin ayırdığı kullanım: kalan hak ondan da düşer (vitrinin sayımı).
+  ayrilan: number;
   // Kapsamın kayıtları ada göre; silinmiş kayıt işaretli (kupon onda artık geçmez).
   kapsamKayitlari: { kimlik: string; ad: string; silinmis: boolean }[];
   ozet: {
@@ -184,6 +201,7 @@ export const kuponPanelAyrintisi = async (
     .select({
       ...satirAlanlari(),
       degismeZamani: kuponlar.degisme_zamani,
+      ayrilan: ayrilanSayisi(),
       kullanildi: sql<boolean>`kupon_kullanildi_mi(${kuponlar.kimlik})`,
     })
     .from(kuponlar)
@@ -334,7 +352,7 @@ export const panelKuponGirdisi = (
     if (girdi.tur === "ucretsiz-kargo") sonuc.deger = 0;
     else if (girdi.tur === "yuzde") {
       if (/^\d{1,3}$/.test(yazi)) sonuc.deger = Number(yazi);
-      else hatalar.push({ alan: "deger", kod: "deger-gecersiz" });
+      else hatalar.push({ alan: "deger", kod: "yuzde-gecersiz" });
     } else {
       const tutar = bicim.paraOku(yazi);
       if (tutar === undefined) hatalar.push({ alan: "deger", kod: "tutar-okunamadi" });

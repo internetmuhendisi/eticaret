@@ -14,6 +14,7 @@ import { expect, type Page, test } from "@playwright/test";
 import { like, sql } from "drizzle-orm";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri";
+import { kuponSinirlari } from "../../kayitlar/kampanya";
 import { sepetDepoAnahtari } from "../../kayitlar/sepet";
 import { doldur } from "../../metinler/doldur";
 import { metin, siteninBicimleyicisi } from "../../metinler/site-metni";
@@ -151,7 +152,11 @@ test("kuponlar: mağaza sahibi klavyeyle açar, sepette kullanılır, kapatır, 
   const kodAlani = alan(page, metin("yonetim.kupon.kod"));
   await expect(kodAlani).toBeFocused();
   await expect(kodAlani).toHaveAttribute("aria-invalid", "true");
-  await expect(page.getByText(metin("yonetim.kupon.hata.kod-gecersiz"))).toBeVisible();
+  const kodHatasi = doldur(metin("yonetim.kupon.hata.kod-gecersiz"), {
+    kodEnAz: String(kuponSinirlari.kodEnAz),
+    kodEnCok: String(kuponSinirlari.kodEnCok),
+  });
+  await expect(kodAlani).toHaveAccessibleDescription(new RegExp(kodHatasi));
   await ikiRenkUcGenislik(page, "hatalı kupon formu");
 
   // Kupon klavyeyle açılır.

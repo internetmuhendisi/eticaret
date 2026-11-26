@@ -53,8 +53,8 @@ export function KuponSayfasi({ veri }: { veri: KuponSayfasiVerisi }) {
       {veri.kapsamAdlari.length === 0 ? null : (
         <Bolum baslik={metin("yonetim.kupon.kapsamBasligi")} kimlik="kupon-kapsami">
           <ul className="m-0 flex list-none flex-wrap gap-2 p-0">
-            {veri.kapsamAdlari.map(({ ad, silinmis }) => (
-              <li key={ad}>
+            {veri.kapsamAdlari.map(({ kimlik, ad, silinmis }) => (
+              <li key={kimlik}>
                 <Rozet tur={silinmis ? "ikincil" : "cerceveli"}>
                   {silinmis ? doldur(metin("yonetim.kupon.silinmisKayit"), { ad }) : ad}
                 </Rozet>

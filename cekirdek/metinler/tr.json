@@ -3054,7 +3054,7 @@
       "ad": "Kuponun adı",
       "adAciklamasi": "Yalnız panelde görünür, müşteri görmez.",
       "deger": "İndirim",
-      "degerAciklamasiYuzde": "1 ile 99 arasında tam sayı. Ürünler sıfıra inmez.",
+      "degerAciklamasiYuzde": "{yuzdeEnAz} ile {yuzdeEnCok} arasında tam sayı. Ürünler sıfıra inmez.",
       "degerAciklamasiTutar": "Ürünlerin tutarından düşülür; kargoya uygulanmaz, ürünlerde en az bir kuruş kalır.",
       "yuzdeIsareti": "%",
       "enAzTutar": "En az sepet tutarı",
@@ -3079,7 +3079,7 @@
       "acikAciklamasi": "Kapalı kupon sepette geçerli değil sayılır. Verilen siparişler değişmez.",
       "ozetCumlesi": {
         "yuzde": "{kapsam} için %{deger} indirim.",
-        "tutar": "{kapsam} için {deger} {simge} indirim.",
+        "tutar": "{kapsam} için {tutar} indirim.",
         "ucretsiz-kargo": "Ücretli kargo ücretsiz olur.",
         "hepsi": "Bütün ürünler",
         "toplam": "Toplam {sayi} kullanım.",
@@ -3087,7 +3087,7 @@
       },
       "kilitli": {
         "baslik": "Kullanılmış kupon",
-        "metin": "Kupon bir kez kullanıldıktan sonra kodu, türü, indirimi ve geçtiği ürünler değişmez: verilen siparişlerle tutarsız olur. Süresi, sınırları ve durumu değişir. Farklı indirim için yeni kupon açın."
+        "metin": "Kupon bir siparişte kullanıldı ya da ödemesi süren bir sepette: kodu, türü, indirimi, geçtiği ürünler ve indirimli ürün kuralı değişmez, verilen siparişlerle tutarsız olurdu. Süresi, sınırları, en az tutarı ve durumu değişir. Farklı indirim için yeni kupon açın."
       },
       "silinmisKapsam": {
         "baslik": "Silinmiş kayıtlar",
@@ -3106,7 +3106,9 @@
         "verilenIndirimAlt": "{sayi} sipariş",
         "siparisToplami": "Kuponlu siparişler",
         "siparisToplamiAlt": "indirim sonrası",
-        "iadeSonrasi": "İade sonrası net"
+        "iadeSonrasi": "İade sonrası net",
+        "suren": "{sayi} ödeme sürüyor",
+        "kalanSuren": "kalan {sayi} · {suren} ödeme sürüyor"
       },
       "kapsamBasligi": "Geçtiği ürünler",
       "silinmisKayit": "{ad} (silindi)",
@@ -3128,16 +3130,18 @@
         "not": "Kullanım sayısı iptal edilmemiş siparişleri sayar; iptal ya da tam iadede kullanım hakkı geri verilir. Dönemlik karşılaştırma Raporlar'dadır."
       },
       "hata": {
-        "kod-gecersiz": "Kodu 3 ile 30 karakter arasında, yalnız harf, rakam ve tireyle yazın.",
+        "kod-gecersiz": "Kodu {kodEnAz} ile {kodEnCok} karakter arasında, yalnız harf, rakam ve tireyle yazın.",
         "kod-var": "Bu kod başka bir kuponda kullanılıyor. Başka bir kod yazın.",
-        "deger-gecersiz": "İndirim yüzdesini 1 ile 99 arasında tam sayı olarak yazın.",
+        "yuzde-gecersiz": "İndirim yüzdesini {yuzdeEnAz} ile {yuzdeEnCok} arasında tam sayı olarak yazın.",
+        "tutar-gecersiz": "İndirim tutarını sıfırdan büyük yazın; çok büyük tutar kabul edilmez.",
+        "deger-gecersiz": "Ücretsiz kargo kuponunda indirim yazılmaz.",
         "tutar-okunamadi": "Tutarı yalnız rakamla yazın, örneğin 50,00.",
         "tutar-sinir-disi": "Tutar izin verilen sınırın dışında. Daha küçük bir tutar yazın.",
         "sayi-gecersiz": "Sınırı 1 ya da daha büyük bir tam sayı olarak yazın; sınırsız için boş bırakın.",
         "zaman-gecersiz": "Tarihi ve saati seçin.",
         "sure-ters": "Bitiş başlangıçtan sonra olmalı.",
         "kapsam-bos": "Kuponun geçeceği en az bir kayıt seçin.",
-        "kapsam-sinir": "En çok 500 kayıt seçilebilir.",
+        "kapsam-sinir": "En çok {kapsamEnCok} kayıt seçilebilir.",
         "kayit-yok": "Seçilen kayıtlardan biri silinmiş. Listeden kaldırıp yeniden seçin.",
         "kullanildi": "Kupon kullanıldığı için bu alan değişmez.",
         "kupon-degisti": "Kupon siz düzenlerken başka biri tarafından değiştirildi. Sayfayı yenileyip yeniden deneyin."

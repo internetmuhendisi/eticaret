@@ -213,6 +213,18 @@ export const kuponGirdisiniOku = async (
   };
 };
 
+// Aynı kod aynı anda iki işlemde yazılınca tekil indeks (kuponlar_kod) ikinciyi durdurur: düz denetim yalnız sırayla
+// gelen istekleri yakalar (bağımsız kontrolün bulgusu). İhlal "kod-var"a çevrilir.
+const kodTekrariMi = (yakalanan: unknown): boolean => {
+  const kaynak = (yakalanan as { cause?: unknown })?.cause ?? yakalanan;
+  const hata = kaynak as { code?: string; constraint?: string } | undefined;
+  return hata?.code === "23505" && hata.constraint === "kuponlar_kod";
+};
+const kodTekrariniCevir = (yakalanan: unknown): never => {
+  if (kodTekrariMi(yakalanan)) throw new BilinenHata("cakisma", [{ alan: "kod", kod: "kod-var" }]);
+  throw yakalanan;
+};
+
 const tamSayiMi = (deger: number | null, enAz: number, enCok: number) =>
   deger === null || (Number.isSafeInteger(deger) && deger >= enAz && deger <= enCok);
 
@@ -227,13 +239,17 @@ const kuponuDenetle = async (
   const hatalar: { alan: string; kod: KuponHatasi }[] = [];
   const kod = kodBiciminde(girdi.kod);
   if (kod === undefined) hatalar.push({ alan: "kod", kod: "kod-gecersiz" });
-  const degerGecerli =
-    girdi.tur === "yuzde"
-      ? tamSayiMi(girdi.deger, kuponSinirlari.yuzdeEnAz, kuponSinirlari.yuzdeEnCok)
-      : girdi.tur === "tutar"
-        ? tamSayiMi(girdi.deger, 1, kuponSinirlari.tutarEnCok)
-        : girdi.deger === 0;
-  if (!degerGecerli) hatalar.push({ alan: "deger", kod: "deger-gecersiz" });
+  if (girdi.tur === "yuzde") {
+    if (!tamSayiMi(girdi.deger, kuponSinirlari.yuzdeEnAz, kuponSinirlari.yuzdeEnCok)) {
+      hatalar.push({ alan: "deger", kod: "yuzde-gecersiz" });
+    }
+  } else if (girdi.tur === "tutar") {
+    if (!tamSayiMi(girdi.deger, 1, kuponSinirlari.tutarEnCok)) {
+      hatalar.push({ alan: "deger", kod: "tutar-gecersiz" });
+    }
+  } else if (girdi.deger !== 0) {
+    hatalar.push({ alan: "deger", kod: "deger-gecersiz" });
+  }
   if (!tamSayiMi(girdi.enAzTutar, 0, kuponSinirlari.tutarEnCok)) {
     hatalar.push({ alan: "enAzTutar", kod: "tutar-sinir-disi" });
   }
@@ -496,7 +512,8 @@ export const kuponServisi = (site: Site) => {
     const [yazilan] = await islem
       .insert(kuponlar)
       .values({ ...kuponSatiri(tam), kod })
-      .returning({ kimlik: kuponlar.kimlik });
+      .returning({ kimlik: kuponlar.kimlik })
+      .catch(kodTekrariniCevir);
     if (yazilan === undefined) throw new Error("Kupon yazılamadı.");
     await kapsamiYaz(islem, yazilan.kimlik, tam);
     await degisikligiKaydet(islem, {
@@ -540,6 +557,8 @@ export const kuponServisi = (site: Site) => {
       ...eski,
       ...Object.fromEntries(Object.entries(degisiklik).filter(([, deger]) => deger !== undefined)),
     };
+    // Kod kırpılmış ve birleşik harfle karşılaştırılır, kayda da öyle girer.
+    yeni.kod = kodBiciminde(yeni.kod) ?? yeni.kod;
     if (yeni.kapsam === "hepsi") yeni.kapsamKayitlari = [];
     yeni.kapsamKayitlari = [...new Set(yeni.kapsamKayitlari.map(kimligiDuzelt))].sort();
     const degisenler = kuponAlanlari.filter(
@@ -569,7 +588,8 @@ export const kuponServisi = (site: Site) => {
       .update(kuponlar)
       .set({ ...kuponSatiri(yeni), kod, degisme_zamani: sql`now()` })
       .where(eq(kuponlar.kimlik, satir.kimlik))
-      .returning({ degismeZamani: kuponlar.degisme_zamani });
+      .returning({ degismeZamani: kuponlar.degisme_zamani })
+      .catch(kodTekrariniCevir);
     if (yazilan === undefined) throw new Error("Kupon yazılamadı.");
     if (degisenler.includes("kapsamKayitlari")) {
       await islem.delete(kuponKapsami).where(eq(kuponKapsami.kupon_kimligi, satir.kimlik));
