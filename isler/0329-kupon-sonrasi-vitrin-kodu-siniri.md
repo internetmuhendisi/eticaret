@@ -48,7 +48,8 @@ Kart 0313 vitrine yalnız kampanya kaydındaki listelerle ulaşıyordu; kayıt a
 
 - Sepet penceresinin içi `sepet-penceresi-icerigi.tsx`'e, satırın ortak parçaları `satir-parcalari.tsx`'e, özet ve kupon nedeni `sepet-ozeti.tsx`'e alındı; `sepet-gorunumu.tsx` yalnız sepet sayfasının kodudur. Kullananlar (ödeme, sipariş sayfaları, Siparişlerim, panelin elle siparişi) ihtiyaç duydukları dosyayı içe aktarır.
 - Kupon kodunun biçimi ve uzunluğu `kayitlar/kupon-kodu.ts`'e alındı; kampanya kaydı onları oradan alır (tek tanım).
-- Pencere ve sepet durumundan sepet sayfasının dosyasına, özetine ve kampanya kaydına içe aktarma zinciri varmaz (`cekirdek/testler/vitrin-kodu.test.ts`); iki bozma kırmızıya düştü.
+- Sepet klasörünün çok sayfaya giden dosyalarından (pencere, sepet düğmeleri, üst kısmın sayısı, sepet durumu ve deposu) sepet sayfasının dosyasına, özetine ve kampanya kaydına içe aktarma zinciri varmaz (`cekirdek/testler/vitrin-kodu.test.ts`); üç bozma kırmızıya düştü.
+- Bağımsız kontrol bölmede davranış değişikliği bulmadı; korumanın sepet düğmesi ve üst kısmın sayısını başlangıç saymaması ve üç bayat yorum düzeltildi.
 - Hız ölçümü yerelde hattın koşuluyla (ayrı kutuda temiz veritabanı, iki işlemci, boş dosya klasörü): 17/17 yeşil; ürün 303, havale bildirimi 303, sipariş takibi 302 KB (hatta 305, 306, 305).
 
 ## Durum

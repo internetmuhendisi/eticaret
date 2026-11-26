@@ -1,16 +1,14 @@
 "use client";
-// Sepet sayfasının görünüşü (kart 0212, karar 0135; kart 0211'in taslağı). Pencere sepet-penceresi-icerigi.tsx, özet
-// sepet-ozeti.tsx, satırın ortak parçaları satir-parcalari.tsx'tedir (kart 0329): bu dosya yalnız sepet sayfasına gider. Veri sunucuda
-// hesaplanmış gelir (useSepetGorunumu, veri.ts); burada hesap yapılmaz, yalnız yazılır.
+// Sepet sayfasının görünüşü (kart 0212, karar 0135; kart 0211'in taslağı). Pencere sepet-penceresi-icerigi.tsx'te, özetin
+// satırları sepet-ozeti.tsx'te, satırın ortak parçaları satir-parcalari.tsx'tedir (kart 0329): bu dosya yalnız sepet
+// sayfasına gider. Veri sunucuda hesaplanmış gelir (useSepetGorunumu, veri.ts); burada hesap yapılmaz, yalnız yazılır.
 //
 // - Satır: görsel, ad (ürün sayfasına bağlantı), seçim, birim fiyatı (fiyat bileşeni, vergi metni özette), uyarılar,
 //   adet seçici, satır tutarı ve "Sepetten çıkar". Satılamayan satırın adedi değişmez, tutarı yoktur, yalnız çıkarılır.
-// - Pencere: eklenen ürünün bildirimi, sade satırlar (adet ve tutar; değişiklik sepet sayfasında) ve ara toplam.
 // - Uyarılar yazıyla ve ikonla verilir, yalnız renkle değil (.claude/rules/erisilebilirlik.md).
 // - Çıkarılan ürünün bildiriminde "Geri al" vardır: ürün eski yerine döner. Odak bir sonraki satırın çıkar düğmesine,
 //   sepet boşalınca boş hâlin bağlantısına geçer.
-// - Özet: ara toplam, kargo, toplam ve vergi dökümü (vergi dahil gösterimde "toplama dahil") ve "Ödemeye geç" (kart
-//   0213). Satılamayan satır varken düğme kapalıdır ama odak alır, nedeni altında yazar (karar 0132).
+// - Özet bölümü: kupon kutusu, özetin satırları (SepetOzeti) ve "Ödemeye geç" (kart 0213). Satılamayan satır varken düğme kapalıdır ama odak alır, nedeni altında yazar (karar 0132).
 // - Telefonda sepet sayfasının toplamı altta sabit durur.
 // - Kupon (kart 0312, karar 0185): kutu yalnız sepet sayfasının özetindedir. Uygulanan kupon kodu ve "Kaldır" ile,
 //   özette tek satır "Kupon (KOD) −tutar" olarak görünür; geçmeyen kuponun nedeni alanın altında yazar ve alana
