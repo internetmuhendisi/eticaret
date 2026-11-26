@@ -29,4 +29,4 @@ Bölüm: Yönetim paneli 2 (açık kartlardan alındı). Kuponun iptal ve iadede
 
 ## Durum
 
-yapılacak
+bitti
