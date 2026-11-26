@@ -23,6 +23,15 @@ Bölüm: Test altyapısı. Kart 0311 sırasında hattın sonucuna bakılırken b
 - Beklemesiz hâlin düştüğü bir sıra kurularak gösterildi ya da sebep ölçümle başka bulundu.
 - Yerel ortam denemesi hattın koşulunda yeşil.
 
+## Sonuç
+
+- **Sebep ölçüldü, bulunamadı.** Yerel Mailpit'te (v1.31.6) gönderimden hemen sonra arama 1100 denemenin 1100'ünde iletiyi buldu, kutu 500 iletiyi aşıp eskileri silerken (545 silindi) de. Hattaki çalışmanın süreleri öncekilerle aynıydı (arka plan denemesi 47 sn); tek fark aramanın 282 ms sonra yapılması (yeşil hatlarda 72 ve 130 ms). Gecikme ya da kutunun hata cevabı olasıdır, ikisi de gösterilemedi.
+- **Bulunan açık.** Eski ölçüm kutunun hata cevabını (`messages` olmayan gövde) "0 e-posta" okuyordu: e-posta ölçümünde sebebi gizliyor, "gönderen adresi olmayan site göndermiyor" ölçümünü yanlışlıkla geçirebiliyordu.
+- **Düzeltme.** Ortak yardımcı `komutlar/posta-kutusu.mts`: üç e-posta ölçümü beklenen e-postayı 30 sn'ye kadar bekler, bulunca bir kez daha sorar (kopya sayılır); HTTP hatası, JSON olmayan ya da listesiz gövde, bağlantı hatası, 10 sn istek süresi ve koşulun kendi hatası nedeniyle ayrıntıya yazılır; "göndermiyor" ölçümü tek arama yapar, hata cevabında kırmızıdır.
+- **Testler.** `komutlar/testler/posta-kutusu.test.ts` sahte kutuyla 16 test; yedi denetim ayrı ayrı bozulunca kırmızı (beklemesiz tek arama dahil: gecikmeli kutuda dört test kırmızı). Gerçek yerel Mailpit'te bir kez elle: bulunan e-posta, olmayan alıcıda boş liste, kapalı port ve yanlış yolda neden, 300 ms sonra gelen kopyanın sayılması. Tür kontrolü ve denetim yeşil.
+- **Bağımsız kontrol.** Engelleyici bulgu yok. Üç bulgu düzeltildi: kopya iletinin sayılmaması, sıfırlama ölçümünde ileti okuma hatasının denemeyi düşürmesi, istek süresinin olmaması. Çekirdek testlerindeki posta kutusu aramaları da tek arama yapıyor; hata cevabında kırmızıdırlar, yanlış geçmezler; gecikmeye karşı ölçülmedi, kart açılmadı (kural tablosunda not).
+- **Açık kalan.** Yerel ortam denemesi yerelde çalıştırılmadı (ortak yerel kutuları kapatır); "hattın koşulunda yeşil" maddesi bir sonraki gönderimin hattında görülür.
+
 ## Durum
 
 yapılacak

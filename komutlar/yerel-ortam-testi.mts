@@ -46,6 +46,7 @@ import {
   surumEnAz,
   yenidenBaslama,
 } from "./kutu-kurali.mts";
+import { postaKutusunuBekle, postaKutusunuSor } from "./posta-kutusu.mts";
 import {
   denemeSitesiAc,
   dosyaBirimi,
@@ -288,23 +289,24 @@ const sitesiniOlc = async (site: OrtamSitesi, oteki: OrtamSitesi) => {
     deneme.includes("basarili=bitti 1") && deneme.includes("hatali=hata 2"),
     deneme.trim().replaceAll("\n", ", "),
   );
-  const yakalanan = (await (
-    await fetch(`${postaKutusuAdresi()}/api/v1/search?query=${encodeURIComponent(`to:"${alici}"`)}`)
-  ).json()) as { messages?: { From?: { Address?: string } }[] };
+  // Bulunması beklenen e-posta beklenir; yokluğu ölçen yol tek arama yapar. Kutunun hata cevabı ikisinde de
+  // "e-posta yok" sayılmaz, ayrıntıya yazılır (kart 0323).
   const gonderenAdresi = siteKlasorunuOku(site.klasor).ayarlar.epostaGonderenAdresi;
   if (gonderenAdresi) {
+    const { iletiler, sonHata } = await postaKutusunuBekle(postaKutusuAdresi(), alici);
     olc(
       `${kodAdi}: e-posta yerel posta kutusuna düştü, gönderen sitenin adresi`,
       deneme.includes("eposta=gonderildi") &&
-        yakalanan.messages?.length === 1 &&
-        yakalanan.messages[0]?.From?.Address === gonderenAdresi,
-      `${yakalanan.messages?.length ?? 0} e-posta`,
+        iletiler.length === 1 &&
+        iletiler[0]?.From?.Address === gonderenAdresi,
+      `${iletiler.length} e-posta${sonHata === undefined ? "" : `; posta kutusu: ${sonHata}`}`,
     );
   } else {
+    const cevap = await postaKutusunuSor(postaKutusuAdresi(), alici);
     olc(
       `${kodAdi}: gönderen adresi olmayan site e-posta göndermiyor`,
-      deneme.includes("eposta=gonderilmedi") && (yakalanan.messages?.length ?? 0) === 0,
-      `${yakalanan.messages?.length ?? 0} e-posta`,
+      deneme.includes("eposta=gonderilmedi") && "iletiler" in cevap && cevap.iletiler.length === 0,
+      "iletiler" in cevap ? `${cevap.iletiler.length} e-posta` : `posta kutusu: ${cevap.hata}`,
     );
   }
 };
@@ -476,22 +478,14 @@ const kayitOlc = async (kodAdi: string): Promise<void> => {
     uydurma.durum === 403,
     `${uydurma.durum}`,
   );
-  let konular: string[] = [];
-  for (let tur = 0; tur < 30 && konular.length === 0; tur++) {
-    const { messages = [] } = (await (
-      await fetch(
-        `${postaKutusuAdresi()}/api/v1/search?query=${encodeURIComponent(`to:"${eposta}"`)}`,
-      )
-    ).json()) as { messages?: { Subject: string }[] };
-    konular = messages.map(({ Subject }) => Subject);
-    if (konular.length === 0) await new Promise((coz) => setTimeout(coz, 1000));
-  }
+  const { iletiler, sonHata } = await postaKutusunuBekle(postaKutusuAdresi(), eposta);
+  const konular = iletiler.map(({ Subject }) => Subject ?? "");
   // Konudaki ad mağaza sahibinin ayarıdır (kart 0071).
   const { baslangic } = siteKlasorunuOku(join(kok, "siteler", kodAdi));
   olc(
     `${kodAdi}: hoş geldin e-postası yerel posta kutusuna ulaşıyor`,
     konular.length === 1 && konular[0]?.includes(baslangic.magazaAdi ?? "") === true,
-    konular.join(", ") || "e-posta yok",
+    konular.join(", ") || `e-posta yok${sonHata === undefined ? "" : `; posta kutusu: ${sonHata}`}`,
   );
   await sifirlamaOlc(kodAdi, eposta);
 };
@@ -506,25 +500,22 @@ const sifirlamaOlc = async (kodAdi: string, eposta: string): Promise<void> => {
   });
   olc(`${kodAdi}: şifre sıfırlama isteği geçiyor`, istek.durum === 200, `${istek.durum}`);
   let baglanti: URL | undefined;
-  for (let tur = 0; tur < 30 && baglanti === undefined; tur++) {
-    const { messages = [] } = (await (
-      await fetch(
-        `${postaKutusuAdresi()}/api/v1/search?query=${encodeURIComponent(`to:"${eposta}"`)}`,
-      )
-    ).json()) as { messages?: { ID: string }[] };
-    for (const { ID } of messages) {
-      const { Text } = (await (
-        await fetch(`${postaKutusuAdresi()}/api/v1/message/${ID}`)
-      ).json()) as { Text: string };
-      const bulunan = /https?:\/\/\S+#anahtar=\S+/.exec(Text)?.[0];
-      if (bulunan !== undefined) baglanti = new URL(bulunan);
-    }
-    if (baglanti === undefined) await new Promise((coz) => setTimeout(coz, 1000));
-  }
+  const { sonHata } = await postaKutusunuBekle(postaKutusuAdresi(), eposta, {
+    tamam: async (iletiler) => {
+      for (const { ID } of iletiler) {
+        const { Text } = (await (
+          await fetch(`${postaKutusuAdresi()}/api/v1/message/${ID}`)
+        ).json()) as { Text: string };
+        const bulunan = /https?:\/\/\S+#anahtar=\S+/.exec(Text)?.[0];
+        if (bulunan !== undefined) baglanti = new URL(bulunan);
+      }
+      return baglanti !== undefined;
+    },
+  });
   olc(
     `${kodAdi}: sıfırlama e-postası ulaşıyor, bağlantı sitenin adresinde`,
     baglanti?.hostname === `${kodAdi}.localhost`,
-    baglanti?.host ?? "bağlantı yok",
+    baglanti?.host ?? `bağlantı yok${sonHata === undefined ? "" : `; posta kutusu: ${sonHata}`}`,
   );
   const anahtar = new URLSearchParams(baglanti?.hash.slice(1)).get("anahtar") ?? "";
   const sifre = "yerel-ortam-yeni-sifre";
