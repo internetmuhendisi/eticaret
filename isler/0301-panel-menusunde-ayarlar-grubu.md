@@ -34,4 +34,4 @@ Bölüm: Yönetim paneli 2 (açık kartlardan alındı). Kart 0278 sırasında b
 
 ## Durum
 
-yapılacak
+bitti
