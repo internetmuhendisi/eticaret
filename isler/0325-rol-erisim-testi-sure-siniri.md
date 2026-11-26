@@ -34,4 +34,4 @@ Bölüm: Test altyapısı (kart 0322 sırasında hattın sonucuna bakılırken b
 
 ## Durum
 
-yapılacak
+bitti
