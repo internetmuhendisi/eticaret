@@ -89,7 +89,7 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 |---|---|---|---|---|
 | Kargo ücreti | Mağaza sahibi | 0 (kargo her zaman ücretsiz) | 49,90 TL, panelden (kart 0216) | Kullanıcı kararı (kart 0212). Fiyatlar gibi vergi dahil ya da hariç girilir. Başlangıçta tek teslimat bölgesi. Şemada `kargoUcreti`, panelde Satış > Kargo (karar 0135) |
 | Ücretsiz kargo sınırı | Mağaza sahibi | Yok | 750 TL, panelden (kart 0216) | Bu tutar ve üstündeki sepette kargo ücretsiz. Şemada `ucretsizKargoSiniri` (kart 0212) |
-| Ücretsiz kargo sınırının hesaplandığı tutar | Mağaza sahibi | İndirimden sonraki tutar | — | Seçenekler: indirimden önce, indirimden sonra. Şemada `ucretsizKargoTutari` (kart 0212) |
+| Ücretsiz kargo sınırının hesaplandığı tutar | Mağaza sahibi | İndirimden sonraki tutar | — | Seçenekler: indirimden önce, indirimden sonra. Şemada `ucretsizKargoTutari` (kart 0212). Kupon indirimine de uygulanır (kart 0312, karar 0185) |
 | Kargoya verme süresi | Mağaza sahibi | 1 iş günü | — | Sayı olarak tutulur. Ürün sayfasında "1 iş gününde kargoda" yazar, ön bilgilendirme metnindeki teslim süresi de buradan gelir. Şemada `kargoyaVermeSuresi` (kart 0110); bugün güven şeridinin yer tutucusu okur |
 | Kargo firmaları | Mağaza sahibi | Boş liste | Bir deneme firması (açıkça deneme adıyla, `.test` alan adlı takip adresi) | Ad ve takip adresi kalıbı (`{takip numarası}` yerine siparişin takip numarası konur). Siparişi kargoya verirken listeden seçilir; takip bağlantısı müşterinin sipariş sayfasında ve e-postasında görünür. Şemada `kargoFirmalari`, panelde Satış > Sipariş ayarları (kart 0234, karar 0145, 0146). Örnek Mağaza'nın firması "Deneme Kargo" (`takip.deneme-kargo.test`) |
 
@@ -152,6 +152,12 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Vitrinde koyu tema | Mağaza sahibi | Kapalı | Açık | Mağazanın tasarımına göre açılır. Tema ayarlarının parçasıdır, başlangıç değeri `baslangic/tema.json` (kart 0105) |
 | Düzen (üst kısım, ana sayfa, alt kısım bölümleri) | Mağaza sahibi | `baslangic/duzen.json`, yoksa başlangıç temasının düzeni | Temanın düzeni (bugün boş; kart 0114) | Sıra, görünürlük, görünüm ve alan değerleri; sürüm sürüm saklanır. Kayda başvuran alanlar başlangıçta boş kalır (kart 0106, karar 0081) |
 
+## Kampanya
+
+| Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
+|---|---|---|---|---|
+| Kupon kodunda büyük-küçük harf | Altyapı sahibi | Fark etmez | — | "kasim50" ile "KASIM50" aynı koddur; kod tekilliği de buna göre denetlenir (kart 0312, karar 0185) |
+
 ## Panel ve içerik
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
@@ -159,6 +165,9 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Panel listelerinde sayfa başına satır | Mağaza sahibi | 25 | — | `panelSayfaBoyu`. Seçenekler: 25, 50, 100. Ürün, sipariş, müşteri ve yazı listeleri; toplu işlem en çok bir sayfaya uygulanır (kart 0258, karar 0157) |
 | Sipariş fişinde fiyatlar | Mağaza sahibi | Göster | — | Kapalıyken fişte yalnız ürün, stok kodu ve adet yazar (ör. hediye siparişi). Ayar `fisteFiyatlar`, panelde Sipariş ayarlarının "Sipariş fişi" bölümünde (kart 0270, karar 0157, 0171) |
 | Blog | Mağaza sahibi | Kapalı | Açık | Kapalıyken yazılar vitrinde görünmez, `/blog` bulunamadı verir, ana sayfanın blog bölümü çizilmez (kart 0272, karar 0157) |
+| Raporun varsayılan dönemi | Mağaza sahibi | Son 30 gün | — | Raporlar ve panodaki satış özeti bu dönemle açılır; seçenekler: bugün, son 7 gün, son 30 gün, bu ay, geçen ay (kart 0317, karar 0185) |
+| Okunan panel bildiriminin saklama süresi | Altyapı sahibi | 30 gün | — | Okunmamış bildirim silinmez (kart 0280, karar 0185) |
+| Excel dosyasında en çok satır | Altyapı sahibi | 5.000 | — | Excel ile toplu ürün işlemleri eklentisi açıksa; bir içe aktarma dosyasının satır sınırı (kart 0315, karar 0185) |
 
 ## Eklentiler
 

@@ -50,6 +50,14 @@ Bölüm: Yönetim paneli 2. Bu bölümün ilk işi.
 - Taslak sayfa hatası, yana kayma ve axe taraması (WCAG 2.2 AA) olmadan açılıyor; basılan alanlar gerçek panelle aynı ölçüde.
 - Kullanıcı taslağı onayladı, verdiği ürün kararları bir karar kaydına yazıldı, önerilen site ayarları `planlar/site-ayarlari.md` tablosuna girdi.
 
+## Sonuç
+
+- Taslak `planlar/tasarim-yonu/panel-2.html`: 12 ekran ve 46 hâl (kuponlar; kupon sepette, ödemede, e-postada, siparişte ve kısmi iadede; toplu düzenleme; ürün kopyalama; Excel eklentisi; siparişleri dışa aktarma; raporlar; pano; bildirimler; panelde arama; e-posta metinleri; vergi ayarları), açık ve koyu temada, telefon (390 px) ve bilgisayar (1280 px) genişliğinde. Stiller ve ortak yardımcılar `panel.html`'den alındı, o dosya değişmedi.
+- 319 görünüm (her hâl iki temada ve iki genişlikte, ayrıca her kararın öteki seçeneği) bir betikle açıldı: sayfa hatası, yana kayma, axe taraması (WCAG 2.2 AA) ve 24 px'ten küçük basılan alan yok. İlk turda kupon formunun 20 px onay kutusu, hata özeti ve sepet ürün adı bağlantıları (17–21 px) bulundu, düzeldi; görüntüyle sepetteki "Kaldır" düğmesinin yayılması ve telefonda tek başına alt satıra düşen "₺" bulundu, düzeldi (tutar ile simge arasında bölünmez boşluk).
+- Taslak dosyası Biome denetiminden geçer (renkler yalnız değişkenlerle, kurallar özgüllüğe göre sıralı).
+- Tutarlar elle hesaplandı: %10 kupon indirimli ürünü atlayarak 629,70 ₺'ye 62,97 ₺; 50,00 ₺ kuponun üç kaleme payı 28,95 + 13,16 + 7,89; kısmi iade 520,95 ₺ (KDV 86,83); rapor özetinde net satış 41.068,90 ₺, KDV 6.844,82 ₺.
+- Kullanıcı bütün önerileri ve site ayarlarını kabul etti (karar 0185); beş site ayarı `planlar/site-ayarlari.md` tablolarında ("Kampanya", "Panel ve içerik", "Kargo").
+
 ## Durum
 
 yapılacak
