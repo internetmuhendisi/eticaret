@@ -1,5 +1,5 @@
 // Kuyruk denemesi gerçek veritabanı ve gerçek döngüyle (kart 0328). Denemenin önünde sırası gelmiş işler
-// varken (hattın Örnek Mağaza'sında tarayıcı testlerinin bıraktığı işler) süreç önce onları işler: beklemeden
+// varken (hatta tarayıcı testlerinin ortak sitesinde bıraktığı işler) süreç önce onları işler: beklemeden
 // başlayan pencere hatalı işin ikinci denemesine yetmez. Deneme önce onların bitmesini bekler.
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
