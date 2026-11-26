@@ -33,4 +33,4 @@ Bölüm: Yönetim paneli 2. Önce 0311 (taslak ve ürün kararları) ve 0246 (ip
 
 ## Durum
 
-yapılacak
+bitti
