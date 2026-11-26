@@ -150,6 +150,59 @@ export const oturumCerezi = async (
     .map((satir) => satir.split(";")[0])
     .join("; ");
 
+// Bir kişiyi bir uçta dener; dönen: tutmayan her şey.
+const kisiyiDene = async (
+  vt: Veritabani,
+  { baslik, yontem, yol, uc }: KayitliUc,
+  izin: HerkeseAcik | IzinAdi,
+  kisi: Kisi,
+  hesap: string | null,
+): Promise<string[]> => {
+  const hatalar: string[] = [];
+  const cerez =
+    kisi.tur === "girissiz" || hesap === null ? null : await oturumCerezi(vt, kisi.tur, hesap);
+  const yanit = await uc(
+    new Request(`http://yerel${yol}`, {
+      method: yontem,
+      headers: {
+        "x-forwarded-for": yeniAdres(),
+        ...(cerez === null ? {} : { cookie: cerez }),
+      },
+    }),
+  );
+  const govde = await yanit.text();
+  // Önbellek (kart 0065, karar 0139): dosya yanıtı dışındaki her yanıt, başarılı ve hatalı, önbelleğe alınmaz.
+  // Dosya yanıtı başarılıdır, türü tahmin ettirmez ve etiket taşır (zarf.ts, dosyaYanitla).
+  const dosyaYaniti =
+    yanit.status < 400 &&
+    yanit.headers.get("x-content-type-options") === "nosniff" &&
+    yanit.headers.has("etag");
+  if (!dosyaYaniti && yanit.headers.get("cache-control") !== zarfOnbellegi) {
+    hatalar.push(
+      `${baslik}: ${kisi.ad} yanıtı önbelleğe alınabilir (${yanit.status}, Cache-Control: ${String(yanit.headers.get("cache-control"))})`,
+    );
+  }
+  let kod: string | undefined;
+  try {
+    kod = (JSON.parse(govde) as { hata?: { kod?: string } }).hata?.kod;
+  } catch {
+    kod = undefined;
+  }
+  if (yanit.status >= 500 || yanit.status === 429) {
+    hatalar.push(`${baslik}: ${kisi.ad} denenemedi (${yanit.status})`);
+    return hatalar;
+  }
+  // Kodsuz 403 de red sayılır: izinli kişi reddedilmişse yeşil kalmasın.
+  const reddedildi = (kod !== undefined && reddedilen.has(kod)) || yanit.status === 403;
+  const beklenen = erisebilirMi(kisi, izin);
+  if (reddedildi === beklenen) {
+    hatalar.push(
+      `${baslik}: ${kisi.ad} ${beklenen ? "erişmeliydi" : "erişmemeliydi"} (${yanit.status} ${String(kod)})`,
+    );
+  }
+  return hatalar;
+};
+
 // Her uçta her kişiyi dener. Dönen: tutmayan her şey, boşsa temiz.
 export const erisimleriDene = async (
   vt: Veritabani,
@@ -175,50 +228,15 @@ export const erisimleriDene = async (
       hatalar.push(`${baslik}: "${belgede}" izin kaydında yok`);
       continue;
     }
-    for (const kisi of kisiler) {
-      const hesap = hesaplar.get(kisi) ?? null;
-      const cerez =
-        kisi.tur === "girissiz" || hesap === null ? null : await oturumCerezi(vt, kisi.tur, hesap);
-      const yanit = await uc(
-        new Request(`http://yerel${yol}`, {
-          method: yontem,
-          headers: {
-            "x-forwarded-for": yeniAdres(),
-            ...(cerez === null ? {} : { cookie: cerez }),
-          },
-        }),
-      );
-      const govde = await yanit.text();
-      // Önbellek (kart 0065, karar 0139): dosya yanıtı dışındaki her yanıt, başarılı ve hatalı, önbelleğe alınmaz.
-      // Dosya yanıtı başarılıdır, türü tahmin ettirmez ve etiket taşır (zarf.ts, dosyaYanitla).
-      const dosyaYaniti =
-        yanit.status < 400 &&
-        yanit.headers.get("x-content-type-options") === "nosniff" &&
-        yanit.headers.has("etag");
-      if (!dosyaYaniti && yanit.headers.get("cache-control") !== zarfOnbellegi) {
-        hatalar.push(
-          `${baslik}: ${kisi.ad} yanıtı önbelleğe alınabilir (${yanit.status}, Cache-Control: ${String(yanit.headers.get("cache-control"))})`,
-        );
-      }
-      let kod: string | undefined;
-      try {
-        kod = (JSON.parse(govde) as { hata?: { kod?: string } }).hata?.kod;
-      } catch {
-        kod = undefined;
-      }
-      if (yanit.status >= 500 || yanit.status === 429) {
-        hatalar.push(`${baslik}: ${kisi.ad} denenemedi (${yanit.status})`);
-        continue;
-      }
-      // Kodsuz 403 de red sayılır: izinli kişi reddedilmişse yeşil kalmasın.
-      const reddedildi = (kod !== undefined && reddedilen.has(kod)) || yanit.status === 403;
-      const beklenen = erisebilirMi(kisi, izin);
-      if (reddedildi === beklenen) {
-        hatalar.push(
-          `${baslik}: ${kisi.ad} ${beklenen ? "erişmeliydi" : "erişmemeliydi"} (${yanit.status} ${String(kod)})`,
-        );
-      }
-    }
+    // Bir uçta kişiler aynı anda denenir (kart 0325): her kişinin hesabı, oturumu ve istemci adresi ayrıdır, biri
+    // ötekinin denemesini etkilemez. Süre çoğunlukla veritabanı beklemesidir; sırayla denemek hattın yükünde
+    // adımı 5 saniyelik sınıra taşıyordu. Hatalar kişilerin sırasıyla yazılır.
+    const kisiHatalari = await Promise.all(
+      kisiler.map((kisi) =>
+        kisiyiDene(vt, { baslik, yontem, yol, uc }, izin, kisi, hesaplar.get(kisi) ?? null),
+      ),
+    );
+    hatalar.push(...kisiHatalari.flat());
   }
   return hatalar;
 };

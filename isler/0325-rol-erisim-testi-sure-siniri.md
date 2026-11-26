@@ -23,6 +23,14 @@ Bölüm: Test altyapısı (kart 0322 sırasında hattın sonucuna bakılırken b
 - Adımın hattın koşulundaki süresi ve sınıra payı karta yazıldı.
 - Birim takımı hattın koşulunda yeşil.
 
+## Sonuç
+
+- Ölçüm (yerelde, `taskset` ile iki işlemci, yalnız bu adım): 159 uç × 7 kişi = 1113 deneme; uç dosyalarının yüklenmesi 0,2 sn, denemeler 1,0 sn (oturum açma 0,27 sn, uç çağrıları 0,61 sn); adımın tamamı 1,1–1,2 sn. Hattaki 5,0 sn yükten gelir: o çalışmada dosyanın tamamı 18,2 sn sürdü, yeşil hatlarda 10,6–10,9 sn.
+- Bir uçta kişiler aynı anda denenir (`erisim-denemesi.ts`, `kisiyiDene`): her kişinin hesabı, oturumu ve istemci adresi ayrıdır; hatalar kişilerin sırasıyla yazılır. Eski ve yeni hâl üçer kez: iki işlemcide 1,10–1,41 sn → 0,76–0,80 sn, tek işlemcide 1,26–1,34 sn → 0,92–1,11 sn.
+- Adımın sınırı 20 sn (`rol-uc-erisimi.test.ts`, gerekçesi yanında): hattın yükü adımı 4 kata kadar uzattı, yeni hâlin hattaki en kötü tahmini yaklaşık 3,2 sn; pay 5 kattan fazla. Her yeni uç yerelde yaklaşık 5 ms ekler.
+- Test zayıflamadı: her kişi her uçta yine denenir; görevlinin izni beklentiden çıkarılınca kırmızı (eksik izinler uç uç listelendi). Dosyanın 38 testi, tür kontrolü ve denetim yeşil.
+- "Birim takımı hattın koşulunda yeşil" bir sonraki gönderimin hattında görülür.
+
 ## Durum
 
 yapılacak

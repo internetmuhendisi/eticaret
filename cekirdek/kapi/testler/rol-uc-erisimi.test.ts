@@ -462,12 +462,15 @@ describe("uygulamanın uçları", () => {
     );
   });
 
+  // Süre sınırı ölçümle (kart 0325): 159 uçta 7 kişi, yerelde iki işlemciyle 0,76–0,80 sn (kişiler aynı anda; sırayla
+  // 1,1–1,4 sn). Hattın yükü adımı 4 kata kadar uzattı (hat 45780640237: sırayla 5,0 sn, Vitest'in 5 sn sınırı). Her yeni
+  // uç yerelde yaklaşık 5 ms ekler. 20 sn, bugünkü en kötü tahminin (yaklaşık 3,2 sn) 5 katından fazladır.
   it("her kişi her uçta izin kaydının söylediğini görür", async () => {
     vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     const uclar = await uclariOku(uygulamaAdresleri);
     expect(await erisimleriDene(vt, uclar, belge)).toEqual([]);
     vi.restoreAllMocks();
-  });
+  }, 20_000);
 
   it("kapı dışında ya da başka adla yazılmış adres yok, sahip panelinde de", () => {
     const uygulama = join(uygulamaAdresleri, "..");
