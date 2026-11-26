@@ -937,6 +937,86 @@ Kargo ayarlarını birlikte değiştirir (kart 0212, karar 0135). Tutarlar siten
 - Başarılı (200): GET ile aynı veri, değişiklikten sonraki hâl.
 - Hatalar: `dogrulama` (şemaya uymayan girdi; alanın koduyla `tutar-okunamadi`, `tutar-sinir-disi` ya da `gun-gecersiz`; hiçbir ayar değişmez), `yetki` (sahte istek ya da izin yok).
 
+### POST /kapi/yonetici/vergi-ayarlari
+
+Vergi ekranının genel ayarlarını ve kargonun vergi sınıfını birlikte değiştirir (kart 0322). Ayarlar mağaza ayarlarıdır (`vergiAcik`, `vergiAdi`, `fiyatGosterimi`, `fiyatEkMetni`, `vergiAdresi`, `vergiYuvarlama`); fiyat girişi burada değişmez (kart 0326). Değişen her ayar (`magaza-ayari.degisti`) ve kargo sınıfı (`vergi.kargo-sinifi`) değişiklik kaydına girer; aynı kalan girmez.
+
+- İzin: `vergi.degistir`. Sınır: `genel`.
+- Girdi: `{ "vergiAcik", "vergiAdi", "fiyatGosterimi", "fiyatEkMetniTuru": "otomatik" | "yok" | "kendi", "fiyatEkMetni", "vergiAdresi", "vergiYuvarlama", "kargoSinifi": "<kimlik>" | null }` (`vergiAyarlariSemasi`, `cekirdek/moduller/vergi/uc-semalari.ts`). `fiyatEkMetni` yalnız `kendi` türünde okunur.
+- Servis: `cekirdek/moduller/vergi/ayarlar.ts` (`vergiAyarlariniDegistir`).
+- Başarılı (200): `{ "basarili": true, "veri": { …ayarlar, "kargoSinifi" } }`.
+- Hatalar: `dogrulama` (şemaya uymayan girdi; `vergiAdi` `too_small` ya da `ad-bicimi`; `fiyatEkMetni` `too_small` ya da `gecersiz`; `kargoSinifi` `sinif-silinmis`: olmayan ya da silinmiş sınıf; hiçbir şey yazılmaz), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/vergi-sinifi-ekle
+
+Yeni vergi sınıfı (kart 0322): silinmemişlerin sonuna eklenir, oransız başlar.
+
+- İzin: `vergi.degistir`. Sınır: `genel`.
+- Girdi: `{ "sinif": { "ad" } }` (`vergiSinifiEklemeSemasi`; sınıf `sinifGirdisi` ile serviste doğrulanır).
+- Servis: `cekirdek/moduller/vergi/servis.ts` (`sinifEkle`).
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
+- Hatalar: `dogrulama` (`ad` `too_small`, `too_big`, `ad-bicimi`), `is-kurali` (`ad-tekrar`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/vergi-sinifi-degistir
+
+Vergi sınıfının adı (kart 0322).
+
+- İzin: `vergi.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "sinif": { "ad"? } }` (`vergiSinifiDegisikligiSemasi`).
+- Servis: `cekirdek/moduller/vergi/servis.ts` (`sinifDegistir`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `is-kurali` (`ad-tekrar`, `sinif-silinmis`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/vergi-sinifi-sil
+
+Vergi sınıfını silinmiş işaretler (kart 0322, karar 0060): satırı ve oranları kalır, bağlı ürünler o oranlarla vergilenmeye devam eder; yeni ürüne seçilemez.
+
+- İzin: `vergi.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }` (`vergiKimlikSemasi`).
+- Servis: `cekirdek/moduller/vergi/servis.ts` (`sinifSil`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `is-kurali` (`sinif-silinmis`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/vergi-siniflari-sirala
+
+Vergi sınıflarının yeni sırası (kart 0322): bütün silinmemiş sınıflar tekrarsız verilir; eksik, fazla ya da tekrarlı liste `cakisma` (`siralama-gecersiz`) alır, hiçbir şey yazılmaz. Yalnız sırası değişen kayda girer.
+
+- İzin: `vergi.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlikler": ["<kimlik>", …] }` (`vergiSinifSiralamaSemasi`).
+- Servis: `cekirdek/moduller/vergi/servis.ts` (`siniflariSirala`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `cakisma` (`siralama-gecersiz`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/vergi-orani-ekle
+
+Sınıfa oran (kart 0322): ülke, isteğe bağlı il ve posta kodu, yüzde metni ("20", "7,5"), isteğe bağlı ad. Sınıfın oranlarının sonuna gelir.
+
+- İzin: `vergi.degistir`. Sınır: `genel`.
+- Girdi: `{ "sinif": "<kimlik>", "oran": { "ulke", "il"?, "postaKodu"?, "oran", "ad"? } }` (`vergiOraniEklemeSemasi`; oran `oranGirdisi` ile serviste doğrulanır).
+- Servis: `cekirdek/moduller/vergi/servis.ts` (`oranEkle`).
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
+- Hatalar: `dogrulama` (`oran` `oran-bicimi`, `oran-siniri`; `ulke`, `il`, `postaKodu` bölge ve adres kodları; `ad` `ad-bicimi`), `bulunamadi` (sınıf), `is-kurali` (`sinif-silinmis`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/vergi-orani-degistir
+
+Oranın alanları (kart 0322): yalnız verilen alan değişir, isteğe bağlı alanı (`il`, `postaKodu`, `ad`) boşaltmak için `null` verilir. Bölge kuralı birleşmiş sonuca uygulanır.
+
+- İzin: `vergi.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "oran": { "ulke"?, "il"?, "postaKodu"?, "oran"?, "ad"? } }` (`vergiOraniDegisikligiSemasi`).
+- Servis: `cekirdek/moduller/vergi/servis.ts` (`oranDegistir`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `is-kurali` (`sinif-silinmis`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/vergi-orani-sil
+
+Oranı silinmiş işaretler (kart 0322). Verilen siparişler değişmez.
+
+- İzin: `vergi.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }` (`vergiKimlikSemasi`).
+- Servis: `cekirdek/moduller/vergi/servis.ts` (`oranSil`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `is-kurali` (`sinif-silinmis`), `oturum-yok`, `yetki`.
+
 ### GET /kapi/yonetici/tema
 
 Panelin tema ekranının verisi (kart 0113): geçerli tema sürümü, sitenin kullanabileceği temalar ve mağaza sahibinin temayı değiştirip değiştiremeyeceği. Sürüm yoksa başlangıç sürümü bir kez yazılır.

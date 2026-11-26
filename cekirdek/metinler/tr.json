@@ -208,6 +208,10 @@
         "ad": "Kargo",
         "aciklama": "Sepette ve ödemede hesaplanan kargo ücreti. Değişiklik kaydedilince hemen yayınlanır."
       },
+      "vergi": {
+        "ad": "Vergi",
+        "aciklama": "Vergi sınıfları, oranlar ve vergi hesabının kuralları. Değişiklik kaydedilince hemen yayınlanır; verilen siparişler değişmez."
+      },
       "odemeYontemleri": {
         "ad": "Ödeme yöntemleri",
         "aciklama": "Müşterinin ödeme adımında gördüğü yöntemler ve sırası. Sıra taşıdığınız anda kaydedilir; öteki değişiklikler \"Kaydet\" ile hemen yayınlanır."
@@ -396,12 +400,119 @@
       "hata": {
         "oran-bicimi": "Oranı yüzde olarak yazın, en çok dört ondalık basamakla. Örnek: 18 ya da 7,5.",
         "oran-siniri": "Oran yüzde 100'den büyük olamaz. Oranı yüzde olarak yazın.",
-        "ad-bicimi": "Adda @ işareti olamaz. Adı @ olmadan yazın.",
+        "ad-bicimi": "Ad @ işareti içeremez, anahtar ya da e-posta biçiminde olamaz. Adı değiştirin.",
         "ad-tekrar": "Bu adla bir vergi sınıfı zaten var. Başka bir ad yazın.",
         "sinif-silinmis": "Bu vergi sınıfı silinmiş, değiştirilemez. Ürünleri başka bir sınıfa geçirin.",
         "kargo-tekrar": "Kargo için yalnız bir vergi sınıfı seçilebilir. Öteki sınıflardan kargo işaretini kaldırın.",
-        "vergi-bolgesi-yok": "Bu adres için vergi oranı bulunamadı, mağaza adresi de vergi tablosunda yok. Mağaza adresini ve vergi oranlarını kontrol edin."
-      }
+        "vergi-bolgesi-yok": "Bu adres için vergi oranı bulunamadı, mağaza adresi de vergi tablosunda yok. Mağaza adresini ve vergi oranlarını kontrol edin.",
+        "siralama-gecersiz": "Sınıfların listesi bu arada değişti. Sayfayı yenileyip yeniden sıralayın.",
+        "postaKodu": "Posta kodu bu ülkenin biçimine uymuyor. Posta kodunu düzeltin ya da boş bırakın.",
+        "bolge": "Seçilen il bu ülkede yok. Ülkeyi ya da ili değiştirin."
+      },
+      "genel": "Genel",
+      "vergiAcik": "Vergi hesaplansın",
+      "vergiAcikAciklamasi": "Kapalıyken fiyatlara ve siparişlere vergi eklenmez, vergi dökümü görünmez.",
+      "vergiAdi": "Vergi adı",
+      "vergiAdiAciklamasi": "Fiyatın yanında ve vergi dökümünde görünür. Oranın kendi adı varsa o görünür. Boş bırakılırsa genel bir ad kullanılır.",
+      "fiyatGirisi": "Fiyatları nasıl giriyorsunuz",
+      "fiyatGirisiDeger": {
+        "vergi-dahil": "Vergi dahil",
+        "vergi-haric": "Vergi hariç"
+      },
+      "fiyatGirisiAciklamasi": "Ürün fiyatları ve kargo ücreti bu biçimde girilir. Değiştirmek kayıtlı bütün fiyatların çevrilmesini gerektirir; bu ekranda değişmez.",
+      "fiyatGosterimi": "Fiyatlar vitrinde nasıl görünsün",
+      "fiyatGosterimiAciklamasi": "Vitrinde, sepette ve e-postada. Girişten farklıysa fiyat vergi hesabıyla çevrilir.",
+      "fiyatEkMetni": "Fiyatın yanındaki metin",
+      "fiyatEkMetniTuru": {
+        "otomatik": "Vergi adından ({ornek})",
+        "yok": "Metin gösterilmesin",
+        "kendi": "Kendi metnim"
+      },
+      "fiyatEkMetniAlani": "Metin",
+      "vergiAdresi": "Vergi hangi adrese göre hesaplansın",
+      "vergiAdresiDeger": {
+        "teslimat": "Teslimat adresi",
+        "fatura": "Fatura adresi",
+        "magaza": "Mağaza adresi"
+      },
+      "vergiAdresiAciklamasi": "Adresin bölgesi vergi tablosunda yoksa mağaza adresi kullanılır.",
+      "vergiYuvarlama": "Yuvarlama",
+      "vergiYuvarlamaDeger": {
+        "satir": "Her satırda",
+        "ara-toplam": "Aynı oranlı satırların toplamında"
+      },
+      "kargoSinifi": "Kargonun vergi sınıfı",
+      "kargoSinifiAciklamasi": "Kargo ücreti bu sınıfın oranlarıyla vergilenir.",
+      "kargoVergisiz": "Kargo vergisiz",
+      "kaydet": "Kaydet",
+      "kaydedildi": "Vergi ayarları kaydedildi",
+      "siniflar": "Vergi sınıfları",
+      "siniflarAciklamasi": "Her ürün bir sınıfa bağlıdır ya da vergisizdir. Sınıfın oranları bölgeye göre değişebilir.",
+      "sinifTek": "Sınıf",
+      "sinifOzeti": "{oranlar} · {urunler}",
+      "sinifOzetiKargo": "{oranlar} · {urunler} · kargo",
+      "oranSayisi": "{sayi} oran",
+      "oransiz": "Oran yok",
+      "urunSayisi": "{sayi} ürün",
+      "sinifBos": {
+        "baslik": "Henüz vergi sınıfı yok",
+        "aciklama": "Ürünlere vergi uygulamak için bir sınıf ekleyin, sonra oranını girin."
+      },
+      "sinifForm": {
+        "yeni": "Yeni vergi sınıfı",
+        "yeniAciklama": "Sınıfı ekledikten sonra oranlarını girin.",
+        "duzenle": "Vergi sınıfı",
+        "ad": "Sınıfın adı"
+      },
+      "sinifEklendi": "Vergi sınıfı eklendi",
+      "sinifKaydedildi": "Vergi sınıfı kaydedildi",
+      "sinifSilindi": "Vergi sınıfı silindi",
+      "siniflarSiralandi": "Sınıfların sırası kaydedildi",
+      "sinifSilOnay": {
+        "baslik": "\"{ad}\" sınıfı silinsin mi?",
+        "urunsuz": "Bu sınıfa bağlı ürün yok. Silinen sınıf yeni ürünlere seçilemez.",
+        "urunler": "Bu sınıfa bağlı {sayi} ürün var. Silinse de bu ürünler sınıfın oranlarıyla vergilenmeye devam eder; başka sınıfa geçirmek için ürünlerini düzenleyin.",
+        "kargo": "Bu sınıf kargonun vergi sınıfı. Silinince kargo bu sınıfın oranlarıyla vergilenmeye devam eder; genel ayarlardan başka bir sınıf seçin."
+      },
+      "oranlar": "Oranlar",
+      "oranlarAciklamasi": "Aynı bölgede birden çok oran toplanır; en özel bölge (posta kodu, il, ülke) geçerlidir. Değişiklik verilen siparişleri değiştirmez.",
+      "oranBos": "Bu sınıfın oranı yok. Oranı olmayan sınıftaki ürünlere vergi uygulanmaz.",
+      "oranEkle": "Oran ekle",
+      "oranForm": {
+        "yeni": "Yeni oran",
+        "duzenle": "Oranı düzenle",
+        "ulke": "Ülke",
+        "il": "İl",
+        "ilHepsi": "Bütün iller",
+        "postaKodu": "Posta kodu",
+        "postaKoduAciklamasi": "Yalnız bu posta koduna uygulanır.",
+        "oran": "Oran",
+        "oranAciklamasi": "Yüzde olarak, en çok dört ondalık. Örnek: 20 ya da 7,5.",
+        "ad": "Vergi adı",
+        "adAciklamasi": "Boşsa mağazanın vergi adı ({ad}) görünür."
+      },
+      "oranOzeti": "%{oran} · {bolge}",
+      "oranDuzenle": "Oranı düzenle: {ozet}",
+      "oranSil": "Oranı sil: {ozet}",
+      "oranEklendi": "Oran eklendi",
+      "oranKaydedildi": "Oran kaydedildi",
+      "oranSilindi": "Oran silindi",
+      "oranSilOnay": {
+        "baslik": "Bu oran silinsin mi?",
+        "aciklama": "%{oran} · {bolge}. Verilen siparişler değişmez."
+      },
+      "sinifDuzenle": "Düzenle: {ad}",
+      "sinifSil": "Sil: {ad}",
+      "sil": "Sil",
+      "genelHata": "Kaydedilemedi. Sayfayı yenileyip yeniden deneyin.",
+      "yetkiHatasi": "Vergi ayarlarını değiştirme izniniz yok.",
+      "oranTablosu": "Sınıfın oranları",
+      "oranYuzdesi": "%{oran}",
+      "hepsi": "Hepsi",
+      "islem": "İşlem",
+      "ekMetinGecersiz": "Metin çok uzun ya da bir e-posta adresi veya giriş anahtarı biçiminde. Metni kısaltın ya da değiştirin.",
+      "oranKaydet": "Oranı kaydet",
+      "silinmisSinif": "{ad} (silinmiş)"
     },
     "urun": {
       "hata": {

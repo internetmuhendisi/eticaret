@@ -18,6 +18,7 @@ import {
   sayfalarAdresi,
   temaAdresi,
   temaAyarlariAdresi,
+  vergiEkraniAdresi,
   yorumlarAdresi,
 } from "./adresler";
 
@@ -392,6 +393,17 @@ export const panelSayfalari = [
     aciklama: "yonetim.sayfa.kargo.aciklama",
     ikon: "kargo",
     izin: "magaza-ayarlari.gor",
+    grup: "ayarlar",
+  },
+  // Vergi (kart 0322): genel ayarlar, sınıflar ve oranlar. Görmek vergi.gor, değiştirmek vergi.degistir (yalnız mağaza
+  // sahibi); fiyat girişi burada yalnız gösterilir (kart 0326).
+  {
+    kod: "vergi",
+    adres: vergiEkraniAdresi,
+    ad: "yonetim.sayfa.vergi.ad",
+    aciklama: "yonetim.sayfa.vergi.aciklama",
+    ikon: "vergi",
+    izin: "vergi.gor",
     grup: "ayarlar",
   },
   // Ekip (kart 0274, karar 0178): kullanıcılar, roller (yalnız okunur) ve kullanıcının ayrıntısı (?kimlik=); yöneticinin

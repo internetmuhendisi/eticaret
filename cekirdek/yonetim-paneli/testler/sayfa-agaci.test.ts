@@ -193,6 +193,7 @@ describe("gruplar (kart 0301)", () => {
       "odeme-yontemleri",
       "banka-hesaplari",
       "kargo",
+      "vergi",
       "ekip",
       "hesabim",
     ]);

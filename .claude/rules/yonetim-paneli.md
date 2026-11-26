@@ -13,7 +13,7 @@ paths:
 - Komut çubuğuna "Yeni ürün", "Dışa aktar", "Ayarlar" gibi eylemleri koy. Arama ve filtre altındaki şeritte durur.
 - Komut çubuğunda dolu renkli tek düğme olsun, o da sayfanın asıl eylemi.
 - Aynı eylem her sayfada aynı ikon, aynı ad ve aynı yerde dursun. Eylem tanımlarını tek dosyadan oku.
-- Yan menüyü, sayfa yolunu ve sayfa başlıklarını tek sayfa ağacından üret. Sayfa yolu kök, sayfanın menüdeki grubu (bağlantısız, grubun sayfası yoktur), üst sayfalar ve sayfanın kendisidir (`sayfaYoluAdimlari`, kart 0301). Menünün grupları: Satış, Ürünler, Vitrin, İçerik, Ayarlar; mağaza ayarlarının ekranları (mağaza bilgileri, sipariş ayarları, ödeme yöntemleri ve banka hesapları, kargo) Ayarlar'da, Ekip'ten önce.
+- Yan menüyü, sayfa yolunu ve sayfa başlıklarını tek sayfa ağacından üret. Sayfa yolu kök, sayfanın menüdeki grubu (bağlantısız, grubun sayfası yoktur), üst sayfalar ve sayfanın kendisidir (`sayfaYoluAdimlari`, kart 0301). Menünün grupları: Satış, Ürünler, Vitrin, İçerik, Ayarlar; mağaza ayarlarının ekranları (mağaza bilgileri, sipariş ayarları, ödeme yöntemleri ve banka hesapları, kargo, vergi) Ayarlar'da, Ekip'ten önce.
 - Ayar ve rapor alt sayfalarında ana sayfanın komut çubuğunu kullan, yalnız seçili öğe değişsin.
 - Kullanıcının yetkisi olmayan düğme, menü ya da bağlantıyı hiç gösterme. Yetki bilgisini sunucudan oku, ikinci bir liste yazma.
 - Panelin ana ekranında günün satışını, bekleyen siparişleri ve uyarıları tek bakışta göster.
@@ -65,6 +65,13 @@ paths:
 
 - Ekran `cekirdek/yonetim-paneli/kargo/` klasöründe, menüde "Ayarlar" altındadır (kart 0301). Ayarlar mağaza ayarlarıdır: görmek `magaza-ayarlari.gor`, değiştirmek `magaza-ayarlari.degistir` ister.
 - Tutar sitenin para biçimiyle yazılı gider, sunucuda `kargoAyarlariniDegistir` (`cekirdek/moduller/kargo/servis.ts`) biçimleyicinin `paraOku`'suyla okur. Ekran tutarı kendisi çevirmez; alanın hatası koduyla döner. Uç şemasının kendi kodu (boş zorunlu alan) ortak eşlemeden (`kodluAlanHatalari`) alana bağlanır (kart 0284); kendi kod eşlemesini yazan ekran şemanın kodunu da karşılar.
+
+## Vergi ekranı (kart 0322)
+
+- Ekran `cekirdek/yonetim-paneli/vergi/` klasöründe, menüde "Ayarlar" altında Kargo'dan sonradır. Görmek `vergi.gor`, değiştirmek `vergi.degistir` ister (silme dahil); izni olmayan yönetici alanları kapalı görür, düğmeleri görmez.
+- Genel ayarlar tek formdur (`vergi-ayarlari`, servis `vergiAyarlariniDegistir`, `cekirdek/moduller/vergi/ayarlar.ts`): vergi açık-kapalı, vergi adı, fiyatın gösterimi, fiyatın yanındaki metin (vergi adından, metinsiz ya da kendi metni; ayarda yazılmamış, boş ya da metin), verginin adresi, yuvarlama ve kargonun vergi sınıfı. Fiyat girişi yalnız gösterilir: değişmesi kayıtlı fiyatların çevrilmesini ister (kart 0326).
+- Sınıflar `SiralanabilirListe` ile taşınır taşınmaz kaydedilir (`vergi-siniflari-sirala`, silinmemiş sınıfların tam kümesi). Sınıf yan pencerede eklenir ve düzenlenir; yeni sınıf eklenince pencere onun oranlarına geçer. Oran pencerenin içinde eklenir, düzenlenir ve onayla silinir; bölgesi ve yazılışı sunucuda sitenin biçimiyle kurulur (`vergiEkraniVerisi`). Sınıf silme onayı bağlı ürün sayısını söyler (`sinifUrunSayilari`); ürünler silinmiş sınıfın oranlarıyla vergilenmeye devam eder (karar 0060).
+- Fiyatın gösterimini değiştirmek bütün vitrinin fiyatlarını değiştirir: tarayıcı testi kendi aşamasında, tema testinden sonra çalışır (`vitrin-ayari`).
 
 ## Siparişler (karar 0146)
 

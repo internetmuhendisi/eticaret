@@ -11,7 +11,7 @@
 //
 // İzin kapıda denetlenir (izinler.ts); servis yalnız kimin yaptığını kayda yazar. Girdi şemadan
 // geçmemişse servis yine şemadan geçirir: başka bir yoldan gelen ham değer tabloya yazılmaz.
-import { and, asc, eq, inArray, isNull, max, sql } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNotNull, isNull, max, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
@@ -27,6 +27,7 @@ import {
 import { kimligiDuzelt } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
+import { urunler } from "../urun/model.ts";
 import { type HesapGirdisi, hesapla, type VergiBolgesi, type VergiSonucu } from "./hesap.ts";
 import { vergiOranlari, vergiSiniflari } from "./model.ts";
 import {
@@ -488,8 +489,62 @@ export const vergiServisi = (baslangic: () => VergiBaslangici) => {
       });
     });
 
+  // Silinmemiş sınıfların yeni sırası (kart 0322): liste silinmemiş sınıfların tam kümesi olmalı (eksik, fazla, tekrarlı ya da
+  // arada değişmiş liste `cakisma` (`siralama-gecersiz`) alır, hiçbir şey yazılmaz). Yalnız sırası değişen sınıf yazılır ve kayda girer.
+  const siniflariSirala = (
+    vt: Veritabani,
+    kim: DegisikligiYapan,
+    kimlikGirdisi: readonly string[],
+  ) =>
+    yaz(vt, async (islem) => {
+      const kimlikler = kimlikGirdisi.map(kimligiDuzelt);
+      const siniflar = await islem
+        .select({ kimlik: vergiSiniflari.kimlik, ad: vergiSiniflari.ad, sira: vergiSiniflari.sira })
+        .from(vergiSiniflari)
+        .where(isNull(vergiSiniflari.silinme_zamani));
+      const varolan = new Set(siniflar.map((sinif) => sinif.kimlik));
+      if (
+        kimlikler.length !== siniflar.length ||
+        new Set(kimlikler).size !== kimlikler.length ||
+        kimlikler.some((kimlik) => !varolan.has(kimlik))
+      ) {
+        throw new BilinenHata("cakisma", { kod: "siralama-gecersiz" });
+      }
+      for (const [sira, kimlik] of kimlikler.entries()) {
+        const eski = siniflar.find((sinif) => sinif.kimlik === kimlik);
+        if (eski === undefined || eski.sira === sira) continue;
+        await islem
+          .update(vergiSiniflari)
+          .set({ sira, guncellenme_zamani: sql`now()` })
+          .where(eq(vergiSiniflari.kimlik, kimlik));
+        await degisikligiKaydet(islem, {
+          kim,
+          islem: "vergi-sinifi.degisti",
+          kayit: { tur: "vergi-sinifi", kimlik },
+          eski: sinifKaydi(eski),
+          yeni: sinifKaydi({ ad: eski.ad, sira }),
+        });
+      }
+    });
+
+  // Her sınıfa bağlı silinmemiş ürün sayısı (kart 0322): silme onayı kaç ürünün etkileneceğini söyler. Tek sorgu.
+  const sinifUrunSayilari = async (
+    vt: Veritabani | VeritabaniIslemi,
+  ): Promise<Map<string, number>> => {
+    const satirlar = await vt
+      .select({ sinif: urunler.vergi_sinifi_kimligi, sayi: count() })
+      .from(urunler)
+      .where(and(isNotNull(urunler.vergi_sinifi_kimligi), isNull(urunler.silinme_zamani)))
+      .groupBy(urunler.vergi_sinifi_kimligi);
+    return new Map(
+      satirlar.flatMap((satir) => (satir.sinif === null ? [] : [[satir.sinif, satir.sayi]])),
+    );
+  };
+
   return {
     tabloyuOku,
+    siniflariSirala,
+    sinifUrunSayilari,
     sinifEkle,
     sinifDegistir,
     sinifSil,

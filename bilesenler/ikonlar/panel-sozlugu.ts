@@ -30,6 +30,7 @@ import {
   MessageSquareTextIcon,
   PaletteIcon,
   PanelsTopLeftIcon,
+  PercentIcon,
   PrinterIcon,
   StoreIcon,
   TagsIcon,
@@ -70,6 +71,8 @@ export const panelIkonlari = {
   yorumlar: MessageSquareTextIcon,
   // Mağaza bilgileri (kart 0278).
   magaza: StoreIcon,
+  // Vergi (kart 0322).
+  vergi: PercentIcon,
   // Ekip (kart 0274).
   ekip: UsersIcon,
   // Ekibe davet (kart 0275).

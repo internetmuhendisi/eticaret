@@ -61,6 +61,8 @@ if (process.env["EPOSTA_SUNUCUSU"] === undefined) {
 
 const ortakDislananlar = ["**/node_modules/**", `${import.meta.dirname}/.claude/**`];
 const temaDegisikligiTesti = "**/uctan-uca/tema.test.ts";
+// Vergi ekranı fiyatın gösterimini değiştirir (kart 0322): bütün vitrinin fiyatları değişir, tema testinden de sonra çalışır.
+const vitrinAyariTesti = "**/uctan-uca/vergi.test.ts";
 
 export default defineConfig({
   testDir: ".",
@@ -109,13 +111,19 @@ export default defineConfig({
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
-      testIgnore: [...ortakDislananlar, temaDegisikligiTesti],
+      testIgnore: [...ortakDislananlar, temaDegisikligiTesti, vitrinAyariTesti],
     },
     {
       name: "tema-degisikligi",
       use: { ...devices["Desktop Chrome"] },
       testMatch: temaDegisikligiTesti,
       dependencies: ["chromium"],
+    },
+    {
+      name: "vitrin-ayari",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: vitrinAyariTesti,
+      dependencies: ["tema-degisikligi"],
     },
   ],
 });

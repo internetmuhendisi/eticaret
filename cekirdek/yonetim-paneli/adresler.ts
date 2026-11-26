@@ -27,6 +27,9 @@ export const musteriAyrintisiAdresi = (kimlik: string): string =>
 // Mağaza bilgileri (kart 0278).
 export const magazaBilgileriAdresi = `${panelAdresi}/magaza-bilgileri`;
 
+// Vergi ayarları (kart 0322).
+export const vergiEkraniAdresi = `${panelAdresi}/vergi`;
+
 // Yorumlar (kart 0277): liste Onay bekleyen sekmesiyle açılır; yönetici bildirimi e-postası da buraya bağlanır.
 export const yorumlarAdresi = `${panelAdresi}/yorumlar`;
 

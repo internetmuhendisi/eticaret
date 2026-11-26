@@ -299,6 +299,7 @@ describe("Ayarlar grubu (kart 0301)", () => {
       sayfa("odemeYontemleri"),
       sayfa("bankaHesaplari"),
       sayfa("kargo"),
+      sayfa("vergi"),
       sayfa("ekip"),
     ]);
     // Görevli ödeme yöntemlerini görür (odeme-yontemi.gor), mağaza ayarlarını görmez.
@@ -311,6 +312,8 @@ describe("Ayarlar grubu (kart 0301)", () => {
     ]);
     expect(gorevli).not.toContain(`>${sayfa("magazaBilgileri")}<`);
     expect(gorevli).not.toContain(`>${sayfa("kargo")}<`);
+    // Vergi ekranı yalnız vergi.gor izni olana (kart 0322): görevlide yok.
+    expect(gorevli).not.toContain(`>${sayfa("vergi")}<`);
   });
 
   it("sayfa yolu: Karşılama bağlantı, grubun adı bağlantısız, sayfanın adı geçerli sayfa", async () => {

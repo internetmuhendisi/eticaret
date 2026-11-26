@@ -15,6 +15,7 @@ import { z } from "zod";
 import type { AdresHatasi } from "../../bolgeler/adres.ts";
 import { bolgeyiDogrula, postaKoduGecerliMi } from "../../bolgeler/bolgeler.ts";
 import type { MetinAnahtari } from "../../metinler/metin.ts";
+import { kayitDegeriYasakMi } from "../degisiklik-kaydi/deger.ts";
 
 export const vergiHatalari = [
   "oran-bicimi",
@@ -26,6 +27,8 @@ export const vergiHatalari = [
   "kargo-tekrar",
   // Ne müşterinin ne mağazanın bölgesi vergi tablosunda var (kart 0075, karar 0061).
   "vergi-bolgesi-yok",
+  // Sınıfların sıralaması silinmemiş sınıfların tam kümesi değil (kart 0322): eksik, fazla ya da tekrarlı.
+  "siralama-gecersiz",
 ] as const;
 export type VergiHatasi = (typeof vergiHatalari)[number];
 
@@ -38,6 +41,7 @@ export const vergiHataMetinleri = {
   "sinif-silinmis": "yonetim.vergi.hata.sinif-silinmis",
   "kargo-tekrar": "yonetim.vergi.hata.kargo-tekrar",
   "vergi-bolgesi-yok": "yonetim.vergi.hata.vergi-bolgesi-yok",
+  "siralama-gecersiz": "yonetim.vergi.hata.siralama-gecersiz",
 } as const satisfies Record<VergiHatasi, MetinAnahtari>;
 
 // Vergi ayarlarının seçenekleri (kart 0075, karar 0061). Mağaza sahibinin ayarıdır (ayarlar.ts).
@@ -94,13 +98,15 @@ export const oranSemasi = z
     return oran;
   });
 
-// Sınıf ve oranın adı. "@" içermez: e-posta biçimindeki değeri değişiklik kaydı reddeder (karar 0045).
+// Sınıf, oran ve verginin adı. "@" içermez ve anahtar biçiminde olamaz: ad değişiklik kaydına değeriyle girer, kaydın
+// reddettiği değer (e-posta, anahtar, karar 0045) beklenmeyen hataya düşmesin, kargo sınıfı yazılıp ayarlar yazılmadan
+// kalmasın (kart 0322).
 export const vergiAdiSemasi = z
   .string()
   .trim()
   .min(1)
   .max(50)
-  .refine((ad) => !ad.includes("@"), hata("ad-bicimi"));
+  .refine((ad) => !ad.includes("@") && !kayitDegeriYasakMi(ad), hata("ad-bicimi"));
 
 const siraSemasi = z.int().min(0).max(9999);
 
