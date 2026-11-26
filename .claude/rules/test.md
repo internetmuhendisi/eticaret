@@ -15,7 +15,7 @@ Birim testi tek bir parçayı, entegrasyon testi parçaların birlikte çalışm
 - Veri ayrımı ve yetki testlerini taklit değil gerçek veritabanıyla yap.
 - Her test kendi verisini hazırlasın ve başka teste bağlı olmasın.
 - Sırayı kuran yarış testinde (`kilitBekleyeniGor`) rakip, ilk işlem kilidi aldıktan sonra başlatılır. İlk işlem kilidi alınca bir söz verir, test o sözü (`Promise.race` ile işlemle birlikte) bekleyip sonra rakibi başlatır (kart 0230). Art arda başlatılan iki işlemde rakip kilidi önce alabilir. Yalnız disiplindir.
-- "Bu gizli değer metinde yok" denetimi `gizliGeciyor` ile yapılır (`cekirdek/testler/gizli-deger.ts`, kart 0310): kısa rakam dizisi (telefon parçası, posta kodu) rastgele kimliklerde ve özetlerde kendiliğinden geçer. Telefon saklandığı yazılışla da aranır ("+90 555 …"). Yardımcıyı kullanmak yalnız disiplindir.
+- "Bu gizli değer metinde yok" denetimi `gizliGeciyor` ile yapılır (`cekirdek/testler/gizli-deger.ts`, kart 0310): kısa rakam dizisi (telefon parçası, posta kodu) rastgele kimliklerde ve özetlerde kendiliğinden geçer. Telefon gruplarıyla verilir ("555 123 45 67"): boşluk her ayracı ve bitişik yazılışı karşılar, saklanan "+90 555 …" de yakalanır. Yardımcıyı kullanmak yalnız disiplindir.
 - Önemli akışları tarayıcıda gerçek kullanıcı gibi tıklayarak dene.
 - Bir işin bitip bitmediğini işi yapmayan ikinci bir kontrol onaylasın. İşi yapan kendi işini onaylamaz.
 
