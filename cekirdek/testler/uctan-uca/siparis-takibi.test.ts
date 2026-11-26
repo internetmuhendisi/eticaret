@@ -273,7 +273,7 @@ test("üye olmayan numara ve e-postayla siparişini bulur; eşleşmeyen e-posta 
     "Müşteri",
     "0555",
     "555 000",
-    "5550000042",
+    "555 000 00 42",
     "Takip Sokak",
     "06420",
     eposta,

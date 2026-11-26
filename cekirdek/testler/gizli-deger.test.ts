@@ -15,6 +15,23 @@ describe("gizli değer denetimi (kart 0310)", () => {
     expect(gizliGeciyor("tel: 555 000 00 42", "555 000")).toBe(true);
   });
 
+  it("telefon her ayraçla ve ayraçsız yakalanır", () => {
+    for (const yazilis of [
+      "+90 555 123 45 67",
+      "0555 123 45 67",
+      "555-123-45-67",
+      "(555) 123 45 67",
+      "555.123.45.67",
+      "555 123 45 67",
+      "+905551234567",
+      '"05551234567"',
+    ]) {
+      expect(gizliGeciyor(yazilis, "555 123 45 67"), yazilis).toBe(true);
+    }
+    expect(gizliGeciyor("tel 555-000", "555 000")).toBe(true);
+    expect(gizliGeciyor("555 124 45 67", "555 123 45 67")).toBe(false);
+  });
+
   it("uzun rakam dizisi ve rakam dışı değer bitişik de yakalanır", () => {
     expect(gizliGeciyor('{"telefon":"+905551234567"}', "5551234567")).toBe(true);
     expect(gizliGeciyor("DenizYılmaz", "Yılmaz")).toBe(true);

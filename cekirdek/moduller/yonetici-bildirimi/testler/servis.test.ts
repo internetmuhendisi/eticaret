@@ -176,17 +176,9 @@ const bilgiler = (odemeYontemi: OdemeYontemiSecimi) =>
     mesafeliSatisOnayi: true,
     pazarlamaIzni: false,
   });
-// Müşterinin kuyruğa ve e-postaya gitmeyen bilgileri: telefonun girilen ("0555 …") ve saklanan ("+90 555 …")
-// yazılışlarının ortak parçası ve bitişik yazılışı,
-// açık adres, posta kodu ve soyadı.
-const gizliler = (eposta: string) => [
-  eposta,
-  "555 123 45 67",
-  "5551234567",
-  "Gizli Sokak",
-  "06420",
-  "Yılmaz",
-];
+// Müşterinin kuyruğa ve e-postaya gitmeyen bilgileri: telefon (her ayraçla ve ayraçsız, girilen "0555 …"
+// ve saklanan "+90 555 …" yazılışı), açık adres, posta kodu ve soyadı.
+const gizliler = (eposta: string) => [eposta, "555 123 45 67", "Gizli Sokak", "06420", "Yılmaz"];
 const havale: OdemeYontemiSecimi = { yontem: "havale" };
 const kapida: OdemeYontemiSecimi = { yontem: "kapida-odeme", secenek: "nakit" };
 
