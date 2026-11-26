@@ -173,17 +173,130 @@ describe("kuponlu sepet", () => {
     expect(sonuc).toMatchObject({ araToplam: 22_600, kupon: { indirim: 5_000 }, toplam: 17_600 });
   });
 
-  it("tutar kuponu ürünlerin tutarını aşmaz, kargoya uygulanmaz", async () => {
+  it("tutar kuponu ürünleri sıfıra indirmez (1 kuruş kalır), kargoya uygulanmaz", async () => {
     const h = await hazirla();
     await h.ayarla({ kargoUcreti: 5_900 });
     const a = await h.urunAc({ satis: 3_000 });
     await h.kuponAc({ kod: "BUYUK", tur: "tutar", deger: 10_000, kapsam: "hepsi" });
     const sonuc = await h.hesapla([{ birim: a.birim, adet: 1 }], "BUYUK");
     expect(sonuc).toMatchObject({
-      kupon: { indirim: 3_000 },
+      kupon: { indirim: 2_999 },
       kargo: { tur: "ucretli", tutar: 5_900 },
-      toplam: 5_900,
+      toplam: 5_901,
     });
+  });
+
+  it("ücretsiz kargo kuponu kargosu zaten ücretsiz ya da kargosuz sepette geçmez (hak harcanmaz)", async () => {
+    const h = await hazirla();
+    await h.kuponAc({ kod: "KARGO", tur: "ucretsiz-kargo", deger: 0, kapsam: "hepsi" });
+    const a = await h.urunAc();
+    // Kargo ücreti verilmemiş: kargo ücretsiz.
+    expect((await h.hesapla([{ birim: a.birim, adet: 1 }], "KARGO")).kupon).toEqual({
+      durum: "gecmedi",
+      kod: "KARGO",
+      neden: "kargo-ucretsiz",
+    });
+    // Ücretsiz kargo sınırı aşılmış.
+    await h.ayarla({ kargoUcreti: 5_900, ucretsizKargoSiniri: 10_000 });
+    expect((await h.hesapla([{ birim: a.birim, adet: 1 }], "KARGO")).kupon).toMatchObject({
+      neden: "kargo-ucretsiz",
+    });
+  });
+
+  it("giriş ile gösterim farklıyken ve ara toplam yuvarlamasında özet her zaman toplamı verir, pay eksi olmaz", async () => {
+    const h = await hazirla();
+    const fiyatlar = [101, 100, 1_001, 999, 3_333, 7, 12_345];
+    const urunler = [];
+    for (const satis of fiyatlar) urunler.push(await h.urunAc({ satis }));
+    await h.kuponAc({
+      kod: "SECILI",
+      tur: "tutar",
+      deger: 1,
+      kapsam: "urunler",
+      kapsamKayitlari: [urunler[0]?.urun ?? ""],
+    });
+    await h.kuponAc({ kod: "YARIM", tur: "yuzde", deger: 7, kapsam: "hepsi" });
+    for (const ayar of [
+      { fiyatGirisi: "vergi-dahil", fiyatGosterimi: "vergi-haric" },
+      { fiyatGirisi: "vergi-haric", fiyatGosterimi: "vergi-dahil" },
+      { fiyatGirisi: "vergi-haric", fiyatGosterimi: "vergi-haric" },
+    ] as const) {
+      await h.ayarla({ ...ayar, vergiYuvarlama: "ara-toplam" });
+      for (const [a, b] of [
+        [0, 1],
+        [2, 3],
+        [4, 5],
+        [0, 6],
+      ] as const) {
+        // Seçili ürün kuponu yalnız ilk ürünü içeren çiftte geçer.
+        for (const kod of a === 0 ? ["SECILI", "YARIM"] : ["YARIM"]) {
+          const sonuc = await h.hesapla(
+            [
+              { birim: urunler[a]?.birim ?? "", adet: 1 },
+              { birim: urunler[b]?.birim ?? "", adet: 2 },
+            ],
+            kod,
+          );
+          const ne = `${JSON.stringify(ayar)} ${a}-${b} ${kod}`;
+          expect(sonuc.kupon?.durum, ne).toBe("uygulandi");
+          expect(toplamTutar(sonuc), ne).toBe(sonuc.toplam);
+          expect(
+            sonuc.satirlar.every((satir) => (satir.indirim ?? 0) >= 0),
+            ne,
+          ).toBe(true);
+          if (kod === "SECILI") expect(sonuc.satirlar[1]?.indirim, ne).toBeUndefined();
+        }
+      }
+    }
+  });
+
+  it("ara toplam yuvarlamasında kapsam dışı satırın gösterimi kayınca da paylar toplam indirime eşittir, dışarıdakine pay düşmez", async () => {
+    const h = await hazirla();
+    await h.ayarla({
+      fiyatGirisi: "vergi-dahil",
+      fiyatGosterimi: "vergi-haric",
+      vergiYuvarlama: "ara-toplam",
+    });
+    // 1,00 ve 1,07 dahil: vergisizler 0,85 ve 0,90. Kuponla 0,99 ve 1,07: vergi yeniden dağılınca 0,84 ve 0,91;
+    // kapsam dışı satırın gösterimi 1 kuruş artar, kapsamdakininki 1 kuruş azalır: gösterimdeki indirim 0'dır.
+    const a = await h.urunAc({ satis: 100 });
+    const b = await h.urunAc({ satis: 107 });
+    await h.kuponAc({
+      kod: "KURUS",
+      tur: "tutar",
+      deger: 1,
+      kapsam: "urunler",
+      kapsamKayitlari: [a.urun],
+    });
+    const sonuc = await h.hesapla(
+      [
+        { birim: a.birim, adet: 1 },
+        { birim: b.birim, adet: 1 },
+      ],
+      "KURUS",
+    );
+    expect(sonuc.kupon).toMatchObject({ durum: "uygulandi" });
+    const paylar = sonuc.satirlar.reduce((toplam, satir) => toplam + (satir.indirim ?? 0), 0);
+    expect(paylar).toBe(sonuc.kupon?.durum === "uygulandi" ? sonuc.kupon.indirim : -1);
+    expect(sonuc.satirlar[1]?.indirim).toBeUndefined();
+    expect(toplamTutar(sonuc)).toBe(sonuc.toplam);
+    expect(sonuc.toplam).toBe(206);
+  });
+
+  it("vergi hariç girişte yüzde kuponu: vergi indirimden sonraki tutara eklenir", async () => {
+    const h = await hazirla();
+    await h.ayarla({ fiyatGirisi: "vergi-haric", fiyatGosterimi: "vergi-dahil" });
+    const a = await h.urunAc({ satis: 10_000 });
+    await h.kuponAc({ kod: "YUZDE10", tur: "yuzde", deger: 10, kapsam: "hepsi" });
+    // 100,00 hariç × yüzde 10 = 10,00 → 90,00 + 16,20 vergi = 106,20. Kupondan önce 118,00 dahil gösterilir.
+    const sonuc = await h.hesapla([{ birim: a.birim, adet: 1 }], "YUZDE10");
+    expect(sonuc.satirlar[0]).toMatchObject({
+      tutar: 11_800,
+      indirim: 1_180,
+      vergi: { vergisiz: 9_000, vergi: 1_620 },
+    });
+    expect(sonuc).toMatchObject({ araToplam: 11_800, kupon: { indirim: 1_180 }, toplam: 10_620 });
+    expect(toplamTutar(sonuc)).toBe(sonuc.toplam);
   });
 
   it("ücretsiz kargo kuponu kargoyu ücretsiz yapar, verilmeyen ücret kargo indirimidir", async () => {

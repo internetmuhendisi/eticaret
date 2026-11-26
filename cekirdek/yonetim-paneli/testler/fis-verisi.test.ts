@@ -10,8 +10,10 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { type Site, siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import { siparisSinirlari } from "../../kayitlar/siparis.ts";
+import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
 import { degisiklikKayitlari } from "../../moduller/degisiklik-kaydi/model.ts";
 import { siteninFiyatServisi } from "../../moduller/fiyat/servis.ts";
+import { kuponServisi } from "../../moduller/kampanya/servis.ts";
 import { odemeBilgileriSemasi } from "../../moduller/odeme/semalar.ts";
 import { odemeServisi } from "../../moduller/odeme/servis.ts";
 import { siparisAyarlari } from "../../moduller/siparis/ayarlar.ts";
@@ -108,7 +110,11 @@ afterAll(async () => {
   await sil();
 });
 
-const ver = async (not: string | undefined, kalemler: { birim: string; adet: number }[]) => {
+const ver = async (
+  not: string | undefined,
+  kalemler: { birim: string; adet: number }[],
+  kupon?: string,
+) => {
   const sonuc = await odemeServisi(site).siparisVer(
     vt,
     {
@@ -134,6 +140,7 @@ const ver = async (not: string | undefined, kalemler: { birim: string; adet: num
         pazarlamaIzni: false,
       }),
       kalemler,
+      kupon,
     },
     3600,
   );
@@ -178,6 +185,30 @@ describe("sipariş fişinin verisi", () => {
     expect(fis?.kalemler.map((kalem) => kalem.stokKodu)).toEqual(["FIS-001", "FIS-002"]);
     expect(fis?.tutarlar).toEqual(ayrinti?.tutarlar);
     expect(fis?.zaman).toBe(ayrinti?.ust.zaman);
+  });
+
+  it("kuponlu siparişte kupon satırı ve kalemlerin payı ayrıntıdakiyle ve siparişin kaydıyla aynı (kart 0312)", async () => {
+    await fisAyari(true);
+    await vt.transaction((islem) =>
+      kuponServisi(site).ekle(islem, kim(), {
+        kod: "FIS5",
+        tur: "tutar",
+        deger: 500,
+        kapsam: "hepsi",
+      }),
+    );
+    const numara = await ver(undefined, [{ birim: birimler[0] ?? "", adet: 1 }], "FIS5");
+    const [fis] = (await siparisFisleriVerisi([numara])).fisler;
+    const ayrinti = await siparisAyrintisiVerisi(numara, () => true);
+    const bicim = siteninBicimleyicisi(site.ayarlar);
+    expect(fis?.tutarlar?.kupon).toEqual({
+      kod: "FIS5",
+      ucretsizKargo: false,
+      indirim: bicim.para(500),
+    });
+    expect(fis?.kalemler[0]?.kuponPayi).toBe(bicim.para(500));
+    expect(fis?.tutarlar).toEqual(ayrinti?.tutarlar);
+    expect(fis?.kalemler).toEqual(ayrinti?.kalemler);
   });
 
   it("ayar kapalıyken tutar yok; ürün ve kalem sayısı var", async () => {

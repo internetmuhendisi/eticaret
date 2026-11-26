@@ -455,8 +455,9 @@ function KuponAlani({ kupon }: { kupon: SepetGorunumuKuponu | undefined }) {
             <GirisAlani
               {...baglanti}
               name="kupon"
+              // Alan yeniden kurulmaz (anahtar yok): geçmeyen kodla Enter'a basan müşterinin odağı alanda kalır
+              // (bağımsız kontrolün bulgusu).
               defaultValue={kupon?.kod ?? ""}
-              key={kupon?.kod ?? ""}
               autoComplete="off"
               autoCapitalize="characters"
               spellCheck={false}

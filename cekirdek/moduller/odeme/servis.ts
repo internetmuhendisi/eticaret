@@ -143,14 +143,24 @@ export const odemeServisi = (site: Site) => {
       throw new BilinenHata("is-kurali", [{ alan: "bilgiler.odemeYontemi", kod: "yontem-kapali" }]);
     }
 
-    // Kişi başı sınırın kişisi: üyede hesabı (e-postası ayırmada hesabından okunur), üye olmayanda e-postası.
+    // Kişi başı sınırın kişisi: üyede hesabı ve hesabının e-postası, üye olmayanda e-postası (ayırmayla aynı). Müşterinin
+    // bir önceki oturumunun ayırması sayılmaz: yeniden onaylayınca bırakılacaktır (bağımsız kontrolün bulgusu; kesin
+    // sayım ayırmada, kilitle). Başkasının oturumu verilse de ayırma onu sayar.
     const kuponKisisi: KuponKisisi =
       girdi.kim.tur === "uye"
-        ? { musteri: girdi.kim.musteri, eposta: null }
+        ? {
+            musteri: girdi.kim.musteri,
+            eposta:
+              girdi.kupon === undefined
+                ? null
+                : ((await musteriHesabi(vt, girdi.kim.musteri))?.eposta ?? null),
+          }
         : { musteri: null, eposta: girdi.kim.eposta };
     const hesap = await sepetiHesapla(vt, site, girdi.kalemler, {
       adresler: { teslimat: bolge(teslimat.adres), fatura: bolge(faturaAdresi(girdi.bilgiler)) },
-      ...(girdi.kupon === undefined ? {} : { kupon: { kod: girdi.kupon, kisi: kuponKisisi } }),
+      ...(girdi.kupon === undefined
+        ? {}
+        : { kupon: { kod: girdi.kupon, kisi: kuponKisisi, oturum: girdi.onceki } }),
     });
     if (hesap.kupon?.durum === "gecmedi") {
       throw new BilinenHata("is-kurali", [
@@ -258,7 +268,7 @@ export const odemeServisi = (site: Site) => {
           kalemler,
           toplam: hesap.toplam,
           para_birimi: hesap.paraBirimi,
-          kupon_kodu: hesap.kupon?.durum === "uygulandi" ? hesap.kupon.kod : null,
+          kupon_kimligi: hesap.kupon?.durum === "uygulandi" ? hesap.kupon.kimlik : null,
           onaylar,
           bitis_zamani: bitis,
           odeme_disarida: disarida,

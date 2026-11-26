@@ -40,7 +40,7 @@ export const kuponlar = pgTable(
     // Mağaza sahibinin kendi adı ("Yılbaşı"); müşteriye görünmez.
     ad: text(),
     tur: text().notNull(),
-    // Yüzdede 1–100, tutarda kuruş (fiyat girişi biçiminde), ücretsiz kargoda 0.
+    // Yüzdede 1–99 (ürünler sıfıra inmez, kullanıcı kararı), tutarda kuruş (fiyat girişi biçiminde), ücretsiz kargoda 0.
     deger: tutar().notNull(),
     kapsam: text().notNull(),
     // Sepetin ara toplamı (gösterim biçiminde, kupondan önce) bunun altındaysa kupon geçmez.
@@ -64,7 +64,7 @@ export const kuponlar = pgTable(
     check("kuponlar_kapsam", sql`${tablo.kapsam} in ('hepsi', 'urunler', 'kategoriler')`),
     check(
       "kuponlar_deger",
-      sql`(${tablo.tur} = 'yuzde' and ${tablo.deger} between 1 and 100)
+      sql`(${tablo.tur} = 'yuzde' and ${tablo.deger} between 1 and 99)
         or (${tablo.tur} = 'tutar' and ${tablo.deger} > 0)
         or (${tablo.tur} = 'ucretsiz-kargo' and ${tablo.deger} = 0)`,
     ),

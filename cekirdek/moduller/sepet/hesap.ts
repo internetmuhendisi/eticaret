@@ -42,6 +42,7 @@ import { vitrinKosulu } from "../urun/vitrin.ts";
 import type { DokumSatiri, VergiBolgesi } from "../vergi/hesap.ts";
 import type { FiyatGirisi } from "../vergi/semalar.ts";
 import { vergiHesaplari } from "../vergi/servis.ts";
+import { kurusa, oranlaDagit } from "../vergi/yuvarlama.ts";
 import type { SepetKalemi } from "./semalar.ts";
 
 export type SepetSatirUyarisi =
@@ -130,15 +131,14 @@ export const sepetiHesapla = async (
   }: {
     an?: Date;
     adresler?: { teslimat?: VergiBolgesi | undefined; fatura?: VergiBolgesi | undefined };
-    // Müşterinin yazdığı kod. Kişi verilirse kişi başı sınır sayılır; oturumun kendi ayırması sayılmaz; süre
-    // "an"a göre denetlenir (kartla ödemede sipariş kurulurken oturumun açıldığı an, karar 0187).
+    // Müşterinin yazdığı kod ya da (kartla ödemenin dönüşünde) ödeme oturumunun kuponunun kimliği. Kişi verilirse kişi
+    // başı sınır sayılır; oturumun ayırması sayılmaz (müşteri yeniden onaylarken bir önceki oturumu da); süre "an"a
+    // göre denetlenir (kartla ödemede sipariş kurulurken oturumun açıldığı an, karar 0187).
     kupon?:
-      | {
-          kod: string;
-          kisi?: KuponKisisi | undefined;
-          oturum?: string | undefined;
-          an?: Date | undefined;
-        }
+      | ({ kisi?: KuponKisisi | undefined; oturum?: string | undefined; an?: Date | undefined } & (
+          | { kod: string }
+          | { kimlik: string; oturum: string }
+        ))
       | undefined;
   } = {},
 ): Promise<SepetHesabi> => {
@@ -268,7 +268,10 @@ export const sepetiHesapla = async (
     | undefined;
   if (kupon !== undefined && kalemTutarlari.length > 0) {
     const servis = kuponServisi(site);
-    const bulunan = await servis.bul(vt, kupon.kod);
+    const bulunan =
+      "kimlik" in kupon
+        ? await servis.oturumunKuponu(vt, kupon.kimlik, kupon.oturum)
+        : await servis.bul(vt, kupon.kod);
     const [kapsamdakiler, sayilar] =
       bulunan === undefined
         ? [new Set<string>(), { toplam: 0 }]
@@ -302,6 +305,10 @@ export const sepetiHesapla = async (
         : { kupon: { kimlik: bulunan.kimlik, kod: bulunan.kod, tur: bulunan.tur } }),
     };
   }
+  // Ücretsiz kargo kuponu kargosu zaten ücretsiz ya da kargosuz sepette geçmez (kullanıcı kararı: hak harcanmaz).
+  if (kuponSonucu?.gecti === true && kuponSonucu.ucretsizKargo && ilkKargo.tur !== "ucretli") {
+    kuponSonucu = { ...kuponSonucu, gecti: false, neden: "kargo-ucretsiz" };
+  }
   const indirimler = kuponSonucu?.gecti === true ? kuponSonucu.indirimler : sifir;
   const ucretsizKargo = kuponSonucu?.gecti === true && kuponSonucu.ucretsizKargo;
   const indirimVar = indirimler.some((indirim) => indirim > 0);
@@ -334,11 +341,30 @@ export const sepetiHesapla = async (
       vergi: sonra.vergi,
       oranlar: sonra.oranlar.map(({ ad, oran }) => (ad === undefined ? { oran } : { ad, oran })),
     };
-    const pay = goster(once) - goster(sonra);
-    if (pay > 0) satir.indirim = pay;
     if (kuponSonucu?.disarida[sira] === "indirimli") satir.kuponDisi = "indirimli";
   });
-  const kuponIndirimi = satilanlar.reduce((toplam, satir) => toplam + (satir.indirim ?? 0), 0);
+  // Kuponun gösterimdeki indirimi iki hesabın toplam farkıdır (ara toplam − indirim, kupondan sonraki satırların
+  // toplamıdır). Satırların payı bu farkın, indirim alan satırlara giriş biçimindeki indirimleriyle orantılı
+  // dağılımıdır: ara toplam yuvarlamasında vergi satırlara yeniden dağıtılınca kapsam dışı satırın gösterimi bir kuruş
+  // oynayabilir (bağımsız kontrolün bulgusu); pay ondan etkilenmez, eksi olmaz.
+  const gosterimToplami = (sonuc: typeof ilkVergi) =>
+    kalemTutarlari.reduce(
+      (toplam, _, sira) => toplam + goster(sonuc?.satirlar[sira] ?? { vergili: 0, vergisiz: 0 }),
+      0,
+    );
+  const kuponIndirimi = indirimVar
+    ? Math.max(gosterimToplami(ilkVergi) - gosterimToplami(vergi), 0)
+    : 0;
+  if (kuponIndirimi > 0) {
+    const paylar = oranlaDagit(
+      BigInt(kuponIndirimi),
+      indirimler.map((indirim) => BigInt(indirim)),
+    );
+    kalemTutarlari.forEach(({ satir }, sira) => {
+      const pay = kurusa(paylar[sira] ?? 0n);
+      if (pay > 0) satir.indirim = pay;
+    });
+  }
   const sepetKuponu: SepetKuponu | undefined =
     kupon === undefined || kalemTutarlari.length === 0
       ? undefined
@@ -351,7 +377,7 @@ export const sepetiHesapla = async (
           }
         : {
             durum: "gecmedi",
-            kod: kupon.kod.trim(),
+            kod: "kod" in kupon ? kupon.kod.trim() : (kuponSonucu?.kupon?.kod ?? ""),
             neden: kuponSonucu?.gecti === false ? kuponSonucu.neden : "bulunamadi",
             ...(kuponSonucu?.gecti === false && kuponSonucu.neden === "en-az"
               ? { kalan: kuponSonucu.kalan }

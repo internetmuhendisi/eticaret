@@ -1,13 +1,13 @@
 // Kupon gerçek tarayıcıda (kart 0312, karar 0185). Test kendi ürününü (200,00, vergisiz) ve kuponlarını açar; sonunda
 // ürünü ve kuponları siler (kuponun silinmesi işaretledir; siparişe bağlı kullanım kalır).
 // - Sepet sayfasında kupon klavyeyle yazılır ve Enter ile uygulanır. Olmayan kod ve en az tutarı tutmayan kupon nedeniyle
-//   geçmez: neden alanın altında yazar, alana bağlıdır, alan hatalıdır. Geçen kupon (küçük harfle yazılmış) kodu ve
+//   geçmez: neden alanın altında yazar, alana bağlıdır, alan hatalıdır, odak alanda kalır. Geçen kupon (küçük harfle yazılmış) kodu ve
 //   "Kaldır" ile durur, özette "Kupon (KOD) −20,00" ve indirimli toplam görünür. Kaldırınca odak alana geçer, toplam
 //   eski hâline döner. Hatalı ve kuponlu sepet iki renkte ve üç genişlikte taramadan geçer, yana kaymaz, konsolda hata
 //   yok.
 // - Ödeme adımının özetinde kupon satırı ve indirimli toplam durur; üye olmayan müşteri siparişi verir, sipariş kuponla
 //   kurulur, sipariş alındı sayfası kupon satırını gösterir, sepetin kuponu silinir.
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
 import { and, eq, inArray, sql } from "drizzle-orm";
@@ -47,6 +47,14 @@ const enAzTutar = 50_000;
 let birim = "";
 const epostalar: string[] = [];
 const temizlik: (() => Promise<unknown>)[] = [];
+
+// Ödeme ucu sıkı sınırlıdır (dakikada 5, istemci başına): bu dosya kendi istemci adresiyle gider, paralel çalışan ödeme
+// testlerinin sınırını doldurmaz.
+test.beforeEach(({ page }) =>
+  page.setExtraHTTPHeaders({
+    "x-forwarded-for": `2001:db8:${randomBytes(2).toString("hex")}:${randomBytes(2).toString("hex")}::1`,
+  }),
+);
 
 test.beforeAll(async () => {
   vt = baglan(veritabaniAdresi());
@@ -164,6 +172,8 @@ test("sepette kupon klavyeyle: geçmeyen kuponun nedeni alana bağlı, geçen ku
   await expect(page.getByText(bulunamadi)).toBeVisible();
   await expect(alan).toHaveAttribute("aria-invalid", "true");
   await expect(alan).toHaveAccessibleDescription(bulunamadi);
+  // Alan yeniden kurulmaz: Enter'a basan müşterinin odağı alanda kalır (bağımsız kontrolün bulgusu).
+  await expect(alan).toBeFocused();
 
   await kuponuYaz(page, enAzKodu);
   const enAz = doldur(metin("vitrin.sepet.kupon.neden.en-az"), {

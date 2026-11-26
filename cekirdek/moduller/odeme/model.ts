@@ -13,8 +13,18 @@
 // - kimlik: müşterinin önceki oturumu (yeniden basınca serbest bırakılır), sipariş kurulurken oturum.
 // - bitis_zamani: süresi dolan oturumların temizliği, indeksli.
 import { sql } from "drizzle-orm";
-import { boolean, check, index, jsonb, pgTable, text, uuid } from "drizzle-orm/pg-core";
+import {
+  type AnyPgColumn,
+  boolean,
+  check,
+  index,
+  jsonb,
+  pgTable,
+  text,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { kimlik, tutar, zaman } from "../../veritabani/turler.ts";
+import { kuponlar } from "../kampanya/model.ts";
 import { musteriler } from "../musteri/model.ts";
 import type { SepetKalemi } from "../sepet/semalar.ts";
 import type { Fatura, Teslimat } from "./semalar.ts";
@@ -37,8 +47,9 @@ export const odemeOturumlari = pgTable(
     kalemler: jsonb().$type<Pick<SepetKalemi, "birim" | "adet">[]>().notNull(),
     toplam: tutar().notNull(),
     para_birimi: text().notNull(),
-    // Sepette uygulanan kuponun kodu (kart 0312): eklentili ödemede sipariş kurulurken hesap bununla yeniden yapılır.
-    kupon_kodu: text(),
+    // Sepette uygulanan kupon (kart 0312): eklentili ödemede sipariş kurulurken hesap bununla yeniden yapılır. Kodu değil
+    // kimliği saklanır: kupon arada silinip aynı kodla yenisi açılsa da oturum kendi kuponunu bulur.
+    kupon_kimligi: uuid().references((): AnyPgColumn => kuponlar.kimlik, { onDelete: "restrict" }),
     onaylar: jsonb().$type<OturumOnayi[]>().notNull(),
     olusturma_zamani: zaman().notNull().defaultNow(),
     // Stok ayırmasının bittiği an; oturum bu ana kadar siparişe dönebilir.

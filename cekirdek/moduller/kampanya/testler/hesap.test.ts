@@ -28,6 +28,10 @@ const durum = (ek: Partial<KuponDurumu> = {}): KuponDurumu => ({
   ...ek,
 });
 
+// Tutar kuponu; ürünlerin toplamı kuponu aşmıyorsa 1 kuruş kalır: 2.999 → 1.199,6 ve 1.799,4, artan kuruş ilkine.
+const kuponUygula_ = (deger: number, satirlar: KuponSatiri[]) =>
+  kuponuUygula(kupon({ tur: "tutar", deger }), satirlar, durum());
+
 describe("kuponun indirimi", () => {
   it("yüzde: kapsam toplamının yüzdesi bir kez yuvarlanır, artan kuruş küsuratı büyük olana", () => {
     // 20.000 × yüzde 10 = 2.000; paylar 1.000, 333,3, 666,7 → 1.000, 333, 667.
@@ -46,18 +50,32 @@ describe("kuponun indirimi", () => {
     expect(sonuc).toMatchObject({ gecti: true, indirimler: [1_235] });
   });
 
-  it("yüzde 100 kapsamın tamamıdır", () => {
-    const sonuc = kuponuUygula(kupon({ deger: 100 }), [satir(4_999), satir(1)], durum());
-    expect(sonuc).toMatchObject({ gecti: true, indirimler: [4_999, 1] });
+  it("ürünler sıfıra inmez: indirim bütün ürünlerden 1 kuruş bırakır; kapsam dışı ürün kalırsa kapsamın tamamı iner", () => {
+    // Yüzde 99 ile 1 kuruşluk ürün: 0,99 → 1 kuruş olurdu, 0 bırakırdı; indirim 0'a iner.
+    expect(kuponuUygula(kupon({ deger: 99 }), [satir(1)], durum())).toMatchObject({
+      gecti: true,
+      indirimler: [0],
+    });
+    expect(
+      kuponuUygula(kupon({ tur: "tutar", deger: 10_000 }), [satir(3_000)], durum()),
+    ).toMatchObject({ indirimler: [2_999] });
+    expect(
+      kuponuUygula(
+        kupon({ tur: "tutar", deger: 10_000 }),
+        [satir(3_000), satir(500, { kapsamda: false })],
+        durum(),
+      ),
+    ).toMatchObject({ indirimler: [3_000, 0] });
   });
 
   it("tutar: tutarlarıyla orantılı dağılır, kapsamın toplamını aşmaz", () => {
     expect(
       kuponuUygula(kupon({ tur: "tutar", deger: 5_000 }), [satir(7_000), satir(3_000)], durum()),
     ).toMatchObject({ gecti: true, indirimler: [3_500, 1_500] });
-    expect(
-      kuponuUygula(kupon({ tur: "tutar", deger: 5_000 }), [satir(1_200), satir(1_800)], durum()),
-    ).toMatchObject({ gecti: true, indirimler: [1_200, 1_800] });
+    expect(kuponUygula_(5_000, [satir(1_200), satir(1_800)])).toMatchObject({
+      gecti: true,
+      indirimler: [1_200, 1_799],
+    });
     // 1.000 üç eşit satıra: 333, 333, 333 ve artan 1 kuruş ilk satıra (küsuratlar eşit).
     expect(
       kuponuUygula(

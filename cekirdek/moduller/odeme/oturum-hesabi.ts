@@ -9,9 +9,9 @@
 // - Stok siparisiKur'un stokDus'uyla düşer: oturumun kendi ayırması siparişe geçer, ayırma süresi dolduysa ve stok
 //   başka müşteriye satıldıysa "stok-ayrildi" ile durur.
 // - Sipariş "hazırlanıyor" durumuyla ve tahsilat bilgisiyle (ödenen tutar, taksit, ödeme kimliği) kurulur.
-// - Kupon (kart 0312, karar 0187): oturumun kuponu aynı kodla yeniden uygulanır. Süresi oturumun açıldığı ana göre
+// - Kupon (kart 0312, karar 0187): oturumun kuponu kimliğiyle yeniden uygulanır. Süresi oturumun açıldığı ana göre
 //   denetlenir (müşteri ödemeyi kupon bitmeden başlattıysa dönüşü geç kalsa da kupon geçer); oturumun kendi ayırması
-//   sınıra sayılmaz. Kupon artık geçmiyorsa ya da ayırmanın süresi dolup sınır dolduysa sipariş kurulmaz
+//   sınıra sayılmaz; ayırma geçerliyken mağaza kuponu kapatsa ya da silse de kupon geçer (bağımsız kontrolün bulgusu). Kupon artık geçmiyorsa ya da ayırmanın süresi dolup sınır dolduysa sipariş kurulmaz
 //   ("sepet-degisti"), ödeme iptal edilir.
 import { eq } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
@@ -84,18 +84,18 @@ export const eklentiliSiparisiKur = async (
       teslimat: bolge(okunan.teslimat.adres),
       fatura: bolge(faturaAdresi(okunan)),
     },
-    ...(okunan.kupon_kodu === null
+    ...(okunan.kupon_kimligi === null
       ? {}
       : {
           kupon: {
-            kod: okunan.kupon_kodu,
+            kimlik: okunan.kupon_kimligi,
             kisi: { musteri: okunan.musteri_kimligi, eposta: okunan.eposta },
             oturum: okunan.kimlik,
             an: okunan.olusturma_zamani,
           },
         }),
   });
-  if (okunan.kupon_kodu !== null && hesap.kupon?.durum !== "uygulandi") {
+  if (okunan.kupon_kimligi !== null && hesap.kupon?.durum !== "uygulandi") {
     throw new SiparisKurulamadi("sepet-degisti");
   }
   const satilanlar = hesap.satirlar.filter((satir) => satir.satilabilir);

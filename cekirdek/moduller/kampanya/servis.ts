@@ -123,6 +123,33 @@ export const kuponServisi = (site: Site) => {
     return satir === undefined ? undefined : hesapKuponu(satir);
   };
 
+  // Ödeme oturumunun kuponu (kartla ödemenin dönüşü, kart 0312): kimlikle. Oturumun geçerli ayırması varsa (süresi
+  // dolmamış, siparişe bağlanmamış) kupon arada kapatılmış ya da silinmiş olsa da bulunur ve açık sayılır: müşteri
+  // ödemeyi kupon geçerliyken başlattı. Ayırması yoksa kapalı ya da silinmiş kupon bulunmaz.
+  const oturumunKuponu = async (
+    vt: Veritabani | VeritabaniIslemi,
+    kimlik: string,
+    oturum: string,
+  ): Promise<BulunanKupon | undefined> => {
+    const [satir] = await vt.select().from(kuponlar).where(eq(kuponlar.kimlik, kimlik)).limit(1);
+    if (satir === undefined) return undefined;
+    const [ayirma] = await vt
+      .select({ kimlik: kuponKullanimlari.kimlik })
+      .from(kuponKullanimlari)
+      .where(
+        and(
+          eq(kuponKullanimlari.kupon_kimligi, kimlik),
+          eq(kuponKullanimlari.oturum_kimligi, oturum),
+          isNull(kuponKullanimlari.siparis_kimligi),
+          isNull(kuponKullanimlari.serbest_zamani),
+          gt(kuponKullanimlari.bitis_zamani, sql`now()`),
+        ),
+      )
+      .limit(1);
+    if (ayirma !== undefined) return { ...hesapKuponu(satir), acik: true };
+    return satir.silinme_zamani === null ? hesapKuponu(satir) : undefined;
+  };
+
   // Ürünlerden kuponun kapsamına girenler (kapsam "hepsi" ise hepsi), tek sorguyla.
   const kapsamdakiUrunler = async (
     vt: Veritabani | VeritabaniIslemi,
@@ -359,6 +386,7 @@ export const kuponServisi = (site: Site) => {
 
   return {
     bul,
+    oturumunKuponu,
     kapsamdakiUrunler,
     kullanimlar,
     ayir,

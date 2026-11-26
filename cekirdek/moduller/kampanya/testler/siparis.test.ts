@@ -348,6 +348,32 @@ describe("kuponlu sipariş", () => {
     ]);
   });
 
+  it("müşteri yeniden onaylayınca bir önceki oturumunun ayırması kişi başı ve toplam sınırı doldurmaz", async () => {
+    const h = await hazirla();
+    const a = await h.urunAc();
+    await h.kuponAc({ kisiBasiSinir: 1, toplamSinir: 1 });
+    const ac = (onceki?: string) =>
+      odeme.odemeOturumuAc(
+        h.vt,
+        {
+          kim: { tur: "misafir", eposta: "tekrar@ornek.test", hesap: { ac: false } },
+          bilgiler: bilgiler(),
+          kalemler: [{ birim: a, adet: 1 }],
+          kupon: "YUZDE10",
+          onceki,
+        },
+        3600,
+      );
+    const ilk = await ac();
+    const ikinci = await ac(ilk.oturum);
+    expect((await h.kullanimlar()).map((satir) => satir.oturum_kimligi)).toEqual([ikinci.oturum]);
+    // Bir önceki oturum verilmezse (başka sekme) kendi ayırması sınırı doldurur.
+    expect(await hatasi(ac())).toEqual({
+      kod: "is-kurali",
+      ayrinti: [{ alan: "kupon", kod: "kupon-gecmedi", neden: "sinir-doldu" }],
+    });
+  });
+
   it("aynı anda dört siparişte toplam sınır (1) aşılmaz", async () => {
     const h = await hazirla();
     const a = await h.urunAc();
@@ -412,6 +438,45 @@ describe("kartla ödemenin dönüşünde kupon", () => {
     // 118,00 − 11,80 + 59,00.
     const siparis = await karttan(h, oturum, 16_520);
     expect(await h.oku(siparis.numara)).toMatchObject({ kupon_indirimi: 1_180, toplam: 16_520 });
+  });
+
+  it("ödeme sürerken mağaza kuponu kapatsa ya da silse de ayırması geçerli oturumun siparişi kurulur", async () => {
+    const h = await hazirla();
+    const a = await h.urunAc();
+    const kupon = await h.kuponAc();
+    const kapali = await oturumAc(h, a, "kart1@ornek.test");
+    await h.vt.update(kuponlar).set({ acik: false }).where(eq(kuponlar.kimlik, kupon));
+    expect(await h.oku((await karttan(h, kapali, 16_520)).numara)).toMatchObject({
+      kupon_kodu: "YUZDE10",
+      kupon_indirimi: 1_180,
+    });
+    // Silinip aynı kodla yenisi açılsa da oturum kendi kuponunu kimliğiyle bulur.
+    await h.vt.update(kuponlar).set({ acik: true }).where(eq(kuponlar.kimlik, kupon));
+    const silinen = await oturumAc(h, a, "kart2@ornek.test");
+    await h.vt
+      .update(kuponlar)
+      .set({ silinme_zamani: new Date() })
+      .where(eq(kuponlar.kimlik, kupon));
+    await h.kuponAc({ deger: 50 });
+    const siparis = await h.oku((await karttan(h, silinen, 16_520)).numara);
+    expect(siparis.kupon_indirimi).toBe(1_180);
+    expect(
+      (await h.kullanimlar()).filter((satir) => satir.siparis_kimligi === siparis.kimlik),
+    ).toEqual([expect.objectContaining({ kupon_kimligi: kupon })]);
+  });
+
+  it("ayırması süresi dolmuş oturumda kapatılmış kupon geçmez, sipariş kurulmaz", async () => {
+    const h = await hazirla();
+    const a = await h.urunAc();
+    const kupon = await h.kuponAc();
+    const oturum = await oturumAc(h, a, "kart@ornek.test");
+    await h.vt.execute(
+      sql`update kupon_kullanimlari set bitis_zamani = now() - interval '1 millisecond'`,
+    );
+    await h.vt.update(kuponlar).set({ acik: false }).where(eq(kuponlar.kimlik, kupon));
+    await expect(karttan(h, oturum, 16_520)).rejects.toEqual(
+      new SiparisKurulamadi("sepet-degisti"),
+    );
   });
 
   it("ayırmanın süresi dolup sınır başkasınca doldurulduysa sipariş kurulmaz", async () => {

@@ -11,7 +11,8 @@
 // - En az tutar sepetin ara toplamıyla (gösterim biçiminde, kupondan önce, bütün satılabilir satırlar) karşılaştırılır;
 //   eşit tutar geçer.
 // - Yüzde: kapsamdaki satırların tutarı (fiyat girişi biçiminde) toplanır, yüzdesi bir kez yuvarlanır (yarım kuruş
-//   yukarı). Tutar: kuponun değeri, kapsamdaki tutarı aşmaz. İndirim kapsamdaki satırlara tutarlarıyla orantılı
+//   yukarı). Tutar: kuponun değeri, kapsamdaki tutarı aşmaz. İkisinde de ürünler sıfıra inmez: indirim bütün ürünlerin
+//   toplamından en az 1 kuruş bırakır (kullanıcı kararı, kart 0312). İndirim kapsamdaki satırlara tutarlarıyla orantılı
 //   dağılır, artan kuruş vergi modülünün kuralıyla (oranlaDagit: küsuratı büyük olana, eşitse önce gelene).
 // - Ücretsiz kargo: ürün indirimi yoktur; sepet hesabı ücretli kargoyu ücretsiz yapar.
 import type { KuponRedNedeni, KuponTuru } from "../../kayitlar/kampanya.ts";
@@ -99,12 +100,16 @@ export const kuponuUygula = (
   }
   const agirliklar = kapsamdakiler.map(({ satir }) => BigInt(satir.tutar));
   const kapsamToplami = agirliklar.reduce((a, b) => a + b, 0n);
-  const toplamIndirim =
+  const hesaplanan =
     kupon.tur === "yuzde"
       ? bolVeYuvarla(kapsamToplami * BigInt(kupon.deger), 100n)
-      : BigInt(kupon.deger) < kapsamToplami
-        ? BigInt(kupon.deger)
-        : kapsamToplami;
+      : BigInt(kupon.deger);
+  // Ürünler sıfıra inmez (kullanıcı kararı): indirim kapsamın toplamını aşmaz ve bütün ürünlerden 1 kuruş bırakır.
+  const urunToplami = satirlar.reduce((toplam, satir) => toplam + BigInt(satir.tutar), 0n);
+  let enCok = urunToplami - 1n;
+  if (kapsamToplami < enCok) enCok = kapsamToplami;
+  if (hesaplanan < enCok) enCok = hesaplanan;
+  const toplamIndirim = enCok < 0n ? 0n : enCok;
   const paylar =
     kapsamToplami === 0n ? agirliklar.map(() => 0n) : oranlaDagit(toplamIndirim, agirliklar);
   kapsamdakiler.forEach(({ yer }, sira) => {

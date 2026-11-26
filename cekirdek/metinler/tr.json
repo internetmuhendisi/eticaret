@@ -3614,7 +3614,8 @@
           "sinir-doldu": "{kod} kuponunun kullanım sınırı doldu.",
           "kullanildi": "{kod} kuponunu daha önce kullandınız.",
           "urun-yok": "{kod} kuponu sepetinizdeki ürünlerde geçerli değil.",
-          "en-az": "{kod} kuponu için sepetinize {kalan} daha ekleyin."
+          "en-az": "{kod} kuponu için sepetinize {kalan} daha ekleyin.",
+          "kargo-ucretsiz": "Kargonuz zaten ücretsiz: {kod} kuponu bu sepette bir şey kazandırmaz, kullanılmadı."
         }
       }
     },
