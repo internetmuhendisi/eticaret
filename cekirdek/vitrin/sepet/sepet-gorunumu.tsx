@@ -410,20 +410,26 @@ function KuponAlani({ kupon }: { kupon: SepetGorunumuKuponu | undefined }) {
   };
   if (kupon?.durum === "uygulandi") {
     return (
-      <div className="flex items-center justify-between gap-2 rounded-kucuk border border-dashed border-basari-yazi py-1 pr-1 pl-3 text-govde text-basari-yazi">
-        <span className="flex items-center gap-1.5 font-kalin">
+      <div className="flex items-center justify-between gap-2 rounded-kucuk border border-dashed border-basari-yazi bg-basari-zemin py-1 pr-1 pl-3 text-govde text-basari-yazi">
+        <span className="flex items-center gap-1.5">
           <Ikon ad="basari" className="size-4 shrink-0" />
-          {doldur(metin("vitrin.sepet.kupon.uygulandi"), { kod: kupon.kod })}
+          <span>
+            <strong className="font-en-kalin">{kupon.kod}</strong>{" "}
+            {metin("vitrin.sepet.kupon.uygulandiEki")}
+          </span>
         </span>
-        <IkonDugmesi
-          ikon="kapat"
-          etiket={doldur(metin("vitrin.sepet.kupon.kaldir"), { kod: kupon.kod })}
+        <Dugme
+          tur="sade"
+          aria-label={doldur(metin("vitrin.sepet.kupon.kaldir"), { kod: kupon.kod })}
+          className="shrink-0"
           onClick={() => {
             kuponuAyarla(undefined);
             // Kutu sunucunun yeni cevabıyla alana döner: odak alan çizilince verilir.
             odakla(kuponAlani, () => kuponAlani() !== null);
           }}
-        />
+        >
+          {metin("vitrin.sepet.kupon.kaldirYazisi")}
+        </Dugme>
       </div>
     );
   }

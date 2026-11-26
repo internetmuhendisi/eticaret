@@ -36,23 +36,27 @@ export function Bolum({
   );
 }
 
+// basari: indirim satırı (kupon, kart 0312) yeşil ve kalındır.
 export function Satir({
   ad,
   children,
   vurgu = false,
+  basari = false,
 }: {
   ad: string;
   children: ReactNode;
   vurgu?: boolean;
+  basari?: boolean;
 }) {
   return (
     <div
       className={sinif(
         "flex justify-between gap-3",
         vurgu && "border-t border-kenar pt-2 font-kalin",
+        basari && "font-kalin text-basari-yazi",
       )}
     >
-      <dt className={vurgu ? "" : "text-soluk-yazi"}>{ad}</dt>
+      <dt className={vurgu || basari ? "" : "text-soluk-yazi"}>{ad}</dt>
       <dd className="text-right whitespace-nowrap">{children}</dd>
     </div>
   );
