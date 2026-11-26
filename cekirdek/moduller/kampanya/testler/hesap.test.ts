@@ -30,7 +30,7 @@ const durum = (ek: Partial<KuponDurumu> = {}): KuponDurumu => ({
 
 describe("kuponun indirimi", () => {
   it("yüzde: kapsam toplamının yüzdesi bir kez yuvarlanır, artan kuruş küsuratı büyük olana", () => {
-    // 20.000 × %10 = 2.000; paylar 1.000, 333,3, 666,7 → 1.000, 333, 667.
+    // 20.000 × yüzde 10 = 2.000; paylar 1.000, 333,3, 666,7 → 1.000, 333, 667.
     const sonuc = kuponuUygula(kupon(), [satir(10_000), satir(3_333), satir(6_667)], durum());
     expect(sonuc).toEqual({
       gecti: true,
@@ -41,7 +41,7 @@ describe("kuponun indirimi", () => {
   });
 
   it("yüzde: yarım kuruş yukarı yuvarlanır", () => {
-    // 12.345 × %10 = 1.234,5 → 1.235.
+    // 12.345 × yüzde 10 = 1.234,5 → 1.235.
     const sonuc = kuponuUygula(kupon(), [satir(12_345)], durum());
     expect(sonuc).toMatchObject({ gecti: true, indirimler: [1_235] });
   });

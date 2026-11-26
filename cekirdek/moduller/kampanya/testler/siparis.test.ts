@@ -1,5 +1,5 @@
 // Kuponlu ödeme, sipariş, iptal ve iade gerçek veritabanıyla (kart 0312, karar 0185, karar 0187). Site vergi dahil
-// girişli (Genel %18); kargo 59,00 ve vergisiz (kargo sınıfı yok). Tutarlar elle hesaplanır.
+// girişli (Genel yüzde 18); kargo 59,00 ve vergisiz (kargo sınıfı yok). Tutarlar elle hesaplanır.
 // - Sipariş kuponun kodunu, türünü, indirimini ve kalemlerin payını saklar; kalemin vergisiz tutarı ve vergisi
 //   kupondan sonradır; ara toplam − indirim + kargo toplamdır. Kullanım siparişe bağlanır.
 // - Kişi başı sınır ödemede e-postayla sayılır; iptalde ve tam iadede hak geri verilir, kısmi iadede verilmez.
@@ -205,7 +205,7 @@ describe("kuponlu sipariş", () => {
       "yuzde10",
     );
     const siparis = await h.oku(numara);
-    // 354,00 × %10 = 35,40: 11,80 + 23,60. Kalanlar 106,20 ve 212,40; vergileri 16,20 ve 32,40.
+    // 354,00 × yüzde 10 = 35,40: 11,80 + 23,60. Kalanlar 106,20 ve 212,40; vergileri 16,20 ve 32,40.
     expect(siparis).toMatchObject({
       kupon_kodu: "YUZDE10",
       kupon_turu: "yuzde",

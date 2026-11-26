@@ -1,5 +1,5 @@
 // Kuponlu sepet hesabı gerçek veritabanıyla, elle hesaplanmış tutarlarla (kart 0312, karar 0187). Site vergi dahil
-// girişlidir (Genel %18; testin açtığı İndirimli %8). Kargonun vergi sınıfı yoktur: kargo vergisiz eklenir.
+// girişlidir (Genel yüzde 18; testin açtığı İndirimli yüzde 8). Kargonun vergi sınıfı yoktur: kargo vergisiz eklenir.
 // - Yüzde kuponu vergi dahil ve hariç gösterimde; vergi indirimden sonraki tutardan.
 // - İki oranlı sepette tutar kuponunun dağıtımı, yuvarlaması ve oran oran döküm.
 // - Ücretsiz kargo kuponu; ücretsiz kargo sınırının kupondan sonraki tutarla hesaplanması.
@@ -113,7 +113,7 @@ describe("kuponlu sepet", () => {
     const kuponsuz = await h.hesapla(kalemler);
     expect(kuponsuz.kupon).toBeUndefined();
     const sonuc = await h.hesapla(kalemler, "YUZDE10");
-    // 472,00 × %10 = 47,20; 23,60 + 23,60. Kalan 212,40'ın vergisi 212,40 × 18 / 118 = 32,40.
+    // 472,00 × yüzde 10 = 47,20; 23,60 + 23,60. Kalan 212,40'ın vergisi 212,40 × 18 / 118 = 32,40.
     expect(
       sonuc.satirlar.map((s) => [s.tutar, s.indirim, s.vergi?.vergisiz, s.vergi?.vergi]),
     ).toEqual([
@@ -135,7 +135,7 @@ describe("kuponlu sepet", () => {
     const a = await h.urunAc();
     await h.kuponAc({ kod: "YUZDE10", tur: "yuzde", deger: 10, kapsam: "hepsi" });
     const sonuc = await h.hesapla([{ birim: a.birim, adet: 3 }], "YUZDE10");
-    // 354,00 dahil, %10 = 35,40 → 318,60 dahil = 270,00 + 48,60 vergi. Kupondan önce vergisiz 300,00.
+    // 354,00 dahil, yüzde 10 = 35,40 → 318,60 dahil = 270,00 + 48,60 vergi. Kupondan önce vergisiz 300,00.
     expect(sonuc.satirlar[0]).toMatchObject({ tutar: 30_000, indirim: 3_000 });
     expect(sonuc).toMatchObject({
       gosterim: "vergi-haric",
