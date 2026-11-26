@@ -14,6 +14,7 @@
 // - Sipariş alındı sayfası yalnız erişim anahtarıyla okur; iki site birbirinin siparişini görmez.
 // - Siparişe dönen oturum temizlikte ve müşterinin yeniden onayında silinmez; geçmiş değiştirilemez; veritabanının
 //   durum, neden ve yöntem denetimleri kayıtla aynıdır.
+
 import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { eq, sql } from "drizzle-orm";
@@ -26,6 +27,8 @@ import { siparisDurumlari, siparisGecmisiNedenleri } from "../../../kayitlar/sip
 import { baglantiyiKapat, type Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
+import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
+import { epostaKayitlari } from "../../eposta/model.ts";
 import { siteninFiyatServisi } from "../../fiyat/servis.ts";
 import { odemeOturumlari } from "../../odeme/model.ts";
 import { type OdemeYontemiSecimi, odemeBilgileriSemasi } from "../../odeme/semalar.ts";
@@ -39,7 +42,14 @@ import { stokServisi } from "../../stok/servis.ts";
 import { urunServisi } from "../../urun/servis.ts";
 import { siteninVergiServisi } from "../../vergi/servis.ts";
 import { havaleBildirimiFormuSemasi } from "../havale-bildirimi-semalari.ts";
-import { havaleBildirimleri, siparisGecmisi, siparisKalemleri, siparisler } from "../model.ts";
+import { havaleIptalTaramasi } from "../iptal.ts";
+import {
+  havaleBildirimleri,
+  siparisGecmisi,
+  siparisIadeleri,
+  siparisKalemleri,
+  siparisler,
+} from "../model.ts";
 import { siparisServisi } from "../servis.ts";
 
 vi.setConfig({ testTimeout: 90_000 });
@@ -580,7 +590,7 @@ describe("havalenin iptali", () => {
     await h.vt.execute(
       sql`update siparisler set odeme_son_zamani = now() + interval '1 second' where odeme_yontemi = 'havale'`,
     );
-    expect(await siparis.havaleIptalTaramasi(h.vt)).toBe(0);
+    expect(await havaleIptalTaramasi(h.vt)).toBe(0);
     // Süresi doldu; arada stok elle değişti: yalnız siparişin düşürdüğü kadar geri konur.
     await h.vt.execute(
       sql`update siparisler set odeme_son_zamani = now() - interval '1 millisecond' where odeme_yontemi = 'havale'`,
@@ -590,12 +600,9 @@ describe("havalenin iptali", () => {
       gorulenMiktar: 6,
       sebep: "sayim",
     });
-    const [ilk, ikinci] = await Promise.all([
-      siparis.havaleIptalTaramasi(h.vt),
-      siparis.havaleIptalTaramasi(h.vt),
-    ]);
+    const [ilk, ikinci] = await Promise.all([havaleIptalTaramasi(h.vt), havaleIptalTaramasi(h.vt)]);
     expect((ilk ?? 0) + (ikinci ?? 0)).toBe(1);
-    expect(await siparis.havaleIptalTaramasi(h.vt)).toBe(0);
+    expect(await havaleIptalTaramasi(h.vt)).toBe(0);
     expect(await h.miktar(a.birim)).toBe(23);
     expect(await h.miktar(b.birim)).toBe(10);
     const durumlar = await h.vt
@@ -618,6 +625,40 @@ describe("havalenin iptali", () => {
       .from(stokGecmisi)
       .where(eq(stokGecmisi.sebep, "siparis-iptali"));
     expect(geri).toHaveLength(2);
+    // Kart 0246: iptal panelin iptaliyle aynı akıştan geçer: sistemin iade satırı (tutar 0, bütün kalemler, stoğa
+    // konmuş), değişiklik kaydı ve tek iptal e-postası.
+    const iadeler = await h.vt.select().from(siparisIadeleri);
+    expect(iadeler).toMatchObject([
+      {
+        tur: "iptal",
+        durum: "tamamlandi",
+        yontem: "yok",
+        tutar: 0,
+        kaynak: "sistem",
+        neden: "odeme-alinmadi",
+        stoga_konacak: true,
+        kim_turu: "sistem",
+        kalemler: [
+          { sira: 0, adet: 3, tutar: 0 },
+          { sira: 1, adet: 1, tutar: 0 },
+        ].map((k) => expect.objectContaining({ sira: k.sira, adet: k.adet })),
+      },
+    ]);
+    const kayit = await h.vt
+      .select()
+      .from(degisiklikKayitlari)
+      .where(eq(degisiklikKayitlari.islem, "siparis.iptal-edildi"));
+    expect(kayit).toMatchObject([
+      {
+        kim_turu: "sistem",
+        yeni_deger: expect.objectContaining({ durum: "iptal", kaynak: "sistem" }),
+      },
+    ]);
+    const epostalar = await h.vt
+      .select({ sablon: epostaKayitlari.sablon })
+      .from(epostaKayitlari)
+      .where(eq(epostaKayitlari.sablon, "siparis-iptali"));
+    expect(epostalar).toHaveLength(1);
   });
 
   it("bir siparişin iptali hata verirse hata kaydedilir, tarama sonraki siparişlerle sürer", async () => {
@@ -638,7 +679,7 @@ describe("havalenin iptali", () => {
       gorulenMiktar: 9,
       sebep: "sayim",
     });
-    expect(await siparis.havaleIptalTaramasi(h.vt)).toBe(1);
+    expect(await havaleIptalTaramasi(h.vt)).toBe(1);
     const durumlar = await h.vt
       .select({ eposta: siparisler.eposta, durum: siparisler.durum })
       .from(siparisler)
@@ -660,7 +701,7 @@ describe("havalenin iptali", () => {
       bildirim(sonuc.siparis.numara),
     );
     await h.vt.execute(sql`update siparisler set odeme_son_zamani = now() - interval '1 day'`);
-    expect(await siparis.havaleIptalTaramasi(h.vt)).toBe(0);
+    expect(await havaleIptalTaramasi(h.vt)).toBe(0);
     const [kayit] = await h.vt.select().from(siparisler);
     expect(kayit?.durum).toBe("odeme-bekleniyor");
   });

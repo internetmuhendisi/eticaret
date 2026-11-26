@@ -233,6 +233,7 @@ const musteriHali = async (
         kalemler: siparisIadeleri.kalemler,
         zaman: siparisIadeleri.olusturma_zamani,
         talep: siparisIadeleri.talep_kimligi,
+        kaynak: siparisIadeleri.kaynak,
       })
       .from(siparisIadeleri)
       .where(
@@ -350,14 +351,18 @@ const musteriHali = async (
     // Takipte mağazanın notları görünmez: nota kişisel bilgi yazılmış olabilir, taslağın takip sonucunda geçmiş
     // yoktur (bağımsız kontrolün bulgusu, karar 0150).
     notlar: kisalt ? [] : notlar,
-    iadeler: iadeler.map((iade) => ({
-      tur: iade.tur as "iptal" | "iade",
-      durum: iade.durum as "bekliyor" | "tamamlandi",
-      tutar: iade.tutar,
-      kargoTutari: iade.kargoTutari,
-      kalemler: iade.kalemler.map(({ sira, adet }) => ({ sira, adet })),
-      zaman: iade.zaman,
-    })),
+    // Sistemin iptali (süresi dolan havale, kart 0246) müşteriye geçmişin "ödeme süresi doldu" olayıyla görünür: iade
+    // satırı ikinci kez "iptal edildi" yazdırmasın. Bu karttan önce iptal edilen siparişlerde iade satırı yoktur.
+    iadeler: iadeler
+      .filter((iade) => iade.kaynak !== "sistem")
+      .map((iade) => ({
+        tur: iade.tur as "iptal" | "iade",
+        durum: iade.durum as "bekliyor" | "tamamlandi",
+        tutar: iade.tutar,
+        kargoTutari: iade.kargoTutari,
+        kalemler: iade.kalemler.map(({ sira, adet }) => ({ sira, adet })),
+        zaman: iade.zaman,
+      })),
     kisiselVeriSilindi: siparis.kisisel_veri_silinme_zamani !== null,
     kisaltilmis: kisalt,
     talepler: talepler.map((talep) => ({

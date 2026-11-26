@@ -421,6 +421,13 @@
       "when": 1795570096766,
       "tag": "0059_siparis-adres-duzeltme",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1795684921294,
+      "tag": "0060_iade-sistem-kaynagi",
+      "breakpoints": true
     }
   ]
 }

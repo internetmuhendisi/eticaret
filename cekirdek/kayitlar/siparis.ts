@@ -234,9 +234,13 @@ export const iadeNedenleri = [
   "diger",
 ] as const;
 export type IadeNedeni = (typeof iadeNedenleri)[number];
-// İadeyi kim başlattı (kart 0239): mağaza (panelden) ya da müşteri (kendi iptali). Geçmişin nedenini seçer
-// (yonetici-iptali ya da musteri-iptali).
-export const iadeKaynaklari = ["yonetici", "musteri"] as const;
+// Panelde seçilmeyen, sistemin yazdığı nedenler (kart 0246): süresinde ödenmeyen havalenin kendiliğinden iptali.
+export const sistemIadeNedenleri = ["odeme-alinmadi"] as const;
+export const tumIadeNedenleri = [...iadeNedenleri, ...sistemIadeNedenleri] as const;
+export type TumIadeNedeni = (typeof tumIadeNedenleri)[number];
+// İadeyi kim başlattı (kart 0239): mağaza (panelden), müşteri (kendi iptali) ya da sistem (kart 0246: süresi dolan
+// havalenin iptali). Geçmişin nedenini seçer (yonetici-iptali, musteri-iptali, havale-suresi-doldu).
+export const iadeKaynaklari = ["yonetici", "musteri", "sistem"] as const;
 export type IadeKaynagi = (typeof iadeKaynaklari)[number];
 // Hangi durumdaki siparişte hangi tür yapılır.
 export const iadeyeAcikDurumlar: Record<IadeTuru, readonly SiparisDurumu[]> = {

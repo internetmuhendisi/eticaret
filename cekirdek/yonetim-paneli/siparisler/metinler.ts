@@ -1,10 +1,10 @@
 // Sipariş ekranlarının ortak metin seçimleri (kart 0234): durum, ödeme yöntemi, geçmişin nedeni ve yazanı. Sunucuda
 // çizilen liste ile tarayıcıdaki ayrıntı aynı seçimi kullanır; metni çağıranın metin işlevi okur.
 import type {
-  IadeNedeni,
   IadeTalebiDurumu,
   SiparisDurumu,
   SiparisGecmisiNedeni,
+  TumIadeNedeni,
 } from "../../kayitlar/siparis";
 import type { MetinAnahtari } from "../../metinler/metin";
 
@@ -84,7 +84,7 @@ export const yazanYazisi = (
 };
 
 // İptal ve iade nedenleri (kart 0235): kayıttaki iadeNedenleri.
-const iadeNedenleri: Record<IadeNedeni, MetinAnahtari> = {
+const iadeNedenleri: Record<TumIadeNedeni, MetinAnahtari> = {
   "musteri-vazgecti": "yonetim.iade.neden.musteri-vazgecti",
   "beklentiyi-karsilamadi": "yonetim.iade.neden.beklentiyi-karsilamadi",
   "kusurlu-hasarli": "yonetim.iade.neden.kusurlu-hasarli",
@@ -92,8 +92,9 @@ const iadeNedenleri: Record<IadeNedeni, MetinAnahtari> = {
   "beden-uymadi": "yonetim.iade.neden.beden-uymadi",
   "stok-yok": "yonetim.iade.neden.stok-yok",
   diger: "yonetim.iade.neden.diger",
+  "odeme-alinmadi": "yonetim.iade.neden.odeme-alinmadi",
 };
-export const iadeNedenMetni = (neden: IadeNedeni): MetinAnahtari => iadeNedenleri[neden];
+export const iadeNedenMetni = (neden: TumIadeNedeni): MetinAnahtari => iadeNedenleri[neden];
 
 // İade talebinin durumunun rozeti ve metni (kart 0239).
 export const talepDurumRozeti: Record<

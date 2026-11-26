@@ -10,6 +10,7 @@
 //   açık adres, posta kodu, fatura ve e-posta yok). Süresi dolan ve bozuk anahtar okumaz; yeni takip süresi
 //   dolanları siler; kapatılan anahtar okumaz; kişisel bilgi silinince anahtar kapanır. Takipte mağazanın notu yoktur.
 //   Bir sitenin siparişi başka sitede takip edilemez. İptal edilen siparişte iade edilen adet sıfırdır.
+
 import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { eq, sql } from "drizzle-orm";
@@ -28,6 +29,7 @@ import { stokServisi } from "../../stok/servis.ts";
 import { urunServisi } from "../../urun/servis.ts";
 import { siteninVergiServisi } from "../../vergi/servis.ts";
 import { iadeServisi } from "../iade.ts";
+import { havaleIptalTaramasi } from "../iptal.ts";
 import { siparisIadeleri, siparisler, siparisTakipErisimleri } from "../model.ts";
 import { adiKisalt, musteriSiparisleri, telefonuKisalt } from "../musteri.ts";
 import { erisimOzeti } from "../servis.ts";
@@ -381,6 +383,29 @@ describe("ayrıntı", () => {
     expect(ayrinti?.durum).toBe("iptal");
     expect(ayrinti?.iadeler).toMatchObject([{ tur: "iptal", durum: "tamamlandi", tutar: 0 }]);
     expect(ayrinti?.kalemler.map((kalem) => kalem.iadeAdedi)).toEqual([0]);
+  });
+
+  it("süresi dolan havalenin iptali müşteriye yalnız geçmişin olayıyla görünür (kart 0246)", async () => {
+    const h = await hazirla();
+    const { birim } = await h.urunAc();
+    const a = await h.musteriAc();
+    const { siparis } = await odeme.siparisVer(
+      h.vt,
+      {
+        kim: { tur: "uye", musteri: a },
+        bilgiler: bilgiler({ yontem: "havale" }),
+        kalemler: [{ birim, adet: 1 }],
+      },
+      3600,
+    );
+    const numara = siparis.numara;
+    await h.vt.execute(sql`update siparisler set odeme_son_zamani = now() - interval '1 second'`);
+    expect(await havaleIptalTaramasi(h.vt)).toBe(1);
+    const ayrinti = await musteri.ayrinti(h.vt, a, numara, kurallar);
+    expect(ayrinti?.durum).toBe("iptal");
+    // Sistemin iade satırı ikinci bir "iptal edildi" yazdırmaz; geçmişin "ödeme süresi doldu" olayı kalır.
+    expect(ayrinti?.iadeler).toEqual([]);
+    expect(ayrinti?.gecmis.map((satir) => satir.neden)).toContain("havale-suresi-doldu");
   });
 
   it("ürünün adı ve fiyatı sonradan değişince ayrıntı değişmez", async () => {

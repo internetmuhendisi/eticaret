@@ -8,6 +8,7 @@
 //   vergisi; HTML kaçırılır; üye olmayanın bağlantısı takip sayfasıdır, e-posta adrese yazılmaz.
 // - Elle siparişte e-posta seçimdir; kişisel bilgisi silinmiş siparişe e-posta yazılmaz; gönderen adresi olmayan
 //   sitede gitmez; iki site ayrı kalır; e-posta gerçek posta kutusuna düşer.
+
 import { randomUUID } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -46,6 +47,7 @@ import { siparisFaturaServisi } from "../fatura.ts";
 import { gecmiseYaz } from "../gecmis.ts";
 import { iadeServisi } from "../iade.ts";
 import { iadeTalebiServisi } from "../iade-talebi.ts";
+import { havaleIptalTaramasi } from "../iptal.ts";
 import { siparisIadeleri, siparisler } from "../model.ts";
 import { elleSiparisSemasi } from "../semalar.ts";
 import { siparisServisi } from "../servis.ts";
@@ -354,7 +356,7 @@ describe("olaylar", () => {
     await h.vt.execute(
       sql`update siparisler set odeme_son_zamani = now() - interval '1 second' where numara = ${sureli}`,
     );
-    expect(await siparisServisi(site).havaleIptalTaramasi(h.vt)).toBe(1);
+    expect(await havaleIptalTaramasi(h.vt)).toBe(1);
     expect(await sablonlari(h.vt, sureli)).toEqual(["siparis-alindi", "siparis-iptali"]);
     expect((await sonEposta(h.vt, sureli, "siparis-iptali")).metin).toContain(
       "ödeme süresi içinde ödenmediği için",

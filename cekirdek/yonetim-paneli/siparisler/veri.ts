@@ -17,6 +17,7 @@ import {
   type SiparisDurumu,
   type SiparisIslemi,
   siparisDurumlari,
+  type TumIadeNedeni,
   yapilabilirIslemler,
 } from "../../kayitlar/siparis";
 import {
@@ -226,7 +227,7 @@ export type SiparisAyrintisiVerisi = {
     kalemler: { ad: string; adet: number }[];
     kargo: string | null;
     stogaKondu: boolean;
-    neden: IadeNedeni;
+    neden: TumIadeNedeni;
     aciklama: string | null;
     yazan: SatirYazani;
   }[];
@@ -585,7 +586,7 @@ export const siparisAyrintisiVerisi = async (
       })),
       kargo: iade.kargo_tutari > 0 ? b.para(iade.kargo_tutari) : null,
       stogaKondu: iade.stoga_konacak,
-      neden: iade.neden as IadeNedeni,
+      neden: iade.neden as TumIadeNedeni,
       aciklama: iade.aciklama,
       yazan: iade.yazan,
     })),

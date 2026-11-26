@@ -1798,7 +1798,8 @@
         "yanlis-urun": "Yanlış ürün gönderildi",
         "stok-yok": "Stokta yok",
         "diger": "Diğer",
-        "beden-uymadi": "Bedeni uymadı"
+        "beden-uymadi": "Bedeni uymadı",
+        "odeme-alinmadi": "Ödeme süresinde alınmadı"
       },
       "yontem": {
         "kurulus": "Ödeme kuruluşundan",

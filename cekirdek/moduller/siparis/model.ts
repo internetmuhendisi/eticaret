@@ -424,7 +424,7 @@ export const siparisIadeleri = pgTable(
     uniqueIndex("siparis_iadeleri_tek_talep")
       .on(tablo.talep_kimligi)
       .where(sql`${tablo.talep_kimligi} is not null and ${tablo.durum} <> 'basarisiz'`),
-    check("siparis_iadeleri_kaynak", sql`${tablo.kaynak} in ('yonetici', 'musteri')`),
+    check("siparis_iadeleri_kaynak", sql`${tablo.kaynak} in ('yonetici', 'musteri', 'sistem')`),
     check(
       "siparis_iadeleri_talep",
       sql`${tablo.talep_kimligi} is null or (${tablo.tur} = 'iade' and ${tablo.kaynak} = 'yonetici')`,
@@ -442,7 +442,7 @@ export const siparisIadeleri = pgTable(
     check("siparis_iadeleri_yontem", sql`${tablo.yontem} in ('kurulus', 'elle', 'yok')`),
     check(
       "siparis_iadeleri_neden",
-      sql`${tablo.neden} in ('musteri-vazgecti', 'beklentiyi-karsilamadi', 'kusurlu-hasarli', 'yanlis-urun', 'beden-uymadi', 'stok-yok', 'diger')`,
+      sql`${tablo.neden} in ('musteri-vazgecti', 'beklentiyi-karsilamadi', 'kusurlu-hasarli', 'yanlis-urun', 'beden-uymadi', 'stok-yok', 'diger', 'odeme-alinmadi')`,
     ),
     check(
       "siparis_iadeleri_tutar",

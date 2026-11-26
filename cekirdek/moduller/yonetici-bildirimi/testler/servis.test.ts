@@ -10,6 +10,7 @@
 // - Panelin kaydı: adreslerin ayrılması, küçük harf, sınır, geçersiz ve tekrar; görünmeyen bildirimin kayıtlı hâli
 //   korunur; değişiklik kaydına adresler yazılmaz.
 // - İki site ayrı kalır; e-posta gerçek posta kutusuna düşer.
+
 import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { and, asc, eq, inArray, like, sql } from "drizzle-orm";
@@ -40,6 +41,7 @@ import { hesapAc } from "../../oturum/servis.ts";
 import { siparisAyarlari } from "../../siparis/ayarlar.ts";
 import { iadeServisi } from "../../siparis/iade.ts";
 import { iadeTalebiServisi } from "../../siparis/iade-talebi.ts";
+import { havaleIptalTaramasi } from "../../siparis/iptal.ts";
 import { siparisler } from "../../siparis/model.ts";
 import { elleSiparisSemasi } from "../../siparis/semalar.ts";
 import { siparisServisi } from "../../siparis/servis.ts";
@@ -325,7 +327,7 @@ describe("sipariş olayları", () => {
     await h.vt.execute(
       sql`update siparisler set odeme_son_zamani = now() - interval '1 second' where numara = ${sureli}`,
     );
-    expect(await siparisServisi(site).havaleIptalTaramasi(h.vt)).toBe(1);
+    expect(await havaleIptalTaramasi(h.vt)).toBe(1);
     expect(await numaraninBildirimleri(h.vt, sureli)).toEqual(["yeni-siparis", "iptal"]);
 
     // Müşterinin iptali.

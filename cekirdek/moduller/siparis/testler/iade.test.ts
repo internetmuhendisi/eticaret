@@ -580,7 +580,7 @@ describe("iade", () => {
     const tanim = await h.vt.execute<{ ad: string; tanim: string }>(
       sql`select conname as ad, pg_get_constraintdef(oid) as tanim from pg_constraint where conrelid = 'siparis_iadeleri'::regclass and contype = 'c'`,
     );
-    const { iadeDurumlari, iadeNedenleri, iadeTurleri } = await import(
+    const { iadeDurumlari, tumIadeNedenleri, iadeTurleri } = await import(
       "../../../kayitlar/siparis.ts"
     );
     const degerler = (ad: string) =>
@@ -589,7 +589,7 @@ describe("iade", () => {
         .sort();
     expect(degerler("siparis_iadeleri_tur")).toEqual([...iadeTurleri].sort());
     expect(degerler("siparis_iadeleri_durum")).toEqual([...iadeDurumlari].sort());
-    expect(degerler("siparis_iadeleri_neden")).toEqual([...iadeNedenleri].sort());
+    expect(degerler("siparis_iadeleri_neden")).toEqual([...tumIadeNedenleri].sort());
   });
 
   it("bir sitenin siparişi öteki sitede bulunamaz", async () => {

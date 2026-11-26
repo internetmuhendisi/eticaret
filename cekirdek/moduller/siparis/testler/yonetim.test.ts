@@ -12,6 +12,7 @@
 // - Yorum için satın alma yalnız teslim edilmiş siparişte sayılır.
 // - Kargo firmaları listesi gördüğü hâliyle değişir; takip adresi denetlenir.
 // - Saklama süresi dolan siparişin kişisel bilgileri silinir, yenisi kalır.
+
 import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { eq, sql } from "drizzle-orm";
@@ -37,6 +38,7 @@ import { satinAldiMi } from "../../yorum/satin-alma.ts";
 import { yorumServisi } from "../../yorum/servis.ts";
 import { siparisAyarlari } from "../ayarlar.ts";
 import { havaleBildirimiFormuSemasi } from "../havale-bildirimi-semalari.ts";
+import { havaleIptalTaramasi } from "../iptal.ts";
 import {
   havaleBildirimleri,
   siparisGecmisi,
@@ -266,7 +268,7 @@ describe("durum işlemleri", () => {
     await h.vt.execute(
       sql`update siparisler set odeme_son_zamani = now() - interval '1 day' where numara = ${numara}`,
     );
-    expect(await siparisServisi(site).havaleIptalTaramasi(h.vt)).toBe(0);
+    expect(await havaleIptalTaramasi(h.vt)).toBe(0);
     expect((await oku(h.vt, numara)).durum).toBe("hazirlaniyor");
     const ayrinti = await yonetim.ayrinti(h.vt, numara);
     expect(ayrinti?.gecmis[0]).toMatchObject({

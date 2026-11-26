@@ -29,6 +29,7 @@ import {
   type IadeTuru,
   iadeyeAcikDurumlar,
   type SiparisDurumu,
+  type SiparisGecmisiNedeni,
 } from "../../kayitlar/siparis.ts";
 import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
@@ -38,6 +39,7 @@ import { stokServisi } from "../stok/servis.ts";
 import { gecmiseYaz, kimSutunlari } from "./gecmis.ts";
 import { IadeHesapHatasi, type IadeSecimi, iadeyiHesapla } from "./iade-hesabi.ts";
 import {
+  type Siparis,
   type SiparisIadesi,
   siparisIadeleri,
   siparisIadeTalepleri,
@@ -98,117 +100,221 @@ const hesapHatasi = (hata: unknown): never => {
   throw hata;
 };
 
-export const iadeServisi = (site: Site) => {
-  // Bekleyen iadeyi tamamlar: siparişin durumu, stok, geçmiş ve değişiklik kaydı. Çağıranın işleminde; siparişin
-  // satırı kilitli olmalıdır.
-  const tamamla = async (
-    islem: VeritabaniIslemi,
-    iade: SiparisIadesi,
-    kim: DegisikligiYapan,
-  ): Promise<SiparisDurumu> => {
-    const [siparis] = await islem
-      .select({ kimlik: siparisler.kimlik, durum: siparisler.durum })
-      .from(siparisler)
-      .where(eq(siparisler.kimlik, iade.siparis_kimligi));
-    if (siparis === undefined) throw new Error("İadenin siparişi yok.");
-    const onceki = siparis.durum as SiparisDurumu;
-    const kalemler = await islem
-      .select({
-        sira: siparisKalemleri.sira,
-        adet: siparisKalemleri.adet,
-        birim: siparisKalemleri.birim_kimligi,
-      })
-      .from(siparisKalemleri)
-      .where(eq(siparisKalemleri.siparis_kimligi, iade.siparis_kimligi));
-    // Bütün kalemler ve kargo iade edildiyse "iade edildi".
-    const tamamlananlar = await islem
-      .select({ kalemler: siparisIadeleri.kalemler, kargo: siparisIadeleri.kargo_tutari })
-      .from(siparisIadeleri)
-      .where(
-        and(
-          eq(siparisIadeleri.siparis_kimligi, iade.siparis_kimligi),
-          eq(siparisIadeleri.durum, "tamamlandi"),
-        ),
-      );
-    const iadeEdilen = new Map<number, number>();
-    for (const satir of [...tamamlananlar, { kalemler: iade.kalemler, kargo: iade.kargo_tutari }]) {
-      for (const kalem of satir.kalemler)
-        iadeEdilen.set(kalem.sira, (iadeEdilen.get(kalem.sira) ?? 0) + kalem.adet);
-    }
-    const [tutarlar] = await islem
-      .select({
-        toplam: siparisler.toplam,
-        kargo: siparisler.kargo_tutari,
-        kargoTuru: siparisler.kargo_turu,
-      })
-      .from(siparisler)
-      .where(eq(siparisler.kimlik, iade.siparis_kimligi));
-    const kargoIade =
-      tutarlar?.kargoTuru !== "ucretli" ||
-      [...tamamlananlar, { kargo: iade.kargo_tutari }].some((satir) => satir.kargo > 0);
-    const butunUrunler = kalemler.every((kalem) => (iadeEdilen.get(kalem.sira) ?? 0) >= kalem.adet);
-    const sonraki: SiparisDurumu =
-      iade.tur === "iptal" ? "iptal" : butunUrunler && kargoIade ? "iade-edildi" : "kismi-iade";
+// Tamamlanan iadenin geçmişteki nedeni: iade ya da iptali kim başlattı.
+const gecmisNedeni = {
+  iade: "iade-yapildi",
+  yonetici: "yonetici-iptali",
+  musteri: "musteri-iptali",
+  sistem: "havale-suresi-doldu",
+} as const satisfies Record<"iade" | IadeKaynagi, SiparisGecmisiNedeni>;
 
-    await islem
-      .update(siparisIadeleri)
-      .set({ durum: "tamamlandi", sonuc_zamani: sql`now()` })
-      .where(eq(siparisIadeleri.kimlik, iade.kimlik));
-    if (sonraki !== onceki) {
-      await islem
-        .update(siparisler)
-        .set({ durum: sonraki })
-        .where(eq(siparisler.kimlik, iade.siparis_kimligi));
-    }
-    if (iade.stoga_konacak) {
-      const kalan = await geriKonabilir(islem, iade.siparis_kimligi);
-      const geri = iade.kalemler.flatMap((secilen) => {
-        const kalem = kalemler.find((k) => k.sira === secilen.sira);
-        const olabilir = kalem === undefined ? 0 : (kalan.get(kalem.birim) ?? 0);
-        const adet = Math.min(secilen.adet, olabilir);
-        if (kalem !== undefined && adet > 0) kalan.set(kalem.birim, olabilir - adet);
-        return kalem === undefined || adet <= 0 ? [] : [{ birim: kalem.birim, adet }];
-      });
-      if (geri.length > 0) {
-        await stok.stokArtir(islem, kim, geri, {
-          sebep: iade.tur === "iptal" ? "siparis-iptali" : "siparis-iadesi",
-          kaynak: iade.siparis_kimligi,
-        });
-      }
-    }
-    await gecmiseYaz(islem, {
-      siparis: iade.siparis_kimligi,
-      onceki,
-      sonraki,
-      neden:
-        iade.tur === "iade"
-          ? "iade-yapildi"
-          : (iade.kaynak as IadeKaynagi) === "musteri"
-            ? "musteri-iptali"
-            : "yonetici-iptali",
-      kim,
-      eposta: { iade: iade.kimlik },
-    });
-    await degisikligiKaydet(islem, {
-      kim,
-      islem: iade.tur === "iptal" ? "siparis.iptal-edildi" : "siparis.iade-edildi",
-      kayit: { tur: "siparis", kimlik: iade.siparis_kimligi },
-      eski: { durum: onceki },
-      yeni: {
-        durum: sonraki,
-        iade: iade.kimlik,
-        tutar: iade.tutar,
-        kargo: iade.kargo_tutari,
-        kalemler: iade.kalemler,
-        stogaKondu: iade.stoga_konacak,
-        neden: iade.neden,
-        ...(iade.kaynak === "musteri" ? { kaynak: iade.kaynak } : {}),
-        ...(iade.talep_kimligi === null ? {} : { talep: iade.talep_kimligi }),
+// Siparişin saklanan kalemleri ve önceki iadeleriyle iadenin tutarı ve vergisi (iade-hesabi.ts). Çağıranın işleminde,
+// siparişin satırı kilitliyken.
+const hesabiKur = async (
+  islem: VeritabaniIslemi,
+  siparis: Siparis,
+  oncekiler: SiparisIadesi[],
+  tur: IadeTuru,
+  secim: IadeSecimi,
+) => {
+  const kalemler = await islem
+    .select()
+    .from(siparisKalemleri)
+    .where(eq(siparisKalemleri.siparis_kimligi, siparis.kimlik));
+  const odenen =
+    siparis.odeme_zamani === null ? null : (siparis.tahsilat?.odenen ?? siparis.toplam);
+  try {
+    const hesap = iadeyiHesapla(
+      {
+        toplam: siparis.toplam,
+        vergiToplami: siparis.vergi_toplami,
+        vergiDokumu: siparis.vergi_dokumu,
+        odenen,
+        kalemler: kalemler.map((kalem) => ({
+          sira: kalem.sira,
+          adet: kalem.adet,
+          vergisiz: kalem.vergisiz,
+          vergi: kalem.vergi,
+          vergiOranlari: kalem.vergi_oranlari,
+        })),
       },
-    });
-    return sonraki;
-  };
+      oncekiler.map((iade) => ({
+        tutar: iade.tutar,
+        kargoTutari: iade.kargo_tutari,
+        kalemler: iade.kalemler,
+      })),
+      tur,
+      secim,
+    );
+    return { hesap, kalemler };
+  } catch (hata) {
+    return hesapHatasi(hata);
+  }
+};
 
+// Bekleyen iadeyi tamamlar: siparişin durumu, stok, geçmiş ve değişiklik kaydı. Çağıranın işleminde; siparişin
+// satırı kilitli olmalıdır.
+const tamamla = async (
+  islem: VeritabaniIslemi,
+  iade: SiparisIadesi,
+  kim: DegisikligiYapan,
+): Promise<SiparisDurumu> => {
+  const [siparis] = await islem
+    .select({ kimlik: siparisler.kimlik, durum: siparisler.durum })
+    .from(siparisler)
+    .where(eq(siparisler.kimlik, iade.siparis_kimligi));
+  if (siparis === undefined) throw new Error("İadenin siparişi yok.");
+  const onceki = siparis.durum as SiparisDurumu;
+  const kalemler = await islem
+    .select({
+      sira: siparisKalemleri.sira,
+      adet: siparisKalemleri.adet,
+      birim: siparisKalemleri.birim_kimligi,
+    })
+    .from(siparisKalemleri)
+    .where(eq(siparisKalemleri.siparis_kimligi, iade.siparis_kimligi));
+  // Bütün kalemler ve kargo iade edildiyse "iade edildi".
+  const tamamlananlar = await islem
+    .select({ kalemler: siparisIadeleri.kalemler, kargo: siparisIadeleri.kargo_tutari })
+    .from(siparisIadeleri)
+    .where(
+      and(
+        eq(siparisIadeleri.siparis_kimligi, iade.siparis_kimligi),
+        eq(siparisIadeleri.durum, "tamamlandi"),
+      ),
+    );
+  const iadeEdilen = new Map<number, number>();
+  for (const satir of [...tamamlananlar, { kalemler: iade.kalemler, kargo: iade.kargo_tutari }]) {
+    for (const kalem of satir.kalemler)
+      iadeEdilen.set(kalem.sira, (iadeEdilen.get(kalem.sira) ?? 0) + kalem.adet);
+  }
+  const [tutarlar] = await islem
+    .select({
+      toplam: siparisler.toplam,
+      kargo: siparisler.kargo_tutari,
+      kargoTuru: siparisler.kargo_turu,
+    })
+    .from(siparisler)
+    .where(eq(siparisler.kimlik, iade.siparis_kimligi));
+  const kargoIade =
+    tutarlar?.kargoTuru !== "ucretli" ||
+    [...tamamlananlar, { kargo: iade.kargo_tutari }].some((satir) => satir.kargo > 0);
+  const butunUrunler = kalemler.every((kalem) => (iadeEdilen.get(kalem.sira) ?? 0) >= kalem.adet);
+  const sonraki: SiparisDurumu =
+    iade.tur === "iptal" ? "iptal" : butunUrunler && kargoIade ? "iade-edildi" : "kismi-iade";
+
+  await islem
+    .update(siparisIadeleri)
+    .set({ durum: "tamamlandi", sonuc_zamani: sql`now()` })
+    .where(eq(siparisIadeleri.kimlik, iade.kimlik));
+  if (sonraki !== onceki) {
+    await islem
+      .update(siparisler)
+      .set({ durum: sonraki })
+      .where(eq(siparisler.kimlik, iade.siparis_kimligi));
+  }
+  if (iade.stoga_konacak) {
+    const kalan = await geriKonabilir(islem, iade.siparis_kimligi);
+    const geri = iade.kalemler.flatMap((secilen) => {
+      const kalem = kalemler.find((k) => k.sira === secilen.sira);
+      const olabilir = kalem === undefined ? 0 : (kalan.get(kalem.birim) ?? 0);
+      const adet = Math.min(secilen.adet, olabilir);
+      if (kalem !== undefined && adet > 0) kalan.set(kalem.birim, olabilir - adet);
+      return kalem === undefined || adet <= 0 ? [] : [{ birim: kalem.birim, adet }];
+    });
+    if (geri.length > 0) {
+      await stok.stokArtir(islem, kim, geri, {
+        sebep: iade.tur === "iptal" ? "siparis-iptali" : "siparis-iadesi",
+        kaynak: iade.siparis_kimligi,
+      });
+    }
+  }
+  await gecmiseYaz(islem, {
+    siparis: iade.siparis_kimligi,
+    onceki,
+    sonraki,
+    neden: gecmisNedeni[iade.tur === "iade" ? "iade" : (iade.kaynak as IadeKaynagi)],
+    kim,
+    eposta: { iade: iade.kimlik },
+  });
+  await degisikligiKaydet(islem, {
+    kim,
+    islem: iade.tur === "iptal" ? "siparis.iptal-edildi" : "siparis.iade-edildi",
+    kayit: { tur: "siparis", kimlik: iade.siparis_kimligi },
+    eski: { durum: onceki },
+    yeni: {
+      durum: sonraki,
+      iade: iade.kimlik,
+      tutar: iade.tutar,
+      kargo: iade.kargo_tutari,
+      kalemler: iade.kalemler,
+      stogaKondu: iade.stoga_konacak,
+      neden: iade.neden,
+      ...(iade.kaynak === "yonetici" ? {} : { kaynak: iade.kaynak }),
+      ...(iade.talep_kimligi === null ? {} : { talep: iade.talep_kimligi }),
+    },
+  });
+  return sonraki;
+};
+
+// Süresinde ödenmeyen havalenin kendiliğinden iptali (kart 0246; tarama iptal.ts'te). Panelin iptaliyle aynı akış: iade
+// satırı (sistemin, "odeme-alinmadi", tutar 0: para alınmamıştır), stoğun geri konması ve geçmiş ("havale-suresi-doldu",
+// e-posta ve yönetici bildirimi geçmişin kaydından) tamamla ile yazılır. Çağıranın işleminde, siparişin satırı kilitli
+// ve durumu "odeme-bekleniyor" iken.
+export const odemesiAlinmayaniIptalEt = async (
+  islem: VeritabaniIslemi,
+  siparisKimligi: string,
+  kim: DegisikligiYapan,
+): Promise<void> => {
+  const [siparis] = await islem
+    .select()
+    .from(siparisler)
+    .where(eq(siparisler.kimlik, siparisKimligi));
+  if (siparis === undefined) throw new Error("İptal edilecek sipariş yok.");
+  if (siparis.durum !== "odeme-bekleniyor" || siparis.odeme_zamani !== null) {
+    throw new Error("Yalnız ödemesi beklenen sipariş kendiliğinden iptal edilir.");
+  }
+  const oncekiler = await islem
+    .select()
+    .from(siparisIadeleri)
+    .where(
+      and(
+        eq(siparisIadeleri.siparis_kimligi, siparis.kimlik),
+        inArray(siparisIadeleri.durum, ["tamamlandi", "bekliyor"]),
+      ),
+    );
+  if (oncekiler.some((iade) => iade.durum === "bekliyor"))
+    throw new Error("Siparişte bekleyen iade var.");
+  // İptalde hesap seçimi kendisi kurar: bütün kalan kalemler ve kargo (iade-hesabi.ts).
+  const { hesap } = await hesabiKur(islem, siparis, oncekiler, "iptal", {
+    kalemler: [],
+    kargo: false,
+  });
+  if (hesap.tutar !== 0) throw new Error("Ödemesi alınmamış siparişin iptal tutarı sıfır değil.");
+  const [iade] = await islem
+    .insert(siparisIadeleri)
+    .values({
+      siparis_kimligi: siparis.kimlik,
+      tur: "iptal",
+      durum: "bekliyor",
+      yontem: "yok",
+      tutar: 0,
+      vergi_dokumu: hesap.vergiDokumu,
+      kalemler: hesap.kalemler,
+      kargo_tutari: hesap.kargoTutari,
+      stoga_konacak: true,
+      neden: "odeme-alinmadi",
+      aciklama: null,
+      kaynak: "sistem",
+      talep_kimligi: null,
+      ...kimSutunlari(kim),
+    })
+    .returning();
+  if (iade === undefined) throw new Error("İptal yazılamadı.");
+  await tamamla(islem, iade, kim);
+};
+
+export const iadeServisi = (site: Site) => {
   const iadeYap = async (
     vt: Veritabani,
     kim: DegisikligiYapan,
@@ -289,39 +395,7 @@ export const iadeServisi = (site: Site) => {
       if (oncekiler.some((iade) => iade.durum === "bekliyor")) {
         throw new BilinenHata("cakisma", [{ alan: "iade", kod: "iade-bekliyor" }]);
       }
-      const kalemler = await islem
-        .select()
-        .from(siparisKalemleri)
-        .where(eq(siparisKalemleri.siparis_kimligi, siparis.kimlik));
-      const odenen =
-        siparis.odeme_zamani === null ? null : (siparis.tahsilat?.odenen ?? siparis.toplam);
-      let hesap: ReturnType<typeof iadeyiHesapla>;
-      try {
-        hesap = iadeyiHesapla(
-          {
-            toplam: siparis.toplam,
-            vergiToplami: siparis.vergi_toplami,
-            vergiDokumu: siparis.vergi_dokumu,
-            odenen,
-            kalemler: kalemler.map((kalem) => ({
-              sira: kalem.sira,
-              adet: kalem.adet,
-              vergisiz: kalem.vergisiz,
-              vergi: kalem.vergi,
-              vergiOranlari: kalem.vergi_oranlari,
-            })),
-          },
-          oncekiler.map((iade) => ({
-            tutar: iade.tutar,
-            kargoTutari: iade.kargo_tutari,
-            kalemler: iade.kalemler,
-          })),
-          girdi.tur,
-          secim,
-        );
-      } catch (hata) {
-        return hesapHatasi(hata);
-      }
+      const { hesap, kalemler } = await hesabiKur(islem, siparis, oncekiler, girdi.tur, secim);
       const yontem = siparis.odeme_yontemi as OdemeYontemi;
       const kurulustan = hesap.tutar > 0 && eklentiliMi(yontem);
       const [iade] = await islem

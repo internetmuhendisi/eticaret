@@ -13,10 +13,10 @@
 // - Ödemesi sipariş kurulurken alınmış siparişte (kartla ödeme, kart 0215; tahsilat verilir) durum "hazırlanıyor"dur,
 //   tahsilat (ödenen tutar, taksit, ödeme kimliği) siparişe yazılır.
 // - Havalede ödeme son anı veritabanının saatiyle şimdi artı havaleIptalSuresi gündür. Süresi dolan, ödeme bekleyen
-//   ve bildirimsiz havale siparişi kendiliğinden iptal olur (havaleIptalTaramasi): stok yalnız o siparişin stok
-//   geçmişinde düşürdüğü adet kadar geri konur, geçmişe yazılır. Bildirimli sipariş iptal olmaz (kullanıcı kararı).
-//   Satır kilidi aynı siparişin iki kez iptal edilmesini önler (SKIP LOCKED ve durum koşulu). İptal iptal.ts'tedir:
-//   arka plan süreci yükler, bu dosyanın vitrin bağımlılıklarını (sitenin biçimleyicisi) çekmez.
+//   ve bildirimsiz havale siparişi kendiliğinden iptal olur (havaleIptalTaramasi, iptal.ts): iptalin tek akışından
+//   geçer (kart 0246, iade.ts), stok yalnız o siparişin düşürüp geri konmamış adedi kadar geri konur. Bildirimli
+//   sipariş iptal olmaz (kullanıcı kararı). Satır kilidi aynı siparişin iki kez iptal edilmesini önler (SKIP LOCKED ve
+//   durum koşulu). Tarama bu servisten dışa verilmez: iade akışı ödeme eklentilerini, onlar bu servisi yükler (döngü).
 // - Siparişi veren tarayıcıya bir erişim anahtarı verilir; veritabanında yalnız özeti durur. Sipariş alındı sayfası
 //   siparişi yalnız bu anahtarla okur.
 // - Havale bildirimi: üye olmayan müşteri numara ve siparişteki e-postayla, üye kendi siparişi için bildirir. Numara
@@ -48,7 +48,6 @@ import {
 } from "../urun/model.ts";
 import { gecmiseYaz, uyeOlmayanMusteri } from "./gecmis.ts";
 import type { HavaleBildirimiFormu } from "./havale-bildirimi-semalari.ts";
-import { havaleIptalTaramasi } from "./iptal.ts";
 import {
   havaleBildirimleri,
   type Siparis,
@@ -401,8 +400,6 @@ export const siparisServisi = (site: Site) => {
 
   return {
     siparisiKur,
-    // Arka plan süreci iptali doğrudan iptal.ts'ten çağırır; servis testleri buradan.
-    havaleIptalTaramasi,
     havaleBildir,
     erisimleOku,
     sonTeslimat,
