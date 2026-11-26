@@ -264,6 +264,10 @@ describe("vergi sınıfları", () => {
         </MetinSaglayici>,
       );
     });
+    // Onay penceresinin kapanınca odağı geri vermesi zamanlayıcıyla gelebilir: bitmesi beklenir, sonra ölçülür.
+    await act(async () => {
+      await new Promise((coz) => setTimeout(coz, 100));
+    });
     expect(document.activeElement).toBe(
       screen.getByRole("button", { name: metin("yonetim.vergi.oranEkle") }),
     );

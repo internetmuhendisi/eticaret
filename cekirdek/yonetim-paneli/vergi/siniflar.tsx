@@ -151,7 +151,10 @@ export function VergiSiniflari({ veri, izinli }: { veri: VergiEkraniVerisi; izin
             <IkonDugmesi
               ikon="sil"
               etiket={doldur(metin("yonetim.vergi.sinifSil"), { ad: sinif.ad })}
-              onClick={() => {
+              onClick={(olay) => {
+                // Fareyle basılınca da odak düğmede olsun (Safari düğmeye odak vermez): onay penceresi kapanınca
+                // odağı açan öğeye döndürür; düğme silinen satırla kalktığı için odağı bu ekran yerleştirir.
+                olay.currentTarget.focus();
                 odaklanacak.current = (liste[sira + 1] ?? liste[sira - 1])?.kimlik ?? "";
                 setOnay(sinif);
               }}
@@ -508,7 +511,11 @@ function Oranlar({
                         <IkonDugmesi
                           ikon="sil"
                           etiket={doldur(metin("yonetim.vergi.oranSil"), { ozet: oran.ozet })}
-                          onClick={() => setOnay(oran)}
+                          onClick={(olay) => {
+                            // Sınıf silmedeki gibi: odak düğmede olsun, onay penceresi kalkan satıra dönmeye çalışır.
+                            olay.currentTarget.focus();
+                            setOnay(oran);
+                          }}
                         />
                       </span>
                     </TabloHucresi>
