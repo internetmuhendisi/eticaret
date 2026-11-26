@@ -60,4 +60,4 @@ Bölüm: Yönetim paneli 2. Bu bölümün ilk işi.
 
 ## Durum
 
-yapılacak
+bitti
