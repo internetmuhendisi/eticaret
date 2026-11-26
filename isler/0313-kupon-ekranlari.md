@@ -28,4 +28,4 @@ Bölüm: Yönetim paneli 2. Önce 0312 bitmiş olmalı.
 
 ## Durum
 
-çalışılıyor
+bitti
