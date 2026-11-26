@@ -54,4 +54,4 @@ Kart 0313 vitrine yalnız kampanya kaydındaki listelerle ulaşıyordu; kayıt a
 
 ## Durum
 
-çalışılıyor
+bitti
