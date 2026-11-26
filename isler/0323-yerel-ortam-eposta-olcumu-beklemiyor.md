@@ -35,4 +35,4 @@ Bölüm: Test altyapısı. Kart 0311 sırasında hattın sonucuna bakılırken b
 
 ## Durum
 
-yapılacak
+bitti
