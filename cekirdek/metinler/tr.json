@@ -277,6 +277,22 @@
         "ad": "Müşteri ayrıntısı",
         "aciklama": "Müşterinin siparişleri, adresleri, hesap bilgileri ve mağazanın notları."
       },
+      "kuponlar": {
+        "ad": "Kuponlar",
+        "aciklama": "Müşterinin sepette girdiği indirim kodları. Bir siparişte tek kupon geçer."
+      },
+      "yeniKupon": {
+        "ad": "Yeni kupon",
+        "aciklama": "Kod, indirim, geçtiği ürünler ve süresi."
+      },
+      "kupon": {
+        "ad": "Kupon",
+        "aciklama": "Kuponun kullanımları ve getirdiği."
+      },
+      "kuponDuzenle": {
+        "ad": "Kuponu düzenle",
+        "aciklama": "Kod, indirim, geçtiği ürünler ve süresi."
+      },
       "yorumlar": {
         "ad": "Yorumlar",
         "aciklama": "Müşterilerin ürün yorumları onayınızdan sonra vitrinde görünür. Yorumun metni değiştirilemez."
@@ -354,7 +370,11 @@
       "yaziEkle": "Yazı ekle",
       "blogKategorileri": "Blog kategorileri",
       "sayfaEkle": "Sayfa ekle",
-      "davetEt": "Davet et"
+      "davetEt": "Davet et",
+      "duzenle": "Düzenle",
+      "kuponEkle": "Kupon ekle",
+      "kuponKapat": "Kuponu kapat",
+      "kuponAc": "Kuponu aç"
     },
     "rol": {
       "magaza-sahibi": "Mağaza sahibi",
@@ -2803,11 +2823,16 @@
         "hesap-kapat": "Hesap kapatır",
         "iki-asama-sifirla": "İki aşamalı girişi sıfırlar",
         "davet-et": "Ekibe davet eder"
+      },
+      "kupon": {
+        "gor": "Kuponları görür",
+        "degistir": "Kupon açar, değiştirir ve kapatır"
       }
     },
     "izinGrubu": {
       "siparis": "Siparişler",
       "musteri": "Müşteriler",
+      "kupon": "Kuponlar",
       "odeme-yontemi": "Ödeme",
       "urun": "Ürünler",
       "kategori": "Kategoriler",
@@ -2956,6 +2981,171 @@
       "hataGenel": "Şu an devam edilemiyor. Biraz sonra yeniden deneyin.",
       "oturumAcik": "Bu tarayıcıda panele bir hesapla girilmiş. Daveti kabul etmek için önce panelden çıkış yapın, sonra davet bağlantısını yeniden açın.",
       "panelDon": "Panele dön"
+    },
+    "kupon": {
+      "liste": "Kuponlar",
+      "ara": "Kupon ara",
+      "araYer": "Kupon kodu ya da adı",
+      "sutun": {
+        "kod": "Kod",
+        "indirim": "İndirim",
+        "gecerlilik": "Geçerlilik",
+        "kullanim": "Kullanım",
+        "durum": "Durum"
+      },
+      "suzgec": {
+        "durum": "Durum"
+      },
+      "durum": {
+        "etkin": "Etkin",
+        "zamanlanmis": "Zamanlanmış",
+        "suresi-doldu": "Süresi dolmuş",
+        "kapali": "Kapalı"
+      },
+      "siralama": {
+        "yeni": "Son eklenen",
+        "kod-artan": "Koda göre (A–Z)",
+        "kullanim-azalan": "En çok kullanılan",
+        "bitis-artan": "Bitişi en yakın"
+      },
+      "bos": {
+        "baslik": "Henüz kupon yok",
+        "metin": "Yüzde ya da tutar indirimi veya ücretsiz kargo veren bir kod açın. Müşteri kodu sepette girer."
+      },
+      "tur": {
+        "baslik": "İndirim türü",
+        "yuzde": "Yüzde",
+        "tutar": "Tutar",
+        "ucretsiz-kargo": "Ücretsiz kargo"
+      },
+      "kapsam": {
+        "baslik": "Hangi ürünlerde geçer",
+        "hepsi": "Bütün ürünler",
+        "kategoriler": "Seçili kategoriler",
+        "urunler": "Seçili ürünler"
+      },
+      "kosul": {
+        "enAz": "En az {tutar}",
+        "kategoriler": "{sayi} kategori",
+        "urunler": "{sayi} ürün",
+        "kisiBasi": "Kişi başı {sayi}",
+        "indirimdeGecmez": "İndirimli ürünlerde geçmez",
+        "ayirici": " · "
+      },
+      "gecerlilik": {
+        "suresiz": "Süresiz",
+        "aralik": "{baslangic} – {bitis}",
+        "baslangic": "{baslangic} başlar",
+        "bitis": "{bitis} biter"
+      },
+      "kullanimSinirli": "{kullanim} / {sinir}",
+      "kullanimSatiri": "{kullanim} kullanım",
+      "telefonSatiri": "{indirim} · {gecerlilik}",
+      "bolum": {
+        "kupon": "Kupon",
+        "kapsam": "Hangi ürünlerde geçer",
+        "sure": "Süre ve kullanım sınırı",
+        "durum": "Durum",
+        "ozet": "Özet"
+      },
+      "kod": "Kupon kodu",
+      "kodAciklamasi": "Müşteri bu kodu sepette yazar. Harf, rakam ve tire; büyük küçük harf fark etmez.",
+      "kodAciklamasiDuyarli": "Müşteri bu kodu sepette yazar. Harf, rakam ve tire; büyük küçük harf ayrılır.",
+      "ad": "Kuponun adı",
+      "adAciklamasi": "Yalnız panelde görünür, müşteri görmez.",
+      "deger": "İndirim",
+      "degerAciklamasiYuzde": "{yuzdeEnAz} ile {yuzdeEnCok} arasında tam sayı. Ürünler sıfıra inmez.",
+      "degerAciklamasiTutar": "Ürünlerin tutarından düşülür; kargoya uygulanmaz, ürünlerde en az bir kuruş kalır.",
+      "yuzdeIsareti": "%",
+      "enAzTutar": "En az sepet tutarı",
+      "enAzTutarAciklamasi": "Kupon bu tutarın altındaki sepette geçmez. Ürünlerin indirimli fiyatıyla hesaplanır.",
+      "kapsamKategoriler": "Kategoriler",
+      "kapsamKategorilerAciklamasi": "Alt kategorilerin ürünleri de dahildir.",
+      "kapsamUrunler": "Ürünler",
+      "kapsamUrunlerAciklamasi": "Kupon yalnız seçilen ürünlerde geçer.",
+      "indirimdeGecmez": "İndirimli ürünlerde geçmez",
+      "indirimdeGecmezAciklamasi": "İşaretliyken indirimdeki ürünler kuponun hesabına girmez; sepette kalan ürünlere uygulanır.",
+      "baslangic": "Başlangıç",
+      "baslangicAciklamasi": "Boş bırakılırsa hemen başlar.",
+      "bitis": "Bitiş",
+      "bitisAciklamasi": "Saatler mağazanın saat dilimindedir ({saatDilimi}). Boş bırakılırsa süresiz.",
+      "toplamSinir": "Toplam kullanım sınırı",
+      "toplamSinirAciklamasi": "Bütün müşteriler toplamı. Boşsa sınırsız.",
+      "kisiBasiSinir": "Kişi başı",
+      "kisiBasiSinirAciklamasi": "Üyede hesapla, üye olmayanda e-posta adresiyle sayılır. Boşsa sınırsız.",
+      "acik": "Kupon açık",
+      "acikYazisi": "Açık",
+      "kapaliYazisi": "Kapalı",
+      "acikAciklamasi": "Kapalı kupon sepette geçerli değil sayılır. Verilen siparişler değişmez.",
+      "ozetCumlesi": {
+        "yuzde": "{kapsam} için %{deger} indirim.",
+        "tutar": "{kapsam} için {tutar} indirim.",
+        "ucretsiz-kargo": "Ücretli kargo ücretsiz olur.",
+        "hepsi": "Bütün ürünler",
+        "toplam": "Toplam {sayi} kullanım.",
+        "tek": "Başka kuponla birlikte kullanılmaz."
+      },
+      "kilitli": {
+        "baslik": "Kullanılmış kupon",
+        "metin": "Kupon bir siparişte kullanıldı ya da ödemesi süren bir sepette: kodu, türü, indirimi, geçtiği ürünler ve indirimli ürün kuralı değişmez, verilen siparişlerle tutarsız olurdu. Süresi, sınırları, en az tutarı ve durumu değişir. Farklı indirim için yeni kupon açın."
+      },
+      "silinmisKapsam": {
+        "baslik": "Silinmiş kayıtlar",
+        "metin": "Kuponun geçtiği şu kayıtlar silindi, kupon onlarda geçmez: {adlar}."
+      },
+      "ekle": "Kuponu ekle",
+      "kaydet": "Kaydet",
+      "eklendi": "Kupon eklendi.",
+      "kaydedildi": "Kupon kaydedildi.",
+      "kapatildi": "Kupon kapatıldı. Müşteriler artık kullanamaz.",
+      "acildi": "Kupon açıldı.",
+      "ozet": {
+        "kullanim": "Kullanım",
+        "kalan": "kalan {sayi}",
+        "verilenIndirim": "Verilen indirim",
+        "verilenIndirimAlt": "{sayi} sipariş",
+        "siparisToplami": "Kuponlu siparişler",
+        "siparisToplamiAlt": "indirim sonrası",
+        "iadeSonrasi": "İade sonrası net",
+        "suren": "{sayi} ödeme sürüyor",
+        "kalanSuren": "kalan {sayi} · {suren} ödeme sürüyor"
+      },
+      "kapsamBasligi": "Geçtiği ürünler",
+      "silinmisKayit": "{ad} (silindi)",
+      "kullanimlar": {
+        "baslik": "Kullanıldığı siparişler",
+        "tablo": "{kod} kullanılan siparişler",
+        "bos": "Kupon henüz bir siparişte kullanılmadı.",
+        "siparis": "Sipariş",
+        "musteri": "Müşteri",
+        "tarih": "Tarih",
+        "durum": "Durum",
+        "indirim": "İndirim",
+        "toplam": "Toplam",
+        "adYok": "Bilgi silindi",
+        "uyeDegil": "üye değil",
+        "geriVerildi": "Kullanım geri verildi",
+        "indirimYazisi": "−{tutar}",
+        "sayfalar": "Kullanımların sayfaları",
+        "not": "Kullanım sayısı iptal edilmemiş siparişleri sayar; iptal ya da tam iadede kullanım hakkı geri verilir. Dönemlik karşılaştırma Raporlar'dadır."
+      },
+      "hata": {
+        "kod-gecersiz": "Kodu {kodEnAz} ile {kodEnCok} karakter arasında, yalnız harf, rakam ve tireyle yazın.",
+        "kod-var": "Bu kod başka bir kuponda kullanılıyor. Başka bir kod yazın.",
+        "yuzde-gecersiz": "İndirim yüzdesini {yuzdeEnAz} ile {yuzdeEnCok} arasında tam sayı olarak yazın.",
+        "tutar-gecersiz": "İndirim tutarını sıfırdan büyük yazın; çok büyük tutar kabul edilmez.",
+        "deger-gecersiz": "Ücretsiz kargo kuponunda indirim yazılmaz.",
+        "tutar-okunamadi": "Tutarı yalnız rakamla yazın, örneğin 50,00.",
+        "tutar-sinir-disi": "Tutar izin verilen sınırın dışında. Daha küçük bir tutar yazın.",
+        "sayi-gecersiz": "Sınırı 1 ya da daha büyük bir tam sayı olarak yazın; sınırsız için boş bırakın.",
+        "zaman-gecersiz": "Tarihi ve saati seçin.",
+        "sure-ters": "Bitiş başlangıçtan sonra olmalı.",
+        "kapsam-bos": "Kuponun geçeceği en az bir kayıt seçin.",
+        "kapsam-sinir": "En çok {kapsamEnCok} kayıt seçilebilir.",
+        "kayit-yok": "Seçilen kayıtlardan biri silinmiş. Listeden kaldırıp yeniden seçin.",
+        "kullanildi": "Kupon kullanıldığı için bu alan değişmez.",
+        "kupon-degisti": "Kupon siz düzenlerken başka biri tarafından değiştirildi. Sayfayı yenileyip yeniden deneyin."
+      }
     }
   },
   "vitrin": {

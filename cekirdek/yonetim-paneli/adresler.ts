@@ -40,6 +40,15 @@ export const yeniUrunAdresi = `${urunlerAdresi}/yeni`;
 export const urunEkraniAdresi = (kimlik: string): string =>
   `${urunlerAdresi}/urun?kimlik=${encodeURIComponent(kimlik)}`;
 
+// Kuponlar (kart 0313): liste, yeni kupon, kuponun sayfası (kullanımları; ?kimlik=, kullanımların sayfası ?sayfa=)
+// ve düzenleme.
+export const kuponlarAdresi = `${panelAdresi}/kuponlar`;
+export const yeniKuponAdresi = `${kuponlarAdresi}/yeni`;
+export const kuponAdresi = (kimlik: string, sayfa?: number): string =>
+  `${kuponlarAdresi}/kupon?kimlik=${encodeURIComponent(kimlik)}${sayfa === undefined || sayfa <= 1 ? "" : `&sayfa=${sayfa}`}`;
+export const kuponDuzenleAdresi = (kimlik: string): string =>
+  `${kuponlarAdresi}/duzenle?kimlik=${encodeURIComponent(kimlik)}`;
+
 // Blog (kart 0272): yazıların listesi, yeni yazı, yazının ekranı (kimlik adresin sorgusunda) ve blog kategorileri.
 export const blogAdresi = `${panelAdresi}/blog`;
 export const yeniBlogYazisiAdresi = `${blogAdresi}/yeni`;

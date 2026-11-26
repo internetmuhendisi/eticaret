@@ -111,6 +111,7 @@ export const degisiklikIslemleri = [
   "siparis.panelden-olusturuldu",
   // Kuponlar (kart 0312). Başlangıç kuponları aynı işlemle, "baslangic-kupon" adlı sistem işlemi olarak yazılır.
   "kupon.eklendi",
+  "kupon.degisti",
   // Kart 0239: mağaza müşterinin iade talebini onayladı ya da reddetti (talep, kalemler, ret açıklaması kayda
   // girmez: müşteriye yazılan serbest metindir).
   "siparis.iade-talebi-onaylandi",

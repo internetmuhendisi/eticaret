@@ -449,6 +449,13 @@
       "when": 1795709996604,
       "tag": "0063_oturum-kupon-kodu-kalkar",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1795711983507,
+      "tag": "0064_kupon-paneli",
+      "breakpoints": true
     }
   ]
 }

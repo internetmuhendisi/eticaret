@@ -34,6 +34,7 @@ import {
   PrinterIcon,
   StoreIcon,
   TagsIcon,
+  TicketPercentIcon,
   UploadIcon,
   UserPlusIcon,
   UsersIcon,
@@ -66,6 +67,8 @@ export const panelIkonlari = {
   menuler: ListTreeIcon,
   kategoriler: FolderTreeIcon,
   markalar: TagsIcon,
+  // Kuponlar (kart 0313).
+  kupon: TicketPercentIcon,
   ozellikler: ListChecksIcon,
   // Yorumlar (kart 0277): menüdeki sayfa ve boş hâli.
   yorumlar: MessageSquareTextIcon,

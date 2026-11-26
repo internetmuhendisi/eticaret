@@ -38,6 +38,11 @@ export const panelEylemleri = {
   "sayfa-ekle": { ikon: "ekle", ad: "yonetim.eylem.sayfaEkle" },
   // Ekip (kart 0275): ekibe davet.
   "davet-et": { ikon: "davet", ad: "yonetim.eylem.davetEt" },
+  // Kuponlar (kart 0313): listenin "Kupon ekle"si; kuponun sayfasının "Düzenle"si, "Kapat"ı ve "Aç"ı.
+  "kupon-ekle": { ikon: "ekle", ad: "yonetim.eylem.kuponEkle" },
+  "kupon-duzenle": { ikon: "duzenle", ad: "yonetim.eylem.duzenle" },
+  "kupon-kapat": { ikon: "iptal", ad: "yonetim.eylem.kuponKapat" },
+  "kupon-ac": { ikon: "basari", ad: "yonetim.eylem.kuponAc" },
 } as const satisfies Record<string, { ikon: PanelIkonAdi; ad: MetinAnahtari }>;
 
 export type PanelEylemi = keyof typeof panelEylemleri;

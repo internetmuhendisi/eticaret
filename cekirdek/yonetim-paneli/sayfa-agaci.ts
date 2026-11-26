@@ -136,6 +136,47 @@ export const panelSayfalari = [
     grup: "satis",
     ust: "musteriler",
   },
+  // Kuponlar (kart 0313, karar 0188): görevli ve sipariş görevlisi görür; açmak, değiştirmek ve kapatmak mağaza
+  // sahibinindir (kupon.degistir). Kuponun sayfası (kullanımları) ve düzenleme alt sayfadır (?kimlik=).
+  {
+    kod: "kuponlar",
+    adres: `${panelAdresi}/kuponlar`,
+    ad: "yonetim.sayfa.kuponlar.ad",
+    aciklama: "yonetim.sayfa.kuponlar.aciklama",
+    ikon: "kupon",
+    izin: "kupon.gor",
+    grup: "satis",
+  },
+  {
+    kod: "yeni-kupon",
+    adres: `${panelAdresi}/kuponlar/yeni`,
+    ad: "yonetim.sayfa.yeniKupon.ad",
+    aciklama: "yonetim.sayfa.yeniKupon.aciklama",
+    ikon: "ekle",
+    izin: "kupon.degistir",
+    grup: "satis",
+    ust: "kuponlar",
+  },
+  {
+    kod: "kupon",
+    adres: `${panelAdresi}/kuponlar/kupon`,
+    ad: "yonetim.sayfa.kupon.ad",
+    aciklama: "yonetim.sayfa.kupon.aciklama",
+    ikon: "kupon",
+    izin: "kupon.gor",
+    grup: "satis",
+    ust: "kuponlar",
+  },
+  {
+    kod: "kupon-duzenle",
+    adres: `${panelAdresi}/kuponlar/duzenle`,
+    ad: "yonetim.sayfa.kuponDuzenle.ad",
+    aciklama: "yonetim.sayfa.kuponDuzenle.aciklama",
+    ikon: "duzenle",
+    izin: "kupon.degistir",
+    grup: "satis",
+    ust: "kuponlar",
+  },
   // Slider kısayolu (kart 0142, karar 0101): ana sayfadaki ilk kayan afişin formu. Kayıtta düzeni değiştirir.
   {
     kod: "slider",

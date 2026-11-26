@@ -46,4 +46,45 @@ export const kuponSinirlari = {
   tutarEnCok: 100_000_000_00,
   kullanimEnCok: 1_000_000_000,
   kapsamEnCok: 500,
+  // Panelin listesinde arama (kod ve ad).
+  aramaEnCok: 100,
 } as const;
+
+// Panelin kupon listesi (kart 0313, karar 0188). Durum kuponun bugünkü hâlidir, veritabanının saatiyle tek SQL
+// ifadesinden bulunur (cekirdek/moduller/kampanya/panel.ts, kuponDurumuSql): kapalı; açıksa başlangıcı gelmemişse
+// zamanlanmış, bitişi geçmişse (bitiş anı dahil) süresi dolmuş, öteki hâlde etkin. Sınırı dolmuş kupon etkindir.
+export const kuponDurumlari = ["etkin", "zamanlanmis", "suresi-doldu", "kapali"] as const;
+export type KuponDurumu = (typeof kuponDurumlari)[number];
+
+// Listenin sıralamaları; ilki varsayılandır.
+export const kuponPanelSiralamalari = [
+  "yeni",
+  "kod-artan",
+  "kullanim-azalan",
+  "bitis-artan",
+] as const;
+export type KuponPanelSiralamasi = (typeof kuponPanelSiralamalari)[number];
+
+// Panelin kupon formunun ve servisinin hata kodları (alanın yoluyla döner; metinleri yonetim.kupon.hata.<kod>).
+// - yuzde-gecersiz, tutar-gecersiz: indirim türünün sınırları dışında; deger-gecersiz: ücretsiz kargo kuponunda
+//   indirim (ekran göndermez).
+// - kullanildi: kullanılmış kuponun kodu, türü, indirimi, kapsamı ya da "indirimli ürünlerde geçmez"i değişmez.
+// - kupon-degisti: ekranın gördüğü kupon arada değişti (çakışma).
+export const kuponHatalari = [
+  "kod-gecersiz",
+  "kod-var",
+  "yuzde-gecersiz",
+  "tutar-gecersiz",
+  "deger-gecersiz",
+  "tutar-okunamadi",
+  "tutar-sinir-disi",
+  "sayi-gecersiz",
+  "zaman-gecersiz",
+  "sure-ters",
+  "kapsam-bos",
+  "kapsam-sinir",
+  "kayit-yok",
+  "kullanildi",
+  "kupon-degisti",
+] as const;
+export type KuponHatasi = (typeof kuponHatalari)[number];

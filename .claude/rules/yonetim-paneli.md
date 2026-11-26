@@ -88,6 +88,11 @@ paths:
 - Teslimat ve fatura bilgilerinin düzeltmesi (kart 0269, karar 0180) Teslimat bölümündeki "Düzelt"in yan penceresidir (`adres-duzeltme.tsx`): elle siparişin alanları (`cekirdek/vitrin/odeme/alanlar.tsx`), pencerenin açıldığı andaki özet (`surum`) gider, yalnız `siparis.yonet` izni olana, kargoya verilene kadar (`adresDuzeltilebilirDurumlar`) ve kişisel bilgisi silinmemiş siparişte görünür (`siparisAyrintisiVerisi`'nin `adresDuzeltme`'si). Kural servistedir (`siparisAdresServisi`, `cekirdek/moduller/siparis/adres-duzeltme.ts`); geçmişin satırı değişen önceki bilgileri gösterir.
 - İptal ve iade (karar 0147) yan penceredir (`iade-penceresi.tsx`), yalnız `siparis.iade` izni olana ve durumu izin veren siparişte görünür; tutar ve vergi önizlemesi sunucunun `iadeyiHesapla`'sıyla ve sitenin biçim ayarlarıyla (`siteninBicimAyarlari`) çizilir, gönderilen yalnız seçimdir.
 
+## Kuponlar (karar 0188)
+
+- Ekranlar `cekirdek/yonetim-paneli/kuponlar/` klasöründe, menüde "Satış" altında Müşteriler'den sonradır: Kuponlar (liste motoruyla, `liste-tanimi.ts`), Yeni kupon, kuponun sayfası (`kupon?kimlik=`, özet ve kullanıldığı siparişler) ve Kuponu düzenle. Görmek `kupon.gor` (görevli ve sipariş görevlisi de), açmak, değiştirmek, kapatmak ve açmak `kupon.degistir` (yalnız mağaza sahibi). Kupon silinmez.
+- Sorgular `cekirdek/moduller/kampanya/panel.ts`'tedir: durum yalnız `kuponDurumuSql`, formun metinleri yalnız `panelKuponGirdisi` ile okunur; kurallar servisin `kuponuDenetle`'sindedir. Form yalnız değişen alanları ve gördüğü değişme anını gönderir (`kuponGirdisi`); kullanılmış kuponun kilitli alanları kapalıdır.
+
 ## Mağaza bilgileri (karar 0175)
 
 - Ekran `cekirdek/yonetim-paneli/magaza-bilgileri/` klasöründe, menüde "Ayarlar" grubunun başındadır (kart 0301). Mağaza ayarıdır: görmek `magaza-ayarlari.gor`, değiştirmek `magaza-ayarlari.degistir`.
