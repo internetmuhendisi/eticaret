@@ -176,11 +176,12 @@ const bilgiler = (odemeYontemi: OdemeYontemiSecimi) =>
     mesafeliSatisOnayi: true,
     pazarlamaIzni: false,
   });
-// Müşterinin kuyruğa ve e-postaya gitmeyen bilgileri: telefonun girilen ve çevrilmiş yazılışı,
+// Müşterinin kuyruğa ve e-postaya gitmeyen bilgileri: telefonun girilen ("0555 …") ve saklanan ("+90 555 …")
+// yazılışlarının ortak parçası ve bitişik yazılışı,
 // açık adres, posta kodu ve soyadı.
 const gizliler = (eposta: string) => [
   eposta,
-  "0555 123 45 67",
+  "555 123 45 67",
   "5551234567",
   "Gizli Sokak",
   "06420",
