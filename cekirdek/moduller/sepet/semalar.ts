@@ -2,6 +2,7 @@
 // Sepet tarayıcıdadır: sunucuya yalnız birimler, adetler ve müşterinin son gördüğü birim fiyatı gelir; tutar
 // gelmez, sunucu her şeyi yeniden hesaplar.
 import { z } from "zod";
+import { kuponSinirlari } from "../../kayitlar/kampanya.ts";
 import { sepetSinirlari } from "../../kayitlar/sepet.ts";
 import { kimlikSemasi } from "../../veritabani/kimlik.ts";
 
@@ -28,7 +29,12 @@ export const vergiBolgeleriSemasi = z.strictObject({
 });
 export type VergiBolgeleri = z.output<typeof vergiBolgeleriSemasi>;
 
+// Müşterinin sepette yazdığı kupon kodu (kart 0312): biçimi burada yalnız uzunlukla sınırlanır; biçimi tutmayan kod
+// kampanya modülünde "bulunamadı" sayılır (kodun var olup olmadığı belli olmaz).
+export const kuponKoduSemasi = z.string().trim().min(1).max(kuponSinirlari.kodEnCok);
+
 export const sepetSemasi = z.strictObject({
   kalemler: z.array(sepetKalemiSemasi).max(sepetSinirlari.kalemEnCok),
   vergiBolgeleri: vergiBolgeleriSemasi.optional(),
+  kupon: kuponKoduSemasi.optional(),
 });

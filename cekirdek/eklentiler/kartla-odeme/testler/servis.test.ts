@@ -25,6 +25,8 @@ import { BilinenHata, Yonlendirme } from "../../../kapi/zarf.ts";
 import { sistemIslemi } from "../../../kayitlar/degisiklik-islemleri.ts";
 import { kartOdemesiDurumlari } from "../../../kayitlar/eklentiler.ts";
 import { siteninFiyatServisi } from "../../../moduller/fiyat/servis.ts";
+import { kuponKullanimlari } from "../../../moduller/kampanya/model.ts";
+import { kuponServisi } from "../../../moduller/kampanya/servis.ts";
 import { siteninServisi } from "../../../moduller/magaza-ayarlari/servis.ts";
 import { odemeOturumlari } from "../../../moduller/odeme/model.ts";
 import { odemeBilgileriSemasi } from "../../../moduller/odeme/semalar.ts";
@@ -37,6 +39,7 @@ import { siparisServisi } from "../../../moduller/siparis/servis.ts";
 import { siparisYonetimi } from "../../../moduller/siparis/yonetim.ts";
 import { birimStoklari, stokAyirmalari } from "../../../moduller/stok/model.ts";
 import { stokServisi } from "../../../moduller/stok/servis.ts";
+import { urunBirimleri } from "../../../moduller/urun/model.ts";
 import { urunServisi } from "../../../moduller/urun/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
@@ -375,6 +378,64 @@ describe("ödeme", () => {
     expect(await ayirmalar(oturum)).toEqual([]);
     expect(await stogu(birim)).toBe(1);
     expect((await odemeSatiri(belirtec))?.durum).toBe("basarisiz");
+  });
+
+  it("kuponlu sepet (kart 0312): kuruluşa kalemin ödenen tutarı gider, sıfıra inen kalem gitmez; başarısızda kupon ayırması bırakılır", async () => {
+    const a = await birimAc();
+    const b = await birimAc();
+    const urunA =
+      (await vt.select().from(urunBirimleri).where(eq(urunBirimleri.kimlik, a)))[0]?.urun_kimligi ??
+      "";
+    const kod = `KART${randomBytes(3).toString("hex").toUpperCase()}`;
+    await vt.transaction((islem) =>
+      kuponServisi(site).ekle(
+        islem,
+        { tur: "yonetici", kimlik: randomUUID() },
+        {
+          kod,
+          tur: "tutar",
+          deger: 15_000,
+          kapsam: "urunler",
+          kapsamKayitlari: [urunA],
+        },
+      ),
+    );
+    const sonuc = await odemeServisi(site).onayla(
+      vt,
+      {
+        kim: { tur: "misafir", eposta: "kuponlu@ornek.test", hesap: { ac: false } },
+        bilgiler: bilgiler(),
+        kalemler: [
+          { birim: a, adet: 1 },
+          { birim: b, adet: 1 },
+        ],
+        kupon: kod,
+        ip: "203.0.113.5",
+      },
+      3600,
+    );
+    if (sonuc.tur !== "yonlendir") throw new Error("Kartla ödeme yönlendirmeliydi.");
+    const [odeme] = await vt
+      .select()
+      .from(kartOdemeleri)
+      .where(eq(kartOdemeleri.oturum_kimligi, sonuc.oturum));
+    const kurulustaki = kurulus.odemeler.get(odeme?.belirtec ?? "");
+    // A'nın 150,00'ı kuponla sıfıra iner: kuruluşa yalnız B gider.
+    expect(kurulustaki?.kalemler.map((kalem) => [kalem.id, kalem.tutar])).toEqual([[b, 15_000]]);
+    expect(
+      await vt
+        .select()
+        .from(kuponKullanimlari)
+        .where(eq(kuponKullanimlari.oturum_kimligi, sonuc.oturum)),
+    ).toHaveLength(1);
+    odemeAyarla(odeme?.belirtec ?? "", "basarisiz");
+    await servis.tamamla(vt, odeme?.belirtec ?? "", { erisimVer: true });
+    expect(
+      await vt
+        .select()
+        .from(kuponKullanimlari)
+        .where(eq(kuponKullanimlari.oturum_kimligi, sonuc.oturum)),
+    ).toEqual([]);
   });
 
   const yaslandir = (belirtec: string, aralik: string) =>

@@ -5,7 +5,7 @@
 //   "Kartla öde" müşteriye görünmez. Sitenin para birimini kuruluşun desteklediği eklenti açılırken denetlenir
 //   (çekirdekte para birimi kodu yazılmaz); desteklemiyorsa ödeme başlatılamaz, müşteri "yontem-ulasilamadi" görür.
 // - Kuruluşa giden tutar oturumun toplamıdır (sunucunun hesabı). Kalemlerin toplamı tutara eşit olmalıdır: satırların
-//   ve kargonun tutarı yazılır, gösterimden kalan fark (vergi hariç gösterimde vergi, yuvarlama) son ürün kalemine eklenir.
+//   ödenen tutarı (vergisiz artı vergi, kupondan sonra) ve kargo yazılır, kalan fark son ürün kalemine eklenir.
 // - Alıcının kimlik numarası sorulmaz (kullanıcı kararı): kurumsal faturada vergi numarası, bireyselde yer tutucu.
 // - Kuruluşa ulaşılamazsa ya da yanıtı tutmazsa hata kaydedilir ve "yontem-ulasilamadi" döner; ödeme satırı yazılmaz.
 import { eq, inArray } from "drizzle-orm";
@@ -64,12 +64,19 @@ const kalemleriKur = async (
     ).map((satir) => [satir.birim, satir.ad]),
   );
   const kategori = metin("eklenti.kartlaOdeme.kategori");
-  const kalemler = satirlar.map((satir) => ({
-    kimlik: satir.birim,
-    ad: adlar.get(satir.birim) ?? kategori,
-    kategori,
-    tutar: satir.tutar ?? 0,
-  }));
+  // Kalemin tutarı müşterinin onun için ödediğidir: kuponlu sepette kupondan sonra (kart 0312). Kupon kalemi sıfıra
+  // indirdiyse kalem gönderilmez (kuruluş sıfır tutarlı kalemi kabul etmez); iadede o kalemden para dönmez.
+  const kalemler = satirlar
+    .map((satir) => ({
+      kimlik: satir.birim,
+      ad: adlar.get(satir.birim) ?? kategori,
+      kategori,
+      tutar:
+        satir.vergi === undefined
+          ? (satir.tutar ?? 0) - (satir.indirim ?? 0)
+          : satir.vergi.vergisiz + satir.vergi.vergi,
+    }))
+    .filter((kalem) => kalem.tutar > 0);
   const { kargo } = girdi.hesap;
   if (kargo.tur === "ucretli") {
     const ad = metin("eklenti.kartlaOdeme.kargo");

@@ -74,6 +74,33 @@ const sayilanKullanim = (): SQL =>
 
 const epostaAnahtari = (eposta: string | null) => (eposta === null ? null : eposta.toLowerCase());
 
+// Ödeme başarısız ya da müşteri yeniden onayladı: oturumun siparişe bağlanmamış ayırması gider. Yalnız oturumun
+// ayırmalarını birlikte bırakan işlevden çağrılır (cekirdek/moduller/odeme/ayirma.ts).
+export const kuponAyirmasiniBirak = async (
+  islem: VeritabaniIslemi,
+  oturum: string,
+): Promise<void> => {
+  await islem
+    .delete(kuponKullanimlari)
+    .where(
+      and(eq(kuponKullanimlari.oturum_kimligi, oturum), isNull(kuponKullanimlari.siparis_kimligi)),
+    );
+};
+
+// İptal ve tam iade (karar 0185): siparişin kullanımı geri verilir (sayılmaz olur). Kısmi iade çağırmaz. Siteye bağlı
+// değildir: iptalin tek akışı (siparis/iade.ts) siteyi taşımadan çağırır.
+export const kuponKullaniminiSerbestBirak = async (
+  islem: VeritabaniIslemi,
+  siparis: string,
+): Promise<void> => {
+  await islem
+    .update(kuponKullanimlari)
+    .set({ serbest_zamani: sql`now()` })
+    .where(
+      and(eq(kuponKullanimlari.siparis_kimligi, siparis), isNull(kuponKullanimlari.serbest_zamani)),
+    );
+};
+
 export const kuponServisi = (site: Site) => {
   const kodKosulu = (kod: string): SQL =>
     site.ayarlar.kuponKoduHarfDuyarli
@@ -251,31 +278,6 @@ export const kuponServisi = (site: Site) => {
       .where(eq(kuponKullanimlari.kimlik, ayirma.kimlik));
   };
 
-  // Ödeme başarısız ya da müşteri yeniden onayladı: oturumun siparişe bağlanmamış ayırması gider.
-  const ayirmayiBirak = async (islem: VeritabaniIslemi, oturum: string): Promise<void> => {
-    await islem
-      .delete(kuponKullanimlari)
-      .where(
-        and(
-          eq(kuponKullanimlari.oturum_kimligi, oturum),
-          isNull(kuponKullanimlari.siparis_kimligi),
-        ),
-      );
-  };
-
-  // İptal ve tam iade (karar 0185): siparişin kullanımı geri verilir. Kısmi iade çağırmaz.
-  const kullanimiSerbestBirak = async (islem: VeritabaniIslemi, siparis: string): Promise<void> => {
-    await islem
-      .update(kuponKullanimlari)
-      .set({ serbest_zamani: sql`now()` })
-      .where(
-        and(
-          eq(kuponKullanimlari.siparis_kimligi, siparis),
-          isNull(kuponKullanimlari.serbest_zamani),
-        ),
-      );
-  };
-
   // Kupon açar (başlangıç verisi ve testler; panelin formu kart 0313). Kod tekilliği harf ayrımsızdır.
   const ekle = async (
     islem: VeritabaniIslemi,
@@ -361,8 +363,7 @@ export const kuponServisi = (site: Site) => {
     kullanimlar,
     ayir,
     siparisiBagla,
-    ayirmayiBirak,
-    kullanimiSerbestBirak,
+    kullanimiSerbestBirak: kuponKullaniminiSerbestBirak,
     ekle,
   };
 };

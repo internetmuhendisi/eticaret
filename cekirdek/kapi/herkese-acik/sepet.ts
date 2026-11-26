@@ -1,6 +1,8 @@
 // POST /kapi/herkese-acik/sepet (kart 0212, karar 0135; uç belgesi: cekirdek/kapi/uclar.md). Tarayıcıdaki sepetin
 // birimleri ve adetleri gelir, sepetin vitrin verisi döner: satırlar, uyarılar, ara toplam, kargo, vergi dökümü ve
-// toplam. Ödeme adımı teslimat ve fatura adresinin bölgesini de verir, vergi ona göre hesaplanır (kart 0213).
+// toplam. Ödeme adımı teslimat ve fatura adresinin bölgesini de verir, vergi ona göre hesaplanır (kart 0213). Sepette
+// yazılan kupon kodu da gelir (kart 0312): kupon uygulanır ya da geçmeme nedeni döner; kişi başı sınır burada
+// sayılmaz (uç oturumsuzdur), ödeme adımında sayılır.
 // Hiçbir şey yazmaz, oturum istemez (sepet tarayıcıdadır). Uç yalnız yönlendirir: hesap sepet modülünde,
 // gösterim vitrinin sepet verisindedir. Tema demosunda açıktır: sepet gezintinin parçasıdır, sipariş doğurmaz.
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
@@ -16,8 +18,9 @@ export const sepetUcu = ucTanimla({
   sema: sepetSemasi,
   izin: herkeseAcik,
   sinir: "genel",
-  isle: ({ kalemler, vergiBolgeleri }) =>
+  isle: ({ kalemler, vergiBolgeleri, kupon }) =>
     sepetGorunumu(siteninVeritabani(), calisanSite(), kalemler, {
       ...(vergiBolgeleri === undefined ? {} : { adresler: vergiBolgeleri }),
+      ...(kupon === undefined ? {} : { kupon }),
     }),
 });

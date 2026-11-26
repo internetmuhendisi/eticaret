@@ -17,7 +17,7 @@ export const uyeOdemeUcu = ucTanimla({
   izin: "odeme.kendi.baslat",
   sinir: "siki",
   isle: async (
-    { robotCevabi, bilgiler, kalemler, onceki, gorulenToplam, adresiKaydet },
+    { robotCevabi, bilgiler, kalemler, onceki, gorulenToplam, kupon, adresiKaydet },
     istek,
     yanit,
     { hesapKimligi },
@@ -32,6 +32,7 @@ export const uyeOdemeUcu = ucTanimla({
         kalemler,
         onceki,
         gorulenToplam,
+        kupon,
         ip: istemciAdresi(istek),
       },
       oturumSuresiSaniye("musteri", site.ayarlar),

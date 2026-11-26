@@ -10,7 +10,8 @@
 //   tamamsa iade tamamlanır, redse "basarisiz" olur (hiçbir şey değişmez), belirsizse bekler (eklentinin taraması
 //   iadeSonucunuIsle'yi çağırır).
 // - İade tamamlanınca aynı işlemde: siparişin durumu (iptal, kısmi iade, iade edildi), stok (seçildiyse; yalnız bu
-//   siparişin düşürüp henüz geri konmamış adedi), sipariş geçmişi ve değişiklik kaydı.
+//   siparişin düşürüp henüz geri konmamış adedi), sipariş geçmişi ve değişiklik kaydı; iptalde ve siparişin tamamı
+//   iade edilince kuponun kullanım hakkı geri verilir (kart 0312, karar 0185).
 // - Müşterinin kendi iptali (kart 0239, iade-talebi.ts) aynı akıştır: kaynak "musteri", geçmişe musteri-iptali yazılır.
 //   Ayarın izin verdiği durum (ayar işlemden hemen önce okunur) ve ödeme kuralı siparişin kilidi altında denetlenir: ödemesi alınmış ve parası
 //   kuruluştan dönmeyen siparişi müşteri iptal edemez (kullanıcı kararı).
@@ -34,6 +35,7 @@ import {
 import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
+import { kuponKullaniminiSerbestBirak } from "../kampanya/servis.ts";
 import { stokGecmisi } from "../stok/model.ts";
 import { stokServisi } from "../stok/servis.ts";
 import { gecmiseYaz, kimSutunlari } from "./gecmis.ts";
@@ -212,6 +214,10 @@ const tamamla = async (
       .update(siparisler)
       .set({ durum: sonraki })
       .where(eq(siparisler.kimlik, iade.siparis_kimligi));
+  }
+  // Kuponun kullanım hakkı iptalde ve siparişin tamamı iade edilince geri verilir (karar 0185, kart 0312).
+  if (sonraki === "iptal" || sonraki === "iade-edildi") {
+    await kuponKullaniminiSerbestBirak(islem, iade.siparis_kimligi);
   }
   if (iade.stoga_konacak) {
     const kalan = await geriKonabilir(islem, iade.siparis_kimligi);

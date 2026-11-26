@@ -6,8 +6,8 @@
 // - Sipariş tek kez kurulur: ödeme satırı kilitlenir, yalnız "başlatıldı"daki ödeme sipariş kurar; sipariş oturuma
 //   tekildir. İkinci dönüş ya da bildirim var olan siparişi bulur.
 // - Ödeme alındı ama sipariş kurulamadıysa (stok yok, fiyat değişti) ödeme aynı gün iptal edilir (kullanıcı kararı),
-//   ayrılan stok bırakılır. İptal edilemezse ödeme "başlatıldı"da kalır, hata kaydedilir; tarama yeniden dener.
-// - Başarısız ödemede ayrılan stok bırakılır. Sonucu bilinmeyen ödeme tarama ile sorulur; kuruluş uzun süre sonuç
+//   ayrılan stok ve kuponun ayırması bırakılır (oturumunAyirmalariniBirak, kart 0312). İptal edilemezse ödeme "başlatıldı"da kalır, hata kaydedilir; tarama yeniden dener.
+// - Başarısız ödemede ayrılan stok ve kupon bırakılır. Sonucu bilinmeyen ödeme tarama ile sorulur; kuruluş uzun süre sonuç
 //   vermezse ödeme başarısız sayılır.
 // - Eklenti kapalıyken de başlatılmış ödeme tamamlanır (parası çekilmiş müşterinin siparişi kaybolmaz); yeni ödeme
 //   başlatılmaz, taksit tablosu verilmez.
@@ -20,11 +20,11 @@ import { type KartOdemesiDurumu, kartlaOdemeAyari } from "../../kayitlar/eklenti
 import type { OdemeDonusSonucu } from "../../kayitlar/odeme.ts";
 import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
 import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis.ts";
+import { oturumunAyirmalariniBirak } from "../../moduller/odeme/ayirma.ts";
 import { eklentiliSiparisiKur, SiparisKurulamadi } from "../../moduller/odeme/oturum-hesabi.ts";
 import { sepetiHesapla } from "../../moduller/sepet/hesap.ts";
 import { siparisler } from "../../moduller/siparis/model.ts";
 import { erisimOzeti } from "../../moduller/siparis/servis.ts";
-import { stokServisi } from "../../moduller/stok/servis.ts";
 import { yoneticiBildirimiYaz } from "../../moduller/yonetici-bildirimi/servis.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
 import { kimlikMi } from "../../veritabani/kimlik.ts";
@@ -39,8 +39,6 @@ import {
   taksitSecenekleri,
 } from "./iyzico.ts";
 import { type KartOdemesi, kartOdemeleri } from "./model.ts";
-
-const stok = stokServisi();
 
 // Ürün sayfasının taksit tablosu (tutarlar sitenin biçimiyle yazılı).
 export type TaksitTablosu = {
@@ -135,7 +133,7 @@ export const kartlaOdemeServisi = (site: Site) => {
             sonuc_zamani: sql`now()`,
           })
           .where(eq(kartOdemeleri.kimlik, odeme.kimlik));
-        await stok.ayirmayiBirak(islem, odeme.oturum_kimligi);
+        await oturumunAyirmalariniBirak(islem, odeme.oturum_kimligi);
         return true;
       });
     } catch (hata) {
@@ -188,7 +186,7 @@ export const kartlaOdemeServisi = (site: Site) => {
           .set({ durum: "basarisiz", sonuc_zamani: sql`now()` })
           .where(and(eq(kartOdemeleri.kimlik, odeme.kimlik), eq(kartOdemeleri.durum, "baslatildi")))
           .returning({ kimlik: kartOdemeleri.kimlik });
-        if (degisen !== undefined) await stok.ayirmayiBirak(islem, odeme.oturum_kimligi);
+        if (degisen !== undefined) await oturumunAyirmalariniBirak(islem, odeme.oturum_kimligi);
       });
       return { tur: "donus", sonuc: "reddedildi" };
     }
@@ -329,7 +327,7 @@ export const kartlaOdemeServisi = (site: Site) => {
                 ),
               )
               .returning({ kimlik: kartOdemeleri.kimlik });
-            if (degisen !== undefined) await stok.ayirmayiBirak(islem, odeme.oturum_kimligi);
+            if (degisen !== undefined) await oturumunAyirmalariniBirak(islem, odeme.oturum_kimligi);
           });
         }
       } catch (hata) {

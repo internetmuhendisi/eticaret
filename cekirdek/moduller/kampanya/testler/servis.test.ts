@@ -21,7 +21,7 @@ import { odemeOturumlari } from "../../odeme/model.ts";
 import { hesapAc } from "../../oturum/servis.ts";
 import { urunServisi } from "../../urun/servis.ts";
 import { kuponKapsami, kuponKullanimlari, kuponlar } from "../model.ts";
-import { type KuponKisisi, kuponServisi } from "../servis.ts";
+import { type KuponKisisi, kuponAyirmasiniBirak, kuponServisi } from "../servis.ts";
 
 const yonetici = (): DegisikligiYapan => ({ tur: "yonetici", kimlik: randomUUID() });
 const site: Site = siteKlasorunuOku(
@@ -137,7 +137,7 @@ describe("kullanım sınırları", () => {
     const h = await hazirla();
     const kupon = await h.kuponAc({ toplamSinir: 1 });
     const oturum = await h.ayir(kupon, kisi());
-    await h.vt.transaction((islem) => servis.ayirmayiBirak(islem, oturum));
+    await h.vt.transaction((islem) => kuponAyirmasiniBirak(islem, oturum));
     expect(await h.kullanimlar()).toEqual([]);
     await h.ayir(kupon, kisi());
     // Serbest bırakma siparişe göredir: bağlı satır doğrudan işaretlenerek denenir.
