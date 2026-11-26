@@ -17,7 +17,7 @@ import { doldur } from "../../metinler/doldur";
 import { useMetin } from "../../metinler/istemci-metni";
 import { vitrinAdresleri } from "../adresler";
 import { penceredenDonulecekOge, pencereyiKapat, useSepet } from "./durum";
-import { SepetPenceresiIcerigi } from "./sepet-gorunumu";
+import { SepetPenceresiIcerigi } from "./sepet-penceresi-icerigi";
 
 export function SepetPenceresi() {
   const metin = useMetin();

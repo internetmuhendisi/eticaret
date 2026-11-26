@@ -1,15 +1,14 @@
 "use client";
-// Sepetin görünüşü (kart 0212, karar 0135; kart 0211'in taslağı): sepet sayfası ve sepet penceresi. Veri sunucuda
-// hesaplanmış gelir (useSepetGorunumu, veri.ts); burada hesap yapılmaz, yalnız yazılır.
+// Sepet sayfasının görünüşü (kart 0212, karar 0135; kart 0211'in taslağı). Pencere sepet-penceresi-icerigi.tsx'te, özetin
+// satırları sepet-ozeti.tsx'te, satırın ortak parçaları satir-parcalari.tsx'tedir (kart 0329): bu dosya yalnız sepet
+// sayfasına gider. Veri sunucuda hesaplanmış gelir (useSepetGorunumu, veri.ts); burada hesap yapılmaz, yalnız yazılır.
 //
 // - Satır: görsel, ad (ürün sayfasına bağlantı), seçim, birim fiyatı (fiyat bileşeni, vergi metni özette), uyarılar,
 //   adet seçici, satır tutarı ve "Sepetten çıkar". Satılamayan satırın adedi değişmez, tutarı yoktur, yalnız çıkarılır.
-// - Pencere: eklenen ürünün bildirimi, sade satırlar (adet ve tutar; değişiklik sepet sayfasında) ve ara toplam.
 // - Uyarılar yazıyla ve ikonla verilir, yalnız renkle değil (.claude/rules/erisilebilirlik.md).
 // - Çıkarılan ürünün bildiriminde "Geri al" vardır: ürün eski yerine döner. Odak bir sonraki satırın çıkar düğmesine,
 //   sepet boşalınca boş hâlin bağlantısına geçer.
-// - Özet: ara toplam, kargo, toplam ve vergi dökümü (vergi dahil gösterimde "toplama dahil") ve "Ödemeye geç" (kart
-//   0213). Satılamayan satır varken düğme kapalıdır ama odak alır, nedeni altında yazar (karar 0132).
+// - Özet bölümü: kupon kutusu, özetin satırları (SepetOzeti) ve "Ödemeye geç" (kart 0213). Satılamayan satır varken düğme kapalıdır ama odak alır, nedeni altında yazar (karar 0132).
 // - Telefonda sepet sayfasının toplamı altta sabit durur.
 // - Kupon (kart 0312, karar 0185): kutu yalnız sepet sayfasının özetindedir. Uygulanan kupon kodu ve "Kaldır" ile,
 //   özette tek satır "Kupon (KOD) −tutar" olarak görünür; geçmeyen kuponun nedeni alanın altında yazar ve alana
@@ -25,12 +24,10 @@ import { BosHal } from "../../../bilesenler/parcalar/bos-hal";
 import { useCizimdenSonraOdak } from "../../../bilesenler/parcalar/cizimden-sonra-odak";
 import { Dugme, IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
-import { IskeletGorunum } from "../../../bilesenler/parcalar/iskelet";
 import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
-import { kuponSinirlari } from "../../kayitlar/kampanya";
+import { kuponKoduSinirlari } from "../../kayitlar/kupon-kodu";
 import { doldur } from "../../metinler/doldur";
-import type { VitrinMetinAnahtari } from "../../metinler/istemci-metni";
 import { useMetin } from "../../metinler/istemci-metni";
 import { vitrinAdresleri } from "../adresler";
 import {
@@ -42,37 +39,16 @@ import {
   useSepetGorunumu,
 } from "./durum";
 import { SepetFiyati } from "./fiyat";
+import {
+  durdurur,
+  SatirGorseli,
+  SecimYazisi,
+  SepetYukleniyor,
+  satirAdi,
+  uyariYazisi,
+} from "./satir-parcalari";
+import { kuponNedeni, SepetOzeti } from "./sepet-ozeti";
 import type { SepetGorunumu, SepetGorunumuKuponu, SepetGorunumuSatiri } from "./veri";
-
-type Metin = ReturnType<typeof useMetin>;
-
-const uyariMetinleri = {
-  "fiyat-degisti": "vitrin.sepet.uyari.fiyatDegisti",
-  "stok-azaldi": "vitrin.sepet.uyari.stokAzaldi",
-  "en-cok": "vitrin.sepet.uyari.enCok",
-  "en-az": "vitrin.sepet.uyari.enAz",
-  tukendi: "vitrin.sepet.uyari.tukendi",
-  kaldirildi: "vitrin.sepet.uyari.kaldirildi",
-} as const satisfies Record<SepetGorunumuSatiri["uyarilar"][number]["kod"], VitrinMetinAnahtari>;
-
-// Satırı durduran uyarı tehlike renginde, öteki uyarılar uyarı renginde.
-// Satırın uyarısı ve durdurup durdurmadığı: panelin elle siparişi de aynı metni yazar (kart 0236).
-export const durdurur = (kod: SepetGorunumuSatiri["uyarilar"][number]["kod"]) =>
-  kod === "tukendi" || kod === "kaldirildi" || kod === "en-az";
-
-export const uyariYazisi = (
-  metin: Metin,
-  satir: SepetGorunumuSatiri,
-  uyari: SepetGorunumuSatiri["uyarilar"][number],
-) =>
-  doldur(metin(uyariMetinleri[uyari.kod]), {
-    ...("sayi" in uyari ? { sayi: String(uyari.sayi) } : {}),
-    ...("eskiYazili" in uyari && uyari.eskiYazili !== undefined ? { eski: uyari.eskiYazili } : {}),
-    ...(satir.fiyat === undefined ? {} : { yeni: satir.fiyat.enDusuk.yazili.tutar }),
-  });
-
-export const satirAdi = (metin: Metin, satir: SepetGorunumuSatiri) =>
-  satir.urun?.ad ?? metin("vitrin.sepet.kaldirilanUrun");
 
 // Sepet sayfasının satırı. Telefonda bilgi üstte, adet ve tutar altta, sil sağ üstte; masaüstünde hepsi tek sırada
 // (taslak). Odak sırası her genişlikte ad, adet, sil: sil telefonda yalnız görünüşte sağ üsttedir.
@@ -178,96 +154,6 @@ function SepetSatiri({
   );
 }
 
-// Satırın görseli: sepet sayfası, sepet penceresi, ödeme adımının özeti (kart 0213) ve siparişin kalemleri (kart 0238).
-// Görsel yanında adı yazan satırda süslemedir (alt boş); adı yalnız görselde olan yerde (Siparişlerim) alt verilir.
-export function SatirGorseli({
-  satir,
-  buyukluk,
-  alt = "",
-}: {
-  satir: Pick<SepetGorunumuSatiri, "gorsel"> & { satilabilir?: boolean };
-  buyukluk: string;
-  alt?: string;
-}) {
-  return (
-    <span
-      className={sinif(
-        "flex shrink-0 items-center justify-center overflow-hidden rounded-orta bg-yuzey",
-        buyukluk,
-        satir.satilabilir === false && "opacity-50",
-      )}
-      {...(satir.gorsel === undefined && alt !== "" ? { role: "img", "aria-label": alt } : {})}
-    >
-      {satir.gorsel === undefined ? (
-        <Ikon ad="gorsel" className="text-soluk-yazi" />
-      ) : (
-        // biome-ignore lint/performance/noImgElement: boyutlar çekirdekte üretilir (karar 0073), srcset ile seçilir.
-        <img
-          src={satir.gorsel.kaynaklar[0]?.adres}
-          srcSet={satir.gorsel.kaynaklar.map((k) => `${k.adres} ${k.genislik}w`).join(", ")}
-          sizes="5rem"
-          alt={alt}
-          width={satir.gorsel.genislik}
-          height={satir.gorsel.yukseklik}
-          loading="lazy"
-          className="size-7/8 object-contain"
-        />
-      )}
-    </span>
-  );
-}
-
-function SecimYazisi({ satir }: { satir: SepetGorunumuSatiri }) {
-  const metin = useMetin();
-  if (satir.secim.length === 0) return null;
-  return (
-    <span className="text-kucuk text-soluk-yazi">
-      {satir.secim.map((secim) => doldur(metin("vitrin.sepet.secim"), secim)).join(" · ")}
-    </span>
-  );
-}
-
-// Sepet penceresinin satırı (taslak): küçük görsel ve üstünde adet, ad, seçim, "n adet" ve tutar. Pencerede adet
-// değişmez, ürün çıkarılmaz: bunlar sepet sayfasındadır.
-function PencereSatiri({ satir }: { satir: SepetGorunumuSatiri }) {
-  const metin = useMetin();
-  const ad = satirAdi(metin, satir);
-  return (
-    <li data-slot="sepet-satiri" data-birim={satir.birim} className="flex items-start gap-3 py-2">
-      <span className="relative shrink-0">
-        <SatirGorseli satir={satir} buyukluk="size-12" />
-        <span
-          aria-hidden="true"
-          className="absolute -top-1.5 -left-1.5 flex size-5 items-center justify-center rounded-dugme bg-yazi text-kucuk font-en-kalin text-zemin"
-        >
-          {satir.adet}
-        </span>
-      </span>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <span className="text-govde font-kalin">{ad}</span>
-        <SecimYazisi satir={satir} />
-        <span className="text-kucuk text-soluk-yazi">
-          {doldur(metin("vitrin.sepet.adetSayisi"), { sayi: String(satir.adet) })}
-        </span>
-        {satir.uyarilar.map((uyari) => (
-          <span
-            key={uyari.kod}
-            className={sinif(
-              "text-kucuk font-kalin",
-              durdurur(uyari.kod) ? "text-tehlike-yazi" : "text-uyari-yazi",
-            )}
-          >
-            {uyariYazisi(metin, satir, uyari)}
-          </span>
-        ))}
-      </div>
-      {satir.yaziliTutar === undefined ? null : (
-        <span className="whitespace-nowrap text-govde">{satir.yaziliTutar}</span>
-      )}
-    </li>
-  );
-}
-
 function SepetSatirlari({ gorunum }: { gorunum: SepetGorunumu }) {
   const metin = useMetin();
   const liste = useRef<HTMLUListElement>(null);
@@ -296,94 +182,6 @@ function SepetSatirlari({ gorunum }: { gorunum: SepetGorunumu }) {
         <SepetSatiri key={satir.birim} satir={satir} sonraki={odakla(satir.birim)} />
       ))}
     </ul>
-  );
-}
-
-function OzetSatiri({ ad, deger, vurgu = false }: { ad: string; deger: string; vurgu?: boolean }) {
-  return (
-    <div
-      className={sinif(
-        "flex justify-between gap-3",
-        vurgu ? "border-t border-kenar pt-3 text-buyuk font-en-kalin" : "text-govde",
-      )}
-    >
-      <dt>{ad}</dt>
-      <dd className="whitespace-nowrap">{deger}</dd>
-    </div>
-  );
-}
-
-// Sipariş alındı sayfası da aynı özeti siparişin saklanan tutarlarıyla çizer (kart 0214).
-export type OzetTutarlari = Pick<
-  SepetGorunumu,
-  "adet" | "kargo" | "gosterim" | "vergiDokumu" | "yazili"
-> & { kupon?: SepetGorunumuKuponu | undefined };
-
-// Kupon geçmeme nedeninin yazısı (sepetin kutusu ve ödeme adımı).
-export const kuponNedeni = (
-  metin: Metin,
-  kupon: { kod: string; neden: Extract<SepetGorunumuKuponu, { durum: "gecmedi" }>["neden"] },
-  kalan?: string,
-) =>
-  doldur(metin(`vitrin.sepet.kupon.neden.${kupon.neden}`), { kod: kupon.kod, kalan: kalan ?? "" });
-
-export function SepetOzeti({ gorunum }: { gorunum: OzetTutarlari }) {
-  const metin = useMetin();
-  const vergiAdi = (ad?: string) => ad ?? metin("vitrin.sepet.vergiAdsiz");
-  return (
-    <dl className="flex flex-col gap-3">
-      <OzetSatiri
-        ad={doldur(metin("vitrin.sepet.araToplam"), { sayi: String(gorunum.adet) })}
-        deger={gorunum.yazili.araToplam}
-      />
-      {gorunum.kupon?.durum === "uygulandi" ? (
-        <div className="flex justify-between gap-3 text-govde font-kalin text-basari-yazi">
-          <dt>{doldur(metin("vitrin.sepet.kupon.ozet"), { kod: gorunum.kupon.kod })}</dt>
-          <dd className="whitespace-nowrap">
-            {gorunum.kupon.tur === "ucretsiz-kargo"
-              ? metin("vitrin.sepet.kupon.ucretsizKargo")
-              : doldur(metin("vitrin.sepet.kupon.indirim"), {
-                  tutar: gorunum.kupon.yaziliIndirim,
-                })}
-          </dd>
-        </div>
-      ) : null}
-      {gorunum.kargo === "yok" ? null : (
-        <OzetSatiri
-          ad={metin("vitrin.sepet.kargo")}
-          deger={gorunum.yazili.kargo ?? metin("vitrin.sepet.kargoUcretsiz")}
-        />
-      )}
-      {gorunum.gosterim === "vergi-haric"
-        ? gorunum.vergiDokumu.map((satir) => (
-            <OzetSatiri
-              key={`${satir.ad}-${satir.oran}`}
-              ad={doldur(metin("vitrin.sepet.vergi"), {
-                vergi: vergiAdi(satir.ad),
-                oran: satir.oran,
-              })}
-              deger={satir.yazili}
-            />
-          ))
-        : null}
-      <OzetSatiri ad={metin("vitrin.sepet.toplam")} deger={gorunum.yazili.toplam} vurgu />
-      {gorunum.gosterim === "vergi-dahil"
-        ? gorunum.vergiDokumu.map((satir) => (
-            <div
-              key={`${satir.ad}-${satir.oran}`}
-              className="flex justify-between gap-3 text-kucuk text-soluk-yazi"
-            >
-              <dt>
-                {doldur(metin("vitrin.sepet.vergiDahil"), {
-                  vergi: vergiAdi(satir.ad),
-                  oran: satir.oran,
-                })}
-              </dt>
-              <dd className="whitespace-nowrap">{satir.yazili}</dd>
-            </div>
-          ))
-        : null}
-    </dl>
   );
 }
 
@@ -461,7 +259,7 @@ function KuponAlani({ kupon }: { kupon: SepetGorunumuKuponu | undefined }) {
               autoComplete="off"
               autoCapitalize="characters"
               spellCheck={false}
-              maxLength={kuponSinirlari.kodEnCok}
+              maxLength={kuponKoduSinirlari.kodEnCok}
               className="min-w-0 flex-1 uppercase"
               onInput={() => setBosHata(false)}
             />
@@ -498,17 +296,6 @@ export function OdemeyeGec({ gorunum, className }: { gorunum: SepetGorunumu; cla
       <span id={nedenKimligi} className="text-kucuk font-kalin text-tehlike-yazi">
         {metin("vitrin.sepet.odemeEngeli")}
       </span>
-    </div>
-  );
-}
-
-function Yukleniyor() {
-  const metin = useMetin();
-  return (
-    <div role="status" className="flex flex-col gap-3">
-      <span className="sr-only">{metin("vitrin.sepet.yukleniyor")}</span>
-      <IskeletGorunum className="h-20 w-full" />
-      <IskeletGorunum className="h-20 w-full" />
     </div>
   );
 }
@@ -558,7 +345,7 @@ export function SepetSayfasiIcerigi({
   }, [bos]);
   const bosBilinir = cerezdeBos && (!sepet.hazir || sepet.kalemler.length === 0);
   if (durum.tur === "yukleniyor")
-    return bosBilinir ? <BosSepet baglanti={bosBaglanti} /> : <Yukleniyor />;
+    return bosBilinir ? <BosSepet baglanti={bosBaglanti} /> : <SepetYukleniyor />;
   if (durum.tur === "hata") return <Uyari tur="tehlike">{metin("vitrin.sepet.hata")}</Uyari>;
   const { gorunum } = durum;
   if (gorunum.satirlar.length === 0) return <BosSepet baglanti={bosBaglanti} />;
@@ -593,41 +380,6 @@ export function SepetSayfasiIcerigi({
         </span>
         <OdemeyeGec gorunum={gorunum} />
       </div>
-    </div>
-  );
-}
-
-// Sepet penceresindeki içerik (sepet-penceresi.tsx).
-export function SepetPenceresiIcerigi({ acik }: { acik: boolean }) {
-  const metin = useMetin();
-  const durum = useSepetGorunumu(acik);
-  const { eklenen } = useSepet();
-  if (durum.tur === "yukleniyor") return <Yukleniyor />;
-  if (durum.tur === "hata") return <Uyari tur="tehlike">{metin("vitrin.sepet.hata")}</Uyari>;
-  const { gorunum } = durum;
-  if (gorunum.satirlar.length === 0) {
-    return <BosHal ikon="sepet" baslik={metin("vitrin.sepet.bosBaslik")} duzey={3} />;
-  }
-  return (
-    <div className="flex flex-col gap-4">
-      {eklenen === undefined ? null : (
-        <p className="flex items-center gap-2 rounded-orta bg-basari-zemin px-4 py-3 text-basari-yazi">
-          <Ikon ad="basari" className="shrink-0" />
-          <span>{doldur(metin("vitrin.sepet.eklendi"), { urun: eklenen })}</span>
-        </p>
-      )}
-      <ul aria-label={metin("vitrin.sepet.satirlar")} className="flex flex-col gap-1">
-        {gorunum.satirlar.map((satir) => (
-          <PencereSatiri key={satir.birim} satir={satir} />
-        ))}
-      </ul>
-      <dl className="flex flex-col gap-1 border-t border-kenar pt-4">
-        <div className="flex justify-between gap-3 font-kalin">
-          <dt>{doldur(metin("vitrin.sepet.araToplam"), { sayi: String(gorunum.adet) })}</dt>
-          <dd className="whitespace-nowrap font-en-kalin">{gorunum.yazili.araToplam}</dd>
-        </div>
-      </dl>
-      <p className="text-kucuk text-soluk-yazi">{metin("vitrin.sepet.pencereNotu")}</p>
     </div>
   );
 }

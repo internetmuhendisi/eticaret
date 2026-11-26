@@ -132,7 +132,7 @@ const vergiAdi = (b: IcerikBaglami, ad: string | undefined) =>
 // Oran milyonda bir birimindedir (vergi/semalar.ts).
 const oranYazisi = (b: IcerikBaglami, oran: number) => b.bicim.yuzde(oran / 10_000);
 
-// Sepet özetiyle aynı sıra (cekirdek/vitrin/sepet/sepet-gorunumu.tsx, SepetOzeti): ara toplam, kupon (kart 0312),
+// Sepet özetiyle aynı sıra (cekirdek/vitrin/sepet/sepet-ozeti.tsx, SepetOzeti): ara toplam, kupon (kart 0312),
 // kargo, hariçse vergiler, toplam, dahilse toplama dahil vergiler.
 const siparisOzeti = (b: IcerikBaglami, t: SiparisEpostaTutarlari): OzetSatiri[] => {
   const vergiler = (anahtar: MetinAnahtari, tur: OzetSatiri["tur"]): OzetSatiri[] =>

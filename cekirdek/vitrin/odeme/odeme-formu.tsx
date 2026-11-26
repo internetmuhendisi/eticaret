@@ -69,7 +69,8 @@ import { useRobotluGonderim } from "../../moduller/robot-korumasi/istemci";
 import { girisAdresiDonuslu, vitrinAdresleri } from "../adresler";
 import { cikisYap, useHesapDurumu } from "../hesap-durumu";
 import { adetDegistir, siparisKalemleriniCikar, useSepet, useSepetGorunumu } from "../sepet/durum";
-import { kuponNedeni, SatirGorseli, SepetOzeti, satirAdi } from "../sepet/sepet-gorunumu";
+import { SatirGorseli, satirAdi } from "../sepet/satir-parcalari";
+import { kuponNedeni, SepetOzeti } from "../sepet/sepet-ozeti";
 import type { SepetGorunumu } from "../sepet/veri";
 import {
   type Adres,

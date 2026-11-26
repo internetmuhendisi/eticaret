@@ -38,7 +38,7 @@ import type { VitrinMetinAnahtari } from "../../metinler/istemci-metni";
 import { useMetin } from "../../metinler/istemci-metni";
 import { useRobotluGonderim } from "../../moduller/robot-korumasi/istemci";
 import { iadeTalebiFormuSemasi } from "../../moduller/siparis/iade-talebi-semalari";
-import { SatirGorseli } from "../sepet/sepet-gorunumu";
+import { SatirGorseli } from "../sepet/satir-parcalari";
 import type { UrunKartiGorseli } from "../urun-karti/tur";
 
 const uyeUcu = "/kapi/musteri/iade-talebi";

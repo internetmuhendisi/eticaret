@@ -56,7 +56,8 @@ import {
   MetinAlani,
   vergiBolgesi,
 } from "../../vitrin/odeme/alanlar";
-import { durdurur, SepetOzeti, uyariYazisi } from "../../vitrin/sepet/sepet-gorunumu";
+import { durdurur, uyariYazisi } from "../../vitrin/sepet/satir-parcalari";
+import { SepetOzeti } from "../../vitrin/sepet/sepet-ozeti";
 import type { SepetGorunumu } from "../../vitrin/sepet/veri";
 import { panelAdresi } from "../adresler";
 import {

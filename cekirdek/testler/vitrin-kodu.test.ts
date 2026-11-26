@@ -8,6 +8,9 @@
 //   panel sözlüğünü kullanabilir; vitrin o parçayı kullanırsa zincir onun üzerinden varır.
 // - Hazır temaların değer tabloları (degerler.ts) yalnız sunucuda okunur: hiçbir tarayıcı dosyasından (panel ve katalog
 //   dahil) varılan dosya onları içe aktarmaz.
+// - Sepetin çok sayfaya giden dosyaları (çerçevedeki pencere, üst kısmın sayısı, ürün kartının ve ürün sayfasının sepet
+//   düğmesi, sepet durumu ve deposu): bunlardan sepet sayfasının dosyasına (sepet-gorunumu.tsx: kupon alanı, adet seçici), özetine ve kampanya kaydının tamamına
+//   zincir varmaz (kart 0329: kupon alanı her sayfaya gidince ürün ve havale bildirimi sayfası kod sınırını aştı).
 // Bozuk örnekler iki denetimin doğrudan, dolaylı, toplu (`* as`) ve sonradan (`import()`) içe aktarmayı ve yalnız panelde
 // kullanılan parça üzerinden varmayı yakaladığını, yalnız türü alanı yakalamadığını gösterir.
 import { readFileSync } from "node:fs";
@@ -75,6 +78,35 @@ describe("vitrinin tarayıcı kodu", () => {
       .filter((zincir) => zincir.length > 0)
       .map((zincir) => zincir.join(" → "));
     expect(sorunlar).toEqual([]);
+  });
+
+  it("çok sayfaya giden sepet dosyaları sepet sayfasının koduna ve kampanya kaydına varmaz", () => {
+    const sayfayaOzel = [
+      "cekirdek/vitrin/sepet/sepet-gorunumu.tsx",
+      "cekirdek/vitrin/sepet/sepet-ozeti.tsx",
+      "cekirdek/kayitlar/kampanya.ts",
+    ];
+    // Sepet klasörünün sepet sayfasına (ve ödeme ile sipariş sayfalarının özetine) özel olmayan bütün dosyaları; yeni
+    // dosya kendiliğinden başlangıç olur. veri.ts sunucuda çalışır (tarayıcı dosyaları ondan yalnız tür alır).
+    const ozel = new Set([
+      ...sayfayaOzel,
+      "cekirdek/vitrin/sepet/sepet-sayfasi.tsx",
+      "cekirdek/vitrin/sepet/veri.ts",
+    ]);
+    const baslangiclar = kaynakDosyalari(join(kok, "cekirdek/vitrin/sepet"))
+      .map((yol) => relative(kok, yol))
+      .filter((yol) => !yol.includes("/testler/") && !ozel.has(yol));
+    expect(baslangiclar).toEqual(
+      expect.arrayContaining([
+        "cekirdek/vitrin/sepet/sepet-penceresi.tsx",
+        "cekirdek/vitrin/sepet/sepete-ekle.tsx",
+        "cekirdek/vitrin/sepet/sepet-sayisi.tsx",
+        "cekirdek/vitrin/sepet/durum.ts",
+      ]),
+    );
+    for (const baslangic of baslangiclar) {
+      expect(yasakZincir(join(kok, baslangic), sayfayaOzel), baslangic).toEqual([]);
+    }
   });
 
   it("bozuk örnekler: doğrudan, dolaylı, toplu ve sonradan içe aktarma yakalanır; yalnız tür alan yakalanmaz", () => {

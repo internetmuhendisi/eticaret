@@ -5,6 +5,8 @@
 // - yuzde: kapsamdaki ürünlerin tutarından yüzde (1–99) indirim.
 // - tutar: kapsamdaki ürünlerin tutarından sabit indirim; ürünlerin tutarını aşmaz, kargoya uygulanmaz.
 // - ucretsiz-kargo: ücretli kargo ücretsiz olur; ürünlere indirim yoktur.
+import { kuponKoduSinirlari } from "./kupon-kodu.ts";
+
 export const kuponTurleri = ["yuzde", "tutar", "ucretsiz-kargo"] as const;
 export type KuponTuru = (typeof kuponTurleri)[number];
 
@@ -31,13 +33,11 @@ export const kuponRedNedenleri = [
 ] as const;
 export type KuponRedNedeni = (typeof kuponRedNedenleri)[number];
 
-// Kod: harf, rakam ve tire. Büyük küçük harfin fark edip etmediği altyapı sahibinin ayarıdır (kuponKoduHarfDuyarli);
-// tekillik her zaman harf ayrımsız aranır (aynı kodun yalnız harf büyüklüğüyle ayrılan iki kuponu açılmaz).
-export const kuponKoduKalibi = /^[\p{L}\p{N}-]+$/u;
+// Kodun biçimi ve uzunluğu kupon-kodu.ts'tedir (vitrinin sepet deposu yalnız onu okur, kart 0329).
+export { kuponKoduKalibi } from "./kupon-kodu.ts";
 
 export const kuponSinirlari = {
-  kodEnAz: 3,
-  kodEnCok: 30,
+  ...kuponKoduSinirlari,
   adEnCok: 100,
   yuzdeEnAz: 1,
   // Kupon ürünleri sıfıra indiremez (kullanıcı kararı, kart 0312): yüzde en çok 99, indirim en az 1 kuruş bırakır.
