@@ -28,4 +28,4 @@ Bölüm: Yönetim paneli 2 (kullanıcının kararıyla bu bölüme eklendi). Ön
 
 ## Durum
 
-yapılacak
+bitti
