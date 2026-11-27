@@ -8,7 +8,13 @@ import { metin } from "../../metinler/site-metni";
 import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
 import { tara } from "./tarama";
-import { ayriBaglanti, type DenemeYoneticisi, paneleGir, yoneticiAc } from "./yonetici";
+import {
+  ayriBaglanti,
+  type DenemeYoneticisi,
+  paneleGir,
+  panoBasligi,
+  yoneticiAc,
+} from "./yonetici";
 
 const genislikler = [
   { ad: "telefon", width: 375, height: 800 },
@@ -36,8 +42,8 @@ test("masaüstünde karşılama komut çubuğuyla açılır, yan menü klavyeyle
   await page.setViewportSize({ width: 1280, height: 900 });
   await paneleGir(page, yonetici);
   await sayfaHazir(page);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(karsilama());
-  await expect(page.getByText(metin("yonetim.sayfa.karsilama.aciklama"))).toBeVisible();
+  // Açılış sayfası panodur (kart 0186): başlık günün selamı.
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(panoBasligi);
   await expect(page).toHaveTitle(new RegExp(`^${karsilama()} \\| `));
 
   const menu = page.getByRole("navigation", { name: menuAdi() });
@@ -57,7 +63,10 @@ test("masaüstünde karşılama komut çubuğuyla açılır, yan menü klavyeyle
     await page.keyboard.press("Tab");
     await expect(sayfalar.nth(sira)).toBeFocused();
   }
-  const vitrine = page.getByRole("link", { name: metin("yonetim.eylem.vitrineGitYeniSekme") });
+  // Yan menünün bağlantısı (panonun kısayollarında da "Vitrine git" vardır, kart 0186).
+  const vitrine = page
+    .getByRole("complementary")
+    .getByRole("link", { name: metin("yonetim.eylem.vitrineGitYeniSekme") });
   await page.keyboard.press("Tab");
   await expect(vitrine).toBeFocused();
   await page.keyboard.press("Tab");
@@ -164,7 +173,7 @@ test("panel iki renkte ve üç genişlikte taramadan geçer, yana kaymaz, konsol
       await page.setViewportSize({ width, height });
       await page.reload();
       await sayfaHazir(page);
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(karsilama());
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(panoBasligi);
       await tara(page, `${renk} ${ad}`);
       expect(await yanaKayma(page), `${renk} ${ad}`).toBe(0);
     }

@@ -287,6 +287,30 @@ export type SatisRaporuVerisi = DonemVerisi & {
   };
 };
 
+// Serinin ekran verisi (grafik ve tablo karşılığı): satış raporu ve panonun son günleri (kart 0186) aynı yazılışı
+// kullanır. Sütunun oranı en yüksek noktaya göredir.
+export const seriVerisi = (
+  b: RaporBicimi,
+  seri: SatisRaporu["seri"],
+): SatisRaporuVerisi["seri"] => {
+  const enCok = Math.max(0, ...seri.noktalar.map((nokta) => nokta.satis));
+  return {
+    baslik: metin(`yonetim.rapor.seri.${seri.tur}`),
+    sutun: metin(seri.tur === "gunluk" ? "yonetim.rapor.seri.donem" : "yonetim.rapor.seri.hafta"),
+    noktalar: seri.noktalar.map((nokta) => ({
+      ad:
+        nokta.baslangic === nokta.bitis
+          ? b.kisaGun(nokta.baslangic)
+          : doldur(metin("yonetim.rapor.aralik"), {
+              baslangic: b.kisaGun(nokta.baslangic),
+              bitis: b.kisaGun(nokta.bitis),
+            }),
+      deger: b.para(nokta.satis),
+      oran: enCok === 0 ? 0 : nokta.satis / enCok,
+    })),
+  };
+};
+
 export const satisRaporuVerisi = (
   site: Site,
   istek: CozulenRaporIstegi,
@@ -313,7 +337,6 @@ export const satisRaporuVerisi = (
     });
   const iade =
     ozet.iade > 0 ? doldur(metin("yonetim.rapor.eksi"), { tutar: para(ozet.iade) }) : para(0);
-  const enCok = Math.max(0, ...rapor.seri.noktalar.map((nokta) => nokta.satis));
   return {
     ...donemVerisi(site, istek, rapor.donem, onceki?.donem ?? null),
     bos: ozet.siparisSayisi === 0 && ozet.iadeSayisi === 0,
@@ -342,22 +365,6 @@ export const satisRaporuVerisi = (
         vurgu: false,
       })),
     ],
-    seri: {
-      baslik: metin(`yonetim.rapor.seri.${rapor.seri.tur}`),
-      sutun: metin(
-        rapor.seri.tur === "gunluk" ? "yonetim.rapor.seri.donem" : "yonetim.rapor.seri.hafta",
-      ),
-      noktalar: rapor.seri.noktalar.map((nokta) => ({
-        ad:
-          nokta.baslangic === nokta.bitis
-            ? b.kisaGun(nokta.baslangic)
-            : doldur(metin("yonetim.rapor.aralik"), {
-                baslangic: b.kisaGun(nokta.baslangic),
-                bitis: b.kisaGun(nokta.bitis),
-              }),
-        deger: para(nokta.satis),
-        oran: enCok === 0 ? 0 : nokta.satis / enCok,
-      })),
-    },
+    seri: seriVerisi(b, rapor.seri),
   };
 };

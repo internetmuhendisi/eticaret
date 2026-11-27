@@ -35,6 +35,13 @@ paths:
 - Elle sıralanan küçük listeler `SiralanabilirListe` ile, metinleri `siralamaMetinleri` ile yazılır.
 - Eklentinin getirdiği sayfa ağaçta `eklenti` alanını taşır (karar 0117): eklenti sitede kapalıysa menüde yoktur, `panelSayfasiniAc` bulunamadı verir.
 
+## Pano (karar 0199)
+
+- Panelin açılış sayfası panodur (`cekirdek/yonetim-paneli/pano/`, kart 0186): başlık günün selamı, açılış adımları (biri eksikken, yalnız mağaza sahibine), bakılması gerekenler, son 14 günün satışı, kısa sayılar ve kısayollar. Verisi sunucuda `panoVerisi` ile kurulur; her kaynak kendi okunur, okunamayanın hatası bir kez kaydedilir, kutu öteki satırlarını gösterip eksik olduğunu söyler.
+- Sayılar çekirdeğin tek kurallarındandır: siparişler `panoSayilari` (sipariş listesinin "Bakılması gereken" koşulları; havale, talep ve iade tek satırdır, sayısı sekmeninki), stok `urunStokSayilari` (ürün listesinin stok süzgeci), yorum `onayBekleyenYorumOzeti`, satış raporun servisleri. Pano kendi koşulunu yazmaz; satır o listenin süzülmüş adresine (`listeAdresi`) gider.
+- Kutu ve satır sayfa ağacının izniyle görünür (`gorulenSayfa`); kısayollar ve adımlar `pano/tanim.ts`'tedir, eylemler eylem kaydından. Eklentinin satırı bağlantı noktasından gelir (`cekirdek/eklentiler/pano-satirlari.ts`).
+- Sayı kutusu raporlarınkiyle ortaktır (`SayiKutusu`, `raporlar/ortak.tsx`): `adres` verilince kutunun adı bütün kutuyu kaplayan bağlantıdır.
+
 ## Panelin araması (karar 0191)
 
 - Arama çerçevededir (`cekirdek/yonetim-paneli/arama/panel-aramasi.tsx`, kart 0321): masaüstünde ana bölgenin üstündeki şeritte, telefon ve tablette üst çubuktaki büyüteçle; Ctrl K kutuya götürür. Ekran kendi arama kutusunu çerçeveye eklemez.

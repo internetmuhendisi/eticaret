@@ -3815,6 +3815,75 @@
       "okunduHatasi": "Bildirimler okundu yapılamadı. Yeniden deneyin.",
       "zilCokOkunmamis": "Bildirimler, {sayi}'dan fazla okunmamış",
       "rozetFazla": "{sayi}+"
+    },
+    "pano": {
+      "selam": {
+        "gunaydin": "Günaydın",
+        "iyiGunler": "İyi günler",
+        "iyiAksamlar": "İyi akşamlar"
+      },
+      "satir": {
+        "bakilacak": "{sayi} sipariş bakılmayı bekliyor",
+        "hazirlanacak": "{sayi} sipariş hazırlanmayı bekliyor",
+        "yorum": "{sayi} yorum onay bekliyor",
+        "dusuk": "{sayi} ürünün stoğu azaldı",
+        "tukendi": "{sayi} ürün tükendi",
+        "stok-bildirimleri": "{sayi} stok bildirimi talebi bekliyor"
+      },
+      "ornekVeFazlasi": "{ornekler} ve {sayi} tane daha",
+      "ayrac": ", ",
+      "enEskisi": "En eskisi {zaman}",
+      "bakilacaklar": "Bakılması gerekenler",
+      "bakilacakYok": "Şu an bakılması gereken bir iş yok.",
+      "satisBasligi": "Son {gun} günün satışı",
+      "raporlar": "Raporlar",
+      "sayilar": "Kısa sayılar",
+      "siparisSayisi": "{sayi} sipariş",
+      "kutu": {
+        "bugun": "Bugün",
+        "son-7-gun": "Son 7 gün",
+        "hazirlanacak": "Hazırlanacak",
+        "odemeBekleyen": "Ödeme bekleyen"
+      },
+      "adimlar": "Mağazanızı açmak için",
+      "adimSayisi": "Tamamlanan: {tamam} / {toplam}",
+      "adimTamam": ", tamamlandı",
+      "adim": {
+        "urun": {
+          "baslik": "İlk ürününüzü ekleyin",
+          "aciklama": "Ürün adı ve fiyatı yeter; görseli ve öteki bilgileri sonra tamamlarsınız.",
+          "eylem": "Ürün ekle"
+        },
+        "magaza": {
+          "baslik": "Mağaza bilgilerini doldurun",
+          "aciklama": "Telefon, adres ve satıcı bilgileri vitrinin alt kısmında ve e-postalarda görünür.",
+          "eylem": "Bilgileri gir"
+        },
+        "odeme": {
+          "baslik": "Ödeme yöntemini açın",
+          "aciklama": "Havale için banka hesabı ekleyin ya da kapıda ödemeyi açın.",
+          "eylem": "Yöntemleri aç"
+        },
+        "logo": {
+          "baslik": "Logonuzu yükleyin",
+          "aciklama": "Logo vitrinin üst kısmında ve e-postalarda görünür; temanın renklerini de aynı sayfada değiştirirsiniz.",
+          "eylem": "Tema ayarlarına git"
+        }
+      },
+      "kisayollar": "Kısayollar",
+      "hata": "Bu bölüm yüklenemedi. Biraz sonra sayfayı yenileyin.",
+      "eylem": {
+        "siparis": "Siparişe git",
+        "siparisler": "Siparişler",
+        "yorumlar": "Yorumlar",
+        "urunler": "Ürünler"
+      },
+      "dokum": {
+        "havale": "{sayi} havale bildirimi",
+        "talep": "{sayi} iade talebi",
+        "iade": "{sayi} iade işi"
+      },
+      "eksik": "Bu bölümün bir kısmı yüklenemedi. Sayfayı yenileyin."
     }
   },
   "vitrin": {

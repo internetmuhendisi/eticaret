@@ -382,3 +382,37 @@ export const urunlerinPanelBirimleri = async (
   for (const { urun, ...birim } of satirlar) sonuc.set(urun, [...(sonuc.get(urun) ?? []), birim]);
   return sonuc;
 };
+
+// Panonun stok satırları (kart 0186, karar 0199): silinmemiş ürünlerden stoğu azalan ve tükenenlerin sayısı ve ilk
+// birkaç adı (ada göre). Koşul ürün listesinin stok süzgeciyle aynıdır (urunPanelStokKosulu): sayı listenin
+// süzülmüş hâliyle aynı ürünleri sayar.
+export const urunStokSayilari = async (
+  vt: Veritabani,
+  ayarlar: UrunPanelAyarlari,
+  ornek = 3,
+): Promise<Record<"dusuk" | "tukendi", { adet: number; adlar: string[] }>> => {
+  const ad = sql`${urunler.ad} collate ${sql.identifier(await harfSirasi(vt, ayarlar.dil))}`;
+  const oku = async (durum: "dusuk" | "tukendi") => {
+    const kosul = and(isNull(urunler.silinme_zamani), urunPanelStokKosulu(durum, ayarlar));
+    const [sayim] = await vt.select({ adet: count() }).from(urunler).where(kosul);
+    const adlar = await vt
+      .select({ ad: urunler.ad })
+      .from(urunler)
+      .where(kosul)
+      .orderBy(ad, asc(urunler.kimlik))
+      .limit(ornek);
+    return { adet: sayim?.adet ?? 0, adlar: adlar.map((satir) => satir.ad) };
+  };
+  const [dusuk, tukendi] = await Promise.all([oku("dusuk"), oku("tukendi")]);
+  return { dusuk, tukendi };
+};
+
+// Sitede silinmemiş ürün var mı (kart 0186: panonun "İlk ürününüzü ekleyin" adımı).
+export const urunVarMi = async (vt: Veritabani): Promise<boolean> => {
+  const [satir] = await vt
+    .select({ kimlik: urunler.kimlik })
+    .from(urunler)
+    .where(isNull(urunler.silinme_zamani))
+    .limit(1);
+  return satir !== undefined;
+};

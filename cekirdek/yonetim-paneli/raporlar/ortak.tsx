@@ -1,6 +1,7 @@
 // Raporlar ekranının ortak parçaları (kart 0317, 0318; taslak: panel-2.html "Raporlar"): üst kısım (rapor sekmeleri,
 // dönem seçimi ve karşılaştırılan dönem), sayı kutuları (önceki döneme göre fark; iyiyse yeşil, kötüyse kırmızı,
 // yönü okla ve yazıyla da) ve boş hâl (sonraki adımı başka döneme bağlantı). Sunucuda çizilir.
+import Link from "next/link";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
 import { BosHal } from "../../../bilesenler/parcalar/bos-hal";
 import { Kart } from "../../../bilesenler/parcalar/kart";
@@ -13,13 +14,24 @@ import type { DonemVerisi, RaporKutusu } from "./veri";
 
 const yonIsareti = { arti: "▲", eksi: "▼", esit: "=" } as const;
 
-function Sayi({ kutu }: { kutu: RaporKutusu }) {
+// Sayı kutusu; adres verilirse kutunun adı bağlantıdır ve bütün kutuya basılır (pano, kart 0186).
+export function SayiKutusu({ kutu, adres }: { kutu: RaporKutusu; adres?: string }) {
   const kimlik = `rapor-kutu-${kutu.kod}`;
   return (
-    <Kart role="group" aria-labelledby={kimlik} className="gap-1 p-4">
-      <span id={kimlik} className="text-kucuk text-soluk-yazi">
-        {kutu.ad}
-      </span>
+    <Kart role="group" aria-labelledby={kimlik} className="relative gap-1 p-4">
+      {adres === undefined ? (
+        <span id={kimlik} className="text-kucuk text-soluk-yazi">
+          {kutu.ad}
+        </span>
+      ) : (
+        <Link
+          id={kimlik}
+          href={adres}
+          className="text-kucuk text-soluk-yazi no-underline after:absolute after:inset-0 after:rounded-orta hover:underline focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-odak focus-visible:after:outline-solid"
+        >
+          {kutu.ad}
+        </Link>
+      )}
       <strong className="font-baslik text-baslik-4">{kutu.deger}</strong>
       {kutu.fark === null ? null : (
         <span
@@ -45,7 +57,7 @@ export function SayiKutulari({ kutular }: { kutular: RaporKutusu[] }) {
   return (
     <div className="grid grid-cols-1 gap-3 tablet:grid-cols-2 masaustu:grid-cols-4">
       {kutular.map((kutu) => (
-        <Sayi key={kutu.kod} kutu={kutu} />
+        <SayiKutusu key={kutu.kod} kutu={kutu} />
       ))}
     </div>
   );

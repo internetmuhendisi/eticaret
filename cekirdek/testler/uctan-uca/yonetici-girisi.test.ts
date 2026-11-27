@@ -11,6 +11,7 @@ import {
   gizliOku,
   kurulumuBitir,
   sifreyleGir as ortakSifreyleGir,
+  panoBasligi,
   yoneticiAc,
 } from "./yonetici";
 
@@ -52,9 +53,7 @@ test("giriş yapıp boş panele ulaşır, çıkınca panele giremez", async ({ p
   await page.goto("/yonetim/giris");
   await girisYap(page);
   await expect(page).toHaveURL(/\/yonetim$/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    metin("yonetim.sayfa.karsilama.ad"),
-  );
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(panoBasligi);
   await expect(page.getByText(altyapiAdi, { exact: true })).toBeVisible();
 
   const cerezler = await page.context().cookies();
@@ -97,9 +96,7 @@ test("kısa anahtar dolunca panel açık kalır, yeni anahtar çereze yazılır"
   await page.context().clearCookies({ name: kisa });
   await page.goto("/yonetim");
   await expect(page).toHaveURL(/\/yonetim$/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    metin("yonetim.sayfa.karsilama.ad"),
-  );
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(panoBasligi);
   const cerezler = await page.context().cookies();
   expect(cerezler.map(({ name }) => name)).toContain(kisa);
   await cikisYap(page);
@@ -190,9 +187,7 @@ test("kurulumlu yönetici yalnız şifreyle giremez, kodla girer; yanlış kod s
   await alan.fill(dogru);
   await page.getByRole("button", { name: metin("yonetim.kod.gonder") }).click();
   await expect(page).toHaveURL(/\/yonetim$/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    metin("yonetim.sayfa.karsilama.ad"),
-  );
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(panoBasligi);
 });
 
 test("yedek kodla girilir, aynı kod ikinci kez reddedilir", async ({ page }) => {

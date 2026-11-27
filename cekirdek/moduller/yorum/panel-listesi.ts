@@ -157,6 +157,32 @@ export const onayBekleyenYorumSayisi = async (
   return satir?.sayi ?? 0;
 };
 
+// Panonun yorum satırı (kart 0186): onay bekleyen yorumların sayısı (menüdeki sayıyla aynı) ve en eski yorumdan
+// başlayarak ürünlerinin ilk birkaç adı (tekrarsız).
+export const onayBekleyenYorumOzeti = async (
+  vt: Veritabani,
+  ornek = 3,
+): Promise<{ sayi: number; urunler: string[]; urunSayisi: number }> => {
+  const [sayi, satirlar, urunSayisi] = await Promise.all([
+    onayBekleyenYorumSayisi(vt),
+    vt
+      .select({ ad: urunler.ad, ilk: sql<Date>`min(${yorumlar.olusturma_zamani})` })
+      .from(yorumlar)
+      .innerJoin(urunler, eq(urunler.kimlik, yorumlar.urun_kimligi))
+      .where(and(urunuVar, eq(yorumlar.durum, "onay-bekliyor")))
+      .groupBy(urunler.kimlik, urunler.ad)
+      .orderBy(sql`min(${yorumlar.olusturma_zamani})`, asc(urunler.kimlik))
+      .limit(ornek),
+    vt
+      .select({ sayi: sql<number>`count(distinct ${yorumlar.urun_kimligi})::int` })
+      .from(yorumlar)
+      .innerJoin(urunler, eq(urunler.kimlik, yorumlar.urun_kimligi))
+      .where(and(urunuVar, eq(yorumlar.durum, "onay-bekliyor")))
+      .then(([satir]) => satir?.sayi ?? 0),
+  ]);
+  return { sayi, urunler: satirlar.map((satir) => satir.ad), urunSayisi };
+};
+
 // Toplu karar: her yorum tekil kararla aynı yoldan, kendi işleminde. İşlenemeyen yorum nedeninin koduyla döner.
 export const yorumTopluKarar = async (
   vt: Veritabani,

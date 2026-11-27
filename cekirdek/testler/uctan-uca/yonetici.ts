@@ -82,3 +82,10 @@ export const paneleGir = async (page: Page, yonetici: DenemeYoneticisi, bekleme:
   await sayfaHazir(page);
   return sonuc;
 };
+
+// Panelin açılış sayfasının başlığı (kart 0186): günün selamı, sitenin saat dilimindeki saate göre üçünden biri.
+export const panoBasligi = new RegExp(
+  `^(${["gunaydin", "iyiGunler", "iyiAksamlar"]
+    .map((kod) => metin(`yonetim.pano.selam.${kod}` as "yonetim.pano.selam.gunaydin"))
+    .join("|")})$`,
+);

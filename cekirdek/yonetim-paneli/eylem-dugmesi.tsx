@@ -40,12 +40,17 @@ export function EylemDugmesi({
 export function EylemBaglantisi({
   eylem,
   asil = false,
+  cerceveli = false,
   ne,
   ...ozellikler
-}: EylemOzellikleri & Omit<ComponentProps<typeof Baglanti>, "children" | "gorunum">) {
+}: EylemOzellikleri &
+  Omit<ComponentProps<typeof Baglanti>, "children" | "gorunum"> & {
+    // Komut çubuğunun dışında, düğme dizisinde (panonun kısayolları, kart 0186): çerçeveli düğme.
+    cerceveli?: boolean;
+  }) {
   const ad = useEylemAdi({ eylem, ...(ne === undefined ? {} : { ne }) });
   return (
-    <Baglanti gorunum={asil ? "birincil" : "sade"} {...ozellikler}>
+    <Baglanti gorunum={asil ? "birincil" : cerceveli ? "cerceveli" : "sade"} {...ozellikler}>
       <PanelIkon ad={panelEylemleri[eylem].ikon} />
       {ad}
     </Baglanti>

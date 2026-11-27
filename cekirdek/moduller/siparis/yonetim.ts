@@ -28,6 +28,7 @@ import {
   inArray,
   isNotNull,
   lt,
+  min,
   notExists,
   notInArray,
   or,
@@ -765,7 +766,62 @@ export const siparisYonetimi = (site: Site) => {
       .orderBy(desc(siparisler.olusturma_zamani), desc(siparisler.numara))
       .limit(sinir);
 
+  // Panonun sayıları (kart 0186, karar 0199): "Bakılması gereken" sekmesinin koşullarından (listeKosullari) bildirilmiş
+  // havale, bekleyen iade talebi ve öteki iade işleri (sonucu beklenen, onaylanıp yapılmamış, başarısız), hazırlanmayı
+  // bekleyen ve ödemesi beklenen siparişler. Her işin ilk birkaç numarası en eskiden; ödeme bekleyenin tutarı yalnız
+  // sitenin para birimindekilerdir. Süzgeç yoktur.
+  const panoSayilari = async (vt: Veritabani, ornek = 3) => {
+    const { havaleBekliyor, talepBekliyor, iadeBekliyor, talepOnaylandi, iadeBasarisiz } =
+      listeKosullari(vt, {});
+    // "bakilacak" sipariş listesinin "Bakılması gereken" sekmesinin koşuludur (sayı sekmeyle aynı); havale, talep ve
+    // iade onun dökümüdür (bir sipariş birden çoğunda olabilir).
+    const isler = {
+      bakilacak: or(havaleBekliyor, talepBekliyor, iadeBekliyor, talepOnaylandi, iadeBasarisiz),
+      havale: havaleBekliyor,
+      talep: talepBekliyor,
+      iade: or(iadeBekliyor, talepOnaylandi, iadeBasarisiz),
+      hazirlanacak: eq(siparisler.durum, "hazirlaniyor"),
+    } as const;
+    const okunan = await Promise.all(
+      Object.entries(isler).map(async ([ad, kosul]) => {
+        const [sayim] = await vt
+          .select({ adet: count(), enEski: min(siparisler.olusturma_zamani) })
+          .from(siparisler)
+          .where(kosul);
+        const ilkler = await vt
+          .select({ numara: siparisler.numara })
+          .from(siparisler)
+          .where(kosul)
+          .orderBy(asc(siparisler.olusturma_zamani), asc(siparisler.kimlik))
+          .limit(ornek);
+        return [
+          ad,
+          {
+            adet: sayim?.adet ?? 0,
+            enEski: sayim?.enEski ?? null,
+            numaralar: ilkler.map((satir) => satir.numara),
+          },
+        ] as const;
+      }),
+    );
+    const [odeme] = await vt
+      .select({
+        adet: count(),
+        toplam: sql<string>`coalesce(sum(${siparisler.toplam}) filter (where ${siparisler.para_birimi} = ${site.ayarlar.paraBirimi}), 0)`,
+      })
+      .from(siparisler)
+      .where(eq(siparisler.durum, "odeme-bekleniyor"));
+    return {
+      ...(Object.fromEntries(okunan) as Record<
+        keyof typeof isler,
+        { adet: number; enEski: Date | null; numaralar: string[] }
+      >),
+      odemeBekleyen: { adet: odeme?.adet ?? 0, toplam: Number(odeme?.toplam ?? 0) },
+    };
+  };
+
   return {
+    panoSayilari,
     liste,
     listeninSiparisleri,
     ara,

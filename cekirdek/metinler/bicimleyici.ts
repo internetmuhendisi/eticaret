@@ -376,3 +376,10 @@ export const goreliZaman = (
     timeZone: ayarlar.saatDilimi,
   }).format(an);
 };
+
+// Haftanın günüyle tam tarih (kart 0186, panonun başlığı: "27 Kasım 2026 Cuma"); sitenin saat diliminde. Yalnız
+// sunucuda kullanılır: site biçimleyicisinin dışındadır, tarayıcı paketine girmez.
+export const tamTarih = (an: Date, ayarlar: Pick<BicimAyarlari, "dil" | "saatDilimi">): string =>
+  new Intl.DateTimeFormat(ayarlar.dil, { dateStyle: "full", timeZone: ayarlar.saatDilimi }).format(
+    an,
+  );
