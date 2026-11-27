@@ -33,4 +33,4 @@ Bölüm: Yönetim paneli 2. Kullanıcının kararıyla on dördüncü bölümden
 
 ## Durum
 
-yapılacak
+bitti
