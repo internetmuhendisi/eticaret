@@ -9,7 +9,7 @@
 // - Bir ürünün gruba bağlanması ürün servisindedir (urun/servis.ts): aynı anda silinen gruba
 //   bağlanmamak için grup satırını paylaşımlı kilitle okur.
 import { randomUUID } from "node:crypto";
-import { and, asc, count, eq, inArray, isNull, ne, type SQL, sql } from "drizzle-orm";
+import { and, asc, count, eq, isNull, ne, type SQL, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type {
@@ -18,7 +18,6 @@ import type {
   DegisiklikKayitTuru,
 } from "../../kayitlar/degisiklik-islemleri.ts";
 import { adAnahtariSql } from "../../metinler/ad-anahtari.ts";
-import { bosAdresAdi } from "../../metinler/adres-adi.ts";
 import {
   siteninVeritabani,
   type Veritabani,
@@ -27,6 +26,7 @@ import {
 import { kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { gorselHazirMi } from "../dosya/servis.ts";
+import { adresAdiHatasi, bosAdresAdiBul } from "../gorunurluk/adres-adi-kullanimi.ts";
 import type { GrupBaglantisi, GrupTablosu } from "./grup.ts";
 import {
   type GrupDegisikligi,
@@ -86,6 +86,8 @@ export type GrupTanimi = {
   girdiSemasi: ReturnType<typeof grupGirdisi>;
   degisiklikSemasi: ReturnType<typeof grupDegisikligi>;
   kayitTuru: DegisiklikKayitTuru;
+  // Eski adreslerin türü (kart 0330): adres adı bu türün kayıtları ve eski adresleri arasında tekildir.
+  adresTuru: "marka" | "etiket";
   islemler: { eklendi: DegisiklikIslemi; degisti: DegisiklikIslemi; silindi: DegisiklikIslemi };
 };
 
@@ -141,20 +143,6 @@ export const grupServisi = (tanim: GrupTanimi) => {
         )
     ).length > 0;
 
-  const adresAdiKullaniliyor = async (islem: VeritabaniIslemi, adresAdi: string, haric?: string) =>
-    (
-      await islem
-        .select({ kimlik: tablo.kimlik })
-        .from(tablo)
-        .where(
-          and(
-            eq(tablo.adres_adi, adresAdi),
-            isNull(tablo.silinme_zamani),
-            haric === undefined ? undefined : ne(tablo.kimlik, haric),
-          ),
-        )
-    ).length > 0;
-
   const degisebilen = async (islem: VeritabaniIslemi, kimlik: string): Promise<GrupKaydi> => {
     if (!kimlikMi(kimlik)) throw new BilinenHata("bulunamadi");
     const [satir] = await islem.select(alanlar).from(tablo).where(eq(tablo.kimlik, kimlik));
@@ -186,21 +174,15 @@ export const grupServisi = (tanim: GrupTanimi) => {
     return yaz(vt, async (islem) => {
       if (await adKullaniliyor(islem, girdi.ad)) throw cakisma("ad", "ad-tekrar");
       await logoyuDenetle(islem, girdi.logo ?? null);
-      if (girdi.adresAdi !== undefined && (await adresAdiKullaniliyor(islem, girdi.adresAdi))) {
-        throw cakisma("adresAdi", "adres-adi-tekrar");
+      if (girdi.adresAdi !== undefined) {
+        const kod = await adresAdiHatasi(islem, tanim.adresTuru, girdi.adresAdi);
+        if (kod !== undefined) throw cakisma("adresAdi", kod);
       }
       const kimlik = randomUUID();
       const kayit: GrupKaydi = {
         ad: girdi.ad,
         adresAdi:
-          girdi.adresAdi ??
-          (await bosAdresAdi(girdi.ad, kimlik, async (adaylar) => {
-            const satirlar = await islem
-              .select({ adresAdi: tablo.adres_adi })
-              .from(tablo)
-              .where(and(isNull(tablo.silinme_zamani), inArray(tablo.adres_adi, adaylar)));
-            return new Set(satirlar.map((satir) => satir.adresAdi));
-          })),
+          girdi.adresAdi ?? (await bosAdresAdiBul(islem, tanim.adresTuru, girdi.ad, kimlik)),
         aciklama: girdi.aciklama ?? null,
         logo: girdi.logo ?? null,
       };
@@ -247,11 +229,9 @@ export const grupServisi = (tanim: GrupTanimi) => {
       if (yeni.ad !== eski.ad && (await adKullaniliyor(islem, yeni.ad, kimlik))) {
         throw cakisma("ad", "ad-tekrar");
       }
-      if (
-        yeni.adresAdi !== eski.adresAdi &&
-        (await adresAdiKullaniliyor(islem, yeni.adresAdi, kimlik))
-      ) {
-        throw cakisma("adresAdi", "adres-adi-tekrar");
+      if (yeni.adresAdi !== eski.adresAdi) {
+        const kod = await adresAdiHatasi(islem, tanim.adresTuru, yeni.adresAdi, kimlik);
+        if (kod !== undefined) throw cakisma("adresAdi", kod);
       }
       await islem
         .update(tablo)

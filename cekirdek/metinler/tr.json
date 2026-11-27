@@ -548,6 +548,7 @@
         "kayda-uygun-degil": "Bu alan yalnız bir e-posta adresinden ya da giriş anahtarından oluşamaz. Metni değiştirin.",
         "adres-adi-bicimi": "Adres adında yalnız küçük harf (ç, ğ, ı, ö, ş, ü olmadan), rakam ve tire olabilir. Örnek: cicekli-sal.",
         "adres-adi-tekrar": "Bu adres adı başka bir üründe kullanılıyor. Başka bir ad yazın.",
+        "adres-adi-eski": "Bu adres başka bir ürünün eski adresi; eski bağlantılar o ürüne gidiyor. Başka bir ad yazın.",
         "stok-kodu-tekrar": "Bu stok kodu başka bir üründe kullanılıyor. Başka bir kod yazın.",
         "yayin-zamani-bicimi": "Yayın zamanını tarih ve saatiyle seçin.",
         "yayin-zamani-gerekli": "Zamanlanmış ürün için yayın zamanını seçin.",
@@ -637,6 +638,7 @@
         "kayda-uygun-degil": "Bu alan yalnız bir e-posta adresinden ya da giriş anahtarından oluşamaz. Metni değiştirin.",
         "adres-adi-bicimi": "Adres adında yalnız küçük harf (ç, ğ, ı, ö, ş, ü olmadan), rakam ve tire olabilir. Örnek: ornek-marka.",
         "adres-adi-tekrar": "Bu adres adı başka bir markada kullanılıyor. Başka bir ad yazın.",
+        "adres-adi-eski": "Bu adres başka bir markanın eski adresi; eski bağlantılar o markaya gidiyor. Başka bir ad yazın.",
         "ad-tekrar": "Bu adla bir marka zaten var. Başka bir ad yazın.",
         "gorsel-gecersiz": "Logo için yüklenmiş ve hazır bir görsel seçin."
       },
@@ -667,6 +669,7 @@
         "kayda-uygun-degil": "Bu alan yalnız bir e-posta adresinden ya da giriş anahtarından oluşamaz. Metni değiştirin.",
         "adres-adi-bicimi": "Adres adında yalnız küçük harf (ç, ğ, ı, ö, ş, ü olmadan), rakam ve tire olabilir. Örnek: yaz-indirimi.",
         "adres-adi-tekrar": "Bu adres adı başka bir etikette kullanılıyor. Başka bir ad yazın.",
+        "adres-adi-eski": "Bu adres başka bir etiketin eski adresi; eski bağlantılar o etikete gidiyor. Başka bir ad yazın.",
         "ad-tekrar": "Bu adla bir etiket zaten var. Başka bir ad yazın.",
         "gorsel-gecersiz": "Görsel hazır değil. Başka bir görsel seçin."
       },
@@ -759,6 +762,7 @@
         "kayda-uygun-degil": "Bu alan yalnız bir e-posta adresinden ya da giriş anahtarından oluşamaz. Metni değiştirin.",
         "adres-adi-bicimi": "Adres adında yalnız küçük harf (ç, ğ, ı, ö, ş, ü olmadan), rakam ve tire olabilir. Örnek: ev-ve-yasam.",
         "adres-adi-tekrar": "Bu adres adı başka bir kategoride kullanılıyor. Başka bir ad yazın.",
+        "adres-adi-eski": "Bu adres başka bir kategorinin eski adresi; eski bağlantılar o kategoriye gidiyor. Başka bir ad yazın.",
         "ad-tekrar": "Aynı üst kategorinin altında bu adla bir kategori zaten var. Başka bir ad yazın ya da başka bir üst kategori seçin.",
         "ust-gecersiz": "Seçilen üst kategori bulunamadı ya da silinmiş. Başka bir üst kategori seçin.",
         "dongu": "Bir kategori kendi altına ya da alt kategorilerinden birinin altına taşınamaz. Başka bir üst kategori seçin.",
@@ -2781,6 +2785,7 @@
         "kayda-uygun-degil": "Bu metin kaydedilemez; gizli bilgiye benzeyen kısmı çıkarın.",
         "adres-adi-bicimi": "Yalnız küçük harf, rakam ve tire kullanın.",
         "adres-adi-tekrar": "Bu adres başka bir kayıtta kullanılıyor; başka bir ad yazın.",
+        "adres-adi-eski": "Bu adres başka bir yazının eski adresi; eski bağlantılar o yazıya gidiyor. Başka bir ad yazın.",
         "ad-tekrar": "Bu adla bir kategori var; başka bir ad yazın.",
         "gorsel-gecersiz": "Görsel kullanılamıyor; yeniden yükleyin.",
         "kategori-gecersiz": "Kategori silinmiş; başka bir kategori seçin.",
@@ -2837,6 +2842,7 @@
         "kayda-uygun-degil": "Bu metin kaydedilemez; gizli bilgiye benzeyen kısmı çıkarın.",
         "adres-adi-bicimi": "Yalnız küçük harf, rakam ve tire kullanın.",
         "adres-adi-tekrar": "Bu adres başka bir sayfada kullanılıyor; başka bir ad yazın.",
+        "adres-adi-eski": "Bu adres başka bir sayfanın eski adresi; eski bağlantılar o sayfaya gidiyor. Başka bir ad yazın.",
         "sayfa-degisti": "Sayfa siz düzenlerken değişti. Sayfa yenilendi; değişikliklerinizi yeniden yapın.",
         "sayfa-siniri": "Sayfa sınırına ulaşıldı; kullanmadığınız bir sayfayı silin."
       }

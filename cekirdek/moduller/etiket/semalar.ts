@@ -11,6 +11,7 @@ export const etiketHataMetinleri = {
   "kayda-uygun-degil": "yonetim.etiket.hata.kayda-uygun-degil",
   "adres-adi-bicimi": "yonetim.etiket.hata.adres-adi-bicimi",
   "adres-adi-tekrar": "yonetim.etiket.hata.adres-adi-tekrar",
+  "adres-adi-eski": "yonetim.etiket.hata.adres-adi-eski",
   "ad-tekrar": "yonetim.etiket.hata.ad-tekrar",
   "gorsel-gecersiz": "yonetim.etiket.hata.gorsel-gecersiz",
 } as const satisfies Record<GrupHatasi, MetinAnahtari>;

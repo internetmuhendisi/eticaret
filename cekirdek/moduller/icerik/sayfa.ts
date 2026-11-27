@@ -9,15 +9,15 @@
 // - Silme: sayfa silinmiş olarak işaretlenir; eski adresi tetikleyiciyle saklanır, vitrinde bulunamaz. Menüdeki öğesi
 //   yerinde kalır, vitrinde görünmez, panelde işaretlenir (menü servisi).
 // - Her yazım değişiklik kaydına aynı işlemde girer (karar 0045). İçerik ve açıklama kayda girmez (uzun metin).
-import { and, asc, count, eq, inArray, isNull, ne, type SQL, sql } from "drizzle-orm";
+import { and, asc, count, eq, isNull, type SQL, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import { type SabitSayfaDurumu, sabitSayfaSinirlari } from "../../kayitlar/sayfa.ts";
-import { bosAdresAdi } from "../../metinler/adres-adi.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
+import { adresAdiHatasi, bosAdresAdiBul } from "../gorunurluk/adres-adi-kullanimi.ts";
 import { sabitSayfalar } from "./model.ts";
 import { sabitSayfaDegisikligi, sabitSayfaGirdisi, sabitSayfaHatalari } from "./sayfa-semalari.ts";
 import { icerikKilidiAl } from "./servis.ts";
@@ -134,30 +134,6 @@ const kayitDegeri = (sayfa: SabitSayfa): Record<string, unknown> => ({
   durum: sayfa.durum,
 });
 
-const adresKullaniliyor = async (islem: VeritabaniIslemi, adresAdi: string, haric?: string) =>
-  (
-    await islem
-      .select({ kimlik: sabitSayfalar.kimlik })
-      .from(sabitSayfalar)
-      .where(
-        and(
-          eq(sabitSayfalar.adres_adi, adresAdi),
-          isNull(sabitSayfalar.silinme_zamani),
-          haric === undefined ? undefined : ne(sabitSayfalar.kimlik, haric),
-        ),
-      )
-      .limit(1)
-  ).length > 0;
-
-const bosAdres = (islem: VeritabaniIslemi, baslik: string, kimlik: string) =>
-  bosAdresAdi(baslik, kimlik, async (adaylar) => {
-    const satirlar = await islem
-      .select({ adresAdi: sabitSayfalar.adres_adi })
-      .from(sabitSayfalar)
-      .where(and(inArray(sabitSayfalar.adres_adi, adaylar), isNull(sabitSayfalar.silinme_zamani)));
-    return new Set(satirlar.map((s) => s.adresAdi));
-  });
-
 const sayfaEkle = async (
   vt: Veritabani | VeritabaniIslemi,
   kim: DegisikligiYapan,
@@ -173,10 +149,11 @@ const sayfaEkle = async (
       throw new BilinenHata("is-kurali", [{ alan: "sayfa", kod: "sayfa-siniri" }]);
     }
     const kimlik = crypto.randomUUID();
-    if (girdi.adresAdi !== undefined && (await adresKullaniliyor(islem, girdi.adresAdi))) {
-      throw cakisma("adresAdi", "adres-adi-tekrar");
+    if (girdi.adresAdi !== undefined) {
+      const kod = await adresAdiHatasi(islem, "sayfa", girdi.adresAdi);
+      if (kod !== undefined) throw cakisma("adresAdi", kod);
     }
-    const adresAdi = girdi.adresAdi ?? (await bosAdres(islem, girdi.baslik, kimlik));
+    const adresAdi = girdi.adresAdi ?? (await bosAdresAdiBul(islem, "sayfa", girdi.baslik, kimlik));
     await islem.insert(sabitSayfalar).values({
       kimlik,
       baslik: girdi.baslik,
@@ -221,11 +198,9 @@ const sayfaDegistir = async (
       aciklama: girdi.aciklama === undefined ? onceki.aciklama : girdi.aciklama,
       durum: girdi.durum ?? onceki.durum,
     };
-    if (
-      yeni.adres_adi !== onceki.adresAdi &&
-      (await adresKullaniliyor(islem, yeni.adres_adi, kimlik))
-    ) {
-      throw cakisma("adresAdi", "adres-adi-tekrar");
+    if (yeni.adres_adi !== onceki.adresAdi) {
+      const kod = await adresAdiHatasi(islem, "sayfa", yeni.adres_adi, kimlik);
+      if (kod !== undefined) throw cakisma("adresAdi", kod);
     }
     const degisti =
       yeni.baslik !== onceki.baslik ||

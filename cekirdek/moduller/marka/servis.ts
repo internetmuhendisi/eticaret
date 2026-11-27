@@ -11,5 +11,6 @@ export const markaServisi = grupServisi({
   girdiSemasi: markaGirdisi,
   degisiklikSemasi: markaDegisikligi,
   kayitTuru: "marka",
+  adresTuru: "marka",
   islemler: { eklendi: "marka.eklendi", degisti: "marka.degisti", silindi: "marka.silindi" },
 });

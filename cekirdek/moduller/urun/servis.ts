@@ -12,12 +12,11 @@
 // İzin kapıda denetlenir (izinler.ts); servis yalnız kimin yaptığını kayda yazar. Girdi şemadan
 // geçmemişse servis yine şemadan geçirir: başka bir yoldan gelen ham değer tabloya yazılmaz.
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { ayarSemasi } from "../../ayar-semasi/ayarlar.ts";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
-import type { AdresliKayitTuru } from "../../kayitlar/adres.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import {
   type UrunDurumu,
@@ -26,7 +25,6 @@ import {
   type VitrinYeri,
 } from "../../kayitlar/urun.ts";
 import type { VideoSitesi } from "../../kayitlar/video-siteleri.ts";
-import { bosAdresAdi } from "../../metinler/adres-adi.ts";
 import { yerelZamandan } from "../../metinler/bicimleyici.ts";
 import {
   siteninVeritabani,
@@ -35,7 +33,7 @@ import {
 } from "../../veritabani/baglanti.ts";
 import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
-import { eskiAdresler } from "../gorunurluk/model.ts";
+import { adresAdiHatasi, bosAdresAdiBul } from "../gorunurluk/adres-adi-kullanimi.ts";
 import {
   kilitliUrunOzellikleri,
   ozellikDegerleriniDenetle,
@@ -329,34 +327,6 @@ export const urunServisi = (
     }
   };
 
-  const adresAdiKullaniliyor = async (
-    islem: VeritabaniIslemi,
-    adresAdi: string,
-    haric?: string,
-  ) => {
-    const bulunan = await islem
-      .select({ kimlik: urunler.kimlik })
-      .from(urunler)
-      .where(
-        and(
-          eq(urunler.adres_adi, adresAdi),
-          isNull(urunler.silinme_zamani),
-          haric === undefined ? undefined : ne(urunler.kimlik, haric),
-        ),
-      );
-    return bulunan.length > 0;
-  };
-
-  // Addan üretilen adres adı (cekirdek/metinler/adres-adi.ts); adaylar silinmemişler arasında aranır.
-  const adresAdiBul = (islem: VeritabaniIslemi, ad: string, kimlik: string) =>
-    bosAdresAdi(ad, kimlik, async (adaylar) => {
-      const satirlar = await islem
-        .select({ adresAdi: urunler.adres_adi })
-        .from(urunler)
-        .where(and(isNull(urunler.silinme_zamani), inArray(urunler.adres_adi, adaylar)));
-      return new Set(satirlar.map((satir) => satir.adresAdi));
-    });
-
   // Elle seçilen ilgili ürünler (ilgili.ts): ürün kendisini seçemez, seçilenler var ve silinmemiş.
   const ilgilileriDenetle = async (islem: VeritabaniIslemi, urun: string, liste: string[]) => {
     const kod = await ilgiliSecimHatasi(islem, urun, liste);
@@ -374,11 +344,10 @@ export const urunServisi = (
     ) {
       throw cakisma("stokKodu", "stok-kodu-tekrar");
     }
-    if (
-      kayit.adresAdi !== null &&
-      (await adresAdiKullaniliyor(islem, kayit.adresAdi, haric?.urun))
-    ) {
-      throw cakisma("adresAdi", "adres-adi-tekrar");
+    // Başka ürünün adresi de eski adresi de alınmaz (kart 0330, karar 0193).
+    if (kayit.adresAdi !== null) {
+      const kod = await adresAdiHatasi(islem, "urun", kayit.adresAdi, haric?.urun);
+      if (kod !== undefined) throw cakisma("adresAdi", kod);
     }
   };
 
@@ -422,7 +391,7 @@ export const urunServisi = (
       await ilgilileriDenetle(islem, kimlik, kayit.ilgiliUrunler);
       const ozellikler = await ozellikDegerleriniDenetle(islem, girdi.ozellikler ?? []);
       await tekligiDenetle(islem, kayit);
-      const adresAdi = kayit.adresAdi ?? (await adresAdiBul(islem, kayit.ad, kimlik));
+      const adresAdi = kayit.adresAdi ?? (await bosAdresAdiBul(islem, "urun", kayit.ad, kimlik));
       const yazilacak = { ...kayit, adresAdi, ozellikler: ozellikler.degerler };
       // "En yeni" sırası (urun/liste.ts, urun/ilgili.ts) oluşturma zamanına göredir. now() işlemin başıdır: aynı
       // işlemde eklenen ürünlerin (başlangıç kataloğu) zamanı eşit olur, sırayı rastgele kimlik belirlerdi. Sonra
@@ -676,33 +645,14 @@ export const urunServisi = (
         .where(and(eq(urunler.kimlik, kimlik), vitrinKosulu(yer, secenekler)))
     ).length > 0;
 
-  // Ürün için boş adres adı (kart 0320, kopya): kökten üretilir, kullanılıyorsa sayı alır ("x-2"). Başka bir ürünün
-  // eski adresi de kullanılmış sayılır: kopya onu alsaydı o ürünün eski bağlantıları yönlenmezdi (bağımsız kontrolün
-  // bulgusu; kopya hep aynı adayla başlar).
-  const bosAdresAdiBul = (islem: VeritabaniIslemi, kok: string, kimlik: string) =>
-    bosAdresAdi(kok, kimlik, async (adaylar) => {
-      const [canli, eski] = await Promise.all([
-        islem
-          .select({ adresAdi: urunler.adres_adi })
-          .from(urunler)
-          .where(and(isNull(urunler.silinme_zamani), inArray(urunler.adres_adi, adaylar))),
-        islem
-          .select({ adresAdi: eskiAdresler.adres_adi })
-          .from(eskiAdresler)
-          .where(
-            and(
-              eq(eskiAdresler.kayit_turu, "urun" satisfies AdresliKayitTuru),
-              inArray(eskiAdresler.adres_adi, adaylar),
-            ),
-          ),
-      ]);
-      return new Set([...canli, ...eski].map((satir) => satir.adresAdi));
-    });
+  // Kopyanın adres adı (kart 0320): kökten üretilir, ekleme ile aynı kural (kart 0330).
+  const kopyaAdresAdiBul = (islem: VeritabaniIslemi, kok: string, kimlik: string) =>
+    bosAdresAdiBul(islem, "urun", kok, kimlik);
 
   return {
     urunEkle,
     urunDegistir,
-    bosAdresAdiBul,
+    bosAdresAdiBul: kopyaAdresAdiBul,
     urunSil,
     urunuOku,
     vitrindeGorunurMu,

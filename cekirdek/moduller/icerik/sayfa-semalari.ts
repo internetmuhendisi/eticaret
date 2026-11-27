@@ -11,6 +11,8 @@ export const sabitSayfaHatalari = [
   "adres-adi-bicimi",
   // Silinmemiş başka bir sayfa bu adres adını kullanıyor.
   "adres-adi-tekrar",
+  // Başka bir kaydın eski adresi: eski bağlantılar ona yönlenir (kart 0330, karar 0193).
+  "adres-adi-eski",
   // Ekranın gördüğü sayfa arada değişti: hiçbir şey yazılmaz.
   "sayfa-degisti",
   "sayfa-siniri",

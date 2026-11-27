@@ -12,24 +12,11 @@
 //
 // İzin kapıda denetlenir (izinler.ts); servis yalnız kimin yaptığını kayda yazar.
 import { randomUUID } from "node:crypto";
-import {
-  and,
-  asc,
-  count,
-  eq,
-  inArray,
-  isNull,
-  max,
-  ne,
-  notInArray,
-  type SQL,
-  sql,
-} from "drizzle-orm";
+import { and, asc, count, eq, isNull, max, notInArray, type SQL, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import { adAnahtariSql } from "../../metinler/ad-anahtari.ts";
-import { bosAdresAdi } from "../../metinler/adres-adi.ts";
 import {
   siteninVeritabani,
   type Veritabani,
@@ -38,6 +25,7 @@ import {
 import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { gorselHazirMi } from "../dosya/servis.ts";
+import { adresAdiHatasi, bosAdresAdiBul } from "../gorunurluk/adres-adi-kullanimi.ts";
 import { urunKilidiAl } from "../urun/kilit.ts";
 import {
   bosUrunListesi,
@@ -168,20 +156,6 @@ const kardesAdiKullaniliyor = async (
       )
   ).length > 0;
 
-const adresAdiKullaniliyor = async (islem: VeritabaniIslemi, adresAdi: string, haric?: string) =>
-  (
-    await islem
-      .select({ kimlik: kategoriler.kimlik })
-      .from(kategoriler)
-      .where(
-        and(
-          eq(kategoriler.adres_adi, adresAdi),
-          isNull(kategoriler.silinme_zamani),
-          haric === undefined ? undefined : ne(kategoriler.kimlik, haric),
-        ),
-      )
-  ).length > 0;
-
 // Üst kategori var ve silinmemiş olmalı.
 const ustuDenetle = async (islem: VeritabaniIslemi, ust: string | null) => {
   if (ust === null) return;
@@ -262,24 +236,16 @@ export const kategoriEkle = async (
     if (await kardesAdiKullaniliyor(islem, girdi.ust, girdi.ad, [])) {
       throw cakisma([{ alan: "ad", kod: "ad-tekrar" }]);
     }
-    if (girdi.adresAdi !== undefined && (await adresAdiKullaniliyor(islem, girdi.adresAdi))) {
-      throw cakisma([{ alan: "adresAdi", kod: "adres-adi-tekrar" }]);
-    }
+    const adresHatasi =
+      girdi.adresAdi === undefined
+        ? undefined
+        : await adresAdiHatasi(islem, "kategori", girdi.adresAdi);
+    if (adresHatasi !== undefined) throw cakisma([{ alan: "adresAdi", kod: adresHatasi }]);
     await gorseliDenetle(islem, girdi.gorsel);
     const kimlik = randomUUID();
     const kayit: KategoriKaydi = {
       ad: girdi.ad,
-      adresAdi:
-        girdi.adresAdi ??
-        (await bosAdresAdi(girdi.ad, kimlik, async (adaylar) => {
-          const satirlar = await islem
-            .select({ adresAdi: kategoriler.adres_adi })
-            .from(kategoriler)
-            .where(
-              and(isNull(kategoriler.silinme_zamani), inArray(kategoriler.adres_adi, adaylar)),
-            );
-          return new Set(satirlar.map((satir) => satir.adresAdi));
-        })),
+      adresAdi: girdi.adresAdi ?? (await bosAdresAdiBul(islem, "kategori", girdi.ad, kimlik)),
       aciklama: girdi.aciklama ?? null,
       ust: girdi.ust,
       sira: girdi.sira ?? (await sonrakiSira(islem, girdi.ust)),
@@ -334,11 +300,9 @@ export const kategoriDegistir = async (
     ) {
       throw cakisma([{ alan: "ad", kod: "ad-tekrar" }]);
     }
-    if (
-      yeni.adresAdi !== eski.adresAdi &&
-      (await adresAdiKullaniliyor(islem, yeni.adresAdi, kimlik))
-    ) {
-      throw cakisma([{ alan: "adresAdi", kod: "adres-adi-tekrar" }]);
+    if (yeni.adresAdi !== eski.adresAdi) {
+      const kod = await adresAdiHatasi(islem, "kategori", yeni.adresAdi, kimlik);
+      if (kod !== undefined) throw cakisma([{ alan: "adresAdi", kod }]);
     }
     await islem
       .update(kategoriler)

@@ -10,6 +10,8 @@ export const kategoriHatalari = [
   "kayda-uygun-degil",
   "adres-adi-bicimi",
   "adres-adi-tekrar",
+  // Başka bir kaydın eski adresi: eski bağlantılar ona yönlenir (kart 0330, karar 0193).
+  "adres-adi-eski",
   // Aynı üst kategorinin altında aynı adla iki kategori (büyük küçük harf ayrımsız).
   "ad-tekrar",
   // Üst kategori yok ya da silinmiş.
@@ -30,6 +32,7 @@ export const kategoriHataMetinleri = {
   "kayda-uygun-degil": "yonetim.kategori.hata.kayda-uygun-degil",
   "adres-adi-bicimi": "yonetim.kategori.hata.adres-adi-bicimi",
   "adres-adi-tekrar": "yonetim.kategori.hata.adres-adi-tekrar",
+  "adres-adi-eski": "yonetim.kategori.hata.adres-adi-eski",
   "ad-tekrar": "yonetim.kategori.hata.ad-tekrar",
   "ust-gecersiz": "yonetim.kategori.hata.ust-gecersiz",
   dongu: "yonetim.kategori.hata.dongu",

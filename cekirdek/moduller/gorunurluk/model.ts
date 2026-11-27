@@ -7,7 +7,8 @@
 //
 // - Bir eski ad, bir türde tek kayda yönlenir. Ad sonradan başka bir kaydın eski adı olursa satır o kayda
 //   geçer (en son bırakan kazanır).
-// - Eski ad bugün yaşayan bir kaydın adıysa yaşayan kayıt kazanır: çözücü önce yaşayan kayıtlara bakar.
+// - Eski ad bugün yaşayan bir kaydın adıysa yaşayan kayıt kazanır: çözücü önce yaşayan kayıtlara bakar. Servisler
+//   yaşayan kaydın eski adını başka kayda vermez (adres-adi-kullanimi.ts, karar 0193); bu yalnız doğrudan yazıda olur.
 // - Çözücü silinmiş kayda yönlendirmez: eski adres "bulunamadı"ya düşer. Silme adı en son bırakan olarak
 //   silinen kaydı yazar; böylece silinen kaydın adresi adın daha eski sahibine de yönlenmez.
 // - Yönlendirme her zaman kaydın bugünkü adına gider, zincir kurulmaz.

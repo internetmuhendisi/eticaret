@@ -11,5 +11,6 @@ export const etiketServisi = grupServisi({
   girdiSemasi: etiketGirdisi,
   degisiklikSemasi: etiketDegisikligi,
   kayitTuru: "etiket",
+  adresTuru: "etiket",
   islemler: { eklendi: "etiket.eklendi", degisti: "etiket.degisti", silindi: "etiket.silindi" },
 });

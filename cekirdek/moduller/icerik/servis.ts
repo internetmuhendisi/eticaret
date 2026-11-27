@@ -22,6 +22,7 @@ import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts"
 import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { gorselHazirMi } from "../dosya/servis.ts";
+import { adresAdiHatasi, bosAdresAdiBul } from "../gorunurluk/adres-adi-kullanimi.ts";
 import { blogKategorileri, blogYazilari } from "./model.ts";
 import {
   blogKategorisiDegisikligi,
@@ -177,34 +178,6 @@ export const icerikServisi = (saatDilimi: () => string) => {
     return an;
   };
 
-  const yaziAdresiKullaniliyor = async (
-    islem: VeritabaniIslemi,
-    adresAdi: string,
-    haric?: string,
-  ) =>
-    (
-      await islem
-        .select({ kimlik: blogYazilari.kimlik })
-        .from(blogYazilari)
-        .where(
-          and(
-            eq(blogYazilari.adres_adi, adresAdi),
-            isNull(blogYazilari.silinme_zamani),
-            haric === undefined ? undefined : ne(blogYazilari.kimlik, haric),
-          ),
-        )
-        .limit(1)
-    ).length > 0;
-
-  const bosYaziAdresi = (islem: VeritabaniIslemi, baslik: string, kimlik: string) =>
-    bosAdresAdi(baslik, kimlik, async (adaylar) => {
-      const satirlar = await islem
-        .select({ adresAdi: blogYazilari.adres_adi })
-        .from(blogYazilari)
-        .where(and(inArray(blogYazilari.adres_adi, adaylar), isNull(blogYazilari.silinme_zamani)));
-      return new Set(satirlar.map((s) => s.adresAdi));
-    });
-
   const kategoriyiDenetle = async (islem: VeritabaniIslemi, kimlik: string | null) => {
     if (kimlik === null) return;
     const [kategori] = await islem
@@ -259,10 +232,12 @@ export const icerikServisi = (saatDilimi: () => string) => {
     const girdi = girdiyiDogrula(blogYazisiGirdisi.safeParse(ham));
     return yaz(vt, async (islem) => {
       const kimlik = crypto.randomUUID();
-      const adresAdi = girdi.adresAdi ?? (await bosYaziAdresi(islem, girdi.baslik, kimlik));
-      if (girdi.adresAdi !== undefined && (await yaziAdresiKullaniliyor(islem, girdi.adresAdi))) {
-        throw cakisma("adresAdi", "adres-adi-tekrar");
+      if (girdi.adresAdi !== undefined) {
+        const kod = await adresAdiHatasi(islem, "blog-yazisi", girdi.adresAdi);
+        if (kod !== undefined) throw cakisma("adresAdi", kod);
       }
+      const adresAdi =
+        girdi.adresAdi ?? (await bosAdresAdiBul(islem, "blog-yazisi", girdi.baslik, kimlik));
       await kategoriyiDenetle(islem, girdi.kategori ?? null);
       await kapagiDenetle(islem, girdi.kapak?.dosya ?? null);
       const yayinZamani =
@@ -311,12 +286,9 @@ export const icerikServisi = (saatDilimi: () => string) => {
       if (gorulen !== undefined && onceki.guncellenmeZamani.getTime() !== gorulen.getTime()) {
         throw cakisma("yazi", "yazi-degisti");
       }
-      if (
-        girdi.adresAdi !== undefined &&
-        girdi.adresAdi !== onceki.adresAdi &&
-        (await yaziAdresiKullaniliyor(islem, girdi.adresAdi, kimlik))
-      ) {
-        throw cakisma("adresAdi", "adres-adi-tekrar");
+      if (girdi.adresAdi !== undefined && girdi.adresAdi !== onceki.adresAdi) {
+        const kod = await adresAdiHatasi(islem, "blog-yazisi", girdi.adresAdi, kimlik);
+        if (kod !== undefined) throw cakisma("adresAdi", kod);
       }
       if (girdi.kategori !== undefined && girdi.kategori !== onceki.kategori) {
         await kategoriyiDenetle(islem, girdi.kategori);

@@ -4,6 +4,10 @@
 // adın eski hâline dönmesi, silinen kayıt, kalıba uymayan ad. Ürünün sayfası açılmayan durumu, tetikleyicinin
 // servis dışı yazıda da çalışması, veritabanındaki tür listesinin kayıtla aynı olması ve iki sitenin ayrı
 // kalması ayrıca denenir.
+//
+// Kart 0330 (karar 0193): servis bir türün yaşayan kaydının eski adresini başka kayda vermez. Elle verilen eski adres
+// reddedilir, addan üretilen adres sayı alır; silinmiş kaydın eski adresi ve kaydın kendi eski adresi serbesttir.
+// Çözücünün "yaşayan kayıt kazanır" kuralı doğrudan veritabanı yazısıyla denenir (dogrudanAdVer).
 import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
@@ -34,33 +38,61 @@ afterEach(async () => {
   await Promise.all(silinecekler.splice(0).map((sil) => sil()));
 });
 
-// Her türün ekleme, ad değiştirme ve silme yolu. Ürün vitrinde açılsın diye yayında eklenir.
+// Her türün tablosu: servisi atlayan doğrudan yazı için (çözücünün kuralı servisin reddettiği durumda denenir).
+const tablolar: Record<AdresliKayitTuru, string> = {
+  kategori: "kategoriler",
+  marka: "markalar",
+  etiket: "etiketler",
+  urun: "urunler",
+  "blog-yazisi": "blog_yazilari",
+  sayfa: "sabit_sayfalar",
+};
+const dogrudanAdVer = (vt: Veritabani, tur: AdresliKayitTuru, kimlik: string, adresAdi: string) =>
+  vt.execute(
+    sql`update ${sql.identifier(tablolar[tur])} set adres_adi = ${adresAdi} where kimlik = ${kimlik}`,
+  );
+
+const hatasi = (soz: Promise<unknown>) =>
+  soz.then(
+    () => "hata yok",
+    (hata: { kod?: unknown; ayrinti?: unknown }) => ({ kod: hata.kod, ayrinti: hata.ayrinti }),
+  );
+const eskiAdresHatasi = { kod: "cakisma", ayrinti: [{ alan: "adresAdi", kod: "adres-adi-eski" }] };
+
+// Her türün ekleme, ad değiştirme ve silme yolu. Ürün vitrinde açılsın diye yayında eklenir. Adres adı
+// verilmezse servis addan üretir.
 type Islemler = {
-  ekle: (vt: Veritabani, ad: string, adresAdi: string) => Promise<string>;
+  ekle: (vt: Veritabani, ad: string, adresAdi?: string) => Promise<string>;
   adiDegistir: (vt: Veritabani, kimlik: string, adresAdi: string) => Promise<void>;
   sil: (vt: Veritabani, kimlik: string) => Promise<unknown>;
 };
+const adres = (adresAdi: string | undefined) => (adresAdi === undefined ? {} : { adresAdi });
 const turler: Record<AdresliKayitTuru, Islemler> = {
   kategori: {
-    ekle: (vt, ad, adresAdi) => kategoriEkle(vt, yonetici(), { ad, adresAdi }),
+    ekle: (vt, ad, adresAdi) => kategoriEkle(vt, yonetici(), { ad, ...adres(adresAdi) }),
     adiDegistir: (vt, kimlik, adresAdi) => kategoriDegistir(vt, yonetici(), kimlik, { adresAdi }),
     sil: (vt, kimlik) => kategoriSil(vt, yonetici(), kimlik),
   },
   marka: {
-    ekle: (vt, ad, adresAdi) => markaServisi.ekle(vt, yonetici(), { ad, adresAdi }),
+    ekle: (vt, ad, adresAdi) => markaServisi.ekle(vt, yonetici(), { ad, ...adres(adresAdi) }),
     adiDegistir: (vt, kimlik, adresAdi) =>
       markaServisi.degistir(vt, yonetici(), kimlik, { adresAdi }),
     sil: (vt, kimlik) => markaServisi.sil(vt, yonetici(), kimlik),
   },
   etiket: {
-    ekle: (vt, ad, adresAdi) => etiketServisi.ekle(vt, yonetici(), { ad, adresAdi }),
+    ekle: (vt, ad, adresAdi) => etiketServisi.ekle(vt, yonetici(), { ad, ...adres(adresAdi) }),
     adiDegistir: (vt, kimlik, adresAdi) =>
       etiketServisi.degistir(vt, yonetici(), kimlik, { adresAdi }),
     sil: (vt, kimlik) => etiketServisi.sil(vt, yonetici(), kimlik),
   },
   urun: {
     ekle: (vt, ad, adresAdi) =>
-      urunSrv.urunEkle(vt, yonetici(), { ad, adresAdi, vergiSinifi: null, durum: "yayinda" }),
+      urunSrv.urunEkle(vt, yonetici(), {
+        ad,
+        ...adres(adresAdi),
+        vergiSinifi: null,
+        durum: "yayinda",
+      }),
     adiDegistir: (vt, kimlik, adresAdi) =>
       urunSrv.urunDegistir(vt, yonetici(), kimlik, { adresAdi }),
     sil: (vt, kimlik) => urunSrv.urunSil(vt, yonetici(), kimlik),
@@ -68,7 +100,8 @@ const turler: Record<AdresliKayitTuru, Islemler> = {
   // Kart 0272: blog yazısı; vitrinde açılsın diye yayında eklenir.
   "blog-yazisi": {
     ekle: async (vt, baslik, adresAdi) =>
-      (await icerikSrv.yaziEkle(vt, yonetici(), { baslik, adresAdi, durum: "yayinda" })).kimlik,
+      (await icerikSrv.yaziEkle(vt, yonetici(), { baslik, ...adres(adresAdi), durum: "yayinda" }))
+        .kimlik,
     adiDegistir: async (vt, kimlik, adresAdi) => {
       await icerikSrv.yaziDegistir(vt, yonetici(), kimlik, { adresAdi });
     },
@@ -77,8 +110,13 @@ const turler: Record<AdresliKayitTuru, Islemler> = {
   // Kart 0273: sabit sayfa; vitrinde açılsın diye yayında eklenir.
   sayfa: {
     ekle: async (vt, baslik, adresAdi) =>
-      (await sabitSayfaServisi.sayfaEkle(vt, yonetici(), { baslik, adresAdi, durum: "yayinda" }))
-        .kimlik,
+      (
+        await sabitSayfaServisi.sayfaEkle(vt, yonetici(), {
+          baslik,
+          ...adres(adresAdi),
+          durum: "yayinda",
+        })
+      ).kimlik,
     adiDegistir: async (vt, kimlik, adresAdi) => {
       await sabitSayfaServisi.sayfaDegistir(vt, yonetici(), kimlik, { adresAdi });
     },
@@ -117,7 +155,9 @@ describe.each(adresliKayitTurleri)("%s", (tur) => {
     const vt = await siteAc();
     const ilk = await ekle(vt, "Yazlık", "yazlik");
     await adiDegistir(vt, ilk, "yaz");
-    const ikinci = await ekle(vt, "Yazlık Yeni", "yazlik");
+    // Servis eski adı başka kayda vermez (kart 0330); kural servisi atlayan yazıyla denenir.
+    const ikinci = await ekle(vt, "Yazlık Yeni", "yazlik-gecici");
+    await dogrudanAdVer(vt, tur, ikinci, "yazlik");
     expect(await kayitAdresiniCoz(vt, tur, "yazlik")).toMatchObject({
       sonuc: "kayit",
       kayit: { kimlik: ikinci },
@@ -150,7 +190,8 @@ describe.each(adresliKayitTurleri)("%s", (tur) => {
     const vt = await siteAc();
     const eski = await ekle(vt, "Kış", "kis");
     await adiDegistir(vt, eski, "kis-yeni");
-    const yeni = await ekle(vt, "Kış Başka", "kis");
+    const yeni = await ekle(vt, "Kış Başka", "kis-gecici");
+    await dogrudanAdVer(vt, tur, yeni, "kis");
     expect(await kayitAdresiniCoz(vt, tur, "kis")).toMatchObject({
       sonuc: "kayit",
       kayit: { kimlik: yeni },
@@ -172,6 +213,69 @@ describe.each(adresliKayitTurleri)("%s", (tur) => {
     expect(await kayitAdresiniCoz(vt, tur, "yaz")).toEqual({
       sonuc: "yonlendir",
       adresAdi: "yaz-yeni",
+    });
+  });
+
+  it("yaşayan kaydın eski adresi elle verilince reddedilir, hiçbir şey yazılmaz, eski bağlantı yönlenir", async () => {
+    const vt = await siteAc();
+    const ilk = await ekle(vt, "Çiçekli", "cicekli");
+    await adiDegistir(vt, ilk, "desenli");
+    const oncekiSatirlar = await vt.select().from(eskiAdresler);
+    expect(await hatasi(ekle(vt, "Çiçekli Yeni", "cicekli"))).toEqual(eskiAdresHatasi);
+    const baska = await ekle(vt, "Başka", "baska");
+    expect(await hatasi(adiDegistir(vt, baska, "cicekli"))).toEqual(eskiAdresHatasi);
+    expect(await kayitAdresiniCoz(vt, tur, "cicekli")).toEqual({
+      sonuc: "yonlendir",
+      adresAdi: "desenli",
+    });
+    expect(await kayitAdresiniCoz(vt, tur, "baska")).toMatchObject({
+      sonuc: "kayit",
+      kayit: { kimlik: baska },
+    });
+    expect(await vt.select().from(eskiAdresler)).toEqual(oncekiSatirlar);
+    // Canlı kaydın adresi yine "tekrar"dır, eski adres değil.
+    expect(await hatasi(ekle(vt, "Desenli Yeni", "desenli"))).toMatchObject({
+      ayrinti: [{ alan: "adresAdi", kod: "adres-adi-tekrar" }],
+    });
+  });
+
+  it("addan üretilen adres yaşayan kaydın eski adresini almaz, sayı alır; eski bağlantı yönlenir", async () => {
+    const vt = await siteAc();
+    const ilk = await ekle(vt, "Çiçekli Şal", "cicekli-sal");
+    await adiDegistir(vt, ilk, "desenli-sal");
+    // Ad kategori, marka ve etikette de tekildir: aynı adresi üreten başka bir yazılış.
+    const yeni = await ekle(vt, "Çiçekli-Şal");
+    expect(await kayitAdresiniCoz(vt, tur, "cicekli-sal-2")).toMatchObject({
+      sonuc: "kayit",
+      kayit: { kimlik: yeni },
+    });
+    expect(await kayitAdresiniCoz(vt, tur, "cicekli-sal")).toEqual({
+      sonuc: "yonlendir",
+      adresAdi: "desenli-sal",
+    });
+  });
+
+  it("silinmiş kaydın eski adresi ve kaydın kendi eski adresi serbesttir", async () => {
+    const vt = await siteAc();
+    const silinen = await ekle(vt, "Kumaş", "kumas");
+    await adiDegistir(vt, silinen, "kumas-eski");
+    await sil(vt, silinen);
+    const uretilen = await ekle(vt, "Kumaş");
+    expect(await kayitAdresiniCoz(vt, tur, "kumas")).toMatchObject({
+      sonuc: "kayit",
+      kayit: { kimlik: uretilen },
+    });
+    const elle = await ekle(vt, "Kumaş Eski", "kumas-eski");
+    expect(await kayitAdresiniCoz(vt, tur, "kumas-eski")).toMatchObject({
+      sonuc: "kayit",
+      kayit: { kimlik: elle },
+    });
+    // Kayıt kendi eski adresine döner (öteki kaydın değil).
+    await adiDegistir(vt, elle, "kumas-yeni");
+    await adiDegistir(vt, elle, "kumas-eski");
+    expect(await kayitAdresiniCoz(vt, tur, "kumas-eski")).toMatchObject({
+      sonuc: "kayit",
+      kayit: { kimlik: elle },
     });
   });
 
@@ -258,10 +362,11 @@ describe("adresin çözülmesi", () => {
     await turler.urun.adiDegistir(vt, eski, "eski-kazak");
     const taslak = await urunSrv.urunEkle(vt, yonetici(), {
       ad: "Yeni Kazak",
-      adresAdi: "kazak",
+      adresAdi: "yeni-kazak",
       vergiSinifi: null,
       durum: "taslak",
     });
+    await dogrudanAdVer(vt, "urun", taslak, "kazak");
     expect(await kayitAdresiniCoz(vt, "urun", "kazak")).toEqual({ sonuc: "yok" });
     await urunSrv.urunDegistir(vt, yonetici(), taslak, { durum: "yayinda" });
     expect(await kayitAdresiniCoz(vt, "urun", "kazak")).toMatchObject({

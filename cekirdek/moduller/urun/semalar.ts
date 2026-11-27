@@ -36,6 +36,8 @@ export const urunHatalari = [
   "kayda-uygun-degil",
   "adres-adi-bicimi",
   "adres-adi-tekrar",
+  // Başka bir kaydın eski adresi: eski bağlantılar ona yönlenir (kart 0330, karar 0193).
+  "adres-adi-eski",
   "stok-kodu-tekrar",
   "yayin-zamani-bicimi",
   "yayin-zamani-gerekli",
@@ -108,6 +110,7 @@ export const urunHataMetinleri = {
   "kayda-uygun-degil": "yonetim.urun.hata.kayda-uygun-degil",
   "adres-adi-bicimi": "yonetim.urun.hata.adres-adi-bicimi",
   "adres-adi-tekrar": "yonetim.urun.hata.adres-adi-tekrar",
+  "adres-adi-eski": "yonetim.urun.hata.adres-adi-eski",
   "stok-kodu-tekrar": "yonetim.urun.hata.stok-kodu-tekrar",
   "yayin-zamani-bicimi": "yonetim.urun.hata.yayin-zamani-bicimi",
   "yayin-zamani-gerekli": "yonetim.urun.hata.yayin-zamani-gerekli",

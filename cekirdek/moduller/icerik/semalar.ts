@@ -10,6 +10,8 @@ export const icerikHatalari = [
   "kayda-uygun-degil",
   "adres-adi-bicimi",
   "adres-adi-tekrar",
+  // Başka bir kaydın eski adresi: eski bağlantılar ona yönlenir (kart 0330, karar 0193).
+  "adres-adi-eski",
   // Aynı adla iki blog kategorisi (büyük küçük harf ayrımsız).
   "ad-tekrar",
   // Kapak hazır bir görsel değil: dosya yok ya da silinmiş, kendisi bir boyut ya da boyutları eksik.

@@ -10,6 +10,8 @@ export const grupHatalari = [
   "kayda-uygun-degil",
   "adres-adi-bicimi",
   "adres-adi-tekrar",
+  // Başka bir kaydın eski adresi: eski bağlantılar ona yönlenir (kart 0330, karar 0193).
+  "adres-adi-eski",
   // Aynı adla iki grup (büyük küçük harf ayrımsız).
   "ad-tekrar",
   // Logo hazır bir görsel değil: dosya yok ya da silinmiş, kendisi bir boyut ya da boyutları eksik (kart 0111).
