@@ -1722,8 +1722,10 @@
       "sutunlarIpucu": "Sütunlar: sipariş no, tarih, durum, ödeme yöntemi, müşteri, e-posta, telefon, teslimat ve fatura bilgisi, ara toplam, kupon, kargo, oran oran vergi, toplam, kargo firması ve takip no, fatura no. Kişisel bilgisi silinmiş siparişte kişisel sütunlar boştur.",
       "kisiselUyari": "Dosya müşterilerin adını, adresini ve telefonunu taşır. Yalnız işiniz için kullanın; her indirme kaydedilir. Dosya 24 saat sonra sunucudan silinir.",
       "hazirla": "Dosyayı hazırla",
-      "hazirlaniyor": "Dosya hazırlanıyor: {sayi} sipariş. Sayfadan ayrılabilirsiniz; hazır olunca burada indirilir.",
-      "hazir": "Dosya hazır: {sayi} sipariş.",
+      "hazirlaniyorBaslik": "Dosya hazırlanıyor.",
+      "hazirlaniyor": "{sayi} sipariş. Sayfadan ayrılabilirsiniz; hazır olunca burada indirilir.",
+      "hazirBaslik": "Dosya hazır.",
+      "hazir": "{sayi} sipariş.",
       "hatali": "Dosya hazırlanamadı. Yeniden deneyin.",
       "indir": "Dosyayı indir",
       "hata": {

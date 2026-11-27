@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import { bicimleyiciOlustur } from "../bicimleyici.ts";
 import { csvYazici, metinHucresi, sayiHucresi } from "../csv.ts";
 
+// Bayt sırası işareti (U+FEFF): CSV dosyası onunla başlar.
+const bom = String.fromCharCode(0xfeff);
+
 const yaz = (
   ayrac: ";" | ",",
   satirlar: Parameters<ReturnType<typeof csvYazici>["satir"]>[0][],
@@ -15,16 +18,16 @@ const yaz = (
 describe("CSV yazıcısı", () => {
   it("UTF-8 BOM ile başlar, satırlar CRLF ile biter, Türkçe harfler korunur", () => {
     const dosya = yaz(";", [[metinHucresi("Sipariş no"), metinHucresi("Müşteri")]]);
-    expect(dosya).toBe("\ufeffSipariş no;Müşteri\r\n");
+    expect(dosya).toBe(`${bom}Sipariş no;Müşteri\r\n`);
   });
 
   it("ayraç, tırnak ya da satır sonu taşıyan hücre tırnağa alınır, tırnak ikilenir", () => {
     expect(yaz(";", [[metinHucresi("a;b"), metinHucresi('"x"'), metinHucresi("1\n2")]])).toBe(
-      '\ufeff"a;b";"""x""";"1\n2"\r\n',
+      `${bom}"a;b";"""x""";"1\n2"\r\n`,
     );
     // Virgül ayraç değilse tırnaksızdır.
-    expect(yaz(";", [[metinHucresi("a,b")]])).toBe("\ufeffa,b\r\n");
-    expect(yaz(",", [[metinHucresi("a,b")]])).toBe('\ufeff"a,b"\r\n');
+    expect(yaz(";", [[metinHucresi("a,b")]])).toBe(`${bom}a,b\r\n`);
+    expect(yaz(",", [[metinHucresi("a,b")]])).toBe(`${bom}"a,b"\r\n`);
   });
 
   it("formül hücresi etkisizdir; sayı hücresine ve boş değere dokunulmaz", () => {
@@ -32,7 +35,7 @@ describe("CSV yazıcısı", () => {
       ["=1+1", "+90 555", "-2", "@SUM(A1)", "\tx", "\rx", "normal"].map(metinHucresi),
       [sayiHucresi("-5,00"), metinHucresi(null), metinHucresi(undefined)],
     ]);
-    expect(dosya).toBe("\ufeff'=1+1;'+90 555;'-2;'@SUM(A1);'\tx;\"'\rx\";normal\r\n-5,00;;\r\n");
+    expect(dosya).toBe(`${bom}'=1+1;'+90 555;'-2;'@SUM(A1);'\tx;"'\rx";normal\r\n-5,00;;\r\n`);
   });
 
   it("satır sayısı başlık dahil sayılır", () => {

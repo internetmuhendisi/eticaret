@@ -175,7 +175,7 @@ describe("listenin üstündeki kutu", () => {
   it("hazırlanırken durumu söyler ve sayfayı aralıkla yeniler; indirme bağlantısı yoktur", () => {
     vi.useFakeTimers();
     kutu({ kimlik: "k1", durum: "hazirlaniyor", siparisSayisi: "1.240" });
-    expect(screen.getByRole("status").textContent).toContain("Dosya hazırlanıyor: 1.240 sipariş.");
+    expect(screen.getByRole("status").textContent).toContain("Dosya hazırlanıyor.1.240 sipariş.");
     expect(screen.queryByRole("link")).toBeNull();
     act(() => {
       vi.advanceTimersByTime(4100);
@@ -186,7 +186,7 @@ describe("listenin üstündeki kutu", () => {
   it("hazır olunca indirme bağlantısı verir, sayfayı yenilemez", () => {
     vi.useFakeTimers();
     kutu({ kimlik: "k2", durum: "hazir", siparisSayisi: "3" });
-    expect(screen.getByRole("status").textContent).toContain("Dosya hazır: 3 sipariş.");
+    expect(screen.getByRole("status").textContent).toContain("Dosya hazır.3 sipariş.");
     const baglanti = screen.getByRole("link", { name: metin("yonetim.siparisDisaAktarma.indir") });
     expect(baglanti.getAttribute("href")).toBe(
       "/kapi/yonetici/siparisler-disa-aktarma-indir?kimlik=k2",

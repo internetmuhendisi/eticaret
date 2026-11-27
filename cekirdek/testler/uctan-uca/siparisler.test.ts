@@ -13,6 +13,9 @@
 //   kaydedilmesi, indirilen dosyanın aynı içerik ve "fatura-<numara>.pdf" adı; müşteri takip sayfasında faturayı
 //   görür ve indirir; düzenlenir ve onay penceresiyle kaldırılır (Vazgeç önce). Pencere ve sayfalar iki renkte ve üç
 //   genişlikte taramadan geçer (kart 0268).
+// - Siparişleri dışa aktarma (kart 0316): listenin süzgeciyle "Dışa aktar" klavyeyle açılır, satır düzeni ok tuşuyla
+//   seçilir, dosya hazırlanırken listenin üstündeki kutu durumu söyler, hazır olunca "Dosyayı indir" CSV'yi verir (yalnız
+//   süzgece uyan sipariş); seçili sipariş toplu çubuktan aktarılır. Pencere ve kutu iki renkte ve üç genişlikte taranır.
 // - "Sipariş ayarları"nda kargo firması yan pencereden eklenir (bozuk takip adresi alanın hatası), onay penceresiyle
 //   silinir; ekran iki renkte ve üç genişlikte taramadan geçer.
 // Siparişler ve kargo firmaları sitenin paylaşılan verisidir: test kendi ürününü ve siparişlerini açar, sonunda
@@ -20,11 +23,12 @@
 import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri";
 import { doldur } from "../../metinler/doldur";
 import { metin } from "../../metinler/site-metni";
+import { yoneticiler } from "../../moduller/ekip/model";
 import { epostaKayitlari } from "../../moduller/eposta/model";
 import { calisanSiteninFiyatServisi } from "../../moduller/fiyat/servis";
 import { type OdemeYontemiSecimi, odemeBilgileriSemasi } from "../../moduller/odeme/semalar";
@@ -32,7 +36,8 @@ import { odemeServisi } from "../../moduller/odeme/servis";
 import { odemeYontemiServisi } from "../../moduller/odeme/yontemler";
 import { siparisAyarlari } from "../../moduller/siparis/ayarlar";
 import { havaleBildirimiFormuSemasi } from "../../moduller/siparis/havale-bildirimi-semalari";
-import { siparisler } from "../../moduller/siparis/model";
+import { calisanDisaAktarmaServisi } from "../../moduller/siparis/isler";
+import { siparisDisaAktarmalari, siparisler } from "../../moduller/siparis/model";
 import { siparisServisi } from "../../moduller/siparis/servis";
 import { siparisYonetimi } from "../../moduller/siparis/yonetim";
 import { stokServisi } from "../../moduller/stok/servis";
@@ -44,6 +49,9 @@ import { konsoluDinle } from "./konsol";
 import { sayfaHazir } from "./sayfa-hazir";
 import { tara } from "./tarama";
 import { ayriBaglanti, paneleGir, yoneticiAc } from "./yonetici";
+
+// Bayt sırası işareti (U+FEFF): CSV dosyası onunla başlar.
+const bom = String.fromCharCode(0xfeff);
 
 if (existsSync(".env")) process.loadEnvFile(".env");
 
@@ -1009,4 +1017,118 @@ test("sipariş ayarları: yönetici bildirimleri klavyeyle kaydedilir", async ({
       ),
     });
   }
+});
+
+test("siparişleri dışa aktarma: listenin süzgeciyle ve seçilenlerle klavyeyle, dosya hazırlanır ve indirilir (kart 0316)", async ({
+  page,
+}) => {
+  test.setTimeout(240_000);
+  const hatalar = konsoluDinle(page, { haric: (m) => m.includes("401") });
+  const ek = randomUUID().slice(0, 8);
+  const kapidaNumara = await siparisAc(
+    { yontem: "kapida-odeme", secenek: "nakit" },
+    `disa-${ek}@ornek.test`,
+  );
+  const havaleNumara = await siparisAc({ yontem: "havale" }, `disa-h-${ek}@ornek.test`);
+  const yonetici = yoneticiAc();
+  await ayriBaglanti(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await paneleGir(page, yonetici);
+  const [hesap] = await vt
+    .select({ kimlik: yoneticiler.kimlik })
+    .from(yoneticiler)
+    .where(eq(yoneticiler.eposta, yonetici.eposta));
+  const sonDisaAktarma = async () => {
+    const [satir] = await vt
+      .select({ kimlik: siparisDisaAktarmalari.kimlik })
+      .from(siparisDisaAktarmalari)
+      .where(eq(siparisDisaAktarmalari.yonetici_kimligi, hesap?.kimlik ?? ""))
+      .orderBy(desc(siparisDisaAktarmalari.olusturma_zamani))
+      .limit(1);
+    return satir?.kimlik ?? "";
+  };
+  // Arka plan süreci tarayıcı testlerinde yoktur: dosyayı test hazırlatır (iş servisi çağırır).
+  const hazirlat = async () => calisanDisaAktarmaServisi().hazirla(vt, await sonDisaAktarma());
+  const kutu = page.getByRole("status").filter({ hasText: "Dosya" });
+
+  // Listenin süzgeciyle: kapıda ödeme. Pencere klavyeyle açılır, satır düzeni ok tuşuyla seçilir.
+  await page.goto("/yonetim/siparisler?odeme=kapida-odeme");
+  await sayfaHazir(page);
+  await page
+    .getByRole("button", { name: metin("yonetim.eylem.disaAktar") })
+    .first()
+    .focus();
+  await page.keyboard.press("Enter");
+  const pencere = page.getByRole("dialog", {
+    name: metin("yonetim.siparisDisaAktarma.pencereBasligi"),
+  });
+  await expect(pencere).toBeVisible();
+  await expect(pencere).toContainText(metin("yonetim.siparisDisaAktarma.aramaYok"));
+  await expect(pencere).toContainText(metin("yonetim.siparisDisaAktarma.kisiselUyari"));
+  await ikiRenkUcGenislik(page, "dışa aktarma penceresi");
+  const siparisSatiri = pencere.getByRole("radio", {
+    name: metin("yonetim.siparisDisaAktarma.duzen.siparis"),
+  });
+  await expect(siparisSatiri).toBeChecked();
+  await siparisSatiri.focus();
+  await page.keyboard.down("ArrowDown");
+  await page.waitForTimeout(50);
+  await page.keyboard.up("ArrowDown");
+  await expect(
+    pencere.getByRole("radio", { name: metin("yonetim.siparisDisaAktarma.duzen.kalem") }),
+  ).toBeChecked();
+  await pencere.getByRole("button", { name: metin("yonetim.siparisDisaAktarma.hazirla") }).focus();
+  await page.keyboard.press("Enter");
+  await expect(pencere).toBeHidden();
+  await expect(kutu).toContainText("Dosya hazırlanıyor");
+  await ikiRenkUcGenislik(page, "dosya hazırlanıyor kutusu");
+  await hazirlat();
+  // Kutu sayfayı yenileyerek sorar; hazır olunca indirme bağlantısı çıkar.
+  const indir = page.getByRole("link", { name: metin("yonetim.siparisDisaAktarma.indir") });
+  await expect(indir).toBeVisible({ timeout: 15_000 });
+  await ikiRenkUcGenislik(page, "dosya hazır kutusu");
+  const indirilen = page.waitForEvent("download");
+  await indir.focus();
+  await page.keyboard.press("Enter");
+  const dosya = await indirilen;
+  expect(dosya.suggestedFilename()).toMatch(/^siparisler-\d{4}-\d{2}-\d{2}\.csv$/);
+  const icerik = readFileSync(await dosya.path(), "utf8");
+  expect(icerik.startsWith(bom)).toBe(true);
+  const [baslik = "", ...satirlar] = icerik.slice(1).split("\r\n");
+  expect(baslik.split(";")).toEqual(
+    expect.arrayContaining([
+      metin("yonetim.siparisDisaAktarma.sutun.numara"),
+      metin("yonetim.siparisDisaAktarma.sutun.urun"),
+    ]),
+  );
+  expect(satirlar.some((satir) => satir.startsWith(`${kapidaNumara};`))).toBe(true);
+  expect(satirlar.some((satir) => satir.startsWith(`${havaleNumara};`))).toBe(false);
+
+  // Seçilenlerle: havale siparişi boşlukla seçilir, toplu çubuktaki Dışa aktar.
+  await page.goto("/yonetim/siparisler?odeme=havale");
+  await sayfaHazir(page);
+  await page
+    .getByRole("table")
+    .getByRole("checkbox", { name: `Seç: ${havaleNumara}` })
+    .focus();
+  await page.keyboard.press("Space");
+  const cubuk = page.getByRole("region", { name: metin("yonetim.liste.topluIslem") });
+  await cubuk.getByRole("button", { name: metin("yonetim.eylem.disaAktar") }).focus();
+  await page.keyboard.press("Enter");
+  await expect(pencere).toContainText("Seçili 1 sipariş");
+  await pencere.getByRole("button", { name: metin("yonetim.siparisDisaAktarma.hazirla") }).focus();
+  await page.keyboard.press("Enter");
+  await expect(pencere).toBeHidden();
+  await hazirlat();
+  await expect(indir).toBeVisible({ timeout: 15_000 });
+  const ikinci = page.waitForEvent("download");
+  await indir.click();
+  const ikinciIcerik = readFileSync(await (await ikinci).path(), "utf8");
+  const ikinciSatirlar = ikinciIcerik
+    .slice(1)
+    .split("\r\n")
+    .filter((satir) => satir !== "");
+  expect(ikinciSatirlar.length).toBe(2);
+  expect(ikinciSatirlar[1]?.startsWith(`${havaleNumara};`)).toBe(true);
+  expect(hatalar).toEqual([]);
 });

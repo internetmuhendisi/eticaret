@@ -1,6 +1,6 @@
 # Plan: Siparişleri dışa aktarma (kart 0316)
 
-Durum: 2026-11-27'de yazıldı, kullanıcıya özetlendi.
+Durum: 2026-11-27'de yazıldı, kullanıcıya özetlendi ve onaylandı. Uygulamada değişenler karar 0194'te: arama kutusundaki metin kapsamda yoktur; "Dosyayı hazırla" pencereyi kapatır, indirme listenin üstündeki kutudandır (kendiliğinden başlamaz).
 
 Taslak: `planlar/tasarim-yonu/panel-2.html`, "Siparişleri dışa aktar" sayfası (pencere ve "dosya hazırlanıyor" hâli). Yeri karar 0185'te: temel pakette, CSV olarak, satış raporunun CSV indirmesiyle aynı yol; listenin süzgeçleriyle ya da seçilen siparişlerle.
 

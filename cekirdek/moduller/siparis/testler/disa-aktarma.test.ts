@@ -39,6 +39,9 @@ import {
 import { siparisDisaAktarmalari, siparisKalemleri, siparisler } from "../model.ts";
 import { siparisYonetimi } from "../yonetim.ts";
 
+// Bayt sırası işareti (U+FEFF): CSV dosyası onunla başlar.
+const bom = String.fromCharCode(0xfeff);
+
 vi.setConfig({ testTimeout: 90_000 });
 
 const klasor = siteKlasorunuOku(
@@ -172,7 +175,7 @@ const tumu: SiparisListesiSuzgecleri = { siralama: "en-yeni" };
 // Dosyayı hazırlar, indirir ve CSV'yi satırlara ayırır (tırnaklı hücre, ikilenmiş tırnak).
 const csvOku = (dosya: Buffer): string[][] => {
   const yazi = dosya.toString("utf8");
-  expect(yazi.startsWith("\ufeff")).toBe(true);
+  expect(yazi.startsWith(bom)).toBe(true);
   const ayrac = b.csvAyraci();
   const satirlar: string[][] = [];
   let satir: string[] = [];

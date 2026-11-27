@@ -189,7 +189,14 @@ export function DisaAktarmaKutusu({ veri }: { veri: DisaAktarmaKutusuVerisi }) {
   }
   // Bilgi kutusu sırası gelince okunur (role="status"); hazırlanırken kendisi de güncellenir.
   return (
-    <Uyari tur="bilgi">
+    <Uyari
+      tur="bilgi"
+      baslik={metin(
+        hazirlaniyor
+          ? "yonetim.siparisDisaAktarma.hazirlaniyorBaslik"
+          : "yonetim.siparisDisaAktarma.hazirBaslik",
+      )}
+    >
       <span className="flex flex-wrap items-center gap-3">
         <span>
           {doldur(

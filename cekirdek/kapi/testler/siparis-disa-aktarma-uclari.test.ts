@@ -30,6 +30,9 @@ import {
 } from "../yonetici/siparis-disa-aktarma.ts";
 import { oturumCerezi } from "./erisim-denemesi.ts";
 
+// Bayt sırası işareti (U+FEFF): CSV dosyası onunla başlar.
+const bom = String.fromCharCode(0xfeff);
+
 vi.setConfig({ testTimeout: 60_000 });
 
 const yapan = sistemIslemi("test");
@@ -177,7 +180,7 @@ describe("siparişleri dışa aktarma uçları", () => {
     );
     expect(indir.headers.get("cache-control")).toContain("no-store");
     const icerik = Buffer.from(await indir.arrayBuffer()).toString("utf8");
-    expect(icerik.startsWith("\ufeff")).toBe(true);
+    expect(icerik.startsWith(bom)).toBe(true);
     expect(icerik).toContain(ilk);
     expect(icerik).toContain(ikinci);
     // Başka yöneticinin dosyası yoktur.
