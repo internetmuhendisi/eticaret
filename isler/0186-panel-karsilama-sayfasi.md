@@ -27,4 +27,4 @@ Bölüm: Yönetim paneli 2 (on dördüncü bölümde yapılmadı, bu bölüme al
 
 ## Durum
 
-yapılacak
+bitti
