@@ -114,6 +114,12 @@ paths:
 - Alanlar yazı olarak `magaza-bilgileri` ucuna gider; kurallar ayar şemasındadır, servis `magazaBilgileriniDegistir` (`cekirdek/moduller/magaza-ayarlari/bilgiler.ts`) uygular ve hatayı alanın yolu ve şemanın koduyla döndürür. Ekran kural yazmaz; kodların metni ekrandadır (`kodMetinleri`). Sosyal hesabın hata yolu gönderilen sıradır, ekran onu alanına çevirir.
 - Adres alanları ödeme adımının parçalarıdır (`AdresAlanlari`, ülkeler `bolgeUlkeleri` ile sitenin satış ülkelerinden). İzni olmayan yönetici için alanlar kapalı bir fieldset içindedir.
 
+## E-postalar (karar 0197)
+
+- Ekranlar `cekirdek/yonetim-paneli/epostalar/` klasöründe, menüde "Ayarlar" altında Vergi'den sonradır: E-postalar (gönderen kartı ve e-postaların listesi) ve E-posta metni (alt sayfa, `?kod=`). Mağaza ayarıdır: görmek `magaza-ayarlari.gor`, değiştirmek `magaza-ayarlari.degistir`.
+- Düzenlenebilen e-postalar ve bilgileri tek kayıttadır (`epostaMetinBirimleri`, `cekirdek/moduller/eposta/metin-birimleri.ts`); ekran birim listesini yeniden yazmaz. Metin yazı olarak gider, sunucuda `metinleriCevir` parçalara çevirir; kayıt ekranın gördüğü sürümü gönderir (`cakisma`).
+- Önizleme `eposta-onizleme` ucundan, gönderimin işleviyle çizilir, betiğe kapalı çerçevededir; ekran e-postayı kendisi çizmez. Deneme düğmesi yalnız `gidebilir` iken görünür.
+
 ## Müşteriler (karar 0173)
 
 - Ekranlar `cekirdek/yonetim-paneli/musteriler/` klasöründe, menüde "Satış" altındadır: Müşteriler (liste motoruyla, `liste-tanimi.ts`) ve Müşteri ayrıntısı (alt sayfa, `?kimlik=`). Görmek `musteri.gor`, not `musteri.not`, şifre sıfırlama bağlantısı `musteri.sifre-sifirlama` ister; görevlide yok.

@@ -11,6 +11,7 @@ import {
   blogKategorileriAdresi,
   ekipAdresi,
   ekipRolleriAdresi,
+  epostalarAdresi,
   hesabimAdresi,
   magazaBilgileriAdresi,
   menulerAdresi,
@@ -471,6 +472,27 @@ export const panelSayfalari = [
     ikon: "vergi",
     izin: "vergi.gor",
     grup: "ayarlar",
+  },
+  // E-postalar (kart 0279, karar 0197): gönderen adı, yanıt adresi, alt bilgiye ek ve müşteriye giden e-postaların
+  // listesi; bir e-postanın metni alt sayfadır (?kod=). Mağaza ayarıdır, yalnız mağaza sahibinin izinleriyle.
+  {
+    kod: "epostalar",
+    adres: epostalarAdresi,
+    ad: "yonetim.sayfa.epostalar.ad",
+    aciklama: "yonetim.sayfa.epostalar.aciklama",
+    ikon: "eposta",
+    izin: "magaza-ayarlari.gor",
+    grup: "ayarlar",
+  },
+  {
+    kod: "eposta-metni",
+    adres: `${epostalarAdresi}/metin`,
+    ad: "yonetim.sayfa.epostaMetni.ad",
+    aciklama: "yonetim.sayfa.epostaMetni.aciklama",
+    ikon: "eposta",
+    izin: "magaza-ayarlari.gor",
+    grup: "ayarlar",
+    ust: "epostalar",
   },
   // Ekip (kart 0274, karar 0178): kullanıcılar, roller (yalnız okunur) ve kullanıcının ayrıntısı (?kimlik=); yöneticinin
   // kendi hesabı (yedek kodlar, kart 0053).

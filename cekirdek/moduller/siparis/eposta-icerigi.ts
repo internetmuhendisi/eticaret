@@ -17,6 +17,7 @@ import {
   siparisTakibiAdresi,
   vitrinAdresleri,
 } from "../../vitrin/adresler.ts";
+import type { EpostaMetinBirimKodu } from "../eposta/metin-birimleri.ts";
 import type {
   EpostaBlogu,
   EpostaGovdesi,
@@ -249,12 +250,16 @@ const siparisDugmesi = (b: IcerikBaglami, v: SiparisEpostaVerisi): EpostaBlogu[]
         },
       ];
 
-const merhaba = (
+// Giriş metni mağaza sahibinin düzenlediği alandır (kart 0279): kayıtlı metin ya da birimin varsayılanı.
+const giris = (
   b: IcerikBaglami,
   v: SiparisEpostaVerisi,
-  anahtar: MetinAnahtari,
+  birim: EpostaMetinBirimKodu,
   ek: Record<string, string> = {},
-) => b.satir(anahtar, { ad: v.ad, numara: v.numara, ...ek });
+): EpostaBlogu => ({
+  tur: "paragraf",
+  metin: b.metin(birim, "giris", { ad: v.ad, numara: v.numara, ...ek }),
+});
 
 const altBilgi = (b: IcerikBaglami): string[] => [
   ...(b.satici.unvan === undefined
@@ -266,18 +271,25 @@ const altBilgi = (b: IcerikBaglami): string[] => [
   b.satir("eposta.siparis.neden"),
 ];
 
+// Konu ve kapanış mağaza sahibinin düzenlediği alanlardır (kart 0279); kapanış gövdenin sonundadır, boşsa yazılmaz.
 const govde = (
   b: IcerikBaglami,
-  konu: MetinAnahtari,
+  birim: EpostaMetinBirimKodu,
   baslik: MetinAnahtari,
   v: SiparisEpostaVerisi,
   bloklar: EpostaBlogu[],
-): EpostaGovdesi => ({
-  konu: b.satir(konu, { numara: v.numara }),
-  baslik: b.satir(baslik, { numara: v.numara }),
-  bloklar,
-  altBilgi: altBilgi(b),
-});
+): EpostaGovdesi => {
+  const kapanis = b.metin(birim, "kapanis", { ad: v.ad, numara: v.numara });
+  return {
+    konu: b.metin(birim, "konu", { ad: v.ad, numara: v.numara }),
+    baslik: b.satir(baslik, { numara: v.numara }),
+    bloklar: [
+      ...bloklar,
+      ...(kapanis.trim() === "" ? [] : [{ tur: "paragraf" as const, metin: kapanis }]),
+    ],
+    altBilgi: altBilgi(b),
+  };
+};
 
 const tumKalemler = (b: IcerikBaglami, v: SiparisEpostaVerisi): EpostaBlogu[] =>
   v.tutarlar === undefined ? [] : [kalemTablosu(b, v.kalemler, siparisOzeti(b, v.tutarlar))];
@@ -288,7 +300,7 @@ const siparisAlindi: IcerikUretici = (veri, b) => {
   const toplam = v.tutarlar === undefined ? "" : b.bicim.para(v.tutarlar.toplam);
   const ilk: EpostaBlogu[] = [];
   if (odeme?.yontem === "havale") {
-    ilk.push({ tur: "paragraf", metin: merhaba(b, v, "eposta.siparisAlindi.havale") });
+    ilk.push(giris(b, v, "siparis-alindi-havale"));
     ilk.push({
       tur: "kutu",
       vurgu: true,
@@ -327,17 +339,22 @@ const siparisAlindi: IcerikUretici = (veri, b) => {
     });
   } else if (odeme?.yontem === "kapida-odeme") {
     const secenek = kapidaSecenekleri[odeme.kapidaSecenegi ?? ""];
-    ilk.push({
-      tur: "paragraf",
-      metin: merhaba(b, v, "eposta.siparisAlindi.kapida", {
+    ilk.push(
+      giris(b, v, "siparis-alindi-kapida", {
         secenek: secenek === undefined ? "" : b.satir(secenek),
       }),
-    });
+    );
   } else {
-    ilk.push({ tur: "paragraf", metin: merhaba(b, v, "eposta.siparisAlindi.odendi") });
+    ilk.push(giris(b, v, "siparis-alindi-odendi"));
   }
   const yontem = yontemAdlari[odeme?.yontem ?? ""];
-  return govde(b, "eposta.siparisAlindi.konu", "eposta.siparisAlindi.baslik", v, [
+  const birim: EpostaMetinBirimKodu =
+    odeme?.yontem === "havale"
+      ? "siparis-alindi-havale"
+      : odeme?.yontem === "kapida-odeme"
+        ? "siparis-alindi-kapida"
+        : "siparis-alindi-odendi";
+  return govde(b, birim, "eposta.siparisAlindi.baslik", v, [
     ...ilk,
     ...tumKalemler(b, v),
     ...(yontem === undefined
@@ -356,13 +373,10 @@ const siparisAlindi: IcerikUretici = (veri, b) => {
 
 const havaleOnaylandi: IcerikUretici = (veri, b) => {
   const v = verisi(veri);
-  return govde(b, "eposta.havaleOnaylandi.konu", "eposta.havaleOnaylandi.baslik", v, [
-    {
-      tur: "paragraf",
-      metin: merhaba(b, v, "eposta.havaleOnaylandi.govde", {
-        tutar: v.tutarlar === undefined ? "" : b.bicim.para(v.tutarlar.toplam),
-      }),
-    },
+  return govde(b, "havale-onaylandi", "eposta.havaleOnaylandi.baslik", v, [
+    giris(b, v, "havale-onaylandi", {
+      tutar: v.tutarlar === undefined ? "" : b.bicim.para(v.tutarlar.toplam),
+    }),
     ...siparisDugmesi(b, v),
   ]);
 };
@@ -370,8 +384,11 @@ const havaleOnaylandi: IcerikUretici = (veri, b) => {
 const kargoyaVerildi: IcerikUretici = (veri, b) => {
   const v = verisi(veri);
   const k = v.kargo;
-  return govde(b, "eposta.kargoyaVerildi.konu", "eposta.kargoyaVerildi.baslik", v, [
-    { tur: "paragraf", metin: merhaba(b, v, "eposta.kargoyaVerildi.govde") },
+  return govde(b, "kargoya-verildi", "eposta.kargoyaVerildi.baslik", v, [
+    giris(b, v, "kargoya-verildi", {
+      firma: k?.firma ?? "",
+      takipNo: k?.takipNumarasi ?? "",
+    }),
     ...(k === undefined
       ? []
       : [
@@ -403,8 +420,8 @@ const kargoyaVerildi: IcerikUretici = (veri, b) => {
 
 const teslimEdildi: IcerikUretici = (veri, b) => {
   const v = verisi(veri);
-  return govde(b, "eposta.teslimEdildi.konu", "eposta.teslimEdildi.baslik", v, [
-    { tur: "paragraf", metin: merhaba(b, v, "eposta.teslimEdildi.govde") },
+  return govde(b, "teslim-edildi", "eposta.teslimEdildi.baslik", v, [
+    giris(b, v, "teslim-edildi"),
     ...siparisDugmesi(b, v),
     ...(v.iadeSonu === undefined
       ? []
@@ -435,14 +452,14 @@ const paraDonusu = (b: IcerikBaglami, iade: SiparisEpostaIadesi | undefined): Ep
 
 const siparisIptali: IcerikUretici = (veri, b) => {
   const v = verisi(veri);
-  const neden: MetinAnahtari =
+  const birim: EpostaMetinBirimKodu =
     v.iptalNedeni === "havale-suresi-doldu"
-      ? "eposta.siparisIptali.sureDoldu"
+      ? "siparis-iptali-sure-doldu"
       : v.iptalNedeni === "musteri-iptali"
-        ? "eposta.siparisIptali.musteri"
-        : "eposta.siparisIptali.magaza";
-  return govde(b, "eposta.siparisIptali.konu", "eposta.siparisIptali.baslik", v, [
-    { tur: "paragraf", metin: merhaba(b, v, neden) },
+        ? "siparis-iptali-musteri"
+        : "siparis-iptali-magaza";
+  return govde(b, birim, "eposta.siparisIptali.baslik", v, [
+    giris(b, v, birim),
     ...paraDonusu(b, v.iade),
     ...tumKalemler(b, v),
     ...(b.kok === undefined
@@ -464,9 +481,9 @@ const iadeIcerigi =
   (veri, b) => {
     const v = verisi(veri);
     const iade = v.iade;
-    const onek = kismi ? "eposta.kismiIade" : "eposta.tamIade";
-    return govde(b, `${onek}.konu` as MetinAnahtari, `${onek}.baslik` as MetinAnahtari, v, [
-      { tur: "paragraf", metin: merhaba(b, v, `${onek}.govde` as MetinAnahtari) },
+    const birim = kismi ? "siparis-kismi-iadesi" : "siparis-iadesi";
+    return govde(b, birim, kismi ? "eposta.kismiIade.baslik" : "eposta.tamIade.baslik", v, [
+      giris(b, v, birim),
       ...paraDonusu(b, iade),
       ...(iade === undefined ? [] : [kalemTablosu(b, v.kalemler, iadeOzeti(b, iade))]),
       ...siparisDugmesi(b, v),
@@ -475,8 +492,8 @@ const iadeIcerigi =
 
 const musteriyeNot: IcerikUretici = (veri, b) => {
   const v = verisi(veri);
-  return govde(b, "eposta.musteriyeNot.konu", "eposta.musteriyeNot.baslik", v, [
-    { tur: "paragraf", metin: merhaba(b, v, "eposta.musteriyeNot.govde") },
+  return govde(b, "musteriye-not", "eposta.musteriyeNot.baslik", v, [
+    giris(b, v, "musteriye-not"),
     { tur: "kutu", satirlar: [{ metin: v.not ?? "" }] },
     ...siparisDugmesi(b, v),
   ]);
@@ -486,8 +503,8 @@ const musteriyeNot: IcerikUretici = (veri, b) => {
 const faturaHazir: IcerikUretici = (veri, b) => {
   const v = verisi(veri);
   if (v.fatura === undefined) throw new Error("Fatura e-postasının faturası yok.");
-  return govde(b, "eposta.faturaHazir.konu", "eposta.faturaHazir.baslik", v, [
-    { tur: "paragraf", metin: merhaba(b, v, "eposta.faturaHazir.govde") },
+  return govde(b, "fatura-hazir", "eposta.faturaHazir.baslik", v, [
+    giris(b, v, "fatura-hazir"),
     {
       tur: "bilgi",
       baslik: b.satir("eposta.faturaHazir.bilgi"),
@@ -509,10 +526,9 @@ const faturaHazir: IcerikUretici = (veri, b) => {
 // adresi gösterir; fatura bilgisi kişisel ve kurumsal bilgi taşıdığı için e-postaya yazılmaz, siparişin sayfasındadır.
 const adresGuncellendi: IcerikUretici = (veri, b) => {
   const v = verisi(veri);
-  return govde(b, "eposta.adresGuncellendi.konu", "eposta.adresGuncellendi.baslik", v, [
-    { tur: "paragraf", metin: merhaba(b, v, "eposta.adresGuncellendi.govde") },
+  return govde(b, "adres-guncellendi", "eposta.adresGuncellendi.baslik", v, [
+    giris(b, v, "adres-guncellendi"),
     ...teslimatBilgisi(b, v.teslimat),
-    { tur: "paragraf", metin: b.satir("eposta.adresGuncellendi.uyari"), soluk: true },
     ...siparisDugmesi(b, v),
   ]);
 };
@@ -523,8 +539,8 @@ const talepKalemleri = (b: IcerikBaglami, v: SiparisEpostaVerisi): EpostaBlogu =
 const talepAlindi: IcerikUretici = (veri, b) => {
   const v = verisi(veri);
   const neden = v.talep === undefined ? undefined : talepNedenleri[v.talep.neden];
-  return govde(b, "eposta.talepAlindi.konu", "eposta.talepAlindi.baslik", v, [
-    { tur: "paragraf", metin: merhaba(b, v, "eposta.talepAlindi.govde") },
+  return govde(b, "iade-talebi-alindi", "eposta.talepAlindi.baslik", v, [
+    giris(b, v, "iade-talebi-alindi"),
     talepKalemleri(b, v),
     ...(neden === undefined
       ? []
@@ -542,8 +558,8 @@ const talepAlindi: IcerikUretici = (veri, b) => {
 const talepOnaylandi: IcerikUretici = (veri, b) => {
   const v = verisi(veri);
   const magaza = v.talep?.iadeKargosu !== "musteri";
-  return govde(b, "eposta.talepOnaylandi.konu", "eposta.talepOnaylandi.baslik", v, [
-    { tur: "paragraf", metin: merhaba(b, v, "eposta.talepOnaylandi.govde") },
+  return govde(b, "iade-talebi-onaylandi", "eposta.talepOnaylandi.baslik", v, [
+    giris(b, v, "iade-talebi-onaylandi"),
     talepKalemleri(b, v),
     {
       tur: "kutu",
@@ -567,15 +583,14 @@ const talepOnaylandi: IcerikUretici = (veri, b) => {
             ]),
       ],
     },
-    { tur: "paragraf", metin: b.satir("eposta.talepOnaylandi.sonra") },
     ...siparisDugmesi(b, v),
   ]);
 };
 
 const talepReddedildi: IcerikUretici = (veri, b) => {
   const v = verisi(veri);
-  return govde(b, "eposta.talepReddedildi.konu", "eposta.talepReddedildi.baslik", v, [
-    { tur: "paragraf", metin: merhaba(b, v, "eposta.talepReddedildi.govde") },
+  return govde(b, "iade-talebi-reddedildi", "eposta.talepReddedildi.baslik", v, [
+    giris(b, v, "iade-talebi-reddedildi"),
     {
       tur: "kutu",
       satirlar: [
@@ -583,7 +598,6 @@ const talepReddedildi: IcerikUretici = (veri, b) => {
         { metin: v.talep?.retAciklamasi ?? "" },
       ],
     },
-    { tur: "paragraf", metin: b.satir("eposta.talepReddedildi.soru") },
     ...siparisDugmesi(b, v),
   ]);
 };

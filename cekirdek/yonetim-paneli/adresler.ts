@@ -29,6 +29,10 @@ export const magazaBilgileriAdresi = `${panelAdresi}/magaza-bilgileri`;
 
 // Vergi ayarları (kart 0322).
 export const vergiEkraniAdresi = `${panelAdresi}/vergi`;
+// E-postalar (kart 0279): gönderen ve liste; bir e-postanın metni ?kod= ile.
+export const epostalarAdresi = `${panelAdresi}/epostalar`;
+export const epostaMetniAdresi = (kod: string): string =>
+  `${epostalarAdresi}/metin?${new URLSearchParams({ kod })}`;
 
 // Yorumlar (kart 0277): liste Onay bekleyen sekmesiyle açılır; yönetici bildirimi e-postası da buraya bağlanır.
 export const yorumlarAdresi = `${panelAdresi}/yorumlar`;

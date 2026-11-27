@@ -14,6 +14,14 @@ import { type Dil, type MetinAnahtari, metinOkuyucu } from "../../metinler/metin
 import { siparisEpostaIcerikleri } from "../siparis/eposta-icerigi.ts";
 import { yoneticiEpostaIcerikleri } from "../yonetici-bildirimi/eposta-icerigi.ts";
 import { type EpostaGorunusu, varsayilanEpostaGorunusu } from "./gorunus.ts";
+import {
+  type EpostaMetinAlani,
+  type EpostaMetinBirimi,
+  type EpostaMetinBirimKodu,
+  epostaMetinBirimleri,
+  type KayitliMetinler,
+  parcalariDoldur,
+} from "./metin-birimleri.ts";
 
 export type EpostaDugmesi = { metin: string; adres: string; birincil?: boolean };
 // kod: satırın sonundaki eş aralıklı parça (takip numarası, IBAN); metin onun önündeki yazıdır.
@@ -46,6 +54,13 @@ export type EpostaGovdesi = {
 // Sipariş e-postalarının gönderimdeki bağlamı: biçim sitenin ayarlarından, adresler sitenin kök adresinden.
 export type IcerikBaglami = {
   satir: (anahtar: MetinAnahtari, degerler?: Record<string, string>) => string;
+  // Mağaza sahibinin düzenlediği alan (kart 0279): kayıtlı metin varsa o, yoksa birimin varsayılan metin anahtarı;
+  // değerler bilgilerin değerleridir (mağaza adı kendiliğinden). Kapanışın varsayılanı yoksa boş yazı.
+  metin: (
+    birim: EpostaMetinBirimKodu,
+    alan: EpostaMetinAlani,
+    degerler?: Record<string, string>,
+  ) => string;
   bicim: Bicimleyici;
   // Sitenin kök adresi ("https://ornek.test"); bilinmiyorsa bağlantılı düğme çizilmez.
   kok: string | undefined;
@@ -56,7 +71,10 @@ export type IcerikUretici = (veri: unknown, baglam: IcerikBaglami) => EpostaGovd
 
 // baglanti: e-postadaki düğme yerine geçen bağlantı. Adresi "baglanti" değişkeninden gelir, düz metinde de
 // açık yazılır.
+// birim: mağaza sahibinin düzenlediği birim (kart 0279); varsa konu ve ilk paragraf (giriş) ondan, kapanış düğmeden
+// sonra.
 type MetinTanimi = {
+  birim?: EpostaMetinBirimKodu;
   konu: MetinAnahtari;
   baslik: MetinAnahtari;
   govde: MetinAnahtari[];
@@ -71,11 +89,13 @@ const metinTanimlari = {
     govde: ["eposta.deneme.govde"],
   },
   "hos-geldin": {
+    birim: "hos-geldin",
     konu: "eposta.hosGeldin.konu",
     baslik: "eposta.hosGeldin.baslik",
     govde: ["eposta.hosGeldin.govde"],
   },
   "sifre-sifirlama": {
+    birim: "sifre-sifirlama",
     konu: "eposta.sifreSifirlama.konu",
     baslik: "eposta.sifreSifirlama.baslik",
     govde: ["eposta.sifreSifirlama.govde", "eposta.sifreSifirlama.uyari"],
@@ -255,17 +275,31 @@ export const epostaOlustur = (girdi: {
   satici?: IcerikBaglami["satici"];
   gorunus?: EpostaGorunusu;
   tanim?: SablonTanimi;
+  // Mağaza sahibinin metinleri (kuyruğa girdiği anki hâliyle) ve alt bilgiye eki (kart 0279).
+  metinler?: KayitliMetinler | null;
+  altBilgiEki?: string | undefined;
 }): EpostaIcerigi => {
   const { dil, magazaAdi, logoAdresi, sablon, degiskenler, tanim = sablonlar[sablon] } = girdi;
   const oku = metinOkuyucu(dil);
   const degerler = { ...degiskenler, magaza: magazaAdi };
   const satir = (anahtar: MetinAnahtari, ek: Record<string, string> = {}) =>
     doldur(oku(anahtar), { ...degerler, ...ek });
+  const birimMetni = (
+    birim: EpostaMetinBirimKodu,
+    alan: EpostaMetinAlani,
+    ek: Record<string, string> = {},
+  ): string => {
+    const parcalar = girdi.metinler?.[birim]?.[alan];
+    if (parcalar !== undefined) return parcalariDoldur(parcalar, { ...degerler, ...ek });
+    const anahtar = (epostaMetinBirimleri[birim] as EpostaMetinBirimi)[alan];
+    return anahtar === undefined ? "" : satir(anahtar, ek);
+  };
   let govde: EpostaGovdesi;
   if (typeof tanim === "function") {
     if (girdi.bicim === undefined) throw new Error("Sipariş e-postası biçimleyicisiz kurulamaz.");
     govde = tanim(girdi.veri, {
       satir,
+      metin: birimMetni,
       bicim: girdi.bicim,
       kok: girdi.kok,
       satici: girdi.satici ?? {},
@@ -273,18 +307,33 @@ export const epostaOlustur = (girdi: {
   } else {
     const baglantiMetni = tanim.baglanti === undefined ? undefined : satir(tanim.baglanti);
     const { baglanti: baglantiAdresi } = degiskenler;
+    const birim = "birim" in tanim ? tanim.birim : undefined;
+    const kapanis = birim === undefined ? "" : birimMetni(birim, "kapanis");
     govde = {
-      konu: satir(tanim.konu),
+      konu: birim === undefined ? satir(tanim.konu) : birimMetni(birim, "konu"),
       baslik: satir(tanim.baslik),
       bloklar: [
-        ...tanim.govde.map((anahtar) => ({ tur: "paragraf" as const, metin: satir(anahtar) })),
+        ...tanim.govde.map((anahtar, sira) => ({
+          tur: "paragraf" as const,
+          metin: sira === 0 && birim !== undefined ? birimMetni(birim, "giris") : satir(anahtar),
+        })),
         ...(baglantiMetni === undefined || baglantiAdresi === undefined
           ? []
           : [{ tur: "dugme" as const, dugme: { metin: baglantiMetni, adres: baglantiAdresi } }]),
+        ...(kapanis.trim() === "" ? [] : [{ tur: "paragraf" as const, metin: kapanis }]),
       ],
     };
   }
-  const altBilgi = govde.altBilgi ?? [satir("eposta.ortak.altBilgi")];
+  const ek = girdi.altBilgiEki?.trim();
+  const altBilgi = [
+    ...(govde.altBilgi ?? [satir("eposta.ortak.altBilgi")]),
+    ...(ek === undefined
+      ? []
+      : ek
+          .split("\n")
+          .map((satir) => satir.trim())
+          .filter((satir) => satir !== "")),
+  ];
   const metin = [
     magazaAdi,
     "",

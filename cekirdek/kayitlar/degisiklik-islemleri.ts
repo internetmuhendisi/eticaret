@@ -129,6 +129,10 @@ export const degisiklikIslemleri = [
   // Kart 0318: müşteri raporu dosyaya indirildi (üyelerin adları; kişisel veri çıkışı). Kayda dönem ve satır sayısı
   // girer, dosyanın içeriği girmez.
   "rapor.musteriler-indirildi",
+  // Kart 0279: mağaza sahibinin e-posta metni değişti ya da varsayılana döndü. Kayda metin girmez, değişen alanların
+  // adı girer.
+  "eposta-metni.degisti",
+  "eposta-metni.varsayilana-dondu",
   // Mağazanın müşteri hakkındaki notu (kart 0271, karar 0173): metni kayda yazılmaz.
   "musteri-notu.eklendi",
   "musteri-notu.silindi",
@@ -209,6 +213,8 @@ export const degisiklikKayitTurleri = [
   "siparis-disa-aktarma",
   // Kart 0318: raporun indirilmesi (kayıt kimliği indirmenin kendi kimliğidir).
   "rapor-indirme",
+  // Kart 0279: e-posta metninin birimi (eposta_metinleri satırı).
+  "eposta-metni",
 ] as const;
 export type DegisiklikKayitTuru = (typeof degisiklikKayitTurleri)[number];
 

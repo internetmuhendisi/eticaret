@@ -12,11 +12,13 @@ import { arkaPlanIsleri } from "../../../arka-plan-isleri/model.ts";
 import { type Site, siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
 import { hataIzlemeAraciniBagla, type IzlenenHata } from "../../../izleme/hata-katmani.ts";
 import { isDurumu } from "../../../kayitlar/arka-plan.ts";
+import { sistemIslemi } from "../../../kayitlar/degisiklik-islemleri.ts";
 import { epostaAyari, epostaDurumu } from "../../../kayitlar/eposta.ts";
 import { doldur } from "../../../metinler/doldur.ts";
 import { cekirdekSurumu } from "../../../surum.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
+import { siteninServisi } from "../../magaza-ayarlari/servis.ts";
 import { epostaGondericisi } from "../gonderici.ts";
 import { epostaKaydiniGonder, gonderilmemeNedeni } from "../gonderim.ts";
 import { epostaGonderIsi, epostaKayitTemizligiIsi } from "../isler.ts";
@@ -296,10 +298,14 @@ describe("gönderim", () => {
     expect(await yakalanan(adres)).toEqual([]);
     expect((await kayit(kimlik)).durum).toBe(epostaDurumu.bekliyor);
 
+    // Yanıt adresi mağaza sahibinin ayarıdır (kart 0279).
+    await siteninServisi(site()).degistir(vt, sistemIslemi("deneme"), {
+      epostaYanitAdresi: "yanit@ornek.test",
+    });
     const uyari = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-    await epostaKaydiniGonder(vt, kimlik, {
-      site: site({ epostaYanitAdresi: "yanit@ornek.test" }),
-      gonderici: gercekGonderici(),
+    await epostaKaydiniGonder(vt, kimlik, { site: site(), gonderici: gercekGonderici() });
+    await siteninServisi(site()).degistir(vt, sistemIslemi("deneme"), {
+      epostaYanitAdresi: undefined,
     });
     const gunlukMetni = uyari.mock.calls.map(([satir]) => String(satir)).join("");
     uyari.mockRestore();

@@ -996,6 +996,55 @@ Mağaza bilgileri ekranının kaydı (kart 0278, karar 0175): mağaza adı, ilet
 - Başarılı (200): `{ "basarili": true, "veri": {} }`.
 - Hatalar: `dogrulama` (alanın yolu ve kodu: `magazaAdi` `too_small`, `too_big`, `magaza-adi-eposta` ("@") ya da `kayda-uygun-degil` (gizli anahtara benzeyen yazı); yazı alanlarında denetim karakteri `metin-gecersiz`; `magazaAdresi.ulke` ve `saticiBilgileri.ulke` `ulke-satis-disi`; `iletisimEpostasi` ve `saticiBilgileri.kepAdresi` `invalid_format`; `iletisimTelefonu` `telefon-bicimi`; `magazaAdresi.il`, `.ilce`, `.postaKodu` adres ve bölge kodları; `sosyalHesaplar.<sıra>.hesap` `invalid_format` ya da `kayda-uygun-degil`, `sosyalHesaplar` `sosyal-hesap-tekrar` ya da `too_big`; `saticiBilgileri.unvan` `too_small`, `.vergiNumarasi` `vergi-numarasi-bicimi` ya da `vergi-numarasi-kontrol`, `.mersisNumarasi` `mersis-numarasi-bicimi`, `.kepAdresi` `kep-adresi-bicimi`), `oturum-yok`, `yetki`.
 
+### POST /kapi/yonetici/eposta-gonderen
+
+E-postaların gönderen adı, yanıt adresi ve alt bilgiye eki (kart 0279, karar 0197). Boş yazı ayarı boşaltır (gönderen adı boşsa mağaza adı, yanıt adresi boşsa gönderen adresi). Gönderen adresi altyapı sahibinin ayarıdır, burada değişmez. Yanıt adresi ve ek değişiklik kaydına değeri yazılmadan girer.
+
+- İzin: `magaza-ayarlari.degistir`. Sınır: `genel`.
+- Girdi: `{ "gonderenAdi", "yanitAdresi", "altBilgiEki" }` (`epostaGondereniSemasi`, `cekirdek/moduller/eposta/semalar.ts`).
+- Servis: `epostaGondereniniKaydet` (`cekirdek/moduller/eposta/metin-servisi.ts`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama` (alanın adı ve kodu: `gonderenAdi` `too_big`, `gonderen-adi-eposta` ya da `kayda-uygun-degil`; `yanitAdresi` `invalid_format` ya da `too_big`; `altBilgiEki` `too_big`; denetim karakteri ya da tek satırlık alanda satır sonu `metin-gecersiz`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/eposta-metni
+
+Bir e-postanın konusu, giriş ve kapanış metni (kart 0279, karar 0197). Metin köşeli parantezli bilgilerle ("[Müşteri adı]") yazı olarak gelir, sitenin dilinin bilgi adlarıyla parçalara çevrilir; varsayılanla aynı alan çekirdeğin metnine bağlı kalır. Değişiklik kuyrukta bekleyen e-postayı değiştirmez. Kayda metin girmez, değişen alanların adı girer (`eposta-metni.degisti`).
+
+- İzin: `magaza-ayarlari.degistir`. Sınır: `genel`.
+- Girdi: `{ "kod", "konu", "giris", "kapanis", "surum" }`: `kod` birimin kodu (`epostaMetinBirimleri`, `cekirdek/moduller/eposta/metin-birimleri.ts`), `surum` ekranın gördüğü sürüm (`epostaMetniSemasi`).
+- Servis: `epostaMetniServisi(site).kaydet` (`cekirdek/moduller/eposta/metin-servisi.ts`).
+- Başarılı (200): `{ "basarili": true, "veri": { "surum" } }`.
+- Hatalar: `dogrulama` (alanın adı ve kodu: `konu` ve `giris` boşsa `too_small`; sınırı aşan `too_big`; denetim karakteri ya da konuda satır sonu `metin-gecersiz`; birimin kullanamadığı bilgi `bilinmeyen-bilgi`), `cakisma` (arada başka yazım), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/eposta-metni-varsayilan
+
+E-postanın konusu, giriş ve kapanış metni çekirdeğin güncel metnine döner (kart 0279). Kayda `eposta-metni.varsayilana-dondu` girer.
+
+- İzin: `magaza-ayarlari.degistir`. Sınır: `genel`.
+- Girdi: `{ "kod", "surum" }` (`epostaVarsayilaniSemasi`).
+- Başarılı (200): `{ "basarili": true, "veri": { "surum" } }`.
+- Hatalar: `dogrulama`, `cakisma`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/eposta-onizleme
+
+Formun kaydedilmemiş metinleriyle örnek siparişin e-postası (kart 0279): gönderimin işleviyle, sitenin temasıyla çizilir. Bilinmeyen bilgi yazı olarak görünür. Hiçbir şey yazmaz.
+
+- İzin: `magaza-ayarlari.gor`. Sınır: `genel`.
+- Girdi: `{ "kod", "konu", "giris", "kapanis" }` (`epostaOnizlemeSemasi`).
+- Servis: `epostaOnizlemesi` (`cekirdek/moduller/eposta/onizleme.ts`), örnek `ornek.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "konu", "html" } }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/eposta-denemesi
+
+Formun metinleriyle örnek siparişin e-postası yöneticinin kendi adresine, kuyruktan (kart 0279). Metinler kayıt kuralından geçer.
+
+- İzin: `magaza-ayarlari.degistir`. Sınır: `siki`.
+- Girdi: `{ "kod", "konu", "giris", "kapanis" }` (`epostaOnizlemeSemasi`).
+- Servis: `denemeEpostasiGonder` (`cekirdek/moduller/eposta/onizleme.ts`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama` (`eposta-metni` ucunun alan kodları), `is-kurali` (`eposta-gidemez`: gönderici ya da gönderen adresi yok), `oturum-yok`, `yetki`, `istek-siniri`.
+
 ### POST /kapi/yonetici/kargo-ayarlari
 
 Kargo ayarlarını birlikte değiştirir (kart 0212, karar 0135). Tutarlar sitenin para biçimiyle yazılı gelir, sunucuda kuruşa çevrilir. Değişen her ayar değişiklik kaydına girer (`magaza-ayari.degisti`); aynı kalan girmez.

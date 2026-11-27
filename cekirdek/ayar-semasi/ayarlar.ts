@@ -219,18 +219,11 @@ export const ayarSemasi = z.strictObject({
     z.string().trim().min(1).max(300).optional(),
     altyapiSahibinin("ayar.aciklama.bakimMetni"),
   ),
-  // E-postanın göndereni (kart 0032). Gönderen adresi olmayan site e-posta göndermez.
-  epostaGonderenAdi: ayar(
-    z.string().trim().min(1).max(100).optional(),
-    altyapiSahibinin("ayar.aciklama.epostaGonderenAdi"),
-  ),
+  // E-postanın gönderen adresi (kart 0032): altyapının gönderim adresidir. Gönderen adresi olmayan site e-posta
+  // göndermez. Gönderen adı ve yanıt adresi mağaza sahibinindir (kart 0279, magazaAyarSemasi).
   epostaGonderenAdresi: ayar(
     z.email().optional(),
     altyapiSahibinin("ayar.aciklama.epostaGonderenAdresi"),
-  ),
-  epostaYanitAdresi: ayar(
-    z.email().optional(),
-    altyapiSahibinin("ayar.aciklama.epostaYanitAdresi"),
   ),
   // Hiç girilmeyen oturumun kapanma süresi (kart 0025). Güvenlik ayarıdır, altyapı sahibinindir.
   yoneticiOturumuSaat: ayar(
@@ -309,6 +302,27 @@ export const magazaAyarSemasi = z.strictObject({
   magazaAdresi: ayar(
     postaAdresiSemasi.optional(),
     magazaSahibinin("ayar.aciklama.magazaAdresi", { kayittaGizli: true }),
+  ),
+  // E-postaların gönderen adı, yanıt adresi ve alt bilgiye eki (kart 0279, karar 0197; kart 0032'de altyapı
+  // sahibinindi). Gönderen adı boşsa mağaza adı, yanıt adresi boşsa yanıt gönderen adresine gider. Ek, mağazanın
+  // müşteriye giden her e-postasının alt bilgisinde satıcı bilgilerinden sonra yazılır.
+  epostaGonderenAdi: ayar(
+    z
+      .string()
+      .trim()
+      .min(1)
+      .max(100)
+      .refine((ad) => !ad.includes("@"), "gonderen-adi-eposta")
+      .optional(),
+    magazaSahibinin("ayar.aciklama.epostaGonderenAdi"),
+  ),
+  epostaYanitAdresi: ayar(
+    z.email().max(254).optional(),
+    magazaSahibinin("ayar.aciklama.epostaYanitAdresi", { kayittaGizli: true }),
+  ),
+  epostaAltBilgiEki: ayar(
+    z.string().trim().min(1).max(500).optional(),
+    magazaSahibinin("ayar.aciklama.epostaAltBilgiEki", { kayittaGizli: true }),
   ),
   // Satıcı bilgileri (kart 0091, karar 0138): unvan, vergi kimlik bilgileri, MERSİS, ticaret sicil, KEP. Boş başlar.
   // Şahıs işletmesinde unvan ve kimlik numarası kişisel veridir: değeri değişiklik kaydına yazılmaz.

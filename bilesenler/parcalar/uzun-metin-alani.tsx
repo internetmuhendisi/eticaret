@@ -1,7 +1,7 @@
 // Uzun metin alanı (kart 0106; shadcn/ui textarea). Giriş alanıyla aynı kenar, zemin ve hata görünüşündedir;
 // köşesi hap değil, çok satırlı metin için orta köşedir. Yazdıkça uzar. Etiket, açıklama ve hata FormAlani
 // ile gelir.
-import type { TextareaHTMLAttributes } from "react";
+import type { Ref, TextareaHTMLAttributes } from "react";
 import { sinif } from "./sinif.ts";
 
 export const uzunMetinAlaniSiniflari =
@@ -10,7 +10,10 @@ export const uzunMetinAlaniSiniflari =
 export function UzunMetinAlani({
   className,
   ...ozellikler
-}: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+}: TextareaHTMLAttributes<HTMLTextAreaElement> & {
+  // İmlecin yerine yazı eklemek için (e-posta metninin "Bilgi ekle"si, kart 0279).
+  ref?: Ref<HTMLTextAreaElement>;
+}) {
   return (
     <textarea
       data-slot="uzun-metin-alani"

@@ -195,6 +195,8 @@ describe("gruplar (kart 0301)", () => {
       "banka-hesaplari",
       "kargo",
       "vergi",
+      // Kart 0279: e-postalar, vergiden sonra (taslak).
+      "epostalar",
       "ekip",
       "hesabim",
     ]);

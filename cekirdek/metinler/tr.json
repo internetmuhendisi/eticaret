@@ -160,7 +160,8 @@
       "kapaliYoneticiBildirimleri": "Kapatılan yönetici bildirimleri. Listede olmayan her bildirim açıktır.",
       "blogAcik": "Açıksa blog yazıları vitrinde /blog adresinde ve ana sayfanın blog bölümünde görünür.",
       "excelSatirSiniri": "Excel ile toplu ürün işlemleri: bir içe aktarma dosyasının en çok satırı.",
-      "raporVarsayilanDonem": "Raporların ve paneldeki satış özetinin açıldığı dönem: bugün, son 7 gün, son 30 gün, bu ay ya da geçen ay."
+      "raporVarsayilanDonem": "Raporların ve paneldeki satış özetinin açıldığı dönem: bugün, son 7 gün, son 30 gün, bu ay ya da geçen ay.",
+      "epostaAltBilgiEki": "Mağazanın müşteriye giden e-postalarının alt bilgisinde satıcı bilgilerinden sonra yazılan metin. Boşsa yazılmaz."
     }
   },
   "tema": {
@@ -354,6 +355,14 @@
       "urunlerExcel": {
         "ad": "Excel ile içe ve dışa aktar",
         "aciklama": "Ürünlerinizi Excel dosyasına indirin, dosyada değiştirip geri yükleyin."
+      },
+      "epostalar": {
+        "ad": "E-postalar",
+        "aciklama": "Müşteriye giden e-postaların metinleri, gönderen adı ve alt bilgi. Değişiklik bundan sonra kuyruğa giren e-postalarda görünür."
+      },
+      "epostaMetni": {
+        "ad": "E-posta metni",
+        "aciklama": "Konu, giriş ve kapanış metni değişir; tablo, tutarlar, kargo kutusu, düğmeler ve yasal alt bilgi değişmez."
       }
     },
     "eylem": {
@@ -3583,6 +3592,177 @@
         "sayfalar": "Kuponların sayfaları",
         "not": "Kullanımı iptal ya da tam iadeyle geri verilen sipariş sayılmaz (kuponun sayfası gibi). Ücretsiz kargo kuponunun indirimi verilmeyen kargo ücretidir. İade sonrası: kuponlu siparişlerden sonradan yapılan iadeler de düşülür."
       }
+    },
+    "epostalar": {
+      "gonderen": {
+        "baslik": "Gönderen ve alt bilgi",
+        "aciklama": "Mağazanın müşteriye giden bütün e-postalarında aynıdır.",
+        "gonderenAdi": "Gönderen adı",
+        "gonderenAdiAciklamasi": "Müşterinin gelen kutusunda görünen ad. Boş bırakırsanız mağaza adı ({magaza}) kullanılır.",
+        "gonderenAdresi": "Gönderen adresi",
+        "gonderenAdresiAciklamasi": "Altyapının gönderim adresidir, değişmez. Müşterinin yanıtı aşağıdaki yanıt adresine gider.",
+        "gonderenAdresiYok": "Bu sitede e-posta henüz gönderilmiyor. Metinler kaydedilir ve önizlenir; gönderim açılınca kullanılır.",
+        "yanitAdresi": "Yanıt adresi",
+        "yanitAdresiAciklamasi": "Müşteri \"Yanıtla\"ya basınca bu adrese yazar. Boş bırakırsanız yanıt gönderen adresine gider.",
+        "altBilgiEki": "Alt bilgiye ek",
+        "altBilgiEkiAciklamasi": "Satıcı bilgileri (unvan, adres, telefon) Mağaza bilgilerinden gelir ve her e-postanın altında durur. Buraya yazdığınız metin onlardan sonra gelir.",
+        "kaydet": "Kaydet",
+        "kaydedildi": "Gönderen bilgileri kaydedildi."
+      },
+      "liste": {
+        "baslik": "E-postalar",
+        "grup": {
+          "siparis": "Siparişler",
+          "hesap": "Müşteri hesabı"
+        },
+        "degistirildi": "Değiştirildi",
+        "varsayilan": "Varsayılan metin",
+        "degisiklik": "{tarih} · {kisi}",
+        "duzenle": "Düzenle",
+        "duzenleAdi": "Düzenle: {ad}",
+        "yoneticiNotu": "Yönetici bildirimlerinin ve ekibe davetin metni düzenlenmez."
+      },
+      "birim": {
+        "siparis-alindi-havale": {
+          "ad": "Sipariş alındı · havale",
+          "aciklama": "Havaleyle verilen sipariş alınınca gider: banka hesapları, tutar ve son ödeme zamanıyla."
+        },
+        "siparis-alindi-kapida": {
+          "ad": "Sipariş alındı · kapıda ödeme",
+          "aciklama": "Kapıda ödemeli sipariş alınınca gider."
+        },
+        "siparis-alindi-odendi": {
+          "ad": "Sipariş alındı · ödendi",
+          "aciklama": "Kartla ödenen ya da panelden ödemesi alınmış girilen sipariş alınınca gider."
+        },
+        "havale-onaylandi": {
+          "ad": "Ödemeniz alındı",
+          "aciklama": "Havale onaylanınca gider."
+        },
+        "kargoya-verildi": {
+          "ad": "Kargoya verildi",
+          "aciklama": "Sipariş kargoya verilince gider: kargo firması ve takip numarasıyla."
+        },
+        "teslim-edildi": {
+          "ad": "Teslim edildi",
+          "aciklama": "Sipariş teslim edilince gider: iade talebinin son günüyle."
+        },
+        "siparis-iptali-sure-doldu": {
+          "ad": "Sipariş iptal edildi · ödeme süresi doldu",
+          "aciklama": "Havalesi süresinde ödenmeyen sipariş iptal edilince gider."
+        },
+        "siparis-iptali-musteri": {
+          "ad": "Sipariş iptal edildi · müşterinin isteği",
+          "aciklama": "Müşteri siparişini kendisi iptal edince gider."
+        },
+        "siparis-iptali-magaza": {
+          "ad": "Sipariş iptal edildi · mağaza",
+          "aciklama": "Sipariş panelden iptal edilince gider."
+        },
+        "siparis-iadesi": {
+          "ad": "İade yapıldı",
+          "aciklama": "Siparişin bütün ürünleri iade edilince gider: iade edilen ürünler, tutar ve vergisiyle."
+        },
+        "siparis-kismi-iadesi": {
+          "ad": "Kısmi iade yapıldı",
+          "aciklama": "Siparişin bazı ürünleri iade edilince gider."
+        },
+        "musteriye-not": {
+          "ad": "Mağazadan not",
+          "aciklama": "Panelde siparişe müşteriye görünen not yazılınca gider; not giriş metninin altındadır."
+        },
+        "iade-talebi-alindi": {
+          "ad": "İade talebi alındı",
+          "aciklama": "Müşteri iade talebi açınca gider."
+        },
+        "iade-talebi-onaylandi": {
+          "ad": "İade talebi onaylandı",
+          "aciklama": "İade talebi onaylanınca gider: ürünün nasıl gönderileceğiyle."
+        },
+        "iade-talebi-reddedildi": {
+          "ad": "İade talebi reddedildi",
+          "aciklama": "İade talebi reddedilince gider: mağazanın açıklamasıyla."
+        },
+        "adres-guncellendi": {
+          "ad": "Sipariş bilgileriniz güncellendi",
+          "aciklama": "Panelde teslimat ya da fatura bilgileri düzeltilince, kutu işaretliyse gider."
+        },
+        "fatura-hazir": {
+          "ad": "Faturanız hazır",
+          "aciklama": "Siparişe fatura eklenince, kutu işaretliyse gider."
+        },
+        "hos-geldin": {
+          "ad": "Hoş geldiniz",
+          "aciklama": "Müşteri hesap açınca gider."
+        },
+        "sifre-sifirlama": {
+          "ad": "Şifre yenileme",
+          "aciklama": "Müşteri şifresini unutunca gider. Yenileme bağlantısı ve güvenlik uyarısı değişmez."
+        }
+      },
+      "metin": {
+        "baslik": "Metin",
+        "konu": "Konu",
+        "giris": "Giriş metni",
+        "kapanis": "Kapanış metni",
+        "kapanisAciklamasi": "Düğmelerin altında yazar. Boş bırakırsanız kapanış olmaz.",
+        "bilgiEkle": "Bilgi ekle",
+        "bilgiEkleAciklamasi": "Son bulunduğunuz alanda imlecin yerine eklenir. Gönderirken siparişin bilgisiyle dolar. Köşeli parantezle elle de yazabilirsiniz.",
+        "bilgiEkleAdi": "{ad} bilgisini ekle",
+        "degismez": "Tablo, tutarlar, kargo kutusu, düğmeler ve alt bilginin yasal satırları değişmez.",
+        "varsayilanaDon": "Varsayılan metne dön",
+        "varsayilanSorusu": "Bu e-postanın metni varsayılana dönsün mü?",
+        "varsayilanAciklamasi": "Konu, giriş ve kapanış çekirdeğin güncel metnine döner. Kuyrukta bekleyen e-postalar değişmez.",
+        "varsayilanEvet": "Varsayılana dön",
+        "varsayilanaDonuldu": "E-postanın metni varsayılana döndü.",
+        "kaydet": "Kaydet",
+        "kaydedildi": "E-postanın metni kaydedildi. Bundan sonra kuyruğa giren e-postalarda görünür."
+      },
+      "onizleme": {
+        "baslik": "Önizleme",
+        "genislik": "Önizleme genişliği",
+        "bilgisayar": "Bilgisayar",
+        "telefon": "Telefon",
+        "konu": "Konu: {konu}",
+        "cerceve": "E-postanın önizlemesi",
+        "ornekNotu": "Örnek sipariş ({numara}) ve örnek müşteriyle çizilir; kaydedilmemiş değişiklikler de görünür.",
+        "yukleniyor": "Önizleme güncelleniyor",
+        "hata": "Önizleme çizilemedi. Metni değiştirip yeniden deneyin.",
+        "deneme": "Kendime deneme e-postası gönder",
+        "denemeGitti": "Deneme e-postası {eposta} adresine gönderilmek üzere kuyruğa alındı.",
+        "denemeYok": "Deneme e-postası, bu sitede e-posta gönderimi açılınca gönderilebilir."
+      },
+      "hata": {
+        "zorunlu": "Bu alan boş olamaz.",
+        "uzun": "Metin çok uzun. En çok {sinir} harf yazabilirsiniz.",
+        "metin": "Metinde yazılamayan bir karakter var. Satır sonu dışında özel karakter kullanmayın; konu tek satırdır.",
+        "bilinmeyenBilgi": "{adlar} bu e-postada yok. Kullanılabilenler: {kullanilabilenler}.",
+        "gonderenAdiEposta": "Gönderen adı e-posta adresi olamaz, mağazanızın adını yazın.",
+        "kaydaUygunDegil": "Bu ad kaydedilemez. Şifre ya da anahtara benzeyen yazıları kullanmayın.",
+        "eposta": "Geçerli bir e-posta adresi yazın, örneğin destek@magazaniz.com.",
+        "gecersiz": "Bu değer kullanılamaz.",
+        "cakisma": "Bu e-postanın metni siz düzenlerken değişti. Sayfa yenilendi; değişikliklerinizi kontrol edip yeniden kaydedin.",
+        "epostaGidemez": "Bu sitede e-posta gönderimi açık değil, deneme e-postası gönderilemez.",
+        "yetki": "Bunu yapma izniniz yok.",
+        "genel": "Kaydedilemedi. Bağlantınızı kontrol edip yeniden deneyin."
+      },
+      "ornek": {
+        "ad": "Deniz",
+        "soyad": "Yılmaz",
+        "urun": "Örnek ürün",
+        "urun2": "İkinci örnek ürün",
+        "secenek": "Beden",
+        "deger": "M",
+        "adres": "Örnek Mahallesi, Örnek Sokak No: 1",
+        "firma": "Örnek Kargo",
+        "takipNo": "4821 0057 3316",
+        "not": "Siparişinizi özenle paketledik.",
+        "ret": "Ürün kullanılmış olarak geldiği için iade kabul edilemedi.",
+        "banka": "Örnek Bank",
+        "hesapSahibi": "Örnek Ticaret",
+        "iban": "TR330006100519786457841326",
+        "fatura": "F2026000001"
+      }
     }
   },
   "vitrin": {
@@ -4810,6 +4990,16 @@
       "baslik": "Sipariş bilgileriniz güncellendi",
       "govde": "Merhaba {ad}, {numara} numaralı siparişinizin teslimat ya da fatura bilgileri mağaza tarafından düzeltildi. Güncel teslimat adresi aşağıdadır.",
       "uyari": "Bu değişikliği siz istemediyseniz mağazayla iletişime geçin."
+    },
+    "bilgi": {
+      "ad": "Müşteri adı",
+      "numara": "Sipariş no",
+      "magaza": "Mağaza adı",
+      "secenek": "Ödeme seçeneği",
+      "tutar": "Tutar",
+      "firma": "Kargo firması",
+      "takipNo": "Takip no",
+      "dakika": "Bağlantı süresi"
     }
   },
   "gelistirme": {

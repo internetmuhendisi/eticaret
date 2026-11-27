@@ -571,6 +571,8 @@ export const sabitDegerler = {
     icerik: "80rem",
     // eposta: e-postanın gövdesi (kart 0240); e-posta programları bu genişlikten dar ekranda tam genişlik çizer.
     eposta: "37.5rem",
+    // telefon: panelin e-posta önizlemesinin telefon genişliği (kart 0279), yaygın telefonun ekranı (375 px).
+    telefon: "23.4375rem",
     // fis: sipariş fişi (kart 0270); A4 kâğıdın genişliği (210 mm), ekranda kâğıt gibi görünür.
     fis: "49.625rem",
   },
