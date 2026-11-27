@@ -73,6 +73,8 @@ const isHatasi = (kod: VergiHatasi) => new BilinenHata("is-kurali", { kod });
 
 const kilitle = (islem: VeritabaniIslemi) =>
   islem.execute(sql`select pg_advisory_xact_lock(hashtext('vergi'))`);
+// Fiyat girişinin değişikliği (kart 0326) tutarları çevirirken vergi tablosu değişmesin: aynı kilit.
+export const vergiKilidiAl = kilitle;
 
 // Değişiklik kaydına giden değerler: boş alan yazılmaz (kayıt boş değeri kabul etmez).
 const sinifKaydi = (sinif: { ad: string; sira: number }) => ({ ad: sinif.ad, sira: sinif.sira });

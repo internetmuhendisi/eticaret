@@ -88,3 +88,26 @@ export const fiyatGecmisi = pgTable(
     ),
   ],
 );
+
+// Fiyat girişinin değişiklikleri (kart 0326, karar 0201): mağaza sahibi fiyat girişini (vergi dahil ya da hariç)
+// değiştirdiğinde bir satır. Fiyat geçmişinin bir satırının hangi girişle yazıldığı buradan bulunur: satırın
+// zamanından önceki son değişikliğin yenisi; ondan önce yazılmış satırda ilk değişikliğin öncekisi; değişiklik yoksa
+// bugünkü ayar (giris-degisikligi.ts, satirinGirisi). Sonradan değiştirilemez, fiyat geçmişi gibi.
+export const fiyatGirisiGecmisi = pgTable(
+  "fiyat_girisi_gecmisi",
+  {
+    kimlik: kimlik(),
+    // Fiyatlar çevrilmeden önce, işlemin kilidi alındıktan sonraki saat (clock_timestamp): çevrilen fiyatların
+    // geçmiş satırları ondan sonra yazılır.
+    zaman: zaman().notNull().defaultNow(),
+    onceki: text().notNull(),
+    yeni: text().notNull(),
+  },
+  (tablo) => [
+    index("fiyat_girisi_gecmisi_zaman").on(tablo.zaman),
+    check(
+      "fiyat_girisi_gecmisi_giris",
+      sql`${tablo.onceki} in ('vergi-dahil', 'vergi-haric') and ${tablo.yeni} in ('vergi-dahil', 'vergi-haric') and ${tablo.onceki} <> ${tablo.yeni}`,
+    ),
+  ],
+);

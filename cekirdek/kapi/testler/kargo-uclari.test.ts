@@ -118,6 +118,16 @@ describe("kargo ayarları uçları", () => {
     // Aynı değerler (başka yazılışla) kayda girmez.
     await kargoAyarlariUcu(istek(oturum, { ...yeni, ucretsizKargoSiniri: "1250,5" }));
     expect(await kayitlar(hesapKimligi)).toHaveLength(4);
+    // Kart 0326: ekranın gördüğü fiyat girişi bugünkü değilse (sayfa açıkken değişti) hiçbir şey yazılmaz.
+    const eskiEkran = await kargoAyarlariUcu(
+      istek(oturum, { ...yeni, kargoUcreti: "10", fiyatGirisi: "vergi-haric" }),
+    );
+    expect(eskiEkran.status).toBe(409);
+    expect(await durum(oturum)).toEqual({ basarili: true, veri: beklenen });
+    // Bugünkü girişle yazılır.
+    expect(
+      (await kargoAyarlariUcu(istek(oturum, { ...yeni, fiyatGirisi: "vergi-dahil" }))).status,
+    ).toBe(200);
     // Boş sınır sınırı kaldırır.
     await kargoAyarlariUcu(istek(oturum, { ...yeni, ucretsizKargoSiniri: " " }));
     const { ucretsizKargoSiniri: _sinir, ...sinirsiz } = beklenen;

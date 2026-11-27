@@ -96,6 +96,8 @@ export const urunHatalari = [
   "galeri-sira-gecersiz",
   // Ürün ekranının galerisi (kart 0266): ekranın gördüğü galeri bu arada değişti.
   "galeri-degisti",
+  // Fiyat girişi ekran açıldıktan sonra değişti (kart 0326): fiyatlar yazılmaz.
+  "giris-degisti",
   "video-adresi-gecersiz",
   "video-sitesi-izinsiz",
   "birim-gorseli-gecersiz",
@@ -151,6 +153,7 @@ export const urunHataMetinleri = {
   "galeri-siniri": "yonetim.urun.hata.galeri-siniri",
   "galeri-sira-gecersiz": "yonetim.urun.hata.galeri-sira-gecersiz",
   "galeri-degisti": "yonetim.urun.hata.galeri-degisti",
+  "giris-degisti": "yonetim.vergi.giris.ekranEskidi",
   "video-adresi-gecersiz": "yonetim.urun.hata.video-adresi-gecersiz",
   "video-sitesi-izinsiz": "yonetim.urun.hata.video-sitesi-izinsiz",
   "birim-gorseli-gecersiz": "yonetim.urun.hata.birim-gorseli-gecersiz",

@@ -153,7 +153,7 @@ export function KuponFormuEkrani({ veri }: { veri: KuponEkraniVerisi }) {
       yeni
         ? islem<{ kimlik?: string; gorulen?: string }>(
             "kupon-ekle",
-            { kupon },
+            { kupon, fiyatGirisi: veri.fiyatGirisi },
             "yonetim.kupon.eklendi",
             {
               formda: true,
@@ -161,7 +161,7 @@ export function KuponFormuEkrani({ veri }: { veri: KuponEkraniVerisi }) {
           )
         : islem<{ kimlik?: string; gorulen?: string }>(
             "kupon-degistir",
-            { kimlik: veri.kimlik, gorulen: gorulen.current, kupon },
+            { kimlik: veri.kimlik, gorulen: gorulen.current, kupon, fiyatGirisi: veri.fiyatGirisi },
             "yonetim.kupon.kaydedildi",
             { formda: true },
           ),

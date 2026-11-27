@@ -18,7 +18,11 @@ import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
 import { type DegisikligiYapan, sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
-import { siteninVeritabani, type Veritabani } from "../../veritabani/baglanti.ts";
+import {
+  siteninVeritabani,
+  type Veritabani,
+  type VeritabaniIslemi,
+} from "../../veritabani/baglanti.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
 import { magazaAyarlari } from "./model.ts";
 
@@ -32,7 +36,10 @@ export const saklanan = (deger: unknown): unknown =>
 
 type Satir = { kimlik: string; anahtar: string; deger: unknown };
 
-const satirlariOku = async (vt: Veritabani, anahtarlar?: string[]): Promise<Satir[]> =>
+const satirlariOku = async (
+  vt: Veritabani | VeritabaniIslemi,
+  anahtarlar?: string[],
+): Promise<Satir[]> =>
   vt
     .select({
       kimlik: magazaAyarlari.kimlik,
@@ -74,7 +81,10 @@ export const magazaAyarlariServisi = <S extends z.ZodObject>(
   };
 
   // Satırı olmayan ayarları başlangıç değeriyle yazar. Yarışı kaybeden süreç hiçbir şey yazmaz.
-  const eksikleriYaz = async (vt: Veritabani, satirlar: Satir[]): Promise<boolean> => {
+  const eksikleriYaz = async (
+    vt: Veritabani | VeritabaniIslemi,
+    satirlar: Satir[],
+  ): Promise<boolean> => {
     const olanlar = new Set(satirlar.map((satir) => satir.anahtar));
     const eksikler = anahtarlar.filter((anahtar) => !olanlar.has(anahtar));
     if (eksikler.length === 0) return false;
@@ -119,7 +129,8 @@ export const magazaAyarlariServisi = <S extends z.ZodObject>(
     return sonuc.data as z.output<S>[K];
   };
 
-  const oku = async (vt: Veritabani): Promise<z.output<S>> => {
+  // Bir işlemin içinden de çağrılabilir (kart 0326): iç içe işlem kayıt noktasıdır.
+  const oku = async (vt: Veritabani | VeritabaniIslemi): Promise<z.output<S>> => {
     const satirlar = await satirlariOku(vt);
     if (await eksikleriYaz(vt, satirlar)) return coz(await satirlariOku(vt));
     return coz(satirlar);
@@ -132,7 +143,7 @@ export const magazaAyarlariServisi = <S extends z.ZodObject>(
   // ayarlarla kilidin içinde çağrılır, aynı anda gelen değişikliğin sonucunu görür. Kilidin dışında okuyup bütün
   // değeri yazmak arada yazılanı geri alırdı. İşlevin attığı hata işlemi geri alır.
   const degistir = async (
-    vt: Veritabani,
+    vt: Veritabani | VeritabaniIslemi,
     kim: DegisikligiYapan,
     yeniler: Partial<z.input<S>> | ((bugunku: z.output<S>) => Partial<z.input<S>>),
     { kendiIslevi = false }: { kendiIslevi?: boolean } = {},

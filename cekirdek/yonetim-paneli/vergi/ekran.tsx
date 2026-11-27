@@ -1,7 +1,7 @@
 "use client";
 // Vergi ekranı (kart 0322; taslak kart 0311, karar 0185): solda genel ayarlar, sağda vergi sınıfları. Genel ayarlar tek
-// formdur (kargonun vergi sınıfı dahil), kaydedilince hemen yayınlanır. Fiyat girişi yalnız gösterilir: değişmesi kayıtlı
-// fiyatların çevrilmesini ister (kart 0326). Değiştirme izni olmayan yönetici alanları okur, düğmeleri görmez.
+// formdur (kargonun vergi sınıfı dahil), kaydedilince hemen yayınlanır. Fiyat girişi formda değil: değişmesi kayıtlı
+// fiyatların çevrilmesini ister, kendi penceresiyle değişir (fiyat-girisi.tsx, kart 0326). Değiştirme izni olmayan yönetici alanları okur, düğmeleri görmez.
 import { useMemo } from "react";
 import { Anahtar } from "../../../bilesenler/parcalar/anahtar";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
@@ -25,6 +25,7 @@ import { type KodMetinleri, kodluAlanHatalari } from "../kodlu-form";
 import { usePanelIslemi } from "../panel-islemi";
 import type { PanelHatasi } from "../panel-istegi";
 import { useSunucuFormu } from "../sunucu-formu";
+import { FiyatGirisiDegisikligi } from "./fiyat-girisi";
 import { VergiSiniflari } from "./siniflar";
 import type { VergiEkraniVerisi } from "./veri";
 
@@ -52,11 +53,20 @@ const genelHataMetni = (hata: PanelHatasi): MetinAnahtari =>
 // Radix seçim kutusunun değeri boş olamaz: "kargo vergisiz" bu değerle gösterilir.
 const vergisiz = "vergisiz";
 
-export function VergiEkrani({ veri, izinli }: { veri: VergiEkraniVerisi; izinli: boolean }) {
+// girisDegistirebilir: fiyat girişinin değişikliği (kart 0326) vergiyi ve fiyatı değiştirme iznini birlikte ister.
+export function VergiEkrani({
+  veri,
+  izinli,
+  girisDegistirebilir,
+}: {
+  veri: VergiEkraniVerisi;
+  izinli: boolean;
+  girisDegistirebilir: boolean;
+}) {
   return (
     <div className="grid items-start gap-6 masaustu:grid-cols-5">
       <div className="min-w-0 masaustu:col-span-3">
-        <GenelAyarlar veri={veri} izinli={izinli} />
+        <GenelAyarlar veri={veri} izinli={izinli} girisDegistirebilir={girisDegistirebilir} />
       </div>
       <div className="min-w-0 masaustu:col-span-2">
         <VergiSiniflari veri={veri} izinli={izinli} />
@@ -65,7 +75,15 @@ export function VergiEkrani({ veri, izinli }: { veri: VergiEkraniVerisi; izinli:
   );
 }
 
-function GenelAyarlar({ veri, izinli }: { veri: VergiEkraniVerisi; izinli: boolean }) {
+function GenelAyarlar({
+  veri,
+  izinli,
+  girisDegistirebilir,
+}: {
+  veri: VergiEkraniVerisi;
+  izinli: boolean;
+  girisDegistirebilir: boolean;
+}) {
   const metin = usePanelMetni();
   const islem = usePanelIslemi(genelHataMetni);
   const { fiyatGirisi } = veri.ayarlar;
@@ -202,11 +220,14 @@ function GenelAyarlar({ veri, izinli }: { veri: VergiEkraniVerisi; izinli: boole
           )}
         </PanelAlani>
         <div className="flex flex-col gap-1">
-          <span className="text-kucuk font-kalin">{metin("yonetim.vergi.fiyatGirisi")}</span>
+          <span id="vergi-fiyat-girisi" className="text-kucuk font-kalin">
+            {metin("yonetim.vergi.fiyatGirisi")}
+          </span>
           <span>{metin(`yonetim.vergi.fiyatGirisiDeger.${fiyatGirisi}`)}</span>
           <span className="text-kucuk text-soluk-yazi">
             {metin("yonetim.vergi.fiyatGirisiAciklamasi")}
           </span>
+          {girisDegistirebilir ? <FiyatGirisiDegisikligi fiyatGirisi={fiyatGirisi} /> : null}
         </div>
         {secenekler(
           "fiyatGosterimi",

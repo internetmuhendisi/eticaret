@@ -102,7 +102,8 @@ export const fiyatStokGirdisi = (
   const fiyatVar = birimler.some((b) => b.satisFiyati !== undefined);
   const stokVar = birimler.some((b) => b.stok !== undefined);
   return {
-    ...(fiyatVar ? zaman : {}),
+    // Fiyatlar ekranın gördüğü girişle yazılmıştır (kart 0326): giriş arada değiştiyse sunucu çakışma döner.
+    ...(fiyatVar ? { ...zaman, fiyatGirisi: veri.fiyatStok.fiyatGirisi } : {}),
     ...(stokVar ? { sebep, ...(form.stokNotu.trim() === "" ? {} : { not: form.stokNotu }) } : {}),
     birimler,
   };

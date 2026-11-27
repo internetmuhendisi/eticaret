@@ -11,6 +11,7 @@ import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
 import { yoneticininIzniVarMi } from "../../moduller/ekip/servis.ts";
 import { calisanSiteninFiyatServisi } from "../../moduller/fiyat/servis.ts";
+import { siteninServisi } from "../../moduller/magaza-ayarlari/servis.ts";
 import type { ElleDuzeltme } from "../../moduller/stok/semalar.ts";
 import { calisanSiteninStokServisi } from "../../moduller/stok/servis.ts";
 import { urunKopyala, urunKopyalamaSemasi } from "../../moduller/urun/kopyalama.ts";
@@ -92,6 +93,7 @@ const fiyatStokYaz = async (
     fiyatStok as PanelFiyatStok,
     {
       fiyat: calisanSiteninFiyatServisi(),
+      fiyatGirisi: async (islem) => (await siteninServisi(calisanSite()).oku(islem)).fiyatGirisi,
       stok: calisanSiteninStokServisi(),
       bicimleyici: panelAyarlari().bicimleyici,
       saatDilimi: calisanSite().ayarlar.saatDilimi,

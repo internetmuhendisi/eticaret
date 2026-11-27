@@ -89,10 +89,10 @@ const veri = (): VergiEkraniVerisi => ({
   ulkeler: [{ kod: "TR", ad: "Türkiye", iller: [{ kod: "TR-06", ad: "Ankara" }] }],
 });
 
-const ciz = (izinli = true, v: VergiEkraniVerisi = veri()) =>
+const ciz = (izinli = true, v: VergiEkraniVerisi = veri(), girisDegistirebilir = izinli) =>
   render(
     <MetinSaglayici dil="tr">
-      <VergiEkrani veri={v} izinli={izinli} />
+      <VergiEkrani veri={v} izinli={izinli} girisDegistirebilir={girisDegistirebilir} />
     </MetinSaglayici>,
   );
 const kaydet = () => screen.getByRole("button", { name: metin("yonetim.vergi.kaydet") });
@@ -260,7 +260,7 @@ describe("vergi sınıfları", () => {
     await act(async () => {
       rerender(
         <MetinSaglayici dil="tr">
-          <VergiEkrani veri={yeni} izinli />
+          <VergiEkrani veri={yeni} izinli girisDegistirebilir />
         </MetinSaglayici>,
       );
     });
@@ -332,5 +332,107 @@ describe("izni olmayan yönetici", () => {
       }),
     ).toBeNull();
     expect(screen.queryByText(metin("yonetim.vergi.oranEkle"))).toBeNull();
+  });
+});
+
+// Kart 0326: fiyat girişinin değişikliği. Pencere açılınca önizleme istenir; onaydan sonra önizlemenin sürümüyle uygular;
+// çakışmada neden yazar ve önizleme yeniden istenir; izni olmayana düğme yok.
+describe("fiyat girişinin değişikliği", () => {
+  const onizleme = (surum = "a".repeat(32), degisenSayisi = 1) => ({
+    eski: "vergi-dahil",
+    yeni: "vergi-haric",
+    surum,
+    fiyatSayisi: 12,
+    degisenSayisi,
+    degisenler:
+      degisenSayisi === 0
+        ? []
+        : [
+            {
+              birim: "5a0d6c1e-2f3b-4c8d-9e7a-1b2c3d4e5f21",
+              ad: "Kupa / Kırmızı",
+              once: "100,03 ¤",
+              sonra: "100,04 ¤",
+            },
+          ],
+    kargoUcreti: { once: "59,00 ¤", sonra: "50,00 ¤" },
+    ucretsizKargoSiniri: null,
+    kuponSayisi: 2,
+    sepetSinifi: "Genel",
+  });
+  const degistir = () =>
+    screen.getByRole("button", { name: metin("yonetim.vergi.giris.degistir") });
+
+  it("önizleme, 1 kuruş değişen fiyatlar, onay ve uygulama; çakışmada yeniden önizleme", async () => {
+    const yanitlar = [
+      Response.json({ basarili: true, veri: onizleme() }),
+      Response.json({ basarili: false, hata: { kod: "cakisma" } }, { status: 409 }),
+      Response.json({ basarili: true, veri: onizleme("b".repeat(32), 0) }),
+      Response.json({ basarili: true, veri: {} }),
+    ];
+    yanit = () => yanitlar.shift() ?? Response.json({ basarili: true, veri: {} });
+    ciz();
+    await act(async () => {
+      fireEvent.click(degistir());
+    });
+    const pencere = screen.getByRole("dialog", { name: metin("yonetim.vergi.giris.baslik") });
+    expect(istekler[0]).toEqual({
+      adres: "/kapi/yonetici/fiyat-girisi-onizle",
+      govde: { yeni: "vergi-haric" },
+    });
+    expect(within(pencere).getByText("Kupa / Kırmızı")).toBeDefined();
+    expect(within(pencere).getByRole("table")).toBeDefined();
+    expect(
+      within(pencere).getByRole("link", { name: metin("yonetim.vergi.giris.indir") }),
+    ).toHaveProperty(
+      "href",
+      expect.stringContaining("/kapi/yonetici/fiyat-girisi-csv?yeni=vergi-haric"),
+    );
+    const uygula = () =>
+      within(screen.getByRole("dialog", { name: metin("yonetim.vergi.giris.baslik") })).getByRole(
+        "button",
+        { name: metin("yonetim.vergi.giris.uygula") },
+      );
+    fireEvent.click(uygula());
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: metin("yonetim.vergi.giris.onay") }));
+    });
+    expect(istekler[1]).toEqual({
+      adres: "/kapi/yonetici/fiyat-girisi-degistir",
+      govde: { yeni: "vergi-haric", surum: "a".repeat(32) },
+    });
+    // Çakışma: neden yazar, önizleme yenilenir (değişen yok).
+    expect(istekler[2]?.adres).toBe("/kapi/yonetici/fiyat-girisi-onizle");
+    expect(screen.getByText(metin("yonetim.vergi.giris.hata.cakisma"))).toBeDefined();
+    expect(screen.getByText(metin("yonetim.vergi.giris.degisenYok"))).toBeDefined();
+    fireEvent.click(uygula());
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: metin("yonetim.vergi.giris.onay") }));
+    });
+    expect(istekler[3]?.govde).toEqual({ yeni: "vergi-haric", surum: "b".repeat(32) });
+    expect(yenile).toHaveBeenCalled();
+    expect(screen.queryByRole("dialog", { name: metin("yonetim.vergi.giris.baslik") })).toBeNull();
+  });
+
+  it("önizleme alınamazsa nedeni yazar; izni olmayana düğme yok", async () => {
+    yanit = () =>
+      Response.json(
+        {
+          basarili: false,
+          hata: { kod: "is-kurali", ayrinti: [{ alan: "yeni", kod: "vergi-bolgesi-yok" }] },
+        },
+        { status: 422 },
+      );
+    ciz();
+    await act(async () => {
+      fireEvent.click(degistir());
+    });
+    expect(screen.getByText(metin("yonetim.vergi.giris.hata.vergi-bolgesi-yok"))).toBeDefined();
+    expect(screen.queryByRole("button", { name: metin("yonetim.vergi.giris.uygula") })).toBeNull();
+    cleanup();
+    ciz(true, veri(), false);
+    expect(
+      screen.queryByRole("button", { name: metin("yonetim.vergi.giris.degistir") }),
+    ).toBeNull();
   });
 });

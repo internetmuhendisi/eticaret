@@ -464,7 +464,7 @@
         "vergi-dahil": "Vergi dahil",
         "vergi-haric": "Vergi hariç"
       },
-      "fiyatGirisiAciklamasi": "Ürün fiyatları ve kargo ücreti bu biçimde girilir. Değiştirmek kayıtlı bütün fiyatların çevrilmesini gerektirir; bu ekranda değişmez.",
+      "fiyatGirisiAciklamasi": "Ürün fiyatları, kargo ücreti ve kupon tutarları bu biçimde girilir. Değiştirince kayıtlı tutarlar yeni biçime çevrilir, müşterinin gördüğü birim fiyatlar değişmez.",
       "fiyatGosterimi": "Fiyatlar vitrinde nasıl görünsün",
       "fiyatGosterimiAciklamasi": "Vitrinde, sepette ve e-postada. Girişten farklıysa fiyat vergi hesabıyla çevrilir.",
       "fiyatEkMetni": "Fiyatın yanındaki metin",
@@ -557,7 +557,48 @@
       "islem": "İşlem",
       "ekMetinGecersiz": "Metin çok uzun ya da bir e-posta adresi veya giriş anahtarı biçiminde. Metni kısaltın ya da değiştirin.",
       "oranKaydet": "Oranı kaydet",
-      "silinmisSinif": "{ad} (silinmiş)"
+      "silinmisSinif": "{ad} (silinmiş)",
+      "giris": {
+        "degistir": "Değiştir",
+        "baslik": "Fiyat girişini değiştir",
+        "aciklama": "Kayıtlı ürün fiyatları, kargo ücreti, ücretsiz kargo sınırı ve kupon tutarları yeni biçime çevrilir; müşterinin gördüğü birim fiyatlar değişmez. Birden çok adetli sepetlerde vergi yuvarlaması toplamı birkaç kuruş değiştirebilir. Önce neyin değişeceğini görün, sonra onaylayın.",
+        "yeni": "Yeni giriş: {giris}",
+        "onizle": "Önizle",
+        "onizlemeBasligi": "Değişecekler",
+        "fiyatSayisi": "{sayi} fiyat çevrilecek (seçenekli ürünlerde her birleşim ayrı sayılır).",
+        "degisenYok": "Müşterinin gördüğü hiçbir birim fiyat değişmeyecek.",
+        "degisen": "{sayi} fiyat vergi yuvarlaması yüzünden müşteriye 1 kuruş farklı görünecek.",
+        "tabloBasligi": "Müşteriye 1 kuruş farklı görünecek fiyatlar",
+        "urun": "Ürün",
+        "once": "Şimdi",
+        "sonra": "Sonra",
+        "fazlasi": "İlk {gosterilen} fiyat gösteriliyor; bütün liste dosyada.",
+        "indir": "Listeyi indir (CSV)",
+        "kargo": "Kargo ücreti: {once} → {sonra}",
+        "sinir": "Ücretsiz kargo sınırı: {once} → {sonra}",
+        "kupon": "{sayi} kuponun tutarı çevrilecek (kullanılmış kuponlar da).",
+        "sepetSinifi": "Ücretsiz kargo sınırı ve kupon tutarları en çok ürünü olan \"{sinif}\" vergi sınıfının oranıyla çevrilir.",
+        "uygula": "Fiyat girişini değiştir",
+        "onayBaslik": "Fiyat girişi değişsin mi?",
+        "onayAciklama": "Kayıtlı tutarlar \"{yeni}\" biçimine çevrilecek ve bu değişiklik kayda girecek. Girişi yeniden değiştirerek geri dönebilirsiniz; 1 kuruşluk farklar geri dönmeyebilir.",
+        "onay": "Değiştir",
+        "tamam": "Fiyat girişi değişti, tutarlar çevrildi.",
+        "hata": {
+          "cakisma": "Önizlemeden sonra fiyatlar, kuponlar ya da vergi ayarları değişti. Yeniden önizleyin.",
+          "vergi-bolgesi-yok": "Mağaza adresinin bölgesi için vergi oranı bulunamadı. Önce mağaza adresini ve vergi oranlarını düzeltin.",
+          "ayni-giris": "Fiyatlar zaten bu biçimde giriliyor.",
+          "yetki": "Fiyat girişini değiştirmek için vergi ve fiyat ayarlarını değiştirme izniniz olmalı.",
+          "genel": "Şu an yapılamadı. Biraz sonra yeniden deneyin.",
+          "acik-odeme": "Şu an süren bir ödeme var: çeviri onun toplamını değiştirebilir. Birkaç dakika sonra yeniden deneyin."
+        },
+        "csv": {
+          "urun": "Ürün",
+          "secim": "Seçim",
+          "once": "Şimdi",
+          "sonra": "Sonra"
+        },
+        "ekranEskidi": "Fiyat girişi bu sayfa açıldıktan sonra değişti, tutarlar kaydedilmedi. Sayfayı yenileyip tutarları kontrol edin."
+      }
     },
     "urun": {
       "hata": {
@@ -3361,7 +3402,8 @@
         "kapsam-sinir": "En çok {kapsamEnCok} kayıt seçilebilir.",
         "kayit-yok": "Seçilen kayıtlardan biri silinmiş. Listeden kaldırıp yeniden seçin.",
         "kullanildi": "Kupon kullanıldığı için bu alan değişmez.",
-        "kupon-degisti": "Kupon siz düzenlerken başka biri tarafından değiştirildi. Sayfayı yenileyip yeniden deneyin."
+        "kupon-degisti": "Kupon siz düzenlerken başka biri tarafından değiştirildi. Sayfayı yenileyip yeniden deneyin.",
+        "giris-degisti": "Fiyat girişi bu sayfa açıldıktan sonra değişti, tutarlar kaydedilmedi. Sayfayı yenileyip tutarları kontrol edin."
       }
     },
     "urunKopyalama": {

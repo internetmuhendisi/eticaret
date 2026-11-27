@@ -106,7 +106,9 @@ const hazirla = async () => {
     return birim;
   };
   const ayarla = (ayarlar: Parameters<ReturnType<typeof siteninServisi>["degistir"]>[2]) =>
-    siteninServisi(site).degistir(vt, yonetici(), ayarlar);
+    siteninServisi(site).degistir(vt, yonetici(), ayarlar, {
+      kendiIslevi: "fiyatGirisi" in ayarlar,
+    });
   const musteriAc = async () =>
     (
       await hesapAc(vt, "musteri", {

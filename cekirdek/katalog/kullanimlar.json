@@ -232,6 +232,7 @@
     "cekirdek/yonetim-paneli/tema/ayarlar-ekrani.tsx",
     "cekirdek/yonetim-paneli/tema/ekran.tsx",
     "cekirdek/yonetim-paneli/urunler/liste.tsx",
+    "cekirdek/yonetim-paneli/vergi/fiyat-girisi.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/slider.tsx",
     "cekirdek/yonetim-paneli/yorumlar/liste.tsx"
   ],
@@ -371,6 +372,7 @@
     "cekirdek/yonetim-paneli/urunler/liste.tsx",
     "cekirdek/yonetim-paneli/urunler/secenekler-bolumu.tsx",
     "cekirdek/yonetim-paneli/urunler/urun-ekrani.tsx",
+    "cekirdek/yonetim-paneli/vergi/fiyat-girisi.tsx",
     "cekirdek/yonetim-paneli/vergi/siniflar.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/slider.tsx",
@@ -552,6 +554,7 @@
     "cekirdek/yonetim-paneli/tema/logo-bolumu.tsx",
     "cekirdek/yonetim-paneli/urunler/secenekler-bolumu.tsx",
     "cekirdek/yonetim-paneli/urunler/urun-ekrani.tsx",
+    "cekirdek/yonetim-paneli/vergi/fiyat-girisi.tsx",
     "cekirdek/yonetim-paneli/vergi/siniflar.tsx"
   ],
   "bilesenler/parcalar/pencere.tsx": [
@@ -737,6 +740,7 @@
     "cekirdek/yonetim-paneli/urunler/fiyat-stok-bolumleri.tsx",
     "cekirdek/yonetim-paneli/urunler/secenekler-bolumu.tsx",
     "cekirdek/yonetim-paneli/urunler/toplu-duzenleme.tsx",
+    "cekirdek/yonetim-paneli/vergi/fiyat-girisi.tsx",
     "cekirdek/yonetim-paneli/vergi/siniflar.tsx"
   ],
   "bilesenler/parcalar/uyari.tsx": [
@@ -804,6 +808,7 @@
     "cekirdek/yonetim-paneli/urunler/kopyalama.tsx",
     "cekirdek/yonetim-paneli/urunler/secenekler-bolumu.tsx",
     "cekirdek/yonetim-paneli/urunler/toplu-duzenleme.tsx",
+    "cekirdek/yonetim-paneli/vergi/fiyat-girisi.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/slider.tsx"
   ],
@@ -853,6 +858,7 @@
     "cekirdek/yonetim-paneli/urunler/fiyat-stok-bolumleri.tsx",
     "cekirdek/yonetim-paneli/urunler/kopyalama.tsx",
     "cekirdek/yonetim-paneli/urunler/toplu-duzenleme.tsx",
+    "cekirdek/yonetim-paneli/vergi/fiyat-girisi.tsx",
     "cekirdek/yonetim-paneli/vergi/siniflar.tsx",
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx"
   ],
@@ -861,6 +867,7 @@
     "cekirdek/yonetim-paneli/bildirimler/zil.tsx",
     "cekirdek/yonetim-paneli/davet-kabul-formu.tsx",
     "cekirdek/yonetim-paneli/epostalar/metin-ekrani.tsx",
+    "cekirdek/yonetim-paneli/vergi/fiyat-girisi.tsx",
     "cekirdek/yonetim-paneli/vergi/siniflar.tsx"
   ]
 }

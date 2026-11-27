@@ -4,6 +4,9 @@
 //   okunamayan oranda alanın hatası ve odak, "7,5" ile kayıt, oran tablosunda oranın yazılışı. Pencere ve hatalı form taranır.
 // - Vitrinde fiyat yeni ayarla görünür: testin ürünü yeni sınıftadır; fiyatın gösterimi klavyeyle değiştirilip
 //   kaydedilince ürün sayfası fiyatı vergi hesabıyla çevrilmiş ve yanındaki metni yeni gösterimle yazar.
+// - Fiyat girişinin değişikliği (kart 0326): "Değiştir" klavyeyle yan pencereyi açar, önizleme görünür; pencere iki
+//   renkte ve üç genişlikte taranır; onay penceresiyle uygulanır, ayar değişir, testin ürününün vitrindeki fiyatı aynı
+//   kalır. Sonunda giriş servisle geri çevrilir.
 // Fiyatın gösterimi bütün vitrini değiştirir: test öteki tarayıcı testlerinden ve tema testinden sonra kendi aşamasında
 // çalışır (playwright.config.ts, "vitrin-ayari") ve sonunda ayarları, sınıfı ve ürünü geri alır.
 import { randomUUID } from "node:crypto";
@@ -13,6 +16,8 @@ import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri";
 import { doldur } from "../../metinler/doldur";
 import { bicim, metin } from "../../metinler/site-metni";
+import { fiyatGirisiServisi } from "../../moduller/fiyat/giris-degisikligi";
+import { fiyatGosterimServisi } from "../../moduller/fiyat/gosterim";
 import { calisanSiteninFiyatServisi } from "../../moduller/fiyat/servis";
 import { siteninServisi } from "../../moduller/magaza-ayarlari/servis";
 import { stokServisi } from "../../moduller/stok/servis";
@@ -221,5 +226,77 @@ test("vergi ekranı: klavyeyle sınıf ve oran, hata ve odak, vitrinde fiyatın 
   await expect(vitrin.getByRole("main")).toContainText(ekMetin);
   await vitrin.close();
 
+  expect(hatalar).toEqual([]);
+});
+
+test("fiyat girişinin değişikliği: klavyeyle önizleme ve onay, vitrinde fiyat aynı (kart 0326)", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  const hatalar = konsoluDinle(page, { haric: (m) => m.includes("401") });
+  const site = calisanSite();
+  const ilk = (await siteninServisi(site).oku(vt)).fiyatGirisi;
+  const yeni = ilk === "vergi-dahil" ? "vergi-haric" : "vergi-dahil";
+  temizlik.push(async () => {
+    if ((await siteninServisi(site).oku(vt)).fiyatGirisi === ilk) return;
+    const servis = fiyatGirisiServisi(site);
+    const plan = await servis.onizle(vt, ilk);
+    await servis.uygula(vt, yapan, { yeni: ilk, surum: plan.surum });
+  });
+  // Testin ürünü sitenin ilk vergi sınıfında.
+  const [sinif] = await vergi().tabloyuOku(vt);
+  const urunServisi = calisanSiteninUrunServisi();
+  const urun = await urunServisi.urunEkle(vt, yapan, {
+    ad: `Giriş deneme ${ek}`,
+    adresAdi: `giris-deneme-${ek}`,
+    vergiSinifi: sinif?.kimlik ?? null,
+    durum: "yayinda",
+  });
+  temizlik.push(() => urunServisi.urunSil(vt, yapan, urun));
+  const birim = (await urunServisi.urunuOku(vt, urun))?.birimler[0]?.kimlik ?? "";
+  await calisanSiteninFiyatServisi().fiyatYaz(vt, yapan, birim, { satisFiyati: 12_000 });
+  const gorunen = async () =>
+    (await fiyatGosterimServisi(site).gosterilecekFiyatlar(vt, [birim])).get(birim)?.tutar;
+  const once = await gorunen();
+
+  await ayriBaglanti(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await paneleGir(page, yoneticiAc());
+  await page.goto("/yonetim/vergi");
+  await sayfaHazir(page);
+  const degistir = page.getByRole("button", { name: metin("yonetim.vergi.giris.degistir") });
+  await degistir.focus();
+  await page.keyboard.press("Enter");
+  const pencere = page.getByRole("dialog", { name: metin("yonetim.vergi.giris.baslik") });
+  await expect(pencere).toBeVisible();
+  await expect(
+    pencere.getByRole("heading", { name: metin("yonetim.vergi.giris.onizlemeBasligi") }),
+  ).toBeVisible();
+  for (const renk of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: renk });
+    for (const boyut of genislikler) {
+      await page.setViewportSize(boyut);
+      await tara(page, `fiyat girişi penceresi ${renk} ${boyut.width}`);
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      ).toBe(true);
+    }
+  }
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await pencere.getByRole("button", { name: metin("yonetim.vergi.giris.uygula") }).focus();
+  await page.keyboard.press("Enter");
+  const onay = page.getByRole("alertdialog", { name: metin("yonetim.vergi.giris.onayBaslik") });
+  await expect(onay).toBeVisible();
+  await tara(page, "fiyat girişi onayı");
+  await onay.getByRole("button", { name: metin("yonetim.vergi.giris.onay") }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByText(metin("yonetim.vergi.giris.tamam")).first()).toBeVisible();
+  await expect(pencere).toHaveCount(0);
+  expect((await siteninServisi(site).oku(vt)).fiyatGirisi).toBe(yeni);
+  await expect(
+    page.getByText(metin(`yonetim.vergi.fiyatGirisiDeger.${yeni}`)).first(),
+  ).toBeVisible();
+  expect(await gorunen()).toBe(once);
   expect(hatalar).toEqual([]);
 });

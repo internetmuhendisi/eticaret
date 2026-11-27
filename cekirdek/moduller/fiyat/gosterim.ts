@@ -32,10 +32,12 @@ import { siteninMagazaAyarlari } from "../magaza-ayarlari/servis.ts";
 import { siteninStokDurumlari } from "../stok/durum.ts";
 import { urunBirimleri, urunler } from "../urun/model.ts";
 import { urunlerinBirimleri } from "../urun/varyant.ts";
-import { hesapla, type VergiBolgesi } from "../vergi/hesap.ts";
+import type { VergiBolgesi } from "../vergi/hesap.ts";
 import type { FiyatGirisi } from "../vergi/semalar.ts";
 import { siteninVergiServisi, type VergiSinifi } from "../vergi/servis.ts";
 import { eskiFiyatiBul } from "./eski-fiyat.ts";
+import { type CeviriBaglami, gosterimeCevir, yeniGiriseCevir } from "./giris-cevirisi.ts";
+import { girisDegisiklikleriniOku, satirinGirisi } from "./giris-degisikligi.ts";
 import { type FiyatGecmisiSatiri, siteninFiyatServisi } from "./servis.ts";
 
 export type GosterilecekFiyat = {
@@ -148,8 +150,11 @@ export const fiyatGosterimServisi = (site: Site) => {
     // değil) tutar girildiği biçimde, kendi vergi durumuyla gösterilir ve hata bir kez kaydedilir:
     // tutar ve metni birbirini tutar, vitrin düşmez.
     const cevirmeli = ayarlar.vergiAcik && ayarlar.fiyatGirisi !== ayarlar.fiyatGosterimi;
+    // Fiyat girişi değiştiyse (kart 0326) geçmişin eski girişle yazılmış satırları bugünkü girişe çevrilir.
+    const girisDegisiklikleri = gecmisler.size === 0 ? [] : await girisDegisiklikleriniOku(vt);
     const tablo: VergiSinifi[] =
-      cevirmeli && [...siniflar.values()].some((sinif) => sinif !== null)
+      (cevirmeli || girisDegisiklikleri.length > 0) &&
+      [...siniflar.values()].some((sinif) => sinif !== null)
         ? await siteninVergiServisi(site).tabloyuOku(vt, { silinmisSiniflar: true })
         : [];
     const magaza = ayarlar.magazaAdresi;
@@ -159,21 +164,14 @@ export const fiyatGosterimServisi = (site: Site) => {
         ? {}
         : { magaza: { ulke: magaza.ulke, il: magaza.il, postaKodu: magaza.postaKodu } }),
     };
+    const baglam: CeviriBaglami = {
+      ayarlar,
+      tablo,
+      ...(secenekler.bolge === undefined ? {} : { bolge: secenekler.bolge }),
+      ...(adresler.magaza === undefined ? {} : { magaza: adresler.magaza }),
+    };
     const cevir = (tutarlar: number[], sinif: string): number[] =>
-      tutarlar.map((tutar) => {
-        const [kalem] = hesapla({
-          ayarlar: {
-            ...ayarlar,
-            // Bölge verilmediyse mağaza adresi: ayardaki adres yoksa hesap mağazaya düşer.
-            vergiAdresi: secenekler.bolge === undefined ? "magaza" : "teslimat",
-          },
-          tablo,
-          adresler,
-          satirlar: [{ birimFiyat: tutar, adet: 1, sinif }],
-        }).satirlar;
-        if (kalem === undefined) throw new Error("Vergi hesabı kalem döndürmedi.");
-        return ayarlar.fiyatGosterimi === "vergi-dahil" ? kalem.vergili : kalem.vergisiz;
-      });
+      tutarlar.map((tutar) => gosterimeCevir(baglam, tutar, sinif, ayarlar.fiyatGirisi));
     const gosterime = (
       tutarlar: number[],
       birim: string,
@@ -193,11 +191,47 @@ export const fiyatGosterimServisi = (site: Site) => {
       }
     };
 
+    // Geçmiş satırının tutarları yazıldığı girişten bugünkü girişe, fiyat girişinin değişikliğiyle aynı kuralla
+    // (mağaza adresinin bölgesi). Satırın girişi girişin değişikliklerinden bulunur (satirinGirisi).
+    const magazaBaglami: CeviriBaglami = {
+      ayarlar,
+      tablo,
+      ...(adresler.magaza === undefined ? {} : { magaza: adresler.magaza }),
+    };
+    const bugunkuGirise = (
+      satirlar: FiyatGecmisiSatiri[],
+      sinif: string | null,
+    ): FiyatGecmisiSatiri[] =>
+      girisDegisiklikleri.length === 0
+        ? satirlar
+        : satirlar.map((satir) => {
+            const giris = satirinGirisi(satir.zaman, girisDegisiklikleri, ayarlar.fiyatGirisi);
+            if (giris === ayarlar.fiyatGirisi) return satir;
+            const cevir = (tutar: number) =>
+              yeniGiriseCevir(magazaBaglami, tutar, sinif, giris, ayarlar.fiyatGirisi).tutar;
+            try {
+              return {
+                ...satir,
+                satisFiyati: cevir(satir.satisFiyati),
+                indirimliFiyat: satir.indirimliFiyat === null ? null : cevir(satir.indirimliFiyat),
+              };
+            } catch (hata) {
+              // Bölge bulunamazsa (mağaza adresi yok ya da vergi tablosunda değil) satır olduğu gibi kalır; vitrin
+              // düşmez, hata bir kez kaydedilir (gosterime ile aynı).
+              if (!(hata instanceof BilinenHata) || hata.kod !== "is-kurali") throw hata;
+              if (!bolgeHatasiKaydedildi) {
+                bolgeHatasiKaydedildi = true;
+                hatayiKaydet(hata, { kaynak: "fiyat-gosterimi", ayrinti: hata.ayrinti });
+              }
+              return satir;
+            }
+          });
+
     const bicim = siteninBicimleyicisi(site.ayarlar);
     for (const [birim, gecerli] of gecerliler) {
       const eski = gecerli.indirimde
         ? eskiFiyatiBul(
-            gecmisler.get(birim) ?? [],
+            bugunkuGirise(gecmisler.get(birim) ?? [], siniflar.get(birim) ?? null),
             an,
             gecerli.paraBirimi,
             ayarlar.indirimdeEnDusukFiyat,

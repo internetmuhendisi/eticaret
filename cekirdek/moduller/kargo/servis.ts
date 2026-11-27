@@ -13,6 +13,7 @@ import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import { sepetTutariEnCok, type UcretsizKargoTutari } from "../../kayitlar/sepet.ts";
 import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
 import type { Veritabani } from "../../veritabani/baglanti.ts";
+import { gorulenGirisiDenetle } from "../fiyat/giris-cevirisi.ts";
 import { siteninServisi } from "../magaza-ayarlari/servis.ts";
 import type { KargoAyarlariGirdisi } from "./semalar.ts";
 
@@ -73,11 +74,15 @@ export const kargoAyarlariniDegistir = async (
     hatalar.push({ alan: "kargoyaVermeSuresi", kod: "gun-gecersiz" });
   if (hatalar.length > 0 || kargoUcreti === undefined || kargoyaVermeSuresi === undefined)
     throw new BilinenHata("dogrulama", hatalar);
-  await siteninServisi(site).degistir(vt, kim, {
-    kargoUcreti,
-    ucretsizKargoSiniri,
-    ucretsizKargoTutari: girdi.ucretsizKargoTutari,
-    kargoyaVermeSuresi,
+  // Değerler kilidin içinde verilir: fiyat girişi arada değiştiyse (kart 0326) eski girişteki tutar yazılmaz.
+  await siteninServisi(site).degistir(vt, kim, (bugunku) => {
+    gorulenGirisiDenetle(girdi.fiyatGirisi, bugunku.fiyatGirisi);
+    return {
+      kargoUcreti,
+      ucretsizKargoSiniri,
+      ucretsizKargoTutari: girdi.ucretsizKargoTutari,
+      kargoyaVermeSuresi,
+    };
   });
   return kargoAyarlariniOku(vt, site);
 };

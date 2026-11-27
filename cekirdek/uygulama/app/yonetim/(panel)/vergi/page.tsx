@@ -18,7 +18,11 @@ export default async function VergiSayfasi() {
   const veri = await vergiEkraniVerisi();
   return (
     <PanelSayfasi kod="vergi">
-      <VergiEkrani veri={veri} izinli={yetkili("vergi.degistir")} />
+      <VergiEkrani
+        veri={veri}
+        izinli={yetkili("vergi.degistir")}
+        girisDegistirebilir={yetkili("vergi.degistir") && yetkili("fiyat.degistir")}
+      />
     </PanelSayfasi>
   );
 }

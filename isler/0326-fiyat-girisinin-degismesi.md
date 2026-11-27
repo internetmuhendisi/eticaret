@@ -25,6 +25,13 @@ Bölüm: Yönetim paneli 2. Önce 0322 bitmiş olmalı.
 - Her yeni denetim bilerek bozularak kırmızıya düşüyor.
 - Bağımsız kontrol yapıldı.
 
+## Sonuç
+
+- Vergi ekranında fiyat girişinin yanında "Değiştir": yan pencerede önizleme (çevrilecek fiyat sayısı, müşteriye 1 kuruş farklı görünecek fiyatlar ilk 20 satır ve CSV, kargo ücreti ve sınırı, kuponlar, sınır ve kuponların çevrildiği sınıf), onay penceresi, uygulama (karar 0201).
+- Kullanıcı kararları: kupon tutarları (kullanılmışlar da) çevrilir; birden çok oranlı tutarlar en çok ürünü olan sınıfın oranıyla.
+- Bağımsız kontrolün bulgularıyla: süren ödeme varken uygulanmaz; kargo ekranı, ürünün fiyatları ve kupon formu gördükleri girişi gönderir, giriş arada değiştiyse kayıt çakışır; kilitler genişledi (kupon tablosu, mağaza ayarları, vergi tablosu); silinmiş kargo sınıfı, indirimli fiyatın önizlemesi ve bölgesi bulunamayan sitede eski fiyat düzeldi. "Müşterinin gördüğü fiyat değişmez" birim fiyat içindir: çok adetli satırda sepet toplamı birkaç kuruş değişebilir, pencere bunu söyler. Excel'in yeni ürün satırları kart 0337'de.
+- Hız ölçümü çalıştırılmadı: vitrine giden tarayıcı kodu değişmedi, vitrin yalnız indirimdeki ürünlerde sunucuda bir sorgu daha yapar.
+
 ## Durum
 
 yapılacak

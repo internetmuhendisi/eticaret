@@ -3,10 +3,14 @@
 // ve oranın alanları uçta nesne olarak alınır, servisin şemasıyla doğrulanır (hata alanın adıyla ve koduyla döner).
 // Görmek vergi.gor, bütün değişiklikler (silme dahil) vergi.degistir ister.
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
+import { yoneticininIzniVarMi } from "../../moduller/ekip/servis.ts";
+import { fiyatGirisiServisi } from "../../moduller/fiyat/giris-degisikligi.ts";
 import { vergiAyarlariniDegistir } from "../../moduller/vergi/ayarlar.ts";
 import type { OranDegisikligi, OranGirdisi, SinifGirdisi } from "../../moduller/vergi/semalar.ts";
 import { siteninVergiServisi } from "../../moduller/vergi/servis.ts";
 import {
+  fiyatGirisiDegisikligiSemasi,
+  fiyatGirisiOnizlemeSemasi,
   vergiAyarlariSemasi,
   vergiKimlikSemasi,
   vergiOraniDegisikligiSemasi,
@@ -16,7 +20,12 @@ import {
   vergiSinifSiralamaSemasi,
 } from "../../moduller/vergi/uc-semalari.ts";
 import { siteninVeritabani } from "../../veritabani/baglanti.ts";
+import {
+  fiyatGirisiCsv,
+  fiyatGirisiOnizlemesi,
+} from "../../yonetim-paneli/vergi/fiyat-girisi-verisi.ts";
 import { ucTanimla } from "../uc.ts";
+import { BilinenHata, DosyaYaniti } from "../zarf.ts";
 
 const yonetici = (hesapKimligi: string) => ({ tur: "yonetici" as const, kimlik: hesapKimligi });
 const servis = () => siteninVergiServisi(calisanSite());
@@ -130,5 +139,56 @@ export const vergiOraniSilmeUcu = ucTanimla({
   isle: async ({ kimlik }, _istek, _yanit, { hesapKimligi }) => {
     await servis().oranSil(siteninVeritabani(), yonetici(hesapKimligi), kimlik);
     return {};
+  },
+});
+
+// Fiyat girişinin değişikliği (kart 0326, karar 0201) kayıtlı fiyatları çevirir: uç vergi.degistir ister, fiyatı
+// değiştirme izni (fiyat.degistir) ayrıca denetlenir; yoksa yetki.
+const fiyatIzniniDenetle = async (hesapKimligi: string) => {
+  if (!(await yoneticininIzniVarMi(siteninVeritabani(), hesapKimligi, "fiyat.degistir"))) {
+    throw new BilinenHata("yetki");
+  }
+};
+
+// POST /kapi/yonetici/fiyat-girisi-onizle: yeni girişe geçince neyin değişeceği; hiçbir şey yazılmaz.
+export const fiyatGirisiOnizlemeUcu = ucTanimla({
+  giris: "yonetici",
+  sema: fiyatGirisiOnizlemeSemasi,
+  izin: "vergi.degistir",
+  sinir: "genel",
+  isle: async ({ yeni }, _istek, _yanit, { hesapKimligi }) => {
+    await fiyatIzniniDenetle(hesapKimligi);
+    return fiyatGirisiOnizlemesi(siteninVeritabani(), calisanSite(), yeni);
+  },
+});
+
+// POST /kapi/yonetici/fiyat-girisi-degistir: önizlemenin sürümüyle uygular; arada bir şey değiştiyse cakisma.
+export const fiyatGirisiDegisikligiUcu = ucTanimla({
+  giris: "yonetici",
+  sema: fiyatGirisiDegisikligiSemasi,
+  izin: "vergi.degistir",
+  sinir: "genel",
+  isle: async (girdi, _istek, _yanit, { hesapKimligi }) => {
+    await fiyatIzniniDenetle(hesapKimligi);
+    await fiyatGirisiServisi(calisanSite()).uygula(
+      siteninVeritabani(),
+      yonetici(hesapKimligi),
+      girdi,
+    );
+    return {};
+  },
+});
+
+// GET /kapi/yonetici/fiyat-girisi-csv?yeni=: müşteriye 1 kuruş farklı görünecek bütün fiyatlar.
+export const fiyatGirisiCsvUcu = ucTanimla({
+  giris: "yonetici",
+  sema: fiyatGirisiOnizlemeSemasi,
+  izin: "vergi.degistir",
+  sinir: "genel",
+  isle: async ({ yeni }, _istek, _yanit, { hesapKimligi }) => {
+    await fiyatIzniniDenetle(hesapKimligi);
+    const ad = `fiyat-girisi-${yeni}.csv`;
+    const dosya = await fiyatGirisiCsv(siteninVeritabani(), calisanSite(), yeni);
+    return new DosyaYaniti(new Uint8Array(dosya), "text/csv; charset=utf-8", ad, "ozel", ad);
   },
 });

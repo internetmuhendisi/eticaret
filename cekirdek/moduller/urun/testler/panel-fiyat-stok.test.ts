@@ -58,7 +58,13 @@ const yaz = (vt: Veritabani, urun: string, girdi: PanelFiyatStok, izinler = tamY
       kim,
       urun,
       girdi,
-      { fiyat, stok, bicimleyici, saatDilimi: "Europe/Istanbul" },
+      {
+        fiyat,
+        fiyatGirisi: async () => "vergi-dahil",
+        stok,
+        bicimleyici,
+        saatDilimi: "Europe/Istanbul",
+      },
       izinler,
     ),
   );

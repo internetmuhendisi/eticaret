@@ -37,3 +37,10 @@ export const vergiAyarlariSemasi = z.strictObject({
   kargoSinifi: kimlikSemasi.nullable(),
 });
 export type VergiAyarlariGirdisi = z.output<typeof vergiAyarlariSemasi>;
+
+// Fiyat girişinin değişikliği (kart 0326): önizleme ve CSV yalnız yeni girişi, uygulama önizlemenin sürümünü de alır.
+export const fiyatGirisiOnizlemeSemasi = z.strictObject({ yeni: z.enum(fiyatGirisleri) });
+export const fiyatGirisiDegisikligiSemasi = z.strictObject({
+  yeni: z.enum(fiyatGirisleri),
+  surum: z.string().regex(/^[0-9a-f]{32}$/),
+});

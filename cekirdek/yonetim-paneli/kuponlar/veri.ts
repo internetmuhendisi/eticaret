@@ -13,7 +13,8 @@ import {
   kuponPanelAyrintisi,
   kuponPanelListesi,
 } from "../../moduller/kampanya/panel";
-import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
+import { siteninMagazaAyarlari, siteninServisi } from "../../moduller/magaza-ayarlari/servis";
+import type { FiyatGirisi } from "../../moduller/vergi/semalar";
 import { siteninVeritabani } from "../../veritabani/baglanti";
 import type { ListeDurumu, ListeVerisi } from "../liste/tanim";
 import { kuponListesiGirdisi } from "./liste-tanimi";
@@ -162,12 +163,15 @@ export type KuponEkraniVerisi = {
   paraSimgesi: { simge: string; yer: "basta" | "sonda" };
   saatDilimi: string;
   harfDuyarli: boolean;
+  // Tutarların girildiği biçim (kart 0326): form onu gönderir, arada değiştiyse kayıt çakışır.
+  fiyatGirisi: FiyatGirisi;
 };
 
-const ortakEkranVerisi = () => {
+const ortakEkranVerisi = async () => {
   const site = calisanSite();
   const b = siteninBicimleyicisi(site.ayarlar);
   return {
+    fiyatGirisi: (await siteninServisi(site).oku(siteninVeritabani())).fiyatGirisi,
     paraSimgesi: b.paraSimgesi(),
     saatDilimi: site.ayarlar.saatDilimi,
     harfDuyarli: site.ayarlar.kuponKoduHarfDuyarli,
@@ -178,7 +182,12 @@ export const kuponEkraniVerisi = async (
   kimlik: string | undefined,
 ): Promise<KuponEkraniVerisi | undefined> => {
   if (kimlik === undefined) {
-    return { ...ortakEkranVerisi(), kullanildi: false, form: bosKuponFormu, silinmisKapsam: [] };
+    return {
+      ...(await ortakEkranVerisi()),
+      kullanildi: false,
+      form: bosKuponFormu,
+      silinmisKapsam: [],
+    };
   }
   const site = calisanSite();
   const b = siteninBicimleyicisi(site.ayarlar);
@@ -186,7 +195,7 @@ export const kuponEkraniVerisi = async (
   if (kupon === null) return undefined;
   const yerel = (an: Date | null) => (an === null ? "" : yerelZamana(an, site.ayarlar.saatDilimi));
   return {
-    ...ortakEkranVerisi(),
+    ...(await ortakEkranVerisi()),
     kimlik: kupon.kimlik,
     gorulen: kupon.degismeZamani.toISOString(),
     kullanildi: kupon.kullanildi,

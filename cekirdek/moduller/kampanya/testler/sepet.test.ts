@@ -82,7 +82,9 @@ const hazirla = async (hedef: Site = site) => {
   const kuponAc = (girdi: Parameters<ReturnType<typeof kuponServisi>["ekle"]>[2]) =>
     vt.transaction((islem) => kuponServisi(hedef).ekle(islem, yonetici(), girdi));
   const ayarla = (ayarlar: Parameters<ReturnType<typeof siteninServisi>["degistir"]>[2]) =>
-    siteninServisi(hedef).degistir(vt, yonetici(), ayarlar);
+    siteninServisi(hedef).degistir(vt, yonetici(), ayarlar, {
+      kendiIslevi: "fiyatGirisi" in ayarlar,
+    });
   const hesapla = (kalemler: { birim: string; adet: number }[], kod?: string) =>
     sepetiHesapla(vt, hedef, kalemler, kod === undefined ? {} : { kupon: { kod } });
   const ikinciSinif = async () => {

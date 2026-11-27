@@ -378,7 +378,8 @@ export const magazaAyarSemasi = z.strictObject({
   // Vergi hesabının ayarları (kart 0075, karar 0061). Seçenekler vergi modülündedir.
   fiyatGirisi: ayar(
     z.enum(fiyatGirisleri).default("vergi-dahil"),
-    magazaSahibinin("ayar.aciklama.fiyatGirisi"),
+    // Yalnız fiyat girişinin değişikliğiyle değişir (kart 0326): kayıtlı tutarlar aynı işlemde çevrilir.
+    magazaSahibinin("ayar.aciklama.fiyatGirisi", { kendiIsleviyle: true }),
   ),
   vergiAdresi: ayar(
     z.enum(vergiAdresleri).default("teslimat"),

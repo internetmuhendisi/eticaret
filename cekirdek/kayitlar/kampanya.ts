@@ -86,5 +86,7 @@ export const kuponHatalari = [
   "kayit-yok",
   "kullanildi",
   "kupon-degisti",
+  // Fiyat girişi ekran açıldıktan sonra değişti (kart 0326): tutarlar o biçimde yazılmıştı, kupon yazılmaz.
+  "giris-degisti",
 ] as const;
 export type KuponHatasi = (typeof kuponHatalari)[number];

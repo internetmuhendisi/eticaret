@@ -3,6 +3,7 @@
 // ayarıdır. Boş ücretsiz kargo sınırı "sınır yok" demektir.
 import { z } from "zod";
 import { ucretsizKargoTutarlari } from "../../kayitlar/sepet.ts";
+import { fiyatGirisleri } from "../vergi/semalar.ts";
 
 const tutarYazisi = z.string().trim().max(40);
 
@@ -14,5 +15,7 @@ export const kargoAyarlariSemasi = z.strictObject({
   ucretsizKargoTutari: z.enum(ucretsizKargoTutarlari),
   // İş günü, yazı olarak: sayı olmayan yazı alanın koduyla döner.
   kargoyaVermeSuresi: z.string().trim().min(1).max(10),
+  // Ekranın gördüğü fiyat girişi (kart 0326): tutarlar o biçimde yazılmıştır; arada değiştiyse kayıt çakışır.
+  fiyatGirisi: z.enum(fiyatGirisleri).optional(),
 });
 export type KargoAyarlariGirdisi = z.infer<typeof kargoAyarlariSemasi>;

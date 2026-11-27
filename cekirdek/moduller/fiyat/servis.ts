@@ -190,6 +190,52 @@ export const fiyatServisi = (ayarlar: () => FiyatAyarlari) => {
     });
   };
 
+  // Fiyat girişi değişince çevrilen fiyatlar (kart 0326, karar 0201): yalnız tutarlar değişir, indirimin zamanları ve
+  // para birimi kalır. Çağıranın işleminde, ürün kilidi alınmış olarak çalışır (giris-degisikligi.ts). Her birim fiyat
+  // yazımıyla aynı üç yere yazılır: bugünkü fiyat, geçmiş (yazanıyla) ve değişiklik kaydı.
+  const cevrilmisFiyatlariYaz = async (
+    islem: VeritabaniIslemi,
+    kim: DegisikligiYapan,
+    fiyatlar: readonly { birim: string; satisFiyati: number; indirimliFiyat: number | null }[],
+  ): Promise<void> => {
+    for (const { birim, satisFiyati, indirimliFiyat } of fiyatlar) {
+      const [eski] = await islem
+        .select(fiyatAlanlari)
+        .from(birimFiyatlari)
+        .where(eq(birimFiyatlari.birim_kimligi, birim));
+      if (eski === undefined) continue;
+      const yeni = { ...eski, satisFiyati, indirimliFiyat };
+      if (ayniMi(eski, yeni)) continue;
+      kurallariDenetle(yeni);
+      const satir = {
+        satis_fiyati: yeni.satisFiyati,
+        indirimli_fiyat: yeni.indirimliFiyat,
+        indirim_baslangici: yeni.indirimBaslangici,
+        indirim_bitisi: yeni.indirimBitisi,
+        para_birimi: yeni.paraBirimi,
+      };
+      await islem
+        .update(birimFiyatlari)
+        .set({ ...satir, guncellenme_zamani: sql`now()` })
+        .where(eq(birimFiyatlari.birim_kimligi, birim));
+      await islem.insert(fiyatGecmisi).values({
+        birim_kimligi: birim,
+        ...satir,
+        zaman: sql`clock_timestamp()`,
+        kim_turu: kim.tur,
+        kim_kimligi: kim.tur === "sistem" ? null : kim.kimlik,
+        kim_adi: kim.tur === "sistem" ? kim.ad : null,
+      });
+      await degisikligiKaydet(islem, {
+        kim,
+        islem: "fiyat.degisti",
+        kayit: { tur: "fiyat", kimlik: birim },
+        eski: kayitDegeri(eski),
+        yeni: kayitDegeri(yeni),
+      });
+    }
+  };
+
   // Birimlerin fiyatları tek sorguyla; fiyatı olmayan birim haritada yoktur. Silinmiş birimin fiyatı
   // da okunur (eski kayıtlar ona bağlıdır). Birimin satılıp satılamayacağına (silinmiş, görünmeyen
   // ürün) burada bakılmaz: sepet ve vitrin birimi önce kendi koşuluyla süzer (karar 0066).
@@ -342,6 +388,7 @@ export const fiyatServisi = (ayarlar: () => FiyatAyarlari) => {
     gecerliFiyatlar,
     fiyatGecmisiniOku,
     gecmisleriOku,
+    cevrilmisFiyatlariYaz,
     panelFiyatGecmisi,
   };
 };

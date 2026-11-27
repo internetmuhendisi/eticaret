@@ -243,6 +243,32 @@ describe("kupon uçları", () => {
     expect((await vt.select().from(kuponlar)).length).toBe(once + 1);
   });
 
+  it("ekranın gördüğü fiyat girişi bugünkü değilse (kart 0326) kupon yazılmaz", async () => {
+    const sahip = await hesap("magaza-sahibi");
+    const eski = await kuponEklemeUcu(
+      istek("kupon-ekle", sahip, { kupon: kupon(), fiyatGirisi: "vergi-haric" }),
+    );
+    expect(eski.status).toBe(409);
+    expect(await eski.json()).toMatchObject({
+      hata: { kod: "cakisma", ayrinti: [{ alan: "fiyatGirisi", kod: "giris-degisti" }] },
+    });
+    const tamam = await kuponEklemeUcu(
+      istek("kupon-ekle", sahip, { kupon: kupon(), fiyatGirisi: "vergi-dahil" }),
+    );
+    expect(tamam.status).toBe(200);
+    const { kimlik } = await veri<{ kimlik: string }>(tamam);
+    const [satir] = await vt.select().from(kuponlar).where(eq(kuponlar.kimlik, kimlik));
+    const degisiklik = await kuponDegisikligiUcu(
+      istek("kupon-degistir", sahip, {
+        kimlik,
+        gorulen: satir?.degisme_zamani.toISOString(),
+        fiyatGirisi: "vergi-haric",
+        kupon: { ad: "Eski ekran" },
+      }),
+    );
+    expect(degisiklik.status).toBe(409);
+  });
+
   it("görevli listeyi görür, ekleyemez ve değiştiremez; rolsüz yönetici, müşteri ve girişsiz ziyaretçi reddedilir", async () => {
     const sahip = await hesap("magaza-sahibi");
     const { kimlik } = await veri<{ kimlik: string }>(

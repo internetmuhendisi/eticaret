@@ -1065,6 +1065,34 @@ Vergi ekranının genel ayarlarını ve kargonun vergi sınıfını birlikte de�
 - Başarılı (200): `{ "basarili": true, "veri": { …ayarlar, "kargoSinifi" } }`.
 - Hatalar: `dogrulama` (şemaya uymayan girdi; `vergiAdi` `too_small` ya da `ad-bicimi`; `fiyatEkMetni` `too_small` ya da `gecersiz`; `kargoSinifi` `sinif-silinmis`: olmayan ya da silinmiş sınıf; hiçbir şey yazılmaz), `oturum-yok`, `yetki`.
 
+### POST /kapi/yonetici/fiyat-girisi-onizle
+
+Fiyat girişinin (vergi dahil ya da hariç) değişikliğinin önizlemesi (kart 0326, karar 0201): kaç ürün fiyatının çevrileceği, müşteriye 1 kuruş farklı görünecek fiyatlar (ilk 20 satır, ürün adı ve seçimiyle), kargo ücreti ve ücretsiz kargo sınırının önceki ve sonraki hâli, çevrilecek kupon sayısı, sınır ve kuponların çevrildiği sınıf. Hiçbir şey yazılmaz.
+
+- İzin: `vergi.degistir`; fiyatı değiştirme izni (`fiyat.degistir`) ayrıca denetlenir. Sınır: `genel`.
+- Girdi: `{ "yeni": "vergi-dahil" | "vergi-haric" }` (`fiyatGirisiOnizlemeSemasi`, `cekirdek/moduller/vergi/uc-semalari.ts`).
+- Servis: `cekirdek/moduller/fiyat/giris-degisikligi.ts` (`onizle`), veri `cekirdek/yonetim-paneli/vergi/fiyat-girisi-verisi.ts`.
+- Başarılı (200): `{ "basarili": true, "veri": { "eski", "yeni", "surum", "fiyatSayisi", "degisenSayisi", "degisenler": [{ "ad", "once", "sonra" }], "kargoUcreti": { "once", "sonra" }, "ucretsizKargoSiniri": { "once", "sonra" } | null, "kuponSayisi", "sepetSinifi" } }`.
+- Hatalar: `dogrulama`, `is-kurali` (`ayni-giris`: giriş zaten bu; `vergi-bolgesi-yok`: mağaza adresinin bölgesi vergi tablosunda yok), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/fiyat-girisi-degistir
+
+Fiyat girişini değiştirir ve kayıtlı tutarları çevirir (kart 0326, karar 0201): ürün fiyatları (geçmişe yeni satır ve `fiyat.degisti`), kupon tutarları (kullanılmışlar da; `kupon.degisti`), kargo ücreti ve ücretsiz kargo sınırı (`magaza-ayari.degisti`), girişin değişikliği (`fiyat-girisi.degisti`) tek işlemde. Planın sürümü önizlemeninkinden farklıysa (arada fiyat, kupon, kargo ya da vergi tablosu değişti) hiçbir şey yazılmaz.
+
+- İzin: `vergi.degistir` ve `fiyat.degistir`. Sınır: `genel`.
+- Girdi: `{ "yeni", "surum" }` (`fiyatGirisiDegisikligiSemasi`; sürüm önizlemenin verdiği 32 onaltılık harf).
+- Servis: `cekirdek/moduller/fiyat/giris-degisikligi.ts` (`uygula`).
+- Başarılı (200): `{ "basarili": true, "veri": {} }`.
+- Hatalar: `dogrulama`, `cakisma` (önizlemeden sonra değişen bir şey var), `is-kurali` (`ayni-giris`, `vergi-bolgesi-yok`), `oturum-yok`, `yetki`.
+
+### GET /kapi/yonetici/fiyat-girisi-csv
+
+Müşteriye 1 kuruş farklı görünecek bütün fiyatlar, indirilecek dosya olarak (`text/csv`, önbelleğe alınmaz; `fiyat-girisi-<yeni>.csv`): ürün, seçim, şimdiki ve sonraki tutar (gösterim biçiminde, simgesiz).
+
+- İzin: `vergi.degistir` ve `fiyat.degistir`. Sınır: `genel`.
+- Girdi: adres parametresi `yeni`.
+- Hatalar: `dogrulama`, `is-kurali`, `oturum-yok`, `yetki`.
+
 ### POST /kapi/yonetici/vergi-sinifi-ekle
 
 Yeni vergi sınıfı (kart 0322): silinmemişlerin sonuna eklenir, oransız başlar.

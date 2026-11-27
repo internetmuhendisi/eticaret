@@ -603,6 +603,36 @@ describe("fiyat ve stok bölümleri (kart 0265)", () => {
     ]);
   });
 
+  it("ekranın gördüğü fiyat girişi bugünkü değilse (kart 0326) fiyat yazılmaz, ürün de eklenmez", async () => {
+    const sahip = await cerez("magaza-sahibi");
+    const ad = `Eski giriş ${benzersiz()}`;
+    const yanit = await urunEklemeUcu(
+      istek("urun-ekle", sahip, {
+        urun: { ad, vergiSinifi: null },
+        fiyatStok: {
+          fiyatGirisi: "vergi-haric",
+          birimler: [{ yer: "fiyat", satisFiyati: tutar(100) }],
+        },
+      }),
+    );
+    expect(yanit.status).toBe(409);
+    expect(await yanit.json()).toMatchObject({
+      hata: { kod: "cakisma", ayrinti: [{ alan: "fiyatGirisi", kod: "giris-degisti" }] },
+    });
+    expect(await vt.select().from(urunler).where(eq(urunler.ad, ad))).toEqual([]);
+    // Bugünkü girişle eklenir.
+    const tamam = await urunEklemeUcu(
+      istek("urun-ekle", sahip, {
+        urun: { ad, vergiSinifi: null },
+        fiyatStok: {
+          fiyatGirisi: "vergi-dahil",
+          birimler: [{ yer: "fiyat", satisFiyati: tutar(100) }],
+        },
+      }),
+    );
+    expect(tamam.status).toBe(200);
+  });
+
   it("görevli fiyatı değiştiremez (ürünün değişikliği de yazılmaz), stoğu düzeltir; eski görülen miktar çakışır", async () => {
     const sahip = await cerez("magaza-sahibi");
     const kimlik = await ekle(sahip, { ad: `Görevli fiyat ${benzersiz()}`, vergiSinifi: null });

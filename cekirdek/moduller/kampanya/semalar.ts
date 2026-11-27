@@ -10,6 +10,7 @@ import {
   kuponTurleri,
 } from "../../kayitlar/kampanya.ts";
 import { kimlikSemasi } from "../../veritabani/kimlik.ts";
+import { fiyatGirisleri } from "../vergi/semalar.ts";
 
 // Hata kodlarının metinleri (kodlu form, cekirdek/yonetim-paneli/kodlu-form.ts).
 export const kuponHataMetinleri = Object.fromEntries(
@@ -36,14 +37,20 @@ export const kuponPanelAlanlari = {
 };
 export type KuponPanelGirdisi = z.infer<z.ZodObject<typeof kuponPanelAlanlari>>;
 
+// Ekranın gördüğü fiyat girişi (kart 0326): tutar kuponunun indirimi ve en az tutar o biçimde yazılmıştır; arada
+// değiştiyse kayıt çakışır.
+const gorulenGiris = z.enum(fiyatGirisleri).optional();
+
 export const kuponEklemeSemasi = z.strictObject({
   kupon: z.strictObject(kuponPanelAlanlari),
+  fiyatGirisi: gorulenGiris,
 });
 
 // Değişiklik: yalnız değişen alanlar ve ekranın gördüğü değişme anı.
 export const kuponDegisikligiSemasi = z.strictObject({
   kimlik: kimlikSemasi,
   gorulen: z.iso.datetime(),
+  fiyatGirisi: gorulenGiris,
   kupon: z
     .strictObject(kuponPanelAlanlari)
     .partial()

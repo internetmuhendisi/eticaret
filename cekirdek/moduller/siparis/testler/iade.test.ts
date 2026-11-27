@@ -492,7 +492,13 @@ describe("iade", () => {
 
   it("vergi hariç girişli sitede iadenin tutarı ve vergisi siparişin kaleminden (yeniden hesaplanmaz)", async () => {
     const h = await hazirla();
-    await siteninServisi(site).degistir(h.vt, yapan(), { fiyatGirisi: "vergi-haric" });
+    // Fiyat girişi yalnız kendi işleviyle değişir (kart 0326): ayar doğrudan yazılır.
+    await siteninServisi(site).degistir(
+      h.vt,
+      yapan(),
+      { fiyatGirisi: "vergi-haric" },
+      { kendiIslevi: true },
+    );
     const birim = await h.urunAc({ fiyat: 10_000 });
     const numara = await ver(h.vt, [{ birim, adet: 2 }]);
     await teslimEt(h.vt, numara);

@@ -614,7 +614,13 @@ describe("veritabanıyla vergi hesabı (kart 0075)", () => {
     ]);
     expect(dahil.dokum.map((satir) => satir.ad)).toEqual(["Deneme vergisi"]);
     // Ayar değişince hesap değişir: hariç 9999 × 0,18 = 1799,82 → 1800; 2990 × 0,18 = 538,2 → 538.
-    await siteninServisi(site).degistir(vt, yonetici(), { fiyatGirisi: "vergi-haric" });
+    // Fiyat girişi yalnız kendi işleviyle değişir (kart 0326): ayar doğrudan yazılır.
+    await siteninServisi(site).degistir(
+      vt,
+      yonetici(),
+      { fiyatGirisi: "vergi-haric" },
+      { kendiIslevi: true },
+    );
     const haric = await hesap();
     expect([haric.satirlar[0]?.vergi, haric.kargo?.vergi]).toEqual([1800, 538]);
     await siteninServisi(site).degistir(vt, yonetici(), { vergiAcik: false });

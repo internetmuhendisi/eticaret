@@ -27,8 +27,13 @@ const alanHatasiMetni: KodMetinleri = {
 };
 
 // Alana bağlanmayan hata (yetki, ağ, sunucu) formun başındaki özette yazılır.
+// Fiyat girişi sayfa açıldıktan sonra değiştiyse (kart 0326) tutarlar yazılmaz, sayfa yenilenir.
 const genelHataMetni = (hata: PanelHatasi): MetinAnahtari =>
-  hata.kod === "yetki" ? "yonetim.kargo.hata.yetki" : "yonetim.kargo.hata.genel";
+  hata.kod === "yetki"
+    ? "yonetim.kargo.hata.yetki"
+    : hata.ayrinti.some((sorun) => sorun.kod === "giris-degisti")
+      ? "yonetim.vergi.giris.ekranEskidi"
+      : "yonetim.kargo.hata.genel";
 
 const sinirTutariAdlari: Record<UcretsizKargoTutari, MetinAnahtari> = {
   "indirimden-sonra": "yonetim.kargo.indirimdenSonra",
@@ -50,7 +55,12 @@ export function KargoEkrani({ veri, izinli }: { veri: KargoEkraniVerisi; izinli:
   const kaydet = async (): Promise<boolean> => {
     const gonderilen = form;
     const sonuc = await pf.isle(() =>
-      islem("kargo-ayarlari", gonderilen, "yonetim.kargo.kaydedildi", { formda: true }),
+      islem(
+        "kargo-ayarlari",
+        { ...gonderilen, fiyatGirisi: veri.fiyatGirisi },
+        "yonetim.kargo.kaydedildi",
+        { formda: true },
+      ),
     );
     if (sonuc === undefined) return false;
     if (sonuc.tamam) {

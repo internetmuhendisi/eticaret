@@ -97,6 +97,8 @@ describe("basit ürün", () => {
     ).toEqual({
       indirimBaslangici: null,
       indirimBitisi: null,
+      // Fiyatlar ekranın gördüğü girişle gider (kart 0326).
+      fiyatGirisi: "vergi-dahil",
       birimler: [{ yer: "fiyat", birim: "b0", satisFiyati: "120,00", indirimliFiyat: "80,00" }],
     });
   });
@@ -125,6 +127,8 @@ describe("basit ürün", () => {
     expect(satirsiz({ ...form, baslangicStogu: "12", stokNotu: "Depo" }, form, yeniVeri)).toEqual({
       indirimBaslangici: null,
       indirimBitisi: null,
+      // Fiyatlar ekranın gördüğü girişle gider (kart 0326).
+      fiyatGirisi: "vergi-dahil",
       sebep: "yeni-mal",
       not: "Depo",
       birimler: [
@@ -206,6 +210,8 @@ describe("seçenekli ürün", () => {
     ).toEqual({
       indirimBaslangici: "2030-01-01T00:00",
       indirimBitisi: null,
+      // Fiyatlar ekranın gördüğü girişle gider (kart 0326).
+      fiyatGirisi: "vergi-dahil",
       birimler: [
         {
           yer: "birlesimler.1",

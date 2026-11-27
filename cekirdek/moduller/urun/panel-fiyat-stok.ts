@@ -22,8 +22,10 @@ import { varyantSinirlari } from "../../kayitlar/urun.ts";
 import { type Bicimleyici, yerelZamana } from "../../metinler/bicimleyici.ts";
 import type { VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { kimligiDuzelt, kimlikSemasi } from "../../veritabani/kimlik.ts";
+import { gorulenGirisiDenetle } from "../fiyat/giris-cevirisi.ts";
 import type { fiyatServisi } from "../fiyat/servis.ts";
 import type { stokServisi } from "../stok/servis.ts";
+import { type FiyatGirisi, fiyatGirisleri } from "../vergi/semalar.ts";
 import { yolla } from "./dogrulama.ts";
 import { urunBirimleri } from "./model.ts";
 import { birlesimAnahtari, secenekleriOku } from "./varyant.ts";
@@ -32,6 +34,8 @@ const tutarYazisi = z.string().trim().max(40);
 const yerelZaman = z.string().max(20).nullable();
 
 export const panelFiyatStokSemasi = z.strictObject({
+  // Ekranın gördüğü fiyat girişi (kart 0326): fiyatlar o biçimde yazılmıştır; arada değiştiyse kayıt çakışır.
+  fiyatGirisi: z.enum(fiyatGirisleri).optional(),
   indirimBaslangici: yerelZaman.optional(),
   indirimBitisi: yerelZaman.optional(),
   sebep: z.enum(elleStokSebepleri).optional(),
@@ -71,6 +75,8 @@ export type PanelFiyatStok = z.input<typeof panelFiyatStokSemasi>;
 
 type Servisler = {
   fiyat: ReturnType<typeof fiyatServisi>;
+  // Sitenin bugünkü fiyat girişi; ürün kilidinden sonra okunur (girişin değişikliğiyle sıraya girer).
+  fiyatGirisi: (islem: VeritabaniIslemi) => Promise<FiyatGirisi>;
   stok: ReturnType<typeof stokServisi>;
   bicimleyici: Bicimleyici;
   saatDilimi: string;
@@ -126,6 +132,7 @@ export const panelFiyatStokYaz = async (
   if (fiyatVar && !izinler.fiyat) {
     throw new BilinenHata("yetki", [{ alan: "fiyat", kod: "fiyat-yetkisi" }]);
   }
+  if (fiyatVar) gorulenGirisiDenetle(girdi.fiyatGirisi, await servisler.fiyatGirisi(islem));
   if (stokVar && !izinler.stok) {
     throw new BilinenHata("yetki", [{ alan: "stok", kod: "stok-yetkisi" }]);
   }

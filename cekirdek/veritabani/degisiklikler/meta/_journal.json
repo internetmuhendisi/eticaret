@@ -498,6 +498,13 @@
       "when": 1795800916153,
       "tag": "0070_panel-bildirimleri",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1795809941024,
+      "tag": "0071_fiyat-girisi-cevirisi",
+      "breakpoints": true
     }
   ]
 }

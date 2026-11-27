@@ -65,6 +65,9 @@ export const degisiklikIslemleri = [
   "ozellik-secenegi.silindi",
   // Satılabilir birimin fiyatı (kart 0080). İlk fiyatta eski değer boştur.
   "fiyat.degisti",
+  // Fiyat girişi (vergi dahil ya da hariç) değişti, kayıtlı tutarlar çevrildi (kart 0326, karar 0201). Kayıt kimliği
+  // fiyat girişi geçmişinin satırıdır; fiyatlar, kuponlar ve ayarlar ayrıca kendi kayıtlarıyla girer.
+  "fiyat-girisi.degisti",
   // Satılabilir birimin stoğu panelden elle düzeltildi (kart 0082). Siparişin düşürmesi ve iptalin
   // artırması yalnız stok geçmişine yazılır.
   "stok.duzeltildi",
@@ -184,6 +187,7 @@ export const degisiklikKayitTurleri = [
   "ozellik-secenegi",
   // Kayıt kimliği satılabilir birimin kimliğidir (kart 0080).
   "fiyat",
+  "fiyat-girisi",
   // Kayıt kimliği satılabilir birimin kimliğidir (kart 0082).
   "stok",
   // Kart 0105: sitenin tema sürümü.
