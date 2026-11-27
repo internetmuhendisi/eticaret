@@ -170,6 +170,18 @@ const yazan = (satir: {
         eposta: satir.kimTuru === "musteri" ? satir.musteriEpostasi : satir.yoneticiEpostasi,
       };
 
+// Siparişin aramasının koşulu (liste ve panelin araması, kart 0321): numara, e-posta ya da teslimattaki ad, aramanın
+// harf kuralıyla (cekirdek/metinler/arama-anahtari.ts): "deniz" "DENİZ"i, "ayse" "Ayşe"yi bulur. strpos ile aranır:
+// "%" ve "_" düz harftir.
+const siparisAramaKosulu = (metin: string) => {
+  const aranan = aramaAnahtari(metin);
+  return or(
+    sql`strpos(${aramaAnahtariSql(siparisler.numara)}, ${aranan}) > 0`,
+    sql`strpos(${aramaAnahtariSql(siparisler.eposta)}, ${aranan}) > 0`,
+    sql`strpos(${aramaAnahtariSql(sql`(${siparisler.teslimat}->>'ad') || ' ' || (${siparisler.teslimat}->>'soyad')`)}, ${aranan}) > 0`,
+  );
+};
+
 export const siparisYonetimi = (site: Site) => {
   const liste = async (vt: Veritabani, girdi: SiparisListesiGirdisi): Promise<SiparisListesi> => {
     const varMi = (tablo: typeof siparisIadeTalepleri | typeof siparisIadeleri) =>
@@ -272,18 +284,7 @@ export const siparisYonetimi = (site: Site) => {
     const kosullar: (SQL | undefined)[] = [...suzgecler];
     if (girdi.durum !== undefined) kosullar.push(eq(siparisler.durum, girdi.durum));
     if (girdi.bakilacak === true) kosullar.push(bakilacak);
-    if (girdi.ara !== undefined) {
-      // Aramanın harf kuralıyla (cekirdek/metinler/arama-anahtari.ts): "deniz" "DENİZ"i, "ayse" "Ayşe"yi bulur.
-      // strpos ile aranır: "%" ve "_" düz harftir.
-      const aranan = aramaAnahtari(girdi.ara);
-      kosullar.push(
-        or(
-          sql`strpos(${aramaAnahtariSql(siparisler.numara)}, ${aranan}) > 0`,
-          sql`strpos(${aramaAnahtariSql(siparisler.eposta)}, ${aranan}) > 0`,
-          sql`strpos(${aramaAnahtariSql(sql`(${siparisler.teslimat}->>'ad') || ' ' || (${siparisler.teslimat}->>'soyad')`)}, ${aranan}) > 0`,
-        ),
-      );
-    }
+    if (girdi.ara !== undefined) kosullar.push(siparisAramaKosulu(girdi.ara));
     const nerede = and(...kosullar);
     const suzgecKosulu = and(...suzgecler);
     const [sayim] = await vt.select({ adet: count() }).from(siparisler).where(nerede);
@@ -706,5 +707,21 @@ export const siparisYonetimi = (site: Site) => {
     return sonuc;
   };
 
-  return { liste, kargoFirmalari, ayrinti, islemYap, notEkle, topluIslem };
+  // Panelin araması (kart 0321): aramaya uyan siparişler, en yeni önce, en çok verilen sayıda. Kişisel bilgisi silinmiş
+  // siparişin adı ve e-postası yoktur: yalnız numarasıyla bulunur.
+  const ara = async (vt: Veritabani, metin: string, sinir: number) =>
+    vt
+      .select({
+        numara: siparisler.numara,
+        teslimat: siparisler.teslimat,
+        durum: siparisler.durum,
+        toplam: siparisler.toplam,
+        paraBirimi: siparisler.para_birimi,
+      })
+      .from(siparisler)
+      .where(siparisAramaKosulu(metin))
+      .orderBy(desc(siparisler.olusturma_zamani), desc(siparisler.numara))
+      .limit(sinir);
+
+  return { liste, ara, kargoFirmalari, ayrinti, islemYap, notEkle, topluIslem };
 };

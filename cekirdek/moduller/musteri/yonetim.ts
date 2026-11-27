@@ -209,6 +209,16 @@ export const musteriYonetimi = (site: Site) => {
     };
   };
 
+  // Aramanın koşulu (liste ve panelin araması, kart 0321): e-posta ya da ad, aramanın harf kuralıyla
+  // (cekirdek/metinler/arama-anahtari.ts); strpos: "%" ve "_" düz harftir.
+  const aramaKosulu = (o: ReturnType<typeof ozetler>, metin: string) => {
+    const aranan = aramaAnahtari(metin);
+    return or(
+      sql`strpos(${aramaAnahtariSql(musteriler.eposta)}, ${aranan}) > 0`,
+      sql`strpos(${aramaAnahtariSql(sql`coalesce(${o.adIfadesi}, '')`)}, ${aranan}) > 0`,
+    );
+  };
+
   // Listenin ve ayrıntının ortak sorgusu: müşteriler, özetleri, adı ve kampanya izni.
   const birlesik = (vt: Veritabani, o: ReturnType<typeof ozetler>) =>
     vt
@@ -245,16 +255,7 @@ export const musteriYonetimi = (site: Site) => {
     if (girdi.siparis !== undefined && girdi.siparis.length === 1) {
       kosullar.push(girdi.siparis[0] === "var" ? sql`${o.adet} > 0` : sql`${o.adet} = 0`);
     }
-    if (girdi.ara !== undefined) {
-      // Aramanın harf kuralıyla (cekirdek/metinler/arama-anahtari.ts); strpos: "%" ve "_" düz harftir.
-      const aranan = aramaAnahtari(girdi.ara);
-      kosullar.push(
-        or(
-          sql`strpos(${aramaAnahtariSql(musteriler.eposta)}, ${aranan}) > 0`,
-          sql`strpos(${aramaAnahtariSql(sql`coalesce(${o.adIfadesi}, '')`)}, ${aranan}) > 0`,
-        ),
-      );
-    }
+    if (girdi.ara !== undefined) kosullar.push(aramaKosulu(o, girdi.ara));
     const nerede = and(...kosullar);
     const [sayim] = await vt
       .select({ adet: count() })
@@ -279,6 +280,16 @@ export const musteriYonetimi = (site: Site) => {
       sayfaSayisi,
       sayfaBoyu: girdi.sayfaBoyu,
     };
+  };
+
+  // Panelin araması (kart 0321): silinmemiş üyelerden aramaya uyanlar, en yeni kayıt önce, en çok verilen sayıda.
+  const ara = async (vt: Veritabani, metin: string, sinir: number): Promise<MusteriSatiri[]> => {
+    const o = ozetler(vt);
+    const satirlar = await birlesik(vt, o)
+      .where(and(isNull(musteriler.silinme_zamani), aramaKosulu(o, metin)))
+      .orderBy(desc(musteriler.olusturulma_zamani), desc(musteriler.kimlik))
+      .limit(sinir);
+    return satirlar.map(({ kampanyaZamani: _zaman, ...satir }) => satir);
   };
 
   // Müşterinin ayrıntısı: silinmiş ya da olmayan hesapta null.
@@ -446,5 +457,5 @@ export const musteriYonetimi = (site: Site) => {
     return { sonuc };
   };
 
-  return { liste, ayrinti, acikMi, notEkle, notSil, sifreSifirlamaGonder };
+  return { liste, ara, ayrinti, acikMi, notEkle, notSil, sifreSifirlamaGonder };
 };

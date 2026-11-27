@@ -1977,7 +1977,7 @@
     "urunler": {
       "liste": "Ürünler",
       "ara": "Ürün ara",
-      "araYer": "Ad ya da stok kodu",
+      "araYer": "Ad, stok kodu ya da barkod",
       "suzgec": {
         "durum": "Durum",
         "kategori": "Kategori",
@@ -3281,6 +3281,40 @@
       "kopyalananFiyatsiz": "Açıklamalar, kategori, marka, etiketler, özellikler, seçenekler ve birleşimler, görseller ve videolar ve ilgili ürünler kopyalanır.",
       "kopyalanmayanFiyatsiz": "Kopyalanmayanlar: fiyatlar (fiyatı değiştirme izniniz yok; kopya fiyatsız açılır, fiyatı mağaza sahibi girer), stok kodu ve barkod (her ürünün kendisine özeldir, boş kalır), stok (0), yorumlar, favoriler, fiyat ve stok geçmişi.",
       "kaydedilmemis": "Bu sayfada kaydedilmemiş değişiklik var. Kopya ürünün kaydedilmiş hâlinden yapılır; kaydetmediğiniz değişiklikler kaybolur. Önce kaydetmek için Vazgeç'e basın."
+    },
+    "arama": {
+      "etiket": "Panelde ara: sipariş, ürün, stok kodu, barkod, müşteri",
+      "yerTutucu": "Sipariş, ürün, stok kodu, müşteri…",
+      "aciklama": "Yazdıkça sonuçlar gelir; ok tuşlarıyla gezin, Enter ile açın.",
+      "ac": "Panelde ara",
+      "kapat": "Aramayı kapat",
+      "sonuclar": "Arama sonuçları",
+      "grup": {
+        "siparis": "Siparişler",
+        "urun": "Ürünler",
+        "musteri": "Müşteriler"
+      },
+      "aranan": {
+        "siparis": "Siparişin numarası, müşterinin adı ya da e-postası",
+        "urun": "Ürünün adı, stok kodu ya da barkodu",
+        "musteri": "Müşterinin adı ya da e-postası"
+      },
+      "kisa": "Aramak için en az {sayi} harf yazın.",
+      "yukleniyor": "Aranıyor…",
+      "sonucYok": "\"{aranan}\" için sonuç bulunamadı.",
+      "aranabilenler": "Şunlarla arayabilirsiniz:",
+      "sonucSayisi": "{sayi} sonuç bulundu.",
+      "hata": "{grup} alınamadı. Biraz sonra yeniden deneyin.",
+      "sinir": "Çok sık arama yapıldı. Bir dakika bekleyip yeniden deneyin.",
+      "klavye": "Ok tuşlarıyla gezin, Enter ile açın.",
+      "butunUrunler": "Bütün ürünlerde ara",
+      "ayrac": " · ",
+      "siparisSayisi": "{sayi} sipariş",
+      "kisayol": "Ctrl K",
+      "kisayolAciklama": "Kısayol: {kisayol}.",
+      "kisayolMac": "⌘ K",
+      "sonucSayisiFazla": "{sayi} sonuç gösteriliyor, daha fazlası var.",
+      "dahaFazla": "Daha fazla sonuç var, aramayı daraltın."
     }
   },
   "vitrin": {

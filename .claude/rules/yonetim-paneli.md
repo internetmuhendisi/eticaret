@@ -35,6 +35,13 @@ paths:
 - Elle sıralanan küçük listeler `SiralanabilirListe` ile, metinleri `siralamaMetinleri` ile yazılır.
 - Eklentinin getirdiği sayfa ağaçta `eklenti` alanını taşır (karar 0117): eklenti sitede kapalıysa menüde yoktur, `panelSayfasiniAc` bulunamadı verir.
 
+## Panelin araması (karar 0191)
+
+- Arama çerçevededir (`cekirdek/yonetim-paneli/arama/panel-aramasi.tsx`, kart 0321): masaüstünde ana bölgenin üstündeki şeritte, telefon ve tablette üst çubuktaki büyüteçle; Ctrl K kutuya götürür. Ekran kendi arama kutusunu çerçeveye eklemez.
+- Aranan türler, uçları ve izinleri `cekirdek/kayitlar/panel-arama.ts` kaydındadır; düzen yöneticinin izni olan türleri verir, ekran ötekilerin isteğini göndermez. Yeni tür kayda, kendi ucuyla ve izniyle eklenir.
+- Satırlar (başlık, alt yazı, adres) sunucuda sitenin biçimiyle kurulur (`arama/veri.ts`). Sipariş, ürün ve müşterinin arama koşulu listeninkiyle tek işlevdir (ürün listesi barkodu da arar); birini değiştiren ikisini değiştirir.
+- Kısayol Ctrl K'dır, Mac'te Cmd K (`aramaKisayoluMu`, `useAramaKisayolu`); başka bir dinleyicinin işlediği tuş yok sayılır.
+
 ## Vitrin bölümleri ekranı (karar 0115)
 
 - Panel ekranı kapıya yalnız `panelIstegi` ile gider (`cekirdek/yonetim-paneli/panel-istegi.ts`); sonucu bildirimle verir (`bildirimGoster`). Bildirim alanı çerçevededir, ekran ikinci bir alan açmaz.

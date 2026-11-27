@@ -35,7 +35,7 @@ Bileşen, düğme, giriş alanı, pencere gibi tekrar kullanılan arayüz parça
 
 - `bilesenler/parcalar/` (kart 0103, karar 0077, shadcn/ui'dan uyarlanmış):
   - `Dugme`, `IkonDugmesi`, `Baglanti`
-  - `GirisAlani`, `UzunMetinAlani` (kart 0106), `Etiket`, `SecimKutusu`, `OnayKutusu`
+  - `GirisAlani` (odağı dışarıdan vermek için `ref` alır, kart 0321), `UzunMetinAlani` (kart 0106), `Etiket`, `SecimKutusu`, `OnayKutusu`
   - `BicimliMetinAlani` (kart 0263, karar 0162): biçimli metin (Tiptap); araç çubuğu kalın, eğik, ara başlık, madde ve sıralı liste, bağlantı. Araç çubuğu tek sekme durağıdır, ok tuşları, Home ve End ile gezilir; bağlantı satırı Enter ile uygular, Escape ile kapanıp odağı yazıya verir. Bağlantının kuralını kullanan verir (`baglantiGecerliMi`).
   - `AcilirMenu`, `Pencere`, `YanPencere`, `Sekmeler`
   - `AcilirPanel` (kart 0267, karar 0169; shadcn/ui popover): tetikleyiciyle açılan küçük pencere, içinde form alanı durabilir (açılır menünün öğeleri yalnız seçimdir). İçerik adlı `dialog`'dur (`aria-label` zorunlu), odak içine girer, Escape ve dışarı tıklama kapatır, odak tetikleyiciye döner; sayfayı kilitlemez. Genişliği `w-acilir` (18rem), ekranın kenarına en az 8 px yaklaşır. Liste motorunun tarih süzgeci kullanır.

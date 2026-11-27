@@ -1409,7 +1409,7 @@ Panelin özellik formunun tek kaydı (kart 0261): alanlar ve seçeneklerin son h
 
 ### GET /kapi/yonetici/urunler
 
-Panelin ürün listesinin bir sayfası (kart 0262, karar 0161): taslak, zamanlanmış, gizli ve arşiv dahil bütün silinmemiş ürünler. Girdi ve yanıt panel sayfasınınkiyle aynıdır (liste tanımı `urunListesiTanimi`, `urunListesiVerisi`). Satırın fiyatı vitrindeki kartın fiyatı (`fiyatAraliklari`), stok durumu vitrinin kuralıdır (`stokDurumlari`). Ana görsel yalnız sitedeki görselleri görme izni (`dosya.gor`) olana verilir.
+Panelin ürün listesinin bir sayfası (kart 0262, karar 0161): taslak, zamanlanmış, gizli ve arşiv dahil bütün silinmemiş ürünler. Arama ad, silinmemiş birimin stok kodu ya da barkodudur (barkod kart 0321'den beri; panelin aramasıyla aynı koşul). Girdi ve yanıt panel sayfasınınkiyle aynıdır (liste tanımı `urunListesiTanimi`, `urunListesiVerisi`). Satırın fiyatı vitrindeki kartın fiyatı (`fiyatAraliklari`), stok durumu vitrinin kuralıdır (`stokDurumlari`). Ana görsel yalnız sitedeki görselleri görme izni (`dosya.gor`) olana verilir.
 
 - İzin: `urun.gor`. Sınır: `genel`.
 - Girdi: adres parametreleri `durum` (yayın durumları, virgülle), `kategori` ve `marka` (kimlikler, virgülle; kategori alt kategorileriyle), `stok` (`stokta`, `dusuk`, `tukendi`, virgülle), `ara` (ad ya da stok kodu, en çok 100 karakter), `sirala` (`son-degisen`, `ad-artan`, `ad-azalan`, `stok-artan`, `stok-azalan`, `fiyat-artan`, `fiyat-azalan`), `sayfa` (`listeUcuSemasi`).
@@ -1526,6 +1526,32 @@ Basit ürünün "Stoğu düzelt" penceresi (kart 0265): birimin stoğunu sebebiy
 - Servis: `urununGecmisSayfasi` (stok servisinin `panelStokGecmisi`).
 - Başarılı (200): `{ "basarili": true, "veri": { "satirlar", "devam"? } }`.
 - Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
+
+### GET /kapi/yonetici/panel-siparis-ara
+
+Panelin üst şeridindeki arama (kart 0321, karar 0191). Her tür kendi ucunda, kendi izniyle aranır; ekran yalnız yöneticinin izni olan türlerin ucuna gider. Üç uçta ortak: harf kuralı aramanınkidir (Türkçe harfsiz, büyük küçük harf ayrımsız), `%` ve `_` düz harftir, aranan metin herhangi bir yerde geçebilir; en çok 5 sonuç gelir, fazlası varsa `dahaFazla`; satırlar ekran için sunucuda biçimlenir (tutar sitenin para biçimiyle, durum sitenin metniyle). Girdi adres parametresi `ara`'dır (boşluklar kırpılır; en az 2, en çok 100 karakter; `panelAramaSemasi`, `cekirdek/yonetim-paneli/arama/veri.ts`). Başarılı (200): `{ "basarili": true, "veri": { "satirlar": [{ "baslik", "alt", "adres" }], "dahaFazla": false } }`.
+
+Bu uç siparişleri arar: numara, e-posta ya da teslimattaki ad ve soyad; en yeni önce. Kişisel bilgisi silinmiş sipariş yalnız numarasıyla bulunur.
+
+- İzin: `siparis.gor`. Sınır: `genel`.
+- Servis: `siparisYonetimi(...).ara` (`cekirdek/moduller/siparis/yonetim.ts`).
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`, `istek-siniri`.
+
+### GET /kapi/yonetici/panel-urun-ara
+
+Panelin araması (kart 0321), ürünler: silinmemiş ürünün adı ya da silinmemiş biriminin (basit ürünün birimi ya da birleşim) stok kodu ya da barkodu; son değişen önce. Taslak, gizli ve arşivdeki ürün de bulunur. Girdi ve yanıt `panel-siparis-ara` ile aynı.
+
+- İzin: `urun.gor`. Sınır: `genel`.
+- Servis: `urunPanelAramasi` (`cekirdek/moduller/urun/panel-listesi.ts`).
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`, `istek-siniri`.
+
+### GET /kapi/yonetici/panel-musteri-ara
+
+Panelin araması (kart 0321), müşteriler: silinmemiş üyenin e-postası ya da adı (Müşteriler listesindeki ad); en yeni kayıt önce. Girdi ve yanıt `panel-siparis-ara` ile aynı.
+
+- İzin: `musteri.gor`. Sınır: `genel`.
+- Servis: `musteriYonetimi(...).ara` (`cekirdek/moduller/musteri/yonetim.ts`).
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`, `istek-siniri`.
 
 ### GET /kapi/yonetici/kayit-ara
 

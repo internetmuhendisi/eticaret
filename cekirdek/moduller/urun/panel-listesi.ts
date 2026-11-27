@@ -2,8 +2,8 @@
 // sıralama ve sayfa sunucuda, tek sorguda. Satırın fiyatı ve stok durumu vitrinle aynı işlevlerden gelir
 // (fiyatAraliklari, stokDurumlari): ürün sayısıyla artmayan birkaç sorgu, yalnız gösterilen sayfanın ürünleri için.
 //
-// - Arama: ad ve silinmemiş birimin stok kodu; harf kuralı aramanınkidir (aramaAnahtari: Türkçe harfsiz, büyük küçük
-//   harf ayrımsız). Aranan metin alanın herhangi bir yerinde geçebilir (strpos: % ve _ joker değildir).
+// - Arama: ad ve silinmemiş birimin stok kodu ya da barkodu (barkod kart 0321'den beri; panelin araması aynı koşulu
+//   kullanır); harf kuralı aramanınkidir (aramaAnahtari: Türkçe harfsiz, büyük küçük harf ayrımsız). Aranan metin alanın herhangi bir yerinde geçebilir (strpos: % ve _ joker değildir).
 // - Süzgeçler: yayın durumu (birden çok), kategori (alt kategorileriyle, birden çok), marka (birden çok), stok durumu
 //   (birden çok). Aynı süzgecin değerleri "ya da", süzgeçler "ve" ile birleşir. Silinmiş kategori ve marka sayılmaz.
 // - Stok durumu (kayitlar/urun.ts, urunPanelStokDurumlari): tükendi tukenmisUrunKosulu ile (vitrinin tanımı), düşük
@@ -155,17 +155,56 @@ const enDusukFiyatSql = (ayarlar: UrunPanelAyarlari) => {
   >`coalesce(${enDusuk(birimSatilabilirKosulu(ayarlar.paraBirimi))}, ${enDusuk(sql`true`)})`;
 };
 
-// Aranan metin adda ya da silinmemiş bir birimin stok kodunda geçer.
+// Birimin stok kodunda ya da barkodunda aranan metin geçer.
+const birimEslesir = (aranan: string): SQL => sql`(
+  strpos(${aramaAnahtariSql(sql`coalesce(${urunBirimleri.stok_kodu}, '')`)}, ${aranan}) > 0
+  or strpos(${aramaAnahtariSql(sql`coalesce(${urunBirimleri.barkod}, '')`)}, ${aranan}) > 0
+)`;
+
+// Aranan metin adda ya da silinmemiş bir birimin stok kodunda ya da barkodunda geçer. Listenin ve panelin araması
+// (kart 0321) aynı koşuldur: "Bütün ürünlerde ara" aramanın bulduğunu listede de bulur.
 const aramaKosulu = (aranan: string): SQL => sql`(
   strpos(${aramaAnahtariSql(urunler.ad)}, ${aranan}) > 0
   or exists (
     select 1 from ${urunBirimleri}
     where ${urunBirimleri.urun_kimligi} = ${urunler.kimlik}
       and ${urunBirimleri.silinme_zamani} is null
-      and ${urunBirimleri.stok_kodu} is not null
-      and strpos(${aramaAnahtariSql(urunBirimleri.stok_kodu)}, ${aranan}) > 0
+      and ${birimEslesir(aranan)}
   )
 )`;
+
+// Panelin araması (kart 0321): silinmemiş ürünlerden listenin arama koşuluna uyanlar, son değişen önce, en çok
+// verilen sayıda. Eşleşen birimin stok kodu (yoksa barkodu) satırda gösterilir; adla bulunan üründe basit birimin
+// stok kodu.
+export const urunPanelAramasi = async (
+  vt: Veritabani,
+  metin: string,
+  sinir: number,
+): Promise<{ kimlik: string; ad: string; durum: UrunDurumu; kod: string | null }[]> => {
+  const aranan = aramaAnahtari(metin);
+  const birimdeKod = (kosul: SQL) => sql<string | null>`(
+    select coalesce(${urunBirimleri.stok_kodu}, ${urunBirimleri.barkod}) from ${urunBirimleri}
+    where ${urunBirimleri.urun_kimligi} = ${urunler.kimlik}
+      and ${urunBirimleri.silinme_zamani} is null
+      and ${kosul}
+    order by ${urunBirimleri.sira}, ${urunBirimleri.kimlik}
+    limit 1
+  )`;
+  const satirlar = await vt
+    .select({
+      kimlik: urunler.kimlik,
+      ad: urunler.ad,
+      durum: urunler.durum,
+      kod: sql<
+        string | null
+      >`coalesce(${birimdeKod(birimEslesir(aranan))}, ${birimdeKod(sql`${urunBirimleri.birlesim} = ''`)})`,
+    })
+    .from(urunler)
+    .where(and(isNull(urunler.silinme_zamani), aramaKosulu(aranan)))
+    .orderBy(desc(urunler.guncellenme_zamani), desc(urunler.kimlik))
+    .limit(sinir);
+  return satirlar.map((satir) => ({ ...satir, durum: satir.durum as UrunDurumu }));
+};
 
 const gecerliKimlikler = (kimlikler: readonly string[] | undefined) =>
   (kimlikler ?? []).filter(kimlikMi).map(kimligiDuzelt);

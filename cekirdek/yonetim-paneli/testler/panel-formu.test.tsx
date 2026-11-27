@@ -441,7 +441,13 @@ describe("telefonda menü", () => {
     yol.simdi = "/yonetim/siparisler";
     const cerceve = () => (
       <MetinSaglayici dil="tr">
-        <PanelCercevesi magaza={{ ad: "Mağaza" }} eposta="" gruplar={[]} altyapiAdi="">
+        <PanelCercevesi
+          magaza={{ ad: "Mağaza" }}
+          eposta=""
+          gruplar={[]}
+          altyapiAdi=""
+          aramaTurleri={[]}
+        >
           <p>{buSayfa}</p>
         </PanelCercevesi>
       </MetinSaglayici>

@@ -2,7 +2,7 @@
 // buradan okur. Sunucuda ve tarayıcıda çalışır.
 // - Süzgeçler: yayın durumu, kategori (alt kategorileriyle), stok durumu, marka (taslağın sırası). Kategori ve marka
 //   sitenin kayıtlarıdır (kayıt süzgeci): seçenekleri sayfa verir.
-// - Arama: ad ya da stok kodu; ürün bilgisi kişisel değildir, adreste durur.
+// - Arama: ad, stok kodu ya da barkod (kart 0321); ürün bilgisi kişisel değildir, adreste durur.
 // - Toplu işlemler: fiyat, stok, kategoriye ekle ve çıkar (kart 0314, pencerede önizlenir), yayınla, taslağa al,
 //   arşive al, sil (karar 0157), her biri kendi izniyle.
 import type { PanelSayfaBoyu } from "../../kayitlar/liste";

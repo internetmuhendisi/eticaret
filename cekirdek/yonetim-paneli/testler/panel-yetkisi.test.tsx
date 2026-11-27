@@ -232,6 +232,35 @@ describe("panelin çerçevesi", () => {
   });
 });
 
+// Kart 0321: panelin araması yöneticinin izni olan türlerle; izni olan tür yoksa çizilmez.
+describe("panelin araması (kart 0321)", () => {
+  const icerik = "icerik";
+  const ciz = async () => {
+    const dugum = (await PanelDuzeni({ children: <p>{icerik}</p> })) as ReactElement<{
+      aramaTurleri: readonly string[];
+    }>;
+    return {
+      turler: dugum.props.aramaTurleri,
+      html: renderToString(<MetinSaglayici dil="tr">{dugum}</MetinSaglayici>),
+    };
+  };
+
+  it("mağaza sahibi üç türü, görevli siparişi ve ürünü arar; rolsüz yöneticide arama yok", async () => {
+    await yoneticiyleGir("magaza-sahibi");
+    const sahip = await ciz();
+    expect(sahip.turler).toEqual(["siparis", "urun", "musteri"]);
+    expect(sahip.html).toContain(`aria-label="${metin("yonetim.arama.etiket")}"`);
+    expect(sahip.html).toContain(`aria-label="${metin("yonetim.arama.ac")}"`);
+    await yoneticiyleGir("gorevli");
+    expect((await ciz()).turler).toEqual(["siparis", "urun"]);
+    await yoneticiyleGir();
+    const rolsuz = await ciz();
+    expect(rolsuz.turler).toEqual([]);
+    expect(rolsuz.html).not.toContain(metin("yonetim.arama.etiket"));
+    expect(rolsuz.html).not.toContain(metin("yonetim.arama.ac"));
+  });
+});
+
 describe("menüdeki sayı (kart 0277)", () => {
   const icerik = "icerik";
   const ciz = async () =>
