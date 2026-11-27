@@ -64,6 +64,8 @@ export const siparisListesiTanimi = {
   // izni kayıttaki işleminkidir (siparisIslemleri); uç da aynısını denetler.
   topluIslemler: [
     { kod: "fis", izin: "siparis.gor" },
+    // "Dışa aktar" (kart 0316) seçilenlerle dışa aktarma penceresini açar; izni uçlarınkidir.
+    { kod: "disa-aktar", izin: "siparis.gor" },
     ...siparisTopluIslemleri.map((kod) => ({ kod, izin: siparisIslemleri[kod].izin })),
   ],
 } as const satisfies ListeTanimi;

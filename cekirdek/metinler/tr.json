@@ -1712,7 +1712,6 @@
       "aciklama": "Siparişleri CSV dosyası olarak indirin. Excel ve muhasebe programları açar.",
       "hangileri": "Hangi siparişler",
       "listedekiler": "Listedeki {sayi} sipariş",
-      "listedekilerSuzgecli": "Listedeki {sayi} sipariş ({suzgecler})",
       "secililer": "Seçili {sayi} sipariş",
       "aramaYok": "Arama kutusuna yazılan dosyaya uygulanmaz; süzgeçler uygulanır.",
       "satirlar": "Satırlar",
@@ -1727,7 +1726,6 @@
       "hazir": "Dosya hazır: {sayi} sipariş.",
       "hatali": "Dosya hazırlanamadı. Yeniden deneyin.",
       "indir": "Dosyayı indir",
-      "kapat": "Kapat",
       "hata": {
         "siparis-yok": "Bu süzgeçlere uyan sipariş yok; süzgeçleri değiştirin.",
         "cok-fazla-siparis": "Bir dosyada en çok {sayi} sipariş olabilir. Tarih süzgeciyle daraltın.",

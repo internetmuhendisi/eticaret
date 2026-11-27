@@ -302,16 +302,19 @@ describe("değer süzgeci (kart 0267)", () => {
 });
 
 describe("toplu işlemin izni (bağımsız kontrolün bulgusu)", () => {
-  it("her toplu işlemin izni kayıttaki işleminkidir; fiş yazdırmanınki fiş sayfasınınkidir (kart 0270)", () => {
+  it("her toplu işlemin izni kayıttaki işleminkidir; fiş yazdırmanınki fiş sayfasınınkidir (kart 0270), dışa aktarmanınki siparişler sayfasınınkidir (kart 0316)", () => {
     for (const { kod, izin } of siparisListesiTanimi.topluIslemler) {
       expect(izin).toBe(
         kod === "fis"
           ? sayfaTanimi(panelSayfalari, "siparis-fisi")?.izin
-          : siparisIslemleri[kod].izin,
+          : kod === "disa-aktar"
+            ? sayfaTanimi(panelSayfalari, "siparisler")?.izin
+            : siparisIslemleri[kod].izin,
       );
     }
     expect(siparisListesiTanimi.topluIslemler.map(({ kod }) => kod)).toEqual([
       "fis",
+      "disa-aktar",
       ...siparisTopluIslemleri,
     ]);
   });

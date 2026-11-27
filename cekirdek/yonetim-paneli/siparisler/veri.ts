@@ -16,6 +16,7 @@ import {
   type MusteriIadeNedeni,
   type SiparisDurumu,
   type SiparisIslemi,
+  siparisDisaAktarmaAyari,
   siparisDurumlari,
   type TumIadeNedeni,
   yapilabilirIslemler,
@@ -35,6 +36,7 @@ import { adresSurumu } from "../../moduller/siparis/adres-duzeltme";
 import { siparisAyarlari } from "../../moduller/siparis/ayarlar";
 import { type SiparisFaturasi, siparisFaturaServisi } from "../../moduller/siparis/fatura";
 import type { HesapSiparisi, OncekiIade } from "../../moduller/siparis/iade-hesabi";
+import { calisanDisaAktarmaServisi } from "../../moduller/siparis/isler";
 import type { Siparis, SiparisKalemi } from "../../moduller/siparis/model";
 import { siparisYonetimi } from "../../moduller/siparis/yonetim";
 import { siteninVeritabani } from "../../veritabani/baglanti";
@@ -42,6 +44,7 @@ import type { BolgeUlkesi } from "../../vitrin/odeme/alanlar";
 import { teslimatUlkeleri } from "../../vitrin/odeme/ulkeler";
 import { musteriAyrintisiAdresi } from "../adresler";
 import { type ListeDurumu, type ListeVerisi, tarihSuzgecininAyrikGunleri } from "../liste/tanim";
+import type { DisaAktarmaKutusuVerisi } from "./disa-aktarma";
 import { bakilacakSekmesi, siparisListesiGirdisi } from "./liste-tanimi";
 
 const bicim = () => siteninBicimleyicisi(calisanSite().ayarlar);
@@ -663,5 +666,28 @@ export const siparisAyarlariVerisi = async () => {
   return {
     ...(await ayarlar.oku(siteninVeritabani())),
     gorunenBildirimler: ayarlar.gorunenBildirimler(),
+  };
+};
+
+// Listenin üstündeki dışa aktarma kutusu (kart 0316): yöneticinin son dışa aktarması hazırlanıyorsa, hatalıysa ya da
+// hazır olup indirilmemişse.
+export const disaAktarmaKutusuVerisi = async (
+  yonetici: string,
+): Promise<DisaAktarmaKutusuVerisi> => {
+  const bilgi = await calisanDisaAktarmaServisi().durum(siteninVeritabani(), yonetici);
+  if (bilgi === null || (bilgi.durum === "hazir" && bilgi.indirildi)) return null;
+  return {
+    kimlik: bilgi.kimlik,
+    durum: bilgi.durum,
+    siparisSayisi: bicim().sayi(bilgi.siparisSayisi),
+  };
+};
+
+// Dışa aktarma penceresinin sayıları sitenin biçimiyle (kart 0316): listedeki sipariş sayısı ve dosya sınırı.
+export const disaAktarmaSayilari = (toplam: number | null) => {
+  const b = bicim();
+  return {
+    sayiYazisi: toplam === null ? null : b.sayi(toplam),
+    sinirYazisi: b.sayi(siparisDisaAktarmaAyari.enCokSiparis),
   };
 };

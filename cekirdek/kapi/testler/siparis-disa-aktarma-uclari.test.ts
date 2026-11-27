@@ -177,7 +177,7 @@ describe("siparişleri dışa aktarma uçları", () => {
     );
     expect(indir.headers.get("cache-control")).toContain("no-store");
     const icerik = Buffer.from(await indir.arrayBuffer()).toString("utf8");
-    expect(icerik.startsWith("﻿")).toBe(true);
+    expect(icerik.startsWith("\ufeff")).toBe(true);
     expect(icerik).toContain(ilk);
     expect(icerik).toContain(ikinci);
     // Başka yöneticinin dosyası yoktur.

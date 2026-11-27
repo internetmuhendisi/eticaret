@@ -18,7 +18,8 @@ export const metinHucresi = (deger: string | null | undefined): CsvHucresi => ({
 export const sayiHucresi = (deger: string): CsvHucresi => ({ tur: "sayi", deger });
 
 const formulBaslangici = /^[=+\-@\t\r]/;
-const bom = "﻿";
+// Bayt sırası işareti (U+FEFF).
+const bom = String.fromCharCode(0xfeff);
 const satirSonu = "\r\n";
 
 const hucreYazisi = (hucre: CsvHucresi, ayrac: string): string => {

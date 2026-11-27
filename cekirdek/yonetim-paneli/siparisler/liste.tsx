@@ -15,6 +15,7 @@ import { siparisAyrintisiAdresi, siparisFisiAdresi } from "../adresler";
 import { panelEylemleri } from "../eylemler";
 import { Liste, type SutunTanimi, type TopluIslemTanimi } from "../liste/liste";
 import type { ListeDurumu, ListeVerisi } from "../liste/tanim";
+import { DisaAktarmaPenceresi } from "./disa-aktarma";
 import { DurumRozeti } from "./durum-rozeti";
 import { bakilacakSekmesi, siparisListesiTanimi } from "./liste-tanimi";
 import { durumMetni, odemeYazisi } from "./metinler";
@@ -167,6 +168,25 @@ export function SiparisListesi({
         },
       ]
     : [];
+  // Seçilenleri dışa aktarma (kart 0316): pencere dosyayı hazırlatır ve kapanır; seçim kalır, sonuç listenin üstündeki
+  // kutudadır.
+  const disaAktar: TopluIslemTanimi<SiparisSatiri>[] = topluIslemler.includes("disa-aktar")
+    ? [
+        {
+          tur: "pencere",
+          kod: "disa-aktar",
+          ad: metin("yonetim.eylem.disaAktar"),
+          pencere: ({ satirlar, kapat }) => (
+            <DisaAktarmaPenceresi
+              kapsam={{ tur: "secili", numaralar: satirlar.map((satir) => satir.numara) }}
+              kapat={kapat}
+            />
+          ),
+          basari: () => "",
+          neden: () => "",
+        },
+      ]
+    : [];
   const islemler: TopluIslemTanimi<SiparisSatiri>[] = topluIslemler.includes("hazirlamaya-al")
     ? [
         {
@@ -250,7 +270,7 @@ export function SiparisListesi({
           </Baglanti>
         ),
       }}
-      topluIslemler={[...fis, ...islemler]}
+      topluIslemler={[...fis, ...disaAktar, ...islemler]}
     />
   );
 }

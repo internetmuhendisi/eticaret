@@ -172,7 +172,7 @@ const tumu: SiparisListesiSuzgecleri = { siralama: "en-yeni" };
 // Dosyayı hazırlar, indirir ve CSV'yi satırlara ayırır (tırnaklı hücre, ikilenmiş tırnak).
 const csvOku = (dosya: Buffer): string[][] => {
   const yazi = dosya.toString("utf8");
-  expect(yazi.startsWith("﻿")).toBe(true);
+  expect(yazi.startsWith("\ufeff")).toBe(true);
   const ayrac = b.csvAyraci();
   const satirlar: string[][] = [];
   let satir: string[] = [];
