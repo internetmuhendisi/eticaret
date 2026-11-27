@@ -38,3 +38,4 @@ Siparişler temel pakette CSV dosyasına aktarılır (kullanıcı kararı, karar
 - Ücretsiz kargo kuponunda "Kupon indirimi" verilmeyen kargo ücretidir (sipariş ayrıntısıyla aynı); kargo sütunu 0'dır.
 - Sayfa açıkken başka sekmede başlatılan dışa aktarma kutuda sayfa yenilenince görünür.
 - Panel içi bildirim (kart 0280) yoktur; hazır dosya listenin kutusunda görünür.
+- Taslaktan bilerek ayrılan yerler: pencerede "Hangi siparişler" seçim grubu değil yazıdır (kapsamı pencereyi açan düğme belirler: komut çubuğu listeyi, toplu çubuk seçilenleri); kutu süzgeç şeridinin altında değil listenin üstündedir (liste motorunda o yerde parça yuvası yoktur). Karşılaştırma bilgisayar ve telefonda görüntüyle bir kez yapıldı; kutunun kalın başlığı taslağa göre eklendi.
