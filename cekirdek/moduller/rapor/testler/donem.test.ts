@@ -6,6 +6,7 @@ import { gunEkle } from "../../../metinler/bicimleyici.ts";
 import {
   donemGunleri,
   gunSayisi,
+  karsilastirmaDonemi,
   oncekiDonem,
   raporDonemDegeri,
   raporDonemDegeriniCoz,
@@ -78,6 +79,35 @@ describe("raporun dönemi", () => {
     expect(oncekiDonem({ baslangic: "2026-03-01", bitis: "2026-03-31" })).toEqual({
       baslangic: "2026-01-29",
       bitis: "2026-02-28",
+    });
+  });
+
+  it("bu ay önceki ayın aynı günleriyle (kısa ayda son gününe kadar), geçen ay ondan önceki ayın tamamıyla karşılaştırılır", () => {
+    const kiyas = (kod: string, bugun: string) => {
+      const deger = raporDonemDegeriniCoz(kod);
+      if (deger === undefined) throw new Error(kod);
+      return karsilastirmaDonemi(deger, donemGunleri(deger, bugun));
+    };
+    expect(kiyas("bu-ay", "2026-11-27")).toEqual({ baslangic: "2026-10-01", bitis: "2026-10-27" });
+    expect(kiyas("bu-ay", "2026-03-31")).toEqual({ baslangic: "2026-02-01", bitis: "2026-02-28" });
+    expect(kiyas("bu-ay", "2028-03-30")).toEqual({ baslangic: "2028-02-01", bitis: "2028-02-29" });
+    expect(kiyas("bu-ay", "2027-01-15")).toEqual({ baslangic: "2026-12-01", bitis: "2026-12-15" });
+    expect(kiyas("gecen-ay", "2026-11-27")).toEqual({
+      baslangic: "2026-09-01",
+      bitis: "2026-09-30",
+    });
+    expect(kiyas("gecen-ay", "2026-03-10")).toEqual({
+      baslangic: "2026-01-01",
+      bitis: "2026-01-31",
+    });
+    // Ötekiler aynı uzunlukta hemen önce.
+    expect(kiyas("son-7-gun", "2026-11-27")).toEqual({
+      baslangic: "2026-11-14",
+      bitis: "2026-11-20",
+    });
+    expect(kiyas("2026-11-10_2026-11-12", "2026-11-27")).toEqual({
+      baslangic: "2026-11-07",
+      bitis: "2026-11-09",
     });
   });
 });

@@ -24,6 +24,7 @@ import { siparisYonetimi } from "../../siparis/yonetim.ts";
 import { stokServisi } from "../../stok/servis.ts";
 import { urunServisi } from "../../urun/servis.ts";
 import { siteninVergiServisi } from "../../vergi/servis.ts";
+import { oncekiDonem } from "../donem.ts";
 import { satisRaporu } from "../satis.ts";
 
 vi.setConfig({ testTimeout: 120_000 });
@@ -210,7 +211,7 @@ describe("satış raporu", () => {
     });
     await iadeAni(h.vt, iptal, ms(bas, 1000));
 
-    const sonuc = await rapor.rapor(h.vt, gun(gunu), false);
+    const sonuc = await rapor.rapor(h.vt, gun(gunu), null);
     expect(sonuc.ozet.siparisSayisi).toBe(2);
     expect(sonuc.ozet.satis).toBe(icerideIlk.toplam + icerideSon.toplam);
     expect(sonuc.ozet.ortalamaSepet).toBe(Math.round((icerideIlk.toplam + icerideSon.toplam) / 2));
@@ -232,7 +233,7 @@ describe("satış raporu", () => {
     const ilk = await ode(h.vt, await ver(h.vt, [{ birim, adet: 1 }]), bas);
     const sonuncu = await ode(h.vt, await ver(h.vt, [{ birim, adet: 2 }]), ms(son, -1));
     await ode(h.vt, await ver(h.vt, [{ birim, adet: 3 }]), son);
-    const sonuc = await satisRaporu(newYork).rapor(h.vt, gun(gunu), false);
+    const sonuc = await satisRaporu(newYork).rapor(h.vt, gun(gunu), null);
     expect(sonuc.ozet.siparisSayisi).toBe(2);
     expect(sonuc.ozet.satis).toBe(ilk.toplam + sonuncu.toplam);
     expect(sonuc.seri.noktalar).toEqual([
@@ -446,7 +447,8 @@ describe("satış raporu", () => {
       await ver(h.vt, [{ birim, adet: 3 }]),
       ms(gununBasi("2026-11-01", tz), -1),
     );
-    const sonuc = await rapor.rapor(h.vt, { baslangic: "2026-11-01", bitis: "2026-11-03" }, true);
+    const donem = { baslangic: "2026-11-01", bitis: "2026-11-03" };
+    const sonuc = await rapor.rapor(h.vt, donem, oncekiDonem(donem));
     expect(sonuc.onceki?.donem).toEqual({ baslangic: "2026-10-29", bitis: "2026-10-31" });
     expect(sonuc.onceki?.ozet).toMatchObject({ siparisSayisi: 1, satis: onceki.toplam });
     expect(sonuc.seri).toEqual({
@@ -458,7 +460,7 @@ describe("satış raporu", () => {
       ],
     });
     // 32 gün: haftalık, dönemin ilk gününden yedişer gün, son nokta kısa.
-    const uzun = await rapor.rapor(h.vt, { baslangic: "2026-10-03", bitis: "2026-11-03" }, false);
+    const uzun = await rapor.rapor(h.vt, { baslangic: "2026-10-03", bitis: "2026-11-03" }, null);
     expect(uzun.seri.tur).toBe("haftalik");
     expect(uzun.seri.noktalar.map(({ baslangic, bitis }) => [baslangic, bitis])).toEqual([
       ["2026-10-03", "2026-10-09"],
@@ -472,7 +474,7 @@ describe("satış raporu", () => {
       siparisSayisi: 3,
     });
     // 31 gün hâlâ günlük.
-    const sinir = await rapor.rapor(h.vt, { baslangic: "2026-10-04", bitis: "2026-11-03" }, false);
+    const sinir = await rapor.rapor(h.vt, { baslangic: "2026-10-04", bitis: "2026-11-03" }, null);
     expect(sinir.seri.tur).toBe("gunluk");
     expect(sinir.seri.noktalar).toHaveLength(31);
   });

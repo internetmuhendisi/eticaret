@@ -24,7 +24,7 @@ import type { IadeDurumu } from "../../kayitlar/siparis.ts";
 import { gunEkle } from "../../metinler/bicimleyici.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { siparisIadeleri, siparisler } from "../siparis/model.ts";
-import { donemAnlari, type GunAraligi, gunSayisi, oncekiDonem } from "./donem.ts";
+import { donemAnlari, type GunAraligi, gunSayisi } from "./donem.ts";
 
 type Vt = Veritabani | VeritabaniIslemi;
 
@@ -188,17 +188,21 @@ export const satisRaporu = (site: Site) => {
     return { tur: adim === 1 ? "gunluk" : "haftalik", noktalar };
   };
 
-  const rapor = async (vt: Vt, donem: GunAraligi, karsilastir: boolean): Promise<SatisRaporu> => {
-    const onceki = oncekiDonem(donem);
+  // Karşılaştırılan dönem çağırandandır (karsilastirmaDonemi, donem.ts); null ise karşılaştırma yok.
+  const rapor = async (
+    vt: Vt,
+    donem: GunAraligi,
+    onceki: GunAraligi | null,
+  ): Promise<SatisRaporu> => {
     const [buOzet, oncekiOzet, buSeri] = await Promise.all([
       ozet(vt, donem),
-      karsilastir ? ozet(vt, onceki) : Promise.resolve(null),
+      onceki === null ? Promise.resolve(null) : ozet(vt, onceki),
       seri(vt, donem),
     ]);
     return {
       donem,
       ozet: buOzet,
-      onceki: oncekiOzet === null ? null : { donem: onceki, ozet: oncekiOzet },
+      onceki: onceki === null || oncekiOzet === null ? null : { donem: onceki, ozet: oncekiOzet },
       seri: buSeri,
     };
   };

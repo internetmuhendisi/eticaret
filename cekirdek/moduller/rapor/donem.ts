@@ -1,6 +1,7 @@
 // Raporun dönemi (kart 0317, karar 0195). Adresteki değer hazır dönemin kodu ya da iki gün ("2026-10-01_2026-10-31",
 // iki uç da zorunlu, iki uç dahil). Günler sitenin saat dilimindeki takvim günleridir; anlara gününBasi çevirir (kart
-// 0267'nin kuralı: yaz saati, gece yarısı yaşanmayan gün). Önceki dönem aynı uzunlukta, hemen önceki günlerdir.
+// 0267'nin kuralı: yaz saati, gece yarısı yaşanmayan gün). Karşılaştırılan dönem: "bu ay" önceki ayın aynı günleri,
+// "geçen ay" ondan önceki ayın tamamı, öteki dönemler aynı uzunlukta hemen önceki günler (kullanıcı kararı, karar 0195).
 import {
   type RaporHazirDonemi,
   raporHazirDonemleri,
@@ -71,3 +72,26 @@ export const donemAnlari = (donem: GunAraligi, saatDilimi: string): { bas: Date;
   bas: gununBasi(donem.baslangic, saatDilimi),
   son: gununBasi(gunEkle(donem.bitis, 1), saatDilimi),
 });
+
+// Ayın gün sayısı ("YYYY-AA" ile başlayan gün).
+const ayinGunSayisi = (gun: string): number => {
+  const [yil = 0, ay = 1] = gun.split("-").map(Number);
+  return new Date(Date.UTC(yil, ay, 0)).getUTCDate();
+};
+const oncekiAyinIlki = (gun: string): string =>
+  `${gunEkle(`${gun.slice(0, 8)}01`, -1).slice(0, 8)}01`;
+
+// Karşılaştırılan dönem. "Bu ay" (ayın 1'inden bugüne) önceki ayın aynı günleriyle; önceki ay kısaysa son günüyle
+// biter (31 Mart'ta 1–29 Şubat). "Geçen ay" ondan önceki ayın tamamıyla. Ötekiler oncekiDonem.
+export const karsilastirmaDonemi = (deger: RaporDonemDegeri, donem: GunAraligi): GunAraligi => {
+  if (deger.tur === "hazir" && deger.kod === "bu-ay") {
+    const baslangic = oncekiAyinIlki(donem.baslangic);
+    const gun = Math.min(Number(donem.bitis.slice(8, 10)), ayinGunSayisi(baslangic));
+    return { baslangic, bitis: gunEkle(baslangic, gun - 1) };
+  }
+  if (deger.tur === "hazir" && deger.kod === "gecen-ay") {
+    const baslangic = oncekiAyinIlki(donem.baslangic);
+    return { baslangic, bitis: gunEkle(baslangic, ayinGunSayisi(baslangic) - 1) };
+  }
+  return oncekiDonem(donem);
+};

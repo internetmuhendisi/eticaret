@@ -17,7 +17,7 @@ import { odemeBilgileriSemasi } from "../../moduller/odeme/semalar.ts";
 import { odemeServisi } from "../../moduller/odeme/servis.ts";
 import { hesapAc } from "../../moduller/oturum/servis.ts";
 import { satisRaporuCsv } from "../../moduller/rapor/csv.ts";
-import { donemGunleri } from "../../moduller/rapor/donem.ts";
+import { donemGunleri, karsilastirmaDonemi, oncekiDonem } from "../../moduller/rapor/donem.ts";
 import { satisRaporu } from "../../moduller/rapor/satis.ts";
 import { siparisler } from "../../moduller/siparis/model.ts";
 import { siparisYonetimi } from "../../moduller/siparis/yonetim.ts";
@@ -178,7 +178,8 @@ describe("rapor uçları", () => {
       `attachment; filename="satis-raporu-${bugun}-${bugun}.csv"`,
     );
     const dosya = Buffer.from(await yanit.arrayBuffer());
-    const rapor = await satisRaporu(site).rapor(vt, { baslangic: bugun, bitis: bugun }, true);
+    const gunu = { baslangic: bugun, bitis: bugun };
+    const rapor = await satisRaporu(site).rapor(vt, gunu, oncekiDonem(gunu));
     expect(rapor.ozet.satis).toBe(siparis.toplam);
     expect(dosya.equals(satisRaporuCsv(site, rapor))).toBe(true);
     const yazi = dosya.toString("utf8");
@@ -188,6 +189,16 @@ describe("rapor uçları", () => {
     );
     expect(yazi).toContain(metin("yonetim.rapor.csv.oncekiDonem"));
 
+    // "Bu ay" önceki ayın aynı günleriyle karşılaştırılır (karar 0195).
+    const buAy = donemGunleri({ tur: "hazir", kod: "bu-ay" }, bugun);
+    const buAyinKiyasi = karsilastirmaDonemi({ tur: "hazir", kod: "bu-ay" }, buAy);
+    expect(buAyinKiyasi.baslangic.slice(8)).toBe("01");
+    const ayYazisi = Buffer.from(
+      await (await satisRaporuCsvUcu(istek("?donem=bu-ay", sahip))).arrayBuffer(),
+    ).toString("utf8");
+    expect(ayYazisi).toContain(
+      `${metin("yonetim.rapor.csv.oncekiDonem")}${b.csvAyraci()}${buAyinKiyasi.baslangic}${b.csvAyraci()}${buAyinKiyasi.bitis}\r\n`,
+    );
     const kiyassiz = await satisRaporuCsvUcu(istek("?donem=bugun&karsilastir=0", sahip));
     const kiyassizYazi = Buffer.from(await kiyassiz.arrayBuffer()).toString("utf8");
     expect(kiyassizYazi).not.toContain(metin("yonetim.rapor.csv.oncekiDonem"));

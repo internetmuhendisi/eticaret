@@ -9,6 +9,7 @@ import { metin, siteninBicimleyicisi } from "../../metinler/site-metni";
 import { siteninMagazaAyarlari } from "../../moduller/magaza-ayarlari/servis";
 import {
   donemGunleri,
+  karsilastirmaDonemi,
   type RaporDonemDegeri,
   raporDonemDegeri,
   raporDonemDegeriniCoz,
@@ -48,7 +49,12 @@ export const raporuOku = async (
   istek: CozulenRaporIstegi,
 ): Promise<SatisRaporu> => {
   const bugun = takvimGunu(new Date(), site.ayarlar.saatDilimi);
-  return satisRaporu(site).rapor(vt, donemGunleri(istek.deger, bugun), istek.karsilastir);
+  const donem = donemGunleri(istek.deger, bugun);
+  return satisRaporu(site).rapor(
+    vt,
+    donem,
+    istek.karsilastir ? karsilastirmaDonemi(istek.deger, donem) : null,
+  );
 };
 
 export type SatisKutusu = {

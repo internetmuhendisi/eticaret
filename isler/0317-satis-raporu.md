@@ -26,6 +26,15 @@ Bölüm: Yönetim paneli 2. Önce 0311, 0312 ve 0298 bitmiş olmalı.
 - Ekran görüntüsü taslakla yan yana kondu, farklar düzeltildi.
 - Bağımsız kontrol yapıldı.
 
+## Sonuç
+
+- Kullanıcı kararları (karar 0195): raporu yalnız mağaza sahibi görür (`rapor.gor`); satış ödemenin alındığı günde, iade tamamlandığı günde sayılır; çok satanlar kart 0318'de; "bu ay" önceki ayın aynı günleriyle, "geçen ay" ondan önceki ayın tamamıyla karşılaştırılır.
+- Rapor modülü `cekirdek/moduller/rapor/` (dönem, satış servisi, CSV), ekran `cekirdek/yonetim-paneli/raporlar/`, uç `rapor-satis-csv`, varsayılan dönem ayarı `raporVarsayilanDonem` (panelde yeri kart 0334), iki kısmi indeks (değişiklik 0068).
+- Sorgu hızı 100 bin siparişte (yerel, yedi çalışmanın ortancası): bugün 5 ms, son 30 gün 13 ms, bir yıl 113 ms (karar 0195).
+- Testler ve bozmalar `.claude/rules/kurallari-koruyan-kontroller.md`'de (Testler satırı, kart 0317): 35 denetimden 34'ü bozulunca kırmızı; iade sorgusunun ilk durum koşulu yalnız daraltır.
+- Taslakla karşılaştırma bilgisayar ve telefonda iki temada yapıldı; ayrılan yerler karar 0195'te.
+- Bağımsız kontrolün 13 bulgusundan 12'si düzeldi; ondalıklı vergi oranının yuvarlanması eski sorun, kart 0335. Çalışırken bulunan hat düşüşleri kart 0332 ve 0333.
+
 ## Durum
 
 yapılacak
