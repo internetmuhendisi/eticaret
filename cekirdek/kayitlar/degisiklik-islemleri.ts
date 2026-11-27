@@ -22,6 +22,8 @@ export const degisiklikIslemleri = [
   "urun.eklendi",
   "urun.degisti",
   "urun.silindi",
+  // Kart 0320: ürün kopyalandı; yeni ürünün kaydı, değerinde kaynak ürün.
+  "urun.kopyalandi",
   // Önerilen sıralama (kart 0136): mağaza sahibinin elle sırası, tek genel sıra.
   "urun.vitrin-sirasi",
   // Varyantlı ürünün seçenekleri, değerleri ve birleşimleri (kart 0085). Değeri silinen birleşim de

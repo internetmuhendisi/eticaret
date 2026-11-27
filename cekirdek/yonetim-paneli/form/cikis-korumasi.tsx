@@ -40,6 +40,8 @@ type KorunanForm = {
 
 type Koruma = {
   kaydol: (kimlik: string, form: KorunanForm) => () => void;
+  // Sayfada kaydedilmemiş değişikliği olan form var mı (kart 0320: kopyalama penceresi söyler).
+  degisenVar: () => boolean;
 };
 
 const KorumaBaglami = createContext<Koruma | null>(null);
@@ -92,7 +94,13 @@ export function CikisKorumasi({ children }: { children: ReactNode }) {
       formlar.current.delete(kimlik);
     };
   }, []);
-  const deger = useMemo(() => ({ kaydol }), [kaydol]);
+  const deger = useMemo(
+    () => ({
+      kaydol,
+      degisenVar: () => [...formlar.current.values()].some((form) => form.degisti()),
+    }),
+    [kaydol],
+  );
 
   const git = (adres: string) => {
     // Gidilen sayfada eski formların kaydı kalmaz (çizimden çıkınca silinir); gezinme beklemeden başlar.
@@ -198,4 +206,10 @@ export const useCikisKorumasi = (form: KorunanForm) => {
     window.addEventListener("beforeunload", ayrilirken);
     return () => window.removeEventListener("beforeunload", ayrilirken);
   }, [koruma, kimlik]);
+};
+
+// Sayfada kaydedilmemiş değişiklik var mı: çağrıldığı anda sorar. Koruma yoksa yoktur.
+export const useDegisenFormVar = (): (() => boolean) => {
+  const koruma = useContext(KorumaBaglami);
+  return () => koruma?.degisenVar() ?? false;
 };

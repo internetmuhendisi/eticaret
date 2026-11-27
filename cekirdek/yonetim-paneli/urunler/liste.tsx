@@ -4,8 +4,16 @@
 // da), sayfa ve dört toplu işlem. Satırda ana görsel, ad ve stok kodu (varyantlı üründe birleşim sayısı), yayın
 // durumu, kategoriler, stok durumu ve vitrindeki fiyat; sayfası vitrinde açılan üründe "Vitrinde gör". Masaüstünde
 // tablo, telefonda her ürün bir kart (.claude/rules/telefon-gorunumu.md). Ürünün adı ürün ekranına gider (kart 0263).
+import { useState } from "react";
 import { Ikon } from "../../../bilesenler/ikonlar/ikon";
+import {
+  AcilirMenu,
+  AcilirMenuIcerigi,
+  AcilirMenuOgesi,
+  AcilirMenuTetikleyici,
+} from "../../../bilesenler/parcalar/acilir-menu";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
+import { IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
 import { Rozet } from "../../../bilesenler/parcalar/rozet";
 import {
   type UrunDurumu,
@@ -20,9 +28,13 @@ import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
 import { kayitAdresleri } from "../../vitrin/adresler";
 import { urunEkraniAdresi } from "../adresler";
+import { panelEylemleri } from "../eylemler";
 import { KatalogGorseli } from "../katalog-gorseli";
 import { Liste, type SutunTanimi, type TopluIslemTanimi } from "../liste/liste";
 import type { ListeDurumu, ListeVerisi } from "../liste/tanim";
+import { useMenudenPencere } from "../menuden-pencere";
+import { panelIkonu } from "../panel-ikon";
+import { UrunKopyalamaPenceresi } from "./kopyalama";
 import { urunListesiTanimi } from "./liste-tanimi";
 import { type ParaSimgesi, TopluDuzenlemePenceresi, topluDuzenlemeNedeni } from "./toplu-duzenleme";
 import type { KayitSecenegi, UrunSatiri } from "./veri";
@@ -111,6 +123,33 @@ function Ad({ satir }: { satir: UrunSatiri }) {
   );
 }
 
+// Satırın sonundaki "Diğer işlemler" menüsü (kart 0320): bugün "Kopyala". Pencere menü kapandıktan sonra açılır.
+function SatirMenusu({
+  satir,
+  kopyala,
+}: {
+  satir: UrunSatiri;
+  kopyala: (satir: UrunSatiri) => void;
+}) {
+  const metin = usePanelMetni();
+  const menudenPencere = useMenudenPencere();
+  return (
+    <AcilirMenu>
+      <AcilirMenuTetikleyici asChild>
+        <IkonDugmesi
+          ikon={panelIkonu("diger")}
+          etiket={doldur(metin("yonetim.urunKopyalama.digerIslemler"), { ad: satir.ad })}
+        />
+      </AcilirMenuTetikleyici>
+      <AcilirMenuIcerigi align="end" onCloseAutoFocus={menudenPencere.kapaninca}>
+        <AcilirMenuOgesi onSelect={menudenPencere.sec(() => kopyala(satir))}>
+          {metin(panelEylemleri["urun-kopyala"].ad)}
+        </AcilirMenuOgesi>
+      </AcilirMenuIcerigi>
+    </AcilirMenu>
+  );
+}
+
 function VitrindeGor({ satir }: { satir: UrunSatiri }) {
   const metin = usePanelMetni();
   if (!satir.vitrinde) return null;
@@ -156,6 +195,8 @@ export function UrunListesi({
   kayitSecenekleri,
   topluIslemler,
   para,
+  kopyalayabilir,
+  fiyatIzni,
 }: {
   durum: ListeDurumu;
   veri: ListeVerisi<UrunSatiri> | null;
@@ -164,8 +205,13 @@ export function UrunListesi({
   topluIslemler: readonly string[];
   // Toplu fiyat değişikliğinin tutar alanının simgesi, sitenin biçimiyle (sunucu verir).
   para: ParaSimgesi;
+  // Ürün ekleme izni (urun.degistir): satırın "Kopyala"sı (kart 0320); fiyat izni yoksa kopya fiyatsızdır.
+  kopyalayabilir: boolean;
+  fiyatIzni: boolean;
 }) {
   const metin = usePanelMetni();
+  const [kopyalanacak, setKopyalanacak] = useState<{ kimlik: string; ad: string } | null>(null);
+  const kopyala = (satir: UrunSatiri) => setKopyalanacak({ kimlik: satir.kimlik, ad: satir.ad });
   const sutunlar: SutunTanimi<UrunSatiri>[] = [
     {
       kod: "urun",
@@ -208,6 +254,15 @@ export function UrunListesi({
       baslik: metin("yonetim.urunler.sutun.vitrin"),
       hucre: (satir) => <VitrindeGor satir={satir} />,
     },
+    ...(kopyalayabilir
+      ? [
+          {
+            kod: "islemler",
+            baslik: metin("yonetim.urunKopyalama.islemler"),
+            hucre: (satir: UrunSatiri) => <SatirMenusu satir={satir} kopyala={kopyala} />,
+          },
+        ]
+      : []),
   ];
   // Toplu düzenlemeler (kart 0314): her biri kendi penceresini açar, önizler ve uygular.
   const duzenlemeler: TopluIslemTanimi<UrunSatiri>[] = urunTopluDuzenlemeKodlari
@@ -246,53 +301,64 @@ export function UrunListesi({
       neden: (neden) => metin(nedenler[neden] ?? "yonetim.urunler.toplu.neden.genel"),
     }));
   return (
-    <Liste
-      tanim={urunListesiTanimi}
-      durum={durum}
-      veri={veri}
-      ad={metin("yonetim.urunler.liste")}
-      sutunlar={sutunlar}
-      telefon={(satir) => (
-        <span className="flex min-w-0 gap-3">
-          <KatalogGorseli gorsel={satir.gorsel} />
-          <span className="flex min-w-0 flex-1 flex-col gap-2">
-            <span className="flex flex-wrap items-start justify-between gap-2">
-              <Ad satir={satir} />
-              <DurumRozeti satir={satir} />
-            </span>
-            <span className="flex flex-wrap items-end justify-between gap-2 text-kucuk">
-              <Stok satir={satir} />
-              <span className="font-kalin">
-                <Fiyat satir={satir} />
+    <>
+      <Liste
+        tanim={urunListesiTanimi}
+        durum={durum}
+        veri={veri}
+        ad={metin("yonetim.urunler.liste")}
+        sutunlar={sutunlar}
+        telefon={(satir) => (
+          <span className="flex min-w-0 gap-3">
+            <KatalogGorseli gorsel={satir.gorsel} />
+            <span className="flex min-w-0 flex-1 flex-col gap-2">
+              <span className="flex flex-wrap items-start justify-between gap-2">
+                <Ad satir={satir} />
+                <DurumRozeti satir={satir} />
+              </span>
+              <span className="flex flex-wrap items-end justify-between gap-2 text-kucuk">
+                <Stok satir={satir} />
+                <span className="font-kalin">
+                  <Fiyat satir={satir} />
+                </span>
+              </span>
+              <span className="flex items-center justify-between gap-2">
+                <VitrindeGor satir={satir} />
+                {kopyalayabilir ? <SatirMenusu satir={satir} kopyala={kopyala} /> : null}
               </span>
             </span>
-            <VitrindeGor satir={satir} />
           </span>
-        </span>
-      )}
-      anahtar={(satir) => satir.kimlik}
-      satirAdi={(satir) => satir.ad}
-      suzgecAdlari={{
-        durum: {
-          ad: metin("yonetim.urunler.suzgec.durum"),
-          secenek: (deger) => metin(durumAdi(deger as UrunDurumu)),
-        },
-        kategori: { ad: metin("yonetim.urunler.suzgec.kategori"), secenek: (deger) => deger },
-        stok: {
-          ad: metin("yonetim.urunler.suzgec.stok"),
-          secenek: (deger) => metin(`yonetim.urunler.stokSuzgeci.${deger as UrunPanelStokDurumu}`),
-        },
-        marka: { ad: metin("yonetim.urunler.suzgec.marka"), secenek: (deger) => deger },
-      }}
-      kayitSecenekleri={kayitSecenekleri}
-      siralamaAdi={(kod) => metin(siralamalar[kod as UrunPanelSiralamasi])}
-      arama={{ etiket: metin("yonetim.urunler.ara"), yerTutucu: metin("yonetim.urunler.araYer") }}
-      bos={{
-        ikon: "urunler",
-        baslik: metin("yonetim.urunler.bos.baslik"),
-        aciklama: metin("yonetim.urunler.bos.metin"),
-      }}
-      topluIslemler={[...duzenlemeler, ...durumIslemleri]}
-    />
+        )}
+        anahtar={(satir) => satir.kimlik}
+        satirAdi={(satir) => satir.ad}
+        suzgecAdlari={{
+          durum: {
+            ad: metin("yonetim.urunler.suzgec.durum"),
+            secenek: (deger) => metin(durumAdi(deger as UrunDurumu)),
+          },
+          kategori: { ad: metin("yonetim.urunler.suzgec.kategori"), secenek: (deger) => deger },
+          stok: {
+            ad: metin("yonetim.urunler.suzgec.stok"),
+            secenek: (deger) =>
+              metin(`yonetim.urunler.stokSuzgeci.${deger as UrunPanelStokDurumu}`),
+          },
+          marka: { ad: metin("yonetim.urunler.suzgec.marka"), secenek: (deger) => deger },
+        }}
+        kayitSecenekleri={kayitSecenekleri}
+        siralamaAdi={(kod) => metin(siralamalar[kod as UrunPanelSiralamasi])}
+        arama={{ etiket: metin("yonetim.urunler.ara"), yerTutucu: metin("yonetim.urunler.araYer") }}
+        bos={{
+          ikon: "urunler",
+          baslik: metin("yonetim.urunler.bos.baslik"),
+          aciklama: metin("yonetim.urunler.bos.metin"),
+        }}
+        topluIslemler={[...duzenlemeler, ...durumIslemleri]}
+      />
+      <UrunKopyalamaPenceresi
+        urun={kopyalanacak}
+        kapat={() => setKopyalanacak(null)}
+        fiyatIzni={fiyatIzni}
+      />
+    </>
   );
 }
