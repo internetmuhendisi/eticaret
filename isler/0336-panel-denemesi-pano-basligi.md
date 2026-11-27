@@ -19,6 +19,12 @@ Bölüm: Yönetim paneli 2.
 
 - Ölçümün kuralı testte, eski beklenti geri konunca kırmızı.
 
+## Sonuç
+
+- Selamların listesi panonun tanımında (`panoSelamlari`, `panoBasligiMi`, `cekirdek/yonetim-paneli/pano/tanim.ts`); pano, tarayıcı testleri (`panoBasligi`) ve sunucudaki panel denemesi onu kullanır.
+- Komutlarda başka eski beklenti yok: `yerel-ortam-testi.mts`'teki "Karşılama" girişsiz sayfada menünün adının görünmediğini ölçer, ad menüde kaldığı için doğrudur.
+- Kural ve betiğin onu kullanması `komutlar/testler/panel-denemesi.test.ts`'te; eski beklenti, eksik selam ve her yazıyı kabul bozulunca kırmızı. Kullanıcı kararıyla düzeltilmiş deneme sunucuda ilk yayında çalışır, bu kartta çalıştırılmadı. Bağımsız kontrolün bulgusu: canlıdaki 0.80.0'da açılış sayfası henüz pano değil, düzeltilmiş deneme ancak panoyu taşıyan yayından sonra çalıştırılmalı (betik sürüme bakmaz). Tanım dosyasının Node ile doğrudan açıldığı da testte.
+
 ## Durum
 
 yapılacak

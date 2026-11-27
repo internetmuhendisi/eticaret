@@ -7,6 +7,7 @@ import { randomBytes } from "node:crypto";
 import { expect, type Page } from "@playwright/test";
 import { metin } from "../../metinler/site-metni";
 import { kodAdimi, zamanliKod } from "../../moduller/oturum/iki-asama";
+import { panoSelamAnahtari, panoSelamlari } from "../../yonetim-paneli/pano/tanim";
 import { sayfaHazir } from "./sayfa-hazir";
 
 export type DenemeYoneticisi = { eposta: string; sifre: string };
@@ -83,9 +84,8 @@ export const paneleGir = async (page: Page, yonetici: DenemeYoneticisi, bekleme:
   return sonuc;
 };
 
-// Panelin açılış sayfasının başlığı (kart 0186): günün selamı, sitenin saat dilimindeki saate göre üçünden biri.
+// Panelin açılış sayfasının başlığı (kart 0186): günün selamı, sitenin saat dilimindeki saate göre üçünden biri. Liste
+// panonun tanımındadır (panoSelamlari, kart 0336).
 export const panoBasligi = new RegExp(
-  `^(${["gunaydin", "iyiGunler", "iyiAksamlar"]
-    .map((kod) => metin(`yonetim.pano.selam.${kod}` as "yonetim.pano.selam.gunaydin"))
-    .join("|")})$`,
+  `^(${panoSelamlari.map((kod) => metin(panoSelamAnahtari(kod))).join("|")})$`,
 );

@@ -2,6 +2,7 @@
 // adımları ve sınırlar. Her kısayol ve adım bir panel sayfasına bağlıdır (sayfa-agaci.ts): bağlantı, izin ve eklenti
 // oradan gelir; izni olmayana kısayol görünmez, adımın bağlantısı yoktur. Yeni ekran kısayol olacaksa buraya kodu
 // yazılır.
+import type { MetinAnahtari } from "../../metinler/metin";
 import type { PanelEylemi } from "../eylemler";
 import type { PanelSayfaKodu } from "../sayfa-agaci";
 
@@ -35,3 +36,13 @@ export const panoSinirlari = {
   // Satış grafiğinin gün sayısı (bugün dahil).
   satisGunu: 14,
 } as const;
+
+// Panonun başlığı günün selamıdır (karar 0199): metinleri yonetim.pano.selam.<kod>. Hangisinin seçildiği saate bağlıdır
+// (veri.ts, selam); sayfanın başlığını ölçen denetimler (tarayıcı testleri, sunucudaki panel denemesi, kart 0336) bu
+// listeyle ve panoBasligiMi ile ölçer, "Karşılama" gibi tek bir adı beklemez.
+export const panoSelamlari = ["gunaydin", "iyiGunler", "iyiAksamlar"] as const;
+export type PanoSelami = (typeof panoSelamlari)[number];
+export const panoSelamAnahtari = (kod: PanoSelami): MetinAnahtari =>
+  `yonetim.pano.selam.${kod}` as MetinAnahtari;
+export const panoBasligiMi = (baslik: string, metin: (anahtar: MetinAnahtari) => string): boolean =>
+  panoSelamlari.some((kod) => metin(panoSelamAnahtari(kod)) === baslik);

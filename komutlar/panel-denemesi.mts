@@ -11,6 +11,7 @@ import { randomBytes } from "node:crypto";
 import { chromium, type Page } from "@playwright/test";
 import { metinOkuyucu } from "../cekirdek/metinler/metin.ts";
 import { kodAdimi, zamanliKod } from "../cekirdek/moduller/oturum/iki-asama.ts";
+import { panoBasligiMi } from "../cekirdek/yonetim-paneli/pano/tanim.ts";
 import { siteNumarasiAl } from "./gizli-bilgi.mts";
 import { denemeAdresi, yayindakiSiteleriOku, yayinOrtami } from "./on-kapi.mts";
 import { kayitlariOku, sshKomutu } from "./sunucu.mts";
@@ -116,7 +117,8 @@ try {
   await page.getByRole("button", { name: metin("yonetim.kurulum.devam") }).click();
   olc("kurulumla boş panele giriliyor", await adresiBekle(page, /\/yonetim$/));
   const baslik = await page.getByRole("heading", { level: 1 }).textContent();
-  olc("panelin başlığı görünüyor", baslik === metin("yonetim.sayfa.karsilama.ad"), baslik ?? "");
+  // Açılış sayfası panodur, başlığı günün selamıdır (kart 0186, 0336).
+  olc("panelin başlığı görünüyor", panoBasligiMi(baslik ?? "", metin), baslik ?? "");
 
   await page.reload();
   olc("sayfa yenilenince panel açık kalıyor", await adresiBekle(page, /\/yonetim$/));

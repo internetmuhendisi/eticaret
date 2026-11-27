@@ -33,7 +33,14 @@ import { kutuKur, type RaporKutusu, raporBicimi, seriVerisi } from "../raporlar/
 import { type PanelSayfaKodu, panelSayfalari, sayfaAcikMi, sayfaTanimi } from "../sayfa-agaci";
 import { bakilacakSekmesi, siparisListesiTanimi } from "../siparisler/liste-tanimi";
 import { urunListesiTanimi } from "../urunler/liste-tanimi";
-import { type PanoAdimi, panoAdimlari, panoKisayollari, panoSinirlari } from "./tanim";
+import {
+  type PanoAdimi,
+  type PanoSelami,
+  panoAdimlari,
+  panoKisayollari,
+  panoSelamAnahtari,
+  panoSinirlari,
+} from "./tanim";
 
 export type PanoSatiri = {
   kod: string;
@@ -89,10 +96,7 @@ const kutu = async <T>(ad: string, oku: () => Promise<T>): Promise<T | "hata"> =
 };
 
 // Günün saatine göre selam: 05–12 günaydın, 12–18 iyi günler, öteki saatler iyi akşamlar (sitenin saat diliminde).
-export const selam = (
-  simdi: Date,
-  saatDilimi: string,
-): "gunaydin" | "iyiGunler" | "iyiAksamlar" => {
+export const selam = (simdi: Date, saatDilimi: string): PanoSelami => {
   const saat = Number(yerelZamana(simdi, saatDilimi).slice(11, 13));
   return saat >= 5 && saat < 12
     ? "gunaydin"
@@ -397,7 +401,7 @@ export const panoVerisi = async (
     sayilar(),
   ]);
   return {
-    baslik: metin(anahtar(`selam.${selam(simdi, site.ayarlar.saatDilimi)}`)),
+    baslik: metin(panoSelamAnahtari(selam(simdi, site.ayarlar.saatDilimi))),
     altBaslik: tamTarih(simdi, site.ayarlar),
     adimlar: adimVerisi,
     bakilacaklar: bakilacakVerisi,
