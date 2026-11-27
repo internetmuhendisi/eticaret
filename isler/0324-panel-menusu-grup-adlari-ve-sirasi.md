@@ -34,4 +34,4 @@ Bölüm: Yönetim paneli 2 (kart 0301 sırasında bulundu).
 
 ## Durum
 
-yapılacak
+bitti
