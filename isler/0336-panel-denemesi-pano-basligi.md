@@ -27,4 +27,4 @@ Bölüm: Yönetim paneli 2.
 
 ## Durum
 
-yapılacak
+bitti
