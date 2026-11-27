@@ -24,6 +24,13 @@ Bölüm: Yönetim paneli 2. Kullanıcının kararıyla on dördüncü bölümden
 - Ekran görüntüsü taslakla yan yana kondu, farklar düzeltildi.
 - Bağımsız kontrol yapıldı.
 
+## Sonuç
+
+- Panelin üst şeridinde zil (telefon ve tablette üst çubukta), okunmamış sayısı, en yeni 20 bildirimin listesi, okundu ve "Hepsini okundu yap", ilgili ekrana bağlantı, okunan bildirimin saklama süresi ve "Bildirim ayarları" bağlantısı (karar 0198).
+- Bildirim ayarının e-postayla ortak mı ayrı mı olduğu sorulmadı: onaylı taslağın kararı (0185) panel bildirimini her zaman açık, ayarı yalnız e-posta için saymıştı.
+- Alıcı kişidir: olay anında olayın iznine sahip yöneticilere yazılır, okurken izin yeniden sorulur. Kartla ödemenin uyuşmazlığı ve takılan iade yalnız mağaza sahibine (kullanıcı kararı). Satır kişisel veri taşımaz, yazı kayıttan kurulur. Veritabanı değişikliği 0070; okunan bildirim altyapı sahibinin `panelBildirimiSaklamaGun` ayarıyla (30 gün) silinir.
+- Testler ve 24 bozma `.claude/rules/kurallari-koruyan-kontroller.md`'de (kart 0280). Bağımsız kontrolün altı bulgusu düzeldi: zilin eski sayıya dönmesi ve iki zilin ayrı sayısı, yenilemede ve sorgu değişince sayı, rozetin sınırı, kapatılmış hesabın birikmesi, stok bildiriminin yedek adresi.
+
 ## Durum
 
 yapılacak

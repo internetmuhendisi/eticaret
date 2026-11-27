@@ -6,7 +6,7 @@
 //   sahibi). Okurken izin yeniden sorulur: rolü değişen yönetici eski bildirimlerini görmez.
 // - Okundu: tek bildirim, hepsi, başkasının kimliği; okunma anı değişmez; sayı.
 // - Satır kişisel veri taşımaz; ekranın yazısı kayıttan kurulur, kişisel bilgisi silinmiş siparişte ad yoktur.
-// - Temizlik okunduğu andan süre geçeni siler, okunmamışı bırakmaz değil: okunmamış kalır.
+// - Temizlik okunduğu andan süre geçeni ve kapatılmış hesabın bütün bildirimlerini siler; açık hesabın okunmamışı kalır.
 // - İzni olan yöneticiler sorgusu izin sorusuyla aynı cevabı verir; veritabanının bildirim listesi kayıtla aynıdır.
 
 import { randomUUID } from "node:crypto";
@@ -564,10 +564,17 @@ describe("okundu ve temizlik", () => {
     expect(listesi.satirlar.map((s) => s.kimlik)[0]).toBe(ilk.kimlik);
   });
 
-  it("temizlik okunduğu andan süre geçeni siler; okunmamış kalır", async () => {
+  it("temizlik okunduğu andan süre geçeni ve kapatılmış hesabın bütün bildirimlerini siler; açık hesabın okunmamışı kalır", async () => {
     const h = await hazirla();
     const { birim } = await h.urunAc();
     for (let i = 0; i < 3; i++) await ver(h.vt, [{ birim, adet: 1 }], kapida);
+    // Kapatılmış hesabın (sipariş görevlisi) okunmamış bildirimleri de silinir; görevlininki kalır.
+    expect(await satirlari(h.vt, h.kisiler.siparisGorevlisi)).toHaveLength(3);
+    await yoneticiHesabiKapat(
+      h.vt,
+      { yoneticiKimligi: h.kisiler.siparisGorevlisi },
+      { tur: "yonetici", kimlik: h.kisiler.sahip },
+    );
     const sahip = h.kisiler.sahip;
     const [eski, yeni, okunmamis] = await satirlari(h.vt, sahip);
     if (eski === undefined || yeni === undefined || okunmamis === undefined) throw new Error();
@@ -580,7 +587,9 @@ describe("okundu ve temizlik", () => {
     await h.vt.execute(
       sql`update panel_bildirimleri set okunma_zamani = now() - interval '29 days 23 hours' where kimlik = ${yeni.kimlik}`,
     );
-    expect(await okunanBildirimleriTemizle(h.vt, 30)).toBe(1);
+    expect(await okunanBildirimleriTemizle(h.vt, 30)).toBe(4);
+    expect(await satirlari(h.vt, h.kisiler.siparisGorevlisi)).toEqual([]);
+    expect(await satirlari(h.vt, h.kisiler.gorevli)).toHaveLength(3);
     expect((await satirlari(h.vt, sahip)).map((s) => s.kimlik).sort()).toEqual(
       [yeni.kimlik, okunmamis.kimlik].sort(),
     );
@@ -652,6 +661,8 @@ describe("kayıt", () => {
       expect(sonuc.baslik, bildirim).not.toBe("");
       expect(sonuc.zaman).toBe("5 dk. önce");
       expect(sonuc.adres.startsWith("/yonetim/")).toBe(true);
+      // Kayıt bulunamayınca bildirimin izniyle açılan listeye gider.
+      if (bildirim === "stok") expect(sonuc.adres).toBe("/yonetim/urunler");
     }
   });
 });

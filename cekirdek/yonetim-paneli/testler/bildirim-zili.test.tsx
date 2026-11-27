@@ -8,13 +8,16 @@ import { act, cleanup, fireEvent, render, screen, within } from "@testing-librar
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MetinSaglayici } from "../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../metinler/metin.ts";
-import { BildirimZili } from "../bildirimler/zil.tsx";
+import { BildirimZili, useBildirimSayisi } from "../bildirimler/zil.tsx";
+import { PanelCercevesi } from "../panel-cercevesi.tsx";
 
 const git = vi.fn();
 let yol = "/yonetim";
+let sorgu = "";
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: git, refresh: vi.fn() }),
   usePathname: () => yol,
+  useSearchParams: () => new URLSearchParams(sorgu),
 }));
 
 const metin = metinOkuyucu("tr");
@@ -26,7 +29,7 @@ let cevaplar: Record<string, (govde: unknown) => { durum?: number; veri?: unknow
 const bildirim = (kimlik: string, baslik: string, okundu: boolean) => ({
   kimlik,
   baslik,
-  alt: "Deniz Y. · 100,00 ₺",
+  alt: "Deniz Y. · 100,00 ¤",
   ikon: "paket",
   an: "2026-11-20T09:00:00.000Z",
   zaman: "5 dk. önce",
@@ -36,6 +39,7 @@ const bildirim = (kimlik: string, baslik: string, okundu: boolean) => ({
 
 beforeEach(() => {
   yol = "/yonetim";
+  sorgu = "";
   istekler.length = 0;
   git.mockReset();
   cevaplar = {
@@ -78,12 +82,39 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const ciz = (ilkSayi = 2, ayarlarAdresi: string | null = "/yonetim/siparis-ayarlari#bildirim") =>
-  render(
-    <MetinSaglayici dil="tr">
-      <BildirimZili ilkSayi={ilkSayi} saklamaGun="30" ayarlarAdresi={ayarlarAdresi} />
-    </MetinSaglayici>,
+// Çerçeve gibi: sayı bir kez tutulur, iki zil (şerit ve telefonun üst çubuğu) onu paylaşır.
+function Cerceve({
+  ilkSayi,
+  ayarlarAdresi,
+  iki = false,
+}: {
+  ilkSayi: number;
+  ayarlarAdresi: string | null;
+  iki?: boolean;
+}) {
+  const okunmamis = useBildirimSayisi(ilkSayi, true);
+  const zil = <BildirimZili okunmamis={okunmamis} saklamaGun="30" ayarlarAdresi={ayarlarAdresi} />;
+  return (
+    <>
+      {zil}
+      {iki ? zil : null}
+    </>
   );
+}
+const cerceve = (
+  ilkSayi = 2,
+  ayarlarAdresi: string | null = "/yonetim/siparis-ayarlari#bildirim",
+  iki = false,
+) => (
+  <MetinSaglayici dil="tr">
+    <Cerceve ilkSayi={ilkSayi} ayarlarAdresi={ayarlarAdresi} iki={iki} />
+  </MetinSaglayici>
+);
+const ciz = (
+  ilkSayi = 2,
+  ayarlarAdresi: string | null = "/yonetim/siparis-ayarlari#bildirim",
+  iki = false,
+) => render(cerceve(ilkSayi, ayarlarAdresi, iki));
 const bekle = () =>
   act(async () => {
     await new Promise((bitti) => setTimeout(bitti, 0));
@@ -110,17 +141,84 @@ describe("bildirim zili", () => {
     expect(sifir.container.querySelector('[aria-hidden="true"]:not(svg)')).toBeNull();
   });
 
-  it("sayfa değişince sayı ucu sorulur", async () => {
+  it("sayfa ya da sorgu değişince sayı ucu bir kez sorulur; sayfa yenilenince düzenin sayısı alınır", async () => {
     const { rerender } = ciz(2);
     yol = "/yonetim/siparisler";
-    rerender(
-      <MetinSaglayici dil="tr">
-        <BildirimZili ilkSayi={2} saklamaGun="30" ayarlarAdresi={null} />
-      </MetinSaglayici>,
-    );
+    rerender(cerceve(2));
     await bekle();
     expect(istekler.map((i) => i.uc)).toEqual(["panel-bildirim-sayisi"]);
     expect(screen.getByRole("button", { name: "Bildirimler, 5 okunmamış" })).toBeTruthy();
+    // Yalnız sorgu değişince de sorulur.
+    cevaplar["panel-bildirim-sayisi"] = () => ({ veri: { okunmamis: 4 } });
+    sorgu = "numara=ORN-2";
+    rerender(cerceve(2));
+    await bekle();
+    expect(istekler.map((i) => i.uc)).toEqual(["panel-bildirim-sayisi", "panel-bildirim-sayisi"]);
+    expect(screen.getByRole("button", { name: "Bildirimler, 4 okunmamış" })).toBeTruthy();
+    // Sayfa yenilenince (router.refresh) düzenin yeni sayısı.
+    rerender(cerceve(7));
+    expect(screen.getByRole("button", { name: "Bildirimler, 7 okunmamış" })).toBeTruthy();
+    await bekle();
+    expect(istekler).toHaveLength(2);
+  });
+
+  it("iki zil aynı sayıyı paylaşır, sayfa değişince tek istek gider", async () => {
+    const { rerender } = ciz(2, null, true);
+    expect(screen.getAllByRole("button", { name: "Bildirimler, 2 okunmamış" })).toHaveLength(2);
+    yol = "/yonetim/siparisler";
+    rerender(cerceve(2, null, true));
+    await bekle();
+    expect(istekler.map((i) => i.uc)).toEqual(["panel-bildirim-sayisi"]);
+    expect(screen.getAllByRole("button", { name: "Bildirimler, 5 okunmamış" })).toHaveLength(2);
+    // Birinde hepsini okundu yapınca öteki de sıfırlanır.
+    const [ilk] = screen.getAllByRole("button", { name: /^Bildirimler/ });
+    if (ilk === undefined) throw new Error("Zil yok.");
+    fireEvent.click(ilk);
+    await bekle();
+    fireEvent.click(screen.getByRole("button", { name: "Hepsini okundu yap" }));
+    await bekle();
+    expect(screen.getAllByRole("button", { name: "Bildirimler" })).toHaveLength(2);
+  });
+
+  it("çerçevede iki zil tek sayıyı paylaşır; sayfa değişince tek istek; izni olmayana zil yok", async () => {
+    const cercevesi = (bildirimler: Parameters<typeof PanelCercevesi>[0]["bildirimler"]) => (
+      <MetinSaglayici dil="tr">
+        <PanelCercevesi
+          magaza={{ ad: "Mağaza" }}
+          eposta=""
+          gruplar={[]}
+          altyapiAdi=""
+          aramaTurleri={[]}
+          bildirimler={bildirimler}
+        >
+          {null}
+        </PanelCercevesi>
+      </MetinSaglayici>
+    );
+    const bilgi = { ilkSayi: 3, saklamaGun: "30", ayarlarAdresi: null };
+    const { rerender, unmount } = render(cercevesi(bilgi));
+    expect(screen.getAllByRole("button", { name: "Bildirimler, 3 okunmamış" })).toHaveLength(2);
+    yol = "/yonetim/siparisler";
+    rerender(cercevesi(bilgi));
+    await bekle();
+    expect(istekler.map((i) => i.uc)).toEqual(["panel-bildirim-sayisi"]);
+    expect(screen.getAllByRole("button", { name: "Bildirimler, 5 okunmamış" })).toHaveLength(2);
+    unmount();
+    istekler.length = 0;
+    const izinsiz = render(cercevesi(null));
+    expect(screen.queryByRole("button", { name: /^Bildirimler/ })).toBeNull();
+    yol = "/yonetim/urunler";
+    izinsiz.rerender(cercevesi(null));
+    await bekle();
+    expect(istekler).toEqual([]);
+  });
+
+  it("99'dan büyük sayı rozette 99+, adda 99'dan fazla", () => {
+    const { container } = ciz(1234);
+    expect(
+      screen.getByRole("button", { name: "Bildirimler, 99'dan fazla okunmamış" }),
+    ).toBeTruthy();
+    expect(container.querySelector('[aria-hidden="true"]:not(svg)')?.textContent).toBe("99+");
   });
 
   it("açılınca liste; okunmamış satır söylenir; saklama yazısı ve ayarlar bağlantısı", async () => {
@@ -131,9 +229,9 @@ describe("bildirim zili", () => {
     // Zaman iki yerdedir (telefonda alt yazının altında, tablette sağda); ekranda biri görünür (jsdom CSS uygulamaz).
     const zaman = "5 dk. önce";
     expect(baglantilar.map((b) => b.textContent)).toEqual([
-      `Yeni sipariş: ORN-1, okunmamışDeniz Y. · 100,00 ₺${zaman}${zaman}`,
-      `Havale bildirildi: ORN-1, okunmamışDeniz Y. · 100,00 ₺${zaman}${zaman}`,
-      `Yorum onay bekliyorDeniz Y. · 100,00 ₺${zaman}${zaman}`,
+      `Yeni sipariş: ORN-1, okunmamışDeniz Y. · 100,00 ¤${zaman}${zaman}`,
+      `Havale bildirildi: ORN-1, okunmamışDeniz Y. · 100,00 ¤${zaman}${zaman}`,
+      `Yorum onay bekliyorDeniz Y. · 100,00 ¤${zaman}${zaman}`,
       "Bildirim ayarları",
     ]);
     expect(baglantilar[3]?.getAttribute("href")).toBe("/yonetim/siparis-ayarlari#bildirim");

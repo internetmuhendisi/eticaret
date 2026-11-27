@@ -39,6 +39,8 @@ vi.mock("next/headers", () => ({
 vi.mock("next/navigation", () => ({
   // Çerçevenin çıkış koruması (kart 0259) gezinmek için yönlendiriciyi kullanır.
   useRouter: () => ({ push: () => {}, refresh: () => {} }),
+  // Bildirim zili (kart 0280) adresin sorgusunu izler.
+  useSearchParams: () => new URLSearchParams(),
   redirect: (adres: string) => {
     throw new Error(`yonlendir ${adres}`);
   },
@@ -273,6 +275,35 @@ describe("panelin araması (kart 0321)", () => {
     expect(rolsuz.turler).toEqual([]);
     expect(rolsuz.html).not.toContain(metin("yonetim.arama.etiket"));
     expect(rolsuz.html).not.toContain(metin("yonetim.arama.ac"));
+  });
+});
+
+describe("bildirim zili (kart 0280)", () => {
+  const ciz = async () => {
+    const dugum = (await PanelDuzeni({ children: null })) as ReactElement<{
+      bildirimler: { ilkSayi: number; ayarlarAdresi: string | null } | null;
+    }>;
+    return {
+      bildirimler: dugum.props.bildirimler,
+      html: renderToString(<MetinSaglayici dil="tr">{dugum}</MetinSaglayici>),
+    };
+  };
+
+  it("mağaza sahibinde zil ve ayarlar bağlantısı, görevlide bağlantısız zil, rolsüz yöneticide zil yok", async () => {
+    await yoneticiyleGir("magaza-sahibi");
+    const sahip = await ciz();
+    expect(sahip.bildirimler?.ayarlarAdresi).toBe(
+      "/yonetim/siparis-ayarlari#yonetici-bildirimleri",
+    );
+    expect(sahip.html).toContain(`aria-label="${metin("yonetim.bildirimler.zil")}`);
+    await yoneticiyleGir("gorevli");
+    const gorevli = await ciz();
+    expect(gorevli.bildirimler).not.toBeNull();
+    expect(gorevli.bildirimler?.ayarlarAdresi).toBeNull();
+    await yoneticiyleGir();
+    const rolsuz = await ciz();
+    expect(rolsuz.bildirimler).toBeNull();
+    expect(rolsuz.html).not.toContain(`aria-label="${metin("yonetim.bildirimler.zil")}`);
   });
 });
 

@@ -4,7 +4,7 @@
 // ilgili kaydın kimliği ve kişisel olmayan özet; metin okunurken kayıttan kurulur (sipariş kişisel bilgisi silinince
 // adı da görünmez). Okurken ve okundu yaparken izin yeniden sorulur: izni sonradan alınan yönetici o bildirimleri
 // görmez. Arka plan süreci de yükler (temizlik): içe aktarmalar uzantılıdır.
-import { and, count, desc, eq, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
 import {
   panelBildirimSinirlari,
   type StokUyarisiTuru,
@@ -14,6 +14,7 @@ import {
 } from "../../kayitlar/yonetici-bildirimi.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { kimlikMi } from "../../veritabani/kimlik.ts";
+import { yoneticiler } from "../ekip/model.ts";
 import { izniOlanYoneticiler, type YoneticiYetkileri } from "../ekip/servis.ts";
 import { siparisler } from "../siparis/model.ts";
 import { urunler } from "../urun/model.ts";
@@ -230,14 +231,24 @@ export const okunduYap = async (
   return satirlar.length;
 };
 
-// Okunduğu andan saklama süresi geçen bildirimleri siler; silinen sayıyı döner. Okunmamış bildirim silinmez.
+// Okunduğu andan saklama süresi geçen bildirimleri ve kapatılmış hesapların bütün bildirimlerini siler; silinen
+// sayıyı döner. Açık hesabın okunmamış bildirimi silinmez (izni alınmış olsa da: rolü geri verilince görünür).
 export const okunanBildirimleriTemizle = async (vt: Veritabani, gun: number): Promise<number> => {
   const silinen = await vt
     .delete(panelBildirimleri)
     .where(
-      and(
-        isNotNull(panelBildirimleri.okunma_zamani),
-        lt(panelBildirimleri.okunma_zamani, sql`now() - make_interval(days => ${gun})`),
+      or(
+        and(
+          isNotNull(panelBildirimleri.okunma_zamani),
+          lt(panelBildirimleri.okunma_zamani, sql`now() - make_interval(days => ${gun})`),
+        ),
+        inArray(
+          panelBildirimleri.yonetici_kimligi,
+          vt
+            .select({ kimlik: yoneticiler.kimlik })
+            .from(yoneticiler)
+            .where(isNotNull(yoneticiler.silinme_zamani)),
+        ),
       ),
     )
     .returning({ kimlik: panelBildirimleri.kimlik });

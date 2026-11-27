@@ -13,8 +13,8 @@ Yönetici bildirimleri (karar 0154) e-postanın yanında panelin içinde de gör
 - Okurken ve okundu yaparken izin yeniden sorulur: rolü alınan yönetici o bildirimleri görmez, satır yerinde kalır.
 - Satır kişisel veri taşımaz: olayın türü, ilgili kaydın kimliği (sipariş, yorum, birim) ve kişisel olmayan özet (tutar, adet, neden, miktar). Başlık, alt yazı ve adres okunurken kayıttan sunucuda kurulur; müşterinin adı kısaltılır, kişisel bilgisi silinmiş siparişte yoktur.
 - Stok uyarısı e-postada saatte bir toplanır; panelde her uyarı hemen ayrı bildirimdir (taslaktaki gibi).
-- Okunan bildirim okunduğu andan altyapı sahibinin `panelBildirimiSaklamaGun` ayarı kadar (varsayılan 30 gün) sonra günlük işle silinir; okunmamış silinmez.
-- Uçlar `panel-bildirimleri`, `panel-bildirim-sayisi`, `panel-bildirimi-okundu`; izin beyanı yöneticinin kendi hesabıdır (`ekip.kendi-hesabi.gor`, `.degistir`; bütün rollerde vardır). Zil sayıyı sayfa değişince sorar; anlık itme yoktur (kartın sınırı).
+- Okunan bildirim okunduğu andan altyapı sahibinin `panelBildirimiSaklamaGun` ayarı kadar (varsayılan 30 gün) sonra günlük işle silinir; kapatılmış hesabın bütün bildirimleri de silinir. Açık hesabın okunmamış bildirimi silinmez.
+- Uçlar `panel-bildirimleri`, `panel-bildirim-sayisi`, `panel-bildirimi-okundu`; izin beyanı yöneticinin kendi hesabıdır (`ekip.kendi-hesabi.gor`, `.degistir`; bütün rollerde vardır). Okunmamış sayısı çerçevede tek yerde tutulur, iki zil (şerit ve telefonun üst çubuğu) onu paylaşır; adres değişince sorulur, sayfa yenilenince düzenin sayısı alınır. Anlık itme yoktur (kartın sınırı). Rozet en çok "99+" yazar.
 
 ## Neden
 
@@ -39,4 +39,5 @@ Yönetici bildirimleri (karar 0154) e-postanın yanında panelin içinde de gör
 - Göreli zaman ("5 dk. önce", "dün") biçimleyicide ayrı ve yalnız sunucunun kullandığı bir işlevdir (`goreliZaman`): site biçimleyicisinin içine konmadı, çünkü panelin tarayıcıdaki kodu o işlevi kullanır ve derleyici modülü vitrine de birlikte götürürdü (karar 0172).
 - Tasarım değerlerine ilk yükseklik sınırı eklendi (`max-h-acilir-liste`, 26rem): açılır paneldeki uzun liste kendi kutusunda kayar.
 - Satıra basınca önce okundu isteği gider, sonra ekran açılır; Ctrl ya da orta tuşla yeni sekmede açılan bildirim okundu yapılmaz.
+- İzni alınmış yöneticinin o türlerdeki okunmamış satırları kalır (rolü geri verilince görünür) ve okundu yapılamaz; paneli hiç açmayan yöneticinin okunmamışları da birikir. Satır küçüktür (kimlikler ve kısa özet), sayı rozette sınırlıdır.
 - Panel bildiriminin metni düzenlenmez (karar 0185); hatalı arka plan işlerinin bildirimi kart 0059'dadır.

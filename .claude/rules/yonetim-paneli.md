@@ -44,7 +44,7 @@ paths:
 
 ## Panelin bildirimleri (karar 0198)
 
-- Zil çerçevededir (`cekirdek/yonetim-paneli/bildirimler/zil.tsx`, kart 0280): masaüstünde aramanın sağında üst şeritte, telefon ve tablette üst çubukta. Düzen ilk okunmamış sayısını ve Sipariş ayarlarının bildirim bölümüne bağlantıyı (sayfayı göremeyene yok) verir; zil sayfa değişince sayıyı kendisi sorar, panel açılınca listeyi ister. Ekran kendi zilini ya da bildirim listesini yazmaz.
+- Zil çerçevededir (`cekirdek/yonetim-paneli/bildirimler/zil.tsx`, kart 0280): masaüstünde aramanın sağında üst şeritte, telefon ve tablette üst çubukta. Okunmamış sayısı çerçevede tek yerde tutulur (`useBildirimSayisi`): iki zil onu paylaşır, sayfa yenilenince düzenin sayısı alınır, adres (yol ya da sorgu) değişince bir istekle sorulur. Düzen ilk sayıyı ve Sipariş ayarlarının bildirim bölümüne bağlantıyı (sayfayı göremeyene yok) verir; panel açılınca liste istenir. Rozet en çok 99 yazar ("99+"). Ekran kendi zilini ya da bildirim listesini yazmaz.
 - Bildirim yalnız `yoneticiBildirimiYaz` (stokta `stokUyarisiYaz`) ile, e-postasıyla birlikte yazılır; panel satırları `panelBildirimiYaz` (`cekirdek/moduller/yonetici-bildirimi/panel.ts`) ile olayın iznine sahip yöneticilere gider. Okuma, sayı ve okundu izni yeniden sorar (`gorulebilenBildirimler`). Yeni bildirim kayda izniyle eklenir.
 - Satırın yazısı ve adresi sunucuda kayıttan kurulur (`panelBildiriminiKur`, `bildirimler/veri.ts`); satırda kişisel veri saklanmaz.
 

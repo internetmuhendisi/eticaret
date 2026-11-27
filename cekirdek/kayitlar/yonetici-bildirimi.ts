@@ -63,10 +63,12 @@ export const yoneticiBildirimSinirlari = {
   stokUyarisiSaklamaGun: 30,
 } as const;
 
-// Panelin içindeki bildirimler (kart 0280, karar 0198): listede gösterilen en çok bildirim ve okunan bildirimin
+// Panelin içindeki bildirimler (kart 0280, karar 0198): listede gösterilen en çok bildirim, rozetin sınırı ve okunan bildirimin
 // saklama süresinin sınırları (gün; değeri altyapı sahibinin `panelBildirimiSaklamaGun` ayarı).
 export const panelBildirimSinirlari = {
   liste: 20,
+  // Zilin rozetinde yazılan en büyük sayı; fazlası "99+".
+  rozetEnCok: 99,
   saklamaGun: { enAz: 1, enCok: 365, varsayilan: 30 },
 } as const;
 

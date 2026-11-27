@@ -36,6 +36,7 @@ const { yol } = vi.hoisted(() => ({ yol: { simdi: "/yonetim/siparisler" } }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: git, refresh: () => {} }),
   usePathname: () => yol.simdi,
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 const metin = metinOkuyucu("tr");

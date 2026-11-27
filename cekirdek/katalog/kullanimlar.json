@@ -138,6 +138,7 @@
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx"
   ],
   "bilesenler/parcalar/acilir-panel.tsx": [
+    "cekirdek/yonetim-paneli/bildirimler/zil.tsx",
     "cekirdek/yonetim-paneli/liste/tarih-suzgeci.tsx",
     "cekirdek/yonetim-paneli/raporlar/donem-secici.tsx"
   ],
@@ -246,6 +247,7 @@
     "cekirdek/vitrin/sepet/sepet-gorunumu.tsx",
     "cekirdek/vitrin/sepet/sepete-ekle.tsx",
     "cekirdek/vitrin/siparis/siparis-iptali.tsx",
+    "cekirdek/yonetim-paneli/bildirimler/zil.tsx",
     "cekirdek/yonetim-paneli/blog/yazi-ekrani.tsx",
     "cekirdek/yonetim-paneli/ekip/kisi.tsx",
     "cekirdek/yonetim-paneli/menuler/ekran.tsx",
@@ -326,6 +328,7 @@
     "cekirdek/vitrin/urun-sayfasi/galeri.tsx",
     "cekirdek/vitrin/urun-sayfasi/yorum-yaz.tsx",
     "cekirdek/yonetim-paneli/arama/panel-aramasi.tsx",
+    "cekirdek/yonetim-paneli/bildirimler/zil.tsx",
     "cekirdek/yonetim-paneli/blog/kategoriler.tsx",
     "cekirdek/yonetim-paneli/blog/yazi-ekrani.tsx",
     "cekirdek/yonetim-paneli/bolum-formu.tsx",
@@ -767,6 +770,7 @@
     "cekirdek/vitrin/siparis/iade-talebi-sayfasi.tsx",
     "cekirdek/vitrin/siparis/takip-formu.tsx",
     "cekirdek/vitrin/urun-sayfasi/yorum-yaz.tsx",
+    "cekirdek/yonetim-paneli/bildirimler/zil.tsx",
     "cekirdek/yonetim-paneli/cikis-dugmesi.tsx",
     "cekirdek/yonetim-paneli/davet-kabul-formu.tsx",
     "cekirdek/yonetim-paneli/ekip/davet.tsx",
@@ -852,6 +856,7 @@
   ],
   "bilesenler/parcalar/yukleniyor.tsx": [
     "cekirdek/eklentiler/excel-ile-toplu-urun-islemleri/panel/ekran.tsx",
+    "cekirdek/yonetim-paneli/bildirimler/zil.tsx",
     "cekirdek/yonetim-paneli/davet-kabul-formu.tsx",
     "cekirdek/yonetim-paneli/epostalar/metin-ekrani.tsx",
     "cekirdek/yonetim-paneli/vergi/siniflar.tsx"

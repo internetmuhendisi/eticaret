@@ -1715,7 +1715,7 @@ Panelin zili (kart 0280, karar 0198): yöneticinin en yeni 20 bildirimi (okunmu�
 
 ### GET /kapi/yonetici/panel-bildirim-sayisi
 
-Zilin okunmamış sayısı (kart 0280): panelde sayfa değişince sorulur. Sayım `panel-bildirimleri` ile aynı kuraldır. Girdi yoktur.
+Zilin okunmamış sayısı (kart 0280): panelde adres (yol ya da sorgu) değişince bir kez sorulur. Sayım `panel-bildirimleri` ile aynı kuraldır. Girdi yoktur.
 
 - İzin: `ekip.kendi-hesabi.gor`. Sınır: `genel`.
 - Servis: `okunmamisSayisi` (`cekirdek/moduller/yonetici-bildirimi/panel.ts`).

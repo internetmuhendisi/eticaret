@@ -3812,7 +3812,9 @@
       "ayarlar": "Bildirim ayarları",
       "yukleniyor": "Bildirimler yükleniyor",
       "hata": "Bildirimler yüklenemedi. Paneli kapatıp yeniden açın.",
-      "okunduHatasi": "Bildirimler okundu yapılamadı. Yeniden deneyin."
+      "okunduHatasi": "Bildirimler okundu yapılamadı. Yeniden deneyin.",
+      "zilCokOkunmamis": "Bildirimler, {sayi}'dan fazla okunmamış",
+      "rozetFazla": "{sayi}+"
     }
   },
   "vitrin": {

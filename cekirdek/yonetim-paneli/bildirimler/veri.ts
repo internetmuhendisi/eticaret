@@ -19,6 +19,7 @@ import {
   siparisAyrintisiAdresi,
   siparislerAdresi,
   urunEkraniAdresi,
+  urunlerAdresi,
   yorumlarAdresi,
 } from "../adresler";
 import { odemeYazisi } from "../siparisler/metinler";
@@ -128,7 +129,7 @@ export const panelBildiriminiKur = (
         alt: doldur(metin(anahtar(`stokAlt.${satir.ozet.tur}`)), {
           miktar: b.sayi(satir.ozet.miktar),
         }),
-        adres: birim === undefined ? siparislerAdresi : urunEkraniAdresi(birim.urun),
+        adres: birim === undefined ? urunlerAdresi : urunEkraniAdresi(birim.urun),
       };
     }
     case "yorum":

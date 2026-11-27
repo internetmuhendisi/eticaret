@@ -19,7 +19,7 @@ import {
 import type { PanelAramaTuru } from "../kayitlar/panel-arama";
 import { usePanelMetni } from "../metinler/panel-metni";
 import { PanelAramaKutusu, TelefonAramaKapat, useAramaKisayolu } from "./arama/panel-aramasi";
-import { BildirimZili } from "./bildirimler/zil";
+import { BildirimZili, useBildirimSayisi } from "./bildirimler/zil";
 import { CikisKorumasi } from "./form/cikis-korumasi";
 import { type MagazaGorunumu, MagazaIsareti, MenuIcerigi } from "./menu-icerigi";
 import type { CizilenMenuGrubu } from "./panel-menusu";
@@ -72,6 +72,16 @@ export function PanelCercevesi({
     setTelefondaAcik(false);
   }
   const menu = { magaza, eposta, gruplar, altyapiAdi };
+  // Bildirim zilinin sayısı (kart 0280): iki zil (şerit ve telefonun üst çubuğu) aynı sayıyı paylaşır.
+  const okunmamis = useBildirimSayisi(bildirimler?.ilkSayi ?? 0, bildirimler !== null);
+  const zil =
+    bildirimler === null ? null : (
+      <BildirimZili
+        okunmamis={okunmamis}
+        saklamaGun={bildirimler.saklamaGun}
+        ayarlarAdresi={bildirimler.ayarlarAdresi}
+      />
+    );
   return (
     // Kaydedilmemiş değişiklikle panelin başka bir sayfasına geçerken sorulur (kart 0259).
     <CikisKorumasi>
@@ -121,7 +131,7 @@ export function PanelCercevesi({
                       onClick={telefondaAc}
                     />
                   )}
-                  {bildirimler === null ? null : <BildirimZili {...bildirimler} />}
+                  {zil}
                 </span>
               </>
             )}
@@ -133,7 +143,7 @@ export function PanelCercevesi({
                   <PanelAramaKutusu turler={aramaTurleri} kutuRef={seritKutusu} kisayolGoster />
                 </div>
               )}
-              {bildirimler === null ? null : <BildirimZili {...bildirimler} />}
+              {zil}
             </div>
           )}
           <main className="flex min-w-0 flex-1 flex-col">{children}</main>

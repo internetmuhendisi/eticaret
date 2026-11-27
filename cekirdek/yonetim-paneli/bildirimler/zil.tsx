@@ -5,7 +5,7 @@
 // "Hepsini okundu yap" görülebilen bütün okunmamışları okundu yapar. Sayı sayfa değişince sayı ucundan yeniden
 // sorulur; anlık itme yoktur. Metinler ve satırların yazısı sunucudan gelir.
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import {
   AcilirPanel,
@@ -18,6 +18,7 @@ import { Dugme, IkonDugmesi } from "../../../bilesenler/parcalar/dugme";
 import { sinif } from "../../../bilesenler/parcalar/sinif";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { YukleniyorGostergesi } from "../../../bilesenler/parcalar/yukleniyor";
+import { panelBildirimSinirlari } from "../../kayitlar/yonetici-bildirimi";
 import { doldur } from "../../metinler/doldur";
 import { usePanelMetni } from "../../metinler/panel-metni";
 import { PanelIkon, panelIkonu } from "../panel-ikon";
@@ -26,35 +27,24 @@ import type { PanelBildirimi, PanelBildirimListesi } from "./veri";
 
 type OkunduCevabi = { okundu: number; okunmamis: number };
 
-export function BildirimZili({
-  ilkSayi,
-  saklamaGun,
-  ayarlarAdresi,
-  className,
-}: {
-  // Sayfa çizilirken sunucunun okuduğu okunmamış sayısı.
-  ilkSayi: number;
-  saklamaGun: string;
-  // Sipariş ayarlarının bildirim bölümü; izni olmayana yoktur.
-  ayarlarAdresi: string | null;
-  className?: string;
-}) {
-  const metin = usePanelMetni();
-  const router = useRouter();
+// Okunmamış sayısı çerçevede tek yerde tutulur: masaüstü ve telefon zili aynı sayıyı gösterir, sayfa değişince tek
+// istek gider. Sayfa yenilenince (panelin işlemleri, router.refresh) düzenin yeni sayısı alınır; adres (yol ya da
+// sorgu) değişince sayı ucu sorulur. Eski cevap yenisini ezmez. etkin değilse (zil yok) istek gitmez.
+export type BildirimSayisi = { sayi: number; yaz: (sayi: number) => void };
+export const useBildirimSayisi = (ilkSayi: number, etkin: boolean): BildirimSayisi => {
   const yol = usePathname();
-  const [acik, setAcik] = useState(false);
+  const sorgu = useSearchParams().toString();
+  const adres = `${yol}?${sorgu}`;
   const [sayi, setSayi] = useState(ilkSayi);
-  const [liste, setListe] = useState<PanelBildirimi[] | null>(null);
-  const [hata, setHata] = useState(false);
-  const baslikKimligi = useId();
-  const odakla = useCizimdenSonraOdak();
-
-  // Sayfa değişince okunmamış sayısı yeniden sorulur (düzen gezinmede yeniden çizilmez). İlk çizimde sunucunun
-  // sayısı vardır. Eski cevap yenisini ezmez.
-  const gorulenYol = useRef(yol);
+  const [gorulenIlk, setGorulenIlk] = useState(ilkSayi);
+  if (ilkSayi !== gorulenIlk) {
+    setGorulenIlk(ilkSayi);
+    setSayi(ilkSayi);
+  }
+  const gorulenAdres = useRef(adres);
   useEffect(() => {
-    if (yol === gorulenYol.current) return;
-    gorulenYol.current = yol;
+    if (!etkin || adres === gorulenAdres.current) return;
+    gorulenAdres.current = adres;
     let gecerli = true;
     void panelIstegi<{ okunmamis: number }>("panel-bildirim-sayisi").then((sonuc) => {
       if (gecerli && sonuc.tamam) setSayi(sonuc.veri.okunmamis);
@@ -62,7 +52,31 @@ export function BildirimZili({
     return () => {
       gecerli = false;
     };
-  }, [yol]);
+  }, [adres, etkin]);
+  return { sayi, yaz: setSayi };
+};
+
+export function BildirimZili({
+  okunmamis,
+  saklamaGun,
+  ayarlarAdresi,
+  className,
+}: {
+  // Çerçevenin tuttuğu okunmamış sayısı (useBildirimSayisi).
+  okunmamis: BildirimSayisi;
+  saklamaGun: string;
+  // Sipariş ayarlarının bildirim bölümü; izni olmayana yoktur.
+  ayarlarAdresi: string | null;
+  className?: string;
+}) {
+  const metin = usePanelMetni();
+  const router = useRouter();
+  const [acik, setAcik] = useState(false);
+  const { sayi, yaz: setSayi } = okunmamis;
+  const [liste, setListe] = useState<PanelBildirimi[] | null>(null);
+  const [hata, setHata] = useState(false);
+  const baslikKimligi = useId();
+  const odakla = useCizimdenSonraOdak();
 
   // Panel açılınca liste istenir; kapanınca eski liste bir sonraki açılışta gösterilmez.
   useEffect(() => {
@@ -82,7 +96,7 @@ export function BildirimZili({
     return () => {
       gecerli = false;
     };
-  }, [acik]);
+  }, [acik, setSayi]);
 
   // Satıra basınca okunmamışsa önce okundu yapılır (olmazsa yine gidilir), sonra ekran açılır.
   const ac = async (bildirim: PanelBildirimi) => {
@@ -108,10 +122,19 @@ export function BildirimZili({
     odakla(() => document.getElementById(baslikKimligi));
   };
 
+  // Rozet en çok iki hanedir: daha büyük sayı "99+" yazılır, ad "99'dan fazla" der (okunmamış silinmez, sayı büyüyebilir).
+  const enCok = panelBildirimSinirlari.rozetEnCok;
   const etiket =
     sayi === 0
       ? metin("yonetim.bildirimler.zil")
-      : doldur(metin("yonetim.bildirimler.zilOkunmamis"), { sayi: String(sayi) });
+      : doldur(
+          metin(
+            sayi > enCok
+              ? "yonetim.bildirimler.zilCokOkunmamis"
+              : "yonetim.bildirimler.zilOkunmamis",
+          ),
+          { sayi: String(Math.min(sayi, enCok)) },
+        );
 
   return (
     <AcilirPanel open={acik} onOpenChange={setAcik}>
@@ -124,7 +147,9 @@ export function BildirimZili({
             aria-hidden="true"
             className="pointer-events-none absolute top-0 right-0 inline-flex h-5 min-w-5 items-center justify-center rounded-dugme bg-rozet px-1.5 text-kucuk font-kalin text-rozet-ustu"
           >
-            {sayi}
+            {sayi > enCok
+              ? doldur(metin("yonetim.bildirimler.rozetFazla"), { sayi: String(enCok) })
+              : sayi}
           </span>
         )}
       </span>
