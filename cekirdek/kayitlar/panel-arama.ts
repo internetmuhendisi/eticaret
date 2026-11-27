@@ -1,3 +1,5 @@
+import { urunPanelAramaSiniri } from "./urun";
+
 // Panelin araması (kart 0321, karar 0191): aranan türler, sırası ve izinleri. Her tür kendi ucundan, kendi izniyle
 // aranır; izni olmayan türün grubu ekranda yoktur, ucu da reddeder. Gruplar bu sırayla görünür (taslak).
 export const panelAramaTurleri = {
@@ -12,4 +14,10 @@ export type PanelAramaTuru = keyof typeof panelAramaTurleri;
 export const panelAramaTurKodlari = Object.keys(panelAramaTurleri) as PanelAramaTuru[];
 
 // Aranan metnin en az ve en çok uzunluğu, bir grupta gösterilen en çok sonuç ve yazma durduktan sonra bekleme (ms).
-export const panelAramaSinirlari = { enAz: 2, enCok: 100, grupta: 5, bekleme: 250 } as const;
+// En çok uzunluk ürün listesininkidir: "Bütün ürünlerde ara" aranan metni listeye taşır.
+export const panelAramaSinirlari = {
+  enAz: 2,
+  enCok: urunPanelAramaSiniri,
+  grupta: 5,
+  bekleme: 250,
+} as const;

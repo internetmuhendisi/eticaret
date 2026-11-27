@@ -1409,7 +1409,7 @@ Panelin özellik formunun tek kaydı (kart 0261): alanlar ve seçeneklerin son h
 
 ### GET /kapi/yonetici/urunler
 
-Panelin ürün listesinin bir sayfası (kart 0262, karar 0161): taslak, zamanlanmış, gizli ve arşiv dahil bütün silinmemiş ürünler. Girdi ve yanıt panel sayfasınınkiyle aynıdır (liste tanımı `urunListesiTanimi`, `urunListesiVerisi`). Satırın fiyatı vitrindeki kartın fiyatı (`fiyatAraliklari`), stok durumu vitrinin kuralıdır (`stokDurumlari`). Ana görsel yalnız sitedeki görselleri görme izni (`dosya.gor`) olana verilir.
+Panelin ürün listesinin bir sayfası (kart 0262, karar 0161): taslak, zamanlanmış, gizli ve arşiv dahil bütün silinmemiş ürünler. Arama ad, silinmemiş birimin stok kodu ya da barkodudur (barkod kart 0321'den beri; panelin aramasıyla aynı koşul). Girdi ve yanıt panel sayfasınınkiyle aynıdır (liste tanımı `urunListesiTanimi`, `urunListesiVerisi`). Satırın fiyatı vitrindeki kartın fiyatı (`fiyatAraliklari`), stok durumu vitrinin kuralıdır (`stokDurumlari`). Ana görsel yalnız sitedeki görselleri görme izni (`dosya.gor`) olana verilir.
 
 - İzin: `urun.gor`. Sınır: `genel`.
 - Girdi: adres parametreleri `durum` (yayın durumları, virgülle), `kategori` ve `marka` (kimlikler, virgülle; kategori alt kategorileriyle), `stok` (`stokta`, `dusuk`, `tukendi`, virgülle), `ara` (ad ya da stok kodu, en çok 100 karakter), `sirala` (`son-degisen`, `ad-artan`, `ad-azalan`, `stok-artan`, `stok-azalan`, `fiyat-artan`, `fiyat-azalan`), `sayfa` (`listeUcuSemasi`).

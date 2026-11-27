@@ -64,7 +64,9 @@ export const urunAramasi = async (ara: string): Promise<PanelAramaSonucu> => {
 };
 
 export const musteriAramasi = async (ara: string): Promise<PanelAramaSonucu> => {
-  const satirlar = await musteriYonetimi(calisanSite()).ara(
+  const site = calisanSite();
+  const b = siteninBicimleyicisi(site.ayarlar);
+  const satirlar = await musteriYonetimi(site).ara(
     siteninVeritabani(),
     ara,
     panelAramaSinirlari.grupta + 1,
@@ -74,7 +76,7 @@ export const musteriAramasi = async (ara: string): Promise<PanelAramaSonucu> => 
     alt: `${m.ad === null ? "" : `${m.eposta}${ayrac()}`}${doldur(
       metin("yonetim.arama.siparisSayisi"),
       {
-        sayi: String(m.siparisSayisi),
+        sayi: b.sayi(m.siparisSayisi),
       },
     )}`,
     adres: musteriAyrintisiAdresi(m.kimlik),

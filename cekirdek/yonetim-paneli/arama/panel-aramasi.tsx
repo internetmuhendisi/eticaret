@@ -5,7 +5,15 @@
 // isteği hiç gitmez, grubu yoktur. WAI-ARIA'nın liste önerili açılır kutusudur: ok tuşları sonuçlarda gezer, Enter
 // sonucu açar, Escape listeyi kapatır; sonuç sayısı canlı bölgede duyurulur. Eski isteğin cevabı yenisini ezmez.
 import { useRouter } from "next/navigation";
-import { type Ref, useEffect, useId, useRef, useState } from "react";
+import {
+  type Ref,
+  type RefObject,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import type { PanelIkonAdi } from "../../../bilesenler/ikonlar/panel-sozlugu";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { GirisAlani } from "../../../bilesenler/parcalar/giris-alani";
@@ -32,12 +40,27 @@ const turIkonlari: Record<PanelAramaTuru, PanelIkonAdi> = {
 type Grup = { tur: PanelAramaTuru; sonuc: PanelAramaSonucu | null; hata?: string };
 type Secenek = { adres: string; satir?: PanelAramaSatiri; tur: PanelAramaTuru; tumu?: true };
 
+// Mac'te kısayol Cmd K'dır: Ctrl K orada metin alanlarında "satır sonuna kadar sil"dir, ona dokunulmaz.
+const macMi = () => /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+const useMac = () =>
+  useSyncExternalStore(
+    () => () => {},
+    macMi,
+    () => false,
+  );
+
 // Kutunun kısayolu: Ctrl K, Mac'te Cmd K.
 export const aramaKisayoluMu = (
-  olay: Pick<KeyboardEvent, "key" | "ctrlKey" | "metaKey" | "altKey">,
-) => (olay.ctrlKey || olay.metaKey) && !olay.altKey && olay.key.toLowerCase() === "k";
+  olay: Pick<KeyboardEvent, "key" | "ctrlKey" | "metaKey" | "altKey" | "shiftKey">,
+  mac: boolean,
+) =>
+  (mac ? olay.metaKey && !olay.ctrlKey : olay.ctrlKey && !olay.metaKey) &&
+  !olay.altKey &&
+  !olay.shiftKey &&
+  olay.key.toLowerCase() === "k";
 
-// Gruplardan klavyeyle gezilen seçenekler: her grubun satırları, ürünlerde daha fazlası varsa "Bütün ürünlerde ara".
+// Gruplardan klavyeyle gezilen seçenekler: her grubun satırları, ürünlerde daha fazlası varsa "Bütün ürünlerde ara"
+// (sonuçların arandığı metinle).
 const secenekleriKur = (gruplar: readonly Grup[], aranan: string): Secenek[] =>
   gruplar.flatMap(({ tur, sonuc }) => [
     ...(sonuc?.satirlar ?? []).map((satir) => ({ adres: satir.adres, satir, tur })),
@@ -55,33 +78,49 @@ const secenekleriKur = (gruplar: readonly Grup[], aranan: string): Secenek[] =>
 export function PanelAramaKutusu({
   turler,
   kutuRef,
-  otomatikOdak = false,
+  kisayolGoster = false,
   sonra,
 }: {
   // Yöneticinin izni olan türler, kayıttaki sırayla (sunucu süzer).
   turler: readonly PanelAramaTuru[];
   kutuRef?: Ref<HTMLInputElement>;
-  otomatikOdak?: boolean;
+  // Kısayolun işareti ve açıklaması (masaüstünün şeridi; telefonda klavye kısayolu yoktur).
+  kisayolGoster?: boolean;
   // Bir sonuç açılınca (false) ya da liste kapalıyken Escape'le (true, odak geri döner): telefonun arama kipi kapanır.
   sonra?: (geriDon: boolean) => void;
 }) {
   const metin = usePanelMetni();
   const router = useRouter();
   const kimlik = useId();
+  const mac = useMac();
   const [yazi, setYazi] = useState("");
   const [acik, setAcik] = useState(false);
   const [gruplar, setGruplar] = useState<Grup[]>([]);
+  // Gösterilen sonuçların arandığı metin: yazı ondan ayrıysa sonuçlar eskidir.
+  const [sonucMetni, setSonucMetni] = useState("");
   const [durum, setDurum] = useState<"bos" | "kisa" | "yukleniyor" | "hazir">("bos");
   const [etkin, setEtkin] = useState(-1);
   const istekSirasi = useRef(0);
+  // Sonuçlar gelmeden basılan Enter (barkod okuyucu, hızlı yazan): o metnin sonuçları gelince ilki açılır.
+  const bekleyenEnter = useRef<string | null>(null);
   const aranan = yazi.trim();
   const sirali = panelAramaTurKodlari.filter((tur) => turler.includes(tur));
+
+  const ac = (secenek: Secenek | undefined) => {
+    if (secenek === undefined) return;
+    bekleyenEnter.current = null;
+    setAcik(false);
+    setYazi("");
+    sonra?.(false);
+    router.push(secenek.adres);
+  };
 
   const ara = async (metni: string) => {
     istekSirasi.current += 1;
     const bu = istekSirasi.current;
     if (metni.length < panelAramaSinirlari.enAz) {
       setGruplar([]);
+      setSonucMetni(metni);
       setDurum(metni === "" ? "bos" : "kisa");
       return;
     }
@@ -98,14 +137,19 @@ export function PanelAramaKutusu({
           hata:
             sonuc.kod === "istek-siniri"
               ? metin("yonetim.arama.sinir")
-              : metin("yonetim.arama.hata"),
+              : doldur(metin("yonetim.arama.hata"), { grup: metin(`yonetim.arama.grup.${tur}`) }),
         };
       }),
     );
     if (bu !== istekSirasi.current) return;
     setGruplar(sonuclar);
+    setSonucMetni(metni);
     setEtkin(-1);
     setDurum("hazir");
+    if (bekleyenEnter.current === metni) {
+      bekleyenEnter.current = null;
+      ac(secenekleriKur(sonuclar, metni)[0]);
+    }
   };
 
   // Yazma durunca aranır.
@@ -115,36 +159,41 @@ export function PanelAramaKutusu({
     return () => clearTimeout(zamanlayici);
   }, [aranan]);
 
-  const secenekler = durum === "hazir" ? secenekleriKur(gruplar, aranan) : [];
+  // Sonuçlar yeni arama gelene kadar görünür kalır (yazarken liste kapanıp açılmaz).
+  const secenekler = durum === "bos" || durum === "kisa" ? [] : secenekleriKur(gruplar, sonucMetni);
+  const guncel = durum === "hazir" && sonucMetni === aranan;
   const listeKimligi = `${kimlik}-liste`;
   const ipucuKimligi = `${kimlik}-ipucu`;
   const secenekKimligi = (sira: number) => `${kimlik}-secenek-${sira}`;
-  const hatalar = gruplar.filter((grup) => grup.hata !== undefined);
+  // Aynı metin bir kez söylenir (üç tür birden sınıra takılırsa).
+  const hatalar = [
+    ...new Set(gruplar.flatMap((grup) => (grup.hata === undefined ? [] : [grup.hata]))),
+  ];
+  const dahaFazla = gruplar.some((grup) => grup.sonuc?.dahaFazla === true);
   const panelAcik = acik && durum !== "bos";
   const listeAcik = panelAcik && secenekler.length > 0;
-
-  const ac = (secenek: Secenek | undefined) => {
-    if (secenek === undefined) return;
-    setAcik(false);
-    setYazi("");
-    sonra?.(false);
-    router.push(secenek.adres);
-  };
+  const kisayol = metin(mac ? "yonetim.arama.kisayolMac" : "yonetim.arama.kisayol");
 
   const sonucSayisi = secenekler.filter((secenek) => secenek.tumu !== true).length;
+  const sonucsuz = guncel && sonucSayisi === 0 && hatalar.length === 0;
   const durumMetni =
     durum === "kisa"
       ? doldur(metin("yonetim.arama.kisa"), { sayi: String(panelAramaSinirlari.enAz) })
       : durum === "yukleniyor"
         ? metin("yonetim.arama.yukleniyor")
-        : durum === "hazir" && sonucSayisi === 0 && hatalar.length === 0
+        : sonucsuz
           ? doldur(metin("yonetim.arama.sonucYok"), { aranan })
           : durum === "hazir"
             ? [
                 sonucSayisi === 0
                   ? ""
-                  : doldur(metin("yonetim.arama.sonucSayisi"), { sayi: String(sonucSayisi) }),
-                ...hatalar.map((grup) => grup.hata ?? ""),
+                  : doldur(
+                      metin(
+                        dahaFazla ? "yonetim.arama.sonucSayisiFazla" : "yonetim.arama.sonucSayisi",
+                      ),
+                      { sayi: String(sonucSayisi) },
+                    ),
+                ...hatalar,
               ]
                 .filter((parca) => parca !== "")
                 .join(" ")
@@ -163,8 +212,6 @@ export function PanelAramaKutusu({
         aria-controls={listeKimligi}
         aria-describedby={ipucuKimligi}
         {...(listeAcik && etkin >= 0 ? { "aria-activedescendant": secenekKimligi(etkin) } : {})}
-        // Telefonda büyüteçle açılan kutu hemen yazılır.
-        autoFocus={otomatikOdak}
         autoComplete="off"
         enterKeyHint="search"
         placeholder={metin("yonetim.arama.yerTutucu")}
@@ -185,11 +232,15 @@ export function PanelAramaKutusu({
             setEtkin((onceki) => Math.min(onceki + 1, secenekler.length - 1));
           } else if (olay.key === "ArrowUp") {
             olay.preventDefault();
-            setEtkin((onceki) => Math.max(onceki - 1, 0));
+            setAcik(true);
+            // Seçim yokken yukarı ok son sonuca gider.
+            setEtkin((onceki) => (onceki < 0 ? secenekler.length - 1 : Math.max(onceki - 1, 0)));
           } else if (olay.key === "Enter") {
             olay.preventDefault();
-            // Seçim yoksa Enter ilk sonucu açar.
-            if (listeAcik) ac(secenekler[Math.max(etkin, 0)]);
+            if (listeAcik && etkin >= 0) ac(secenekler[etkin]);
+            // Seçim yoksa Enter ilk sonucu açar; sonuçlar yazılan metnin değilse gelince açılır.
+            else if (guncel) ac(secenekler[0]);
+            else if (aranan.length >= panelAramaSinirlari.enAz) bekleyenEnter.current = aranan;
           } else if (olay.key === "Escape") {
             if (panelAcik) {
               olay.preventDefault();
@@ -205,25 +256,29 @@ export function PanelAramaKutusu({
         aria-hidden="true"
         className="pointer-events-none absolute inset-y-0 right-3 flex items-center gap-2 text-soluk-yazi"
       >
-        {yazi === "" ? (
+        {kisayolGoster && yazi === "" ? (
           <kbd className="rounded-kucuk border border-kenar px-1.5 font-govde text-kucuk">
-            {metin("yonetim.arama.kisayol")}
+            {kisayol}
           </kbd>
         ) : null}
         <PanelIkon ad="arama" />
       </span>
       <span id={ipucuKimligi} className="sr-only">
         {metin("yonetim.arama.aciklama")}
+        {kisayolGoster ? ` ${doldur(metin("yonetim.arama.kisayolAciklama"), { kisayol })}` : ""}
       </span>
       <span role="status" className="sr-only">
         {acik ? durumMetni : ""}
       </span>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: yalnız kutunun odağını korur, bir eylem değildir. */}
       <div
         hidden={!panelAcik}
         className="absolute inset-x-0 top-full z-ust-kisim mt-1 flex flex-col rounded-orta border border-kenar bg-zemin py-2 shadow-acilir"
+        // Panelin içine basmak kutunun odağını almaz: liste açık kalır.
+        onMouseDown={(olay) => olay.preventDefault()}
       >
         <div id={listeKimligi} role="listbox" aria-label={metin("yonetim.arama.sonuclar")}>
-          {gruplar.map(({ tur }) => {
+          {gruplar.map(({ tur, sonuc }) => {
             const grupSecenekleri = secenekler.filter((secenek) => secenek.tur === tur);
             if (grupSecenekleri.length === 0) return null;
             const baslikKimligi = `${kimlik}-grup-${tur}`;
@@ -279,12 +334,18 @@ export function PanelAramaKutusu({
                     </div>
                   );
                 })}
+                {/* Sipariş ve müşteride fazlası söylenir (ürünlerde "Bütün ürünlerde ara" vardır); duyuruda da. */}
+                {tur !== "urun" && sonuc?.dahaFazla === true ? (
+                  <span aria-hidden="true" className="block px-4 pb-1 text-kucuk text-soluk-yazi">
+                    {metin("yonetim.arama.dahaFazla")}
+                  </span>
+                ) : null}
               </div>
             );
           })}
         </div>
         {/* Aynı metin canlı bölgede duyurulur: görünen kopya ekran okuyucuya iki kez okunmaz. */}
-        {durum === "hazir" && sonucSayisi === 0 && hatalar.length === 0 ? (
+        {sonucsuz ? (
           <div aria-hidden="true" className="flex flex-col gap-1 px-4 py-2 text-kucuk">
             <span>{durumMetni}</span>
             <span className="text-soluk-yazi">{metin("yonetim.arama.aranabilenler")}</span>
@@ -296,7 +357,7 @@ export function PanelAramaKutusu({
           </div>
         ) : durumMetni !== "" && (durum !== "hazir" || hatalar.length > 0) ? (
           <span aria-hidden="true" className="px-4 py-2 text-kucuk text-soluk-yazi">
-            {durum === "hazir" ? hatalar.map((grup) => grup.hata).join(" ") : durumMetni}
+            {durum === "hazir" ? hatalar.join(" ") : durumMetni}
           </span>
         ) : null}
         {listeAcik ? (
@@ -312,25 +373,29 @@ export function PanelAramaKutusu({
   );
 }
 
-// Çerçevenin araması: masaüstünde üst şerit, telefon ve tablette büyüteçle açılan tam genişlikte kutu. Ctrl K
-// görünen kutuya gider; telefonda kutuyu açar. İzni olan tür yoksa hiçbir şey çizilmez.
-export function usePanelAramasi(turler: readonly PanelAramaTuru[]) {
-  const seritKutusu = useRef<HTMLInputElement>(null);
-  const [telefondaAcik, setTelefondaAcik] = useState(false);
+// Çerçevenin kısayolu: Ctrl K (Mac'te Cmd K) masaüstünde şeritteki kutuya gider, telefon ve tablette arama kipini
+// açar (`telefondaAc`). Başka bir dinleyicinin işlediği tuş yok sayılır. İzni olan tür yoksa dinlenmez.
+export function useAramaKisayolu(
+  etkin: boolean,
+  seritKutusu: RefObject<HTMLInputElement | null>,
+  telefondaAc: () => void,
+) {
+  const mac = useMac();
+  const son = useRef(telefondaAc);
+  son.current = telefondaAc;
   useEffect(() => {
-    if (turler.length === 0) return;
+    if (!etkin) return;
     const dinle = (olay: KeyboardEvent) => {
-      if (!aramaKisayoluMu(olay)) return;
+      if (olay.defaultPrevented || !aramaKisayoluMu(olay, mac)) return;
       olay.preventDefault();
       const kutu = seritKutusu.current;
       // Şerit yalnız masaüstünde görünür (offsetParent gizli öğede null'dır).
       if (kutu !== null && kutu.offsetParent !== null) kutu.focus();
-      else setTelefondaAcik(true);
+      else son.current();
     };
     document.addEventListener("keydown", dinle);
     return () => document.removeEventListener("keydown", dinle);
-  }, [turler.length]);
-  return { seritKutusu, telefondaAcik, setTelefondaAcik };
+  }, [etkin, mac, seritKutusu]);
 }
 
 export function TelefonAramaKapat({ kapat }: { kapat: () => void }) {

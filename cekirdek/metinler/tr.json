@@ -1977,7 +1977,7 @@
     "urunler": {
       "liste": "Ürünler",
       "ara": "Ürün ara",
-      "araYer": "Ad ya da stok kodu",
+      "araYer": "Ad, stok kodu ya da barkod",
       "suzgec": {
         "durum": "Durum",
         "kategori": "Kategori",
@@ -3285,9 +3285,9 @@
     "arama": {
       "etiket": "Panelde ara: sipariş, ürün, stok kodu, barkod, müşteri",
       "yerTutucu": "Sipariş, ürün, stok kodu, müşteri…",
-      "aciklama": "Kısayol: Ctrl K. Yazdıkça sonuçlar gelir; ok tuşlarıyla gezin, Enter ile açın.",
+      "aciklama": "Yazdıkça sonuçlar gelir; ok tuşlarıyla gezin, Enter ile açın.",
       "ac": "Panelde ara",
-      "kapat": "Kapat",
+      "kapat": "Aramayı kapat",
       "sonuclar": "Arama sonuçları",
       "grup": {
         "siparis": "Siparişler",
@@ -3304,13 +3304,17 @@
       "sonucYok": "\"{aranan}\" için sonuç bulunamadı.",
       "aranabilenler": "Şunlarla arayabilirsiniz:",
       "sonucSayisi": "{sayi} sonuç bulundu.",
-      "hata": "Bazı sonuçlar alınamadı. Biraz sonra yeniden deneyin.",
+      "hata": "{grup} alınamadı. Biraz sonra yeniden deneyin.",
       "sinir": "Çok sık arama yapıldı. Bir dakika bekleyip yeniden deneyin.",
       "klavye": "Ok tuşlarıyla gezin, Enter ile açın.",
       "butunUrunler": "Bütün ürünlerde ara",
       "ayrac": " · ",
       "siparisSayisi": "{sayi} sipariş",
-      "kisayol": "Ctrl K"
+      "kisayol": "Ctrl K",
+      "kisayolAciklama": "Kısayol: {kisayol}.",
+      "kisayolMac": "⌘ K",
+      "sonucSayisiFazla": "{sayi} sonuç gösteriliyor, daha fazlası var.",
+      "dahaFazla": "Daha fazla sonuç var, aramayı daraltın."
     }
   },
   "vitrin": {

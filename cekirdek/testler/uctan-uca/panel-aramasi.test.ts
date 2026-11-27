@@ -213,7 +213,25 @@ test("panelin araması: Ctrl K, gruplar, klavyeyle sonuca gitme, sonuçsuz hâl,
     await expect(
       page.getByRole("combobox", { name: metin("yonetim.arama.etiket") }).filter({ visible: true }),
     ).toHaveCount(0);
+    // Ctrl K da telefonun kipini açar; menü açıksa önce menü kapanır.
+    await page.getByRole("button", { name: metin("yonetim.cerceve.menuyuAc") }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.keyboard.press("Control+k");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(kutu(page)).toBeFocused();
+    // "Aramayı kapat" kipi kapatır, odak büyütece döner.
+    await page.getByRole("button", { name: metin("yonetim.arama.kapat") }).focus();
+    await page.keyboard.press("Enter");
+    await expect(buyutec).toBeFocused();
   }
+  // Telefonda sonuç açılınca kip kapanır, sayfa açılır.
+  await page.setViewportSize({ width: 375, height: 800 });
+  await page.getByRole("button", { name: metin("yonetim.arama.ac") }).click();
+  await page.keyboard.type(v.stokKodu.toLowerCase());
+  await expect(page.getByRole("option")).toHaveCount(1);
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(new RegExp(`${urunEkraniAdresi(v.urun).replace("?", "\\?")}$`));
+  await expect(page.getByRole("button", { name: metin("yonetim.arama.ac") })).toBeVisible();
   expect(hatalar).toEqual([]);
 });
 

@@ -5,11 +5,12 @@
 // sonuçsuz aramada yalnız izni olan türlerin aranabilecekleri yazılır; ürünlerde fazlası varsa "Bütün ürünlerde ara";
 // hata ve istek sınırı söylenir; eski isteğin cevabı yenisini ezmez. Uçlar sahte fetch ile verilir.
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PanelAramaTuru } from "../../kayitlar/panel-arama.ts";
 import { MetinSaglayici } from "../../metinler/istemci-metni.tsx";
 import { metinOkuyucu } from "../../metinler/metin.ts";
-import { aramaKisayoluMu, PanelAramaKutusu } from "../arama/panel-aramasi.tsx";
+import { aramaKisayoluMu, PanelAramaKutusu, useAramaKisayolu } from "../arama/panel-aramasi.tsx";
 
 const git = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: git, refresh: vi.fn() }) }));
@@ -63,6 +64,12 @@ afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
+
+function KisayolDenemesi({ etkin, ac }: { etkin: boolean; ac: () => void }) {
+  const kutu = useRef<HTMLInputElement>(null);
+  useAramaKisayolu(etkin, kutu, ac);
+  return null;
+}
 
 const ciz = (turler: readonly PanelAramaTuru[], sonra?: (geriDon: boolean) => void) =>
   render(
@@ -164,7 +171,7 @@ describe("panelin arama kutusu", () => {
     cevaplar["panel-urun-ara"] = () => ({
       veri: { satirlar: [satir("Ayna", "/u/2")], dahaFazla: true },
     });
-    cevaplar["panel-siparis-ara"] = () => ({ veri: { satirlar: [], dahaFazla: true } });
+    cevaplar["panel-siparis-ara"] = () => ({ veri: { satirlar: [], dahaFazla: false } });
     ciz(["siparis", "urun"]);
     const kutu = screen.getByRole("combobox", { name: etiket });
     await yaz(kutu, "ay na");
@@ -173,8 +180,8 @@ describe("panelin arama kutusu", () => {
       "Aynaalt",
       metin("yonetim.arama.butunUrunler"),
     ]);
-    // Sonuç sayısına "Bütün ürünlerde ara" girmez.
-    expect(durum()).toBe("1 sonuç bulundu.");
+    // Sonuç sayısına "Bütün ürünlerde ara" girmez; fazlası olduğu söylenir.
+    expect(durum()).toBe("1 sonuç gösteriliyor, daha fazlası var.");
     fireEvent.click(secenekler[1] as HTMLElement);
     expect(git).toHaveBeenCalledWith("/yonetim/urunler?ara=ay+na");
   });
@@ -186,7 +193,7 @@ describe("panelin arama kutusu", () => {
     await yaz(screen.getByRole("combobox", { name: etiket }), "ay");
     expect(screen.getAllByRole("option")).toHaveLength(1);
     expect(durum()).toBe(
-      `1 sonuç bulundu. ${metin("yonetim.arama.hata")} ${metin("yonetim.arama.sinir")}`,
+      `1 sonuç bulundu. ${metin("yonetim.arama.hata").replace("{grup}", metin("yonetim.arama.grup.urun"))} ${metin("yonetim.arama.sinir")}`,
     );
   });
 
@@ -205,13 +212,130 @@ describe("panelin arama kutusu", () => {
     expect(screen.getAllByRole("option").map((oge) => oge.textContent)).toEqual(["Yenialt"]);
   });
 
-  it("kısayol Ctrl K ve Cmd K'dır; Alt ile ya da başka harfle değildir", () => {
+  it("bekleme sürerken Enter eski sonucu açmaz; yeni sonuçlar gelince ilkini açar (barkod okuyucu)", async () => {
+    cevaplar["panel-siparis-ara"] = () => ({ veri: { satirlar: [], dahaFazla: false } });
+    cevaplar["panel-urun-ara"] = (aranan) => ({
+      veri: { satirlar: [satir(`Ürün ${aranan}`, `/u/${aranan}`)], dahaFazla: false },
+    });
+    ciz(["siparis", "urun"]);
+    const kutu = screen.getByRole("combobox", { name: etiket });
+    await yaz(kutu, "ay");
+    // Yazı değişti, bekleme dolmadı: Enter eski "ay" sonucunu açmaz.
+    fireEvent.change(kutu, { target: { value: "ayna" } });
+    fireEvent.keyDown(kutu, { key: "Enter" });
+    expect(git).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(git).toHaveBeenCalledWith("/u/ayna");
+    // Boş kutuya hızla yazılıp Enter'a basılır: liste hiç açılmadan sonuç gelince açılır.
+    git.mockReset();
+    fireEvent.change(kutu, { target: { value: "8690000000017" } });
+    fireEvent.keyDown(kutu, { key: "Enter" });
+    expect(git).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(git).toHaveBeenCalledWith("/u/8690000000017");
+    // Enter'dan sonra yazı değişirse eski metnin sonucu açılmaz.
+    git.mockReset();
+    fireEvent.change(kutu, { target: { value: "kup" } });
+    fireEvent.keyDown(kutu, { key: "Enter" });
+    fireEvent.change(kutu, { target: { value: "kupa" } });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    expect(git).not.toHaveBeenCalled();
+  });
+
+  it("seçim yokken yukarı ok son sonuca gider", async () => {
+    ciz(["siparis", "urun", "musteri"]);
+    const kutu = screen.getByRole("combobox", { name: etiket });
+    await yaz(kutu, "ay");
+    fireEvent.keyDown(kutu, { key: "ArrowUp" });
+    const etkin = kutu.getAttribute("aria-activedescendant");
+    expect(document.getElementById(etkin ?? "")?.textContent).toBe("Ayşe Şahinalt");
+  });
+
+  it("sipariş ve müşteride fazlası söylenir, duyuruda da", async () => {
+    cevaplar["panel-musteri-ara"] = () => ({
+      veri: { satirlar: [satir("Ayşe Şahin", "/m/1")], dahaFazla: true },
+    });
+    ciz(["siparis", "musteri"]);
+    await yaz(screen.getByRole("combobox", { name: etiket }), "ay");
+    expect(screen.getByText(metin("yonetim.arama.dahaFazla"))).toBeTruthy();
+    expect(durum()).toBe("2 sonuç gösteriliyor, daha fazlası var.");
+  });
+
+  it("aynı hata bir kez söylenir; alınamayan tür adıyla söylenir", async () => {
+    for (const uc of Object.keys(cevaplar))
+      cevaplar[uc] = () => ({ durum: 429, hata: "istek-siniri" });
+    ciz(["siparis", "urun", "musteri"]);
+    const kutu = screen.getByRole("combobox", { name: etiket });
+    await yaz(kutu, "ay");
+    expect(durum()).toBe(metin("yonetim.arama.sinir"));
+    cevaplar["panel-urun-ara"] = () => ({ durum: 500, hata: "beklenmeyen" });
+    await yaz(kutu, "ayn");
+    expect(durum()).toContain(
+      metin("yonetim.arama.hata").replace("{grup}", metin("yonetim.arama.grup.urun")),
+    );
+  });
+
+  it("panelin içine basmak kutunun odağını almaz", async () => {
+    ciz(["urun"]);
+    const kutu = screen.getByRole("combobox", { name: etiket });
+    await yaz(kutu, "ay");
+    const baslik = screen.getByText(metin("yonetim.arama.grup.urun"));
+    // preventDefault edilen olayda fireEvent false döner.
+    expect(fireEvent.mouseDown(baslik)).toBe(false);
+  });
+
+  it("kısayolun işareti ve açıklaması yalnız istenince (masaüstünün şeridi)", () => {
+    const { unmount } = ciz(["urun"]);
+    expect(screen.queryByText(metin("yonetim.arama.kisayol"))).toBeNull();
+    unmount();
+    render(
+      <MetinSaglayici dil="tr">
+        <PanelAramaKutusu turler={["urun"]} kisayolGoster />
+      </MetinSaglayici>,
+    );
+    expect(screen.getByText(metin("yonetim.arama.kisayol"))).toBeTruthy();
+    expect(
+      screen.getByRole("combobox", { name: etiket }).getAttribute("aria-describedby"),
+    ).toBeTruthy();
+  });
+
+  it("kısayol Ctrl K'dır, Mac'te Cmd K; Alt, Shift ya da başka harfle değildir", () => {
     const olay = (ek: Partial<KeyboardEvent>) =>
-      ({ key: "k", ctrlKey: false, metaKey: false, altKey: false, ...ek }) as KeyboardEvent;
-    expect(aramaKisayoluMu(olay({ ctrlKey: true }))).toBe(true);
-    expect(aramaKisayoluMu(olay({ metaKey: true, key: "K" }))).toBe(true);
-    expect(aramaKisayoluMu(olay({ ctrlKey: true, altKey: true }))).toBe(false);
-    expect(aramaKisayoluMu(olay({ ctrlKey: true, key: "j" }))).toBe(false);
-    expect(aramaKisayoluMu(olay({}))).toBe(false);
+      ({
+        key: "k",
+        ctrlKey: false,
+        metaKey: false,
+        altKey: false,
+        shiftKey: false,
+        ...ek,
+      }) as KeyboardEvent;
+    expect(aramaKisayoluMu(olay({ ctrlKey: true }), false)).toBe(true);
+    expect(aramaKisayoluMu(olay({ metaKey: true }), false)).toBe(false);
+    // Mac'te Ctrl K metin alanının kendi kısayoludur.
+    expect(aramaKisayoluMu(olay({ ctrlKey: true }), true)).toBe(false);
+    expect(aramaKisayoluMu(olay({ metaKey: true, key: "K" }), true)).toBe(true);
+    expect(aramaKisayoluMu(olay({ ctrlKey: true, altKey: true }), false)).toBe(false);
+    expect(aramaKisayoluMu(olay({ ctrlKey: true, shiftKey: true }), false)).toBe(false);
+    expect(aramaKisayoluMu(olay({ ctrlKey: true, key: "j" }), false)).toBe(false);
+  });
+
+  it("çerçevenin kısayolu: şerit görünmüyorsa telefonun kipini açar; başkasının işlediği tuşu yok sayar; izinsizde dinlemez", () => {
+    const telefondaAc = vi.fn();
+    const { rerender } = render(<KisayolDenemesi etkin ac={telefondaAc} />);
+    fireEvent.keyDown(document, { key: "k", ctrlKey: true });
+    expect(telefondaAc).toHaveBeenCalledTimes(1);
+    const islenmis = new KeyboardEvent("keydown", { key: "k", ctrlKey: true, cancelable: true });
+    islenmis.preventDefault();
+    document.dispatchEvent(islenmis);
+    expect(telefondaAc).toHaveBeenCalledTimes(1);
+    rerender(<KisayolDenemesi etkin={false} ac={telefondaAc} />);
+    fireEvent.keyDown(document, { key: "k", ctrlKey: true });
+    expect(telefondaAc).toHaveBeenCalledTimes(1);
   });
 });

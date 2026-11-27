@@ -5,7 +5,7 @@
 // tablette üst çubuktaki büyüteçle açılır; yalnız yöneticinin izni olan türler aranır. Tarayıcıda çizilir: yan pencerenin tetikleyicisi özelliklerini ancak düğme burada
 // çizilirse alır (kart 0108'de ölçüldü). Metinler ve menü sunucudan gelir.
 import { usePathname } from "next/navigation";
-import { type ReactNode, useId, useState } from "react";
+import { type ReactNode, useId, useRef, useState } from "react";
 import { BildirimAlani } from "../../bilesenler/parcalar/bildirim";
 import { useCizimdenSonraOdak } from "../../bilesenler/parcalar/cizimden-sonra-odak";
 import { IkonDugmesi } from "../../bilesenler/parcalar/dugme";
@@ -17,7 +17,7 @@ import {
 } from "../../bilesenler/parcalar/yan-pencere";
 import type { PanelAramaTuru } from "../kayitlar/panel-arama";
 import { usePanelMetni } from "../metinler/panel-metni";
-import { PanelAramaKutusu, TelefonAramaKapat, usePanelAramasi } from "./arama/panel-aramasi";
+import { PanelAramaKutusu, TelefonAramaKapat, useAramaKisayolu } from "./arama/panel-aramasi";
 import { CikisKorumasi } from "./form/cikis-korumasi";
 import { type MagazaGorunumu, MagazaIsareti, MenuIcerigi } from "./menu-icerigi";
 import type { CizilenMenuGrubu } from "./panel-menusu";
@@ -40,9 +40,18 @@ export function PanelCercevesi({
 }) {
   const metin = usePanelMetni();
   const [acik, setAcik] = useState(false);
-  const { seritKutusu, telefondaAcik, setTelefondaAcik } = usePanelAramasi(aramaTurleri);
+  const seritKutusu = useRef<HTMLInputElement>(null);
+  const telefonKutusu = useRef<HTMLInputElement>(null);
+  const [telefondaAcik, setTelefondaAcik] = useState(false);
   const buyutecKimligi = useId();
   const odakla = useCizimdenSonraOdak();
+  // Telefonun arama kipi açılınca menü kapanır, odak kutuya geçer (zaten açıksa da kutuya döner).
+  const telefondaAc = () => {
+    setAcik(false);
+    setTelefondaAcik(true);
+    odakla(() => telefonKutusu.current);
+  };
+  useAramaKisayolu(aramaTurleri.length > 0, seritKutusu, telefondaAc);
   // Telefonun arama kipi kapanınca odak büyütece döner; bir sonuç açılınca sayfa değişir, odak verilmez.
   const telefonAramasiniKapat = (geriDon: boolean) => {
     setTelefondaAcik(false);
@@ -74,7 +83,7 @@ export function PanelCercevesi({
               <>
                 <PanelAramaKutusu
                   turler={aramaTurleri}
-                  otomatikOdak
+                  kutuRef={telefonKutusu}
                   sonra={(geriDon) => telefonAramasiniKapat(geriDon)}
                 />
                 <TelefonAramaKapat kapat={() => telefonAramasiniKapat(true)} />
@@ -103,7 +112,7 @@ export function PanelCercevesi({
                     ikon="arama"
                     etiket={metin("yonetim.arama.ac")}
                     className="ml-auto shrink-0"
-                    onClick={() => setTelefondaAcik(true)}
+                    onClick={telefondaAc}
                   />
                 )}
               </>
@@ -112,7 +121,7 @@ export function PanelCercevesi({
           {aramaTurleri.length === 0 ? null : (
             <div className="hidden justify-end border-b border-kenar bg-zemin px-6 py-2 masaustu:flex print:hidden">
               <div className="w-full max-w-form">
-                <PanelAramaKutusu turler={aramaTurleri} kutuRef={seritKutusu} />
+                <PanelAramaKutusu turler={aramaTurleri} kutuRef={seritKutusu} kisayolGoster />
               </div>
             </div>
           )}

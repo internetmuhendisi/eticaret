@@ -25,6 +25,7 @@ import { hesapAc } from "../../moduller/oturum/servis.ts";
 import { siparisler } from "../../moduller/siparis/model.ts";
 import { kisiselVeriTemizligi } from "../../moduller/siparis/temizlik.ts";
 import { stokServisi } from "../../moduller/stok/servis.ts";
+import { urunPanelListesi } from "../../moduller/urun/panel-listesi.ts";
 import { urunServisi } from "../../moduller/urun/servis.ts";
 import { siteninVergiServisi } from "../../moduller/vergi/servis.ts";
 import { baglantiyiKapat, siteninVeritabani, type Veritabani } from "../../veritabani/baglanti.ts";
@@ -296,6 +297,18 @@ describe("panelin araması", () => {
     expect(birlesimKodu.govde.veri?.satirlar[0]?.alt).toBe(`MAV-${kod} · Taslak`);
     const barkodla = await ucunuCagir(panelUrunAramaUcu, "4006381333931", sahip);
     expect(adresler(barkodla.govde)).toContain(urunEkraniAdresi(secenekli));
+    // Ürün listesi de barkodla bulur ("Bütün ürünlerde ara" aramanın bulduğunu listede de bulur).
+    const liste = await urunPanelListesi(
+      vt,
+      { ara: "4006381333931", siralama: "ad-artan", sayfa: 1, sayfaBoyu: 100 },
+      {
+        paraBirimi: site.ayarlar.paraBirimi,
+        dusukStokEsigi: 3,
+        an: new Date(),
+        dil: site.ayarlar.dil,
+      },
+    );
+    expect(liste.satirlar.map((satir) => satir.kimlik)).toContain(secenekli);
     // Silinen birleşimin kodu artık bulmaz.
     await urunSrv.birlesimSil(vt, kim(), maviBirim);
     expect(adresler((await ucunuCagir(panelUrunAramaUcu, `mav-${kod}`, sahip)).govde)).toEqual([]);
