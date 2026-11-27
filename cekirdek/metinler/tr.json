@@ -182,11 +182,12 @@
     },
     "grup": {
       "satis": "Satış",
-      "urunler": "Ürünler",
-      "vitrin": "Vitrin",
+      "katalog": "Katalog",
       "icerik": "İçerik",
+      "vitrin": "Vitrin",
       "ayarlar": "Ayarlar"
     },
+    "sayfaYoluKok": "Panel",
     "sayfa": {
       "karsilama": {
         "ad": "Karşılama",
@@ -5315,7 +5316,7 @@
       "yolKisa1": "Ev",
       "yolKisa2": "Su",
       "yolUzun": "Bahçe mobilyaları, dış mekân aydınlatması ve süs bitkileri",
-      "yolPanel": "Karşılama",
+      "yolPanel": "Panel",
       "yolGrup": "Ayarlar",
       "yolAyar": "Mağaza bilgileri",
       "baslikGiyim": "Giyim",

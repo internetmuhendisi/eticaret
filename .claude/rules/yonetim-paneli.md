@@ -13,7 +13,7 @@ paths:
 - Komut çubuğuna "Yeni ürün", "Dışa aktar", "Ayarlar" gibi eylemleri koy. Arama ve filtre altındaki şeritte durur.
 - Komut çubuğunda dolu renkli tek düğme olsun, o da sayfanın asıl eylemi.
 - Aynı eylem her sayfada aynı ikon, aynı ad ve aynı yerde dursun. Eylem tanımlarını tek dosyadan oku.
-- Yan menüyü, sayfa yolunu ve sayfa başlıklarını tek sayfa ağacından üret. Sayfa yolu kök, sayfanın menüdeki grubu (bağlantısız, grubun sayfası yoktur), üst sayfalar ve sayfanın kendisidir (`sayfaYoluAdimlari`, kart 0301). Menünün grupları: Satış, Ürünler, Vitrin, İçerik, Ayarlar; mağaza ayarlarının ekranları (mağaza bilgileri, sipariş ayarları, ödeme yöntemleri ve banka hesapları, kargo, vergi) Ayarlar'da, Ekip'ten önce.
+- Yan menüyü, sayfa yolunu ve sayfa başlıklarını tek sayfa ağacından üret. Sayfa yolu kök, sayfanın menüdeki grubu (bağlantısız, grubun sayfası yoktur), üst sayfalar ve sayfanın kendisidir (`sayfaYoluAdimlari`, kart 0301). Sayfa yolunun ilk adımı "Panel"dir (`sayfaYoluKokAdi`). Menünün grupları taslağın sırasıyla (karar 0200): Satış, Katalog, İçerik, Vitrin, Ayarlar; mağaza ayarlarının ekranları (mağaza bilgileri, sipariş ayarları, ödeme yöntemleri ve banka hesapları, kargo, vergi) Ayarlar'da, Ekip'ten önce.
 - Ayar ve rapor alt sayfalarında ana sayfanın komut çubuğunu kullan, yalnız seçili öğe değişsin.
 - Kullanıcının yetkisi olmayan düğme, menü ya da bağlantıyı hiç gösterme. Yetki bilgisini sunucudan oku, ikinci bir liste yazma.
 - Panelin ana ekranında günün satışını, bekleyen siparişleri ve uyarıları tek bakışta göster.
@@ -156,7 +156,7 @@ paths:
 
 ## Kategoriler, markalar ve etiketler, özellikler (karar 0160)
 
-- Ekranlar `cekirdek/yonetim-paneli/kategoriler/`, `markalar/` ve `ozellikler/` klasörlerinde, menüde "Ürünler" altındadır. Görmek `kategori.gor`, `marka.gor` (etiket listesi ayrıca `etiket.gor`), `ozellik.gor`; değiştirmek `*.degistir`, silmek `*.sil` ister (görevli silemez).
+- Ekranlar `cekirdek/yonetim-paneli/kategoriler/`, `markalar/` ve `ozellikler/` klasörlerinde, menüde "Katalog" altındadır. Görmek `kategori.gor`, `marka.gor` (etiket listesi ayrıca `etiket.gor`), `ozellik.gor`; değiştirmek `*.degistir`, silmek `*.sil` ister (görevli silemez).
 - Kategoriyi başka bir kategorinin altına almak satırın "Diğer işlemler" menüsünden ya da formdaki "Üst kategori"den yapılır (menüler ekranının yolu); kendisi ve alt ağacı sunulmaz. Sıralama kardeşlerin tamamını tek uçla gönderir; eski sıra `cakisma` alır.
 - Kodlu hata döndüren modülün formu `useKodluForm` ile yazılır (`cekirdek/yonetim-paneli/kodlu-form.ts`): alan hatası alanın altında, alanı olmayan hata özette modülün metniyle. Açılır menüden pencere açmak `useMenudenPencere` iledir (`menuden-pencere.ts`).
 - Özelliğin formu tek kayıtla gider (`ozellik-kaydet`); değeri olan özelliğin türü seçilemez, değeri olan seçenek çıkarılınca kayıttan önce sorulur. Var olan seçeneği çıkarmak `ozellik.sil` ister (uç denetler, ekran düğmeyi göstermez).
@@ -165,13 +165,13 @@ paths:
 
 ## Yorumlar (karar 0174)
 
-- Ekran `cekirdek/yonetim-paneli/yorumlar/` klasöründe, menüde "Ürünler" altındadır; servisi `cekirdek/moduller/yorum/panel-listesi.ts`. Görmek `yorum.gor`, karar ve ana sayfa işareti `yorum.onayla` (görevlide de); ürün adı yalnız `urun.gor` izni olana ürün ekranına bağlantıdır.
+- Ekran `cekirdek/yonetim-paneli/yorumlar/` klasöründe, menüde "Katalog" altındadır; servisi `cekirdek/moduller/yorum/panel-listesi.ts`. Görmek `yorum.gor`, karar ve ana sayfa işareti `yorum.onayla` (görevlide de); ürün adı yalnız `urun.gor` izni olana ürün ekranına bağlantıdır.
 - Liste Onay bekleyen sekmesiyle açılır (varsayılan sekme), her genişlikte karttır. Kart eylemleri `yorum-karari` ve `yorum-ana-sayfa` uçlarına, toplu işlem `yorumlar-toplu`'ya gider. Karar ekranın gördüğü durumu (`gorulen`) gönderir; arada değişen yorum çakışır (`yorum-degisti`). Toplu işlemler sekmeye göredir (`yorumTopluIslemleri`'nin `sekmeler`'i). Eylemden sonra odak kartta, sonraki ya da önceki kartta, liste boşalınca seçili sekmede kalır; odak yenilenen liste gelince yerleşir.
 - Silinmiş ürünün yorumu listede, sayılarda ve menüdeki sayıda yoktur. Yönetici e-postasının "Yorumlara git" düğmesi `yorumlarAdresi`'ne gider.
 
 ## Ürünler listesi (karar 0161)
 
-- Ekran `cekirdek/yonetim-paneli/urunler/` klasöründe, menüde "Ürünler" grubunun başındadır; servisi `cekirdek/moduller/urun/panel-listesi.ts`. Görmek `urun.gor`; yayınla, taslağa al, arşive al `urun.degistir`, sil `urun.sil` ister (`urunTopluIslemleri`, `cekirdek/kayitlar/urun.ts`).
+- Ekran `cekirdek/yonetim-paneli/urunler/` klasöründe, menüde "Katalog" grubunun başındadır; servisi `cekirdek/moduller/urun/panel-listesi.ts`. Görmek `urun.gor`; yayınla, taslağa al, arşive al `urun.degistir`, sil `urun.sil` ister (`urunTopluIslemleri`, `cekirdek/kayitlar/urun.ts`).
 - Satırın fiyatı yalnız `fiyatAraliklari`, stok durumu yalnız `urunPanelStokDurumu` ile bulunur; stok süzgeci `urunPanelStokKosulu` ile, iki kural aynı sonucu verir (test). Ad sıralaması sitenin dilinin harf sırasıyladır, dil koda yazılmaz.
 - Listenin asıl eylemi "Ürün ekle"dir (`urun-ekle`), satırdaki ad ürün ekranına gider (kart 0263).
 - Ürün kopyalama (kart 0320, karar 0190): "Kopyala" (`urun-kopyala` eylemi) ürün ekranının komut çubuğunda ve listenin satır menüsündedir ("Diğer işlemler", yalnız `urun.degistir` izni olana). Yan pencere `urunler/kopyalama.tsx`'tir, `urun-kopyala` ucuna gider, kopyanın ürün ekranını `?kopya=1` ile açar. Fiyat izni olmayana kopyanın fiyatsız açılacağını, kaydedilmemiş değişiklik varsa (`useDegisenFormVar`, çıkış koruması) onun kaybolacağını söyler. Ürün ekranı kimlikle anahtarlanır (`key`): başka ürüne geçince form baştan kurulur. Kopyalama yalnız `urunKopyala` (`cekirdek/moduller/urun/kopyalama.ts`) ile, parçaların kendi servisleriyle yapılır.

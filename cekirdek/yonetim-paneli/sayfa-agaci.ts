@@ -24,13 +24,15 @@ import {
   yorumlarAdresi,
 } from "./adresler";
 
-// Menüdeki gruplar, menüdeki sırasıyla. Grubun adı yalnız menüde görünür; grubun kendi sayfası yoktur.
+// Menüdeki gruplar, menüdeki sırasıyla (taslak karar 0157, kart 0324, karar 0200: Satış, Katalog, İçerik, Vitrin,
+// Ayarlar). Grubun adı menüde ve sayfa yolunda görünür; grubun kendi sayfası yoktur.
 export const panelGruplari = {
   satis: "yonetim.grup.satis",
-  urunler: "yonetim.grup.urunler",
-  vitrin: "yonetim.grup.vitrin",
+  // Ürün ekranları, kategoriler, markalar, özellikler, yorumlar (adı "Katalog": içindeki "Ürünler" sayfasıyla karışmaz).
+  katalog: "yonetim.grup.katalog",
   // Kart 0272: blog; kart 0273: sabit sayfalar.
   icerik: "yonetim.grup.icerik",
+  vitrin: "yonetim.grup.vitrin",
   // Kart 0274: ekip ve kendi hesabı; kart 0301: mağaza bilgileri, sipariş ayarları, ödeme, kargo.
   ayarlar: "yonetim.grup.ayarlar",
 } as const satisfies Record<string, MetinAnahtari>;
@@ -211,7 +213,7 @@ export const panelSayfalari = [
     aciklama: "yonetim.sayfa.urunler.aciklama",
     ikon: "urunler",
     izin: "urun.gor",
-    grup: "urunler",
+    grup: "katalog",
   },
   // Ürün ekranı (kart 0263, karar 0162): yeni ürün ve var olan ürün (kimlik adresin sorgusunda, ?kimlik=); sayfa
   // yolunda listenin altında durur.
@@ -222,7 +224,7 @@ export const panelSayfalari = [
     aciklama: "yonetim.sayfa.yeniUrun.aciklama",
     ikon: "ekle",
     izin: "urun.degistir",
-    grup: "urunler",
+    grup: "katalog",
     ust: "urunler",
   },
   // Excel ile toplu ürün işlemleri eklentisi (kart 0315): dışa aktarma ürünleri görene açıktır; içe aktarma ekranda
@@ -234,7 +236,7 @@ export const panelSayfalari = [
     aciklama: "yonetim.sayfa.urunlerExcel.aciklama",
     ikon: "yukle",
     izin: "urun.gor",
-    grup: "urunler",
+    grup: "katalog",
     ust: "urunler",
     eklenti: "excel-ile-toplu-urun-islemleri",
   },
@@ -245,7 +247,7 @@ export const panelSayfalari = [
     aciklama: "yonetim.sayfa.urun.aciklama",
     ikon: "urunler",
     izin: "urun.gor",
-    grup: "urunler",
+    grup: "katalog",
     ust: "urunler",
   },
   // Kategoriler, markalar ve etiketler, özellikler (kart 0261, karar 0160): ürünün gruplandığı kayıtlar. Görevli
@@ -257,7 +259,7 @@ export const panelSayfalari = [
     aciklama: "yonetim.sayfa.kategoriler.aciklama",
     ikon: "kategoriler",
     izin: "kategori.gor",
-    grup: "urunler",
+    grup: "katalog",
   },
   {
     kod: "markalar",
@@ -266,7 +268,7 @@ export const panelSayfalari = [
     aciklama: "yonetim.sayfa.markalar.aciklama",
     ikon: "markalar",
     izin: "marka.gor",
-    grup: "urunler",
+    grup: "katalog",
   },
   {
     kod: "ozellikler",
@@ -275,7 +277,7 @@ export const panelSayfalari = [
     aciklama: "yonetim.sayfa.ozellikler.aciklama",
     ikon: "ozellikler",
     izin: "ozellik.gor",
-    grup: "urunler",
+    grup: "katalog",
   },
   // Yorumlar (kart 0277, karar 0174): onay bekleyen, yayındaki ve reddedilen yorumlar; görevli de görür ve karar
   // verir. Menüde onay bekleyen yorum sayısı görünür.
@@ -286,7 +288,7 @@ export const panelSayfalari = [
     aciklama: "yonetim.sayfa.yorumlar.aciklama",
     ikon: "yorumlar",
     izin: "yorum.gor",
-    grup: "urunler",
+    grup: "katalog",
     sayac: "onay-bekleyen-yorum",
   },
   // Stoğa gelince haber ver eklentisi (kart 0144, karar 0117): bekleyen talepler stok bilgisidir, stok.gor ister.
@@ -297,7 +299,7 @@ export const panelSayfalari = [
     aciklama: "yonetim.sayfa.stokBildirimleri.aciklama",
     ikon: "eposta",
     izin: "stok.gor",
-    grup: "urunler",
+    grup: "katalog",
     eklenti: "stoga-gelince-haber-ver",
   },
   {
@@ -607,16 +609,19 @@ export const sayfaYolunuKur = (
   return yol;
 };
 
-// Sayfa yolunun adımları (kart 0301, taslak karar 0157): kök, sayfanın menüdeki grubu, üst sayfalar, sayfanın kendisi.
+// Sayfa yolunun adımları (kart 0301, taslak karar 0157): kök ("Panel"), sayfanın menüdeki grubu, üst sayfalar, sayfanın kendisi.
 // Grubun kendi sayfası yoktur, adımı bağlantı değildir (adresi yok). Kökün ve grupsuz sayfanın yolunda grup yoktur.
 export type SayfaYoluAdimTanimi = { ad: MetinAnahtari; adres?: string };
+export const sayfaYoluKokAdi: MetinAnahtari = "yonetim.sayfaYoluKok";
 export const sayfaYoluAdimlari = (
   agac: readonly PanelSayfaTanimi[],
   kod: string,
 ): SayfaYoluAdimTanimi[] => {
-  const [kok, ...geri] = sayfaYolunuKur(agac, kod).map(({ ad, adres }) => ({ ad, adres }));
+  const [ilk, ...geri] = sayfaYolunuKur(agac, kod).map(({ ad, adres }) => ({ ad, adres }));
   const grup = sayfaTanimi(agac, kod)?.grup;
-  if (kok === undefined) return [];
+  if (ilk === undefined) return [];
+  // Yolun başı bütün paneldir, kökün menüdeki adı değil (kart 0324, karar 0200).
+  const kok = { ad: sayfaYoluKokAdi, adres: ilk.adres };
   if (geri.length === 0 || grup === null || grup === undefined) return [kok, ...geri];
   return [kok, { ad: panelGruplari[grup] }, ...geri];
 };

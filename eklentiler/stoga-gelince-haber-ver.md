@@ -37,7 +37,7 @@ Temel paketteki ürün sayfası, stok (stok takibi ve artışı), e-posta gönde
 ## Ekranlar
 
 - Vitrin, ürün sayfası: eklenti açıkken tükenmiş beden ya da renk seçilebilir (üstü çizili kalır, kullanıcı kararı). Seçili birim satın alınamıyorsa (tükenmiş ya da fiyatsız) "Tükendi" yazısının altında "Stoğa gelince haber verelim" kutusu (taslaktaki): başlık, kısa açıklama, e-posta alanı ve "Haber ver". Altında KVKK aydınlatma bağlantısı ve "Bu adresi yalnız bu bildirim için kullanırız" cümlesi. Giriş yapmış müşteride e-posta alanı yerine hesabın e-postası yazılır. Başarıda kutu teşekkür yazısına döner.
-- Panel: "Stok bildirimleri" sayfası (Ürünler grubunda). Bekleyen talebi olan her birim bir satırdır: ürün adı, seçim (renk ve beden), bekleyen talep sayısı, en eski talebin tarihi; en çok bekleyen önce. Stoğu görebilen yönetici (`stok.gor`) görür.
+- Panel: "Stok bildirimleri" sayfası (Katalog grubunda; karar 0200). Bekleyen talebi olan her birim bir satırdır: ürün adı, seçim (renk ve beden), bekleyen talep sayısı, en eski talebin tarihi; en çok bekleyen önce. Stoğu görebilen yönetici (`stok.gor`) görür.
 
 ## Bildirimler
 

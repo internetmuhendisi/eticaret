@@ -53,6 +53,14 @@ test("masaüstünde karşılama komut çubuğuyla açılır, yan menü klavyeyle
   await expect(page.getByText(yonetici.eposta)).toBeVisible();
   await expect(page.getByText(altyapiAdi, { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: metin("yonetim.cerceve.menuyuAc") })).toBeHidden();
+  // Kart 0324 (karar 0200): grupların adları ve sırası taslaktaki gibi.
+  // textContent: grup başlıkları büyük harfle çizilir, innerText dönüşmüş yazıyı verir.
+  const menuYazisi = (await menu.textContent()) ?? "";
+  const gruplar = (["satis", "katalog", "icerik", "vitrin", "ayarlar"] as const).map((kod) =>
+    menuYazisi.indexOf(metin(`yonetim.grup.${kod}`)),
+  );
+  expect(gruplar.every((yer) => yer >= 0)).toBe(true);
+  expect([...gruplar].sort((a, b) => a - b)).toEqual(gruplar);
 
   // Klavye sırası: menünün sayfaları (kart 0142'den beri Vitrin grubu da), vitrine git, çıkış.
   await page.locator("body").focus();
@@ -179,4 +187,24 @@ test("panel iki renkte ve üç genişlikte taramadan geçer, yana kaymaz, konsol
     }
   }
   expect(hatalar).toEqual([]);
+});
+
+test("sayfa yolu Panel ile başlar, grubun adı bağlantısız; tablet ve bilgisayarda (kart 0324)", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await paneleGir(page, yonetici);
+  await page.goto("/yonetim/urunler");
+  await sayfaHazir(page);
+  for (const genislik of [768, 1280]) {
+    await page.setViewportSize({ width: genislik, height: 900 });
+    const yol = page
+      .getByRole("main")
+      .getByRole("navigation", { name: metin("ortak.parca.sayfaYolu") });
+    await expect(yol).toBeVisible();
+    await expect(yol.getByRole("link")).toHaveText([metin("yonetim.sayfaYoluKok")]);
+    await expect(yol.getByRole("link")).toHaveAttribute("href", "/yonetim");
+    await expect(yol).toContainText(metin("yonetim.grup.katalog"));
+    await tara(page, `sayfa yolu ${genislik}`);
+  }
 });

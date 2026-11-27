@@ -364,10 +364,15 @@ describe("Ayarlar grubu (kart 0301)", () => {
   it("mağaza sahibinde ayar ekranları Ayarlar başlığının altında, siparişlerden sonra; görevlide yalnız izinlileri", async () => {
     await yoneticiyleGir("magaza-sahibi");
     const sahip = await ciz(PanelDuzeni({ children: <p>{icerik}</p> }));
+    // Kart 0324 (karar 0200): gruplar taslağın sırasıyla, ürün ekranları "Katalog" grubunda.
     sirali(sahip, [
       metin("yonetim.grup.satis"),
       sayfa("siparisler"),
       sayfa("musteriler"),
+      metin("yonetim.grup.katalog"),
+      sayfa("urunler"),
+      metin("yonetim.grup.icerik"),
+      metin("yonetim.grup.vitrin"),
       metin("yonetim.grup.ayarlar"),
       sayfa("magazaBilgileri"),
       sayfa("siparisAyarlari"),
@@ -391,11 +396,14 @@ describe("Ayarlar grubu (kart 0301)", () => {
     expect(gorevli).not.toContain(`>${sayfa("vergi")}<`);
   });
 
-  it("sayfa yolu: Karşılama bağlantı, grubun adı bağlantısız, sayfanın adı geçerli sayfa", async () => {
+  it("sayfa yolu: Panel bağlantı, grubun adı bağlantısız, sayfanın adı geçerli sayfa", async () => {
     await yoneticiyleGir("magaza-sahibi");
     const html = await ciz(PanelSayfasi({ kod: "magaza-bilgileri" }));
     const yol = html.slice(html.indexOf("<nav"), html.indexOf("</nav>"));
-    expect(yol).toMatch(new RegExp(`<a [^>]*href="/yonetim"[^>]*>${sayfa("karsilama")}</a>`));
+    expect(yol).toMatch(
+      new RegExp(`<a [^>]*href="/yonetim"[^>]*>${metin("yonetim.sayfaYoluKok")}</a>`),
+    );
+    expect(yol).not.toContain(`>${sayfa("karsilama")}<`);
     expect(yol).toContain(
       `<span class="inline-flex min-h-8 items-center">${metin("yonetim.grup.ayarlar")}</span>`,
     );

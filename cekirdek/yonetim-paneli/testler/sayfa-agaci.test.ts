@@ -185,7 +185,26 @@ describe("gruplar (kart 0301)", () => {
         () => true,
         () => true,
       ).map(({ grup }) => grup),
-    ).toEqual([null, "satis", "urunler", "vitrin", "icerik", "ayarlar"]);
+    ).toEqual([null, "satis", "katalog", "icerik", "vitrin", "ayarlar"]);
+    // Kart 0324 (karar 0200): ürün ekranlarının grubu "Katalog"; adı içindeki "Ürünler" sayfasından ayrı.
+    expect(kodlar("katalog")?.[0]).toBe("urunler");
+    expect(metin(panelGruplari.katalog)).toBe("Katalog");
+    expect(Object.values(panelGruplari).map((ad) => metin(ad))).toEqual([
+      "Satış",
+      "Katalog",
+      "İçerik",
+      "Vitrin",
+      "Ayarlar",
+    ]);
+    for (const grup of menuyuKur(
+      agac,
+      () => true,
+      () => true,
+    )) {
+      if (grup.grup === null) continue;
+      const grubunAdi = metin(panelGruplari[grup.grup]);
+      expect(grup.sayfalar.map(({ ad }) => metin(ad))).not.toContain(grubunAdi);
+    }
     // Kuponlar Satış grubundadır, müşterilerden sonra (kart 0313, taslak).
     expect(kodlar("satis")).toEqual(["siparisler", "musteriler", "kuponlar"]);
     expect(kodlar("ayarlar")).toEqual([
@@ -202,8 +221,10 @@ describe("gruplar (kart 0301)", () => {
     ]);
   });
 
-  it("sayfa yolunda grubun adı kökten sonra, bağlantısız; kökte ve grupsuz sayfada grup yok", () => {
-    const kok = { ad: "yonetim.sayfa.karsilama.ad", adres: panelAdresi };
+  it("sayfa yolunun kökü Panel, grubun adı kökten sonra, bağlantısız; kökte ve grupsuz sayfada grup yok", () => {
+    // Kart 0324 (karar 0200): yolun başı bütün paneldir ("Panel"), kökün menüdeki adı ("Karşılama") değil.
+    const kok = { ad: "yonetim.sayfaYoluKok", adres: panelAdresi };
+    expect(metin(kok.ad as Parameters<typeof metin>[0])).toBe("Panel");
     expect(sayfaYoluAdimlari(agac, "karsilama")).toEqual([kok]);
     expect(sayfaYoluAdimlari(agac, "magaza-bilgileri")).toEqual([
       kok,
@@ -211,7 +232,7 @@ describe("gruplar (kart 0301)", () => {
       { ad: "yonetim.sayfa.magazaBilgileri.ad", adres: magazaBilgileriAdresi },
     ]);
     expect(sayfaYoluAdimlari(agac, "siparis-ayrintisi").map(({ ad }) => ad)).toEqual([
-      "yonetim.sayfa.karsilama.ad",
+      "yonetim.sayfaYoluKok",
       "yonetim.grup.satis",
       "yonetim.sayfa.siparisler.ad",
       "yonetim.sayfa.siparisAyrintisi.ad",
