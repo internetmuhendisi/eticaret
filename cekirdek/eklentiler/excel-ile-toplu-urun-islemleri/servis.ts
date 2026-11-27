@@ -70,7 +70,13 @@ export type IceAktarmaDurumu = {
   nedenAyrintisi?: string;
   satirSayisi: number;
   sayilar: { ekle: number; degistir: number; ayni: number; hatali: number };
-  uygulama: { toplam: number; uygulanan: number; uygulanamayan: number };
+  uygulama: {
+    toplam: number;
+    uygulanan: number;
+    uygulanamayan: number;
+    eklenen: number;
+    degisen: number;
+  };
   hatalilar: OnizlemeSatiri[];
   degisecekler: OnizlemeSatiri[];
   eklenecekler: OnizlemeSatiri[];
@@ -430,10 +436,14 @@ export const excelServisi = (site: Site, isler: ExcelIsleri) => {
     const sayilar = { ekle: 0, degistir: 0, ayni: 0, hatali: 0 };
     let uygulanan = 0;
     let uygulanamayan = 0;
+    let eklenen = 0;
+    let degisen = 0;
     for (const s of sayimlar) {
       sayilar[s.sonuc as keyof typeof sayilar] = s.adet;
       uygulanan += s.uygulanan;
       uygulanamayan += s.uygulanamayan;
+      if (s.sonuc === "ekle") eklenen += s.uygulanan;
+      if (s.sonuc === "degistir") degisen += s.uygulanan;
     }
     const liste = async (kosul: ReturnType<typeof eq>): Promise<OnizlemeSatiri[]> =>
       (
@@ -472,7 +482,13 @@ export const excelServisi = (site: Site, isler: ExcelIsleri) => {
       ...(nedenAyrintisi === undefined ? {} : { nedenAyrintisi }),
       satirSayisi: kayit.satir_sayisi,
       sayilar,
-      uygulama: { toplam: sayilar.ekle + sayilar.degistir, uygulanan, uygulanamayan },
+      uygulama: {
+        toplam: sayilar.ekle + sayilar.degistir,
+        uygulanan,
+        uygulanamayan,
+        eklenen,
+        degisen,
+      },
       hatalilar,
       degisecekler,
       eklenecekler,

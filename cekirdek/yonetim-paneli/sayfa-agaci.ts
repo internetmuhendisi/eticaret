@@ -212,6 +212,19 @@ export const panelSayfalari = [
     grup: "urunler",
     ust: "urunler",
   },
+  // Excel ile toplu ürün işlemleri eklentisi (kart 0315): dışa aktarma ürünleri görene açıktır; içe aktarma ekranda
+  // ürünü değiştirme izniyle görünür, uçlar da onu ister.
+  {
+    kod: "urunler-excel",
+    adres: `${panelAdresi}/urunler/excel`,
+    ad: "yonetim.sayfa.urunlerExcel.ad",
+    aciklama: "yonetim.sayfa.urunlerExcel.aciklama",
+    ikon: "yukle",
+    izin: "urun.gor",
+    grup: "urunler",
+    ust: "urunler",
+    eklenti: "excel-ile-toplu-urun-islemleri",
+  },
   {
     kod: "urun",
     adres: `${panelAdresi}/urunler/urun`,

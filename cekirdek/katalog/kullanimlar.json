@@ -160,6 +160,7 @@
   ],
   "bilesenler/parcalar/baglanti.tsx": [
     "bilesenler/parcalar/sayfalama.tsx",
+    "cekirdek/eklentiler/excel-ile-toplu-urun-islemleri/panel/ekran.tsx",
     "cekirdek/eklentiler/stoga-gelince-haber-ver/form.tsx",
     "cekirdek/eklentiler/stoga-gelince-haber-ver/panel/liste.tsx",
     "cekirdek/moduller/oturum/sifirlama-formlari.tsx",
@@ -269,6 +270,7 @@
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx"
   ],
   "bilesenler/parcalar/dosya-yukleme.tsx": [
+    "cekirdek/eklentiler/excel-ile-toplu-urun-islemleri/panel/ekran.tsx",
     "cekirdek/yonetim-paneli/blog/yazi-ekrani.tsx",
     "cekirdek/yonetim-paneli/dosya-yuklemesi.ts",
     "cekirdek/yonetim-paneli/siparisler/fatura.tsx",
@@ -288,6 +290,7 @@
     "bilesenler/parcalar/serit.tsx",
     "bilesenler/parcalar/siralanabilir-liste.tsx",
     "bilesenler/parcalar/yan-pencere.tsx",
+    "cekirdek/eklentiler/excel-ile-toplu-urun-islemleri/panel/ekran.tsx",
     "cekirdek/eklentiler/kartla-odeme/taksit-satiri.tsx",
     "cekirdek/vitrin/bolumler/genis-afis/gorunum.tsx",
     "cekirdek/vitrin/bolumler/kampanya-afisleri/gorunum.tsx",
@@ -415,6 +418,7 @@
   ],
   "bilesenler/parcalar/ilerleme-cubugu.tsx": [
     "bilesenler/parcalar/dosya-yukleme.tsx",
+    "cekirdek/eklentiler/excel-ile-toplu-urun-islemleri/panel/ekran.tsx",
     "cekirdek/yonetim-paneli/urunler/galeri-bolumu.tsx"
   ],
   "bilesenler/parcalar/ipucu.tsx": [
@@ -432,6 +436,7 @@
     "cekirdek/yonetim-paneli/liste/liste.tsx"
   ],
   "bilesenler/parcalar/kart.tsx": [
+    "cekirdek/eklentiler/excel-ile-toplu-urun-islemleri/panel/ekran.tsx",
     "cekirdek/eklentiler/stoga-gelince-haber-ver/form.tsx",
     "cekirdek/vitrin/hesap/adres-defteri.tsx",
     "cekirdek/vitrin/hesap/giris-duzeni.tsx",
@@ -611,6 +616,7 @@
     "cekirdek/yonetim-paneli/liste/liste.tsx"
   ],
   "bilesenler/parcalar/secenek-grubu.tsx": [
+    "cekirdek/eklentiler/excel-ile-toplu-urun-islemleri/panel/ekran.tsx",
     "cekirdek/vitrin/odeme/odeme-formu.tsx",
     "cekirdek/vitrin/urun-sayfasi/urun-ust.tsx",
     "cekirdek/vitrin/urun-sayfasi/yorum-yaz.tsx",
@@ -677,6 +683,7 @@
   ],
   "bilesenler/parcalar/tablo-secimi.tsx": ["cekirdek/yonetim-paneli/liste/liste.tsx"],
   "bilesenler/parcalar/tablo.tsx": [
+    "cekirdek/eklentiler/excel-ile-toplu-urun-islemleri/panel/ekran.tsx",
     "cekirdek/eklentiler/kartla-odeme/taksit-satiri.tsx",
     "cekirdek/vitrin/urun-sayfasi/sayfa.tsx",
     "cekirdek/yonetim-paneli/ekip/roller.tsx",
@@ -694,6 +701,7 @@
   "bilesenler/parcalar/uyari.tsx": [
     "bilesenler/form/hata-ozeti.tsx",
     "bilesenler/parcalar/bildirim.tsx",
+    "cekirdek/eklentiler/excel-ile-toplu-urun-islemleri/panel/ekran.tsx",
     "cekirdek/eklentiler/kartla-odeme/taksit-satiri.tsx",
     "cekirdek/eklentiler/stoga-gelince-haber-ver/form.tsx",
     "cekirdek/moduller/oturum/sifirlama-formlari.tsx",
@@ -799,6 +807,7 @@
     "cekirdek/yonetim-paneli/vitrin-bolumleri/ekran.tsx"
   ],
   "bilesenler/parcalar/yukleniyor.tsx": [
+    "cekirdek/eklentiler/excel-ile-toplu-urun-islemleri/panel/ekran.tsx",
     "cekirdek/yonetim-paneli/davet-kabul-formu.tsx",
     "cekirdek/yonetim-paneli/vergi/siniflar.tsx"
   ]

@@ -37,6 +37,11 @@ export const yorumlarAdresi = `${panelAdresi}/yorumlar`;
 export const urunlerAdresi = `${panelAdresi}/urunler`;
 // Ürün ekranı (kart 0263): yeni ürün ve var olan ürünün ekranı (kimlik adresin sorgusunda).
 export const yeniUrunAdresi = `${urunlerAdresi}/yeni`;
+// Excel ile toplu ürün işlemleri eklentisi (kart 0315): Ürünler listesinin sorgusu (süzgeçler) "liste" ile taşınır.
+export const urunlerExcelAdresi = (listeSorgusu?: string): string =>
+  listeSorgusu === undefined || listeSorgusu === ""
+    ? `${urunlerAdresi}/excel`
+    : `${urunlerAdresi}/excel?${new URLSearchParams({ liste: listeSorgusu })}`;
 export const urunEkraniAdresi = (kimlik: string): string =>
   `${urunlerAdresi}/urun?kimlik=${encodeURIComponent(kimlik)}`;
 

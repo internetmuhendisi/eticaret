@@ -21,6 +21,7 @@ import { metin as metinOku, siteninBicimleyicisi } from "../../metinler/site-met
 import { fiyatGirdisi } from "../../moduller/fiyat/semalar.ts";
 import { barkoduDogrula } from "../../moduller/urun/barkod.ts";
 import { urunBirimleri } from "../../moduller/urun/model.ts";
+import { urunDegisikligi } from "../../moduller/urun/semalar.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import type { OkunanDosya, OkunanHucre, OkunanSatir } from "./dosya.ts";
 import {
@@ -208,9 +209,12 @@ export const satirlariDenetle = async (
     }
     const yazi = metinHucresi(h.deger) ?? "";
     switch (sutun) {
-      case "ad":
-        if (yazi.length > 200) return { hata: { kod: "ad-uzun", alan: sutun } };
+      case "ad": {
+        // Ürün servisinin ad kuralı (uzunluk, kayda yazılamayan metin): önizlemede yakalanır.
+        const sorun = urunKuralSorunu({ ad: yazi });
+        if (sorun !== undefined) return { hata: { kod: sorun, alan: sutun } };
         return { duz: yazi, deger: yazi };
+      }
       case "durum": {
         const durum = durumBul(yazi);
         if (durum === undefined) return { hata: { kod: "durum-yok", alan: sutun, deger: yazi } };
@@ -303,7 +307,8 @@ export const satirlariDenetle = async (
     switch (sutun) {
       case "stokKodu": {
         const yazi = metinHucresi(h.deger) ?? "";
-        if (yazi.length > 64) return { hata: { kod: "stok-kodu-uzun", alan: sutun } };
+        const sorun = urunKuralSorunu({ stokKodu: yazi });
+        if (sorun !== undefined) return { hata: { kod: sorun, alan: sutun } };
         return { duz: yazi, deger: yazi };
       }
       case "barkod": {
@@ -644,6 +649,12 @@ const sozlukMetni = {
   hayir: () => metinOku("eklenti.excel.hayir"),
 };
 const durumsuzAnahtar = (yazi: string) => yazi.normalize("NFC").toLocaleLowerCase("tr");
+
+// Ürün değişikliği şemasının ilk sorununun kodu (ad ve stok kodu ürün servisinin kuralıyla denetlenir).
+const urunKuralSorunu = (girdi: { ad?: string; stokKodu?: string }): string | undefined => {
+  const sonuc = urunDegisikligi.safeParse(girdi);
+  return sonuc.success ? undefined : (sonuc.error.issues[0]?.message ?? "kayda-uygun-degil");
+};
 
 const tekrarsiz = (hatalar: SatirHatasi[]): SatirHatasi[] => {
   const goruldu = new Set<string>();

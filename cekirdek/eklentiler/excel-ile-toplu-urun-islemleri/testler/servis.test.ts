@@ -359,7 +359,13 @@ describe("değişiklik ve uygulama", () => {
     await isleriCalistir();
     const son = await servis.iceAktarmaDurumu(vt, yonetici, durum.kimlik);
     expect(son?.durum).toBe("bitti");
-    expect(son?.uygulama).toEqual({ toplam: 1, uygulanan: 1, uygulanamayan: 0 });
+    expect(son?.uygulama).toEqual({
+      toplam: 1,
+      uygulanan: 1,
+      uygulanamayan: 0,
+      eklenen: 0,
+      degisen: 1,
+    });
     const urun = await urunSrv.urunuOku(vt, k.basit);
     expect(urun?.ad).toBe(`Büyük Kupa ${k.e}`);
     expect(urun?.kategoriler.sort()).toEqual([k.kategori, k.altKategori].sort());
@@ -521,7 +527,13 @@ describe("değişiklik ve uygulama", () => {
       .where(eq(excelIceAktarmalari.kimlik, durum.kimlik));
     await servis.uygulamaPartisi(vt, durum.kimlik);
     const son = await servis.iceAktarmaDurumu(vt, yonetici, durum.kimlik);
-    expect(son?.uygulama).toEqual({ toplam: 3, uygulanan: 2, uygulanamayan: 1 });
+    expect(son?.uygulama).toEqual({
+      toplam: 3,
+      uygulanan: 2,
+      uygulanamayan: 1,
+      eklenen: 0,
+      degisen: 2,
+    });
     expect(son?.uygulanamayanlar[0]?.uygulamaHatasi).toBe("sitede-degisti");
     expect((await stokSrv.stoklariOku(vt, [k.basitBirim])).get(k.basitBirim)?.miktar).toBe(6);
     const tisortStoklari = await stokSrv.stoklariOku(

@@ -3,9 +3,10 @@
 // hata hâlini gösterir; hata kaydedilir.
 import type { Metadata } from "next";
 import { calisanSite } from "../../../../../ayar-semasi/calisan-site";
+import { eklentiAcikMi } from "../../../../../eklentiler/acik";
 import { hatayiKaydet } from "../../../../../izleme/hata-katmani";
 import { siteninBicimleyicisi } from "../../../../../metinler/site-metni";
-import { yeniUrunAdresi } from "../../../../../yonetim-paneli/adresler";
+import { urunlerExcelAdresi, yeniUrunAdresi } from "../../../../../yonetim-paneli/adresler";
 import { EylemBaglantisi } from "../../../../../yonetim-paneli/eylem-dugmesi";
 import { listeDurumunuOku } from "../../../../../yonetim-paneli/liste/tanim";
 import { panelOturumu } from "../../../../../yonetim-paneli/panel-oturumu";
@@ -22,6 +23,16 @@ import {
 } from "../../../../../yonetim-paneli/urunler/veri";
 
 export const generateMetadata = (): Promise<Metadata> => panelSayfaBilgisi("urunler");
+
+// Listenin sorgusu (sayfa numarası olmadan): Excel sayfasının "Listedeki süzgeçlerle" seçeneği.
+const listeSorgusu = (sorgu: Record<string, string | string[] | undefined>): string => {
+  const yazi = new URLSearchParams();
+  for (const [ad, deger] of Object.entries(sorgu)) {
+    if (ad === "sayfa" || deger === undefined) continue;
+    for (const tek of Array.isArray(deger) ? deger : [deger]) yazi.append(ad, tek);
+  }
+  return yazi.toString();
+};
 
 export default async function UrunlerSayfasi({
   searchParams,
@@ -48,9 +59,18 @@ export default async function UrunlerSayfasi({
     <PanelSayfasi
       kod="urunler"
       eylemler={
-        yetkili("urun.degistir") ? (
-          <EylemBaglantisi eylem="urun-ekle" asil href={yeniUrunAdresi} />
-        ) : undefined
+        <>
+          {/* Excel ile toplu ürün işlemleri eklentisi (kart 0315): listenin süzgeçleri sayfaya taşınır. */}
+          {eklentiAcikMi(calisanSite(), "excel-ile-toplu-urun-islemleri") ? (
+            <EylemBaglantisi
+              eylem="urunler-excel"
+              href={urunlerExcelAdresi(listeSorgusu(await searchParams))}
+            />
+          ) : null}
+          {yetkili("urun.degistir") ? (
+            <EylemBaglantisi eylem="urun-ekle" asil href={yeniUrunAdresi} />
+          ) : null}
+        </>
       }
     >
       <UrunListesi

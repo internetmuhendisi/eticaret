@@ -1487,6 +1487,69 @@ Yeni ürün (kart 0263): panelin ürün ekranından. Durum verilmezse ürün tas
 - Başarılı (200): `{ "basarili": true, "veri": {} }`.
 - Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
 
+### POST /kapi/yonetici/urunler-excel-disa-aktar
+
+Ürünlerin Excel dosyasının hazırlanmasını başlatır; dosya arka planda yazılır. Excel ile toplu ürün işlemleri eklentisi (kart 0315, tarif `eklentiler/excel-ile-toplu-urun-islemleri.md`); eklenti kapalıyken `bulunamadi`. Servis: `cekirdek/eklentiler/excel-ile-toplu-urun-islemleri/servis.ts`. Dışa aktarma ve içe aktarma yöneticinin kendisinindir: başka yöneticinin dosyası ve işi `bulunamadi`. Fiyat sütunları fiyatı görebilene (`fiyat.gor`), stok sütunu stoğu görebilene (`stok.gor`) yazılır.
+
+- İzin: `urun.gor`. Sınır: `genel`.
+- Girdi: `{ "sorgu"? }`: ürün listesinin adresinin sorgu kısmı (süzgeçler, arama; en çok 2000 karakter). Verilmezse bütün ürünler.
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
+
+### GET /kapi/yonetici/urunler-excel-disa-aktarma
+
+Dışa aktarmanın durumu. Excel ile toplu ürün işlemleri eklentisi (kart 0315, tarif `eklentiler/excel-ile-toplu-urun-islemleri.md`); eklenti kapalıyken `bulunamadi`. Servis: `cekirdek/eklentiler/excel-ile-toplu-urun-islemleri/servis.ts`. Dışa aktarma ve içe aktarma yöneticinin kendisinindir: başka yöneticinin dosyası ve işi `bulunamadi`.
+
+- İzin: `urun.gor`. Sınır: `genel`.
+- Girdi: adres parametresi `kimlik`? (verilmezse yöneticinin son dışa aktarması).
+- Başarılı (200): `{ "basarili": true, "veri": { "disaAktarma": { "kimlik", "durum", "urunSayisi", "satirSayisi", "olusturma" } | null } }`; durum `hazirlaniyor`, `hazir`, `hatali`.
+- Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
+
+### GET /kapi/yonetici/urunler-excel-indir
+
+Hazır dosya, indirilecek dosya olarak (`urunler-<gün>.xlsx`, önbelleğe alınmaz). Excel ile toplu ürün işlemleri eklentisi (kart 0315, tarif `eklentiler/excel-ile-toplu-urun-islemleri.md`); eklenti kapalıyken `bulunamadi`. Servis: `cekirdek/eklentiler/excel-ile-toplu-urun-islemleri/servis.ts`. Dışa aktarma ve içe aktarma yöneticinin kendisinindir: başka yöneticinin dosyası ve işi `bulunamadi`.
+
+- İzin: `urun.gor`. Sınır: `genel`.
+- Girdi: adres parametresi `kimlik`.
+- Başarılı (200): dosyanın kendisi.
+- Hatalar: `dogrulama`, `bulunamadi` (hazır değil, başkasının ya da silinmiş), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/urunler-excel-yukle
+
+Dosyanın yüklenmesi; gövde dosyanın kendisidir (yükleme sınırı). Dosya arka planda satır satır denetlenir, yöneticinin önceki açık içe aktarması vazgeçilmiş sayılır. Excel ile toplu ürün işlemleri eklentisi (kart 0315, tarif `eklentiler/excel-ile-toplu-urun-islemleri.md`); eklenti kapalıyken `bulunamadi`. Servis: `cekirdek/eklentiler/excel-ile-toplu-urun-islemleri/servis.ts`. Dışa aktarma ve içe aktarma yöneticinin kendisinindir: başka yöneticinin dosyası ve işi `bulunamadi`.
+
+- İzin: `urun.degistir`. Sınır: `yukleme`.
+- Girdi: gövde dosya; adres parametresi `ad`? (dosyanın adı, yalnız gösterilir).
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
+- Hatalar: `dogrulama` (`dosya` `cok-buyuk`), `bulunamadi`, `oturum-yok`, `yetki`, `istek-siniri`.
+
+### GET /kapi/yonetici/urunler-excel-ice-aktarma
+
+İçe aktarmanın durumu ve önizlemesi: sayılar (eklenecek, değişecek, değişmeyecek, hatalı), uygulamanın ilerlemesi, her listeden en çok 200 satır (hatalılar nedenleriyle, değişecekler alan, şimdiki ve yeni değerle, eklenecekler, uygulanamayanlar). Okunamayan dosyada nedeninin kodu. Excel ile toplu ürün işlemleri eklentisi (kart 0315, tarif `eklentiler/excel-ile-toplu-urun-islemleri.md`); eklenti kapalıyken `bulunamadi`. Servis: `cekirdek/eklentiler/excel-ile-toplu-urun-islemleri/servis.ts`. Dışa aktarma ve içe aktarma yöneticinin kendisinindir: başka yöneticinin dosyası ve işi `bulunamadi`.
+
+- İzin: `urun.degistir`. Sınır: `genel`.
+- Girdi: adres parametresi `kimlik`? (verilmezse yöneticinin son içe aktarması).
+- Başarılı (200): `{ "basarili": true, "veri": { "iceAktarma": { … } | null } }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/urunler-excel-uygula
+
+Önizlemenin onayı: hatalı satır yoksa ve değişecek ya da eklenecek satır varsa uygulama arka planda başlar. Excel ile toplu ürün işlemleri eklentisi (kart 0315, tarif `eklentiler/excel-ile-toplu-urun-islemleri.md`); eklenti kapalıyken `bulunamadi`. Servis: `cekirdek/eklentiler/excel-ile-toplu-urun-islemleri/servis.ts`. Dışa aktarma ve içe aktarma yöneticinin kendisinindir: başka yöneticinin dosyası ve işi `bulunamadi`.
+
+- İzin: `urun.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }`.
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `cakisma` (`excel-onizlemede-degil`), `is-kurali` (`excel-hatali-satir`, `excel-degisiklik-yok`), `oturum-yok`, `yetki`.
+
+### POST /kapi/yonetici/urunler-excel-vazgec
+
+Önizlemeden vazgeçer; yüklenen dosya silinir. Excel ile toplu ürün işlemleri eklentisi (kart 0315, tarif `eklentiler/excel-ile-toplu-urun-islemleri.md`); eklenti kapalıyken `bulunamadi`. Servis: `cekirdek/eklentiler/excel-ile-toplu-urun-islemleri/servis.ts`. Dışa aktarma ve içe aktarma yöneticinin kendisinindir: başka yöneticinin dosyası ve işi `bulunamadi`.
+
+- İzin: `urun.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }`.
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
+- Hatalar: `dogrulama`, `bulunamadi`, `cakisma` (`excel-onizlemede-degil`), `oturum-yok`, `yetki`.
+
 ### POST /kapi/yonetici/urun-kopyala
 
 Ürünün taslak kopyası (kart 0320, karar 0190), tek işlemde: açıklamalar, kargo ve stok ayarları, alım adetleri, vergi sınıfı, kategori, marka, etiketler, ilgili ürünler, özellikler, ağırlık ve ölçüler, seçenekler ve birleşimler (görseliyle), fiyatlar (indirim ve zamanıyla; başka para birimindeki fiyat kopyalanmaz) ve galeri (görsel dosyası paylaşılır). Stok kodu, barkod, stok, yorumlar, favoriler, fiyat ve stok geçmişi kopyalanmaz. Fiyatı değiştirme izni (`fiyat.degistir`) olmayan yöneticinin kopyası fiyatsızdır. Kopya taslaktır, adres adı kaynağınkinden sayıyla üretilir (başka ürünün eski adresi de kullanılmış sayılır). Değişiklik kaydına `urun.kopyalandi` ile kaynağıyla girer.

@@ -176,6 +176,21 @@ describe("sayfa izni", () => {
     }
   });
 
+  it("Excel ile toplu ürün işlemleri sayfası gerçek ağaçta: eklenti kapalıyken bulunamadı, açıkken açılır (kart 0315)", async () => {
+    await yoneticiyleGir("magaza-sahibi");
+    expect((await panelSayfasiniAc("urunler-excel")).sayfa.kod).toBe("urunler-excel");
+    const anahtar = Symbol.for("cekirdek.calisanSite");
+    const ortak = globalThis as { [anahtar]?: unknown };
+    const acikSite = calisanSite();
+    ortak[anahtar] = { ...acikSite, ayarlar: { ...acikSite.ayarlar, eklentiler: [] } };
+    try {
+      await expect(panelSayfasiniAc("urunler-excel")).rejects.toThrow("bulunamadi");
+      expect(await panelSayfaBilgisi("urunler-excel")).toEqual({});
+    } finally {
+      ortak[anahtar] = acikSite;
+    }
+  });
+
   // Bulunamadı veren sayfanın adı sekme başlığında da görünmez (bağımsız kontrolün bulgusu).
   it("izni olmayan sayfanın sekme başlığı sayfanın adını taşımaz, izinli sayfanınki taşır", async () => {
     const kod = (deger: string) => deger as PanelSayfaKodu;

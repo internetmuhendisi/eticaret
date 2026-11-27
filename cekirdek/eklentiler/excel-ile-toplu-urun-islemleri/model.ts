@@ -118,7 +118,7 @@ export const excelIceAktarmaSatirlari = pgTable(
     sonuc: text().notNull(),
     urun_kimligi: uuid(),
     birim_kimligi: uuid(),
-    // Ekranda satırın adı ("Basic Tişört · Beyaz / L").
+    // Ekranda satırın adı ("Tişört · Renk: Beyaz; Beden: L").
     ad: text().notNull(),
     // Değişecek alanlar: [{ alan, simdi, yeni }] (gösterim yazılarıyla) ve hatalar: [{ kod, alan?, deger? }].
     degisiklikler: jsonb().notNull().default([]),
