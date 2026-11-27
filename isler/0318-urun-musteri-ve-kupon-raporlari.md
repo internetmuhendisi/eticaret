@@ -37,4 +37,4 @@ Bölüm: Yönetim paneli 2. Önce 0317 ve 0313 bitmiş olmalı.
 
 ## Durum
 
-yapılacak
+bitti
