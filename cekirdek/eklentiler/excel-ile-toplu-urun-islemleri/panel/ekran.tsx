@@ -283,6 +283,11 @@ export function ExcelEkrani({ veri }: { veri: ExcelEkraniVerisi }) {
               ))}
             </ul>
           ) : null}
+          {onizlemede && ice.indirilenYok ? (
+            <Uyari tur="uyari" baslik={metin("eklenti.excel.ekran.indirilenYokBaslik")}>
+              {metin("eklenti.excel.ekran.indirilenYok")}
+            </Uyari>
+          ) : null}
           {onizlemede && ice.hatalilar.length > 0 ? (
             <Kart
               role="region"

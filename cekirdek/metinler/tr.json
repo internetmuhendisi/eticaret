@@ -5118,7 +5118,9 @@
         "tutar-okunamadi": "Tutar okunamadı: \"{deger}\".",
         "urun-kodu-bicimi": "Yeni ürün kodu yalnız küçük harf, rakam ve tire olabilir: \"{deger}\".",
         "zamanlanmis-dosyadan-secilmez": "Zamanlanmış durum dosyadan seçilmez; yayın zamanını panelden seçin.",
-        "zaman-okunamadi": "Tarih okunamadı: \"{deger}\". 2026-12-08 23:59 biçiminde yazın."
+        "zaman-okunamadi": "Tarih okunamadı: \"{deger}\". 2026-12-08 23:59 biçiminde yazın.",
+        "sitede-silindi": "Dosyayı indirdikten sonra sitede silindi; değişiklik yazılmaz. Ürünü panelden ekleyin ya da satırı dosyadan çıkarın.",
+        "beklenmeyen": "Beklenmeyen bir hata oluştu; bu ürün yazılmadı. Dosyayı yeniden yükleyin."
       },
       "okunamadi": {
         "excel-dosyasi-degil": "Dosya okunamadı: Excel dosyası (.xlsx) değil ya da bozuk.",
@@ -5182,7 +5184,9 @@
         "okunamadiBaslik": "Dosya okunamadı",
         "islemHatasi": "İşlem yapılamadı. Sayfayı yenileyip yeniden deneyin.",
         "gonderildi": "Dosya yüklendi, denetleniyor.",
-        "uygulaSade": "Uygula"
+        "uygulaSade": "Uygula",
+        "indirilenYokBaslik": "Dosyanın indirildiği an bilinmiyor",
+        "indirilenYok": "Bu dosya 30 günden eski ya da bu siteden indirilmemiş. Sitedekinden farklı her dolu hücre yazılır; o arada satılan ürünlerin stoğu da dosyadaki değere döner. Güncel dosyayı indirip onu düzenlemeniz önerilir."
       }
     }
   }

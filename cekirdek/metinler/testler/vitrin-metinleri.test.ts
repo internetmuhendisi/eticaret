@@ -33,7 +33,7 @@ describe("vitrin metinleri", () => {
   });
 
   it("yalnız panelde görünen eklentilerin metinleri vitrin dosyasında yok, ötekiler var (kart 0315)", () => {
-    const eklenti = (vitrinMetinleri as Record<string, { eklenti: Record<string, unknown> }>).tr
+    const eklenti = (vitrinMetinleri as Record<string, { eklenti: Record<string, unknown> }>)["tr"]
       ?.eklenti;
     for (const ad of yalnizPaneldekiEklentiMetinleri) expect(eklenti?.[ad]).toBeUndefined();
     expect(eklenti?.["stokBildirimi"]).toBeDefined();

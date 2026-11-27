@@ -15,7 +15,7 @@
 //   site ayrı kalır.
 import { randomBytes, randomUUID } from "node:crypto";
 import { resolve } from "node:path";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { strFromU8, unzipSync, zipSync } from "fflate";
 import readXlsxFile from "read-excel-file/node";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -33,12 +33,13 @@ import { roller, yoneticiRolleri } from "../../../moduller/ekip/model.ts";
 import { etiketServisi } from "../../../moduller/etiket/servis.ts";
 import { fiyatGecmisi } from "../../../moduller/fiyat/model.ts";
 import { siteninFiyatServisi } from "../../../moduller/fiyat/servis.ts";
-import { kategoriEkle } from "../../../moduller/kategori/servis.ts";
+import { kategoriDegistir, kategoriEkle } from "../../../moduller/kategori/servis.ts";
 import { markaServisi } from "../../../moduller/marka/servis.ts";
 import { hesapAc } from "../../../moduller/oturum/servis.ts";
 import { ozellikServisi } from "../../../moduller/ozellik/servis.ts";
 import { stokGecmisi } from "../../../moduller/stok/model.ts";
 import { stokServisi } from "../../../moduller/stok/servis.ts";
+import { urunler } from "../../../moduller/urun/model.ts";
 import { urunServisi } from "../../../moduller/urun/servis.ts";
 import type { Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
@@ -328,6 +329,9 @@ describe("dışa aktarma ve değiştirilmeden geri yükleme", () => {
     expect(baslik).not.toContain("Satış fiyatı");
     expect(baslik).not.toContain("Stok");
     expect(baslik).toContain("Stok kodu");
+    // Rolleri alınan hazırlayan fiyatlı dosyayı artık indiremez; fiyatsız dosyayı indirebilir.
+    await vt.delete(yoneticiRolleri).where(eq(yoneticiRolleri.yonetici_kimligi, sahip));
+    expect((await hatasi(servis.disaAktarmaDosyasi(vt, sahip, kimlik))).kod).toBe("yetki");
   });
 });
 
@@ -604,6 +608,13 @@ describe("hatalı satırlar", () => {
         "Ad",
         `Başka ad ${k.e}`,
       );
+      // İki satır aynı alanı farklı değiştirirse çelişir (dokunulmamış satır çelişmez).
+      t = hucreYaz(
+        t,
+        (r) => r[0] === `tisort-${k.e}` && r[2] === "Renk: Beyaz",
+        "Ad",
+        `Üçüncü ad ${k.e}`,
+      );
       t = [
         ...t,
         [
@@ -734,6 +745,22 @@ describe("dosya", () => {
     );
     expect(bomba.byteLength).toBeLessThan(1024 * 1024);
     expect(await okunamadi(bomba)).toBe("excel-cok-buyuk");
+    // Başlıkları yalan söyleyen bomba: arşivin boyut bilgileri 100 bayt yazılır, açılan bayt yine sayılır.
+    const yalanci = Buffer.from(
+      zipSync(
+        { "xl/workbook.xml": new Uint8Array(1), "xl/a.bin": new Uint8Array(101 * 1024 * 1024) },
+        { level: 9 },
+      ),
+    );
+    for (let i = 0; i + 30 < yalanci.byteLength; i++) {
+      const imza = yalanci.readUInt32LE(i);
+      // Yerel başlıkta açılmış boyut 22., merkez dizinde 24. baytta.
+      if (imza === 0x04034b50 && yalanci.readUInt32LE(i + 22) > 1000)
+        yalanci.writeUInt32LE(100, i + 22);
+      if (imza === 0x02014b50 && yalanci.readUInt32LE(i + 24) > 1000)
+        yalanci.writeUInt32LE(100, i + 24);
+    }
+    expect(await okunamadi(yalanci)).toBe("excel-cok-buyuk");
     const kucukSinir = excelServisi(
       { ...site, ayarlar: { ...site.ayarlar, excelSatirSiniri: 100 } },
       isler,
@@ -748,6 +775,110 @@ describe("dosya", () => {
     expect(await okunamadi(await writeXlsxFile(satirlar).toBuffer(), kucukSinir)).toBe(
       "excel-satir-siniri",
     );
+  });
+});
+
+describe("indirildikten sonra sitede değişenler (bağımsız kontrolün bulguları)", () => {
+  it("sitede silinen ürün ve birleşim yeniden açılmaz; adı değişen kategori ve marka dokunulmamış dosyayı bozmaz", async () => {
+    const yonetici = await yoneticiAc();
+    const k = await katalogKur();
+    await urunSrv.urunDegistir(vt, sistem(), k.tisort, {
+      kategoriler: [k.altKategori],
+      marka: k.marka,
+    });
+    const { dosya } = await disaAktar(yonetici, k.e);
+    const urunu = await urunSrv.urunuOku(vt, k.tisort);
+    const siyahDeger = urunu?.secenekler[0]?.degerler.find((d) => d.ad === "Siyah")?.kimlik;
+    const siyah = k.birimler.find(
+      (b) => siyahDeger !== undefined && b.degerler.includes(siyahDeger),
+    );
+    if (siyah === undefined) throw new Error("Siyah yok.");
+    await urunSrv.urunSil(vt, sistem(), k.basit);
+    await urunSrv.birlesimSil(vt, sistem(), siyah.kimlik);
+    await kategoriDegistir(vt, sistem(), k.altKategori, { ad: `Kadın yeni ${k.e}` });
+    await markaServisi.degistir(vt, sistem(), k.marka, { ad: `Marka yeni ${k.e}` });
+
+    // Dokunulmamış dosya: hiçbir şey yazılmaz, hatalı satır yok.
+    const ayni = await yukleVeDenetle(yonetici, dosya);
+    expect(ayni.sayilar).toEqual({ ekle: 0, degistir: 0, ayni: 3, hatali: 0 });
+    const kupalar = await vt
+      .select({ kimlik: urunler.kimlik })
+      .from(urunler)
+      .where(and(eq(urunler.adres_adi, `kupa-${k.e}`), isNull(urunler.silinme_zamani)));
+    expect(kupalar).toEqual([]);
+
+    // Silinen ürünün ve birleşimin değiştirilmiş satırı hatalıdır.
+    const degisen = await dosyayiDegistir(dosya, (t) => {
+      let d = hucreYaz(t, koduyla(`kupa-${k.e}`), "Stok", 99);
+      d = hucreYaz(d, (r) => r[0] === `tisort-${k.e}` && r[2] === "Renk: Siyah", "Stok", 99);
+      return d;
+    });
+    const durum = await yukleVeDenetle(yonetici, degisen);
+    expect(durum.sayilar.hatali).toBe(2);
+    expect(hataKodlari(durum)).toEqual(["sitede-silindi", "sitede-silindi"]);
+  });
+
+  it("önizlemeden sonra adı ve stoğu değişen ürünün fiyatı yine yazılır; stoğu yazılan satır yazılmaz", async () => {
+    const yonetici = await yoneticiAc();
+    const k = await katalogKur();
+    const { dosya } = await disaAktar(yonetici, k.e);
+    const degisen = await dosyayiDegistir(dosya, (t) => {
+      let d = hucreYaz(t, koduyla(`kupa-${k.e}`), "Satış fiyatı", "150,00");
+      d = hucreYaz(d, koduyla(`tisort-${k.e}`), "Stok", 9);
+      return d;
+    });
+    const durum = await yukleVeDenetle(yonetici, degisen);
+    expect(durum.sayilar.degistir).toBe(3);
+    // Arada kupanın adı sitede değişir (dosya adı yazmaz) ve iki ürünün de stoğu siparişle düşer.
+    await urunSrv.urunDegistir(vt, sistem(), k.basit, { ad: `Kupa yeni ${k.e}` });
+    for (const birim of [k.basitBirim, k.birimler[0]?.kimlik ?? ""]) {
+      const simdi = (await stokSrv.stoklariOku(vt, [birim])).get(birim)?.miktar ?? 0;
+      await stokSrv.stokDuzelt(vt, sistem(), birim, {
+        yeniMiktar: simdi - 1,
+        gorulenMiktar: simdi,
+        sebep: "sayim",
+      });
+    }
+    await servis.uygula(vt, yonetici, durum.kimlik);
+    await isleriCalistir();
+    const son = await servis.iceAktarmaDurumu(vt, yonetici, durum.kimlik);
+    expect(son?.uygulama).toEqual({
+      toplam: 3,
+      uygulanan: 1,
+      uygulanamayan: 2,
+      eklenen: 0,
+      degisen: 1,
+    });
+    const fiyat = (await fiyatSrv.fiyatlariOku(vt, [k.basitBirim])).get(k.basitBirim);
+    expect(fiyat?.satisFiyati).toBe(15_000);
+  });
+
+  it("beklenmeyen hata grubu uygulanamadı yapar, iş öteki gruplarla biter", async () => {
+    const yonetici = await yoneticiAc();
+    const k = await katalogKur();
+    const { dosya } = await disaAktar(yonetici, k.e);
+    const degisen = await dosyayiDegistir(dosya, (t) => {
+      let d = hucreYaz(t, koduyla(`kupa-${k.e}`), "Stok", 40);
+      d = hucreYaz(d, koduyla(`tisort-${k.e}`), "Stok", 9);
+      return d;
+    });
+    const durum = await yukleVeDenetle(yonetici, degisen);
+    // Kupanın grubu veritabanının reddettiği bir kimlikle bozulur.
+    await vt
+      .update(excelIceAktarmaSatirlari)
+      .set({ yazilacak: sql`jsonb_set(yazilacak, '{urun,kimlik}', '"bozuk"')` })
+      .where(
+        and(
+          eq(excelIceAktarmaSatirlari.is_kimligi, durum.kimlik),
+          eq(excelIceAktarmaSatirlari.grup, `kupa-${k.e}`),
+        ),
+      );
+    await servis.uygula(vt, yonetici, durum.kimlik);
+    await isleriCalistir();
+    const son = await servis.iceAktarmaDurumu(vt, yonetici, durum.kimlik);
+    expect(son?.durum).toBe("bitti");
+    expect(son?.uygulama?.uygulanan).toBe(2);
+    expect(son?.uygulanamayanlar.map((s) => s.uygulamaHatasi)).toEqual(["beklenmeyen"]);
   });
 });
 
@@ -870,6 +1001,9 @@ describe("kapalı eklenti, temizlik, denetimler, iki site", () => {
     const durum = await yukleVeDenetle(yoneticiB, dosya, servis, vtB);
     // B sitesinde ürün kodları yoktur: satırlar yeni ürün olur ya da (kategori, marka olmadığı için) hatalıdır.
     expect(durum.sayilar.degistir + durum.sayilar.ayni).toBe(0);
+    // Öteki sitenin dışa aktarması bu sitede yoktur: ekran indirildiği anın bilinmediğini söyler.
+    expect(durum.indirilenVar).toBe(false);
+    expect((await yukleVeDenetle(yonetici, dosya)).indirilenVar).toBe(true);
     expect(hataKodlari(durum)).toEqual(expect.arrayContaining(["kategori-yok", "marka-yok"]));
     const tablolar = await vtB
       .select()

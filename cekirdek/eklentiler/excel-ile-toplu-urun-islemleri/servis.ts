@@ -10,6 +10,7 @@
 // - Saklama: dışa aktarma ve içe aktarma kayıtları excelAyari.saklamaGun sonra silinir (kapalıyken de).
 import { and, asc, desc, eq, inArray, isNull, lt, sql } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
+import { hatayiKaydet } from "../../izleme/hata-katmani.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import { type ExcelIceAktarmaDurumu, excelAyari } from "../../kayitlar/eklentiler.ts";
@@ -29,7 +30,13 @@ import { type DenetlenenSatir, type Gorulen, satirlariDenetle, type Yazilacak } 
 import { DosyaOkunamadi, dosyaOku, dosyaYaz, type YazilacakSatir } from "./dosya.ts";
 import { type KatalogUrunu, sozlukOku, urunleriOku } from "./katalog.ts";
 import { excelDisaAktarmalari, excelIceAktarmalari, excelIceAktarmaSatirlari } from "./model.ts";
-import { fiyatSutunlari, type IndirilenDegerler, type Sutun, sutunlar } from "./sutunlar.ts";
+import {
+  birimAnahtari,
+  fiyatSutunlari,
+  type IndirilenDegerler,
+  type Sutun,
+  sutunlar,
+} from "./sutunlar.ts";
 import { grubuUygula } from "./uygulama.ts";
 
 export const excelEklentisi = "excel-ile-toplu-urun-islemleri" as const;
@@ -66,6 +73,8 @@ export type IceAktarmaDurumu = {
   durum: ExcelIceAktarmaDurumu;
   dosyaAdi: string;
   dosyaBoyutu: number;
+  // Dosyanın indirildiği andaki değerler var mı (yoksa sitedekinden farklı her dolu hücre yazılır).
+  indirilenVar: boolean;
   neden?: string;
   nedenAyrintisi?: string;
   satirSayisi: number;
@@ -163,12 +172,16 @@ export const excelServisi = (site: Site, isler: ExcelIsleri) => {
           (kayit.fiyat_sutunlari || !(fiyatSutunlari as readonly Sutun[]).includes(s)) &&
           (kayit.stok_sutunu || s !== "stok"),
       );
-      const degerler: IndirilenDegerler = { urunler: {}, birimler: {} };
+      const kodlar: Record<string, string> = {};
+      const anahtarlar: Record<string, string> = {};
+      const degerler: IndirilenDegerler = { urunler: {}, birimler: {}, kodlar, anahtarlar };
       const satirlar: YazilacakSatir[] = [];
       for (let i = 0; i < kimlikler.length; i += 500) {
         for (const urun of await urunleriOku(islem, site, sozluk, kimlikler.slice(i, i + 500))) {
           degerler.urunler[urun.kimlik] = urun.duz;
+          kodlar[urun.adresAdi.toLocaleLowerCase("tr")] = urun.kimlik;
           for (const birim of urun.birimler) {
+            anahtarlar[birimAnahtari(urun.kimlik, birim.secenekAnahtari)] = birim.kimlik;
             degerler.birimler[birim.kimlik] = Object.fromEntries(
               Object.entries(birim.duz).filter(([alan]) => yazilacak.includes(alan as Sutun)),
             );
@@ -241,7 +254,7 @@ export const excelServisi = (site: Site, isler: ExcelIsleri) => {
   };
 
   const disaAktarmaDosyasi = async (
-    vt: Vt,
+    vt: Veritabani,
     yonetici: string,
     kimlik: string,
   ): Promise<{ dosya: Buffer; olusturma: Date }> => {
@@ -251,6 +264,8 @@ export const excelServisi = (site: Site, isler: ExcelIsleri) => {
       .select({
         dosya: excelDisaAktarmalari.dosya,
         olusturma: excelDisaAktarmalari.olusturma_zamani,
+        fiyat: excelDisaAktarmalari.fiyat_sutunlari,
+        stok: excelDisaAktarmalari.stok_sutunu,
       })
       .from(excelDisaAktarmalari)
       .where(
@@ -261,6 +276,11 @@ export const excelServisi = (site: Site, isler: ExcelIsleri) => {
         ),
       );
     if (kayit?.dosya === undefined || kayit.dosya === null) throw new BilinenHata("bulunamadi");
+    // Hazırlandıktan sonra fiyatı ya da stoğu görme izni alınan yönetici fiyatlı ya da stoklu dosyayı indiremez.
+    const yetkiler = await yoneticininYetkileri(vt, yonetici);
+    if ((kayit.fiyat && !yetkiler("fiyat.gor")) || (kayit.stok && !yetkiler("stok.gor"))) {
+      throw new BilinenHata("yetki");
+    }
     return { dosya: kayit.dosya, olusturma: kayit.olusturma };
   };
 
@@ -478,6 +498,7 @@ export const excelServisi = (site: Site, isler: ExcelIsleri) => {
       durum: kayit.durum as ExcelIceAktarmaDurumu,
       dosyaAdi: kayit.dosya_adi,
       dosyaBoyutu: kayit.dosya_boyutu,
+      indirilenVar: kayit.disa_aktarma_kimligi !== null,
       ...(neden === undefined || neden === "" ? {} : { neden }),
       ...(nedenAyrintisi === undefined ? {} : { nedenAyrintisi }),
       satirSayisi: kayit.satir_sayisi,
@@ -643,7 +664,13 @@ export const excelServisi = (site: Site, isler: ExcelIsleri) => {
           await isaretle(islem, null);
         });
       } catch (hata) {
-        if (!(hata instanceof BilinenHata)) throw hata;
+        if (!(hata instanceof BilinenHata)) {
+          // Beklenmeyen hata grubu "uygulanamadı" yapar, iş öteki gruplarla sürer: aynı hatayla her taramada
+          // yeniden denenip iş hiç bitmeyebilirdi (bağımsız kontrolün bulgusu). Grup işlemiyle geri alınmıştır.
+          hatayiKaydet(hata, { is: "excel-uygulama", grup });
+          await vt.transaction((islem) => isaretle(islem, "beklenmeyen"));
+          continue;
+        }
         const ilkSorun = Array.isArray(hata.ayrinti)
           ? (hata.ayrinti[0] as { kod?: unknown } | undefined)
           : undefined;

@@ -37,6 +37,7 @@ import {
 import {
   adDegerAyir,
   type BirimSutunu,
+  birimAnahtari,
   bosalabilenSutunlar,
   type DuzBirim,
   type DuzOrtak,
@@ -157,8 +158,15 @@ export const satirlariDenetle = async (
     vt,
     kodlar.filter((kod) => kod !== ""),
   );
+  // Satır indirildiği andaki ürüne bağlanır: ürün kodu sonradan başka ürüne geçmiş ya da ürün silinmiş olabilir.
+  const hedefler = new Map<string, string>();
+  for (const kod of new Set(kodlar)) {
+    if (kod === "") continue;
+    const kimlik = indirilen?.kodlar?.[kod] ?? kimlikler.get(kod);
+    if (kimlik !== undefined) hedefler.set(kod, kimlik);
+  }
   const katalog = new Map(
-    (await urunleriOku(vt, site, sozluk, [...new Set(kimlikler.values())])).map((u) => [
+    (await urunleriOku(vt, site, sozluk, [...new Set(hedefler.values())])).map((u) => [
       u.kimlik,
       u,
     ]),
@@ -329,6 +337,40 @@ export const satirlariDenetle = async (
     }
   };
 
+  // Bir hücre indirildiği andaki yazısıyla aynı mı: ad aranmadan, düz yazıyla (harf ve liste sırası ayırmaz).
+  // Sitede adı değişen ya da silinen kategori, marka, etiket ve özellik dokunulmamış hücreyi hatalı yapmaz.
+  const hamAnahtar = (sutun: OrtakSutun, yazi: string): string =>
+    sutun === "kategoriler" || sutun === "etiketler" || sutun === "ozellikler"
+      ? listeYazisi(
+          listeyiAyir(yazi).map((oge) => oge.toLocaleLowerCase("tr")),
+          dil,
+        )
+      : durumsuzAnahtar(hucreMetni(yazi));
+  const ayniKalmis = (sutun: OrtakSutun, h: Hucre, indirildigi: string | undefined): boolean => {
+    if (indirildigi === undefined || h.tur === "yok") return false;
+    const yazi = h.tur === "sil" ? "" : (metinHucresi(h.deger) ?? "");
+    return hamAnahtar(sutun, yazi) === hamAnahtar(sutun, indirildigi);
+  };
+  // Satırın hiçbir dolu hücresi indirildiği andan değişmemiş mi.
+  const dokunulmamis = (
+    satir: OkunanSatir,
+    urunDuz: DuzOrtak | undefined,
+    birimDuz: DuzBirim | undefined,
+  ): boolean => {
+    for (const sutun of ortakSutunlar) {
+      const h = hucre(satir, sutun);
+      if (h.tur === "yok") continue;
+      if (!ayniKalmis(sutun, h, urunDuz?.[sutun])) return false;
+    }
+    for (const sutun of ["stokKodu", "barkod", ...fiyatSutunlari, "stok"] as const) {
+      const okunan = birimOku(sutun, hucre(satir, sutun));
+      if (okunan === null) continue;
+      if (birimDuz === undefined || "hata" in okunan) return false;
+      if (okunan.duz !== (birimDuz[sutun] ?? "")) return false;
+    }
+    return true;
+  };
+
   // ——— Gruplar ———
   const gruplar = new Map<string, OkunanSatir[]>();
   dosya.satirlar.forEach((satir, i) => {
@@ -349,16 +391,53 @@ export const satirlariDenetle = async (
 
   const sonuclar: DenetlenenSatir[] = [];
   for (const [grup, satirlar] of gruplar) {
-    const kimlik = grup.startsWith("#") ? undefined : kimlikler.get(grup);
+    const kimlik = grup.startsWith("#") ? undefined : hedefler.get(grup);
     const urun = kimlik === undefined ? undefined : katalog.get(kimlik);
     const kodsuz = grup.startsWith("#");
+
+    // İndirildikten sonra sitede silinen ürün: dokunulmamış satır bir şey yapmaz, değiştirilmiş satır hatalıdır
+    // (ürün yeniden açılmaz).
+    const indirilenUrun = kimlik === undefined ? undefined : indirilen?.urunler[kimlik];
+    if (kimlik !== undefined && urun === undefined && indirilenUrun !== undefined) {
+      for (const satir of satirlar) {
+        const yazi = metinHucresi(satir.hucreler.secenekler) ?? "";
+        const ogeler = listeyiAyir(yazi).map(adDegerAyir);
+        const birimKimligi = ogeler.some((oge) => oge === undefined)
+          ? undefined
+          : indirilen?.anahtarlar?.[
+              birimAnahtari(kimlik, secenekAnahtari(ogeler as { ad: string; deger: string }[]))
+            ];
+        const ayni = dokunulmamis(
+          satir,
+          indirilenUrun,
+          birimKimligi === undefined ? undefined : indirilen?.birimler[birimKimligi],
+        );
+        sonuclar.push({
+          no: satir.no,
+          grup,
+          sonuc: ayni ? "ayni" : "hatali",
+          urunKimligi: null,
+          birimKimligi: null,
+          ad: [indirilenUrun.ad, yazi].filter((parca) => parca !== "").join(" · "),
+          degisiklikler: [],
+          hatalar: ayni ? [] : [{ kod: "sitede-silindi", alan: "urunKodu" }],
+          gorulen: null,
+          yazilacak: null,
+        });
+      }
+      continue;
+    }
 
     // Ortak bilgiler: satırlar arasında çelişmemeli; boş hücre çelişmez.
     const ortakHatalari = new Map<number, SatirHatasi[]>();
     const ortakDegerler = new Map<OrtakSutun, { duz: string; deger: YazilacakOrtak[OrtakSutun] }>();
     for (const sutun of ortakSutunlar) {
       for (const satir of satirlar) {
-        const okunan = ortakOku(sutun, hucre(satir, sutun));
+        const h = hucre(satir, sutun);
+        // İndirildiği andaki yazısıyla aynı hücre değişmez; ad aranmaz.
+        if (urun !== undefined && ayniKalmis(sutun, h, indirilen?.urunler[urun.kimlik]?.[sutun]))
+          continue;
+        const okunan = ortakOku(sutun, h);
         if (okunan === null) continue;
         if ("hata" in okunan) {
           ortakHatalari.set(satir.no, [...(ortakHatalari.get(satir.no) ?? []), okunan.hata]);
@@ -438,6 +517,7 @@ export const satirlariDenetle = async (
       const secenekler = satirSecenekleri.get(satir.no);
       let birim: KatalogBirimi | undefined;
       let yeniDegerler: { secenek: string; deger: string }[] | undefined;
+      let silinenBirim: string | undefined;
       if (secenekler !== undefined && !Array.isArray(secenekler)) {
         hatalar.push(secenekler);
       } else {
@@ -463,7 +543,11 @@ export const satirlariDenetle = async (
           } else {
             const anahtar = secenekAnahtari(liste);
             birim = urun.birimler.find((b2) => b2.secenekAnahtari === anahtar);
-            if (birim === undefined) {
+            const indirilenBirim = indirilen?.anahtarlar?.[birimAnahtari(urun.kimlik, anahtar)];
+            if (birim === undefined && indirilenBirim !== undefined) {
+              // İndirildikten sonra sitede silinen (ya da değeri yeniden adlandırılan) birleşim yeniden açılmaz.
+              silinenBirim = indirilenBirim;
+            } else if (birim === undefined) {
               if (liste.length === 0) hatalar.push({ kod: "secenek-gerekli", alan: "secenekler" });
               else yeniDegerler = liste.map((s) => ({ secenek: s.ad, deger: s.deger }));
             }
@@ -492,6 +576,32 @@ export const satirlariDenetle = async (
         }
         if (birim !== undefined) gorulenBirimler.add(birim.kimlik);
         gorulenAnahtarlar.add(anahtar);
+      }
+
+      if (silinenBirim !== undefined && urun !== undefined) {
+        const ayni = dokunulmamis(
+          satir,
+          indirilen?.urunler[urun.kimlik],
+          indirilen?.birimler[silinenBirim],
+        );
+        const tumu: SatirHatasi[] = ayni
+          ? hatalar
+          : [...hatalar, { kod: "sitede-silindi", alan: "secenekler" }];
+        sonuclar.push({
+          no: satir.no,
+          grup,
+          sonuc: tumu.length > 0 ? "hatali" : "ayni",
+          urunKimligi: urun.kimlik,
+          birimKimligi: null,
+          ad: [urun.duz.ad, metinHucresi(satir.hucreler.secenekler) ?? ""]
+            .filter((parca) => parca !== "")
+            .join(" · "),
+          degisiklikler: [],
+          hatalar: tekrarsiz(tumu),
+          gorulen: null,
+          yazilacak: null,
+        });
+        continue;
       }
 
       // Birimin alanları.

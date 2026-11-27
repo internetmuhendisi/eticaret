@@ -83,10 +83,18 @@ export type DuzOrtak = Record<OrtakSutun, string>;
 export type DuzBirim = { [S in BirimSutunu]?: string };
 
 // Dışa aktarmanın kaydındaki indirildiği andaki değerler: ürünün ve birimin kimliğiyle.
+// kodlar: ürün kodu (adres adı) → ürünün kimliği; anahtarlar: birimAnahtari → birimin kimliği. Dosyanın satırı
+// indirildiği andaki ürüne ve birime bunlarla bağlanır: sonradan sitede silinen ya da kodu başka ürüne geçen ürün,
+// silinen ya da değeri yeniden adlandırılan birleşim tanınır (kart 0315, bağımsız kontrolün bulgusu).
 export type IndirilenDegerler = {
   urunler: Record<string, DuzOrtak>;
   birimler: Record<string, DuzBirim>;
+  kodlar?: Record<string, string>;
+  anahtarlar?: Record<string, string>;
 };
+// Veritabanının JSON'u sıfır karakteri kabul etmez: seçenek anahtarı kodlanarak yazılır.
+export const birimAnahtari = (urun: string, secenekler: string): string =>
+  `${urun} ${encodeURIComponent(secenekler)}`;
 
 // Ürün kodu (adres adı) ve seçeneklerin düz anahtarı: "Renk: Beyaz; Beden: L" yazılışı ve harf ayrımı satırı
 // ayırmaz.

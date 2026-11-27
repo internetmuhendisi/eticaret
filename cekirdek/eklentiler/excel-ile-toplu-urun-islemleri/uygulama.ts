@@ -48,16 +48,27 @@ export const grubuUygula = async (
     for (const satir of satirlar) {
       const gorulen = satir.gorulen;
       if (gorulen === null) continue;
-      if (ortakSutunlar.some((sutun) => gorulen.ortak[sutun] !== simdi.duz[sutun])) {
+      // Yalnız yazılacak alanlar karşılaştırılır: arada başka alanı değişen ürün (ör. fiyatı yazılırken siparişle
+      // düşen stok) yine yazılır.
+      const yazilanOrtak = ortakSutunlar.filter((sutun) => sutun in ortak);
+      if (yazilanOrtak.some((sutun) => gorulen.ortak[sutun] !== simdi.duz[sutun])) {
         throw new BilinenHata("cakisma", [{ alan: "urun", kod: "sitede-degisti" }]);
       }
       if (gorulen.birim !== null && satir.yazilacak.birim.tur === "var") {
         const kimlik = satir.yazilacak.birim.kimlik;
         const birim = simdi.birimler.find((b) => b.kimlik === kimlik);
         const gorulenBirim = gorulen.birim;
+        const { alanlar } = satir.yazilacak;
+        const yazilanBirim = birimSutunlari.filter((sutun) =>
+          sutun === "stokKodu" || sutun === "barkod"
+            ? alanlar[sutun] !== undefined
+            : sutun === "stok"
+              ? alanlar.stok !== undefined
+              : alanlar.fiyat !== undefined,
+        );
         if (
           birim === undefined ||
-          birimSutunlari.some((sutun) => gorulenBirim[sutun] !== birim.duz[sutun])
+          yazilanBirim.some((sutun) => gorulenBirim[sutun] !== birim.duz[sutun])
         ) {
           throw new BilinenHata("cakisma", [{ alan: "birim", kod: "sitede-degisti" }]);
         }

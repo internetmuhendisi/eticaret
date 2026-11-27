@@ -2,7 +2,7 @@
 // yazılmaz: "=", "+", "-", "@" ile başlayan ürün adı dosyayı açan bilgisayarda formül olarak çalışmaz (tarif, yasal
 // notlar). Okurken dosya açılmadan önce denetlenir: .xlsx (zip) imzası, boyut, açılmış hâlinin boyutu (sıkıştırma
 // bombası), satır sınırı; yalnız hücrelerin değerleri okunur, formül ve makro çalıştırılmaz.
-import { unzipSync } from "fflate";
+import { Unzip, UnzipInflate, zipSync } from "fflate";
 import readXlsxFile from "read-excel-file/node";
 import writeXlsxFile from "write-excel-file/node";
 import { excelAyari } from "../../kayitlar/eklentiler.ts";
@@ -88,29 +88,66 @@ export class DosyaOkunamadi extends Error {
 // Zip imzası ("PK\x03\x04"): .xlsx bir zip arşividir.
 const zipImzasi = [0x50, 0x4b, 0x03, 0x04];
 
+// Arşivi açar; açılan baytlar gerçekten sayılır, sınır aşılınca açma durur (sıkıştırma bombası). Başlıktaki
+// boyut bilgisine güvenilmez.
+const arsiviAc = (dosya: Uint8Array): Record<string, Uint8Array> => {
+  const icerik: Record<string, Uint8Array> = {};
+  let toplam = 0;
+  let sorun: OkumaHatasi | undefined;
+  const arsiv = new Unzip();
+  arsiv.register(UnzipInflate);
+  arsiv.onfile = (girdi) => {
+    if (sorun !== undefined) return;
+    if (girdi.compression !== 0 && girdi.compression !== UnzipInflate.compression) {
+      sorun = "excel-dosyasi-degil";
+      return;
+    }
+    const parcalar: Uint8Array[] = [];
+    girdi.ondata = (hata, veri, son) => {
+      if (sorun !== undefined) return;
+      if (hata !== null) {
+        sorun = "excel-dosyasi-degil";
+        return;
+      }
+      toplam += veri.byteLength;
+      if (toplam > excelAyari.acilmisEnCokBayt) {
+        sorun = "excel-cok-buyuk";
+        girdi.terminate();
+        return;
+      }
+      parcalar.push(veri);
+      if (son) {
+        const birlesik = new Uint8Array(parcalar.reduce((t, p) => t + p.byteLength, 0));
+        let yer = 0;
+        for (const p of parcalar) {
+          birlesik.set(p, yer);
+          yer += p.byteLength;
+        }
+        icerik[girdi.name] = birlesik;
+      }
+    };
+    girdi.start();
+  };
+  try {
+    arsiv.push(dosya, true);
+  } catch {
+    sorun ??= "excel-dosyasi-degil";
+  }
+  if (sorun !== undefined) throw new DosyaOkunamadi(sorun);
+  return icerik;
+};
+
 export const dosyaOku = async (dosya: Uint8Array, satirSiniri: number): Promise<OkunanDosya> => {
   if (dosya.byteLength > excelAyari.enCokBayt) throw new DosyaOkunamadi("excel-cok-buyuk");
   if (zipImzasi.some((bayt, i) => dosya[i] !== bayt))
     throw new DosyaOkunamadi("excel-dosyasi-degil");
-  // Açılmış hâlin boyutu dosyalar açılmadan, arşivin kendi bilgisiyle ölçülür; sınırı aşan dosya açılmaz.
-  let acilmis = 0;
-  let calisma = false;
-  try {
-    unzipSync(dosya, {
-      filter: (girdi) => {
-        acilmis += girdi.originalSize;
-        if (girdi.name === "xl/workbook.xml") calisma = true;
-        return false;
-      },
-    });
-  } catch {
-    throw new DosyaOkunamadi("excel-dosyasi-degil");
-  }
-  if (acilmis > excelAyari.acilmisEnCokBayt) throw new DosyaOkunamadi("excel-cok-buyuk");
-  if (!calisma) throw new DosyaOkunamadi("excel-dosyasi-degil");
+  const icerik = arsiviAc(dosya);
+  if (icerik["xl/workbook.xml"] === undefined) throw new DosyaOkunamadi("excel-dosyasi-degil");
   let sayfalar: { sheet: string; data: (OkunanHucre | null)[][] }[];
   try {
-    sayfalar = await readXlsxFile(Buffer.from(dosya.buffer, dosya.byteOffset, dosya.byteLength));
+    // Okuyucuya yalnız açılıp ölçülen içerikten yeniden kurulan arşiv verilir: arşivin başlıklarındaki boyut
+    // bilgisi yalan olabilir, okuyucu onu denetlemez (bağımsız kontrolün bulgusu).
+    sayfalar = await readXlsxFile(Buffer.from(zipSync(icerik, { level: 1 })));
   } catch {
     throw new DosyaOkunamadi("excel-dosyasi-degil");
   }

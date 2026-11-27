@@ -4,7 +4,7 @@
 import { calisanSite } from "../../../ayar-semasi/calisan-site";
 import { excelAyari } from "../../../kayitlar/eklentiler";
 import { doldur } from "../../../metinler/doldur";
-import type { MetinAnahtari } from "../../../metinler/metin";
+import { type MetinAnahtari, sozlukler } from "../../../metinler/metin";
 import { metin, siteninBicimleyicisi } from "../../../metinler/site-metni";
 import { fiyatHataMetinleri } from "../../../moduller/fiyat/semalar";
 import { urunHataMetinleri } from "../../../moduller/urun/semalar";
@@ -36,6 +36,7 @@ export type ExcelEkraniVerisi = {
     durum: "denetleniyor" | "onizleme" | "uygulaniyor" | "bitti" | "vazgecildi" | "okunamadi";
     dosyaAdi: string;
     dosyaYazisi: string;
+    indirilenYok: boolean;
     okunamadi?: string;
     sayilar: { degistir: string; ekle: string; ayni: string; hatali: string };
     hataliSayisi: number;
@@ -52,42 +53,9 @@ export type ExcelEkraniVerisi = {
   } | null;
 };
 
+// Eklentinin kendi hata metinleri: anahtar listesi tr.json'dan ("genel" hata kodu değildir).
 const kendiHatalari = new Set<string>(
-  Object.keys(
-    // tr.json'daki eklentinin hata metinleri: anahtar listesi metinlerin kendisinden.
-    {
-      "ad-gerekli": 1,
-      "barkod-gecersiz": 1,
-      "birlesim-tekrar": 1,
-      bosaltilamaz: 1,
-      "durum-yok": 1,
-      "etiket-yok": 1,
-      "fiyat-yetkisi": 1,
-      "indirim-sirasi": 1,
-      "kategori-yok": 1,
-      "marka-yok": 1,
-      "ortak-celisiyor": 1,
-      "ozellik-deger-gecersiz": 1,
-      "ozellik-okunamadi": 1,
-      "ozellik-tekrar": 1,
-      "ozellik-yok": 1,
-      "satis-fiyati-gerekli": 1,
-      "secenek-gerekli": 1,
-      "secenekler-okunamadi": 1,
-      "secenekler-uyusmuyor": 1,
-      "secenek-tekrar": 1,
-      "yeni-secenek": 1,
-      "sitede-degisti": 1,
-      "stok-kodu-kullaniliyor": 1,
-      "stok-kodu-tekrar": 1,
-      "stok-okunamadi": 1,
-      "stok-yetkisi": 1,
-      "tutar-okunamadi": 1,
-      "urun-kodu-bicimi": 1,
-      "zamanlanmis-dosyadan-secilmez": 1,
-      "zaman-okunamadi": 1,
-    },
-  ),
+  Object.keys(sozlukler.tr.eklenti.excel.hata).filter((kod) => kod !== "genel"),
 );
 
 // Bir hatanın metni: önce eklentinin kendi metni, sonra ürün ve fiyat servislerinin metinleri, yoksa genel metin.
@@ -186,6 +154,7 @@ export const excelEkraniVerisi = async (girdi: {
             kimlik: ice.kimlik,
             durum: ice.durum,
             dosyaAdi: ice.dosyaAdi,
+            indirilenYok: !ice.indirilenVar,
             dosyaYazisi: doldur(metin("eklenti.excel.ekran.dosyaSatiri"), {
               satir: b.sayi(ice.satirSayisi),
               boyut: b.dosyaBoyutu(ice.dosyaBoyutu),
