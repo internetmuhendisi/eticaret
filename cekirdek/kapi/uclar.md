@@ -743,6 +743,36 @@ Seçilen siparişlere toplu işlem (kart 0258, karar 0157): bugün `hazirlamaya-
 - Başarılı (200): `{ "islenen": [numara], "islenemeyen": [{ "anahtar": numara, "kod" }] }`. Kod tekil işlemin ayrıntı kodudur (`durum-degisti`, `gecis-yok`, `yontem-uymuyor`, `iade-bekliyor`) ya da `bulunamadi`; beklenmeyen hata kaydedilir ve `beklenmeyen` döner.
 - Hatalar: `dogrulama` (boş, sınırı aşan ya da tekrarlı liste), `yetki`.
 
+### POST /kapi/yonetici/siparisler-disa-aktar
+
+Siparişleri CSV dosyasına aktarmayı başlatır (kart 0316, karar 0185); dosya arka planda (`siparis-disa-aktarma` işi) hazırlanır. Kapsam listenin süzgeçleridir (sipariş listesinin adresinin sorgusu: durum sekmesi, tarih, ödeme yöntemi, kargo firması, sıralama; arama ve sayfa yok sayılır) ya da seçilen siparişlerin numaraları. Satır düzeni her sipariş bir satır (`siparis`) ya da her ürün bir satırdır (`kalem`).
+
+- İzin: `siparis.gor`. Sınır: `genel`.
+- Girdi: `{ "kapsam": { "tur": "liste", "sorgu" } | { "tur": "secili", "numaralar": [numara] }, "duzen": "siparis" | "kalem" }` (`siparisDisaAktarmaSemasi`): seçili en az 1, en çok bir sayfa (100), her numara bir kez.
+- Servis: `cekirdek/moduller/siparis/disa-aktarma.ts` (`baslat`).
+- Başarılı (200): `{ "kimlik" }`.
+- Hatalar: `dogrulama`, `is-kurali` (`siparis-yok`: kapsamda sipariş yok; `cok-fazla-siparis`: `siparisDisaAktarmaAyari.enCokSiparis`'i aşıyor), `oturum-yok`, `yetki`.
+
+### GET /kapi/yonetici/siparisler-disa-aktarma
+
+Yöneticinin dışa aktarmasının durumu (kart 0316): kimlikle ya da kimliksiz (sonuncusu). Başka yöneticinin dışa aktarması yoktur (`null`).
+
+- İzin: `siparis.gor`. Sınır: `genel`.
+- Girdi: adres parametresi `kimlik` (isteğe bağlı).
+- Servis: `cekirdek/moduller/siparis/disa-aktarma.ts` (`durum`).
+- Başarılı (200): `{ "disaAktarma": { "kimlik", "durum": "hazirlaniyor" | "hazir" | "hatali", "duzen", "siparisSayisi", "indirildi" } | null }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`.
+
+### GET /kapi/yonetici/siparisler-disa-aktarma-indir
+
+Hazır dosya, indirilecek dosya olarak (`siparisler-<gün>.csv`, `text/csv`, önbelleğe alınmaz; kart 0316). Yalnız isteyen yönetici indirir. Her indirme değişiklik kaydına `siparis.disa-aktarildi` ile girer (kapsam, düzen, sipariş sayısı; dosyanın içeriği girmez).
+
+- İzin: `siparis.gor`. Sınır: `genel`.
+- Girdi: adres parametresi `kimlik`.
+- Servis: `cekirdek/moduller/siparis/disa-aktarma.ts` (`dosya`).
+- Başarılı (200): dosyanın kendisi.
+- Hatalar: `dogrulama`, `bulunamadi` (hazır değil, başkasının ya da saklama süresi dolmuş), `oturum-yok`, `yetki`.
+
 ### POST /kapi/yonetici/fatura-yukle
 
 Gövdedeki PDF'i faturanın belgesi olarak kaydeder (kart 0268, karar 0170). Belge yeniden kodlanmaz, olduğu gibi saklanır; tür içerikten anlaşılır (`%PDF-` imzası), en çok 5 MB (`belgeSinirlari`). Siparişe bağlanmaz: bağlama `siparis-fatura` ucuyla yapılır.

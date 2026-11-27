@@ -178,6 +178,12 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
       .join("");
 
   const paraSayisi = sayiBicimi(ayarlar.para.ondalikSayisi);
+  // Tablo dosyasındaki tutar (kart 0316): binlik ayırıcısız, sitenin ondalık ayırıcısıyla.
+  const duzParaSayisi = new Intl.NumberFormat(ayarlar.dil, {
+    useGrouping: false,
+    minimumFractionDigits: ayarlar.para.ondalikSayisi,
+    maximumFractionDigits: ayarlar.para.ondalikSayisi,
+  });
   // Simgeyle tutarın arası bölünmez boşluktur (kart 0190): dar ekranda simge tutardan ayrılıp tek başına alt
   // satıra düşmez; satır kırılacaksa simge yanındaki tutarla birlikte iner.
   const simgeyleTutarArasi = "\u00a0";
@@ -256,6 +262,15 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
       }
       return ayiricilariUygula(paraSayisi, enKucukBirimde / 10 ** ayarlar.para.ondalikSayisi);
     },
+    // CSV dosyasındaki tutar (kart 0316): simgesiz, binlik ayırıcısız, sitenin ondalık ayırıcısıyla ("1234,50");
+    // tablo programı sayı olarak okur. Ayraç csvAyraci'dır: ondalık ayırıcı virgülse noktalı virgül.
+    csvTutari: (enKucukBirimde: number): string => {
+      if (!Number.isSafeInteger(enKucukBirimde)) {
+        throw new Error(`Para tutarı en küçük birimde tam sayı olmalı: ${enKucukBirimde}`);
+      }
+      return ayiricilariUygula(duzParaSayisi, enKucukBirimde / 10 ** ayarlar.para.ondalikSayisi);
+    },
+    csvAyraci: (): ";" | "," => (ayarlar.sayi.ondalikAyirici === "," ? ";" : ","),
     // Tutar, para biriminin en küçük biriminde (kuruş, sent) tam sayıdır.
     para: (enKucukBirimde: number): string => {
       if (!Number.isSafeInteger(enKucukBirimde)) {

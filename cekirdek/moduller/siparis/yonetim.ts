@@ -183,7 +183,9 @@ const siparisAramaKosulu = (metin: string) => {
 };
 
 export const siparisYonetimi = (site: Site) => {
-  const liste = async (vt: Veritabani, girdi: SiparisListesiGirdisi): Promise<SiparisListesi> => {
+  // Listenin koşulları (kart 0316'da ayrıldı): liste, sayılar ve dışa aktarma aynı koşulu kullanır.
+  type ListeKosulGirdisi = Omit<SiparisListesiGirdisi, "siralama" | "sayfa" | "sayfaBoyu">;
+  const listeKosullari = (vt: Veritabani, girdi: ListeKosulGirdisi) => {
     const varMi = (tablo: typeof siparisIadeTalepleri | typeof siparisIadeleri) =>
       exists(
         vt
@@ -285,8 +287,29 @@ export const siparisYonetimi = (site: Site) => {
     if (girdi.durum !== undefined) kosullar.push(eq(siparisler.durum, girdi.durum));
     if (girdi.bakilacak === true) kosullar.push(bakilacak);
     if (girdi.ara !== undefined) kosullar.push(siparisAramaKosulu(girdi.ara));
-    const nerede = and(...kosullar);
-    const suzgecKosulu = and(...suzgecler);
+    return {
+      nerede: and(...kosullar),
+      suzgecKosulu: and(...suzgecler),
+      bakilacak,
+      havaleBekliyor,
+      talepBekliyor,
+      iadeBekliyor,
+      talepOnaylandi,
+      iadeBasarisiz,
+    };
+  };
+
+  const liste = async (vt: Veritabani, girdi: SiparisListesiGirdisi): Promise<SiparisListesi> => {
+    const {
+      nerede,
+      suzgecKosulu,
+      bakilacak,
+      havaleBekliyor,
+      talepBekliyor,
+      iadeBekliyor,
+      talepOnaylandi,
+      iadeBasarisiz,
+    } = listeKosullari(vt, girdi);
     const [sayim] = await vt.select({ adet: count() }).from(siparisler).where(nerede);
     const toplam = sayim?.adet ?? 0;
     const sayfaSayisi = Math.max(1, Math.ceil(toplam / girdi.sayfaBoyu));
@@ -360,6 +383,25 @@ export const siparisYonetimi = (site: Site) => {
       sayilar,
       bakilacakSayisi: bakilacakSayimi?.adet ?? 0,
     };
+  };
+
+  // Listenin süzgeçlerine uyan siparişlerin kimlikleri listenin sırasıyla (kart 0316, dışa aktarma): en çok sinir
+  // kadar; toplam sınırı aşıyorsa yalnız sayı döner.
+  const listeninSiparisleri = async (
+    vt: Veritabani,
+    girdi: ListeKosulGirdisi & { siralama: SiparisListesiSiralamasi },
+    sinir: number,
+  ): Promise<{ toplam: number; kimlikler: string[] }> => {
+    const { nerede } = listeKosullari(vt, girdi);
+    const [sayim] = await vt.select({ adet: count() }).from(siparisler).where(nerede);
+    const toplam = sayim?.adet ?? 0;
+    if (toplam > sinir) return { toplam, kimlikler: [] };
+    const satirlar = await vt
+      .select({ kimlik: siparisler.kimlik })
+      .from(siparisler)
+      .where(nerede)
+      .orderBy(...listeSiralari[girdi.siralama]);
+    return { toplam, kimlikler: satirlar.map((satir) => satir.kimlik) };
   };
 
   // Siparişlerdeki kargo firması adları (kart 0267, sipariş listesinin süzgeci): kargoya verildiği andaki adlar,
@@ -723,5 +765,14 @@ export const siparisYonetimi = (site: Site) => {
       .orderBy(desc(siparisler.olusturma_zamani), desc(siparisler.numara))
       .limit(sinir);
 
-  return { liste, ara, kargoFirmalari, ayrinti, islemYap, notEkle, topluIslem };
+  return {
+    liste,
+    listeninSiparisleri,
+    ara,
+    kargoFirmalari,
+    ayrinti,
+    islemYap,
+    notEkle,
+    topluIslem,
+  };
 };

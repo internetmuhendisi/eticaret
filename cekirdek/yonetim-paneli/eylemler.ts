@@ -28,6 +28,8 @@ export const panelEylemleri = {
   "vitrinde-gor": { ikon: "yeni-sekme", ad: "yonetim.eylem.vitrindeGor" },
   // Ürün kopyalama (kart 0320): ürün ekranının ve listenin satır menüsünün "Kopyala"sı.
   "urun-kopyala": { ikon: "kopyala", ad: "yonetim.eylem.urunKopyala" },
+  // Siparişleri dışa aktarma (kart 0316): listenin komut çubuğunda ve toplu çubuğunda.
+  "disa-aktar": { ikon: "indir", ad: "yonetim.eylem.disaAktar" },
   // Excel ile toplu ürün işlemleri eklentisi (kart 0315): Ürünler listesinin "Excel"i.
   "urunler-excel": { ikon: "yukle", ad: "yonetim.eylem.urunlerExcel" },
   // Müşteri ayrıntısı (kart 0271): müşterinin kendi e-postasına şifre sıfırlama bağlantısı.

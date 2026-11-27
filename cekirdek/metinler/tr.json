@@ -381,7 +381,8 @@
       "kuponKapat": "Kuponu kapat",
       "kuponAc": "Kuponu aç",
       "urunKopyala": "Kopyala",
-      "urunlerExcel": "Excel"
+      "urunlerExcel": "Excel",
+      "disaAktar": "Dışa aktar"
     },
     "rol": {
       "magaza-sahibi": "Mağaza sahibi",
@@ -1705,6 +1706,78 @@
       "atlanan": "Şu siparişlerin kişisel bilgileri silindiği için fişi yok: {numaralar}.",
       "yok": "Yazdırılacak fiş yok. Siparişlere dönüp başka siparişler seçin.",
       "siparislereDon": "Siparişlere dön"
+    },
+    "siparisDisaAktarma": {
+      "pencereBasligi": "Siparişleri dışa aktar",
+      "aciklama": "Siparişleri CSV dosyası olarak indirin. Excel ve muhasebe programları açar.",
+      "hangileri": "Hangi siparişler",
+      "listedekiler": "Listedeki {sayi} sipariş",
+      "listedekilerSuzgecli": "Listedeki {sayi} sipariş ({suzgecler})",
+      "secililer": "Seçili {sayi} sipariş",
+      "aramaYok": "Arama kutusuna yazılan dosyaya uygulanmaz; süzgeçler uygulanır.",
+      "satirlar": "Satırlar",
+      "duzen": {
+        "siparis": "Her sipariş bir satır",
+        "kalem": "Her ürün bir satır"
+      },
+      "sutunlarIpucu": "Sütunlar: sipariş no, tarih, durum, ödeme yöntemi, müşteri, e-posta, telefon, teslimat ve fatura bilgisi, ara toplam, kupon, kargo, oran oran vergi, toplam, kargo firması ve takip no, fatura no. Kişisel bilgisi silinmiş siparişte kişisel sütunlar boştur.",
+      "kisiselUyari": "Dosya müşterilerin adını, adresini ve telefonunu taşır. Yalnız işiniz için kullanın; her indirme kaydedilir. Dosya 24 saat sonra sunucudan silinir.",
+      "hazirla": "Dosyayı hazırla",
+      "hazirlaniyor": "Dosya hazırlanıyor: {sayi} sipariş. Sayfadan ayrılabilirsiniz; hazır olunca burada indirilir.",
+      "hazir": "Dosya hazır: {sayi} sipariş.",
+      "hatali": "Dosya hazırlanamadı. Yeniden deneyin.",
+      "indir": "Dosyayı indir",
+      "kapat": "Kapat",
+      "hata": {
+        "siparis-yok": "Bu süzgeçlere uyan sipariş yok; süzgeçleri değiştirin.",
+        "cok-fazla-siparis": "Bir dosyada en çok {sayi} sipariş olabilir. Tarih süzgeciyle daraltın.",
+        "genel": "Dosya hazırlanamadı. Biraz sonra yeniden deneyin."
+      },
+      "teslimatAdresiyleAyni": "Teslimat adresiyle aynı",
+      "faturaTuru": {
+        "bireysel": "Bireysel",
+        "kurumsal": "Kurumsal"
+      },
+      "sutun": {
+        "numara": "Sipariş no",
+        "tarih": "Tarih",
+        "durum": "Durum",
+        "odeme": "Ödeme yöntemi",
+        "musteri": "Müşteri",
+        "eposta": "E-posta",
+        "telefon": "Telefon",
+        "adres": "Teslimat adresi",
+        "ilce": "İlçe",
+        "il": "İl",
+        "postaKodu": "Posta kodu",
+        "ulke": "Ülke",
+        "faturaTuru": "Fatura türü",
+        "faturaUnvani": "Fatura unvanı",
+        "vergiDairesi": "Vergi dairesi",
+        "vergiNumarasi": "Vergi numarası",
+        "faturaAdresi": "Fatura adresi",
+        "araToplam": "Ara toplam",
+        "kuponKodu": "Kupon kodu",
+        "kuponIndirimi": "Kupon indirimi",
+        "kargo": "Kargo",
+        "vergi": "Vergi",
+        "vergiToplami": "Vergi toplamı",
+        "toplam": "Toplam",
+        "paraBirimi": "Para birimi",
+        "kargoFirmasi": "Kargo firması",
+        "takipNumarasi": "Takip no",
+        "faturaNumarasi": "Fatura no",
+        "faturaTarihi": "Fatura tarihi",
+        "urun": "Ürün",
+        "secim": "Seçenekler",
+        "stokKodu": "Stok kodu",
+        "adet": "Adet",
+        "birimFiyat": "Birim fiyat",
+        "satirTutari": "Satır tutarı",
+        "kuponPayi": "Kupon payı",
+        "vergisiz": "Vergisiz tutar",
+        "kalemVergisi": "Satırın vergisi"
+      }
     },
     "siparisAyarlari": {
       "kargoFirmalari": "Kargo firmaları",

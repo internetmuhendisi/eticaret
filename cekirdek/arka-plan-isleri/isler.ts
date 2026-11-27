@@ -22,10 +22,16 @@ import {
 import { gunluk } from "../izleme/gunluk.ts";
 import { denemeIsaretiBicimi } from "../kayitlar/arka-plan.ts";
 import { excelAyari, kartlaOdemeAyari, stokBildirimiAyari } from "../kayitlar/eklentiler.ts";
+import { siparisDisaAktarmaAyari } from "../kayitlar/siparis.ts";
 import { davetTemizligiIsi } from "../moduller/ekip/isler.ts";
 import { epostaGonderIsi, epostaKayitTemizligiIsi } from "../moduller/eposta/isler.ts";
 import { odemeOturumuTemizligiIsi } from "../moduller/odeme/isler.ts";
-import { havaleIptalIsi, kisiselVeriTemizligiIsi } from "../moduller/siparis/isler.ts";
+import {
+  havaleIptalIsi,
+  kisiselVeriTemizligiIsi,
+  siparisDisaAktarmaIsi,
+  siparisDisaAktarmaTemizligiIsi,
+} from "../moduller/siparis/isler.ts";
 import { stokUyarisiIsi, yoneticiBildirimiIsi } from "../moduller/yonetici-bildirimi/isler.ts";
 import { type ZamanliIs, zamanliIs } from "./calistirici.ts";
 import { bitenIsleriSil, type IsTanimi, isTanimla } from "./kuyruk.ts";
@@ -72,6 +78,9 @@ export const kayitliIsler: readonly IsTanimi[] = [
   // Ödenmeyen havale siparişinin iptali (kart 0214).
   havaleIptalIsi,
   kisiselVeriTemizligiIsi,
+  // Siparişlerin dışa aktarması (kart 0316).
+  siparisDisaAktarmaIsi,
+  siparisDisaAktarmaTemizligiIsi,
   // Stoğa gelince haber ver eklentisi (kart 0144, karar 0117).
   stokBildirimiGonderIsi,
   stokBildirimiTaramasiIsi,
@@ -108,4 +117,11 @@ export const zamanliIsler: readonly ZamanliIs[] = [
   zamanliIs(kartlaIadeTaramasiIsi, {}, { herDakika: kartlaOdemeAyari.taramaDakika }),
   zamanliIs(excelTaramasiIsi, {}, { herDakika: excelAyari.taramaDakika }),
   zamanliIs(excelTemizligiIsi, {}, { herDakika: 24 * 60 }),
+  zamanliIs(
+    siparisDisaAktarmaTemizligiIsi,
+    {},
+    {
+      herDakika: siparisDisaAktarmaAyari.temizlikDakika,
+    },
+  ),
 ];

@@ -306,6 +306,21 @@ export const siparisSinirlari = {
   fisEnCok: 100,
 } as const;
 
+// Siparişleri dışa aktarma (kart 0316, karar 0185, plan planlar/siparisleri-disa-aktarma.md). Satır düzeni: her
+// sipariş bir satır ya da her ürün (kalem) bir satır; ilki varsayılan. Durumlar veritabanının denetimiyle aynıdır
+// (test). Dosya kişisel veri taşır: hazırlandıktan saklamaSaat sonra kaydıyla silinir (temizlik her saat çalışır).
+// Siparişler partiBoyu'nca okunur; bir dosyada en çok enCokSiparis sipariş olur, aşan istek reddedilir.
+export const siparisDisaAktarmaDuzenleri = ["siparis", "kalem"] as const;
+export type SiparisDisaAktarmaDuzeni = (typeof siparisDisaAktarmaDuzenleri)[number];
+export const siparisDisaAktarmaDurumlari = ["hazirlaniyor", "hazir", "hatali"] as const;
+export type SiparisDisaAktarmaDurumu = (typeof siparisDisaAktarmaDurumlari)[number];
+export const siparisDisaAktarmaAyari = {
+  enCokSiparis: 50_000,
+  partiBoyu: 500,
+  saklamaSaat: 24,
+  temizlikDakika: 60,
+} as const;
+
 // Panelin sipariş listesinin sıralamaları (kart 0258): oluşturma zamanı ve toplam tutar; eşitlikte siparişin
 // kimliği. İlki varsayılandır. Adreste durur (?sirala=tutar-azalan): yayınlandıktan sonra adı değişmez.
 export const siparisListesiSiralamalari = [

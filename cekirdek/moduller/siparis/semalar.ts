@@ -13,6 +13,7 @@ import {
   iadeTalebiSuresiSinirlari,
   iadeTurleri,
   musteriIptaliSecenekleri,
+  siparisDisaAktarmaDuzenleri,
   siparisDurumlari,
   siparisListesiSiralamalari,
   siparisNotTurleri,
@@ -315,3 +316,22 @@ export const siparisAdresiSemasi = z
   })
   .superRefine(faturaVergiDenetimi);
 export type SiparisAdresiGirdisi = z.output<typeof siparisAdresiSemasi>;
+
+// Siparişleri dışa aktarma (kart 0316): listenin adresinin sorgusu (süzgeçler; arama ve sayfa yok sayılır) ya da seçilen
+// siparişlerin numaraları (en çok bir sayfa, her numara bir kez), satır düzeni.
+export const siparisDisaAktarmaSemasi = z.strictObject({
+  kapsam: z.discriminatedUnion("tur", [
+    z.strictObject({ tur: z.literal("liste"), sorgu: z.string().max(2000) }),
+    z.strictObject({
+      tur: z.literal("secili"),
+      numaralar: z
+        .array(siparisNumarasiSemasi)
+        .min(1)
+        .max(Math.max(...panelSayfaBoylari))
+        .refine((liste) => new Set(liste).size === liste.length, "tekrar"),
+    }),
+  ]),
+  duzen: z.enum(siparisDisaAktarmaDuzenleri),
+});
+export const siparisDisaAktarmaKimligiSemasi = z.strictObject({ kimlik: kimlikSemasi });
+export const siparisDisaAktarmaDurumSemasi = z.strictObject({ kimlik: kimlikSemasi.optional() });

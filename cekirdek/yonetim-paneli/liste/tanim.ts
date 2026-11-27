@@ -122,6 +122,19 @@ const ilkDeger = (deger: string | string[] | undefined): string | undefined =>
 
 // Adresin sorgusundan listenin durumu. Kalıtılmış adlar (constructor, __proto__) okunmaz: sorgu nesnesinin kendi
 // alanları okunur.
+// Adresin "?" sonrasından sayfanın okuduğu biçim: aynı adın birden çok değeri dizi olur (uçlar listenin adresini
+// alınca: Excel dışa aktarması, siparişlerin dışa aktarması).
+export const sorgudanDegerler = (sorgu: string): Sorgu => {
+  // Kalıtımsız nesne: "__proto__" adı da düz alan olur.
+  const okunan: Record<string, string | string[]> = Object.create(null);
+  for (const [ad, deger] of new URLSearchParams(sorgu)) {
+    const onceki = okunan[ad];
+    okunan[ad] =
+      onceki === undefined ? deger : [...(Array.isArray(onceki) ? onceki : [onceki]), deger];
+  }
+  return okunan;
+};
+
 export const listeDurumunuOku = (tanim: ListeTanimi, sorgu: Sorgu): ListeDurumu => {
   const oku = (ad: string) => (Object.hasOwn(sorgu, ad) ? (ilkDeger(sorgu[ad]) ?? "").trim() : "");
   const suzgecler: Record<string, string[]> = {};

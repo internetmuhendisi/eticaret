@@ -123,6 +123,9 @@ export const degisiklikIslemleri = [
   // Kart 0269: teslimat ve fatura bilgileri düzeltildi; kayda yalnız değişen alanların adları ve il, ilçe kodları girer.
   "siparis.adres-duzeltildi",
   "siparis.fatura-kaldirildi",
+  // Kart 0316: siparişler dosyaya indirildi (kişisel veri çıkışı). Kayda kapsam, satır düzeni ve sipariş sayısı girer;
+  // dosyanın içeriği girmez.
+  "siparis.disa-aktarildi",
   // Mağazanın müşteri hakkındaki notu (kart 0271, karar 0173): metni kayda yazılmaz.
   "musteri-notu.eklendi",
   "musteri-notu.silindi",
@@ -199,6 +202,8 @@ export const degisiklikKayitTurleri = [
   "yonetici-daveti",
   // Kart 0312: kupon.
   "kupon",
+  // Kart 0316: siparişlerin dışa aktarması (kayıt kimliği dışa aktarmanın kimliğidir).
+  "siparis-disa-aktarma",
 ] as const;
 export type DegisiklikKayitTuru = (typeof degisiklikKayitTurleri)[number];
 

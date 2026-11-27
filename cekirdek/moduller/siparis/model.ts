@@ -36,6 +36,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  customType,
   date,
   index,
   integer,
@@ -48,6 +49,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { kimlik, tutar, zaman } from "../../veritabani/turler.ts";
 import { dosyalar } from "../dosya/model.ts";
+import { yoneticiler } from "../ekip/model.ts";
 import { musteriler } from "../musteri/model.ts";
 import { type OturumOnayi, odemeOturumlari } from "../odeme/model.ts";
 import type { Fatura, Teslimat } from "../odeme/semalar.ts";
@@ -500,3 +502,50 @@ export const siparisTakipErisimleri = pgTable(
     index("siparis_takip_erisimleri_bitis").on(tablo.bitis_zamani),
   ],
 );
+
+// Siparişlerin dışa aktarması (kart 0316, karar 0185, plan planlar/siparisleri-disa-aktarma.md). Yönetici ister, arka
+// plan işi CSV dosyasını yazar, dosyayı yalnız isteyen indirir. Kapsam listenin süzgeçleri (arama ve sayfa yok) ya
+// da seçilen siparişlerin numaralarıdır. Dosya kişisel veri taşır: saklama süresi (siparisDisaAktarmaAyari.saklamaSaat)
+// dolunca kaydıyla silinir. Dosya bu tabloda durur, dosya servisinin yollarına girmez.
+//
+// Aranan alanlar: yonetici_kimligi ve olusturma_zamani (yöneticinin son dışa aktarması), olusturma_zamani (temizlik).
+const bayt = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
+
+export type SiparisDisaAktarmaKapsami =
+  | { tur: "liste"; suzgecler: Record<string, unknown> }
+  | { tur: "secili"; numaralar: string[] };
+
+export const siparisDisaAktarmalari = pgTable(
+  "siparis_disa_aktarmalari",
+  {
+    kimlik: kimlik(),
+    yonetici_kimligi: uuid()
+      .notNull()
+      .references(() => yoneticiler.kimlik, { onDelete: "cascade" }),
+    // cekirdek/kayitlar/siparis.ts: siparisDisaAktarmaDurumlari, siparisDisaAktarmaDuzenleri.
+    durum: text().notNull(),
+    duzen: text().notNull(),
+    kapsam: jsonb().$type<SiparisDisaAktarmaKapsami>().notNull(),
+    siparis_sayisi: integer().notNull().default(0),
+    satir_sayisi: integer().notNull().default(0),
+    dosya: bayt(),
+    olusturma_zamani: zaman().notNull().defaultNow(),
+    bitis_zamani: zaman(),
+    // İlk indirildiği an: listenin kutusu indirilmemiş hazır dosyayı gösterir.
+    indirme_zamani: zaman(),
+  },
+  (tablo) => [
+    index("siparis_disa_aktarmalari_yonetici").on(tablo.yonetici_kimligi, tablo.olusturma_zamani),
+    index("siparis_disa_aktarmalari_zaman").on(tablo.olusturma_zamani),
+    check(
+      "siparis_disa_aktarmalari_durum",
+      sql`${tablo.durum} in ('hazirlaniyor', 'hazir', 'hatali')`,
+    ),
+    check("siparis_disa_aktarmalari_duzen", sql`${tablo.duzen} in ('siparis', 'kalem')`),
+    check(
+      "siparis_disa_aktarmalari_dosya",
+      sql`(${tablo.durum} = 'hazir') = (${tablo.dosya} is not null)`,
+    ),
+  ],
+);
+export type SiparisDisaAktarmasi = typeof siparisDisaAktarmalari.$inferSelect;

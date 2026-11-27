@@ -463,6 +463,13 @@
       "when": 1795744026832,
       "tag": "0065_excel-ile-toplu-urun-islemleri",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1795760168779,
+      "tag": "0066_siparis-disa-aktarma",
+      "breakpoints": true
     }
   ]
 }

@@ -10,7 +10,7 @@ import { dosyaGovdesiSemasi } from "../../moduller/dosya/semalar.ts";
 import { yoneticininYetkileri } from "../../moduller/ekip/servis.ts";
 import { siteninVeritabani } from "../../veritabani/baglanti.ts";
 import { kimlikSemasi } from "../../veritabani/kimlik.ts";
-import { listeDurumunuOku } from "../../yonetim-paneli/liste/tanim.ts";
+import { listeDurumunuOku, sorgudanDegerler } from "../../yonetim-paneli/liste/tanim.ts";
 import {
   urunListesiGirdisi,
   urunListesiTanimi,
@@ -29,12 +29,7 @@ export const excelDurumSemasi = z.strictObject({ kimlik: kimlikSemasi.optional()
 
 // Sorgunun liste girdisi: sayfanın okuduğu biçimle (aynı adın birden çok değeri dizi olur).
 const kapsamiCoz = (sorgu: string) => {
-  const okunan: Record<string, string | string[]> = {};
-  for (const [ad, deger] of new URLSearchParams(sorgu)) {
-    const onceki = okunan[ad];
-    okunan[ad] =
-      onceki === undefined ? deger : [...(Array.isArray(onceki) ? onceki : [onceki]), deger];
-  }
+  const okunan = sorgudanDegerler(sorgu);
   const {
     sayfa: _sayfa,
     sayfaBoyu: _boy,
