@@ -24,7 +24,7 @@ Bölüm: Yönetim paneli 2. Önce 0311 ve 0314 bitmiş olmalı.
 - Tarif onaylandı, plan `planlar/` klasöründe.
 - Gerçek veritabanıyla dışa aktarılan dosyanın değiştirilmeden içe aktarılınca hiçbir şey değiştirmemesi, ekleme, değişiklik, hatalı satır, varyantlı ürün, sınırlar, formül hücresi, kapalı eklenti, iki site.
 - Tarayıcıda klavyeyle dışa aktarma, dosya yükleme, önizleme ve sonuç; iki renkte ve üç genişlikte tarama.
-- Tarifin "bitti sayılır" listesi tek tek kontrol edildi.
+- Tarifin "bitti sayılır" listesi tek tek kontrol edildi (`eklentiler/excel-ile-toplu-urun-islemleri.md`).
 - Ekran görüntüsü taslakla yan yana kondu, farklar düzeltildi.
 - Bağımsız kontrol yapıldı.
 
