@@ -35,6 +35,7 @@ import { SayfaYoluOrnegi } from "./ornekler/sayfa-yolu";
 import { SayfalamaOrnegi } from "./ornekler/sayfalama";
 import { SecenekGrubuOrnegi } from "./ornekler/secenek-grubu";
 import { SecimKutusuOrnegi } from "./ornekler/secim-kutusu";
+import { SekmeBaglantilariOrnegi } from "./ornekler/sekme-baglantilari";
 import { SekmelerOrnegi } from "./ornekler/sekmeler";
 import { SeritOrnegi } from "./ornekler/serit";
 import { SiralanabilirListeOrnegi } from "./ornekler/siralanabilir-liste";
@@ -73,6 +74,7 @@ const ornekler: Record<ParcaKodu, ComponentType> = {
   "adet-secici": AdetSeciciOrnegi,
   "yan-pencere": YanPencereOrnegi,
   sekmeler: SekmelerOrnegi,
+  "sekme-baglantilari": SekmeBaglantilariOrnegi,
   kart: KartOrnegi,
   rozet: RozetOrnegi,
   uyari: UyariOrnegi,

@@ -773,13 +773,13 @@ Hazır dosya, indirilecek dosya olarak (`siparisler-<gün>.csv`, `text/csv`, ön
 - Başarılı (200): dosyanın kendisi.
 - Hatalar: `dogrulama`, `bulunamadi` (hazır değil, başkasının ya da saklama süresi dolmuş), `oturum-yok`, `yetki`.
 
-### GET /kapi/yonetici/rapor-satis-csv
+### GET /kapi/yonetici/rapor-csv
 
-Satış raporu, indirilecek dosya olarak (`satis-raporu-<ilk gün>-<son gün>.csv`, `text/csv`, önbelleğe alınmaz; kart 0317, karar 0195). Ekrandaki raporla aynı işlevden: dönem, özet (önceki dönemle), oran oran vergi ve seri; tutarlar simgesiz, binlik ayırıcısız sayıdır. Dönem geçersizse sitenin varsayılan dönemi (`raporVarsayilanDonem`).
+Raporun CSV dosyası, indirilecek dosya olarak (`text/csv`, önbelleğe alınmaz; kart 0317, 0318, karar 0195, 0196). Ekrandaki raporla aynı işlevlerden, bütün satırlarıyla: satış raporu (`satis-raporu-<ilk gün>-<son gün>.csv`: dönem, özet önceki dönemle, oran oran vergi, seri), ürün raporu (`rapor-urunler-…`: ürün ve birleşim başına adet, tutar, iade adedi), müşteri raporu (`rapor-musteriler-…`: özet ve üyeler) ve kupon raporu (`rapor-kuponlar-…`: özet ve kupon başına). Tutarlar simgesiz, binlik ayırıcısız sayıdır. Dönem geçersizse sitenin varsayılan dönemi (`raporVarsayilanDonem`). Müşteri raporu üyelerin adlarını taşır: her indirmesi değişiklik kaydına `rapor.musteriler-indirildi` ile girer (dönem ve satır sayısı; dosyanın içeriği girmez).
 
 - İzin: `rapor.gor`. Sınır: `genel`.
-- Girdi: adres parametreleri `donem` (hazır dönem kodu ya da `YYYY-AA-GG_YYYY-AA-GG`, en çok 40 harf; isteğe bağlı) ve `karsilastir` (`0` kapatır; isteğe bağlı).
-- Servis: `cekirdek/moduller/rapor/satis.ts` (`rapor`), dosya `cekirdek/moduller/rapor/csv.ts`.
+- Girdi: adres parametreleri `rapor` (`satis`, `urunler`, `musteriler`, `kuponlar`; isteğe bağlı, varsayılan satış), `donem` (hazır dönem kodu ya da `YYYY-AA-GG_YYYY-AA-GG`, en çok 40 harf; isteğe bağlı), `karsilastir` (`0` kapatır; isteğe bağlı) ve `sirala` (ürün raporunda `tutar` ya da `adet`; isteğe bağlı).
+- Servis: `cekirdek/moduller/rapor/` (`satis.ts`, `urun.ts`, `musteri.ts`, `kupon.ts`), dosya `csv.ts`.
 - Hatalar: `dogrulama`, `oturum-yok`, `yetki`.
 
 ### POST /kapi/yonetici/fatura-yukle

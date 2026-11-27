@@ -12,6 +12,10 @@ export const raporHazirDonemleri = [
 ] as const;
 export type RaporHazirDonemi = (typeof raporHazirDonemleri)[number];
 
+// Raporlar ekranının sekmeleri (kart 0318); adreste `?rapor=`, satış varsayılandır ve adrese yazılmaz.
+export const raporTurleri = ["satis", "urunler", "musteriler", "kuponlar"] as const;
+export type RaporTuru = (typeof raporTurleri)[number];
+
 export const raporSinirlari = {
   // Özel aralığın en çok gün sayısı (iki uç dahil): bir yıl ve artık gün. Daha uzun dönem grafiği okunmaz kılar.
   enCokGun: 366,

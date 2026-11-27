@@ -6,184 +6,33 @@
 // - Kupon indirimi siparişin saklanan değeridir; başka para birimindeki sipariş ve iadesi sayılmaz.
 // - Oran oran vergi satışların ve iadelerin dökümünden; önceki dönem aynı uzunlukta; seri günlük ve haftalık.
 // - İki site ayrıdır.
-import { randomUUID } from "node:crypto";
-import { resolve } from "node:path";
 import { eq, sql } from "drizzle-orm";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { type Site, siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
-import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
+import { describe, expect, it, vi } from "vitest";
+import type { Site } from "../../../ayar-semasi/site-klasoru.ts";
 import { gunEkle, gununBasi } from "../../../metinler/bicimleyici.ts";
-import { baglantiyiKapat, type Veritabani } from "../../../veritabani/baglanti.ts";
-import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
-import { siteninFiyatServisi } from "../../fiyat/servis.ts";
-import { type OdemeYontemiSecimi, odemeBilgileriSemasi } from "../../odeme/semalar.ts";
-import { odemeServisi } from "../../odeme/servis.ts";
-import { iadeServisi } from "../../siparis/iade.ts";
 import { siparisIadeleri, siparisler } from "../../siparis/model.ts";
-import { siparisYonetimi } from "../../siparis/yonetim.ts";
-import { stokServisi } from "../../stok/servis.ts";
-import { urunServisi } from "../../urun/servis.ts";
-import { siteninVergiServisi } from "../../vergi/servis.ts";
 import { oncekiDonem } from "../donem.ts";
 import { satisRaporu } from "../satis.ts";
+import {
+  gun,
+  hazirla,
+  iade,
+  iadeAni,
+  kapida,
+  ms,
+  ode,
+  oku,
+  site,
+  teslimEt,
+  tz,
+  ver,
+  yapan,
+  yonetim,
+} from "./ortak.ts";
 
 vi.setConfig({ testTimeout: 120_000 });
 
-const klasor = siteKlasorunuOku(
-  resolve(import.meta.dirname, "../../../ayar-semasi/testler/ornek-siteler/vergi-dolu"),
-);
-const firmaKimligi = randomUUID();
-const site: Site = {
-  ...klasor,
-  baslangic: {
-    ...klasor.baslangic,
-    vergiAdi: "Deneme vergisi",
-    magazaAdresi: {
-      ulke: "TR",
-      il: "TR-06",
-      ilce: "TR-06-007",
-      adres: "Deneme Sokak No: 1",
-      postaKodu: "06000",
-    },
-    odemeYontemleri: [
-      { kod: "havale", acik: true },
-      { kod: "kapida-odeme", acik: true },
-    ],
-    kapidaOdemeSecenekleri: ["nakit"],
-    bankaHesaplari: [
-      {
-        kimlik: randomUUID(),
-        banka: "Deneme Bankası",
-        sahip: "Deneme Ticaret",
-        iban: "TR420001000000000000000001",
-      },
-    ],
-    kargoFirmalari: [{ kimlik: firmaKimligi, ad: "Deneme Kargo" }],
-  },
-};
-const tz = site.ayarlar.saatDilimi;
 const rapor = satisRaporu(site);
-const iade = iadeServisi(site);
-const yonetim = siparisYonetimi(site);
-const urunSrv = urunServisi(() => tz);
-const yapan = (): DegisikligiYapan => ({ tur: "yonetici", kimlik: randomUUID() });
-
-const temizlenecekler: (() => Promise<void>)[] = [];
-afterEach(async () => {
-  await baglantiyiKapat();
-  for (const temizle of temizlenecekler.splice(0)) await temizle();
-});
-
-const hazirla = async (ad = "rapor-satis") => {
-  const deneme = await denemeSitesiAc(ad);
-  temizlenecekler.push(deneme.sil);
-  const vt = deneme.vt;
-  const vergi = siteninVergiServisi(site);
-  const genel = (await vergi.tabloyuOku(vt)).find((s) => s.ad === "Genel")?.kimlik;
-  if (genel === undefined) throw new Error("Genel sınıf yok.");
-  // İkinci oran: oran oran vergi.
-  const indirimli = await vergi.sinifEkle(vt, yapan(), { ad: "İndirimli" });
-  await vergi.oranEkle(vt, yapan(), indirimli, { ulke: "TR", oran: "8" });
-  const urunAc = async ({ fiyat = 10_000, sinif = genel } = {}) => {
-    const urun = await urunSrv.urunEkle(vt, yapan(), {
-      ad: `Ürün ${randomUUID().slice(0, 8)}`,
-      vergiSinifi: sinif,
-      durum: "yayinda",
-      stokTakibi: true,
-    });
-    const birim = (await urunSrv.urunuOku(vt, urun))?.birimler[0]?.kimlik ?? "";
-    await siteninFiyatServisi(site).fiyatYaz(vt, yapan(), birim, { satisFiyati: fiyat });
-    await stokServisi().stokDuzelt(vt, yapan(), birim, {
-      yeniMiktar: 500,
-      gorulenMiktar: 0,
-      sebep: "sayim",
-    });
-    return birim;
-  };
-  return { vt, urunAc, genel, indirimli };
-};
-
-const havale: OdemeYontemiSecimi = { yontem: "havale" };
-const kapida: OdemeYontemiSecimi = { yontem: "kapida-odeme", secenek: "nakit" };
-
-const ver = async (
-  vt: Veritabani,
-  kalemler: { birim: string; adet: number }[],
-  yontem: OdemeYontemiSecimi = havale,
-) =>
-  (
-    await odemeServisi(site).siparisVer(
-      vt,
-      {
-        kim: { tur: "misafir", eposta: "misafir@ornek.test", hesap: { ac: false } },
-        bilgiler: odemeBilgileriSemasi.parse({
-          odemeYontemi: yontem,
-          teslimat: {
-            ad: "Deniz",
-            soyad: "Yılmaz",
-            telefon: "0555 123 45 67",
-            adres: {
-              ulke: "TR",
-              il: "TR-06",
-              ilce: "TR-06-007",
-              adres: "Atatürk Bulvarı No: 10",
-              postaKodu: "06420",
-            },
-          },
-          fatura: { tur: "bireysel", adresAyni: true },
-          onBilgilendirmeOnayi: true,
-          mesafeliSatisOnayi: true,
-          pazarlamaIzni: false,
-        }),
-        kalemler,
-      },
-      3600,
-    )
-  ).siparis.numara;
-
-const oku = async (vt: Veritabani, numara: string) => {
-  const [satir] = await vt.select().from(siparisler).where(eq(siparisler.numara, numara));
-  if (satir === undefined) throw new Error("Sipariş yok.");
-  return satir;
-};
-
-// Havalenin onayı ödemeyi alır; ödeme anı teste göre yazılır.
-const ode = async (vt: Veritabani, numara: string, an: Date) => {
-  await yonetim.islemYap(vt, yapan(), {
-    numara,
-    islem: "havale-onayla",
-    gorulenDurum: "odeme-bekleniyor",
-  });
-  await vt.update(siparisler).set({ odeme_zamani: an }).where(eq(siparisler.numara, numara));
-  return oku(vt, numara);
-};
-
-// Ödenmiş siparişi teslim eder (kısmi iade teslim edilmiş siparişte yapılır).
-const teslimEt = async (vt: Veritabani, numara: string) => {
-  await yonetim.islemYap(vt, yapan(), {
-    numara,
-    islem: "kargoya-ver",
-    gorulenDurum: "hazirlaniyor",
-    kargo: { firma: firmaKimligi },
-  });
-  await yonetim.islemYap(vt, yapan(), {
-    numara,
-    islem: "teslim-edildi",
-    gorulenDurum: "kargoda",
-  });
-};
-
-// Siparişin son iadesinin tamamlanma anı teste göre yazılır.
-const iadeAni = async (vt: Veritabani, numara: string, an: Date) => {
-  const siparis = await oku(vt, numara);
-  await vt
-    .update(siparisIadeleri)
-    .set({ sonuc_zamani: an })
-    .where(eq(siparisIadeleri.siparis_kimligi, siparis.kimlik));
-};
-
-const gun = (gunu: string) => ({ baslangic: gunu, bitis: gunu });
-const ms = (an: Date, fark: number) => new Date(an.getTime() + fark);
 
 describe("satış raporu", () => {
   it("gün sınırı milisaniyesine kadar sitenin saat diliminde; ödeme bekleyen ve ödenmeden iptal edilen sayılmaz", async () => {
@@ -343,7 +192,10 @@ describe("satış raporu", () => {
     // Başarısız iade sayılmaz: tek başına da, aynı siparişin tamamlanmış iadesinin yanında da.
     const { kimlik: _kimlik, ...kopya } = kayit;
     await h.vt.insert(siparisIadeleri).values({ ...kopya, durum: "basarisiz", tutar: 777 });
-    expect(await rapor.ozet(h.vt, gun(gunu))).toMatchObject({ iade: kayit.tutar, iadeSayisi: 1 });
+    const basarisizla = await rapor.ozet(h.vt, gun(gunu));
+    expect(basarisizla).toMatchObject({ iade: kayit.tutar, iadeSayisi: 1 });
+    // Başarısız iadenin vergisi de düşülmez.
+    expect(basarisizla.vergiler.toSorted((a, b) => a.oran - b.oran)).toEqual(beklenen);
     await h.vt
       .update(siparisIadeleri)
       .set({ durum: "basarisiz" })

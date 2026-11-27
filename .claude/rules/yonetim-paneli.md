@@ -103,10 +103,10 @@ paths:
 
 ## Raporlar (karar 0195)
 
-- Ekran `cekirdek/yonetim-paneli/raporlar/` klasöründe, menüde grupsuz, Karşılama'dan sonradır. Görmek ve CSV indirmek `rapor.gor` ister (yalnız mağaza sahibi). Bugün yalnız satış raporu vardır; ürün, müşteri ve kupon raporları sekme olarak gelir (kart 0318).
-- Sayılar yalnız `satisRaporu` (`cekirdek/moduller/rapor/satis.ts`) ile okunur: hangi sipariş ve iadenin hangi günde sayıldığı orada yazılıdır (karar 0195); ekran ve CSV kural yazmaz, pano da onu çağırır.
+- Ekran `cekirdek/yonetim-paneli/raporlar/` klasöründe, menüde grupsuz, Karşılama'dan sonradır. Görmek ve CSV indirmek `rapor.gor` ister (yalnız mağaza sahibi). Sekmeler (Satış, Ürünler, Müşteriler, Kuponlar; karar 0196) aynı sayfadadır, adreste `?rapor=`; şerit `SekmeBaglantilari`, üst kısım, sayı kutuları ve boş hâl `raporlar/ortak.tsx`'tedir.
+- Hangi sipariş ve iadenin hangi günde sayıldığı yalnız `cekirdek/moduller/rapor/kural.ts`'tedir (karar 0195); satış, ürün, müşteri ve kupon servisleri (`satis.ts`, `urun.ts`, `musteri.ts`, `kupon.ts`) onu kullanır, ekran ve CSV kural yazmaz, pano da servisleri çağırır.
 - Dönem ve karşılaştırma adrestedir (`raporAdresi`); sayfa ve CSV ucu isteği aynı işlevle çözer (`raporIsteginiCoz`, geçersiz dönem sitenin varsayılan dönemine düşer). Dönem seçimi `DonemSecici` ile (liste motorunun tarih süzgecinden ayrı: dönem boş olamaz, kendi hazır dönemleri ve karşılaştırması vardır). Sayılar sunucuda sitenin biçimiyle yazılır (`satisRaporuVerisi`), takvim günü `takvimGunuYazisi` ile.
-- Grafik `SeriGrafigi`'dir: çizim ekran okuyucudan gizli, tablo karşılığı her zaman ekran okuyucuya açık, "Tablo olarak göster" ekranda da gösterir. CSV `satisRaporuCsv` ile ortak CSV yazıcısından, komut çubuğunun "Dışa aktar"ından iner.
+- Grafik `SeriGrafigi`'dir: çizim ekran okuyucudan gizli, tablo karşılığı her zaman ekran okuyucuya açık, "Tablo olarak göster" ekranda da gösterir. CSV dört rapor için tek uçtan (`rapor-csv`), `cekirdek/moduller/rapor/csv.ts` ile ortak CSV yazıcısından, komut çubuğunun "Dışa aktar"ından iner; müşteri raporunun indirmesi değişiklik kaydına girer. Ürün, müşteri ve kupon tabloları sayfa sayfadır (`panelSayfaBoyu`), sayfa ve ürün raporunun sırası adrestedir.
 
 ## Mağaza bilgileri (karar 0175)
 

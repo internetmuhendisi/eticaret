@@ -8,8 +8,15 @@ import { doldur } from "../../metinler/doldur";
 import { metin, siteninBicimleyicisi } from "../../metinler/site-metni";
 import { satisRaporuCsv } from "../../moduller/rapor/csv";
 import type { SatisOzeti, SatisRaporu } from "../../moduller/rapor/satis";
+import {
+  kuponKutulari,
+  kuponSatiri,
+  musteriKutulari,
+  musteriSatiri,
+  secimYazisi,
+} from "../raporlar/diger-veri";
 import type { CozulenRaporIstegi } from "../raporlar/veri";
-import { satisRaporuVerisi } from "../raporlar/veri";
+import { raporBicimi, satisRaporuVerisi } from "../raporlar/veri";
 
 const site: Site = siteKlasorunuOku(
   resolve(import.meta.dirname, "../../ayar-semasi/testler/ornek-siteler/vergi-dolu"),
@@ -45,6 +52,9 @@ const rapor = (bu: SatisOzeti, onceki: SatisOzeti | null): SatisRaporu => ({
   seri: { tur: "gunluk", noktalar: [] },
 });
 const istek = (ek: Partial<CozulenRaporIstegi> = {}): CozulenRaporIstegi => ({
+  rapor: "satis",
+  sirala: "tutar",
+  sayfa: 1,
   deger: { tur: "hazir", kod: "son-30-gun" },
   varsayilan: "son-30-gun",
   karsilastir: true,
@@ -191,5 +201,118 @@ describe("raporlar ekranının verisi", () => {
       rapor(ozet({ satis: 100, siparisSayisi: 1 }), null),
     );
     expect(sifir.ozetSatirlari[2]?.deger).toBe(b.para(0));
+  });
+
+  it("sekmeler dönemi ve karşılaştırmayı korur; CSV adresi açık sekmenin", () => {
+    const veri = satisRaporuVerisi(
+      site,
+      istek({ karsilastir: false, deger: { tur: "hazir", kod: "bu-ay" } }),
+      rapor(bos, null),
+    );
+    expect(veri.sekmeler.map((sekme) => sekme.adres)).toEqual([
+      "/yonetim/raporlar?donem=bu-ay&karsilastir=0",
+      "/yonetim/raporlar?rapor=urunler&donem=bu-ay&karsilastir=0",
+      "/yonetim/raporlar?rapor=musteriler&donem=bu-ay&karsilastir=0",
+      "/yonetim/raporlar?rapor=kuponlar&donem=bu-ay&karsilastir=0",
+    ]);
+    expect(veri.csvAdresi).toBe("/kapi/yonetici/rapor-csv?rapor=satis&donem=bu-ay&karsilastir=0");
+  });
+});
+
+describe("ürün, müşteri ve kupon raporlarının verisi", () => {
+  it("müşteri kutuları: yeni ve dönen artışı iyi; üye olmadan ve müşteri başına renksiz; üye yoksa müşteri başına yok", () => {
+    const kutular = musteriKutulari(
+      raporBicimi(site),
+      { yeni: 3, donen: 1, uyeSiparisi: 6, misafirSiparisi: 2 },
+      { yeni: 1, donen: 2, uyeSiparisi: 3, misafirSiparisi: 1 },
+    );
+    expect(kutular.map(({ kod, yon, iyi }) => ({ kod, yon, iyi }))).toEqual([
+      { kod: "yeni", yon: "arti", iyi: true },
+      { kod: "donen", yon: "eksi", iyi: false },
+      { kod: "misafir", yon: "arti", iyi: null },
+      { kod: "musteriBasina", yon: "arti", iyi: null },
+    ]);
+    expect(kutular[3]?.deger).toBe(
+      doldur(metin("yonetim.rapor.musteri.siparis"), { sayi: b.sayi(1.5, 1) }),
+    );
+    const uyesiz = musteriKutulari(
+      raporBicimi(site),
+      { yeni: 0, donen: 0, uyeSiparisi: 0, misafirSiparisi: 4 },
+      null,
+    );
+    expect(uyesiz[3]?.deger).toBe(metin("yonetim.rapor.yok"));
+  });
+
+  it("müşteri satırı: adı silinmişse 'adı silinmiş', kapalı hesapta bağlantı yok", () => {
+    const bicim = raporBicimi(site);
+    expect(
+      musteriSatiri(bicim, {
+        musteri: "m1",
+        ad: null,
+        hesapKapali: false,
+        siparisSayisi: 2,
+        tutar: 1_000,
+      }),
+    ).toMatchObject({
+      ad: metin("yonetim.rapor.musteri.adYok"),
+      adYok: true,
+      adres: "/yonetim/musteriler/ayrinti?kimlik=m1",
+    });
+    expect(
+      musteriSatiri(bicim, {
+        musteri: "m2",
+        ad: "Ada",
+        hesapKapali: true,
+        siparisSayisi: 1,
+        tutar: 500,
+      }),
+    ).toMatchObject({ ad: "Ada", adres: null, hesapKapali: true, tutar: b.para(500) });
+  });
+
+  it("kupon kutuları: kuponlu siparişin payı; indirim renksiz, satış artışı iyi; kuponsuz kodda bağlantı yok", () => {
+    const bicim = raporBicimi(site);
+    const kutular = kuponKutulari(
+      bicim,
+      { kuponluSiparis: 3, butunSiparis: 10, indirim: 900, satis: 30_000, iadeSonrasi: 25_000 },
+      { kuponluSiparis: 3, butunSiparis: 8, indirim: 1_000, satis: 20_000, iadeSonrasi: 20_000 },
+    );
+    expect(kutular[0]?.alt).toBe(
+      doldur(metin("yonetim.rapor.kupon.pay"), { butun: b.sayi(10), yuzde: b.yuzde(30) }),
+    );
+    expect(kutular.map(({ kod, iyi }) => ({ kod, iyi }))).toEqual([
+      { kod: "kuponluSiparis", iyi: null },
+      { kod: "indirim", iyi: null },
+      { kod: "satis", iyi: true },
+      { kod: "iadeSonrasi", iyi: true },
+    ]);
+    expect(
+      kuponSatiri(bicim, {
+        kupon: null,
+        kod: "ESKI",
+        kullanim: 1,
+        indirim: 100,
+        satis: 1_000,
+        iadeSonrasi: 1_000,
+      }).adres,
+    ).toBeNull();
+    expect(
+      kuponSatiri(bicim, {
+        kupon: "k1",
+        kod: "YENI",
+        kullanim: 1,
+        indirim: 100,
+        satis: 1_000,
+        iadeSonrasi: 900,
+      }).adres,
+    ).toBe("/yonetim/kuponlar/kupon?kimlik=k1");
+  });
+
+  it("birleşimin seçimi okunur yazılır", () => {
+    expect(
+      secimYazisi([
+        { secenek: "Renk", deger: "Lacivert" },
+        { secenek: "Beden", deger: "M" },
+      ]),
+    ).toBe("Renk: Lacivert · Beden: M");
   });
 });

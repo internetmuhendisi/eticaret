@@ -26,6 +26,14 @@ Bölüm: Yönetim paneli 2. Önce 0317 ve 0313 bitmiş olmalı.
 - Ekran görüntüsü taslakla yan yana kondu, farklar düzeltildi.
 - Bağımsız kontrol yapıldı.
 
+## Sonuç
+
+- Raporlar ekranında Ürünler, Müşteriler ve Kuponlar sekmeleri (karar 0196); sayma kuralı tek dosyada (`cekirdek/moduller/rapor/kural.ts`), satış raporuyla aynı. İzin `rapor.gor` (yalnız mağaza sahibi, kullanıcı kararı).
+- CSV dört rapor için tek uç (`rapor-csv`); müşteri raporunun indirmesi değişiklik kaydına girer.
+- Sekme şeridi ortak kütüphaneye taşındı (`SekmeBaglantilari`), ekip ekranı da kullanır.
+- 100 bin siparişte 30 günlük raporlar 5–37 ms, bir yıllık 43–63 ms; yeni indeks gerekmedi.
+- Testler ve bozmalar `.claude/rules/kurallari-koruyan-kontroller.md`'de (kart 0318): 29 denetimin hepsi bozulunca kırmızı.
+
 ## Durum
 
 yapılacak

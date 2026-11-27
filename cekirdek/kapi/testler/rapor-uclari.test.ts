@@ -10,15 +10,24 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 import { type Site, siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
 import { takvimGunu } from "../../metinler/bicimleyici.ts";
 import { metin, siteninBicimleyicisi } from "../../metinler/site-metni.ts";
+import { degisiklikKayitlari } from "../../moduller/degisiklik-kaydi/model.ts";
 import { roller, yoneticiRolleri } from "../../moduller/ekip/model.ts";
 import { siteninFiyatServisi } from "../../moduller/fiyat/servis.ts";
 import { siteninServisi } from "../../moduller/magaza-ayarlari/servis.ts";
 import { odemeBilgileriSemasi } from "../../moduller/odeme/semalar.ts";
 import { odemeServisi } from "../../moduller/odeme/servis.ts";
 import { hesapAc } from "../../moduller/oturum/servis.ts";
-import { satisRaporuCsv } from "../../moduller/rapor/csv.ts";
+import {
+  kuponRaporuCsv,
+  musteriRaporuCsv,
+  satisRaporuCsv,
+  urunRaporuCsv,
+} from "../../moduller/rapor/csv.ts";
 import { donemGunleri, karsilastirmaDonemi, oncekiDonem } from "../../moduller/rapor/donem.ts";
+import { kuponRaporu } from "../../moduller/rapor/kupon.ts";
+import { musteriRaporu } from "../../moduller/rapor/musteri.ts";
 import { satisRaporu } from "../../moduller/rapor/satis.ts";
+import { urunRaporu } from "../../moduller/rapor/urun.ts";
 import { siparisler } from "../../moduller/siparis/model.ts";
 import { siparisYonetimi } from "../../moduller/siparis/yonetim.ts";
 import { stokServisi } from "../../moduller/stok/servis.ts";
@@ -26,7 +35,7 @@ import { urunServisi } from "../../moduller/urun/servis.ts";
 import { siteninVergiServisi } from "../../moduller/vergi/servis.ts";
 import { baglantiyiKapat, type Veritabani } from "../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../veritabani/testler/deneme-sitesi.ts";
-import { satisRaporuCsvUcu } from "../yonetici/rapor.ts";
+import { raporCsvUcu } from "../yonetici/rapor.ts";
 import { oturumCerezi } from "./erisim-denemesi.ts";
 
 vi.setConfig({ testTimeout: 90_000 });
@@ -104,7 +113,7 @@ const hesap = async (
 };
 
 const istek = (sorgu: string, oturum: string | undefined) =>
-  new Request(`http://magaza.ornek.test/kapi/yonetici/rapor-satis-csv${sorgu}`, {
+  new Request(`http://magaza.ornek.test/kapi/yonetici/rapor-csv${sorgu}`, {
     headers: {
       "x-forwarded-for": `2001:db8:${randomBytes(2).toString("hex")}::1`,
       ...(oturum === undefined ? {} : { cookie: oturum }),
@@ -170,7 +179,7 @@ describe("rapor uçları", () => {
     const sahip = await hesap("magaza-sahibi");
     const siparis = await satisYap();
     const bugun = takvimGunu(new Date(), site.ayarlar.saatDilimi);
-    const yanit = await satisRaporuCsvUcu(istek("?donem=bugun", sahip));
+    const yanit = await raporCsvUcu(istek("?donem=bugun", sahip));
     expect(yanit.status).toBe(200);
     expect(yanit.headers.get("content-type")).toBe("text/csv; charset=utf-8");
     expect(yanit.headers.get("cache-control")).toBe("private, no-store");
@@ -194,14 +203,63 @@ describe("rapor uçları", () => {
     const buAyinKiyasi = karsilastirmaDonemi({ tur: "hazir", kod: "bu-ay" }, buAy);
     expect(buAyinKiyasi.baslangic.slice(8)).toBe("01");
     const ayYazisi = Buffer.from(
-      await (await satisRaporuCsvUcu(istek("?donem=bu-ay", sahip))).arrayBuffer(),
+      await (await raporCsvUcu(istek("?donem=bu-ay", sahip))).arrayBuffer(),
     ).toString("utf8");
     expect(ayYazisi).toContain(
       `${metin("yonetim.rapor.csv.oncekiDonem")}${b.csvAyraci()}${buAyinKiyasi.baslangic}${b.csvAyraci()}${buAyinKiyasi.bitis}\r\n`,
     );
-    const kiyassiz = await satisRaporuCsvUcu(istek("?donem=bugun&karsilastir=0", sahip));
+    const kiyassiz = await raporCsvUcu(istek("?donem=bugun&karsilastir=0", sahip));
     const kiyassizYazi = Buffer.from(await kiyassiz.arrayBuffer()).toString("utf8");
     expect(kiyassizYazi).not.toContain(metin("yonetim.rapor.csv.oncekiDonem"));
+  });
+
+  it("ürün, müşteri ve kupon raporu kendi CSV'siyle; müşteri raporunun indirmesi değişiklik kaydına girer", async () => {
+    const sahip = await hesap("magaza-sahibi");
+    const siparis = await satisYap();
+    const bugun = takvimGunu(new Date(), site.ayarlar.saatDilimi);
+    const gunu = { baslangic: bugun, bitis: bugun };
+    const b = siteninBicimleyicisi(site.ayarlar);
+    const indir = async (rapor: string) => {
+      const yanit = await raporCsvUcu(istek(`?rapor=${rapor}&donem=bugun`, sahip));
+      expect(yanit.status, rapor).toBe(200);
+      expect(yanit.headers.get("content-disposition"), rapor).toBe(
+        `attachment; filename="rapor-${rapor}-${bugun}-${bugun}.csv"`,
+      );
+      return Buffer.from(await yanit.arrayBuffer());
+    };
+    const urunler = await indir("urunler");
+    expect(
+      urunler.equals(urunRaporuCsv(site, gunu, await urunRaporu(site).satirlar(vt, gunu, "tutar"))),
+    ).toBe(true);
+    expect(urunler.toString("utf8")).toContain(`${b.csvAyraci()}2${b.csvAyraci()}`);
+    const kupon = kuponRaporu(site);
+    expect(
+      (await indir("kuponlar")).equals(
+        kuponRaporuCsv(site, gunu, await kupon.ozet(vt, gunu), await kupon.satirlar(vt, gunu)),
+      ),
+    ).toBe(true);
+    const oncekiKayit = await vt
+      .select()
+      .from(degisiklikKayitlari)
+      .where(eq(degisiklikKayitlari.islem, "rapor.musteriler-indirildi"));
+    const musteri = musteriRaporu(site);
+    expect(
+      (await indir("musteriler")).equals(
+        musteriRaporuCsv(
+          site,
+          gunu,
+          await musteri.ozet(vt, gunu),
+          await musteri.enCokAlanlar(vt, gunu),
+        ),
+      ),
+    ).toBe(true);
+    const kayitlar = await vt
+      .select()
+      .from(degisiklikKayitlari)
+      .where(eq(degisiklikKayitlari.islem, "rapor.musteriler-indirildi"));
+    expect(kayitlar.length).toBe(oncekiKayit.length + 1);
+    expect(kayitlar.at(-1)?.yeni_deger).toMatchObject({ baslangic: bugun, bitis: bugun });
+    expect(siparis.toplam).toBeGreaterThan(0);
   });
 
   it("geçersiz dönem sitenin varsayılan dönemine düşer; varsayılan dönem mağaza ayarıdır", async () => {
@@ -210,16 +268,16 @@ describe("rapor uçları", () => {
     const adi = (yanit: Response) => yanit.headers.get("content-disposition");
     const otuz = donemGunleri({ tur: "hazir", kod: "son-30-gun" }, bugun);
     for (const sorgu of ["", "?donem=dun", "?donem=2026-10-31_2026-10-01"]) {
-      expect(adi(await satisRaporuCsvUcu(istek(sorgu, sahip))), sorgu).toBe(
+      expect(adi(await raporCsvUcu(istek(sorgu, sahip))), sorgu).toBe(
         `attachment; filename="satis-raporu-${otuz.baslangic}-${otuz.bitis}.csv"`,
       );
     }
     await siteninServisi(site).degistir(vt, yapan(), { raporVarsayilanDonem: "gecen-ay" });
     const gecenAy = donemGunleri({ tur: "hazir", kod: "gecen-ay" }, bugun);
-    expect(adi(await satisRaporuCsvUcu(istek("?donem=dun", sahip)))).toBe(
+    expect(adi(await raporCsvUcu(istek("?donem=dun", sahip)))).toBe(
       `attachment; filename="satis-raporu-${gecenAy.baslangic}-${gecenAy.bitis}.csv"`,
     );
-    expect(adi(await satisRaporuCsvUcu(istek("?donem=2026-10-01_2026-10-31", sahip)))).toBe(
+    expect(adi(await raporCsvUcu(istek("?donem=2026-10-01_2026-10-31", sahip)))).toBe(
       `attachment; filename="satis-raporu-2026-10-01-2026-10-31.csv"`,
     );
     await siteninServisi(site).degistir(vt, yapan(), { raporVarsayilanDonem: "son-30-gun" });
@@ -227,19 +285,25 @@ describe("rapor uçları", () => {
 
   it("sınırı aşan ve tanımsız girdi 400 alır", async () => {
     const sahip = await hesap("magaza-sahibi");
-    for (const sorgu of [`?donem=${"a".repeat(41)}`, "?karsilastir=2", "?baska=1"]) {
-      expect((await satisRaporuCsvUcu(istek(sorgu, sahip))).status, sorgu).toBe(400);
+    for (const sorgu of [
+      `?donem=${"a".repeat(41)}`,
+      "?karsilastir=2",
+      "?baska=1",
+      "?rapor=stok",
+      "?sirala=ad",
+    ]) {
+      expect((await raporCsvUcu(istek(sorgu, sahip))).status, sorgu).toBe(400);
     }
   });
 
   it("görevli, sipariş görevlisi ve rolsüz yönetici yetki; müşteri ve girişsiz ziyaretçi oturum-yok alır", async () => {
     for (const kisi of ["gorevli", "siparis-gorevlisi", "rolsuz"] as const) {
-      const yanit = await satisRaporuCsvUcu(istek("?donem=bugun", await hesap(kisi)));
+      const yanit = await raporCsvUcu(istek("?donem=bugun", await hesap(kisi)));
       expect(yanit.status, kisi).toBe(403);
       expect(await yanit.json(), kisi).toMatchObject({ hata: { kod: "yetki" } });
     }
     for (const oturum of [await hesap("musteri"), undefined]) {
-      const yanit = await satisRaporuCsvUcu(istek("?donem=bugun", oturum));
+      const yanit = await raporCsvUcu(istek("?donem=bugun", oturum));
       expect(yanit.status).toBe(401);
       expect(await yanit.json()).toMatchObject({ hata: { kod: "oturum-yok" } });
     }

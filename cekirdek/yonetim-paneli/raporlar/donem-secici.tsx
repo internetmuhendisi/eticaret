@@ -31,12 +31,15 @@ const ozel = "ozel";
 type Alan = "baslangic" | "bitis";
 
 export function DonemSecici({
+  rapor,
   dugmeYazisi,
   hazirKod,
   baslangic,
   bitis,
   karsilastir,
 }: {
+  // Açık rapor sekmesi: yeni dönem aynı sekmede açılır.
+  rapor: string;
   // Düğmede seçili dönem: "Son 30 gün: 29 Ekim – 27 Kasım 2026".
   dugmeYazisi: string;
   // Seçili hazır dönem; özel aralıkta yok.
@@ -75,7 +78,7 @@ export function DonemSecici({
 
   const git = (donem: string) => {
     setAcik(false);
-    yonlendirici.push(raporAdresi(donem, kiyas));
+    yonlendirici.push(raporAdresi({ donem, karsilastir: kiyas, rapor }));
   };
 
   const uygula = (olay: FormEvent<HTMLFormElement>) => {

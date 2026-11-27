@@ -20,11 +20,10 @@
 import { sql } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { raporSinirlari } from "../../kayitlar/rapor.ts";
-import type { IadeDurumu } from "../../kayitlar/siparis.ts";
 import { gunEkle } from "../../metinler/bicimleyici.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
-import { siparisIadeleri, siparisler } from "../siparis/model.ts";
 import { donemAnlari, type GunAraligi, gunSayisi } from "./donem.ts";
+import { iadeKosulu, satisKosulu, tamamlandi } from "./kural.ts";
 
 type Vt = Veritabani | VeritabaniIslemi;
 
@@ -55,7 +54,6 @@ export type SatisRaporu = {
 };
 
 const sayi = (deger: unknown): number => Number(deger ?? 0);
-const tamamlandi: IadeDurumu = "tamamlandi";
 
 export const satisRaporu = (site: Site) => {
   const { paraBirimi, saatDilimi } = site.ayarlar;
@@ -68,11 +66,10 @@ export const satisRaporu = (site: Site) => {
       kupon: string;
     }>(sql`
       select count(*) as adet,
-        coalesce(sum(${siparisler.toplam}), 0) as satis,
-        coalesce(sum(${siparisler.kupon_indirimi} + ${siparisler.kupon_kargo_indirimi}), 0) as kupon
-      from ${siparisler}
-      where ${siparisler.odeme_zamani} >= ${bas} and ${siparisler.odeme_zamani} < ${son}
-        and ${siparisler.para_birimi} = ${paraBirimi}`);
+        coalesce(sum(s.toplam), 0) as satis,
+        coalesce(sum(s.kupon_indirimi + s.kupon_kargo_indirimi), 0) as kupon
+      from siparisler s
+      where ${satisKosulu(paraBirimi, bas, son)}`);
     const [satir] = rows;
     return { adet: sayi(satir?.adet), satis: sayi(satir?.satis), kupon: sayi(satir?.kupon) };
   };
@@ -82,10 +79,10 @@ export const satisRaporu = (site: Site) => {
   const iadeler = async (vt: Vt, bas: Date, son: Date) => {
     const { rows } = await vt.execute<{ tutar: string; adet: string }>(sql`
       with donemdekiler as (
-        select distinct ${siparisIadeleri.siparis_kimligi} as siparis
-        from ${siparisIadeleri}
-        where ${siparisIadeleri.durum} = ${tamamlandi}
-          and ${siparisIadeleri.sonuc_zamani} >= ${bas} and ${siparisIadeleri.sonuc_zamani} < ${son}
+        select distinct i.siparis_kimligi as siparis
+        from siparis_iadeleri i
+        join siparisler s on s.kimlik = i.siparis_kimligi
+        where ${iadeKosulu(paraBirimi, bas, son)}
       ),
       birikimli as (
         select i.tutar, i.sonuc_zamani, s.toplam,
@@ -113,19 +110,17 @@ export const satisRaporu = (site: Site) => {
     }>(sql`
       with satirlar as (
         select d.ad, d.oran, d.matrah, d.vergi
-        from ${siparisler}
-        cross join lateral jsonb_to_recordset(${siparisler.vergi_dokumu})
+        from siparisler s
+        cross join lateral jsonb_to_recordset(s.vergi_dokumu)
           as d(ad text, oran bigint, matrah bigint, vergi bigint)
-        where ${siparisler.odeme_zamani} >= ${bas} and ${siparisler.odeme_zamani} < ${son}
-          and ${siparisler.para_birimi} = ${paraBirimi}
+        where ${satisKosulu(paraBirimi, bas, son)}
         union all
         select d.ad, d.oran, -d.matrah, -d.vergi
         from siparis_iadeleri i
         join siparisler s on s.kimlik = i.siparis_kimligi
         cross join lateral jsonb_to_recordset(i.vergi_dokumu)
           as d(ad text, oran bigint, matrah bigint, vergi bigint)
-        where i.durum = ${tamamlandi} and i.sonuc_zamani >= ${bas} and i.sonuc_zamani < ${son}
-          and s.para_birimi = ${paraBirimi}
+        where ${iadeKosulu(paraBirimi, bas, son)}
       )
       select ad, oran, sum(matrah) as matrah, sum(vergi) as vergi
       from satirlar
@@ -163,11 +158,10 @@ export const satisRaporu = (site: Site) => {
   const seri = async (vt: Vt, donem: GunAraligi): Promise<SatisRaporu["seri"]> => {
     const { bas, son } = donemAnlari(donem, saatDilimi);
     const { rows } = await vt.execute<{ gun: string; satis: string; adet: string }>(sql`
-      select to_char(timezone(${saatDilimi}, ${siparisler.odeme_zamani}), 'YYYY-MM-DD') as gun,
-        sum(${siparisler.toplam}) as satis, count(*) as adet
-      from ${siparisler}
-      where ${siparisler.odeme_zamani} >= ${bas} and ${siparisler.odeme_zamani} < ${son}
-        and ${siparisler.para_birimi} = ${paraBirimi}
+      select to_char(timezone(${saatDilimi}, s.odeme_zamani), 'YYYY-MM-DD') as gun,
+        sum(s.toplam) as satis, count(*) as adet
+      from siparisler s
+      where ${satisKosulu(paraBirimi, bas, son)}
       group by 1`);
     const gunler = new Map(rows.map((satir) => [satir.gun, satir]));
     const uzunluk = gunSayisi(donem);

@@ -192,7 +192,7 @@
       },
       "raporlar": {
         "ad": "Raporlar",
-        "aciklama": "Mağazanızın cirosu, iadesi ve vergisi seçtiğiniz dönemde. Günler mağazanın saat dilimindedir; ciro ödemenin alındığı günde, iade tamamlandığı günde sayılır."
+        "aciklama": "Mağazanızın satışı, ürünleri, müşterileri ve kuponları seçtiğiniz dönemde. Günler mağazanın saat dilimindedir; satış ödemenin alındığı günde, iade tamamlandığı günde sayılır."
       },
       "stokBildirimleri": {
         "ad": "Stok bildirimleri",
@@ -3491,7 +3491,34 @@
         "baslangic": "Başlangıç",
         "bitis": "Bitiş",
         "satis": "Ciro",
-        "siparisSayisi": "Sipariş sayısı"
+        "siparisSayisi": "Sipariş sayısı",
+        "evet": "Evet",
+        "urun": {
+          "urun": "Ürün",
+          "secim": "Seçim",
+          "adet": "Adet",
+          "tutar": "Tutar",
+          "iade": "İade",
+          "silindi": "Silinmiş"
+        },
+        "musteri": {
+          "yeni": "Yeni müşteri",
+          "donen": "Dönen müşteri",
+          "uyeSiparisi": "Üyelerin siparişi",
+          "misafirSiparisi": "Üye olmadan verilen sipariş",
+          "ad": "Müşteri",
+          "siparisSayisi": "Sipariş",
+          "tutar": "Tutar"
+        },
+        "kupon": {
+          "kuponluSiparis": "Kuponlu sipariş",
+          "butunSiparis": "Bütün siparişler",
+          "indirim": "Verilen indirim",
+          "satis": "Kuponlu satış",
+          "iadeSonrasi": "İade sonrası",
+          "kod": "Kod",
+          "kullanim": "Kullanım"
+        }
       },
       "aralikYili": "{aralik} {yil}",
       "ozet": {
@@ -3502,7 +3529,60 @@
         "vergi": "{ad} · matrah {matrah}"
       },
       "birdenAz": "{yuzde}'den az",
-      "oncekiYok": "önceki —"
+      "oncekiYok": "önceki —",
+      "sekmeler": "Raporlar",
+      "sekme": {
+        "satis": "Satış",
+        "urunler": "Ürünler",
+        "musteriler": "Müşteriler",
+        "kuponlar": "Kuponlar"
+      },
+      "urun": {
+        "secim": "{secenek}: {deger}",
+        "secimAyiraci": " · ",
+        "bos": "Bu dönemde satılan ürün yok",
+        "baslik": "Çok satanlar",
+        "siralama": "Sıralama",
+        "tutaraGore": "Tutara göre",
+        "adedeGore": "Adede göre",
+        "tablo": {
+          "tutar": "Ürünlerin satışı, tutara göre",
+          "adet": "Ürünlerin satışı, adede göre"
+        },
+        "silindi": "Silinmiş",
+        "sayfalar": "Ürünlerin sayfaları",
+        "not": "Tutar, sipariş anındaki satır tutarıdır (kupon payı düşülmeden). İade adedi dönemde tamamlanan iadelerdendir. Seçenekli ürünün birleşimleri altında yazar; silinmiş ürün siparişteki adıyla kalır."
+      },
+      "musteri": {
+        "kutu": {
+          "yeni": "Yeni müşteri",
+          "donen": "Dönen müşteri",
+          "misafir": "Üye olmadan",
+          "musteriBasina": "Müşteri başına"
+        },
+        "siparis": "{sayi} sipariş",
+        "adYok": "Adı silinmiş",
+        "baslik": "En çok alışveriş yapan üyeler",
+        "uyeYok": "Bu dönemde üyelerden sipariş yok; yalnız üye olmadan verilmiş siparişler var.",
+        "hesapKapali": "Hesap kapalı",
+        "sayfalar": "Üyelerin sayfaları",
+        "not": "Yeni müşteri dönemde ilk siparişini veren üyedir, dönen müşteri daha önce de sipariş vermiş üyedir. Üye olmadan verilen siparişler ayrı sayılır, kişi olarak listelenmez. Kişisel bilgisi silinmiş siparişler sayılara girer, adı görünmez."
+      },
+      "kupon": {
+        "kutu": {
+          "kuponluSiparis": "Kuponlu sipariş",
+          "indirim": "Verilen indirim",
+          "satis": "Kuponlu satış",
+          "iadeSonrasi": "İade sonrası"
+        },
+        "pay": "{butun} siparişin {yuzde} kadarı",
+        "indirimSonrasi": "indirim sonrası",
+        "bos": "Bu dönemde kuponlu sipariş yok",
+        "bosAciklama": "Seçilen dönemde ödemesi alınmış kuponlu sipariş yok. Başka bir dönem seçin.",
+        "baslik": "Kuponlar",
+        "sayfalar": "Kuponların sayfaları",
+        "not": "Ücretsiz kargo kuponunun indirimi verilmeyen kargo ücretidir. İade sonrası: kuponlu siparişlerden sonradan yapılan iadeler de düşülür."
+      }
     }
   },
   "vitrin": {
@@ -4792,7 +4872,8 @@
         "dosyaYukleme": "Dosya yükleme",
         "ilerlemeCubugu": "İlerleme çubuğu",
         "renkAlani": "Renk alanı",
-        "kopyalaDugmesi": "Kopyala düğmesi"
+        "kopyalaDugmesi": "Kopyala düğmesi",
+        "sekmeBaglantilari": "Sekme bağlantıları"
       },
       "bolumKutuphanesi": "Bölüm kütüphanesi"
     },
@@ -5011,7 +5092,11 @@
       "panelKapat": "Tamam",
       "kopyalaDeger": "https://ornek.test/davet",
       "kopyalandi": "Kopyalandı.",
-      "kopyalanamadi": "Kopyalanamadı. Değeri seçip kendiniz kopyalayın."
+      "kopyalanamadi": "Kopyalanamadı. Değeri seçip kendiniz kopyalayın.",
+      "sekmeBaglantilari": "Örnek sayfanın bölümleri",
+      "sekmeBirinci": "Siparişler",
+      "sekmeIkinci": "İadeler",
+      "sekmeUcuncu": "Notlar"
     },
     "bolum": {
       "ad": "Deneme bölümü",
