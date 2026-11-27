@@ -9,11 +9,14 @@ import { createContext, type ReactNode, useContext } from "react";
 import type { Dil } from "./dil";
 import type { MetinAnahtari } from "./metin";
 import { sozluktenOkuyucu } from "./okuyucu";
-import type { VitrinMetinBolumu } from "./vitrin-bolumleri";
+import type { VitrinMetinBolumu, yalnizPaneldekiEklentiMetinleri } from "./vitrin-bolumleri";
 import vitrinMetinleri from "./vitrin-metinleri.json" with { type: "json" };
 
 // Vitrinin tarayıcı kodunun okuyabildiği anahtarlar.
-export type VitrinMetinAnahtari = Extract<MetinAnahtari, `${VitrinMetinBolumu}.${string}`>;
+export type VitrinMetinAnahtari = Exclude<
+  Extract<MetinAnahtari, `${VitrinMetinBolumu}.${string}`>,
+  `eklenti.${(typeof yalnizPaneldekiEklentiMetinleri)[number]}.${string}`
+>;
 
 const DilBaglami = createContext<Dil | undefined>(undefined);
 

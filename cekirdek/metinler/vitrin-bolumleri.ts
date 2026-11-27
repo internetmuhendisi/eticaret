@@ -3,3 +3,6 @@
 // üretilir (vitrin-metinleri.json) ve testle tr.json'la aynı tutulur. Panel ve katalog bütün dosyayı okur.
 export const vitrinMetinBolumleri = ["ortak", "vitrin", "eklenti"] as const;
 export type VitrinMetinBolumu = (typeof vitrinMetinBolumleri)[number];
+// Yalnız panelde görünen eklentilerin metinleri (eklenti.<ad>) vitrine gitmez: vitrinin kodu sınırın yakınındadır
+// (kart 0315). Panel ekranı bütün dosyayı okur.
+export const yalnizPaneldekiEklentiMetinleri = ["excel"] as const;

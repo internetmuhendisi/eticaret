@@ -13,6 +13,7 @@ import {
   panelVeKatalogMu,
   yasakZincir as zincir,
 } from "../../testler/ice-aktarma-zinciri.ts";
+import { yalnizPaneldekiEklentiMetinleri } from "../vitrin-bolumleri.ts";
 import vitrinMetinleri from "../vitrin-metinleri.json" with { type: "json" };
 import { vitrinMetinleriniUret } from "../vitrin-metinleri-uret.ts";
 
@@ -29,6 +30,13 @@ const yasakZincir = (baslangic: string, oku?: (yol: string) => string): string[]
 describe("vitrin metinleri", () => {
   it("vitrin-metinleri.json tr.json'dan üretilenle aynı", () => {
     expect(vitrinMetinleri).toEqual(vitrinMetinleriniUret());
+  });
+
+  it("yalnız panelde görünen eklentilerin metinleri vitrin dosyasında yok, ötekiler var (kart 0315)", () => {
+    const eklenti = (vitrinMetinleri as Record<string, { eklenti: Record<string, unknown> }>).tr
+      ?.eklenti;
+    for (const ad of yalnizPaneldekiEklentiMetinleri) expect(eklenti?.[ad]).toBeUndefined();
+    expect(eklenti?.["stokBildirimi"]).toBeDefined();
   });
 
   it("panel ve katalog dışındaki tarayıcı dosyaları bütün metin dosyasına ve panelin okuyucusuna varmaz", () => {
