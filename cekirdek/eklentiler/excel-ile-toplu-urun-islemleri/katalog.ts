@@ -323,6 +323,7 @@ export const urunKodlariniBul = async (
       .select({ kod: urunler.adres_adi, kimlik: urunler.kimlik })
       .from(urunler)
       .where(and(inArray(urunler.adres_adi, liste), isNull(urunler.silinme_zamani))),
+    // Silinmemiş ürünün eski adresi: gorunurluk/adres-adi-kullanimi.ts'in kuralıyla aynı olmalı (kart 0330).
     vt
       .select({ kod: eskiAdresler.adres_adi, kimlik: eskiAdresler.kayit_kimligi })
       .from(eskiAdresler)

@@ -24,4 +24,6 @@ Eski adres başka kayda geçince o kaydın eski bağlantıları (müşterinin pa
 
 - Mağaza sahibi bir kaydın eski adresini başka kayda hiç veremez. Vermek isterse önce o adresin sahibini silmesi gerekir; eski adreslerin listesi ya da silinmesi panelde yoktur.
 - Denetim her türün servisinde, o türün işlem kilidi altında yapılır. Veritabanına doğrudan yazı kuralı atlar; bu yalnız disiplindir.
+- Sayfası açılmayan (taslak, arşiv) sahibin eski adresi de kullanılmıştır: sahip sonra açılabilir.
+- Panelde adres alanı boşken gösterilen örnek adres tarayıcıda addan üretilir; eski adres yüzünden kaydedilen adres sayı alabilir ("cicekli-sal-2"). Kaydedilen adres doğrudur, yalnız örnek farklıdır.
 - Excel ile içe aktarmada ürün kodu eski adresse satır o ürünü bulur (karar 0192); yeni ürün açmaz.

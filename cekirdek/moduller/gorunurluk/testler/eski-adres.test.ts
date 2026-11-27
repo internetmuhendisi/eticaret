@@ -375,6 +375,39 @@ describe("adresin çözülmesi", () => {
     });
   });
 
+  it("sayfası açılmayan ürünün eski adresi de kullanılmıştır: elle reddedilir, üretimde sayı alır", async () => {
+    const vt = await siteAc();
+    const sahip = await turler.urun.ekle(vt, "Örgü Atkı", "orgu-atki");
+    await turler.urun.adiDegistir(vt, sahip, "atki");
+    await urunSrv.urunDegistir(vt, yonetici(), sahip, { durum: "taslak" });
+    expect(await hatasi(turler.urun.ekle(vt, "Başka Atkı", "orgu-atki"))).toEqual(eskiAdresHatasi);
+    const yeni = await turler.urun.ekle(vt, "Örgü Atkı");
+    expect(await kayitAdresiniCoz(vt, "urun", "orgu-atki-2")).toMatchObject({
+      sonuc: "kayit",
+      kayit: { kimlik: yeni },
+    });
+    // Sahip yeniden açılınca eski bağlantı ona yönlenir.
+    await urunSrv.urunDegistir(vt, yonetici(), sahip, { durum: "yayinda" });
+    expect(await kayitAdresiniCoz(vt, "urun", "orgu-atki")).toEqual({
+      sonuc: "yonlendir",
+      adresAdi: "atki",
+    });
+  });
+
+  it("kopya silinmiş ürünün eski adresini alır, silinmemiş ürününkini almaz", async () => {
+    const vt = await siteAc();
+    const silinen = await turler.urun.ekle(vt, "Keten Gömlek", "keten-gomlek");
+    await turler.urun.adiDegistir(vt, silinen, "keten-gomlek-eski");
+    await turler.urun.sil(vt, silinen);
+    const yasayan = await turler.urun.ekle(vt, "Pamuk Gömlek", "pamuk-gomlek");
+    await turler.urun.adiDegistir(vt, yasayan, "pamuk-gomlek-eski");
+    const kaynak = await turler.urun.ekle(vt, "Kaynak", "kaynak");
+    const kopyaAdresi = (kok: string) =>
+      vt.transaction((islem) => urunSrv.bosAdresAdiBul(islem, kok, kaynak));
+    expect(await kopyaAdresi("keten-gomlek-eski")).toBe("keten-gomlek-eski");
+    expect(await kopyaAdresi("pamuk-gomlek")).toBe("pamuk-gomlek-2");
+  });
+
   it("servisi atlayan yazıda da eski ad saklanır; aynı ad yazılınca satır eklenmez", async () => {
     const vt = await siteAc();
     const kimlik = await turler.kategori.ekle(vt, "Ev", "ev");

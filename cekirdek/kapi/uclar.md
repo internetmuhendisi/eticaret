@@ -1275,7 +1275,7 @@ Yeni kategori (kart 0261). Verilmeyen adres adı addan üretilir, verilmeyen üs
 - Girdi: `{ "kategori": { "ad", "adresAdi"?, "aciklama"?, "ust"?, "sira"?, "gorsel"? } }` (`kategoriEklemeSemasi`; kategori `kategoriGirdisi` ile serviste doğrulanır).
 - Servis: `cekirdek/moduller/kategori/servis.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
-- Hatalar: `dogrulama` (`adres-adi-bicimi`, `kayda-uygun-degil`, `ust-gecersiz`, `gorsel-gecersiz`, ...), `cakisma` (`ad-tekrar`, `adres-adi-tekrar`), `oturum-yok`, `yetki`.
+- Hatalar: `dogrulama` (`adres-adi-bicimi`, `kayda-uygun-degil`, `ust-gecersiz`, `gorsel-gecersiz`, ...), `cakisma` (`ad-tekrar`, `adres-adi-tekrar`, `adres-adi-eski`), `oturum-yok`, `yetki`.
 
 ### POST /kapi/yonetici/kategori-degistir
 
@@ -1315,7 +1315,7 @@ Yeni marka (kart 0261). Açıklaması ve logosu (sitedeki bir görselin kimliği
 - Girdi: `{ "grup": { "ad", "adresAdi"?, "aciklama"?, "logo"? } }` (`grupEklemeSemasi`; grup `markaGirdisi` ile serviste doğrulanır).
 - Servis: `cekirdek/moduller/urun/grup-servisi.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
-- Hatalar: `dogrulama` (`adres-adi-bicimi`, `kayda-uygun-degil`, `gorsel-gecersiz`, ...), `cakisma` (`ad-tekrar`, `adres-adi-tekrar`), `oturum-yok`, `yetki`.
+- Hatalar: `dogrulama` (`adres-adi-bicimi`, `kayda-uygun-degil`, `gorsel-gecersiz`, ...), `cakisma` (`ad-tekrar`, `adres-adi-tekrar`, `adres-adi-eski`), `oturum-yok`, `yetki`.
 
 ### POST /kapi/yonetici/marka-degistir
 
@@ -1345,7 +1345,7 @@ Yeni etiket (kart 0261). Yalnız ad ve adres adı girilir. Verilmeyen adres adı
 - Girdi: `{ "grup": { "ad", "adresAdi"? } }` (`grupEklemeSemasi`; grup `etiketGirdisi` ile serviste doğrulanır).
 - Servis: `cekirdek/moduller/urun/grup-servisi.ts`.
 - Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
-- Hatalar: `dogrulama` (`adres-adi-bicimi`, `kayda-uygun-degil`, ...), `cakisma` (`ad-tekrar`, `adres-adi-tekrar`), `oturum-yok`, `yetki`.
+- Hatalar: `dogrulama` (`adres-adi-bicimi`, `kayda-uygun-degil`, ...), `cakisma` (`ad-tekrar`, `adres-adi-tekrar`, `adres-adi-eski`), `oturum-yok`, `yetki`.
 
 ### POST /kapi/yonetici/etiket-degistir
 
@@ -1459,7 +1459,7 @@ Yeni ürün (kart 0263): panelin ürün ekranından. Durum verilmezse ürün tas
 
 ### POST /kapi/yonetici/urun-degistir
 
-Ürünün değişikliği (kart 0263): yalnız verilen alan değişir, `null` isteğe bağlı alanı boşaltır. Adres adı değişince eski adres yenisine yönlenir (kart 0135). Girdi kuralları `urun-ekle` ile aynıdır (`urunDegisikligi`).
+Ürünün değişikliği (kart 0263): yalnız verilen alan değişir, `null` isteğe bağlı alanı boşaltır. Adres adı değişince eski adres yenisine yönlenir (kart 0135). Başka bir ürünün adresi `adres-adi-tekrar`, silinmemiş başka bir ürünün eski adresi `adres-adi-eski` alır (karar 0193). Girdi kuralları `urun-ekle` ile aynıdır (`urunDegisikligi`).
 
 - İzin: `urun.degistir`. Sınır: `genel`.
 - Girdi: `{ "kimlik", "urun": { ... }, "varyant"?: { ... }, "fiyatStok"?: { ... }, "galeri"?: { ... } }` (`urunDegisikligiSemasi`).
@@ -1552,7 +1552,7 @@ Dosyanın yüklenmesi; gövde dosyanın kendisidir (yükleme sınırı). Dosya a
 
 ### POST /kapi/yonetici/urun-kopyala
 
-Ürünün taslak kopyası (kart 0320, karar 0190), tek işlemde: açıklamalar, kargo ve stok ayarları, alım adetleri, vergi sınıfı, kategori, marka, etiketler, ilgili ürünler, özellikler, ağırlık ve ölçüler, seçenekler ve birleşimler (görseliyle), fiyatlar (indirim ve zamanıyla; başka para birimindeki fiyat kopyalanmaz) ve galeri (görsel dosyası paylaşılır). Stok kodu, barkod, stok, yorumlar, favoriler, fiyat ve stok geçmişi kopyalanmaz. Fiyatı değiştirme izni (`fiyat.degistir`) olmayan yöneticinin kopyası fiyatsızdır. Kopya taslaktır, adres adı kaynağınkinden sayıyla üretilir (başka ürünün eski adresi de kullanılmış sayılır). Değişiklik kaydına `urun.kopyalandi` ile kaynağıyla girer.
+Ürünün taslak kopyası (kart 0320, karar 0190), tek işlemde: açıklamalar, kargo ve stok ayarları, alım adetleri, vergi sınıfı, kategori, marka, etiketler, ilgili ürünler, özellikler, ağırlık ve ölçüler, seçenekler ve birleşimler (görseliyle), fiyatlar (indirim ve zamanıyla; başka para birimindeki fiyat kopyalanmaz) ve galeri (görsel dosyası paylaşılır). Stok kodu, barkod, stok, yorumlar, favoriler, fiyat ve stok geçmişi kopyalanmaz. Fiyatı değiştirme izni (`fiyat.degistir`) olmayan yöneticinin kopyası fiyatsızdır. Kopya taslaktır, adres adı kaynağınkinden sayıyla üretilir (silinmemiş başka ürünün eski adresi de kullanılmış sayılır, karar 0193). Değişiklik kaydına `urun.kopyalandi` ile kaynağıyla girer.
 
 - İzin: `urun.degistir`. Sınır: `genel`.
 - Girdi: `{ "kimlik", "ad" }` (`urunKopyalamaSemasi`; ad ürünün ad kuralıyla denetlenir).
@@ -1684,7 +1684,7 @@ Yeni blog yazısı (kart 0272). Verilmeyen adres adı başlıktan üretilir, ver
 - Girdi: `{ "yazi": { "baslik", "adresAdi"?, "ozet"?, "icerik"?, "kapak"?: { "dosya", "metin" }, "kategori"?, "yazar"?, "durum"?, "yayinZamani"? } }` (`blogYazisiEklemeSemasi`; yazı `blogYazisiGirdisi` ile serviste doğrulanır).
 - Servis: `cekirdek/moduller/icerik/servis.ts` (`yaziEkle`).
 - Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
-- Hatalar: `dogrulama` (`adres-adi-bicimi`, `kayda-uygun-degil`, `kategori-gecersiz`, `kapak.dosya` `gorsel-gecersiz`, `yayin-zamani-gerekli`, `yayin-zamani-gecersiz`, ...), `cakisma` (`adres-adi-tekrar`), `oturum-yok`, `yetki`.
+- Hatalar: `dogrulama` (`adres-adi-bicimi`, `kayda-uygun-degil`, `kategori-gecersiz`, `kapak.dosya` `gorsel-gecersiz`, `yayin-zamani-gerekli`, `yayin-zamani-gecersiz`, ...), `cakisma` (`adres-adi-tekrar`, `adres-adi-eski`), `oturum-yok`, `yetki`.
 
 ### POST /kapi/yonetici/blog-yazisi-degistir
 
@@ -1694,7 +1694,7 @@ Yazının değişikliği (kart 0272): yalnız verilen alan değişir, `null` ist
 - Girdi: `{ "kimlik", "gorulen": "<ISO an>", "yazi": { ... } }` (`blogYazisiDegisikligiSemasi`; yazı `blogYazisiDegisikligi` ile serviste doğrulanır).
 - Servis: `cekirdek/moduller/icerik/servis.ts` (`yaziDegistir`).
 - Başarılı (200): `{ "basarili": true, "veri": { "gorulen": "<yeni değişme anı>" } }`.
-- Hatalar: `dogrulama`, `bulunamadi`, `cakisma` (`yazi-degisti`, `adres-adi-tekrar`), `oturum-yok`, `yetki`.
+- Hatalar: `dogrulama`, `bulunamadi`, `cakisma` (`yazi-degisti`, `adres-adi-tekrar`, `adres-adi-eski`), `oturum-yok`, `yetki`.
 
 ### POST /kapi/yonetici/blog-yazisi-sil
 
@@ -1774,7 +1774,7 @@ Yeni sabit sayfa (kart 0273). Verilmeyen adres adı başlıktan üretilir, veril
 - Girdi: `{ "sayfa": { "baslik", "adresAdi"?, "icerik"?, "aciklama"?, "durum"? } }` (`sabitSayfaEklemeSemasi`; sayfa `sabitSayfaGirdisi` ile serviste doğrulanır).
 - Servis: `cekirdek/moduller/icerik/sayfa.ts` (`sayfaEkle`).
 - Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
-- Hatalar: `dogrulama` (`adres-adi-bicimi`, `kayda-uygun-degil`, ...), `cakisma` (`adres-adi-tekrar`), `is-kurali` (`sayfa-siniri`), `oturum-yok`, `yetki`.
+- Hatalar: `dogrulama` (`adres-adi-bicimi`, `kayda-uygun-degil`, ...), `cakisma` (`adres-adi-tekrar`, `adres-adi-eski`), `is-kurali` (`sayfa-siniri`), `oturum-yok`, `yetki`.
 
 ### POST /kapi/yonetici/sayfa-degistir
 
@@ -1784,7 +1784,7 @@ Sayfanın değişikliği (kart 0273): yalnız verilen alan değişir, `null` aç
 - Girdi: `{ "kimlik", "gorulen": "<ISO an>", "sayfa": { ... } }` (`sabitSayfaDegisikligiSemasi`; sayfa `sabitSayfaDegisikligi` ile serviste doğrulanır).
 - Servis: `cekirdek/moduller/icerik/sayfa.ts` (`sayfaDegistir`).
 - Başarılı (200): `{ "basarili": true, "veri": { "gorulen": "<yeni değişme anı>" } }`.
-- Hatalar: `dogrulama`, `bulunamadi`, `cakisma` (`sayfa-degisti`, `adres-adi-tekrar`), `oturum-yok`, `yetki`.
+- Hatalar: `dogrulama`, `bulunamadi`, `cakisma` (`sayfa-degisti`, `adres-adi-tekrar`, `adres-adi-eski`), `oturum-yok`, `yetki`.
 
 ### POST /kapi/yonetici/sayfa-sil
 
