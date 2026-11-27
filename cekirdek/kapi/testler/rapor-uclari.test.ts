@@ -9,7 +9,7 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Site, siteKlasorunuOku } from "../../ayar-semasi/site-klasoru.ts";
 import { takvimGunu } from "../../metinler/bicimleyici.ts";
-import { siteninBicimleyicisi } from "../../metinler/site-metni.ts";
+import { metin, siteninBicimleyicisi } from "../../metinler/site-metni.ts";
 import { roller, yoneticiRolleri } from "../../moduller/ekip/model.ts";
 import { siteninFiyatServisi } from "../../moduller/fiyat/servis.ts";
 import { siteninServisi } from "../../moduller/magaza-ayarlari/servis.ts";
@@ -183,12 +183,14 @@ describe("rapor uçları", () => {
     expect(dosya.equals(satisRaporuCsv(site, rapor))).toBe(true);
     const yazi = dosya.toString("utf8");
     const b = siteninBicimleyicisi(site.ayarlar);
-    expect(yazi).toContain(`Satış${b.csvAyraci()}${b.csvTutari(siparis.toplam)}`);
-    expect(yazi).toContain("Önceki dönem");
+    expect(yazi).toContain(
+      `${metin("yonetim.rapor.csv.satir.satis")}${b.csvAyraci()}${b.csvTutari(siparis.toplam)}`,
+    );
+    expect(yazi).toContain(metin("yonetim.rapor.csv.oncekiDonem"));
 
     const kiyassiz = await satisRaporuCsvUcu(istek("?donem=bugun&karsilastir=0", sahip));
     const kiyassizYazi = Buffer.from(await kiyassiz.arrayBuffer()).toString("utf8");
-    expect(kiyassizYazi).not.toContain("Önceki dönem");
+    expect(kiyassizYazi).not.toContain(metin("yonetim.rapor.csv.oncekiDonem"));
   });
 
   it("geçersiz dönem sitenin varsayılan dönemine düşer; varsayılan dönem mağaza ayarıdır", async () => {

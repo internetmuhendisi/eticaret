@@ -38,7 +38,9 @@ Teknik kararlar:
 ## Sonuçları
 
 - Ekran taslaktan şu yerlerde ayrılır: CSV bağlantısı komut çubuğunda "Dışa aktar" adıyladır (panelin kuralı: dışa aktarma eylemi komut çubuğunda, `disa-aktar` eylemi); Ürünler, Müşteriler ve Kuponlar sekmeleri kart 0318 ile gelir; özel aralığın günleri zorunludur (taslakta isteğe bağlı yazıyordu); tek gün ve iki yıla yayılan dönem uzun tarihle yazılır.
-- Önceki dönem sıfırken yüzde yazılmaz, yalnız önceki değer yazılır. Fark mağaza için iyiyse yeşil, kötüyse kırmızıdır (iadede azalış iyidir); anlamı okla ve yazıyla da verilir.
+- Önceki dönem sıfırken yüzde yazılmaz, yalnız önceki değer yazılır; bir dönemde değer yoksa (siparişsiz dönemin ortalama sepeti) yalnız önceki değer ya da "önceki —". Yüzde tam sayıdır, %1'in altındaki değişim "%1'den az" yazılır. Fark mağaza için iyiyse yeşil, kötüyse kırmızıdır (iadede azalış iyidir); anlamı okla ve yazıyla da verilir.
+- Satışsız dönemin boş hâli varsayılan döneme dönüşü, varsayılan dönemdeyse öteki bir hazır dönemi (geçen ay; varsayılan geçen aysa son 30 gün) önerir.
+- Ondalıklı vergi oranı bugün tam sayıya yuvarlanarak yazılır (eski sorun, kart 0335).
 - Rapor satış tarihine bağlı geçmişi değiştirmez; buna karşılık ödenmemiş siparişi hiç göstermez (bekleyen havale ayrı listede, siparişlerin "ödeme bekleniyor" sekmesindedir).
 - Taksit farkı satışta yoktur, iadede aşan kısmı sayılmaz: kuruluşun ödediği taksit farkı raporda görünmez.
 - Varsayılan dönem ayarının panelde değiştirildiği yer yoktur (kart 0334); başlangıç değeri site ayarından gelir.

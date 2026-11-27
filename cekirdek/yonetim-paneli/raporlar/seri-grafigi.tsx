@@ -2,7 +2,7 @@
 // Raporun serisi (kart 0317; taslak: panel-2.html "Günlük ciro"): sütun grafiği ve tablo karşılığı. Grafik ekran
 // okuyucudan gizlidir; tablo her zaman ekran okuyucuya açıktır, "Tablo olarak göster" onu ekranda da gösterir.
 // Sütunun yüksekliği sunucunun verdiği orandır (en yüksek nokta 1); tutarlar sitenin biçimiyle sunucudan gelir.
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Dugme } from "../../../bilesenler/parcalar/dugme";
 import { sinif } from "../../../bilesenler/parcalar/sinif";
 import {
@@ -24,13 +24,17 @@ const enYuksekSutun = 37;
 
 export function SeriGrafigi({
   baslik,
+  sutun,
   noktalar,
 }: {
   baslik: string;
+  // İlk sütunun başlığı: gün ya da hafta.
+  sutun: string;
   noktalar: { ad: string; deger: string; oran: number }[];
 }) {
   const metin = usePanelMetni();
   const [tablo, setTablo] = useState(false);
+  const tabloKimligi = useId();
   // Kısa dönemde (bir gün, üç gün) sütun bütün genişliği kaplamaz: yer en az yedi sütunluktur, sütunlar ortalanır.
   const genislik = 100 / Math.max(noktalar.length, 7);
   const bosluk = (100 - genislik * noktalar.length) / 2;
@@ -64,13 +68,13 @@ export function SeriGrafigi({
         <span>{noktalar[0]?.ad}</span>
         <span>{noktalar.at(-1)?.ad}</span>
       </div>
-      <div className={sinif(tablo ? "overflow-x-auto" : "sr-only")}>
+      <div id={tabloKimligi} className={sinif(tablo ? "overflow-x-auto" : "sr-only")}>
         <Tablo>
           <TabloBasligi className={tablo ? "sr-only" : undefined}>{baslik}</TabloBasligi>
           <TabloUstu>
             <TabloSatiri>
               <TabloBasHucresi scope="col" className="py-2 pr-3">
-                {metin("yonetim.rapor.seri.donem")}
+                {sutun}
               </TabloBasHucresi>
               <TabloBasHucresi scope="col" className="py-2 text-right">
                 {metin("yonetim.rapor.csv.satis")}

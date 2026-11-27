@@ -54,7 +54,7 @@ export const raporuOku = async (
 export type SatisKutusu = {
   kod: "satis" | "siparisSayisi" | "ortalamaSepet" | "iade";
   deger: string;
-  // "▲ %12 · önceki 37.784,30 ₺"; karşılaştırma yoksa yok.
+  // Değişim ve önceki değer ("▲ yüzde 12 artış · önceki …"); karşılaştırma yoksa yok.
   fark: string | null;
   yon: "arti" | "eksi" | "esit" | null;
   // Değişim mağaza için iyi mi (iadede azalış iyidir): fark yeşil ya da kırmızı yazılır, anlamı okla ve yazıyla da
@@ -66,8 +66,8 @@ export type SatisKutusu = {
 export type SatisRaporuVerisi = {
   // Dönem düğmesinin yazısı: "Son 30 gün: 29 Ekim – 27 Kasım 2026" ya da özel aralıkta yalnız günler.
   dugmeYazisi: string;
-  // Boş hâlin sonraki adımı: varsayılan döneme dönüş; varsayılan dönemdeyken yok.
-  varsayilanaDonus: { adres: string; yazi: string } | null;
+  // Boş hâlin sonraki adımı: varsayılan döneme dönüş; varsayılan dönemdeyken başka bir hazır dönem.
+  bosDonemBaglantisi: { adres: string; yazi: string };
   // Adreste yazılacak değer ve seçim penceresinin başlangıcı.
   donemDegeri: string;
   hazirKod: string | null;
@@ -82,6 +82,8 @@ export type SatisRaporuVerisi = {
   ozetSatirlari: { ad: string; deger: string; vurgu: boolean }[];
   seri: {
     baslik: string;
+    // Tablonun ilk sütununun başlığı: gün ya da hafta.
+    sutun: string;
     noktalar: { ad: string; deger: string; oran: number }[];
   };
   csvAdresi: string;
@@ -119,7 +121,9 @@ const aralikYazisi = (
     : aralik;
 };
 
-// Önceki döneme göre değişim: yüzde (önceki sıfırken yok) ve önceki değer.
+// Önceki döneme göre değişim: tam sayı yüzde (önceki sıfırken yok, yüzde birin altındaki değişim "yüzde birden az")
+// ve önceki
+// değer.
 const farkYazisi = (
   b: Bicim,
   simdi: number,
@@ -129,7 +133,11 @@ const farkYazisi = (
   const yon = simdi > onceki ? "arti" : simdi < onceki ? "eksi" : "esit";
   const oncekiYazi = doldur(metin("yonetim.rapor.onceki"), { deger: yazi(onceki) });
   if (onceki === 0) return { fark: oncekiYazi, yon };
-  const yuzde = b.yuzde(Math.abs(Math.round(((simdi - onceki) / onceki) * 1000) / 10));
+  const tam = Math.round((Math.abs(simdi - onceki) / onceki) * 100);
+  const yuzde =
+    tam === 0 && yon !== "esit"
+      ? doldur(metin("yonetim.rapor.birdenAz"), { yuzde: b.yuzde(1) })
+      : b.yuzde(tam);
   return {
     fark: doldur(metin(`yonetim.rapor.fark.${yon}`), { yuzde, onceki: oncekiYazi }),
     yon,
@@ -157,9 +165,15 @@ export const satisRaporuVerisi = (
   ): SatisKutusu => {
     const simdi = al(ozet);
     const deger = simdi === null ? metin("yonetim.rapor.yok") : yazi(simdi);
-    const oncekiSayi = onceki === null ? null : al(onceki.ozet);
+    if (onceki === null) return { kod, deger, fark: null, yon: null, iyi: null, alt };
+    const oncekiSayi = al(onceki.ozet);
+    // Bir dönemde değer yoksa (siparişsiz dönemin ortalama sepeti) karşılaştırma yalnız önceki değeri söyler.
     if (simdi === null || oncekiSayi === null) {
-      return { kod, deger, fark: null, yon: null, iyi: null, alt };
+      const fark =
+        oncekiSayi === null
+          ? metin("yonetim.rapor.oncekiYok")
+          : doldur(metin("yonetim.rapor.onceki"), { deger: yazi(oncekiSayi) });
+      return { kod, deger, fark, yon: null, iyi: null, alt };
     }
     const fark = farkYazisi(b, simdi, oncekiSayi, yazi);
     const iyi = fark.yon === "esit" ? null : (fark.yon === "arti") !== (kod === "iade");
@@ -173,6 +187,8 @@ export const satisRaporuVerisi = (
   const { saatDilimi } = site.ayarlar;
   const donemYazisi = aralikYazisi(b, saatDilimi, rapor.donem, true);
   const varsayilandaMi = istek.deger.tur === "hazir" && istek.deger.kod === istek.varsayilan;
+  // Varsayılan dönem boşsa önerilen öteki dönem: geçen ay, varsayılan geçen aysa son 30 gün.
+  const baskaDonem: RaporHazirDonemi = istek.varsayilan === "gecen-ay" ? "son-30-gun" : "gecen-ay";
   return {
     dugmeYazisi:
       istek.deger.tur === "hazir"
@@ -181,8 +197,13 @@ export const satisRaporuVerisi = (
             aralik: donemYazisi,
           })
         : donemYazisi,
-    varsayilanaDonus: varsayilandaMi
-      ? null
+    bosDonemBaglantisi: varsayilandaMi
+      ? {
+          adres: raporAdresi(baskaDonem, istek.karsilastir),
+          yazi: doldur(metin("yonetim.rapor.bos.baska"), {
+            donem: metin(`yonetim.rapor.hazir.${baskaDonem}`),
+          }),
+        }
       : {
           adres: raporAdresi(istek.varsayilan, istek.karsilastir),
           yazi: doldur(metin("yonetim.rapor.bos.donus"), {
@@ -229,6 +250,9 @@ export const satisRaporuVerisi = (
     ],
     seri: {
       baslik: metin(`yonetim.rapor.seri.${rapor.seri.tur}`),
+      sutun: metin(
+        rapor.seri.tur === "gunluk" ? "yonetim.rapor.seri.donem" : "yonetim.rapor.seri.hafta",
+      ),
       noktalar: rapor.seri.noktalar.map((nokta) => ({
         ad:
           nokta.baslangic === nokta.bitis

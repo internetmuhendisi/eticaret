@@ -24,11 +24,14 @@ import type { SatisKutusu, SatisRaporuVerisi } from "./veri";
 const yonIsareti = { arti: "▲", eksi: "▼", esit: "=" } as const;
 
 function Sayi({ ad, kutu }: { ad: string; kutu: SatisKutusu }) {
+  const kimlik = `rapor-kutu-${kutu.kod}`;
   return (
-    <Kart role="group" aria-label={ad} className="gap-1 p-4">
-      <span className="text-kucuk text-soluk-yazi">{ad}</span>
+    <Kart role="group" aria-labelledby={kimlik} className="gap-1 p-4">
+      <span id={kimlik} className="text-kucuk text-soluk-yazi">
+        {ad}
+      </span>
       <strong className="font-baslik text-baslik-4">{kutu.deger}</strong>
-      {kutu.fark === null || kutu.yon === null ? null : (
+      {kutu.fark === null ? null : (
         <span
           className={sinif(
             "text-kucuk font-kalin",
@@ -39,7 +42,7 @@ function Sayi({ ad, kutu }: { ad: string; kutu: SatisKutusu }) {
                 : "text-tehlike-yazi",
           )}
         >
-          <span aria-hidden="true">{yonIsareti[kutu.yon]} </span>
+          {kutu.yon === null ? null : <span aria-hidden="true">{yonIsareti[kutu.yon]} </span>}
           {kutu.fark}
         </span>
       )}
@@ -69,11 +72,9 @@ export function SatisRaporu({ veri }: { veri: SatisRaporuVerisi }) {
           baslik={metin("yonetim.rapor.bos.baslik")}
           aciklama={metin("yonetim.rapor.bos.aciklama")}
         >
-          {veri.varsayilanaDonus === null ? null : (
-            <Baglanti gorunum="cerceveli" href={veri.varsayilanaDonus.adres}>
-              {veri.varsayilanaDonus.yazi}
-            </Baglanti>
-          )}
+          <Baglanti gorunum="cerceveli" href={veri.bosDonemBaglantisi.adres}>
+            {veri.bosDonemBaglantisi.yazi}
+          </Baglanti>
         </BosHal>
       ) : (
         <>
@@ -84,7 +85,11 @@ export function SatisRaporu({ veri }: { veri: SatisRaporuVerisi }) {
           </div>
           <div className="grid grid-cols-1 items-start gap-4 masaustu:grid-cols-2">
             <Bolum baslik={veri.seri.baslik} kimlik="rapor-seri">
-              <SeriGrafigi baslik={veri.seri.baslik} noktalar={veri.seri.noktalar} />
+              <SeriGrafigi
+                baslik={veri.seri.baslik}
+                sutun={veri.seri.sutun}
+                noktalar={veri.seri.noktalar}
+              />
             </Bolum>
             <Bolum baslik={metin("yonetim.rapor.ozetBasligi")} kimlik="rapor-ozet">
               <div className="overflow-x-auto">

@@ -192,7 +192,7 @@
       },
       "raporlar": {
         "ad": "Raporlar",
-        "aciklama": "Mağazanızın cirosu, iadesi ve vergisi seçtiğiniz dönemde. Günler mağazanın saat dilimindedir; ciro ödemenin alındığı günde, iade yapıldığı günde sayılır."
+        "aciklama": "Mağazanızın cirosu, iadesi ve vergisi seçtiğiniz dönemde. Günler mağazanın saat dilimindedir; ciro ödemenin alındığı günde, iade tamamlandığı günde sayılır."
       },
       "stokBildirimleri": {
         "ad": "Stok bildirimleri",
@@ -3457,17 +3457,19 @@
       "seri": {
         "gunluk": "Günlük ciro",
         "haftalik": "Haftalık ciro",
-        "donem": "Gün"
+        "donem": "Gün",
+        "hafta": "Hafta"
       },
       "tabloyuGoster": "Tablo olarak göster",
       "tabloyuGizle": "Tabloyu gizle",
       "ozetBasligi": "Özet ve vergi",
       "ozetTablosu": "Ciro özeti ve oran oran vergi",
-      "ozetNotu": "Ciro ödemesi alınmış siparişlerin toplamıdır: kupon indirimi düşülmüş, kargo ve vergi dahil. Ödeme bekleyen sipariş sayılmaz. İade yapıldığı günde düşülür; vergi, satışların vergisinden iadelerin vergisi çıkarılarak bulunur.",
+      "ozetNotu": "Ciro ödemesi alınmış siparişlerin toplamıdır: kupon indirimi düşülmüş, kargo ve vergi dahil. Ödeme bekleyen sipariş sayılmaz. İade tamamlandığı günde düşülür; vergi, satışların vergisinden iadelerin vergisi çıkarılarak bulunur.",
       "bos": {
         "baslik": "Bu dönemde satış yok",
-        "aciklama": "Seçilen dönemde ödemesi alınmış sipariş ya da yapılmış iade yok. Başka bir dönem seçin.",
-        "donus": "{donem} dönemine dön"
+        "aciklama": "Seçilen dönemde ödemesi alınmış sipariş ya da tamamlanmış iade yok. Başka bir dönem seçin.",
+        "donus": "{donem} dönemine dön",
+        "baska": "{donem} dönemine bak"
       },
       "csv": {
         "donem": "Dönem",
@@ -3498,7 +3500,9 @@
         "iade": "İadeler",
         "net": "Net satış",
         "vergi": "{ad} · matrah {matrah}"
-      }
+      },
+      "birdenAz": "{yuzde}'den az",
+      "oncekiYok": "önceki —"
     }
   },
   "vitrin": {

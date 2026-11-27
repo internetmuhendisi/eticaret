@@ -133,7 +133,7 @@ export const siparisler = pgTable(
     index("siparisler_kargo_firmasi")
       .on(tablo.kargo_firmasi)
       .where(sql`${tablo.kargo_firmasi} is not null`),
-    // Raporlar (kart 0317): satış ödeme gününde sayılır. 100 bin siparişte günlük rapor 28 → 8 ms, 30 günlük 55 → 21 ms
+    // Raporlar (kart 0317): satış ödeme gününde sayılır. 100 bin siparişte günlük rapor 28 → 5 ms, 30 günlük 55 → 13 ms
     // (karar 0195).
     index("siparisler_odeme_zamani")
       .on(tablo.odeme_zamani)

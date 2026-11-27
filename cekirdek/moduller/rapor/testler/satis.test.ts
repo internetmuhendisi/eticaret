@@ -358,7 +358,7 @@ describe("satış raporu", () => {
     expect((await rapor.ozet(h.vt, gun(gunEkle(gunu, 1)))).iade).toBe(kayit.tutar);
   });
 
-  it("siparişin iadeleri toplamını aşmaz (taksit farkı); kupon indirimi saklanan değerden", async () => {
+  it("siparişin iadeleri toplamını aşmaz (taksit farkı); kupon indirimi (ücretsiz kargo kuponu da) saklanan değerden", async () => {
     const h = await hazirla("rapor-taksit-kupon");
     const birim = await h.urunAc();
     const gunu = "2026-10-20";
@@ -383,12 +383,29 @@ describe("satış raporu", () => {
       .update(siparisIadeleri)
       .set({ tutar: sql`${siparisIadeleri.tutar} + 500` })
       .where(eq(siparisIadeleri.siparis_kimligi, siparis.kimlik));
+    // Ücretsiz kargo kuponu: indirimi verilmeyen kargo ücretidir (karar 0187).
+    const kargolu = await ode(
+      h.vt,
+      await ver(h.vt, [{ birim, adet: 1 }]),
+      ms(gununBasi(gunu, tz), 3000),
+    );
+    await h.vt
+      .update(siparisler)
+      .set({
+        kargo_turu: "ucretsiz",
+        kargo_tutari: 0,
+        kupon_kodu: "KARGO",
+        kupon_turu: "ucretsiz-kargo",
+        kupon_kargo_indirimi: 1_500,
+      })
+      .where(eq(siparisler.numara, kargolu.numara));
     const ozet = await rapor.ozet(h.vt, gun(gunu));
     expect(ozet).toMatchObject({
-      satis: siparis.toplam,
-      kuponIndirimi: 1_234,
+      siparisSayisi: 2,
+      satis: siparis.toplam + kargolu.toplam,
+      kuponIndirimi: 1_234 + 1_500,
       iade: siparis.toplam,
-      netSatis: 0,
+      netSatis: kargolu.toplam,
     });
   });
 
