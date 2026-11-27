@@ -167,6 +167,56 @@ const aramaKosulu = (aranan: string): SQL => sql`(
   )
 )`;
 
+// Panelin araması (kart 0321): silinmemiş ürünlerden adı, ya da silinmemiş bir biriminin (basit ürünün birimi ya da
+// birleşim) stok kodu ya da barkodu aranan metni taşıyanlar, son değişen önce, en çok verilen sayıda. Eşleşen birimin
+// stok kodu (yoksa barkodu) satırda gösterilir; adla bulunan üründe basit birimin stok kodu.
+export const urunPanelAramasi = async (
+  vt: Veritabani,
+  metin: string,
+  sinir: number,
+): Promise<{ kimlik: string; ad: string; durum: UrunDurumu; kod: string | null }[]> => {
+  const aranan = aramaAnahtari(metin);
+  const birimEslesir = sql`(
+    strpos(${aramaAnahtariSql(sql`coalesce(${urunBirimleri.stok_kodu}, '')`)}, ${aranan}) > 0
+    or strpos(${aramaAnahtariSql(sql`coalesce(${urunBirimleri.barkod}, '')`)}, ${aranan}) > 0
+  )`;
+  const birimdeKod = (kosul: SQL) => sql<string | null>`(
+    select coalesce(${urunBirimleri.stok_kodu}, ${urunBirimleri.barkod}) from ${urunBirimleri}
+    where ${urunBirimleri.urun_kimligi} = ${urunler.kimlik}
+      and ${urunBirimleri.silinme_zamani} is null
+      and ${kosul}
+    order by ${urunBirimleri.sira}, ${urunBirimleri.kimlik}
+    limit 1
+  )`;
+  const satirlar = await vt
+    .select({
+      kimlik: urunler.kimlik,
+      ad: urunler.ad,
+      durum: urunler.durum,
+      kod: sql<
+        string | null
+      >`coalesce(${birimdeKod(birimEslesir)}, ${birimdeKod(sql`${urunBirimleri.birlesim} = ''`)})`,
+    })
+    .from(urunler)
+    .where(
+      and(
+        isNull(urunler.silinme_zamani),
+        sql`(
+          strpos(${aramaAnahtariSql(urunler.ad)}, ${aranan}) > 0
+          or exists (
+            select 1 from ${urunBirimleri}
+            where ${urunBirimleri.urun_kimligi} = ${urunler.kimlik}
+              and ${urunBirimleri.silinme_zamani} is null
+              and ${birimEslesir}
+          )
+        )`,
+      ),
+    )
+    .orderBy(desc(urunler.guncellenme_zamani), desc(urunler.kimlik))
+    .limit(sinir);
+  return satirlar.map((satir) => ({ ...satir, durum: satir.durum as UrunDurumu }));
+};
+
 const gecerliKimlikler = (kimlikler: readonly string[] | undefined) =>
   (kimlikler ?? []).filter(kimlikMi).map(kimligiDuzelt);
 

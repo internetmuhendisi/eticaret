@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import { calisanSite } from "../../../../ayar-semasi/calisan-site";
 import { eklentiAcikMi } from "../../../../eklentiler/acik";
 import { altyapiAdi } from "../../../../kayitlar/altyapi";
+import { panelAramaTurKodlari, panelAramaTurleri } from "../../../../kayitlar/panel-arama";
 import { doldur } from "../../../../metinler/doldur";
 import { bicim, metin } from "../../../../metinler/site-metni";
 import { logonunYolu, magazaLogosu } from "../../../../moduller/magaza-ayarlari/logo";
@@ -59,6 +60,8 @@ export default async function PanelDuzeni({ children }: { children: ReactNode })
       eposta={eposta}
       gruplar={gruplar}
       altyapiAdi={altyapiAdi}
+      // Panelin araması (kart 0321): yalnız izni olan türler; ekran ötekilerin isteğini göndermez.
+      aramaTurleri={panelAramaTurKodlari.filter((tur) => yetkili(panelAramaTurleri[tur].izin))}
     >
       {children}
     </PanelCercevesi>

@@ -1,6 +1,6 @@
 // Giriş alanı (kart 0103; shadcn/ui input). Etiket, açıklama ve hata FormAlani ile gelir. Onay kutusu,
 // düğme ve dosya alanı bu parçayla yazılmaz: her birinin kendi parçası vardır.
-import type { InputHTMLAttributes } from "react";
+import type { InputHTMLAttributes, Ref } from "react";
 import { sinif } from "./sinif.ts";
 
 type YazilanTur =
@@ -22,7 +22,11 @@ export function GirisAlani({
   className,
   type = "text",
   ...ozellikler
-}: Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & { type?: YazilanTur }) {
+}: Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
+  type?: YazilanTur;
+  // Odağı dışarıdan vermek için (panelin aramasının kısayolu, kart 0321).
+  ref?: Ref<HTMLInputElement>;
+}) {
   return (
     <input
       type={type}
