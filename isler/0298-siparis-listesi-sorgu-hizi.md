@@ -53,4 +53,4 @@ Yerelde, geçici deneme veritabanında: servisle verilen bir sipariş SQL ile 10
 
 ## Durum
 
-yapılacak
+bitti
