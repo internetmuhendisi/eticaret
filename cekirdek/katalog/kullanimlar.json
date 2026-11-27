@@ -243,6 +243,7 @@
     "cekirdek/yonetim-paneli/panel-cercevesi.tsx",
     "cekirdek/yonetim-paneli/panel-islemi.ts",
     "cekirdek/yonetim-paneli/sayfalar/ekran.tsx",
+    "cekirdek/yonetim-paneli/siparisler/disa-aktarma.tsx",
     "cekirdek/yonetim-paneli/siparisler/elle-siparis.tsx",
     "cekirdek/yonetim-paneli/tema/logo-bolumu.tsx",
     "cekirdek/yonetim-paneli/urunler/urun-ekrani.tsx",

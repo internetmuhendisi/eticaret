@@ -233,7 +233,7 @@ const hatasi = async (is: Promise<unknown>) => {
 describe("siparişlerin dışa aktarması", () => {
   it("listenin süzgeçleri listenin siparişlerini listenin sırasıyla verir; seçilenler seçimin sırasıyla", async () => {
     const { vt, urunAc, yonetici } = await hazirla();
-    const birim = await urunAc("Keten Gömlek");
+    const birim = await urunAc("Deneme Gömleği");
     const ilk = await ver(vt, [{ birim, adet: 1 }], havale);
     const ikinci = await ver(vt, [{ birim, adet: 1 }], kapida);
     const ucuncu = await ver(vt, [{ birim, adet: 2 }], havale);
@@ -266,7 +266,7 @@ describe("siparişlerin dışa aktarması", () => {
 
   it("tutarlar siparişin saklanan değerleridir; kupon ve iki oranlı vergi ayrı sütunlarda", async () => {
     const { vt, urunAc, yonetici } = await hazirla();
-    const birim = await urunAc("Yün Atkı", 12_345);
+    const birim = await urunAc("Deneme Atkısı", 12_345);
     const numara = await ver(vt, [{ birim, adet: 3 }], havale);
     // Kupon ve vergi dökümü siparişte saklanan değerlerdir (kart 0312, 0214): dışa aktarma yalnız okur. İkinci oran
     // dökümün ikinci satırıdır (adı olan ek oran).
@@ -310,7 +310,7 @@ describe("siparişlerin dışa aktarması", () => {
 
   it("aynı ad ve oranda iki vergi satırı tek sütunda toplanır (bağımsız kontrolün bulgusu)", async () => {
     const { vt, urunAc, yonetici } = await hazirla();
-    const birim = await urunAc("Yün Atkı", 12_345);
+    const birim = await urunAc("Deneme Atkısı", 12_345);
     const numara = await ver(vt, [{ birim, adet: 1 }], havale);
     const [once] = await vt.select().from(siparisler).where(eq(siparisler.numara, numara));
     const [ilk] = once?.vergi_dokumu ?? [];
@@ -330,7 +330,7 @@ describe("siparişlerin dışa aktarması", () => {
 
   it("tarih ve kargo firması süzgeçleri listeyle aynı siparişleri verir", async () => {
     const { vt, urunAc, yonetici } = await hazirla();
-    const birim = await urunAc("Keten Gömlek");
+    const birim = await urunAc("Deneme Gömleği");
     const kargolu = await ver(vt, [{ birim, adet: 1 }], havale);
     const kargosuz = await ver(vt, [{ birim, adet: 1 }], havale);
     await vt
@@ -371,8 +371,8 @@ describe("siparişlerin dışa aktarması", () => {
 
   it("her ürün bir satır: siparişin sütunları her kalemde, kalemin değerleriyle", async () => {
     const { vt, urunAc, yonetici } = await hazirla();
-    const gomlek = await urunAc("Keten Gömlek", 20_000);
-    const atki = await urunAc("Yün Atkı", 5_000);
+    const gomlek = await urunAc("Deneme Gömleği", 20_000);
+    const atki = await urunAc("Deneme Atkısı", 5_000);
     const numara = await ver(
       vt,
       [
@@ -409,7 +409,7 @@ describe("siparişlerin dışa aktarması", () => {
 
   it("kişisel bilgisi silinmiş siparişte kişisel sütunlar boş, il, ilçe ve tutarlar kalır", async () => {
     const { vt, urunAc, yonetici } = await hazirla();
-    const birim = await urunAc("Keten Gömlek");
+    const birim = await urunAc("Deneme Gömleği");
     const kurumsal = {
       tur: "kurumsal",
       firma: "Deniz Ticaret",
@@ -469,7 +469,7 @@ describe("siparişlerin dışa aktarması", () => {
 
   it("kapsam boşsa ya da sınırı aşıyorsa başlamaz; iş dosyayı bir kez yazar", async () => {
     const { vt, urunAc, yonetici } = await hazirla();
-    const birim = await urunAc("Keten Gömlek");
+    const birim = await urunAc("Deneme Gömleği");
     await ver(vt, [{ birim, adet: 1 }], havale);
     await ver(vt, [{ birim, adet: 1 }], havale);
     const kim = await yonetici();
@@ -517,7 +517,7 @@ describe("siparişlerin dışa aktarması", () => {
 
   it("başladıktan sonra sınırı aşan kapsam boş dosya değil hata olur; takılan dışa aktarma hatalı sayılır", async () => {
     const { vt, urunAc, yonetici } = await hazirla();
-    const birim = await urunAc("Keten Gömlek");
+    const birim = await urunAc("Deneme Gömleği");
     await ver(vt, [{ birim, adet: 1 }], havale);
     await ver(vt, [{ birim, adet: 1 }], havale);
     const kim = await yonetici();
@@ -555,7 +555,7 @@ describe("siparişlerin dışa aktarması", () => {
 
   it("dosyayı yalnız isteyen indirir; indirme kişisel veri olmadan kayda girer", async () => {
     const { vt, urunAc, yonetici } = await hazirla();
-    const birim = await urunAc("Keten Gömlek");
+    const birim = await urunAc("Deneme Gömleği");
     const numara = await ver(vt, [{ birim, adet: 1 }], havale);
     const kim = await yonetici();
     const baska = await yonetici();
@@ -589,7 +589,7 @@ describe("siparişlerin dışa aktarması", () => {
 
   it("saklama süresi dolan kayıt dosyasıyla silinir, yenisi kalır", async () => {
     const { vt, urunAc, yonetici } = await hazirla();
-    const birim = await urunAc("Keten Gömlek");
+    const birim = await urunAc("Deneme Gömleği");
     const numara = await ver(vt, [{ birim, adet: 1 }], havale);
     const kim = await yonetici();
     const girdi: SiparisDisaAktarmaGirdisi = {
@@ -616,8 +616,8 @@ describe("siparişlerin dışa aktarması", () => {
   it("iki site birbirinin siparişini dışa aktarmaz", async () => {
     const birinci = await hazirla();
     const ikinci = await hazirla();
-    const b1 = await birinci.urunAc("Keten Gömlek");
-    const b2 = await ikinci.urunAc("Yün Atkı");
+    const b1 = await birinci.urunAc("Deneme Gömleği");
+    const b2 = await ikinci.urunAc("Deneme Atkısı");
     await ver(birinci.vt, [{ birim: b1, adet: 1 }], havale);
     await ver(ikinci.vt, [{ birim: b2, adet: 1 }], havale);
     await ver(ikinci.vt, [{ birim: b2, adet: 1 }], havale);
@@ -625,7 +625,7 @@ describe("siparişlerin dışa aktarması", () => {
       kapsam: { tur: "liste", suzgecler: tumu },
       duzen: "kalem",
     });
-    expect(satirlar.map((s) => deger(s, "Ürün"))).toEqual(["Keten Gömlek"]);
+    expect(satirlar.map((s) => deger(s, "Ürün"))).toEqual(["Deneme Gömleği"]);
   });
 
   it("veritabanının durum ve düzen denetimleri kayıtla aynıdır", async () => {

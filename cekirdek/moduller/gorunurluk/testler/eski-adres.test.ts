@@ -396,15 +396,15 @@ describe("adresin çözülmesi", () => {
 
   it("kopya silinmiş ürünün eski adresini alır, silinmemiş ürününkini almaz", async () => {
     const vt = await siteAc();
-    const silinen = await turler.urun.ekle(vt, "Keten Gömlek", "keten-gomlek");
-    await turler.urun.adiDegistir(vt, silinen, "keten-gomlek-eski");
+    const silinen = await turler.urun.ekle(vt, "Deneme Gömleği", "deneme-gomlegi");
+    await turler.urun.adiDegistir(vt, silinen, "deneme-gomlegi-eski");
     await turler.urun.sil(vt, silinen);
     const yasayan = await turler.urun.ekle(vt, "Pamuk Gömlek", "pamuk-gomlek");
     await turler.urun.adiDegistir(vt, yasayan, "pamuk-gomlek-eski");
     const kaynak = await turler.urun.ekle(vt, "Kaynak", "kaynak");
     const kopyaAdresi = (kok: string) =>
       vt.transaction((islem) => urunSrv.bosAdresAdiBul(islem, kok, kaynak));
-    expect(await kopyaAdresi("keten-gomlek-eski")).toBe("keten-gomlek-eski");
+    expect(await kopyaAdresi("deneme-gomlegi-eski")).toBe("deneme-gomlegi-eski");
     expect(await kopyaAdresi("pamuk-gomlek")).toBe("pamuk-gomlek-2");
   });
 
