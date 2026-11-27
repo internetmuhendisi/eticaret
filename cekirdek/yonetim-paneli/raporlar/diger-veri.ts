@@ -99,6 +99,8 @@ export const urunRaporuVerisi = async (
     });
   return {
     ...ortak,
+    // Ürün raporu karşılaştırma yapmaz: karşılaştırılan dönem yazılmaz.
+    oncekiYazisi: null,
     bos: tum.length === 0,
     sirala: istek.sirala,
     siralamaAdresleri: { tutar: sirala("tutar"), adet: sirala("adet") },

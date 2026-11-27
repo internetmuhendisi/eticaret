@@ -1,12 +1,13 @@
 // Kupon raporu (kart 0318, karar 0196). Kuponlu sipariş, dönemde satış sayılan (kural.ts: ödeme gününde) ve kupon
-// kullanmış siparişlerdir.
+// kullanmış siparişlerdir; kullanımı geri verilmiş sipariş (iptal ve tam iade, karar 0187) sayılmaz: kuponun sayfasıyla
+// aynı kural (kart 0313; bağımsız kontrolün bulgusu).
 //
 // - Kupon başına: kullanım (sipariş sayısı), verilen indirim (ürün indirimi ve ücretsiz kargo kuponunun verilmeyen
 //   kargo ücreti), kuponlu satış (siparişlerin toplamı) ve iade sonrası (o siparişlerin dönemden bağımsız bütün
 //   tamamlanmış iadeleri düşülmüş; bir siparişin iadeleri toplamını aşmaz). İade sonrası bir kupon grubunun getirdiğidir,
 //   satış raporunun gün kuralından ayrıdır (kuponun sayfasıyla aynı, kart 0313).
-// - Kupon siparişe bağlanan kullanımdan bulunur (kupon_kullanimlari); kod siparişteki koddur. Kuponu silinmiş ya da
-//   kullanımı bulunmayan sipariş koduyla gruplanır, kuponun sayfasına bağlantısı yoktur.
+// - Kupon siparişe bağlanan kullanımdan bulunur (kupon_kullanimlari); kod kuponun bugünkü kodudur. Kullanımı
+//   bulunmayan sipariş siparişteki koduyla gruplanır, kuponun sayfasına bağlantısı yoktur.
 // - Sıra: kullanım, sonra indirim, büyükten küçüğe; eşitte kod.
 import { sql } from "drizzle-orm";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
@@ -46,7 +47,11 @@ export const kuponRaporu = (site: Site) => {
       ${iadeSonrasiTutar()} as iade_sonrasi,
       (select ku.kupon_kimligi from kupon_kullanimlari ku where ku.siparis_kimligi = s.kimlik limit 1) as kupon
     from siparisler s
-    where ${satisKosulu(paraBirimi, bas, son)} and s.kupon_kodu is not null`;
+    where ${satisKosulu(paraBirimi, bas, son)} and s.kupon_kodu is not null
+      and not exists (
+        select 1 from kupon_kullanimlari ku
+        where ku.siparis_kimligi = s.kimlik and ku.serbest_zamani is not null
+      )`;
 
   const ozet = async (vt: Vt, donem: GunAraligi): Promise<KuponOzeti> => {
     const { bas, son } = donemAnlari(donem, saatDilimi);

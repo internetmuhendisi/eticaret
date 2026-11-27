@@ -32,7 +32,8 @@ Bölüm: Yönetim paneli 2. Önce 0317 ve 0313 bitmiş olmalı.
 - CSV dört rapor için tek uç (`rapor-csv`); müşteri raporunun indirmesi değişiklik kaydına girer.
 - Sekme şeridi ortak kütüphaneye taşındı (`SekmeBaglantilari`), ekip ekranı da kullanır.
 - 100 bin siparişte 30 günlük raporlar 5–37 ms, bir yıllık 43–63 ms; yeni indeks gerekmedi.
-- Testler ve bozmalar `.claude/rules/kurallari-koruyan-kontroller.md`'de (kart 0318): 29 denetimin hepsi bozulunca kırmızı.
+- Testler ve bozmalar `.claude/rules/kurallari-koruyan-kontroller.md`'de (kart 0318): 32 denetimin hepsi bozulunca kırmızı.
+- Bağımsız kontrolün dört bulgusu düzeldi: ödenmemiş siparişin iptali ürün raporunda iade sayılıyordu, kupon raporu geri verilen kullanımı sayıyordu, ürün adı rastgele birleşimden alınıyordu, müşteri raporunun notu eksikti.
 
 ## Durum
 

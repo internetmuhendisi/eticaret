@@ -67,8 +67,19 @@ describe("ürün raporu", () => {
     // Dönem dışında ödenen A×1; iadesi dönemde tamamlanır (iade adedine girer, satışa girmez).
     const o4 = await ver(h.vt, [{ birim: a, adet: 1 }]);
     await ode(h.vt, o4, oncekiGunde());
-    // Ödeme bekleyen A×5 sayılmaz.
+    // Ödeme bekleyen A×5 sayılmaz; ödenmeden iptal edilen A×4 (tutarı 0 iade satırı) iade adedine girmez.
     await ver(h.vt, [{ birim: a, adet: 5 }]);
+    const odenmeyen = await ver(h.vt, [{ birim: a, adet: 4 }]);
+    await iade.iadeYap(h.vt, yapan(), {
+      numara: odenmeyen,
+      tur: "iptal",
+      gorulenDurum: "odeme-bekleniyor",
+      kalemler: [],
+      kargo: false,
+      stogaKoy: true,
+      neden: "musteri-vazgecti",
+    });
+    await iadeAni(h.vt, odenmeyen, gunde(10_800_000));
     // o1'den 1 adet iade (teslimden sonra), o4 iptal; ikisi de dönemde tamamlanır.
     await teslimEt(h.vt, o1);
     await iade.iadeYap(h.vt, yapan(), {
@@ -142,6 +153,15 @@ describe("ürün raporu", () => {
     );
     expect(sonra).toMatchObject({ ad: adA, silindi: true, adet: 3 });
     expect((await urunler.satirlar(h.vt, gun(gunEkle(gunu, 1)), "tutar")).length).toBe(0);
+    // Ad, dönemin en son satışındaki addır (birleşimden bağımsız): B'nin adı değişir, M yeniden satılır.
+    await servis.urunDegistir(h.vt, yapan(), b.urun, { ad: "Bedenli Yeni" });
+    await ode(h.vt, await ver(h.vt, [{ birim: b.M, adet: 1 }]), gunde(20_000_000));
+    for (let i = 0; i < 3; i += 1) {
+      const satirB = (await urunler.satirlar(h.vt, gun(gunu), "tutar")).find(
+        (satir) => satir.urun === b.urun,
+      );
+      expect(satirB?.ad).toBe("Bedenli Yeni");
+    }
   });
 });
 
@@ -266,7 +286,7 @@ describe("kupon raporu", () => {
     const sg = await ode(h.vt, kargo, gunde());
     expect([sg.kupon_indirimi, sg.kupon_kargo_indirimi]).toEqual([0, 5_900]);
     await ode(h.vt, disari, oncekiGunde());
-    // b sonradan (dönemden sonra) iptal edilir: iade sonrasından düşer.
+    // b sonradan (dönemden sonra) iptal edilir: kullanımı geri verilir, kupon raporunda yoktur (kuponun sayfası gibi).
     await iade.iadeYap(h.vt, yapan(), {
       numara: b,
       tur: "iptal",
@@ -277,18 +297,21 @@ describe("kupon raporu", () => {
       neden: "musteri-vazgecti",
     });
     await iadeAni(h.vt, b, gunde(20 * 86_400_000));
-    // b'nin iadesi taksit farkıyla toplamını aşar: iade sonrası eksiye inmez. a'nın başarısız iadesi düşülmez.
+    // sg'nin tamamlanmış iadesi taksit farkıyla toplamını aşar: iade sonrası eksiye inmez (kullanım geri verilmez,
+    // satır doğrudan yazılır). a'nın başarısız iadesi düşülmez.
     const kayitB = await oku(h.vt, b);
-    await h.vt
-      .update(siparisIadeleri)
-      .set({ tutar: sql`${siparisIadeleri.tutar} + 500` })
-      .where(eq(siparisIadeleri.siparis_kimligi, kayitB.kimlik));
     const [iadeB] = await h.vt
       .select()
       .from(siparisIadeleri)
       .where(eq(siparisIadeleri.siparis_kimligi, kayitB.kimlik));
     if (iadeB === undefined) throw new Error("İade yok.");
     const { kimlik: _k, ...kopyaB } = iadeB;
+    await h.vt.insert(siparisIadeleri).values({
+      ...kopyaB,
+      siparis_kimligi: sg.kimlik,
+      durum: "tamamlandi",
+      tutar: sg.toplam + 500,
+    });
     await h.vt
       .insert(siparisIadeleri)
       .values({ ...kopyaB, siparis_kimligi: sa.kimlik, durum: "basarisiz", tutar: 1_000 });
@@ -297,30 +320,16 @@ describe("kupon raporu", () => {
     expect([indirim(sa), indirim(sb), indirim(sc)]).toEqual([2_000, 4_000, 2_000]);
 
     expect(await kuponlar.ozet(h.vt, gun(gunu))).toEqual({
-      kuponluSiparis: 4,
+      kuponluSiparis: 3,
       butunSiparis: 5,
-      indirim: indirim(sa) + indirim(sb) + indirim(sc) + 5_900,
-      satis: sa.toplam + sb.toplam + sc.toplam + sg.toplam,
-      iadeSonrasi: sa.toplam + sc.toplam + sg.toplam,
+      indirim: indirim(sa) + indirim(sc) + 5_900,
+      satis: sa.toplam + sc.toplam + sg.toplam,
+      iadeSonrasi: sa.toplam + sc.toplam,
     });
     expect(sk.kupon_kodu).toBeNull();
+    // Sıra: kullanım, indirim, eşitte kod.
     expect(await kuponlar.satirlar(h.vt, gun(gunu))).toEqual([
-      {
-        kupon: k1,
-        kod: "RAPOR10",
-        kullanim: 2,
-        indirim: indirim(sa) + indirim(sb),
-        satis: sa.toplam + sb.toplam,
-        iadeSonrasi: sa.toplam,
-      },
-      {
-        kupon: k3,
-        kod: "KARGO",
-        kullanim: 1,
-        indirim: 5_900,
-        satis: sg.toplam,
-        iadeSonrasi: sg.toplam,
-      },
+      { kupon: k3, kod: "KARGO", kullanim: 1, indirim: 5_900, satis: sg.toplam, iadeSonrasi: 0 },
       {
         kupon: k2,
         kod: "BASKA10",
@@ -328,6 +337,14 @@ describe("kupon raporu", () => {
         indirim: indirim(sc),
         satis: sc.toplam,
         iadeSonrasi: sc.toplam,
+      },
+      {
+        kupon: k1,
+        kod: "RAPOR10",
+        kullanim: 1,
+        indirim: indirim(sa),
+        satis: sa.toplam,
+        iadeSonrasi: sa.toplam,
       },
     ]);
   });

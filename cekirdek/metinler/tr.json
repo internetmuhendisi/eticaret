@@ -3566,7 +3566,7 @@
         "uyeYok": "Bu dönemde üyelerden sipariş yok; yalnız üye olmadan verilmiş siparişler var.",
         "hesapKapali": "Hesap kapalı",
         "sayfalar": "Üyelerin sayfaları",
-        "not": "Yeni müşteri dönemde ilk siparişini veren üyedir, dönen müşteri daha önce de sipariş vermiş üyedir. Üye olmadan verilen siparişler ayrı sayılır, kişi olarak listelenmez. Kişisel bilgisi silinmiş siparişler sayılara girer, adı görünmez."
+        "not": "Yeni müşteri dönemde ilk siparişini veren üyedir, dönen müşteri daha önce de sipariş vermiş üyedir. Tutar üyenin dönemdeki siparişlerinin toplamıdır, iade düşülmez (Müşteriler ekranındaki toplam bütün zamanların iade düşülmüş toplamıdır). Üye olmadan verilen siparişler ayrı sayılır, kişi olarak listelenmez. Kişisel bilgisi silinmiş siparişler sayılara girer, adı görünmez."
       },
       "kupon": {
         "kutu": {
@@ -3581,7 +3581,7 @@
         "bosAciklama": "Seçilen dönemde ödemesi alınmış kuponlu sipariş yok. Başka bir dönem seçin.",
         "baslik": "Kuponlar",
         "sayfalar": "Kuponların sayfaları",
-        "not": "Ücretsiz kargo kuponunun indirimi verilmeyen kargo ücretidir. İade sonrası: kuponlu siparişlerden sonradan yapılan iadeler de düşülür."
+        "not": "Kullanımı iptal ya da tam iadeyle geri verilen sipariş sayılmaz (kuponun sayfası gibi). Ücretsiz kargo kuponunun indirimi verilmeyen kargo ücretidir. İade sonrası: kuponlu siparişlerden sonradan yapılan iadeler de düşülür."
       }
     }
   },

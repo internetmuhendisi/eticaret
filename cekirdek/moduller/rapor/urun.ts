@@ -54,6 +54,7 @@ export const urunRaporu = (site: Site) => {
       ad: string;
       secim: { secenek: string; deger: string }[];
       silindi: boolean;
+      son: string;
     }>(sql`
       with satislar as (
         select k.urun_kimligi as urun, k.birim_kimligi as birim, k.adet, k.tutar, 0 as iade,
@@ -73,12 +74,21 @@ export const urunRaporu = (site: Site) => {
       select t.urun, t.birim, sum(t.adet) as adet, sum(t.tutar) as tutar, sum(t.iade) as iade,
         (array_agg(t.ad order by t.an desc))[1] as ad,
         (array_agg(t.secim order by t.an desc))[1] as secim,
+        max(t.an) as son,
         coalesce(u.silinme_zamani is not null, true) as silindi
       from satislar t
       left join urunler u on u.kimlik = t.urun
       group by t.urun, t.birim, u.silinme_zamani`);
+    // Ürünün adı dönemdeki en son satış ya da iadedeki addır: en son satırı olan birleşimin adı.
     const urunler = new Map<string, UrunRaporuSatiri>();
+    const sonAn = new Map<string, number>();
     for (const satir of rows) {
+      const an = new Date(satir.son).getTime();
+      if (an >= (sonAn.get(satir.urun) ?? Number.NEGATIVE_INFINITY)) {
+        sonAn.set(satir.urun, an);
+        const var_ = urunler.get(satir.urun);
+        if (var_ !== undefined) var_.ad = satir.ad;
+      }
       const birlesim: UrunRaporuBirlesimi = {
         birim: satir.birim,
         secim: satir.secim,
