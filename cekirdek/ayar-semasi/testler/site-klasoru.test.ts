@@ -108,6 +108,7 @@ describe("ayar şeması", () => {
       temaDemosu: false,
       eklentiler: [],
       kartlaOdemeOrtami: "deneme",
+      excelSatirSiniri: 5000,
     });
   });
 

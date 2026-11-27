@@ -3,6 +3,13 @@
 // iş kendi modülünde tanımlanır, kaydı buradadır.
 import { z } from "zod";
 import {
+  excelDenetimIsi,
+  excelDisaAktarmaIsi,
+  excelTaramasiIsi,
+  excelTemizligiIsi,
+  excelUygulamaIsi,
+} from "../eklentiler/excel-ile-toplu-urun-islemleri/isler.ts";
+import {
   kartlaIadeTaramasiIsi,
   kartlaOdemeKarsilastirmasiIsi,
   kartlaOdemeTaramasiIsi,
@@ -14,7 +21,7 @@ import {
 } from "../eklentiler/stoga-gelince-haber-ver/isler.ts";
 import { gunluk } from "../izleme/gunluk.ts";
 import { denemeIsaretiBicimi } from "../kayitlar/arka-plan.ts";
-import { kartlaOdemeAyari, stokBildirimiAyari } from "../kayitlar/eklentiler.ts";
+import { excelAyari, kartlaOdemeAyari, stokBildirimiAyari } from "../kayitlar/eklentiler.ts";
 import { davetTemizligiIsi } from "../moduller/ekip/isler.ts";
 import { epostaGonderIsi, epostaKayitTemizligiIsi } from "../moduller/eposta/isler.ts";
 import { odemeOturumuTemizligiIsi } from "../moduller/odeme/isler.ts";
@@ -79,6 +86,12 @@ export const kayitliIsler: readonly IsTanimi[] = [
   stokUyarisiIsi,
   // Ekibe davet (kart 0275, karar 0179).
   davetTemizligiIsi,
+  // Excel ile toplu ürün işlemleri eklentisi (kart 0315).
+  excelDisaAktarmaIsi,
+  excelDenetimIsi,
+  excelUygulamaIsi,
+  excelTaramasiIsi,
+  excelTemizligiIsi,
 ];
 
 export const zamanliIsler: readonly ZamanliIs[] = [
@@ -93,4 +106,6 @@ export const zamanliIsler: readonly ZamanliIs[] = [
   zamanliIs(kartlaOdemeKarsilastirmasiIsi, {}, { herDakika: 24 * 60 }),
   zamanliIs(davetTemizligiIsi, {}, { herDakika: 24 * 60 }),
   zamanliIs(kartlaIadeTaramasiIsi, {}, { herDakika: kartlaOdemeAyari.taramaDakika }),
+  zamanliIs(excelTaramasiIsi, {}, { herDakika: excelAyari.taramaDakika }),
+  zamanliIs(excelTemizligiIsi, {}, { herDakika: 24 * 60 }),
 ];

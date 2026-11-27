@@ -67,7 +67,7 @@ export const stokGecmisi = pgTable(
     // Kayıt dosyasındaki sebeplerle aynıdır (cekirdek/kayitlar/stok.ts); bunu servis testi denetler.
     check(
       "stok_gecmisi_sebep",
-      sql`${tablo.sebep} in ('sayim', 'yeni-mal', 'hasarli-kayip', 'iade-edilen', 'diger', 'siparis', 'siparis-iptali', 'siparis-iadesi')`,
+      sql`${tablo.sebep} in ('sayim', 'yeni-mal', 'hasarli-kayip', 'iade-edilen', 'diger', 'siparis', 'siparis-iptali', 'siparis-iadesi', 'excel-ice-aktarma')`,
     ),
     check(
       "stok_gecmisi_kim_dolu",

@@ -14,6 +14,7 @@ import { ibanSemasi } from "../bolgeler/iban.ts";
 import { saticiBilgileriSemasi } from "../bolgeler/satici.ts";
 import {
   eklentiKodlari,
+  excelAyari,
   kartlaOdemeAyari,
   kartlaOdemeOrtamlari,
   stokBildirimiAyari,
@@ -265,6 +266,16 @@ export const ayarSemasi = z.strictObject({
   kartlaOdemeOrtami: ayar(
     z.enum(kartlaOdemeOrtamlari).default("deneme"),
     altyapiSahibinin("ayar.aciklama.kartlaOdemeOrtami"),
+  ),
+  // Excel ile toplu ürün işlemleri eklentisi (kart 0315): bir içe aktarma dosyasının en çok satırı. Büyük dosya
+  // sunucuyu uzun süre meşgul eder; sınır altyapı sahibinindir (karar 0185).
+  excelSatirSiniri: ayar(
+    z
+      .int()
+      .min(excelAyari.satirSiniriEnAz)
+      .max(excelAyari.satirSiniriEnCok)
+      .default(excelAyari.satirSiniriVarsayilan),
+    altyapiSahibinin("ayar.aciklama.excelSatirSiniri"),
   ),
 });
 

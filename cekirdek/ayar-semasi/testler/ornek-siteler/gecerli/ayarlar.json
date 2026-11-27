@@ -1,5 +1,5 @@
 {
   "paraBirimi": "XTS",
   "epostaGonderenAdresi": "gonderen@ornek.test",
-  "eklentiler": ["stoga-gelince-haber-ver"]
+  "eklentiler": ["stoga-gelince-haber-ver", "excel-ile-toplu-urun-islemleri"]
 }

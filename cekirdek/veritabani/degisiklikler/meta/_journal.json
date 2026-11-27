@@ -456,6 +456,13 @@
       "when": 1795711983507,
       "tag": "0064_kupon-paneli",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1795744026832,
+      "tag": "0065_excel-ile-toplu-urun-islemleri",
+      "breakpoints": true
     }
   ]
 }

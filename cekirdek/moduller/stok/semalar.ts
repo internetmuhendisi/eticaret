@@ -5,7 +5,12 @@
 //
 // Hata iletileri düz cümle değil koddur (stokHatalari); metni ekran çözer.
 import { z } from "zod";
-import { elleStokSebepleri, type StokGosterimi, type StokSebebi } from "../../kayitlar/stok.ts";
+import {
+  aracStokSebepleri,
+  elleStokSebepleri,
+  type StokGosterimi,
+  type StokSebebi,
+} from "../../kayitlar/stok.ts";
 import type { MetinAnahtari } from "../../metinler/metin.ts";
 import { kimligiDuzelt } from "../../veritabani/kimlik.ts";
 import { kayitDegeriYasakMi, kayitMetniHatasi } from "../degisiklik-kaydi/deger.ts";
@@ -51,6 +56,7 @@ export const stokSebepMetinleri = {
   siparis: "yonetim.stok.sebep.siparis",
   "siparis-iptali": "yonetim.stok.sebep.siparis-iptali",
   "siparis-iadesi": "yonetim.stok.sebep.siparis-iadesi",
+  "excel-ice-aktarma": "yonetim.stok.sebep.excel-ice-aktarma",
 } as const satisfies Record<StokSebebi, MetinAnahtari>;
 
 const hata = (kod: StokHatasi) => kod;
@@ -96,6 +102,15 @@ export const elleDuzeltme = z.strictObject({
   not: not.optional(),
 });
 export type ElleDuzeltme = z.input<typeof elleDuzeltme>;
+
+// Panelin bir aracının düzeltmesi (kart 0315: Excel ile içe aktarma): elle düzeltmenin kuralları, sebebi aracın
+// kendisi (aracStokSebepleri); not yoktur.
+export const aracDuzeltmesi = z.strictObject({
+  yeniMiktar: miktar,
+  gorulenMiktar: miktar,
+  sebep: z.enum(aracStokSebepleri),
+});
+export type AracDuzeltmesi = z.input<typeof aracDuzeltmesi>;
 
 // Düşürme ve artırmanın kalemleri: aynı birim birden çok kez gelebilir, servis toplar.
 export const stokKalemleri = z

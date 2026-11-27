@@ -10,18 +10,21 @@
 //   sebepte (notZorunlu) not yazılmadan düzeltme kaydedilmez.
 // - yon: sebebin stoğu hangi işlevle değiştirdiği. "dus" sipariş oluşurken, "artir" iptal ve iadede
 //   çalışır; elle düzeltmenin yönü yoktur, yeni miktar verilir.
+// - arac: panelin bir aracının düzeltmesi (kart 0315: Excel ile içe aktarma); elle seçilemez, yeni miktar verilir,
+//   aracın kendisi sebebi yazar (aracDuzeltmesi).
 export const stokSebepleri = {
-  sayim: { elle: true, notZorunlu: false, yon: null },
-  "yeni-mal": { elle: true, notZorunlu: false, yon: null },
-  "hasarli-kayip": { elle: true, notZorunlu: false, yon: null },
-  "iade-edilen": { elle: true, notZorunlu: false, yon: null },
-  diger: { elle: true, notZorunlu: true, yon: null },
-  siparis: { elle: false, notZorunlu: false, yon: "dus" },
-  "siparis-iptali": { elle: false, notZorunlu: false, yon: "artir" },
-  "siparis-iadesi": { elle: false, notZorunlu: false, yon: "artir" },
+  sayim: { elle: true, notZorunlu: false, yon: null, arac: false },
+  "yeni-mal": { elle: true, notZorunlu: false, yon: null, arac: false },
+  "hasarli-kayip": { elle: true, notZorunlu: false, yon: null, arac: false },
+  "iade-edilen": { elle: true, notZorunlu: false, yon: null, arac: false },
+  diger: { elle: true, notZorunlu: true, yon: null, arac: false },
+  siparis: { elle: false, notZorunlu: false, yon: "dus", arac: false },
+  "siparis-iptali": { elle: false, notZorunlu: false, yon: "artir", arac: false },
+  "siparis-iadesi": { elle: false, notZorunlu: false, yon: "artir", arac: false },
+  "excel-ice-aktarma": { elle: false, notZorunlu: false, yon: null, arac: true },
 } as const satisfies Record<
   string,
-  { elle: boolean; notZorunlu: boolean; yon: "dus" | "artir" | null }
+  { elle: boolean; notZorunlu: boolean; yon: "dus" | "artir" | null; arac: boolean }
 >;
 export type StokSebebi = keyof typeof stokSebepleri;
 export const stokSebepAdlari = Object.keys(stokSebepleri) as StokSebebi[];
@@ -38,6 +41,12 @@ export type ArtirmaSebebi = Yonlu<"artir">;
 export const elleStokSebepleri = stokSebepAdlari.filter(
   (ad) => stokSebepleri[ad].elle,
 ) as ElleStokSebebi[];
+export type AracStokSebebi = {
+  [Ad in StokSebebi]: (typeof stokSebepleri)[Ad]["arac"] extends true ? Ad : never;
+}[StokSebebi];
+export const aracStokSebepleri = stokSebepAdlari.filter(
+  (ad) => stokSebepleri[ad].arac,
+) as AracStokSebebi[];
 
 // Tükenen ürünün vitrindeki davranışı (kart 0083, karar 0069). Mağaza sahibinin ayarıdır (tukenenUrun).
 // - goster: ürün listelerde görünür, satılamaz.

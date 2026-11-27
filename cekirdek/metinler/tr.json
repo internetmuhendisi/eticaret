@@ -158,7 +158,8 @@
       "fisteFiyatlar": "Sipariş fişinde fiyatlar ve toplam görünsün mü. Kapalıyken fişte yalnız ürün, stok kodu ve adet yazar (ör. hediye siparişi).",
       "yoneticiBildirimAlicilari": "Yönetici bildirimlerinin gideceği e-posta adresleri, en çok 5. Boşsa bildirimler mağaza sahibi rolündeki yöneticilere gider.",
       "kapaliYoneticiBildirimleri": "Kapatılan yönetici bildirimleri. Listede olmayan her bildirim açıktır.",
-      "blogAcik": "Açıksa blog yazıları vitrinde /blog adresinde ve ana sayfanın blog bölümünde görünür."
+      "blogAcik": "Açıksa blog yazıları vitrinde /blog adresinde ve ana sayfanın blog bölümünde görünür.",
+      "excelSatirSiniri": "Excel ile toplu ürün işlemleri: bir içe aktarma dosyasının en çok satırı."
     }
   },
   "tema": {
@@ -611,7 +612,8 @@
         "diger": "Diğer",
         "siparis": "Sipariş",
         "siparis-iptali": "Sipariş iptali",
-        "siparis-iadesi": "Sipariş iadesi"
+        "siparis-iadesi": "Sipariş iadesi",
+        "excel-ice-aktarma": "Excel ile içe aktarma"
       },
       "hata": {
         "miktar-bicimi": "Stok sıfır ya da sıfırdan büyük bir tam sayı olmalı.",
@@ -5048,6 +5050,38 @@
       "kategori": "Ürün",
       "kargo": "Kargo",
       "ayrac": "·"
+    },
+    "excel": {
+      "evet": "Evet",
+      "hayir": "Hayır",
+      "sutun": {
+        "urunKodu": "Ürün kodu",
+        "ad": "Ad",
+        "secenekler": "Seçenekler",
+        "stokKodu": "Stok kodu",
+        "barkod": "Barkod",
+        "satisFiyati": "Satış fiyatı",
+        "indirimliFiyat": "İndirimli fiyat",
+        "indirimBaslangici": "İndirim başlangıcı",
+        "indirimBitisi": "İndirim bitişi",
+        "stok": "Stok",
+        "durum": "Durum",
+        "kategoriler": "Kategoriler",
+        "marka": "Marka",
+        "etiketler": "Etiketler",
+        "ozellikler": "Özellikler"
+      },
+      "sayfa": {
+        "urunler": "Ürünler",
+        "bilgi": "Bilgi"
+      },
+      "bilgi": {
+        "kimlik": "Dışa aktarma",
+        "tarih": "İndirildiği an",
+        "aciklama": "Bu dosyayı değiştirip panelde \"Excel ile içe ve dışa aktar\" sayfasından yükleyin. Yüklemeden önce neyin değişeceğini görürsünüz; onaylamadan hiçbir şey değişmez.",
+        "bos": "Boş hücre değeri değiştirmez; değeri silmek için hücreye \"-\" yazın. Dosyadan silinen satır ürünü silmez.",
+        "yeni": "Yeni ürün için Ürün kodu sütununa küçük harf ve tireyle yeni bir kod yazın; aynı kodlu satırlar aynı ürünün birleşimleridir. Seçenekler \"Renk: Beyaz; Beden: L\" biçimindedir."
+      }
     }
   }
 }

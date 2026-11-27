@@ -33,6 +33,7 @@ import { BilinenHata } from "../../kapi/zarf.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import {
   type ArtirmaSebebi,
+  aracStokSebepleri,
   type DusmeSebebi,
   type StokSebebi,
   stokSebepleri,
@@ -46,6 +47,8 @@ import { stokUyarisiYaz } from "../yonetici-bildirimi/servis.ts";
 import { birimStoklariniOku } from "./durum.ts";
 import { birimStoklari, stokAyirmalari, stokGecmisi } from "./model.ts";
 import {
+  type AracDuzeltmesi,
+  aracDuzeltmesi,
   type ElleDuzeltme,
   elleDuzeltme,
   enCokStok,
@@ -333,14 +336,25 @@ export const stokServisi = () => {
   // Panelden elle düzeltme: birimin stoğu yeni miktar olur. Ekranın gördüğü miktar artık doğru değilse
   // (arada sipariş düştü) çakışma döner, hiçbir şey yazılmaz. Aynı kalan miktar hiçbir yere yazılmaz.
   // Takibi kapalı üründe de düzeltilir: takip açılmadan önce stok girilebilsin. Silinmiş birim ya da
-  // ürün bulunamadıdır.
+  // ürün bulunamadıdır. Panelin bir aracı (Excel ile içe aktarma, kart 0315) aynı yoldan kendi sebebiyle düzeltir
+  // (aracDuzeltmesi).
   const stokDuzelt = async (
     vt: Veritabani | VeritabaniIslemi,
     kim: DegisikligiYapan,
     birim: string,
-    ham: ElleDuzeltme,
+    ham: ElleDuzeltme | AracDuzeltmesi,
   ): Promise<void> => {
-    const girdi = girdiyiDogrula(elleDuzeltme.safeParse(ham));
+    const girdi: {
+      yeniMiktar: number;
+      gorulenMiktar: number;
+      sebep: StokSebebi;
+      not?: string | undefined;
+    } =
+      typeof ham === "object" &&
+      ham !== null &&
+      (aracStokSebepleri as readonly unknown[]).includes((ham as { sebep?: unknown }).sebep)
+        ? girdiyiDogrula(aracDuzeltmesi.safeParse(ham))
+        : girdiyiDogrula(elleDuzeltme.safeParse(ham));
     if (stokSebepleri[girdi.sebep].notZorunlu && girdi.not === undefined) {
       throw dogrulamaHatasi([sorun("not", "not-gerekli")]);
     }

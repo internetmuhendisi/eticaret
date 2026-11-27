@@ -167,13 +167,13 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Blog | Mağaza sahibi | Kapalı | Açık | Kapalıyken yazılar vitrinde görünmez, `/blog` bulunamadı verir, ana sayfanın blog bölümü çizilmez (kart 0272, karar 0157) |
 | Raporun varsayılan dönemi | Mağaza sahibi | Son 30 gün | — | Raporlar ve panodaki satış özeti bu dönemle açılır; seçenekler: bugün, son 7 gün, son 30 gün, bu ay, geçen ay (kart 0317, karar 0185) |
 | Okunan panel bildiriminin saklama süresi | Altyapı sahibi | 30 gün | — | Okunmamış bildirim silinmez (kart 0280, karar 0185) |
-| Excel dosyasında en çok satır | Altyapı sahibi | 5.000 | — | Excel ile toplu ürün işlemleri eklentisi açıksa; bir içe aktarma dosyasının satır sınırı (kart 0315, karar 0185) |
+| Excel dosyasında en çok satır | Altyapı sahibi | 5.000 | 5.000 | `excelSatirSiniri`, 100–50.000. Excel ile toplu ürün işlemleri eklentisi açıksa; bir içe aktarma dosyasının satır sınırı (kart 0315, karar 0185) |
 
 ## Eklentiler
 
 | Ayar | Kim değiştirir | Varsayılan | Örnek Mağaza | Not |
 |---|---|---|---|---|
-| Açık eklentiler | Altyapı sahibi | Hiçbiri | Stoğa gelince haber ver, kartla ödeme | `eklentiler`, eklenti kodlarının listesi (`ayarlar.json`). Kurulu eklenti listede yoksa kapalıdır (kart 0144, karar 0117) |
+| Açık eklentiler | Altyapı sahibi | Hiçbiri | Stoğa gelince haber ver, kartla ödeme, Excel ile toplu ürün işlemleri | `eklentiler`, eklenti kodlarının listesi (`ayarlar.json`). Kurulu eklenti listede yoksa kapalıdır (kart 0144, karar 0117) |
 | Stoğa gelince haber ver: üye olmayan müşteri de isteyebilir | Mağaza sahibi | Açık | — | `stokBildirimiUyeOlmayan`. Kapalıysa formda giriş bağlantısı görünür; giriş yapmış müşteri hesabının e-postasıyla ister (kart 0144) |
 | Stoğa gelince haber ver: talep saklama süresi | Mağaza sahibi | 90 gün | — | `stokBildirimiSaklamaGun`, 1–365. Süresi dolan talep, e-postası gitmemiş olsa da silinir (kart 0144) |
 | Kartla ödeme: ödeme kuruluşunun ortamı | Altyapı sahibi | Deneme | Deneme | `kartlaOdemeOrtami` (`deneme`, `canli`). Canlı ortam gerçek ödeme alır, mağazanın sözleşmesi ve anahtarlarıyla, kullanıcının onayıyla açılır. Anahtarlar gizli bilgidir (`KARTLA_ODEME_ANAHTARI`, `KARTLA_ODEME_GIZLI_ANAHTARI`) (kart 0215, karar 0142) |

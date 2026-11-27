@@ -4,7 +4,11 @@
 // Eklentinin kodu çekirdektedir ama hiçbir sitede kendiliğinden açılmaz: sitenin açık eklentileri altyapı sahibinin
 // `eklentiler` ayarıdır (ayarlar.json), varsayılanı boş listedir. Açık olup olmadığı yalnız eklentiAcikMi ile
 // sorulur (cekirdek/eklentiler/acik.ts).
-export const eklentiKodlari = ["stoga-gelince-haber-ver", "kartla-odeme"] as const;
+export const eklentiKodlari = [
+  "stoga-gelince-haber-ver",
+  "kartla-odeme",
+  "excel-ile-toplu-urun-islemleri",
+] as const;
 export type EklentiKodu = (typeof eklentiKodlari)[number];
 
 // Stoğa gelince haber ver (kart 0144). Talep durumları talep tablosuna yazılır; veritabanındaki denetim
@@ -75,4 +79,46 @@ export const kartlaOdemeAyari = {
   // bulunmazsa hatası bir kez kaydedilir; parça yine "red" sayılmaz (para dönmüş olabilir), sormaGun boyunca sorulur.
   iadeSorguDakika: 30,
   iadeBulunamazsaGun: 2,
+} as const;
+
+// Excel ile toplu ürün işlemleri (kart 0315). Dışa aktarmanın ve içe aktarmanın durumları eklentinin tablolarına
+// yazılır; veritabanındaki denetimler (excel_disa_aktarmalari_durum, excel_ice_aktarmalari_durum,
+// excel_ice_aktarma_satirlari_sonuc) bu listelerle aynıdır, bunu eklentinin servis testi denetler.
+// - Dışa aktarma: hazirlaniyor (iş dosyayı yazıyor), hazir (dosya indirilebilir), hatali (dosya yazılamadı).
+// - İçe aktarma: denetleniyor (satırlar okunuyor), onizleme (sonuç onay bekliyor), uygulaniyor, bitti, vazgecildi
+//   (yönetici vazgeçti ya da yeni dosya yükledi), okunamadi (dosya .xlsx değil, sınırı aşıyor ya da sütunları
+//   tanınmadı; nedeni kayıtta).
+// - Satırın sonucu: ekle (yeni ürün ya da birleşim), degistir, ayni (değişmeyecek), hatali.
+export const excelDisaAktarmaDurumlari = ["hazirlaniyor", "hazir", "hatali"] as const;
+export type ExcelDisaAktarmaDurumu = (typeof excelDisaAktarmaDurumlari)[number];
+export const excelIceAktarmaDurumlari = [
+  "denetleniyor",
+  "onizleme",
+  "uygulaniyor",
+  "bitti",
+  "vazgecildi",
+  "okunamadi",
+] as const;
+export type ExcelIceAktarmaDurumu = (typeof excelIceAktarmaDurumlari)[number];
+export const excelSatirSonuclari = ["ekle", "degistir", "ayni", "hatali"] as const;
+export type ExcelSatirSonucu = (typeof excelSatirSonuclari)[number];
+
+export const excelAyari = {
+  // Bir dosyanın satır sınırı (altyapı sahibinin ayarı excelSatirSiniri): varsayılan ve izin verilen aralık.
+  satirSiniriVarsayilan: 5000,
+  satirSiniriEnAz: 100,
+  satirSiniriEnCok: 50_000,
+  // Yüklenen dosyanın en çok boyutu (dosya yükleme sınırı) ve açılmış hâlinin en çok boyutu (sıkıştırma bombası).
+  enCokBayt: 10 * 1024 * 1024,
+  acilmisEnCokBayt: 100 * 1024 * 1024,
+  // Bir hücrenin en çok uzunluğu (en uzun alan ürünün adıdır, 200; kategori yolları ve özellikler daha uzun olabilir).
+  hucreEnCok: 2000,
+  // Bir arka plan işinin işlediği ürün sayısı; iş bitince sonraki parti kuyruğa girer (iş süresi 300 saniye).
+  parti: 100,
+  // Dışa aktarma kaydı (indirildiği andaki değerler ve dosya) ve içe aktarma kaydı bu kadar gün saklanır.
+  saklamaGun: 30,
+  // Önizlemede ekrana gönderilen en çok hatalı ve değişecek satır; tamamı dosyanın kaydındadır.
+  onizlemeSatiri: 200,
+  // Bu kadar dakikadır ilerlemeyen iş (eklenti kapalıydı, süreç durdu) zamanlı taramayla yeniden kuyruğa girer.
+  taramaDakika: 10,
 } as const;
