@@ -2,7 +2,8 @@
 // Panelin çerçevesi (kart 0141, karar 0102 ve 0111): masaüstünde solda yan menü, telefon ve tablette üstte menü
 // düğmesi ve mağazanın adı; menü yan pencerede açılır. Sayfa, çerçevenin sağındaki ana bölgeye kendi iskeletiyle
 // (PanelSayfasi) çizilir. Panelin araması (kart 0321) masaüstünde ana bölgenin üstündeki şeritte, telefon ve
-// tablette üst çubuktaki büyüteçle açılır; yalnız yöneticinin izni olan türler aranır. Tarayıcıda çizilir: yan pencerenin tetikleyicisi özelliklerini ancak düğme burada
+// tablette üst çubuktaki büyüteçle açılır; yalnız yöneticinin izni olan türler aranır. Bildirim zili (kart 0280)
+// şeritte aramanın sağında, telefon ve tablette üst çubukta büyütecin yanındadır. Tarayıcıda çizilir: yan pencerenin tetikleyicisi özelliklerini ancak düğme burada
 // çizilirse alır (kart 0108'de ölçüldü). Metinler ve menü sunucudan gelir.
 import { usePathname } from "next/navigation";
 import { type ReactNode, useId, useRef, useState } from "react";
@@ -18,6 +19,7 @@ import {
 import type { PanelAramaTuru } from "../kayitlar/panel-arama";
 import { usePanelMetni } from "../metinler/panel-metni";
 import { PanelAramaKutusu, TelefonAramaKapat, useAramaKisayolu } from "./arama/panel-aramasi";
+import { BildirimZili } from "./bildirimler/zil";
 import { CikisKorumasi } from "./form/cikis-korumasi";
 import { type MagazaGorunumu, MagazaIsareti, MenuIcerigi } from "./menu-icerigi";
 import type { CizilenMenuGrubu } from "./panel-menusu";
@@ -28,6 +30,7 @@ export function PanelCercevesi({
   gruplar,
   altyapiAdi,
   aramaTurleri,
+  bildirimler,
   children,
 }: {
   magaza: MagazaGorunumu;
@@ -36,6 +39,8 @@ export function PanelCercevesi({
   altyapiAdi: string;
   // Yöneticinin izni olan arama türleri (sunucu süzer); boşsa arama çizilmez.
   aramaTurleri: readonly PanelAramaTuru[];
+  // Bildirim zili (kart 0280); izni olmayana yoktur.
+  bildirimler: { ilkSayi: number; saklamaGun: string; ayarlarAdresi: string | null } | null;
   children: ReactNode;
 }) {
   const metin = usePanelMetni();
@@ -106,23 +111,29 @@ export function PanelCercevesi({
                   </YanPencereIcerigi>
                 </YanPencere>
                 <MagazaIsareti magaza={magaza} />
-                {aramaTurleri.length === 0 ? null : (
-                  <IkonDugmesi
-                    id={buyutecKimligi}
-                    ikon="arama"
-                    etiket={metin("yonetim.arama.ac")}
-                    className="ml-auto shrink-0"
-                    onClick={telefondaAc}
-                  />
-                )}
+                <span className="ml-auto flex shrink-0 items-center gap-1">
+                  {aramaTurleri.length === 0 ? null : (
+                    <IkonDugmesi
+                      id={buyutecKimligi}
+                      ikon="arama"
+                      etiket={metin("yonetim.arama.ac")}
+                      className="shrink-0"
+                      onClick={telefondaAc}
+                    />
+                  )}
+                  {bildirimler === null ? null : <BildirimZili {...bildirimler} />}
+                </span>
               </>
             )}
           </div>
-          {aramaTurleri.length === 0 ? null : (
-            <div className="hidden justify-end border-b border-kenar bg-zemin px-6 py-2 masaustu:flex print:hidden">
-              <div className="w-full max-w-form">
-                <PanelAramaKutusu turler={aramaTurleri} kutuRef={seritKutusu} kisayolGoster />
-              </div>
+          {aramaTurleri.length === 0 && bildirimler === null ? null : (
+            <div className="hidden items-center justify-end gap-2 border-b border-kenar bg-zemin px-6 py-2 masaustu:flex print:hidden">
+              {aramaTurleri.length === 0 ? null : (
+                <div className="w-full max-w-form">
+                  <PanelAramaKutusu turler={aramaTurleri} kutuRef={seritKutusu} kisayolGoster />
+                </div>
+              )}
+              {bildirimler === null ? null : <BildirimZili {...bildirimler} />}
             </div>
           )}
           <main className="flex min-w-0 flex-1 flex-col">{children}</main>

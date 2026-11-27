@@ -99,6 +99,7 @@
       "siparisOneki": "Sipariş numarasının başındaki harfler. Verilmezse mağaza adının ilk üç harfi kullanılır.",
       "siparisBaslangici": "İlk siparişin numarası.",
       "kisiselVeriSaklamaYili": "Siparişteki ad, adres, telefon ve e-postanın kaç yıl saklandığı. Süre dolunca bu bilgiler silinir; tutarlar ve ürünler kalır.",
+      "panelBildirimiSaklamaGun": "Yönetim panelinde okunan bildirimin kaç gün saklandığı. Okunmamış bildirim silinmez.",
       "temaDegistirilebilir": "Mağaza sahibi yönetim panelinden temayı değiştirebilir.",
       "kuponKoduHarfDuyarli": "Kupon kodunda büyük küçük harf ayrılır. Kapalıyken \"kasim50\" ile \"KASIM50\" aynı koddur.",
       "temaDemosu": "Bu site bir tema demosudur: ziyaretçi temaları adresten seçip gezer, hesap açamaz, sipariş veremez; site arama motorlarına kapalıdır.",
@@ -1850,7 +1851,7 @@
       },
       "iptalKaydedildi": "İptal ve iade ayarları kaydedildi.",
       "bildirimler": "Yönetici bildirimleri",
-      "bildirimlerAciklamasi": "Mağazada bir şey olunca hangi e-postaların gideceği ve kime gideceği. Değişiklik kaydedilince hemen geçerli olur.",
+      "bildirimlerAciklamasi": "Mağazada bir şey olunca hangi e-postaların gideceği ve kime gideceği. Panelin bildirimleri her zaman açıktır: zilde, olayı görme izni olan her yöneticiye görünür; burada yalnız e-postası açılıp kapanır. Değişiklik kaydedilince hemen geçerli olur.",
       "bildirimlerKaydedildi": "Yönetici bildirimleri kaydedildi.",
       "acik": "Açık",
       "kapali": "Kapalı",
@@ -3026,8 +3027,8 @@
       },
       "ekip": {
         "kendi-hesabi": {
-          "gor": "Kendi hesabını görür",
-          "degistir": "Kendi yedek kodlarını yeniler"
+          "gor": "Kendi hesabını ve bildirimlerini görür",
+          "degistir": "Kendi yedek kodlarını yeniler, bildirimlerini okundu yapar"
         },
         "gor": "Ekibi görür",
         "rol-ata": "Rol verir ve alır",
@@ -3768,6 +3769,50 @@
         "iban": "TR330006100519786457841326",
         "fatura": "F2026000001"
       }
+    },
+    "bildirimler": {
+      "baslik": {
+        "yeni-siparis": "Yeni sipariş: {numara}",
+        "havale-bildirimi": "Havale bildirildi: {numara}",
+        "iade-talebi": "İade talebi: {numara}",
+        "iptal": "Sipariş iptal edildi: {numara}",
+        "stok": {
+          "dusuk": "Stok azaldı: {urun}",
+          "tukendi": "Tükendi: {urun}"
+        },
+        "yorum": "Yorum onay bekliyor",
+        "kartla-odeme-uyusmazligi": "Kartla ödemeler kuruluşun kaydıyla uyuşmuyor",
+        "bekleyen-iade": "Kartla iade takıldı: {numara}"
+      },
+      "stokAlt": {
+        "dusuk": "Kalan {miktar}",
+        "tukendi": "Stokta kalmadı"
+      },
+      "iptalNedeni": {
+        "havale-suresi-doldu": "Ödeme süresi doldu",
+        "musteri-iptali": "Müşteri iptal etti"
+      },
+      "bekleyenIadeNedeni": {
+        "raporda-yok": "Kuruluşun raporunda bulunamadı, elle bakın",
+        "kismi-red": "Bir kısmını kuruluş reddetti, elle bakın"
+      },
+      "ayrac": " · ",
+      "urunSayisi": "{sayi} ürün",
+      "secimli": "{urun} ({secim})",
+      "secimAyiraci": ", ",
+      "puan": "{puan} yıldız",
+      "odemeSayisi": "{sayi} ödeme",
+      "zil": "Bildirimler",
+      "zilOkunmamis": "Bildirimler, {sayi} okunmamış",
+      "panelBasligi": "Bildirimler",
+      "okunmamis": ", okunmamış",
+      "hepsiniOku": "Hepsini okundu yap",
+      "bos": "Bildirim yok. Yeni sipariş, havale bildirimi, iade talebi, stok uyarısı ve onay bekleyen yorum burada görünür.",
+      "saklama": "Okunan bildirim {gun} gün sonra silinir.",
+      "ayarlar": "Bildirim ayarları",
+      "yukleniyor": "Bildirimler yükleniyor",
+      "hata": "Bildirimler yüklenemedi. Paneli kapatıp yeniden açın.",
+      "okunduHatasi": "Bildirimler okundu yapılamadı. Yeniden deneyin."
     }
   },
   "vitrin": {

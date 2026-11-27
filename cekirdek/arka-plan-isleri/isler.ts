@@ -32,7 +32,11 @@ import {
   siparisDisaAktarmaIsi,
   siparisDisaAktarmaTemizligiIsi,
 } from "../moduller/siparis/isler.ts";
-import { stokUyarisiIsi, yoneticiBildirimiIsi } from "../moduller/yonetici-bildirimi/isler.ts";
+import {
+  panelBildirimiTemizligiIsi,
+  stokUyarisiIsi,
+  yoneticiBildirimiIsi,
+} from "../moduller/yonetici-bildirimi/isler.ts";
 import { type ZamanliIs, zamanliIs } from "./calistirici.ts";
 import { bitenIsleriSil, type IsTanimi, isTanimla } from "./kuyruk.ts";
 
@@ -93,6 +97,8 @@ export const kayitliIsler: readonly IsTanimi[] = [
   // Yönetici bildirimleri (kart 0241, karar 0154).
   yoneticiBildirimiIsi,
   stokUyarisiIsi,
+  // Panelin içindeki bildirimler (kart 0280, karar 0198).
+  panelBildirimiTemizligiIsi,
   // Ekibe davet (kart 0275, karar 0179).
   davetTemizligiIsi,
   // Excel ile toplu ürün işlemleri eklentisi (kart 0315).
@@ -114,6 +120,7 @@ export const zamanliIsler: readonly ZamanliIs[] = [
   zamanliIs(kartlaOdemeTaramasiIsi, {}, { herDakika: kartlaOdemeAyari.taramaDakika }),
   zamanliIs(kartlaOdemeKarsilastirmasiIsi, {}, { herDakika: 24 * 60 }),
   zamanliIs(davetTemizligiIsi, {}, { herDakika: 24 * 60 }),
+  zamanliIs(panelBildirimiTemizligiIsi, {}, { herDakika: 24 * 60 }),
   zamanliIs(kartlaIadeTaramasiIsi, {}, { herDakika: kartlaOdemeAyari.taramaDakika }),
   zamanliIs(excelTaramasiIsi, {}, { herDakika: excelAyari.taramaDakika }),
   zamanliIs(excelTemizligiIsi, {}, { herDakika: 24 * 60 }),

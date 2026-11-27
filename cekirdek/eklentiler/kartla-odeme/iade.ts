@@ -329,7 +329,7 @@ const bekleyenIadeyiBildir = async (
   neden: "raporda-yok" | "kismi-red",
 ): Promise<void> => {
   const [satir] = await vt
-    .select({ numara: siparisler.numara })
+    .select({ numara: siparisler.numara, siparis: siparisler.kimlik })
     .from(siparisIadeleri)
     .innerJoin(siparisler, eq(siparisler.kimlik, siparisIadeleri.siparis_kimligi))
     .where(eq(siparisIadeleri.kimlik, iade));
@@ -337,6 +337,7 @@ const bekleyenIadeyiBildir = async (
   await yoneticiBildirimiYaz(vt, {
     bildirim: "bekleyen-iade",
     anahtar: `kartla-iade-${neden}:${iade}`,
+    kayit: satir.siparis,
     veri: { numara: satir.numara, neden },
   });
 };

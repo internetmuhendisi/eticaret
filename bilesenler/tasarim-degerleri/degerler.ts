@@ -576,6 +576,10 @@ export const sabitDegerler = {
     // fis: sipariş fişi (kart 0270); A4 kâğıdın genişliği (210 mm), ekranda kâğıt gibi görünür.
     fis: "49.625rem",
   },
+  // İçeriğin en çok yüksekliği; aşan içerik kendi kutusunda kayar.
+  // acilir-liste: açılır panelin içindeki uzun liste (kart 0280, panel bildirimleri); 568 px yüksek telefonda
+  // panelin başı ve alt satırıyla sığar.
+  yukseklikler: { "acilir-liste": "26rem" },
   // Kod yüklenmeyince "yükleniyor" yazısının görünmeden önce beklediği süre (kart 0057).
   yukleniyorGecikmesi: "3s",
   // Açılış ve kapanış hareketlerinin süreleri (kart 0103). Hareketi azaltmayı seçen kullanıcıda

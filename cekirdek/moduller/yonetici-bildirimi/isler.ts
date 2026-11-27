@@ -3,8 +3,10 @@
 import { z } from "zod";
 import { type IsTanimi, isEkle, isTanimla } from "../../arka-plan-isleri/kuyruk.ts";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
+import { gunluk } from "../../izleme/gunluk.ts";
 import { yoneticiBildirimleri } from "../../kayitlar/yonetici-bildirimi.ts";
 import { bildirimiGonder } from "./gonderim.ts";
+import { okunanBildirimleriTemizle } from "./panel.ts";
 import { stokUyarilariniGonder } from "./stok-uyarisi.ts";
 
 export const yoneticiBildirimiIsi = isTanimla({
@@ -27,4 +29,18 @@ export const stokUyarisiIsi: IsTanimi<Record<string, never>> = isTanimla({
     stokUyarilariniGonder(vt, calisanSite(), (islem, gecikmeSaniye, anahtar) =>
       isEkle(islem, stokUyarisiIsi, {}, { gecikmeSaniye, tekillikAnahtari: anahtar }),
     ).then(() => undefined),
+});
+
+// Okunan panel bildirimlerinin temizliği (kart 0280, karar 0198): okunduğu andan altyapı sahibinin
+// `panelBildirimiSaklamaGun` ayarı kadar sonra silinir; okunmamış bildirim kalır. Günde bir çalışır.
+export const panelBildirimiTemizligiIsi = isTanimla({
+  tur: "panel-bildirimi-temizligi",
+  sema: z.strictObject({}),
+  calistir: async (_, { vt }) => {
+    const silinen = await okunanBildirimleriTemizle(
+      vt,
+      calisanSite().ayarlar.panelBildirimiSaklamaGun,
+    );
+    gunluk.bilgi("okunan panel bildirimleri silindi", { silinen });
+  },
 });

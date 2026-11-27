@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   type BicimAyarlari,
   bicimleyiciOlustur,
+  goreliZaman,
   gunEkle,
   gununBasi,
   ikiHaneli,
@@ -439,5 +440,31 @@ describe("takvim gününün yazılışı (kart 0317)", () => {
     expect(takvimGunuYazisi("tr-TR", "2026-12-31", "uzun")).toBe("31 Aralık 2026");
     expect(takvimGunuYazisi("tr-TR", "2026-10-29", "kisa")).toBe("29 Eki");
     expect(takvimGunuYazisi("en-US", "2026-10-29", "kisa")).toBe("Oct 29");
+  });
+});
+
+describe("göreli zaman (kart 0280)", () => {
+  const istanbul = { dil: "tr", saatDilimi: "Europe/Istanbul" };
+  const simdi = new Date("2026-11-20T09:30:00Z"); // İstanbul'da 12.30
+  const once = (dakika: number) => new Date(simdi.getTime() - dakika * 60_000);
+  it("bir saatten yenide dakika, aynı günde saat, son yedi günde gün, daha eskide tarih", () => {
+    expect(goreliZaman(simdi, simdi, istanbul)).toBe("bu dakika");
+    expect(goreliZaman(once(5), simdi, istanbul)).toBe("5 dk. önce");
+    expect(goreliZaman(once(59), simdi, istanbul)).toBe("59 dk. önce");
+    expect(goreliZaman(once(60), simdi, istanbul)).toBe("1 sa. önce");
+    // İstanbul'da 00.10: aynı gün.
+    expect(goreliZaman(once(12 * 60 + 20), simdi, istanbul)).toBe("12 sa. önce");
+    // İstanbul'da dün 23.50: bir saatten eski, takvimde dün.
+    expect(goreliZaman(once(12 * 60 + 40), simdi, istanbul)).toBe("dün");
+    expect(goreliZaman(once(6 * 24 * 60), simdi, istanbul)).toBe("6 gün önce");
+    expect(goreliZaman(once(7 * 24 * 60), simdi, istanbul)).toBe("13.11.2026");
+    // Gelecekteki an (saat farkı) şimdi sayılır.
+    expect(goreliZaman(new Date(simdi.getTime() + 90_000), simdi, istanbul)).toBe("bu dakika");
+  });
+  it("günler sitenin saat dilimindedir", () => {
+    // New York'ta şimdi 04.30, 5 saat önce dünün 23.30'u.
+    const newYork = { dil: "tr", saatDilimi: "America/New_York" };
+    expect(goreliZaman(once(5 * 60), simdi, newYork)).toBe("dün");
+    expect(goreliZaman(once(5 * 60), simdi, istanbul)).toBe("5 sa. önce");
   });
 });

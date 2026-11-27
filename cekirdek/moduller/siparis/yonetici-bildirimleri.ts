@@ -26,6 +26,7 @@ export const siparisYoneticiBildirimiYaz = async (
       await yoneticiBildirimiYaz(islem, {
         bildirim: "yeni-siparis",
         anahtar: g.anahtar,
+        kayit: s.kimlik,
         veri: {
           numara: s.numara,
           musteri: kisaAdVerisi(`${s.teslimat.ad} ${s.teslimat.soyad}`),
@@ -55,6 +56,7 @@ export const siparisYoneticiBildirimiYaz = async (
       await yoneticiBildirimiYaz(islem, {
         bildirim: "havale-bildirimi",
         anahtar: g.anahtar,
+        kayit: s.kimlik,
         veri: {
           numara: s.numara,
           gonderen: kisaAdVerisi(bildirim.gonderen),
@@ -80,6 +82,7 @@ export const siparisYoneticiBildirimiYaz = async (
       await yoneticiBildirimiYaz(islem, {
         bildirim: "iade-talebi",
         anahtar: g.anahtar,
+        kayit: s.kimlik,
         veri: {
           numara: s.numara,
           kalemler: talep.kalemler.flatMap(({ sira, adet }) => {
@@ -98,6 +101,7 @@ export const siparisYoneticiBildirimiYaz = async (
       await yoneticiBildirimiYaz(islem, {
         bildirim: "iptal",
         anahtar: g.anahtar,
+        kayit: s.kimlik,
         veri: {
           numara: s.numara,
           neden: g.neden === "havale-suresi-doldu" ? "havale-suresi-doldu" : "musteri-iptali",

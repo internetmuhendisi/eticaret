@@ -61,6 +61,7 @@ export default {
     screens: sabitDegerler.kirilmaNoktalari,
     containers: sabitDegerler.kapsayicilar,
     maxWidth: sabitDegerler.genislikler,
+    maxHeight: sabitDegerler.yukseklikler,
     zIndex: sabitDegerler.katmanlar,
     // Açılış ve kapanış hareketleri (kart 0103). Süreler degerler.ts'ten gelir; hareketin kendisi
     // (@keyframes) tailwind.css'tedir: Tailwind 4 bu ayar dosyasındaki keyframes alanını CSS'e yazmaz

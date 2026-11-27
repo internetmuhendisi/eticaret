@@ -57,7 +57,11 @@ import {
   tukenmisSecenekGosterimleri,
 } from "../kayitlar/urun.ts";
 import { videoSiteAdlari } from "../kayitlar/video-siteleri.ts";
-import { yoneticiBildirimleri, yoneticiBildirimSinirlari } from "../kayitlar/yonetici-bildirimi.ts";
+import {
+  panelBildirimSinirlari,
+  yoneticiBildirimleri,
+  yoneticiBildirimSinirlari,
+} from "../kayitlar/yonetici-bildirimi.ts";
 import { saatDilimiGecerliMi } from "../metinler/bicimleyici.ts";
 import { diller, type MetinAnahtari, varsayilanDil } from "../metinler/metin.ts";
 import { kayitDegeriYasakMi, kayitMetniHatasi } from "../moduller/degisiklik-kaydi/deger.ts";
@@ -186,6 +190,16 @@ export const ayarSemasi = z.strictObject({
       .max(kisiselVeriSaklamaSinirlari.enCok)
       .default(kisiselVeriSaklamaSinirlari.varsayilan),
     altyapiSahibinin("ayar.aciklama.kisiselVeriSaklamaYili"),
+  ),
+  // Okunan panel bildiriminin saklama süresi (gün, kart 0280, karar 0198): okunduğu andan bu kadar sonra günlük işle
+  // silinir; okunmamış bildirim silinmez.
+  panelBildirimiSaklamaGun: ayar(
+    z
+      .int()
+      .min(panelBildirimSinirlari.saklamaGun.enAz)
+      .max(panelBildirimSinirlari.saklamaGun.enCok)
+      .default(panelBildirimSinirlari.saklamaGun.varsayilan),
+    altyapiSahibinin("ayar.aciklama.panelBildirimiSaklamaGun"),
   ),
   temaDegistirilebilir: ayar(
     z.boolean().default(true),

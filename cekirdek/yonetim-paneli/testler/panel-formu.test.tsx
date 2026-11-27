@@ -447,6 +447,7 @@ describe("telefonda menü", () => {
           gruplar={[]}
           altyapiAdi=""
           aramaTurleri={[]}
+          bildirimler={null}
         >
           <p>{buSayfa}</p>
         </PanelCercevesi>

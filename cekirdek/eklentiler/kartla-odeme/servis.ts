@@ -440,6 +440,7 @@ export const kartlaOdemeServisi = (site: Site) => {
       await yoneticiBildirimiYaz(vt, {
         bildirim: "kartla-odeme-uyusmazligi",
         anahtar: `kartla-odeme-karsilastirma:${ortam}:${gun}`,
+        kayit: null,
         veri: { gun, sayi: uyusmazliklar.length },
       });
     }

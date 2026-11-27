@@ -467,11 +467,26 @@ describe("tek işlem, tek bildirim, açıklık ve alıcılar", () => {
     expect(await numaraninBildirimleri(h.vt, numara)).toEqual(["yeni-siparis"]);
 
     const veri = { numara, neden: "musteri-iptali" as const, toplam: 1 };
-    await yoneticiBildirimiYaz(h.vt, { bildirim: "iptal", anahtar: "deneme:tek", veri });
-    await yoneticiBildirimiYaz(h.vt, { bildirim: "iptal", anahtar: "deneme:tek", veri });
+    await yoneticiBildirimiYaz(h.vt, {
+      bildirim: "iptal",
+      anahtar: "deneme:tek",
+      kayit: null,
+      veri,
+    });
+    await yoneticiBildirimiYaz(h.vt, {
+      bildirim: "iptal",
+      anahtar: "deneme:tek",
+      kayit: null,
+      veri,
+    });
     await Promise.all(
       [1, 2, 3].map(() =>
-        yoneticiBildirimiYaz(h.vt, { bildirim: "iptal", anahtar: "deneme:ayni-anda", veri }),
+        yoneticiBildirimiYaz(h.vt, {
+          bildirim: "iptal",
+          anahtar: "deneme:ayni-anda",
+          kayit: null,
+          veri,
+        }),
       ),
     );
     expect(await numaraninBildirimleri(h.vt, numara)).toEqual(["yeni-siparis", "iptal", "iptal"]);

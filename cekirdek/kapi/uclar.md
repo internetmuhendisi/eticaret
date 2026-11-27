@@ -1704,6 +1704,34 @@ Panelin araması (kart 0321), müşteriler: silinmemiş üyenin e-postası ya da
 - Servis: `musteriYonetimi(...).ara` (`cekirdek/moduller/musteri/yonetim.ts`).
 - Hatalar: `dogrulama`, `oturum-yok`, `yetki`, `istek-siniri`.
 
+### GET /kapi/yonetici/panel-bildirimleri
+
+Panelin zili (kart 0280, karar 0198): yöneticinin en yeni 20 bildirimi (okunmuşlar da, en yeni önce) ve okunmamış sayısı. Bildirim yöneticinin kendi hesabınındır: yalnız kendi satırları gelir ve her satırın olayının izni okunurken yeniden sorulur (izni alınmış olayın bildirimi gelmez, sayılmaz). Satır kişisel veri saklamaz; başlık, alt yazı ve adres ekran için sunucuda ilgili kayıttan kurulur (müşterinin adı kısaltılır, kişisel bilgisi silinmiş siparişte yoktur; tutar sitenin para biçimiyle, zaman göreli). Girdi yoktur (`panelBildirimleriSemasi`).
+
+- İzin: `ekip.kendi-hesabi.gor`. Sınır: `genel`.
+- Servis: `panelBildirimleriniOku` (`cekirdek/moduller/yonetici-bildirimi/panel.ts`), biçim `panelBildirimListesi` (`cekirdek/yonetim-paneli/bildirimler/veri.ts`).
+- Başarılı (200): `{ "basarili": true, "veri": { "okunmamis": 3, "bildirimler": [{ "kimlik", "baslik", "alt", "ikon", "an", "zaman", "okundu", "adres" }] } }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`, `istek-siniri`.
+
+### GET /kapi/yonetici/panel-bildirim-sayisi
+
+Zilin okunmamış sayısı (kart 0280): panelde sayfa değişince sorulur. Sayım `panel-bildirimleri` ile aynı kuraldır. Girdi yoktur.
+
+- İzin: `ekip.kendi-hesabi.gor`. Sınır: `genel`.
+- Servis: `okunmamisSayisi` (`cekirdek/moduller/yonetici-bildirimi/panel.ts`).
+- Başarılı (200): `{ "basarili": true, "veri": { "okunmamis": 3 } }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`, `istek-siniri`.
+
+### POST /kapi/yonetici/panel-bildirimi-okundu
+
+Bir bildirimi ya da yöneticinin görebildiği bütün okunmamışları okundu yapar (kart 0280). Yalnız kendi satırları değişir; başkasının, görülemeyen ya da zaten okunmuş bildirimin kimliği hiçbir şey değiştirmez (`okundu: 0`). Okunma anı ilk okunduğu andır: saklama süresi ondan sayılır.
+
+- İzin: `ekip.kendi-hesabi.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik" }` ya da `{ "hepsi": true }` (`panelBildirimiOkunduSemasi`).
+- Servis: `okunduYap` (`cekirdek/moduller/yonetici-bildirimi/panel.ts`).
+- Başarılı (200): `{ "basarili": true, "veri": { "okundu": 1, "okunmamis": 2 } }`.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`, `istek-siniri`.
+
 ### GET /kapi/yonetici/kayit-ara
 
 Panelde kategori, marka, etiket (kart 0263) ya da ürünü yazdıkça arayarak seçmek (kart 0143, karar 0116). Yalnız silinmemiş kayıtlar gelir; harf kuralı aramanınkidir (Türkçe harfsiz, büyük küçük harf ayrımsız), aranan metin adın herhangi bir yerinde geçebilir. Kategoriler üstlerinin adıyla ("Kadın › Tişört") ve ağaç sırasında gelir, bu yolda aranır (yol ayracı aranmaz). Marka, etiket ve ürün ada göre sıralı ve adres adlarıyla gelir: aynı adlı ürünler ayrılır. Sayfa başına 20 kayıt.

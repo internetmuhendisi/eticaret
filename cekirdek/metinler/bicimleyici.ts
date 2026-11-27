@@ -355,3 +355,24 @@ export const bicimleyiciOlustur = (ayarlar: BicimAyarlari) => {
 // Sayacın kutusundaki gibi iki haneli tam sayı: "05" (kart 0111, Canlı Çarşı taslağı). Dilden bağımsızdır,
 // tarayıcıda da çalışır.
 export const ikiHaneli = (sayi: number): string => String(Math.trunc(sayi)).padStart(2, "0");
+
+// Bir anın şimdiye göre yazısı (kart 0280, panel bildirimleri): bir saatten yeniyse dakika, aynı günse saat, son yedi
+// takvim gününde gün ("dün"), daha eskiyse kısa tarih. Günler sitenin saat dilimindedir. Gelecekteki an (saat farkı)
+// "bu dakika" yazılır. Yalnız sunucuda kullanılır: site biçimleyicisinin dışındadır, tarayıcı paketine girmez.
+export const goreliZaman = (
+  an: Date,
+  simdi: Date,
+  ayarlar: Pick<BicimAyarlari, "dil" | "saatDilimi">,
+): string => {
+  const bicim = new Intl.RelativeTimeFormat(ayarlar.dil, { numeric: "auto", style: "short" });
+  const saniye = Math.max(0, (simdi.getTime() - an.getTime()) / 1000);
+  if (saniye < 60 * 60) return bicim.format(-Math.floor(saniye / 60), "minute");
+  const gun = (tarih: Date) => Date.parse(`${takvimGunu(tarih, ayarlar.saatDilimi)}T00:00:00Z`);
+  const gunFarki = Math.round((gun(simdi) - gun(an)) / (24 * 60 * 60 * 1000));
+  if (gunFarki <= 0) return bicim.format(-Math.floor(saniye / 3600), "hour");
+  if (gunFarki < 7) return bicim.format(-gunFarki, "day");
+  return new Intl.DateTimeFormat(ayarlar.dil, {
+    dateStyle: "short",
+    timeZone: ayarlar.saatDilimi,
+  }).format(an);
+};

@@ -120,6 +120,7 @@ export const yorumServisi = (site: Site) => {
         await yoneticiBildirimiYaz(islem, {
           bildirim: "yorum",
           anahtar: `yorum:${satir.kimlik}`,
+          kayit: satir.kimlik,
           veri: {
             urun: urun?.ad ?? "",
             puan: girdi.puan,

@@ -98,6 +98,7 @@ describe("ayar şeması", () => {
       videoSiteleri: ["youtube", "vimeo"],
       siparisBaslangici: 1001,
       kisiselVeriSaklamaYili: 10,
+      panelBildirimiSaklamaGun: 30,
       temaDegistirilebilir: true,
       kuponKoduHarfDuyarli: false,
       vitrindeAltyapiAdi: false,

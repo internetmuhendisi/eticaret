@@ -42,6 +42,12 @@ paths:
 - Satırlar (başlık, alt yazı, adres) sunucuda sitenin biçimiyle kurulur (`arama/veri.ts`). Sipariş, ürün ve müşterinin arama koşulu listeninkiyle tek işlevdir (ürün listesi barkodu da arar); birini değiştiren ikisini değiştirir.
 - Kısayol Ctrl K'dır, Mac'te Cmd K (`aramaKisayoluMu`, `useAramaKisayolu`); başka bir dinleyicinin işlediği tuş yok sayılır.
 
+## Panelin bildirimleri (karar 0198)
+
+- Zil çerçevededir (`cekirdek/yonetim-paneli/bildirimler/zil.tsx`, kart 0280): masaüstünde aramanın sağında üst şeritte, telefon ve tablette üst çubukta. Düzen ilk okunmamış sayısını ve Sipariş ayarlarının bildirim bölümüne bağlantıyı (sayfayı göremeyene yok) verir; zil sayfa değişince sayıyı kendisi sorar, panel açılınca listeyi ister. Ekran kendi zilini ya da bildirim listesini yazmaz.
+- Bildirim yalnız `yoneticiBildirimiYaz` (stokta `stokUyarisiYaz`) ile, e-postasıyla birlikte yazılır; panel satırları `panelBildirimiYaz` (`cekirdek/moduller/yonetici-bildirimi/panel.ts`) ile olayın iznine sahip yöneticilere gider. Okuma, sayı ve okundu izni yeniden sorar (`gorulebilenBildirimler`). Yeni bildirim kayda izniyle eklenir.
+- Satırın yazısı ve adresi sunucuda kayıttan kurulur (`panelBildiriminiKur`, `bildirimler/veri.ts`); satırda kişisel veri saklanmaz.
+
 ## Vitrin bölümleri ekranı (karar 0115)
 
 - Panel ekranı kapıya yalnız `panelIstegi` ile gider (`cekirdek/yonetim-paneli/panel-istegi.ts`); sonucu bildirimle verir (`bildirimGoster`). Bildirim alanı çerçevededir, ekran ikinci bir alan açmaz.

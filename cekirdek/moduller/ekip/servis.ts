@@ -49,6 +49,31 @@ export const yoneticininIzniVarMi = async (
   return bulunan !== undefined;
 };
 
+// Bir izne sahip silinmemiş yöneticilerin kimlikleri (kart 0280): panel bildiriminin alıcıları. Kural
+// yoneticininIzniVarMi ile aynıdır: tam yetkili rol her izni verir. İkisinin aynı cevabı verdiği testte ölçülür.
+export const izniOlanYoneticiler = async (
+  vt: Veritabani | VeritabaniIslemi,
+  izin: GirisIzni<"yonetici">,
+): Promise<string[]> => {
+  const satirlar = await vt
+    .selectDistinct({ kimlik: yoneticiler.kimlik })
+    .from(yoneticiRolleri)
+    .innerJoin(roller, eq(roller.kimlik, yoneticiRolleri.rol_kimligi))
+    .innerJoin(yoneticiler, eq(yoneticiler.kimlik, yoneticiRolleri.yonetici_kimligi))
+    .leftJoin(
+      rolIzinleri,
+      and(eq(rolIzinleri.rol_kimligi, roller.kimlik), eq(rolIzinleri.izin, izin)),
+    )
+    .where(
+      and(
+        isNull(yoneticiler.silinme_zamani),
+        or(eq(roller.tam_yetki, true), isNotNull(rolIzinleri.izin)),
+      ),
+    )
+    .orderBy(yoneticiler.kimlik);
+  return satirlar.map((satir) => satir.kimlik);
+};
+
 // Yöneticinin bütün izinleri tek sorguyla (kart 0141): panel menüsü her sayfanın iznini ayrı sormaz.
 // Kural yukarıdakiyle aynıdır: silinmiş hesabın izni yoktur, tam yetkili rol her izni verir. İkisinin her
 // rol ve her izinde aynı cevabı verdiği testte ölçülür (testler/servis.test.ts).

@@ -22,11 +22,54 @@ import { bildirimAcikMi, bildirimAlicilari, bildirimEpostalariniYaz } from "./go
 import { stokUyarilari } from "./model.ts";
 import type { YoneticiBildirimVerisi } from "./veri.ts";
 
+// Birimlerin ürün adı, ürünü, stok kodu ve seçimi (seçenek sırasıyla değer adları), iki sorguda: stok e-postası ve
+// panelin stok bildirimi (kart 0280) aynı yazılışı kullanır.
+export type BirimBilgisi = { urun: string; ad: string; stokKodu: string | null; secim: string[] };
+export const birimBilgileri = async (
+  vt: Veritabani | VeritabaniIslemi,
+  birimler: readonly string[],
+): Promise<Map<string, BirimBilgisi>> => {
+  if (birimler.length === 0) return new Map();
+  const bilgiler = await vt
+    .select({
+      birim: urunBirimleri.kimlik,
+      urun: urunler.kimlik,
+      ad: urunler.ad,
+      stokKodu: urunBirimleri.stok_kodu,
+    })
+    .from(urunBirimleri)
+    .innerJoin(urunler, eq(urunler.kimlik, urunBirimleri.urun_kimligi))
+    .where(inArray(urunBirimleri.kimlik, [...birimler]));
+  const secimler = await vt
+    .select({ birim: urunBirimiDegerleri.birim_kimligi, deger: urunSecenekDegerleri.ad })
+    .from(urunBirimiDegerleri)
+    .innerJoin(
+      urunSecenekDegerleri,
+      eq(urunSecenekDegerleri.kimlik, urunBirimiDegerleri.deger_kimligi),
+    )
+    .innerJoin(urunSecenekleri, eq(urunSecenekleri.kimlik, urunSecenekDegerleri.secenek_kimligi))
+    .where(inArray(urunBirimiDegerleri.birim_kimligi, [...birimler]))
+    .orderBy(asc(urunSecenekleri.sira), asc(urunSecenekleri.kimlik));
+  return new Map(
+    bilgiler.map(({ birim, ...bilgi }) => [
+      birim,
+      { ...bilgi, secim: secimler.filter((s) => s.birim === birim).map((s) => s.deger) },
+    ]),
+  );
+};
+
 // Uyarının satırı; iş kuyruğa çağıranın yazdığı işle girer (ertele aynı işi kurar).
-export const stokUyarisiSatiriYaz = (
+export const stokUyarisiSatiriYaz = async (
   islem: VeritabaniIslemi,
   g: { birim: string; tur: StokUyarisiTuru; miktar: number },
-) => islem.insert(stokUyarilari).values({ birim_kimligi: g.birim, tur: g.tur, miktar: g.miktar });
+): Promise<string> => {
+  const [satir] = await islem
+    .insert(stokUyarilari)
+    .values({ birim_kimligi: g.birim, tur: g.tur, miktar: g.miktar })
+    .returning({ kimlik: stokUyarilari.kimlik });
+  if (satir === undefined) throw new Error("Stok uyarısı yazılamadı.");
+  return satir.kimlik;
+};
 
 type Ertele = (islem: VeritabaniIslemi, gecikmeSaniye: number, anahtar: string) => Promise<unknown>;
 
@@ -101,31 +144,19 @@ export const stokUyarilariniGonder = async (
     const sonUyarilar = [
       ...new Map(bekleyenler.map((satir) => [satir.birim_kimligi, satir])).values(),
     ];
-    const birimler = sonUyarilar.map((satir) => satir.birim_kimligi);
-    const bilgiler = await islem
-      .select({ birim: urunBirimleri.kimlik, ad: urunler.ad, stokKodu: urunBirimleri.stok_kodu })
-      .from(urunBirimleri)
-      .innerJoin(urunler, eq(urunler.kimlik, urunBirimleri.urun_kimligi))
-      .where(inArray(urunBirimleri.kimlik, birimler));
-    const secimler = await islem
-      .select({ birim: urunBirimiDegerleri.birim_kimligi, deger: urunSecenekDegerleri.ad })
-      .from(urunBirimiDegerleri)
-      .innerJoin(
-        urunSecenekDegerleri,
-        eq(urunSecenekDegerleri.kimlik, urunBirimiDegerleri.deger_kimligi),
-      )
-      .innerJoin(urunSecenekleri, eq(urunSecenekleri.kimlik, urunSecenekDegerleri.secenek_kimligi))
-      .where(inArray(urunBirimiDegerleri.birim_kimligi, birimler))
-      .orderBy(asc(urunSecenekleri.sira), asc(urunSecenekleri.kimlik));
+    const bilgiler = await birimBilgileri(
+      islem,
+      sonUyarilar.map((satir) => satir.birim_kimligi),
+    );
     const veri: YoneticiBildirimVerisi["stok"] = {
       uyarilar: sonUyarilar.flatMap((satir) => {
-        const bilgi = bilgiler.find((b) => b.birim === satir.birim_kimligi);
+        const bilgi = bilgiler.get(satir.birim_kimligi);
         return bilgi === undefined
           ? []
           : [
               {
                 ad: bilgi.ad,
-                secim: secimler.filter((s) => s.birim === satir.birim_kimligi).map((s) => s.deger),
+                secim: bilgi.secim,
                 stokKodu: bilgi.stokKodu,
                 tur: satir.tur,
                 miktar: satir.miktar,

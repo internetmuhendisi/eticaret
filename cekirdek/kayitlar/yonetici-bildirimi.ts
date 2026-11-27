@@ -1,5 +1,6 @@
 import type { EklentiKodu } from "./eklentiler.ts";
 import type { EpostaSablonu } from "./eposta.ts";
+import type { GirisIzni } from "./izinler.ts";
 
 // Yönetici bildirimlerinin kaydı (kart 0241, karar 0154). Her bildirim mağaza sahibinin ayarıyla ayrı ayrı açılıp
 // kapanır (kapaliYoneticiBildirimleri; varsayılan hepsi açık). Alıcılar ayardaki adreslerdir, boşsa tam yetkili rolün
@@ -16,19 +17,34 @@ import type { EpostaSablonu } from "./eposta.ts";
 // - bekleyen-iade: kartla iade kuruluşta takıldı, elle bakılmalı (eklenti).
 // eklenti: bildirimin anahtarı panelde yalnız eklenti sitede açıkken görünür; bildirimin kendisi eklenti kapalıyken de
 // gider (karar 0155: eklentinin para işleri kapalıyken de çalışır). sablon: e-postanın şablonu.
+// izin: panelin içindeki bildirimi (kart 0280, karar 0198) görecek yöneticinin izni. Bildirim olay anında bu izni
+// olan yöneticilere yazılır, okunurken izin yeniden sorulur. Kartla ödemenin ikisi para işidir, iade ve iptal
+// iznini ister (kullanıcı kararı: yalnız mağaza sahibi).
 export const yoneticiBildirimTanimlari = {
-  "yeni-siparis": { eklenti: null, sablon: "yonetici-yeni-siparis" },
-  "havale-bildirimi": { eklenti: null, sablon: "yonetici-havale-bildirimi" },
-  "iade-talebi": { eklenti: null, sablon: "yonetici-iade-talebi" },
-  iptal: { eklenti: null, sablon: "yonetici-iptal" },
-  stok: { eklenti: null, sablon: "yonetici-stok" },
-  yorum: { eklenti: null, sablon: "yonetici-yorum" },
+  "yeni-siparis": { eklenti: null, sablon: "yonetici-yeni-siparis", izin: "siparis.gor" },
+  "havale-bildirimi": {
+    eklenti: null,
+    sablon: "yonetici-havale-bildirimi",
+    izin: "siparis.gor",
+  },
+  "iade-talebi": { eklenti: null, sablon: "yonetici-iade-talebi", izin: "siparis.gor" },
+  iptal: { eklenti: null, sablon: "yonetici-iptal", izin: "siparis.gor" },
+  stok: { eklenti: null, sablon: "yonetici-stok", izin: "stok.gor" },
+  yorum: { eklenti: null, sablon: "yonetici-yorum", izin: "yorum.gor" },
   "kartla-odeme-uyusmazligi": {
     eklenti: "kartla-odeme",
     sablon: "yonetici-kartla-odeme-uyusmazligi",
+    izin: "siparis.iade",
   },
-  "bekleyen-iade": { eklenti: "kartla-odeme", sablon: "yonetici-bekleyen-iade" },
-} as const satisfies Record<string, { eklenti: EklentiKodu | null; sablon: EpostaSablonu }>;
+  "bekleyen-iade": {
+    eklenti: "kartla-odeme",
+    sablon: "yonetici-bekleyen-iade",
+    izin: "siparis.iade",
+  },
+} as const satisfies Record<
+  string,
+  { eklenti: EklentiKodu | null; sablon: EpostaSablonu; izin: GirisIzni<"yonetici"> }
+>;
 export type YoneticiBildirimi = keyof typeof yoneticiBildirimTanimlari;
 export const yoneticiBildirimleri = Object.keys(yoneticiBildirimTanimlari) as [
   YoneticiBildirimi,
@@ -45,6 +61,13 @@ export const yoneticiBildirimSinirlari = {
   stokErtelemePayiSaniye: 60,
   // İşlenmiş stok uyarısı bu kadar gün sonra silinir.
   stokUyarisiSaklamaGun: 30,
+} as const;
+
+// Panelin içindeki bildirimler (kart 0280, karar 0198): listede gösterilen en çok bildirim ve okunan bildirimin
+// saklama süresinin sınırları (gün; değeri altyapı sahibinin `panelBildirimiSaklamaGun` ayarı).
+export const panelBildirimSinirlari = {
+  liste: 20,
+  saklamaGun: { enAz: 1, enCok: 365, varsayilan: 30 },
 } as const;
 
 // Stok uyarısının türü: düşük stok eşiğinin altına indi ya da tükendi.
