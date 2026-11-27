@@ -13,6 +13,7 @@ import { yoneticininIzniVarMi } from "../../moduller/ekip/servis.ts";
 import { calisanSiteninFiyatServisi } from "../../moduller/fiyat/servis.ts";
 import type { ElleDuzeltme } from "../../moduller/stok/semalar.ts";
 import { calisanSiteninStokServisi } from "../../moduller/stok/servis.ts";
+import { urunKopyala, urunKopyalamaSemasi } from "../../moduller/urun/kopyalama.ts";
 import { type PanelFiyatStok, panelFiyatStokYaz } from "../../moduller/urun/panel-fiyat-stok.ts";
 import { type PanelGaleri, panelGaleriYaz } from "../../moduller/urun/panel-galeri.ts";
 import { panelGirdisiniCevir, panelVaryantiniCevir } from "../../moduller/urun/panel-girdisi.ts";
@@ -155,6 +156,27 @@ export const urunSilmeUcu = ucTanimla({
   isle: async ({ kimlik }, _istek, _yanit, { hesapKimligi }) => {
     await calisanSiteninUrunServisi().urunSil(siteninVeritabani(), yonetici(hesapKimligi), kimlik);
     return {};
+  },
+});
+
+// POST /kapi/yonetici/urun-kopyala: ürünün taslak kopyası (kart 0320, karar 0190); kopyanın kimliği döner. Ürün
+// ekleme izni ister (urun.degistir); fiyatı değiştirme izni (fiyat.degistir) olmayanın kopyası fiyatsızdır.
+export const urunKopyalamaUcu = ucTanimla({
+  giris: "yonetici",
+  sema: urunKopyalamaSemasi,
+  izin: "urun.degistir",
+  sinir: "genel",
+  isle: async (girdi, _istek, _yanit, { hesapKimligi }) => {
+    const site = calisanSite();
+    const vt = siteninVeritabani();
+    const kimlik = await urunKopyala(vt, yonetici(hesapKimligi), girdi, {
+      fiyatIzni: await yoneticininIzniVarMi(vt, hesapKimligi, "fiyat.degistir"),
+      urun: calisanSiteninUrunServisi(),
+      fiyat: calisanSiteninFiyatServisi(),
+      saatDilimi: site.ayarlar.saatDilimi,
+      paraBirimi: site.ayarlar.paraBirimi,
+    });
+    return { kimlik };
   },
 });
 

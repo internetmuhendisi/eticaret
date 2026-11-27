@@ -1487,6 +1487,16 @@ Yeni ürün (kart 0263): panelin ürün ekranından. Durum verilmezse ürün tas
 - Başarılı (200): `{ "basarili": true, "veri": {} }`.
 - Hatalar: `dogrulama`, `bulunamadi`, `oturum-yok`, `yetki`.
 
+### POST /kapi/yonetici/urun-kopyala
+
+Ürünün taslak kopyası (kart 0320, karar 0190), tek işlemde: açıklamalar, kargo ve stok ayarları, alım adetleri, vergi sınıfı, kategori, marka, etiketler, ilgili ürünler, özellikler, ağırlık ve ölçüler, seçenekler ve birleşimler (görseliyle), fiyatlar (indirim ve zamanıyla; başka para birimindeki fiyat kopyalanmaz) ve galeri (görsel dosyası paylaşılır). Stok kodu, barkod, stok, yorumlar, favoriler, fiyat ve stok geçmişi kopyalanmaz. Fiyatı değiştirme izni (`fiyat.degistir`) olmayan yöneticinin kopyası fiyatsızdır. Kopya taslaktır, adres adı kaynağınkinden sayıyla üretilir (başka ürünün eski adresi de kullanılmış sayılır). Değişiklik kaydına `urun.kopyalandi` ile kaynağıyla girer.
+
+- İzin: `urun.degistir`. Sınır: `genel`.
+- Girdi: `{ "kimlik", "ad" }` (`urunKopyalamaSemasi`; ad ürünün ad kuralıyla denetlenir).
+- Servis: `cekirdek/moduller/urun/kopyalama.ts` (`urunKopyala`).
+- Başarılı (200): `{ "basarili": true, "veri": { "kimlik" } }`.
+- Hatalar: `dogrulama` (`ad`; galerinin videosu bu sitede artık kabul edilmiyorsa `adres` `video-sitesi-izinsiz`; kaynağın vergi sınıfı silinmişse `vergiSinifi` `vergi-sinifi-gecersiz`), `bulunamadi` (silinmiş ya da olmayan ürün), `oturum-yok`, `yetki`.
+
 ### POST /kapi/yonetici/urun-stok-duzelt
 
 Basit ürünün "Stoğu düzelt" penceresi (kart 0265): birimin stoğunu sebebiyle elle düzeltir, hemen kaydeder. Ekranın gördüğü miktar artık doğru değilse `cakisma` (`stok-degisti`), hiçbir şey yazılmaz.

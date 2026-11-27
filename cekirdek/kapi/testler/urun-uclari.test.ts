@@ -49,6 +49,7 @@ import {
   urunDegisikligiUcu,
   urunEklemeUcu,
   urunFiyatGecmisiUcu,
+  urunKopyalamaUcu,
   urunSilmeUcu,
   urunStokDuzeltmeUcu,
   urunStokGecmisiUcu,
@@ -349,6 +350,73 @@ describe("ürün uçları", () => {
       expect(await vt.select().from(urunler).where(eq(urunler.ad, ad))).toEqual([]);
     }
     expect(await servis.urunuOku(vt, kimlik)).toEqual(once);
+  });
+});
+
+describe("ürün kopyalama (kart 0320)", () => {
+  it("mağaza sahibi ve görevli kopyalar (taslak, adres sayıyla); boş ad alanın hatası; silinmiş ürün bulunamadı", async () => {
+    const sahip = await cerez("magaza-sahibi");
+    const adresAdi = `kopya-${benzersiz()}`;
+    const kaynak = await ekle(sahip, {
+      ad: "Kopyalanacak",
+      adresAdi,
+      durum: "yayinda",
+      vergiSinifi: null,
+      stokKodu: `KP-${benzersiz()}`,
+    });
+    await fiyat.fiyatYaz(
+      vt,
+      yapan,
+      (await servis.urunuOku(vt, kaynak))?.birimler[0]?.kimlik ?? "",
+      {
+        satisFiyati: 12_990,
+      },
+    );
+    const { kimlik } = await veri<{ kimlik: string }>(
+      await urunKopyalamaUcu(
+        istek("urun-kopyala", sahip, { kimlik: kaynak, ad: "Kopyalanacak (kopya)" }),
+      ),
+    );
+    expect(await servis.urunuOku(vt, kimlik)).toMatchObject({
+      ad: "Kopyalanacak (kopya)",
+      adresAdi: `${adresAdi}-2`,
+      durum: "taslak",
+    });
+    const gorevli = await cerez("gorevli");
+    const ikinci = await veri<{ kimlik: string }>(
+      await urunKopyalamaUcu(
+        istek("urun-kopyala", gorevli, { kimlik: kaynak, ad: "Görevli kopyası" }),
+      ),
+    );
+    expect((await servis.urunuOku(vt, ikinci.kimlik))?.adresAdi).toBe(`${adresAdi}-3`);
+    // Görevlinin fiyat izni yok: kopyası fiyatsızdır (kullanıcı kararı); sahibininki fiyatlıdır.
+    const birimi = async (urun: string) =>
+      (await servis.urunuOku(vt, urun))?.birimler[0]?.kimlik ?? "";
+    expect(await fiyat.fiyatOku(vt, await birimi(ikinci.kimlik))).toBeUndefined();
+    expect((await fiyat.fiyatOku(vt, await birimi(kimlik)))?.satisFiyati).toBe(12_990);
+    const bos = await urunKopyalamaUcu(istek("urun-kopyala", sahip, { kimlik: kaynak, ad: " " }));
+    expect(bos.status).toBe(400);
+    expect(await hata(bos)).toMatchObject({ kod: "dogrulama", ayrinti: [{ alan: "ad" }] });
+    await servis.urunSil(vt, yapan, kaynak);
+    const silinmis = await urunKopyalamaUcu(
+      istek("urun-kopyala", sahip, { kimlik: kaynak, ad: "Silinmişin kopyası" }),
+    );
+    expect(silinmis.status).toBe(404);
+  });
+
+  it("rolsüz yönetici, müşteri ve girişsiz ziyaretçi kopyalayamaz, hiçbir şey yazılmaz", async () => {
+    const kaynak = await ekle(await cerez("magaza-sahibi"), {
+      ad: `Kaynak ${benzersiz()}`,
+      vergiSinifi: null,
+    });
+    for (const kisi of ["rolsuz", "musteri", "girissiz"] as const) {
+      const ad = `Yetkisiz kopya ${benzersiz()}`;
+      const yanit = await urunKopyalamaUcu(
+        istek("urun-kopyala", await cerez(kisi), { kimlik: kaynak, ad }),
+      );
+      expect(yanit.status, kisi).toBe(kisi === "rolsuz" ? 403 : 401);
+      expect(await vt.select().from(urunler).where(eq(urunler.ad, ad))).toEqual([]);
+    }
   });
 });
 

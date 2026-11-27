@@ -61,6 +61,8 @@ export default async function UrunlerSayfasi({
           .filter((islem) => yetkili(islem.izin))
           .map((islem) => islem.kod)}
         para={{ simge, simgeYeri: yer }}
+        kopyalayabilir={yetkili("urun.degistir")}
+        fiyatIzni={yetkili("fiyat.degistir")}
       />
     </PanelSayfasi>
   );

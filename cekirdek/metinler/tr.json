@@ -374,7 +374,8 @@
       "duzenle": "Düzenle",
       "kuponEkle": "Kupon ekle",
       "kuponKapat": "Kuponu kapat",
-      "kuponAc": "Kuponu aç"
+      "kuponAc": "Kuponu aç",
+      "urunKopyala": "Kopyala"
     },
     "rol": {
       "magaza-sahibi": "Mağaza sahibi",
@@ -3254,6 +3255,32 @@
         "kullanildi": "Kupon kullanıldığı için bu alan değişmez.",
         "kupon-degisti": "Kupon siz düzenlerken başka biri tarafından değiştirildi. Sayfayı yenileyip yeniden deneyin."
       }
+    },
+    "urunKopyalama": {
+      "baslik": "Ürünü kopyala",
+      "aciklama": "{ad} taslak olarak kopyalanacak. Kopyayı yayına almadan önce düzenleyin.",
+      "varsayilanAd": "{ad} (kopya)",
+      "ad": "Kopyanın adı",
+      "kopyala": "Kopyala",
+      "kopyalanan": "Açıklamalar, kategori, marka, etiketler, özellikler, seçenekler ve birleşimler, fiyatlar, görseller ve videolar ve ilgili ürünler kopyalanır.",
+      "kopyalanmayan": "Kopyalanmayanlar: stok kodu ve barkod (her ürünün kendisine özeldir, boş kalır), stok (0), yorumlar, favoriler, fiyat ve stok geçmişi.",
+      "digerIslemler": "Diğer işlemler: {ad}",
+      "islemler": "İşlemler",
+      "acildi": {
+        "baslik": "Kopya taslak olarak açıldı.",
+        "metin": "Stok kodları ve barkodlar boş, stok 0. Yayına almadan önce adı, adresi ve stok kodlarını kontrol edin."
+      },
+      "hata": {
+        "ad": "Kopyanın adını yazın; ad çok uzunsa kısaltın.",
+        "bulunamadi": "Ürün bulunamadı, silinmiş olabilir. Sayfayı yenileyin.",
+        "video": "Ürünün galerisindeki bir video bu sitede artık kabul edilmeyen bir siteden. Videoyu üründen kaldırıp yeniden deneyin.",
+        "genel": "Ürün kopyalanamadı. Sayfayı yenileyip yeniden deneyin.",
+        "vergiSinifi": "Ürünün vergi sınıfı silinmiş. Üründe başka bir vergi sınıfı seçip yeniden deneyin.",
+        "adKayit": "Ad yalnız bir e-posta adresinden ya da giriş anahtarından oluşamaz. Adı değiştirin."
+      },
+      "kopyalananFiyatsiz": "Açıklamalar, kategori, marka, etiketler, özellikler, seçenekler ve birleşimler, görseller ve videolar ve ilgili ürünler kopyalanır.",
+      "kopyalanmayanFiyatsiz": "Kopyalanmayanlar: fiyatlar (fiyatı değiştirme izniniz yok; kopya fiyatsız açılır, fiyatı mağaza sahibi girer), stok kodu ve barkod (her ürünün kendisine özeldir, boş kalır), stok (0), yorumlar, favoriler, fiyat ve stok geçmişi.",
+      "kaydedilmemis": "Bu sayfada kaydedilmemiş değişiklik var. Kopya ürünün kaydedilmiş hâlinden yapılır; kaydetmediğiniz değişiklikler kaybolur. Önce kaydetmek için Vazgeç'e basın."
     }
   },
   "vitrin": {

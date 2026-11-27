@@ -84,6 +84,8 @@ const ciz = (topluIslemler = urunListesiTanimi.topluIslemler.map((islem) => isle
         kayitSecenekleri={{}}
         topluIslemler={topluIslemler}
         para={{ simge: "¤", simgeYeri: "sonda" }}
+        kopyalayabilir={false}
+        fiyatIzni={false}
       />
     </MetinSaglayici>,
   );

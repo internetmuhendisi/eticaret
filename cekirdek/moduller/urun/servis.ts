@@ -17,6 +17,7 @@ import { ayarSemasi } from "../../ayar-semasi/ayarlar.ts";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { BilinenHata } from "../../kapi/zarf.ts";
+import type { AdresliKayitTuru } from "../../kayitlar/adres.ts";
 import type { DegisikligiYapan } from "../../kayitlar/degisiklik-islemleri.ts";
 import {
   type UrunDurumu,
@@ -34,6 +35,7 @@ import {
 } from "../../veritabani/baglanti.ts";
 import { kimligiDuzelt, kimlikMi } from "../../veritabani/kimlik.ts";
 import { degisikligiKaydet } from "../degisiklik-kaydi/servis.ts";
+import { eskiAdresler } from "../gorunurluk/model.ts";
 import {
   kilitliUrunOzellikleri,
   ozellikDegerleriniDenetle,
@@ -674,9 +676,33 @@ export const urunServisi = (
         .where(and(eq(urunler.kimlik, kimlik), vitrinKosulu(yer, secenekler)))
     ).length > 0;
 
+  // Ürün için boş adres adı (kart 0320, kopya): kökten üretilir, kullanılıyorsa sayı alır ("x-2"). Başka bir ürünün
+  // eski adresi de kullanılmış sayılır: kopya onu alsaydı o ürünün eski bağlantıları yönlenmezdi (bağımsız kontrolün
+  // bulgusu; kopya hep aynı adayla başlar).
+  const bosAdresAdiBul = (islem: VeritabaniIslemi, kok: string, kimlik: string) =>
+    bosAdresAdi(kok, kimlik, async (adaylar) => {
+      const [canli, eski] = await Promise.all([
+        islem
+          .select({ adresAdi: urunler.adres_adi })
+          .from(urunler)
+          .where(and(isNull(urunler.silinme_zamani), inArray(urunler.adres_adi, adaylar))),
+        islem
+          .select({ adresAdi: eskiAdresler.adres_adi })
+          .from(eskiAdresler)
+          .where(
+            and(
+              eq(eskiAdresler.kayit_turu, "urun" satisfies AdresliKayitTuru),
+              inArray(eskiAdresler.adres_adi, adaylar),
+            ),
+          ),
+      ]);
+      return new Set([...canli, ...eski].map((satir) => satir.adresAdi));
+    });
+
   return {
     urunEkle,
     urunDegistir,
+    bosAdresAdiBul,
     urunSil,
     urunuOku,
     vitrindeGorunurMu,
