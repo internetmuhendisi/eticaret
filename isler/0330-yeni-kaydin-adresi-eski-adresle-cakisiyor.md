@@ -17,4 +17,4 @@ Kart 0320'nin bağımsız kontrolünde bulundu. Ürün eklenirken adres adı ad�
 
 ## Durum
 
-yapılacak
+bitti
