@@ -224,7 +224,10 @@ test("Excel: listeden gelme, dışa aktarma ve indirme, değişiklik yükleme, �
     .first();
   await expect(hatali).toBeVisible({ timeout: 15_000 });
   await expect(hatali).toContainText(`Bahçe ${u.ek}`);
-  const kapali = page.getByRole("button", { name: /satırı uygula$/ });
+  const kapali = page.getByRole("button", {
+    name: metin("eklenti.excel.ekran.uygulaSade"),
+    exact: true,
+  });
   await expect(kapali).toHaveAttribute("aria-disabled", "true");
   await expect(kapali).toHaveAccessibleDescription(metin("eklenti.excel.ekran.uygulaHatali"));
   await ikiRenkUcGenislik(page, "Excel hatalı önizleme");

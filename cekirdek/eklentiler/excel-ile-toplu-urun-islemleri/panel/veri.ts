@@ -201,9 +201,13 @@ export const excelEkraniVerisi = async (girdi: {
             },
             hataliSayisi: ice.sayilar.hatali,
             yazilacakSayisi: ice.sayilar.degistir + ice.sayilar.ekle,
-            uygulaYazisi: doldur(metin("eklenti.excel.ekran.uygula"), {
-              sayi: b.sayi(ice.sayilar.degistir + ice.sayilar.ekle),
-            }),
+            // Uygulanamayan önizlemede sayı yazılmaz ("0 satırı uygula" yerine "Uygula").
+            uygulaYazisi:
+              ice.sayilar.hatali > 0 || ice.sayilar.degistir + ice.sayilar.ekle === 0
+                ? metin("eklenti.excel.ekran.uygulaSade")
+                : doldur(metin("eklenti.excel.ekran.uygula"), {
+                    sayi: b.sayi(ice.sayilar.degistir + ice.sayilar.ekle),
+                  }),
             hatalilar: ice.hatalilar.map((s) => hataSatiri(s, s.hatalar)),
             ...(fazla(ice.sayilar.hatali, ice.hatalilar.length) === undefined
               ? {}

@@ -5131,7 +5131,7 @@
       },
       "ekran": {
         "disaAktar": "Dışa aktar",
-        "disaAciklama": "Ürünlerinizi Excel dosyasına indirin. Her birleşim bir satırdır; basit ürün tek satır.",
+        "disaAciklama": "Ürünlerinizi Excel dosyasına indirin. Her birleşim bir satırdır, basit ürün tek satır; ürünün ortak bilgileri her satırda tekrarlanır.",
         "hangiUrunler": "Hangi ürünler",
         "butunUrunler": "Bütün ürünler",
         "listedekiler": "Ürünler listesindeki süzgeçlerle",
@@ -5181,7 +5181,8 @@
         "vazgecildi": "Önceki dosyadan vazgeçildi.",
         "okunamadiBaslik": "Dosya okunamadı",
         "islemHatasi": "İşlem yapılamadı. Sayfayı yenileyip yeniden deneyin.",
-        "gonderildi": "Dosya yüklendi, denetleniyor."
+        "gonderildi": "Dosya yüklendi, denetleniyor.",
+        "uygulaSade": "Uygula"
       }
     }
   }

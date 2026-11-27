@@ -35,7 +35,7 @@ import { doldur } from "../../../metinler/doldur";
 import { usePanelMetni } from "../../../metinler/panel-metni";
 import { urunlerAdresi } from "../../../yonetim-paneli/adresler";
 import { dosyaHatasiMetni, useDosyaYuklemesi } from "../../../yonetim-paneli/dosya-yuklemesi";
-import { panelIkonu } from "../../../yonetim-paneli/panel-ikon";
+import { PanelIkon, panelIkonu } from "../../../yonetim-paneli/panel-ikon";
 import { usePanelIslemi } from "../../../yonetim-paneli/panel-islemi";
 import type { ExcelEkraniVerisi } from "./veri";
 
@@ -248,11 +248,13 @@ export function ExcelEkrani({ veri }: { veri: ExcelEkraniVerisi }) {
 
       {ice !== null && (onizlemede || uygulanirken || bitti) ? (
         <>
-          <Kart className="flex flex-wrap items-center gap-3 p-4">
-            <span className="flex min-w-0 flex-col">
+          <Kart className="flex-row flex-wrap items-center gap-3 p-4 tablet:p-4">
+            <PanelIkon ad="yukle" />
+            <span className="flex min-w-0 flex-1 flex-col">
               <span className="truncate font-kalin">{ice.dosyaAdi}</span>
               <span className="text-kucuk text-soluk-yazi">{ice.dosyaYazisi}</span>
             </span>
+            {onizlemede && veri.iceAktarabilir ? dosyaSecimi : null}
           </Kart>
           {onizlemede ? (
             <ul
@@ -268,11 +270,14 @@ export function ExcelEkrani({ veri }: { veri: ExcelEkraniVerisi }) {
                 ] as const
               ).map(([ad, sayi]) => (
                 <li key={ad}>
-                  <Kart className="flex flex-col gap-1 p-4">
+                  <Kart className="gap-1 p-4 tablet:p-4">
                     <span className="text-kucuk text-soluk-yazi">
                       {metin(`eklenti.excel.ekran.${ad}`)}
                     </span>
                     <strong className="text-baslik-3">{sayi}</strong>
+                    <span className="text-kucuk text-soluk-yazi">
+                      {metin("eklenti.excel.ekran.satir")}
+                    </span>
                   </Kart>
                 </li>
               ))}
@@ -374,7 +379,6 @@ export function ExcelEkrani({ veri }: { veri: ExcelEkraniVerisi }) {
               )}
             </div>
           ) : null}
-          {onizlemede && veri.iceAktarabilir ? dosyaSecimi : null}
           {uygulanirken ? (
             <Kart role="region" aria-labelledby={`${kimlik}-uygulaniyor`} className="p-4">
               <KartBasligi duzey={2} id={`${kimlik}-uygulaniyor`}>
@@ -406,7 +410,7 @@ export function ExcelEkrani({ veri }: { veri: ExcelEkraniVerisi }) {
                   ] as const
                 ).map(([ad, sayi]) => (
                   <li key={ad}>
-                    <Kart className="flex flex-col gap-1 p-4">
+                    <Kart className="gap-1 p-4 tablet:p-4">
                       <span className="text-kucuk text-soluk-yazi">
                         {metin(`eklenti.excel.ekran.${ad}`)}
                       </span>
@@ -471,7 +475,7 @@ function SatirTablosu({
         <TabloUstu>
           <TabloSatiri>
             {sutunlar.map((sutun) => (
-              <TabloBasHucresi key={sutun} scope="col">
+              <TabloBasHucresi key={sutun} scope="col" className="pr-3 pb-2 text-left font-kalin">
                 {sutun}
               </TabloBasHucresi>
             ))}
@@ -483,7 +487,9 @@ function SatirTablosu({
             <TabloSatiri key={i}>
               {satir.map((hucre, j) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: sütunlar sabittir.
-                <TabloHucresi key={j}>{hucre}</TabloHucresi>
+                <TabloHucresi key={j} className="py-2 pr-3 align-top">
+                  {hucre}
+                </TabloHucresi>
               ))}
             </TabloSatiri>
           ))}

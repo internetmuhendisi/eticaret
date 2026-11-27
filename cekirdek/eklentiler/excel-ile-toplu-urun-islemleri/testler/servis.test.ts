@@ -770,20 +770,53 @@ describe("kapalı eklenti, temizlik, denetimler, iki site", () => {
       ).kod,
     ).toBe("bulunamadi");
     expect((await hatasi(kapaliServis.iceAktarmaDurumu(vt, yonetici))).kod).toBe("bulunamadi");
-    // Açıkken başlatılan iş eklenti kapanınca beklemede kalır.
+    // Açıkken başlatılan işler eklenti kapanınca beklemede kalır; tarama onları kapalıyken sürdürmez, açılınca sürdürür.
     const kimlik = await servis.disaAktarmaBaslat(vt, yonetici, {
       kapsam: null,
       fiyat: true,
       stok: true,
     });
+    const is = await servis.iceAktarmaYukle(vt, yonetici, {
+      dosya: Buffer.from("x"),
+      ad: "a.xlsx",
+    });
     bekleyenler.length = 0;
+    await vt
+      .update(excelDisaAktarmalari)
+      .set({ olusturma_zamani: sql`now() - interval '1 hour'` })
+      .where(eq(excelDisaAktarmalari.kimlik, kimlik));
+    await vt
+      .update(excelIceAktarmalari)
+      .set({ guncellenme_zamani: sql`now() - interval '1 hour'` })
+      .where(eq(excelIceAktarmalari.kimlik, is));
     await kapaliServis.disaAktarmayiHazirla(vt, kimlik);
+    await kapaliServis.iceAktarmayiDenetle(vt, is);
     expect(await kapaliServis.takilanlariSurdur(vt)).toBe(0);
-    const [kayit] = await vt
+    expect(bekleyenler).toEqual([]);
+    const [disa] = await vt
       .select()
       .from(excelDisaAktarmalari)
       .where(eq(excelDisaAktarmalari.kimlik, kimlik));
-    expect(kayit?.durum).toBe("hazirlaniyor");
+    expect(disa?.durum).toBe("hazirlaniyor");
+    const [ice] = await vt
+      .select()
+      .from(excelIceAktarmalari)
+      .where(eq(excelIceAktarmalari.kimlik, is));
+    expect(ice?.durum).toBe("denetleniyor");
+    // Uygulama partisi kapalıyken bir şey yazmaz.
+    await vt
+      .update(excelIceAktarmalari)
+      .set({ durum: "uygulaniyor" })
+      .where(eq(excelIceAktarmalari.kimlik, is));
+    expect(await kapaliServis.uygulamaPartisi(vt, is)).toBe(false);
+    const [ice2] = await vt
+      .select()
+      .from(excelIceAktarmalari)
+      .where(eq(excelIceAktarmalari.kimlik, is));
+    expect(ice2?.durum).toBe("uygulaniyor");
+    // Açılınca tarama ikisini de sürdürür.
+    expect(await servis.takilanlariSurdur(vt)).toBeGreaterThanOrEqual(2);
+    expect(bekleyenler.map((b) => b.kimlik)).toEqual(expect.arrayContaining([kimlik, is]));
   });
 
   it("saklama süresi dolan kayıtlar silinir; yenisi kalır", async () => {
