@@ -32,6 +32,11 @@ Bölüm: Yönetim paneli 2. Önce 0322 bitmiş olmalı.
 - Bağımsız kontrolün bulgularıyla: süren ödeme varken uygulanmaz; kargo ekranı, ürünün fiyatları ve kupon formu gördükleri girişi gönderir, giriş arada değiştiyse kayıt çakışır; kilitler genişledi (kupon tablosu, mağaza ayarları, vergi tablosu); silinmiş kargo sınıfı, indirimli fiyatın önizlemesi ve bölgesi bulunamayan sitede eski fiyat düzeldi. "Müşterinin gördüğü fiyat değişmez" birim fiyat içindir: çok adetli satırda sepet toplamı birkaç kuruş değişebilir, pencere bunu söyler. Excel'in yeni ürün satırları kart 0337'de.
 - Hız ölçümü çalıştırılmadı: vitrine giden tarayıcı kodu değişmedi, vitrin yalnız indirimdeki ürünlerde sunucuda bir sorgu daha yapar.
 
+## Kalan (2026-11-28, kullanıcı kararı: sonraki oturum)
+
+- "Her yeni denetim bozularak kırmızı" maddesi eksik: bağımsız kontrolden sonra eklenen dört denetim için sırayı kuran yarış testi yazılıp bozulacak: kupon tablosunun kilidi (uygulama sürerken eklenen kupon bekler ve yeni girişle yazılır ya da çakışır), mağaza ayarlarının kilidi (arada kaydedilen kargo ayarı ezilmez), vergi tablosunun kilidi (arada değişen oran), siparişe dönmüş ödeme oturumu değişikliği durdurmaz. İkinci izin denetimi (`fiyat.degistir`) bugün denenemez, yalnız disiplin kalır.
+- Sonra `/is-bitti 0326`.
+
 ## Durum
 
 yapılacak
