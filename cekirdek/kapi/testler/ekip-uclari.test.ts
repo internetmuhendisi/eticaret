@@ -193,7 +193,7 @@ describe("hesap kapatma ve iki aşamalı girişi sıfırlama", () => {
           .from(epostaKayitlari)
           .where(eq(epostaKayitlari.alici, ece.eposta))
       ).map((satir) => satir.sablon),
-    ).toEqual(["sifre-sifirlama"]);
+    ).toEqual(["yonetici-sifre-sifirlama"]);
     expect(await hesapSifresiniDogrula(vt, "yonetici", { eposta: ece.eposta, sifre })).toBeNull();
     for (const tablo of [yoneticiIkiAsama, yoneticiYedekKodlari]) {
       expect(await vt.select().from(tablo).where(eq(tablo.yonetici_kimligi, ece.kimlik))).toEqual(

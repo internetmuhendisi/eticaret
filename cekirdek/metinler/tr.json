@@ -3729,7 +3729,7 @@
         "yukleniyor": "Önizleme güncelleniyor",
         "hata": "Önizleme çizilemedi. Metni değiştirip yeniden deneyin.",
         "deneme": "Kendime deneme e-postası gönder",
-        "denemeGitti": "Deneme e-postası {eposta} adresine gönderilmek üzere kuyruğa alındı.",
+        "denemeGitti": "Deneme e-postası kendi adresinize gönderilmek üzere kuyruğa alındı.",
         "denemeYok": "Deneme e-postası, bu sitede e-posta gönderimi açılınca gönderilebilir."
       },
       "hata": {
@@ -3742,9 +3742,14 @@
         "eposta": "Geçerli bir e-posta adresi yazın, örneğin destek@magazaniz.com.",
         "gecersiz": "Bu değer kullanılamaz.",
         "cakisma": "Bu e-postanın metni siz düzenlerken değişti. Sayfa yenilendi; değişikliklerinizi kontrol edip yeniden kaydedin.",
-        "epostaGidemez": "Bu sitede e-posta gönderimi açık değil, deneme e-postası gönderilemez.",
         "yetki": "Bunu yapma izniniz yok.",
-        "genel": "Kaydedilemedi. Bağlantınızı kontrol edip yeniden deneyin."
+        "genel": "Kaydedilemedi. Bağlantınızı kontrol edip yeniden deneyin.",
+        "deneme": {
+          "metin": "Deneme gönderilemedi: metinde düzeltilmesi gereken bir şey var. Kaydet'e bastığınızda hangi alanda olduğu yazar.",
+          "gidemez": "Bu sitede e-posta gönderimi açık değil, deneme e-postası gönderilemez.",
+          "sinir": "Kısa sürede çok deneme gönderdiniz. Bir dakika sonra yeniden deneyin.",
+          "genel": "Deneme e-postası gönderilemedi. Bağlantınızı kontrol edip yeniden deneyin."
+        }
       },
       "ornek": {
         "ad": "Deniz",

@@ -101,6 +101,17 @@ const metinTanimlari = {
     govde: ["eposta.sifreSifirlama.govde", "eposta.sifreSifirlama.uyari"],
     baglanti: "eposta.sifreSifirlama.baglanti",
   },
+  "yonetici-sifre-sifirlama": {
+    konu: "eposta.sifreSifirlama.konu",
+    baslik: "eposta.sifreSifirlama.baslik",
+    govde: ["eposta.sifreSifirlama.govde", "eposta.sifreSifirlama.uyari"],
+    baglanti: "eposta.sifreSifirlama.baglanti",
+  },
+  "yonetici-sifre-degisti": {
+    konu: "eposta.sifreDegisti.konu",
+    baslik: "eposta.sifreDegisti.baslik",
+    govde: ["eposta.sifreDegisti.govde", "eposta.sifreDegisti.uyari"],
+  },
   "sifre-degisti": {
     konu: "eposta.sifreDegisti.konu",
     baslik: "eposta.sifreDegisti.baslik",
@@ -194,7 +205,8 @@ const dugmeHtml = (s: Stiller, d: EpostaDugmesi): string =>
 const blokHtml = (s: Stiller, b: EpostaBlogu): string => {
   switch (b.tur) {
     case "paragraf":
-      return `<p style="${b.soluk ? s.soluk : s.paragraf}">${htmlKacir(b.metin)}</p>`;
+      // Mağaza sahibinin çok satırlı giriş ve kapanışı (kart 0279) satır sonlarıyla çizilir.
+      return `<p style="${b.soluk ? s.soluk : s.paragraf}">${htmlKacir(b.metin).replaceAll("\n", "<br>")}</p>`;
     case "kutu":
       return `<div style="${b.vurgu ? s.vurguKutu : s.kutu}">${b.satirlar
         .map((satir) => {

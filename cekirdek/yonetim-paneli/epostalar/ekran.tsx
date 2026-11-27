@@ -10,6 +10,7 @@ import { Kart } from "../../../bilesenler/parcalar/kart";
 import { Rozet } from "../../../bilesenler/parcalar/rozet";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import { UzunMetinAlani } from "../../../bilesenler/parcalar/uzun-metin-alani";
+import { epostaGondereniSinirlari } from "../../kayitlar/eposta";
 import { doldur } from "../../metinler/doldur";
 import type { MetinAnahtari } from "../../metinler/metin";
 import { usePanelMetni } from "../../metinler/panel-metni";
@@ -27,6 +28,7 @@ const gonderenHataMetinleri: KodMetinleri = {
   "kayda-uygun-degil": "yonetim.epostalar.hata.kaydaUygunDegil",
   "metin-gecersiz": "yonetim.epostalar.hata.metin",
   invalid_format: "yonetim.epostalar.hata.eposta",
+  too_big: "yonetim.epostalar.hata.uzun",
 };
 
 export const epostaGenelHataMetni = (hata: PanelHatasi): MetinAnahtari =>
@@ -62,9 +64,15 @@ function GonderenKarti({ veri, izinli }: { veri: EpostalarVerisi; izinli: boolea
       pf.temizle();
       return true;
     }
+    // Uzunluk hatası alanın sınırını söyler (kayıttaki sınır).
     const alanlar = Object.fromEntries(
       Object.entries(kodluAlanHatalari(gonderenHataMetinleri, sonuc, Object.keys(form))).map(
-        ([alan, anahtar]) => [alan, metin(anahtar)],
+        ([alan, anahtar]) => [
+          alan,
+          doldur(metin(anahtar), {
+            sinir: String(epostaGondereniSinirlari[alan as keyof GonderenFormu]),
+          }),
+        ],
       ),
     );
     pf.hatalariGoster(

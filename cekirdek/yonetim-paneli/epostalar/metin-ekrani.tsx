@@ -30,10 +30,22 @@ import {
 import { KaydetCubugu, PanelAlani, PanelFormu, usePanelFormu } from "../form/panel-formu";
 import { type KodMetinleri, kodluAlanHatalari } from "../kodlu-form";
 import { usePanelIslemi } from "../panel-islemi";
-import { panelIstegi } from "../panel-istegi";
+import { type PanelHatasi, panelIstegi } from "../panel-istegi";
 import { useSunucuFormu } from "../sunucu-formu";
 import { epostaGenelHataMetni } from "./ekran";
 import type { EpostaMetniFormu, EpostaMetniVerisi } from "./veri";
+
+// Deneme e-postasının hatası bildirimle söylenir: formun alanına bağlanmaz (kayıt değildir).
+const denemeHataMetni = (hata: PanelHatasi): MetinAnahtari =>
+  hata.kod === "dogrulama"
+    ? "yonetim.epostalar.hata.deneme.metin"
+    : hata.kod === "is-kurali"
+      ? "yonetim.epostalar.hata.deneme.gidemez"
+      : hata.kod === "istek-siniri"
+        ? "yonetim.epostalar.hata.deneme.sinir"
+        : hata.kod === "yetki"
+          ? "yonetim.epostalar.hata.yetki"
+          : "yonetim.epostalar.hata.deneme.genel";
 
 const alanHataMetinleri: KodMetinleri = {
   too_small: "yonetim.epostalar.hata.zorunlu",
@@ -58,7 +70,7 @@ function Onizleme({
 }) {
   const metin = usePanelMetni();
   const baslik = useId();
-  const islem = usePanelIslemi(epostaGenelHataMetni);
+  const islem = usePanelIslemi(denemeHataMetni);
   const [genislik, setGenislik] = useState<Genislik>("bilgisayar");
   const [onizleme, setOnizleme] = useState(veri.onizleme);
   const [yukleniyor, setYukleniyor] = useState(false);

@@ -371,6 +371,75 @@ describe("gönderim", () => {
   });
 });
 
+describe("bağımsız kontrolün bulguları", () => {
+  it("birimin bilgileri konu ve kapanışta da dolar; giriş ve kapanışın satır sonları HTML'de kalır", async () => {
+    const onizleme = await epostaOnizlemesi(vt, site(), {
+      kod: "kargoya-verildi",
+      konu: "Kargonuz [Kargo firması] ile yolda",
+      giris: "Birinci satır\nikinci satır",
+      kapanis: "Takip: [Takip no]\nİyi günler",
+    });
+    expect(onizleme.konu).toBe("Kargonuz Örnek Kargo ile yolda");
+    expect(onizleme.html).toContain("Birinci satır<br>ikinci satır");
+    expect(onizleme.html).toContain("Takip: 4821 0057 3316<br>İyi günler");
+    const havale = await epostaOnizlemesi(vt, site(), {
+      kod: "havale-onaylandi",
+      konu: "Ödeme: [Tutar]",
+      giris: "Alındı",
+      kapanis: "",
+    });
+    expect(havale.konu).toMatch(/^Ödeme: \S+/);
+    expect(havale.konu).not.toBe("Ödeme: ");
+  });
+
+  it("ayrışık harfle yapıştırılan bilgi adı tanınır, kayıt birleşik harfle saklanır", () => {
+    const ayrisik = "Görüşürüz [Müşteri adı]".normalize("NFD");
+    expect(ayrisik).not.toBe("Görüşürüz [Müşteri adı]");
+    expect(metniCoz(ayrisik, { adlar, izinli: ["ad"], dil: "tr" })).toEqual({
+      parcalar: [{ yazi: "Görüşürüz " }, { bilgi: "ad" }],
+      bilinmeyenler: [],
+    });
+  });
+
+  it("yöneticinin şifre e-postası mağaza sahibinin metnini ve alt bilgiye eki almaz", async () => {
+    const bugunku = await satir("sifre-sifirlama");
+    await servis.kaydet(vt, yonetici, {
+      kod: "sifre-sifirlama",
+      konu: "Müşteri konusu",
+      giris: "Müşteriye özel giriş",
+      kapanis: "İyi alışverişler",
+      surum: bugunku?.surum ?? 0,
+    });
+    await epostaGondereniniKaydet(vt, site(), yonetici, {
+      gonderenAdi: "",
+      yanitAdresi: "",
+      altBilgiEki: "Kampanya satırı",
+    });
+    for (const sablon of ["yonetici-sifre-sifirlama", "yonetici-sifre-degisti"] as const) {
+      const adres = alici();
+      await epostaKaydiniGonder(
+        vt,
+        await epostaGonder(vt, {
+          kime: adres,
+          sablon,
+          degiskenler: { baglanti: "https://magaza.ornek.test/yonetim/sifre#a=b", dakika: "60" },
+        }),
+        { site: site(), gonderici: gonderici() },
+      );
+      const ileti = await gelen(adres);
+      expect(ileti.Subject).not.toBe("Müşteri konusu");
+      expect(ileti.Text).not.toContain("Müşteriye özel giriş");
+      expect(ileti.Text).not.toContain("İyi alışverişler");
+      expect(ileti.Text).not.toContain("Kampanya satırı");
+    }
+    await epostaGondereniniKaydet(vt, site(), yonetici, {
+      gonderenAdi: "",
+      yanitAdresi: "",
+      altBilgiEki: "",
+    });
+  });
+});
+
 describe("önizleme ve deneme", () => {
   it("önizleme kaydedilmemiş metni çizer, bilinmeyen bilgiyi yazı olarak gösterir, hiçbir şey yazmaz", async () => {
     const once = await satir("fatura-hazir");

@@ -88,7 +88,8 @@ export const sifreSifirlamaIste = async (
     });
     await epostaGonder(islem, {
       kime: eposta,
-      sablon: "sifre-sifirlama",
+      // Yöneticinin e-postası mağaza sahibinin müşteriler için yazdığı metni almaz (kart 0279).
+      sablon: tur === "yonetici" ? "yonetici-sifre-sifirlama" : "sifre-sifirlama",
       degiskenler: {
         baglanti: `${adres}${yenilemeYolu}#${anahtarParametresi}=${anahtar}`,
         dakika: String(gecerlilikSaniye / 60),
@@ -164,7 +165,10 @@ export const sifreYenile = async (
         yeni: null,
       });
     }
-    await epostaGonder(islem, { kime: guncellenen.eposta, sablon: "sifre-degisti" });
+    await epostaGonder(islem, {
+      kime: guncellenen.eposta,
+      sablon: tur === "yonetici" ? "yonetici-sifre-degisti" : "sifre-degisti",
+    });
     return guncellenen.eposta;
   });
   gunluk.bilgi("Şifre sıfırlandı, oturumlar kapatıldı.", { hesapTuru: tur, eposta });

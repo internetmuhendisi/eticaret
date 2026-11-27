@@ -238,14 +238,16 @@ export const parcalariDoldur = (
 ): string => parcalar.map((p) => ("yazi" in p ? p.yazi : (degerler[p.bilgi] ?? ""))).join("");
 
 // Ad karşılaştırması: büyük-küçük harf ve baştaki, sondaki boşluk fark etmez.
-const adAnahtari = (ad: string, dil: string) => ad.trim().toLocaleLowerCase(dil);
+const adAnahtari = (ad: string, dil: string) => ad.normalize("NFC").trim().toLocaleLowerCase(dil);
 
 // Panelin yazısını parçalara çevirir. Köşeli parantezdeki ad birimin bilgilerinden biri değilse "bilinmeyenler"e girer
 // (kayıt reddedilir; önizleme onu yazı olarak çizer). Parantezin dışındaki yazı olduğu gibi kalır.
 export const metniCoz = (
-  yazi: string,
+  hamYazi: string,
   g: { adlar: Record<EpostaBilgisi, string>; izinli: readonly EpostaBilgisi[]; dil: string },
 ): { parcalar: MetinParcasi[]; bilinmeyenler: string[] } => {
+  // Yapıştırılan ayrışık harfler ("u" + iki nokta) birleşik yazılır: ad tanınır, kayıt tek biçimdedir.
+  const yazi = hamYazi.normalize("NFC");
   const parcalar: MetinParcasi[] = [];
   const bilinmeyenler: string[] = [];
   const ekle = (metin: string) => {

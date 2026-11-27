@@ -19,6 +19,7 @@ import {
   kartlaOdemeOrtamlari,
   stokBildirimiAyari,
 } from "../kayitlar/eklentiler.ts";
+import { epostaGondereniSinirlari } from "../kayitlar/eposta.ts";
 import { favoriSiniriEnCok } from "../kayitlar/favori.ts";
 import {
   listeSayfasi,
@@ -311,17 +312,17 @@ export const magazaAyarSemasi = z.strictObject({
       .string()
       .trim()
       .min(1)
-      .max(100)
+      .max(epostaGondereniSinirlari.gonderenAdi)
       .refine((ad) => !ad.includes("@"), "gonderen-adi-eposta")
       .optional(),
     magazaSahibinin("ayar.aciklama.epostaGonderenAdi"),
   ),
   epostaYanitAdresi: ayar(
-    z.email().max(254).optional(),
+    z.email().max(epostaGondereniSinirlari.yanitAdresi).optional(),
     magazaSahibinin("ayar.aciklama.epostaYanitAdresi", { kayittaGizli: true }),
   ),
   epostaAltBilgiEki: ayar(
-    z.string().trim().min(1).max(500).optional(),
+    z.string().trim().min(1).max(epostaGondereniSinirlari.altBilgiEki).optional(),
     magazaSahibinin("ayar.aciklama.epostaAltBilgiEki", { kayittaGizli: true }),
   ),
   // Satıcı bilgileri (kart 0091, karar 0138): unvan, vergi kimlik bilgileri, MERSİS, ticaret sicil, KEP. Boş başlar.

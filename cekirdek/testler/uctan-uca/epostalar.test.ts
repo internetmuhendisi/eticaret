@@ -10,11 +10,11 @@
 import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { calisanSite } from "../../ayar-semasi/calisan-site";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri";
 import { metin } from "../../metinler/site-metni";
-import { epostaMetinleri } from "../../moduller/eposta/model";
+import { epostaKayitlari, epostaMetinleri } from "../../moduller/eposta/model";
 import { magazaAyarlariniOku, siteninServisi } from "../../moduller/magaza-ayarlari/servis";
 import { baglan, veritabaniAdresi } from "../../veritabani/baglanti";
 import { epostalarAdresi, epostaMetniAdresi } from "../../yonetim-paneli/adresler";
@@ -75,7 +75,9 @@ test("e-postalar: gönderen, metin, bilgi ekle, önizleme, varsayılana dönüş
   try {
     await ayriBaglanti(page);
     await page.setViewportSize({ width: 1280, height: 900 });
-    await paneleGir(page, yoneticiAc());
+    const hesap = yoneticiAc();
+    const yoneticiEpostasi = hesap.eposta;
+    await paneleGir(page, hesap);
 
     const menu = page.getByRole("navigation", { name: metin("yonetim.cerceve.menu") });
     await menu.getByRole("link", { name: metin("yonetim.sayfa.epostalar.ad") }).focus();
@@ -188,6 +190,23 @@ test("e-postalar: gönderen, metin, bilgi ekle, önizleme, varsayılana dönüş
     await expect(page.getByText(metin("yonetim.epostalar.metin.kaydedildi"))).toBeVisible();
     const [kayitli] = await vt.select().from(epostaMetinleri).where(eq(epostaMetinleri.kod, kod));
     expect(kayitli?.giris).toEqual([{ yazi: "Selam " }, { bilgi: "ad" }]);
+
+    // Deneme e-postası (tarayıcı testlerinde e-posta gidebilir, yerel posta kutusu): bildirim yöneticinin adresine
+    // gittiğini söyler, kuyrukta formun metniyle bir e-posta vardır.
+    const deneme = page.getByRole("button", { name: metin("yonetim.epostalar.onizleme.deneme") });
+    await deneme.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByText(metin("yonetim.epostalar.onizleme.denemeGitti"))).toBeVisible();
+    const [kuyrukta] = await vt
+      .select()
+      .from(epostaKayitlari)
+      .where(eq(epostaKayitlari.alici, yoneticiEpostasi))
+      .orderBy(desc(epostaKayitlari.olusturulma_zamani))
+      .limit(1);
+    expect(kuyrukta?.sablon).toBe("kargoya-verildi");
+    expect(kuyrukta?.metinler).toEqual({
+      [kod]: expect.objectContaining({ giris: [{ yazi: "Selam " }, { bilgi: "ad" }] }),
+    });
 
     // Önizlemenin telefon genişliği: çerçeve telefonun genişliğine (375 px) daralır, bilgisayarda sütunu doldurur.
     const cerceveGenisligi = () =>

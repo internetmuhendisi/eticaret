@@ -272,16 +272,19 @@ const altBilgi = (b: IcerikBaglami): string[] => [
 ];
 
 // Konu ve kapanış mağaza sahibinin düzenlediği alanlardır (kart 0279); kapanış gövdenin sonundadır, boşsa yazılmaz.
+// Birimin bilgileri konu, giriş ve kapanışta aynı değerlerle dolar (ek: firma, takip no, tutar, ödeme seçeneği).
 const govde = (
   b: IcerikBaglami,
   birim: EpostaMetinBirimKodu,
   baslik: MetinAnahtari,
   v: SiparisEpostaVerisi,
   bloklar: EpostaBlogu[],
+  ek: Record<string, string> = {},
 ): EpostaGovdesi => {
-  const kapanis = b.metin(birim, "kapanis", { ad: v.ad, numara: v.numara });
+  const degerler = { ad: v.ad, numara: v.numara, ...ek };
+  const kapanis = b.metin(birim, "kapanis", degerler);
   return {
-    konu: b.metin(birim, "konu", { ad: v.ad, numara: v.numara }),
+    konu: b.metin(birim, "konu", degerler),
     baslik: b.satir(baslik, { numara: v.numara }),
     bloklar: [
       ...bloklar,
@@ -299,6 +302,7 @@ const siparisAlindi: IcerikUretici = (veri, b) => {
   const odeme = v.odeme;
   const toplam = v.tutarlar === undefined ? "" : b.bicim.para(v.tutarlar.toplam);
   const ilk: EpostaBlogu[] = [];
+  const ek: Record<string, string> = {};
   if (odeme?.yontem === "havale") {
     ilk.push(giris(b, v, "siparis-alindi-havale"));
     ilk.push({
@@ -339,11 +343,8 @@ const siparisAlindi: IcerikUretici = (veri, b) => {
     });
   } else if (odeme?.yontem === "kapida-odeme") {
     const secenek = kapidaSecenekleri[odeme.kapidaSecenegi ?? ""];
-    ilk.push(
-      giris(b, v, "siparis-alindi-kapida", {
-        secenek: secenek === undefined ? "" : b.satir(secenek),
-      }),
-    );
+    ek["secenek"] = secenek === undefined ? "" : b.satir(secenek);
+    ilk.push(giris(b, v, "siparis-alindi-kapida", ek));
   } else {
     ilk.push(giris(b, v, "siparis-alindi-odendi"));
   }
@@ -354,68 +355,86 @@ const siparisAlindi: IcerikUretici = (veri, b) => {
       : odeme?.yontem === "kapida-odeme"
         ? "siparis-alindi-kapida"
         : "siparis-alindi-odendi";
-  return govde(b, birim, "eposta.siparisAlindi.baslik", v, [
-    ...ilk,
-    ...tumKalemler(b, v),
-    ...(yontem === undefined
-      ? []
-      : [
-          {
-            tur: "bilgi" as const,
-            baslik: b.satir("eposta.siparis.odemeYontemi"),
-            satirlar: [b.satir(yontem)],
-          },
-        ]),
-    ...teslimatBilgisi(b, v.teslimat),
-    ...siparisDugmesi(b, v),
-  ]);
+  return govde(
+    b,
+    birim,
+    "eposta.siparisAlindi.baslik",
+    v,
+    [
+      ...ilk,
+      ...tumKalemler(b, v),
+      ...(yontem === undefined
+        ? []
+        : [
+            {
+              tur: "bilgi" as const,
+              baslik: b.satir("eposta.siparis.odemeYontemi"),
+              satirlar: [b.satir(yontem)],
+            },
+          ]),
+      ...teslimatBilgisi(b, v.teslimat),
+      ...siparisDugmesi(b, v),
+    ],
+    ek,
+  );
 };
 
 const havaleOnaylandi: IcerikUretici = (veri, b) => {
   const v = verisi(veri);
-  return govde(b, "havale-onaylandi", "eposta.havaleOnaylandi.baslik", v, [
-    giris(b, v, "havale-onaylandi", {
-      tutar: v.tutarlar === undefined ? "" : b.bicim.para(v.tutarlar.toplam),
-    }),
-    ...siparisDugmesi(b, v),
-  ]);
+  const ek = { tutar: v.tutarlar === undefined ? "" : b.bicim.para(v.tutarlar.toplam) };
+  return govde(
+    b,
+    "havale-onaylandi",
+    "eposta.havaleOnaylandi.baslik",
+    v,
+    [giris(b, v, "havale-onaylandi", ek), ...siparisDugmesi(b, v)],
+    ek,
+  );
 };
 
 const kargoyaVerildi: IcerikUretici = (veri, b) => {
   const v = verisi(veri);
   const k = v.kargo;
-  return govde(b, "kargoya-verildi", "eposta.kargoyaVerildi.baslik", v, [
-    giris(b, v, "kargoya-verildi", {
-      firma: k?.firma ?? "",
-      takipNo: k?.takipNumarasi ?? "",
-    }),
-    ...(k === undefined
-      ? []
-      : [
-          {
-            tur: "kutu" as const,
-            satirlar: [
-              { metin: k.firma, kalin: true },
-              ...(k.takipNumarasi === null
-                ? []
-                : [
-                    {
-                      metin: b.satir("eposta.kargoyaVerildi.takipNo"),
-                      kod: k.takipNumarasi,
+  const ek = { firma: k?.firma ?? "", takipNo: k?.takipNumarasi ?? "" };
+  return govde(
+    b,
+    "kargoya-verildi",
+    "eposta.kargoyaVerildi.baslik",
+    v,
+    [
+      giris(b, v, "kargoya-verildi", ek),
+      ...(k === undefined
+        ? []
+        : [
+            {
+              tur: "kutu" as const,
+              satirlar: [
+                { metin: k.firma, kalin: true },
+                ...(k.takipNumarasi === null
+                  ? []
+                  : [
+                      {
+                        metin: b.satir("eposta.kargoyaVerildi.takipNo"),
+                        kod: k.takipNumarasi,
+                      },
+                    ]),
+              ],
+              ...(k.takipAdresi === null
+                ? {}
+                : {
+                    dugme: {
+                      metin: b.satir("eposta.kargoyaVerildi.takipEt"),
+                      adres: k.takipAdresi,
                     },
-                  ]),
-            ],
-            ...(k.takipAdresi === null
-              ? {}
-              : {
-                  dugme: { metin: b.satir("eposta.kargoyaVerildi.takipEt"), adres: k.takipAdresi },
-                }),
-          },
-        ]),
-    ...tumKalemler(b, v),
-    ...teslimatBilgisi(b, v.teslimat),
-    ...siparisDugmesi(b, v),
-  ]);
+                  }),
+            },
+          ]),
+      ...tumKalemler(b, v),
+      ...teslimatBilgisi(b, v.teslimat),
+      ...siparisDugmesi(b, v),
+    ],
+    ek,
+  );
 };
 
 const teslimEdildi: IcerikUretici = (veri, b) => {

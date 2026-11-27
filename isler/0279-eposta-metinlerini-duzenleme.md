@@ -27,7 +27,8 @@ Bölüm: Yönetim paneli 2. Kullanıcının kararıyla on dördüncü bölümden
 
 - Ayarlar > E-postalar (karar 0197): gönderen adı, yanıt adresi ve alt bilgiye ek (kullanıcı kararıyla altyapı sahibinden mağaza sahibine geçti) ve müşteriye giden 19 e-postanın (sipariş e-postaları, Hoş geldiniz, Şifre yenileme; kullanıcı kararı) konusu, giriş ve kapanış metni; köşeli parantezli bilgiler, "Bilgi ekle", yazdıkça yenilenen önizleme (bilgisayar ve telefon), "Varsayılan metne dön", e-posta gidebiliyorsa deneme e-postası (kullanıcı kararı).
 - Metin parçalarla saklanır; e-posta kuyruğa girerken o anki metin kayda yazılır, değerler gönderimde kaçırılır. Veritabanı değişikliği 0069.
-- Testler ve bozmalar `.claude/rules/kurallari-koruyan-kontroller.md`'de (kart 0279): 28 denetimin hepsi bozulunca kırmızı.
+- Testler ve bozmalar `.claude/rules/kurallari-koruyan-kontroller.md`'de (kart 0279): 33 denetimin hepsi bozulunca kırmızı.
+- Bağımsız kontrolün yedi bulgusu düzeldi: konu ve kapanışta bilgilerin boş kalması, yöneticinin şifre e-postasının müşteri metnini alması, satır sonları, ayrışık harf, deneme e-postasının bildirimi ve hataları, gönderen kartında sınır metni.
 
 ## Durum
 

@@ -16,6 +16,10 @@ export const epostaSablonlari = [
   "sifre-degisti",
   // Ekibe davet (kart 0275).
   "yonetici-daveti",
+  // Yöneticinin şifre yenileme ve şifre değişti e-postası (kart 0279): müşterininkiyle aynı metin, ama mağaza
+  // sahibinin müşteriler için yazdığı metni ve alt bilgiye eki almaz (adı "yonetici" ile başlar).
+  "yonetici-sifre-sifirlama",
+  "yonetici-sifre-degisti",
   // Stoğa gelince haber ver eklentisi (kart 0144, karar 0117).
   "stok-bildirimi",
   // Müşteriye giden sipariş e-postaları (kart 0240, karar 0153). Hangi olayın hangisini gönderdiği
@@ -47,6 +51,13 @@ export const epostaSablonlari = [
   "yonetici-bekleyen-iade",
 ] as const;
 export type EpostaSablonu = (typeof epostaSablonlari)[number];
+
+// Mağaza sahibinin gönderen bilgilerinin sınırları (kart 0279): ayar şeması ve ekranın hata metni okur.
+export const epostaGondereniSinirlari = {
+  gonderenAdi: 100,
+  yanitAdresi: 254,
+  altBilgiEki: 500,
+} as const;
 
 export const epostaAyari = {
   // Kayıt alıcı adresi taşır, bu süreden sonra silinir. İçerik hiç tutulmaz.

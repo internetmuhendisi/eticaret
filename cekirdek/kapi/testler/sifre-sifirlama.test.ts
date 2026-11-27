@@ -94,7 +94,10 @@ const giris = (tur: HesapTuru, eposta: string, sifre: string) =>
 const epostalar = (alici: string) =>
   vt.select().from(epostaKayitlari).where(eq(epostaKayitlari.alici, alici));
 const sonBaglanti = async (alici: string) => {
-  const satirlar = (await epostalar(alici)).filter(({ sablon }) => sablon === "sifre-sifirlama");
+  // Yöneticinin şifre e-postası kendi şablonuyla gider (kart 0279).
+  const satirlar = (await epostalar(alici)).filter(
+    ({ sablon }) => sablon === "sifre-sifirlama" || sablon === "yonetici-sifre-sifirlama",
+  );
   const { baglanti } = (satirlar.at(-1)?.degiskenler ?? {}) as { baglanti?: string };
   if (baglanti === undefined) throw new Error("bağlantı yok");
   return new URL(baglanti);
@@ -200,7 +203,9 @@ describe.each(turler)("%s: istek", (tur) => {
       .where(eq(uclar[tur].tablo.hesap_kimligi, hesapKimligi));
     expect(JSON.stringify(satir)).not.toContain(anahtar);
     const [kuyruk] = await epostalar(eposta);
-    expect(kuyruk?.sablon).toBe("sifre-sifirlama");
+    expect(kuyruk?.sablon).toBe(
+      tur === "yonetici" ? "yonetici-sifre-sifirlama" : "sifre-sifirlama",
+    );
   });
 
   it("hesap sınırı dolunca cevap aynı kalır, e-posta gitmez", async () => {
@@ -231,7 +236,9 @@ describe.each(turler)("%s: yeni şifre", (tur) => {
     expect(yanit.headers.getSetCookie()).toEqual([]);
     expect((await giris(tur, eposta, yeniSifre)).status).toBe(200);
     expect((await giris(tur, eposta, eskiSifre)).status).toBe(401);
-    expect((await epostalar(eposta)).map(({ sablon }) => sablon)).toContain("sifre-degisti");
+    expect((await epostalar(eposta)).map(({ sablon }) => sablon)).toContain(
+      tur === "yonetici" ? "yonetici-sifre-degisti" : "sifre-degisti",
+    );
   });
 
   it("kullanılmış bağlantı reddedilir", async () => {
