@@ -47,6 +47,10 @@ export const urunEkraniAdresi = (kimlik: string): string =>
 
 // Kuponlar (kart 0313): liste, yeni kupon, kuponun sayfası (kullanımları; ?kimlik=, kullanımların sayfası ?sayfa=)
 // ve düzenleme.
+// Raporlar (kart 0317): dönem ve karşılaştırma adreste.
+export const raporlarAdresi = `${panelAdresi}/raporlar`;
+export const raporAdresi = (donem: string, karsilastir: boolean): string =>
+  `${raporlarAdresi}?donem=${encodeURIComponent(donem)}${karsilastir ? "" : "&karsilastir=0"}`;
 export const kuponlarAdresi = `${panelAdresi}/kuponlar`;
 export const yeniKuponAdresi = `${kuponlarAdresi}/yeni`;
 export const kuponAdresi = (kimlik: string, sayfa?: number): string =>

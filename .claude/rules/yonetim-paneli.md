@@ -101,6 +101,13 @@ paths:
 - Ekranlar `cekirdek/yonetim-paneli/kuponlar/` klasöründe, menüde "Satış" altında Müşteriler'den sonradır: Kuponlar (liste motoruyla, `liste-tanimi.ts`), Yeni kupon, kuponun sayfası (`kupon?kimlik=`, özet ve kullanıldığı siparişler) ve Kuponu düzenle. Görmek `kupon.gor` (görevli ve sipariş görevlisi de), açmak, değiştirmek, kapatmak ve açmak `kupon.degistir` (yalnız mağaza sahibi). Kupon silinmez.
 - Sorgular `cekirdek/moduller/kampanya/panel.ts`'tedir: durum yalnız `kuponDurumuSql`, formun metinleri yalnız `panelKuponGirdisi` ile okunur; kurallar servisin `kuponuDenetle`'sindedir. Form yalnız değişen alanları ve gördüğü değişme anını gönderir (`kuponGirdisi`); kullanılmış kuponun kilitli alanları kapalıdır.
 
+## Raporlar (karar 0195)
+
+- Ekran `cekirdek/yonetim-paneli/raporlar/` klasöründe, menüde grupsuz, Karşılama'dan sonradır. Görmek ve CSV indirmek `rapor.gor` ister (yalnız mağaza sahibi). Bugün yalnız satış raporu vardır; ürün, müşteri ve kupon raporları sekme olarak gelir (kart 0318).
+- Sayılar yalnız `satisRaporu` (`cekirdek/moduller/rapor/satis.ts`) ile okunur: hangi sipariş ve iadenin hangi günde sayıldığı orada yazılıdır (karar 0195); ekran ve CSV kural yazmaz, pano da onu çağırır.
+- Dönem ve karşılaştırma adrestedir (`raporAdresi`); sayfa ve CSV ucu isteği aynı işlevle çözer (`raporIsteginiCoz`, geçersiz dönem sitenin varsayılan dönemine düşer). Dönem seçimi `DonemSecici` ile (liste motorunun tarih süzgecinden ayrı: dönem boş olamaz, kendi hazır dönemleri ve karşılaştırması vardır). Sayılar sunucuda sitenin biçimiyle yazılır (`satisRaporuVerisi`), takvim günü `takvimGunuYazisi` ile.
+- Grafik `SeriGrafigi`'dir: çizim ekran okuyucudan gizli, tablo karşılığı her zaman ekran okuyucuya açık, "Tablo olarak göster" ekranda da gösterir. CSV `satisRaporuCsv` ile ortak CSV yazıcısından, komut çubuğunun "Dışa aktar"ından iner.
+
 ## Mağaza bilgileri (karar 0175)
 
 - Ekran `cekirdek/yonetim-paneli/magaza-bilgileri/` klasöründe, menüde "Ayarlar" grubunun başındadır (kart 0301). Mağaza ayarıdır: görmek `magaza-ayarlari.gor`, değiştirmek `magaza-ayarlari.degistir`.

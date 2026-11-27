@@ -165,7 +165,7 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Panel listelerinde sayfa başına satır | Mağaza sahibi | 25 | — | `panelSayfaBoyu`. Seçenekler: 25, 50, 100. Ürün, sipariş, müşteri ve yazı listeleri; toplu işlem en çok bir sayfaya uygulanır (kart 0258, karar 0157) |
 | Sipariş fişinde fiyatlar | Mağaza sahibi | Göster | — | Kapalıyken fişte yalnız ürün, stok kodu ve adet yazar (ör. hediye siparişi). Ayar `fisteFiyatlar`, panelde Sipariş ayarlarının "Sipariş fişi" bölümünde (kart 0270, karar 0157, 0171) |
 | Blog | Mağaza sahibi | Kapalı | Açık | Kapalıyken yazılar vitrinde görünmez, `/blog` bulunamadı verir, ana sayfanın blog bölümü çizilmez (kart 0272, karar 0157) |
-| Raporun varsayılan dönemi | Mağaza sahibi | Son 30 gün | — | Raporlar ve panodaki satış özeti bu dönemle açılır; seçenekler: bugün, son 7 gün, son 30 gün, bu ay, geçen ay (kart 0317, karar 0185) |
+| Raporun varsayılan dönemi | Mağaza sahibi | Son 30 gün | — | `raporVarsayilanDonem`. Raporlar ve panodaki satış özeti bu dönemle açılır; seçenekler: bugün, son 7 gün, son 30 gün, bu ay, geçen ay (kart 0317, karar 0185 ve 0195). Panelde değiştirildiği yer kart 0334 |
 | Okunan panel bildiriminin saklama süresi | Altyapı sahibi | 30 gün | — | Okunmamış bildirim silinmez (kart 0280, karar 0185) |
 | Excel dosyasında en çok satır | Altyapı sahibi | 5.000 | 5.000 | `excelSatirSiniri`, 100–50.000. Excel ile toplu ürün işlemleri eklentisi açıksa; bir içe aktarma dosyasının satır sınırı (kart 0315, karar 0185) |
 

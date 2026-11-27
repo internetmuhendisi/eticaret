@@ -15,6 +15,7 @@ import {
   magazaBilgileriAdresi,
   menulerAdresi,
   panelAdresi,
+  raporlarAdresi,
   sayfalarAdresi,
   temaAdresi,
   temaAyarlariAdresi,
@@ -70,6 +71,17 @@ export const panelSayfalari = [
     aciklama: "yonetim.sayfa.karsilama.aciklama",
     ikon: "ev",
     izin: null,
+    grup: null,
+  },
+  // Raporlar (kart 0317, karar 0195; taslak: panel-2.html "Raporlar"): grupsuz, Karşılama'dan sonra. Yalnız mağaza
+  // sahibi görür (rapor.gor).
+  {
+    kod: "raporlar",
+    adres: raporlarAdresi,
+    ad: "yonetim.sayfa.raporlar.ad",
+    aciklama: "yonetim.sayfa.raporlar.aciklama",
+    ikon: "rapor",
+    izin: "rapor.gor",
     grup: null,
   },
   // Siparişler (kart 0234, karar 0145): görevli görür ve yönetir, havaleyi yalnız mağaza sahibi onaylar. Ayrıntı alt

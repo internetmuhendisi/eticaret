@@ -1,0 +1,4 @@
+-- Geri dönüş: geri alınabilir. Yalnız iki kısmi indeks eklenir, eski kod onları kullanmasa da çalışır; indeksler silinebilir.
+-- Kart 0317: raporların dönemi (siparişin ödeme anı, tamamlanan iadenin sonuç anı; ölçüm karar 0195'te). Mağazaların sipariş sayısı küçük olduğu için indeks kurulurken kısa yazma kilidi önemsizdir.
+CREATE INDEX "siparis_iadeleri_tamamlanan" ON "siparis_iadeleri" USING btree ("sonuc_zamani") WHERE "siparis_iadeleri"."durum" = 'tamamlandi';--> statement-breakpoint
+CREATE INDEX "siparisler_odeme_zamani" ON "siparisler" USING btree ("odeme_zamani") WHERE "siparisler"."odeme_zamani" is not null;

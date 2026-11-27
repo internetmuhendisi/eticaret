@@ -177,7 +177,13 @@ const kisiyiDene = async (
     yanit.status < 400 &&
     yanit.headers.get("x-content-type-options") === "nosniff" &&
     yanit.headers.has("etag");
-  if (!dosyaYaniti && yanit.headers.get("cache-control") !== zarfOnbellegi) {
+  // İndirilecek dosya (kart 0268, 0317: faturanın PDF'i, satış raporunun CSV'si) hiçbir önbelleğe yazılmaz: ekli dosya,
+  // "private, no-store". Kimlik istemeyen ilk indirme ucu satış raporununkidir (kart 0317).
+  const indirme =
+    yanit.status < 400 &&
+    (yanit.headers.get("content-disposition") ?? "").startsWith("attachment;") &&
+    yanit.headers.get("cache-control") === "private, no-store";
+  if (!dosyaYaniti && !indirme && yanit.headers.get("cache-control") !== zarfOnbellegi) {
     hatalar.push(
       `${baslik}: ${kisi.ad} yanıtı önbelleğe alınabilir (${yanit.status}, Cache-Control: ${String(yanit.headers.get("cache-control"))})`,
     );

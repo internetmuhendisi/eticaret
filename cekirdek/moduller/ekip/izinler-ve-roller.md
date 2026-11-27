@@ -53,6 +53,7 @@ Kuralları `.claude/rules/yetki.md`, gerekçeleri karar 0040'tadır. Yeni izin y
 | `ozellik.gor` | yonetici | tumu | Ürün özelliklerini ve seçeneklerini görür. |
 | `ozellik.degistir` | yonetici | tumu | Özellik ve seçenek ekler ve değiştirir. |
 | `ozellik.sil` | yonetici | tumu | Özellik ya da seçenek siler: değerleri ürünlerden kalkar. |
+| `rapor.gor` | yonetici | tumu | Raporları (satış: ciro, sipariş, ortalama sepet, kupon indirimi, iade, oran oran vergi) görür ve CSV olarak indirir (kart 0317; ticari bilgi, yalnız mağaza sahibinde, kullanıcı kararı). |
 | `siparis.kendi.havale-bildir` | musteri | kendi | Giriş yapmış müşteri kendi havale siparişi için ödediğini bildirir (kart 0214). |
 | `siparis.kendi.iade-talebi` | musteri | kendi | Giriş yapmış müşteri kendi siparişi için iade talebi açar (kart 0239). |
 | `siparis.kendi.iptal` | musteri | kendi | Giriş yapmış müşteri kendi siparişini, ayarın izin verdiği durumda iptal eder (kart 0239). |

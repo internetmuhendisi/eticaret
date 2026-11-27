@@ -33,6 +33,7 @@ import {
   odemeYontemleri,
   stokAyirmaSuresiSinirlari,
 } from "../kayitlar/odeme.ts";
+import { raporHazirDonemleri } from "../kayitlar/rapor.ts";
 import {
   sepeteEkleyinceSecenekleri,
   sepetTutariEnCok,
@@ -404,6 +405,11 @@ export const magazaAyarSemasi = z.strictObject({
   panelSayfaBoyu: ayar(
     z.literal(panelSayfaBoylari).default(panelSayfaBoylari[0]),
     magazaSahibinin("ayar.aciklama.panelSayfaBoyu"),
+  ),
+  // Raporların varsayılan dönemi (kart 0317, karar 0185): Raporlar ve panodaki satış özeti bu dönemle açılır.
+  raporVarsayilanDonem: ayar(
+    z.enum(raporHazirDonemleri).default("son-30-gun"),
+    magazaSahibinin("ayar.aciklama.raporVarsayilanDonem"),
   ),
   // Ürün sayfası (kart 0138, karar 0102 ve 0108): tükenmiş seçenek değerinin gösterimi ve sayfa ilk
   // açıldığında seçili birleşim. Seçenekler cekirdek/kayitlar/urun.ts'dedir.

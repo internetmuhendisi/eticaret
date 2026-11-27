@@ -11,6 +11,7 @@ import {
   BoldIcon,
   BoxIcon,
   CalendarIcon,
+  ChartColumnIcon,
   CircleXIcon,
   EllipsisIcon,
   EyeIcon,
@@ -33,6 +34,7 @@ import {
   PercentIcon,
   PrinterIcon,
   StoreIcon,
+  TableIcon,
   TagsIcon,
   TicketPercentIcon,
   UploadIcon,
@@ -67,6 +69,9 @@ export const panelIkonlari = {
   menuler: ListTreeIcon,
   kategoriler: FolderTreeIcon,
   markalar: TagsIcon,
+  // Raporlar (kart 0317): menüdeki sayfa ve boş hâli; grafiğin tablo görünümü.
+  rapor: ChartColumnIcon,
+  tablo: TableIcon,
   // Kuponlar (kart 0313).
   kupon: TicketPercentIcon,
   ozellikler: ListChecksIcon,

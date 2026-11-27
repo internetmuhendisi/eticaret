@@ -159,7 +159,8 @@
       "yoneticiBildirimAlicilari": "Yönetici bildirimlerinin gideceği e-posta adresleri, en çok 5. Boşsa bildirimler mağaza sahibi rolündeki yöneticilere gider.",
       "kapaliYoneticiBildirimleri": "Kapatılan yönetici bildirimleri. Listede olmayan her bildirim açıktır.",
       "blogAcik": "Açıksa blog yazıları vitrinde /blog adresinde ve ana sayfanın blog bölümünde görünür.",
-      "excelSatirSiniri": "Excel ile toplu ürün işlemleri: bir içe aktarma dosyasının en çok satırı."
+      "excelSatirSiniri": "Excel ile toplu ürün işlemleri: bir içe aktarma dosyasının en çok satırı.",
+      "raporVarsayilanDonem": "Raporların ve paneldeki satış özetinin açıldığı dönem: bugün, son 7 gün, son 30 gün, bu ay ya da geçen ay."
     }
   },
   "tema": {
@@ -188,6 +189,10 @@
       "karsilama": {
         "ad": "Karşılama",
         "aciklama": "Mağazanızın yönetim paneline hoş geldiniz. Yönetmek istediğiniz bölümü panel menüsünden seçin."
+      },
+      "raporlar": {
+        "ad": "Raporlar",
+        "aciklama": "Mağazanızın cirosu, iadesi ve vergisi seçtiğiniz dönemde. Günler mağazanın saat dilimindedir; ciro ödemenin alındığı günde, iade yapıldığı günde sayılır."
       },
       "stokBildirimleri": {
         "ad": "Stok bildirimleri",
@@ -3024,12 +3029,16 @@
       "kupon": {
         "gor": "Kuponları görür",
         "degistir": "Kupon açar, değiştirir ve kapatır"
+      },
+      "rapor": {
+        "gor": "Raporları görür ve indirir"
       }
     },
     "izinGrubu": {
       "siparis": "Siparişler",
       "musteri": "Müşteriler",
       "kupon": "Kuponlar",
+      "rapor": "Raporlar",
       "odeme-yontemi": "Ödeme",
       "urun": "Ürünler",
       "kategori": "Kategoriler",
@@ -3403,6 +3412,93 @@
       "kisayolMac": "⌘ K",
       "sonucSayisiFazla": "{sayi} sonuç gösteriliyor, daha fazlası var.",
       "dahaFazla": "Daha fazla sonuç var, aramayı daraltın."
+    },
+    "rapor": {
+      "dugme": "{donem}: {aralik}",
+      "aralik": "{baslangic} – {bitis}",
+      "karsilastirma": "Karşılaştırma: {aralik}",
+      "donemSecimi": "Dönem",
+      "donem": "Dönem",
+      "ozel": "Özel aralık",
+      "hazir": {
+        "bugun": "Bugün",
+        "son-7-gun": "Son 7 gün",
+        "son-30-gun": "Son 30 gün",
+        "bu-ay": "Bu ay",
+        "gecen-ay": "Geçen ay"
+      },
+      "baslangic": "Başlangıç",
+      "bitis": "Bitiş",
+      "karsilastir": "Önceki dönemle karşılaştır",
+      "uygula": "Uygula",
+      "hata": {
+        "bos": "Günü seçin.",
+        "gecersiz": "Bu gün okunamadı. Günü takvimden seçin.",
+        "sira": "Bitiş, başlangıçtan önce olamaz. Bitişi başlangıçla aynı ya da daha sonraki bir gün seçin.",
+        "uzun": "Dönem en çok {gun} gün olabilir. Daha kısa bir aralık seçin.",
+        "okunamadi": "Rapor okunamadı",
+        "okunamadiAciklama": "Rapor şu anda okunamıyor. Sayfayı biraz sonra yenileyin; sorun sürerse altyapı sahibine bildirin."
+      },
+      "kutu": {
+        "satis": "Ciro",
+        "siparisSayisi": "Sipariş",
+        "ortalamaSepet": "Ortalama sepet",
+        "iade": "İade"
+      },
+      "onceki": "önceki {deger}",
+      "fark": {
+        "arti": "{yuzde} artış · {onceki}",
+        "eksi": "{yuzde} azalış · {onceki}",
+        "esit": "Değişmedi · {onceki}"
+      },
+      "iadeSayisi": "{sayi} iade",
+      "yok": "—",
+      "eksi": "−{tutar}",
+      "seri": {
+        "gunluk": "Günlük ciro",
+        "haftalik": "Haftalık ciro",
+        "donem": "Gün"
+      },
+      "tabloyuGoster": "Tablo olarak göster",
+      "tabloyuGizle": "Tabloyu gizle",
+      "ozetBasligi": "Özet ve vergi",
+      "ozetTablosu": "Ciro özeti ve oran oran vergi",
+      "ozetNotu": "Ciro ödemesi alınmış siparişlerin toplamıdır: kupon indirimi düşülmüş, kargo ve vergi dahil. Ödeme bekleyen sipariş sayılmaz. İade yapıldığı günde düşülür; vergi, satışların vergisinden iadelerin vergisi çıkarılarak bulunur.",
+      "bos": {
+        "baslik": "Bu dönemde satış yok",
+        "aciklama": "Seçilen dönemde ödemesi alınmış sipariş ya da yapılmış iade yok. Başka bir dönem seçin.",
+        "donus": "{donem} dönemine dön"
+      },
+      "csv": {
+        "donem": "Dönem",
+        "oncekiDonem": "Önceki dönem",
+        "gosterge": "Gösterge",
+        "buDonem": "Bu dönem",
+        "satir": {
+          "siparisSayisi": "Sipariş sayısı",
+          "satis": "Ciro (kupon indirimi düşülmüş)",
+          "kuponIndirimi": "Kupon indirimi (ciroda düşülmüş)",
+          "iade": "İade",
+          "iadeSayisi": "İade sayısı",
+          "netSatis": "Net satış",
+          "ortalamaSepet": "Ortalama sepet"
+        },
+        "vergi": "Vergi",
+        "matrah": "Matrah",
+        "vergiTutari": "Vergi tutarı",
+        "baslangic": "Başlangıç",
+        "bitis": "Bitiş",
+        "satis": "Ciro",
+        "siparisSayisi": "Sipariş sayısı"
+      },
+      "aralikYili": "{aralik} {yil}",
+      "ozet": {
+        "satis": "Ciro (kupon indirimi düşülmüş)",
+        "kupon": "Verilen kupon indirimi (ciroda düşülmüş)",
+        "iade": "İadeler",
+        "net": "Net satış",
+        "vergi": "{ad} · matrah {matrah}"
+      }
     }
   },
   "vitrin": {

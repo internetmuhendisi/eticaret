@@ -34,6 +34,7 @@
 // - olusturma_zamani (kişisel bilgisi silinmemiş): saklama süresi temizliği, kısmi indeks.
 // - olusturma_zamani ve kimlik: panelin listesinde durum seçilmemişken varsayılan sıra ve tarih süzgeci (kart 0298).
 // - kargo_firmasi (dolu): panelin kargo firması süzgeci ve seçenekleri, kısmi indeks (kart 0298).
+// - odeme_zamani (dolu): raporların dönemi (kart 0317), kısmi indeks.
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -132,6 +133,11 @@ export const siparisler = pgTable(
     index("siparisler_kargo_firmasi")
       .on(tablo.kargo_firmasi)
       .where(sql`${tablo.kargo_firmasi} is not null`),
+    // Raporlar (kart 0317): satış ödeme gününde sayılır. 100 bin siparişte günlük rapor 28 → 8 ms, 30 günlük 55 → 21 ms
+    // (karar 0195).
+    index("siparisler_odeme_zamani")
+      .on(tablo.odeme_zamani)
+      .where(sql`${tablo.odeme_zamani} is not null`),
     // Bir PDF yalnız bir siparişin faturasıdır (kart 0268): aynı anda iki siparişe bağlanan dosyayı veritabanı da durdurur.
     uniqueIndex("siparisler_fatura_dosyasi")
       .on(tablo.fatura_dosyasi)
@@ -367,8 +373,8 @@ export type SiparisNotu = typeof siparisNotlari.$inferSelect;
 // (sıra, adet, tutar). Kartla ödemede para ödeme kuruluşundan döner (yontem "kurulus"); kuruluşun yanıtı beklenirken
 // satır "bekliyor"dur, sipariş değişmez. Satır silinmez.
 //
-// Aranan alanlar: siparis_kimligi (siparişin iadeleri, bekleyen iade), indeksli; bekleyen iadeler (kuruluşun
-// taraması), kısmi indeks.
+// Aranan alanlar: siparis_kimligi (siparişin iadeleri, bekleyen iade), indeksli; tamamlanan iadelerin sonuç anı
+// (raporlar, kart 0317), kısmi indeks; bekleyen iadeler (kuruluşun taraması), kısmi indeks.
 // Müşterinin iade talebi (kart 0239, karar 0151; cekirdek/kayitlar/siparis.ts: iadeTalebiDurumlari,
 // musteriIadeNedenleri). Müşteri ürün ve adet seçer, neden ve açıklama yazar; tutarı mağaza sahibi iadeyle belirler.
 // Talebi açan hesap ya da üye olmayan müşteri (sistem adı), kararı veren yönetici yazılır. Reddedilen talepte
@@ -466,6 +472,10 @@ export const siparisIadeleri = pgTable(
     index("siparis_iadeleri_bekleyen")
       .on(tablo.olusturma_zamani)
       .where(sql`${tablo.durum} = 'bekliyor'`),
+    // Raporlar (kart 0317): iade tamamlandığı günde düşülür.
+    index("siparis_iadeleri_tamamlanan")
+      .on(tablo.sonuc_zamani)
+      .where(sql`${tablo.durum} = 'tamamlandi'`),
     // Bir siparişte aynı anda en çok bir bekleyen iade.
     uniqueIndex("siparis_iadeleri_tek_bekleyen")
       .on(tablo.siparis_kimligi)

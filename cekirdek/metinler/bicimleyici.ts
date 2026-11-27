@@ -117,6 +117,17 @@ export const yerelZamandan = (yerel: string, saatDilimi: string): Date | undefin
   return an === undefined ? undefined : new Date(an);
 };
 
+// Takvim gününün yazılışı (kart 0317, raporlar): uzun ("20 Kasım 2026") ya da kısa ("20 Kas"). Gün zaten sitenin saat
+// dilimindedir, yeniden çevrilmez. Biçimleyici nesnesinin dışındadır: yalnız panelin sunucusu kullanır, vitrinin
+// tarayıcı koduna gitmez.
+export const takvimGunuYazisi = (dil: string, gun: string, uzunluk: "uzun" | "kisa"): string =>
+  new Intl.DateTimeFormat(
+    dil,
+    uzunluk === "uzun"
+      ? { dateStyle: "long", timeZone: "UTC" }
+      : { day: "numeric", month: "short", timeZone: "UTC" },
+  ).format(Date.parse(`${gun}T00:00:00Z`));
+
 // Bir takvim gününün bir saat diliminde başladığı an (kart 0267): gece yarısı. Gece yarısının yaşanmadığı günde
 // (saatin gece yarısında ileri alındığı dilimler) günün yaşanan ilk dakikası. Hiç yaşanmayan gün (bir dilimin günü
 // atladığı tarih: Pacific/Apia 2011-12-30) ertesi günün başında başlar; o gün sıfır uzunluktadır.

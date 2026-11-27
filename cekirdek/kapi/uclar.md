@@ -773,6 +773,15 @@ Hazır dosya, indirilecek dosya olarak (`siparisler-<gün>.csv`, `text/csv`, ön
 - Başarılı (200): dosyanın kendisi.
 - Hatalar: `dogrulama`, `bulunamadi` (hazır değil, başkasının ya da saklama süresi dolmuş), `oturum-yok`, `yetki`.
 
+
+### GET /kapi/yonetici/rapor-satis-csv
+
+Satış raporu, indirilecek dosya olarak (`satis-raporu-<ilk gün>-<son gün>.csv`, `text/csv`, önbelleğe alınmaz; kart 0317, karar 0195). Ekrandaki raporla aynı işlevden: dönem, özet (önceki dönemle), oran oran vergi ve seri; tutarlar simgesiz, binlik ayırıcısız sayıdır. Dönem geçersizse sitenin varsayılan dönemi (`raporVarsayilanDonem`).
+
+- İzin: `rapor.gor`. Sınır: `genel`.
+- Girdi: adres parametreleri `donem` (hazır dönem kodu ya da `YYYY-AA-GG_YYYY-AA-GG`, en çok 40 harf; isteğe bağlı) ve `karsilastir` (`0` kapatır; isteğe bağlı).
+- Servis: `cekirdek/moduller/rapor/satis.ts` (`rapor`), dosya `cekirdek/moduller/rapor/csv.ts`.
+- Hatalar: `dogrulama`, `oturum-yok`, `yetki`.
 ### POST /kapi/yonetici/fatura-yukle
 
 Gövdedeki PDF'i faturanın belgesi olarak kaydeder (kart 0268, karar 0170). Belge yeniden kodlanmaz, olduğu gibi saklanır; tür içerikten anlaşılır (`%PDF-` imzası), en çok 5 MB (`belgeSinirlari`). Siparişe bağlanmaz: bağlama `siparis-fatura` ucuyla yapılır.

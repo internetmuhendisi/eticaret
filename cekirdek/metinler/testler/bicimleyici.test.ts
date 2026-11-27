@@ -6,6 +6,7 @@ import {
   gununBasi,
   ikiHaneli,
   takvimGunuMu,
+  takvimGunuYazisi,
   yerelZamana,
   yerelZamandan,
 } from "../bicimleyici";
@@ -429,5 +430,14 @@ describe("takvim günü (kart 0267)", () => {
     expect(gununBasi("9998-12-31", "Europe/Istanbul").toISOString()).toBe(
       "9998-12-30T21:00:00.000Z",
     );
+  });
+});
+
+describe("takvim gününün yazılışı (kart 0317)", () => {
+  it("gün saat diliminden bağımsız yazılır: yılın ilk ve son günü kaymaz", () => {
+    expect(takvimGunuYazisi("tr-TR", "2026-01-01", "uzun")).toBe("1 Ocak 2026");
+    expect(takvimGunuYazisi("tr-TR", "2026-12-31", "uzun")).toBe("31 Aralık 2026");
+    expect(takvimGunuYazisi("tr-TR", "2026-10-29", "kisa")).toBe("29 Eki");
+    expect(takvimGunuYazisi("en-US", "2026-10-29", "kisa")).toBe("Oct 29");
   });
 });
