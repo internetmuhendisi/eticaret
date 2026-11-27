@@ -11,7 +11,7 @@ Siparişler temel pakette CSV dosyasına aktarılır (kullanıcı kararı, karar
 - Kapsam listenin süzgeçleridir (durum sekmesi, tarih, ödeme yöntemi, kargo firması, sıralama) ya da seçilen siparişler. Arama kutusundaki metin kapsamda yoktur: aranan metin kişisel bilgi taşıdığı için adrese yazılmaz (karar 0145), pencere bunu söyler. Liste ile dosya aynı koşuldan okunur (`listeninSiparisleri`).
 - Dosya her zaman arka planda hazırlanır. "Dosyayı hazırla" pencereyi kapatır; listenin üstündeki kutu durumu söyler, hazır olunca "Dosyayı indir" bağlantısını gösterir. İndirme kendiliğinden başlamaz.
 - CSV: UTF-8 ve BOM, CRLF; ayraç sitenin ondalık ayırıcısından (virgülse noktalı virgül); tutar binlik ayırıcısız, sitenin ondalık ayırıcısıyla sayı; formüle benzeyen metin başına ' konarak yazılır. Yazıcı ortaktır (`cekirdek/metinler/csv.ts`), satış raporu (kart 0317) da kullanır.
-- Dosya kişisel veri taşır: yalnız isteyen indirir, her indirme değişiklik kaydına (kapsam, düzen, sayı; içerik değil) girer, kayıt dosyasıyla 24 saat sonra silinir. Bir dosyada en çok 50.000 sipariş.
+- Dosya kişisel veri taşır: yalnız isteyen indirir, her indirme değişiklik kaydına (kapsam, düzen, sayı; içerik değil) girer, kayıt dosyasıyla 24 saat sonra silinir. Bir dosyada en çok 20.000 sipariş (plandaki 50.000 bellek ölçümüyle indi).
 - Kişisel bilgisi silinmiş siparişte kişisel sütunlar boştur; il, ilçe, ülke ve tutarlar kalır (temizliğin bıraktıkları).
 
 ## Neden
@@ -32,6 +32,9 @@ Siparişler temel pakette CSV dosyasına aktarılır (kullanıcı kararı, karar
 ## Sonuçları
 
 - Telefon numarası "+" ile başladığı için dosyada başında ' ile görünür (formül koruması).
-- Dosya 24 saatten sonra yeniden hazırlanmalıdır.
+- Dosya 24 saatten sonra yeniden hazırlanmalıdır. Dosya veritabanındadır: o gece alınan yedek, yedeğin saklama süresince onu da taşır (yedekler şifreli ve yalnız altyapı sahibinindir).
+- 15 dakikadır hazırlanan dışa aktarma hatalı sayılır (iş düştü ya da arka plan süreci kapalı); kutu sayfayı yenilemeyi bırakır.
+- Dosya bellekte, tek büyüyen arabellekte kurulur (partilerle okunur ama dosya bütün olarak yazılır). Her ürün bir satır düzeninde sipariş başına 3 kalemle 50.000 siparişte dosya 122 MB, sürecin tepesi 324 MB ölçüldü (satır başına ayrı parçayla 543 MB); veritabanı sürücüsü yazarken bir kat daha ekler. Sınır bu yüzden 20.000'dir (yaklaşık 50 MB). Daha büyük dışa aktarma dosyayı parça parça yazmayı ister.
+- Ücretsiz kargo kuponunda "Kupon indirimi" verilmeyen kargo ücretidir (sipariş ayrıntısıyla aynı); kargo sütunu 0'dır.
 - Sayfa açıkken başka sekmede başlatılan dışa aktarma kutuda sayfa yenilenince görünür.
 - Panel içi bildirim (kart 0280) yoktur; hazır dosya listenin kutusunda görünür.

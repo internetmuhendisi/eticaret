@@ -1712,6 +1712,8 @@
       "aciklama": "Siparişleri CSV dosyası olarak indirin. Excel ve muhasebe programları açar.",
       "hangileri": "Hangi siparişler",
       "listedekiler": "Listedeki {sayi} sipariş",
+      "listedekilerSayisiz": "Listedeki siparişler",
+      "basladi": "Dosya hazırlanıyor. Hazır olunca listenin üstünde indirilir.",
       "secililer": "Seçili {sayi} sipariş",
       "aramaYok": "Arama kutusuna yazılan dosyaya uygulanmaz; süzgeçler uygulanır.",
       "satirlar": "Satırlar",

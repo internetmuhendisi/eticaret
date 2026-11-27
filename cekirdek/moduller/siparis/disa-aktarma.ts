@@ -162,17 +162,18 @@ export const siparisDisaAktarmaServisi = (site: Site, isler: SiparisDisaAktarmaI
   };
 
   // Kapsamın siparişleri: listenin sırasıyla ya da seçimin sırasıyla.
+  // Başlatıldıktan sonra kapsam sınırı aştıysa (yeni siparişler) dosya yazılmaz: undefined, iş hatalı olur.
   const kapsaminSiparisleri = async (
     vt: Vt,
     kapsam: SiparisDisaAktarmaKapsami,
-  ): Promise<string[]> => {
+  ): Promise<string[] | undefined> => {
     if (kapsam.tur === "liste") {
-      const { kimlikler } = await yonetim.listeninSiparisleri(
+      const { toplam, kimlikler } = await yonetim.listeninSiparisleri(
         vt as Veritabani,
         kapsam.suzgecler as SiparisListesiSuzgecleri,
         ayar.enCokSiparis,
       );
-      return kimlikler;
+      return toplam > ayar.enCokSiparis ? undefined : kimlikler;
     }
     const satirlar = await vt
       .select({ kimlik: siparisler.kimlik, numara: siparisler.numara })
@@ -194,6 +195,10 @@ export const siparisDisaAktarmaServisi = (site: Site, isler: SiparisDisaAktarmaI
         .for("update", { skipLocked: true });
       if (kayit === undefined || kayit.durum !== "hazirlaniyor") return;
       const kimlikler = await kapsaminSiparisleri(islem, kayit.kapsam);
+      if (kimlikler === undefined) {
+        await hatali(islem, kimlik);
+        return;
+      }
       const b = siteninBicimleyicisi(site.ayarlar);
       const metin = metinOkuyucu(site.ayarlar.dil);
       const kalemli = kayit.duzen === "kalem";
@@ -254,7 +259,12 @@ export const siparisDisaAktarmaServisi = (site: Site, isler: SiparisDisaAktarmaI
           const silindi = siparis.kisisel_veri_silinme_zamani !== null;
           const kisisel = (deger: string | null | undefined) => metinHucresi(silindi ? "" : deger);
           const { teslimat, fatura } = siparis;
-          const vergiler = new Map(siparis.vergi_dokumu.map((s) => [vergiAnahtari(s), s.vergi]));
+          // Aynı ad ve oranda iki satır olabilir (vergi/hesap.ts): sütunda toplanır.
+          const vergiler = new Map<string, number>();
+          for (const satir of siparis.vergi_dokumu) {
+            const anahtar = vergiAnahtari(satir);
+            vergiler.set(anahtar, (vergiler.get(anahtar) ?? 0) + satir.vergi);
+          }
           const kuponIndirimi =
             siparis.kupon_turu === "ucretsiz-kargo"
               ? siparis.kupon_kargo_indirimi
@@ -360,6 +370,8 @@ export const siparisDisaAktarmaServisi = (site: Site, isler: SiparisDisaAktarmaI
         duzen: siparisDisaAktarmalari.duzen,
         siparisSayisi: siparisDisaAktarmalari.siparis_sayisi,
         indirme: siparisDisaAktarmalari.indirme_zamani,
+        // Uzun süredir hazırlanan dışa aktarma takılmıştır (iş düştü ya da arka plan süreci kapalı): hatalı sayılır.
+        takildi: sql<boolean>`${siparisDisaAktarmalari.olusturma_zamani} < now() - make_interval(mins => ${ayar.takilmaDakika})`,
       })
       .from(siparisDisaAktarmalari)
       .where(
@@ -373,10 +385,13 @@ export const siparisDisaAktarmaServisi = (site: Site, isler: SiparisDisaAktarmaI
       .orderBy(desc(siparisDisaAktarmalari.olusturma_zamani))
       .limit(1);
     if (kayit === undefined) return null;
-    const { indirme, ...bilgi } = kayit;
+    const { indirme, takildi, ...bilgi } = kayit;
     return {
       ...bilgi,
-      durum: bilgi.durum as SiparisDisaAktarmaDurumu,
+      durum:
+        bilgi.durum === "hazirlaniyor" && takildi
+          ? "hatali"
+          : (bilgi.durum as SiparisDisaAktarmaDurumu),
       duzen: bilgi.duzen as SiparisDisaAktarmaDuzeni,
       indirildi: indirme !== null,
     };

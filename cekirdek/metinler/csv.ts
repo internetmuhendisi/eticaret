@@ -30,21 +30,26 @@ const hucreYazisi = (hucre: CsvHucresi, ayrac: string): string => {
     : deger;
 };
 
+// Satırlar tek bir büyüyen arabelleğe yazılır (kart 0316): satır başına ayrı parça ve sondaki birleştirme belleği
+// ikiye katlıyordu (50.000 siparişte ölçüldü). Dosya arabelleğin dolu kısmıdır, kopyalanmaz.
 export const csvYazici = (ayrac: ";" | ",") => {
-  const parcalar: Buffer[] = [Buffer.from(bom, "utf8")];
+  let arabellek = Buffer.allocUnsafe(1 << 20);
+  let uzunluk = arabellek.write(bom, 0, "utf8");
   let satirSayisi = 0;
   return {
     satir: (hucreler: readonly CsvHucresi[]) => {
-      parcalar.push(
-        Buffer.from(
-          `${hucreler.map((hucre) => hucreYazisi(hucre, ayrac)).join(ayrac)}${satirSonu}`,
-          "utf8",
-        ),
-      );
+      const yazi = `${hucreler.map((hucre) => hucreYazisi(hucre, ayrac)).join(ayrac)}${satirSonu}`;
+      const gereken = uzunluk + Buffer.byteLength(yazi, "utf8");
+      if (gereken > arabellek.length) {
+        const yeni = Buffer.allocUnsafe(Math.max(gereken, Math.ceil(arabellek.length * 1.5)));
+        arabellek.copy(yeni, 0, 0, uzunluk);
+        arabellek = yeni;
+      }
+      uzunluk += arabellek.write(yazi, uzunluk, "utf8");
       satirSayisi += 1;
     },
     // Başlık satırı da sayılır.
     satirSayisi: () => satirSayisi,
-    dosya: (): Buffer => Buffer.concat(parcalar),
+    dosya: (): Buffer => arabellek.subarray(0, uzunluk),
   };
 };

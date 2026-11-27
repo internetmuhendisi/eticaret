@@ -315,10 +315,14 @@ export type SiparisDisaAktarmaDuzeni = (typeof siparisDisaAktarmaDuzenleri)[numb
 export const siparisDisaAktarmaDurumlari = ["hazirlaniyor", "hazir", "hatali"] as const;
 export type SiparisDisaAktarmaDurumu = (typeof siparisDisaAktarmaDurumlari)[number];
 export const siparisDisaAktarmaAyari = {
-  enCokSiparis: 50_000,
+  // Dosya bellekte kurulur: her ürün bir satır düzeninde sipariş başına 3 kalemle 20.000 sipariş yaklaşık 50 MB'tır
+  // (50.000'de 122 MB ve 324 MB tepe ölçüldü; veritabanına yazarken bir kat daha), kutunun sınırı 1 GB.
+  enCokSiparis: 20_000,
   partiBoyu: 500,
   saklamaSaat: 24,
   temizlikDakika: 60,
+  // Bu kadar dakikadır hazırlanan dışa aktarma hatalı sayılır (iş düştü ya da süreç kapalı): ekran yoklamayı bırakır.
+  takilmaDakika: 15,
 } as const;
 
 // Panelin sipariş listesinin sıralamaları (kart 0258): oluşturma zamanı ve toplam tutar; eşitlikte siparişin

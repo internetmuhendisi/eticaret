@@ -24,7 +24,7 @@ Taslak: `planlar/tasarim-yonu/panel-2.html`, "Siparişleri dışa aktar" sayfas�
 ## Arka plan ve saklama
 
 - Tablo `siparis_disa_aktarmalari`: kimlik, yönetici, durum (hazırlanıyor, hazır, hatalı), kapsam (listenin süzgeçleri ve aranan metin ya da seçilen sipariş kimlikleri), satır düzeni, sipariş ve satır sayısı, dosya, zamanlar.
-- İş `siparis-disa-aktarma`: siparişler 500'lük partilerle okunur, dosya parça parça kurulur (bütün sipariş bellekte tutulmaz). Sınır: bir dosyada en çok 50.000 sipariş (kayıtta); aşan istek "çok büyük" hatası alır, süzgeç daraltılır.
+- İş `siparis-disa-aktarma`: siparişler 500'lük partilerle okunur, dosya parça parça kurulur (bütün sipariş bellekte tutulmaz). Sınır: bir dosyada en çok 20.000 sipariş (kayıtta; 50.000 bellek ölçümüyle indi, karar 0194); aşan istek "çok büyük" hatası alır, süzgeç daraltılır.
 - Dosya kişisel veri taşır: hazırlandıktan 24 saat sonra kaydıyla birlikte silinir (günlük temizlik). Dosyayı yalnız hazırlayan indirir.
 - Kayıt: her indirme değişiklik kaydına `siparis.disa-aktarildi` ile girer (kişisel veri çıkışı): kapsam, satır düzeni, sipariş sayısı; dosyanın içeriği ve kişisel veri girmez.
 

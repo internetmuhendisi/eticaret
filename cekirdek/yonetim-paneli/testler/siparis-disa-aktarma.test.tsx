@@ -25,6 +25,10 @@ globalThis.ResizeObserver ??= class {
 };
 
 const yenile = vi.fn();
+const bildirim = vi.fn();
+vi.mock("../../../bilesenler/parcalar/bildirim.tsx", () => ({
+  bildirimGoster: (...degerler: unknown[]) => bildirim(...degerler),
+}));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: yenile, push: vi.fn() }),
   usePathname: () => "/yonetim/siparisler",
@@ -60,7 +64,7 @@ const pencere = () =>
 
 describe("dışa aktarma penceresi", () => {
   it("komut çubuğundan listenin süzgeçleriyle açılır, düzen seçilir, gönderilir, kapanır ve sayfa yenilenir", async () => {
-    ciz(<DisaAktarDugmesi sorgu="odeme=havale" sayiYazisi="1.240" sinirYazisi="50.000" />);
+    ciz(<DisaAktarDugmesi sorgu="odeme=havale" sayiYazisi="1.240" sinirYazisi="20.000" />);
     fireEvent.click(screen.getByRole("button", { name: metin("yonetim.eylem.disaAktar") }));
     const p = within(pencere());
     expect(p.getByText("Listedeki 1.240 sipariş")).toBeTruthy();
@@ -85,16 +89,24 @@ describe("dışa aktarma penceresi", () => {
     ]);
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(yenile).toHaveBeenCalled();
+    // Sonuç bildirim alanıyla duyurulur (kutu yenilemeyle sonradan gelir).
+    expect(bildirim).toHaveBeenCalledWith("bilgi", metin("yonetim.siparisDisaAktarma.basladi"));
+  });
+
+  it("liste okunamadıysa sayısız yazar", () => {
+    ciz(<DisaAktarDugmesi sorgu="" sayiYazisi={null} sinirYazisi="20.000" />);
+    fireEvent.click(screen.getByRole("button", { name: metin("yonetim.eylem.disaAktar") }));
+    expect(within(pencere()).getByText("Listedeki siparişler")).toBeTruthy();
   });
 
   it("kapsam boşsa ya da sınırı aşıyorsa nedeni özette yazar, pencere açık kalır", async () => {
-    ciz(<DisaAktarDugmesi sorgu="durum=kargoda" sayiYazisi="0" sinirYazisi="50.000" />);
+    ciz(<DisaAktarDugmesi sorgu="durum=kargoda" sayiYazisi="0" sinirYazisi="20.000" />);
     fireEvent.click(screen.getByRole("button", { name: metin("yonetim.eylem.disaAktar") }));
     for (const [kod, beklenen] of [
       ["siparis-yok", metin("yonetim.siparisDisaAktarma.hata.siparis-yok")],
       [
         "cok-fazla-siparis",
-        "Bir dosyada en çok 50.000 sipariş olabilir. Tarih süzgeciyle daraltın.",
+        "Bir dosyada en çok 20.000 sipariş olabilir. Tarih süzgeciyle daraltın.",
       ],
     ] as const) {
       yanit = () =>

@@ -20,6 +20,7 @@ import {
   siparisDisaAktarmaDurumlari,
   siparisDisaAktarmaDuzenleri,
 } from "../../../kayitlar/siparis.ts";
+import { gunEkle, takvimGunu } from "../../../metinler/bicimleyici.ts";
 import { siteninBicimleyicisi } from "../../../metinler/site-metni.ts";
 import { baglantiyiKapat, type Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
@@ -307,6 +308,67 @@ describe("siparişlerin dışa aktarması", () => {
     expect(b.csvTutari(123_456_789)).not.toMatch(/\s/);
   });
 
+  it("aynı ad ve oranda iki vergi satırı tek sütunda toplanır (bağımsız kontrolün bulgusu)", async () => {
+    const { vt, urunAc, yonetici } = await hazirla();
+    const birim = await urunAc("Yün Atkı", 12_345);
+    const numara = await ver(vt, [{ birim, adet: 1 }], havale);
+    const [once] = await vt.select().from(siparisler).where(eq(siparisler.numara, numara));
+    const [ilk] = once?.vergi_dokumu ?? [];
+    if (ilk === undefined) throw new Error("Döküm boş.");
+    await vt
+      .update(siparisler)
+      .set({ vergi_dokumu: [ilk, { ...ilk, vergi: 7 }] })
+      .where(eq(siparisler.numara, numara));
+    const { baslik, satirlar, deger } = await disaAktar(vt, await yonetici(), {
+      kapsam: { tur: "secili", numaralar: [numara] },
+      duzen: "siparis",
+    });
+    const ad = `${ilk.ad ?? "Vergi"} ${b.yuzde(ilk.oran / 10_000)}`;
+    expect(baslik.filter((sutun) => sutun === ad).length).toBe(1);
+    expect(deger(satirlar[0] ?? [], ad)).toBe(b.csvTutari(ilk.vergi + 7));
+  });
+
+  it("tarih ve kargo firması süzgeçleri listeyle aynı siparişleri verir", async () => {
+    const { vt, urunAc, yonetici } = await hazirla();
+    const birim = await urunAc("Keten Gömlek");
+    const kargolu = await ver(vt, [{ birim, adet: 1 }], havale);
+    const kargosuz = await ver(vt, [{ birim, adet: 1 }], havale);
+    await vt
+      .update(siparisler)
+      .set({ kargo_firmasi: "Deneme, Kargo", kargo_zamani: sql`now()` })
+      .where(eq(siparisler.numara, kargolu));
+    const kim = await yonetici();
+    const bugun = takvimGunu(new Date(), site.ayarlar.saatDilimi);
+    const numaralar = async (suzgecler: SiparisListesiSuzgecleri) => {
+      const liste = await yonetim.liste(vt, { ...suzgecler, sayfa: 1, sayfaBoyu: 25 });
+      const { satirlar, deger } = await disaAktar(vt, kim, {
+        kapsam: { tur: "liste", suzgecler },
+        duzen: "siparis",
+      });
+      const dosyadakiler = satirlar.map((s) => deger(s, "Sipariş no"));
+      expect(dosyadakiler).toEqual(liste.satirlar.map((s) => s.numara));
+      return dosyadakiler;
+    };
+    expect(await numaralar({ kargo: ["Deneme, Kargo"], siralama: "en-yeni" })).toEqual([kargolu]);
+    expect(
+      await numaralar({ tarih: { baslangic: bugun, bitis: bugun }, siralama: "en-eski" }),
+    ).toEqual([kargolu, kargosuz]);
+    expect(
+      await hatasi(
+        servis.baslat(vt, kim, {
+          kapsam: {
+            tur: "liste",
+            suzgecler: {
+              tarih: { baslangic: null, bitis: gunEkle(bugun, -1) },
+              siralama: "en-yeni",
+            },
+          },
+          duzen: "siparis",
+        }),
+      ),
+    ).toMatchObject({ ayrinti: [{ kod: "siparis-yok" }] });
+  });
+
   it("her ürün bir satır: siparişin sütunları her kalemde, kalemin değerleriyle", async () => {
     const { vt, urunAc, yonetici } = await hazirla();
     const gomlek = await urunAc("Keten Gömlek", 20_000);
@@ -451,6 +513,44 @@ describe("siparişlerin dışa aktarması", () => {
     // Son deneme de düşen iş hatalıdır; hazır dosya hatalı olmaz.
     await servis.hatali(vt, kimlik);
     expect((await servis.durum(vt, kim))?.durum).toBe("hazir");
+  });
+
+  it("başladıktan sonra sınırı aşan kapsam boş dosya değil hata olur; takılan dışa aktarma hatalı sayılır", async () => {
+    const { vt, urunAc, yonetici } = await hazirla();
+    const birim = await urunAc("Keten Gömlek");
+    await ver(vt, [{ birim, adet: 1 }], havale);
+    await ver(vt, [{ birim, adet: 1 }], havale);
+    const kim = await yonetici();
+    const kimlik = await servis.baslat(vt, kim, {
+      kapsam: { tur: "liste", suzgecler: tumu },
+      duzen: "siparis",
+    });
+    const ayar = siparisDisaAktarmaAyari as { enCokSiparis: number };
+    const eskiSinir = ayar.enCokSiparis;
+    ayar.enCokSiparis = 1;
+    try {
+      await servis.hazirla(vt, kimlik);
+    } finally {
+      ayar.enCokSiparis = eskiSinir;
+    }
+    const [kayit] = await vt.select().from(siparisDisaAktarmalari);
+    expect(kayit?.durum).toBe("hatali");
+    expect(kayit?.dosya).toBeNull();
+    // Takılan: uzun süredir hazırlanan dışa aktarma hatalı görünür (ekran yoklamayı bırakır).
+    const takilan = await servis.baslat(vt, kim, {
+      kapsam: { tur: "liste", suzgecler: tumu },
+      duzen: "siparis",
+    });
+    expect((await servis.durum(vt, kim, takilan))?.durum).toBe("hazirlaniyor");
+    const dakika = siparisDisaAktarmaAyari.takilmaDakika;
+    await vt
+      .update(siparisDisaAktarmalari)
+      .set({ olusturma_zamani: sql`now() - make_interval(mins => ${dakika}, secs => 1)` })
+      .where(eq(siparisDisaAktarmalari.kimlik, takilan));
+    expect((await servis.durum(vt, kim, takilan))?.durum).toBe("hatali");
+    // Sonradan biten iş hazır yazar.
+    await servis.hazirla(vt, takilan);
+    expect((await servis.durum(vt, kim, takilan))?.durum).toBe("hazir");
   });
 
   it("dosyayı yalnız isteyen indirir; indirme kişisel veri olmadan kayda girer", async () => {

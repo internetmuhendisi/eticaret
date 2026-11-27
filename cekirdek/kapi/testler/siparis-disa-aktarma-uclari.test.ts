@@ -11,6 +11,7 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { calisanSite } from "../../ayar-semasi/calisan-site.ts";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
+import { takvimGunu } from "../../metinler/bicimleyici.ts";
 import { roller, yoneticiRolleri } from "../../moduller/ekip/model.ts";
 import { siteninFiyatServisi } from "../../moduller/fiyat/servis.ts";
 import { odemeBilgileriSemasi } from "../../moduller/odeme/semalar.ts";
@@ -192,6 +193,25 @@ describe("siparişleri dışa aktarma uçları", () => {
       get(`siparisler-disa-aktarma?kimlik=${kimlik}`, baska.cerez),
     );
     expect(await veri(baskaDurum)).toEqual({ disaAktarma: null });
+  });
+
+  it("tarih süzgecinin hazır aralığı uçta günlere çözülüp kapsamla saklanır", async () => {
+    await siparisVer();
+    const sahip = await kisi("magaza-sahibi");
+    const yanit = await siparisDisaAktarUcu(
+      post({ kapsam: { tur: "liste", sorgu: "tarih=bugun" }, duzen: "siparis" }, sahip.cerez),
+    );
+    expect(yanit.status).toBe(200);
+    const { kimlik } = await veri<{ kimlik: string }>(yanit);
+    const [kayit] = await vt
+      .select()
+      .from(siparisDisaAktarmalari)
+      .where(eq(siparisDisaAktarmalari.kimlik, kimlik));
+    const bugun = takvimGunu(new Date(), calisanSite().ayarlar.saatDilimi);
+    expect(kayit?.kapsam).toEqual({
+      tur: "liste",
+      suzgecler: { tarih: { baslangic: bugun, bitis: bugun }, siralama: "en-yeni" },
+    });
   });
 
   it("seçili siparişlerle başlar; tekrarlı numara ve boş kapsam reddedilir", async () => {

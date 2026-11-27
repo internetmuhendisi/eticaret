@@ -7,6 +7,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Baglanti } from "../../../bilesenler/parcalar/baglanti";
+import { bildirimGoster } from "../../../bilesenler/parcalar/bildirim";
 import { SecenekGrubu } from "../../../bilesenler/parcalar/secenek-grubu";
 import { Uyari } from "../../../bilesenler/parcalar/uyari";
 import {
@@ -94,9 +95,9 @@ function DisaAktarmaFormu({
       ? doldur(metin("yonetim.siparisDisaAktarma.secililer"), {
           sayi: String(kapsam.numaralar.length),
         })
-      : doldur(metin("yonetim.siparisDisaAktarma.listedekiler"), {
-          sayi: kapsam.sayiYazisi ?? "",
-        });
+      : kapsam.sayiYazisi === null
+        ? metin("yonetim.siparisDisaAktarma.listedekilerSayisiz")
+        : doldur(metin("yonetim.siparisDisaAktarma.listedekiler"), { sayi: kapsam.sayiYazisi });
   const gonder = async () => {
     const sonuc = await pf.isle(() =>
       panelIstegi<{ kimlik: string }>("siparisler-disa-aktar", {
@@ -109,6 +110,8 @@ function DisaAktarmaFormu({
     );
     if (sonuc === undefined) return;
     if (sonuc.tamam) {
+      // Sonuç bildirim alanıyla duyurulur (her zaman sayfadadır); kutu yenilemeyle gelir, yeni eklenen bölge okunmayabilir.
+      bildirimGoster("bilgi", metin("yonetim.siparisDisaAktarma.basladi"));
       kapat();
       router.refresh();
       return;
