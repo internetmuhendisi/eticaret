@@ -25,6 +25,30 @@ Bölüm: Yönetim paneli 2 (açık kartlardan alındı). Raporlar ve siparişler
 
 - Ölçüm karta yazıldı; gerekiyorsa düzeltme ve düzeltmeden sonraki ölçüm.
 
+## Ölçüm (2026-11-27)
+
+Yerelde, geçici deneme veritabanında: servisle verilen bir sipariş SQL ile 100.000'e çoğaltıldı (son iki yıla yayılmış zaman, beş durum, kargodaki ve teslim edilenlerde beş kargo firması), %2 havale bildirimi, %2,5 iade talebi (bekleyen, onaylı, reddedilmiş), %3 iade (tamamlanan, süren, başarısız). Listenin servisi (`siparisYonetimi.liste`, kargo seçenekleri, harf sırası ve dışa aktarmanın `listeninSiparisleri`) çalıştırıldı, atılan her sorgu yakalanıp `explain analyze` ile ölçüldü. Ölçüm betiği kayda girmedi.
+
+| Açılış (4 sorgu) | Önce | Sonra |
+|---|---|---|
+| Süzgeçsiz, en yeni | 298 ms | 70 ms |
+| Süzgeçsiz, son sayfa (4000.) | 681 ms | 125 ms |
+| Tarih (son 30 gün) | 34 ms | 11 ms |
+| Kargo firması | 289 ms | 14 ms |
+| Durum sekmesi | 314 ms | 64 ms |
+| Bakılması gereken | 956 ms | 102 ms |
+| Tutara göre | 291 ms | 103 ms |
+| Kargo firması seçenekleri | 24 ms | 16 ms |
+| Harf sırası (`pg_collation`) | 0,4 ms | değişmedi |
+| Dışa aktarmanın kimlikleri (son 30 gün) | 7 ms | 7 ms |
+
+- En pahalısı her açılışta sayılan "Bakılması gereken" koşuluydu (sipariş başına beş alt sorgu, 235 ms; bildirim, talep ve iade tabloları boşken yalnız 57 ms ölçülüyordu). Koşul aynı anlamda "siparişin kimliği şu kümede" biçimine yazıldı (`yonetim.ts`, `listeKosullari`): veritabanı küçük tabloları bir kez okuyup eşler. Koşulların her biri bozularak denendi, servis testi kırmızıya düştü (altı bozma).
+- Durum seçilmemişken varsayılan sıranın ve tarih süzgecinin indeksi yoktu: satırlar bütün tablodan sıralanıyordu, son sayfada sıralama diske taşıyordu. `siparisler_zaman` (oluşturma zamanı, kimlik) eklendi.
+- Kargo firması süzgeci tam taramaydı: kısmi `siparisler_kargo_firmasi` eklendi (değişiklik 0067).
+- Harf sırası sorusu ölçülmeyecek kadar kısa, değişmedi.
+- Kalan en büyük pay durum sayıları (`group by durum`, ~20 ms) ve toplam sayımı (~10 ms): her açılışta bütün tablo sayılır. 100 bin siparişte kabul edilebilir; büyürse sayıları önbelleğe almak ayrı iştir.
+- Planın indeksi seçmesi tabloya ve sürüme bağlıdır; testte ölçülmez.
+
 ## Durum
 
 yapılacak

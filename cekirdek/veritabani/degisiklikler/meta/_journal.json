@@ -470,6 +470,13 @@
       "when": 1795760168779,
       "tag": "0066_siparis-disa-aktarma",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1795764516437,
+      "tag": "0067_siparis-listesi-indeksleri",
+      "breakpoints": true
     }
   ]
 }

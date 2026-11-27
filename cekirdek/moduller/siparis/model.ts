@@ -32,6 +32,8 @@
 // - durum ve olusturma_zamani: panelin durum sekmeleri ve sayıları (kart 0234), indeksli. Panelin aramasındaki ad ve
 //   e-posta indekssizdir: liste sayfalıdır, bir site birkaç bin siparişe kadar tam taramayla yeter.
 // - olusturma_zamani (kişisel bilgisi silinmemiş): saklama süresi temizliği, kısmi indeks.
+// - olusturma_zamani ve kimlik: panelin listesinde durum seçilmemişken varsayılan sıra ve tarih süzgeci (kart 0298).
+// - kargo_firmasi (dolu): panelin kargo firması süzgeci ve seçenekleri, kısmi indeks (kart 0298).
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -124,6 +126,12 @@ export const siparisler = pgTable(
     index("siparisler_musteri").on(tablo.musteri_kimligi, tablo.olusturma_zamani),
     index("siparisler_erisim").on(tablo.erisim_ozeti),
     index("siparisler_durum_zaman").on(tablo.durum, tablo.olusturma_zamani),
+    // Panelin sipariş listesi (kart 0298): durum seçilmemişken varsayılan sıra (en yeni, eşitlikte kimlik) ve tarih
+    // süzgeci; kargo firması süzgeci ve seçenekleri. 100 bin siparişte ölçüldü, kart 0298'in notunda.
+    index("siparisler_zaman").on(tablo.olusturma_zamani, tablo.kimlik),
+    index("siparisler_kargo_firmasi")
+      .on(tablo.kargo_firmasi)
+      .where(sql`${tablo.kargo_firmasi} is not null`),
     // Bir PDF yalnız bir siparişin faturasıdır (kart 0268): aynı anda iki siparişe bağlanan dosyayı veritabanı da durdurur.
     uniqueIndex("siparisler_fatura_dosyasi")
       .on(tablo.fatura_dosyasi)
