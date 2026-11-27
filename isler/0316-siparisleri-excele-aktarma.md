@@ -25,4 +25,4 @@ Bölüm: Yönetim paneli 2. Önce 0311 bitmiş olmalı; eklentideyse 0315.
 
 ## Durum
 
-yapılacak
+bitti
