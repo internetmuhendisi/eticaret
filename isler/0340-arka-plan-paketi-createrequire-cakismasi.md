@@ -30,4 +30,4 @@ Kart 0315'ten beri her hat tarayıcı testlerinde düştüğü için (kart 0339)
 
 ## Durum
 
-yapılacak
+bitti
