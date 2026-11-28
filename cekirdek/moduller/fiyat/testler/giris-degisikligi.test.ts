@@ -7,25 +7,35 @@
 // - Önizleme hiçbir şey yazmaz; aynı giriş ve bölgesi bulunamayan mağaza iş kuralı hatasıdır.
 // - Yarıda kalan işlem hiçbir şey bırakmaz; açık duran fiyat yazımının arkasında kilitte bekleyen değişiklik,
 //   önizlemeden sonra değişen fiyatı görünce çakışma verir (sıra kurularak).
+// - Kilitler sıra kurularak: açık duran kupon eklemesi, kargo ayarı ve oran değişikliğinin arkasında bekleyen
+//   değişiklik onları görüp çakışma verir; değişiklik sürerken eski girişle gönderilen kupon ve kargo ayarı kilitte
+//   bekler, sonra çakışır. Siparişe dönmüş ödeme oturumu süren ödeme sayılmaz.
 // - Verilen sipariş değişmez; başka site değişmez; fiyat girişi genel ayar değiştirmeyle değişmez.
 import { randomUUID } from "node:crypto";
 import { join, resolve } from "node:path";
 import { eq, sql } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Site, siteKlasorunuOku } from "../../../ayar-semasi/site-klasoru.ts";
+import { girisiDenetle } from "../../../kapi/yonetici/kupon.ts";
 import type { DegisikligiYapan } from "../../../kayitlar/degisiklik-islemleri.ts";
-import { baglantiyiKapat, type Veritabani } from "../../../veritabani/baglanti.ts";
+import {
+  baglantiyiKapat,
+  type Veritabani,
+  type VeritabaniIslemi,
+} from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
 import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import { degisiklikKayitlari } from "../../degisiklik-kaydi/model.ts";
 import { kuponKullanimlari, kuponlar } from "../../kampanya/model.ts";
 import { kuponServisi } from "../../kampanya/servis.ts";
+import { kargoAyarlariniDegistir } from "../../kargo/servis.ts";
 import { siteninServisi } from "../../magaza-ayarlari/servis.ts";
 import { odemeOturumlari } from "../../odeme/model.ts";
+import { siparisler } from "../../siparis/model.ts";
 import { urunKilidiAl } from "../../urun/kilit.ts";
 import { urunServisi } from "../../urun/servis.ts";
 import { vergiAyarlariniDegistir, vergiAyarlariniOku } from "../../vergi/ayarlar.ts";
-import { siteninVergiServisi } from "../../vergi/servis.ts";
+import { siteninVergiServisi, vergiKilidiAl } from "../../vergi/servis.ts";
 import { yeniGiriseCevir } from "../giris-cevirisi.ts";
 import { fiyatGirisiServisi, gorunenDegisirMi, satirinGirisi } from "../giris-degisikligi.ts";
 import { fiyatGosterimServisi } from "../gosterim.ts";
@@ -58,11 +68,15 @@ const site: Site = {
 const ortak = globalThis as Record<symbol, unknown>;
 const siteAnahtari = Symbol.for("cekirdek.calisanSite");
 const temizlenecekler: (() => Promise<void>)[] = [];
+// Yarış testinin tuttuğu işlemler: test kırmızıya düşüp bırakmasa da temizlikten önce bırakılır (açık işlem
+// bağlantıyı ve deneme veritabanının silinmesini bekletmesin).
+const birakilacaklar: (() => void)[] = [];
 beforeEach(() => {
   ortak[siteAnahtari] = site;
 });
 afterEach(async () => {
   delete ortak[siteAnahtari];
+  for (const birak of birakilacaklar.splice(0)) birak();
   await baglantiyiKapat();
   for (const temizle of temizlenecekler.splice(0)) await temizle();
 });
@@ -123,6 +137,8 @@ const hazirla = async (secilen: Site = site) => {
     return birim;
   };
   const gorunen = async (birimler: string[]) => {
+    // Yazıldığı milisaniyede okunan geçmiş satırı süzgecin dışında kalır (kart 0338): bir sonraki milisaniye beklenir.
+    await new Promise((tamam) => setTimeout(tamam, 2));
     const fiyatlar = await fiyatGosterimServisi(secilen).gosterilecekFiyatlar(vt, birimler);
     return birimler.map((b) => {
       const f = fiyatlar.get(b);
@@ -447,6 +463,35 @@ describe("hatalar, yarış ve ayrım", () => {
     expect((await h.kayitli(birim))?.satis_fiyati).toBe(12_900);
   });
 
+  it("siparişe dönmüş ödeme oturumu süren ödeme sayılmaz: değişiklik uygulanır", async () => {
+    const h = await hazirla();
+    await h.urunAc(11_800, h.genel);
+    const oturum = await oturumAc(h.vt, 15 * 60_000);
+    await h.vt.insert(siparisler).values({
+      numara: `D-${randomUUID().slice(0, 8)}`,
+      oturum_kimligi: oturum?.kimlik ?? "",
+      eposta: "kisi@ornek.test",
+      teslimat: {} as never,
+      fatura: {} as never,
+      onaylar: [],
+      odeme_yontemi: "havale",
+      odeme_son_zamani: new Date(Date.now() + 86_400_000),
+      durum: "odeme-bekleniyor",
+      para_birimi: site.ayarlar.paraBirimi,
+      gosterim: "vergi-dahil",
+      ara_toplam: 0,
+      kargo_turu: "yok",
+      kargo_tutari: 0,
+      vergi_toplami: 0,
+      toplam: 0,
+      vergi_dokumu: [] as never,
+      erisim_ozeti: "deneme",
+    });
+    const plan = await h.servis.onizle(h.vt, "vergi-haric");
+    await h.servis.uygula(h.vt, kim(), { yeni: "vergi-haric", surum: plan.surum });
+    expect((await siteninServisi(site).oku(h.vt)).fiyatGirisi).toBe("vergi-haric");
+  });
+
   it("verilen siparişe ve başka siteye dokunmaz; satırın girişi değişikliklerden bulunur", async () => {
     const a = await hazirla();
     const b = await hazirla();
@@ -472,5 +517,139 @@ describe("hatalar, yarış ve ayrım", () => {
     expect(satirinGirisi(t("3"), degisiklikler, "vergi-dahil")).toBe("vergi-haric");
     expect(satirinGirisi(t("5"), degisiklikler, "vergi-dahil")).toBe("vergi-dahil");
     expect(satirinGirisi(t("1"), [], "vergi-haric")).toBe("vergi-haric");
+  });
+});
+
+// Sırayı kuran yarışlar (kart 0326, test.md: rakip ilk işlem kilidi aldıktan sonra başlar). tut: verilen işi bir
+// işlemde yapar, sözü verip bırakılana kadar işlemi açık tutar.
+const tut = (vt: Veritabani, is: (islem: VeritabaniIslemi) => Promise<unknown>) => {
+  let alindi: () => void = () => undefined;
+  const alindiSozu = new Promise<void>((tamam) => {
+    alindi = tamam;
+  });
+  let birak: () => void = () => undefined;
+  const bekle = new Promise<void>((tamam) => {
+    birak = tamam;
+  });
+  birakilacaklar.push(birak);
+  const islem = vt.transaction(async (i) => {
+    await is(i);
+    alindi();
+    await bekle;
+  });
+  return { hazir: Promise.race([alindiSozu, islem]), birak, islem };
+};
+
+describe("kilitler (sıra kurularak)", () => {
+  it("açık duran kupon eklemesinin arkasında bekleyen değişiklik yeni kuponu görüp çakışma verir", async () => {
+    const h = await hazirla();
+    await h.urunAc(11_800, h.genel);
+    const plan = await h.servis.onizle(h.vt, "vergi-haric");
+    const rakip = tut(h.vt, async (islem) => {
+      await girisiDenetle(islem, "vergi-dahil");
+      await kuponServisi(site).ekle(islem, kim(), {
+        kod: "ARADA1",
+        tur: "tutar",
+        deger: 11_800,
+        kapsam: "hepsi",
+      });
+    });
+    await rakip.hazir;
+    const degisiklik = h.servis.uygula(h.vt, kim(), { yeni: "vergi-haric", surum: plan.surum });
+    await kilitBekleyeniGor(h.vt);
+    rakip.birak();
+    await rakip.islem;
+    await expect(degisiklik).rejects.toMatchObject({ kod: "cakisma" });
+    expect((await siteninServisi(site).oku(h.vt)).fiyatGirisi).toBe("vergi-dahil");
+    const [kupon] = await h.vt.select().from(kuponlar).where(eq(kuponlar.kod, "ARADA1"));
+    expect(kupon?.deger).toBe(11_800);
+  });
+
+  it("değişiklik sürerken eski girişle gönderilen kupon kilitte bekler, sonra çakışır ve yazılmaz", async () => {
+    const h = await hazirla();
+    await h.urunAc(11_800, h.genel);
+    const plan = await h.servis.onizle(h.vt, "vergi-haric");
+    // Değişiklik kupon ve ayar kilidini aldıktan sonra vergi kilidinde bekler.
+    const vergi = tut(h.vt, (islem) => vergiKilidiAl(islem));
+    await vergi.hazir;
+    const degisiklik = h.servis.uygula(h.vt, kim(), { yeni: "vergi-haric", surum: plan.surum });
+    await kilitBekleyeniGor(h.vt);
+    // Sonuçlar başlatıldıkları anda tutulur: ret, beklentiden önce gelirse yakalanmamış sayılmasın.
+    const sonuc = (soz: Promise<unknown>) =>
+      soz.then(
+        () => null,
+        (hata: unknown) => hata,
+      );
+    const kupon = sonuc(
+      h.vt.transaction(async (islem) => {
+        await girisiDenetle(islem, "vergi-dahil");
+        return kuponServisi(site).ekle(islem, kim(), {
+          kod: "ESKI1",
+          tur: "tutar",
+          deger: 11_800,
+          kapsam: "hepsi",
+        });
+      }),
+    );
+    const kargo = sonuc(
+      kargoAyarlariniDegistir(h.vt, site, kim(), {
+        kargoUcreti: "70,80",
+        ucretsizKargoSiniri: "",
+        ucretsizKargoTutari: "indirimden-once",
+        kargoyaVermeSuresi: "2",
+        fiyatGirisi: "vergi-dahil",
+      }),
+    );
+    await kilitBekleyeniGor(h.vt, 3);
+    vergi.birak();
+    await vergi.islem;
+    await degisiklik;
+    const cakisma = {
+      kod: "cakisma",
+      ayrinti: [{ alan: "fiyatGirisi", kod: "giris-degisti" }],
+    };
+    expect(await kupon).toMatchObject(cakisma);
+    expect(await kargo).toMatchObject(cakisma);
+    expect(await h.vt.select().from(kuponlar).where(eq(kuponlar.kod, "ESKI1"))).toEqual([]);
+    const ayarlar = await siteninServisi(site).oku(h.vt);
+    expect([ayarlar.fiyatGirisi, ayarlar.kargoUcreti]).toEqual(["vergi-haric", 5_000]);
+  });
+
+  it("açık duran kargo ayarının arkasında bekleyen değişiklik yeni ücreti görüp çakışma verir, ücret ezilmez", async () => {
+    const h = await hazirla();
+    await h.urunAc(11_800, h.genel);
+    const plan = await h.servis.onizle(h.vt, "vergi-haric");
+    const rakip = tut(h.vt, (islem) =>
+      siteninServisi(site).degistir(islem, kim(), { kargoUcreti: 7_080 }),
+    );
+    await rakip.hazir;
+    const degisiklik = h.servis.uygula(h.vt, kim(), { yeni: "vergi-haric", surum: plan.surum });
+    await kilitBekleyeniGor(h.vt);
+    rakip.birak();
+    await rakip.islem;
+    await expect(degisiklik).rejects.toMatchObject({ kod: "cakisma" });
+    const ayarlar = await siteninServisi(site).oku(h.vt);
+    expect([ayarlar.fiyatGirisi, ayarlar.kargoUcreti]).toEqual(["vergi-dahil", 7_080]);
+  });
+
+  it("açık duran oran değişikliğinin arkasında bekleyen değişiklik yeni oranı görüp çakışma verir", async () => {
+    const h = await hazirla();
+    const birim = await h.urunAc(11_000, h.onluk);
+    const plan = await h.servis.onizle(h.vt, "vergi-haric");
+    const vergi = siteninVergiServisi(site);
+    const oran = (await vergi.tabloyuOku(h.vt)).find((s) => s.kimlik === h.onluk)?.oranlar[0];
+    const rakip = tut(h.vt, (islem) =>
+      vergi.oranDegistir(islem as unknown as Veritabani, kim(), oran?.kimlik ?? "", {
+        oran: "12",
+      }),
+    );
+    await rakip.hazir;
+    const degisiklik = h.servis.uygula(h.vt, kim(), { yeni: "vergi-haric", surum: plan.surum });
+    await kilitBekleyeniGor(h.vt);
+    rakip.birak();
+    await rakip.islem;
+    await expect(degisiklik).rejects.toMatchObject({ kod: "cakisma" });
+    expect((await h.kayitli(birim))?.satis_fiyati).toBe(11_000);
+    expect((await siteninServisi(site).oku(h.vt)).fiyatGirisi).toBe("vergi-dahil");
   });
 });

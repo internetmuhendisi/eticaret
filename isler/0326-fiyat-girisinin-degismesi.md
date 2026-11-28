@@ -32,10 +32,8 @@ Bölüm: Yönetim paneli 2. Önce 0322 bitmiş olmalı.
 - Bağımsız kontrolün bulgularıyla: süren ödeme varken uygulanmaz; kargo ekranı, ürünün fiyatları ve kupon formu gördükleri girişi gönderir, giriş arada değiştiyse kayıt çakışır; kilitler genişledi (kupon tablosu, mağaza ayarları, vergi tablosu); silinmiş kargo sınıfı, indirimli fiyatın önizlemesi ve bölgesi bulunamayan sitede eski fiyat düzeldi. "Müşterinin gördüğü fiyat değişmez" birim fiyat içindir: çok adetli satırda sepet toplamı birkaç kuruş değişebilir, pencere bunu söyler. Excel'in yeni ürün satırları kart 0337'de.
 - Hız ölçümü çalıştırılmadı: vitrine giden tarayıcı kodu değişmedi, vitrin yalnız indirimdeki ürünlerde sunucuda bir sorgu daha yapar.
 
-## Kalan (2026-11-28, kullanıcı kararı: sonraki oturum)
-
-- "Her yeni denetim bozularak kırmızı" maddesi eksik: bağımsız kontrolden sonra eklenen dört denetim için sırayı kuran yarış testi yazılıp bozulacak: kupon tablosunun kilidi (uygulama sürerken eklenen kupon bekler ve yeni girişle yazılır ya da çakışır), mağaza ayarlarının kilidi (arada kaydedilen kargo ayarı ezilmez), vergi tablosunun kilidi (arada değişen oran), siparişe dönmüş ödeme oturumu değişikliği durdurmaz. İkinci izin denetimi (`fiyat.degistir`) bugün denenemez, yalnız disiplin kalır.
-- Sonra `/is-bitti 0326`.
+- Kilitlerin yarış testleri (2026-11-28): bağımsız kontrolden sonra eklenen dört denetim sıra kurularak denenir. Açık duran kupon eklemesinin, kargo ayarının ve oran değişikliğinin arkasında bekleyen değişiklik çakışma verir. Değişiklik sürerken eski girişle gönderilen kupon ve kargo ayarı bekler, sonra çakışır. Siparişe dönmüş oturum değişikliği durdurmaz. Beş bozmanın (kupon, ayar ve vergi kilidi, kupon ucunun kilidi, sipariş koşulu) her biri kırmızıya düştü. Bağımsız kontrolün bulgularıyla düzeldi: eski girişle gönderilen kargo ayarının reddi yakalayıcıdan önce geliyordu, testler geçse de dosya "Unhandled Rejection" ile kırmızıydı (sonuç başlatılınca tutulur, üç çalışmada çıkış 0); kırmızı testte tutulan işlem bırakılmıyordu (temizlik önce bırakır). İkinci izin denetimi (`fiyat.degistir`) bugün denenemez, yalnız disiplindir.
+- Eski fiyat testi ara sıra düşüyordu (yerelde dört tam çalışmanın birinde): yazıldığı milisaniyede okunan geçmiş satırı vitrinin süzgecinin dışında kalıyor, eski fiyat bulunamıyor. Bu kartın getirdiği değil, kart 0081'den beri böyle; kart 0338 açıldı. Test okumadan önce bir sonraki milisaniyeyi bekler (altı tam çalışmanın altısı yeşil).
 
 ## Durum
 

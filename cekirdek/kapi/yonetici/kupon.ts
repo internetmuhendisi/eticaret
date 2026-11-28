@@ -29,7 +29,8 @@ export const kuponListesiUcu = ucTanimla({
 
 // Ekranın gördüğü fiyat girişi (kart 0326): önce kuponların yazım kilidi alınır (girişin değişikliği kupon tablosunu
 // kilitler, bu yazım onun bitmesini bekler), sonra bugünkü giriş okunur; farklıysa çakışma, hiçbir şey yazılmaz.
-const girisiDenetle = async (islem: VeritabaniIslemi, gorulen: FiyatGirisi | undefined) => {
+// Yarışı fiyat girişinin testi sıra kurarak dener (giris-degisikligi.test.ts).
+export const girisiDenetle = async (islem: VeritabaniIslemi, gorulen: FiyatGirisi | undefined) => {
   if (gorulen === undefined) return;
   await islem.execute(sql`lock table ${kuponlar} in row exclusive mode`);
   gorulenGirisiDenetle(gorulen, (await siteninServisi(calisanSite()).oku(islem)).fiyatGirisi);
