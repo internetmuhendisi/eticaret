@@ -9,7 +9,7 @@
 // - Site klasörü çalışma klasöründen değil kayıttan alınır; görüntü bu kayıttan üretilmiş olmalı.
 
 import { spawnSync } from "node:child_process";
-import { mkdtempSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { cekirdekSurumu } from "../cekirdek/surum.ts";
@@ -121,6 +121,33 @@ export const kayittanSiteKlasoru = (kayit: string, klasor: string): string => {
   );
   if (sonuc.status !== 0)
     throw new Error(`Site klasörü kayıttan çıkarılamadı: ${sonuc.stderr.trim()}`);
+  // Sitenin demo paketi (karar 0203) aynı kayıttan, site klasörünün iki üstündeki cekirdek/demolar altına çıkarılır:
+  // site doğrulaması ve yayın paketi orada bulur.
+  const ayarlarYolu = join(gecici, yol, "ayarlar.json");
+  const demo: unknown = existsSync(ayarlarYolu)
+    ? (JSON.parse(readFileSync(ayarlarYolu, "utf8")) as { baslangicDemosu?: unknown })
+        .baslangicDemosu
+    : undefined;
+  if (demo !== undefined) {
+    if (typeof demo !== "string" || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(demo)) {
+      throw new Error(`ayarlar.json: baslangicDemosu geçersiz: ${String(demo)}`);
+    }
+    const paket = spawnSync(
+      "sh",
+      [
+        "-c",
+        'git -C "$0" archive "$1" "$2" | tar -x -C "$3"',
+        kok,
+        kayit,
+        `cekirdek/demolar/${demo}`,
+        gecici,
+      ],
+      { encoding: "utf8" },
+    );
+    if (paket.status !== 0) {
+      throw new Error(`Demo paketi ${demo} kayıttan çıkarılamadı: ${paket.stderr.trim()}`);
+    }
+  }
   return join(gecici, yol);
 };
 

@@ -12,8 +12,11 @@
 //   Geri dönüşün hedefi ve saklanacak yayınlar bu kayıttan hesaplanır.
 
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import type { Kimlik } from "../cekirdek/ayar-semasi/kimlik.ts";
 import { hataIzlemeDegiskenleri } from "../cekirdek/izleme/hata-izleme-araci.ts";
+import { kutudakiDemoKlasoru } from "../cekirdek/kayitlar/demo-paketi.ts";
 import { dosyaKlasoruDegiskeni, kutudakiDosyaKlasoru } from "../cekirdek/kayitlar/dosya.ts";
 import { siteOrtamiDegiskeni } from "../cekirdek/kayitlar/site.ts";
 import {
@@ -161,8 +164,10 @@ export const yayinKutusuTanimi = (
     security_opt: ["no-new-privileges:true"],
     read_only: true,
     tmpfs: ["/tmp"],
+    // Demo paketi (karar 0203): yayının klasöründeki paketler /cekirdek/demolar altına; site klasörünün iki üstü.
     volumes: [
       `${yayinKlasoru(ortam, kodAdi)}/${no}/site:/siteler/${kodAdi}:ro`,
+      `${yayinKlasoru(ortam, kodAdi)}/${no}/demolar:${kutudakiDemoKlasoru}:ro`,
       `${sunucuDosyaKlasoru(ortam, kodAdi)}:${kutudakiDosyaKlasoru}`,
     ],
     networks: [ag],
@@ -313,6 +318,8 @@ const kayitEkle = (ipv4: string, ortam: Ortam, kodAdi: string, kayit: YayinKaydi
 
 // Site klasörü bilgisayardan sunucudaki yayın klasörüne aktarılır; kök kullanıcıya aittir,
 // kutu yalnız okuyabilir.
+// Site klasörünü ve (varsa) demo paketini yayının klasörüne yükler: <yayın>/site ve <yayın>/demolar. Paket yerel
+// klasörde site klasörünün iki üstündeki cekirdek/demolar altındadır (kayittanSiteKlasoru ikisini birlikte çıkarır).
 const klasoruYukle = (
   ipv4: string,
   ortam: Ortam,
@@ -321,22 +328,31 @@ const klasoruYukle = (
   yerel: string,
 ): void => {
   const d = `${yayinKlasoru(ortam, kodAdi)}/${no}`;
-  const uzak = `sudo sh -c 'set -e; rm -rf ${d}; install -d -m 0755 -o root -g root ${yayinKoku} ${yayinKoku}/${ortam} ${yayinKlasoru(ortam, kodAdi)} ${d} ${d}/site; tar -x --no-same-owner --no-same-permissions -C ${d}/site; chown -R root:root ${d}/site; chmod -R u=rwX,go=rX ${d}/site'`;
-  const ssh = [
-    "ssh",
-    ...sshSecenekleri,
-    "-i",
-    girisAnahtari,
-    "-o",
-    "IdentitiesOnly=yes",
-    `${sunucuTanimi.kullanici}@${ipv4}`,
-    uzak,
-  ];
-  const sonuc = spawnSync("sh", ["-c", 'tar -C "$0" -cf - . | "$@"', yerel, ...ssh], {
-    encoding: "utf8",
-    timeout: 300_000,
-  });
-  if (sonuc.status !== 0) throw new Error(`Site klasörü aktarılamadı: ${sonuc.stderr.trim()}`);
+  const yukle = (kaynak: string, hedef: string) => {
+    const uzak = `sudo sh -c 'set -e; install -d -m 0755 -o root -g root ${hedef}; tar -x --no-same-owner --no-same-permissions -C ${hedef}; chown -R root:root ${hedef}; chmod -R u=rwX,go=rX ${hedef}'`;
+    const ssh = [
+      "ssh",
+      ...sshSecenekleri,
+      "-i",
+      girisAnahtari,
+      "-o",
+      "IdentitiesOnly=yes",
+      `${sunucuTanimi.kullanici}@${ipv4}`,
+      uzak,
+    ];
+    const sonuc = spawnSync("sh", ["-c", 'tar -C "$0" -cf - . | "$@"', kaynak, ...ssh], {
+      encoding: "utf8",
+      timeout: 300_000,
+    });
+    if (sonuc.status !== 0) throw new Error(`${hedef} aktarılamadı: ${sonuc.stderr.trim()}`);
+  };
+  sunucudaCalistir(
+    ipv4,
+    `sudo sh -c 'set -e; rm -rf ${d}; install -d -m 0755 -o root -g root ${yayinKoku} ${yayinKoku}/${ortam} ${yayinKlasoru(ortam, kodAdi)} ${d} ${d}/site ${d}/demolar'`,
+  );
+  yukle(yerel, `${d}/site`);
+  const demolar = join(yerel, "..", "..", "cekirdek", "demolar");
+  if (existsSync(demolar)) yukle(demolar, `${d}/demolar`);
 };
 
 // Yayının kutusunu açar ve sağlık ucunu kutunun içinden okur. Çıktının son satırı: saglik=<yanıt>.

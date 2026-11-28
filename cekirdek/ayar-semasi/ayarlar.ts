@@ -12,6 +12,7 @@ import { postaAdresiSemasi, telefonSemasi } from "../bolgeler/adres.ts";
 import { ulkeGecerliMi } from "../bolgeler/bolgeler.ts";
 import { ibanSemasi } from "../bolgeler/iban.ts";
 import { saticiBilgileriSemasi } from "../bolgeler/satici.ts";
+import { demoParcaKodlari } from "../kayitlar/demo-paketi.ts";
 import {
   eklentiKodlari,
   excelAyari,
@@ -229,6 +230,20 @@ export const ayarSemasi = z.strictObject({
   // Ana sayfada başlığın altında "Yakında açılıyoruz." yazısı (kart 0041). Bakım modu değildir:
   // vitrin açık kalır. Mağaza sahibinin ayarları gelince panele taşınabilir.
   yakindaYazisi: ayar(z.boolean().default(false), altyapiSahibinin("ayar.aciklama.yakindaYazisi")),
+  // Sitenin başlangıç içeriğinin demo paketi (kart 0345, karar 0203): cekirdek/demolar/<kod>/. Yalnız boş veritabanına
+  // kurulumda okunur.
+  baslangicDemosu: ayar(
+    z
+      .string()
+      .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Küçük harf, rakam ve tireden oluşmalı.")
+      .optional(),
+    altyapiSahibinin("ayar.aciklama.baslangicDemosu"),
+  ),
+  // Paketin, sitenin kendi başlangıç dosyasıyla değiştirdiği parçaları (karar 0203).
+  demoParcasiSiteden: ayar(
+    z.array(z.enum(demoParcaKodlari)).default([]),
+    altyapiSahibinin("ayar.aciklama.demoParcasiSiteden"),
+  ),
   // Asıl adresin arama motorlarına açıklığı (kart 0344, karar 0202). Kuralı ön kapı uygular; deneme adresi her
   // zaman kapalıdır. Satışa açılışta açılır.
   aramaMotorlarinaAcik: ayar(

@@ -40,6 +40,7 @@ const ornekMagaza: KurulusGirdisi = {
     yakindaYazisi: true,
     temalar: ["canli-carsi", "yumusak-mevsim", "keskin-cizgi"],
     eklentiler: ["stoga-gelince-haber-ver", "kartla-odeme", "excel-ile-toplu-urun-islemleri"],
+    baslangicDemosu: "demo1",
   },
 };
 
@@ -53,6 +54,8 @@ const temaGalerisi: KurulusGirdisi = {
     siparisOneki: "TGL",
     temalar: ["canli-carsi", "yumusak-mevsim", "keskin-cizgi"],
     temaDemosu: true,
+    baslangicDemosu: "demo1",
+    demoParcasiSiteden: ["duzen"],
   },
 };
 

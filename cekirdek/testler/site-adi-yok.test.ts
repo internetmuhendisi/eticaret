@@ -1,6 +1,8 @@
 // Çekirdekte ve ortak bileşenlerde hiçbir sitenin kod adı ya da görünen adı geçmez
-// (değişmez kural 1, .claude/rules/ayarlar.md). Siteye özel davranış ayarla yapılır. Sitenin başlangıç
-// kataloğundaki ürün ve marka adları da geçmez (kart 0084): örnek ürünler yalnız sitenin klasöründedir.
+// (değişmez kural 1, .claude/rules/ayarlar.md). Siteye özel davranış ayarla yapılır; demo paketleri de
+// (cekirdek/demolar/, karar 0203) sitenin adını taşımaz, mağazanın adı yer tutucuyla yazılır. Sitenin başlangıç
+// kataloğundaki ürün ve marka adları da geçmez (kart 0084): örnek ürünler yalnız sitenin klasöründe ya da demo
+// paketindedir.
 import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -17,6 +19,10 @@ const dosyalar = (klasor: string): string[] =>
   });
 
 const taranan = ["cekirdek", "bilesenler"].flatMap((klasor) => dosyalar(join(kok, klasor)));
+// Demo paketlerinin görselleri ikili dosyadır, metin olarak taranmaz.
+const metinDosyasi = (dosya: string) => !/\.(jpe?g|png|webp|gif|avif)$/i.test(dosya);
+const demolar = join(kok, "cekirdek", "demolar");
+const paketDisi = taranan.filter((dosya) => !dosya.startsWith(`${demolar}/`));
 
 const siteKlasorleri = readdirSync(join(kok, "siteler"), { withFileTypes: true })
   .filter((girdi) => girdi.isDirectory())
@@ -28,7 +34,7 @@ describe("çekirdekte site adı", () => {
 
     it(`${kimlik.kodAdi} geçmez`, () => {
       const adlar = [kimlik.kodAdi, kimlik.gorunenAd].map((ad) => ad.toLowerCase());
-      const gecenler = taranan.filter((dosya) => {
+      const gecenler = taranan.filter(metinDosyasi).filter((dosya) => {
         const icerik = readFileSync(dosya, "utf8").toLowerCase();
         return adlar.some((ad) => icerik.includes(ad));
       });
@@ -40,7 +46,7 @@ describe("çekirdekte site adı", () => {
         ...katalogBaslangici.urunler.flatMap((urun) => [urun.ad, urun.adresAdi]),
         ...katalogBaslangici.markalar.map((marka) => marka.ad),
       ].map((ad) => ad.toLocaleLowerCase("tr"));
-      const gecenler = taranan.flatMap((dosya) => {
+      const gecenler = paketDisi.filter(metinDosyasi).flatMap((dosya) => {
         const icerik = readFileSync(dosya, "utf8").toLocaleLowerCase("tr");
         return adlar
           .filter((ad) => icerik.includes(ad))

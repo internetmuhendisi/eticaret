@@ -144,6 +144,8 @@ Durum: 2026-10-28 tarihinde kullanıcı onayıyla yazıldı. Aynı gün ilk site
 | Tema yazı tipi, köşe ve düğme biçimi | Mağaza sahibi | Temanın kendi değerleri | Temanın kendi değerleri | Temanın seçeneklerinden biri; Canlı Çarşı'nın seçenekleri kart 0114'te |
 | Vitrinde altyapı adı | Altyapı sahibi | Kapalı | — | |
 | Ana sayfada "Yakında açılıyoruz." yazısı | Altyapı sahibi | Kapalı | Açık | Başlığın altında bilgi yazısı; bakım modu değildir, vitrin açık kalır (kart 0041). Mağaza sahibinin ayarları gelince panele taşınabilir |
+| Başlangıç demosu | Altyapı sahibi | Yok | `demo1` | Sitenin başlangıç içeriğinin demo paketi (`cekirdek/demolar/<kod>/`): katalog, görseller, menüler, düzen, sayfalar, blog, kuponlar. Yalnız ilk kurulumda okunur. Paketin dili, para birimi ve saat dilimi sitenin ayarıyla aynı olmalı (kart 0345, karar 0203) |
+| Demo paketinin sitede değiştirilen parçaları | Altyapı sahibi | Hiçbiri | Hiçbiri (Tema Galerisi: düzen) | Yazılan parça sitenin kendi başlangıç dosyasından gelir; yazılmayan parça sitede bulunursa doğrulama durur (karar 0203) |
 | Asıl adres arama motorlarına açık | Altyapı sahibi | Kapalı | Kapalı (asıl adresi yok) | Asıl adres (alt adres ya da kendi alan adı) kapalıyken deneme adresinin kuralını alır: `noindex`, `robots.txt` her şeyi kapatır. Deneme adresi her zaman kapalıdır. Satışa açılışta açılır; seramik mağazası için önerilen değer kapalı (kart 0344, karar 0202) |
 | Bakım sayfasının metni | Altyapı sahibi | Boş (ortak metin) | Boş | Bakım sayfasında ortak metnin yerine görünür (kart 0043) |
 | Yönetici oturumu | Altyapı sahibi | 24 saat | — | Bu süre boyunca hiç girmezse yeniden giriş ister (kart 0025) |

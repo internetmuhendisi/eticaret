@@ -29,6 +29,7 @@ import {
   type Site,
   siteKlasorunuDogrula,
 } from "../cekirdek/ayar-semasi/site-klasoru.ts";
+import { kutudakiDemoKlasoru } from "../cekirdek/kayitlar/demo-paketi.ts";
 import { dosyaKlasoruDegiskeni, kutudakiDosyaKlasoru } from "../cekirdek/kayitlar/dosya.ts";
 import { siteOrtamiDegiskeni } from "../cekirdek/kayitlar/site.ts";
 import { cekirdekSurumu } from "../cekirdek/surum.ts";
@@ -230,7 +231,12 @@ export const siteKutusu = (
     SITE_ADRESI: `http://${kodAdi}.localhost:${yerelPort()}`,
     ...temaDemosuOrtami(temaDemosuAdresi),
   },
-  volumes: [`${klasor}:/siteler/${kodAdi}:ro`, `${dosyaBirimi(kodAdi)}:${kutudakiDosyaKlasoru}`],
+  // Demo paketleri (karar 0203) site klasörünün iki üstünde: deponun cekirdek/demolar klasörü.
+  volumes: [
+    `${klasor}:/siteler/${kodAdi}:ro`,
+    `${join(kok, "cekirdek", "demolar")}:${kutudakiDemoKlasoru}:ro`,
+    `${dosyaBirimi(kodAdi)}:${kutudakiDosyaKlasoru}`,
+  ],
   depends_on: {
     veritabani: { condition: "service_healthy" },
     "posta-kutusu": { condition: "service_healthy" },

@@ -2,6 +2,8 @@
 
 Hazır temaların gezilebilir demosu (kart 0116, karar 0127).
 
+Başlangıç içeriği `demo1` paketindendir (`cekirdek/demolar/demo1/`, karar 0203). Yalnız ana sayfa düzeni sitenin kendi dosyasıdır (`baslangic/duzen.json`, `demoParcasiSiteden: ["duzen"]`): "Öne çıkanlar" 10 ürün (kullanıcı kararı).
+
 - Site ayarı `temaDemosu` açıktır:
   - Ziyaretçi temayı adresten seçer (`/?tema=canli-carsi`, `yumusak-mevsim`, `keskin-cizgi`) ve yalnız gezer.
   - Hesap, giriş, sipariş, yorum ve bildirim yoktur.

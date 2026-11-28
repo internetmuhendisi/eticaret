@@ -2,8 +2,8 @@
   {
     "baslik": "Hakkımızda",
     "adresAdi": "hakkimizda",
-    "icerik": "<p>Örnek Mağaza 2026'da Ankara'da kuruldu. Günlük hayatı kolaylaştıran, uzun ömürlü ürünleri özenle seçiyoruz.</p><h3>Neler satıyoruz?</h3><p>Giyimden ev ve yaşam ürünlerine, elektronik aksesuardan kişisel bakıma kadar her gün kullanacağınız ürünler.</p>",
-    "aciklama": "Örnek Mağaza'yı tanıyın: günlük hayatı kolaylaştıran, uzun ömürlü ürünler.",
+    "icerik": "<p>{magazaAdi}, 2026'da Ankara'da kuruldu. Günlük hayatı kolaylaştıran, uzun ömürlü ürünleri özenle seçiyoruz.</p><h3>Neler satıyoruz?</h3><p>Giyimden ev ve yaşam ürünlerine, elektronik aksesuardan kişisel bakıma kadar her gün kullanacağınız ürünler.</p>",
+    "aciklama": "Mağazamızı tanıyın: günlük hayatı kolaylaştıran, uzun ömürlü ürünler.",
     "durum": "yayinda"
   },
   {

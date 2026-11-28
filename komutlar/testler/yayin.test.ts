@@ -210,6 +210,8 @@ describe("sunucudaki site kutusunun tanımı", () => {
     });
     expect(kutu.volumes).toEqual([
       "/srv/altyapi/yayin/deneme/ornek-magaza/7/site:/siteler/ornek-magaza:ro",
+      // Demo paketleri site klasörünün iki üstünde (karar 0203).
+      "/srv/altyapi/yayin/deneme/ornek-magaza/7/demolar:/cekirdek/demolar:ro",
       // Dosya klasörü (kart 0072): yayından bağımsız, yazılabilir.
       "/srv/altyapi/dosyalar/deneme/ornek-magaza:/dosyalar",
     ]);

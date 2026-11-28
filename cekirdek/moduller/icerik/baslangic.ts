@@ -7,11 +7,14 @@
 //   servisle, tek işlemde; değişiklik kaydında yazan "baslangic-blog" adlı sistem işlemidir. İşlem içeriğin kilidini
 //   alır: aynı anda açılan iki süreç blogu iki kez yazmaz. Yazılamazsa kaydedilen görseller silinmiş işaretlenir.
 // - Yayındaki yazının ilk yayın anı dosyadaki yerel zamandır (sıra ve tarih ondan gelir).
+
 import type { Site } from "../../ayar-semasi/site-klasoru.ts";
 import { sistemIslemi } from "../../kayitlar/degisiklik-islemleri.ts";
+import { magazaAdiniYerlestir } from "../../kayitlar/demo-paketi.ts";
 import { yerelZamandan } from "../../metinler/bicimleyici.ts";
 import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { dosyaKlasoru } from "../dosya/servis.ts";
+import { magazaninAdi } from "../magaza-ayarlari/servis.ts";
 import { baslangicGorselleriyle } from "../urun/baslangic.ts";
 import { blogGorselAdlari } from "./baslangic-semasi.ts";
 import { blogKategorileri, blogYazilari } from "./model.ts";
@@ -34,6 +37,9 @@ export const blogBaslangiciniKur = async (
   // Kurulu blogda görseller boşuna kaydedilmesin. Kesin cevap işlemin içinde, kilitten sonradır.
   if (await kuruluMu(vt)) return false;
   const servis = icerikServisi(() => site.ayarlar.saatDilimi);
+  // Demo paketinin metinlerindeki yer tutucuya mağazanın adı konur (karar 0203); ayar işlemden önce okunur.
+  const ad = await magazaninAdi(vt, site);
+  const yerlestir = (metin: string) => magazaAdiniYerlestir(metin, ad);
   const yaz = (gorseller: ReadonlyMap<string, string>) =>
     vt.transaction(async (islem) => {
       await icerikKilidiAl(islem);
@@ -59,10 +65,10 @@ export const blogBaslangiciniKur = async (
           islem,
           baslangicBlogYazari,
           {
-            baslik: yazi.baslik,
+            baslik: yerlestir(yazi.baslik),
             adresAdi: yazi.adresAdi,
-            ...(yazi.ozet === undefined ? {} : { ozet: yazi.ozet }),
-            icerik: yazi.icerik,
+            ...(yazi.ozet === undefined ? {} : { ozet: yerlestir(yazi.ozet) }),
+            icerik: yerlestir(yazi.icerik),
             ...(kapak === undefined ? {} : { kapak }),
             ...(yazi.kategori === undefined ? {} : { kategori: kategoriler.get(yazi.kategori) }),
             ...(yazi.yazar === undefined ? {} : { yazar: yazi.yazar }),

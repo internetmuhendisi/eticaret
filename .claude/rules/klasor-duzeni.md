@@ -27,6 +27,8 @@ cekirdek/
     testler/           testler
   surum.ts             çekirdeğin sürümü (karar 0024)
   katalog/             bileşen kataloğu: parça listesi, örnekler, sayfa, kaynak taraması (karar 0078)
+  demolar/<kod>/       demo paketleri: paket.json ve baslangic/ (katalog, görseller, menüler, düzen, sayfalar,
+                       blog, kuponlar); kod değil, veri (karar 0203)
   kapi/                dört giriş: herkese-acik/, musteri/, yonetici/, sahip/; uç belgesi uclar.md
   ayar-semasi/         bütün site ayarlarının şeması
   bolgeler/            ülke, il ve ilçe listesi (veri dosyaları), bölge doğrulaması, ortak adres şeması ve

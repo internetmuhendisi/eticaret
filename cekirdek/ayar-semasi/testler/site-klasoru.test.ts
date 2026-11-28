@@ -104,6 +104,7 @@ describe("ayar şeması", () => {
       vitrindeAltyapiAdi: false,
       yakindaYazisi: false,
       aramaMotorlarinaAcik: false,
+      demoParcasiSiteden: [],
       yoneticiOturumuSaat: 24,
       musteriOturumuGun: 30,
       favoriSiniri: 100,

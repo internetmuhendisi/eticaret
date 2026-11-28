@@ -295,6 +295,30 @@ describe("başlangıç sayfaları", () => {
     for (const sayfa of sayfalar) await sayfaSil(vt, yonetici(), sayfa.kimlik);
     expect(await sayfaBaslangiciniKur(vt, site)).toBe(false);
   });
+
+  it("demo paketinin yer tutucusuna mağazanın adı konur: başlık, içerik ve açıklamada (karar 0203)", async () => {
+    const vt = await siteAc();
+    const ad = "Kum $& Saat";
+    // Mağaza adı ayarın başlangıç değeridir: ilk okumada veritabanına yazılır (karar 0055).
+    const demolu: Site = {
+      ...ornekSite,
+      baslangic: { ...ornekSite.baslangic, magazaAdi: ad },
+      sayfaBaslangici: [
+        {
+          baslik: "{magazaAdi} hakkında",
+          adresAdi: "hakkimizda",
+          icerik: "<p>{magazaAdi}, 2026'da kuruldu. {magazaAdi} ürünleri.</p>",
+          aciklama: "{magazaAdi} tanıyın",
+          durum: "yayinda",
+        },
+      ],
+    };
+    expect(await sayfaBaslangiciniKur(vt, demolu)).toBe(true);
+    const [sayfa] = await vt.select().from(sabitSayfalar);
+    expect(sayfa?.baslik).toBe("Kum $& Saat hakkında");
+    expect(sayfa?.icerik).toBe("<p>Kum $& Saat, 2026'da kuruldu. Kum $& Saat ürünleri.</p>");
+    expect(sayfa?.aciklama).toBe("Kum $& Saat tanıyın");
+  });
 });
 
 describe("veritabanı ve iki site", () => {

@@ -2,6 +2,8 @@
 
 İlk demo sitesi (karar 0007).
 
+Başlangıç içeriği `demo1` paketindedir (`cekirdek/demolar/demo1/`, karar 0203): aşağıdaki `baslangic/` yolları o paketin içindedir. Sitede kalanlar mağazanın kendisinindir: `baslangic/ayarlar.json`, `vergi.json`, `tema.json`, `marka/`. Paketin "Hakkımızda" sayfası mağazanın adını yer tutucuyla yazar, kurulumda "Örnek Mağaza" konur.
+
 - Her yeni özellik ve her yeni çekirdek sürümü önce burada denenir.
 - Gerçek satış yapılmaz, gerçek ödeme alınmaz. Site arama motorlarına kapalıdır.
 - Mağaza sahibi hesabı ve yurt dışı aktarım belgeleri gerekmez, site kimseye teslim edilmez.

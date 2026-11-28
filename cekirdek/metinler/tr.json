@@ -106,6 +106,8 @@
       "temalar": "Mağaza sahibinin seçebileceği temalar. İlki sitenin başlangıç temasıdır. Verilmezse bütün hazır temalar.",
       "vitrindeAltyapiAdi": "Vitrinde altyapının adı görünür.",
       "yakindaYazisi": "Vitrinin ana sayfasında başlığın altında \"Yakında açılıyoruz.\" yazısı görünür.",
+      "baslangicDemosu": "Sitenin başlangıç içeriği bu demo paketinden gelir: katalog, görseller, menüler, düzen, sayfalar, blog ve kuponlar. Yalnız ilk kurulumda okunur.",
+      "demoParcasiSiteden": "Demo paketinin bu parçaları sitenin kendi başlangıç dosyalarından gelir.",
       "aramaMotorlarinaAcik": "Sitenin asıl adresi arama motorlarına açıktır. Kapalıyken asıl adres dizine alınmaz; deneme adresi her zaman kapalıdır.",
       "bakimMetni": "Bakım sayfasında görünen metin. Boşsa ortak metin görünür.",
       "yoneticiOturumuSaat": "Hiç girilmeyen yönetici oturumunun kapanma süresi, saat olarak.",

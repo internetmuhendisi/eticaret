@@ -5,6 +5,12 @@
 import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import { basename, join, sep } from "node:path";
 import { z } from "zod";
+import {
+  type DemoParcasi,
+  demoParcaKodlari,
+  demoParcalari,
+  magazaAdiYerTutucusu,
+} from "../kayitlar/demo-paketi.ts";
 import { type DosyaTuru, dosyaSinirlari } from "../kayitlar/dosya.ts";
 import type { VideoSitesi } from "../kayitlar/video-siteleri.ts";
 import { icerikTuru, uzantininTuru } from "../moduller/dosya/tur.ts";
@@ -608,6 +614,169 @@ export const markaLogosunuDogrula = (
   return { gecerli: true, logo: { yol, tur } };
 };
 
+// --- Demo paketi (kart 0345, karar 0203) ---
+
+// Paketin yeri: site klasörünün iki üstündeki cekirdek/demolar/<kod>. Depoda siteler/<kod>/ için deponun kendisi;
+// kutularda site /siteler/<kod> altına, paketler /cekirdek/demolar altına bağlanır.
+export const demoKlasoru = (siteKlasoru: string, kod: string): string =>
+  join(siteKlasoru, "..", "..", "cekirdek", "demolar", kod);
+
+export const demoTanimDosyasi = "paket.json";
+
+export const demoTanimSemasi = z.strictObject({
+  kod: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/),
+  ad: z.string().trim().min(1).max(80),
+  sektor: z.string().trim().min(1).max(80),
+  aciklama: z.string().trim().min(1).max(500),
+  // Önizleme görseli: paketin görsellerinden biri.
+  onizleme: z.string().min(1),
+  onerilenTema: kodSemasi,
+  dil: ayarSemasi.shape.dil,
+  paraBirimi: ayarSemasi.shape.paraBirimi,
+  saatDilimi: ayarSemasi.shape.saatDilimi,
+  // Paketin ürünlerinin kullandığı vergi sınıflarının adları: paketi kullanan sitenin vergi başlangıcında olmalı.
+  vergiSiniflari: z.array(z.string().min(1)).max(50),
+});
+export type DemoTanimi = z.output<typeof demoTanimSemasi>;
+
+export const demoTaniminiOku = (
+  paketKlasoru: string,
+): { gecerli: true; deger: DemoTanimi } | { gecerli: false; hatalar: string[] } => {
+  if (!existsSync(paketKlasoru)) return { gecerli: false, hatalar: ["paket yok."] };
+  const ham = jsonOku(paketKlasoru, demoTanimDosyasi);
+  if ("hata" in ham) return { gecerli: false, hatalar: [ham.hata] };
+  const sonuc = demoTanimSemasi.safeParse(ham.deger);
+  if (!sonuc.success) {
+    return { gecerli: false, hatalar: sorunlariYaz(demoTanimDosyasi, sonuc.error.issues) };
+  }
+  const hatalar: string[] = [];
+  if (sonuc.data.kod !== basename(paketKlasoru)) {
+    hatalar.push(
+      `${demoTanimDosyasi}: kod: klasörün adıyla aynı olmalı (${basename(paketKlasoru)}).`,
+    );
+  }
+  if (!existsSync(join(paketKlasoru, demoParcalari.gorseller, sonuc.data.onizleme))) {
+    hatalar.push(`${demoTanimDosyasi}: onizleme: ${demoParcalari.gorseller} klasöründe yok.`);
+  }
+  // Mağaza adının yer tutucusu yalnız sayfaların ve blogun metinlerinde geçer (kurulum yalnız orada yerleştirir).
+  for (const parca of ["katalog", "menuler", "duzen", "kuponlar"] as const) {
+    const yol = join(paketKlasoru, demoParcalari[parca]);
+    if (existsSync(yol) && readFileSync(yol, "utf8").includes(magazaAdiYerTutucusu)) {
+      hatalar.push(
+        `${demoParcalari[parca]}: ${magazaAdiYerTutucusu} yalnız sayfalarda ve blogda kullanılır.`,
+      );
+    }
+  }
+  return hatalar.length > 0 ? { gecerli: false, hatalar } : { gecerli: true, deger: sonuc.data };
+};
+
+// Her paket parçasının okunacağı klasör ve hatalara paketin yerini ekleyen yardımcı. Demosuz sitede her parça
+// sitenin kendi klasöründendir.
+const demoKaynaklari = (
+  klasor: string,
+  ayarlar: z.output<typeof ayarSemasi> | undefined,
+  vergi: VergiBaslangici | undefined,
+) => {
+  const kaynak = Object.fromEntries(demoParcaKodlari.map((p) => [p, klasor])) as Record<
+    DemoParcasi,
+    string
+  >;
+  const hatalar: string[] = [];
+  const kod = ayarlar?.baslangicDemosu;
+  const siteden = new Set(ayarlar?.demoParcasiSiteden ?? []);
+  if (kod === undefined) {
+    if (siteden.size > 0) {
+      hatalar.push("ayarlar.json: demoParcasiSiteden: başlangıç demosu yokken yazılmaz.");
+    }
+  } else {
+    const paket = demoKlasoru(klasor, kod);
+    const tanim = demoTaniminiOku(paket);
+    if (!tanim.gecerli) {
+      hatalar.push(...tanim.hatalar.map((h) => `demo paketi ${kod}: ${h}`));
+    } else if (ayarlar !== undefined) {
+      for (const alan of ["dil", "paraBirimi", "saatDilimi"] as const) {
+        if (tanim.deger[alan] !== ayarlar[alan]) {
+          hatalar.push(
+            `ayarlar.json: baslangicDemosu: ${kod} paketinin ${alan} değeri ${tanim.deger[alan]}, sitenin ${ayarlar[alan]}.`,
+          );
+        }
+      }
+      const siniflar = new Set(vergi?.siniflar.map((s) => s.ad) ?? []);
+      for (const sinif of tanim.deger.vergiSiniflari) {
+        if (vergi !== undefined && !siniflar.has(sinif)) {
+          hatalar.push(
+            `${vergiBaslangicDosyasi}: ${kod} paketinin ürünleri "${sinif}" vergi sınıfını kullanıyor, sitede yok.`,
+          );
+        }
+      }
+    }
+    for (const parca of demoParcaKodlari) {
+      const sitede = existsSync(join(klasor, demoParcalari[parca]));
+      if (siteden.has(parca)) {
+        if (!sitede)
+          hatalar.push(`${demoParcalari[parca]}: demoParcasiSiteden'de yazılı ama sitede yok.`);
+      } else {
+        if (sitede) {
+          hatalar.push(
+            `${demoParcalari[parca]}: ${kod} paketinde; sitede de olamaz (değiştirmek için demoParcasiSiteden).`,
+          );
+        }
+        kaynak[parca] = paket;
+      }
+    }
+  }
+  const yerler = Object.fromEntries(
+    demoParcaKodlari.map((p) => [p, kaynak[p] === klasor ? "" : `cekirdek/demolar/${kod ?? ""}/`]),
+  ) as Record<DemoParcasi, string>;
+  const oneklenmis = <T extends { gecerli: boolean }>(parca: DemoParcasi, sonuc: T): T =>
+    !sonuc.gecerli && "hatalar" in sonuc && yerler[parca]
+      ? { ...sonuc, hatalar: (sonuc.hatalar as string[]).map((h) => `${yerler[parca]}${h}`) }
+      : sonuc;
+  return { kaynak, hatalar, oneklenmis };
+};
+
+// Paketin kendi başına doğrulanması (karar 0203): tanımındaki saat dilimi, vergi sınıfları ve önerilen temayla, site
+// doğrulamasının aynı başlangıç denetimleri. Hatalar paketin klasörüne göre yazılır.
+export const demoPaketiniDogrula = (paketKlasoru: string): string[] => {
+  const tanim = demoTaniminiOku(paketKlasoru);
+  if (!tanim.gecerli) return tanim.hatalar;
+  const { saatDilimi, vergiSiniflari, onerilenTema } = tanim.deger;
+  const hatalar: string[] = [];
+  const videoSiteleri = ayarSemasi.shape.videoSiteleri.parse(undefined);
+  const vergi = vergiBaslangicSemasi.parse({ siniflar: vergiSiniflari.map((ad) => ({ ad })) });
+  const katalog = katalogBaslangiciniDogrula(paketKlasoru, { saatDilimi, vergi, videoSiteleri });
+  if (!katalog.gecerli) hatalar.push(...katalog.hatalar);
+  const sayfalar = sayfaBaslangiciniDogrula(paketKlasoru);
+  if (!sayfalar.gecerli) hatalar.push(...sayfalar.hatalar);
+  const blog = blogBaslangiciniDogrula(paketKlasoru, saatDilimi);
+  if (!blog.gecerli) hatalar.push(...blog.hatalar);
+  if (!hazirTemaKodlari().includes(onerilenTema)) {
+    hatalar.push(`${demoTanimDosyasi}: onerilenTema: hazır temalarda yok: ${onerilenTema}.`);
+  }
+  if (!katalog.gecerli) return hatalar;
+  if (sayfalar.gecerli) {
+    const menuler = menuBaslangiciniDogrula(paketKlasoru, katalog.deger, sayfalar.deger);
+    if (!menuler.gecerli) hatalar.push(...menuler.hatalar);
+  }
+  const kuponlar = kuponBaslangiciniDogrula(paketKlasoru, katalog.deger, saatDilimi);
+  if (!kuponlar.gecerli) hatalar.push(...kuponlar.hatalar);
+  const tema = hazirTemaKodlari().includes(onerilenTema) ? hazirTemayiOku(onerilenTema) : undefined;
+  if (tema !== undefined && !tema.gecerli) hatalar.push(...tema.hatalar);
+  const duzen =
+    tema?.gecerli === true
+      ? duzenBaslangiciniDogrula(paketKlasoru, tema.tema, katalog.deger)
+      : undefined;
+  if (duzen !== undefined && !duzen.gecerli) hatalar.push(...duzen.hatalar);
+  const gorseller = katalogGorselleriniDogrula(
+    paketKlasoru,
+    katalog.deger,
+    duzen?.gecerli === true ? duzen.deger : undefined,
+    blog.gecerli ? blog.deger : undefined,
+  );
+  if (!gorseller.gecerli) hatalar.push(...gorseller.hatalar);
+  return hatalar;
+};
+
 export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
   if (!existsSync(klasor)) return { gecerli: false, hatalar: [`${klasor}: klasör yok.`] };
 
@@ -642,28 +811,51 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
   if (!baslangic.gecerli) hatalar.push(...baslangic.hatalar);
   const vergiBaslangici = vergiBaslangiciniDogrula(klasor);
   if (!vergiBaslangici.gecerli) hatalar.push(...vergiBaslangici.hatalar);
-  const katalogBaslangici = katalogBaslangiciniDogrula(
+
+  // Demo paketi (karar 0203): paketin parçaları paketten, sitenin değiştirdiği parçalar siteden okunur.
+  const kaynaklar = demoKaynaklari(
     klasor,
-    vergiBaslangici.gecerli && ayarlar !== undefined
-      ? {
-          saatDilimi: ayarlar.saatDilimi,
-          vergi: vergiBaslangici.deger,
-          videoSiteleri: ayarlar.videoSiteleri,
-        }
-      : undefined,
+    ayarlar,
+    vergiBaslangici.gecerli ? vergiBaslangici.deger : undefined,
+  );
+  hatalar.push(...kaynaklar.hatalar);
+  const { kaynak, oneklenmis } = kaynaklar;
+
+  const katalogBaslangici = oneklenmis(
+    "katalog",
+    katalogBaslangiciniDogrula(
+      kaynak.katalog,
+      vergiBaslangici.gecerli && ayarlar !== undefined
+        ? {
+            saatDilimi: ayarlar.saatDilimi,
+            vergi: vergiBaslangici.deger,
+            videoSiteleri: ayarlar.videoSiteleri,
+          }
+        : undefined,
+    ),
   );
   if (!katalogBaslangici.gecerli) hatalar.push(...katalogBaslangici.hatalar);
-  const sayfaBaslangici = sayfaBaslangiciniDogrula(klasor);
+  const sayfaBaslangici = oneklenmis("sayfalar", sayfaBaslangiciniDogrula(kaynak.sayfalar));
   if (!sayfaBaslangici.gecerli) hatalar.push(...sayfaBaslangici.hatalar);
   const menuBaslangici =
     katalogBaslangici.gecerli && sayfaBaslangici.gecerli
-      ? menuBaslangiciniDogrula(klasor, katalogBaslangici.deger, sayfaBaslangici.deger)
+      ? oneklenmis(
+          "menuler",
+          menuBaslangiciniDogrula(kaynak.menuler, katalogBaslangici.deger, sayfaBaslangici.deger),
+        )
       : undefined;
   if (menuBaslangici !== undefined && !menuBaslangici.gecerli) {
     hatalar.push(...menuBaslangici.hatalar);
   }
   const kuponBaslangici = katalogBaslangici.gecerli
-    ? kuponBaslangiciniDogrula(klasor, katalogBaslangici.deger, ayarlar?.saatDilimi ?? "UTC")
+    ? oneklenmis(
+        "kuponlar",
+        kuponBaslangiciniDogrula(
+          kaynak.kuponlar,
+          katalogBaslangici.deger,
+          ayarlar?.saatDilimi ?? "UTC",
+        ),
+      )
     : undefined;
   if (kuponBaslangici !== undefined && !kuponBaslangici.gecerli) {
     hatalar.push(...kuponBaslangici.hatalar);
@@ -684,11 +876,17 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
   const duzenBaslangici =
     baslangicTemasi === undefined || !katalogBaslangici.gecerli
       ? undefined
-      : duzenBaslangiciniDogrula(klasor, baslangicTemasi, katalogBaslangici.deger);
+      : oneklenmis(
+          "duzen",
+          duzenBaslangiciniDogrula(kaynak.duzen, baslangicTemasi, katalogBaslangici.deger),
+        );
   if (duzenBaslangici !== undefined && !duzenBaslangici.gecerli) {
     hatalar.push(...duzenBaslangici.hatalar);
   }
-  const blogBaslangici = blogBaslangiciniDogrula(klasor, ayarlar?.saatDilimi ?? "UTC");
+  const blogBaslangici = oneklenmis(
+    "blog",
+    blogBaslangiciniDogrula(kaynak.blog, ayarlar?.saatDilimi ?? "UTC"),
+  );
   if (!blogBaslangici.gecerli) hatalar.push(...blogBaslangici.hatalar);
   // Başlangıç düzeninin blog bölümü kategoriyi adres adıyla seçer: başlangıç blogunda olmalı (kart 0272).
   if (blogBaslangici.gecerli && duzenBaslangici?.gecerli === true) {
@@ -707,11 +905,14 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
     }
   }
   const katalogGorselleri = katalogBaslangici.gecerli
-    ? katalogGorselleriniDogrula(
-        klasor,
-        katalogBaslangici.deger,
-        duzenBaslangici?.gecerli === true ? duzenBaslangici.deger : undefined,
-        blogBaslangici.gecerli ? blogBaslangici.deger : undefined,
+    ? oneklenmis(
+        "gorseller",
+        katalogGorselleriniDogrula(
+          kaynak.gorseller,
+          katalogBaslangici.deger,
+          duzenBaslangici?.gecerli === true ? duzenBaslangici.deger : undefined,
+          blogBaslangici.gecerli ? blogBaslangici.deger : undefined,
+        ),
       )
     : undefined;
   if (katalogGorselleri !== undefined && !katalogGorselleri.gecerli) {

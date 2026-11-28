@@ -47,8 +47,6 @@ export type KurulusGirdisi = {
   cekirdekSurumu: string;
   // Yalnız varsayılandan farklı olan altyapı sahibi ayarları (ayarlar.json'a aynen yazılır).
   ayarlar: Record<string, unknown>;
-  // Başlanacak demonun kodu (kart 0345). Tarif yalnız taşır; paketin doğrulaması ve kurulumu orada.
-  demo?: string;
   // Asıl adres (karar 0202): alt adres ("https://seramik.eticaretmagazasi.com") ya da mağazanın kendi alan adı.
   // Komut alt adresi kod adından önerir. Deneme adresi her zaman kod adından türer (karar 0032).
   asilAdres?: string;
@@ -513,7 +511,8 @@ export const kuruCalistir = (
     numara,
     kayitlar: sunucuKayitlari(ortam, girdi.kodAdi, numara),
     digerKayitlar: digerKayitlar(ortam, girdi.kodAdi),
-    demo: girdi.demo,
+    // Başlanacak demo ayarlardadır (baslangicDemosu, karar 0203).
+    demo: girdi.ayarlar["baslangicDemosu"],
     adimlar: kurulusAdimlari.map((adim) => adim.kod),
   };
 };

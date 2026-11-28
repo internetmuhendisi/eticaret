@@ -1,0 +1,12 @@
+{
+  "kod": "demo1",
+  "ad": "Günlük yaşam mağazası",
+  "sektor": "Çok kategorili perakende",
+  "aciklama": "Giyim, ev ve yaşam, elektronik aksesuar, spor ve kişisel bakım ürünleriyle dolu bir mağaza: seçenekli ürünler, indirimler, kampanya afişleri, blog ve kuponlar.",
+  "onizleme": "afis-slider-2-giyim.jpg",
+  "onerilenTema": "canli-carsi",
+  "dil": "tr",
+  "paraBirimi": "TRY",
+  "saatDilimi": "Europe/Istanbul",
+  "vergiSiniflari": ["%20"]
+}

@@ -4,6 +4,8 @@ paths:
   - "cekirdek/moduller/magaza-ayarlari/**"
   - "cekirdek/yonetim-paneli/ayarlar/**"
   - "siteler/**"
+  - "cekirdek/demolar/**"
+  - "cekirdek/kayitlar/demo-paketi.ts"
   - "planlar/site-ayarlari.md"
   - "**/.env.example"
 ---
@@ -21,3 +23,4 @@ Site ayarı, siteden siteye değişebilen ve varsayılan değeriyle tanımlı da
 - Fiziksel, dijital, hizmet gibi ürün türlerini site başına açılıp kapanan ayar yap.
 - Yönetim panelindeki ayar ekranlarını ayar şemasından üret.
 - Ödeme anahtarı, şifre gibi gizli bilgileri ayar dosyasına yazma. Bilgisayarda `.env` dosyasında, sunucuda sitenin gizli bilgi dosyalarında tut. Yeni gizli bilgiyi `cekirdek/kayitlar/gizli-bilgiler.ts` kaydına ekle, uygulamada yalnız `gizliBilgi()` ile oku (karar 0031).
+- Sitenin başlangıç içeriği (katalog, görseller, menüler, düzen, sayfalar, blog, kuponlar) bir demo paketinden gelebilir: `cekirdek/demolar/<kod>/`, site `baslangicDemosu` ayarıyla seçer (karar 0203). Parçaların listesi tek yerdedir (`cekirdek/kayitlar/demo-paketi.ts`). Site bir parçayı kendi başlangıç dosyasıyla değiştirecekse onu `demoParcasiSiteden` ayarına yazar; yazılmayan parça sitede bulunursa doğrulama durur. Paket dilini, para birimini, saat dilimini ve ürünlerinin vergi sınıflarını tanımında (`paket.json`) yazar, uymayan site o paketle başlayamaz. Paketin metninde mağazanın adı `{magazaAdi}` yer tutucusuyla yazılır, kurulumda mağazanın adı konur.
