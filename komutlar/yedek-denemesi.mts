@@ -89,9 +89,12 @@ const dene = (betik: string) => {
 };
 const bekle = (ms: number) => new Promise((bitti) => setTimeout(bitti, ms));
 
+// Yalnız denemenin kendi geçici veritabanına (ve postgres'e) gider. Güvenli oturumun arama yolu yalnız pg_catalog'dur
+// (karar 0053): denemenin tabloları public'te açılsın diye kendi veritabanında arama yolu açıkça verilir. Bu veritabanının
+// içeriğini deneme kendisi yazar, sitenin kodu yoktur.
 const sql = (komut: string, hedef = db): string =>
   calistir(
-    `docker exec -i ${guvenliOturum} ${dbKutusu} psql -U postgres -d ${hedef} -At -v ON_ERROR_STOP=1 <<'SQL_SONU'\n${komut}\nSQL_SONU\n`,
+    `docker exec -i ${guvenliOturum} ${dbKutusu} psql -U postgres -d ${hedef} -Atq -v ON_ERROR_STOP=1 <<'SQL_SONU'\n${hedef === db ? "SET search_path = public, pg_catalog;\n" : ""}${komut}\nSQL_SONU\n`,
   ).trim();
 
 // Veritabanının özeti: Örnek Mağaza'nın değişmediğini ölçer. Yalnız özet döner, veri basılmaz. Sitenin
