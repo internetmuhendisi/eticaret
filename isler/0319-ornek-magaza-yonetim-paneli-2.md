@@ -25,6 +25,12 @@ Bölüm: Yönetim paneli 2. Bölümün son işi. Önce bu bölümün öteki kart
 - Sağlık ve sunucu denetimi yeşil.
 - Geri dönüş komutunun bu sürümde çalıştığı biliniyor (yayın denemesi).
 
+## Sonuç
+
+- Kullanıcı kararları (2026-11-28): Excel ile toplu ürün işlemleri eklentisi Örnek Mağaza'da açık; dört örnek kupon (HOSGELDIN10, GIYIM50, KARGOBEDAVA, YILBASI20) başlangıç verisinde kalır, canlı demoda hiç kupon olmadığı için yeni sürümün ilk açılışında bir kez yazılır; bu bölümün site ayarları önerilen değerlerde (rapor son 30 gün, ücretsiz kargo sınırı indirimden sonra; kupon kodu harf ayrımsız, Excel 5.000 satır, okunan bildirim 30 gün), `ayarlar.json`'a ayrıca bir şey yazılmaz.
+- Yayından önce kontrol hattı bu bölümde her çalışmada kırmızıydı (yönetici şifre sıfırlama testi eski şablonu arıyordu): kart 0339 ile düzeldi.
+- Çekirdek ve Örnek Mağaza 0.81.0, sürüm notu `cekirdek/surum-notlari/0.81.0.md`.
+
 ## Durum
 
 yapılacak
