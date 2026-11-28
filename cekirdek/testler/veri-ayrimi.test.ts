@@ -67,9 +67,12 @@ const kutuKimligi = (): string => {
 const kutuKomutu = (betik: string, girdi?: Buffer) =>
   spawnSync("bash", ["-euo", "pipefail", "-c", betik], {
     input: girdi,
-    encoding: girdi ? undefined : "utf8",
+    encoding: "utf8",
     maxBuffer: 50_000_000,
-  }) as ReturnType<typeof spawnSync> & { stdout: string; stderr: string };
+  });
+// Yedek gibi ikili çıktı veren parça.
+const kutuDokumu = (betik: string) =>
+  spawnSync("bash", ["-euo", "pipefail", "-c", betik], { maxBuffer: 50_000_000 });
 
 // Bağlanıp tek bir sorgu çalıştırır. Başarılıysa "bağlandı", değilse hatanın kendisini döner.
 const dene = async (kullanici: string, sifre: string, veritabani: string, sorgu = "select 1") => {
@@ -389,10 +392,7 @@ describe("üst bilgi", () => {
   });
 
   it("yedek alınır; yedekten açılan veritabanında veri gelir, izin gelmez, kapatınca kapalıdır", async () => {
-    const yedek = kutuKomutu(
-      `docker exec ${kutuKimligi()} pg_dump -U postgres -Fc -d ${a.ad}`,
-      Buffer.alloc(0),
-    );
+    const yedek = kutuDokumu(`docker exec ${kutuKimligi()} pg_dump -U postgres -Fc -d ${a.ad}`);
     expect(yedek.status).toBe(0);
 
     const yeni = `${a.ad}_yeni`;
@@ -401,7 +401,7 @@ describe("üst bilgi", () => {
     try {
       // Geri yüklemenin kendi komutu (komutlar/yedek.mts).
       const yukleme = kutuKomutu(siteYuklemeKomutu(kutuKimligi(), a.ad, yeni), yedek.stdout);
-      expect(yukleme.stderr.toString()).toBe("");
+      expect(yukleme.stderr).toBe("");
       expect(yukleme.status).toBe(0);
       expect(kutuKomutu(sessizYuklemeKapat(kutuKimligi(), a.ad, yeni)).status).toBe(0);
       const satirlar = await acilan.select().from(veritabaniKimligi);
@@ -468,10 +468,7 @@ describe("yedek provası ve geri yükleme", () => {
   });
 
   it("geri yükleme yedekteki kısıtlamayı yönetici olarak çalıştırmaz, ayar yüklemeden sonra kalkar", async () => {
-    const yedek = kutuKomutu(
-      `docker exec ${kutuKimligi()} pg_dump -U postgres -Fc -d ${c.ad}`,
-      Buffer.alloc(0),
-    );
+    const yedek = kutuDokumu(`docker exec ${kutuKimligi()} pg_dump -U postgres -Fc -d ${c.ad}`);
     expect(yedek.status).toBe(0);
     expect(kutuKomutu(sessizYuklemeAc(kutuKimligi(), c.ad, yeni)).status).toBe(0);
     const ayar = async () =>
@@ -484,7 +481,7 @@ describe("yedek provası ve geri yükleme", () => {
     expect(await ayar()).toEqual(["log_min_messages=panic", "log_min_error_statement=panic"]);
 
     const yukleme = kutuKomutu(siteYuklemeKomutu(kutuKimligi(), c.ad, yeni), yedek.stdout);
-    expect(yukleme.stderr.toString()).toBe("");
+    expect(yukleme.stderr).toBe("");
     expect(yukleme.status).toBe(0);
     expect(await superMi()).toBe(false);
     expect(kutuKomutu(sessizYuklemeKapat(kutuKimligi(), c.ad, yeni)).status).toBe(0);

@@ -119,6 +119,16 @@ describe("sunucuda çalışan betikler", () => {
     expect(sonuc.status).toBe(0);
   });
 
+  it("kurma, kutu yeniden kurulmasa da yazdığı bağlantı kuralını okutur", () => {
+    const betik = kurmaBetigi("deneme", ["ornek-magaza"]);
+    const yazma = betik.indexOf('"$k/ayar/pg_hba.conf"');
+    const acma = betik.indexOf("docker compose");
+    const okutma = betik.indexOf("pg_reload_conf()");
+    expect(yazma).toBeGreaterThan(0);
+    expect(acma).toBeGreaterThan(yazma);
+    expect(okutma).toBeGreaterThan(acma);
+  });
+
   it("değişiklikler sitenin kullanıcısıyla, ağında ve yalnız kendi dosyasıyla uygulanır", () => {
     const betik = guncellemeBetigi("deneme", "ornek-magaza", 1, "altyapi-cekirdek:0.1.0");
     expect(betik).toContain("--network site-deneme-ornek-magaza");

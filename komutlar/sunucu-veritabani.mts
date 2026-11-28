@@ -167,6 +167,9 @@ ${yazma.join("\n")}
 h=$(mktemp)
 trap 'rm -f "$h"' EXIT
 docker compose -f "$k/compose.json" up -d --wait --remove-orphans --quiet-pull </dev/null >/dev/null 2>"$h" || { echo "HATA veritabanı kutusu açılamadı:" >&2; tail -5 "$h" >&2; docker logs --tail 5 ${veritabaniKutusu(ortam)} >&2 || true; exit 1; }
+# Tanım değişmediyse kutu yeniden kurulmaz: yeni bağlantı kuralı dosyası ancak yeniden okutulunca
+# geçerli olur (kart 0068). Okunamayan dosyada PostgreSQL eski kuralları tutar, hata kayda düşer.
+docker exec ${veritabaniKutusu(ortam)} psql -U postgres -d postgres -Atqc 'SELECT pg_reload_conf()' </dev/null >/dev/null
 echo veritabani=hazir
 `;
 };
