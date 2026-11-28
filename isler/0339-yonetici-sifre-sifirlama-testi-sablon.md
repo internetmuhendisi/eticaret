@@ -27,4 +27,4 @@ Yayın yalnız yeşil hatla yapılır: kart 0319'un önünde.
 
 ## Durum
 
-yapılacak
+bitti
