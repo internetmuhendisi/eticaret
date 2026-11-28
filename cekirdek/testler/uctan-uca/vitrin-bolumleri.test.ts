@@ -76,6 +76,16 @@ const bildirim = (page: Page, anahtar: Parameters<typeof metin>[0]) =>
     .getByRole("region", { name: metin("ortak.parca.bildirimler") })
     .getByText(metin(anahtar), { exact: true });
 
+// Bildirimi kendi kapat düğmesiyle kapatır, kapanmasını bekler (kart 0341). Bildirim sağ altta çıkar ve fare
+// üstündeyken kapanmaz: az önce basılan düğmenin yerinde kalan fare onu açık tutar, altında kalan bir sonraki düğmeye
+// basılamaz (hat 46097578163: satır ekranın altındaydı). Bildirimden sonra fareyle basmadan önce çağrılır.
+const bildirimiKapat = async (page: Page, anahtar: Parameters<typeof metin>[0]) => {
+  const alan = page.getByRole("region", { name: metin("ortak.parca.bildirimler") });
+  const kutu = page.locator("[data-sonner-toast]").filter({ hasText: metin(anahtar) });
+  await kutu.getByRole("button", { name: metin("ortak.parca.bildirimiKapat") }).click();
+  await expect(alan.getByText(metin(anahtar), { exact: true })).toHaveCount(0);
+};
+
 const alanSekmesi = (page: Page, alan: "ust-kisim" | "ana-sayfa" | "alt-kisim") =>
   page.getByRole("tab", { name: new RegExp(`^${metin(`yonetim.bolumler.alanlar.${alan}`)}`) });
 
@@ -155,6 +165,7 @@ test("mağaza sahibi klavyeyle bölüm ekler ve düzenler, kaydedilmemiş deği�
     expect((await ustKisimSirasi()).at(-1)).toBe(ilk);
     await vitrin.goto(vitrinAdresleri.anasayfa);
     await expect(vitrin.getByRole("banner").getByText(ilk)).toBeVisible();
+    await bildirimiKapat(page, "yonetim.bolumler.eklendi");
 
     // Düzenleme: değer değişir, vitrinde yenisi görünür.
     await satir.getByRole("button", { name: eylemAdi("yonetim.bolumler.duzenle") }).click();
@@ -373,6 +384,7 @@ test("mağaza sahibi sıralar, gizler, siler, silmeyi geri alır ve önceki hâl
     await expect(satir2.getByText(metin("yonetim.bolumler.gizliRozet"))).toBeVisible();
     await vitrin.reload();
     await expect(vitrin.getByText(ikinci)).toHaveCount(0);
+    await bildirimiKapat(page, "yonetim.bolumler.gizlendi");
     await satir2.getByRole("button", { name: eylemAdi("yonetim.bolumler.goster") }).click();
     await expect(bildirim(page, "yonetim.bolumler.gosterildi")).toBeVisible();
     await vitrin.reload();
@@ -494,6 +506,7 @@ test("Slider kısayolu: yoksa yeni form en üste ekler, birden çokta ilkini aç
     const yeni = (await servis.duzenOku(vt)).duzen["ana-sayfa"];
     expect(yeni[0]?.tur).toBe(sliderTuru);
     expect(sliderBasligi(yeni[0] as BolumOrnegi)).toBe(birinci);
+    await bildirimiKapat(page, "yonetim.bolumler.eklendi");
     await slaytBasligi(page).fill(duzeltilen);
     // Yenileme gelmeden yazılan başlık kaydedilir: aynı slider değişir, ikinci slider eklenmez (hattaki 0264
     // çalışmasında yenileme geç geldi, ikinci Kaydet yeni slider ekledi; iz: iki ekleme isteği).
@@ -609,6 +622,7 @@ test("Slider: eklenen slider yenileme gelmeden başka yerde silinirse sonraki Ka
     const kaydet = page.getByRole("button", { name: metin("yonetim.bolumler.form.kaydet") });
     await kaydet.click();
     await expect(bildirim(page, "yonetim.bolumler.eklendi")).toBeVisible();
+    await bildirimiKapat(page, "yonetim.bolumler.eklendi");
     // Başka bir sekme eklenen slider'ı siler.
     for (const bolum of (await servis.duzenOku(vt)).duzen["ana-sayfa"]) {
       if (bolum.tur === sliderTuru) await servis.bolumSil(vt, kim, bolum.kimlik);
