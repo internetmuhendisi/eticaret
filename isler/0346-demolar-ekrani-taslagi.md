@@ -55,4 +55,4 @@ Bölüm: Yeni mağaza. Önce 0345 bitmiş olmalı (paketin parçaları belli olm
 
 ## Durum
 
-yapılacak
+bitti
