@@ -917,8 +917,18 @@ export const geriYukle = (
   // Veritabanı bozuksa o anki durumun yedeği alınamaz. Bu seçenekte önceki veri kendiliğinden
   // silinmez, yedeği yoktur: incelenince --eskiyi-sil ile silinir.
   { sonYedeksiz = false } = {},
-): Promise<void> =>
-  yerDegistir(
+): Promise<void> => {
+  const dosyalariGetir = (ne: string): void => {
+    const cikti = sunucudaCalistir(
+      ipv4,
+      dosyaGetirmeBetigi(ortam, site, geciciAd(siteVeritabaniAdi(site.kodAdi)), anahtar),
+      uzunSure,
+    );
+    const sayilar = /dosya=(\d+) yerinde=(\d+) indirilen=(\d+)/.exec(cikti);
+    if (!sayilar) throw new Error(`Dosyalar geri getirilemedi: ${cikti.trim()}`);
+    yaz(`dosyalar    ${sayilar[1]} dosya: ${sayilar[2]} yerinde, ${sayilar[3]} ${ne}`);
+  };
+  return yerDegistir(
     ipv4,
     ortam,
     site,
@@ -935,21 +945,17 @@ export const geriYukle = (
         );
         if (!/tablo=[1-9]/.test(acilan)) throw new Error("Yedekten tablo çıkmadı.");
         yaz(`açıldı      ${dosya} yan veritabanında`);
-        // Dosyalar veritabanından önce yerine konur: yer değiştirdiğinde kaydı olan her dosya yerindedir.
-        const dosyalar = sunucudaCalistir(
-          ipv4,
-          dosyaGetirmeBetigi(ortam, site, geciciAd(siteVeritabaniAdi(site.kodAdi)), anahtar),
-          uzunSure,
-        );
-        const sayilar = /dosya=(\d+) yerinde=(\d+) indirilen=(\d+)/.exec(dosyalar);
-        if (!sayilar) throw new Error(`Dosyalar geri getirilemedi: ${dosyalar.trim()}`);
-        yaz(
-          `dosyalar    ${sayilar[1]} dosya: ${sayilar[2]} yerinde, ${sayilar[3]} depodan getirildi`,
-        );
+        // Dosyalar veritabanından önce yerine konur: yer değiştirdiğinde kaydı olan her dosya yerindedir. Uzun
+        // indirme site açıkken yapılır.
+        dosyalariGetir("depodan getirildi");
       },
+      // Site açıkken sitenin kendi dosya temizliği getirilen bir dosyayı silmiş olabilir (kaydı şimdi silinmiş
+      // işaretlidir): kutular durunca bir kez daha denetlenir, eksik kalan getirilir.
+      durunca: () => dosyalariGetir("kutular durunca getirildi"),
     },
     yaz,
   );
+};
 
 // Boş yan veritabanı: sitenin kullanıcısına ait, herkese kapalı, üst bilgi izinleri kapalı. Tablo yok;
 // değişiklikleri yer değiştirdikten sonra yayındaki görüntü uygular (kart 0128).
@@ -1020,6 +1026,9 @@ const yerDegistir = (
     dosya: string;
     sonYedeksiz: boolean;
     yanaAc: () => void;
+    // Kutular durduktan sonra, son yedekten ve yer değiştirmeden önce (kart 0093): bu arada sitenin kendisi bir şeyi
+    // değiştiremez. Hata verirse yer değiştirmeden önceki hata gibi işlenir.
+    durunca?: () => void;
     // Yayında kutusu olmayan sitede değişiklikleri uygulayacak görüntü yoktur: boş veritabanı tablosuz
     // kalıp başarılı sayılırdı. Yedekten açılan veritabanında tablolar zaten vardır.
     kutuZorunlu?: boolean;
@@ -1072,6 +1081,7 @@ const yerDegistir = (
     }
     try {
       if (kutu) sunucudaCalistir(ipv4, kutuyuDurdurmaBetigi(kutu));
+      is.durunca?.();
       if (sonYedeksiz) {
         yaz("uyarı       son yedek istenerek atlandı, önceki veri silinmeyecek");
       } else {

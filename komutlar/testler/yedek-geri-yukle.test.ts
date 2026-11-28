@@ -217,6 +217,7 @@ describe("başarılı geri yükleme", () => {
       "yana",
       "dosyalar",
       "durdur",
+      "dosyalar",
       "yedek",
       "degistir",
       "uret",
@@ -237,6 +238,15 @@ describe("yer değiştirmeden önce hata: veri değişmez, site açık kalır, y
     expect(durum.cagrilar).not.toContain("uret");
     expect(durum.cagrilar).not.toContain("gerial");
     expect(durum.cagrilar).not.toContain("eskisil");
+  });
+
+  // Kart 0093: kutular durunca dosyalar bir kez daha denetlenir; düşerse veri değişmez, site yeniden açılır.
+  it("kutular durunca dosya adımı düşerse", async () => {
+    durum.sonraBozuk = { ad: "dosyalar", kacinci: 2 };
+    await expect(calistir()).rejects.toThrow(/SAHTE-HATA dosyalar/);
+    expect(durum).toMatchObject({ canli: "gercek", eski: null, yan: null, kutu: "acik" });
+    expect(durum.cagrilar).not.toContain("degistir");
+    expect(durum.cagrilar).not.toContain("uret");
   });
 
   it("kutu açılamazsa asıl hata da söylenir", async () => {
