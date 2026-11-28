@@ -76,6 +76,9 @@ const uygula = (ad: string): ReturnType<typeof cevap> => {
     case "yana":
       d.yan = "yedek";
       return cevap(0, "tablo=2\n");
+    // Dosyalar (kart 0093): diskte olmayan dosyalar depodan gelir; diske yalnız ekler.
+    case "dosyalar":
+      return cevap(0, "dosya=2 yerinde=1 indirilen=1\n");
     case "bosyana":
       d.yan = "bos";
       return cevap(0, `${sahteYanTablo}\n`);
@@ -198,10 +201,21 @@ describe("başarılı geri yükleme", () => {
   it("sıra doğru: yana aç, kutuyu durdur, son yedek, yer değiştir, şifre, aç, sağlık, sil", async () => {
     await calistir();
     const sira = durum.cagrilar.filter((ad) =>
-      ["yana", "durdur", "yedek", "degistir", "uret", "yeniden", "saglik", "eskisil"].includes(ad),
+      [
+        "yana",
+        "dosyalar",
+        "durdur",
+        "yedek",
+        "degistir",
+        "uret",
+        "yeniden",
+        "saglik",
+        "eskisil",
+      ].includes(ad),
     );
     expect(sira).toEqual([
       "yana",
+      "dosyalar",
       "durdur",
       "yedek",
       "degistir",
@@ -216,7 +230,7 @@ describe("başarılı geri yükleme", () => {
 });
 
 describe("yer değiştirmeden önce hata: veri değişmez, site açık kalır, yan veritabanı kalmaz", () => {
-  it.each(["yana", "durdur", "yedek", "degistir"])("%s düşerse", async (ad) => {
+  it.each(["yana", "dosyalar", "durdur", "yedek", "degistir"])("%s düşerse", async (ad) => {
     durum.bozuk.add(ad);
     await expect(calistir()).rejects.toThrow(/SAHTE-HATA/);
     expect(durum).toMatchObject({ canli: "gercek", eski: null, yan: null, kutu: "acik" });
