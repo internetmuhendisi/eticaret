@@ -16,6 +16,12 @@ import {
   ustBilgiKapatmaSql,
 } from "../../komutlar/site-ust-bilgi.mts";
 import { veritabaniVeKullaniciAc } from "../../komutlar/site-veritabani.mts";
+import {
+  sessizYuklemeAc,
+  sessizYuklemeKapat,
+  siteYuklemeKomutu,
+  tabloOzetiKomutu,
+} from "../../komutlar/yedek.mts";
 import { baglan, siteVeritabaniAdi, type Veritabani } from "../veritabani/baglanti";
 import { siteVeritabaniniGuncelle } from "../veritabani/guncelle";
 import { veritabaniKimligi } from "../veritabani/tablolar/veritabani-kimligi";
@@ -42,6 +48,28 @@ const baglantilar: Veritabani[] = [];
 // Yanlış şifre gibi başka bir hata testi geçirmez.
 const reddedildi = /no pg_hba\.conf entry|permission denied for database/;
 const izinYok = /permission denied/;
+
+// Yerel veritabanı kutusunun kimliği: sunucudaki betiklerin komutları (`docker exec <kutu> …`) onunla çalışır.
+const composeArgumanlari = [
+  ...["compose", "-f", join(kok, "sunucu", "compose.yaml"), "--env-file", join(kok, ".env")],
+];
+let kutu = "";
+const kutuKimligi = (): string => {
+  if (!kutu) {
+    kutu = spawnSync("docker", [...composeArgumanlari, "ps", "-q", "veritabani"], {
+      encoding: "utf8",
+    }).stdout.trim();
+    if (!kutu) throw new Error("Veritabanı kutusu bulunamadı (pnpm veritabani-baslat).");
+  }
+  return kutu;
+};
+// Sunucu betiğinin bir parçasını bu bilgisayarda kabukla çalıştırır.
+const kutuKomutu = (betik: string, girdi?: Buffer) =>
+  spawnSync("bash", ["-euo", "pipefail", "-c", betik], {
+    input: girdi,
+    encoding: girdi ? undefined : "utf8",
+    maxBuffer: 50_000_000,
+  }) as ReturnType<typeof spawnSync> & { stdout: string; stderr: string };
 
 // Bağlanıp tek bir sorgu çalıştırır. Başarılıysa "bağlandı", değilse hatanın kendisini döner.
 const dene = async (kullanici: string, sifre: string, veritabani: string, sorgu = "select 1") => {
@@ -102,6 +130,23 @@ describe("bağlantı kuralları", () => {
     );
     expect(izin.rows[0]?.var).toBe(true);
     expect(await dene(a.ad, a.sifre, acikVeritabani)).toMatch(reddedildi);
+  });
+
+  // Kutunun içinden (yerel soket) sitenin kullanıcısı şifresiz girer (karar 0206); yalnız kökün
+  // `docker exec`'i bu yolu görür. Girebildiği veritabanını yine izinler belirler.
+  it("kutunun içinden de site yalnız kendi veritabanına girer", () => {
+    const icerden = (kullanici: string, veritabani: string) =>
+      kutuKomutu(
+        `docker exec ${kutuKimligi()} psql -U ${kullanici} -d ${veritabani} -Atc 'select 1'`,
+      );
+    expect(icerden(a.ad, a.ad).stdout.trim()).toBe("1");
+    // Herkese açık bırakılmış veritabanı burada tek katmanlıdır (izin yok sayılır, kural yoktur): yalnız kök
+    // bu yoldan girer, siteye özel işlerde başka veritabanı adı verilmez (karar 0206).
+    for (const veritabani of [b.ad, "postgres", "template1"]) {
+      const sonuc = icerden(a.ad, veritabani);
+      expect(sonuc.status).not.toBe(0);
+      expect(sonuc.stderr).toMatch(/permission denied for database/);
+    }
   });
 });
 
@@ -344,36 +389,21 @@ describe("üst bilgi", () => {
   });
 
   it("yedek alınır; yedekten açılan veritabanında veri gelir, izin gelmez, kapatınca kapalıdır", async () => {
-    const kutu = (girdi: Buffer | string | undefined, ...arguman: string[]) =>
-      spawnSync(
-        "docker",
-        [
-          ...[
-            "compose",
-            "-f",
-            join(kok, "sunucu", "compose.yaml"),
-            "--env-file",
-            join(kok, ".env"),
-          ],
-          ...["exec", "-T", "veritabani", ...arguman],
-        ],
-        { input: girdi, maxBuffer: 50_000_000 },
-      );
-    const yedek = kutu(undefined, "pg_dump", "-U", "postgres", "-Fc", "-d", a.ad);
+    const yedek = kutuKomutu(
+      `docker exec ${kutuKimligi()} pg_dump -U postgres -Fc -d ${a.ad}`,
+      Buffer.alloc(0),
+    );
     expect(yedek.status).toBe(0);
 
     const yeni = `${a.ad}_yeni`;
-    await yonetici.execute(
-      sql`create database ${sql.identifier(yeni)} owner ${sql.identifier(a.ad)}`,
-    );
+    expect(kutuKomutu(sessizYuklemeAc(kutuKimligi(), a.ad, yeni)).status).toBe(0);
     const acilan = baglan(yoneticiAdresi(yeni));
     try {
-      const yukleme = kutu(
-        yedek.stdout,
-        ...["pg_restore", "-U", "postgres", "--no-owner", "--no-acl", `--role=${a.ad}`],
-        ...["--exit-on-error", "-d", yeni],
-      );
+      // Geri yüklemenin kendi komutu (komutlar/yedek.mts).
+      const yukleme = kutuKomutu(siteYuklemeKomutu(kutuKimligi(), a.ad, yeni), yedek.stdout);
       expect(yukleme.stderr.toString()).toBe("");
+      expect(yukleme.status).toBe(0);
+      expect(kutuKomutu(sessizYuklemeKapat(kutuKimligi(), a.ad, yeni)).status).toBe(0);
       const satirlar = await acilan.select().from(veritabaniKimligi);
       expect(satirlar.map((satir) => satir.site_kod_adi)).toEqual([a.kodAdi]);
       // Geri yükleme bu yüzden kapatmayı yeniden uygular (komutlar/yedek.mts).
@@ -386,6 +416,89 @@ describe("üst bilgi", () => {
       await acilan.$client.end();
       await yonetici.execute(sql`drop database if exists ${sql.identifier(yeni)} with (force)`);
     }
+  }, 60_000);
+});
+
+// Kart 0068, karar 0206: yedek provası ve geri yükleme sitenin içeriğine dokunur. Site kendi veritabanına
+// tür dönüşümü ya da yükleme sırasında çalışan kısıtlama koyarsa, bu kod yönetici oturumunda çalışınca rolü
+// geri alıp süper kullanıcı olurdu (ölçüldü: eski özet sorgusu ve `pg_restore -U postgres --role=<site>` ile
+// rolsuper t). Gerçek komutlarla, gerçek veritabanında.
+describe("yedek provası ve geri yükleme", () => {
+  const c = denemeSitesi("c");
+  const yeni = `${c.ad}__geri`;
+  const superMi = async () =>
+    (
+      await yonetici.execute<{ s: boolean }>(
+        sql`select rolsuper as s from pg_roles where rolname = ${c.ad}`,
+      )
+    ).rows[0]?.s;
+
+  beforeAll(async () => {
+    await denemeVeritabaniAc(c.ad, c.sifre);
+    // Saldırı her yolu dener: rolü geri almak, yöneticiye geçmek, oturumun asıl kullanıcısına dönmek.
+    const yukselt = (yol: string) =>
+      `begin ${yol}; execute 'alter role ${c.ad} superuser'; exception when others then null; end;`;
+    for (const sorgu of [
+      `create function public.saldiri() returns boolean language plpgsql as $f$ begin
+        ${yukselt("reset role")} ${yukselt("set role postgres")} ${yukselt("reset session authorization")}
+        return true; end $f$`,
+      "create table public.saldiri_tablosu (x int check (public.saldiri()))",
+      "insert into public.saldiri_tablosu values (1), (2)",
+      `create function public.metne(public.saldiri_tablosu) returns text language plpgsql
+        as $f$ begin perform public.saldiri(); return 'x'; end $f$`,
+      "create cast (public.saldiri_tablosu as text) with function public.metne(public.saldiri_tablosu)",
+    ]) {
+      expect(await dene(c.ad, c.sifre, c.ad, sorgu)).toBe("bağlandı");
+    }
+    expect(await superMi()).toBe(false);
+  });
+
+  afterAll(async () => {
+    for (const ad of [yeni, c.ad]) {
+      await yonetici.execute(sql`drop database if exists ${sql.identifier(ad)} with (force)`);
+    }
+    await yonetici.execute(sql`drop role if exists ${sql.identifier(c.ad)}`);
+  });
+
+  it("tabloların özeti sitenin dönüşümünü yönetici olarak çalıştırmaz", async () => {
+    const ozet = kutuKomutu(tabloOzetiKomutu(kutuKimligi(), c.ad, c.ad));
+    expect(ozet.stderr).toBe("");
+    expect(ozet.stdout).toMatch(/^public\.saldiri_tablosu\|2\|[0-9a-f]{32}$/m);
+    expect(await superMi()).toBe(false);
+  });
+
+  it("geri yükleme yedekteki kısıtlamayı yönetici olarak çalıştırmaz, ayar yüklemeden sonra kalkar", async () => {
+    const yedek = kutuKomutu(
+      `docker exec ${kutuKimligi()} pg_dump -U postgres -Fc -d ${c.ad}`,
+      Buffer.alloc(0),
+    );
+    expect(yedek.status).toBe(0);
+    expect(kutuKomutu(sessizYuklemeAc(kutuKimligi(), c.ad, yeni)).status).toBe(0);
+    const ayar = async () =>
+      (
+        await yonetici.execute<{ ayar: string[] }>(
+          sql`select s.setconfig as ayar from pg_db_role_setting s join pg_database d on d.oid = s.setdatabase
+              where d.datname = ${yeni}`,
+        )
+      ).rows.flatMap((satir) => satir.ayar);
+    expect(await ayar()).toEqual(["log_min_messages=panic", "log_min_error_statement=panic"]);
+
+    const yukleme = kutuKomutu(siteYuklemeKomutu(kutuKimligi(), c.ad, yeni), yedek.stdout);
+    expect(yukleme.stderr.toString()).toBe("");
+    expect(yukleme.status).toBe(0);
+    expect(await superMi()).toBe(false);
+    expect(kutuKomutu(sessizYuklemeKapat(kutuKimligi(), c.ad, yeni)).status).toBe(0);
+    expect(await ayar()).toEqual([]);
+
+    // Prova yüklenen yedeğin özetini de alır: kısıtlama ve dönüşüm yedekten gelmiştir.
+    const ozet = kutuKomutu(tabloOzetiKomutu(kutuKimligi(), c.ad, yeni));
+    expect(ozet.stdout).toMatch(/^public\.saldiri_tablosu\|2\|/m);
+    expect(await superMi()).toBe(false);
+    // Nesneler sitenin kullanıcısınındır.
+    const sahip = kutuKomutu(
+      `docker exec ${kutuKimligi()} psql -U postgres -d ${yeni} -Atc "select tableowner from pg_tables where tablename = 'saldiri_tablosu'"`,
+    );
+    expect(sahip.stdout.trim()).toBe(c.ad);
   }, 60_000);
 });
 

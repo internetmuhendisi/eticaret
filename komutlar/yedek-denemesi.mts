@@ -49,6 +49,7 @@ import {
   provaYap,
   siteBilgisiSatiri,
   sonYedegiBulBetigi,
+  tabloOzetiKomutu,
   yanaAcmaBetigi,
   yedekAlmaBetigi,
   yedekKoku,
@@ -88,13 +89,11 @@ const sql = (komut: string, hedef = db): string =>
     `docker exec -i ${guvenliOturum} ${dbKutusu} psql -U postgres -d ${hedef} -At -v ON_ERROR_STOP=1 <<'SQL_SONU'\n${komut}\nSQL_SONU\n`,
   ).trim();
 
-// Veritabanının özeti: Örnek Mağaza'nın değişmediğini ölçer. Yalnız özet döner, veri basılmaz.
+// Veritabanının özeti: Örnek Mağaza'nın değişmediğini ölçer. Yalnız özet döner, veri basılmaz. Sitenin
+// kullanıcısıyla çalışır: yönetici olarak sitenin kodunu çalıştırmaz (karar 0206).
 const veritabaniOzeti = (kodAdi: string) => {
   const hedef = siteVeritabaniAdi(kodAdi);
-  const tablolar = sql(
-    `SELECT format('SELECT %L, count(*), md5(coalesce(string_agg(t::text, %L ORDER BY t::text), %L)) FROM %I.%I t', table_schema || '.' || table_name, '|', '', table_schema, table_name) FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema') AND table_type = 'BASE TABLE' ORDER BY 1 \\gexec`,
-    hedef,
-  );
+  const tablolar = calistir(`${tabloOzetiKomutu(dbKutusu, hedef, hedef)}\n`).trim();
   const metin = tablolar
     .split("\n")
     .map((satir) => `OZ tablo ${satir}`)

@@ -32,6 +32,8 @@ import {
   ozetiOku,
   provaBetigi,
   siteBilgisiSatiri,
+  siteYuklemeKomutu,
+  tabloOzetiKomutu,
   veritabaniHatalari,
   type YedekAyari,
   type YedekKaydi,
@@ -144,13 +146,46 @@ describe("sunucu betikleri", () => {
   it("geçici prova kutusu ağsızdır, canlı veritabanına yalnız okumak için bakar", () => {
     const prova = provaBetigi("deneme", "ornek-magaza", "20261106T000000Z.dump.age", anahtar);
     expect(prova).toContain("--network none");
-    expect(prova).not.toMatch(/DROP|ALTER|CREATE DATABASE/);
-    expect(prova).toContain("pg_restore -U postgres --no-owner --no-acl --exit-on-error -d prova");
+    // Canlı veritabanının kutusuna giden satırlar yalnız okur.
+    const canli = prova.split("\n").filter((satir) => satir.includes("veritabani-deneme"));
+    expect(canli.length).toBeGreaterThan(0);
+    expect(canli.join("\n")).not.toMatch(/DROP|ALTER|CREATE|pg_restore/);
+    expect(prova).toContain(
+      "pg_restore -U site_ornek_magaza --no-owner --no-acl --exit-on-error -d prova",
+    );
   });
 
-  it("yana açma sunucu günlüğüne satır içeriği yazmaz", () => {
+  // Sitenin kodu yönetici oturumunda çalışırsa site süper kullanıcı olur (kart 0068, karar 0206). Yedeği
+  // yükleyen ve tabloların özetini alan komut sitenin kullanıcısıyla çalışır; saldırının kendisi veri
+  // ayrımı testinde gerçek veritabanıyla denenir.
+  it("yedek ve tablo özeti yönetici olarak çalışmaz", () => {
+    for (const betik of [
+      provaBetigi("deneme", "ornek-magaza", "20261106T000000Z.dump.age", anahtar),
+      yanaAcmaBetigi("deneme", "ornek-magaza", "20261106T000000Z.dump.age", anahtar),
+    ]) {
+      const yuklemeler = betik.split("\n").filter((satir) => satir.includes("pg_restore"));
+      expect(yuklemeler.length).toBe(1);
+      expect(yuklemeler.join("\n")).toContain("pg_restore -U site_ornek_magaza ");
+      expect(betik).not.toContain("--role");
+    }
+    const prova = provaBetigi("deneme", "ornek-magaza", "20261106T000000Z.dump.age", anahtar);
+    const ozetler = prova.split("\n").filter((satir) => satir.includes("OZET_SONU'"));
+    expect(ozetler).toHaveLength(2);
+    for (const satir of ozetler) expect(satir).toContain("psql -U site_ornek_magaza ");
+    expect(() => tabloOzetiKomutu("k", "postgres", "site_x")).toThrow();
+    expect(() => siteYuklemeKomutu("k", "postgres", "site_x")).toThrow();
+  });
+
+  it("yana açma sunucu günlüğüne satır içeriği yazmaz, ayarı yüklemeden sonra kaldırır", () => {
     const betik = yanaAcmaBetigi("deneme", "x", "20261106T000000Z.dump.age", anahtar);
-    expect(betik).toContain("log_min_messages=panic");
+    const ac = betik.indexOf("log_min_error_statement = panic");
+    const yukleme = betik.indexOf("pg_restore");
+    const kapat = betik.indexOf("RESET ALL");
+    expect(betik).toContain("log_min_messages = panic");
+    expect(ac).toBeGreaterThan(0);
+    expect(yukleme).toBeGreaterThan(ac);
+    expect(kapat).toBeGreaterThan(yukleme);
+    expect(betik.indexOf("UST_BILGI_SONU")).toBeGreaterThan(kapat);
   });
 
   it("pg_restore çıktısı (müşteri verisi taşıyabilir) gösterilmez", () => {
@@ -185,7 +220,9 @@ describe("sunucu betikleri", () => {
     const betik = yanaAcmaBetigi("deneme", "ornek-magaza", "20261106T000000Z.dump.age", anahtar);
     expect(betik).toContain('-d "site_ornek_magaza__geri"');
     expect(betik).not.toMatch(/-d "?site_ornek_magaza"?(\s|$)/);
-    expect(betik).toContain('--role="site_ornek_magaza"');
+    expect(betik).toContain(
+      "pg_restore -U site_ornek_magaza --no-owner --no-acl --exit-on-error -d site_ornek_magaza__geri",
+    );
   });
 });
 

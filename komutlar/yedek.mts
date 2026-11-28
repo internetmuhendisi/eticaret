@@ -254,12 +254,38 @@ FROM information_schema.tables
 WHERE table_schema NOT IN ('pg_catalog', 'information_schema') AND table_type = 'BASE TABLE'
 ORDER BY 1 \\gexec`;
 
-// Veritabanının özet satırları: her tablo için ad, satır sayısı, içerik özeti ve bir de düzen özeti.
-const ozetKomutu = (kutu: string, veritabani: string, onek: string): string => `
-printf '${onek} sema %s\\n' "$(docker exec ${guvenliOturum} ${kutu} pg_dump -U postgres -s --no-owner --no-acl -d ${veritabani} </dev/null | grep -v -E '^.(un)?restrict' | sha256sum | cut -d' ' -f1)"
-docker exec -i ${guvenliOturum} ${kutu} psql -U postgres -d ${veritabani} -At -f - <<'OZET_SONU' | sed 's/^/${onek} tablo /'
+// Sitenin içeriğine (tablo satırı, tür dönüşümü, kısıtlama, işlev) dokunan her komut sitenin kendi
+// kullanıcısıyla, kutunun yerel soketinden çalışır (karar 0206). Yönetici oturumu bu kodu çalıştırırsa
+// kod oturumun asıl kullanıcısını devralır: SET ROLE ya da --role yetmez, RESET ROLE ile geri alınır.
+// Yönetici yalnız sitenin kodunu çalıştırmayan işleri yapar: veritabanı açma, adlandırma, düzen dökümü
+// (pg_dump), sistem kayıtları.
+const siteKullanicisi = (ad: string): string => {
+  if (!/^site_[a-z0-9_]+$/.test(ad)) throw new Error(`Geçersiz site kullanıcısı: ${ad}`);
+  return ad;
+};
+
+// Tabloların özeti, sitenin kullanıcısıyla: ad, satır sayısı, içerik özeti. Satır başına bir tablo.
+// "boru" çıktının gideceği komuttur (heredoc'un ilk satırına yazılır).
+export const tabloOzetiKomutu = (
+  kutu: string,
+  kullanici: string,
+  veritabani: string,
+  boru = "",
+): string =>
+  `docker exec -i ${kutu} psql -U ${siteKullanicisi(kullanici)} -d ${veritabani} -At -f - <<'OZET_SONU'${boru ? ` | ${boru}` : ""}
 ${ozetSql}
-OZET_SONU
+OZET_SONU`;
+
+// Yedeği sitenin kullanıcısıyla yükler; nesneler onun olur. Yedekteki kısıtlama ve ifadeler yüklenirken
+// onun yetkisiyle çalışır.
+export const siteYuklemeKomutu = (kutu: string, kullanici: string, veritabani: string): string =>
+  `docker exec -i ${kutu} pg_restore -U ${siteKullanicisi(kullanici)} --no-owner --no-acl --exit-on-error -d ${veritabani}`;
+
+// Veritabanının özet satırları: her tablo için ad, satır sayısı, içerik özeti ve bir de düzen özeti.
+// Düzen dökümü yöneticiyle alınır: pg_dump sitenin kodunu çalıştırmaz (kart 0068'de ölçüldü).
+const ozetKomutu = (kutu: string, kullanici: string, veritabani: string, onek: string): string => `
+printf '${onek} sema %s\\n' "$(docker exec ${guvenliOturum} ${kutu} pg_dump -U postgres -s --no-owner --no-acl -d ${veritabani} </dev/null | grep -v -E '^.(un)?restrict' | sha256sum | cut -d' ' -f1)"
+${tabloOzetiKomutu(kutu, kullanici, veritabani, `sed 's/^/${onek} tablo /'`)}
 `;
 
 export type Ozet = { sema: string; tablolar: Map<string, { satir: number; icerik: string }> };
@@ -312,6 +338,7 @@ export const provaBetigi = (
 ): string => {
   if (!dosyaAdiGecerli(dosya)) throw new Error(`Geçersiz yedek dosyası: ${dosya}`);
   const kutu = '"$prova"';
+  const ad = siteKullanicisi(siteVeritabaniAdi(kodAdi));
   return kokBetigi(`${acmaAnahtariSatiri(anahtar)}
 prova="yedek-prova-$$"
 trap 'docker rm -f "$prova" >/dev/null 2>&1 || true' EXIT
@@ -322,10 +349,12 @@ for _ in $(seq 1 90); do
   sleep 1
 done
 [ "$hazir" = evet ] || { echo "geçici veritabanı açılmadı" >&2; exit 1; }
-docker exec "$prova" createdb -U postgres prova </dev/null
-${yedekAcmaBoru(ortam, kodAdi, dosya)} | docker exec -i "$prova" pg_restore -U postgres --no-owner --no-acl --exit-on-error -d prova 2>/dev/null
-${ozetKomutu(kutu, "prova", "YEDEK")}
-${ozetKomutu(veritabaniKutusu(ortam), siteVeritabaniAdi(kodAdi), "CANLI")}`);
+# Geçici kutuda da yedek sitenin adındaki yetkisiz kullanıcıyla açılır: kutu ağsız olsa da yönetici olarak
+# çalışan kod özeti değiştirebilirdi (karar 0206).
+docker exec "$prova" psql -U postgres -q -v ON_ERROR_STOP=1 -c 'CREATE ROLE "${ad}" LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS' -c 'CREATE DATABASE prova OWNER "${ad}"' </dev/null >/dev/null
+${yedekAcmaBoru(ortam, kodAdi, dosya)} | ${siteYuklemeKomutu(kutu, ad, "prova")} 2>/dev/null
+${ozetKomutu(kutu, ad, "prova", "YEDEK")}
+${ozetKomutu(veritabaniKutusu(ortam), ad, ad, "CANLI")}`);
 };
 
 export const kaydaYazBetigi = (
@@ -385,7 +414,15 @@ const kisaKilitSn = 60;
 const geriAlmaKilitSn = 240;
 
 // Geri yüklemede yazılan sunucu günlüğüne satır içeriği düşmesin (COPY hatası müşteri verisi taşır).
-const sessizOturum = `-e PGOPTIONS='-c log_min_messages=panic -c log_min_error_statement=panic'`;
+// Yükleme sitenin kullanıcısıyla çalıştığı için bu ayarlar bağlantı seçeneğiyle verilemez (yalnız yönetici
+// verebilir): yönetici onları yalnız bu kullanıcı ve yan veritabanı için kaydeder, site değiştiremez
+// (ölçüldü, kart 0068). Ayar veritabanına bağlıdır, adı değişince de kalırdı: yüklemeden hemen sonra kalkar.
+// Yan veritabanı burada açılır: sitenin kullanıcısına ait, herkese kapalı.
+export const sessizYuklemeAc = (kutu: string, ad: string, yeni: string): string =>
+  `docker exec ${kutu} psql -U postgres -d postgres -q -v ON_ERROR_STOP=1 -c 'CREATE DATABASE "${yeni}" OWNER "${siteKullanicisi(ad)}"' -c 'REVOKE ALL ON DATABASE "${yeni}" FROM PUBLIC' -c 'ALTER ROLE "${ad}" IN DATABASE "${yeni}" SET log_min_messages = panic' -c 'ALTER ROLE "${ad}" IN DATABASE "${yeni}" SET log_min_error_statement = panic' </dev/null >/dev/null`;
+
+export const sessizYuklemeKapat = (kutu: string, ad: string, yeni: string): string =>
+  `docker exec ${kutu} psql -U postgres -d postgres -q -v ON_ERROR_STOP=1 -c 'ALTER ROLE "${siteKullanicisi(ad)}" IN DATABASE "${yeni}" RESET ALL' </dev/null >/dev/null`;
 
 export type VeritabaniDurumu = { canli: boolean; eski: boolean; geri: boolean; basarisiz: boolean };
 
@@ -461,10 +498,15 @@ exec 9>"$K/.kilit"
 flock -w ${kisaKilitSn} 9
 sil() { docker exec ${kutu} psql -U postgres -d postgres -q -c 'DROP DATABASE IF EXISTS "${yeni}" WITH (FORCE)' </dev/null >/dev/null; }
 sil
-docker exec ${kutu} psql -U postgres -d postgres -q -v ON_ERROR_STOP=1 -c 'CREATE DATABASE "${yeni}" OWNER "${ad}"' -c 'REVOKE ALL ON DATABASE "${yeni}" FROM PUBLIC' </dev/null >/dev/null
-if ! ${yedekAcmaBoru(ortam, kodAdi, dosya)} | docker exec -i ${guvenliOturum} ${sessizOturum} ${kutu} pg_restore -U postgres --no-owner --no-acl --role="${ad}" --exit-on-error -d "${yeni}" 2>/dev/null; then
+${sessizYuklemeAc(kutu, ad, yeni)}
+if ! ${yedekAcmaBoru(ortam, kodAdi, dosya)} | ${siteYuklemeKomutu(kutu, ad, yeni)} 2>/dev/null; then
   sil
   echo "yedek açılamadı (ayrıntı müşteri verisi taşıyabilir, gösterilmez), canlı veritabanına dokunulmadı" >&2
+  exit 1
+fi
+if ! ${sessizYuklemeKapat(kutu, ad, yeni)}; then
+  sil
+  echo "yükleme ayarı kaldırılamadı, canlı veritabanına dokunulmadı" >&2
   exit 1
 fi
 # Üst bilgi izinleri sitenin veritabanındaki sistem kayıtlarındadır, yedekten gelmez (karar 0053).
