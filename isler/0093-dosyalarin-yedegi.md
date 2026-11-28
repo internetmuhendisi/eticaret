@@ -31,4 +31,4 @@ Bölüm: Yeni mağaza. On altıncı bölümde açık kartlardan bu bölüme alı
 
 ## Durum
 
-yapılacak
+bitti
