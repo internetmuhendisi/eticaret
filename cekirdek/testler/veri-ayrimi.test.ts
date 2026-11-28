@@ -447,6 +447,8 @@ describe("yedek provası ve geri yükleme", () => {
       `create function public.metne(public.saldiri_tablosu) returns text language plpgsql
         as $f$ begin perform public.saldiri(); return 'x'; end $f$`,
       "create cast (public.saldiri_tablosu as text) with function public.metne(public.saldiri_tablosu)",
+      // Tablo yerine görünüm: özet yalnız tabloları okur, düzen dökümü görünümü çalıştırmaz.
+      "create view public.saldiri_gorunumu as select x, public.saldiri() as s from public.saldiri_tablosu",
     ]) {
       expect(await dene(c.ad, c.sifre, c.ad, sorgu)).toBe("bağlandı");
     }
@@ -479,6 +481,14 @@ describe("yedek provası ve geri yükleme", () => {
         )
       ).rows.flatMap((satir) => satir.ayar);
     expect(await ayar()).toEqual(["log_min_messages=panic", "log_min_error_statement=panic"]);
+    // Site ayarı kaldıramaz: yalnız kendi koyabildiği ayarlar silinir.
+    for (const sorgu of [
+      `alter role ${c.ad} in database ${yeni} reset log_min_messages`,
+      `alter role ${c.ad} in database ${yeni} reset all`,
+    ]) {
+      kutuKomutu(`docker exec ${kutuKimligi()} psql -U ${c.ad} -d ${yeni} -qc "${sorgu}"`);
+    }
+    expect(await ayar()).toEqual(["log_min_messages=panic", "log_min_error_statement=panic"]);
 
     const yukleme = kutuKomutu(siteYuklemeKomutu(kutuKimligi(), c.ad, yeni), yedek.stdout);
     expect(yukleme.stderr).toBe("");
@@ -496,6 +506,71 @@ describe("yedek provası ve geri yükleme", () => {
       `docker exec ${kutuKimligi()} psql -U postgres -d ${yeni} -Atc "select tableowner from pg_tables where tablename = 'saldiri_tablosu'"`,
     );
     expect(sahip.stdout.trim()).toBe(c.ad);
+
+    // Yöneticinin yüklenmiş veritabanında yaptıkları (düzen dökümü, üst bilgi kapatma, tablo sayımı)
+    // sitenin kodunu çalıştırmaz. Site ayrıca arama yolunu kendi işlecinin önüne almayı dener.
+    expect(
+      await dene(
+        c.ad,
+        c.sifre,
+        c.ad,
+        `create function public.esit_degil(name, name) returns boolean language plpgsql as $f$ begin
+          perform public.saldiri(); return true; end $f$;
+         create operator public.<> (function = public.esit_degil, leftarg = name, rightarg = name)`,
+      ),
+    ).toBe("bağlandı");
+    const yoneticiOlarak = (komut: string, girdi?: string) =>
+      spawnSync(
+        "docker",
+        ["exec", "-i", "-e", `PGOPTIONS=${guvenliOturumAyari}`, kutuKimligi(), "sh", "-c", komut],
+        { input: girdi, encoding: "utf8", maxBuffer: 50_000_000 },
+      );
+    for (const veritabani of [c.ad, yeni]) {
+      kutuKomutu(
+        `docker exec ${kutuKimligi()} psql -U postgres -qc 'alter database ${veritabani} set search_path = public, pg_catalog'`,
+      );
+      expect(
+        yoneticiOlarak(`pg_dump -U postgres -s --no-owner --no-acl -d ${veritabani}`).status,
+      ).toBe(0);
+      expect(
+        yoneticiOlarak(
+          `psql -U postgres -d ${veritabani} -q -v ON_ERROR_STOP=1 -f -`,
+          ustBilgiKapatmaSql(),
+        ).status,
+      ).toBe(0);
+      expect(
+        yoneticiOlarak(
+          `psql -U postgres -d ${veritabani} -Atc "select count(*) from information_schema.tables where table_schema not in ('pg_catalog','information_schema')"`,
+        ).stdout.trim(),
+      ).toMatch(/^[1-9]/);
+    }
+    expect(await superMi()).toBe(false);
+  }, 60_000);
+
+  // Site veritabanına yüklenecek kitaplık ayarı koyup yöneticinin bağlantısını düşüremez: düşseydi sunucu
+  // denetimi, dolayısıyla bütün sitelerin yayını dururdu (kart 0068). Güvenli oturum ayarı onu ezer.
+  it("site, kitaplık ayarıyla yönetici bağlantısını düşüremez", async () => {
+    const d = denemeSitesi("d");
+    await denemeVeritabaniAc(d.ad, d.sifre);
+    try {
+      expect(
+        await dene(d.ad, d.sifre, d.ad, `alter database ${d.ad} set local_preload_libraries = 'x'`),
+      ).toBe("bağlandı");
+      const kim = spawnSync(
+        "docker",
+        [
+          ...composeArgumanlari,
+          ...["exec", "-T", "-e", `PGOPTIONS=${guvenliOturumAyari}`, "veritabani"],
+          ...["psql", "-U", "postgres", "-d", d.ad, "-Atc", "select current_user"],
+        ],
+        { encoding: "utf8" },
+      );
+      expect(kim.stderr).toBe("");
+      expect(kim.stdout.trim()).toBe("postgres");
+    } finally {
+      await yonetici.execute(sql`drop database if exists ${sql.identifier(d.ad)} with (force)`);
+      await yonetici.execute(sql`drop role if exists ${sql.identifier(d.ad)}`);
+    }
   }, 60_000);
 });
 

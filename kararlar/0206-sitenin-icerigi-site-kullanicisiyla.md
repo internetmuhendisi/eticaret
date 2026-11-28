@@ -14,6 +14,7 @@ Yedek provası, yedek denemesi ve geri yükleme sitenin içeriğine (tablo satı
 - Bunun için bağlantı kuralı değişti (karar 0023'ün yerel satırı): kutunun içinden, yerel soketten her kullanıcı şifresiz girer (`local all all trust`). Hangi veritabanına girileceğini izinler belirler.
 - Geri yüklemede günlüğe satır içeriği düşmesin diye ayar bağlantı seçeneğiyle verilemez (yalnız yönetici verebilir). Yönetici onu yalnız o kullanıcı ve yan veritabanı için kaydeder (`ALTER ROLE … IN DATABASE … SET`), yüklemeden hemen sonra kaldırır.
 - Sunucuda veritabanını kuran betik, kutu yeniden kurulmasa da yazdığı bağlantı kuralını okutur (`pg_reload_conf`).
+- Yöneticinin sitenin veritabanına bağlandığı güvenli oturum ayarı (karar 0053) `local_preload_libraries`'i de boş değerle ezer.
 
 ## Neden
 
@@ -25,7 +26,7 @@ Yerelde gerçek betiklerle ölçüldü (kart 0068):
 - **Ölçülen veritabanı ayarları:**
   - `session_replication_role`: site kaydedemiyor.
   - `session_authorization`: site kaydedebiliyor, ama yönetici oturumu yine yönetici kalıyor.
-  - `local_preload_libraries`: site kaydedebiliyor ve o veritabanına bağlantıları bozuyor. Kutuda eklenti klasörü olmadığı için kod yükletemiyor; etkisi yalnız sitenin kendi yedeğini durdurmak.
+  - `local_preload_libraries`: site kaydedebiliyor. Kutuda eklenti klasörü olmadığı için kod yükletemiyor, ama o veritabanına yöneticinin bağlantısını da düşürüyor. Bu durumda sunucu denetiminin üst bilgi ölçümü kırmızı olur, yayın komutu hızlı denetimi kullandığı için bütün sitelerin yayını durur. Bağımsız kontrol buldu. Yöneticinin güvenli oturum ayarı (`guvenliOturumAyari`, gece yedeğinde de) artık bu ayarı boş değerle ezer.
 - **Yeni yolla aynı saldırılar:** Gerçek Örnek Mağaza düzeniyle (83 tablo) yeni prova betiği yerelde çalıştı. Site süper kullanıcı olmadı, yedeğin özeti canlınınkiyle aynı çıktı. Ana daldaki eski betik aynı saldırıda siteyi süper kullanıcı yaptı.
 
 ## Düşünülen diğer yollar
@@ -44,5 +45,8 @@ Yerelde gerçek betiklerle ölçüldü (kart 0068):
 - Sunucudaki veritabanı kutusu yeni kuralı ancak `pnpm sunucu-veritabani` bağlantı kuralını yazıp okuttuktan sonra kullanır. O zamana kadar:
   - prova ve geri yükleme site kullanıcısıyla bağlanamaz, "no pg_hba.conf entry" ile durur (güvenli yönde);
   - sunucu denetimi "bağlantı kuralı dosyası projedekiyle aynı değil" der ve yayın komutunu durdurur.
-- `local_preload_libraries` ile sitenin kendi yedeğini durdurması kapanmadı: gece yedeğinin başarısızlığı yedek kaydında ve sunucu denetiminde görünür.
+- Sitenin kendi kullanıcısının bağlantısı `local_preload_libraries` ile düşebilir: site kendi provasını ve geri yüklemesini durdurabilir. Bu yalnız kendi verisini etkiler; geri yükleme bu durumda "sitenin kullanıcısı kutunun içinden bağlanamadı" der.
+- Geri yükleme, yüklemeden önce sitenin kullanıcısının kutunun içinden bağlanabildiğini denetler. Yeni kural okutulmamışsa nedeni açıkça yazar: yüklemenin kendi hatası müşteri verisi taşıyabildiği için gösterilmez.
+- Sunucu denetimi bağlantı kuralı dosyasının özetini karşılaştırır, PostgreSQL'in onu yeniden okuyup okumadığını ölçmez. Kurma betiği her çalışmada okutur. Okutulmamış kuralın denetimde görünmemesi yalnız disiplindir.
+- Yedek denemesi kendi geçici sitesinin tablosunu hâlâ yönetici olarak okuyup yazar (`komutlar/yedek-denemesi.mts`). Tabloyu deneme kendisi açar, içine sitenin kodu girmez. Gerçek sitenin özeti sitenin kullanıcısıyla alınır.
 - Gerçek sunucuda ölçülmedi (sunucuda prova ve deneme çalıştırılmadı). Yerelde gerçek kutularla ölçüldü.

@@ -498,7 +498,17 @@ exec 9>"$K/.kilit"
 flock -w ${kisaKilitSn} 9
 sil() { docker exec ${kutu} psql -U postgres -d postgres -q -c 'DROP DATABASE IF EXISTS "${yeni}" WITH (FORCE)' </dev/null >/dev/null; }
 sil
-${sessizYuklemeAc(kutu, ad, yeni)}
+if ! ${sessizYuklemeAc(kutu, ad, yeni)}; then
+  sil
+  echo "yan veritabanı açılamadı, canlı veritabanına dokunulmadı" >&2
+  exit 1
+fi
+# Yüklemenin hatası gösterilmez; sitenin kullanıcısı kutunun içinden bağlanamıyorsa nedeni ayrıca söylenir.
+if ! docker exec ${kutu} psql -U ${ad} -d "${yeni}" -Atqc 'SELECT 1' </dev/null >/dev/null 2>&1; then
+  sil
+  echo "sitenin kullanıcısı kutunun içinden bağlanamadı: bağlantı kuralı yeni değil mi? (pnpm sunucu-veritabani, karar 0206); canlı veritabanına dokunulmadı" >&2
+  exit 1
+fi
 if ! ${yedekAcmaBoru(ortam, kodAdi, dosya)} | ${siteYuklemeKomutu(kutu, ad, yeni)} 2>/dev/null; then
   sil
   echo "yedek açılamadı (ayrıntı müşteri verisi taşıyabilir, gösterilmez), canlı veritabanına dokunulmadı" >&2

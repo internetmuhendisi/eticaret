@@ -43,9 +43,12 @@ const islevSarti = `p.pronamespace = 'pg_catalog'::regnamespace
 // Site kullanıcısı veritabanının sahibidir: "ALTER DATABASE ... SET search_path" ile public şemasındaki işlevini
 // sistem işlevinin önüne alabilir, yönetici oturumu o işlevi çalıştırınca süper kullanıcı olurdu.
 // "SET role" ile de yönetici oturumunu kendi rolüne çevirebilirdi. Bağlantı ayarı veritabanı ayarını ezer.
+// "local_preload_libraries" ile yönetici bağlantısını düşürüp sunucu denetimini, dolayısıyla bütün sitelerin
+// yayınını durdurabilirdi (kart 0068); boş değer onu da ezer.
 // Yetki düşürmez: bu oturumda sitenin nesnesi (tablo içeriği, görünüm, dönüşüm) okunursa kodu yönetici olarak
-// çalışır. Sitenin tablosuna dokunan sorgu bu ayarla yazılmaz (kart 0068).
-export const guvenliOturumAyari = "-c search_path=pg_catalog -c role=none";
+// çalışır. Sitenin tablosuna dokunan sorgu bu ayarla yazılmaz, sitenin kullanıcısıyla çalışır (karar 0206).
+export const guvenliOturumAyari =
+  "-c search_path=pg_catalog -c role=none -c local_preload_libraries=";
 export const guvenliOturum = `-e PGOPTIONS='${guvenliOturumAyari}'`;
 
 // Yönetici olarak sitenin veritabanında çalışır, guvenliOturum ile. Tekrar çalıştırılabilir. Aynı anda iki
