@@ -32,6 +32,27 @@ Bölüm: Yeni mağaza. Önce 0345 bitmiş olmalı (paketin parçaları belli olm
 - Taslak sayfa hatası, yana kayma ve axe taraması (WCAG 2.2 AA) olmadan açılıyor; basılan alanlar gerçek panelle aynı ölçüde.
 - Kullanıcı taslağı onayladı, ürün kararları bir karar kaydına yazıldı, önerilen site ayarları `planlar/site-ayarlari.md` tablosuna girdi.
 
+## Sonuç
+
+- **Taslak.** `planlar/tasarim-yonu/panel-3.html`: Demolar ekranı (liste, içe aktarma penceresi, satıştaki mağaza, içe aktarılıyor, sonuç, önceki hâline dön, içe aktarılamadı) ve vitrinde örnek ürün (kategori sayfası, ürün sayfası). Stiller ve yardımcılar `panel-2.html`'den alındı, o dosya değişmedi.
+  - demo1 paketin gerçek içeriğiyle (21 ürün, 5 kategori, 3 blog yazısı, 3 sayfa, 4 kupon), demo2 köşeli parantezli yer tutucuyla (kart 0349).
+  - Demolar panel menüsünün Vitrin grubunda.
+- **Kararlar (2026-11-28), karar 0204.**
+  - Kullanıcı önerilen seçeneklerin hepsini onayladı.
+  - Örnek veriler bütün içeriği kapsar. "(örnek)" eki yalnız ürün adındadır. Düzen ve menüler demonunkiyle değişir, tema pencerede sorulur.
+  - Başka demoya geçişte dokunulmamış örnekler kalkar. Düzenlenen örnek ürün mağazanın olur.
+  - "Önceki hâline dön" son içe aktarmayı geri alır. Satıştaki mağazaya demo örneksiz aktarılır.
+  - İçe aktarmayı yalnız mağaza sahibi yapar. "Demoyu gez" önizleme görselleridir.
+  - Örnek ürün uyarıyla satılır, arama motorlarına kapalıdır.
+  - Site ayarları `planlar/site-ayarlari.md`'de: Demolar ekranı (varsayılan açık, Örnek Mağaza açık), kullanılabilecek demolar (varsayılan bütün demolar, Örnek Mağaza bütün demolar).
+- **Ölçümler.** 43 hâl iki temada ve iki genişlikte tarayıcıda açıldı; sayfa hatası, yüklenmeyen görsel, yana kayma ve axe taraması (WCAG 2.2 AA) temiz. İçerikteki her düğme, bağlantı düğmesi, anahtar ve seçenek altı hâlde iki genişlikte en az 44 px (gerçek paneldeki gibi; ölçüm). `pnpm denetim` temiz.
+  - Ölçümün ilk turunda vitrin kartının adı tek satırda 24 px'in altında kaldı. Ürün kartı gibi ad bağlantısı kartın bütününe yayıldı (kart 0129).
+  - Ürün sayfasında galeri boş görünüyordu; görüntüde fark edilip tek sütuna alındı.
+  - İlk kayıt denemesinde kayıt öncesi denetim taslaktaki kullanılmayan yardımcıları ve stil sırasını yakaladı; yardımcılar silindi, taslağın kendi stil bloğuna gerekçeli muafiyet yazıldı.
+- **Sonraki kartlara.**
+  - Var olan altı taslak görselleri kart 0345'ten beri olmayan klasörden okuyor: kart 0354 açıldı.
+  - Önizleme görsellerinin (ana sayfa, kategori, ürün sayfası) pakete eklenmesi ve içe aktarma kart 0347'de, ekran kart 0348'de.
+
 ## Durum
 
 yapılacak
