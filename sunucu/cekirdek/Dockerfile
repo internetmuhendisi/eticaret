@@ -33,7 +33,7 @@ RUN pnpm --filter cekirdek-uygulama derle
 # içine gömülü tek dosya. pg CommonJS'tir; require gömülü dosyada yeniden tanımlanır.
 RUN pnpm exec esbuild cekirdek/veritabani/sunucuda-guncelle.ts --bundle --platform=node \
       --format=esm --target=node24 --external:pg-native --log-level=warning \
-      --banner:js="import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" \
+      --banner:js="import { createRequire as __requireKur } from 'node:module'; const require = __requireKur(import.meta.url);" \
       --outfile=/kaynak/veritabani/guncelle.mjs \
     && cp -R cekirdek/veritabani/degisiklikler /kaynak/veritabani/degisiklikler
 # Hata izleme aracının sunucudaki denemesi (kart 0022, karar 0036): yalnız docker exec ile çalışır.
@@ -41,18 +41,20 @@ RUN pnpm exec esbuild cekirdek/izleme/hata-izleme-denemesi.ts --bundle --platfor
       --format=esm --target=node24 --log-level=warning \
       --outfile=/kaynak/izleme/hata-denemesi.mjs
 # Arka plan süreci ve denemesi (kart 0031, karar 0049): kullandıkları paketler içine gömülü tek dosyalar.
-# sharp gömülmez (kart 0087): yerli ikili dosya taşır, kendi içindeki createRequire üstteki satırla
-# çakışır. Başlangıç kataloğunun görselleri onu uygulamanın node_modules klasöründen yükler.
+# sharp gömülmez (kart 0087): yerli ikili dosya taşır. Başlangıç kataloğunun görselleri onu uygulamanın
+# node_modules klasöründen yükler. Paketlerin başındaki satır createRequire'ı takma adla alır (kart 0340): gömülü
+# kütüphane (fflate) aynı adı içe aktarınca modül açılmıyordu; her paketin Node'da açıldığını
+# komutlar/testler/goruntu-paketleri.test.ts denetler.
 RUN pnpm exec esbuild cekirdek/arka-plan-isleri/surec.ts cekirdek/arka-plan-isleri/deneme.ts \
       --bundle --platform=node --format=esm --target=node24 --external:pg-native --external:sharp \
       --log-level=warning \
-      --banner:js="import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" \
+      --banner:js="import { createRequire as __requireKur } from 'node:module'; const require = __requireKur(import.meta.url);" \
       --outdir=/kaynak/arka-plan --out-extension:.js=.mjs
 
 # Sunucuda yönetici açan parça (kart 0048, karar 0054): dışarıya uç açmaz, geçici kutuda çalışır.
 RUN pnpm exec esbuild cekirdek/moduller/ekip/sunucuda-yonetici.ts --bundle --platform=node \
       --format=esm --target=node24 --external:pg-native --log-level=warning \
-      --banner:js="import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" \
+      --banner:js="import { createRequire as __requireKur } from 'node:module'; const require = __requireKur(import.meta.url);" \
       --outfile=/kaynak/yonetici/yonetici.mjs
 
 FROM node:${NODE_SURUMU}-alpine
