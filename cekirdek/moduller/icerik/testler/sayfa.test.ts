@@ -298,7 +298,7 @@ describe("başlangıç sayfaları", () => {
 
   it("demo paketinin yer tutucusuna mağazanın adı konur: başlık, içerik ve açıklamada (karar 0203)", async () => {
     const vt = await siteAc();
-    const ad = "Kum $& Saat";
+    const ad = "Kum $& Saat<3";
     // Mağaza adı ayarın başlangıç değeridir: ilk okumada veritabanına yazılır (karar 0055).
     const demolu: Site = {
       ...ornekSite,
@@ -315,9 +315,12 @@ describe("başlangıç sayfaları", () => {
     };
     expect(await sayfaBaslangiciniKur(vt, demolu)).toBe(true);
     const [sayfa] = await vt.select().from(sabitSayfalar);
-    expect(sayfa?.baslik).toBe("Kum $& Saat hakkında");
-    expect(sayfa?.icerik).toBe("<p>Kum $& Saat, 2026'da kuruldu. Kum $& Saat ürünleri.</p>");
-    expect(sayfa?.aciklama).toBe("Kum $& Saat tanıyın");
+    // Başlık ve açıklama düz metindir; içerik HTML'dir, ad kaçırılarak girer (etiket sanılıp silinmez).
+    expect(sayfa?.baslik).toBe("Kum $& Saat<3 hakkında");
+    expect(sayfa?.icerik).toBe(
+      "<p>Kum $&#38; Saat&#60;3, 2026'da kuruldu. Kum $&#38; Saat&#60;3 ürünleri.</p>",
+    );
+    expect(sayfa?.aciklama).toBe("Kum $& Saat<3 tanıyın");
   });
 });
 

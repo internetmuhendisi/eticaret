@@ -38,6 +38,11 @@ describe("Örnek Mağaza'nın sayfaları", () => {
     if (hakkimizda.sonuc !== "kayit") return;
     expect(hakkimizda.kayit.aciklama).not.toBeNull();
     expect((await vitrinSabitSayfasi(vt, hakkimizda.kayit.kimlik))?.icerik).toContain("<h3>");
+    // Paketin yer tutucusuna mağazanın adı kondu (karar 0203).
+    const icerik = (await vitrinSabitSayfasi(vt, hakkimizda.kayit.kimlik))?.icerik ?? "";
+    expect(icerik).toContain("<p>Örnek Mağaza, 2026'da Ankara'da kuruldu.");
+    expect(JSON.stringify(hakkimizda.kayit)).not.toContain("{magazaAdi}");
+    expect(icerik).not.toContain("{magazaAdi}");
     const iletisim = await kayitAdresiniCoz(vt, "sayfa", "iletisim");
     expect(iletisim.sonuc === "kayit" && iletisim.kayit.aciklama).toBeNull();
     expect(await kayitAdresiniCoz(vt, "sayfa", "sss")).toEqual({ sonuc: "yok" });

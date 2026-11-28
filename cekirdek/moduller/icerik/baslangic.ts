@@ -40,6 +40,7 @@ export const blogBaslangiciniKur = async (
   // Demo paketinin metinlerindeki yer tutucuya mağazanın adı konur (karar 0203); ayar işlemden önce okunur.
   const ad = await magazaninAdi(vt, site);
   const yerlestir = (metin: string) => magazaAdiniYerlestir(metin, ad);
+  const yerlestirHtml = (metin: string) => magazaAdiniYerlestir(metin, ad, { html: true });
   const yaz = (gorseller: ReadonlyMap<string, string>) =>
     vt.transaction(async (islem) => {
       await icerikKilidiAl(islem);
@@ -68,7 +69,7 @@ export const blogBaslangiciniKur = async (
             baslik: yerlestir(yazi.baslik),
             adresAdi: yazi.adresAdi,
             ...(yazi.ozet === undefined ? {} : { ozet: yerlestir(yazi.ozet) }),
-            icerik: yerlestir(yazi.icerik),
+            icerik: yerlestirHtml(yazi.icerik),
             ...(kapak === undefined ? {} : { kapak }),
             ...(yazi.kategori === undefined ? {} : { kategori: kategoriler.get(yazi.kategori) }),
             ...(yazi.yazar === undefined ? {} : { yazar: yazi.yazar }),

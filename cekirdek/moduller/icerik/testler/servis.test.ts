@@ -584,3 +584,31 @@ describe("başlangıç blogu ve vitrin bağlamı", () => {
     expect(await h.vt.select({ kimlik: dosyalar.kimlik }).from(dosyalar)).toEqual([]);
   });
 });
+
+describe("başlangıç blogunda mağaza adı (karar 0203)", () => {
+  it("yer tutucuya mağazanın adı konur: başlık ve özet düz, içerik kaçırılmış", async () => {
+    const h = await hazirla("blog-ad");
+    const ad = "Kum $& Saat<3";
+    const baslangicli: Site = {
+      ...site,
+      baslangic: { ...site.baslangic, magazaAdi: ad },
+      blogBaslangici: {
+        kategoriler: [],
+        yazilar: [
+          {
+            baslik: "{magazaAdi} ile kış",
+            adresAdi: "kis",
+            ozet: "{magazaAdi} önerileri",
+            icerik: "<p>{magazaAdi} seçti.</p>",
+            durum: "taslak",
+          },
+        ],
+      },
+    };
+    expect(await blogBaslangiciniKur(h.vt, baslangicli, () => h.klasor)).toBe(true);
+    const [yazi] = await h.vt.select().from(blogYazilari);
+    expect(yazi?.baslik).toBe("Kum $& Saat<3 ile kış");
+    expect(yazi?.ozet).toBe("Kum $& Saat<3 önerileri");
+    expect(yazi?.icerik).toBe("<p>Kum $&#38; Saat&#60;3 seçti.</p>");
+  });
+});

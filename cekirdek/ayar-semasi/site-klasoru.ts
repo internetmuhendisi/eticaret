@@ -9,9 +9,11 @@ import {
   type DemoParcasi,
   demoParcaKodlari,
   demoParcalari,
+  magazaAdiniYerlestir,
   magazaAdiYerTutucusu,
 } from "../kayitlar/demo-paketi.ts";
 import { type DosyaTuru, dosyaSinirlari } from "../kayitlar/dosya.ts";
+import { baslangicGorselAdiKalibi } from "../kayitlar/gorsel.ts";
 import type { VideoSitesi } from "../kayitlar/video-siteleri.ts";
 import { icerikTuru, uzantininTuru } from "../moduller/dosya/tur.ts";
 import {
@@ -58,6 +60,7 @@ import { bolumKutuphanesi } from "../vitrin/bolum-kutuphanesi/kutuphane.ts";
 import {
   ayarSemasi,
   type MagazaAyarlari,
+  magazaAdiSiniri,
   magazaAyarSemasi,
   onekTuret,
   type SiteAyarlari,
@@ -179,7 +182,7 @@ export const vergiBaslangiciniDogrula = (
   return { gecerli: false, hatalar: sorunlariYaz(vergiBaslangicDosyasi, sonuc.error.issues) };
 };
 
-export const katalogBaslangicDosyasi = "baslangic/katalog.json";
+export const katalogBaslangicDosyasi = demoParcalari.katalog;
 
 // Dosyası olmayan site boş katalogla başlar. Sitenin ayarına bağlı kurallar (saat dilimi, vergi
 // başlangıcı) yalnız ikisi geçerliyse denetlenir; geçersizse hatası zaten kendi dosyasında yazar.
@@ -413,7 +416,7 @@ export const temaBaslangiciniDogrula = (
   return { gecerli: true, deger: { tema: tema.kod, ayarlar: sonuc.data.ayarlar } };
 };
 
-export const duzenBaslangicDosyasi = "baslangic/duzen.json";
+export const duzenBaslangicDosyasi = demoParcalari.duzen;
 
 // Düzenin başlangıç değeri (kart 0106): dosya varsa bölüm kütüphanesinin kurallarından geçer, yoksa sitenin
 // başlangıç temasının düzeni kullanılır (o da tema şemasında aynı kurallardan geçmiştir). Sitenin dosyası
@@ -455,7 +458,7 @@ export const duzenBaslangiciniDogrula = (
   return { gecerli: true, deger: sonuc.data };
 };
 
-export const menuBaslangicDosyasi = "baslangic/menuler.json";
+export const menuBaslangicDosyasi = demoParcalari.menuler;
 
 // Başlangıç menüleri (kart 0107): dosya menü şemasından geçer, bağlanılan kategori, marka ve ürün başlangıç
 // kataloğunda, sayfa (kart 0273) başlangıç sayfalarında olmalı. Dosyası olmayan sitede başlangıç menüsü yoktur.
@@ -488,7 +491,7 @@ export const menuBaslangiciniDogrula = (
   return { gecerli: true, deger: sonuc.data };
 };
 
-export const blogBaslangicDosyasi = "baslangic/blog.json";
+export const blogBaslangicDosyasi = demoParcalari.blog;
 
 // Başlangıç blogu (kart 0272): dosya şemadan ve alanlar arası kurallardan geçer. Dosyası olmayan sitede başlangıç blogu
 // yoktur. Kapak görsellerini katalogGorselleriniDogrula denetler.
@@ -512,7 +515,7 @@ export const blogBaslangiciniDogrula = (
   return { gecerli: true, deger: sonuc.data };
 };
 
-export const sayfaBaslangicDosyasi = "baslangic/sayfalar.json";
+export const sayfaBaslangicDosyasi = demoParcalari.sayfalar;
 
 // Başlangıç sayfaları (kart 0273): dosya şemadan ve adres adının tekilliğinden geçer. Dosyası olmayan sitede başlangıç
 // sayfası yoktur.
@@ -535,7 +538,7 @@ export const sayfaBaslangiciniDogrula = (
   return { gecerli: true, deger: sonuc.data };
 };
 
-export const kuponBaslangicDosyasi = "baslangic/kuponlar.json";
+export const kuponBaslangicDosyasi = demoParcalari.kuponlar;
 
 // Başlangıç kuponları (kart 0312): dosya şemadan ve alanlar arası kurallardan (tekil kod, türe uyan değer, kapsamın
 // kayıtları başlangıç kataloğunda, geçerli zamanlar) geçer. Dosyası olmayan sitede başlangıç kuponu yoktur.
@@ -614,6 +617,89 @@ export const markaLogosunuDogrula = (
   return { gecerli: true, logo: { yol, tur } };
 };
 
+// Başlangıç düzeninin blog bölümü kategoriyi adres adıyla seçer: başlangıç blogunda olmalı (kart 0272).
+const blogKategoriSorunlari = (duzen: BaslangicDuzeni, blog: BlogBaslangici): string[] => {
+  const blogKategorileri = new Set(blog.kategoriler.map((k) => k.adresAdi));
+  const hatalar: string[] = [];
+  for (const [alan, bolumler] of Object.entries(duzen)) {
+    for (const [sira, bolum] of bolumler.entries()) {
+      const kategori = (bolum.degerler as { kategori?: unknown }).kategori;
+      if (bolum.tur === "blog-yazilari" && typeof kategori === "string" && kategori !== "") {
+        if (!blogKategorileri.has(kategori)) {
+          hatalar.push(
+            `${duzenBaslangicDosyasi}: ${alan}.${sira}.degerler.kategori: ${blogBaslangicDosyasi} dosyasında bu adres adıyla blog kategorisi yok.`,
+          );
+        }
+      }
+    }
+  }
+  return hatalar;
+};
+
+// Mağaza adının yer tutucusu (karar 0203) yalnız kurulumun yerleştirdiği alanlarda geçer: sabit sayfaların başlığı,
+// içeriği ve açıklaması, blog yazılarının başlığı, özeti ve içeriği. Ad konduktan sonra alanın sınırı da aşılmamalı:
+// yoksa kurulum her açılışta düşerdi. Ham dosyası verilen öteki parçalarda hiç geçmez.
+const yerTutucuSorunlari = (
+  ad: string,
+  sayfalar: SayfaBaslangici | undefined,
+  blog: BlogBaslangici | undefined,
+  hamDosyalar: [string, string][],
+): string[] => {
+  const hatalar: string[] = [];
+  const gecer = (deger: unknown) => JSON.stringify(deger ?? "").includes(magazaAdiYerTutucusu);
+  for (const [dosya, yol] of hamDosyalar) {
+    if (existsSync(yol) && readFileSync(yol, "utf8").includes(magazaAdiYerTutucusu)) {
+      hatalar.push(`${dosya}: ${magazaAdiYerTutucusu} yalnız sayfalarda ve blogda kullanılır.`);
+    }
+  }
+  for (const [sira, sayfa] of (sayfalar ?? []).entries()) {
+    const { baslik, icerik, aciklama, ...oteki } = sayfa;
+    if (gecer(oteki)) {
+      hatalar.push(
+        `${sayfaBaslangicDosyasi}: ${sira}: ${magazaAdiYerTutucusu} yalnız başlıkta, içerikte ve açıklamada kullanılır.`,
+      );
+    }
+    const yerlesmis = {
+      ...sayfa,
+      baslik: magazaAdiniYerlestir(baslik, ad),
+      icerik: magazaAdiniYerlestir(icerik, ad, { html: true }),
+      ...(aciklama === undefined ? {} : { aciklama: magazaAdiniYerlestir(aciklama, ad) }),
+    };
+    if (gecer(sayfa) && !sayfaBaslangicSemasi.safeParse([yerlesmis]).success) {
+      hatalar.push(
+        `${sayfaBaslangicDosyasi}: ${sira}: mağazanın adı konunca alanın sınırı aşılıyor.`,
+      );
+    }
+  }
+  if (blog !== undefined && gecer(blog.kategoriler)) {
+    hatalar.push(`${blogBaslangicDosyasi}: kategoriler: ${magazaAdiYerTutucusu} kullanılmaz.`);
+  }
+  for (const [sira, yazi] of (blog?.yazilar ?? []).entries()) {
+    const { baslik, ozet, icerik, ...oteki } = yazi;
+    if (gecer(oteki)) {
+      hatalar.push(
+        `${blogBaslangicDosyasi}: yazilar.${sira}: ${magazaAdiYerTutucusu} yalnız başlıkta, özette ve içerikte kullanılır.`,
+      );
+    }
+    const yerlesmis = {
+      ...yazi,
+      baslik: magazaAdiniYerlestir(baslik, ad),
+      icerik: magazaAdiniYerlestir(icerik, ad, { html: true }),
+      ...(ozet === undefined ? {} : { ozet: magazaAdiniYerlestir(ozet, ad) }),
+    };
+    if (
+      gecer(yazi) &&
+      !blogBaslangicSemasi.safeParse({ kategoriler: blog?.kategoriler ?? [], yazilar: [yerlesmis] })
+        .success
+    ) {
+      hatalar.push(
+        `${blogBaslangicDosyasi}: yazilar.${sira}: mağazanın adı konunca alanın sınırı aşılıyor.`,
+      );
+    }
+  }
+  return hatalar;
+};
+
 // --- Demo paketi (kart 0345, karar 0203) ---
 
 // Paketin yeri: site klasörünün iki üstündeki cekirdek/demolar/<kod>. Depoda siteler/<kod>/ için deponun kendisi;
@@ -629,11 +715,12 @@ export const demoTanimSemasi = z.strictObject({
   sektor: z.string().trim().min(1).max(80),
   aciklama: z.string().trim().min(1).max(500),
   // Önizleme görseli: paketin görsellerinden biri.
-  onizleme: z.string().min(1),
+  onizleme: z.string().regex(baslangicGorselAdiKalibi),
   onerilenTema: kodSemasi,
-  dil: ayarSemasi.shape.dil,
+  // Paket bunları kendisi yazar (karar 0203): sitenin varsayılanına düşmez.
+  dil: ayarSemasi.shape.dil.unwrap(),
   paraBirimi: ayarSemasi.shape.paraBirimi,
-  saatDilimi: ayarSemasi.shape.saatDilimi,
+  saatDilimi: ayarSemasi.shape.saatDilimi.unwrap(),
   // Paketin ürünlerinin kullandığı vergi sınıflarının adları: paketi kullanan sitenin vergi başlangıcında olmalı.
   vergiSiniflari: z.array(z.string().min(1)).max(50),
 });
@@ -657,15 +744,6 @@ export const demoTaniminiOku = (
   }
   if (!existsSync(join(paketKlasoru, demoParcalari.gorseller, sonuc.data.onizleme))) {
     hatalar.push(`${demoTanimDosyasi}: onizleme: ${demoParcalari.gorseller} klasöründe yok.`);
-  }
-  // Mağaza adının yer tutucusu yalnız sayfaların ve blogun metinlerinde geçer (kurulum yalnız orada yerleştirir).
-  for (const parca of ["katalog", "menuler", "duzen", "kuponlar"] as const) {
-    const yol = join(paketKlasoru, demoParcalari[parca]);
-    if (existsSync(yol) && readFileSync(yol, "utf8").includes(magazaAdiYerTutucusu)) {
-      hatalar.push(
-        `${demoParcalari[parca]}: ${magazaAdiYerTutucusu} yalnız sayfalarda ve blogda kullanılır.`,
-      );
-    }
   }
   return hatalar.length > 0 ? { gecerli: false, hatalar } : { gecerli: true, deger: sonuc.data };
 };
@@ -774,6 +852,21 @@ export const demoPaketiniDogrula = (paketKlasoru: string): string[] => {
     blog.gecerli ? blog.deger : undefined,
   );
   if (!gorseller.gecerli) hatalar.push(...gorseller.hatalar);
+  if (duzen?.gecerli === true && blog.gecerli) {
+    hatalar.push(...blogKategoriSorunlari(duzen.deger, blog.deger));
+  }
+  // Paket her mağazaya kurulabilir: en uzun mağaza adıyla da alanların sınırı aşılmamalı.
+  hatalar.push(
+    ...yerTutucuSorunlari(
+      "x".repeat(magazaAdiSiniri),
+      sayfalar.gecerli ? sayfalar.deger : undefined,
+      blog.gecerli ? blog.deger : undefined,
+      (["katalog", "menuler", "duzen", "kuponlar"] as const).map((parca) => [
+        demoParcalari[parca],
+        join(paketKlasoru, demoParcalari[parca]),
+      ]),
+    ),
+  );
   return hatalar;
 };
 
@@ -888,22 +981,24 @@ export const siteKlasorunuDogrula = (klasor: string): DogrulamaSonucu => {
     blogBaslangiciniDogrula(kaynak.blog, ayarlar?.saatDilimi ?? "UTC"),
   );
   if (!blogBaslangici.gecerli) hatalar.push(...blogBaslangici.hatalar);
-  // Başlangıç düzeninin blog bölümü kategoriyi adres adıyla seçer: başlangıç blogunda olmalı (kart 0272).
   if (blogBaslangici.gecerli && duzenBaslangici?.gecerli === true) {
-    const blogKategorileri = new Set(blogBaslangici.deger.kategoriler.map((k) => k.adresAdi));
-    for (const [alan, bolumler] of Object.entries(duzenBaslangici.deger)) {
-      for (const [sira, bolum] of bolumler.entries()) {
-        const kategori = (bolum.degerler as { kategori?: unknown }).kategori;
-        if (bolum.tur === "blog-yazilari" && typeof kategori === "string" && kategori !== "") {
-          if (!blogKategorileri.has(kategori)) {
-            hatalar.push(
-              `${duzenBaslangicDosyasi}: ${alan}.${sira}.degerler.kategori: ${blogBaslangicDosyasi} dosyasında bu adres adıyla blog kategorisi yok.`,
-            );
-          }
-        }
-      }
-    }
+    hatalar.push(...blogKategoriSorunlari(duzenBaslangici.deger, blogBaslangici.deger));
   }
+  // Yer tutucu (karar 0203) her kaynakta, sitenin değiştirdiği parçada da denetlenir; sınır sitenin adıyla.
+  if (kimlik !== undefined && baslangic.gecerli) {
+    hatalar.push(
+      ...yerTutucuSorunlari(
+        baslangic.deger.magazaAdi ?? kimlik.gorunenAd,
+        sayfaBaslangici.gecerli ? sayfaBaslangici.deger : undefined,
+        blogBaslangici.gecerli ? blogBaslangici.deger : undefined,
+        (["katalog", "menuler", "duzen", "kuponlar"] as const).map((parca) => [
+          `${kaynak[parca] === klasor ? "" : `cekirdek/demolar/${ayarlar?.baslangicDemosu ?? ""}/`}${demoParcalari[parca]}`,
+          join(kaynak[parca], demoParcalari[parca]),
+        ]),
+      ),
+    );
+  }
+
   const katalogGorselleri = katalogBaslangici.gecerli
     ? oneklenmis(
         "gorseller",

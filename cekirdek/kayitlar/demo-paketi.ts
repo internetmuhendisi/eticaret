@@ -24,9 +24,16 @@ export const magazaninParcalari = {
 // Paket metinlerinde mağazanın adının yer tutucusu; kurulumda mağazanın adı konur (kullanıcı kararı).
 export const magazaAdiYerTutucusu = "{magazaAdi}";
 
-// Yer tutucunun yerine mağazanın adını koyar. Ad düz metin olarak girer ($ ve benzeri işaretler yorumlanmaz).
-export const magazaAdiniYerlestir = (metin: string, ad: string): string =>
-  metin.split(magazaAdiYerTutucusu).join(ad);
+// Yer tutucunun yerine mağazanın adını koyar. Ad düz metin olarak girer ($ ve benzeri işaretler yorumlanmaz); HTML
+// içerikte (sayfa ve blog içeriği) kaçırılarak girer: "Moda<3" gibi bir ad etiket sanılıp silinmesin.
+const htmlIcin = (ad: string): string =>
+  ad.replace(/[&<>"']/g, (harf) => `&#${harf.charCodeAt(0)};`);
+
+export const magazaAdiniYerlestir = (
+  metin: string,
+  ad: string,
+  { html = false }: { html?: boolean } = {},
+): string => metin.split(magazaAdiYerTutucusu).join(html ? htmlIcin(ad) : ad);
 
 // Kutuda demo paketlerinin klasörü: site /siteler/<kod> altına bağlandığı için site klasörünün iki üstü (karar 0203).
 export const kutudakiDemoKlasoru = "/cekirdek/demolar";

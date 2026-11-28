@@ -14,6 +14,8 @@
 !sahip-paneli/package.json
 
 # İzin verilen klasörlerin içinde de girmeyecekler.
+# Demo paketleri görüntüye girmez, yayın onları site klasörüyle birlikte taşır (karar 0203).
+cekirdek/demolar
 **/node_modules
 **/.next
 **/testler

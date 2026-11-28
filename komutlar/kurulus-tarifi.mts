@@ -97,20 +97,22 @@ const kimlikDosyasi = (girdi: KurulusGirdisi) => ({
 
 // --- Site klasörü ---
 
-// Site klasörünün parçaları ve her birinin kaynağı. "girdi": tarif girdiden üretir; "demo": başlanacak
-// demonun paketinden gelir (kart 0345); "elle": siteye özeldir, komut iskeletini yazar, içeriği
-// kurulumdan sonra elle yazılır.
+// Site klasörünün parçaları ve her birinin kaynağı. "girdi": tarif girdiden üretir; "elle": siteye özeldir, komut
+// iskeletini yazar, içeriği kurulumdan sonra elle yazılır. İçerik (katalog, düzen, menüler...) site klasöründe değil,
+// demo paketindedir (karar 0203).
 export const siteKlasoruParcalari = [
   { yol: "kimlik.json", kaynak: "girdi", zorunlu: true },
   { yol: "ayarlar.json", kaynak: "girdi", zorunlu: true },
   { yol: "KURALLAR.md", kaynak: "elle", zorunlu: true },
-  { yol: "baslangic", kaynak: "demo", zorunlu: false },
+  // Mağazanın kendi başlangıç dosyaları (ayarlar, vergi, tema); ürünler, düzen ve öteki içerik demo paketinden
+  // gelir (baslangicDemosu, karar 0203), site bir parçayı değiştirirse o dosya da burada durur.
+  { yol: "baslangic", kaynak: "elle", zorunlu: false },
   { yol: "marka", kaynak: "elle", zorunlu: false },
   { yol: "testler", kaynak: "elle", zorunlu: false },
   { yol: "tema", kaynak: "elle", zorunlu: false },
 ] as const satisfies readonly {
   yol: string;
-  kaynak: "girdi" | "demo" | "elle";
+  kaynak: "girdi" | "elle";
   zorunlu: boolean;
 }[];
 
@@ -358,7 +360,7 @@ export const kurulusAdimlari: readonly Adim[] = [
     kod: "site-klasoru",
     ad: "Site klasörü yazılır: kimlik, ayarlar, KURALLAR.md, başlangıç, marka, testler",
     komut: "kuruCalistir (kimlik.json, ayarlar.json)",
-    elle: "KURALLAR.md, marka/, testler/ siteye özeldir; baslangic/ demodan gelir (kart 0345)",
+    elle: "KURALLAR.md, marka/, testler/ ve mağazanın kendi başlangıç dosyaları siteye özeldir; içerik demo paketinden gelir (karar 0203)",
     yer: "bilgisayar",
     geriAlinamaz: false,
     oncekiler: ["numara"],

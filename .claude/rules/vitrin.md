@@ -6,6 +6,7 @@ paths:
   - "cekirdek/katalog/deneme-bolumu/**"
   - "cekirdek/uygulama/app/**"
   - "cekirdek/temalar/**"
+  - "cekirdek/demolar/**"
   - "siteler/**"
   - "**/sitemap*"
   - "**/robots*"

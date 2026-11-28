@@ -126,9 +126,11 @@ describe("çekirdekte sitenin vergi değeri", () => {
 
   it("çekirdekte ve bileşenlerde vergi adı, sınıf adı ya da yüzde yazılışıyla oran geçmez", () => {
     const taranan = oku(
-      ["cekirdek", "bilesenler"].flatMap((klasor) =>
-        dosyalar(join(kok, klasor), /\.(ts|tsx|mts|cts|js|mjs|cjs|json|sql|css)$/),
-      ),
+      ["cekirdek", "bilesenler"]
+        .flatMap((klasor) =>
+          dosyalar(join(kok, klasor), /\.(ts|tsx|mts|cts|js|mjs|cjs|json|sql|css)$/),
+        )
+        .filter((yol) => !yol.startsWith(join(kok, "cekirdek", "demolar", "/"))), // Demo paketi veridir, ürünlerinin vergi sınıfını yazar (karar 0203).
     );
     expect(taranan.length).toBeGreaterThan(50);
     // Veritabanı değişiklikleri de taranır: bütün sitelerin oranını değiştiren veri değişikliği oranı

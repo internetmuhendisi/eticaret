@@ -18,6 +18,7 @@ export const sayfaBaslangiciniKur = async (vt: Veritabani, site: Site): Promise<
   if (site.sayfaBaslangici.length === 0) return false;
   // Demo paketinin metinlerindeki yer tutucuya mağazanın adı konur (karar 0203). Ayar ilk okunurken kendi işlemiyle
   // yazılabildiği için işlemden önce okunur.
+  if (await kuruluMu(vt)) return false;
   const ad = await magazaninAdi(vt, site);
   return vt.transaction(async (islem) => {
     await icerikKilidiAl(islem);
@@ -26,7 +27,7 @@ export const sayfaBaslangiciniKur = async (vt: Veritabani, site: Site): Promise<
       await sabitSayfaServisi.sayfaEkle(islem, baslangicSayfaYazari, {
         ...sayfa,
         baslik: magazaAdiniYerlestir(sayfa.baslik, ad),
-        icerik: magazaAdiniYerlestir(sayfa.icerik, ad),
+        icerik: magazaAdiniYerlestir(sayfa.icerik, ad, { html: true }),
         ...(sayfa.aciklama === undefined
           ? {}
           : { aciklama: magazaAdiniYerlestir(sayfa.aciklama, ad) }),

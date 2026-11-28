@@ -103,9 +103,11 @@ describe("çekirdekte para simgesi yok", () => {
   });
 
   it("çekirdekte ve bileşenlerde sitelerin para birimi ve simgesi geçmez", () => {
-    const yollar = ["cekirdek", "bilesenler"].flatMap((klasor) =>
-      dosyalar(join(kok, klasor), /\.(ts|tsx|mts|js|mjs|cjs|json|sql|css|html|svg)$/),
-    );
+    const yollar = ["cekirdek", "bilesenler"]
+      .flatMap((klasor) =>
+        dosyalar(join(kok, klasor), /\.(ts|tsx|mts|js|mjs|cjs|json|sql|css|html|svg)$/),
+      )
+      .filter((yol) => !yol.startsWith(join(kok, "cekirdek", "demolar", "/"))); // Demo paketi veridir, para birimini tanımında yazar (karar 0203).
     expect(yollar.length).toBeGreaterThan(100);
     const metinler = yollar.map((yol) => ({
       ad: relative(kok, yol),

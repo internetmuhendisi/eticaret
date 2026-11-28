@@ -115,6 +115,9 @@ const ulkeListesi = z
   .min(1, "En az bir ülke olmalı.")
   .refine((liste) => new Set(liste).size === liste.length, "Aynı ülke iki kez yazılmış.");
 
+// Mağaza adının en çok uzunluğu; demo paketinin metinleri en uzun adla da sığmalı (karar 0203).
+export const magazaAdiSiniri = 100;
+
 export const ayarSemasi = z.strictObject({
   // Satış ve teslimat yapılan ülkeler (kart 0071, karar 0010): satış ayarlarını değiştirdiği için
   // altyapı sahibinindir.
@@ -321,7 +324,7 @@ export const magazaAyarSemasi = z.strictObject({
       .string()
       .trim()
       .min(1)
-      .max(100)
+      .max(magazaAdiSiniri)
       .refine((ad) => !ad.includes("@"), "magaza-adi-eposta")
       .optional(),
     magazaSahibinin("ayar.aciklama.magazaAdi"),

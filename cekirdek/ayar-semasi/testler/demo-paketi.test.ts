@@ -1,4 +1,5 @@
-// Demo paketinin kuralları (kart 0345, karar 0203): her paket kendi başına doğrulanır; paketi kullanan site parçaları
+// Demo paketinin kuralları (kart 0345, karar 0203). Değerler sitelerde olmayan deneme değerleridir (para birimi XTS,
+// vergi sınıfı "Deneme oranı"): çekirdekte site değeri arayan taramalar testleri de tarar: her paket kendi başına doğrulanır; paketi kullanan site parçaları
 // paketten, değiştirdiklerini kendinden okur; uyuşmayan dil, para birimi, saat dilimi ve eksik vergi sınıfı, iki
 // kaynakta birden duran parça, yazılı ama sitede olmayan parça ve olmayan paket durur.
 import { mkdirSync, mkdtempSync, readdirSync, writeFileSync } from "node:fs";
@@ -23,9 +24,9 @@ const tanim = {
   onizleme: "o.jpg",
   onerilenTema: "canli-carsi",
   dil: "tr",
-  paraBirimi: "TRY",
+  paraBirimi: "XTS",
   saatDilimi: "Europe/Istanbul",
-  vergiSiniflari: ["%20"],
+  vergiSiniflari: ["Deneme oranı"],
 };
 
 const katalog = {
@@ -73,12 +74,12 @@ const kur = ({
     teslimDurumu: { magazaSahibiHesabi: "bekliyor", yurtDisiAktarimBelgeleri: "bekliyor" },
   });
   yaz(join(site, "ayarlar.json"), {
-    paraBirimi: "TRY",
+    paraBirimi: "XTS",
     baslangicDemosu: "deneme-paketi",
     ...ayarlar,
   });
   yaz(join(site, "baslangic", "vergi.json"), {
-    siniflar: [{ ad: "%20", oranlar: [{ ulke: "TR", oran: "20" }] }],
+    siniflar: [{ ad: "Deneme oranı", oranlar: [{ ulke: "TR", oran: "7" }] }],
   });
   for (const [yol, icerik] of Object.entries(siteDosyalari)) yaz(join(site, yol), icerik);
   return { site, paketKlasoru };
@@ -212,7 +213,7 @@ describe("paketi kullanan site", () => {
   it("dili, para birimi ya da saat dilimi farklı paket ve sitede olmayan vergi sınıfı durur", () => {
     expect(
       hatalar(siteKlasorunuDogrula(kur({ ayarlar: { paraBirimi: "EUR" } }).site)),
-    ).toContainEqual(expect.stringContaining("paraBirimi değeri TRY, sitenin EUR"));
+    ).toContainEqual(expect.stringContaining("paraBirimi değeri XTS, sitenin EUR"));
     expect(
       hatalar(siteKlasorunuDogrula(kur({ ayarlar: { saatDilimi: "Europe/Berlin" } }).site)),
     ).toContainEqual(expect.stringContaining("saatDilimi"));
@@ -221,8 +222,14 @@ describe("paketi kullanan site", () => {
       expect.stringMatching(/^demo paketi deneme-paketi: paket\.json: dil:/),
     );
     expect(
-      hatalar(siteKlasorunuDogrula(kur({ paket: { vergiSiniflari: ["%20", "%8"] } }).site)),
-    ).toContainEqual(expect.stringContaining('"%8" vergi sınıfını kullanıyor, sitede yok'));
+      hatalar(
+        siteKlasorunuDogrula(
+          kur({ paket: { vergiSiniflari: ["Deneme oranı", "Eksik sınıf"] } }).site,
+        ),
+      ),
+    ).toContainEqual(
+      expect.stringContaining('"Eksik sınıf" vergi sınıfını kullanıyor, sitede yok'),
+    );
   });
 
   it("paketin parçasının hatası paketin yeriyle söylenir", () => {
@@ -241,5 +248,144 @@ describe("mağaza adının yerleşmesi", () => {
   it("her yer tutucuya ad konur, adın işaretleri yorumlanmaz", () => {
     expect(magazaAdiniYerlestir("{magazaAdi} ve {magazaAdi}", "A$&B")).toBe("A$&B ve A$&B");
     expect(magazaAdiniYerlestir("yer tutucu yok", "X")).toBe("yer tutucu yok");
+  });
+});
+
+describe("paketin parçalarının bozuk örnekleri", () => {
+  const paketHatasi = (dosyalar: Record<string, unknown>) =>
+    demoPaketiniDogrula(kur({ paketDosyalari: dosyalar }).paketKlasoru).join("\n");
+
+  it("her parçanın kendi denetimi pakette çalışır", () => {
+    expect(
+      paketHatasi({ [demoParcalari.duzen]: { "ana-sayfa": [{ tur: "olmayan-bolum" }] } }),
+    ).toContain(demoParcalari.duzen);
+    expect(
+      paketHatasi({
+        [demoParcalari.menuler]: [
+          {
+            kod: "ana",
+            ad: "Ana",
+            tur: "elle",
+            ogeler: [{ hedef: { tur: "kategori", adresAdi: "yok" } }],
+          },
+        ],
+      }),
+    ).toContain(demoParcalari.menuler);
+    expect(paketHatasi({ [demoParcalari.kuponlar]: [{ kod: "" }] })).toContain(
+      demoParcalari.kuponlar,
+    );
+    expect(
+      paketHatasi({ [demoParcalari.blog]: { kategoriler: [{ ad: "" }], yazilar: [] } }),
+    ).toContain(demoParcalari.blog);
+    expect(
+      paketHatasi({
+        [demoParcalari.katalog]: {
+          ...katalog,
+          kategoriler: [{ ad: "Görselli", adresAdi: "gorselli", gorsel: "olmayan.jpg" }],
+        },
+      }),
+    ).toContain("olmayan.jpg");
+  });
+
+  it("düzenin blog bölümünün kategorisi paketin blogunda olmalı", () => {
+    const duzen = {
+      "ust-kisim": [],
+      "ana-sayfa": [{ tur: "blog-yazilari", degerler: { baslik: "Blogdan", kategori: "olmayan" } }],
+      "alt-kisim": [],
+    };
+    const blog = { kategoriler: [{ ad: "Rehber", adresAdi: "rehber" }], yazilar: [] };
+    expect(
+      demoPaketiniDogrula(
+        kur({ paketDosyalari: { [demoParcalari.duzen]: duzen, [demoParcalari.blog]: blog } })
+          .paketKlasoru,
+      ).join(),
+    ).toContain("bu adres adıyla blog kategorisi yok");
+  });
+
+  // Önizleme yolu var olan dosyaya gitse de görsel adı kalıbına uymalı (kart 0347 onu panelde gösterecek).
+  it("dil ve saat dilimi tanımda zorunlu, önizleme görsel adı kalıbında", () => {
+    const { dil: _dil, ...dilsiz } = tanim;
+    const k1 = kur();
+    writeFileSync(join(k1.paketKlasoru, "paket.json"), JSON.stringify(dilsiz));
+    expect(demoPaketiniDogrula(k1.paketKlasoru).join()).toContain("dil");
+    const { saatDilimi: _saat, ...saatsiz } = tanim;
+    const k2 = kur();
+    writeFileSync(join(k2.paketKlasoru, "paket.json"), JSON.stringify(saatsiz));
+    expect(demoPaketiniDogrula(k2.paketKlasoru).join()).toContain("saatDilimi");
+    expect(
+      demoPaketiniDogrula(kur({ paket: { onizleme: "../gorseller/o.jpg" } }).paketKlasoru).join(),
+    ).toContain("onizleme");
+  });
+});
+
+describe("yer tutucunun yeri ve sınırı", () => {
+  const sayfa = (ek: Record<string, unknown>) => ({
+    baslik: "Hakkımızda",
+    adresAdi: "a",
+    icerik: "",
+    durum: "yayinda",
+    ...ek,
+  });
+
+  it("blog kategorisinde ve yazının öteki alanlarında kullanılmaz", () => {
+    const kategori = kur({
+      paketDosyalari: {
+        [demoParcalari.blog]: {
+          kategoriler: [{ ad: "{magazaAdi} rehberi", adresAdi: "r" }],
+          yazilar: [],
+        },
+      },
+    });
+    expect(demoPaketiniDogrula(kategori.paketKlasoru).join()).toContain("kategoriler");
+    const yazar = kur({
+      paketDosyalari: {
+        [demoParcalari.blog]: {
+          kategoriler: [],
+          yazilar: [
+            { baslik: "B", adresAdi: "b", icerik: "", yazar: "{magazaAdi}", durum: "taslak" },
+          ],
+        },
+      },
+    });
+    expect(demoPaketiniDogrula(yazar.paketKlasoru).join()).toContain(
+      "yalnız başlıkta, özette ve içerikte",
+    );
+  });
+
+  it("en uzun mağaza adıyla sınırı aşan alan pakette, sitenin adıyla aşan sitede reddedilir", () => {
+    const uzun = "{magazaAdi} ".padEnd(150, "x");
+    expect(
+      demoPaketiniDogrula(
+        kur({ paketDosyalari: { [demoParcalari.sayfalar]: [sayfa({ baslik: uzun })] } })
+          .paketKlasoru,
+      ).join(),
+    ).toContain("alanın sınırı aşılıyor");
+    // Sitenin kısa adıyla (Deneme Dükkanı) aynı başlık sığar.
+    expect(
+      hatalar(
+        siteKlasorunuDogrula(
+          kur({ paketDosyalari: { [demoParcalari.sayfalar]: [sayfa({ baslik: uzun })] } }).site,
+        ),
+      ),
+    ).toEqual([]);
+  });
+
+  it("sitenin değiştirdiği parçada da denetlenir", () => {
+    expect(
+      hatalar(
+        siteKlasorunuDogrula(
+          kur({
+            ayarlar: { demoParcasiSiteden: ["kuponlar"] },
+            siteDosyalari: { [demoParcalari.kuponlar]: [{ kod: "{magazaAdi}" }] },
+          }).site,
+        ),
+      ),
+    ).toContainEqual(expect.stringContaining("yalnız sayfalarda ve blogda"));
+  });
+
+  it("içeriğe ad HTML'de kaçırılarak girer", () => {
+    expect(magazaAdiniYerlestir("<p>{magazaAdi}</p>", 'Moda<3 & "Ev"', { html: true })).toBe(
+      "<p>Moda&#60;3 &#38; &#34;Ev&#34;</p>",
+    );
   });
 });

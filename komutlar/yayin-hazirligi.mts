@@ -132,11 +132,12 @@ export const kayittanSiteKlasoru = (kayit: string, klasor: string): string => {
     if (typeof demo !== "string" || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(demo)) {
       throw new Error(`ayarlar.json: baslangicDemosu geçersiz: ${String(demo)}`);
     }
+    // pipefail: git'in hatası (kayıtta paket yok) tar'ın başarısıyla gizlenmesin.
     const paket = spawnSync(
-      "sh",
+      "bash",
       [
         "-c",
-        'git -C "$0" archive "$1" "$2" | tar -x -C "$3"',
+        'set -o pipefail; git -C "$0" archive "$1" "$2" | tar -x -C "$3"',
         kok,
         kayit,
         `cekirdek/demolar/${demo}`,
