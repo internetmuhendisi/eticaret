@@ -34,12 +34,16 @@ test.beforeEach(({ page }) =>
 const yuklenmesiniBekle = sayfaHazir;
 const alan = (page: Page, etiket: string) => page.getByLabel(etiket, { exact: true });
 
-// Kuyruktaki e-postayı gönderir, posta kutusundan okur, içindeki bağlantıyı döner.
-const epostadakiBaglanti = async (alici: string): Promise<string> => {
+// Kuyruktaki e-postayı gönderir, posta kutusundan okur, içindeki bağlantıyı döner. Yöneticinin e-postası kendi
+// şablonuyla gider (kart 0279, karar 0197): yönetici testi şablonu verir (kart 0339).
+const epostadakiBaglanti = async (
+  alici: string,
+  sablon: "sifre-sifirlama" | "yonetici-sifre-sifirlama" = "sifre-sifirlama",
+): Promise<string> => {
   const [kayit] = await vt
     .select({ kimlik: epostaKayitlari.kimlik })
     .from(epostaKayitlari)
-    .where(and(eq(epostaKayitlari.alici, alici), eq(epostaKayitlari.sablon, "sifre-sifirlama")))
+    .where(and(eq(epostaKayitlari.alici, alici), eq(epostaKayitlari.sablon, sablon)))
     .orderBy(desc(epostaKayitlari.olusturulma_zamani))
     .limit(1);
   if (kayit === undefined) throw new Error("e-posta kaydı yok");
@@ -239,7 +243,7 @@ test("yönetici: sıfırlamadan sonra yine doğrulama kodu ister", async ({ page
   await page.getByRole("link", { name: metin("ortak.sifirlama.baglanti") }).click();
   await expect(page).toHaveURL(/\/yonetim\/giris\/sifremi-unuttum$/);
   await bagantiIste(page, "/yonetim/giris/sifremi-unuttum", eposta);
-  await yeniSifreYaz(page, await epostadakiBaglanti(eposta));
+  await yeniSifreYaz(page, await epostadakiBaglanti(eposta, "yonetici-sifre-sifirlama"));
   await expect(page).toHaveURL(/\/yonetim\/giris\?sifre-yenilendi=1$/);
 
   await girisYap(sifre);
