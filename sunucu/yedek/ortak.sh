@@ -40,3 +40,14 @@ depodaki_dosyalar() {
 
 # Sitenin dosya adı biçimi: kaydın kimliği ve türün uzantısı (karar 0058). Geçici adlar (.yaziliyor) dışarıda kalır.
 DOSYA_ADI='^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z0-9]+$'
+
+# Sitenin klasöründeki bir dosyayı okur (kart 0093, karar 0207). Site kendi klasörüne yazabilir: kök onun bıraktığı
+# bağı ya da özel dosyayı izlerse başka sitenin dosyasını yedeğe sokabilir, diski doldurabilir, gece işini takabilir.
+# Okuma sitenin kendi kullanıcısıyla (klasörün sahibi), bağı izlemeden, en çok 16 MB ve iki dakikayla yapılır;
+# dosya sınırları (cekirdek/kayitlar/dosya.ts) bunun altındadır. Okunamazsa hata döner.
+site_dosyasi_oku() {
+  local sahip="$1" yol="$2"
+  [[ "$sahip" =~ ^[1-9][0-9]*$ ]] || return 1
+  timeout 120 setpriv --reuid="$sahip" --regid="$sahip" --clear-groups -- \
+    dd if="$yol" iflag=nofollow bs=1M count=16 status=none
+}

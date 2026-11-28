@@ -132,7 +132,7 @@ dosya_yedekle() {
     echo "HATA $ortam/$kod: dosya klasörü yok" >&2
     return 1
   fi
-  local g zaman bitis pay sinir uzak yerel ad sebep="" sayi=0 toplam=0 parti=0 boyut
+  local g zaman bitis pay sinir uzak ad sahip sebep="" sayi=0 toplam=0 parti=0 boyut
   local -A en=()
   g="$(mktemp -d -p "$K/gecici")"
   mkdir "$g/parti"
@@ -148,18 +148,20 @@ dosya_yedekle() {
     find "$g/parti" -type f -delete
     parti=0
   }
+  # Adlar NUL ile ayrılır: satır sonu taşıyan bir ad iki ada bölünmez. Yalnız düz dosyalar; bağ ve özel dosya yok.
+  sahip="$(stat -c %u "$klasor")"
   if ! uzak="$(depodaki_dosyalar "$ortam" "$kod")"; then
     sebep="liste-okunamadi"
-  elif ! yerel="$(find "$klasor" -maxdepth 1 -type f -printf '%f\n')"; then
+  elif ! find "$klasor" -maxdepth 1 -type f -printf '%f\0' >"$g/yerel"; then
     sebep="klasor-okunamadi"
   else
     while read -r ad z; do [ -n "$ad" ] && en["$ad"]="$z"; done <<<"$uzak"
-    while read -r ad; do
+    while IFS= read -r -d '' ad; do
       [[ "$ad" =~ $DOSYA_ADI ]] || continue
       # Kopyası var ve kilidi daha uzun sürecekse gönderilmez.
       if [ -n "${en[$ad]:-}" ] && [[ "${en[$ad]}" > "$sinir" ]]; then continue; fi
-      if ! age -r "$acik" <"$klasor/$ad" >"$g/parti/$ad.$zaman.age"; then
-        sebep="sifrelenemedi"
+      if ! site_dosyasi_oku "$sahip" "$klasor/$ad" | age -r "$acik" >"$g/parti/$ad.$zaman.age"; then
+        sebep="okunamadi"
         break
       fi
       boyut="$(stat -c %s "$g/parti/$ad.$zaman.age")"
@@ -170,7 +172,7 @@ dosya_yedekle() {
         sebep="yuklenemedi"
         break
       fi
-    done <<<"$yerel"
+    done <"$g/yerel"
     if [ -z "$sebep" ] && ! gonder; then sebep="yuklenemedi"; fi
     # Bu çalışmada gönderilen her kopya depoda aynı boyutla durmalı.
     if [ -z "$sebep" ] && [ "$sayi" -gt 0 ]; then
@@ -190,27 +192,54 @@ dosya_yedekle() {
   echo "dosyalar yedeklendi $ortam/$kod $sayi $toplam"
 }
 
-# Süresi dolan dosya kopyaları silinir; yalnız o gece dosya yedeği başarılıysa çalışır. Diskte duran her
-# dosyanın en yeni kopyası saklama süresinden gençtir, silinmez. Silme işareti veritabanı yedeklerindeki
-# gibi kaldırılır ve hata kayda yazılır (aynı onayla kapanır).
+# Süresi dolan dosya kopyaları silinir; yalnız o gece dosya yedeği başarılıysa çalışır. Bir kopya saklama süresi ve
+# payı geçince silinir, şu iki durum dışında: dosya diskte duruyorsa en yeni kopyası hiç silinmez; diskte yoksa en yeni
+# kopyası depodaki en eski veritabanı yedeğinden yeniyse silinmez (o yedek dosyayı gösteriyor olabilir; dosya yedeği
+# uzun süre başarısız kaldıysa kopyası eskimiş olabilir). Silme işareti veritabanı yedeklerindeki gibi kaldırılır ve
+# hata kayda yazılır (aynı onayla kapanır).
 dosya_temizle() {
-  local ortam="$1" kod="$2" acik saklama marj liste
+  local ortam="$1" kod="$2" acik saklama marj liste dumplar g sinir en_eski silinen
+  local klasor="$D/$ortam/$kod"
   if ! bilgiyi_oku "$ortam" "$kod" 2>/dev/null; then
     kayit "$ortam" "$kod" "temizlik" "basarisiz" "site-bilgisi-bozuk" "dosyalar" 0
     return 1
   fi
-  if ! liste="$(rc "$ortam" lsf -R --files-only --include 'dosyalar/**' "depo:$KOVA/$ortam/$kod")"; then
+  if ! liste="$(rc "$ortam" lsf -R --files-only --include 'dosyalar/**' "depo:$KOVA/$ortam/$kod")" ||
+    ! dumplar="$(rc "$ortam" lsf --files-only "depo:$KOVA/$ortam/$kod")"; then
     kayit "$ortam" "$kod" "temizlik" "basarisiz" "liste-okunamadi" "dosyalar" 0
     return 1
   fi
   # Hiç kopya yoksa (dosyasız site) silinecek bir şey de yoktur.
   [ -n "$liste" ] || return 0
-  if ! rc "$ortam" delete --min-age "$((saklama + marj))s" "depo:$KOVA/$ortam/$kod/dosyalar" ||
+  g="$(mktemp -d -p "$K/gecici")"
+  sinir="$(date -u -d "-$((saklama + marj)) seconds" +%Y%m%dT%H%M%SZ)"
+  en_eski="$(printf '%s\n' "$dumplar" | grep -oE '^[0-9]{8}T[0-9]{6}Z' | sort | head -1 || true)"
+  find "$klasor" -maxdepth 1 -type f -printf '%f\n' 2>/dev/null >"$g/diskte" || true
+  printf '%s\n' "$liste" | awk -v sinir="$sinir" -v en_eski="$en_eski" -v diskte="$g/diskte" '
+    BEGIN { while ((getline d < diskte) > 0) var[d] = 1 }
+    { yol = $0; sub(/^dosyalar\//, "") }
+    match($0, /\.[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]T[0-9][0-9][0-9][0-9][0-9][0-9]Z\.age$/) {
+      ad = substr($0, 1, RSTART - 1); z = substr($0, RSTART + 1, 16)
+      n++; adi[n] = ad; zamani[n] = z; kopya[n] = $0
+      if (z > en[ad]) en[ad] = z
+    }
+    END {
+      for (i = 1; i <= n; i++) {
+        ad = adi[i]; z = zamani[i]
+        if (z >= sinir) continue
+        if (z == en[ad] && (ad in var || z >= en_eski)) continue
+        print kopya[i]
+      }
+    }' >"$g/sil"
+  if [ -s "$g/sil" ] && ! RC_BAGLA="$g:/g:ro" rc "$ortam" delete "depo:$KOVA/$ortam/$kod/dosyalar" --files-from /g/sil ||
     ! rc "$ortam" backend cleanup-hidden "depo:$KOVA/$ortam/$kod/dosyalar"; then
+    rm -rf "$g"
     kayit "$ortam" "$kod" "temizlik" "basarisiz" "temizlik-yarim" "dosyalar" 0
     return 1
   fi
-  kayit "$ortam" "$kod" "temizlik" "basarili" "" "dosyalar" 0
+  silinen="$(wc -l <"$g/sil")"
+  rm -rf "$g"
+  kayit "$ortam" "$kod" "temizlik" "basarili" "" "dosyalar" "$silinen"
 }
 
 if [ "${1:-}" = "--dosya" ]; then

@@ -9,6 +9,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -452,6 +453,9 @@ case "$*" in
     [ -z "\${DOSYA_YUKLEME_BOZUK:-}" ] || exit 1
     kaynak="$(printf '%s\\n' "$@" | sed -n 's|:/veri:ro$||p')"
     find "$kaynak" -type f -printf '%s;%f\\n' >> "$DEPO_KAYDI"; exit 0 ;;
+  *"--files-from /g/sil"*)
+    bag="$(printf '%s\\n' "$@" | sed -n 's|:/g:ro$||p')"
+    cat "$bag/sil" >> "$SILINEN"; exit 0 ;;
   *"--format sp"*) [ -z "\${DOSYA_BOYUT_BOZUK:-}" ] || { echo "1;x"; exit 0; }; cat "$DEPO_KAYDI" 2>/dev/null; exit 0 ;;
   *"--files-only"*) printf '%s\\n' \${GENC_DOSYA-yeni.dump.age}; exit 0 ;;
   *copyto*) [ -z "\${YUKLEME_BOZUK:-}" ] || exit 1; exit 0 ;;
@@ -462,6 +466,8 @@ esac`,
     );
     betik("age", 'cat > "$AGE_GIRDISI"; printf "12345678901"; exit 0');
     betik("flock", "exit 0");
+    // Sitenin dosyası sitenin kullanıcısıyla okunur (setpriv); burada kullanıcı değişmez.
+    betik("setpriv", 'while [ "$1" != "--" ]; do shift; done; shift; exec "$@"');
     const calistir = (args: string[], ortam: Record<string, string> = {}) => {
       const sonuc = spawnSync("bash", [join(k, "gece.sh"), ...args], {
         encoding: "utf8",
@@ -474,6 +480,7 @@ esac`,
           AGE_GIRDISI: join(kok, "age-girdisi"),
           DOSYA_KOKU: d,
           DEPO_KAYDI: join(kok, "depo-kaydi"),
+          SILINEN: join(kok, "silinen"),
           ...ortam,
         },
       });
@@ -501,7 +508,9 @@ esac`,
       writeFileSync(join(d, "deneme", site, ad), icerik);
     const depoKaydi = () =>
       existsSync(join(kok, "depo-kaydi")) ? readFileSync(join(kok, "depo-kaydi"), "utf8") : "";
-    return { calistir, siteYaz, kayitYaz, dosyaYaz, depoKaydi, dosyaKoku: d };
+    const silinen = () =>
+      existsSync(join(kok, "silinen")) ? readFileSync(join(kok, "silinen"), "utf8") : "";
+    return { calistir, siteYaz, kayitYaz, dosyaYaz, depoKaydi, silinen, dosyaKoku: d };
   };
 
   it("başarılı gece: kilitle yükler, kayda yazar, temizler, geçici dosya kalmaz", () => {
@@ -679,9 +688,90 @@ esac`,
     expect(r.cagrilar).toMatch(
       /copy \/veri depo:kova\/deneme\/ornek-magaza\/dosyalar --s3-no-check-bucket --s3-object-lock-mode COMPLIANCE --s3-object-lock-retain-until-date \d{4}-/,
     );
-    expect(r.cagrilar).toContain("delete --min-age 90s depo:kova/deneme/ornek-magaza/dosyalar");
+    // Depodaki tek kopya diskteki dosyanın en yeni kopyasıdır: silinmez.
+    expect(r.cagrilar).not.toContain("--files-from /g/sil");
     expect(r.cagrilar).toContain("backend cleanup-hidden depo:kova/deneme/ornek-magaza/dosyalar");
     expect(r.gecici).toBe("");
+  });
+
+  it("süresi dolan kopya silinir; diskteki dosyanın ve en eski veritabanı yedeğinden yeni kopyanın en yenisi kalır", () => {
+    const { calistir, dosyaYaz, silinen } = kur(["ornek-magaza"]);
+    dosyaYaz("ornek-magaza", ad1);
+    const ad3 = "33333333-3333-4333-8333-333333333333.png";
+    const ad4 = "44444444-4444-4444-8444-444444444444.png";
+    const taze = zamanAdi(Date.now() - 5_000);
+    const r = calistir([], {
+      VERITABANLARI: "site_ornek_magaza",
+      // En eski veritabanı yedeği 2020-06-15.
+      GENC_DOSYA: "20200615T000000Z-gece.dump.age 20261101T000000Z-gece.dump.age",
+      DEPO_DOSYALARI: [
+        `dosyalar/${ad1}.20200101T000000Z.age`,
+        `dosyalar/${ad1}.20210101T000000Z.age`,
+        `dosyalar/${ad1}.${taze}.age`,
+        `dosyalar/${ad3}.20200101T000000Z.age`,
+        `dosyalar/${ad4}.20200701T000000Z.age`,
+      ].join(" "),
+    });
+    expect(r.durum).toBe(0);
+    expect(silinen().trim().split("\n").sort()).toEqual([
+      `${ad1}.20200101T000000Z.age`,
+      `${ad1}.20210101T000000Z.age`,
+      `${ad3}.20200101T000000Z.age`,
+    ]);
+    expect(dosyaKayitlari(r).at(-1)).toMatchObject({
+      tur: "temizlik",
+      sonuc: "basarili",
+      dosya: "dosyalar",
+      boyut: 3,
+    });
+  });
+
+  it("diskteki dosyanın en yeni kopyası eski olsa da silinmez", () => {
+    const { calistir, dosyaYaz, silinen } = kur(["ornek-magaza"]);
+    dosyaYaz("ornek-magaza", ad1);
+    // Gönderim yapılsa da sahte depo listesi değişmez: en yeni kopya 2021'dir.
+    calistir([], {
+      VERITABANLARI: "site_ornek_magaza",
+      GENC_DOSYA: "20261101T000000Z-gece.dump.age",
+      DEPO_DOSYALARI: `dosyalar/${ad1}.20200101T000000Z.age dosyalar/${ad1}.20210101T000000Z.age`,
+    });
+    expect(silinen().trim()).toBe(`${ad1}.20200101T000000Z.age`);
+  });
+
+  it("bağ, özel dosya ve satır sonlu ad okunmaz; dosya sitenin kullanıcısıyla, bağı izlemeden okunur", () => {
+    const { calistir, dosyaYaz, depoKaydi, dosyaKoku } = kur(["ornek-magaza"]);
+    const klasor = join(dosyaKoku, "deneme", "ornek-magaza");
+    const gizli = join(dosyaKoku, "baska-sitenin-dosyasi");
+    writeFileSync(gizli, "GIZLI-ICERIK");
+    symlinkSync(gizli, join(klasor, ad1));
+    // Satır sonlu ad, bağın adını taşır: adlar satırla ayrılsaydı bağ okunurdu.
+    dosyaYaz("ornek-magaza", `x\n${ad1}`);
+    spawnSync("mkfifo", [join(klasor, "55555555-5555-4555-8555-555555555555.png")]);
+    const r = calistir(["--dosya", "deneme", "ornek-magaza"]);
+    expect(r.durum).toBe(0);
+    expect(r.kayit.at(-1)).toMatchObject({ tur: "dosya", sonuc: "basarili", dosya: "0" });
+    expect(depoKaydi()).toBe("");
+    expect(r.sifrelenen).not.toContain("GIZLI");
+    // Okuma işlevi bağı izlemez.
+    const oku = spawnSync(
+      "bash",
+      [
+        "-c",
+        `. ${join(yedekKlasoru, "ortak.sh")}; site_dosyasi_oku 1 "$1"`,
+        "-",
+        join(klasor, ad1),
+      ],
+      {
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          PATH: `${join(dosyaKoku, "..", "arac")}:${process.env.PATH}`,
+          YEDEK_KOKU: join(dosyaKoku, "..", "yedek"),
+        },
+      },
+    );
+    expect(oku.status).not.toBe(0);
+    expect(oku.stdout).toBe("");
   });
 
   it("kilidi uzun süren kopyası olan dosya yeniden gönderilmez", () => {
