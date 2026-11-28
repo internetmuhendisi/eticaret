@@ -13,12 +13,11 @@ import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { cekirdekSurumu } from "../cekirdek/surum.ts";
-import { kayitEtiketi } from "./cekirdek-goruntusu-denetle.mts";
 import { hatDosyasi, hatSonucunuOku } from "./hat-sonucu.mts";
 import { asilAdresiCoz } from "./on-kapi.mts";
 import { herkeseAcikCozulme } from "./on-kapi-olcumleri.mts";
 import { kok } from "./sunucu.mts";
-import { surumEtiketi } from "./sunucu-veritabani.mts";
+import { goruntununKaydi, surumEtiketi } from "./sunucu-veritabani.mts";
 
 const git = (argumanlar: string[]) => {
   const sonuc = spawnSync("git", argumanlar, { cwd: kok, encoding: "utf8" });
@@ -151,15 +150,6 @@ export const kayittanSiteKlasoru = (kayit: string, klasor: string): string => {
   }
   return join(gecici, yol);
 };
-
-const goruntununKaydi = (etiket: string): string =>
-  spawnSync(
-    "docker",
-    ["image", "inspect", "-f", `{{index .Config.Labels "${kayitEtiketi}"}}`, etiket],
-    {
-      encoding: "utf8",
-    },
-  ).stdout?.trim() ?? "";
 
 // Kimlikteki sürümün görüntüsü bu kayıttan üretilmiş olmalı; değilse yeniden üretilir.
 // Bu kayıttan yalnız kaydın kendi çekirdek sürümü üretilebilir.

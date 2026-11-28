@@ -20,7 +20,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { gizliBilgiler } from "../cekirdek/kayitlar/gizli-bilgiler.ts";
 import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
-import { goruntuAdi, goruntuyuDenetle } from "./cekirdek-goruntusu-denetle.mts";
+import { goruntuAdi, goruntuyuDenetle, kayitEtiketi } from "./cekirdek-goruntusu-denetle.mts";
+import { izBicimi } from "./cekirdek-izi.mts";
 import {
   gizliKlasor,
   gizliKok,
@@ -370,3 +371,52 @@ export const agHatalari = (aglar: string[], ortam: Ortam, siteler: string[]): st
 
 // docker inspect çıktısı: {{json .HostConfig.PortBindings}}. Port açılmamış olmalı.
 export const portuKapali = (cikti: string): boolean => ["{}", "null"].includes(cikti.trim());
+
+// Sunucu veritabanı denemesinin Örnek Mağaza'yı kullanıp kullanamayacağı (kart 0058). Deneme sitenin gerçek
+// veritabanına kullanılacak görüntünün değişikliklerini uygular. Yayındaki çekirdekten başka bir görüntü, yayın
+// yapılmadan çalışan sitenin veritabanını değiştirirdi. Site yalnız hiç yayınlanmamışsa ya da görüntü yayındakiyle
+// aynı çekirdekse (aynı sürüm ve aynı parmak izi, karar 0205) kullanılır. Görüntünün kaydı bilinmiyorsa, kaydedilmemiş
+// değişiklikten üretildiyse ya da iz hesaplanamıyorsa kullanılmaz.
+export const yayindakiCekirdekMi = (
+  girdi: {
+    surum: string;
+    goruntuKaydi: string;
+    yayin?: { surum: string; kayit: string; cekirdekIzi?: string } | undefined;
+  },
+  kayittanIz: (kayit: string) => string,
+): { kullanilir: true } | { kullanilir: false; neden: string } => {
+  const { surum, goruntuKaydi, yayin } = girdi;
+  if (yayin === undefined) return { kullanilir: true };
+  const yayinda = `yayında ${yayin.surum} (${yayin.kayit.slice(0, 12)})`;
+  if (yayin.surum !== surum) {
+    return { kullanilir: false, neden: `${yayinda}, denemenin sürümü ${surum}` };
+  }
+  if (!/^[0-9a-f]{7,40}$/.test(goruntuKaydi)) {
+    return {
+      kullanilir: false,
+      neden: `${yayinda}, görüntünün kaydı ${goruntuKaydi ? `"${goruntuKaydi.slice(0, 18)}"` : "yok"} (kaydedilmemiş değişiklik ya da bilinmiyor)`,
+    };
+  }
+  try {
+    const yayinIzi = yayin.cekirdekIzi?.startsWith(`${izBicimi}:`)
+      ? yayin.cekirdekIzi
+      : kayittanIz(yayin.kayit);
+    if (kayittanIz(goruntuKaydi) === yayinIzi) return { kullanilir: true };
+    return {
+      kullanilir: false,
+      neden: `${yayinda}, görüntü (${goruntuKaydi.slice(0, 12)}) başka bir çekirdek`,
+    };
+  } catch (hata) {
+    return { kullanilir: false, neden: `${yayinda}, iz hesaplanamadı: ${(hata as Error).message}` };
+  }
+};
+
+// Bilgisayardaki görüntünün üretildiği git kaydı (görüntünün etiketi, kart 0021). Görüntü yoksa boş.
+export const goruntununKaydi = (etiket: string): string =>
+  spawnSync(
+    "docker",
+    ["image", "inspect", "-f", `{{index .Config.Labels "${kayitEtiketi}"}}`, etiket],
+    {
+      encoding: "utf8",
+    },
+  ).stdout?.trim() ?? "";

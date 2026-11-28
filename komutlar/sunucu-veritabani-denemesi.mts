@@ -1,22 +1,27 @@
 // Sunucudaki veritabanının denemesi (kart 0039, karar 0034). Çalıştırma: pnpm sunucu-veritabani-denemesi
 //
 // Örnek Mağaza'nın deneme veritabanı (yoksa açılır, deneme sonunda kalır) ile geçici bir deneme
-// sitesinin veritabanı sunucuda yan yana kurulur. Ölçülenler:
+// sitesinin veritabanı sunucuda yan yana kurulur. Örnek Mağaza'nın veritabanı yalnız kullanılacak görüntü yayındaki
+// çekirdeğin aynısıysa ya da site hiç yayınlanmamışsa kullanılır (kart 0058): yoksa ona dokunulmaz, nedeni yazılır,
+// yerine ikinci bir geçici site açılır ve ölçümler iki geçici siteyle yapılır. Ölçülenler:
 // - İki sitenin veritabanı açılıyor, değişiklikleri uygulanıyor; ikinci çalışmada bir şey değişmiyor.
 // - Her site kendi veritabanına bağlanıyor, ötekinin veritabanına giremiyor (iki yönde).
 // - Deneme sitesinin gizli bilgisi yenilenince yeni şifreyle bağlanıyor, eski şifreyle bağlanamıyor;
 //   Örnek Mağaza etkilenmiyor.
 // Bağlantıları sitenin kutu kullanıcısıyla, sitenin ağında ve gizli bilgi dosyasıyla açılan geçici
 // kutular dener; değerler ekrana basılmaz. Sonunda deneme sitesinin veritabanı, kullanıcısı,
-// gizli bilgileri ve ağı silinir.
+// gizli bilgileri ve ağı silinir (ikinci geçici site açıldıysa onunki de).
 
+import { spawnSync } from "node:child_process";
 import { siteKlasorunuOku } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { gizliBilgiler } from "../cekirdek/kayitlar/gizli-bilgiler.ts";
 import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
+import { cekirdekIzi } from "./cekirdek-izi.mts";
 import {
   denemeSiteNumarasi,
   gizliKlasor,
   gizliKok,
+  ikinciDenemeSiteNumarasi,
   kutuKullanicisi,
   type Ortam,
   silmeBetigi,
@@ -25,6 +30,7 @@ import {
 } from "./gizli-bilgi.mts";
 import { kayitlariOku, kok, sshKomutu } from "./sunucu.mts";
 import {
+  goruntununKaydi,
   goruntuyuGonder,
   sifreyiEsitle,
   siteAgi,
@@ -32,17 +38,38 @@ import {
   surumEtiketi,
   veritabaniKutusu,
   veritabaniKutusunuKur,
+  yayindakiCekirdekMi,
 } from "./sunucu-veritabani.mts";
+import { etkinYigini, kayitlariOku as yayinKayitlariOku } from "./yayin.mts";
 
 const ortam: Ortam = "deneme";
 const ornek = siteKlasorunuOku(`${kok}/siteler/ornek-magaza`).kimlik;
-const a = {
+// Görüntü sunucuya denemenin kendi etiketiyle gider: sürümün etiketi (altyapi-cekirdek:<sürüm>) sunucuda yayındaki
+// görüntüyü gösterir, bilgisayardaki aynı adlı görüntü onu başka bir görüntüye kaydırırdı (kart 0058). Etiket
+// sonunda iki yerde de silinir.
+const surumunEtiketi = surumEtiketi(ornek.cekirdekSurumu);
+const denemeEtiketi = `${surumunEtiketi}-vt-deneme`;
+const ornekSite = {
   kodAdi: ornek.kodAdi,
   numara: siteNumaralariniOku()[ornek.kodAdi] as number,
   surum: ornek.cekirdekSurumu,
+  etiket: denemeEtiketi,
 };
-// Deneme sitesinin numarası kayda yazılmaz; gerçek sitelere verilmeyen ayrılmış numarayı kullanır.
-const b = { kodAdi: "vt-deneme", numara: denemeSiteNumarasi, surum: ornek.cekirdekSurumu };
+// Deneme sitelerinin numarası kayda yazılmaz; gerçek sitelere verilmeyen ayrılmış numaraları kullanırlar. İkincisi
+// yalnız Örnek Mağaza kullanılamayınca açılır.
+const b = {
+  kodAdi: "vt-deneme",
+  numara: denemeSiteNumarasi,
+  surum: ornek.cekirdekSurumu,
+  etiket: denemeEtiketi,
+};
+const yedek = {
+  kodAdi: "vt-deneme-2",
+  numara: ikinciDenemeSiteNumarasi,
+  surum: ornek.cekirdekSurumu,
+  etiket: denemeEtiketi,
+};
+let a = ornekSite;
 
 const sonuclar: { ad: string; gecti: boolean }[] = [];
 const olc = (ad: string, gecti: boolean, ayrinti = "") => {
@@ -113,25 +140,32 @@ docker run --rm --network ${siteAgi(ortam, site.kodAdi)} --user ${kullanici}:${k
   }
 };
 
-const temizle = (ipv4: string, eskiKopya: string): void => {
-  const ad = siteVeritabaniAdi(b.kodAdi);
-  const betik = `set +e
+const temizle = (ipv4: string, eskiKopya: string, gecicilere: string[]): void => {
+  for (const kodAdi of gecicilere) {
+    const ad = siteVeritabaniAdi(kodAdi);
+    const betik = `set +e
 ${eskiKopya ? `sudo rm -f ${eskiKopya}` : "true"}
 printf '%s\\n' 'DROP DATABASE IF EXISTS "${ad}" WITH (FORCE);' 'DROP ROLE IF EXISTS "${ad}";' | docker exec -i ${veritabaniKutusu(ortam)} psql -U postgres -d postgres -q >/dev/null
-${silmeBetigi(ortam, b.kodAdi).replace("set -eu", "true")}
+${silmeBetigi(ortam, kodAdi).replace("set -eu", "true")}
 `;
-  const sonuc = calistir(ipv4, betik, { temizlik: true });
-  if (sonuc.durum !== 0) console.error(`temizlik: ${sonuc.hata.trim()}`);
+    const sonuc = calistir(ipv4, betik, { temizlik: true });
+    if (sonuc.durum !== 0) console.error(`temizlik: ${sonuc.hata.trim()}`);
+  }
   // Deneme sitesi listeden çıkınca veritabanı kutusu onun ağı olmadan yeniden kurulur.
   try {
     veritabaniKutusunuKur(ipv4, ortam);
   } catch (hata) {
     console.error(`temizlik: ${(hata as Error).message}`);
   }
-  calistir(ipv4, `docker network rm ${siteAgi(ortam, b.kodAdi)} >/dev/null 2>&1 || true`, {
-    temizlik: true,
-  });
-  console.log(`silindi     deneme sitesi ${b.kodAdi} (veritabanı, kullanıcı, gizli bilgi, ağ)`);
+  // Denemenin etiketi: sunucuda yalnız bu ad kaldırılır (görüntüyü başka etiket ya da kutu kullanıyorsa kalır).
+  calistir(ipv4, `docker image rm ${denemeEtiketi} >/dev/null 2>&1 || true`, { temizlik: true });
+  spawnSync("docker", ["image", "rm", denemeEtiketi], { stdio: "ignore" });
+  for (const kodAdi of gecicilere) {
+    calistir(ipv4, `docker network rm ${siteAgi(ortam, kodAdi)} >/dev/null 2>&1 || true`, {
+      temizlik: true,
+    });
+    console.log(`silindi     deneme sitesi ${kodAdi} (veritabanı, kullanıcı, gizli bilgi, ağ)`);
+  }
 };
 
 const [sunucu] = kayitlariOku();
@@ -141,7 +175,37 @@ if (!sunucu) {
 }
 const { ipv4 } = sunucu;
 let eskiKopya = "";
+const geciciler = [b.kodAdi];
 try {
+  // Önce denemenin etiketi konur, karar o etiketin görüntüsünden verilir: sunucuya giden görüntü kararın baktığıdır.
+  const etiketle = spawnSync("docker", ["image", "tag", surumunEtiketi, denemeEtiketi], {
+    encoding: "utf8",
+  });
+  if (etiketle.status !== 0) {
+    throw new Error(`${surumunEtiketi} bu bilgisayarda yok: ${etiketle.stderr.trim()}`);
+  }
+  // Örnek Mağaza'nın veritabanına yalnız yayındaki çekirdeğin görüntüsüyle dokunulur (kart 0058).
+  const yayinKayitlari = yayinKayitlariOku(ipv4, ortam, ornek.kodAdi);
+  const etkin = etkinYigini(yayinKayitlari).at(-1);
+  const yayin = yayinKayitlari.find(
+    (k) => k.tur === "yayin" && k.sonuc === "basarili" && k.no === etkin,
+  );
+  const karar = yayindakiCekirdekMi(
+    {
+      surum: ornek.cekirdekSurumu,
+      goruntuKaydi: goruntununKaydi(denemeEtiketi),
+      // Etkin yayının kaydı bulunamazsa site yayında sayılır ve kullanılmaz.
+      yayin: etkin === undefined ? undefined : (yayin ?? { surum: "bilinmiyor", kayit: "" }),
+    },
+    (kayit) => cekirdekIzi(kok, kayit),
+  );
+  if (!karar.kullanilir) {
+    console.log(
+      `dokunulmadı ${ornek.kodAdi}: ${karar.neden}; veritabanı değiştirilmez, yerine geçici ${yedek.kodAdi} açılıyor (kart 0058)`,
+    );
+    a = yedek;
+    geciciler.unshift(yedek.kodAdi);
+  }
   console.log(`${sunucu.ad}: ${a.kodAdi} ile geçici ${b.kodAdi} deneme ortamında deneniyor...`);
   const ilkA = siteVeritabaniniHazirla(ipv4, ortam, a);
   const ilkB = siteVeritabaniniHazirla(ipv4, ortam, b);
@@ -158,7 +222,7 @@ try {
     `yeni ${ikinciA.yeni} ve ${ikinciB.yeni}`,
   );
 
-  const { etiket } = goruntuyuGonder(ipv4, surumEtiketi(a.surum));
+  const { etiket } = goruntuyuGonder(ipv4, denemeEtiketi);
   for (const [site, oteki] of [
     [a, b],
     [b, a],
@@ -207,7 +271,7 @@ try {
   sonuclar.push({ ad: "deneme çalıştı", gecti: false });
   console.log(`HATA   deneme çalıştı  (${(hata as Error).message})`);
 } finally {
-  temizle(ipv4, eskiKopya);
+  temizle(ipv4, eskiKopya, geciciler);
 }
 
 const kalanlar = sonuclar.filter((sonuc) => !sonuc.gecti);
