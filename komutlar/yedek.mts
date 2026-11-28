@@ -14,8 +14,9 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { parseEnv } from "node:util";
+import { kayitliDosyaTurleri } from "../cekirdek/kayitlar/dosya.ts";
 import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
-import { gizliKok, type Ortam, yedekDeposuGizliBilgisi } from "./gizli-bilgi.mts";
+import { gizliKok, kutuKullanicisi, type Ortam, yedekDeposuGizliBilgisi } from "./gizli-bilgi.mts";
 import { arkaPlanKutuAdi } from "./kutu-kurali.mts";
 import {
   kodAdiGecerli,
@@ -229,6 +230,13 @@ KOK_SONU
 export const yedekAlmaBetigi = (ortam: Ortam, kodAdi: string, tur: string): string =>
   `# adim:yedek\nset -eu\nsudo YEDEK_KILIT_SN=${yedekKilitSn} ${yedekKoku}/gece.sh ${ortam} ${kodAdi} ${tur}\n`;
 
+// Sitenin dosyalarının yedeği (kart 0093, karar 0207): yalnız yeni ve kilidi bitmeye yaklaşan dosyalar gider. Her
+// zaman güvenlidir, veriye dokunmaz: kurulumda ve elle yedekte veritabanı yedeğinin yanında çalışır.
+export const dosyaYedegiBetigi = (ortam: Ortam, kodAdi: string): string => {
+  if (!kodAdiGecerli(kodAdi)) throw new Error(`Geçersiz kod adı: ${kodAdi}`);
+  return `# adim:dosya\nset -eu\nsudo YEDEK_KILIT_SN=${yedekKilitSn} ${yedekKoku}/gece.sh --dosya ${ortam} ${kodAdi}\n`;
+};
+
 export const sonYedegiBulBetigi = (ortam: Ortam, kodAdi: string): string =>
   kokBetigi(`rc ${ortam} lsf --files-only "depo:$KOVA/${ortam}/${kodAdi}" | sort | tail -1`);
 
@@ -281,6 +289,34 @@ OZET_SONU`;
 export const siteYuklemeKomutu = (kutu: string, kullanici: string, veritabani: string): string =>
   `docker exec -i ${kutu} pg_restore -U ${siteKullanicisi(kullanici)} --no-owner --no-acl --exit-on-error -d ${veritabani}`;
 
+// Veritabanındaki silinmemiş dosyalar, sitenin kullanıcısıyla (kart 0093, karar 0207): satır başına "<ad> <özet>",
+// ad diskteki adıdır (kimlik ve türün uzantısı, karar 0058). Tablo yoksa (dosya deposundan önceki yedek) liste
+// boştur; türü kayıtta olmayan satır "?" adıyla gelir ve onu okuyan betik durur. Silinmiş işaretli dosya
+// listede yoktur: diskte olması gerekmez, site onu bir süre sonra siler (dosyaTemizligiAyari).
+const dosyaListesiSql = (): string => {
+  const turler = Object.entries(kayitliDosyaTurleri)
+    .map(([tur, { uzanti }]) => `('${tur}', '${uzanti}')`)
+    .join(", ");
+  return `\\set ON_ERROR_STOP on
+SELECT to_regclass('public.dosyalar') IS NOT NULL AS dosya_tablosu \\gset
+\\if :dosya_tablosu
+SELECT coalesce(d.kimlik::text || '.' || u.uzanti, '?'), d.icerik_ozeti
+FROM public.dosyalar d LEFT JOIN (VALUES ${turler}) AS u (tur, uzanti) ON u.tur = d.tur
+WHERE d.silinme_zamani IS NULL ORDER BY 1;
+\\endif`;
+};
+
+// "hedef" çıktının yazılacağı dosyadır (heredoc'un ilk satırına yazılır, bitiş satırı yalnız kalır).
+export const dosyaListesiKomutu = (
+  kutu: string,
+  kullanici: string,
+  veritabani: string,
+  hedef: string,
+): string =>
+  `docker exec -i ${kutu} psql -U ${siteKullanicisi(kullanici)} -d ${veritabani} -At -F ' ' -f - >${hedef} <<'DOSYA_LISTESI_SONU'
+${dosyaListesiSql()}
+DOSYA_LISTESI_SONU`;
+
 // Veritabanının özet satırları: her tablo için ad, satır sayısı, içerik özeti ve bir de düzen özeti.
 // Düzen dökümü yöneticiyle alınır: pg_dump sitenin kodunu çalıştırmaz (kart 0068'de ölçüldü).
 const ozetKomutu = (kutu: string, kullanici: string, veritabani: string, onek: string): string => `
@@ -288,18 +324,51 @@ printf '${onek} sema %s\\n' "$(docker exec ${guvenliOturum} ${kutu} pg_dump -U p
 ${tabloOzetiKomutu(kutu, kullanici, veritabani, `sed 's/^/${onek} tablo /'`)}
 `;
 
-export type Ozet = { sema: string; tablolar: Map<string, { satir: number; icerik: string }> };
+export type DosyaOzeti = { toplam: number; bulunan: number; tutan: number };
+export type Ozet = {
+  sema: string;
+  tablolar: Map<string, { satir: number; icerik: string }>;
+  dosya?: DosyaOzeti;
+};
 
 export const ozetiOku = (cikti: string, onek: string): Ozet => {
   const ozet: Ozet = { sema: "", tablolar: new Map() };
   for (const satir of cikti.split("\n")) {
     if (satir.startsWith(`${onek} sema `)) ozet.sema = satir.slice(`${onek} sema `.length).trim();
+    if (satir.startsWith(`${onek} dosya `)) {
+      const [toplam = Number.NaN, bulunan = Number.NaN, tutan = Number.NaN] = satir
+        .slice(`${onek} dosya `.length)
+        .trim()
+        .split(" ")
+        .map(Number);
+      ozet.dosya = { toplam, bulunan, tutan };
+    }
     if (satir.startsWith(`${onek} tablo `)) {
       const [ad = "", sayi = "", icerik = ""] = satir.slice(`${onek} tablo `.length).split("|");
       ozet.tablolar.set(ad, { satir: Number(sayi), icerik });
     }
   }
   return ozet;
+};
+
+// Provanın dosya farkları (kart 0093): yedekte depodaki kopyalar, canlıda disk. Sayılar okunamazsa da farktır.
+// Canlı ile yedeğin kayıt sayısının farkı tablo özetinde görünür (dosyalar tablosu).
+export const dosyaFarklari = (canli: Ozet, yedek: Ozet): string[] => {
+  const farklar: string[] = [];
+  for (const [yer, ozet, bulunamadi, tutmadi] of [
+    ["yedek", yedek.dosya, "depoda kopyası yok", "kopyası açılınca kayıtla tutmuyor"],
+    ["canlı", canli.dosya, "diskte yok", "diskteki içeriği kayıtla tutmuyor"],
+  ] as const) {
+    if (!ozet || ![ozet.toplam, ozet.bulunan, ozet.tutan].every(Number.isInteger)) {
+      farklar.push(`dosyalar (${yer}): özet okunamadı`);
+      continue;
+    }
+    if (ozet.bulunan < ozet.toplam)
+      farklar.push(`dosyalar (${yer}): ${ozet.toplam - ozet.bulunan} dosyanın ${bulunamadi}`);
+    if (ozet.tutan < ozet.bulunan)
+      farklar.push(`dosyalar (${yer}): ${ozet.bulunan - ozet.tutan} dosyanın ${tutmadi}`);
+  }
+  return farklar;
 };
 
 // Fark yoksa boş liste. Boş özet (hiç tablo ya da düzen yok) eşit sayılmaz.
@@ -341,7 +410,8 @@ export const provaBetigi = (
   const ad = siteKullanicisi(siteVeritabaniAdi(kodAdi));
   return kokBetigi(`${acmaAnahtariSatiri(anahtar)}
 prova="yedek-prova-$$"
-trap 'docker rm -f "$prova" >/dev/null 2>&1 || true' EXIT
+g="$(mktemp -d -p "$K/gecici")"
+trap 'docker rm -f "$prova" >/dev/null 2>&1 || true; rm -rf "$g"' EXIT
 docker run --rm -d --name "$prova" --network none --memory 1g --user 70:70 --read-only --cap-drop ALL --security-opt no-new-privileges:true --tmpfs /var/lib/postgresql:uid=70,gid=70,mode=0700 --tmpfs /var/run/postgresql:uid=70,gid=70 --tmpfs /tmp -e POSTGRES_HOST_AUTH_METHOD=trust ${postgresGoruntusu} >/dev/null </dev/null
 hazir=hayir
 for _ in $(seq 1 90); do
@@ -354,8 +424,54 @@ done
 docker exec "$prova" psql -U postgres -q -v ON_ERROR_STOP=1 -c 'CREATE ROLE "${ad}" LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS' -c 'CREATE DATABASE prova OWNER "${ad}"' </dev/null >/dev/null
 ${yedekAcmaBoru(ortam, kodAdi, dosya)} | ${siteYuklemeKomutu(kutu, ad, "prova")} 2>/dev/null
 ${ozetKomutu(kutu, ad, "prova", "YEDEK")}
-${ozetKomutu(veritabaniKutusu(ortam), ad, ad, "CANLI")}`);
+${ozetKomutu(veritabaniKutusu(ortam), ad, ad, "CANLI")}
+${dosyaProvasi(ortam, kodAdi, kutu, ad)}`);
 };
+
+// Provanın dosya kısmı (kart 0093, karar 0207). Yedeğin gösterdiği her silinmemiş dosyanın depoda kopyası olmalı ve
+// en yeni kopya açılınca özeti kayıtla tutmalı; canlıda kaydı olan her silinmemiş dosya diskte olmalı ve özeti
+// tutmalı. Satırlar: "<önek> dosya <kayıt sayısı> <bulunan> <özeti tutan>". Dosya içeriği ekrana basılmaz.
+export const dosyaProvasi = (
+  ortam: Ortam,
+  kodAdi: string,
+  kutu: string,
+  ad: string,
+  yedekVeritabani = "prova",
+): string => `
+${dosyaListesiKomutu(kutu, ad, yedekVeritabani, '"$g/yedek"')}
+${dosyaListesiKomutu(veritabaniKutusu(ortam), ad, ad, '"$g/canli"')}
+depodaki_dosyalar ${ortam} ${kodAdi} >"$g/depoda"
+declare -A en=()
+while read -r a z; do [ -n "$a" ] && en["$a"]="$z"; done <"$g/depoda"
+: >"$g/liste"
+while read -r a o; do
+  [[ -n "$a" && "$a" =~ $DOSYA_ADI && -n "\${en[$a]:-}" ]] && printf '%s\n' "$a.\${en[$a]}.age" >>"$g/liste"
+done <"$g/yedek"
+mkdir "$g/indir"
+if [ -s "$g/liste" ]; then
+  RC_BAGLA="$g:/g" rc ${ortam} copy "depo:$KOVA/${ortam}/${kodAdi}/dosyalar" /g/indir --files-from /g/liste --no-traverse
+fi
+toplam=0 bulunan=0 tutan=0
+while read -r a o; do
+  [ -n "$a" ] || continue
+  toplam=$((toplam + 1))
+  [[ "$a" =~ $DOSYA_ADI && -n "\${en[$a]:-}" && -f "$g/indir/$a.\${en[$a]}.age" ]] || continue
+  bulunan=$((bulunan + 1))
+  if [ "$(age -d -i <(printf '%s\n' "$anahtar") <"$g/indir/$a.\${en[$a]}.age" 2>/dev/null | sha256sum | cut -d' ' -f1)" = "$o" ]; then
+    tutan=$((tutan + 1))
+  fi
+done <"$g/yedek"
+printf 'YEDEK dosya %s %s %s\n' "$toplam" "$bulunan" "$tutan"
+toplam=0 bulunan=0 tutan=0
+while read -r a o; do
+  [ -n "$a" ] || continue
+  toplam=$((toplam + 1))
+  [[ "$a" =~ $DOSYA_ADI && -f "$D/${ortam}/${kodAdi}/$a" ]] || continue
+  bulunan=$((bulunan + 1))
+  [ "$(sha256sum <"$D/${ortam}/${kodAdi}/$a" | cut -d' ' -f1)" = "$o" ] && tutan=$((tutan + 1))
+done <"$g/canli"
+printf 'CANLI dosya %s %s %s\n' "$toplam" "$bulunan" "$tutan"
+`;
 
 export const kaydaYazBetigi = (
   ortam: Ortam,
@@ -372,7 +488,7 @@ export const provaYap = (
   kodAdi: string,
   dosya: string,
   anahtar = acmaAnahtariniOku(ortam, kodAdi),
-): { farklar: string[]; tablolar: number; satirlar: number } => {
+): { farklar: string[]; dosyalar: number; tablolar: number; satirlar: number } => {
   let cikti: string;
   try {
     cikti = sunucudaCalistir(ipv4, provaBetigi(ortam, kodAdi, dosya, anahtar), 900_000);
@@ -381,7 +497,8 @@ export const provaYap = (
     throw hata;
   }
   const yedek = ozetiOku(cikti, "YEDEK");
-  const farklar = ozetFarklari(ozetiOku(cikti, "CANLI"), yedek);
+  const canli = ozetiOku(cikti, "CANLI");
+  const farklar = [...ozetFarklari(canli, yedek), ...dosyaFarklari(canli, yedek)];
   sunucudaCalistir(
     ipv4,
     kaydaYazBetigi(
@@ -395,6 +512,7 @@ export const provaYap = (
   );
   return {
     farklar,
+    dosyalar: yedek.dosya?.toplam ?? 0,
     tablolar: yedek.tablolar.size,
     satirlar: [...yedek.tablolar.values()].reduce((toplam, tablo) => toplam + tablo.satir, 0),
   };
@@ -529,6 +647,66 @@ then
   exit 1
 fi
 printf 'tablo=%s\\n' "$(docker exec ${guvenliOturum} ${kutu} psql -U postgres -d "${yeni}" -Atc "select count(*) from information_schema.tables where table_schema not in ('pg_catalog','information_schema')" </dev/null)"`);
+};
+
+// Geri yüklemede dosyalar (kart 0093, karar 0207). Yan veritabanının gösterdiği her silinmemiş dosya diskte
+// olmalı: yoksa depodaki en yeni kopyası indirilir, açılır, özeti kayıtla karşılaştırılır ve sitenin
+// kullanıcısına ait olarak yerine konur. Diskteki hiçbir dosya silinmez ve üzerine yazılmaz (dosya adı kaydın
+// kimliğidir, içerik değişmez): yarıda kalan geri yükleme siteyi bozmaz, fazladan dosya kayıtsız kalır ve sitenin
+// dosya temizliği onu bildirir. Diskteki dosyanın özeti tutmuyorsa, depoda kopyası yoksa ya da liste beklenmeyen
+// bir satır taşıyorsa hiçbir şey yapılmadan durulur.
+export const dosyaGetirmeBetigi = (
+  ortam: Ortam,
+  site: { kodAdi: string; numara: number },
+  veritabani: string,
+  anahtar: string,
+): string => {
+  const kutu = veritabaniKutusu(ortam);
+  const ad = siteKullanicisi(siteVeritabaniAdi(site.kodAdi));
+  const u = kutuKullanicisi(ortam, site.numara);
+  return kokBetigi(`# adim:dosyalar
+${acmaAnahtariSatiri(anahtar)}
+klasor="$D/${ortam}/${site.kodAdi}"
+g="$(mktemp -d -p "$K/gecici")"
+trap 'rm -rf "$g"' EXIT
+[ -d "$klasor" ] || install -d -m 0700 -o ${u} -g ${u} "$klasor"
+${dosyaListesiKomutu(kutu, ad, veritabani, '"$g/gerekli"')}
+depodaki_dosyalar ${ortam} ${site.kodAdi} >"$g/depoda"
+declare -A en=() ozet=()
+while read -r a z; do [ -n "$a" ] && en["$a"]="$z"; done <"$g/depoda"
+toplam=0 yerinde=0 eksik=0 bozuk=0 gecersiz=0 indirilen=0
+: >"$g/liste"
+while read -r a o; do
+  [ -n "$a" ] || continue
+  toplam=$((toplam + 1))
+  if ! [[ "$a" =~ $DOSYA_ADI && "$o" =~ ^[0-9a-f]{64}$ ]]; then gecersiz=$((gecersiz + 1)); continue; fi
+  if [ -e "$klasor/$a" ]; then
+    if [ "$(sha256sum <"$klasor/$a" | cut -d' ' -f1)" = "$o" ]; then yerinde=$((yerinde + 1)); else bozuk=$((bozuk + 1)); fi
+    continue
+  fi
+  if [ -z "\${en[$a]:-}" ]; then eksik=$((eksik + 1)); continue; fi
+  ozet["$a"]="$o"
+  printf '%s\\n' "$a.\${en[$a]}.age" >>"$g/liste"
+done <"$g/gerekli"
+if [ "$gecersiz" -gt 0 ] || [ "$eksik" -gt 0 ] || [ "$bozuk" -gt 0 ]; then
+  echo "dosyalar geri getirilemez: $eksik dosyanın depoda kopyası yok, $bozuk dosyanın diskteki içeriği kayıtla tutmuyor, $gecersiz satır tanınmadı; hiçbir şeye dokunulmadı" >&2
+  exit 1
+fi
+if [ -s "$g/liste" ]; then
+  mkdir "$g/indir"
+  RC_BAGLA="$g:/g" rc ${ortam} copy "depo:$KOVA/${ortam}/${site.kodAdi}/dosyalar" /g/indir --files-from /g/liste --no-traverse
+  for a in "\${!ozet[@]}"; do
+    age -d -i <(printf '%s\\n' "$anahtar") <"$g/indir/$a.\${en[$a]}.age" >"$g/acik"
+    if [ "$(sha256sum <"$g/acik" | cut -d' ' -f1)" != "\${ozet[$a]}" ]; then
+      echo "dosyanın yedeği kayıtla tutmuyor: $a; indirilenlerden yerine konanlar kalır, veritabanına dokunulmadı" >&2
+      exit 1
+    fi
+    install -m 0600 -o ${u} -g ${u} "$g/acik" "$klasor/$a.geri-yukleniyor"
+    mv -f "$klasor/$a.geri-yukleniyor" "$klasor/$a"
+    indirilen=$((indirilen + 1))
+  done
+fi
+printf 'dosya=%s yerinde=%s indirilen=%s\\n' "$toplam" "$yerinde" "$indirilen"`);
 };
 
 export const yaniSilmeBetigi = (ortam: Ortam, kodAdi: string): string =>
@@ -739,6 +917,17 @@ export const geriYukle = (
         );
         if (!/tablo=[1-9]/.test(acilan)) throw new Error("Yedekten tablo çıkmadı.");
         yaz(`açıldı      ${dosya} yan veritabanında`);
+        // Dosyalar veritabanından önce yerine konur: yer değiştirdiğinde kaydı olan her dosya yerindedir.
+        const dosyalar = sunucudaCalistir(
+          ipv4,
+          dosyaGetirmeBetigi(ortam, site, geciciAd(siteVeritabaniAdi(site.kodAdi)), anahtar),
+          uzunSure,
+        );
+        const sayilar = /dosya=(\d+) yerinde=(\d+) indirilen=(\d+)/.exec(dosyalar);
+        if (!sayilar) throw new Error(`Dosyalar geri getirilemedi: ${dosyalar.trim()}`);
+        yaz(
+          `dosyalar    ${sayilar[1]} dosya: ${sayilar[2]} yerinde, ${sayilar[3]} depodan getirildi`,
+        );
       },
     },
     yaz,
@@ -1061,7 +1250,7 @@ export const kayitlariCoz = (metin: string): YedekKaydi[] =>
 
 export const gecerlilikSiniri = 26 * 60 * 60 * 1000;
 
-// Her sitenin son gece yedeği başarılı ve 26 saatten yeni olmalı; son gece işinde site dışı hata
+// Her sitenin son gece yedeği ve son dosya yedeği başarılı ve 26 saatten yeni olmalı; son gece işinde site dışı hata
 // (anahtarsız veritabanı, kilit) da kırmızıdır. Elle alınan yedek gece işinin yerine geçmez.
 export const kayitHatalari = (
   kayitlar: YedekKaydi[],
@@ -1077,6 +1266,15 @@ export const kayitHatalari = (
       hatalar.push(`${ortam}/${kodAdi}: son gece yedeği başarısız (${son.sebep})`);
     else if (simdi - Date.parse(son.zaman) > gecerlilikSiniri)
       hatalar.push(`${ortam}/${kodAdi}: son gece yedeği 26 saatten eski (${son.zaman})`);
+    // Dosya yedeği (kart 0093, karar 0207): gece işinde ya da elle (--dosya), aynı sınırla.
+    const dosya = kayitlar
+      .filter((k) => k.ortam === ortam && k.site === kodAdi && k.tur === "dosya")
+      .at(-1);
+    if (!dosya) hatalar.push(`${ortam}/${kodAdi}: dosya yedeği kaydı yok`);
+    else if (dosya.sonuc !== "basarili")
+      hatalar.push(`${ortam}/${kodAdi}: son dosya yedeği başarısız (${dosya.sebep})`);
+    else if (simdi - Date.parse(dosya.zaman) > gecerlilikSiniri)
+      hatalar.push(`${ortam}/${kodAdi}: son dosya yedeği 26 saatten eski (${dosya.zaman})`);
   }
   const bilinen = new Set(siteler.map((s) => `${s.ortam}/${s.kodAdi}`));
   const onaylar = new Map<string, number>();

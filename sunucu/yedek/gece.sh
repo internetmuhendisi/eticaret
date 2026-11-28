@@ -1,9 +1,10 @@
 #!/bin/bash
-# Sitelerin veritabanı yedeği (kart 0024, karar 0037). Sunucuda çalışır, kökle.
+# Sitelerin veritabanı ve dosya yedeği (kart 0024, karar 0037; dosyalar kart 0093, karar 0207). Sunucuda çalışır, kökle.
 #
 #   gece.sh                         bütün siteler, süresi dolanları temizler (zamanlayıcı)
 #   gece.sh <ortam> <kod> <tür>     tek site (elle, geri yükleme öncesi)
 #   gece.sh --temizle <ortam> <kod> tek sitenin süresi dolanlarını temizler
+#   gece.sh --dosya <ortam> <kod>   tek sitenin dosyalarını yedekler (elle)
 #
 # Yedek sitenin kendi açık anahtarıyla şifrelenir; açma anahtarı sunucuda yoktur. Dosya süresi
 # dolana kadar depoda silme kilidiyle durur. Hiçbir site atlanmaz: anahtarı olmayan veritabanı
@@ -101,7 +102,8 @@ temizle() {
     kayit "$ortam" "$kod" "temizlik" "basarisiz" "yeni-yedek-yok" "" 0
     return 1
   fi
-  if ! rc "$ortam" delete --min-age "$sinir" "depo:$KOVA/$ortam/$kod" ||
+  # Yalnız veritabanı yedekleri: dosya kopyalarının temizliği dosya yedeği başarılı olunca yapılır.
+  if ! rc "$ortam" delete --max-depth 1 --min-age "$sinir" "depo:$KOVA/$ortam/$kod" ||
     ! rc "$ortam" backend cleanup-hidden "depo:$KOVA/$ortam/$kod"; then
     kayit "$ortam" "$kod" "temizlik" "basarisiz" "temizlik-yarim" "" 0
     return 1
@@ -109,6 +111,112 @@ temizle() {
   kayit "$ortam" "$kod" "temizlik" "basarili" "" "" 0
 }
 
+# Dosyalar (kart 0093, karar 0207). Dosya sonradan değişmez (adı kaydın kimliğidir): her dosya depoya bir kez,
+# sitenin açık anahtarıyla şifrelenip "<ad>.<zaman>.age" adıyla ve saklama süresi kadar silme kilidiyle gider.
+# Kilidi bitmeye yaklaşan (yaşı saklama süresinden "yenileme payı" kadar eksik) dosyanın yeni bir kopyası
+# gönderilir: diskte duran her dosyanın kilitli bir kopyası hep vardır. Silinmiş işaretli dosya diskte kaldıkça
+# yedeklenir; site onu saklama süresinden uzun bekletip siler (dosyaTemizligiAyari.kaliciSilmeGun).
+# Gönderim parti parti yapılır: geçici klasör bütün dosyaların şifreli kopyasını birden tutmaz.
+PARTI_SINIRI="${DOSYA_PARTI_SINIRI:-536870912}"
+
+dosya_yedekle() {
+  local ortam="$1" kod="$2" acik saklama marj
+  local klasor="$D/$ortam/$kod"
+  if ! bilgiyi_oku "$ortam" "$kod" 2>/dev/null; then
+    kayit "$ortam" "$kod" "dosya" "basarisiz" "anahtar-yok" "" 0
+    echo "HATA $ortam/$kod: anahtar bilgisi yok" >&2
+    return 1
+  fi
+  if [ ! -d "$klasor" ]; then
+    kayit "$ortam" "$kod" "dosya" "basarisiz" "klasor-yok" "" 0
+    echo "HATA $ortam/$kod: dosya klasörü yok" >&2
+    return 1
+  fi
+  local g zaman bitis pay sinir uzak yerel ad sebep="" sayi=0 toplam=0 parti=0 boyut
+  local -A en=()
+  g="$(mktemp -d -p "$K/gecici")"
+  mkdir "$g/parti"
+  zaman="$(date -u +%Y%m%dT%H%M%SZ)"
+  bitis="$(date -u -d "+$saklama seconds" +%Y-%m-%dT%H:%M:%SZ)"
+  pay=$((saklama / 2 < 604800 ? saklama / 2 : 604800))
+  sinir="$(date -u -d "-$((saklama - pay)) seconds" +%Y%m%dT%H%M%SZ)"
+  gonder() {
+    [ "$parti" -gt 0 ] || return 0
+    RC_BAGLA="$g/parti:/veri:ro" rc "$ortam" copy /veri "depo:$KOVA/$ortam/$kod/dosyalar" \
+      --s3-no-check-bucket --s3-object-lock-mode COMPLIANCE --s3-object-lock-retain-until-date "$bitis" || return 1
+    find "$g/parti" -type f -printf '%s;%f\n' >>"$g/gonderilen"
+    find "$g/parti" -type f -delete
+    parti=0
+  }
+  if ! uzak="$(depodaki_dosyalar "$ortam" "$kod")"; then
+    sebep="liste-okunamadi"
+  elif ! yerel="$(find "$klasor" -maxdepth 1 -type f -printf '%f\n')"; then
+    sebep="klasor-okunamadi"
+  else
+    while read -r ad z; do [ -n "$ad" ] && en["$ad"]="$z"; done <<<"$uzak"
+    while read -r ad; do
+      [[ "$ad" =~ $DOSYA_ADI ]] || continue
+      # Kopyası var ve kilidi daha uzun sürecekse gönderilmez.
+      if [ -n "${en[$ad]:-}" ] && [[ "${en[$ad]}" > "$sinir" ]]; then continue; fi
+      if ! age -r "$acik" <"$klasor/$ad" >"$g/parti/$ad.$zaman.age"; then
+        sebep="sifrelenemedi"
+        break
+      fi
+      boyut="$(stat -c %s "$g/parti/$ad.$zaman.age")"
+      sayi=$((sayi + 1))
+      toplam=$((toplam + boyut))
+      parti=$((parti + boyut))
+      if [ "$parti" -ge "$PARTI_SINIRI" ] && ! gonder; then
+        sebep="yuklenemedi"
+        break
+      fi
+    done <<<"$yerel"
+    if [ -z "$sebep" ] && ! gonder; then sebep="yuklenemedi"; fi
+    # Bu çalışmada gönderilen her kopya depoda aynı boyutla durmalı.
+    if [ -z "$sebep" ] && [ "$sayi" -gt 0 ]; then
+      if ! uzak="$(rc "$ortam" lsf --files-only --format sp --include "*.$zaman.age" "depo:$KOVA/$ortam/$kod/dosyalar")" ||
+        [ "$(printf '%s\n' "$uzak" | sort)" != "$(sort "$g/gonderilen")" ]; then
+        sebep="boyut-tutmadi"
+      fi
+    fi
+  fi
+  rm -rf "$g"
+  if [ -n "$sebep" ]; then
+    kayit "$ortam" "$kod" "dosya" "basarisiz" "$sebep" "" 0
+    echo "HATA $ortam/$kod dosyalar: $sebep" >&2
+    return 1
+  fi
+  kayit "$ortam" "$kod" "dosya" "basarili" "" "$sayi" "$toplam"
+  echo "dosyalar yedeklendi $ortam/$kod $sayi $toplam"
+}
+
+# Süresi dolan dosya kopyaları silinir; yalnız o gece dosya yedeği başarılıysa çalışır. Diskte duran her
+# dosyanın en yeni kopyası saklama süresinden gençtir, silinmez. Silme işareti veritabanı yedeklerindeki
+# gibi kaldırılır ve hata kayda yazılır (aynı onayla kapanır).
+dosya_temizle() {
+  local ortam="$1" kod="$2" acik saklama marj liste
+  if ! bilgiyi_oku "$ortam" "$kod" 2>/dev/null; then
+    kayit "$ortam" "$kod" "temizlik" "basarisiz" "site-bilgisi-bozuk" "dosyalar" 0
+    return 1
+  fi
+  if ! liste="$(rc "$ortam" lsf -R --files-only --include 'dosyalar/**' "depo:$KOVA/$ortam/$kod")"; then
+    kayit "$ortam" "$kod" "temizlik" "basarisiz" "liste-okunamadi" "dosyalar" 0
+    return 1
+  fi
+  # Hiç kopya yoksa (dosyasız site) silinecek bir şey de yoktur.
+  [ -n "$liste" ] || return 0
+  if ! rc "$ortam" delete --min-age "$((saklama + marj))s" "depo:$KOVA/$ortam/$kod/dosyalar" ||
+    ! rc "$ortam" backend cleanup-hidden "depo:$KOVA/$ortam/$kod/dosyalar"; then
+    kayit "$ortam" "$kod" "temizlik" "basarisiz" "temizlik-yarim" "dosyalar" 0
+    return 1
+  fi
+  kayit "$ortam" "$kod" "temizlik" "basarili" "" "dosyalar" 0
+}
+
+if [ "${1:-}" = "--dosya" ]; then
+  dosya_yedekle "$2" "$3"
+  exit $?
+fi
 if [ "${1:-}" = "--temizle" ]; then
   temizle "$2" "$3"
   exit $?
@@ -137,6 +245,11 @@ for ortam in $(printf '%s\n' "$ortamlar" | sort -u); do
     bilinen="$bilinen site_${kod//-/_} "
     if yedekle "$ortam" "$kod" "gece"; then
       temizle "$ortam" "$kod" || durum=1
+    else
+      durum=1
+    fi
+    if dosya_yedekle "$ortam" "$kod"; then
+      dosya_temizle "$ortam" "$kod" || durum=1
     else
       durum=1
     fi

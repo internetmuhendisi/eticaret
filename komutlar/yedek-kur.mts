@@ -20,6 +20,7 @@ import {
   depoAnahtarlari,
   depoAyariMetni,
   depodaYedekVarBetigi,
+  dosyaYedegiBetigi,
   kokBetigi,
   kurmaBetigi,
   type YedekAyari,
@@ -73,6 +74,13 @@ try {
       if (sunucudaCalistir(sunucu.ipv4, depodaYedekVarBetigi(ortam, kodAdi)).trim()) continue;
       const ilk = sunucudaCalistir(sunucu.ipv4, yedekAlmaBetigi(ortam, kodAdi, "gece"), 900_000);
       console.log(ilk.trim());
+    }
+    // Dosya yedeği her sitede alınır (kart 0093): yalnız depoda olmayan dosyaları gönderir, veriye dokunmaz;
+    // denetim ilk geceyi beklemez.
+    for (const kodAdi of Object.keys(ayar.siteler[ortam] ?? {})) {
+      console.log(
+        sunucudaCalistir(sunucu.ipv4, dosyaYedegiBetigi(ortam, kodAdi), 3_600_000).trim(),
+      );
     }
     console.log(
       `kuruldu     ${ortam}: betikler, depo anahtarı, zamanlayıcı, kova ${ayar.depo.kova}`,
