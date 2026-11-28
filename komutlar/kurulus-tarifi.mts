@@ -412,15 +412,16 @@ export const kurulusAdimlari: readonly Adim[] = [
   },
   {
     kod: "yedek",
-    ad: "Gece yedeği: sitenin anahtar çifti, sunucu/yedek/ayar.json, ilk yedek",
+    ad: "Gece yedeği: sitenin anahtar çifti, sunucu/yedek/ayar.json, ilk veritabanı ve dosya yedeği",
     komut: "pnpm yedek-kur",
     elle: "açma anahtarının kopyası şifre yöneticisine konur; sunucu/yedek/ayar.json kayıt dışı değişiklik bırakır, ayrıca kaydedilir",
     yer: "sunucu",
     // İlk yedek depoya silme kilidiyle yazılır, saklama süresi dolmadan silinemez.
     geriAlinamaz: true,
     oncekiler: ["yayin"],
-    denetim: "sunucu denetimi: son gece yedeği, anahtarın ayarla aynılığı",
-    geriAlis: "ayardan satır silinir; depodaki yedek süresi dolmadan silinemez (silme kilidi)",
+    denetim: "sunucu denetimi: son gece yedeği ve son dosya yedeği, anahtarın ayarla aynılığı",
+    geriAlis:
+      "ayardan satır silinir; depodaki yedek ve dosya kopyaları süresi dolmadan silinemez (silme kilidi)",
   },
   {
     kod: "hata-izleme",

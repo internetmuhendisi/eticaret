@@ -222,6 +222,9 @@ ${dosyalar.map((d) => `printf '%s' '${d.icerik}' > ${dosyaKlasoru}/${d.ad}\nchow
 
   // Dosya yedeği: her dosya bir kez, şifreli; sonuç kayıtta.
   const dosyaCikti = calistir(dosyaYedegiBetigi(ortam, b.kodAdi));
+  // Kopyalar kısa kilitle gider: temizlik kilidin dolmasını bekler. Yenileme payı saklama süresinin yarısıdır.
+  const dosyaYuklemesi = Date.now();
+  sonYukleme = dosyaYuklemesi;
   const dosyaKaydi = kayitlariCoz(calistir(`sudo cat ${yedekKoku}/kayit.jsonl\n`)).at(-1);
   olc(
     "dosya yedeği alındı, kayda yazıldı",
@@ -283,19 +286,23 @@ rc ${ortam} cat ${uzakKopya} | age -d -i <(printf '%s\\n' "$anahtar") >/dev/null
     kopyaSurumu !== "" && kopyaSilme.durum !== 0 && /object lock/.test(kopyaSilme.hata),
     kopyaSurumu ? "" : "sürüm bulunamadı",
   );
-  // Silme işareti altındaki dosya görünmez: sonraki dosya yedeği onu yeniden gönderir. (Deneme kısa saklama süresiyle
-  // çalışır, yenileme payı da kısadır: öteki kopyalar da yeniden gidebilir.)
+  // Silme işareti altındaki dosya görünmez: sonraki dosya yedeği yalnız onu yeniden gönderir. Öteki kopyalar
+  // yenileme payı (kilitSn / 2) dolunca da gider; ölçüm ancak o süre dolmadan anlamlıdır, dolduysa kırmızıdır.
   calistir(dosyaYedegiBetigi(ortam, b.kodAdi));
+  sonYukleme = Date.now();
+  const gecen = Math.round((sonYukleme - dosyaYuklemesi) / 1000);
   const yeniden = kayitlariCoz(calistir(`sudo cat ${yedekKoku}/kayit.jsonl\n`)).at(-1);
   const gorunenler = calistir(
     kokBetigi(`rc ${ortam} lsf --files-only "depo:$KOVA/${ortam}/${b.kodAdi}/dosyalar"`),
   );
   olc(
-    "silme işaretli dosya bir sonraki dosya yedeğinde yeniden gidiyor",
-    yeniden?.tur === "dosya" &&
+    "silme işaretli dosya bir sonraki dosya yedeğinde yeniden gidiyor, ötekiler gitmiyor",
+    gecen < kilitSn / 2 - 5 &&
+      yeniden?.tur === "dosya" &&
       yeniden.sonuc === "basarili" &&
+      yeniden.dosya === "1" &&
       gorunenler.includes(dosyalar[0]?.ad ?? "-"),
-    `${yeniden?.dosya} gönderildi`,
+    `${yeniden?.dosya} gönderildi, ilk gönderimden ${gecen} sn sonra (sınır ${kilitSn / 2 - 5} sn)`,
   );
 
   const uzak = `"depo:$KOVA/${ortam}/${b.kodAdi}/${dosya}"`;

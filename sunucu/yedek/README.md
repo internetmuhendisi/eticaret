@@ -8,11 +8,11 @@ Sitelerin veritabanı ve dosya yedeğinin dosyaları (kart 0024, karar 0037; dos
 | `gece.sh`, `ortak.sh` | Sunucuda çalışan yedek işi (`/srv/altyapi/yedek/`): her sitenin veritabanı, ardından dosyaları. |
 | `altyapi-yedek.service`, `altyapi-yedek.timer` | Her gece 03:00 (Türkiye saati). |
 
-Değişiklik sunucuya `pnpm yedek-kur` ile gider; kurulum her sitenin dosya yedeğini de hemen alır. Sonuç kaydı sunucuda `/srv/altyapi/yedek/kayit.jsonl` dosyasındadır, `pnpm yedek-kaydi` gösterir.
+Değişiklik sunucuya `pnpm yedek-kur` ile gider; kurulum her sitenin dosya yedeğini de hemen alır. `pnpm yedek-denemesi` sunucudaki betikleri kullanır: betik değiştiyse önce `pnpm yedek-kur`. Sonuç kaydı sunucuda `/srv/altyapi/yedek/kayit.jsonl` dosyasındadır, `pnpm yedek-kaydi` gösterir.
 
 ## Dosyalar
 
-Sitenin dosyaları (`/srv/altyapi/dosyalar/<ortam>/<kod adı>`) depoda `<ortam>/<kod adı>/dosyalar/` altında, her biri ayrı şifreli ve kilitli durur. Her gece yalnız yeni dosyalar ve kilidi bitmeye yaklaşanların yeni kopyası gider. Elle: `sudo /srv/altyapi/yedek/gece.sh --dosya <ortam> <kod adı>` ya da `pnpm yedek-al`. Geri yükleme dosyaları kendisi getirir: seçilen yedeğin gösterdiği ama diskte olmayan dosyalar depodan indirilir, diskteki hiçbir dosya silinmez. Kaydı olmayan ve kaydı olup diskte olmayan dosyaları sitenin günlük dosya temizliği hata izleme aracına bildirir; kaydı olmayan dosya kendiliğinden silinmez.
+Sitenin dosyaları (`/srv/altyapi/dosyalar/<ortam>/<kod adı>`) depoda `<ortam>/<kod adı>/dosyalar/` altında, her biri ayrı şifreli ve kilitli durur. Her gece yalnız yeni dosyalar ve kilidi bitmeye yaklaşanların yeni kopyası gider. Elle: `sudo /srv/altyapi/yedek/gece.sh --dosya <ortam> <kod adı>` ya da `pnpm yedek-al`. Geri yükleme dosyaları kendisi getirir: seçilen yedeğin gösterdiği ama diskte olmayan dosyalar depodan indirilir, diskteki hiçbir dosya silinmez. Diskteki bir dosyanın içeriği kayıtla tutmuyorsa (bozulmuş ya da değiştirilmiş) geri yükleme durur ve adını söyler: o dosyayı inceleyip adını değiştirerek kenara alın (`<ad>.bozuk`), komutu yeniden çalıştırın; yedekteki kopyası gelir. Kaydı olmayan ve kaydı olup diskte olmayan dosyaları sitenin günlük dosya temizliği hata izleme aracına bildirir; kaydı olmayan dosya kendiliğinden silinmez.
 
 ## Açma anahtarları
 
