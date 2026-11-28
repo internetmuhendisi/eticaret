@@ -20,11 +20,17 @@ import { request as httpIstegi, type IncomingHttpHeaders } from "node:http";
 import { request as httpsIstegi } from "node:https";
 import type { TLSSocket } from "node:tls";
 import {
+  type AsilAdres,
+  asilAdresAdlari,
+  asilAdreseYonleniyor,
+  asilAdresOlcumOneki,
   ayniAdres,
+  bakimBilgisiOku,
   bakimDamgasi,
   bakimdakiSiteleriOku,
   bakimSuresiHatasi,
   bakimUnutulduMetni,
+  cozulmeHatasi,
   denemeAdresi,
   denemeAlani,
   dizineKapali,
@@ -32,6 +38,8 @@ import {
   kalanGun,
   kutuKisitHatalari,
   kutuOlcumBicimi,
+  onKapiKlasoru,
+  onKapiSatirDosyasi,
   onKapiTanimi,
   robotlaraKapali,
   sertifikaReddedildi,
@@ -252,6 +260,120 @@ export const onKapiyiOlc = async (kayit: SunucuKaydi, olcum: Olcum): Promise<voi
   }
 };
 
+// Asıl adresin adlarının herkese açık ad sunucularındaki (1.1.1.1, 8.8.8.8) cevabı; her ad için hata ya da
+// undefined. Yayın komutu da kullanır: kimlikteki asıl adres çözülmeden yayın yapılmaz (karar 0202).
+export const herkeseAcikCozulme = async (
+  asil: AsilAdres,
+  kayit: { ipv4: string; ipv6: string },
+): Promise<[string, string | undefined][]> => {
+  const cozucu = new Resolver({ timeout: 5000, tries: 2 });
+  cozucu.setServers(["1.1.1.1", "8.8.8.8"]);
+  const sonuc: [string, string | undefined][] = [];
+  for (const ad of asilAdresAdlari(asil)) {
+    const v4 = await cozucu.resolve4(ad).catch(() => [] as string[]);
+    const v6 = await cozucu.resolve6(ad).catch(() => [] as string[]);
+    sonuc.push([ad, cozulmeHatasi(v4, v6, kayit.ipv4, kayit.ipv6)]);
+  }
+  return sonuc;
+};
+
+// Bir asıl adresin dışarıdan ölçümü (kart 0344, karar 0202). Ölçümlerin adı verilen önekle başlar. IPv4 ve
+// IPv6 ayrı ayrı: herkese açık ad sunucularında sunucuya çözülme, şifreli açılma ve sertifika, http://
+// yönlenmesi, arama motoru kuralının ayarla aynılığı, kendi alan adında www. yönlenmesi; deneme adresi
+// verilmişse onun asıl adrese 308 ile yönlenmesi, sağlık ucunun ve robots.txt'nin deneme adresinde kalması.
+export const asilAdresiOlc = async (
+  kayit: SunucuKaydi,
+  olcum: Olcum,
+  {
+    onek,
+    asil,
+    deneme,
+    aramaAcik,
+    bakimda = false,
+  }: { onek: string; asil: AsilAdres; deneme?: string; aramaAcik: boolean; bakimda?: boolean },
+): Promise<void> => {
+  for (const [ad, hata] of await herkeseAcikCozulme(asil, kayit)) {
+    olcum(
+      hata === undefined,
+      `${onek}: ${ad} herkese açık ad sunucularında sunucuya çözülüyor`,
+      hata ?? "",
+    );
+  }
+  for (const [tur, ip] of [
+    ["IPv4", kayit.ipv4],
+    ["IPv6", kayit.ipv6],
+  ] as const) {
+    const ana = await dene(() => iste(true, ip, asil.ad, "/"));
+    olcum(
+      !(ana instanceof Error) &&
+        (bakimda ? ana.durum === 503 && ana.govde.includes(bakimDamgasi) : ana.durum === 200),
+      `${onek}: ${tur} ile ${asil.ad} şifreli bağlantıyla ${bakimda ? "bakım sayfasını gösteriyor (elle açık)" : "açılıyor"}`,
+      ana instanceof Error ? ana.message : String(ana.durum),
+    );
+    const gun =
+      !(ana instanceof Error) && ana.sertifikaBitisi ? kalanGun(ana.sertifikaBitisi) : Number.NaN;
+    olcum(
+      gun >= sertifikaSiniri,
+      `${onek}: ${tur} ile ${asil.ad} sertifikası geçerli ve en az ${sertifikaSiniri} günü var`,
+      Number.isFinite(gun)
+        ? `${gun} gün`
+        : ana instanceof Error
+          ? ana.message
+          : "sertifika okunamadı",
+    );
+    const kapali = !(ana instanceof Error) && dizineKapali(ana.basliklar["x-robots-tag"]);
+    olcum(
+      !(ana instanceof Error) && kapali === !aramaAcik,
+      `${onek}: ${tur} ile ${asil.ad} arama motorlarına ${aramaAcik ? "açık (ayar açık)" : 'kapalı: "dizine alma" diyor (ayar kapalı)'}`,
+      ana instanceof Error ? ana.message : String(ana.basliklar["x-robots-tag"] ?? "başlık yok"),
+    );
+    if (!aramaAcik) {
+      const robots = await dene(() => iste(true, ip, asil.ad, "/robots.txt"));
+      olcum(
+        !(robots instanceof Error) && robots.durum === 200 && robotlaraKapali(robots.govde),
+        `${onek}: ${tur} ile ${asil.ad} robots.txt bütün siteyi kapatıyor (ayar kapalı)`,
+        robots instanceof Error ? robots.message : String(robots.durum),
+      );
+    }
+    const yol = "/denetim?yonlendirme=1";
+    const sifresiz = await dene(() => iste(false, ip, asil.ad, yol));
+    olcum(
+      !(sifresiz instanceof Error) &&
+        yonlendirmeDogru(sifresiz.durum, sifresiz.basliklar.location, asil.ad, yol),
+      `${onek}: ${tur} ile http://${asil.ad} https:// adresine yönleniyor`,
+      sifresiz instanceof Error
+        ? sifresiz.message
+        : `${sifresiz.durum} ${sifresiz.basliklar.location ?? ""}`,
+    );
+    if (asil.tur === "kendi") {
+      const www = await dene(() => iste(true, ip, `www.${asil.ad}`, yol));
+      olcum(
+        !(www instanceof Error) &&
+          asilAdreseYonleniyor(www.durum, www.basliklar.location, asil.ad, yol),
+        `${onek}: ${tur} ile www.${asil.ad} www'suz adrese yönleniyor`,
+        www instanceof Error ? www.message : `${www.durum} ${www.basliklar.location ?? ""}`,
+      );
+    }
+    if (deneme !== undefined) {
+      const yonlenme = await dene(() => iste(true, ip, deneme, yol));
+      olcum(
+        !(yonlenme instanceof Error) &&
+          asilAdreseYonleniyor(yonlenme.durum, yonlenme.basliklar.location, asil.ad, yol),
+        `${onek}: ${tur} ile deneme adresi ${asil.ad} adresine 308 ile yönleniyor`,
+        yonlenme instanceof Error
+          ? yonlenme.message
+          : `${yonlenme.durum} ${yonlenme.basliklar.location ?? ""}`,
+      );
+      const saglik = await dene(() => iste(true, ip, deneme, "/kapi/herkese-acik/saglik"));
+      olcum(
+        !(saglik instanceof Error) && ![301, 302, 307, 308].includes(saglik.durum),
+        `${onek}: ${tur} ile sağlık ucu deneme adresinde kalıyor (yönlenmiyor)`,
+        saglik instanceof Error ? saglik.message : String(saglik.durum),
+      );
+    }
+  }
+};
+
 // Yayındaki her sitenin dışarıdan görünüşü. Ölçümün adı "<ortam>/<kod adı> yayındaki kutusu" ile
 // başlar: yayın komutu, yalnız o sitenin kendi kutusuyla ilgili kırmızı ölçümde düzeltme
 // yayınına izin verir (yayinla.mts). Beklenen sürüm sunucudaki yayın kaydından okunur: etkin
@@ -264,6 +386,16 @@ export const yayindakiSiteleriOlc = async (kayit: SunucuKaydi, olcum: Olcum): Pr
   for (const [kodAdi, no] of Object.entries(siteler).sort(([a], [b]) => a.localeCompare(b))) {
     const ad = `${yayinOrtami}/${kodAdi} yayındaki kutusu`;
     const adres = denemeAdresi(kodAdi);
+    // Asıl adresi olan sitenin deneme adresi asıl adrese yönlenir (karar 0202): ana sayfası ve başlığı
+    // asıl adreste ölçülür, deneme adresinde robots.txt ve sağlık ucu kalır.
+    const bilgi = bakimBilgisiOku(kayit.ipv4, kodAdi, no);
+    // Asıl adres ön kapıya ancak sunucuya çözülünce girer; girmemişse site deneme adresinde olağan açılır.
+    const asilOnKapida =
+      bilgi.asil !== undefined &&
+      sshKomutu(
+        kayit.ipv4,
+        `sudo grep -qs '^${bilgi.asil.ad.replaceAll(".", "\\.")} {' ${onKapiKlasoru}/${onKapiSatirDosyasi(kodAdi)} && echo var || echo yok`,
+      ).stdout.trim() === "var";
     for (const [tur, ip] of [
       ["IPv4", kayit.ipv4],
       ["IPv6", kayit.ipv6],
@@ -271,23 +403,43 @@ export const yayindakiSiteleriOlc = async (kayit: SunucuKaydi, olcum: Olcum): Pr
       const ana = await dene(() => iste(true, ip, adres, "/"));
       // Elle açık bakımda adres bakım sayfasını göstermeli; bu kırmızı değildir, unutulması kırmızıdır.
       const bakimda = bakimdakiler.has(kodAdi);
-      olcum(
-        !(ana instanceof Error) &&
-          (bakimda ? ana.durum === 503 && ana.govde.includes(bakimDamgasi) : ana.durum === 200),
-        `${ad}: ${tur} ile deneme adresi şifreli bağlantıyla ${bakimda ? "bakım sayfasını gösteriyor (elle açık)" : "açılıyor"}`,
-        ana instanceof Error ? ana.message : String(ana.durum),
-      );
-      olcum(
-        !(ana instanceof Error) && dizineKapali(ana.basliklar["x-robots-tag"]),
-        `${ad}: ${tur} ile deneme adresi arama motorlarına "dizine alma" diyor`,
-        ana instanceof Error ? ana.message : String(ana.basliklar["x-robots-tag"] ?? "başlık yok"),
-      );
+      if (!asilOnKapida)
+        olcum(
+          !(ana instanceof Error) &&
+            (bakimda ? ana.durum === 503 && ana.govde.includes(bakimDamgasi) : ana.durum === 200),
+          `${ad}: ${tur} ile deneme adresi şifreli bağlantıyla ${bakimda ? "bakım sayfasını gösteriyor (elle açık)" : "açılıyor"}`,
+          ana instanceof Error ? ana.message : String(ana.durum),
+        );
+      if (!asilOnKapida)
+        olcum(
+          !(ana instanceof Error) && dizineKapali(ana.basliklar["x-robots-tag"]),
+          `${ad}: ${tur} ile deneme adresi arama motorlarına "dizine alma" diyor`,
+          ana instanceof Error
+            ? ana.message
+            : String(ana.basliklar["x-robots-tag"] ?? "başlık yok"),
+        );
       const robots = await dene(() => iste(true, ip, adres, "/robots.txt"));
       olcum(
         !(robots instanceof Error) && robots.durum === 200 && robotlaraKapali(robots.govde),
         `${ad}: ${tur} ile robots.txt bütün siteyi kapatıyor`,
         robots instanceof Error ? robots.message : String(robots.durum),
       );
+    }
+    if (bilgi.asil !== undefined && !asilOnKapida) {
+      olcum(
+        false,
+        `${ad}: ${asilAdresOlcumOneki} ${bilgi.asil.ad} ön kapıda değil (sunucuya çözülmüyor); e-postalar bu adrese gidiyor`,
+        "kayıtları açın; ön kapı sonraki kuruluşta ekler (pnpm sunucu-kur --onayli)",
+      );
+    }
+    if (bilgi.asil !== undefined && asilOnKapida) {
+      await asilAdresiOlc(kayit, olcum, {
+        onek: `${ad}: ${asilAdresOlcumOneki}`,
+        asil: bilgi.asil,
+        deneme: adres,
+        aramaAcik: bilgi.aramaAcik === true,
+        bakimda: bakimdakiler.has(kodAdi),
+      });
     }
     const bakimZamani = bakimdakiler.get(kodAdi);
     if (bakimZamani !== undefined) {

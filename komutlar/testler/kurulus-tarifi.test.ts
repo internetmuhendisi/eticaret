@@ -369,3 +369,41 @@ describe("sunucu kayıtlarının ölçümü", () => {
     ).toThrow("Betiğe girmeyecek ad");
   });
 });
+
+describe("asıl adres (kart 0344)", () => {
+  const seramik: KurulusGirdisi = {
+    ...ornekMagaza,
+    kodAdi: "seramik",
+    gorunenAd: "Seramik",
+    tur: "gercek",
+    asilAdres: "https://seramik.eticaretmagazasi.com",
+  };
+
+  it("asıl adres kimliğe canli olarak yazılır, deneme adresi kod adından türer", () => {
+    const sonuc = kuruCalistir(seramik, "deneme", {});
+    expect(sonuc.dosyalar["kimlik.json"]).toMatchObject({
+      adresler: {
+        deneme: "https://seramik.deneme.eticaretmagazasi.com",
+        canli: "https://seramik.eticaretmagazasi.com",
+      },
+    });
+  });
+
+  it("geçersiz ve ayrılmış asıl adres hiçbir şey üretmez", () => {
+    for (const asilAdres of [
+      "https://www.eticaretmagazasi.com",
+      "http://seramik.com",
+      "https://www.seramik.com",
+    ]) {
+      expect(girdiHatalari({ ...seramik, asilAdres }).join("\n")).toContain("asıl adres");
+      expect(() => kuruCalistir({ ...seramik, asilAdres }, "deneme", {})).toThrow("Girdi geçersiz");
+    }
+  });
+
+  it("alan adı adımı kayıttan sonra, yayından önce ve geri alınamaz", () => {
+    const sira = kurulusAdimlari.map((a) => a.kod);
+    expect(sira.indexOf("kayit-ve-hat")).toBeLessThan(sira.indexOf("alan-adi"));
+    expect(sira.indexOf("alan-adi")).toBeLessThan(sira.indexOf("yayin"));
+    expect(kurulusAdimlari.find((a) => a.kod === "alan-adi")?.geriAlinamaz).toBe(true);
+  });
+});

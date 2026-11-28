@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { siteKlasorunuOku } from "../../cekirdek/ayar-semasi/site-klasoru.ts";
 import {
   alanAdiKayitlari,
+  asilAdresCakismalari,
   ayniAdres,
   bakimBilgisiCoz,
   bakimDamgasi,
@@ -77,6 +78,10 @@ describe("sitelerin kimliğindeki deneme adresi", () => {
       expect(kimlikAdresiHatasi(kimlik)).toBeUndefined();
     },
   );
+
+  it("projedeki iki site aynı asıl adresi taşımıyor (karar 0202)", () => {
+    expect(asilAdresCakismalari(siteler)).toEqual([]);
+  });
 
   it.each([
     ["adres yok", {}, "yok"],
@@ -182,8 +187,19 @@ describe("bakım sayfası", () => {
     expect(siteSatiri(adres, hedef, bilgi, { elleBakim: true })).not.toContain("request_body");
   });
 
-  it("deneme alanı dışını ve ayar sızdıran hedefi reddeder", () => {
-    expect(() => siteSatiri("ornek.com", hedef, bilgi)).toThrow();
+  it("ne deneme ne asıl adres olanı, açık arama kuralıyla deneme adresini ve ayar sızdıran hedefi reddeder", () => {
+    for (const ad of [
+      "www.ornek.com",
+      "panel.eticaretmagazasi.com",
+      "a.b.eticaretmagazasi.com",
+      "eticaretmagazasi.com",
+      "Ornek.com",
+      "ornek",
+      "ornek.com {\n}",
+    ]) {
+      expect(() => siteSatiri(ad, hedef, bilgi), ad).toThrow();
+    }
+    expect(() => siteSatiri(adres, hedef, bilgi, { aramaAcik: true })).toThrow("açılamaz");
     expect(() => siteSatiri(adres, "kutu:3000\n}\n:80 {", bilgi)).toThrow();
   });
 
@@ -205,6 +221,8 @@ describe("bakım sayfası", () => {
       ad: "Ad",
       dil: undefined,
       metin: "M",
+      asil: undefined,
+      aramaAcik: false,
     });
     expect(bakimBilgisiCoz("x", "", "").ad).toBe("x");
     expect(bakimBilgisiCoz("x", '{"gorunenAd":5}', "[]").ad).toBe("x");

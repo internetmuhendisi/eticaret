@@ -25,6 +25,7 @@ import {
   yeniSiteNumarasi,
 } from "./gizli-bilgi.mts";
 import {
+  asilAdresiCoz,
   denemeAdresi,
   kodAdiGecerli,
   onKapiKlasoru,
@@ -48,6 +49,9 @@ export type KurulusGirdisi = {
   ayarlar: Record<string, unknown>;
   // Başlanacak demonun kodu (kart 0345). Tarif yalnız taşır; paketin doğrulaması ve kurulumu orada.
   demo?: string;
+  // Asıl adres (karar 0202): alt adres ("https://seramik.eticaretmagazasi.com") ya da mağazanın kendi alan adı.
+  // Komut alt adresi kod adından önerir. Deneme adresi her zaman kod adından türer (karar 0032).
+  asilAdres?: string;
 };
 
 // Türün teslim adımları: demo site teslim edilmez (planlar/komutlar.md, "Teslim").
@@ -67,7 +71,9 @@ export const girdiHatalari = (girdi: KurulusGirdisi): string[] => {
       ? [`ayarlar: ${ad}: varsayılanıyla aynı, yazılmaz`]
       : [];
   });
+  const asil = girdi.asilAdres === undefined ? undefined : asilAdresiCoz(girdi.asilAdres);
   return [
+    ...(asil !== undefined && "hata" in asil ? [`asıl adres: ${asil.hata}`] : []),
     ...varsayilanlar,
     ...(kimlik.success
       ? []
@@ -83,7 +89,10 @@ const kimlikDosyasi = (girdi: KurulusGirdisi) => ({
   gorunenAd: girdi.gorunenAd,
   tur: girdi.tur,
   // Adres yalnız kod adı geçerliyse kurulur; geçersiz ad şemanın hatasıyla döner.
-  adresler: kodAdiGecerli(girdi.kodAdi) ? { deneme: `https://${denemeAdresi(girdi.kodAdi)}` } : {},
+  adresler: {
+    ...(kodAdiGecerli(girdi.kodAdi) ? { deneme: `https://${denemeAdresi(girdi.kodAdi)}` } : {}),
+    ...(girdi.asilAdres === undefined ? {} : { canli: girdi.asilAdres }),
+  },
   cekirdekSurumu: girdi.cekirdekSurumu,
   teslimDurumu: teslimDurumu(girdi.tur),
 });
@@ -304,6 +313,7 @@ export type AdimKodu =
   | "site-klasoru"
   | "dogrulama"
   | "kayit-ve-hat"
+  | "alan-adi"
   | "yayin"
   | "yedek"
   | "hata-izleme"
@@ -378,12 +388,24 @@ export const kurulusAdimlari: readonly Adim[] = [
     geriAlis: "gönderilen kayıt geri alınmaz, düzeltme yeni kayıtla gelir",
   },
   {
+    kod: "alan-adi",
+    ad: "Asıl adres alan adında sunucuya bağlanır: alt adreste sitenin A ve AAAA kaydı; kendi alan adında mağaza sahibi iki adın (www'lu ve www'suz) kayıtlarını açar",
+    komut: "pnpm alan-adi --onayli",
+    elle: "asıl adresi olmayan sitede adım yoktur; kendi alan adının kayıtlarını mağaza sahibi açar (karar 0202)",
+    yer: "bilgisayar",
+    // Alan adı değişikliği geri alınamaz sayılır (karar 0032).
+    geriAlinamaz: true,
+    oncekiler: ["kayit-ve-hat"],
+    denetim: "pnpm alan-adi değişiklik yok diyor; ön kapı adı sunucuya çözülmeden eklemez",
+    geriAlis: "kayıt pnpm alan-adi --onayli ile silinir (kimlikten asıl adres kalkınca)",
+  },
+  {
     kod: "yayin",
     ad: "Deneme adresinde yayın: gizli bilgiler, hata izleme projesi, veritabanı ve kullanıcısı, ağ, dosya klasörü, kutular, ön kapı satırı",
     komut: "pnpm yayinla siteler/<kod adı> deneme",
     yer: "sunucu",
     geriAlinamaz: false,
-    oncekiler: ["kayit-ve-hat"],
+    oncekiler: ["alan-adi"],
     denetim: "yayın komutunun kilitleri, içeriden ve dışarıdan sağlık",
     geriAlis:
       "yeni kutu ve yayın silinir; gizli bilgi, veritabanı, ağ ve dosya klasörü kalır (siteyi kaldırma kart 0350)",

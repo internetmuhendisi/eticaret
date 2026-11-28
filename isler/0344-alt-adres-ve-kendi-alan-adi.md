@@ -32,6 +32,42 @@ Bölüm: Yeni mağaza. Önce 0343 bitmiş olmalı.
 - Kendi alan adının çözülmeden eklenmediği bozuk örneğiyle testte.
 - Ayrılmış adların reddi ve kimlik ile ön kapı satırının aynılığı testte.
 
+## Sonuç
+
+- **Kullanıcı kararları (2026-11-28), karar 0202.**
+  - Alt adres `<ad>.eticaretmagazasi.com`; komut kod adını önerir, değiştirilebilir.
+  - Asıl adres ön kapıya girince deneme adresi ona 308 ile yönlenir; sağlık ucu ve `robots.txt` deneme adresinde kalır.
+  - Kendi alan adının kayıtlarını mağaza sahibi açar, komut söyler.
+  - Asıl adres www'suzdur, `www.` ona yönlenir.
+  - Site ayarı `aramaMotorlarinaAcik`: varsayılanı kapalı, seramik için önerilen değer kapalı, satışa açılışta açılır.
+  - Teknik kararlar: ayrılmış adlar, her alt adresin kendi kaydı (joker yok), silme `--sil` ister, kimlikteki asıl adres çözülmeden yayın yok, seramik bu bölümde deneme ortamında.
+- **Kod.**
+  - Ön kapı (`komutlar/on-kapi.mts`): asıl adresin biçimi ve ayrılmış adlar (`asilAdresiCoz`, `altAdHatasi`). Asıl adres satırı ve arama kuralı (`(arama-kapali)` parçası, `sunucu/on-kapi/Caddyfile`). Deneme adresinin yönlendirme satırı (sağlık ucunun hata yolu dahil), www satırı. Çözülme ölçümü (`adCozumuBetigi`, `cozulenleriSec`). Kimlik denetimi (`kimlikAdresiHatasi`) ve iki sitenin aynı asıl adresi taşımaması.
+  - Alan adı: plan (`komutlar/alan-adi-plani.mts`), Cloudflare istemcisi (`komutlar/cloudflare.mts`), `pnpm alan-adi` sitelerin alt adres kayıtlarını ve kendi alan adının açılacak kayıtlarını yazar.
+  - Denetim (`asilAdresiOlc`, `komutlar/on-kapi-olcumleri.mts`), yayın kilidi (`asilAdresKilidi`).
+  - Kuruluş tarifinde `asilAdres` girdisi ve "alan-adi" adımı. Gerçek deneme komutu `pnpm alan-adi-denemesi`.
+- **Gerçek deneme.** Geçici altyapı adresi `kapi--deneme.eticaretmagazasi.com` iki kez baştan sona yeşil. Her çalışmada:
+  - Cloudflare kaydı açıldı, sunucunun çözücüsünde ve herkese açık ad sunucularında çözüldü.
+  - Ön kapı yeni satırları Caddy doğrulamasından geçirip kurdu, sertifika alındı.
+  - IPv4 ve IPv6'da adres açıldı, sertifikanın en az 14 günü vardı, arama motorlarına kapalıydı, `robots.txt` kapalıydı, `http://` yönlendi.
+  - Deneme adresi 308 ile yönlendi, sağlık ucu deneme adresinde kaldı.
+  - Sonra satır ve iki kayıt kaldırıldı ve ölçüldü. Kaldırmadan sonra `pnpm sunucu-denetle --hizli` yeşil, `pnpm alan-adi` "değişiklik yok".
+  - İlk çalışma ön kapının satır adı denetiminde durdu (yalnız iki altyapı adını tanıyordu). Temizlik o çalışmada da kaydı ve satırı kaldırdı; denetim iki tireli altyapı adlarını kabul edecek biçimde düzeltildi.
+- **Testler.** `komutlar/testler/asil-adres.test.ts`, `alan-adi-plani.test.ts`, `kurulus-tarifi.test.ts`, `on-kapi.test.ts` (projedeki sitelerin kimliği ve asıl adres çakışması). 26 denetim ayrı ayrı bilerek bozularak denendi, her biri kırmızıya düştü. Tek düzeyli alt adres denetimi ikinci katman çıktı, kaldırıldı. Komut, ayar ve metin testleri 908/908, tür kontrolü ve denetim temiz.
+- **Bağımsız kontrolün bulgularıyla düzeltilen.**
+  - Ad çözücünün anlık takılması açık mağazanın asıl adresini ön kapıdan düşürürdü; ölçüm hatası da adresleri çözülmemiş sayardı.
+  - Bir sitenin asıl adres sorunu öteki sitelerin yayınını durdururdu.
+  - Asıl adres açılmadan e-postalar o adrese giderdi (yayın kilidi).
+  - Kendi alan adının açılacak kayıtları yazılmıyordu.
+  - Denemenin temizliği yarıda kalabilirdi.
+  - Deneme adresinin sağlık ucunun hata yolu yoktu.
+  - `--sil`'siz silme, asıl adreste hedef denetimi, ek satır çakışması, `::ffff:` cevabı, aynı asıl adres, punycode, deneme adresinin ortak kuralı, tarifte adımın yeri.
+- **Ölçülmeyen.**
+  - Üretilen Caddy satırları yerel Caddy ile doğrulanmadı (komuta izin verilmedi); sunucunun doğrulamasından iki kez geçti.
+  - `cozulenAdlar`'ın ölçüm hatasında durması, `asilAdresiOlc` ve denetimin asıl adresli dalı birim testinde yok, gerçek denemeyle ölçüldü.
+  - Kendi alan adı gerçek bir alan adıyla denenmedi.
+  - Bugün asıl adresi olan site yok: seramik kart 0352'de.
+
 ## Durum
 
 yapılacak

@@ -18,7 +18,7 @@ import { dosyaSinirlari } from "../cekirdek/kayitlar/dosya.ts";
 import type { HataKodu } from "../cekirdek/kayitlar/kapi.ts";
 import { type Dil, diller, metinOkuyucu } from "../cekirdek/metinler/metin.ts";
 import { bellekBaytlari, kaliciKutu, kutuKuraliDogru, yenidenBaslama } from "./kutu-kurali.mts";
-import { kok, sshKomutu } from "./sunucu.mts";
+import { kok, sshKomutu, kayitlariOku as sunuculariOku } from "./sunucu.mts";
 
 // --- Adresler ---
 
@@ -38,13 +38,141 @@ export const denemeAdresi = (kodAdi: string): string => {
 // trafiği ön kapının kod adından ürettiği adres alır. Her sitenin deneme adresi vardır.
 export const kimlikAdresiHatasi = (kimlik: {
   kodAdi: string;
-  adresler: { deneme?: string | undefined };
+  adresler: { deneme?: string | undefined; canli?: string | undefined };
 }): string | undefined => {
   const beklenen = `https://${denemeAdresi(kimlik.kodAdi)}`;
   if (kimlik.adresler.deneme === undefined)
     return `kimlikte deneme adresi yok, beklenen ${beklenen}`;
   if (kimlik.adresler.deneme !== beklenen) {
     return `kimlikteki deneme adresi ${kimlik.adresler.deneme}, beklenen ${beklenen}`;
+  }
+  // Asıl adres (karar 0202) varsa ön kapının karşılayabileceği biçimde olmalı.
+  if (kimlik.adresler.canli !== undefined) {
+    const asil = asilAdresiCoz(kimlik.adresler.canli);
+    if ("hata" in asil) return `kimlikteki asıl adres: ${asil.hata}`;
+  }
+  return undefined;
+};
+
+// --- Asıl adres (karar 0202) ---
+
+// Hiçbir siteye alt adres olarak verilemeyen adlar: altyapının işlerine ve e-postaya ayrılır.
+export const ayrilmisAltAdlar = [
+  "deneme",
+  "www",
+  "panel",
+  "yonetim",
+  "sahip",
+  "admin",
+  "api",
+  "kapi",
+  "posta",
+  "mail",
+  "smtp",
+  "imap",
+  "altyapi",
+  "destek",
+  "durum",
+  "yardim",
+  "cdn",
+  "statik",
+  "ns1",
+  "ns2",
+] as const;
+
+// Alt adresin adı kod adının kuralına uyar ve ayrılmış değildir.
+export const altAdHatasi = (ad: string): string | undefined => {
+  if (!kodAdiGecerli(ad)) return `alt adres adı geçersiz: ${ad} (küçük harf, rakam ve tek tire)`;
+  if ((ayrilmisAltAdlar as readonly string[]).includes(ad)) return `alt adres adı ayrılmış: ${ad}`;
+  return undefined;
+};
+
+export const altAdres = (ad: string): string => {
+  const hata = altAdHatasi(ad);
+  if (hata) throw new Error(hata);
+  return `${ad}.${altyapiAlanAdi}`;
+};
+
+export type AsilAdres = { tur: "alt"; ad: string } | { tur: "kendi"; ad: string };
+
+// Kimlikteki asıl adres (adresler.canli): https, yalnız ad (yol, port, kullanıcı yok), küçük harf.
+// eticaretmagazasi.com altında tek düzeyli alt adres; başka bir ad mağazanın kendi alan adıdır ve www'suz
+// yazılır (www. hâli ona yönlenir).
+export const asilAdresiCoz = (adres: string): AsilAdres | { hata: string } => {
+  const bicimHatasi = { hata: `asıl adres yalnız https://<ad> biçiminde olmalı: ${adres}` };
+  if (!URL.canParse(adres)) return bicimHatasi;
+  const adresMi = new URL(adres);
+  if (
+    adresMi.protocol !== "https:" ||
+    adresMi.username ||
+    adresMi.password ||
+    adresMi.port ||
+    adresMi.search ||
+    adresMi.hash ||
+    !["", "/"].includes(adresMi.pathname) ||
+    adres.replace(/\/$/, "") !== `https://${adresMi.hostname}`
+  ) {
+    return bicimHatasi;
+  }
+  const ad = adresMi.hostname;
+  // Türkçe harfli alan adı punycode biçiminde yazılır (çiçek.com → xn--iek-qna.com; URL bunu kendiliğinden çevirir).
+  if (!/^((xn--)?[a-z0-9]+(-[a-z0-9]+)*\.)+([a-z]{2,}|xn--[a-z0-9]+)$/.test(ad))
+    return { hata: `asıl adres geçersiz: ${ad}` };
+  if (ad === altyapiAlanAdi) return { hata: `asıl adres altyapının kendi adı olamaz: ${ad}` };
+  if (ad.endsWith(`.${altyapiAlanAdi}`)) {
+    const etiket = ad.slice(0, -altyapiAlanAdi.length - 1);
+    // Noktalı etiket (iki düzeyli alt adres) kod adının kuralına takılır.
+    const hata = altAdHatasi(etiket);
+    return hata ? { hata } : { tur: "alt", ad };
+  }
+  if (ad.startsWith("www.")) return { hata: `kendi alan adı www'suz yazılır: ${ad}` };
+  return { tur: "kendi", ad };
+};
+
+// Asıl adresin ön kapıda karşılanan adları: kendi alan adında www. hâli de (ona yönlenir).
+export const asilAdresAdlari = (asil: AsilAdres): string[] =>
+  asil.tur === "kendi" ? [asil.ad, `www.${asil.ad}`] : [asil.ad];
+
+// Altyapının kendi adresi: iki tire taşır, hiçbir sitenin adı olamaz (kimlik şeması). Ön kapının asıl adres
+// satırını gerçek sunucuda deneyen komut bu adı kullanır (alan-adi-denemesi.mts).
+export const altyapiAdresiMi = (ad: string): boolean =>
+  new RegExp(`^[a-z0-9]+--[a-z0-9]+(-[a-z0-9]+)*\\.${altyapiAlanAdi.replaceAll(".", "\\.")}$`).test(
+    ad,
+  );
+
+// Ön kapının asıl adres olarak karşılayabileceği ad: geçerli asıl adres ya da altyapının kendi adresi.
+const karsilanabilir = (ad: string): boolean =>
+  altyapiAdresiMi(ad) || !("hata" in asilAdresiCoz(`https://${ad}`));
+
+// İki site aynı asıl adresi taşıyamaz.
+export const asilAdresCakismalari = (
+  kimlikler: { kodAdi: string; adresler: { canli?: string | undefined } }[],
+): string[] => {
+  const gorulen = new Map<string, string>();
+  const hatalar: string[] = [];
+  for (const { kodAdi, adresler } of kimlikler) {
+    if (adresler.canli === undefined) continue;
+    const asil = asilAdresiCoz(adresler.canli);
+    if ("hata" in asil) continue;
+    const oteki = gorulen.get(asil.ad);
+    if (oteki) hatalar.push(`${kodAdi} ile ${oteki} aynı asıl adresi taşıyor: ${asil.ad}`);
+    gorulen.set(asil.ad, kodAdi);
+  }
+  return hatalar;
+};
+
+// Bir adın sunucunun ad çözücüsündeki cevabı sunucunun kendi adresleri olmalı: IPv4 tek adres ve aynı,
+// IPv6 tek adres ve aynı. Vekil açık ya da kayıt eksikse ad ön kapıya girmez (karar 0202).
+export const cozulmeHatasi = (
+  v4: string[],
+  v6: string[],
+  ipv4: string,
+  ipv6: string,
+): string | undefined => {
+  if (v4.length === 0 && v6.length === 0) return "çözülmüyor";
+  if (v4.length !== 1 || v4[0] !== ipv4) return `IPv4 ${v4.join(", ") || "yok"}, beklenen ${ipv4}`;
+  if (v6.length !== 1 || !ayniAdres(v6[0], ipv6)) {
+    return `IPv6 ${v6.join(", ") || "yok"}, beklenen ${ipv6}`;
   }
   return undefined;
 };
@@ -92,7 +220,7 @@ const proje = "altyapi-on-kapi";
 // Caddy'nin kutu kullanıcısı. Sitelerin numaraları 20000 ve 30000'den başlar (karar 0031).
 export const caddyKullanicisi = 10080;
 const yoklamaKullanicisi = 10081;
-const yoklamaHedefi = "on-kapi-yoklama:3000";
+export const yoklamaHedefi = "on-kapi-yoklama:3000";
 
 const kaynakKlasoru = join(kok, "sunucu", "on-kapi");
 const kaynak = (dosya: string): string => readFileSync(join(kaynakKlasoru, dosya), "utf8");
@@ -119,7 +247,14 @@ const bakimHataKodu: HataKodu = "hizmet-kullanilamiyor";
 const htmlKacir = (metin: string): string =>
   metin.replace(/[&<>"'`{}]/g, (harf) => `&#${harf.charCodeAt(0)};`);
 
-export type BakimBilgisi = { ad: string; dil?: string | undefined; metin?: string | undefined };
+export type BakimBilgisi = {
+  ad: string;
+  dil?: string | undefined;
+  metin?: string | undefined;
+  // Sitenin asıl adresi ve arama motoru ayarı (karar 0202); ön kapı aynı dosyalardan okur.
+  asil?: AsilAdres | undefined;
+  aramaAcik?: boolean | undefined;
+};
 
 export const bakimSayfasi = ({ ad, dil, metin }: BakimBilgisi): string => {
   const secilen: Dil = diller.find((d) => d === dil) ?? "tr";
@@ -146,15 +281,21 @@ export const siteSatiri = (
   adres: string,
   hedef: string,
   bilgi: BakimBilgisi,
-  { elleBakim = false } = {},
+  // Arama motoru kuralı (karar 0202): deneme adresi her zaman kapalı; asıl adres ayara göre.
+  { elleBakim = false, aramaAcik = false } = {},
 ): string => {
-  denemeSatiri(adres, hedef);
+  const denemeMi = adres.endsWith(`.${denemeAlani}`);
+  if (denemeMi) {
+    denemeSatiri(adres, hedef);
+    if (aramaAcik) throw new Error(`Deneme adresi arama motorlarına açılamaz: ${adres}`);
+  } else if (!karsilanabilir(adres)) {
+    throw new Error(`Ne deneme ne asıl adres: ${adres}`);
+  } else if (!/^[a-z0-9-]+:\d+$/.test(hedef)) {
+    throw new Error(`Geçersiz kutu hedefi: ${hedef}`);
+  }
   const sayfa = bakimSayfasi(bilgi);
   if (sayfa.includes(bakimSiniri)) throw new Error("Bakım sayfası ayrılmış satır içeriyor.");
-  const zarf = JSON.stringify({ basarili: false, hata: { kod: bakimHataKodu } }).replace(
-    /[{}]/g,
-    (ayrac) => `\\${ayrac}`,
-  );
+  const zarf = bakimZarfi();
   const ziyaretci = elleBakim
     ? "\t\terror 503\n"
     : `\t\t@yukleme path_regexp ${yuklemeYoluKalibi}
@@ -171,8 +312,7 @@ export const siteSatiri = (
 \t\t\t}
 \t\t}\n`;
   return `${adres} {
-\timport deneme
-\t@saglik {
+${denemeMi ? "\timport deneme\n" : aramaAcik ? "" : "\timport arama-kapali\n"}\t@saglik {
 \t\tmethod GET HEAD
 \t\texpression \`{http.request.uri} == "${saglikYolu}"\`
 \t}
@@ -238,8 +378,11 @@ export const bakimSuresiHatasi = (zaman: string, simdi: number): string | undefi
 // Geri almada önceki zaman korunur: 24 saat sayacı başa dönmesin, kayıtta da başarısız deneme görünsün.
 // Unutulan bakım denetimde kırmızıdır ama yayını durdurmaz: başka sitenin güvenlik yayını engellenmesin.
 export const bakimUnutulduMetni = "elle bakım unutulmamış";
+// Asıl adresin ölçümleri (karar 0202) öteki sitelerin yayınını durdurmaz: o sitenin adres sorunu (örneğin mağaza
+// sahibinin açmadığı kayıt) başka sitenin yayınıyla değişmez.
+export const asilAdresOlcumOneki = "asıl adres";
 export const yayiniDurdurmayanSatir = (satir: string): boolean =>
-  satir.includes(bakimUnutulduMetni);
+  satir.includes(bakimUnutulduMetni) || satir.includes(`: ${asilAdresOlcumOneki}`);
 
 export const bakimIsaretiBetigi = (
   kodAdi: string,
@@ -446,7 +589,8 @@ export const kurmaBetigi = (
   siteler: YayindakiSiteler = {},
 ): string => {
   for (const ad of Object.keys(siteSatirlari)) {
-    if (ad !== yoklamaAdi && ad !== hataIzlemeAdi && !kodAdiGecerli(ad)) {
+    // Site satırı kod adıyla, altyapının satırı iki tireli adıyla (yoklama, hata izleme, alan adı denemesi).
+    if (!kodAdiGecerli(ad) && !/^[a-z0-9]+--[a-z0-9]+(-[a-z0-9]+)*$/.test(ad)) {
       throw new Error(`Geçersiz site satırı adı: ${ad}`);
     }
   }
@@ -505,23 +649,94 @@ echo on-kapi=hazir
 `;
 };
 
-// Yayındaki sitelerin satırları; her satır sitenin etkin kutusunu gösterir.
+// Kutu kapalıyken kapıdaki istek bakım zarfıyla 503 alır; süslü ayraçlar Caddy yer tutucusu sanılmasın diye kaçırılır.
+const bakimZarfi = (): string =>
+  JSON.stringify({ basarili: false, hata: { kod: bakimHataKodu } }).replace(
+    /[{}]/g,
+    (ayrac) => `\\${ayrac}`,
+  );
+
+// Asıl adresi olan sitenin deneme adresi (karar 0202): sağlık ucu ve robots.txt yerinde kalır, geri
+// kalan her istek yolu ve sorgusuyla asıl adrese kalıcı olarak yönlenir.
+export const denemeYonlendirmeSatiri = (adres: string, asil: string, hedef: string): string => {
+  denemeSatiri(adres, hedef);
+  if (!karsilanabilir(asil)) throw new Error(`Asıl adres değil: ${asil}`);
+  return `${adres} {
+\timport deneme
+\t@saglik {
+\t\tmethod GET HEAD
+\t\texpression \`{http.request.uri} == "${saglikYolu}"\`
+\t}
+\thandle @saglik {
+\t\treverse_proxy ${hedef} {
+\t\t\ttransport http {
+\t\t\t\tresponse_header_timeout 30s
+\t\t\t}
+\t\t}
+\t}
+\thandle {
+\t\tredir https://${asil}{uri} 308
+\t}
+\thandle_errors 502 503 504 {
+\t\timport bakim-basliklari
+\t\theader Content-Type "application/json"
+\t\trespond \`${bakimZarfi()}\` 503
+\t}
+}
+`;
+};
+
+// Kendi alan adının www. hâli www'suz asıl adrese kalıcı olarak yönlenir (karar 0202).
+export const wwwYonlendirmeSatiri = (asil: string): string => {
+  const cozulen = asilAdresiCoz(`https://${asil}`);
+  if ("hata" in cozulen || cozulen.tur !== "kendi")
+    throw new Error(`Kendi alan adı değil: ${asil}`);
+  return `www.${asil} {\n\tredir https://${asil}{uri} 308\n}\n`;
+};
+
+// Yayındaki sitelerin satırları; her satır sitenin etkin kutusunu gösterir. Asıl adresi olan sitenin
+// bütün adları (kendi alan adında www. hâli de) çözülmüşse asıl adres karşılanır ve deneme adresi ona
+// yönlenir; çözülmemişse site yalnız deneme adresinde açılır.
 export const siteSatirlari = (
   siteler: YayindakiSiteler,
   bilgiler: Record<string, BakimBilgisi> = {},
   bakimdakiler: ReadonlyMap<string, string> = new Map(),
-): Record<string, string> =>
-  Object.fromEntries(
-    Object.entries(siteler).map(([kodAdi, no]) => [
-      kodAdi,
-      siteSatiri(
-        denemeAdresi(kodAdi),
-        `${siteKutusuAdi(yayinOrtami, kodAdi, no)}:3000`,
-        bilgiler[kodAdi] ?? { ad: kodAdi },
-        { elleBakim: bakimdakiler.has(kodAdi) },
-      ),
-    ]),
+  cozulenler: ReadonlySet<string> = new Set(),
+): Record<string, string> => {
+  const gorulenAsillar = new Set<string>();
+  return Object.fromEntries(
+    Object.entries(siteler)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([kodAdi, no]) => {
+        const hedef = `${siteKutusuAdi(yayinOrtami, kodAdi, no)}:3000`;
+        const bilgi = bilgiler[kodAdi] ?? { ad: kodAdi };
+        const elleBakim = bakimdakiler.has(kodAdi);
+        const { asil } = bilgi;
+        // Aynı asıl adresi ikinci kez taşıyan site deneme adresinde kalır: iki tanım bütün ön kapıyı durdururdu.
+        const tekrar = asil !== undefined && gorulenAsillar.has(asil.ad);
+        if (tekrar)
+          process.stderr.write(
+            `Uyarı: ${kodAdi} asıl adresi ${asil.ad} başka sitede; kullanılmadı.\n`,
+          );
+        if (asil !== undefined) gorulenAsillar.add(asil.ad);
+        if (
+          asil === undefined ||
+          tekrar ||
+          !asilAdresAdlari(asil).every((ad) => cozulenler.has(ad))
+        ) {
+          return [kodAdi, siteSatiri(denemeAdresi(kodAdi), hedef, bilgi, { elleBakim })];
+        }
+        return [
+          kodAdi,
+          [
+            denemeYonlendirmeSatiri(denemeAdresi(kodAdi), asil.ad, hedef),
+            siteSatiri(asil.ad, hedef, bilgi, { elleBakim, aramaAcik: bilgi.aramaAcik === true }),
+            ...(asil.tur === "kendi" ? [wwwYonlendirmeSatiri(asil.ad)] : []),
+          ].join("\n"),
+        ];
+      }),
   );
+};
 
 // Sayfadaki ad ve metin sitenin yayındaki klasöründen okunur: çalışan yayınla aynıdır.
 // Okunamayan ya da bozuk bilgi kurulumu durdurmaz: bir sitenin dosyası bütün sitelerin yayınını ve
@@ -536,9 +751,25 @@ export const bakimBilgisiCoz = (
     return typeof deger === "object" && deger !== null ? (deger as Record<string, unknown>) : {};
   };
   const yazi = (deger: unknown) => (typeof deger === "string" && deger.trim() ? deger : undefined);
-  const { gorunenAd } = nesne(kimlikMetni);
-  const { dil, bakimMetni } = nesne(ayarMetni);
-  return { ad: yazi(gorunenAd) ?? kodAdi, dil: yazi(dil), metin: yazi(bakimMetni) };
+  const { gorunenAd, adresler } = nesne(kimlikMetni);
+  const { dil, bakimMetni, aramaMotorlarinaAcik } = nesne(ayarMetni);
+  // Geçersiz asıl adres yok sayılır (site deneme adresinde kalır); yayın komutu ve birim testindeki kimlik denetimi
+  // (kimlikAdresiHatasi) onu yayından önce durdurur.
+  const canli =
+    typeof adresler === "object" && adresler !== null
+      ? yazi((adresler as Record<string, unknown>)["canli"])
+      : undefined;
+  const asil = canli === undefined ? undefined : asilAdresiCoz(canli);
+  if (asil !== undefined && "hata" in asil) {
+    process.stderr.write(`Uyarı: ${kodAdi} asıl adresi kullanılmadı: ${asil.hata}\n`);
+  }
+  return {
+    ad: yazi(gorunenAd) ?? kodAdi,
+    dil: yazi(dil),
+    metin: yazi(bakimMetni),
+    asil: asil === undefined || "hata" in asil ? undefined : asil,
+    aramaAcik: aramaMotorlarinaAcik === true,
+  };
 };
 
 export const bakimBilgisiOku = (ipv4: string, kodAdi: string, no: number): BakimBilgisi => {
@@ -555,23 +786,115 @@ export const bakimBilgisiOku = (ipv4: string, kodAdi: string, no: number): Bakim
   }
 };
 
+// Adların sunucunun ad çözücüsündeki cevabı (karar 0202). Çıktı: "<ad> 4 <adres>" ve "<ad> 6 <adres>" satırları;
+// ad ön kapının satırlarında zaten karşılanıyorsa ayrıca "<ad> onkapi". Son satır "cozum=bitti": gelmezse
+// ölçüm yapılmamış sayılır.
+export const adCozumuBetigi = (adlar: string[]): string =>
+  [
+    ...adlar.map((ad) => {
+      if (!/^[a-z0-9.-]+$/.test(ad)) throw new Error(`Betiğe girmeyecek ad: ${ad}`);
+      const kalip = ad.replaceAll(".", "\\.");
+      return `for t in 4 6; do getent ahostsv$t ${ad} 2>/dev/null | awk -v a=${ad} -v t=$t '$2=="STREAM"{print a, t, $1}'; done
+if sudo grep -qs '^${kalip} {' ${onKapiKlasoru}/caddy/siteler/*.caddy; then echo "${ad} onkapi"; fi`;
+    }),
+    "echo cozum=bitti",
+  ].join("\n");
+
+export type AdCozumu = { v4: string[]; v6: string[]; onKapida: boolean };
+
+export const adCozumleri = (cikti: string): Map<string, AdCozumu> => {
+  const sonuc = new Map<string, AdCozumu>();
+  const kayit = (ad: string) => {
+    const var_ = sonuc.get(ad) ?? { v4: [], v6: [], onKapida: false };
+    sonuc.set(ad, var_);
+    return var_;
+  };
+  for (const satir of cikti.split("\n")) {
+    const [ad, tur, adres] = satir.trim().split(" ");
+    if (!ad) continue;
+    if (tur === "onkapi" && adres === undefined) {
+      kayit(ad).onKapida = true;
+      continue;
+    }
+    // getent ahostsv6, AAAA kaydı olmayan adda IPv4'ü IPv6 biçiminde (::ffff:) döndürür: yok sayılır.
+    if (!adres || (tur !== "4" && tur !== "6") || adres.startsWith("::ffff:")) continue;
+    const liste = tur === "4" ? kayit(ad).v4 : kayit(ad).v6;
+    if (!liste.includes(adres)) liste.push(adres);
+  }
+  return sonuc;
+};
+
+// Ön kapının karşılayacağı asıl adlar (karar 0202). Sunucuya çözülen ad girer. Hiç cevap alınamayan ad yalnız ön
+// kapıda zaten karşılanıyorsa kalır (ad çözücünün anlık takılması açık mağazayı düşürmesin); başka bir adrese
+// çözülen ad çıkar. Uyarılar ikinci değerdedir.
+export const cozulenleriSec = (
+  adlar: string[],
+  cozumler: ReadonlyMap<string, AdCozumu>,
+  ipv4: string,
+  ipv6: string,
+): { cozulenler: Set<string>; uyarilar: string[] } => {
+  const cozulenler = new Set<string>();
+  const uyarilar: string[] = [];
+  for (const ad of adlar) {
+    const { v4 = [], v6 = [], onKapida = false } = cozumler.get(ad) ?? {};
+    const hata = cozulmeHatasi(v4, v6, ipv4, ipv6);
+    if (hata === undefined) cozulenler.add(ad);
+    else if (hata === "çözülmüyor" && onKapida) {
+      cozulenler.add(ad);
+      uyarilar.push(`${ad} şu an çözülmüyor; ön kapıda zaten olduğu için kaldı.`);
+    } else uyarilar.push(`${ad} sunucuya çözülmüyor (${hata}); ön kapıya eklenmedi.`);
+  }
+  return { cozulenler, uyarilar };
+};
+
+// Sitelerin asıl adlarından ön kapının karşılayacakları. Ölçüm yapılamazsa (ssh, betik, sunucu kaydı) kuruluş
+// durur: çalışan ön kapıya dokunulmaz, açık mağazanın adresi düşmez.
+const cozulenAdlar = (ipv4: string, bilgiler: Record<string, BakimBilgisi>): Set<string> => {
+  const adlar = Object.values(bilgiler).flatMap((b) => (b.asil ? asilAdresAdlari(b.asil) : []));
+  if (adlar.length === 0) return new Set();
+  const sunucu = sunuculariOku().find((s) => s.ipv4 === ipv4);
+  if (!sunucu) throw new Error(`${ipv4} sunucu/sunucular.json'da yok; asıl adresler ölçülemedi.`);
+  const sonuc = sshKomutu(ipv4, "bash -s", { girdi: adCozumuBetigi(adlar) });
+  if (sonuc.status !== 0 || !sonuc.stdout.includes("cozum=bitti")) {
+    throw new Error(`Asıl adresler ölçülemedi, ön kapıya dokunulmadı: ${sonuc.stderr.trim()}`);
+  }
+  const { cozulenler, uyarilar } = cozulenleriSec(
+    adlar,
+    adCozumleri(sonuc.stdout),
+    sunucu.ipv4,
+    sunucu.ipv6,
+  );
+  for (const uyari of uyarilar) process.stderr.write(`Uyarı: ${uyari}\n`);
+  return cozulenler;
+};
+
 // Ön kapıyı sunucudaki yayın listesine göre kurar. Yayın komutu listeyi değiştirerek
 // (yeni kutu ya da geri dönüş) çağırır; değişiklik verilmezse liste sunucudakidir.
-export const onKapiyiKur = (ipv4: string, siteler = yayindakiSiteleriOku(ipv4)): void => {
+export const onKapiyiKur = (
+  ipv4: string,
+  siteler = yayindakiSiteleriOku(ipv4),
+  // Siteye bağlı olmayan ek satırlar (yalnız deneme komutu, alan-adi-denemesi.mts).
+  ekSatirlar: Record<string, string> = {},
+): void => {
+  for (const ad of Object.keys(ekSatirlar)) {
+    if (ad === yoklamaAdi || ad === hataIzlemeAdi || Object.hasOwn(siteler, ad)) {
+      throw new Error(`Ek satır var olan bir satırın adını taşıyor: ${ad}`);
+    }
+  }
+  const bilgiler = Object.fromEntries(
+    Object.entries(siteler).map(([kodAdi, no]) => [kodAdi, bakimBilgisiOku(ipv4, kodAdi, no)]),
+  );
   const sonuc = sshKomutu(ipv4, "bash -s", {
     girdi: kurmaBetigi(
       {
         [yoklamaAdi]: denemeSatiri(yoklamaAdresi, yoklamaHedefi),
         [hataIzlemeAdi]: hataIzlemeSatiri(),
+        ...ekSatirlar,
         ...siteSatirlari(
           siteler,
-          Object.fromEntries(
-            Object.entries(siteler).map(([kodAdi, no]) => [
-              kodAdi,
-              bakimBilgisiOku(ipv4, kodAdi, no),
-            ]),
-          ),
+          bilgiler,
           bakimdakiSiteleriOku(ipv4),
+          cozulenAdlar(ipv4, bilgiler),
         ),
       },
       siteler,
@@ -592,6 +915,14 @@ export const yonlendirmeDogru = (
   adres: string,
   yol: string,
 ): boolean => [301, 308].includes(durum) && konum === `https://${adres}${yol}`;
+
+// Asıl adrese yönlenme kalıcıdır (308) ve yolu ve sorguyu korur (karar 0202).
+export const asilAdreseYonleniyor = (
+  durum: number,
+  konum: string | undefined,
+  asil: string,
+  yol: string,
+): boolean => durum === 308 && konum === `https://${asil}${yol}`;
 
 export const dizineKapali = (baslik: string | string[] | undefined): boolean => {
   const degerler = (Array.isArray(baslik) ? baslik : [baslik ?? ""]).flatMap((d) =>

@@ -51,6 +51,7 @@ Tarifin tek tanımı `komutlar/kurulus-tarifi.mts`'tedir (kart 0343): adımlar, 
 | 3. Site klasörü | `kimlik.json`, `ayarlar.json` girdiden (ayarlarda varsayılanıyla aynı değer yazılmaz); `baslangic/` başlanacak demodan (kart 0345); `KURALLAR.md`, `marka/`, `testler/`, `tema/` siteye özel | `kuruCalistir` (kimlik ve ayarlar) | kısmen: kimlik ve ayarlar üretilir, öteki parçalar elle |
 | 4. Doğrulama | Klasör ayar şemasından geçer | `pnpm site-dogrula` | komutlu; çalışma kopyasındaki çekirdeğin şemasıyla, kimlikteki sürümünkiyle değil |
 | 5. Kayıt ve hat | Kaydedilir, gönderilir, hat yeşil beklenir | `git push`, `pnpm hat-sonucu` | komutlu; gönderme geri alınamaz, onay ister |
+| 5a. Alan adı | Asıl adres varsa alan adında sunucuya bağlanır: alt adreste sitenin A ve AAAA kaydı (`altyapi: site <kod>` açıklamasıyla); kendi alan adında mağaza sahibi www'lu ve www'suz adın kayıtlarını açar (karar 0202) | `pnpm alan-adi --onayli` | komutlu; geri alınamaz, onay ister. Kendi alan adında komut açılacak kayıtları yazar. Kimlikteki asıl adres herkese açık ad sunucularında sunucuyu göstermeden yayın komutu durur; ön kapı da çözülmeyen adı eklemez |
 | 6. Yayın | Gizli bilgiler, hata izleme projesi, veritabanı ve kullanıcısı, veritabanı kutusunun site ağı, dosya klasörü, kutular, ön kapı satırı, yayın kaydı ve `etkin` | `pnpm yayinla siteler/<kod adı> deneme` | komutlu |
 | 7. Yedek | Sitenin anahtar çifti, `sunucu/yedek/ayar.json` satırı, sunucuda sitenin yedek bilgisi, ilk yedek | `pnpm yedek-kur` | kısmen: açma anahtarının kopyası şifre yöneticisine elle konur; `sunucu/yedek/ayar.json` kayıt dışı değişiklik bırakır, ayrıca kaydedilir. Geri alınamaz: ilk yedek silme kilidiyle yazılır |
 | 8. Hata izleme | Olay etiketli ve maskeli araca ulaşıyor | `pnpm hata-izleme-denemesi siteler/<kod adı>` | komutlu; ortamın veritabanı kutusunu kısa süre durdurur, aynı ortamdaki bütün siteler o arada veritabanısız kalır |
@@ -60,7 +61,9 @@ Tarifin tek tanımı `komutlar/kurulus-tarifi.mts`'tedir (kart 0343): adımlar, 
 
 Sunucu kayıtları (bir site, bir ortam; `sunucuKayitlari`): gizli bilgi klasörü (kök, 0700) ve her gizli bilginin dosyası (kutu kullanıcısı, 0400), `site_<kod>` veritabanı ve kullanıcısı, `site-<ortam>-<kod>` ağı, yayın klasörü (kök, 0755) ve yayın kaydı (kök, 0644), trafiği alan yayının numarası (`etkin`, kök, 0644), dosya klasörü (kutu kullanıcısı, 0700; 0.15.0'dan eski yayında yok), ön kapı satırı (`/srv/altyapi/on-kapi/caddy/siteler/<kod>.caddy`, kök, 0644), gece yedeğinin site bilgisi (`/srv/altyapi/yedek/siteler/<ortam>/<kod>`, kök, 0400). Kutular yayına göre değişir, yayın kaydındadır. Betikle ölçülmeyen öteki kayıtlar (`digerKayitlar`): numaralar dosyasındaki satır, `sunucu/yedek/ayar.json` satırı, bilgisayardaki açma anahtarı, hata izleme projesi.
 
-Tarifte olmayanlar: alan adı kaydı (deneme adresleri joker kayıtla gelir, karar 0032; asıl adres kart 0344), sahip paneli (yok), ekran ölçümü (hatta, yayından sonra canlıda yok), mağaza sahibi hesabı (teslim), dışarıdan gelen gizli bilgiler (kartla ödeme anahtarları, `cekirdek/kayitlar/disaridan-gizli-bilgiler.ts`; sunucuya kuruluşu canlıya geçişte, mağazanın sözleşmesiyle). Tablo ile tanımın aynı kalması yalnız disiplindir.
+Asıl adres (karar 0202): girdi `asilAdres`, kimlikte `adresler.canli`. Alt adres `<ad>.eticaretmagazasi.com`, komut kod adını önerir; ayrılmış adlar (`ayrilmisAltAdlar`) verilemez. Kendi alan adı www'suz yazılır, www'lu hâli ona yönlenir. Asıl adres ön kapıya girince deneme adresi ona 308 ile yönlenir; sağlık ucu ve `robots.txt` deneme adresinde kalır. Asıl adres `aramaMotorlarinaAcik` ayarı kapalıyken arama motorlarına kapalıdır (satışa açılışta açılır).
+
+Tarifte olmayanlar: deneme adreslerinin alan adı kaydı (joker kayıt, karar 0032; yeni site için dokunulmaz), sahip paneli (yok), ekran ölçümü (hatta, yayından sonra canlıda yok), mağaza sahibi hesabı (teslim), dışarıdan gelen gizli bilgiler (kartla ödeme anahtarları, `cekirdek/kayitlar/disaridan-gizli-bilgiler.ts`; sunucuya kuruluşu canlıya geçişte, mağazanın sözleşmesiyle). Tablo ile tanımın aynı kalması yalnız disiplindir.
 
 ### Ne zaman bitmiş sayılır
 
@@ -253,6 +256,6 @@ Güncellenen: Örnek Mağaza, çekirdek `0.1.0` → `0.2.0` (ana sayfada "Yakın
 ## Henüz açık olanlar
 
 - Klasör adları karar 0015 ile, gizli bilgilerin sunucuda saklanması karar 0031 ile, deneme adresinin biçimi (`<kod-adi>.deneme.eticaretmagazasi.com`) karar 0032 ile kapandı.
-- Alan adını kimin satın alıp kimin adına kaydettireceği.
+- Alan adını kimin satın alıp kimin adına kaydettireceği. Kayıtları mağaza sahibinin açtığı ve asıl adresin www'suz olduğu karar 0202'dedir; satın alma ve kimin adına kayıtlı olduğu teslimde konuşulur.
 - Teslim edilmiş bir sitenin sahibi değişirse ya da bir site kapatılırsa ne yapılacağı. Bunlar bu üç komutun dışındadır, gerekince ayrı tarif yazılır.
 - Ayrılan mağazaya siteyi devretmenin tarifi (0014): ilk devir istendiğinde yazılır. Kodun başka yerde kullanılması ve devredilen siteyi kimin güncelleyeceği de o zaman konuşulur.

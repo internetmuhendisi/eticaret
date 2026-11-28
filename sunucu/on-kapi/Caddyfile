@@ -9,9 +9,10 @@
 	}
 }
 
-# Deneme adreslerinin ortak kuralı: arama motorlarına kapalı. Başlık kutunun cevabından sonra
-# yazılır, kutu başka bir değer gönderse de bu kalır.
-(deneme) {
+# Arama motorlarına kapalı adresin kuralı. Başlık kutunun cevabından sonra yazılır, kutu başka bir
+# değer gönderse de bu kalır. Deneme adresleri her zaman, asıl adres sitenin aramaMotorlarinaAcik
+# ayarı kapalıyken alır (karar 0202).
+(arama-kapali) {
 	header {
 		defer
 		X-Robots-Tag "noindex, nofollow"
@@ -21,6 +22,11 @@
 Disallow: /
 " 200
 	}
+}
+
+# Deneme adreslerinin ortak kuralı (karar 0032): arama motorlarına kapalı.
+(deneme) {
+	import arama-kapali
 }
 
 # Bakım cevabının başlıkları (kart 0043, karar 0038): 503 ve Retry-After arama motorlarına kapanmanın

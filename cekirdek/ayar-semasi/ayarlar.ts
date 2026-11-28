@@ -229,6 +229,12 @@ export const ayarSemasi = z.strictObject({
   // Ana sayfada başlığın altında "Yakında açılıyoruz." yazısı (kart 0041). Bakım modu değildir:
   // vitrin açık kalır. Mağaza sahibinin ayarları gelince panele taşınabilir.
   yakindaYazisi: ayar(z.boolean().default(false), altyapiSahibinin("ayar.aciklama.yakindaYazisi")),
+  // Asıl adresin arama motorlarına açıklığı (kart 0344, karar 0202). Kuralı ön kapı uygular; deneme adresi her
+  // zaman kapalıdır. Satışa açılışta açılır.
+  aramaMotorlarinaAcik: ayar(
+    z.boolean().default(false),
+    altyapiSahibinin("ayar.aciklama.aramaMotorlarinaAcik"),
+  ),
   // Bakım sayfasının metni (kart 0043). Sayfayı ön kapı sunar; boşsa ortak metin görünür.
   bakimMetni: ayar(
     z.string().trim().min(1).max(300).optional(),

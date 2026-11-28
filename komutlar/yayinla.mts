@@ -17,6 +17,7 @@ import { yayiniDurdurmayanSatir, yayinOrtami } from "./on-kapi.mts";
 import { kok, kayitlariOku as sunuculariOku } from "./sunucu.mts";
 import { yayinla } from "./yayin.mts";
 import {
+  asilAdresKilidi,
   kayittanSiteKlasoru,
   yayinGoruntusunuHazirla,
   yayinKilitleri,
@@ -35,6 +36,11 @@ try {
   const sonuc = siteKlasorunuDogrula(yerel);
   if (!sonuc.gecerli) throw new Error(`${klasor} geçersiz:\n  ${sonuc.hatalar.join("\n  ")}`);
   const { kimlik } = sonuc.site;
+  const [sunucu] = sunuculariOku();
+  if (!sunucu) throw new Error("sunucu/sunucular.json'da sunucu yok. Önce: pnpm sunucu-kur");
+  // Kimlikteki asıl adres (karar 0202) sunucuya çözülmeden yayın yapılmaz.
+  const asilAdres = await asilAdresKilidi(kimlik.adresler.canli, sunucu);
+  if (asilAdres) console.log(`asıl adres  ${asilAdres} sunucuya çözülüyor`);
   // Sunucu denetimi kırmızıysa yayın yapılmaz (hızlı kapı taramasıyla, yaklaşık bir dakika).
   // Yalnız bu sitenin yayındaki kutusuyla ilgili bir ölçüm kırmızıysa yayın sürer: bozuk bir
   // siteye düzeltme yayınlanabilmeli.
@@ -66,8 +72,6 @@ try {
       : `denetim     yalnız bu sitenin kutusu kırmızı, düzeltme yayını sürüyor: ${kalanlar.join("; ")}`,
   );
   const etiket = yayinGoruntusunuHazirla(kimlik.cekirdekSurumu, kayit);
-  const [sunucu] = sunuculariOku();
-  if (!sunucu) throw new Error("sunucu/sunucular.json'da sunucu yok. Önce: pnpm sunucu-kur");
   const yayin = await yayinla({
     ipv4: sunucu.ipv4,
     ortam: yayinOrtami,

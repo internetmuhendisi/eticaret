@@ -63,6 +63,7 @@
     "yayin-kaydi": "node komutlar/yayin-kaydi.mts",
     "yayin-denemesi": "node komutlar/yayin-denemesi.mts",
     "alan-adi": "node komutlar/alan-adi.mts",
+    "alan-adi-denemesi": "node komutlar/alan-adi-denemesi.mts",
     "sunucu-hata-izleme": "node komutlar/sunucu-hata-izleme.mts",
     "hata-izleme-ac": "node komutlar/hata-izleme-ac.mts",
     "hata-izleme-denemesi": "node komutlar/hata-izleme-denemesi.mts",

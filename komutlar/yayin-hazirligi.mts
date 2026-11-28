@@ -15,6 +15,8 @@ import { join } from "node:path";
 import { cekirdekSurumu } from "../cekirdek/surum.ts";
 import { kayitEtiketi } from "./cekirdek-goruntusu-denetle.mts";
 import { hatDosyasi, hatSonucunuOku } from "./hat-sonucu.mts";
+import { asilAdresiCoz } from "./on-kapi.mts";
+import { herkeseAcikCozulme } from "./on-kapi-olcumleri.mts";
 import { kok } from "./sunucu.mts";
 import { surumEtiketi } from "./sunucu-veritabani.mts";
 
@@ -151,4 +153,27 @@ export const yayinGoruntusunuHazirla = (surum: string, kayit: string): string =>
     throw new Error(`${etiket} bu kayıttan üretilmemiş (görüntüdeki kayıt: ${sonra || "yok"}).`);
   }
   return etiket;
+};
+
+// Kimlikteki asıl adres (karar 0202) herkese açık ad sunucularında sunucuyu göstermeden yayın yapılmaz: uygulama
+// e-postalardaki bağlantıları bu adresle kurar, açılmamış adrese bağlantı gitmez. Asıl adres yoksa geçer.
+export const asilAdresKilidi = async (
+  canli: string | undefined,
+  sunucu: { ipv4: string; ipv6: string },
+  coz: typeof herkeseAcikCozulme = herkeseAcikCozulme,
+): Promise<string | undefined> => {
+  if (canli === undefined) return undefined;
+  const asil = asilAdresiCoz(canli);
+  if ("hata" in asil) throw new Error(`Kimlikteki asıl adres: ${asil.hata}`);
+  const hatalar = (await coz(asil, sunucu)).filter(([, hata]) => hata !== undefined);
+  if (hatalar.length > 0) {
+    throw new Error(
+      `Asıl adres sunucuya çözülmüyor, yayın yapılmaz: ${hatalar.map(([ad, hata]) => `${ad} (${hata})`).join(", ")}. ${
+        asil.tur === "alt"
+          ? "Önce: pnpm alan-adi --onayli"
+          : "Mağaza sahibi kayıtları açmalı (pnpm alan-adi gereken kayıtları yazar)"
+      }`,
+    );
+  }
+  return asil.ad;
 };

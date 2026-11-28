@@ -106,6 +106,7 @@
       "temalar": "Mağaza sahibinin seçebileceği temalar. İlki sitenin başlangıç temasıdır. Verilmezse bütün hazır temalar.",
       "vitrindeAltyapiAdi": "Vitrinde altyapının adı görünür.",
       "yakindaYazisi": "Vitrinin ana sayfasında başlığın altında \"Yakında açılıyoruz.\" yazısı görünür.",
+      "aramaMotorlarinaAcik": "Sitenin asıl adresi arama motorlarına açıktır. Kapalıyken asıl adres dizine alınmaz; deneme adresi her zaman kapalıdır.",
       "bakimMetni": "Bakım sayfasında görünen metin. Boşsa ortak metin görünür.",
       "yoneticiOturumuSaat": "Hiç girilmeyen yönetici oturumunun kapanma süresi, saat olarak.",
       "musteriOturumuGun": "Hiç girilmeyen müşteri oturumunun kapanma süresi, gün olarak.",

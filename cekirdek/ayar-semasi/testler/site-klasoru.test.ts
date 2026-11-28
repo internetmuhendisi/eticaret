@@ -103,6 +103,7 @@ describe("ayar şeması", () => {
       kuponKoduHarfDuyarli: false,
       vitrindeAltyapiAdi: false,
       yakindaYazisi: false,
+      aramaMotorlarinaAcik: false,
       yoneticiOturumuSaat: 24,
       musteriOturumuGun: 30,
       favoriSiniri: 100,
