@@ -13,6 +13,7 @@ import {
   readFileSync,
   rmSync,
   statSync,
+  symlinkSync,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -121,9 +122,24 @@ install() {
         GIZLI_KOKU: join(gecici, "gizli"),
         DOSYA_KOKU: join(gecici, "dosyalar"),
         DEPO: join(gecici, "depo"),
+        // timeout ayrı bir programı çalıştırır: sahte setpriv yolda durur, kullanıcı değişmez.
+        PATH: `${aracKlasoru()}:${process.env.PATH}`,
       },
     },
   );
+};
+
+const aracKlasoru = () => {
+  const arac = join(gecici, "arac");
+  if (!existsSync(arac)) {
+    mkdirSync(arac);
+    writeFileSync(
+      join(arac, "setpriv"),
+      '#!/bin/bash\nwhile [ "$1" != "--" ]; do shift; done; shift; exec "$@"\n',
+      { mode: 0o755 },
+    );
+  }
+  return arac;
 };
 
 const getir = () => calistir(dosyaGetirmeBetigi("deneme", { kodAdi, numara: 1 }, ad, anahtar));
@@ -196,6 +212,27 @@ describe("geri yüklemede dosyalar", () => {
     expect(existsSync(join(canli, a)) ? readFileSync(join(canli, a)) : undefined).toEqual(bozuk);
     if (once) writeFileSync(join(canli, a), once);
     else copyFileSync(join(depo, `${a}.20261101T000000Z.age`), join(canli, a));
+  });
+});
+
+describe("geri yüklemede sitenin klasörü", () => {
+  it("diskteki bağ izlenmez: aynı içeriği gösterse de tutmuyor sayılır, adı söylenir", () => {
+    const a = adlar[0] as string;
+    const yol = join(canli, a);
+    const asil = readFileSync(yol);
+    const baska = join(gecici, "klasor-disi");
+    writeFileSync(baska, asil);
+    unlinkSync(yol);
+    symlinkSync(baska, yol);
+    try {
+      const sonuc = getir();
+      expect(sonuc.status).not.toBe(0);
+      expect(sonuc.stderr).toContain("1 dosyanın diskteki içeriği kayıtla tutmuyor");
+      expect(sonuc.stderr).toContain(`diskteki içeriği tutmayanlar (${canli}): ${a}`);
+    } finally {
+      unlinkSync(yol);
+      writeFileSync(yol, asil);
+    }
   });
 });
 

@@ -474,7 +474,10 @@ while read -r a o; do
   toplam=$((toplam + 1))
   [[ "$a" =~ $DOSYA_ADI && -f "$D/${ortam}/${kodAdi}/$a" ]] || continue
   bulunan=$((bulunan + 1))
-  [ "$(sha256sum <"$D/${ortam}/${kodAdi}/$a" | cut -d' ' -f1)" = "$o" ] && tutan=$((tutan + 1))
+  # Sitenin kullanıcısıyla, bağı izlemeden (ortak.sh).
+  if [ "$(site_dosyasi_oku "$(stat -c %u "$D/${ortam}/${kodAdi}")" "$D/${ortam}/${kodAdi}/$a" | sha256sum | cut -d' ' -f1)" = "$o" ]; then
+    tutan=$((tutan + 1))
+  fi
 done <"$g/canli"
 printf 'CANLI dosya %s %s %s\n' "$toplam" "$bulunan" "$tutan"
 `;
@@ -681,21 +684,30 @@ depodaki_dosyalar ${ortam} ${site.kodAdi} >"$g/depoda"
 declare -A en=() ozet=()
 while read -r a z; do [ -n "$a" ] && en["$a"]="$z"; done <"$g/depoda"
 toplam=0 yerinde=0 eksik=0 bozuk=0 gecersiz=0 indirilen=0
+bozuklar=() eksikler=()
 : >"$g/liste"
 while read -r a o; do
   [ -n "$a" ] || continue
   toplam=$((toplam + 1))
   if ! [[ "$a" =~ $DOSYA_ADI && "$o" =~ ^[0-9a-f]{64}$ ]]; then gecersiz=$((gecersiz + 1)); continue; fi
-  if [ -e "$klasor/$a" ]; then
-    if [ "$(sha256sum <"$klasor/$a" | cut -d' ' -f1)" = "$o" ]; then yerinde=$((yerinde + 1)); else bozuk=$((bozuk + 1)); fi
+  if [ -e "$klasor/$a" ] || [ -L "$klasor/$a" ]; then
+    # Site kendi klasörüne yazabilir: dosya sitenin kullanıcısıyla, bağı izlemeden okunur (ortak.sh).
+    if [ "$(site_dosyasi_oku ${u} "$klasor/$a" | sha256sum | cut -d' ' -f1)" = "$o" ]; then
+      yerinde=$((yerinde + 1))
+    else
+      bozuk=$((bozuk + 1))
+      bozuklar+=("$a")
+    fi
     continue
   fi
-  if [ -z "\${en[$a]:-}" ]; then eksik=$((eksik + 1)); continue; fi
+  if [ -z "\${en[$a]:-}" ]; then eksik=$((eksik + 1)); eksikler+=("$a"); continue; fi
   ozet["$a"]="$o"
   printf '%s\\n' "$a.\${en[$a]}.age" >>"$g/liste"
 done <"$g/gerekli"
 if [ "$gecersiz" -gt 0 ] || [ "$eksik" -gt 0 ] || [ "$bozuk" -gt 0 ]; then
   echo "dosyalar geri getirilemez: $eksik dosyanın depoda kopyası yok, $bozuk dosyanın diskteki içeriği kayıtla tutmuyor, $gecersiz satır tanınmadı; hiçbir şeye dokunulmadı" >&2
+  [ "$bozuk" -eq 0 ] || echo "diskteki içeriği tutmayanlar ($klasor): \${bozuklar[*]:0:5}" >&2
+  [ "$eksik" -eq 0 ] || echo "kopyası olmayanlar: \${eksikler[*]:0:5}" >&2
   exit 1
 fi
 if [ -s "$g/liste" ]; then
