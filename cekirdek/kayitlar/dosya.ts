@@ -87,3 +87,19 @@ export const dosyaHatalari = [
   "cok-fazla-piksel",
 ] as const;
 export type DosyaHatasi = (typeof dosyaHatalari)[number];
+
+// Sitenin dosya temizliği (kart 0093, karar 0207). Günde bir kez arka plan sürecinde çalışır.
+export const dosyaTemizligiAyari = {
+  // Silinmiş işaretli dosya bu kadar gün sonra diskten silinir. Yedeğin saklama süresinden (sunucu/yedek/ayar.json)
+  // kısa olamaz: o süre içindeki bir veritabanı yedeği dosyayı silinmemiş gösterebilir, geri yüklenince dosya
+  // depodaki kopyasından gelmelidir. Yedek ayarı bundan uzun saklama süresini reddeder.
+  kaliciSilmeGun: 35,
+  // Hiçbir siparişe bağlanmamış fatura belgesi (kart 0268) bu kadar saat sonra silinmiş işaretlenir: belge ad ve
+  // adres taşır, gereğinden uzun kalmaz (karar 0145).
+  sahipsizBelgeSaat: 24,
+  // Bu kadar dakikadan yeni dosya kayıtsız sayılmaz: kaydetme işlemi dosyayı yerine koyup işlemi bitirene kadar
+  // dosya kayıtsız görünür (karar 0058).
+  yeniDosyaDakika: 60,
+  // Bildirimde adı yazılan en çok dosya.
+  ornekSayisi: 5,
+} as const;

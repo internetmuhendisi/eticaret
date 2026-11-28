@@ -23,6 +23,7 @@ import { gunluk } from "../izleme/gunluk.ts";
 import { denemeIsaretiBicimi } from "../kayitlar/arka-plan.ts";
 import { excelAyari, kartlaOdemeAyari, stokBildirimiAyari } from "../kayitlar/eklentiler.ts";
 import { siparisDisaAktarmaAyari } from "../kayitlar/siparis.ts";
+import { dosyaTemizligiIsi } from "../moduller/dosya/isler.ts";
 import { davetTemizligiIsi } from "../moduller/ekip/isler.ts";
 import { epostaGonderIsi, epostaKayitTemizligiIsi } from "../moduller/eposta/isler.ts";
 import { odemeOturumuTemizligiIsi } from "../moduller/odeme/isler.ts";
@@ -101,6 +102,8 @@ export const kayitliIsler: readonly IsTanimi[] = [
   panelBildirimiTemizligiIsi,
   // Ekibe davet (kart 0275, karar 0179).
   davetTemizligiIsi,
+  // Dosya temizliği (kart 0093, karar 0207).
+  dosyaTemizligiIsi,
   // Excel ile toplu ürün işlemleri eklentisi (kart 0315).
   excelDisaAktarmaIsi,
   excelDenetimIsi,
@@ -115,6 +118,7 @@ export const zamanliIsler: readonly ZamanliIs[] = [
   zamanliIs(odemeOturumuTemizligiIsi, {}, { herDakika: 60 }),
   zamanliIs(havaleIptalIsi, {}, { herDakika: 60 }),
   zamanliIs(kisiselVeriTemizligiIsi, {}, { herDakika: 24 * 60 }),
+  zamanliIs(dosyaTemizligiIsi, {}, { herDakika: 24 * 60 }),
   zamanliIs(stokBildirimiTemizligiIsi, {}, { herDakika: 24 * 60 }),
   zamanliIs(stokBildirimiTaramasiIsi, {}, { herDakika: stokBildirimiAyari.taramaDakika }),
   zamanliIs(kartlaOdemeTaramasiIsi, {}, { herDakika: kartlaOdemeAyari.taramaDakika }),

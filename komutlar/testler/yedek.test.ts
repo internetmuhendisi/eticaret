@@ -14,6 +14,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
+import { dosyaTemizligiAyari } from "../../cekirdek/kayitlar/dosya.ts";
 import { sunucuTanimi } from "../sunucu.mts";
 import {
   anahtarHatalari,
@@ -88,6 +89,17 @@ describe("yedek ayarı", () => {
     [
       "sitede geçersiz süre",
       { siteler: { deneme: { x: { acik_anahtar: acik, saklama_gun: 1.5 } } } },
+      "saklama",
+    ],
+    [
+      "dosyaların kalıcı silinme süresinden uzun saklama",
+      {
+        siteler: {
+          deneme: {
+            x: { acik_anahtar: acik, saklama_gun: dosyaTemizligiAyari.kaliciSilmeGun + 1 },
+          },
+        },
+      },
       "saklama",
     ],
   ])("%s yakalanır", (_ad, bozuk, beklenen) => {

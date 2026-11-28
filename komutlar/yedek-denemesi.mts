@@ -9,9 +9,12 @@
 //   veritabanı kalmıyor.
 // - Süresi dolan yedek temizleniyor, yeni yedek kalıyor.
 // - Depo yalnız kendi veri merkezinden görünüyor.
-// Sonunda deneme sitesi, anahtarları ve depodaki dosyaları silinir. Değerler ekrana basılmaz.
+// - Dosyalar (kart 0093, karar 0207): dosya yedeği depoda ve şifreli, süresi dolmamış kopyası kalıcı silinemiyor,
+//   başka sitenin anahtarı açamıyor; prova dosyaları karşılaştırıyor; geri yükleme diskten giden dosyaları aynı
+//   içerikle ve sitenin kullanıcısına ait olarak geri getiriyor, sonradan eklenen dosyaya dokunmuyor.
+// Sonunda deneme sitesi, anahtarları, dosya klasörü ve depodaki dosyaları silinir. Değerler ekrana basılmaz.
 
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { siteKlasorunuOku } from "../cekirdek/ayar-semasi/site-klasoru.ts";
 import { gizliBilgiler } from "../cekirdek/kayitlar/gizli-bilgiler.ts";
 import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
@@ -33,10 +36,12 @@ import {
   veritabaniKutusu,
   veritabaniKutusunuKur,
 } from "./sunucu-veritabani.mts";
+import { sunucuDosyaKlasoru } from "./yayin.mts";
 import {
   anahtarCiftiUret,
   ayariOku,
   degistirmeBetigi,
+  dosyaYedegiBetigi,
   geriAlmaBetigi,
   geriYukle,
   kaydaYazBetigi,
@@ -123,6 +128,28 @@ done`),
 let eskiKopya = "";
 let sonYukleme = 0;
 const siteBilgisi = `${yedekKoku}/siteler/${ortam}/${b.kodAdi}`;
+const dosyaKlasoru = sunucuDosyaKlasoru(ortam, b.kodAdi);
+// Bilinen dosyalar: içerikleri bilinen işareti taşır (şifre denetimi), üçüncüsü silinmiş işaretlidir.
+const dosyalar = [1, 2, 3].map((sira) => {
+  const icerik = `${isaret}-dosya-${sira}-${randomBytes(16).toString("hex")}`;
+  const kimlik = randomUUID();
+  return {
+    kimlik,
+    ad: `${kimlik}.pdf`,
+    icerik,
+    ozet: createHash("sha256").update(icerik).digest("hex"),
+    silinmis: sira === 3,
+  };
+});
+// Diskteki dosyaların özetleri, sahipleri ve izinleri: "<ad> <özet> <sahip> <izin>".
+const diskOzeti = () =>
+  calistir(
+    `sudo sh -c 'cd ${dosyaKlasoru} && for f in *; do printf "%s %s %s\\n" "$f" "$(sha256sum < "$f" | cut -d" " -f1)" "$(stat -c "%u %a" "$f")"; done'\n`,
+  )
+    .trim()
+    .split("\n")
+    .filter(Boolean)
+    .sort();
 
 const temizle = async (): Promise<void> => {
   // Kilit dolmadan dosya silinemez; kısa kilidin dolması beklenir.
@@ -132,6 +159,7 @@ const temizle = async (): Promise<void> => {
   dene(`set +e
 ${eskiKopya ? `sudo rm -f ${eskiKopya}` : "true"}
 sudo rm -f ${siteBilgisi}
+sudo rm -rf ${dosyaKlasoru}
 printf '%s\\n' 'DROP DATABASE IF EXISTS "${db}__geri" WITH (FORCE);' 'DROP DATABASE IF EXISTS "${db}__eski" WITH (FORCE);' 'DROP DATABASE IF EXISTS "${db}" WITH (FORCE);' 'DROP ROLE IF EXISTS "${db}";' | docker exec -i ${dbKutusu} psql -U postgres -d postgres -q >/dev/null
 ${silmeBetigi(ortam, b.kodAdi).replace("set -eu", "true")}
 `);
@@ -170,6 +198,16 @@ const adimlar = async (): Promise<void> => {
     ),
   );
 
+  // Dosyalar diskte (sitenin kullanıcısına ait, 0600) ve kayıtta (sitenin rolüyle).
+  const u0 = kutuKullanicisi(ortam, b.numara);
+  calistir(
+    kokBetigi(`install -d -m 0700 -o ${u0} -g ${u0} ${dosyaKlasoru}
+${dosyalar.map((d) => `printf '%s' '${d.icerik}' > ${dosyaKlasoru}/${d.ad}\nchown ${u0}:${u0} ${dosyaKlasoru}/${d.ad}\nchmod 0600 ${dosyaKlasoru}/${d.ad}`).join("\n")}`),
+  );
+  sql(
+    `SET ROLE "${db}"; INSERT INTO dosyalar (kimlik, tur, boyut, genislik, yukseklik, icerik_ozeti, silinme_zamani) VALUES ${dosyalar.map((d) => `('${d.kimlik}', 'pdf', ${d.icerik.length}, 0, 0, '${d.ozet}', ${d.silinmis ? "now()" : "NULL"})`).join(", ")};`,
+  );
+
   const ilkCikti = calistir(yedekAlmaBetigi(ortam, b.kodAdi, "deneme"));
   sonYukleme = Date.now();
   const ilkAn = sonYukleme;
@@ -180,6 +218,84 @@ const adimlar = async (): Promise<void> => {
     "sonuç kayda yazıldı",
     kayit?.site === b.kodAdi && kayit?.sonuc === "basarili" && (kayit?.boyut ?? 0) > 0,
     `${kayit?.sonuc} ${kayit?.boyut}`,
+  );
+
+  // Dosya yedeği: her dosya bir kez, şifreli; sonuç kayıtta.
+  const dosyaCikti = calistir(dosyaYedegiBetigi(ortam, b.kodAdi));
+  const dosyaKaydi = kayitlariCoz(calistir(`sudo cat ${yedekKoku}/kayit.jsonl\n`)).at(-1);
+  olc(
+    "dosya yedeği alındı, kayda yazıldı",
+    dosyaKaydi?.tur === "dosya" && dosyaKaydi.sonuc === "basarili" && dosyaKaydi.dosya === "3",
+    `${dosyaKaydi?.tur} ${dosyaKaydi?.sonuc} ${dosyaKaydi?.dosya} ${dosyaCikti.trim().slice(0, 80)}`,
+  );
+  const ikinciDosya = calistir(dosyaYedegiBetigi(ortam, b.kodAdi));
+  const ikinciKayit = kayitlariCoz(calistir(`sudo cat ${yedekKoku}/kayit.jsonl\n`)).at(-1);
+  olc(
+    "ikinci dosya yedeği bir şey göndermiyor",
+    ikinciKayit?.tur === "dosya" && ikinciKayit.dosya === "0",
+    ikinciDosya.trim().slice(0, 80),
+  );
+  const kopyalar = calistir(
+    kokBetigi(`rc ${ortam} lsf --files-only "depo:$KOVA/${ortam}/${b.kodAdi}/dosyalar"`),
+  )
+    .trim()
+    .split("\n")
+    .filter(Boolean);
+  const kopya = kopyalar.find((ad) => ad.startsWith(dosyalar[0]?.ad ?? "-")) ?? "";
+  const uzakKopya = `"depo:$KOVA/${ortam}/${b.kodAdi}/dosyalar/${kopya}"`;
+  const kopyaIcerigi = calistir(
+    kokBetigi(`g=$(mktemp -p "$K/gecici")
+trap 'rm -f "$g"' EXIT
+rc ${ortam} cat ${uzakKopya} > "$g"
+printf 'bas=%s\\n' "$(head -c 21 "$g")"
+printf 'isaret=%s\\n' "$(grep -a -c '${isaret}' "$g" || true)"`),
+  );
+  olc(
+    "dosya yedeği şifreli: üç dosyanın kopyası depoda, bilinen içerik geçmiyor",
+    kopyalar.length === 3 &&
+      kopyaIcerigi.includes("bas=age-encryption.org") &&
+      kopyaIcerigi.includes("isaret=0"),
+    `${kopyalar.length} kopya`,
+  );
+  const baskaAnahtarla = dene(
+    kokBetigi(`anahtar='${baskaCift.acma}'
+rc ${ortam} cat ${uzakKopya} | age -d -i <(printf '%s\\n' "$anahtar") >/dev/null`),
+  );
+  olc(
+    "başka sitenin anahtarı dosya yedeğini açamıyor",
+    baskaAnahtarla.durum !== 0 && /no identity matched/.test(baskaAnahtarla.hata),
+    baskaAnahtarla.hata.trim().slice(0, 120),
+  );
+  dene(kokBetigi(`rc ${ortam} deletefile ${uzakKopya} >/dev/null 2>&1`));
+  const kopyaSurumleri = calistir(
+    kokBetigi(
+      `rc ${ortam} lsf --files-only --s3-versions "depo:$KOVA/${ortam}/${b.kodAdi}/dosyalar"`,
+    ),
+  );
+  const kopyaSurumu = kopyaSurumleri.split("\n").find((satir) => /-v\d{4}-/.test(satir)) ?? "";
+  const kopyaSilme = dene(
+    kokBetigi(
+      `rc ${ortam} deletefile --s3-versions "depo:$KOVA/${ortam}/${b.kodAdi}/dosyalar/${kopyaSurumu}"`,
+    ),
+  );
+  olc(
+    "süresi dolmamış dosya yedeği kalıcı silinemiyor",
+    kopyaSurumu !== "" && kopyaSilme.durum !== 0 && /object lock/.test(kopyaSilme.hata),
+    kopyaSurumu ? "" : "sürüm bulunamadı",
+  );
+  // Silme işareti altındaki dosya görünmez: sonraki dosya yedeği onu yeniden gönderir. (Deneme kısa saklama süresiyle
+  // çalışır, yenileme payı da kısadır: öteki kopyalar da yeniden gidebilir.)
+  calistir(dosyaYedegiBetigi(ortam, b.kodAdi));
+  const yeniden = kayitlariCoz(calistir(`sudo cat ${yedekKoku}/kayit.jsonl\n`)).at(-1);
+  const gorunenler = calistir(
+    kokBetigi(`rc ${ortam} lsf --files-only "depo:$KOVA/${ortam}/${b.kodAdi}/dosyalar"`),
+  );
+  olc(
+    "silme işaretli dosya bir sonraki dosya yedeğinde yeniden gidiyor",
+    yeniden?.tur === "dosya" &&
+      yeniden.sonuc === "basarili" &&
+      gorunenler.includes(dosyalar[0]?.ad ?? "-"),
+    `${yeniden?.dosya} gönderildi`,
   );
 
   const uzak = `"depo:$KOVA/${ortam}/${b.kodAdi}/${dosya}"`;
@@ -226,6 +342,11 @@ printf 'isaret=%s\\n' "$(grep -a -c '${isaret}' "$g" || true)"`),
     "prova: yedek ayrı veritabanına açıldı, içerik aynı",
     prova.farklar.length === 0 && prova.tablolar > 0 && prova.satirlar >= 3,
     prova.farklar.join("; ") || `${prova.tablolar} tablo, ${prova.satirlar} satır`,
+  );
+  olc(
+    "prova: silinmemiş iki dosyanın depodaki kopyası ve diskteki hâli kayıtla tutuyor",
+    prova.farklar.length === 0 && prova.dosyalar === 2,
+    `${prova.dosyalar} dosya`,
   );
 
   // Ret sebebi de ölçülür: başka bir hata (ör. betik hatası) yanlışlıkla "reddedildi" sayılmasın.
@@ -296,6 +417,13 @@ RC_BAGLA="$g:/veri:ro" rc ${ortam} copyto "/veri/${bozukAd}" "depo:$KOVA/${ortam
   const yedekSayisiOnce = calistir(
     `sudo grep -c '"tur":"geri-yukleme-oncesi".*"site":"${b.kodAdi}"\\|"site":"${b.kodAdi}".*"tur":"geri-yukleme-oncesi"' ${yedekKoku}/kayit.jsonl || true\n`,
   ).trim();
+  const diskOnce = diskOzeti();
+  const sonradan = `${randomUUID()}.pdf`;
+  calistir(
+    kokBetigi(`rm -f ${dosyaKlasoru}/${dosyalar[0]?.ad} ${dosyaKlasoru}/${dosyalar[1]?.ad}
+printf 'sonradan' > ${dosyaKlasoru}/${sonradan}
+chown ${u}:${u} ${dosyaKlasoru}/${sonradan}`),
+  );
   await geriYukle(ipv4, ortam, b, dosya, cift.acma);
   sonYukleme = Date.now();
   const satirlar = sql("SELECT no || '=' || metin FROM yedek_denemesi ORDER BY no;");
@@ -311,6 +439,19 @@ RC_BAGLA="$g:/veri:ro" rc ${ortam} copyto "/veri/${bozukAd}" "depo:$KOVA/${ortam
     "geri yüklemeden önce o anki durumun yedeği alındı",
     Number(yedekSayisiSonra) > Number(yedekSayisiOnce),
     `${yedekSayisiOnce} → ${yedekSayisiSonra}`,
+  );
+  const diskSonra = diskOzeti();
+  olc(
+    "geri yükleme diskten giden dosyaları aynı içerikle, sitenin kullanıcısına ait getirdi",
+    diskOnce.every((satir) => diskSonra.includes(satir)) &&
+      dosyalar.every((d) =>
+        diskSonra.some((satir) => satir.startsWith(`${d.ad} ${d.ozet} ${u} 600`)),
+      ),
+    `${diskOnce.length} → ${diskSonra.length} dosya`,
+  );
+  olc(
+    "sonradan eklenen dosyaya dokunulmadı",
+    diskSonra.some((satir) => satir.startsWith(`${sonradan} `)),
   );
   const sahip = sql(
     `SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname = '${db}'; SELECT tableowner FROM pg_tables WHERE tablename = 'yedek_denemesi';`,

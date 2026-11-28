@@ -14,7 +14,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { parseEnv } from "node:util";
-import { kayitliDosyaTurleri } from "../cekirdek/kayitlar/dosya.ts";
+import { dosyaTemizligiAyari, kayitliDosyaTurleri } from "../cekirdek/kayitlar/dosya.ts";
 import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
 import { gizliKok, kutuKullanicisi, type Ortam, yedekDeposuGizliBilgisi } from "./gizli-bilgi.mts";
 import { arkaPlanKutuAdi } from "./kutu-kurali.mts";
@@ -54,7 +54,8 @@ const gunSaniye = 86_400;
 // Hetzner'in Almanya'daki Object Storage konumları (karar 0009, 0037). Helsinki yoktur.
 const almanKonumlar = ["nbg1", "fsn1"];
 
-// Ayarın kuralları: yedek canlı sunucudan farklı bir Alman veri merkezinde, süre tam gün.
+// Ayarın kuralları: yedek canlı sunucudan farklı bir Alman veri merkezinde, süre tam gün ve dosyaların kalıcı
+// silinme süresinden uzun değil.
 export const yedekAyariHatalari = (ayar: YedekAyari, canliKonum: string): string[] => {
   const hatalar: string[] = [];
   if (!almanKonumlar.includes(ayar.depo.konum))
@@ -64,7 +65,12 @@ export const yedekAyariHatalari = (ayar: YedekAyari, canliKonum: string): string
   if (!/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(ayar.depo.kova)) hatalar.push("geçersiz kova adı");
   if (!/^rclone\/rclone:\d+\.\d+\.\d+$/.test(ayar.rclone_goruntusu))
     hatalar.push("rclone görüntüsünün sürümü sabit değil");
-  const gunGecerli = (gun: unknown) => Number.isInteger(gun) && (gun as number) >= 1;
+  // Saklama süresi sitenin silinmiş dosyayı diskten silme süresinden uzun olamaz (kart 0093, karar 0207): o süre
+  // içindeki bir veritabanı yedeği dosyayı silinmemiş gösterebilir, kopyası depoda durmalıdır.
+  const gunGecerli = (gun: unknown) =>
+    Number.isInteger(gun) &&
+    (gun as number) >= 1 &&
+    (gun as number) <= dosyaTemizligiAyari.kaliciSilmeGun;
   if (!gunGecerli(ayar.varsayilan_saklama_gun)) hatalar.push("geçersiz varsayılan saklama süresi");
   for (const [ortam, siteler] of Object.entries(ayar.siteler)) {
     for (const [kodAdi, site] of Object.entries(siteler ?? {})) {
