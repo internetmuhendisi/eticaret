@@ -473,6 +473,9 @@ export const belgeBoyutu = async (
         isNull(dosyalar.silinme_zamani),
         inArray(dosyalar.tur, Object.keys(belgeTurleri)),
       ),
-    );
+    )
+    // Paylaşımlı kilit (kart 0093): belgeyi bağlayan işlem bitene kadar dosya temizliği onu silinmiş işaretleyemez;
+    // temizlik önce işaretlediyse bu okuma onu bekler ve belgeyi bulamaz.
+    .for("share");
   return satir?.boyut;
 };

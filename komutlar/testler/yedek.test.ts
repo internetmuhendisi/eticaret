@@ -765,7 +765,7 @@ esac`,
         encoding: "utf8",
         env: {
           ...process.env,
-          PATH: `${join(dosyaKoku, "..", "arac")}:${process.env.PATH}`,
+          PATH: `${join(dosyaKoku, "..", "arac")}:${process.env["PATH"]}`,
           YEDEK_KOKU: join(dosyaKoku, "..", "yedek"),
         },
       },

@@ -13,7 +13,7 @@ import { readdir, stat, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import { and, inArray, isNull, lt, sql } from "drizzle-orm";
 import { belgeTurleri, dosyaTemizligiAyari, kayitliDosyaTurleri } from "../../kayitlar/dosya.ts";
-import type { Veritabani } from "../../veritabani/baglanti.ts";
+import type { Veritabani, VeritabaniIslemi } from "../../veritabani/baglanti.ts";
 import { dosyaBoyutlari, dosyalar } from "./model.ts";
 
 export type DosyaTemizligiSonucu = {
@@ -31,7 +31,7 @@ const uzanti = (tur: string): string | undefined =>
 // Bir dosyaya başvuran bütün sütunlar: dosyalar tablosuna giden yabancı anahtarlar (yeni tablo kendiliğinden girer)
 // ve kimliği değerinde taşıyan iki JSON alanı: mağaza ayarları (logo) ve düzenin bütün sürümleri (geri dönülebilir).
 // Görselin boyutları (dosya_boyutlari) kaynağa bağlıdır, kullanım sayılmaz: boyut, kaynağı kullanılırken kullanılır.
-const kullanilanlar = async (vt: Veritabani): Promise<Set<string>> => {
+const kullanilanlar = async (vt: Veritabani | VeritabaniIslemi): Promise<Set<string>> => {
   const sutunlar = await vt.execute<{ sema: string; tablo: string; sutun: string }>(sql`
     select n.nspname as sema, t.relname as tablo, a.attname as sutun
     from pg_catalog.pg_constraint c
@@ -51,7 +51,10 @@ const kullanilanlar = async (vt: Veritabani): Promise<Set<string>> => {
 };
 
 // Kimliği JSON değerlerinde geçen dosyalar. Tablolar küçüktür (ayar sayısı, düzen sürümü sayısı).
-const jsondaGecenler = async (vt: Veritabani, adaylar: string[]): Promise<Set<string>> => {
+const jsondaGecenler = async (
+  vt: Veritabani | VeritabaniIslemi,
+  adaylar: string[],
+): Promise<Set<string>> => {
   if (adaylar.length === 0) return new Set();
   const metinler = await vt.execute<{ m: string }>(sql`
     select deger::text as m from public.magaza_ayarlari where deger is not null
@@ -82,22 +85,35 @@ export const dosyaTemizligi = async (
         ),
       ),
     );
-  const sahipsiz = belgeler.map((b) => b.kimlik).filter((k) => !kullanilan.has(k));
-  const sahipsizJson = await jsondaGecenler(vt, sahipsiz);
-  const isaretlenecek = sahipsiz.filter((k) => !sahipsizJson.has(k));
-  if (isaretlenecek.length > 0) {
-    await vt
-      .update(dosyalar)
-      .set({ silinme_zamani: simdi })
-      .where(
-        and(
-          isNull(dosyalar.silinme_zamani),
-          inArray(dosyalar.kimlik, isaretlenecek),
-          // Bu arada bir siparişe bağlanan belge işaretlenmez.
-          sql`not exists (select 1 from public.siparisler s where s.fatura_dosyasi = ${dosyalar.kimlik})`,
-        ),
-      );
-  }
+  const adaylar0 = belgeler.map((b) => b.kimlik).filter((k) => !kullanilan.has(k));
+  // İşaretleme kendi işleminde: satırlar kilitlenir, kullanım kilitten sonra yeniden okunur. Belgeyi bağlayan açık bir
+  // işlem (fatura, paylaşımlı kilit) bitene kadar beklenir ve onun bağı görülür (kart 0093).
+  const isaretlenecek =
+    adaylar0.length === 0
+      ? []
+      : await vt.transaction(async (islem) => {
+          const kilitli = await islem
+            .select({ kimlik: dosyalar.kimlik })
+            .from(dosyalar)
+            .where(and(inArray(dosyalar.kimlik, adaylar0), isNull(dosyalar.silinme_zamani)))
+            .orderBy(dosyalar.kimlik)
+            .for("update");
+          const simdiKullanilan = await kullanilanlar(islem);
+          const json = await jsondaGecenler(
+            islem,
+            kilitli.map((s) => s.kimlik),
+          );
+          const secilen = kilitli
+            .map((s) => s.kimlik)
+            .filter((k) => !simdiKullanilan.has(k) && !json.has(k));
+          if (secilen.length > 0) {
+            await islem
+              .update(dosyalar)
+              .set({ silinme_zamani: simdi })
+              .where(inArray(dosyalar.kimlik, secilen));
+          }
+          return secilen;
+        });
 
   const satirlar = await vt
     .select({

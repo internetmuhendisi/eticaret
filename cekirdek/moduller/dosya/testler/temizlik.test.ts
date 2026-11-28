@@ -6,10 +6,11 @@ import { eq, sql } from "drizzle-orm";
 import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { dosyaTemizligiAyari } from "../../../kayitlar/dosya.ts";
-import type { Veritabani } from "../../../veritabani/baglanti.ts";
+import { baglan, type Veritabani } from "../../../veritabani/baglanti.ts";
 import { denemeSitesiAc } from "../../../veritabani/testler/deneme-sitesi.ts";
+import { kilitBekleyeniGor } from "../../../veritabani/testler/kilit-bekleyen.ts";
 import { dosyalar } from "../model.ts";
-import { belgeKaydet, dosyaKaydet, dosyaSil, gorselKaydet } from "../servis.ts";
+import { belgeBoyutu, belgeKaydet, dosyaKaydet, dosyaSil, gorselKaydet } from "../servis.ts";
 import { dosyaTemizligi } from "../temizlik.ts";
 
 let site: Awaited<ReturnType<typeof denemeSitesiAc>>;
@@ -98,6 +99,81 @@ describe("dosya temizliği", () => {
     expect(await silinmeZamani(sahipsiz)).not.toBeNull();
     expect(await silinmeZamani(yeni)).toBeNull();
     expect(await silinmeZamani(bagli)).toBeNull();
+  });
+
+  // Kart 0093 bağımsız kontrolü: belgeyi faturaya bağlayan işlem ile temizlik yarışmamalı. Sıra kurularak.
+  it("faturayı bağlayan açık işlem varken temizlik bekler ve bağlanan belgeyi işaretlemez", async () => {
+    const x = await belge("yarış");
+    await geriAl(x, "olusturma_zamani", (dosyaTemizligiAyari.sahipsizBelgeSaat + 1) * 3_600_000);
+    await vt.execute(
+      sql`create table deneme_fatura_baglantisi (dosya uuid references dosyalar (kimlik))`,
+    );
+    const ikinci = baglan(site.baglantiAdresi);
+    let birak = () => {};
+    const bekle = new Promise<void>((cozum) => {
+      birak = cozum;
+    });
+    let alindi = () => {};
+    const kilitAlindi = new Promise<void>((cozum) => {
+      alindi = cozum;
+    });
+    try {
+      const fatura = ikinci.transaction(async (islem) => {
+        expect(await belgeBoyutu(islem, x)).toBeGreaterThan(0);
+        await islem.execute(sql`insert into deneme_fatura_baglantisi values (${x})`);
+        alindi();
+        await bekle;
+      });
+      await Promise.race([kilitAlindi, fatura]);
+      const temizlik = temizle();
+      await kilitBekleyeniGor(vt);
+      birak();
+      await fatura;
+      await temizlik;
+      expect(await silinmeZamani(x)).toBeNull();
+    } finally {
+      birak();
+      await ikinci.$client.end();
+    }
+  });
+
+  it("temizlik belgeyi işaretlerken belgeyi okuyan fatura onu bekler ve bulamaz", async () => {
+    const x = await belge("işaretlenen");
+    const ikinci = baglan(site.baglantiAdresi);
+    let birak = () => {};
+    const bekle = new Promise<void>((cozum) => {
+      birak = cozum;
+    });
+    let alindi = () => {};
+    const isaretlendi = new Promise<void>((cozum) => {
+      alindi = cozum;
+    });
+    try {
+      const isaret = ikinci.transaction(async (islem) => {
+        await islem.update(dosyalar).set({ silinme_zamani: simdi }).where(eq(dosyalar.kimlik, x));
+        alindi();
+        await bekle;
+      });
+      await Promise.race([isaretlendi, isaret]);
+      const okuma = vt.transaction((islem) => belgeBoyutu(islem, x));
+      await kilitBekleyeniGor(vt);
+      birak();
+      await isaret;
+      expect(await okuma).toBeUndefined();
+    } finally {
+      birak();
+      await ikinci.$client.end();
+    }
+  });
+
+  it("ayarda ya da düzende kimliği geçen belge işaretlenmez", async () => {
+    const x = await belge("ayarda");
+    await geriAl(x, "olusturma_zamani", (dosyaTemizligiAyari.sahipsizBelgeSaat + 1) * 3_600_000);
+    await vt.execute(
+      sql`insert into magaza_ayarlari (anahtar, deger) values ('deneme-belge', to_jsonb(${x}::text))`,
+    );
+    await temizle();
+    expect(await silinmeZamani(x)).toBeNull();
   });
 
   it("kaydı olmayan eski dosya bildirilir, silinmez; yeni dosya ve kayıtlı dosya bildirilmez", async () => {

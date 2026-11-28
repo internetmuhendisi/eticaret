@@ -123,7 +123,7 @@ install() {
         DOSYA_KOKU: join(gecici, "dosyalar"),
         DEPO: join(gecici, "depo"),
         // timeout ayrı bir programı çalıştırır: sahte setpriv yolda durur, kullanıcı değişmez.
-        PATH: `${aracKlasoru()}:${process.env.PATH}`,
+        PATH: `${aracKlasoru()}:${process.env["PATH"]}`,
       },
     },
   );
