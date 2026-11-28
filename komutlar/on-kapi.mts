@@ -306,6 +306,9 @@ const kisitli = {
 // Sitenin yayınları sunucuda /srv/altyapi/yayin/<ortam>/<kod adı>/ klasöründedir; etkin dosyası o an
 // trafiği alan yayının numarasını taşır. Ön kapının site satırları ve ağları bu listeden kurulur:
 // listenin tek kaynağı sunucudaki etkin dosyalarıdır (yayın komutu yazar, yayin.mts).
+// Bir sitenin (ya da altyapı adresinin) ön kapı satırının, ön kapı klasörüne göre yolu.
+export const onKapiSatirDosyasi = (ad: string): string => `caddy/siteler/${ad}.caddy`;
+
 export const yayinKoku = "/srv/altyapi/yayin";
 // Deneme adresi olan tek ortam; canlı ortam alan adı bağlanınca eklenir.
 export const yayinOrtami = "deneme";
@@ -452,7 +455,7 @@ export const kurmaBetigi = (
     "yoklama/Caddyfile": kaynak("yoklama.Caddyfile"),
     "compose.json": `${JSON.stringify(onKapiTanimi(siteler), null, 2)}\n`,
     ...Object.fromEntries(
-      Object.entries(siteSatirlari).map(([ad, satir]) => [`caddy/siteler/${ad}.caddy`, satir]),
+      Object.entries(siteSatirlari).map(([ad, satir]) => [onKapiSatirDosyasi(ad), satir]),
     ),
   };
   // Dosyalar önce hazırlık klasörüne yazılır ve Caddy'ye doğrulatılır; ancak hepsi geçerse yerine

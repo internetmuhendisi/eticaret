@@ -43,6 +43,7 @@ import {
   hataIzlemeOrtamlari,
   hataIzlemeTanimi,
 } from "./hata-izleme.mts";
+import { kayitHatalari, kayitOlcumBetigi, sunucuKayitlari } from "./kurulus-tarifi.mts";
 import { arkaPlanKutuAdi, arkaPlanKutusuVarMi, dosyaKlasoruVarMi } from "./kutu-kurali.mts";
 import {
   hataIzlemeAgi,
@@ -454,6 +455,25 @@ const denetle = async (kayit: SunucuKaydi, hizli: boolean): Promise<string[]> =>
           dosyaHatalari.length === 0,
           `${yayinOrtami}/${kodAdi} dosya klasörü yalnız sitenin kullanıcısına açık (0700), iki kutuya da yazılabilir bağlı`,
           dosyaHatalari.join("; "),
+        );
+      }
+      // Kuruluş tarifinin sunucu kayıtları (kart 0343): gizli bilgiler, veritabanı ve kullanıcısı, ağ,
+      // yayın ve dosya klasörü, ön kapı satırı yerinde, sahibi ve izniyle. Tarife eklenen kayıt burada da ölçülür.
+      if (numara !== undefined) {
+        const tarif = sunucuKayitlari(yayinOrtami, kodAdi, numara, {
+          dosyaKlasoru: surum === undefined || dosyaKlasoruVarMi(surum),
+        });
+        const sonuc = sshKomutu(kayit.ipv4, "bash -s", {
+          girdi: kayitOlcumBetigi(yayinOrtami, tarif),
+        });
+        const tarifHatalari =
+          sonuc.status === 0
+            ? kayitHatalari(tarif, sonuc.stdout)
+            : [sonuc.stderr.trim() || "ölçülemedi"];
+        olcum(
+          tarifHatalari.length === 0,
+          `${yayinOrtami}/${kodAdi} kuruluş tarifinin sunucu kayıtları yerinde`,
+          tarifHatalari.join("; "),
         );
       }
     }

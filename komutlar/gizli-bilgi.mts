@@ -114,14 +114,20 @@ export const siteNumaralariniOku = (): SiteNumaralari => {
   return numaralar as SiteNumaralari;
 };
 
+// Yeni sitenin numarası: en büyük numaranın bir fazlası (kuruluş tarifi de bunu kullanır, kart 0343).
+export const yeniSiteNumarasi = (numaralar: SiteNumaralari): number => {
+  const yeni = Math.max(0, ...Object.values(numaralar)) + 1;
+  if (yeni >= ikinciDenemeSiteNumarasi) throw new Error("Site numaraları tükendi.");
+  return yeni;
+};
+
 // Sitenin numarası yoksa bir sonrakini verir ve dosyaya yazar. Numara bir kez verilir, değişmez.
 export const siteNumarasiAl = (kodAdi: string): number => {
   kodAdiniDenetle(kodAdi);
   const numaralar = siteNumaralariniOku();
   const var_ = numaralar[kodAdi];
   if (var_ !== undefined) return var_;
-  const yeni = Math.max(0, ...Object.values(numaralar)) + 1;
-  if (yeni >= ikinciDenemeSiteNumarasi) throw new Error("Site numaraları tükendi.");
+  const yeni = yeniSiteNumarasi(numaralar);
   writeFileSync(
     siteKullanicilariDosyasi,
     `${JSON.stringify({ ...numaralar, [kodAdi]: yeni }, null, 2)}\n`,
