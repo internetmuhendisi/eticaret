@@ -4,6 +4,7 @@
 
 - Sürüm `büyük.orta.küçük` biçimindedir. Satışa hazır olana kadar `0.` ile başlar.
 - Çekirdek sürümü değişince aynı değişiklikte notu yazılır. `surum.ts`'deki sürümün ve sitelerin kimliklerindeki her sürümün notu olmalıdır; bunu `cekirdek/testler/surum-notlari.test.ts` denetler.
+- Bir sürüm numarası yalnız bir çekirdeği gösterir (karar 0205). Görüntünün tarifi (`sunucu/cekirdek/Dockerfile` ve `Dockerfile.dockerignore`), görüntüye giren bir dosya (dockerignore'un izin listesi; testler ve `.md` belgeler hariç, sürüm notları yayından sonra düzeltilebilir) ya da demo paketi değişmişse yayından önce sürüm artar ve notu yazılır; deneme yayınları da numara alır, sürüme ek yazılmaz. Yayın komutu sunucudaki bütün sitelerin kayıtlarında aynı sürümü başka bir parmak iziyle bulursa durur (`komutlar/cekirdek-izi.mts`).
 - Yayınlanmış bir sürümün notu sonradan değiştirilmez, yalnız yazım hatası düzeltilir. Bu kuralın kontrolü yoktur, yalnız disiplindir.
 
 Her not şu başlıkları taşır, sırası da budur:

@@ -126,6 +126,8 @@ Sorun çıkarsa kimlik 1.0.0'a döner ve yeniden yayınlanır. Veritabanı deği
 
 Her yeni sürüm önce Örnek Mağaza'ya gider (karar 0007), sonra öteki siteler site site güncellenir.
 
+Bir sürüm numarası yalnız bir çekirdeği gösterir (karar 0205): görüntünün tarifi, görüntüye giren kod ya da demo paketlerinden biri değişmişse (belgeler sayılmaz) yayından önce sürüm artar ve notu yazılır. Yayın komutu sunucudaki bütün sitelerin yayın kayıtlarında aynı numarayı başka bir çekirdekle bulursa görüntüye, veritabanına ve kutulara dokunmadan durur, kayda başarısız yayın olarak yazılır. Aynı sürüme sonraki bir kayıttan kurulan site, çekirdeği değişmemişse yayınlanır.
+
 ## 4. Sahip paneli hangi bilgiyi nereden alır
 
 Sahip paneli hiçbir sitenin veritabanına doğrudan bağlanmaz. Her siteye kapının **sahip girişinden** sorar. Her site soruyu kendi verisiyle cevaplar, sahip paneli cevapları yan yana koyar.

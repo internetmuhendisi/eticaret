@@ -25,6 +25,12 @@ import {
   geriDonusNotlari,
 } from "../cekirdek/veritabani/guncelle.ts";
 import { goruntuyuDenetle } from "./cekirdek-goruntusu-denetle.mts";
+import {
+  birlesikKayitlariCoz,
+  cekirdekIzi,
+  type SiteninKayitlari,
+  surumCakismasi,
+} from "./cekirdek-izi.mts";
 import { kutuGizliTanimi, type Ortam, uretmeBetigi } from "./gizli-bilgi.mts";
 import { projeAdresiniHazirla } from "./hata-izleme.mts";
 import {
@@ -45,7 +51,7 @@ import {
   yayinKilidiyle,
   yayinKoku,
 } from "./on-kapi.mts";
-import { girisAnahtari, sshKomutu, sshSecenekleri, sunucuTanimi } from "./sunucu.mts";
+import { girisAnahtari, kok, sshKomutu, sshSecenekleri, sunucuTanimi } from "./sunucu.mts";
 import {
   goruntuyuGonder,
   sifreyiEsitle,
@@ -201,6 +207,8 @@ export type YayinKaydi = {
   // Yayının kutu tanımındaki bellek sınırı (kart 0094, karar 0165). Bu alandan önceki yayınların kutusu sınırsızdır;
   // geri dönüş yayının kendi tanımını açtığı için sunucu denetimi beklenen değeri buradan okur.
   bellekSiniri?: string;
+  // Yayınlanan çekirdeğin parmak izi (kart 0040, karar 0205). Bu alandan önceki kayıtların izi git kaydından hesaplanır.
+  cekirdekIzi?: string;
 };
 
 export const kayitlariCoz = (metin: string): YayinKaydi[] =>
@@ -303,6 +311,17 @@ export const kayitlariOku = (ipv4: string, ortam: Ortam, kodAdi: string): YayinK
   const sonuc = sshKomutu(ipv4, `sudo sh -c 'if [ -f ${dosya} ]; then cat ${dosya}; fi'`);
   if (sonuc.status !== 0) throw new Error(`Yayın kaydı okunamadı: ${sonuc.stderr.trim()}`);
   return kayitlariCoz(sonuc.stdout);
+};
+
+// Sunucudaki bütün sitelerin (her ortamın) yayın kayıtları: sürüm çakışması bütün sitelerde aranır (kart 0040).
+// Betik her sitenin kaydını "### <ortam>/<kod adı>" başlığıyla birleştirir; kök verilerek yerelde de denenir.
+export const butunKayitlarBetigi = (koku: string): string =>
+  `for f in ${koku}/*/*/kayit.jsonl; do [ -f "$f" ] || continue; d=\${f%/kayit.jsonl}; echo "### \${d#${koku}/}"; cat "$f"; echo; done`;
+
+export const butunKayitlariOku = (ipv4: string): SiteninKayitlari[] => {
+  const sonuc = sshKomutu(ipv4, `sudo sh -c '${butunKayitlarBetigi(yayinKoku)}'`);
+  if (sonuc.status !== 0) throw new Error(`Yayın kayıtları okunamadı: ${sonuc.stderr.trim()}`);
+  return birlesikKayitlariCoz(sonuc.stdout, kayitlariCoz);
 };
 
 const kayitEkle = (ipv4: string, ortam: Ortam, kodAdi: string, kayit: YayinKaydi): void => {
@@ -587,6 +606,13 @@ const yayinlaKilitli = async (girdi: YayinGirdisi): Promise<YayinKaydi> => {
   let trafikGecti = false;
   try {
     yaz(`yayın       ${ortam}/${kodAdi} ${no} (sürüm ${surum}, kayıt ${girdi.kayit.slice(0, 12)})`);
+    // Bir sürüm numarası yalnız bir çekirdeği gösterir (kart 0040, karar 0205): yayın kilidinin içinde, görüntüye,
+    // veritabanına ve kutulara dokunmadan önce. Durursa yalnız başarısız yayın satırı yazılır.
+    kayit.cekirdekIzi = cekirdekIzi(kok, girdi.kayit);
+    const cakisma = surumCakismasi(surum, kayit.cekirdekIzi, butunKayitlariOku(ipv4), (k) =>
+      cekirdekIzi(kok, k),
+    );
+    if (cakisma) throw new Error(cakisma);
     const hatalar = goruntuyuDenetle(girdi.etiket);
     if (hatalar.length > 0) throw new Error(`Görüntü denetimden geçmedi: ${hatalar.join("; ")}`);
     // Panelin "Demoyu gez" bağlantısı (kart 0148): demo sitesi projenin siteler/ klasöründen bulunur. Birden çok

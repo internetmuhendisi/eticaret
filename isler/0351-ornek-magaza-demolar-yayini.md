@@ -10,7 +10,7 @@ Bölüm: Yeni mağaza. Önce 0345–0349 bitmiş olmalı.
 
 - Yayından önce kullanıcıya sorulur: bu bölümde önerilen site ayarlarının Örnek Mağaza değerleri, Örnek Mağaza'da Demolar ekranının açık olup olmadığı.
 - Örnek Mağaza demo sitedir: gerçek ödeme almaz, arama motorlarına kapalı kalır.
-- Kimlik yeni çekirdek sürümüne çıkar, sürüm notu yazılır, sitenin testleri çalışır; yeşil hattan geçmiş kayıtla yayınlanır. Canlı veritabanında Örnek Mağaza'nın içeriğinin demo1 kaynağıyla işaretlenmesi (kurulu içeriğin pakete bağlanması) ayrıca ele alınır ve ölçülür (kart 0276'nın dersi: başlangıç verisi yalnız ilk kurulumda yazılır).
+- Kimlik yeni çekirdek sürümüne çıkar (kart 0040, karar 0205: yayındaki 0.81.0 başka bir çekirdeği gösterdiği için en az 0.82.0; yayın komutu 0.81.0 ile durur, 2026-11-28 sunucunun kayıtlarıyla ölçüldü), sürüm notu yazılır, sitenin testleri çalışır; yeşil hattan geçmiş kayıtla yayınlanır. Canlı veritabanında Örnek Mağaza'nın içeriğinin demo1 kaynağıyla işaretlenmesi (kurulu içeriğin pakete bağlanması) ayrıca ele alınır ve ölçülür (kart 0276'nın dersi: başlangıç verisi yalnız ilk kurulumda yazılır).
 - Yayından önce canlı veritabanının yedeği alınır.
 - Yayından sonra sağlık kontrolü, sunucu denetimi ve deneme adresinde tarayıcıyla gezinti, telefon ve bilgisayarda: Demolar ekranı, demo2'nin örnek verilerle içe aktarılması, vitrinde VOLTIS ürünleri "(örnek)" ekiyle ve demo2'nin düzeni, mağaza adı, logo, ödeme ve kargo ayarlarının değişmemesi, demo1'e geri dönüş ve vitrinin eski hâli.
 - Sunucunun belleği ve işlemcisi paylaşılıyor: aynı anda yalnız bir ağır test ya da tarayıcı.
