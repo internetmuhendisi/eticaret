@@ -52,7 +52,7 @@ Bölüm: Yeni mağaza. On altıncı bölümde açık kartlardan bu bölüme alı
 - **Sonraki kartlara.**
   - Örnek Mağaza'nın bir sonraki yayını en az 0.82.0 olur (kart 0351'e yazıldı).
   - Yayın denemesi de aynı kuraldan geçer: yayınlanmış bir sürümle denenemez.
-  - Site kaldırma ve devretme işi o sitenin yayın kaydını saklamalı (karar 0205, kart 0352 ve devretme).
+  - Site kaldırma ve devretme işi (bugün komutu yok) o sitenin yayın kaydını saklamalı (karar 0205).
 
 ## Durum
 
