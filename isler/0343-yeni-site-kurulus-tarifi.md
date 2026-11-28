@@ -51,4 +51,4 @@ Bölüm: Yeni mağaza. Bölümün ilk işi.
 
 ## Durum
 
-yapılacak
+bitti
