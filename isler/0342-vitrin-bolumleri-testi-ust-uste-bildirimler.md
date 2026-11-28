@@ -29,4 +29,4 @@ Kart 0341'in düzeltmesi eksik kaldı. Hat 46107381410 (7a2054ad) yalnız `cekir
 
 ## Durum
 
-yapılacak
+bitti
