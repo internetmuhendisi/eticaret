@@ -86,6 +86,8 @@ describe("dosya temizliği", () => {
       "olusturma_zamani",
       (dosyaTemizligiAyari.sahipsizBelgeSaat + 1) * 3_600_000,
     );
+    // Süresi dolmamış belge: bir saat eksik.
+    await geriAl(yeni, "olusturma_zamani", (dosyaTemizligiAyari.sahipsizBelgeSaat - 1) * 3_600_000);
     // Dosyalara giden her yabancı anahtar sayılır: yeni bir tablo da kendiliğinden girer.
     await vt.execute(
       sql`create table deneme_belge_baglantisi (dosya uuid references dosyalar (kimlik))`,
