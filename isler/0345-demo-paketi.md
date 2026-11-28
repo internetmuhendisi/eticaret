@@ -76,4 +76,4 @@ Bölüm: Yeni mağaza. Önce 0343 bitmiş olmalı.
 
 ## Durum
 
-yapılacak
+bitti
