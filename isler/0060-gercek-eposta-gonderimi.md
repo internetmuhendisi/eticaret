@@ -6,6 +6,8 @@ Kart 0032 e-postayı yerel posta kutusuyla kurdu; kullanıcının kararıyla hiz
 
 İlk gerçek mağazadan önce yapılmalı. Kart 0032'de karşılaştırma ve önerilen hizmet (Amazon SES Frankfurt, seçenek Lettermint) kullanıcıya söylendi, seçim yapılmadı; fiyatlar o tarihe aittir, yeniden bakılır.
 
+Bölüm: Açılış (kullanıcı kararı, 2026-11-28). Seramik mağazasının satışa açılışından önce.
+
 ## Olmazsa olmazlar
 
 - Hizmetin verisi Avrupa Birliği'nde, tercihen Almanya'da durur (karar 0009). Seçim ve gerekçesi karar kaydına yazılır, fiyatı kullanıcıya söylenir.

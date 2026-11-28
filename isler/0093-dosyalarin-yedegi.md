@@ -6,7 +6,7 @@ Kart 0072 her sitenin dosyalarını sunucunun diskinde, sitenin kendi klasörün
 
 Önce 0072 bitmiş olmalı. Bu kart bitmeden gerçek bir mağazaya dosya yüklenmez.
 
-Bölüm: Yönetim paneli.
+Bölüm: Yeni mağaza. On altıncı bölümde açık kartlardan bu bölüme alındı (önce Yönetim paneli); demo içe aktarma (kart 0347) mağazaya görsel yazdığı için ondan önce.
 
 ## Olmazsa olmazlar
 

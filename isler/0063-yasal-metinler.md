@@ -4,6 +4,8 @@
 
 Kart 0033 kayıt kutularını taslak olduğunu söyleyen yer tutucu sayfalara bağladı (karar 0051). İlk gerçek mağazadan önce gerçek metinler gelmeli.
 
+Bölüm: Açılış (kullanıcı kararı, 2026-11-28). Seramik mağazasının satışa açılışından önce.
+
 ## Olmazsa olmazlar
 
 - Metinlerin nereden geldiği ve mağaza bilgileriyle nasıl dolduğu `planlar/komutlar.md` ile uyumlu kurulur (temel paket: Yasal).

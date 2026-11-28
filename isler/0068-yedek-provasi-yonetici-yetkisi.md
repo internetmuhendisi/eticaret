@@ -8,6 +8,8 @@ Kart 0037'nin bağımsız kontrolü ölçtü: yedek provasının canlı veritaba
 
 İkinci bir mağaza açılmadan önce yapılmalı.
 
+Bölüm: Yeni mağaza. On altıncı bölümde açık kartlardan bu bölüme alındı; kart 0350'den (ikinci mağaza) önce.
+
 ## Olmazsa olmazlar
 
 - Canlı veritabanında sitenin nesnesini (tablo içeriği, görünüm, dönüşüm, işlev) yönetici olarak çalıştıran sorgu kalmaz. `SET ROLE` yetmez: oturumun asıl kullanıcısı yönetici kaldıkça işlev rolü geri alabilir. Yol ya sitenin kendi kullanıcısıyla bağlanmak ya da içeriği `pg_dump` ile okumaktır; seçim ölçülerek yapılır, karar kaydına yazılır.

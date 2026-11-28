@@ -4,6 +4,8 @@
 
 Çekirdeğin görüntüsü `altyapi-cekirdek:<sürüm>` adını alıyor. Örnek Mağaza'nın yayın kaydında üç yayın var, üçü de `0.1.0` sürümüyle ama üç farklı kayıttan: `380d46e` ve `ed1b203` (kart 0022), `bb6bcc6` (kart 0023). Aynı numara farklı kodu gösterince sahip paneli, sürüm notu ve güncelleme tarifi "bu site hangi kodda çalışıyor" sorusunu numaradan cevaplayamaz (karar 0011, 0024). Bir sürüm numarası yalnız bir çekirdeği göstermeli.
 
+Bölüm: Yeni mağaza. On altıncı bölümde açık kartlardan bu bölüme alındı; sürüm numarası birden çok sitede tek kodu göstermeli.
+
 ## Olmazsa olmazlar
 
 - Yayınlanmış bir sürüm numarasıyla farklı bir çekirdek yayınlanamaz. Örneğin yayın komutu, sunucudaki yayın kayıtlarında aynı sürümün başka bir çekirdek kaydıyla yayınlandığını görürse durur. Yol karar kaydında seçilir.

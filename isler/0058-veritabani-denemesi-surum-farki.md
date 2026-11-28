@@ -4,6 +4,8 @@
 
 `pnpm sunucu-veritabani-denemesi`, Örnek Mağaza'nın veritabanına kimlik dosyasındaki çekirdek sürümünün değişikliklerini uygular. Kart 0051 sırasında ölçüldü: sunucudaki site 0.6.1, kimlik 0.8.1. Görüntü bilgisayarda olsaydı deneme, yayın yapılmadan yeni tabloları çalışan sitenin veritabanına uygulayacaktı. Bu değişikliklerden biri "yedekten" notludur (karar 0044). Sitenin eski kodla yeni veritabanında nasıl çalıştığı ölçülmedi. Deneme bu sırada uyarmıyor.
 
+Bölüm: Yeni mağaza. On altıncı bölümde açık kartlardan bu bölüme alındı; deneme birden çok siteli sunucuda yayındaki sürümü gözetmeli.
+
 ## Olmazsa olmazlar
 
 - Deneme, yayındaki sitenin sürümünden yeni değişikliği çalışan siteye sormadan uygulamaz.

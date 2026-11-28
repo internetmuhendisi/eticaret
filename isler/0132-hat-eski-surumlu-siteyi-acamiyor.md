@@ -8,6 +8,8 @@ Kart 0129 sırasında görüldü (2026-11-11, çalışma 42914059742): çekirdek
 
 Bugün tek site var. Siteler çoğalınca her site kendi sürümünde kalacağı için (değişmez kural 3) hat çekirdeğin her sürüm artışında kırmızıya düşer, ya da her artışta bütün sitelerin kimliği değişmek zorunda kalır.
 
+Bölüm: Yeni mağaza. On altıncı bölümde açık kartlardan bu bölüme alındı; siteler farklı sürümlerde kalacağı için kart 0350'den önce.
+
 ## Olmazsa olmazlar
 
 - Hattın yerel ortam denemesinin hangi sitelerle ve hangi sürümle çalışacağı kararlaştırılır: örneğin yalnız şu anki çekirdeğin sürümündeki siteler ve deneme sitesi, eski sürümdeki siteler için açık bir "ölçülmedi" satırı.
