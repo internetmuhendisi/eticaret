@@ -28,4 +28,4 @@ Kod değişmedi (gönderim yalnız Dockerfile, komut testi ve belgeler); 0319'un
 
 ## Durum
 
-yapılacak
+bitti
