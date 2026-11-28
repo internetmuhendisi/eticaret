@@ -3,5 +3,10 @@
 // deneme sitesi de yazar. Şemadan geçtiğini komutlar/testler/deneme-sitesi-ayarlari.test.ts denetler.
 export const denemeSitesiAyarlari = { paraBirimi: "TRY" } as const;
 
-export const denemeSitesiAyarDosyasi = (): string =>
-  `${JSON.stringify(denemeSitesiAyarlari, null, 2)}\n`;
+// Gönderen adresi verilirse deneme sitesi e-posta da gönderir (kart 0132: Örnek Mağaza'nın yerine açılan deneme sitesi).
+export const denemeSitesiAyarDosyasi = ({
+  epostaGonderenAdresi,
+}: {
+  epostaGonderenAdresi?: string;
+} = {}): string =>
+  `${JSON.stringify({ ...denemeSitesiAyarlari, ...(epostaGonderenAdresi ? { epostaGonderenAdresi } : {}) }, null, 2)}\n`;

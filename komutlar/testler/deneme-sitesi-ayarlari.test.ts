@@ -10,8 +10,14 @@ import { denemeSitesiAyarDosyasi } from "../deneme-sitesi-ayarlari.mts";
 const komutlar = join(import.meta.dirname, "..");
 
 describe("deneme sitesi ayarları", () => {
-  it("şemadan geçer", () => {
+  it("şemadan geçer, gönderen adresiyle de", () => {
     expect(ayarSemasi.safeParse(JSON.parse(denemeSitesiAyarDosyasi())).success).toBe(true);
+    const gonderenli = JSON.parse(
+      denemeSitesiAyarDosyasi({ epostaGonderenAdresi: "deneme-abc123@posta.ornek.test" }),
+    );
+    expect(ayarSemasi.safeParse(gonderenli).success).toBe(true);
+    expect(gonderenli.epostaGonderenAdresi).toBe("deneme-abc123@posta.ornek.test");
+    expect(JSON.parse(denemeSitesiAyarDosyasi())).not.toHaveProperty("epostaGonderenAdresi");
   });
 
   it("ayarlar.json yazan her komut ortak ayarı kullanır", () => {
@@ -21,7 +27,7 @@ describe("deneme sitesi ayarları", () => {
       .filter(({ icerik }) => /writeFileSync\([^;]*"ayarlar\.json"/s.test(icerik));
     expect(yazanlar.map((y) => y.ad).toSorted()).toEqual(["yayin-denemesi.mts", "yerel-ortam.mts"]);
     for (const { ad, icerik } of yazanlar) {
-      expect([ad, /"ayarlar\.json"\),\s*denemeSitesiAyarDosyasi\(\)/.test(icerik)]).toEqual([
+      expect([ad, /"ayarlar\.json"\),\s*denemeSitesiAyarDosyasi\(/.test(icerik)]).toEqual([
         ad,
         true,
       ]);

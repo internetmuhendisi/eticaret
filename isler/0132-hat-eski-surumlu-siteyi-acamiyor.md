@@ -25,6 +25,30 @@ Bölüm: Yeni mağaza. On altıncı bölümde açık kartlardan bu bölüme alı
 
 - Kimliği eski sürümde duran bir site varken hat yeşil biter ve o sitenin ölçülmediğini yazar; bir testle ya da bilerek eski kimlikle bir kez çalıştırılarak gösterilir.
 
+## Sonuç
+
+- **Kural.** Yerel ortam denemesinin proje sitesi Örnek Mağaza'dır (karar 0007). Örnek Mağaza yalnız kimliği şu anki çekirdeğin sürümündeyse açılır.
+  - Karar tek işlevde: `yerelDenemeSecimi` (`komutlar/yerel-ortam.mts`). Eski ya da başka sürümdeki site açılmaz; yerelde eski görüntü olsa da açılmaz, sonuç makineye bağlı olmaz.
+  - Açılmayan site sessiz kalmaz: "ölçülmedi" satırı çıktının başında ve özet satırının altında yazılır.
+  - Yerine e-posta gönderen ikinci bir geçici deneme sitesi açılır. Siteler arası ölçümler (veri ayrımı, dosya klasörü) ve e-postanın iki dalı (gönderen var ve yok) sürer.
+  - O hatta Örnek Mağaza'nın kendi verisine bağlı ölçümler yapılmaz: kart 0309'un uzun kurulumu, kart 0328'in `onde=` satırı, kendi logosu ve adı. Site kendi güncellemesinde ölçülür.
+- **Deneme sitesinin sürümü.** Geçici deneme sitesinin kimliği her açılışta çekirdeğin o anki sürümünü alır, elle artmaz. Proje sitelerinin kimliği yalnız kendi güncelleme işinde artar (değişmez kural 3). Kural `cekirdek/surum-notlari/README.md`'de yazılı.
+- **Ölçümler.**
+  - `komutlar/testler/yerel-ortam-secimi.test.ts` (seçim, satır ve denemenin seçimi kullanması), `deneme-sitesi-ayarlari.test.ts` (gönderen adresli ayar şemadan geçer). Dokuz bozma ayrı ayrı denendi, her biri kırmızıya düştü. Denemenin kuralı kullanması yalnız yazıyla denetlenir (deneme Docker ister).
+  - Komutların testleri (717), tür kontrolü ve denetim yeşil.
+  - Örnek Mağaza'nın kimliği çalışma kopyasında geçici olarak 0.80.0 yapılarak (bilgisayarda 0.80.0 görüntüsü varken) `pnpm yerel-ortam-testi` üç kez çalıştırıldı. Kimlik her seferinde geri alındı, kayda girmedi.
+  - İlk çalışma 3 ölçümde kırmızıydı: geçici deneme siteleri e-posta göndermediği için kayıt ve şifre sıfırlama e-postası gelmedi. Yerine açılan site gönderen adresi aldı.
+  - Sonraki iki çalışma yeşil bitti: 79/79, "ölçülmedi" satırı başta ve özette.
+- **Bağımsız kontrolün bulgularıyla düzeltilen.**
+  - Belgeler kuralı "proje siteleri" diye genel söylüyordu, kod yalnız Örnek Mağaza'ya bakıyor.
+  - Satır özette yoktu.
+  - Örnek Mağaza'ya bağlı ölçümlerin o hatta yapılmadığı yazılı değildi.
+  - "Klasör yalnız seçimden geçer" denetimi doğrudan kullanımı yakalamıyordu.
+  - Deneme sitesinin ayarları ve "deneme sitesini siler" yorumları eskimişti.
+- **Sonraki kartlara.**
+  - `pnpm yerel-ortam-ac` klasör verilmeden açılınca hâlâ eski sürümdeki Tema Galerisi'ni (0.76.0) açmaya çalışıp görüntü yok hatasıyla düşer. Hat adımı değil, bu kartın dışında bırakıldı.
+  - Hatta ilk sonuç, çekirdek Örnek Mağaza'dan önce bir sürüm artınca görülür (kart 0351 öncesi).
+
 ## Durum
 
-yapılacak
+çalışılıyor

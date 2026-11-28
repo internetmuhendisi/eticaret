@@ -552,8 +552,8 @@ export const ortamiKapat = async (): Promise<string[]> => {
   return silinenler;
 };
 
-// Geçici deneme sitesi: sunucu/olusan/deneme-siteleri/deneme-<ek>. Ayarların hepsi varsayılandır;
-// yalnız mağaza adı kimlikteki addan farklıdır: vitrin adı ayardan okumazsa denemede yakalanır (kart 0071).
+// Geçici deneme sitesi: sunucu/olusan/deneme-siteleri/deneme-<ek>. Ayarların hepsi varsayılandır (istenirse e-posta
+// gönderen adresi dışında); mağaza adı kimlikteki addan farklıdır: vitrin adı ayardan okumazsa denemede yakalanır (kart 0071).
 const denemeAdi = /^deneme-[0-9a-f]{6}$/;
 const denemeAltKlasorleri = ["baslangic", markaKlasoru];
 const denemeLogosu = join(
@@ -563,7 +563,32 @@ const denemeLogosu = join(
   "logo.webp",
 );
 
-export const denemeSitesiAc = (): string => {
+// Yerel ortam denemesinin siteleri (kart 0132): kontrol hattı her çalışmada temiz makinede başlar ve yalnız şu anki
+// çekirdeğin görüntüsünü üretebilir; sonuç makineye bağlı olmasın diye yerelde de aynı kural geçer. Denemeye verilen
+// proje sitelerinden (bugün yalnız Örnek Mağaza) yalnız kimliği şu anki çekirdeğin sürümünde olanlar açılır;
+// eski sürümdeki site sessizce atlanmaz, "ölçülmedi" satırıyla yazılır (o site kendi güncellemesinde ölçülür,
+// değişmez kural 3). Siteler arası ölçümler (veri ayrımı) iki site ister: açılacak proje sitesi yoksa yerine ikinci
+// bir geçici deneme sitesi açılır. Geçici deneme sitesinin kimliği her açılışta çekirdeğin sürümünü alır, elle artmaz.
+export type ProjeSitesi = { klasor: string; kodAdi: string; surum: string };
+
+export const yerelDenemeSecimi = (
+  adaylar: ProjeSitesi[],
+  surum: string,
+): { acilacaklar: ProjeSitesi[]; olculmeyenler: ProjeSitesi[]; ekDenemeSitesi: number } => {
+  const acilacaklar = adaylar.filter((aday) => aday.surum === surum);
+  return {
+    acilacaklar,
+    olculmeyenler: adaylar.filter((aday) => aday.surum !== surum),
+    ekDenemeSitesi: acilacaklar.length === 0 ? 1 : 0,
+  };
+};
+
+export const olculmediSatiri = (site: ProjeSitesi, surum: string): string =>
+  `ölçülmedi  ${site.kodAdi}: kimlik ${site.surum}, çekirdek ${surum}; bu sürümün görüntüsü burada üretilemez, site kendi güncellemesinde ölçülür (kart 0132)`;
+
+// epostaGonderir: site gönderen adresi alır ve e-posta gönderir (yerel ortam denemesinde Örnek Mağaza'nın yerine
+// açılan site, kart 0132); verilmezse göndermez (gönderen adresi olmayan sitenin ölçümü).
+export const denemeSitesiAc = ({ epostaGonderir = false } = {}): string => {
   const kodAdi = `deneme-${randomBytes(3).toString("hex")}`;
   const klasor = join(denemeSiteleri, kodAdi);
   mkdirSync(klasor, { recursive: true });
@@ -576,7 +601,12 @@ export const denemeSitesiAc = (): string => {
     teslimDurumu: { magazaSahibiHesabi: "gerekmez", yurtDisiAktarimBelgeleri: "gerekmez" },
   };
   writeFileSync(join(klasor, "kimlik.json"), `${JSON.stringify(kimlik, null, 2)}\n`);
-  writeFileSync(join(klasor, "ayarlar.json"), denemeSitesiAyarDosyasi());
+  writeFileSync(
+    join(klasor, "ayarlar.json"),
+    denemeSitesiAyarDosyasi(
+      epostaGonderir ? { epostaGonderenAdresi: `${kodAdi}@posta.ornek.test` } : {},
+    ),
+  );
   mkdirSync(join(klasor, "baslangic"));
   writeFileSync(
     join(klasor, "baslangic", "ayarlar.json"),

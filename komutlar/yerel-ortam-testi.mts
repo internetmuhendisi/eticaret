@@ -1,5 +1,5 @@
 // Yerel ortamın denemesi (kart 0016, karar 0028). Örnek Mağaza'nın yanına geçici bir deneme
-// sitesi açar ve Caddy üzerinden ölçer:
+// sitesi açar (Örnek Mağaza şu anki çekirdeğin sürümünde değilse onun yerine ikinci bir deneme sitesi, kart 0132) ve Caddy üzerinden ölçer:
 //   - her site yalnız kendi adını gösterir, sağlık ucu açılır ve sitenin çekirdek sürümünü söyler;
 //   - tanınmayan adres 404 döner;
 //   - her kutu yalnız kendi veritabanına bağlanır, ötekinin veritabanına giremez;
@@ -11,9 +11,9 @@
 //   - şifre sıfırlama e-postası ulaşır, bağlantısı sitenin adresindedir ve yeni şifreyi kurar (kart 0034);
 //   - görüntüdeki parça yalnız kendi sitesine yönetici açar, şifre girişte geçer (kart 0048);
 //   - bileşen kataloğu deneme ortamında açılır, canlı ve ortamı bilinmeyen kutuda açılmaz (kart 0104).
-// Sonunda ortamı kapatır ve deneme sitesini siler. Bir ölçüm kalırsa kırmızı biter.
+// Sonunda ortamı kapatır ve deneme sitelerini siler. Bir ölçüm kalırsa kırmızı biter.
 // Çalıştırma: pnpm yerel-ortam-testi [--acik-birak]
-//   --acik-birak: ortamı ve deneme sitesini açık bırakır; kapatmak: pnpm yerel-ortam-kapat
+//   --acik-birak: ortamı ve deneme sitelerini açık bırakır; kapatmak: pnpm yerel-ortam-kapat
 
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -37,6 +37,7 @@ import { siteOrtamiDegiskeni } from "../cekirdek/kayitlar/site.ts";
 import { metinOkuyucu } from "../cekirdek/metinler/metin.ts";
 import { kodAdimi, zamanliKod } from "../cekirdek/moduller/oturum/iki-asama.ts";
 import { soruyuCoz } from "../cekirdek/moduller/robot-korumasi/testler/soru-coz.ts";
+import { cekirdekSurumu } from "../cekirdek/surum.ts";
 import { siteVeritabaniAdi } from "../cekirdek/veritabani/baglanti.ts";
 import {
   arkaPlanKutuAdi,
@@ -57,11 +58,13 @@ import {
   kok,
   kutuAdi,
   type OrtamSitesi,
+  olculmediSatiri,
   ortamiAc,
   ortamiKapat,
   postaKutusuAdresi,
   siteAdresi,
   vitrinBasligi,
+  yerelDenemeSecimi,
 } from "./yerel-ortam.mts";
 
 const acikBirak = process.argv.includes("--acik-birak");
@@ -72,6 +75,8 @@ const kuyrukBaslamaSiniriMs = 300_000;
 const kuyrukGunluguSatiri = 40;
 const kuyrukGunluguGenisligi = 400;
 const sonuclar: { ad: string; gecti: boolean; ayrinti: string }[] = [];
+// Açılmayan proje siteleri (kart 0132): özet satırında da yazılır.
+const olculmeyenSatirlari: string[] = [];
 const olc = (ad: string, gecti: boolean, ayrinti = "") => {
   sonuclar.push({ ad, gecti, ayrinti });
   console.log(`${gecti ? "geçti " : "KALDI "}  ${ad}${ayrinti ? `  (${ayrinti})` : ""}`);
@@ -466,7 +471,8 @@ const logoOlc = async (kodAdi: string): Promise<void> => {
 };
 
 // Kapıdan gerçek kayıt: robot sorusu, hesap, kuyruk, arka plan kutusu, posta kutusu (kart 0033, karar 0051).
-const kayitOlc = async (kodAdi: string): Promise<void> => {
+const kayitOlc = async (site: OrtamSitesi): Promise<void> => {
+  const { kodAdi } = site.kimlik;
   const soru = JSON.parse((await iste(kodAdi, "/kapi/herkese-acik/robot-sorusu")).govde).veri;
   const eposta = `kayit-${Date.now()}@ornek.test`;
   const kayit = await gonder(kodAdi, "/kapi/herkese-acik/musteri-kayit", {
@@ -498,7 +504,7 @@ const kayitOlc = async (kodAdi: string): Promise<void> => {
   const { iletiler, sonHata } = await postaKutusunuBekle(postaKutusuAdresi(), eposta);
   const konular = iletiler.map(({ Subject }) => Subject ?? "");
   // Konudaki ad mağaza sahibinin ayarıdır (kart 0071).
-  const { baslangic } = siteKlasorunuOku(join(kok, "siteler", kodAdi));
+  const { baslangic } = site;
   olc(
     `${kodAdi}: hoş geldin e-postası yerel posta kutusuna ulaşıyor`,
     konular.length === 1 && konular[0]?.includes(baslangic.magazaAdi ?? "") === true,
@@ -684,8 +690,34 @@ for (const no of readdirSync("/proc").filter((ad) => /^[0-9]+$/.test(ad))) {
 const calistir = async (): Promise<void> => {
   let siteler: OrtamSitesi[] = [];
   try {
-    const deneme = denemeSitesiAc();
-    siteler = await ortamiAc([join(kok, "siteler", "ornek-magaza"), deneme]);
+    // Denemenin tek proje sitesi Örnek Mağaza'dır (karar 0007: her özellik önce onda denenir). Şu anki çekirdeğin
+    // sürümünde değilse (yerelde eski görüntü olsa da) açılmaz, yerine ikinci bir geçici deneme sitesi açılır
+    // (kart 0132). O hatta Örnek Mağaza'nın kendi verisine bağlı ölçümler (uzun açılış kurulumu kart 0309, kuyruğun
+    // önündeki işler kart 0328, kendi logosu ve adı) yapılmaz; site kendi güncellemesinde ölçülür.
+    const ornekKlasoru = join(kok, "siteler", "ornek-magaza");
+    const secim = yerelDenemeSecimi(
+      [
+        {
+          klasor: ornekKlasoru,
+          kodAdi: "ornek-magaza",
+          surum: siteKlasorunuOku(ornekKlasoru).kimlik.cekirdekSurumu,
+        },
+      ],
+      cekirdekSurumu,
+    );
+    for (const site of secim.olculmeyenler) {
+      olculmeyenSatirlari.push(olculmediSatiri(site, cekirdekSurumu));
+      console.log(olculmediSatiri(site, cekirdekSurumu));
+    }
+    const klasorler = [
+      ...secim.acilacaklar.map(({ klasor }) => klasor),
+      // Örnek Mağaza'nın yerine açılan site onun gibi e-posta gönderir: kayıt ve şifre sıfırlama e-postası ölçülür.
+      ...Array.from({ length: secim.ekDenemeSitesi }, () =>
+        denemeSitesiAc({ epostaGonderir: true }),
+      ),
+      denemeSitesiAc(),
+    ];
+    siteler = await ortamiAc(klasorler);
     const [ornek, denemeSitesi] = siteler as [OrtamSitesi, OrtamSitesi];
     console.log("");
     await sitesiniOlc(ornek, denemeSitesi);
@@ -783,7 +815,7 @@ const calistir = async (): Promise<void> => {
       });
       olc(`POST ${yol} giriş sınırını aşamıyor`, [308, 404, 429].includes(durum), `${durum}`);
     }
-    await kayitOlc(ornek.kimlik.kodAdi);
+    await kayitOlc(ornek);
     kutuKurallariniOlc(siteler.length);
   } catch (hata) {
     olc("ortam açıldı", false, (hata as Error).message);
@@ -794,7 +826,7 @@ const calistir = async (): Promise<void> => {
     for (const { kimlik } of siteler) {
       console.log(`  ${kimlik.gorunenAd.padEnd(24)} ${siteAdresi(kimlik.kodAdi)}`);
     }
-    console.log("Kapatmak (deneme sitesini de siler): pnpm yerel-ortam-kapat");
+    console.log("Kapatmak (deneme sitelerini de siler): pnpm yerel-ortam-kapat");
   } else {
     for (const kodAdi of await ortamiKapat()) console.log(`silindi     deneme sitesi ${kodAdi}`);
   }
@@ -811,4 +843,5 @@ console.log(
     ? `\nYerel ortam denemesi yeşil: ${sonuclar.length} ölçüm geçti.`
     : `\nYerel ortam denemesi kırmızı: ${kalanlar.length} ölçüm kaldı.`,
 );
+for (const satir of olculmeyenSatirlari) console.log(satir);
 process.exitCode = kalanlar.length === 0 ? 0 : 1;
